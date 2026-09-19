@@ -84,6 +84,8 @@ pub struct Instance {
     pub created_at: DateTime<Utc>,
     pub last_played: Option<DateTime<Utc>>,
     #[serde(default)]
+    pub total_play_seconds: u64,
+    #[serde(default)]
     pub overrides: InstanceOverrides,
 }
 
@@ -166,6 +168,7 @@ impl InstanceStore {
             loader: new.loader,
             created_at: Utc::now(),
             last_played: None,
+            total_play_seconds: 0,
             overrides: InstanceOverrides::default(),
         };
 
@@ -190,6 +193,13 @@ impl InstanceStore {
         let _guard = self.write_lock.lock().await;
         let mut instance = self.get(id).await?;
         instance.last_played = Some(Utc::now());
+        fsutil::write_json(&self.paths.instance_file(id), &instance).await
+    }
+
+    pub async fn add_play_time(&self, id: &str, seconds: u64) -> Result<()> {
+        let _guard = self.write_lock.lock().await;
+        let mut instance = self.get(id).await?;
+        instance.total_play_seconds = instance.total_play_seconds.saturating_add(seconds);
         fsutil::write_json(&self.paths.instance_file(id), &instance).await
     }
 
@@ -346,6 +356,9 @@ mod tests {
 
         store.touch_last_played(&b.id).await.unwrap();
         assert_eq!(store.list().await.unwrap()[0].id, b.id);
+        store.add_play_time(&b.id, 90).await.unwrap();
+        store.add_play_time(&b.id, 30).await.unwrap();
+        assert_eq!(store.get(&b.id).await.unwrap().total_play_seconds, 120);
 
         store.delete(&a.id).await.unwrap();
         assert!(matches!(store.get(&a.id).await, Err(Error::InstanceNotFound(_))));

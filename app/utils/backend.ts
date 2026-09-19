@@ -1,6 +1,11 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
+import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import type {
+  Account,
   AppInfo,
+  DeviceCode,
+  LogLine,
+  RunningGame,
+  StageProgress,
   CommandError,
   Instance,
   InstanceOverrides,
@@ -53,6 +58,31 @@ export const backend = {
 
   getVersionManifest: (forceRefresh = false) =>
     call<VersionManifest>('get_version_manifest', { forceRefresh }),
+
+  /** Löst erst auf, wenn das Spiel gestartet ist; Fortschritt kommt über `onProgress`. */
+  launchInstance: (id: string, onProgress: (p: StageProgress) => void) => {
+    const channel = new Channel<StageProgress>()
+    channel.onmessage = onProgress
+    return call<number>('launch_instance', { id, onProgress: channel })
+  },
+  stopInstance: (id: string) => call<boolean>('stop_instance', { id }),
+  runningGames: () => call<RunningGame[]>('running_games'),
+  getGameLogs: (id: string) => call<LogLine[]>('get_game_logs', { id }),
+
+  listAccounts: () => call<Account[]>('list_accounts'),
+  loginBrowser: () => call<Account>('login_browser'),
+  loginDeviceCode: (onCode: (code: DeviceCode) => void) => {
+    const channel = new Channel<DeviceCode>()
+    channel.onmessage = onCode
+    return call<Account>('login_device_code', { onCode: channel })
+  },
+  cancelLogin: () => call<void>('cancel_login'),
+  setActiveAccount: (id: string) => call<void>('set_active_account', { id }),
+  removeAccount: (id: string) => call<void>('remove_account', { id }),
+}
+
+export function isCancelled(e: unknown): boolean {
+  return e instanceof BackendError && e.kind === 'cancelled'
 }
 
 export function errorMessage(e: unknown): string {

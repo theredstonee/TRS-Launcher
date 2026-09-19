@@ -1,0 +1,46 @@
+use tauri::ipc::Channel;
+use tauri::{AppHandle, Manager, State};
+use trs_core::gamelog::LogLine;
+use trs_core::launch::RunningGame;
+use trs_core::prepare::StageProgress;
+
+use crate::LauncherState;
+use crate::error::CommandResult;
+
+/// Lädt alles Nötige und startet das Spiel. Fortschritt kommt über den
+/// Channel, Logs und Spielende über das Event `game-event`.
+#[tauri::command]
+pub async fn launch_instance(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    on_progress: Channel<StageProgress>,
+) -> CommandResult<u32> {
+    let pid = launcher
+        .launch(&id, &move |progress| {
+            let _ = on_progress.send(progress);
+        })
+        .await?;
+
+    if launcher.settings().await.close_on_launch
+        && let Some(window) = app.get_webview_window("main")
+    {
+        let _ = window.minimize();
+    }
+    Ok(pid)
+}
+
+#[tauri::command]
+pub fn stop_instance(launcher: State<'_, LauncherState>, id: String) -> bool {
+    launcher.games().kill(&id)
+}
+
+#[tauri::command]
+pub fn running_games(launcher: State<'_, LauncherState>) -> Vec<RunningGame> {
+    launcher.games().running()
+}
+
+#[tauri::command]
+pub fn get_game_logs(launcher: State<'_, LauncherState>, id: String) -> Vec<LogLine> {
+    launcher.games().logs(&id)
+}

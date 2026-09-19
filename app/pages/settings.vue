@@ -108,7 +108,7 @@ async function save() {
         </div>
         <label class="mt-4 flex items-center gap-2.5 text-sm text-base-200">
           <input v-model="form.closeOnLaunch" type="checkbox" class="accent-redstone-500" />
-          Launcher beim Spielstart schließen
+          Launcher beim Spielstart minimieren
         </label>
         <label class="mt-2.5 flex items-center gap-2.5 text-sm text-base-200">
           <input v-model="form.showSnapshots" type="checkbox" class="accent-redstone-500" />

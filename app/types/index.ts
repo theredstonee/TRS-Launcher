@@ -26,6 +26,7 @@ export interface Instance {
   loader: Loader
   createdAt: string
   lastPlayed: string | null
+  totalPlaySeconds: number
   overrides: InstanceOverrides
 }
 
@@ -70,3 +71,47 @@ export interface CommandError {
   kind: string
   message: string
 }
+
+export interface Account {
+  id: string
+  name: string
+  skinUrl: string | null
+  active: boolean
+  addedAt: string
+}
+
+export interface DeviceCode {
+  userCode: string
+  verificationUri: string
+  expiresIn: number
+}
+
+export type LaunchStage = 'version' | 'java' | 'libraries' | 'assets' | 'starting'
+
+export interface StageProgress {
+  stage: LaunchStage
+  /** 0–100 innerhalb der Stufe */
+  percent: number
+  doneFiles: number
+  totalFiles: number
+}
+
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+
+export interface LogLine {
+  time: number
+  level: LogLevel
+  thread: string | null
+  message: string
+}
+
+export interface RunningGame {
+  instanceId: string
+  pid: number
+  startedAt: string
+}
+
+export type GameEvent =
+  | { type: 'started'; instanceId: string; pid: number }
+  | { type: 'logs'; instanceId: string; lines: LogLine[] }
+  | { type: 'exited'; instanceId: string; exitCode: number | null; crashed: boolean; playSeconds: number }

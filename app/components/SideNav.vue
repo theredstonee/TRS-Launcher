@@ -5,6 +5,10 @@ const items = [
   { to: '/accounts', label: 'Accounts', icon: 'M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM4 21c0-4 3.6-7 8-7s8 3 8 7z' },
 ]
 
+const accounts = useAccountsStore()
+const games = useGamesStore()
+const runningCount = computed(() => Object.values(games.states).filter((s) => s.phase !== 'idle').length)
+
 const info = ref<string | null>(null)
 onMounted(async () => {
   try {
@@ -20,9 +24,21 @@ onMounted(async () => {
     <NuxtLink v-for="item in items" :key="item.to" :to="item.to" class="nav-item" active-class="nav-active">
       <svg viewBox="0 0 24 24" class="size-4 shrink-0" fill="currentColor"><path :d="item.icon" /></svg>
       {{ item.label }}
+      <span v-if="item.to === '/' && runningCount" class="ml-auto flex items-center gap-1.5 text-xs text-ok">
+        <span class="size-1.5 animate-pulse rounded-full bg-ok" />{{ runningCount }}
+      </span>
     </NuxtLink>
 
     <div class="mt-auto">
+      <NuxtLink to="/accounts" class="mb-1 flex items-center gap-2.5 rounded-md border border-base-800 bg-base-850 p-2 transition-colors hover:border-base-700">
+        <SkinHead :skin-url="accounts.active?.skinUrl ?? null" :name="accounts.active?.name ?? '?'" :size="28" />
+        <div class="min-w-0">
+          <p class="truncate text-sm font-medium">{{ accounts.active?.name ?? 'Nicht angemeldet' }}</p>
+          <p class="truncate text-[11px] text-base-400">
+            {{ accounts.active ? (accounts.items.length > 1 ? `${accounts.items.length} Accounts` : 'Microsoft-Konto') : 'Jetzt anmelden' }}
+          </p>
+        </div>
+      </NuxtLink>
       <NuxtLink to="/settings" class="nav-item" active-class="nav-active">
         <svg viewBox="0 0 24 24" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />

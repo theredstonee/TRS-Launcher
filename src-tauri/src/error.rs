@@ -16,7 +16,11 @@ impl From<trs_core::Error> for CommandError {
         match &err {
             trs_core::Error::Validation(_)
             | trs_core::Error::InstanceNotFound(_)
-            | trs_core::Error::UnknownGameVersion(_) => log::debug!("{err}"),
+            | trs_core::Error::UnknownGameVersion(_)
+            | trs_core::Error::Launch(_)
+            | trs_core::Error::Auth(_)
+            | trs_core::Error::AuthNotApproved
+            | trs_core::Error::Cancelled => log::debug!("{err}"),
             _ => log::error!("{err:?}"),
         }
         Self { kind: err.kind(), message: err.public_message() }

@@ -34,7 +34,7 @@ pub async fn update_instance(
 
 #[tauri::command]
 pub async fn delete_instance(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
-    Ok(launcher.instances().delete(&id).await?)
+    Ok(launcher.delete_instance(&id).await?)
 }
 
 #[tauri::command]

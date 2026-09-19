@@ -19,16 +19,28 @@ export const newInstanceSchema = z.object({
   }),
 })
 
+const resolutionSchema = z.object({
+  width: z.number().int().min(320).max(16384),
+  height: z.number().int().min(240).max(16384),
+})
+
+export const updateInstanceSchema = z.object({
+  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(64, 'Maximal 64 Zeichen'),
+  overrides: z.object({
+    maxMemoryMb: z.number().int().min(512).max(131072).nullable(),
+    javaPath: z.string().min(1).max(1024).nullable(),
+    jvmArgs: z.string().max(4096).nullable(),
+    resolution: resolutionSchema.nullable(),
+  }),
+})
+
 export const settingsSchema = z
   .object({
     minMemoryMb: z.number().int().min(128),
     maxMemoryMb: z.number().int().min(512).max(131072),
     javaPath: z.string().min(1).max(1024).nullable(),
     jvmArgs: z.string().max(4096),
-    resolution: z.object({
-      width: z.number().int().min(320).max(16384),
-      height: z.number().int().min(240).max(16384),
-    }),
+    resolution: resolutionSchema,
     concurrentDownloads: z.number().int().min(1).max(64),
     closeOnLaunch: z.boolean(),
     showSnapshots: z.boolean(),

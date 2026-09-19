@@ -27,9 +27,11 @@ built with [Tauri 2](https://tauri.app) (Rust) and [Nuxt 4](https://nuxt.com).
 Early development.
 
 1. ✅ Foundation: instances, settings, version manifest
-2. Vanilla launch: version metadata, downloads with progress, Java runtimes, game log console
-3. Microsoft sign-in
-4. Fabric / Quilt
+2. ✅ Launch pipeline: version metadata, verified parallel downloads with progress, automatic
+   Java runtimes (Mojang's own builds), legacy versions back to 1.5.2, live game log console,
+   play-time tracking
+3. ✅ Microsoft sign-in with multiple accounts (awaiting Mojang's approval of the app ID)
+4. ✅ Fabric / Quilt
 5. Forge / NeoForge
 6. Modrinth / CurseForge, modpack import
 7. Auto-updater, installer, polish
@@ -64,7 +66,14 @@ src-tauri/
   crates/core/          trs-core – UI-independent launcher core
     instance.rs         instances (instances/<id>/instance.json)
     settings.rs         global settings
-    meta/               Mojang metadata (cached version manifest)
+    meta/               Mojang metadata: version manifest, version JSON, rules, inheritsFrom merge
+    download.rs         parallel downloads, SHA-1 verification, retries, progress
+    java.rs             Java runtimes from Mojang's runtime manifest
+    prepare.rs          client jar, libraries, natives, assets (incl. legacy layouts)
+    launch.rs           argument builder, process management, log streaming
+    gamelog.rs          log4j XML / plain-text log parser
+    loaders.rs          Fabric / Quilt profiles
+    auth/               Microsoft → Xbox Live → Minecraft, account store (DPAPI-encrypted tokens)
     paths.rs            directory layout
 ```
 

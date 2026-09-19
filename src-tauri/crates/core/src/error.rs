@@ -29,6 +29,26 @@ pub enum Error {
 
     #[error("Minecraft-Version '{0}' ist unbekannt")]
     UnknownGameVersion(String),
+
+    #[error("Download von {url} fehlgeschlagen: {reason}")]
+    Download { url: String, reason: String },
+
+    /// Meldung ist für den Nutzer formuliert.
+    #[error("{0}")]
+    Launch(String),
+
+    /// Meldung ist für den Nutzer formuliert.
+    #[error("{0}")]
+    Auth(String),
+
+    #[error("Die App-Registrierung ist von Mojang noch nicht freigegeben")]
+    AuthNotApproved,
+
+    #[error("Vorgang abgebrochen")]
+    Cancelled,
+
+    #[error("Interner Fehler: {0}")]
+    Internal(String),
 }
 
 impl Error {
@@ -44,6 +64,18 @@ impl Error {
         Self::Validation(msg.into())
     }
 
+    pub fn download(url: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self::Download { url: url.into(), reason: reason.into() }
+    }
+
+    pub fn launch(msg: impl Into<String>) -> Self {
+        Self::Launch(msg.into())
+    }
+
+    pub fn auth(msg: impl Into<String>) -> Self {
+        Self::Auth(msg.into())
+    }
+
     /// Stabiler Bezeichner fürs Frontend.
     pub fn kind(&self) -> &'static str {
         match self {
@@ -53,6 +85,12 @@ impl Error {
             Self::Validation(_) => "validation",
             Self::InstanceNotFound(_) => "not_found",
             Self::UnknownGameVersion(_) => "unknown_version",
+            Self::Download { .. } => "download",
+            Self::Launch(_) => "launch",
+            Self::Auth(_) => "auth",
+            Self::AuthNotApproved => "auth_not_approved",
+            Self::Cancelled => "cancelled",
+            Self::Internal(_) => "internal",
         }
     }
 
@@ -63,9 +101,21 @@ impl Error {
             Self::Io { .. } => "Datei konnte nicht gelesen oder geschrieben werden.".into(),
             Self::Http(_) => "Netzwerkfehler – bitte Internetverbindung prüfen.".into(),
             Self::Json { .. } => "Daten konnten nicht verarbeitet werden.".into(),
-            Self::Validation(_) | Self::InstanceNotFound(_) | Self::UnknownGameVersion(_) => {
-                self.to_string()
+            Self::Download { .. } => {
+                "Download fehlgeschlagen – bitte Internetverbindung prüfen und erneut versuchen.".into()
             }
+            Self::AuthNotApproved => {
+                "Der Microsoft-Login ist noch nicht freigeschaltet: Die App-Registrierung wartet \
+                 auf die Freigabe durch Mojang."
+                    .into()
+            }
+            Self::Internal(_) => "Ein interner Fehler ist aufgetreten.".into(),
+            Self::Validation(_)
+            | Self::InstanceNotFound(_)
+            | Self::UnknownGameVersion(_)
+            | Self::Launch(_)
+            | Self::Auth(_)
+            | Self::Cancelled => self.to_string(),
         }
     }
 }

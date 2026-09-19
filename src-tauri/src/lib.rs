@@ -4,7 +4,7 @@ mod error;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use trs_core::Launcher;
 
 /// Überschreibt das Datenverzeichnis – praktisch für Entwicklung und Tests.
@@ -41,7 +41,14 @@ pub fn run() {
         .setup(|app| {
             let root = data_root(app)?;
             log::info!("Datenverzeichnis: {}", root.display());
-            let launcher = tauri::async_runtime::block_on(Launcher::init(root))?;
+            // Spielstart, Logs und Spielende gehen als Event ans Frontend.
+            let handle = app.handle().clone();
+            let events = Arc::new(move |event: trs_core::launch::GameEvent| {
+                if let Err(e) = handle.emit("game-event", &event) {
+                    log::warn!("game-event konnte nicht gesendet werden: {e}");
+                }
+            });
+            let launcher = tauri::async_runtime::block_on(Launcher::init(root, events))?;
             app.manage::<LauncherState>(Arc::new(launcher));
             Ok(())
         })
@@ -57,6 +64,16 @@ pub fn run() {
             commands::instances::delete_instance,
             commands::instances::open_instance_dir,
             commands::meta::get_version_manifest,
+            commands::games::launch_instance,
+            commands::games::stop_instance,
+            commands::games::running_games,
+            commands::games::get_game_logs,
+            commands::accounts::list_accounts,
+            commands::accounts::login_browser,
+            commands::accounts::login_device_code,
+            commands::accounts::cancel_login,
+            commands::accounts::set_active_account,
+            commands::accounts::remove_account,
         ])
         .run(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden");

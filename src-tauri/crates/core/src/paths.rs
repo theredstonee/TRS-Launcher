@@ -12,6 +12,7 @@ use crate::{Result, fsutil};
 ///   libraries/            Maven-Layout, von allen Instanzen geteilt
 ///   assets/{indexes,objects}/
 ///   java/<component>/     von uns installierte Runtimes
+///   accounts.json         Accounts (Tokens DPAPI-verschlüsselt)
 ///   instances/<id>/
 ///     instance.json
 ///     minecraft/          Game-Directory (.minecraft-Äquivalent)
@@ -84,5 +85,44 @@ impl Paths {
 
     pub fn instance_game_dir(&self, id: &str) -> PathBuf {
         self.instance_dir(id).join("minecraft")
+    }
+
+    pub fn accounts_file(&self) -> PathBuf {
+        self.root.join("accounts.json")
+    }
+
+    // Die folgenden IDs stammen aus Metadaten und müssen vorher geprüft sein
+    // (siehe `meta::is_safe_id`).
+
+    pub fn version_dir(&self, version_id: &str) -> PathBuf {
+        self.versions_dir().join(version_id)
+    }
+
+    pub fn version_json(&self, version_id: &str) -> PathBuf {
+        self.version_dir(version_id).join(format!("{version_id}.json"))
+    }
+
+    pub fn version_jar(&self, version_id: &str) -> PathBuf {
+        self.version_dir(version_id).join(format!("{version_id}.jar"))
+    }
+
+    pub fn natives_dir(&self, version_id: &str) -> PathBuf {
+        self.version_dir(version_id).join("natives")
+    }
+
+    pub fn asset_index(&self, index_id: &str) -> PathBuf {
+        self.assets_dir().join("indexes").join(format!("{index_id}.json"))
+    }
+
+    pub fn asset_object(&self, hash: &str) -> PathBuf {
+        self.assets_dir().join("objects").join(&hash[..2]).join(hash)
+    }
+
+    pub fn virtual_assets_dir(&self, index_id: &str) -> PathBuf {
+        self.assets_dir().join("virtual").join(index_id)
+    }
+
+    pub fn log_config(&self, file_id: &str) -> PathBuf {
+        self.assets_dir().join("log_configs").join(file_id)
     }
 }
