@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TRS Launcher",
+  "version": "0.1.0",
+  "identifier": "dev.theredstonee.trslauncher",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm generate",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../.output/public"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "TRS Launcher",
+        "width": 1180,
+        "height": 720,
+        "minWidth": 940,
+        "minHeight": 600,
+        "center": true,
+        "decorations": false,
+        "backgroundColor": "#0b0c0f"
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data: https: asset: http://asset.localhost",
+        "font-src": "'self' data:",
+        "connect-src": "'self' ipc: http://ipc.localhost",
+        "object-src": "'none'",
+        "base-uri": "'self'",
+        "form-action": "'none'",
+        "frame-ancestors": "'none'"
+      },
+      "devCsp": {
+        "default-src": "'self' http://localhost:3000",
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3000",
+        "style-src": "'self' 'unsafe-inline' http://localhost:3000",
+        "img-src": "'self' data: https: asset: http://asset.localhost http://localhost:3000",
+        "font-src": "'self' data: http://localhost:3000",
+        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:3000 ws://localhost:3000"
+      },
+      "freezePrototype": false
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "theredstonee",
+    "shortDescription": "Minecraft-Launcher",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["German", "English"]
+      },
+      "webviewInstallMode": { "type": "downloadBootstrapper" }
+    }
+  }
+}

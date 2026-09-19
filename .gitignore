@@ -1,0 +1,27 @@
+# Nuxt
+node_modules
+.nuxt
+.output
+.data
+.nitro
+.cache
+dist
+
+# Tauri / Rust
+src-tauri/target
+src-tauri/gen/schemas
+
+# Env / Secrets
+.env
+.env.*
+!.env.example
+*.key
+*.key.pub
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+.idea
+.vscode/*
+!.vscode/extensions.json

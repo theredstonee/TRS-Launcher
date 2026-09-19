@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Rechte des Hauptfensters. Dateisystem, Netzwerk und Prozesse laufen ausschließlich über eigene Rust-Commands – das Webview bekommt dafür keine Plugin-Rechte.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
+    "core:window:allow-start-dragging",
+    "core:window:allow-is-maximized",
+    "log:default"
+  ]
+}
