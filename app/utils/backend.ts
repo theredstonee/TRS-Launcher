@@ -2,6 +2,10 @@ import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import type {
   Account,
   AppInfo,
+  ContentItem,
+  ContentKind,
+  ModrinthSearchParams,
+  ModrinthSearchResult,
   DeviceCode,
   LogLine,
   RunningGame,
@@ -79,6 +83,17 @@ export const backend = {
   cancelLogin: () => call<void>('cancel_login'),
   setActiveAccount: (id: string) => call<void>('set_active_account', { id }),
   removeAccount: (id: string) => call<void>('remove_account', { id }),
+
+  listContent: (id: string, kind: ContentKind) => call<ContentItem[]>('list_content', { id, kind }),
+  setContentEnabled: (id: string, kind: ContentKind, fileName: string, enabled: boolean) =>
+    call<void>('set_content_enabled', { id, kind, fileName, enabled }),
+  deleteContent: (id: string, kind: ContentKind, fileName: string) =>
+    call<void>('delete_content', { id, kind, fileName }),
+  installedProjects: (id: string) => call<string[]>('installed_projects', { id }),
+  modrinthSearch: (params: ModrinthSearchParams) => call<ModrinthSearchResult>('modrinth_search', { params }),
+  /** Installiert die neueste passende Version samt Pflicht-Abhängigkeiten; liefert die neuen Dateinamen. */
+  modrinthInstall: (id: string, projectId: string, kind: ContentKind) =>
+    call<string[]>('modrinth_install', { id, projectId, kind }),
 }
 
 export function isCancelled(e: unknown): boolean {

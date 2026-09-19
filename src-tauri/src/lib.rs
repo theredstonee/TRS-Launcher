@@ -74,6 +74,12 @@ pub fn run() {
             commands::accounts::cancel_login,
             commands::accounts::set_active_account,
             commands::accounts::remove_account,
+            commands::content::list_content,
+            commands::content::set_content_enabled,
+            commands::content::delete_content,
+            commands::content::installed_projects,
+            commands::content::modrinth_search,
+            commands::content::modrinth_install,
         ])
         .run(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden");

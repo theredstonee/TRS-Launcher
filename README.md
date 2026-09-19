@@ -32,9 +32,11 @@ Early development.
    play-time tracking
 3. ✅ Microsoft sign-in with multiple accounts (awaiting Mojang's approval of the app ID)
 4. ✅ Fabric / Quilt
-5. Forge / NeoForge
-6. Modrinth / CurseForge, modpack import
-7. Auto-updater, installer, polish
+5. ✅ Content management per instance (mods, resource packs, shaders: enable/disable/delete)
+   and Modrinth search + one-click install incl. required dependencies
+6. Forge / NeoForge
+7. CurseForge, modpack import (.mrpack), content updates
+8. Auto-updater, code signing, polish
 
 ## Development
 
@@ -73,6 +75,8 @@ src-tauri/
     launch.rs           argument builder, process management, log streaming
     gamelog.rs          log4j XML / plain-text log parser
     loaders.rs          Fabric / Quilt profiles
+    content.rs          per-instance mods / resource packs / shaders
+    modrinth.rs         Modrinth API v2: search, install with dependency resolution
     auth/               Microsoft → Xbox Live → Minecraft, account store (DPAPI-encrypted tokens)
     paths.rs            directory layout
 ```

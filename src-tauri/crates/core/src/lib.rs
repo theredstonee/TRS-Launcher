@@ -5,6 +5,7 @@
 //! Spielstart. Die Tauri-App ist nur eine dünne Command-Schicht darüber.
 
 pub mod auth;
+pub mod content;
 pub mod download;
 pub mod error;
 pub mod fsutil;
@@ -14,6 +15,7 @@ pub mod java;
 pub mod launch;
 pub mod loaders;
 pub mod meta;
+pub mod modrinth;
 pub mod paths;
 pub mod prepare;
 pub mod settings;

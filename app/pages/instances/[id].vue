@@ -11,7 +11,15 @@ const game = computed(() => games.state(id.value))
 
 const instance = ref<Instance | null>(null)
 const loadError = ref<string | null>(null)
-const tab = ref<'logs' | 'settings'>('logs')
+const tab = ref<'content' | 'logs' | 'settings'>('content')
+
+// Beim Start direkt zu den Logs springen – da passiert dann etwas.
+watch(
+  () => game.value.phase,
+  (phase, before) => {
+    if (before === 'idle' && phase !== 'idle') tab.value = 'logs'
+  },
+)
 
 async function load() {
   try {
@@ -139,11 +147,13 @@ function openFolder() {
       </p>
 
       <div class="mb-3 flex gap-1 border-b border-base-800 text-sm">
+        <button class="tab" :class="{ 'tab-on': tab === 'content' }" @click="tab = 'content'">Inhalte</button>
         <button class="tab" :class="{ 'tab-on': tab === 'logs' }" @click="tab = 'logs'">Logs</button>
         <button class="tab" :class="{ 'tab-on': tab === 'settings' }" @click="tab = 'settings'">Einstellungen</button>
       </div>
 
-      <LogConsole v-if="tab === 'logs'" :lines="game.logs" />
+      <ContentList v-if="tab === 'content'" :instance="instance" />
+      <LogConsole v-else-if="tab === 'logs'" :lines="game.logs" />
 
       <form v-else class="max-w-2xl space-y-5 overflow-y-auto pb-2" @submit.prevent="save">
         <section class="card p-5">

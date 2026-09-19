@@ -115,3 +115,42 @@ export type GameEvent =
   | { type: 'started'; instanceId: string; pid: number }
   | { type: 'logs'; instanceId: string; lines: LogLine[] }
   | { type: 'exited'; instanceId: string; exitCode: number | null; crashed: boolean; playSeconds: number }
+
+export type ContentKind = 'mod' | 'resourcepack' | 'shaderpack'
+
+export interface ContentItem {
+  fileName: string
+  kind: ContentKind
+  enabled: boolean
+  size: number
+  title: string | null
+  version: string | null
+  description: string | null
+  source: { projectId: string; versionId: string } | null
+}
+
+export interface ModrinthSearchParams {
+  query: string
+  kind: ContentKind
+  gameVersion: string | null
+  loader: LoaderKind | null
+  offset: number
+}
+
+export interface ModrinthHit {
+  projectId: string
+  slug: string
+  title: string
+  description: string
+  author: string
+  iconUrl: string | null
+  downloads: number
+  categories: string[]
+}
+
+export interface ModrinthSearchResult {
+  hits: ModrinthHit[]
+  totalHits: number
+  offset: number
+  limit: number
+}

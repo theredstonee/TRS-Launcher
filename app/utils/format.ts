@@ -1,4 +1,4 @@
-import type { LaunchStage, LoaderKind } from '~/types'
+import type { ContentKind, LaunchStage, LoaderKind } from '~/types'
 
 export const loaderLabels: Record<LoaderKind, string> = {
   vanilla: 'Vanilla',
@@ -61,4 +61,21 @@ export function overallPercent(stage: LaunchStage, stagePercent: number): number
     done += weight
   }
   return 100
+}
+
+export const contentKindLabels: Record<ContentKind, string> = {
+  mod: 'Mods',
+  resourcepack: 'Ressourcenpakete',
+  shaderpack: 'Shader',
+}
+
+export const contentKinds: ContentKind[] = ['mod', 'resourcepack', 'shaderpack']
+
+export function formatFileSize(bytes: number): string {
+  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toLocaleString('de', { maximumFractionDigits: 1 })} MB`
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
+export function formatCount(n: number): string {
+  return new Intl.NumberFormat('de', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
 }
