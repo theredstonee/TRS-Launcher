@@ -50,8 +50,8 @@ public abstract class TextHudElement extends HudElement {
 	@Override
 	public void draw(Gfx g, Font font, boolean preview) {
 		refresh(font, preview);
-		boolean bg = module.background.get();
-		if (bg) g.fill(0, 0, textWidth + PAD_X * 2, 8 + PAD_Y * 2, Brand.HUD_BG);
-		g.text(font, text, PAD_X, PAD_Y, textColor(), !bg);
+		int bg = module.backgroundArgb();
+		if (bg != 0) g.fill(0, 0, textWidth + PAD_X * 2, 8 + PAD_Y * 2, bg);
+		g.text(font, text, PAD_X, PAD_Y, textColor(), module.shadow());
 	}
 }
