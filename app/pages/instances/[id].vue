@@ -113,8 +113,8 @@ function openFolder() {
           </button>
 
           <div class="min-w-56 flex-1">
-            <h1 class="display truncate text-3xl leading-tight text-base-50 drop-shadow">{{ instance.name }}</h1>
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-base-400">
+            <h1 class="display truncate text-3xl leading-tight text-white drop-shadow">{{ instance.name }}</h1>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/75">
               <button
                 class="chip gap-1.5 ring-1 ring-base-700 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-60"
                 title="Version wechseln"

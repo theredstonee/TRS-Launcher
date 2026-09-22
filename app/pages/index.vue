@@ -75,7 +75,7 @@ function play(instance: Instance) {
       >
         <div class="flex h-full flex-col justify-between gap-6 p-7">
           <div class="flex items-start justify-between gap-4">
-            <p class="text-sm text-base-200 drop-shadow">{{ greeting }}</p>
+            <p class="text-sm text-white/80 drop-shadow">{{ greeting }}</p>
             <span v-if="game?.phase === 'running'" class="badge bg-lamp-400 text-base-950">
               <span class="size-1.5 animate-lamp rounded-full bg-base-950" />Läuft gerade
             </span>
@@ -92,13 +92,13 @@ function play(instance: Instance) {
             </NuxtLink>
 
             <div class="min-w-64 flex-1">
-              <NuxtLink :to="`/instances/${featured.id}`" class="display block truncate text-5xl leading-tight text-base-50 drop-shadow-lg transition-colors hover:text-redstone-300">
+              <NuxtLink :to="`/instances/${featured.id}`" class="display block truncate text-5xl leading-tight text-white drop-shadow-lg transition-colors hover:text-redstone-300">
                 {{ featured.name }}
               </NuxtLink>
-              <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-200">
+              <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/85">
                 <span class="flex items-center gap-1.5">
                   <span class="size-2 rounded-full" :style="{ background: loaderColors[featured.loader.kind] }" />
-                  <span class="font-mono text-base-50">{{ featured.gameVersion }}</span> {{ loaderLabels[featured.loader.kind] }}
+                  <span class="font-mono text-white">{{ featured.gameVersion }}</span> {{ loaderLabels[featured.loader.kind] }}
                 </span>
                 <span>{{ formatRelative(featured.lastPlayed) }}</span>
                 <span v-if="showPlayTime && featured.totalPlaySeconds >= 60">{{ formatPlayTime(featured.totalPlaySeconds) }} gespielt</span>
@@ -123,6 +123,7 @@ function play(instance: Instance) {
 
         <!-- Die Leitung unter der Rampe: lädt beim Start auf, glimmt, solange gespielt wird. -->
         <RedstoneWire
+          v-if="game && game.phase !== 'idle'"
           class="absolute inset-x-0 bottom-0 px-7 pb-4"
           :segments="64"
           :percent="game?.progress ? overallPercent(game.progress.stage, game.progress.percent) : 0"
@@ -206,7 +207,7 @@ function play(instance: Instance) {
         </ul>
       </section>
 
-      <div class="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div class="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-2">
         <!-- Neuigkeiten (eigene Komponente, sobald sie da ist) -->
         <section>
           <h2 class="mb-3 font-semibold">Neuigkeiten</h2>

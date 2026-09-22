@@ -35,8 +35,10 @@ watch(banner, () => (failed.value = false))
       <div class="absolute inset-0 pixels" />
     </template>
 
-    <div v-if="shade === 'bottom'" class="absolute inset-0 bg-gradient-to-t from-base-950 via-base-950/70 to-base-950/10" />
-    <div v-else-if="shade === 'full'" class="absolute inset-0 bg-base-950/70" />
+    <!-- Der Schleier ist bewusst schwarz statt aus den Theme-Farben: Text auf
+         einem Bild bleibt so in jedem Farbschema lesbar. -->
+    <div v-if="shade === 'bottom'" class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/20" />
+    <div v-else-if="shade === 'full'" class="absolute inset-0 bg-black/60" />
 
     <div class="relative size-full">
       <slot />

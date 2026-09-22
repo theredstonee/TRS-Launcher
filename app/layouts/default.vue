@@ -21,6 +21,14 @@ function onKey(e: KeyboardEvent) {
   }
 }
 
+// Jede Seite fängt oben an – sonst hängt die neue Seite auf der alten Scrollhöhe.
+const main = useTemplateRef<HTMLElement>('main')
+const route = useRoute()
+watch(
+  () => route.fullPath,
+  () => main.value?.scrollTo({ top: 0 }),
+)
+
 function onCreated(instance: { id: string }) {
   ui.creating = false
   router.push(`/instances/${instance.id}`)
@@ -48,7 +56,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <UpdateBanner />
       <div class="flex min-h-0 flex-1">
         <SideNav />
-        <main class="min-w-0 flex-1 overflow-y-auto bg-base-950">
+        <main ref="main" class="min-w-0 flex-1 overflow-y-auto bg-base-950">
           <slot />
         </main>
       </div>

@@ -71,14 +71,16 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
       <span v-if="game.phase === 'running'" class="badge absolute top-2 left-2 bg-lamp-400 text-base-950">
         <span class="size-1.5 animate-lamp rounded-full bg-base-950" />Läuft
       </span>
-    </div>
 
-    <div class="flex items-start gap-2.5 px-2.5 pt-1.5 pb-2.5">
+      <!-- Das Instanz-Bild sitzt auf der Kante des Banners. -->
       <InstanceIcon
         :instance="instance"
         :size="compact ? 34 : 42"
-        class="-mt-7 shadow-lg shadow-black/50 ring-2 ring-base-900 transition-transform duration-150 group-hover:scale-105"
+        class="absolute -bottom-4 left-2.5 shadow-lg shadow-black/50 ring-2 ring-base-900 transition-transform duration-150 group-hover:scale-105"
       />
+    </div>
+
+    <div class="flex items-start gap-1 px-2.5 pt-5 pb-2.5">
       <div class="min-w-0 flex-1">
         <NuxtLink :to="`/instances/${instance.id}`" class="block truncate font-semibold text-base-50 hover:text-redstone-300" :class="compact ? 'text-sm' : ''" :title="instance.name">
           {{ instance.name }}

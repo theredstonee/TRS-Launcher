@@ -168,7 +168,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
     </div>
 
     <div v-if="instances.loading && !instances.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4">
-      <div v-for="i in 5" :key="i" class="skeleton aspect-[4/5] rounded-xl" />
+      <div v-for="i in 5" :key="i" class="skeleton h-44 rounded-xl" />
     </div>
 
     <template v-else-if="visible.length">
