@@ -9,6 +9,7 @@ pub mod content;
 pub mod download;
 pub mod error;
 pub mod extras;
+pub mod forge;
 pub mod fsutil;
 pub mod gamelog;
 pub mod instance;
