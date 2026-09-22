@@ -4,7 +4,11 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.level.biome.Biome;
 
 /**
  * Zugriffe auf Minecraft, die zwischen den Versionen umgezogen sind.
@@ -62,5 +66,24 @@ public final class Mc {
 		/*return mc().gameRenderer.mainRenderTarget();
 		*///?} else
 		return mc().getMainRenderTarget();
+	}
+
+	/** Der Effekt einer Effekt-Instanz (ab 1.20.5 als Holder verpackt). */
+	public static MobEffect effect(MobEffectInstance instance) {
+		//? if >=1.20.5 {
+		return instance.getEffect().value();
+		//?} else
+		/*return instance.getEffect();*/
+	}
+
+	/** Übersetzter Name eines Bioms (z. B. "Ebene"). */
+	public static String biomeName(Holder<Biome> biome) {
+		return biome.unwrapKey().map(key -> {
+			//? if >=1.21.11 {
+			/*var id = key.identifier();
+			*///?} else
+			var id = key.location();
+			return Component.translatable("biome." + id.getNamespace() + "." + id.getPath()).getString();
+		}).orElse("?");
 	}
 }

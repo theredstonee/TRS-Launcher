@@ -1,22 +1,33 @@
 package dev.theredstonee.trsclient;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.config.ConfigStore;
 import dev.theredstonee.trsclient.core.input.ClickCounter;
+import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.zoom.ZoomState;
 import dev.theredstonee.trsclient.dev.AutoTest;
+import dev.theredstonee.trsclient.feature.PvpFeatures;
 import dev.theredstonee.trsclient.hud.HudManager;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
+import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.ui.Gfx;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import dev.theredstonee.trsclient.ui.Gfx;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 //? if >=1.21.6 {
 /*import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 *///?} else
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 //? if >=1.21.11 {
@@ -24,11 +35,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 *///?} elif >=1.21.6 {
 /*import net.minecraft.resources.ResourceLocation;
 *///?}
-import com.mojang.blaze3d.platform.InputConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /** Einstiegspunkt des TRS Clients (nur Client). */
 public final class TrsClient implements ClientModInitializer {
@@ -43,6 +49,9 @@ public final class TrsClient implements ClientModInitializer {
 	private final ZoomState zoom = new ZoomState();
 	private ConfigStore config;
 	private HudManager hud;
+	private final PvpFeatures pvp = new PvpFeatures(modules);
+	/** Einmalig den Vanilla-Titelbildschirm zulassen ("Klassisch" auf dem TRS-Startbildschirm). */
+	private boolean vanillaTitleOnce;
 	/** Nur für den Autotest: Zoom ohne Tastendruck erzwingen. */
 	private boolean forceZoom;
 
@@ -63,6 +72,8 @@ public final class TrsClient implements ClientModInitializer {
 		hud = new HudManager(modules);
 		registerHud();
 		ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
+		// Vor der Spieler-Bewegung: Toggle-Tasten, Freelook, Treffer-Farbe.
+		ClientTickEvents.START_CLIENT_TICK.register(pvp::tick);
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> saveConfig());
 		AutoTest.installIfRequested();
 
@@ -72,12 +83,41 @@ public final class TrsClient implements ClientModInitializer {
 				version, modules.registry.all().size(), status, config.file());
 	}
 
-	/** HUD einhängen: Fabric-HUD-Ebene ab 1.21.6, davor der klassische HUD-Callback. */
+	/**
+	 * HUD einhängen: Fabric-HUD-Ebenen ab 1.21.6 (dort ersetzt TRS auch die Fadenkreuz-Ebene),
+	 * davor der klassische HUD-Callback (Vanilla-Fadenkreuz blendet dann CrosshairMixin aus).
+	 */
 	private void registerHud() {
 		//? if >=1.21.6 {
 		/*HudElementRegistry.addLast(id("hud"), (g, delta) -> hud.render(Gfx.of(g)));
+		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, vanilla -> (g, delta) -> {
+			if (hud.crosshair().replacesVanilla()) hud.crosshair().drawInGame(Gfx.of(g));
+			//? if >=26.1 {
+			else vanilla.extractRenderState(g, delta);
+			//?} else
+			else vanilla.render(g, delta);
+		});
 		*///?} else
 		HudRenderCallback.EVENT.register((g, delta) -> hud.render(Gfx.of(g)));
+	}
+
+	/**
+	 * Aus dem Mixin in setScreen: ersetzt den Vanilla-Titelbildschirm durch den TRS-Startbildschirm,
+	 * solange das Modul "Startbildschirm" an ist.
+	 */
+	public Screen replaceScreen(Screen screen) {
+		if (screen == null || screen.getClass() != TitleScreen.class) return screen;
+		if (vanillaTitleOnce) {
+			vanillaTitleOnce = false;
+			return screen;
+		}
+		return modules.titleScreen.isEnabled() ? new TrsTitleScreen() : screen;
+	}
+
+	/** Öffnet einmalig den Vanilla-Titelbildschirm. */
+	public void openVanillaTitle() {
+		vanillaTitleOnce = true;
+		Mc.setScreen(new TitleScreen());
 	}
 
 	//? if >=1.21.11 {
@@ -161,6 +201,18 @@ public final class TrsClient implements ClientModInitializer {
 
 	public ClickCounter rightClicks() {
 		return rightClicks;
+	}
+
+	public PvpFeatures pvp() {
+		return pvp;
+	}
+
+	public ToggleState sprintToggle() {
+		return pvp.sprint();
+	}
+
+	public ToggleState sneakToggle() {
+		return pvp.sneak();
 	}
 
 	public void setForceZoom(boolean forceZoom) {

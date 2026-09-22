@@ -19,6 +19,7 @@ public final class TrsKeys {
 	public static KeyMapping menu;
 	public static KeyMapping zoom;
 	public static KeyMapping fullbright;
+	public static KeyMapping freelook;
 
 	private TrsKeys() {
 	}
@@ -34,6 +35,15 @@ public final class TrsKeys {
 		zoom = register(new KeyMapping("key.trsclient.zoom", KEYBOARD, InputConstants.KEY_C, CATEGORY));
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		freelook = register(new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY));
+	}
+
+	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */
+	public static int boundKey(KeyMapping mapping) {
+		//? if >=26.1 {
+		/*return KeyMappingHelper.getBoundKeyOf(mapping).getValue();
+		*///?} else
+		return KeyBindingHelper.getBoundKeyOf(mapping).getValue();
 	}
 
 	private static KeyMapping register(KeyMapping mapping) {

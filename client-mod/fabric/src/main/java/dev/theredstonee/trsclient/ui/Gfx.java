@@ -3,6 +3,7 @@ package dev.theredstonee.trsclient.ui;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.item.ItemStack;
 //? if >=26.1 {
 /*import net.minecraft.client.gui.GuiGraphicsExtractor;
 *///?} else
@@ -114,6 +115,26 @@ public final class Gfx {
 		/*g.centeredText(font, text, centerX, y, argb);
 		*///?} else
 		g.drawCenteredString(font, text, centerX, y, argb);
+	}
+
+	/** Gegenstand als 16×16-Symbol (inkl. Stapelzahl/Haltbarkeitsbalken). */
+	public void item(Font font, ItemStack stack, int x, int y) {
+		//? if >=26.1 {
+		/*g.item(stack, x, y);
+		g.itemDecorations(font, stack, x, y);
+		*///?} else {
+		g.renderItem(stack, x, y);
+		g.renderItemDecorations(font, stack, x, y);
+		//?}
+	}
+
+	/** Zeichnen auf ein Rechteck begrenzen (Bildschirmkoordinaten), mit {@link #noScissor()} beenden. */
+	public void scissor(int x1, int y1, int x2, int y2) {
+		g.enableScissor(x1, y1, x2, y2);
+	}
+
+	public void noScissor() {
+		g.disableScissor();
 	}
 
 	// --- Transformation (PoseStack bis 1.21.5, Matrix3x2fStack ab 1.21.6) ---

@@ -1,9 +1,13 @@
 package dev.theredstonee.trsclient.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.theredstonee.trsclient.TrsClient;
+import dev.theredstonee.trsclient.core.camera.FreelookState;
 import dev.theredstonee.trsclient.dev.HookStats;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.player.LocalPlayer;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 //? if >=1.21.9
 //import net.minecraft.client.input.MouseButtonInfo;
 
-/** CPS-Zählung, Zoom per Mausrad und langsamere Maus beim Zoomen. */
+/** CPS-Zählung, Zoom per Mausrad, langsamere Maus beim Zoomen und Freelook-Drehung. */
 @Mixin(MouseHandler.class)
 public abstract class MouseHandlerMixin {
 	@Shadow @Final private Minecraft minecraft;
@@ -60,6 +64,15 @@ public abstract class MouseHandlerMixin {
 			accumulatedDX /= divisor;
 			accumulatedDY /= divisor;
 		}
+	}
+
+	/** Freelook: Mausbewegung dreht die Kamera statt der Spielfigur. */
+	@WrapOperation(method = "turnPlayer",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"), require = 1)
+	private void trsclient$freelookTurn(LocalPlayer player, double yaw, double pitch, Operation<Void> original) {
+		FreelookState freelook = TrsClient.get().pvp().freelook();
+		if (freelook.active()) freelook.turn(yaw, pitch);
+		else original.call(player, yaw, pitch);
 	}
 
 	private long trsclient$window() {

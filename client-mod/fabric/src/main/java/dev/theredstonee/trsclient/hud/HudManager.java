@@ -1,10 +1,10 @@
 package dev.theredstonee.trsclient.hud;
 
 import dev.theredstonee.trsclient.compat.Mc;
-import dev.theredstonee.trsclient.ui.Gfx;
 import dev.theredstonee.trsclient.core.hud.HudLayout;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.screen.HudEditorScreen;
+import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 
@@ -16,13 +16,28 @@ public final class HudManager {
 	private final List<HudElement> elements;
 	/** Wiederverwendeter Puffer für {@link #bounds}: x, y, Breite, Höhe (skaliert). */
 	private final int[] box = new int[4];
+	private final CrosshairRenderer crosshair;
 
 	public HudManager(TrsModules modules) {
+		this.crosshair = new CrosshairRenderer(modules);
 		this.elements = List.of(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
 				new KeystrokesHud(modules.keystrokes, modules),
-				new PingHud(modules.ping));
+				new PingHud(modules.ping),
+				new ArmorHud(modules.armor, modules),
+				new InfoHuds.Effects(modules.effects),
+				new InfoHuds.Coords(modules.coords, modules),
+				new InfoHuds.Clock(modules.clock, modules),
+				new InfoHuds.Memory(modules.memory),
+				new InfoHuds.Server(modules.server),
+				new InfoHuds.Packs(modules.packs),
+				new InfoHuds.ToggleIndicator(modules.toggleSprint, "Sprinten", true),
+				new InfoHuds.ToggleIndicator(modules.toggleSneak, "Schleichen", false));
+	}
+
+	public CrosshairRenderer crosshair() {
+		return crosshair;
 	}
 
 	public List<HudElement> elements() {
@@ -32,6 +47,10 @@ public final class HudManager {
 	/** HUD-Callback (jeden Frame). */
 	public void render(Gfx g) {
 		if (Mc.hudHidden() || Mc.screen() instanceof HudEditorScreen) return;
+		// Bis 1.21.5 wird das Vanilla-Fadenkreuz per Mixin ausgeblendet und das eigene hier gezeichnet;
+		// ab 1.21.6 ersetzt TRS die Fabric-HUD-Ebene des Fadenkreuzes direkt (siehe TrsClient).
+		//? if <1.21.6
+		if (crosshair.replacesVanilla()) crosshair.drawInGame(g);
 		Font font = mc.font;
 		int sw = g.width();
 		int sh = g.height();

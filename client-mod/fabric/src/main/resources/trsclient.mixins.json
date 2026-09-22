@@ -4,9 +4,13 @@
 	"package": "dev.theredstonee.trsclient.mixin",
 	"compatibilityLevel": "${mixinJava}",
 	"client": [
+		"CameraMixin",
+		"CrosshairMixin",
 		"FovMixin",
 		"LightmapMixin",
-		"MouseHandlerMixin"
+		"MouseHandlerMixin",
+		"OverlayTextureAccessor",
+		"TitleScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

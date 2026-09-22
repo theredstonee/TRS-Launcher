@@ -1,6 +1,5 @@
 package dev.theredstonee.trsclient.screen;
 
-import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.core.hud.HudLayout;
 import dev.theredstonee.trsclient.core.module.HudModule;
@@ -11,19 +10,12 @@ import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-//? if >=26.1 {
-/*import net.minecraft.client.gui.GuiGraphicsExtractor;
-*///?} else
-import net.minecraft.client.gui.GuiGraphics;
-//? if >=1.21.9 {
-/*import net.minecraft.client.input.MouseButtonEvent;
-*///?}
 
 /**
  * "HUD bearbeiten": aktive HUD-Module mit der Maus verschieben (rastet an Rändern und Mitte ein),
  * Mausrad ändert die Größe, Rechtsklick setzt die Position zurück, Shift = ohne Einrasten.
  */
-public final class HudEditorScreen extends Screen {
+public final class HudEditorScreen extends TrsScreen {
 	private static final Component HEADLINE = Component.literal("HUD bearbeiten").withStyle(ChatFormatting.BOLD);
 	private static final String HELP = "Ziehen · Mausrad: Größe · Rechtsklick: Reset · Shift: frei";
 
@@ -41,100 +33,20 @@ public final class HudEditorScreen extends Screen {
 		this.parent = parent;
 	}
 
-	// --- Versionsabhängige Einstiegspunkte (Zeichnen/Eingabe) → neutrale Methoden unten ---
+	/** Kein Weichzeichner – das Spiel soll sichtbar bleiben (ohne Welt: Markenhintergrund). */
+	@Override
+	protected boolean customBackground() {
+		return true;
+	}
 
-	//? if >=26.1 {
-	/*@Override
-	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		// Kein Weichzeichner – das Spiel soll sichtbar bleiben.
-		if (minecraft.level == null) extractPanorama(g, partialTick);
+	@Override
+	protected void drawBackground(Gfx g, float partialTick) {
+		if (minecraft.level == null) g.fill(0, 0, width, height, Brand.BG);
 		g.fill(0, 0, width, height, 0x40000000);
 	}
 
 	@Override
-	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		super.extractRenderState(g, mouseX, mouseY, partialTick);
-		draw(Gfx.of(g), mouseX, mouseY);
-	}
-	*///?} else {
-	@Override
-	//? if >=1.20.2 {
-	public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-	//?} else
-	/*public void renderBackground(GuiGraphics g) {*/
-		// Kein Weichzeichner – das Spiel soll sichtbar bleiben.
-		if (minecraft.level == null) {
-			//? if >=1.20.5 {
-			renderPanorama(g, partialTick);
-			//?} else
-			/*g.fill(0, 0, width, height, Brand.BG);*/
-		}
-		g.fill(0, 0, width, height, 0x40000000);
-	}
-
-	@Override
-	public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-		//? if <1.20.2
-		/*renderBackground(g);*/
-		super.render(g, mouseX, mouseY, partialTick);
-		draw(Gfx.of(g), mouseX, mouseY);
-	}
-	//?}
-
-	//? if >=1.21.9 {
-	/*@Override
-	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		return onClick(event.x(), event.y(), event.button()) || super.mouseClicked(event, doubleClick);
-	}
-
-	@Override
-	public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-		return onDrag(event.x(), event.y(), event.button()) || super.mouseDragged(event, dragX, dragY);
-	}
-
-	@Override
-	public boolean mouseReleased(MouseButtonEvent event) {
-		return onRelease(event.button()) || super.mouseReleased(event);
-	}
-	*///?} else {
-	@Override
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		return onClick(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
-	}
-
-	@Override
-	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		return onDrag(mouseX, mouseY, button) || super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-	}
-
-	@Override
-	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		return onRelease(button) || super.mouseReleased(mouseX, mouseY, button);
-	}
-	//?}
-
-	//? if >=1.20.2 {
-	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-		return onScroll(mouseX, mouseY, scrollY) || super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
-	}
-	//?} else {
-	/*@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
-		return onScroll(mouseX, mouseY, scrollY) || super.mouseScrolled(mouseX, mouseY, scrollY);
-	}
-	*///?}
-
-	private boolean shiftDown() {
-		//? if >=1.21.9 {
-		/*return minecraft.hasShiftDown();
-		*///?} else
-		return hasShiftDown();
-	}
-
-	// --- Neutrale Logik ---
-
-	private void draw(Gfx g, int mouseX, int mouseY) {
+	protected void draw(Gfx g, int mouseX, int mouseY, float partialTick) {
 		// Hilfslinien Bildschirmmitte
 		g.vLine(width / 2, -1, height, dragging != null && guideX ? Brand.RED : 0x22FFFFFF);
 		g.hLine(0, width, height / 2, dragging != null && guideY ? Brand.RED : 0x22FFFFFF);
@@ -169,7 +81,8 @@ public final class HudEditorScreen extends Screen {
 		Brand.button(g, font, fx, fy, fw, 16, "Fertig", true, inside(mouseX, mouseY, fx, fy, fw, 16));
 	}
 
-	private boolean onClick(double mouseX, double mouseY, int button) {
+	@Override
+	protected boolean onClick(double mouseX, double mouseY, int button) {
 		int fw = 60;
 		int fx = (width - fw) / 2;
 		if (button == 0 && inside(mouseX, mouseY, fx, doneY(), fw, 16)) {
@@ -192,7 +105,8 @@ public final class HudEditorScreen extends Screen {
 		return false;
 	}
 
-	private boolean onDrag(double mouseX, double mouseY, int button) {
+	@Override
+	protected boolean onDrag(double mouseX, double mouseY, int button) {
 		if (dragging == null || button != 0) return false;
 		int[] b = hud.bounds(font, dragging, width, height, true);
 		int w = b[2];
@@ -212,7 +126,8 @@ public final class HudEditorScreen extends Screen {
 		return true;
 	}
 
-	private boolean onRelease(int button) {
+	@Override
+	protected boolean onRelease(double mouseX, double mouseY, int button) {
 		if (button == 0 && dragging != null) {
 			dragging = null;
 			return true;
@@ -220,10 +135,11 @@ public final class HudEditorScreen extends Screen {
 		return false;
 	}
 
-	private boolean onScroll(double mouseX, double mouseY, double scrollY) {
+	@Override
+	protected boolean onScroll(double mouseX, double mouseY, double amount) {
 		HudElement e = elementAt(mouseX, mouseY);
-		if (e == null || scrollY == 0) return false;
-		e.module().scale.nudge(scrollY > 0 ? 1 : -1);
+		if (e == null) return false;
+		e.module().scale.nudge(amount > 0 ? 1 : -1);
 		return true;
 	}
 
@@ -243,18 +159,14 @@ public final class HudEditorScreen extends Screen {
 		return found;
 	}
 
-	private static boolean inside(double mx, double my, int x, int y, int w, int h) {
-		return mx >= x && mx < x + w && my >= y && my < y + h;
-	}
-
 	@Override
 	public void onClose() {
-		Mc.setScreen(parent);
+		open(parent);
 	}
 
 	@Override
 	public void removed() {
-		TrsClient.get().saveConfig();
+		save();
 	}
 
 	@Override
