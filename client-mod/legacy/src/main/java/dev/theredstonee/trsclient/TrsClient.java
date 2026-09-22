@@ -9,23 +9,36 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.zoom.ZoomState;
 import dev.theredstonee.trsclient.dev.AutoTest;
 import dev.theredstonee.trsclient.dev.HookStats;
+import dev.theredstonee.trsclient.feature.ChatFeatures;
 import dev.theredstonee.trsclient.feature.PvpFeatures;
+import dev.theredstonee.trsclient.feature.Waypoints;
 import dev.theredstonee.trsclient.hud.HudManager;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.screen.WaypointEditScreen;
+import dev.theredstonee.trsclient.screen.WaypointListScreen;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiVideoSettings;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MouseHelper;
+import dev.theredstonee.trsclient.compat.BlockOutline;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.client.event.EntityViewRenderEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import org.lwjgl.input.Mouse;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
@@ -67,10 +80,19 @@ public final class TrsClient {
 	private final ClickCounter rightClicks = new ClickCounter();
 	private final ZoomState zoom = new ZoomState();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
+	private final ChatFeatures chat = new ChatFeatures(modules);
 	/** Module im TRS-Menü (ohne die, die unter Legacy-Forge nicht umsetzbar sind). */
 	private final List<Module> menuModules;
 	private ConfigStore config;
+	private Waypoints waypoints;
 	private HudManager hud;
+	/** Tatsächlich benutztes senkrechtes Sichtfeld (aus dem FOV-Ereignis) – für die Wegpunkt-Projektion. */
+	private double worldFov = 70;
+	/** Welt des letzten Ticks – Wechsel verwirft Minimap-Speicher und Chat-Zusammenfassung. */
+	private WorldClient lastWorld;
+	/** Kein Schadens-Wackeln: ersetzter {@code hurtTime}-Wert, solange {@link #hurtSwapped}. */
+	private int savedHurtTime;
+	private boolean hurtSwapped;
 	private String version = "?";
 	/** Nur für den Autotest: Zoom ohne Tastendruck erzwingen. */
 	private boolean forceZoom;
@@ -86,6 +108,10 @@ public final class TrsClient {
 		List<Module> list = new ArrayList<>(modules.registry.all());
 		// Treffer-Farbe: in RendererLivingEntity fest einprogrammiert – ohne Coremod nicht änderbar.
 		list.remove(modules.hitColor);
+		// Bewegungsunschärfe braucht einen zweiten Bildpuffer (nirgends umgesetzt),
+		// niedriges Feuer den Feuer-Overlay-Renderer – beides ohne Coremod nicht machbar.
+		list.remove(modules.motionBlur);
+		list.remove(modules.lowFire);
 		menuModules = Collections.unmodifiableList(list);
 	}
 
@@ -98,6 +124,7 @@ public final class TrsClient {
 		instance = this;
 		version = event.getModMetadata().version;
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
+		initWaypoints(event.getModConfigurationDirectory());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -114,6 +141,11 @@ public final class TrsClient {
 		AutoTest.installIfRequested();
 		// Legacy-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
+	}
+
+	/** Wegpunkt-Datei neben der Config (erst hier, weil das Verzeichnis aus preInit kommt). */
+	private void initWaypoints(File configDir) {
+		waypoints = new Waypoints(modules, new File(configDir, "trsclient-waypoints.json").toPath());
 	}
 
 	@Mod.EventHandler
@@ -141,7 +173,70 @@ public final class TrsClient {
 			Mc.actionBar("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus"));
 			saveConfig();
 		}
+		while (TrsKeys.waypointAdd.isPressed()) {
+			if (mc.currentScreen == null && Mc.player() != null && modules.waypoints.isEnabled()) {
+				mc.displayGuiScreen(new WaypointEditScreen(null, null));
+			}
+		}
+		while (TrsKeys.waypointList.isPressed()) {
+			if (mc.currentScreen == null && modules.waypoints.isEnabled()) {
+				mc.displayGuiScreen(new WaypointListScreen(null));
+			}
+		}
+		for (int i = 0; i < TrsKeys.textHotkeys.length; i++) {
+			while (TrsKeys.textHotkeys[i].isPressed()) chat.onHotkey(i);
+		}
+		checkWorldChange();
 		pvp.tick(mc);
+		chat.tick(mc);
+		waypoints.tick();
+		hud.tick();
+	}
+
+	/** Weltwechsel erkennen (Legacy-Forge hat dafür kein eigenes Ereignis). */
+	private void checkWorldChange() {
+		WorldClient world = Mc.world();
+		if (world == lastWorld) return;
+		lastWorld = world;
+		hud.onWorldChange();
+		chat.onWorldChange();
+		if (world == null) waypoints.onDisconnect();
+	}
+
+	/** Reichweite und Combo: jeder Schlag des eigenen Spielers (reine Anzeige). */
+	@SubscribeEvent
+	public void onAttackEntity(AttackEntityEvent event) {
+		EntityPlayer player = Mc.player();
+		//? if >=1.9 {
+		/*if (event.getEntityPlayer() == player) pvp.onAttack(player, event.getTarget());
+		*///?} else
+		if (event.entityPlayer == player) pvp.onAttack(player, event.target);
+	}
+
+	/** Chat-Verbesserungen (zuletzt, damit andere Mods die Nachricht unverändert sehen). */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onChatReceived(ClientChatReceivedEvent event) {
+		if (event.isCanceled()) return;
+		chat.onChatReceived(event);
+	}
+
+	/** Eigene Farbe/Stärke für den Rahmen um den anvisierten Block. */
+	@SubscribeEvent
+	public void onBlockHighlight(DrawBlockHighlightEvent event) {
+		if (!modules.blockOutline.isEnabled()) return;
+		float alpha = (float) (modules.blockOutlineOpacity.get() / 100.0);
+		if (BlockOutline.draw(event, modules.blockOutlineColor.rgb(), alpha, modules.blockOutlineWidth.getFloat())) {
+			event.setCanceled(true);
+		}
+	}
+
+	/** Strg+Klick im Chat kopiert die angeklickte Zeile. */
+	@SubscribeEvent
+	public void onGuiMouseInput(GuiScreenEvent.MouseInputEvent.Pre event) {
+		if (!(Mc.eventGui(event) instanceof GuiChat)) return;
+		if (!Mouse.getEventButtonState() || Mouse.getEventButton() != 0) return;
+		if (!GuiScreen.isCtrlKeyDown()) return;
+		if (chat.onChatClick(Mouse.getX(), Mouse.getY())) event.setCanceled(true);
 	}
 
 	@SubscribeEvent
@@ -158,9 +253,22 @@ public final class TrsClient {
 				gammaSwapped = true;
 				HookStats.lightmap++;
 			}
+			// Kein Schadens-Wackeln: hurtTime nur für dieses Bild auf 0 (die Kamera kippt dann nicht).
+			if (modules.noHurtCam.isEnabled() && Mc.player() != null && Mc.player().hurtTime > 0) {
+				savedHurtTime = Mc.player().hurtTime;
+				Mc.player().hurtTime = 0;
+				hurtSwapped = true;
+			}
 		} else {
 			restoreGamma(mc);
+			restoreHurtTime();
 		}
+	}
+
+	private void restoreHurtTime() {
+		if (!hurtSwapped) return;
+		hurtSwapped = false;
+		if (Mc.player() != null) Mc.player().hurtTime = savedHurtTime;
 	}
 
 	/**
@@ -183,6 +291,9 @@ public final class TrsClient {
 		}
 		double factor = zoom.factor();
 		if (factor != 1.0) event.setFOV((float) (event.getFOV() / factor));
+		// Tatsächlich benutztes Sichtfeld merken – damit rechnet die Wegpunkt-Projektion.
+		float fov = event.getFOV();
+		if (fov > 1 && fov < 180) worldFov = fov;
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -234,7 +345,7 @@ public final class TrsClient {
 		if (Mc.overlayType(event) != RenderGameOverlayEvent.ElementType.ALL) return;
 		HookStats.hud++;
 		ScaledResolution res = Mc.resolution(event);
-		hud.render(Gfx.of(res.getScaledWidth(), res.getScaledHeight()));
+		hud.render(Gfx.of(res.getScaledWidth(), res.getScaledHeight()), Mc.partialTicks(event));
 	}
 
 	/** Ersetzt den Vanilla-Titelbildschirm durch den TRS-Startbildschirm (Modul "Startbildschirm"). */
@@ -316,6 +427,19 @@ public final class TrsClient {
 
 	public PvpFeatures pvp() {
 		return pvp;
+	}
+
+	public ChatFeatures chat() {
+		return chat;
+	}
+
+	public Waypoints waypoints() {
+		return waypoints;
+	}
+
+	/** Tatsächlich benutztes senkrechtes Sichtfeld (Grad). */
+	public double worldFov() {
+		return worldFov;
 	}
 
 	public ToggleState sprintToggle() {

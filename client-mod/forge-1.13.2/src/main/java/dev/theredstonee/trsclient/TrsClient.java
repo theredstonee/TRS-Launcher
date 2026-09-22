@@ -6,18 +6,30 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.zoom.ZoomState;
 import dev.theredstonee.trsclient.dev.AutoTest;
 import dev.theredstonee.trsclient.dev.HookStats;
+import dev.theredstonee.trsclient.feature.BlockOutline;
+import dev.theredstonee.trsclient.feature.ChatFeatures;
 import dev.theredstonee.trsclient.feature.PvpFeatures;
+import dev.theredstonee.trsclient.feature.Waypoints;
 import dev.theredstonee.trsclient.hud.HudManager;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
+import dev.theredstonee.trsclient.screen.WaypointEditScreen;
+import dev.theredstonee.trsclient.screen.WaypointListScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.GuiChat;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiVideoSettings;
+import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.client.event.EntityViewRenderEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
@@ -67,9 +79,18 @@ public final class TrsClient {
 	private final ClickCounter rightClicks = new ClickCounter();
 	private final ZoomState zoom = new ZoomState();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
+	private final ChatFeatures chat = new ChatFeatures(modules);
 	private ConfigStore config;
 	private HudManager hud;
+	private Waypoints waypoints;
 	private String version = "?";
+	/** Zuletzt gesehene Welt (Forge 1.13.2 hat kein zuverlässiges "Welt gewechselt"-Ereignis). */
+	private WorldClient lastWorld;
+	/** Tatsächlich benutztes senkrechtes Sichtfeld – damit rechnet die Wegpunkt-Projektion. */
+	private double worldFov = 70;
+	/** Kein Schadens-Wackeln: ersetzter {@code hurtTime}-Wert, solange {@link #hurtSwapped}. */
+	private int savedHurtTime;
+	private boolean hurtSwapped;
 	/** Nur für den Autotest: Zoom ohne Tastendruck erzwingen. */
 	private boolean forceZoom;
 	/** Der nächste FOV-Aufruf gehört zur Hand (nicht zoomen). */

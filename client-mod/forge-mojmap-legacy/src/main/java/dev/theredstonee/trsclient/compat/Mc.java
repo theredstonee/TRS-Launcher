@@ -1,16 +1,23 @@
 package dev.theredstonee.trsclient.compat;
 
 import com.mojang.blaze3d.platform.Window;
+import dev.theredstonee.trsclient.core.chat.ChatOut;
 import dev.theredstonee.trsclient.core.pack.PackList;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Camera;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fml.ModList;
 
 import java.nio.file.Path;
@@ -74,6 +81,25 @@ public final class Mc {
 		/*return Component.literal(text);
 		*///?} else
 		return new TextComponent(text);
+	}
+
+	/**
+	 * Text-Komponente mit einer Formatierung (Farbe). Bis 1.15.2 liefert {@code withStyle}
+	 * noch {@code Component}, ab 1.16 {@code MutableComponent} – beides passt in Component.
+	 */
+	public static Component styled(String text, ChatFormatting format) {
+		//? if >=1.19 {
+		/*return Component.literal(text).withStyle(format);
+		*///?} else
+		return new TextComponent(text).withStyle(format);
+	}
+
+	/** Zwei Komponenten hintereinander, ohne die Originale zu verändern. */
+	public static Component concat(Component first, Component second) {
+		//? if >=1.19 {
+		/*return Component.empty().append(first).append(second);
+		*///?} else
+		return new TextComponent("").append(first).append(second);
 	}
 
 	/** Kurzer Hinweis über der Hotbar. */
@@ -195,37 +221,37 @@ public final class Mc {
 		return cameraMode() == 0;
 	}
 
-	// --- Spieler ---
+	// --- Spieler / Kreaturen (Position und Rotation liegen auf Entity) ---
 
-	public static double x(Player p) {
+	public static double x(Entity p) {
 		//? if >=1.15 {
 		return p.getX();
 		//?} else
 		/*return p.x;*/
 	}
 
-	public static double y(Player p) {
+	public static double y(Entity p) {
 		//? if >=1.15 {
 		return p.getY();
 		//?} else
 		/*return p.y;*/
 	}
 
-	public static double z(Player p) {
+	public static double z(Entity p) {
 		//? if >=1.15 {
 		return p.getZ();
 		//?} else
 		/*return p.z;*/
 	}
 
-	public static float yRot(Player p) {
+	public static float yRot(Entity p) {
 		//? if >=1.17 {
 		/*return p.getYRot();
 		*///?} else
 		return p.yRot;
 	}
 
-	public static float xRot(Player p) {
+	public static float xRot(Entity p) {
 		//? if >=1.17 {
 		/*return p.getXRot();
 		*///?} else
@@ -343,5 +369,116 @@ public final class Mc {
 		/*return mc().getResourcePackDirectory();
 		*///?} else
 		return mc().getResourcePackDirectory().toPath();
+	}
+
+	// --- Kamera (Wegpunkt-Markierungen) ---
+
+	/** Kamera des laufenden Frames (Position und Blickrichtung sind seit 1.14.4 gleich benannt). */
+	public static Camera camera() {
+		return mc().gameRenderer.getMainCamera();
+	}
+
+	public static double cameraX() {
+		return cameraPos().x;
+	}
+
+	public static double cameraY() {
+		return cameraPos().y;
+	}
+
+	public static double cameraZ() {
+		return cameraPos().z;
+	}
+
+	private static Vec3 cameraPos() {
+		return camera().getPosition();
+	}
+
+	public static float cameraYaw() {
+		return camera().getYRot();
+	}
+
+	public static float cameraPitch() {
+		return camera().getXRot();
+	}
+
+	// --- Welt / Dimension ---
+
+	/** ID der aktuellen Dimension ("minecraft:overworld"); "" wenn keine Welt geladen ist. */
+	public static String dimensionId() {
+		if (mc().level == null) return "";
+		//? if >=1.16 {
+		return mc().level.dimension().location().toString();
+		//?} else
+		/*return String.valueOf(mc().level.dimension.getType());*/
+	}
+
+	/** Name der Einzelspielerwelt bzw. null auf Servern. */
+	public static String levelName() {
+		net.minecraft.server.MinecraftServer server = mc().getSingleplayerServer();
+		if (server == null) return null;
+		//? if >=1.16 {
+		return server.getWorldData().getLevelName();
+		//?} else
+		/*return server.getLevelName();*/
+	}
+
+	/** Adresse des Servers oder null im Einzelspieler. */
+	public static String serverAddress() {
+		if (mc().getSingleplayerServer() != null) return null;
+		ServerData data = mc().getCurrentServer();
+		return data == null ? null : data.ip;
+	}
+
+	// --- Chat ---
+
+	/**
+	 * Sendet eine Nachricht bzw. einen Befehl ("/…") als Spieler. Der signierte Chat ab 1.19
+	 * braucht je Version einen anderen Weg; bis 1.18 erkennt {@code chat()} Befehle selbst.
+	 */
+	public static void sendChat(String message) {
+		LocalPlayer player = mc().player;
+		if (player == null || message == null || message.isEmpty()) return;
+		//? if >=1.19.3 {
+		/*if (ChatOut.isCommand(message)) player.connection.sendCommand(ChatOut.command(message));
+		else player.connection.sendChat(message);
+		*///?} elif >=1.19.1 {
+		/*if (ChatOut.isCommand(message)) player.commandSigned(ChatOut.command(message), null);
+		else player.chatSigned(message, null);
+		*///?} elif >=1.19 {
+		/*if (ChatOut.isCommand(message)) player.command(ChatOut.command(message));
+		else player.chat(message);
+		*///?} else {
+		player.chat(message);
+		//?}
+	}
+
+	/** Text in die Zwischenablage legen. */
+	public static void setClipboard(String text) {
+		mc().keyboardHandler.setClipboard(text);
+	}
+
+	/** Text aus der Zwischenablage (nie null). */
+	public static String clipboard() {
+		String text = mc().keyboardHandler.getClipboard();
+		return text == null ? "" : text;
+	}
+
+	/** Chat-Skalierung (Option). */
+	public static double chatScale() {
+		//? if >=1.19 {
+		/*return mc().options.chatScale().get();
+		*///?} else
+		return mc().options.chatScale;
+	}
+
+	/** Zeilenhöhe im Chat in Pixeln (mit dem Zeilenabstand der Optionen, den es erst ab 1.16 gibt). */
+	public static int chatLineHeight() {
+		//? if >=1.19 {
+		/*return (int) (9.0 * (mc().options.chatLineSpacing().get() + 1.0));
+		*///?} elif >=1.16 {
+		return (int) (9.0 * (mc().options.chatLineSpacing + 1.0));
+		//?} else
+		/*return 9;*/
 	}
 }

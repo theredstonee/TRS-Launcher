@@ -19,9 +19,13 @@ public final class HudManager {
 	/** Wiederverwendeter Puffer für {@link #bounds}: x, y, Breite, Höhe (skaliert). */
 	private final int[] box = new int[4];
 	private final CrosshairRenderer crosshair;
+	private final WaypointOverlay waypointOverlay;
+	private final MinimapHud minimap;
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
+		this.waypointOverlay = new WaypointOverlay(modules);
+		this.minimap = new MinimapHud(modules.minimap, modules);
 		this.elements = Collections.unmodifiableList(Arrays.<HudElement>asList(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
@@ -35,11 +39,25 @@ public final class HudManager {
 				new InfoHuds.Server(modules.server),
 				new InfoHuds.Packs(modules.packs),
 				new InfoHuds.ToggleIndicator(modules.toggleSprint, "Sprinten", true),
-				new InfoHuds.ToggleIndicator(modules.toggleSneak, "Schleichen", false)));
+				new InfoHuds.ToggleIndicator(modules.toggleSneak, "Schleichen", false),
+				new PvpHuds.Reach(modules.reach, modules),
+				new PvpHuds.Combo(modules.combo, modules),
+				new PvpHuds.Speed(modules.speed),
+				minimap));
 	}
 
 	public CrosshairRenderer crosshair() {
 		return crosshair;
+	}
+
+	/** Einmal je Client-Tick (die Minimap liest dann ein paar Chunks nach). */
+	public void tick() {
+		minimap.tick();
+	}
+
+	/** Welt gewechselt: zwischengespeicherte Karte verwerfen. */
+	public void onWorldChange() {
+		minimap.onWorldChange();
 	}
 
 	public List<HudElement> elements() {
@@ -47,11 +65,13 @@ public final class HudManager {
 	}
 
 	/** Aus RenderGameOverlayEvent.Post (ALL), jeden Frame. */
-	public void render(Gfx g) {
+	public void render(Gfx g, float partialTicks) {
 		if (Mc.hudHidden() || Mc.screen() instanceof HudEditorScreen) return;
 		// Das Vanilla-Fadenkreuz wird über RenderGameOverlayEvent.Pre (CROSSHAIRS) abgebrochen, das eigene hier gezeichnet.
 		if (crosshair.replacesVanilla()) crosshair.drawInGame(g);
 		FontRenderer font = Mc.font();
+		// Wegpunkte liegen hinter den HUD-Elementen.
+		waypointOverlay.render(g, font, partialTicks);
 		int sw = g.width();
 		int sh = g.height();
 		for (int i = 0, n = elements.size(); i < n; i++) {

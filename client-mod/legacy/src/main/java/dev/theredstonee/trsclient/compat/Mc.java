@@ -158,6 +158,21 @@ public final class Mc {
 		return event.resolution;
 	}
 
+	public static float partialTicks(RenderGameOverlayEvent event) {
+		//? if >=1.9 {
+		/*return event.getPartialTicks();
+		*///?} else
+		return event.partialTicks;
+	}
+
+	/** Bildschirm, zu dem ein {@code GuiScreenEvent} gehört. */
+	public static GuiScreen eventGui(net.minecraftforge.client.event.GuiScreenEvent event) {
+		//? if >=1.9 {
+		/*return event.getGui();
+		*///?} else
+		return event.gui;
+	}
+
 	/** Maustaste des Ereignisses (-1 = nur Bewegung/Mausrad). */
 	public static int mouseButton(MouseEvent event) {
 		//? if >=1.9 {
@@ -282,6 +297,93 @@ public final class Mc {
 		/*return new GuiWorldSelection(parent);
 		*///?} else
 		return new GuiSelectWorld(parent);
+	}
+
+	// --- PvP-Anzeigen / Optik ---
+
+	/**
+	 * Entfernung vom Auge des Spielers zum getroffenen Punkt (reine Anzeige).
+	 * Fällt auf die Mitte des Ziels zurück, wenn gerade kein Treffer anliegt.
+	 */
+	public static double hitDistance(EntityPlayer player, net.minecraft.entity.Entity target) {
+		//? if >=1.9 {
+		/*net.minecraft.util.math.Vec3d eye = player.getPositionEyes(1.0F);
+		net.minecraft.util.math.RayTraceResult hit = mc().objectMouseOver;
+		if (hit != null && hit.entityHit == target && hit.hitVec != null) return eye.distanceTo(hit.hitVec);
+		return eye.distanceTo(new net.minecraft.util.math.Vec3d(target.posX, target.posY + target.height / 2.0, target.posZ));
+		*///?} else {
+		net.minecraft.util.Vec3 eye = player.getPositionEyes(1.0F);
+		net.minecraft.util.MovingObjectPosition hit = mc().objectMouseOver;
+		if (hit != null && hit.entityHit == target && hit.hitVec != null) return eye.distanceTo(hit.hitVec);
+		return eye.distanceTo(new net.minecraft.util.Vec3(target.posX, target.posY + target.height / 2.0, target.posZ));
+		//?}
+	}
+
+	/** Benutzt der Spieler gerade einen Gegenstand (Bogen, Essen, Block …)? */
+	public static boolean usingItem(EntityPlayer player) {
+		//? if >=1.9 {
+		/*return player.isHandActive();
+		*///?} else
+		return player.isUsingItem();
+	}
+
+	/** Startet die Schlaganimation nur als Anzeige (kein Paket, kein Angriff). */
+	public static void startSwingAnimation(EntityPlayer player) {
+		player.isSwingInProgress = true;
+		player.swingProgressInt = -1;
+		//? if >=1.9 {
+		/*player.swingingHand = net.minecraft.util.EnumHand.MAIN_HAND;
+		*///?}
+	}
+
+	/** Trefferboxen wie F3+B ein-/ausschalten. */
+	public static void setDebugHitboxes(boolean on) {
+		if (mc().getRenderManager() != null) mc().getRenderManager().setDebugBoundingBox(on);
+	}
+
+	// --- Chat, Welt, Kamera ---
+
+	/** Sendet eine Chat-Nachricht bzw. einen Befehl (mit "/") als Spieler. */
+	public static void sendChat(String text) {
+		EntityPlayerSP p = player();
+		if (p != null && text != null && !text.isEmpty()) p.sendChatMessage(text);
+	}
+
+	public static void setClipboard(String text) {
+		GuiScreen.setClipboardString(text);
+	}
+
+	/** Adresse des Servers (null = Einzelspieler). */
+	public static String serverAddress() {
+		net.minecraft.client.multiplayer.ServerData data = mc().getCurrentServerData();
+		return data == null ? null : data.serverIP;
+	}
+
+	/** Ordnername der Einzelspielerwelt (null = kein integrierter Server). */
+	public static String levelName() {
+		net.minecraft.server.integrated.IntegratedServer server = mc().getIntegratedServer();
+		return server == null ? null : server.getFolderName();
+	}
+
+	/** Kennung der Dimension ("dim0", "dim-1" …) – Wegpunkte gelten nur in ihrer Dimension. */
+	public static String dimensionId() {
+		World w = world();
+		if (w == null || w.provider == null) return "";
+		//? if >=1.9 {
+		/*return "dim" + w.provider.getDimension();
+		*///?} else
+		return "dim" + w.provider.getDimensionId();
+	}
+
+	/** Entity, aus deren Sicht gerendert wird (normalerweise der Spieler). */
+	public static net.minecraft.entity.Entity viewEntity() {
+		net.minecraft.entity.Entity e = mc().getRenderViewEntity();
+		return e == null ? player() : e;
+	}
+
+	/** Zwischenwert einer Position für das aktuelle Teilbild. */
+	public static double lerp(double last, double now, float partialTicks) {
+		return last + (now - last) * partialTicks;
 	}
 
 	/** Welt-Einstellungen für die Kreativ-Testwelt des Selbsttests. */

@@ -18,9 +18,13 @@ public final class HudManager {
 	/** Wiederverwendeter Puffer für {@link #bounds}: x, y, Breite, Höhe (skaliert). */
 	private final int[] box = new int[4];
 	private final CrosshairRenderer crosshair;
+	private final WaypointOverlay waypointOverlay;
+	private final MinimapHud minimap;
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
+		this.waypointOverlay = new WaypointOverlay(modules);
+		this.minimap = new MinimapHud(modules.minimap, modules);
 		this.elements = Collections.unmodifiableList(Arrays.<HudElement>asList(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
@@ -34,11 +38,25 @@ public final class HudManager {
 				new InfoHuds.Server(modules.server),
 				new InfoHuds.Packs(modules.packs),
 				new InfoHuds.ToggleIndicator(modules.toggleSprint, "Sprinten", true),
-				new InfoHuds.ToggleIndicator(modules.toggleSneak, "Schleichen", false)));
+				new InfoHuds.ToggleIndicator(modules.toggleSneak, "Schleichen", false),
+				new PvpHuds.Reach(modules.reach, modules),
+				new PvpHuds.Combo(modules.combo, modules),
+				new PvpHuds.Speed(modules.speed),
+				minimap));
 	}
 
 	public CrosshairRenderer crosshair() {
 		return crosshair;
+	}
+
+	/** Einmal je Client-Tick (die Minimap liest dann ein paar Chunks nach). */
+	public void tick() {
+		minimap.tick();
+	}
+
+	/** Welt gewechselt: zwischengespeicherte Karte verwerfen. */
+	public void onWorldChange() {
+		minimap.onWorldChange();
 	}
 
 	public List<HudElement> elements() {
@@ -46,9 +64,11 @@ public final class HudManager {
 	}
 
 	/** Aus RenderGameOverlayEvent.Post (jeden Frame), Größe in GUI-Pixeln. */
-	public void render(int sw, int sh) {
+	public void render(int sw, int sh, float partialTicks) {
 		if (mc.gameSettings.hideGUI || mc.currentScreen instanceof HudEditorScreen) return;
 		FontRenderer font = mc.fontRenderer;
+		// Wegpunkte liegen hinter den HUD-Elementen.
+		waypointOverlay.render(font, sw, sh, partialTicks);
 		for (int i = 0, n = elements.size(); i < n; i++) {
 			HudElement e = elements.get(i);
 			if (e.module().isEnabled() && e.visible()) draw(font, e, sw, sh, false);

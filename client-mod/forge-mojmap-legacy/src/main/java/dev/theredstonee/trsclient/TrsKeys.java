@@ -25,8 +25,25 @@ public final class TrsKeys {
 			new KeyMapping("key.trsclient.fullbright", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	public static final KeyMapping freelook =
 			new KeyMapping("key.trsclient.freelook", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY);
+	/** Wegpunkt an der eigenen Position anlegen. */
+	public static final KeyMapping waypointAdd =
+			new KeyMapping("key.trsclient.waypointAdd", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY);
+	/** Wegpunkt-Liste öffnen. */
+	public static final KeyMapping waypointList =
+			new KeyMapping("key.trsclient.waypointList", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, CATEGORY);
+	/** Vier frei belegbare Tasten, die je einen Text senden (Standard: unbelegt). */
+	public static final KeyMapping[] textHotkeys = new KeyMapping[4];
 
-	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook};
+	private static final KeyMapping[] ALL;
+
+	static {
+		for (int i = 0; i < textHotkeys.length; i++) {
+			textHotkeys[i] = new KeyMapping("key.trsclient.text" + (i + 1), InputConstants.Type.KEYSYM,
+					GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+		}
+		ALL = new KeyMapping[]{menu, zoom, fullbright, freelook, waypointAdd, waypointList,
+				textHotkeys[0], textHotkeys[1], textHotkeys[2], textHotkeys[3]};
+	}
 
 	private TrsKeys() {
 	}

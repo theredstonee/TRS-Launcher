@@ -12,6 +12,7 @@ import dev.theredstonee.trsclient.screen.HudEditorScreen;
 import dev.theredstonee.trsclient.screen.PackScreen;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.screen.WaypointListScreen;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -39,7 +40,8 @@ import java.util.stream.Stream;
  * ({@code ./gradlew :<version>:runClient -PtrsAutotest}): TRS-Startbildschirm und Menü, neue Testwelt
  * (über den Vanilla-"Welt erstellen"-Bildschirm, so bleibt es über alle Versionen gleich),
  * Screenshots von HUD, Zoom, Nacht ohne/mit Fullbright, Treffer-Farbe, Freelook, Menü,
- * Fadenkreuz-Editor, Resourcepacks und HUD-Editor, dann beenden.
+ * Fadenkreuz-Editor, Resourcepacks, HUD-Editor, Wegpunkten/Minimap, Wegpunkt-Liste und Chat,
+ * dann beenden.
  * Screenshots: {@code run/forge-<minecraft>/screenshots/trsclient-<minecraft>-*.png}.
  */
 public final class AutoTest {
@@ -66,7 +68,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 5 && step < 19 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 5 && step < 22 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -234,10 +236,49 @@ public final class AutoTest {
 				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null))) return;
 				shot(mc, "trsclient-hud-editor");
 				Mc.setScreen(null);
-				next(5);
+				// Wegpunkte + Minimap + PvP-Anzeigen einschalten und einen Wegpunkt anlegen
+				modules.waypoints.setEnabled(true);
+				modules.minimap.setEnabled(true);
+				modules.speed.setEnabled(true);
+				if (PvpFeatures.mixinFeatures()) {
+					modules.reach.setEnabled(true);
+					modules.combo.setEnabled(true);
+				}
+				TrsClient.get().waypoints().create("Basis", 0x3DDC84);
+				// 20 Blöcke nach Norden und zurückschauen (yaw 0 = Süden) → Wegpunkt im Blick
+				command(mc, "tp @p ~ ~ ~-20 0 0");
+				next(40);
 				break;
 			}
 			case 16: {
+				shot(mc, "trsclient-waypoints");
+				Mc.setScreen(new WaypointListScreen(null));
+				next(20);
+				break;
+			}
+			case 17: {
+				if (!ensureScreen(WaypointListScreen.class, () -> new WaypointListScreen(null))) return;
+				shot(mc, "trsclient-waypoint-liste");
+				Mc.setScreen(null);
+				// Chat: Zeitstempel an, dreimal dieselbe Nachricht → wird zusammengefasst
+				if (PvpFeatures.mixinFeatures()) {
+					modules.chat.setEnabled(true);
+					modules.chatTimestamps.set(true);
+					modules.chatStack.set(true);
+					chat("TRS Client: Chat-Test");
+					chat("Wiederholte Nachricht");
+					chat("Wiederholte Nachricht");
+					chat("Wiederholte Nachricht");
+				}
+				next(10);
+				break;
+			}
+			case 18: {
+				shot(mc, "trsclient-chat");
+				next(5);
+				break;
+			}
+			case 19: {
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -249,10 +290,15 @@ public final class AutoTest {
 				break;
 			}
 			default: {
-				if (step == 17) mc.stop();
-				step = 18;
+				if (step == 20) mc.stop();
+				step = 21;
 			}
 		}
+	}
+
+	/** Schreibt eine Nachricht in den Chat (wie eine Servernachricht – geht durch die TRS-Chat-Hooks). */
+	private static void chat(String text) {
+		dev.theredstonee.trsclient.compat.ChatLines.addMessage(Mc.literal(text));
 	}
 
 	/** Öffnet den Vanilla-Bildschirm "Neue Welt erstellen" (Fabrikmethode je nach Version). */

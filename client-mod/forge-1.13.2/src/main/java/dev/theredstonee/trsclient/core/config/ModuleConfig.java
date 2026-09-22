@@ -18,6 +18,8 @@ public final class ModuleConfig {
 	public Map<String, String> colors = new LinkedHashMap<>();
 	/** Auswahl-Optionen (z. B. Fadenkreuz-Form) als Options-ID. */
 	public Map<String, String> choices = new LinkedHashMap<>();
+	/** Freie Texte (z. B. Auto-GG-Nachricht). */
+	public Map<String, String> texts = new LinkedHashMap<>();
 
 	/** Gson kann null-Maps liefern (z. B. {"flags": null}); hier auf leere Maps normalisieren. */
 	public ModuleConfig normalized() {
@@ -25,6 +27,7 @@ public final class ModuleConfig {
 		if (numbers == null) numbers = new LinkedHashMap<>();
 		if (colors == null) colors = new LinkedHashMap<>();
 		if (choices == null) choices = new LinkedHashMap<>();
+		if (texts == null) texts = new LinkedHashMap<>();
 		return this;
 	}
 }

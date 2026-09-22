@@ -24,12 +24,26 @@ public final class TrsModules {
 	public final HudModule packs;
 	public final HudModule toggleSprint;
 	public final HudModule toggleSneak;
+	public final HudModule reach;
+	public final HudModule combo;
+	public final HudModule speed;
+	public final HudModule minimap;
 	public final Module crosshair;
 	public final Module hitColor;
 	public final Module freelook;
 	public final Module zoom;
 	public final Module fullbright;
 	public final Module titleScreen;
+	public final Module oldAnimations;
+	public final Module lowFire;
+	public final Module blockOutline;
+	public final Module hitboxes;
+	public final Module motionBlur;
+	public final Module noHurtCam;
+	public final Module chat;
+	public final Module autoGg;
+	public final Module textHotkeys;
+	public final Module waypoints;
 
 	public final BoolSetting keystrokesShowCps;
 	public final BoolSetting keystrokesShowSpace;
@@ -55,6 +69,78 @@ public final class TrsModules {
 	public final ColorSetting hitColorColor;
 	public final NumberSetting hitColorOpacity;
 	public final BoolSetting titleServers;
+
+	// --- PvP-Anzeigen ---
+	public final NumberSetting reachDecimals;
+	public final NumberSetting reachHold;
+	public final BoolSetting comboBest;
+	public final NumberSetting comboTimeout;
+	public final BoolSetting speedVertical;
+
+	// --- PvP-Optik ---
+	public final BoolSetting oldAnimationsNoDip;
+	public final BoolSetting oldAnimationsBlockHit;
+	public final NumberSetting lowFireHeight;
+	public final ColorSetting blockOutlineColor;
+	public final NumberSetting blockOutlineOpacity;
+	public final NumberSetting blockOutlineWidth;
+	public final ColorSetting hitboxColor;
+	public final NumberSetting motionBlurStrength;
+
+	// --- Chat ---
+	public final BoolSetting chatTimestamps;
+	public final BoolSetting chatTimestampSeconds;
+	public final BoolSetting chatStack;
+	public final BoolSetting chatCopy;
+	public final TextSetting autoGgText;
+	public final NumberSetting autoGgDelay;
+	public final TextSetting autoGgTriggers;
+	public final TextSetting[] hotkeyTexts = new TextSetting[4];
+
+	// --- Wegpunkte / Minimap ---
+	public final BoolSetting waypointBeam;
+	public final BoolSetting waypointDistance;
+	public final BoolSetting waypointDeath;
+	public final NumberSetting waypointRange;
+	public final BoolSetting minimapRotate;
+	public final ChoiceSetting<MinimapZoom> minimapZoom;
+	public final NumberSetting minimapSize;
+	public final BoolSetting minimapWaypoints;
+	public final BoolSetting minimapPlayers;
+	public final BoolSetting minimapCoords;
+
+	/** Zoomstufen der Minimap: Zellgröße in Pixeln und Blöcke je Zelle. */
+	public enum MinimapZoom implements ChoiceSetting.Option {
+		FAR("Weit", 1, 2),
+		NORMAL("Normal", 2, 1),
+		NEAR("Nah", 3, 1),
+		CLOSE("Sehr nah", 4, 1);
+
+		private final String label;
+		private final int pixels;
+		private final int blocks;
+
+		MinimapZoom(String label, int pixels, int blocks) {
+			this.label = label;
+			this.pixels = pixels;
+			this.blocks = blocks;
+		}
+
+		@Override
+		public String label() {
+			return label;
+		}
+
+		/** Kantenlänge einer Zelle in GUI-Pixeln. */
+		public int pixels() {
+			return pixels;
+		}
+
+		/** Blöcke je Zelle. */
+		public int blocks() {
+			return blocks;
+		}
+	}
 
 	public TrsModules() {
 		fps = registry.register(new HudModule("fps", "FPS", "Bilder pro Sekunde", true,
@@ -86,6 +172,18 @@ public final class TrsModules {
 		toggleSneak = registry.register(new HudModule("toggleSneak", "Toggle-Schleichen",
 				"Schleich-Taste einmal drücken = Dauerschleichen, erneut drücken = aus. Anzeige im HUD, solange aktiv.", false,
 				new HudPosition(HudAnchor.BOTTOM_RIGHT, -0.005, -0.49)));
+		reach = registry.register(new HudModule("reach", "Reichweite",
+				"Entfernung des letzten Treffers (reine Anzeige – die Reichweite selbst bleibt unverändert)", false,
+				new HudPosition(HudAnchor.CENTER_LEFT, 0.005, -0.12)));
+		combo = registry.register(new HudModule("combo", "Combo",
+				"Zählt Treffer in Folge; endet, wenn du selbst getroffen wirst oder eine Pause kommt", false,
+				new HudPosition(HudAnchor.CENTER_LEFT, 0.005, -0.06)));
+		speed = registry.register(new HudModule("speed", "Geschwindigkeit", "Blöcke pro Sekunde", false,
+				new HudPosition(HudAnchor.TOP_LEFT, 0.005, 0.345)));
+		minimap = registry.register(new HudModule("minimap", "Minimap",
+				"Kleine Karte der Umgebung (Blockfarben von oben) mit Wegpunkten. "
+						+ "Zeigt nur geladene Chunks – kein Röntgenblick, keine Höhlenansicht.", false,
+				new HudPosition(HudAnchor.TOP_RIGHT, -0.005, 0.01)));
 		crosshair = registry.register(new Module("crosshair", "Fadenkreuz",
 				"Eigenes Fadenkreuz: Form, Farbe, Größe und Abstand frei einstellbar", false));
 		hitColor = registry.register(new Module("hitColor", "Treffer-Farbe",
@@ -97,6 +195,30 @@ public final class TrsModules {
 		fullbright = registry.register(new Module("fullbright", "Fullbright", "Maximale Helligkeit überall", false));
 		titleScreen = registry.register(new Module("titleScreen", "Startbildschirm",
 				"TRS-Startbildschirm statt des Vanilla-Titelbildschirms", true));
+		oldAnimations = registry.register(new Module("oldAnimations", "1.7-Animationen",
+				"Alte Handbewegungen: kein Absenken der Hand durch die Angriffs-Abklingzeit, "
+						+ "Schlaganimation auch beim Benutzen eines Gegenstands (nur Optik)", false));
+		lowFire = registry.register(new Module("lowFire", "Niedriges Feuer",
+				"Zieht die Flammen am Bildschirmrand nach unten, wenn du brennst", false));
+		blockOutline = registry.register(new Module("blockOutline", "Block-Umrandung",
+				"Farbe und Stärke des Rahmens um den anvisierten Block", false));
+		hitboxes = registry.register(new Module("hitboxes", "Hitboxen",
+				"Zeigt die Trefferboxen der Kreaturen wie F3+B (nur Anzeige – die Boxen selbst ändern sich nicht)", false));
+		motionBlur = registry.register(new Module("motionBlur", "Bewegungsunschärfe",
+				"Blendet das vorherige Bild leicht ein (reiner Nachzieh-Effekt, kein Vorteil)", false));
+		noHurtCam = registry.register(new Module("noHurtCam", "Kein Schadens-Wackeln",
+				"Die Kamera kippt nicht mehr, wenn du Schaden nimmst", false));
+		chat = registry.register(new Module("chat", "Chat-Verbesserungen",
+				"Zeitstempel, Zusammenfassen gleicher Nachrichten und Kopieren per Strg+Klick", true));
+		autoGg = registry.register(new Module("autoGg", "Auto-GG",
+				"Schickt nach dem Spielende automatisch einen Text. Standardmäßig aus; höchstens einmal pro Minute. "
+						+ "Manche Server mögen das nicht – nur nutzen, wo es erlaubt ist.", false));
+		textHotkeys = registry.register(new Module("textHotkeys", "Text-Hotkeys",
+				"Vier Tasten (in den Steuerungen belegbar) senden je einen festen Text oder Befehl. "
+						+ "Standardmäßig aus, höchstens eine Nachricht pro Sekunde.", false));
+		waypoints = registry.register(new Module("waypoints", "Wegpunkte",
+				"Eigene Markierungen je Welt/Server: Taste drücken, Name und Farbe wählen; "
+						+ "im Spiel mit Entfernung und Lichtsäule, dazu ein Todespunkt.", true));
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS unter Maustasten", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Leertaste anzeigen", true));
@@ -122,5 +244,43 @@ public final class TrsModules {
 		hitColorColor = hitColor.add(new ColorSetting("color", "Farbe", 0xB07CFF));
 		hitColorOpacity = hitColor.add(new NumberSetting("opacity", "Deckkraft (%)", 70, 10, 100, 10, ""));
 		titleServers = titleScreen.add(new BoolSetting("servers", "Server-Schnellbeitritt", true));
+
+		reachDecimals = reach.add(new NumberSetting("decimals", "Nachkommastellen", 2, 0, 3, 1, ""));
+		reachHold = reach.add(new NumberSetting("hold", "Anzeigedauer (s, 0 = immer)", 4, 0, 10, 1, ""));
+		comboBest = combo.add(new BoolSetting("best", "Beste Combo mitzeigen", false));
+		comboTimeout = combo.add(new NumberSetting("timeout", "Combo endet nach (s)", 3, 1, 10, 1, ""));
+		speedVertical = speed.add(new BoolSetting("vertical", "Höhenunterschied mitzählen", false));
+
+		oldAnimationsNoDip = oldAnimations.add(new BoolSetting("noDip", "Hand bleibt oben (keine Abklingzeit-Bewegung)", true));
+		oldAnimationsBlockHit = oldAnimations.add(new BoolSetting("blockHit", "Schlagen beim Benutzen zeigen", true));
+		lowFireHeight = lowFire.add(new NumberSetting("height", "Absenkung", 0.4, 0.1, 0.8, 0.1, ""));
+		blockOutlineColor = blockOutline.add(new ColorSetting("color", "Farbe", 0x000000));
+		blockOutlineOpacity = blockOutline.add(new NumberSetting("opacity", "Deckkraft (%)", 40, 10, 100, 10, ""));
+		blockOutlineWidth = blockOutline.add(new NumberSetting("width", "Stärke", 2, 1, 6, 1, ""));
+		hitboxColor = hitboxes.add(new ColorSetting("color", "Farbe", 0xFFFFFF));
+		motionBlurStrength = motionBlur.add(new NumberSetting("strength", "Stärke (%)", 40, 10, 80, 10, ""));
+
+		chatTimestamps = chat.add(new BoolSetting("timestamps", "Zeitstempel", false));
+		chatTimestampSeconds = chat.add(new BoolSetting("timestampSeconds", "Zeitstempel mit Sekunden", false));
+		chatStack = chat.add(new BoolSetting("stack", "Gleiche Nachrichten zusammenfassen (x2, x3)", true));
+		chatCopy = chat.add(new BoolSetting("copy", "Strg+Klick kopiert eine Zeile", true));
+		autoGgText = autoGg.add(new TextSetting("text", "Nachricht", "gg", 100, "gg"));
+		autoGgDelay = autoGg.add(new NumberSetting("delay", "Verzögerung (s)", 1.0, 0.5, 5.0, 0.5, ""));
+		autoGgTriggers = autoGg.add(new TextSetting("triggers", "Eigene Auslöser (mit ; trennen)", "", 200,
+				"z. B. spiel vorbei;runde beendet"));
+		for (int i = 0; i < hotkeyTexts.length; i++) {
+			hotkeyTexts[i] = textHotkeys.add(new TextSetting("text" + (i + 1), "Text " + (i + 1), "", 100, "leer"));
+		}
+
+		waypointBeam = waypoints.add(new BoolSetting("beam", "Lichtsäule", true));
+		waypointDistance = waypoints.add(new BoolSetting("distance", "Entfernung anzeigen", true));
+		waypointDeath = waypoints.add(new BoolSetting("death", "Todespunkt automatisch setzen", true));
+		waypointRange = waypoints.add(new NumberSetting("range", "Nur bis (Blöcke, 0 = immer)", 0, 0, 2000, 100, ""));
+		minimapSize = minimap.add(new NumberSetting("size", "Größe (Pixel)", 96, 48, 160, 16, ""));
+		minimapZoom = minimap.add(new ChoiceSetting<>("zoom", "Zoom", MinimapZoom.class, MinimapZoom.NORMAL));
+		minimapRotate = minimap.add(new BoolSetting("rotate", "Mit Blickrichtung drehen", true));
+		minimapWaypoints = minimap.add(new BoolSetting("showWaypoints", "Wegpunkte anzeigen", true));
+		minimapPlayers = minimap.add(new BoolSetting("showPlayers", "Spieler anzeigen (nur in Sichtweite)", false));
+		minimapCoords = minimap.add(new BoolSetting("coords", "Koordinaten unter der Karte", true));
 	}
 }

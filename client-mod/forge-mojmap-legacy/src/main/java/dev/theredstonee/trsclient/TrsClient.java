@@ -8,10 +8,14 @@ import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.zoom.ZoomState;
 import dev.theredstonee.trsclient.dev.AutoTest;
+import dev.theredstonee.trsclient.feature.ChatFeatures;
 import dev.theredstonee.trsclient.feature.PvpFeatures;
+import dev.theredstonee.trsclient.feature.Waypoints;
 import dev.theredstonee.trsclient.hud.HudManager;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.screen.WaypointEditScreen;
+import dev.theredstonee.trsclient.screen.WaypointListScreen;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -82,11 +86,17 @@ public final class TrsClient {
 	private final ConfigStore config;
 	private final HudManager hud;
 	private final PvpFeatures pvp = new PvpFeatures(modules);
+	private final ChatFeatures chat = new ChatFeatures(modules);
+	private final Waypoints waypoints;
 	private final List<Module> visibleModules = new ArrayList<>();
 	/** Einmalig den Vanilla-Titelbildschirm zulassen ("Klassisch" auf dem TRS-Startbildschirm). */
 	private boolean vanillaTitleOnce;
 	/** Nur für den Autotest: Zoom ohne Tastendruck erzwingen. */
 	private boolean forceZoom;
+	/** Zuletzt benutztes Welt-Sichtfeld (für die Wegpunkt-Projektion), aus dem FOV-Hook. */
+	private double worldFov = 70;
+	/** Welt, zu der der Kartenspeicher der Minimap gehört (Wechsel → leeren). */
+	private boolean hadLevel;
 
 	public static TrsClient get() {
 		return instance;
@@ -103,10 +113,17 @@ public final class TrsClient {
 		if (status == ConfigStore.Status.RECOVERED) {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
 		}
+		waypoints = new Waypoints(modules, FMLPaths.CONFIGDIR.get().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
 		for (Module m : modules.registry.all()) {
-			// Ohne Mixin (Forge 1.14.4) gibt es kein Freelook und keine Treffer-Farbe.
-			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor)) continue;
+			// Bewegungsunschärfe ist auf keiner Version umgesetzt – gar nicht erst anzeigen.
+			if (m == modules.motionBlur) continue;
+			// Ohne Mixin (Forge 1.14.4) fehlen alle Module, die einen Mixin-Hook brauchen.
+			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor
+					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
+					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline)) {
+				continue;
+			}
 			visibleModules.add(m);
 		}
 
@@ -194,6 +211,8 @@ public final class TrsClient {
 			if (handRendering) return;
 			double factor = updateZoom();
 			if (factor != 1.0) e.setFOV(e.getFOV() / factor);
+			// Sichtfeld der Welt merken – daraus rechnet die Wegpunkt-Anzeige ihre Positionen.
+			setWorldFov(e.getFOV());
 		});
 		bus.addListener((RenderWorldLastEvent e) -> handRendering = true);
 		bus.addListener((TickEvent.RenderTickEvent e) -> {
@@ -251,6 +270,26 @@ public final class TrsClient {
 			Mc.actionBar("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus"));
 			saveConfig();
 		}
+		while (TrsKeys.waypointAdd.consumeClick()) {
+			if (Mc.screen() == null && mc.player != null && modules.waypoints.isEnabled()) {
+				Mc.setScreen(new WaypointEditScreen(null, null));
+			}
+		}
+		while (TrsKeys.waypointList.consumeClick()) {
+			if (Mc.screen() == null && modules.waypoints.isEnabled()) Mc.setScreen(new WaypointListScreen(null));
+		}
+		for (int i = 0; i < TrsKeys.textHotkeys.length; i++) {
+			while (TrsKeys.textHotkeys[i].consumeClick()) chat.onHotkey(i);
+		}
+		// Welt verlassen/betreten: Kartenspeicher der Minimap leeren.
+		boolean hasLevel = mc.level != null;
+		if (hasLevel != hadLevel) {
+			hud.onWorldChange();
+			hadLevel = hasLevel;
+		}
+		waypoints.tick(mc);
+		chat.tick(mc);
+		hud.tick();
 	}
 
 	/** Speichert die Einstellungen (Fehler nur loggen). */
@@ -321,6 +360,24 @@ public final class TrsClient {
 
 	public PvpFeatures pvp() {
 		return pvp;
+	}
+
+	public ChatFeatures chat() {
+		return chat;
+	}
+
+	public Waypoints waypoints() {
+		return waypoints;
+	}
+
+	/** Zuletzt gezeichnetes Sichtfeld der Welt (Grad) – Grundlage der Wegpunkt-Projektion. */
+	public double worldFov() {
+		return worldFov;
+	}
+
+	/** Aus dem FOV-Hook: das tatsächlich benutzte Sichtfeld merken. */
+	public void setWorldFov(double fov) {
+		if (fov > 1 && fov < 180) worldFov = fov;
 	}
 
 	public ToggleState sprintToggle() {

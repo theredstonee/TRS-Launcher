@@ -6,8 +6,18 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.camera.FreelookState;
 import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.pvp.ComboTracker;
+import dev.theredstonee.trsclient.core.pvp.ReachTracker;
+import dev.theredstonee.trsclient.core.pvp.SpeedTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 //? if >=1.15 {
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.theredstonee.trsclient.mixin.OverlayTextureAccessor;
@@ -15,9 +25,10 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 //?}
 
 /**
- * Toggle-Sprint/-Schleichen, Freelook und Treffer-Farbe. Wird zu Beginn jedes Client-Ticks
+ * Toggle-Sprint/-Schleichen, Freelook, Treffer-Farbe sowie die PvP-Zähler (Reichweite, Combo,
+ * Geschwindigkeit), Hitboxen und die 1.7-Schlaganimation. Wird zu Beginn jedes Client-Ticks
  * aufgerufen (vor der Spieler-Bewegung, damit gesetzte Tasten im selben Tick wirken).
- * Freelook und Treffer-Farbe brauchen Mixins – ohne Mixin (Forge 1.14.4) sind sie aus.
+ * Alles, was Mixins braucht, ist ohne Mixin (Forge 1.14.4) aus – siehe {@link #mixinFeatures()}.
  */
 public final class PvpFeatures {
 	/** Vanilla-Farbe der Treffer-Einfärbung (ARGB). */
@@ -32,12 +43,21 @@ public final class PvpFeatures {
 	private float forcedFreelookYaw = Float.NaN;
 	private int appliedHitColor = VANILLA_HIT;
 	private boolean hitColorFailed;
+	private final ReachTracker reach = new ReachTracker();
+	private final ComboTracker combo = new ComboTracker();
+	private final SpeedTracker speed = new SpeedTracker();
+	/** Zuletzt angegriffenes Ziel (für die Combo) und dessen Schadens-Zähler. */
+	private Entity attacked;
+	private int attackedHurtTime;
+	private int selfHurtTime;
+	/** Merkt, ob die Hitboxen von uns eingeschaltet wurden (damit F3+B nicht überschrieben bleibt). */
+	private boolean hitboxesApplied;
 
 	public PvpFeatures(TrsModules modules) {
 		this.modules = modules;
 	}
 
-	/** Gibt es auf dieser Version Freelook/Treffer-Farbe (Mixins vorhanden)? */
+	/** Gibt es auf dieser Version Mixins (Freelook, Treffer-Farbe, Reichweite, Combo, Chat …)? */
 	public static boolean mixinFeatures() {
 		//? if >=1.15 {
 		return true;
@@ -52,11 +72,99 @@ public final class PvpFeatures {
 		if (mc.player == null) {
 			sprint.reset();
 			sneak.reset();
+			reach.reset();
+			combo.reset();
+			speed.reset();
+			attacked = null;
 		}
 		if (mixinFeatures()) {
 			tickFreelook(mc, inGame);
 			tickHitColor(mc);
 		}
+		tickPvpTrackers(mc);
+		tickHitboxes(mc);
+		tickBlockHit(mc, inGame);
+	}
+
+	// --- Reichweite, Combo, Geschwindigkeit ---
+
+	/**
+	 * Aus dem Angriffs-Mixin: merkt sich Ziel und Entfernung des Schlages.
+	 * Gemessen wird vom Auge zum tatsächlich getroffenen Punkt – reine Anzeige.
+	 */
+	public void onAttack(Player player, Entity target) {
+		if (player == null || target == null) return;
+		long now = System.currentTimeMillis();
+		Minecraft mc = Minecraft.getInstance();
+		Vec3 eye = new Vec3(Mc.x(player), Mc.y(player) + player.getEyeHeight(), Mc.z(player));
+		HitResult hit = mc.hitResult;
+		double distance;
+		if (hit instanceof EntityHitResult && ((EntityHitResult) hit).getEntity() == target) {
+			distance = eye.distanceTo(hit.getLocation());
+		} else {
+			distance = eye.distanceTo(new Vec3(Mc.x(target), Mc.y(target) + target.getBbHeight() / 2, Mc.z(target)));
+		}
+		reach.record(distance, now);
+		combo.onAttack(target.getId(), now);
+		attacked = target;
+		attackedHurtTime = target instanceof LivingEntity ? ((LivingEntity) target).hurtTime : 0;
+	}
+
+	/** Bestätigt Treffer (Ziel nimmt Schaden), bricht die Combo bei eigenem Schaden ab. */
+	private void tickPvpTrackers(Minecraft mc) {
+		long now = System.currentTimeMillis();
+		if (mc.player != null) {
+			speed.tick(Mc.x(mc.player), Mc.y(mc.player), Mc.z(mc.player), modules.speedVertical.get());
+			int hurt = mc.player.hurtTime;
+			if (hurt > selfHurtTime) combo.onSelfHurt();
+			selfHurtTime = hurt;
+		}
+		if (attacked != null) {
+			boolean gone = !attacked.isAlive();
+			if (attacked instanceof LivingEntity) {
+				int hurt = ((LivingEntity) attacked).hurtTime;
+				if (hurt > attackedHurtTime) combo.onTargetHurt(attacked.getId(), now);
+				attackedHurtTime = hurt;
+			} else {
+				// Nicht lebende Ziele (z. B. Boote) melden keinen Schaden – Schlag sofort zählen.
+				combo.onTargetHurt(attacked.getId(), now);
+				attacked = null;
+			}
+			if (gone) attacked = null;
+		}
+		combo.tick(now, (long) (modules.comboTimeout.get() * 1000));
+	}
+
+	/** Hitboxen wie F3+B; schaltet sie nur, solange das Modul an ist. */
+	private void tickHitboxes(Minecraft mc) {
+		boolean wanted = modules.hitboxes.isEnabled();
+		if (wanted == hitboxesApplied) return;
+		mc.getEntityRenderDispatcher().setRenderHitBoxes(wanted);
+		hitboxesApplied = wanted;
+	}
+
+	/** 1.7-Animationen (Teil 2): Schlagbewegung auch, während ein Gegenstand benutzt wird (nur Optik). */
+	private void tickBlockHit(Minecraft mc, boolean inGame) {
+		if (!inGame || mc.player == null) return;
+		if (!modules.oldAnimations.isEnabled() || !modules.oldAnimationsBlockHit.get()) return;
+		if (!mc.player.isUsingItem() || !mc.options.keyAttack.isDown()) return;
+		if (mc.player.swinging) return;
+		// Nur die Anzeige: kein Paket, kein Angriff – Minecraft spielt die Animation lokal ab.
+		mc.player.swinging = true;
+		mc.player.swingingArm = InteractionHand.MAIN_HAND;
+		mc.player.swingTime = -1;
+	}
+
+	public ReachTracker reach() {
+		return reach;
+	}
+
+	public ComboTracker combo() {
+		return combo;
+	}
+
+	public SpeedTracker speed() {
+		return speed;
 	}
 
 	/**

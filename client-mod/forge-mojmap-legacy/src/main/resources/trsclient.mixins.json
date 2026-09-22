@@ -4,10 +4,20 @@
 	"package": "dev.theredstonee.trsclient.mixin",
 	"compatibilityLevel": "${mixinJava}",
 	"client": [
+		"AttackMixin",
+		"BlockOutlineMixin",
 		"CameraMixin",
+		"ChatComponentAccessor",
+		"ChatMixin",
+		"ChatScreenMixin",
 		"FovMixin",
+		"HitboxColorMixin",
+		"HurtCamMixin",
 		"LightTextureMixin",
+		"LineWidthMixin",
+		"LowFireMixin",
 		"MouseHandlerMixin",
+		"OldAnimationsMixin",
 		"OverlayTextureAccessor"
 	],
 	"injectors": {

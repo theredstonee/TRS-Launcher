@@ -35,14 +35,37 @@ Not built: **1.16.1** (Loom cannot remap Minecraft 1.16.1 to Mojang names – co
 | Own crosshair | cancels `RenderGameOverlayEvent.Pre(CROSSHAIRS)` ≤ 1.16.5, `PreLayer(CROSSHAIR_ELEMENT)` 1.17–1.18.2, `RenderGuiOverlayEvent.Pre(CROSSHAIR)` ≥ 1.19 |
 | TRS title screen | `GuiOpenEvent` ≤ 1.17.1, `ScreenOpenEvent` 1.18.x, `ScreenEvent.Opening` ≥ 1.19 |
 | Keys | `ClientRegistry` (package moved 1.17 / 1.18) in `FMLClientSetupEvent`, `RegisterKeyMappingsEvent` ≥ 1.19 |
-| Zoom | Mixin `GameRenderer#getFov` RETURN (only `useFovSetting`, so the hand is not zoomed) |
+| Zoom + world FOV (waypoints) | Mixin `GameRenderer#getFov` RETURN (only `useFovSetting`, so the hand is not zoomed) |
 | CPS / zoom wheel / slower mouse / freelook turn | Mixin `MouseHandler#onPress`, `#onScroll`, `#turnPlayer` (+ `@Redirect LocalPlayer.turn`) |
 | Freelook camera | Mixin `@Redirect Entity.getViewYRot/XRot` in `Camera#setup` |
 | Fullbright | Mixin `@Redirect` of the gamma read in `LightTexture#updateLightTexture` (field `Options.gamma` ≤ 1.18.2, `Double.floatValue()` after `gamma()` ≥ 1.19) |
 | Hit color | Accessor on `OverlayTexture.texture` (≥ 1.15) |
+| Reach / combo | Mixin `MultiPlayerGameMode#attack` HEAD (display only, the attack is untouched) |
+| Speed / minimap / waypoints | no Mixin – client tick, `Camera` + own projection, `LevelChunk` map colours |
+| Chat (timestamps, "(x3)") | Mixin `@ModifyVariable` on `ChatComponent#addMessage(Component, int)` ≤ 1.19, `(Component, MessageSignature, GuiMessageTag)` ≥ 1.19.1 + accessors `allMessages` / `trimmedMessages` / `chatScrollbarPos` |
+| Ctrl+click copies a chat line | Mixin `ChatScreen#mouseClicked` HEAD |
+| No hurt camera | Mixin `GameRenderer#bobHurt` HEAD (cancel) |
+| Low fire | Mixin `ScreenEffectRenderer#renderFire(Minecraft, PoseStack)` HEAD/RETURN (≥ 1.15) |
+| Block outline colour | Mixin `@ModifyArgs` on `renderShape(…)` inside `LevelRenderer#renderHitOutline` (≥ 1.15) |
+| Outline / hitbox line width | Mixin `@ModifyVariable` on `RenderSystem#lineWidth` (≥ 1.15) |
+| Hitboxes | toggle via `EntityRenderDispatcher#setRenderHitBoxes`; colour = `@ModifyArgs` on `renderLineBox` in `renderHitbox` (6 doubles ≤ 1.16.5, `AABB` ≥ 1.17; `renderHitbox` is static from 1.17) |
+| 1.7 animations | Mixin `@Redirect LocalPlayer#getAttackStrengthScale` in `ItemInHandRenderer#tick`; the "swing while using" half needs no Mixin |
+| Text hotkeys / Auto-GG send | `LocalPlayer#chat` ≤ 1.18, `chat/command` 1.19, `chatSigned/commandSigned` 1.19.1–1.19.2, `connection.sendChat/sendCommand` ≥ 1.19.3 |
 | 1.14.4 (no Mixin) | Zoom = `FOVModifier` (skipped after `RenderWorldLastEvent` = hand), CPS/wheel = `InputEvent`, Fullbright = gamma only between `RenderTickEvent` START and the first FOV event |
 
-Forge ships no MixinExtras in these versions → only `@Inject`/`@Redirect`/`@Accessor`.
+Forge ships no MixinExtras in these versions → only `@Inject`/`@Redirect`/`@ModifyVariable`/`@ModifyArgs`/`@Accessor`.
+Because every Mojang method maps to its own SRG name, every `@At(INVOKE)` target carries its full descriptor.
+
+## What is missing where
+
+| Version | Missing |
+| --- | --- |
+| 1.14.4 | Forge ships no Mixin → freelook, hit colour, reach, combo, chat tools, Auto-GG, no-hurt-camera, low fire and the block outline are not registered (hidden in the menu). Hitboxes work, of the 1.7 animations only "swing while using an item"; the hitbox colour and "hand stays up" do nothing. |
+| all | **Motion blur** is not implemented on any loader – the module is hidden in this build. |
+
+Everything else (HUD modules incl. reach/combo/speed/minimap, waypoints with beam, death waypoint,
+chat timestamps/stacking/Ctrl+click, text hotkeys, Auto-GG, no-hurt-camera, low fire, block outline,
+hitboxes, 1.7 animations) works on 1.15.2–1.19.4.
 
 ## Build
 
