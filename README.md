@@ -126,6 +126,22 @@ Principles:
 - **The webview gets no file system, network or shell permissions.** Everything goes through dedicated commands, under a strict CSP.
 - **Only a stable error kind and a readable message reach the UI.** Details go to the log.
 
+## Code signing policy
+
+Windows releases are signed so that Windows can verify who published them.
+
+- Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+- Builds are made from this repository by [GitHub Actions](.github/workflows/release.yml). Every release needs manual approval before it is signed.
+
+**Team roles**
+
+| Role | Members |
+|---|---|
+| Committers and reviewers | [theredstonee](https://github.com/theredstonee) |
+| Approvers | [theredstonee](https://github.com/theredstonee) |
+
+**Privacy:** this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. See [PRIVACY.md](PRIVACY.md) for the services the launcher contacts and when.
+
 ## Acknowledgements
 
 Parts of the process handling are adapted from [Polyfrost OneLauncher](https://github.com/Polyfrost/OneLauncher) (GPL-3.0-only). Game metadata comes from Mojang, and mod data comes from the [Modrinth API](https://docs.modrinth.com/).
