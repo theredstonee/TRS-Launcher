@@ -1,0 +1,30 @@
+modLoader = "javafml"
+loaderVersion = "[${loaderMajor},)"
+license = "GPL-3.0-only"
+issueTrackerURL = "https://github.com/theredstonee/TRS-Launcher/issues"
+
+[[mods]]
+modId = "trsclient"
+version = "${version}"
+displayName = "TRS Client"
+authors = "theredstonee"
+displayURL = "https://github.com/theredstonee/TRS-Launcher"
+description = '''
+In-Game-Client des TRS Launchers: HUD (FPS, CPS, Tastenanzeige, Ping, Rüstung, Effekte, Koordinaten …), Zoom, Fullbright, Fadenkreuz und ein eigenes Menü (Rechte Umschalttaste).
+'''
+${displayTest}
+
+[[dependencies.trsclient]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forgeMin},)"
+ordering = "NONE"
+side = "CLIENT"
+
+# Eine JAR je Minecraft-Version – bewusst keine breitere Spanne.
+[[dependencies.trsclient]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft}]"
+ordering = "NONE"
+side = "CLIENT"

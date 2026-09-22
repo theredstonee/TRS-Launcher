@@ -1,0 +1,49 @@
+import groovy.json.JsonOutput
+
+plugins {
+	id 'dev.kikugie.stonecutter'
+	// Essentials Fork von architectury-loom: Forge mit Mojang-Namen im Code, remapJar → SRG für Produktion.
+	id 'gg.essential.loom' version '1.15.50' apply false
+}
+// Version, deren Code gerade unkommentiert in src/ steht (eingecheckt: 1.16.5).
+// Umschalten: ./gradlew "Set active project to <version>" (danach vor dem Commit zurück auf 1.16.5).
+stonecutter.active '1.16.5'
+
+/*
+ * ./gradlew collectLauncherJars
+ * Baut alle Versionen und legt trsclient-forge-<minecraft>.jar + builds-forge-mojmap-legacy.json
+ * in client-mod/dist/ ab (die JAR-Liste führt der Koordinator mit den anderen Manifesten zusammen).
+ * Nur über Task-Pfade verknüpft, damit "configure on demand" die Versionsprojekte nicht vorzeitig braucht.
+ */
+def distDir = rootProject.file('../dist')
+def versions = stonecutter.versions.collect { it.project }
+def modVersion = rootProject.mod_version
+
+tasks.register('collectLauncherJars') {
+	group = 'build'
+	description = 'Builds every Forge version and writes the jars and builds-forge-mojmap-legacy.json to client-mod/dist/'
+
+	dependsOn(versions.collect { ":${it}:remapJar" })
+	// Unit-Tests der gemeinsamen Logik (laufen im 1.19.4-Projekt) müssen grün sein.
+	dependsOn(':1.19.4:test')
+	outputs.upToDateWhen { false }
+
+	doLast {
+		distDir.mkdirs()
+		def builds = []
+		versions.each { mc ->
+			def props = new Properties()
+			rootProject.file("versions/${mc}/gradle.properties").withInputStream { props.load(it) }
+			def forge = props.getProperty('forge_version')
+			def jar = rootProject.file("versions/${mc}/build/libs/trsclient-forge-${mc}-${modVersion}.jar")
+			if (!jar.isFile()) throw new GradleException("Fehlende JAR: ${jar}")
+			def name = "trsclient-forge-${mc}.jar"
+			new File(distDir, name).bytes = jar.bytes
+			// Keine weiteren Mods nötig – nur Forge (kompiliert/getestet gegen genau diese Version).
+			builds << [loader: 'forge', minecraft: [mc], file: name, requires: [], forge: "${mc}-${forge}".toString()]
+		}
+		new File(distDir, 'builds-forge-mojmap-legacy.json')
+				.setText(JsonOutput.prettyPrint(JsonOutput.toJson(builds)) + '\n', 'UTF-8')
+		logger.lifecycle("collectLauncherJars: ${builds.size()} Forge-JARs → ${distDir}")
+	}
+}

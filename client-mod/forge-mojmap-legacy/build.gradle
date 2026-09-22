@@ -1,0 +1,131 @@
+// Build-Skript für JEDE Minecraft-Version (:<minecraft>), ausgeführt von Stonecutter.
+// Quellcode: src/ (vorverarbeitet je Version) + versionsunabhängige Logik (common bzw. core8, siehe unten).
+// Versionsspezifische Werte: versions/<minecraft>/gradle.properties (forge_version)
+apply plugin: 'gg.essential.loom'
+
+def mc = stonecutter.current.version
+// Java-Level der Minecraft-Version (so startet sie auch der Launcher): 8 bis 1.16.5, 16 für 1.17.x, 17 ab 1.18.
+def javaVersion = stonecutter.eval(mc, '>=1.18') ? 17 : (stonecutter.eval(mc, '>=1.17') ? 16 : 8)
+// Forge liefert Mixin erst ab 1.15.2 (31.2.44) mit – 1.14.4 läuft ohne Mixins (Event-Ersatz im Code).
+def withMixins = stonecutter.eval(mc, '>=1.15')
+def forgeMajor = project.forge_version.tokenize('.')[0]
+
+group = rootProject.maven_group
+version = rootProject.mod_version
+
+base {
+	archivesName = "trsclient-forge-${mc}"
+}
+
+java {
+	toolchain {
+		// 1.17.1 läuft auf Java 16 – kompiliert wird mit JDK 17 und --release 16 (JDK 16 ist EOL).
+		languageVersion = JavaLanguageVersion.of(javaVersion == 16 ? 17 : javaVersion)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	if (javaVersion > 8) options.release = javaVersion
+}
+
+// Versionsunabhängige Logik: ab 1.18 direkt ../common (Java 17), davor die Java-8-Kopie core8/
+// (≤1.16.5 läuft auf Java 8, 1.17.1 auf Java 16 – sealed/records/switch-Ausdrücke von common gehen dort nicht).
+def coreDir = javaVersion >= 17 ? rootProject.file('../common/src/main/java') : rootProject.file('core8/src/main/java')
+sourceSets.main.java.srcDir(coreDir)
+// Die Unit-Tests von common laufen einmal (mit der neuesten Version dieses Baums).
+def runsCommonTests = mc == '1.19.4'
+if (runsCommonTests) {
+	sourceSets.test.java.srcDir(rootProject.file('../common/src/test/java'))
+}
+
+loom {
+	silentMojangMappingsLicense()
+	if (withMixins) {
+		// Kein Mixin-Annotationsprozessor/Refmap: Loom (Forge-Modus) schreibt beim remapJar die Ziele in den
+		// Mixin-Annotationen direkt auf SRG-Namen um (tiny-remapper-Mixin-Erweiterung, useLegacyMixinAp = false).
+		forge {
+			mixinConfig 'trsclient.mixins.json'
+		}
+	}
+	runConfigs {
+		client {
+			// Eigenes Spielverzeichnis je Version (ältere Versionen können neuere Welten/Optionen nicht lesen).
+			runDir = "../../../run/forge-${mc}"
+			if (withMixins) {
+				// Mixin-Anwendung sichtbar im Log (Nachweis, dass alle Mixins greifen).
+				vmArg '-Dmixin.debug.verbose=true'
+			}
+			// ./gradlew :<v>:runClient -PtrsAutotest → Menü, Testwelt, Screenshots, beendet sich selbst.
+			if (rootProject.hasProperty('trsAutotest')) {
+				vmArg '-Dtrsclient.autotest=true'
+			}
+		}
+		remove(server)
+	}
+}
+
+repositories {
+	mavenCentral()
+	// Mixin (nur Kompilier-Abhängigkeit für 1.14.4)
+	maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${mc}"
+	mappings loom.officialMojangMappings()
+	forge "net.minecraftforge:forge:${mc}-${project.forge_version}"
+	if (!withMixins) {
+		// Nur zum Kompilieren der (auf 1.14.4 nicht ausgelieferten) Mixin-Klassen.
+		compileOnly 'org.spongepowered:mixin:0.8.5'
+	}
+
+	if (runsCommonTests) {
+		testImplementation 'com.google.code.gson:gson:2.8.9'
+		testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
+		testImplementation 'org.junit.jupiter:junit-jupiter'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	}
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'failed'
+	}
+}
+
+// Minecraft-/Forge-abhängige Werte für mods.toml, pack.mcmeta und die Mixin-Config.
+def packFormat = stonecutter.eval(mc, '>=1.19.4') ? 13 : stonecutter.eval(mc, '>=1.19.3') ? 12 :
+		stonecutter.eval(mc, '>=1.19') ? 9 : stonecutter.eval(mc, '>=1.18') ? 8 : stonecutter.eval(mc, '>=1.17') ? 7 :
+		stonecutter.eval(mc, '>=1.16.2') ? 6 : stonecutter.eval(mc, '>=1.15') ? 5 : 4
+// Kleinste Forge-Version derselben Minecraft-Version, mit der die JAR läuft (1.15.2: erst ab 31.2.44 mit Mixin).
+def forgeMin = mc == '1.15.2' ? '31.2.44' : forgeMajor
+def props = [
+		version    : project.version,
+		minecraft  : mc,
+		loaderMajor: forgeMajor,
+		forgeMin   : forgeMin,
+		packFormat : packFormat,
+		mixinJava  : "JAVA_${javaVersion}",
+		// Ab Forge 1.19 steht die Client-only-Kennzeichnung in mods.toml, davor per Extension-Point im Code.
+		displayTest: stonecutter.eval(mc, '>=1.19') ? 'displayTest = "IGNORE_ALL_VERSION"' : '',
+]
+processResources {
+	inputs.properties(props)
+	filesMatching(['META-INF/mods.toml', 'pack.mcmeta', 'trsclient.mixins.json']) {
+		expand props
+	}
+	if (!withMixins) exclude 'trsclient.mixins.json'
+}
+
+tasks.withType(Jar).configureEach {
+	if (!withMixins) exclude 'dev/theredstonee/trsclient/mixin/**'
+	from(rootProject.file('../LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
+
+// Die fertige, auf SRG-Namen remappte Mod-JAR dieser Version (für die Produktion).
+ext.trsModJar = tasks.named('remapJar')
+ext.trsForgeVersion = project.forge_version

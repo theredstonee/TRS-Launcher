@@ -1,0 +1,38 @@
+// TRS Client für Forge 1.14.4 – 1.19.4 (Mojang-Namen im Code, SRG in Produktion) – eigenständiger Gradle-Build.
+// EIN Quellbaum (src/), ein Unterprojekt je Minecraft-Version (:<version>), vorverarbeitet von Stonecutter.
+// Versionsspezifische Werte: versions/<minecraft>/gradle.properties
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+		maven { url = 'https://maven.kikugie.dev/releases' }
+		maven { url = 'https://repo.essential.gg/repository/maven-public/' }
+		maven { url = 'https://maven.architectury.dev/' }
+		maven { url = 'https://maven.fabricmc.net/' }
+		maven { url = 'https://maven.minecraftforge.net/' }
+	}
+	resolutionStrategy {
+		eachPlugin {
+			if (requested.id.id == 'gg.essential.loom') {
+				useModule("gg.essential:architectury-loom:${requested.version}")
+			}
+		}
+	}
+}
+
+plugins {
+	// Lädt bei Bedarf automatisch JDK 8/16/17 (Gradle-Toolchains).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+	id 'dev.kikugie.stonecutter' version '0.9.8'
+}
+
+rootProject.name = 'trsclient-forge-mojmap-legacy'
+
+stonecutter {
+	create(rootProject) {
+		versions '1.14.4', '1.15.2', '1.16.2', '1.16.4', '1.16.5', '1.17.1',
+				'1.18', '1.18.1', '1.18.2', '1.19', '1.19.1', '1.19.2', '1.19.3', '1.19.4'
+		// Version, in deren Zustand src/ eingecheckt ist.
+		vcsVersion = '1.16.5'
+	}
+}
