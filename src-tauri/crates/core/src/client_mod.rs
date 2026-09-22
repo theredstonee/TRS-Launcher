@@ -11,12 +11,15 @@ use crate::content::{self, ContentKind};
 use crate::download;
 use crate::instance::{Instance, LoaderKind};
 use crate::paths::Paths;
+use crate::settings::{Accent, Theme, UiSettings};
 use crate::{Error, Result, modrinth};
 
 /// So heißt die Datei im Mods-Ordner – fester Name, damit Updates sie ersetzen.
 const INSTALLED_NAME: &str = "trsclient.jar";
 const FABRIC_API_PROJECT: &str = "P7dR8mSH";
 const MANIFEST: &str = "builds.json";
+/// Farben des Launchers für das In-Game-Menü (relativ zum Config-Ordner der Instanz).
+const THEME_FILE: &str = "trsclient/launcher-theme.json";
 
 /// Ein Eintrag aus `builds.json` (erzeugt vom Gradle-Task `collectLauncherJars`).
 #[derive(Debug, Clone, Deserialize)]
@@ -85,7 +88,13 @@ pub fn availability(builds: &[Build], instance: &Instance) -> Availability {
 /// Sorgt vor dem Start dafür, dass der TRS Client (und seine Abhängigkeiten)
 /// in der Instanz liegt – bzw. entfernt ihn, wenn er abgeschaltet wurde oder
 /// für die Version keinen Build mehr hat.
-pub async fn sync(http: &reqwest::Client, paths: &Paths, bundled_dir: Option<&Path>, instance: &Instance) -> Result<()> {
+pub async fn sync(
+    http: &reqwest::Client,
+    paths: &Paths,
+    bundled_dir: Option<&Path>,
+    instance: &Instance,
+    ui: &UiSettings,
+) -> Result<()> {
     let Some(dir) = bundled_dir else { return Ok(()) };
     let builds = load_builds(dir);
     let mods = content::content_dir(paths, &instance.id, ContentKind::Mod);
@@ -99,6 +108,10 @@ pub async fn sync(http: &reqwest::Client, paths: &Paths, bundled_dir: Option<&Pa
             if file.is_file() {
                 tokio::fs::remove_file(file).await.map_err(|e| Error::io(file, e))?;
             }
+        }
+        let theme = theme_path(paths, &instance.id);
+        if theme.is_file() {
+            let _ = tokio::fs::remove_file(&theme).await;
         }
         return Ok(());
     };
@@ -116,10 +129,76 @@ pub async fn sync(http: &reqwest::Client, paths: &Paths, bundled_dir: Option<&Pa
         tracing::info!("TRS Client ({}) in '{}' installiert", build.file, instance.id);
     }
 
+    // Der Mod übernimmt Thema und Akzentfarbe des Launchers.
+    if let Err(e) = write_theme(paths, &instance.id, ui).await {
+        tracing::warn!("Farben für den TRS Client konnten nicht geschrieben werden: {e}");
+    }
+
     if build.requires.iter().any(|r| r == "fabric-api") {
         ensure_fabric_api(http, paths, instance).await;
     }
     Ok(())
+}
+
+/// Datei mit den Farben des Launchers in der Instanz.
+fn theme_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
+    paths.instance_game_dir(instance_id).join("config").join(THEME_FILE)
+}
+
+/// Farben, die der Mod liest: Thema, Akzent-Name und der dazugehörige Farbwert.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LauncherTheme {
+    version: u32,
+    theme: &'static str,
+    accent: &'static str,
+    /// "#RRGGBB" – passend zum Akzent-Namen, damit der Mod nichts raten muss.
+    accent_color: &'static str,
+}
+
+/// Schreibt `config/trsclient/launcher-theme.json` in die Instanz (nur bekannte, feste Werte).
+pub async fn write_theme(paths: &Paths, instance_id: &str, ui: &UiSettings) -> Result<()> {
+    let file = theme_path(paths, instance_id);
+    let dir = file.parent().expect("Elternordner");
+    tokio::fs::create_dir_all(dir).await.map_err(|e| Error::io(dir, e))?;
+    let theme = LauncherTheme {
+        version: 1,
+        theme: theme_name(ui.theme),
+        accent: accent_name(ui.accent),
+        accent_color: accent_color(ui.accent),
+    };
+    let json = serde_json::to_string_pretty(&theme).map_err(|e| Error::json("launcher-theme.json", e))?;
+    tokio::fs::write(&file, json).await.map_err(|e| Error::io(&file, e))
+}
+
+/// Name des Themas für den Mod. "System" löst der Launcher auf – im Spiel gilt dann Dunkel.
+fn theme_name(theme: Theme) -> &'static str {
+    match theme {
+        Theme::Dark | Theme::System => "dark",
+        Theme::Oled => "oled",
+        Theme::Light => "light",
+    }
+}
+
+fn accent_name(accent: Accent) -> &'static str {
+    match accent {
+        Accent::Redstone => "redstone",
+        Accent::Lamp => "lamp",
+        Accent::Emerald => "emerald",
+        Accent::Lapis => "lapis",
+        Accent::Amethyst => "amethyst",
+    }
+}
+
+/// Dieselben Farbwerte wie in der Oberfläche (app/assets/css/main.css, `--color-redstone-500`).
+fn accent_color(accent: Accent) -> &'static str {
+    match accent {
+        Accent::Redstone => "#E0281E",
+        Accent::Lamp => "#E0900C",
+        Accent::Emerald => "#17A34A",
+        Accent::Lapis => "#3563E9",
+        Accent::Amethyst => "#9B4DDF",
+    }
 }
 
 async fn same_file(a: &Path, b: &Path) -> bool {
@@ -246,6 +325,39 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn writes_launcher_colours_for_the_mod() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path().join("root"));
+        let mut ui = UiSettings { accent: Accent::Emerald, theme: Theme::Oled, ..UiSettings::default() };
+        write_theme(&paths, "test", &ui).await.unwrap();
+
+        let file = paths.instance_game_dir("test").join("config/trsclient/launcher-theme.json");
+        let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+        assert_eq!(json["version"], 1);
+        assert_eq!(json["theme"], "oled");
+        assert_eq!(json["accent"], "emerald");
+        assert_eq!(json["accentColor"], "#17A34A");
+
+        // "System" gibt es im Spiel nicht – dort gilt das dunkle Thema.
+        ui.theme = Theme::System;
+        ui.accent = Accent::Redstone;
+        write_theme(&paths, "test", &ui).await.unwrap();
+        let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+        assert_eq!(json["theme"], "dark");
+        assert_eq!(json["accentColor"], "#E0281E");
+    }
+
+    #[test]
+    fn every_accent_has_a_colour() {
+        for accent in [Accent::Redstone, Accent::Lamp, Accent::Emerald, Accent::Lapis, Accent::Amethyst] {
+            let hex = accent_color(accent);
+            assert!(hex.len() == 7 && hex.starts_with('#'), "{accent:?} → {hex}");
+            assert!(hex[1..].chars().all(|c| c.is_ascii_hexdigit()), "{accent:?} → {hex}");
+            assert!(!accent_name(accent).is_empty());
+        }
+    }
+
+    #[tokio::test]
     async fn installs_updates_and_removes_jar() {
         let dir = tempfile::tempdir().unwrap();
         let paths = Paths::new(dir.path().join("root"));
@@ -258,23 +370,26 @@ mod tests {
         // Offline-Client: die Fabric-API-Nachinstallation schlägt fehl, darf aber nichts blockieren.
         let http = reqwest::Client::builder().proxy(reqwest::Proxy::all("http://127.0.0.1:9").unwrap()).build().unwrap();
         let mods = content::content_dir(&paths, "test", ContentKind::Mod);
+        let ui = UiSettings::default();
 
         let on = instance("1.21.1", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&res), &on).await.unwrap();
+        sync(&http, &paths, Some(&res), &on, &ui).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v1");
+        assert!(theme_path(&paths, "test").is_file(), "Farben des Launchers liegen in der Instanz");
 
         tokio::fs::write(res.join("trsclient-fabric-1.21.jar"), b"v2").await.unwrap();
-        sync(&http, &paths, Some(&res), &on).await.unwrap();
+        sync(&http, &paths, Some(&res), &on, &ui).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v2");
 
         // Versionswechsel auf eine Version ohne Build: alte Kopie verschwindet.
         let other = instance("1.20.4", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&res), &other).await.unwrap();
+        sync(&http, &paths, Some(&res), &other, &ui).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
 
-        sync(&http, &paths, Some(&res), &on).await.unwrap();
+        sync(&http, &paths, Some(&res), &on, &ui).await.unwrap();
         let off = instance("1.21.1", LoaderKind::Fabric, Some(false));
-        sync(&http, &paths, Some(&res), &off).await.unwrap();
+        sync(&http, &paths, Some(&res), &off, &ui).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
+        assert!(!theme_path(&paths, "test").exists(), "abgeschaltet: auch die Farbdatei ist weg");
     }
 }
