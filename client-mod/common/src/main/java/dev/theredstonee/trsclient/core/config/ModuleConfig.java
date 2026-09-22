@@ -18,6 +18,24 @@ public final class ModuleConfig {
 	public Map<String, String> colors = new LinkedHashMap<>();
 	/** Auswahl-Optionen (z. B. Fadenkreuz-Form) als Options-ID. */
 	public Map<String, String> choices = new LinkedHashMap<>();
+	/** Tastenbelegungen als Vanilla-Tastenname (z. B. "key.keyboard.v"). */
+	public Map<String, String> keys = new LinkedHashMap<>();
+
+	/** Tiefe Kopie (für HUD-Profile). */
+	public ModuleConfig copy() {
+		ModuleConfig c = new ModuleConfig();
+		c.enabled = enabled;
+		c.anchor = anchor;
+		c.offsetX = offsetX;
+		c.offsetY = offsetY;
+		normalized();
+		c.flags.putAll(flags);
+		c.numbers.putAll(numbers);
+		c.colors.putAll(colors);
+		c.choices.putAll(choices);
+		c.keys.putAll(keys);
+		return c;
+	}
 
 	/** Gson kann null-Maps liefern (z. B. {"flags": null}); hier auf leere Maps normalisieren. */
 	public ModuleConfig normalized() {
@@ -25,6 +43,7 @@ public final class ModuleConfig {
 		if (numbers == null) numbers = new LinkedHashMap<>();
 		if (colors == null) colors = new LinkedHashMap<>();
 		if (choices == null) choices = new LinkedHashMap<>();
+		if (keys == null) keys = new LinkedHashMap<>();
 		return this;
 	}
 }

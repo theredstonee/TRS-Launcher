@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.core.module;
 
+import dev.theredstonee.trsclient.core.config.KeyDefaults;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
+import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudAnchor;
 import dev.theredstonee.trsclient.core.hud.HudPosition;
 
@@ -10,6 +12,10 @@ import dev.theredstonee.trsclient.core.hud.HudPosition;
  */
 public final class TrsModules {
 	public final ModuleRegistry registry = new ModuleRegistry();
+	/** Gespeicherte HUD-Layouts (wird nach den Modulen erstellt). */
+	public final HudProfiles profiles;
+	/** Stand der Standard-Tastenbelegungen (Migration alter Belegungen). */
+	public final KeyDefaults keyDefaults = new KeyDefaults();
 
 	public final HudModule fps;
 	public final HudModule cps;
@@ -98,6 +104,26 @@ public final class TrsModules {
 		titleScreen = registry.register(new Module("titleScreen", "Startbildschirm",
 				"TRS-Startbildschirm statt des Vanilla-Titelbildschirms", true));
 
+		fps.icon("gauge");
+		cps.icon("mouse").category(Category.PVP);
+		keystrokes.icon("keyboard").category(Category.PVP);
+		ping.icon("signal");
+		armor.icon("shield").category(Category.PVP);
+		effects.icon("potion");
+		coords.icon("compass").category(Category.WORLD);
+		clock.icon("clock");
+		memory.icon("chip");
+		server.icon("signal").category(Category.WORLD);
+		packs.icon("packs");
+		toggleSprint.icon("run").category(Category.PVP);
+		toggleSneak.icon("sneak").category(Category.PVP);
+		crosshair.icon("crosshair").category(Category.PVP);
+		hitColor.icon("hit").category(Category.PVP);
+		freelook.icon("eye").category(Category.WORLD);
+		zoom.icon("zoom").category(Category.WORLD);
+		fullbright.icon("sun").category(Category.WORLD);
+		titleScreen.icon("home");
+
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS unter Maustasten", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Leertaste anzeigen", true));
 		zoomFactor = zoom.add(new NumberSetting("factor", "Zoom-Faktor", 4.0, 2.0, 10.0, 0.5, "×"));
@@ -122,5 +148,9 @@ public final class TrsModules {
 		hitColorColor = hitColor.add(new ColorSetting("color", "Farbe", 0xB07CFF));
 		hitColorOpacity = hitColor.add(new NumberSetting("opacity", "Deckkraft (%)", 70, 10, 100, 10, ""));
 		titleServers = titleScreen.add(new BoolSetting("servers", "Server-Schnellbeitritt", true));
+
+		registry.addPart(keyDefaults);
+		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.
+		profiles = new HudProfiles(registry);
 	}
 }

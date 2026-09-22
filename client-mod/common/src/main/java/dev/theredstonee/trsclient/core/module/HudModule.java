@@ -13,14 +13,23 @@ public class HudModule extends Module {
 	public final NumberSetting scale;
 	public final BoolSetting background;
 	public final ColorSetting textColor;
+	/** Textschatten. */
+	public final BoolSetting textShadow;
+	/** Deckkraft des Hintergrunds in Prozent (nur wenn {@link #background} an). */
+	public final NumberSetting backgroundOpacity;
+
+	/** Farbe (RGB) des HUD-Hintergrunds – Tiefenschiefer wie das Menü. */
+	public static final int BACKGROUND_RGB = 0x17171E;
 
 	public HudModule(String id, String name, String description, boolean defaultEnabled, HudPosition defaultPosition) {
 		super(id, name, description, defaultEnabled);
 		this.defaultPosition = defaultPosition.copy();
 		this.position = defaultPosition.copy();
 		this.textColor = add(new ColorSetting("textColor", "Textfarbe", 0xFFFFFF));
+		this.textShadow = add(new BoolSetting("shadow", "Textschatten", true));
 		this.background = add(new BoolSetting("background", "Hintergrund", true));
-		this.scale = add(new NumberSetting("scale", "Größe", 1.0, 0.5, 2.0, 0.25, "×"));
+		this.backgroundOpacity = add(new NumberSetting("backgroundOpacity", "Hintergrund-Deckkraft", 56, 0, 100, 1, "", "%"));
+		this.scale = add(new NumberSetting("scale", "Größe", 1.0, 0.5, 2.0, 0.05, "×"));
 	}
 
 	/** Aktuelle Position (veränderbares Objekt – im Editor direkt gesetzt). */
@@ -30,6 +39,37 @@ public class HudModule extends Module {
 
 	public void resetPosition() {
 		position.set(defaultPosition);
+	}
+
+	/** Standard-Position (z. B. für "Zurücksetzen" im HUD-Editor). */
+	public HudPosition defaultPosition() {
+		return defaultPosition.copy();
+	}
+
+	/**
+	 * Setzt Position und Aussehen (Größe, Farbe, Schatten, Hintergrund) zurück –
+	 * An/Aus und modulspezifische Einstellungen bleiben.
+	 */
+	public void resetLayout() {
+		resetPosition();
+		textColor.reset();
+		textShadow.reset();
+		background.reset();
+		backgroundOpacity.reset();
+		scale.reset();
+	}
+
+	/** Hintergrundfarbe (ARGB) oder 0, wenn kein Hintergrund gezeichnet wird. */
+	public int backgroundArgb() {
+		if (!background.get()) return 0;
+		int a = (int) Math.round(backgroundOpacity.get() * 2.55);
+		if (a <= 0) return 0;
+		return (Math.min(255, a) << 24) | BACKGROUND_RGB;
+	}
+
+	/** Text mit Schatten zeichnen? */
+	public boolean shadow() {
+		return textShadow.get();
 	}
 
 	@Override

@@ -6,7 +6,8 @@ import dev.theredstonee.trsclient.core.config.ModuleConfig;
  * Eine einstellbare Option eines Moduls. Der aktuelle Wert liegt als einfaches Feld
  * in der Unterklasse, damit das Rendern ohne Map-Zugriffe/Boxing auskommt.
  */
-// Unterklassen: BoolSetting, NumberSetting, ColorSetting, ChoiceSetting (kein "sealed" – Java 8).
+// Unterklassen: BoolSetting (Schalter), NumberSetting (Schieberegler), ColorSetting (Farbwähler),
+// ChoiceSetting (Auswahlliste), KeySetting (Tastenbelegung) – das Menü kennt genau diese Typen.
 public abstract class Setting {
 	private final String key;
 	private final String label;
