@@ -8,9 +8,8 @@ const instances = useInstancesStore()
 const settings = useSettingsStore()
 const meta = useMetaStore()
 const toasts = useToasts()
+const shell = useUiStore()
 
-const creating = ref(false)
-const importing = ref(false)
 const newGroupFor = ref<{ preselect: string | null } | null>(null)
 const toDelete = ref<Instance | null>(null)
 const deleting = ref(false)
@@ -117,9 +116,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
 <template>
   <div class="p-6">
     <PageHeader title="Bibliothek" subtitle="Jede Instanz hat eigene Welten, Mods und Einstellungen.">
-      <button class="btn btn-ghost" @click="importing = true">Importieren</button>
+      <button class="btn btn-ghost" @click="shell.importing = true">Importieren</button>
       <button v-if="instances.items.length" class="btn btn-ghost" @click="newGroupFor = { preselect: null }">Neue Gruppe</button>
-      <button class="btn btn-primary" @click="creating = true">
+      <button class="btn btn-primary" @click="shell.creating = true">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
         Neue Instanz
       </button>
@@ -205,13 +204,11 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
       <h2 class="mt-5 font-semibold">Noch keine Instanz</h2>
       <p class="mt-1 max-w-sm text-sm text-base-400">Erstelle deine erste Instanz – Vanilla oder mit Fabric, Quilt, Forge oder NeoForge.</p>
       <div class="mt-5 flex justify-center gap-2">
-        <button class="btn btn-primary" @click="creating = true">Instanz erstellen</button>
-        <button class="btn btn-ghost" @click="importing = true">Aus anderem Launcher importieren</button>
+        <button class="btn btn-primary" @click="shell.creating = true">Instanz erstellen</button>
+        <button class="btn btn-ghost" @click="shell.importing = true">Aus anderem Launcher importieren</button>
       </div>
     </div>
 
-    <ImportDialog v-if="importing" @close="importing = false" />
-    <CreateInstanceDialog v-if="creating" @close="creating = false" @created="creating = false" />
     <NewGroupDialog v-if="newGroupFor" :instances="instances.items" :preselect="newGroupFor.preselect" @close="newGroupFor = null" @done="onGroupCreated" />
 
     <BaseDialog v-if="toDelete" title="Instanz löschen?" @close="toDelete = null">
