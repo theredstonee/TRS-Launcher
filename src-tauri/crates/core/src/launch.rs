@@ -417,6 +417,7 @@ mod tests {
             resolution: Some(Resolution { width: 1920, height: 1080 }),
             java_path: None,
             trs_client: None,
+            boost: None,
         };
         let args = build(&prepared(MODERN), &inst, &Session { demo: true, ..session() });
         assert!(args.contains(&"-Xmx8192M".to_owned()));

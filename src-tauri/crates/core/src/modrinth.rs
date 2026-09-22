@@ -27,6 +27,11 @@ const PERFORMANCE_PACK: &[&[&str]] = &[
     &["immediatelyfast"],
     &["modernfix"],
     &["dynamic-fps"],
+    &["moreculling"],
+    &["badoptimizations"],
+    &["krypton"],
+    // Nur für alte Versionen (bis 1.19) sinnvoll; neuere gibt es dort nicht.
+    &["lazydfu"],
 ];
 
 /// Was sich suchen lässt – Instanz-Inhalte plus Modpacks.

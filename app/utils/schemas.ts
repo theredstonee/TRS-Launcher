@@ -32,6 +32,7 @@ export const updateInstanceSchema = z.object({
     jvmArgs: z.string().max(4096).nullable(),
     resolution: resolutionSchema.nullable(),
     trsClient: z.boolean().nullable(),
+    boost: z.boolean().nullable(),
   }),
 })
 

@@ -216,14 +216,29 @@ pub async fn fetch_all(
     concurrency: usize,
     on_progress: &(dyn Fn(Progress) + Sync),
 ) -> Result<()> {
+    fetch_all_with(http, tasks, concurrency, false, on_progress).await
+}
+
+/// Wie [`fetch_all`]; mit `verify` wird jede vorhandene Datei per SHA1 geprüft
+/// und bei Abweichung neu geladen (Reparieren).
+pub async fn fetch_all_with(
+    http: &reqwest::Client,
+    tasks: Vec<Task>,
+    concurrency: usize,
+    verify: bool,
+    on_progress: &(dyn Fn(Progress) + Sync),
+) -> Result<()> {
     // Dieselbe Datei taucht oft mehrfach auf (Assets mit gleichem Hash).
     let mut seen = HashSet::new();
     let unique: Vec<Task> = tasks.into_iter().filter(|t| seen.insert(t.path.clone())).collect();
 
     // Benannte async-Funktionen statt Closures: Closures, die hier Referenzen
     // einfangen, machen das Future für den Compiler nicht mehr `Send`-beweisbar.
-    let checked: Vec<Option<Task>> =
-        futures::stream::iter(unique.into_iter().map(keep_if_missing)).buffer_unordered(64).collect().await;
+    let checked: Vec<Option<Task>> = if verify {
+        futures::stream::iter(unique.into_iter().map(keep_if_invalid)).buffer_unordered(16).collect().await
+    } else {
+        futures::stream::iter(unique.into_iter().map(keep_if_missing)).buffer_unordered(64).collect().await
+    };
     let missing: Vec<Task> = checked.into_iter().flatten().collect();
 
     let total_files = missing.len() as u64;
@@ -274,6 +289,10 @@ pub async fn fetch_all(
 
     on_progress(snapshot());
     Ok(())
+}
+
+async fn keep_if_invalid(task: Task) -> Option<Task> {
+    if is_valid(&task, true).await { None } else { Some(task) }
 }
 
 async fn keep_if_missing(task: Task) -> Option<Task> {

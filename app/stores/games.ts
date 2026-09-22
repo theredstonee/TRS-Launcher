@@ -1,7 +1,7 @@
 import { isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
-import type { GameEvent, LogLine, StageProgress } from '~/types'
+import type { Diagnosis, GameEvent, LogLine, StageProgress } from '~/types'
 
 export type GamePhase = 'idle' | 'preparing' | 'running'
 
@@ -10,7 +10,7 @@ export interface GameState {
   progress: StageProgress | null
   error: string | null
   logs: LogLine[]
-  lastExit: { exitCode: number | null; crashed: boolean } | null
+  lastExit: { exitCode: number | null; crashed: boolean; diagnosis: Diagnosis | null } | null
 }
 
 // Das Backend hält dieselbe Menge vor; mehr bremst nur das Rendering.
@@ -38,8 +38,8 @@ export const useGamesStore = defineStore('games', () => {
       if (s.logs.length > MAX_LOG_LINES) s.logs.splice(0, s.logs.length - MAX_LOG_LINES)
     } else {
       s.phase = 'idle'
-      s.lastExit = { exitCode: event.exitCode, crashed: event.crashed }
-      if (event.crashed) useToasts().error('Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache.')
+      s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis }
+      if (event.crashed) useToasts().error(event.diagnosis?.message ?? 'Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache.')
       // Spielzeit und "zuletzt gespielt" haben sich geändert.
       useInstancesStore().load()
     }

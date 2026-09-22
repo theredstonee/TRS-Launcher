@@ -77,6 +77,7 @@ const javaPath = ref('')
 const jvmArgs = ref('')
 const customResolution = ref(false)
 const trsClient = ref(true)
+const boost = ref(true)
 const width = ref(1280)
 const height = ref(720)
 const saving = ref(false)
@@ -93,6 +94,7 @@ function resetForm() {
   jvmArgs.value = o.jvmArgs ?? ''
   customResolution.value = o.resolution !== null
   trsClient.value = o.trsClient !== false
+  boost.value = o.boost !== false
   width.value = o.resolution?.width ?? settings.current?.resolution.width ?? 1280
   height.value = o.resolution?.height ?? settings.current?.resolution.height ?? 720
 }
@@ -106,6 +108,7 @@ async function save() {
     jvmArgs: jvmArgs.value.trim() || null,
     resolution: customResolution.value ? { width: width.value, height: height.value } : null,
     trsClient: trsClient.value ? null : false,
+    boost: boost.value ? null : false,
   }
   const parsed = updateInstanceSchema.safeParse({ name: name.value, overrides })
   if (!parsed.success) {
@@ -166,9 +169,7 @@ function openFolder() {
       </header>
 
       <p v-if="game.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ game.error }}</p>
-      <p v-else-if="game.lastExit?.crashed" role="alert" class="card mb-4 border-warn/40 px-4 py-2.5 text-sm text-warn">
-        Das Spiel wurde unerwartet beendet (Exit-Code {{ game.lastExit.exitCode ?? '?' }}). Die letzten Zeilen im Log zeigen meist die Ursache.
-      </p>
+      <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" class="mb-4" />
 
       <div class="mb-3 flex gap-1 border-b border-base-800 text-sm">
         <button class="tab" :class="{ 'tab-on': tab === 'content' }" @click="tab = 'content'">Inhalte</button>
@@ -186,6 +187,19 @@ function openFolder() {
         <section class="card p-5">
           <label class="label" for="i-name">Name</label>
           <input id="i-name" v-model="name" class="field" maxlength="64" />
+        </section>
+
+        <section v-if="instance.loader.kind === 'vanilla'" class="card p-5">
+          <label class="flex items-start gap-2.5 text-sm text-base-200">
+            <input v-model="boost" type="checkbox" class="mt-0.5 accent-redstone-500" />
+            <span>
+              TRS-Optimierung
+              <span class="block text-xs text-base-400">
+                Startet diese Instanz unter der Haube mit Fabric, dem TRS Client und Performance-Mods wie Sodium –
+                deutlich mehr FPS, sonst wie Vanilla. Aus = echtes Vanilla ohne Mods.
+              </span>
+            </span>
+          </label>
         </section>
 
         <section class="card p-5">

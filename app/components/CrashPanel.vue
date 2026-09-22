@@ -1,0 +1,78 @@
+<script setup lang="ts">
+import type { Diagnosis } from '~/types'
+
+const props = defineProps<{ instanceId: string; exitCode: number | null; diagnosis: Diagnosis | null }>()
+
+const toasts = useToasts()
+const repairing = ref<number | null>(null)
+const sharing = ref(false)
+const confirmShare = ref(false)
+const sharedUrl = ref<string | null>(null)
+
+async function repair() {
+  repairing.value = 0
+  try {
+    await backend.repairInstance(props.instanceId, (p) => (repairing.value = Math.floor(overallPercent(p.stage, p.percent))))
+    toasts.ok('Alle Dateien geprüft – beschädigte wurden neu geladen')
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    repairing.value = null
+  }
+}
+
+async function share() {
+  confirmShare.value = false
+  sharing.value = true
+  try {
+    sharedUrl.value = await backend.shareLog(props.instanceId)
+    try {
+      await navigator.clipboard.writeText(sharedUrl.value)
+      toasts.ok('Link kopiert')
+    } catch {
+      // Ohne Zwischenablage bleibt der Link unten sichtbar.
+    }
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    sharing.value = false
+  }
+}
+
+</script>
+
+<template>
+  <section class="card border-warn/40 px-4 py-3" role="alert">
+    <p class="text-sm font-medium text-warn">
+      {{ diagnosis ? 'Das Spiel ist abgestürzt' : `Das Spiel wurde unerwartet beendet (Exit-Code ${exitCode ?? '?'})` }}
+    </p>
+    <p class="mt-0.5 text-sm text-base-200">
+      {{ diagnosis?.message ?? 'Die letzten Zeilen im Log zeigen meist die Ursache. Du kannst den Log auch teilen, um Hilfe zu bekommen.' }}
+    </p>
+
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <button v-if="repairing === null" class="btn btn-primary px-3 py-1.5 text-xs" :class="{ 'btn-ghost': !diagnosis?.canRepair }" @click="repair">
+        Dateien prüfen
+      </button>
+      <div v-else class="flex w-56 items-center gap-2">
+        <RedstoneWire :percent="repairing" :segments="16" class="flex-1" />
+        <span class="display text-xs tabular-nums text-redstone-300">{{ repairing }} %</span>
+      </div>
+      <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="sharing" @click="confirmShare = true">
+        {{ sharing ? 'Lade hoch …' : 'Log teilen' }}
+      </button>
+      <span v-if="sharedUrl" class="font-mono text-xs text-lamp-300 select-text">{{ sharedUrl }}</span>
+    </div>
+
+    <BaseDialog v-if="confirmShare" title="Log öffentlich teilen?" @close="confirmShare = false">
+      <p class="text-sm text-base-200">
+        Der Log wird auf <strong>mclo.gs</strong> hochgeladen und ist über den Link für alle lesbar. Login-Tokens und
+        dein Windows-Benutzername werden vorher entfernt.
+      </p>
+      <template #actions>
+        <button class="btn btn-ghost" @click="confirmShare = false">Abbrechen</button>
+        <button class="btn btn-primary" @click="share">Hochladen</button>
+      </template>
+    </BaseDialog>
+  </section>
+</template>

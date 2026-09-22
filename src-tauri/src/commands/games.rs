@@ -45,3 +45,24 @@ pub fn running_games(launcher: State<'_, LauncherState>) -> Vec<RunningGame> {
 pub fn get_game_logs(launcher: State<'_, LauncherState>, id: String) -> Vec<LogLine> {
     launcher.games().logs(&id)
 }
+
+/// Prüft alle Spieldateien per Prüfsumme und lädt beschädigte neu.
+#[tauri::command]
+pub async fn repair_instance(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    on_progress: Channel<StageProgress>,
+) -> CommandResult<()> {
+    Ok(launcher
+        .repair_instance(&id, &move |progress| {
+            let _ = on_progress.send(progress);
+        })
+        .await?)
+}
+
+/// Lädt den neuesten Log (Tokens und Benutzername geschwärzt) auf mclo.gs hoch
+/// und liefert den Link.
+#[tauri::command]
+pub async fn share_log(launcher: State<'_, LauncherState>, id: String) -> CommandResult<String> {
+    Ok(launcher.share_log(&id).await?)
+}

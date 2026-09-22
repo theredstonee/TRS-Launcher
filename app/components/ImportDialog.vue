@@ -142,10 +142,7 @@ function loaderText(c: ImportCandidate) {
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium">{{ c.name }}</p>
             <p class="truncate text-xs text-base-400">
-              {{ importSourceLabels[c.source] }}
-              <template v-if="!c.versionGuessed">, <span class="font-mono text-base-200">{{ c.gameVersion }}</span> {{ loaderText(c) }}</template>
-              <template v-if="c.modCount">, {{ c.modCount }} Mods</template>
-              <template v-if="c.worldCount">, {{ c.worldCount }} {{ c.worldCount === 1 ? 'Welt' : 'Welten' }}</template>
+              {{ importSourceLabels[c.source] }}<template v-if="!c.versionGuessed">, <span class="font-mono text-base-200">{{ c.gameVersion }}</span> {{ loaderText(c) }}</template><template v-if="c.modCount">, {{ c.modCount }} Mods</template><template v-if="c.worldCount">, {{ c.worldCount }} {{ c.worldCount === 1 ? 'Welt' : 'Welten' }}</template>
             </p>
           </div>
           <span v-if="done.has(c.id)" class="shrink-0 text-xs text-ok">Importiert</span>

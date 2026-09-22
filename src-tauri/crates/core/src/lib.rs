@@ -5,6 +5,7 @@
 //! Spielstart. Die Tauri-App ist nur eine dünne Command-Schicht darüber.
 
 pub mod auth;
+pub mod boost;
 pub mod client_mod;
 pub mod content;
 pub mod download;
@@ -218,13 +219,20 @@ impl Launcher {
         };
         let settings = self.settings().await;
 
+        // Vanilla mit TRS-Optimierung läuft unter der Haube als Fabric.
+        let effective = boost::effective_instance(&self.http, &self.paths, instance).await;
+        if effective.loader.kind != instance.loader.kind {
+            boost::ensure_performance(&self.http, &self.paths, &effective).await?;
+        }
+        let instance = &effective;
+
         let client_mod_dir = self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
         if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance).await {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
 
         let prepared =
-            prepare::prepare(&self.http, &self.paths, &settings, instance, &session.features(), on_progress)
+            prepare::prepare(&self.http, &self.paths, &settings, instance, &session.features(), false, on_progress)
                 .await?;
 
         on_progress(StageProgress::begin(Stage::Starting));
@@ -264,6 +272,35 @@ impl Launcher {
         let pid = self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit)?;
         self.instances.touch_last_played(&instance.id).await?;
         Ok(pid)
+    }
+}
+
+impl Launcher {
+    /// Prüft alle Spieldateien der Instanz per Prüfsumme und lädt beschädigte
+    /// neu (nach einem Absturz wegen kaputter Dateien).
+    pub async fn repair_instance(&self, instance_id: &str, on_progress: &ProgressFn) -> Result<()> {
+        let instance = self.instances.get(instance_id).await?;
+        if self.games.is_running(&instance.id) {
+            return Err(Error::launch("Die Instanz läuft gerade – bitte erst beenden."));
+        }
+        let effective = boost::effective_instance(&self.http, &self.paths, &instance).await;
+        let settings = self.settings().await;
+        let features = meta::version::Features { custom_resolution: true, ..Default::default() };
+        prepare::prepare(&self.http, &self.paths, &settings, &effective, &features, true, on_progress).await?;
+        Ok(())
+    }
+
+    /// Lädt den neuesten Log der Instanz geschwärzt auf mclo.gs hoch.
+    pub async fn share_log(&self, instance_id: &str) -> Result<String> {
+        let instance = self.instances.get(instance_id).await?;
+        let game_dir = self.paths.instance_game_dir(&instance.id);
+        let launcher_logs = self.paths.instance_dir(&instance.id).join("launcher-logs");
+        let file = process::latest_log_file(&game_dir, &launcher_logs)
+            .ok_or_else(|| Error::validation("Es gibt noch keinen Log zum Teilen."))?;
+        let raw = process::read_log_file(&file).await?;
+        // Gespeicherte Tokens zusätzlich wörtlich schwärzen.
+        let secrets = self.accounts.active_session().await.ok().flatten().map(|s| vec![s.access_token]).unwrap_or_default();
+        process::share_log(&self.http, &process::redact(&raw, &secrets)).await
     }
 }
 

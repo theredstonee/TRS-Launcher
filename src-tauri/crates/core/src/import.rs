@@ -18,6 +18,7 @@ pub enum ImportSource {
     Prism,
     MultiMc,
     CurseForge,
+    Modrinth,
     /// Von Hand gewählter Ordner (anderer Client, Backup, …).
     Folder,
 }
@@ -283,6 +284,71 @@ fn curse_instance(dir: &Path) -> Option<ImportCandidate> {
     candidate(ImportSource::CurseForge, &inst.name, &inst.game_version, loader, dir.to_owned())
 }
 
+// --- Modrinth App -----------------------------------------------------------------
+
+fn modrinth_loader(loader: Option<&str>, version: Option<String>) -> Loader {
+    let kind = match loader.unwrap_or("vanilla") {
+        "fabric" => LoaderKind::Fabric,
+        "quilt" => LoaderKind::Quilt,
+        "forge" => LoaderKind::Forge,
+        "neoforge" => LoaderKind::NeoForge,
+        _ => return Loader::vanilla(),
+    };
+    Loader { kind, version }
+}
+
+/// Die Modrinth App führt ihre Instanzen in `app.db` (SQLite); der
+/// Profilordner kann in den App-Einstellungen verlegt sein (`custom_dir`).
+/// Wir öffnen die Datenbank nur lesend.
+fn scan_modrinth(app_dir: &Path) -> Vec<ImportCandidate> {
+    let db_file = app_dir.join("app.db");
+    let Ok(db) = rusqlite::Connection::open_with_flags(
+        &db_file,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    ) else {
+        return Vec::new();
+    };
+    let base = db
+        .query_row("SELECT custom_dir FROM settings", [], |r| r.get::<_, Option<String>>(0))
+        .ok()
+        .flatten()
+        .map(PathBuf::from)
+        .filter(|p| p.is_dir())
+        .unwrap_or_else(|| app_dir.to_owned());
+    let profiles = base.join("profiles");
+
+    // Neues Schema (Instanzen + Content-Sets), sonst das alte `profiles`-Schema.
+    let queries = [
+        "SELECT i.path, i.name, c.game_version, c.loader, c.loader_version FROM instances i \
+         JOIN instance_content_sets c ON c.id = i.applied_content_set_id",
+        "SELECT path, name, game_version, mod_loader, mod_loader_version FROM profiles",
+    ];
+    for sql in queries {
+        let Ok(mut stmt) = db.prepare(sql) else { continue };
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, Option<String>>(3)?,
+                r.get::<_, Option<String>>(4)?,
+            ))
+        });
+        let Ok(rows) = rows else { continue };
+        return rows
+            .flatten()
+            .filter_map(|(path, name, game_version, loader, loader_version)| {
+                // `path` ist ein einzelner Ordnername – nichts, was aus `profiles` herausführt.
+                let safe = !path.is_empty() && !path.contains(['/', '\\', ':']) && path != "." && path != "..";
+                let dir = profiles.join(&path);
+                safe.then_some(())?;
+                candidate(ImportSource::Modrinth, &name, &game_version, modrinth_loader(loader.as_deref(), loader_version), dir)
+            })
+            .collect();
+    }
+    Vec::new()
+}
+
 /// Erkennt, was in einem von Hand gewählten Ordner liegt.
 pub fn scan_folder(dir: &Path, latest_release: Option<&str>) -> Vec<ImportCandidate> {
     if dir.join("launcher_profiles.json").is_file() {
@@ -483,6 +549,7 @@ struct ImportRoots {
     prism: Option<PathBuf>,
     multimc: Option<PathBuf>,
     curseforge: Option<PathBuf>,
+    modrinth: Option<PathBuf>,
 }
 
 impl ImportRoots {
@@ -495,6 +562,9 @@ impl ImportRoots {
             prism: existing(appdata.as_ref().map(|a| a.join("PrismLauncher").join("instances"))),
             multimc: existing(appdata.as_ref().map(|a| a.join("MultiMC").join("instances"))),
             curseforge: existing(home.as_ref().map(|h| h.join("curseforge").join("minecraft").join("Instances"))),
+            modrinth: ["ModrinthApp", "com.modrinth.theseus"]
+                .iter()
+                .find_map(|d| existing(appdata.as_ref().map(|a| a.join(d))).filter(|p| p.join("app.db").is_file())),
         }
     }
 
@@ -511,6 +581,9 @@ impl ImportRoots {
         }
         if let Some(dir) = &self.curseforge {
             out.extend(scan_curseforge(dir));
+        }
+        if let Some(dir) = &self.modrinth {
+            out.extend(scan_modrinth(dir));
         }
         out
     }
@@ -574,6 +647,37 @@ mod tests {
     }
 
     #[test]
+    fn reads_modrinth_app_database() {
+        let dir = tempfile::tempdir().unwrap();
+        let app = dir.path().join("ModrinthApp");
+        let custom = dir.path().join("Modrinth");
+        std::fs::create_dir_all(&app).unwrap();
+        std::fs::create_dir_all(custom.join("profiles/Freizeitpark/mods")).unwrap();
+        std::fs::create_dir_all(custom.join("profiles/Neo")).unwrap();
+        let db = rusqlite::Connection::open(app.join("app.db")).unwrap();
+        db.execute_batch(&format!(
+            "CREATE TABLE settings (id INTEGER, custom_dir TEXT);
+             INSERT INTO settings VALUES (0, '{}');
+             CREATE TABLE instances (id TEXT, path TEXT, applied_content_set_id TEXT, name TEXT);
+             CREATE TABLE instance_content_sets (id TEXT, game_version TEXT, loader TEXT, loader_version TEXT);
+             INSERT INTO instances VALUES ('a', 'Freizeitpark', 'ca', 'Freizeitpark');
+             INSERT INTO instances VALUES ('b', 'Neo', 'cb', 'Create Live');
+             INSERT INTO instances VALUES ('c', '..', 'ca', 'Böse');
+             INSERT INTO instance_content_sets VALUES ('ca', '1.21.1', 'fabric', '0.16.13');
+             INSERT INTO instance_content_sets VALUES ('cb', '1.21.1', 'neoforge', '21.1.180');",
+            custom.display().to_string().replace('\'', "''")
+        ))
+        .unwrap();
+        drop(db);
+
+        let found = scan_modrinth(&app);
+        assert_eq!(found.len(), 2, "{found:#?}");
+        let fp = found.iter().find(|c| c.name == "Freizeitpark").unwrap();
+        assert_eq!((fp.loader.kind, fp.loader.version.as_deref()), (LoaderKind::Fabric, Some("0.16.13")));
+        assert!(found.iter().any(|c| c.loader.kind == LoaderKind::NeoForge));
+    }
+
+    #[test]
     fn exclusions() {
         for name in ["versions", "Libraries", "launcher_profiles.json", "BLClient-Menu-Styles", "badlion_settings.json", "webcache2"] {
             assert!(is_excluded(name), "{name}");
@@ -627,7 +731,7 @@ mod tests {
         )
         .unwrap();
 
-        let roots = ImportRoots { minecraft: Some(mc.clone()), prism: Some(prism), multimc: None, curseforge: Some(curse) };
+        let roots = ImportRoots { minecraft: Some(mc.clone()), prism: Some(prism), multimc: None, curseforge: Some(curse), modrinth: None };
         let found = roots.scan(Some("1.21.4"));
         assert_eq!(found.len(), 4, "{found:#?}");
 

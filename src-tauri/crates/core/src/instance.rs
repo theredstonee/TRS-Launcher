@@ -56,6 +56,8 @@ pub struct InstanceOverrides {
     pub resolution: Option<Resolution>,
     /// TRS Client in dieser Instanz; `None` = an (Standard).
     pub trs_client: Option<bool>,
+    /// TRS-Optimierung (nur Vanilla): Fabric + Performance-Mods; `None` = an.
+    pub boost: Option<bool>,
 }
 
 impl InstanceOverrides {

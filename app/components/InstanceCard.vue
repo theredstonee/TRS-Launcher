@@ -42,7 +42,7 @@ async function openFolder() {
 
     <p v-if="game.error" role="alert" class="mt-2 text-xs text-redstone-300">{{ game.error }}</p>
     <p v-else-if="game.lastExit?.crashed" role="alert" class="mt-2 text-xs text-warn">
-      Das Spiel wurde unerwartet beendet (Code {{ game.lastExit.exitCode ?? '?' }}).
+      {{ game.lastExit.diagnosis?.message ?? `Das Spiel wurde unerwartet beendet (Code ${game.lastExit.exitCode ?? '?'}).` }}
       <NuxtLink :to="`/instances/${instance.id}`" class="underline">Logs ansehen</NuxtLink>
     </p>
 

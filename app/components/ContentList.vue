@@ -135,7 +135,7 @@ async function confirmDelete() {
       <button v-if="pendingUpdates.length" class="btn h-8 bg-lamp-900 py-0 text-xs text-lamp-300 ring-1 ring-lamp-400/40 hover:bg-base-800" :disabled="updatingAll" @click="updateAll">
         {{ updatingAll ? 'Aktualisiere …' : `${pendingUpdates.length} aktualisieren` }}
       </button>
-      <button v-if="!isVanilla" class="btn btn-ghost h-8 py-0 text-xs" :disabled="packBusy" title="Sodium, Lithium & Co. – nur was es für diese Version gibt" @click="installPerformancePack">
+      <button v-if="!isVanilla || instance.overrides.boost !== false" class="btn btn-ghost h-8 py-0 text-xs" :disabled="packBusy" title="Sodium, Lithium & Co. – nur was es für diese Version gibt" @click="installPerformancePack">
         {{ packBusy ? 'Installiere …' : 'Performance-Paket' }}
       </button>
       <NuxtLink :to="{ path: '/browse', query: { instance: instance.id, kind } }" class="btn btn-primary h-8 py-0 text-xs">
@@ -146,8 +146,10 @@ async function confirmDelete() {
 
     <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
 
-    <p v-if="kind === 'mod' && isVanilla" class="card mb-3 border-warn/40 px-4 py-2.5 text-sm text-warn">
-      Das ist eine Vanilla-Instanz – Mods werden hier nicht geladen. Erstelle dafür eine Instanz mit Fabric oder Quilt.
+    <p v-if="kind === 'mod' && isVanilla" class="card mb-3 px-4 py-2.5 text-sm text-base-400">
+      {{ instance.overrides.boost === false
+        ? 'TRS-Optimierung ist aus – diese Instanz startet als echtes Vanilla und lädt keine Mods.'
+        : 'Diese Instanz nutzt die TRS-Optimierung: Sie startet mit Fabric, dem TRS Client und Performance-Mods. Eigene Fabric-Mods funktionieren hier auch.' }}
     </p>
 
     <div v-if="loading && !items.length" class="space-y-1.5">

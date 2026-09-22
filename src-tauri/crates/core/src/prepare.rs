@@ -85,6 +85,7 @@ pub async fn prepare(
     settings: &Settings,
     instance: &Instance,
     features: &Features,
+    verify: bool,
     on_progress: &ProgressFn,
 ) -> Result<Prepared> {
     let concurrency = usize::from(settings.concurrent_downloads);
@@ -132,7 +133,7 @@ pub async fn prepare(
     let uses_installer = matches!(instance.loader.kind, LoaderKind::Forge | LoaderKind::NeoForge);
     if uses_installer {
         on_progress(StageProgress::begin(Stage::Loader));
-        download::fetch_all(http, vec![client_task.clone()], 1, &|p| {
+        download::fetch_all_with(http, vec![client_task.clone()], 1, verify, &|p| {
             on_progress(loader_progress(p.percent() / 100.0 * LOADER_CLIENT_JAR_PERCENT, p.done_files, p.total_files));
         })
         .await?;
@@ -192,7 +193,7 @@ pub async fn prepare(
         _ => None,
     };
 
-    download::fetch_all(http, tasks, concurrency, &|p| {
+    download::fetch_all_with(http, tasks, concurrency, verify, &|p| {
         on_progress(StageProgress::new(Stage::Libraries, p));
     })
     .await?;
@@ -201,7 +202,7 @@ pub async fn prepare(
     extract_natives(paths, &libraries, &natives_dir).await?;
 
     on_progress(StageProgress::begin(Stage::Assets));
-    let game_assets = install_assets(http, paths, &version, instance, concurrency, on_progress).await?;
+    let game_assets = install_assets(http, paths, &version, instance, concurrency, verify, on_progress).await?;
 
     let mut classpath: Vec<PathBuf> =
         libraries.iter().filter(|l| l.on_classpath).map(|l| library_path(paths, l)).collect();
@@ -282,6 +283,7 @@ async fn install_assets(
     version: &VersionInfo,
     instance: &Instance,
     concurrency: usize,
+    verify: bool,
     on_progress: &ProgressFn,
 ) -> Result<PathBuf> {
     let Some(index_ref) = &version.asset_index else {
@@ -324,7 +326,7 @@ async fn install_assets(
             size: Some(o.size),
         })
         .collect();
-    download::fetch_all(http, tasks, concurrency, &|p| {
+    download::fetch_all_with(http, tasks, concurrency, verify, &|p| {
         on_progress(StageProgress::new(Stage::Assets, p));
     })
     .await?;

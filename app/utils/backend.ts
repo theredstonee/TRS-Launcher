@@ -89,6 +89,10 @@ export const backend = {
   stopInstance: (id: string) => call<boolean>('stop_instance', { id }),
   runningGames: () => call<RunningGame[]>('running_games'),
   getGameLogs: (id: string) => call<LogLine[]>('get_game_logs', { id }),
+  repairInstance: (id: string, onProgress: (p: StageProgress) => void) =>
+    call<void>('repair_instance', { id, onProgress: channel(onProgress) }),
+  /** Lädt den Log geschwärzt auf mclo.gs hoch; liefert den Link. */
+  shareLog: (id: string) => call<string>('share_log', { id }),
 
   listAccounts: () => call<Account[]>('list_accounts'),
   loginBrowser: () => call<Account>('login_browser'),

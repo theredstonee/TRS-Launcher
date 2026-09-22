@@ -19,6 +19,8 @@ export interface InstanceOverrides {
   resolution: Resolution | null
   /** TRS Client in dieser Instanz; null = an */
   trsClient: boolean | null
+  /** TRS-Optimierung für Vanilla (Fabric + Performance-Mods); null = an */
+  boost: boolean | null
 }
 
 export interface Instance {
@@ -117,7 +119,20 @@ export interface RunningGame {
 export type GameEvent =
   | { type: 'started'; instanceId: string; pid: number }
   | { type: 'logs'; instanceId: string; lines: LogLine[] }
-  | { type: 'exited'; instanceId: string; exitCode: number | null; crashed: boolean; playSeconds: number }
+  | {
+      type: 'exited'
+      instanceId: string
+      exitCode: number | null
+      crashed: boolean
+      playSeconds: number
+      diagnosis: Diagnosis | null
+    }
+
+export interface Diagnosis {
+  kind: 'corrupt_files' | 'out_of_memory' | 'wrong_java' | 'missing_dependency' | 'mod_conflict' | 'graphics_driver'
+  message: string
+  canRepair: boolean
+}
 
 export type ContentKind = 'mod' | 'resourcepack' | 'shaderpack'
 
@@ -216,7 +231,7 @@ export interface ImageEntry {
   date: string | null
 }
 
-export type ImportSource = 'vanilla' | 'prism' | 'multimc' | 'curseforge' | 'folder'
+export type ImportSource = 'vanilla' | 'prism' | 'multimc' | 'curseforge' | 'modrinth' | 'folder'
 
 export interface ImportCandidate {
   id: string

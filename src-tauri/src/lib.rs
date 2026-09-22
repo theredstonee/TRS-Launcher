@@ -75,6 +75,8 @@ pub fn run() {
             commands::games::stop_instance,
             commands::games::running_games,
             commands::games::get_game_logs,
+            commands::games::repair_instance,
+            commands::games::share_log,
             commands::accounts::list_accounts,
             commands::accounts::login_browser,
             commands::accounts::login_device_code,

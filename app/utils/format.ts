@@ -96,5 +96,6 @@ export const importSourceLabels: Record<ImportSource, string> = {
   prism: 'Prism Launcher',
   multimc: 'MultiMC',
   curseforge: 'CurseForge',
+  modrinth: 'Modrinth App',
   folder: 'Eigener Ordner',
 }
