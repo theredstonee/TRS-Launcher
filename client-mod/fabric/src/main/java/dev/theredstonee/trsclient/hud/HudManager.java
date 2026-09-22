@@ -6,7 +6,7 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.menu.HudItem;
 import dev.theredstonee.trsclient.ui.GfxCanvas;
-import dev.theredstonee.trsclient.screen.HudEditorScreen;
+import dev.theredstonee.trsclient.screen.TrsUiScreen;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -94,7 +94,7 @@ public final class HudManager {
 
 	/** HUD-Callback (jeden Frame). */
 	public void render(Gfx g) {
-		if (Mc.hudHidden() || Mc.screen() instanceof HudEditorScreen) return;
+		if (Mc.hudHidden() || Mc.screen() instanceof TrsUiScreen) return;
 		// Bis 1.21.5 wird das Vanilla-Fadenkreuz per Mixin ausgeblendet und das eigene hier gezeichnet;
 		// ab 1.21.6 ersetzt TRS die Fabric-HUD-Ebene des Fadenkreuzes direkt (siehe TrsClient).
 		//? if <1.21.6

@@ -33,6 +33,12 @@ public interface Canvas {
 
 	void noScissor();
 
+	/**
+	 * Hebt die Zeichenebene um {@code z} nach vorn (zwischen {@link #push()} und {@link #pop()}).
+	 * Minecraft zeichnet GUI-Text mit eigener Tiefe; ohne das Anheben lägen Fenster dahinter.
+	 */
+	void raise(float z);
+
 	void push();
 
 	void translate(float x, float y);

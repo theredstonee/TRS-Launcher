@@ -68,6 +68,11 @@ public final class BrandCanvas implements Canvas {
 	}
 
 	@Override
+	public void raise(float z) {
+		GL11.glTranslatef(0f, 0f, z);
+	}
+
+	@Override
 	public void push() {
 		GL11.glPushMatrix();
 	}

@@ -28,7 +28,7 @@ public class HudModule extends Module {
 		this.textColor = add(new ColorSetting("textColor", "Textfarbe", 0xFFFFFF));
 		this.textShadow = add(new BoolSetting("shadow", "Textschatten", true));
 		this.background = add(new BoolSetting("background", "Hintergrund", true));
-		this.backgroundOpacity = add(new NumberSetting("backgroundOpacity", "Hintergrund-Deckkraft", 56, 0, 100, 1, "", "%"));
+		this.backgroundOpacity = add(new NumberSetting("backgroundOpacity", "Deckkraft", 56, 0, 100, 1, "", "%"));
 		this.scale = add(new NumberSetting("scale", "Größe", 1.0, 0.5, 2.0, 0.05, "×"));
 	}
 

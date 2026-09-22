@@ -96,20 +96,23 @@ public final class HudEditor extends UiScreen {
 			});
 		}
 
-		// Text der Vorschauen jetzt zeichnen – sonst läge er über der Leiste und dem Feld.
+		// Leiste und Feld liegen über den Vorschauen (Text hat in Minecraft eine eigene Tiefe).
 		c.flush();
+		c.push();
+		c.raise(300f);
 		topBar(c, width, mouseX, mouseY);
 		panelIn = Anim.approach(panelIn, selected != null ? 1f : 0f, dt, 0.07f);
 		if (panelIn > 0.02f) sidePanel(c, width, height, mouseX, mouseY);
+		c.pop();
 	}
 
 	private void topBar(Canvas c, int width, int mx, int my) {
 		Theme t = Theme.get();
-		int h = 22;
-		Paint.roundRect(c, 0, -6, width, h + 6, 6, ColorMath.withAlpha(t.background, 235));
+		int h = 19;
+		Paint.roundRect(c, 0, -6, width, h + 6, 6, ColorMath.withAlpha(t.background, 215));
 		c.fill(0, h, width, h + 1, t.border);
-		c.fill(8, 5, 10, 17, t.accent);
-		c.text("HUD bearbeiten", 15, 7, t.text, false);
+		c.fill(8, 4, 10, 15, t.accent);
+		c.text("HUD bearbeiten", 15, 6, t.text, false);
 
 		// Profilwechsel
 		final HudProfiles profiles = host.modules().profiles;
@@ -117,10 +120,10 @@ public final class HudEditor extends UiScreen {
 		int pw = Math.min(140, c.textWidth(label) + 16);
 		int px = 15 + c.textWidth("HUD bearbeiten") + 10;
 		boolean pHover = inside(mx, my, px, 4, pw, 14);
-		Paint.roundRect(c, px, 4, pw, 14, 3, pHover ? t.surfaceHover : t.surfaceHigh);
-		Paint.roundOutline(c, px, 4, pw, 14, 3, t.border);
-		Paint.textCentered(c, c.clip(label, pw - 6), px + pw / 2, 8, t.text, false);
-		hits.add(px, 4, pw, 14, new Runnable() {
+		Paint.roundRect(c, px, 3, pw, 14, 3, pHover ? t.surfaceHover : t.surfaceHigh);
+		Paint.roundOutline(c, px, 3, pw, 14, 3, t.border);
+		Paint.textCentered(c, c.clip(label, pw - 6), px + pw / 2, 7, t.text, false);
+		hits.add(px, 3, pw, 14, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -131,9 +134,9 @@ public final class HudEditor extends UiScreen {
 
 		int doneW = 54;
 		int doneX = width - doneW - 8;
-		boolean doneHover = inside(mx, my, doneX, 4, doneW, 14);
-		Paint.button(c, doneX, 4, doneW, 14, "Fertig", true, doneHover);
-		hits.add(doneX, 4, doneW, 14, new Runnable() {
+		boolean doneHover = inside(mx, my, doneX, 3, doneW, 14);
+		Paint.button(c, doneX, 3, doneW, 14, "Fertig", true, doneHover);
+		hits.add(doneX, 3, doneW, 14, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -142,9 +145,9 @@ public final class HudEditor extends UiScreen {
 		});
 		int menuW = 56;
 		int menuX = doneX - menuW - 5;
-		boolean menuHover = inside(mx, my, menuX, 4, menuW, 14);
-		Paint.button(c, menuX, 4, menuW, 14, "Menü", false, menuHover);
-		hits.add(menuX, 4, menuW, 14, new Runnable() {
+		boolean menuHover = inside(mx, my, menuX, 3, menuW, 14);
+		Paint.button(c, menuX, 3, menuW, 14, "Menü", false, menuHover);
+		hits.add(menuX, 3, menuW, 14, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -153,7 +156,7 @@ public final class HudEditor extends UiScreen {
 			}
 		});
 
-		Paint.textRight(c, c.clip(HINT, Math.max(0, menuX - px - pw - 12)), menuX - 8, 7, t.textDim, false);
+		Paint.textRight(c, c.clip(HINT, Math.max(0, menuX - px - pw - 12)), menuX - 8, 6, t.textDim, false);
 	}
 
 	private void sidePanel(Canvas c, int width, int height, int mx, int my) {

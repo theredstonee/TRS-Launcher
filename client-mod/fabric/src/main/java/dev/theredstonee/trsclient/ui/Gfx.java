@@ -305,6 +305,20 @@ public final class Gfx {
 		/*GlStateManager.pushMatrix();*/
 	}
 
+	/** Hebt die Zeichenebene nach vorn (Tiefe der GUI); ab 1.21.6 zeichnet Minecraft in Reihenfolge. */
+	public void raise(float z) {
+		//? if >=1.21.6 {
+		/*// Ab 1.21.6 gibt es keine Tiefe mehr – die Reihenfolge entscheidet.
+		*///?} elif >=1.20 {
+		g.pose().translate(0, 0, z);
+		//?} elif >=1.16 {
+		/*pose.translate(0, 0, z);
+		*///?} elif >=1.15 {
+		/*RenderSystem.translatef(0, 0, z);
+		*///?} else
+		/*GlStateManager.translatef(0, 0, z);*/
+	}
+
 	public void translate(float x, float y) {
 		//? if >=1.21.6 {
 		/*g.pose().translate(x, y);

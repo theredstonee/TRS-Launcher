@@ -73,6 +73,11 @@ public final class GfxCanvas implements Canvas {
 	}
 
 	@Override
+	public void raise(float z) {
+		g.raise(z);
+	}
+
+	@Override
 	public void push() {
 		g.push();
 	}

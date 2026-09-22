@@ -7,7 +7,7 @@ import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.FadeCanvas;
 import dev.theredstonee.trsclient.core.ui.menu.HudItem;
 import dev.theredstonee.trsclient.ui.GfxCanvas;
-import dev.theredstonee.trsclient.screen.HudEditorScreen;
+import dev.theredstonee.trsclient.screen.TrsUiScreen;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -93,7 +93,7 @@ public final class HudManager {
 
 	/** Aus RenderGameOverlayEvent.Post (ALL), jeden Frame. */
 	public void render(Gfx g) {
-		if (Mc.hudHidden() || Mc.screen() instanceof HudEditorScreen) return;
+		if (Mc.hudHidden() || Mc.screen() instanceof TrsUiScreen) return;
 		// Das Vanilla-Fadenkreuz wird über RenderGameOverlayEvent.Pre (CROSSHAIRS) abgebrochen, das eigene hier gezeichnet.
 		if (crosshair.replacesVanilla()) crosshair.drawInGame(g);
 		FontRenderer font = Mc.font();

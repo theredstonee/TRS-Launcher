@@ -102,6 +102,9 @@ public final class ModMenu extends UiScreen {
 		int px = (width - pw) / 2;
 		int py = (height - ph) / 2 + Math.round((1 - Anim.easeOut(open)) * 14);
 
+		// Das Fenster liegt über allem, was vorher gezeichnet wurde (HUD-Text hat eigene Tiefe).
+		c.push();
+		c.raise(300f);
 		Paint.shadow(c, px, py, pw, ph, 6, alpha());
 		Paint.roundRect(c, px, py, pw, ph, 6, t.background);
 		Paint.roundOutline(c, px, py, pw, ph, 6, t.border);
@@ -128,6 +131,7 @@ public final class ModMenu extends UiScreen {
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
 				break;
 		}
+		c.pop();
 	}
 
 	private void header(Canvas c, int px, int py, int pw, int mx, int my) {
@@ -245,8 +249,8 @@ public final class ModMenu extends UiScreen {
 			if (all.get(i).isEnabled()) active++;
 		}
 		int footerY = y + h - 18;
-		Paint.textClipped(c, active + "/" + total + " Module an", x, footerY, w, t.textDim, false);
-		Paint.textClipped(c, host.menuKeyLabel() + " schließt", x, footerY + 9, w, t.textDim, false);
+		Paint.textClipped(c, active + "/" + total + " an", x, footerY, w, t.textDim, false);
+		Paint.textClipped(c, host.menuKeyLabel(), x, footerY + 9, w, t.textDim, false);
 	}
 
 	private void railItem(Canvas c, int x, int y, int w, int h, String icon, String label, boolean active,
@@ -550,7 +554,7 @@ public final class ModMenu extends UiScreen {
 		if (profileError != null) {
 			Paint.textClipped(c, profileError, x + 2, y + h - 10, w - 4, t.accent, false);
 		} else {
-			Paint.textClipped(c, "Ein Profil speichert Lage, Größe und Aussehen aller HUD-Module.",
+			Paint.textClipped(c, "Profile speichern Lage und Aussehen aller HUD-Module.",
 					x + 2, y + h - 10, w - 4, t.textDim, false);
 		}
 	}

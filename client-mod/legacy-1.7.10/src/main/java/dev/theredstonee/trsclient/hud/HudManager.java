@@ -4,7 +4,7 @@ import dev.theredstonee.trsclient.core.hud.HudLayout;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.menu.HudItem;
-import dev.theredstonee.trsclient.screen.HudEditorScreen;
+import dev.theredstonee.trsclient.screen.TrsUiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import org.lwjgl.opengl.GL11;
@@ -97,7 +97,7 @@ public final class HudManager {
 
 	/** Aus RenderGameOverlayEvent.Post (jeden Frame), Größe in GUI-Pixeln. */
 	public void render(int sw, int sh) {
-		if (mc.gameSettings.hideGUI || mc.currentScreen instanceof HudEditorScreen) return;
+		if (mc.gameSettings.hideGUI || mc.currentScreen instanceof TrsUiScreen) return;
 		FontRenderer font = mc.fontRenderer;
 		for (int i = 0, n = elements.size(); i < n; i++) {
 			HudElement e = elements.get(i);

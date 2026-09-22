@@ -239,6 +239,10 @@ class UiLogicTest {
 		}
 
 		@Override
+		public void raise(float z) {
+		}
+
+		@Override
 		public void push() {
 		}
 

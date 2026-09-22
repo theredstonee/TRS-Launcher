@@ -79,6 +79,11 @@ public final class FadeCanvas implements Canvas {
 	}
 
 	@Override
+	public void raise(float z) {
+		delegate.raise(z);
+	}
+
+	@Override
 	public void push() {
 		delegate.push();
 	}
