@@ -60,6 +60,20 @@ pub async fn repair_instance(
         .await?)
 }
 
+/// Lädt Spielversion und Bibliotheken der Instanz komplett neu.
+#[tauri::command]
+pub async fn reinstall_instance(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    on_progress: Channel<StageProgress>,
+) -> CommandResult<()> {
+    Ok(launcher
+        .reinstall_instance(&id, &move |progress| {
+            let _ = on_progress.send(progress);
+        })
+        .await?)
+}
+
 /// Lädt den neuesten Log (Tokens und Benutzername geschwärzt) auf mclo.gs hoch
 /// und liefert den Link.
 #[tauri::command]

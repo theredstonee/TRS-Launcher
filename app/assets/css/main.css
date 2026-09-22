@@ -52,6 +52,72 @@
   }
 }
 
+/*
+ * Themes: überschreiben nur die Deepslate-Skala. „Dunkel“ ist der Standard
+ * oben; OLED geht auf echtes Schwarz, Hell dreht die Skala um.
+ */
+:root[data-theme="oled"] {
+  --color-base-950: #000000;
+  --color-base-900: #060608;
+  --color-base-850: #0c0c10;
+  --color-base-800: #15151b;
+  --color-base-700: #24242e;
+  --color-base-600: #3c3c4c;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-base-950: #eeeef3;
+  --color-base-900: #ffffff;
+  --color-base-850: #f6f6fa;
+  --color-base-800: #e6e6ee;
+  --color-base-700: #d4d4df;
+  --color-base-600: #a9a9bb;
+  --color-base-400: #5f5f75;
+  --color-base-200: #30303c;
+  --color-base-50: #101015;
+  --color-redstone-300: #c81e14;
+  --color-lamp-300: #9a5a00;
+  --color-lamp-900: #fdf0d8;
+  --color-redstone-900: #fde4e1;
+}
+
+/* Akzentfarben: ersetzen die Redstone-Skala (Aktionen, aktive Punkte). */
+:root[data-accent="lamp"] {
+  --color-redstone-300: #ffd48a;
+  --color-redstone-400: #ffb84d;
+  --color-redstone-500: #e0900c;
+  --color-redstone-600: #b06e00;
+  --color-redstone-900: #3d2a0c;
+}
+:root[data-accent="emerald"] {
+  --color-redstone-300: #86efac;
+  --color-redstone-400: #4ade80;
+  --color-redstone-500: #17a34a;
+  --color-redstone-600: #15803d;
+  --color-redstone-900: #0c2a17;
+}
+:root[data-accent="lapis"] {
+  --color-redstone-300: #9dbaff;
+  --color-redstone-400: #6b95ff;
+  --color-redstone-500: #3563e9;
+  --color-redstone-600: #2447b8;
+  --color-redstone-900: #0f1c42;
+}
+:root[data-accent="amethyst"] {
+  --color-redstone-300: #dcbcff;
+  --color-redstone-400: #c38cfb;
+  --color-redstone-500: #9b4ddf;
+  --color-redstone-600: #7a2fc0;
+  --color-redstone-900: #2b1442;
+}
+
+/* „Erweitertes Rendering“ aus: keine Unschärfe-Effekte. */
+:root.no-blur *,
+:root.no-blur *::before,
+:root.no-blur *::after {
+  backdrop-filter: none !important;
+}
+
 html,
 body,
 #__nuxt {

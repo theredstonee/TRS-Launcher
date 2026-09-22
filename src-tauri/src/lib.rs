@@ -90,6 +90,7 @@ pub fn run() {
             commands::instances::loader_versions,
             commands::instances::latest_loader_version,
             commands::content::bulk_content,
+            commands::games::reinstall_instance,
             commands::app::app_info,
             commands::app::open_data_dir,
             commands::app::firewall_status,

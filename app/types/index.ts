@@ -21,7 +21,113 @@ export interface InstanceOverrides {
   trsClient: boolean | null
   /** TRS-Optimierung für Vanilla (Fabric + Performance-Mods); null = an */
   boost: boolean | null
+  /** Welche Modrinth-Versionen Updates nehmen; null = stabil */
+  updateChannel: UpdateChannel | null
+  /** Vollbild beim Start; null = global */
+  fullscreen: boolean | null
+  /** Eigene Start-Hooks; null = globale */
+  hooks: LaunchHooks | null
+  /** Eigene Umgebungsvariablen; null = globale */
+  env: EnvVar[] | null
+  /** Diese Dinge bleiben in dieser Instanz separat. */
+  syncSeparate: SyncItem[]
 }
+
+export type UpdateChannel = 'release' | 'beta' | 'alpha'
+
+export interface EnvVar {
+  key: string
+  value: string
+}
+
+export interface LaunchHooks {
+  preLaunch: string | null
+  wrapper: string | null
+  postExit: string | null
+}
+
+export type SyncItem = 'options' | 'servers' | 'resourcePacks' | 'commandHistory' | 'hotbar'
+
+export interface SyncSettings {
+  options: boolean
+  servers: boolean
+  resourcePacks: boolean
+  commandHistory: boolean
+  hotbar: boolean
+}
+
+export type Theme = 'dark' | 'oled' | 'light' | 'system'
+export type Accent = 'redstone' | 'lamp' | 'emerald' | 'lapis' | 'amethyst'
+
+export interface UiSettings {
+  theme: Theme
+  accent: Accent
+  advancedRendering: boolean
+  worldsTab: boolean
+  screenshotsTab: boolean
+  historyTab: boolean
+  sidebarRecent: boolean
+  sidebarAccount: boolean
+  hideRightSidebar: boolean
+  compactLibrary: boolean
+  showPlayTime: boolean
+  language: 'de'
+}
+
+export interface JavaPaths {
+  java8: string | null
+  java17: string | null
+  java21: string | null
+  java25: string | null
+}
+
+export interface JavaInstall {
+  path: string
+  major: number
+  version: string
+  managed: boolean
+}
+
+export interface JavaCheck {
+  major: number | null
+  version: string | null
+}
+
+export interface StorageStats {
+  instances: number
+  libraries: number
+  assets: number
+  versions: number
+  java: number
+  shared: number
+  unused: number
+  unusedVersions: number
+}
+
+export interface VerifyReport {
+  checked: number
+  removed: number
+}
+
+export interface LoaderVersionInfo {
+  version: string
+  stable: boolean
+}
+
+export interface UploadResult {
+  fileName: string
+  kind: ContentKind | null
+  error: string | null
+}
+
+export type BulkAction = 'enable' | 'disable' | 'delete'
+
+export interface BulkResult {
+  changed: number
+  failed: number
+}
+
+export type DropEvent = { type: 'enter' } | { type: 'leave' } | { type: 'drop'; token: number; names: string[] }
 
 export interface Instance {
   id: string
@@ -36,6 +142,8 @@ export interface Instance {
   icon?: string | null
   /** Freigegebener Pfad fürs Webview (convertFileSrc) */
   iconPath?: string | null
+  /** Eigene Gruppe in der Bibliothek */
+  group?: string | null
 }
 
 export interface NewInstance {
@@ -55,6 +163,13 @@ export interface Settings {
   showSnapshots: boolean
   preferDedicatedGpu: boolean
   autoFirewall: boolean
+  fullscreen: boolean
+  hooks: LaunchHooks
+  env: EnvVar[]
+  sync: SyncSettings
+  ui: UiSettings
+  allowLogUpload: boolean
+  java: JavaPaths
 }
 
 export type VersionType = 'release' | 'snapshot' | 'old_beta' | 'old_alpha'
@@ -75,6 +190,7 @@ export interface VersionManifest {
 export interface AppInfo {
   version: string
   dataDir: string
+  os: string
 }
 
 export interface CommandError {
@@ -132,6 +248,7 @@ export type GameEvent =
       playSeconds: number
       diagnosis: Diagnosis | null
     }
+  | { type: 'notice'; instanceId: string; message: string }
 
 export interface Diagnosis {
   kind: 'corrupt_files' | 'out_of_memory' | 'wrong_java' | 'missing_dependency' | 'mod_conflict' | 'graphics_driver'
@@ -306,6 +423,11 @@ export type HistoryKind =
   | 'version_switched'
   | 'repaired'
   | 'icon_changed'
+  | 'files_added'
+  | 'content_bulk'
+  | 'hooks_changed'
+  | 'group_changed'
+  | 'renamed'
 
 export interface HistoryEntry {
   at: string

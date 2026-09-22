@@ -372,7 +372,7 @@ impl Launcher {
 
         let exit_plan = ExitPlan::new(&self.paths, instance, &settings, Some(prepared.java.clone()));
         if let Some(pre) = &exit_plan.hooks.pre_launch {
-            hooks::run(HookKind::PreLaunch, pre, &exit_plan.context, &exit_plan.hooks.env_pairs(), hooks::HOOK_TIMEOUT).await?;
+            hooks::run(HookKind::PreLaunch, pre, &exit_plan.context, &exit_plan.env, hooks::HOOK_TIMEOUT).await?;
         }
         // Gemeinsame options.txt & Co. holen. Scheitert das, startet das Spiel
         // mit den eigenen Dateien – dann wird auch nichts zurückkopiert.
@@ -412,7 +412,7 @@ impl Launcher {
         if settings.prefer_dedicated_gpu {
             process::prefer_dedicated_gpu(&command.program);
         }
-        command.env = exit_plan.hooks.env_pairs();
+        command.env = exit_plan.env.clone();
         if let Some(wrapper) = &exit_plan.hooks.wrapper {
             hooks::apply_wrapper(&mut command, wrapper);
         }
@@ -473,6 +473,25 @@ impl Launcher {
             || !self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_empty()
     }
 
+    /// Wie [`Self::repair_instance`], lädt aber auch die Spielversion komplett
+    /// neu und prüft die TRS-Optimierung beim nächsten Start neu.
+    pub async fn reinstall_instance(&self, instance_id: &str, on_progress: &ProgressFn) -> Result<()> {
+        let instance = self.instances.get(instance_id).await?;
+        if self.anything_active() {
+            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+        }
+        let _ = tokio::fs::remove_file(self.paths.instance_dir(&instance.id).join("trs-boost.json")).await;
+        if meta::is_safe_id(&instance.game_version) {
+            let dir = self.paths.version_dir(&instance.game_version);
+            if dir.is_dir()
+                && let Err(e) = tokio::fs::remove_dir_all(&dir).await
+            {
+                tracing::warn!("Versionsordner konnte nicht gelöscht werden: {e}");
+            }
+        }
+        self.repair_instance(&instance.id, on_progress).await
+    }
+
     pub async fn storage_stats(&self) -> Result<storage::StorageStats> {
         storage::stats(&self.paths, self.instances.list().await?).await
     }
@@ -514,6 +533,7 @@ struct ExitPlan {
     context: HookContext,
     sync_dirs: sync::SyncDirs,
     sync_items: Vec<sync::SyncItem>,
+    env: Vec<(String, String)>,
 }
 
 impl ExitPlan {
@@ -522,6 +542,7 @@ impl ExitPlan {
         let game_dir = paths.instance_game_dir(&instance.id);
         Self {
             hooks: instance.overrides.hooks.clone().unwrap_or_else(|| settings.hooks.clone()),
+            env: hooks::env_pairs(instance.overrides.env.as_deref().unwrap_or(&settings.env)),
             context: HookContext {
                 instance_id: instance.id.clone(),
                 instance_name: instance.name.clone(),
@@ -545,7 +566,7 @@ impl ExitPlan {
             });
         }
         if let Some(post) = &self.hooks.post_exit
-            && let Err(e) = hooks::run(HookKind::PostExit, post, &self.context, &self.hooks.env_pairs(), hooks::HOOK_TIMEOUT).await
+            && let Err(e) = hooks::run(HookKind::PostExit, post, &self.context, &self.env, hooks::HOOK_TIMEOUT).await
         {
             sink(GameEvent::Notice { instance_id: id, message: e.public_message() });
         }

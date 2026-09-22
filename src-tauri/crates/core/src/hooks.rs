@@ -32,8 +32,6 @@ pub struct LaunchHooks {
     pub wrapper: Option<String>,
     /// Läuft nach dem Beenden des Spiels.
     pub post_exit: Option<String>,
-    /// Zusätzliche Umgebungsvariablen für Spiel und Hooks.
-    pub env: Vec<EnvVar>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -64,9 +62,6 @@ impl LaunchHooks {
         self.pre_launch = clean(self.pre_launch);
         self.wrapper = clean(self.wrapper);
         self.post_exit = clean(self.post_exit);
-        for var in &mut self.env {
-            var.key = var.key.trim().to_owned();
-        }
         self
     }
 
@@ -80,30 +75,42 @@ impl LaunchHooks {
                 validate_command(label, c)?;
             }
         }
-        if self.env.len() > MAX_ENV_VARS {
-            return Err(Error::validation(format!("Höchstens {MAX_ENV_VARS} Umgebungsvariablen")));
-        }
-        let mut seen = std::collections::HashSet::new();
-        for var in &self.env {
-            validate_env_key(&var.key)?;
-            if var.value.len() > MAX_ENV_VALUE_LEN || var.value.chars().any(char::is_control) {
-                return Err(Error::validation(format!("Der Wert von {} ist ungültig oder zu lang", var.key)));
-            }
-            // Windows unterscheidet bei Umgebungsvariablen nicht nach Groß/klein.
-            if !seen.insert(var.key.to_ascii_uppercase()) {
-                return Err(Error::validation(format!("Die Variable {} ist doppelt", var.key)));
-            }
-        }
         Ok(())
     }
 
     pub fn is_empty(&self) -> bool {
-        self.pre_launch.is_none() && self.wrapper.is_none() && self.post_exit.is_none() && self.env.is_empty()
+        self.pre_launch.is_none() && self.wrapper.is_none() && self.post_exit.is_none()
     }
+}
 
-    pub fn env_pairs(&self) -> Vec<(String, String)> {
-        self.env.iter().map(|v| (v.key.clone(), v.value.clone())).collect()
+/// Schlüssel trimmen, leere Zeilen (ohne Schlüssel und Wert) entfernen.
+pub fn normalize_env(env: Vec<EnvVar>) -> Vec<EnvVar> {
+    env.into_iter()
+        .map(|v| EnvVar { key: v.key.trim().to_owned(), value: v.value })
+        .filter(|v| !(v.key.is_empty() && v.value.is_empty()))
+        .collect()
+}
+
+pub fn validate_env(env: &[EnvVar]) -> Result<()> {
+    if env.len() > MAX_ENV_VARS {
+        return Err(Error::validation(format!("Höchstens {MAX_ENV_VARS} Umgebungsvariablen")));
     }
+    let mut seen = std::collections::HashSet::new();
+    for var in env {
+        validate_env_key(&var.key)?;
+        if var.value.len() > MAX_ENV_VALUE_LEN || var.value.chars().any(char::is_control) {
+            return Err(Error::validation(format!("Der Wert von {} ist ungültig oder zu lang", var.key)));
+        }
+        // Windows unterscheidet bei Umgebungsvariablen nicht nach Groß/klein.
+        if !seen.insert(var.key.to_ascii_uppercase()) {
+            return Err(Error::validation(format!("Die Variable {} ist doppelt", var.key)));
+        }
+    }
+    Ok(())
+}
+
+pub fn env_pairs(env: &[EnvVar]) -> Vec<(String, String)> {
+    env.iter().map(|v| (v.key.clone(), v.value.clone())).collect()
 }
 
 fn validate_command(label: &str, command: &str) -> Result<()> {
@@ -239,9 +246,9 @@ mod tests {
             pre_launch: Some("echo hallo & exit 0".into()),
             wrapper: Some(r#""C:\Program Files\x\wrap.exe" --flag"#.into()),
             post_exit: None,
-            env: vec![EnvVar { key: "_JAVA_OPTIONS".into(), value: "-Dx=1".into() }],
         };
         ok.validate().unwrap();
+        validate_env(&[EnvVar { key: "_JAVA_OPTIONS".into(), value: "-Dx=1".into() }]).unwrap();
 
         let bad_cmd = LaunchHooks { pre_launch: Some("echo a\r\ndel x".into()), ..Default::default() };
         assert!(bad_cmd.validate().is_err());
@@ -251,18 +258,16 @@ mod tests {
         for key in ["", "1ABC", "A B", "A=B", "Ä", &"K".repeat(65)] {
             assert!(validate_env_key(key).is_err(), "{key:?}");
         }
-        let dup = LaunchHooks {
-            env: vec![EnvVar { key: "path".into(), value: "a".into() }, EnvVar { key: "PATH".into(), value: "b".into() }],
-            ..Default::default()
-        };
-        assert!(dup.validate().is_err());
-        let bad_value = LaunchHooks { env: vec![EnvVar { key: "A".into(), value: "x\ny".into() }], ..Default::default() };
-        assert!(bad_value.validate().is_err());
-        let too_many = LaunchHooks {
-            env: (0..=MAX_ENV_VARS).map(|i| EnvVar { key: format!("K{i}"), value: String::new() }).collect(),
-            ..Default::default()
-        };
-        assert!(too_many.validate().is_err());
+        let dup = [EnvVar { key: "path".into(), value: "a".into() }, EnvVar { key: "PATH".into(), value: "b".into() }];
+        assert!(validate_env(&dup).is_err());
+        assert!(validate_env(&[EnvVar { key: "A".into(), value: "x\ny".into() }]).is_err());
+        let too_many: Vec<EnvVar> = (0..=MAX_ENV_VARS).map(|i| EnvVar { key: format!("K{i}"), value: String::new() }).collect();
+        assert!(validate_env(&too_many).is_err());
+        let cleaned = normalize_env(vec![
+            EnvVar { key: " A ".into(), value: "1".into() },
+            EnvVar { key: String::new(), value: String::new() },
+        ]);
+        assert_eq!(cleaned, [EnvVar { key: "A".into(), value: "1".into() }]);
     }
 
     #[test]

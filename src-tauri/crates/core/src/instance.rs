@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::sync::Mutex;
 
-use crate::hooks::LaunchHooks;
+use crate::hooks::{self, EnvVar, LaunchHooks};
 use crate::paths::Paths;
 use crate::settings::{self, Resolution};
 use crate::sync::SyncItem;
@@ -68,6 +68,8 @@ pub struct InstanceOverrides {
     pub fullscreen: Option<bool>,
     /// Eigene Start-Hooks; `None` = globale Hooks.
     pub hooks: Option<LaunchHooks>,
+    /// Eigene Umgebungsvariablen; `None` = globale.
+    pub env: Option<Vec<EnvVar>>,
     /// Diese Dinge werden in dieser Instanz nicht synchronisiert.
     pub sync_separate: Vec<SyncItem>,
 }
@@ -105,6 +107,7 @@ impl InstanceOverrides {
     /// Leere Hook-Befehle → `None`, doppelte Sync-Einträge raus.
     pub fn normalized(mut self) -> Self {
         self.hooks = self.hooks.map(LaunchHooks::normalized);
+        self.env = self.env.map(hooks::normalize_env);
         let mut seen = Vec::new();
         self.sync_separate.retain(|i| {
             let new = !seen.contains(i);
@@ -117,6 +120,9 @@ impl InstanceOverrides {
     pub fn validate(&self) -> Result<()> {
         if let Some(hooks) = &self.hooks {
             hooks.validate()?;
+        }
+        if let Some(env) = &self.env {
+            hooks::validate_env(env)?;
         }
         if self.sync_separate.len() > SyncItem::ALL.len() {
             return Err(Error::validation("Ungültige Synchronisierungs-Einstellungen"));

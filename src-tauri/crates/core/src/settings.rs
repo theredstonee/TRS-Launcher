@@ -2,7 +2,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::hooks::LaunchHooks;
+use crate::hooks::{self, EnvVar, LaunchHooks};
 use crate::sync::SyncSettings;
 use crate::{Error, Result, fsutil};
 
@@ -46,6 +46,8 @@ pub struct Settings {
     pub fullscreen: bool,
     /// Globale Start-Hooks; Instanzen können eigene setzen.
     pub hooks: LaunchHooks,
+    /// Zusätzliche Umgebungsvariablen für Spiel und Hooks.
+    pub env: Vec<EnvVar>,
     /// Was zwischen den Instanzen synchronisiert wird.
     pub sync: SyncSettings,
     /// Darstellung, sichtbare Bereiche und Verhalten der Oberfläche.
@@ -180,6 +182,7 @@ impl Default for Settings {
             auto_firewall: true,
             fullscreen: false,
             hooks: LaunchHooks::default(),
+            env: Vec::new(),
             sync: SyncSettings::default(),
             ui: UiSettings::default(),
             allow_log_upload: true,
@@ -221,6 +224,7 @@ impl Settings {
     /// Normalisiert Eingaben (leere Hook-Befehle werden zu `None`).
     pub fn normalized(mut self) -> Self {
         self.hooks = self.hooks.normalized();
+        self.env = hooks::normalize_env(self.env);
         self
     }
 
@@ -234,12 +238,16 @@ impl Settings {
         if self.java.validate().is_err() {
             self.java = JavaPaths::default();
         }
+        if hooks::validate_env(&self.env).is_err() {
+            self.env = Vec::new();
+        }
         self
     }
 
     pub fn validate(&self) -> Result<()> {
         validate_memory(self.max_memory_mb)?;
         self.hooks.validate()?;
+        hooks::validate_env(&self.env)?;
         self.java.validate()?;
         if self.min_memory_mb < 128 || self.min_memory_mb > self.max_memory_mb {
             return Err(Error::validation(
