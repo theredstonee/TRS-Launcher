@@ -2,6 +2,7 @@
 import type { Settings } from '~/types'
 
 const store = useSettingsStore()
+const onboarding = useOnboardingStore()
 
 const form = ref<Settings | null>(null)
 const dataDir = ref<string | null>(null)
@@ -124,5 +125,11 @@ async function save() {
         <button type="button" class="btn btn-ghost shrink-0" @click="openDataDir">Öffnen</button>
       </section>
     </form>
+
+    <div class="mt-6 text-center">
+      <button type="button" class="text-xs text-base-400 underline-offset-2 hover:text-base-50 hover:underline" @click="onboarding.restart()">
+        Einrichtung erneut starten
+      </button>
+    </div>
   </div>
 </template>
