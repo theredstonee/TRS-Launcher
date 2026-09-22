@@ -1,10 +1,11 @@
 //! TRS Client: unser eigener In-Game-Mod (HUD, Zoom, Fullbright, Menü).
-//! Der Launcher bringt die Jars mit und legt sie beim Start automatisch in
-//! jede passende Instanz – inklusive Fabric API, die der Mod braucht.
+//! Der Launcher bringt die Jars samt `builds.json` mit und legt beim Start
+//! automatisch den passenden Build in jede Instanz – inklusive benötigter
+//! Abhängigkeiten wie Fabric API.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::content::{self, ContentKind};
 use crate::download;
@@ -15,59 +16,94 @@ use crate::{Error, Result, modrinth};
 /// So heißt die Datei im Mods-Ordner – fester Name, damit Updates sie ersetzen.
 const INSTALLED_NAME: &str = "trsclient.jar";
 const FABRIC_API_PROJECT: &str = "P7dR8mSH";
+const MANIFEST: &str = "builds.json";
 
-/// Welche Builds es gibt: (Minecraft-Version, Dateiname im Ressourcen-Ordner).
-const BUILDS: &[(&str, &str)] = &[("1.21.1", "trsclient-fabric-1.21.1.jar")];
+/// Ein Eintrag aus `builds.json` (erzeugt vom Gradle-Task `collectLauncherJars`).
+#[derive(Debug, Clone, Deserialize)]
+pub struct Build {
+    /// `fabric`, `forge`, `neoforge`
+    pub loader: String,
+    /// Alle exakten Spielversionen, die dieser Jar unterstützt.
+    pub minecraft: Vec<String>,
+    pub file: String,
+    #[serde(default)]
+    pub requires: Vec<String>,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Availability {
-    /// Wird beim Start installiert.
     Available,
-    /// Für diese Version/diesen Loader gibt es (noch) keinen Build.
     Unsupported,
-    /// In den Instanz-Einstellungen abgeschaltet.
     Disabled,
 }
 
-fn build_for(instance: &Instance) -> Option<&'static str> {
-    // Quilt lädt Fabric-Mods.
-    if !matches!(instance.loader.kind, LoaderKind::Fabric | LoaderKind::Quilt) {
-        return None;
-    }
-    BUILDS.iter().find(|(v, _)| *v == instance.game_version).map(|(_, jar)| *jar)
+/// Liest `builds.json` aus dem Ressourcen-Ordner; kaputt oder fehlend = leer.
+pub fn load_builds(dir: &Path) -> Vec<Build> {
+    std::fs::read(dir.join(MANIFEST))
+        .ok()
+        .and_then(|b| serde_json::from_slice::<Vec<Build>>(&b).ok())
+        .unwrap_or_default()
+        .into_iter()
+        // Dateinamen stammen aus unserer eigenen Datei – trotzdem nur einfache Namen zulassen.
+        .filter(|b| content::validate_file_name(ContentKind::Mod, &b.file).is_ok())
+        .collect()
 }
 
-pub fn availability(instance: &Instance) -> Availability {
+fn loader_matches(build: &str, kind: LoaderKind) -> bool {
+    match build {
+        // Quilt lädt Fabric-Mods.
+        "fabric" => matches!(kind, LoaderKind::Fabric | LoaderKind::Quilt),
+        "forge" => kind == LoaderKind::Forge,
+        "neoforge" => kind == LoaderKind::NeoForge,
+        _ => false,
+    }
+}
+
+pub fn build_for<'a>(builds: &'a [Build], kind: LoaderKind, game_version: &str) -> Option<&'a Build> {
+    builds.iter().find(|b| loader_matches(&b.loader, kind) && b.minecraft.iter().any(|v| v == game_version))
+}
+
+/// Für welchen Loader es einen TRS-Client-Build für diese Version gibt
+/// (bevorzugt Fabric) – für die TRS-Optimierung von Vanilla-Instanzen.
+pub fn boost_loader(builds: &[Build], game_version: &str) -> Option<LoaderKind> {
+    [LoaderKind::Fabric, LoaderKind::Forge, LoaderKind::NeoForge]
+        .into_iter()
+        .find(|&k| build_for(builds, k, game_version).is_some())
+}
+
+pub fn availability(builds: &[Build], instance: &Instance) -> Availability {
     if instance.overrides.trs_client == Some(false) {
         Availability::Disabled
-    } else if build_for(instance).is_some() {
+    } else if build_for(builds, instance.loader.kind, &instance.game_version).is_some() {
         Availability::Available
     } else {
         Availability::Unsupported
     }
 }
 
-/// Sorgt vor dem Start dafür, dass der TRS Client (und Fabric API) in der
-/// Instanz liegt – bzw. entfernt ihn, wenn er abgeschaltet wurde.
+/// Sorgt vor dem Start dafür, dass der TRS Client (und seine Abhängigkeiten)
+/// in der Instanz liegt – bzw. entfernt ihn, wenn er abgeschaltet wurde oder
+/// für die Version keinen Build mehr hat.
 pub async fn sync(http: &reqwest::Client, paths: &Paths, bundled_dir: Option<&Path>, instance: &Instance) -> Result<()> {
+    let Some(dir) = bundled_dir else { return Ok(()) };
+    let builds = load_builds(dir);
     let mods = content::content_dir(paths, &instance.id, ContentKind::Mod);
     let target = mods.join(INSTALLED_NAME);
     let disabled_copy = mods.join(format!("{INSTALLED_NAME}.disabled"));
 
-    let (Some(jar), Some(dir)) = (build_for(instance), bundled_dir) else {
-        return Ok(());
-    };
-    if instance.overrides.trs_client == Some(false) {
+    let build = build_for(&builds, instance.loader.kind, &instance.game_version);
+    let Some(build) = build.filter(|_| instance.overrides.trs_client != Some(false)) else {
+        // Abgeschaltet oder nicht passend (z. B. nach Versionswechsel): alte Kopie weg.
         for file in [&target, &disabled_copy] {
             if file.is_file() {
                 tokio::fs::remove_file(file).await.map_err(|e| Error::io(file, e))?;
             }
         }
         return Ok(());
-    }
+    };
 
-    let source = dir.join(jar);
+    let source = dir.join(&build.file);
     if !source.is_file() {
         tracing::warn!("TRS Client fehlt im Launcher-Paket: {}", source.display());
         return Ok(());
@@ -77,14 +113,16 @@ pub async fn sync(http: &reqwest::Client, paths: &Paths, bundled_dir: Option<&Pa
         tokio::fs::create_dir_all(&mods).await.map_err(|e| Error::io(&mods, e))?;
         tokio::fs::copy(&source, &target).await.map_err(|e| Error::io(&target, e))?;
         let _ = tokio::fs::remove_file(&disabled_copy).await;
-        tracing::info!("TRS Client in '{}' installiert", instance.id);
+        tracing::info!("TRS Client ({}) in '{}' installiert", build.file, instance.id);
     }
 
-    ensure_fabric_api(http, paths, instance).await;
+    if build.requires.iter().any(|r| r == "fabric-api") {
+        ensure_fabric_api(http, paths, instance).await;
+    }
     Ok(())
 }
 
-async fn same_file(a: &PathBuf, b: &PathBuf) -> bool {
+async fn same_file(a: &Path, b: &Path) -> bool {
     let (Ok(ma), Ok(mb)) = (tokio::fs::metadata(a).await, tokio::fs::metadata(b).await) else { return false };
     if ma.len() != mb.len() {
         return false;
@@ -141,13 +179,31 @@ mod tests {
         }
     }
 
+    const MANIFEST_JSON: &str = r#"[
+        {"loader":"fabric","minecraft":["1.21","1.21.1"],"file":"trsclient-fabric-1.21.jar","requires":["fabric-api"]},
+        {"loader":"forge","minecraft":["1.8.9"],"file":"trsclient-forge-1.8.9.jar","requires":[]},
+        {"loader":"fabric","minecraft":["1.20.1"],"file":"../boese.jar"}
+    ]"#;
+
+    fn bundled(dir: &Path) -> Vec<Build> {
+        std::fs::write(dir.join(MANIFEST), MANIFEST_JSON).unwrap();
+        load_builds(dir)
+    }
+
     #[test]
-    fn availability_rules() {
-        assert_eq!(availability(&instance("1.21.1", LoaderKind::Fabric, None)), Availability::Available);
-        assert_eq!(availability(&instance("1.21.1", LoaderKind::Quilt, None)), Availability::Available);
-        assert_eq!(availability(&instance("1.21.1", LoaderKind::Vanilla, None)), Availability::Unsupported);
-        assert_eq!(availability(&instance("1.20.1", LoaderKind::Fabric, None)), Availability::Unsupported);
-        assert_eq!(availability(&instance("1.21.1", LoaderKind::Fabric, Some(false))), Availability::Disabled);
+    fn manifest_matching() {
+        let dir = tempfile::tempdir().unwrap();
+        let builds = bundled(dir.path());
+        assert_eq!(builds.len(), 2, "unsichere Dateinamen werden verworfen");
+        assert_eq!(availability(&builds, &instance("1.21", LoaderKind::Fabric, None)), Availability::Available);
+        assert_eq!(availability(&builds, &instance("1.21.1", LoaderKind::Quilt, None)), Availability::Available);
+        assert_eq!(availability(&builds, &instance("1.8.9", LoaderKind::Forge, None)), Availability::Available);
+        assert_eq!(availability(&builds, &instance("1.8.9", LoaderKind::Fabric, None)), Availability::Unsupported);
+        assert_eq!(availability(&builds, &instance("1.21.1", LoaderKind::Fabric, Some(false))), Availability::Disabled);
+        assert_eq!(boost_loader(&builds, "1.21.1"), Some(LoaderKind::Fabric));
+        assert_eq!(boost_loader(&builds, "1.8.9"), Some(LoaderKind::Forge));
+        assert_eq!(boost_loader(&builds, "1.5.2"), None);
+        assert!(load_builds(&dir.path().join("fehlt")).is_empty());
     }
 
     #[tokio::test]
@@ -155,29 +211,31 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let paths = Paths::new(dir.path().join("root"));
         paths.ensure().await.unwrap();
-        let bundled = dir.path().join("bundled");
-        tokio::fs::create_dir_all(&bundled).await.unwrap();
-        tokio::fs::write(bundled.join("trsclient-fabric-1.21.1.jar"), b"v1").await.unwrap();
+        let res = dir.path().join("bundled");
+        tokio::fs::create_dir_all(&res).await.unwrap();
+        bundled(&res);
+        tokio::fs::write(res.join("trsclient-fabric-1.21.jar"), b"v1").await.unwrap();
 
         // Offline-Client: die Fabric-API-Nachinstallation schlägt fehl, darf aber nichts blockieren.
         let http = reqwest::Client::builder().proxy(reqwest::Proxy::all("http://127.0.0.1:9").unwrap()).build().unwrap();
         let mods = content::content_dir(&paths, "test", ContentKind::Mod);
 
         let on = instance("1.21.1", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&bundled), &on).await.unwrap();
+        sync(&http, &paths, Some(&res), &on).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v1");
 
-        tokio::fs::write(bundled.join("trsclient-fabric-1.21.1.jar"), b"v2").await.unwrap();
-        sync(&http, &paths, Some(&bundled), &on).await.unwrap();
+        tokio::fs::write(res.join("trsclient-fabric-1.21.jar"), b"v2").await.unwrap();
+        sync(&http, &paths, Some(&res), &on).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v2");
 
-        let off = instance("1.21.1", LoaderKind::Fabric, Some(false));
-        sync(&http, &paths, Some(&bundled), &off).await.unwrap();
+        // Versionswechsel auf eine Version ohne Build: alte Kopie verschwindet.
+        let other = instance("1.20.4", LoaderKind::Fabric, None);
+        sync(&http, &paths, Some(&res), &other).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
 
-        // Nicht unterstützte Version: nichts anfassen.
-        let other = instance("1.20.1", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&bundled), &other).await.unwrap();
+        sync(&http, &paths, Some(&res), &on).await.unwrap();
+        let off = instance("1.21.1", LoaderKind::Fabric, Some(false));
+        sync(&http, &paths, Some(&res), &off).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
     }
 }

@@ -4,6 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::client_mod::{self, Build};
 use crate::instance::{Instance, Loader, LoaderKind};
 use crate::paths::Paths;
 use crate::{Result, fsutil, loaders, modrinth};
@@ -26,15 +27,20 @@ pub fn wants_boost(instance: &Instance) -> bool {
 
 /// Liefert die Instanz so, wie sie gestartet werden soll: bei aktiver
 /// Optimierung mit Fabric statt Vanilla. Gibt es für die Version kein Fabric
-/// (vor 1.14) oder ist offline nichts im Cache, bleibt es bei Vanilla.
-pub async fn effective_instance(http: &reqwest::Client, paths: &Paths, instance: &Instance) -> Instance {
+/// (vor 1.14), aber einen TRS-Client-Build für Forge (z. B. 1.8.9), dann mit
+/// Forge. Sonst – oder offline ohne Cache – bleibt es bei Vanilla.
+pub async fn effective_instance(http: &reqwest::Client, paths: &Paths, builds: &[Build], instance: &Instance) -> Instance {
     if !wants_boost(instance) {
         return instance.clone();
     }
-    if !loaders::supports(http, paths, LoaderKind::Fabric, &instance.game_version).await {
-        return instance.clone();
+    let as_loader = |kind| Instance { loader: Loader { kind, version: None }, ..instance.clone() };
+    if loaders::supports(http, paths, LoaderKind::Fabric, &instance.game_version).await {
+        return as_loader(LoaderKind::Fabric);
     }
-    Instance { loader: Loader { kind: LoaderKind::Fabric, version: None }, ..instance.clone() }
+    match client_mod::boost_loader(builds, &instance.game_version) {
+        Some(kind @ (LoaderKind::Forge | LoaderKind::NeoForge)) => as_loader(kind),
+        _ => instance.clone(),
+    }
 }
 
 /// Einmal pro Version bzw. Paket-Revision die Performance-Mods ergänzen.

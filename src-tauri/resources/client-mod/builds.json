@@ -1,0 +1,14 @@
+[
+  {
+    "loader": "fabric",
+    "minecraft": ["1.21.1"],
+    "file": "trsclient-fabric-1.21.1.jar",
+    "requires": ["fabric-api"]
+  },
+  {
+    "loader": "forge",
+    "minecraft": ["1.8.9"],
+    "file": "trsclient-forge-1.8.9.jar",
+    "requires": []
+  }
+]

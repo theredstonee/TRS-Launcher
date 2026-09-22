@@ -38,7 +38,7 @@ use tokio::sync::RwLock;
 
 use auth::AccountStore;
 pub use error::{Error, Result};
-use instance::{Instance, InstanceStore, NewInstance};
+use instance::{Instance, InstanceStore, LoaderKind, NewInstance};
 use launch::{EventSink, GameManager, Session};
 use paths::Paths;
 use servers::ServerStore;
@@ -220,13 +220,15 @@ impl Launcher {
         let settings = self.settings().await;
 
         // Vanilla mit TRS-Optimierung läuft unter der Haube als Fabric.
-        let effective = boost::effective_instance(&self.http, &self.paths, instance).await;
-        if effective.loader.kind != instance.loader.kind {
+        let client_mod_dir = self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let builds = client_mod_dir.as_deref().map(client_mod::load_builds).unwrap_or_default();
+        let effective = boost::effective_instance(&self.http, &self.paths, &builds, instance).await;
+        // Performance-Mods gibt es nur für Fabric; Forge-Boost (1.8.9) bekommt nur den TRS Client.
+        if effective.loader.kind == LoaderKind::Fabric && instance.loader.kind != LoaderKind::Fabric {
             boost::ensure_performance(&self.http, &self.paths, &effective).await?;
         }
         let instance = &effective;
 
-        let client_mod_dir = self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
         if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance).await {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
@@ -283,7 +285,9 @@ impl Launcher {
         if self.games.is_running(&instance.id) {
             return Err(Error::launch("Die Instanz läuft gerade – bitte erst beenden."));
         }
-        let effective = boost::effective_instance(&self.http, &self.paths, &instance).await;
+        let client_mod_dir = self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let builds = client_mod_dir.as_deref().map(client_mod::load_builds).unwrap_or_default();
+        let effective = boost::effective_instance(&self.http, &self.paths, &builds, &instance).await;
         let settings = self.settings().await;
         let features = meta::version::Features { custom_resolution: true, ..Default::default() };
         prepare::prepare(&self.http, &self.paths, &settings, &effective, &features, true, on_progress).await?;
