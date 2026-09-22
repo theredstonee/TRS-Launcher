@@ -91,6 +91,9 @@ pub struct Instance {
     pub total_play_seconds: u64,
     #[serde(default)]
     pub overrides: InstanceOverrides,
+    /// Dateiname des Instanz-Bilds im Instanz-Ordner (siehe [`crate::icon`]).
+    #[serde(default)]
+    pub icon: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -174,10 +177,38 @@ impl InstanceStore {
             last_played: None,
             total_play_seconds: 0,
             overrides: InstanceOverrides::default(),
+            icon: None,
         };
 
         fsutil::ensure_dir(&self.paths.instance_game_dir(&id)).await?;
         fsutil::write_json(&self.paths.instance_file(&id), &instance).await?;
+        Ok(instance)
+    }
+
+    /// Setzt den Dateinamen des Instanz-Bilds (Datei legt [`crate::icon`] an).
+    pub async fn set_icon(&self, id: &str, icon: Option<String>) -> Result<Instance> {
+        if icon.as_deref().is_some_and(|n| !crate::icon::is_icon_file_name(n)) {
+            return Err(Error::validation("Ungültiger Bildname"));
+        }
+        let _guard = self.write_lock.lock().await;
+        let mut instance = self.get(id).await?;
+        instance.icon = icon;
+        fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
+        Ok(instance)
+    }
+
+    /// Wechselt Minecraft-Version und/oder Modloader. Prüfen, ob die Version
+    /// existiert und die Instanz nicht läuft, muss der Aufrufer.
+    pub async fn set_version(&self, id: &str, game_version: &str, loader: Loader) -> Result<Instance> {
+        if !is_safe_version_string(game_version) {
+            return Err(Error::validation("Minecraft-Version enthält ungültige Zeichen"));
+        }
+        loader.validate()?;
+        let _guard = self.write_lock.lock().await;
+        let mut instance = self.get(id).await?;
+        instance.game_version = game_version.to_owned();
+        instance.loader = loader;
+        fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
         Ok(instance)
     }
 

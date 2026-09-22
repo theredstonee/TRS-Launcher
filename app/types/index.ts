@@ -32,6 +32,10 @@ export interface Instance {
   lastPlayed: string | null
   totalPlaySeconds: number
   overrides: InstanceOverrides
+  /** Dateiname des Instanz-Bilds */
+  icon?: string | null
+  /** Freigegebener Pfad fürs Webview (convertFileSrc) */
+  iconPath?: string | null
 }
 
 export interface NewInstance {
@@ -144,7 +148,11 @@ export interface ContentItem {
   title: string | null
   version: string | null
   description: string | null
-  source: { projectId: string; versionId: string } | null
+  source: { projectId: string; versionId: string; versionNumber?: string } | null
+  author: string | null
+  /** Modrinth-CDN-URL oder Data-URL aus der Datei */
+  iconUrl: string | null
+  slug: string | null
 }
 
 export type ProjectKind = ContentKind | 'modpack'
@@ -185,6 +193,9 @@ export interface ModrinthVersion {
   loaders: string[]
   fileName: string
   size: number
+  /** Markdown – nur über renderMarkdown anzeigen */
+  changelog: string | null
+  dependencies: DependencyInfo[]
 }
 
 export interface ContentUpdate {
@@ -248,4 +259,94 @@ export interface ImportProgress {
   percent: number
   doneFiles: number
   totalFiles: number
+}
+
+export type HistoryKind =
+  | 'created'
+  | 'imported'
+  | 'launched'
+  | 'stopped'
+  | 'crashed'
+  | 'mod_installed'
+  | 'mod_updated'
+  | 'mod_removed'
+  | 'mod_enabled'
+  | 'mod_disabled'
+  | 'version_switched'
+  | 'repaired'
+  | 'icon_changed'
+
+export interface HistoryEntry {
+  at: string
+  kind: HistoryKind
+  subject?: string
+  from?: string
+  to?: string
+  detail?: string
+  seconds?: number
+}
+
+export interface DependencyInfo {
+  projectId: string | null
+  versionId: string | null
+  dependencyType: string
+}
+
+export interface ProjectCard {
+  projectId: string
+  slug: string
+  projectType: string
+  title: string
+  description: string
+  author: string | null
+  iconUrl: string | null
+  downloads: number
+}
+
+export interface GalleryImage {
+  url: string
+  title: string | null
+  description: string | null
+  featured: boolean
+}
+
+export interface ProjectLink {
+  kind: 'source' | 'issues' | 'wiki' | 'discord' | 'modrinth'
+  url: string
+}
+
+export interface ProjectDetails {
+  projectId: string
+  slug: string
+  projectType: string
+  title: string
+  description: string
+  /** Markdown – nur über `renderMarkdown` anzeigen. */
+  body: string
+  author: string | null
+  iconUrl: string | null
+  downloads: number
+  followers: number
+  categories: string[]
+  loaders: string[]
+  gameVersions: string[]
+  gallery: GalleryImage[]
+  updated: string | null
+  published: string | null
+  license: string | null
+  clientSide: string
+  serverSide: string
+  links: ProjectLink[]
+}
+
+export interface MigrationItem {
+  kind: ContentKind
+  fileName: string
+  title: string
+  iconUrl: string | null
+  projectId: string
+  currentVersion: string | null
+  status: 'compatible' | 'update' | 'missing'
+  targetVersionId: string | null
+  targetVersionNumber: string | null
 }

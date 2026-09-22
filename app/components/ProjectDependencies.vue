@@ -1,0 +1,85 @@
+<script setup lang="ts">
+import type { ModrinthVersion, ProjectCard } from '~/types'
+
+// Abhängigkeiten der gewählten Version (neueste passende bzw. neueste).
+const props = defineProps<{ version: ModrinthVersion | null; instanceId: string | null }>()
+
+const cards = ref<Record<string, ProjectCard>>({})
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+const groups = computed(() => {
+  const deps = (props.version?.dependencies ?? []).filter((d) => d.projectId)
+  const order: [string, string][] = [
+    ['required', 'Benötigt'],
+    ['optional', 'Optional'],
+    ['incompatible', 'Nicht kompatibel'],
+    ['embedded', 'Eingebaut'],
+  ]
+  return order
+    .map(([type, label]) => ({ type, label, ids: deps.filter((d) => d.dependencyType === type).map((d) => d.projectId!) }))
+    .filter((g) => g.ids.length)
+})
+
+watch(
+  () => props.version?.id,
+  async () => {
+    const ids = [...new Set(groups.value.flatMap((g) => g.ids))].filter((id) => !cards.value[id])
+    if (!ids.length) return
+    loading.value = true
+    error.value = null
+    try {
+      const list = await backend.modrinthProjects(ids)
+      cards.value = { ...cards.value, ...Object.fromEntries(list.map((c) => [c.projectId, c])) }
+    } catch (e) {
+      error.value = errorMessage(e)
+    } finally {
+      loading.value = false
+    }
+  },
+  { immediate: true },
+)
+
+const tone: Record<string, string> = {
+  required: 'bg-redstone-900 text-redstone-300',
+  optional: 'bg-base-800 text-base-200',
+  incompatible: 'bg-lamp-900 text-lamp-300',
+  embedded: 'bg-base-800 text-base-400',
+}
+</script>
+
+<template>
+  <div>
+    <p v-if="!version" class="card px-4 py-10 text-center text-sm text-base-400">Keine Version zum Anzeigen.</p>
+    <p v-else-if="!groups.length" class="card px-4 py-10 text-center text-sm text-base-400">
+      Version {{ version.versionNumber }} braucht keine weiteren Projekte.
+    </p>
+    <template v-else>
+      <p class="mb-3 text-xs text-base-400">
+        Für Version <span class="font-mono text-base-200">{{ version.versionNumber }}</span>. Benötigte Abhängigkeiten installiert der
+        Launcher automatisch mit.
+      </p>
+      <p v-if="error" role="alert" class="mb-3 text-sm text-redstone-300">{{ error }}</p>
+      <section v-for="g in groups" :key="g.type" class="mb-5">
+        <h3 class="mb-2 text-xs font-medium text-base-400">{{ g.label }}</h3>
+        <ul class="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-2">
+          <li v-for="id in g.ids" :key="id">
+            <div v-if="loading && !cards[id]" class="skeleton h-16" />
+            <NuxtLink
+              v-else
+              :to="{ path: `/project/${id}`, query: instanceId ? { instance: instanceId } : {} }"
+              class="card card-hover flex items-center gap-3 p-2.5"
+            >
+              <ModIcon :src="cards[id]?.iconUrl" :name="cards[id]?.title ?? id" :size="40" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium">{{ cards[id]?.title ?? id }}</p>
+                <p class="truncate text-xs text-base-400">{{ cards[id]?.description ?? '' }}</p>
+              </div>
+              <span class="badge" :class="tone[g.type]">{{ g.label }}</span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </section>
+    </template>
+  </div>
+</template>

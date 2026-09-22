@@ -1,4 +1,4 @@
-import type { ContentKind, ImportSource, LaunchStage, LoaderKind } from '~/types'
+import type { Instance, ContentKind, ImportSource, LaunchStage, LoaderKind } from '~/types'
 
 export const loaderLabels: Record<LoaderKind, string> = {
   vanilla: 'Vanilla',
@@ -98,4 +98,10 @@ export const importSourceLabels: Record<ImportSource, string> = {
   curseforge: 'CurseForge',
   modrinth: 'Modrinth App',
   folder: 'Eigener Ordner',
+}
+
+/** Vanilla mit TRS-Optimierung läuft als Fabric – Suche und Filter richten sich danach. */
+export function effectiveLoader(instance: Instance | null | undefined): LoaderKind | null {
+  if (!instance) return null
+  return instance.loader.kind === "vanilla" && instance.overrides.boost !== false ? "fabric" : instance.loader.kind
 }

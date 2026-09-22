@@ -1,16 +1,28 @@
 <script setup lang="ts">
 import type { ContentKind, Instance, ModrinthVersion } from '~/types'
 
-const props = defineProps<{ instance: Instance; projectId: string; title: string; kind: ContentKind }>()
+// Wählt eine zur Instanz passende Version – zum Installieren oder, mit
+// `currentVersionId`, zum Wechseln (auch auf ältere Versionen).
+const props = defineProps<{
+  instance: Instance
+  projectId: string
+  title: string
+  kind: ContentKind
+  currentVersionId?: string | null
+}>()
 const emit = defineEmits<{ close: []; pick: [version: ModrinthVersion] }>()
 
 const versions = ref<ModrinthVersion[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showPrerelease = ref(false)
+const open = ref<string | null>(null)
 
+const currentIndex = computed(() => versions.value.findIndex((v) => v.id === props.currentVersionId))
 const visible = computed(() =>
-  showPrerelease.value ? versions.value : versions.value.filter((v) => v.versionType === 'release'),
+  showPrerelease.value
+    ? versions.value
+    : versions.value.filter((v) => v.versionType === 'release' || v.id === props.currentVersionId),
 )
 
 onMounted(async () => {
@@ -25,11 +37,14 @@ onMounted(async () => {
   }
 })
 
-const typeLabels: Record<string, string> = { release: 'Stabil', beta: 'Beta', alpha: 'Alpha' }
+function relation(v: ModrinthVersion): string | null {
+  if (!props.currentVersionId || currentIndex.value < 0 || v.id === props.currentVersionId) return null
+  return versions.value.indexOf(v) < currentIndex.value ? 'Neuer' : 'Älter'
+}
 </script>
 
 <template>
-  <BaseDialog :title="`Version wählen – ${title}`" @close="emit('close')">
+  <BaseDialog :title="currentVersionId ? `Version wechseln – ${title}` : `Version wählen – ${title}`" wide @close="emit('close')">
     <div class="mb-3 flex items-center justify-between text-xs text-base-400">
       <span>Passend zu {{ instance.gameVersion }} ({{ loaderLabels[instance.loader.kind] }})</span>
       <label class="flex items-center gap-1.5">
@@ -39,31 +54,52 @@ const typeLabels: Record<string, string> = { release: 'Stabil', beta: 'Beta', al
     </div>
 
     <div v-if="loading" class="space-y-2">
-      <div v-for="i in 4" :key="i" class="skeleton h-12" />
+      <div v-for="i in 4" :key="i" class="skeleton h-14" />
     </div>
     <p v-else-if="error" role="alert" class="text-sm text-redstone-300">{{ error }}</p>
     <p v-else-if="!visible.length" class="py-6 text-center text-sm text-base-400">Keine passende Version gefunden.</p>
 
-    <ul v-else class="-mr-2 max-h-80 space-y-1.5 overflow-y-auto pr-2">
-      <li v-for="(v, i) in visible" :key="v.id">
-        <button class="flex w-full items-center gap-3 rounded-md border border-base-700 bg-base-900 px-3 py-2 text-left transition-colors hover:border-redstone-500" @click="emit('pick', v)">
+    <ul v-else class="-mr-2 max-h-[26rem] space-y-1.5 overflow-y-auto pr-2">
+      <li v-for="(v, i) in visible" :key="v.id" class="overflow-hidden rounded-lg border bg-base-900" :class="v.id === currentVersionId ? 'border-redstone-600/60' : 'border-base-700'">
+        <div class="flex items-center gap-2 px-2 py-2">
+          <button
+            class="flex size-7 shrink-0 items-center justify-center rounded-md text-base-400 hover:bg-base-800 hover:text-base-50 disabled:opacity-30"
+            :disabled="!v.changelog"
+            :aria-expanded="open === v.id"
+            :aria-label="open === v.id ? 'Changelog zuklappen' : 'Changelog zeigen'"
+            @click="open = open === v.id ? null : v.id"
+          >
+            <svg viewBox="0 0 24 24" class="size-4 transition-transform" :class="{ 'rotate-90': open === v.id }" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 6 6 6-6 6" /></svg>
+          </button>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium">
-              {{ v.versionNumber }}
-              <span v-if="i === 0" class="ml-1.5 rounded bg-redstone-900 px-1.5 py-0.5 text-[10px] text-redstone-300">Neueste</span>
+            <p class="flex items-center gap-1.5 truncate text-sm font-medium">
+              <span class="truncate">{{ v.versionNumber }}</span>
+              <span v-if="v.id === currentVersionId" class="badge bg-redstone-900 text-redstone-300">Installiert</span>
+              <span v-else-if="i === 0" class="badge bg-base-800 text-base-200">Neueste</span>
+              <span v-if="relation(v)" class="badge bg-base-850 text-base-400">{{ relation(v) }}</span>
             </p>
-            <p class="truncate text-xs text-base-400">{{ formatDate(v.datePublished) }}</p>
+            <p class="truncate text-xs text-base-400">
+              <span :class="v.versionType === 'release' ? 'text-ok' : 'text-lamp-400'">{{ versionTypeLabels[v.versionType] ?? v.versionType }}</span>
+              · {{ formatDate(v.datePublished) }} · {{ formatFileSize(v.size) }}
+            </p>
           </div>
-          <span class="shrink-0 text-xs" :class="v.versionType === 'release' ? 'text-ok' : 'text-lamp-400'">
-            {{ typeLabels[v.versionType] ?? v.versionType }}
-          </span>
-          <span class="w-14 shrink-0 text-right font-mono text-xs text-base-600">{{ formatFileSize(v.size) }}</span>
-        </button>
+          <button
+            v-if="v.id !== currentVersionId"
+            class="btn shrink-0 px-3 py-1.5 text-xs"
+            :class="currentVersionId ? 'btn-ghost' : 'btn-primary'"
+            @click="emit('pick', v)"
+          >
+            {{ !currentVersionId ? 'Installieren' : relation(v) === 'Älter' ? 'Zurückstufen' : relation(v) === 'Neuer' ? 'Aktualisieren' : 'Wechseln' }}
+          </button>
+        </div>
+        <div v-if="open === v.id && v.changelog" class="border-t border-base-800 bg-base-950/40 px-4 py-3">
+          <MarkdownView :source="v.changelog" />
+        </div>
       </li>
     </ul>
 
     <template #actions>
-      <button class="btn btn-ghost" @click="emit('close')">Abbrechen</button>
+      <button class="btn btn-ghost" @click="emit('close')">Schließen</button>
     </template>
   </BaseDialog>
 </template>

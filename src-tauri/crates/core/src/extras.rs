@@ -145,11 +145,16 @@ impl Launcher {
         let from = self.paths().instance_dir(&source.id);
         let to = self.paths().instance_dir(&copy.id);
         let copy_id = copy.id.clone();
+        let icon = source.icon.clone().filter(|n| crate::icon::is_icon_file_name(n));
+        let icon_file = icon.clone();
         let result = tokio::task::spawn_blocking(move || -> std::io::Result<()> {
             copy_dir(&from.join("minecraft"), &to.join("minecraft"))?;
             let index = from.join("content.json");
             if index.is_file() {
                 std::fs::copy(index, to.join("content.json"))?;
+            }
+            if let Some(name) = icon_file.filter(|n| from.join(n).is_file()) {
+                std::fs::copy(from.join(&name), to.join(&name))?;
             }
             Ok(())
         })
@@ -166,7 +171,19 @@ impl Launcher {
             .instances()
             .update(&copy.id, crate::instance::UpdateInstance { name: copy.name.clone(), overrides: source.overrides })
             .await?;
+        let updated = match icon {
+            Some(name) if self.paths().instance_dir(&updated.id).join(&name).is_file() => {
+                self.instances().set_icon(&updated.id, Some(name)).await?
+            }
+            _ => updated,
+        };
         fsutil::ensure_dir(&self.paths().instance_game_dir(&updated.id)).await?;
+        crate::history::record(
+            self.paths(),
+            &updated.id,
+            crate::history::HistoryEntry::new(crate::history::HistoryKind::Created).subject(&source.name).detail("duplicate"),
+        )
+        .await;
         Ok(updated)
     }
 }

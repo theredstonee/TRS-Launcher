@@ -83,6 +83,7 @@ mod tests {
             created_at: Utc::now(),
             last_played: None,
             total_play_seconds: 0,
+            icon: None,
             overrides: InstanceOverrides { boost, ..Default::default() },
         }
     }

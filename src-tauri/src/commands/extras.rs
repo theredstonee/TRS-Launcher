@@ -21,7 +21,7 @@ pub struct ImageEntry {
 
 /// Gibt genau diese eine Datei für das Asset-Protokoll frei – das Webview
 /// bekommt keinen Zugriff auf ganze Ordner.
-fn allow(app: &AppHandle, path: &Path) -> bool {
+pub(crate) fn allow(app: &AppHandle, path: &Path) -> bool {
     app.asset_protocol_scope().allow_file(path).is_ok()
 }
 
