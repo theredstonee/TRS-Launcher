@@ -7,6 +7,9 @@ classes/
 # Fabric-Laufzeitverzeichnis (runClient)
 run/
 
+# Fertige JARs für den Launcher (collectLauncherJars)
+dist/
+
 # IDE
 .idea/
 *.iml

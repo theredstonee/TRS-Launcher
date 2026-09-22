@@ -1,0 +1,118 @@
+import groovy.json.JsonOutput
+
+plugins {
+	id 'java'
+	// Essentials Fork von architectury-loom – unterstützt Legacy-Forge (1.8.9) mit aktuellem Gradle.
+	id 'gg.essential.loom' version '1.15.50'
+	// Forge 1.8.9 liefert seine Binär-Patches pack200-komprimiert (seit Java 14 nicht mehr im JDK).
+	id 'dev.architectury.architectury-pack200' version '0.1.3'
+}
+
+group = maven_group
+version = mod_version
+
+base {
+	archivesName = "trsclient-forge-${minecraft_version}"
+}
+
+java {
+	// Minecraft 1.8.9 + LaunchWrapper laufen nur auf Java 8 – kompiliert und gestartet wird mit JDK 8.
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
+loom {
+	forge {
+		pack200Provider = new dev.architectury.pack200.java.Pack200Adapter()
+	}
+	runConfigs {
+		client {
+			// Gemeinsames Spielverzeichnis für alle Versionen: client-mod/run
+			runDir = '../run'
+			// ./gradlew runClient -PtrsAutotest → öffnet Menü + HUD-Editor, macht Screenshots, beendet das Spiel.
+			if (project.hasProperty('trsAutotest')) {
+				vmArg '-Dtrsclient.autotest=true'
+			}
+		}
+		remove(server)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${minecraft_version}"
+	mappings mcp_mappings
+	forge "net.minecraftforge:forge:${forge_version}"
+
+	// Tests laufen gegen dieselbe Gson-Version, die Minecraft 1.8.9 mitbringt.
+	testImplementation "com.google.code.gson:gson:${gson_version}"
+	testImplementation platform("org.junit:junit-bom:${junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'passed', 'skipped', 'failed'
+	}
+}
+
+// Forge sucht mcmod.info neben den Klassen – im Dev-Start (runClient) liegen Ressourcen sonst in einem
+// eigenen Ordner und Forge meldet "missing the required element 'version'".
+sourceSets.main.output.resourcesDir = sourceSets.main.java.classesDirectory
+
+processResources {
+	def version = project.version
+	inputs.property 'version', version
+	filesMatching('mcmod.info') {
+		expand 'version': version
+	}
+}
+
+jar {
+	from(file('../LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
+
+// --- Übergabe an den Launcher ---------------------------------------------------------------
+// Kopiert die fertige (auf SRG-Namen remappte) Mod-JAR nach client-mod/dist/ und schreibt
+// builds-legacy.json mit den Angaben, die der Launcher zum Installieren braucht.
+def distDir = file('../dist')
+def launcherJarName = "trsclient-forge-${minecraft_version}.jar"
+
+tasks.register('collectLauncherJars', Copy) {
+	group = 'build'
+	description = "Kopiert die Mod-JAR nach client-mod/dist/ und schreibt builds-legacy.json."
+	dependsOn tasks.named('remapJar')
+	from(tasks.named('remapJar').flatMap { it.archiveFile })
+	into distDir
+	rename { launcherJarName }
+	def mcVersion = minecraft_version
+	def forgeVersion = forge_version
+	inputs.property 'forge', forgeVersion
+	doLast {
+		def builds = [[
+				loader   : 'forge',
+				minecraft: [mcVersion],
+				file     : launcherJarName,
+				// Keine weiteren Mods nötig – nur Forge selbst (getestet mit ${forgeVersion}).
+				requires : [],
+				forge    : forgeVersion,
+		]]
+		new File(distDir, 'builds-legacy.json').setText(JsonOutput.prettyPrint(JsonOutput.toJson(builds)) + '\n', 'UTF-8')
+	}
+}
+
+tasks.named('build') {
+	finalizedBy 'collectLauncherJars'
+}
