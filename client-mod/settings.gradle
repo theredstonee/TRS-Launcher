@@ -4,6 +4,11 @@ pluginManagement {
 			name = 'Fabric'
 			url = 'https://maven.fabricmc.net/'
 		}
+		// Stonecutter (Mehrversions-Präprozessor für :fabric)
+		maven {
+			name = 'KikuGie Releases'
+			url = 'https://maven.kikugie.dev/releases'
+		}
 		mavenCentral()
 		gradlePluginPortal()
 	}
@@ -12,11 +17,27 @@ pluginManagement {
 plugins {
 	// Lädt bei Bedarf automatisch ein JDK 21 (Gradle-Toolchains).
 	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+	// Mehrversions-Build für :fabric (ein Quellbaum, ein Build je Minecraft-Version).
+	id 'dev.kikugie.stonecutter' version '0.9.8'
 }
 
 rootProject.name = 'trs-client'
 
 // Versionsunabhängige Logik (Module, Config, HUD-Mathe) – reines Java, ohne Minecraft.
 include 'common'
-// Minecraft-spezifischer Teil je Version. Weitere (z. B. legacy-1.8.9, 26.x) kommen später dazu.
-include 'fabric-1.21.1'
+
+// --- Fabric (Stonecutter) --------------------------------------------------------------
+// Ein Quellbaum in fabric/src, ein Unterprojekt je Minecraft-Version (:fabric:<version>).
+// Unterschiede zwischen Versionen stehen als Stonecutter-Kommentare im Code (//? if >=1.21.2 ...).
+// Neue Version: hier eintragen + fabric/versions/<version>/gradle.properties anlegen.
+stonecutter {
+	create(':fabric') {
+		versions '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.5', '1.20.6',
+				'1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4', '1.21.5', '1.21.6', '1.21.7', '1.21.8',
+				'1.21.9', '1.21.10', '1.21.11',
+				'26.1', '26.1.1', '26.1.2', '26.2', '26.3'
+		// Version, in deren Zustand fabric/src eingecheckt ist.
+		vcsVersion = '1.21.1'
+	}
+}
+// ---------------------------------------------------------------------------------------

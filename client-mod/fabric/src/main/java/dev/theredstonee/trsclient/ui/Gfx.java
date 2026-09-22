@@ -1,0 +1,148 @@
+package dev.theredstonee.trsclient.ui;
+
+import net.minecraft.client.gui.Font;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
+//? if >=26.1 {
+/*import net.minecraft.client.gui.GuiGraphicsExtractor;
+*///?} else
+import net.minecraft.client.gui.GuiGraphics;
+
+/**
+ * Dünne, versionsunabhängige Zeichen-Schnittstelle über Minecrafts GUI-Grafikobjekt
+ * (GuiGraphics bis 1.21.11, GuiGraphicsExtractor ab 26.1). Alle HUD- und Menü-Zeichnungen
+ * laufen hierüber, damit Versionsunterschiede nur an dieser einen Stelle stehen.
+ * Linien und Rahmen werden aus Rechtecken gebaut (überall identisch).
+ */
+public final class Gfx {
+	private static final Gfx INSTANCE = new Gfx();
+
+	//? if >=26.1 {
+	/*private GuiGraphicsExtractor g;
+
+	// Wiederverwendete Instanz für das aktuelle Frame (Rendern ist single-threaded).
+	public static Gfx of(GuiGraphicsExtractor g) {
+		INSTANCE.g = g;
+		return INSTANCE;
+	}
+	*///?} else {
+	private GuiGraphics g;
+
+	// Wiederverwendete Instanz für das aktuelle Frame (Rendern ist single-threaded).
+	public static Gfx of(GuiGraphics g) {
+		INSTANCE.g = g;
+		return INSTANCE;
+	}
+	//?}
+
+	private Gfx() {
+	}
+
+	public int width() {
+		return g.guiWidth();
+	}
+
+	public int height() {
+		return g.guiHeight();
+	}
+
+	/** Rechteck von (x1, y1) bis ausschließlich (x2, y2), Farbe ARGB. */
+	public void fill(int x1, int y1, int x2, int y2, int argb) {
+		g.fill(x1, y1, x2, y2, argb);
+	}
+
+	/** Waagerechte Linie von x1 bis einschließlich x2. */
+	public void hLine(int x1, int x2, int y, int argb) {
+		if (x2 < x1) {
+			int t = x1;
+			x1 = x2;
+			x2 = t;
+		}
+		fill(x1, y, x2 + 1, y + 1, argb);
+	}
+
+	/** Senkrechte Linie zwischen y1 und y2 (Endpunkte exklusiv, wie Vanilla). */
+	public void vLine(int x, int y1, int y2, int argb) {
+		if (y2 < y1) {
+			int t = y1;
+			y1 = y2;
+			y2 = t;
+		}
+		fill(x, y1 + 1, x + 1, y2, argb);
+	}
+
+	/** Rahmen mit 1 px Stärke. */
+	public void outline(int x, int y, int w, int h, int argb) {
+		fill(x, y, x + w, y + 1, argb);
+		fill(x, y + h - 1, x + w, y + h, argb);
+		fill(x, y + 1, x + 1, y + h - 1, argb);
+		fill(x + w - 1, y + 1, x + w, y + h - 1, argb);
+	}
+
+	public void text(Font font, String text, int x, int y, int argb, boolean shadow) {
+		//? if >=26.1 {
+		/*g.text(font, text, x, y, argb, shadow);
+		*///?} else
+		g.drawString(font, text, x, y, argb, shadow);
+	}
+
+	public void text(Font font, Component text, int x, int y, int argb, boolean shadow) {
+		//? if >=26.1 {
+		/*g.text(font, text, x, y, argb, shadow);
+		*///?} else
+		g.drawString(font, text, x, y, argb, shadow);
+	}
+
+	public void text(Font font, FormattedCharSequence text, int x, int y, int argb, boolean shadow) {
+		//? if >=26.1 {
+		/*g.text(font, text, x, y, argb, shadow);
+		*///?} else
+		g.drawString(font, text, x, y, argb, shadow);
+	}
+
+	/** Zentrierter Text mit Schatten. */
+	public void centered(Font font, String text, int centerX, int y, int argb) {
+		//? if >=26.1 {
+		/*g.centeredText(font, text, centerX, y, argb);
+		*///?} else
+		g.drawCenteredString(font, text, centerX, y, argb);
+	}
+
+	/** Zentrierter Text mit Schatten. */
+	public void centered(Font font, Component text, int centerX, int y, int argb) {
+		//? if >=26.1 {
+		/*g.centeredText(font, text, centerX, y, argb);
+		*///?} else
+		g.drawCenteredString(font, text, centerX, y, argb);
+	}
+
+	// --- Transformation (PoseStack bis 1.21.5, Matrix3x2fStack ab 1.21.6) ---
+
+	public void push() {
+		//? if >=1.21.6 {
+		/*g.pose().pushMatrix();
+		*///?} else
+		g.pose().pushPose();
+	}
+
+	public void translate(float x, float y) {
+		//? if >=1.21.6 {
+		/*g.pose().translate(x, y);
+		*///?} else
+		g.pose().translate(x, y, 0);
+	}
+
+	public void scale(float s) {
+		//? if >=1.21.6 {
+		/*g.pose().scale(s, s);
+		*///?} else
+		g.pose().scale(s, s, 1f);
+	}
+
+	public void pop() {
+		//? if >=1.21.6 {
+		/*g.pose().popMatrix();
+		*///?} else
+		g.pose().popPose();
+	}
+}

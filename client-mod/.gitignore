@@ -7,6 +7,9 @@ classes/
 # Fabric-Laufzeitverzeichnis (runClient)
 run/
 
+# Ausgabe von ./gradlew collectLauncherJars (der Launcher kopiert sie in seine Ressourcen)
+dist/
+
 # IDE
 .idea/
 *.iml
