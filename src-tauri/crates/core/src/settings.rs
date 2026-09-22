@@ -36,6 +36,8 @@ pub struct Settings {
     pub concurrent_downloads: u8,
     pub close_on_launch: bool,
     pub show_snapshots: bool,
+    /// Windows soll dem Spiel die leistungsstarke Grafikkarte geben.
+    pub prefer_dedicated_gpu: bool,
 }
 
 impl Default for Settings {
@@ -49,6 +51,7 @@ impl Default for Settings {
             concurrent_downloads: 8,
             close_on_launch: false,
             show_snapshots: false,
+            prefer_dedicated_gpu: true,
         }
     }
 }

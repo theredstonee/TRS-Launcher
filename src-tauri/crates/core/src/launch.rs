@@ -1,27 +1,13 @@
 //! Baut die Java-Kommandozeile und verwaltet laufende Spielprozesse.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::Stdio;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
-use chrono::{DateTime, Utc};
-use serde::Serialize;
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::sync::{mpsc, oneshot};
-
-use crate::gamelog::{LogLine, LogParser};
 use crate::instance::Instance;
 use crate::meta::version::{Argument, Features, VersionInfo, rules_allow};
 use crate::prepare::Prepared;
 use crate::settings::Settings;
 use crate::{Error, LAUNCHER_NAME, LAUNCHER_VERSION, Result};
-
-const LOG_HISTORY: usize = 5000;
-const LOG_BATCH_MAX: usize = 400;
-const LOG_BATCH_INTERVAL: Duration = Duration::from_millis(60);
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// Mit wem gespielt wird.
 #[derive(Clone)]
@@ -295,213 +281,13 @@ fn split_args(input: &str) -> Vec<String> {
     out
 }
 
-// --- Prozessverwaltung -------------------------------------------------------
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
-pub enum GameEvent {
-    Started { instance_id: String, pid: u32 },
-    Logs { instance_id: String, lines: Vec<LogLine> },
-    Exited { instance_id: String, exit_code: Option<i32>, crashed: bool, play_seconds: u64 },
-}
-
-pub type EventSink = Arc<dyn Fn(GameEvent) + Send + Sync>;
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RunningGame {
-    pub instance_id: String,
-    pub pid: u32,
-    pub started_at: DateTime<Utc>,
-}
-
-struct Running {
-    info: RunningGame,
-    kill: Option<oneshot::Sender<()>>,
-}
-
-#[derive(Default)]
-struct State {
-    running: HashMap<String, Running>,
-    logs: HashMap<String, VecDeque<LogLine>>,
-}
-
-pub struct GameManager {
-    state: Arc<Mutex<State>>,
-    sink: EventSink,
-}
-
-/// Was nach dem Spielende passieren soll (Spielzeit verbuchen).
-pub type OnExit = Box<dyn FnOnce(u64) + Send>;
-
-impl GameManager {
-    pub fn new(sink: EventSink) -> Self {
-        Self { state: Arc::default(), sink }
-    }
-
-    pub fn running(&self) -> Vec<RunningGame> {
-        self.lock().running.values().map(|r| r.info.clone()).collect()
-    }
-
-    pub fn is_running(&self, instance_id: &str) -> bool {
-        self.lock().running.contains_key(instance_id)
-    }
-
-    pub fn logs(&self, instance_id: &str) -> Vec<LogLine> {
-        self.lock().logs.get(instance_id).map(|l| l.iter().cloned().collect()).unwrap_or_default()
-    }
-
-    pub fn kill(&self, instance_id: &str) -> bool {
-        self.lock()
-            .running
-            .get_mut(instance_id)
-            .and_then(|r| r.kill.take())
-            .is_some_and(|tx| tx.send(()).is_ok())
-    }
-
-    fn lock(&self) -> std::sync::MutexGuard<'_, State> {
-        self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
-    }
-
-    /// `secrets` werden aus allen Log-Zeilen entfernt – alte Versionen geben
-    /// das Session-Token beim Start aus.
-    pub fn spawn(
-        &self,
-        instance_id: &str,
-        command: Command,
-        secrets: Vec<String>,
-        on_exit: OnExit,
-    ) -> Result<u32> {
-        if self.is_running(instance_id) {
-            return Err(Error::launch("Diese Instanz läuft bereits."));
-        }
-
-        let mut cmd = tokio::process::Command::new(&command.program);
-        cmd.args(&command.args)
-            .current_dir(&command.cwd)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .creation_flags(CREATE_NO_WINDOW)
-            // Das Spiel soll den Launcher überleben dürfen.
-            .kill_on_drop(false);
-
-        let mut child = cmd.spawn().map_err(|e| {
-            tracing::error!("Java konnte nicht gestartet werden ({}): {e}", command.program.display());
-            Error::launch("Java konnte nicht gestartet werden.")
-        })?;
-        let pid = child.id().unwrap_or_default();
-        let started_at = Utc::now();
-
-        let (line_tx, mut line_rx) = mpsc::unbounded_channel::<LogLine>();
-        let secrets: Arc<Vec<String>> = Arc::new(secrets.into_iter().filter(|s| s.len() >= 8).collect());
-
-        if let Some(stdout) = child.stdout.take() {
-            tokio::spawn(pump(BufReader::new(stdout), LogParser::stdout(), line_tx.clone(), secrets.clone()));
-        }
-        if let Some(stderr) = child.stderr.take() {
-            tokio::spawn(pump(BufReader::new(stderr), LogParser::stderr(), line_tx.clone(), secrets.clone()));
-        }
-        drop(line_tx);
-
-        let (kill_tx, kill_rx) = oneshot::channel();
-        {
-            let mut state = self.lock();
-            state.logs.insert(instance_id.to_owned(), VecDeque::new());
-            state.running.insert(
-                instance_id.to_owned(),
-                Running {
-                    info: RunningGame { instance_id: instance_id.to_owned(), pid, started_at },
-                    kill: Some(kill_tx),
-                },
-            );
-        }
-        (self.sink)(GameEvent::Started { instance_id: instance_id.to_owned(), pid });
-
-        // Log-Zeilen gebündelt weiterreichen, damit das Frontend bei
-        // Ausgabe-Stürmen nicht mit Einzel-Events geflutet wird.
-        let forwarder = {
-            let (state, sink, id) = (self.state.clone(), self.sink.clone(), instance_id.to_owned());
-            tokio::spawn(async move {
-                while let Some(first) = line_rx.recv().await {
-                    let mut batch = vec![first];
-                    while batch.len() < LOG_BATCH_MAX
-                        && let Ok(line) = line_rx.try_recv()
-                    {
-                        batch.push(line);
-                    }
-                    {
-                        let mut state = state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-                        let history = state.logs.entry(id.clone()).or_default();
-                        history.extend(batch.iter().cloned());
-                        while history.len() > LOG_HISTORY {
-                            history.pop_front();
-                        }
-                    }
-                    sink(GameEvent::Logs { instance_id: id.clone(), lines: batch });
-                    tokio::time::sleep(LOG_BATCH_INTERVAL).await;
-                }
-            })
-        };
-
-        let (state, sink, id) = (self.state.clone(), self.sink.clone(), instance_id.to_owned());
-        tokio::spawn(async move {
-            let (status, killed) = tokio::select! {
-                status = child.wait() => (status.ok(), false),
-                _ = kill_rx => {
-                    let _ = child.kill().await;
-                    (child.wait().await.ok(), true)
-                }
-            };
-            // Erst alle Logs ausliefern, dann das Ende melden.
-            let _ = forwarder.await;
-
-            let exit_code = status.and_then(|s| s.code());
-            let play_seconds = (Utc::now() - started_at).num_seconds().max(0) as u64;
-            state.lock().unwrap_or_else(std::sync::PoisonError::into_inner).running.remove(&id);
-            on_exit(play_seconds);
-            sink(GameEvent::Exited {
-                instance_id: id,
-                exit_code,
-                crashed: !killed && exit_code != Some(0),
-                play_seconds,
-            });
-        });
-
-        Ok(pid)
-    }
-}
-
-async fn pump<R: tokio::io::AsyncRead + Unpin>(
-    mut reader: BufReader<R>,
-    mut parser: LogParser,
-    tx: mpsc::UnboundedSender<LogLine>,
-    secrets: Arc<Vec<String>>,
-) {
-    let mut buf = Vec::new();
-    loop {
-        buf.clear();
-        match reader.read_until(b'\n', &mut buf).await {
-            Ok(0) | Err(_) => break,
-            Ok(_) => {}
-        }
-        // Nicht jede Ausgabe ist gültiges UTF-8 (alte Versionen, native Libs).
-        let text = String::from_utf8_lossy(&buf);
-        if let Some(mut line) = parser.feed(&text, Utc::now().timestamp_millis()) {
-            for secret in secrets.iter() {
-                if line.message.contains(secret.as_str()) {
-                    line.message = line.message.replace(secret.as_str(), "********");
-                }
-            }
-            if tx.send(line).is_err() {
-                break;
-            }
-        }
-    }
-}
+// Prozessverwaltung liegt in `crate::process`.
+pub use crate::process::{EventSink, GameEvent, GameManager, OnExit, RunningGame};
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
     use crate::instance::{InstanceOverrides, Loader};
     use crate::settings::Resolution;

@@ -23,6 +23,7 @@ pub mod modrinth;
 pub mod nbt;
 pub mod paths;
 pub mod prepare;
+pub mod process;
 pub mod servers;
 pub mod settings;
 
@@ -75,16 +76,31 @@ impl Launcher {
 
         let settings = Settings::load(&paths.settings_file()).await?;
 
-        Ok(Self {
+        let launcher = Self {
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
-            games: GameManager::new(events),
+            games: GameManager::new(events, paths.root().join("running.json")),
             servers: ServerStore::new(paths.clone()),
             preparing: Mutex::default(),
             settings: RwLock::new(settings),
             paths,
             http,
-        })
+        };
+
+        // Spiele, die beim letzten Schließen noch liefen, wieder übernehmen.
+        let paths = launcher.paths.clone();
+        launcher.games.recover(|id| {
+            let (paths, id) = (paths.clone(), id.to_owned());
+            Box::new(move |seconds| {
+                tokio::spawn(async move {
+                    let store = InstanceStore::new(paths);
+                    if let Err(e) = store.add_play_time(&id, seconds).await {
+                        tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
+                    }
+                });
+            })
+        });
+        Ok(launcher)
     }
 
     pub fn paths(&self) -> &Paths {
@@ -224,7 +240,11 @@ impl Launcher {
             });
         });
 
-        let pid = self.games.spawn(&instance.id, command, vec![session.access_token.clone()], on_exit)?;
+        if settings.prefer_dedicated_gpu {
+            process::prefer_dedicated_gpu(&command.program);
+        }
+        let log_dir = self.paths.instance_dir(&instance.id).join("launcher-logs");
+        let pid = self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit)?;
         self.instances.touch_last_played(&instance.id).await?;
         Ok(pid)
     }
