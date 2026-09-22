@@ -16,7 +16,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,10 +27,6 @@ public final class TrsMenuHost implements MenuHost {
 
 	public TrsMenuHost(Screen parent) {
 		this.parent = parent;
-	}
-
-	public Screen parent() {
-		return parent;
 	}
 
 	@Override
@@ -77,7 +72,7 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public List<MenuAction> actions(Module module) {
-		List<MenuAction> actions = new ArrayList<>();
+		List<MenuAction> actions = new ArrayList<MenuAction>();
 		if (module == modules().crosshair) {
 			actions.add(new MenuAction("Fadenkreuz bearbeiten", "crosshair", new Runnable() {
 				@Override
@@ -94,7 +89,7 @@ public final class TrsMenuHost implements MenuHost {
 				}
 			}));
 		}
-		return actions.isEmpty() ? Collections.<MenuAction>emptyList() : actions;
+		return actions;
 	}
 
 	@Override

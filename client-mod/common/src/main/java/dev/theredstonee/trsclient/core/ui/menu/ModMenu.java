@@ -237,12 +237,15 @@ public final class ModMenu extends UiScreen {
 
 		// Fußzeile der Leiste: Taste und aktive Module
 		int active = 0;
+		int total = 0;
 		List<Module> all = host.modules().registry.all();
 		for (int i = 0; i < all.size(); i++) {
+			if (!host.supports(all.get(i))) continue;
+			total++;
 			if (all.get(i).isEnabled()) active++;
 		}
 		int footerY = y + h - 18;
-		Paint.textClipped(c, active + "/" + all.size() + " Module an", x, footerY, w, t.textDim, false);
+		Paint.textClipped(c, active + "/" + total + " Module an", x, footerY, w, t.textDim, false);
 		Paint.textClipped(c, host.menuKeyLabel() + " schließt", x, footerY + 9, w, t.textDim, false);
 	}
 
@@ -269,6 +272,7 @@ public final class ModMenu extends UiScreen {
 		List<Module> all = host.modules().registry.all();
 		for (int i = 0; i < all.size(); i++) {
 			Module m = all.get(i);
+			if (!host.supports(m)) continue;
 			if (!query.isEmpty()) {
 				if (m.matches(query)) out.add(m);
 				continue;

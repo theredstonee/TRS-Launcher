@@ -10,28 +10,21 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.ui.menu.HudItem;
 import dev.theredstonee.trsclient.core.ui.menu.MenuAction;
 import dev.theredstonee.trsclient.core.ui.menu.MenuHost;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.settings.GameSettings;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Die Minecraft-Seite des TRS-Menüs: Bildschirme öffnen, Geräusche, Tastennamen.
+ * Die Minecraft-Seite des TRS-Menüs unter 1.8.9–1.12.2: Bildschirme öffnen, Geräusche, Tastennamen.
  * Alles Weitere steht versionsunabhängig in {@code core.ui.menu}.
  */
 public final class TrsMenuHost implements MenuHost {
-	private final Screen parent;
+	private final GuiScreen parent;
 
-	public TrsMenuHost(Screen parent) {
+	public TrsMenuHost(GuiScreen parent) {
 		this.parent = parent;
-	}
-
-	public Screen parent() {
-		return parent;
 	}
 
 	@Override
@@ -41,7 +34,7 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public void playClick() {
-		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		Mc.clickSound();
 	}
 
 	@Override
@@ -77,7 +70,7 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public List<MenuAction> actions(Module module) {
-		List<MenuAction> actions = new ArrayList<>();
+		List<MenuAction> actions = new ArrayList<MenuAction>();
 		if (module == modules().crosshair) {
 			actions.add(new MenuAction("Fadenkreuz bearbeiten", "crosshair", new Runnable() {
 				@Override
@@ -94,7 +87,7 @@ public final class TrsMenuHost implements MenuHost {
 				}
 			}));
 		}
-		return actions.isEmpty() ? Collections.<MenuAction>emptyList() : actions;
+		return actions;
 	}
 
 	@Override
@@ -104,7 +97,7 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public boolean shiftDown() {
-		return Keys.isDown("key.keyboard.left.shift") || Keys.isDown("key.keyboard.right.shift");
+		return GuiScreen.isShiftKeyDown();
 	}
 
 	@Override
@@ -119,12 +112,13 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public String menuKeyLabel() {
-		return Mc.keyName(TrsKeys.menu);
+		return GameSettings.getKeyDisplayString(TrsKeys.menu.getKeyCode());
 	}
 
 	@Override
 	public String profileKeyLabel() {
-		return TrsKeys.boundKey(TrsKeys.hudProfile) == Keys.UNBOUND ? "" : Mc.keyName(TrsKeys.hudProfile);
+		int code = TrsKeys.hudProfile.getKeyCode();
+		return code == Keys.UNBOUND ? "" : GameSettings.getKeyDisplayString(code);
 	}
 
 	@Override
@@ -134,6 +128,6 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public boolean inWorld() {
-		return Minecraft.getInstance().level != null;
+		return Mc.world() != null;
 	}
 }

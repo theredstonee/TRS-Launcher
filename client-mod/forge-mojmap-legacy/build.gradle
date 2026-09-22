@@ -1,5 +1,5 @@
 // Build-Skript für JEDE Minecraft-Version (:<minecraft>), ausgeführt von Stonecutter.
-// Quellcode: src/ (vorverarbeitet je Version) + versionsunabhängige Logik (common bzw. core8, siehe unten).
+// Quellcode: src/ (vorverarbeitet je Version) + versionsunabhängige Logik aus ../common.
 // Versionsspezifische Werte: versions/<minecraft>/gradle.properties (forge_version)
 apply plugin: 'gg.essential.loom'
 
@@ -29,10 +29,9 @@ tasks.withType(JavaCompile).configureEach {
 	if (javaVersion > 8) options.release = javaVersion
 }
 
-// Versionsunabhängige Logik: ab 1.18 direkt ../common (Java 17), davor die Java-8-Kopie core8/
-// (≤1.16.5 läuft auf Java 8, 1.17.1 auf Java 16 – sealed/records/switch-Ausdrücke von common gehen dort nicht).
-def coreDir = javaVersion >= 17 ? rootProject.file('../common/src/main/java') : rootProject.file('core8/src/main/java')
-sourceSets.main.java.srcDir(coreDir)
+// Versionsunabhängige Logik direkt aus ../common – das ist reines Java 8 und passt damit
+// auch zu 1.14.4–1.16.5 (Java 8) und 1.17.1 (Java 16).
+sourceSets.main.java.srcDir(rootProject.file('../common/src/main/java'))
 // Die Unit-Tests von common laufen einmal (mit der neuesten Version dieses Baums).
 def runsCommonTests = mc == '1.19.4'
 if (runsCommonTests) {

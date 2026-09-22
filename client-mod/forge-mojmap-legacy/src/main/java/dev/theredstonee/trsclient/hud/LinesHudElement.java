@@ -77,12 +77,12 @@ public abstract class LinesHudElement extends HudElement {
 	@Override
 	public void draw(Gfx g, Font font, boolean preview) {
 		refresh(font, preview);
-		boolean bg = module.background.get();
-		if (bg) g.fill(0, 0, width(font, preview), height(font, preview), Brand.HUD_BG);
+		int bg = module.backgroundArgb();
+		if (bg != 0) g.fill(0, 0, width(font, preview), height(font, preview), bg);
 		int text = textColor();
 		for (int i = 0, n = lines.size(); i < n; i++) {
 			int c = colors.get(i);
-			g.text(font, lines.get(i), PAD_X, PAD_Y + i * LINE_H, c == 0 ? text : c, !bg);
+			g.text(font, lines.get(i), PAD_X, PAD_Y + i * LINE_H, c == 0 ? text : c, module.shadow());
 		}
 	}
 }

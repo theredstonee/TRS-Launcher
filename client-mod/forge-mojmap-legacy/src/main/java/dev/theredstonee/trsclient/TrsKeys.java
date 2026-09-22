@@ -18,15 +18,20 @@ public final class TrsKeys {
 
 	public static final KeyMapping menu =
 			new KeyMapping("key.trsclient.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, CATEGORY);
+	// Zoom liegt auf V: C ist ab Minecraft 1.12 mit "Hotbar speichern" belegt.
 	public static final KeyMapping zoom =
-			new KeyMapping("key.trsclient.zoom", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, CATEGORY);
+			new KeyMapping("key.trsclient.zoom", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, CATEGORY);
 	/** Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten. */
 	public static final KeyMapping fullbright =
 			new KeyMapping("key.trsclient.fullbright", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	public static final KeyMapping freelook =
 			new KeyMapping("key.trsclient.freelook", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY);
 
-	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook};
+	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
+	public static final KeyMapping hudProfile =
+			new KeyMapping("key.trsclient.hudProfile", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+
+	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile};
 
 	private TrsKeys() {
 	}
@@ -34,6 +39,18 @@ public final class TrsKeys {
 	/** Aktuell belegte Taste (GLFW-Code) einer Tastenbelegung. */
 	public static int boundKey(KeyMapping mapping) {
 		return mapping.getKey().getValue();
+	}
+
+	/**
+	 * Stellt den alten Zoom-Standard C auf V um – aber nur, wenn die Taste noch auf C liegt,
+	 * also nie geändert wurde.
+	 * @return true, wenn umgestellt wurde
+	 */
+	public static boolean migrateZoomKey() {
+		if (boundKey(zoom) != GLFW.GLFW_KEY_C) return false;
+		zoom.setKey(InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_V));
+		KeyMapping.resetMapping();
+		return true;
 	}
 
 	//? if >=1.19 {

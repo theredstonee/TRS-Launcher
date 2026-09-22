@@ -3,7 +3,6 @@ package dev.theredstonee.trsclient.screen;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.TrsKeys;
 import dev.theredstonee.trsclient.compat.Keys;
-import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.TrsModules;
@@ -11,27 +10,22 @@ import dev.theredstonee.trsclient.core.ui.menu.HudItem;
 import dev.theredstonee.trsclient.core.ui.menu.MenuAction;
 import dev.theredstonee.trsclient.core.ui.menu.MenuHost;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.client.audio.SimpleSound;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.init.SoundEvents;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Die Minecraft-Seite des TRS-Menüs: Bildschirme öffnen, Geräusche, Tastennamen.
- * Alles Weitere steht versionsunabhängig in {@code core.ui.menu}.
+ * Die Minecraft-Seite des TRS-Menüs unter 1.13.2. Resourcepacks gibt es hier nicht;
+ * Module, die diese Version nicht kennt, blendet {@link TrsClient#supported} aus.
  */
 public final class TrsMenuHost implements MenuHost {
-	private final Screen parent;
+	private final GuiScreen parent;
 
-	public TrsMenuHost(Screen parent) {
+	public TrsMenuHost(GuiScreen parent) {
 		this.parent = parent;
-	}
-
-	public Screen parent() {
-		return parent;
 	}
 
 	@Override
@@ -41,48 +35,47 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public void playClick() {
-		Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		Minecraft.getInstance().getSoundHandler().play(SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 	}
 
 	@Override
 	public void closeScreen() {
-		Mc.setScreen(parent);
+		Minecraft.getInstance().displayGuiScreen(parent);
 	}
 
 	@Override
 	public void openHudEditor() {
-		Mc.setScreen(new HudEditorScreen(parent));
+		Minecraft.getInstance().displayGuiScreen(new HudEditorScreen(parent));
 	}
 
 	@Override
 	public void openMenu() {
-		Mc.setScreen(new TrsMenuScreen(parent));
+		Minecraft.getInstance().displayGuiScreen(new TrsMenuScreen(parent));
 	}
 
+	/** 1.13.2 hat keinen eigenen Resourcepack-Bildschirm im TRS-Menü. */
 	@Override
 	public void openPacks() {
-		Mc.setScreen(new PackScreen(new TrsMenuScreen(parent)));
 	}
 
 	@Override
 	public boolean hasPacks() {
-		return true;
+		return false;
 	}
 
-	/** In diesen Versionen gibt es jedes Modul. */
 	@Override
 	public boolean supports(Module module) {
-		return true;
+		return TrsClient.supported(module);
 	}
 
 	@Override
 	public List<MenuAction> actions(Module module) {
-		List<MenuAction> actions = new ArrayList<>();
+		List<MenuAction> actions = new ArrayList<MenuAction>();
 		if (module == modules().crosshair) {
 			actions.add(new MenuAction("Fadenkreuz bearbeiten", "crosshair", new Runnable() {
 				@Override
 				public void run() {
-					Mc.setScreen(new CrosshairEditorScreen(new TrsMenuScreen(parent)));
+					Minecraft.getInstance().displayGuiScreen(new CrosshairEditorScreen(new TrsMenuScreen(parent)));
 				}
 			}));
 		}
@@ -94,7 +87,7 @@ public final class TrsMenuHost implements MenuHost {
 				}
 			}));
 		}
-		return actions.isEmpty() ? Collections.<MenuAction>emptyList() : actions;
+		return actions;
 	}
 
 	@Override
@@ -104,7 +97,7 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public boolean shiftDown() {
-		return Keys.isDown("key.keyboard.left.shift") || Keys.isDown("key.keyboard.right.shift");
+		return GuiScreen.isShiftKeyDown();
 	}
 
 	@Override
@@ -119,12 +112,12 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public String menuKeyLabel() {
-		return Mc.keyName(TrsKeys.menu);
+		return TrsKeys.menu.getLocalizedName();
 	}
 
 	@Override
 	public String profileKeyLabel() {
-		return TrsKeys.boundKey(TrsKeys.hudProfile) == Keys.UNBOUND ? "" : Mc.keyName(TrsKeys.hudProfile);
+		return TrsKeys.hudProfile.isInvalid() ? "" : TrsKeys.hudProfile.getLocalizedName();
 	}
 
 	@Override
@@ -134,6 +127,6 @@ public final class TrsMenuHost implements MenuHost {
 
 	@Override
 	public boolean inWorld() {
-		return Minecraft.getInstance().level != null;
+		return Minecraft.getInstance().world != null;
 	}
 }

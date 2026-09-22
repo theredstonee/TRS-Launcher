@@ -75,9 +75,9 @@ public final class AutoTest {
 			return;
 		}
 		// Verbindung verloren (z. B. Server-Timeout bei überlasteter Maschine) → Test abbrechen statt abstürzen.
-		if (step >= 4 && step < 13 && Mc.player() == null) {
+		if (step >= 4 && step < 14 && Mc.player() == null) {
 			TrsClient.LOGGER.error("[Autotest] Welt/Spieler verloren in Schritt {} – Abbruch", step);
-			step = 13;
+			step = 14;
 		}
 		TrsModules modules = TrsClient.get().modules();
 		switch (step) {
@@ -180,15 +180,20 @@ public final class AutoTest {
 				break;
 			case 11:
 				shot(mc, "packs");
-				expect(new HudEditorScreen(null));
+				expect(new TrsMenuScreen(null).showProfiles());
 				next(20);
 				break;
 			case 12:
+				shot(mc, "profiles");
+				expect(new HudEditorScreen(null).selectFirst());
+				next(20);
+				break;
+			case 13:
 				shot(mc, "hud-editor");
 				expect(null);
 				next(5);
 				break;
-			case 13:
+			case 14:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -203,8 +208,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 14) mc.shutdown();
-				step = 15;
+				if (step == 15) mc.shutdown();
+				step = 16;
 				break;
 		}
 	}

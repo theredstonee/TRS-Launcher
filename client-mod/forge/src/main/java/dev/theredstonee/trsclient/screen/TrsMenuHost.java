@@ -69,6 +69,12 @@ public final class TrsMenuHost implements MenuHost {
 		return true;
 	}
 
+	/** In diesen Versionen gibt es jedes Modul. */
+	@Override
+	public boolean supports(Module module) {
+		return true;
+	}
+
 	@Override
 	public List<MenuAction> actions(Module module) {
 		List<MenuAction> actions = new ArrayList<>();

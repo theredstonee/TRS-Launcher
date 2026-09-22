@@ -29,6 +29,12 @@ public interface MenuHost {
 
 	boolean hasPacks();
 
+	/**
+	 * Gibt es das Modul in dieser Minecraft-Version? Alte Versionen lassen einzelne Module aus
+	 * (z. B. Treffer-Farbe in 1.7.10) – die tauchen dann gar nicht erst im Menü auf.
+	 */
+	boolean supports(Module module);
+
 	/** Zusätzliche Knöpfe eines Moduls (z. B. „Fadenkreuz-Editor“); nie null. */
 	List<MenuAction> actions(Module module);
 

@@ -98,6 +98,8 @@ public final class TrsClient {
 
 	private TrsClient() {
 		instance = this;
+		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
+		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
 		config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -243,6 +245,12 @@ public final class TrsClient {
 	}
 
 	private void onTick(Minecraft mc) {
+		migrateKeys(mc);
+		while (TrsKeys.hudProfile.consumeClick()) {
+			String name = modules.profiles.cycle();
+			Mc.actionBar("HUD-Profil: " + name);
+			saveConfig();
+		}
 		while (TrsKeys.menu.consumeClick()) {
 			if (Mc.screen() == null) Mc.setScreen(new TrsMenuScreen(null));
 		}
@@ -251,6 +259,20 @@ public final class TrsClient {
 			Mc.actionBar("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus"));
 			saveConfig();
 		}
+	}
+
+	/**
+	 * Einmalige Umstellung alter Standard-Tasten: Zoom lag auf C, was ab Minecraft 1.12 mit
+	 * "Hotbar speichern" kollidiert. Selbst belegte Tasten bleiben unangetastet.
+	 */
+	private void migrateKeys(Minecraft mc) {
+		if (!modules.keyDefaults.needsZoomKeyMigration() || mc.options == null) return;
+		if (TrsKeys.migrateZoomKey()) {
+			mc.options.save();
+			LOGGER.info("Zoom-Taste von C auf V umgestellt (C ist ab 1.12 'Hotbar speichern')");
+		}
+		modules.keyDefaults.markMigrated();
+		saveConfig();
 	}
 
 	/** Speichert die Einstellungen (Fehler nur loggen). */
