@@ -212,6 +212,25 @@ async function clean() {
 function openDataDir() {
   backend.openDataDir().catch(() => {})
 }
+
+// --- Netzwerk -----------------------------------------------------------------
+const firewall = ref<{ total: number; missing: number } | null>(null)
+const firewallBusy = ref(false)
+watch(active, (a) => a === 'network' && !firewall.value && backend.firewallStatus().then((s) => (firewall.value = s)).catch(() => {}), {
+  immediate: true,
+})
+async function allowFirewall() {
+  firewallBusy.value = true
+  try {
+    const n = await backend.firewallAllowAll()
+    toasts.ok(n ? `Netzwerkzugriff für ${n} Java-Programme erlaubt` : 'Noch keine Java-Version installiert')
+    firewall.value = await backend.firewallStatus()
+  } catch (e) {
+    if (!isCancelled(e)) toasts.error(e)
+  } finally {
+    firewallBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -484,6 +503,22 @@ function openDataDir() {
     <!-- Netzwerk --------------------------------------------------------------------- -->
     <div v-else-if="active === 'network'">
       <h3 class="section-heading">Netzwerk</h3>
+      <SettingRow
+        title="Java-Versionen automatisch freigeben"
+        description="Windows fragt sonst bei jeder Java-Version einzeln, ob Minecraft ins Netzwerk darf (z. B. für LAN-Welten). Neue Java-Versionen werden vor dem Start mit einer Admin-Abfrage freigegeben."
+      >
+        <ToggleSwitch v-model="form.autoFirewall" label="Java-Versionen automatisch freigeben" />
+      </SettingRow>
+      <SettingRow title="Firewall-Freigabe" description="Trägt die Freigabe für alle Java-Versionen des Launchers auf einmal ein – eine einzige Admin-Abfrage.">
+        <template #description>
+          <p v-if="firewall" class="mt-1 text-xs" :class="firewall.missing ? 'text-warn' : 'text-ok'">
+            {{ firewall.total === 0 ? 'Noch keine Java-Version installiert' : firewall.missing ? `${firewall.missing} von ${firewall.total} noch nicht freigegeben` : 'Alle freigegeben' }}
+          </p>
+        </template>
+        <button class="btn btn-ghost" :disabled="firewallBusy || firewall?.total === 0" @click="allowFirewall">
+          {{ firewallBusy ? 'Warte auf Windows …' : 'Jetzt für alle erlauben' }}
+        </button>
+      </SettingRow>
       <SettingRow title="Parallele Downloads" description="Wie viele Dateien gleichzeitig geladen werden. Bei langsamer Leitung weniger.">
         <input v-model.number="form.concurrentDownloads" type="number" min="1" max="64" class="field w-24 font-mono" aria-label="Parallele Downloads" />
       </SettingRow>
