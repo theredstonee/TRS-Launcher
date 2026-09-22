@@ -722,6 +722,7 @@ struct Installed {
     file_name: String,
     project_id: String,
     version_number: String,
+    published: Option<DateTime<Utc>>,
     previous: Option<Source>,
     dependency: bool,
 }
@@ -857,6 +858,7 @@ async fn install_version(
         file_name: file.filename.clone(),
         project_id: version.project_id.clone(),
         version_number,
+        published: version.date_published,
         // Von Hand ersetzte Datei ohne Index-Eintrag zählt auch als Update.
         previous: previous.or_else(|| {
             replaced_any.then(|| Source { project_id: String::new(), version_id: String::new(), version_number: None })
@@ -880,6 +882,10 @@ async fn after_install(http: &reqwest::Client, paths: &Paths, instance_id: &str,
                 if let Some(from) = &prev.version_number {
                     e = e.from(from);
                 }
+                // Ältere Version gewählt? Dann als Zurückstufen kennzeichnen.
+                if is_downgrade(http, &prev.version_id, item.published).await {
+                    e = e.detail("downgrade");
+                }
                 e
             }
             None => {
@@ -889,6 +895,15 @@ async fn after_install(http: &reqwest::Client, paths: &Paths, instance_id: &str,
         };
         history::record(paths, instance_id, entry).await;
     }
+}
+
+/// Ist die bisherige Version neuer als die jetzt installierte?
+async fn is_downgrade(http: &reqwest::Client, previous_id: &str, new_date: Option<DateTime<Utc>>) -> bool {
+    let Some(new_date) = new_date else { return false };
+    if !is_safe_project_id(previous_id) {
+        return false;
+    }
+    version_by_id(http, previous_id).await.ok().and_then(|v| v.date_published).is_some_and(|old| old > new_date)
 }
 
 /// Lädt Titel, Autor und Icon für diese Projekte und legt sie im Index ab.
