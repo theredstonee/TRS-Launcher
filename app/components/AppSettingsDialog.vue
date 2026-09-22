@@ -9,18 +9,7 @@ const accounts = useAccountsStore()
 const onboarding = useOnboardingStore()
 const toasts = useToasts()
 
-const sections: ShellSection[] = [
-  { key: 'appearance', label: 'Aussehen', icon: 'palette', group: 'Darstellung' },
-  { key: 'features', label: 'Funktionen', icon: 'toggles', group: 'Darstellung' },
-  { key: 'behavior', label: 'Verhalten', icon: 'behavior', group: 'Darstellung' },
-  { key: 'language', label: 'Sprache', icon: 'language', group: 'Darstellung' },
-  { key: 'profile', label: 'Profil', icon: 'user', group: 'Konto' },
-  { key: 'privacy', label: 'Datenschutz', icon: 'shield', group: 'Konto' },
-  { key: 'defaults', label: 'Standard-Einstellungen', icon: 'defaults', group: 'Instanzen' },
-  { key: 'java', label: 'Java-Installationen', icon: 'java', group: 'Instanzen' },
-  { key: 'storage', label: 'Speicherverwaltung', icon: 'storage', group: 'Instanzen' },
-  { key: 'network', label: 'Netzwerk', icon: 'network', group: 'Instanzen' },
-]
+const sections: ShellSection[] = appSettingsSections
 const active = computed({
   get: () => (sections.some((s) => s.key === store.dialog) ? store.dialog! : 'appearance'),
   set: (v: string) => (store.dialog = v),

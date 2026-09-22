@@ -5,8 +5,38 @@ const accounts = useAccountsStore()
 const instances = useInstancesStore()
 const onboarding = useOnboardingStore()
 const settings = useSettingsStore()
+const ui = useUiStore()
+const router = useRouter()
+
+/** Strg+K öffnet überall die Suche; Strg+N legt eine Instanz an. */
+function onKey(e: KeyboardEvent) {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+  const key = e.key.toLowerCase()
+  if (key === 'k') {
+    e.preventDefault()
+    ui.togglePalette()
+  } else if (key === 'n' && !e.shiftKey) {
+    e.preventDefault()
+    ui.creating = true
+  }
+}
+
+// Jede Seite fängt oben an – sonst hängt die neue Seite auf der alten Scrollhöhe.
+const main = useTemplateRef<HTMLElement>('main')
+const route = useRoute()
+watch(
+  () => route.fullPath,
+  () => main.value?.scrollTo({ top: 0 }),
+)
+
+function onCreated(instance: { id: string }) {
+  ui.creating = false
+  router.push(`/instances/${instance.id}`)
+}
 
 onMounted(async () => {
+  ui.restore()
+  window.addEventListener('keydown', onKey)
   games.init()
   // Darstellung (Theme, Akzent) und Oberflächen-Schalter früh laden.
   settings.load().catch(() => {})
@@ -14,6 +44,8 @@ onMounted(async () => {
   await Promise.allSettled([accounts.load(), instances.load()])
   onboarding.openIfFirstRun()
 })
+
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <template>
@@ -24,7 +56,7 @@ onMounted(async () => {
       <UpdateBanner />
       <div class="flex min-h-0 flex-1">
         <SideNav />
-        <main class="min-w-0 flex-1 overflow-y-auto bg-base-950">
+        <main ref="main" class="min-w-0 flex-1 overflow-y-auto bg-base-950">
           <slot />
         </main>
       </div>
@@ -33,6 +65,10 @@ onMounted(async () => {
       </Transition>
     </div>
     <AppSettingsDialog v-if="settings.dialog" />
+    <!-- Global, damit Seitenleiste und Befehlspalette sie überall öffnen können. -->
+    <CreateInstanceDialog v-if="ui.creating" @close="ui.creating = false" @created="onCreated" />
+    <ImportDialog v-if="ui.importing" @close="ui.importing = false" />
+    <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <ToastHost />
   </div>
 </template>
