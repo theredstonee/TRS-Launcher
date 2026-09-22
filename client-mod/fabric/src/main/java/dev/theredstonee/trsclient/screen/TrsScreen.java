@@ -14,7 +14,8 @@ import net.minecraft.client.gui.GuiGraphics;
 //?} elif >=1.16
 /*import com.mojang.blaze3d.vertex.PoseStack;*/
 //? if >=1.21.9 {
-/*import net.minecraft.client.input.KeyEvent;
+/*import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 *///?}
 
@@ -62,6 +63,11 @@ public abstract class TrsScreen extends Screen {
 
 	/** Taste gedrückt (GLFW-/InputConstants-Code). true = verbraucht. */
 	protected boolean onKey(int key, int modifiers) {
+		return false;
+	}
+
+	/** Zeichen eingegeben (Textfelder des TRS-Menüs). true = verbraucht. */
+	protected boolean onChar(char c) {
 		return false;
 	}
 
@@ -166,6 +172,12 @@ public abstract class TrsScreen extends Screen {
 	public boolean keyPressed(KeyEvent event) {
 		return onKey(event.key(), event.modifiers()) || super.keyPressed(event);
 	}
+
+	@Override
+	public boolean charTyped(CharacterEvent event) {
+		int codepoint = event.codepoint();
+		return (codepoint > 0 && codepoint <= 0xFFFF && onChar((char) codepoint)) || super.charTyped(event);
+	}
 	*///?} else {
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -185,6 +197,11 @@ public abstract class TrsScreen extends Screen {
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		return onKey(keyCode, modifiers) || super.keyPressed(keyCode, scanCode, modifiers);
+	}
+
+	@Override
+	public boolean charTyped(char c, int modifiers) {
+		return onChar(c) || super.charTyped(c, modifiers);
 	}
 	//?}
 

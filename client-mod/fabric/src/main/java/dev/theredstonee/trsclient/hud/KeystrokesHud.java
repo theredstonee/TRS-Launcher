@@ -51,22 +51,22 @@ public final class KeystrokesHud extends HudElement {
 	@Override
 	public void draw(Gfx g, Font font, boolean preview) {
 		if (move == null) move = new KeyMapping[]{mc.options.keyUp, mc.options.keyLeft, mc.options.keyDown, mc.options.keyRight};
-		boolean bg = module.background.get();
+		int bg = module.backgroundArgb();
 		int color = textColor();
 
-		key(g, font, KEY + GAP, 0, KEY, KEY, label(font, 0, move[0]), move[0].isDown(), bg, color);
+		key(g, font, KEY + GAP, 0, KEY, KEY, label(font, 0, move[0]), move[0].isDown(), bg, color, module.shadow());
 		int y = KEY + GAP;
 		for (int i = 1; i < 4; i++) {
-			key(g, font, (i - 1) * (KEY + GAP), y, KEY, KEY, label(font, i, move[i]), move[i].isDown(), bg, color);
+			key(g, font, (i - 1) * (KEY + GAP), y, KEY, KEY, label(font, i, move[i]), move[i].isDown(), bg, color, module.shadow());
 		}
 		y += KEY + GAP;
 
 		long now = System.currentTimeMillis();
 		int mh = mouseHeight();
 		boolean showCps = modules.keystrokesShowCps.get();
-		mouse(g, font, 0, y, mh, "LMT", mc.options.keyAttack.isDown(), bg, color,
+		mouse(g, font, 0, y, mh, "LMT", mc.options.keyAttack.isDown(), bg, color, module.shadow(),
 				showCps ? TrsClient.get().leftClicks().count(now) : -1);
-		mouse(g, font, MOUSE_W + GAP, y, mh, "RMT", mc.options.keyUse.isDown(), bg, color,
+		mouse(g, font, MOUSE_W + GAP, y, mh, "RMT", mc.options.keyUse.isDown(), bg, color, module.shadow(),
 				showCps ? TrsClient.get().rightClicks().count(now) : -1);
 		y += mh;
 
@@ -93,27 +93,27 @@ public final class KeystrokesHud extends HudElement {
 		return labels[idx];
 	}
 
-	private static void key(Gfx g, Font font, int x, int y, int w, int h, String label, boolean down, boolean bg, int color) {
+	private static void key(Gfx g, Font font, int x, int y, int w, int h, String label, boolean down, int bg, int color, boolean shadow) {
 		fillKey(g, x, y, w, h, down, bg);
 		int tw = font.width(label);
-		g.text(font, label, x + (w - tw) / 2, y + (h - 8) / 2, down ? Brand.BG : color, !bg && !down);
+		g.text(font, label, x + (w - tw) / 2, y + (h - 8) / 2, down ? Brand.BG : color, shadow && !down);
 	}
 
-	private static void mouse(Gfx g, Font font, int x, int y, int h, String label, boolean down, boolean bg, int color, int cps) {
+	private static void mouse(Gfx g, Font font, int x, int y, int h, String label, boolean down, int bg, int color, boolean shadow, int cps) {
 		fillKey(g, x, y, MOUSE_W, h, down, bg);
 		int textColor = down ? Brand.BG : color;
-		boolean shadow = !bg && !down;
+		boolean textShadow = shadow && !down;
 		if (cps < 0) {
-			g.text(font, label, x + (MOUSE_W - font.width(label)) / 2, y + (h - 8) / 2, textColor, shadow);
+			g.text(font, label, x + (MOUSE_W - font.width(label)) / 2, y + (h - 8) / 2, textColor, textShadow);
 		} else {
 			String cpsText = CPS_TEXT[Math.min(cps, CPS_TEXT.length - 1)];
-			g.text(font, label, x + (MOUSE_W - font.width(label)) / 2, y + 5, textColor, shadow);
-			g.text(font, cpsText, x + (MOUSE_W - font.width(cpsText)) / 2, y + 16, textColor, shadow);
+			g.text(font, label, x + (MOUSE_W - font.width(label)) / 2, y + 5, textColor, textShadow);
+			g.text(font, cpsText, x + (MOUSE_W - font.width(cpsText)) / 2, y + 16, textColor, textShadow);
 		}
 	}
 
-	private static void fillKey(Gfx g, int x, int y, int w, int h, boolean down, boolean bg) {
+	private static void fillKey(Gfx g, int x, int y, int w, int h, boolean down, int bg) {
 		if (down) g.fill(x, y, x + w, y + h, Brand.HUD_BG_PRESSED);
-		else if (bg) g.fill(x, y, x + w, y + h, Brand.HUD_BG);
+		else if (bg != 0) g.fill(x, y, x + w, y + h, bg);
 	}
 }

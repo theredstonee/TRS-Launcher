@@ -246,6 +246,17 @@ public final class Gfx {
 		*///?}
 	}
 
+	/**
+	 * Zeichnet gepufferten Text sofort. 1.20–1.21.5 sammelt GuiGraphics den Text und zeichnet ihn
+	 * erst am Ende – ohne das läge er über später gezeichneten Flächen. Davor und ab 1.21.6
+	 * wird sofort bzw. in Reihenfolge gezeichnet.
+	 */
+	public void flush() {
+		//? if >=1.20 && <1.21.6 {
+		g.flush();
+		//?}
+	}
+
 	/** Zeichnen auf ein Rechteck begrenzen (Bildschirmkoordinaten), mit {@link #noScissor()} beenden. */
 	public void scissor(int x1, int y1, int x2, int y2) {
 		//? if >=1.20 {
