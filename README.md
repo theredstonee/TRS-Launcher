@@ -18,6 +18,7 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.5.2%E2%80%9326.x-62B47A)](#features)
 
 [Download](https://github.com/theredstonee/TRS-Launcher/releases) ·
+[Wiki](https://github.com/theredstonee/TRS-Launcher/wiki) ·
 [Features](#features) ·
 [Building](#building-from-source) ·
 [Architecture](#architecture)
