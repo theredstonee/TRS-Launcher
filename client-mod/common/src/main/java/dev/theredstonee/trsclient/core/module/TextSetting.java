@@ -7,6 +7,9 @@ import dev.theredstonee.trsclient.core.config.ModuleConfig;
  * Eingabefeld angezeigt; der Wert landet in {@link ModuleConfig#texts}.
  */
 public final class TextSetting extends Setting {
+	/** Obergrenze für alle Textfelder (Chat-Nachrichten sind kürzer). */
+	public static final int MAX_LENGTH = 200;
+
 	private final String defaultValue;
 	private final int maxLength;
 	/** Platzhalter, wenn der Text leer ist (nur Anzeige). */

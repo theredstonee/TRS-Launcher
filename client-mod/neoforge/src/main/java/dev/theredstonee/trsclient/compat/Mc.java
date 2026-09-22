@@ -3,6 +3,7 @@ package dev.theredstonee.trsclient.compat;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Camera;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.Screen;
@@ -29,8 +30,14 @@ public final class Mc {
 		return Minecraft.getInstance();
 	}
 
+	/** Fenster des Spiels (Größe, Tastaturabfrage). */
 	public static Window window() {
 		return mc().getWindow();
+	}
+
+	/** Übersetzter Anzeigename einer Tastenbelegung. */
+	public static String keyName(KeyMapping mapping) {
+		return mapping.getTranslatedKeyMessage().getString();
 	}
 
 	/** Aktuell offener Bildschirm (null = im Spiel). */

@@ -40,8 +40,8 @@ import java.util.stream.Stream;
  * ({@code ./gradlew :<version>:runClient -PtrsAutotest}): TRS-Startbildschirm und Menü, neue Testwelt
  * (über den Vanilla-"Welt erstellen"-Bildschirm, so bleibt es über alle Versionen gleich),
  * Screenshots von HUD, Zoom, Nacht ohne/mit Fullbright, Treffer-Farbe, Freelook, Menü,
- * Fadenkreuz-Editor, Resourcepacks, HUD-Editor, Wegpunkten/Minimap, Wegpunkt-Liste und Chat,
- * dann beenden.
+ * Fadenkreuz-Editor, Resourcepacks, HUD-Profilen, HUD-Editor, Wegpunkten/Minimap, Wegpunkt-Liste,
+ * dem Menü mit Text-Einstellungen und Chat, dann beenden.
  * Screenshots: {@code run/forge-<minecraft>/screenshots/trsclient-<minecraft>-*.png}.
  */
 public final class AutoTest {
@@ -117,7 +117,7 @@ public final class AutoTest {
 					TrsClient.LOGGER.info("[Autotest] erstelle Testwelt");
 				} catch (ReflectiveOperationException e) {
 					TrsClient.LOGGER.error("[Autotest] Welt konnte nicht erstellt werden", e);
-					step = 17;
+					step = 21;
 					return;
 				}
 				next(0);
@@ -228,12 +228,19 @@ public final class AutoTest {
 			case 14: {
 				if (!ensureScreen(PackScreen.class, () -> new PackScreen(null))) return;
 				shot(mc, "trsclient-packs");
-				Mc.setScreen(new HudEditorScreen(null));
+				Mc.setScreen(new TrsMenuScreen(null).showProfiles());
 				next(20);
 				break;
 			}
 			case 15: {
-				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null))) return;
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).showProfiles())) return;
+				shot(mc, "trsclient-profiles");
+				Mc.setScreen(new HudEditorScreen(null).selectFirst());
+				next(20);
+				break;
+			}
+			case 16: {
+				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null).selectFirst())) return;
 				shot(mc, "trsclient-hud-editor");
 				Mc.setScreen(null);
 				// Wegpunkte + Minimap + PvP-Anzeigen einschalten und einen Wegpunkt anlegen
@@ -250,15 +257,23 @@ public final class AutoTest {
 				next(40);
 				break;
 			}
-			case 16: {
+			case 17: {
 				shot(mc, "trsclient-waypoints");
 				Mc.setScreen(new WaypointListScreen(null));
 				next(20);
 				break;
 			}
-			case 17: {
+			case 18: {
 				if (!ensureScreen(WaypointListScreen.class, () -> new WaypointListScreen(null))) return;
 				shot(mc, "trsclient-waypoint-liste");
+				// Menü mit Text-Einstellungen – neue Textzeilen im Einstellungs-Bereich
+				Mc.setScreen(new TrsMenuScreen(null).select(textModule(modules)));
+				next(20);
+				break;
+			}
+			case 19: {
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).select(textModule(modules)))) return;
+				shot(mc, "trsclient-menu-text");
 				Mc.setScreen(null);
 				// Chat: Zeitstempel an, dreimal dieselbe Nachricht → wird zusammengefasst
 				if (PvpFeatures.mixinFeatures()) {
@@ -273,12 +288,12 @@ public final class AutoTest {
 				next(10);
 				break;
 			}
-			case 18: {
+			case 20: {
 				shot(mc, "trsclient-chat");
 				next(5);
 				break;
 			}
-			case 19: {
+			case 21: {
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -290,10 +305,18 @@ public final class AutoTest {
 				break;
 			}
 			default: {
-				if (step == 20) mc.stop();
-				step = 21;
+				if (step == 22) mc.stop();
+				step = 23;
 			}
 		}
+	}
+
+	/**
+	 * Modul für den Screenshot der Text-Einstellungen: Auto-GG, wo es das Modul gibt;
+	 * ohne Mixin (1.14.4) stattdessen die Text-Hotkeys (dort stehen ebenfalls Text- und Tastenzeilen).
+	 */
+	private static Module textModule(TrsModules modules) {
+		return PvpFeatures.mixinFeatures() ? modules.autoGg : modules.textHotkeys;
 	}
 
 	/** Schreibt eine Nachricht in den Chat (wie eine Servernachricht – geht durch die TRS-Chat-Hooks). */

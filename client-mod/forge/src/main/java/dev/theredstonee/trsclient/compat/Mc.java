@@ -30,6 +30,7 @@ public final class Mc {
 		return Minecraft.getInstance();
 	}
 
+	/** Fenster des Spiels (Größe, Tastaturabfrage). */
 	public static Window window() {
 		return mc().getWindow();
 	}

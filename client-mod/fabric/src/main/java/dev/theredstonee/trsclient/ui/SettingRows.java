@@ -5,7 +5,6 @@ import dev.theredstonee.trsclient.core.module.ChoiceSetting;
 import dev.theredstonee.trsclient.core.module.ColorSetting;
 import dev.theredstonee.trsclient.core.module.NumberSetting;
 import dev.theredstonee.trsclient.core.module.Setting;
-import dev.theredstonee.trsclient.core.module.TextSetting;
 import net.minecraft.client.gui.Font;
 
 import java.util.List;
@@ -26,9 +25,7 @@ public final class SettingRows {
 		int right = x + w;
 		for (Setting s : settings) {
 			if (y + ROW_H > maxY) break;
-			// Bei Textzeilen ist rechts ein breites Eingabefeld – den Namen davor abschneiden.
-			int labelWidth = s instanceof TextSetting ? w - Math.min(140, w / 2) - 6 : w;
-			g.text(font, Gfx.clip(font, s.label(), labelWidth), x, y + 3, Brand.TEXT, false);
+			g.text(font, s.label(), x, y + 3, Brand.TEXT, false);
 			if (s instanceof BoolSetting) {
 				BoolSetting b = (BoolSetting) s;
 				int bx = right - 26;
@@ -44,17 +41,6 @@ public final class SettingRows {
 				g.fill(sx, y + 1, sx + 24, y + 12, c.argb());
 				Brand.outline(g, sx - 1, y, 26, 13, hover ? Brand.AMBER : Brand.BORDER);
 				hot.add(sx, y + 1, 24, 11, c::cycle);
-			} else if (s instanceof TextSetting) {
-				TextSetting t = (TextSetting) s;
-				int tw = Math.min(140, w / 2);
-				int tx = right - tw;
-				boolean hover = inside(mx, my, tx, y + 1, tw, 11);
-				g.fill(tx, y + 1, tx + tw, y + 12, hover ? Brand.SURFACE_HOVER : Brand.BG);
-				Brand.outline(g, tx, y + 1, tw, 11, hover ? Brand.AMBER : Brand.BORDER);
-				g.text(font, Gfx.clip(font, t.display(), tw - 6), tx + 3, y + 3,
-						t.isEmpty() ? Brand.TEXT_DIM : Brand.TEXT, false);
-				// Klick öffnet den Eingabedialog; danach geht es zum aufrufenden Bildschirm zurück.
-				hot.add(tx, y + 1, tw, 11, () -> openEditor(t));
 			} else if (s instanceof ChoiceSetting) {
 				ChoiceSetting<?> c = (ChoiceSetting<?>) s;
 				String label = "‹ " + c.display() + " ›";
@@ -70,13 +56,6 @@ public final class SettingRows {
 			y += ROW_H;
 		}
 		return y;
-	}
-
-	/** Öffnet den Eingabedialog einer Text-Einstellung (zurück geht es zum aktuellen Bildschirm). */
-	private static void openEditor(TextSetting setting) {
-		dev.theredstonee.trsclient.compat.Mc.setScreen(
-				new dev.theredstonee.trsclient.screen.TextInputScreen(
-						dev.theredstonee.trsclient.compat.Mc.screen(), setting));
 	}
 
 	private static void number(Gfx g, Font font, int right, int y, NumberSetting n, double mx, double my, Hotspots hot) {

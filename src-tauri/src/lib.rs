@@ -20,6 +20,9 @@ fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
 }
 
 pub fn run() {
+    if let Ok(exe) = std::env::current_exe() {
+        trs_core::firewall::set_helper_exe(exe);
+    }
     tauri::Builder::default()
         // Muss als erstes Plugin registriert werden.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
@@ -102,6 +105,9 @@ pub fn run() {
             commands::instances::create_instance,
             commands::instances::pick_instance_icon,
             commands::instances::remove_instance_icon,
+            commands::instances::pick_instance_banner,
+            commands::instances::set_instance_banner_screenshot,
+            commands::instances::remove_instance_banner,
             commands::instances::change_instance_version,
             commands::instances::instance_history,
             commands::content::refresh_content_meta,
@@ -152,6 +158,26 @@ pub fn run() {
             commands::import::scan_imports,
             commands::import::pick_import_folder,
             commands::import::import_instance,
+            commands::skins::skin_profile,
+            commands::skins::skin_library,
+            commands::skins::add_skin_file,
+            commands::skins::save_active_skin,
+            commands::skins::delete_skin,
+            commands::skins::apply_skin,
+            commands::skins::reset_skin,
+            commands::skins::choose_cape,
+            commands::news::get_news,
+            commands::news::news_image,
+            commands::news::patch_notes_body,
+            commands::screenshots::all_screenshots,
+            commands::screenshots::screenshot_thumbnail,
+            commands::screenshots::screenshot_image,
+            commands::screenshots::copy_screenshot,
+            commands::screenshots::reveal_screenshot,
+            commands::screenshots::trash_screenshot,
+            commands::export::export_candidates,
+            commands::export::export_modpack,
+            commands::export::import_modpack_file,
         ])
         .run(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden");

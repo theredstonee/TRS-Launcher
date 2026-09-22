@@ -10,7 +10,8 @@ publish.workspace = true
 base64 = "0.23.1"
 chrono = { version = "0.4.45", features = ["serde"] }
 futures = "0.3.34"
-reqwest = { version = "0.13.5", default-features = false, features = ["native-tls", "http2", "json", "stream", "gzip", "system-proxy", "form", "query"] }
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["native-tls", "http2", "json", "stream", "gzip", "system-proxy", "form", "query", "multipart"] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
@@ -20,7 +21,7 @@ thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["fs", "sync", "macros", "rt-multi-thread", "process", "io-util", "net", "time"] }
 tracing = { version = "0.1.44", features = ["log"] }
 uuid = { version = "1.26.1", features = ["v4"] }
-windows = { version = "0.62.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_NetworkManagement_Dns", "Win32_System_Threading", "Win32_System_Registry", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+windows = { version = "0.62.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_NetworkManagement_Dns", "Win32_NetworkManagement_WindowsFirewall", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_Threading", "Win32_System_Registry", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 zip = "8.6.0"
 
 [dev-dependencies]

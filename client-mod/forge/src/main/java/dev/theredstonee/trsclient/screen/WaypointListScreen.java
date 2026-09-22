@@ -1,7 +1,6 @@
 package dev.theredstonee.trsclient.screen;
 
 import dev.theredstonee.trsclient.TrsClient;
-import dev.theredstonee.trsclient.TrsKeys;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.render.Projection;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
@@ -62,7 +61,8 @@ public final class WaypointListScreen extends TrsScreen {
 
 		g.scissor(listX, listY, listX + listW, listY + listH);
 		if (list.isEmpty()) {
-			g.text(font, "Noch keine Wegpunkte – Taste " + Mc.keyName(TrsKeys.waypointAdd)
+			String key = TrsClient.get().modules().waypointAddKey.get();
+			g.text(font, "Noch keine Wegpunkte – Taste " + dev.theredstonee.trsclient.compat.Keys.display(key)
 					+ " im Spiel legt einen an.", listX, listY + 4, Brand.TEXT_DIM, false);
 		}
 		for (int i = 0; i < list.size(); i++) {

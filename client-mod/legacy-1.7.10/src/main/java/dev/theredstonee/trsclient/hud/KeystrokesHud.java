@@ -53,22 +53,22 @@ public final class KeystrokesHud extends HudElement {
 			GameSettings o = mc.gameSettings;
 			move = new KeyBinding[]{o.keyBindForward, o.keyBindLeft, o.keyBindBack, o.keyBindRight};
 		}
-		boolean bg = module.background.get();
+		int bg = module.backgroundArgb();
 		int color = textColor();
 
-		key(font, KEY + GAP, 0, KEY, KEY, label(font, 0, move[0]), move[0].getIsKeyPressed(), bg, color);
+		key(font, KEY + GAP, 0, KEY, KEY, label(font, 0, move[0]), move[0].getIsKeyPressed(), bg, color, module.shadow());
 		int y = KEY + GAP;
 		for (int i = 1; i < 4; i++) {
-			key(font, (i - 1) * (KEY + GAP), y, KEY, KEY, label(font, i, move[i]), move[i].getIsKeyPressed(), bg, color);
+			key(font, (i - 1) * (KEY + GAP), y, KEY, KEY, label(font, i, move[i]), move[i].getIsKeyPressed(), bg, color, module.shadow());
 		}
 		y += KEY + GAP;
 
 		long now = System.currentTimeMillis();
 		int mh = mouseHeight();
 		boolean showCps = modules.keystrokesShowCps.get();
-		mouse(font, 0, y, mh, "LMT", mc.gameSettings.keyBindAttack.getIsKeyPressed(), bg, color,
+		mouse(font, 0, y, mh, "LMT", mc.gameSettings.keyBindAttack.getIsKeyPressed(), bg, color, module.shadow(),
 				showCps ? TrsClient.get().leftClicks().count(now) : -1);
-		mouse(font, MOUSE_W + GAP, y, mh, "RMT", mc.gameSettings.keyBindUseItem.getIsKeyPressed(), bg, color,
+		mouse(font, MOUSE_W + GAP, y, mh, "RMT", mc.gameSettings.keyBindUseItem.getIsKeyPressed(), bg, color, module.shadow(),
 				showCps ? TrsClient.get().rightClicks().count(now) : -1);
 		y += mh;
 
@@ -94,27 +94,27 @@ public final class KeystrokesHud extends HudElement {
 		return labels[idx];
 	}
 
-	private static void key(FontRenderer font, int x, int y, int w, int h, String label, boolean down, boolean bg, int color) {
+	private static void key(FontRenderer font, int x, int y, int w, int h, String label, boolean down, int bg, int color, boolean shadow) {
 		fillKey(x, y, w, h, down, bg);
 		int tw = font.getStringWidth(label);
-		Brand.text(font, label, x + (w - tw) / 2, y + (h - 8) / 2, down ? Brand.BG : color, !bg && !down);
+		Brand.text(font, label, x + (w - tw) / 2, y + (h - 8) / 2, down ? Brand.BG : color, shadow && !down);
 	}
 
-	private static void mouse(FontRenderer font, int x, int y, int h, String label, boolean down, boolean bg, int color, int cps) {
+	private static void mouse(FontRenderer font, int x, int y, int h, String label, boolean down, int bg, int color, boolean shadow, int cps) {
 		fillKey(x, y, MOUSE_W, h, down, bg);
 		int textColor = down ? Brand.BG : color;
-		boolean shadow = !bg && !down;
+		boolean textShadow = shadow && !down;
 		if (cps < 0) {
-			Brand.text(font, label, x + (MOUSE_W - font.getStringWidth(label)) / 2, y + (h - 8) / 2, textColor, shadow);
+			Brand.text(font, label, x + (MOUSE_W - font.getStringWidth(label)) / 2, y + (h - 8) / 2, textColor, textShadow);
 		} else {
 			String cpsText = CPS_TEXT[Math.min(cps, CPS_TEXT.length - 1)];
-			Brand.text(font, label, x + (MOUSE_W - font.getStringWidth(label)) / 2, y + 5, textColor, shadow);
-			Brand.text(font, cpsText, x + (MOUSE_W - font.getStringWidth(cpsText)) / 2, y + 16, textColor, shadow);
+			Brand.text(font, label, x + (MOUSE_W - font.getStringWidth(label)) / 2, y + 5, textColor, textShadow);
+			Brand.text(font, cpsText, x + (MOUSE_W - font.getStringWidth(cpsText)) / 2, y + 16, textColor, textShadow);
 		}
 	}
 
-	private static void fillKey(int x, int y, int w, int h, boolean down, boolean bg) {
+	private static void fillKey(int x, int y, int w, int h, boolean down, int bg) {
 		if (down) Brand.rect(x, y, w, h, Brand.HUD_BG_PRESSED);
-		else if (bg) Brand.rect(x, y, w, h, Brand.HUD_BG);
+		else if (bg != 0) Brand.rect(x, y, w, h, bg);
 	}
 }

@@ -81,6 +81,9 @@ public final class TrsClient {
 	private final ZoomState zoom = new ZoomState();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
 	private final ChatFeatures chat = new ChatFeatures(modules);
+	/** Tastendruck-Erkennung für die Modul-Tasten (Wegpunkte, Text-Hotkeys). */
+	private final dev.theredstonee.trsclient.core.input.KeyPresses moduleKeys =
+			new dev.theredstonee.trsclient.core.input.KeyPresses(dev.theredstonee.trsclient.compat.Keys::isDown);
 	/** Module im TRS-Menü (ohne die, die unter Legacy-Forge nicht umsetzbar sind). */
 	private final List<Module> menuModules;
 	private ConfigStore config;
@@ -108,9 +111,7 @@ public final class TrsClient {
 		List<Module> list = new ArrayList<>(modules.registry.all());
 		// Treffer-Farbe: in RendererLivingEntity fest einprogrammiert – ohne Coremod nicht änderbar.
 		list.remove(modules.hitColor);
-		// Bewegungsunschärfe braucht einen zweiten Bildpuffer (nirgends umgesetzt),
-		// niedriges Feuer den Feuer-Overlay-Renderer – beides ohne Coremod nicht machbar.
-		list.remove(modules.motionBlur);
+		// Niedriges Feuer braucht den Feuer-Overlay-Renderer – ohne Coremod nicht machbar.
 		list.remove(modules.lowFire);
 		menuModules = Collections.unmodifiableList(list);
 	}
@@ -124,6 +125,8 @@ public final class TrsClient {
 		instance = this;
 		version = event.getModMetadata().version;
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
+		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
+		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
 		initWaypoints(event.getModConfigurationDirectory());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
@@ -165,6 +168,11 @@ public final class TrsClient {
 	public void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
 		Minecraft mc = Minecraft.getMinecraft();
+		migrateKeys(mc);
+		while (TrsKeys.hudProfile.isPressed()) {
+			Mc.actionBar("HUD-Profil: " + modules.profiles.cycle());
+			saveConfig();
+		}
 		while (TrsKeys.menu.isPressed()) {
 			if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
 		}
@@ -173,18 +181,19 @@ public final class TrsClient {
 			Mc.actionBar("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus"));
 			saveConfig();
 		}
-		while (TrsKeys.waypointAdd.isPressed()) {
-			if (mc.currentScreen == null && Mc.player() != null && modules.waypoints.isEnabled()) {
+		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
+		if (mc.currentScreen == null) {
+			if (moduleKeys.pressed(modules.waypointAddKey) && Mc.player() != null && modules.waypoints.isEnabled()) {
 				mc.displayGuiScreen(new WaypointEditScreen(null, null));
 			}
-		}
-		while (TrsKeys.waypointList.isPressed()) {
-			if (mc.currentScreen == null && modules.waypoints.isEnabled()) {
+			if (moduleKeys.pressed(modules.waypointListKey) && modules.waypoints.isEnabled()) {
 				mc.displayGuiScreen(new WaypointListScreen(null));
 			}
-		}
-		for (int i = 0; i < TrsKeys.textHotkeys.length; i++) {
-			while (TrsKeys.textHotkeys[i].isPressed()) chat.onHotkey(i);
+			for (int i = 0; i < modules.hotkeyKeys.length; i++) {
+				if (moduleKeys.pressed(modules.hotkeyKeys[i])) chat.onHotkey(i);
+			}
+		} else {
+			moduleKeys.releaseAll();
 		}
 		checkWorldChange();
 		pvp.tick(mc);
@@ -383,6 +392,20 @@ public final class TrsClient {
 	/** Maus-Divisor während des Zooms (1 = unverändert). */
 	public double mouseDivisor() {
 		return modules.zoom.isEnabled() && modules.zoomSlowMouse.get() ? zoom.factor() : 1.0;
+	}
+
+	/**
+	 * Einmalige Umstellung alter Standard-Tasten: Zoom lag auf C, was ab Minecraft 1.12 mit
+	 * "Schnellleiste speichern" kollidiert. Selbst belegte Tasten bleiben unangetastet.
+	 */
+	private void migrateKeys(Minecraft mc) {
+		if (!modules.keyDefaults.needsZoomKeyMigration() || mc.gameSettings == null) return;
+		if (TrsKeys.migrateZoomKey()) {
+			mc.gameSettings.saveOptions();
+			LOGGER.info("Zoom-Taste von C auf V umgestellt (C ist ab 1.12 'Schnellleiste speichern')");
+		}
+		modules.keyDefaults.markMigrated();
+		saveConfig();
 	}
 
 	/** Speichert die Einstellungen (Fehler nur loggen). */

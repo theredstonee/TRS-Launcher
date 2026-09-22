@@ -17,14 +17,7 @@ const inst = ref<Instance>(structuredClone(toRaw(props.instance)))
 const running = computed(() => games.state(inst.value.id).phase !== 'idle')
 const g = computed(() => settings.current)
 
-const sections: ShellSection[] = [
-  { key: 'general', label: 'Allgemein', icon: 'general' },
-  { key: 'installation', label: 'Installation', icon: 'install' },
-  { key: 'window', label: 'Fenster', icon: 'window' },
-  { key: 'java', label: 'Java & Arbeitsspeicher', icon: 'java' },
-  { key: 'hooks', label: 'Start-Hooks', icon: 'hooks' },
-  { key: 'sync', label: 'Synchronisierung', icon: 'sync' },
-]
+const sections: ShellSection[] = instanceSettingsSections
 const active = ref(sections.some((s) => s.key === props.initial) ? props.initial : 'general')
 
 // --- Formularzustand ----------------------------------------------------------
@@ -124,7 +117,7 @@ async function save() {
   try {
     const updated = await backend.updateInstance(inst.value.id, parsed.data)
     lastSaved = json
-    inst.value = { ...updated, iconPath: inst.value.iconPath }
+    inst.value = { ...updated, iconPath: inst.value.iconPath, bannerPath: inst.value.bannerPath }
     emit('updated', inst.value)
     instances.load()
     status.value = { ok: true, text: 'Gespeichert' }
@@ -153,9 +146,30 @@ async function removeIcon() {
     toasts.error(e)
   }
 }
-/** Bild, Gruppe, Version: sofort gespeichert – nur diese Felder übernehmen. */
+
+const bannerBusy = ref(false)
+async function pickBanner() {
+  bannerBusy.value = true
+  try {
+    const updated = await backend.pickInstanceBanner(inst.value.id)
+    if (updated) applyMeta(updated)
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    bannerBusy.value = false
+  }
+}
+async function removeBanner() {
+  try {
+    applyMeta(await backend.removeInstanceBanner(inst.value.id))
+  } catch (e) {
+    toasts.error(e)
+  }
+}
+
+/** Bild, Banner, Gruppe, Version: sofort gespeichert – nur diese Felder übernehmen. */
 function applyMeta(updated: Instance) {
-  inst.value = { ...inst.value, icon: updated.icon, iconPath: updated.iconPath, group: updated.group, gameVersion: updated.gameVersion, loader: updated.loader }
+  inst.value = { ...inst.value, icon: updated.icon, iconPath: updated.iconPath, bannerPath: updated.bannerPath, group: updated.group, gameVersion: updated.gameVersion, loader: updated.loader }
   emit('updated', inst.value)
   instances.load()
 }
@@ -180,6 +194,7 @@ async function setGroup(group: string | null) {
   }
 }
 
+const exporting = ref(false)
 const duplicating = ref(false)
 async function duplicate() {
   duplicating.value = true
@@ -300,6 +315,22 @@ const loaderLine = computed(() => {
         </div>
       </div>
 
+      <SettingRow
+        title="Banner"
+        description="Breites Titelbild für Startseite und Instanz-Kopf. PNG, JPEG oder WebP, höchstens 10 MB – oder im Tab „Screenshots“ ein eigenes Bild übernehmen."
+        stacked
+      >
+        <div class="group relative overflow-hidden rounded-xl border border-base-800">
+          <InstanceBanner :instance="inst" shade="none" class="h-28 w-full" />
+          <div class="absolute inset-0 flex items-end justify-end gap-2 bg-gradient-to-t from-base-950/80 to-transparent p-2.5">
+            <button class="btn btn-ghost py-1.5 text-xs" :disabled="bannerBusy" @click="pickBanner">
+              {{ bannerBusy ? 'Wähle …' : inst.bannerPath ? 'Banner ändern' : 'Banner wählen' }}
+            </button>
+            <button v-if="inst.bannerPath" class="btn btn-ghost py-1.5 text-xs hover:text-redstone-300" @click="removeBanner">Entfernen</button>
+          </div>
+        </div>
+      </SettingRow>
+
       <SettingRow title="Bibliotheksgruppe" description="Gruppen ordnen die Instanzen in der Bibliothek. Eine Instanz gehört zu höchstens einer Gruppe." stacked>
         <div class="flex flex-wrap items-center gap-1.5">
           <button class="group-chip" :class="{ 'group-chip-on': !inst.group }" @click="setGroup(null)">Keine</button>
@@ -331,6 +362,10 @@ const loaderLine = computed(() => {
 
       <SettingRow title="Duplizieren" description="Legt eine Kopie mit allen Welten, Mods und Einstellungen an – praktisch vor einem Versionswechsel.">
         <button class="btn btn-ghost" :disabled="duplicating || running" @click="duplicate">{{ duplicating ? 'Kopiere …' : 'Duplizieren' }}</button>
+      </SettingRow>
+
+      <SettingRow title="Als Modpack exportieren" description="Schreibt eine .mrpack-Datei zum Weitergeben oder Sichern. Mods von Modrinth werden verlinkt statt kopiert.">
+        <button class="btn btn-ghost" :disabled="running" @click="exporting = true">Exportieren</button>
       </SettingRow>
 
       <SettingRow title="Instanz löschen" description="Löscht die Instanz mit allen Welten, Mods und Screenshots unwiderruflich." danger>
@@ -483,6 +518,8 @@ const loaderLine = computed(() => {
   </SettingsShell>
 
   <ChangeVersionDialog v-if="changingVersion" :instance="inst" @close="changingVersion = false" @changed="onVersionChanged" />
+
+  <ExportPackDialog v-if="exporting" :instance="inst" @close="exporting = false" />
 
   <BaseDialog v-if="confirmReinstall" title="Neu installieren?" @close="confirmReinstall = false">
     <p class="text-sm text-base-200">Spielversion und Bibliotheken werden neu heruntergeladen. Welten, Mods und Einstellungen bleiben erhalten.</p>

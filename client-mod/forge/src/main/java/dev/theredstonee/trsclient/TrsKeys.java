@@ -17,12 +17,8 @@ public final class TrsKeys {
 	public static KeyMapping zoom;
 	public static KeyMapping fullbright;
 	public static KeyMapping freelook;
-	/** Wegpunkt an der eigenen Position anlegen. */
-	public static KeyMapping waypointAdd;
-	/** Wegpunkt-Liste öffnen. */
-	public static KeyMapping waypointList;
-	/** Vier frei belegbare Tasten, die je einen Text senden (Standard: unbelegt). */
-	public static final KeyMapping[] textHotkeys = new KeyMapping[4];
+	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
+	public static KeyMapping hudProfile;
 
 	private TrsKeys() {
 	}
@@ -38,16 +34,26 @@ public final class TrsKeys {
 		//? if >=1.21.9
 		/*CATEGORY = KeyMapping.Category.register(TrsClient.id("main"));*/
 		menu = new KeyMapping("key.trsclient.menu", KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY);
-		zoom = new KeyMapping("key.trsclient.zoom", KEYBOARD, InputConstants.KEY_C, CATEGORY);
+		// Zoom liegt auf V: C ist ab Minecraft 1.12 mit "Hotbar speichern" belegt.
+		zoom = new KeyMapping("key.trsclient.zoom", KEYBOARD, dev.theredstonee.trsclient.compat.Keys.code("key.keyboard.v"), CATEGORY);
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
 		freelook = new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY);
-		waypointAdd = new KeyMapping("key.trsclient.waypointAdd", KEYBOARD, InputConstants.KEY_B, CATEGORY);
-		waypointList = new KeyMapping("key.trsclient.waypointList", KEYBOARD, InputConstants.KEY_N, CATEGORY);
-		for (int i = 0; i < textHotkeys.length; i++) {
-			textHotkeys[i] = new KeyMapping("key.trsclient.text" + (i + 1), KEYBOARD,
-					InputConstants.UNKNOWN.getValue(), CATEGORY);
-		}
+		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
+		hudProfile = new KeyMapping("key.trsclient.hudProfile", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
+	}
+
+	/**
+	 * Stellt den alten Zoom-Standard C auf V um – aber nur, wenn die Taste noch auf C liegt,
+	 * also nie geändert wurde.
+	 * @return true, wenn umgestellt wurde
+	 */
+	public static boolean migrateZoomKey() {
+		if (zoom == null) return false;
+		if (boundKey(zoom) != dev.theredstonee.trsclient.compat.Keys.code("key.keyboard.c")) return false;
+		zoom.setKey(InputConstants.getKey("key.keyboard.v"));
+		KeyMapping.resetMapping();
+		return true;
 	}
 
 	/** Forge-Event (Mod-Bus): Tasten in die Steuerungs-Optionen eintragen. */
@@ -57,9 +63,7 @@ public final class TrsKeys {
 		event.register(zoom);
 		event.register(fullbright);
 		event.register(freelook);
-		event.register(waypointAdd);
-		event.register(waypointList);
-		for (KeyMapping mapping : textHotkeys) event.register(mapping);
+		event.register(hudProfile);
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */

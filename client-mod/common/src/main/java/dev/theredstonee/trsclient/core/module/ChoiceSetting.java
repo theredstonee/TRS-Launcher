@@ -42,6 +42,26 @@ public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> exten
 		cycle(1);
 	}
 
+	/** Anzahl der Optionen (für die Auswahlliste im Menü). */
+	public int size() {
+		return options.length;
+	}
+
+	/** Anzeigename der Option {@code i}. */
+	public String optionLabel(int i) {
+		return options[i].label();
+	}
+
+	/** Index der aktuellen Option. */
+	public int index() {
+		return value.ordinal();
+	}
+
+	/** Wählt die Option {@code i} (außerhalb des Bereichs → unverändert). */
+	public void setIndex(int i) {
+		if (i >= 0 && i < options.length) value = options[i];
+	}
+
 	public String display() {
 		return value.label();
 	}

@@ -99,6 +99,8 @@ public final class TrsClient {
 		// TRS-Startbildschirm, Angriffs-Abklingzeit am Fadenkreuz (Kampfsystem ab 1.9).
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.hitColor, modules.freelook, modules.titleScreen, modules.crosshairAttack));
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
+		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
+		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -141,6 +143,12 @@ public final class TrsClient {
 			if (event.phase == TickEvent.Phase.START) {
 				pvp.countPresses(mc);
 				return;
+			}
+			migrateKeys(mc);
+			while (TrsKeys.hudProfile.isPressed()) {
+				String name = modules.profiles.cycle();
+				if (mc.ingameGUI != null) mc.ingameGUI.func_110326_a("HUD-Profil: " + name, false);
+				saveConfig();
 			}
 			while (TrsKeys.menu.isPressed()) {
 				if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
@@ -262,6 +270,20 @@ public final class TrsClient {
 	}
 
 	/** Speichert die Einstellungen (Fehler nur loggen). */
+	/**
+	 * Einmalige Umstellung alter Standard-Tasten: Zoom lag auf C, was ab Minecraft 1.12 mit
+	 * "Schnellleiste speichern" kollidiert. Selbst belegte Tasten bleiben unangetastet.
+	 */
+	private void migrateKeys(Minecraft mc) {
+		if (!modules.keyDefaults.needsZoomKeyMigration() || mc.gameSettings == null) return;
+		if (TrsKeys.migrateZoomKey()) {
+			mc.gameSettings.saveOptions();
+			LOGGER.info("Zoom-Taste von C auf V umgestellt");
+		}
+		modules.keyDefaults.markMigrated();
+		saveConfig();
+	}
+
 	public void saveConfig() {
 		if (config == null) return;
 		try {

@@ -21,11 +21,14 @@ pub struct InstanceView {
     #[serde(flatten)]
     instance: Instance,
     icon_path: Option<PathBuf>,
+    /// Breites Titelbild – ebenfalls nur diese eine Datei freigegeben.
+    banner_path: Option<PathBuf>,
 }
 
 pub(crate) fn view(app: &AppHandle, launcher: &Launcher, instance: Instance) -> InstanceView {
     let icon_path = launcher.instance_icon_path(&instance).filter(|p| allow(app, p));
-    InstanceView { instance, icon_path }
+    let banner_path = launcher.instance_banner_path(&instance).filter(|p| allow(app, p));
+    InstanceView { instance, icon_path, banner_path }
 }
 
 #[tauri::command]
@@ -145,6 +148,56 @@ pub async fn remove_instance_icon(
     id: String,
 ) -> CommandResult<InstanceView> {
     let updated = launcher.remove_instance_icon(&id).await?;
+    Ok(view(&app, &launcher, updated))
+}
+
+/// Banner per Windows-Bilddialog wählen (Pfad bleibt in Rust). `None` = abgebrochen.
+#[tauri::command]
+pub async fn pick_instance_banner(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+) -> CommandResult<Option<InstanceView>> {
+    let instance = launcher.instances().get(&id).await?;
+    let dialog_app = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        dialog_app
+            .dialog()
+            .file()
+            .set_title("Banner für die Instanz wählen")
+            .add_filter("Bilder", &["png", "jpg", "jpeg", "webp"])
+            .blocking_pick_file()
+    })
+    .await
+    .ok()
+    .flatten()
+    .and_then(|p| p.into_path().ok());
+
+    let Some(file) = picked else { return Ok(None) };
+    let updated = launcher.set_instance_banner_from_file(&instance.id, &file).await?;
+    Ok(Some(view(&app, &launcher, updated)))
+}
+
+/// Einen Screenshot der Instanz als Banner nehmen – nur der Dateiname kommt
+/// aus dem Webview, der Kern prüft ihn gegen den Screenshot-Ordner.
+#[tauri::command]
+pub async fn set_instance_banner_screenshot(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    file_name: String,
+) -> CommandResult<InstanceView> {
+    let updated = launcher.set_instance_banner_from_screenshot(&id, &file_name).await?;
+    Ok(view(&app, &launcher, updated))
+}
+
+#[tauri::command]
+pub async fn remove_instance_banner(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+) -> CommandResult<InstanceView> {
+    let updated = launcher.remove_instance_banner(&id).await?;
     Ok(view(&app, &launcher, updated))
 }
 

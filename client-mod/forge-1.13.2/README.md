@@ -44,6 +44,6 @@ Standalone Gradle build (not part of `../settings.gradle`):
 
 ## Shared code
 
-`src/main/java/dev/theredstonee/trsclient/core/**` is the same **Java 8 copy** of `../common` as in `../legacy-1.7.10`
-(Minecraft 1.13.2 runs on Java 8). Tests run against Gson 2.8.0 (the version 1.13.2 ships). When `common` changes,
-sync the copy.
+`../common` is compiled straight into this build (`srcDir ../common/src/main/java`); it is plain Java 8, which is
+what Minecraft 1.13.2 runs on, and it only uses Gson calls that the bundled Gson 2.8.0 has. The unit tests of
+`common` run in the `common` project (`../gradlew :common:test`), not here.

@@ -95,6 +95,8 @@ final class BuildInfo {
 	}
 }
 sourceSets.main.java.srcDir(generateBuildInfo)
+// Versionsunabhängige Logik direkt aus ../common (reines Java 8 – passt zu 1.8.9–1.12.2).
+sourceSets.main.java.srcDir(rootProject.file('../common/src/main/java'))
 
 // Forge sucht mcmod.info neben den Klassen – im Dev-Start (runClient) liegen Ressourcen sonst in einem
 // eigenen Ordner und Forge meldet "missing the required element 'version'".

@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.core.module;
 
+import dev.theredstonee.trsclient.core.config.KeyDefaults;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
+import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudAnchor;
 import dev.theredstonee.trsclient.core.hud.HudPosition;
 
@@ -10,6 +12,10 @@ import dev.theredstonee.trsclient.core.hud.HudPosition;
  */
 public final class TrsModules {
 	public final ModuleRegistry registry = new ModuleRegistry();
+	/** Gespeicherte HUD-Layouts (wird nach den Modulen erstellt). */
+	public final HudProfiles profiles;
+	/** Stand der Standard-Tastenbelegungen (Migration alter Belegungen). */
+	public final KeyDefaults keyDefaults = new KeyDefaults();
 
 	public final HudModule fps;
 	public final HudModule cps;
@@ -38,7 +44,6 @@ public final class TrsModules {
 	public final Module lowFire;
 	public final Module blockOutline;
 	public final Module hitboxes;
-	public final Module motionBlur;
 	public final Module noHurtCam;
 	public final Module chat;
 	public final Module autoGg;
@@ -85,7 +90,6 @@ public final class TrsModules {
 	public final NumberSetting blockOutlineOpacity;
 	public final NumberSetting blockOutlineWidth;
 	public final ColorSetting hitboxColor;
-	public final NumberSetting motionBlurStrength;
 
 	// --- Chat ---
 	public final BoolSetting chatTimestamps;
@@ -96,8 +100,11 @@ public final class TrsModules {
 	public final NumberSetting autoGgDelay;
 	public final TextSetting autoGgTriggers;
 	public final TextSetting[] hotkeyTexts = new TextSetting[4];
+	public final KeySetting[] hotkeyKeys = new KeySetting[4];
 
 	// --- Wegpunkte / Minimap ---
+	public final KeySetting waypointAddKey;
+	public final KeySetting waypointListKey;
 	public final BoolSetting waypointBeam;
 	public final BoolSetting waypointDistance;
 	public final BoolSetting waypointDeath;
@@ -178,8 +185,10 @@ public final class TrsModules {
 		combo = registry.register(new HudModule("combo", "Combo",
 				"Zählt Treffer in Folge; endet, wenn du selbst getroffen wirst oder eine Pause kommt", false,
 				new HudPosition(HudAnchor.CENTER_LEFT, 0.005, -0.06)));
+		// Geschwindigkeit, Reichweite und Combo stehen übereinander links neben dem Fadenkreuz,
+		// oberhalb der Rüstung (die auf 0.0 sitzt).
 		speed = registry.register(new HudModule("speed", "Geschwindigkeit", "Blöcke pro Sekunde", false,
-				new HudPosition(HudAnchor.TOP_LEFT, 0.005, 0.345)));
+				new HudPosition(HudAnchor.CENTER_LEFT, 0.005, -0.18)));
 		minimap = registry.register(new HudModule("minimap", "Minimap",
 				"Kleine Karte der Umgebung (Blockfarben von oben) mit Wegpunkten. "
 						+ "Zeigt nur geladene Chunks – kein Röntgenblick, keine Höhlenansicht.", false,
@@ -204,8 +213,6 @@ public final class TrsModules {
 				"Farbe und Stärke des Rahmens um den anvisierten Block", false));
 		hitboxes = registry.register(new Module("hitboxes", "Hitboxen",
 				"Zeigt die Trefferboxen der Kreaturen wie F3+B (nur Anzeige – die Boxen selbst ändern sich nicht)", false));
-		motionBlur = registry.register(new Module("motionBlur", "Bewegungsunschärfe",
-				"Blendet das vorherige Bild leicht ein (reiner Nachzieh-Effekt, kein Vorteil)", false));
 		noHurtCam = registry.register(new Module("noHurtCam", "Kein Schadens-Wackeln",
 				"Die Kamera kippt nicht mehr, wenn du Schaden nimmst", false));
 		chat = registry.register(new Module("chat", "Chat-Verbesserungen",
@@ -214,11 +221,44 @@ public final class TrsModules {
 				"Schickt nach dem Spielende automatisch einen Text. Standardmäßig aus; höchstens einmal pro Minute. "
 						+ "Manche Server mögen das nicht – nur nutzen, wo es erlaubt ist.", false));
 		textHotkeys = registry.register(new Module("textHotkeys", "Text-Hotkeys",
-				"Vier Tasten (in den Steuerungen belegbar) senden je einen festen Text oder Befehl. "
+				"Vier frei belegbare Tasten senden je einen festen Text oder Befehl. "
 						+ "Standardmäßig aus, höchstens eine Nachricht pro Sekunde.", false));
 		waypoints = registry.register(new Module("waypoints", "Wegpunkte",
 				"Eigene Markierungen je Welt/Server: Taste drücken, Name und Farbe wählen; "
 						+ "im Spiel mit Entfernung und Lichtsäule, dazu ein Todespunkt.", true));
+
+		fps.icon("gauge");
+		cps.icon("mouse").category(Category.PVP);
+		keystrokes.icon("keyboard").category(Category.PVP);
+		ping.icon("signal");
+		armor.icon("shield").category(Category.PVP);
+		effects.icon("potion");
+		coords.icon("compass").category(Category.WORLD);
+		clock.icon("clock");
+		memory.icon("chip");
+		server.icon("signal").category(Category.WORLD);
+		packs.icon("packs");
+		toggleSprint.icon("run").category(Category.PVP);
+		toggleSneak.icon("sneak").category(Category.PVP);
+		crosshair.icon("crosshair").category(Category.PVP);
+		hitColor.icon("hit").category(Category.PVP);
+		freelook.icon("eye").category(Category.WORLD);
+		zoom.icon("zoom").category(Category.WORLD);
+		fullbright.icon("sun").category(Category.WORLD);
+		titleScreen.icon("home");
+		reach.icon("sword").category(Category.PVP);
+		combo.icon("hit").category(Category.PVP);
+		speed.icon("run").category(Category.PVP);
+		minimap.icon("globe").category(Category.WORLD);
+		oldAnimations.icon("sword").category(Category.PVP);
+		lowFire.icon("hit").category(Category.PVP);
+		blockOutline.icon("layers").category(Category.WORLD);
+		hitboxes.icon("shield").category(Category.PVP);
+		noHurtCam.icon("eye").category(Category.PVP);
+		chat.icon("chat").category(Category.CHAT);
+		autoGg.icon("chat").category(Category.CHAT);
+		textHotkeys.icon("keyboard").category(Category.CHAT);
+		waypoints.icon("compass").category(Category.WORLD);
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS unter Maustasten", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Leertaste anzeigen", true));
@@ -258,7 +298,6 @@ public final class TrsModules {
 		blockOutlineOpacity = blockOutline.add(new NumberSetting("opacity", "Deckkraft (%)", 40, 10, 100, 10, ""));
 		blockOutlineWidth = blockOutline.add(new NumberSetting("width", "Stärke", 2, 1, 6, 1, ""));
 		hitboxColor = hitboxes.add(new ColorSetting("color", "Farbe", 0xFFFFFF));
-		motionBlurStrength = motionBlur.add(new NumberSetting("strength", "Stärke (%)", 40, 10, 80, 10, ""));
 
 		chatTimestamps = chat.add(new BoolSetting("timestamps", "Zeitstempel", false));
 		chatTimestampSeconds = chat.add(new BoolSetting("timestampSeconds", "Zeitstempel mit Sekunden", false));
@@ -266,12 +305,15 @@ public final class TrsModules {
 		chatCopy = chat.add(new BoolSetting("copy", "Strg+Klick kopiert eine Zeile", true));
 		autoGgText = autoGg.add(new TextSetting("text", "Nachricht", "gg", 100, "gg"));
 		autoGgDelay = autoGg.add(new NumberSetting("delay", "Verzögerung (s)", 1.0, 0.5, 5.0, 0.5, ""));
-		autoGgTriggers = autoGg.add(new TextSetting("triggers", "Eigene Auslöser (mit ; trennen)", "", 200,
+		autoGgTriggers = autoGg.add(new TextSetting("triggers", "Eigene Auslöser (; trennt)", "", 200,
 				"z. B. spiel vorbei;runde beendet"));
 		for (int i = 0; i < hotkeyTexts.length; i++) {
 			hotkeyTexts[i] = textHotkeys.add(new TextSetting("text" + (i + 1), "Text " + (i + 1), "", 100, "leer"));
+			hotkeyKeys[i] = textHotkeys.add(new KeySetting("key" + (i + 1), "Taste " + (i + 1)));
 		}
 
+		waypointAddKey = waypoints.add(new KeySetting("addKey", "Wegpunkt anlegen", "key.keyboard.b"));
+		waypointListKey = waypoints.add(new KeySetting("listKey", "Wegpunkte öffnen", "key.keyboard.n"));
 		waypointBeam = waypoints.add(new BoolSetting("beam", "Lichtsäule", true));
 		waypointDistance = waypoints.add(new BoolSetting("distance", "Entfernung anzeigen", true));
 		waypointDeath = waypoints.add(new BoolSetting("death", "Todespunkt automatisch setzen", true));
@@ -282,5 +324,9 @@ public final class TrsModules {
 		minimapWaypoints = minimap.add(new BoolSetting("showWaypoints", "Wegpunkte anzeigen", true));
 		minimapPlayers = minimap.add(new BoolSetting("showPlayers", "Spieler anzeigen (nur in Sichtweite)", false));
 		minimapCoords = minimap.add(new BoolSetting("coords", "Koordinaten unter der Karte", true));
+
+		registry.addPart(keyDefaults);
+		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.
+		profiles = new HudProfiles(registry);
 	}
 }

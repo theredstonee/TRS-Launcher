@@ -48,20 +48,23 @@ Not built: **1.16.1** (Loom cannot remap Minecraft 1.16.1 to Mojang names – co
 | Low fire | Mixin `ScreenEffectRenderer#renderFire(Minecraft, PoseStack)` HEAD/RETURN (≥ 1.15) |
 | Block outline colour | Mixin `@ModifyArgs` on `renderShape(…)` inside `LevelRenderer#renderHitOutline` (≥ 1.15) |
 | Outline / hitbox line width | Mixin `@ModifyVariable` on `RenderSystem#lineWidth` (≥ 1.15) |
-| Hitboxes | toggle via `EntityRenderDispatcher#setRenderHitBoxes`; colour = `@ModifyArgs` on `renderLineBox` in `renderHitbox` (6 doubles ≤ 1.16.5, `AABB` ≥ 1.17; `renderHitbox` is static from 1.17) |
+| Hitboxes | toggle via `EntityRenderDispatcher#setRenderHitBoxes`; colour = `@Redirect` on `renderLineBox` in `renderHitbox` (6 doubles ≤ 1.16.5, `AABB` ≥ 1.17; `renderHitbox` is static from 1.17) |
 | 1.7 animations | Mixin `@Redirect LocalPlayer#getAttackStrengthScale` in `ItemInHandRenderer#tick`; the "swing while using" half needs no Mixin |
 | Text hotkeys / Auto-GG send | `LocalPlayer#chat` ≤ 1.18, `chat/command` 1.19, `chatSigned/commandSigned` 1.19.1–1.19.2, `connection.sendChat/sendCommand` ≥ 1.19.3 |
 | 1.14.4 (no Mixin) | Zoom = `FOVModifier` (skipped after `RenderWorldLastEvent` = hand), CPS/wheel = `InputEvent`, Fullbright = gamma only between `RenderTickEvent` START and the first FOV event |
 
 Forge ships no MixinExtras in these versions → only `@Inject`/`@Redirect`/`@ModifyVariable`/`@ModifyArgs`/`@Accessor`.
 Because every Mojang method maps to its own SRG name, every `@At(INVOKE)` target carries its full descriptor.
+`@ModifyArgs` is avoided on purpose: it makes Mixin generate a class in `org.spongepowered.asm.synthetic.args`
+that Forge's module class loader cannot load from 1.17 on (the game crashes at start with
+`NoClassDefFoundError: …/Args$1`) – the block outline and the hitbox colour use `@Redirect` instead.
 
 ## What is missing where
 
 | Version | Missing |
 | --- | --- |
 | 1.14.4 | Forge ships no Mixin → freelook, hit colour, reach, combo, chat tools, Auto-GG, no-hurt-camera, low fire and the block outline are not registered (hidden in the menu). Hitboxes work, of the 1.7 animations only "swing while using an item"; the hitbox colour and "hand stays up" do nothing. |
-| all | **Motion blur** is not implemented on any loader – the module is hidden in this build. |
+| ≤ 1.16.5 | The hitbox colour changes the eye line that `renderHitbox` draws itself; the box around the entity comes from the private `renderBox` and stays white. From 1.17 the box itself is coloured. |
 
 Everything else (HUD modules incl. reach/combo/speed/minimap, waypoints with beam, death waypoint,
 chat timestamps/stacking/Ctrl+click, text hotkeys, Auto-GG, no-hurt-camera, low fire, block outline,
@@ -89,12 +92,11 @@ src/                 ONE source tree for all versions (Stonecutter comments), ch
   ui/Gfx             drawing: no matrix ≤1.15.2 (GL matrix), PoseStack ≥1.16; items per era; scissor
   compat/Mc          everything else that moved (options → OptionInstance 1.19, camera type, player rotation, biomes, packs …)
   screen/TrsScreen   render(int…) ≤1.15.2 vs render(PoseStack…)
-core8/               Java-8 copy of ../common (no records/sealed/switch expressions) for 1.14.4–1.17.1
 versions/<mc>/       gradle.properties (forge_version) + build output
 ```
 
-`common` is Java 17 – used directly (`srcDir ../common/src/main/java`) from 1.18; 1.14.4–1.16.5 (Java 8) and
-1.17.1 (Java 16) compile `core8/` instead. **When `common` changes, sync `core8`.** The common unit tests run with the 1.19.4 node.
+`common` is plain Java 8 and is compiled into every version (`srcDir ../common/src/main/java`) – also into
+1.14.4–1.16.5 (Java 8) and 1.17.1 (Java 16). The common unit tests run with the 1.19.4 node.
 
 Switch the active version in `src/` with `./gradlew "Set active project to 1.19.4"` (switch back to 1.16.5 before committing).
 Adding a version: add it to `settings.gradle` and create `versions/<mc>/gradle.properties` with `forge_version=...`.

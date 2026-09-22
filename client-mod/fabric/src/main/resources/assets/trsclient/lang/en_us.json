@@ -5,10 +5,5 @@
 	"key.trsclient.zoom": "Zoom (halten)",
 	"key.trsclient.fullbright": "Fullbright umschalten",
 	"key.trsclient.freelook": "Freelook (halten)",
-	"key.trsclient.waypointAdd": "Wegpunkt anlegen",
-	"key.trsclient.waypointList": "Wegpunkte öffnen",
-	"key.trsclient.text1": "Text-Hotkey 1",
-	"key.trsclient.text2": "Text-Hotkey 2",
-	"key.trsclient.text3": "Text-Hotkey 3",
-	"key.trsclient.text4": "Text-Hotkey 4"
+	"key.trsclient.hudProfile": "HUD-Profil wechseln"
 }

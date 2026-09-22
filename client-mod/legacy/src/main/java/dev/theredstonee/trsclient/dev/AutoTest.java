@@ -10,7 +10,6 @@ import dev.theredstonee.trsclient.core.pvp.ComboTracker;
 import dev.theredstonee.trsclient.screen.CrosshairEditorScreen;
 import dev.theredstonee.trsclient.screen.HudEditorScreen;
 import dev.theredstonee.trsclient.screen.PackScreen;
-import dev.theredstonee.trsclient.screen.TextInputScreen;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
 import dev.theredstonee.trsclient.screen.WaypointListScreen;
@@ -33,8 +32,9 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
  * Entwickler-Selbsttest, nur aktiv mit {@code -Dtrsclient.autotest=true}
  * ({@code ./gradlew :<minecraft>:runClient -PtrsAutotest}): TRS-Startbildschirm und Menü, Testwelt laden,
  * Screenshots von HUD (inkl. Rüstung/Effekte/Koordinaten/…, eigenes Fadenkreuz), Zoom, Nacht ohne/mit
- * Fullbright, Freelook, Menü, Fadenkreuz-Editor, Resourcepacks, HUD-Editor sowie Wegpunkte + Minimap +
- * Chat-Zeitstempel/Zusammenfassung, Wegpunkt-Liste und Text-Eingabe, dann beenden.
+ * Fullbright, Freelook, Menü, Fadenkreuz-Editor, Resourcepacks, HUD-Profilen, HUD-Editor sowie
+ * Wegpunkte + Minimap + Chat-Zeitstempel/Zusammenfassung, Wegpunkt-Liste und dem Menü mit
+ * Text-Einstellungen, dann beenden.
  * Screenshots landen in {@code run/forge-<minecraft>/screenshots/trsclient-<minecraft>-*.png}.
  */
 public final class AutoTest {
@@ -67,7 +67,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Das Spielfenster bekommt den Fokus – Tastendrücke landen im Spiel (Esc → Pausenmenü …).
 		// Für saubere Screenshots den erwarteten Zustand wiederherstellen (höchstens 5-mal).
-		if (step >= 4 && step < 16 && Mc.world() != null && !isExpected(mc.currentScreen) && reopenCount < 5) {
+		if (step >= 4 && step < 17 && Mc.world() != null && !isExpected(mc.currentScreen) && reopenCount < 5) {
 			reopenCount++;
 			TrsClient.LOGGER.warn("[Autotest] fremdes Menü geschlossen/ersetzt: {}", mc.currentScreen);
 			mc.displayGuiScreen(expectedInstance);
@@ -79,9 +79,9 @@ public final class AutoTest {
 			return;
 		}
 		// Verbindung verloren (z. B. Server-Timeout bei überlasteter Maschine) → Test abbrechen statt abstürzen.
-		if (step >= 4 && step < 16 && Mc.player() == null) {
+		if (step >= 4 && step < 17 && Mc.player() == null) {
 			TrsClient.LOGGER.error("[Autotest] Welt/Spieler verloren in Schritt {} – Abbruch", step);
-			step = 16;
+			step = 17;
 		}
 		TrsModules modules = TrsClient.get().modules();
 		switch (step) {
@@ -184,10 +184,15 @@ public final class AutoTest {
 				break;
 			case 11:
 				shot(mc, "packs");
-				expect(new HudEditorScreen(null));
+				expect(new TrsMenuScreen(null).showProfiles());
 				next(20);
 				break;
-			case 12: {
+			case 12:
+				shot(mc, "profiles");
+				expect(new HudEditorScreen(null).selectFirst());
+				next(20);
+				break;
+			case 13: {
 				shot(mc, "hud-editor");
 				expect(null);
 				// Neue Module einschalten und mit Beispielwerten füttern (reine Anzeigen).
@@ -216,18 +221,19 @@ public final class AutoTest {
 				next(30);
 				break;
 			}
-			case 13:
+			case 14:
 				shot(mc, "waypoints-minimap");
 				expect(new WaypointListScreen(null));
 				next(20);
 				break;
-			case 14:
+			case 15:
 				shot(mc, "waypoint-list");
-				expect(new TextInputScreen(null, modules.autoGgText));
+				// Menü mit Text-Einstellungen (Auto-GG) – Textzeilen liegen jetzt im Einstellungs-Bereich.
+				expect(new TrsMenuScreen(null).select(modules.autoGg));
 				next(20);
 				break;
-			case 15:
-				shot(mc, "text-input");
+			case 16:
+				shot(mc, "menu-text");
 				TrsClient.LOGGER.info("[Autotest] Wegpunkte: {}, Combo: {}, Reichweite: {}",
 						TrsClient.get().waypoints().all().size(),
 						TrsClient.get().pvp().combo().combo(),
@@ -235,7 +241,7 @@ public final class AutoTest {
 				expect(null);
 				next(5);
 				break;
-			case 16:
+			case 17:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -250,8 +256,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 17) mc.shutdown();
-				step = 18;
+				if (step == 18) mc.shutdown();
+				step = 19;
 				break;
 		}
 	}

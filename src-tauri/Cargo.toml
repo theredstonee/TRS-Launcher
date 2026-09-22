@@ -3,7 +3,7 @@ members = [".", "crates/core"]
 resolver = "3"
 
 [workspace.package]
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 authors = ["theredstonee"]
 publish = false
@@ -30,6 +30,7 @@ panic = "abort"
 strip = true
 
 [dependencies]
+arboard = { version = "3.6.1", default-features = false, features = ["image-data"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 log = "0.4.34"
 serde = { version = "1.0.229", features = ["derive"] }

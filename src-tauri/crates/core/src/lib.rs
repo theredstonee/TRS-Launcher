@@ -25,13 +25,17 @@ pub mod launch;
 pub mod loaders;
 pub mod meta;
 pub mod modpack;
+pub mod modpack_export;
 pub mod modrinth;
+pub mod news;
 pub mod nbt;
 pub mod paths;
 pub mod prepare;
 pub mod process;
+pub mod screenshots;
 pub mod servers;
 pub mod settings;
+pub mod skins;
 pub mod storage;
 pub mod sync;
 pub mod system;
@@ -344,7 +348,7 @@ impl Launcher {
         }
         let instance = &effective;
 
-        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance).await {
+        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance, &settings.ui).await {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
 

@@ -104,6 +104,19 @@ impl AccountStore {
         self.write(&file).await
     }
 
+    /// Merkt sich die aktuelle Skin-Textur (nach einem Skin-Wechsel).
+    /// Unbekannte Accounts werden still übergangen.
+    pub async fn set_skin_url(&self, id: &str, url: &str) -> Result<()> {
+        let _guard = self.file_lock.lock().await;
+        let mut file = self.read().await?;
+        let Some(account) = file.accounts.iter_mut().find(|a| a.id == id) else { return Ok(()) };
+        if account.skin_url.as_deref() == Some(url) {
+            return Ok(());
+        }
+        account.skin_url = Some(url.to_owned());
+        self.write(&file).await
+    }
+
     pub async fn remove(&self, id: &str) -> Result<()> {
         let _guard = self.file_lock.lock().await;
         let mut file = self.read().await?;

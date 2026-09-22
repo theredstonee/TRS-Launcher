@@ -99,6 +99,25 @@ async function run(candidate: ImportCandidate) {
   }
 }
 
+/** Eine .mrpack-Datei einlesen – etwa ein eigener Export. */
+const packing = ref<number | null>(null)
+async function importPack() {
+  if (packing.value !== null || running.value) return
+  error.value = null
+  packing.value = 0
+  try {
+    const id = await backend.importModpackFile((p) => (packing.value = Math.floor(p.percent)))
+    if (!id) return
+    await instances.load()
+    const instance = instances.items.find((i) => i.id === id)
+    toasts.ok(instance ? `„${instance.name}“ importiert` : 'Modpack importiert')
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    packing.value = null
+  }
+}
+
 function loaderText(c: ImportCandidate) {
   return c.loader.version ? `${loaderLabels[c.loader.kind]} ${c.loader.version}` : loaderLabels[c.loader.kind]
 }
@@ -119,6 +138,9 @@ function loaderText(c: ImportCandidate) {
       </select>
       <button class="btn btn-ghost h-9" :disabled="picking || !!running" @click="browse">
         {{ picking ? 'Durchsuche …' : 'Ordner durchsuchen …' }}
+      </button>
+      <button class="btn btn-ghost h-9" :disabled="packing !== null || !!running" @click="importPack">
+        {{ packing !== null ? `Modpack ${packing} %` : 'Modpack-Datei (.mrpack) …' }}
       </button>
     </div>
 

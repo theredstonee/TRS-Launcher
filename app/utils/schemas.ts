@@ -174,6 +174,34 @@ export const modrinthSearchSchema = z.object({
   limit: z.number().int().min(1).max(100),
 })
 
+/** Name eines Skins in der eigenen Sammlung (Kern kürzt zusätzlich auf 48). */
+export const skinNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Bitte einen Namen eingeben')
+  .max(48, 'Maximal 48 Zeichen')
+  .regex(noControl, 'Name enthält ungültige Zeichen')
+
+export const skinVariants = ['classic', 'slim'] as const
+
+/** Spiegelt `validate_options` im Kern (modpack_export.rs). */
+export const exportOptionsSchema = z.object({
+  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(64, 'Maximal 64 Zeichen'),
+  version: z
+    .string()
+    .trim()
+    .min(1, 'Bitte eine Version angeben')
+    .max(32, 'Maximal 32 Zeichen')
+    .regex(/^[A-Za-z0-9._+-]+$/, 'Nur Buchstaben, Ziffern und . - _ +'),
+  summary: z
+    .string()
+    .trim()
+    .max(512, 'Maximal 512 Zeichen')
+    .regex(noControl, 'Beschreibung enthält ungültige Zeichen')
+    .nullable(),
+  include: z.array(z.string().min(1).max(120)).min(1, 'Bitte mindestens einen Ordner auswählen').max(100),
+})
+
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Ungültige Eingabe'
 }

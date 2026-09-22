@@ -68,6 +68,8 @@ public final class AutoTest {
 	private int reopenCount;
 	/** Modul-Zustand vor dem Test – wird am Ende wiederhergestellt (die Config bleibt sauber). */
 	private TrsConfig before;
+	/** Vom Test angelegter Wegpunkt – am Ende wieder entfernt. */
+	private dev.theredstonee.trsclient.core.waypoint.Waypoint testWaypoint;
 
 	private AutoTest() {
 	}
@@ -82,7 +84,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 22 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 3 && step < 23 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -196,40 +198,39 @@ public final class AutoTest {
 			case 11:
 				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).select(modules.crosshair))) return;
 				shot(mc, "trsclient-menu");
-				// Menü mit Text-Einstellungen (Auto-GG) – zeigt die neue Zeile mit Eingabefeld
-				Mc.setScreen(new TrsMenuScreen(null).select(modules.autoGg));
-				next(20);
-				break;
-			case 12:
-				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).select(modules.autoGg))) return;
-				shot(mc, "trsclient-menu-text");
 				Mc.setScreen(new CrosshairEditorScreen(null));
 				next(20);
 				break;
-			case 13:
+			case 12:
 				if (!ensureScreen(CrosshairEditorScreen.class, () -> new CrosshairEditorScreen(null))) return;
 				shot(mc, "trsclient-crosshair-editor");
 				Mc.setScreen(new PackScreen(null));
 				next(20);
 				break;
-			case 14:
+			case 13:
 				if (!ensureScreen(PackScreen.class, () -> new PackScreen(null))) return;
 				shot(mc, "trsclient-packs");
-				Mc.setScreen(new HudEditorScreen(null));
+				Mc.setScreen(new TrsMenuScreen(null).showProfiles());
+				next(20);
+				break;
+			case 14:
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).showProfiles())) return;
+				shot(mc, "trsclient-profiles");
+				Mc.setScreen(new HudEditorScreen(null).selectFirst());
 				next(20);
 				break;
 			case 15:
-				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null))) return;
+				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null).selectFirst())) return;
 				shot(mc, "trsclient-hud-editor");
 				Mc.setScreen(null);
-				// Wegpunkte + Minimap + PvP-Anzeigen einschalten und einen Wegpunkt anlegen
+				// Wegpunkte, Minimap und die PvP-Anzeigen einschalten, einen Wegpunkt anlegen
 				modules.waypoints.setEnabled(true);
 				modules.minimap.setEnabled(true);
 				modules.reach.setEnabled(true);
 				modules.combo.setEnabled(true);
 				modules.speed.setEnabled(true);
-				TrsClient.get().waypoints().create("Basis", 0x3DDC84);
-				// 20 Blöcke nach Norden und zurückschauen (yaw 0 = Süden) → Wegpunkt im Blick
+				testWaypoint = TrsClient.get().waypoints().create("Basis", 0x3DDC84);
+				// 20 Blöcke nach Norden und nach Süden schauen (yaw 0) → Wegpunkt im Blick
 				command(mc, "tp @p ~ ~ ~-20 0 0");
 				next(40);
 				break;
@@ -241,6 +242,13 @@ public final class AutoTest {
 			case 17:
 				if (!ensureScreen(WaypointListScreen.class, () -> new WaypointListScreen(null))) return;
 				shot(mc, "trsclient-waypoint-liste");
+				// Menü mit Text-Einstellungen (Auto-GG)
+				Mc.setScreen(new TrsMenuScreen(null).select(modules.autoGg));
+				next(20);
+				break;
+			case 18:
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).select(modules.autoGg))) return;
+				shot(mc, "trsclient-menu-text");
 				Mc.setScreen(null);
 				// Chat: Zeitstempel an, dreimal dieselbe Nachricht → wird zusammengefasst
 				modules.chat.setEnabled(true);
@@ -252,9 +260,9 @@ public final class AutoTest {
 				chat(mc, "Wiederholte Nachricht");
 				next(10);
 				break;
-			case 18:
+			case 19:
 				shot(mc, "trsclient-chat");
-				// Auto-GG und Text-Hotkey: beide senden echten Chat (prüft den Sende-Weg je Version)
+				// Auto-GG und Text-Hotkey senden echten Chat (prüft den Sende-Weg je Version)
 				modules.autoGg.setEnabled(true);
 				modules.autoGgText.set("gg (TRS-Autotest)");
 				modules.autoGgDelay.set(0.5);
@@ -264,25 +272,26 @@ public final class AutoTest {
 				TrsClient.get().chat().onHotkey(0);
 				next(30);
 				break;
-			case 19:
+			case 20:
 				shot(mc, "trsclient-autogg");
 				modules.autoGg.setEnabled(false);
 				modules.textHotkeys.setEnabled(false);
 				copyChatLine(mc);
 				next(5);
 				break;
-			case 20:
+			case 21:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
+				if (testWaypoint != null) TrsClient.get().waypoints().remove(testWaypoint);
 				if (before != null) modules.registry.apply(before);
 				TrsClient.get().saveConfig();
 				disconnect(mc);
 				next(20);
 				break;
 			default:
-				if (step == 21) mc.stop();
-				step = 22;
+				if (step == 22) mc.stop();
+				step = 23;
 				break;
 		}
 	}

@@ -96,9 +96,11 @@ while `Minecraft` is being constructed (verified on 1.20.1). Use `@Redirect` or 
 
 - Dev self-test (all screenshots checked): 1.20.1, 1.20.4 (SRG), 1.21.1, 26.3.
 - Dev self-test of the PvP/chat/waypoint/minimap features: 1.20.1 (SRG branches), 1.21.1, 26.3 – the
-  screenshots `trsclient-<mc>-waypoints/-waypoint-liste/-chat.png` show the minimap with terrain and
-  coordinates, the waypoint with beam and distance, the waypoint list and the chat with timestamp and
-  "(x3)" stacking.
+  screenshots `trsclient-<mc>-waypoints/-waypoint-liste/-menu-text/-chat/-autogg.png` show the minimap with
+  terrain and coordinates, the waypoint with beam and distance, the waypoint list, the menu with the
+  Auto-GG text settings and the chat with timestamp and "(x3)" stacking. The log line
+  `[Autotest] Strg+Klick auf Chat-Zeile: …` confirms that Auto-GG/text hotkeys really send chat and that
+  Ctrl+click copies a line.
 - Production through the launcher (`launch.exe … forge`, `TRSCLIENT_AUTOTEST=1`): 1.20.1 reobf jar (mod loads,
   refmapped mixins work: TRS title screen + menu; world part stopped by the demo account's DemoIntroScreen, which the
   self-test now closes), 1.21.1 plain jar (full self-test incl. HUD, zoom, fullbright, freelook).

@@ -49,8 +49,8 @@ public abstract class TextHudElement extends HudElement {
 	@Override
 	public void draw(FontRenderer font, boolean preview) {
 		refresh(font, preview);
-		boolean bg = module.background.get();
-		if (bg) Brand.rect(0, 0, textWidth + PAD_X * 2, 8 + PAD_Y * 2, Brand.HUD_BG);
-		Brand.text(font, text, PAD_X, PAD_Y, textColor(), !bg);
+		int bg = module.backgroundArgb();
+		if (bg != 0) Brand.rect(0, 0, textWidth + PAD_X * 2, 8 + PAD_Y * 2, bg);
+		Brand.text(font, text, PAD_X, PAD_Y, textColor(), module.shadow());
 	}
 }

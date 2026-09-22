@@ -73,7 +73,7 @@ public final class AutoTest {
 	public void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 20 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 3 && step < 23 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -195,11 +195,17 @@ public final class AutoTest {
 			case 13 -> {
 				if (!ensureScreen(PackScreen.class, () -> new PackScreen(null))) return;
 				shot(mc, "trsclient-packs");
-				Mc.setScreen(new HudEditorScreen(null));
+				Mc.setScreen(new TrsMenuScreen(null).showProfiles());
 				next(20);
 			}
 			case 14 -> {
-				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null))) return;
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).showProfiles())) return;
+				shot(mc, "trsclient-profiles");
+				Mc.setScreen(new HudEditorScreen(null).selectFirst());
+				next(20);
+			}
+			case 15 -> {
+				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null).selectFirst())) return;
 				shot(mc, "trsclient-hud-editor");
 				Mc.setScreen(null);
 				// Wegpunkte + Minimap + PvP-Anzeigen einschalten und einen Wegpunkt anlegen
@@ -213,14 +219,21 @@ public final class AutoTest {
 				command(mc, "tp @p ~ ~ ~-20 0 0");
 				next(40);
 			}
-			case 15 -> {
+			case 16 -> {
 				shot(mc, "trsclient-waypoints");
 				Mc.setScreen(new WaypointListScreen(null));
 				next(20);
 			}
-			case 16 -> {
+			case 17 -> {
 				if (!ensureScreen(WaypointListScreen.class, () -> new WaypointListScreen(null))) return;
 				shot(mc, "trsclient-waypoint-liste");
+				// Menü mit Text-Einstellungen (Auto-GG)
+				Mc.setScreen(new TrsMenuScreen(null).select(modules.autoGg));
+				next(20);
+			}
+			case 18 -> {
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).select(modules.autoGg))) return;
+				shot(mc, "trsclient-menu-text");
 				Mc.setScreen(null);
 				// Chat: Zeitstempel an, dreimal dieselbe Nachricht → wird zusammengefasst
 				modules.chat.setEnabled(true);
@@ -232,11 +245,26 @@ public final class AutoTest {
 				chat("Wiederholte Nachricht");
 				next(10);
 			}
-			case 17 -> {
+			case 19 -> {
 				shot(mc, "trsclient-chat");
+				// Auto-GG und Text-Hotkey senden echten Chat (prüft den Sende-Weg je Version)
+				modules.autoGg.setEnabled(true);
+				modules.autoGgText.set("gg (TRS-Autotest)");
+				modules.autoGgDelay.set(0.5);
+				modules.textHotkeys.setEnabled(true);
+				modules.hotkeyTexts[0].set("Text-Hotkey 1 (TRS-Autotest)");
+				chat("Winner: TRS Client");
+				TrsClient.get().chat().onHotkey(0);
+				next(30);
+			}
+			case 20 -> {
+				shot(mc, "trsclient-autogg");
+				modules.autoGg.setEnabled(false);
+				modules.textHotkeys.setEnabled(false);
+				copyChatLine(mc);
 				next(5);
 			}
-			case 18 -> {
+			case 21 -> {
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -246,8 +274,8 @@ public final class AutoTest {
 				next(20);
 			}
 			default -> {
-				if (step == 19) mc.stop();
-				step = 20;
+				if (step == 22) mc.stop();
+				step = 23;
 			}
 		}
 	}
@@ -265,6 +293,19 @@ public final class AutoTest {
 		list.add(new ServerData("Hypixel", "mc.hypixel.net", false), false);
 		*///?}
 		list.save();
+	}
+
+	/**
+	 * Prüft das Kopieren per Strg+Klick: klickt rechnerisch auf die unterste Chat-Zeile
+	 * und schreibt das Ergebnis der Zwischenablage ins Log.
+	 */
+	private static void copyChatLine(Minecraft mc) {
+		double scale = Mc.chatScale();
+		int lineHeight = Mc.chatLineHeight();
+		double mouseY = Mc.window().getGuiScaledHeight() - 40 - scale * lineHeight / 2.0;
+		boolean copied = TrsClient.get().chat().onChatClick(20, mouseY, true);
+		String clipboard = copied ? mc.keyboardHandler.getClipboard() : "(nicht kopiert)";
+		TrsClient.LOGGER.info("[Autotest] Strg+Klick auf Chat-Zeile: {}", clipboard);
 	}
 
 	/** Schreibt eine Nachricht in den Chat (wie eine Servernachricht – geht durch die TRS-Chat-Hooks). */

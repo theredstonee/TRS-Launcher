@@ -21,12 +21,8 @@ public final class TrsKeys {
 	public static KeyMapping zoom;
 	public static KeyMapping fullbright;
 	public static KeyMapping freelook;
-	/** Wegpunkt an der eigenen Position anlegen. */
-	public static KeyMapping waypointAdd;
-	/** Wegpunkt-Liste öffnen. */
-	public static KeyMapping waypointList;
-	/** Vier frei belegbare Tasten, die je einen Text senden (Standard: unbelegt). */
-	public static final KeyMapping[] textHotkeys = new KeyMapping[4];
+	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
+	public static KeyMapping hudProfile;
 
 	private TrsKeys() {
 	}
@@ -39,16 +35,26 @@ public final class TrsKeys {
 
 	static void register() {
 		menu = register(new KeyMapping("key.trsclient.menu", KEYBOARD, Keys.KEY_RSHIFT, CATEGORY));
-		zoom = register(new KeyMapping("key.trsclient.zoom", KEYBOARD, Keys.KEY_C, CATEGORY));
+		// Zoom liegt auf V: C ist ab Minecraft 1.12 mit "Hotbar speichern" belegt.
+		zoom = register(new KeyMapping("key.trsclient.zoom", KEYBOARD, Keys.code("key.keyboard.v"), CATEGORY));
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		freelook = register(new KeyMapping("key.trsclient.freelook", KEYBOARD, Keys.KEY_LALT, CATEGORY));
-		waypointAdd = register(new KeyMapping("key.trsclient.waypointAdd", KEYBOARD, Keys.KEY_B, CATEGORY));
-		waypointList = register(new KeyMapping("key.trsclient.waypointList", KEYBOARD, Keys.KEY_N, CATEGORY));
-		for (int i = 0; i < textHotkeys.length; i++) {
-			textHotkeys[i] = register(new KeyMapping("key.trsclient.text" + (i + 1), KEYBOARD,
-					InputConstants.UNKNOWN.getValue(), CATEGORY));
-		}
+		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
+		hudProfile = register(new KeyMapping("key.trsclient.hudProfile", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+	}
+
+	/**
+	 * Stellt den alten Zoom-Standard C auf V um – aber nur, wenn die Taste nie geändert wurde
+	 * (sie liegt also noch auf C). Danach werden die Steuerungen gespeichert.
+	 * @return true, wenn umgestellt wurde
+	 */
+	public static boolean migrateZoomKey() {
+		if (zoom == null) return false;
+		if (boundKey(zoom) != Keys.code("key.keyboard.c")) return false;
+		zoom.setKey(InputConstants.getKey("key.keyboard.v"));
+		KeyMapping.resetMapping();
+		return true;
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */

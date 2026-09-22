@@ -90,12 +90,12 @@ public final class ArmorHud extends HudElement {
 	public void draw(FontRenderer font, boolean preview) {
 		int w = width(font, preview);
 		int h = height(font, preview);
-		boolean bg = module.background.get();
-		if (bg) Brand.rect(0, 0, w, h, Brand.HUD_BG);
+		int bg = module.backgroundArgb();
+		if (bg != 0) Brand.rect(0, 0, w, h, bg);
 		for (int i = 0; i < rows; i++) {
 			int y = PAD + i * ROW;
 			item(font, stacks[i], PAD, y);
-			if (texts[i] != null) Brand.text(font, texts[i], PAD + 19, y + 4, colors[i], !bg);
+			if (texts[i] != null) Brand.text(font, texts[i], PAD + 19, y + 4, colors[i], module.shadow());
 		}
 	}
 

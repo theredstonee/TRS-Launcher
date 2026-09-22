@@ -1,7 +1,6 @@
 package dev.theredstonee.trsclient.screen;
 
 import dev.theredstonee.trsclient.TrsClient;
-import dev.theredstonee.trsclient.TrsKeys;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.render.Projection;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
@@ -10,7 +9,6 @@ import dev.theredstonee.trsclient.ui.Gfx;
 import dev.theredstonee.trsclient.ui.Hotspots;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.settings.GameSettings;
 
 import java.util.List;
 
@@ -62,8 +60,8 @@ public final class WaypointListScreen extends TrsScreen {
 
 		g.scissor(listX, listY, listX + listW, listY + listH);
 		if (list.isEmpty()) {
-			g.text(font, "Noch keine Wegpunkte – Taste "
-					+ GameSettings.getKeyDisplayString(TrsKeys.waypointAdd.getKeyCode())
+			String key = TrsClient.get().modules().waypointAddKey.get();
+			g.text(font, "Noch keine Wegpunkte – Taste " + dev.theredstonee.trsclient.compat.Keys.display(key)
 					+ " im Spiel legt einen an.", listX, listY + 4, Brand.TEXT_DIM, false);
 		}
 		EntityPlayerSP player = Mc.player();

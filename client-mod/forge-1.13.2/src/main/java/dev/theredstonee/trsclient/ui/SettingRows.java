@@ -6,9 +6,6 @@ import dev.theredstonee.trsclient.core.module.ChoiceSetting;
 import dev.theredstonee.trsclient.core.module.ColorSetting;
 import dev.theredstonee.trsclient.core.module.NumberSetting;
 import dev.theredstonee.trsclient.core.module.Setting;
-import dev.theredstonee.trsclient.core.module.TextSetting;
-import dev.theredstonee.trsclient.screen.TextInputScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 
 import java.util.List;
@@ -46,17 +43,6 @@ public final class SettingRows {
 				Brand.rect(sx, y + 1, 24, 11, c.argb());
 				Brand.outline(sx - 1, y, 26, 13, hover ? Brand.AMBER : Brand.BORDER);
 				hot.add(sx, y + 1, 24, 11, c::cycle);
-			} else if (s instanceof TextSetting) {
-				final TextSetting t = (TextSetting) s;
-				int tw = Math.min(140, w / 2);
-				int tx = right - tw;
-				boolean hover = inside(mx, my, tx, y + 1, tw, 11);
-				Brand.rect(tx, y + 1, tw, 11, hover ? Brand.SURFACE_HOVER : Brand.BG);
-				Brand.outline(tx, y + 1, tw, 11, hover ? Brand.AMBER : Brand.BORDER);
-				Brand.text(font, font.trimStringToWidth(t.display(), tw - 6), tx + 3, y + 3,
-						t.isEmpty() ? Brand.TEXT_DIM : Brand.TEXT, false);
-				// Klick öffnet den Eingabedialog; danach geht es zum aufrufenden Bildschirm zurück.
-				hot.add(tx, y + 1, tw, 11, () -> openEditor(t));
 			} else if (s instanceof ChoiceSetting) {
 				final ChoiceSetting<?> c = (ChoiceSetting<?>) s;
 				String label = "< " + c.display() + " >";
@@ -72,12 +58,6 @@ public final class SettingRows {
 			y += ROW_H;
 		}
 		return y;
-	}
-
-	/** Öffnet den Eingabedialog einer Text-Einstellung (zurück geht es zum aktuellen Bildschirm). */
-	private static void openEditor(TextSetting setting) {
-		Minecraft mc = Minecraft.getInstance();
-		mc.displayGuiScreen(new TextInputScreen(mc.currentScreen, setting));
 	}
 
 	private static void number(FontRenderer font, int right, int y, final NumberSetting n, int mx, int my, Hotspots hot) {

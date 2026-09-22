@@ -14,7 +14,8 @@ import net.minecraft.client.gui.GuiGraphics;
 //?} elif >=1.16
 /*import com.mojang.blaze3d.vertex.PoseStack;*/
 //? if >=1.21.9 {
-/*import net.minecraft.client.input.KeyEvent;
+/*import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 *///?}
 
@@ -65,8 +66,8 @@ public abstract class TrsScreen extends Screen {
 		return false;
 	}
 
-	/** Zeichen eingetippt (für eigene Textfelder). true = verbraucht. */
-	protected boolean onChar(char character) {
+	/** Zeichen eingegeben (Textfelder des TRS-Menüs). true = verbraucht. */
+	protected boolean onChar(char c) {
 		return false;
 	}
 
@@ -173,8 +174,9 @@ public abstract class TrsScreen extends Screen {
 	}
 
 	@Override
-	public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
-		return onChar((char) event.codepoint()) || super.charTyped(event);
+	public boolean charTyped(CharacterEvent event) {
+		int codepoint = event.codepoint();
+		return (codepoint > 0 && codepoint <= 0xFFFF && onChar((char) codepoint)) || super.charTyped(event);
 	}
 	*///?} else {
 	@Override
@@ -198,8 +200,8 @@ public abstract class TrsScreen extends Screen {
 	}
 
 	@Override
-	public boolean charTyped(char character, int modifiers) {
-		return onChar(character) || super.charTyped(character, modifiers);
+	public boolean charTyped(char c, int modifiers) {
+		return onChar(c) || super.charTyped(c, modifiers);
 	}
 	//?}
 
