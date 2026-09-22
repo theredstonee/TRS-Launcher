@@ -50,6 +50,8 @@ public final class AutoTest {
 	private int step;
 	private int wait;
 	private int reopenCount;
+	/** Ticks, die in der geladenen Welt schon ein Bildschirm offen ist (Schritt 3). */
+	private int screenWait;
 	/** Modul-Zustand vor dem Test – wird am Ende wiederhergestellt (die Config bleibt sauber). */
 	private TrsConfig before;
 
@@ -66,7 +68,8 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 17 && Mc.screen() instanceof PauseScreen) {
+		// Ohne Lizenz (Demo-Modus, z. B. Rauchtest über den Launcher) öffnet sich zusätzlich der Demo-Hinweis.
+		if (step >= 3 && step < 17 && (Mc.screen() instanceof PauseScreen || isDemoIntro(Mc.screen()))) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -102,7 +105,18 @@ public final class AutoTest {
 			}
 			case 3 -> {
 				if (mc.level == null || mc.player == null) return;
-				if (Mc.screen() != null) return; // Ladebildschirm
+				if (Mc.screen() != null) {
+					// Ladebildschirm – oder ein unerwarteter Bildschirm (z. B. Hinweise im echten Launcher):
+					// nach 10 s melden und schließen, statt ewig zu warten.
+					if (++screenWait == 200) {
+						TrsClient.LOGGER.warn("[Autotest] Bildschirm in der Welt: {} (pausiert: {}) – schließe ihn",
+								Mc.screen().getClass().getName(), mc.isPaused());
+						Mc.setScreen(null);
+						KeyMapping.releaseAll();
+						screenWait = 0;
+					}
+					return;
+				}
 				TrsClient.LOGGER.info("[Autotest] Welt geladen");
 				KeyMapping.releaseAll();
 				// Echte Rüstung/Effekte für die neuen HUD-Module
@@ -239,6 +253,11 @@ public final class AutoTest {
 		Mc.setScreen(factory.get());
 		wait = 10;
 		return false;
+	}
+
+	/** Demo-Hinweis (DemoIntroScreen; Paket wechselt ab 26.1) – über den Klassennamen erkannt. */
+	private static boolean isDemoIntro(Screen screen) {
+		return screen != null && screen.getClass().getSimpleName().equals("DemoIntroScreen");
 	}
 
 	private void next(int ticks) {
