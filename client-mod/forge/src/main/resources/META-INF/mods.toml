@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[${forgeMajor},)"
+license = "GPL-3.0-only"
+issueTrackerURL = "https://github.com/theredstonee/TRS-Launcher/issues"
+
+[[mods]]
+modId = "trsclient"
+version = "${version}"
+displayName = "TRS Client"
+authors = "theredstonee"
+displayURL = "https://github.com/theredstonee/TRS-Launcher"
+description = '''
+In-Game-Client des TRS Launchers: HUD (FPS, CPS, Tastenanzeige, Ping, Rüstung, Effekte, …), Zoom, Fullbright, Fadenkreuz, Freelook und ein eigenes Menü (Rechte Umschalttaste).
+'''
+# Reine Client-Mod: auf dedizierten Servern wird sie nicht geladen, Versionsabgleich mit dem Server entfällt.
+clientSideOnly = true
+displayTest = "IGNORE_ALL_VERSION"
+
+# Jede Forge-Version dieser Minecraft-Version (die Mod nutzt kaum Forge-API, fast alles läuft über Mixins).
+[[dependencies.trsclient]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forgeMajor},)"
+ordering = "NONE"
+side = "CLIENT"
+
+# Eine JAR je Minecraft-Version (Mixin-Ziele unterscheiden sich zwischen Patch-Versionen).
+[[dependencies.trsclient]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft}]"
+ordering = "NONE"
+side = "CLIENT"

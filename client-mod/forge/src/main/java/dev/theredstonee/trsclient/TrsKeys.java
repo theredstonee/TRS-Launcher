@@ -1,0 +1,54 @@
+package dev.theredstonee.trsclient;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+
+/** Tastenbelegungen – erscheinen in den Steuerungs-Optionen unter "TRS Client". */
+public final class TrsKeys {
+	// Kategorie: bis 1.21.8 ein Übersetzungsschlüssel, ab 1.21.9 ein registrierter Datensatz
+	// (Anzeigename dann über "key.category.trsclient.main").
+	//? if >=1.21.9 {
+	/*public static KeyMapping.Category CATEGORY;
+	*///?} else
+	public static final String CATEGORY = "key.categories.trsclient";
+
+	public static KeyMapping menu;
+	public static KeyMapping zoom;
+	public static KeyMapping fullbright;
+	public static KeyMapping freelook;
+
+	private TrsKeys() {
+	}
+
+	// Tastatur-Eingabetyp: KEYSYM bis 26.2, KEYBOARD ab 26.3.
+	//? if >=26.3 {
+	/*private static final InputConstants.Type KEYBOARD = InputConstants.Type.KEYBOARD;
+	*///?} else
+	private static final InputConstants.Type KEYBOARD = InputConstants.Type.KEYSYM;
+
+	/** Legt die Tastenbelegungen an (Mod-Konstruktor); eingetragen werden sie über {@link #register}. */
+	static void create() {
+		//? if >=1.21.9
+		/*CATEGORY = KeyMapping.Category.register(TrsClient.id("main"));*/
+		menu = new KeyMapping("key.trsclient.menu", KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY);
+		zoom = new KeyMapping("key.trsclient.zoom", KEYBOARD, InputConstants.KEY_C, CATEGORY);
+		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
+		fullbright = new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
+		freelook = new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY);
+	}
+
+	/** Forge-Event (Mod-Bus): Tasten in die Steuerungs-Optionen eintragen. */
+	static void register(RegisterKeyMappingsEvent event) {
+		if (menu == null) return;
+		event.register(menu);
+		event.register(zoom);
+		event.register(fullbright);
+		event.register(freelook);
+	}
+
+	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */
+	public static int boundKey(KeyMapping mapping) {
+		return mapping.getKey().getValue();
+	}
+}

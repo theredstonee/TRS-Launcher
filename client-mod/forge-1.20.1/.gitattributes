@@ -1,4 +1,0 @@
-# Linux-Startskript braucht LF, Windows-Skripte CRLF
-/gradlew        text eol=lf
-*.bat           text eol=crlf
-*.jar           binary

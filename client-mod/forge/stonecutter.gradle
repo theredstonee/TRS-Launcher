@@ -1,0 +1,56 @@
+import groovy.json.JsonOutput
+
+plugins {
+	id 'dev.kikugie.stonecutter'
+	// ForgeGradle 7 (läuft mit Gradle 9) für alle Versionen; Renamer = Reobfuscation (Mojang → SRG) für 1.20 – 1.20.4.
+	id 'net.minecraftforge.gradle' version '7.0.40' apply false
+	id 'net.minecraftforge.renamer' version '1.1.7' apply false
+}
+// Version, deren Code gerade unkommentiert in src/ steht (eingecheckt: 1.21.1).
+// Umschalten: ./gradlew "Set active project to <version>" (danach vor dem Commit zurück auf 1.21.1).
+stonecutter.active '1.21.1'
+
+/*
+ * ./gradlew collectLauncherJars
+ * Baut alle Forge-Versionen und legt trsclient-forge-<minecraft>.jar + builds-forge.json in client-mod/dist/ ab.
+ * SRG-Versionen (1.20 – 1.20.4) liefern die reobfuskierte JAR, alle anderen die normale JAR.
+ */
+def distDir = file('../dist')
+// Optional nur ein Teil: ./gradlew :collectLauncherJars -PtrsVersions=1.20.1,1.21.1
+// (mit ":" davor – ein unqualifizierter Task-Name lässt Gradle alle Versionsprojekte konfigurieren)
+def selected = project.findProperty('trsVersions')?.toString()?.tokenize(',')
+def nodes = stonecutter.versions.findAll { selected == null || it.project in selected }.collect { project(":${it.project}") }
+// configureondemand: die Versionsprojekte nur auswerten, wenn wirklich gesammelt wird.
+if (gradle.startParameter.taskNames.any { it.endsWith('collectLauncherJars') }) {
+	logger.lifecycle("collectLauncherJars: ${nodes*.path}")
+	nodes.each { evaluationDependsOn(it.path) }
+}
+
+tasks.register('collectLauncherJars') {
+	group = 'build'
+	description = 'Builds every Forge version and writes the jars and builds-forge.json to client-mod/dist/'
+
+	dependsOn(nodes.collect { it.trsModTask })
+	// Unit-Tests der gemeinsamen Logik (mit Java 17 kompiliert) müssen vorher grün sein.
+	if (nodes.any { it.path == ':1.20.1' }) dependsOn(':1.20.1:test')
+
+	def entries = nodes.collect { p ->
+		[minecraft: p.stonecutter.current.version.toString(), forge: p.forge_version.toString(),
+		 jar: p.trsModFile]
+	}
+	def distFile = distDir
+	outputs.upToDateWhen { false }
+
+	doLast {
+		distFile.mkdirs()
+		def builds = []
+		entries.each { e ->
+			def name = "trsclient-forge-${e.minecraft}.jar"
+			new File(distFile, name).bytes = e.jar.get().asFile.bytes
+			builds << [loader: 'forge', minecraft: [e.minecraft], file: name, requires: [],
+					   forge: "${e.minecraft}-${e.forge}".toString()]
+		}
+		new File(distFile, 'builds-forge.json').setText(JsonOutput.prettyPrint(JsonOutput.toJson(builds)) + '\n', 'UTF-8')
+		logger.lifecycle("collectLauncherJars: ${builds.size()} Forge-JARs → ${distFile}")
+	}
+}

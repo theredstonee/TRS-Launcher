@@ -1,0 +1,133 @@
+// Build-Skript für JEDE Forge-Version (:<minecraft>), ausgeführt von Stonecutter.
+// Quellcode: src/ (vorverarbeitet je Version) + ../common/src/main/java (unverändert).
+// Versionsspezifische Werte: versions/<minecraft>/gradle.properties
+//
+// Namen zur Laufzeit (aus den install_profile.json der Forge-Installer geprüft):
+//   1.20 – 1.20.4   SRG (MCPConfig)   → Renamer: JAR nach SRG + Mixin-Refmap
+//   1.20.6 – 1.21.11 Mojang-Namen      → JAR unverändert
+//   26.x            nicht obfuskiert   → JAR unverändert, keine Mappings
+import groovy.json.JsonOutput
+
+def mc = stonecutter.current.version
+def srg = stonecutter.eval(mc, '<1.20.5')
+def unobfuscated = stonecutter.eval(mc, '>=26.1')
+def javaVersion = unobfuscated ? 25 : (srg ? 17 : 21)
+// Forge-Hauptversion = FML-Loader-Version (mods.toml loaderVersion)
+def forgeMajor = project.forge_version.toString().tokenize('.')[0]
+
+apply plugin: 'java'
+apply plugin: 'net.minecraftforge.gradle'
+if (srg) apply plugin: 'net.minecraftforge.renamer'
+
+group = rootProject.maven_group
+version = rootProject.mod_version
+
+base {
+	archivesName = "trsclient-forge-${mc}"
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(javaVersion)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = javaVersion
+}
+
+// Versionsunabhängige Logik direkt aus ../common (mit dem Java-Level DIESER Version kompiliert).
+sourceSets {
+	main.java.srcDir(rootProject.file('../common/src/main/java'))
+	test.java.srcDir(rootProject.file('../common/src/test/java'))
+}
+
+minecraft {
+	if (!unobfuscated) {
+		mappings channel: 'official', version: mc.toString()
+	}
+	runs {
+		register('client') {
+			// Eigenes Spielverzeichnis je Loader/Version: client-mod/run/forge-<minecraft>
+			workingDir = rootProject.layout.projectDirectory.dir("../run/forge-${mc}")
+			// Im Dev-Start liegt die Mod nicht als JAR vor → Mixin-Config per Argument.
+			args '--mixin.config=trsclient.mixins.json'
+			// Mixin-Anwendung sichtbar im Log (Nachweis, dass die Mixins greifen).
+			systemProperty 'mixin.debug.verbose', 'true'
+			// ./gradlew :<v>:runClient -PtrsAutotest → Menü, Testwelt, Screenshots, beendet das Spiel.
+			if (project.hasProperty('trsAutotest')) {
+				systemProperty 'trsclient.autotest', 'true'
+			}
+		}
+	}
+}
+
+repositories {
+	minecraft.mavenizer(it)
+	maven fg.forgeMaven
+	maven fg.minecraftLibsMaven
+	mavenCentral()
+}
+
+dependencies {
+	implementation minecraft.dependency("net.minecraftforge:forge:${mc}-${project.forge_version}")
+	if (srg) {
+		annotationProcessor "org.spongepowered:mixin:${rootProject.mixin_processor_version}:processor"
+	}
+
+	testImplementation "com.google.code.gson:gson:${rootProject.gson_version}"
+	testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+}
+
+if (srg) {
+	// Forge 1.20 – 1.20.4 lädt Minecraft mit SRG-Namen: Klassen umbenennen und eine Refmap für die Mixins erzeugen.
+	renamer.mappings(minecraft.dependency.toSrg)
+	renamer.enableMixinRefmaps {
+		config 'trsclient.mixins.json'
+		// Eindeutiger Name statt "main.refmap.json" (alle Mod-JARs teilen sich einen Klassenpfad).
+		refMap = 'trsclient.refmap.json'
+	}
+	renamer.classes(tasks.named('jar', Jar)) {
+		archiveClassifier = 'srg'
+		// Enthält auch die vom Mixin-Annotation-Processor erzeugten Einträge.
+		mappings renamer.mixin.generatedMappings
+	}
+}
+
+processResources {
+	def props = [
+			version     : project.version.toString(),
+			minecraft   : mc.toString(),
+			forgeMajor  : forgeMajor,
+			packFields  : project.pack_fields.toString(),
+			// Forges Mixin meldet ohnehin nur eine Warnung, wenn die Stufe über seinem Maximum liegt.
+			mixinJava   : 'JAVA_17',
+			refmapLine  : srg ? '"refmap": "trsclient.refmap.json",' : '',
+	]
+	inputs.properties(props)
+	filesMatching(['META-INF/mods.toml', 'pack.mcmeta', 'trsclient.mixins.json']) {
+		expand props
+	}
+}
+
+tasks.named('jar', Jar) {
+	// Forge findet Mixin-Configs in Produktion nur über dieses Manifest-Attribut.
+	manifest.attributes('MixinConfigs': 'trsclient.mixins.json')
+	from(rootProject.file('../LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
+
+// Die fertige Mod-JAR dieser Version (reobfuskiert für SRG-Versionen) – Task + Datei für collectLauncherJars.
+ext.trsModTask = srg ? tasks.named('renameJar') : tasks.named('jar')
+ext.trsModFile = srg ? tasks.named('renameJar').flatMap { it.output } : tasks.named('jar', Jar).flatMap { it.archiveFile }
+if (srg) {
+	tasks.named('assemble') { dependsOn 'renameJar' }
+}

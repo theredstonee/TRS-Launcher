@@ -1,0 +1,33 @@
+// TRS Client für Forge (MinecraftForge) 1.20 – 26.3 – eigenständiger Gradle-Build.
+// EIN Quellbaum (src/), ein Unterprojekt je Minecraft-Version (:<version>), vorverarbeitet von Stonecutter.
+// Versionsspezifische Werte: versions/<minecraft>/gradle.properties (forge_version).
+// Die versionsunabhängige Logik kommt als Quellordner aus ../common (siehe build.gradle).
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+		maven { url = 'https://maven.kikugie.dev/releases' }
+		maven { url = 'https://maven.minecraftforge.net/' }
+	}
+}
+
+plugins {
+	// Lädt bei Bedarf automatisch JDK 17/21/25 (Gradle-Toolchains).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+	id 'dev.kikugie.stonecutter' version '0.9.8'
+}
+
+rootProject.name = 'trsclient-forge'
+
+// Jede Minecraft-Version, für die es Forge gibt (files.minecraftforge.net, Stand 2026-09-22).
+// 1.20.5 und 1.21.2 fehlen absichtlich: für sie wurde nie ein Forge veröffentlicht.
+stonecutter {
+	create(rootProject) {
+		versions '1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.6',
+				'1.21', '1.21.1', '1.21.3', '1.21.4', '1.21.5', '1.21.6', '1.21.7', '1.21.8',
+				'1.21.9', '1.21.10', '1.21.11',
+				'26.1', '26.1.1', '26.1.2', '26.2', '26.3'
+		// Version, in deren Zustand src/ eingecheckt ist (wie der Fabric-Baum).
+		vcsVersion = '1.21.1'
+	}
+}
