@@ -305,6 +305,31 @@ async fn resolve_installer(ctx: &InstallContext<'_>) -> Result<InstallerRef> {
     }
 }
 
+/// Welche Version „neueste stabile“ derzeit bedeutet (nur zur Anzeige –
+/// beim Start löst [`resolve_installer`] selbst auf). Forge: empfohlene
+/// Version als voller Maven-String, NeoForge: neueste stabile.
+pub async fn latest_version(http: &reqwest::Client, kind: LoaderKind, game_version: &str) -> Result<String> {
+    match kind {
+        LoaderKind::Forge => {
+            let promos: ForgePromotions = fetch_json(http, FORGE_PROMOTIONS_URL).await?;
+            match pick_forge_promo(&promos.promos, game_version) {
+                Some(short) => Ok(format!("{game_version}-{short}")),
+                None => available_versions(http, kind, game_version)
+                    .await?
+                    .into_iter()
+                    .next()
+                    .ok_or_else(|| not_available(game_version)),
+            }
+        }
+        LoaderKind::NeoForge => {
+            let url = if game_version == NEOFORGE_LEGACY_GAME_VERSION { NEOFORGE_LEGACY_VERSIONS_URL } else { NEOFORGE_VERSIONS_URL };
+            let list: MavenVersions = fetch_json(http, url).await?;
+            pick_neoforge(&list.versions, game_version).ok_or_else(|| not_available(game_version))
+        }
+        _ => Err(Error::Internal("latest_version nur für Forge/NeoForge".into())),
+    }
+}
+
 /// Auswählbare Loader-Versionen für eine Spielversion, neueste zuerst.
 /// Forge liefert den vollen Maven-String (`1.20.1-47.4.10`), der so auch als
 /// `Loader::version` akzeptiert wird.

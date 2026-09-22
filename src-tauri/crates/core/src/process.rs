@@ -48,6 +48,9 @@ pub enum GameEvent {
         play_seconds: u64,
         diagnosis: Option<Diagnosis>,
     },
+    /// Ein Start-Hook oder die Synchronisierung nach dem Beenden ist
+    /// fehlgeschlagen – das Frontend zeigt die Meldung als Hinweis.
+    Notice { instance_id: String, message: String },
 }
 
 pub type EventSink = Arc<dyn Fn(GameEvent) + Send + Sync>;
@@ -265,6 +268,11 @@ impl GameManager {
         Self { state: Arc::default(), sink, sessions_file, sessions_lock: Arc::default() }
     }
 
+    /// Kanal zum Frontend (für Hinweise außerhalb des Prozesslebens).
+    pub fn sink(&self) -> EventSink {
+        self.sink.clone()
+    }
+
     pub fn running(&self) -> Vec<RunningGame> {
         self.lock().running.values().map(|r| r.info.clone()).collect()
     }
@@ -312,6 +320,7 @@ impl GameManager {
         let child = std::process::Command::new(&command.program)
             .args(&command.args)
             .current_dir(&command.cwd)
+            .envs(command.env.iter().map(|(k, v)| (k, v)))
             .stdin(std::process::Stdio::null())
             .stdout(stdout)
             .stderr(stderr)
@@ -729,6 +738,7 @@ mod tests {
             program: PathBuf::from(r"C:\Windows\System32\PING.EXE"),
             args: vec!["-n".into(), "30".into(), "127.0.0.1".into()],
             cwd: dir.path().to_owned(),
+            env: Vec::new(),
         };
         manager.spawn("test", command, &dir.path().join("logs"), vec![], Box::new(|_| {})).unwrap();
         assert!(manager.is_running("test"));

@@ -10,7 +10,7 @@ use crate::content::{self, ContentKind, ProjectMeta, Source};
 use crate::download::{self, Task};
 use crate::history::{self, HistoryEntry, HistoryKind};
 use crate::icon::is_allowed_icon_url;
-use crate::instance::{Instance, LoaderKind};
+use crate::instance::{Instance, LoaderKind, UpdateChannel};
 use crate::paths::Paths;
 use crate::{Error, Result, fsutil};
 
@@ -949,6 +949,14 @@ async fn compatible_versions(
         .await?)
 }
 
+/// Neueste Version im Update-Kanal der Instanz (`versions` neueste zuerst).
+/// Gibt es im Kanal nichts (Projekt veröffentlicht nur Betas), dann die
+/// neueste überhaupt – sonst ließe sich so ein Projekt gar nicht installieren.
+fn newest_in_channel(versions: Vec<Version>, channel: UpdateChannel) -> Option<Version> {
+    let fallback = versions.first().cloned();
+    versions.into_iter().find(|v| channel.allows(&v.version_type)).or(fallback)
+}
+
 pub(crate) async fn version_by_id(http: &reqwest::Client, version_id: &str) -> Result<Version> {
     if !is_safe_project_id(version_id) {
         return Err(Error::validation("Ungültige Versions-ID"));
@@ -992,7 +1000,10 @@ pub async fn changelog_since(
     if !is_safe_project_id(project_id) || !is_safe_project_id(installed_version_id) {
         return Err(Error::validation("Ungültige Projekt-ID"));
     }
-    let versions = compatible_versions(http, project_id, kind, instance).await?;
+    let channel = instance.overrides.channel();
+    let mut versions = compatible_versions(http, project_id, kind, instance).await?;
+    // Nur Versionen im Update-Kanal – die installierte bleibt als Bezugspunkt drin.
+    versions.retain(|v| v.id == installed_version_id || channel.allows(&v.version_type));
     let installed_date = if versions.iter().any(|v| v.id == installed_version_id) {
         None
     } else {
@@ -1048,7 +1059,7 @@ pub async fn install(
             }
             version
         }
-        None => compatible_versions(http, project_id, kind, instance).await?.into_iter().next().ok_or_else(|| {
+        None => newest_in_channel(compatible_versions(http, project_id, kind, instance).await?, instance.overrides.channel()).ok_or_else(|| {
             Error::validation(format!(
                 "Für Minecraft {} mit diesem Modloader gibt es keine passende Version.",
                 instance.game_version
@@ -1063,7 +1074,8 @@ pub async fn install(
         if !visited.insert(id.clone()) {
             continue;
         }
-        let Some(version) = compatible_versions(http, &id, ContentKind::Mod, instance).await?.into_iter().next() else {
+        let candidates = compatible_versions(http, &id, ContentKind::Mod, instance).await?;
+        let Some(version) = newest_in_channel(candidates, instance.overrides.channel()) else {
             tracing::warn!("Abhängigkeit {id} hat keine passende Version – übersprungen");
             continue;
         };
@@ -1342,6 +1354,7 @@ async fn latest_for_hashes(
     instance: &Instance,
     kind: ContentKind,
     hashes: &[&String],
+    channel: Option<UpdateChannel>,
 ) -> Result<HashMap<String, Version>> {
     let mut body = serde_json::json!({
         "hashes": hashes,
@@ -1351,7 +1364,40 @@ async fn latest_for_hashes(
     if let Some(loaders) = version_loaders(kind, instance) {
         body["loaders"] = serde_json::json!(loaders);
     }
-    Ok(http.post(format!("{API}/version_files/update")).json(&body).send().await?.error_for_status()?.json().await?)
+    if let Some(channel) = channel {
+        body["version_types"] = serde_json::json!(channel.version_types());
+    }
+    let mut found: HashMap<String, Version> =
+        http.post(format!("{API}/version_files/update")).json(&body).send().await?.error_for_status()?.json().await?;
+    // Doppelt hält besser, falls die API den Filter einmal ignoriert.
+    if let Some(channel) = channel {
+        found.retain(|_, v| channel.allows(&v.version_type));
+    }
+    Ok(found)
+}
+
+/// Aktuell installierte Versionen je Datei-Hash (für den Datumsvergleich).
+async fn versions_for_hashes(http: &reqwest::Client, hashes: &[&String]) -> Result<HashMap<String, Version>> {
+    Ok(http
+        .post(format!("{API}/version_files"))
+        .json(&serde_json::json!({ "hashes": hashes, "algorithm": "sha1" }))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?)
+}
+
+/// Ist `candidate` ein echtes Update für die Datei mit `hash`? Andere Datei UND
+/// – falls die installierte Version bekannt ist – später veröffentlicht. So
+/// wird aus „installierte Beta, Kanal nur stabil“ kein Downgrade-Angebot.
+fn is_update(hash: &str, current: Option<&Version>, candidate: &Version) -> bool {
+    let other_file = candidate.primary_file().is_some_and(|f| !f.hashes.sha1.eq_ignore_ascii_case(hash));
+    let later = match (current.and_then(|c| c.date_published), candidate.date_published) {
+        (Some(installed), Some(offered)) => offered > installed,
+        _ => current.is_none_or(|c| c.id != candidate.id),
+    };
+    other_file && later
 }
 
 /// Sucht per Datei-Hash nach neueren Versionen – funktioniert auch für Mods,
@@ -1376,10 +1422,15 @@ pub async fn check_updates(http: &reqwest::Client, paths: &Paths, instance: &Ins
             }
         }
 
-        let latest = latest_for_hashes(http, instance, kind, &by_hash.keys().collect::<Vec<_>>()).await?;
+        let hashes: Vec<&String> = by_hash.keys().collect();
+        let latest = latest_for_hashes(http, instance, kind, &hashes, Some(instance.overrides.channel())).await?;
+        if latest.is_empty() {
+            continue;
+        }
+        let current = versions_for_hashes(http, &hashes).await.unwrap_or_default();
         for (hash, version) in latest {
             let Some(file_name) = by_hash.get(&hash) else { continue };
-            let is_newer = version.primary_file().is_some_and(|f| !f.hashes.sha1.eq_ignore_ascii_case(&hash));
+            let is_newer = is_update(&hash, current.get(&hash), &version);
             if is_newer && is_safe_project_id(&version.project_id) && is_safe_project_id(&version.id) {
                 updates.push(UpdateInfo {
                     kind,
@@ -1460,7 +1511,8 @@ pub async fn plan_migration(http: &reqwest::Client, paths: &Paths, instance: &In
         if by_hash.is_empty() {
             continue;
         }
-        let latest = latest_for_hashes(http, instance, kind, &by_hash.keys().collect::<Vec<_>>()).await?;
+        // Beim Versionswechsel zählt jede passende Version, nicht nur der Kanal.
+        let latest = latest_for_hashes(http, instance, kind, &by_hash.keys().collect::<Vec<_>>(), None).await?;
         for (hash, item) in by_hash {
             let Some(source) = item.source.clone() else { continue };
             let found = latest.get(&hash).filter(|v| is_safe_project_id(&v.id));
@@ -1499,6 +1551,36 @@ mod tests {
             "files": [{"url": "https://cdn.modrinth.com/x.jar", "filename": "x.jar", "size": 1, "hashes": {"sha1": "a"}}]
         }))
         .unwrap()
+    }
+
+    fn typed(id: &str, day: u32, kind: &str, sha1: &str) -> Version {
+        let mut v = version(id, day);
+        v.version_type = kind.into();
+        v.files[0].hashes.sha1 = sha1.into();
+        v
+    }
+
+    #[test]
+    fn channel_picks_newest_allowed_with_fallback() {
+        let list = || vec![typed("a3", 3, "alpha", "3"), typed("b2", 2, "beta", "2"), typed("r1", 1, "release", "1")];
+        assert_eq!(newest_in_channel(list(), UpdateChannel::Release).unwrap().id, "r1");
+        assert_eq!(newest_in_channel(list(), UpdateChannel::Beta).unwrap().id, "b2");
+        assert_eq!(newest_in_channel(list(), UpdateChannel::Alpha).unwrap().id, "a3");
+        // Nur Betas veröffentlicht: trotzdem installierbar.
+        assert_eq!(newest_in_channel(vec![typed("b", 1, "beta", "x")], UpdateChannel::Release).unwrap().id, "b");
+        assert!(newest_in_channel(Vec::new(), UpdateChannel::Release).is_none());
+    }
+
+    #[test]
+    fn updates_must_be_newer_and_different() {
+        let installed_beta = typed("b5", 5, "beta", "installed");
+        let older_release = typed("r3", 3, "release", "other");
+        let newer_release = typed("r7", 7, "release", "other");
+        assert!(!is_update("installed", Some(&installed_beta), &older_release), "kein Downgrade als Update");
+        assert!(is_update("installed", Some(&installed_beta), &newer_release));
+        assert!(!is_update("installed", Some(&installed_beta), &typed("b5", 5, "beta", "installed")));
+        // Installierte Datei unbekannt: jede andere Datei zählt.
+        assert!(is_update("unknown", None, &older_release));
     }
 
     #[test]

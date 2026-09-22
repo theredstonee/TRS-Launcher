@@ -87,6 +87,11 @@ impl Paths {
         self.instance_dir(id).join("minecraft")
     }
 
+    /// Gemeinsame Dateien für die Synchronisierung (siehe [`crate::sync`]).
+    pub fn shared_dir(&self) -> PathBuf {
+        self.root.join("shared")
+    }
+
     pub fn accounts_file(&self) -> PathBuf {
         self.root.join("accounts.json")
     }

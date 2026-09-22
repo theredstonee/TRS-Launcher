@@ -37,6 +37,13 @@ pub enum HistoryKind {
     VersionSwitched,
     Repaired,
     IconChanged,
+    /// Dateien per Dialog oder Drag & Drop hinzugefügt.
+    FilesAdded,
+    /// Mehrere Inhalte auf einmal (de)aktiviert oder gelöscht.
+    ContentBulk,
+    HooksChanged,
+    GroupChanged,
+    Renamed,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
