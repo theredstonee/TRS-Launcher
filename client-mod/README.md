@@ -58,6 +58,16 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
 toggle, priority ▲/▼, open folder; applied with one reload).
 
+### Settings API
+
+Modules are registered in `common/.../core/module/TrsModules.java`; a setting is one of
+`BoolSetting`, `NumberSetting`, `ColorSetting`, `ChoiceSetting` and – new – **`TextSetting`**
+(free text, e.g. the Auto-GG message; stored in the new `texts` map of `ModuleConfig`).
+A menu that renders settings has to handle `TextSetting`: the Fabric menu draws the value in a
+box and opens `TextInputScreen` on click (`SettingRows.openEditor`). `TextInputScreen` uses
+`ui/TextField`, a small self-drawn text field, because the vanilla `EditBox` differs too much
+between versions. Everything else about the menu/HUD editor is unchanged.
+
 HUD modules have text color, background and size settings and can be dragged in **HUD bearbeiten**
 (snaps to screen edges and center; mouse wheel = size, right click = reset, Shift = no snapping).
 Positions are stored as anchor + offset relative to the screen size, so they survive resolution/GUI-scale changes.

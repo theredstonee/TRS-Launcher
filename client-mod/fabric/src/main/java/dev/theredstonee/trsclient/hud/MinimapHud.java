@@ -82,7 +82,9 @@ public final class MinimapHud extends HudElement {
 	/** Einmal je Client-Tick: fehlende Chunks nachladen (Budget). */
 	public void tick() {
 		if (!module.isEnabled() || mc.level == null || mc.player == null) return;
-		String dimension = Mc.dimensionId();
+		// Welt oder Dimension gewechselt → alte Kartendaten wegwerfen (sonst zeigt die Karte
+		// kurz das Gelände der vorherigen Welt an denselben Koordinaten).
+		String dimension = Mc.dimensionId() + "@" + TrsClient.get().waypoints().worldKey();
 		if (!dimension.equals(lastDimension)) {
 			cache.clear();
 			lastDimension = dimension;
