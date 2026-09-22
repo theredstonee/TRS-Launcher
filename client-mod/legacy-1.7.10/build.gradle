@@ -24,6 +24,9 @@ tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 }
 
+// Versionsunabhängige Logik direkt aus ../common (reines Java 8 – keine Kopie mehr nötig).
+sourceSets.main.java.srcDir(file('../common/src/main/java'))
+
 minecraft {
 	mcVersion = minecraft_version
 	// Mappings: RFG-Standard MCP stable_12, Forge 10.13.4.1614 ist fest in RFG hinterlegt.

@@ -3,11 +3,16 @@ package dev.theredstonee.trsclient.hud;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.hud.HudLayout;
 import dev.theredstonee.trsclient.core.module.TrsModules;
-import dev.theredstonee.trsclient.screen.HudEditorScreen;
+import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.core.ui.FadeCanvas;
+import dev.theredstonee.trsclient.core.ui.menu.HudItem;
+import dev.theredstonee.trsclient.ui.GfxCanvas;
+import dev.theredstonee.trsclient.screen.TrsUiScreen;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** Hält alle HUD-Elemente und zeichnet sie an ihrer gespeicherten Position. */
@@ -17,6 +22,7 @@ public final class HudManager {
 	/** Wiederverwendeter Puffer für {@link #bounds}: x, y, Breite, Höhe (skaliert). */
 	private final int[] box = new int[4];
 	private final CrosshairRenderer crosshair;
+	private List<HudItem> editorItems;
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
@@ -44,9 +50,48 @@ public final class HudManager {
 		return elements;
 	}
 
+	/** Die HUD-Elemente für den versionsunabhängigen HUD-Editor (Vorschau mit Beispielwerten). */
+	public List<HudItem> editorItems() {
+		if (editorItems == null) {
+			List<HudItem> items = new ArrayList<>(elements.size());
+			for (int i = 0; i < elements.size(); i++) items.add(new EditorItem(elements.get(i)));
+			editorItems = items;
+		}
+		return editorItems;
+	}
+
+	/** Ein HUD-Element aus Sicht des Editors. */
+	private final class EditorItem implements HudItem {
+		private final HudElement element;
+
+		EditorItem(HudElement element) {
+			this.element = element;
+		}
+
+		@Override
+		public dev.theredstonee.trsclient.core.module.HudModule module() {
+			return element.module();
+		}
+
+		@Override
+		public int width() {
+			return element.width(mc.font, true);
+		}
+
+		@Override
+		public int height() {
+			return element.height(mc.font, true);
+		}
+
+		@Override
+		public void draw(Canvas canvas) {
+			element.draw(((GfxCanvas) FadeCanvas.unwrap(canvas)).gfx(), mc.font, true);
+		}
+	}
+
 	/** HUD-Callback (jeden Frame). */
 	public void render(Gfx g) {
-		if (Mc.hudHidden() || Mc.screen() instanceof HudEditorScreen) return;
+		if (Mc.hudHidden() || Mc.screen() instanceof TrsUiScreen) return;
 		// Das Vanilla-Fadenkreuz blendet CrosshairMixin aus, das eigene wird hier gezeichnet (alle Versionen).
 		if (crosshair.replacesVanilla()) crosshair.drawInGame(g);
 		Font font = mc.font;

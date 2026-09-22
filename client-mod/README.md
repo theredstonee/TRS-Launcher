@@ -49,9 +49,27 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
 toggle, priority ▲/▼, open folder; applied with one reload).
 
-HUD modules have text color, background and size settings and can be dragged in **HUD bearbeiten**
-(snaps to screen edges and center; mouse wheel = size, right click = reset, Shift = no snapping).
+## Menu, HUD editor and profiles
+
+The menu (Right Shift) shows every module as a tile with icon, name and switch: a search field, the category
+tabs **HUD / PvP / Chat / Welt / Sonstiges**, and a click on a tile opens that module's settings page. Settings are
+typed and drawn by the same code everywhere: switch, slider, colour picker (hue/saturation field, opacity and
+**Chroma**, plus the brand palette), dropdown and key binding. Panels are rounded, fade in and dim the background.
+
+**HUD bearbeiten** drags the modules around: they snap to the screen edges, the screen centre and to the edges and
+centres of the other modules, and the guide line that is being used lights up. Holding Shift moves freely, the mouse
+wheel changes the size and a right click resets a module. A click selects a module and opens a small panel with size,
+background opacity, text shadow, text colour (with chroma) and **Zurücksetzen**.
+
 Positions are stored as anchor + offset relative to the screen size, so they survive resolution/GUI-scale changes.
+
+**HUD profiles** are complete HUD layouts (e.g. PvP, Bauen, Aufnahme): a profile keeps on/off, position, size and
+look of every HUD module, while the other modules stay shared. Profiles are created, renamed, deleted and switched
+under **Profile** in the menu or in the editor's top bar; the key *HUD-Profil wechseln* (unbound by default) cycles
+through them in game.
+
+The colours come from the launcher: before a start it writes `config/trsclient/launcher-theme.json` (theme and accent)
+into the instance, and the menu and the editor use that accent. Without the file the dark theme with Redstone red applies.
 
 ## Keys
 
@@ -60,9 +78,13 @@ Listed under **TRS Client** in the vanilla controls menu.
 | Key | Action |
 | --- | --- |
 | Right Shift | Open the TRS menu |
-| C (hold) | Zoom (note: vanilla also uses C for "save hotbar activator"; rebind if needed) |
+| V (hold) | Zoom (V is free in every vanilla version; C is "save hotbar activator" from 1.12 on) |
 | unbound | Toggle Fullbright (also switchable in the menu) |
+| unbound | Switch the HUD profile (cycles) |
 | Left Alt (hold) | Freelook (module must be enabled) |
+
+Configs written before the key moved are migrated once: if zoom is still on the old default C, it moves to V –
+a key the player bound themselves is never touched.
 
 ## Supported versions
 
@@ -103,10 +125,30 @@ Self-test screenshots: `run/screenshots/trsclient-<minecraft>-*.png` (one test w
 `minecraft` lists every exact game version the jar supports. Entries of other projects/loaders already present
 in `builds.json` are kept (only Fabric entries for the built versions are replaced).
 
+## Adding modules and settings
+
+New modules are registered in `common` (`core/module/TrsModules`) and rendered per version; the menu picks them up
+automatically. The API for that:
+
+| Piece | What it does |
+| --- | --- |
+| `registry.register(new Module(id, name, description, defaultOn))` | a module; `.category(Category.PVP)` and `.icon("sword")` set its tab and tile icon (icons: `core/ui/Icons`) |
+| `new HudModule(id, name, description, defaultOn, position)` | a module drawn in the HUD; brings text colour, text shadow, background, background opacity and size |
+| `module.add(new BoolSetting(key, label, default))` | switch |
+| `… new NumberSetting(key, label, default, min, max, step, prefix[, suffix])` | slider |
+| `… new ColorSetting(key, label, defaultArgb[, alphaEditable])` | colour picker; `argb()` already includes chroma |
+| `… new ChoiceSetting<>(key, label, EnumType.class, default)` | dropdown (enum implements `ChoiceSetting.Option`) |
+| `… new KeySetting(key, label[, "key.keyboard.v"])` | key binding, stored as the version-neutral vanilla key name |
+
+The version-specific side only implements `core/ui/Canvas` (see `ui/GfxCanvas`) and `core/ui/menu/MenuHost`
+(open screens, sounds, key names, HUD elements for the editor); menu, settings pages, profiles and the HUD editor
+live in `core/ui` and are shared by every loader and Minecraft version.
+
 ## Layout
 
 ```
-common/                   version-independent Java (modules, settings, config, HUD layout math, CPS, zoom) + unit tests
+common/                   version-independent Java (modules, settings, config, HUD layout math, CPS, zoom,
+                          the whole interface in core/ui) + unit tests
 fabric/                   Minecraft code, ONE source tree for all versions (Stonecutter)
   src/                    sources, checked in for the 1.21.1 state
   versions/<mc>/          per-version gradle.properties (Fabric API version) + build output

@@ -348,7 +348,7 @@ impl Launcher {
         }
         let instance = &effective;
 
-        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance).await {
+        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance, &settings.ui).await {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
 

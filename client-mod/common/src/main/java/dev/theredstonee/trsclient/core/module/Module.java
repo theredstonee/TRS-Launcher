@@ -14,6 +14,10 @@ public class Module {
 	private final boolean defaultEnabled;
 	private final List<Setting> settings = new ArrayList<>();
 	private boolean enabled;
+	/** Menü-Reiter; null = automatisch (HUD-Module → HUD, sonst Sonstiges). */
+	private Category category;
+	/** Symbol-ID (siehe core.ui.Icons); null = Symbol der Kategorie. */
+	private String icon;
 
 	public Module(String id, String name, String description, boolean defaultEnabled) {
 		this.id = id;
@@ -58,6 +62,43 @@ public class Module {
 	}
 
 	public boolean isHud() {
+		return false;
+	}
+
+	/** Reiter im Menü. */
+	public Category category() {
+		if (category != null) return category;
+		return isHud() ? Category.HUD : Category.MISC;
+	}
+
+	/** Setzt den Menü-Reiter (verkettbar: {@code registry.register(new Module(...)).category(Category.PVP)}). */
+	public Module category(Category category) {
+		this.category = category;
+		return this;
+	}
+
+	/** Symbol-ID für die Kachel im Menü (siehe {@code core.ui.Icons#ids()}). */
+	public String icon() {
+		return icon != null ? icon : category().icon();
+	}
+
+	/** Setzt das Symbol der Kachel (unbekannte IDs fallen auf das Kategorie-Symbol zurück). */
+	public Module icon(String icon) {
+		this.icon = icon;
+		return this;
+	}
+
+	/** Treffer für die Menü-Suche (Name, Beschreibung, Einstellungen; ohne Groß-/Kleinschreibung). */
+	public boolean matches(String query) {
+		if (query == null) return true;
+		String q = query.trim().toLowerCase(java.util.Locale.ROOT);
+		if (q.isEmpty()) return true;
+		if (name.toLowerCase(java.util.Locale.ROOT).contains(q)) return true;
+		if (description.toLowerCase(java.util.Locale.ROOT).contains(q)) return true;
+		if (category().label().toLowerCase(java.util.Locale.ROOT).contains(q)) return true;
+		for (Setting s : settings) {
+			if (s.label().toLowerCase(java.util.Locale.ROOT).contains(q)) return true;
+		}
 		return false;
 	}
 

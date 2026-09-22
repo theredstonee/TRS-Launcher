@@ -71,7 +71,7 @@ public final class AutoTest {
 	public void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 17 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 3 && step < 18 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -193,16 +193,22 @@ public final class AutoTest {
 			case 13 -> {
 				if (!ensureScreen(PackScreen.class, () -> new PackScreen(null))) return;
 				shot(mc, "trsclient-packs");
-				Mc.setScreen(new HudEditorScreen(null));
+				Mc.setScreen(new TrsMenuScreen(null).showProfiles());
 				next(20);
 			}
 			case 14 -> {
-				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null))) return;
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).showProfiles())) return;
+				shot(mc, "trsclient-profiles");
+				Mc.setScreen(new HudEditorScreen(null).selectFirst());
+				next(20);
+			}
+			case 15 -> {
+				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null).selectFirst())) return;
 				shot(mc, "trsclient-hud-editor");
 				Mc.setScreen(null);
 				next(5);
 			}
-			case 15 -> {
+			case 16 -> {
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -212,8 +218,8 @@ public final class AutoTest {
 				next(20);
 			}
 			default -> {
-				if (step == 16) mc.stop();
-				step = 17;
+				if (step == 17) mc.stop();
+				step = 18;
 			}
 		}
 	}

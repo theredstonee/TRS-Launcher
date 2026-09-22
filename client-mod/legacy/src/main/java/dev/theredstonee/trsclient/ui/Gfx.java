@@ -116,6 +116,11 @@ public final class Gfx {
 		GlStateManager.pushMatrix();
 	}
 
+	/** Hebt die Zeichenebene nach vorn (Tiefe der GUI). */
+	public void raise(float z) {
+		GlStateManager.translate(0, 0, z);
+	}
+
 	public void translate(float x, float y) {
 		GlStateManager.translate(x, y, 0f);
 	}

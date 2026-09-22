@@ -2,11 +2,14 @@ package dev.theredstonee.trsclient.hud;
 
 import dev.theredstonee.trsclient.core.hud.HudLayout;
 import dev.theredstonee.trsclient.core.module.TrsModules;
-import dev.theredstonee.trsclient.screen.HudEditorScreen;
+import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.core.ui.menu.HudItem;
+import dev.theredstonee.trsclient.screen.TrsUiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +21,7 @@ public final class HudManager {
 	/** Wiederverwendeter Puffer für {@link #bounds}: x, y, Breite, Höhe (skaliert). */
 	private final int[] box = new int[4];
 	private final CrosshairRenderer crosshair;
+	private List<HudItem> editorItems;
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
@@ -45,9 +49,55 @@ public final class HudManager {
 		return elements;
 	}
 
+	/** Die HUD-Elemente für den versionsunabhängigen HUD-Editor (Vorschau mit Beispielwerten). */
+	public List<HudItem> editorItems() {
+		if (editorItems == null) {
+			List<HudItem> items = new ArrayList<HudItem>(elements.size());
+			for (int i = 0; i < elements.size(); i++) items.add(new EditorItem(elements.get(i)));
+			editorItems = items;
+		}
+		return editorItems;
+	}
+
+	/**
+	 * Ein HUD-Element aus Sicht des Editors. Gezeichnet wird über den FontRenderer und die
+	 * GL-Matrix – der Editor hat die Fläche vorher verschoben und skaliert.
+	 */
+	private static final class EditorItem implements HudItem {
+		private final HudElement element;
+
+		EditorItem(HudElement element) {
+			this.element = element;
+		}
+
+		@Override
+		public dev.theredstonee.trsclient.core.module.HudModule module() {
+			return element.module();
+		}
+
+		@Override
+		public int width() {
+			return element.width(font(), true);
+		}
+
+		@Override
+		public int height() {
+			return element.height(font(), true);
+		}
+
+		@Override
+		public void draw(Canvas canvas) {
+			element.draw(font(), true);
+		}
+
+		private static FontRenderer font() {
+			return Minecraft.getInstance().fontRenderer;
+		}
+	}
+
 	/** Aus RenderGameOverlayEvent.Post (jeden Frame), Größe in GUI-Pixeln. */
 	public void render(int sw, int sh) {
-		if (mc.gameSettings.hideGUI || mc.currentScreen instanceof HudEditorScreen) return;
+		if (mc.gameSettings.hideGUI || mc.currentScreen instanceof TrsUiScreen) return;
 		FontRenderer font = mc.fontRenderer;
 		for (int i = 0, n = elements.size(); i < n; i++) {
 			HudElement e = elements.get(i);

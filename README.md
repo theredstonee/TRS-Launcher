@@ -41,9 +41,10 @@
 - Games keep running when you close the launcher and are picked up again on the next start
 
 **TRS Client (in-game mod)**
-- HUD with FPS, CPS, keystrokes and ping, fully draggable
-- Zoom, fullbright and a custom in-game menu (Right Shift)
-- Shipped with the launcher and installed automatically in every matching instance
+- HUD with FPS, CPS, keystrokes and ping; the editor snaps modules to the screen and to each other
+- Several HUD layouts as profiles (PvP, building, recording) – switchable by a key
+- Zoom, fullbright and an in-game menu (Right Shift) with search, categories and per-module settings
+- Takes the launcher's theme and accent colour, and is installed automatically in every matching instance
 
 **Content**
 - Browse and install mods, modpacks, resource packs and shaders from **Modrinth**, dependencies included

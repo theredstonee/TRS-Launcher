@@ -24,6 +24,9 @@ tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 }
 
+// Versionsunabhängige Logik direkt aus ../common (reines Java 8 – keine Kopie mehr nötig).
+sourceSets.main.java.srcDir(file('../common/src/main/java'))
+
 minecraft {
 	mappings channel: mcp_channel, version: mcp_version
 

@@ -226,18 +226,25 @@ public final class AutoTest {
 			case 14: {
 				if (!ensureScreen(PackScreen.class, () -> new PackScreen(null))) return;
 				shot(mc, "trsclient-packs");
-				Mc.setScreen(new HudEditorScreen(null));
+				Mc.setScreen(new TrsMenuScreen(null).showProfiles());
 				next(20);
 				break;
 			}
 			case 15: {
-				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null))) return;
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).showProfiles())) return;
+				shot(mc, "trsclient-profiles");
+				Mc.setScreen(new HudEditorScreen(null).selectFirst());
+				next(20);
+				break;
+			}
+			case 16: {
+				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null).selectFirst())) return;
 				shot(mc, "trsclient-hud-editor");
 				Mc.setScreen(null);
 				next(5);
 				break;
 			}
-			case 16: {
+			case 17: {
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -249,8 +256,8 @@ public final class AutoTest {
 				break;
 			}
 			default: {
-				if (step == 17) mc.stop();
-				step = 18;
+				if (step == 18) mc.stop();
+				step = 19;
 			}
 		}
 	}

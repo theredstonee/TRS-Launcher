@@ -4,5 +4,6 @@
 	"key.trsclient.menu": "TRS-Menü öffnen",
 	"key.trsclient.zoom": "Zoom (halten)",
 	"key.trsclient.fullbright": "Fullbright umschalten",
-	"key.trsclient.freelook": "Freelook (halten)"
+	"key.trsclient.freelook": "Freelook (halten)",
+	"key.trsclient.hudProfile": "HUD-Profil wechseln"
 }

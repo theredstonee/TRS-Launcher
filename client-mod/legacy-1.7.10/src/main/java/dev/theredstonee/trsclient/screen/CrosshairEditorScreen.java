@@ -90,7 +90,7 @@ public final class CrosshairEditorScreen extends GuiScreen {
 	@Override
 	protected void mouseClicked(int mouseX, int mouseY, int button) {
 		if (hot.click(mouseX, mouseY, button)) {
-			TrsMenuScreen.clickSound(this);
+			new TrsMenuHost(null).playClick();
 			return;
 		}
 		super.mouseClicked(mouseX, mouseY, button);

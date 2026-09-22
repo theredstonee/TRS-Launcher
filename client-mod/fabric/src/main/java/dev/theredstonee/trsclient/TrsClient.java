@@ -6,6 +6,7 @@ import dev.theredstonee.trsclient.core.config.ConfigStore;
 import dev.theredstonee.trsclient.core.input.ClickCounter;
 import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.zoom.ZoomState;
 import dev.theredstonee.trsclient.dev.AutoTest;
 import dev.theredstonee.trsclient.feature.PvpFeatures;
@@ -71,6 +72,8 @@ public final class TrsClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		instance = this;
+		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
+		Theme.loadFrom(FabricLoader.getInstance().getConfigDir());
 		config = new ConfigStore(FabricLoader.getInstance().getConfigDir().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -149,6 +152,12 @@ public final class TrsClient implements ClientModInitializer {
 	*///?}
 
 	private void onTick(Minecraft mc) {
+		migrateKeys(mc);
+		while (TrsKeys.hudProfile.consumeClick()) {
+			String name = modules.profiles.cycle();
+			Mc.actionBar(Mc.text("HUD-Profil: " + name));
+			saveConfig();
+		}
 		while (TrsKeys.menu.consumeClick()) {
 			if (Mc.screen() == null) Mc.setScreen(new TrsMenuScreen(null));
 		}
@@ -157,6 +166,21 @@ public final class TrsClient implements ClientModInitializer {
 			Mc.actionBar(Mc.text("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus")));
 			saveConfig();
 		}
+	}
+
+	/**
+	 * Einmalige Umstellung alter Standard-Tasten: Zoom lag auf C, was ab Minecraft 1.12 mit
+	 * "Hotbar speichern" kollidiert. Umgestellt wird nur, wenn die Taste noch auf dem alten
+	 * Standard liegt – selbst belegte Tasten bleiben unangetastet.
+	 */
+	private void migrateKeys(Minecraft mc) {
+		if (!modules.keyDefaults.needsZoomKeyMigration() || mc.options == null) return;
+		if (TrsKeys.migrateZoomKey()) {
+			mc.options.save();
+			LOGGER.info("Zoom-Taste von C auf V umgestellt (C ist ab 1.12 'Hotbar speichern')");
+		}
+		modules.keyDefaults.markMigrated();
+		saveConfig();
 	}
 
 	/** Speichert die Einstellungen (Fehler nur loggen). */

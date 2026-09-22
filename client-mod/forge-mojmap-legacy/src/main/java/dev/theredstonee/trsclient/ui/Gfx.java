@@ -177,6 +177,16 @@ public final class Gfx {
 		/*GlStateManager.pushMatrix();*/
 	}
 
+	/** Hebt die Zeichenebene nach vorn (die Minecraft-GUI hat eine Tiefe). */
+	public void raise(float z) {
+		//? if >=1.16 {
+		pose.translate(0, 0, z);
+		//?} elif >=1.15 {
+		/*RenderSystem.translatef(0, 0, z);
+		*///?} else
+		/*GlStateManager.translatef(0, 0, z);*/
+	}
+
 	public void translate(float x, float y) {
 		//? if >=1.16 {
 		pose.translate(x, y, 0);

@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.module;
 
+import dev.theredstonee.trsclient.core.config.ConfigPart;
 import dev.theredstonee.trsclient.core.config.ModuleConfig;
 import dev.theredstonee.trsclient.core.config.TrsConfig;
 
@@ -10,6 +11,7 @@ import java.util.List;
 /** Geordnete Liste aller Module + Übertragung von/zur Config. */
 public final class ModuleRegistry {
 	private final List<Module> modules = new ArrayList<>();
+	private final List<ConfigPart> parts = new ArrayList<>();
 
 	public <M extends Module> M register(M module) {
 		for (Module m : modules) {
@@ -17,6 +19,11 @@ public final class ModuleRegistry {
 		}
 		modules.add(module);
 		return module;
+	}
+
+	/** Weiterer Config-Teil (z. B. HUD-Profile), wird nach den Modulen gelesen/geschrieben. */
+	public void addPart(ConfigPart part) {
+		parts.add(part);
 	}
 
 	public List<Module> all() {
@@ -36,12 +43,14 @@ public final class ModuleRegistry {
 			ModuleConfig mc = config.modules == null ? null : config.modules.get(m.id());
 			m.read(mc == null ? new ModuleConfig() : mc.normalized());
 		}
+		for (ConfigPart p : parts) p.read(config);
 	}
 
 	/** Erzeugt eine Config aus dem aktuellen Zustand. */
 	public TrsConfig capture() {
 		TrsConfig config = new TrsConfig();
 		for (Module m : modules) config.modules.put(m.id(), m.write());
+		for (ConfigPart p : parts) p.write(config);
 		return config;
 	}
 }

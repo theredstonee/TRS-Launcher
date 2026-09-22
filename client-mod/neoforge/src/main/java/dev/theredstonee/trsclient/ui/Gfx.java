@@ -128,6 +128,16 @@ public final class Gfx {
 		//?}
 	}
 
+	/**
+	 * Zeichnet gepufferten Text sofort. 1.20–1.21.5 sammelt GuiGraphics den Text und zeichnet ihn
+	 * erst am Ende – ohne das läge er über später gezeichneten Flächen.
+	 */
+	public void flush() {
+		//? if <1.21.6 {
+		g.flush();
+		//?}
+	}
+
 	/** Zeichnen auf ein Rechteck begrenzen (Bildschirmkoordinaten), mit {@link #noScissor()} beenden. */
 	public void scissor(int x1, int y1, int x2, int y2) {
 		g.enableScissor(x1, y1, x2, y2);
@@ -144,6 +154,20 @@ public final class Gfx {
 		/*g.pose().pushMatrix();
 		*///?} else
 		g.pose().pushPose();
+	}
+
+	/** Hebt die Zeichenebene nach vorn (Tiefe der GUI); ab 1.21.6 zeichnet Minecraft in Reihenfolge. */
+	public void raise(float z) {
+		//? if >=1.21.6 {
+		/*// Ab 1.21.6 gibt es keine Tiefe mehr – die Reihenfolge entscheidet.
+		*///?} elif >=1.20 {
+		g.pose().translate(0, 0, z);
+		//?} elif >=1.16 {
+		/*pose.translate(0, 0, z);
+		*///?} elif >=1.15 {
+		/*RenderSystem.translatef(0, 0, z);
+		*///?} else
+		/*GlStateManager.translatef(0, 0, z);*/
 	}
 
 	public void translate(float x, float y) {
