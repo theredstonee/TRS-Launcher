@@ -59,7 +59,9 @@ pub fn classify(path: &Path) -> Result<ContentKind> {
     }
     let names: Vec<&str> = archive.file_names().take(MAX_SCANNED_ENTRIES).collect();
     if names.iter().any(|n| n.eq_ignore_ascii_case("pack.mcmeta")) {
-        Ok(ContentKind::ResourcePack)
+        // Datenpakete haben `data/`, Ressourcenpakete `assets/`.
+        let has = |prefix: &str| names.iter().any(|n| n.starts_with(prefix));
+        Ok(if has("data/") && !has("assets/") { ContentKind::DataPack } else { ContentKind::ResourcePack })
     } else if names.iter().any(|n| n.starts_with("shaders/")) {
         Ok(ContentKind::ShaderPack)
     } else {
@@ -173,6 +175,8 @@ mod tests {
         zip_file(&p("pack.zip"), &["pack.mcmeta", "assets/x.png"]);
         zip_file(&p("shader.zip"), &["shaders/final.fsh"]);
         zip_file(&p("anderes.zip"), &["readme.txt"]);
+        zip_file(&p("daten.zip"), &["pack.mcmeta", "data/x/function/a.mcfunction"]);
+        assert_eq!(classify(&p("daten.zip")).unwrap(), ContentKind::DataPack);
         std::fs::write(p("fake.jar"), b"MZ\x90\x00 kein zip").unwrap();
         std::fs::write(p("leer.jar"), b"").unwrap();
         zip_file(&p("mod.exe"), &["a"]);
