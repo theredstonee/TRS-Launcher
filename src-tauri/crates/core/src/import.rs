@@ -522,12 +522,17 @@ impl Launcher {
             }
         }
 
+        let source = serde_json::to_value(candidate.source).ok().and_then(|v| v.as_str().map(str::to_owned));
         let instance = self
-            .create_instance(NewInstance {
-                name: candidate.name.clone(),
-                game_version: candidate.game_version.clone(),
-                loader: candidate.loader.clone(),
-            })
+            .create_instance_as(
+                NewInstance {
+                    name: candidate.name.clone(),
+                    game_version: candidate.game_version.clone(),
+                    loader: candidate.loader.clone(),
+                },
+                crate::history::HistoryEntry::new(crate::history::HistoryKind::Imported)
+                    .subject(source.unwrap_or_default()),
+            )
             .await?;
 
         let from = candidate.game_dir.clone();

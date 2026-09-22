@@ -216,7 +216,21 @@ impl Launcher {
             Task { url: file.url.clone(), path: pack_path.clone(), sha1: Some(file.hashes.sha1.clone()), size: Some(file.size) };
         let result = self.install_pack_file(&pack_task, on_progress).await;
         let _ = tokio::fs::remove_file(&pack_path).await;
-        result
+        let instance = result?;
+
+        // Das Pack-Icon wird zum Instanz-Bild (nur von Modrinths CDN, siehe `icon`).
+        let icon_url = modrinth::project_cards(http, &[project_id.to_owned()])
+            .await
+            .ok()
+            .and_then(|cards| cards.into_iter().next())
+            .and_then(|card| card.icon_url);
+        if let Some(url) = icon_url {
+            match self.set_instance_icon_from_url(&instance.id, &url).await {
+                Ok(with_icon) => return Ok(with_icon),
+                Err(e) => tracing::debug!("Modpack-Icon übersprungen: {e}"),
+            }
+        }
+        Ok(instance)
     }
 
     async fn install_pack_file(&self, pack_task: &Task, on_progress: &PackProgressFn) -> Result<Instance> {
@@ -231,12 +245,12 @@ impl Launcher {
             tokio::task::spawn_blocking(move || read_index(&path)).await.map_err(|e| Error::Internal(e.to_string()))??
         };
 
+        let name: String = index.name.chars().filter(|c| !c.is_control()).take(64).collect();
         let instance = self
-            .create_instance(NewInstance {
-                name: index.name.chars().filter(|c| !c.is_control()).take(64).collect(),
-                game_version: index.game_version()?.to_owned(),
-                loader: index.loader()?,
-            })
+            .create_instance_as(
+                NewInstance { name: name.clone(), game_version: index.game_version()?.to_owned(), loader: index.loader()? },
+                crate::history::HistoryEntry::new(crate::history::HistoryKind::Created).subject(&name).detail("modpack"),
+            )
             .await?;
 
         let game_dir = self.paths().instance_game_dir(&instance.id);

@@ -14,6 +14,8 @@ pub mod extras;
 pub mod forge;
 pub mod fsutil;
 pub mod gamelog;
+pub mod history;
+pub mod icon;
 pub mod import;
 pub mod instance;
 pub mod java;
@@ -38,8 +40,9 @@ use tokio::sync::RwLock;
 
 use auth::AccountStore;
 pub use error::{Error, Result};
-use instance::{Instance, InstanceStore, NewInstance};
-use launch::{EventSink, GameManager, Session};
+use history::{HistoryEntry, HistoryKind};
+use instance::{Instance, InstanceStore, Loader, LoaderKind, NewInstance};
+use launch::{EventSink, GameEvent, GameManager, Session};
 use paths::Paths;
 use servers::ServerStore;
 use prepare::{ProgressFn, Stage, StageProgress};
@@ -81,6 +84,29 @@ impl Launcher {
             .build()?;
 
         let settings = Settings::load(&paths.settings_file()).await?;
+
+        // Spielende landet zusätzlich im Verlauf der Instanz.
+        let history_paths = paths.clone();
+        let events: EventSink = Arc::new(move |event: GameEvent| {
+            if let GameEvent::Exited { instance_id, crashed, play_seconds, diagnosis, exit_code } = &event {
+                let entry = if *crashed {
+                    let detail = diagnosis
+                        .as_ref()
+                        .and_then(|d| serde_json::to_value(d.kind).ok())
+                        .and_then(|v| v.as_str().map(str::to_owned))
+                        .or_else(|| exit_code.map(|c| format!("exit:{c}")));
+                    let entry = HistoryEntry::new(HistoryKind::Crashed).seconds(*play_seconds);
+                    match detail {
+                        Some(d) => entry.detail(d),
+                        None => entry,
+                    }
+                } else {
+                    HistoryEntry::new(HistoryKind::Stopped).seconds(*play_seconds)
+                };
+                history::record_detached(&history_paths, instance_id, entry);
+            }
+            events(event);
+        });
 
         let launcher = Self {
             instances: InstanceStore::new(paths.clone()),
@@ -159,11 +185,20 @@ impl Launcher {
     /// Wie [`InstanceStore::create`], prüft aber vorher gegen das Manifest,
     /// dass es die Spielversion wirklich gibt.
     pub async fn create_instance(&self, new: NewInstance) -> Result<Instance> {
+        self.create_instance_as(new, HistoryEntry::new(HistoryKind::Created)).await
+    }
+
+    /// Wie [`Self::create_instance`] mit eigenem ersten Verlaufseintrag
+    /// (Import, Modpack, Kopie).
+    pub(crate) async fn create_instance_as(&self, new: NewInstance, first: HistoryEntry) -> Result<Instance> {
         let manifest = self.version_manifest(false).await?;
         if manifest.find(&new.game_version).is_none() {
             return Err(Error::UnknownGameVersion(new.game_version));
         }
-        self.instances.create(new).await
+        let instance = self.instances.create(new).await?;
+        let first = first.to(describe_version(&instance.game_version, &instance.loader));
+        history::record(&self.paths, &instance.id, first).await;
+        Ok(instance)
     }
 
     pub async fn delete_instance(&self, id: &str) -> Result<()> {
@@ -171,6 +206,39 @@ impl Launcher {
             return Err(Error::launch("Die Instanz läuft gerade und kann nicht gelöscht werden."));
         }
         self.instances.delete(id).await
+    }
+
+    /// Wechselt Minecraft-Version und/oder Modloader einer Instanz. Welten und
+    /// Mods bleiben liegen; passende Mod-Versionen findet danach
+    /// [`modrinth::plan_migration`].
+    pub async fn change_instance_version(&self, id: &str, game_version: &str, loader: Loader) -> Result<Instance> {
+        let instance = self.instances.get(id).await?;
+        if self.games.is_running(&instance.id) || self.is_preparing(&instance.id) {
+            return Err(Error::launch("Die Instanz läuft gerade – bitte erst beenden."));
+        }
+        loader.validate()?;
+        if instance.game_version == game_version && instance.loader == loader {
+            return Ok(instance);
+        }
+        let manifest = self.version_manifest(false).await?;
+        if manifest.find(game_version).is_none() {
+            return Err(Error::UnknownGameVersion(game_version.to_owned()));
+        }
+        let updated = self.instances.set_version(&instance.id, game_version, loader).await?;
+        history::record(
+            &self.paths,
+            &updated.id,
+            HistoryEntry::new(HistoryKind::VersionSwitched)
+                .from(describe_version(&instance.game_version, &instance.loader))
+                .to(describe_version(&updated.game_version, &updated.loader)),
+        )
+        .await;
+        Ok(updated)
+    }
+
+    pub async fn instance_history(&self, id: &str) -> Result<Vec<history::HistoryEntry>> {
+        let instance = self.instances.get(id).await?;
+        history::list(&self.paths, &instance.id).await
     }
 
     fn is_preparing(&self, id: &str) -> bool {
@@ -271,6 +339,13 @@ impl Launcher {
         let log_dir = self.paths.instance_dir(&instance.id).join("launcher-logs");
         let pid = self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit)?;
         self.instances.touch_last_played(&instance.id).await?;
+        let mut entry = HistoryEntry::new(HistoryKind::Launched);
+        if let Some(id) = join_server
+            && let Ok(server) = self.servers.get(id).await
+        {
+            entry = entry.subject(&server.name);
+        }
+        history::record(&self.paths, &instance.id, entry).await;
         Ok(pid)
     }
 }
@@ -287,6 +362,7 @@ impl Launcher {
         let settings = self.settings().await;
         let features = meta::version::Features { custom_resolution: true, ..Default::default() };
         prepare::prepare(&self.http, &self.paths, &settings, &effective, &features, true, on_progress).await?;
+        history::record(&self.paths, &instance.id, HistoryEntry::new(HistoryKind::Repaired)).await;
         Ok(())
     }
 
@@ -301,6 +377,21 @@ impl Launcher {
         // Gespeicherte Tokens zusätzlich wörtlich schwärzen.
         let secrets = self.accounts.active_session().await.ok().flatten().map(|s| vec![s.access_token]).unwrap_or_default();
         process::share_log(&self.http, &process::redact(&raw, &secrets)).await
+    }
+}
+
+/// Kurzbeschreibung für den Verlauf, z. B. `1.21.1 Fabric 0.16.10`.
+fn describe_version(game_version: &str, loader: &Loader) -> String {
+    let name = match loader.kind {
+        LoaderKind::Vanilla => "Vanilla",
+        LoaderKind::Fabric => "Fabric",
+        LoaderKind::Quilt => "Quilt",
+        LoaderKind::Forge => "Forge",
+        LoaderKind::NeoForge => "NeoForge",
+    };
+    match &loader.version {
+        Some(v) => format!("{game_version} {name} {v}"),
+        None => format!("{game_version} {name}"),
     }
 }
 

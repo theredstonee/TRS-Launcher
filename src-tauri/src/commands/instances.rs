@@ -1,35 +1,63 @@
+use std::path::PathBuf;
+
+use serde::Serialize;
 use tauri::{AppHandle, State};
+use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
-use trs_core::instance::{Instance, NewInstance, UpdateInstance};
+use trs_core::Launcher;
+use trs_core::history::HistoryEntry;
+use trs_core::instance::{Instance, Loader, NewInstance, UpdateInstance};
 
 use crate::LauncherState;
+use crate::commands::extras::allow;
 use crate::error::CommandResult;
 
-#[tauri::command]
-pub async fn list_instances(launcher: State<'_, LauncherState>) -> CommandResult<Vec<Instance>> {
-    Ok(launcher.instances().list().await?)
+/// Instanz plus Pfad zum Bild – die Datei ist einzeln fürs Webview freigegeben
+/// (`convertFileSrc`), nicht der ganze Ordner.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstanceView {
+    #[serde(flatten)]
+    instance: Instance,
+    icon_path: Option<PathBuf>,
+}
+
+pub(crate) fn view(app: &AppHandle, launcher: &Launcher, instance: Instance) -> InstanceView {
+    let icon_path = launcher.instance_icon_path(&instance).filter(|p| allow(app, p));
+    InstanceView { instance, icon_path }
 }
 
 #[tauri::command]
-pub async fn get_instance(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Instance> {
-    Ok(launcher.instances().get(&id).await?)
+pub async fn list_instances(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Vec<InstanceView>> {
+    let list = launcher.instances().list().await?;
+    Ok(list.into_iter().map(|i| view(&app, &launcher, i)).collect())
+}
+
+#[tauri::command]
+pub async fn get_instance(app: AppHandle, launcher: State<'_, LauncherState>, id: String) -> CommandResult<InstanceView> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(view(&app, &launcher, instance))
 }
 
 #[tauri::command]
 pub async fn create_instance(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     instance: NewInstance,
-) -> CommandResult<Instance> {
-    Ok(launcher.create_instance(instance).await?)
+) -> CommandResult<InstanceView> {
+    let created = launcher.create_instance(instance).await?;
+    Ok(view(&app, &launcher, created))
 }
 
 #[tauri::command]
 pub async fn update_instance(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
     update: UpdateInstance,
-) -> CommandResult<Instance> {
-    Ok(launcher.instances().update(&id, update).await?)
+) -> CommandResult<InstanceView> {
+    let updated = launcher.instances().update(&id, update).await?;
+    Ok(view(&app, &launcher, updated))
 }
 
 #[tauri::command]
@@ -48,4 +76,60 @@ pub async fn open_instance_dir(
     let path = launcher.paths().instance_game_dir(&instance.id).display().to_string();
     app.opener().open_path(path, None::<&str>)?;
     Ok(())
+}
+
+/// Öffnet den Windows-Bilddialog; der Pfad kommt aus dem nativen Dialog,
+/// nicht aus dem Webview. `None` = abgebrochen.
+#[tauri::command]
+pub async fn pick_instance_icon(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+) -> CommandResult<Option<InstanceView>> {
+    let instance = launcher.instances().get(&id).await?;
+    let dialog_app = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        dialog_app
+            .dialog()
+            .file()
+            .set_title("Bild für die Instanz wählen")
+            .add_filter("Bilder", &["png", "jpg", "jpeg", "webp"])
+            .blocking_pick_file()
+    })
+    .await
+    .ok()
+    .flatten()
+    .and_then(|p| p.into_path().ok());
+
+    let Some(file) = picked else { return Ok(None) };
+    let updated = launcher.set_instance_icon_from_file(&instance.id, &file).await?;
+    Ok(Some(view(&app, &launcher, updated)))
+}
+
+#[tauri::command]
+pub async fn remove_instance_icon(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+) -> CommandResult<InstanceView> {
+    let updated = launcher.remove_instance_icon(&id).await?;
+    Ok(view(&app, &launcher, updated))
+}
+
+/// Wechselt Minecraft-Version und/oder Modloader.
+#[tauri::command]
+pub async fn change_instance_version(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    game_version: String,
+    loader: Loader,
+) -> CommandResult<InstanceView> {
+    let updated = launcher.change_instance_version(&id, &game_version, loader).await?;
+    Ok(view(&app, &launcher, updated))
+}
+
+#[tauri::command]
+pub async fn instance_history(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<HistoryEntry>> {
+    Ok(launcher.instance_history(&id).await?)
 }
