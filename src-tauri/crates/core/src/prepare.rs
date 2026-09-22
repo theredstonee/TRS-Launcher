@@ -12,15 +12,19 @@ use crate::meta::version::{self, Features, ResolvedLibrary, VersionInfo};
 use crate::meta::{self, is_safe_id};
 use crate::paths::Paths;
 use crate::settings::Settings;
-use crate::{Error, Result, fsutil, java, loaders};
+use crate::{Error, Result, forge, fsutil, java, loaders};
 
 const RESOURCES_URL: &str = "https://resources.download.minecraft.net";
+/// Anteil des Vanilla-Client-Jars an der Loader-Stufe (Rest: Installer).
+const LOADER_CLIENT_JAR_PERCENT: f64 = 10.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Stage {
     Version,
     Java,
+    /// Nur Forge/NeoForge: Installer laden, Libraries holen, Processors ausführen.
+    Loader,
     Libraries,
     Assets,
     Starting,
@@ -86,7 +90,9 @@ pub async fn prepare(
     let concurrency = usize::from(settings.concurrent_downloads);
 
     on_progress(StageProgress::begin(Stage::Version));
-    let version = resolve_version(http, paths, instance).await?;
+    // Bei Forge/NeoForge ist das zunächst nur Vanilla; das Loader-Profil
+    // kommt weiter unten aus dem Installer dazu.
+    let mut version = resolve_version(http, paths, instance).await?;
     validate_version(&version)?;
 
     on_progress(StageProgress::begin(Stage::Java));
@@ -109,23 +115,60 @@ pub async fn prepare(
         }
     };
 
+    // Das Jar hängt an der Vanilla-Version, nicht am Loader-Profil.
+    let jar_id = jar_version_id(instance, &version);
+    let client_jar = paths.version_jar(&jar_id);
+    let client = version
+        .downloads
+        .as_ref()
+        .and_then(|d| d.client.as_ref())
+        .ok_or_else(|| Error::launch("Diese Version enthält keinen Client-Download."))?;
+    let client_task =
+        Task { url: client.url.clone(), path: client_jar.clone(), sha1: client.sha1.clone(), size: client.size };
+
+    // Forge/NeoForge: Der Installer patcht das Vanilla-Jar mit dem Java der
+    // Spielversion – beides muss deshalb vorher da sein. Erst danach steht
+    // das Loader-Profil fest.
+    let uses_installer = matches!(instance.loader.kind, LoaderKind::Forge | LoaderKind::NeoForge);
+    if uses_installer {
+        on_progress(StageProgress::begin(Stage::Loader));
+        download::fetch_all(http, vec![client_task.clone()], 1, &|p| {
+            on_progress(loader_progress(p.percent() / 100.0 * LOADER_CLIENT_JAR_PERCENT, p.done_files, p.total_files));
+        })
+        .await?;
+
+        let ctx = forge::InstallContext {
+            http,
+            paths,
+            game_version: &instance.game_version,
+            loader: &instance.loader,
+            client_jar: &client_jar,
+            java: &java,
+            concurrency,
+        };
+        let profile = forge::ensure_installed(&ctx, &|p| {
+            let rest = 100.0 - LOADER_CLIENT_JAR_PERCENT;
+            on_progress(loader_progress(LOADER_CLIENT_JAR_PERCENT + p.percent / 100.0 * rest, p.done, p.total));
+        })
+        .await?;
+        version = profile.merge_onto(version);
+        validate_version(&version)?;
+    }
+
     on_progress(StageProgress::begin(Stage::Libraries));
     let mut libraries = Vec::new();
     for lib in &version.libraries {
         libraries.extend(lib.resolve(features)?);
     }
 
-    let client = version
-        .downloads
-        .as_ref()
-        .and_then(|d| d.client.as_ref())
-        .ok_or_else(|| Error::launch("Diese Version enthält keinen Client-Download."))?;
-    // Das Jar hängt an der Vanilla-Version, nicht am Loader-Profil.
-    let jar_id = jar_version_id(instance, &version);
-    let client_jar = paths.version_jar(&jar_id);
-
+    // Libraries ohne URL hat der Loader-Installer lokal erzeugt.
+    if let Some(missing) = libraries.iter().find(|l| l.is_local() && !library_path(paths, l).is_file()) {
+        tracing::error!("Lokale Library fehlt: {}", missing.path);
+        return Err(Error::launch("Eine vom Modloader erzeugte Datei fehlt. Bitte die Instanz erneut starten."));
+    }
     let mut tasks: Vec<Task> = libraries
         .iter()
+        .filter(|l| !l.is_local())
         .map(|l| Task {
             url: l.url.clone(),
             path: library_path(paths, l),
@@ -133,12 +176,7 @@ pub async fn prepare(
             size: l.size,
         })
         .collect();
-    tasks.push(Task {
-        url: client.url.clone(),
-        path: client_jar.clone(),
-        sha1: client.sha1.clone(),
-        size: client.size,
-    });
+    tasks.push(client_task);
 
     let log_config = match version.logging.as_ref().and_then(|l| l.client.as_ref()) {
         Some(cfg) if is_safe_id(&cfg.file.id) => {
@@ -167,9 +205,33 @@ pub async fn prepare(
 
     let mut classpath: Vec<PathBuf> =
         libraries.iter().filter(|l| l.on_classpath).map(|l| library_path(paths, l)).collect();
-    classpath.push(client_jar);
+    classpath.push(if uses_installer { link_profile_jar(paths, &client_jar, &version.id).await? } else { client_jar });
 
     Ok(Prepared { version, java, classpath, natives_dir, game_assets, log_config })
+}
+
+fn loader_progress(percent: f64, done_files: u64, total_files: u64) -> StageProgress {
+    StageProgress { stage: Stage::Loader, percent, done_files, total_files }
+}
+
+/// Forge/NeoForge erwarten das Client-Jar – wie beim offiziellen Launcher –
+/// unter `versions/<profil>/<profil>.jar`: Ihr `-DignoreList=…${version_name}.jar`
+/// blendet genau diesen Dateinamen aus, damit das ungepatchte Vanilla-Jar nicht
+/// zusätzlich als Modul geladen wird. Hardlink spart die 25 MB Kopie.
+async fn link_profile_jar(paths: &Paths, vanilla_jar: &Path, profile_id: &str) -> Result<PathBuf> {
+    let target = paths.version_jar(profile_id);
+    let source_len = tokio::fs::metadata(vanilla_jar).await.map_err(|e| Error::io(vanilla_jar, e))?.len();
+    if tokio::fs::metadata(&target).await.is_ok_and(|m| m.is_file() && m.len() == source_len) {
+        return Ok(target);
+    }
+    if let Some(parent) = target.parent() {
+        fsutil::ensure_dir(parent).await?;
+    }
+    let _ = tokio::fs::remove_file(&target).await;
+    if tokio::fs::hard_link(vanilla_jar, &target).await.is_err() {
+        tokio::fs::copy(vanilla_jar, &target).await.map_err(|e| Error::io(&target, e))?;
+    }
+    Ok(target)
 }
 
 fn jar_version_id(instance: &Instance, version: &VersionInfo) -> String {
@@ -193,7 +255,8 @@ async fn resolve_version(http: &reqwest::Client, paths: &Paths, instance: &Insta
         Err(e) => fsutil::read_json(&paths.version_json(&instance.game_version)).await?.ok_or(e)?,
     };
 
-    if instance.loader.kind == LoaderKind::Vanilla {
+    // Forge/NeoForge liefern ihr Profil erst nach der Installation (`forge.rs`).
+    if matches!(instance.loader.kind, LoaderKind::Vanilla | LoaderKind::Forge | LoaderKind::NeoForge) {
         return Ok(vanilla);
     }
     let profile = loaders::fetch_profile(http, paths, &instance.game_version, &instance.loader).await?;

@@ -278,6 +278,8 @@ impl MavenCoord {
 pub struct ResolvedLibrary {
     /// Pfad relativ zu `libraries/`.
     pub path: String,
+    /// Leer, wenn die Datei lokal entsteht (Forge/NeoForge: aus dem Installer
+    /// entpackt oder von einem Processor erzeugt) – siehe [`Self::is_local`].
     pub url: String,
     pub sha1: Option<String>,
     pub size: Option<u64>,
@@ -285,6 +287,13 @@ pub struct ResolvedLibrary {
     pub on_classpath: bool,
     /// Muss ins Natives-Verzeichnis entpackt werden (altes Format).
     pub extract: Option<Extract>,
+}
+
+impl ResolvedLibrary {
+    /// Ohne URL gibt es nichts herunterzuladen; die Datei muss schon da sein.
+    pub fn is_local(&self) -> bool {
+        self.url.is_empty()
+    }
 }
 
 const DEFAULT_LIBRARY_REPO: &str = "https://libraries.minecraft.net/";
@@ -412,7 +421,9 @@ impl VersionInfo {
             downloads: self.downloads.or(parent.downloads),
             java_version: self.java_version.or(parent.java_version),
             libraries,
-            logging: self.logging.or(parent.logging),
+            // Forge schreibt ein leeres `"logging": {}` – das darf Mojangs
+            // Log-Konfiguration nicht verdrängen.
+            logging: self.logging.filter(|l| l.client.is_some()).or(parent.logging),
             kind: self.kind.or(parent.kind),
         }
     }
@@ -557,5 +568,43 @@ mod tests {
         let args = merged.arguments.unwrap();
         assert_eq!(args.jvm.len(), 3);
         assert_eq!(args.game.len(), 2);
+    }
+
+    #[test]
+    fn forge_style_merge() {
+        let parent: VersionInfo = serde_json::from_str(
+            r#"{"id":"1.20.1","mainClass":"net.minecraft.client.main.Main",
+                "logging":{"client":{"argument":"-Dlog4j.configurationFile=${path}","type":"log4j2-xml",
+                    "file":{"id":"client-1.12.xml","sha1":"x","size":1,"url":"https://x"}}},
+                "libraries":[{"name":"org.apache.logging.log4j:log4j-api:2.19.0"},
+                             {"name":"org.lwjgl:lwjgl:3.3.1"},{"name":"org.lwjgl:lwjgl:3.3.1:natives-windows"}]}"#,
+        )
+        .unwrap();
+        let child: VersionInfo = serde_json::from_str(
+            r#"{"id":"1.20.1-forge-47.4.10","inheritsFrom":"1.20.1","logging":{},
+                "mainClass":"cpw.mods.bootstraplauncher.BootstrapLauncher",
+                "libraries":[{"name":"org.apache.logging.log4j:log4j-api:2.22.1"},
+                  {"name":"net.minecraftforge:forge:1.20.1-47.4.10:client","downloads":{"artifact":{
+                    "path":"net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-client.jar",
+                    "url":"","sha1":"aa","size":1}}}]}"#,
+        )
+        .unwrap();
+
+        let merged = child.merge_onto(parent);
+        // Leeres `logging` des Loaders verdrängt Mojangs Konfiguration nicht.
+        assert!(merged.logging.unwrap().client.is_some());
+        // Gleiche Library nur einmal (Loader gewinnt); Classifier bleiben getrennt.
+        let names: Vec<_> = merged.libraries.iter().map(|l| l.name.as_str()).collect();
+        assert_eq!(
+            names,
+            [
+                "org.apache.logging.log4j:log4j-api:2.22.1",
+                "net.minecraftforge:forge:1.20.1-47.4.10:client",
+                "org.lwjgl:lwjgl:3.3.1",
+                "org.lwjgl:lwjgl:3.3.1:natives-windows"
+            ]
+        );
+        let local = merged.libraries[1].resolve(&Features::default()).unwrap();
+        assert!(local[0].is_local());
     }
 }

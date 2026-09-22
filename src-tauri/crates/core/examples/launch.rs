@@ -1,7 +1,8 @@
 //! Rauchtest für die Start-Pipeline ohne UI:
 //!
 //! ```sh
-//! cargo run -p trs-core --example launch -- <datenordner> <version> [vanilla|fabric|quilt] [sekunden]
+//! cargo run -p trs-core --example launch -- <datenordner> <version> \
+//!     [vanilla|fabric|quilt|forge|neoforge] [sekunden] [loader-version]
 //! ```
 //!
 //! Lädt alles herunter, startet das Spiel, gibt Logs aus und beendet es nach
@@ -23,9 +24,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let kind = match args.next().as_deref() {
         Some("fabric") => LoaderKind::Fabric,
         Some("quilt") => LoaderKind::Quilt,
+        Some("forge") => LoaderKind::Forge,
+        Some("neoforge") => LoaderKind::NeoForge,
         _ => LoaderKind::Vanilla,
     };
     let seconds: u64 = args.next().and_then(|s| s.parse().ok()).unwrap_or(25);
+    // Optional eine feste Loader-Version, z. B. `14.23.5.2847` (altes Installer-Format).
+    let loader_version = args.next();
+    if std::env::var_os("TRS_LOG").is_some() {
+        install_stderr_logger();
+    }
 
     let (exit_tx, mut exit_rx) = tokio::sync::mpsc::unbounded_channel();
     let launcher = Arc::new(
@@ -47,7 +55,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?,
     );
 
-    let name = format!("smoke-{version}-{kind:?}").to_lowercase();
+    let pinned = loader_version.as_deref().map(|v| format!("-{v}")).unwrap_or_default();
+    let name = format!("smoke-{version}-{kind:?}{pinned}").to_lowercase();
     let instance = match launcher.instances().list().await?.into_iter().find(|i| i.name == name) {
         Some(i) => i,
         None => {
@@ -55,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .create_instance(NewInstance {
                     name,
                     game_version: version,
-                    loader: Loader { kind, version: None },
+                    loader: Loader { kind, version: loader_version },
                 })
                 .await?
         }
@@ -85,4 +94,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let inst = launcher.instances().get(&instance.id).await?;
     println!("== gespeicherte Spielzeit: {}s", inst.total_play_seconds);
     Ok(())
+}
+
+/// Mit `TRS_LOG=1` landen die `tracing`-Meldungen des Kerns (z. B. die Ausgabe
+/// der Forge-Processors) auf stderr – ohne zusätzliche Abhängigkeit.
+fn install_stderr_logger() {
+    use tracing::field::{Field, Visit};
+    use tracing::span::{Attributes, Id, Record};
+    use tracing::{Event, Metadata, Subscriber};
+
+    struct Message(String);
+    impl Visit for Message {
+        fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+            if field.name() == "message" {
+                self.0 = format!("{value:?}");
+            }
+        }
+    }
+
+    struct Stderr;
+    impl Subscriber for Stderr {
+        fn enabled(&self, metadata: &Metadata<'_>) -> bool {
+            metadata.target().starts_with("trs_core") && *metadata.level() <= tracing::Level::DEBUG
+        }
+        fn new_span(&self, _: &Attributes<'_>) -> Id {
+            Id::from_u64(1)
+        }
+        fn record(&self, _: &Id, _: &Record<'_>) {}
+        fn record_follows_from(&self, _: &Id, _: &Id) {}
+        fn event(&self, event: &Event<'_>) {
+            let mut message = Message(String::new());
+            event.record(&mut message);
+            eprintln!("~~ {} {}", event.metadata().level(), message.0);
+        }
+        fn enter(&self, _: &Id) {}
+        fn exit(&self, _: &Id) {}
+    }
+
+    let _ = tracing::subscriber::set_global_default(Stderr);
 }

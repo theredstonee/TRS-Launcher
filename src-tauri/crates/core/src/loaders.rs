@@ -1,6 +1,6 @@
 //! Modloader. Fabric und Quilt liefern über ihre Meta-APIs ein fertiges
 //! Version-JSON mit `inheritsFrom` – das ist ein reiner Merge. Forge und
-//! NeoForge brauchen einen Installer mit Processor-Kette (folgt).
+//! NeoForge brauchen einen Installer mit Processor-Kette, siehe [`crate::forge`].
 
 use serde::Deserialize;
 
@@ -28,9 +28,9 @@ fn meta_base(kind: LoaderKind) -> Result<&'static str> {
     match kind {
         LoaderKind::Fabric => Ok(FABRIC_META),
         LoaderKind::Quilt => Ok(QUILT_META),
-        LoaderKind::Forge | LoaderKind::NeoForge => Err(Error::launch(
-            "Forge und NeoForge werden in einer der nächsten Versionen unterstützt.",
-        )),
+        LoaderKind::Forge | LoaderKind::NeoForge => {
+            Err(Error::Internal("Forge/NeoForge laufen über forge::ensure_installed".into()))
+        }
         LoaderKind::Vanilla => Err(Error::Internal("Vanilla hat kein Loader-Profil".into())),
     }
 }
