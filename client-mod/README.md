@@ -44,6 +44,15 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Fadenkreuz | Own crosshair (cross, cross+dot, dot, T, circle, circle+dot; color, size, gap, thickness, outline, attack cooldown) with an editor |
 | Treffer-Farbe | Color/opacity of the hurt tint of entities (recolors the overlay texture) |
 | Freelook | Hold Left Alt to orbit the camera without turning the player. Off by default – some servers forbid it |
+| Reichweite / Combo / Geschwindigkeit | Distance of the last hit (display only – the reach itself is untouched), hits in a row (ends on own damage or a pause) and blocks per second |
+| 1.7-Animationen | Hand stays up during the attack cooldown, swing animation while using an item (visual only, no packet) |
+| Niedriges Feuer / Kein Schadens-Wackeln | Fire overlay pulled down / no camera tilt when taking damage |
+| Block-Umrandung / Hitboxen | Colour + opacity + line width of the block outline / F3+B hitboxes with colour |
+| Chat-Verbesserungen | Timestamps, repeated messages collapsed to "(x3)", Ctrl+click copies a line |
+| Auto-GG | Sends a configurable text after typical end-of-game messages. Off by default, at most once per minute, only triggers on messages that are not player chat |
+| Text-Hotkeys | Four bindable keys send a fixed text or command. Off by default, at most one message per second (3 per 10 s) |
+| Wegpunkte | Own markers per world/server (`config/trsclient-waypoints.json`): name, colour, in-world label with distance and light column, show/hide, automatic death waypoint |
+| Minimap | Top-down map of the loaded chunks (map colours, height shading), rotating or north-up, zoom, waypoints, coordinates. Player dots are off by default and only ever show players the game already knows (normal render range) – no radar, no cave mode |
 | Startbildschirm | TRS title screen (pixel wordmark, Einzelspieler/Mehrspieler/Einstellungen/Mods*/TRS-Menü/Beenden, quick-join strip with the first 4 servers of servers.dat); link "Klassischer Titelbildschirm"; disable the module to always get the vanilla one |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
@@ -63,6 +72,18 @@ Listed under **TRS Client** in the vanilla controls menu.
 | C (hold) | Zoom (note: vanilla also uses C for "save hotbar activator"; rebind if needed) |
 | unbound | Toggle Fullbright (also switchable in the menu) |
 | Left Alt (hold) | Freelook (module must be enabled) |
+| B | Create a waypoint at the player position |
+| N | Open the waypoint list |
+| unbound ×4 | Text hotkeys 1–4 (module must be enabled) |
+
+## Fair play
+
+The client never automates anything and never shows more than the game already knows:
+reach/combo/speed only *display* what happened, hitboxes and the block outline are the vanilla
+shapes (only colour/width change), the minimap reads loaded chunks only (no cave mode, no
+entity radar; player dots are off by default), Auto-GG and text hotkeys are off by default and
+rate limited so they can never flood a chat. Freelook and Auto-GG are forbidden on some servers –
+they stay off until you turn them on.
 
 ## Supported versions
 
@@ -73,6 +94,17 @@ Not built: 1.14–1.14.3 (no official Mojang mappings), 1.15, 1.15.1 and 1.16 (t
 which the launcher installs, has no `fabric-lifecycle-events-v1`) and 1.16.1 (rendering/text API predates 1.16.2).
 On older versions some features degrade: 1.14 has no hit color, the pack search hint is a suggestion text before 1.19.3,
 vanilla toggle sprint/sneak only exists from 1.15.
+
+### What is missing where (Fabric)
+
+| Feature | Not available on | Why |
+| --- | --- | --- |
+| Niedriges Feuer, Block-Umrandung, Hitbox-Farbe | 1.14.4 | no `ScreenEffectRenderer`, the outline is drawn with fixed GL calls |
+| Linienstärke der Umrandung | 1.14.4, 1.21.11+ | `RenderSystem.lineWidth` does not exist there |
+| Hitboxen (an/aus + Farbe) | 1.21.9+ | the toggle moved into the debug-screen entries and a separate renderer |
+| 1.7-Animationen: Schlag beim Benutzen | 26.3 | the swing state is no longer a public field |
+| Wegpunkte je Dimension | 1.14.4, 1.15.2 | no `Level#dimension()`; waypoints are then valid in every dimension of that world |
+| Bewegungsunschärfe | all | not implemented yet (see "Open") – the frame copy needs a different path per render era |
 
 Each version gets its **own jar** whose `fabric.mod.json` depends on exactly that Minecraft version
 (`trsclient-fabric-<minecraft>.jar`, requires the Fabric API modules it uses). Bytecode: Java 8 for 1.14–1.16,

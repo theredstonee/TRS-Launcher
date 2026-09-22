@@ -82,7 +82,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 20 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 3 && step < 21 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -247,9 +247,23 @@ public final class AutoTest {
 				break;
 			case 17:
 				shot(mc, "trsclient-chat");
-				next(5);
+				// Auto-GG und Text-Hotkey: beide senden echten Chat (prüft den Sende-Weg je Version)
+				modules.autoGg.setEnabled(true);
+				modules.autoGgText.set("gg (TRS-Autotest)");
+				modules.autoGgDelay.set(0.5);
+				modules.textHotkeys.setEnabled(true);
+				modules.hotkeyTexts[0].set("Text-Hotkey 1 (TRS-Autotest)");
+				chat(mc, "Winner: TRS Client");
+				TrsClient.get().chat().onHotkey(0);
+				next(30);
 				break;
 			case 18:
+				shot(mc, "trsclient-autogg");
+				modules.autoGg.setEnabled(false);
+				modules.textHotkeys.setEnabled(false);
+				next(5);
+				break;
+			case 19:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -259,8 +273,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 19) mc.stop();
-				step = 20;
+				if (step == 20) mc.stop();
+				step = 21;
 				break;
 		}
 	}

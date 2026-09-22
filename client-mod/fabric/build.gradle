@@ -103,8 +103,8 @@ if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']
 // ScreenEffectRenderer (niedriges Feuer) und die Block-Umrandung mit Farbe gibt es erst ab 1.15.
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses += ['LowFireMixin', 'BlockOutlineMixin']
-// RenderSystem#lineWidth: erst ab 1.15, ab 26.1 nicht mehr vorhanden (Linienstärke dort unveränderbar).
-if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<26.1')) mixinClasses << 'LineWidthMixin'
+// RenderSystem#lineWidth: erst ab 1.15, ab 1.21.11 nicht mehr vorhanden (Linienstärke dort unveränderbar).
+if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
 // Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.
 if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
 
