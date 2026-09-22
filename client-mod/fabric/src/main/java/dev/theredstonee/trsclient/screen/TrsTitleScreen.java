@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.core.server.QuickJoin;
 import dev.theredstonee.trsclient.core.ui.PixelFont;
@@ -13,6 +14,7 @@ import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.ServerList;
+//? if >=1.17
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
 
@@ -42,7 +44,7 @@ public final class TrsTitleScreen extends TrsScreen {
 	private final boolean modMenu = FabricLoader.getInstance().isModLoaded("modmenu");
 
 	public TrsTitleScreen() {
-		super(Component.literal("TRS Client"));
+		super(Mc.text("TRS Client"));
 		String mcVersion = FabricLoader.getInstance().getModContainer("minecraft")
 				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("?");
 		String trsVersion = FabricLoader.getInstance().getModContainer(TrsClient.MOD_ID)
@@ -70,7 +72,7 @@ public final class TrsTitleScreen extends TrsScreen {
 				servers.add(s);
 				for (int i = 0; i < list.size(); i++) {
 					ServerData d = list.get(i);
-					if (d.ip != null && d.ip.strip().equals(s.address()) && !serverData.contains(d)) {
+					if (d.ip != null && d.ip.trim().equals(s.address()) && !serverData.contains(d)) {
 						serverData.add(d);
 						break;
 					}
@@ -167,8 +169,8 @@ public final class TrsTitleScreen extends TrsScreen {
 			boolean hover = inside(mx, my, cx, y, cardW, cardH);
 			g.fill(cx, y, cx + cardW, y + cardH, hover ? Brand.SURFACE_HOVER : Brand.SURFACE);
 			g.fill(cx, y, cx + 2, y + cardH, hover ? Brand.AMBER : Brand.RED);
-			g.text(font, font.plainSubstrByWidth(s.label(), cardW - 10), cx + 6, y + 4, Brand.TEXT, false);
-			g.text(font, font.plainSubstrByWidth(s.address(), cardW - 10), cx + 6, y + 15, Brand.TEXT_DIM, false);
+			g.text(font, Gfx.clip(font, s.label(), cardW - 10), cx + 6, y + 4, Brand.TEXT, false);
+			g.text(font, Gfx.clip(font, s.address(), cardW - 10), cx + 6, y + 15, Brand.TEXT_DIM, false);
 			if (i < serverData.size()) {
 				ServerData data = serverData.get(i);
 				hot.add(cx, y, cardW, cardH, () -> join(data));
@@ -177,11 +179,14 @@ public final class TrsTitleScreen extends TrsScreen {
 	}
 
 	private void join(ServerData data) {
-		ServerAddress address = ServerAddress.parseString(data.ip);
 		//? if >=1.20.5 {
-		ConnectScreen.startConnecting(this, minecraft, address, data, false, null);
-		//?} else
-		/*ConnectScreen.startConnecting(this, minecraft, address, data, false);*/
+		ConnectScreen.startConnecting(this, minecraft, ServerAddress.parseString(data.ip), data, false, null);
+		//?} elif >=1.20 {
+		/*ConnectScreen.startConnecting(this, minecraft, ServerAddress.parseString(data.ip), data, false);
+		*///?} elif >=1.17 {
+		/*ConnectScreen.startConnecting(this, minecraft, ServerAddress.parseString(data.ip), data);
+		*///?} else
+		/*open(new ConnectScreen(this, minecraft, data));*/
 	}
 
 	private void openOptions() {

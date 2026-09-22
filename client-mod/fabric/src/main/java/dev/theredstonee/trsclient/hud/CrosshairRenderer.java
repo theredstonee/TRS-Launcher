@@ -4,9 +4,9 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.ui.Gfx;
-import net.minecraft.client.AttackIndicatorStatus;
 import net.minecraft.client.Minecraft;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,8 +17,8 @@ public final class CrosshairRenderer {
 	private static final int OUTLINE = 0xB0000000;
 
 	private final TrsModules modules;
-	private List<int[]> rects = List.of();
-	private List<int[]> outline = List.of();
+	private List<int[]> rects = Collections.emptyList();
+	private List<int[]> outline = Collections.emptyList();
 	private long key = Long.MIN_VALUE;
 
 	public CrosshairRenderer(TrsModules modules) {
@@ -34,7 +34,7 @@ public final class CrosshairRenderer {
 	public boolean visibleInGame() {
 		Minecraft mc = Minecraft.getInstance();
 		return mc.player != null && !mc.player.isSpectator() && !Mc.hudHidden()
-				&& mc.options.getCameraType().isFirstPerson();
+				&& Mc.cameraMode() == 0;
 	}
 
 	private void refresh() {
@@ -65,7 +65,7 @@ public final class CrosshairRenderer {
 		int cy = g.height() / 2;
 		draw(g, cx, cy);
 		Minecraft mc = Minecraft.getInstance();
-		if (modules.crosshairAttack.get() && mc.options.attackIndicator().get() == AttackIndicatorStatus.CROSSHAIR) {
+		if (modules.crosshairAttack.get() && Mc.attackIndicatorOnCrosshair()) {
 			float scale = mc.player.getAttackStrengthScale(0.0F);
 			if (scale < 1.0F) {
 				int y = cy + 9 + modules.crosshairSize.getInt();

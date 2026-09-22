@@ -8,7 +8,22 @@ import java.util.List;
  * und beim Klick rückwärts geprüft (später gezeichnet = liegt oben).
  */
 public final class Hotspots {
-	private record Spot(int x, int y, int w, int h, int button, Runnable action) {
+	private static final class Spot {
+		final int x;
+		final int y;
+		final int w;
+		final int h;
+		final int button;
+		final Runnable action;
+
+		Spot(int x, int y, int w, int h, int button, Runnable action) {
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+			this.button = button;
+			this.action = action;
+		}
 	}
 
 	private final List<Spot> spots = new ArrayList<>();

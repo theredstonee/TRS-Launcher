@@ -6,7 +6,8 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 use trs_core::Launcher;
 use trs_core::history::HistoryEntry;
-use trs_core::instance::{Instance, Loader, NewInstance, UpdateInstance};
+use trs_core::instance::{Instance, Loader, LoaderKind, NewInstance, UpdateInstance};
+use trs_core::loaders::LoaderVersionInfo;
 
 use crate::LauncherState;
 use crate::commands::extras::allow;
@@ -56,8 +57,39 @@ pub async fn update_instance(
     id: String,
     update: UpdateInstance,
 ) -> CommandResult<InstanceView> {
-    let updated = launcher.instances().update(&id, update).await?;
+    let updated = launcher.update_instance(&id, update).await?;
     Ok(view(&app, &launcher, updated))
+}
+
+#[tauri::command]
+pub async fn set_instance_group(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    group: Option<String>,
+) -> CommandResult<InstanceView> {
+    let updated = launcher.set_instance_group(&id, group.as_deref()).await?;
+    Ok(view(&app, &launcher, updated))
+}
+
+/// Alle Loader-Versionen für eine Spielversion (neueste zuerst).
+#[tauri::command]
+pub async fn loader_versions(
+    launcher: State<'_, LauncherState>,
+    kind: LoaderKind,
+    game_version: String,
+) -> CommandResult<Vec<LoaderVersionInfo>> {
+    Ok(trs_core::loaders::available_versions(launcher.http(), kind, &game_version).await?)
+}
+
+/// Was „neueste stabile“ für diese Spielversion gerade bedeutet.
+#[tauri::command]
+pub async fn latest_loader_version(
+    launcher: State<'_, LauncherState>,
+    kind: LoaderKind,
+    game_version: String,
+) -> CommandResult<Option<String>> {
+    Ok(trs_core::loaders::latest_stable(launcher.http(), kind, &game_version).await?)
 }
 
 #[tauri::command]

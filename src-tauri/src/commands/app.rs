@@ -10,6 +10,8 @@ use crate::error::CommandResult;
 pub struct AppInfo {
     version: &'static str,
     data_dir: String,
+    /// z. B. „Windows 11 (24H2, Build 26100)“.
+    os: String,
 }
 
 #[tauri::command]
@@ -17,6 +19,7 @@ pub fn app_info(launcher: State<'_, LauncherState>) -> AppInfo {
     AppInfo {
         version: trs_core::LAUNCHER_VERSION,
         data_dir: launcher.paths().root().display().to_string(),
+        os: trs_core::system::os_description(),
     }
 }
 

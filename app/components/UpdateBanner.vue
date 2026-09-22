@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { isTauri } from '@tauri-apps/api/core'
 import { relaunch } from '@tauri-apps/plugin-process'
+import { error as logError } from '@tauri-apps/plugin-log'
 import { check, type Update } from '@tauri-apps/plugin-updater'
 
 // Sucht beim Start nach einer neuen Launcher-Version (signierte Updates aus
@@ -8,6 +9,8 @@ import { check, type Update } from '@tauri-apps/plugin-updater'
 const update = ref<Update | null>(null)
 const percent = ref<number | null>(null)
 const failed = ref(false)
+const failReason = ref('')
+const attempts = ref(0)
 
 onMounted(async () => {
   if (!isTauri() || import.meta.dev) return
@@ -21,6 +24,8 @@ onMounted(async () => {
 async function install() {
   if (!update.value) return
   failed.value = false
+  failReason.value = ''
+  attempts.value++
   percent.value = 0
   let total = 0
   let done = 0
@@ -33,10 +38,17 @@ async function install() {
       }
     })
     await relaunch()
-  } catch {
+  } catch (e) {
+    // Grund ins Log und anzeigen – sonst lässt sich ein Fehlschlag nicht nachvollziehen.
+    failReason.value = errorMessage(e)
+    logError(`Update auf ${update.value.version} fehlgeschlagen: ${failReason.value}`).catch(() => {})
     failed.value = true
     percent.value = null
   }
+}
+
+function openRelease() {
+  if (update.value) backend.openExternalUrl(`https://github.com/theredstonee/TRS-Launcher/releases/tag/v${update.value.version}`).catch(() => {})
 }
 </script>
 
@@ -44,13 +56,18 @@ async function install() {
   <div v-if="update" class="flex items-center gap-3 border-b border-lamp-400/30 bg-lamp-900 px-4 py-2 text-sm text-lamp-300">
     <span class="size-2 animate-lamp rounded-full bg-lamp-400" />
     <p class="min-w-0 flex-1 truncate">
-      <template v-if="failed">Das Update konnte nicht installiert werden – bitte später erneut versuchen.</template>
+      <template v-if="failed">
+        Update fehlgeschlagen<span v-if="failReason" class="text-lamp-300/80">: {{ failReason }}</span>
+      </template>
       <template v-else-if="percent !== null">Update wird geladen … <span class="display tabular-nums">{{ percent }} %</span></template>
       <template v-else>TRS Launcher {{ update.version }} ist verfügbar.</template>
     </p>
     <RedstoneWire v-if="percent !== null" :percent="percent" :segments="16" class="w-40" />
-    <button v-else class="btn bg-lamp-400 px-3 py-1 text-xs text-base-950 hover:bg-lamp-300" @click="install">
-      Jetzt aktualisieren
-    </button>
+    <template v-else>
+      <button v-if="failed && attempts > 1" class="text-xs text-lamp-300 underline hover:text-lamp-200" @click="openRelease">Installer herunterladen</button>
+      <button class="btn bg-lamp-400 px-3 py-1 text-xs text-base-950 hover:bg-lamp-300" @click="install">
+        {{ failed ? 'Erneut versuchen' : 'Jetzt aktualisieren' }}
+      </button>
+    </template>
   </div>
 </template>

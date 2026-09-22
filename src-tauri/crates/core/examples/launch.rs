@@ -50,6 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("== beendet: code={exit_code:?} crashed={crashed} spielzeit={play_seconds}s");
                     let _ = exit_tx.send(());
                 }
+                GameEvent::Notice { message, .. } => println!("== Hinweis: {message}"),
             }),
         )
         .await?,

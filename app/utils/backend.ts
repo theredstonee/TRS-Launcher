@@ -1,7 +1,17 @@
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import type {
   Account,
+  BulkAction,
+  BulkResult,
+  JavaCheck,
+  JavaInstall,
+  LoaderKind,
+  LoaderVersionInfo,
+  StorageStats,
+  UploadResult,
+  VerifyReport,
   AppInfo,
+  CategoryTag,
   CommandError,
   ContentItem,
   ContentKind,
@@ -89,6 +99,23 @@ export const backend = {
   changeInstanceVersion: (id: string, gameVersion: string, loader: Loader) =>
     call<Instance>('change_instance_version', { id, gameVersion, loader }),
   instanceHistory: (id: string) => call<HistoryEntry[]>('instance_history', { id }),
+  setInstanceGroup: (id: string, group: string | null) => call<Instance>('set_instance_group', { id, group }),
+  loaderVersions: (kind: LoaderKind, gameVersion: string) =>
+    call<LoaderVersionInfo[]>('loader_versions', { kind, gameVersion }),
+  latestLoaderVersion: (kind: LoaderKind, gameVersion: string) =>
+    call<string | null>('latest_loader_version', { kind, gameVersion }),
+  reinstallInstance: (id: string, onProgress: (p: StageProgress) => void) =>
+    call<void>('reinstall_instance', { id, onProgress: channel(onProgress) }),
+
+  /** Öffnet den Dateidialog für java.exe/javaw.exe; `null` = abgebrochen. */
+  pickJavaPath: () => call<string | null>('pick_java_path'),
+  checkJava: (path: string) => call<JavaCheck>('check_java', { path }),
+  detectJava: () => call<JavaInstall[]>('detect_java'),
+  installJava: (major: number, onProgress: (percent: number) => void) =>
+    call<string>('install_java', { major, onProgress: channel(onProgress) }),
+  storageStats: () => call<StorageStats>('storage_stats'),
+  cleanUnusedStorage: () => call<number>('clean_unused_storage'),
+  verifyStorage: () => call<VerifyReport>('verify_storage'),
 
   getVersionManifest: (forceRefresh = false) =>
     call<VersionManifest>('get_version_manifest', { forceRefresh }),
@@ -120,6 +147,12 @@ export const backend = {
     call<void>('set_content_enabled', { id, kind, fileName, enabled }),
   deleteContent: (id: string, kind: ContentKind, fileName: string) =>
     call<void>('delete_content', { id, kind, fileName }),
+  bulkContent: (id: string, action: BulkAction, targets: { kind: ContentKind; fileName: string }[]) =>
+    call<BulkResult>('bulk_content', { id, action, targets }),
+  /** Öffnet den Dateidialog (Mehrfachauswahl); `null` = abgebrochen. */
+  pickContentFiles: (id: string) => call<UploadResult[] | null>('pick_content_files', { id }),
+  /** Übernimmt die zuletzt ins Fenster gezogenen Dateien (Marke aus dem `file-drop`-Event). */
+  addDroppedFiles: (id: string, token: number) => call<UploadResult[]>('add_dropped_files', { id, token }),
   installedProjects: (id: string) => call<string[]>('installed_projects', { id }),
   checkContentUpdates: (id: string) => call<ContentUpdate[]>('check_content_updates', { id }),
   applyContentUpdate: (id: string, update: ContentUpdate) =>
@@ -144,6 +177,8 @@ export const backend = {
   openExternalUrl: (url: string) => call<void>('open_external_url', { url }),
 
   modrinthSearch: (params: ModrinthSearchParams) => call<ModrinthSearchResult>('modrinth_search', { params }),
+  /** Alle Modrinth-Kategorien (der Kern cacht sie einen Tag). */
+  modrinthCategories: () => call<CategoryTag[]>('modrinth_categories'),
   modrinthVersions: (id: string, projectId: string, kind: ContentKind) =>
     call<ModrinthVersion[]>('modrinth_versions', { id, projectId, kind }),
   /** Ohne `versionId` die neueste passende Version; Pflicht-Abhängigkeiten kommen immer mit. */

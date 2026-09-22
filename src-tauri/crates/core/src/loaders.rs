@@ -109,6 +109,62 @@ async fn has_cached_profile(paths: &Paths, kind: LoaderKind, game_version: &str)
     false
 }
 
+/// Eine wählbare Loader-Version.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoaderVersionInfo {
+    pub version: String,
+    pub stable: bool,
+}
+
+/// Höchstens so viele Versionen gehen ans Frontend.
+const MAX_LISTED: usize = 300;
+
+fn is_listable(v: &str) -> bool {
+    !v.is_empty() && v.len() <= 64 && v.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '+'))
+}
+
+/// Alle Loader-Versionen für eine Spielversion, neueste zuerst.
+pub async fn available_versions(http: &reqwest::Client, kind: LoaderKind, game_version: &str) -> Result<Vec<LoaderVersionInfo>> {
+    if !crate::meta::is_safe_id(game_version) {
+        return Err(Error::validation("Ungültige Minecraft-Version"));
+    }
+    let list = match kind {
+        LoaderKind::Vanilla => Vec::new(),
+        LoaderKind::Fabric | LoaderKind::Quilt => {
+            let url = format!("{}/versions/loader/{game_version}", meta_base(kind)?);
+            let entries: Vec<LoaderEntry> = http.get(&url).send().await?.error_for_status()?.json().await?;
+            entries
+                .into_iter()
+                .map(|e| {
+                    // Quilt kennt kein `stable`: Versionen mit `-beta` o. Ä. sind keine.
+                    let stable = e.loader.stable.unwrap_or(!e.loader.version.contains('-'));
+                    LoaderVersionInfo { version: e.loader.version, stable }
+                })
+                .collect()
+        }
+        LoaderKind::Forge | LoaderKind::NeoForge => crate::forge::available_versions(http, kind, game_version)
+            .await?
+            .into_iter()
+            .map(|v| LoaderVersionInfo { stable: !v.contains("beta") && !v.contains("alpha"), version: v })
+            .collect(),
+    };
+    Ok(list.into_iter().filter(|v| is_listable(&v.version)).take(MAX_LISTED).collect())
+}
+
+/// Welche Version „neueste stabile“ gerade bedeutet (Anzeige in den Einstellungen).
+pub async fn latest_stable(http: &reqwest::Client, kind: LoaderKind, game_version: &str) -> Result<Option<String>> {
+    if !crate::meta::is_safe_id(game_version) {
+        return Err(Error::validation("Ungültige Minecraft-Version"));
+    }
+    let version = match kind {
+        LoaderKind::Vanilla => return Ok(None),
+        LoaderKind::Fabric | LoaderKind::Quilt => latest_loader_version(http, meta_base(kind)?, game_version).await?,
+        LoaderKind::Forge | LoaderKind::NeoForge => crate::forge::latest_version(http, kind, game_version).await?,
+    };
+    Ok(Some(version).filter(|v| is_listable(v)))
+}
+
 async fn latest_loader_version(http: &reqwest::Client, base: &str, game_version: &str) -> Result<String> {
     let url = format!("{base}/versions/loader/{game_version}");
     let entries: Vec<LoaderEntry> = http.get(&url).send().await?.error_for_status()?.json().await?;

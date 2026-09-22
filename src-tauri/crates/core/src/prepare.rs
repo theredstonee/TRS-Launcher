@@ -97,7 +97,14 @@ pub async fn prepare(
     validate_version(&version)?;
 
     on_progress(StageProgress::begin(Stage::Java));
-    let custom_java = instance.overrides.java_path.clone().or_else(|| settings.java_path.clone());
+    // Reihenfolge: Instanz → Java je Hauptversion → globaler Pfad → automatisch.
+    let required_major = version.java_version.as_ref().map_or(8, |j| j.major_version);
+    let custom_java = instance
+        .overrides
+        .java_path
+        .clone()
+        .or_else(|| settings.java.get(required_major).map(str::to_owned))
+        .or_else(|| settings.java_path.clone());
     let java = match custom_java {
         Some(path) => {
             let path = PathBuf::from(path);

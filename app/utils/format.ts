@@ -1,4 +1,4 @@
-import type { Instance, ContentKind, ImportSource, LaunchStage, LoaderKind } from '~/types'
+import type { Instance, ContentKind, ImportSource, LaunchStage, LoaderKind, SyncItem } from '~/types'
 
 export const loaderLabels: Record<LoaderKind, string> = {
   vanilla: 'Vanilla',
@@ -69,12 +69,21 @@ export const contentKindLabels: Record<ContentKind, string> = {
   mod: 'Mods',
   resourcepack: 'Ressourcenpakete',
   shaderpack: 'Shader',
+  datapack: 'Datenpakete',
 }
 
-export const contentKinds: ContentKind[] = ['mod', 'resourcepack', 'shaderpack']
+export const contentKinds: ContentKind[] = ['mod', 'resourcepack', 'shaderpack', 'datapack']
 
 export function formatFileSize(bytes: number): string {
   if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toLocaleString('de', { maximumFractionDigits: 1 })} MB`
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
+/** Größen bis in den GB-Bereich (Speicherverwaltung). */
+export function formatBytes(bytes: number): string {
+  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toLocaleString('de', { maximumFractionDigits: 1 })} GB`
+  if (bytes >= 1_048_576) return `${Math.round(bytes / 1_048_576).toLocaleString('de')} MB`
+  if (bytes <= 0) return '0 MB'
   return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
@@ -98,6 +107,32 @@ export const importSourceLabels: Record<ImportSource, string> = {
   curseforge: 'CurseForge',
   modrinth: 'Modrinth App',
   folder: 'Eigener Ordner',
+}
+
+export const syncItemList: { key: SyncItem; label: string; description: string }[] = [
+  { key: 'options', label: 'Spieleinstellungen', description: 'options.txt – Grafik, Steuerung, Tastenbelegung und Sound.' },
+  { key: 'servers', label: 'Serverliste', description: 'servers.dat – die Server im Mehrspieler-Menü.' },
+  { key: 'resourcePacks', label: 'Ressourcenpakete', description: 'Pakete werden zwischen den Instanzen ergänzt, nie gelöscht.' },
+  { key: 'commandHistory', label: 'Befehlsverlauf', description: 'command_history.txt – zuletzt eingegebene Befehle.' },
+  { key: 'hotbar', label: 'Gespeicherte Schnellleisten', description: 'hotbar.nbt – die Kreativ-Schnellleisten.' },
+]
+
+/**
+ * Welche Java-Hauptversion (8/17/21/25) eine Minecraft-Version grob braucht –
+ * nur für Anzeige und Platzhalter; der Kern liest es genau aus dem Versions-JSON.
+ */
+export function javaMajorFor(gameVersion: string): 8 | 17 | 21 | 25 {
+  const release = /^1\.(\d+)(?:\.(\d+))?/.exec(gameVersion)
+  if (release) {
+    const minor = Number(release[1])
+    const patch = Number(release[2] ?? 0)
+    if (minor > 20 || (minor === 20 && patch >= 5)) return 21
+    return minor >= 17 ? 17 : 8
+  }
+  // Jahresversionen (26.1) und Snapshots (26w14a): ab 26 Java 25.
+  const year = /^(\d{2})(?:\.|w)/.exec(gameVersion)
+  if (year) return Number(year[1]) >= 26 ? 25 : 21
+  return 21
 }
 
 /** Vanilla mit TRS-Optimierung läuft als Fabric – Suche und Filter richten sich danach. */

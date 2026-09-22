@@ -34,23 +34,29 @@ pub enum ContentKind {
     Mod,
     ResourcePack,
     ShaderPack,
+    /// Datenpakete landen wie in der Modrinth App im Instanz-Ordner
+    /// datapacks/. Minecraft liest sie dort nicht selbst – sie werden beim
+    /// Anlegen einer Welt ausgewählt bzw. in saves/<welt>/datapacks/
+    /// kopiert, oder von Mods wie „Global Packs“/„Paxi“ global geladen.
+    DataPack,
 }
 
 impl ContentKind {
-    pub const ALL: [Self; 3] = [Self::Mod, Self::ResourcePack, Self::ShaderPack];
+    pub const ALL: [Self; 4] = [Self::Mod, Self::ResourcePack, Self::ShaderPack, Self::DataPack];
 
     pub fn dir_name(self) -> &'static str {
         match self {
             Self::Mod => "mods",
             Self::ResourcePack => "resourcepacks",
             Self::ShaderPack => "shaderpacks",
+            Self::DataPack => "datapacks",
         }
     }
 
     fn extensions(self) -> &'static [&'static str] {
         match self {
             Self::Mod => &[".jar"],
-            Self::ResourcePack | Self::ShaderPack => &[".zip"],
+            Self::ResourcePack | Self::ShaderPack | Self::DataPack => &[".zip"],
         }
     }
 
@@ -60,6 +66,7 @@ impl ContentKind {
             Self::Mod => "mod",
             Self::ResourcePack => "resourcepack",
             Self::ShaderPack => "shader",
+            Self::DataPack => "datapack",
         }
     }
 
@@ -209,7 +216,7 @@ pub async fn list(paths: &Paths, instance_id: &str, kind: ContentKind) -> Result
         // Das eingebettete Icon nur lesen, wenn Modrinth keins liefert.
         let local = match kind {
             ContentKind::Mod => read_mod_metadata(entry.path(), remote_icon.is_none()).await,
-            ContentKind::ResourcePack if remote_icon.is_none() => read_pack_icon(entry.path()).await,
+            ContentKind::ResourcePack | ContentKind::DataPack if remote_icon.is_none() => read_pack_icon(entry.path()).await,
             _ => None,
         }
         .unwrap_or_default();
@@ -262,6 +269,22 @@ pub(crate) async fn display_name(paths: &Paths, instance_id: &str, kind: Content
         .unwrap_or_else(|| file_name.to_owned())
 }
 
+/// Benennt um (`.disabled`); `true`, wenn sich etwas geändert hat.
+async fn rename_enabled(paths: &Paths, instance_id: &str, kind: ContentKind, file_name: &str, enabled: bool) -> Result<bool> {
+    validate_id(instance_id)?;
+    validate_file_name(kind, file_name)?;
+    let dir = content_dir(paths, instance_id, kind);
+    let (current, is_enabled) =
+        existing_path(&dir, file_name).ok_or_else(|| Error::validation("Die Datei existiert nicht mehr."))?;
+    if is_enabled == enabled {
+        return Ok(false);
+    }
+    let target =
+        if enabled { dir.join(file_name) } else { dir.join(format!("{file_name}{DISABLED_SUFFIX}")) };
+    fs::rename(&current, &target).await.map_err(|e| Error::io(&current, e))?;
+    Ok(true)
+}
+
 pub async fn set_enabled(
     paths: &Paths,
     instance_id: &str,
@@ -269,18 +292,9 @@ pub async fn set_enabled(
     file_name: &str,
     enabled: bool,
 ) -> Result<()> {
-    validate_id(instance_id)?;
-    validate_file_name(kind, file_name)?;
-    let dir = content_dir(paths, instance_id, kind);
-    let (current, is_enabled) =
-        existing_path(&dir, file_name).ok_or_else(|| Error::validation("Die Datei existiert nicht mehr."))?;
-    if is_enabled == enabled {
+    if !rename_enabled(paths, instance_id, kind, file_name, enabled).await? {
         return Ok(());
     }
-    let target =
-        if enabled { dir.join(file_name) } else { dir.join(format!("{file_name}{DISABLED_SUFFIX}")) };
-    fs::rename(&current, &target).await.map_err(|e| Error::io(&current, e))?;
-
     let name = display_name(paths, instance_id, kind, file_name).await;
     let kind_entry = if enabled { HistoryKind::ModEnabled } else { HistoryKind::ModDisabled };
     history::record(paths, instance_id, HistoryEntry::new(kind_entry).subject(name)).await;
@@ -295,6 +309,70 @@ pub async fn delete(paths: &Paths, instance_id: &str, kind: ContentKind, file_na
     remove_file(paths, instance_id, kind, file_name).await?;
     history::record(paths, instance_id, HistoryEntry::new(HistoryKind::ModRemoved).subject(name)).await;
     Ok(())
+}
+
+pub const MAX_BULK_ITEMS: usize = 1000;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BulkAction {
+    Enable,
+    Disable,
+    Delete,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkTarget {
+    pub kind: ContentKind,
+    pub file_name: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkResult {
+    /// Tatsächlich geändert.
+    pub changed: usize,
+    /// Fehlgeschlagen (Datei weg, gesperrt …).
+    pub failed: usize,
+}
+
+/// Mehrere Inhalte auf einmal (de)aktivieren oder löschen – mit EINEM
+/// zusammenfassenden Verlaufseintrag statt einem je Datei.
+pub async fn bulk(paths: &Paths, instance_id: &str, action: BulkAction, targets: &[BulkTarget]) -> Result<BulkResult> {
+    validate_id(instance_id)?;
+    if targets.len() > MAX_BULK_ITEMS {
+        return Err(Error::validation(format!("Höchstens {MAX_BULK_ITEMS} Einträge auf einmal")));
+    }
+    for t in targets {
+        validate_file_name(t.kind, &t.file_name)?;
+    }
+    let mut result = BulkResult::default();
+    for t in targets {
+        let outcome = match action {
+            BulkAction::Enable => rename_enabled(paths, instance_id, t.kind, &t.file_name, true).await,
+            BulkAction::Disable => rename_enabled(paths, instance_id, t.kind, &t.file_name, false).await,
+            BulkAction::Delete => remove_file(paths, instance_id, t.kind, &t.file_name).await.map(|()| true),
+        };
+        match outcome {
+            Ok(true) => result.changed += 1,
+            Ok(false) => {}
+            Err(e) => {
+                tracing::warn!("Sammelaktion für {} fehlgeschlagen: {e}", t.file_name);
+                result.failed += 1;
+            }
+        }
+    }
+    if result.changed > 0 {
+        let action_name = match action {
+            BulkAction::Enable => "enable",
+            BulkAction::Disable => "disable",
+            BulkAction::Delete => "delete",
+        };
+        let entry = HistoryEntry::new(HistoryKind::ContentBulk).detail(action_name).to(result.changed.to_string());
+        history::record(paths, instance_id, entry).await;
+    }
+    Ok(result)
 }
 
 /// Entfernt Datei und Index-Eintrag ohne Verlaufseintrag (z. B. beim Update).
@@ -683,6 +761,38 @@ mod tests {
         assert_eq!(remote.title.as_deref(), Some("Fabric API"));
         assert_eq!(remote.icon_url.as_deref(), Some("https://cdn.modrinth.com/data/P7dR8mSH/icon.png"));
         assert_eq!(remote.slug.as_deref(), Some("fabric-api"));
+    }
+
+    #[tokio::test]
+    async fn bulk_actions_record_one_entry() {
+        let (_dir, paths) = setup().await;
+        fsutil::write_json(&paths.instance_file("test"), &serde_json::json!({})).await.unwrap();
+        let mods = content_dir(&paths, "test", ContentKind::Mod);
+        for name in ["a.jar", "b.jar", "c.jar"] {
+            write_jar(&mods.join(name), &[("x.txt", b"x")]);
+        }
+        let targets: Vec<BulkTarget> = ["a.jar", "b.jar", "fehlt.jar"]
+            .iter()
+            .map(|n| BulkTarget { kind: ContentKind::Mod, file_name: (*n).into() })
+            .collect();
+
+        let r = bulk(&paths, "test", BulkAction::Disable, &targets).await.unwrap();
+        assert_eq!((r.changed, r.failed), (2, 1));
+        assert!(mods.join("a.jar.disabled").is_file() && mods.join("b.jar.disabled").is_file());
+        // Schon deaktiviert zählt nicht noch einmal.
+        assert_eq!(bulk(&paths, "test", BulkAction::Disable, &targets[..2]).await.unwrap().changed, 0);
+
+        let r = bulk(&paths, "test", BulkAction::Delete, &targets[..1]).await.unwrap();
+        assert_eq!(r.changed, 1);
+        assert!(!mods.join("a.jar.disabled").exists());
+
+        let entries = history::list(&paths, "test").await.unwrap();
+        assert_eq!(entries.len(), 2, "eine Zeile je Sammelaktion");
+        assert_eq!(entries[0].detail.as_deref(), Some("delete"));
+        assert_eq!(entries[1].to.as_deref(), Some("2"));
+
+        let evil = [BulkTarget { kind: ContentKind::Mod, file_name: "../x.jar".into() }];
+        assert!(bulk(&paths, "test", BulkAction::Delete, &evil).await.is_err());
     }
 
     #[tokio::test]

@@ -7,7 +7,6 @@ import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
@@ -34,7 +33,7 @@ public final class InfoHuds {
 					MobEffect effect = Mc.effect(e);
 					String level = HudFormat.level(e.getAmplifier());
 					String name = effect.getDisplayName().getString() + (level.isEmpty() ? "" : " " + level);
-					line(name + "  " + HudFormat.duration(e.getDuration(), e.isInfiniteDuration()), 0xFF000000 | effect.getColor());
+					line(name + "  " + HudFormat.duration(e.getDuration(), Mc.infinite(e)), 0xFF000000 | effect.getColor());
 					count++;
 				}
 			}
@@ -61,13 +60,13 @@ public final class InfoHuds {
 				if (preview) line(HudFormat.coords(128, 64, -256));
 				return;
 			}
-			line(HudFormat.coords(p.getX(), p.getY(), p.getZ()));
+			line(HudFormat.coords(Mc.x(p), Mc.y(p), Mc.z(p)));
 			if (modules.coordsDirection.get()) {
-				float yaw = p.getYRot();
+				float yaw = Mc.yRot(p);
 				line("Richtung: " + HudFormat.directionName(yaw) + " (" + HudFormat.direction(yaw) + ")");
 			}
 			if (modules.coordsBiome.get() && mc.level != null) {
-				line("Biom: " + Mc.biomeName(mc.level.getBiome(p.blockPosition())));
+				line("Biom: " + Mc.biomeName(p));
 			}
 		}
 	}
@@ -125,15 +124,9 @@ public final class InfoHuds {
 
 		@Override
 		protected void build(boolean preview) {
-			java.util.List<Pack> selected = new java.util.ArrayList<>(mc.getResourcePackRepository().getSelectedPacks());
-			java.util.Collections.reverse(selected);
-			for (Pack pack : selected) {
-				if (pack.isRequired() || pack.isFixedPosition()) continue;
-				line(pack.getTitle().getString());
-			}
-			if (preview && selected.stream().allMatch(pk -> pk.isRequired() || pk.isFixedPosition())) {
-				line("Keine zusätzlichen Packs aktiv");
-			}
+			java.util.List<String> titles = dev.theredstonee.trsclient.compat.Packs.activeTitles();
+			for (String title : titles) line(title);
+			if (preview && titles.isEmpty()) line("Keine zusätzlichen Packs aktiv");
 		}
 	}
 

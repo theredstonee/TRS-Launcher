@@ -29,6 +29,11 @@ export const useGamesStore = defineStore('games', () => {
   }
 
   function onEvent(event: GameEvent) {
+    // Hook oder Synchronisierung nach dem Beenden fehlgeschlagen.
+    if (event.type === 'notice') {
+      useToasts().error(event.message)
+      return
+    }
     const s = state(event.instanceId)
     if (event.type === 'started') {
       s.phase = 'running'

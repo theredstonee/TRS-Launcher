@@ -4,7 +4,8 @@ use tauri_plugin_opener::OpenerExt;
 use trs_core::content::{self, ContentItem, ContentKind};
 use trs_core::modpack::PackProgress;
 use trs_core::modrinth::{
-    self, MigrationItem, ProjectCard, ProjectDetails, SearchParams, SearchResult, UpdateInfo, VersionSummary,
+    self, CategoryTag, MigrationItem, ProjectCard, ProjectDetails, SearchParams, SearchResult, UpdateInfo,
+    VersionSummary,
 };
 
 use crate::commands::instances::{InstanceView, view};
@@ -46,6 +47,18 @@ pub async fn delete_content(
     Ok(content::delete(launcher.paths(), &instance.id, kind, &file_name).await?)
 }
 
+/// Mehrere Inhalte auf einmal (de)aktivieren oder löschen.
+#[tauri::command]
+pub async fn bulk_content(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    action: content::BulkAction,
+    targets: Vec<content::BulkTarget>,
+) -> CommandResult<content::BulkResult> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content::bulk(launcher.paths(), &instance.id, action, &targets).await?)
+}
+
 #[tauri::command]
 pub async fn installed_projects(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<String>> {
     let instance = launcher.instances().get(&id).await?;
@@ -58,6 +71,12 @@ pub async fn modrinth_search(
     params: SearchParams,
 ) -> CommandResult<SearchResult> {
     Ok(modrinth::search(launcher.http(), &params).await?)
+}
+
+/// Modrinth-Kategorien für die Filterleiste (im Kern einen Tag gecacht).
+#[tauri::command]
+pub async fn modrinth_categories(launcher: State<'_, LauncherState>) -> CommandResult<Vec<CategoryTag>> {
+    Ok(modrinth::categories(launcher.http()).await?)
 }
 
 /// Installiert eine Version samt Pflicht-Abhängigkeiten; ohne `version_id` die

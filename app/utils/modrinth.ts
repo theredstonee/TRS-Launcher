@@ -14,12 +14,15 @@ export function projectKindOf(projectType: string): ProjectKind {
   if (projectType === 'modpack') return 'modpack'
   if (projectType === 'resourcepack') return 'resourcepack'
   if (projectType === 'shader') return 'shaderpack'
+  if (projectType === 'datapack') return 'datapack'
   return 'mod'
 }
 
 /** Passt die Version zu Minecraft-Version und Modloader der Instanz? */
 export function versionFits(v: ModrinthVersion, instance: Pick<Instance, 'gameVersion' | 'loader'>, kind: ContentKind): boolean {
   if (!v.gameVersions.includes(instance.gameVersion)) return false
+  // Datenpakete gibt es oft auch als Mod-Variante – nur die reine Datapack-Datei passt.
+  if (kind === 'datapack') return v.loaders.includes('datapack')
   if (kind !== 'mod') return true
   const tags = loaderTags[instance.loader.kind]
   return v.loaders.some((l) => tags.includes(l))

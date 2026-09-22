@@ -8,6 +8,7 @@ import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 
+import java.util.Arrays;
 import java.util.List;
 
 /** Hält alle HUD-Elemente und zeichnet sie an ihrer gespeicherten Position. */
@@ -20,7 +21,7 @@ public final class HudManager {
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
-		this.elements = List.of(
+		this.elements = Arrays.asList(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
 				new KeystrokesHud(modules.keystrokes, modules),

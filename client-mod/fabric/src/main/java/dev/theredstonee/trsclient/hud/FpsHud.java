@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.hud;
 
+import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.HudModule;
 
 /** Bilder pro Sekunde. */
@@ -10,7 +11,7 @@ public final class FpsHud extends TextHudElement {
 
 	@Override
 	protected long valueKey(boolean preview) {
-		return mc.getFps();
+		return Mc.fps();
 	}
 
 	@Override

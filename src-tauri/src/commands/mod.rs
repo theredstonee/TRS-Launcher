@@ -11,3 +11,4 @@ pub mod instances;
 pub mod meta;
 pub mod servers;
 pub mod settings;
+pub mod system;

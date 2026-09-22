@@ -3,11 +3,14 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::sync::Mutex;
 
+use crate::hooks::{self, EnvVar, LaunchHooks};
 use crate::paths::Paths;
 use crate::settings::{self, Resolution};
+use crate::sync::SyncItem;
 use crate::{Error, Result, fsutil};
 
 pub const MAX_NAME_LEN: usize = 64;
+pub const MAX_GROUP_LEN: usize = 32;
 const MAX_ID_LEN: usize = 64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -58,10 +61,72 @@ pub struct InstanceOverrides {
     pub trs_client: Option<bool>,
     /// TRS-Optimierung (nur Vanilla): Fabric + Performance-Mods; `None` = an.
     pub boost: Option<bool>,
+    /// Welche Modrinth-Versionen Updates und „neueste passende“ nehmen;
+    /// `None` = nur stabile.
+    pub update_channel: Option<UpdateChannel>,
+    /// Vollbild beim Start; `None` = globale Einstellung.
+    pub fullscreen: Option<bool>,
+    /// Eigene Start-Hooks; `None` = globale Hooks.
+    pub hooks: Option<LaunchHooks>,
+    /// Eigene Umgebungsvariablen; `None` = globale.
+    pub env: Option<Vec<EnvVar>>,
+    /// Diese Dinge werden in dieser Instanz nicht synchronisiert.
+    pub sync_separate: Vec<SyncItem>,
+}
+
+/// Update-Kanal für Inhalte (Modrinth-Versionstypen).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum UpdateChannel {
+    #[default]
+    Release,
+    Beta,
+    Alpha,
+}
+
+impl UpdateChannel {
+    /// Modrinth-`version_type`s, die dieser Kanal zulässt.
+    pub fn version_types(self) -> &'static [&'static str] {
+        match self {
+            Self::Release => &["release"],
+            Self::Beta => &["release", "beta"],
+            Self::Alpha => &["release", "beta", "alpha"],
+        }
+    }
+
+    pub fn allows(self, version_type: &str) -> bool {
+        self.version_types().contains(&version_type)
+    }
 }
 
 impl InstanceOverrides {
+    pub fn channel(&self) -> UpdateChannel {
+        self.update_channel.unwrap_or_default()
+    }
+
+    /// Leere Hook-Befehle → `None`, doppelte Sync-Einträge raus.
+    pub fn normalized(mut self) -> Self {
+        self.hooks = self.hooks.map(LaunchHooks::normalized);
+        self.env = self.env.map(hooks::normalize_env);
+        let mut seen = Vec::new();
+        self.sync_separate.retain(|i| {
+            let new = !seen.contains(i);
+            seen.push(*i);
+            new
+        });
+        self
+    }
+
     pub fn validate(&self) -> Result<()> {
+        if let Some(hooks) = &self.hooks {
+            hooks.validate()?;
+        }
+        if let Some(env) = &self.env {
+            hooks::validate_env(env)?;
+        }
+        if self.sync_separate.len() > SyncItem::ALL.len() {
+            return Err(Error::validation("Ungültige Synchronisierungs-Einstellungen"));
+        }
         if let Some(mb) = self.max_memory_mb {
             settings::validate_memory(mb)?;
         }
@@ -94,6 +159,9 @@ pub struct Instance {
     /// Dateiname des Instanz-Bilds im Instanz-Ordner (siehe [`crate::icon`]).
     #[serde(default)]
     pub icon: Option<String>,
+    /// Eigene Gruppe in der Bibliothek (`None` = keine).
+    #[serde(default)]
+    pub group: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -178,6 +246,7 @@ impl InstanceStore {
             total_play_seconds: 0,
             overrides: InstanceOverrides::default(),
             icon: None,
+            group: None,
         };
 
         fsutil::ensure_dir(&self.paths.instance_game_dir(&id)).await?;
@@ -212,14 +281,25 @@ impl InstanceStore {
         Ok(instance)
     }
 
+    /// Setzt die eigene Gruppe (`None` oder leer = keine Gruppe).
+    pub async fn set_group(&self, id: &str, group: Option<&str>) -> Result<Instance> {
+        let group = validate_group(group)?;
+        let _guard = self.write_lock.lock().await;
+        let mut instance = self.get(id).await?;
+        instance.group = group;
+        fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
+        Ok(instance)
+    }
+
     pub async fn update(&self, id: &str, update: UpdateInstance) -> Result<Instance> {
         let name = validate_name(&update.name)?;
-        update.overrides.validate()?;
+        let overrides = update.overrides.normalized();
+        overrides.validate()?;
 
         let _guard = self.write_lock.lock().await;
         let mut instance = self.get(id).await?;
         instance.name = name;
-        instance.overrides = update.overrides;
+        instance.overrides = overrides;
         fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
         Ok(instance)
     }
@@ -283,6 +363,15 @@ fn validate_name(name: &str) -> Result<String> {
         return Err(Error::validation("Der Name enthält ungültige Zeichen"));
     }
     Ok(name.to_owned())
+}
+
+/// Gruppennamen: getrimmt, 1–32 Zeichen, keine Steuerzeichen; leer = keine Gruppe.
+pub fn validate_group(group: Option<&str>) -> Result<Option<String>> {
+    let Some(group) = group.map(str::trim).filter(|g| !g.is_empty()) else { return Ok(None) };
+    if group.chars().count() > MAX_GROUP_LEN || group.chars().any(char::is_control) {
+        return Err(Error::validation(format!("Gruppennamen: höchstens {MAX_GROUP_LEN} Zeichen, keine Sonderzeichen")));
+    }
+    Ok(Some(group.to_owned()))
 }
 
 /// Versions-IDs landen später in Pfaden (`versions/<id>/`) und URLs.
@@ -408,6 +497,52 @@ mod tests {
         let mut bad = new_instance("ok");
         bad.game_version = "../../etc".into();
         assert!(store.create(bad).await.is_err());
+    }
+
+    #[test]
+    fn group_validation() {
+        assert_eq!(validate_group(None).unwrap(), None);
+        assert_eq!(validate_group(Some("   ")).unwrap(), None);
+        assert_eq!(validate_group(Some(" PvP ")).unwrap().as_deref(), Some("PvP"));
+        assert!(validate_group(Some(&"g".repeat(33))).is_err());
+        assert!(validate_group(Some("a\nb")).is_err());
+    }
+
+    #[tokio::test]
+    async fn groups_and_new_overrides_roundtrip() {
+        let (_dir, store) = store().await;
+        let a = store.create(new_instance("Gruppiert")).await.unwrap();
+        assert_eq!(store.set_group(&a.id, Some("Modpacks")).await.unwrap().group.as_deref(), Some("Modpacks"));
+        assert_eq!(store.set_group(&a.id, Some("")).await.unwrap().group, None);
+
+        let overrides = InstanceOverrides {
+            update_channel: Some(UpdateChannel::Beta),
+            fullscreen: Some(true),
+            hooks: Some(LaunchHooks { pre_launch: Some("  ".into()), wrapper: Some("w".into()), ..Default::default() }),
+            sync_separate: vec![SyncItem::Options, SyncItem::Options, SyncItem::Hotbar],
+            ..Default::default()
+        };
+        let updated = store.update(&a.id, UpdateInstance { name: "Gruppiert".into(), overrides }).await.unwrap();
+        assert_eq!(updated.overrides.sync_separate, [SyncItem::Options, SyncItem::Hotbar]);
+        assert_eq!(updated.overrides.hooks.as_ref().unwrap().pre_launch, None);
+        assert_eq!(store.get(&a.id).await.unwrap().overrides.channel(), UpdateChannel::Beta);
+
+        let bad = InstanceOverrides {
+            hooks: Some(LaunchHooks { post_exit: Some("a\nb".into()), ..Default::default() }),
+            ..Default::default()
+        };
+        assert!(store.update(&a.id, UpdateInstance { name: "x".into(), overrides: bad }).await.is_err());
+    }
+
+    #[test]
+    fn channels() {
+        assert!(UpdateChannel::Release.allows("release") && !UpdateChannel::Release.allows("beta"));
+        assert!(UpdateChannel::Beta.allows("beta") && !UpdateChannel::Beta.allows("alpha"));
+        assert!(UpdateChannel::Alpha.allows("alpha"));
+        assert_eq!(serde_json::to_value(UpdateChannel::Beta).unwrap(), "beta");
+        // Alte instance.json ohne neue Felder lädt weiter.
+        let old: InstanceOverrides = serde_json::from_str(r#"{"maxMemoryMb":4096}"#).unwrap();
+        assert_eq!(old.channel(), UpdateChannel::Release);
     }
 
     #[test]
