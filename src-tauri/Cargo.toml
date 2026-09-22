@@ -21,8 +21,10 @@ name = "trs_launcher_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [profile.release]
-codegen-units = 1
-lto = true
+# Thin-LTO + parallele Codegen-Units: deutlich schnellere Release-Builds bei
+# kaum größerer Datei (ein paar Hundert KB).
+codegen-units = 16
+lto = "thin"
 opt-level = "s"
 panic = "abort"
 strip = true
