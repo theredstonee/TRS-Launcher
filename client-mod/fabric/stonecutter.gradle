@@ -1,0 +1,59 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+plugins {
+	id 'dev.kikugie.stonecutter'
+}
+// Version, deren Code gerade unkommentiert in fabric/src steht (eingecheckt: 1.21.1).
+// Umschalten: ./gradlew "Set active project to <version>" (danach vor dem Commit zurück auf 1.21.1).
+stonecutter.active '1.21.1'
+
+/*
+ * ./gradlew collectLauncherJars
+ * Baut alle Fabric-Versionen und legt die JARs + builds.json in client-mod/dist/ ab.
+ * Der Launcher liest builds.json, um für jede Instanz die passende JAR zu wählen.
+ * Einträge anderer Loader/Projekte in einer vorhandenen builds.json bleiben erhalten.
+ */
+def distDir = rootProject.layout.projectDirectory.dir('dist')
+def nodes = stonecutter.versions.collect { project(":fabric:${it.project}") }
+
+tasks.register('collectLauncherJars') {
+	group = 'build'
+	description = 'Builds every Fabric version and writes the jars and builds.json to client-mod/dist/'
+
+	def jarTasks = nodes.collect { it.trsModJar }
+	dependsOn(jarTasks)
+	// Unit-Tests der gemeinsamen Logik müssen vorher grün sein.
+	dependsOn(':common:test')
+
+	def entries = nodes.collect { p ->
+		def mcVersion = p.stonecutter.current.version.toString()
+		[minecraft: mcVersion, jar: p.trsModJar.flatMap { it.archiveFile }]
+	}
+	def distFile = distDir.asFile
+	outputs.upToDateWhen { false }
+
+	doLast {
+		distFile.mkdirs()
+		def builds = []
+		entries.each { e ->
+			def name = "trsclient-fabric-${e.minecraft}.jar"
+			def target = new File(distFile, name)
+			target.bytes = e.jar.get().asFile.bytes
+			builds << [loader: 'fabric', minecraft: [e.minecraft], file: name, requires: ['fabric-api']]
+		}
+		def producedFiles = builds*.file as Set
+		def producedVersions = builds.collectMany { it.minecraft } as Set
+		def buildsFile = new File(distFile, 'builds.json')
+		def kept = []
+		if (buildsFile.isFile()) {
+			def old = new JsonSlurper().parse(buildsFile)
+			kept = old.findAll { o ->
+				!(o.file in producedFiles) && !(o.loader == 'fabric' && o.minecraft.any { it in producedVersions })
+			}
+		}
+		def all = kept + builds
+		buildsFile.setText(JsonOutput.prettyPrint(JsonOutput.toJson(all)) + '\n', 'UTF-8')
+		logger.lifecycle("collectLauncherJars: ${builds.size()} Fabric-JARs → ${distFile}")
+	}
+}

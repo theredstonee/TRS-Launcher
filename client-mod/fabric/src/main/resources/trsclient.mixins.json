@@ -1,0 +1,21 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "dev.theredstonee.trsclient.mixin",
+	"compatibilityLevel": "${mixinJava}",
+	"client": [
+		"CameraMixin",
+		"CrosshairMixin",
+		"FovMixin",
+		"LightmapMixin",
+		"MouseHandlerMixin",
+		"OverlayTextureAccessor",
+		"TitleScreenMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

@@ -32,6 +32,10 @@ public final class NumberSetting extends Setting {
 		return (float) value;
 	}
 
+	public int getInt() {
+		return (int) Math.round(value);
+	}
+
 	public void set(double v) {
 		value = clamp(v);
 	}
@@ -49,9 +53,10 @@ public final class NumberSetting extends Setting {
 		return max;
 	}
 
-	/** Anzeige, z. B. "×4.0" oder "1.25". */
+	/** Anzeige, z. B. "×4.0", "1.25" oder bei ganzzahliger Schrittweite "3". */
 	public String display() {
-		return prefix + String.format(Locale.ROOT, step < 0.1 ? "%.2f" : "%.1f", value);
+		String fmt = step >= 1 ? "%.0f" : step < 0.1 ? "%.2f" : "%.1f";
+		return prefix + String.format(Locale.ROOT, fmt, value);
 	}
 
 	@Override

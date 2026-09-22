@@ -1,0 +1,109 @@
+// Build-Skript für JEDE Fabric-Version (:fabric:<minecraft>), ausgeführt von Stonecutter.
+// Quellcode: fabric/src (vorverarbeitet je Version) + common/src/main/java (unverändert).
+// Versionsspezifische Werte: fabric/versions/<minecraft>/gradle.properties
+
+def mc = stonecutter.current.version
+// Ab 26.1 ist Minecraft nicht mehr obfuskiert → Loom ohne Remapping, keine Mappings.
+def unobfuscated = stonecutter.eval(mc, '>=26.1')
+def javaVersion = stonecutter.eval(mc, '>=26.1') ? 25 : (stonecutter.eval(mc, '>=1.20.5') ? 21 : 17)
+
+apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
+
+// Mod-Abhängigkeiten heißen im unobfuskierten Loom einfach implementation/compileOnly/…
+def modImpl = unobfuscated ? 'implementation' : 'modImplementation'
+def modRuntime = unobfuscated ? 'runtimeOnly' : 'modRuntimeOnly'
+
+group = rootProject.maven_group
+version = rootProject.mod_version
+
+base {
+	archivesName = "trsclient-fabric-${mc}"
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(javaVersion)
+	}
+	withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = javaVersion
+}
+
+// Die versionsunabhängige Logik wird mit dem Java-Level DIESER Version mitkompiliert
+// (1.20.1–1.20.4 laufen auf Java 17) und landet direkt in der Mod-JAR.
+sourceSets.main.java.srcDir(rootProject.file('common/src/main/java'))
+
+loom {
+	runs {
+		client {
+			// Gemeinsames Spielverzeichnis für alle Versionen: client-mod/run
+			runDir = '../../../run'
+			// Mixin-Anwendung sichtbar im Log (Nachweis, dass alle Mixins greifen).
+			vmArg '-Dmixin.debug.verbose=true'
+			// ./gradlew :fabric:<v>:runClient -PtrsAutotest → Menü, Testwelt, Screenshots, beendet sich selbst.
+			if (project.hasProperty('trsAutotest')) {
+				vmArg '-Dtrsclient.autotest=true'
+			}
+		}
+		server {
+			ideConfigGenerated = false
+		}
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+// Nur die benötigten Fabric-API-Module (spart je Version das Remappen der kompletten API).
+def fapiModules = [
+		'fabric-api-base',
+		'fabric-lifecycle-events-v1',
+		'fabric-rendering-v1',
+		stonecutter.eval(mc, '>=26.1') ? 'fabric-key-mapping-api-v1' : 'fabric-key-binding-api-v1',
+		stonecutter.eval(mc, '>=1.21.9') ? 'fabric-resource-loader-v1' : 'fabric-resource-loader-v0',
+]
+// Die komplette Fabric API nur, wenn genau diese Version gestartet wird (:fabric:<v>:runClient)
+// oder mit -PtrsFullApi – Loom verarbeitet Mod-Abhängigkeiten schon beim Konfigurieren.
+def running = project.hasProperty('trsFullApi') ||
+		gradle.startParameter.taskNames.any { it == "${project.path}:runClient".toString() }
+
+dependencies {
+	minecraft "com.mojang:minecraft:${mc}"
+	if (!unobfuscated) {
+		mappings loom.officialMojangMappings()
+	}
+	add(modImpl, "net.fabricmc:fabric-loader:${rootProject.loader_version}")
+	fapiModules.each { add(modImpl, fabricApi.module(it, project.fabric_api_version)) }
+	if (running) {
+		add(modRuntime, "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
+	}
+	compileOnly "com.google.code.gson:gson:${rootProject.gson_version}"
+}
+
+processResources {
+	def props = [
+			version     : project.version,
+			minecraft   : mc,
+			java        : "${javaVersion}",
+			loader      : unobfuscated ? '0.18.4' : '0.15.0',
+			mixinJava   : "JAVA_${javaVersion >= 21 ? 21 : 17}",
+	]
+	inputs.properties(props)
+	filesMatching(['fabric.mod.json', 'trsclient.mixins.json']) {
+		expand props
+	}
+}
+
+// Die fertige Mod-JAR dieser Version (remapJar bzw. jar ab 26.1).
+def modJar = tasks.named(unobfuscated ? 'jar' : 'remapJar')
+ext.trsModJar = modJar
+
+tasks.withType(Jar).configureEach {
+	from(rootProject.file('LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
