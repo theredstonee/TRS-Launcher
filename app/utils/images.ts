@@ -15,3 +15,9 @@ export function instanceIconSrc(instance: Pick<Instance, 'iconPath'>): string | 
   if (!instance.iconPath || !isTauri()) return null
   return convertFileSrc(instance.iconPath)
 }
+
+/** URL des Instanz-Banners; `null` = kein eigenes Banner. */
+export function instanceBannerSrc(instance: Pick<Instance, 'bannerPath'>): string | null {
+  if (!instance.bannerPath || !isTauri()) return null
+  return convertFileSrc(instance.bannerPath)
+}

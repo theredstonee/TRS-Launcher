@@ -156,6 +156,11 @@ impl Launcher {
             if let Some(name) = icon_file.filter(|n| from.join(n).is_file()) {
                 std::fs::copy(from.join(&name), to.join(&name))?;
             }
+            if let Some(banner) = crate::icon::find_banner(&from)
+                && let Some(name) = banner.file_name()
+            {
+                std::fs::copy(&banner, to.join(name))?;
+            }
             Ok(())
         })
         .await
