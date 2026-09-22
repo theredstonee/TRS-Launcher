@@ -1,0 +1,270 @@
+// Build-Skript für JEDE NeoForge-Version (:<minecraft>), ausgeführt von Stonecutter.
+// Quellcode: src/ (vorverarbeitet je Version) + ../common/src/main/java (unverändert).
+// Versionsspezifische Werte: versions/<minecraft>/gradle.properties (neo_version)
+//
+// Alle NeoForge-Versionen (ab 20.2 / Minecraft 1.20.2) laufen in Produktion mit Mojang-Namen
+// (geprüft: die Universal-JARs von 20.2.93/20.4.251/20.6.141 referenzieren Mojmap, keine SRG-Namen) –
+// die normale JAR ist daher direkt die fertige Mod, ohne Reobfuskierung oder Refmap.
+import groovy.json.JsonSlurper
+import org.gradle.api.artifacts.CacheableRule
+import org.gradle.api.artifacts.ComponentMetadataContext
+import org.gradle.api.artifacts.ComponentMetadataRule
+import org.gradle.api.artifacts.repositories.RepositoryResourceAccessor
+import org.gradle.api.attributes.Bundling
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
+import org.gradle.api.model.ObjectFactory
+
+import javax.inject.Inject
+import java.nio.charset.StandardCharsets
+import java.util.jar.JarInputStream
+
+plugins {
+	id 'java'
+	id 'net.neoforged.moddev'
+}
+
+/**
+ * NeoForge 20.2.93 (1.20.2), 20.3.8-beta (1.20.3) und 20.5.21-beta (1.20.5) wurden ohne Gradle-Module-Metadaten
+ * veröffentlicht – ModDevGradle findet dort seine Varianten (moddev-bundle, moddev-config, …) nicht.
+ * Diese Regel erzeugt sie aus der config.json der userdev-JAR, genau wie sie NeoForge 20.4.251 mitbringt
+ * (Vorbild: ModDevGradles LegacyForgeMetadataTransform). Die Minecraft-Bibliotheken kommen aus
+ * net.neoforged:minecraft-dependencies:<minecraft>, dekompiliert/gepatcht wird mit der NeoForm-Version,
+ * gegen die NeoForge gebaut wurde (config.json "mcp").
+ */
+@CacheableRule
+class OldNeoForgeMetadataRule implements ComponentMetadataRule {
+	static final Set<String> VERSIONS = ['20.2.93', '20.3.8-beta', '20.5.21-beta'] as Set
+
+	private final ObjectFactory objects
+	private final RepositoryResourceAccessor resources
+
+	@Inject
+	OldNeoForgeMetadataRule(ObjectFactory objects, RepositoryResourceAccessor resources) {
+		this.objects = objects
+		this.resources = resources
+	}
+
+	@Override
+	void execute(ComponentMetadataContext context) {
+		def details = context.details
+		def id = details.id
+		if (!(id.version in VERSIONS)) return
+		def base = "${id.name}-${id.version}"
+		Map config = null
+		resources.withResource("net/neoforged/neoforge/${id.version}/${base}-userdev.jar") { InputStream stream ->
+			def zin = new JarInputStream(new BufferedInputStream(stream))
+			for (def e = zin.nextJarEntry; e != null; e = zin.nextJarEntry) {
+				if (e.name == 'config.json') config = (Map) new JsonSlurper().parseText(new String(zin.readAllBytes(), StandardCharsets.UTF_8))
+			}
+			zin.close()
+		}
+		if (config == null) throw new GradleException("config.json fehlt in ${base}-userdev.jar")
+		// "net.neoforged:neoform:1.20.2-20231019.002635@zip"
+		def neoformVersion = config.mcp.toString().tokenize(':')[2].tokenize('@')[0]
+		def mcVersion = neoformVersion.tokenize('-')[0]
+		def libraries = config.libraries.collect { it.toString().replace('@jar', '') }
+		def modules = (config.modules ?: []).collect { it.toString().replace('@jar', '') }
+		def userdevJar = "${base}-userdev.jar".toString()
+		def universalJar = "${base}-universal.jar".toString()
+		def data = { attrs ->
+			attrs.attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, 'data'))
+			attrs.attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+		}
+		def library = { attrs, String usage ->
+			attrs.attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+			attrs.attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+			attrs.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, usage))
+		}
+
+		details.addVariant('modDevBundle') { v ->
+			v.attributes { data(it) }
+			v.withFiles { it.addFile(userdevJar, userdevJar) }
+			v.withDependencies { it.add("net.neoforged:neoform:${neoformVersion}") }
+			v.withCapabilities { it.addCapability('net.neoforged', 'neoforge-moddev-bundle', id.version) }
+		}
+		details.addVariant('modDevConfig') { v ->
+			v.attributes { data(it) }
+			// MDG liest die Run-Vorlagen auch direkt aus der userdev-JAR (config.json).
+			v.withFiles { it.addFile(userdevJar, userdevJar) }
+			v.withCapabilities { it.addCapability('net.neoforged', 'neoforge-moddev-config', id.version) }
+		}
+		details.addVariant('modDevModulePath') { v ->
+			v.attributes {
+				it.attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+				it.attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+			}
+			v.withDependencies { deps -> modules.each { deps.add(it) } }
+			v.withCapabilities { it.addCapability('net.neoforged', 'neoforge-moddev-module-path', id.version) }
+		}
+		['modDevApiElements': Usage.JAVA_API, 'modDevRuntimeElements': Usage.JAVA_RUNTIME].each { name, usage ->
+			details.addVariant(name) { v ->
+				v.attributes { library(it, usage) }
+				v.withDependencies { deps ->
+					// Genau die Versionen des Installers (sonst hebt Gradle z. B. modlauncher über
+					// at-modlauncher auf 10.1.7 an, und FML 1.0.16 startet nicht mehr).
+					libraries.findAll { !it.startsWith('net.neoforged:neoform:') }.each { lib ->
+						def parts = lib.tokenize(':')
+						deps.add(lib) { d -> d.version { it.strictly(parts[2]) } }
+					}
+					deps.add("net.neoforged:minecraft-dependencies:${mcVersion}")
+				}
+				v.withCapabilities {
+					it.removeCapability(id.group, id.name)
+					it.addCapability('net.neoforged', 'neoforge-dependencies', id.version)
+				}
+			}
+		}
+		details.addVariant('universalJar') { v ->
+			v.attributes {
+				library(it, Usage.JAVA_RUNTIME)
+				it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+			}
+			v.withFiles { it.addFile(universalJar, universalJar) }
+		}
+		// Quellen-JAR ohne transitive Abhängigkeiten (wie sourcesElements in neuen NeoForge-Versionen).
+		['sources', 'javadoc'].each { n ->
+			details.withVariant(n) { v -> v.withDependencies { it.removeAll { true } } }
+		}
+		// Die aus der POM abgeleiteten Varianten dürfen nicht mehr gewählt werden.
+		['compile', 'runtime'].each { n ->
+			details.withVariant(n) { v ->
+				v.withCapabilities { caps ->
+					caps.removeCapability(id.group, id.name)
+					caps.addCapability('___dummy___', '___dummy___', '___dummy___')
+				}
+			}
+		}
+	}
+}
+
+/** Macht strikte Versionen in minecraft-dependencies 1.20.2/1.20.3/1.20.5 zu normalen Anforderungen. */
+@CacheableRule
+class NonStrictOldMinecraftRule implements ComponentMetadataRule {
+	@Override
+	void execute(ComponentMetadataContext context) {
+		if (!(context.details.id.version in ['1.20.2', '1.20.3', '1.20.5'])) return
+		context.details.allVariants { v ->
+			v.withDependencies { deps ->
+				deps.each { d ->
+					d.version { vc ->
+						def strict = vc.strictVersion
+						if (strict) {
+							vc.strictly('')
+							vc.require(strict)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+def mc = stonecutter.current.version
+def javaVersion = stonecutter.eval(mc, '>=26.1') ? 25 : (stonecutter.eval(mc, '>=1.20.5') ? 21 : 17)
+// NeoForge 20.2–20.4 lesen META-INF/mods.toml, ab 20.5 META-INF/neoforge.mods.toml.
+def newModsToml = stonecutter.eval(mc, '>=1.20.5')
+// "20.2.93" → "20.2", "26.1.0.19-beta" → "26.1" (Untergrenze der NeoForge-Abhängigkeit)
+def neoMajorMinor = project.neo_version.tokenize('.').take(2).join('.')
+
+group = rootProject.maven_group
+version = rootProject.mod_version
+
+base {
+	archivesName = "trsclient-neoforge-${mc}"
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(javaVersion)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = javaVersion
+}
+
+// Die versionsunabhängige Logik wird mit dem Java-Level DIESER Version mitkompiliert
+// (1.20.2–1.20.4 laufen auf Java 17) und landet direkt in der Mod-JAR. Ihre Tests laufen mit.
+sourceSets {
+	main.java.srcDir(rootProject.file('../common/src/main/java'))
+	test.java.srcDir(rootProject.file('../common/src/test/java'))
+}
+
+repositories {
+	mavenCentral()
+}
+
+neoForge {
+	version = project.neo_version
+
+	runs {
+		client {
+			client()
+			// Eigenes Spielverzeichnis je Loader/Version (Welten und Configs kollidieren sonst).
+			gameDirectory = rootProject.file("../run/neoforge-${mc}")
+			// Mixin-Anwendung sichtbar im Log (Nachweis, dass alle Mixins greifen).
+			systemProperty 'mixin.debug.verbose', 'true'
+			// ./gradlew :<v>:runClient -PtrsAutotest → Startbildschirm, Menü, Testwelt, Screenshots, beendet sich.
+			if (project.hasProperty('trsAutotest')) {
+				systemProperty 'trsclient.autotest', 'true'
+			}
+		}
+	}
+
+	mods {
+		trsclient {
+			sourceSet sourceSets.main
+		}
+	}
+}
+
+dependencies {
+	testImplementation "com.google.code.gson:gson:${rootProject.gson_version}"
+	testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+}
+
+processResources {
+	def props = [
+			version        : project.version,
+			minecraft      : mc,
+			neoforge       : neoMajorMinor,
+			mixinJava      : "JAVA_${javaVersion >= 21 ? 21 : 17}",
+			// FML 1 (NeoForge 20.2/20.3) kennt nur "mandatory = true", ab FML 2 (20.4) ist das ein Fehler → type = "required"
+			required       : stonecutter.eval(mc, '>=1.20.4') ? 'type = "required"' : 'mandatory = true',
+	]
+	inputs.properties(props)
+	filesMatching(['META-INF/neoforge.mods.toml', 'trsclient.mixins.json']) {
+		expand props
+	}
+	if (!newModsToml) {
+		rename('neoforge\\.mods\\.toml', 'mods.toml')
+	}
+}
+
+tasks.withType(Jar).configureEach {
+	from(rootProject.file('../LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
+
+// Die fertige Mod-JAR dieser Version (für collectLauncherJars im Controller).
+ext.trsModJar = tasks.named('jar')
+
+// Fehlende Gradle-Metadaten alter NeoForge-Versionen ergänzen (siehe OldNeoForgeMetadataRule oben).
+dependencies {
+	components {
+		withModule('net.neoforged:neoforge', OldNeoForgeMetadataRule)
+		// Die Minecraft-Bibliotheken dort strikt festgenagelt, NeoForge 20.2/20.3/20.5 will teils neuere
+		// (slf4j 2.0.9 statt 2.0.7 …) – wie ModDevGradles NonStrictDependencyTransform nur "require".
+		withModule('net.neoforged:minecraft-dependencies', NonStrictOldMinecraftRule)
+	}
+}

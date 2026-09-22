@@ -316,9 +316,199 @@
   {
     "loader": "neoforge",
     "minecraft": [
+      "1.20.2"
+    ],
+    "file": "trsclient-neoforge-1.20.2.jar",
+    "requires": [],
+    "neoforge": "20.2.93"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.20.3"
+    ],
+    "file": "trsclient-neoforge-1.20.3.jar",
+    "requires": [],
+    "neoforge": "20.3.8-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.20.4"
+    ],
+    "file": "trsclient-neoforge-1.20.4.jar",
+    "requires": [],
+    "neoforge": "20.4.251"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.20.5"
+    ],
+    "file": "trsclient-neoforge-1.20.5.jar",
+    "requires": [],
+    "neoforge": "20.5.21-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.20.6"
+    ],
+    "file": "trsclient-neoforge-1.20.6.jar",
+    "requires": [],
+    "neoforge": "20.6.141"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21"
+    ],
+    "file": "trsclient-neoforge-1.21.jar",
+    "requires": [],
+    "neoforge": "21.0.167"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
       "1.21.1"
     ],
     "file": "trsclient-neoforge-1.21.1.jar",
-    "requires": []
+    "requires": [],
+    "neoforge": "21.1.251"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.2"
+    ],
+    "file": "trsclient-neoforge-1.21.2.jar",
+    "requires": [],
+    "neoforge": "21.2.1-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.3"
+    ],
+    "file": "trsclient-neoforge-1.21.3.jar",
+    "requires": [],
+    "neoforge": "21.3.97"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.4"
+    ],
+    "file": "trsclient-neoforge-1.21.4.jar",
+    "requires": [],
+    "neoforge": "21.4.157"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.5"
+    ],
+    "file": "trsclient-neoforge-1.21.5.jar",
+    "requires": [],
+    "neoforge": "21.5.98"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.6"
+    ],
+    "file": "trsclient-neoforge-1.21.6.jar",
+    "requires": [],
+    "neoforge": "21.6.20-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.7"
+    ],
+    "file": "trsclient-neoforge-1.21.7.jar",
+    "requires": [],
+    "neoforge": "21.7.25-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.8"
+    ],
+    "file": "trsclient-neoforge-1.21.8.jar",
+    "requires": [],
+    "neoforge": "21.8.54"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.9"
+    ],
+    "file": "trsclient-neoforge-1.21.9.jar",
+    "requires": [],
+    "neoforge": "21.9.16-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.10"
+    ],
+    "file": "trsclient-neoforge-1.21.10.jar",
+    "requires": [],
+    "neoforge": "21.10.64"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.11"
+    ],
+    "file": "trsclient-neoforge-1.21.11.jar",
+    "requires": [],
+    "neoforge": "21.11.45"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "26.1"
+    ],
+    "file": "trsclient-neoforge-26.1.jar",
+    "requires": [],
+    "neoforge": "26.1.0.19-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "26.1.1"
+    ],
+    "file": "trsclient-neoforge-26.1.1.jar",
+    "requires": [],
+    "neoforge": "26.1.1.15-beta"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "26.1.2"
+    ],
+    "file": "trsclient-neoforge-26.1.2.jar",
+    "requires": [],
+    "neoforge": "26.1.2.109"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "26.2"
+    ],
+    "file": "trsclient-neoforge-26.2.jar",
+    "requires": [],
+    "neoforge": "26.2.0.88"
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "26.3"
+    ],
+    "file": "trsclient-neoforge-26.3.jar",
+    "requires": [],
+    "neoforge": "26.3.0.8-beta"
   }
 ]

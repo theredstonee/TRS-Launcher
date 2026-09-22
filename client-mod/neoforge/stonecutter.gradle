@@ -1,0 +1,45 @@
+import groovy.json.JsonOutput
+
+plugins {
+	id 'dev.kikugie.stonecutter'
+}
+// Version, deren Code gerade unkommentiert in src/ steht (eingecheckt: 1.21.1).
+// Umschalten: ./gradlew "Set active project to <version>" (danach vor dem Commit zurück auf 1.21.1).
+stonecutter.active '1.21.1'
+
+/*
+ * ./gradlew collectLauncherJars
+ * Baut alle NeoForge-Versionen und legt trsclient-neoforge-<mc>.jar + builds-neoforge.json in ../dist/ ab.
+ * Der Koordinator führt builds-neoforge.json mit den Manifesten der anderen Loader zu builds.json zusammen.
+ */
+def distDir = rootProject.layout.projectDirectory.dir('../dist')
+def nodes = stonecutter.versions.collect { project(":${it.project}") }
+
+tasks.register('collectLauncherJars') {
+	group = 'build'
+	description = 'Builds every NeoForge version and writes the jars and builds-neoforge.json to ../dist/'
+
+	dependsOn(nodes.collect { it.trsModJar })
+	// Unit-Tests der gemeinsamen Logik müssen vorher grün sein (einmal genügt: gleicher Code).
+	dependsOn(':1.21.1:test')
+
+	def entries = nodes.collect { p ->
+		[minecraft: p.stonecutter.current.version.toString(), neoforge: p.neo_version.toString(),
+		 jar: p.trsModJar.flatMap { it.archiveFile }]
+	}
+	def distFile = distDir.asFile
+	outputs.upToDateWhen { false }
+
+	doLast {
+		distFile.mkdirs()
+		def builds = []
+		entries.each { e ->
+			def name = "trsclient-neoforge-${e.minecraft}.jar"
+			new File(distFile, name).bytes = e.jar.get().asFile.bytes
+			// Keine weiteren Mods nötig – nur NeoForge selbst (kompiliert/getestet gegen e.neoforge).
+			builds << [loader: 'neoforge', minecraft: [e.minecraft], file: name, requires: [], neoforge: e.neoforge]
+		}
+		new File(distFile, 'builds-neoforge.json').setText(JsonOutput.prettyPrint(JsonOutput.toJson(builds)) + '\n', 'UTF-8')
+		logger.lifecycle("collectLauncherJars: ${builds.size()} NeoForge-JARs → ${distFile}")
+	}
+}

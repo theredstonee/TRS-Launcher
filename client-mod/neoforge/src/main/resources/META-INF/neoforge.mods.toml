@@ -1,0 +1,36 @@
+# Vorlage für alle Versionen (processResources): ab NeoForge 20.5 als META-INF/neoforge.mods.toml,
+# für 20.2–20.4 umbenannt in META-INF/mods.toml.
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "GPL-3.0-only"
+issueTrackerURL = "https://github.com/theredstonee/TRS-Launcher/issues"
+
+[[mods]]
+modId = "trsclient"
+version = "${version}"
+displayName = "TRS Client"
+authors = "theredstonee"
+displayURL = "https://github.com/theredstonee/TRS-Launcher"
+description = '''
+In-Game-Client des TRS Launchers: HUD (FPS, CPS, Tastenanzeige, Ping, Rüstung, Effekte, …) mit Editor, Zoom, Fullbright, eigenes Fadenkreuz, Freelook, TRS-Startbildschirm und ein eigenes Menü (Rechte Umschalttaste).
+'''
+# Reine Client-Mod: Server müssen sie nicht haben, Versionsabgleich mit dem Server entfällt.
+displayTest = "IGNORE_ALL_VERSION"
+
+[[mixins]]
+config = "trsclient.mixins.json"
+
+# Jede NeoForge-Version dieser Minecraft-Version (gebaut gegen die neueste, siehe versions/<mc>).
+[[dependencies.trsclient]]
+modId = "neoforge"
+${required}
+versionRange = "[${neoforge},)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.trsclient]]
+modId = "minecraft"
+${required}
+versionRange = "[${minecraft}]"
+ordering = "NONE"
+side = "CLIENT"
