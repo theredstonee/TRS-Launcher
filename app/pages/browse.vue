@@ -72,6 +72,10 @@ watch([kind, target], () => search(), { immediate: true })
 watch(target, loadInstalled, { immediate: true })
 onBeforeUnmount(() => clearTimeout(debounce))
 
+function detailLink(hit: ModrinthHit) {
+  return { path: `/project/${hit.projectId}`, query: !isPack.value && target.value ? { instance: target.value.id } : {} }
+}
+
 function setBusy(id: string, value: number | null | undefined) {
   const next = { ...installing.value }
   if (value === undefined) delete next[id]
@@ -118,9 +122,12 @@ async function install(hit: ModrinthHit, version: ModrinthVersion | null = null)
     <PageHeader title="Entdecken" subtitle="Mods, Modpacks, Ressourcenpakete und Shader von Modrinth." />
 
     <div class="mb-4 flex flex-wrap items-center gap-2">
-      <input v-model="query" class="field max-w-xs" maxlength="100" placeholder="Suchen …" spellcheck="false" autofocus />
-      <div class="flex overflow-hidden rounded-md border border-base-700 text-sm">
-        <button v-for="k in kinds" :key="k" class="seg py-2" :class="{ 'seg-on': kind === k }" @click="kind = k">
+      <div class="relative w-full max-w-xs">
+        <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-600" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
+        <input v-model="query" class="field rounded-full pl-9" maxlength="100" :placeholder="`${kindLabels[kind]} suchen …`" spellcheck="false" autofocus aria-label="Suchen" />
+      </div>
+      <div class="flex rounded-full bg-base-900 p-0.5 ring-1 ring-base-800">
+        <button v-for="k in kinds" :key="k" class="tab px-3.5 py-1.5" :class="{ 'tab-on': kind === k }" @click="kind = k">
           {{ kindLabels[k] }}
         </button>
       </div>
@@ -142,21 +149,29 @@ async function install(hit: ModrinthHit, version: ModrinthVersion | null = null)
     </p>
 
     <div class="min-h-0 flex-1 overflow-y-auto pr-1">
-      <ul v-if="loading && !hits.length" class="grid grid-cols-[repeat(auto-fill,minmax(22rem,1fr))] gap-3">
-        <li v-for="i in 8" :key="i" class="skeleton h-[88px]" />
+      <ul v-if="loading && !hits.length" class="grid grid-cols-[repeat(auto-fill,minmax(24rem,1fr))] gap-3">
+        <li v-for="i in 8" :key="i" class="skeleton h-[118px] rounded-xl" />
       </ul>
 
-      <ul v-else class="grid grid-cols-[repeat(auto-fill,minmax(22rem,1fr))] gap-3">
-        <li v-for="hit in hits" :key="hit.projectId" class="card flex gap-3 p-3">
-          <img v-if="hit.iconUrl" :src="hit.iconUrl" alt="" loading="lazy" class="size-14 shrink-0 rounded-md bg-base-800 object-cover" />
-          <div v-else class="display flex size-14 shrink-0 items-center justify-center rounded-md bg-base-800 text-xl text-base-600">
-            {{ hit.title.charAt(0).toUpperCase() }}
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium">{{ hit.title }}</p>
-            <p class="truncate text-xs text-base-400">von {{ hit.author }}, {{ formatCount(hit.downloads) }} Downloads</p>
-            <p class="mt-1 line-clamp-2 text-xs text-base-200">{{ hit.description }}</p>
-          </div>
+      <ul v-else class="grid grid-cols-[repeat(auto-fill,minmax(24rem,1fr))] gap-3">
+        <li v-for="hit in hits" :key="hit.projectId" class="card card-hover group flex gap-3.5 p-3.5">
+          <NuxtLink :to="detailLink(hit)" class="flex min-w-0 flex-1 gap-3.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-redstone-500">
+            <ModIcon :src="hit.iconUrl" :name="hit.title" :size="64" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium group-hover:text-redstone-300">{{ hit.title }}</p>
+              <p class="truncate text-xs text-base-400">von {{ hit.author }}</p>
+              <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-base-200">{{ hit.description }}</p>
+              <p class="mt-2 flex items-center gap-1.5 overflow-hidden text-[11px] text-base-400">
+                <span class="flex shrink-0 items-center gap-1">
+                  <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
+                  <span class="tabular-nums">{{ formatCount(hit.downloads) }}</span>
+                </span>
+                <span v-for="c in hit.categories.filter((c) => !(c in loaderNames)).slice(0, 3)" :key="c" class="truncate rounded-full bg-base-800 px-2 py-px">
+                  {{ categoryLabels[c] ?? c }}
+                </span>
+              </p>
+            </div>
+          </NuxtLink>
 
           <div class="flex w-28 shrink-0 flex-col items-stretch justify-center gap-1">
             <template v-if="hit.projectId in installing">

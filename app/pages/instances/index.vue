@@ -10,6 +10,17 @@ const toDelete = ref<Instance | null>(null)
 const deleting = ref(false)
 const deleteError = ref<string | null>(null)
 
+const search = ref('')
+const sort = ref<'played' | 'name'>('played')
+const visible = computed(() => {
+  const needle = search.value.trim().toLowerCase()
+  const list = needle
+    ? instances.items.filter((i) => `${i.name} ${i.gameVersion} ${loaderLabels[i.loader.kind]}`.toLowerCase().includes(needle))
+    : [...instances.items]
+  if (sort.value === 'name') list.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  return list
+})
+
 onMounted(() => {
   instances.load()
   if (!settings.current) settings.load().catch(() => {})
@@ -44,13 +55,25 @@ async function confirmDelete() {
       {{ instances.error }}
     </p>
 
-    <div v-if="instances.loading && !instances.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-4">
-      <div v-for="i in 3" :key="i" class="skeleton h-40" />
+    <div v-if="instances.items.length > 1" class="mb-4 flex items-center gap-2">
+      <div class="relative">
+        <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-600" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
+        <input v-model="search" class="field w-64 rounded-full pl-9" maxlength="64" placeholder="Instanzen durchsuchen …" spellcheck="false" aria-label="Instanzen durchsuchen" />
+      </div>
+      <div class="ml-auto flex rounded-full bg-base-900 p-0.5 ring-1 ring-base-800">
+        <button class="tab px-3 py-1 text-xs" :class="{ 'tab-on': sort === 'played' }" @click="sort = 'played'">Zuletzt gespielt</button>
+        <button class="tab px-3 py-1 text-xs" :class="{ 'tab-on': sort === 'name' }" @click="sort = 'name'">Name</button>
+      </div>
     </div>
 
-    <div v-else-if="instances.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-4">
-      <InstanceCard v-for="i in instances.items" :key="i.id" :instance="i" @delete="toDelete = $event" />
+    <div v-if="instances.loading && !instances.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
+      <div v-for="i in 3" :key="i" class="skeleton h-[164px] rounded-xl" />
     </div>
+
+    <div v-else-if="visible.length" class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-4">
+      <InstanceCard v-for="i in visible" :key="i.id" :instance="i" @delete="toDelete = $event" />
+    </div>
+    <p v-else-if="instances.items.length" class="py-16 text-center text-sm text-base-400">Keine Instanz passt zu „{{ search }}“.</p>
 
     <div v-else-if="!instances.loading && !instances.error" class="card flex flex-col items-center px-6 py-16 text-center">
       <img src="/icon.png" alt="" class="size-14 opacity-80 [image-rendering:pixelated]" />

@@ -51,15 +51,23 @@ function join(server: Server) {
         </div>
 
         <template v-else-if="selected">
-          <div class="min-w-0">
-            <NuxtLink :to="`/instances/${selected.id}`" class="display block truncate text-5xl leading-tight text-base-50 hover:text-redstone-300">
-              {{ selected.name }}
+          <div class="flex min-w-0 items-center gap-5">
+            <NuxtLink :to="`/instances/${selected.id}`" class="shrink-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-redstone-500" tabindex="-1">
+              <InstanceIcon :instance="selected" :size="96" class="shadow-xl shadow-black/40" />
             </NuxtLink>
-            <p class="mt-1 flex flex-wrap gap-x-4 text-sm text-base-400">
-              <span><span class="font-mono text-base-200">{{ selected.gameVersion }}</span> {{ loaderLabels[selected.loader.kind] }}</span>
-              <span>{{ formatRelative(selected.lastPlayed) }}</span>
-              <span v-if="selected.totalPlaySeconds >= 60">{{ formatPlayTime(selected.totalPlaySeconds) }} gespielt</span>
-            </p>
+            <div class="min-w-0">
+              <NuxtLink :to="`/instances/${selected.id}`" class="display block truncate text-5xl leading-tight text-base-50 hover:text-redstone-300">
+                {{ selected.name }}
+              </NuxtLink>
+              <p class="mt-1 flex flex-wrap items-center gap-x-4 text-sm text-base-400">
+                <span class="flex items-center gap-1.5">
+                  <span class="size-2 rounded-full" :style="{ background: loaderColors[selected.loader.kind] }" />
+                  <span class="font-mono text-base-200">{{ selected.gameVersion }}</span> {{ loaderLabels[selected.loader.kind] }}
+                </span>
+                <span>{{ formatRelative(selected.lastPlayed) }}</span>
+                <span v-if="selected.totalPlaySeconds >= 60">{{ formatPlayTime(selected.totalPlaySeconds) }} gespielt</span>
+              </p>
+            </div>
           </div>
 
           <div class="flex flex-wrap items-center gap-3">
@@ -142,12 +150,14 @@ function join(server: Server) {
           <div v-for="i in 3" :key="i" class="skeleton h-14" />
         </div>
         <ul v-else-if="others.length" class="space-y-2">
-          <li v-for="i in others" :key="i.id" class="card flex items-center gap-3 px-3 py-2.5">
+          <li v-for="i in others" :key="i.id" class="card card-hover group flex items-center gap-3 px-3 py-2.5">
             <NuxtLink :to="`/instances/${i.id}`" class="flex min-w-0 flex-1 items-center gap-3">
-              <span class="display flex size-9 shrink-0 items-center justify-center rounded-md bg-base-800 text-redstone-400">{{ i.name.charAt(0).toUpperCase() }}</span>
+              <InstanceIcon :instance="i" :size="40" />
               <span class="min-w-0">
-                <span class="block truncate text-sm font-medium">{{ i.name }}</span>
-                <span class="block truncate text-xs text-base-400">{{ i.gameVersion }} {{ loaderLabels[i.loader.kind] }}</span>
+                <span class="block truncate text-sm font-medium group-hover:text-redstone-300">{{ i.name }}</span>
+                <span class="block truncate text-xs text-base-400">
+                  <span class="font-mono">{{ i.gameVersion }}</span> {{ loaderLabels[i.loader.kind] }} · {{ formatRelative(i.lastPlayed) }}
+                </span>
               </span>
             </NuxtLink>
             <div class="w-32 shrink-0"><PlayButton :instance-id="i.id" /></div>

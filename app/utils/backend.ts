@@ -7,6 +7,7 @@ import type {
   ContentKind,
   ContentUpdate,
   DeviceCode,
+  HistoryEntry,
   ImportCandidate,
   ImportProgress,
   ImageEntry,
@@ -14,11 +15,14 @@ import type {
   InstanceOverrides,
   Loader,
   LogLine,
+  MigrationItem,
   ModrinthSearchParams,
   ModrinthSearchResult,
   ModrinthVersion,
   NewInstance,
   PackProgress,
+  ProjectCard,
+  ProjectDetails,
   RunningGame,
   Server,
   ServerInput,
@@ -76,6 +80,12 @@ export const backend = {
   deleteInstance: (id: string) => call<void>('delete_instance', { id }),
   duplicateInstance: (id: string, name: string) => call<Instance>('duplicate_instance', { id, name }),
   openInstanceDir: (id: string) => call<void>('open_instance_dir', { id }),
+  /** Öffnet den Bilddialog; `null` = abgebrochen. */
+  pickInstanceIcon: (id: string) => call<Instance | null>('pick_instance_icon', { id }),
+  removeInstanceIcon: (id: string) => call<Instance>('remove_instance_icon', { id }),
+  changeInstanceVersion: (id: string, gameVersion: string, loader: Loader) =>
+    call<Instance>('change_instance_version', { id, gameVersion, loader }),
+  instanceHistory: (id: string) => call<HistoryEntry[]>('instance_history', { id }),
 
   getVersionManifest: (forceRefresh = false) =>
     call<VersionManifest>('get_version_manifest', { forceRefresh }),
@@ -117,6 +127,18 @@ export const backend = {
       versionId: update.versionId,
     }),
   installPerformancePack: (id: string) => call<string[]>('install_performance_pack', { id }),
+  /** Icons, Titel, Autoren von Modrinth nachladen; `true` = Liste neu laden. */
+  refreshContentMeta: (id: string) => call<boolean>('refresh_content_meta', { id }),
+  /** Neuere passende Versionen seit der installierten, mit Changelog. */
+  contentChangelog: (id: string, projectId: string, kind: ContentKind, installedVersionId: string) =>
+    call<ModrinthVersion[]>('content_changelog', { id, projectId, kind, installedVersionId }),
+  planContentMigration: (id: string) => call<MigrationItem[]>('plan_content_migration', { id }),
+
+  modrinthProject: (projectId: string) => call<ProjectDetails>('modrinth_project', { projectId }),
+  modrinthProjectVersions: (projectId: string) => call<ModrinthVersion[]>('modrinth_project_versions', { projectId }),
+  modrinthProjects: (ids: string[]) => call<ProjectCard[]>('modrinth_projects', { ids }),
+  /** Öffnet einen HTTPS-Link im Standardbrowser (Rust prüft die URL erneut). */
+  openExternalUrl: (url: string) => call<void>('open_external_url', { url }),
 
   modrinthSearch: (params: ModrinthSearchParams) => call<ModrinthSearchResult>('modrinth_search', { params }),
   modrinthVersions: (id: string, projectId: string, kind: ContentKind) =>

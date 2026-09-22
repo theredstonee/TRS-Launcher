@@ -9,6 +9,9 @@ const items = [
 const route = useRoute()
 const accounts = useAccountsStore()
 const games = useGamesStore()
+const instances = useInstancesStore()
+// Die Liste ist nach „zuletzt gespielt“ sortiert.
+const recent = computed(() => instances.items.slice(0, 4))
 
 // Unterseiten (/instances/abc) sollen den Hauptpunkt weiter markieren.
 function isActive(to: string) {
@@ -36,6 +39,24 @@ onMounted(async () => {
         <span class="size-1.5 animate-lamp rounded-full bg-lamp-400" />{{ games.runningCount }}
       </span>
     </NuxtLink>
+
+    <!-- Schnellzugriff: zuletzt gespielte Instanzen mit Bild -->
+    <div v-if="recent.length" class="mt-5">
+      <p class="mb-1.5 px-3 text-[11px] font-medium text-base-600">Zuletzt gespielt</p>
+      <NuxtLink
+        v-for="i in recent"
+        :key="i.id"
+        :to="`/instances/${i.id}`"
+        class="mb-0.5 flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-base-400 transition-colors hover:bg-base-800 hover:text-base-50"
+        :class="{ 'bg-base-800 text-base-50': route.path === `/instances/${i.id}` }"
+      >
+        <span class="relative">
+          <InstanceIcon :instance="i" :size="24" />
+          <span v-if="games.state(i.id).phase !== 'idle'" class="absolute -right-0.5 -bottom-0.5 size-2 animate-lamp rounded-full bg-lamp-400 ring-2 ring-base-900" />
+        </span>
+        <span class="min-w-0 flex-1 truncate">{{ i.name }}</span>
+      </NuxtLink>
+    </div>
 
     <div class="mt-auto">
       <NuxtLink to="/accounts" class="mb-1 flex items-center gap-2.5 rounded-md border border-base-800 bg-base-850 p-2 transition-colors hover:border-base-700" :class="{ 'border-redstone-600/60': isActive('/accounts') }">

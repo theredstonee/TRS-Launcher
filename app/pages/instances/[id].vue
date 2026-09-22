@@ -11,10 +11,63 @@ const game = computed(() => games.state(id.value))
 
 const instance = ref<Instance | null>(null)
 const loadError = ref<string | null>(null)
-const tab = ref<'content' | 'screenshots' | 'worlds' | 'logs' | 'settings'>('content')
+type Tab = 'content' | 'history' | 'screenshots' | 'worlds' | 'logs' | 'settings'
+const tabs: [Tab, string][] = [
+  ['content', 'Inhalte'],
+  ['history', 'Verlauf'],
+  ['screenshots', 'Screenshots'],
+  ['worlds', 'Welten'],
+  ['logs', 'Logs'],
+  ['settings', 'Einstellungen'],
+]
+const tab = ref<Tab>('content')
 const router = useRouter()
 const toasts = useToasts()
 const duplicating = ref(false)
+const changingVersion = ref(false)
+const iconMenu = ref(false)
+const iconBusy = ref(false)
+
+async function pickIcon() {
+  if (!instance.value) return
+  iconMenu.value = false
+  iconBusy.value = true
+  try {
+    const updated = await backend.pickInstanceIcon(instance.value.id)
+    if (updated) {
+      instance.value = { ...instance.value, icon: updated.icon, iconPath: updated.iconPath }
+      instances.load()
+    }
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    iconBusy.value = false
+  }
+}
+
+async function removeIcon() {
+  if (!instance.value) return
+  iconMenu.value = false
+  try {
+    const updated = await backend.removeInstanceIcon(instance.value.id)
+    instance.value = { ...instance.value, icon: updated.icon, iconPath: updated.iconPath }
+    instances.load()
+  } catch (e) {
+    toasts.error(e)
+  }
+}
+
+function onVersionChanged(updated: Instance) {
+  instance.value = updated
+  resetForm()
+  instances.load()
+}
+
+function closeIconMenu(e: MouseEvent) {
+  if (!(e.target as HTMLElement | null)?.closest('[data-icon-menu]')) iconMenu.value = false
+}
+onMounted(() => document.addEventListener('mousedown', closeIconMenu))
+onBeforeUnmount(() => document.removeEventListener('mousedown', closeIconMenu))
 
 async function duplicate() {
   if (!instance.value) return
@@ -142,25 +195,61 @@ function openFolder() {
 
     <p v-if="loadError" role="alert" class="card border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">{{ loadError }}</p>
 
-    <template v-else-if="instance">
-      <header class="mb-5 flex items-center gap-4">
-        <div class="flex size-14 shrink-0 items-center justify-center rounded-lg bg-base-800 font-mono text-2xl font-bold text-redstone-400">
-          {{ instance.name.charAt(0).toUpperCase() }}
+    <div v-else-if="!instance" class="mb-5 flex items-center gap-5">
+      <div class="skeleton size-[88px] rounded-xl" />
+      <div class="flex-1 space-y-2.5"><div class="skeleton h-8 w-64" /><div class="skeleton h-4 w-80" /></div>
+      <div class="skeleton h-10 w-72" />
+    </div>
+
+    <template v-else>
+      <header class="mb-5 flex items-center gap-5">
+        <!-- Instanz-Bild: Klick ändert es, das Menü bietet Entfernen. -->
+        <div class="group relative shrink-0" data-icon-menu>
+          <button
+            class="relative block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-redstone-500"
+            :aria-label="instance.iconPath ? 'Bild ändern oder entfernen' : 'Bild festlegen'"
+            :aria-expanded="iconMenu"
+            @click="instance.iconPath ? (iconMenu = !iconMenu) : pickIcon()"
+          >
+            <InstanceIcon :instance="instance" :size="88" />
+            <span class="absolute inset-0 grid place-items-center rounded-xl bg-black/55 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100" :class="{ 'opacity-100': iconBusy }">
+              <svg v-if="!iconBusy" viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h3l2-3h6l2 3h3v12H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+              <span v-else>…</span>
+            </span>
+          </button>
+          <div v-if="iconMenu" class="menu top-full left-0 mt-2" role="menu">
+            <button class="menu-item" role="menuitem" @click="pickIcon">Bild ändern</button>
+            <button class="menu-item text-redstone-300" role="menuitem" @click="removeIcon">Bild entfernen</button>
+          </div>
         </div>
+
         <div class="min-w-0 flex-1">
-          <h1 class="truncate text-xl font-semibold tracking-tight">{{ instance.name }}</h1>
-          <p class="mt-0.5 flex flex-wrap gap-x-3 text-xs text-base-400">
-            <span><span class="font-mono text-base-200">{{ instance.gameVersion }}</span> · {{ loader }}</span>
-            <span>Spielzeit: {{ formatPlayTime(instance.totalPlaySeconds) }}</span>
+          <h1 class="display truncate text-3xl leading-tight text-base-50">{{ instance.name }}</h1>
+          <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-base-400">
+            <button
+              class="chip gap-1.5 ring-1 ring-base-700 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-60"
+              title="Version wechseln"
+              :disabled="game.phase !== 'idle'"
+              @click="changingVersion = true"
+            >
+              <span class="size-2 rounded-full" :style="{ background: loaderColors[instance.loader.kind] }" />
+              <span class="font-mono text-base-50">{{ instance.gameVersion }}</span> {{ loader }}
+              <svg viewBox="0 0 24 24" class="size-3 text-base-400" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m7 10 5 5 5-5" /></svg>
+            </button>
+            <span v-if="instance.totalPlaySeconds > 0" class="flex items-center gap-1.5">
+              <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg>
+              {{ formatPlayTime(instance.totalPlaySeconds) }}
+            </span>
             <span>{{ formatRelative(instance.lastPlayed) }}</span>
-          </p>
+          </div>
         </div>
+
         <div class="flex w-80 shrink-0 items-center gap-2">
-          <PlayButton :instance-id="instance.id" />
-          <button class="btn btn-ghost px-2.5" title="Duplizieren" aria-label="Duplizieren" :disabled="duplicating || game.phase !== 'idle'" @click="duplicate">
+          <PlayButton :instance-id="instance.id" large />
+          <button class="btn-icon size-12" title="Duplizieren" aria-label="Duplizieren" :disabled="duplicating || game.phase !== 'idle'" @click="duplicate">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" /></svg>
           </button>
-          <button class="btn btn-ghost px-2.5" title="Ordner öffnen" aria-label="Ordner öffnen" @click="openFolder">
+          <button class="btn-icon size-12" title="Ordner öffnen" aria-label="Ordner öffnen" @click="openFolder">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
             </svg>
@@ -171,22 +260,39 @@ function openFolder() {
       <p v-if="game.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ game.error }}</p>
       <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" class="mb-4" />
 
-      <div class="mb-3 flex gap-1 border-b border-base-800 text-sm">
-        <button class="tab" :class="{ 'tab-on': tab === 'content' }" @click="tab = 'content'">Inhalte</button>
-        <button class="tab" :class="{ 'tab-on': tab === 'screenshots' }" @click="tab = 'screenshots'">Screenshots</button>
-        <button class="tab" :class="{ 'tab-on': tab === 'worlds' }" @click="tab = 'worlds'">Welten</button>
-        <button class="tab" :class="{ 'tab-on': tab === 'logs' }" @click="tab = 'logs'">Logs</button>
-        <button class="tab" :class="{ 'tab-on': tab === 'settings' }" @click="tab = 'settings'">Einstellungen</button>
-      </div>
+      <nav class="mb-4 flex flex-wrap gap-1" aria-label="Bereiche">
+        <button v-for="[key, label] in tabs" :key="key" class="tab" :class="{ 'tab-on': tab === key }" @click="tab = key">{{ label }}</button>
+      </nav>
 
-      <ContentList v-if="tab === 'content'" :instance="instance" />
+      <ChangeVersionDialog v-if="changingVersion" :instance="instance" @close="changingVersion = false" @changed="onVersionChanged" />
+
+      <ContentList v-if="tab === 'content'" :key="`${instance.gameVersion}-${instance.loader.kind}`" :instance="instance" />
+      <HistoryList v-else-if="tab === 'history'" :instance="instance" />
       <InstanceGallery v-else-if="tab === 'screenshots' || tab === 'worlds'" :instance="instance" :mode="tab" />
       <LogConsole v-else-if="tab === 'logs'" :lines="game.logs" />
 
       <form v-else class="max-w-2xl space-y-5 overflow-y-auto pb-2" @submit.prevent="save">
-        <section class="card p-5">
-          <label class="label" for="i-name">Name</label>
-          <input id="i-name" v-model="name" class="field" maxlength="64" />
+        <section class="card flex items-center gap-4 p-5">
+          <InstanceIcon :instance="instance" :size="56" />
+          <div class="min-w-0 flex-1">
+            <label class="label" for="i-name">Name</label>
+            <input id="i-name" v-model="name" class="field" maxlength="64" />
+          </div>
+          <div class="flex shrink-0 flex-col gap-1.5 self-end">
+            <button type="button" class="btn btn-ghost py-1.5 text-xs" :disabled="iconBusy" @click="pickIcon">Bild ändern</button>
+            <button v-if="instance.iconPath" type="button" class="text-xs text-base-400 hover:text-redstone-300" @click="removeIcon">Bild entfernen</button>
+          </div>
+        </section>
+
+        <section class="card flex items-center gap-4 p-5">
+          <div class="min-w-0 flex-1">
+            <h2 class="font-medium">Version</h2>
+            <p class="mt-0.5 text-xs text-base-400">
+              <span class="font-mono text-base-200">{{ instance.gameVersion }}</span> mit {{ loader }}. Beim Wechsel bleiben Welten und
+              Einstellungen erhalten; Mods können danach auf passende Versionen gebracht werden.
+            </p>
+          </div>
+          <button type="button" class="btn btn-ghost shrink-0" :disabled="game.phase !== 'idle'" @click="changingVersion = true">Version wechseln</button>
         </section>
 
         <section v-if="instance.loader.kind === 'vanilla'" class="card p-5">
@@ -261,14 +367,3 @@ function openFolder() {
     </template>
   </div>
 </template>
-
-<style scoped>
-@reference "~/assets/css/main.css";
-
-.tab {
-  @apply -mb-px border-b-2 border-transparent px-3 py-2 text-base-400 transition-colors hover:text-base-50;
-}
-.tab-on {
-  @apply border-redstone-500 text-base-50;
-}
-</style>
