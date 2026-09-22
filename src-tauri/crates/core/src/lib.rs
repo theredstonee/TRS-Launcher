@@ -11,6 +11,7 @@ pub mod content;
 pub mod download;
 pub mod error;
 pub mod extras;
+pub mod firewall;
 pub mod forge;
 pub mod fsutil;
 pub mod gamelog;
@@ -306,6 +307,20 @@ impl Launcher {
                 .await?;
 
         on_progress(StageProgress::begin(Stage::Starting));
+        // Neue Java-Version? Einmal die Firewall-Freigabe eintragen, damit Windows
+        // nicht bei jeder Instanz einzeln nach dem Netzwerkzugriff fragt.
+        if settings.auto_firewall {
+            let missing = firewall::missing_for_auto(&self.paths).await;
+            if !missing.is_empty() {
+                match firewall::allow(&self.paths, missing.clone()).await {
+                    Ok(n) => tracing::info!("Firewall-Freigabe für {n} Java-Programme eingetragen"),
+                    Err(Error::Cancelled) => {
+                        let _ = firewall::remember_declined(&self.paths, &missing).await;
+                    }
+                    Err(e) => tracing::warn!("Firewall-Freigabe fehlgeschlagen: {e}"),
+                }
+            }
+        }
         let game_dir = self.paths.instance_game_dir(&instance.id);
         fsutil::ensure_dir(&game_dir).await?;
         // Die Launcher-Server sollen in jeder Instanz in der Serverliste stehen.

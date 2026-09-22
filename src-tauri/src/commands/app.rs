@@ -26,3 +26,26 @@ pub fn open_data_dir(app: AppHandle, launcher: State<'_, LauncherState>) -> Comm
     app.opener().open_path(path, None::<&str>)?;
     Ok(())
 }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FirewallStatus {
+    total: usize,
+    missing: usize,
+}
+
+#[tauri::command]
+pub async fn firewall_status(launcher: State<'_, LauncherState>) -> CommandResult<FirewallStatus> {
+    Ok(FirewallStatus {
+        total: trs_core::firewall::runtime_programs(launcher.paths()).len(),
+        missing: trs_core::firewall::missing(launcher.paths()).await.len(),
+    })
+}
+
+/// Trägt die Firewall-Freigabe für alle Java-Versionen des Launchers ein
+/// (eine Windows-Admin-Abfrage).
+#[tauri::command]
+pub async fn firewall_allow_all(launcher: State<'_, LauncherState>) -> CommandResult<usize> {
+    let programs = trs_core::firewall::runtime_programs(launcher.paths());
+    Ok(trs_core::firewall::allow(launcher.paths(), programs).await?)
+}

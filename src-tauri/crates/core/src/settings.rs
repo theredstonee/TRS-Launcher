@@ -38,6 +38,8 @@ pub struct Settings {
     pub show_snapshots: bool,
     /// Windows soll dem Spiel die leistungsstarke Grafikkarte geben.
     pub prefer_dedicated_gpu: bool,
+    /// Netzwerkzugriff für neue Java-Versionen automatisch freigeben (eine Admin-Abfrage).
+    pub auto_firewall: bool,
 }
 
 impl Default for Settings {
@@ -52,6 +54,7 @@ impl Default for Settings {
             close_on_launch: false,
             show_snapshots: false,
             prefer_dedicated_gpu: true,
+            auto_firewall: true,
         }
     }
 }

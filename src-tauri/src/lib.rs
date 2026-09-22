@@ -62,6 +62,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
             commands::app::open_data_dir,
+            commands::app::firewall_status,
+            commands::app::firewall_allow_all,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::instances::list_instances,

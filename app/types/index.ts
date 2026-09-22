@@ -54,6 +54,7 @@ export interface Settings {
   closeOnLaunch: boolean
   showSnapshots: boolean
   preferDedicatedGpu: boolean
+  autoFirewall: boolean
 }
 
 export type VersionType = 'release' | 'snapshot' | 'old_beta' | 'old_alpha'

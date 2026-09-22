@@ -68,6 +68,9 @@ function channel<T>(onMessage: (message: T) => void): Channel<T> {
 export const backend = {
   appInfo: () => call<AppInfo>('app_info'),
   openDataDir: () => call<void>('open_data_dir'),
+  firewallStatus: () => call<{ total: number; missing: number }>('firewall_status'),
+  /** Eine Windows-Admin-Abfrage; danach fragt Windows bei keiner Instanz mehr nach dem Netzwerk. */
+  firewallAllowAll: () => call<number>('firewall_allow_all'),
 
   getSettings: () => call<Settings>('get_settings'),
   updateSettings: (settings: Settings) => call<Settings>('update_settings', { settings }),

@@ -47,6 +47,7 @@ export const settingsSchema = z
     closeOnLaunch: z.boolean(),
     showSnapshots: z.boolean(),
     preferDedicatedGpu: z.boolean(),
+    autoFirewall: z.boolean(),
   })
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {
     message: 'Minimum darf nicht über dem Maximum liegen',

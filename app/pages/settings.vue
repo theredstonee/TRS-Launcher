@@ -28,6 +28,24 @@ const javaPath = computed({
   },
 })
 
+const firewall = ref<{ total: number; missing: number } | null>(null)
+const firewallBusy = ref(false)
+const toasts = useToasts()
+onMounted(() => backend.firewallStatus().then((s) => (firewall.value = s)).catch(() => {}))
+
+async function allowFirewall() {
+  firewallBusy.value = true
+  try {
+    const n = await backend.firewallAllowAll()
+    toasts.ok(n ? `Netzwerkzugriff für ${n} Java-Programme erlaubt` : 'Noch keine Java-Version installiert')
+    firewall.value = await backend.firewallStatus()
+  } catch (e) {
+    if (!isCancelled(e)) toasts.error(e)
+  } finally {
+    firewallBusy.value = false
+  }
+}
+
 function openDataDir() {
   backend.openDataDir().catch(() => {})
 }
@@ -119,6 +137,27 @@ async function save() {
           <input v-model="form.preferDedicatedGpu" type="checkbox" class="accent-redstone-500" />
           Leistungsstarke Grafikkarte verwenden (für Laptops mit zwei Grafikchips)
         </label>
+      </section>
+
+      <section class="card p-5">
+        <h2 class="mb-1 font-medium">Netzwerk</h2>
+        <p class="mb-4 text-xs text-base-400">
+          Windows fragt sonst bei jeder Java-Version einzeln, ob Minecraft ins Netzwerk darf (z. B. für LAN-Welten).
+          Der Launcher kann die Freigabe für alle seine Java-Versionen auf einmal eintragen – mit einer einzigen
+          Admin-Abfrage.
+        </p>
+        <label class="flex items-center gap-2.5 text-sm text-base-200">
+          <input v-model="form.autoFirewall" type="checkbox" class="accent-redstone-500" />
+          Neue Java-Versionen automatisch freigeben
+        </label>
+        <div class="mt-3 flex flex-wrap items-center gap-3">
+          <button type="button" class="btn btn-ghost" :disabled="firewallBusy || firewall?.total === 0" @click="allowFirewall">
+            {{ firewallBusy ? 'Warte auf Windows …' : 'Jetzt für alle Java-Versionen erlauben' }}
+          </button>
+          <span v-if="firewall" class="text-xs" :class="firewall.missing ? 'text-warn' : 'text-ok'">
+            {{ firewall.total === 0 ? 'Noch keine Java-Version installiert' : firewall.missing ? `${firewall.missing} von ${firewall.total} noch nicht freigegeben` : 'Alle freigegeben' }}
+          </span>
+        </div>
       </section>
 
       <section v-if="dataDir" class="card flex items-center justify-between gap-4 p-5">
