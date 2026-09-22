@@ -535,6 +535,47 @@ fn hit_from_raw(h: RawHit) -> SearchHit {
     }
 }
 
+/// Sucht Versionen zu Datei-Prüfsummen (SHA1). Unbekannte Hashes fehlen in
+/// der Antwort. Wird für „woher stammt diese Datei?“ benutzt (Export, Updates).
+pub(crate) async fn versions_by_hashes(
+    http: &reqwest::Client,
+    hashes: &[String],
+) -> Result<HashMap<String, Version>> {
+    let mut found = HashMap::new();
+    for chunk in hashes.chunks(IDS_PER_REQUEST) {
+        let response: HashMap<String, Version> = http
+            .post(format!("{API}/version_files"))
+            .json(&serde_json::json!({ "hashes": chunk, "algorithm": "sha1" }))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        found.extend(response);
+    }
+    Ok(found)
+}
+
+/// Gerade beliebte Mods: in den letzten `days` Tagen veröffentlicht, nach
+/// Downloads sortiert. Für die Startseite („Gerade beliebt“).
+pub async fn trending(http: &reqwest::Client, days: i64, limit: u32) -> Result<Vec<SearchHit>> {
+    let since = (Utc::now() - Duration::days(days.clamp(1, 365))).timestamp();
+    let facets = format!(r#"[["project_type:mod"],["created_timestamp>{since}"]]"#);
+    let raw: RawSearch = http
+        .get(format!("{API}/search"))
+        .query(&[
+            ("facets", facets.as_str()),
+            ("index", "downloads"),
+            ("limit", &limit.clamp(1, MAX_SEARCH_LIMIT).to_string()),
+        ])
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    Ok(raw.hits.into_iter().filter(|h| is_safe_project_id(&h.project_id)).map(hit_from_raw).collect())
+}
+
 pub async fn search(http: &reqwest::Client, params: &SearchParams) -> Result<SearchResult> {
     validate_search(params)?;
     let query: String = params.query.trim().chars().filter(|c| !c.is_control()).collect();

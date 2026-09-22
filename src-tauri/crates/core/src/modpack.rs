@@ -35,7 +35,7 @@ pub type PackProgressFn = dyn Fn(PackProgress) + Send + Sync;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct PackIndex {
+pub(crate) struct PackIndex {
     format_version: u32,
     game: String,
     name: String,
@@ -66,7 +66,7 @@ struct PackEnv {
 }
 
 impl PackIndex {
-    fn loader(&self) -> Result<Loader> {
+    pub(crate) fn loader(&self) -> Result<Loader> {
         let pick = |key: &str, kind| self.dependencies.get(key).map(|v| Loader { kind, version: Some(v.clone()) });
         Ok(pick("fabric-loader", LoaderKind::Fabric)
             .or_else(|| pick("quilt-loader", LoaderKind::Quilt))
@@ -75,7 +75,7 @@ impl PackIndex {
             .unwrap_or_else(Loader::vanilla))
     }
 
-    fn game_version(&self) -> Result<&str> {
+    pub(crate) fn game_version(&self) -> Result<&str> {
         self.dependencies
             .get("minecraft")
             .map(String::as_str)
@@ -96,7 +96,7 @@ fn safe_relative(path: &str) -> Option<PathBuf> {
     ok.then(|| path.split('/').collect())
 }
 
-fn read_index(pack: &Path) -> Result<PackIndex> {
+pub(crate) fn read_index(pack: &Path) -> Result<PackIndex> {
     let file = std::fs::File::open(pack).map_err(|e| Error::io(pack, e))?;
     let mut archive = zip::ZipArchive::new(file).map_err(|_| Error::validation("Das Modpack ist beschädigt."))?;
     let entry = archive
@@ -122,7 +122,7 @@ fn read_index(pack: &Path) -> Result<PackIndex> {
 }
 
 /// Entpackt `overrides/` und danach `client-overrides/` in den Spielordner.
-fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
+pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
     let file = std::fs::File::open(pack).map_err(|e| Error::io(pack, e))?;
     let mut archive = zip::ZipArchive::new(file).map_err(|_| Error::validation("Das Modpack ist beschädigt."))?;
 
@@ -147,7 +147,7 @@ fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-fn download_tasks(index: &PackIndex, game_dir: &Path) -> Result<Vec<Task>> {
+pub(crate) fn download_tasks(index: &PackIndex, game_dir: &Path) -> Result<Vec<Task>> {
     let mut tasks = Vec::new();
     for file in &index.files {
         if file.env.as_ref().and_then(|e| e.client.as_deref()) == Some("unsupported") {
@@ -233,13 +233,27 @@ impl Launcher {
         Ok(instance)
     }
 
+    /// Legt aus einer `.mrpack`-Datei auf der Platte eine Instanz an – etwa
+    /// aus einem eigenen Export oder von einem anderen Launcher.
+    pub async fn import_modpack_file(&self, pack: &Path, on_progress: &PackProgressFn) -> Result<Instance> {
+        let meta = tokio::fs::metadata(pack).await.map_err(|e| Error::io(pack, e))?;
+        if !meta.is_file() {
+            return Err(Error::validation("Das ist keine Modpack-Datei."));
+        }
+        on_progress(PackProgress { phase: PackPhase::Pack, percent: 100.0 });
+        self.install_local_pack(pack, on_progress).await
+    }
+
     async fn install_pack_file(&self, pack_task: &Task, on_progress: &PackProgressFn) -> Result<Instance> {
         download::fetch_all(self.http(), vec![pack_task.clone()], 1, &|p| {
             on_progress(PackProgress { phase: PackPhase::Pack, percent: p.percent() });
         })
         .await?;
+        self.install_local_pack(&pack_task.path, on_progress).await
+    }
 
-        let pack_path = pack_task.path.clone();
+    async fn install_local_pack(&self, pack: &Path, on_progress: &PackProgressFn) -> Result<Instance> {
+        let pack_path = pack.to_owned();
         let index = {
             let path = pack_path.clone();
             tokio::task::spawn_blocking(move || read_index(&path)).await.map_err(|e| Error::Internal(e.to_string()))??
