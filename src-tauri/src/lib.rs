@@ -97,6 +97,8 @@ pub fn run() {
             commands::extras::delete_screenshot,
             commands::extras::list_worlds,
             commands::extras::duplicate_instance,
+            commands::import::scan_imports,
+            commands::import::import_instance,
         ])
         .run(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden");

@@ -1,4 +1,4 @@
-import type { ContentKind, LaunchStage, LoaderKind } from '~/types'
+import type { ContentKind, ImportSource, LaunchStage, LoaderKind } from '~/types'
 
 export const loaderLabels: Record<LoaderKind, string> = {
   vanilla: 'Vanilla',
@@ -89,4 +89,11 @@ export const optimizedJvmArgs =
 
 export function formatDate(iso: string | null): string {
   return iso ? new Intl.DateTimeFormat('de', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)) : ''
+}
+
+export const importSourceLabels: Record<ImportSource, string> = {
+  vanilla: 'Minecraft Launcher',
+  prism: 'Prism Launcher',
+  multimc: 'MultiMC',
+  curseforge: 'CurseForge',
 }

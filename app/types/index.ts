@@ -212,3 +212,21 @@ export interface ImageEntry {
   size: number
   date: string | null
 }
+
+export type ImportSource = 'vanilla' | 'prism' | 'multimc' | 'curseforge'
+
+export interface ImportCandidate {
+  id: string
+  source: ImportSource
+  name: string
+  gameVersion: string
+  loader: Loader
+  modCount: number
+  worldCount: number
+}
+
+export interface ImportProgress {
+  percent: number
+  doneFiles: number
+  totalFiles: number
+}

@@ -11,7 +11,25 @@ const game = computed(() => games.state(id.value))
 
 const instance = ref<Instance | null>(null)
 const loadError = ref<string | null>(null)
-const tab = ref<'content' | 'logs' | 'settings'>('content')
+const tab = ref<'content' | 'screenshots' | 'worlds' | 'logs' | 'settings'>('content')
+const router = useRouter()
+const toasts = useToasts()
+const duplicating = ref(false)
+
+async function duplicate() {
+  if (!instance.value) return
+  duplicating.value = true
+  try {
+    const copy = await backend.duplicateInstance(instance.value.id, `${instance.value.name} (Kopie)`.slice(0, 64))
+    await instances.load()
+    toasts.ok(`Kopie „${copy.name}“ angelegt`)
+    router.push(`/instances/${copy.id}`)
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    duplicating.value = false
+  }
+}
 
 // Beim Start direkt zu den Logs springen – da passiert dann etwas.
 watch(
@@ -131,8 +149,11 @@ function openFolder() {
             <span>{{ formatRelative(instance.lastPlayed) }}</span>
           </p>
         </div>
-        <div class="flex w-64 shrink-0 items-center gap-2">
+        <div class="flex w-80 shrink-0 items-center gap-2">
           <PlayButton :instance-id="instance.id" />
+          <button class="btn btn-ghost px-2.5" title="Duplizieren" aria-label="Duplizieren" :disabled="duplicating || game.phase !== 'idle'" @click="duplicate">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" /></svg>
+          </button>
           <button class="btn btn-ghost px-2.5" title="Ordner öffnen" aria-label="Ordner öffnen" @click="openFolder">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
@@ -148,11 +169,14 @@ function openFolder() {
 
       <div class="mb-3 flex gap-1 border-b border-base-800 text-sm">
         <button class="tab" :class="{ 'tab-on': tab === 'content' }" @click="tab = 'content'">Inhalte</button>
+        <button class="tab" :class="{ 'tab-on': tab === 'screenshots' }" @click="tab = 'screenshots'">Screenshots</button>
+        <button class="tab" :class="{ 'tab-on': tab === 'worlds' }" @click="tab = 'worlds'">Welten</button>
         <button class="tab" :class="{ 'tab-on': tab === 'logs' }" @click="tab = 'logs'">Logs</button>
         <button class="tab" :class="{ 'tab-on': tab === 'settings' }" @click="tab = 'settings'">Einstellungen</button>
       </div>
 
       <ContentList v-if="tab === 'content'" :instance="instance" />
+      <InstanceGallery v-else-if="tab === 'screenshots' || tab === 'worlds'" :instance="instance" :mode="tab" />
       <LogConsole v-else-if="tab === 'logs'" :lines="game.logs" />
 
       <form v-else class="max-w-2xl space-y-5 overflow-y-auto pb-2" @submit.prevent="save">

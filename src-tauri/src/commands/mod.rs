@@ -6,6 +6,7 @@ pub mod app;
 pub mod content;
 pub mod extras;
 pub mod games;
+pub mod import;
 pub mod instances;
 pub mod meta;
 pub mod servers;

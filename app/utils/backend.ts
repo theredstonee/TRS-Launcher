@@ -7,6 +7,8 @@ import type {
   ContentKind,
   ContentUpdate,
   DeviceCode,
+  ImportCandidate,
+  ImportProgress,
   ImageEntry,
   Instance,
   InstanceOverrides,
@@ -130,6 +132,10 @@ export const backend = {
   openScreenshot: (id: string, fileName: string) => call<void>('open_screenshot', { id, fileName }),
   deleteScreenshot: (id: string, fileName: string) => call<void>('delete_screenshot', { id, fileName }),
   listWorlds: (id: string) => call<ImageEntry[]>('list_worlds', { id }),
+
+  scanImports: () => call<ImportCandidate[]>('scan_imports'),
+  importInstance: (id: string, onProgress: (p: ImportProgress) => void) =>
+    call<Instance>('import_instance', { id, onProgress: channel(onProgress) }),
 }
 
 export function isCancelled(e: unknown): boolean {

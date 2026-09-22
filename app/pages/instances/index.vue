@@ -5,6 +5,7 @@ const instances = useInstancesStore()
 const settings = useSettingsStore()
 
 const creating = ref(false)
+const importing = ref(false)
 const toDelete = ref<Instance | null>(null)
 const deleting = ref(false)
 const deleteError = ref<string | null>(null)
@@ -32,6 +33,7 @@ async function confirmDelete() {
 <template>
   <div class="p-6">
     <PageHeader title="Instanzen" subtitle="Jede Instanz hat eigene Welten, Mods und Einstellungen.">
+      <button class="btn btn-ghost" @click="importing = true">Importieren</button>
       <button class="btn btn-primary" @click="creating = true">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
         Neue Instanz
@@ -56,9 +58,13 @@ async function confirmDelete() {
       <p class="mt-1 max-w-sm text-sm text-base-400">
         Erstelle deine erste Instanz – Vanilla oder mit Fabric, Quilt, Forge oder NeoForge.
       </p>
-      <button class="btn btn-primary mt-5" @click="creating = true">Instanz erstellen</button>
+      <div class="mt-5 flex justify-center gap-2">
+        <button class="btn btn-primary" @click="creating = true">Instanz erstellen</button>
+        <button class="btn btn-ghost" @click="importing = true">Aus anderem Launcher importieren</button>
+      </div>
     </div>
 
+    <ImportDialog v-if="importing" @close="importing = false" />
     <CreateInstanceDialog v-if="creating" @close="creating = false" @created="creating = false" />
 
     <BaseDialog v-if="toDelete" title="Instanz löschen?" @close="toDelete = null">
