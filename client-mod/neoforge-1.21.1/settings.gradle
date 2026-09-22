@@ -1,0 +1,17 @@
+// TRS Client für Minecraft 1.21.1 (NeoForge) – eigenständiger Gradle-Build.
+// Absichtlich NICHT Teil des Builds in client-mod/: NeoForge braucht ModDevGradle statt Loom.
+// Die versionsunabhängige Logik kommt als Quellordner aus ../common (siehe build.gradle).
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+		maven { url = 'https://maven.neoforged.net/releases' }
+	}
+}
+
+plugins {
+	// Lädt bei Bedarf automatisch ein JDK 21 (Gradle-Toolchains).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trsclient-neoforge-1.21.1'
