@@ -55,7 +55,8 @@ not obfuscated at all.
 ## Hooks (mostly Mixins, no MixinExtras)
 
 Forge ships MixinExtras only from 1.21.10 and replaced its EventBus in 1.21.6 (EventBus 7), so the Forge API is
-used as little as possible:
+used as little as possible – every hook below is a plain Mixin (`@Inject`, `@Redirect`, `@ModifyVariable`,
+`@ModifyArg`, `@Accessor`), which keeps one piece of code working across all 22 versions.
 
 - `@Mod` constructor + `RegisterKeyMappingsEvent` (EventBus 6: `getModEventBus().addListener`,
   EventBus 7 / 1.21.6+: `RegisterKeyMappingsEvent.getBus(context.getModBusGroup())`)
@@ -66,10 +67,38 @@ used as little as possible:
 - Zoom `FovMixin` (@Inject RETURN), Fullbright `LightmapMixin` (@Redirect `Double.floatValue`), freelook
   `CameraMixin` + `MouseHandlerMixin` (@Redirect), crosshair `CrosshairMixin`, title screen `TitleScreenMixin`,
   hit color `OverlayTextureAccessor` – the same targets as the Fabric tree.
+- PvP displays: `AttackMixin` (`MultiPlayerGameMode#attack` → reach/combo), no hurt camera `HurtCamMixin`
+  (`GameRenderer#bobHurt`), 1.7 animations `OldAnimationsMixin` (@Redirect on
+  `LocalPlayer#getAttackStrengthScale`, from 1.21.11 `#getItemSwapScale`; class `ItemInHandRenderer` →
+  `FirstPersonHandsAndItems` in 26.3), low fire `LowFireMixin` (`ScreenEffectRenderer#renderFire` →
+  `#submitFire` in 26.2+), block outline `BlockOutlineMixin`, hitbox colour `HitboxColorMixin`,
+  line width `LineWidthMixin` (`RenderSystem#lineWidth`)
+- Chat: `ChatMixin` (`ChatComponent#addMessage` + `#clearMessages`), `ChatComponentAccessor` (the message
+  lists, needed for stacking and Ctrl+click), `ChatScreenMixin` (`ChatScreen#mouseClicked`).
+  `ClientChatReceivedEvent` was deliberately *not* used: the mixin is one piece of code for EventBus 6 and 7
+  and the accessor is needed for stacking anyway.
+
+**`@ModifyArgs` must not be used on Forge.** Its generated helper class
+`org.spongepowered.asm.synthetic.args.Args$1` cannot be found by Forge's module class loader – the game crashes
+while `Minecraft` is being constructed (verified on 1.20.1). Use `@Redirect` or `@ModifyArg` instead.
+
+## Per-version limits of the new features
+
+| Feature | Available | Degrades to |
+| --- | --- | --- |
+| Hitbox toggle + colour | 1.20 – 1.21.8 | from 1.21.9 `EntityRenderDispatcher#renderHitbox`/`setRenderHitBoxes` are gone (hitboxes only via the vanilla debug entry); the module has no effect, the mixin is not registered |
+| Outline/hitbox line width | 1.20 – 1.21.10 | `RenderSystem#lineWidth` no longer exists from **1.21.11**; width stays vanilla, the mixin is not registered |
+| 1.7 animations, "swing while using an item" | 1.20 – 26.2 | 26.3 keeps the swing state privately (`swinging`/`swingingArm`/`swingTime` gone from `LivingEntity`); only the "no cooldown dip" half works there |
+| Motion blur | – | not implemented (neither on Fabric); the module exists but does nothing |
+| Everything else (reach/combo/speed, chat, waypoints, minimap, low fire, block outline colour, no hurt camera) | 1.20 – 26.3 | – |
 
 ## Verified in-game (2026-09-22)
 
 - Dev self-test (all screenshots checked): 1.20.1, 1.20.4 (SRG), 1.21.1, 26.3.
+- Dev self-test of the PvP/chat/waypoint/minimap features: 1.20.1 (SRG branches), 1.21.1, 26.3 – the
+  screenshots `trsclient-<mc>-waypoints/-waypoint-liste/-chat.png` show the minimap with terrain and
+  coordinates, the waypoint with beam and distance, the waypoint list and the chat with timestamp and
+  "(x3)" stacking.
 - Production through the launcher (`launch.exe … forge`, `TRSCLIENT_AUTOTEST=1`): 1.20.1 reobf jar (mod loads,
   refmapped mixins work: TRS title screen + menu; world part stopped by the demo account's DemoIntroScreen, which the
   self-test now closes), 1.21.1 plain jar (full self-test incl. HUD, zoom, fullbright, freelook).

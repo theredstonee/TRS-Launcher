@@ -9,10 +9,14 @@ import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.zoom.ZoomState;
 import dev.theredstonee.trsclient.dev.AutoTest;
+import dev.theredstonee.trsclient.feature.ChatFeatures;
 import dev.theredstonee.trsclient.feature.PvpFeatures;
+import dev.theredstonee.trsclient.feature.Waypoints;
 import dev.theredstonee.trsclient.hud.HudManager;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.screen.WaypointEditScreen;
+import dev.theredstonee.trsclient.screen.WaypointListScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -46,6 +50,10 @@ public final class TrsClient {
 	private final ConfigStore config;
 	private final HudManager hud;
 	private final PvpFeatures pvp = new PvpFeatures(modules);
+	private final ChatFeatures chat = new ChatFeatures(modules);
+	private final Waypoints waypoints;
+	/** Zuletzt benutztes Welt-Sichtfeld (für die Wegpunkt-Projektion), aus dem FOV-Mixin. */
+	private double worldFov = 70;
 	/** Einmalig den Vanilla-Titelbildschirm zulassen ("Klassisch" auf dem TRS-Startbildschirm). */
 	private boolean vanillaTitleOnce;
 	/** Nur für den Autotest: Zoom ohne Tastendruck erzwingen. */
@@ -69,10 +77,14 @@ public final class TrsClient {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
 		}
 		TrsKeys.create();
+		waypoints = new Waypoints(modules, Platform.configDir().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
 		autoTest = AutoTest.createIfRequested();
 		// Beim Beenden speichern (Forge-unabhängig; Änderungen im Menü werden ohnehin sofort gespeichert).
-		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			saveConfig();
+			waypoints.save();
+		}, "TRS Client config save"));
 
 		LOGGER.info("TRS Client {} initialisiert (Forge, Minecraft {}) – {} Module, Config {} ({})",
 				Platform.modVersion(MOD_ID), Platform.modVersion("minecraft"), modules.registry.all().size(),
@@ -126,6 +138,20 @@ public final class TrsClient {
 			Mc.actionBar(Component.literal("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus")));
 			saveConfig();
 		}
+		while (TrsKeys.waypointAdd.consumeClick()) {
+			if (Mc.screen() == null && mc.player != null && modules.waypoints.isEnabled()) {
+				Mc.setScreen(new WaypointEditScreen(null, null));
+			}
+		}
+		while (TrsKeys.waypointList.consumeClick()) {
+			if (Mc.screen() == null && modules.waypoints.isEnabled()) Mc.setScreen(new WaypointListScreen(null));
+		}
+		for (int i = 0; i < TrsKeys.textHotkeys.length; i++) {
+			while (TrsKeys.textHotkeys[i].consumeClick()) chat.onHotkey(i);
+		}
+		waypoints.tick(mc);
+		chat.tick(mc);
+		hud.tick();
 		if (autoTest != null) autoTest.tick(mc);
 	}
 
@@ -192,6 +218,24 @@ public final class TrsClient {
 
 	public PvpFeatures pvp() {
 		return pvp;
+	}
+
+	public ChatFeatures chat() {
+		return chat;
+	}
+
+	public Waypoints waypoints() {
+		return waypoints;
+	}
+
+	/** Zuletzt gezeichnetes Sichtfeld der Welt (Grad) – Grundlage der Wegpunkt-Projektion. */
+	public double worldFov() {
+		return worldFov;
+	}
+
+	/** Aus dem FOV-Mixin: das tatsächlich benutzte Sichtfeld merken. */
+	public void setWorldFov(double fov) {
+		if (fov > 1 && fov < 180) worldFov = fov;
 	}
 
 	public ToggleState sprintToggle() {

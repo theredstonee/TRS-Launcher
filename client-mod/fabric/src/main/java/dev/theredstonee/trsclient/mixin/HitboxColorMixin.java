@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 @Mixin(EntityRenderDispatcher.class)
 public abstract class HitboxColorMixin {
 	@ModifyArgs(method = "renderHitbox",
-			//? if >=1.21.4 {
+			//? if >=1.21.2 {
 			/*at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ShapeRenderer;renderLineBox"),
 			*///?} else
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLineBox"),

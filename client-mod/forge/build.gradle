@@ -101,8 +101,19 @@ if (srg) {
 	}
 }
 
+// Mixin-Liste je Version: die Ziele einiger Hooks gibt es nicht in jeder Version.
+def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'GuiMixin', 'LightmapMixin', 'MinecraftMixin',
+		'MouseHandlerMixin', 'OverlayTextureAccessor', 'TitleScreenMixin',
+		'AttackMixin', 'BlockOutlineMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin',
+		'HurtCamMixin', 'LowFireMixin', 'OldAnimationsMixin']
+// RenderSystem#lineWidth gibt es ab 1.21.11 nicht mehr (Linienstärke dort unveränderbar).
+if (stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
+// Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.
+if (stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
+
 processResources {
 	def props = [
+			mixins      : mixinClasses.collect { "\"${it}\"" }.join(",\n\t\t"),
 			version     : project.version.toString(),
 			minecraft   : mc.toString(),
 			forgeMajor  : forgeMajor,

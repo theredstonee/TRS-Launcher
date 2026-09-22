@@ -117,6 +117,11 @@ public final class Gfx {
 		g.drawCenteredString(font, text, centerX, y, argb);
 	}
 
+	/** Schneidet {@code text} auf höchstens {@code maxWidth} Pixel ab. */
+	public static String clip(Font font, String text, int maxWidth) {
+		return font.plainSubstrByWidth(text, maxWidth);
+	}
+
 	/** Gegenstand als 16×16-Symbol (inkl. Stapelzahl/Haltbarkeitsbalken). */
 	public void item(Font font, ItemStack stack, int x, int y) {
 		//? if >=26.1 {

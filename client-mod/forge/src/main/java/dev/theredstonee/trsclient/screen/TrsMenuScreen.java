@@ -176,7 +176,8 @@ public final class TrsMenuScreen extends TrsScreen {
 		g.hLine(ix, ix + iw - 1, cy, Brand.BORDER);
 		cy += 5;
 
-		boolean hasAction = selected instanceof HudModule || selected == modules.crosshair;
+		boolean hasAction = selected instanceof HudModule || selected == modules.crosshair
+				|| selected == modules.waypoints;
 		if (selected.settings().isEmpty()) {
 			g.text(font, "Keine Einstellungen", ix, cy + 3, Brand.TEXT_DIM, false);
 		}
@@ -189,6 +190,9 @@ public final class TrsMenuScreen extends TrsScreen {
 		} else if (selected == modules.crosshair) {
 			String label = "Fadenkreuz bearbeiten";
 			button(g, mx, my, ix, by, font.width(label) + 10, 13, label, true, () -> open(new CrosshairEditorScreen(this)));
+		} else if (selected == modules.waypoints) {
+			String label = "Wegpunkte verwalten";
+			button(g, mx, my, ix, by, font.width(label) + 10, 13, label, true, () -> open(new WaypointListScreen(this)));
 		}
 	}
 

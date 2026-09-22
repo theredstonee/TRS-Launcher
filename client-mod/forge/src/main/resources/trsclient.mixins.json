@@ -5,15 +5,7 @@
 	"compatibilityLevel": "${mixinJava}",
 	${refmapLine}
 	"client": [
-		"CameraMixin",
-		"CrosshairMixin",
-		"FovMixin",
-		"GuiMixin",
-		"LightmapMixin",
-		"MinecraftMixin",
-		"MouseHandlerMixin",
-		"OverlayTextureAccessor",
-		"TitleScreenMixin"
+		${mixins}
 	],
 	"injectors": {
 		"defaultRequire": 1

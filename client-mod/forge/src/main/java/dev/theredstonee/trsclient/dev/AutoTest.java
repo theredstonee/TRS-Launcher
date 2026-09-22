@@ -10,6 +10,8 @@ import dev.theredstonee.trsclient.screen.HudEditorScreen;
 import dev.theredstonee.trsclient.screen.PackScreen;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.screen.WaypointListScreen;
+import dev.theredstonee.trsclient.compat.ChatLines;
 import dev.theredstonee.trsclient.compat.Platform;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -71,7 +73,7 @@ public final class AutoTest {
 	public void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 17 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 3 && step < 20 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -200,9 +202,41 @@ public final class AutoTest {
 				if (!ensureScreen(HudEditorScreen.class, () -> new HudEditorScreen(null))) return;
 				shot(mc, "trsclient-hud-editor");
 				Mc.setScreen(null);
-				next(5);
+				// Wegpunkte + Minimap + PvP-Anzeigen einschalten und einen Wegpunkt anlegen
+				modules.waypoints.setEnabled(true);
+				modules.minimap.setEnabled(true);
+				modules.reach.setEnabled(true);
+				modules.combo.setEnabled(true);
+				modules.speed.setEnabled(true);
+				TrsClient.get().waypoints().create("Basis", 0x3DDC84);
+				// 20 Blöcke nach Norden und zurückschauen (yaw 0 = Süden) → Wegpunkt im Blick
+				command(mc, "tp @p ~ ~ ~-20 0 0");
+				next(40);
 			}
 			case 15 -> {
+				shot(mc, "trsclient-waypoints");
+				Mc.setScreen(new WaypointListScreen(null));
+				next(20);
+			}
+			case 16 -> {
+				if (!ensureScreen(WaypointListScreen.class, () -> new WaypointListScreen(null))) return;
+				shot(mc, "trsclient-waypoint-liste");
+				Mc.setScreen(null);
+				// Chat: Zeitstempel an, dreimal dieselbe Nachricht → wird zusammengefasst
+				modules.chat.setEnabled(true);
+				modules.chatTimestamps.set(true);
+				modules.chatStack.set(true);
+				chat("TRS Client: Chat-Test");
+				chat("Wiederholte Nachricht");
+				chat("Wiederholte Nachricht");
+				chat("Wiederholte Nachricht");
+				next(10);
+			}
+			case 17 -> {
+				shot(mc, "trsclient-chat");
+				next(5);
+			}
+			case 18 -> {
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -212,8 +246,8 @@ public final class AutoTest {
 				next(20);
 			}
 			default -> {
-				if (step == 16) mc.stop();
-				step = 17;
+				if (step == 19) mc.stop();
+				step = 20;
 			}
 		}
 	}
@@ -231,6 +265,11 @@ public final class AutoTest {
 		list.add(new ServerData("Hypixel", "mc.hypixel.net", false), false);
 		*///?}
 		list.save();
+	}
+
+	/** Schreibt eine Nachricht in den Chat (wie eine Servernachricht – geht durch die TRS-Chat-Hooks). */
+	private static void chat(String text) {
+		ChatLines.addMessage(Component.literal(text));
 	}
 
 	/** Führt einen Befehl als Server (Berechtigungsstufe 4) aus. */

@@ -17,6 +17,12 @@ public final class TrsKeys {
 	public static KeyMapping zoom;
 	public static KeyMapping fullbright;
 	public static KeyMapping freelook;
+	/** Wegpunkt an der eigenen Position anlegen. */
+	public static KeyMapping waypointAdd;
+	/** Wegpunkt-Liste öffnen. */
+	public static KeyMapping waypointList;
+	/** Vier frei belegbare Tasten, die je einen Text senden (Standard: unbelegt). */
+	public static final KeyMapping[] textHotkeys = new KeyMapping[4];
 
 	private TrsKeys() {
 	}
@@ -36,6 +42,12 @@ public final class TrsKeys {
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
 		freelook = new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY);
+		waypointAdd = new KeyMapping("key.trsclient.waypointAdd", KEYBOARD, InputConstants.KEY_B, CATEGORY);
+		waypointList = new KeyMapping("key.trsclient.waypointList", KEYBOARD, InputConstants.KEY_N, CATEGORY);
+		for (int i = 0; i < textHotkeys.length; i++) {
+			textHotkeys[i] = new KeyMapping("key.trsclient.text" + (i + 1), KEYBOARD,
+					InputConstants.UNKNOWN.getValue(), CATEGORY);
+		}
 	}
 
 	/** Forge-Event (Mod-Bus): Tasten in die Steuerungs-Optionen eintragen. */
@@ -45,6 +57,9 @@ public final class TrsKeys {
 		event.register(zoom);
 		event.register(fullbright);
 		event.register(freelook);
+		event.register(waypointAdd);
+		event.register(waypointList);
+		for (KeyMapping mapping : textHotkeys) event.register(mapping);
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */
