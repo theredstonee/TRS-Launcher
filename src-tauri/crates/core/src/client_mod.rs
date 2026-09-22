@@ -176,6 +176,7 @@ mod tests {
             last_played: None,
             total_play_seconds: 0,
             icon: None,
+            group: None,
             overrides: InstanceOverrides { trs_client: enabled, ..Default::default() },
         }
     }

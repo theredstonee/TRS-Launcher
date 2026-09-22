@@ -16,6 +16,7 @@ pub mod forge;
 pub mod fsutil;
 pub mod gamelog;
 pub mod history;
+pub mod hooks;
 pub mod icon;
 pub mod import;
 pub mod instance;
@@ -31,6 +32,10 @@ pub mod prepare;
 pub mod process;
 pub mod servers;
 pub mod settings;
+pub mod storage;
+pub mod sync;
+pub mod system;
+pub mod upload;
 
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -42,7 +47,8 @@ use tokio::sync::RwLock;
 use auth::AccountStore;
 pub use error::{Error, Result};
 use history::{HistoryEntry, HistoryKind};
-use instance::{Instance, InstanceStore, Loader, LoaderKind, NewInstance};
+use hooks::{HookContext, HookKind};
+use instance::{Instance, InstanceStore, Loader, LoaderKind, NewInstance, UpdateInstance};
 use launch::{EventSink, GameEvent, GameManager, Session};
 use paths::Paths;
 use servers::ServerStore;
@@ -122,16 +128,22 @@ impl Launcher {
             http,
         };
 
-        // Spiele, die beim letzten Schließen noch liefen, wieder übernehmen.
+        // Spiele, die beim letzten Schließen noch liefen, wieder übernehmen –
+        // nach ihrem Ende auch synchronisieren und den Nach-Beenden-Hook ausführen.
         let paths = launcher.paths.clone();
+        let sink = launcher.games.sink();
         launcher.games.recover(|id| {
-            let (paths, id) = (paths.clone(), id.to_owned());
+            let (paths, id, sink) = (paths.clone(), id.to_owned(), sink.clone());
             Box::new(move |seconds| {
                 tokio::spawn(async move {
-                    let store = InstanceStore::new(paths);
+                    let store = InstanceStore::new(paths.clone());
                     if let Err(e) = store.add_play_time(&id, seconds).await {
                         tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
                     }
+                    let Ok(instance) = store.get(&id).await else { return };
+                    let settings = Settings::load(&paths.settings_file()).await.unwrap_or_default();
+                    let plan = ExitPlan::new(&paths, &instance, &settings, None);
+                    plan.run(sink).await;
                 });
             })
         });
@@ -172,6 +184,7 @@ impl Launcher {
     }
 
     pub async fn update_settings(&self, new: Settings) -> Result<Settings> {
+        let new = new.normalized();
         new.validate()?;
         let mut guard = self.settings.write().await;
         new.save(&self.paths.settings_file()).await?;
@@ -234,6 +247,39 @@ impl Launcher {
                 .to(describe_version(&updated.game_version, &updated.loader)),
         )
         .await;
+        Ok(updated)
+    }
+
+    /// Name und Einstellungen einer Instanz ändern; Umbenennen und geänderte
+    /// Start-Hooks landen im Verlauf.
+    pub async fn update_instance(&self, id: &str, update: UpdateInstance) -> Result<Instance> {
+        let before = self.instances.get(id).await?;
+        let updated = self.instances.update(&before.id, update).await?;
+        if before.name != updated.name {
+            let entry = HistoryEntry::new(HistoryKind::Renamed).from(&before.name).to(&updated.name);
+            history::record(&self.paths, &updated.id, entry).await;
+        }
+        if before.overrides.hooks != updated.overrides.hooks {
+            let detail = if updated.overrides.hooks.is_some() { "custom" } else { "global" };
+            history::record(&self.paths, &updated.id, HistoryEntry::new(HistoryKind::HooksChanged).detail(detail)).await;
+        }
+        Ok(updated)
+    }
+
+    /// Instanz in eine eigene Gruppe verschieben (`None` = aus der Gruppe nehmen).
+    pub async fn set_instance_group(&self, id: &str, group: Option<&str>) -> Result<Instance> {
+        let before = self.instances.get(id).await?;
+        let updated = self.instances.set_group(&before.id, group).await?;
+        if before.group != updated.group {
+            let mut entry = HistoryEntry::new(HistoryKind::GroupChanged);
+            if let Some(from) = &before.group {
+                entry = entry.from(from);
+            }
+            if let Some(to) = &updated.group {
+                entry = entry.to(to);
+            }
+            history::record(&self.paths, &updated.id, entry).await;
+        }
         Ok(updated)
     }
 
@@ -323,11 +369,21 @@ impl Launcher {
         }
         let game_dir = self.paths.instance_game_dir(&instance.id);
         fsutil::ensure_dir(&game_dir).await?;
+
+        let exit_plan = ExitPlan::new(&self.paths, instance, &settings, Some(prepared.java.clone()));
+        if let Some(pre) = &exit_plan.hooks.pre_launch {
+            hooks::run(HookKind::PreLaunch, pre, &exit_plan.context, &exit_plan.env, hooks::HOOK_TIMEOUT).await?;
+        }
+        // Gemeinsame options.txt & Co. holen. Scheitert das, startet das Spiel
+        // mit den eigenen Dateien – dann wird auch nichts zurückkopiert.
+        if let Err(e) = sync::pull(&exit_plan.sync_dirs, &exit_plan.sync_items).await {
+            tracing::warn!("Synchronisierung vor dem Start fehlgeschlagen: {e}");
+        }
         // Die Launcher-Server sollen in jeder Instanz in der Serverliste stehen.
         if let Err(e) = self.servers.sync_to_instance(&game_dir).await {
             tracing::warn!("servers.dat konnte nicht aktualisiert werden: {e}");
         }
-        let command = launch::build_command(
+        let mut command = launch::build_command(
             &prepared,
             instance,
             &settings,
@@ -342,16 +398,23 @@ impl Launcher {
 
         let launcher = Arc::clone(self);
         let id = instance.id.clone();
+        let sink = self.games.sink();
+        let plan = exit_plan.clone();
         let on_exit = Box::new(move |play_seconds: u64| {
             tokio::spawn(async move {
                 if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
                     tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
                 }
+                plan.run(sink).await;
             });
         });
 
         if settings.prefer_dedicated_gpu {
             process::prefer_dedicated_gpu(&command.program);
+        }
+        command.env = exit_plan.env.clone();
+        if let Some(wrapper) = &exit_plan.hooks.wrapper {
+            hooks::apply_wrapper(&mut command, wrapper);
         }
         let log_dir = self.paths.instance_dir(&instance.id).join("launcher-logs");
         let pid = self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit)?;
@@ -387,6 +450,11 @@ impl Launcher {
 
     /// Lädt den neuesten Log der Instanz geschwärzt auf mclo.gs hoch.
     pub async fn share_log(&self, instance_id: &str) -> Result<String> {
+        if !self.settings().await.allow_log_upload {
+            return Err(Error::validation(
+                "Log-Upload ist in den Datenschutz-Einstellungen ausgeschaltet.",
+            ));
+        }
         let instance = self.instances.get(instance_id).await?;
         let game_dir = self.paths.instance_game_dir(&instance.id);
         let launcher_logs = self.paths.instance_dir(&instance.id).join("launcher-logs");
@@ -396,6 +464,112 @@ impl Launcher {
         // Gespeicherte Tokens zusätzlich wörtlich schwärzen.
         let secrets = self.accounts.active_session().await.ok().flatten().map(|s| vec![s.access_token]).unwrap_or_default();
         process::share_log(&self.http, &process::redact(&raw, &secrets)).await
+    }
+}
+
+impl Launcher {
+    fn anything_active(&self) -> bool {
+        !self.games.running().is_empty()
+            || !self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_empty()
+    }
+
+    /// Wie [`Self::repair_instance`], lädt aber auch die Spielversion komplett
+    /// neu und prüft die TRS-Optimierung beim nächsten Start neu.
+    pub async fn reinstall_instance(&self, instance_id: &str, on_progress: &ProgressFn) -> Result<()> {
+        let instance = self.instances.get(instance_id).await?;
+        if self.anything_active() {
+            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+        }
+        let _ = tokio::fs::remove_file(self.paths.instance_dir(&instance.id).join("trs-boost.json")).await;
+        if meta::is_safe_id(&instance.game_version) {
+            let dir = self.paths.version_dir(&instance.game_version);
+            if dir.is_dir()
+                && let Err(e) = tokio::fs::remove_dir_all(&dir).await
+            {
+                tracing::warn!("Versionsordner konnte nicht gelöscht werden: {e}");
+            }
+        }
+        self.repair_instance(&instance.id, on_progress).await
+    }
+
+    pub async fn storage_stats(&self) -> Result<storage::StorageStats> {
+        storage::stats(&self.paths, self.instances.list().await?).await
+    }
+
+    /// Löscht Spielversionen, die keine Instanz mehr braucht.
+    pub async fn clean_unused_storage(&self) -> Result<u64> {
+        if self.anything_active() {
+            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+        }
+        storage::clean_unused(&self.paths, self.instances.list().await?).await
+    }
+
+    /// Prüft die geteilten Spieldateien; beschädigte werden beim nächsten Start neu geladen.
+    pub async fn verify_storage(&self) -> Result<storage::VerifyReport> {
+        if self.anything_active() {
+            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+        }
+        storage::verify_assets(&self.paths).await
+    }
+
+    pub async fn detect_java(&self) -> Vec<java::JavaInstall> {
+        let paths = self.paths.clone();
+        tokio::task::spawn_blocking(move || java::detect(&paths)).await.unwrap_or_default()
+    }
+
+    /// Installiert die von Mojang empfohlene Runtime für eine Java-Hauptversion.
+    pub async fn install_java(&self, major: u32, on_progress: &(dyn Fn(download::Progress) + Sync)) -> Result<PathBuf> {
+        let component = java::component_for(major).ok_or_else(|| Error::validation("Diese Java-Version gibt es nicht zum Installieren."))?;
+        let concurrency = usize::from(self.settings().await.concurrent_downloads);
+        java::ensure_runtime(&self.http, &self.paths, component, concurrency, on_progress).await
+    }
+}
+
+/// Was vor dem Start feststeht und nach dem Spielende passieren soll:
+/// zurücksynchronisieren und den Nach-Beenden-Hook ausführen.
+#[derive(Clone)]
+struct ExitPlan {
+    hooks: hooks::LaunchHooks,
+    context: HookContext,
+    sync_dirs: sync::SyncDirs,
+    sync_items: Vec<sync::SyncItem>,
+    env: Vec<(String, String)>,
+}
+
+impl ExitPlan {
+    fn new(paths: &Paths, instance: &Instance, settings: &Settings, java: Option<PathBuf>) -> Self {
+        let instance_dir = paths.instance_dir(&instance.id);
+        let game_dir = paths.instance_game_dir(&instance.id);
+        Self {
+            hooks: instance.overrides.hooks.clone().unwrap_or_else(|| settings.hooks.clone()),
+            env: hooks::env_pairs(instance.overrides.env.as_deref().unwrap_or(&settings.env)),
+            context: HookContext {
+                instance_id: instance.id.clone(),
+                instance_name: instance.name.clone(),
+                instance_dir: instance_dir.clone(),
+                game_dir: game_dir.clone(),
+                java,
+            },
+            sync_dirs: sync::SyncDirs { shared: paths.shared_dir(), instance: instance_dir, game: game_dir },
+            sync_items: sync::active_items(&settings.sync, &instance.overrides.sync_separate),
+        }
+    }
+
+    /// Fehler gehen als Hinweis ans Frontend – das Spiel ist ja schon zu.
+    async fn run(self, sink: EventSink) {
+        let id = self.context.instance_id.clone();
+        if let Err(e) = sync::push(&self.sync_dirs).await {
+            tracing::warn!("Synchronisierung nach dem Beenden fehlgeschlagen: {e}");
+            sink(GameEvent::Notice {
+                instance_id: id.clone(),
+                message: "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden.".into(),
+            });
+        }
+        if let Some(post) = &self.hooks.post_exit
+            && let Err(e) = hooks::run(HookKind::PostExit, post, &self.context, &self.env, hooks::HOOK_TIMEOUT).await
+        {
+            sink(GameEvent::Notice { instance_id: id, message: e.public_message() });
+        }
     }
 }
 

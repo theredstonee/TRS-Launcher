@@ -50,6 +50,8 @@ pub struct Command {
     pub program: PathBuf,
     pub args: Vec<String>,
     pub cwd: PathBuf,
+    /// Zusätzliche Umgebungsvariablen (Start-Hooks).
+    pub env: Vec<(String, String)>,
 }
 
 pub fn build_command(
@@ -157,11 +159,15 @@ pub fn build_command(
         _ => return Err(Error::launch("Die Versions-Metadaten enthalten keine Startargumente.")),
     }
 
+    if instance.overrides.fullscreen.unwrap_or(settings.fullscreen) {
+        args.push("--fullscreen".into());
+    }
+
     if let Some(join) = join.filter(|_| !quick_play) {
         args.extend(["--server".into(), join.host.clone(), "--port".into(), join.port.to_string()]);
     }
 
-    Ok(Command { program: prepared.java.clone(), args, cwd: game_dir.to_owned() })
+    Ok(Command { program: prepared.java.clone(), args, cwd: game_dir.to_owned(), env: Vec::new() })
 }
 
 /// GC-Voreinstellungen (angelehnt an OneLauncher `arguments.rs` `performance_flags`):
@@ -252,7 +258,7 @@ fn substitute(template: &str, vars: &HashMap<&str, String>) -> String {
 }
 
 /// Trennt an Leerzeichen, doppelte Anführungszeichen halten zusammen.
-fn split_args(input: &str) -> Vec<String> {
+pub(crate) fn split_args(input: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut current = String::new();
     let mut quoted = false;
@@ -312,6 +318,7 @@ mod tests {
             last_played: None,
             total_play_seconds: 0,
             icon: None,
+            group: None,
             overrides: InstanceOverrides::default(),
         }
     }
@@ -416,15 +423,28 @@ mod tests {
             max_memory_mb: Some(8192),
             jvm_args: Some(r#"-XX:+UseG1GC "-Dfoo=a b""#.into()),
             resolution: Some(Resolution { width: 1920, height: 1080 }),
-            java_path: None,
-            trs_client: None,
-            boost: None,
+            ..Default::default()
         };
         let args = build(&prepared(MODERN), &inst, &Session { demo: true, ..session() });
         assert!(args.contains(&"-Xmx8192M".to_owned()));
         assert!(args.contains(&"-Dfoo=a b".to_owned()));
         assert!(args.contains(&"--demo".to_owned()));
         assert!(args.contains(&"1920".to_owned()));
+        assert!(!args.contains(&"--fullscreen".to_owned()));
+    }
+
+    #[test]
+    fn fullscreen_from_instance_or_settings() {
+        let mut inst = instance();
+        inst.overrides.fullscreen = Some(true);
+        assert!(build(&prepared(MODERN), &inst, &session()).ends_with(&["--fullscreen".to_owned()]));
+
+        let settings = Settings { fullscreen: true, ..Default::default() };
+        let args = build_command(&prepared(MODERN), &instance(), &settings, &session(), dirs(), None).unwrap().args;
+        assert!(args.contains(&"--fullscreen".to_owned()));
+        inst.overrides.fullscreen = Some(false);
+        let args = build_command(&prepared(MODERN), &inst, &settings, &session(), dirs(), None).unwrap().args;
+        assert!(!args.contains(&"--fullscreen".to_owned()));
     }
 
     #[test]

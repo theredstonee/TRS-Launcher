@@ -1,75 +1,118 @@
 <script setup lang="ts">
 import type { Instance } from '~/types'
 
-const props = defineProps<{ instance: Instance }>()
-const emit = defineEmits<{ delete: [instance: Instance] }>()
+// Quadratische Bibliothekskachel: großes Bild, Name, Loader + Version.
+// Beim Überfahren erscheint der Spielen-Knopf auf dem Bild; laufende
+// Instanzen leuchten wie eine Redstone-Lampe.
+const props = defineProps<{ instance: Instance; groups: string[]; compact?: boolean; showPlayTime?: boolean }>()
+const emit = defineEmits<{ delete: [instance: Instance]; move: [group: string | null]; newGroup: [instance: Instance] }>()
 
 const games = useGamesStore()
 const game = computed(() => games.state(props.instance.id))
+const menu = ref<'main' | 'groups' | null>(null)
 
-const loader = computed(() => {
-  const { kind, version } = props.instance.loader
-  return version ? `${loaderLabels[kind]} ${version}` : loaderLabels[kind]
-})
+const percent = computed(() =>
+  game.value.progress ? Math.floor(overallPercent(game.value.progress.stage, game.value.progress.percent)) : 0,
+)
 
-async function openFolder() {
-  try {
-    await backend.openInstanceDir(props.instance.id)
-  } catch {
-    // Fehler steht im Log; ein fehlgeschlagenes "Ordner öffnen" braucht keinen Dialog.
-  }
+function play() {
+  if (game.value.phase === 'idle') games.launch(props.instance.id)
+  else if (game.value.phase === 'running') games.stop(props.instance.id)
 }
+
+function openFolder() {
+  menu.value = null
+  backend.openInstanceDir(props.instance.id).catch(() => {})
+}
+
+function closeMenu(e: MouseEvent) {
+  if (!(e.target as HTMLElement | null)?.closest(`[data-card-menu="${props.instance.id}"]`)) menu.value = null
+}
+onMounted(() => document.addEventListener('mousedown', closeMenu))
+onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
 </script>
 
 <template>
   <article
-    class="card card-hover group relative flex flex-col overflow-hidden"
-    :class="{ 'border-lamp-400/40 shadow-[0_0_24px_-8px_var(--color-lamp-400)]': game.phase === 'running' }"
+    class="card group relative flex flex-col p-2.5 transition-[border-color,background-color,box-shadow] hover:border-base-700 hover:bg-base-850"
+    :class="{ 'border-lamp-400/50 shadow-[0_0_26px_-8px_var(--color-lamp-400)]': game.phase === 'running' }"
   >
-    <!-- Farbstreifen des Modloaders als leiser Akzent -->
-    <span class="absolute inset-x-0 top-0 h-px opacity-60" :style="{ background: `linear-gradient(90deg, ${loaderColors[instance.loader.kind]}, transparent 70%)` }" />
+    <div class="relative">
+      <NuxtLink :to="`/instances/${instance.id}`" class="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-redstone-500" :aria-label="instance.name">
+        <div class="aspect-square w-full overflow-hidden rounded-xl">
+          <InstanceIcon :instance="instance" :size="compact ? 140 : 200" class="!size-full" />
+        </div>
+      </NuxtLink>
 
-    <NuxtLink :to="`/instances/${instance.id}`" class="flex items-center gap-3.5 p-4 pb-3 outline-none focus-visible:ring-2 focus-visible:ring-redstone-500 focus-visible:ring-inset">
-      <InstanceIcon :instance="instance" :size="56" />
+      <!-- Spielen beim Überfahren; während der Vorbereitung Prozent, beim Laufen Stopp -->
+      <button
+        v-if="game.phase !== 'preparing'"
+        class="absolute right-2 bottom-2 grid place-items-center rounded-full shadow-lg shadow-black/50 transition-all"
+        :class="[
+          compact ? 'size-10' : 'size-12',
+          game.phase === 'running'
+            ? 'bg-lamp-400 text-base-950 opacity-100'
+            : 'translate-y-1 bg-redstone-500 text-white opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 hover:bg-redstone-400',
+        ]"
+        :aria-label="game.phase === 'running' ? `${instance.name} stoppen` : `${instance.name} spielen`"
+        :title="game.phase === 'running' ? 'Läuft – stoppen' : 'Spielen'"
+        @click="play"
+      >
+        <svg v-if="game.phase === 'running'" viewBox="0 0 24 24" class="size-4" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="1" /></svg>
+        <svg v-else viewBox="0 0 24 24" class="ml-0.5 size-5" fill="currentColor"><path d="M7 4v16l13-8z" /></svg>
+      </button>
+      <div v-else class="absolute inset-x-2 bottom-2 rounded-lg bg-base-950/85 px-2.5 py-1.5 backdrop-blur" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100">
+        <div class="flex justify-between text-[11px]"><span class="text-base-200">Starte …</span><span class="display text-redstone-300">{{ percent }} %</span></div>
+        <RedstoneWire :percent="percent" :segments="16" class="mt-1" />
+      </div>
+
+      <span v-if="game.phase === 'running'" class="badge absolute top-2 left-2 bg-lamp-400 text-base-950">
+        <span class="size-1.5 animate-lamp rounded-full bg-base-950" />Läuft
+      </span>
+    </div>
+
+    <div class="mt-2.5 flex items-start gap-1 px-0.5">
       <div class="min-w-0 flex-1">
-        <h3 class="truncate font-semibold text-base-50 transition-colors group-hover:text-redstone-300" :title="instance.name">{{ instance.name }}</h3>
-        <p class="mt-1 flex items-center gap-1.5 truncate text-xs text-base-400">
+        <NuxtLink :to="`/instances/${instance.id}`" class="block truncate font-semibold text-base-50 hover:text-redstone-300" :class="compact ? 'text-sm' : ''" :title="instance.name">
+          {{ instance.name }}
+        </NuxtLink>
+        <p class="mt-0.5 flex items-center gap-1.5 truncate text-xs text-base-400">
           <span class="size-1.5 shrink-0 rounded-full" :style="{ background: loaderColors[instance.loader.kind] }" />
-          <span class="font-mono text-base-200">{{ instance.gameVersion }}</span>
-          <span class="truncate">{{ loader }}</span>
+          {{ loaderLabels[instance.loader.kind] }} <span class="font-mono text-base-200">{{ instance.gameVersion }}</span>
+        </p>
+        <p v-if="!compact" class="mt-0.5 truncate text-[11px] text-base-600">
+          {{ game.phase === 'running' ? 'Läuft gerade' : formatRelative(instance.lastPlayed) }}<template v-if="showPlayTime && instance.totalPlaySeconds >= 60"> · {{ formatPlayTime(instance.totalPlaySeconds) }}</template>
         </p>
       </div>
-    </NuxtLink>
 
-    <p class="flex justify-between gap-2 px-4 text-xs text-base-600">
-      <span class="truncate">{{ game.phase === 'running' ? 'Läuft gerade' : formatRelative(instance.lastPlayed) }}</span>
-      <span v-if="instance.totalPlaySeconds >= 60" class="shrink-0 tabular-nums">{{ formatPlayTime(instance.totalPlaySeconds) }}</span>
-    </p>
-
-    <p v-if="game.error" role="alert" class="mx-4 mt-2 text-xs text-redstone-300">{{ game.error }}</p>
-    <p v-else-if="game.lastExit?.crashed" role="alert" class="mx-4 mt-2 text-xs text-warn">
-      {{ game.lastExit.diagnosis?.message ?? `Das Spiel wurde unerwartet beendet (Code ${game.lastExit.exitCode ?? '?'}).` }}
-      <NuxtLink :to="`/instances/${instance.id}`" class="underline">Details</NuxtLink>
-    </p>
-
-    <div class="mt-auto flex items-center gap-2 p-4 pt-3">
-      <PlayButton :instance-id="instance.id" />
-      <button class="btn-icon" title="Ordner öffnen" aria-label="Ordner öffnen" @click="openFolder">
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
-        </svg>
-      </button>
-      <button
-        class="btn-icon hover:text-redstone-300"
-        title="Löschen"
-        aria-label="Löschen"
-        :disabled="game.phase !== 'idle'"
-        @click="emit('delete', instance)"
-      >
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
-        </svg>
-      </button>
+      <div class="relative shrink-0" :data-card-menu="instance.id">
+        <button class="btn-icon size-7 bg-transparent text-base-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100" :class="{ 'opacity-100': menu }" :aria-label="`Aktionen für ${instance.name}`" :aria-expanded="!!menu" @click="menu = menu ? null : 'main'">
+          <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
+        </button>
+        <div v-if="menu === 'main'" class="menu right-0 bottom-8" role="menu">
+          <button class="menu-item" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; games.launch(instance.id)">Spielen</button>
+          <NuxtLink :to="{ path: `/instances/${instance.id}`, query: { settings: 'general' } }" class="menu-item" role="menuitem">Einstellungen</NuxtLink>
+          <button class="menu-item justify-between" role="menuitem" @click="menu = 'groups'">
+            In Gruppe verschieben
+            <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 5 7 7-7 7" /></svg>
+          </button>
+          <button class="menu-item" role="menuitem" @click="openFolder">Ordner öffnen</button>
+          <div class="my-1 border-t border-base-700" />
+          <button class="menu-item text-redstone-300" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; emit('delete', instance)">Löschen</button>
+        </div>
+        <div v-else-if="menu === 'groups'" class="menu right-0 bottom-8 max-h-72 overflow-y-auto" role="menu" aria-label="In Gruppe verschieben">
+          <button class="menu-item text-base-400" role="menuitem" @click="menu = 'main'">
+            <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 5-7 7 7 7" /></svg>
+            Zurück
+          </button>
+          <button v-for="g in groups" :key="g" class="menu-item" role="menuitemradio" :aria-checked="instance.group === g" @click="menu = null; emit('move', g)">
+            <span class="size-1.5 rounded-full" :class="instance.group === g ? 'bg-redstone-400' : 'bg-transparent'" />{{ g }}
+          </button>
+          <button v-if="instance.group" class="menu-item" role="menuitem" @click="menu = null; emit('move', null)">Aus der Gruppe nehmen</button>
+          <div class="my-1 border-t border-base-700" />
+          <button class="menu-item" role="menuitem" @click="menu = null; emit('newGroup', instance)">+ Neue Gruppe …</button>
+        </div>
+      </div>
     </div>
   </article>
 </template>

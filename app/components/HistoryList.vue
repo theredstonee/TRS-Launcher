@@ -23,7 +23,14 @@ const groupsOf: Record<HistoryKind, 'play' | 'content' | 'instance'> = {
   version_switched: 'instance',
   repaired: 'instance',
   icon_changed: 'instance',
+  files_added: 'content',
+  content_bulk: 'content',
+  hooks_changed: 'instance',
+  group_changed: 'instance',
+  renamed: 'instance',
 }
+
+const bulkLabels: Record<string, string> = { enable: 'aktiviert', disable: 'deaktiviert', delete: 'gelöscht' }
 
 async function load() {
   error.value = null
@@ -77,6 +84,18 @@ function title(e: HistoryEntry): string {
       return 'Dateien geprüft und repariert'
     case 'icon_changed':
       return 'Bild geändert'
+    case 'files_added': {
+      const count = Number(e.to ?? 1)
+      return count > 1 ? `${count} Dateien hinzugefügt` : `${s} hinzugefügt`
+    }
+    case 'content_bulk':
+      return `${e.to ?? 'Mehrere'} Inhalte ${bulkLabels[e.detail ?? ''] ?? 'geändert'}`
+    case 'hooks_changed':
+      return e.detail === 'global' ? 'Start-Hooks zurück auf global' : 'Eigene Start-Hooks gesetzt'
+    case 'group_changed':
+      return e.to ? `In Gruppe „${e.to}“ verschoben` : 'Aus der Gruppe genommen'
+    case 'renamed':
+      return 'Umbenannt'
   }
 }
 
@@ -88,6 +107,8 @@ function detail(e: HistoryEntry): string | null {
   }
   if (e.kind === 'mod_installed' && e.detail === 'dependency') return e.to ? `${e.to} · als Abhängigkeit` : 'Als Abhängigkeit'
   if ((e.kind === 'created' || e.kind === 'imported') && e.to) return e.to
+  if (e.kind === 'renamed' && e.from && e.to) return `„${e.from}“ → „${e.to}“`
+  if (e.kind === 'group_changed' && e.from) return `vorher: ${e.from}`
   return null
 }
 
@@ -105,6 +126,11 @@ const tone: Record<HistoryKind, string> = {
   version_switched: 'bg-base-800 text-base-50',
   repaired: 'bg-base-800 text-base-200',
   icon_changed: 'bg-base-800 text-base-200',
+  files_added: 'bg-ok/10 text-ok',
+  content_bulk: 'bg-base-800 text-base-200',
+  hooks_changed: 'bg-base-800 text-base-200',
+  group_changed: 'bg-base-800 text-base-200',
+  renamed: 'bg-base-800 text-base-200',
 }
 
 const icons: Record<HistoryKind, string> = {
@@ -121,6 +147,11 @@ const icons: Record<HistoryKind, string> = {
   version_switched: 'M4 8h13m0 0-4-4m4 4-4 4M20 16H7m0 0 4-4m-4 4 4 4',
   repaired: 'M14.5 5.5a4 4 0 0 0-5 5L4 16l4 4 5.5-5.5a4 4 0 0 0 5-5L16 12l-4-4z',
   icon_changed: 'M4 5h16v14H4zM4 15l5-5 5 5m-2-2 3-3 5 5',
+  files_added: 'M14 3H6v18h12V7zM14 3v4h4M12 11v6m-3-3h6',
+  content_bulk: 'M4 6h16M4 12h16M4 18h16',
+  hooks_changed: 'M9 4v6a3 3 0 0 0 6 0V4M12 13v7M8 20h8',
+  group_changed: 'M3 7h7l2 2h9v10H3z',
+  renamed: 'M4 20h4L18 10l-4-4L4 16zM14 6l4 4',
 }
 
 const visible = computed(() => entries.value.filter((e) => filter.value === 'all' || groupsOf[e.kind] === filter.value))

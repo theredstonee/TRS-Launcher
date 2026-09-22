@@ -171,6 +171,10 @@ impl Launcher {
             .instances()
             .update(&copy.id, crate::instance::UpdateInstance { name: copy.name.clone(), overrides: source.overrides })
             .await?;
+        let updated = match &source.group {
+            Some(group) => self.instances().set_group(&updated.id, Some(group)).await?,
+            None => updated,
+        };
         let updated = match icon {
             Some(name) if self.paths().instance_dir(&updated.id).join(&name).is_file() => {
                 self.instances().set_icon(&updated.id, Some(name)).await?

@@ -5,6 +5,7 @@ const instances = useInstancesStore()
 const accounts = useAccountsStore()
 const servers = useServersStore()
 const games = useGamesStore()
+const settings = useSettingsStore()
 
 const selectedId = ref<string | null>(null)
 const addingServer = ref(false)
@@ -39,7 +40,8 @@ function join(server: Server) {
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col gap-5 p-6">
+  <div class="flex min-h-full">
+  <div class="flex min-w-0 flex-1 flex-col gap-5 p-6">
     <!-- Startrampe: die zuletzt gespielte Instanz, ein Klick bis ins Spiel. -->
     <section class="launchpad relative overflow-hidden rounded-xl border border-base-800">
       <div class="relative flex flex-col gap-6 p-7">
@@ -171,6 +173,8 @@ function join(server: Server) {
     </div>
 
     <ServerDialog v-if="addingServer" @close="addingServer = false" />
+  </div>
+  <AccountPanel v-if="settings.current?.ui.hideRightSidebar !== true" class="hidden lg:flex" />
   </div>
 </template>
 

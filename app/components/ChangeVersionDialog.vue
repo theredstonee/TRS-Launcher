@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Instance, LoaderKind, MigrationItem } from '~/types'
+import type { Instance, LoaderKind, LoaderVersionInfo, MigrationItem } from '~/types'
 
 // Minecraft-Version und/oder Modloader einer Instanz wechseln. Danach werden
 // die über Modrinth installierten Inhalte auf passende Versionen gebracht.
@@ -58,6 +58,36 @@ onMounted(async () => {
 
 watch(loaderKind, (kind) => {
   if (kind === 'vanilla' || kind !== props.instance.loader.kind) loaderVersion.value = ''
+})
+
+// Auswählbare Loader-Versionen für die gewählte Spielversion.
+const loaderOptions = ref<LoaderVersionInfo[] | null>(null)
+const loaderListFailed = ref(false)
+const showUnstable = ref(false)
+let loaderRequest = 0
+watch(
+  [loaderKind, gameVersion],
+  async ([kind, game]) => {
+    const request = ++loaderRequest
+    loaderOptions.value = null
+    loaderListFailed.value = false
+    if (kind === 'vanilla') return
+    try {
+      const list = await backend.loaderVersions(kind, game)
+      if (request === loaderRequest) loaderOptions.value = list
+    } catch {
+      if (request === loaderRequest) loaderListFailed.value = true
+    }
+  },
+  { immediate: true },
+)
+const visibleLoaderOptions = computed(() => {
+  const list = (loaderOptions.value ?? []).filter((v) => v.stable || showUnstable.value)
+  // Die aktuell eingestellte Version bleibt wählbar.
+  if (loaderVersion.value && !list.some((v) => v.version === loaderVersion.value)) {
+    list.unshift({ version: loaderVersion.value, stable: true })
+  }
+  return list
 })
 
 async function submit() {
@@ -175,8 +205,23 @@ async function disableMissing() {
       </div>
 
       <div v-if="loaderKind !== 'vanilla'">
-        <label class="label" for="cv-loader">Loader-Version</label>
-        <input id="cv-loader" v-model="loaderVersion" class="field font-mono" maxlength="64" placeholder="Leer = neueste stabile" spellcheck="false" />
+        <div class="flex items-center justify-between">
+          <label class="label" for="cv-loader">{{ loaderLabels[loaderKind] }}-Version</label>
+          <label v-if="loaderOptions?.some((v) => !v.stable)" class="mb-1.5 flex items-center gap-1.5 text-xs text-base-400">
+            <input v-model="showUnstable" type="checkbox" class="accent-redstone-500" />
+            Betas anzeigen
+          </label>
+        </div>
+        <input v-if="loaderListFailed" id="cv-loader" v-model="loaderVersion" class="field font-mono" maxlength="64" placeholder="Leer = neueste stabile" spellcheck="false" />
+        <select v-else id="cv-loader" v-model="loaderVersion" class="field font-mono" :disabled="!loaderOptions">
+          <option value="">{{ loaderOptions ? 'Neueste stabile (empfohlen)' : 'Lade Versionen …' }}</option>
+          <option v-for="v in visibleLoaderOptions" :key="v.version" :value="v.version">
+            {{ v.version }}{{ v.stable ? '' : ' (Beta)' }}{{ v.version === instance.loader.version ? ' (aktuell)' : '' }}
+          </option>
+        </select>
+        <p v-if="loaderOptions && !loaderOptions.length" class="mt-1 text-xs text-warn">
+          Für Minecraft {{ gameVersion }} gibt es {{ loaderLabels[loaderKind] }} (noch) nicht.
+        </p>
       </div>
 
       <div class="rounded-lg border border-warn/40 bg-lamp-900/40 px-4 py-3 text-sm text-base-200" role="note">
