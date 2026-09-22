@@ -4,9 +4,12 @@ const games = useGamesStore()
 const accounts = useAccountsStore()
 const instances = useInstancesStore()
 const onboarding = useOnboardingStore()
+const settings = useSettingsStore()
 
 onMounted(async () => {
   games.init()
+  // Darstellung (Theme, Akzent) und Oberflächen-Schalter früh laden.
+  settings.load().catch(() => {})
   // Erst wenn beides geladen ist, entscheiden, ob der Einrichtungs-Assistent kommt.
   await Promise.allSettled([accounts.load(), instances.load()])
   onboarding.openIfFirstRun()
@@ -29,6 +32,7 @@ onMounted(async () => {
         <OnboardingWizard v-if="onboarding.open" />
       </Transition>
     </div>
+    <AppSettingsDialog v-if="settings.dialog" />
     <ToastHost />
   </div>
 </template>

@@ -79,6 +79,14 @@ export function formatFileSize(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
+/** Größen bis in den GB-Bereich (Speicherverwaltung). */
+export function formatBytes(bytes: number): string {
+  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toLocaleString('de', { maximumFractionDigits: 1 })} GB`
+  if (bytes >= 1_048_576) return `${Math.round(bytes / 1_048_576).toLocaleString('de')} MB`
+  if (bytes <= 0) return '0 MB'
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
 export function formatCount(n: number): string {
   return new Intl.NumberFormat('de', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
 }
