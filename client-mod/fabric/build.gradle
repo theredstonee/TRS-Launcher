@@ -84,9 +84,14 @@ dependencies {
 		mappings loom.officialMojangMappings()
 	}
 	add(modImpl, "net.fabricmc:fabric-loader:${rootProject.loader_version}")
-	fapiModules.each { add(modImpl, fabricApi.module(it, project.fabric_api_version)) }
+	// Alte Fabric-API-Versionen (1.14–1.16) ziehen ein altes fabric-loader mit – das bringen wir selbst mit.
+	fapiModules.each {
+		add(modImpl, fabricApi.module(it, project.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+	}
 	if (running) {
-		add(modRuntime, "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
+		add(modRuntime, "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}") {
+			exclude group: 'net.fabricmc', module: 'fabric-loader'
+		}
 	}
 	compileOnly "com.google.code.gson:gson:${rootProject.gson_version}"
 }
@@ -99,6 +104,9 @@ if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAcces
 processResources {
 	def props = [
 			mixins      : mixinClasses.collect { "\"${it}\"" }.join(', '),
+			// Abhängig von den einzelnen Fabric-API-Modulen statt "fabric-api": bis ~1.19 hieß die
+			// Fabric API selbst noch "fabric" – die Modul-IDs sind dagegen in allen Versionen gleich.
+			fapiDepends : fapiModules.collect { "\"${it}\": \"*\"" }.join(', '),
 			version     : project.version,
 			minecraft   : mc,
 			java        : "${javaVersion}",

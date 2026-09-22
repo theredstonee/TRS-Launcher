@@ -319,6 +319,9 @@ public final class AutoTest {
 			*///?} elif >=1.18.2 {
 			/*RegistryAccess registries = RegistryAccess.builtinCopy();
 			mc.createLevel(WORLD, settings, registries, WorldGenSettings.makeDefault(registries));
+			*///?} elif >=1.18 {
+			/*RegistryAccess.RegistryHolder registries = RegistryAccess.builtin();
+			mc.createLevel(WORLD, settings, registries, WorldGenSettings.makeDefault(registries));
 			*///?} elif >=1.16 {
 			/*RegistryAccess.RegistryHolder registries = RegistryAccess.builtin();
 			mc.createLevel(WORLD, settings, registries, WorldGenSettings.makeDefault(registries.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY),
@@ -348,7 +351,7 @@ public final class AutoTest {
 	private static void shot(Minecraft mc, String name) {
 		// run/screenshots/trsclient-<minecraft>-<name>.png
 		Screenshot.grab(mc.gameDirectory, name.replace("trsclient-", "trsclient-" + MC_VERSION + "-") + ".png",
-				//? if <1.17
+				//? if <1.17.1
 				/*Mc.window().getWidth(), Mc.window().getHeight(),*/
 				Mc.mainRenderTarget(),
 				//? if >=1.21.6

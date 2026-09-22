@@ -27,6 +27,8 @@ import org.lwjgl.opengl.GL11;
 import net.minecraft.client.gui.GuiComponent;
 import org.lwjgl.opengl.GL11;
 *///?}
+//? if >=1.16 && <1.17
+/*import org.lwjgl.opengl.GL11;*/
 
 /**
  * Dünne, versionsunabhängige Zeichen-Schnittstelle. Alle HUD- und Menü-Zeichnungen laufen hierüber,
@@ -248,7 +250,7 @@ public final class Gfx {
 	public void scissor(int x1, int y1, int x2, int y2) {
 		//? if >=1.20 {
 		g.enableScissor(x1, y1, x2, y2);
-		//?} elif >=1.16 {
+		//?} elif >=1.17 {
 		/*int[] r = windowRect(x1, y1, x2, y2);
 		RenderSystem.enableScissor(r[0], r[1], r[2], r[3]);
 		*///?} else {
@@ -271,7 +273,7 @@ public final class Gfx {
 	public void noScissor() {
 		//? if >=1.20 {
 		g.disableScissor();
-		//?} elif >=1.16 {
+		//?} elif >=1.17 {
 		/*RenderSystem.disableScissor();
 		*///?} else
 		/*GL11.glDisable(GL11.GL_SCISSOR_TEST);*/

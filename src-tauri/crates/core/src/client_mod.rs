@@ -207,6 +207,24 @@ mod tests {
         assert!(load_builds(&dir.path().join("fehlt")).is_empty());
     }
 
+    /// Die mitgelieferte builds.json deckt jede Fabric-Version von 1.14.4 bis 26.3 ab,
+    /// und jede genannte Jar liegt tatsächlich im Ressourcen-Ordner.
+    #[test]
+    fn bundled_manifest_covers_all_fabric_versions() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/client-mod");
+        let builds = load_builds(&dir);
+        let versions = [
+            "1.14.4", "1.15.2", "1.16.2", "1.16.3", "1.16.4", "1.16.5", "1.17", "1.17.1", "1.18", "1.18.1", "1.18.2",
+            "1.19", "1.19.1", "1.19.2", "1.19.3", "1.19.4", "1.20.1", "1.20.6", "1.21", "1.21.1", "1.21.11", "26.1",
+            "26.3",
+        ];
+        for v in versions {
+            let build = build_for(&builds, LoaderKind::Fabric, v).unwrap_or_else(|| panic!("kein Fabric-Build für {v}"));
+            assert!(dir.join(&build.file).is_file(), "{} fehlt", build.file);
+            assert_eq!(boost_loader(&builds, v), Some(LoaderKind::Fabric));
+        }
+    }
+
     #[tokio::test]
     async fn installs_updates_and_removes_jar() {
         let dir = tempfile::tempdir().unwrap();
