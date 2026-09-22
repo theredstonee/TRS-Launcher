@@ -92,6 +92,17 @@ fn secure_url(url: &str) -> Result<String> {
     }
 }
 
+/// Wartezeit vor dem nächsten Versuch: Retry-After des Servers (höchstens
+/// 30 s), sonst exponentiell 0,5 s → 1 s → 2 s.
+fn retry_delay(err: &Error, attempt: u32) -> Duration {
+    if let Error::Download { reason, .. } = err
+        && let Some(secs) = reason.split("retry-after ").nth(1).and_then(|s| s.trim_end_matches(')').parse::<u64>().ok())
+    {
+        return Duration::from_secs(secs.min(30));
+    }
+    Duration::from_millis(500 * (1 << (attempt - 1).min(4)))
+}
+
 pub async fn fetch_one(http: &reqwest::Client, task: &Task) -> Result<()> {
     fetch_with_retries(http, task, &|_| {}).await
 }
@@ -114,9 +125,10 @@ async fn fetch_with_retries(
                 // Bereits gezählte Bytes des Fehlversuchs zurücknehmen.
                 on_bytes(-(counted.load(Ordering::Relaxed) as i64));
                 tracing::warn!("Download-Versuch {attempt}/{MAX_ATTEMPTS} fehlgeschlagen: {e}");
+                let delay = retry_delay(&e, attempt);
                 last_err = Some(e);
                 if attempt < MAX_ATTEMPTS {
-                    tokio::time::sleep(Duration::from_millis(400 * u64::from(attempt))).await;
+                    tokio::time::sleep(delay).await;
                 }
             }
         }
@@ -141,8 +153,21 @@ async fn fetch_attempt(
         .timeout(Duration::from_secs(60 * 30))
         .send()
         .await
-        .and_then(reqwest::Response::error_for_status)
         .map_err(|e| Error::download(&url, e.without_url().to_string()))?;
+    let status = response.status();
+    if !status.is_success() {
+        // Retry-After (Sekunden) merken – Modrinth & Co. drosseln mit 429.
+        let wait = response
+            .headers()
+            .get(reqwest::header::RETRY_AFTER)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.trim().parse::<u64>().ok());
+        let reason = match wait {
+            Some(secs) => format!("HTTP {} (retry-after {secs})", status.as_u16()),
+            None => format!("HTTP {}", status.as_u16()),
+        };
+        return Err(Error::download(&url, reason));
+    }
 
     let tmp = task.path.with_extension(format!("part-{}", uuid::Uuid::new_v4().simple()));
     let result = async {
@@ -279,6 +304,17 @@ mod tests {
         assert_eq!(p.percent(), 25.0);
         let p = Progress { done_files: 1, total_files: 4, ..Default::default() };
         assert_eq!(p.percent(), 25.0);
+    }
+
+    #[test]
+    fn retry_delays() {
+        let throttled = Error::download("https://x", "HTTP 429 (retry-after 7)");
+        assert_eq!(retry_delay(&throttled, 1), Duration::from_secs(7));
+        let huge = Error::download("https://x", "HTTP 429 (retry-after 9999)");
+        assert_eq!(retry_delay(&huge, 1), Duration::from_secs(30));
+        let other = Error::download("https://x", "HTTP 503");
+        assert_eq!(retry_delay(&other, 1), Duration::from_millis(500));
+        assert_eq!(retry_delay(&other, 3), Duration::from_millis(2000));
     }
 
     #[test]

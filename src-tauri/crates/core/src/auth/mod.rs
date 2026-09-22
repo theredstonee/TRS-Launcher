@@ -224,8 +224,28 @@ impl AccountStore {
         tracing::info!("Erneuere Sitzung für {}", account.name);
         let refresh_token = crypto::unprotect(&account.refresh_token)?;
         // Microsoft rotiert Refresh-Tokens – das neue muss gespeichert werden.
-        let tokens = microsoft::refresh(&self.http, &refresh_token).await?;
-        let session = microsoft::minecraft_login(&self.http, &tokens.access_token).await?;
+        let renewed = async {
+            let tokens = microsoft::refresh(&self.http, &refresh_token).await?;
+            let session = microsoft::minecraft_login(&self.http, &tokens.access_token).await?;
+            Ok::<_, Error>((tokens, session))
+        }
+        .await;
+        let (tokens, session) = match renewed {
+            Ok(pair) => pair,
+            // Kein Internet: mit dem alten Token weiterspielen (Einzelspieler
+            // klappt, Server lehnen es dann selbst ab) statt den Start zu blockieren.
+            Err(Error::Http(e)) if e.is_connect() || e.is_timeout() => {
+                tracing::warn!("Sitzung konnte offline nicht erneuert werden – nutze vorhandenes Token");
+                return Ok(Some(Session {
+                    player_name: account.name.clone(),
+                    uuid: account.id.clone(),
+                    access_token: crypto::unprotect(&account.access_token)?,
+                    xuid: account.xuid.clone(),
+                    demo: false,
+                }));
+            }
+            Err(e) => return Err(e),
+        };
         if session.uuid != account.id {
             return Err(Error::auth("Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden."));
         }

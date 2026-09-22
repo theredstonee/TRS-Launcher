@@ -147,8 +147,13 @@ pub fn build_command(
         args.push(cfg.argument.replace("${path}", &path.display().to_string()));
     }
 
-    let user_jvm = instance.overrides.jvm_args.as_deref().unwrap_or(&settings.jvm_args);
-    args.extend(split_args(user_jvm));
+    let user_jvm = split_args(instance.overrides.jvm_args.as_deref().unwrap_or(&settings.jvm_args));
+    // Eigene GC-Wahl des Nutzers hat Vorrang vor unseren Voreinstellungen.
+    if !user_jvm.iter().any(|a| is_collector_flag(a)) {
+        let java_major = version.java_version.as_ref().map_or(8, |j| j.major_version);
+        args.extend(performance_flags(java_major, max_mb));
+    }
+    args.extend(user_jvm);
 
     args.push(main_class(version)?.to_owned());
 
@@ -171,6 +176,41 @@ pub fn build_command(
     }
 
     Ok(Command { program: prepared.java.clone(), args, cwd: game_dir.to_owned() })
+}
+
+/// GC-Voreinstellungen (angelehnt an OneLauncher `arguments.rs` `performance_flags`):
+/// G1 mit kurzen Pausen; ab Java 21 und großem Heap das generationelle ZGC.
+fn performance_flags(java_major: u32, max_mb: u32) -> Vec<String> {
+    let mut flags: Vec<&str> = if java_major >= 21 && max_mb >= 8192 {
+        vec!["-XX:+UseZGC", "-XX:+ZGenerational"]
+    } else {
+        vec![
+            "-XX:+UseG1GC",
+            "-XX:+ParallelRefProcEnabled",
+            "-XX:MaxGCPauseMillis=50",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:G1NewSizePercent=20",
+            "-XX:G1ReservePercent=20",
+            "-XX:G1HeapRegionSize=32M",
+        ]
+    };
+    // Java 24+: kleinere Objekt-Header, spürbar weniger RAM-Verbrauch.
+    if java_major >= 24 {
+        flags.extend(["-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders"]);
+    }
+    // ZGenerational ist ab Java 23 Standard und wird dort als veraltet gemeldet.
+    if java_major >= 23 {
+        flags.retain(|f| *f != "-XX:+ZGenerational");
+    }
+    flags.dedup();
+    flags.into_iter().map(str::to_owned).collect()
+}
+
+fn is_collector_flag(arg: &str) -> bool {
+    matches!(
+        arg,
+        "-XX:+UseG1GC" | "-XX:+UseZGC" | "-XX:+UseShenandoahGC" | "-XX:+UseParallelGC" | "-XX:+UseSerialGC" | "-XX:+UseEpsilonGC"
+    ) || arg.starts_with("-XX:+UseConcMarkSweepGC")
 }
 
 fn supports_quick_play(version: &VersionInfo) -> bool {
@@ -511,6 +551,22 @@ mod tests {
     fn build_joining(p: &Prepared) -> Vec<String> {
         let join = JoinTarget { address: "play.cooltiers.de".into(), host: "srv.cooltiers.de".into(), port: 25577 };
         build_command(p, &instance(), &Settings::default(), &session(), dirs(), Some(&join)).unwrap().args
+    }
+
+    #[test]
+    fn gc_defaults_respect_java_and_user_choice() {
+        assert!(performance_flags(8, 4096).contains(&"-XX:+UseG1GC".to_owned()));
+        let zgc = performance_flags(21, 8192);
+        assert!(zgc.contains(&"-XX:+UseZGC".to_owned()) && zgc.contains(&"-XX:+ZGenerational".to_owned()));
+        let j25 = performance_flags(25, 16384);
+        assert!(!j25.contains(&"-XX:+ZGenerational".to_owned()));
+        assert!(j25.contains(&"-XX:+UseCompactObjectHeaders".to_owned()));
+
+        let mut inst = instance();
+        inst.overrides.jvm_args = Some("-XX:+UseShenandoahGC".into());
+        let args = build(&prepared(MODERN), &inst, &session());
+        assert!(args.contains(&"-XX:+UseShenandoahGC".to_owned()));
+        assert!(!args.iter().any(|a| a == "-XX:+UseG1GC" || a == "-XX:+UseZGC"));
     }
 
     #[test]

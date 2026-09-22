@@ -11,6 +11,7 @@ pub mod error;
 pub mod extras;
 pub mod fsutil;
 pub mod gamelog;
+pub mod import;
 pub mod instance;
 pub mod java;
 pub mod launch;
