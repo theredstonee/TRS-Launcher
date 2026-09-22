@@ -1,14 +1,36 @@
 [
   {
     "loader": "fabric",
-    "minecraft": ["1.21.1"],
+    "minecraft": [
+      "1.21.1"
+    ],
     "file": "trsclient-fabric-1.21.1.jar",
-    "requires": ["fabric-api"]
+    "requires": [
+      "fabric-api"
+    ]
   },
   {
     "loader": "forge",
-    "minecraft": ["1.8.9"],
+    "minecraft": [
+      "1.8.9"
+    ],
     "file": "trsclient-forge-1.8.9.jar",
+    "requires": []
+  },
+  {
+    "loader": "neoforge",
+    "minecraft": [
+      "1.21.1"
+    ],
+    "file": "trsclient-neoforge-1.21.1.jar",
+    "requires": []
+  },
+  {
+    "loader": "forge",
+    "minecraft": [
+      "1.20.1"
+    ],
+    "file": "trsclient-forge-1.20.1.jar",
     "requires": []
   }
 ]

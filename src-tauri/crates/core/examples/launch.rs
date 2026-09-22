@@ -56,6 +56,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let pinned = loader_version.as_deref().map(|v| format!("-{v}")).unwrap_or_default();
+    // Optional: mitgelieferte TRS-Client-Builds wie in der App verwenden.
+    if let Ok(dir) = std::env::var("TRS_CLIENT_MOD_DIR") {
+        launcher.set_client_mod_dir(dir.into());
+    }
+
     let name = format!("smoke-{version}-{kind:?}{pinned}").to_lowercase();
     let instance = match launcher.instances().list().await?.into_iter().find(|i| i.name == name) {
         Some(i) => i,
