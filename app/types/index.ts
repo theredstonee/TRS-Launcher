@@ -17,6 +17,8 @@ export interface InstanceOverrides {
   javaPath: string | null
   jvmArgs: string | null
   resolution: Resolution | null
+  /** TRS Client in dieser Instanz; null = an */
+  trsClient: boolean | null
 }
 
 export interface Instance {
@@ -45,6 +47,7 @@ export interface Settings {
   concurrentDownloads: number
   closeOnLaunch: boolean
   showSnapshots: boolean
+  preferDedicatedGpu: boolean
 }
 
 export type VersionType = 'release' | 'snapshot' | 'old_beta' | 'old_alpha'

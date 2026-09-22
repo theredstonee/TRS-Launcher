@@ -115,6 +115,10 @@ async function save() {
           <input v-model="form.showSnapshots" type="checkbox" class="accent-redstone-500" />
           Snapshots und alte Versionen standardmäßig anzeigen
         </label>
+        <label class="mt-2.5 flex items-center gap-2.5 text-sm text-base-200">
+          <input v-model="form.preferDedicatedGpu" type="checkbox" class="accent-redstone-500" />
+          Leistungsstarke Grafikkarte verwenden (für Laptops mit zwei Grafikchips)
+        </label>
       </section>
 
       <section v-if="dataDir" class="card flex items-center justify-between gap-4 p-5">

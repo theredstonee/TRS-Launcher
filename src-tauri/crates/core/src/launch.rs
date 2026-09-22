@@ -416,6 +416,7 @@ mod tests {
             jvm_args: Some(r#"-XX:+UseG1GC "-Dfoo=a b""#.into()),
             resolution: Some(Resolution { width: 1920, height: 1080 }),
             java_path: None,
+            trs_client: None,
         };
         let args = build(&prepared(MODERN), &inst, &Session { demo: true, ..session() });
         assert!(args.contains(&"-Xmx8192M".to_owned()));

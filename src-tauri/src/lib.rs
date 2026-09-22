@@ -51,6 +51,10 @@ pub fn run() {
                 }
             });
             let launcher = tauri::async_runtime::block_on(Launcher::init(root, events))?;
+            match app.path().resource_dir() {
+                Ok(dir) => launcher.set_client_mod_dir(dir.join("client-mod")),
+                Err(e) => log::warn!("Ressourcen-Ordner nicht gefunden: {e}"),
+            }
             app.manage::<LauncherState>(Arc::new(launcher));
             Ok(())
         })

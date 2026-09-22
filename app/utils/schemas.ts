@@ -31,6 +31,7 @@ export const updateInstanceSchema = z.object({
     javaPath: z.string().min(1).max(1024).nullable(),
     jvmArgs: z.string().max(4096).nullable(),
     resolution: resolutionSchema.nullable(),
+    trsClient: z.boolean().nullable(),
   }),
 })
 
@@ -44,6 +45,7 @@ export const settingsSchema = z
     concurrentDownloads: z.number().int().min(1).max(64),
     closeOnLaunch: z.boolean(),
     showSnapshots: z.boolean(),
+    preferDedicatedGpu: z.boolean(),
   })
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {
     message: 'Minimum darf nicht über dem Maximum liegen',

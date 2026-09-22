@@ -76,6 +76,7 @@ const memoryMb = ref(4096)
 const javaPath = ref('')
 const jvmArgs = ref('')
 const customResolution = ref(false)
+const trsClient = ref(true)
 const width = ref(1280)
 const height = ref(720)
 const saving = ref(false)
@@ -91,6 +92,7 @@ function resetForm() {
   javaPath.value = o.javaPath ?? ''
   jvmArgs.value = o.jvmArgs ?? ''
   customResolution.value = o.resolution !== null
+  trsClient.value = o.trsClient !== false
   width.value = o.resolution?.width ?? settings.current?.resolution.width ?? 1280
   height.value = o.resolution?.height ?? settings.current?.resolution.height ?? 720
 }
@@ -103,6 +105,7 @@ async function save() {
     javaPath: javaPath.value.trim() || null,
     jvmArgs: jvmArgs.value.trim() || null,
     resolution: customResolution.value ? { width: width.value, height: height.value } : null,
+    trsClient: trsClient.value ? null : false,
   }
   const parsed = updateInstanceSchema.safeParse({ name: name.value, overrides })
   if (!parsed.success) {
@@ -183,6 +186,19 @@ function openFolder() {
         <section class="card p-5">
           <label class="label" for="i-name">Name</label>
           <input id="i-name" v-model="name" class="field" maxlength="64" />
+        </section>
+
+        <section class="card p-5">
+          <label class="flex items-start gap-2.5 text-sm text-base-200">
+            <input v-model="trsClient" type="checkbox" class="mt-0.5 accent-redstone-500" />
+            <span>
+              TRS Client verwenden
+              <span class="block text-xs text-base-400">
+                HUD mit FPS, CPS, Tastenanzeige und Ping, dazu Zoom (C) und Fullbright. Das Menü öffnest du im Spiel
+                mit der rechten Umschalttaste. Gibt es derzeit für Fabric und Quilt 1.21.1 – weitere Versionen folgen.
+              </span>
+            </span>
+          </label>
         </section>
 
         <section class="card p-5">

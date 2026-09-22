@@ -54,6 +54,8 @@ pub struct InstanceOverrides {
     pub java_path: Option<String>,
     pub jvm_args: Option<String>,
     pub resolution: Option<Resolution>,
+    /// TRS Client in dieser Instanz; `None` = an (Standard).
+    pub trs_client: Option<bool>,
 }
 
 impl InstanceOverrides {

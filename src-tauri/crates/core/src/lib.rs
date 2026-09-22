@@ -5,6 +5,7 @@
 //! Spielstart. Die Tauri-App ist nur eine dünne Command-Schicht darüber.
 
 pub mod auth;
+pub mod client_mod;
 pub mod content;
 pub mod download;
 pub mod error;
@@ -57,6 +58,8 @@ pub struct Launcher {
     accounts: AccountStore,
     games: GameManager,
     servers: ServerStore,
+    /// Mitgelieferte TRS-Client-Jars (Tauri-Ressourcen).
+    client_mod_dir: std::sync::RwLock<Option<PathBuf>>,
     /// Instanzen, die gerade vorbereitet werden (Schutz vor Doppelklicks).
     preparing: Mutex<HashSet<String>>,
 }
@@ -81,6 +84,7 @@ impl Launcher {
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
             servers: ServerStore::new(paths.clone()),
+            client_mod_dir: std::sync::RwLock::default(),
             preparing: Mutex::default(),
             settings: RwLock::new(settings),
             paths,
@@ -121,6 +125,11 @@ impl Launcher {
 
     pub fn games(&self) -> &GameManager {
         &self.games
+    }
+
+    /// Ordner mit den mitgelieferten TRS-Client-Jars.
+    pub fn set_client_mod_dir(&self, dir: PathBuf) {
+        *self.client_mod_dir.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(dir);
     }
 
     pub fn servers(&self) -> &ServerStore {
@@ -205,6 +214,11 @@ impl Launcher {
             None => demo_session()?,
         };
         let settings = self.settings().await;
+
+        let client_mod_dir = self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance).await {
+            tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
+        }
 
         let prepared =
             prepare::prepare(&self.http, &self.paths, &settings, instance, &session.features(), on_progress)
