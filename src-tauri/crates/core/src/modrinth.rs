@@ -44,6 +44,22 @@ const PERFORMANCE_PACK: &[&[&str]] = &[
     &["lazydfu"],
 ];
 
+/// ModernFix blockiert vor 1.20 zusammen mit Lithium die Weltenerstellung
+/// („Spawn-Bereich wird vorbereitet: 0 %“) – dort weglassen.
+fn pack_mod_fits(slug: &str, game_version: &str) -> bool {
+    slug != "modernfix" || at_least_1_20(game_version)
+}
+
+/// 1.20+ oder die neue Jahres-Zählung (26.x).
+fn at_least_1_20(game_version: &str) -> bool {
+    let mut parts = game_version.split(['.', '-', ' ']).map(|p| p.parse::<u32>().ok());
+    match (parts.next().flatten(), parts.next().flatten()) {
+        (Some(1), Some(minor)) => minor >= 20,
+        (Some(major), _) => major > 1,
+        _ => true,
+    }
+}
+
 /// Was sich suchen lässt – Instanz-Inhalte plus Modpacks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -1327,7 +1343,7 @@ pub async fn install_performance_pack(
     ensure_mods_allowed(ContentKind::Mod, instance)?;
     let mut installed = Vec::new();
     for group in PERFORMANCE_PACK {
-        for slug in *group {
+        for slug in group.iter().filter(|s| pack_mod_fits(s, &instance.game_version)) {
             match install(http, paths, instance, slug, ContentKind::Mod, None).await {
                 Ok(files) => {
                     installed.extend(files);
@@ -1596,6 +1612,16 @@ mod tests {
     fn quilt_accepts_fabric_mods() {
         assert_eq!(loader_tags(LoaderKind::Quilt), ["quilt", "fabric"]);
         assert!(loader_tags(LoaderKind::Vanilla).is_empty());
+    }
+
+    #[test]
+    fn modernfix_only_from_1_20() {
+        assert!(!pack_mod_fits("modernfix", "1.16.5"));
+        assert!(!pack_mod_fits("modernfix", "1.19.4"));
+        assert!(pack_mod_fits("modernfix", "1.20.1"));
+        assert!(pack_mod_fits("modernfix", "1.21.11"));
+        assert!(pack_mod_fits("modernfix", "26.1"));
+        assert!(pack_mod_fits("lithium", "1.16.5"));
     }
 
     #[test]
