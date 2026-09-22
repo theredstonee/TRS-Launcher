@@ -4,6 +4,8 @@ import type { Instance, NewInstance } from '~/types'
 export const useInstancesStore = defineStore('instances', () => {
   const items = ref<Instance[]>([])
   const loading = ref(false)
+  /** Mindestens einmal erfolgreich geladen – vorher ist eine leere Liste nicht aussagekräftig. */
+  const loaded = ref(false)
   const error = ref<string | null>(null)
 
   async function load() {
@@ -11,6 +13,7 @@ export const useInstancesStore = defineStore('instances', () => {
     error.value = null
     try {
       items.value = await backend.listInstances()
+      loaded.value = true
     } catch (e) {
       error.value = errorMessage(e)
     } finally {
@@ -29,5 +32,5 @@ export const useInstancesStore = defineStore('instances', () => {
     items.value = items.value.filter((i) => i.id !== id)
   }
 
-  return { items, loading, error, load, create, remove }
+  return { items, loading, loaded, error, load, create, remove }
 })
