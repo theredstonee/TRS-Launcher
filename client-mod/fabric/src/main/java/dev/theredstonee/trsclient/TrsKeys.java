@@ -21,6 +21,12 @@ public final class TrsKeys {
 	public static KeyMapping zoom;
 	public static KeyMapping fullbright;
 	public static KeyMapping freelook;
+	/** Wegpunkt an der eigenen Position anlegen. */
+	public static KeyMapping waypointAdd;
+	/** Wegpunkt-Liste öffnen. */
+	public static KeyMapping waypointList;
+	/** Vier frei belegbare Tasten, die je einen Text senden (Standard: unbelegt). */
+	public static final KeyMapping[] textHotkeys = new KeyMapping[4];
 
 	private TrsKeys() {
 	}
@@ -37,6 +43,12 @@ public final class TrsKeys {
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		freelook = register(new KeyMapping("key.trsclient.freelook", KEYBOARD, Keys.KEY_LALT, CATEGORY));
+		waypointAdd = register(new KeyMapping("key.trsclient.waypointAdd", KEYBOARD, Keys.KEY_B, CATEGORY));
+		waypointList = register(new KeyMapping("key.trsclient.waypointList", KEYBOARD, Keys.KEY_N, CATEGORY));
+		for (int i = 0; i < textHotkeys.length; i++) {
+			textHotkeys[i] = register(new KeyMapping("key.trsclient.text" + (i + 1), KEYBOARD,
+					InputConstants.UNKNOWN.getValue(), CATEGORY));
+		}
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */

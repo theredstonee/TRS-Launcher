@@ -12,6 +12,8 @@ public final class Keys {
 	public static final int KEY_RSHIFT = InputConstants.KEY_RSHIFT;
 	public static final int KEY_C = InputConstants.KEY_C;
 	public static final int KEY_LALT = InputConstants.KEY_LALT;
+	public static final int KEY_B = InputConstants.KEY_B;
+	public static final int KEY_N = InputConstants.KEY_N;
 	public static final int PRESS = InputConstants.PRESS;
 	public static final int MOUSE_LEFT = InputConstants.MOUSE_BUTTON_LEFT;
 	public static final int MOUSE_RIGHT = InputConstants.MOUSE_BUTTON_RIGHT;
@@ -19,6 +21,8 @@ public final class Keys {
 	/*public static final int KEY_RSHIFT = 344;
 	public static final int KEY_C = 67;
 	public static final int KEY_LALT = 342;
+	public static final int KEY_B = 66;
+	public static final int KEY_N = 78;
 	public static final int PRESS = 1;
 	public static final int MOUSE_LEFT = 0;
 	public static final int MOUSE_RIGHT = 1;

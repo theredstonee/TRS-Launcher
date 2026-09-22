@@ -274,4 +274,132 @@ public final class Mc {
 		//?} else
 		/*mc().options.thirdPersonView = mode;*/
 	}
+
+	// --- Kamera (Wegpunkt-Markierungen) ---
+
+	/** Kamera des laufenden Frames. */
+	public static net.minecraft.client.Camera camera() {
+		//? if >=26.2 {
+		/*return mc().gameRenderer.mainCamera();
+		*///?} else
+		return mc().gameRenderer.getMainCamera();
+	}
+
+	public static double cameraX() {
+		return cameraPos().x;
+	}
+
+	public static double cameraY() {
+		return cameraPos().y;
+	}
+
+	public static double cameraZ() {
+		return cameraPos().z;
+	}
+
+	private static net.minecraft.world.phys.Vec3 cameraPos() {
+		//? if >=1.21.11 {
+		/*return camera().position();
+		*///?} else
+		return camera().getPosition();
+	}
+
+	public static float cameraYaw() {
+		//? if >=1.21.11 {
+		/*return camera().yRot();
+		*///?} else
+		return camera().getYRot();
+	}
+
+	public static float cameraPitch() {
+		//? if >=1.21.11 {
+		/*return camera().xRot();
+		*///?} else
+		return camera().getXRot();
+	}
+
+	// --- Welt / Dimension ---
+
+	/** ID der aktuellen Dimension ("minecraft:overworld"); "" wenn unbekannt/zu alt. */
+	public static String dimensionId() {
+		if (mc().level == null) return "";
+		//? if >=1.21.11 {
+		/*return mc().level.dimension().identifier().toString();
+		*///?} elif >=1.16 {
+		return mc().level.dimension().location().toString();
+		//?} else
+		/*return String.valueOf(mc().level.dimension.getType());*/
+	}
+
+	/** Name der Einzelspielerwelt bzw. null auf Servern. */
+	public static String levelName() {
+		//? if >=1.16 {
+		net.minecraft.server.MinecraftServer server = mc().getSingleplayerServer();
+		return server == null ? null : server.getWorldData().getLevelName();
+		//?} else {
+		/*if (mc().getSingleplayerServer() == null || mc().level == null) return null;
+		return mc().level.getLevelData().getLevelName();
+		*///?}
+	}
+
+	/** Adresse des Servers oder null im Einzelspieler. */
+	public static String serverAddress() {
+		if (mc().getSingleplayerServer() != null) return null;
+		net.minecraft.client.multiplayer.ServerData data = mc().getCurrentServer();
+		return data == null ? null : data.ip;
+	}
+
+	// --- Chat ---
+
+	/** Sendet eine Nachricht bzw. einen Befehl ("/..." ) als Spieler. */
+	public static void sendChat(String message) {
+		net.minecraft.client.player.LocalPlayer player = mc().player;
+		if (player == null || message == null || message.isEmpty()) return;
+		//? if >=1.19.3 {
+		if (dev.theredstonee.trsclient.core.chat.ChatOut.isCommand(message)) {
+			player.connection.sendCommand(dev.theredstonee.trsclient.core.chat.ChatOut.command(message));
+		} else {
+			player.connection.sendChat(message);
+		}
+		//?} elif >=1.19.1 {
+		/*// 1.19.1/1.19.2: signierter Chat direkt über den Spieler.
+		if (dev.theredstonee.trsclient.core.chat.ChatOut.isCommand(message)) {
+			player.commandSigned(dev.theredstonee.trsclient.core.chat.ChatOut.command(message), null);
+		} else {
+			player.chatSigned(message, null);
+		}
+		*///?} elif >=1.19 {
+		/*if (dev.theredstonee.trsclient.core.chat.ChatOut.isCommand(message)) {
+			player.command(dev.theredstonee.trsclient.core.chat.ChatOut.command(message));
+		} else {
+			player.chat(message);
+		}
+		*///?} else {
+		/*// Bis 1.18 erkennt chat() Befehle selbst am "/".
+		player.chat(message);
+		*///?}
+	}
+
+	/** Text in die Zwischenablage legen. */
+	public static void setClipboard(String text) {
+		mc().keyboardHandler.setClipboard(text);
+	}
+
+	/** Chat-Skalierung (Option). */
+	public static double chatScale() {
+		//? if >=1.19 {
+		return mc().options.chatScale().get();
+		//?} else
+		/*return mc().options.chatScale;*/
+	}
+
+	/** Zeilenhöhe im Chat in Pixeln (mit dem Zeilenabstand der Optionen). */
+	public static int chatLineHeight() {
+		//? if >=1.19 {
+		return (int) (9.0 * (mc().options.chatLineSpacing().get() + 1.0));
+		//?} elif >=1.16 {
+		/*return (int) (9.0 * (mc().options.chatLineSpacing + 1.0));
+		*///?} else
+		/*return 9;*/
+	}
 }

@@ -65,6 +65,11 @@ public abstract class TrsScreen extends Screen {
 		return false;
 	}
 
+	/** Zeichen eingetippt (für eigene Textfelder). true = verbraucht. */
+	protected boolean onChar(char character) {
+		return false;
+	}
+
 	// --- Hilfen ---
 
 	protected boolean shiftDown() {
@@ -166,6 +171,11 @@ public abstract class TrsScreen extends Screen {
 	public boolean keyPressed(KeyEvent event) {
 		return onKey(event.key(), event.modifiers()) || super.keyPressed(event);
 	}
+
+	@Override
+	public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
+		return onChar((char) event.codepoint()) || super.charTyped(event);
+	}
 	*///?} else {
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -185,6 +195,11 @@ public abstract class TrsScreen extends Screen {
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		return onKey(keyCode, modifiers) || super.keyPressed(keyCode, scanCode, modifiers);
+	}
+
+	@Override
+	public boolean charTyped(char character, int modifiers) {
+		return onChar(character) || super.charTyped(character, modifiers);
 	}
 	//?}
 
