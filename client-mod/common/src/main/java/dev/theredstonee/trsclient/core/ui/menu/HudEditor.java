@@ -87,13 +87,7 @@ public final class HudEditor extends UiScreen {
 				int ly = b[1] - 11 >= 0 ? b[1] - 11 : b[1] + b[3] + 3;
 				Paint.textClipped(c, label, b[0] - 1, ly, Math.max(40, b[2] + 40), t.text, true);
 			}
-			final HudItem clicked = item;
-			hits.add(b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, new Runnable() {
-				@Override
-				public void run() {
-					selected = clicked;
-				}
-			});
+			// Klickflächen für die Elemente gibt es nicht: ein Klick zieht sie (siehe mouseClicked).
 		}
 
 		// Leiste und Feld liegen über den Vorschauen (Text hat in Minecraft eine eigene Tiefe).
@@ -208,7 +202,7 @@ public final class HudEditor extends UiScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (button == 1) {
+		if (button == 1 && !hits.hovers(mouseX, mouseY)) {
 			HudItem item = itemAt(mouseX, mouseY, lastWidth, lastHeight);
 			if (item != null) {
 				item.module().resetLayout();
@@ -216,7 +210,8 @@ public final class HudEditor extends UiScreen {
 			}
 		}
 		boolean hit = super.mouseClicked(mouseX, mouseY, button);
-		if (button == 0) {
+		// Nur ziehen, wenn der Klick nicht schon auf der Leiste oder im Einstellungsfeld gelandet ist.
+		if (button == 0 && !hit) {
 			HudItem item = itemAt(mouseX, mouseY, lastWidth, lastHeight);
 			if (item != null && !hits.dragging()) {
 				int[] b = bounds(item, lastWidth, lastHeight);
@@ -258,6 +253,8 @@ public final class HudEditor extends UiScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+		// Über der Leiste oder dem Einstellungsfeld ändert das Mausrad nichts am Element darunter.
+		if (hits.hovers(mouseX, mouseY)) return false;
 		HudItem item = itemAt(mouseX, mouseY, lastWidth, lastHeight);
 		if (item == null) return false;
 		item.module().scale.nudge(amount > 0 ? 1 : -1);
