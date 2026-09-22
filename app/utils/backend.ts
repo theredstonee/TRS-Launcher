@@ -13,6 +13,15 @@ import type {
   AppInfo,
   CategoryTag,
   CommandError,
+  ExportEntry,
+  ExportOptions,
+  ExportProgress,
+  ExportSummary,
+  GalleryShot,
+  LibrarySkin,
+  NewsFeed,
+  SkinProfile,
+  SkinVariant,
   ContentItem,
   ContentKind,
   ContentUpdate,
@@ -192,6 +201,45 @@ export const backend = {
   updateServer: (id: string, server: ServerInput) => call<Server>('update_server', { id, server }),
   removeServer: (id: string) => call<void>('remove_server', { id }),
   pingServer: (id: string) => call<ServerStatus>('ping_server', { id }),
+
+  /** Profil des aktiven Accounts (Skin, Modell, Umhänge) – Texturen als Data-URL. */
+  skinProfile: () => call<SkinProfile>('skin_profile'),
+  skinLibrary: () => call<LibrarySkin[]>('skin_library'),
+  /** Öffnet den Dateidialog für ein 64×64-PNG; `null` = abgebrochen. */
+  addSkinFile: (name: string, variant: SkinVariant) => call<LibrarySkin | null>('add_skin_file', { name, variant }),
+  saveActiveSkin: (name: string) => call<LibrarySkin>('save_active_skin', { name }),
+  deleteSkin: (id: string) => call<void>('delete_skin', { id }),
+  applySkin: (id: string, variant: SkinVariant | null = null) => call<SkinProfile>('apply_skin', { id, variant }),
+  resetSkin: () => call<SkinProfile>('reset_skin'),
+  /** `null` = keinen Umhang tragen. */
+  chooseCape: (capeId: string | null) => call<SkinProfile>('choose_cape', { capeId }),
+
+  /** Neuigkeiten für die Startseite (Kern cacht sie; `force` lädt neu). */
+  getNews: (force = false) => call<NewsFeed>('get_news', { force }),
+  /** Lädt ein Feed-Bild in den Cache und gibt den freigegebenen Pfad zurück. */
+  newsImage: (url: string) => call<string | null>('news_image', { url }),
+  /** Voller Patchnotes-Text (HTML) – nur über MarkdownView anzeigen. */
+  patchNotesBody: (contentPath: string) => call<string>('patch_notes_body', { contentPath }),
+
+  /** Ordner und Dateien der Instanz, die exportiert werden können. */
+  exportCandidates: (id: string) => call<ExportEntry[]>('export_candidates', { id }),
+  /** Fragt nach dem Speicherort und schreibt das .mrpack; `null` = abgebrochen. */
+  exportModpack: (id: string, options: ExportOptions, onProgress: (p: ExportProgress) => void) =>
+    call<ExportSummary | null>('export_modpack', { id, options, onProgress: channel(onProgress) }),
+  /** Öffnet eine .mrpack-Datei und legt daraus eine Instanz an; `null` = abgebrochen. */
+  importModpackFile: (onProgress: (p: PackProgress) => void) =>
+    call<string | null>('import_modpack_file', { onProgress: channel(onProgress) }),
+
+  /** Screenshots aller Instanzen, neueste zuerst. */
+  allScreenshots: () => call<GalleryShot[]>('all_screenshots'),
+  /** Vorschaubild (wird im Kern erzeugt und zwischengespeichert). */
+  screenshotThumbnail: (id: string, fileName: string) =>
+    call<string | null>('screenshot_thumbnail', { id, fileName }),
+  screenshotImage: (id: string, fileName: string) => call<string | null>('screenshot_image', { id, fileName }),
+  copyScreenshot: (id: string, fileName: string) => call<void>('copy_screenshot', { id, fileName }),
+  revealScreenshot: (id: string, fileName: string) => call<void>('reveal_screenshot', { id, fileName }),
+  /** Löschen – wenn möglich in den Papierkorb. */
+  trashScreenshot: (id: string, fileName: string) => call<void>('trash_screenshot', { id, fileName }),
 
   listScreenshots: (id: string) => call<ImageEntry[]>('list_screenshots', { id }),
   openScreenshot: (id: string, fileName: string) => call<void>('open_screenshot', { id, fileName }),

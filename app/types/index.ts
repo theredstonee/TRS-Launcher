@@ -503,3 +503,97 @@ export interface MigrationItem {
   targetVersionId: string | null
   targetVersionNumber: string | null
 }
+
+// --- Skins & Umhänge ------------------------------------------------------------
+
+export type SkinVariant = 'classic' | 'slim'
+
+export interface Cape {
+  id: string
+  name: string
+  active: boolean
+  /** Textur als Data-URL (kommt aus dem Kern). */
+  texture: string | null
+}
+
+export interface SkinProfile {
+  name: string
+  uuid: string
+  variant: SkinVariant
+  /** Aktive Skin-Textur als Data-URL. */
+  skin: string | null
+  capes: Cape[]
+}
+
+export interface LibrarySkin {
+  id: string
+  name: string
+  variant: SkinVariant
+  addedAt: string
+  /** Textur als Data-URL. */
+  texture: string
+}
+
+// --- Neuigkeiten ------------------------------------------------------------------
+
+export type NewsSource = 'patchNotes' | 'mojang' | 'modrinth' | 'launcher'
+
+export interface NewsItem {
+  id: string
+  source: NewsSource
+  title: string
+  /** Reiner Text – im Kern schon von HTML befreit. */
+  summary: string
+  date: string | null
+  tag: string | null
+  imageUrl?: string
+  link?: string
+  /** Pfad für den vollen Patchnotes-Text. */
+  contentPath?: string
+}
+
+export interface NewsFeed {
+  items: NewsItem[]
+  fetchedAt: string
+  /** Daten kommen aus dem Cache, weil das Laden scheiterte. */
+  stale: boolean
+}
+
+// --- Modpack-Export ----------------------------------------------------------------
+
+export interface ExportEntry {
+  name: string
+  isDir: boolean
+  size: number
+  files: number
+  recommended: boolean
+}
+
+export interface ExportOptions {
+  name: string
+  version: string
+  summary: string | null
+  include: string[]
+}
+
+export interface ExportProgress {
+  phase: 'hashing' | 'lookup' | 'writing'
+  percent: number
+}
+
+export interface ExportSummary {
+  downloads: number
+  overrides: number
+  bytes: number
+  fileName: string
+}
+
+// --- Screenshot-Galerie --------------------------------------------------------------
+
+export interface GalleryShot {
+  instanceId: string
+  instanceName: string
+  fileName: string
+  size: number
+  takenAt: string | null
+}
