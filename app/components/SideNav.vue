@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const items = [
   { to: '/', label: 'Start', icon: 'M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
-  { to: '/instances', label: 'Instanzen', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
+  { to: '/instances', label: 'Bibliothek', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
   { to: '/servers', label: 'Server', icon: 'M4 4h16v6H4zM4 14h16v6H4zM7 7h.01M7 17h.01' },
   { to: '/browse', label: 'Entdecken', icon: 'M11 4a7 7 0 1 0 4.2 12.6l4.1 4.1 1.4-1.4-4.1-4.1A7 7 0 0 0 11 4zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10z' },
 ]
