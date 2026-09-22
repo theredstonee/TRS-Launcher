@@ -2,9 +2,229 @@
   {
     "loader": "fabric",
     "minecraft": [
+      "1.20.1"
+    ],
+    "file": "trsclient-fabric-1.20.1.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.20.2"
+    ],
+    "file": "trsclient-fabric-1.20.2.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.20.3"
+    ],
+    "file": "trsclient-fabric-1.20.3.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.20.4"
+    ],
+    "file": "trsclient-fabric-1.20.4.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.20.5"
+    ],
+    "file": "trsclient-fabric-1.20.5.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.20.6"
+    ],
+    "file": "trsclient-fabric-1.20.6.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21"
+    ],
+    "file": "trsclient-fabric-1.21.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
       "1.21.1"
     ],
     "file": "trsclient-fabric-1.21.1.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.2"
+    ],
+    "file": "trsclient-fabric-1.21.2.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.3"
+    ],
+    "file": "trsclient-fabric-1.21.3.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.4"
+    ],
+    "file": "trsclient-fabric-1.21.4.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.5"
+    ],
+    "file": "trsclient-fabric-1.21.5.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.6"
+    ],
+    "file": "trsclient-fabric-1.21.6.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.7"
+    ],
+    "file": "trsclient-fabric-1.21.7.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.8"
+    ],
+    "file": "trsclient-fabric-1.21.8.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.9"
+    ],
+    "file": "trsclient-fabric-1.21.9.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.10"
+    ],
+    "file": "trsclient-fabric-1.21.10.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "1.21.11"
+    ],
+    "file": "trsclient-fabric-1.21.11.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "26.1"
+    ],
+    "file": "trsclient-fabric-26.1.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "26.1.1"
+    ],
+    "file": "trsclient-fabric-26.1.1.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "26.1.2"
+    ],
+    "file": "trsclient-fabric-26.1.2.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "26.2"
+    ],
+    "file": "trsclient-fabric-26.2.jar",
+    "requires": [
+      "fabric-api"
+    ]
+  },
+  {
+    "loader": "fabric",
+    "minecraft": [
+      "26.3"
+    ],
+    "file": "trsclient-fabric-26.3.jar",
     "requires": [
       "fabric-api"
     ]
