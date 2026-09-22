@@ -20,6 +20,9 @@ fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
 }
 
 pub fn run() {
+    if let Ok(exe) = std::env::current_exe() {
+        trs_core::firewall::set_helper_exe(exe);
+    }
     tauri::Builder::default()
         // Muss als erstes Plugin registriert werden.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
@@ -102,6 +105,9 @@ pub fn run() {
             commands::instances::create_instance,
             commands::instances::pick_instance_icon,
             commands::instances::remove_instance_icon,
+            commands::instances::pick_instance_banner,
+            commands::instances::set_instance_banner_screenshot,
+            commands::instances::remove_instance_banner,
             commands::instances::change_instance_version,
             commands::instances::instance_history,
             commands::content::refresh_content_meta,

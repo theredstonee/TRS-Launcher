@@ -105,6 +105,12 @@ export const backend = {
   /** Öffnet den Bilddialog; `null` = abgebrochen. */
   pickInstanceIcon: (id: string) => call<Instance | null>('pick_instance_icon', { id }),
   removeInstanceIcon: (id: string) => call<Instance>('remove_instance_icon', { id }),
+  /** Öffnet den Bilddialog für das Banner; `null` = abgebrochen. */
+  pickInstanceBanner: (id: string) => call<Instance | null>('pick_instance_banner', { id }),
+  /** Nimmt einen Screenshot der Instanz als Banner (Rust prüft den Dateinamen). */
+  setInstanceBannerFromScreenshot: (id: string, fileName: string) =>
+    call<Instance>('set_instance_banner_screenshot', { id, fileName }),
+  removeInstanceBanner: (id: string) => call<Instance>('remove_instance_banner', { id }),
   changeInstanceVersion: (id: string, gameVersion: string, loader: Loader) =>
     call<Instance>('change_instance_version', { id, gameVersion, loader }),
   instanceHistory: (id: string) => call<HistoryEntry[]>('instance_history', { id }),

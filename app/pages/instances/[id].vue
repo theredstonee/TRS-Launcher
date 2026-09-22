@@ -51,6 +51,9 @@ onMounted(() => {
   load()
   if (!settings.current) settings.load().catch(() => {})
   if (route.query.settings) settingsOpen.value = String(route.query.settings)
+  // Die Befehlspalette springt direkt in einen Bereich (z. B. ?tab=content).
+  const wanted = route.query.tab ? String(route.query.tab) : null
+  if (wanted && tabs.value.some(([key]) => key === wanted)) tab.value = wanted as Tab
 })
 
 // Nach Spielende lädt der Instanz-Store neu – Spielzeit hier mitziehen.
@@ -102,14 +105,16 @@ function openFolder() {
       </div>
 
       <template v-else>
-        <header class="mb-5 flex items-center gap-5">
-          <button class="shrink-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-redstone-500" aria-label="Einstellungen: Allgemein" @click="settingsOpen = 'general'">
-            <InstanceIcon :instance="instance" :size="88" />
+        <!-- Banner als Kopf: Bild der Instanz, darüber Icon, Name und Spielen. -->
+        <InstanceBanner :instance="instance" class="mb-5 rounded-2xl border border-base-800">
+          <header class="flex flex-wrap items-center gap-5 p-5">
+          <button class="shrink-0 rounded-xl outline-none transition-transform duration-150 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-redstone-500" aria-label="Einstellungen: Allgemein" @click="settingsOpen = 'general'">
+            <InstanceIcon :instance="instance" :size="88" class="shadow-xl shadow-black/50" />
           </button>
 
-          <div class="min-w-0 flex-1">
-            <h1 class="display truncate text-3xl leading-tight text-base-50">{{ instance.name }}</h1>
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-base-400">
+          <div class="min-w-56 flex-1">
+            <h1 class="display truncate text-3xl leading-tight text-white drop-shadow">{{ instance.name }}</h1>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/75">
               <button
                 class="chip gap-1.5 ring-1 ring-base-700 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-60"
                 title="Version wechseln"
@@ -131,16 +136,17 @@ function openFolder() {
 
           <div class="flex w-80 shrink-0 items-center gap-2">
             <PlayButton :instance-id="instance.id" large />
-            <button class="btn-icon size-12" title="Einstellungen" aria-label="Einstellungen" @click="settingsOpen = 'general'">
+            <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" title="Einstellungen" aria-label="Einstellungen" @click="settingsOpen = 'general'">
               <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.gear" /></svg>
             </button>
-            <button class="btn-icon size-12" title="Ordner öffnen" aria-label="Ordner öffnen" @click="openFolder">
+            <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" title="Ordner öffnen" aria-label="Ordner öffnen" @click="openFolder">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
               </svg>
             </button>
           </div>
-        </header>
+          </header>
+        </InstanceBanner>
 
         <p v-if="game.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ game.error }}</p>
         <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" class="mb-4" />
@@ -161,7 +167,7 @@ function openFolder() {
 
         <ContentList v-if="tab === 'content'" :key="`${instance.gameVersion}-${instance.loader.kind}-${instance.overrides.boost}`" :instance="instance" />
         <HistoryList v-else-if="tab === 'history'" :instance="instance" :refresh-key="historyKey" />
-        <InstanceGallery v-else-if="tab === 'screenshots' || tab === 'worlds'" :instance="instance" :mode="tab" />
+        <InstanceGallery v-else-if="tab === 'screenshots' || tab === 'worlds'" :instance="instance" :mode="tab" @updated="onUpdated" />
         <LogConsole v-else-if="tab === 'logs'" :lines="game.logs" />
       </template>
     </div>

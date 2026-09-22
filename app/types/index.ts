@@ -142,6 +142,8 @@ export interface Instance {
   icon?: string | null
   /** Freigegebener Pfad fürs Webview (convertFileSrc) */
   iconPath?: string | null
+  /** Freigegebener Pfad des breiten Titelbilds (Banner) */
+  bannerPath?: string | null
   /** Eigene Gruppe in der Bibliothek */
   group?: string | null
 }

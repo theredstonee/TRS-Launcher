@@ -4,8 +4,10 @@ import type { ImageEntry, Instance } from '~/types'
 
 // Screenshots und Welten einer Instanz.
 const props = defineProps<{ instance: Instance; mode: 'screenshots' | 'worlds' }>()
+const emit = defineEmits<{ updated: [instance: Instance] }>()
 
 const toasts = useToasts()
+const instances = useInstancesStore()
 const entries = ref<ImageEntry[]>([])
 const loading = ref(true)
 const toDelete = ref<ImageEntry | null>(null)
@@ -29,6 +31,17 @@ const src = (entry: ImageEntry) => (entry.path ? convertFileSrc(entry.path) : nu
 
 function open(entry: ImageEntry) {
   if (props.mode === 'screenshots') backend.openScreenshot(props.instance.id, entry.name).catch((e) => toasts.error(e))
+}
+
+/** Screenshot als Banner der Instanz übernehmen (der Kern prüft den Dateinamen). */
+async function useAsBanner(entry: ImageEntry) {
+  try {
+    emit('updated', await backend.setInstanceBannerFromScreenshot(props.instance.id, entry.name))
+    instances.load()
+    toasts.ok('Banner gesetzt')
+  } catch (e) {
+    toasts.error(e)
+  }
 }
 
 async function confirmDelete() {
@@ -64,7 +77,10 @@ async function confirmDelete() {
           <div v-else class="aspect-video bg-base-800" />
         </button>
         <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs">
-          <span class="truncate text-base-400">{{ formatDate(e.date) }}</span>
+          <span class="min-w-0 flex-1 truncate text-base-400">{{ formatDate(e.date) }}</span>
+          <button class="shrink-0 text-base-600 transition-colors hover:text-base-50" :aria-label="`${e.name} als Banner verwenden`" title="Als Banner der Instanz verwenden" @click="useAsBanner(e)">
+            <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.image" /></svg>
+          </button>
           <button class="shrink-0 text-base-600 hover:text-redstone-300" aria-label="Screenshot löschen" @click="toDelete = e">
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
           </button>
