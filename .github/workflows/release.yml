@@ -7,15 +7,24 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Vorhandenes Tag, z. B. v0.1.0"
+        required: true
 
 permissions:
   contents: write
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
 
       - uses: pnpm/action-setup@v4
 
@@ -34,27 +43,51 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build and publish release
-        uses: tauri-apps/tauri-action@v0
+      # Nur bauen und signieren – veröffentlicht wird unten selbst.
+      - name: Build signed installer
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: TRS Launcher ${{ github.ref_name }}
-          releaseBody: Neue Version des TRS Launchers. Installer herunterladen und ausführen – bestehende Installationen aktualisieren sich automatisch.
-          # Solange wir in der Vorabphase sind, als Pre-release markieren.
-          prerelease: true
-          includeUpdaterJson: true
+        run: pnpm tauri build
 
-      # Der Updater fragt einen festen Kanal ab (Release "updater"), damit auch
-      # Vorabversionen gefunden werden.
-      - name: Update channel
+      - name: Collect release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          src=$(ls src-tauri/target/release/bundle/nsis/*_x64-setup.exe | head -1)
+          mkdir -p out
+          exe="TRS-Launcher_${version}_x64-setup.exe"
+          cp "$src" "out/$exe"
+          cp "$src.sig" "out/$exe.sig"
+          node -e '
+            const fs = require("fs");
+            const [version, exe, repo, tag] = process.argv.slice(1);
+            const signature = fs.readFileSync(`out/${exe}.sig`, "utf8").trim();
+            const manifest = {
+              version,
+              notes: `TRS Launcher ${tag}`,
+              pub_date: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+              platforms: { "windows-x86_64": { signature, url: `https://github.com/${repo}/releases/download/${tag}/${exe}` } },
+            };
+            fs.writeFileSync("out/latest.json", JSON.stringify(manifest, null, 2));
+          ' "$version" "$exe" "$GITHUB_REPOSITORY" "$TAG"
+          ls -la out
+
+      - name: Publish release and update channel
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download "${GITHUB_REF_NAME}" --pattern latest.json --dir channel
-          gh release view updater >/dev/null 2>&1 || gh release create updater --title "Update-Kanal" --notes "Wird automatisch gepflegt – enthält nur latest.json für den Auto-Updater." --prerelease
-          gh release upload updater channel/latest.json --clobber
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" out/* --clobber
+          else
+            gh release create "$TAG" out/* --prerelease --title "TRS Launcher $TAG" \
+              --notes "Neue Version des TRS Launchers. Installer herunterladen und ausführen – bestehende Installationen aktualisieren sich automatisch."
+          fi
+          # Der Updater fragt einen festen Kanal ab (Release "updater"), damit
+          # auch Vorabversionen gefunden werden.
+          gh release view updater >/dev/null 2>&1 || gh release create updater --prerelease --title "Update-Kanal" \
+            --notes "Wird automatisch gepflegt – enthält nur latest.json für den Auto-Updater."
+          gh release upload updater out/latest.json --clobber
