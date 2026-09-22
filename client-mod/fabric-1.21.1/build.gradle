@@ -1,0 +1,60 @@
+plugins {
+	id 'net.fabricmc.fabric-loom-remap'
+}
+
+evaluationDependsOn(':common')
+
+base {
+	archivesName = "trsclient-fabric-${minecraft_version}"
+}
+
+loom {
+	runs {
+		client {
+			// Gemeinsames Spielverzeichnis für alle Versionen: client-mod/run
+			runDir = '../run'
+			// Mixin-Anwendung sichtbar im Log (Nachweis, dass alle Mixins greifen).
+			vmArg '-Dmixin.debug.verbose=true'
+			// ./gradlew runClient -PtrsAutotest → öffnet Menü + HUD-Editor, macht Screenshots, beendet das Spiel.
+			if (project.hasProperty('trsAutotest')) {
+				vmArg '-Dtrsclient.autotest=true'
+			}
+		}
+		server {
+			ideConfigGenerated = false
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+	implementation project(':common')
+}
+
+processResources {
+	def version = project.version
+	inputs.property 'version', version
+	filesMatching('fabric.mod.json') {
+		expand 'version': version
+	}
+}
+
+java {
+	withSourcesJar()
+}
+
+// Die versionsunabhängigen Klassen landen direkt mit in der Mod-JAR.
+jar {
+	from(project(':common').sourceSets.main.output)
+	from(rootProject.file('LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
+
+sourcesJar {
+	from(project(':common').sourceSets.main.allSource)
+}
