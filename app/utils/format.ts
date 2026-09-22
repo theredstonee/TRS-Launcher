@@ -69,9 +69,10 @@ export const contentKindLabels: Record<ContentKind, string> = {
   mod: 'Mods',
   resourcepack: 'Ressourcenpakete',
   shaderpack: 'Shader',
+  datapack: 'Datenpakete',
 }
 
-export const contentKinds: ContentKind[] = ['mod', 'resourcepack', 'shaderpack']
+export const contentKinds: ContentKind[] = ['mod', 'resourcepack', 'shaderpack', 'datapack']
 
 export function formatFileSize(bytes: number): string {
   if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toLocaleString('de', { maximumFractionDigits: 1 })} MB`

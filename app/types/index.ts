@@ -139,7 +139,7 @@ export interface Diagnosis {
   canRepair: boolean
 }
 
-export type ContentKind = 'mod' | 'resourcepack' | 'shaderpack'
+export type ContentKind = 'mod' | 'resourcepack' | 'shaderpack' | 'datapack'
 
 export interface ContentItem {
   fileName: string
@@ -158,12 +158,37 @@ export interface ContentItem {
 
 export type ProjectKind = ContentKind | 'modpack'
 
+/** Modrinths Such-Indizes. */
+export type SortIndex = 'relevance' | 'downloads' | 'follows' | 'newest' | 'updated'
+export type SearchEnvironment = 'client' | 'server'
+
 export interface ModrinthSearchParams {
   query: string
   kind: ProjectKind
-  gameVersion: string | null
-  loader: LoaderKind | null
+  /** ODER-verknüpft */
+  gameVersions: string[]
+  /** Modrinth-Loadernamen (fabric, quilt, forge, neoforge), ODER-verknüpft */
+  loaders: string[]
+  categories: string[]
+  /** all = alle Kategorien nötig, any = eine reicht */
+  categoryMatch: 'all' | 'any'
+  excludeCategories: string[]
+  environments: SearchEnvironment[]
+  /** z. B. bereits installierte Projekte ausblenden (max. 300) */
+  excludeProjectIds: string[]
+  openSource: boolean
+  index: SortIndex
   offset: number
+  /** 1–100 */
+  limit: number
+}
+
+/** Kategorie aus Modrinths Tag-API. icon ist SVG-Markup – nur als <img>-Data-URL anzeigen. */
+export interface CategoryTag {
+  name: string
+  projectType: string
+  header: string
+  icon: string | null
 }
 
 export interface ModrinthHit {
@@ -174,7 +199,12 @@ export interface ModrinthHit {
   author: string
   iconUrl: string | null
   downloads: number
+  follows: number
   categories: string[]
+  clientSide: 'required' | 'optional' | 'unsupported' | 'unknown'
+  serverSide: 'required' | 'optional' | 'unsupported' | 'unknown'
+  dateModified: string | null
+  license: string | null
 }
 
 export interface ModrinthSearchResult {

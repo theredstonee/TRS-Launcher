@@ -65,6 +65,26 @@ export const serverSchema = z.object({
   autoResourcePack: z.boolean(),
 })
 
+const searchSlug = z.string().min(1).max(40).regex(/^[a-z0-9+-]+$/)
+const projectId = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/)
+
+/** Spiegelt `validate_search` im Kern (Whitelist für Sortierung, Arten, Loader, Grenzen). */
+export const modrinthSearchSchema = z.object({
+  query: z.string().max(100),
+  kind: z.enum(['mod', 'resourcepack', 'shaderpack', 'datapack', 'modpack']),
+  gameVersions: z.array(z.string().min(1).max(32).regex(/^[A-Za-z0-9._+\- ]+$/)).max(30),
+  loaders: z.array(z.enum(['fabric', 'quilt', 'forge', 'neoforge'])).max(30),
+  categories: z.array(searchSlug).max(30),
+  categoryMatch: z.enum(['all', 'any']),
+  excludeCategories: z.array(searchSlug).max(30),
+  environments: z.array(z.enum(['client', 'server'])).max(2),
+  excludeProjectIds: z.array(projectId).max(300),
+  openSource: z.boolean(),
+  index: z.enum(['relevance', 'downloads', 'follows', 'newest', 'updated']),
+  offset: z.number().int().min(0).max(10_000),
+  limit: z.number().int().min(1).max(100),
+})
+
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Ungültige Eingabe'
 }
