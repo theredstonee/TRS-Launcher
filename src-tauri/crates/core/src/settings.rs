@@ -48,6 +48,121 @@ pub struct Settings {
     pub hooks: LaunchHooks,
     /// Was zwischen den Instanzen synchronisiert wird.
     pub sync: SyncSettings,
+    /// Darstellung, sichtbare Bereiche und Verhalten der Oberfläche.
+    pub ui: UiSettings,
+    /// Logs dürfen (geschwärzt) auf mclo.gs hochgeladen werden.
+    pub allow_log_upload: bool,
+    /// Eigene Java-Installationen je Hauptversion; leer = automatisch.
+    pub java: JavaPaths,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    #[default]
+    Dark,
+    Oled,
+    Light,
+    System,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Accent {
+    #[default]
+    Redstone,
+    Lamp,
+    Emerald,
+    Lapis,
+    Amethyst,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Language {
+    #[default]
+    De,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct UiSettings {
+    pub theme: Theme,
+    pub accent: Accent,
+    /// Unschärfe-Effekte (Backdrop-Blur) – aus spart GPU auf schwachen Rechnern.
+    pub advanced_rendering: bool,
+    pub worlds_tab: bool,
+    pub screenshots_tab: bool,
+    pub history_tab: bool,
+    /// „Zuletzt gespielt“ in der linken Leiste.
+    pub sidebar_recent: bool,
+    /// Account-Kachel mit Skin in der linken Leiste.
+    pub sidebar_account: bool,
+    pub hide_right_sidebar: bool,
+    pub compact_library: bool,
+    pub show_play_time: bool,
+    pub language: Language,
+}
+
+impl Default for UiSettings {
+    fn default() -> Self {
+        Self {
+            theme: Theme::Dark,
+            accent: Accent::Redstone,
+            advanced_rendering: true,
+            worlds_tab: true,
+            screenshots_tab: true,
+            history_tab: true,
+            sidebar_recent: true,
+            sidebar_account: true,
+            hide_right_sidebar: false,
+            compact_library: false,
+            show_play_time: true,
+            language: Language::De,
+        }
+    }
+}
+
+/// Java je Hauptversion – Minecraft braucht 8 (bis 1.16), 17 (1.17–1.20.4),
+/// 21 (1.20.5–1.21.x) oder 25 (26.x).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct JavaPaths {
+    pub java8: Option<String>,
+    pub java17: Option<String>,
+    pub java21: Option<String>,
+    pub java25: Option<String>,
+}
+
+impl JavaPaths {
+    pub const MAJORS: [u32; 4] = [8, 17, 21, 25];
+
+    /// Welche Einstellung für eine benötigte Java-Hauptversion gilt.
+    pub fn slot_for(required_major: u32) -> u32 {
+        match required_major {
+            0..=8 => 8,
+            9..=17 => 17,
+            18..=21 => 21,
+            _ => 25,
+        }
+    }
+
+    pub fn get(&self, required_major: u32) -> Option<&str> {
+        match Self::slot_for(required_major) {
+            8 => self.java8.as_deref(),
+            17 => self.java17.as_deref(),
+            21 => self.java21.as_deref(),
+            _ => self.java25.as_deref(),
+        }
+    }
+
+    fn all(&self) -> [&Option<String>; 4] {
+        [&self.java8, &self.java17, &self.java21, &self.java25]
+    }
+
+    fn validate(&self) -> Result<()> {
+        self.all().into_iter().flatten().try_for_each(|p| validate_java_path(p))
+    }
 }
 
 impl Default for Settings {
@@ -66,6 +181,9 @@ impl Default for Settings {
             fullscreen: false,
             hooks: LaunchHooks::default(),
             sync: SyncSettings::default(),
+            ui: UiSettings::default(),
+            allow_log_upload: true,
+            java: JavaPaths::default(),
         }
     }
 }
@@ -113,12 +231,16 @@ impl Settings {
         if self.hooks.validate().is_err() {
             self.hooks = LaunchHooks::default();
         }
+        if self.java.validate().is_err() {
+            self.java = JavaPaths::default();
+        }
         self
     }
 
     pub fn validate(&self) -> Result<()> {
         validate_memory(self.max_memory_mb)?;
         self.hooks.validate()?;
+        self.java.validate()?;
         if self.min_memory_mb < 128 || self.min_memory_mb > self.max_memory_mb {
             return Err(Error::validation(
                 "Minimaler Arbeitsspeicher muss zwischen 128 MB und dem Maximum liegen",
@@ -191,6 +313,27 @@ mod tests {
         let loaded = Settings::load(&file).await.unwrap();
         assert_eq!(loaded.max_memory_mb, 6144);
         assert_eq!(loaded.java_path, None);
+    }
+
+    #[test]
+    fn java_slots_and_ui_defaults() {
+        assert_eq!(JavaPaths::slot_for(8), 8);
+        assert_eq!(JavaPaths::slot_for(16), 17);
+        assert_eq!(JavaPaths::slot_for(17), 17);
+        assert_eq!(JavaPaths::slot_for(21), 21);
+        assert_eq!(JavaPaths::slot_for(25), 25);
+        let paths = JavaPaths { java17: Some(r"C:\j17\bin\javaw.exe".into()), ..Default::default() };
+        assert_eq!(paths.get(16), Some(r"C:\j17\bin\javaw.exe"));
+        assert_eq!(paths.get(21), None);
+
+        let bad = Settings { java: JavaPaths { java8: Some("x".into()), ..Default::default() }, ..Default::default() };
+        assert!(bad.validate().is_err());
+
+        // Alte settings.json ohne `ui` bekommt sinnvolle Standardwerte.
+        let old: Settings = serde_json::from_str(r#"{"maxMemoryMb":4096}"#).unwrap();
+        assert!(old.ui.worlds_tab && old.ui.show_play_time && old.allow_log_upload);
+        assert_eq!(serde_json::to_value(Theme::Oled).unwrap(), "oled");
+        assert!(serde_json::from_str::<UiSettings>(r#"{"theme":"neon"}"#).is_err());
     }
 
     #[test]

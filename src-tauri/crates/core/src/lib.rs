@@ -32,7 +32,9 @@ pub mod prepare;
 pub mod process;
 pub mod servers;
 pub mod settings;
+pub mod storage;
 pub mod sync;
+pub mod system;
 pub mod upload;
 
 use std::collections::HashSet;
@@ -448,6 +450,11 @@ impl Launcher {
 
     /// Lädt den neuesten Log der Instanz geschwärzt auf mclo.gs hoch.
     pub async fn share_log(&self, instance_id: &str) -> Result<String> {
+        if !self.settings().await.allow_log_upload {
+            return Err(Error::validation(
+                "Log-Upload ist in den Datenschutz-Einstellungen ausgeschaltet.",
+            ));
+        }
         let instance = self.instances.get(instance_id).await?;
         let game_dir = self.paths.instance_game_dir(&instance.id);
         let launcher_logs = self.paths.instance_dir(&instance.id).join("launcher-logs");
@@ -457,6 +464,45 @@ impl Launcher {
         // Gespeicherte Tokens zusätzlich wörtlich schwärzen.
         let secrets = self.accounts.active_session().await.ok().flatten().map(|s| vec![s.access_token]).unwrap_or_default();
         process::share_log(&self.http, &process::redact(&raw, &secrets)).await
+    }
+}
+
+impl Launcher {
+    fn anything_active(&self) -> bool {
+        !self.games.running().is_empty()
+            || !self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_empty()
+    }
+
+    pub async fn storage_stats(&self) -> Result<storage::StorageStats> {
+        storage::stats(&self.paths, self.instances.list().await?).await
+    }
+
+    /// Löscht Spielversionen, die keine Instanz mehr braucht.
+    pub async fn clean_unused_storage(&self) -> Result<u64> {
+        if self.anything_active() {
+            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+        }
+        storage::clean_unused(&self.paths, self.instances.list().await?).await
+    }
+
+    /// Prüft die geteilten Spieldateien; beschädigte werden beim nächsten Start neu geladen.
+    pub async fn verify_storage(&self) -> Result<storage::VerifyReport> {
+        if self.anything_active() {
+            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+        }
+        storage::verify_assets(&self.paths).await
+    }
+
+    pub async fn detect_java(&self) -> Vec<java::JavaInstall> {
+        let paths = self.paths.clone();
+        tokio::task::spawn_blocking(move || java::detect(&paths)).await.unwrap_or_default()
+    }
+
+    /// Installiert die von Mojang empfohlene Runtime für eine Java-Hauptversion.
+    pub async fn install_java(&self, major: u32, on_progress: &(dyn Fn(download::Progress) + Sync)) -> Result<PathBuf> {
+        let component = java::component_for(major).ok_or_else(|| Error::validation("Diese Java-Version gibt es nicht zum Installieren."))?;
+        let concurrency = usize::from(self.settings().await.concurrent_downloads);
+        java::ensure_runtime(&self.http, &self.paths, component, concurrency, on_progress).await
     }
 }
 

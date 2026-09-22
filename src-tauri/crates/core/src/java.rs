@@ -2,7 +2,7 @@
 //! die auch der offizielle Launcher verwendet.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 
@@ -175,9 +175,143 @@ async fn find_runtime(http: &reqwest::Client, component: &str) -> Result<Runtime
         })
 }
 
+// --- Installierte Java-Versionen erkennen ------------------------------------------
+
+/// Eine gefundene Java-Installation.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JavaInstall {
+    /// Pfad zu `javaw.exe`.
+    pub path: PathBuf,
+    pub major: u32,
+    /// Volle Version laut `release`-Datei, z. B. `21.0.7`.
+    pub version: String,
+    /// Vom Launcher selbst installiert (Mojang-Runtime).
+    pub managed: bool,
+}
+
+/// Mojang-Runtime je Java-Hauptversion (für „Empfohlene installieren“).
+pub fn component_for(major: u32) -> Option<&'static str> {
+    match major {
+        8 => Some(LEGACY_COMPONENT),
+        17 => Some("java-runtime-gamma"),
+        21 => Some("java-runtime-delta"),
+        25 => Some("java-runtime-epsilon"),
+        _ => None,
+    }
+}
+
+/// `JAVA_VERSION="1.8.0_392"` → 8, `JAVA_VERSION="21.0.2"` → 21.
+fn parse_release(text: &str) -> Option<(u32, String)> {
+    let line = text.lines().find_map(|l| l.trim().strip_prefix("JAVA_VERSION="))?;
+    let version = line.trim().trim_matches('"').to_owned();
+    if version.is_empty() || version.len() > 40 || !version.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '+')) {
+        return None;
+    }
+    let mut parts = version.split(['.', '_', '-', '+']);
+    let first: u32 = parts.next()?.parse().ok()?;
+    let major = if first == 1 { parts.next()?.parse().ok()? } else { first };
+    Some((major, version))
+}
+
+/// Liest Hauptversion und Version aus der `release`-Datei neben `bin/` –
+/// ohne Java auszuführen.
+pub fn inspect(java_exe: &Path) -> Option<(u32, String)> {
+    let home = java_exe.parent()?.parent()?;
+    let text = std::fs::read_to_string(home.join("release")).ok()?;
+    parse_release(&text)
+}
+
+fn scan_homes(homes: impl IntoIterator<Item = (PathBuf, bool)>) -> Vec<JavaInstall> {
+    let mut out: Vec<JavaInstall> = Vec::new();
+    for (home, managed) in homes {
+        let exe = home.join("bin").join("javaw.exe");
+        if !exe.is_file() {
+            continue;
+        }
+        let Some((major, version)) = inspect(&exe) else { continue };
+        let key = std::fs::canonicalize(&exe).unwrap_or_else(|_| exe.clone());
+        if out.iter().any(|j| std::fs::canonicalize(&j.path).unwrap_or_else(|_| j.path.clone()) == key) {
+            continue;
+        }
+        out.push(JavaInstall { path: exe, major, version, managed });
+    }
+    out.sort_by(|a, b| b.major.cmp(&a.major).then_with(|| a.path.cmp(&b.path)));
+    out
+}
+
+fn child_dirs(dir: &Path) -> Vec<PathBuf> {
+    std::fs::read_dir(dir)
+        .map(|entries| entries.flatten().map(|e| e.path()).filter(|p| p.is_dir()).take(200).collect())
+        .unwrap_or_default()
+}
+
+/// Sucht Java in den üblichen Ordnern: Launcher-Runtimes, `JAVA_HOME`,
+/// Program Files (Oracle, Adoptium, Microsoft, Zulu, …) und `~/.jdks`.
+pub fn detect(paths: &Paths) -> Vec<JavaInstall> {
+    let mut homes: Vec<(PathBuf, bool)> = child_dirs(&paths.java_dir()).into_iter().map(|d| (d, true)).collect();
+    if let Some(home) = std::env::var_os("JAVA_HOME").filter(|v| !v.is_empty()) {
+        homes.push((PathBuf::from(home), false));
+    }
+    const VENDORS: [&str; 10] = [
+        "Java", "Eclipse Adoptium", "Microsoft", "Zulu", "BellSoft", "Amazon Corretto", "Semeru",
+        "Eclipse Foundation", "AdoptOpenJDK", "OpenJDK",
+    ];
+    let mut bases: Vec<PathBuf> = ["ProgramFiles", "ProgramFiles(x86)", "ProgramW6432"]
+        .iter()
+        .filter_map(|v| std::env::var_os(v).map(PathBuf::from))
+        .collect();
+    if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+        bases.push(PathBuf::from(local).join("Programs"));
+    }
+    for base in bases {
+        for vendor in VENDORS {
+            homes.extend(child_dirs(&base.join(vendor)).into_iter().map(|d| (d, false)));
+        }
+    }
+    if let Some(profile) = std::env::var_os("USERPROFILE") {
+        homes.extend(child_dirs(&PathBuf::from(profile).join(".jdks")).into_iter().map(|d| (d, false)));
+    }
+    scan_homes(homes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn release_file_versions() {
+        assert_eq!(parse_release("IMPLEMENTOR=\"x\"\nJAVA_VERSION=\"1.8.0_392\"\n"), Some((8, "1.8.0_392".into())));
+        assert_eq!(parse_release("JAVA_VERSION=\"21.0.2\""), Some((21, "21.0.2".into())));
+        assert_eq!(parse_release("JAVA_VERSION=\"17\""), Some((17, "17".into())));
+        assert_eq!(parse_release("JAVA_VERSION=\"25-ea\""), Some((25, "25-ea".into())));
+        assert_eq!(parse_release("JAVA_VERSION=\"$(evil)\""), None);
+        assert_eq!(parse_release("nichts"), None);
+        assert_eq!(component_for(21), Some("java-runtime-delta"));
+        assert_eq!(component_for(11), None);
+    }
+
+    #[test]
+    fn scans_homes_with_release_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let make = |name: &str, release: Option<&str>| {
+            let home = dir.path().join(name);
+            std::fs::create_dir_all(home.join("bin")).unwrap();
+            std::fs::write(home.join("bin/javaw.exe"), b"MZ").unwrap();
+            if let Some(r) = release {
+                std::fs::write(home.join("release"), r).unwrap();
+            }
+            home
+        };
+        let j21 = make("jdk-21", Some("JAVA_VERSION=\"21.0.7\""));
+        let j8 = make("jre8", Some("JAVA_VERSION=\"1.8.0_451\""));
+        let broken = make("kaputt", None);
+        let found = scan_homes([(j8.clone(), false), (j21.clone(), true), (broken, false), (j21.clone(), false)]);
+        assert_eq!(found.len(), 2, "doppelt und ohne release-Datei fallen raus");
+        assert_eq!((found[0].major, found[0].managed), (21, true));
+        assert_eq!(found[1].major, 8);
+        assert_eq!(inspect(&j8.join("bin/javaw.exe")).unwrap().0, 8);
+    }
 
     #[test]
     fn path_safety() {

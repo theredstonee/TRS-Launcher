@@ -47,6 +47,18 @@ pub async fn delete_content(
     Ok(content::delete(launcher.paths(), &instance.id, kind, &file_name).await?)
 }
 
+/// Mehrere Inhalte auf einmal (de)aktivieren oder löschen.
+#[tauri::command]
+pub async fn bulk_content(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    action: content::BulkAction,
+    targets: Vec<content::BulkTarget>,
+) -> CommandResult<content::BulkResult> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content::bulk(launcher.paths(), &instance.id, action, &targets).await?)
+}
+
 #[tauri::command]
 pub async fn installed_projects(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<String>> {
     let instance = launcher.instances().get(&id).await?;

@@ -57,9 +57,39 @@ pub fn run() {
                 Err(e) => log::warn!("Ressourcen-Ordner nicht gefunden: {e}"),
             }
             app.manage::<LauncherState>(Arc::new(launcher));
+            app.manage(commands::system::DropState::default());
             Ok(())
         })
+        // Dateien, die ins Fenster gezogen werden: Pfade bleiben in Rust,
+        // das Webview bekommt nur Namen und eine Marke.
+        .on_window_event(|window, event| {
+            use commands::system::{DropEvent, DropState};
+            let payload = match event {
+                tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Enter { .. }) => DropEvent::Enter,
+                tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Leave) => DropEvent::Leave,
+                tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) => {
+                    window.state::<DropState>().store(paths.clone())
+                }
+                _ => return,
+            };
+            if let Err(e) = window.emit("file-drop", payload) {
+                log::warn!("file-drop konnte nicht gesendet werden: {e}");
+            }
+        })
         .invoke_handler(tauri::generate_handler![
+            commands::system::add_dropped_files,
+            commands::system::pick_content_files,
+            commands::system::pick_java_path,
+            commands::system::check_java,
+            commands::system::detect_java,
+            commands::system::install_java,
+            commands::system::storage_stats,
+            commands::system::clean_unused_storage,
+            commands::system::verify_storage,
+            commands::instances::set_instance_group,
+            commands::instances::loader_versions,
+            commands::instances::latest_loader_version,
+            commands::content::bulk_content,
             commands::app::app_info,
             commands::app::open_data_dir,
             commands::app::firewall_status,
