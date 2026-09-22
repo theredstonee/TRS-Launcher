@@ -180,6 +180,7 @@ async function setGroup(group: string | null) {
   }
 }
 
+const exporting = ref(false)
 const duplicating = ref(false)
 async function duplicate() {
   duplicating.value = true
@@ -333,6 +334,10 @@ const loaderLine = computed(() => {
         <button class="btn btn-ghost" :disabled="duplicating || running" @click="duplicate">{{ duplicating ? 'Kopiere …' : 'Duplizieren' }}</button>
       </SettingRow>
 
+      <SettingRow title="Als Modpack exportieren" description="Schreibt eine .mrpack-Datei zum Weitergeben oder Sichern. Mods von Modrinth werden verlinkt statt kopiert.">
+        <button class="btn btn-ghost" :disabled="running" @click="exporting = true">Exportieren</button>
+      </SettingRow>
+
       <SettingRow title="Instanz löschen" description="Löscht die Instanz mit allen Welten, Mods und Screenshots unwiderruflich." danger>
         <button class="btn btn-danger" :disabled="running" @click="deleting = true; deleteConfirm = ''">Instanz löschen</button>
       </SettingRow>
@@ -483,6 +488,8 @@ const loaderLine = computed(() => {
   </SettingsShell>
 
   <ChangeVersionDialog v-if="changingVersion" :instance="inst" @close="changingVersion = false" @changed="onVersionChanged" />
+
+  <ExportPackDialog v-if="exporting" :instance="inst" @close="exporting = false" />
 
   <BaseDialog v-if="confirmReinstall" title="Neu installieren?" @close="confirmReinstall = false">
     <p class="text-sm text-base-200">Spielversion und Bibliotheken werden neu heruntergeladen. Welten, Mods und Einstellungen bleiben erhalten.</p>
