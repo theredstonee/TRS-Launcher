@@ -4,7 +4,9 @@
 pub mod accounts;
 pub mod app;
 pub mod content;
+pub mod extras;
 pub mod games;
 pub mod instances;
 pub mod meta;
+pub mod servers;
 pub mod settings;

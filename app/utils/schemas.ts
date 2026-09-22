@@ -50,6 +50,17 @@ export const settingsSchema = z
     path: ['minMemoryMb'],
   })
 
+export const serverSchema = z.object({
+  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(64, 'Maximal 64 Zeichen'),
+  address: z
+    .string()
+    .trim()
+    .min(1, 'Bitte eine Adresse eingeben')
+    .max(260)
+    .regex(/^[A-Za-z0-9._-]+(:\d{1,5})?$/, 'Adresse im Format play.example.de oder play.example.de:25565'),
+  autoResourcePack: z.boolean(),
+})
+
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Ungültige Eingabe'
 }

@@ -37,8 +37,26 @@ pub struct Session {
 
 impl Session {
     pub fn features(&self) -> Features {
-        Features { demo_user: self.demo, custom_resolution: true }
+        Features { demo_user: self.demo, custom_resolution: true, quick_play_multiplayer: false }
     }
+}
+
+/// Server, auf den nach dem Start direkt verbunden wird.
+#[derive(Debug, Clone)]
+pub struct JoinTarget {
+    /// Wie eingegeben (`host` oder `host:port`) – für `--quickPlayMultiplayer`.
+    pub address: String,
+    /// SRV-aufgelöst – für das alte `--server/--port`, das selbst kein SRV kennt.
+    pub host: String,
+    pub port: u16,
+}
+
+/// Verzeichnisse, die in die Startargumente einfließen.
+#[derive(Debug, Clone, Copy)]
+pub struct LaunchDirs<'a> {
+    pub game: &'a Path,
+    pub assets: &'a Path,
+    pub libraries: &'a Path,
 }
 
 #[derive(Debug)]
@@ -53,12 +71,13 @@ pub fn build_command(
     instance: &Instance,
     settings: &Settings,
     session: &Session,
-    game_dir: &Path,
-    assets_root: &Path,
-    libraries_dir: &Path,
+    dirs: LaunchDirs<'_>,
+    join: Option<&JoinTarget>,
 ) -> Result<Command> {
+    let (game_dir, assets_root, libraries_dir) = (dirs.game, dirs.assets, dirs.libraries);
     let version = &prepared.version;
-    let features = session.features();
+    let quick_play = join.is_some() && supports_quick_play(version);
+    let features = Features { quick_play_multiplayer: quick_play, ..session.features() };
     let resolution = instance.overrides.resolution.unwrap_or(settings.resolution);
     let max_mb = instance.overrides.max_memory_mb.unwrap_or(settings.max_memory_mb);
     let min_mb = settings.min_memory_mb.min(max_mb);
@@ -93,6 +112,7 @@ pub fn build_command(
         ("launcher_version", LAUNCHER_VERSION.into()),
         ("resolution_width", resolution.width.to_string()),
         ("resolution_height", resolution.height.to_string()),
+        ("quickPlayMultiplayer", join.map(|j| j.address.clone()).unwrap_or_default()),
     ]);
     let fill = |template: &str| substitute(template, &vars);
 
@@ -146,7 +166,22 @@ pub fn build_command(
         _ => return Err(Error::launch("Die Versions-Metadaten enthalten keine Startargumente.")),
     }
 
+    if let Some(join) = join.filter(|_| !quick_play) {
+        args.extend(["--server".into(), join.host.clone(), "--port".into(), join.port.to_string()]);
+    }
+
     Ok(Command { program: prepared.java.clone(), args, cwd: game_dir.to_owned() })
+}
+
+fn supports_quick_play(version: &VersionInfo) -> bool {
+    version.arguments.as_ref().is_some_and(|a| {
+        a.game.iter().any(|arg| match arg {
+            Argument::Conditional { rules, .. } => rules
+                .iter()
+                .any(|r| r.features.as_ref().is_some_and(|f| f.contains_key("is_quick_play_multiplayer"))),
+            Argument::Plain(_) => false,
+        })
+    })
 }
 
 fn main_class(version: &VersionInfo) -> Result<&str> {
@@ -465,18 +500,33 @@ mod tests {
         }
     }
 
+    fn dirs() -> LaunchDirs<'static> {
+        LaunchDirs { game: Path::new(r"C:\game dir"), assets: Path::new(r"C:\assets"), libraries: Path::new(r"C:\l") }
+    }
+
     fn build(p: &Prepared, inst: &Instance, s: &Session) -> Vec<String> {
-        build_command(
-            p,
-            inst,
-            &Settings::default(),
-            s,
-            Path::new(r"C:\game dir"),
-            Path::new(r"C:\assets"),
-            Path::new(r"C:\l"),
-        )
-        .unwrap()
-        .args
+        build_command(p, inst, &Settings::default(), s, dirs(), None).unwrap().args
+    }
+
+    fn build_joining(p: &Prepared) -> Vec<String> {
+        let join = JoinTarget { address: "play.cooltiers.de".into(), host: "srv.cooltiers.de".into(), port: 25577 };
+        build_command(p, &instance(), &Settings::default(), &session(), dirs(), Some(&join)).unwrap().args
+    }
+
+    #[test]
+    fn quick_join_modern_and_legacy() {
+        let modern = prepared(
+            r#"{"id":"1.21.1","mainClass":"M","arguments":{"jvm":["-cp","${classpath}"],"game":["--username","${auth_player_name}",
+                {"rules":[{"action":"allow","features":{"is_quick_play_multiplayer":true}}],
+                 "value":["--quickPlayMultiplayer","${quickPlayMultiplayer}"]}]}}"#,
+        );
+        let args = build_joining(&modern).join(" ");
+        assert!(args.ends_with("--quickPlayMultiplayer play.cooltiers.de"));
+        assert!(!args.contains("--server"));
+        assert!(!build(&modern, &instance(), &session()).join(" ").contains("quickPlay"));
+
+        let legacy = prepared(r#"{"id":"1.8.9","mainClass":"M","minecraftArguments":"--username ${auth_player_name}"}"#);
+        assert!(build_joining(&legacy).join(" ").ends_with("--server srv.cooltiers.de --port 25577"));
     }
 
     const MODERN: &str = r#"{

@@ -37,6 +37,8 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             let root = data_root(app)?;
@@ -80,6 +82,21 @@ pub fn run() {
             commands::content::installed_projects,
             commands::content::modrinth_search,
             commands::content::modrinth_install,
+            commands::content::modrinth_versions,
+            commands::content::check_content_updates,
+            commands::content::apply_content_update,
+            commands::content::install_performance_pack,
+            commands::content::install_modpack,
+            commands::servers::list_servers,
+            commands::servers::add_server,
+            commands::servers::update_server,
+            commands::servers::remove_server,
+            commands::servers::ping_server,
+            commands::extras::list_screenshots,
+            commands::extras::open_screenshot,
+            commands::extras::delete_screenshot,
+            commands::extras::list_worlds,
+            commands::extras::duplicate_instance,
         ])
         .run(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden");

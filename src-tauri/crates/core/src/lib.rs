@@ -8,6 +8,7 @@ pub mod auth;
 pub mod content;
 pub mod download;
 pub mod error;
+pub mod extras;
 pub mod fsutil;
 pub mod gamelog;
 pub mod instance;
@@ -15,9 +16,12 @@ pub mod java;
 pub mod launch;
 pub mod loaders;
 pub mod meta;
+pub mod modpack;
 pub mod modrinth;
+pub mod nbt;
 pub mod paths;
 pub mod prepare;
+pub mod servers;
 pub mod settings;
 
 use std::collections::HashSet;
@@ -32,6 +36,7 @@ pub use error::{Error, Result};
 use instance::{Instance, InstanceStore, NewInstance};
 use launch::{EventSink, GameManager, Session};
 use paths::Paths;
+use servers::ServerStore;
 use prepare::{ProgressFn, Stage, StageProgress};
 use settings::Settings;
 
@@ -48,6 +53,7 @@ pub struct Launcher {
     instances: InstanceStore,
     accounts: AccountStore,
     games: GameManager,
+    servers: ServerStore,
     /// Instanzen, die gerade vorbereitet werden (Schutz vor Doppelklicks).
     preparing: Mutex<HashSet<String>>,
 }
@@ -71,6 +77,7 @@ impl Launcher {
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events),
+            servers: ServerStore::new(paths.clone()),
             preparing: Mutex::default(),
             settings: RwLock::new(settings),
             paths,
@@ -96,6 +103,10 @@ impl Launcher {
 
     pub fn games(&self) -> &GameManager {
         &self.games
+    }
+
+    pub fn servers(&self) -> &ServerStore {
+        &self.servers
     }
 
     pub async fn settings(&self) -> Settings {
@@ -136,7 +147,15 @@ impl Launcher {
     }
 
     /// Lädt alles Nötige herunter und startet das Spiel. Liefert die PID.
-    pub async fn launch(self: &Arc<Self>, instance_id: &str, on_progress: &ProgressFn) -> Result<u32> {
+    ///
+    /// `join_server`: ID eines Servers aus der Launcher-Liste, auf den direkt
+    /// verbunden werden soll.
+    pub async fn launch(
+        self: &Arc<Self>,
+        instance_id: &str,
+        join_server: Option<&str>,
+        on_progress: &ProgressFn,
+    ) -> Result<u32> {
         let instance = self.instances.get(instance_id).await?;
         if self.games.is_running(&instance.id) {
             return Err(Error::launch("Diese Instanz läuft bereits."));
@@ -148,12 +167,21 @@ impl Launcher {
             }
         }
 
-        let result = self.launch_inner(&instance, on_progress).await;
+        let result = self.launch_inner(&instance, join_server, on_progress).await;
         self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&instance.id);
         result
     }
 
-    async fn launch_inner(self: &Arc<Self>, instance: &Instance, on_progress: &ProgressFn) -> Result<u32> {
+    async fn launch_inner(
+        self: &Arc<Self>,
+        instance: &Instance,
+        join_server: Option<&str>,
+        on_progress: &ProgressFn,
+    ) -> Result<u32> {
+        let join = match join_server {
+            Some(id) => Some(servers::join_target(&self.servers.get(id).await?.address).await?),
+            None => None,
+        };
         let session = match self.accounts.active_session().await? {
             Some(session) => session,
             None => demo_session()?,
@@ -167,14 +195,21 @@ impl Launcher {
         on_progress(StageProgress::begin(Stage::Starting));
         let game_dir = self.paths.instance_game_dir(&instance.id);
         fsutil::ensure_dir(&game_dir).await?;
+        // Die Launcher-Server sollen in jeder Instanz in der Serverliste stehen.
+        if let Err(e) = self.servers.sync_to_instance(&game_dir).await {
+            tracing::warn!("servers.dat konnte nicht aktualisiert werden: {e}");
+        }
         let command = launch::build_command(
             &prepared,
             instance,
             &settings,
             &session,
-            &game_dir,
-            &self.paths.assets_dir(),
-            &self.paths.libraries_dir(),
+            launch::LaunchDirs {
+                game: &game_dir,
+                assets: &self.paths.assets_dir(),
+                libraries: &self.paths.libraries_dir(),
+            },
+            join.as_ref(),
         )?;
 
         let launcher = Arc::clone(self);

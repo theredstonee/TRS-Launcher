@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let last = AtomicU64::new(u64::MAX);
     launcher
-        .launch(&instance.id, &move |p| {
+        .launch(&instance.id, None, &move |p| {
             // Nur bei Änderung in 10-%-Schritten ausgeben.
             let bucket = (p.stage as u64) * 1000 + (p.percent as u64 / 10);
             if last.swap(bucket, Ordering::Relaxed) != bucket {

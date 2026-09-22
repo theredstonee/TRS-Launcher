@@ -9,6 +9,7 @@ export default defineNuxtConfig({
   modules: ['@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
   app: {
+    pageTransition: { name: "page", mode: "out-in" },
     head: {
       title: 'TRS Launcher',
       htmlAttrs: { lang: 'de' },

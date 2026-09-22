@@ -14,10 +14,11 @@ pub async fn launch_instance(
     app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
+    join_server: Option<String>,
     on_progress: Channel<StageProgress>,
 ) -> CommandResult<u32> {
     let pid = launcher
-        .launch(&id, &move |progress| {
+        .launch(&id, join_server.as_deref(), &move |progress| {
             let _ = on_progress.send(progress);
         })
         .await?;

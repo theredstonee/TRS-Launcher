@@ -86,7 +86,7 @@ export interface DeviceCode {
   expiresIn: number
 }
 
-export type LaunchStage = 'version' | 'java' | 'libraries' | 'assets' | 'starting'
+export type LaunchStage = 'version' | 'java' | 'loader' | 'libraries' | 'assets' | 'starting'
 
 export interface StageProgress {
   stage: LaunchStage
@@ -129,9 +129,11 @@ export interface ContentItem {
   source: { projectId: string; versionId: string } | null
 }
 
+export type ProjectKind = ContentKind | 'modpack'
+
 export interface ModrinthSearchParams {
   query: string
-  kind: ContentKind
+  kind: ProjectKind
   gameVersion: string | null
   loader: LoaderKind | null
   offset: number
@@ -153,4 +155,60 @@ export interface ModrinthSearchResult {
   totalHits: number
   offset: number
   limit: number
+}
+
+export interface ModrinthVersion {
+  id: string
+  name: string
+  versionNumber: string
+  versionType: string
+  datePublished: string | null
+  gameVersions: string[]
+  loaders: string[]
+  fileName: string
+  size: number
+}
+
+export interface ContentUpdate {
+  kind: ContentKind
+  fileName: string
+  projectId: string
+  versionId: string
+  versionNumber: string
+}
+
+export interface PackProgress {
+  phase: 'pack' | 'files' | 'overrides'
+  percent: number
+}
+
+export interface Server {
+  id: string
+  name: string
+  address: string
+  autoResourcePack: boolean
+}
+
+export interface ServerInput {
+  name: string
+  address: string
+  autoResourcePack: boolean
+}
+
+export interface ServerStatus {
+  online: boolean
+  playersOnline: number
+  playersMax: number
+  motd: string
+  version: string
+  favicon: string | null
+  latencyMs: number
+}
+
+/** Screenshot oder Welt; `path` ist fürs Webview freigegeben (convertFileSrc). */
+export interface ImageEntry {
+  name: string
+  path: string | null
+  size: number
+  date: string | null
 }

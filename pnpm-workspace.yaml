@@ -2,3 +2,5 @@ allowBuilds:
   '@parcel/watcher': true
   esbuild: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@tauri-apps/plugin-updater@2.12.0'

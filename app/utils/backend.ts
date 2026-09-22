@@ -2,19 +2,26 @@ import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import type {
   Account,
   AppInfo,
+  CommandError,
   ContentItem,
   ContentKind,
-  ModrinthSearchParams,
-  ModrinthSearchResult,
+  ContentUpdate,
   DeviceCode,
-  LogLine,
-  RunningGame,
-  StageProgress,
-  CommandError,
+  ImageEntry,
   Instance,
   InstanceOverrides,
+  LogLine,
+  ModrinthSearchParams,
+  ModrinthSearchResult,
+  ModrinthVersion,
   NewInstance,
+  PackProgress,
+  RunningGame,
+  Server,
+  ServerInput,
+  ServerStatus,
   Settings,
+  StageProgress,
   VersionManifest,
 } from '~/types'
 
@@ -44,6 +51,12 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
   }
 }
 
+function channel<T>(onMessage: (message: T) => void): Channel<T> {
+  const ch = new Channel<T>()
+  ch.onmessage = onMessage
+  return ch
+}
+
 /** Typisierte Wrapper um die Rust-Commands aus `src-tauri/src/commands`. */
 export const backend = {
   appInfo: () => call<AppInfo>('app_info'),
@@ -58,28 +71,26 @@ export const backend = {
   updateInstance: (id: string, update: { name: string; overrides: InstanceOverrides }) =>
     call<Instance>('update_instance', { id, update }),
   deleteInstance: (id: string) => call<void>('delete_instance', { id }),
+  duplicateInstance: (id: string, name: string) => call<Instance>('duplicate_instance', { id, name }),
   openInstanceDir: (id: string) => call<void>('open_instance_dir', { id }),
 
   getVersionManifest: (forceRefresh = false) =>
     call<VersionManifest>('get_version_manifest', { forceRefresh }),
 
-  /** Löst erst auf, wenn das Spiel gestartet ist; Fortschritt kommt über `onProgress`. */
-  launchInstance: (id: string, onProgress: (p: StageProgress) => void) => {
-    const channel = new Channel<StageProgress>()
-    channel.onmessage = onProgress
-    return call<number>('launch_instance', { id, onProgress: channel })
-  },
+  /**
+   * Löst erst auf, wenn das Spiel gestartet ist; Fortschritt kommt über `onProgress`.
+   * `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich dann direkt.
+   */
+  launchInstance: (id: string, joinServer: string | null, onProgress: (p: StageProgress) => void) =>
+    call<number>('launch_instance', { id, joinServer, onProgress: channel(onProgress) }),
   stopInstance: (id: string) => call<boolean>('stop_instance', { id }),
   runningGames: () => call<RunningGame[]>('running_games'),
   getGameLogs: (id: string) => call<LogLine[]>('get_game_logs', { id }),
 
   listAccounts: () => call<Account[]>('list_accounts'),
   loginBrowser: () => call<Account>('login_browser'),
-  loginDeviceCode: (onCode: (code: DeviceCode) => void) => {
-    const channel = new Channel<DeviceCode>()
-    channel.onmessage = onCode
-    return call<Account>('login_device_code', { onCode: channel })
-  },
+  loginDeviceCode: (onCode: (code: DeviceCode) => void) =>
+    call<Account>('login_device_code', { onCode: channel(onCode) }),
   cancelLogin: () => call<void>('cancel_login'),
   setActiveAccount: (id: string) => call<void>('set_active_account', { id }),
   removeAccount: (id: string) => call<void>('remove_account', { id }),
@@ -90,10 +101,35 @@ export const backend = {
   deleteContent: (id: string, kind: ContentKind, fileName: string) =>
     call<void>('delete_content', { id, kind, fileName }),
   installedProjects: (id: string) => call<string[]>('installed_projects', { id }),
+  checkContentUpdates: (id: string) => call<ContentUpdate[]>('check_content_updates', { id }),
+  applyContentUpdate: (id: string, update: ContentUpdate) =>
+    call<string>('apply_content_update', {
+      id,
+      kind: update.kind,
+      fileName: update.fileName,
+      versionId: update.versionId,
+    }),
+  installPerformancePack: (id: string) => call<string[]>('install_performance_pack', { id }),
+
   modrinthSearch: (params: ModrinthSearchParams) => call<ModrinthSearchResult>('modrinth_search', { params }),
-  /** Installiert die neueste passende Version samt Pflicht-Abhängigkeiten; liefert die neuen Dateinamen. */
-  modrinthInstall: (id: string, projectId: string, kind: ContentKind) =>
-    call<string[]>('modrinth_install', { id, projectId, kind }),
+  modrinthVersions: (id: string, projectId: string, kind: ContentKind) =>
+    call<ModrinthVersion[]>('modrinth_versions', { id, projectId, kind }),
+  /** Ohne `versionId` die neueste passende Version; Pflicht-Abhängigkeiten kommen immer mit. */
+  modrinthInstall: (id: string, projectId: string, kind: ContentKind, versionId: string | null = null) =>
+    call<string[]>('modrinth_install', { id, projectId, kind, versionId }),
+  installModpack: (projectId: string, onProgress: (p: PackProgress) => void) =>
+    call<Instance>('install_modpack', { projectId, onProgress: channel(onProgress) }),
+
+  listServers: () => call<Server[]>('list_servers'),
+  addServer: (server: ServerInput) => call<Server>('add_server', { server }),
+  updateServer: (id: string, server: ServerInput) => call<Server>('update_server', { id, server }),
+  removeServer: (id: string) => call<void>('remove_server', { id }),
+  pingServer: (id: string) => call<ServerStatus>('ping_server', { id }),
+
+  listScreenshots: (id: string) => call<ImageEntry[]>('list_screenshots', { id }),
+  openScreenshot: (id: string, fileName: string) => call<void>('open_screenshot', { id, fileName }),
+  deleteScreenshot: (id: string, fileName: string) => call<void>('delete_screenshot', { id, fileName }),
+  listWorlds: (id: string) => call<ImageEntry[]>('list_worlds', { id }),
 }
 
 export function isCancelled(e: unknown): boolean {

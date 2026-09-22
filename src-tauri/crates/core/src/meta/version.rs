@@ -88,6 +88,8 @@ pub struct OsRule {
 pub struct Features {
     pub demo_user: bool,
     pub custom_resolution: bool,
+    /// Direkt auf einen Server verbinden (`--quickPlayMultiplayer`, ab 1.20).
+    pub quick_play_multiplayer: bool,
 }
 
 impl Features {
@@ -95,6 +97,7 @@ impl Features {
         match name {
             "is_demo_user" => self.demo_user,
             "has_custom_resolution" => self.custom_resolution,
+            "is_quick_play_multiplayer" => self.quick_play_multiplayer,
             // Quick-Play & Co. unterstützen wir (noch) nicht.
             _ => false,
         }

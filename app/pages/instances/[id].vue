@@ -111,7 +111,7 @@ function openFolder() {
 
 <template>
   <div class="flex h-full flex-col p-6">
-    <NuxtLink to="/" class="mb-3 inline-flex w-fit items-center gap-1 text-xs text-base-400 hover:text-base-50">
+    <NuxtLink to="/instances" class="mb-3 inline-flex w-fit items-center gap-1 text-xs text-base-400 hover:text-base-50">
       <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7" /></svg>
       Instanzen
     </NuxtLink>

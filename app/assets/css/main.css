@@ -1,27 +1,55 @@
 @import "tailwindcss";
+@import "@fontsource-variable/pixelify-sans";
 
+/*
+ * Redstone-Look: Deepslate-Grau (leicht violett, wie der Block) als Grund,
+ * Redstone-Rot für Aktionen, Lampen-Bernstein für alles, was "unter Strom"
+ * steht (laufendes Spiel, geladene Leitung).
+ */
 @theme {
-  --color-base-950: #0b0c0f;
-  --color-base-900: #111318;
-  --color-base-850: #161920;
-  --color-base-800: #1c2029;
-  --color-base-700: #272c38;
-  --color-base-600: #3a4152;
-  --color-base-400: #7d8699;
-  --color-base-200: #c5cad6;
-  --color-base-50: #f2f4f8;
+  --color-base-950: #111116;
+  --color-base-900: #17171e;
+  --color-base-850: #1d1d26;
+  --color-base-800: #252531;
+  --color-base-700: #333343;
+  --color-base-600: #4a4a5e;
+  --color-base-400: #8b8ba2;
+  --color-base-200: #c8c8d8;
+  --color-base-50: #f3f3f8;
 
-  --color-redstone-300: #ff8a80;
+  --color-redstone-300: #ff8f85;
   --color-redstone-400: #ff5a4d;
-  --color-redstone-500: #e5281c;
-  --color-redstone-600: #b81a10;
+  --color-redstone-500: #e0281e;
+  --color-redstone-600: #b31a12;
   --color-redstone-900: #3a0d09;
 
-  --color-ok: #4ade80;
-  --color-warn: #fbbf24;
+  --color-lamp-300: #ffd48a;
+  --color-lamp-400: #ffb84d;
+  --color-lamp-900: #3d2a0c;
+
+  --color-ok: #5ee08a;
+  --color-warn: #ffb84d;
 
   --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Cascadia Mono", Consolas, monospace;
+
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-pop: pop 0.18s ease-out;
+  --animate-lamp: lamp 2.4s ease-in-out infinite;
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes lamp {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
 }
 
 html,
@@ -44,8 +72,14 @@ textarea {
   user-select: text;
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-redstone-400);
+  outline-offset: 2px;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-base-700);
@@ -57,9 +91,32 @@ textarea {
   background-color: var(--color-base-600);
 }
 
+/* Seitenwechsel: kurz genug, um nicht aufzuhalten. */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.page-leave-to {
+  opacity: 0;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-[background-color,color,transform] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
     @apply bg-redstone-500 text-white hover:bg-redstone-400 active:bg-redstone-600;
@@ -74,9 +131,41 @@ textarea {
     @apply w-full rounded-md border border-base-700 bg-base-900 px-3 py-2 text-sm text-base-50 outline-none transition-colors placeholder:text-base-400 focus:border-redstone-500;
   }
   .label {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-base-400;
+    @apply mb-1.5 block text-xs font-medium text-base-400;
   }
   .card {
     @apply rounded-lg border border-base-800 bg-base-900;
+  }
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+  /* Platzhalter, während Daten laden. */
+  .skeleton {
+    @apply animate-shimmer rounded-md;
+    background: linear-gradient(90deg, var(--color-base-850) 25%, var(--color-base-800) 50%, var(--color-base-850) 75%);
+    background-size: 200% 100%;
+  }
+  .seg {
+    @apply px-3 py-1.5 text-base-400 transition-colors hover:text-base-50;
+  }
+  .seg-on {
+    @apply bg-base-700 text-base-50;
+  }
+  .tab {
+    @apply -mb-px border-b-2 border-transparent px-3 py-2 text-base-400 transition-colors hover:text-base-50;
+  }
+  .tab-on {
+    @apply border-redstone-500 text-base-50;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

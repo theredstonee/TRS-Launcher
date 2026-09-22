@@ -1,74 +1,177 @@
 <script setup lang="ts">
-import type { Instance } from '~/types'
+import type { Server } from '~/types'
 
 const instances = useInstancesStore()
-const settings = useSettingsStore()
+const accounts = useAccountsStore()
+const servers = useServersStore()
+const games = useGamesStore()
 
-const creating = ref(false)
-const toDelete = ref<Instance | null>(null)
-const deleting = ref(false)
-const deleteError = ref<string | null>(null)
+const selectedId = ref<string | null>(null)
+const addingServer = ref(false)
+const ready = ref(false)
 
-onMounted(() => {
-  instances.load()
-  if (!settings.current) settings.load().catch(() => {})
+// Standard: die zuletzt gespielte Instanz (die Liste ist so sortiert).
+const selected = computed(
+  () => instances.items.find((i) => i.id === selectedId.value) ?? instances.items[0] ?? null,
+)
+const game = computed(() => (selected.value ? games.state(selected.value.id) : null))
+const others = computed(() => instances.items.filter((i) => i.id !== selected.value?.id).slice(0, 5))
+const totalSeconds = computed(() => instances.items.reduce((sum, i) => sum + i.totalPlaySeconds, 0))
+
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  const word = hour < 5 ? 'Noch wach' : hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend'
+  return accounts.active ? `${word}, ${accounts.active.name}` : word
 })
 
-async function confirmDelete() {
-  if (!toDelete.value) return
-  deleting.value = true
-  deleteError.value = null
-  try {
-    await instances.remove(toDelete.value.id)
-    toDelete.value = null
-  } catch (e) {
-    deleteError.value = errorMessage(e)
-  } finally {
-    deleting.value = false
-  }
+let pingTimer: ReturnType<typeof setInterval> | undefined
+onMounted(async () => {
+  await Promise.allSettled([instances.load(), servers.load()])
+  ready.value = true
+  // Spielerzahlen sollen nicht veralten, solange die Startseite offen ist.
+  pingTimer = setInterval(() => servers.refresh(), 30_000)
+})
+onBeforeUnmount(() => clearInterval(pingTimer))
+
+function join(server: Server) {
+  if (selected.value) games.launch(selected.value.id, server.id)
 }
 </script>
 
 <template>
-  <div class="p-6">
-    <PageHeader title="Instanzen" subtitle="Jede Instanz hat eigene Welten, Mods und Einstellungen.">
-      <button class="btn btn-primary" @click="creating = true">
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        Neue Instanz
-      </button>
-    </PageHeader>
+  <div class="flex min-h-full flex-col gap-5 p-6">
+    <!-- Startrampe: die zuletzt gespielte Instanz, ein Klick bis ins Spiel. -->
+    <section class="launchpad relative overflow-hidden rounded-xl border border-base-800">
+      <div class="relative flex flex-col gap-6 p-7">
+        <p class="text-sm text-base-400">{{ greeting }}</p>
 
-    <p v-if="instances.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">
-      {{ instances.error }}
-    </p>
+        <div v-if="!ready" class="space-y-3">
+          <div class="skeleton h-12 w-80" />
+          <div class="skeleton h-4 w-52" />
+        </div>
 
-    <div v-if="instances.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-4">
-      <InstanceCard v-for="i in instances.items" :key="i.id" :instance="i" @delete="toDelete = $event" />
+        <template v-else-if="selected">
+          <div class="min-w-0">
+            <NuxtLink :to="`/instances/${selected.id}`" class="display block truncate text-5xl leading-tight text-base-50 hover:text-redstone-300">
+              {{ selected.name }}
+            </NuxtLink>
+            <p class="mt-1 flex flex-wrap gap-x-4 text-sm text-base-400">
+              <span><span class="font-mono text-base-200">{{ selected.gameVersion }}</span> {{ loaderLabels[selected.loader.kind] }}</span>
+              <span>{{ formatRelative(selected.lastPlayed) }}</span>
+              <span v-if="selected.totalPlaySeconds >= 60">{{ formatPlayTime(selected.totalPlaySeconds) }} gespielt</span>
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="w-72"><PlayButton :instance-id="selected.id" large /></div>
+            <select
+              v-if="instances.items.length > 1"
+              v-model="selectedId"
+              class="field h-12 w-56 bg-base-900/80"
+              aria-label="Instanz wählen"
+              :disabled="game?.phase !== 'idle'"
+            >
+              <option :value="null" disabled>Andere Instanz …</option>
+              <option v-for="i in instances.items" :key="i.id" :value="i.id">{{ i.name }} ({{ i.gameVersion }})</option>
+            </select>
+          </div>
+          <p v-if="game?.error" role="alert" class="-mt-2 text-sm text-redstone-300">{{ game.error }}</p>
+        </template>
+
+        <template v-else>
+          <div>
+            <h1 class="display text-5xl leading-tight">Bereit zum Start</h1>
+            <p class="mt-1 max-w-md text-sm text-base-400">
+              Lege deine erste Instanz an – Vanilla oder mit Modloader – oder hol dir gleich ein fertiges Modpack.
+            </p>
+          </div>
+          <div class="flex gap-3">
+            <NuxtLink to="/instances" class="btn btn-primary h-12 px-6 text-base">Instanz erstellen</NuxtLink>
+            <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="btn btn-ghost h-12 px-6 text-base">Modpacks ansehen</NuxtLink>
+          </div>
+        </template>
+      </div>
+
+      <!-- Die Leitung unter der Rampe: lädt beim Start auf, glimmt, solange gespielt wird. -->
+      <RedstoneWire
+        class="relative px-7 pb-5"
+        :segments="64"
+        :percent="game?.progress ? overallPercent(game.progress.stage, game.progress.percent) : 0"
+        :powered="game?.phase === 'running'"
+      />
+    </section>
+
+    <div class="grid min-h-0 flex-1 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <section>
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="font-semibold">Server</h2>
+          <div class="flex items-center gap-2">
+            <NuxtLink v-if="servers.items.length" to="/servers" class="text-xs text-base-400 hover:text-base-50">Alle verwalten</NuxtLink>
+            <button class="btn btn-ghost px-2.5 py-1 text-xs" @click="addingServer = true">Hinzufügen</button>
+          </div>
+        </div>
+
+        <div v-if="!ready" class="space-y-2">
+          <div v-for="i in 2" :key="i" class="skeleton h-[74px]" />
+        </div>
+        <div v-else-if="servers.items.length" class="space-y-2">
+          <ServerCard
+            v-for="s in servers.items.slice(0, 5)"
+            :key="s.id"
+            :server="s"
+            compact
+            :join-disabled="!selected || game?.phase !== 'idle'"
+            :join-hint="selected ? `Startet „${selected.name}“ und verbindet direkt` : 'Erst eine Instanz anlegen'"
+            @join="join"
+          />
+        </div>
+        <div v-else class="card px-5 py-8 text-center">
+          <p class="text-sm text-base-200">Deine Server an einem Ort – mit Live-Status und Beitritt per Klick.</p>
+          <p class="mt-1 text-xs text-base-400">Sie stehen danach in jeder Instanz in der Serverliste.</p>
+          <button class="btn btn-primary mt-4" @click="addingServer = true">Ersten Server hinzufügen</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="font-semibold">Weitere Instanzen</h2>
+          <span v-if="totalSeconds >= 60" class="text-xs text-base-400">Insgesamt {{ formatPlayTime(totalSeconds) }}</span>
+        </div>
+
+        <div v-if="!ready" class="space-y-2">
+          <div v-for="i in 3" :key="i" class="skeleton h-14" />
+        </div>
+        <ul v-else-if="others.length" class="space-y-2">
+          <li v-for="i in others" :key="i.id" class="card flex items-center gap-3 px-3 py-2.5">
+            <NuxtLink :to="`/instances/${i.id}`" class="flex min-w-0 flex-1 items-center gap-3">
+              <span class="display flex size-9 shrink-0 items-center justify-center rounded-md bg-base-800 text-redstone-400">{{ i.name.charAt(0).toUpperCase() }}</span>
+              <span class="min-w-0">
+                <span class="block truncate text-sm font-medium">{{ i.name }}</span>
+                <span class="block truncate text-xs text-base-400">{{ i.gameVersion }} {{ loaderLabels[i.loader.kind] }}</span>
+              </span>
+            </NuxtLink>
+            <div class="w-32 shrink-0"><PlayButton :instance-id="i.id" /></div>
+          </li>
+        </ul>
+        <div v-else class="card px-5 py-8 text-center text-sm text-base-400">
+          <NuxtLink to="/instances" class="text-base-200 underline-offset-2 hover:underline">Weitere Instanz anlegen</NuxtLink>
+          – zum Beispiel eine zweite Version oder ein Modpack.
+        </div>
+      </section>
     </div>
 
-    <div v-else-if="!instances.loading && !instances.error" class="card flex flex-col items-center px-6 py-16 text-center">
-      <img src="/icon.png" alt="" class="size-14 opacity-80 [image-rendering:pixelated]" />
-      <h2 class="mt-5 font-semibold">Noch keine Instanz</h2>
-      <p class="mt-1 max-w-sm text-sm text-base-400">
-        Erstelle deine erste Instanz – Vanilla oder mit Fabric, Quilt, Forge oder NeoForge.
-      </p>
-      <button class="btn btn-primary mt-5" @click="creating = true">Instanz erstellen</button>
-    </div>
-
-    <CreateInstanceDialog v-if="creating" @close="creating = false" @created="creating = false" />
-
-    <BaseDialog v-if="toDelete" title="Instanz löschen?" @close="toDelete = null">
-      <p class="text-sm text-base-200">
-        <strong class="text-base-50">{{ toDelete.name }}</strong> wird mit allen Welten, Mods und Screenshots
-        unwiderruflich gelöscht.
-      </p>
-      <p v-if="deleteError" role="alert" class="mt-3 text-sm text-redstone-300">{{ deleteError }}</p>
-      <template #actions>
-        <button class="btn btn-ghost" @click="toDelete = null">Abbrechen</button>
-        <button class="btn btn-danger" :disabled="deleting" @click="confirmDelete">
-          {{ deleting ? 'Lösche …' : 'Endgültig löschen' }}
-        </button>
-      </template>
-    </BaseDialog>
+    <ServerDialog v-if="addingServer" @close="addingServer = false" />
   </div>
 </template>
+
+<style scoped>
+/* Deepslate-Kacheln als Hintergrund der Startrampe, nach unten ausgeblendet. */
+.launchpad {
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgb(224 40 30 / 0.16), transparent 55%),
+    linear-gradient(to bottom, transparent 40%, var(--color-base-900)),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 32px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 32px),
+    var(--color-base-850);
+}
+</style>

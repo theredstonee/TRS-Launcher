@@ -166,6 +166,12 @@ fn existing_path(dir: &Path, file_name: &str) -> Option<(PathBuf, bool)> {
     }
 }
 
+/// Pfad der Datei, egal ob aktiviert oder deaktiviert.
+pub fn existing_file(paths: &Paths, instance_id: &str, kind: ContentKind, file_name: &str) -> Option<PathBuf> {
+    validate_file_name(kind, file_name).ok()?;
+    existing_path(&content_dir(paths, instance_id, kind), file_name).map(|(path, _)| path)
+}
+
 pub async fn set_enabled(
     paths: &Paths,
     instance_id: &str,

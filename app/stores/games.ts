@@ -39,6 +39,7 @@ export const useGamesStore = defineStore('games', () => {
     } else {
       s.phase = 'idle'
       s.lastExit = { exitCode: event.exitCode, crashed: event.crashed }
+      if (event.crashed) useToasts().error('Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache.')
       // Spielzeit und "zuletzt gespielt" haben sich geändert.
       useInstancesStore().load()
     }
@@ -60,7 +61,8 @@ export const useGamesStore = defineStore('games', () => {
     }
   }
 
-  async function launch(id: string) {
+  /** `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich nach dem Start direkt. */
+  async function launch(id: string, joinServer: string | null = null) {
     const s = state(id)
     if (s.phase !== 'idle') return
     s.phase = 'preparing'
@@ -69,12 +71,13 @@ export const useGamesStore = defineStore('games', () => {
     s.logs = []
     s.progress = { stage: 'version', percent: 0, doneFiles: 0, totalFiles: 0 }
     try {
-      await backend.launchInstance(id, (p) => (s.progress = p))
+      await backend.launchInstance(id, joinServer, (p) => (s.progress = p))
       // Das `started`-Event kann vor oder nach der Antwort ankommen.
       if (s.phase === 'preparing') s.phase = 'running'
     } catch (e) {
       s.phase = 'idle'
       s.error = errorMessage(e)
+      useToasts().error(e)
     } finally {
       s.progress = null
     }
@@ -88,5 +91,7 @@ export const useGamesStore = defineStore('games', () => {
     }
   }
 
-  return { states, state, init, launch, stop }
+  const runningCount = computed(() => Object.values(states.value).filter((s) => s.phase !== 'idle').length)
+
+  return { states, state, init, launch, stop, runningCount }
 })

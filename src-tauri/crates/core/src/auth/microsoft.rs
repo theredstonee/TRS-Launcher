@@ -30,6 +30,12 @@ const MC_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft/profil
 
 const BROWSER_LOGIN_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
+/// So ist die Umleitungs-URI in der Azure-App eingetragen:
+/// `http://localhost:28443/login`. Microsoft ignoriert bei `localhost` den
+/// Port, der Pfad muss aber exakt stimmen.
+const REDIRECT_PORT: u16 = 28443;
+const REDIRECT_PATH: &str = "/login";
+
 #[derive(Debug, Deserialize)]
 pub struct MsTokens {
     pub access_token: String,
@@ -151,11 +157,15 @@ async fn respond(stream: &mut tokio::net::TcpStream, status: &str, body: &str) {
 /// Öffnet den Browser (über `open_url`) und wartet auf den Redirect.
 pub async fn browser_login(http: &reqwest::Client, open_url: &(dyn Fn(&str) + Sync)) -> Result<MsTokens> {
     // Nur Loopback – von außen ist der Port nicht erreichbar.
-    let listener = TcpListener::bind(("127.0.0.1", 0))
-        .await
-        .map_err(|e| Error::Internal(format!("Loopback-Server: {e}")))?;
+    let listener = match TcpListener::bind(("127.0.0.1", REDIRECT_PORT)).await {
+        Ok(listener) => listener,
+        // Port belegt (z. B. zweiter Launcher): irgendein freier tut es auch.
+        Err(_) => TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .map_err(|e| Error::Internal(format!("Loopback-Server: {e}")))?,
+    };
     let port = listener.local_addr().map_err(|e| Error::Internal(e.to_string()))?.port();
-    let redirect_uri = format!("http://localhost:{port}");
+    let redirect_uri = format!("http://localhost:{port}{REDIRECT_PATH}");
 
     let state = random_token();
     let verifier = random_token();
@@ -225,7 +235,7 @@ async fn wait_for_redirect(listener: &TcpListener, expected_state: &str) -> Resu
             continue;
         };
         // Browser fragen gern zusätzlich nach /favicon.ico.
-        if url.path() != "/" {
+        if url.path() != REDIRECT_PATH {
             respond(&mut stream, "404 Not Found", "").await;
             continue;
         }
@@ -494,9 +504,9 @@ mod tests {
             let http = reqwest::Client::new();
             let base = format!("http://127.0.0.1:{port}");
             // Falscher State und Favicon dürfen den Login nicht beenden.
-            assert_eq!(http.get(format!("{base}/?code=evil&state=falsch")).send().await.unwrap().status(), 400);
+            assert_eq!(http.get(format!("{base}/login?code=evil&state=falsch")).send().await.unwrap().status(), 400);
             assert_eq!(http.get(format!("{base}/favicon.ico")).send().await.unwrap().status(), 404);
-            let ok = http.get(format!("{base}/?code=M.C5_abc%2Bdef&state=richtig")).send().await.unwrap();
+            let ok = http.get(format!("{base}/login?code=M.C5_abc%2Bdef&state=richtig")).send().await.unwrap();
             assert_eq!(ok.status(), 200);
             assert!(ok.text().await.unwrap().contains("Anmeldung abgeschlossen"));
         });
@@ -511,7 +521,7 @@ mod tests {
         let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
         let port = listener.local_addr().unwrap().port();
         tokio::spawn(async move {
-            let _ = reqwest::get(format!("http://127.0.0.1:{port}/?error=access_denied&state=s")).await;
+            let _ = reqwest::get(format!("http://127.0.0.1:{port}/login?error=access_denied&state=s")).await;
         });
         assert!(matches!(wait_for_redirect(&listener, "s").await, Err(Error::Cancelled)));
     }

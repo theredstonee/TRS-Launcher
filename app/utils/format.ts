@@ -40,6 +40,7 @@ export function formatPlayTime(seconds: number): string {
 export const stageLabels: Record<LaunchStage, string> = {
   version: 'Versionsdaten',
   java: 'Java',
+  loader: 'Modloader',
   libraries: 'Bibliotheken',
   assets: 'Spieldateien',
   starting: 'Starte Spiel',
@@ -48,9 +49,10 @@ export const stageLabels: Record<LaunchStage, string> = {
 // Grobe Gewichtung der Stufen für EINE durchgehende Prozentanzeige.
 const stageWeights: [LaunchStage, number][] = [
   ['version', 2],
-  ['java', 28],
-  ['libraries', 20],
-  ['assets', 48],
+  ['java', 24],
+  ['loader', 14],
+  ['libraries', 16],
+  ['assets', 42],
   ['starting', 2],
 ]
 
@@ -78,4 +80,13 @@ export function formatFileSize(bytes: number): string {
 
 export function formatCount(n: number): string {
   return new Intl.NumberFormat('de', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
+}
+
+/** Bewährte G1-Einstellungen für den Client – weniger Ruckler durch kürzere GC-Pausen. */
+export const optimizedJvmArgs =
+  '-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions ' +
+  '-XX:+DisableExplicitGC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:G1HeapRegionSize=32M'
+
+export function formatDate(iso: string | null): string {
+  return iso ? new Intl.DateTimeFormat('de', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)) : ''
 }

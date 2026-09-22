@@ -44,12 +44,18 @@
         "font-src": "'self' data: http://localhost:3000",
         "connect-src": "'self' ipc: http://ipc.localhost http://localhost:3000 ws://localhost:3000"
       },
-      "freezePrototype": false
+      "freezePrototype": false,
+      "assetProtocol": {
+        "enable": true,
+        "scope": []
+      }
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "publisher": "theredstonee",
     "shortDescription": "Minecraft-Launcher",
     "icon": [
@@ -61,9 +67,26 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "languages": ["German", "English"]
+        "languages": [
+          "German",
+          "English"
+        ]
       },
-      "webviewInstallMode": { "type": "downloadBootstrapper" }
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQwMTI1Q0E3RDkzRDg0QzQKUldURWhEM1pwMXdTUU5QOTg4dzQycEQ3eVFwVjgyckpBK2hBMTUyTE5pdEtXd0VOWldzTWVVR28K",
+      "endpoints": [
+        "https://github.com/theredstonee/TRS-Launcher/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }
