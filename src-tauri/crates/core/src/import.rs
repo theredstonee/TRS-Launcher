@@ -18,6 +18,8 @@ pub enum ImportSource {
     Prism,
     MultiMc,
     CurseForge,
+    /// Von Hand gewählter Ordner (anderer Client, Backup, …).
+    Folder,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -31,6 +33,8 @@ pub struct ImportCandidate {
     pub loader: Loader,
     pub mod_count: u32,
     pub world_count: u32,
+    /// Version/Loader nur geschätzt – der Nutzer soll sie vor dem Import prüfen.
+    pub version_guessed: bool,
     #[serde(skip)]
     game_dir: PathBuf,
 }
@@ -118,6 +122,7 @@ fn candidate(source: ImportSource, name: &str, game_version: &str, loader: Loade
         loader,
         mod_count,
         world_count,
+        version_guessed: false,
         game_dir,
     })
 }
@@ -222,25 +227,17 @@ fn parse_mmc_pack(pack: &MmcPack) -> Option<(String, Loader)> {
 
 fn scan_mmc(instances: &Path, source: ImportSource) -> Vec<ImportCandidate> {
     let Ok(entries) = std::fs::read_dir(instances) else { return Vec::new() };
-    let mut out = Vec::new();
-    for entry in entries.flatten() {
-        let dir = entry.path();
-        let Some(pack) = std::fs::read(dir.join("mmc-pack.json")).ok().and_then(|b| serde_json::from_slice::<MmcPack>(&b).ok())
-        else {
-            continue;
-        };
-        let Some((game_version, loader)) = parse_mmc_pack(&pack) else { continue };
-        let cfg = std::fs::read_to_string(dir.join("instance.cfg")).unwrap_or_default();
-        let name = cfg
-            .lines()
-            .find_map(|l| l.strip_prefix("name="))
-            .map_or_else(|| entry.file_name().to_string_lossy().into_owned(), str::to_owned);
-        let game_dir = [".minecraft", "minecraft"].iter().map(|d| dir.join(d)).find(|d| d.is_dir());
-        if let Some(game_dir) = game_dir {
-            out.extend(candidate(source, &name, &game_version, loader, game_dir));
-        }
-    }
-    out
+    entries.flatten().filter_map(|entry| mmc_instance(&entry.path(), source)).collect()
+}
+
+fn mmc_instance(dir: &Path, source: ImportSource) -> Option<ImportCandidate> {
+    let pack: MmcPack = std::fs::read(dir.join("mmc-pack.json")).ok().and_then(|b| serde_json::from_slice(&b).ok())?;
+    let (game_version, loader) = parse_mmc_pack(&pack)?;
+    let cfg = std::fs::read_to_string(dir.join("instance.cfg")).unwrap_or_default();
+    let fallback = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let name = cfg.lines().find_map(|l| l.strip_prefix("name=")).map_or(fallback, str::to_owned);
+    let game_dir = [".minecraft", "minecraft"].iter().map(|d| dir.join(d)).find(|d| d.is_dir())?;
+    candidate(source, &name, &game_version, loader, game_dir)
 }
 
 // --- CurseForge ------------------------------------------------------------
@@ -273,24 +270,63 @@ fn parse_curse_loader(name: &str, game_version: &str) -> Loader {
 
 fn scan_curseforge(instances: &Path) -> Vec<ImportCandidate> {
     let Ok(entries) = std::fs::read_dir(instances) else { return Vec::new() };
-    let mut out = Vec::new();
-    for entry in entries.flatten() {
-        let dir = entry.path();
-        let Some(inst) = std::fs::read(dir.join("minecraftinstance.json"))
-            .ok()
-            .and_then(|b| serde_json::from_slice::<CurseInstance>(&b).ok())
-        else {
+    entries.flatten().filter_map(|entry| curse_instance(&entry.path())).collect()
+}
+
+fn curse_instance(dir: &Path) -> Option<ImportCandidate> {
+    let inst: CurseInstance =
+        std::fs::read(dir.join("minecraftinstance.json")).ok().and_then(|b| serde_json::from_slice(&b).ok())?;
+    let loader =
+        inst.base_mod_loader.as_ref().map_or_else(Loader::vanilla, |l| parse_curse_loader(&l.name, &inst.game_version));
+    // Bewusst der Ordner des Eintrags und nicht `installPath` aus der Datei:
+    // kopierte CurseForge-Instanzen zeigen dort oft noch auf das Original.
+    candidate(ImportSource::CurseForge, &inst.name, &inst.game_version, loader, dir.to_owned())
+}
+
+/// Erkennt, was in einem von Hand gewählten Ordner liegt.
+pub fn scan_folder(dir: &Path, latest_release: Option<&str>) -> Vec<ImportCandidate> {
+    if dir.join("launcher_profiles.json").is_file() {
+        return scan_vanilla(dir, latest_release);
+    }
+    if let Some(c) = mmc_instance(dir, ImportSource::Prism).or_else(|| curse_instance(dir)) {
+        return vec![c];
+    }
+    // Ein Ordner voller Instanzen (z. B. `PrismLauncher/instances` oder CurseForge `Instances`)?
+    let nested: Vec<_> = scan_mmc(dir, ImportSource::Prism).into_iter().chain(scan_curseforge(dir)).collect();
+    if !nested.is_empty() {
+        return nested;
+    }
+    // Sonst: ein nackter Spielordner – Version unbekannt, Loader anhand der Mods geraten.
+    let looks_like_game = ["mods", "saves", "config", "options.txt", "resourcepacks"].iter().any(|n| dir.join(n).exists());
+    let Some(version) = latest_release.filter(|_| looks_like_game) else { return Vec::new() };
+    let name = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "Import".into());
+    candidate(ImportSource::Folder, &name, version, guess_loader(&dir.join("mods")), dir.to_owned())
+        .map(|c| ImportCandidate { version_guessed: true, ..c })
+        .into_iter()
+        .collect()
+}
+
+/// Schaut in bis zu 20 Mod-Jars, für welchen Loader sie gebaut sind.
+fn guess_loader(mods: &Path) -> Loader {
+    let Ok(entries) = std::fs::read_dir(mods) else { return Loader::vanilla() };
+    for entry in entries.flatten().take(20) {
+        let Ok(file) = std::fs::File::open(entry.path()) else { continue };
+        let Ok(mut zip) = zip::ZipArchive::new(file) else { continue };
+        let has = |zip: &mut zip::ZipArchive<std::fs::File>, name: &str| zip.by_name(name).is_ok();
+        let kind = if has(&mut zip, "quilt.mod.json") {
+            LoaderKind::Quilt
+        } else if has(&mut zip, "fabric.mod.json") {
+            LoaderKind::Fabric
+        } else if has(&mut zip, "META-INF/neoforge.mods.toml") {
+            LoaderKind::NeoForge
+        } else if has(&mut zip, "META-INF/mods.toml") || has(&mut zip, "mcmod.info") {
+            LoaderKind::Forge
+        } else {
             continue;
         };
-        let loader = inst
-            .base_mod_loader
-            .as_ref()
-            .map_or_else(Loader::vanilla, |l| parse_curse_loader(&l.name, &inst.game_version));
-        // Bewusst der Ordner des Eintrags und nicht `installPath` aus der Datei:
-        // kopierte CurseForge-Instanzen zeigen dort oft noch auf das Original.
-        out.extend(candidate(ImportSource::CurseForge, &inst.name, &inst.game_version, loader, dir));
+        return Loader { kind, version: None };
     }
-    out
+    Loader::vanilla()
 }
 
 // --- Kopieren ----------------------------------------------------------------
@@ -349,7 +385,17 @@ impl Launcher {
     pub async fn scan_imports(&self) -> Result<Vec<ImportCandidate>> {
         let latest = self.version_manifest(false).await.ok().map(|m| m.latest.release);
         let roots = ImportRoots::detect();
-        let mut found = tokio::task::spawn_blocking(move || roots.scan(latest.as_deref()))
+        let custom = self.import_folders.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let mut found = tokio::task::spawn_blocking(move || {
+            let mut all = roots.scan(latest.as_deref());
+            for dir in &custom {
+                all.extend(scan_folder(dir, latest.as_deref()));
+            }
+            // Derselbe Ordner kann über mehrere Wege gefunden werden.
+            let mut seen = std::collections::HashSet::new();
+            all.retain(|c| seen.insert(c.id.clone()));
+            all
+        })
             .await
             .map_err(|e| Error::Internal(e.to_string()))?;
 
@@ -361,13 +407,54 @@ impl Launcher {
         Ok(found)
     }
 
-    pub async fn import_instance(&self, candidate_id: &str, on_progress: &ImportProgressFn) -> Result<Instance> {
-        let candidate = self
+    /// Nimmt einen vom Nutzer gewählten Ordner in die Suche auf und liefert,
+    /// was darin gefunden wurde.
+    pub async fn add_import_folder(&self, dir: PathBuf) -> Result<Vec<ImportCandidate>> {
+        if !dir.is_dir() {
+            return Err(Error::validation("Dieser Ordner existiert nicht."));
+        }
+        {
+            let mut folders = self.import_folders.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            if !folders.contains(&dir) {
+                folders.push(dir.clone());
+            }
+        }
+        let latest = self.version_manifest(false).await.ok().map(|m| m.latest.release);
+        let found = tokio::task::spawn_blocking(move || scan_folder(&dir, latest.as_deref()))
+            .await
+            .map_err(|e| Error::Internal(e.to_string()))?;
+        if found.is_empty() {
+            return Err(Error::validation(
+                "In diesem Ordner wurde keine Minecraft-Installation gefunden. Wähle den Ordner, in dem \
+                 mods, saves oder options.txt liegen.",
+            ));
+        }
+        Ok(found)
+    }
+
+    /// `game_version`/`loader` dürfen nur bei geschätzten Kandidaten gesetzt werden.
+    pub async fn import_instance(
+        &self,
+        candidate_id: &str,
+        game_version: Option<String>,
+        loader: Option<Loader>,
+        on_progress: &ImportProgressFn,
+    ) -> Result<Instance> {
+        let mut candidate = self
             .scan_imports()
             .await?
             .into_iter()
             .find(|c| c.id == candidate_id)
             .ok_or_else(|| Error::validation("Diese Installation wurde nicht mehr gefunden."))?;
+        if candidate.version_guessed {
+            if let Some(v) = game_version {
+                candidate.game_version = v;
+            }
+            if let Some(l) = loader {
+                l.validate()?;
+                candidate.loader = l;
+            }
+        }
 
         let instance = self
             .create_instance(NewInstance {
@@ -453,6 +540,37 @@ mod tests {
         let l = parse_curse_loader("fabric-0.16.10-1.21.1", "1.21.1");
         assert_eq!((l.kind, l.version.as_deref()), (LoaderKind::Fabric, Some("0.16.10")));
         assert_eq!(parse_curse_loader("unbekannt", "1.20.1").kind, LoaderKind::Vanilla);
+    }
+
+    #[test]
+    fn folder_scan_detects_formats() {
+        let dir = tempfile::tempdir().unwrap();
+        // Nackter Spielordner mit Fabric-Mod
+        let game = dir.path().join("Lunar-Profil");
+        std::fs::create_dir_all(game.join("mods")).unwrap();
+        {
+            use std::io::Write;
+            let mut zip = zip::ZipWriter::new(std::fs::File::create(game.join("mods/a.jar")).unwrap());
+            zip.start_file("fabric.mod.json", zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(b"{}").unwrap();
+            zip.finish().unwrap();
+        }
+        let found = scan_folder(&game, Some("1.21.1"));
+        assert_eq!(found.len(), 1);
+        assert!(found[0].version_guessed);
+        assert_eq!((found[0].source, found[0].loader.kind), (ImportSource::Folder, LoaderKind::Fabric));
+
+        // Leerer Ordner: nichts
+        let empty = dir.path().join("leer");
+        std::fs::create_dir_all(&empty).unwrap();
+        assert!(scan_folder(&empty, Some("1.21.1")).is_empty());
+
+        // Einzelne CurseForge-Instanz direkt gewählt
+        let cf = dir.path().join("cf");
+        std::fs::create_dir_all(&cf).unwrap();
+        std::fs::write(cf.join("minecraftinstance.json"), r#"{"name":"CF","gameVersion":"1.20.1","baseModLoader":{"name":"forge-47.3.0"}}"#).unwrap();
+        let found = scan_folder(&cf, None);
+        assert_eq!((found.len(), found[0].version_guessed), (1, false));
     }
 
     #[test]

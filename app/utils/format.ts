@@ -96,4 +96,5 @@ export const importSourceLabels: Record<ImportSource, string> = {
   prism: 'Prism Launcher',
   multimc: 'MultiMC',
   curseforge: 'CurseForge',
+  folder: 'Eigener Ordner',
 }

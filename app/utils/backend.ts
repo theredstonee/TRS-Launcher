@@ -12,6 +12,7 @@ import type {
   ImageEntry,
   Instance,
   InstanceOverrides,
+  Loader,
   LogLine,
   ModrinthSearchParams,
   ModrinthSearchResult,
@@ -134,8 +135,14 @@ export const backend = {
   listWorlds: (id: string) => call<ImageEntry[]>('list_worlds', { id }),
 
   scanImports: () => call<ImportCandidate[]>('scan_imports'),
-  importInstance: (id: string, onProgress: (p: ImportProgress) => void) =>
-    call<Instance>('import_instance', { id, onProgress: channel(onProgress) }),
+  /** Öffnet den Ordnerdialog; `null` = abgebrochen. */
+  pickImportFolder: () => call<ImportCandidate[] | null>('pick_import_folder'),
+  importInstance: (
+    id: string,
+    gameVersion: string | null,
+    loader: Loader | null,
+    onProgress: (p: ImportProgress) => void,
+  ) => call<Instance>('import_instance', { id, gameVersion, loader, onProgress: channel(onProgress) }),
 }
 
 export function isCancelled(e: unknown): boolean {

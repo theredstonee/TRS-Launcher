@@ -37,6 +37,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
@@ -102,6 +103,7 @@ pub fn run() {
             commands::extras::list_worlds,
             commands::extras::duplicate_instance,
             commands::import::scan_imports,
+            commands::import::pick_import_folder,
             commands::import::import_instance,
         ])
         .run(tauri::generate_context!())

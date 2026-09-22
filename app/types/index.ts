@@ -216,7 +216,7 @@ export interface ImageEntry {
   date: string | null
 }
 
-export type ImportSource = 'vanilla' | 'prism' | 'multimc' | 'curseforge'
+export type ImportSource = 'vanilla' | 'prism' | 'multimc' | 'curseforge' | 'folder'
 
 export interface ImportCandidate {
   id: string
@@ -226,6 +226,7 @@ export interface ImportCandidate {
   loader: Loader
   modCount: number
   worldCount: number
+  versionGuessed: boolean
 }
 
 export interface ImportProgress {

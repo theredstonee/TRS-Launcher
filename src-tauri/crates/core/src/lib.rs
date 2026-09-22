@@ -58,6 +58,8 @@ pub struct Launcher {
     accounts: AccountStore,
     games: GameManager,
     servers: ServerStore,
+    /// Von Hand gewählte Import-Ordner (nur für diese Sitzung).
+    import_folders: Mutex<Vec<PathBuf>>,
     /// Mitgelieferte TRS-Client-Jars (Tauri-Ressourcen).
     client_mod_dir: std::sync::RwLock<Option<PathBuf>>,
     /// Instanzen, die gerade vorbereitet werden (Schutz vor Doppelklicks).
@@ -84,6 +86,7 @@ impl Launcher {
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
             servers: ServerStore::new(paths.clone()),
+            import_folders: Mutex::default(),
             client_mod_dir: std::sync::RwLock::default(),
             preparing: Mutex::default(),
             settings: RwLock::new(settings),
