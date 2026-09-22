@@ -16,6 +16,19 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Ping | Latency to the current server from the player list (hidden in singleplayer) |
 | Zoom | Hold key → FOV divided by the zoom factor (default ×4), smooth transition, mouse wheel adjusts the zoom, slower mouse while zooming |
 | Fullbright | Maximum brightness; only overrides the gamma used for the lightmap, the vanilla brightness option is never changed |
+| Rüstung | Worn armor + held item with durability (number or percent, colored green→red) |
+| Trank-Effekte | Active effects with level and remaining time, in the effect color |
+| Koordinaten | Position, facing direction and biome |
+| Uhrzeit / Speicher | Real-time clock (24 h/12 h, optional seconds) / JVM memory usage |
+| Server-Adresse / Aktive Resourcepacks | Current server (hidden in singleplayer) / enabled packs |
+| Toggle-Sprint / Toggle-Schleichen | Press once to keep sprinting/sneaking, HUD indicator while active (inactive if vanilla's own toggle option is on) |
+| Fadenkreuz | Own crosshair (cross, cross+dot, dot, T, circle, circle+dot; color, size, gap, thickness, outline, attack cooldown) with an editor |
+| Treffer-Farbe | Color/opacity of the hurt tint of entities (recolors the overlay texture) |
+| Freelook | Hold Left Alt to orbit the camera without turning the player. Off by default – some servers forbid it |
+| Startbildschirm | TRS title screen (pixel wordmark, Einzelspieler/Mehrspieler/Einstellungen/Mods*/TRS-Menü/Beenden, quick-join strip with the first 4 servers of servers.dat); link "Klassischer Titelbildschirm"; disable the module to always get the vanilla one |
+
+*Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
+toggle, priority ▲/▼, open folder; applied with one reload).
 
 HUD modules have text color, background and size settings and can be dragged in **HUD bearbeiten**
 (snaps to screen edges and center; mouse wheel = size, right click = reset, Shift = no snapping).
@@ -30,6 +43,7 @@ Listed under **TRS Client** in the vanilla controls menu.
 | Right Shift | Open the TRS menu |
 | C (hold) | Zoom (note: vanilla also uses C for "save hotbar activator"; rebind if needed) |
 | unbound | Toggle Fullbright (also switchable in the menu) |
+| Left Alt (hold) | Freelook (module must be enabled) |
 
 ## Supported versions
 
