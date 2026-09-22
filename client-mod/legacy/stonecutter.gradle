@@ -1,0 +1,49 @@
+import groovy.json.JsonOutput
+
+plugins {
+	id 'dev.kikugie.stonecutter'
+	// Einmal für alle Versions-Unterprojekte laden (gemeinsamer Klassenlader).
+	id 'gg.essential.loom' version '1.15.50' apply false
+	id 'dev.architectury.architectury-pack200' version '0.1.3' apply false
+}
+// Version, deren Code gerade unkommentiert in src/ steht (eingecheckt: 1.8.9).
+// Umschalten: ./gradlew "Set active project to <version>" (danach vor dem Commit zurück auf 1.8.9).
+stonecutter.active '1.8.9'
+
+/*
+ * ./gradlew collectLauncherJars
+ * Baut alle Legacy-Forge-Versionen (inkl. Unit-Tests) und legt die JARs + builds-legacy.json
+ * in client-mod/dist/ ab. Der Koordinator führt builds-legacy.json mit den anderen Manifesten zusammen.
+ */
+def distFile = file('../dist')
+def nodes = stonecutter.versions.collect { project(":${it.project}") }
+
+tasks.register('collectLauncherJars') {
+	group = 'build'
+	description = 'Builds every legacy Forge version and writes the jars and builds-legacy.json to client-mod/dist/'
+
+	dependsOn(nodes.collect { it.trsModJar })
+	dependsOn(nodes.collect { "${it.path}:test" })
+
+	def entries = nodes.collect { p ->
+		[minecraft: p.stonecutter.current.version.toString(),
+		 versions : p.trsLauncherVersions,
+		 forge    : (p.findProperty('launcher_forge') ?: p.forge_version).toString(),
+		 jar      : p.trsModJar.flatMap { it.archiveFile }]
+	}
+	outputs.upToDateWhen { false }
+
+	doLast {
+		distFile.mkdirs()
+		def builds = []
+		entries.each { e ->
+			def name = "trsclient-forge-${e.minecraft}.jar"
+			new File(distFile, name).bytes = e.jar.get().asFile.bytes
+			// Maven-Version 1.8.9-11.15.1.2318-1.8.9 → Launcher-Form 1.8.9-11.15.1.2318
+			def forge = e.forge.endsWith("-${e.minecraft}") ? e.forge.substring(0, e.forge.length() - e.minecraft.length() - 1) : e.forge
+			builds << [loader: 'forge', minecraft: e.versions, file: name, requires: [], forge: forge]
+		}
+		new File(distFile, 'builds-legacy.json').setText(JsonOutput.prettyPrint(JsonOutput.toJson(builds)) + '\n', 'UTF-8')
+		logger.lifecycle("collectLauncherJars: ${builds.size()} Legacy-Forge-JARs → ${distFile}")
+	}
+}

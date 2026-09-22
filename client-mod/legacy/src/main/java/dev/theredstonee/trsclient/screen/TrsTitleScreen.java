@@ -1,0 +1,203 @@
+package dev.theredstonee.trsclient.screen;
+
+import dev.theredstonee.trsclient.TrsClient;
+import dev.theredstonee.trsclient.core.server.QuickJoin;
+import dev.theredstonee.trsclient.core.ui.PixelFont;
+import dev.theredstonee.trsclient.ui.Brand;
+import dev.theredstonee.trsclient.ui.Gfx;
+import dev.theredstonee.trsclient.ui.Hotspots;
+import dev.theredstonee.trsclient.compat.Mc;
+import net.minecraft.client.gui.GuiMultiplayer;
+import net.minecraft.client.gui.GuiOptions;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.multiplayer.ServerList;
+import net.minecraftforge.fml.client.FMLClientHandler;
+import net.minecraftforge.fml.client.GuiModList;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * TRS-Startbildschirm (ersetzt den Vanilla-Titelbildschirm, abschaltbar im Modul "Startbildschirm"):
+ * im Code gezeichneter Pixel-Schriftzug in Markenfarben, Hauptknöpfe und eine Schnellbeitritt-Leiste
+ * mit den ersten Servern aus servers.dat (die der Launcher mit seiner Serverliste abgleicht).
+ */
+public final class TrsTitleScreen extends TrsScreen {
+	private static final int MAX_SERVERS = 4;
+	private static final int BTN_W = 180;
+	private static final int BTN_H = 18;
+	private static final int BTN_GAP = 4;
+
+	private final Hotspots hot = new Hotspots();
+	private final List<QuickJoin.Server> servers = new ArrayList<>();
+	private final List<ServerData> serverData = new ArrayList<>();
+	private final String versionLine;
+
+	public TrsTitleScreen() {
+		versionLine = "Minecraft " + Mc.version() + " · Forge · TRS Client " + TrsClient.get().version();
+	}
+
+	@Override
+	public void initGui() {
+		super.initGui();
+		loadServers();
+	}
+
+	/** Liest servers.dat (Vanilla-Serverliste) und wählt die ersten Einträge für die Schnellbeitritt-Leiste. */
+	private void loadServers() {
+		servers.clear();
+		serverData.clear();
+		if (!TrsClient.get().modules().titleServers.get()) return;
+		try {
+			ServerList list = new ServerList(minecraft);
+			list.loadServerList();
+			List<QuickJoin.Server> all = new ArrayList<>();
+			for (int i = 0; i < list.countServers(); i++) all.add(new QuickJoin.Server(list.getServerData(i).serverName, list.getServerData(i).serverIP));
+			for (QuickJoin.Server s : QuickJoin.pick(all, MAX_SERVERS)) {
+				servers.add(s);
+				for (int i = 0; i < list.countServers(); i++) {
+					ServerData d = list.getServerData(i);
+					if (d.serverIP != null && d.serverIP.trim().equals(s.address()) && !serverData.contains(d)) {
+						serverData.add(d);
+						break;
+					}
+				}
+			}
+		} catch (RuntimeException e) {
+			TrsClient.LOGGER.warn("Serverliste konnte nicht gelesen werden", e);
+			servers.clear();
+			serverData.clear();
+		}
+	}
+
+	@Override
+	protected boolean customBackground() {
+		return true;
+	}
+
+	@Override
+	protected void drawBackground(Gfx g, float partialTick) {
+		g.fill(0, 0, width, height, Brand.BG);
+		// Dezentes "Schaltkreis"-Raster in Tiefenschiefer mit einzelnen Lampen.
+		for (int x = 12; x < width; x += 24) g.fill(x, 0, x + 1, height, 0xFF1B1B23);
+		for (int y = 12; y < height; y += 24) g.fill(0, y, width, y + 1, 0xFF1B1B23);
+		for (int i = 0; i < 9; i++) {
+			int lx = 12 + ((i * 7 + 3) % Math.max(1, width / 24)) * 24;
+			int ly = 12 + ((i * 5 + 2) % Math.max(1, height / 24)) * 24;
+			g.fill(lx - 1, ly - 1, lx + 2, ly + 2, i % 3 == 0 ? 0x60FFB84D : 0x40E0281E);
+		}
+		// Redstone-Linie oben
+		g.fill(0, 0, width, 2, Brand.RED);
+	}
+
+	@Override
+	protected void draw(Gfx g, int mouseX, int mouseY, float partialTick) {
+		hot.clear();
+		boolean compact = height < 300;
+
+		// Schriftzug "TRS" groß, "CLIENT" klein darunter
+		int big = compact ? 6 : 8;
+		int small = compact ? 2 : 3;
+		int logoW = PixelFont.width("TRS") * big;
+		int logoX = (width - logoW) / 2;
+		int logoY = compact ? 14 : 30;
+		pixelText(g, "TRS", logoX + big / 2, logoY + big / 2, big, 0xFF5A0F0B);
+		pixelText(g, "TRS", logoX, logoY, big, Brand.RED);
+		int subW = PixelFont.width("CLIENT") * small;
+		int subY = logoY + PixelFont.HEIGHT * big + (compact ? 5 : 8);
+		pixelText(g, "CLIENT", (width - subW) / 2, subY, small, Brand.TEXT);
+		// Lampe rechts neben "CLIENT"
+		int lampX = (width + subW) / 2 + small * 2;
+		g.fill(lampX, subY + small * 2, lampX + small * 3, subY + small * 5, Brand.AMBER);
+
+		// Knöpfe
+		int y = subY + PixelFont.HEIGHT * small + (compact ? 10 : 18);
+		int x = (width - BTN_W) / 2;
+		y = button(g, mouseX, mouseY, x, y, "Einzelspieler", true, () -> open(Mc.worldSelectScreen(this)));
+		y = button(g, mouseX, mouseY, x, y, "Mehrspieler", false, () -> open(new GuiMultiplayer(this)));
+		int half = (BTN_W - BTN_GAP) / 2;
+		halfButton(g, mouseX, mouseY, x, y, half, "Einstellungen", this::openOptions);
+		halfButton(g, mouseX, mouseY, x + half + BTN_GAP, y, half, "TRS-Menü", () -> open(new TrsMenuScreen(this)));
+		y += BTN_H + BTN_GAP;
+		// Forge bringt immer eine Mod-Liste mit.
+		halfButton(g, mouseX, mouseY, x, y, half, "Mods", () -> open(new GuiModList(this)));
+		halfButton(g, mouseX, mouseY, x + half + BTN_GAP, y, half, "Beenden", minecraft::shutdown);
+		y += BTN_H + BTN_GAP;
+
+		drawServers(g, mouseX, mouseY, y + (compact ? 4 : 12));
+
+		// Fußzeile
+		g.text(font, versionLine, 4, height - 10, Brand.TEXT_DIM, false);
+		String classic = "Klassischer Titelbildschirm";
+		int cw = font.getStringWidth(classic);
+		boolean hover = inside(mouseX, mouseY, width - cw - 4, height - 11, cw, 10);
+		g.text(font, classic, width - cw - 4, height - 10, hover ? Brand.AMBER : Brand.TEXT_DIM, false);
+		hot.add(width - cw - 4, height - 11, cw, 10, () -> TrsClient.get().openVanillaTitle());
+	}
+
+	private void drawServers(Gfx g, int mx, int my, int y) {
+		if (servers.isEmpty()) return;
+		int n = servers.size();
+		int cardW = Math.min(120, (width - 24 - (n - 1) * BTN_GAP) / n);
+		int cardH = 26;
+		if (y + 12 + cardH > height - 14) return; // Fenster zu klein
+		int total = n * cardW + (n - 1) * BTN_GAP;
+		int x0 = (width - total) / 2;
+		g.text(font, "Server", x0, y, Brand.TEXT_DIM, false);
+		y += 11;
+		for (int i = 0; i < n; i++) {
+			QuickJoin.Server s = servers.get(i);
+			int cx = x0 + i * (cardW + BTN_GAP);
+			boolean hover = inside(mx, my, cx, y, cardW, cardH);
+			g.fill(cx, y, cx + cardW, y + cardH, hover ? Brand.SURFACE_HOVER : Brand.SURFACE);
+			g.fill(cx, y, cx + 2, y + cardH, hover ? Brand.AMBER : Brand.RED);
+			g.text(font, font.trimStringToWidth(s.label(), cardW - 10), cx + 6, y + 4, Brand.TEXT, false);
+			g.text(font, font.trimStringToWidth(s.address(), cardW - 10), cx + 6, y + 15, Brand.TEXT_DIM, false);
+			if (i < serverData.size()) {
+				ServerData data = serverData.get(i);
+				hot.add(cx, y, cardW, cardH, () -> join(data));
+			}
+		}
+	}
+
+	private void join(ServerData data) {
+		// Wie der Vanilla-Mehrspieler-Bildschirm (Forge prüft dabei die Mod-Kompatibilität).
+		FMLClientHandler.instance().connectToServer(this, data);
+	}
+
+	private void openOptions() {
+		open(new GuiOptions(this, minecraft.gameSettings));
+	}
+
+	private void pixelText(Gfx g, String text, int x, int y, int scale, int color) {
+		for (int[] r : PixelFont.rects(text)) {
+			g.fill(x + r[0] * scale, y + r[1] * scale, x + r[2] * scale, y + r[3] * scale, color);
+		}
+	}
+
+	private int button(Gfx g, int mx, int my, int x, int y, String label, boolean primary, Runnable action) {
+		Brand.button(g, font, x, y, BTN_W, BTN_H, label, primary, inside(mx, my, x, y, BTN_W, BTN_H));
+		hot.add(x, y, BTN_W, BTN_H, action);
+		return y + BTN_H + BTN_GAP;
+	}
+
+	private void halfButton(Gfx g, int mx, int my, int x, int y, int w, String label, Runnable action) {
+		Brand.button(g, font, x, y, w, BTN_H, label, false, inside(mx, my, x, y, w, BTN_H));
+		hot.add(x, y, w, BTN_H, action);
+	}
+
+	@Override
+	protected boolean onClick(double mouseX, double mouseY, int button) {
+		if (hot.click(mouseX, mouseY, button)) {
+			clickSound();
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean shouldCloseOnEsc() {
+		return false;
+	}
+}

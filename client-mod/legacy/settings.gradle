@@ -1,0 +1,40 @@
+// TRS Client für Legacy-Forge (Minecraft 1.8.9 – 1.12.2, MCP-Namen, LaunchWrapper, Java 8).
+// Eigenständiger Gradle-Build – absichtlich NICHT Teil von client-mod/settings.gradle:
+// Legacy-Forge braucht Essentials architectury-loom-Fork und Java 8.
+// Ein Quellbaum (src/), ein Unterprojekt je Minecraft-Version (Stonecutter, versions/<mc>/).
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+		maven { url = 'https://repo.essential.gg/repository/maven-public/' }
+		maven { url = 'https://maven.architectury.dev/' }
+		maven { url = 'https://maven.fabricmc.net/' }
+		maven { url = 'https://maven.minecraftforge.net/' }
+		// Stonecutter (Mehrversions-Präprozessor)
+		maven { url = 'https://maven.kikugie.dev/releases' }
+	}
+	resolutionStrategy {
+		eachPlugin {
+			if (requested.id.id == 'gg.essential.loom') {
+				useModule("gg.essential:architectury-loom:${requested.version}")
+			}
+		}
+	}
+}
+
+plugins {
+	// Lädt bei Bedarf automatisch ein JDK 8 (Gradle-Toolchains).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+	id 'dev.kikugie.stonecutter' version '0.9.8'
+}
+
+rootProject.name = 'trsclient-legacy'
+
+// Neue Version: hier eintragen + versions/<version>/gradle.properties anlegen.
+stonecutter {
+	create(rootProject) {
+		versions '1.8.9', '1.9', '1.9.4', '1.10.2', '1.11.2', '1.12.2'
+		// Version, in deren Zustand src/ eingecheckt ist.
+		vcsVersion = '1.8.9'
+	}
+}

@@ -1,0 +1,124 @@
+// Build-Skript für JEDE Legacy-Forge-Version (versions/<minecraft>), ausgeführt von Stonecutter.
+// Quellcode: src/ (vorverarbeitet je Version). Versionsspezifische Werte: versions/<minecraft>/gradle.properties
+plugins {
+	id 'java'
+	// Essentials Fork von architectury-loom – unterstützt Legacy-Forge (1.8.9 – 1.12.2) mit aktuellem Gradle.
+	id 'gg.essential.loom'
+	// Forge 1.8.9 liefert seine Binär-Patches pack200-komprimiert (seit Java 14 nicht mehr im JDK).
+	id 'dev.architectury.architectury-pack200'
+}
+
+def mc = stonecutter.current.version
+
+group = maven_group
+version = mod_version
+
+base {
+	archivesName = "trsclient-forge-${mc}"
+}
+
+java {
+	// Minecraft ≤ 1.12.2 + LaunchWrapper laufen nur auf Java 8 – kompiliert und gestartet wird mit JDK 8.
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
+loom {
+	forge {
+		pack200Provider = new dev.architectury.pack200.java.Pack200Adapter()
+	}
+	runConfigs {
+		client {
+			// Eigenes Spielverzeichnis je Version: client-mod/run/forge-<minecraft>
+			runDir = "../../../run/forge-${mc}"
+			// ./gradlew :<mc>:runClient -PtrsAutotest → Menü, Testwelt, Screenshots, beendet das Spiel.
+			if (project.hasProperty('trsAutotest')) {
+				vmArg '-Dtrsclient.autotest=true'
+			}
+		}
+		remove(server)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${mc}"
+	mappings project.mcp_mappings
+	forge "net.minecraftforge:forge:${project.forge_version}"
+
+	// Tests laufen gegen dieselbe Gson-Version, die Minecraft 1.8.9 mitbringt (ältestes Ziel).
+	testImplementation "com.google.code.gson:gson:${gson_version}"
+	testImplementation platform("org.junit:junit-bom:${junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'failed'
+	}
+}
+
+// BuildInfo.java: Versionsbereich für @Mod(acceptedMinecraftVersions = …) – muss eine Konstante sein.
+def buildInfoDir = layout.buildDirectory.dir('generated/sources/buildinfo')
+def generateBuildInfo = tasks.register('generateBuildInfo') {
+	def accepted = project.accepted_versions
+	def modVersion = project.version.toString()
+	inputs.property('accepted', accepted)
+	inputs.property('version', modVersion)
+	outputs.dir(buildInfoDir)
+	doLast {
+		def out = buildInfoDir.get().file('dev/theredstonee/trsclient/BuildInfo.java').asFile
+		out.parentFile.mkdirs()
+		out.setText("""package dev.theredstonee.trsclient;
+
+/** Generiert von build.gradle (versions/${mc}/gradle.properties). */
+final class BuildInfo {
+	/** Minecraft-Versionen, die Forge für diese JAR akzeptiert (Maven-Versionsbereich). */
+	static final String ACCEPTED_MINECRAFT = "${accepted}";
+	/** Mod-Version (gradle.properties mod_version). */
+	static final String VERSION = "${modVersion}";
+
+	private BuildInfo() {
+	}
+}
+""", 'UTF-8')
+	}
+}
+sourceSets.main.java.srcDir(generateBuildInfo)
+
+// Forge sucht mcmod.info neben den Klassen – im Dev-Start (runClient) liegen Ressourcen sonst in einem
+// eigenen Ordner und Forge meldet "missing the required element 'version'".
+sourceSets.main.output.resourcesDir = sourceSets.main.java.classesDirectory
+
+processResources {
+	def props = [version: project.version, minecraft: mc]
+	inputs.properties(props)
+	filesMatching('mcmod.info') {
+		expand props
+	}
+	// Sprachdateien: bis 1.10.2 heißen sie en_US.lang/de_DE.lang, ab 1.11 kleingeschrieben.
+	if (stonecutter.eval(mc, '<1.11')) {
+		rename 'en_us.lang', 'en_US.lang'
+		rename 'de_de.lang', 'de_DE.lang'
+	}
+}
+
+jar {
+	from(rootProject.file('../LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
+
+// Die fertige, auf SRG-Namen remappte Mod-JAR dieser Version (für collectLauncherJars im Controller).
+ext.trsModJar = tasks.named('remapJar')
+ext.trsLauncherVersions = project.launcher_versions.split(',').collect { it.trim() }
