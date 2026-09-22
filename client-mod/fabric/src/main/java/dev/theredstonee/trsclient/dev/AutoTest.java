@@ -268,6 +268,7 @@ public final class AutoTest {
 				shot(mc, "trsclient-autogg");
 				modules.autoGg.setEnabled(false);
 				modules.textHotkeys.setEnabled(false);
+				copyChatLine(mc);
 				next(5);
 				break;
 			case 20:
@@ -302,6 +303,19 @@ public final class AutoTest {
 		list.add(new ServerData("Hypixel", "mc.hypixel.net", false));
 		*///?}
 		list.save();
+	}
+
+	/**
+	 * Prüft das Kopieren per Strg+Klick: klickt rechnerisch auf die unterste Chat-Zeile
+	 * und schreibt das Ergebnis der Zwischenablage ins Log.
+	 */
+	private static void copyChatLine(Minecraft mc) {
+		double scale = Mc.chatScale();
+		int lineHeight = Mc.chatLineHeight();
+		double mouseY = Mc.window().getGuiScaledHeight() - 40 - scale * lineHeight / 2.0;
+		boolean copied = TrsClient.get().chat().onChatClick(20, mouseY, true);
+		String clipboard = copied ? mc.keyboardHandler.getClipboard() : "(nicht kopiert)";
+		TrsClient.LOGGER.info("[Autotest] Strg+Klick auf Chat-Zeile: {}", clipboard);
 	}
 
 	/** Schreibt eine Nachricht in den Chat (wie eine Servernachricht – geht durch die TRS-Chat-Hooks). */

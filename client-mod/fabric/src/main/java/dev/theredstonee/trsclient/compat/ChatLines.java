@@ -90,9 +90,26 @@ public final class ChatLines {
 		append(sb, ((GuiMessage<net.minecraft.util.FormattedCharSequence>) lines.get(index)).getMessage());
 		return sb.toString().trim();
 		*///?} else {
-		/*return ((GuiMessage) lines.get(index)).getMessage().getString().trim();
+		/*// Bis 1.15 enthält der Text noch die Farbcodes – die gehören nicht in die Zwischenablage.
+		return stripColors(((GuiMessage) lines.get(index)).getMessage().getString()).trim();
 		*///?}
 	}
+
+	//? if <1.16 {
+	/*/^* Entfernt "§x"-Farbcodes aus einem Text. *^/
+	private static String stripColors(String text) {
+		StringBuilder sb = new StringBuilder(text.length());
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+			if (c == '§' && i + 1 < text.length()) {
+				i++;
+				continue;
+			}
+			sb.append(c);
+		}
+		return sb.toString();
+	}
+	*///?}
 
 	//? if >=1.16 {
 	/** Zeichen einer vorformatierten Zeile anhängen (ohne Farbcodes). */
