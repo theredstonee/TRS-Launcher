@@ -230,8 +230,11 @@ public final class AutoTest {
 				modules.combo.setEnabled(true);
 				modules.speed.setEnabled(true);
 				testWaypoint = TrsClient.get().waypoints().create("Basis", 0x3DDC84);
-				// 20 Blöcke nach Norden und nach Süden schauen (yaw 0) → Wegpunkt im Blick
-				command(mc, "tp @p ~ ~ ~-20 0 0");
+				TrsClient.LOGGER.info("[Autotest] Wegpunkt bei {}/{}/{}, Spieler bei {}/{}/{}", testWaypoint.x, testWaypoint.y,
+						testWaypoint.z, (int) Mc.x(mc.player), (int) Mc.y(mc.player), (int) Mc.z(mc.player));
+				// 20 Blöcke nach Norden und nach Süden schauen (yaw 0) → Wegpunkt im Blick.
+				// "execute as/at @p": ~ bezieht sich sonst auf den Weltspawn, nicht auf den Spieler.
+				command(mc, "execute as @p at @s run tp @s ~ ~ ~-20 0 0");
 				next(40);
 				break;
 			case 16:
