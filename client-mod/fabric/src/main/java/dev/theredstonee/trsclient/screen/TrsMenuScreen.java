@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.TrsKeys;
 import dev.theredstonee.trsclient.core.module.HudModule;
@@ -12,7 +13,6 @@ import dev.theredstonee.trsclient.ui.SettingRows;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import java.util.List;
  * Einfaches Immediate-Mode-UI: Klickflächen werden beim Zeichnen registriert.
  */
 public final class TrsMenuScreen extends TrsScreen {
-	private static final Component TITLE = Component.literal("TRS Client").withStyle(ChatFormatting.BOLD);
+	private static final Component TITLE = Mc.text("TRS Client").withStyle(ChatFormatting.BOLD);
 	private static final int HEADER_H = 26;
 	private static final int FOOTER_H = 24;
 	private static final int CARD_H = 26;
@@ -42,7 +42,7 @@ public final class TrsMenuScreen extends TrsScreen {
 	private int cardsH;
 
 	public TrsMenuScreen(Screen parent) {
-		super(Component.literal("TRS Client"));
+		super(Mc.text("TRS Client"));
 		this.parent = parent;
 		this.selected = modules.registry.all().get(0);
 	}
@@ -93,7 +93,7 @@ public final class TrsMenuScreen extends TrsScreen {
 		int closeX = px + pw - 10 - closeW;
 		int editX = closeX - 6 - editW;
 		int packsX = editX - 6 - packsW;
-		String hint = "Taste: " + TrsKeys.menu.getTranslatedKeyMessage().getString();
+		String hint = "Taste: " + Mc.keyName(TrsKeys.menu);
 		if (px + 10 + font.width(hint) < packsX - 6) {
 			g.text(font, hint, px + 10, footerY + 8, Brand.TEXT_DIM, false);
 		}
@@ -128,7 +128,7 @@ public final class TrsMenuScreen extends TrsScreen {
 			if (m == selected) Brand.outline(g, cx, cy, cardW, CARD_H, Brand.RED);
 			// Lampe: leuchtet bernsteinfarben, wenn "bestromt"
 			g.fill(cx + cardW - 8, cy + 5, cx + cardW - 4, cy + 9, m.isEnabled() ? Brand.AMBER : Brand.OFF);
-			g.text(font, font.plainSubstrByWidth(m.name(), cardW - 16), cx + 6, cy + 4, Brand.TEXT, false);
+			g.text(font, Gfx.clip(font, m.name(), cardW - 16), cx + 6, cy + 4, Brand.TEXT, false);
 			if (mouseInList) hot.add(cx, Math.max(cy, y), cardW, Math.min(cy + CARD_H, y + h) - Math.max(cy, y), () -> selected = m);
 
 			int pillX = cx + 6;
@@ -161,17 +161,14 @@ public final class TrsMenuScreen extends TrsScreen {
 		int iw = w - 14;
 		int cy = y + 7;
 
-		g.text(font, Component.literal(selected.name()).withStyle(ChatFormatting.BOLD), ix, cy, Brand.TEXT, false);
+		g.text(font, Mc.text(selected.name()).withStyle(ChatFormatting.BOLD), ix, cy, Brand.TEXT, false);
 		int pillX = x + w - 7 - 26;
 		Brand.pill(g, font, pillX, cy - 1, selected.isEnabled(), inside(mx, my, pillX, cy - 1, 26, 11));
 		Module sel = selected;
 		hot.add(pillX, cy - 1, 26, 11, sel::toggle);
 		cy += 13;
 
-		for (FormattedCharSequence line : font.split(Component.literal(selected.description()), iw)) {
-			g.text(font, line, ix, cy, Brand.TEXT_DIM, false);
-			cy += 10;
-		}
+		cy = g.paragraph(font, selected.description(), ix, cy, iw, 10, Brand.TEXT_DIM);
 		cy += 4;
 		g.hLine(ix, ix + iw - 1, cy, Brand.BORDER);
 		cy += 5;
@@ -183,7 +180,8 @@ public final class TrsMenuScreen extends TrsScreen {
 		SettingRows.draw(g, font, selected.settings(), ix, cy, iw, y + h - (hasAction ? 18 : 0), mx, my, hot);
 
 		int by = y + h - 17;
-		if (selected instanceof HudModule hud) {
+		if (selected instanceof HudModule) {
+			HudModule hud = (HudModule) selected;
 			String label = "Position zurücksetzen";
 			button(g, mx, my, ix, by, font.width(label) + 10, 13, label, false, hud::resetPosition);
 		} else if (selected == modules.crosshair) {

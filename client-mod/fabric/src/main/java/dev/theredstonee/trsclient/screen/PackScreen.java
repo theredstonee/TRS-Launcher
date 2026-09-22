@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.TrsClient;
+import dev.theredstonee.trsclient.compat.Packs;
 import dev.theredstonee.trsclient.core.pack.PackList;
 import dev.theredstonee.trsclient.core.util.PlatformOpen;
 import dev.theredstonee.trsclient.ui.Brand;
@@ -10,11 +12,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.server.packs.repository.PackRepository;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,15 +23,16 @@ import java.util.List;
  * "Ordner öffnen". Änderungen werden erst mit "Übernehmen" angewendet (ein einziger Reload).
  */
 public final class PackScreen extends TrsScreen {
-	private static final Component TITLE = Component.literal("Resourcepacks").withStyle(ChatFormatting.BOLD);
+	private static final Component TITLE = Mc.text("Resourcepacks").withStyle(ChatFormatting.BOLD);
 	private static final int ROW_H = 24;
+	private static final String HINT = "Packs durchsuchen …";
 
 	private final Screen parent;
 	private final Hotspots hot = new Hotspots();
 	private final List<PackList.Entry> entries = new ArrayList<>();
 	private final List<String> fixedIds = new ArrayList<>();
 	private List<String> enabledIds = new ArrayList<>();
-	private List<String> originalIds = List.of();
+	private List<String> originalIds = Collections.emptyList();
 	private PackList.Filter filter = PackList.Filter.ALL;
 	private EditBox search;
 	private int scroll;
@@ -42,7 +44,7 @@ public final class PackScreen extends TrsScreen {
 	private String status = "";
 
 	public PackScreen(Screen parent) {
-		super(Component.literal("Resourcepacks"));
+		super(Mc.text("Resourcepacks"));
 		this.parent = parent;
 	}
 
@@ -54,29 +56,36 @@ public final class PackScreen extends TrsScreen {
 		int px = (width - pw) / 2;
 		int py = panelY();
 		String query = search == null ? "" : search.getValue();
-		search = new EditBox(font, px + 10, py + 30, pw - 20 - 96, 16, Component.literal("Suche"));
-		search.setHint(Component.literal("Packs durchsuchen …"));
+		//? if >=1.16 {
+		search = new EditBox(font, px + 10, py + 30, pw - 20 - 96, 16, Mc.text("Suche"));
+		//?} else
+		/*search = new EditBox(font, px + 10, py + 30, pw - 20 - 96, 16, "Suche");*/
 		search.setMaxLength(64);
 		search.setValue(query);
+		//? if >=1.19.3 {
+		search.setHint(Mc.text(HINT));
 		search.setResponder(q -> scroll = 0);
+		//?} else {
+		/*// Platzhalter über den Vorschlagstext (setHint gibt es erst ab 1.19.3).
+		search.setSuggestion(query.isEmpty() ? HINT : null);
+		search.setResponder(q -> {
+			scroll = 0;
+			search.setSuggestion(q.isEmpty() ? HINT : null);
+		});
+		*///?}
+		//? if >=1.17 {
 		addRenderableWidget(search);
+		//?} else
+		/*addButton(search);*/
 		setInitialFocus(search);
 	}
 
 	private void loadPacks() {
-		PackRepository repo = minecraft.getResourcePackRepository();
-		repo.reload();
 		entries.clear();
 		fixedIds.clear();
-		for (Pack p : repo.getAvailablePacks()) {
-			if (p.isFixedPosition()) fixedIds.add(p.getId());
-			// Pflicht-Packs (Standard, Mod-Ressourcen) sind immer aktiv und nicht schaltbar → nicht auflisten.
-			if (p.isRequired()) continue;
-			entries.add(new PackList.Entry(p.getId(), p.getTitle().getString(), p.getDescription().getString(),
-					false, p.getCompatibility().isCompatible()));
-		}
-		enabledIds = new ArrayList<>(repo.getSelectedIds());
-		originalIds = List.copyOf(enabledIds);
+		entries.addAll(Packs.available(fixedIds));
+		enabledIds = Packs.selectedIds();
+		originalIds = new ArrayList<>(enabledIds);
 	}
 
 	private int panelW() {
@@ -179,8 +188,8 @@ public final class PackScreen extends TrsScreen {
 		g.fill(x + 1, y + 1, x + 3, y + ROW_H - 1, on ? Brand.AMBER : Brand.OFF);
 		int textRight = x + w - 8 - 26 - (on ? 30 : 0);
 		String title = e.title() + (e.compatible() ? "" : "  (nicht kompatibel)");
-		g.text(font, font.plainSubstrByWidth(title, textRight - x - 10), x + 8, y + 4, e.compatible() ? Brand.TEXT : 0xFFFF8080, false);
-		g.text(font, font.plainSubstrByWidth(e.description().replace('\n', ' '), textRight - x - 10), x + 8, y + 14, Brand.TEXT_DIM, false);
+		g.text(font, Gfx.clip(font, title, textRight - x - 10), x + 8, y + 4, e.compatible() ? Brand.TEXT : 0xFFFF8080, false);
+		g.text(font, Gfx.clip(font, e.description().replace('\n', ' '), textRight - x - 10), x + 8, y + 14, Brand.TEXT_DIM, false);
 
 		int pillX = x + w - 8 - 26;
 		int pillY = y + 7;
@@ -217,7 +226,7 @@ public final class PackScreen extends TrsScreen {
 
 	private void openFolder() {
 		try {
-			PlatformOpen.open(minecraft.getResourcePackDirectory());
+			PlatformOpen.open(Packs.folder());
 			status = "Ordner geöffnet";
 		} catch (IOException | RuntimeException e) {
 			TrsClient.LOGGER.warn("Resourcepack-Ordner konnte nicht geöffnet werden", e);
@@ -228,10 +237,8 @@ public final class PackScreen extends TrsScreen {
 	/** Übernimmt die Auswahl (Minecraft speichert sie in options.txt und lädt die Ressourcen neu). */
 	private void apply() {
 		if (!enabledIds.equals(originalIds)) {
-			PackRepository repo = minecraft.getResourcePackRepository();
-			repo.setSelected(enabledIds);
-			minecraft.options.updateResourcePacks(repo);
-			originalIds = List.copyOf(enabledIds);
+			Packs.apply(enabledIds);
+			originalIds = new ArrayList<>(enabledIds);
 		}
 		onClose();
 	}

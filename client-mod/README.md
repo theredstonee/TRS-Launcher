@@ -1,7 +1,7 @@
 # TRS Client
 
 The in-game client mod of the TRS Launcher (Lunar/Badlion style). Fabric, client-only, one jar per
-Minecraft release from **1.20.1 to 26.3** (23 versions, see below).
+Minecraft release from **1.14.4 to 26.3** (39 versions, see below).
 License: GPL-3.0-only, author: theredstonee.
 
 ## Features
@@ -47,11 +47,17 @@ Listed under **TRS Client** in the vanilla controls menu.
 
 ## Supported versions
 
-Every Minecraft release from 1.20.1 to 26.3 with Fabric API builds (checked against Mojang's version manifest
-and meta.fabricmc.net): 1.20.1–1.20.6, 1.21–1.21.11, 26.1, 26.1.1, 26.1.2, 26.2, 26.3. No release in that range was skipped.
+1.14.4, 1.15.2, 1.16.2–1.16.5, 1.17, 1.17.1, 1.18–1.18.2, 1.19–1.19.4, 1.20.1–1.20.6, 1.21–1.21.11,
+26.1, 26.1.1, 26.1.2, 26.2, 26.3 (checked against Mojang's version manifest and meta.fabricmc.net).
+
+Not built: 1.14–1.14.3 (no official Mojang mappings), 1.15, 1.15.1 and 1.16 (their newest Fabric API on Modrinth,
+which the launcher installs, has no `fabric-lifecycle-events-v1`) and 1.16.1 (rendering/text API predates 1.16.2).
+On older versions some features degrade: 1.14 has no hit color, the pack search hint is a suggestion text before 1.19.3,
+vanilla toggle sprint/sneak only exists from 1.15.
 
 Each version gets its **own jar** whose `fabric.mod.json` depends on exactly that Minecraft version
-(`trsclient-fabric-<minecraft>.jar`, requires Fabric API). Java: 17 for 1.20.1–1.20.4, 21 for 1.20.5–1.21.11, 25 for 26.x.
+(`trsclient-fabric-<minecraft>.jar`, requires the Fabric API modules it uses). Bytecode: Java 8 for 1.14–1.16,
+16 for 1.17, 17 for 1.18–1.20.4, 21 for 1.20.5–1.21.11, 25 for 26.x. `common` is plain Java 8 for that reason.
 
 ## Build
 

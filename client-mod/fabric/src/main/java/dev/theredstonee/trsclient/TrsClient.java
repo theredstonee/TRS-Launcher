@@ -1,6 +1,6 @@
 package dev.theredstonee.trsclient;
 
-import com.mojang.blaze3d.platform.InputConstants;
+import dev.theredstonee.trsclient.compat.Keys;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.config.ConfigStore;
 import dev.theredstonee.trsclient.core.input.ClickCounter;
@@ -21,14 +21,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
+// Logging: SLF4J ab 1.17, davor nur Log4j (gleiche {}-Platzhalter).
+//? if >=1.17 {
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+//?} else {
+/*import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+*///?}
 
 import java.io.IOException;
 //? if >=1.21.6 {
 /*import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-*///?} else
+*///?} elif >=1.15
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 //? if >=1.21.11 {
 /*import net.minecraft.resources.Identifier;
@@ -39,7 +45,10 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 /** Einstiegspunkt des TRS Clients (nur Client). */
 public final class TrsClient implements ClientModInitializer {
 	public static final String MOD_ID = "trsclient";
+	//? if >=1.17 {
 	public static final Logger LOGGER = LoggerFactory.getLogger("TRS Client");
+	//?} else
+	/*public static final Logger LOGGER = LogManager.getLogger("TRS Client");*/
 
 	private static TrsClient instance;
 
@@ -97,8 +106,17 @@ public final class TrsClient implements ClientModInitializer {
 			//?} else
 			else vanilla.render(g, delta);
 		});
-		*///?} else
+		*///?} elif >=1.16 {
 		HudRenderCallback.EVENT.register((g, delta) -> hud.render(Gfx.of(g)));
+		//?} elif >=1.15 {
+		/*HudRenderCallback.EVENT.register(delta -> hud.render(Gfx.of()));
+		*///?}
+		// 1.14 hat keinen HUD-Callback: dort ruft HudMixin (Gui#render) renderHud() auf.
+	}
+
+	/** HUD zeichnen – aus dem HUD-Callback bzw. in 1.14 aus HudMixin. */
+	public void renderHud(Gfx g) {
+		hud.render(g);
 	}
 
 	/**
@@ -136,7 +154,7 @@ public final class TrsClient implements ClientModInitializer {
 		}
 		while (TrsKeys.fullbright.consumeClick()) {
 			modules.fullbright.toggle();
-			Mc.actionBar(Component.literal("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus")));
+			Mc.actionBar(Mc.text("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus")));
 			saveConfig();
 		}
 	}
@@ -156,8 +174,8 @@ public final class TrsClient implements ClientModInitializer {
 	public void onMouseClick(int button) {
 		if (Mc.screen() != null) return;
 		long now = System.currentTimeMillis();
-		if (button == InputConstants.MOUSE_BUTTON_LEFT) leftClicks.record(now);
-		else if (button == InputConstants.MOUSE_BUTTON_RIGHT) rightClicks.record(now);
+		if (button == Keys.MOUSE_LEFT) leftClicks.record(now);
+		else if (button == Keys.MOUSE_RIGHT) rightClicks.record(now);
 	}
 
 	/** Pro Frame aus getFov: aktualisiert den Zoom und liefert den FOV-Divisor. */

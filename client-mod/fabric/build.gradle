@@ -5,7 +5,11 @@
 def mc = stonecutter.current.version
 // Ab 26.1 ist Minecraft nicht mehr obfuskiert → Loom ohne Remapping, keine Mappings.
 def unobfuscated = stonecutter.eval(mc, '>=26.1')
-def javaVersion = stonecutter.eval(mc, '>=26.1') ? 25 : (stonecutter.eval(mc, '>=1.20.5') ? 21 : 17)
+// Bytecode-Level = Java, mit dem Mojang diese Version ausliefert (1.14–1.16: 8, 1.17: 16, 1.18–1.20.4: 17, …).
+def javaVersion = stonecutter.eval(mc, '>=26.1') ? 25 : (stonecutter.eval(mc, '>=1.20.5') ? 21 :
+		(stonecutter.eval(mc, '>=1.18') ? 17 : (stonecutter.eval(mc, '>=1.17') ? 16 : 8)))
+// Kompiliert (und gestartet) wird mindestens mit JDK 17 – javac erzeugt per --release älteren Bytecode.
+def toolchainVersion = Math.max(javaVersion, 17)
 
 apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
 
@@ -22,7 +26,7 @@ base {
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(javaVersion)
+		languageVersion = JavaLanguageVersion.of(toolchainVersion)
 	}
 	withSourcesJar()
 }
@@ -30,10 +34,12 @@ java {
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 	options.release = javaVersion
+	// "--release 8" ist in neuen JDKs veraltet – die Warnung ist hier gewollt.
+	options.compilerArgs << '-Xlint:-options'
 }
 
 // Die versionsunabhängige Logik wird mit dem Java-Level DIESER Version mitkompiliert
-// (1.20.1–1.20.4 laufen auf Java 17) und landet direkt in der Mod-JAR.
+// (1.14–1.16 laufen auf Java 8!) und landet direkt in der Mod-JAR – common ist deshalb reines Java 8.
 sourceSets.main.java.srcDir(rootProject.file('common/src/main/java'))
 
 loom {
@@ -62,10 +68,11 @@ repositories {
 def fapiModules = [
 		'fabric-api-base',
 		'fabric-lifecycle-events-v1',
-		'fabric-rendering-v1',
 		stonecutter.eval(mc, '>=26.1') ? 'fabric-key-mapping-api-v1' : 'fabric-key-binding-api-v1',
 		stonecutter.eval(mc, '>=1.21.9') ? 'fabric-resource-loader-v1' : 'fabric-resource-loader-v0',
 ]
+// HudRenderCallback gibt es erst ab 1.15 – in 1.14 hängt sich der HUD per eigenem Mixin ein.
+if (stonecutter.eval(mc, '>=1.15')) fapiModules << 'fabric-rendering-v1'
 // Die komplette Fabric API nur, wenn genau diese Version gestartet wird (:fabric:<v>:runClient)
 // oder mit -PtrsFullApi – Loom verarbeitet Mod-Abhängigkeiten schon beim Konfigurieren.
 def running = project.hasProperty('trsFullApi') ||
@@ -77,20 +84,34 @@ dependencies {
 		mappings loom.officialMojangMappings()
 	}
 	add(modImpl, "net.fabricmc:fabric-loader:${rootProject.loader_version}")
-	fapiModules.each { add(modImpl, fabricApi.module(it, project.fabric_api_version)) }
+	// Alte Fabric-API-Versionen (1.14–1.16) ziehen ein altes fabric-loader mit – das bringen wir selbst mit.
+	fapiModules.each {
+		add(modImpl, fabricApi.module(it, project.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+	}
 	if (running) {
-		add(modRuntime, "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
+		add(modRuntime, "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}") {
+			exclude group: 'net.fabricmc', module: 'fabric-loader'
+		}
 	}
 	compileOnly "com.google.code.gson:gson:${rootProject.gson_version}"
 }
 
+// Mixin-Liste je Version: 1.14 braucht eigene HUD-/Tasten-Hooks, die Overlay-Textur gibt es erst ab 1.15.
+def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin', 'MouseHandlerMixin', 'TitleScreenMixin']
+if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
+if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']
+
 processResources {
 	def props = [
+			mixins      : mixinClasses.collect { "\"${it}\"" }.join(', '),
+			// Abhängig von den einzelnen Fabric-API-Modulen statt "fabric-api": bis ~1.19 hieß die
+			// Fabric API selbst noch "fabric" – die Modul-IDs sind dagegen in allen Versionen gleich.
+			fapiDepends : fapiModules.collect { "\"${it}\": \"*\"" }.join(', '),
 			version     : project.version,
 			minecraft   : mc,
 			java        : "${javaVersion}",
 			loader      : unobfuscated ? '0.18.4' : '0.15.0',
-			mixinJava   : "JAVA_${javaVersion >= 21 ? 21 : 17}",
+			mixinJava   : "JAVA_${javaVersion >= 21 ? 21 : javaVersion}",
 	]
 	inputs.properties(props)
 	filesMatching(['fabric.mod.json', 'trsclient.mixins.json']) {

@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.theredstonee.trsclient.compat.Keys;
 import net.minecraft.client.KeyMapping;
 //? if >=26.1 {
 /*import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -31,11 +32,11 @@ public final class TrsKeys {
 	private static final InputConstants.Type KEYBOARD = InputConstants.Type.KEYSYM;
 
 	static void register() {
-		menu = register(new KeyMapping("key.trsclient.menu", KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
-		zoom = register(new KeyMapping("key.trsclient.zoom", KEYBOARD, InputConstants.KEY_C, CATEGORY));
+		menu = register(new KeyMapping("key.trsclient.menu", KEYBOARD, Keys.KEY_RSHIFT, CATEGORY));
+		zoom = register(new KeyMapping("key.trsclient.zoom", KEYBOARD, Keys.KEY_C, CATEGORY));
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
-		freelook = register(new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY));
+		freelook = register(new KeyMapping("key.trsclient.freelook", KEYBOARD, Keys.KEY_LALT, CATEGORY));
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */

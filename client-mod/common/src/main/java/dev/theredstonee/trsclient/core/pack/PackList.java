@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Logik des Resourcepack-Menüs: Filtern/Suchen und Aktivieren/Deaktivieren mit korrekter
@@ -26,7 +27,59 @@ public final class PackList {
 	}
 
 	/** Ein Pack in der Liste (Titel/Beschreibung bereits als Klartext). */
-	public record Entry(String id, String title, String description, boolean required, boolean compatible) {
+	public static final class Entry {
+		private final String id;
+		private final String title;
+		private final String description;
+		private final boolean required;
+		private final boolean compatible;
+
+		public Entry(String id, String title, String description, boolean required, boolean compatible) {
+			this.id = id;
+			this.title = title;
+			this.description = description;
+			this.required = required;
+			this.compatible = compatible;
+		}
+
+		public String id() {
+			return id;
+		}
+
+		public String title() {
+			return title;
+		}
+
+		public String description() {
+			return description;
+		}
+
+		public boolean required() {
+			return required;
+		}
+
+		public boolean compatible() {
+			return compatible;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (!(o instanceof Entry)) return false;
+			Entry e = (Entry) o;
+			return required == e.required && compatible == e.compatible && Objects.equals(id, e.id)
+					&& Objects.equals(title, e.title) && Objects.equals(description, e.description);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(id, title, description, required, compatible);
+		}
+
+		@Override
+		public String toString() {
+			return "Entry[id=" + id + ", title=" + title + "]";
+		}
 	}
 
 	private PackList() {

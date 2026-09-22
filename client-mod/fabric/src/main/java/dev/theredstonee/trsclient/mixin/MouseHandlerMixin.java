@@ -8,7 +8,7 @@ import dev.theredstonee.trsclient.dev.HookStats;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.player.LocalPlayer;
-import com.mojang.blaze3d.platform.InputConstants;
+import dev.theredstonee.trsclient.compat.Keys;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,7 +30,7 @@ public abstract class MouseHandlerMixin {
 	/*@Inject(method = "onButton", at = @At("HEAD"), require = 1)
 	private void trsclient$countClick(long window, MouseButtonInfo info, int action, CallbackInfo ci) {
 		HookStats.press++;
-		if (action == InputConstants.PRESS && window == trsclient$window()) {
+		if (action == Keys.PRESS && window == trsclient$window()) {
 			TrsClient.get().onMouseClick(info.button());
 		}
 	}
@@ -38,7 +38,7 @@ public abstract class MouseHandlerMixin {
 	@Inject(method = "onPress", at = @At("HEAD"), require = 1)
 	private void trsclient$countClick(long window, int button, int action, int mods, CallbackInfo ci) {
 		HookStats.press++;
-		if (action == InputConstants.PRESS && window == trsclient$window()) {
+		if (action == Keys.PRESS && window == trsclient$window()) {
 			TrsClient.get().onMouseClick(button);
 		}
 	}
@@ -79,6 +79,6 @@ public abstract class MouseHandlerMixin {
 		//? if >=1.21.9 {
 		/*return minecraft.getWindow().handle();
 		*///?} else
-		return minecraft.getWindow().getWindow();
+		return dev.theredstonee.trsclient.compat.Mc.window().getWindow();
 	}
 }

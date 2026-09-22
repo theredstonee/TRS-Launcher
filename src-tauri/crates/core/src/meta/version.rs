@@ -394,8 +394,13 @@ impl VersionInfo {
         let mut seen = std::collections::HashSet::new();
         let mut libraries = Vec::with_capacity(self.libraries.len() + parent.libraries.len());
         // Kind zuerst: bei gleicher group:artifact gewinnt die Loader-Version.
-        for lib in self.libraries.into_iter().chain(parent.libraries) {
-            let key = MavenCoord::parse(&lib.name).map(|c| c.dedupe_key()).ok();
+        // Einträge, die auf diesem System gar nicht gelten, fallen vorher weg – sonst verdrängt in
+        // 1.14–1.18 das nur für macOS gedachte LWJGL 3.2.1 das echte LWJGL 3.2.2 (Spiel startet ohne LWJGL).
+        let applies = |lib: &Library| lib.rules.as_deref().is_none_or(|r| rules_allow(r, &Features::default()));
+        for lib in self.libraries.into_iter().chain(parent.libraries).filter(applies) {
+            // Alte Versionen führen dieselbe LWJGL-Library zweimal: einmal als Jar, einmal mit Natives –
+            // der Natives-Eintrag darf nicht als Duplikat wegfallen.
+            let key = MavenCoord::parse(&lib.name).map(|c| (c.dedupe_key(), lib.natives.is_some())).ok();
             if key.is_none_or(|k| seen.insert(k)) {
                 libraries.push(lib);
             }
@@ -606,5 +611,28 @@ mod tests {
         );
         let local = merged.libraries[1].resolve(&Features::default()).unwrap();
         assert!(local[0].is_local());
+    }
+
+    #[test]
+    fn merge_ignores_foreign_os_duplicates() {
+        // 1.16.5: LWJGL 3.2.1 nur für macOS steht VOR 3.2.2 für alle anderen Systeme.
+        let parent: VersionInfo = serde_json::from_str(
+            r#"{"id":"1.16.5","mainClass":"net.minecraft.client.main.Main",
+                "libraries":[{"name":"org.lwjgl:lwjgl:3.2.1","rules":[{"action":"allow","os":{"name":"osx"}}]},
+                             {"name":"org.lwjgl:lwjgl:3.2.2","rules":[{"action":"allow"},{"action":"disallow","os":{"name":"osx"}}]},
+                             {"name":"org.lwjgl:lwjgl:3.2.2","natives":{"windows":"natives-windows"},
+                              "rules":[{"action":"allow"},{"action":"disallow","os":{"name":"osx"}}]}]}"#,
+        )
+        .unwrap();
+        let child: VersionInfo = serde_json::from_str(
+            r#"{"id":"fabric-loader-0.19.5-1.16.5","inheritsFrom":"1.16.5","mainClass":"net.fabricmc.loader.impl.launch.knot.KnotClient",
+                "libraries":[{"name":"net.fabricmc:fabric-loader:0.19.5"}]}"#,
+        )
+        .unwrap();
+        let libs = child.merge_onto(parent).libraries;
+        let names: Vec<_> = libs.iter().map(|l| l.name.as_str()).collect();
+        // Der zweite 3.2.2-Eintrag trägt die Windows-Natives und bleibt erhalten.
+        assert_eq!(names, ["net.fabricmc:fabric-loader:0.19.5", "org.lwjgl:lwjgl:3.2.2", "org.lwjgl:lwjgl:3.2.2"]);
+        assert!(libs[2].natives.is_some());
     }
 }
