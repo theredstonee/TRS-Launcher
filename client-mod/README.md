@@ -126,16 +126,28 @@ which the launcher installs, has no `fabric-lifecycle-events-v1`) and 1.16.1 (re
 On older versions some features degrade: 1.14 has no hit color, the pack search hint is a suggestion text before 1.19.3,
 vanilla toggle sprint/sneak only exists from 1.15.
 
-### What is missing where (Fabric)
+### What is missing where
 
 | Feature | Not available on | Why |
 | --- | --- | --- |
-| Niedriges Feuer, Block-Umrandung, Hitbox-Farbe | 1.14.4 | no `ScreenEffectRenderer`, the outline is drawn with fixed GL calls |
-| Linienstärke der Umrandung | 1.14.4, 1.21.11+ | `RenderSystem.lineWidth` does not exist there |
+| Niedriges Feuer, Block-Umrandung, Hitbox-Farbe | Fabric 1.14.4 | no `ScreenEffectRenderer`, the outline is drawn with fixed GL calls |
+| Linienstärke der Umrandung | Fabric/Forge 1.14.4 and 1.21.11+ | `RenderSystem.lineWidth` does not exist there |
 | Hitboxen (an/aus + Farbe) | 1.21.9+ | the toggle moved into the debug-screen entries and a separate renderer |
+| Hitbox-**Farbe** | Forge 1.15.2–1.16.5 | there `renderHitbox` only routes the eye line through `renderLineBox`, the box itself goes through a private method |
 | 1.7-Animationen: Schlag beim Benutzen | 26.3 | the swing state is no longer a public field |
+| 1.7-Animationen: Hand bleibt oben | Forge 1.8.9–1.12.2 | `ItemRenderer.equippedProgress` is private and there is no hook |
 | Wegpunkte je Dimension | 1.14.4, 1.15.2 | no `Level#dimension()`; waypoints are then valid in every dimension of that world |
-| Bewegungsunschärfe | all | not implemented yet (see "Open") – the frame copy needs a different path per render era |
+| Treffer-Farbe, niedriges Feuer, Reichweite/Combo, Chat-Tools, Auto-GG, Kein Schadens-Wackeln, Block-Umrandung | Forge 1.14.4 | that build has no Mixin at all – the modules are hidden in the menu |
+| Alle neuen Module | Forge 1.13.2 and 1.7.10 | not ported yet (see "Open") |
+| Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |
+
+### Open
+
+- **Bewegungsunschärfe** (motion blur): needs a copy of the previous frame. Up to 1.21.4 that is a framebuffer
+  blit, from 1.21.5 it goes through the new `GpuDevice`/`CommandEncoder` and in 26.x again differently, so it needs
+  three separate implementations; vanilla's own `phosphor` post effect only exists up to 1.20.6. Not built yet.
+- **Forge 1.13.2 and 1.7.10**: the new modules are not ported. Both builds still compile and run with everything
+  that existed before.
 
 Each version gets its **own jar** whose `fabric.mod.json` depends on exactly that Minecraft version
 (`trsclient-fabric-<minecraft>.jar`, requires the Fabric API modules it uses). Bytecode: Java 8 for 1.14–1.16,
