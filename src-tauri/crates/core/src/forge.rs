@@ -72,8 +72,21 @@ pub struct InstallContext<'a> {
     pub client_jar: &'a Path,
     /// Java der Spielversion (`javaw.exe` oder `java.exe`).
     pub java: &'a Path,
+    /// Java-Hauptversion laut Version-JSON (`javaVersion.majorVersion`, sonst 8).
+    pub java_major: u32,
     pub concurrency: usize,
 }
+
+/// Runtime für die Processors, wenn das Spiel mit Java 8 läuft.
+///
+/// Mojangs `jre-legacy` ist 8u51. Dessen `ZipOutputStream` schreibt die
+/// Einträge anders als spätere JDKs, sodass z. B. der Jarsplitter von Forge
+/// 1.13–1.16 Jars mit anderer SHA1 erzeugt als im Installer hinterlegt – der
+/// offizielle Installer scheitert mit 8u51 genauso. Mit Java 21 stimmen die
+/// Prüfsummen (nachgeprüft: 1.13.2 `MC_SLIM`/`MC_EXTRA`). Die Processors sind
+/// reine Kommandozeilen-Werkzeuge; die Java-Version des Spiels ist für sie egal.
+const PROCESSOR_RUNTIME: &str = "java-runtime-delta";
+const PROCESSOR_MIN_JAVA: u32 = 17;
 
 // --- Versionsauflösung -------------------------------------------------------
 
@@ -844,7 +857,7 @@ async fn install_modern(
     if !processors.is_empty() {
         let work_dir = paths.meta_dir().join("loader-install").join(&profile.id);
         let data = build_data_map(ctx, installer_jar, &install.data, &work_dir, &mut tracked).await?;
-        let java = console_java(ctx.java);
+        let java = console_java(&processor_java(ctx, report).await);
 
         let total = processors.len() as u64;
         for (index, processor) in processors.iter().enumerate() {
@@ -870,6 +883,26 @@ async fn install_modern(
         }
     }
     Ok((profile, tracked))
+}
+
+/// Java für die Processors: das des Spiels, außer es ist Java 8 – dann eine
+/// aktuelle verwaltete Runtime (siehe [`PROCESSOR_RUNTIME`]). Ist die nicht zu
+/// bekommen (offline, Plattform ohne Runtime), bleibt es beim Spiel-Java.
+async fn processor_java(ctx: &InstallContext<'_>, report: &(dyn Fn(f64, u64, u64) + Sync)) -> PathBuf {
+    if ctx.java_major >= PROCESSOR_MIN_JAVA {
+        return ctx.java.to_owned();
+    }
+    let runtime = crate::java::ensure_runtime(ctx.http, ctx.paths, PROCESSOR_RUNTIME, ctx.concurrency, &|p| {
+        report(PERCENT_LIBRARIES, p.done_files, p.total_files);
+    })
+    .await;
+    match runtime {
+        Ok(java) => java,
+        Err(e) => {
+            tracing::warn!("Runtime {PROCESSOR_RUNTIME} für die Processors nicht verfügbar, nehme Spiel-Java: {e}");
+            ctx.java.to_owned()
+        }
+    }
 }
 
 /// Baut die Platzhalter für die Processors. Library-Verweise landen zusätzlich

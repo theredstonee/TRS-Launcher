@@ -145,6 +145,7 @@ pub async fn prepare(
             loader: &instance.loader,
             client_jar: &client_jar,
             java: &java,
+            java_major: version.java_version.as_ref().map_or(8, |j| j.major_version),
             concurrency,
         };
         let profile = forge::ensure_installed(&ctx, &|p| {
@@ -204,8 +205,13 @@ pub async fn prepare(
     on_progress(StageProgress::begin(Stage::Assets));
     let game_assets = install_assets(http, paths, &version, instance, concurrency, verify, on_progress).await?;
 
-    let mut classpath: Vec<PathBuf> =
-        libraries.iter().filter(|l| l.on_classpath).map(|l| library_path(paths, l)).collect();
+    // Vanilla 1.13–1.18 nennen manche Jars doppelt (einmal mit Natives).
+    let mut seen = std::collections::HashSet::new();
+    let mut classpath: Vec<PathBuf> = libraries
+        .iter()
+        .filter(|l| l.on_classpath && seen.insert(l.path.as_str()))
+        .map(|l| library_path(paths, l))
+        .collect();
     classpath.push(if uses_installer { link_profile_jar(paths, &client_jar, &version.id).await? } else { client_jar });
 
     Ok(Prepared { version, java, classpath, natives_dir, game_assets, log_config })
