@@ -57,6 +57,6 @@ The self-test also runs in production: put `-Dtrsclient.autotest=true` into the 
 
 ## Shared code
 
-`src/main/java/dev/theredstonee/trsclient/core/**` is a Java-8 **copy** of `../common` (no `sealed`,
-records → classes, no switch expressions / `List.of`); tests are converted too and run against Gson 2.2.4.
-Legacy-only: `core/input/MouseScaler`. When `common` changes, sync the copy.
+`../common` is compiled straight into this build (`srcDir ../common/src/main/java`): it is plain Java 8 and only
+uses Gson calls that the bundled Gson 2.2.4 has. The unit tests of `common` run in the `common` project
+(`../gradlew :common:test`).

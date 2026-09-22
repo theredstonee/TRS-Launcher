@@ -49,6 +49,7 @@ Standalone Gradle build (not part of `../settings.gradle`):
 
 ## Shared code
 
-`src/main/java/dev/theredstonee/trsclient/core/**` is a **Java 8 copy** of `../common` (no `sealed`, no switch
-arrows, no records; title-screen/pack-screen helpers left out). Tests run against Gson 2.2.4 (the version 1.7.10 ships).
-Legacy-only addition: `core/input/MouseScaler`. When `common` changes, sync the copy.
+`../common` is compiled straight into this build (`srcDir ../common/src/main/java`): it is plain Java 8 and only
+uses Gson calls that the bundled Gson 2.2.4 has. Pack and title screens are not built for 1.7.10; the modules that
+do not exist here are listed in `TrsClient.UNSUPPORTED` and the menu hides them. The unit tests of `common` run
+in the `common` project (`../gradlew :common:test`).
