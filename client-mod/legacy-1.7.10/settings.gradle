@@ -1,0 +1,24 @@
+// TRS Client für Minecraft 1.7.10 (Forge) – eigenständiger Gradle-Build.
+// Absichtlich NICHT Teil des Builds in client-mod/: 1.7.10 braucht RetroFuturaGradle (GTNH) und Java 8.
+pluginManagement {
+	repositories {
+		maven {
+			// RetroFuturaGradle
+			name = 'GTNH Maven'
+			url = 'https://nexus.gtnewhorizons.com/repository/public/'
+			mavenContent {
+				includeGroupByRegex 'com\\.gtnewhorizons\\..+'
+				includeGroup 'com.gtnewhorizons'
+			}
+		}
+		gradlePluginPortal()
+		mavenCentral()
+	}
+}
+
+plugins {
+	// Lädt bei Bedarf automatisch ein JDK 8 (Gradle-Toolchains).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trsclient-legacy-1.7.10'

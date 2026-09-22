@@ -1,0 +1,30 @@
+# TRS Client – Forge 1.13.2 (FML2 / ModLauncher)
+modLoader="javafml"
+# Forge 1.13.2 = FML 25.x
+loaderVersion="[25,)"
+issueTrackerURL="https://github.com/theredstonee/TRS-Launcher/issues"
+
+[[mods]]
+modId="trsclient"
+version="${version}"
+displayName="TRS Client"
+displayURL="https://github.com/theredstonee/TRS-Launcher"
+authors="theredstonee"
+credits="Lizenz: GPL-3.0-only"
+description='''
+In-Game-Client des TRS Launchers: HUD (FPS, CPS, Tastenanzeige, Ping, Rüstung, Effekte, Koordinaten, Uhrzeit, Speicher, Server, Packs), Zoom, Fullbright, Toggle-Sprint/-Schleichen, eigenes Fadenkreuz und ein eigenes Menü (Rechte Umschalttaste).
+'''
+
+[[dependencies.trsclient]]
+    modId="forge"
+    mandatory=true
+    versionRange="[25.0.0,)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.trsclient]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.13.2]"
+    ordering="NONE"
+    side="CLIENT"

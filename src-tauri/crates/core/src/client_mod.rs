@@ -207,6 +207,25 @@ mod tests {
         assert!(load_builds(&dir.path().join("fehlt")).is_empty());
     }
 
+    /// Die mitgelieferte `builds.json`: jede Datei existiert, jede (Loader, Version)-Kombination
+    /// ist eindeutig und kein Eintrag wurde wegen eines unsicheren Namens verworfen.
+    #[test]
+    fn bundled_manifest_is_consistent() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/client-mod");
+        let raw: Vec<Build> = serde_json::from_slice(&std::fs::read(dir.join(MANIFEST)).unwrap()).unwrap();
+        let builds = load_builds(&dir);
+        assert_eq!(builds.len(), raw.len(), "unsichere Dateinamen in builds.json");
+        let mut seen = std::collections::HashSet::new();
+        for b in &builds {
+            assert!(matches!(b.loader.as_str(), "fabric" | "forge" | "neoforge"), "{}", b.loader);
+            assert!(dir.join(&b.file).is_file(), "{} fehlt", b.file);
+            assert!(!b.minecraft.is_empty(), "{}", b.file);
+            for v in &b.minecraft {
+                assert!(seen.insert((b.loader.clone(), v.clone())), "doppelt: {} {v}", b.loader);
+            }
+        }
+    }
+
     #[tokio::test]
     async fn installs_updates_and_removes_jar() {
         let dir = tempfile::tempdir().unwrap();

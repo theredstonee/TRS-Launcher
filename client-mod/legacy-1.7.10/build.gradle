@@ -1,0 +1,115 @@
+import groovy.json.JsonOutput
+
+plugins {
+	id 'java'
+	// GTNH RetroFuturaGradle: ForgeGradle-1.2-Ersatz für Minecraft 1.7.10, läuft mit Gradle 9 (braucht JDK 25 für Gradle selbst).
+	id 'com.gtnewhorizons.retrofuturagradle' version '2.0.4'
+}
+
+group = maven_group
+version = mod_version
+
+base {
+	archivesName = "trsclient-forge-${minecraft_version}"
+}
+
+java {
+	// Minecraft 1.7.10 + LaunchWrapper laufen nur auf Java 8 – kompiliert und gestartet wird mit JDK 8.
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
+minecraft {
+	mcVersion = minecraft_version
+	// Mappings: RFG-Standard MCP stable_12, Forge 10.13.4.1614 ist fest in RFG hinterlegt.
+	username = 'Developer'
+	// Version als Konstante (dev.theredstonee.trsclient.Tags.VERSION) – FML 1.7.10 liest @Mod(version) direkt.
+	injectedTags.put('VERSION', project.version)
+	if (project.hasProperty('trsAutotest')) {
+		// ./gradlew runClient -PtrsAutotest → öffnet Menü + HUD-Editor, macht Screenshots, beendet das Spiel.
+		extraRunJvmArguments.add('-Dtrsclient.autotest=true')
+	}
+}
+
+tasks.named('injectTags').configure {
+	outputClassName = 'dev.theredstonee.trsclient.Tags'
+}
+
+// Eigenes Spielverzeichnis je Loader/Version: client-mod/run/forge-1.7.10 (git-ignoriert).
+def runDir = file('../run/forge-1.7.10')
+['runClient', 'runObfClient'].each { name ->
+	tasks.named(name).configure {
+		workingDir = runDir
+		doFirst { runDir.mkdirs() }
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Tests laufen gegen dieselbe Gson-Version, die Minecraft 1.7.10 mitbringt.
+	testImplementation "com.google.code.gson:gson:${gson_version}"
+	testImplementation platform("org.junit:junit-bom:${junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'failed'
+	}
+}
+
+processResources {
+	def version = project.version
+	inputs.property 'version', version
+	filesMatching('mcmod.info') {
+		expand 'version': version
+	}
+}
+
+jar {
+	from(file('../LICENSE')) {
+		rename { "${it}_trsclient" }
+	}
+}
+
+// --- Übergabe an den Launcher ---------------------------------------------------------------
+// Kopiert die reobfuskierte (SRG-Namen) Mod-JAR nach client-mod/dist/ und schreibt
+// builds-legacy-1.7.10.json mit den Angaben, die der Launcher zum Installieren braucht.
+def distDir = file('../dist')
+def launcherJarName = "trsclient-forge-${minecraft_version}.jar"
+
+tasks.register('collectLauncherJars', Copy) {
+	group = 'build'
+	description = 'Kopiert die Mod-JAR nach client-mod/dist/ und schreibt builds-legacy-1.7.10.json.'
+	dependsOn tasks.named('reobfJar')
+	from(tasks.named('reobfJar').flatMap { it.archiveFile })
+	into distDir
+	rename { launcherJarName }
+	def mcVersion = minecraft_version
+	def forgeVersion = "${minecraft_version}-${forge_version}"
+	inputs.property 'forge', forgeVersion
+	doLast {
+		def builds = [[
+				loader   : 'forge',
+				minecraft: [mcVersion],
+				file     : launcherJarName,
+				requires : [],
+				forge    : forgeVersion,
+		]]
+		new File(distDir, 'builds-legacy-1.7.10.json').setText(JsonOutput.prettyPrint(JsonOutput.toJson(builds)) + '\n', 'UTF-8')
+	}
+}
+
+tasks.named('build') {
+	finalizedBy 'collectLauncherJars'
+}

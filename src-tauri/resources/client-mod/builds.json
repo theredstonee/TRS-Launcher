@@ -232,9 +232,35 @@
   {
     "loader": "forge",
     "minecraft": [
+      "1.7.10"
+    ],
+    "file": "trsclient-forge-1.7.10.jar",
+    "requires": [],
+    "forge": "1.7.10-10.13.4.1614"
+  },
+  {
+    "loader": "forge",
+    "minecraft": [
       "1.8.9"
     ],
     "file": "trsclient-forge-1.8.9.jar",
+    "requires": []
+  },
+  {
+    "loader": "forge",
+    "minecraft": [
+      "1.13.2"
+    ],
+    "file": "trsclient-forge-1.13.2.jar",
+    "requires": [],
+    "forge": "1.13.2-25.0.223"
+  },
+  {
+    "loader": "forge",
+    "minecraft": [
+      "1.20.1"
+    ],
+    "file": "trsclient-forge-1.20.1.jar",
     "requires": []
   },
   {
@@ -243,14 +269,6 @@
       "1.21.1"
     ],
     "file": "trsclient-neoforge-1.21.1.jar",
-    "requires": []
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.20.1"
-    ],
-    "file": "trsclient-forge-1.20.1.jar",
     "requires": []
   }
 ]

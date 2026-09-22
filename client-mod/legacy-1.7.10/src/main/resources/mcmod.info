@@ -1,0 +1,13 @@
+[
+	{
+		"modid": "trsclient",
+		"name": "TRS Client",
+		"description": "In-Game-Client des TRS Launchers: HUD (FPS, CPS, Tastenanzeige, Ping, Rüstung, Effekte, Koordinaten, Uhrzeit, Speicher, Server, Packs), Zoom, Fullbright, Toggle-Sprint/-Schleichen, eigenes Fadenkreuz und ein eigenes Menü (Rechte Umschalttaste).",
+		"version": "${version}",
+		"mcversion": "1.7.10",
+		"url": "https://github.com/theredstonee/TRS-Launcher",
+		"authorList": ["theredstonee"],
+		"credits": "Lizenz: GPL-3.0-only",
+		"dependencies": []
+	}
+]

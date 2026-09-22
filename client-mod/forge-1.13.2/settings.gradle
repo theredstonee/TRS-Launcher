@@ -1,0 +1,16 @@
+// TRS Client für Minecraft 1.13.2 (Forge 25.0.x) – eigenständiger Gradle-Build.
+// Absichtlich NICHT Teil des Builds in client-mod/: 1.13.2 braucht ForgeGradle (MCP-Namen, SRG-Reobf)
+// und Java 8; ForgeGradle 6 läuft nur mit Gradle 8.x (daher eigener Wrapper 8.14.3).
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		maven { url = 'https://maven.minecraftforge.net/' }
+	}
+}
+
+plugins {
+	// Lädt bei Bedarf automatisch ein JDK 8 (Kompilieren/Starten) bzw. JDK 17 (Gradle-Daemon).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trsclient-forge-1.13.2'
