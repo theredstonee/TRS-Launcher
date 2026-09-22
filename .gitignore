@@ -28,3 +28,6 @@ Thumbs.db
 
 # Lokale Werkzeug-Daten
 .claude/
+
+# Gebaute Installer
+release/

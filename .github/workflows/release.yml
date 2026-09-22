@@ -1,0 +1,62 @@
+name: Release
+
+# Baut bei jedem Versions-Tag (v1.2.3) den signierten Windows-Installer,
+# legt ein (Vorab-)Release an und aktualisiert den Update-Kanal, den der
+# eingebaute Auto-Updater abfragt.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Tests
+        working-directory: src-tauri
+        run: cargo test --workspace
+
+      - name: Build and publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: TRS Launcher ${{ github.ref_name }}
+          releaseBody: Neue Version des TRS Launchers. Installer herunterladen und ausführen – bestehende Installationen aktualisieren sich automatisch.
+          # Solange wir in der Vorabphase sind, als Pre-release markieren.
+          prerelease: true
+          includeUpdaterJson: true
+
+      # Der Updater fragt einen festen Kanal ab (Release "updater"), damit auch
+      # Vorabversionen gefunden werden.
+      - name: Update channel
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "${GITHUB_REF_NAME}" --pattern latest.json --dir channel
+          gh release view updater >/dev/null 2>&1 || gh release create updater --title "Update-Kanal" --notes "Wird automatisch gepflegt – enthält nur latest.json für den Auto-Updater." --prerelease
+          gh release upload updater channel/latest.json --clobber

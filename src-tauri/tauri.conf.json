@@ -83,9 +83,9 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQwMTI1Q0E3RDkzRDg0QzQKUldURWhEM1pwMXdTUU5QOTg4dzQycEQ3eVFwVjgyckpBK2hBMTUyTE5pdEtXd0VOWldzTWVVR28K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQxOEQ3OUEwNjk2NTQxRjkKUldUNVFXVnBvSG1OUVRQZk5iYnpLcVdXbndGbVhxbDZaa1F2VnYrNm1rUzVzTG1NTmcyQWpiYVkK",
       "endpoints": [
-        "https://github.com/theredstonee/TRS-Launcher/releases/latest/download/latest.json"
+        "https://github.com/theredstonee/TRS-Launcher/releases/download/updater/latest.json"
       ],
       "windows": {
         "installMode": "passive"
