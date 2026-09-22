@@ -34,23 +34,29 @@ pub enum ContentKind {
     Mod,
     ResourcePack,
     ShaderPack,
+    /// Datenpakete landen wie in der Modrinth App im Instanz-Ordner
+    /// datapacks/. Minecraft liest sie dort nicht selbst – sie werden beim
+    /// Anlegen einer Welt ausgewählt bzw. in saves/<welt>/datapacks/
+    /// kopiert, oder von Mods wie „Global Packs“/„Paxi“ global geladen.
+    DataPack,
 }
 
 impl ContentKind {
-    pub const ALL: [Self; 3] = [Self::Mod, Self::ResourcePack, Self::ShaderPack];
+    pub const ALL: [Self; 4] = [Self::Mod, Self::ResourcePack, Self::ShaderPack, Self::DataPack];
 
     pub fn dir_name(self) -> &'static str {
         match self {
             Self::Mod => "mods",
             Self::ResourcePack => "resourcepacks",
             Self::ShaderPack => "shaderpacks",
+            Self::DataPack => "datapacks",
         }
     }
 
     fn extensions(self) -> &'static [&'static str] {
         match self {
             Self::Mod => &[".jar"],
-            Self::ResourcePack | Self::ShaderPack => &[".zip"],
+            Self::ResourcePack | Self::ShaderPack | Self::DataPack => &[".zip"],
         }
     }
 
@@ -60,6 +66,7 @@ impl ContentKind {
             Self::Mod => "mod",
             Self::ResourcePack => "resourcepack",
             Self::ShaderPack => "shader",
+            Self::DataPack => "datapack",
         }
     }
 
@@ -209,7 +216,7 @@ pub async fn list(paths: &Paths, instance_id: &str, kind: ContentKind) -> Result
         // Das eingebettete Icon nur lesen, wenn Modrinth keins liefert.
         let local = match kind {
             ContentKind::Mod => read_mod_metadata(entry.path(), remote_icon.is_none()).await,
-            ContentKind::ResourcePack if remote_icon.is_none() => read_pack_icon(entry.path()).await,
+            ContentKind::ResourcePack | ContentKind::DataPack if remote_icon.is_none() => read_pack_icon(entry.path()).await,
             _ => None,
         }
         .unwrap_or_default();

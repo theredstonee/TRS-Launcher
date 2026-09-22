@@ -99,6 +99,7 @@ pub fn run() {
             commands::content::delete_content,
             commands::content::installed_projects,
             commands::content::modrinth_search,
+            commands::content::modrinth_categories,
             commands::content::modrinth_install,
             commands::content::modrinth_versions,
             commands::content::check_content_updates,

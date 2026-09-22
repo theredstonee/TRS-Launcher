@@ -2,6 +2,7 @@ import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import type {
   Account,
   AppInfo,
+  CategoryTag,
   CommandError,
   ContentItem,
   ContentKind,
@@ -141,6 +142,8 @@ export const backend = {
   openExternalUrl: (url: string) => call<void>('open_external_url', { url }),
 
   modrinthSearch: (params: ModrinthSearchParams) => call<ModrinthSearchResult>('modrinth_search', { params }),
+  /** Alle Modrinth-Kategorien (der Kern cacht sie einen Tag). */
+  modrinthCategories: () => call<CategoryTag[]>('modrinth_categories'),
   modrinthVersions: (id: string, projectId: string, kind: ContentKind) =>
     call<ModrinthVersion[]>('modrinth_versions', { id, projectId, kind }),
   /** Ohne `versionId` die neueste passende Version; Pflicht-Abhängigkeiten kommen immer mit. */

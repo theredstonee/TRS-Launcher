@@ -51,6 +51,7 @@ pub enum ProjectKind {
     Mod,
     ResourcePack,
     ShaderPack,
+    DataPack,
     Modpack,
 }
 
@@ -60,21 +61,104 @@ impl ProjectKind {
             Self::Mod => "mod",
             Self::ResourcePack => "resourcepack",
             Self::ShaderPack => "shader",
+            Self::DataPack => "datapack",
             Self::Modpack => "modpack",
         }
     }
+
+    /// Nur bei Mods und Modpacks unterscheidet Modrinth nach Modloader.
+    fn has_loaders(self) -> bool {
+        matches!(self, Self::Mod | Self::Modpack)
+    }
+}
+
+/// Sortierung – genau die Indizes, die Modrinth kennt.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SortIndex {
+    #[default]
+    Relevance,
+    Downloads,
+    Follows,
+    Newest,
+    Updated,
+}
+
+impl SortIndex {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Relevance => "relevance",
+            Self::Downloads => "downloads",
+            Self::Follows => "follows",
+            Self::Newest => "newest",
+            Self::Updated => "updated",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Environment {
+    Client,
+    Server,
+}
+
+/// Wie mehrere gewählte Kategorien verknüpft werden.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CategoryMatch {
+    /// Projekt muss alle Kategorien haben (wie auf modrinth.com).
+    #[default]
+    All,
+    /// Eine der Kategorien reicht.
+    Any,
+}
+
+pub const MAX_SEARCH_LIMIT: u32 = 100;
+const MAX_SEARCH_OFFSET: u32 = 10_000;
+const MAX_FILTER_VALUES: usize = 30;
+/// So viele (installierte) Projekte lassen sich höchstens ausblenden.
+const MAX_EXCLUDED_PROJECTS: usize = 300;
+/// Loader-Namen, nach denen gefiltert werden darf.
+const SEARCH_LOADERS: &[&str] = &["fabric", "quilt", "forge", "neoforge"];
+
+fn default_limit() -> u32 {
+    20
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchParams {
+    #[serde(default)]
     pub query: String,
     pub kind: ProjectKind,
-    /// Filtert auf Kompatibilität mit dieser Instanz.
-    pub game_version: Option<String>,
-    pub loader: Option<LoaderKind>,
+    /// Spielversionen (ODER-verknüpft), z. B. die der Instanz.
+    #[serde(default)]
+    pub game_versions: Vec<String>,
+    /// Modrinth-Loadernamen (ODER), nur bei Mods/Modpacks wirksam.
+    #[serde(default)]
+    pub loaders: Vec<String>,
+    #[serde(default)]
+    pub categories: Vec<String>,
+    #[serde(default)]
+    pub category_match: CategoryMatch,
+    /// Kategorien, die ein Projekt NICHT haben darf.
+    #[serde(default)]
+    pub exclude_categories: Vec<String>,
+    #[serde(default)]
+    pub environments: Vec<Environment>,
+    /// Projekte ausblenden (z. B. schon installierte) – Modrinth filtert,
+    /// damit die Seitenzahlen stimmen.
+    #[serde(default)]
+    pub exclude_project_ids: Vec<String>,
+    #[serde(default)]
+    pub open_source: bool,
+    #[serde(default)]
+    pub index: SortIndex,
     #[serde(default)]
     pub offset: u32,
+    #[serde(default = "default_limit")]
+    pub limit: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -87,7 +171,14 @@ pub struct SearchHit {
     pub author: String,
     pub icon_url: Option<String>,
     pub downloads: u64,
+    pub follows: u64,
+    /// Kategorien inkl. Loader (wie Modrinth sie anzeigt).
     pub categories: Vec<String>,
+    /// `required`, `optional`, `unsupported` oder `unknown`.
+    pub client_side: String,
+    pub server_side: String,
+    pub date_modified: Option<DateTime<Utc>>,
+    pub license: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -122,7 +213,18 @@ struct RawHit {
     #[serde(default)]
     downloads: u64,
     #[serde(default)]
+    follows: u64,
+    #[serde(default)]
     categories: Vec<String>,
+    #[serde(default)]
+    display_categories: Vec<String>,
+    #[serde(default)]
+    client_side: String,
+    #[serde(default)]
+    server_side: String,
+    date_modified: Option<DateTime<Utc>>,
+    #[serde(default)]
+    license: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -234,6 +336,16 @@ fn loader_tags(loader: LoaderKind) -> &'static [&'static str] {
     }
 }
 
+/// Nach welchen Loadern die Versionen einer Inhaltsart gefiltert werden.
+/// Datenpakete: nur die reinen datapack-Dateien (keine Mod-Varianten).
+fn version_loaders(kind: ContentKind, instance: &Instance) -> Option<&'static [&'static str]> {
+    match kind {
+        ContentKind::Mod => Some(loader_tags(content_loader(instance))),
+        ContentKind::DataPack => Some(&["datapack"]),
+        ContentKind::ResourcePack | ContentKind::ShaderPack => None,
+    }
+}
+
 pub(crate) fn is_safe_project_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
@@ -295,31 +407,131 @@ fn summarize(v: Version) -> Option<VersionSummary> {
     })
 }
 
-pub async fn search(http: &reqwest::Client, params: &SearchParams) -> Result<SearchResult> {
-    let query: String = params.query.trim().chars().filter(|c| !c.is_control()).take(MAX_QUERY_LEN).collect();
+/// Kategorie-Slugs wie `game-mechanics`, `8x-` oder `512x+` (Auflösungen).
+fn is_safe_category(c: &str) -> bool {
+    !c.is_empty()
+        && c.len() <= 40
+        && c.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '+'))
+}
 
-    // Facets als JSON bauen (nicht per String-Verkettung): innen ODER, außen UND.
-    let mut facets = vec![vec![format!("project_type:{}", params.kind.modrinth_type())]];
-    if let Some(v) = params.game_version.as_deref().filter(|v| is_safe_game_version(v)) {
-        facets.push(vec![format!("versions:{v}")]);
+/// Prüft alle Filter streng (Whitelist) – nichts davon landet ungeprüft in
+/// der Anfrage an Modrinth.
+fn validate_search(params: &SearchParams) -> Result<()> {
+    if params.query.chars().count() > MAX_QUERY_LEN {
+        return Err(Error::validation("Suchbegriff ist zu lang"));
     }
-    if matches!(params.kind, ProjectKind::Mod | ProjectKind::Modpack)
-        && let Some(loader) = params.loader
+    if params.limit == 0 || params.limit > MAX_SEARCH_LIMIT {
+        return Err(Error::validation("Ungültige Seitengröße"));
+    }
+    if params.offset > MAX_SEARCH_OFFSET {
+        return Err(Error::validation("Ungültige Seite"));
+    }
+    let lists = [&params.game_versions, &params.loaders, &params.categories, &params.exclude_categories];
+    if lists.iter().any(|l| l.len() > MAX_FILTER_VALUES) || params.environments.len() > 2 {
+        return Err(Error::validation("Zu viele Filter"));
+    }
+    if !params.game_versions.iter().all(|v| is_safe_game_version(v)) {
+        return Err(Error::validation("Ungültige Spielversion"));
+    }
+    if !params.loaders.iter().all(|l| SEARCH_LOADERS.contains(&l.as_str())) {
+        return Err(Error::validation("Unbekannter Modloader"));
+    }
+    if !params.categories.iter().chain(&params.exclude_categories).all(|c| is_safe_category(c)) {
+        return Err(Error::validation("Ungültige Kategorie"));
+    }
+    if params.exclude_project_ids.len() > MAX_EXCLUDED_PROJECTS
+        || !params.exclude_project_ids.iter().all(|id| is_safe_project_id(id))
     {
-        let tags = loader_tags(loader);
-        if !tags.is_empty() {
-            facets.push(tags.iter().map(|t| format!("categories:{t}")).collect());
+        return Err(Error::validation("Ungültige Projektliste"));
+    }
+    Ok(())
+}
+
+/// Modrinth-Facets: innere Listen ODER, äußere UND. Als Daten gebaut und
+/// später per JSON serialisiert – nie per String-Verkettung ins JSON.
+fn build_facets(params: &SearchParams) -> Vec<Vec<String>> {
+    let mut facets = vec![vec![format!("project_type:{}", params.kind.modrinth_type())]];
+    if !params.game_versions.is_empty() {
+        facets.push(params.game_versions.iter().map(|v| format!("versions:{v}")).collect());
+    }
+    if params.kind.has_loaders() && !params.loaders.is_empty() {
+        facets.push(params.loaders.iter().map(|l| format!("categories:{l}")).collect());
+    }
+    if !params.categories.is_empty() {
+        let each = params.categories.iter().map(|c| format!("categories:{c}"));
+        match params.category_match {
+            CategoryMatch::All => facets.extend(each.map(|c| vec![c])),
+            CategoryMatch::Any => facets.push(each.collect()),
         }
     }
+    // Ausschlüsse müssen alle gelten – je eine eigene Gruppe.
+    facets.extend(params.exclude_categories.iter().map(|c| vec![format!("categories!={c}")]));
+    facets.extend(params.exclude_project_ids.iter().map(|id| vec![format!("project_id!={id}")]));
+
+    let client = params.environments.contains(&Environment::Client);
+    let server = params.environments.contains(&Environment::Server);
+    let group = |values: &[&str]| values.iter().map(|v| (*v).to_owned()).collect::<Vec<_>>();
+    match (client, server) {
+        (true, true) => {
+            facets.push(group(&["client_side:required"]));
+            facets.push(group(&["server_side:required"]));
+        }
+        (true, false) => {
+            facets.push(group(&["client_side:optional", "client_side:required"]));
+            facets.push(group(&["server_side:optional", "server_side:unsupported"]));
+        }
+        (false, true) => {
+            facets.push(group(&["client_side:optional", "client_side:unsupported"]));
+            facets.push(group(&["server_side:optional", "server_side:required"]));
+        }
+        (false, false) => {}
+    }
+    if params.open_source {
+        facets.push(group(&["open_source:true"]));
+    }
+    facets
+}
+
+fn side(value: String) -> String {
+    match value.as_str() {
+        "required" | "optional" | "unsupported" => value,
+        _ => "unknown".to_owned(),
+    }
+}
+
+fn hit_from_raw(h: RawHit) -> SearchHit {
+    let categories = if h.display_categories.is_empty() { h.categories } else { h.display_categories };
+    SearchHit {
+        project_id: h.project_id,
+        slug: clip(h.slug, 100),
+        title: clip(h.title, 100),
+        description: clip(h.description, 400),
+        author: clip(h.author, 60),
+        // Bilder nur von Modrinths eigenem CDN.
+        icon_url: h.icon_url.filter(|u| is_allowed_icon_url(u)),
+        downloads: h.downloads,
+        follows: h.follows,
+        categories: categories.into_iter().filter(|c| is_safe_category(c)).take(12).collect(),
+        client_side: side(h.client_side),
+        server_side: side(h.server_side),
+        date_modified: h.date_modified,
+        license: Some(clip(h.license, 60)).filter(|l| !l.is_empty()),
+    }
+}
+
+pub async fn search(http: &reqwest::Client, params: &SearchParams) -> Result<SearchResult> {
+    validate_search(params)?;
+    let query: String = params.query.trim().chars().filter(|c| !c.is_control()).collect();
+    let facets = build_facets(params);
 
     let raw: RawSearch = http
         .get(format!("{API}/search"))
         .query(&[
             ("query", query.as_str()),
             ("facets", json(&facets)?.as_str()),
-            ("index", if query.is_empty() { "downloads" } else { "relevance" }),
-            ("offset", &params.offset.min(10_000).to_string()),
-            ("limit", "20"),
+            ("index", params.index.as_str()),
+            ("offset", &params.offset.to_string()),
+            ("limit", &params.limit.to_string()),
         ])
         .send()
         .await?
@@ -331,23 +543,98 @@ pub async fn search(http: &reqwest::Client, params: &SearchParams) -> Result<Sea
         total_hits: raw.total_hits,
         offset: raw.offset,
         limit: raw.limit,
-        hits: raw
-            .hits
-            .into_iter()
-            .filter(|h| is_safe_project_id(&h.project_id))
-            .map(|h| SearchHit {
-                project_id: h.project_id,
-                slug: clip(h.slug, 100),
-                title: clip(h.title, 100),
-                description: clip(h.description, 400),
-                author: clip(h.author, 60),
-                // Bilder nur von Modrinths eigenem CDN.
-                icon_url: h.icon_url.filter(|u| is_allowed_icon_url(u)),
-                downloads: h.downloads,
-                categories: h.categories.into_iter().take(12).map(|c| clip(c, 30)).collect(),
-            })
-            .collect(),
+        hits: raw.hits.into_iter().filter(|h| is_safe_project_id(&h.project_id)).map(hit_from_raw).collect(),
     })
+}
+
+// --- Tags ----------------------------------------------------------------------
+
+/// Kategorien ändern sich selten – einmal pro Tag laden reicht.
+const TAG_CACHE_SECS: u64 = 24 * 60 * 60;
+const MAX_TAG_ICON_LEN: usize = 8 * 1024;
+
+static CATEGORY_CACHE: tokio::sync::Mutex<Option<(std::time::Instant, Vec<CategoryTag>)>> =
+    tokio::sync::Mutex::const_new(None);
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CategoryTag {
+    pub name: String,
+    /// Modrinth-Projekttyp: `mod`, `resourcepack`, `shader`, `datapack`, `modpack` …
+    pub project_type: String,
+    /// Gruppe in der Filterleiste (`categories`, `features`, `resolutions`, `performance impact`).
+    pub header: String,
+    /// Reines SVG-Markup von Modrinth. Das Frontend zeigt es nur als
+    /// `<img src="data:image/svg+xml,…">` an – dort laufen keine Skripte.
+    pub icon: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct RawCategory {
+    #[serde(default)]
+    icon: String,
+    name: String,
+    #[serde(default)]
+    project_type: String,
+    #[serde(default)]
+    header: String,
+}
+
+/// Nur schlichte SVGs ohne Skripte, Links, Fremdinhalte oder Event-Handler.
+fn safe_svg(icon: String) -> Option<String> {
+    let trimmed = icon.trim();
+    let lower = trimmed.to_ascii_lowercase();
+    let ok = lower.starts_with("<svg")
+        && lower.ends_with("</svg>")
+        && trimmed.len() <= MAX_TAG_ICON_LEN
+        && !["<script", "javascript:", "href", "<foreignobject", "<iframe", "<image", "url(", "<!"]
+            .iter()
+            .any(|bad| lower.contains(bad))
+        // Event-Handler-Attribute (`onload=` …), egal mit welchem Leerraum davor.
+        && !lower.as_bytes().windows(3).any(|w| w[0].is_ascii_whitespace() && w[1] == b'o' && w[2] == b'n');
+    ok.then(|| trimmed.to_owned())
+}
+
+fn categories_from_raw(raw: Vec<RawCategory>) -> Vec<CategoryTag> {
+    raw.into_iter()
+        .filter(|c| is_safe_category(&c.name))
+        .take(500)
+        .map(|c| CategoryTag {
+            name: c.name,
+            project_type: clip(c.project_type, 20),
+            header: clip(c.header, 40),
+            icon: safe_svg(c.icon),
+        })
+        .collect()
+}
+
+/// Alle Modrinth-Kategorien (für die Filterleiste), im Speicher gecacht.
+/// Schlägt das Nachladen fehl, bleibt die alte Liste gültig.
+pub async fn categories(http: &reqwest::Client) -> Result<Vec<CategoryTag>> {
+    let mut cache = CATEGORY_CACHE.lock().await;
+    if let Some((at, list)) = cache.as_ref()
+        && at.elapsed().as_secs() < TAG_CACHE_SECS
+    {
+        return Ok(list.clone());
+    }
+    let fetched: std::result::Result<Vec<RawCategory>, reqwest::Error> = async {
+        http.get(format!("{API}/tag/category")).send().await?.error_for_status()?.json().await
+    }
+    .await;
+    match fetched {
+        Ok(raw) => {
+            let list = categories_from_raw(raw);
+            *cache = Some((std::time::Instant::now(), list.clone()));
+            Ok(list)
+        }
+        Err(e) => match cache.as_ref() {
+            Some((_, list)) => {
+                tracing::debug!("Kategorien konnten nicht aktualisiert werden: {e}");
+                Ok(list.clone())
+            }
+            None => Err(e.into()),
+        },
+    }
 }
 
 // --- Projekte ------------------------------------------------------------------
@@ -649,8 +936,8 @@ async fn compatible_versions(
     instance: &Instance,
 ) -> Result<Vec<Version>> {
     let mut query = vec![("game_versions", json(&[&instance.game_version])?)];
-    if kind == ContentKind::Mod {
-        query.push(("loaders", json(loader_tags(content_loader(instance)))?));
+    if let Some(loaders) = version_loaders(kind, instance) {
+        query.push(("loaders", json(loaders)?));
     }
     Ok(http
         .get(format!("{API}/project/{project_id}/version"))
@@ -1061,8 +1348,8 @@ async fn latest_for_hashes(
         "algorithm": "sha1",
         "game_versions": [instance.game_version],
     });
-    if kind == ContentKind::Mod {
-        body["loaders"] = serde_json::json!(loader_tags(content_loader(instance)));
+    if let Some(loaders) = version_loaders(kind, instance) {
+        body["loaders"] = serde_json::json!(loaders);
     }
     Ok(http.post(format!("{API}/version_files/update")).json(&body).send().await?.error_for_status()?.json().await?)
 }
@@ -1290,6 +1577,160 @@ mod tests {
         ] {
             assert!(!is_safe_external_url(bad), "{bad:?}");
         }
+    }
+
+    fn params(value: serde_json::Value) -> SearchParams {
+        serde_json::from_value(value).unwrap()
+    }
+
+    #[test]
+    fn search_params_defaults() {
+        let p = params(serde_json::json!({ "kind": "datapack" }));
+        assert_eq!(p.kind, ProjectKind::DataPack);
+        assert_eq!(p.index, SortIndex::Relevance);
+        assert_eq!(p.limit, 20);
+        assert!(validate_search(&p).is_ok());
+        assert_eq!(build_facets(&p), [["project_type:datapack"]]);
+        // Unbekannte Sortierung / Art wird schon beim Einlesen abgelehnt.
+        assert!(serde_json::from_value::<SearchParams>(serde_json::json!({ "kind": "mod", "index": "random" })).is_err());
+        assert!(serde_json::from_value::<SearchParams>(serde_json::json!({ "kind": "plugin" })).is_err());
+    }
+
+    #[test]
+    fn facets_for_instance_filters() {
+        let p = params(serde_json::json!({
+            "query": "sodium", "kind": "mod", "gameVersions": ["1.21.1"], "loaders": ["quilt", "fabric"],
+            "categories": ["optimization", "utility"], "excludeCategories": ["library"],
+            "environments": ["client"], "openSource": true, "excludeProjectIds": ["AANobbMI"], "index": "follows", "limit": 50, "offset": 100
+        }));
+        assert!(validate_search(&p).is_ok());
+        let facets = build_facets(&p);
+        let expected: Vec<Vec<&str>> = vec![
+            vec!["project_type:mod"],
+            vec!["versions:1.21.1"],
+            vec!["categories:quilt", "categories:fabric"],
+            vec!["categories:optimization"],
+            vec!["categories:utility"],
+            vec!["categories!=library"],
+            vec!["project_id!=AANobbMI"],
+            vec!["client_side:optional", "client_side:required"],
+            vec!["server_side:optional", "server_side:unsupported"],
+            vec!["open_source:true"],
+        ];
+        assert_eq!(facets, expected);
+        assert_eq!(p.index.as_str(), "follows");
+    }
+
+    #[test]
+    fn facets_any_category_env_and_loaderless_kinds() {
+        let p = params(serde_json::json!({
+            "kind": "shaderpack", "loaders": ["fabric"], "categories": ["pbr", "bloom"], "categoryMatch": "any",
+            "environments": ["server", "client"]
+        }));
+        let facets = build_facets(&p);
+        // Shader haben keine Modloader – der Loader-Filter entfällt.
+        assert_eq!(facets[0], ["project_type:shader"]);
+        assert_eq!(facets[1], ["categories:pbr", "categories:bloom"]);
+        assert_eq!(facets[2], ["client_side:required"]);
+        assert_eq!(facets[3], ["server_side:required"]);
+        assert_eq!(facets.len(), 4);
+
+        let server = build_facets(&params(serde_json::json!({ "kind": "mod", "environments": ["server"] })));
+        assert_eq!(server[1], ["client_side:optional", "client_side:unsupported"]);
+        assert_eq!(server[2], ["server_side:optional", "server_side:required"]);
+    }
+
+    #[test]
+    fn search_validation_rejects_bad_input() {
+        let bad = [
+            serde_json::json!({ "kind": "mod", "limit": 0 }),
+            serde_json::json!({ "kind": "mod", "limit": 101 }),
+            serde_json::json!({ "kind": "mod", "offset": 10_001 }),
+            serde_json::json!({ "kind": "mod", "query": "x".repeat(101) }),
+            serde_json::json!({ "kind": "mod", "loaders": ["bukkit"] }),
+            serde_json::json!({ "kind": "mod", "gameVersions": ["1.21\"]]"] }),
+            serde_json::json!({ "kind": "mod", "categories": ["Magic"] }),
+            serde_json::json!({ "kind": "mod", "excludeCategories": ["a,b"] }),
+            serde_json::json!({ "kind": "mod", "categories": vec!["magic"; 31] }),
+            serde_json::json!({ "kind": "mod", "excludeProjectIds": ["a/b"] }),
+            serde_json::json!({ "kind": "mod", "excludeProjectIds": vec!["abc"; 301] }),
+        ];
+        for value in bad {
+            let p = params(value.clone());
+            assert!(validate_search(&p).is_err(), "{value}");
+        }
+        assert!(validate_search(&params(serde_json::json!({ "kind": "resourcepack", "categories": ["8x-", "512x+"] }))).is_ok());
+    }
+
+    #[test]
+    fn parses_search_hit() {
+        let raw: RawHit = serde_json::from_value(serde_json::json!({
+            "project_id": "AANobbMI", "slug": "sodium", "title": "Sodium", "author": "jellysquid3",
+            "icon_url": "https://cdn.modrinth.com/data/AANobbMI/icon.png", "downloads": 10, "follows": 5,
+            "categories": ["fabric", "optimization", "neoforge"], "display_categories": ["fabric", "optimization"],
+            "client_side": "required", "server_side": "weird", "date_modified": "2026-09-01T10:00:00.5Z",
+            "license": "LGPL-3.0-only"
+        }))
+        .unwrap();
+        let hit = hit_from_raw(raw);
+        assert_eq!(hit.follows, 5);
+        assert_eq!(hit.categories, ["fabric", "optimization"]);
+        assert_eq!(hit.client_side, "required");
+        assert_eq!(hit.server_side, "unknown");
+        assert!(hit.date_modified.is_some());
+        assert_eq!(hit.license.as_deref(), Some("LGPL-3.0-only"));
+
+        let bare: RawHit = serde_json::from_value(serde_json::json!({
+            "project_id": "x", "icon_url": "https://evil.example/x.png"
+        }))
+        .unwrap();
+        let bare = hit_from_raw(bare);
+        assert!(bare.icon_url.is_none() && bare.license.is_none() && bare.date_modified.is_none());
+    }
+
+    #[test]
+    fn category_icons_are_sanitized() {
+        let ok = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 1h2"/></svg>"#;
+        assert!(safe_svg(ok.to_owned()).is_some());
+        for bad in [
+            r#"<svg onload="alert(1)"></svg>"#,
+            "<svg\nonload=\"alert(1)\"></svg>",
+            r#"<svg><script>alert(1)</script></svg>"#,
+            r#"<svg><a href="javascript:alert(1)">x</a></svg>"#,
+            r#"<svg><image xlink:href="https://evil.example/x.png"/></svg>"#,
+            r#"<svg><foreignObject><div/></foreignObject></svg>"#,
+            "<div></div>",
+            "",
+        ] {
+            assert!(safe_svg(bad.to_owned()).is_none(), "{bad:?}");
+        }
+
+        let tags = categories_from_raw(
+            serde_json::from_value(serde_json::json!([
+                { "icon": ok, "name": "magic", "project_type": "mod", "header": "categories" },
+                { "icon": "<svg onload=x></svg>", "name": "8x-", "project_type": "resourcepack", "header": "resolutions" },
+                { "icon": ok, "name": "Böse Kategorie", "project_type": "mod", "header": "categories" }
+            ]))
+            .unwrap(),
+        );
+        assert_eq!(tags.len(), 2);
+        assert!(tags[0].icon.is_some());
+        assert!(tags[1].icon.is_none());
+    }
+
+    #[test]
+    fn datapacks_only_take_datapack_files() {
+        let instance: Instance = serde_json::from_value(serde_json::json!({
+            "id": "test", "name": "Test", "gameVersion": "1.21.1", "loader": { "kind": "fabric", "version": null },
+            "createdAt": "2026-01-01T00:00:00Z"
+        }))
+        .unwrap();
+        assert_eq!(version_loaders(ContentKind::DataPack, &instance), Some(&["datapack"][..]));
+        assert_eq!(version_loaders(ContentKind::Mod, &instance), Some(&["fabric"][..]));
+        assert!(version_loaders(ContentKind::ResourcePack, &instance).is_none());
+        assert_eq!(ContentKind::DataPack.dir_name(), "datapacks");
+        assert!(content::validate_file_name(ContentKind::DataPack, "Terralith.zip").is_ok());
+        assert!(content::validate_file_name(ContentKind::DataPack, "terralith.jar").is_err());
     }
 
     #[test]
