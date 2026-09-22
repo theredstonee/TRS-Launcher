@@ -94,29 +94,20 @@ public final class WaypointOverlay {
 		}
 	}
 
-	/**
-	 * Dünne Linie aus Rechtecken (2 Pixel breit). Fast senkrechte Stücke – der Normalfall –
-	 * werden als ein einziges Rechteck gezeichnet, sonst in Schritten von 2 Pixeln.
-	 */
+	/** Dünne Linie aus Rechtecken (zwei Punkte, immer 2 Pixel breit). */
 	private static void line(Gfx g, int x1, int y1, int x2, int y2, int color) {
-		int dx = x2 - x1;
-		int dy = y2 - y1;
-		if (Math.abs(dx) <= 2) {
-			int top = Math.min(y1, y2);
-			int bottom = Math.max(y1, y2);
-			g.fill(x1, top, x1 + 2, bottom + 1, color);
-			return;
-		}
-		int steps = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
+		int dx = Math.abs(x2 - x1);
+		int dy = Math.abs(y2 - y1);
+		int steps = Math.max(dx, dy);
 		if (steps <= 0) {
 			g.fill(x1, y1, x1 + 2, y1 + 1, color);
 			return;
 		}
-		if (steps > 300) return; // sehr nah dran – lieber nichts als tausende Rechtecke
+		if (steps > 400) return; // sehr nah dran – nicht zeichnen statt tausende Rechtecke
 		for (int i = 0; i <= steps; i++) {
-			int x = x1 + dx * i / steps;
-			int y = y1 + dy * i / steps;
-			g.fill(x, y, x + 2, y + 2, color);
+			int x = x1 + (x2 - x1) * i / steps;
+			int y = y1 + (y2 - y1) * i / steps;
+			g.fill(x, y, x + 2, y + 1, color);
 		}
 	}
 }

@@ -17,6 +17,12 @@ public final class TrsKeys {
 	public static KeyMapping zoom;
 	public static KeyMapping fullbright;
 	public static KeyMapping freelook;
+	/** Wegpunkt an der eigenen Position anlegen. */
+	public static KeyMapping waypointAdd;
+	/** Wegpunkt-Liste öffnen. */
+	public static KeyMapping waypointList;
+	/** Vier frei belegbare Tasten, die je einen Text senden (Standard: unbelegt). */
+	public static final KeyMapping[] textHotkeys = new KeyMapping[4];
 
 	private TrsKeys() {
 	}
@@ -35,6 +41,13 @@ public final class TrsKeys {
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(event, new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		freelook = register(event, new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY));
+		waypointAdd = register(event, new KeyMapping("key.trsclient.waypointAdd", KEYBOARD, InputConstants.KEY_B, CATEGORY));
+		waypointList = register(event, new KeyMapping("key.trsclient.waypointList", KEYBOARD, InputConstants.KEY_N, CATEGORY));
+		// Standardmäßig unbelegt – Text-Hotkeys senden erst, wenn man sie selbst belegt.
+		for (int i = 0; i < textHotkeys.length; i++) {
+			textHotkeys[i] = register(event, new KeyMapping("key.trsclient.text" + (i + 1), KEYBOARD,
+					InputConstants.UNKNOWN.getValue(), CATEGORY));
+		}
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung (NeoForge: KeyMapping#getKey). */

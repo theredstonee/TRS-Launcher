@@ -12,6 +12,8 @@ import dev.theredstonee.trsclient.feature.PvpFeatures;
 import dev.theredstonee.trsclient.hud.HudManager;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.screen.WaypointEditScreen;
+import dev.theredstonee.trsclient.screen.WaypointListScreen;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -69,6 +71,11 @@ public final class TrsClient {
 	private ConfigStore config;
 	private HudManager hud;
 	private final PvpFeatures pvp = new PvpFeatures(modules);
+	private final dev.theredstonee.trsclient.feature.ChatFeatures chat =
+			new dev.theredstonee.trsclient.feature.ChatFeatures(modules);
+	private dev.theredstonee.trsclient.feature.Waypoints waypoints;
+	/** Zuletzt benutztes Welt-Sichtfeld (für die Wegpunkt-Projektion), aus dem FOV-Mixin. */
+	private double worldFov = 70;
 	/** Einmalig den Vanilla-Titelbildschirm zulassen ("Klassisch" auf dem TRS-Startbildschirm). */
 	private boolean vanillaTitleOnce;
 	/** Nur für den Autotest: Zoom ohne Tastendruck erzwingen. */
@@ -92,6 +99,8 @@ public final class TrsClient {
 		}
 
 		modBus.addListener(RegisterKeyMappingsEvent.class, TrsKeys::register);
+		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
+				FMLPaths.CONFIGDIR.get().resolve("trsclient-waypoints.json"));
 		IEventBus bus = NeoForge.EVENT_BUS;
 		// HUD über allem anderen (nach der Vanilla-GUI), das eigene Fadenkreuz statt der Vanilla-Ebene.
 		bus.addListener(RenderGuiEvent.Post.class, e -> hud().render(Gfx.of(e.getGuiGraphics())));
@@ -113,7 +122,10 @@ public final class TrsClient {
 		// Vor der Spieler-Bewegung: Toggle-Tasten, Freelook, Treffer-Farbe. Danach: Menü-/Fullbright-Taste.
 		onStartTick(pvp::tick);
 		onEndTick(this::onTick);
-		bus.addListener(GameShuttingDownEvent.class, e -> saveConfig());
+		bus.addListener(GameShuttingDownEvent.class, e -> {
+			saveConfig();
+			waypoints.save();
+		});
 
 		// "Konfigurieren" in der Mod-Liste öffnet das TRS-Menü.
 		//? if >=1.20.5 {
@@ -192,6 +204,20 @@ public final class TrsClient {
 			Mc.actionBar(Component.literal("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus")));
 			saveConfig();
 		}
+		while (TrsKeys.waypointAdd.consumeClick()) {
+			if (Mc.screen() == null && mc.player != null && modules.waypoints.isEnabled()) {
+				Mc.setScreen(new WaypointEditScreen(null, null));
+			}
+		}
+		while (TrsKeys.waypointList.consumeClick()) {
+			if (Mc.screen() == null && modules.waypoints.isEnabled()) Mc.setScreen(new WaypointListScreen(null));
+		}
+		for (int i = 0; i < TrsKeys.textHotkeys.length; i++) {
+			while (TrsKeys.textHotkeys[i].consumeClick()) chat.onHotkey(i);
+		}
+		waypoints.tick(mc);
+		chat.tick(mc);
+		hud().tick();
 	}
 
 	/** Speichert die Einstellungen (Fehler nur loggen). */
@@ -262,6 +288,24 @@ public final class TrsClient {
 
 	public PvpFeatures pvp() {
 		return pvp;
+	}
+
+	public dev.theredstonee.trsclient.feature.ChatFeatures chat() {
+		return chat;
+	}
+
+	public dev.theredstonee.trsclient.feature.Waypoints waypoints() {
+		return waypoints;
+	}
+
+	/** Zuletzt gezeichnetes Sichtfeld der Welt (Grad) – Grundlage der Wegpunkt-Projektion. */
+	public double worldFov() {
+		return worldFov;
+	}
+
+	/** Aus dem FOV-Mixin: das tatsächlich benutzte Sichtfeld merken. */
+	public void setWorldFov(double fov) {
+		if (fov > 1 && fov < 180) worldFov = fov;
 	}
 
 	public ToggleState sprintToggle() {

@@ -232,11 +232,21 @@ test {
 	useJUnitPlatform()
 }
 
+// Mixin-Liste je Version (alle NeoForge-Versionen sind ≥ 1.20.2, daher nur wenige Ausnahmen).
+def mixinClasses = ['CameraMixin', 'FovMixin', 'LightmapMixin', 'MouseHandlerMixin', 'OverlayTextureAccessor',
+		'TitleScreenMixin', 'AttackMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin',
+		'HurtCamMixin', 'OldAnimationsMixin', 'LowFireMixin', 'BlockOutlineMixin']
+// RenderSystem#lineWidth gibt es ab 1.21.11 nicht mehr (Linienstärke dort unveränderbar).
+if (stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
+// Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.
+if (stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
+
 processResources {
 	def props = [
 			version        : project.version,
 			minecraft      : mc,
 			neoforge       : neoMajorMinor,
+			mixins         : mixinClasses.collect { "\"${it}\"" }.join(', '),
 			mixinJava      : "JAVA_${javaVersion >= 21 ? 21 : 17}",
 			// FML 1 (NeoForge 20.2/20.3) kennt nur "mandatory = true", ab FML 2 (20.4) ist das ein Fehler → type = "required"
 			required       : stonecutter.eval(mc, '>=1.20.4') ? 'type = "required"' : 'mandatory = true',

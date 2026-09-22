@@ -38,10 +38,22 @@ release jar; mixins need no refmap.
 | Config button | `ConfigScreenHandler.ConfigScreenFactory` ≤1.20.4, `IConfigScreenFactory` from 1.20.5 |
 | Save on exit | `GameShuttingDownEvent` |
 | Zoom, CPS, zoom scroll, slow mouse, freelook, fullbright, hit color, title screen | the same vanilla mixins as the Fabric build (NeoForge ships Mixin + MixinExtras ≥0.3.1): `FovMixin`, `MouseHandlerMixin`, `CameraMixin`, `LightmapMixin`, `OverlayTextureAccessor`, `TitleScreenMixin` |
+| Reach/combo, chat, low fire, block outline, line width, hitbox color, 1.7 animations | vanilla mixins as well: `AttackMixin`, `ChatMixin`, `ChatComponentAccessor`, `ChatScreenMixin`, `HurtCamMixin`, `LowFireMixin`, `BlockOutlineMixin`, `LineWidthMixin`, `HitboxColorMixin`, `OldAnimationsMixin`. The NeoForge events do not fit: `PlayerInteractEvent.AttackEntity` also runs on the integrated server (every hit counted twice), `RenderBlockScreenEffectEvent` and `RenderHighlightEvent` can only cancel the fire/outline, not move or recolour it, and `ViewportEvent.ComputeCameraAngles` does not contain the hurt tilt. |
+| Mixin list | not static: `build.gradle` builds `mixinClasses` per version and expands `${mixins}` in `trsclient.mixins.json` (like the Fabric build) |
 
-All other classes (screens, HUD, `ui/Gfx`, `compat/Mc`, features) are copies of the Fabric tree with the same
-Stonecutter conditions; only `TrsClient`, `TrsKeys`, `AutoTest` (tick hook, version string) and `TrsTitleScreen`
-(NeoForge mod list instead of ModMenu – moved to `client.gui.modlist` in 26.2, opened via reflection) differ.
+All other classes (screens, HUD, `ui/Gfx`, `compat/Mc`, `compat/ChatLines`, `compat/MapSampler`, features) are copies
+of the Fabric tree with the same Stonecutter conditions, minus the branches below 1.20.2; only `TrsClient`, `TrsKeys`,
+`AutoTest` (tick hook, version string) and `TrsTitleScreen` (NeoForge mod list instead of ModMenu – moved to
+`client.gui.modlist` in 26.2, opened via reflection) differ.
+
+### Where a version offers less
+
+| Feature | Available | Behaviour elsewhere |
+| --- | --- | --- |
+| Hitboxes (toggle + colour) | 1.20.2 – 1.21.8 | from 1.21.9 Minecraft only knows the hitbox display as a debug entry and `EntityRenderDispatcher` no longer draws it – the module does nothing (`HitboxColorMixin` is not registered) |
+| Block outline width | 1.20.2 – 1.21.10 | `RenderSystem.lineWidth` is gone from 1.21.11 – colour and opacity still work, the width stays vanilla |
+| 1.7 animations, "swing while using" | 1.20.2 – 26.2 | from 26.3 the swing lives in an internal state without public fields; "hand stays up" still works everywhere |
+| Motion blur | – | not implemented on any loader (the module exists but draws nothing) |
 
 ## Build
 
@@ -52,7 +64,8 @@ Stonecutter 0.9.8, toolchains 17/21/25 via foojay. `src/` is checked in for the 
 ./gradlew collectLauncherJars                 # builds all 22 versions, runs the common unit tests,
                                               # writes ../dist/trsclient-neoforge-<mc>.jar + ../dist/builds-neoforge.json
 ./gradlew :1.20.4:build                       # a single version
-./gradlew :1.21.1:runClient -PtrsAutotest     # self-test (title screen, menu, test world, screenshots, quits)
+./gradlew :1.21.1:runClient -PtrsAutotest     # self-test (title screen, menu, test world, waypoints, minimap,
+                                              # chat, screenshots, quits)
 ./gradlew "Set active project to 26.3"        # edit another version in the IDE (switch back to 1.21.1 before committing)
 ```
 

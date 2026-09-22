@@ -24,7 +24,9 @@ public abstract class FovMixin {
 	private float trsclient$applyZoom(float fov) {
 		HookStats.fov++;
 		double factor = TrsClient.get().updateZoom();
-		return factor == 1.0 ? fov : (float) (fov / factor);
+		float result = factor == 1.0 ? fov : (float) (fov / factor);
+		TrsClient.get().setWorldFov(result);
+		return result;
 	}
 	*///?} elif >=1.21.2 {
 	/*@ModifyReturnValue(method = "getFov", at = @At("RETURN"), require = 1)
@@ -32,7 +34,9 @@ public abstract class FovMixin {
 		HookStats.fov++;
 		if (!useFovSetting) return fov;
 		double factor = TrsClient.get().updateZoom();
-		return factor == 1.0 ? fov : (float) (fov / factor);
+		float result = factor == 1.0 ? fov : (float) (fov / factor);
+		TrsClient.get().setWorldFov(result);
+		return result;
 	}
 	*///?} else {
 	@ModifyReturnValue(method = "getFov", at = @At("RETURN"), require = 1)
@@ -41,7 +45,9 @@ public abstract class FovMixin {
 		// Nur das Welt-Sichtfeld zoomen, nicht die Hand.
 		if (!useFovSetting) return fov;
 		double factor = TrsClient.get().updateZoom();
-		return factor == 1.0 ? fov : fov / factor;
+		double result = factor == 1.0 ? fov : fov / factor;
+		TrsClient.get().setWorldFov(result);
+		return result;
 	}
 	//?}
 }
