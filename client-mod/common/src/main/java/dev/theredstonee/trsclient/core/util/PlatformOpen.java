@@ -2,6 +2,7 @@ package dev.theredstonee.trsclient.core.util;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -17,9 +18,9 @@ public final class PlatformOpen {
 	public static List<String> command(String osName, Path path) {
 		String os = osName == null ? "" : osName.toLowerCase(Locale.ROOT);
 		String p = path.toAbsolutePath().toString();
-		if (os.contains("win")) return List.of("explorer.exe", p);
-		if (os.contains("mac") || os.contains("darwin")) return List.of("open", p);
-		return List.of("xdg-open", p);
+		if (os.contains("win")) return Arrays.asList("explorer.exe", p);
+		if (os.contains("mac") || os.contains("darwin")) return Arrays.asList("open", p);
+		return Arrays.asList("xdg-open", p);
 	}
 
 	/** Startet den Dateimanager (wartet nicht auf ihn). */

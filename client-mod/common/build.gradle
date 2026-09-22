@@ -16,6 +16,13 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// common wird in JEDE Mod-JAR mitkompiliert – auch für Minecraft 1.14–1.16 (Java 8).
+// Deshalb: nur Java-8-Sprache und -API (keine records/var/switch-Ausdrücke/List.of …).
+tasks.named('compileJava') {
+	options.release = 8
+	options.compilerArgs << '-Xlint:-options'
+}
+
 test {
 	useJUnitPlatform()
 	testLogging {

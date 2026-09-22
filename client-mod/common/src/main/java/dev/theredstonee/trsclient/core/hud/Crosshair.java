@@ -49,16 +49,22 @@ public final class Crosshair {
 		int lo = -(thickness / 2);
 		int hi = lo + thickness;
 		switch (shape) {
-			case CROSS, CROSS_DOT -> {
+			case CROSS:
+			case CROSS_DOT:
 				arms(out, size, gap, lo, hi, true);
 				if (shape == Shape.CROSS_DOT) out.add(new int[]{lo, lo, hi, hi});
-			}
-			case T -> arms(out, size, gap, lo, hi, false);
-			case DOT -> out.add(new int[]{lo, lo, hi, hi});
-			case CIRCLE, CIRCLE_DOT -> {
+				break;
+			case T:
+				arms(out, size, gap, lo, hi, false);
+				break;
+			case DOT:
+				out.add(new int[]{lo, lo, hi, hi});
+				break;
+			case CIRCLE:
+			case CIRCLE_DOT:
 				ring(out, size + gap, thickness);
 				if (shape == Shape.CIRCLE_DOT) out.add(new int[]{lo, lo, hi, hi});
-			}
+				break;
 		}
 		return out;
 	}

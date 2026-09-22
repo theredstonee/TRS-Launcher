@@ -9,8 +9,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 //? if >=26.1 {
 /*import net.minecraft.client.gui.GuiGraphicsExtractor;
-*///?} else
+*///?} elif >=1.20 {
 import net.minecraft.client.gui.GuiGraphics;
+//?} elif >=1.16
+/*import com.mojang.blaze3d.vertex.PoseStack;*/
 //? if >=1.21.9 {
 /*import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -102,7 +104,7 @@ public abstract class TrsScreen extends Screen {
 		super.extractRenderState(g, mouseX, mouseY, partialTick);
 		draw(Gfx.of(g), mouseX, mouseY, partialTick);
 	}
-	*///?} else {
+	*///?} elif >=1.20 {
 	@Override
 	//? if >=1.20.2 {
 	public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
@@ -124,7 +126,25 @@ public abstract class TrsScreen extends Screen {
 		super.render(g, mouseX, mouseY, partialTick);
 		draw(Gfx.of(g), mouseX, mouseY, partialTick);
 	}
-	//?}
+	//?} elif >=1.16 {
+	/*// 1.16–1.19.4: Zeichnen über PoseStack; Hintergrund zeichnet render() selbst.
+	@Override
+	public void render(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+		if (customBackground()) drawBackground(Gfx.of(pose), partialTick);
+		else renderBackground(pose);
+		super.render(pose, mouseX, mouseY, partialTick);
+		draw(Gfx.of(pose), mouseX, mouseY, partialTick);
+	}
+	*///?} else {
+	/*// 1.14–1.15: kein PoseStack, Zeichnen über die OpenGL-Matrix.
+	@Override
+	public void render(int mouseX, int mouseY, float partialTick) {
+		if (customBackground()) drawBackground(Gfx.of(), partialTick);
+		else renderBackground();
+		super.render(mouseX, mouseY, partialTick);
+		draw(Gfx.of(), mouseX, mouseY, partialTick);
+	}
+	*///?}
 
 	//? if >=1.21.9 {
 	/*@Override

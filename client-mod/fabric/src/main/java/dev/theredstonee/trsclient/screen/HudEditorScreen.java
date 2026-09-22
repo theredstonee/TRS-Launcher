@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.core.hud.HudLayout;
 import dev.theredstonee.trsclient.core.module.HudModule;
@@ -16,7 +17,7 @@ import net.minecraft.network.chat.Component;
  * Mausrad ändert die Größe, Rechtsklick setzt die Position zurück, Shift = ohne Einrasten.
  */
 public final class HudEditorScreen extends TrsScreen {
-	private static final Component HEADLINE = Component.literal("HUD bearbeiten").withStyle(ChatFormatting.BOLD);
+	private static final Component HEADLINE = Mc.text("HUD bearbeiten").withStyle(ChatFormatting.BOLD);
 	private static final String HELP = "Ziehen · Mausrad: Größe · Rechtsklick: Reset · Shift: frei";
 
 	private final Screen parent;
@@ -29,7 +30,7 @@ public final class HudEditorScreen extends TrsScreen {
 	private boolean guideY;
 
 	public HudEditorScreen(Screen parent) {
-		super(Component.literal("HUD bearbeiten"));
+		super(Mc.text("HUD bearbeiten"));
 		this.parent = parent;
 	}
 
@@ -66,13 +67,13 @@ public final class HudEditorScreen extends TrsScreen {
 		}
 
 		// Hinweis-Box in der Mitte (HUD-Elemente liegen meist am Rand)
-		int boxW = Math.min(width - 16, Math.max(font.width(HELP), font.width(HEADLINE)) + 16);
+		int boxW = Math.min(width - 16, Math.max(font.width(HELP), Gfx.width(font, HEADLINE)) + 16);
 		int bx = (width - boxW) / 2;
 		int by = height / 2 - 34;
 		g.fill(bx, by, bx + boxW, by + 26, 0xD017171E);
 		g.fill(bx, by, bx + 2, by + 26, Brand.RED);
 		g.centered(font, HEADLINE, width / 2, by + 4, Brand.TEXT);
-		g.centered(font, font.plainSubstrByWidth(HELP, boxW - 8), width / 2, by + 15, Brand.TEXT_DIM);
+		g.centered(font, Gfx.clip(font, HELP, boxW - 8), width / 2, by + 15, Brand.TEXT_DIM);
 
 		// Fertig-Knopf darunter
 		int fw = 60;

@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.hud.CrosshairRenderer;
@@ -16,7 +17,7 @@ import net.minecraft.network.chat.Component;
  * Rechtsklick auf eine Auswahl blättert rückwärts.
  */
 public final class CrosshairEditorScreen extends TrsScreen {
-	private static final Component TITLE = Component.literal("Fadenkreuz bearbeiten").withStyle(ChatFormatting.BOLD);
+	private static final Component TITLE = Mc.text("Fadenkreuz bearbeiten").withStyle(ChatFormatting.BOLD);
 	private static final int PREVIEW_SCALE = 4;
 
 	private final Screen parent;
@@ -25,7 +26,7 @@ public final class CrosshairEditorScreen extends TrsScreen {
 	private final Hotspots hot = new Hotspots();
 
 	public CrosshairEditorScreen(Screen parent) {
-		super(Component.literal("Fadenkreuz bearbeiten"));
+		super(Mc.text("Fadenkreuz bearbeiten"));
 		this.parent = parent;
 	}
 

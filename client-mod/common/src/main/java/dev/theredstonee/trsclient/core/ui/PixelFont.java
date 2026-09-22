@@ -18,17 +18,17 @@ public final class PixelFont {
 
 	/** Zeilen eines Zeichens ('#' = Pixel) oder null, wenn unbekannt. */
 	static String[] glyph(char c) {
-		return switch (Character.toUpperCase(c)) {
-			case 'T' -> new String[]{"#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."};
-			case 'R' -> new String[]{"####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"};
-			case 'S' -> new String[]{".####", "#....", "#....", ".###.", "....#", "....#", "####."};
-			case 'C' -> new String[]{".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."};
-			case 'L' -> new String[]{"#....", "#....", "#....", "#....", "#....", "#....", "#####"};
-			case 'I' -> new String[]{"###", ".#.", ".#.", ".#.", ".#.", ".#.", "###"};
-			case 'E' -> new String[]{"#####", "#....", "#....", "####.", "#....", "#....", "#####"};
-			case 'N' -> new String[]{"#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#", "#...#"};
-			default -> null;
-		};
+		switch (Character.toUpperCase(c)) {
+			case 'T': return new String[]{"#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."};
+			case 'R': return new String[]{"####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"};
+			case 'S': return new String[]{".####", "#....", "#....", ".###.", "....#", "....#", "####."};
+			case 'C': return new String[]{".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."};
+			case 'L': return new String[]{"#....", "#....", "#....", "#....", "#....", "#....", "#####"};
+			case 'I': return new String[]{"###", ".#.", ".#.", ".#.", ".#.", ".#.", "###"};
+			case 'E': return new String[]{"#####", "#....", "#....", "####.", "#....", "#....", "#####"};
+			case 'N': return new String[]{"#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#", "#...#"};
+			default: return null;
+		}
 	}
 
 	/** Breite eines Textes in Pixeln (ohne Abstand nach dem letzten Zeichen). */

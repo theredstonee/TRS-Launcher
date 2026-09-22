@@ -2,6 +2,7 @@ package dev.theredstonee.trsclient.hud;
 
 import dev.theredstonee.trsclient.ui.Gfx;
 import dev.theredstonee.trsclient.TrsClient;
+import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.ui.Brand;
@@ -87,7 +88,7 @@ public final class KeystrokesHud extends HudElement {
 		String bound = mapping.saveString();
 		if (bound != boundKeys[idx] || labels[idx] == null) {
 			boundKeys[idx] = bound;
-			labels[idx] = font.plainSubstrByWidth(mapping.getTranslatedKeyMessage().getString(), KEY - 4);
+			labels[idx] = Gfx.clip(font, Mc.keyName(mapping), KEY - 4);
 		}
 		return labels[idx];
 	}

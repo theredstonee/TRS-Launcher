@@ -2,14 +2,49 @@ package dev.theredstonee.trsclient.core.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /** Auswahl der Server für die Schnellbeitritt-Leiste des TRS-Startbildschirms. */
 public final class QuickJoin {
 	/** Ein Eintrag aus servers.dat. */
-	public record Server(String name, String address) {
+	public static final class Server {
+		private final String name;
+		private final String address;
+
+		public Server(String name, String address) {
+			this.name = name;
+			this.address = address;
+		}
+
+		public String name() {
+			return name;
+		}
+
+		public String address() {
+			return address;
+		}
+
 		/** Anzeigename; leerer Name → Adresse. */
 		public String label() {
-			return name == null || name.isBlank() ? address : name.strip();
+			return name == null || name.trim().isEmpty() ? address : name.trim();
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (!(o instanceof Server)) return false;
+			Server s = (Server) o;
+			return Objects.equals(name, s.name) && Objects.equals(address, s.address);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, address);
+		}
+
+		@Override
+		public String toString() {
+			return "Server[name=" + name + ", address=" + address + "]";
 		}
 	}
 
@@ -21,8 +56,8 @@ public final class QuickJoin {
 		List<Server> out = new ArrayList<>();
 		for (Server s : all) {
 			if (out.size() >= max) break;
-			if (s == null || s.address() == null || s.address().isBlank()) continue;
-			out.add(new Server(s.name(), s.address().strip()));
+			if (s == null || s.address() == null || s.address().trim().isEmpty()) continue;
+			out.add(new Server(s.name(), s.address().trim()));
 		}
 		return out;
 	}

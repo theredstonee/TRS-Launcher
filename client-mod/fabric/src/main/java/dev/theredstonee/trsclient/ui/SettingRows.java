@@ -26,19 +26,23 @@ public final class SettingRows {
 		for (Setting s : settings) {
 			if (y + ROW_H > maxY) break;
 			g.text(font, s.label(), x, y + 3, Brand.TEXT, false);
-			if (s instanceof BoolSetting b) {
+			if (s instanceof BoolSetting) {
+				BoolSetting b = (BoolSetting) s;
 				int bx = right - 26;
 				Brand.pill(g, font, bx, y + 1, b.get(), inside(mx, my, bx, y + 1, 26, 11));
 				hot.add(bx, y + 1, 26, 11, b::toggle);
-			} else if (s instanceof NumberSetting n) {
+			} else if (s instanceof NumberSetting) {
+				NumberSetting n = (NumberSetting) s;
 				number(g, font, right, y + 1, n, mx, my, hot);
-			} else if (s instanceof ColorSetting c) {
+			} else if (s instanceof ColorSetting) {
+				ColorSetting c = (ColorSetting) s;
 				int sx = right - 24;
 				boolean hover = inside(mx, my, sx, y + 1, 24, 11);
 				g.fill(sx, y + 1, sx + 24, y + 12, c.argb());
 				Brand.outline(g, sx - 1, y, 26, 13, hover ? Brand.AMBER : Brand.BORDER);
 				hot.add(sx, y + 1, 24, 11, c::cycle);
-			} else if (s instanceof ChoiceSetting<?> c) {
+			} else if (s instanceof ChoiceSetting) {
+				ChoiceSetting<?> c = (ChoiceSetting<?>) s;
 				String label = "‹ " + c.display() + " ›";
 				int cw = font.width(label) + 8;
 				int cx = right - cw;
