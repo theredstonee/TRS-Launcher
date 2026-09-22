@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "trsclient",
+	"version": "${version}",
+	"name": "TRS Client",
+	"description": "In-Game-Client des TRS Launchers: HUD (FPS, CPS, Tastenanzeige, Ping), Zoom, Fullbright und ein eigenes Menü (Rechte Umschalttaste).",
+	"authors": [
+		"theredstonee"
+	],
+	"contact": {
+		"sources": "https://github.com/theredstonee/TRS-Launcher"
+	},
+	"license": "GPL-3.0-only",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.theredstonee.trsclient.TrsClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "trsclient.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": "1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

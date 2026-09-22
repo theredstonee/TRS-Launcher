@@ -1,0 +1,22 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+plugins {
+	// Lädt bei Bedarf automatisch ein JDK 21 (Gradle-Toolchains).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trs-client'
+
+// Versionsunabhängige Logik (Module, Config, HUD-Mathe) – reines Java, ohne Minecraft.
+include 'common'
+// Minecraft-spezifischer Teil je Version. Weitere (z. B. legacy-1.8.9, 26.x) kommen später dazu.
+include 'fabric-1.21.1'

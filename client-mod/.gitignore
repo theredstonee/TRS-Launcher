@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+out/
+classes/
+
+# Fabric-Laufzeitverzeichnis (runClient)
+run/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+bin/
+.classpath
+.project
+
+# Java
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr

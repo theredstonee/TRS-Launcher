@@ -1,0 +1,24 @@
+plugins {
+	id 'java-library'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Gson liefert Minecraft selbst mit – daher nur zum Kompilieren.
+	compileOnly "com.google.code.gson:gson:${gson_version}"
+
+	testImplementation "com.google.code.gson:gson:${gson_version}"
+	testImplementation platform("org.junit:junit-bom:${junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'passed', 'skipped', 'failed'
+	}
+}
