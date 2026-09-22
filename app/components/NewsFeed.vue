@@ -128,7 +128,7 @@ async function showPatchNotes(item: NewsItem) {
       Für diesen Bereich gibt es gerade nichts Neues.
     </p>
 
-    <ul v-else class="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
+    <ul v-else class="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] items-start gap-3">
       <li v-for="item in shown" :key="item.id" class="card card-hover overflow-hidden">
         <button class="flex h-full w-full flex-col text-left" :title="item.contentPath ? 'Patchnotes lesen' : item.link ? 'Im Browser öffnen' : item.title" @click="open(item)">
           <img

@@ -49,12 +49,16 @@
 - Browse and install mods, modpacks, resource packs and shaders from **Modrinth**, dependencies included
 - Pick any version, check for updates, enable or disable mods per instance
 - Import instances from the **official launcher, Modrinth App, CurseForge, Prism Launcher, MultiMC** or any folder
+- Export any instance as a **`.mrpack`** — mods that exist on Modrinth are linked, everything else is packed as overrides — and import pack files again
 
 **Everything else**
 - Multiple Microsoft accounts with one-click switching (tokens encrypted with Windows DPAPI)
 - Server list with live player count and ping, one-click join
+- **Skins & capes** with a 3D preview: keep your own skin library, switch model (classic/slim) and pick any cape you own
+- **Screenshot gallery** across all instances with a fullscreen viewer, copy to clipboard and recycle bin
+- **News** on the start page: Minecraft patch notes, Mojang news, trending Modrinth projects and launcher releases
 - Live game log with filters, crash diagnosis, file repair and log sharing via mclo.gs (tokens redacted)
-- Screenshots, worlds, play time and instance duplication
+- Worlds, play time and instance duplication
 - Signed automatic updates
 
 ## Installation
@@ -116,6 +120,8 @@ src-tauri/
     launch.rs process.rs  Arguments, detached game processes, logs, crash diagnosis
     auth/               Microsoft → Xbox Live → Minecraft, encrypted account store
     modrinth.rs modpack.rs content.rs  Modrinth, modpacks, per-instance content
+    modpack_export.rs   .mrpack export (Modrinth lookup by hash, overrides)
+    skins.rs news.rs screenshots.rs    Minecraft profile/skins, news cache, screenshot gallery
     import.rs servers.rs boost.rs client_mod.rs
   resources/client-mod/ Bundled TRS Client builds + builds.json
 client-mod/             TRS Client (Fabric multi-version, Forge 1.8.9)

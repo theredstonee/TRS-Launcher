@@ -76,9 +76,16 @@ pub fn validate_skin_png(bytes: &[u8]) -> Result<(u32, u32)> {
 }
 
 /// Textur-URLs von Mojang: nur `textures.minecraft.net`, nur der Texturpfad.
+/// Mojang liefert sie teils als `http://…` – daraus wird immer HTTPS.
+pub fn normalize_texture_url(url: &str) -> Option<String> {
+    let rest = url.strip_prefix("https://").or_else(|| url.strip_prefix("http://"))?;
+    let id = rest.strip_prefix("textures.minecraft.net/texture/")?;
+    let ok = !id.is_empty() && id.len() <= 128 && id.chars().all(|c| c.is_ascii_alphanumeric());
+    ok.then(|| format!("{TEXTURE_PREFIX}{id}"))
+}
+
 pub fn is_texture_url(url: &str) -> bool {
-    let Some(id) = url.strip_prefix(TEXTURE_PREFIX) else { return false };
-    !id.is_empty() && id.len() <= 128 && id.chars().all(|c| c.is_ascii_alphanumeric())
+    normalize_texture_url(url).as_deref() == Some(url)
 }
 
 fn data_url(bytes: &[u8]) -> String {
@@ -351,8 +358,9 @@ impl Launcher {
     async fn to_profile(&self, profile: ApiProfile) -> Result<Profile> {
         let active = profile.skins.iter().find(|s| s.state.eq_ignore_ascii_case("ACTIVE"));
         let variant = active.map_or(SkinVariant::Classic, |s| SkinVariant::from_api(&s.variant));
-        let skin = match active.filter(|s| is_texture_url(&s.url)) {
-            Some(s) => match texture_bytes(self.http(), self.paths(), &s.url).await {
+        let skin_url = active.and_then(|s| normalize_texture_url(&s.url));
+        let skin = match &skin_url {
+            Some(url) => match texture_bytes(self.http(), self.paths(), url).await {
                 Ok(bytes) => Some(data_url(&bytes)),
                 Err(e) => {
                     tracing::warn!("Skin-Textur konnte nicht geladen werden: {e}");
@@ -362,15 +370,15 @@ impl Launcher {
             None => None,
         };
         // Den Skin-Link merkt sich auch der Account (Kopf in der Seitenleiste).
-        if let Some(url) = active.map(|s| s.url.clone()).filter(|u| is_texture_url(u)) {
-            let _ = self.accounts().set_skin_url(&profile.id, &url).await;
+        if let Some(url) = &skin_url {
+            let _ = self.accounts().set_skin_url(&profile.id, url).await;
         }
 
         let mut capes = Vec::new();
         for cape in profile.capes.iter().filter(|c| is_cape_id(&c.id)) {
-            let texture = match is_texture_url(&cape.url) {
-                true => texture_bytes(self.http(), self.paths(), &cape.url).await.ok().map(|b| data_url(&b)),
-                false => None,
+            let texture = match normalize_texture_url(&cape.url) {
+                Some(url) => texture_bytes(self.http(), self.paths(), &url).await.ok().map(|b| data_url(&b)),
+                None => None,
             };
             capes.push(Cape {
                 id: cape.id.clone(),
@@ -452,10 +460,11 @@ impl Launcher {
         let active = profile
             .skins
             .iter()
-            .find(|s| s.state.eq_ignore_ascii_case("ACTIVE") && is_texture_url(&s.url))
+            .find(|s| s.state.eq_ignore_ascii_case("ACTIVE") && normalize_texture_url(&s.url).is_some())
             .ok_or_else(|| Error::validation("Dieses Konto trägt gerade keinen eigenen Skin."))?;
         let variant = SkinVariant::from_api(&active.variant);
-        let bytes = texture_bytes(self.http(), self.paths(), &active.url).await?;
+        let url = normalize_texture_url(&active.url).unwrap_or_default();
+        let bytes = texture_bytes(self.http(), self.paths(), &url).await?;
         self.add_skin_bytes(&bytes, name, variant).await
     }
 
@@ -598,10 +607,16 @@ mod tests {
     #[test]
     fn only_mojang_texture_urls_are_allowed() {
         assert!(is_texture_url("https://textures.minecraft.net/texture/abc123"));
+        // Mojang schickt die Profil-Texturen als http – daraus wird https.
+        assert_eq!(
+            normalize_texture_url("http://textures.minecraft.net/texture/abc123").as_deref(),
+            Some("https://textures.minecraft.net/texture/abc123")
+        );
         assert!(!is_texture_url("http://textures.minecraft.net/texture/abc123"));
-        assert!(!is_texture_url("https://textures.minecraft.net/texture/../../etc"));
-        assert!(!is_texture_url("https://evil.example/texture/abc123"));
-        assert!(!is_texture_url("https://textures.minecraft.net/texture/"));
+        assert!(normalize_texture_url("https://textures.minecraft.net/texture/../../etc").is_none());
+        assert!(normalize_texture_url("https://evil.example/texture/abc123").is_none());
+        assert!(normalize_texture_url("https://textures.minecraft.net/texture/").is_none());
+        assert!(normalize_texture_url("https://textures.minecraft.net/texture/a?x=1").is_none());
     }
 
     #[test]
