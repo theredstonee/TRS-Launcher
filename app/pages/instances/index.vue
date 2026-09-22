@@ -182,7 +182,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
         <div
           v-if="!collapsed.has(g.key)"
           class="grid gap-4"
-          :class="ui?.compactLibrary ? 'grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]'"
+          :class="ui?.compactLibrary ? 'grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]'"
         >
           <InstanceCard
             v-for="i in g.items"
