@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { Instance } from '~/types'
 
-// Quadratische Bibliothekskachel: großes Bild, Name, Loader + Version.
-// Beim Überfahren erscheint der Spielen-Knopf auf dem Bild; laufende
-// Instanzen leuchten wie eine Redstone-Lampe.
+// Bibliothekskachel: Banner oben, darüber das Instanz-Bild, darunter Name,
+// Loader und Version. Beim Überfahren erscheint der Spielen-Knopf auf dem
+// Banner; laufende Instanzen leuchten wie eine Redstone-Lampe.
 const props = defineProps<{ instance: Instance; groups: string[]; compact?: boolean; showPlayTime?: boolean }>()
 const emit = defineEmits<{ delete: [instance: Instance]; move: [group: string | null]; newGroup: [instance: Instance] }>()
 
@@ -34,22 +34,24 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
 
 <template>
   <article
-    class="card group relative flex flex-col p-2.5 transition-[border-color,background-color,box-shadow] hover:border-base-700 hover:bg-base-850"
+    class="card group relative flex flex-col transition-[border-color,background-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-base-700 hover:bg-base-850"
     :class="{ 'border-lamp-400/50 shadow-[0_0_26px_-8px_var(--color-lamp-400)]': game.phase === 'running' }"
   >
     <div class="relative">
-      <NuxtLink :to="`/instances/${instance.id}`" class="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-redstone-500" :aria-label="instance.name">
-        <div class="aspect-square w-full overflow-hidden rounded-xl">
-          <InstanceIcon :instance="instance" :size="compact ? 140 : 200" class="!size-full" />
-        </div>
+      <NuxtLink
+        :to="`/instances/${instance.id}`"
+        class="block overflow-hidden rounded-t-xl outline-none focus-visible:ring-2 focus-visible:ring-redstone-500"
+        :aria-label="instance.name"
+      >
+        <InstanceBanner :instance="instance" shade="none" class="w-full" :class="compact ? 'h-20' : 'h-28'" />
       </NuxtLink>
 
       <!-- Spielen beim Überfahren; während der Vorbereitung Prozent, beim Laufen Stopp -->
       <button
         v-if="game.phase !== 'preparing'"
-        class="absolute right-2 bottom-2 grid place-items-center rounded-full shadow-lg shadow-black/50 transition-all"
+        class="absolute right-2 -bottom-4 grid place-items-center rounded-full shadow-lg shadow-black/50 transition-all"
         :class="[
-          compact ? 'size-10' : 'size-12',
+          compact ? 'size-9' : 'size-11',
           game.phase === 'running'
             ? 'bg-lamp-400 text-base-950 opacity-100'
             : 'translate-y-1 bg-redstone-500 text-white opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 hover:bg-redstone-400',
@@ -71,7 +73,12 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
       </span>
     </div>
 
-    <div class="mt-2.5 flex items-start gap-1 px-0.5">
+    <div class="flex items-start gap-2.5 px-2.5 pt-1.5 pb-2.5">
+      <InstanceIcon
+        :instance="instance"
+        :size="compact ? 34 : 42"
+        class="-mt-7 shadow-lg shadow-black/50 ring-2 ring-base-900 transition-transform duration-150 group-hover:scale-105"
+      />
       <div class="min-w-0 flex-1">
         <NuxtLink :to="`/instances/${instance.id}`" class="block truncate font-semibold text-base-50 hover:text-redstone-300" :class="compact ? 'text-sm' : ''" :title="instance.name">
           {{ instance.name }}
