@@ -6,7 +6,7 @@ import dev.theredstonee.trsclient.core.config.ModuleConfig;
  * Eine einstellbare Option eines Moduls. Der aktuelle Wert liegt als einfaches Feld
  * in der Unterklasse, damit das Rendern ohne Map-Zugriffe/Boxing auskommt.
  */
-public abstract sealed class Setting permits BoolSetting, NumberSetting, ColorSetting {
+public abstract sealed class Setting permits BoolSetting, NumberSetting, ColorSetting, ChoiceSetting {
 	private final String key;
 	private final String label;
 
