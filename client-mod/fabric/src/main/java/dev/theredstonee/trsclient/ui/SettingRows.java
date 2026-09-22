@@ -26,7 +26,9 @@ public final class SettingRows {
 		int right = x + w;
 		for (Setting s : settings) {
 			if (y + ROW_H > maxY) break;
-			g.text(font, s.label(), x, y + 3, Brand.TEXT, false);
+			// Bei Textzeilen ist rechts ein breites Eingabefeld – den Namen davor abschneiden.
+			int labelWidth = s instanceof TextSetting ? w - Math.min(140, w / 2) - 6 : w;
+			g.text(font, Gfx.clip(font, s.label(), labelWidth), x, y + 3, Brand.TEXT, false);
 			if (s instanceof BoolSetting) {
 				BoolSetting b = (BoolSetting) s;
 				int bx = right - 26;
