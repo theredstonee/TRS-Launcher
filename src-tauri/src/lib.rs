@@ -20,6 +20,9 @@ fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
 }
 
 pub fn run() {
+    if let Ok(exe) = std::env::current_exe() {
+        trs_core::firewall::set_helper_exe(exe);
+    }
     tauri::Builder::default()
         // Muss als erstes Plugin registriert werden.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
