@@ -67,10 +67,21 @@ used as little as possible:
   `CameraMixin` + `MouseHandlerMixin` (@Redirect), crosshair `CrosshairMixin`, title screen `TitleScreenMixin`,
   hit color `OverlayTextureAccessor` – the same targets as the Fabric tree.
 
+## Verified in-game (2026-09-22)
+
+- Dev self-test (all screenshots checked): 1.20.1, 1.20.4 (SRG), 1.21.1, 26.3.
+- Production through the launcher (`launch.exe … forge`, `TRSCLIENT_AUTOTEST=1`): 1.20.1 reobf jar (mod loads,
+  refmapped mixins work: TRS title screen + menu; world part stopped by the demo account's DemoIntroScreen, which the
+  self-test now closes), 1.21.1 plain jar (full self-test incl. HUD, zoom, fullbright, freelook).
+- All other versions: compiled only – mixin targets are not checked at compile time (the 26.1.x targets
+  `Gui#extractRenderState`/`Gui#extractCrosshair`/`Minecraft#setScreen` were checked in the Forge 26.1.2 sources).
+
 ## Build
 
 ```sh
-./gradlew collectLauncherJars          # all versions → ../dist/trsclient-forge-<mc>.jar + ../dist/builds-forge.json
+./gradlew :collectLauncherJars         # all versions → ../dist/trsclient-forge-<mc>.jar + ../dist/builds-forge.json
+                                       # (leading ':' – otherwise Gradle configures every version project)
+./gradlew :collectLauncherJars -PtrsVersions=1.20.1,1.21.1   # only some versions
 ./gradlew :1.21.1:build                # one version
 ./gradlew :1.21.1:runClient            # dev client, game dir client-mod/run/forge-<mc>
 ./gradlew :1.21.1:runClient -PtrsAutotest   # self-test (menu, world, screenshots, quits)

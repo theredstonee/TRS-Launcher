@@ -1,8 +1,27 @@
 # TRS Client
 
-The in-game client mod of the TRS Launcher (Lunar/Badlion style). Fabric, client-only, one jar per
-Minecraft release from **1.14.4 to 26.3** (39 versions, see below).
+The in-game client mod of the TRS Launcher (Lunar/Badlion style). Client-only, one jar per loader and
+Minecraft release: **Fabric 1.14.4–26.3**, **Forge 1.7.10–26.3**, **NeoForge 1.20.2–26.3** (see below).
 License: GPL-3.0-only, author: theredstonee.
+
+## Projects
+
+Each loader family is its own Gradle build (own wrapper, own README with hooks and pitfalls); all of them put
+their jars and a `builds-<project>.json` into `dist/`, which the launcher bundles as
+`src-tauri/resources/client-mod/builds.json`.
+
+| Directory | Loader / versions | Tooling | Rebuild |
+| --- | --- | --- | --- |
+| `fabric/` (this build) | Fabric 1.14.4–26.3 (39) | Loom + Stonecutter | `./gradlew collectLauncherJars` |
+| `neoforge/` | NeoForge 1.20.2–26.3 (22, incl. beta-only versions) | ModDevGradle + Stonecutter | `./gradlew collectLauncherJars` |
+| `forge/` | Forge 1.20–26.3 (22) | ForgeGradle 7 + Stonecutter | `./gradlew :collectLauncherJars` |
+| `forge-mojmap-legacy/` | Forge 1.14.4, 1.15.2, 1.16.2, 1.16.4, 1.16.5, 1.17.1, 1.18–1.18.2, 1.19–1.19.4 | Essential Loom + Stonecutter | `./gradlew collectLauncherJars` |
+| `forge-1.13.2/` | Forge 1.13.2 | ForgeGradle 6 (Gradle 8.14) | `./gradlew build` |
+| `legacy/` | Forge 1.8.9, 1.9, 1.9.4, 1.10(.2), 1.11(.2), 1.12–1.12.2 | Essential Loom + Stonecutter | `./gradlew collectLauncherJars` |
+| `legacy-1.7.10/` | Forge 1.7.10 | RetroFuturaGradle | `./gradlew build` |
+
+`common/` is shared by the modern builds as a source folder; the Java-8/MCP builds (`legacy*`, `forge-1.13.2`,
+`forge-mojmap-legacy` ≤1.17.1) keep a copy of it that has to be kept in sync.
 
 ## Features
 
