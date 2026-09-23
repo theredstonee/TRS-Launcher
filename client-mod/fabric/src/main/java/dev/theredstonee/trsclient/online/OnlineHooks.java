@@ -193,39 +193,60 @@ public final class OnlineHooks {
 	 * Spieler posiert, Schleichen inklusive), {@code texture} = Textur wie Vanilla sie nehmen würde.
 	 */
 	//? if >=1.21.11 {
-	/*public static void render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
+	/*public static boolean render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
 			Object texture, ClothSim sim, ModelPart body, boolean armor) {
 		float partial = features.physics().partial();
 		float zOff = zOffset(armor);
 		pose.pushPose();
-		body.translateAndRotate(pose);
-		collector.submitCustomGeometry(pose, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(
-				(net.minecraft.resources.Identifier) texture), (last, vc) ->
-				features.mesh().emit(sim, partial, sink(vc, last, light, zOff)));
-		pose.popPose();
+		try {
+			body.translateAndRotate(pose);
+			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(
+					(net.minecraft.resources.Identifier) texture), (last, vc) ->
+					features.mesh().emit(sim, partial, sink(vc, last, light, zOff)));
+			return true;
+		} catch (RuntimeException e) {
+			features.online().reportError(e);
+			return false;
+		} finally {
+			pose.popPose();
+		}
 	}
 	*///?} elif >=1.21.9 {
-	/*public static void render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
+	/*public static boolean render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
 			Object texture, ClothSim sim, ModelPart body, boolean armor) {
 		float partial = features.physics().partial();
 		float zOff = zOffset(armor);
 		pose.pushPose();
-		body.translateAndRotate(pose);
-		collector.submitCustomGeometry(pose, net.minecraft.client.renderer.RenderType.entitySolid(
-				(net.minecraft.resources.ResourceLocation) texture), (last, vc) ->
-				features.mesh().emit(sim, partial, sink(vc, last, light, zOff)));
-		pose.popPose();
+		try {
+			body.translateAndRotate(pose);
+			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.RenderType.entitySolid(
+					(net.minecraft.resources.ResourceLocation) texture), (last, vc) ->
+					features.mesh().emit(sim, partial, sink(vc, last, light, zOff)));
+			return true;
+		} catch (RuntimeException e) {
+			features.online().reportError(e);
+			return false;
+		} finally {
+			pose.popPose();
+		}
 	}
 	*///?} else {
-	public static void render(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light,
+	public static boolean render(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light,
 			Object texture, ClothSim sim, ModelPart body, boolean armor) {
 		float partial = features.physics().partial();
-		VertexConsumer vc = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(
-				(net.minecraft.resources.ResourceLocation) texture));
 		pose.pushPose();
-		body.translateAndRotate(pose);
-		features.mesh().emit(sim, partial, sink(vc, pose.last(), light, zOffset(armor)));
-		pose.popPose();
+		try {
+			VertexConsumer vc = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(
+				(net.minecraft.resources.ResourceLocation) texture));
+			body.translateAndRotate(pose);
+			features.mesh().emit(sim, partial, sink(vc, pose.last(), light, zOffset(armor)));
+			return true;
+		} catch (RuntimeException e) {
+			features.online().reportError(e);
+			return false;
+		} finally {
+			pose.popPose();
+		}
 	}
 	//?}
 

@@ -49,8 +49,7 @@ public abstract class CapeLayerMixin {
 		if (sim == null) return;
 		model.setupAnim(state);
 		boolean armor = hasLayer(state.chestEquipment, net.minecraft.client.resources.model.EquipmentClientInfo.LayerType.HUMANOID);
-		OnlineHooks.render(pose, collector, light, state.skin.cape().texturePath(), sim, model.body, armor);
-		ci.cancel();
+		if (OnlineHooks.render(pose, collector, light, state.skin.cape().texturePath(), sim, model.body, armor)) ci.cancel();
 	}
 	*///?} elif >=1.21.4 {
 	/*@Shadow @Final private HumanoidModel<net.minecraft.client.renderer.entity.state.PlayerRenderState> model;
@@ -70,8 +69,7 @@ public abstract class CapeLayerMixin {
 		if (sim == null) return;
 		model.setupAnim(state);
 		boolean armor = hasLayer(state.chestEquipment, net.minecraft.client.resources.model.EquipmentClientInfo.LayerType.HUMANOID);
-		OnlineHooks.render(pose, buffers, light, state.skin.capeTexture(), sim, model.body, armor);
-		ci.cancel();
+		if (OnlineHooks.render(pose, buffers, light, state.skin.capeTexture(), sim, model.body, armor)) ci.cancel();
 	}
 	*///?} elif >=1.21.2 {
 	/*@Shadow @Final private HumanoidModel<net.minecraft.client.renderer.entity.state.PlayerRenderState> model;
@@ -91,8 +89,7 @@ public abstract class CapeLayerMixin {
 		if (sim == null) return;
 		model.setupAnim(state);
 		boolean armor = hasLayer(state.chestItem, net.minecraft.world.item.equipment.EquipmentModel.LayerType.HUMANOID);
-		OnlineHooks.render(pose, buffers, light, state.skin.capeTexture(), sim, model.body, armor);
-		ci.cancel();
+		if (OnlineHooks.render(pose, buffers, light, state.skin.capeTexture(), sim, model.body, armor)) ci.cancel();
 	}
 	*///?} else {
 	@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/player/AbstractClientPlayer;FFFFFF)V",
@@ -109,8 +106,7 @@ public abstract class CapeLayerMixin {
 		/*Object texture = player.getSkin().capeTexture();
 		*///?} else
 		Object texture = player.getCloakTextureLocation();
-		OnlineHooks.render(pose, buffers, light, texture, sim, parent.body, !chest.isEmpty());
-		ci.cancel();
+		if (OnlineHooks.render(pose, buffers, light, texture, sim, parent.body, !chest.isEmpty())) ci.cancel();
 	}
 	//?}
 }

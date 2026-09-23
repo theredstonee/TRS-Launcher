@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -72,7 +72,7 @@ public interface Http {
 
 		@Override
 		public Response send(Request request) throws IOException {
-			HttpURLConnection c = (HttpURLConnection) new URL(request.url).openConnection();
+			HttpURLConnection c = (HttpURLConnection) URI.create(request.url).toURL().openConnection();
 			try {
 				c.setConnectTimeout(CONNECT_TIMEOUT_MS);
 				c.setReadTimeout(READ_TIMEOUT_MS);

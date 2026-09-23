@@ -47,11 +47,21 @@ public final class OnlineFeatures<T> {
 	public void tick(Collection<UUID> visible, List<CapePhysics.Sample> samples) {
 		gameThread = Thread.currentThread();
 		long now = System.currentTimeMillis();
-		online.tick(now, visible, modules.trsOnline.isEnabled());
-		textures.cleanup(now);
-		physics.tick(samples, modules.capePhysics.isEnabled(),
-				modules.capeScope.get() == TrsModules.CapeScope.OWN,
-				(float) (modules.capeStrength.get() / 100.0), (float) (modules.capeWind.get() / 100.0));
+		// Nichts hiervon darf je das Spiel abstürzen lassen.
+		try {
+			online.tick(now, visible, modules.trsOnline.isEnabled());
+			textures.cleanup(now);
+		} catch (RuntimeException e) {
+			online.reportError(e);
+		}
+		try {
+			physics.tick(samples, modules.capePhysics.isEnabled(),
+					modules.capeScope.get() == TrsModules.CapeScope.OWN,
+					(float) (modules.capeStrength.get() / 100.0), (float) (modules.capeWind.get() / 100.0));
+		} catch (RuntimeException e) {
+			physics.clear();
+			online.reportError(e);
+		}
 	}
 
 	/**
@@ -63,7 +73,12 @@ public final class OnlineFeatures<T> {
 		if (!modules.trsOnline.isEnabled() || !modules.trsCapes.get()) return null;
 		PlayerInfo info = online.info(uuid);
 		if (info.cape == null) return null;
-		return textures.texture(info.cape, System.currentTimeMillis());
+		try {
+			return textures.texture(info.cape, System.currentTimeMillis());
+		} catch (RuntimeException e) {
+			online.reportError(e);
+			return null;
+		}
 	}
 
 	/** Zeigt der Spieler das TRS-Abzeichen? {@code tab}: Tabliste, sonst Namensschild. */

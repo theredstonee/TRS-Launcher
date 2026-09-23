@@ -127,7 +127,12 @@ public final class TrsOnline {
 			return;
 		}
 		GameSession session = platform.session();
-		if (session == null || !(session.usable() || devMock())) {
+		if (session != null && session.uuid == null && session.name != null && devMock()) {
+			// Nur gegen die lokale Test-Attrappe: Entwicklungsstarts ohne UUID bekommen die Offline-UUID des Namens.
+			session = new GameSession(Uuids.of(UUID.nameUUIDFromBytes(("OfflinePlayer:" + session.name)
+					.getBytes(java.nio.charset.StandardCharsets.UTF_8))), session.name, session.accessToken);
+		}
+		if (session == null || session.uuid == null || !(session.usable() || devMock())) {
 			status = Status.NO_ACCOUNT;
 			return;
 		}
@@ -343,6 +348,18 @@ public final class TrsOnline {
 
 	PlayerDirectory directory() {
 		return directory;
+	}
+
+	private long lastError;
+
+	/** Fehler aus dem Tick (nie ans Spiel weiterreichen), höchstens einmal pro Minute ins Log. */
+	public void reportError(RuntimeException e) {
+		long now = System.currentTimeMillis();
+		if (now - lastError < 60_000L) return;
+		lastError = now;
+		StackTraceElement[] st = e.getStackTrace();
+		platform.log("TRS Client: Fehler in den Online-Funktionen ignoriert: " + e
+				+ (st.length > 0 ? " bei " + st[0] : ""));
 	}
 
 	// --- Validierung der Presence-Felder (die API prüft ebenso streng) ---
