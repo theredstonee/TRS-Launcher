@@ -121,6 +121,14 @@ pub async fn sync(
         tracing::warn!("TRS Client fehlt im Launcher-Paket: {}", source.display());
         return Ok(());
     }
+    // In der Mod-Liste deaktiviert (trsclient.jar.disabled): Das bleibt so – nur die
+    // deaktivierte Kopie wird aktuell gehalten, damit ein späteres Einschalten passt.
+    if disabled_copy.is_file() && !target.exists() {
+        if !same_file(&source, &disabled_copy).await {
+            tokio::fs::copy(&source, &disabled_copy).await.map_err(|e| Error::io(&disabled_copy, e))?;
+        }
+        return Ok(());
+    }
     // Nur kopieren, wenn sich etwas geändert hat (Launcher-Update bringt neue Version).
     if !same_file(&source, &target).await {
         tokio::fs::create_dir_all(&mods).await.map_err(|e| Error::io(&mods, e))?;
@@ -287,6 +295,30 @@ mod tests {
         assert!(load_builds(&dir.path().join("fehlt")).is_empty());
     }
 
+    /// In der Mod-Liste deaktiviert = bleibt deaktiviert, wird aber aktuell gehalten.
+    #[tokio::test]
+    async fn disabled_in_mod_list_stays_disabled() {
+        let bundle = tempfile::tempdir().unwrap();
+        bundled(bundle.path());
+        std::fs::write(bundle.path().join("trsclient-forge-1.8.9.jar"), b"neu").unwrap();
+        let root = tempfile::tempdir().unwrap();
+        let paths = Paths::new(root.path());
+        let inst = instance("1.8.9", LoaderKind::Forge, None);
+        let http = reqwest::Client::new();
+        let ui = UiSettings::default();
+        let mods = content::content_dir(&paths, &inst.id, ContentKind::Mod);
+
+        sync(&http, &paths, Some(bundle.path()), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"neu");
+
+        // Nutzer schaltet ihn in der Mod-Liste aus, danach kommt ein Launcher-Update.
+        std::fs::rename(mods.join(INSTALLED_NAME), mods.join("trsclient.jar.disabled")).unwrap();
+        std::fs::write(bundle.path().join("trsclient-forge-1.8.9.jar"), b"neuer").unwrap();
+        sync(&http, &paths, Some(bundle.path()), &inst, &ui).await.unwrap();
+        assert!(!mods.join(INSTALLED_NAME).exists(), "darf nicht wieder eingeschaltet werden");
+        assert_eq!(std::fs::read(mods.join("trsclient.jar.disabled")).unwrap(), b"neuer");
+    }
+
     /// Die mitgelieferte `builds.json`: jede Datei existiert, jede (Loader, Version)-Kombination
     /// ist eindeutig und kein Eintrag wurde wegen eines unsicheren Namens verworfen.
     #[test]
@@ -322,6 +354,60 @@ mod tests {
             assert!(dir.join(&build.file).is_file(), "{} fehlt", build.file);
             assert_eq!(boost_loader(&builds, v), Some(LoaderKind::Fabric));
         }
+    }
+
+    /// Fabric-Jars laufen im echten Spiel mit Intermediary-Namen (`net/minecraft/class_…`).
+    /// Bleibt ein Mojang-Name stehen (etwa ein Mixin-Ziel ohne vollständige Signatur, das
+    /// Loom nicht umschreibt), findet Mixin nichts und das Spiel stürzt beim Start ab –
+    /// im Entwicklungsmodus fällt das nicht auf, deshalb prüft es dieser Test.
+    #[test]
+    fn bundled_fabric_jars_contain_no_mojang_names() {
+        use std::io::Read;
+        const MOJANG: &[&str] = &[
+            "net/minecraft/client/renderer/",
+            "net/minecraft/client/gui/",
+            "net/minecraft/client/player/",
+            "net/minecraft/client/multiplayer/",
+            "net/minecraft/world/",
+            "net/minecraft/network/",
+            "net/minecraft/server/",
+            "net/minecraft/core/",
+            "net/minecraft/util/",
+            "net/minecraft/resources/",
+            "net/minecraft/sounds/",
+        ];
+        // Klassen, die auch in Intermediary ihren Namen behalten.
+        const KEEPS_NAME: &[&str] = &["net/minecraft/server/MinecraftServer", "net/minecraft/server/Main"];
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/client-mod");
+        let mut problems = Vec::new();
+        // Ab 26.1 liefert Mojang das Spiel unverschleiert aus – dort sind Mojang-Namen richtig.
+        let obfuscated = |b: &&Build| b.minecraft.iter().all(|v| v.starts_with("1."));
+        for build in load_builds(&dir).iter().filter(|b| b.loader == "fabric").filter(obfuscated) {
+            let file = std::fs::File::open(dir.join(&build.file)).unwrap();
+            let mut zip = zip::ZipArchive::new(file).unwrap();
+            for i in 0..zip.len() {
+                let mut entry = zip.by_index(i).unwrap();
+                if !entry.name().ends_with(".class") {
+                    continue;
+                }
+                let name = entry.name().to_owned();
+                let mut bytes = Vec::new();
+                entry.read_to_end(&mut bytes).unwrap();
+                for needle in MOJANG {
+                    for (at, _) in bytes.windows(needle.len()).enumerate().filter(|(_, w)| *w == needle.as_bytes()) {
+                        let class: String = bytes[at..]
+                            .iter()
+                            .take_while(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'_' | b'$'))
+                            .map(|&b| b as char)
+                            .collect();
+                        if !KEEPS_NAME.contains(&class.as_str()) {
+                            problems.push(format!("{}: {name} enthält {class}", build.file));
+                        }
+                    }
+                }
+            }
+        }
+        assert!(problems.is_empty(), "nicht umgeschriebene Mojang-Namen:\n{}", problems.join("\n"));
     }
 
     #[tokio::test]
