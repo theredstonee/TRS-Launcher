@@ -72,6 +72,10 @@ public final class TrsMenuHost implements MenuHost {
 	/** In diesen Versionen gibt es jedes Modul. */
 	@Override
 	public boolean supports(Module module) {
+		//? if <1.15 {
+		/*// 1.14 zeichnet den Umhang noch mit festen GL-Aufrufen – dort gibt es keine Umhang-Physik.
+		if (module == modules().capePhysics) return false;
+		*///?}
 		return true;
 	}
 

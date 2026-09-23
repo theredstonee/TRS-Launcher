@@ -51,6 +51,8 @@ public final class AutoTest {
 	/** Modul-Zustand vor dem Test – wird am Ende wiederhergestellt (die Config bleibt sauber). */
 	private TrsConfig before;
 
+	private final CapeTest capeTest = new CapeTest();
+
 	private AutoTest() {
 	}
 
@@ -68,7 +70,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Das Spielfenster bekommt den Fokus – Tastendrücke landen im Spiel (Esc → Pausenmenü …).
 		// Für saubere Screenshots den erwarteten Zustand wiederherstellen (höchstens 5-mal).
-		if (step >= 4 && step < 17 && Mc.world() != null && !isExpected(mc.currentScreen) && reopenCount < 5) {
+		if (step >= 4 && step < 18 && Mc.world() != null && !isExpected(mc.currentScreen) && reopenCount < 5) {
 			reopenCount++;
 			TrsClient.LOGGER.warn("[Autotest] fremdes Menü geschlossen/ersetzt: {}", mc.currentScreen);
 			mc.displayGuiScreen(expectedInstance);
@@ -80,9 +82,9 @@ public final class AutoTest {
 			return;
 		}
 		// Verbindung verloren (z. B. Server-Timeout bei überlasteter Maschine) → Test abbrechen statt abstürzen.
-		if (step >= 4 && step < 17 && Mc.player() == null) {
+		if (step >= 4 && step < 18 && Mc.player() == null) {
 			TrsClient.LOGGER.error("[Autotest] Welt/Spieler verloren in Schritt {} – Abbruch", step);
-			step = 17;
+			step = 18;
 		}
 		TrsModules modules = TrsClient.get().modules();
 		switch (step) {
@@ -243,6 +245,21 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 17:
+				// TRS-Umhang, Umhang-Physik und Abzeichen (mit lokaler API-Attrappe, siehe -PtrsApi)
+				if (capeTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				next(5);
+				break;
+			case 18:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -257,8 +274,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 18) mc.shutdown();
-				step = 19;
+				if (step == 19) mc.shutdown();
+				step = 20;
 				break;
 		}
 	}

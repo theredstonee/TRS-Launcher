@@ -59,6 +59,11 @@ loom {
 			if (rootProject.hasProperty('trsAutotest')) {
 				vmArg '-Dtrsclient.autotest=true'
 			}
+			// -PtrsApi=http://127.0.0.1:8787 → TRS API + Mojang-Join gegen eine lokale Attrappe (Umhang-/Abzeichen-Tests)
+			if (rootProject.hasProperty('trsApi')) {
+				vmArg "-Dtrsclient.api.url=${rootProject.trsApi}"
+				vmArg "-Dtrsclient.session.url=${rootProject.trsApi}"
+			}
 		}
 		remove(server)
 	}

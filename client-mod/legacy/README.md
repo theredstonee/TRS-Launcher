@@ -40,6 +40,10 @@ Every listed version was tested in the real launcher. 1.8.8 is **not** supported
 | Hitboxes | `RenderManager#setDebugBoundingBox`; the colour is hard-coded in vanilla and does nothing here |
 | Hit color | **not available** – the hurt tint is hard-coded in `RendererLivingEntity`; hidden from the menu |
 | Low fire | **not available** – needs the fire overlay renderer; hidden from the menu |
+| TRS cape (HD, animated; own and other TRS players) | written into the player's tab list entry every tick (`NetworkPlayerInfo`: 1.8.9 the second `ResourceLocation` field, from 1.9 the `Map<Type, ResourceLocation>` for CAPE + ELYTRA) and restored when the TRS cape goes away; fields found by type (no SRG names). OptiFine's own cape getter wins over it |
+| TRS badge (tab list) | the entry's display name becomes `§4■§r ` + the old display name or the team-formatted name; a display name the server sets later becomes the new original |
+| TRS badge (name tag) | `PlayerEvent.NameFormat` (+ `refreshDisplayName()` when the badge state changes), the team colour is repeated after the badge |
+| Cape physics | the `LayerCape` of both player renderers (`RenderManager#getSkinMap`) is replaced by `online/ClothCapeLayer` (layer list found by type); without a simulation it calls the original layer |
 
 Version differences live in `compat/Mc.java` (MCP renames: `theWorld/thePlayer` → `world/player` in 1.10,
 `fontRendererObj` → `fontRenderer` in 1.11, `mcDataDir` → `gameDir` in 1.12; Forge event fields → getters

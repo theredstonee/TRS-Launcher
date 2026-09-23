@@ -59,6 +59,11 @@ minecraft {
 			if (project.hasProperty('trsAutotest')) {
 				systemProperty 'trsclient.autotest', 'true'
 			}
+			// -PtrsApi=http://127.0.0.1:8787 → TRS API + Mojang-Join gegen eine lokale Attrappe (Umhang-/Abzeichen-Tests)
+			if (project.hasProperty('trsApi')) {
+				systemProperty 'trsclient.api.url', project.trsApi
+				systemProperty 'trsclient.session.url', project.trsApi
+			}
 		}
 	}
 }
@@ -105,7 +110,9 @@ if (srg) {
 def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'GuiMixin', 'LightmapMixin', 'MinecraftMixin',
 		'MouseHandlerMixin', 'OverlayTextureAccessor', 'TitleScreenMixin',
 		'AttackMixin', 'BlockOutlineMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin',
-		'HurtCamMixin', 'LowFireMixin', 'OldAnimationsMixin']
+		'HurtCamMixin', 'LowFireMixin', 'OldAnimationsMixin',
+		// TRS API: TRS-Umhang-Textur, Umhang-Physik, Abzeichen in Tabliste und über dem Namen
+		'CapeTextureMixin', 'CapeLayerMixin', 'TabBadgeMixin', 'NameTagBadgeMixin']
 // RenderSystem#lineWidth gibt es ab 1.21.11 nicht mehr (Linienstärke dort unveränderbar).
 if (stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
 // Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.

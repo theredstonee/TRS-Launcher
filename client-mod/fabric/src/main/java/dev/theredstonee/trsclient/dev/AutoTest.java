@@ -89,7 +89,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 23 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 3 && step < 24 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -191,7 +191,7 @@ public final class AutoTest {
 				//? if >=1.19.4 {
 				command(mc, "damage @e[type=pig,limit=1,sort=nearest] 1");
 				//?} else
-				/*command(mc, "effect give @e[type=pig,limit=1,sort=nearest] instant_damage 1 0 true");*/
+				//command(mc, "effect give @e[type=pig,limit=1,sort=nearest] instant_damage 1 0 true");
 				next(2);
 				break;
 			case 9:
@@ -293,6 +293,21 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 21:
+				// TRS-Umhang, Umhang-Physik und Abzeichen (mit lokaler API-Attrappe, siehe -PtrsApi)
+				if (capeTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				next(5);
+				break;
+			case 22:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -303,11 +318,13 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 22) mc.stop();
-				step = 23;
+				if (step == 23) mc.stop();
+				step = 24;
 				break;
 		}
 	}
+
+	private final CapeTest capeTest = new CapeTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {
@@ -352,7 +369,7 @@ public final class AutoTest {
 		//? if >=1.19 {
 		server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command));
 		//?} else
-		/*server.execute(() -> server.getCommands().performCommand(server.createCommandSourceStack(), command));*/
+		//server.execute(() -> server.getCommands().performCommand(server.createCommandSourceStack(), command));
 	}
 
 	/**
@@ -533,7 +550,7 @@ public final class AutoTest {
 					//? if >=1.20.3 {
 					WorldPresets::createNormalWorldDimensions, new TitleScreen());
 					//?} else
-					/*WorldPresets::createNormalWorldDimensions);*/
+					//WorldPresets::createNormalWorldDimensions);
 			//?} elif >=1.19 {
 			/*RegistryAccess registries = RegistryAccess.builtinCopy().freeze();
 			mc.createWorldOpenFlows().createFreshLevel(WORLD, settings, registries, WorldPresets.createNormalWorldFromPreset(registries));
@@ -573,7 +590,7 @@ public final class AutoTest {
 		// run/screenshots/trsclient-<minecraft>-<name>.png
 		Screenshot.grab(mc.gameDirectory, name.replace("trsclient-", "trsclient-" + MC_VERSION + "-") + ".png",
 				//? if <1.17.1
-				/*Mc.window().getWidth(), Mc.window().getHeight(),*/
+				//Mc.window().getWidth(), Mc.window().getHeight(),
 				Mc.mainRenderTarget(),
 				//? if >=1.21.6
 				//1,

@@ -103,6 +103,8 @@ public final class TrsClient {
 		// Gibt es erst in neueren Versionen bzw. braucht Mixins: Treffer-Farbe (Overlay-Textur ab 1.15),
 		// Freelook (Kamera-Hooks) und der TRS-Startbildschirm.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.hitColor, client.modules.freelook, client.modules.titleScreen));
+		// TRS-Online-Funktionen (Abzeichen, TRS-Umhänge, Umhang-Physik) sind für 1.13.2 nicht umgesetzt.
+		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.trsOnline, client.modules.capePhysics));
 		client.version = ModList.get().getModContainerById(MOD_ID)
 				.map(c -> c.getModInfo().getVersion().toString()).orElse("?");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.

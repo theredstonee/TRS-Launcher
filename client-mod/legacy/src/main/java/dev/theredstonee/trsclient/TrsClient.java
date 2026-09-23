@@ -134,6 +134,9 @@ public final class TrsClient {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
 		}
 		LOGGER.info("Config {} ({})", status, config.file());
+		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
+		dev.theredstonee.trsclient.online.LegacyOnline.init(event.getModConfigurationDirectory().toPath(), modules,
+				version, Mc.version(), message -> LOGGER.info(message));
 	}
 
 	@Mod.EventHandler
@@ -141,6 +144,7 @@ public final class TrsClient {
 		TrsKeys.register();
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		AutoTest.installIfRequested();
 		// Legacy-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
@@ -200,6 +204,7 @@ public final class TrsClient {
 		chat.tick(mc);
 		waypoints.tick();
 		hud.tick();
+		dev.theredstonee.trsclient.online.LegacyOnline.tick(mc);
 	}
 
 	/** Weltwechsel erkennen (Legacy-Forge hat dafür kein eigenes Ereignis). */

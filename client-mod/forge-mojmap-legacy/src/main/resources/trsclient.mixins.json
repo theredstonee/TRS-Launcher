@@ -7,6 +7,8 @@
 		"AttackMixin",
 		"BlockOutlineMixin",
 		"CameraMixin",
+		"CapeLayerMixin",
+		"CapeTextureMixin",
 		"ChatComponentAccessor",
 		"ChatMixin",
 		"ChatScreenMixin",
@@ -17,8 +19,10 @@
 		"LineWidthMixin",
 		"LowFireMixin",
 		"MouseHandlerMixin",
+		"NameTagBadgeMixin",
 		"OldAnimationsMixin",
-		"OverlayTextureAccessor"
+		"OverlayTextureAccessor",
+		"TabBadgeMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

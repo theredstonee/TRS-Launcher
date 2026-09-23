@@ -1,0 +1,11 @@
+{
+	"providers": [
+		{
+			"type": "bitmap",
+			"file": "trsclient:font/badge.png",
+			"ascent": 7,
+			"height": 8,
+			"chars": ["\ue2a5"]
+		}
+	]
+}

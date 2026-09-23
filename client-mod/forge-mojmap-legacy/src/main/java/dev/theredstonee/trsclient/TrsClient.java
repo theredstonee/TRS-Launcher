@@ -124,7 +124,8 @@ public final class TrsClient {
 			// Ohne Mixin (Forge 1.14.4) fehlen alle Module, die einen Mixin-Hook brauchen.
 			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor
 					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
-					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline)) {
+					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline
+					|| m == modules.capePhysics)) {
 				continue;
 			}
 			visibleModules.add(m);
@@ -191,6 +192,9 @@ public final class TrsClient {
 		ctx.registerExtensionPoint(ExtensionPoint.DISPLAYTEST,
 				() -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (remote, network) -> true));
 		//?}
+		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
+		dev.theredstonee.trsclient.online.OnlineHooks.init(FMLPaths.CONFIGDIR.get(), modules, Mc.modVersion(MOD_ID),
+				Mc.modVersion("minecraft"), "forge", message -> LOGGER.info(message));
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (Forge {}) – {} Module, Config {} ({})",
@@ -302,6 +306,7 @@ public final class TrsClient {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		hud.tick();
+		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 	}
 
 	/**
