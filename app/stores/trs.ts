@@ -64,7 +64,7 @@ export const useTrsStore = defineStore('trs', () => {
       const incoming = new Set(view.requests.incoming.map((r) => r.uuid))
       if (knownIncoming) {
         const fresh = view.requests.incoming.filter((r) => !knownIncoming!.has(r.uuid))
-        for (const r of fresh) useToasts().info(`${r.name} möchte mit dir befreundet sein.`)
+        for (const r of fresh) useToasts().info(t('trs.toasts.friendRequest', { name: r.name }))
       }
       knownIncoming = incoming
       friends.value = view

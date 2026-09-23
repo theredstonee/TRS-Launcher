@@ -220,7 +220,10 @@ pub async fn plan_content_migration(
 #[tauri::command]
 pub fn open_external_url(app: AppHandle, url: String) -> CommandResult<()> {
     if !modrinth::is_safe_external_url(&url) {
-        return Err(trs_core::Error::validation("Dieser Link kann nicht geöffnet werden.").into());
+        return Err(trs_core::Error::validation(trs_core::msg!(
+            "commands.linkNotAllowed",
+            "Dieser Link kann nicht geöffnet werden."
+        )).into());
     }
     app.opener().open_url(url, None::<&str>)?;
     Ok(())

@@ -263,7 +263,7 @@ impl Launcher {
 
     pub async fn delete_instance(&self, id: &str) -> Result<()> {
         if self.games.is_running(id) || self.is_preparing(id) {
-            return Err(Error::launch("Die Instanz läuft gerade und kann nicht gelöscht werden."));
+            return Err(Error::launch(crate::msg!("launcher.instanceRunningNoDelete", "Die Instanz läuft gerade und kann nicht gelöscht werden.")));
         }
         self.instances.delete(id).await
     }
@@ -274,7 +274,7 @@ impl Launcher {
     pub async fn change_instance_version(&self, id: &str, game_version: &str, loader: Loader) -> Result<Instance> {
         let instance = self.instances.get(id).await?;
         if self.games.is_running(&instance.id) || self.is_preparing(&instance.id) {
-            return Err(Error::launch("Die Instanz läuft gerade – bitte erst beenden."));
+            return Err(Error::launch(crate::msg!("launcher.instanceRunningStopFirst", "Die Instanz läuft gerade – bitte erst beenden.")));
         }
         loader.validate()?;
         if instance.game_version == game_version && instance.loader == loader {
@@ -350,12 +350,12 @@ impl Launcher {
     ) -> Result<u32> {
         let instance = self.instances.get(instance_id).await?;
         if self.games.is_running(&instance.id) {
-            return Err(Error::launch("Diese Instanz läuft bereits."));
+            return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
         }
         {
             let mut preparing = self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             if !preparing.insert(instance.id.clone()) {
-                return Err(Error::launch("Diese Instanz wird bereits gestartet."));
+                return Err(Error::launch(crate::msg!("launcher.alreadyStarting", "Diese Instanz wird bereits gestartet.")));
             }
         }
 
@@ -507,7 +507,7 @@ impl Launcher {
     pub async fn repair_instance(&self, instance_id: &str, on_progress: &ProgressFn) -> Result<()> {
         let instance = self.instances.get(instance_id).await?;
         if self.games.is_running(&instance.id) {
-            return Err(Error::launch("Die Instanz läuft gerade – bitte erst beenden."));
+            return Err(Error::launch(crate::msg!("launcher.instanceRunningStopFirst", "Die Instanz läuft gerade – bitte erst beenden.")));
         }
         let (_, catalog) = self.client_mod_catalog().await;
         let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), &instance).await;
@@ -521,15 +521,13 @@ impl Launcher {
     /// Lädt den neuesten Log der Instanz geschwärzt auf mclo.gs hoch.
     pub async fn share_log(&self, instance_id: &str) -> Result<String> {
         if !self.settings().await.allow_log_upload {
-            return Err(Error::validation(
-                "Log-Upload ist in den Datenschutz-Einstellungen ausgeschaltet.",
-            ));
+            return Err(Error::validation(crate::msg!("launcher.logUploadDisabled", "Log-Upload ist in den Datenschutz-Einstellungen ausgeschaltet.")));
         }
         let instance = self.instances.get(instance_id).await?;
         let game_dir = self.paths.instance_game_dir(&instance.id);
         let launcher_logs = self.paths.instance_dir(&instance.id).join("launcher-logs");
         let file = process::latest_log_file(&game_dir, &launcher_logs)
-            .ok_or_else(|| Error::validation("Es gibt noch keinen Log zum Teilen."))?;
+            .ok_or_else(|| Error::validation(crate::msg!("launcher.noLogToShare", "Es gibt noch keinen Log zum Teilen.")))?;
         let raw = process::read_log_file(&file).await?;
         // Gespeicherte Tokens zusätzlich wörtlich schwärzen.
         let secrets = self.accounts.active_session().await.ok().flatten().map(|s| vec![s.access_token]).unwrap_or_default();
@@ -548,7 +546,7 @@ impl Launcher {
     pub async fn reinstall_instance(&self, instance_id: &str, on_progress: &ProgressFn) -> Result<()> {
         let instance = self.instances.get(instance_id).await?;
         if self.anything_active() {
-            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+            return Err(Error::launch(crate::msg!("launcher.stopAllGamesFirst", "Bitte erst alle laufenden Spiele beenden.")));
         }
         let _ = tokio::fs::remove_file(self.paths.instance_dir(&instance.id).join("trs-boost.json")).await;
         if meta::is_safe_id(&instance.game_version) {
@@ -569,7 +567,7 @@ impl Launcher {
     /// Löscht Spielversionen, die keine Instanz mehr braucht.
     pub async fn clean_unused_storage(&self) -> Result<u64> {
         if self.anything_active() {
-            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+            return Err(Error::launch(crate::msg!("launcher.stopAllGamesFirst", "Bitte erst alle laufenden Spiele beenden.")));
         }
         storage::clean_unused(&self.paths, self.instances.list().await?).await
     }
@@ -577,7 +575,7 @@ impl Launcher {
     /// Prüft die geteilten Spieldateien; beschädigte werden beim nächsten Start neu geladen.
     pub async fn verify_storage(&self) -> Result<storage::VerifyReport> {
         if self.anything_active() {
-            return Err(Error::launch("Bitte erst alle laufenden Spiele beenden."));
+            return Err(Error::launch(crate::msg!("launcher.stopAllGamesFirst", "Bitte erst alle laufenden Spiele beenden.")));
         }
         storage::verify_assets(&self.paths).await
     }
@@ -589,7 +587,7 @@ impl Launcher {
 
     /// Installiert die von Mojang empfohlene Runtime für eine Java-Hauptversion.
     pub async fn install_java(&self, major: u32, on_progress: &(dyn Fn(download::Progress) + Sync)) -> Result<PathBuf> {
-        let component = java::component_for(major).ok_or_else(|| Error::validation("Diese Java-Version gibt es nicht zum Installieren."))?;
+        let component = java::component_for(major).ok_or_else(|| Error::validation(crate::msg!("launcher.javaVersionUnavailable", "Diese Java-Version gibt es nicht zum Installieren.")))?;
         let concurrency = usize::from(self.settings().await.concurrent_downloads);
         java::ensure_runtime(&self.http, &self.paths, component, concurrency, on_progress).await
     }
@@ -637,15 +635,18 @@ impl ExitPlan {
         let id = self.context.instance_id.clone();
         if let Err(e) = sync::push(&self.sync_dirs).await {
             tracing::warn!("Synchronisierung nach dem Beenden fehlgeschlagen: {e}");
-            sink(GameEvent::Notice {
-                instance_id: id.clone(),
-                message: "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden.".into(),
-            });
+            sink(GameEvent::notice(
+                id.clone(),
+                &crate::msg!(
+                    "launcher.syncAfterExitFailed",
+                    "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden."
+                ),
+            ));
         }
         if let Some(post) = &self.hooks.post_exit
             && let Err(e) = hooks::run(HookKind::PostExit, post, &self.context, &self.env, hooks::HOOK_TIMEOUT).await
         {
-            sink(GameEvent::Notice { instance_id: id, message: e.public_message() });
+            sink(GameEvent::notice_error(id, &e));
         }
     }
 }
@@ -678,6 +679,6 @@ fn demo_session() -> Result<Session> {
             demo: true,
         })
     } else {
-        Err(Error::auth("Bitte melde dich zuerst unter „Accounts“ mit deinem Microsoft-Konto an."))
+        Err(Error::auth(crate::msg!("launcher.signInFirst", "Bitte melde dich zuerst unter „Accounts“ mit deinem Microsoft-Konto an.")))
     }
 }

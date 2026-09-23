@@ -8,20 +8,20 @@ const running = computed(() => games.runningCount > 0)
 const label = computed(() => {
   switch (updater.phase) {
     case 'ready':
-      return 'Neu starten zum Aktualisieren'
+      return t('updater.restartToUpdate')
     case 'installing':
-      return 'Wird aktualisiert …'
+      return t('updater.installing')
     case 'failed':
-      return 'Update erneut versuchen'
+      return t('updater.retry')
     default:
       return ''
   }
 })
 const title = computed(() => {
-  if (updater.phase === 'downloading') return `TRS Launcher ${updater.version} wird geladen … ${updater.percent} %`
-  if (updater.phase === 'failed') return `Update fehlgeschlagen: ${updater.failReason}`
-  const note = running.value ? ' Laufende Spiele laufen weiter.' : ''
-  return `TRS Launcher ${updater.version} ist bereit.${note}`
+  const version = updater.version ?? ''
+  if (updater.phase === 'downloading') return t('updater.downloading', { version, percent: updater.percent })
+  if (updater.phase === 'failed') return t('updater.failed', { reason: updater.failReason })
+  return running.value ? t('updater.readyRunning', { version }) : t('updater.ready', { version })
 })
 
 function openRelease() {
@@ -61,7 +61,7 @@ function openRelease() {
       class="text-[11px] text-base-400 underline-offset-2 hover:text-base-200 hover:underline"
       @click="openRelease"
     >
-      Installer laden
+      {{ t('updater.downloadInstaller') }}
     </button>
     <button
       class="update-pill"
@@ -84,7 +84,7 @@ function openRelease() {
       <div v-if="updater.phase === 'installing'" class="update-splash" role="status" aria-live="polite">
         <img src="/icon.png" alt="" width="64" height="64" />
         <p class="display text-sm tracking-widest text-base-200 uppercase">TRS Launcher {{ updater.version }}</p>
-        <p class="text-xs text-base-400">Wird aktualisiert – startet gleich neu …</p>
+        <p class="text-xs text-base-400">{{ t('updater.splash') }}</p>
         <div class="update-wire"><span /></div>
       </div>
     </Transition>

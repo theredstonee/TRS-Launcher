@@ -62,7 +62,7 @@ pub async fn fetch_profile(
             fsutil::write_json(&paths.version_json(&profile.id), &profile).await?;
             Ok(profile)
         }
-        Ok(_) => Err(Error::launch("Das Loader-Profil enthält eine ungültige ID.")),
+        Ok(_) => Err(Error::launch(crate::msg!("loaders.invalidProfileId", "Das Loader-Profil enthält eine ungültige ID."))),
         Err(e) => cached_profile(paths, game_version, loader, &loader_version).await.ok_or(e),
     }
 }
@@ -127,7 +127,7 @@ fn is_listable(v: &str) -> bool {
 /// Alle Loader-Versionen für eine Spielversion, neueste zuerst.
 pub async fn available_versions(http: &reqwest::Client, kind: LoaderKind, game_version: &str) -> Result<Vec<LoaderVersionInfo>> {
     if !crate::meta::is_safe_id(game_version) {
-        return Err(Error::validation("Ungültige Minecraft-Version"));
+        return Err(Error::validation(crate::msg!("loaders.invalidGameVersion", "Ungültige Minecraft-Version")));
     }
     let list = match kind {
         LoaderKind::Vanilla => Vec::new(),
@@ -155,7 +155,7 @@ pub async fn available_versions(http: &reqwest::Client, kind: LoaderKind, game_v
 /// Welche Version „neueste stabile“ gerade bedeutet (Anzeige in den Einstellungen).
 pub async fn latest_stable(http: &reqwest::Client, kind: LoaderKind, game_version: &str) -> Result<Option<String>> {
     if !crate::meta::is_safe_id(game_version) {
-        return Err(Error::validation("Ungültige Minecraft-Version"));
+        return Err(Error::validation(crate::msg!("loaders.invalidGameVersion", "Ungültige Minecraft-Version")));
     }
     let version = match kind {
         LoaderKind::Vanilla => return Ok(None),
@@ -176,6 +176,10 @@ async fn latest_loader_version(http: &reqwest::Client, base: &str, game_version:
         .or(entries.first())
         .map(|e| e.loader.version.clone())
         .ok_or_else(|| {
-            Error::launch(format!("Für Minecraft {game_version} gibt es diesen Modloader (noch) nicht."))
+            Error::launch(crate::msg!(
+                "loaders.notAvailable",
+                "Für Minecraft {version} gibt es diesen Modloader (noch) nicht.",
+                version = game_version
+            ))
         })
 }

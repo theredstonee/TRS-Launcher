@@ -1,0 +1,2441 @@
+{
+  "common": {
+    "actions": {
+      "apply": "Toepassen",
+      "back": "Terug",
+      "browse": "Bladeren",
+      "cancel": "Annuleren",
+      "change": "Wijzigen",
+      "close": "Sluiten",
+      "continue": "Doorgaan",
+      "copy": "Kopiëren",
+      "create": "Aanmaken",
+      "delete": "Verwijderen",
+      "disable": "Uitschakelen",
+      "done": "Klaar",
+      "edit": "Bewerken",
+      "enable": "Inschakelen",
+      "export": "Exporteren",
+      "import": "Importeren",
+      "install": "Installeren",
+      "later": "Later",
+      "open": "Openen",
+      "openFolder": "Map openen",
+      "play": "Spelen",
+      "refresh": "Vernieuwen",
+      "remove": "Verwijderen",
+      "retry": "Opnieuw proberen",
+      "save": "Opslaan",
+      "search": "Zoeken",
+      "skip": "Overslaan",
+      "start": "Starten",
+      "stop": "Stoppen",
+      "update": "Bijwerken"
+    },
+    "status": {
+      "active": "Actief",
+      "copied": "Gekopieerd!",
+      "disabled": "Uitgeschakeld",
+      "enabled": "Ingeschakeld",
+      "error": "Fout",
+      "loading": "Laden …",
+      "none": "Geen",
+      "offline": "Offline",
+      "online": "Online",
+      "running": "Actief",
+      "saved": "Opgeslagen",
+      "saving": "Opslaan …",
+      "unknown": "Onbekend"
+    },
+    "labels": {
+      "all": "Alle",
+      "automatic": "Automatisch",
+      "description": "Beschrijving",
+      "name": "Naam",
+      "version": "Versie",
+      "gameVersion": "Spelversie",
+      "loader": "Modloader"
+    }
+  },
+  "language": {
+    "title": "Taal",
+    "searchPlaceholder": "Talen zoeken …",
+    "searchLabel": "Talen zoeken",
+    "standard": "Standaardtalen",
+    "beta": "Bèta",
+    "betaHint": "Bètatalen zijn machinaal vertaald en nog niet volledig nagekeken. Ontbrekende teksten verschijnen in het Engels.",
+    "complete": "{percent}% voltooid",
+    "noResults": "Geen taal gevonden voor “{query}”.",
+    "changeHint": "De launcher schakelt meteen over – opnieuw starten is niet nodig. Ontbrekende teksten in bètatalen verschijnen in het Engels.",
+    "betaGroup": "Bètatalen",
+    "onboardingTitle": "Kies je taal",
+    "onboardingText": "Je kunt dit altijd wijzigen via Instellingen → Taal.",
+    "detected": "Herkend via Windows"
+  },
+  "format": {
+    "neverPlayed": "Nooit gespeeld",
+    "justNow": "Zojuist",
+    "playTime": {
+      "underMinute": "minder dan 1 min",
+      "minutes": "{minutes} min",
+      "hoursMinutes": "{hours} u {minutes} min"
+    },
+    "justNowInline": "zojuist"
+  },
+  "launchStage": {
+    "version": "Versiegegevens",
+    "java": "Java",
+    "loader": "Modloader",
+    "libraries": "Bibliotheken",
+    "assets": "Spelbestanden",
+    "starting": "Spel starten"
+  },
+  "contentKind": {
+    "mod": "Mods",
+    "resourcepack": "Resourcepacks",
+    "shaderpack": "Shaders",
+    "datapack": "Datapacks",
+    "modpack": "Modpacks"
+  },
+  "importSource": {
+    "vanilla": "Minecraft Launcher",
+    "prism": "Prism Launcher",
+    "multimc": "MultiMC",
+    "curseforge": "CurseForge",
+    "modrinth": "Modrinth App",
+    "folder": "Eigen map"
+  },
+  "syncItem": {
+    "options": {
+      "label": "Spelopties",
+      "description": "options.txt – graphics, besturing, toetstoewijzingen en geluid."
+    },
+    "servers": {
+      "label": "Serverlijst",
+      "description": "servers.dat – de servers in het multiplayermenu."
+    },
+    "resourcePacks": {
+      "label": "Resourcepacks",
+      "description": "Packs worden tussen instanties toegevoegd, nooit verwijderd."
+    },
+    "commandHistory": {
+      "label": "Commandogeschiedenis",
+      "description": "command_history.txt – recent ingevoerde commando’s."
+    },
+    "hotbar": {
+      "label": "Opgeslagen hotbars",
+      "description": "hotbar.nbt – de hotbars uit de creatieve modus."
+    }
+  },
+  "errors": {
+    "unexpected": "Er is een onverwachte fout opgetreden.",
+    "noBackend": "De backend is alleen beschikbaar in de desktop-app.",
+    "io": "Een bestand kon niet worden gelezen of geschreven.",
+    "network": "Netwerkfout – controleer je internetverbinding.",
+    "data": "Gegevens konden niet worden verwerkt.",
+    "download": "Download mislukt – controleer je internetverbinding en probeer het opnieuw.",
+    "internal": "Er is een interne fout opgetreden.",
+    "cancelled": "Geannuleerd",
+    "openFolder": "De map kon niet worden geopend.",
+    "instanceNotFound": "Instantie “{id}” is niet gevonden",
+    "unknownVersion": "Minecraft-versie “{version}” is onbekend",
+    "authNotApproved": "Inloggen met Microsoft is nog niet ingeschakeld: de app-registratie wacht op goedkeuring door Mojang.",
+    "settings": {
+      "resolutionRange": "De resolutie valt buiten het toegestane bereik",
+      "minMemoryRange": "Het minimale geheugen moet tussen 128 MB en het maximum liggen",
+      "downloadsRange": "Parallelle downloads moeten tussen 1 en 64 liggen",
+      "memoryRange": "Het geheugen moet tussen {min} en {max} MB liggen",
+      "jvmArgsInvalid": "De JVM-argumenten zijn ongeldig of te lang",
+      "javaPathInvalid": "Het Java-pad is ongeldig",
+      "javaPathNotJava": "Het Java-pad moet naar java.exe of javaw.exe verwijzen"
+    },
+    "trs": {
+      "offline": "De TRS-server is op dit moment niet bereikbaar.",
+      "disabled": "TRS-diensten zijn uitgeschakeld (Instellingen → Privacy).",
+      "noAccount": "Log eerst in met je Minecraft-account onder “Accounts”.",
+      "badResponse": "De TRS-API gaf een onverwacht antwoord.",
+      "banned": "Je account is verbannen van TRS-diensten.",
+      "rateLimited": "Te veel verzoeken – probeer het over {seconds} s opnieuw.",
+      "notJoined": "Mojang heeft het inloggen niet bevestigd – probeer het later opnieuw.",
+      "challengeExpired": "Inloggen duurde te lang – probeer het opnieuw.",
+      "sessionExpired": "Je TRS-sessie is verlopen – probeer het opnieuw.",
+      "forbidden": "Je hebt geen toestemming om dat te doen.",
+      "loginRejected": "Het inloggen bij TRS is geweigerd – probeer het later opnieuw.",
+      "badChallenge": "De TRS-API stuurde een ongeldige inlog-challenge.",
+      "badToken": "De TRS-API stuurde een ongeldige token.",
+      "wrongAccount": "De TRS-login hoort bij een ander account.",
+      "mojangRejected": "Mojang heeft het inloggen geweigerd – log opnieuw in bij je account onder “Accounts”.",
+      "mojangRateLimited": "Mojang beperkt het inloggen op dit moment – probeer het over een minuut opnieuw.",
+      "mojangFailed": "Inloggen bij Mojang is mislukt – probeer het later opnieuw."
+    },
+    "trsApi": {
+      "cape_not_found": "Deze cape bestaat niet (meer).",
+      "cape_locked": "Deze cape is nog niet voor je ontgrendeld.",
+      "invalid_code": "Deze code is ongeldig.",
+      "code_expired": "Deze code is verlopen.",
+      "code_used_up": "Deze code is al te vaak ingewisseld.",
+      "player_not_found": "Speler niet gevonden – die moet de TRS Launcher minstens één keer hebben gebruikt.",
+      "cannot_target_self": "Dat ben jij.",
+      "blocked": "Je hebt deze speler geblokkeerd – deblokkeer hem eerst.",
+      "already_friends": "Jullie zijn al vrienden.",
+      "already_requested": "Je hebt deze speler al een verzoek gestuurd.",
+      "too_many_requests": "Je hebt te veel openstaande verzoeken (maximaal 50).",
+      "target_inbox_full": "Deze speler heeft te veel openstaande verzoeken.",
+      "friend_limit": "Je vriendenlijst is vol (maximaal 200).",
+      "target_friend_limit": "De vriendenlijst van deze speler is vol.",
+      "request_not_found": "Dit verzoek bestaat niet meer.",
+      "friend_not_found": "Jullie zijn geen vrienden (meer).",
+      "block_not_found": "Deze speler is niet geblokkeerd.",
+      "invalid_png": "Het bestand is geen geldige PNG-afbeelding.",
+      "animated_png": "Geanimeerde PNG’s zijn niet toegestaan voor eigen capes.",
+      "invalid_dimensions": "De afbeelding heeft niet het juiste formaat voor een cape.",
+      "empty_cape": "De cape is volledig transparant.",
+      "too_many_pending": "Je hebt al 3 capes in beoordeling – wacht op goedkeuring.",
+      "upload_limit": "Je hebt al 10 eigen capes.",
+      "duplicate_cape": "Je hebt deze cape al geüpload.",
+      "payload_too_large": "Het bestand is te groot.",
+      "unsupported_media_type": "Dit bestandsformaat wordt niet ondersteund.",
+      "user_not_found": "Deze speler heeft nooit TRS-diensten gebruikt.",
+      "builtin_cape": "Standaardcapes kunnen niet worden verwijderd.",
+      "cape_is_free": "Gratis capes hebben geen code nodig.",
+      "grant_not_found": "Deze speler heeft de cape niet.",
+      "cannot_ban_admin": "Admins kunnen niet worden verbannen.",
+      "not_banned": "Deze speler is niet verbannen.",
+      "invalid_request": "Het verzoek was ongeldig.",
+      "not_found": "Niet gevonden.",
+      "rejected": "De TRS-API heeft het verzoek geweigerd."
+    },
+    "auth": {
+      "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
+      "accountMissing": "Dit account bestaat niet meer.",
+      "deviceCodeExpired": "De inlogcode is verlopen – probeer het opnieuw.",
+      "entitlementCheckFailed": "Het bezit van het spel kon niet worden gecontroleerd.",
+      "loginInProgress": "Er wordt al ingelogd.",
+      "loginTimeout": "Inloggen duurde te lang – probeer het opnieuw.",
+      "microsoftRejected": "Microsoft heeft het inloggen geweigerd.",
+      "minecraftServicesFailed": "Inloggen bij de Minecraft-diensten is mislukt.",
+      "noJavaEdition": "Dit account bezit geen Minecraft: Java Edition.",
+      "noProfile": "Dit account heeft nog geen Minecraft-profiel. Log één keer in via de officiële launcher en kies een spelersnaam.",
+      "profileInvalid": "Het Minecraft-profiel bevat ongeldige gegevens.",
+      "profileLoadFailed": "Het Minecraft-profiel kon niet worden geladen.",
+      "sessionExpired": "De login is verlopen – log opnieuw in bij het account.",
+      "storedCredentialsCorrupt": "Opgeslagen inloggegevens zijn beschadigd – log opnieuw in.",
+      "storedCredentialsInvalid": "Opgeslagen inloggegevens zijn beschadigd.",
+      "storedCredentialsUndecryptable": "Opgeslagen inloggegevens konden niet worden ontsleuteld – log opnieuw in.",
+      "xboxAgeVerification": "Dit account heeft leeftijdsverificatie op Xbox nodig.",
+      "xboxBanned": "Dit Xbox-account is verbannen.",
+      "xboxChildAccount": "Dit is een kinderaccount en moet eerst door een volwassene aan een Microsoft-gezin worden toegevoegd.",
+      "xboxFailed": "Inloggen bij Xbox Live is mislukt.",
+      "xboxNoProfile": "Dit Microsoft-account heeft nog geen Xbox-profiel. Log één keer in op xbox.com en maak er een aan.",
+      "xboxRegionBlocked": "Xbox Live is niet beschikbaar in jouw land."
+    },
+    "clientModUpdate": {
+      "invalidVersion": "Ongeldige TRS Client-versie",
+      "manifestUnreadable": "Het TRS Client-manifest kan niet worden gelezen",
+      "manifestWithoutVersion": "Het TRS Client-manifest heeft geen geldige versie",
+      "missingChecksum": "TRS Client-build zonder checksum",
+      "signatureBadFormat": "Ongeldige handtekening (formaat)",
+      "signatureBadKey": "Ongeldige handtekening (sleutel)",
+      "signatureMismatch": "Ongeldige handtekening (verificatie)",
+      "signatureWrongFile": "Ongeldige handtekening (verkeerd bestand)"
+    },
+    "content": {
+      "fileGone": "Het bestand bestaat niet meer.",
+      "invalidFileName": "Ongeldige bestandsnaam",
+      "tooManyItems": "Maximaal {max} items tegelijk"
+    },
+    "extras": {
+      "screenshotGone": "De screenshot bestaat niet meer."
+    },
+    "firewall": {
+      "elevationFailed": "De beheerdersprompt kon niet worden geopend.",
+      "helperNotStarted": "De firewall-uitzondering is niet gestart.",
+      "onlyLauncherJava": "Alleen de eigen Java-versies van de launcher kunnen worden toegestaan.",
+      "ruleFailed": "De firewall-uitzondering kon niet worden toegevoegd."
+    },
+    "forge": {
+      "installFailed": "Het installeren van de modloader is mislukt. Zie het launcherlog voor details.",
+      "installIncomplete": "De installatie van de modloader is onvolledig. Probeer het opnieuw.",
+      "installerCorrupt": "Het installatieprogramma van de modloader is beschadigd. Probeer het opnieuw.",
+      "installerDownloadFailed": "Het installatieprogramma van de modloader kon niet worden gedownload. Controleer je internetverbinding en de loaderversie.",
+      "installerVersionMismatch": "Het installatieprogramma van de modloader past niet bij de Minecraft-versie.",
+      "invalidArgument": "Het installatieprofiel bevat een onjuist argument.",
+      "invalidFileReference": "Het installatieprofiel bevat een ongeldige bestandsverwijzing.",
+      "invalidLoaderVersion": "De loaderversie bevat ongeldige tekens.",
+      "javaStartFailed": "Java kon niet worden gestart om de modloader te installeren.",
+      "legacyUnsupported": "Forge wordt nog niet ondersteund voor deze Minecraft-versie (alleen 1.7 en later).",
+      "unknownPlaceholder": "Het installatieprofiel gebruikt een onbekende placeholder.",
+      "unsupportedInstaller": "Dit installatieformaat wordt niet ondersteund.",
+      "versionUnavailable": "Forge {forge} is niet beschikbaar voor Minecraft {version}."
+    },
+    "hooks": {
+      "envDuplicate": "De variabele {name} komt meer dan één keer voor",
+      "envNameInvalid": "Namen van omgevingsvariabelen: alleen letters, cijfers en _ (niet aan het begin)",
+      "envValueInvalid": "De waarde van {name} is ongeldig of te lang",
+      "postExitExitCode": "Het post-exit-commando is mislukt (exitcode {code}).",
+      "postExitInvalidChars": "Het post-exit-commando bevat ongeldige tekens",
+      "postExitRunFailed": "Het post-exit-commando kon niet worden uitgevoerd.",
+      "postExitStartFailed": "Het post-exit-commando kon niet worden gestart.",
+      "postExitTimeout": "Het post-exit-commando liep langer dan {seconds} seconden en is gestopt.",
+      "postExitTooLong": "Post-exit-commando: maximaal {max} tekens",
+      "preLaunchExitCode": "Het pre-launch-commando is mislukt (exitcode {code}).",
+      "preLaunchInvalidChars": "Het pre-launch-commando bevat ongeldige tekens",
+      "preLaunchRunFailed": "Het pre-launch-commando kon niet worden uitgevoerd.",
+      "preLaunchStartFailed": "Het pre-launch-commando kon niet worden gestart.",
+      "preLaunchTimeout": "Het pre-launch-commando liep langer dan {seconds} seconden en is gestopt.",
+      "preLaunchTooLong": "Pre-launch-commando: maximaal {max} tekens",
+      "tooManyEnvVars": "Maximaal {max} omgevingsvariabelen",
+      "wrapperInvalidChars": "Het wrapper-commando bevat ongeldige tekens",
+      "wrapperTooLong": "Wrapper-commando: maximaal {max} tekens"
+    },
+    "icon": {
+      "bannerTooLarge": "De banner mag maximaal 10 MB zijn.",
+      "imageTooLarge": "De afbeelding mag maximaal 5 MB zijn.",
+      "sourceNotAllowed": "Afbeeldingsbron niet toegestaan",
+      "unsupportedFormat": "Alleen PNG-, JPEG- en WebP-afbeeldingen worden ondersteund."
+    },
+    "import": {
+      "folderMissing": "Deze map bestaat niet.",
+      "installationGone": "Deze installatie kan niet meer worden gevonden.",
+      "noInstallation": "Er is geen Minecraft-installatie in deze map gevonden. Kies de map met mods, saves of options.txt."
+    },
+    "instance": {
+      "groupInvalid": "Groepsnamen: maximaal {max} tekens, geen speciale tekens",
+      "invalidGameVersion": "De Minecraft-versie bevat ongeldige tekens",
+      "invalidId": "Ongeldige instantie-ID",
+      "invalidImageName": "Ongeldige afbeeldingsnaam",
+      "invalidLoaderVersion": "De loaderversie bevat ongeldige tekens",
+      "invalidSyncSettings": "Ongeldige synchronisatie-instellingen",
+      "nameInvalidChars": "De naam bevat ongeldige tekens",
+      "nameLength": "De naam moet tussen 1 en {max} tekens lang zijn",
+      "vanillaNoLoaderVersion": "Vanilla heeft geen loaderversie"
+    },
+    "java": {
+      "javawMissing": "De Java-runtime is geïnstalleerd, maar bevat geen javaw.exe.",
+      "manifestInvalidPath": "Het manifest van de Java-runtime bevat een ongeldig pad.",
+      "manifestMissing": "Het manifest van de Java-runtime ontbreekt.",
+      "noRuntimeForPlatform": "Er is geen passende Java-runtime voor dit platform ({component}). Stel een Java-pad in bij de instellingen.",
+      "unknownRuntime": "Onbekende Java-runtime aangevraagd."
+    },
+    "launch": {
+      "noArguments": "De versiemetadata bevatten geen startargumenten.",
+      "noMainClass": "De versiemetadata bevatten geen main class."
+    },
+    "launcher": {
+      "alreadyRunning": "Deze instantie draait al.",
+      "alreadyStarting": "Deze instantie wordt al gestart.",
+      "instanceRunningNoDelete": "De instantie draait en kan niet worden verwijderd.",
+      "instanceRunningStopFirst": "De instantie draait – stop deze eerst.",
+      "javaVersionUnavailable": "Deze Java-versie is niet beschikbaar om te installeren.",
+      "logUploadDisabled": "Log-uploads zijn uitgeschakeld in de privacy-instellingen.",
+      "noLogToShare": "Er is nog geen log om te delen.",
+      "signInFirst": "Log eerst in met je Microsoft-account onder “Accounts”.",
+      "stopAllGamesFirst": "Sluit eerst alle actieve games.",
+      "syncAfterExitFailed": "De instellingen konden niet worden gesynchroniseerd met de andere instanties."
+    },
+    "loaders": {
+      "invalidGameVersion": "Ongeldige Minecraft-versie",
+      "invalidProfileId": "Het loaderprofiel bevat een ongeldige ID.",
+      "notAvailable": "Deze modloader is (nog) niet beschikbaar voor Minecraft {version}."
+    },
+    "meta": {
+      "invalidLibraryName": "Ongeldige bibliotheekcoördinaat: {name}",
+      "unsafeLibraryPath": "Onveilig bibliotheekpad: {path}"
+    },
+    "nbt": {
+      "corrupt": "Het NBT-bestand is beschadigd."
+    },
+    "prepare": {
+      "assetIndexInvalid": "De asset-index bevat ongeldige items.",
+      "assetIndexMissing": "De asset-index ontbreekt.",
+      "invalidIdentifiers": "De versiemetadata bevatten ongeldige identifiers.",
+      "javaPathMissing": "Het ingestelde Java-pad bestaat niet.",
+      "loaderFileMissing": "Een door de modloader gegenereerd bestand ontbreekt. Start de instantie opnieuw.",
+      "nativesCorrupt": "Het natives-archief is beschadigd: {error}",
+      "noClientDownload": "Deze versie heeft geen clientdownload."
+    },
+    "process": {
+      "crashCorruptFiles": "Een spelbestand is beschadigd (bijv. na een onderbroken download). “Bestanden controleren” downloadt het opnieuw.",
+      "crashGraphicsDriver": "Het grafische stuurprogramma is gecrasht of ondersteunt geen OpenGL. Werk het stuurprogramma van je videokaart bij.",
+      "crashMissingDependency": "Een mod mist een andere mod die hij nodig heeft. Het log toont vlak boven de fout welke.",
+      "crashModConflict": "Twee mods kunnen niet met elkaar overweg. Schakel de laatst toegevoegde mods uit en start opnieuw.",
+      "crashOutOfMemory": "Het spel had te weinig geheugen. Verhoog het geheugen van de instantie in de instellingen.",
+      "crashWrongJava": "Een mod heeft een nieuwere Java-versie nodig. Verwijder het eigen Java-pad in de instellingen; de launcher kiest dan automatisch de juiste.",
+      "exitedImmediately": "Het spel sloot meteen af.",
+      "javaStartFailed": "Java kon niet worden gestart.",
+      "logUploadFailed": "Het log kon niet worden geüpload."
+    },
+    "modpack": {
+      "noGameVersion": "Het modpack geeft geen Minecraft-versie op.",
+      "corrupt": "Het modpack is beschadigd.",
+      "notModrinthPack": "Dit is geen geldig Modrinth-modpack.",
+      "unsupportedFormat": "Dit modpackformaat wordt niet ondersteund.",
+      "tooManyFiles": "Het modpack bevat te veel bestanden.",
+      "invalidFilePath": "Het modpack bevat een ongeldig bestandspad.",
+      "disallowedSource": "Het modpack verwijst naar een downloadbron die niet is toegestaan.",
+      "invalidChecksum": "Het modpack bevat een ongeldige checksum.",
+      "noVersion": "Dit modpack heeft geen versies.",
+      "versionHasNoPack": "Deze versie bevat geen modpack.",
+      "notPackFile": "Dit is geen modpackbestand."
+    },
+    "modpackExport": {
+      "selectionNotExportable": "Deze selectie kan niet worden geëxporteerd.",
+      "tooManyFiles": "Te veel bestanden voor een modpack – selecteer minder mappen.",
+      "tooLarge": "De selectie is te groot (meer dan 4 GB).",
+      "nameRequired": "Voer een naam in voor het modpack.",
+      "invalidVersion": "De versie mag alleen letters, cijfers en . - _ + bevatten",
+      "tooManyEntries": "Te veel items geselecteerd.",
+      "nothingSelected": "Er is niets geselecteerd om te exporteren."
+    },
+    "modrinth": {
+      "queryTooLong": "Zoekterm is te lang",
+      "invalidPageSize": "Ongeldige paginagrootte",
+      "invalidPage": "Ongeldige pagina",
+      "tooManyFilters": "Te veel filters",
+      "invalidGameVersion": "Ongeldige spelversie",
+      "unknownLoader": "Onbekende modloader",
+      "invalidCategory": "Ongeldige categorie",
+      "invalidProjectList": "Ongeldige projectlijst",
+      "tooManyProjects": "Te veel projecten tegelijk",
+      "invalidProjectId": "Ongeldige project-ID",
+      "invalidVersionId": "Ongeldige versie-ID",
+      "vanillaNoMods": "Deze instantie is vanilla – mods hebben een instantie met Fabric, Quilt, Forge of NeoForge nodig.",
+      "versionNotInProject": "Deze versie hoort niet bij het project.",
+      "noCompatibleVersion": "Er is geen compatibele versie voor Minecraft {version} met deze modloader.",
+      "versionHasNoFile": "Deze versie bevat geen bestand.",
+      "noPerformanceMods": "Geen van de prestatiemods is beschikbaar voor deze versie."
+    },
+    "news": {
+      "unavailable": "Nieuws is momenteel niet beschikbaar.",
+      "patchNotesNotFound": "Deze patchnotes bestaan niet.",
+      "imageSourceNotAllowed": "Deze afbeeldingsbron is niet toegestaan.",
+      "imageTooLarge": "De afbeelding is te groot.",
+      "tagRelease": "Release",
+      "tagSnapshot": "Snapshot",
+      "tagPreview": "Preview",
+      "tagUpdate": "Update",
+      "tagDownloads": "{count} downloads"
+    },
+    "screenshots": {
+      "tooLargeForClipboard": "De afbeelding is te groot voor het klembord.",
+      "imageUnreadable": "De afbeelding kon niet worden gelezen.",
+      "screenshotUnreadable": "De screenshot kon niet worden gelezen.",
+      "thumbnailWriteFailed": "De miniatuur kon niet worden opgeslagen.",
+      "invalidPath": "Ongeldig pad"
+    },
+    "servers": {
+      "invalidPort": "Ongeldige poort",
+      "invalidAddress": "Ongeldig serveradres",
+      "nameLength": "De servernaam moet tussen 1 en 64 tekens lang zijn",
+      "tooMany": "Meer dan 100 servers wordt niet ondersteund.",
+      "duplicate": "Deze server staat al in de lijst.",
+      "notFound": "Deze server bestaat niet meer."
+    },
+    "skins": {
+      "fileTooLarge": "Het skinbestand is te groot (max. 128 KB).",
+      "notPng": "Dit is geen PNG-bestand.",
+      "invalidSize": "Een skin moet 64×64 pixels zijn (of 64×32 voor oude skins).",
+      "rateLimited": "Mojang beperkt op dit moment verzoeken – wacht een paar minuten.",
+      "mojangUnavailable": "Mojang is op dit moment niet bereikbaar – probeer het later opnieuw.",
+      "sessionExpired": "Je login is verlopen – log opnieuw in bij het account.",
+      "noProfile": "Dit account heeft nog geen Minecraft-profiel.",
+      "fileRejected": "Mojang heeft het bestand geweigerd. Is het een geldige 64×64-skin?",
+      "changeRejected": "Mojang heeft de wijziging geweigerd.",
+      "invalidCape": "Ongeldige cape.",
+      "noCustomSkin": "Dit account draagt momenteel geen eigen skin.",
+      "textureSourceNotAllowed": "Deze texturebron is niet toegestaan.",
+      "invalidTexture": "De texture van Mojang is ongeldig.",
+      "nameRequired": "Voer een naam in voor de skin.",
+      "signInFirst": "Log eerst in onder “Accounts”.",
+      "libraryFull": "De skinbibliotheek is vol – verwijder eerst een skin.",
+      "notFound": "Deze skin bestaat niet."
+    },
+    "skinSync": {
+      "accountSwitched": "Het actieve account is gewisseld – de wijzigingen zijn verworpen.",
+      "accountChanged": "Het actieve account is gewijzigd – laad de pagina opnieuw."
+    },
+    "taskHistory": {
+      "untitled": "Taak zonder naam",
+      "invalidEntry": "Ongeldig item"
+    },
+    "upload": {
+      "foldersUnsupported": "Mappen worden niet ondersteund – kies het .zip- of .jar-bestand.",
+      "emptyOrTooLarge": "Het bestand is leeg of groter dan 200 MB.",
+      "unsupportedType": "Alleen .jar- en .zip-bestanden kunnen worden toegevoegd.",
+      "invalidArchive": "Het bestand is geen geldig archief.",
+      "unknownContent": "Er is geen resourcepack (pack.mcmeta) of shader (shaders/) herkend.",
+      "vanillaNoMods": "Deze instantie is puur vanilla – mods werken hier niet.",
+      "fileExists": "Er bestaat al een bestand met deze naam in de instantie.",
+      "tooLarge": "Het bestand is groter dan 200 MB.",
+      "tooManyFiles": "Maximaal {max} bestanden tegelijk.",
+      "invalidFileName": "Ongeldige bestandsnaam"
+    },
+    "trsOps": {
+      "invalidPlayerId": "Ongeldige speler-ID.",
+      "invalidCapeId": "Ongeldige cape-ID.",
+      "noChange": "Geen wijziging opgegeven.",
+      "onlyOwnCapesDeletable": "Alleen je eigen capes kunnen worden verwijderd.",
+      "onlyUploadedReportable": "Alleen geüploade capes kunnen worden gemeld.",
+      "invalidCodeFormat": "Codes hebben 20 tekens, bijv. 7K3QF-M2XPA-9RTVB-C4HJN.",
+      "tooManyPlayers": "Maximaal 100 spelers tegelijk.",
+      "onlyUploadedDeletable": "Alleen geüploade capes kunnen worden verwijderd.",
+      "invalidCodeId": "Ongeldige code-ID.",
+      "redemptionsRange": "Inwisselingen per code: 1 tot 100.000.",
+      "countRange": "Aantal: 1 tot 100 codes tegelijk.",
+      "expiryInPast": "De vervaldatum ligt in het verleden."
+    },
+    "trsPng": {
+      "fileTooLarge": "Het bestand is te groot (max. 256 KB).",
+      "invalidPng": "Het bestand is geen geldige PNG-afbeelding.",
+      "animated": "Geanimeerde PNG’s zijn niet toegestaan voor eigen capes.",
+      "invalidSize": "De cape moet 64×32 pixels zijn (of 128×64, 192×96, 256×128), of 22×17 in capeformaat (of 44×34, 66×51, 88×68)."
+    },
+    "trsValidate": {
+      "invalidName": "Voer een Minecraft-naam in (1–16 tekens: A–Z, 0–9, _).",
+      "commentLength": "Opmerking: 1 tot {max} tekens.",
+      "commentInvalidChars": "Opmerking bevat ongeldige tekens.",
+      "reasonLength": "Reden: 1 tot {max} tekens.",
+      "reasonInvalidChars": "Reden bevat ongeldige tekens.",
+      "noteLength": "Notitie: 1 tot {max} tekens.",
+      "noteInvalidChars": "Notitie bevat ongeldige tekens.",
+      "invalidUploadName": "Naam: 1–32 tekens – letters, cijfers, spaties en . , ' ! ? & ( ) + - _",
+      "invalidExpiry": "Ongeldige vervaldatum."
+    },
+    "commands": {
+      "linkNotAllowed": "Deze link kan niet worden geopend.",
+      "dropExpired": "De neergezette bestanden zijn niet meer beschikbaar – sleep ze opnieuw hierheen.",
+      "noJavaAtPath": "Er staat geen Java-programma op dit pad.",
+      "invalidTaskId": "Ongeldige taak-ID",
+      "taskRunning": "Deze taak wordt al uitgevoerd."
+    }
+  },
+  "browse": {
+    "title": "Ontdekken",
+    "subtitle": "Mods, modpacks, resourcepacks, datapacks en shaders van Modrinth.",
+    "backToInstance": "Terug naar instantie",
+    "installContent": "Content installeren",
+    "installInto": "Installeren in",
+    "noInstance": "Nog geen instanties",
+    "packHint": "Een modpack wordt als nieuwe instantie ingesteld.",
+    "kindTabs": "Contenttype",
+    "searchPlaceholder": {
+      "mod": "Mods zoeken …",
+      "resourcepack": "Resourcepacks zoeken …",
+      "datapack": "Datapacks zoeken …",
+      "shaderpack": "Shaders zoeken …",
+      "modpack": "Modpacks zoeken …"
+    },
+    "clearSearch": "Zoekopdracht wissen",
+    "sortBy": "Sorteren op",
+    "perPage": "Tonen",
+    "results": "{count} resultaat | {count} resultaten",
+    "pages": "Pagina’s",
+    "pagesBottom": "Pagina’s (onderaan)",
+    "prevPage": "Vorige pagina",
+    "nextPage": "Volgende pagina",
+    "lockedByInstance": "Ingesteld door de instantie",
+    "chips": {
+      "openSource": "Open source",
+      "hideInstalled": "Geïnstalleerde verborgen",
+      "resetAll": "Alles resetten"
+    },
+    "vanillaBlocked": "“{name}” is een vanilla-instantie. Kies voor mods een instantie met een modloader.",
+    "datapackHint": {
+      "text": "Datapacks komen in de map {folder} van de instantie. Bij het maken van een wereld kies je ze onder “Datapacks”; kopieer ze voor bestaande werelden naar {worldFolder}.",
+      "world": "wereld"
+    },
+    "hit": {
+      "by": "door {author}",
+      "installingLabel": "{title} wordt geïnstalleerd – tonen in het takenpaneel",
+      "percent": "{percent}%",
+      "openInstance": "Instantie openen",
+      "installed": "Geïnstalleerd",
+      "asInstance": "Nieuwe instantie",
+      "chooseVersion": "Versie kiezen",
+      "downloads": "{count} download | {count} downloads",
+      "followers": "{count} volger | {count} volgers"
+    },
+    "empty": {
+      "title": "Geen signaal",
+      "text": "Niets gevonden – probeer andere zoektermen of filters.",
+      "textFor": "Niets gevonden voor {versions} – probeer andere zoektermen of filters.",
+      "allVersions": "alle versies",
+      "resetFilters": "Filters resetten"
+    },
+    "filters": {
+      "label": "Filters",
+      "hideInstalled": "Geïnstalleerde content verbergen",
+      "versionLocked": "De spelversie wordt ingesteld door de instantie ({version}).",
+      "unlock": "Filter ontgrendelen",
+      "searchVersionPlaceholder": "Versies zoeken …",
+      "searchVersionLabel": "Versies zoeken",
+      "noVersion": "Geen versie gevonden.",
+      "rebind": "Instelling van instantie weer gebruiken",
+      "loader": "Loader",
+      "loaderLocked": "De loader wordt ingesteld door de instantie ({loader}).",
+      "matchAny": "Minstens één",
+      "exclude": "{category} uitsluiten",
+      "loadingCategories": "Categorieën laden …",
+      "environment": "Omgeving",
+      "license": "Licentie",
+      "openSourceOnly": "Alleen open source",
+      "locked": "Vergrendeld"
+    }
+  },
+  "modrinth": {
+    "sort": {
+      "relevance": "Relevantie",
+      "downloads": "Downloads",
+      "follows": "Volgers",
+      "newest": "Nieuwste",
+      "updated": "Recent bijgewerkt"
+    },
+    "categoryHeader": {
+      "categories": "Categorie",
+      "features": "Functies",
+      "resolutions": "Resolutie",
+      "performanceImpact": "Impact op prestaties"
+    },
+    "environment": {
+      "client": "Client",
+      "server": "Server",
+      "both": "Client en server",
+      "either": "Client of server"
+    },
+    "side": {
+      "required": "Vereist",
+      "optional": "Optioneel",
+      "unsupported": "Niet nodig",
+      "unknown": "Onbekend"
+    },
+    "versionType": {
+      "release": "Release",
+      "beta": "Bèta",
+      "alpha": "Alfa"
+    },
+    "categories": {
+      "adventure": "Avontuur",
+      "cursed": "Cursed",
+      "decoration": "Decoratie",
+      "economy": "Economie",
+      "equipment": "Uitrusting",
+      "food": "Eten",
+      "gameMechanics": "Spelmechanieken",
+      "library": "Bibliotheek",
+      "magic": "Magie",
+      "management": "Beheer",
+      "minigame": "Minigame",
+      "mobs": "Mobs",
+      "optimization": "Optimalisatie",
+      "social": "Sociaal",
+      "storage": "Opslag",
+      "technology": "Technologie",
+      "transportation": "Transport",
+      "utility": "Hulpmiddelen",
+      "worldgen": "Wereldgeneratie",
+      "combat": "Gevechten",
+      "challenging": "Uitdagend",
+      "kitchenSink": "Van alles wat",
+      "lightweight": "Lichtgewicht",
+      "multiplayer": "Multiplayer",
+      "quests": "Quests",
+      "audio": "Audio",
+      "blocks": "Blokken",
+      "entities": "Entiteiten",
+      "environment": "Omgeving",
+      "fonts": "Lettertypen",
+      "gui": "GUI",
+      "items": "Items",
+      "models": "Modellen",
+      "simplistic": "Simpel",
+      "themed": "Thema",
+      "tweaks": "Tweaks",
+      "realistic": "Realistisch",
+      "semiRealistic": "Semi-realistisch",
+      "vanillaLike": "Vanilla-achtig",
+      "atmosphere": "Atmosfeer",
+      "bloom": "Bloom",
+      "shadows": "Schaduwen",
+      "reflections": "Reflecties",
+      "fantasy": "Fantasy",
+      "cartoon": "Cartoon",
+      "potato": "Aardappel-pc’s",
+      "low": "Laag",
+      "medium": "Gemiddeld",
+      "high": "Hoog",
+      "screenshot": "Screenshot",
+      "pbr": "PBR",
+      "coloredLighting": "Gekleurde verlichting",
+      "pathTracing": "Path tracing",
+      "foliage": "Gebladerte",
+      "coreShaders": "Core shaders"
+    }
+  },
+  "project": {
+    "stats": {
+      "author": "Auteur",
+      "by": "door {author}",
+      "downloadsLabel": "Downloads",
+      "downloads": "{count} download | {count} downloads",
+      "followersLabel": "Volgers",
+      "followers": "{count} volger | {count} volgers",
+      "updatedLabel": "Bijgewerkt",
+      "updated": "{time} bijgewerkt"
+    },
+    "pack": {
+      "title": "Modpack",
+      "hint": "Wordt als nieuwe instantie met al zijn mods ingesteld.",
+      "installingLabel": "Installeren, {percent} procent – tonen in het takenpaneel",
+      "installingPercent": "Installeren … {percent}%",
+      "pausedPercent": "Gepauzeerd {percent}%",
+      "openInstance": "Instantie openen",
+      "reinstall": "Opnieuw installeren",
+      "install": "Installeren als instantie"
+    },
+    "install": {
+      "target": "Installeren in",
+      "noInstance": "Nog geen instanties",
+      "installed": "{version} geïnstalleerd",
+      "updateTo": "Bijwerken naar {version}",
+      "modsBlocked": "Bij deze vanilla-instantie staat TRS-optimalisatie uit en worden geen mods geladen – zet het aan in de instantie-instellingen of kies een instantie met een modloader.",
+      "noVersion": "Geen versie voor {version} ({loader}).",
+      "switchVersion": "Versie wijzigen",
+      "otherVersion": "Andere versie kiezen"
+    },
+    "links": {
+      "modrinth": "Op Modrinth",
+      "source": "Broncode",
+      "issues": "Problemen melden",
+      "wiki": "Wiki",
+      "discord": "Discord"
+    },
+    "tabs": {
+      "label": "Onderdelen",
+      "gallery": "Galerij",
+      "versions": "Versies",
+      "dependencies": "Afhankelijkheden"
+    },
+    "noDescription": "Geen beschrijving opgegeven.",
+    "info": {
+      "title": "Info",
+      "license": "Licentie",
+      "published": "Gepubliceerd"
+    },
+    "versions": {
+      "gameVersionLabel": "Minecraft-versie",
+      "allVersions": "Alle versies",
+      "allLoaders": "Alle loaders",
+      "showPrerelease": "Bèta en alfa tonen",
+      "count": "{shown} van {total}",
+      "noMatch": "Geen versie past bij dit filter.",
+      "expandChangelog": "Changelog tonen",
+      "collapseChangelog": "Changelog verbergen",
+      "installed": "Geïnstalleerd",
+      "newestFitting": "Nieuwste compatibele",
+      "incompatibleTitle": "Niet compatibel met {version} ({loader})",
+      "incompatible": "Incompatibel",
+      "showMore": "Meer tonen",
+      "action": {
+        "switch": "Wisselen",
+        "update": "Bijwerken",
+        "downgrade": "Downgraden"
+      }
+    },
+    "dependencies": {
+      "noVersion": "Geen versie om te tonen.",
+      "none": "Versie {version} heeft geen andere projecten nodig.",
+      "intro": "Voor versie {version}. De launcher installeert vereiste afhankelijkheden automatisch.",
+      "group": {
+        "required": "Vereist",
+        "optional": "Optioneel",
+        "incompatible": "Incompatibel",
+        "embedded": "Ingebouwd"
+      }
+    },
+    "gallery": {
+      "empty": "Dit project heeft geen galerij.",
+      "image": "Afbeelding",
+      "prev": "Vorige afbeelding",
+      "next": "Volgende afbeelding"
+    }
+  },
+  "changelog": {
+    "title": "Changelog – {name}",
+    "installedVersion": "geïnstalleerde versie",
+    "searching": "Zoeken naar nieuwere versies …",
+    "newVersions": "{n} nieuwe versie | {n} nieuwe versies",
+    "upToDate": "Je hebt al de nieuwste compatibele versie ({version}).",
+    "noChangelog": "Geen changelog opgegeven.",
+    "updateTo": "Bijwerken naar {version}"
+  },
+  "content": {
+    "toasts": {
+      "upToDate": "Alles is up-to-date",
+      "fileAdded": "{name} toegevoegd",
+      "filesAdded": "{n} bestand toegevoegd | {n} bestanden toegevoegd"
+    },
+    "bulk": {
+      "done": {
+        "enable": "{n} item ingeschakeld | {n} items ingeschakeld",
+        "disable": "{n} item uitgeschakeld | {n} items uitgeschakeld",
+        "delete": "{n} item verwijderd | {n} items verwijderd"
+      },
+      "partial": {
+        "enable": "{changed} ingeschakeld, {failed} mislukt",
+        "disable": "{changed} uitgeschakeld, {failed} mislukt",
+        "delete": "{changed} verwijderd, {failed} mislukt"
+      }
+    },
+    "updates": {
+      "stage": "{n} update | {n} updates",
+      "done": "{n} update geïnstalleerd | {n} updates geïnstalleerd",
+      "partial": "{failed} van {total} updates mislukt. | {failed} van {total} updates mislukt."
+    },
+    "perfPack": {
+      "taskTitle": "Prestatiepakket voor {name}",
+      "stage": "Mods laden",
+      "done": "Prestatiepakket geïnstalleerd ({n} bestand) | Prestatiepakket geïnstalleerd ({n} bestanden)",
+      "title": "Sodium, Lithium & co. – alleen wat voor deze versie beschikbaar is",
+      "installing": "Prestatiepakket installeren …",
+      "button": "+ Prestatiepakket"
+    },
+    "toolbar": {
+      "searchPlaceholder": "{n} project zoeken … | {n} projecten zoeken …",
+      "searchLabel": "Projecten zoeken",
+      "sortLabel": "Sorteren",
+      "refreshTitle": "Vernieuwen (lijst opnieuw laden en op updates controleren)",
+      "updating": "Bijwerken …",
+      "updateAll": "Alles bijwerken ({n})",
+      "addFiles": "Bestanden toevoegen",
+      "browse": "Content bekijken"
+    },
+    "sort": {
+      "name": "Op naam",
+      "enabled": "Ingeschakeld eerst",
+      "updates": "Updates eerst",
+      "kind": "Op type"
+    },
+    "boostOff": "TRS-optimalisatie staat uit – deze instantie start als puur vanilla en laadt geen mods.",
+    "boostOn": "TRS-optimalisatie: de instantie start met Fabric, de TRS Client en prestatiemods.",
+    "selection": {
+      "selectAll": "Alles selecteren",
+      "selected": "{n} geselecteerd | {n} geselecteerd",
+      "update": "Bijwerken ({n})",
+      "clear": "Selectie wissen"
+    },
+    "columns": {
+      "project": "Project",
+      "actions": "Acties"
+    },
+    "row": {
+      "select": "{name} selecteren",
+      "by": "door {author}",
+      "unknownAuthor": "Onbekende auteur",
+      "updateTitle": "Bijwerken naar {version}",
+      "updateBadge": "Update",
+      "switchVersion": "Versie wijzigen",
+      "onlyModrinth": "Alleen voor Modrinth-content",
+      "switchVersionOf": "Versie van {name} wijzigen",
+      "enable": "{name} inschakelen",
+      "disable": "{name} uitschakelen",
+      "delete": "{name} verwijderen",
+      "moreActions": "Meer acties voor {name}"
+    },
+    "menu": {
+      "updateTo": "Bijwerken naar {version}",
+      "changelog": "Changelog bekijken",
+      "projectPage": "Projectpagina",
+      "notModrinth": "Niet via Modrinth geïnstalleerd – versies en changelogs zijn alleen beschikbaar voor Modrinth-content."
+    },
+    "empty": {
+      "noMatchTitle": "Geen signaal",
+      "noMatchText": "Niets past bij het filter of de zoekopdracht.",
+      "title": "Nog geen content",
+      "text": "Hier staat nog alles uit. Bekijk Modrinth, voeg bestanden toe of sleep gewoon .jar- en .zip-bestanden naar het venster."
+    },
+    "drop": {
+      "title": "Loslaten om toe te voegen",
+      "hint": ".jar = mod · .zip = resourcepack, shader of datapack"
+    },
+    "deleteDialog": {
+      "titleOne": "Bestand verwijderen?",
+      "titleMany": "{n} bestand verwijderen? | {n} bestanden verwijderen?",
+      "textOne": "{name} wordt uit deze instantie verwijderd.",
+      "textMany": "{n} item wordt uit deze instantie verwijderd. | {n} items worden uit deze instantie verwijderd."
+    }
+  },
+  "screenshots": {
+    "title": "Screenshots",
+    "subtitle": "{n} afbeelding uit alle instanties | {n} afbeeldingen uit alle instanties",
+    "noDate": "Geen datum",
+    "instanceLabel": "Instantie",
+    "allInstances": "Alle instanties",
+    "reload": "Opnieuw laden",
+    "toasts": {
+      "copied": "Afbeelding naar klembord gekopieerd",
+      "trashed": "Naar de Prullenbak verplaatst"
+    },
+    "empty": {
+      "title": "Nog geen screenshots",
+      "text": "Druk in het spel op F2 – elke foto laat hier een extra lamp oplichten. Screenshots van alle instanties worden hier verzameld."
+    },
+    "open": "{name} openen",
+    "copyTitle": "Kopiëren naar klembord",
+    "showInFolder": "Tonen in map",
+    "viewer": {
+      "label": "Screenshot",
+      "closeLabel": "Volledig scherm sluiten",
+      "prev": "Vorige",
+      "prevLabel": "Vorige afbeelding",
+      "next": "Volgende",
+      "nextLabel": "Volgende afbeelding",
+      "hint": "Pijltjestoetsen om te bladeren · Esc sluit · “Kopiëren” zet de afbeelding op het klembord om te plakken"
+    },
+    "deleteDialog": {
+      "title": "Screenshot verwijderen?",
+      "text": "{name} gaat naar de Windows-Prullenbak – daar kun je het terugzetten."
+    }
+  },
+  "servers": {
+    "title": "Servers",
+    "subtitle": "Eén keer toevoegen – beschikbaar in elke instantie, met live status en joinen met één klik.",
+    "refreshing": "Vernieuwen …",
+    "add": "Server toevoegen",
+    "joinWith": "Joinen met",
+    "lastPlayed": "{name} (laatst gespeeld)",
+    "joinHint": "Start “{name}” en maakt direct verbinding",
+    "noInstance": "Maak eerst een instantie aan",
+    "empty": {
+      "title": "Nog geen servers",
+      "text": "Leg een draad naar je favoriete server: voer het adres in – de launcher toont het aantal spelers en de ping live en voegt de server toe aan de serverlijst van elke instantie."
+    },
+    "card": {
+      "checking": "Controleren …",
+      "unreachable": "Onbereikbaar",
+      "join": "Joinen"
+    }
+  },
+  "serverDialog": {
+    "addTitle": "Server toevoegen",
+    "editTitle": "Server bewerken",
+    "address": "Adres",
+    "namePlaceholder": "Hoe de server moet heten",
+    "autoResourcePack": "Resourcepack van de server automatisch accepteren",
+    "autoResourcePackHint": "Zodat rangen, iconen en geluiden van de server zonder vragen laden.",
+    "toasts": {
+      "saved": "Server opgeslagen",
+      "added": "Server toegevoegd",
+      "removed": "Server verwijderd"
+    }
+  },
+  "library": {
+    "title": "Bibliotheek",
+    "subtitle": "Elke instantie heeft haar eigen werelden, mods en instellingen.",
+    "newGroup": "Nieuwe groep",
+    "newInstance": "Nieuwe instantie",
+    "searchPlaceholder": "{n} instantie zoeken … | {n} instanties zoeken …",
+    "searchLabel": "Instanties zoeken",
+    "sortLabel": "Sorteren",
+    "groupLabel": "Groeperen",
+    "filter": "Filter",
+    "resetFilters": "Filters resetten",
+    "sort": {
+      "played": "Laatst gespeeld",
+      "name": "Naam",
+      "created": "Aangemaakt",
+      "playtime": "Speeltijd",
+      "version": "Versie"
+    },
+    "groupBy": {
+      "none": "Geen",
+      "loader": "Modloader",
+      "version": "Minecraft-versie",
+      "custom": "Eigen groepen"
+    },
+    "ungrouped": "Geen groep",
+    "noMatch": {
+      "title": "Geen signaal",
+      "text": "Geen instantie past bij je zoekopdracht of filters."
+    },
+    "empty": {
+      "title": "Nog geen instanties",
+      "text": "De draad ligt er al, alleen de lamp ontbreekt nog: maak je eerste instantie aan – vanilla of met Fabric, Quilt, Forge of NeoForge.",
+      "create": "Instantie aanmaken",
+      "import": "Importeren uit andere launcher"
+    },
+    "toasts": {
+      "movedToGroup": "“{name}” staat nu in “{group}”",
+      "removedFromGroup": "“{name}” uit de groep verwijderd"
+    },
+    "delete": {
+      "title": "Instantie verwijderen?",
+      "text": "{name} wordt definitief verwijderd, samen met alle werelden, mods en screenshots.",
+      "deleting": "Verwijderen …",
+      "confirm": "Definitief verwijderen"
+    }
+  },
+  "instance": {
+    "settingsGeneral": "Instellingen: Algemeen",
+    "changeVersion": "Versie wijzigen",
+    "settings": "Instellingen",
+    "tabsLabel": "Onderdelen",
+    "tabs": {
+      "content": "Content",
+      "history": "Geschiedenis",
+      "screenshots": "Screenshots",
+      "worlds": "Werelden",
+      "logs": "Logs"
+    },
+    "gallery": {
+      "bannerSet": "Banner ingesteld",
+      "noScreenshots": {
+        "title": "Nog geen screenshots",
+        "text": "Druk in het spel op F2 – elke foto laat hier een extra lamp oplichten."
+      },
+      "noWorlds": {
+        "title": "Nog geen werelden",
+        "text": "Nog niets gebouwd: de singleplayerwerelden van deze instantie verschijnen hier."
+      },
+      "openScreenshot": "{name} openen",
+      "useAsBannerLabel": "{name} als banner gebruiken",
+      "useAsBannerTitle": "Als instantiebanner gebruiken",
+      "deleteScreenshot": "Screenshot verwijderen",
+      "lastPlayed": "Laatst gespeeld {date}",
+      "deleteTitle": "Screenshot verwijderen?",
+      "deleteText": "De screenshot wordt van je schijf verwijderd."
+    }
+  },
+  "instanceSettings": {
+    "title": "Instellingen · {name}",
+    "sections": {
+      "general": "Algemeen",
+      "installation": "Installatie",
+      "window": "Venster",
+      "java": "Java & geheugen",
+      "hooks": "Starthooks",
+      "sync": "Synchronisatie"
+    },
+    "general": {
+      "changeImage": "Afbeelding wijzigen",
+      "removeImage": "Afbeelding verwijderen",
+      "bannerTitle": "Banner",
+      "bannerDescription": "Brede omslagafbeelding voor de startpagina en de kop van de instantie. PNG, JPEG of WebP, tot 10 MB – of gebruik een eigen afbeelding in het tabblad “Screenshots”.",
+      "bannerPicking": "Kiezen …",
+      "bannerChange": "Banner wijzigen",
+      "bannerPick": "Banner kiezen",
+      "groupTitle": "Bibliotheekgroep",
+      "groupDescription": "Groepen ordenen de instanties in je bibliotheek. Een instantie hoort bij hoogstens één groep.",
+      "groupNone": "Geen",
+      "groupNamePlaceholder": "Groepsnaam",
+      "groupNameLabel": "Naam van de nieuwe groep",
+      "groupCreate": "Aanmaken",
+      "groupNew": "+ Nieuwe groep",
+      "channelTitle": "Updatekanaal voor content",
+      "channelDescription": "Welke Modrinth-versies “Bijwerken” en “nieuwste compatibele versie” kiezen.",
+      "channel": {
+        "release": {
+          "label": "Stabiel",
+          "hint": "Alleen afgeronde versies"
+        },
+        "beta": {
+          "label": "Bèta",
+          "hint": "Stabiel + bèta’s"
+        },
+        "alpha": {
+          "label": "Alfa",
+          "hint": "Alles, inclusief alfa’s"
+        }
+      },
+      "duplicateTitle": "Dupliceren",
+      "duplicateDescription": "Maakt een kopie met alle werelden, mods en instellingen – handig voordat je van versie wisselt.",
+      "duplicating": "Kopiëren …",
+      "copyName": "{name} (kopie)",
+      "copyStage": "Bestanden kopiëren",
+      "copyDone": "Kopie “{name}” aangemaakt",
+      "exportTitle": "Exporteren als modpack",
+      "exportDescription": "Schrijft een .mrpack-bestand om te delen of als back-up. Mods van Modrinth worden gelinkt in plaats van gekopieerd.",
+      "deleteTitle": "Instantie verwijderen",
+      "deleteDescription": "Verwijdert de instantie definitief, met alle werelden, mods en screenshots.",
+      "deleted": "“{name}” verwijderd"
+    },
+    "installation": {
+      "platform": "Platform",
+      "loaderVersion": "{loader}-versie",
+      "latestStable": "Nieuwste stabiele",
+      "currently": "(momenteel {version})",
+      "changeHint": "Werelden en instellingen blijven behouden bij het wisselen; mods van Modrinth kunnen daarna naar compatibele versies worden bijgewerkt. Werelden worden bij de eerste start omgezet – dupliceer voor de zekerheid eerst de instantie.",
+      "boostTitle": "TRS-optimalisatie",
+      "boostDescription": "Draait de instantie onder de motorkap met Fabric, de TRS Client en prestatiemods zoals Sodium – een stuk meer FPS. Uit = puur vanilla.",
+      "clientDescription": "HUD met FPS, CPS, toetsaanslagen en ping, zoom (V) en fullbright. Open het menu in het spel met Rechter Shift.",
+      "maintenance": "Onderhoud",
+      "repairTitle": "Repareren",
+      "repairDescription": "Controleert elk spelbestand via checksum en downloadt beschadigde bestanden opnieuw. Werelden en mods blijven onaangeroerd.",
+      "reinstallTitle": "Opnieuw installeren",
+      "reinstallDescription": "Downloadt de spelversie, modloader en bibliotheken helemaal opnieuw. Werelden, mods en instellingen blijven behouden.",
+      "reinstallConfirmTitle": "Opnieuw installeren?",
+      "reinstallConfirmText": "De spelversie en bibliotheken worden opnieuw gedownload. Werelden, mods en instellingen blijven behouden."
+    },
+    "window": {
+      "customTitle": "Eigen vensterinstellingen",
+      "customDescription": "Uit = de globale instellingen gelden.",
+      "fullscreenTitle": "Volledig scherm",
+      "fullscreenDescription": "Start het spel direct in volledig scherm.",
+      "widthTitle": "Breedte",
+      "widthDescription": "Breedte van het spelvenster in pixels.",
+      "heightTitle": "Hoogte",
+      "heightDescription": "Hoogte van het spelvenster in pixels."
+    },
+    "java": {
+      "customTitle": "Eigen Java- en geheugeninstellingen",
+      "customDescription": "Uit = de globale instellingen gelden. Lege velden gebruiken ook de globale waarden.",
+      "installTitle": "Java-installatie",
+      "installDescriptionGlobal": "Deze versie heeft Java {major} nodig. Leeg = globaal pad.",
+      "installDescriptionAuto": "Deze versie heeft Java {major} nodig. Leeg = automatisch installeren.",
+      "autoPlaceholder": "Automatisch (Java {major})",
+      "memoryTitle": "Geheugen",
+      "memoryDescription": "Het maximale RAM dat het spel mag gebruiken. Meer dan de helft van het geheugen van je computer is zelden zinvol.",
+      "memoryMbLabel": "Geheugen in MB",
+      "jvmArgsTitle": "JVM-argumenten",
+      "jvmArgsDescription": "Extra argumenten voor Java, gescheiden door spaties.",
+      "jvmArgsNone": "Geen",
+      "optimizedTitle": "Beproefde G1-instellingen",
+      "optimized": "Geoptimaliseerde argumenten",
+      "envTitle": "Omgevingsvariabelen",
+      "envDescription": "Gelden voor het spel en de starthooks."
+    },
+    "hooks": {
+      "intro": "Commando’s draaien via {cmd} zonder venster, maximaal 2 minuten. Beschikbaar: {id}, {name}, {dir}, {mcDir} en {java}.",
+      "customTitle": "Eigen starthooks",
+      "customDescription": "Uit = de globale hooks gelden.",
+      "preLaunchTitle": "Voor het starten",
+      "preLaunchDescription": "Draait voordat het spel start. Als het mislukt, start het spel niet.",
+      "preLaunchLabel": "Commando voor het starten",
+      "noCommand": "Geen commando",
+      "wrapperTitle": "Wrapper",
+      "wrapperDescription": "Wordt vóór de Java-opdrachtregel gezet, bijv. een profiler of launcher.",
+      "wrapperLabel": "Wrapper-commando",
+      "noWrapper": "Geen wrapper",
+      "postExitTitle": "Na afsluiten",
+      "postExitDescription": "Draait nadat het spel is gesloten. Fouten verschijnen als melding.",
+      "postExitLabel": "Commando na afsluiten"
+    },
+    "sync": {
+      "intro": "Globaal ingeschakelde onderdelen worden voor het starten uit de gedeelde opslag gehaald en na het sluiten van het spel teruggeschreven. Hier kun je ze voor deze instantie apart houden. Overschreven bestanden worden eerst geback-upt.",
+      "globallyOff": "Globaal uitgeschakeld – zet het aan in Instellingen onder Instanties.",
+      "toggleLabel": "{item} synchroniseren"
+    }
+  },
+  "createInstance": {
+    "title": "Nieuwe instantie",
+    "namePlaceholder": "Mijn wereld",
+    "gameVersion": "Minecraft-versie",
+    "showSnapshots": "Snapshots & oude versies",
+    "loadingVersions": "Versies laden …",
+    "creating": "Aanmaken …"
+  },
+  "changeVersion": {
+    "title": "Versie wijzigen",
+    "migrateTitle": "Content aanpassen",
+    "current": "Momenteel: {version} met {loader}",
+    "gameVersion": "Minecraft-versie",
+    "showSnapshots": "Snapshots & oude versies",
+    "loadingVersions": "Versies laden …",
+    "optionCurrent": "{version} (huidig)",
+    "optionBeta": "{version} (bèta)",
+    "optionBetaCurrent": "{version} (bèta, huidig)",
+    "loaderVersion": "{loader}-versie",
+    "showBetas": "Bèta’s tonen",
+    "loaderEmptyPlaceholder": "Leeg = nieuwste stabiele",
+    "latestRecommended": "Nieuwste stabiele (aanbevolen)",
+    "loaderUnavailable": "{loader} is (nog) niet beschikbaar voor Minecraft {version}.",
+    "notice": {
+      "title": "Lees dit eerst",
+      "downgradeLabel": "Oudere versie:",
+      "downgrade": "{label} Werelden die met een nieuwere versie zijn gespeeld, kunnen kapotgaan.",
+      "worlds": "Werelden worden bij de eerste start omgezet en kunnen daarna niet meer in de oude versie worden geopend. Veiliger: dupliceer eerst de instantie.",
+      "loaderChanged": "Mods voor {from} werken niet met {to}.",
+      "migrate": "Daarna kun je mods van Modrinth automatisch naar compatibele versies bijwerken."
+    },
+    "planning": "Zoeken naar compatibele versies van je content …",
+    "updateCount": "{n} met een nieuwe versie | {n} met een nieuwe versie",
+    "fineCount": "{n} al compatibel | {n} al compatibel",
+    "missingCount": "{n} zonder compatibele versie | {n} zonder compatibele versie",
+    "itemChange": "{from} naar {to}",
+    "noMatch": "Geen compatibele versie",
+    "fits": "Compatibel",
+    "saving": "Wisselen …",
+    "disableMissing": "Incompatibele uitschakelen",
+    "applyUpdates": "Mods bijwerken naar compatibele versies",
+    "toasts": {
+      "changed": "De instantie draait nu {version} ({loader})",
+      "disabledMissing": "Incompatibele content uitgeschakeld"
+    },
+    "task": {
+      "stage": "Content aanpassen",
+      "done": "{n} item bijgewerkt naar een compatibele versie | {n} items bijgewerkt naar compatibele versies",
+      "partial": "{n} van {total} updates mislukt. | {n} van {total} updates mislukt."
+    }
+  },
+  "versionPicker": {
+    "titleChange": "Versie wijzigen – {title}",
+    "titlePick": "Versie kiezen – {title}",
+    "compatibleWith": "Compatibel met {version} ({loader})",
+    "showPrerelease": "Bèta en alfa tonen",
+    "none": "Geen compatibele versie gevonden.",
+    "hideChangelog": "Changelog verbergen",
+    "showChangelog": "Changelog tonen",
+    "installed": "Geïnstalleerd",
+    "latest": "Nieuwste",
+    "newer": "Nieuwer",
+    "older": "Ouder",
+    "type": {
+      "release": "Stabiel",
+      "beta": "Bèta",
+      "alpha": "Alfa"
+    },
+    "downgrade": "Downgraden",
+    "switch": "Wisselen"
+  },
+  "newGroup": {
+    "title": "Nieuwe groep",
+    "placeholder": "bijv. PvP, Modpacks, Met vrienden",
+    "instances": "Instanties",
+    "nameRequired": "Voer een naam in",
+    "pickInstance": "Kies minstens één instantie – lege groepen bestaan niet.",
+    "created": "Groep “{name}” aangemaakt",
+    "creating": "Aanmaken …",
+    "submit": "Groep aanmaken"
+  },
+  "history": {
+    "filters": {
+      "all": "Alle",
+      "play": "Spelen",
+      "content": "Content",
+      "instance": "Instantie"
+    },
+    "entryCount": "{n} item | {n} items",
+    "empty": {
+      "title": "Er is nog niets gebeurd",
+      "text": "Starts, crashes, geïnstalleerde mods en versiewijzigingen verschijnen hier."
+    },
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "titles": {
+      "createdFromModpack": "Aangemaakt uit modpack “{name}”",
+      "createdAsCopy": "Aangemaakt als kopie van “{name}”",
+      "created": "Instantie aangemaakt",
+      "imported": "Geïmporteerd uit {source}",
+      "importedUnknown": "Geïmporteerd uit een andere launcher",
+      "launchedServer": "Gestart en verbonden met “{server}”",
+      "launched": "Gestart",
+      "stopped": "Spel gesloten",
+      "crashed": "Gecrasht",
+      "modInstalled": "{name} geïnstalleerd",
+      "modDowngraded": "{name} gedowngraded",
+      "modUpdated": "{name} bijgewerkt",
+      "modRemoved": "{name} verwijderd",
+      "modEnabled": "{name} ingeschakeld",
+      "modDisabled": "{name} uitgeschakeld",
+      "versionSwitched": "Versie gewijzigd",
+      "repaired": "Bestanden gecontroleerd en gerepareerd",
+      "iconChanged": "Afbeelding gewijzigd",
+      "filesAdded": "{n} bestanden toegevoegd",
+      "fileAdded": "{name} toegevoegd",
+      "bulk": {
+        "enable": "{n} item ingeschakeld | {n} items ingeschakeld",
+        "disable": "{n} item uitgeschakeld | {n} items uitgeschakeld",
+        "delete": "{n} item verwijderd | {n} items verwijderd",
+        "changed": "{n} item gewijzigd | {n} items gewijzigd"
+      },
+      "bulkSeveral": {
+        "enable": "Meerdere items ingeschakeld",
+        "disable": "Meerdere items uitgeschakeld",
+        "delete": "Meerdere items verwijderd",
+        "changed": "Meerdere items gewijzigd"
+      },
+      "hooksGlobal": "Starthooks teruggezet naar globaal",
+      "hooksCustom": "Eigen starthooks ingesteld",
+      "movedToGroup": "Verplaatst naar groep “{group}”",
+      "removedFromGroup": "Uit groep verwijderd",
+      "renamed": "Hernoemd"
+    },
+    "details": {
+      "played": "Gespeeld: {time}",
+      "exitCode": "Exitcode {code}",
+      "after": "na {time}",
+      "asDependencyVersion": "{version} · als afhankelijkheid",
+      "asDependency": "Als afhankelijkheid",
+      "renamed": "“{from}” → “{to}”",
+      "previousGroup": "eerder: {group}"
+    }
+  },
+  "logConsole": {
+    "warnings": "Waarschuwingen",
+    "errors": "Fouten",
+    "search": "Zoeken …",
+    "lineCount": "{n} regel | {n} regels",
+    "copied": "Gekopieerd",
+    "empty": "Nog geen uitvoer – start de instantie om de logs live te zien.",
+    "jumpToEnd": "↓ Naar het einde"
+  },
+  "crash": {
+    "crashed": "Het spel is gecrasht",
+    "exitedUnexpectedly": "Het spel is onverwacht afgesloten (exitcode {code})",
+    "hint": "De laatste regels van het log tonen meestal de oorzaak. Je kunt het log ook delen om hulp te krijgen.",
+    "checkFiles": "Bestanden controleren",
+    "uploading": "Uploaden …",
+    "shareLog": "Log delen",
+    "linkCopied": "Link gekopieerd",
+    "shareTitle": "Log openbaar delen?",
+    "shareText": "Het log wordt geüpload naar {site}, waar iedereen met de link het kan lezen. Inlogtokens en je Windows-gebruikersnaam worden eerst verwijderd.",
+    "upload": "Uploaden",
+    "cause": {
+      "corrupt_files": "Beschadigde bestanden",
+      "out_of_memory": "Geheugen vol",
+      "wrong_java": "Verkeerde Java-versie",
+      "missing_dependency": "Ontbrekende afhankelijkheid",
+      "mod_conflict": "Modconflict",
+      "graphics_driver": "Grafisch stuurprogramma"
+    },
+    "diagnosis": {
+      "corrupt_files": "Een spelbestand is beschadigd (bijv. na een onderbroken download). “Bestanden controleren” downloadt het opnieuw.",
+      "out_of_memory": "Het spel had te weinig geheugen. Verhoog het geheugen van de instantie in de instellingen.",
+      "wrong_java": "Een mod heeft een nieuwere Java-versie nodig. Verwijder het eigen Java-pad in de instellingen; de launcher kiest dan automatisch de juiste.",
+      "missing_dependency": "Een mod mist een andere mod die hij nodig heeft. Het log toont vlak boven de fout welke.",
+      "mod_conflict": "Twee mods kunnen niet met elkaar overweg. Schakel de laatst toegevoegde mods uit en start opnieuw.",
+      "graphics_driver": "Het grafische stuurprogramma is gecrasht of ondersteunt geen OpenGL. Werk het stuurprogramma van je videokaart bij."
+    }
+  },
+  "exportPack": {
+    "title": "Exporteren als modpack",
+    "summary": "Korte beschrijving (optioneel)",
+    "summaryPlaceholder": "Waar gaat dit pack over?",
+    "included": "Wat wordt meegenomen",
+    "nothing": "Er is nog niets in deze instantie om te exporteren.",
+    "dirSize": "{n} bestand · {size} | {n} bestanden · {size}",
+    "hint": "Mods die op Modrinth staan worden alleen gelinkt – het pack blijft klein en makkelijk te delen. Al het andere wordt erin gekopieerd. Geselecteerd: {size}.",
+    "runsInBackground": "{stage} – loopt op de achtergrond door als je dit sluit.",
+    "exporting": "Exporteren …",
+    "saveAs": "Opslaan als …",
+    "phase": {
+      "hashing": "Bestanden controleren",
+      "lookup": "Vergelijken met Modrinth",
+      "writing": "Modpack schrijven"
+    },
+    "pickLocation": "Locatie kiezen …",
+    "done": "“{file}” geschreven – {downloads} bestanden van Modrinth, {overrides} gekopieerd ({size})"
+  },
+  "import": {
+    "title": "Importeren uit andere launcher",
+    "intro": "Werelden, mods, instellingen en servers worden gekopieerd; het origineel blijft onaangeroerd. Inloggegevens van andere launchers worden nooit overgenomen.",
+    "search": "Zoeken …",
+    "searchLabel": "Installaties zoeken",
+    "sourceLabel": "Bron",
+    "allSources": "Alle bronnen",
+    "scanning": "Scannen …",
+    "browseFolder": "Map kiezen …",
+    "packProgress": "Modpack {percent} %",
+    "packFile": "Modpackbestand (.mrpack) …",
+    "nothingFound": "Niets automatisch gevonden. Met “Map kiezen” kun je elke map met Minecraft-gegevens kiezen, bijvoorbeeld van een andere client.",
+    "noMatch": "Geen installatie past bij je zoekopdracht.",
+    "modCount": "{n} mod | {n} mods",
+    "worldCount": "{n} wereld | {n} werelden",
+    "imported": "Geïmporteerd",
+    "checkVersion": "Controleer versie en modloader:",
+    "gameVersion": "Minecraft-versie",
+    "backgroundHint": "Loopt op de achtergrond door als je dit sluit.",
+    "task": {
+      "stage": "Kopiëren uit {source}",
+      "filesCopied": "{done} / {total} bestanden gekopieerd",
+      "done": "“{name}” geïmporteerd",
+      "packTitle": "Modpack uit bestand",
+      "pickFile": "Bestand kiezen …",
+      "packDone": "Modpack geïmporteerd"
+    }
+  },
+  "envEditor": {
+    "valuePlaceholder": "Waarde",
+    "nameLabel": "Naam van variabele {n}",
+    "valueLabel": "Waarde van variabele {n}",
+    "remove": "Variabele {name} verwijderen",
+    "global": "Globaal: {vars}",
+    "add": "Variabele toevoegen"
+  },
+  "javaPath": {
+    "foundUnknown": "Gevonden (versie onbekend)",
+    "wrongMajor": "Java {found} – hier wordt Java {expected} verwacht",
+    "notFoundMajor": "Geen Java {major} gevonden",
+    "notFound": "Geen Java-installatie gevonden",
+    "searching": "Zoeken …",
+    "detect": "Detecteren",
+    "managed": "van launcher"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "footer": {
+      "clientModUpdate": "TRS Client: update naar {version} gedownload",
+      "clientModCurrent": "TRS Client: versie {version} (up-to-date)"
+    },
+    "appearance": {
+      "colorScheme": "Kleurthema",
+      "themes": {
+        "dark": "Donker",
+        "oled": "OLED",
+        "light": "Licht",
+        "system": "Systeem"
+      },
+      "accents": {
+        "redstone": "Redstone",
+        "lamp": "Lamp",
+        "emerald": "Smaragd",
+        "lapis": "Lapis",
+        "amethyst": "Amethist"
+      },
+      "accentTitle": "Accentkleur",
+      "accentDescription": "Kleur voor knoppen, actieve items en de redstonedraad.",
+      "accentLabel": "Accentkleur {name}",
+      "advancedRenderingTitle": "Geavanceerde weergave",
+      "advancedRenderingDescription": "Vervagingseffecten achter dialogen en balken. Uitschakelen bespaart wat prestaties op tragere pc’s.",
+      "animatedBackgroundTitle": "Geanimeerde achtergrond",
+      "animatedBackgroundDescription": "Een rustig redstonecircuit achter elke pagina. Als dit uit staat, wordt alleen het deepslate-patroon getoond."
+    },
+    "features": {
+      "instancePage": "Instantiepagina",
+      "historyTabTitle": "Tabblad Geschiedenis",
+      "historyTabDescription": "Starts, crashes, geïnstalleerde mods en versiewijzigingen per instantie.",
+      "screenshotsTabTitle": "Tabblad Screenshots",
+      "screenshotsTabDescription": "Galerij met de screenshots van een instantie.",
+      "worldsTabTitle": "Tabblad Werelden",
+      "worldsTabDescription": "Lijst met de werelden van een instantie.",
+      "sidebar": "Linkerzijbalk",
+      "sidebarRecentTitle": "Snelle instanties",
+      "sidebarRecentDescription": "Je recent gespeelde instanties met hun iconen onder de navigatie.",
+      "sidebarAccountTitle": "Accounttegel",
+      "sidebarAccountDescription": "Het actieve account met zijn skinhoofd onderaan de zijbalk."
+    },
+    "behavior": {
+      "title": "Gedrag",
+      "closeOnLaunchTitle": "Launcher minimaliseren als het spel start",
+      "closeOnLaunchDescription": "Het venster gaat bij het starten uit de weg; het spel blijft draaien, ook als je de launcher sluit.",
+      "compactLibraryTitle": "Compacte bibliotheek",
+      "compactLibraryDescription": "Kleinere tegels – meer instanties in één oogopslag.",
+      "showPlayTimeTitle": "Speeltijd tonen",
+      "showPlayTimeDescription": "Totale speeltijd op tegels en instantiepagina’s.",
+      "showSnapshotsTitle": "Snapshots tonen",
+      "showSnapshotsDescription": "Snapshots en oude versies standaard in de versiekiezer opnemen.",
+      "restartOnboardingTitle": "Installatie opnieuw doorlopen",
+      "restartOnboardingDescription": "Leidt je nog een keer door het inloggen en je eerste instantie."
+    },
+    "profile": {
+      "title": "Minecraft-accounts",
+      "added": "Toegevoegd {time}",
+      "use": "Gebruiken",
+      "none": "Nog geen account ingelogd.",
+      "manage": "Accounts beheren"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "logUploadTitle": "Logs delen toestaan",
+      "logUploadDescription": "“Log delen” uploadt het spellog naar mclo.gs – inloggegevens en gebruikersnaam worden eerst weggelaten. Als dit uit staat, werkt de knop niet.",
+      "telemetryTitle": "Telemetrie",
+      "telemetryDescription": "TRS Launcher verzamelt geen gebruiks- of crashgegevens. Er valt niets in te schakelen."
+    },
+    "defaults": {
+      "title": "Standaarden voor alle instanties",
+      "hint": "Instanties kunnen losse waarden in hun eigen instellingen overschrijven.",
+      "memoryTitle": "Geheugen",
+      "memoryDescription": "De maximale hoeveelheid RAM die het spel mag gebruiken.",
+      "maxMemoryLabel": "Maximaal geheugen",
+      "maxMemoryMbLabel": "Maximaal geheugen in MB",
+      "minMemoryTitle": "Minimaal geheugen",
+      "minMemoryDescription": "Beginwaarde voor Java (-Xms), in MB.",
+      "jvmArgsTitle": "JVM-argumenten",
+      "jvmArgsDescription": "Extra argumenten voor Java.",
+      "optimizedArgs": "Geoptimaliseerde argumenten",
+      "envTitle": "Omgevingsvariabelen",
+      "envDescription": "Gelden voor het spel en de starthooks.",
+      "fullscreenTitle": "Volledig scherm",
+      "fullscreenDescription": "Games in volledig scherm starten.",
+      "resolutionTitle": "Venstergrootte",
+      "resolutionDescription": "Breedte × hoogte van het spelvenster.",
+      "windowWidth": "Vensterbreedte",
+      "windowHeight": "Vensterhoogte",
+      "dedicatedGpuTitle": "Krachtige videokaart",
+      "dedicatedGpuDescription": "Voor laptops met twee grafische chips: Windows geeft het spel de dedicated GPU."
+    },
+    "hooks": {
+      "title": "Starthooks",
+      "noCommand": "Geen commando",
+      "preLaunchTitle": "Voor het starten",
+      "preLaunchDescription": "Draait via cmd /C voor elke start; als het mislukt, start het spel niet.",
+      "preLaunchLabel": "Commando voor het starten",
+      "wrapperTitle": "Wrapper",
+      "wrapperDescription": "Wordt vóór de Java-opdrachtregel gezet.",
+      "wrapperPlaceholder": "Geen wrapper",
+      "wrapperLabel": "Wrapper-commando",
+      "postExitTitle": "Na afsluiten",
+      "postExitDescription": "Draait nadat het spel is gesloten.",
+      "postExitLabel": "Commando na afsluiten"
+    },
+    "sync": {
+      "title": "Synchronisatie",
+      "description": "Alles wat aan staat, wordt voor het starten uit de gedeelde opslag gehaald en na het afsluiten teruggeschreven – zo heeft elke instantie dezelfde instellingen. De eerste instantie met een bestand levert het startpunt; overschreven bestanden worden geback-upt.",
+      "toggleLabel": "{item} synchroniseren"
+    },
+    "java": {
+      "title": "Java-installaties",
+      "hint": "Leeg = de launcher installeert automatisch de juiste Java-versie van Mojang.",
+      "slots": {
+        "java8": "Minecraft tot en met 1.16",
+        "java17": "Minecraft 1.17 tot 1.20.4",
+        "java21": "Minecraft 1.20.5 tot 1.21.x",
+        "java25": "Minecraft 26.x"
+      },
+      "installing": "Installeren … {percent}%",
+      "installRecommended": "Aanbevolen installeren",
+      "autoPlaceholder": "Automatisch (Java {major})",
+      "taskStage": "Java-runtime downloaden",
+      "taskDone": "Java {major} geïnstalleerd",
+      "globalTitle": "Voor alle versies",
+      "globalDescription": "Alleen nodig als één Java voor alles moet worden gebruikt – de items hierboven hebben voorrang.",
+      "notSet": "Niet ingesteld"
+    },
+    "storage": {
+      "title": "Opslag",
+      "instances": "Instanties",
+      "sharedFiles": "Gedeelde spelbestanden",
+      "unused": "Niet meer nodig",
+      "verifyTitle": "Controleren & repareren",
+      "verifyDescription": "Controleert de gedeelde spelbestanden via checksum. Beschadigde bestanden worden verwijderd en bij de volgende start opnieuw gedownload.",
+      "verifying": "Controleren …",
+      "verifyRemoved": "{checked} bestanden gecontroleerd, {removed} beschadigde verwijderd – ze worden bij de volgende start opnieuw gedownload.",
+      "verifyOk": "{checked} bestanden gecontroleerd – alles in orde.",
+      "cleanTitle": "Ongebruikte verwijderen",
+      "cleanDescription": "{n} spelversie is door geen enkele instantie meer nodig ({size}). Ze wordt zo nodig opnieuw gedownload. | {n} spelversies zijn door geen enkele instantie meer nodig ({size}). Ze worden zo nodig opnieuw gedownload.",
+      "cleanDescriptionEmpty": "Spelversies die geen instantie meer nodig heeft.",
+      "cleaning": "Verwijderen …",
+      "freed": "{size} vrijgemaakt",
+      "confirmTitle": "Ongebruikte verwijderen?",
+      "confirmText": "{n} spelversie ({size}) wordt verwijderd. Instanties, werelden en mods blijven onaangeroerd. | {n} spelversies ({size}) worden verwijderd. Instanties, werelden en mods blijven onaangeroerd.",
+      "dataDirTitle": "App-map"
+    },
+    "network": {
+      "title": "Netwerk",
+      "autoFirewallTitle": "Java-versies automatisch toestaan",
+      "autoFirewallDescription": "Anders vraagt Windows voor elke Java-versie apart of Minecraft het netwerk mag gebruiken (bijv. voor LAN-werelden). Nieuwe Java-versies worden voor het starten toegestaan met één beheerdersprompt.",
+      "firewallTitle": "Firewall-toegang",
+      "firewallDescription": "Voegt de regel in één keer toe voor alle Java-versies van de launcher – één beheerdersprompt.",
+      "noJava": "Nog geen Java-versie geïnstalleerd",
+      "missing": "{missing} van {total} nog niet toegestaan",
+      "allAllowed": "Alles toegestaan",
+      "waitingForWindows": "Wachten op Windows …",
+      "allowAll": "Nu alles toestaan",
+      "allowed": "Netwerktoegang toegestaan voor {n} Java-programma | Netwerktoegang toegestaan voor {n} Java-programma’s",
+      "downloadsTitle": "Parallelle downloads",
+      "downloadsDescription": "Hoeveel bestanden tegelijk worden gedownload. Gebruik er minder bij een trage verbinding."
+    }
+  },
+  "settingsShell": {
+    "sectionsLabel": "Onderdelen"
+  },
+  "onboarding": {
+    "steps": {
+      "language": "Taal",
+      "welcome": "Welkom",
+      "login": "Inloggen",
+      "import": "Importeren",
+      "instance": "Eerste instantie",
+      "done": "Klaar"
+    },
+    "skipSetup": "Installatie overslaan",
+    "welcome": {
+      "text": "Elke Minecraft-versie, elke modloader, mods en modpacks – op één plek en maar één klik van spelen verwijderd.",
+      "start": "Aan de slag"
+    },
+    "login": {
+      "title": "Inloggen",
+      "text": "Met het Microsoft-account waarmee je Minecraft hebt gekocht. Je voert je wachtwoord alleen bij Microsoft in je browser in – de launcher ziet het nooit.",
+      "signedIn": "Ingelogd"
+    },
+    "import": {
+      "title": "Importeren",
+      "text": "Neem werelden, mods, instellingen en servers over uit andere launchers. Het origineel blijft onaangeroerd en inloggegevens worden nooit gekopieerd.",
+      "none": "Geen andere launchers gevonden – je kunt meteen verder.",
+      "modCount": "{n} mod | {n} mods",
+      "worldCount": "{n} wereld | {n} werelden",
+      "imported": "Geïmporteerd",
+      "importedToast": "“{name}” geïmporteerd"
+    },
+    "instance": {
+      "title": "Eerste instantie",
+      "text": "Een instantie is een aparte Minecraft-installatie met een eigen versie, mods en werelden. Je kunt er later zoveel bijmaken als je wilt.",
+      "presetLabel": "Sjabloon",
+      "vanillaText": "Het spel zoals Mojang het levert.",
+      "fabricTitle": "Fabric + prestaties",
+      "fabricText": "Met Sodium, Lithium en co. voor meer FPS.",
+      "customTitle": "Eigen versie",
+      "customText": "Kies zelf de versie en modloader.",
+      "allVersions": "Alle versies",
+      "creatingPack": "Instantie klaar – prestatiemods downloaden van Modrinth …",
+      "creatingInstance": "Instantie aanmaken …",
+      "chooseVersion": "Versie kiezen",
+      "installingPack": "Prestatiepakket installeren …",
+      "creating": "Aanmaken …",
+      "create": "Instantie aanmaken",
+      "packInstalled": "Prestatiepakket geïnstalleerd ({n} bestand) | Prestatiepakket geïnstalleerd ({n} bestanden)"
+    },
+    "done": {
+      "title": "Alles klaar",
+      "text": "Dit heb je ingesteld – je kunt alles later altijd nog wijzigen.",
+      "account": "Account",
+      "notSignedIn": "Niet ingelogd",
+      "notSignedInHint": "Dat kan altijd nog onder Accounts.",
+      "noInstance": "Nog geen instantie",
+      "noInstanceHint": "Maak er een wanneer je maar wilt – op de startpagina of in de Bibliotheek.",
+      "home": "Naar start",
+      "playNow": "Nu spelen"
+    }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "subtitle": "Meerdere Microsoft-accounts – wissel met één klik.",
+    "signInWithCode": "Inloggen met code",
+    "add": "Account toevoegen",
+    "activeHint": "Actief – wordt gebruikt bij het starten van het spel",
+    "microsoftAccount": "Microsoft-account",
+    "use": "Gebruiken",
+    "signOut": "Uitloggen",
+    "empty": {
+      "title": "Nog geen account",
+      "text": "Log in met het Microsoft-account waarmee je Minecraft hebt gekocht. Je voert je wachtwoord alleen bij Microsoft in je browser in – de launcher ziet het nooit."
+    },
+    "login": {
+      "signInMicrosoft": "Inloggen met Microsoft",
+      "browserOpened": "Het inloggen is geopend in je browser. Rond het daar af – de launcher gaat daarna automatisch verder.",
+      "enterCode": "Voer deze code in op de Microsoft-pagina die net is geopend:",
+      "copyCode": "Code kopiëren",
+      "clickToCopy": "Klik om te kopiëren",
+      "page": "Pagina: {url}",
+      "requestingCode": "Code aanvragen …",
+      "waiting": "Wachten op Microsoft …",
+      "notApprovedHint": "Dit is geen fout van de launcher: inloggen bij Microsoft en Xbox is gelukt, alleen de goedkeuring van de app door Mojang staat nog open. Zodra die er is, werkt inloggen zonder update."
+    },
+    "remove": {
+      "title": "Account uitloggen?",
+      "text": "{name} wordt uit de launcher verwijderd. Werelden en instanties blijven behouden."
+    }
+  },
+  "skins": {
+    "title": "Skins",
+    "subtitle": "Kies, pas ze aan in de preview en pas daarna alles in één keer toe.",
+    "savingCurrent": "Opslaan …",
+    "saveCurrent": "Huidige skin opslaan",
+    "add": "Skin toevoegen",
+    "loadErrorHint": "Je kunt je opgeslagen skins nog steeds beheren – voor het wisselen van skin op je account heb je een login en internetverbinding nodig.",
+    "previewLabel": "Preview en concept",
+    "previewHint": "Sleep om te draaien · Scroll om te zoomen",
+    "unapplied": "Niet toegepast",
+    "endTrsPreview": "TRS-preview beëindigen",
+    "animation": {
+      "walk": "Lopen",
+      "idle": "Rust",
+      "none": "Staan"
+    },
+    "model": "Model",
+    "variants": {
+      "classic": "Klassiek",
+      "slim": "Slank"
+    },
+    "variantHints": {
+      "classic": "Armen van 4 pixels breed (Steve)",
+      "slim": "Armen van 3 pixels breed (Alex)"
+    },
+    "skin": "Skin",
+    "cape": "Cape",
+    "defaultSkin": "Standaardskin",
+    "currentSkin": "Huidige skin",
+    "noCape": "Geen",
+    "submitting": "Versturen …",
+    "discard": "Verwerpen",
+    "applyHint": "Kies een skin, model en cape – er verandert niets tot je op “Toepassen” klikt.",
+    "mySkins": "Mijn skins",
+    "onAccount": "{variant} · op je account",
+    "defaultSkinHint": "Steve / Alex van Mojang",
+    "tryOnLabel": "{name} passen",
+    "selected": "Geselecteerd",
+    "tryOn": "Passen",
+    "empty": {
+      "title": "Nog geen eigen skins",
+      "text": "Voeg PNG-bestanden van 64×64 toe aan je collectie – dan kun je ze passen en samen toepassen."
+    },
+    "mojangCapes": "Mojang-capes",
+    "worn": "gedragen",
+    "noCapes": "Dit account heeft geen capes. Die komen alleen van Mojang – zoals de Migrator-cape.",
+    "addDialog": {
+      "namePlaceholder": "bijv. Winterskin",
+      "fileHint": "Daarna opent het bestandsvenster. PNG-bestanden van 64×64 (of 64×32 voor oude skins) zijn toegestaan.",
+      "chooseFile": "Bestand kiezen"
+    },
+    "addedToast": "“{name}” toegevoegd aan je collectie",
+    "savedToast": "Huidige skin opgeslagen als “{name}”",
+    "deleteDialog": {
+      "title": "Skin verwijderen?",
+      "text": "{name} wordt uit je collectie verwijderd. De skin die je draagt, verandert niet."
+    },
+    "sync": {
+      "applying": "Toepassen …",
+      "rateLimited": "Mojang remt af – wordt automatisch toegepast over {time}",
+      "rateLimitedSoon": "Mojang remt af – wordt zo automatisch toegepast",
+      "network": "Mojang is niet bereikbaar – opnieuw proberen over {time}",
+      "networkSoon": "Mojang is niet bereikbaar – zo opnieuw proberen",
+      "pacing": "Veel wijzigingen achter elkaar – toepassen over {time}",
+      "pacingSoon": "Veel wijzigingen achter elkaar – zo toepassen",
+      "failed": "De wijziging kon niet worden toegepast."
+    },
+    "viewer": {
+      "label": "3D-skinpreview",
+      "failed": "De 3D-preview kon niet worden gestart. Je grafische stuurprogramma’s ondersteunen waarschijnlijk geen WebGL."
+    }
+  },
+  "validation": {
+    "invalidCharacters": "Bevat ongeldige tekens",
+    "nameRequired": "Voer een naam in",
+    "maxChars": "Niet meer dan {max} tekens",
+    "javaPathInvalid": "Het Java-pad is ongeldig",
+    "javaPathNotJava": "Het Java-pad moet naar java.exe of javaw.exe verwijzen",
+    "commandTooLong": "Commando’s: niet meer dan {max} tekens",
+    "commandInvalidChars": "Het commando bevat ongeldige tekens",
+    "envKeyTooLong": "Variabelenamen: niet meer dan {max} tekens",
+    "envKeyFormat": "Variabelenamen: alleen letters, cijfers en _ (niet aan het begin)",
+    "envValueTooLong": "Waarden: niet meer dan {max} tekens",
+    "envValueInvalidChars": "De waarde bevat ongeldige tekens",
+    "envTooMany": "Niet meer dan {max} omgevingsvariabelen",
+    "envDuplicate": "Een omgevingsvariabele komt twee keer voor",
+    "jvmArgsInvalidChars": "De JVM-argumenten bevatten ongeldige tekens",
+    "groupTooLong": "Groepsnamen: niet meer dan {max} tekens",
+    "groupInvalidChars": "De groepsnaam bevat ongeldige tekens",
+    "minAboveMax": "Het minimum kan niet hoger zijn dan het maximum",
+    "addressRequired": "Voer een adres in",
+    "addressFormat": "Gebruik het formaat play.example.com of play.example.com:25565",
+    "nameInvalidChars": "De naam bevat ongeldige tekens",
+    "versionRequired": "Voer een versie in",
+    "versionFormat": "Alleen letters, cijfers en . - _ +",
+    "descriptionInvalidChars": "De beschrijving bevat ongeldige tekens",
+    "folderRequired": "Selecteer minstens één map",
+    "invalidInput": "Ongeldige invoer"
+  },
+  "titleBar": {
+    "forward": "Vooruit",
+    "ctrl": "Ctrl",
+    "minimize": "Minimaliseren",
+    "maximize": "Maximaliseren",
+    "restore": "Herstellen",
+    "running": {
+      "none": "Geen instantie actief",
+      "count": "{n} instantie actief | {n} instanties actief",
+      "menuLabel": "Actieve instanties",
+      "firstStarted": "Eerst gestart",
+      "uptime": "actief sinds {time}",
+      "openLogs": "Logs openen",
+      "openLogsNamed": "Logs van {name} openen"
+    }
+  },
+  "nav": {
+    "mainLabel": "Hoofdnavigatie",
+    "home": "Start",
+    "library": "Bibliotheek",
+    "discover": "Ontdekken",
+    "servers": "Servers",
+    "screenshots": "Screenshots",
+    "skins": "Skins",
+    "friends": "Vrienden",
+    "admin": "Admin",
+    "runningCount": "{n} actief | {n} actief",
+    "friendRequests": "{n} openstaand vriendschapsverzoek | {n} openstaande vriendschapsverzoeken",
+    "quickLaunch": "Snel starten",
+    "openNamed": "{name} openen",
+    "newInstance": "Nieuwe instantie",
+    "searchShortcut": "Zoeken (Ctrl+K)",
+    "searchTip": "Zoeken · Ctrl K",
+    "settings": "Instellingen",
+    "accountNamed": "Account: {name}",
+    "signIn": "Inloggen",
+    "collapseLabel": "Zijbalk inklappen",
+    "expandLabel": "Zijbalk uitklappen",
+    "collapse": "Inklappen",
+    "expand": "Uitklappen"
+  },
+  "accountMenu": {
+    "menuLabel": "Accounts",
+    "playingAs": "Speelt als",
+    "switching": "Wisselen …",
+    "switch": "Wisselen",
+    "noAccount": "Nog geen account – zonder inloggen start alleen de demomodus.",
+    "add": "Account toevoegen",
+    "manage": "Accounts beheren"
+  },
+  "palette": {
+    "dialogLabel": "Zoeken en commando’s",
+    "placeholder": "Instantie, mod, instelling of actie …",
+    "resultsLabel": "Resultaten",
+    "noResults": "Niets gevonden – andere spelling proberen?",
+    "hints": {
+      "select": "kiezen",
+      "open": "openen",
+      "second": "tweede actie"
+    },
+    "resultCount": "{n} resultaat | {n} resultaten",
+    "groups": {
+      "instances": "Instanties",
+      "mods": "Mods",
+      "servers": "Servers",
+      "settings": "Instellingen",
+      "pages": "Pagina’s",
+      "actions": "Acties"
+    },
+    "pages": {
+      "accounts": "Accounts"
+    },
+    "openPage": "Pagina openen",
+    "running": "actief",
+    "modEnabled": "ingeschakeld",
+    "modDisabled": "uitgeschakeld",
+    "projectPage": "Projectpagina",
+    "joinWith": "Joinen met “{name}”",
+    "keywords": {
+      "home": "start home thuis begin",
+      "library": "instanties bibliotheek library",
+      "discover": "modrinth mods modpacks zoeken bladeren ontdekken",
+      "servers": "server lijst serverlijst",
+      "accounts": "account inloggen aanmelden login microsoft",
+      "screenshots": "afbeeldingen foto’s galerij screenshots",
+      "skins": "cape skin",
+      "friends": "vrienden online verzoeken trs",
+      "settings": "instellingen opties voorkeuren",
+      "newInstance": "toevoegen aanmaken nieuw",
+      "import": "importeren prism multimc curseforge migreren",
+      "modpacks": "modpack pack installeren",
+      "dataDir": "map verkenner bestanden"
+    },
+    "actions": {
+      "newInstance": {
+        "title": "Nieuwe instantie aanmaken",
+        "subtitle": "Vanilla, Fabric, Quilt, Forge of NeoForge"
+      },
+      "import": {
+        "title": "Importeren uit andere launcher",
+        "subtitle": "Vanilla-launcher, Prism/MultiMC, CurseForge"
+      },
+      "modpacks": {
+        "title": "Modpacks bekijken",
+        "subtitle": "Kant-en-klare packs van Modrinth"
+      },
+      "dataDir": {
+        "title": "Gegevensmap openen",
+        "subtitle": "Map met instanties en instellingen"
+      }
+    }
+  },
+  "tasks": {
+    "title": "Taken",
+    "launcherUpdate": "Launcher-update",
+    "launcherUpdatePercent": "Launcher-update {percent}%",
+    "percent": "{percent}%",
+    "paused": "Gepauzeerd",
+    "pausedShort": "gepauzeerd",
+    "remaining": "nog {time}",
+    "failed": "mislukt",
+    "showNamed": "Taken tonen: {title}",
+    "activeCount": "Taken: {count} actief",
+    "close": "Taken sluiten",
+    "empty": {
+      "title": "Niets actief",
+      "text": "Downloads, installaties en imports verschijnen hier – ook als je van pagina wisselt."
+    },
+    "activeSection": "Actieve taken",
+    "doneSection": "Voltooide taken",
+    "resume": "Hervatten",
+    "pause": "Pauzeren",
+    "resumeNamed": "{title} hervatten",
+    "pauseNamed": "{title} pauzeren",
+    "cancelNamed": "{title} annuleren",
+    "progressNamed": "{title}: voortgang",
+    "updateBackground": "Update wordt op de achtergrond gedownload",
+    "clearAll": "Alles wissen",
+    "retryShort": "Opnieuw",
+    "retryNamed": "{title} opnieuw proberen",
+    "openNamed": "{title} openen",
+    "removeNamed": "{title} uit geschiedenis verwijderen",
+    "justNow": "zojuist",
+    "eta": {
+      "seconds": "{seconds} s",
+      "minutes": "{minutes} min",
+      "hours": "{hours} u",
+      "hoursMinutes": "{hours} u {minutes} min"
+    },
+    "kind": {
+      "modpack": "Modpack",
+      "modpackFile": "Modpack uit bestand",
+      "content": "Content geïnstalleerd",
+      "contentUpdate": "Content bijgewerkt",
+      "performancePack": "Prestatiepakket",
+      "java": "Java geïnstalleerd",
+      "import": "Instantie geïmporteerd",
+      "export": "Modpack geëxporteerd",
+      "create": "Nieuwe instantie",
+      "duplicate": "Instantie gedupliceerd",
+      "repair": "Instantie gerepareerd",
+      "reinstall": "Opnieuw geïnstalleerd",
+      "versionChange": "Versie gewijzigd",
+      "launch": "Spelstart"
+    },
+    "stage": {
+      "preparing": "Voorbereiden",
+      "cancelling": "Annuleren …",
+      "packLoading": "Modpack downloaden",
+      "packFiles": "Mods downloaden",
+      "packOverrides": "Bestanden uitpakken",
+      "checkingFiles": "Bestanden controleren",
+      "reinstalling": "Opnieuw installeren",
+      "installingInto": "Installeren in {name}"
+    },
+    "toast": {
+      "done": "{title} is klaar",
+      "failed": "{title}: {error}",
+      "openInstance": "Instantie openen",
+      "showTasks": "Taken tonen",
+      "details": "Details",
+      "modpackReady": "Modpack “{name}” is klaar",
+      "repairDone": "Alle bestanden gecontroleerd – beschadigde zijn opnieuw gedownload",
+      "reinstallDone": "Instantie opnieuw geïnstalleerd",
+      "contentVersionInstalled": "{title}: versie {version} geïnstalleerd",
+      "contentInstalled": "{title} geïnstalleerd",
+      "contentWithDependencies": "{title} en {n} afhankelijkheid geïnstalleerd | {title} en {n} afhankelijkheden geïnstalleerd"
+    }
+  },
+  "toasts": {
+    "times": "{count} keer"
+  },
+  "updater": {
+    "restartToUpdate": "Herstarten om bij te werken",
+    "installing": "Bijwerken …",
+    "retry": "Update opnieuw proberen",
+    "downloading": "TRS Launcher {version} downloaden … {percent}%",
+    "failed": "Update mislukt: {reason}",
+    "ready": "TRS Launcher {version} is klaar.",
+    "readyRunning": "TRS Launcher {version} is klaar. Actieve games blijven draaien.",
+    "downloadInstaller": "Installatieprogramma downloaden",
+    "splash": "Bijwerken – zo meteen herstarten …"
+  },
+  "play": {
+    "stopGame": "Spel stoppen",
+    "cancelLaunch": "Starten annuleren",
+    "runningStop": "Actief – stoppen",
+    "playNamed": "{name} spelen",
+    "stopNamed": "{name} stoppen",
+    "starting": "Starten …",
+    "startingShort": "Starten",
+    "runningNow": "Nu actief",
+    "preparing": "Voorbereiden …"
+  },
+  "instanceCard": {
+    "actionsFor": "Acties voor {name}",
+    "settings": "Instellingen",
+    "moveToGroup": "Naar groep verplaatsen",
+    "removeFromGroup": "Uit groep verwijderen",
+    "newGroup": "+ Nieuwe groep …"
+  },
+  "home": {
+    "greeting": {
+      "lateNight": "Nog wakker",
+      "lateNightNamed": "Nog wakker, {name}",
+      "morning": "Goedemorgen",
+      "morningNamed": "Goedemorgen, {name}",
+      "day": "Hallo",
+      "dayNamed": "Hallo, {name}",
+      "evening": "Goedenavond",
+      "eveningNamed": "Goedenavond, {name}"
+    },
+    "lastPlayed": "Laatst gespeeld: {name}",
+    "playedTime": "{time} gespeeld",
+    "openInstance": "Instantie openen",
+    "empty": {
+      "title": "Klaar om te spelen",
+      "text": "Maak je eerste instantie aan – vanilla of met een modloader – of pak meteen een kant-en-klaar modpack.",
+      "create": "Instantie aanmaken",
+      "modpacks": "Modpacks bekijken"
+    },
+    "continue": {
+      "title": "Verder spelen",
+      "totalPlayed": "In totaal {time} gespeeld",
+      "toLibrary": "Naar bibliotheek"
+    },
+    "add": {
+      "newInstanceHint": "Vanilla of met een modloader",
+      "discoverModpack": "Modpacks ontdekken",
+      "discoverModpackHint": "Kant-en-klare packs van Modrinth",
+      "importHint": "Uit Prism, CurseForge of vanilla"
+    },
+    "servers": {
+      "manageAll": "Alles beheren",
+      "joinHint": "Start “{name}” en maakt direct verbinding",
+      "joinHintNone": "Maak eerst een instantie aan",
+      "add": "Server toevoegen",
+      "addHint": "Live status en joinen met één klik",
+      "addHintEmpty": "Je servers met live status – joinen met één klik"
+    }
+  },
+  "news": {
+    "title": "Nieuws",
+    "filters": {
+      "all": "Alles",
+      "patchNotes": "Updates",
+      "mojang": "Minecraft",
+      "modrinth": "Mods",
+      "launcher": "Launcher"
+    },
+    "sourceMinecraftUpdate": "Minecraft-update",
+    "offlineHint": "Laatst opgeslagen versie – momenteel offline",
+    "sourceLabel": "Bron",
+    "reload": "Opnieuw laden",
+    "reloadLabel": "Nieuws opnieuw laden",
+    "empty": "Hier is op dit moment niets nieuws.",
+    "readPatchNotes": "Patchnotes lezen",
+    "openInBrowser": "Openen in browser",
+    "launcherReleased": "{title} is uit"
+  },
+  "game": {
+    "preparing": "Minecraft voorbereiden",
+    "crashed": "Het spel is onverwacht gesloten – de logs tonen meestal de oorzaak."
+  },
+  "settingsSections": {
+    "groups": {
+      "interface": "Interface",
+      "account": "Account",
+      "instances": "Instanties"
+    },
+    "app": {
+      "appearance": "Uiterlijk",
+      "features": "Functies",
+      "behavior": "Gedrag",
+      "language": "Taal",
+      "profile": "Profiel",
+      "privacy": "Privacy",
+      "defaults": "Standaardinstellingen",
+      "java": "Java-installaties",
+      "storage": "Opslag",
+      "network": "Netwerk"
+    },
+    "instance": {
+      "general": "Algemeen",
+      "installation": "Installatie",
+      "window": "Venster",
+      "java": "Java & geheugen",
+      "hooks": "Starthooks",
+      "sync": "Synchronisatie"
+    }
+  },
+  "trs": {
+    "invalidData": "De TRS-gegevens zijn ongeldig.",
+    "validation": {
+      "playerName": "Minecraft-namen hebben 1–16 tekens (A–Z, 0–9, _).",
+      "target": "Voer een Minecraft-naam in (1–16 tekens: A–Z, 0–9, _).",
+      "codeTooLong": "De code is te lang.",
+      "codeFormat": "Codes hebben 20 tekens, bijv. 7K3QF-M2XPA-9RTVB-C4HJN.",
+      "max32": "Maximaal 32 tekens.",
+      "capeNameChars": "Alleen letters, cijfers, spaties en . , ' ! ? & ( ) + - _",
+      "max200": "Maximaal 200 tekens.",
+      "invalidChars": "Bevat ongeldige tekens.",
+      "minUses": "Minstens 1 inwisseling.",
+      "maxUses": "Maximaal 100.000 inwisselingen.",
+      "minCount": "Minstens 1 code.",
+      "maxCount": "Maximaal 100 codes tegelijk.",
+      "invalidExpiry": "Ongeldige vervaldatum.",
+      "expiryPast": "De vervaldatum ligt in het verleden."
+    },
+    "unlock": {
+      "own": "Eigen",
+      "free": "Gratis",
+      "code": "Code",
+      "team": "Team",
+      "locked": "Vergrendeld"
+    },
+    "status": {
+      "pending": "Wacht op goedkeuring",
+      "rejected": "Afgewezen"
+    },
+    "presence": {
+      "online": "Online in de launcher",
+      "inGame": "In het spel",
+      "playing": "Speelt {version}",
+      "playingLoader": "Speelt {version} ({loader})",
+      "playingServer": "Speelt {version} op {server}",
+      "playingLoaderServer": "Speelt {version} ({loader}) op {server}"
+    },
+    "toasts": {
+      "friendRequest": "{name} wil je vriend worden."
+    }
+  },
+  "trsGate": {
+    "consent": {
+      "title": "TRS-diensten zijn uitgeschakeld",
+      "friends": "Om je vriendenlijst te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
+      "capes": "Om TRS-capes te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
+      "button": "Meer info & inschakelen"
+    },
+    "account": {
+      "title": "Geen account ingelogd",
+      "text": "Log in met je Minecraft-account onder “Accounts”.",
+      "button": "Naar accounts"
+    },
+    "banned": {
+      "title": "Je account is verbannen van TRS-diensten",
+      "text": "Daarom zijn capes en vrienden niet beschikbaar."
+    }
+  },
+  "trsConsent": {
+    "title": "TRS-diensten gebruiken?",
+    "intro": "Met TRS-diensten krijg je {capes}, een {friendsList} met onlinestatus en kun je vrienden naar hun server volgen. Daarvoor logt de launcher met je Minecraft-account in bij de TRS-server ({host}) – net zoals wanneer je een Minecraft-server joint. De server krijgt nooit je wachtwoord of je Minecraft-token.",
+    "capes": "TRS-capes",
+    "friendsList": "vriendenlijst",
+    "storedTitle": "Wat wordt opgeslagen",
+    "stored": {
+      "identity": "je Minecraft-UUID en spelersnaam",
+      "capes": "je gekozen cape, ingewisselde codes en geüploade cape-afbeeldingen",
+      "friends": "vrienden, verzoeken en blokkeringen",
+      "settings": "je privacy-instellingen en tijdstempels (inloggen, aanmaken)",
+      "presence": "je onlinestatus (launcher open / in het spel, versie en, als je dat wilt, de server) – alleen in het geheugen bewaard, verloopt na 3 minuten"
+    },
+    "footer": "Je kunt de diensten altijd uitschakelen onder {path} en daar al je TRS-gegevens verwijderen. Zonder jouw toestemming stuurt de launcher niets naar de TRS-server.",
+    "settingsPath": "Instellingen → Privacy",
+    "readPolicy": "Privacybeleid lezen",
+    "decline": "Nee, bedankt",
+    "wait": "Even geduld …",
+    "accept": "TRS-diensten gebruiken",
+    "enabled": "TRS-diensten zijn ingeschakeld."
+  },
+  "trsPrivacy": {
+    "heading": "TRS-diensten",
+    "intro": "Capes, vrienden en onlinestatus via de TRS-server.",
+    "whatStored": "Wat wordt opgeslagen?",
+    "services": {
+      "title": "TRS-diensten gebruiken",
+      "description": "Uit = de launcher stuurt niets naar de TRS-server en logt je daar uit. Ook de TRS Client gebruikt de diensten dan niet in het spel."
+    },
+    "turnedOff": "TRS-diensten uitgeschakeld – de launcher stuurt niets meer naar de TRS-server.",
+    "noAccount": "Log in met een Minecraft-account om deze instellingen te wijzigen.",
+    "offline": "De TRS-server is op dit moment niet bereikbaar.",
+    "loading": "Instellingen laden …",
+    "perAccount": "Geldt voor {name} – elk account heeft eigen instellingen.",
+    "badge": {
+      "title": "TRS-badge tonen",
+      "description": "Andere TRS-spelers zien in het spel dat je TRS gebruikt."
+    },
+    "cape": {
+      "title": "Cape zichtbaar voor anderen",
+      "description": "Uit = alleen jij ziet je TRS-cape."
+    },
+    "presence": {
+      "title": "Onlinestatus",
+      "description": "Wie kan zien of je online bent en wat je speelt.",
+      "label": "Onlinestatus zichtbaar voor",
+      "friends": "Vrienden",
+      "nobody": "Niemand"
+    },
+    "server": {
+      "title": "Server delen",
+      "description": "Vrienden zien op welke server je speelt en kunnen je volgen."
+    },
+    "delete": {
+      "title": "Alle TRS-gegevens verwijderen",
+      "description": "Verwijdert je TRS-account met capes, uploads, codes, vrienden en onlinestatus direct van de server. Daarna worden de TRS-diensten uitgeschakeld.",
+      "button": "Alle TRS-gegevens verwijderen …",
+      "confirm": "Echt alles van {name} verwijderen? Ontgrendelde capes en vrienden zijn dan weg – dit kan niet ongedaan worden gemaakt.",
+      "deleting": "Verwijderen …",
+      "confirmButton": "Ja, definitief verwijderen",
+      "done": "Alle TRS-gegevens van dit account zijn verwijderd. TRS-diensten staan nu uit."
+    }
+  },
+  "capes": {
+    "title": "TRS-capes",
+    "wearing": "Draagt: {name}",
+    "redeem": "Code inwisselen",
+    "upload": "Eigen cape uploaden",
+    "intro": "TRS-capes staan los van je Mojang-capes: iedereen die met de TRS Client speelt, kan ze zien. Je Mojang-cape wijzig je hierboven – de twee blijven gescheiden.",
+    "offline": "De TRS-server is op dit moment niet bereikbaar.",
+    "tryOn": "{name} passen",
+    "tryOnLocked": "{name} – nog vergrendeld (je kunt hem toch passen)",
+    "locked": "vergrendeld",
+    "animated": "geanimeerd",
+    "worn": "gedragen",
+    "empty": "Er zijn op dit moment geen TRS-capes.",
+    "selected": {
+      "pending": "Wacht op goedkeuring door het team – tot die tijd zie alleen jij hem.",
+      "rejected": "Afgewezen.",
+      "rejectedReason": "Afgewezen: {reason}.",
+      "lockedCode": "Vergrendeld – te ontgrendelen met een code.",
+      "lockedTeam": "Vergrendeld – alleen voor het TRS-team of via een code.",
+      "active": "Je draagt deze cape.",
+      "free": "Vrij beschikbaar – doe hem om zodat anderen hem zien.",
+      "unlocked": "Voor je ontgrendeld – doe hem om zodat anderen hem zien."
+    },
+    "actions": {
+      "wearing": "Omdoen …",
+      "wear": "Omdoen",
+      "removing": "Afdoen …",
+      "remove": "Afdoen",
+      "endPreview": "Preview beëindigen"
+    },
+    "pendingCount": "{n} cape wacht op goedkeuring. | {n} capes wachten op goedkeuring.",
+    "redeemDialog": {
+      "codeLabel": "Code",
+      "hint": "Hoofdletters, kleine letters en streepjes maken niet uit.",
+      "checking": "Controleren …",
+      "submit": "Inwisselen"
+    },
+    "uploadDialog": {
+      "nameLabel": "Naam (optioneel)",
+      "placeholder": "bijv. Mijn cape",
+      "rules": {
+        "size": "PNG van 64×32 pixels (of 128×64, 192×96, 256×128) of in het capeformaat 22×17 – maximaal 256 KB.",
+        "review": "Geen animatie. Het team beoordeelt elke cape; tot die tijd zie alleen jij hem.",
+        "rights": "Alleen je eigen afbeeldingen of afbeeldingen die je mag gebruiken – niets aanstootgevends."
+      },
+      "uploading": "Uploaden …",
+      "chooseFile": "Bestand kiezen"
+    },
+    "deleteDialog": {
+      "title": "Cape verwijderen?",
+      "text": "{name} wordt definitief verwijderd."
+    },
+    "toasts": {
+      "worn": "“{name}” omgedaan",
+      "removed": "TRS-cape afgedaan",
+      "alreadyOwned": "Je had “{name}” al.",
+      "unlocked": "“{name}” ontgrendeld!",
+      "uploaded": "Geüpload – je cape wacht op goedkeuring.",
+      "deleted": "Cape verwijderd"
+    }
+  },
+  "friends": {
+    "title": "Vrienden",
+    "subtitle": "Wie is online, wie speelt wat – en join ze met één klik.",
+    "add": "Vriend toevoegen",
+    "offline": "De TRS-server is op dit moment niet bereikbaar – de lijst is mogelijk verouderd.",
+    "tabs": {
+      "label": "Weergave",
+      "friends": "Vrienden",
+      "requests": "Verzoeken",
+      "blocked": "Geblokkeerd"
+    },
+    "join": {
+      "withLabel": "Joinen met",
+      "auto": "Passende instantie (automatisch)",
+      "button": "Joinen",
+      "withInstance": "Joinen met {name}",
+      "noInstance": "Geen instantie beschikbaar",
+      "starting": "{instance} starten en verbinden met {server} …"
+    },
+    "list": {
+      "usesTrs": "Gebruikt TRS",
+      "capeOf": "TRS-cape van {name}",
+      "moreActions": "Meer acties voor {name}",
+      "block": "Blokkeren",
+      "reportCape": "Cape melden"
+    },
+    "empty": {
+      "title": "Nog geen vrienden",
+      "text": "Je signaal bereikt nu nog niemand. Voeg vrienden toe via hun Minecraft-naam – zodra ze accepteren, gaat hun lamp hier branden."
+    },
+    "requests": {
+      "empty": "Geen openstaande verzoeken",
+      "incoming": "Aan jou",
+      "incomingText": "wil je vriend worden · {date}",
+      "accept": "Accepteren",
+      "decline": "Weigeren",
+      "outgoing": "Van jou",
+      "outgoingText": "wacht op antwoord · {date}",
+      "withdraw": "Intrekken"
+    },
+    "blocked": {
+      "placeholder": "Een Minecraft-naam blokkeren",
+      "inputLabel": "Naam om te blokkeren",
+      "hint": "Geblokkeerde spelers kunnen je niet vinden, je geen verzoeken sturen en zien je TRS-badge en cape niet. Ze krijgen hier geen melding van.",
+      "since": "sinds {date}",
+      "unblock": "Deblokkeren",
+      "empty": "Niemand geblokkeerd"
+    },
+    "addDialog": {
+      "nameLabel": "Minecraft-naam",
+      "placeholder": "bijv. Theredstonee",
+      "hint": "Je vriend moet de TRS Launcher minstens één keer met TRS-diensten hebben gebruikt.",
+      "sending": "Versturen …",
+      "send": "Verzoek sturen"
+    },
+    "confirm": {
+      "removeTitle": "Vriend verwijderen?",
+      "blockTitle": "Speler blokkeren?",
+      "removeText": "{name} wordt uit je vriendenlijst verwijderd.",
+      "blockText": "{name} wordt geblokkeerd: jullie vriendschap en openstaande verzoeken worden verwijderd en hij of zij kan je niet meer vinden."
+    },
+    "report": {
+      "title": "Cape melden",
+      "text": "De geüploade cape van {name} wordt gemeld bij het TRS-team.",
+      "reason": "Reden",
+      "reasons": {
+        "inappropriate": "Ongepast",
+        "copyright": "Auteursrecht",
+        "impersonation": "Doet zich voor als iemand anders",
+        "other": "Anders"
+      },
+      "note": "Notitie (optioneel)",
+      "submit": "Melden",
+      "thanks": "Bedankt – het team gaat de cape bekijken."
+    },
+    "toasts": {
+      "nowFriends": "Jij en {name} zijn nu vrienden.",
+      "requestSent": "Verzoek verstuurd naar {name}.",
+      "removed": "{name} staat niet meer in je vriendenlijst.",
+      "blocked": "{name} is geblokkeerd.",
+      "unblocked": "{name} is niet meer geblokkeerd."
+    }
+  },
+  "admin": {
+    "title": "Admin",
+    "subtitle": "TRS-diensten: capes beoordelen, codes, spelers en statistieken.",
+    "notAdmin": "Deze pagina is alleen voor admins van de TRS-diensten.",
+    "tabs": {
+      "label": "Onderdeel",
+      "overview": "Overzicht",
+      "capes": "Capes beoordelen",
+      "codes": "Codes",
+      "players": "Spelers"
+    },
+    "stats": {
+      "users": "Gebruikers",
+      "usersHint": "{count} actief (24 u)",
+      "online": "Online",
+      "onlineHint": "{count} live verbindingen",
+      "pending": "Openstaande capes",
+      "pendingHint": "{count} gemeld",
+      "worn": "Gedragen capes",
+      "wornHint": "{count} uploads goedgekeurd",
+      "codes": "Actieve codes",
+      "codesHint": "{count} ingewisseld",
+      "friendships": "Vriendschappen",
+      "friendshipsHint": "{count} openstaande verzoeken",
+      "banned": "Verbannen",
+      "bannedHint": "{count} sessies"
+    },
+    "review": {
+      "lists": {
+        "pending": "Openstaand",
+        "reported": "Gemeld",
+        "approved": "Goedgekeurd",
+        "rejected": "Afgewezen"
+      },
+      "emptyPending": "Alles goedgekeurd – geen capes in de wachtrij.",
+      "empty": "Niets hier.",
+      "fullTexture": "Volledige texture",
+      "byOwner": "door {owner} · {date} · {size}",
+      "deletedAccount": "een verwijderd account",
+      "reported": "{count}× gemeld: {reasons}",
+      "reasons": {
+        "inappropriate": "ongepast",
+        "copyright": "auteursrecht",
+        "impersonation": "imitatie",
+        "other": "anders"
+      },
+      "rejectReason": "Reden: {reason}",
+      "reviewed": "Beoordeeld {date}",
+      "approve": "Goedkeuren",
+      "reject": "Afwijzen"
+    },
+    "codes": {
+      "cape": "Cape",
+      "chooseCape": "Cape kiezen …",
+      "usesPerCode": "Inwisselingen per code",
+      "count": "Aantal codes",
+      "validUntil": "Geldig tot (optioneel)",
+      "note": "Notitie (optioneel)",
+      "notePlaceholder": "bijv. Discord-giveaway",
+      "creating": "Aanmaken …",
+      "create": "Codes aanmaken",
+      "pickCape": "Kies een cape.",
+      "newCodes": "Nieuwe codes – alleen nu zichtbaar, sla ze meteen op!",
+      "copyAll": "Alles kopiëren",
+      "hide": "Verbergen",
+      "empty": "Nog geen codes",
+      "table": {
+        "code": "Code",
+        "cape": "Cape",
+        "redeemed": "Ingewisseld",
+        "validUntil": "Geldig tot",
+        "note": "Notitie"
+      },
+      "unlimited": "onbeperkt",
+      "revoked": "ingetrokken",
+      "revoke": "Intrekken"
+    },
+    "players": {
+      "placeholder": "Minecraft-naam of UUID",
+      "searchLabel": "Speler zoeken",
+      "searching": "Zoeken …",
+      "admin": "Admin",
+      "banned": "Verbannen",
+      "copyUuid": "UUID kopiëren",
+      "since": "Lid sinds",
+      "lastLogin": "Laatste login",
+      "friends": "Vrienden",
+      "uploadsSessions": "Uploads / sessies",
+      "neverUsed": "Heeft nooit TRS-diensten gebruikt – alleen een ban is mogelijk.",
+      "bannedOn": "Verbannen op {date}",
+      "bannedOnReason": "Verbannen op {date} – {reason}",
+      "capes": "Capes",
+      "revokeCape": "{cape} intrekken",
+      "noCapes": "Geen toegekende capes.",
+      "grantLabel": "Cape toekennen",
+      "grantPlaceholder": "Cape toekennen …",
+      "grant": "Toekennen",
+      "ban": "Ban",
+      "unban": "Ban opheffen",
+      "reasonPlaceholder": "Reden (optioneel)",
+      "reasonLabel": "Reden voor de ban",
+      "banButton": "Verbannen …",
+      "adminsNotBannable": "Admins kunnen niet worden verbannen."
+    },
+    "dialogs": {
+      "rejectTitle": "Cape afwijzen?",
+      "rejectText": "{name} wordt afgewezen en niemand draagt hem nog.",
+      "rejectReasonLabel": "Reden (zichtbaar voor de uploader)",
+      "rejectPlaceholder": "bijv. auteursrecht",
+      "deleteTitle": "Cape verwijderen?",
+      "deleteText": "{name} van {owner} wordt definitief verwijderd, inclusief het bestand.",
+      "unknownOwner": "onbekend",
+      "revokeTitle": "Code intrekken?",
+      "revokeText": "De code {code} voor {cape} kan daarna niet meer worden ingewisseld. Al ontgrendelde capes blijven behouden.",
+      "banTitle": "Speler verbannen?",
+      "banText": "{name} verliest direct de toegang tot alle TRS-diensten: sessies worden beëindigd en de onlinestatus verdwijnt.",
+      "banConfirm": "Verbannen"
+    },
+    "toasts": {
+      "approved": "“{name}” goedgekeurd",
+      "rejected": "“{name}” afgewezen",
+      "capeDeleted": "Cape verwijderd",
+      "codesCreated": "{n} code aangemaakt | {n} codes aangemaakt",
+      "copied": {
+        "code": "Code gekopieerd",
+        "all": "Alle codes gekopieerd",
+        "uuid": "UUID gekopieerd"
+      },
+      "copyFailed": "Kopiëren mislukt.",
+      "codeRevoked": "Code ingetrokken",
+      "alreadyHad": "Had de cape al.",
+      "granted": "{cape} toegekend aan {player}",
+      "playerFallback": "speler",
+      "grantRevoked": "Cape ingetrokken",
+      "banned": "Speler verbannen",
+      "unbanned": "Ban opgeheven"
+    }
+  }
+}

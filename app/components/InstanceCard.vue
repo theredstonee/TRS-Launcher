@@ -56,20 +56,20 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
             ? 'bg-lamp-400 text-base-950 opacity-100'
             : 'translate-y-1 bg-redstone-500 text-white opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 hover:bg-redstone-400',
         ]"
-        :aria-label="game.phase === 'running' ? `${instance.name} stoppen` : `${instance.name} spielen`"
-        :title="game.phase === 'running' ? 'Läuft – stoppen' : 'Spielen'"
+        :aria-label="game.phase === 'running' ? t('play.stopNamed', { name: instance.name }) : t('play.playNamed', { name: instance.name })"
+        :title="game.phase === 'running' ? t('play.runningStop') : t('common.actions.play')"
         @click="play"
       >
         <svg v-if="game.phase === 'running'" viewBox="0 0 24 24" class="size-4" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="1" /></svg>
         <svg v-else viewBox="0 0 24 24" class="ml-0.5 size-5" fill="currentColor"><path d="M7 4v16l13-8z" /></svg>
       </button>
       <div v-else class="absolute inset-x-2 bottom-2 rounded-lg bg-base-950/85 px-2.5 py-1.5 backdrop-blur" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100">
-        <div class="flex justify-between text-[11px]"><span class="text-base-200">Starte …</span><span class="display text-redstone-300">{{ percent }} %</span></div>
+        <div class="flex justify-between text-[11px]"><span class="text-base-200">{{ t('play.starting') }}</span><span class="display text-redstone-300">{{ t('tasks.percent', { percent }) }}</span></div>
         <RedstoneWire :percent="percent" :segments="16" class="mt-1" />
       </div>
 
       <span v-if="game.phase === 'running'" class="badge absolute top-2 left-2 bg-lamp-400 text-base-950">
-        <span class="size-1.5 animate-lamp rounded-full bg-base-950" />Läuft
+        <span class="size-1.5 animate-lamp rounded-full bg-base-950" />{{ t('common.status.running') }}
       </span>
 
       <!-- Das Instanz-Bild sitzt auf der Kante des Banners. -->
@@ -90,36 +90,36 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
           {{ loaderLabels[instance.loader.kind] }} <span class="font-mono text-base-200">{{ instance.gameVersion }}</span>
         </p>
         <p v-if="!compact" class="mt-0.5 truncate text-[11px] text-base-600">
-          {{ game.phase === 'running' ? 'Läuft gerade' : formatRelative(instance.lastPlayed) }}<template v-if="showPlayTime && instance.totalPlaySeconds >= 60"> · {{ formatPlayTime(instance.totalPlaySeconds) }}</template>
+          {{ game.phase === 'running' ? t('play.runningNow') : formatRelative(instance.lastPlayed) }}<template v-if="showPlayTime && instance.totalPlaySeconds >= 60"> · {{ formatPlayTime(instance.totalPlaySeconds) }}</template>
         </p>
       </div>
 
       <div class="relative shrink-0" :data-card-menu="instance.id">
-        <button class="btn-icon size-7 bg-transparent text-base-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100" :class="{ 'opacity-100': menu }" :aria-label="`Aktionen für ${instance.name}`" :aria-expanded="!!menu" @click="menu = menu ? null : 'main'">
+        <button class="btn-icon size-7 bg-transparent text-base-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100" :class="{ 'opacity-100': menu }" :aria-label="t('instanceCard.actionsFor', { name: instance.name })" :aria-expanded="!!menu" @click="menu = menu ? null : 'main'">
           <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
         </button>
         <div v-if="menu === 'main'" class="menu right-0 bottom-8" role="menu">
-          <button class="menu-item" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; games.launch(instance.id)">Spielen</button>
-          <NuxtLink :to="{ path: `/instances/${instance.id}`, query: { settings: 'general' } }" class="menu-item" role="menuitem">Einstellungen</NuxtLink>
+          <button class="menu-item" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; games.launch(instance.id)">{{ t('common.actions.play') }}</button>
+          <NuxtLink :to="{ path: `/instances/${instance.id}`, query: { settings: 'general' } }" class="menu-item" role="menuitem">{{ t('instanceCard.settings') }}</NuxtLink>
           <button class="menu-item justify-between" role="menuitem" @click="menu = 'groups'">
-            In Gruppe verschieben
+            {{ t('instanceCard.moveToGroup') }}
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 5 7 7-7 7" /></svg>
           </button>
-          <button class="menu-item" role="menuitem" @click="openFolder">Ordner öffnen</button>
+          <button class="menu-item" role="menuitem" @click="openFolder">{{ t('common.actions.openFolder') }}</button>
           <div class="my-1 border-t border-base-700" />
-          <button class="menu-item text-redstone-300" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; emit('delete', instance)">Löschen</button>
+          <button class="menu-item text-redstone-300" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; emit('delete', instance)">{{ t('common.actions.delete') }}</button>
         </div>
-        <div v-else-if="menu === 'groups'" class="menu right-0 bottom-8 max-h-72 overflow-y-auto" role="menu" aria-label="In Gruppe verschieben">
+        <div v-else-if="menu === 'groups'" class="menu right-0 bottom-8 max-h-72 overflow-y-auto" role="menu" :aria-label="t('instanceCard.moveToGroup')">
           <button class="menu-item text-base-400" role="menuitem" @click="menu = 'main'">
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 5-7 7 7 7" /></svg>
-            Zurück
+            {{ t('common.actions.back') }}
           </button>
           <button v-for="g in groups" :key="g" class="menu-item" role="menuitemradio" :aria-checked="instance.group === g" @click="menu = null; emit('move', g)">
             <span class="size-1.5 rounded-full" :class="instance.group === g ? 'bg-redstone-400' : 'bg-transparent'" />{{ g }}
           </button>
-          <button v-if="instance.group" class="menu-item" role="menuitem" @click="menu = null; emit('move', null)">Aus der Gruppe nehmen</button>
+          <button v-if="instance.group" class="menu-item" role="menuitem" @click="menu = null; emit('move', null)">{{ t('instanceCard.removeFromGroup') }}</button>
           <div class="my-1 border-t border-base-700" />
-          <button class="menu-item" role="menuitem" @click="menu = null; emit('newGroup', instance)">+ Neue Gruppe …</button>
+          <button class="menu-item" role="menuitem" @click="menu = null; emit('newGroup', instance)">{{ t('instanceCard.newGroup') }}</button>
         </div>
       </div>
     </div>

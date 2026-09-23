@@ -1,4 +1,7 @@
 import type { Instance, LoaderKind } from '~/types'
+// Relativ importiert, damit Tests die Helfer ohne Nuxt laden können.
+import { compareText } from './format'
+import { t } from './i18n'
 
 // Sortieren, Filtern und Gruppieren der Bibliothek – reine Funktionen, getestet in tests/library.test.ts.
 
@@ -18,20 +21,11 @@ export interface LibraryGroup {
   items: Instance[]
 }
 
-export const sortLabels: Record<LibrarySort, string> = {
-  played: 'Zuletzt gespielt',
-  name: 'Name',
-  created: 'Erstellt',
-  playtime: 'Spielzeit',
-  version: 'Version',
-}
+/** Sortierungen in Menü-Reihenfolge – Texte unter `library.sort.*`. */
+export const librarySorts: LibrarySort[] = ['played', 'name', 'created', 'playtime', 'version']
 
-export const groupLabels: Record<LibraryGroupBy, string> = {
-  none: 'Keine',
-  loader: 'Modloader',
-  version: 'Minecraft-Version',
-  custom: 'Eigene Gruppen',
-}
+/** Gruppierungen in Menü-Reihenfolge – Texte unter `library.groupBy.*`. */
+export const libraryGroupBys: LibraryGroupBy[] = ['none', 'loader', 'version', 'custom']
 
 const LOADER_ORDER: LoaderKind[] = ['vanilla', 'fabric', 'quilt', 'forge', 'neoforge']
 const LOADER_NAMES: Record<LoaderKind, string> = {
@@ -69,7 +63,7 @@ export function majorVersion(v: string): string {
   return m ? m[1]! : v
 }
 
-const byName = (a: Instance, b: Instance) => a.name.localeCompare(b.name, 'de', { sensitivity: 'base' })
+const byName = (a: Instance, b: Instance) => compareText(a.name, b.name)
 const time = (iso: string | null) => (iso ? new Date(iso).getTime() : 0)
 
 export function sortInstances(list: Instance[], sort: LibrarySort, order?: Map<string, number>): Instance[] {
@@ -95,7 +89,7 @@ export function filterInstances(list: Instance[], filter: LibraryFilter): Instan
   )
 }
 
-/** Gruppiert die (bereits sortierte) Liste; die Reihenfolge innerhalb bleibt. */
+/** Gruppiert die (bereits sortierte) Liste; die Reihenfolge innerhalb bleibt. Beschriftungen in der eingestellten Sprache. */
 export function groupInstances(list: Instance[], groupBy: LibraryGroupBy, order?: Map<string, number>): LibraryGroup[] {
   if (groupBy === 'none') return [{ key: 'all', label: '', items: list }]
   const groups = new Map<string, LibraryGroup>()
@@ -107,16 +101,16 @@ export function groupInstances(list: Instance[], groupBy: LibraryGroupBy, order?
   for (const i of list) {
     if (groupBy === 'loader') add(i.loader.kind, LOADER_NAMES[i.loader.kind], i)
     else if (groupBy === 'version') add(majorVersion(i.gameVersion), `Minecraft ${majorVersion(i.gameVersion)}`, i)
-    else add(i.group ? `g:${i.group}` : 'none', i.group ?? 'Ohne Gruppe', i)
+    else add(i.group ? `g:${i.group}` : 'none', i.group ?? t('library.ungrouped'), i)
   }
   const result = [...groups.values()]
   if (groupBy === 'loader') result.sort((a, b) => LOADER_ORDER.indexOf(a.key as LoaderKind) - LOADER_ORDER.indexOf(b.key as LoaderKind))
   else if (groupBy === 'version') result.sort((a, b) => compareGameVersions(a.items[0]!.gameVersion, b.items[0]!.gameVersion, order) || compareGameVersions(a.key, b.key))
-  else result.sort((a, b) => (a.key === 'none' ? 1 : b.key === 'none' ? -1 : a.label.localeCompare(b.label, 'de')))
+  else result.sort((a, b) => (a.key === 'none' ? 1 : b.key === 'none' ? -1 : compareText(a.label, b.label)))
   return result
 }
 
 /** Alle eigenen Gruppen, alphabetisch. */
 export function customGroups(list: Instance[]): string[] {
-  return [...new Set(list.map((i) => i.group).filter((g): g is string => !!g))].sort((a, b) => a.localeCompare(b, 'de'))
+  return [...new Set(list.map((i) => i.group).filter((g): g is string => !!g))].sort(compareText)
 }

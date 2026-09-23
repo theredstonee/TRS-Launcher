@@ -434,31 +434,31 @@ fn is_safe_category(c: &str) -> bool {
 /// der Anfrage an Modrinth.
 fn validate_search(params: &SearchParams) -> Result<()> {
     if params.query.chars().count() > MAX_QUERY_LEN {
-        return Err(Error::validation("Suchbegriff ist zu lang"));
+        return Err(Error::validation(crate::msg!("modrinth.queryTooLong", "Suchbegriff ist zu lang")));
     }
     if params.limit == 0 || params.limit > MAX_SEARCH_LIMIT {
-        return Err(Error::validation("Ungültige Seitengröße"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidPageSize", "Ungültige Seitengröße")));
     }
     if params.offset > MAX_SEARCH_OFFSET {
-        return Err(Error::validation("Ungültige Seite"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidPage", "Ungültige Seite")));
     }
     let lists = [&params.game_versions, &params.loaders, &params.categories, &params.exclude_categories];
     if lists.iter().any(|l| l.len() > MAX_FILTER_VALUES) || params.environments.len() > 2 {
-        return Err(Error::validation("Zu viele Filter"));
+        return Err(Error::validation(crate::msg!("modrinth.tooManyFilters", "Zu viele Filter")));
     }
     if !params.game_versions.iter().all(|v| is_safe_game_version(v)) {
-        return Err(Error::validation("Ungültige Spielversion"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidGameVersion", "Ungültige Spielversion")));
     }
     if !params.loaders.iter().all(|l| SEARCH_LOADERS.contains(&l.as_str())) {
-        return Err(Error::validation("Unbekannter Modloader"));
+        return Err(Error::validation(crate::msg!("modrinth.unknownLoader", "Unbekannter Modloader")));
     }
     if !params.categories.iter().chain(&params.exclude_categories).all(|c| is_safe_category(c)) {
-        return Err(Error::validation("Ungültige Kategorie"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidCategory", "Ungültige Kategorie")));
     }
     if params.exclude_project_ids.len() > MAX_EXCLUDED_PROJECTS
         || !params.exclude_project_ids.iter().all(|id| is_safe_project_id(id))
     {
-        return Err(Error::validation("Ungültige Projektliste"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidProjectList", "Ungültige Projektliste")));
     }
     Ok(())
 }
@@ -890,7 +890,7 @@ async fn fetch_projects(http: &reqwest::Client, ids: &[String]) -> Result<Vec<(R
 
 pub async fn project_cards(http: &reqwest::Client, ids: &[String]) -> Result<Vec<ProjectCard>> {
     if ids.len() > 200 {
-        return Err(Error::validation("Zu viele Projekte auf einmal"));
+        return Err(Error::validation(crate::msg!("modrinth.tooManyProjects", "Zu viele Projekte auf einmal")));
     }
     Ok(fetch_projects(http, ids)
         .await?
@@ -911,12 +911,12 @@ pub async fn project_cards(http: &reqwest::Client, ids: &[String]) -> Result<Vec
 /// Alles für die Detailansicht eines Projekts. `id_or_slug` wie bei Modrinth.
 pub async fn project_details(http: &reqwest::Client, id_or_slug: &str) -> Result<ProjectDetails> {
     if !is_safe_project_id(id_or_slug) {
-        return Err(Error::validation("Ungültige Projekt-ID"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
     }
     let p: RawProject =
         http.get(format!("{API}/project/{id_or_slug}")).send().await?.error_for_status()?.json().await?;
     if !is_safe_project_id(&p.id) {
-        return Err(Error::validation("Ungültige Projekt-ID"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
     }
     let members: Vec<RawMember> = match http.get(format!("{API}/project/{}/members", p.id)).send().await {
         Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
@@ -976,7 +976,7 @@ pub async fn project_details(http: &reqwest::Client, id_or_slug: &str) -> Result
 /// Alle Versionen eines Projekts (für die Detailansicht, dort gefiltert).
 pub async fn project_versions(http: &reqwest::Client, project_id: &str) -> Result<Vec<VersionSummary>> {
     if !is_safe_project_id(project_id) {
-        return Err(Error::validation("Ungültige Projekt-ID"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
     }
     let versions: Vec<Version> =
         http.get(format!("{API}/project/{project_id}/version")).send().await?.error_for_status()?.json().await?;
@@ -1016,7 +1016,7 @@ fn newest_in_channel(versions: Vec<Version>, channel: UpdateChannel) -> Option<V
 
 pub(crate) async fn version_by_id(http: &reqwest::Client, version_id: &str) -> Result<Version> {
     if !is_safe_project_id(version_id) {
-        return Err(Error::validation("Ungültige Versions-ID"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidVersionId", "Ungültige Versions-ID")));
     }
     Ok(http.get(format!("{API}/version/{version_id}")).send().await?.error_for_status()?.json().await?)
 }
@@ -1028,7 +1028,7 @@ pub async fn list_versions(
     kind: ContentKind,
 ) -> Result<Vec<VersionSummary>> {
     if !is_safe_project_id(project_id) {
-        return Err(Error::validation("Ungültige Projekt-ID"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
     }
     let versions = compatible_versions(http, project_id, kind, instance).await?;
     Ok(versions.into_iter().filter_map(summarize).take(100).collect())
@@ -1055,7 +1055,7 @@ pub async fn changelog_since(
     installed_version_id: &str,
 ) -> Result<Vec<VersionSummary>> {
     if !is_safe_project_id(project_id) || !is_safe_project_id(installed_version_id) {
-        return Err(Error::validation("Ungültige Projekt-ID"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
     }
     let channel = instance.overrides.channel();
     let mut versions = compatible_versions(http, project_id, kind, instance).await?;
@@ -1071,9 +1071,10 @@ pub async fn changelog_since(
 
 fn ensure_mods_allowed(kind: ContentKind, instance: &Instance) -> Result<()> {
     if kind == ContentKind::Mod && loader_tags(content_loader(instance)).is_empty() {
-        return Err(Error::validation(
-            "Diese Instanz ist Vanilla – Mods brauchen eine Instanz mit Fabric, Quilt, Forge oder NeoForge.",
-        ));
+        return Err(Error::validation(crate::msg!(
+            "modrinth.vanillaNoMods",
+            "Diese Instanz ist Vanilla – Mods brauchen eine Instanz mit Fabric, Quilt, Forge oder NeoForge."
+        )));
     }
     Ok(())
 }
@@ -1099,7 +1100,7 @@ pub async fn install(
     version_id: Option<&str>,
 ) -> Result<Vec<String>> {
     if !is_safe_project_id(project_id) {
-        return Err(Error::validation("Ungültige Projekt-ID"));
+        return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
     }
     ensure_mods_allowed(kind, instance)?;
 
@@ -1112,14 +1113,18 @@ pub async fn install(
             let version = version_by_id(http, id).await?;
             // Slug oder ID: bei einer ID muss sie zur Version passen.
             if version.project_id != project_id && !compatible_versions(http, project_id, kind, instance).await?.iter().any(|v| v.id == version.id) {
-                return Err(Error::validation("Diese Version gehört nicht zu dem Projekt."));
+                return Err(Error::validation(crate::msg!(
+                    "modrinth.versionNotInProject",
+                    "Diese Version gehört nicht zu dem Projekt."
+                )));
             }
             version
         }
         None => newest_in_channel(compatible_versions(http, project_id, kind, instance).await?, instance.overrides.channel()).ok_or_else(|| {
-            Error::validation(format!(
-                "Für Minecraft {} mit diesem Modloader gibt es keine passende Version.",
-                instance.game_version
+            Error::validation(crate::msg!(
+                "modrinth.noCompatibleVersion",
+                "Für Minecraft {version} mit diesem Modloader gibt es keine passende Version.",
+                version = &instance.game_version
             ))
         })?,
     };
@@ -1168,7 +1173,10 @@ async fn install_version(
     replace: Option<&str>,
     dependency: bool,
 ) -> Result<Installed> {
-    let file = version.primary_file().ok_or_else(|| Error::validation("Diese Version enthält keine Datei."))?;
+    let file = version.primary_file().ok_or_else(|| Error::validation(crate::msg!(
+        "modrinth.versionHasNoFile",
+        "Diese Version enthält keine Datei."
+    )))?;
 
     content::validate_file_name(kind, &file.filename)?;
     if !file.url.starts_with(CDN_PREFIX) {
@@ -1398,7 +1406,10 @@ pub async fn install_performance_pack(
         }
     }
     if installed.is_empty() {
-        return Err(Error::validation("Für diese Version gibt es keine der Optimierungs-Mods."));
+        return Err(Error::validation(crate::msg!(
+            "modrinth.noPerformanceMods",
+            "Für diese Version gibt es keine der Optimierungs-Mods."
+        )));
     }
     installed.sort();
     installed.dedup();

@@ -29,7 +29,7 @@ const pingClass = computed(() => {
       <span
         class="absolute -right-1 -bottom-1 size-3 border-2 border-base-900"
         :class="status === undefined ? 'animate-lamp bg-base-600' : status.online ? 'bg-ok shadow-[0_0_8px_var(--color-ok)]' : 'bg-redstone-500'"
-        :title="status === undefined ? 'Wird abgefragt' : status.online ? 'Online' : 'Nicht erreichbar'"
+        :title="status === undefined ? t('servers.card.checking') : status.online ? t('common.status.online') : t('servers.card.unreachable')"
       />
     </div>
 
@@ -44,7 +44,7 @@ const pingClass = computed(() => {
       <p v-else-if="status.online" class="truncate text-xs text-base-400" :title="status.motd">
         {{ status.motd.split('\n')[0] || status.version }}
       </p>
-      <p v-else class="text-xs text-base-600">Nicht erreichbar</p>
+      <p v-else class="text-xs text-base-600">{{ t('servers.card.unreachable') }}</p>
     </div>
 
     <div v-if="status?.online" class="shrink-0 text-right text-xs">
@@ -54,9 +54,9 @@ const pingClass = computed(() => {
 
     <div class="flex shrink-0 items-center gap-1.5">
       <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="joinDisabled" :title="joinHint" @click="emit('join', server)">
-        Beitreten
+        {{ t('servers.card.join') }}
       </button>
-      <button v-if="!compact" class="btn btn-ghost px-2 py-1.5" title="Bearbeiten" aria-label="Bearbeiten" @click="emit('edit', server)">
+      <button v-if="!compact" class="btn btn-ghost px-2 py-1.5" :title="t('common.actions.edit')" :aria-label="t('common.actions.edit')" @click="emit('edit', server)">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></svg>
       </button>
     </div>

@@ -18,7 +18,7 @@ const id = useId()
       @click="open = !open"
     >
       <span class="flex-1">{{ title }}</span>
-      <svg v-if="locked" viewBox="0 0 24 24" class="size-3.5 text-base-400" fill="none" stroke="currentColor" stroke-width="2.4" aria-label="Gesperrt"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+      <svg v-if="locked" viewBox="0 0 24 24" class="size-3.5 text-base-400" fill="none" stroke="currentColor" stroke-width="2.4" :aria-label="t('browse.filters.locked')"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
       <span v-if="count" class="rounded-full bg-redstone-900 px-1.5 text-[11px] font-medium text-redstone-300 tabular-nums">{{ count }}</span>
       <svg viewBox="0 0 24 24" class="size-4 text-base-400 transition-transform" :class="{ '-rotate-90': !open }" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" /></svg>
     </button>

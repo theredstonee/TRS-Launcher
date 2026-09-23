@@ -155,9 +155,9 @@ watch(() => props.height, resize)
 
 <template>
   <div ref="box" class="relative w-full" :style="{ height: `${height}px` }">
-    <canvas ref="canvas" class="size-full cursor-grab active:cursor-grabbing" aria-label="3D-Vorschau des Skins" />
+    <canvas ref="canvas" class="size-full cursor-grab active:cursor-grabbing" :aria-label="t('skins.viewer.label')" />
     <div v-if="failed" class="absolute inset-0 grid place-items-center px-4 text-center text-sm text-base-400">
-      Die 3D-Vorschau konnte nicht gestartet werden. Deine Grafiktreiber unterstützen vermutlich kein WebGL.
+      {{ t('skins.viewer.failed') }}
     </div>
   </div>
 </template>

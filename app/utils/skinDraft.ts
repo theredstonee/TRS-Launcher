@@ -1,4 +1,7 @@
 import type { SkinChanges, SkinProfile, SkinSyncStatus, SkinVariant } from '~/types'
+// Relativ importiert, damit die Tests die Datei ohne Nuxt laden können.
+import { t } from './i18n'
+import { userErrorText } from './backend'
 
 // Lokaler Entwurf für Skin, Modell und Umhang – wie in der Modrinth App:
 // Auswählen ändert nur den Entwurf (sofort in der 3D-Vorschau, ohne Netzwerk),
@@ -86,13 +89,13 @@ export function syncLabel(status: SkinSyncStatus | null, now: number): string | 
   const left = status.retryAt != null ? formatCountdown(status.retryAt - now) : null
   switch (status.state) {
     case 'applying':
-      return 'Wird angewendet …'
-    case 'waiting':
-      if (status.reason === 'rateLimited') return `Mojang bremst – wird in ${left ?? 'Kürze'} automatisch angewendet`
-      if (status.reason === 'network') return `Mojang nicht erreichbar – neuer Versuch in ${left ?? 'Kürze'}`
-      return `Viele Änderungen kurz hintereinander – wird in ${left ?? 'Kürze'} angewendet`
+      return t('skins.sync.applying')
+    case 'waiting': {
+      const reason = status.reason === 'rateLimited' || status.reason === 'network' ? status.reason : 'pacing'
+      return left ? t(`skins.sync.${reason}`, { time: left }) : t(`skins.sync.${reason}Soon`)
+    }
     case 'failed':
-      return status.message ?? 'Die Änderung konnte nicht angewendet werden.'
+      return status.errorInfo ? userErrorText(status.errorInfo) : (status.message ?? t('skins.sync.failed'))
     default:
       return null
   }

@@ -34,12 +34,12 @@ const count = computed(() => tasks.active.length + (updating.value ? 1 : 0))
 const lead = computed(() => tasks.active[0] ?? null)
 
 const leadLabel = computed(() => {
-  const t = lead.value
-  if (!t) return updating.value ? `Launcher-Update ${updater.percent} %` : ''
-  if (t.paused) return 'Pausiert'
-  if (t.speed > 0) return formatSpeed(t.speed)
-  if (t.doneBytes > 0) return formatSize(t.doneBytes)
-  return t.percent !== null ? `${t.percent} %` : ''
+  const task = lead.value
+  if (!task) return updating.value ? t('tasks.launcherUpdatePercent', { percent: updater.percent }) : ''
+  if (task.paused) return t('tasks.paused')
+  if (task.speed > 0) return formatSpeed(task.speed)
+  if (task.doneBytes > 0) return formatSize(task.doneBytes)
+  return task.percent !== null ? t('tasks.percent', { percent: task.percent }) : ''
 })
 
 function instanceOf(id: string | null | undefined) {
@@ -61,22 +61,28 @@ function kindIcon(kind: TaskKind): string {
   return kindIcons[kind] ?? icons.install
 }
 
-function rowMeta(t: Task): string {
+function rowMeta(task: Task): string {
   const parts: string[] = []
-  if (t.doneBytes > 0 || t.totalBytes > 0) parts.push(formatProgressBytes(t.doneBytes, t.totalBytes))
-  if (t.paused) parts.push('pausiert')
+  if (task.doneBytes > 0 || task.totalBytes > 0) parts.push(formatProgressBytes(task.doneBytes, task.totalBytes))
+  if (task.paused) parts.push(t('tasks.pausedShort'))
   else {
-    if (t.speed > 0) parts.push(formatSpeed(t.speed))
-    const eta = t.totalBytes > 0 ? formatEta(t.totalBytes - t.doneBytes, t.speed) : null
-    if (eta) parts.push(`noch ${eta}`)
+    if (task.speed > 0) parts.push(formatSpeed(task.speed))
+    const eta = task.totalBytes > 0 ? formatEta(task.totalBytes - task.doneBytes, task.speed) : null
+    if (eta) parts.push(t('tasks.remaining', { time: eta }))
   }
-  if (!parts.length && t.percent !== null) parts.push(`${t.percent} %`)
+  if (!parts.length && task.percent !== null) parts.push(t('tasks.percent', { percent: task.percent }))
   return parts.join(' · ')
+}
+
+/** Fehlertext eines Verlaufseintrags – übersetzt, wenn der Schlüssel mitgespeichert wurde. */
+function recordDetail(r: TaskRecord): string | null {
+  const ref = r.detailRef
+  return ref && hasKey(ref.key) ? tKey(ref.key, ref.params) : (r.detail ?? null)
 }
 
 function recordMeta(r: TaskRecord): string {
   const ago = formatAgo(Date.parse(r.finishedAt), now.value)
-  return r.outcome === 'failed' ? `${ago} · fehlgeschlagen` : `${ago} · ${taskKindLabels[r.kind]}`
+  return `${ago} · ${r.outcome === 'failed' ? t('tasks.failed') : taskKindLabel(r.kind)}`
 }
 
 // Offen: relative Zeiten ab und zu auffrischen, Fokus ins Panel, fokussierte Aufgabe zeigen.
@@ -151,7 +157,7 @@ function open(id: string) {
     <button
       v-if="lead || updating"
       class="lead-pill hidden sm:flex"
-      :aria-label="`Aufgaben anzeigen: ${lead?.title ?? 'Launcher-Update'}`"
+      :aria-label="t('tasks.showNamed', { title: lead?.title ?? t('tasks.launcherUpdate') })"
       tabindex="-1"
       @click="toggle"
     >
@@ -161,7 +167,7 @@ function open(id: string) {
           <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-dasharray="10 28" class="ring text-redstone-400" />
         </svg>
       </span>
-      <span class="max-w-36 truncate text-base-50 lg:max-w-48">{{ lead?.title ?? 'Launcher-Update' }}</span>
+      <span class="max-w-36 truncate text-base-50 lg:max-w-48">{{ lead?.title ?? t('tasks.launcherUpdate') }}</span>
       <RedstoneWire class="hidden w-14 lg:flex" :percent="lead ? (lead.percent ?? 0) : updater.percent" :indeterminate="!!lead && lead.percent == null" :segments="8" />
       <span v-if="leadLabel" class="font-mono text-[10px] tabular-nums text-base-400">{{ leadLabel }}</span>
     </button>
@@ -172,8 +178,8 @@ function open(id: string) {
       :class="{ 'tasks-btn-open': tasks.panelOpen, 'text-redstone-300': count > 0 }"
       :aria-expanded="tasks.panelOpen"
       aria-controls="tasks-panel"
-      :aria-label="count ? `Aufgaben: ${count} aktiv` : 'Aufgaben'"
-      title="Aufgaben"
+      :aria-label="count ? t('tasks.activeCount', { count }) : t('tasks.title')"
+      :title="t('tasks.title')"
       @click="toggle"
     >
       <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.install" /></svg>
@@ -186,15 +192,15 @@ function open(id: string) {
       ref="panel"
       class="menu top-full right-0 mt-1.5 flex max-h-[min(34rem,calc(100vh-4rem))] w-[23rem] animate-pop flex-col p-0 outline-none"
       role="dialog"
-      aria-label="Aufgaben"
+      :aria-label="t('tasks.title')"
       tabindex="-1"
       @keydown="onPanelKey"
     >
       <header class="flex items-center gap-2 border-b border-base-700 px-3.5 py-2.5">
-        <h2 class="display text-sm text-base-50">Aufgaben</h2>
+        <h2 class="display text-sm text-base-50">{{ t('tasks.title') }}</h2>
         <span v-if="count" class="badge bg-redstone-900 text-redstone-300">{{ count }}</span>
         <span v-if="tasks.totalSpeed > 0" class="ml-auto font-mono text-[11px] tabular-nums text-base-400">{{ formatSpeed(tasks.totalSpeed) }}</span>
-        <button class="grid size-6 place-items-center rounded-md text-base-400 hover:bg-base-700 hover:text-base-50" :class="tasks.totalSpeed > 0 ? 'ml-2' : 'ml-auto'" aria-label="Aufgaben schließen" @click="close()">
+        <button class="grid size-6 place-items-center rounded-md text-base-400 hover:bg-base-700 hover:text-base-50" :class="tasks.totalSpeed > 0 ? 'ml-2' : 'ml-auto'" :aria-label="t('tasks.close')" @click="close()">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path :d="icons.close" /></svg>
         </button>
       </header>
@@ -205,71 +211,71 @@ function open(id: string) {
           v-if="!count && !tasks.history.length"
           compact
           :seed="0x3a"
-          title="Nichts läuft"
-          text="Downloads, Installationen und Importe erscheinen hier – auch wenn du die Seite wechselst."
+          :title="t('tasks.empty.title')"
+          :text="t('tasks.empty.text')"
         />
 
         <!-- Aktiv -->
-        <section v-if="count" aria-label="Aktive Aufgaben">
+        <section v-if="count" :aria-label="t('tasks.activeSection')">
           <button class="section-toggle" :aria-expanded="showActive" @click="showActive = !showActive">
             <svg viewBox="0 0 24 24" class="size-3 transition-transform" :class="{ '-rotate-90': !showActive }" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-            Aktiv
+            {{ t('common.status.active') }}
             <span class="text-base-400">{{ count }}</span>
           </button>
           <ul v-show="showActive" class="flex flex-col gap-1 pb-1">
             <li
-              v-for="t in tasks.active"
-              :key="t.key"
-              :data-task="t.key"
+              v-for="task in tasks.active"
+              :key="task.key"
+              :data-task="task.key"
               tabindex="-1"
               class="row"
-              :class="{ 'row-focused': tasks.focused === t.key }"
+              :class="{ 'row-focused': tasks.focused === task.key }"
             >
-              <InstanceIcon v-if="instanceOf(t.instanceId)" :instance="instanceOf(t.instanceId)!" :size="36" />
-              <ModIcon v-else-if="t.iconUrl" :src="t.iconUrl" :name="t.title" :size="36" />
-              <span v-else class="kind-icon"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="kindIcon(t.kind)" /></svg></span>
+              <InstanceIcon v-if="instanceOf(task.instanceId)" :instance="instanceOf(task.instanceId)!" :size="36" />
+              <ModIcon v-else-if="task.iconUrl" :src="task.iconUrl" :name="task.title" :size="36" />
+              <span v-else class="kind-icon"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="kindIcon(task.kind)" /></svg></span>
               <div class="min-w-0 flex-1">
                 <div class="flex items-start gap-1">
                   <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-medium text-base-50">{{ t.title }}</p>
-                    <p class="truncate text-[11px] text-base-400">{{ t.stage }}</p>
+                    <p class="truncate text-sm font-medium text-base-50">{{ task.title }}</p>
+                    <p class="truncate text-[11px] text-base-400">{{ task.stage }}</p>
                   </div>
                   <button
-                    v-if="t.pausable"
+                    v-if="task.pausable"
                     class="row-btn"
-                    :aria-label="t.paused ? `${t.title} fortsetzen` : `${t.title} pausieren`"
-                    :title="t.paused ? 'Fortsetzen' : 'Pausieren'"
-                    :disabled="t.cancelling"
-                    @click="tasks.pause(t.key, !t.paused)"
+                    :aria-label="task.paused ? t('tasks.resumeNamed', { title: task.title }) : t('tasks.pauseNamed', { title: task.title })"
+                    :title="task.paused ? t('tasks.resume') : t('tasks.pause')"
+                    :disabled="task.cancelling"
+                    @click="tasks.pause(task.key, !task.paused)"
                   >
-                    <svg v-if="t.paused" viewBox="0 0 24 24" class="size-3.5" fill="currentColor"><path :d="icons.play" /></svg>
+                    <svg v-if="task.paused" viewBox="0 0 24 24" class="size-3.5" fill="currentColor"><path :d="icons.play" /></svg>
                     <svg v-else viewBox="0 0 24 24" class="size-3.5" fill="currentColor"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" /></svg>
                   </button>
                   <button
-                    v-if="t.cancellable"
+                    v-if="task.cancellable"
                     class="row-btn hover:text-redstone-300"
-                    :aria-label="`${t.title} abbrechen`"
-                    title="Abbrechen"
-                    :disabled="t.cancelling"
-                    @click="tasks.cancel(t.key)"
+                    :aria-label="t('tasks.cancelNamed', { title: task.title })"
+                    :title="t('common.actions.cancel')"
+                    :disabled="task.cancelling"
+                    @click="tasks.cancel(task.key)"
                   >
                     <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path :d="icons.close" /></svg>
                   </button>
                 </div>
                 <div
                   class="mt-1.5"
-                  :class="{ 'opacity-50 grayscale': t.paused }"
+                  :class="{ 'opacity-50 grayscale': task.paused }"
                   role="progressbar"
-                  :aria-label="`${t.title}: Fortschritt`"
+                  :aria-label="t('tasks.progressNamed', { title: task.title })"
                   aria-valuemin="0"
                   aria-valuemax="100"
-                  :aria-valuenow="t.percent ?? undefined"
+                  :aria-valuenow="task.percent ?? undefined"
                 >
-                  <RedstoneWire :percent="t.percent ?? 0" :indeterminate="t.percent == null" :segments="28" />
+                  <RedstoneWire :percent="task.percent ?? 0" :indeterminate="task.percent == null" :segments="28" />
                 </div>
                 <p class="mt-1 flex justify-between gap-2 font-mono text-[10px] tabular-nums text-base-400">
-                  <span class="truncate">{{ rowMeta(t) }}</span>
-                  <span v-if="t.percent !== null" class="shrink-0">{{ t.percent }} %</span>
+                  <span class="truncate">{{ rowMeta(task) }}</span>
+                  <span v-if="task.percent !== null" class="shrink-0">{{ t('tasks.percent', { percent: task.percent }) }}</span>
                 </p>
               </div>
             </li>
@@ -277,25 +283,25 @@ function open(id: string) {
               <span class="kind-icon"><img src="/icon.png" alt="" class="size-4 [image-rendering:pixelated]" /></span>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium text-base-50">TRS Launcher {{ updater.version }}</p>
-                <p class="truncate text-[11px] text-base-400">Update wird im Hintergrund geladen</p>
-                <div class="mt-1.5" role="progressbar" aria-label="Launcher-Update" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="updater.percent">
+                <p class="truncate text-[11px] text-base-400">{{ t('tasks.updateBackground') }}</p>
+                <div class="mt-1.5" role="progressbar" :aria-label="t('tasks.launcherUpdate')" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="updater.percent">
                   <RedstoneWire :percent="updater.percent" :segments="28" />
                 </div>
-                <p class="mt-1 text-right font-mono text-[10px] tabular-nums text-base-400">{{ updater.percent }} %</p>
+                <p class="mt-1 text-right font-mono text-[10px] tabular-nums text-base-400">{{ t('tasks.percent', { percent: updater.percent }) }}</p>
               </div>
             </li>
           </ul>
         </section>
 
         <!-- Fertig -->
-        <section v-if="tasks.history.length" aria-label="Fertige Aufgaben" :class="{ 'mt-1 border-t border-base-700 pt-1': count }">
+        <section v-if="tasks.history.length" :aria-label="t('tasks.doneSection')" :class="{ 'mt-1 border-t border-base-700 pt-1': count }">
           <div class="flex items-center">
             <button class="section-toggle flex-1" :aria-expanded="showDone" @click="showDone = !showDone">
               <svg viewBox="0 0 24 24" class="size-3 transition-transform" :class="{ '-rotate-90': !showDone }" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-              Fertig
+              {{ t('common.actions.done') }}
               <span class="text-base-400">{{ tasks.history.length }}</span>
             </button>
-            <button class="mr-1 rounded px-2 py-1 text-[11px] text-base-400 hover:bg-base-700 hover:text-base-50" @click="tasks.clearHistory()">Alle löschen</button>
+            <button class="mr-1 rounded px-2 py-1 text-[11px] text-base-400 hover:bg-base-700 hover:text-base-50" @click="tasks.clearHistory()">{{ t('tasks.clearAll') }}</button>
           </div>
           <ul v-show="showDone" class="flex flex-col">
             <li
@@ -311,20 +317,20 @@ function open(id: string) {
               <span v-else class="kind-icon size-7"><svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="kindIcon(r.kind)" /></svg></span>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-[13px] text-base-50">{{ r.title }}</p>
-                <p class="truncate text-[11px]" :class="r.outcome === 'failed' ? 'text-redstone-300' : 'text-base-400'" :title="r.detail">
-                  {{ recordMeta(r) }}<template v-if="r.outcome === 'failed' && r.detail"> – {{ r.detail }}</template>
+                <p class="truncate text-[11px]" :class="r.outcome === 'failed' ? 'text-redstone-300' : 'text-base-400'" :title="recordDetail(r) ?? undefined">
+                  {{ recordMeta(r) }}<template v-if="r.outcome === 'failed' && recordDetail(r)"> – {{ recordDetail(r) }}</template>
                 </p>
               </div>
-              <button v-if="tasks.canRetry(r.id)" class="row-btn w-auto px-1.5 text-[11px]" :aria-label="`${r.title} erneut versuchen`" @click="tasks.retry(r.id)">Erneut</button>
+              <button v-if="tasks.canRetry(r.id)" class="row-btn w-auto px-1.5 text-[11px]" :aria-label="t('tasks.retryNamed', { title: r.title })" @click="tasks.retry(r.id)">{{ t('tasks.retryShort') }}</button>
               <button
                 v-else-if="r.outcome === 'done' && instanceOf(r.instanceId)"
                 class="row-btn w-auto px-1.5 text-[11px]"
-                :aria-label="`${r.title} öffnen`"
+                :aria-label="t('tasks.openNamed', { title: r.title })"
                 @click="open(r.instanceId!)"
               >
-                Öffnen
+                {{ t('common.actions.open') }}
               </button>
-              <button class="row-btn" :aria-label="`${r.title} aus dem Verlauf entfernen`" title="Entfernen" @click="tasks.removeRecord(r.id)">
+              <button class="row-btn" :aria-label="t('tasks.removeNamed', { title: r.title })" :title="t('common.actions.remove')" @click="tasks.removeRecord(r.id)">
                 <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>
               </button>
             </li>

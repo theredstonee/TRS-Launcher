@@ -37,19 +37,32 @@ onMounted(async () => {
   }
 })
 
-function relation(v: ModrinthVersion): string | null {
+function relation(v: ModrinthVersion): 'newer' | 'older' | null {
   if (!props.currentVersionId || currentIndex.value < 0 || v.id === props.currentVersionId) return null
-  return versions.value.indexOf(v) < currentIndex.value ? 'Neuer' : 'Älter'
+  return versions.value.indexOf(v) < currentIndex.value ? 'newer' : 'older'
+}
+
+const versionTypes = ['release', 'beta', 'alpha'] as const
+/** „Stabil“, „Beta“, „Alpha“ – Unbekanntes bleibt, wie Modrinth es liefert. */
+function typeLabel(type: string): string {
+  const known = versionTypes.find((k) => k === type)
+  return known ? t(`versionPicker.type.${known}`) : type
+}
+
+function actionLabel(v: ModrinthVersion): string {
+  if (!props.currentVersionId) return t('common.actions.install')
+  const rel = relation(v)
+  return rel === 'older' ? t('versionPicker.downgrade') : rel === 'newer' ? t('common.actions.update') : t('versionPicker.switch')
 }
 </script>
 
 <template>
-  <BaseDialog :title="currentVersionId ? `Version wechseln – ${title}` : `Version wählen – ${title}`" wide @close="emit('close')">
+  <BaseDialog :title="currentVersionId ? t('versionPicker.titleChange', { title }) : t('versionPicker.titlePick', { title })" wide @close="emit('close')">
     <div class="mb-3 flex items-center justify-between text-xs text-base-400">
-      <span>Passend zu {{ instance.gameVersion }} ({{ loaderLabels[instance.loader.kind] }})</span>
+      <span>{{ t('versionPicker.compatibleWith', { version: instance.gameVersion, loader: loaderLabels[instance.loader.kind] }) }}</span>
       <label class="flex items-center gap-1.5">
         <input v-model="showPrerelease" type="checkbox" class="accent-redstone-500" />
-        Beta und Alpha zeigen
+        {{ t('versionPicker.showPrerelease') }}
       </label>
     </div>
 
@@ -57,7 +70,7 @@ function relation(v: ModrinthVersion): string | null {
       <div v-for="i in 4" :key="i" class="skeleton h-14" />
     </div>
     <p v-else-if="error" role="alert" class="text-sm text-redstone-300">{{ error }}</p>
-    <p v-else-if="!visible.length" class="py-6 text-center text-sm text-base-400">Keine passende Version gefunden.</p>
+    <p v-else-if="!visible.length" class="py-6 text-center text-sm text-base-400">{{ t('versionPicker.none') }}</p>
 
     <ul v-else class="-mr-2 max-h-[26rem] space-y-1.5 overflow-y-auto pr-2">
       <li v-for="(v, i) in visible" :key="v.id" class="overflow-hidden rounded-lg border bg-base-900" :class="v.id === currentVersionId ? 'border-redstone-600/60' : 'border-base-700'">
@@ -66,7 +79,7 @@ function relation(v: ModrinthVersion): string | null {
             class="flex size-7 shrink-0 items-center justify-center rounded-md text-base-400 hover:bg-base-800 hover:text-base-50 disabled:opacity-30"
             :disabled="!v.changelog"
             :aria-expanded="open === v.id"
-            :aria-label="open === v.id ? 'Changelog zuklappen' : 'Changelog zeigen'"
+            :aria-label="open === v.id ? t('versionPicker.hideChangelog') : t('versionPicker.showChangelog')"
             @click="open = open === v.id ? null : v.id"
           >
             <svg viewBox="0 0 24 24" class="size-4 transition-transform" :class="{ 'rotate-90': open === v.id }" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 6 6 6-6 6" /></svg>
@@ -74,12 +87,12 @@ function relation(v: ModrinthVersion): string | null {
           <div class="min-w-0 flex-1">
             <p class="flex items-center gap-1.5 truncate text-sm font-medium">
               <span class="truncate">{{ v.versionNumber }}</span>
-              <span v-if="v.id === currentVersionId" class="badge bg-redstone-900 text-redstone-300">Installiert</span>
-              <span v-else-if="i === 0" class="badge bg-base-800 text-base-200">Neueste</span>
-              <span v-if="relation(v)" class="badge bg-base-850 text-base-400">{{ relation(v) }}</span>
+              <span v-if="v.id === currentVersionId" class="badge bg-redstone-900 text-redstone-300">{{ t('versionPicker.installed') }}</span>
+              <span v-else-if="i === 0" class="badge bg-base-800 text-base-200">{{ t('versionPicker.latest') }}</span>
+              <span v-if="relation(v)" class="badge bg-base-850 text-base-400">{{ relation(v) === 'newer' ? t('versionPicker.newer') : t('versionPicker.older') }}</span>
             </p>
             <p class="truncate text-xs text-base-400">
-              <span :class="v.versionType === 'release' ? 'text-ok' : 'text-lamp-400'">{{ versionTypeLabels[v.versionType] ?? v.versionType }}</span>
+              <span :class="v.versionType === 'release' ? 'text-ok' : 'text-lamp-400'">{{ typeLabel(v.versionType) }}</span>
               · {{ formatDate(v.datePublished) }} · {{ formatFileSize(v.size) }}
             </p>
           </div>
@@ -89,7 +102,7 @@ function relation(v: ModrinthVersion): string | null {
             :class="currentVersionId ? 'btn-ghost' : 'btn-primary'"
             @click="emit('pick', v)"
           >
-            {{ !currentVersionId ? 'Installieren' : relation(v) === 'Älter' ? 'Zurückstufen' : relation(v) === 'Neuer' ? 'Aktualisieren' : 'Wechseln' }}
+            {{ actionLabel(v) }}
           </button>
         </div>
         <div v-if="open === v.id && v.changelog" class="border-t border-base-800 bg-base-950/40 px-4 py-3">
@@ -99,7 +112,7 @@ function relation(v: ModrinthVersion): string | null {
     </ul>
 
     <template #actions>
-      <button class="btn btn-ghost" @click="emit('close')">Schließen</button>
+      <button class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.close') }}</button>
     </template>
   </BaseDialog>
 </template>

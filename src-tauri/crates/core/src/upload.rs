@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 use crate::content::{self, ContentKind};
+use crate::error::UserError;
 use crate::history::{self, HistoryEntry, HistoryKind};
 use crate::instance::{Instance, LoaderKind};
 use crate::paths::Paths;
@@ -29,6 +30,16 @@ pub struct UploadResult {
     pub kind: Option<ContentKind>,
     /// Nutzertaugliche Meldung, falls die Datei nicht übernommen wurde.
     pub error: Option<String>,
+    /// Derselbe Fehler mit Übersetzungs-Code (`errors.<code>`) und Parametern.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_info: Option<UserError>,
+}
+
+impl UploadResult {
+    fn failed(file_name: String, error: &Error) -> Self {
+        let info = error.to_user();
+        Self { file_name, kind: None, error: Some(info.message.clone()), error_info: Some(info) }
+    }
 }
 
 /// Erkennt die Inhaltsart: `.jar` = Mod; `.zip` mit `pack.mcmeta` =
@@ -36,23 +47,32 @@ pub struct UploadResult {
 pub fn classify(path: &Path) -> Result<ContentKind> {
     let meta = std::fs::metadata(path).map_err(|e| Error::io(path, e))?;
     if !meta.is_file() {
-        return Err(Error::validation("Ordner werden nicht unterstützt – bitte die .zip bzw. .jar wählen."));
+        return Err(Error::validation(crate::msg!(
+            "upload.foldersUnsupported",
+            "Ordner werden nicht unterstützt – bitte die .zip bzw. .jar wählen."
+        )));
     }
     if meta.len() == 0 || meta.len() > MAX_UPLOAD_BYTES {
-        return Err(Error::validation("Die Datei ist leer oder größer als 200 MB."));
+        return Err(Error::validation(crate::msg!(
+            "upload.emptyOrTooLarge",
+            "Die Datei ist leer oder größer als 200 MB."
+        )));
     }
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or_default().to_ascii_lowercase();
     if ext != "jar" && ext != "zip" {
-        return Err(Error::validation("Nur .jar- und .zip-Dateien können hinzugefügt werden."));
+        return Err(Error::validation(crate::msg!(
+            "upload.unsupportedType",
+            "Nur .jar- und .zip-Dateien können hinzugefügt werden."
+        )));
     }
 
     let mut file = std::fs::File::open(path).map_err(|e| Error::io(path, e))?;
     let mut magic = [0u8; 4];
     if file.read_exact(&mut magic).is_err() || &magic != ZIP_MAGIC {
-        return Err(Error::validation("Die Datei ist kein gültiges Archiv."));
+        return Err(Error::validation(crate::msg!("upload.invalidArchive", "Die Datei ist kein gültiges Archiv.")));
     }
     let archive = zip::ZipArchive::new(std::fs::File::open(path).map_err(|e| Error::io(path, e))?)
-        .map_err(|_| Error::validation("Die Datei ist kein gültiges Archiv."))?;
+        .map_err(|_| Error::validation(crate::msg!("upload.invalidArchive", "Die Datei ist kein gültiges Archiv.")))?;
 
     if ext == "jar" {
         return Ok(ContentKind::Mod);
@@ -65,7 +85,10 @@ pub fn classify(path: &Path) -> Result<ContentKind> {
     } else if names.iter().any(|n| n.starts_with("shaders/")) {
         Ok(ContentKind::ShaderPack)
     } else {
-        Err(Error::validation("Weder Ressourcenpaket (pack.mcmeta) noch Shader (shaders/) erkannt."))
+        Err(Error::validation(crate::msg!(
+            "upload.unknownContent",
+            "Weder Ressourcenpaket (pack.mcmeta) noch Shader (shaders/) erkannt."
+        )))
     }
 }
 
@@ -79,11 +102,17 @@ async fn import_one(paths: &Paths, instance: &Instance, source: PathBuf, file_na
         .await
         .map_err(|e| Error::Internal(e.to_string()))??;
     if kind == ContentKind::Mod && !mods_allowed(instance) {
-        return Err(Error::validation("Diese Instanz ist echtes Vanilla – Mods laufen hier nicht."));
+        return Err(Error::validation(crate::msg!(
+            "upload.vanillaNoMods",
+            "Diese Instanz ist echtes Vanilla – Mods laufen hier nicht."
+        )));
     }
     content::validate_file_name(kind, file_name)?;
     if content::existing_file(paths, &instance.id, kind, file_name).is_some() {
-        return Err(Error::validation("Eine Datei mit diesem Namen gibt es in der Instanz schon."));
+        return Err(Error::validation(crate::msg!(
+            "upload.fileExists",
+            "Eine Datei mit diesem Namen gibt es in der Instanz schon."
+        )));
     }
     let dir = content::content_dir(paths, &instance.id, kind);
     fsutil::ensure_dir(&dir).await?;
@@ -97,7 +126,7 @@ async fn import_one(paths: &Paths, instance: &Instance, source: PathBuf, file_na
     let copied = tokio::fs::metadata(&tmp).await.map(|m| m.len()).unwrap_or(u64::MAX);
     if copied > MAX_UPLOAD_BYTES {
         let _ = tokio::fs::remove_file(&tmp).await;
-        return Err(Error::validation("Die Datei ist größer als 200 MB."));
+        return Err(Error::validation(crate::msg!("upload.tooLarge", "Die Datei ist größer als 200 MB.")));
     }
     if let Err(e) = tokio::fs::rename(&tmp, &target).await {
         let _ = tokio::fs::remove_file(&tmp).await;
@@ -110,19 +139,24 @@ async fn import_one(paths: &Paths, instance: &Instance, source: PathBuf, file_na
 /// landen im Ergebnis; ein Verlaufseintrag fasst alles zusammen.
 pub async fn import_files(paths: &Paths, instance: &Instance, files: Vec<PathBuf>) -> Result<Vec<UploadResult>> {
     if files.len() > MAX_UPLOAD_FILES {
-        return Err(Error::validation(format!("Höchstens {MAX_UPLOAD_FILES} Dateien auf einmal.")));
+        return Err(Error::validation(crate::msg!(
+            "upload.tooManyFiles",
+            "Höchstens {max} Dateien auf einmal.",
+            max = MAX_UPLOAD_FILES
+        )));
     }
     let mut results = Vec::new();
     for source in files {
         let Some(file_name) = source.file_name().and_then(|n| n.to_str()).map(str::to_owned) else {
-            results.push(UploadResult { file_name: "?".into(), kind: None, error: Some("Ungültiger Dateiname".into()) });
+            let error = Error::validation(crate::msg!("upload.invalidFileName", "Ungültiger Dateiname"));
+            results.push(UploadResult::failed("?".into(), &error));
             continue;
         };
         match import_one(paths, instance, source, &file_name).await {
-            Ok(kind) => results.push(UploadResult { file_name, kind: Some(kind), error: None }),
+            Ok(kind) => results.push(UploadResult { file_name, kind: Some(kind), error: None, error_info: None }),
             Err(e) => {
                 tracing::info!("Datei {file_name} nicht übernommen: {e}");
-                results.push(UploadResult { file_name, kind: None, error: Some(e.public_message()) });
+                results.push(UploadResult::failed(file_name, &e));
             }
         }
     }
@@ -215,6 +249,7 @@ mod tests {
         // Zweites Mal: Namen gibt es schon.
         let again = import_files(&paths, &instance(LoaderKind::Fabric, None), files[..1].to_vec()).await.unwrap();
         assert!(again[0].error.as_deref().unwrap().contains("schon"));
+        assert_eq!(again[0].error_info.as_ref().unwrap().code, "upload.fileExists");
 
         let history = history::list(&paths, "test").await.unwrap();
         assert_eq!(history[0].kind, HistoryKind::FilesAdded);

@@ -175,7 +175,10 @@ fn plan_files(game_dir: &Path, include: &[String]) -> Result<Vec<(PathBuf, u64)>
     let mut total = 0u64;
     for name in include {
         if !is_offered(name) {
-            return Err(Error::validation("Diese Auswahl kann nicht exportiert werden."));
+            return Err(Error::validation(crate::msg!(
+                "modpackExport.selectionNotExportable",
+                "Diese Auswahl kann nicht exportiert werden."
+            )));
         }
         let path = game_dir.join(name);
         let Ok(meta) = std::fs::symlink_metadata(&path) else { continue };
@@ -193,10 +196,16 @@ fn plan_files(game_dir: &Path, include: &[String]) -> Result<Vec<(PathBuf, u64)>
         }
     }
     if files.len() > MAX_FILES {
-        return Err(Error::validation("Zu viele Dateien für ein Modpack – bitte weniger Ordner auswählen."));
+        return Err(Error::validation(crate::msg!(
+            "modpackExport.tooManyFiles",
+            "Zu viele Dateien für ein Modpack – bitte weniger Ordner auswählen."
+        )));
     }
     if total > MAX_TOTAL_BYTES {
-        return Err(Error::validation("Die Auswahl ist zu groß (mehr als 4 GB)."));
+        return Err(Error::validation(crate::msg!(
+            "modpackExport.tooLarge",
+            "Die Auswahl ist zu groß (mehr als 4 GB)."
+        )));
     }
     files.sort();
     Ok(files)
@@ -273,17 +282,23 @@ fn clean_text(value: &str, max: usize) -> String {
 fn validate_options(options: &ExportOptions) -> Result<(String, String, Option<String>)> {
     let name = clean_text(&options.name, 64);
     if name.is_empty() {
-        return Err(Error::validation("Bitte einen Namen für das Modpack eingeben."));
+        return Err(Error::validation(crate::msg!(
+            "modpackExport.nameRequired",
+            "Bitte einen Namen für das Modpack eingeben."
+        )));
     }
     let version = clean_text(&options.version, 32);
     let version_ok = !version.is_empty()
         && version.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '+'));
     if !version_ok {
-        return Err(Error::validation("Die Version darf nur Buchstaben, Ziffern und . - _ + enthalten."));
+        return Err(Error::validation(crate::msg!(
+            "modpackExport.invalidVersion",
+            "Die Version darf nur Buchstaben, Ziffern und . - _ + enthalten."
+        )));
     }
     let summary = options.summary.as_deref().map(|s| clean_text(s, 512)).filter(|s| !s.is_empty());
     if options.include.len() > 100 {
-        return Err(Error::validation("Zu viele Einträge ausgewählt."));
+        return Err(Error::validation(crate::msg!("modpackExport.tooManyEntries", "Zu viele Einträge ausgewählt.")));
     }
     Ok((name, version, summary))
 }
@@ -431,7 +446,10 @@ impl Launcher {
             .await
             .map_err(|e| Error::Internal(e.to_string()))??;
         if files.is_empty() {
-            return Err(Error::validation("Es wurde nichts zum Exportieren ausgewählt."));
+            return Err(Error::validation(crate::msg!(
+                "modpackExport.nothingSelected",
+                "Es wurde nichts zum Exportieren ausgewählt."
+            )));
         }
 
         // 1. Kandidaten hashen (Mods & Co.) – die können als Download ins Pack.

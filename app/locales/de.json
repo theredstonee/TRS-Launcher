@@ -1,0 +1,2441 @@
+{
+  "common": {
+    "actions": {
+      "apply": "Anwenden",
+      "back": "Zurück",
+      "browse": "Durchsuchen",
+      "cancel": "Abbrechen",
+      "change": "Ändern",
+      "close": "Schließen",
+      "continue": "Weiter",
+      "copy": "Kopieren",
+      "create": "Erstellen",
+      "delete": "Löschen",
+      "disable": "Deaktivieren",
+      "done": "Fertig",
+      "edit": "Bearbeiten",
+      "enable": "Aktivieren",
+      "export": "Exportieren",
+      "import": "Importieren",
+      "install": "Installieren",
+      "later": "Später",
+      "open": "Öffnen",
+      "openFolder": "Ordner öffnen",
+      "play": "Spielen",
+      "refresh": "Aktualisieren",
+      "remove": "Entfernen",
+      "retry": "Erneut versuchen",
+      "save": "Speichern",
+      "search": "Suchen",
+      "skip": "Überspringen",
+      "start": "Starten",
+      "stop": "Stoppen",
+      "update": "Aktualisieren"
+    },
+    "status": {
+      "active": "Aktiv",
+      "copied": "Kopiert!",
+      "disabled": "Deaktiviert",
+      "enabled": "Aktiviert",
+      "error": "Fehler",
+      "loading": "Lädt …",
+      "none": "Keine",
+      "offline": "Offline",
+      "online": "Online",
+      "running": "Läuft",
+      "saved": "Gespeichert",
+      "saving": "Speichere …",
+      "unknown": "Unbekannt"
+    },
+    "labels": {
+      "all": "Alle",
+      "automatic": "Automatisch",
+      "description": "Beschreibung",
+      "name": "Name",
+      "version": "Version",
+      "gameVersion": "Spielversion",
+      "loader": "Modloader"
+    }
+  },
+  "language": {
+    "title": "Sprache",
+    "searchPlaceholder": "Sprache suchen …",
+    "searchLabel": "Sprache suchen",
+    "standard": "Standardsprachen",
+    "beta": "Beta",
+    "betaHint": "Beta-Sprachen sind maschinell übersetzt und noch nicht vollständig geprüft. Fehlende Texte erscheinen auf Englisch.",
+    "complete": "{percent} % übersetzt",
+    "noResults": "Keine Sprache passt zu „{query}“.",
+    "changeHint": "Der Launcher wechselt sofort – ohne Neustart. Fehlende Texte in Beta-Sprachen erscheinen auf Englisch.",
+    "betaGroup": "Beta-Sprachen",
+    "onboardingTitle": "Wähle deine Sprache",
+    "onboardingText": "Du kannst sie jederzeit unter Einstellungen → Sprache ändern.",
+    "detected": "Aus Windows übernommen"
+  },
+  "format": {
+    "neverPlayed": "Noch nie gespielt",
+    "justNow": "Gerade eben",
+    "playTime": {
+      "underMinute": "unter 1 Min.",
+      "minutes": "{minutes} Min.",
+      "hoursMinutes": "{hours} Std. {minutes} Min."
+    },
+    "justNowInline": "gerade eben"
+  },
+  "launchStage": {
+    "version": "Versionsdaten",
+    "java": "Java",
+    "loader": "Modloader",
+    "libraries": "Bibliotheken",
+    "assets": "Spieldateien",
+    "starting": "Starte Spiel"
+  },
+  "contentKind": {
+    "mod": "Mods",
+    "resourcepack": "Ressourcenpakete",
+    "shaderpack": "Shader",
+    "datapack": "Datenpakete",
+    "modpack": "Modpacks"
+  },
+  "importSource": {
+    "vanilla": "Minecraft Launcher",
+    "prism": "Prism Launcher",
+    "multimc": "MultiMC",
+    "curseforge": "CurseForge",
+    "modrinth": "Modrinth App",
+    "folder": "Eigener Ordner"
+  },
+  "syncItem": {
+    "options": {
+      "label": "Spieleinstellungen",
+      "description": "options.txt – Grafik, Steuerung, Tastenbelegung und Sound."
+    },
+    "servers": {
+      "label": "Serverliste",
+      "description": "servers.dat – die Server im Mehrspieler-Menü."
+    },
+    "resourcePacks": {
+      "label": "Ressourcenpakete",
+      "description": "Pakete werden zwischen den Instanzen ergänzt, nie gelöscht."
+    },
+    "commandHistory": {
+      "label": "Befehlsverlauf",
+      "description": "command_history.txt – zuletzt eingegebene Befehle."
+    },
+    "hotbar": {
+      "label": "Gespeicherte Schnellleisten",
+      "description": "hotbar.nbt – die Kreativ-Schnellleisten."
+    }
+  },
+  "errors": {
+    "unexpected": "Ein unerwarteter Fehler ist aufgetreten.",
+    "noBackend": "Das Backend ist nur in der Desktop-App verfügbar.",
+    "io": "Datei konnte nicht gelesen oder geschrieben werden.",
+    "network": "Netzwerkfehler – bitte Internetverbindung prüfen.",
+    "data": "Daten konnten nicht verarbeitet werden.",
+    "download": "Download fehlgeschlagen – bitte Internetverbindung prüfen und erneut versuchen.",
+    "internal": "Ein interner Fehler ist aufgetreten.",
+    "cancelled": "Vorgang abgebrochen",
+    "openFolder": "Ordner konnte nicht geöffnet werden.",
+    "instanceNotFound": "Instanz „{id}“ wurde nicht gefunden",
+    "unknownVersion": "Minecraft-Version „{version}“ ist unbekannt",
+    "authNotApproved": "Der Microsoft-Login ist noch nicht freigeschaltet: Die App-Registrierung wartet auf die Freigabe durch Mojang.",
+    "settings": {
+      "resolutionRange": "Auflösung liegt außerhalb des erlaubten Bereichs",
+      "minMemoryRange": "Minimaler Arbeitsspeicher muss zwischen 128 MB und dem Maximum liegen",
+      "downloadsRange": "Parallele Downloads müssen zwischen 1 und 64 liegen",
+      "memoryRange": "Arbeitsspeicher muss zwischen {min} und {max} MB liegen",
+      "jvmArgsInvalid": "JVM-Argumente sind ungültig oder zu lang",
+      "javaPathInvalid": "Java-Pfad ist ungültig",
+      "javaPathNotJava": "Der Java-Pfad muss auf java.exe oder javaw.exe zeigen"
+    },
+    "trs": {
+      "offline": "Der TRS-Server ist gerade nicht erreichbar.",
+      "disabled": "Die TRS-Dienste sind ausgeschaltet (Einstellungen → Datenschutz).",
+      "noAccount": "Bitte melde dich zuerst unter „Accounts“ mit deinem Minecraft-Konto an.",
+      "badResponse": "Die TRS API hat unerwartet geantwortet.",
+      "banned": "Dein Konto ist für die TRS-Dienste gesperrt.",
+      "rateLimited": "Zu viele Anfragen – bitte in {seconds} s erneut versuchen.",
+      "notJoined": "Mojang hat die Anmeldung nicht bestätigt – bitte später erneut versuchen.",
+      "challengeExpired": "Die Anmeldung hat zu lange gedauert – bitte erneut versuchen.",
+      "sessionExpired": "Die TRS-Anmeldung ist abgelaufen – bitte erneut versuchen.",
+      "forbidden": "Dafür fehlen dir die Rechte.",
+      "loginRejected": "Die TRS-Anmeldung wurde abgelehnt – bitte später erneut versuchen.",
+      "badChallenge": "Die TRS API hat eine ungültige Anmelde-Aufgabe geschickt.",
+      "badToken": "Die TRS API hat einen ungültigen Token geschickt.",
+      "wrongAccount": "Die TRS-Anmeldung gehört zu einem anderen Account.",
+      "mojangRejected": "Mojang hat die Anmeldung abgelehnt – bitte melde deinen Account unter „Accounts“ neu an.",
+      "mojangRateLimited": "Mojang begrenzt gerade die Anmeldungen – bitte in einer Minute erneut versuchen.",
+      "mojangFailed": "Die Mojang-Anmeldung ist fehlgeschlagen – bitte später erneut versuchen."
+    },
+    "trsApi": {
+      "cape_not_found": "Diesen Umhang gibt es nicht (mehr).",
+      "cape_locked": "Dieser Umhang ist für dich noch nicht freigeschaltet.",
+      "invalid_code": "Dieser Code ist ungültig.",
+      "code_expired": "Dieser Code ist abgelaufen.",
+      "code_used_up": "Dieser Code wurde bereits zu oft eingelöst.",
+      "player_not_found": "Spieler nicht gefunden – er muss den TRS Launcher schon einmal benutzt haben.",
+      "cannot_target_self": "Das bist du selbst.",
+      "blocked": "Du hast diesen Spieler blockiert – entsperre ihn zuerst.",
+      "already_friends": "Ihr seid schon befreundet.",
+      "already_requested": "Du hast diesem Spieler schon eine Anfrage geschickt.",
+      "too_many_requests": "Du hast zu viele offene Anfragen (höchstens 50).",
+      "target_inbox_full": "Dieser Spieler hat zu viele offene Anfragen.",
+      "friend_limit": "Deine Freundesliste ist voll (höchstens 200).",
+      "target_friend_limit": "Die Freundesliste dieses Spielers ist voll.",
+      "request_not_found": "Diese Anfrage gibt es nicht mehr.",
+      "friend_not_found": "Ihr seid nicht (mehr) befreundet.",
+      "block_not_found": "Dieser Spieler ist nicht blockiert.",
+      "invalid_png": "Die Datei ist kein gültiges PNG-Bild.",
+      "animated_png": "Animierte PNGs sind für eigene Umhänge nicht erlaubt.",
+      "invalid_dimensions": "Das Bild hat nicht die richtige Größe für einen Umhang.",
+      "empty_cape": "Der Umhang ist komplett durchsichtig.",
+      "too_many_pending": "Du hast schon 3 Umhänge in Prüfung – warte auf die Freigabe.",
+      "upload_limit": "Du hast schon 10 eigene Umhänge.",
+      "duplicate_cape": "Diesen Umhang hast du schon hochgeladen.",
+      "payload_too_large": "Die Datei ist zu groß.",
+      "unsupported_media_type": "Dieses Dateiformat wird nicht unterstützt.",
+      "user_not_found": "Dieser Spieler hat die TRS-Dienste noch nie benutzt.",
+      "builtin_cape": "Standard-Umhänge können nicht gelöscht werden.",
+      "cape_is_free": "Für freie Umhänge braucht es keinen Code.",
+      "grant_not_found": "Dieser Spieler hat den Umhang nicht.",
+      "cannot_ban_admin": "Admins können nicht gesperrt werden.",
+      "not_banned": "Dieser Spieler ist nicht gesperrt.",
+      "invalid_request": "Die Anfrage war ungültig.",
+      "not_found": "Nicht gefunden.",
+      "rejected": "Die TRS API hat die Anfrage abgelehnt."
+    },
+    "auth": {
+      "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
+      "accountMissing": "Dieser Account existiert nicht mehr.",
+      "deviceCodeExpired": "Der Anmeldecode ist abgelaufen – bitte erneut versuchen.",
+      "entitlementCheckFailed": "Der Spielbesitz konnte nicht geprüft werden.",
+      "loginInProgress": "Es läuft bereits eine Anmeldung.",
+      "loginTimeout": "Zeitüberschreitung bei der Anmeldung – bitte erneut versuchen.",
+      "microsoftRejected": "Microsoft hat die Anmeldung abgelehnt.",
+      "minecraftServicesFailed": "Die Anmeldung bei den Minecraft-Diensten ist fehlgeschlagen.",
+      "noJavaEdition": "Dieses Konto besitzt Minecraft: Java Edition nicht.",
+      "noProfile": "Für dieses Konto gibt es noch kein Minecraft-Profil. Bitte einmal im offiziellen Launcher anmelden und einen Spielernamen festlegen.",
+      "profileInvalid": "Das Minecraft-Profil enthält ungültige Daten.",
+      "profileLoadFailed": "Das Minecraft-Profil konnte nicht geladen werden.",
+      "sessionExpired": "Die Anmeldung ist abgelaufen – bitte den Account erneut anmelden.",
+      "storedCredentialsCorrupt": "Gespeicherte Anmeldedaten sind beschädigt – bitte erneut anmelden.",
+      "storedCredentialsInvalid": "Gespeicherte Anmeldedaten sind beschädigt.",
+      "storedCredentialsUndecryptable": "Gespeicherte Anmeldedaten konnten nicht entschlüsselt werden – bitte erneut anmelden.",
+      "xboxAgeVerification": "Für dieses Konto ist eine Altersverifikation bei Xbox nötig.",
+      "xboxBanned": "Dieses Xbox-Konto ist gesperrt.",
+      "xboxChildAccount": "Dieses Konto gehört einem Kind und muss erst von einem Erwachsenen zu einer Microsoft-Familie hinzugefügt werden.",
+      "xboxFailed": "Die Anmeldung bei Xbox Live ist fehlgeschlagen.",
+      "xboxNoProfile": "Zu diesem Microsoft-Konto gibt es noch kein Xbox-Profil. Bitte einmal auf xbox.com anmelden und eines anlegen.",
+      "xboxRegionBlocked": "Xbox Live ist in deinem Land nicht verfügbar."
+    },
+    "clientModUpdate": {
+      "invalidVersion": "Ungültige TRS-Client-Version",
+      "manifestUnreadable": "TRS-Client-Manifest unlesbar",
+      "manifestWithoutVersion": "TRS-Client-Manifest ohne gültige Version",
+      "missingChecksum": "TRS-Client-Build ohne Prüfsumme",
+      "signatureBadFormat": "Signatur ungültig (Format)",
+      "signatureBadKey": "Signatur ungültig (Schlüssel)",
+      "signatureMismatch": "Signatur ungültig (Prüfung)",
+      "signatureWrongFile": "Signatur ungültig (falsche Datei)"
+    },
+    "content": {
+      "fileGone": "Die Datei existiert nicht mehr.",
+      "invalidFileName": "Ungültiger Dateiname",
+      "tooManyItems": "Höchstens {max} Einträge auf einmal"
+    },
+    "extras": {
+      "screenshotGone": "Der Screenshot existiert nicht mehr."
+    },
+    "firewall": {
+      "elevationFailed": "Die Admin-Abfrage konnte nicht geöffnet werden.",
+      "helperNotStarted": "Die Firewall-Freigabe wurde nicht gestartet.",
+      "onlyLauncherJava": "Nur Java-Versionen des Launchers können freigegeben werden.",
+      "ruleFailed": "Die Firewall-Freigabe konnte nicht eingetragen werden."
+    },
+    "forge": {
+      "installFailed": "Die Modloader-Installation ist fehlgeschlagen. Details stehen im Launcher-Log.",
+      "installIncomplete": "Die Modloader-Installation ist unvollständig. Bitte erneut versuchen.",
+      "installerCorrupt": "Der Modloader-Installer ist beschädigt. Bitte erneut versuchen.",
+      "installerDownloadFailed": "Der Modloader-Installer konnte nicht heruntergeladen werden. Bitte Internetverbindung und Loader-Version prüfen.",
+      "installerVersionMismatch": "Der Modloader-Installer passt nicht zur Minecraft-Version.",
+      "invalidArgument": "Das Installer-Profil enthält ein fehlerhaftes Argument.",
+      "invalidFileReference": "Das Installer-Profil enthält einen ungültigen Dateiverweis.",
+      "invalidLoaderVersion": "Die Loader-Version enthält ungültige Zeichen.",
+      "javaStartFailed": "Java konnte für die Modloader-Installation nicht gestartet werden.",
+      "legacyUnsupported": "Forge wird für diese Minecraft-Version noch nicht unterstützt (erst ab 1.7).",
+      "unknownPlaceholder": "Das Installer-Profil verwendet einen unbekannten Platzhalter.",
+      "unsupportedInstaller": "Dieses Installer-Format wird nicht unterstützt.",
+      "versionUnavailable": "Forge {forge} gibt es für Minecraft {version} nicht."
+    },
+    "hooks": {
+      "envDuplicate": "Die Variable {name} ist doppelt",
+      "envNameInvalid": "Namen von Umgebungsvariablen: nur Buchstaben, Ziffern und _ (nicht vorne)",
+      "envValueInvalid": "Der Wert von {name} ist ungültig oder zu lang",
+      "postExitExitCode": "Der Befehl nach dem Beenden ist fehlgeschlagen (Exit-Code {code}).",
+      "postExitInvalidChars": "Befehl nach dem Beenden enthält ungültige Zeichen",
+      "postExitRunFailed": "Der Befehl nach dem Beenden konnte nicht ausgeführt werden.",
+      "postExitStartFailed": "Der Befehl nach dem Beenden konnte nicht gestartet werden.",
+      "postExitTimeout": "Der Befehl nach dem Beenden lief länger als {seconds} Sekunden und wurde abgebrochen.",
+      "postExitTooLong": "Befehl nach dem Beenden: höchstens {max} Zeichen",
+      "preLaunchExitCode": "Der Befehl vor dem Start ist fehlgeschlagen (Exit-Code {code}).",
+      "preLaunchInvalidChars": "Befehl vor dem Start enthält ungültige Zeichen",
+      "preLaunchRunFailed": "Der Befehl vor dem Start konnte nicht ausgeführt werden.",
+      "preLaunchStartFailed": "Der Befehl vor dem Start konnte nicht gestartet werden.",
+      "preLaunchTimeout": "Der Befehl vor dem Start lief länger als {seconds} Sekunden und wurde abgebrochen.",
+      "preLaunchTooLong": "Befehl vor dem Start: höchstens {max} Zeichen",
+      "tooManyEnvVars": "Höchstens {max} Umgebungsvariablen",
+      "wrapperInvalidChars": "Wrapper-Befehl enthält ungültige Zeichen",
+      "wrapperTooLong": "Wrapper-Befehl: höchstens {max} Zeichen"
+    },
+    "icon": {
+      "bannerTooLarge": "Das Banner darf höchstens 10 MB groß sein.",
+      "imageTooLarge": "Das Bild darf höchstens 5 MB groß sein.",
+      "sourceNotAllowed": "Bildquelle nicht erlaubt",
+      "unsupportedFormat": "Nur PNG-, JPEG- und WebP-Bilder werden unterstützt."
+    },
+    "import": {
+      "folderMissing": "Dieser Ordner existiert nicht.",
+      "installationGone": "Diese Installation wurde nicht mehr gefunden.",
+      "noInstallation": "In diesem Ordner wurde keine Minecraft-Installation gefunden. Wähle den Ordner, in dem mods, saves oder options.txt liegen."
+    },
+    "instance": {
+      "groupInvalid": "Gruppennamen: höchstens {max} Zeichen, keine Sonderzeichen",
+      "invalidGameVersion": "Minecraft-Version enthält ungültige Zeichen",
+      "invalidId": "Ungültige Instanz-ID",
+      "invalidImageName": "Ungültiger Bildname",
+      "invalidLoaderVersion": "Loader-Version enthält ungültige Zeichen",
+      "invalidSyncSettings": "Ungültige Synchronisierungs-Einstellungen",
+      "nameInvalidChars": "Der Name enthält ungültige Zeichen",
+      "nameLength": "Der Name muss zwischen 1 und {max} Zeichen lang sein",
+      "vanillaNoLoaderVersion": "Vanilla hat keine Loader-Version"
+    },
+    "java": {
+      "javawMissing": "Die Java-Runtime wurde installiert, enthält aber kein javaw.exe.",
+      "manifestInvalidPath": "Java-Runtime-Manifest enthält einen ungültigen Pfad.",
+      "manifestMissing": "Java-Runtime-Manifest fehlt.",
+      "noRuntimeForPlatform": "Für diese Plattform gibt es keine passende Java-Runtime ({component}). Bitte in den Einstellungen einen Java-Pfad angeben.",
+      "unknownRuntime": "Unbekannte Java-Runtime angefordert."
+    },
+    "launch": {
+      "noArguments": "Die Versions-Metadaten enthalten keine Startargumente.",
+      "noMainClass": "Die Versions-Metadaten enthalten keine Hauptklasse."
+    },
+    "launcher": {
+      "alreadyRunning": "Diese Instanz läuft bereits.",
+      "alreadyStarting": "Diese Instanz wird bereits gestartet.",
+      "instanceRunningNoDelete": "Die Instanz läuft gerade und kann nicht gelöscht werden.",
+      "instanceRunningStopFirst": "Die Instanz läuft gerade – bitte erst beenden.",
+      "javaVersionUnavailable": "Diese Java-Version gibt es nicht zum Installieren.",
+      "logUploadDisabled": "Log-Upload ist in den Datenschutz-Einstellungen ausgeschaltet.",
+      "noLogToShare": "Es gibt noch keinen Log zum Teilen.",
+      "signInFirst": "Bitte melde dich zuerst unter „Accounts“ mit deinem Microsoft-Konto an.",
+      "stopAllGamesFirst": "Bitte erst alle laufenden Spiele beenden.",
+      "syncAfterExitFailed": "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden."
+    },
+    "loaders": {
+      "invalidGameVersion": "Ungültige Minecraft-Version",
+      "invalidProfileId": "Das Loader-Profil enthält eine ungültige ID.",
+      "notAvailable": "Für Minecraft {version} gibt es diesen Modloader (noch) nicht."
+    },
+    "meta": {
+      "invalidLibraryName": "Ungültige Library-Koordinate: {name}",
+      "unsafeLibraryPath": "Unsicherer Library-Pfad: {path}"
+    },
+    "nbt": {
+      "corrupt": "Die NBT-Datei ist beschädigt."
+    },
+    "prepare": {
+      "assetIndexInvalid": "Der Asset-Index enthält ungültige Einträge.",
+      "assetIndexMissing": "Der Asset-Index fehlt.",
+      "invalidIdentifiers": "Die Versions-Metadaten enthalten ungültige Bezeichner.",
+      "javaPathMissing": "Der eingestellte Java-Pfad existiert nicht.",
+      "loaderFileMissing": "Eine vom Modloader erzeugte Datei fehlt. Bitte die Instanz erneut starten.",
+      "nativesCorrupt": "Natives-Archiv ist beschädigt: {error}",
+      "noClientDownload": "Diese Version enthält keinen Client-Download."
+    },
+    "process": {
+      "crashCorruptFiles": "Eine Spieldatei ist beschädigt (z. B. nach einem abgebrochenen Download). „Dateien prüfen“ lädt sie neu herunter.",
+      "crashGraphicsDriver": "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den Treiber deiner Grafikkarte.",
+      "crashMissingDependency": "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler.",
+      "crashModConflict": "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut.",
+      "crashOutOfMemory": "Dem Spiel ist der Arbeitsspeicher ausgegangen. Erhöhe den Arbeitsspeicher der Instanz in den Einstellungen.",
+      "crashWrongJava": "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den Einstellungen, dann wählt der Launcher automatisch die passende.",
+      "exitedImmediately": "Das Spiel wurde sofort wieder beendet.",
+      "javaStartFailed": "Java konnte nicht gestartet werden.",
+      "logUploadFailed": "Der Log konnte nicht hochgeladen werden."
+    },
+    "modpack": {
+      "noGameVersion": "Das Modpack nennt keine Minecraft-Version.",
+      "corrupt": "Das Modpack ist beschädigt.",
+      "notModrinthPack": "Das ist kein gültiges Modrinth-Modpack.",
+      "unsupportedFormat": "Dieses Modpack-Format wird nicht unterstützt.",
+      "tooManyFiles": "Das Modpack enthält zu viele Dateien.",
+      "invalidFilePath": "Das Modpack enthält einen ungültigen Dateipfad.",
+      "disallowedSource": "Das Modpack verweist auf eine nicht erlaubte Download-Quelle.",
+      "invalidChecksum": "Das Modpack enthält eine ungültige Prüfsumme.",
+      "noVersion": "Dieses Modpack hat keine Version.",
+      "versionHasNoPack": "Diese Version enthält kein Modpack.",
+      "notPackFile": "Das ist keine Modpack-Datei."
+    },
+    "modpackExport": {
+      "selectionNotExportable": "Diese Auswahl kann nicht exportiert werden.",
+      "tooManyFiles": "Zu viele Dateien für ein Modpack – bitte weniger Ordner auswählen.",
+      "tooLarge": "Die Auswahl ist zu groß (mehr als 4 GB).",
+      "nameRequired": "Bitte einen Namen für das Modpack eingeben.",
+      "invalidVersion": "Die Version darf nur Buchstaben, Ziffern und . - _ + enthalten.",
+      "tooManyEntries": "Zu viele Einträge ausgewählt.",
+      "nothingSelected": "Es wurde nichts zum Exportieren ausgewählt."
+    },
+    "modrinth": {
+      "queryTooLong": "Suchbegriff ist zu lang",
+      "invalidPageSize": "Ungültige Seitengröße",
+      "invalidPage": "Ungültige Seite",
+      "tooManyFilters": "Zu viele Filter",
+      "invalidGameVersion": "Ungültige Spielversion",
+      "unknownLoader": "Unbekannter Modloader",
+      "invalidCategory": "Ungültige Kategorie",
+      "invalidProjectList": "Ungültige Projektliste",
+      "tooManyProjects": "Zu viele Projekte auf einmal",
+      "invalidProjectId": "Ungültige Projekt-ID",
+      "invalidVersionId": "Ungültige Versions-ID",
+      "vanillaNoMods": "Diese Instanz ist Vanilla – Mods brauchen eine Instanz mit Fabric, Quilt, Forge oder NeoForge.",
+      "versionNotInProject": "Diese Version gehört nicht zu dem Projekt.",
+      "noCompatibleVersion": "Für Minecraft {version} mit diesem Modloader gibt es keine passende Version.",
+      "versionHasNoFile": "Diese Version enthält keine Datei.",
+      "noPerformanceMods": "Für diese Version gibt es keine der Optimierungs-Mods."
+    },
+    "news": {
+      "unavailable": "Neuigkeiten sind gerade nicht erreichbar.",
+      "patchNotesNotFound": "Diese Patchnotes gibt es nicht.",
+      "imageSourceNotAllowed": "Diese Bildquelle ist nicht erlaubt.",
+      "imageTooLarge": "Das Bild ist zu groß.",
+      "tagRelease": "Vollversion",
+      "tagSnapshot": "Snapshot",
+      "tagPreview": "Vorschau",
+      "tagUpdate": "Update",
+      "tagDownloads": "{count} Downloads"
+    },
+    "screenshots": {
+      "tooLargeForClipboard": "Das Bild ist zu groß für die Zwischenablage.",
+      "imageUnreadable": "Das Bild konnte nicht gelesen werden.",
+      "screenshotUnreadable": "Der Screenshot konnte nicht gelesen werden.",
+      "thumbnailWriteFailed": "Das Vorschaubild konnte nicht geschrieben werden.",
+      "invalidPath": "Ungültiger Pfad"
+    },
+    "servers": {
+      "invalidPort": "Ungültiger Port",
+      "invalidAddress": "Ungültige Server-Adresse",
+      "nameLength": "Der Servername muss zwischen 1 und 64 Zeichen lang sein",
+      "tooMany": "Mehr als 100 Server werden nicht unterstützt.",
+      "duplicate": "Dieser Server steht schon in der Liste.",
+      "notFound": "Dieser Server existiert nicht mehr."
+    },
+    "skins": {
+      "fileTooLarge": "Die Skin-Datei ist zu groß (höchstens 128 KB).",
+      "notPng": "Das ist keine PNG-Datei.",
+      "invalidSize": "Ein Skin muss 64×64 (oder 64×32 für alte Skins) Pixel groß sein.",
+      "rateLimited": "Mojang bremst gerade – bitte ein paar Minuten warten.",
+      "mojangUnavailable": "Mojang ist gerade nicht erreichbar – bitte später erneut versuchen.",
+      "sessionExpired": "Die Anmeldung ist abgelaufen – bitte den Account neu anmelden.",
+      "noProfile": "Dieses Konto hat noch kein Minecraft-Profil.",
+      "fileRejected": "Mojang hat die Datei abgelehnt. Ist es ein gültiger 64×64-Skin?",
+      "changeRejected": "Mojang hat die Änderung abgelehnt.",
+      "invalidCape": "Ungültiger Umhang.",
+      "noCustomSkin": "Dieses Konto trägt gerade keinen eigenen Skin.",
+      "textureSourceNotAllowed": "Diese Texturquelle ist nicht erlaubt.",
+      "invalidTexture": "Die Textur von Mojang ist ungültig.",
+      "nameRequired": "Bitte einen Namen für den Skin eingeben.",
+      "signInFirst": "Bitte melde dich zuerst unter „Accounts“ an.",
+      "libraryFull": "Die Skin-Bibliothek ist voll – bitte erst einen Skin löschen.",
+      "notFound": "Diesen Skin gibt es nicht."
+    },
+    "skinSync": {
+      "accountSwitched": "Das aktive Konto wurde gewechselt – die Änderungen wurden verworfen.",
+      "accountChanged": "Das aktive Konto hat gewechselt – bitte die Seite neu laden."
+    },
+    "taskHistory": {
+      "untitled": "Aufgabe ohne Namen",
+      "invalidEntry": "Ungültiger Eintrag"
+    },
+    "upload": {
+      "foldersUnsupported": "Ordner werden nicht unterstützt – bitte die .zip bzw. .jar wählen.",
+      "emptyOrTooLarge": "Die Datei ist leer oder größer als 200 MB.",
+      "unsupportedType": "Nur .jar- und .zip-Dateien können hinzugefügt werden.",
+      "invalidArchive": "Die Datei ist kein gültiges Archiv.",
+      "unknownContent": "Weder Ressourcenpaket (pack.mcmeta) noch Shader (shaders/) erkannt.",
+      "vanillaNoMods": "Diese Instanz ist echtes Vanilla – Mods laufen hier nicht.",
+      "fileExists": "Eine Datei mit diesem Namen gibt es in der Instanz schon.",
+      "tooLarge": "Die Datei ist größer als 200 MB.",
+      "tooManyFiles": "Höchstens {max} Dateien auf einmal.",
+      "invalidFileName": "Ungültiger Dateiname"
+    },
+    "trsOps": {
+      "invalidPlayerId": "Ungültige Spieler-ID.",
+      "invalidCapeId": "Ungültige Umhang-ID.",
+      "noChange": "Keine Änderung angegeben.",
+      "onlyOwnCapesDeletable": "Nur eigene Umhänge können gelöscht werden.",
+      "onlyUploadedReportable": "Nur hochgeladene Umhänge können gemeldet werden.",
+      "invalidCodeFormat": "Codes haben 20 Zeichen, z. B. 7K3QF-M2XPA-9RTVB-C4HJN.",
+      "tooManyPlayers": "Höchstens 100 Spieler auf einmal.",
+      "onlyUploadedDeletable": "Nur hochgeladene Umhänge können gelöscht werden.",
+      "invalidCodeId": "Ungültige Code-ID.",
+      "redemptionsRange": "Einlösungen je Code: 1 bis 100 000.",
+      "countRange": "Anzahl: 1 bis 100 Codes auf einmal.",
+      "expiryInPast": "Das Ablaufdatum liegt in der Vergangenheit."
+    },
+    "trsPng": {
+      "fileTooLarge": "Die Datei ist zu groß (höchstens 256 KB).",
+      "invalidPng": "Die Datei ist kein gültiges PNG-Bild.",
+      "animated": "Animierte PNGs sind für eigene Umhänge nicht erlaubt.",
+      "invalidSize": "Der Umhang muss 64×32 (oder 128×64, 192×96, 256×128) bzw. im Umhang-Format 22×17 (oder 44×34, 66×51, 88×68) Pixel groß sein."
+    },
+    "trsValidate": {
+      "invalidName": "Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) eingeben.",
+      "commentLength": "Hinweis: 1 bis {max} Zeichen.",
+      "commentInvalidChars": "Hinweis enthält ungültige Zeichen.",
+      "reasonLength": "Grund: 1 bis {max} Zeichen.",
+      "reasonInvalidChars": "Grund enthält ungültige Zeichen.",
+      "noteLength": "Notiz: 1 bis {max} Zeichen.",
+      "noteInvalidChars": "Notiz enthält ungültige Zeichen.",
+      "invalidUploadName": "Name: 1–32 Zeichen – Buchstaben, Ziffern, Leerzeichen und . , ' ! ? & ( ) + - _",
+      "invalidExpiry": "Ungültiges Ablaufdatum."
+    },
+    "commands": {
+      "linkNotAllowed": "Dieser Link kann nicht geöffnet werden.",
+      "dropExpired": "Die gezogenen Dateien sind nicht mehr verfügbar – bitte erneut ziehen.",
+      "noJavaAtPath": "Unter diesem Pfad gibt es keine Java-Datei.",
+      "invalidTaskId": "Ungültige Aufgaben-ID",
+      "taskRunning": "Diese Aufgabe läuft bereits."
+    }
+  },
+  "browse": {
+    "title": "Entdecken",
+    "subtitle": "Mods, Modpacks, Ressourcenpakete, Datenpakete und Shader von Modrinth.",
+    "backToInstance": "Zurück zur Instanz",
+    "installContent": "Inhalte installieren",
+    "installInto": "Installieren in",
+    "noInstance": "Keine Instanz vorhanden",
+    "packHint": "Ein Modpack wird als neue Instanz angelegt.",
+    "kindTabs": "Art",
+    "searchPlaceholder": {
+      "mod": "Mods suchen …",
+      "resourcepack": "Ressourcenpakete suchen …",
+      "datapack": "Datenpakete suchen …",
+      "shaderpack": "Shader suchen …",
+      "modpack": "Modpacks suchen …"
+    },
+    "clearSearch": "Suche leeren",
+    "sortBy": "Sortieren nach",
+    "perPage": "Anzeigen",
+    "results": "{count} Ergebnis | {count} Ergebnisse",
+    "pages": "Seiten",
+    "pagesBottom": "Seiten unten",
+    "prevPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "lockedByInstance": "Von der Instanz vorgegeben",
+    "chips": {
+      "openSource": "Open Source",
+      "hideInstalled": "Installierte ausgeblendet",
+      "resetAll": "Alle zurücksetzen"
+    },
+    "vanillaBlocked": "„{name}“ ist eine Vanilla-Instanz. Für Mods bitte eine Instanz mit Modloader wählen.",
+    "datapackHint": {
+      "text": "Datenpakete landen im Ordner {folder} der Instanz. Beim Erstellen einer Welt lassen sie sich dort unter „Datenpakete“ auswählen; für bestehende Welten in {worldFolder} kopieren.",
+      "world": "Welt"
+    },
+    "hit": {
+      "by": "von {author}",
+      "installingLabel": "{title} wird installiert – im Aufgaben-Panel anzeigen",
+      "percent": "{percent} %",
+      "openInstance": "Instanz öffnen",
+      "installed": "Installiert",
+      "asInstance": "Als Instanz",
+      "chooseVersion": "Version wählen",
+      "downloads": "{count} Download | {count} Downloads",
+      "followers": "{count} Follower | {count} Follower"
+    },
+    "empty": {
+      "title": "Kein Signal",
+      "text": "Nichts gefunden – andere Suchbegriffe oder Filter probieren.",
+      "textFor": "Nichts gefunden für {versions} – andere Suchbegriffe oder Filter probieren.",
+      "allVersions": "alle Versionen",
+      "resetFilters": "Filter zurücksetzen"
+    },
+    "filters": {
+      "label": "Filter",
+      "hideInstalled": "Bereits installierte ausblenden",
+      "versionLocked": "Die Spielversion wird von der Instanz vorgegeben ({version}).",
+      "unlock": "Filter entsperren",
+      "searchVersionPlaceholder": "Version suchen …",
+      "searchVersionLabel": "Version suchen",
+      "noVersion": "Keine Version gefunden.",
+      "rebind": "Wieder an Instanz binden",
+      "loader": "Loader",
+      "loaderLocked": "Der Loader wird von der Instanz vorgegeben ({loader}).",
+      "matchAny": "Mindestens eine",
+      "exclude": "{category} ausschließen",
+      "loadingCategories": "Kategorien werden geladen …",
+      "environment": "Umgebung",
+      "license": "Lizenz",
+      "openSourceOnly": "Nur Open Source",
+      "locked": "Gesperrt"
+    }
+  },
+  "modrinth": {
+    "sort": {
+      "relevance": "Relevanz",
+      "downloads": "Downloads",
+      "follows": "Follower",
+      "newest": "Neueste",
+      "updated": "Aktualisiert"
+    },
+    "categoryHeader": {
+      "categories": "Kategorie",
+      "features": "Merkmale",
+      "resolutions": "Auflösung",
+      "performanceImpact": "Leistungsbedarf"
+    },
+    "environment": {
+      "client": "Client",
+      "server": "Server",
+      "both": "Client und Server",
+      "either": "Client oder Server"
+    },
+    "side": {
+      "required": "Nötig",
+      "optional": "Optional",
+      "unsupported": "Nicht nötig",
+      "unknown": "Unbekannt"
+    },
+    "versionType": {
+      "release": "Stabil",
+      "beta": "Beta",
+      "alpha": "Alpha"
+    },
+    "categories": {
+      "adventure": "Abenteuer",
+      "cursed": "Verflucht",
+      "decoration": "Deko",
+      "economy": "Wirtschaft",
+      "equipment": "Ausrüstung",
+      "food": "Essen",
+      "gameMechanics": "Spielmechanik",
+      "library": "Bibliothek",
+      "magic": "Magie",
+      "management": "Verwaltung",
+      "minigame": "Minispiel",
+      "mobs": "Kreaturen",
+      "optimization": "Optimierung",
+      "social": "Sozial",
+      "storage": "Lager",
+      "technology": "Technik",
+      "transportation": "Transport",
+      "utility": "Werkzeuge",
+      "worldgen": "Weltgenerierung",
+      "combat": "Kampf",
+      "challenging": "Herausfordernd",
+      "kitchenSink": "Alles drin",
+      "lightweight": "Leichtgewichtig",
+      "multiplayer": "Mehrspieler",
+      "quests": "Quests",
+      "audio": "Audio",
+      "blocks": "Blöcke",
+      "entities": "Entities",
+      "environment": "Umgebung",
+      "fonts": "Schriften",
+      "gui": "Oberfläche",
+      "items": "Items",
+      "models": "Modelle",
+      "simplistic": "Schlicht",
+      "themed": "Thematisch",
+      "tweaks": "Anpassungen",
+      "realistic": "Realistisch",
+      "semiRealistic": "Halb-realistisch",
+      "vanillaLike": "Vanilla-nah",
+      "atmosphere": "Atmosphäre",
+      "bloom": "Bloom",
+      "shadows": "Schatten",
+      "reflections": "Spiegelungen",
+      "fantasy": "Fantasy",
+      "cartoon": "Cartoon",
+      "potato": "Für schwache PCs",
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch",
+      "screenshot": "Screenshot",
+      "pbr": "PBR",
+      "coloredLighting": "Farbiges Licht",
+      "pathTracing": "Path Tracing",
+      "foliage": "Pflanzen",
+      "coreShaders": "Core Shader"
+    }
+  },
+  "project": {
+    "stats": {
+      "author": "Autor",
+      "by": "von {author}",
+      "downloadsLabel": "Downloads",
+      "downloads": "{count} Download | {count} Downloads",
+      "followersLabel": "Follower",
+      "followers": "{count} Follower | {count} Follower",
+      "updatedLabel": "Aktualisiert",
+      "updated": "Aktualisiert {time}"
+    },
+    "pack": {
+      "title": "Modpack",
+      "hint": "Wird als neue Instanz mit allen Mods angelegt.",
+      "installingLabel": "Wird installiert, {percent} Prozent – im Aufgaben-Panel anzeigen",
+      "installingPercent": "Wird installiert … {percent} %",
+      "pausedPercent": "Pausiert {percent} %",
+      "openInstance": "Instanz öffnen",
+      "reinstall": "Noch einmal installieren",
+      "install": "Als Instanz installieren"
+    },
+    "install": {
+      "target": "Installieren in",
+      "noInstance": "Keine Instanz vorhanden",
+      "installed": "Installiert {version}",
+      "updateTo": "Auf {version} aktualisieren",
+      "modsBlocked": "Diese Vanilla-Instanz hat die TRS-Optimierung aus und lädt keine Mods – aktiviere sie in den Instanz-Einstellungen oder wähle eine Instanz mit Modloader.",
+      "noVersion": "Keine Version für {version} ({loader}).",
+      "switchVersion": "Version wechseln",
+      "otherVersion": "Andere Version wählen"
+    },
+    "links": {
+      "modrinth": "Auf Modrinth",
+      "source": "Quelltext",
+      "issues": "Fehler melden",
+      "wiki": "Wiki",
+      "discord": "Discord"
+    },
+    "tabs": {
+      "label": "Bereiche",
+      "gallery": "Galerie",
+      "versions": "Versionen",
+      "dependencies": "Abhängigkeiten"
+    },
+    "noDescription": "Keine Beschreibung vorhanden.",
+    "info": {
+      "title": "Infos",
+      "license": "Lizenz",
+      "published": "Veröffentlicht"
+    },
+    "versions": {
+      "gameVersionLabel": "Minecraft-Version",
+      "allVersions": "Alle Versionen",
+      "allLoaders": "Alle Loader",
+      "showPrerelease": "Beta und Alpha zeigen",
+      "count": "{shown} von {total}",
+      "noMatch": "Keine Version passt zu diesem Filter.",
+      "expandChangelog": "Changelog zeigen",
+      "collapseChangelog": "Changelog zuklappen",
+      "installed": "Installiert",
+      "newestFitting": "Neueste passende",
+      "incompatibleTitle": "Passt nicht zu {version} ({loader})",
+      "incompatible": "Passt nicht",
+      "showMore": "Mehr anzeigen",
+      "action": {
+        "switch": "Wechseln",
+        "update": "Aktualisieren",
+        "downgrade": "Zurückstufen"
+      }
+    },
+    "dependencies": {
+      "noVersion": "Keine Version zum Anzeigen.",
+      "none": "Version {version} braucht keine weiteren Projekte.",
+      "intro": "Für Version {version}. Benötigte Abhängigkeiten installiert der Launcher automatisch mit.",
+      "group": {
+        "required": "Benötigt",
+        "optional": "Optional",
+        "incompatible": "Nicht kompatibel",
+        "embedded": "Eingebaut"
+      }
+    },
+    "gallery": {
+      "empty": "Dieses Projekt hat keine Galerie.",
+      "image": "Bild",
+      "prev": "Vorheriges Bild",
+      "next": "Nächstes Bild"
+    }
+  },
+  "changelog": {
+    "title": "Changelog – {name}",
+    "installedVersion": "installierte Version",
+    "searching": "Suche nach neueren Versionen …",
+    "newVersions": "{n} neue Version | {n} neue Versionen",
+    "upToDate": "Du hast bereits die neueste passende Version ({version}).",
+    "noChangelog": "Kein Changelog angegeben.",
+    "updateTo": "Auf {version} aktualisieren"
+  },
+  "content": {
+    "toasts": {
+      "upToDate": "Alles ist aktuell",
+      "fileAdded": "{name} hinzugefügt",
+      "filesAdded": "{n} Datei hinzugefügt | {n} Dateien hinzugefügt"
+    },
+    "bulk": {
+      "done": {
+        "enable": "{n} Inhalt aktiviert | {n} Inhalte aktiviert",
+        "disable": "{n} Inhalt deaktiviert | {n} Inhalte deaktiviert",
+        "delete": "{n} Inhalt gelöscht | {n} Inhalte gelöscht"
+      },
+      "partial": {
+        "enable": "{changed} aktiviert, {failed} fehlgeschlagen",
+        "disable": "{changed} deaktiviert, {failed} fehlgeschlagen",
+        "delete": "{changed} gelöscht, {failed} fehlgeschlagen"
+      }
+    },
+    "updates": {
+      "stage": "{n} Update | {n} Updates",
+      "done": "{n} Update installiert | {n} Updates installiert",
+      "partial": "{failed} von {total} Updates ist fehlgeschlagen. | {failed} von {total} Updates sind fehlgeschlagen."
+    },
+    "perfPack": {
+      "taskTitle": "Performance-Paket für {name}",
+      "stage": "Mods werden geladen",
+      "done": "Performance-Paket installiert ({n} Datei) | Performance-Paket installiert ({n} Dateien)",
+      "title": "Sodium, Lithium & Co. – nur was es für diese Version gibt",
+      "installing": "Installiere Performance-Paket …",
+      "button": "+ Performance-Paket"
+    },
+    "toolbar": {
+      "searchPlaceholder": "{n} Projekt durchsuchen … | {n} Projekte durchsuchen …",
+      "searchLabel": "Projekte durchsuchen",
+      "sortLabel": "Sortieren",
+      "refreshTitle": "Aktualisieren (Liste neu laden und nach Updates suchen)",
+      "updating": "Aktualisiere …",
+      "updateAll": "Alle aktualisieren ({n})",
+      "addFiles": "Dateien hinzufügen",
+      "browse": "Inhalte durchsuchen"
+    },
+    "sort": {
+      "name": "Nach Name",
+      "enabled": "Aktive zuerst",
+      "updates": "Updates zuerst",
+      "kind": "Nach Art"
+    },
+    "boostOff": "TRS-Optimierung ist aus – diese Instanz startet als echtes Vanilla und lädt keine Mods.",
+    "boostOn": "TRS-Optimierung: Die Instanz startet mit Fabric, dem TRS Client und Performance-Mods.",
+    "selection": {
+      "selectAll": "Alle auswählen",
+      "selected": "{n} ausgewählt | {n} ausgewählt",
+      "update": "Aktualisieren ({n})",
+      "clear": "Auswahl aufheben"
+    },
+    "columns": {
+      "project": "Projekt",
+      "actions": "Aktionen"
+    },
+    "row": {
+      "select": "{name} auswählen",
+      "by": "von {author}",
+      "unknownAuthor": "Unbekannter Autor",
+      "updateTitle": "Update auf {version}",
+      "updateBadge": "Update",
+      "switchVersion": "Version wechseln",
+      "onlyModrinth": "Nur für Modrinth-Inhalte",
+      "switchVersionOf": "Version von {name} wechseln",
+      "enable": "{name} aktivieren",
+      "disable": "{name} deaktivieren",
+      "delete": "{name} löschen",
+      "moreActions": "Weitere Aktionen für {name}"
+    },
+    "menu": {
+      "updateTo": "Auf {version} aktualisieren",
+      "changelog": "Changelog ansehen",
+      "projectPage": "Projektseite",
+      "notModrinth": "Nicht über Modrinth installiert – Versionen und Changelog gibt es nur für Modrinth-Inhalte."
+    },
+    "empty": {
+      "noMatchTitle": "Kein Signal",
+      "noMatchText": "Kein Eintrag passt zu Filter oder Suche.",
+      "title": "Noch keine Inhalte",
+      "text": "Hier ist noch alles aus. Durchsuche Modrinth, füge Dateien hinzu oder ziehe .jar- und .zip-Dateien einfach ins Fenster."
+    },
+    "drop": {
+      "title": "Loslassen zum Hinzufügen",
+      "hint": ".jar = Mod · .zip = Ressourcenpaket, Shader oder Datenpaket"
+    },
+    "deleteDialog": {
+      "titleOne": "Datei löschen?",
+      "titleMany": "{n} Datei löschen? | {n} Dateien löschen?",
+      "textOne": "{name} wird aus dieser Instanz gelöscht.",
+      "textMany": "{n} Inhalt wird aus dieser Instanz gelöscht. | {n} Inhalte werden aus dieser Instanz gelöscht."
+    }
+  },
+  "screenshots": {
+    "title": "Screenshots",
+    "subtitle": "{n} Bild aus allen Instanzen | {n} Bilder aus allen Instanzen",
+    "noDate": "Ohne Datum",
+    "instanceLabel": "Instanz",
+    "allInstances": "Alle Instanzen",
+    "reload": "Neu laden",
+    "toasts": {
+      "copied": "Bild in die Zwischenablage kopiert",
+      "trashed": "In den Papierkorb gelegt"
+    },
+    "empty": {
+      "title": "Noch keine Screenshots",
+      "text": "Drück im Spiel F2 – jedes Bild lässt hier eine Lampe mehr leuchten. Die Screenshots aller Instanzen sammeln sich an dieser Stelle."
+    },
+    "open": "{name} öffnen",
+    "copyTitle": "In die Zwischenablage kopieren",
+    "showInFolder": "Im Ordner zeigen",
+    "viewer": {
+      "label": "Screenshot",
+      "closeLabel": "Vollbild schließen",
+      "prev": "Vorheriges",
+      "prevLabel": "Vorheriges Bild",
+      "next": "Nächstes",
+      "nextLabel": "Nächstes Bild",
+      "hint": "Pfeiltasten zum Blättern · Esc schließt · „Kopieren“ legt das Bild zum Einfügen in die Zwischenablage"
+    },
+    "deleteDialog": {
+      "title": "Screenshot löschen?",
+      "text": "{name} wandert in den Papierkorb von Windows – von dort lässt er sich zurückholen."
+    }
+  },
+  "servers": {
+    "title": "Server",
+    "subtitle": "Einmal eintragen – in jeder Instanz verfügbar, mit Live-Status und Beitritt per Klick.",
+    "refreshing": "Aktualisiere …",
+    "add": "Server hinzufügen",
+    "joinWith": "Beitreten mit",
+    "lastPlayed": "{name} (zuletzt gespielt)",
+    "joinHint": "Startet „{name}“ und verbindet direkt",
+    "noInstance": "Erst eine Instanz anlegen",
+    "empty": {
+      "title": "Noch kein Server",
+      "text": "Leg eine Leitung zu deinem Lieblingsserver: Adresse eintragen – der Launcher zeigt Spielerzahl und Ping live an und setzt den Server in die Serverliste jeder Instanz."
+    },
+    "card": {
+      "checking": "Wird abgefragt",
+      "unreachable": "Nicht erreichbar",
+      "join": "Beitreten"
+    }
+  },
+  "serverDialog": {
+    "addTitle": "Server hinzufügen",
+    "editTitle": "Server bearbeiten",
+    "address": "Adresse",
+    "namePlaceholder": "Wie der Server heißen soll",
+    "autoResourcePack": "Server-Resourcepack automatisch annehmen",
+    "autoResourcePackHint": "Damit Ränge, Icons und Sounds des Servers ohne Nachfrage laden.",
+    "toasts": {
+      "saved": "Server gespeichert",
+      "added": "Server hinzugefügt",
+      "removed": "Server entfernt"
+    }
+  },
+  "library": {
+    "title": "Bibliothek",
+    "subtitle": "Jede Instanz hat eigene Welten, Mods und Einstellungen.",
+    "newGroup": "Neue Gruppe",
+    "newInstance": "Neue Instanz",
+    "searchPlaceholder": "{n} Instanz durchsuchen … | {n} Instanzen durchsuchen …",
+    "searchLabel": "Instanzen durchsuchen",
+    "sortLabel": "Sortieren",
+    "groupLabel": "Gruppieren",
+    "filter": "Filter",
+    "resetFilters": "Filter zurücksetzen",
+    "sort": {
+      "played": "Zuletzt gespielt",
+      "name": "Name",
+      "created": "Erstellt",
+      "playtime": "Spielzeit",
+      "version": "Version"
+    },
+    "groupBy": {
+      "none": "Keine",
+      "loader": "Modloader",
+      "version": "Minecraft-Version",
+      "custom": "Eigene Gruppen"
+    },
+    "ungrouped": "Ohne Gruppe",
+    "noMatch": {
+      "title": "Kein Signal",
+      "text": "Keine Instanz passt zu Suche oder Filter."
+    },
+    "empty": {
+      "title": "Noch keine Instanz",
+      "text": "Die Leitung liegt, nur die Lampe fehlt noch: Erstelle deine erste Instanz – Vanilla oder mit Fabric, Quilt, Forge oder NeoForge.",
+      "create": "Instanz erstellen",
+      "import": "Aus anderem Launcher importieren"
+    },
+    "toasts": {
+      "movedToGroup": "„{name}“ ist jetzt in „{group}“",
+      "removedFromGroup": "„{name}“ aus der Gruppe genommen"
+    },
+    "delete": {
+      "title": "Instanz löschen?",
+      "text": "{name} wird mit allen Welten, Mods und Screenshots unwiderruflich gelöscht.",
+      "deleting": "Lösche …",
+      "confirm": "Endgültig löschen"
+    }
+  },
+  "instance": {
+    "settingsGeneral": "Einstellungen: Allgemein",
+    "changeVersion": "Version wechseln",
+    "settings": "Einstellungen",
+    "tabsLabel": "Bereiche",
+    "tabs": {
+      "content": "Inhalte",
+      "history": "Verlauf",
+      "screenshots": "Screenshots",
+      "worlds": "Welten",
+      "logs": "Logs"
+    },
+    "gallery": {
+      "bannerSet": "Banner gesetzt",
+      "noScreenshots": {
+        "title": "Noch keine Screenshots",
+        "text": "Drück im Spiel F2 – jedes Bild lässt hier eine Lampe mehr leuchten."
+      },
+      "noWorlds": {
+        "title": "Noch keine Welten",
+        "text": "Noch nichts gebaut: Einzelspieler-Welten dieser Instanz erscheinen hier."
+      },
+      "openScreenshot": "{name} öffnen",
+      "useAsBannerLabel": "{name} als Banner verwenden",
+      "useAsBannerTitle": "Als Banner der Instanz verwenden",
+      "deleteScreenshot": "Screenshot löschen",
+      "lastPlayed": "Zuletzt gespielt {date}",
+      "deleteTitle": "Screenshot löschen?",
+      "deleteText": "Der Screenshot wird von der Festplatte gelöscht."
+    }
+  },
+  "instanceSettings": {
+    "title": "Einstellungen · {name}",
+    "sections": {
+      "general": "Allgemein",
+      "installation": "Installation",
+      "window": "Fenster",
+      "java": "Java & Arbeitsspeicher",
+      "hooks": "Start-Hooks",
+      "sync": "Synchronisierung"
+    },
+    "general": {
+      "changeImage": "Bild ändern",
+      "removeImage": "Bild entfernen",
+      "bannerTitle": "Banner",
+      "bannerDescription": "Breites Titelbild für Startseite und Instanz-Kopf. PNG, JPEG oder WebP, höchstens 10 MB – oder im Tab „Screenshots“ ein eigenes Bild übernehmen.",
+      "bannerPicking": "Wähle …",
+      "bannerChange": "Banner ändern",
+      "bannerPick": "Banner wählen",
+      "groupTitle": "Bibliotheksgruppe",
+      "groupDescription": "Gruppen ordnen die Instanzen in der Bibliothek. Eine Instanz gehört zu höchstens einer Gruppe.",
+      "groupNone": "Keine",
+      "groupNamePlaceholder": "Name der Gruppe",
+      "groupNameLabel": "Name der neuen Gruppe",
+      "groupCreate": "Anlegen",
+      "groupNew": "+ Neue Gruppe",
+      "channelTitle": "Update-Kanal für Inhalte",
+      "channelDescription": "Welche Modrinth-Versionen „Aktualisieren“ und „neueste passende Version“ nehmen.",
+      "channel": {
+        "release": {
+          "label": "Stabil",
+          "hint": "Nur fertige Versionen"
+        },
+        "beta": {
+          "label": "Beta",
+          "hint": "Stabil + Betas"
+        },
+        "alpha": {
+          "label": "Alpha",
+          "hint": "Alles, auch Alphas"
+        }
+      },
+      "duplicateTitle": "Duplizieren",
+      "duplicateDescription": "Legt eine Kopie mit allen Welten, Mods und Einstellungen an – praktisch vor einem Versionswechsel.",
+      "duplicating": "Kopiere …",
+      "copyName": "{name} (Kopie)",
+      "copyStage": "Dateien werden kopiert",
+      "copyDone": "Kopie „{name}“ angelegt",
+      "exportTitle": "Als Modpack exportieren",
+      "exportDescription": "Schreibt eine .mrpack-Datei zum Weitergeben oder Sichern. Mods von Modrinth werden verlinkt statt kopiert.",
+      "deleteTitle": "Instanz löschen",
+      "deleteDescription": "Löscht die Instanz mit allen Welten, Mods und Screenshots unwiderruflich.",
+      "deleted": "„{name}“ gelöscht"
+    },
+    "installation": {
+      "platform": "Plattform",
+      "loaderVersion": "{loader}-Version",
+      "latestStable": "Neueste stabile",
+      "currently": "(derzeit {version})",
+      "changeHint": "Beim Wechsel bleiben Welten und Einstellungen erhalten; über Modrinth installierte Mods lassen sich danach auf passende Versionen bringen. Welten werden beim ersten Start umgewandelt – sicherer ist es, die Instanz vorher zu duplizieren.",
+      "boostTitle": "TRS-Optimierung",
+      "boostDescription": "Startet die Instanz unter der Haube mit Fabric, dem TRS Client und Performance-Mods wie Sodium – deutlich mehr FPS. Aus = echtes Vanilla.",
+      "clientDescription": "HUD mit FPS, CPS, Tastenanzeige und Ping, Zoom (V) und Fullbright. Menü im Spiel mit der rechten Umschalttaste.",
+      "maintenance": "Wartung",
+      "repairTitle": "Reparieren",
+      "repairDescription": "Prüft alle Spieldateien per Prüfsumme und lädt beschädigte neu. Welten und Mods bleiben unberührt.",
+      "reinstallTitle": "Neu installieren",
+      "reinstallDescription": "Lädt Spielversion, Modloader und Bibliotheken komplett neu. Welten, Mods und Einstellungen bleiben erhalten.",
+      "reinstallConfirmTitle": "Neu installieren?",
+      "reinstallConfirmText": "Spielversion und Bibliotheken werden neu heruntergeladen. Welten, Mods und Einstellungen bleiben erhalten."
+    },
+    "window": {
+      "customTitle": "Eigene Fenstereinstellungen",
+      "customDescription": "Aus = die globalen Einstellungen gelten.",
+      "fullscreenTitle": "Vollbild",
+      "fullscreenDescription": "Startet das Spiel direkt im Vollbild.",
+      "widthTitle": "Breite",
+      "widthDescription": "Breite des Spielfensters in Pixeln.",
+      "heightTitle": "Höhe",
+      "heightDescription": "Höhe des Spielfensters in Pixeln."
+    },
+    "java": {
+      "customTitle": "Eigene Java- und Speichereinstellungen",
+      "customDescription": "Aus = die globalen Einstellungen gelten. Leere Felder übernehmen ebenfalls die globalen Werte.",
+      "installTitle": "Java-Installation",
+      "installDescriptionGlobal": "Diese Version braucht Java {major}. Leer = globaler Pfad.",
+      "installDescriptionAuto": "Diese Version braucht Java {major}. Leer = automatisch installieren.",
+      "autoPlaceholder": "Automatisch (Java {major})",
+      "memoryTitle": "Arbeitsspeicher",
+      "memoryDescription": "Wie viel RAM das Spiel höchstens nutzen darf. Mehr als die Hälfte des Rechners ist selten sinnvoll.",
+      "memoryMbLabel": "Arbeitsspeicher in MB",
+      "jvmArgsTitle": "JVM-Argumente",
+      "jvmArgsDescription": "Zusätzliche Argumente für Java, durch Leerzeichen getrennt.",
+      "jvmArgsNone": "Keine",
+      "optimizedTitle": "Bewährte G1-Einstellungen",
+      "optimized": "Optimierte Argumente",
+      "envTitle": "Umgebungsvariablen",
+      "envDescription": "Gelten für das Spiel und die Start-Hooks."
+    },
+    "hooks": {
+      "intro": "Befehle laufen über {cmd} ohne Fenster, höchstens 2 Minuten. Verfügbar sind {id}, {name}, {dir}, {mcDir} und {java}.",
+      "customTitle": "Eigene Start-Hooks",
+      "customDescription": "Aus = die globalen Hooks gelten.",
+      "preLaunchTitle": "Vor dem Start",
+      "preLaunchDescription": "Läuft, bevor das Spiel startet. Schlägt er fehl, startet das Spiel nicht.",
+      "preLaunchLabel": "Befehl vor dem Start",
+      "noCommand": "Kein Befehl",
+      "wrapperTitle": "Wrapper",
+      "wrapperDescription": "Wird vor die Java-Kommandozeile gesetzt, z. B. ein Profiler oder Starter.",
+      "wrapperLabel": "Wrapper-Befehl",
+      "noWrapper": "Kein Wrapper",
+      "postExitTitle": "Nach dem Beenden",
+      "postExitDescription": "Läuft, nachdem das Spiel beendet wurde. Fehler erscheinen als Hinweis.",
+      "postExitLabel": "Befehl nach dem Beenden"
+    },
+    "sync": {
+      "intro": "Global eingeschaltete Dinge werden vor dem Start aus dem gemeinsamen Speicher geholt und nach dem Beenden zurückgeschrieben. Hier kannst du sie für diese Instanz separat halten. Überschriebene Dateien werden vorher gesichert.",
+      "globallyOff": "Global ausgeschaltet – in den Einstellungen unter Instanzen einschalten.",
+      "toggleLabel": "{item} synchronisieren"
+    }
+  },
+  "createInstance": {
+    "title": "Neue Instanz",
+    "namePlaceholder": "Meine Welt",
+    "gameVersion": "Minecraft-Version",
+    "showSnapshots": "Snapshots & alte Versionen",
+    "loadingVersions": "Lade Versionen …",
+    "creating": "Erstelle …"
+  },
+  "changeVersion": {
+    "title": "Version wechseln",
+    "migrateTitle": "Inhalte anpassen",
+    "current": "Aktuell: {version} mit {loader}",
+    "gameVersion": "Minecraft-Version",
+    "showSnapshots": "Snapshots & alte Versionen",
+    "loadingVersions": "Lade Versionen …",
+    "optionCurrent": "{version} (aktuell)",
+    "optionBeta": "{version} (Beta)",
+    "optionBetaCurrent": "{version} (Beta) (aktuell)",
+    "loaderVersion": "{loader}-Version",
+    "showBetas": "Betas anzeigen",
+    "loaderEmptyPlaceholder": "Leer = neueste stabile",
+    "latestRecommended": "Neueste stabile (empfohlen)",
+    "loaderUnavailable": "Für Minecraft {version} gibt es {loader} (noch) nicht.",
+    "notice": {
+      "title": "Bitte vorher lesen",
+      "downgradeLabel": "Ältere Version:",
+      "downgrade": "{label} Welten, die mit einer neueren Version gespielt wurden, können dabei kaputtgehen.",
+      "worlds": "Welten werden beim ersten Start umgewandelt und lassen sich danach nicht mehr in der alten Version öffnen. Sicherer: Instanz vorher duplizieren.",
+      "loaderChanged": "Mods für {from} laufen nicht mit {to}.",
+      "migrate": "Danach kannst du über Modrinth installierte Mods automatisch auf passende Versionen bringen."
+    },
+    "planning": "Suche passende Versionen für deine Inhalte …",
+    "updateCount": "{n} mit neuer Version | {n} mit neuer Version",
+    "fineCount": "{n} passt schon | {n} passen schon",
+    "missingCount": "{n} ohne passende Version | {n} ohne passende Version",
+    "itemChange": "{from} zu {to}",
+    "noMatch": "Keine passende Version",
+    "fits": "Passt",
+    "saving": "Wechsle …",
+    "disableMissing": "Nicht passende deaktivieren",
+    "applyUpdates": "Mods auf passende Versionen aktualisieren",
+    "toasts": {
+      "changed": "Instanz läuft jetzt mit {version} ({loader})",
+      "disabledMissing": "Nicht passende Inhalte deaktiviert"
+    },
+    "task": {
+      "stage": "Inhalte werden angepasst",
+      "done": "{n} Inhalt auf passende Versionen gebracht | {n} Inhalte auf passende Versionen gebracht",
+      "partial": "{n} von {total} Updates ist fehlgeschlagen. | {n} von {total} Updates sind fehlgeschlagen."
+    }
+  },
+  "versionPicker": {
+    "titleChange": "Version wechseln – {title}",
+    "titlePick": "Version wählen – {title}",
+    "compatibleWith": "Passend zu {version} ({loader})",
+    "showPrerelease": "Beta und Alpha zeigen",
+    "none": "Keine passende Version gefunden.",
+    "hideChangelog": "Changelog zuklappen",
+    "showChangelog": "Changelog zeigen",
+    "installed": "Installiert",
+    "latest": "Neueste",
+    "newer": "Neuer",
+    "older": "Älter",
+    "type": {
+      "release": "Stabil",
+      "beta": "Beta",
+      "alpha": "Alpha"
+    },
+    "downgrade": "Zurückstufen",
+    "switch": "Wechseln"
+  },
+  "newGroup": {
+    "title": "Neue Gruppe",
+    "placeholder": "z. B. PvP, Modpacks, Mit Freunden",
+    "instances": "Instanzen",
+    "nameRequired": "Bitte einen Namen eingeben",
+    "pickInstance": "Wähle mindestens eine Instanz – leere Gruppen gibt es nicht.",
+    "created": "Gruppe „{name}“ angelegt",
+    "creating": "Lege an …",
+    "submit": "Gruppe anlegen"
+  },
+  "history": {
+    "filters": {
+      "all": "Alles",
+      "play": "Spielen",
+      "content": "Inhalte",
+      "instance": "Instanz"
+    },
+    "entryCount": "{n} Eintrag | {n} Einträge",
+    "empty": {
+      "title": "Noch nichts passiert",
+      "text": "Starts, Abstürze, installierte Mods und Versionswechsel erscheinen hier."
+    },
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "titles": {
+      "createdFromModpack": "Aus Modpack „{name}“ erstellt",
+      "createdAsCopy": "Als Kopie von „{name}“ erstellt",
+      "created": "Instanz erstellt",
+      "imported": "Importiert aus {source}",
+      "importedUnknown": "Importiert aus anderem Launcher",
+      "launchedServer": "Gestartet und mit „{server}“ verbunden",
+      "launched": "Gestartet",
+      "stopped": "Spiel beendet",
+      "crashed": "Abgestürzt",
+      "modInstalled": "{name} installiert",
+      "modDowngraded": "{name} zurückgestuft",
+      "modUpdated": "{name} aktualisiert",
+      "modRemoved": "{name} entfernt",
+      "modEnabled": "{name} aktiviert",
+      "modDisabled": "{name} deaktiviert",
+      "versionSwitched": "Version gewechselt",
+      "repaired": "Dateien geprüft und repariert",
+      "iconChanged": "Bild geändert",
+      "filesAdded": "{n} Dateien hinzugefügt",
+      "fileAdded": "{name} hinzugefügt",
+      "bulk": {
+        "enable": "{n} Inhalt aktiviert | {n} Inhalte aktiviert",
+        "disable": "{n} Inhalt deaktiviert | {n} Inhalte deaktiviert",
+        "delete": "{n} Inhalt gelöscht | {n} Inhalte gelöscht",
+        "changed": "{n} Inhalt geändert | {n} Inhalte geändert"
+      },
+      "bulkSeveral": {
+        "enable": "Mehrere Inhalte aktiviert",
+        "disable": "Mehrere Inhalte deaktiviert",
+        "delete": "Mehrere Inhalte gelöscht",
+        "changed": "Mehrere Inhalte geändert"
+      },
+      "hooksGlobal": "Start-Hooks zurück auf global",
+      "hooksCustom": "Eigene Start-Hooks gesetzt",
+      "movedToGroup": "In Gruppe „{group}“ verschoben",
+      "removedFromGroup": "Aus der Gruppe genommen",
+      "renamed": "Umbenannt"
+    },
+    "details": {
+      "played": "Gespielt: {time}",
+      "exitCode": "Exit-Code {code}",
+      "after": "nach {time}",
+      "asDependencyVersion": "{version} · als Abhängigkeit",
+      "asDependency": "Als Abhängigkeit",
+      "renamed": "„{from}“ → „{to}“",
+      "previousGroup": "vorher: {group}"
+    }
+  },
+  "logConsole": {
+    "warnings": "Warnungen",
+    "errors": "Fehler",
+    "search": "Suchen …",
+    "lineCount": "{n} Zeile | {n} Zeilen",
+    "copied": "Kopiert",
+    "empty": "Noch keine Ausgabe – starte die Instanz, um die Logs live zu sehen.",
+    "jumpToEnd": "↓ Zum Ende springen"
+  },
+  "crash": {
+    "crashed": "Das Spiel ist abgestürzt",
+    "exitedUnexpectedly": "Das Spiel wurde unerwartet beendet (Exit-Code {code})",
+    "hint": "Die letzten Zeilen im Log zeigen meist die Ursache. Du kannst den Log auch teilen, um Hilfe zu bekommen.",
+    "checkFiles": "Dateien prüfen",
+    "uploading": "Lade hoch …",
+    "shareLog": "Log teilen",
+    "linkCopied": "Link kopiert",
+    "shareTitle": "Log öffentlich teilen?",
+    "shareText": "Der Log wird auf {site} hochgeladen und ist über den Link für alle lesbar. Login-Tokens und dein Windows-Benutzername werden vorher entfernt.",
+    "upload": "Hochladen",
+    "cause": {
+      "corrupt_files": "Beschädigte Dateien",
+      "out_of_memory": "Zu wenig Arbeitsspeicher",
+      "wrong_java": "Falsche Java-Version",
+      "missing_dependency": "Fehlende Abhängigkeit",
+      "mod_conflict": "Mod-Konflikt",
+      "graphics_driver": "Grafiktreiber"
+    },
+    "diagnosis": {
+      "corrupt_files": "Eine Spieldatei ist beschädigt (z. B. nach einem abgebrochenen Download). „Dateien prüfen“ lädt sie neu herunter.",
+      "out_of_memory": "Dem Spiel ist der Arbeitsspeicher ausgegangen. Erhöhe den Arbeitsspeicher der Instanz in den Einstellungen.",
+      "wrong_java": "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den Einstellungen, dann wählt der Launcher automatisch die passende.",
+      "missing_dependency": "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler.",
+      "mod_conflict": "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut.",
+      "graphics_driver": "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den Treiber deiner Grafikkarte."
+    }
+  },
+  "exportPack": {
+    "title": "Als Modpack exportieren",
+    "summary": "Kurzbeschreibung (optional)",
+    "summaryPlaceholder": "Worum geht es in diesem Pack?",
+    "included": "Das kommt mit",
+    "nothing": "In dieser Instanz liegt noch nichts, was sich exportieren ließe.",
+    "dirSize": "{n} Datei · {size} | {n} Dateien · {size}",
+    "hint": "Mods, die es auf Modrinth gibt, werden nur verlinkt – das Pack bleibt klein und lässt sich weitergeben. Alles andere landet als Kopie darin. Ausgewählt: {size}.",
+    "runsInBackground": "{stage} – läuft im Hintergrund weiter, wenn du schließt.",
+    "exporting": "Exportiere …",
+    "saveAs": "Speichern unter …",
+    "phase": {
+      "hashing": "Dateien werden geprüft",
+      "lookup": "Abgleich mit Modrinth",
+      "writing": "Modpack wird geschrieben"
+    },
+    "pickLocation": "Speicherort wählen …",
+    "done": "„{file}“ geschrieben – {downloads} Dateien von Modrinth, {overrides} mitkopiert ({size})"
+  },
+  "import": {
+    "title": "Aus anderem Launcher importieren",
+    "intro": "Welten, Mods, Einstellungen und Server werden kopiert, das Original bleibt unverändert. Anmeldedaten anderer Launcher werden nie übernommen.",
+    "search": "Suchen …",
+    "searchLabel": "Installationen durchsuchen",
+    "sourceLabel": "Quelle",
+    "allSources": "Alle Quellen",
+    "scanning": "Durchsuche …",
+    "browseFolder": "Ordner durchsuchen …",
+    "packProgress": "Modpack {percent} %",
+    "packFile": "Modpack-Datei (.mrpack) …",
+    "nothingFound": "Nichts automatisch gefunden. Mit „Ordner durchsuchen“ kannst du jeden Ordner mit Minecraft-Daten wählen, zum Beispiel von einem anderen Client.",
+    "noMatch": "Keine Installation passt zur Suche.",
+    "modCount": "{n} Mod | {n} Mods",
+    "worldCount": "{n} Welt | {n} Welten",
+    "imported": "Importiert",
+    "checkVersion": "Version und Modloader prüfen:",
+    "gameVersion": "Minecraft-Version",
+    "backgroundHint": "Läuft im Hintergrund weiter, wenn du schließt.",
+    "task": {
+      "stage": "Wird aus {source} kopiert",
+      "filesCopied": "{done} / {total} Dateien kopiert",
+      "done": "„{name}“ importiert",
+      "packTitle": "Modpack aus Datei",
+      "pickFile": "Datei wählen …",
+      "packDone": "Modpack importiert"
+    }
+  },
+  "envEditor": {
+    "valuePlaceholder": "Wert",
+    "nameLabel": "Name der Variable {n}",
+    "valueLabel": "Wert der Variable {n}",
+    "remove": "Variable {name} entfernen",
+    "global": "Global: {vars}",
+    "add": "Variable hinzufügen"
+  },
+  "javaPath": {
+    "foundUnknown": "Gefunden (Version unbekannt)",
+    "wrongMajor": "Java {found} – hier wird Java {expected} erwartet",
+    "notFoundMajor": "Kein Java {major} gefunden",
+    "notFound": "Keine Java-Installation gefunden",
+    "searching": "Suche …",
+    "detect": "Erkennen",
+    "managed": "vom Launcher"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "footer": {
+      "clientModUpdate": "TRS Client: Update auf {version} geladen",
+      "clientModCurrent": "TRS Client: Version {version} (aktuell)"
+    },
+    "appearance": {
+      "colorScheme": "Farbschema",
+      "themes": {
+        "dark": "Dunkel",
+        "oled": "OLED",
+        "light": "Hell",
+        "system": "System"
+      },
+      "accents": {
+        "redstone": "Redstone",
+        "lamp": "Lampe",
+        "emerald": "Smaragd",
+        "lapis": "Lapis",
+        "amethyst": "Amethyst"
+      },
+      "accentTitle": "Akzentfarbe",
+      "accentDescription": "Farbe für Knöpfe, aktive Punkte und die Redstone-Leitung.",
+      "accentLabel": "Akzentfarbe {name}",
+      "advancedRenderingTitle": "Erweitertes Rendering",
+      "advancedRenderingDescription": "Unschärfe-Effekte hinter Dialogen und Leisten. Aus spart auf schwachen Rechnern etwas Leistung.",
+      "animatedBackgroundTitle": "Animierter Hintergrund",
+      "animatedBackgroundDescription": "Eine ruhige Redstone-Schaltung hinter allen Seiten. Aus zeigt nur das Deepslate-Muster."
+    },
+    "features": {
+      "instancePage": "Instanz-Seite",
+      "historyTabTitle": "Verlauf-Tab",
+      "historyTabDescription": "Starts, Abstürze, installierte Mods und Versionswechsel je Instanz.",
+      "screenshotsTabTitle": "Screenshots-Tab",
+      "screenshotsTabDescription": "Galerie der Screenshots einer Instanz.",
+      "worldsTabTitle": "Welten-Tab",
+      "worldsTabDescription": "Liste der Welten einer Instanz.",
+      "sidebar": "Linke Leiste",
+      "sidebarRecentTitle": "Schnell-Instanzen",
+      "sidebarRecentDescription": "Die zuletzt gespielten Instanzen mit Bild unter der Navigation.",
+      "sidebarAccountTitle": "Account-Kachel",
+      "sidebarAccountDescription": "Aktiver Account mit Skin-Kopf unten in der Leiste."
+    },
+    "behavior": {
+      "title": "Verhalten",
+      "closeOnLaunchTitle": "Launcher beim Spielstart minimieren",
+      "closeOnLaunchDescription": "Das Fenster geht beim Start aus dem Weg; das Spiel läuft weiter, auch wenn der Launcher geschlossen wird.",
+      "compactLibraryTitle": "Kompakte Bibliothek",
+      "compactLibraryDescription": "Kleinere Kacheln – mehr Instanzen auf einen Blick.",
+      "showPlayTimeTitle": "Spielzeit anzeigen",
+      "showPlayTimeDescription": "Gesamte Spielzeit auf Kacheln und Instanzseiten.",
+      "showSnapshotsTitle": "Snapshots anzeigen",
+      "showSnapshotsDescription": "Snapshots und alte Versionen standardmäßig in der Versionsauswahl.",
+      "restartOnboardingTitle": "Einrichtung erneut starten",
+      "restartOnboardingDescription": "Führt noch einmal durch Anmeldung und erste Instanz."
+    },
+    "profile": {
+      "title": "Minecraft-Accounts",
+      "added": "Hinzugefügt {time}",
+      "use": "Verwenden",
+      "none": "Noch kein Account angemeldet.",
+      "manage": "Accounts verwalten"
+    },
+    "privacy": {
+      "title": "Datenschutz",
+      "logUploadTitle": "Logs teilen erlauben",
+      "logUploadDescription": "„Log teilen“ lädt den Spiel-Log auf mclo.gs hoch – Zugangsdaten und Benutzername werden vorher geschwärzt. Aus = der Knopf funktioniert nicht.",
+      "telemetryTitle": "Telemetrie",
+      "telemetryDescription": "Der TRS Launcher sammelt keine Nutzungs- oder Absturzdaten. Es gibt nichts einzuschalten."
+    },
+    "defaults": {
+      "title": "Standard für alle Instanzen",
+      "hint": "Instanzen können einzelne Werte in ihren eigenen Einstellungen überschreiben.",
+      "memoryTitle": "Arbeitsspeicher",
+      "memoryDescription": "Wie viel RAM das Spiel höchstens nutzen darf.",
+      "maxMemoryLabel": "Maximaler Arbeitsspeicher",
+      "maxMemoryMbLabel": "Maximaler Arbeitsspeicher in MB",
+      "minMemoryTitle": "Minimaler Arbeitsspeicher",
+      "minMemoryDescription": "Startwert für Java (-Xms), in MB.",
+      "jvmArgsTitle": "JVM-Argumente",
+      "jvmArgsDescription": "Zusätzliche Argumente für Java.",
+      "optimizedArgs": "Optimierte Argumente",
+      "envTitle": "Umgebungsvariablen",
+      "envDescription": "Gelten für das Spiel und die Start-Hooks.",
+      "fullscreenTitle": "Vollbild",
+      "fullscreenDescription": "Spiele im Vollbild starten.",
+      "resolutionTitle": "Fenstergröße",
+      "resolutionDescription": "Breite × Höhe des Spielfensters.",
+      "windowWidth": "Fensterbreite",
+      "windowHeight": "Fensterhöhe",
+      "dedicatedGpuTitle": "Leistungsstarke Grafikkarte",
+      "dedicatedGpuDescription": "Für Laptops mit zwei Grafikchips: Windows gibt dem Spiel die dedizierte GPU."
+    },
+    "hooks": {
+      "title": "Start-Hooks",
+      "noCommand": "Kein Befehl",
+      "preLaunchTitle": "Vor dem Start",
+      "preLaunchDescription": "Läuft über cmd /C vor jedem Start; schlägt er fehl, startet das Spiel nicht.",
+      "preLaunchLabel": "Befehl vor dem Start",
+      "wrapperTitle": "Wrapper",
+      "wrapperDescription": "Wird vor die Java-Kommandozeile gesetzt.",
+      "wrapperPlaceholder": "Kein Wrapper",
+      "wrapperLabel": "Wrapper-Befehl",
+      "postExitTitle": "Nach dem Beenden",
+      "postExitDescription": "Läuft, nachdem das Spiel beendet wurde.",
+      "postExitLabel": "Befehl nach dem Beenden"
+    },
+    "sync": {
+      "title": "Synchronisierung",
+      "description": "Eingeschaltetes wird vor dem Start aus einem gemeinsamen Speicher geholt und nach dem Beenden zurückgeschrieben – so hat jede Instanz dieselben Einstellungen. Die erste Instanz, die eine Datei hat, liefert den Ausgangsstand; überschriebene Dateien werden gesichert.",
+      "toggleLabel": "{item} synchronisieren"
+    },
+    "java": {
+      "title": "Java-Installationen",
+      "hint": "Leer = der Launcher installiert die passende Java-Version von Mojang automatisch.",
+      "slots": {
+        "java8": "Minecraft bis 1.16",
+        "java17": "Minecraft 1.17 bis 1.20.4",
+        "java21": "Minecraft 1.20.5 bis 1.21.x",
+        "java25": "Minecraft 26.x"
+      },
+      "installing": "Installiere … {percent} %",
+      "installRecommended": "Empfohlene installieren",
+      "autoPlaceholder": "Automatisch (Java {major})",
+      "taskStage": "Java-Runtime wird geladen",
+      "taskDone": "Java {major} installiert",
+      "globalTitle": "Für alle Versionen",
+      "globalDescription": "Nur nötig, wenn ein einziges Java für alles gelten soll – die Einträge oben haben Vorrang.",
+      "notSet": "Nicht gesetzt"
+    },
+    "storage": {
+      "title": "Speicherverwaltung",
+      "instances": "Instanzen",
+      "sharedFiles": "Geteilte Spieldateien",
+      "unused": "Nicht mehr benötigt",
+      "verifyTitle": "Prüfen & reparieren",
+      "verifyDescription": "Prüft die geteilten Spieldateien per Prüfsumme. Beschädigte werden entfernt und beim nächsten Start neu geladen.",
+      "verifying": "Prüfe …",
+      "verifyRemoved": "{checked} Dateien geprüft, {removed} beschädigte entfernt – sie werden beim nächsten Start neu geladen.",
+      "verifyOk": "{checked} Dateien geprüft – alles in Ordnung.",
+      "cleanTitle": "Unbenutztes löschen",
+      "cleanDescription": "{n} Spielversion braucht keine Instanz mehr ({size}). Sie wird bei Bedarf neu geladen. | {n} Spielversionen braucht keine Instanz mehr ({size}). Sie werden bei Bedarf neu geladen.",
+      "cleanDescriptionEmpty": "Spielversionen, die keine Instanz mehr braucht.",
+      "cleaning": "Lösche …",
+      "freed": "{size} freigegeben",
+      "confirmTitle": "Unbenutztes löschen?",
+      "confirmText": "{n} Spielversion ({size}) wird gelöscht. Instanzen, Welten und Mods bleiben unberührt. | {n} Spielversionen ({size}) werden gelöscht. Instanzen, Welten und Mods bleiben unberührt.",
+      "dataDirTitle": "App-Ordner"
+    },
+    "network": {
+      "title": "Netzwerk",
+      "autoFirewallTitle": "Java-Versionen automatisch freigeben",
+      "autoFirewallDescription": "Windows fragt sonst bei jeder Java-Version einzeln, ob Minecraft ins Netzwerk darf (z. B. für LAN-Welten). Neue Java-Versionen werden vor dem Start mit einer Admin-Abfrage freigegeben.",
+      "firewallTitle": "Firewall-Freigabe",
+      "firewallDescription": "Trägt die Freigabe für alle Java-Versionen des Launchers auf einmal ein – eine einzige Admin-Abfrage.",
+      "noJava": "Noch keine Java-Version installiert",
+      "missing": "{missing} von {total} noch nicht freigegeben",
+      "allAllowed": "Alle freigegeben",
+      "waitingForWindows": "Warte auf Windows …",
+      "allowAll": "Jetzt für alle erlauben",
+      "allowed": "Netzwerkzugriff für {n} Java-Programm erlaubt | Netzwerkzugriff für {n} Java-Programme erlaubt",
+      "downloadsTitle": "Parallele Downloads",
+      "downloadsDescription": "Wie viele Dateien gleichzeitig geladen werden. Bei langsamer Leitung weniger."
+    }
+  },
+  "settingsShell": {
+    "sectionsLabel": "Bereiche"
+  },
+  "onboarding": {
+    "steps": {
+      "language": "Sprache",
+      "welcome": "Willkommen",
+      "login": "Anmelden",
+      "import": "Importieren",
+      "instance": "Erste Instanz",
+      "done": "Fertig"
+    },
+    "skipSetup": "Einrichtung überspringen",
+    "welcome": {
+      "text": "Jede Minecraft-Version, jeder Modloader, Mods und Modpacks – an einem Ort und mit einem Klick im Spiel.",
+      "start": "Los geht's"
+    },
+    "login": {
+      "title": "Anmelden",
+      "text": "Mit dem Microsoft-Konto, mit dem du Minecraft gekauft hast. Dein Passwort gibst du nur bei Microsoft im Browser ein – der Launcher bekommt es nie zu sehen.",
+      "signedIn": "Angemeldet"
+    },
+    "import": {
+      "title": "Importieren",
+      "text": "Welten, Mods, Einstellungen und Server aus anderen Launchern übernehmen. Das Original bleibt unverändert, Anmeldedaten werden nie übernommen.",
+      "none": "Keine anderen Launcher gefunden – du kannst direkt weitermachen.",
+      "modCount": "{n} Mod | {n} Mods",
+      "worldCount": "{n} Welt | {n} Welten",
+      "imported": "Importiert",
+      "importedToast": "„{name}“ importiert"
+    },
+    "instance": {
+      "title": "Erste Instanz",
+      "text": "Eine Instanz ist eine eigene Minecraft-Installation mit Version, Mods und Welten. Du kannst später beliebig viele weitere anlegen.",
+      "presetLabel": "Vorlage",
+      "vanillaText": "Das Spiel so, wie Mojang es ausliefert.",
+      "fabricTitle": "Fabric + Performance",
+      "fabricText": "Mit Sodium, Lithium und Co. für mehr FPS.",
+      "customTitle": "Eigene Version",
+      "customText": "Version und Modloader selbst wählen.",
+      "allVersions": "Alle Versionen",
+      "creatingPack": "Instanz steht – lade Performance-Mods von Modrinth …",
+      "creatingInstance": "Lege Instanz an …",
+      "chooseVersion": "Version wählen",
+      "installingPack": "Installiere Performance-Paket …",
+      "creating": "Erstelle …",
+      "create": "Instanz erstellen",
+      "packInstalled": "Performance-Paket installiert ({n} Datei) | Performance-Paket installiert ({n} Dateien)"
+    },
+    "done": {
+      "title": "Alles bereit",
+      "text": "Das hast du eingerichtet – alles lässt sich später jederzeit ändern.",
+      "account": "Account",
+      "notSignedIn": "Nicht angemeldet",
+      "notSignedInHint": "Unter Accounts kannst du das jederzeit nachholen.",
+      "noInstance": "Noch keine Instanz",
+      "noInstanceHint": "Leg sie an, wann immer du willst – auf der Startseite oder unter Instanzen.",
+      "home": "Zur Startseite",
+      "playNow": "Jetzt spielen"
+    }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "subtitle": "Mehrere Microsoft-Konten – mit einem Klick wechseln.",
+    "signInWithCode": "Mit Code anmelden",
+    "add": "Account hinzufügen",
+    "activeHint": "Aktiv – wird beim Spielstart verwendet",
+    "microsoftAccount": "Microsoft-Konto",
+    "use": "Verwenden",
+    "signOut": "Abmelden",
+    "empty": {
+      "title": "Noch kein Account",
+      "text": "Melde dich mit dem Microsoft-Konto an, mit dem du Minecraft gekauft hast. Dein Passwort gibst du nur bei Microsoft im Browser ein – der Launcher bekommt es nie zu sehen."
+    },
+    "login": {
+      "signInMicrosoft": "Mit Microsoft anmelden",
+      "browserOpened": "Die Anmeldung wurde in deinem Browser geöffnet. Schließe sie dort ab – der Launcher macht dann automatisch weiter.",
+      "enterCode": "Gib diesen Code auf der geöffneten Microsoft-Seite ein:",
+      "copyCode": "Code kopieren",
+      "clickToCopy": "Klicken zum Kopieren",
+      "page": "Seite: {url}",
+      "requestingCode": "Fordere Code an …",
+      "waiting": "Warte auf Microsoft …",
+      "notApprovedHint": "Das ist kein Fehler im Launcher: Microsoft-Login und Xbox-Anmeldung haben funktioniert, nur Mojangs Freigabe der App steht noch aus. Sobald sie da ist, klappt die Anmeldung ohne Update."
+    },
+    "remove": {
+      "title": "Account abmelden?",
+      "text": "{name} wird aus dem Launcher entfernt. Welten und Instanzen bleiben erhalten."
+    }
+  },
+  "skins": {
+    "title": "Skins & Umhänge",
+    "subtitle": "Auswählen, in der Vorschau anprobieren und dann gesammelt anwenden.",
+    "savingCurrent": "Sichere …",
+    "saveCurrent": "Getragenen Skin sichern",
+    "add": "Skin hinzufügen",
+    "loadErrorHint": "Deine gespeicherten Skins lassen sich trotzdem verwalten – zum Wechseln auf dem Konto braucht es eine Anmeldung und Internet.",
+    "previewLabel": "Vorschau und Entwurf",
+    "previewHint": "Ziehen zum Drehen · Mausrad zum Zoomen",
+    "unapplied": "Nicht angewendet",
+    "endTrsPreview": "TRS-Vorschau beenden",
+    "animation": {
+      "walk": "Laufen",
+      "idle": "Ruhig",
+      "none": "Stehen"
+    },
+    "model": "Modell",
+    "variants": {
+      "classic": "Klassisch",
+      "slim": "Slim"
+    },
+    "variantHints": {
+      "classic": "4 Pixel breite Arme (Steve)",
+      "slim": "3 Pixel breite Arme (Alex)"
+    },
+    "skin": "Skin",
+    "cape": "Umhang",
+    "defaultSkin": "Standard-Skin",
+    "currentSkin": "Getragener Skin",
+    "noCape": "Keiner",
+    "submitting": "Wird übergeben …",
+    "discard": "Verwerfen",
+    "applyHint": "Wähle Skin, Modell und Umhang – angewendet wird erst mit „Anwenden“.",
+    "mySkins": "Meine Skins",
+    "onAccount": "{variant} · auf dem Konto",
+    "defaultSkinHint": "Steve / Alex von Mojang",
+    "tryOnLabel": "{name} anprobieren",
+    "selected": "Ausgewählt",
+    "tryOn": "Anprobieren",
+    "empty": {
+      "title": "Noch keine eigenen Skins",
+      "text": "Lege 64×64-PNG-Dateien in deine Sammlung – dann kannst du sie anprobieren und gesammelt anwenden."
+    },
+    "mojangCapes": "Mojang-Umhänge",
+    "worn": "getragen",
+    "noCapes": "Für dieses Konto gibt es keine Umhänge. Die gibt es nur von Mojang – etwa den Migrator-Umhang.",
+    "addDialog": {
+      "namePlaceholder": "z. B. Winter-Skin",
+      "fileHint": "Danach öffnet sich der Dateidialog. Erlaubt sind PNG-Dateien mit 64×64 (oder 64×32 für alte Skins).",
+      "chooseFile": "Datei wählen"
+    },
+    "addedToast": "„{name}“ zur Sammlung hinzugefügt",
+    "savedToast": "Aktueller Skin als „{name}“ gesichert",
+    "deleteDialog": {
+      "title": "Skin löschen?",
+      "text": "{name} wird aus deiner Sammlung entfernt. Dein getragener Skin ändert sich dadurch nicht."
+    },
+    "sync": {
+      "applying": "Wird angewendet …",
+      "rateLimited": "Mojang bremst – wird in {time} automatisch angewendet",
+      "rateLimitedSoon": "Mojang bremst – wird in Kürze automatisch angewendet",
+      "network": "Mojang nicht erreichbar – neuer Versuch in {time}",
+      "networkSoon": "Mojang nicht erreichbar – neuer Versuch in Kürze",
+      "pacing": "Viele Änderungen kurz hintereinander – wird in {time} angewendet",
+      "pacingSoon": "Viele Änderungen kurz hintereinander – wird in Kürze angewendet",
+      "failed": "Die Änderung konnte nicht angewendet werden."
+    },
+    "viewer": {
+      "label": "3D-Vorschau des Skins",
+      "failed": "Die 3D-Vorschau konnte nicht gestartet werden. Deine Grafiktreiber unterstützen vermutlich kein WebGL."
+    }
+  },
+  "validation": {
+    "invalidCharacters": "Enthält ungültige Zeichen",
+    "nameRequired": "Bitte einen Namen eingeben",
+    "maxChars": "Maximal {max} Zeichen",
+    "javaPathInvalid": "Java-Pfad ist ungültig",
+    "javaPathNotJava": "Der Java-Pfad muss auf java.exe oder javaw.exe zeigen",
+    "commandTooLong": "Befehle: höchstens {max} Zeichen",
+    "commandInvalidChars": "Befehl enthält ungültige Zeichen",
+    "envKeyTooLong": "Variablennamen: höchstens {max} Zeichen",
+    "envKeyFormat": "Variablennamen: nur Buchstaben, Ziffern und _ (nicht vorne)",
+    "envValueTooLong": "Werte: höchstens {max} Zeichen",
+    "envValueInvalidChars": "Wert enthält ungültige Zeichen",
+    "envTooMany": "Höchstens {max} Umgebungsvariablen",
+    "envDuplicate": "Eine Umgebungsvariable ist doppelt",
+    "jvmArgsInvalidChars": "JVM-Argumente enthalten ungültige Zeichen",
+    "groupTooLong": "Gruppennamen: höchstens {max} Zeichen",
+    "groupInvalidChars": "Gruppenname enthält ungültige Zeichen",
+    "minAboveMax": "Minimum darf nicht über dem Maximum liegen",
+    "addressRequired": "Bitte eine Adresse eingeben",
+    "addressFormat": "Adresse im Format play.example.de oder play.example.de:25565",
+    "nameInvalidChars": "Name enthält ungültige Zeichen",
+    "versionRequired": "Bitte eine Version angeben",
+    "versionFormat": "Nur Buchstaben, Ziffern und . - _ +",
+    "descriptionInvalidChars": "Beschreibung enthält ungültige Zeichen",
+    "folderRequired": "Bitte mindestens einen Ordner auswählen",
+    "invalidInput": "Ungültige Eingabe"
+  },
+  "titleBar": {
+    "forward": "Vorwärts",
+    "ctrl": "Strg",
+    "minimize": "Minimieren",
+    "maximize": "Maximieren",
+    "restore": "Wiederherstellen",
+    "running": {
+      "none": "Keine Instanz läuft",
+      "count": "{n} Instanz läuft | {n} Instanzen laufen",
+      "menuLabel": "Laufende Instanzen",
+      "firstStarted": "Zuerst gestartet",
+      "uptime": "läuft seit {time}",
+      "openLogs": "Logs öffnen",
+      "openLogsNamed": "Logs von {name} öffnen"
+    }
+  },
+  "nav": {
+    "mainLabel": "Hauptnavigation",
+    "home": "Start",
+    "library": "Bibliothek",
+    "discover": "Entdecken",
+    "servers": "Server",
+    "screenshots": "Screenshots",
+    "skins": "Skins",
+    "friends": "Freunde",
+    "admin": "Verwaltung",
+    "runningCount": "{n} laufend | {n} laufend",
+    "friendRequests": "{n} offene Freundschaftsanfrage | {n} offene Freundschaftsanfragen",
+    "quickLaunch": "Schnellstart",
+    "openNamed": "{name} öffnen",
+    "newInstance": "Neue Instanz",
+    "searchShortcut": "Suchen (Strg+K)",
+    "searchTip": "Suchen · Strg K",
+    "settings": "Einstellungen",
+    "accountNamed": "Konto: {name}",
+    "signIn": "Anmelden",
+    "collapseLabel": "Leiste einklappen",
+    "expandLabel": "Leiste ausklappen",
+    "collapse": "Einklappen",
+    "expand": "Ausklappen"
+  },
+  "accountMenu": {
+    "menuLabel": "Konten",
+    "playingAs": "Spielt als",
+    "switching": "Wechsle …",
+    "switch": "Wechseln",
+    "noAccount": "Noch kein Account – ohne Anmeldung startet nur der Demo-Modus.",
+    "add": "Account hinzufügen",
+    "manage": "Accounts verwalten"
+  },
+  "palette": {
+    "dialogLabel": "Suche und Befehle",
+    "placeholder": "Instanz, Mod, Einstellung oder Aktion …",
+    "resultsLabel": "Treffer",
+    "noResults": "Nichts gefunden – andere Schreibweise versuchen?",
+    "hints": {
+      "select": "wählen",
+      "open": "öffnen",
+      "second": "zweite Aktion"
+    },
+    "resultCount": "{n} Treffer | {n} Treffer",
+    "groups": {
+      "instances": "Instanzen",
+      "mods": "Mods",
+      "servers": "Server",
+      "settings": "Einstellungen",
+      "pages": "Seiten",
+      "actions": "Aktionen"
+    },
+    "pages": {
+      "accounts": "Accounts"
+    },
+    "openPage": "Seite öffnen",
+    "running": "läuft",
+    "modEnabled": "aktiv",
+    "modDisabled": "deaktiviert",
+    "projectPage": "Projektseite",
+    "joinWith": "Mit „{name}“ beitreten",
+    "keywords": {
+      "home": "startseite home",
+      "library": "instanzen library",
+      "discover": "modrinth mods modpacks suchen",
+      "servers": "serverliste",
+      "accounts": "konto anmelden microsoft",
+      "screenshots": "bilder galerie",
+      "skins": "umhang cape",
+      "friends": "freunde friends online anfragen trs",
+      "settings": "einstellungen optionen",
+      "newInstance": "anlegen hinzufügen erstellen",
+      "import": "import prism multimc curseforge übernehmen",
+      "modpacks": "modpack pack installieren",
+      "dataDir": "ordner explorer dateien"
+    },
+    "actions": {
+      "newInstance": {
+        "title": "Neue Instanz erstellen",
+        "subtitle": "Vanilla, Fabric, Quilt, Forge oder NeoForge"
+      },
+      "import": {
+        "title": "Aus anderem Launcher importieren",
+        "subtitle": "Vanilla-Launcher, Prism/MultiMC, CurseForge"
+      },
+      "modpacks": {
+        "title": "Modpacks durchsuchen",
+        "subtitle": "Fertige Pakete von Modrinth"
+      },
+      "dataDir": {
+        "title": "Datenverzeichnis öffnen",
+        "subtitle": "Ordner mit Instanzen und Einstellungen"
+      }
+    }
+  },
+  "tasks": {
+    "title": "Aufgaben",
+    "launcherUpdate": "Launcher-Update",
+    "launcherUpdatePercent": "Launcher-Update {percent} %",
+    "percent": "{percent} %",
+    "paused": "Pausiert",
+    "pausedShort": "pausiert",
+    "remaining": "noch {time}",
+    "failed": "fehlgeschlagen",
+    "showNamed": "Aufgaben anzeigen: {title}",
+    "activeCount": "Aufgaben: {count} aktiv",
+    "close": "Aufgaben schließen",
+    "empty": {
+      "title": "Nichts läuft",
+      "text": "Downloads, Installationen und Importe erscheinen hier – auch wenn du die Seite wechselst."
+    },
+    "activeSection": "Aktive Aufgaben",
+    "doneSection": "Fertige Aufgaben",
+    "resume": "Fortsetzen",
+    "pause": "Pausieren",
+    "resumeNamed": "{title} fortsetzen",
+    "pauseNamed": "{title} pausieren",
+    "cancelNamed": "{title} abbrechen",
+    "progressNamed": "{title}: Fortschritt",
+    "updateBackground": "Update wird im Hintergrund geladen",
+    "clearAll": "Alle löschen",
+    "retryShort": "Erneut",
+    "retryNamed": "{title} erneut versuchen",
+    "openNamed": "{title} öffnen",
+    "removeNamed": "{title} aus dem Verlauf entfernen",
+    "justNow": "gerade eben",
+    "eta": {
+      "seconds": "{seconds} s",
+      "minutes": "{minutes} min",
+      "hours": "{hours} h",
+      "hoursMinutes": "{hours} h {minutes} min"
+    },
+    "kind": {
+      "modpack": "Modpack",
+      "modpackFile": "Modpack aus Datei",
+      "content": "Inhalt installiert",
+      "contentUpdate": "Inhalte aktualisiert",
+      "performancePack": "Leistungspaket",
+      "java": "Java installiert",
+      "import": "Instanz importiert",
+      "export": "Modpack exportiert",
+      "create": "Neue Instanz",
+      "duplicate": "Instanz dupliziert",
+      "repair": "Instanz repariert",
+      "reinstall": "Neu installiert",
+      "versionChange": "Version gewechselt",
+      "launch": "Spielstart"
+    },
+    "stage": {
+      "preparing": "Wird vorbereitet",
+      "cancelling": "Wird abgebrochen …",
+      "packLoading": "Modpack wird geladen",
+      "packFiles": "Mods werden geladen",
+      "packOverrides": "Dateien werden entpackt",
+      "checkingFiles": "Dateien werden geprüft",
+      "reinstalling": "Wird neu installiert",
+      "installingInto": "Wird in {name} installiert"
+    },
+    "toast": {
+      "done": "{title} ist fertig",
+      "failed": "{title}: {error}",
+      "openInstance": "Instanz öffnen",
+      "showTasks": "Aufgaben anzeigen",
+      "details": "Details",
+      "modpackReady": "Modpack „{name}“ ist bereit",
+      "repairDone": "Alle Dateien geprüft – beschädigte wurden neu geladen",
+      "reinstallDone": "Instanz neu installiert",
+      "contentVersionInstalled": "{title}: Version {version} installiert",
+      "contentInstalled": "{title} installiert",
+      "contentWithDependencies": "{title} und {n} Abhängigkeit installiert | {title} und {n} Abhängigkeiten installiert"
+    }
+  },
+  "toasts": {
+    "times": "{count}-mal"
+  },
+  "updater": {
+    "restartToUpdate": "Neu starten zum Aktualisieren",
+    "installing": "Wird aktualisiert …",
+    "retry": "Update erneut versuchen",
+    "downloading": "TRS Launcher {version} wird geladen … {percent} %",
+    "failed": "Update fehlgeschlagen: {reason}",
+    "ready": "TRS Launcher {version} ist bereit.",
+    "readyRunning": "TRS Launcher {version} ist bereit. Laufende Spiele laufen weiter.",
+    "downloadInstaller": "Installer laden",
+    "splash": "Wird aktualisiert – startet gleich neu …"
+  },
+  "play": {
+    "stopGame": "Spiel beenden",
+    "cancelLaunch": "Start abbrechen",
+    "runningStop": "Läuft – stoppen",
+    "playNamed": "{name} spielen",
+    "stopNamed": "{name} stoppen",
+    "starting": "Starte …",
+    "startingShort": "Startet",
+    "runningNow": "Läuft gerade",
+    "preparing": "Wird vorbereitet …"
+  },
+  "instanceCard": {
+    "actionsFor": "Aktionen für {name}",
+    "settings": "Einstellungen",
+    "moveToGroup": "In Gruppe verschieben",
+    "removeFromGroup": "Aus der Gruppe nehmen",
+    "newGroup": "+ Neue Gruppe …"
+  },
+  "home": {
+    "greeting": {
+      "lateNight": "Noch wach",
+      "lateNightNamed": "Noch wach, {name}",
+      "morning": "Guten Morgen",
+      "morningNamed": "Guten Morgen, {name}",
+      "day": "Hallo",
+      "dayNamed": "Hallo, {name}",
+      "evening": "Guten Abend",
+      "eveningNamed": "Guten Abend, {name}"
+    },
+    "lastPlayed": "Zuletzt gespielt: {name}",
+    "playedTime": "{time} gespielt",
+    "openInstance": "Instanz öffnen",
+    "empty": {
+      "title": "Bereit zum Start",
+      "text": "Lege deine erste Instanz an – Vanilla oder mit Modloader – oder hol dir gleich ein fertiges Modpack.",
+      "create": "Instanz erstellen",
+      "modpacks": "Modpacks ansehen"
+    },
+    "continue": {
+      "title": "Weiterspielen",
+      "totalPlayed": "Insgesamt {time} gespielt",
+      "toLibrary": "Zur Bibliothek"
+    },
+    "add": {
+      "newInstanceHint": "Vanilla oder mit Modloader",
+      "discoverModpack": "Modpack entdecken",
+      "discoverModpackHint": "Fertige Pakete von Modrinth",
+      "importHint": "Aus Prism, CurseForge oder Vanilla"
+    },
+    "servers": {
+      "manageAll": "Alle verwalten",
+      "joinHint": "Startet „{name}“ und verbindet direkt",
+      "joinHintNone": "Erst eine Instanz anlegen",
+      "add": "Server hinzufügen",
+      "addHint": "Live-Status und Beitritt per Klick",
+      "addHintEmpty": "Deine Server mit Live-Status – Beitritt per Klick"
+    }
+  },
+  "news": {
+    "title": "Neuigkeiten",
+    "filters": {
+      "all": "Alles",
+      "patchNotes": "Updates",
+      "mojang": "Minecraft",
+      "modrinth": "Mods",
+      "launcher": "Launcher"
+    },
+    "sourceMinecraftUpdate": "Minecraft-Update",
+    "offlineHint": "Zuletzt gespeicherter Stand – gerade offline",
+    "sourceLabel": "Quelle",
+    "reload": "Neu laden",
+    "reloadLabel": "Neuigkeiten neu laden",
+    "empty": "Für diesen Bereich gibt es gerade nichts Neues.",
+    "readPatchNotes": "Patchnotes lesen",
+    "openInBrowser": "Im Browser öffnen",
+    "launcherReleased": "{title} ist da"
+  },
+  "game": {
+    "preparing": "Minecraft wird vorbereitet",
+    "crashed": "Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache."
+  },
+  "settingsSections": {
+    "groups": {
+      "interface": "Darstellung",
+      "account": "Konto",
+      "instances": "Instanzen"
+    },
+    "app": {
+      "appearance": "Aussehen",
+      "features": "Funktionen",
+      "behavior": "Verhalten",
+      "language": "Sprache",
+      "profile": "Profil",
+      "privacy": "Datenschutz",
+      "defaults": "Standard-Einstellungen",
+      "java": "Java-Installationen",
+      "storage": "Speicherverwaltung",
+      "network": "Netzwerk"
+    },
+    "instance": {
+      "general": "Allgemein",
+      "installation": "Installation",
+      "window": "Fenster",
+      "java": "Java & Arbeitsspeicher",
+      "hooks": "Start-Hooks",
+      "sync": "Synchronisierung"
+    }
+  },
+  "trs": {
+    "invalidData": "Die TRS-Daten sind ungültig.",
+    "validation": {
+      "playerName": "Minecraft-Namen haben 1–16 Zeichen (A–Z, 0–9, _).",
+      "target": "Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) eingeben.",
+      "codeTooLong": "Der Code ist zu lang.",
+      "codeFormat": "Codes haben 20 Zeichen, z. B. 7K3QF-M2XPA-9RTVB-C4HJN.",
+      "max32": "Höchstens 32 Zeichen.",
+      "capeNameChars": "Nur Buchstaben, Ziffern, Leerzeichen und . , ' ! ? & ( ) + - _",
+      "max200": "Höchstens 200 Zeichen.",
+      "invalidChars": "Enthält ungültige Zeichen.",
+      "minUses": "Mindestens 1 Einlösung.",
+      "maxUses": "Höchstens 100 000 Einlösungen.",
+      "minCount": "Mindestens 1 Code.",
+      "maxCount": "Höchstens 100 Codes auf einmal.",
+      "invalidExpiry": "Ungültiges Ablaufdatum.",
+      "expiryPast": "Das Ablaufdatum liegt in der Vergangenheit."
+    },
+    "unlock": {
+      "own": "Eigener",
+      "free": "Frei",
+      "code": "Code",
+      "team": "Team",
+      "locked": "Gesperrt"
+    },
+    "status": {
+      "pending": "Wartet auf Freigabe",
+      "rejected": "Abgelehnt"
+    },
+    "presence": {
+      "online": "Online im Launcher",
+      "inGame": "Im Spiel",
+      "playing": "Spielt {version}",
+      "playingLoader": "Spielt {version} ({loader})",
+      "playingServer": "Spielt {version} auf {server}",
+      "playingLoaderServer": "Spielt {version} ({loader}) auf {server}"
+    },
+    "toasts": {
+      "friendRequest": "{name} möchte mit dir befreundet sein."
+    }
+  },
+  "trsGate": {
+    "consent": {
+      "title": "TRS-Dienste sind ausgeschaltet",
+      "friends": "Für die Freundesliste meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
+      "capes": "Für TRS-Umhänge meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
+      "button": "Mehr erfahren & einschalten"
+    },
+    "account": {
+      "title": "Kein Account angemeldet",
+      "text": "Melde dich unter „Accounts“ mit deinem Minecraft-Konto an.",
+      "button": "Zu den Accounts"
+    },
+    "banned": {
+      "title": "Dein Konto ist für die TRS-Dienste gesperrt",
+      "text": "Umhänge und Freunde sind deshalb nicht verfügbar."
+    }
+  },
+  "trsConsent": {
+    "title": "TRS-Dienste nutzen?",
+    "intro": "Mit den TRS-Diensten bekommst du {capes}, eine {friendsList} mit Online-Status und kannst Freunden auf ihren Server folgen. Dafür meldet sich der Launcher mit deinem Minecraft-Account beim TRS-Server ({host}) an – wie beim Beitritt zu einem Minecraft-Server. Dein Passwort und dein Minecraft-Token bekommt der Server nie.",
+    "capes": "TRS-Umhänge",
+    "friendsList": "Freundesliste",
+    "storedTitle": "Gespeichert werden",
+    "stored": {
+      "identity": "deine Minecraft-UUID und dein Spielername",
+      "capes": "gewählter Umhang, eingelöste Codes und hochgeladene Umhang-Bilder",
+      "friends": "Freunde, Anfragen und Blockierungen",
+      "settings": "deine Datenschutz-Einstellungen und Zeitpunkte (Anmeldung, Erstellung)",
+      "presence": "der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher, er verfällt nach 3 Minuten"
+    },
+    "footer": "Du kannst die Dienste jederzeit unter {path} ausschalten und dort alle deine TRS-Daten löschen. Ohne Zustimmung sendet der Launcher nichts an den TRS-Server.",
+    "settingsPath": "Einstellungen → Datenschutz",
+    "readPolicy": "Datenschutzerklärung lesen",
+    "decline": "Nein, danke",
+    "wait": "Einen Moment …",
+    "accept": "TRS-Dienste nutzen",
+    "enabled": "TRS-Dienste sind eingeschaltet."
+  },
+  "trsPrivacy": {
+    "heading": "TRS-Dienste",
+    "intro": "Umhänge, Freunde und Online-Status über den TRS-Server.",
+    "whatStored": "Was wird gespeichert?",
+    "services": {
+      "title": "TRS-Dienste nutzen",
+      "description": "Aus = der Launcher sendet nichts an den TRS-Server und meldet dich dort ab. Im Spiel nutzt der TRS Client die Dienste dann auch nicht."
+    },
+    "turnedOff": "TRS-Dienste ausgeschaltet – der Launcher sendet nichts mehr an den TRS-Server.",
+    "noAccount": "Melde dich mit einem Minecraft-Account an, um diese Einstellungen zu ändern.",
+    "offline": "Der TRS-Server ist gerade nicht erreichbar.",
+    "loading": "Lade Einstellungen …",
+    "perAccount": "Gilt für {name} – jeder Account hat eigene Einstellungen.",
+    "badge": {
+      "title": "TRS-Symbol zeigen",
+      "description": "Andere TRS-Spieler sehen im Spiel, dass du TRS nutzt."
+    },
+    "cape": {
+      "title": "Umhang für andere sichtbar",
+      "description": "Aus = nur du siehst deinen TRS-Umhang."
+    },
+    "presence": {
+      "title": "Online-Status",
+      "description": "Wer sieht, ob du online bist und was du spielst.",
+      "label": "Online-Status sichtbar für",
+      "friends": "Freunde",
+      "nobody": "Niemand"
+    },
+    "server": {
+      "title": "Server teilen",
+      "description": "Freunde sehen, auf welchem Server du spielst, und können beitreten."
+    },
+    "delete": {
+      "title": "Alle TRS-Daten löschen",
+      "description": "Löscht dein TRS-Konto mit Umhängen, Uploads, Codes, Freunden und Online-Status sofort vom Server. Danach sind die TRS-Dienste aus.",
+      "button": "Alle TRS-Daten löschen …",
+      "confirm": "Wirklich alles von {name} löschen? Freigeschaltete Umhänge und Freunde sind danach weg – das lässt sich nicht rückgängig machen.",
+      "deleting": "Lösche …",
+      "confirmButton": "Ja, endgültig löschen",
+      "done": "Alle TRS-Daten dieses Accounts sind gelöscht. Die TRS-Dienste sind jetzt aus."
+    }
+  },
+  "capes": {
+    "title": "TRS-Umhänge",
+    "wearing": "Getragen: {name}",
+    "redeem": "Code einlösen",
+    "upload": "Eigenen Umhang hochladen",
+    "intro": "TRS-Umhänge sind unabhängig von deinen Mojang-Umhängen: Sie sehen alle, die mit dem TRS Client spielen. Deinen Mojang-Umhang änderst du oben – beides bleibt getrennt.",
+    "offline": "Der TRS-Server ist gerade nicht erreichbar.",
+    "tryOn": "{name} anprobieren",
+    "tryOnLocked": "{name} – noch gesperrt (anprobieren geht trotzdem)",
+    "locked": "gesperrt",
+    "animated": "animiert",
+    "worn": "getragen",
+    "empty": "Gerade gibt es keine TRS-Umhänge.",
+    "selected": {
+      "pending": "Wartet auf Freigabe durch das Team – bis dahin siehst nur du ihn.",
+      "rejected": "Abgelehnt.",
+      "rejectedReason": "Abgelehnt: {reason}.",
+      "lockedCode": "Gesperrt – mit einem Code freischaltbar.",
+      "lockedTeam": "Gesperrt – nur für das TRS-Team bzw. per Code.",
+      "active": "Du trägst diesen Umhang.",
+      "free": "Frei verfügbar – anlegen, damit ihn andere sehen.",
+      "unlocked": "Für dich freigeschaltet – anlegen, damit ihn andere sehen."
+    },
+    "actions": {
+      "wearing": "Lege an …",
+      "wear": "Anlegen",
+      "removing": "Lege ab …",
+      "remove": "Ablegen",
+      "endPreview": "Vorschau beenden"
+    },
+    "pendingCount": "{n} Umhang wartet auf Freigabe. | {n} Umhänge warten auf Freigabe.",
+    "redeemDialog": {
+      "codeLabel": "Code",
+      "hint": "Groß-/Kleinschreibung und Bindestriche sind egal.",
+      "checking": "Prüfe …",
+      "submit": "Einlösen"
+    },
+    "uploadDialog": {
+      "nameLabel": "Name (optional)",
+      "placeholder": "z. B. Mein Umhang",
+      "rules": {
+        "size": "PNG mit 64×32 Pixeln (oder 128×64, 192×96, 256×128) bzw. im Umhang-Format 22×17 – höchstens 256 KB.",
+        "review": "Keine Animation. Das Team prüft jeden Umhang, bis dahin siehst nur du ihn.",
+        "rights": "Nur eigene Bilder oder solche, die du verwenden darfst – nichts Anstößiges."
+      },
+      "uploading": "Lade hoch …",
+      "chooseFile": "Datei wählen"
+    },
+    "deleteDialog": {
+      "title": "Umhang löschen?",
+      "text": "{name} wird endgültig gelöscht."
+    },
+    "toasts": {
+      "worn": "„{name}“ angelegt",
+      "removed": "TRS-Umhang abgelegt",
+      "alreadyOwned": "„{name}“ hattest du schon.",
+      "unlocked": "„{name}“ freigeschaltet!",
+      "uploaded": "Hochgeladen – dein Umhang wartet auf Freigabe.",
+      "deleted": "Umhang gelöscht"
+    }
+  },
+  "friends": {
+    "title": "Freunde",
+    "subtitle": "Wer ist online, wer spielt was – und mit einem Klick hinterher.",
+    "add": "Freund hinzufügen",
+    "offline": "Der TRS-Server ist gerade nicht erreichbar – die Liste kann veraltet sein.",
+    "tabs": {
+      "label": "Ansicht",
+      "friends": "Freunde",
+      "requests": "Anfragen",
+      "blocked": "Blockiert"
+    },
+    "join": {
+      "withLabel": "Beitreten mit",
+      "auto": "Passende Instanz (automatisch)",
+      "button": "Beitreten",
+      "withInstance": "Mit {name} beitreten",
+      "noInstance": "Keine Instanz vorhanden",
+      "starting": "Starte {instance} und verbinde mit {server} …"
+    },
+    "list": {
+      "usesTrs": "Nutzt TRS",
+      "capeOf": "TRS-Umhang von {name}",
+      "moreActions": "Weitere Aktionen für {name}",
+      "block": "Blockieren",
+      "reportCape": "Umhang melden"
+    },
+    "empty": {
+      "title": "Noch keine Freunde",
+      "text": "Dein Signal erreicht gerade niemanden. Füge Freunde über ihren Minecraft-Namen hinzu – sobald sie annehmen, leuchtet hier ihre Lampe."
+    },
+    "requests": {
+      "empty": "Keine offenen Anfragen",
+      "incoming": "An dich",
+      "incomingText": "möchte mit dir befreundet sein · {date}",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "outgoing": "Von dir",
+      "outgoingText": "wartet auf Antwort · {date}",
+      "withdraw": "Zurückziehen"
+    },
+    "blocked": {
+      "placeholder": "Minecraft-Name blockieren",
+      "inputLabel": "Name zum Blockieren",
+      "hint": "Blockierte Spieler können dich nicht finden, dir keine Anfragen schicken und sehen dein TRS-Symbol und deinen Umhang nicht. Sie erfahren nichts davon.",
+      "since": "seit {date}",
+      "unblock": "Entsperren",
+      "empty": "Niemand blockiert"
+    },
+    "addDialog": {
+      "nameLabel": "Minecraft-Name",
+      "placeholder": "z. B. Theredstonee",
+      "hint": "Dein Freund muss den TRS Launcher mindestens einmal mit den TRS-Diensten benutzt haben.",
+      "sending": "Sende …",
+      "send": "Anfrage senden"
+    },
+    "confirm": {
+      "removeTitle": "Freund entfernen?",
+      "blockTitle": "Spieler blockieren?",
+      "removeText": "{name} wird aus deiner Freundesliste entfernt.",
+      "blockText": "{name} wird blockiert: Eure Freundschaft und offene Anfragen werden entfernt, und er kann dich nicht mehr finden."
+    },
+    "report": {
+      "title": "Umhang melden",
+      "text": "Der hochgeladene Umhang von {name} wird dem TRS-Team gemeldet.",
+      "reason": "Grund",
+      "reasons": {
+        "inappropriate": "Unangemessen",
+        "copyright": "Urheberrecht",
+        "impersonation": "Gibt sich als jemand anderes aus",
+        "other": "Sonstiges"
+      },
+      "note": "Hinweis (optional)",
+      "submit": "Melden",
+      "thanks": "Danke – das Team schaut sich den Umhang an."
+    },
+    "toasts": {
+      "nowFriends": "Du und {name} seid jetzt befreundet.",
+      "requestSent": "Anfrage an {name} gesendet.",
+      "removed": "{name} ist nicht mehr in deiner Freundesliste.",
+      "blocked": "{name} ist blockiert.",
+      "unblocked": "{name} ist nicht mehr blockiert."
+    }
+  },
+  "admin": {
+    "title": "Verwaltung",
+    "subtitle": "TRS-Dienste: Umhänge prüfen, Codes, Spieler und Zahlen.",
+    "notAdmin": "Diese Seite ist nur für Admins der TRS-Dienste.",
+    "tabs": {
+      "label": "Bereich",
+      "overview": "Übersicht",
+      "capes": "Umhänge prüfen",
+      "codes": "Codes",
+      "players": "Spieler"
+    },
+    "stats": {
+      "users": "Nutzer",
+      "usersHint": "{count} aktiv (24 h)",
+      "online": "Online",
+      "onlineHint": "{count} Live-Verbindungen",
+      "pending": "Wartende Umhänge",
+      "pendingHint": "{count} gemeldet",
+      "worn": "Umhänge getragen",
+      "wornHint": "{count} Uploads freigegeben",
+      "codes": "Aktive Codes",
+      "codesHint": "{count} eingelöst",
+      "friendships": "Freundschaften",
+      "friendshipsHint": "{count} offene Anfragen",
+      "banned": "Gesperrt",
+      "bannedHint": "{count} Sitzungen"
+    },
+    "review": {
+      "lists": {
+        "pending": "Wartend",
+        "reported": "Gemeldet",
+        "approved": "Freigegeben",
+        "rejected": "Abgelehnt"
+      },
+      "emptyPending": "Alles freigegeben – keine Umhänge warten.",
+      "empty": "Hier ist nichts.",
+      "fullTexture": "Ganze Textur",
+      "byOwner": "von {owner} · {date} · {size}",
+      "deletedAccount": "gelöschtem Konto",
+      "reported": "{count}× gemeldet: {reasons}",
+      "reasons": {
+        "inappropriate": "unangemessen",
+        "copyright": "Urheberrecht",
+        "impersonation": "Identität",
+        "other": "sonstiges"
+      },
+      "rejectReason": "Grund: {reason}",
+      "reviewed": "Geprüft {date}",
+      "approve": "Freigeben",
+      "reject": "Ablehnen"
+    },
+    "codes": {
+      "cape": "Umhang",
+      "chooseCape": "Umhang wählen …",
+      "usesPerCode": "Einlösungen je Code",
+      "count": "Anzahl Codes",
+      "validUntil": "Gültig bis (optional)",
+      "note": "Notiz (optional)",
+      "notePlaceholder": "z. B. Discord-Gewinnspiel",
+      "creating": "Erstelle …",
+      "create": "Codes erstellen",
+      "pickCape": "Bitte einen Umhang wählen.",
+      "newCodes": "Neue Codes – nur jetzt sichtbar, gleich sichern!",
+      "copyAll": "Alle kopieren",
+      "hide": "Ausblenden",
+      "empty": "Noch keine Codes",
+      "table": {
+        "code": "Code",
+        "cape": "Umhang",
+        "redeemed": "Eingelöst",
+        "validUntil": "Gültig bis",
+        "note": "Notiz"
+      },
+      "unlimited": "unbegrenzt",
+      "revoked": "widerrufen",
+      "revoke": "Widerrufen"
+    },
+    "players": {
+      "placeholder": "Minecraft-Name oder UUID",
+      "searchLabel": "Spieler suchen",
+      "searching": "Suche …",
+      "admin": "Admin",
+      "banned": "Gesperrt",
+      "copyUuid": "UUID kopieren",
+      "since": "Dabei seit",
+      "lastLogin": "Letzte Anmeldung",
+      "friends": "Freunde",
+      "uploadsSessions": "Uploads / Sitzungen",
+      "neverUsed": "Hat die TRS-Dienste noch nie benutzt – nur eine Sperre ist möglich.",
+      "bannedOn": "Gesperrt am {date}",
+      "bannedOnReason": "Gesperrt am {date} – {reason}",
+      "capes": "Umhänge",
+      "revokeCape": "{cape} entziehen",
+      "noCapes": "Keine vergebenen Umhänge.",
+      "grantLabel": "Umhang vergeben",
+      "grantPlaceholder": "Umhang vergeben …",
+      "grant": "Vergeben",
+      "ban": "Sperre",
+      "unban": "Sperre aufheben",
+      "reasonPlaceholder": "Grund (optional)",
+      "reasonLabel": "Grund der Sperre",
+      "banButton": "Sperren …",
+      "adminsNotBannable": "Admins können nicht gesperrt werden."
+    },
+    "dialogs": {
+      "rejectTitle": "Umhang ablehnen?",
+      "rejectText": "{name} wird abgelehnt und von niemandem mehr getragen.",
+      "rejectReasonLabel": "Grund (sieht der Uploader)",
+      "rejectPlaceholder": "z. B. Urheberrecht",
+      "deleteTitle": "Umhang löschen?",
+      "deleteText": "{name} von {owner} wird endgültig gelöscht, auch die Datei.",
+      "unknownOwner": "unbekannt",
+      "revokeTitle": "Code widerrufen?",
+      "revokeText": "Der Code {code} für {cape} kann danach nicht mehr eingelöst werden. Schon freigeschaltete Umhänge bleiben.",
+      "banTitle": "Spieler sperren?",
+      "banText": "{name} verliert sofort den Zugang zu allen TRS-Diensten: Sitzungen enden, Online-Status verschwindet.",
+      "banConfirm": "Sperren"
+    },
+    "toasts": {
+      "approved": "„{name}“ freigegeben",
+      "rejected": "„{name}“ abgelehnt",
+      "capeDeleted": "Umhang gelöscht",
+      "codesCreated": "{n} Code erstellt | {n} Codes erstellt",
+      "copied": {
+        "code": "Code kopiert",
+        "all": "Alle Codes kopiert",
+        "uuid": "UUID kopiert"
+      },
+      "copyFailed": "Kopieren nicht möglich.",
+      "codeRevoked": "Code widerrufen",
+      "alreadyHad": "Hatte den Umhang schon.",
+      "granted": "{cape} an {player} vergeben",
+      "playerFallback": "Spieler",
+      "grantRevoked": "Umhang entzogen",
+      "banned": "Spieler gesperrt",
+      "unbanned": "Sperre aufgehoben"
+    }
+  }
+}

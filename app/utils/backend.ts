@@ -1,4 +1,5 @@
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
+import { hasKey, t, tKey } from './i18n'
 import { z } from 'zod'
 import {
   trsAdminCapeSchema,
@@ -80,9 +81,13 @@ import type {
 export class BackendError extends Error {
   constructor(
     public readonly kind: string,
+    /** Rückfall-Meldung (bei Fehlern aus dem Kern: deutsch, fürs Log). */
     message: string,
-    /** Genauer Fehlercode (z. B. von der TRS API: `cape_locked`). */
+    /** Übersetzungs-Code: `errors.<code>` in `app/locales/*.json`. */
     public readonly code?: string,
+    public readonly params?: Record<string, string>,
+    /** Fehlercode der TRS API (z. B. `cape_locked`). */
+    public readonly apiCode?: string,
   ) {
     super(message)
     this.name = 'BackendError'
@@ -95,13 +100,21 @@ function isCommandError(e: unknown): e is CommandError {
 
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) {
-    throw new BackendError('no_backend', 'Das Backend ist nur in der Desktop-App verfügbar.')
+    throw new BackendError('no_backend', 'Das Backend ist nur in der Desktop-App verfügbar.', 'noBackend')
   }
   try {
     return await invoke<T>(command, args)
   } catch (e) {
-    if (isCommandError(e)) throw new BackendError(e.kind, e.message, typeof e.code === 'string' ? e.code : undefined)
-    throw new BackendError('unknown', 'Ein unerwarteter Fehler ist aufgetreten.')
+    if (isCommandError(e)) {
+      throw new BackendError(
+        e.kind,
+        e.message,
+        typeof e.code === 'string' ? e.code : undefined,
+        e.params && typeof e.params === 'object' ? e.params : undefined,
+        typeof e.apiCode === 'string' ? e.apiCode : undefined,
+      )
+    }
+    throw new BackendError('unknown', 'Ein unerwarteter Fehler ist aufgetreten.', 'unexpected')
   }
 }
 
@@ -376,6 +389,17 @@ export function isCancelled(e: unknown): boolean {
   return e instanceof BackendError && e.kind === 'cancelled'
 }
 
+/**
+ * Fehler in der eingestellten Sprache: Code vom Kern → `errors.<code>`,
+ * sonst die mitgelieferte Meldung.
+ */
 export function errorMessage(e: unknown): string {
-  return e instanceof BackendError ? e.message : 'Ein unerwarteter Fehler ist aufgetreten.'
+  if (e instanceof BackendError) return userErrorText(e)
+  return t('errors.unexpected')
+}
+
+/** Übersetzt einen Fehler, der als Daten ankommt (z. B. `UploadResult.error`). */
+export function userErrorText(error: { code?: string | null; params?: Record<string, string> | null; message: string }): string {
+  if (error.code && hasKey(`errors.${error.code}`)) return tKey(`errors.${error.code}`, error.params ?? undefined)
+  return error.message || t('errors.unexpected')
 }

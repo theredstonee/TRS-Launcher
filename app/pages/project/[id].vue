@@ -115,18 +115,9 @@ function installPack() {
   installModpackTask(details.value)
 }
 
-const linkLabels: Record<ProjectLink['kind'], string> = {
-  modrinth: 'Auf Modrinth',
-  source: 'Quelltext',
-  issues: 'Fehler melden',
-  wiki: 'Wiki',
-  discord: 'Discord',
-}
 function openLink(link: ProjectLink) {
   backend.openExternalUrl(link.url).catch((e) => toasts.error(e))
 }
-
-const sideLabels: Record<string, string> = { required: 'Nötig', optional: 'Optional', unsupported: 'Nicht nötig', unknown: 'Unbekannt' }
 
 function back() {
   if (window.history.length > 1) router.back()
@@ -138,7 +129,7 @@ function back() {
   <div class="p-6">
     <button class="mb-4 inline-flex items-center gap-1 text-xs text-base-400 hover:text-base-50" @click="back">
       <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7" /></svg>
-      Zurück
+      {{ t('common.actions.back') }}
     </button>
 
     <p v-if="error" role="alert" class="card border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">{{ error }}</p>
@@ -162,54 +153,60 @@ function back() {
           <p class="mt-1.5 max-w-2xl text-sm text-base-200">{{ details.description }}</p>
           <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-base-400">
             <div v-if="details.author">
-              <dt class="sr-only">Autor</dt>
-              <dd>von <span class="font-medium text-base-50">{{ details.author }}</span></dd>
+              <dt class="sr-only">{{ t('project.stats.author') }}</dt>
+              <i18n-t keypath="project.stats.by" tag="dd" scope="global">
+                <template #author><span class="font-medium text-base-50">{{ details.author }}</span></template>
+              </i18n-t>
             </div>
             <div class="flex items-baseline gap-1.5">
-              <dt class="sr-only">Downloads</dt>
-              <dd><span class="display text-base text-base-50 tabular-nums">{{ formatCount(details.downloads) }}</span> Downloads</dd>
+              <dt class="sr-only">{{ t('project.stats.downloadsLabel') }}</dt>
+              <i18n-t keypath="project.stats.downloads" tag="dd" scope="global" :plural="details.downloads">
+                <template #count><span class="display text-base text-base-50 tabular-nums">{{ formatCount(details.downloads) }}</span></template>
+              </i18n-t>
             </div>
             <div class="flex items-baseline gap-1.5">
-              <dt class="sr-only">Follower</dt>
-              <dd><span class="display text-base text-base-50 tabular-nums">{{ formatCount(details.followers) }}</span> Follower</dd>
+              <dt class="sr-only">{{ t('project.stats.followersLabel') }}</dt>
+              <i18n-t keypath="project.stats.followers" tag="dd" scope="global" :plural="details.followers">
+                <template #count><span class="display text-base text-base-50 tabular-nums">{{ formatCount(details.followers) }}</span></template>
+              </i18n-t>
             </div>
             <div v-if="details.updated">
-              <dt class="sr-only">Aktualisiert</dt>
-              <dd>Aktualisiert {{ formatRelative(details.updated).toLowerCase() }}</dd>
+              <dt class="sr-only">{{ t('project.stats.updatedLabel') }}</dt>
+              <dd :title="formatDate(details.updated)">{{ t('project.stats.updated', { time: formatRelative(details.updated, true) }) }}</dd>
             </div>
           </dl>
           <div v-if="categories.length || details.loaders.length" class="mt-4 flex flex-wrap gap-1.5">
             <span v-for="l in details.loaders" :key="l" class="chip bg-base-800/80 font-medium">{{ loaderNames[l] ?? l }}</span>
-            <span v-for="c in categories" :key="c" class="chip bg-base-850/80 text-base-400">{{ categoryLabels[c] ?? c }}</span>
+            <span v-for="c in categories" :key="c" class="chip bg-base-850/80 text-base-400">{{ categoryLabel(c) }}</span>
           </div>
         </div>
 
         <!-- Installieren -->
         <aside class="w-full shrink-0 rounded-xl border border-base-700/70 bg-base-900/80 p-4 backdrop-blur sm:w-72">
           <template v-if="isPack">
-            <p class="text-sm font-medium">Modpack</p>
-            <p class="mt-0.5 mb-3 text-xs text-base-400">Wird als neue Instanz mit allen Mods angelegt.</p>
+            <p class="text-sm font-medium">{{ t('project.pack.title') }}</p>
+            <p class="mt-0.5 mb-3 text-xs text-base-400">{{ t('project.pack.hint') }}</p>
             <div v-if="packTask?.status === 'running'" class="space-y-2">
               <button
                 class="btn btn-ghost w-full tabular-nums"
-                :aria-label="`Wird installiert, ${packTask.percent ?? 0} Prozent – im Aufgaben-Panel anzeigen`"
+                :aria-label="t('project.pack.installingLabel', { percent: packTask.percent ?? 0 })"
                 @click="tasks.openPanel(packTask.key)"
               >
-                {{ packTask.paused ? 'Pausiert' : 'Wird installiert …' }} {{ packTask.percent ?? 0 }} %
+                {{ t(packTask.paused ? 'project.pack.pausedPercent' : 'project.pack.installingPercent', { percent: packTask.percent ?? 0 }) }}
               </button>
               <RedstoneWire :percent="packTask.percent ?? 0" :segments="24" />
               <p class="text-center text-xs text-base-400">{{ packTask.stage }}</p>
             </div>
             <template v-else-if="packTask?.status === 'done' && packTask.instanceId">
-              <button class="btn btn-primary w-full" @click="router.push(`/instances/${packTask.instanceId}`)">Instanz öffnen</button>
-              <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-200" @click="installPack">Noch einmal installieren</button>
+              <button class="btn btn-primary w-full" @click="router.push(`/instances/${packTask.instanceId}`)">{{ t('project.pack.openInstance') }}</button>
+              <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-200" @click="installPack">{{ t('project.pack.reinstall') }}</button>
             </template>
-            <button v-else class="btn btn-primary w-full" @click="installPack">Als Instanz installieren</button>
+            <button v-else class="btn btn-primary w-full" @click="installPack">{{ t('project.pack.install') }}</button>
           </template>
           <template v-else>
-            <label class="label" for="p-target">Installieren in</label>
+            <label class="label" for="p-target">{{ t('project.install.target') }}</label>
             <select id="p-target" v-model="instanceId" class="field mb-3 py-1.5" :disabled="!instances.items.length">
-              <option v-if="!instances.items.length" value="">Keine Instanz vorhanden</option>
+              <option v-if="!instances.items.length" value="">{{ t('project.install.noInstance') }}</option>
               <option v-for="i in instances.items" :key="i.id" :value="i.id">{{ i.name }} ({{ i.gameVersion }}, {{ loaderLabels[i.loader.kind] }})</option>
             </select>
 
@@ -217,10 +214,12 @@ function back() {
             <template v-else-if="installed">
               <div class="flex items-center gap-2 rounded-md bg-base-850 px-3 py-2 text-sm">
                 <svg viewBox="0 0 24 24" class="size-4 shrink-0 text-ok" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5 9-10" /></svg>
-                <span class="min-w-0 flex-1 truncate">Installiert <span class="font-mono text-xs text-base-400">{{ installed.version ?? installed.source?.versionNumber }}</span></span>
+                <i18n-t keypath="project.install.installed" tag="span" scope="global" class="min-w-0 flex-1 truncate">
+                  <template #version><span class="font-mono text-xs text-base-400">{{ installed.version ?? installed.source?.versionNumber }}</span></template>
+                </i18n-t>
               </div>
               <button v-if="updateAvailable" class="btn mt-2 w-full bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/40 hover:bg-base-800" @click="installVersion(newestFitting)">
-                Auf {{ newestFitting?.versionNumber }} aktualisieren
+                {{ t('project.install.updateTo', { version: newestFitting?.versionNumber ?? '' }) }}
               </button>
             </template>
             <button
@@ -229,48 +228,48 @@ function back() {
               :disabled="!target || modsBlocked || (!loadingVersions && !newestFitting)"
               @click="installVersion(null)"
             >
-              Installieren
+              {{ t('common.actions.install') }}
             </button>
-            <p v-if="modsBlocked" class="mt-2 text-xs text-warn">Diese Vanilla-Instanz hat die TRS-Optimierung aus und lädt keine Mods – aktiviere sie in den Instanz-Einstellungen oder wähle eine Instanz mit Modloader.</p>
+            <p v-if="modsBlocked" class="mt-2 text-xs text-warn">{{ t('project.install.modsBlocked') }}</p>
             <p v-else-if="target && !loadingVersions && !newestFitting && !installed" class="mt-2 text-xs text-warn">
-              Keine Version für {{ target.gameVersion }} ({{ loaderLabels[target.loader.kind] }}).
+              {{ t('project.install.noVersion', { version: target.gameVersion, loader: loaderLabels[target.loader.kind] }) }}
             </p>
             <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-50" @click="tab = 'versions'">
-              {{ installed ? 'Version wechseln' : 'Andere Version wählen' }}
+              {{ installed ? t('project.install.switchVersion') : t('project.install.otherVersion') }}
             </button>
           </template>
 
           <div v-if="details.links.length" class="mt-4 flex flex-wrap gap-1.5 border-t border-base-800 pt-3">
             <button v-for="l in details.links" :key="l.kind" class="chip hover:bg-base-700 hover:text-base-50" @click="openLink(l)">
-              {{ linkLabels[l.kind] }}
+              {{ t(`project.links.${l.kind}`) }}
             </button>
           </div>
         </aside>
       </header>
 
-      <nav class="mb-4 flex gap-1" aria-label="Bereiche">
-        <button class="tab" :class="{ 'tab-on': tab === 'description' }" @click="tab = 'description'">Beschreibung</button>
+      <nav class="mb-4 flex gap-1" :aria-label="t('project.tabs.label')">
+        <button class="tab" :class="{ 'tab-on': tab === 'description' }" @click="tab = 'description'">{{ t('common.labels.description') }}</button>
         <button class="tab" :class="{ 'tab-on': tab === 'gallery' }" @click="tab = 'gallery'">
-          Galerie <span v-if="details.gallery.length" class="ml-1 text-xs text-base-600">{{ details.gallery.length }}</span>
+          {{ t('project.tabs.gallery') }} <span v-if="details.gallery.length" class="ml-1 text-xs text-base-600">{{ details.gallery.length }}</span>
         </button>
         <button class="tab" :class="{ 'tab-on': tab === 'versions' }" @click="tab = 'versions'">
-          Versionen <span v-if="versions.length" class="ml-1 text-xs text-base-600">{{ versions.length }}</span>
+          {{ t('project.tabs.versions') }} <span v-if="versions.length" class="ml-1 text-xs text-base-600">{{ versions.length }}</span>
         </button>
-        <button class="tab" :class="{ 'tab-on': tab === 'dependencies' }" @click="tab = 'dependencies'">Abhängigkeiten</button>
+        <button class="tab" :class="{ 'tab-on': tab === 'dependencies' }" @click="tab = 'dependencies'">{{ t('project.tabs.dependencies') }}</button>
       </nav>
 
       <div v-if="tab === 'description'" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <article class="card min-w-0 px-6 py-5">
           <MarkdownView v-if="details.body" :source="details.body" />
-          <p v-else class="text-sm text-base-400">Keine Beschreibung vorhanden.</p>
+          <p v-else class="text-sm text-base-400">{{ t('project.noDescription') }}</p>
         </article>
         <aside class="space-y-3 text-xs">
           <div class="card space-y-2.5 p-4">
-            <h2 class="section-title">Infos</h2>
-            <p v-if="details.license" class="flex justify-between gap-2"><span class="text-base-400">Lizenz</span><span class="truncate text-right">{{ details.license }}</span></p>
-            <p class="flex justify-between gap-2"><span class="text-base-400">Client</span><span>{{ sideLabels[details.clientSide] ?? details.clientSide }}</span></p>
-            <p class="flex justify-between gap-2"><span class="text-base-400">Server</span><span>{{ sideLabels[details.serverSide] ?? details.serverSide }}</span></p>
-            <p v-if="details.published" class="flex justify-between gap-2"><span class="text-base-400">Veröffentlicht</span><span>{{ formatDate(details.published).split(',')[0] }}</span></p>
+            <h2 class="section-title">{{ t('project.info.title') }}</h2>
+            <p v-if="details.license" class="flex justify-between gap-2"><span class="text-base-400">{{ t('project.info.license') }}</span><span class="truncate text-right">{{ details.license }}</span></p>
+            <p class="flex justify-between gap-2"><span class="text-base-400">{{ t('modrinth.environment.client') }}</span><span>{{ sideLabel(details.clientSide) }}</span></p>
+            <p class="flex justify-between gap-2"><span class="text-base-400">{{ t('modrinth.environment.server') }}</span><span>{{ sideLabel(details.serverSide) }}</span></p>
+            <p v-if="details.published" class="flex justify-between gap-2"><span class="text-base-400">{{ t('project.info.published') }}</span><span>{{ formatShortDate(details.published) }}</span></p>
           </div>
           <div v-if="details.gameVersions.length" class="card p-4">
             <h2 class="section-title mb-2">Minecraft</h2>

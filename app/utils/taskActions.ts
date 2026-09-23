@@ -20,7 +20,7 @@ export function installModpackTask(pack: { projectId: string; title: string; ico
       key: modpackTaskKey(pack.projectId),
       kind: 'modpack',
       title: pack.title,
-      stage: packStageLabels.pack,
+      stage: packStageLabel('pack'),
       iconUrl: pack.iconUrl,
       cancellable: true,
       pausable: true,
@@ -29,13 +29,13 @@ export function installModpackTask(pack: { projectId: string; title: string; ico
       const instance = await backend.installModpack(
         pack.projectId,
         (p) => {
-          ctx.progress(packPercent(p), packStageLabels[p.phase])
+          ctx.progress(packPercent(p), packStageLabel(p.phase))
           // Entpacken lässt sich nicht mehr sinnvoll anhalten.
           if (p.phase === 'overrides') ctx.update({ pausable: false })
         },
         ctx.taskId,
       )
-      ctx.update({ instanceId: instance.id, doneText: `Modpack „${instance.name}“ ist bereit` })
+      ctx.update({ instanceId: instance.id, doneText: t('tasks.toast.modpackReady', { name: instance.name }) })
       await instances.load()
       return instance
     },
@@ -56,14 +56,14 @@ export function repairInstanceTask(instance: Pick<Instance, 'id' | 'name'>, kind
       key: repairTaskKey(instance.id),
       kind,
       title: instance.name,
-      stage: kind === 'repair' ? 'Dateien werden geprüft' : 'Wird neu installiert',
+      stage: kind === 'repair' ? t('tasks.stage.checkingFiles') : t('tasks.stage.reinstalling'),
       instanceId: instance.id,
       cancellable: true,
       pausable: true,
-      doneText: kind === 'repair' ? 'Alle Dateien geprüft – beschädigte wurden neu geladen' : 'Instanz neu installiert',
+      doneText: kind === 'repair' ? t('tasks.toast.repairDone') : t('tasks.toast.reinstallDone'),
     },
     (ctx) => {
-      const onProgress = (p: StageProgress) => ctx.progress(overallPercent(p.stage, p.percent), stageLabels[p.stage])
+      const onProgress = (p: StageProgress) => ctx.progress(overallPercent(p.stage, p.percent), stageLabel(p.stage))
       return kind === 'repair'
         ? backend.repairInstance(instance.id, onProgress, ctx.taskId)
         : backend.reinstallInstance(instance.id, onProgress, ctx.taskId)
@@ -90,7 +90,7 @@ export function installContentTask(options: {
       key: contentTaskKey(instance.id, projectId),
       kind: 'content',
       title,
-      stage: `Wird in ${instance.name} installiert`,
+      stage: t('tasks.stage.installingInto', { name: instance.name }),
       instanceId: instance.id,
       iconUrl: options.iconUrl,
       tag: version?.id ?? 'latest',
@@ -101,12 +101,15 @@ export function installContentTask(options: {
       if (replace && version) {
         const update: ContentUpdate = { kind, fileName: replace, projectId, versionId: version.id, versionNumber: version.versionNumber }
         await backend.applyContentUpdate(instance.id, update, ctx.taskId)
-        ctx.update({ doneText: `${title}: Version ${version.versionNumber} installiert` })
+        ctx.update({ doneText: t('tasks.toast.contentVersionInstalled', { title, version: version.versionNumber }) })
         return [replace]
       }
       const files = await backend.modrinthInstall(instance.id, projectId, kind, version?.id ?? null, ctx.taskId)
       ctx.update({
-        doneText: files.length > 1 ? `${title} und ${files.length - 1} Abhängigkeit(en) installiert` : `${title} installiert`,
+        doneText:
+          files.length > 1
+            ? t('tasks.toast.contentWithDependencies', { title }, files.length - 1)
+            : t('tasks.toast.contentInstalled', { title }),
       })
       return files
     },

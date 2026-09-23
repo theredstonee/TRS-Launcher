@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { IconName } from '~/utils/icons'
+import type { MessageKey } from '~/utils/i18n'
 
 // Schmale Icon-Leiste wie in der Modrinth App: oben die Bereiche, darunter der
 // Schnellstart der zuletzt gespielten Instanzen, unten Suche, Einstellungen und
 // Konto. Ausklappbar (dann mit Beschriftung), sonst mit Kurzhinweisen.
 interface NavItem {
   to: string
-  label: string
+  label: MessageKey
   icon: IconName
   /** Seiten, die ein anderer Bereich baut – fehlen sie noch, bleibt der Punkt ruhig stehen. */
   optional?: boolean
@@ -15,14 +16,14 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { to: '/', label: 'Start', icon: 'home' },
-  { to: '/instances', label: 'Bibliothek', icon: 'library' },
-  { to: '/browse', label: 'Entdecken', icon: 'compass' },
-  { to: '/servers', label: 'Server', icon: 'server' },
-  { to: '/screenshots', label: 'Screenshots', icon: 'screenshots', optional: true },
-  { to: '/skins', label: 'Skins', icon: 'skins', optional: true },
-  { to: '/friends', label: 'Freunde', icon: 'friends' },
-  { to: '/admin', label: 'Verwaltung', icon: 'admin', admin: true },
+  { to: '/', label: 'nav.home', icon: 'home' },
+  { to: '/instances', label: 'nav.library', icon: 'library' },
+  { to: '/browse', label: 'nav.discover', icon: 'compass' },
+  { to: '/servers', label: 'nav.servers', icon: 'server' },
+  { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
+  { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
+  { to: '/friends', label: 'nav.friends', icon: 'friends' },
+  { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
 ]
 
 const route = useRoute()
@@ -73,7 +74,7 @@ function play(id: string) {
   <nav
     class="relative z-30 flex shrink-0 flex-col border-r border-base-800 bg-base-900 py-2 transition-[width] duration-200"
     :class="expanded ? 'w-56 px-2' : 'w-[4.25rem] items-center px-2'"
-    aria-label="Hauptnavigation"
+    :aria-label="t('nav.mainLabel')"
   >
     <NuxtLink
       v-for="item in visibleItems"
@@ -81,35 +82,35 @@ function play(id: string) {
       :to="item.to"
       class="rail group"
       :class="[{ 'rail-on': isActive(item.to) }, expanded ? 'rail-wide' : '']"
-      :aria-label="item.label"
+      :aria-label="t(item.label)"
       :aria-current="isActive(item.to) ? 'page' : undefined"
     >
       <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path :d="icons[item.icon]" />
       </svg>
-      <span v-if="expanded" class="min-w-0 flex-1 truncate text-sm">{{ item.label }}</span>
+      <span v-if="expanded" class="min-w-0 flex-1 truncate text-sm">{{ t(item.label) }}</span>
       <span
         v-if="item.to === '/instances' && games.runningCount"
         class="size-1.5 animate-lamp rounded-full bg-lamp-400"
         :class="expanded ? 'ml-auto' : 'absolute top-1.5 right-1.5'"
-        :title="`${games.runningCount} laufend`"
+        :title="t('nav.runningCount', games.runningCount)"
       />
       <span
         v-if="item.to === '/friends' && trs.incomingCount"
         class="grid min-w-4 place-items-center rounded-full bg-redstone-500 px-1 text-[10px] leading-4 font-bold text-white"
         :class="expanded ? 'ml-auto' : 'absolute top-0.5 right-0.5'"
-        :title="`${trs.incomingCount} offene Freundschaftsanfragen`"
+        :title="t('nav.friendRequests', trs.incomingCount)"
       >
         {{ trs.incomingCount }}
       </span>
-      <span v-if="!expanded" class="tip" role="tooltip">{{ item.label }}</span>
+      <span v-if="!expanded" class="tip" role="tooltip">{{ t(item.label) }}</span>
     </NuxtLink>
 
     <div class="my-2 h-px w-full shrink-0 bg-base-800" />
 
     <!-- Schnellstart: laufende und zuletzt gespielte Instanzen -->
     <div v-if="quick.length && uiSettings?.sidebarRecent !== false" class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-      <p v-if="expanded" class="mb-1.5 px-2 text-[11px] font-medium text-base-600">Schnellstart</p>
+      <p v-if="expanded" class="mb-1.5 px-2 text-[11px] font-medium text-base-600">{{ t('nav.quickLaunch') }}</p>
       <div
         v-for="i in quick"
         :key="i.id"
@@ -120,7 +121,7 @@ function play(id: string) {
           :to="`/instances/${i.id}`"
           class="flex items-center gap-2.5 rounded-lg p-1 transition-colors hover:bg-base-800"
           :class="[expanded ? 'w-full' : '', route.path === `/instances/${i.id}` ? 'bg-base-800' : '']"
-          :aria-label="`${i.name} öffnen`"
+          :aria-label="t('nav.openNamed', { name: i.name })"
         >
           <span class="relative shrink-0">
             <InstanceIcon :instance="i" :size="34" class="transition-transform duration-150 group-hover:scale-[1.06]" />
@@ -138,7 +139,7 @@ function play(id: string) {
           class="absolute grid size-5 place-items-center rounded-full bg-redstone-500 text-white opacity-0 shadow-md shadow-black/50 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 disabled:hidden"
           :class="expanded ? 'top-1/2 right-2 -translate-y-1/2' : 'right-1.5 bottom-0'"
           :disabled="games.state(i.id).phase !== 'idle'"
-          :aria-label="`${i.name} spielen`"
+          :aria-label="t('play.playNamed', { name: i.name })"
           @click="play(i.id)"
         >
           <svg viewBox="0 0 24 24" class="ml-px size-3" fill="currentColor"><path :d="icons.play" /></svg>
@@ -148,27 +149,27 @@ function play(id: string) {
     </div>
     <div v-else class="min-h-0 flex-1" />
 
-    <button class="rail group mt-1" :class="expanded ? 'rail-wide' : ''" aria-label="Neue Instanz" @click="ui.creating = true">
+    <button class="rail group mt-1" :class="expanded ? 'rail-wide' : ''" :aria-label="t('nav.newInstance')" @click="ui.creating = true">
       <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.plus" /></svg>
-      <span v-if="expanded" class="truncate text-sm">Neue Instanz</span>
-      <span v-else class="tip">Neue Instanz</span>
+      <span v-if="expanded" class="truncate text-sm">{{ t('nav.newInstance') }}</span>
+      <span v-else class="tip">{{ t('nav.newInstance') }}</span>
     </button>
 
     <div class="my-2 h-px w-full shrink-0 bg-base-800" />
 
-    <button class="rail group" :class="expanded ? 'rail-wide' : ''" aria-label="Suchen (Strg+K)" @click="ui.openPalette()">
+    <button class="rail group" :class="expanded ? 'rail-wide' : ''" :aria-label="t('nav.searchShortcut')" @click="ui.openPalette()">
       <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path :d="icons.search" /></svg>
       <template v-if="expanded">
-        <span class="truncate text-sm">Suchen</span>
-        <kbd class="ml-auto rounded border border-base-700 px-1.5 py-0.5 font-mono text-[10px] text-base-400">Strg K</kbd>
+        <span class="truncate text-sm">{{ t('common.actions.search') }}</span>
+        <kbd class="ml-auto rounded border border-base-700 px-1.5 py-0.5 font-mono text-[10px] text-base-400">{{ t('titleBar.ctrl') }} K</kbd>
       </template>
-      <span v-else class="tip">Suchen · Strg K</span>
+      <span v-else class="tip">{{ t('nav.searchTip') }}</span>
     </button>
 
-    <button class="rail group" :class="[expanded ? 'rail-wide' : '', { 'rail-on': settings.dialog !== null }]" aria-label="Einstellungen" @click="settings.open()">
+    <button class="rail group" :class="[expanded ? 'rail-wide' : '', { 'rail-on': settings.dialog !== null }]" :aria-label="t('nav.settings')" @click="settings.open()">
       <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.gear" /></svg>
-      <span v-if="expanded" class="truncate text-sm">Einstellungen</span>
-      <span v-else class="tip">Einstellungen</span>
+      <span v-if="expanded" class="truncate text-sm">{{ t('nav.settings') }}</span>
+      <span v-else class="tip">{{ t('nav.settings') }}</span>
     </button>
 
     <NuxtLink
@@ -176,25 +177,25 @@ function play(id: string) {
       to="/accounts"
       class="rail group"
       :class="[expanded ? 'rail-wide' : '', { 'rail-on': isActive('/accounts') }]"
-      :aria-label="accounts.active ? `Konto: ${accounts.active.name}` : 'Anmelden'"
+      :aria-label="accounts.active ? t('nav.accountNamed', { name: accounts.active.name }) : t('nav.signIn')"
     >
       <SkinHead :skin-url="accounts.active?.skinUrl ?? null" :name="accounts.active?.name ?? '?'" :size="26" class="shrink-0" />
-      <span v-if="expanded" class="min-w-0 flex-1 truncate text-sm">{{ accounts.active?.name ?? 'Anmelden' }}</span>
-      <span v-else class="tip">{{ accounts.active?.name ?? 'Anmelden' }}</span>
+      <span v-if="expanded" class="min-w-0 flex-1 truncate text-sm">{{ accounts.active?.name ?? t('nav.signIn') }}</span>
+      <span v-else class="tip">{{ accounts.active?.name ?? t('nav.signIn') }}</span>
     </NuxtLink>
 
     <button
       class="rail group"
       :class="expanded ? 'rail-wide' : ''"
-      :aria-label="expanded ? 'Leiste einklappen' : 'Leiste ausklappen'"
+      :aria-label="expanded ? t('nav.collapseLabel') : t('nav.expandLabel')"
       :aria-pressed="expanded"
       @click="ui.toggleNav()"
     >
       <svg viewBox="0 0 24 24" class="size-5 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="m9 6 6 6-6 6" />
       </svg>
-      <span v-if="expanded" class="truncate text-sm">Einklappen</span>
-      <span v-else class="tip">Ausklappen</span>
+      <span v-if="expanded" class="truncate text-sm">{{ t('nav.collapse') }}</span>
+      <span v-else class="tip">{{ t('nav.expand') }}</span>
     </button>
 
     <p v-if="version && expanded" class="px-2 pt-1 font-mono text-[11px] text-base-600">v{{ version }}</p>

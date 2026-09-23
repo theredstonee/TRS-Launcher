@@ -1,4 +1,5 @@
 mod commands;
+mod dialog_text;
 mod error;
 
 use std::path::PathBuf;

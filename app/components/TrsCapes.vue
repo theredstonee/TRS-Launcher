@@ -61,7 +61,7 @@ async function run(key: string, action: () => Promise<void>) {
 async function wear(cape: TrsCape | null) {
   await run('wear', async () => {
     await backend.trs.setCape(cape?.id ?? null)
-    toasts.ok(cape ? `„${cape.name}“ angelegt` : 'TRS-Umhang abgelegt')
+    toasts.ok(cape ? t('capes.toasts.worn', { name: cape.name }) : t('capes.toasts.removed'))
     await load()
   })
 }
@@ -89,7 +89,11 @@ async function redeem() {
     try {
       const result = await backend.trs.redeem(parsed.data)
       redeeming.value = false
-      toasts.ok(result.alreadyOwned ? `„${result.name}“ hattest du schon.` : `„${result.name}“ freigeschaltet!`)
+      toasts.ok(
+        result.alreadyOwned
+          ? t('capes.toasts.alreadyOwned', { name: result.name })
+          : t('capes.toasts.unlocked', { name: result.name }),
+      )
       await load()
       const cape = capes.value?.find((c) => c.id === result.capeId)
       if (cape) emit('preview', cape)
@@ -124,7 +128,7 @@ async function upload() {
       const cape = await backend.trs.uploadCape(parsed.data || null)
       if (!cape) return
       uploading.value = false
-      toasts.ok('Hochgeladen – dein Umhang wartet auf Freigabe.')
+      toasts.ok(t('capes.toasts.uploaded'))
       await load()
       emit('preview', capes.value?.find((c) => c.id === cape.id) ?? cape)
     } catch (e) {
@@ -141,7 +145,7 @@ async function confirmDelete() {
   await run('delete', async () => {
     await backend.trs.deleteCape(cape.id)
     if (props.previewId === cape.id) emit('preview', null)
-    toasts.ok('Umhang gelöscht')
+    toasts.ok(t('capes.toasts.deleted'))
     await load()
   })
 }
@@ -157,25 +161,22 @@ function lockClass(cape: TrsCape) {
 <template>
   <section aria-labelledby="trs-capes-title">
     <div class="mb-2 flex flex-wrap items-center gap-2">
-      <h2 id="trs-capes-title" class="section-title">TRS-Umhänge</h2>
-      <span v-if="active" class="badge bg-ok/10 text-ok">Getragen: {{ active.name }}</span>
+      <h2 id="trs-capes-title" class="section-title">{{ t('capes.title') }}</h2>
+      <span v-if="active" class="badge bg-ok/10 text-ok">{{ t('capes.wearing', { name: active.name }) }}</span>
       <div v-if="trs.enabled && accounts.active" class="ml-auto flex gap-2">
-        <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy || offline" @click="startRedeem">Code einlösen</button>
+        <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy || offline" @click="startRedeem">{{ t('capes.redeem') }}</button>
         <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy || offline" @click="startUpload">
-          Eigenen Umhang hochladen
+          {{ t('capes.upload') }}
         </button>
       </div>
     </div>
-    <p class="mb-3 text-xs text-base-400">
-      TRS-Umhänge sind unabhängig von deinen Mojang-Umhängen: Sie sehen alle, die mit dem TRS Client spielen. Deinen
-      Mojang-Umhang änderst du oben – beides bleibt getrennt.
-    </p>
+    <p class="mb-3 text-xs text-base-400">{{ t('capes.intro') }}</p>
 
-    <TrsGate what="TRS-Umhänge">
+    <TrsGate what="capes">
       <div v-if="offline" class="card flex items-center gap-3 px-4 py-3 text-sm text-base-400">
         <span class="size-2 rounded-full bg-base-600" />
-        <span class="flex-1">Der TRS-Server ist gerade nicht erreichbar.</span>
-        <button class="btn btn-ghost px-3 py-1 text-xs" :disabled="loading" @click="load">Erneut versuchen</button>
+        <span class="flex-1">{{ t('capes.offline') }}</span>
+        <button class="btn btn-ghost px-3 py-1 text-xs" :disabled="loading" @click="load">{{ t('common.actions.retry') }}</button>
       </div>
       <div v-else-if="loading && !capes" class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3">
         <div v-for="i in 6" :key="i" class="skeleton h-32" />
@@ -190,7 +191,7 @@ function lockClass(cape: TrsCape) {
                 'opacity-60': !cape.owned && cape.kind !== 'upload',
               }"
               :aria-pressed="previewId === cape.id"
-              :title="cape.owned ? `${cape.name} anprobieren` : `${cape.name} – noch gesperrt (anprobieren geht trotzdem)`"
+              :title="cape.owned ? t('capes.tryOn', { name: cape.name }) : t('capes.tryOnLocked', { name: cape.name })"
               @click="preview(cape)"
             >
               <span class="relative">
@@ -209,7 +210,7 @@ function lockClass(cape: TrsCape) {
                   stroke="currentColor"
                   stroke-width="2"
                   stroke-linecap="round"
-                  aria-label="gesperrt"
+                  :aria-label="t('capes.locked')"
                 >
                   <path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" />
                 </svg>
@@ -217,9 +218,9 @@ function lockClass(cape: TrsCape) {
               <span class="w-full truncate text-center text-xs">{{ cape.name }}</span>
               <span class="flex flex-wrap justify-center gap-1">
                 <span class="badge px-1.5 py-0 text-[10px]" :class="lockClass(cape)">{{ trsUnlockLabel(cape) }}</span>
-                <span v-if="cape.frames > 1" class="badge bg-base-800 px-1.5 py-0 text-[10px] text-base-200">animiert</span>
+                <span v-if="cape.frames > 1" class="badge bg-base-800 px-1.5 py-0 text-[10px] text-base-200">{{ t('capes.animated') }}</span>
               </span>
-              <span v-if="cape.active" class="text-[10px] text-ok">getragen</span>
+              <span v-if="cape.active" class="text-[10px] text-ok">{{ t('capes.worn') }}</span>
               <span
                 v-else-if="trsStatusLabel(cape.status)"
                 class="text-[10px]"
@@ -231,7 +232,7 @@ function lockClass(cape: TrsCape) {
           </li>
         </ul>
         <p v-if="!capes.length" class="card px-4 py-6 text-center text-sm text-base-400">
-          Gerade gibt es keine TRS-Umhänge.
+          {{ t('capes.empty') }}
         </p>
 
         <!-- Aktionen für den angeprobten Umhang -->
@@ -240,16 +241,20 @@ function lockClass(cape: TrsCape) {
             <p class="truncate text-sm font-semibold text-base-50">{{ selected.name }}</p>
             <p class="text-xs text-base-400">
               <template v-if="selected.kind === 'upload' && selected.status === 'pending'">
-                Wartet auf Freigabe durch das Team – bis dahin siehst nur du ihn.
+                {{ t('capes.selected.pending') }}
               </template>
               <template v-else-if="selected.kind === 'upload' && selected.status === 'rejected'">
-                Abgelehnt{{ selected.rejectReason ? `: ${selected.rejectReason}` : '' }}.
+                {{
+                  selected.rejectReason
+                    ? t('capes.selected.rejectedReason', { reason: selected.rejectReason })
+                    : t('capes.selected.rejected')
+                }}
               </template>
-              <template v-else-if="!selected.owned && selected.unlock === 'code'">Gesperrt – mit einem Code freischaltbar.</template>
-              <template v-else-if="!selected.owned">Gesperrt – nur für das TRS-Team bzw. per Code.</template>
-              <template v-else-if="selected.active">Du trägst diesen Umhang.</template>
-              <template v-else-if="selected.unlock === 'free'">Frei verfügbar – anlegen, damit ihn andere sehen.</template>
-              <template v-else>Für dich freigeschaltet – anlegen, damit ihn andere sehen.</template>
+              <template v-else-if="!selected.owned && selected.unlock === 'code'">{{ t('capes.selected.lockedCode') }}</template>
+              <template v-else-if="!selected.owned">{{ t('capes.selected.lockedTeam') }}</template>
+              <template v-else-if="selected.active">{{ t('capes.selected.active') }}</template>
+              <template v-else-if="selected.unlock === 'free'">{{ t('capes.selected.free') }}</template>
+              <template v-else>{{ t('capes.selected.unlocked') }}</template>
             </p>
           </div>
           <button
@@ -258,10 +263,10 @@ function lockClass(cape: TrsCape) {
             :disabled="!!busy"
             @click="wear(selected)"
           >
-            {{ busy === 'wear' ? 'Lege an …' : 'Anlegen' }}
+            {{ busy === 'wear' ? t('capes.actions.wearing') : t('capes.actions.wear') }}
           </button>
           <button v-if="selected.active" class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="wear(null)">
-            {{ busy === 'wear' ? 'Lege ab …' : 'Ablegen' }}
+            {{ busy === 'wear' ? t('capes.actions.removing') : t('capes.actions.remove') }}
           </button>
           <button
             v-if="!selected.owned && selected.unlock === 'code'"
@@ -269,7 +274,7 @@ function lockClass(cape: TrsCape) {
             :disabled="!!busy"
             @click="startRedeem"
           >
-            Code einlösen
+            {{ t('capes.redeem') }}
           </button>
           <button
             v-if="selected.kind === 'upload'"
@@ -277,18 +282,18 @@ function lockClass(cape: TrsCape) {
             :disabled="!!busy"
             @click="toDelete = selected"
           >
-            Löschen
+            {{ t('common.actions.delete') }}
           </button>
-          <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="emit('preview', null)">Vorschau beenden</button>
+          <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="emit('preview', null)">{{ t('capes.actions.endPreview') }}</button>
         </div>
         <p v-if="pendingCount" class="mt-2 text-[11px] text-base-600">
-          {{ pendingCount }} {{ pendingCount === 1 ? 'Umhang wartet' : 'Umhänge warten' }} auf Freigabe.
+          {{ t('capes.pendingCount', pendingCount) }}
         </p>
       </template>
     </TrsGate>
 
-    <BaseDialog v-if="redeeming" title="Code einlösen" @close="redeeming = false">
-      <label class="label" for="trs-code">Code</label>
+    <BaseDialog v-if="redeeming" :title="t('capes.redeem')" @close="redeeming = false">
+      <label class="label" for="trs-code">{{ t('capes.redeemDialog.codeLabel') }}</label>
       <input
         id="trs-code"
         v-model="code"
@@ -300,48 +305,48 @@ function lockClass(cape: TrsCape) {
         autofocus
         @keydown.enter="redeem"
       />
-      <p class="mt-2 text-xs text-base-400">Groß-/Kleinschreibung und Bindestriche sind egal.</p>
+      <p class="mt-2 text-xs text-base-400">{{ t('capes.redeemDialog.hint') }}</p>
       <p v-if="codeError" role="alert" class="mt-2 text-xs text-redstone-300">{{ codeError }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="redeeming = false">Abbrechen</button>
+        <button class="btn btn-ghost" @click="redeeming = false">{{ t('common.actions.cancel') }}</button>
         <button class="btn btn-primary" :disabled="busy === 'redeem'" @click="redeem">
-          {{ busy === 'redeem' ? 'Prüfe …' : 'Einlösen' }}
+          {{ busy === 'redeem' ? t('capes.redeemDialog.checking') : t('capes.redeemDialog.submit') }}
         </button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="uploading" title="Eigenen Umhang hochladen" @close="uploading = false">
-      <label class="label" for="trs-cape-name">Name (optional)</label>
+    <BaseDialog v-if="uploading" :title="t('capes.upload')" @close="uploading = false">
+      <label class="label" for="trs-cape-name">{{ t('capes.uploadDialog.nameLabel') }}</label>
       <input
         id="trs-cape-name"
         v-model="uploadName"
         class="field"
         maxlength="32"
-        placeholder="z. B. Mein Umhang"
+        :placeholder="t('capes.uploadDialog.placeholder')"
         autofocus
         @keydown.enter="upload"
       />
       <ul class="mt-3 list-disc space-y-1 pl-4 text-xs text-base-400">
-        <li>PNG mit 64×32 Pixeln (oder 128×64, 192×96, 256×128) bzw. im Umhang-Format 22×17 – höchstens 256 KB.</li>
-        <li>Keine Animation. Das Team prüft jeden Umhang, bis dahin siehst nur du ihn.</li>
-        <li>Nur eigene Bilder oder solche, die du verwenden darfst – nichts Anstößiges.</li>
+        <li>{{ t('capes.uploadDialog.rules.size') }}</li>
+        <li>{{ t('capes.uploadDialog.rules.review') }}</li>
+        <li>{{ t('capes.uploadDialog.rules.rights') }}</li>
       </ul>
       <p v-if="uploadError" role="alert" class="mt-2 text-xs text-redstone-300">{{ uploadError }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="uploading = false">Abbrechen</button>
+        <button class="btn btn-ghost" @click="uploading = false">{{ t('common.actions.cancel') }}</button>
         <button class="btn btn-primary" :disabled="busy === 'upload'" @click="upload">
-          {{ busy === 'upload' ? 'Lade hoch …' : 'Datei wählen' }}
+          {{ busy === 'upload' ? t('capes.uploadDialog.uploading') : t('capes.uploadDialog.chooseFile') }}
         </button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="toDelete" title="Umhang löschen?" @close="toDelete = null">
-      <p class="text-sm text-base-200">
-        <strong class="text-base-50">{{ toDelete.name }}</strong> wird endgültig gelöscht.
-      </p>
+    <BaseDialog v-if="toDelete" :title="t('capes.deleteDialog.title')" @close="toDelete = null">
+      <i18n-t keypath="capes.deleteDialog.text" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ toDelete.name }}</strong></template>
+      </i18n-t>
       <template #actions>
-        <button class="btn btn-ghost" @click="toDelete = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmDelete">Löschen</button>
+        <button class="btn btn-ghost" @click="toDelete = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmDelete">{{ t('common.actions.delete') }}</button>
       </template>
     </BaseDialog>
   </section>

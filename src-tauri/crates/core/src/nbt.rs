@@ -76,7 +76,7 @@ struct Reader<'a> {
 }
 
 fn corrupt() -> Error {
-    Error::validation("Die NBT-Datei ist beschädigt.")
+    Error::validation(crate::msg!("nbt.corrupt", "Die NBT-Datei ist beschädigt."))
 }
 
 impl<'a> Reader<'a> {

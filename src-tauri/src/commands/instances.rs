@@ -11,6 +11,7 @@ use trs_core::loaders::LoaderVersionInfo;
 
 use crate::LauncherState;
 use crate::commands::extras::allow;
+use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 /// Instanz plus Pfad zum Bild – die Datei ist einzeln fürs Webview freigegeben
@@ -123,12 +124,13 @@ pub async fn pick_instance_icon(
 ) -> CommandResult<Option<InstanceView>> {
     let instance = launcher.instances().get(&id).await?;
     let dialog_app = app.clone();
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         dialog_app
             .dialog()
             .file()
-            .set_title("Bild für die Instanz wählen")
-            .add_filter("Bilder", &["png", "jpg", "jpeg", "webp"])
+            .set_title(DialogText::PickInstanceIcon.text(lang))
+            .add_filter(DialogText::Images.text(lang), &["png", "jpg", "jpeg", "webp"])
             .blocking_pick_file()
     })
     .await
@@ -160,12 +162,13 @@ pub async fn pick_instance_banner(
 ) -> CommandResult<Option<InstanceView>> {
     let instance = launcher.instances().get(&id).await?;
     let dialog_app = app.clone();
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         dialog_app
             .dialog()
             .file()
-            .set_title("Banner für die Instanz wählen")
-            .add_filter("Bilder", &["png", "jpg", "jpeg", "webp"])
+            .set_title(DialogText::PickInstanceBanner.text(lang))
+            .add_filter(DialogText::Images.text(lang), &["png", "jpg", "jpeg", "webp"])
             .blocking_pick_file()
     })
     .await

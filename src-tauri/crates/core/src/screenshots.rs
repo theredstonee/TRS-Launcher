@@ -114,14 +114,20 @@ pub struct RgbaImage {
 fn decode_rgba(path: &Path) -> Result<RgbaImage> {
     let meta = std::fs::metadata(path).map_err(|e| Error::io(path, e))?;
     if meta.len() > MAX_SOURCE_BYTES {
-        return Err(Error::validation("Das Bild ist zu groß für die Zwischenablage."));
+        return Err(Error::validation(crate::msg!(
+            "screenshots.tooLargeForClipboard",
+            "Das Bild ist zu groß für die Zwischenablage."
+        )));
     }
     let image = image::ImageReader::open(path)
         .map_err(|e| Error::io(path, e))?
         .with_guessed_format()
         .map_err(|e| Error::io(path, e))?
         .decode()
-        .map_err(|_| Error::validation("Das Bild konnte nicht gelesen werden."))?
+        .map_err(|_| Error::validation(crate::msg!(
+            "screenshots.imageUnreadable",
+            "Das Bild konnte nicht gelesen werden."
+        )))?
         .to_rgba8();
     Ok(RgbaImage { width: image.width(), height: image.height(), pixels: image.into_raw() })
 }
@@ -147,7 +153,10 @@ fn write_thumbnail(source: &Path, target: &Path) -> Result<()> {
         .with_guessed_format()
         .map_err(|e| Error::io(source, e))?
         .decode()
-        .map_err(|_| Error::validation("Der Screenshot konnte nicht gelesen werden."))?;
+        .map_err(|_| Error::validation(crate::msg!(
+            "screenshots.screenshotUnreadable",
+            "Der Screenshot konnte nicht gelesen werden."
+        )))?;
     let thumb = if image.width() > THUMB_WIDTH {
         image.thumbnail(THUMB_WIDTH, u32::MAX)
     } else {
@@ -158,7 +167,10 @@ fn write_thumbnail(source: &Path, target: &Path) -> Result<()> {
     thumb
         .to_rgb8()
         .write_with_encoder(image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 82))
-        .map_err(|_| Error::validation("Das Vorschaubild konnte nicht geschrieben werden."))?;
+        .map_err(|_| Error::validation(crate::msg!(
+            "screenshots.thumbnailWriteFailed",
+            "Das Vorschaubild konnte nicht geschrieben werden."
+        )))?;
     drop(out);
     std::fs::rename(&tmp, target).map_err(|e| {
         let _ = std::fs::remove_file(&tmp);
@@ -179,7 +191,7 @@ fn recycle(path: &Path) -> Result<()> {
     // Der Pfad muss doppelt nullterminiert sein (Liste von Dateien).
     let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
     if wide.contains(&0) {
-        return Err(Error::validation("Ungültiger Pfad"));
+        return Err(Error::validation(crate::msg!("screenshots.invalidPath", "Ungültiger Pfad")));
     }
     wide.push(0);
     wide.push(0);

@@ -14,18 +14,19 @@ const ui = computed(() => settings.current?.ui)
 const instance = ref<Instance | null>(null)
 const loadError = ref<string | null>(null)
 type Tab = 'content' | 'history' | 'screenshots' | 'worlds' | 'logs'
-const tabs = computed<[Tab, string][]>(() => {
-  const list: [Tab, string][] = [['content', 'Inhalte']]
-  if (ui.value?.historyTab !== false) list.push(['history', 'Verlauf'])
-  if (ui.value?.screenshotsTab !== false) list.push(['screenshots', 'Screenshots'])
-  if (ui.value?.worldsTab !== false) list.push(['worlds', 'Welten'])
-  list.push(['logs', 'Logs'])
+// Nur die Schlüssel – die Beschriftung kommt beim Rendern aus `instance.tabs.*`.
+const tabs = computed<Tab[]>(() => {
+  const list: Tab[] = ['content']
+  if (ui.value?.historyTab !== false) list.push('history')
+  if (ui.value?.screenshotsTab !== false) list.push('screenshots')
+  if (ui.value?.worldsTab !== false) list.push('worlds')
+  list.push('logs')
   return list
 })
 const tab = ref<Tab>('content')
 // Ausgeblendeter Tab aktiv? Zurück zu den Inhalten.
 watch(tabs, (list) => {
-  if (!list.some(([key]) => key === tab.value)) tab.value = 'content'
+  if (!list.includes(tab.value)) tab.value = 'content'
 })
 
 const settingsOpen = ref<string | null>(null)
@@ -53,14 +54,14 @@ onMounted(() => {
   if (route.query.settings) settingsOpen.value = String(route.query.settings)
   // Die Befehlspalette springt direkt in einen Bereich (z. B. ?tab=content).
   const wanted = route.query.tab ? String(route.query.tab) : null
-  if (wanted && tabs.value.some(([key]) => key === wanted)) tab.value = wanted as Tab
+  if (wanted && tabs.value.includes(wanted as Tab)) tab.value = wanted as Tab
 })
 
 // Titelleiste „Logs öffnen“, während die Seite schon offen ist.
 watch(
   () => route.query.tab,
   (wanted) => {
-    if (typeof wanted === 'string' && tabs.value.some(([key]) => key === wanted)) tab.value = wanted as Tab
+    if (typeof wanted === 'string' && tabs.value.includes(wanted as Tab)) tab.value = wanted as Tab
   },
 )
 
@@ -101,7 +102,7 @@ function openFolder() {
     <div class="flex min-w-0 flex-1 flex-col p-6">
       <NuxtLink to="/instances" class="mb-3 inline-flex w-fit items-center gap-1 text-xs text-base-400 hover:text-base-50">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7" /></svg>
-        Bibliothek
+        {{ t('library.title') }}
       </NuxtLink>
 
       <p v-if="loadError" role="alert" class="card border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">{{ loadError }}</p>
@@ -116,7 +117,7 @@ function openFolder() {
         <!-- Banner als Kopf: Bild der Instanz, darüber Icon, Name und Spielen. -->
         <InstanceBanner :instance="instance" class="mb-5 rounded-2xl border border-base-800">
           <header class="flex flex-wrap items-center gap-5 p-5">
-          <button class="shrink-0 rounded-xl outline-none transition-transform duration-150 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-redstone-500" aria-label="Einstellungen: Allgemein" @click="settingsOpen = 'general'">
+          <button class="shrink-0 rounded-xl outline-none transition-transform duration-150 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-redstone-500" :aria-label="t('instance.settingsGeneral')" @click="settingsOpen = 'general'">
             <InstanceIcon :instance="instance" :size="88" class="shadow-xl shadow-black/50" />
           </button>
 
@@ -125,7 +126,7 @@ function openFolder() {
             <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/75">
               <button
                 class="chip gap-1.5 ring-1 ring-base-700 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-60"
-                title="Version wechseln"
+                :title="t('instance.changeVersion')"
                 :disabled="game.phase !== 'idle'"
                 @click="changingVersion = true"
               >
@@ -144,10 +145,10 @@ function openFolder() {
 
           <div class="flex w-80 shrink-0 items-center gap-2">
             <PlayButton :instance-id="instance.id" large />
-            <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" title="Einstellungen" aria-label="Einstellungen" @click="settingsOpen = 'general'">
+            <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" :title="t('instance.settings')" :aria-label="t('instance.settings')" @click="settingsOpen = 'general'">
               <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.gear" /></svg>
             </button>
-            <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" title="Ordner öffnen" aria-label="Ordner öffnen" @click="openFolder">
+            <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" :title="t('common.actions.openFolder')" :aria-label="t('common.actions.openFolder')" @click="openFolder">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
               </svg>
@@ -159,8 +160,8 @@ function openFolder() {
         <p v-if="game.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ game.error }}</p>
         <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" class="mb-4" />
 
-        <nav class="mb-4 flex flex-wrap gap-1" aria-label="Bereiche">
-          <button v-for="[key, label] in tabs" :key="key" class="tab" :class="{ 'tab-on': tab === key }" @click="tab = key">{{ label }}</button>
+        <nav class="mb-4 flex flex-wrap gap-1" :aria-label="t('instance.tabsLabel')">
+          <button v-for="key in tabs" :key="key" class="tab" :class="{ 'tab-on': tab === key }" @click="tab = key">{{ t(`instance.tabs.${key}`) }}</button>
         </nav>
 
         <ChangeVersionDialog v-if="changingVersion" :instance="instance" @close="changingVersion = false" @changed="onUpdated" />

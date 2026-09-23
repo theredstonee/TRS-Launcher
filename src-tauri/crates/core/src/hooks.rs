@@ -12,7 +12,8 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::launch::Command;
-use crate::{Error, Result};
+use crate::error::Msg;
+use crate::{Error, Result, msg};
 
 pub const MAX_COMMAND_LEN: usize = 1024;
 pub const MAX_ENV_VARS: usize = 32;
@@ -47,10 +48,80 @@ pub enum HookKind {
 }
 
 impl HookKind {
-    fn label(self) -> &'static str {
+    fn slot(self) -> CommandSlot {
         match self {
-            Self::PreLaunch => "Der Befehl vor dem Start",
-            Self::PostExit => "Der Befehl nach dem Beenden",
+            Self::PreLaunch => CommandSlot::PreLaunch,
+            Self::PostExit => CommandSlot::PostExit,
+        }
+    }
+
+    fn start_failed(self) -> Msg {
+        match self {
+            Self::PreLaunch => msg!("hooks.preLaunchStartFailed", "Der Befehl vor dem Start konnte nicht gestartet werden."),
+            Self::PostExit => msg!("hooks.postExitStartFailed", "Der Befehl nach dem Beenden konnte nicht gestartet werden."),
+        }
+    }
+
+    fn run_failed(self) -> Msg {
+        match self {
+            Self::PreLaunch => msg!("hooks.preLaunchRunFailed", "Der Befehl vor dem Start konnte nicht ausgeführt werden."),
+            Self::PostExit => msg!("hooks.postExitRunFailed", "Der Befehl nach dem Beenden konnte nicht ausgeführt werden."),
+        }
+    }
+
+    fn timed_out(self, secs: u64) -> Msg {
+        match self {
+            Self::PreLaunch => msg!(
+                "hooks.preLaunchTimeout",
+                "Der Befehl vor dem Start lief länger als {seconds} Sekunden und wurde abgebrochen.",
+                seconds = secs
+            ),
+            Self::PostExit => msg!(
+                "hooks.postExitTimeout",
+                "Der Befehl nach dem Beenden lief länger als {seconds} Sekunden und wurde abgebrochen.",
+                seconds = secs
+            ),
+        }
+    }
+
+    fn exit_code(self, exit: String) -> Msg {
+        match self {
+            Self::PreLaunch => {
+                msg!("hooks.preLaunchExitCode", "Der Befehl vor dem Start ist fehlgeschlagen (Exit-Code {code}).", code = exit)
+            }
+            Self::PostExit => {
+                msg!("hooks.postExitExitCode", "Der Befehl nach dem Beenden ist fehlgeschlagen (Exit-Code {code}).", code = exit)
+            }
+        }
+    }
+}
+
+/// Welcher Befehl geprüft wird – jeder hat eigene Meldungen (übersetzbar).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CommandSlot {
+    PreLaunch,
+    Wrapper,
+    PostExit,
+}
+
+impl CommandSlot {
+    fn too_long(self) -> Msg {
+        match self {
+            Self::PreLaunch => {
+                msg!("hooks.preLaunchTooLong", "Befehl vor dem Start: höchstens {max} Zeichen", max = MAX_COMMAND_LEN)
+            }
+            Self::Wrapper => msg!("hooks.wrapperTooLong", "Wrapper-Befehl: höchstens {max} Zeichen", max = MAX_COMMAND_LEN),
+            Self::PostExit => {
+                msg!("hooks.postExitTooLong", "Befehl nach dem Beenden: höchstens {max} Zeichen", max = MAX_COMMAND_LEN)
+            }
+        }
+    }
+
+    fn invalid_chars(self) -> Msg {
+        match self {
+            Self::PreLaunch => msg!("hooks.preLaunchInvalidChars", "Befehl vor dem Start enthält ungültige Zeichen"),
+            Self::Wrapper => msg!("hooks.wrapperInvalidChars", "Wrapper-Befehl enthält ungültige Zeichen"),
+            Self::PostExit => msg!("hooks.postExitInvalidChars", "Befehl nach dem Beenden enthält ungültige Zeichen"),
         }
     }
 }
@@ -66,13 +137,13 @@ impl LaunchHooks {
     }
 
     pub fn validate(&self) -> Result<()> {
-        for (label, command) in [
-            ("Befehl vor dem Start", &self.pre_launch),
-            ("Wrapper-Befehl", &self.wrapper),
-            ("Befehl nach dem Beenden", &self.post_exit),
+        for (slot, command) in [
+            (CommandSlot::PreLaunch, &self.pre_launch),
+            (CommandSlot::Wrapper, &self.wrapper),
+            (CommandSlot::PostExit, &self.post_exit),
         ] {
             if let Some(c) = command {
-                validate_command(label, c)?;
+                validate_command(slot, c)?;
             }
         }
         Ok(())
@@ -93,17 +164,21 @@ pub fn normalize_env(env: Vec<EnvVar>) -> Vec<EnvVar> {
 
 pub fn validate_env(env: &[EnvVar]) -> Result<()> {
     if env.len() > MAX_ENV_VARS {
-        return Err(Error::validation(format!("Höchstens {MAX_ENV_VARS} Umgebungsvariablen")));
+        return Err(Error::validation(msg!("hooks.tooManyEnvVars", "Höchstens {max} Umgebungsvariablen", max = MAX_ENV_VARS)));
     }
     let mut seen = std::collections::HashSet::new();
     for var in env {
         validate_env_key(&var.key)?;
         if var.value.len() > MAX_ENV_VALUE_LEN || var.value.chars().any(char::is_control) {
-            return Err(Error::validation(format!("Der Wert von {} ist ungültig oder zu lang", var.key)));
+            return Err(Error::validation(msg!(
+                "hooks.envValueInvalid",
+                "Der Wert von {name} ist ungültig oder zu lang",
+                name = &var.key
+            )));
         }
         // Windows unterscheidet bei Umgebungsvariablen nicht nach Groß/klein.
         if !seen.insert(var.key.to_ascii_uppercase()) {
-            return Err(Error::validation(format!("Die Variable {} ist doppelt", var.key)));
+            return Err(Error::validation(msg!("hooks.envDuplicate", "Die Variable {name} ist doppelt", name = &var.key)));
         }
     }
     Ok(())
@@ -113,13 +188,13 @@ pub fn env_pairs(env: &[EnvVar]) -> Vec<(String, String)> {
     env.iter().map(|v| (v.key.clone(), v.value.clone())).collect()
 }
 
-fn validate_command(label: &str, command: &str) -> Result<()> {
+fn validate_command(slot: CommandSlot, command: &str) -> Result<()> {
     if command.trim().is_empty() || command.len() > MAX_COMMAND_LEN {
-        return Err(Error::validation(format!("{label}: höchstens {MAX_COMMAND_LEN} Zeichen")));
+        return Err(Error::validation(slot.too_long()));
     }
     // Zeilenumbrüche & Co. würden in `cmd /C` weitere Befehle anhängen.
     if command.chars().any(char::is_control) {
-        return Err(Error::validation(format!("{label} enthält ungültige Zeichen")));
+        return Err(Error::validation(slot.invalid_chars()));
     }
     Ok(())
 }
@@ -133,7 +208,7 @@ pub fn validate_env_key(key: &str) -> Result<()> {
     if ok {
         Ok(())
     } else {
-        Err(Error::validation("Namen von Umgebungsvariablen: nur Buchstaben, Ziffern und _ (nicht vorne)"))
+        Err(Error::validation(msg!("hooks.envNameInvalid", "Namen von Umgebungsvariablen: nur Buchstaben, Ziffern und _ (nicht vorne)")))
     }
 }
 
@@ -173,7 +248,7 @@ pub fn apply_wrapper(command: &mut Command, wrapper: &str) {
 /// Führt einen Hook über `cmd /C` aus. Nicht-Null-Exit-Code, Zeitüberschreitung
 /// oder ein fehlendes `cmd` sind Fehler mit nutzertauglicher Meldung.
 pub async fn run(kind: HookKind, command: &str, ctx: &HookContext, user_env: &[(String, String)], timeout: Duration) -> Result<()> {
-    validate_command(kind.label(), command)?;
+    validate_command(kind.slot(), command)?;
     let shell = std::env::var_os("ComSpec").filter(|s| !s.is_empty()).unwrap_or_else(|| "cmd.exe".into());
     let mut cmd = tokio::process::Command::new(shell);
     // `/S /C "…"`: cmd entfernt genau das äußere Anführungszeichenpaar und
@@ -190,21 +265,17 @@ pub async fn run(kind: HookKind, command: &str, ctx: &HookContext, user_env: &[(
 
     let child = cmd.spawn().map_err(|e| {
         tracing::error!("Hook konnte nicht gestartet werden: {e}");
-        Error::launch(format!("{} konnte nicht gestartet werden.", kind.label()))
+        Error::launch(kind.start_failed())
     })?;
     let output = match tokio::time::timeout(timeout, child.wait_with_output()).await {
         Ok(Ok(output)) => output,
         Ok(Err(e)) => {
             tracing::error!("Hook fehlgeschlagen: {e}");
-            return Err(Error::launch(format!("{} konnte nicht ausgeführt werden.", kind.label())));
+            return Err(Error::launch(kind.run_failed()));
         }
         // Beim Verwerfen des Futures beendet `kill_on_drop` den Prozess.
         Err(_) => {
-            return Err(Error::launch(format!(
-                "{} lief länger als {} Sekunden und wurde abgebrochen.",
-                kind.label(),
-                timeout.as_secs()
-            )));
+            return Err(Error::launch(kind.timed_out(timeout.as_secs())));
         }
     };
     let tail = |bytes: &[u8]| {
@@ -222,7 +293,7 @@ pub async fn run(kind: HookKind, command: &str, ctx: &HookContext, user_env: &[(
         Ok(())
     } else {
         let code = output.status.code().map_or_else(|| "?".to_owned(), |c| c.to_string());
-        Err(Error::launch(format!("{} ist fehlgeschlagen (Exit-Code {code}).", kind.label())))
+        Err(Error::launch(kind.exit_code(code)))
     }
 }
 
@@ -253,7 +324,9 @@ mod tests {
         let bad_cmd = LaunchHooks { pre_launch: Some("echo a\r\ndel x".into()), ..Default::default() };
         assert!(bad_cmd.validate().is_err());
         let long = LaunchHooks { post_exit: Some("x".repeat(MAX_COMMAND_LEN + 1)), ..Default::default() };
-        assert!(long.validate().is_err());
+        let err = long.validate().unwrap_err();
+        assert_eq!(err.message_code(), "hooks.postExitTooLong");
+        assert_eq!(err.to_string(), format!("Befehl nach dem Beenden: höchstens {MAX_COMMAND_LEN} Zeichen"));
 
         for key in ["", "1ABC", "A B", "A=B", "Ä", &"K".repeat(65)] {
             assert!(validate_env_key(key).is_err(), "{key:?}");
@@ -307,6 +380,8 @@ mod tests {
 
         let err = run(HookKind::PostExit, "exit 3", &ctx, &[], HOOK_TIMEOUT).await.unwrap_err();
         assert!(err.to_string().contains("Exit-Code 3"), "{err}");
+        assert_eq!(err.message_code(), "hooks.postExitExitCode");
+        assert_eq!(err.message_params()["code"], "3");
 
         let err = run(HookKind::PreLaunch, "ping -n 5 127.0.0.1 >nul", &ctx, &[], Duration::from_millis(300)).await.unwrap_err();
         assert!(err.to_string().contains("abgebrochen"), "{err}");

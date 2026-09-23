@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ContentItem, Instance } from '~/types'
 import type { IconName } from '~/utils/icons'
+import type { MessageKey } from '~/utils/i18n'
 
 // Globale Suche (Strg+K) im Stil der Modrinth App: Instanzen starten oder
 // öffnen, installierte Mods finden, in einen Einstellungs-Bereich springen,
@@ -15,7 +16,11 @@ const settings = useSettingsStore()
 const toasts = useToasts()
 const ui = useUiStore()
 
-type Group = 'Instanzen' | 'Mods' | 'Server' | 'Einstellungen' | 'Seiten' | 'Aktionen'
+type Group = 'instances' | 'mods' | 'servers' | 'settings' | 'pages' | 'actions'
+
+function groupName(group: Group): string {
+  return t(`palette.groups.${group}`)
+}
 
 interface Command {
   id: string
@@ -57,24 +62,24 @@ function launch(instance: Instance) {
 
 // --- Einträge -------------------------------------------------------------------
 const pages = computed<Command[]>(() => {
-  const list: { to: string; label: string; icon: IconName; keywords?: string }[] = [
-    { to: '/', label: 'Start', icon: 'home', keywords: 'startseite home' },
-    { to: '/instances', label: 'Bibliothek', icon: 'library', keywords: 'instanzen library' },
-    { to: '/browse', label: 'Entdecken', icon: 'compass', keywords: 'modrinth mods modpacks suchen' },
-    { to: '/servers', label: 'Server', icon: 'server', keywords: 'serverliste' },
-    { to: '/accounts', label: 'Accounts', icon: 'user', keywords: 'konto anmelden microsoft' },
-    { to: '/screenshots', label: 'Screenshots', icon: 'screenshots', keywords: 'bilder galerie' },
-    { to: '/skins', label: 'Skins', icon: 'skins', keywords: 'umhang cape' },
-    { to: '/friends', label: 'Freunde', icon: 'friends', keywords: 'freunde friends online anfragen trs' },
+  const list: { to: string; label: MessageKey; icon: IconName; keywords: MessageKey }[] = [
+    { to: '/', label: 'nav.home', icon: 'home', keywords: 'palette.keywords.home' },
+    { to: '/instances', label: 'nav.library', icon: 'library', keywords: 'palette.keywords.library' },
+    { to: '/browse', label: 'nav.discover', icon: 'compass', keywords: 'palette.keywords.discover' },
+    { to: '/servers', label: 'nav.servers', icon: 'server', keywords: 'palette.keywords.servers' },
+    { to: '/accounts', label: 'palette.pages.accounts', icon: 'user', keywords: 'palette.keywords.accounts' },
+    { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', keywords: 'palette.keywords.screenshots' },
+    { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
+    { to: '/friends', label: 'nav.friends', icon: 'friends', keywords: 'palette.keywords.friends' },
   ]
   return list
     .filter((p) => router.resolve(p.to).matched.length > 0)
     .map((p) => ({
       id: `page:${p.to}`,
-      group: 'Seiten' as const,
-      title: p.label,
-      subtitle: 'Seite öffnen',
-      keywords: p.keywords,
+      group: 'pages' as const,
+      title: t(p.label),
+      subtitle: t('palette.openPage'),
+      keywords: t(p.keywords),
       icon: p.icon,
       run: () => go(p.to),
     }))
@@ -86,33 +91,33 @@ const joinTarget = computed(() => instances.items[0] ?? null)
 const commands = computed<Command[]>(() => [
   ...instances.items.map<Command>((i) => ({
     id: `instance:${i.id}`,
-    group: 'Instanzen',
+    group: 'instances',
     title: i.name,
-    subtitle: `${i.gameVersion} · ${loaderLabels[i.loader.kind]}${games.state(i.id).phase !== 'idle' ? ' · läuft' : ''}`,
+    subtitle: [i.gameVersion, loaderLabels[i.loader.kind], ...(games.state(i.id).phase !== 'idle' ? [t('palette.running')] : [])].join(' · '),
     keywords: `${i.gameVersion} ${loaderLabels[i.loader.kind]} ${i.group ?? ''}`,
     instance: i,
     run: () => go(`/instances/${i.id}`),
     second: {
-      label: games.state(i.id).phase === 'idle' ? 'Spielen' : 'Läuft',
+      label: games.state(i.id).phase === 'idle' ? t('common.actions.play') : t('common.status.running'),
       run: () => launch(i),
       disabled: games.state(i.id).phase !== 'idle',
     },
   })),
   ...mods.value.map<Command>(({ instance, item }) => ({
     id: `mod:${instance.id}:${item.kind}:${item.fileName}`,
-    group: 'Mods',
+    group: 'mods',
     title: item.title ?? item.fileName,
-    subtitle: `${instance.name} · ${item.enabled ? 'aktiv' : 'deaktiviert'}${item.version ? ` · ${item.version}` : ''}`,
+    subtitle: [instance.name, item.enabled ? t('palette.modEnabled') : t('palette.modDisabled'), ...(item.version ? [item.version] : [])].join(' · '),
     keywords: `${item.fileName} ${item.author ?? ''} ${instance.name}`,
     iconUrl: item.iconUrl,
     run: () => go(`/instances/${instance.id}?tab=content`),
     second: item.source
-      ? { label: 'Projektseite', run: () => go(`/project/${item.source!.projectId}`) }
+      ? { label: t('palette.projectPage'), run: () => go(`/project/${item.source!.projectId}`) }
       : undefined,
   })),
   ...servers.items.map<Command>((s) => ({
     id: `server:${s.id}`,
-    group: 'Server',
+    group: 'servers',
     title: s.name,
     subtitle: s.address,
     keywords: s.address,
@@ -120,7 +125,7 @@ const commands = computed<Command[]>(() => [
     run: () => go('/servers'),
     second: joinTarget.value
       ? {
-          label: `Mit „${joinTarget.value.name}“ beitreten`,
+          label: t('palette.joinWith', { name: joinTarget.value.name }),
           disabled: games.state(joinTarget.value.id).phase !== 'idle',
           run: () => {
             const target = joinTarget.value
@@ -133,10 +138,10 @@ const commands = computed<Command[]>(() => [
   })),
   ...appSettingsSections.map<Command>((s) => ({
     id: `settings:${s.key}`,
-    group: 'Einstellungen',
+    group: 'settings',
     title: s.label,
-    subtitle: s.group ? `Einstellungen · ${s.group}` : 'Einstellungen',
-    keywords: 'einstellungen optionen',
+    subtitle: s.group ? `${groupName('settings')} · ${s.group}` : groupName('settings'),
+    keywords: t('palette.keywords.settings'),
     icon: s.icon,
     run: () => {
       settings.open(s.key)
@@ -146,10 +151,10 @@ const commands = computed<Command[]>(() => [
   ...pages.value,
   {
     id: 'action:new-instance',
-    group: 'Aktionen',
-    title: 'Neue Instanz erstellen',
-    subtitle: 'Vanilla, Fabric, Quilt, Forge oder NeoForge',
-    keywords: 'anlegen hinzufügen erstellen',
+    group: 'actions',
+    title: t('palette.actions.newInstance.title'),
+    subtitle: t('palette.actions.newInstance.subtitle'),
+    keywords: t('palette.keywords.newInstance'),
     icon: 'plus',
     run: () => {
       ui.creating = true
@@ -158,10 +163,10 @@ const commands = computed<Command[]>(() => [
   },
   {
     id: 'action:import',
-    group: 'Aktionen',
-    title: 'Aus anderem Launcher importieren',
-    subtitle: 'Vanilla-Launcher, Prism/MultiMC, CurseForge',
-    keywords: 'import prism multimc curseforge übernehmen',
+    group: 'actions',
+    title: t('palette.actions.import.title'),
+    subtitle: t('palette.actions.import.subtitle'),
+    keywords: t('palette.keywords.import'),
     icon: 'install',
     run: () => {
       ui.importing = true
@@ -170,19 +175,19 @@ const commands = computed<Command[]>(() => [
   },
   {
     id: 'action:modpacks',
-    group: 'Aktionen',
-    title: 'Modpacks durchsuchen',
-    subtitle: 'Fertige Pakete von Modrinth',
-    keywords: 'modpack pack installieren',
+    group: 'actions',
+    title: t('palette.actions.modpacks.title'),
+    subtitle: t('palette.actions.modpacks.subtitle'),
+    keywords: t('palette.keywords.modpacks'),
     icon: 'compass',
     run: () => go('/browse?kind=modpack'),
   },
   {
     id: 'action:data-dir',
-    group: 'Aktionen',
-    title: 'Datenverzeichnis öffnen',
-    subtitle: 'Ordner mit Instanzen und Einstellungen',
-    keywords: 'ordner explorer dateien',
+    group: 'actions',
+    title: t('palette.actions.dataDir.title'),
+    subtitle: t('palette.actions.dataDir.subtitle'),
+    keywords: t('palette.keywords.dataDir'),
     icon: 'storage',
     run: () => {
       backend.openDataDir().catch((e) => toasts.error(e))
@@ -197,10 +202,10 @@ const results = computed(() => {
     // Ohne Eingabe: zuletzt benutzte Befehle, sonst ein sinnvoller Einstieg.
     const byId = new Map(commands.value.map((c) => [c.id, c]))
     const recent = ui.recentCommands.map((id) => byId.get(id)).filter((c): c is Command => !!c)
-    const rest = commands.value.filter((c) => !recent.includes(c) && (c.group === 'Instanzen' || c.group === 'Aktionen'))
+    const rest = commands.value.filter((c) => !recent.includes(c) && (c.group === 'instances' || c.group === 'actions'))
     return [...recent, ...rest].slice(0, 12).map((item) => ({ item, positions: [] as number[] }))
   }
-  return rank(commands.value, q, (c) => [c.title, c.subtitle ?? '', c.keywords ?? '', c.group])
+  return rank(commands.value, q, (c) => [c.title, c.subtitle ?? '', c.keywords ?? '', groupName(c.group)])
     .slice(0, 40)
     .map(({ item, positions }) => ({ item, positions }))
 })
@@ -208,7 +213,8 @@ const results = computed(() => {
 /** Überschriften nur beim ersten Eintrag einer Gruppe zeigen. */
 function groupLabel(index: number): string | null {
   const current = results.value[index]?.item.group
-  return index === 0 || results.value[index - 1]?.item.group !== current ? (current ?? null) : null
+  if (!current) return null
+  return index === 0 || results.value[index - 1]?.item.group !== current ? groupName(current) : null
 }
 
 watch(results, () => (activeIndex.value = 0))
@@ -290,15 +296,15 @@ onMounted(async () => {
       class="flex max-h-[70vh] w-full max-w-2xl animate-pop flex-col overflow-hidden rounded-2xl border border-base-700 bg-base-850 shadow-2xl shadow-black/60"
       role="dialog"
       aria-modal="true"
-      aria-label="Suche und Befehle"
+      :aria-label="t('palette.dialogLabel')"
     >
       <div class="flex items-center gap-3 border-b border-base-800 px-4">
         <svg viewBox="0 0 24 24" class="size-4 shrink-0 text-base-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.search" /></svg>
         <input
           v-model="query"
           class="min-w-0 flex-1 bg-transparent py-3.5 text-sm text-base-50 outline-none placeholder:text-base-600"
-          placeholder="Instanz, Mod, Einstellung oder Aktion …"
-          aria-label="Suchen"
+          :placeholder="t('palette.placeholder')"
+          :aria-label="t('common.actions.search')"
           role="combobox"
           aria-expanded="true"
           aria-controls="palette-list"
@@ -310,7 +316,7 @@ onMounted(async () => {
         <kbd class="shrink-0 rounded border border-base-700 px-1.5 py-0.5 font-mono text-[10px] text-base-400">Esc</kbd>
       </div>
 
-      <div v-if="results.length" id="palette-list" ref="listEl" class="min-h-0 flex-1 overflow-y-auto p-2" role="listbox" aria-label="Treffer">
+      <div v-if="results.length" id="palette-list" ref="listEl" class="min-h-0 flex-1 overflow-y-auto p-2" role="listbox" :aria-label="t('palette.resultsLabel')">
         <template v-for="(entry, index) in results" :key="entry.item.id">
           <p v-if="groupLabel(index)" class="mt-2 mb-1 px-2 text-[11px] font-semibold tracking-wider text-base-600 uppercase first:mt-0">
             {{ groupLabel(index) }}
@@ -353,13 +359,13 @@ onMounted(async () => {
         </template>
       </div>
 
-      <p v-else class="flex-1 px-4 py-10 text-center text-sm text-base-400">Nichts gefunden – andere Schreibweise versuchen?</p>
+      <p v-else class="flex-1 px-4 py-10 text-center text-sm text-base-400">{{ t('palette.noResults') }}</p>
 
       <div class="flex items-center gap-4 border-t border-base-800 px-4 py-2 text-[11px] text-base-600">
-        <span><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> wählen</span>
-        <span><kbd class="kbd">↵</kbd> öffnen</span>
-        <span><kbd class="kbd">Strg</kbd>+<kbd class="kbd">↵</kbd> zweite Aktion</span>
-        <span class="ml-auto">{{ results.length }} Treffer</span>
+        <span><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> {{ t('palette.hints.select') }}</span>
+        <span><kbd class="kbd">↵</kbd> {{ t('palette.hints.open') }}</span>
+        <span><kbd class="kbd">{{ t('titleBar.ctrl') }}</kbd>+<kbd class="kbd">↵</kbd> {{ t('palette.hints.second') }}</span>
+        <span class="ml-auto">{{ t('palette.resultCount', results.length) }}</span>
       </div>
     </div>
   </div>

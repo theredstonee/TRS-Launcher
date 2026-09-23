@@ -39,10 +39,10 @@ impl Loader {
     pub fn validate(&self) -> Result<()> {
         match (&self.kind, &self.version) {
             (LoaderKind::Vanilla, Some(_)) => {
-                Err(Error::validation("Vanilla hat keine Loader-Version"))
+                Err(Error::validation(crate::msg!("instance.vanillaNoLoaderVersion", "Vanilla hat keine Loader-Version")))
             }
             (_, Some(v)) if !is_safe_version_string(v) => {
-                Err(Error::validation("Loader-Version enthält ungültige Zeichen"))
+                Err(Error::validation(crate::msg!("instance.invalidLoaderVersion", "Loader-Version enthält ungültige Zeichen")))
             }
             _ => Ok(()),
         }
@@ -125,7 +125,7 @@ impl InstanceOverrides {
             hooks::validate_env(env)?;
         }
         if self.sync_separate.len() > SyncItem::ALL.len() {
-            return Err(Error::validation("Ungültige Synchronisierungs-Einstellungen"));
+            return Err(Error::validation(crate::msg!("instance.invalidSyncSettings", "Ungültige Synchronisierungs-Einstellungen")));
         }
         if let Some(mb) = self.max_memory_mb {
             settings::validate_memory(mb)?;
@@ -229,7 +229,7 @@ impl InstanceStore {
     pub async fn create(&self, new: NewInstance) -> Result<Instance> {
         let name = validate_name(&new.name)?;
         if !is_safe_version_string(&new.game_version) {
-            return Err(Error::validation("Minecraft-Version enthält ungültige Zeichen"));
+            return Err(Error::validation(crate::msg!("instance.invalidGameVersion", "Minecraft-Version enthält ungültige Zeichen")));
         }
         new.loader.validate()?;
 
@@ -257,7 +257,7 @@ impl InstanceStore {
     /// Setzt den Dateinamen des Instanz-Bilds (Datei legt [`crate::icon`] an).
     pub async fn set_icon(&self, id: &str, icon: Option<String>) -> Result<Instance> {
         if icon.as_deref().is_some_and(|n| !crate::icon::is_icon_file_name(n)) {
-            return Err(Error::validation("Ungültiger Bildname"));
+            return Err(Error::validation(crate::msg!("instance.invalidImageName", "Ungültiger Bildname")));
         }
         let _guard = self.write_lock.lock().await;
         let mut instance = self.get(id).await?;
@@ -270,7 +270,7 @@ impl InstanceStore {
     /// existiert und die Instanz nicht läuft, muss der Aufrufer.
     pub async fn set_version(&self, id: &str, game_version: &str, loader: Loader) -> Result<Instance> {
         if !is_safe_version_string(game_version) {
-            return Err(Error::validation("Minecraft-Version enthält ungültige Zeichen"));
+            return Err(Error::validation(crate::msg!("instance.invalidGameVersion", "Minecraft-Version enthält ungültige Zeichen")));
         }
         loader.validate()?;
         let _guard = self.write_lock.lock().await;
@@ -349,18 +349,20 @@ pub fn validate_id(id: &str) -> Result<()> {
         && !id.starts_with('-')
         && !id.ends_with('-')
         && !is_reserved_windows_name(id);
-    if ok { Ok(()) } else { Err(Error::validation("Ungültige Instanz-ID")) }
+    if ok { Ok(()) } else { Err(Error::validation(crate::msg!("instance.invalidId", "Ungültige Instanz-ID"))) }
 }
 
 fn validate_name(name: &str) -> Result<String> {
     let name = name.trim();
     if name.is_empty() || name.chars().count() > MAX_NAME_LEN {
-        return Err(Error::validation(format!(
-            "Der Name muss zwischen 1 und {MAX_NAME_LEN} Zeichen lang sein"
+        return Err(Error::validation(crate::msg!(
+            "instance.nameLength",
+            "Der Name muss zwischen 1 und {max} Zeichen lang sein",
+            max = MAX_NAME_LEN
         )));
     }
     if name.chars().any(char::is_control) {
-        return Err(Error::validation("Der Name enthält ungültige Zeichen"));
+        return Err(Error::validation(crate::msg!("instance.nameInvalidChars", "Der Name enthält ungültige Zeichen")));
     }
     Ok(name.to_owned())
 }
@@ -369,7 +371,11 @@ fn validate_name(name: &str) -> Result<String> {
 pub fn validate_group(group: Option<&str>) -> Result<Option<String>> {
     let Some(group) = group.map(str::trim).filter(|g| !g.is_empty()) else { return Ok(None) };
     if group.chars().count() > MAX_GROUP_LEN || group.chars().any(char::is_control) {
-        return Err(Error::validation(format!("Gruppennamen: höchstens {MAX_GROUP_LEN} Zeichen, keine Sonderzeichen")));
+        return Err(Error::validation(crate::msg!(
+            "instance.groupInvalid",
+            "Gruppennamen: höchstens {max} Zeichen, keine Sonderzeichen",
+            max = MAX_GROUP_LEN
+        )));
     }
     Ok(Some(group.to_owned()))
 }

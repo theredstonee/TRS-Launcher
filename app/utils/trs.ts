@@ -1,4 +1,7 @@
 import { z } from 'zod'
+// Relativ importiert, damit Tests die Datei ohne Nuxt laden können.
+import { t } from './i18n'
+import { compareText, formatShortDate, loaderLabels } from './format'
 
 // TRS-Dienste (Umhänge, Freunde, Verwaltung): Schemas für das, was der Kern
 // liefert (wird beim Empfang geprüft), und für Eingaben, bevor sie rausgehen.
@@ -165,7 +168,7 @@ export type TrsReviewList = 'pending' | 'approved' | 'rejected' | 'reported'
 /** Antwort des Kerns prüfen; kaputte Daten werden zu einem verständlichen Fehler. */
 export function trsParse<S extends z.ZodType>(schema: S, value: unknown): z.output<S> {
   const r = schema.safeParse(value)
-  if (!r.success) throw new Error('Die TRS-Daten sind ungültig.')
+  if (!r.success) throw new Error(t('trs.invalidData'))
   return r.data
 }
 
@@ -176,7 +179,7 @@ const noControl = /^[^\u0000-\u001f\u007f​-‏‪-‮⁠-⁯﻿]*$/
 export const trsPlayerNameSchema = z
   .string()
   .trim()
-  .regex(/^[A-Za-z0-9_]{1,16}$/, 'Minecraft-Namen haben 1–16 Zeichen (A–Z, 0–9, _).')
+  .regex(/^[A-Za-z0-9_]{1,16}$/, { error: () => t('trs.validation.playerName') })
 
 /** Name oder UUID (mit/ohne Bindestriche). */
 export const trsTargetSchema = z
@@ -184,7 +187,7 @@ export const trsTargetSchema = z
   .trim()
   .refine(
     (s) => /^[A-Za-z0-9_]{1,16}$/.test(s) || /^[0-9a-fA-F]{32}$/.test(s) || /^[0-9a-fA-F-]{36}$/.test(s),
-    'Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) eingeben.',
+    { error: () => t('trs.validation.target') },
   )
 
 /** Einlösecode wie der Server: Groß, ohne Trenner, O→0, I/L→1, 20 Zeichen Crockford-Base32. */
@@ -199,26 +202,38 @@ export function trsNormalizeCode(input: string): string | null {
 
 export const trsRedeemCodeSchema = z
   .string()
-  .max(64, 'Der Code ist zu lang.')
-  .refine((s) => trsNormalizeCode(s) !== null, 'Codes haben 20 Zeichen, z. B. 7K3QF-M2XPA-9RTVB-C4HJN.')
+  .max(64, { error: () => t('trs.validation.codeTooLong') })
+  .refine((s) => trsNormalizeCode(s) !== null, { error: () => t('trs.validation.codeFormat') })
 
 export const trsCapeNameSchema = z
   .string()
   .trim()
-  .max(32, 'Höchstens 32 Zeichen.')
-  .regex(/^[\p{L}\p{N} _.,'!?&()+-]*$/u, "Nur Buchstaben, Ziffern, Leerzeichen und . , ' ! ? & ( ) + - _")
+  .max(32, { error: () => t('trs.validation.max32') })
+  .regex(/^[\p{L}\p{N} _.,'!?&()+-]*$/u, { error: () => t('trs.validation.capeNameChars') })
 
-export const trsNoteSchema = z.string().trim().max(200, 'Höchstens 200 Zeichen.').regex(noControl, 'Enthält ungültige Zeichen.')
+export const trsNoteSchema = z
+  .string()
+  .trim()
+  .max(200, { error: () => t('trs.validation.max200') })
+  .regex(noControl, { error: () => t('trs.validation.invalidChars') })
 
 export const trsNewCodesSchema = z.object({
   capeId: capeId,
-  maxUses: z.number().int().min(1, 'Mindestens 1 Einlösung.').max(100_000, 'Höchstens 100 000 Einlösungen.'),
-  count: z.number().int().min(1, 'Mindestens 1 Code.').max(100, 'Höchstens 100 Codes auf einmal.'),
+  maxUses: z
+    .number()
+    .int()
+    .min(1, { error: () => t('trs.validation.minUses') })
+    .max(100_000, { error: () => t('trs.validation.maxUses') }),
+  count: z
+    .number()
+    .int()
+    .min(1, { error: () => t('trs.validation.minCount') })
+    .max(100, { error: () => t('trs.validation.maxCount') }),
   expiresAt: z
     .string()
     .nullable()
-    .refine((s) => s === null || !Number.isNaN(Date.parse(s)), 'Ungültiges Ablaufdatum.')
-    .refine((s) => s === null || Date.parse(s) > Date.now(), 'Das Ablaufdatum liegt in der Vergangenheit.'),
+    .refine((s) => s === null || !Number.isNaN(Date.parse(s)), { error: () => t('trs.validation.invalidExpiry') })
+    .refine((s) => s === null || Date.parse(s) > Date.now(), { error: () => t('trs.validation.expiryPast') }),
   note: trsNoteSchema.nullable(),
 })
 
@@ -232,48 +247,47 @@ export function trsFrameIndex(now: number, frames: number, frameTimeMs: number |
 
 /** Kurzlabel, wie man an den Umhang kommt. */
 export function trsUnlockLabel(cape: Pick<TrsCape, 'unlock' | 'kind'>): string {
-  if (cape.kind === 'upload') return 'Eigener'
+  if (cape.kind === 'upload') return t('trs.unlock.own')
   switch (cape.unlock) {
     case 'free':
-      return 'Frei'
+      return t('trs.unlock.free')
     case 'code':
-      return 'Code'
+      return t('trs.unlock.code')
     case 'admin':
-      return 'Team'
+      return t('trs.unlock.team')
     default:
-      return 'Gesperrt'
+      return t('trs.unlock.locked')
   }
 }
 
 /** Status eines eigenen Uploads in Worten. */
 export function trsStatusLabel(status: TrsCape['status']): string | null {
-  if (status === 'pending') return 'Wartet auf Freigabe'
-  if (status === 'rejected') return 'Abgelehnt'
+  if (status === 'pending') return t('trs.status.pending')
+  if (status === 'rejected') return t('trs.status.rejected')
   return null
-}
-
-const loaderNames: Record<TrsGame['loader'], string> = {
-  vanilla: 'Vanilla',
-  fabric: 'Fabric',
-  quilt: 'Quilt',
-  forge: 'Forge',
-  neoforge: 'NeoForge',
 }
 
 /** „Spielt 1.21.1 (Fabric) auf play.example.net“ usw. */
 export function trsPresenceText(presence: TrsPresence | null): string {
-  if (!presence) return 'Offline'
-  if (presence.state === 'online') return 'Online im Launcher'
+  if (!presence) return t('common.status.offline')
+  if (presence.state === 'online') return t('trs.presence.online')
   const game = presence.game
-  if (!game) return 'Im Spiel'
-  const base = `Spielt ${game.version}${game.loader === 'vanilla' ? '' : ` (${loaderNames[game.loader]})`}`
-  return game.server ? `${base} auf ${game.server}` : base
+  if (!game) return t('trs.presence.inGame')
+  const version = game.version
+  const server = game.server
+  if (game.loader === 'vanilla') {
+    return server ? t('trs.presence.playingServer', { version, server }) : t('trs.presence.playing', { version })
+  }
+  const loader = loaderLabels[game.loader]
+  return server
+    ? t('trs.presence.playingLoaderServer', { version, loader, server })
+    : t('trs.presence.playingLoader', { version, loader })
 }
 
 /** Sortierung: im Spiel, online, offline – innerhalb nach Name. */
 export function trsSortFriends<T extends { name: string; presence: TrsPresence | null }>(list: T[]): T[] {
   const rank = (f: T) => (f.presence?.state === 'in-game' ? 0 : f.presence ? 1 : 2)
-  return [...list].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }))
+  return [...list].sort((a, b) => rank(a) - rank(b) || compareText(a.name, b.name))
 }
 
 interface InstanceLike {
@@ -302,11 +316,9 @@ export function trsIsQuiet(kind: string | undefined): boolean {
   return kind === 'trs_offline' || kind === 'trs_disabled' || kind === 'trs_no_account'
 }
 
-/** Datum kurz auf Deutsch („23.09.2026“), unbekannt → „–“. */
+/** Datum kurz in der eingestellten Sprache („23.09.2026“ / „9/23/26“), unbekannt → „–“. */
 export function trsDate(iso: string | null | undefined): string {
-  if (!iso) return '–'
-  const t = Date.parse(iso)
-  return Number.isNaN(t) ? '–' : new Date(t).toLocaleDateString('de-DE')
+  return formatShortDate(iso)
 }
 
 export const TRS_PRIVACY_URL = 'https://github.com/theredstonee/TRS-Launcher/blob/main/PRIVACY.md#trs-services'

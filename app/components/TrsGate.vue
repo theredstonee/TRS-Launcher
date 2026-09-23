@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Zeigt statt des Inhalts einen ruhigen Hinweis, solange die TRS-Dienste nicht
 // nutzbar sind: nicht zugestimmt, kein Account, gesperrt oder offline.
-defineProps<{ what: string }>()
+/** Wofür die Dienste gebraucht werden – bestimmt den Hinweistext. */
+defineProps<{ what: 'friends' | 'capes' }>()
 const trs = useTrsStore()
 const accounts = useAccountsStore()
 
@@ -25,20 +26,18 @@ const state = computed(() => {
     </span>
     <div class="min-w-0 flex-1 text-sm">
       <template v-if="state === 'consent'">
-        <p class="font-semibold text-base-50">TRS-Dienste sind ausgeschaltet</p>
-        <p class="mt-0.5 text-base-400">
-          Für {{ what }} meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.
-        </p>
-        <button class="btn btn-primary mt-3 px-3 py-1.5 text-xs" @click="trs.askConsent()">Mehr erfahren &amp; einschalten</button>
+        <p class="font-semibold text-base-50">{{ t('trsGate.consent.title') }}</p>
+        <p class="mt-0.5 text-base-400">{{ t(`trsGate.consent.${what}`) }}</p>
+        <button class="btn btn-primary mt-3 px-3 py-1.5 text-xs" @click="trs.askConsent()">{{ t('trsGate.consent.button') }}</button>
       </template>
       <template v-else-if="state === 'account'">
-        <p class="font-semibold text-base-50">Kein Account angemeldet</p>
-        <p class="mt-0.5 text-base-400">Melde dich unter „Accounts“ mit deinem Minecraft-Konto an.</p>
-        <NuxtLink to="/accounts" class="btn btn-ghost mt-3 px-3 py-1.5 text-xs">Zu den Accounts</NuxtLink>
+        <p class="font-semibold text-base-50">{{ t('trsGate.account.title') }}</p>
+        <p class="mt-0.5 text-base-400">{{ t('trsGate.account.text') }}</p>
+        <NuxtLink to="/accounts" class="btn btn-ghost mt-3 px-3 py-1.5 text-xs">{{ t('trsGate.account.button') }}</NuxtLink>
       </template>
       <template v-else>
-        <p class="font-semibold text-base-50">Dein Konto ist für die TRS-Dienste gesperrt</p>
-        <p class="mt-0.5 text-base-400">Umhänge und Freunde sind deshalb nicht verfügbar.</p>
+        <p class="font-semibold text-base-50">{{ t('trsGate.banned.title') }}</p>
+        <p class="mt-0.5 text-base-400">{{ t('trsGate.banned.text') }}</p>
       </template>
     </div>
   </div>

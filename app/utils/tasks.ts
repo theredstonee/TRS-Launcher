@@ -1,28 +1,38 @@
 // Reine Helfer für das Aufgaben-Panel – getestet in tests/tasks.test.ts.
 // Keine Nuxt-Auto-Imports, damit die Tests sie direkt laden können.
 import type { PackProgress, TaskKind } from '../types'
+import { intlLocale, t, type MessageKey } from './i18n'
 
-/** Beschriftung im Verlauf („vor 2 Monaten · Modpack“). */
-export const taskKindLabels: Record<TaskKind, string> = {
-  modpack: 'Modpack',
-  'modpack-file': 'Modpack aus Datei',
-  content: 'Inhalt installiert',
-  'content-update': 'Inhalte aktualisiert',
-  'performance-pack': 'Leistungspaket',
-  java: 'Java installiert',
-  import: 'Instanz importiert',
-  export: 'Modpack exportiert',
-  create: 'Neue Instanz',
-  duplicate: 'Instanz dupliziert',
-  repair: 'Instanz repariert',
-  reinstall: 'Neu installiert',
-  'version-change': 'Version gewechselt',
-  launch: 'Spielstart',
+const taskKindKeys: Record<TaskKind, MessageKey> = {
+  modpack: 'tasks.kind.modpack',
+  'modpack-file': 'tasks.kind.modpackFile',
+  content: 'tasks.kind.content',
+  'content-update': 'tasks.kind.contentUpdate',
+  'performance-pack': 'tasks.kind.performancePack',
+  java: 'tasks.kind.java',
+  import: 'tasks.kind.import',
+  export: 'tasks.kind.export',
+  create: 'tasks.kind.create',
+  duplicate: 'tasks.kind.duplicate',
+  repair: 'tasks.kind.repair',
+  reinstall: 'tasks.kind.reinstall',
+  'version-change': 'tasks.kind.versionChange',
+  launch: 'tasks.kind.launch',
+}
+
+/** Beschriftung im Verlauf („vor 2 Monaten · Modpack“) in der eingestellten Sprache. */
+export function taskKindLabel(kind: TaskKind): string {
+  const key = taskKindKeys[kind]
+  return key ? t(key) : kind
+}
+
+function decimal(value: number, digits: number): string {
+  return value.toLocaleString(intlLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits })
 }
 
 const units = ['B', 'KB', 'MB', 'GB', 'TB']
 
-/** „20,6 MB“, „9,79 MB“, „172 MB“ – drei gültige Stellen. */
+/** „20,6 MB“, „9,79 MB“, „172 MB“ – drei gültige Stellen, Dezimalzeichen der Sprache. */
 export function formatSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
   let value = bytes
@@ -32,7 +42,7 @@ export function formatSize(bytes: number): string {
     unit++
   }
   const digits = unit === 0 ? 0 : value >= 100 ? 0 : value >= 10 ? 1 : 2
-  return `${value.toLocaleString('de', { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${units[unit]}`
+  return `${decimal(value, digits)} ${units[unit]}`
 }
 
 export function formatSpeed(bytesPerSecond: number): string {
@@ -51,7 +61,7 @@ export function formatProgressBytes(done: number, total: number): string {
   const fmt = (n: number) => {
     const v = n / scale
     const digits = unit === 0 ? 0 : v >= 100 ? 0 : v >= 10 ? 1 : v > 0 ? 2 : 0
-    return v.toLocaleString('de', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+    return decimal(v, digits)
   }
   return `${fmt(Math.min(done, total))} / ${fmt(total)} ${units[unit]}`
 }
@@ -61,15 +71,25 @@ export function formatEta(remainingBytes: number, bytesPerSecond: number): strin
   if (remainingBytes <= 0 || bytesPerSecond <= 0) return null
   const seconds = Math.ceil(remainingBytes / bytesPerSecond)
   if (seconds > 24 * 3600) return null
-  if (seconds < 60) return `${seconds} s`
+  if (seconds < 60) return t('tasks.eta.seconds', { seconds })
   const minutes = Math.round(seconds / 60)
-  if (minutes < 60) return `${minutes} min`
+  if (minutes < 60) return t('tasks.eta.minutes', { minutes })
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
-  return rest ? `${hours} h ${rest} min` : `${hours} h`
+  return rest ? t('tasks.eta.hoursMinutes', { hours, minutes: rest }) : t('tasks.eta.hours', { hours })
 }
 
-const relative = new Intl.RelativeTimeFormat('de', { numeric: 'auto' })
+const relativeFormats = new Map<string, Intl.RelativeTimeFormat>()
+
+function relativeFormat(): Intl.RelativeTimeFormat {
+  const locale = intlLocale()
+  let format = relativeFormats.get(locale)
+  if (!format) {
+    format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+    relativeFormats.set(locale, format)
+  }
+  return format
+}
 
 /** „vor 1 Woche“, „vor 2 Monaten“, „gerade eben“. */
 export function formatAgo(at: number, now = Date.now()): string {
@@ -83,9 +103,9 @@ export function formatAgo(at: number, now = Date.now()): string {
     ['minute', 60],
   ]
   for (const [unit, seconds] of steps) {
-    if (Math.abs(diff) >= seconds) return relative.format(Math.trunc(diff / seconds), unit)
+    if (Math.abs(diff) >= seconds) return relativeFormat().format(Math.trunc(diff / seconds), unit)
   }
-  return 'gerade eben'
+  return t('tasks.justNow')
 }
 
 /**
@@ -125,10 +145,28 @@ export function packPercent(p: PackProgress): number {
   return Math.min(100, Math.floor(base + (p.percent / 100) * span))
 }
 
-export const packStageLabels: Record<PackProgress['phase'], string> = {
-  pack: 'Modpack wird geladen',
-  files: 'Mods werden geladen',
-  overrides: 'Dateien werden entpackt',
+const packStageKeys: Record<PackProgress['phase'], MessageKey> = {
+  pack: 'tasks.stage.packLoading',
+  files: 'tasks.stage.packFiles',
+  overrides: 'tasks.stage.packOverrides',
+}
+
+/** Was beim Modpack-Installieren gerade passiert („Mods werden geladen“). */
+export function packStageLabel(phase: PackProgress['phase']): string {
+  return t(packStageKeys[phase])
+}
+
+/** Wie `packStageLabel`, als Objekt – übersetzt beim Lesen. */
+export const packStageLabels: Readonly<Record<PackProgress['phase'], string>> = {
+  get pack() {
+    return packStageLabel('pack')
+  },
+  get files() {
+    return packStageLabel('files')
+  },
+  get overrides() {
+    return packStageLabel('overrides')
+  },
 }
 
 /** Aufgaben-IDs gehen an den Kern – nur harmlose Zeichen, begrenzte Länge. */

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEntry, HistoryKind, ImportSource, Instance } from '~/types'
+import type { Diagnosis, HistoryEntry, HistoryKind, ImportSource, Instance } from '~/types'
 
 // Verlauf einer Instanz: gestartet, abgestürzt, Mods installiert, Version gewechselt …
 const props = defineProps<{ instance: Instance; refreshKey?: number }>()
@@ -30,7 +30,7 @@ const groupsOf: Record<HistoryKind, 'play' | 'content' | 'instance'> = {
   renamed: 'instance',
 }
 
-const bulkLabels: Record<string, string> = { enable: 'aktiviert', disable: 'deaktiviert', delete: 'gelöscht' }
+const bulkActions = ['enable', 'disable', 'delete'] as const
 
 async function load() {
   error.value = null
@@ -44,71 +44,81 @@ async function load() {
 }
 watch(() => [props.instance.id, props.refreshKey], load, { immediate: true })
 
-const diagnosisLabels: Record<string, string> = {
-  corrupt_files: 'Beschädigte Dateien',
-  out_of_memory: 'Zu wenig Arbeitsspeicher',
-  wrong_java: 'Falsche Java-Version',
-  missing_dependency: 'Fehlende Abhängigkeit',
-  mod_conflict: 'Mod-Konflikt',
-  graphics_driver: 'Grafiktreiber',
+const diagnosisKinds: Diagnosis['kind'][] = ['corrupt_files', 'out_of_memory', 'wrong_java', 'missing_dependency', 'mod_conflict', 'graphics_driver']
+
+/** Kurzname der Absturzursache; Unbekanntes bleibt, wie der Kern es geschrieben hat. */
+function crashCause(detail: string): string {
+  const kind = diagnosisKinds.find((k) => k === detail)
+  return kind ? t(`crash.cause.${kind}`) : detail
 }
 
 function title(e: HistoryEntry): string {
   const s = e.subject ?? ''
   switch (e.kind) {
     case 'created':
-      if (e.detail === 'modpack') return `Aus Modpack „${s}“ erstellt`
-      if (e.detail === 'duplicate') return `Als Kopie von „${s}“ erstellt`
-      return 'Instanz erstellt'
+      if (e.detail === 'modpack') return t('history.titles.createdFromModpack', { name: s })
+      if (e.detail === 'duplicate') return t('history.titles.createdAsCopy', { name: s })
+      return t('history.titles.created')
     case 'imported':
-      return `Importiert aus ${importSourceLabels[s as ImportSource] ?? 'anderem Launcher'}`
+      return importSources.includes(s as ImportSource)
+        ? t('history.titles.imported', { source: importSourceLabel(s as ImportSource) })
+        : t('history.titles.importedUnknown')
     case 'launched':
-      return s ? `Gestartet und mit „${s}“ verbunden` : 'Gestartet'
+      return s ? t('history.titles.launchedServer', { server: s }) : t('history.titles.launched')
     case 'stopped':
-      return 'Spiel beendet'
+      return t('history.titles.stopped')
     case 'crashed':
-      return 'Abgestürzt'
+      return t('history.titles.crashed')
     case 'mod_installed':
-      return `${s} installiert`
+      return t('history.titles.modInstalled', { name: s })
     case 'mod_updated':
-      return e.detail === 'downgrade' ? `${s} zurückgestuft` : `${s} aktualisiert`
+      return e.detail === 'downgrade' ? t('history.titles.modDowngraded', { name: s }) : t('history.titles.modUpdated', { name: s })
     case 'mod_removed':
-      return `${s} entfernt`
+      return t('history.titles.modRemoved', { name: s })
     case 'mod_enabled':
-      return `${s} aktiviert`
+      return t('history.titles.modEnabled', { name: s })
     case 'mod_disabled':
-      return `${s} deaktiviert`
+      return t('history.titles.modDisabled', { name: s })
     case 'version_switched':
-      return 'Version gewechselt'
+      return t('history.titles.versionSwitched')
     case 'repaired':
-      return 'Dateien geprüft und repariert'
+      return t('history.titles.repaired')
     case 'icon_changed':
-      return 'Bild geändert'
+      return t('history.titles.iconChanged')
     case 'files_added': {
       const count = Number(e.to ?? 1)
-      return count > 1 ? `${count} Dateien hinzugefügt` : `${s} hinzugefügt`
+      return count > 1 ? t('history.titles.filesAdded', { n: count }) : t('history.titles.fileAdded', { name: s })
     }
-    case 'content_bulk':
-      return `${e.to ?? 'Mehrere'} Inhalte ${bulkLabels[e.detail ?? ''] ?? 'geändert'}`
+    case 'content_bulk': {
+      const action = bulkActions.find((a) => a === e.detail) ?? 'changed'
+      const count = Number(e.to)
+      return e.to && Number.isFinite(count) ? t(`history.titles.bulk.${action}`, count) : t(`history.titles.bulkSeveral.${action}`)
+    }
     case 'hooks_changed':
-      return e.detail === 'global' ? 'Start-Hooks zurück auf global' : 'Eigene Start-Hooks gesetzt'
+      return e.detail === 'global' ? t('history.titles.hooksGlobal') : t('history.titles.hooksCustom')
     case 'group_changed':
-      return e.to ? `In Gruppe „${e.to}“ verschoben` : 'Aus der Gruppe genommen'
+      return e.to ? t('history.titles.movedToGroup', { group: e.to }) : t('history.titles.removedFromGroup')
     case 'renamed':
-      return 'Umbenannt'
+      return t('history.titles.renamed')
   }
 }
 
 function detail(e: HistoryEntry): string | null {
-  if (e.kind === 'stopped' && e.seconds !== undefined) return `Gespielt: ${formatPlayTime(e.seconds)}`
+  if (e.kind === 'stopped' && e.seconds !== undefined) return t('history.details.played', { time: formatPlayTime(e.seconds) })
   if (e.kind === 'crashed') {
-    const cause = e.detail?.startsWith('exit:') ? `Exit-Code ${e.detail.slice(5)}` : e.detail ? (diagnosisLabels[e.detail] ?? e.detail) : null
-    return [cause, e.seconds ? `nach ${formatPlayTime(e.seconds)}` : null].filter(Boolean).join(' · ') || null
+    const cause = e.detail?.startsWith('exit:')
+      ? t('history.details.exitCode', { code: e.detail.slice(5) })
+      : e.detail
+        ? crashCause(e.detail)
+        : null
+    const after = e.seconds ? t('history.details.after', { time: formatPlayTime(e.seconds) }) : null
+    return [cause, after].filter(Boolean).join(' · ') || null
   }
-  if (e.kind === 'mod_installed' && e.detail === 'dependency') return e.to ? `${e.to} · als Abhängigkeit` : 'Als Abhängigkeit'
+  if (e.kind === 'mod_installed' && e.detail === 'dependency')
+    return e.to ? t('history.details.asDependencyVersion', { version: e.to }) : t('history.details.asDependency')
   if ((e.kind === 'created' || e.kind === 'imported') && e.to) return e.to
-  if (e.kind === 'renamed' && e.from && e.to) return `„${e.from}“ → „${e.to}“`
-  if (e.kind === 'group_changed' && e.from) return `vorher: ${e.from}`
+  if (e.kind === 'renamed' && e.from && e.to) return t('history.details.renamed', { from: e.from, to: e.to })
+  if (e.kind === 'group_changed' && e.from) return t('history.details.previousGroup', { group: e.from })
   return null
 }
 
@@ -156,23 +166,31 @@ const icons: Record<HistoryKind, string> = {
 
 const visible = computed(() => entries.value.filter((e) => filter.value === 'all' || groupsOf[e.kind] === filter.value))
 
-const dayFormat = new Intl.DateTimeFormat('de', { weekday: 'long', day: 'numeric', month: 'long' })
-const timeFormat = new Intl.DateTimeFormat('de', { hour: '2-digit', minute: '2-digit' })
-function dayLabel(iso: string): string {
+// Folgt der eingestellten Sprache (intlLocale ist reaktiv).
+const dayFormat = computed(() => new Intl.DateTimeFormat(intlLocale(), { weekday: 'long', day: 'numeric', month: 'long' }))
+
+interface Day {
+  /** Stabiler Schlüssel (Kalendertag), unabhängig von der Sprache. */
+  key: string
+  label: string
+  today: boolean
+}
+function dayOf(iso: string): Day {
   const d = new Date(iso)
-  const today = new Date()
-  const yesterday = new Date(today.getTime() - 86_400_000)
-  if (d.toDateString() === today.toDateString()) return 'Heute'
-  if (d.toDateString() === yesterday.toDateString()) return 'Gestern'
-  return dayFormat.format(d)
+  const now = new Date()
+  const yesterday = new Date(now.getTime() - 86_400_000)
+  const key = d.toDateString()
+  if (key === now.toDateString()) return { key, label: t('history.today'), today: true }
+  if (key === yesterday.toDateString()) return { key, label: t('history.yesterday'), today: false }
+  return { key, label: dayFormat.value.format(d), today: false }
 }
 const grouped = computed(() => {
-  const out: { day: string; items: HistoryEntry[] }[] = []
+  const out: (Day & { items: HistoryEntry[] })[] = []
   for (const e of visible.value) {
-    const day = dayLabel(e.at)
+    const day = dayOf(e.at)
     const last = out[out.length - 1]
-    if (last?.day === day) last.items.push(e)
-    else out.push({ day, items: [e] })
+    if (last?.key === day.key) last.items.push(e)
+    else out.push({ ...day, items: [e] })
   }
   return out
 })
@@ -182,11 +200,11 @@ const grouped = computed(() => {
   <div class="min-h-0 max-w-3xl flex-1 overflow-y-auto pr-1">
     <div class="mb-4 flex items-center gap-2">
       <div class="flex rounded-full bg-base-900 p-0.5 ring-1 ring-base-800">
-        <button v-for="[k, label] in ([['all', 'Alles'], ['play', 'Spielen'], ['content', 'Inhalte'], ['instance', 'Instanz']] as const)" :key="k" class="tab px-3 py-1 text-xs" :class="{ 'tab-on': filter === k }" @click="filter = k">
-          {{ label }}
+        <button v-for="k in (['all', 'play', 'content', 'instance'] as const)" :key="k" class="tab px-3 py-1 text-xs" :class="{ 'tab-on': filter === k }" @click="filter = k">
+          {{ t(`history.filters.${k}`) }}
         </button>
       </div>
-      <span v-if="entries.length" class="text-xs text-base-600">{{ entries.length }} Einträge</span>
+      <span v-if="entries.length" class="text-xs text-base-600">{{ t('history.entryCount', entries.length) }}</span>
     </div>
 
     <div v-if="loading" class="space-y-2">
@@ -194,12 +212,12 @@ const grouped = computed(() => {
     </div>
     <p v-else-if="error" role="alert" class="card px-4 py-3 text-sm text-redstone-300">{{ error }}</p>
     <div v-else-if="!visible.length" class="card px-6 py-12 text-center">
-      <h2 class="font-semibold">Noch nichts passiert</h2>
-      <p class="mx-auto mt-1 max-w-md text-sm text-base-400">Starts, Abstürze, installierte Mods und Versionswechsel erscheinen hier.</p>
+      <h2 class="font-semibold">{{ t('history.empty.title') }}</h2>
+      <p class="mx-auto mt-1 max-w-md text-sm text-base-400">{{ t('history.empty.text') }}</p>
     </div>
 
-    <section v-for="g in grouped" v-else :key="g.day" class="mb-5">
-      <h3 class="sticky top-0 z-10 mb-2 bg-base-950/90 py-1 text-xs font-medium text-base-400 backdrop-blur">{{ g.day }}</h3>
+    <section v-for="g in grouped" v-else :key="g.key" class="mb-5">
+      <h3 class="sticky top-0 z-10 mb-2 bg-base-950/90 py-1 text-xs font-medium text-base-400 backdrop-blur">{{ g.label }}</h3>
       <ol class="relative space-y-1 before:absolute before:top-2 before:bottom-2 before:left-[15px] before:w-px before:bg-base-800">
         <li v-for="(e, i) in g.items" :key="`${e.at}-${i}`" class="relative flex items-start gap-3 rounded-lg py-1.5 pr-2">
           <span class="relative z-[1] grid size-8 shrink-0 place-items-center rounded-full ring-4 ring-base-950" :class="tone[e.kind]">
@@ -217,7 +235,7 @@ const grouped = computed(() => {
             </p>
             <p v-if="detail(e)" class="text-xs text-base-400">{{ detail(e) }}</p>
           </div>
-          <time class="shrink-0 pt-1.5 text-xs text-base-600 tabular-nums" :datetime="e.at" :title="formatDate(e.at)">{{ g.day === 'Heute' ? formatRelative(e.at) : timeFormat.format(new Date(e.at)) }}</time>
+          <time class="shrink-0 pt-1.5 text-xs text-base-600 tabular-nums" :datetime="e.at" :title="formatDate(e.at)">{{ g.today ? formatRelative(e.at) : formatTime(e.at) }}</time>
         </li>
       </ol>
     </section>

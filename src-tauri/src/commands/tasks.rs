@@ -74,14 +74,17 @@ pub async fn tracked<T>(
 ) -> trs_core::Result<T> {
     let Some(id) = task_id else { return work.await };
     if !valid_task_id(&id) {
-        return Err(trs_core::Error::validation("Ungültige Aufgaben-ID"));
+        return Err(trs_core::Error::validation(trs_core::msg!("commands.invalidTaskId", "Ungültige Aufgaben-ID")));
     }
     let registry = app.state::<TaskRegistry>();
     let control = TaskControl::new();
     {
         let mut tasks = registry.lock();
         if tasks.contains_key(&id) {
-            return Err(trs_core::Error::validation("Diese Aufgabe läuft bereits."));
+            return Err(trs_core::Error::validation(trs_core::msg!(
+                "commands.taskRunning",
+                "Diese Aufgabe läuft bereits."
+            )));
         }
         tasks.insert(id.clone(), control.clone());
     }

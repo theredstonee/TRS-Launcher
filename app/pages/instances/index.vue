@@ -23,8 +23,8 @@ function readPrefs(): Prefs {
   try {
     const raw = JSON.parse(localStorage.getItem(PREFS_KEY) ?? '{}')
     return {
-      sort: raw.sort in sortLabels ? raw.sort : fallback.sort,
-      groupBy: raw.groupBy in groupLabels ? raw.groupBy : fallback.groupBy,
+      sort: librarySorts.includes(raw.sort) ? raw.sort : fallback.sort,
+      groupBy: libraryGroupBys.includes(raw.groupBy) ? raw.groupBy : fallback.groupBy,
       loaders: Array.isArray(raw.loaders) ? raw.loaders.filter((l: unknown) => loaderKinds.includes(l as LoaderKind)) : [],
       versions: Array.isArray(raw.versions) ? raw.versions.filter((v: unknown) => typeof v === 'string' && v.length < 16) : [],
     }
@@ -80,7 +80,11 @@ async function move(instance: Instance, group: string | null) {
   try {
     await backend.setInstanceGroup(instance.id, group)
     await instances.load()
-    toasts.ok(group ? `„${instance.name}“ ist jetzt in „${group}“` : `„${instance.name}“ aus der Gruppe genommen`)
+    toasts.ok(
+      group
+        ? t('library.toasts.movedToGroup', { name: instance.name, group })
+        : t('library.toasts.removedFromGroup', { name: instance.name }),
+    )
   } catch (e) {
     toasts.error(e)
   }
@@ -115,12 +119,12 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
 
 <template>
   <div class="p-6">
-    <PageHeader title="Bibliothek" subtitle="Jede Instanz hat eigene Welten, Mods und Einstellungen.">
-      <button class="btn btn-ghost" @click="shell.importing = true">Importieren</button>
-      <button v-if="instances.items.length" class="btn btn-ghost" @click="newGroupFor = { preselect: null }">Neue Gruppe</button>
+    <PageHeader :title="t('library.title')" :subtitle="t('library.subtitle')">
+      <button class="btn btn-ghost" @click="shell.importing = true">{{ t('common.actions.import') }}</button>
+      <button v-if="instances.items.length" class="btn btn-ghost" @click="newGroupFor = { preselect: null }">{{ t('library.newGroup') }}</button>
       <button class="btn btn-primary" @click="shell.creating = true">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        Neue Instanz
+        {{ t('library.newInstance') }}
       </button>
     </PageHeader>
 
@@ -129,40 +133,40 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
     <div v-if="instances.items.length" class="mb-5 flex flex-wrap items-center gap-2">
       <div class="relative min-w-56 flex-1">
         <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-600" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
-        <input v-model="search" class="field h-9 rounded-full py-0 pl-9" maxlength="64" :placeholder="`${instances.items.length} Instanzen durchsuchen …`" spellcheck="false" aria-label="Instanzen durchsuchen" />
+        <input v-model="search" class="field h-9 rounded-full py-0 pl-9" maxlength="64" :placeholder="t('library.searchPlaceholder', instances.items.length)" spellcheck="false" :aria-label="t('library.searchLabel')" />
       </div>
       <label class="flex items-center gap-2 text-xs text-base-400">
-        Sortieren
+        {{ t('library.sortLabel') }}
         <select v-model="prefs.sort" class="field h-9 w-auto py-0 text-xs text-base-50">
-          <option v-for="(label, key) in sortLabels" :key="key" :value="key">{{ label }}</option>
+          <option v-for="key in librarySorts" :key="key" :value="key">{{ t(`library.sort.${key}`) }}</option>
         </select>
       </label>
       <label class="flex items-center gap-2 text-xs text-base-400">
-        Gruppieren
+        {{ t('library.groupLabel') }}
         <select v-model="prefs.groupBy" class="field h-9 w-auto py-0 text-xs text-base-50">
-          <option v-for="(label, key) in groupLabels" :key="key" :value="key">{{ label }}</option>
+          <option v-for="key in libraryGroupBys" :key="key" :value="key">{{ t(`library.groupBy.${key}`) }}</option>
         </select>
       </label>
       <div class="relative" data-filter-menu>
         <button class="btn btn-ghost h-9 py-0 text-xs" :aria-expanded="filterOpen" @click="filterOpen = !filterOpen">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 5h16l-6 8v5l-4 2v-7z" /></svg>
-          Filter
+          {{ t('library.filter') }}
           <span v-if="activeFilters" class="badge bg-redstone-500 text-white">{{ activeFilters }}</span>
         </button>
         <div v-if="filterOpen" class="menu top-10 right-0 w-64 p-3">
-          <p class="mb-1.5 text-[11px] font-semibold tracking-wider text-base-600 uppercase">Modloader</p>
+          <p class="mb-1.5 text-[11px] font-semibold tracking-wider text-base-600 uppercase">{{ t('common.labels.loader') }}</p>
           <label v-for="k in availableLoaders" :key="k" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm hover:bg-base-700">
             <input type="checkbox" class="size-4 accent-redstone-500" :checked="prefs.loaders.includes(k)" @change="toggleIn(prefs.loaders, k)" />
             <span class="size-2 rounded-full" :style="{ background: loaderColors[k] }" />{{ loaderLabels[k] }}
           </label>
-          <p class="mt-3 mb-1.5 text-[11px] font-semibold tracking-wider text-base-600 uppercase">Version</p>
+          <p class="mt-3 mb-1.5 text-[11px] font-semibold tracking-wider text-base-600 uppercase">{{ t('common.labels.version') }}</p>
           <div class="max-h-40 overflow-y-auto">
             <label v-for="v in availableVersions" :key="v" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm hover:bg-base-700">
               <input type="checkbox" class="size-4 accent-redstone-500" :checked="prefs.versions.includes(v)" @change="toggleIn(prefs.versions, v)" />
               <span class="font-mono">{{ v }}</span>
             </label>
           </div>
-          <button v-if="activeFilters" class="mt-2 w-full text-xs text-base-400 hover:text-base-50" @click="prefs.loaders = []; prefs.versions = []">Filter zurücksetzen</button>
+          <button v-if="activeFilters" class="mt-2 w-full text-xs text-base-400 hover:text-base-50" @click="prefs.loaders = []; prefs.versions = []">{{ t('library.resetFilters') }}</button>
         </div>
       </div>
     </div>
@@ -201,30 +205,30 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
       v-else-if="instances.items.length"
       compact
       :seed="0x21"
-      title="Kein Signal"
-      text="Keine Instanz passt zu Suche oder Filter."
+      :title="t('library.noMatch.title')"
+      :text="t('library.noMatch.text')"
     />
 
     <RedstoneEmpty
       v-else-if="!instances.loading && !instances.error"
       :seed="0x11"
-      title="Noch keine Instanz"
-      text="Die Leitung liegt, nur die Lampe fehlt noch: Erstelle deine erste Instanz – Vanilla oder mit Fabric, Quilt, Forge oder NeoForge."
+      :title="t('library.empty.title')"
+      :text="t('library.empty.text')"
     >
-      <button class="btn btn-primary" @click="shell.creating = true">Instanz erstellen</button>
-      <button class="btn btn-ghost" @click="shell.importing = true">Aus anderem Launcher importieren</button>
+      <button class="btn btn-primary" @click="shell.creating = true">{{ t('library.empty.create') }}</button>
+      <button class="btn btn-ghost" @click="shell.importing = true">{{ t('library.empty.import') }}</button>
     </RedstoneEmpty>
 
     <NewGroupDialog v-if="newGroupFor" :instances="instances.items" :preselect="newGroupFor.preselect" @close="newGroupFor = null" @done="onGroupCreated" />
 
-    <BaseDialog v-if="toDelete" title="Instanz löschen?" @close="toDelete = null">
-      <p class="text-sm text-base-200">
-        <strong class="text-base-50">{{ toDelete.name }}</strong> wird mit allen Welten, Mods und Screenshots unwiderruflich gelöscht.
-      </p>
+    <BaseDialog v-if="toDelete" :title="t('library.delete.title')" @close="toDelete = null">
+      <i18n-t keypath="library.delete.text" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ toDelete.name }}</strong></template>
+      </i18n-t>
       <p v-if="deleteError" role="alert" class="mt-3 text-sm text-redstone-300">{{ deleteError }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="toDelete = null">Abbrechen</button>
-        <button class="btn btn-danger" :disabled="deleting" @click="confirmDelete">{{ deleting ? 'Lösche …' : 'Endgültig löschen' }}</button>
+        <button class="btn btn-ghost" @click="toDelete = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" :disabled="deleting" @click="confirmDelete">{{ deleting ? t('library.delete.deleting') : t('library.delete.confirm') }}</button>
       </template>
     </BaseDialog>
   </div>

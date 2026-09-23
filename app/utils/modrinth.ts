@@ -1,4 +1,6 @@
 import type { ContentKind, Instance, LoaderKind, ModrinthVersion, ProjectKind } from '~/types'
+// Relativ importiert, damit Tests die Helfer ohne Nuxt laden können.
+import { hasKey, t, tKey } from './i18n'
 
 /** Loader-Namen, mit denen Modrinth passende Mods kennzeichnet (Quilt lädt auch Fabric-Mods). */
 export const loaderTags: Record<LoaderKind, string[]> = {
@@ -28,7 +30,33 @@ export function versionFits(v: ModrinthVersion, instance: Pick<Instance, 'gameVe
   return v.loaders.some((l) => tags.includes(l))
 }
 
-export const versionTypeLabels: Record<string, string> = { release: 'Stabil', beta: 'Beta', alpha: 'Alpha' }
+/** „Stabil“ / „Beta“ / „Alpha“; unbekannte Typen bleiben, wie sie sind. */
+export function versionTypeLabel(type: string): string {
+  return type === 'release' || type === 'beta' || type === 'alpha' ? t(`modrinth.versionType.${type}`) : type
+}
+
+/**
+ * Wie `versionTypeLabel`, als Objekt für bestehende Aufrufer
+ * (`versionTypeLabels[type] ?? type`). Getter, damit der Text der Sprache folgt.
+ */
+export const versionTypeLabels: Record<string, string> = {
+  get release() {
+    return t('modrinth.versionType.release')
+  },
+  get beta() {
+    return t('modrinth.versionType.beta')
+  },
+  get alpha() {
+    return t('modrinth.versionType.alpha')
+  },
+}
+
+/** Anzeige der Seite (client_side/server_side) eines Projekts. */
+export function sideLabel(side: string): string {
+  return side === 'required' || side === 'optional' || side === 'unsupported' || side === 'unknown'
+    ? t(`modrinth.side.${side}`)
+    : side
+}
 
 export const loaderNames: Record<string, string> = {
   fabric: 'Fabric',
@@ -50,61 +78,14 @@ export function gameVersionRange(versions: string[]): string {
   return `${versions[0]} – ${versions[versions.length - 1]}`
 }
 
-/** Modrinth-Kategorien auf Deutsch (unbekannte bleiben, wie sie sind). */
-export const categoryLabels: Record<string, string> = {
-  adventure: 'Abenteuer',
-  cursed: 'Verflucht',
-  decoration: 'Deko',
-  economy: 'Wirtschaft',
-  equipment: 'Ausrüstung',
-  food: 'Essen',
-  'game-mechanics': 'Spielmechanik',
-  library: 'Bibliothek',
-  magic: 'Magie',
-  management: 'Verwaltung',
-  minigame: 'Minispiel',
-  mobs: 'Kreaturen',
-  optimization: 'Optimierung',
-  social: 'Sozial',
-  storage: 'Lager',
-  technology: 'Technik',
-  transportation: 'Transport',
-  utility: 'Werkzeuge',
-  worldgen: 'Weltgenerierung',
-  combat: 'Kampf',
-  challenging: 'Herausfordernd',
-  'kitchen-sink': 'Alles drin',
-  lightweight: 'Leichtgewichtig',
-  multiplayer: 'Mehrspieler',
-  quests: 'Quests',
-  'audio': 'Audio',
-  blocks: 'Blöcke',
-  entities: 'Entities',
-  environment: 'Umgebung',
-  fonts: 'Schriften',
-  gui: 'Oberfläche',
-  items: 'Items',
-  models: 'Modelle',
-  simplistic: 'Schlicht',
-  themed: 'Thematisch',
-  tweaks: 'Anpassungen',
-  realistic: 'Realistisch',
-  'semi-realistic': 'Halb-realistisch',
-  'vanilla-like': 'Vanilla-nah',
-  atmosphere: 'Atmosphäre',
-  bloom: 'Bloom',
-  shadows: 'Schatten',
-  reflections: 'Spiegelungen',
-  fantasy: 'Fantasy',
-  cartoon: 'Cartoon',
-  potato: 'Für schwache PCs',
-  low: 'Niedrig',
-  medium: 'Mittel',
-  high: 'Hoch',
-  screenshot: 'Screenshot',
-  pbr: 'PBR',
-  'colored-lighting': 'Farbiges Licht',
-  'path-tracing': 'Path Tracing',
-  foliage: 'Pflanzen',
-  'core-shaders': 'Core Shader',
+/**
+ * Anzeigename einer Modrinth-Kategorie (`game-mechanics` → „Spielmechanik“).
+ * Unbekannte Tags erscheinen mit großem Anfangsbuchstaben und Leerzeichen.
+ */
+export function categoryLabel(name: string): string {
+  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+    const key = `modrinth.categories.${name.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase())}`
+    if (hasKey(key)) return tKey(key)
+  }
+  return name.charAt(0).toUpperCase() + name.slice(1).replaceAll('-', ' ')
 }

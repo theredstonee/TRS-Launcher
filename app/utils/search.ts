@@ -9,7 +9,10 @@ export interface FuzzyResult {
   positions: number[]
 }
 
-const FOLD: Record<string, string> = { ä: 'a', ö: 'o', ü: 'u', ß: 's', é: 'e', è: 'e', ê: 'e', á: 'a', à: 'a', í: 'i', ó: 'o', ú: 'u', â: 'a', ô: 'o', û: 'u' }
+const FOLD: Record<string, string> = {
+  ä: 'a', ö: 'o', ü: 'u', ß: 's', é: 'e', è: 'e', ê: 'e', ë: 'e', á: 'a', à: 'a', â: 'a', ã: 'a',
+  í: 'i', ì: 'i', ï: 'i', ó: 'o', ò: 'o', ô: 'o', õ: 'o', ú: 'u', ù: 'u', û: 'u', ñ: 'n', ç: 'c',
+}
 
 /** Kleinschreibung + Umlaute auflösen, ohne die Länge zu verändern (Positionen bleiben gültig). */
 export function fold(text: string): string {

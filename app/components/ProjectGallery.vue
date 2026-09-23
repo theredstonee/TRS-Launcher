@@ -24,7 +24,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div>
-    <p v-if="!images.length" class="card px-4 py-10 text-center text-sm text-base-400">Dieses Projekt hat keine Galerie.</p>
+    <p v-if="!images.length" class="card px-4 py-10 text-center text-sm text-base-400">{{ t('project.gallery.empty') }}</p>
     <ul v-else class="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
       <li v-for="(img, i) in images" :key="img.url">
         <button class="group card-hover card block w-full overflow-hidden text-left" @click="current = i">
@@ -46,7 +46,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/90 p-10"
           role="dialog"
           aria-modal="true"
-          :aria-label="image.title ?? 'Bild'"
+          :aria-label="image.title ?? t('project.gallery.image')"
           @mousedown.self="current = null"
         >
           <img :src="image.url" alt="" referrerpolicy="no-referrer" class="max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl" />
@@ -55,14 +55,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             <p v-if="image.description" class="mt-0.5 text-sm text-base-400">{{ image.description }}</p>
             <p class="mt-1 text-xs text-base-600">{{ (current ?? 0) + 1 }} / {{ images.length }}</p>
           </div>
-          <button class="btn-icon absolute top-4 right-4" aria-label="Schließen" @click="current = null">
+          <button class="btn-icon absolute top-4 right-4" :aria-label="t('common.actions.close')" @click="current = null">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
           <template v-if="images.length > 1">
-            <button class="btn-icon absolute top-1/2 left-4 size-11 -translate-y-1/2" aria-label="Vorheriges Bild" @click="step(-1)">
+            <button class="btn-icon absolute top-1/2 left-4 size-11 -translate-y-1/2" :aria-label="t('project.gallery.prev')" @click="step(-1)">
               <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5l-7 7 7 7" /></svg>
             </button>
-            <button class="btn-icon absolute top-1/2 right-4 size-11 -translate-y-1/2" aria-label="Nächstes Bild" @click="step(1)">
+            <button class="btn-icon absolute top-1/2 right-4 size-11 -translate-y-1/2" :aria-label="t('project.gallery.next')" @click="step(1)">
               <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 5 7 7-7 7" /></svg>
             </button>
           </template>

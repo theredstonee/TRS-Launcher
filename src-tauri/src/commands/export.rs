@@ -11,6 +11,7 @@ use trs_core::modpack_export::{ExportEntry, ExportOptions, ExportProgress, Expor
 
 use crate::LauncherState;
 use crate::commands::tasks::tracked;
+use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 /// Was im Spielordner liegt und mitexportiert werden kann.
@@ -30,12 +31,13 @@ pub async fn export_modpack(
     on_progress: Channel<ExportProgress>,
 ) -> CommandResult<Option<ExportSummary>> {
     let suggestion = suggested_file_name(&options.name, &options.version);
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         app.dialog()
             .file()
-            .set_title("Modpack speichern")
+            .set_title(DialogText::SaveModpack.text(lang))
             .set_file_name(suggestion)
-            .add_filter("Modrinth-Modpack", &["mrpack"])
+            .add_filter(DialogText::ModrinthModpack.text(lang), &["mrpack"])
             .blocking_save_file()
     })
     .await
@@ -60,12 +62,13 @@ pub async fn import_modpack_file(
     task_id: Option<String>,
 ) -> CommandResult<Option<String>> {
     let dialog = app.clone();
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         dialog
             .dialog()
             .file()
-            .set_title("Modpack-Datei wählen")
-            .add_filter("Modrinth-Modpack", &["mrpack"])
+            .set_title(DialogText::PickModpack.text(lang))
+            .add_filter(DialogText::ModrinthModpack.text(lang), &["mrpack"])
             .blocking_pick_file()
     })
     .await

@@ -9,6 +9,7 @@ use trs_core::trs_api::types::{
 };
 
 use crate::LauncherState;
+use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 #[tauri::command]
@@ -56,11 +57,12 @@ pub async fn trs_upload_cape(
     launcher: State<'_, LauncherState>,
     name: Option<String>,
 ) -> CommandResult<Option<CapeItem>> {
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         app.dialog()
             .file()
-            .set_title("Umhang-Bild wählen (PNG, 64×32 oder 22×17)")
-            .add_filter("Umhang", &["png"])
+            .set_title(DialogText::PickCape.text(lang))
+            .add_filter(DialogText::Cape.text(lang), &["png"])
             .blocking_pick_file()
     })
     .await

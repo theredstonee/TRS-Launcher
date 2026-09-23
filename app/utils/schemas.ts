@@ -1,17 +1,26 @@
 import { z } from 'zod'
+import { supportedLocales, t, type MessageKey, type NamedParams } from './i18n'
 
 // Spiegelt die Regeln aus `trs_core` – der Kern validiert trotzdem immer selbst.
+
+/**
+ * Fehlermeldung, die zod erst beim Prüfen übersetzt – folgt so der aktuell
+ * eingestellten Sprache.
+ */
+function msg(key: MessageKey, params?: NamedParams) {
+  return { error: () => t(key, params) }
+}
 
 const versionString = z
   .string()
   .min(1)
   .max(64)
-  .regex(/^[A-Za-z0-9._+\- ]+$/, 'Enthält ungültige Zeichen')
+  .regex(/^[A-Za-z0-9._+\- ]+$/, msg('validation.invalidCharacters'))
 
 export const loaderKinds = ['vanilla', 'fabric', 'quilt', 'forge', 'neoforge'] as const
 
 export const newInstanceSchema = z.object({
-  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(64, 'Maximal 64 Zeichen'),
+  name: z.string().trim().min(1, msg('validation.nameRequired')).max(64, msg('validation.maxChars', { max: 64 })),
   gameVersion: versionString,
   loader: z.object({
     kind: z.enum(loaderKinds),
@@ -31,14 +40,14 @@ const noControl = /^[^\u0000-\u001f\u007f]*$/
 export const javaPathSchema = z
   .string()
   .max(1024)
-  .regex(noControl, 'Java-Pfad ist ungültig')
-  .regex(/^[A-Za-z]:\\.*\\javaw?\.exe$/i, 'Der Java-Pfad muss auf java.exe oder javaw.exe zeigen')
+  .regex(noControl, msg('validation.javaPathInvalid'))
+  .regex(/^[A-Za-z]:\\.*\\javaw?\.exe$/i, msg('validation.javaPathNotJava'))
 
 const hookCommand = z
   .string()
   .trim()
-  .max(1024, 'Befehle: höchstens 1024 Zeichen')
-  .regex(noControl, 'Befehl enthält ungültige Zeichen')
+  .max(1024, msg('validation.commandTooLong', { max: 1024 }))
+  .regex(noControl, msg('validation.commandInvalidChars'))
   .nullable()
   .transform((v) => (v ? v : null))
 
@@ -46,9 +55,12 @@ export const envVarSchema = z.object({
   key: z
     .string()
     .trim()
-    .max(64, 'Variablennamen: höchstens 64 Zeichen')
-    .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, 'Variablennamen: nur Buchstaben, Ziffern und _ (nicht vorne)'),
-  value: z.string().max(1024, 'Werte: höchstens 1024 Zeichen').regex(noControl, 'Wert enthält ungültige Zeichen'),
+    .max(64, msg('validation.envKeyTooLong', { max: 64 }))
+    .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, msg('validation.envKeyFormat')),
+  value: z
+    .string()
+    .max(1024, msg('validation.envValueTooLong', { max: 1024 }))
+    .regex(noControl, msg('validation.envValueInvalidChars')),
 })
 
 export const hooksSchema = z.object({
@@ -59,10 +71,8 @@ export const hooksSchema = z.object({
 
 export const envSchema = z
   .array(envVarSchema)
-  .max(32, 'Höchstens 32 Umgebungsvariablen')
-  .refine((env) => new Set(env.map((e) => e.key.toUpperCase())).size === env.length, {
-    message: 'Eine Umgebungsvariable ist doppelt',
-  })
+  .max(32, msg('validation.envTooMany', { max: 32 }))
+  .refine((env) => new Set(env.map((e) => e.key.toUpperCase())).size === env.length, msg('validation.envDuplicate'))
 
 export const syncItems = ['options', 'servers', 'resourcePacks', 'commandHistory', 'hotbar'] as const
 
@@ -75,11 +85,11 @@ export const syncSettingsSchema = z.object({
 })
 
 export const updateInstanceSchema = z.object({
-  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(64, 'Maximal 64 Zeichen'),
+  name: z.string().trim().min(1, msg('validation.nameRequired')).max(64, msg('validation.maxChars', { max: 64 })),
   overrides: z.object({
     maxMemoryMb: z.number().int().min(512).max(131072).nullable(),
     javaPath: javaPathSchema.nullable(),
-    jvmArgs: z.string().max(4096).regex(noControl, 'JVM-Argumente enthalten ungültige Zeichen').nullable(),
+    jvmArgs: z.string().max(4096).regex(noControl, msg('validation.jvmArgsInvalidChars')).nullable(),
     resolution: resolutionSchema.nullable(),
     trsClient: z.boolean().nullable(),
     boost: z.boolean().nullable(),
@@ -94,8 +104,8 @@ export const updateInstanceSchema = z.object({
 export const groupSchema = z
   .string()
   .trim()
-  .max(32, 'Gruppennamen: höchstens 32 Zeichen')
-  .regex(noControl, 'Gruppenname enthält ungültige Zeichen')
+  .max(32, msg('validation.groupTooLong', { max: 32 }))
+  .regex(noControl, msg('validation.groupInvalidChars'))
 
 export const uiSettingsSchema = z.object({
   theme: z.enum(['dark', 'oled', 'light', 'system']),
@@ -110,7 +120,7 @@ export const uiSettingsSchema = z.object({
   hideRightSidebar: z.boolean(),
   compactLibrary: z.boolean(),
   showPlayTime: z.boolean(),
-  language: z.literal('de'),
+  language: z.enum(supportedLocales),
 })
 
 export const settingsSchema = z
@@ -118,7 +128,7 @@ export const settingsSchema = z
     minMemoryMb: z.number().int().min(128),
     maxMemoryMb: z.number().int().min(512).max(131072),
     javaPath: javaPathSchema.nullable(),
-    jvmArgs: z.string().max(4096).regex(noControl, 'JVM-Argumente enthalten ungültige Zeichen'),
+    jvmArgs: z.string().max(4096).regex(noControl, msg('validation.jvmArgsInvalidChars')),
     resolution: resolutionSchema,
     concurrentDownloads: z.number().int().min(1).max(64),
     closeOnLaunch: z.boolean(),
@@ -140,18 +150,18 @@ export const settingsSchema = z
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {
-    message: 'Minimum darf nicht über dem Maximum liegen',
+    ...msg('validation.minAboveMax'),
     path: ['minMemoryMb'],
   })
 
 export const serverSchema = z.object({
-  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(64, 'Maximal 64 Zeichen'),
+  name: z.string().trim().min(1, msg('validation.nameRequired')).max(64, msg('validation.maxChars', { max: 64 })),
   address: z
     .string()
     .trim()
-    .min(1, 'Bitte eine Adresse eingeben')
+    .min(1, msg('validation.addressRequired'))
     .max(260)
-    .regex(/^[A-Za-z0-9._-]+(:\d{1,5})?$/, 'Adresse im Format play.example.de oder play.example.de:25565'),
+    .regex(/^[A-Za-z0-9._-]+(:\d{1,5})?$/, msg('validation.addressFormat')),
   autoResourcePack: z.boolean(),
 })
 
@@ -179,30 +189,30 @@ export const modrinthSearchSchema = z.object({
 export const skinNameSchema = z
   .string()
   .trim()
-  .min(1, 'Bitte einen Namen eingeben')
-  .max(48, 'Maximal 48 Zeichen')
-  .regex(noControl, 'Name enthält ungültige Zeichen')
+  .min(1, msg('validation.nameRequired'))
+  .max(48, msg('validation.maxChars', { max: 48 }))
+  .regex(noControl, msg('validation.nameInvalidChars'))
 
 export const skinVariants = ['classic', 'slim'] as const
 
 /** Spiegelt `validate_options` im Kern (modpack_export.rs). */
 export const exportOptionsSchema = z.object({
-  name: z.string().trim().min(1, 'Bitte einen Namen eingeben').max(64, 'Maximal 64 Zeichen'),
+  name: z.string().trim().min(1, msg('validation.nameRequired')).max(64, msg('validation.maxChars', { max: 64 })),
   version: z
     .string()
     .trim()
-    .min(1, 'Bitte eine Version angeben')
-    .max(32, 'Maximal 32 Zeichen')
-    .regex(/^[A-Za-z0-9._+-]+$/, 'Nur Buchstaben, Ziffern und . - _ +'),
+    .min(1, msg('validation.versionRequired'))
+    .max(32, msg('validation.maxChars', { max: 32 }))
+    .regex(/^[A-Za-z0-9._+-]+$/, msg('validation.versionFormat')),
   summary: z
     .string()
     .trim()
-    .max(512, 'Maximal 512 Zeichen')
-    .regex(noControl, 'Beschreibung enthält ungültige Zeichen')
+    .max(512, msg('validation.maxChars', { max: 512 }))
+    .regex(noControl, msg('validation.descriptionInvalidChars'))
     .nullable(),
-  include: z.array(z.string().min(1).max(120)).min(1, 'Bitte mindestens einen Ordner auswählen').max(100),
+  include: z.array(z.string().min(1).max(120)).min(1, msg('validation.folderRequired')).max(100),
 })
 
 export function firstIssue(error: z.ZodError): string {
-  return error.issues[0]?.message ?? 'Ungültige Eingabe'
+  return error.issues[0]?.message ?? t('validation.invalidInput')
 }

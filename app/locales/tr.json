@@ -1,0 +1,2441 @@
+{
+  "common": {
+    "actions": {
+      "apply": "Uygula",
+      "back": "Geri",
+      "browse": "Göz at",
+      "cancel": "İptal",
+      "change": "Değiştir",
+      "close": "Kapat",
+      "continue": "Devam",
+      "copy": "Kopyala",
+      "create": "Oluştur",
+      "delete": "Sil",
+      "disable": "Devre dışı bırak",
+      "done": "Bitti",
+      "edit": "Düzenle",
+      "enable": "Etkinleştir",
+      "export": "Dışa aktar",
+      "import": "İçe aktar",
+      "install": "Yükle",
+      "later": "Sonra",
+      "open": "Aç",
+      "openFolder": "Klasörü aç",
+      "play": "Oyna",
+      "refresh": "Yenile",
+      "remove": "Kaldır",
+      "retry": "Tekrar dene",
+      "save": "Kaydet",
+      "search": "Ara",
+      "skip": "Atla",
+      "start": "Başlat",
+      "stop": "Durdur",
+      "update": "Güncelle"
+    },
+    "status": {
+      "active": "Etkin",
+      "copied": "Kopyalandı!",
+      "disabled": "Devre dışı",
+      "enabled": "Etkin",
+      "error": "Hata",
+      "loading": "Yükleniyor …",
+      "none": "Yok",
+      "offline": "Çevrimdışı",
+      "online": "Çevrimiçi",
+      "running": "Çalışıyor",
+      "saved": "Kaydedildi",
+      "saving": "Kaydediliyor …",
+      "unknown": "Bilinmiyor"
+    },
+    "labels": {
+      "all": "Tümü",
+      "automatic": "Otomatik",
+      "description": "Açıklama",
+      "name": "Ad",
+      "version": "Sürüm",
+      "gameVersion": "Oyun sürümü",
+      "loader": "Mod yükleyici"
+    }
+  },
+  "language": {
+    "title": "Dil",
+    "searchPlaceholder": "Dil ara …",
+    "searchLabel": "Dil ara",
+    "standard": "Standart diller",
+    "beta": "Beta",
+    "betaHint": "Beta diller makine çevirisidir ve henüz tam olarak gözden geçirilmemiştir. Eksik metinler İngilizce görünür.",
+    "complete": "%{percent} tamamlandı",
+    "noResults": "“{query}” ile eşleşen dil yok.",
+    "changeHint": "Launcher hemen değişir – yeniden başlatmaya gerek yok. Beta dillerdeki eksik metinler İngilizce görünür.",
+    "betaGroup": "Beta diller",
+    "onboardingTitle": "Dilini seç",
+    "onboardingText": "Bunu istediğin zaman Ayarlar → Dil bölümünden değiştirebilirsin.",
+    "detected": "Windows'tan algılandı"
+  },
+  "format": {
+    "neverPlayed": "Hiç oynanmadı",
+    "justNow": "Az önce",
+    "playTime": {
+      "underMinute": "1 dk'dan az",
+      "minutes": "{minutes} dk",
+      "hoursMinutes": "{hours} sa {minutes} dk"
+    },
+    "justNowInline": "az önce"
+  },
+  "launchStage": {
+    "version": "Sürüm verileri",
+    "java": "Java",
+    "loader": "Mod yükleyici",
+    "libraries": "Kütüphaneler",
+    "assets": "Oyun dosyaları",
+    "starting": "Oyun başlatılıyor"
+  },
+  "contentKind": {
+    "mod": "Modlar",
+    "resourcepack": "Kaynak paketleri",
+    "shaderpack": "Shader'lar",
+    "datapack": "Veri paketleri",
+    "modpack": "Modpack'ler"
+  },
+  "importSource": {
+    "vanilla": "Minecraft Launcher",
+    "prism": "Prism Launcher",
+    "multimc": "MultiMC",
+    "curseforge": "CurseForge",
+    "modrinth": "Modrinth App",
+    "folder": "Özel klasör"
+  },
+  "syncItem": {
+    "options": {
+      "label": "Oyun seçenekleri",
+      "description": "options.txt – grafik, kontroller, tuş atamaları ve ses."
+    },
+    "servers": {
+      "label": "Sunucu listesi",
+      "description": "servers.dat – çok oyunculu menüsündeki sunucular."
+    },
+    "resourcePacks": {
+      "label": "Kaynak paketleri",
+      "description": "Paketler kurulumlar arasında eklenir, asla silinmez."
+    },
+    "commandHistory": {
+      "label": "Komut geçmişi",
+      "description": "command_history.txt – son girilen komutlar."
+    },
+    "hotbar": {
+      "label": "Kayıtlı hızlı çubuklar",
+      "description": "hotbar.nbt – yaratıcı mod hızlı çubukları."
+    }
+  },
+  "errors": {
+    "unexpected": "Beklenmeyen bir hata oluştu.",
+    "noBackend": "Arka uç yalnızca masaüstü uygulamasında kullanılabilir.",
+    "io": "Bir dosya okunamadı veya yazılamadı.",
+    "network": "Ağ hatası – lütfen internet bağlantını kontrol et.",
+    "data": "Veriler işlenemedi.",
+    "download": "İndirme başarısız – lütfen internet bağlantını kontrol edip tekrar dene.",
+    "internal": "Dahili bir hata oluştu.",
+    "cancelled": "İptal edildi",
+    "openFolder": "Klasör açılamadı.",
+    "instanceNotFound": "Kurulum bulunamadı: “{id}”",
+    "unknownVersion": "Bilinmeyen Minecraft sürümü: “{version}”",
+    "authNotApproved": "Microsoft girişi henüz etkin değil: uygulama kaydı Mojang onayını bekliyor.",
+    "settings": {
+      "resolutionRange": "Çözünürlük izin verilen aralığın dışında",
+      "minMemoryRange": "Minimum bellek 128 MB ile maksimum arasında olmalı",
+      "downloadsRange": "Paralel indirmeler 1 ile 64 arasında olmalı",
+      "memoryRange": "Bellek {min} ile {max} MB arasında olmalı",
+      "jvmArgsInvalid": "JVM argümanları geçersiz veya çok uzun",
+      "javaPathInvalid": "Java yolu geçersiz",
+      "javaPathNotJava": "Java yolu java.exe veya javaw.exe dosyasını göstermeli"
+    },
+    "trs": {
+      "offline": "TRS sunucusuna şu anda ulaşılamıyor.",
+      "disabled": "TRS hizmetleri kapalı (Ayarlar → Gizlilik).",
+      "noAccount": "Lütfen önce “Hesaplar” bölümünden Minecraft hesabınla giriş yap.",
+      "badResponse": "TRS API beklenmeyen bir yanıt gönderdi.",
+      "banned": "Hesabın TRS hizmetlerinden yasaklandı.",
+      "rateLimited": "Çok fazla istek – lütfen {seconds} sn sonra tekrar dene.",
+      "notJoined": "Mojang girişi onaylamadı – lütfen daha sonra tekrar dene.",
+      "challengeExpired": "Giriş çok uzun sürdü – lütfen tekrar dene.",
+      "sessionExpired": "TRS oturumunun süresi doldu – lütfen tekrar dene.",
+      "forbidden": "Bunu yapma iznin yok.",
+      "loginRejected": "TRS girişi reddedildi – lütfen daha sonra tekrar dene.",
+      "badChallenge": "TRS API geçersiz bir giriş sorgusu gönderdi.",
+      "badToken": "TRS API geçersiz bir token gönderdi.",
+      "wrongAccount": "TRS girişi başka bir hesaba ait.",
+      "mojangRejected": "Mojang girişi reddetti – lütfen “Hesaplar” bölümünden hesabına tekrar giriş yap.",
+      "mojangRateLimited": "Mojang şu anda girişleri sınırlıyor – lütfen bir dakika sonra tekrar dene.",
+      "mojangFailed": "Mojang ile giriş başarısız – lütfen daha sonra tekrar dene."
+    },
+    "trsApi": {
+      "cape_not_found": "Bu pelerin mevcut değil (artık).",
+      "cape_locked": "Bu pelerinin kilidi senin için henüz açılmadı.",
+      "invalid_code": "Bu kod geçersiz.",
+      "code_expired": "Bu kodun süresi doldu.",
+      "code_used_up": "Bu kod zaten çok fazla kullanıldı.",
+      "player_not_found": "Oyuncu bulunamadı – TRS Launcher'ı en az bir kez kullanmış olmalı.",
+      "cannot_target_self": "Bu sensin.",
+      "blocked": "Bu oyuncuyu engelledin – önce engeli kaldır.",
+      "already_friends": "Zaten arkadaşsınız.",
+      "already_requested": "Bu oyuncuya zaten istek gönderdin.",
+      "too_many_requests": "Çok fazla açık isteğin var (en fazla 50).",
+      "target_inbox_full": "Bu oyuncunun çok fazla açık isteği var.",
+      "friend_limit": "Arkadaş listen dolu (en fazla 200).",
+      "target_friend_limit": "Bu oyuncunun arkadaş listesi dolu.",
+      "request_not_found": "Bu istek artık mevcut değil.",
+      "friend_not_found": "Arkadaş değilsiniz (artık).",
+      "block_not_found": "Bu oyuncu engellenmemiş.",
+      "invalid_png": "Dosya geçerli bir PNG görseli değil.",
+      "animated_png": "Özel pelerinlerde animasyonlu PNG'lere izin verilmez.",
+      "invalid_dimensions": "Görsel bir pelerin için doğru boyutta değil.",
+      "empty_cape": "Pelerin tamamen şeffaf.",
+      "too_many_pending": "İncelemede zaten 3 pelerinin var – lütfen onayı bekle.",
+      "upload_limit": "Zaten 10 özel pelerinin var.",
+      "duplicate_cape": "Bu pelerini zaten yükledin.",
+      "payload_too_large": "Dosya çok büyük.",
+      "unsupported_media_type": "Bu dosya biçimi desteklenmiyor.",
+      "user_not_found": "Bu oyuncu TRS hizmetlerini hiç kullanmadı.",
+      "builtin_cape": "Varsayılan pelerinler silinemez.",
+      "cape_is_free": "Ücretsiz pelerinler için kod gerekmez.",
+      "grant_not_found": "Bu oyuncuda bu pelerin yok.",
+      "cannot_ban_admin": "Yöneticiler yasaklanamaz.",
+      "not_banned": "Bu oyuncu yasaklı değil.",
+      "invalid_request": "İstek geçersizdi.",
+      "not_found": "Bulunamadı.",
+      "rejected": "TRS API isteği reddetti."
+    },
+    "auth": {
+      "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
+      "accountMissing": "Bu hesap artık mevcut değil.",
+      "deviceCodeExpired": "Giriş kodunun süresi doldu – lütfen tekrar dene.",
+      "entitlementCheckFailed": "Oyun sahipliği doğrulanamadı.",
+      "loginInProgress": "Zaten bir giriş işlemi sürüyor.",
+      "loginTimeout": "Giriş zaman aşımına uğradı – lütfen tekrar dene.",
+      "microsoftRejected": "Microsoft girişi reddetti.",
+      "minecraftServicesFailed": "Minecraft hizmetlerine giriş başarısız.",
+      "noJavaEdition": "Bu hesapta Minecraft: Java Edition yok.",
+      "noProfile": "Bu hesabın henüz bir Minecraft profili yok. Resmi launcher'da bir kez giriş yap ve bir oyuncu adı seç.",
+      "profileInvalid": "Minecraft profili geçersiz veriler içeriyor.",
+      "profileLoadFailed": "Minecraft profili yüklenemedi.",
+      "sessionExpired": "Girişin süresi doldu – lütfen hesaba tekrar giriş yap.",
+      "storedCredentialsCorrupt": "Kayıtlı giriş verileri bozuk – lütfen tekrar giriş yap.",
+      "storedCredentialsInvalid": "Kayıtlı giriş verileri bozuk.",
+      "storedCredentialsUndecryptable": "Kayıtlı giriş verilerinin şifresi çözülemedi – lütfen tekrar giriş yap.",
+      "xboxAgeVerification": "Bu hesap için Xbox'ta yaş doğrulaması gerekiyor.",
+      "xboxBanned": "Bu Xbox hesabı yasaklı.",
+      "xboxChildAccount": "Bu bir çocuk hesabı ve önce bir yetişkin tarafından bir Microsoft ailesine eklenmeli.",
+      "xboxFailed": "Xbox Live girişi başarısız.",
+      "xboxNoProfile": "Bu Microsoft hesabının henüz bir Xbox profili yok. xbox.com'da bir kez giriş yap ve bir profil oluştur.",
+      "xboxRegionBlocked": "Xbox Live ülkende kullanılamıyor."
+    },
+    "clientModUpdate": {
+      "invalidVersion": "Geçersiz TRS Client sürümü",
+      "manifestUnreadable": "TRS Client manifesti okunamıyor",
+      "manifestWithoutVersion": "TRS Client manifestinde geçerli bir sürüm yok",
+      "missingChecksum": "Sağlama toplamı olmayan TRS Client derlemesi",
+      "signatureBadFormat": "Geçersiz imza (biçim)",
+      "signatureBadKey": "Geçersiz imza (anahtar)",
+      "signatureMismatch": "Geçersiz imza (doğrulama)",
+      "signatureWrongFile": "Geçersiz imza (yanlış dosya)"
+    },
+    "content": {
+      "fileGone": "Dosya artık mevcut değil.",
+      "invalidFileName": "Geçersiz dosya adı",
+      "tooManyItems": "Aynı anda en fazla {max} öğe"
+    },
+    "extras": {
+      "screenshotGone": "Ekran görüntüsü artık mevcut değil."
+    },
+    "firewall": {
+      "elevationFailed": "Yönetici istemi açılamadı.",
+      "helperNotStarted": "Güvenlik duvarı istisnası başlatılmadı.",
+      "onlyLauncherJava": "Yalnızca launcher'ın kendi Java sürümlerine izin verilebilir.",
+      "ruleFailed": "Güvenlik duvarı istisnası eklenemedi."
+    },
+    "forge": {
+      "installFailed": "Mod yükleyici kurulamadı. Ayrıntılar için launcher günlüğüne bak.",
+      "installIncomplete": "Mod yükleyici kurulumu eksik. Lütfen tekrar dene.",
+      "installerCorrupt": "Mod yükleyici kurulum dosyası bozuk. Lütfen tekrar dene.",
+      "installerDownloadFailed": "Mod yükleyici kurulum dosyası indirilemedi. Lütfen internet bağlantını ve yükleyici sürümünü kontrol et.",
+      "installerVersionMismatch": "Mod yükleyici kurulum dosyası Minecraft sürümüyle uyuşmuyor.",
+      "invalidArgument": "Kurulum profili hatalı bir argüman içeriyor.",
+      "invalidFileReference": "Kurulum profili geçersiz bir dosya referansı içeriyor.",
+      "invalidLoaderVersion": "Yükleyici sürümü geçersiz karakterler içeriyor.",
+      "javaStartFailed": "Mod yükleyiciyi kurmak için Java başlatılamadı.",
+      "legacyUnsupported": "Forge bu Minecraft sürümü için henüz desteklenmiyor (yalnızca 1.7 ve sonrası).",
+      "unknownPlaceholder": "Kurulum profili bilinmeyen bir yer tutucu kullanıyor.",
+      "unsupportedInstaller": "Bu kurulum dosyası biçimi desteklenmiyor.",
+      "versionUnavailable": "Forge {forge}, Minecraft {version} için mevcut değil."
+    },
+    "hooks": {
+      "envDuplicate": "Değişken birden fazla kez geçiyor: {name}",
+      "envNameInvalid": "Ortam değişkeni adları: yalnızca harf, rakam ve _ (başta olamaz)",
+      "envValueInvalid": "Değer geçersiz veya çok uzun: {name}",
+      "postExitExitCode": "Çıkış sonrası komutu başarısız oldu (çıkış kodu {code}).",
+      "postExitInvalidChars": "Çıkış sonrası komutu geçersiz karakterler içeriyor",
+      "postExitRunFailed": "Çıkış sonrası komutu çalıştırılamadı.",
+      "postExitStartFailed": "Çıkış sonrası komutu başlatılamadı.",
+      "postExitTimeout": "Çıkış sonrası komutu {seconds} saniyeden uzun sürdü ve durduruldu.",
+      "postExitTooLong": "Çıkış sonrası komutu: en fazla {max} karakter",
+      "preLaunchExitCode": "Başlatma öncesi komutu başarısız oldu (çıkış kodu {code}).",
+      "preLaunchInvalidChars": "Başlatma öncesi komutu geçersiz karakterler içeriyor",
+      "preLaunchRunFailed": "Başlatma öncesi komutu çalıştırılamadı.",
+      "preLaunchStartFailed": "Başlatma öncesi komutu başlatılamadı.",
+      "preLaunchTimeout": "Başlatma öncesi komutu {seconds} saniyeden uzun sürdü ve durduruldu.",
+      "preLaunchTooLong": "Başlatma öncesi komutu: en fazla {max} karakter",
+      "tooManyEnvVars": "En fazla {max} ortam değişkeni",
+      "wrapperInvalidChars": "Sarmalayıcı komutu geçersiz karakterler içeriyor",
+      "wrapperTooLong": "Sarmalayıcı komutu: en fazla {max} karakter"
+    },
+    "icon": {
+      "bannerTooLarge": "Banner en fazla 10 MB olabilir.",
+      "imageTooLarge": "Görsel en fazla 5 MB olabilir.",
+      "sourceNotAllowed": "Görsel kaynağına izin verilmiyor",
+      "unsupportedFormat": "Yalnızca PNG, JPEG ve WebP görselleri desteklenir."
+    },
+    "import": {
+      "folderMissing": "Bu klasör mevcut değil.",
+      "installationGone": "Bu kurulum artık bulunamıyor.",
+      "noInstallation": "Bu klasörde Minecraft kurulumu bulunamadı. mods, saves veya options.txt içeren klasörü seç."
+    },
+    "instance": {
+      "groupInvalid": "Grup adları: en fazla {max} karakter, özel karakter yok",
+      "invalidGameVersion": "Minecraft sürümü geçersiz karakterler içeriyor",
+      "invalidId": "Geçersiz kurulum kimliği",
+      "invalidImageName": "Geçersiz görsel adı",
+      "invalidLoaderVersion": "Yükleyici sürümü geçersiz karakterler içeriyor",
+      "invalidSyncSettings": "Geçersiz eşitleme ayarları",
+      "nameInvalidChars": "Ad geçersiz karakterler içeriyor",
+      "nameLength": "Ad 1 ile {max} karakter arasında olmalı",
+      "vanillaNoLoaderVersion": "Vanilla'nın yükleyici sürümü yoktur"
+    },
+    "java": {
+      "javawMissing": "Java çalışma ortamı kuruldu ama javaw.exe içermiyor.",
+      "manifestInvalidPath": "Java çalışma ortamı manifesti geçersiz bir yol içeriyor.",
+      "manifestMissing": "Java çalışma ortamı manifesti eksik.",
+      "noRuntimeForPlatform": "Bu platform için uygun Java çalışma ortamı yok ({component}). Lütfen ayarlarda bir Java yolu belirle.",
+      "unknownRuntime": "Bilinmeyen Java çalışma ortamı istendi."
+    },
+    "launch": {
+      "noArguments": "Sürüm meta verileri başlatma argümanı içermiyor.",
+      "noMainClass": "Sürüm meta verileri ana sınıf içermiyor."
+    },
+    "launcher": {
+      "alreadyRunning": "Bu kurulum zaten çalışıyor.",
+      "alreadyStarting": "Bu kurulum zaten başlatılıyor.",
+      "instanceRunningNoDelete": "Kurulum çalışıyor ve silinemez.",
+      "instanceRunningStopFirst": "Kurulum çalışıyor – lütfen önce durdur.",
+      "javaVersionUnavailable": "Bu Java sürümü kurulum için mevcut değil.",
+      "logUploadDisabled": "Günlük yüklemeleri gizlilik ayarlarında kapalı.",
+      "noLogToShare": "Henüz paylaşılacak bir günlük yok.",
+      "signInFirst": "Lütfen önce “Hesaplar” bölümünden Microsoft hesabınla giriş yap.",
+      "stopAllGamesFirst": "Lütfen önce çalışan tüm oyunları kapat.",
+      "syncAfterExitFailed": "Ayarlar diğer kurulumlarla eşitlenemedi."
+    },
+    "loaders": {
+      "invalidGameVersion": "Geçersiz Minecraft sürümü",
+      "invalidProfileId": "Yükleyici profili geçersiz bir kimlik içeriyor.",
+      "notAvailable": "Bu mod yükleyici Minecraft {version} için (henüz) mevcut değil."
+    },
+    "meta": {
+      "invalidLibraryName": "Geçersiz kütüphane koordinatı: {name}",
+      "unsafeLibraryPath": "Güvenli olmayan kütüphane yolu: {path}"
+    },
+    "nbt": {
+      "corrupt": "NBT dosyası bozuk."
+    },
+    "prepare": {
+      "assetIndexInvalid": "Asset dizini geçersiz girdiler içeriyor.",
+      "assetIndexMissing": "Asset dizini eksik.",
+      "invalidIdentifiers": "Sürüm meta verileri geçersiz tanımlayıcılar içeriyor.",
+      "javaPathMissing": "Ayarlanan Java yolu mevcut değil.",
+      "loaderFileMissing": "Mod yükleyicinin oluşturduğu bir dosya eksik. Lütfen kurulumu tekrar başlat.",
+      "nativesCorrupt": "Natives arşivi bozuk: {error}",
+      "noClientDownload": "Bu sürümün istemci indirmesi yok."
+    },
+    "process": {
+      "crashCorruptFiles": "Bir oyun dosyası bozuk (ör. yarıda kalan bir indirme sonrası). “Dosyaları kontrol et” onu yeniden indirir.",
+      "crashGraphicsDriver": "Ekran kartı sürücüsü çöktü veya OpenGL'i desteklemiyor. Ekran kartı sürücünü güncelle.",
+      "crashMissingDependency": "Bir mod, ihtiyaç duyduğu başka bir modu bulamıyor. Hangisi olduğu günlükte hatanın hemen üstünde yazıyor.",
+      "crashModConflict": "İki mod birbiriyle uyuşmuyor. En son eklediğin modları devre dışı bırak ve tekrar başlat.",
+      "crashOutOfMemory": "Oyunun belleği yetmedi. Kurulum ayarlarından belleği artır.",
+      "crashWrongJava": "Bir mod daha yeni bir Java sürümüne ihtiyaç duyuyor. Ayarlardaki özel Java yolunu kaldır, launcher doğru sürümü otomatik seçer.",
+      "exitedImmediately": "Oyun hemen kapandı.",
+      "javaStartFailed": "Java başlatılamadı.",
+      "logUploadFailed": "Günlük yüklenemedi."
+    },
+    "modpack": {
+      "noGameVersion": "Modpack bir Minecraft sürümü belirtmiyor.",
+      "corrupt": "Modpack bozuk.",
+      "notModrinthPack": "Bu geçerli bir Modrinth modpack'i değil.",
+      "unsupportedFormat": "Bu modpack biçimi desteklenmiyor.",
+      "tooManyFiles": "Modpack çok fazla dosya içeriyor.",
+      "invalidFilePath": "Modpack geçersiz bir dosya yolu içeriyor.",
+      "disallowedSource": "Modpack izin verilmeyen bir indirme kaynağını gösteriyor.",
+      "invalidChecksum": "Modpack geçersiz bir sağlama toplamı içeriyor.",
+      "noVersion": "Bu modpack'in hiç sürümü yok.",
+      "versionHasNoPack": "Bu sürüm bir modpack içermiyor.",
+      "notPackFile": "Bu bir modpack dosyası değil."
+    },
+    "modpackExport": {
+      "selectionNotExportable": "Bu seçim dışa aktarılamaz.",
+      "tooManyFiles": "Bir modpack için çok fazla dosya – lütfen daha az klasör seç.",
+      "tooLarge": "Seçim çok büyük (4 GB'tan fazla).",
+      "nameRequired": "Lütfen modpack için bir ad gir.",
+      "invalidVersion": "Sürüm yalnızca harf, rakam ve . - _ + içerebilir",
+      "tooManyEntries": "Çok fazla girdi seçildi.",
+      "nothingSelected": "Dışa aktarmak için hiçbir şey seçilmedi."
+    },
+    "modrinth": {
+      "queryTooLong": "Arama terimi çok uzun",
+      "invalidPageSize": "Geçersiz sayfa boyutu",
+      "invalidPage": "Geçersiz sayfa",
+      "tooManyFilters": "Çok fazla filtre",
+      "invalidGameVersion": "Geçersiz oyun sürümü",
+      "unknownLoader": "Bilinmeyen mod yükleyici",
+      "invalidCategory": "Geçersiz kategori",
+      "invalidProjectList": "Geçersiz proje listesi",
+      "tooManyProjects": "Aynı anda çok fazla proje",
+      "invalidProjectId": "Geçersiz proje kimliği",
+      "invalidVersionId": "Geçersiz sürüm kimliği",
+      "vanillaNoMods": "Bu kurulum vanilla – modlar için Fabric, Quilt, Forge veya NeoForge içeren bir kurulum gerekir.",
+      "versionNotInProject": "Bu sürüm projeye ait değil.",
+      "noCompatibleVersion": "Bu mod yükleyiciyle Minecraft {version} için uyumlu sürüm yok.",
+      "versionHasNoFile": "Bu sürüm bir dosya içermiyor.",
+      "noPerformanceMods": "Performans modlarının hiçbiri bu sürüm için mevcut değil."
+    },
+    "news": {
+      "unavailable": "Haberler şu anda kullanılamıyor.",
+      "patchNotesNotFound": "Bu yama notları mevcut değil.",
+      "imageSourceNotAllowed": "Bu görsel kaynağına izin verilmiyor.",
+      "imageTooLarge": "Görsel çok büyük.",
+      "tagRelease": "Sürüm",
+      "tagSnapshot": "Snapshot",
+      "tagPreview": "Önizleme",
+      "tagUpdate": "Güncelleme",
+      "tagDownloads": "{count} indirme"
+    },
+    "screenshots": {
+      "tooLargeForClipboard": "Görsel pano için çok büyük.",
+      "imageUnreadable": "Görsel okunamadı.",
+      "screenshotUnreadable": "Ekran görüntüsü okunamadı.",
+      "thumbnailWriteFailed": "Küçük resim kaydedilemedi.",
+      "invalidPath": "Geçersiz yol"
+    },
+    "servers": {
+      "invalidPort": "Geçersiz port",
+      "invalidAddress": "Geçersiz sunucu adresi",
+      "nameLength": "Sunucu adı 1 ile 64 karakter arasında olmalı",
+      "tooMany": "100'den fazla sunucu desteklenmiyor.",
+      "duplicate": "Bu sunucu zaten listede.",
+      "notFound": "Bu sunucu artık mevcut değil."
+    },
+    "skins": {
+      "fileTooLarge": "Skin dosyası çok büyük (en fazla 128 KB).",
+      "notPng": "Bu bir PNG dosyası değil.",
+      "invalidSize": "Bir skin 64×64 piksel olmalı (eski skinler için 64×32).",
+      "rateLimited": "Mojang şu anda istekleri sınırlıyor – lütfen birkaç dakika bekle.",
+      "mojangUnavailable": "Mojang'a şu anda ulaşılamıyor – lütfen daha sonra tekrar dene.",
+      "sessionExpired": "Girişinin süresi doldu – lütfen hesaba tekrar giriş yap.",
+      "noProfile": "Bu hesabın henüz bir Minecraft profili yok.",
+      "fileRejected": "Mojang dosyayı reddetti. Geçerli bir 64×64 skin mi?",
+      "changeRejected": "Mojang değişikliği reddetti.",
+      "invalidCape": "Geçersiz pelerin.",
+      "noCustomSkin": "Bu hesap şu anda özel bir skin kullanmıyor.",
+      "textureSourceNotAllowed": "Bu doku kaynağına izin verilmiyor.",
+      "invalidTexture": "Mojang'dan gelen doku geçersiz.",
+      "nameRequired": "Lütfen skin için bir ad gir.",
+      "signInFirst": "Lütfen önce “Hesaplar” bölümünden giriş yap.",
+      "libraryFull": "Skin kütüphanesi dolu – önce bir skin sil.",
+      "notFound": "Bu skin mevcut değil."
+    },
+    "skinSync": {
+      "accountSwitched": "Etkin hesap değiştirildi – değişiklikler atıldı.",
+      "accountChanged": "Etkin hesap değişti – lütfen sayfayı yeniden yükle."
+    },
+    "taskHistory": {
+      "untitled": "Adsız görev",
+      "invalidEntry": "Geçersiz girdi"
+    },
+    "upload": {
+      "foldersUnsupported": "Klasörler desteklenmiyor – lütfen .zip veya .jar dosyasını seç.",
+      "emptyOrTooLarge": "Dosya boş veya 200 MB'tan büyük.",
+      "unsupportedType": "Yalnızca .jar ve .zip dosyaları eklenebilir.",
+      "invalidArchive": "Dosya geçerli bir arşiv değil.",
+      "unknownContent": "Ne kaynak paketi (pack.mcmeta) ne de shader (shaders/) algılandı.",
+      "vanillaNoMods": "Bu kurulum saf vanilla – modlar burada çalışmaz.",
+      "fileExists": "Kurulumda bu adda bir dosya zaten var.",
+      "tooLarge": "Dosya 200 MB'tan büyük.",
+      "tooManyFiles": "Aynı anda en fazla {max} dosya.",
+      "invalidFileName": "Geçersiz dosya adı"
+    },
+    "trsOps": {
+      "invalidPlayerId": "Geçersiz oyuncu kimliği.",
+      "invalidCapeId": "Geçersiz pelerin kimliği.",
+      "noChange": "Değişiklik belirtilmedi.",
+      "onlyOwnCapesDeletable": "Yalnızca kendi pelerinlerin silinebilir.",
+      "onlyUploadedReportable": "Yalnızca yüklenen pelerinler bildirilebilir.",
+      "invalidCodeFormat": "Kodlar 20 karakterlidir, ör. 7K3QF-M2XPA-9RTVB-C4HJN.",
+      "tooManyPlayers": "Aynı anda en fazla 100 oyuncu.",
+      "onlyUploadedDeletable": "Yalnızca yüklenen pelerinler silinebilir.",
+      "invalidCodeId": "Geçersiz kod kimliği.",
+      "redemptionsRange": "Kod başına kullanım: 1 ile 100.000 arası.",
+      "countRange": "Miktar: aynı anda 1 ile 100 kod arası.",
+      "expiryInPast": "Son kullanma tarihi geçmişte."
+    },
+    "trsPng": {
+      "fileTooLarge": "Dosya çok büyük (en fazla 256 KB).",
+      "invalidPng": "Dosya geçerli bir PNG görseli değil.",
+      "animated": "Özel pelerinlerde animasyonlu PNG'lere izin verilmez.",
+      "invalidSize": "Pelerin 64×32 piksel (veya 128×64, 192×96, 256×128) ya da pelerin biçiminde 22×17 (veya 44×34, 66×51, 88×68) olmalı."
+    },
+    "trsValidate": {
+      "invalidName": "Lütfen bir Minecraft adı gir (1–16 karakter: A–Z, 0–9, _).",
+      "commentLength": "Yorum: 1 ile {max} karakter arası.",
+      "commentInvalidChars": "Yorum geçersiz karakterler içeriyor.",
+      "reasonLength": "Sebep: 1 ile {max} karakter arası.",
+      "reasonInvalidChars": "Sebep geçersiz karakterler içeriyor.",
+      "noteLength": "Not: 1 ile {max} karakter arası.",
+      "noteInvalidChars": "Not geçersiz karakterler içeriyor.",
+      "invalidUploadName": "Ad: 1–32 karakter – harf, rakam, boşluk ve . , ' ! ? & ( ) + - _",
+      "invalidExpiry": "Geçersiz son kullanma tarihi."
+    },
+    "commands": {
+      "linkNotAllowed": "Bu bağlantı açılamaz.",
+      "dropExpired": "Bırakılan dosyalar artık mevcut değil – lütfen tekrar sürükle.",
+      "noJavaAtPath": "Bu yolda Java çalıştırılabilir dosyası yok.",
+      "invalidTaskId": "Geçersiz görev kimliği",
+      "taskRunning": "Bu görev zaten çalışıyor."
+    }
+  },
+  "browse": {
+    "title": "Keşfet",
+    "subtitle": "Modrinth'ten modlar, modpack'ler, kaynak paketleri, veri paketleri ve shader'lar.",
+    "backToInstance": "Kuruluma dön",
+    "installContent": "İçerik yükle",
+    "installInto": "Yükleneceği yer",
+    "noInstance": "Henüz kurulum yok",
+    "packHint": "Bir modpack yeni bir kurulum olarak oluşturulur.",
+    "kindTabs": "İçerik türü",
+    "searchPlaceholder": {
+      "mod": "Mod ara …",
+      "resourcepack": "Kaynak paketi ara …",
+      "datapack": "Veri paketi ara …",
+      "shaderpack": "Shader ara …",
+      "modpack": "Modpack ara …"
+    },
+    "clearSearch": "Aramayı temizle",
+    "sortBy": "Sırala",
+    "perPage": "Göster",
+    "results": "{count} sonuç | {count} sonuç",
+    "pages": "Sayfalar",
+    "pagesBottom": "Sayfalar (alt)",
+    "prevPage": "Önceki sayfa",
+    "nextPage": "Sonraki sayfa",
+    "lockedByInstance": "Kurulum tarafından belirlendi",
+    "chips": {
+      "openSource": "Açık kaynak",
+      "hideInstalled": "Yüklüler gizli",
+      "resetAll": "Tümünü sıfırla"
+    },
+    "vanillaBlocked": "“{name}” bir vanilla kurulum. Modlar için mod yükleyicili bir kurulum seç.",
+    "datapackHint": {
+      "text": "Veri paketleri kurulumun {folder} klasörüne gider. Dünya oluştururken “Veri Paketleri” altından seçebilirsin; mevcut dünyalar için bunları {worldFolder} konumuna kopyala.",
+      "world": "dünya"
+    },
+    "hit": {
+      "by": "{author} tarafından",
+      "installingLabel": "Yükleniyor: {title} – görev panelinde göster",
+      "percent": "%{percent}",
+      "openInstance": "Kurulumu aç",
+      "installed": "Yüklü",
+      "asInstance": "Yeni kurulum",
+      "chooseVersion": "Sürüm seç",
+      "downloads": "{count} indirme | {count} indirme",
+      "followers": "{count} takipçi | {count} takipçi"
+    },
+    "empty": {
+      "title": "Sinyal yok",
+      "text": "Hiçbir şey bulunamadı – farklı arama terimleri veya filtreler dene.",
+      "textFor": "{versions} için hiçbir şey bulunamadı – farklı arama terimleri veya filtreler dene.",
+      "allVersions": "tüm sürümler",
+      "resetFilters": "Filtreleri sıfırla"
+    },
+    "filters": {
+      "label": "Filtreler",
+      "hideInstalled": "Yüklü içeriği gizle",
+      "versionLocked": "Oyun sürümü kurulum tarafından belirlendi ({version}).",
+      "unlock": "Filtrenin kilidini aç",
+      "searchVersionPlaceholder": "Sürüm ara …",
+      "searchVersionLabel": "Sürüm ara",
+      "noVersion": "Sürüm bulunamadı.",
+      "rebind": "Kurulum ayarını tekrar kullan",
+      "loader": "Yükleyici",
+      "loaderLocked": "Yükleyici kurulum tarafından belirlendi ({loader}).",
+      "matchAny": "En az biri",
+      "exclude": "Hariç tut: {category}",
+      "loadingCategories": "Kategoriler yükleniyor …",
+      "environment": "Ortam",
+      "license": "Lisans",
+      "openSourceOnly": "Yalnızca açık kaynak",
+      "locked": "Kilitli"
+    }
+  },
+  "modrinth": {
+    "sort": {
+      "relevance": "Alaka",
+      "downloads": "İndirmeler",
+      "follows": "Takipçiler",
+      "newest": "En yeni",
+      "updated": "Son güncellenen"
+    },
+    "categoryHeader": {
+      "categories": "Kategori",
+      "features": "Özellikler",
+      "resolutions": "Çözünürlük",
+      "performanceImpact": "Performans etkisi"
+    },
+    "environment": {
+      "client": "İstemci",
+      "server": "Sunucu",
+      "both": "İstemci ve sunucu",
+      "either": "İstemci veya sunucu"
+    },
+    "side": {
+      "required": "Gerekli",
+      "optional": "İsteğe bağlı",
+      "unsupported": "Gerekmez",
+      "unknown": "Bilinmiyor"
+    },
+    "versionType": {
+      "release": "Kararlı",
+      "beta": "Beta",
+      "alpha": "Alfa"
+    },
+    "categories": {
+      "adventure": "Macera",
+      "cursed": "Lanetli",
+      "decoration": "Dekorasyon",
+      "economy": "Ekonomi",
+      "equipment": "Ekipman",
+      "food": "Yiyecek",
+      "gameMechanics": "Oyun mekanikleri",
+      "library": "Kütüphane",
+      "magic": "Büyü",
+      "management": "Yönetim",
+      "minigame": "Mini oyun",
+      "mobs": "Yaratıklar",
+      "optimization": "Optimizasyon",
+      "social": "Sosyal",
+      "storage": "Depolama",
+      "technology": "Teknoloji",
+      "transportation": "Ulaşım",
+      "utility": "Araçlar",
+      "worldgen": "Dünya oluşturma",
+      "combat": "Savaş",
+      "challenging": "Zorlu",
+      "kitchenSink": "Her şey dahil",
+      "lightweight": "Hafif",
+      "multiplayer": "Çok oyunculu",
+      "quests": "Görevler",
+      "audio": "Ses",
+      "blocks": "Bloklar",
+      "entities": "Varlıklar",
+      "environment": "Çevre",
+      "fonts": "Yazı tipleri",
+      "gui": "Arayüz",
+      "items": "Eşyalar",
+      "models": "Modeller",
+      "simplistic": "Sade",
+      "themed": "Temalı",
+      "tweaks": "İnce ayarlar",
+      "realistic": "Gerçekçi",
+      "semiRealistic": "Yarı gerçekçi",
+      "vanillaLike": "Vanilla benzeri",
+      "atmosphere": "Atmosfer",
+      "bloom": "Bloom",
+      "shadows": "Gölgeler",
+      "reflections": "Yansımalar",
+      "fantasy": "Fantastik",
+      "cartoon": "Çizgi film",
+      "potato": "Patates PC'ler",
+      "low": "Düşük",
+      "medium": "Orta",
+      "high": "Yüksek",
+      "screenshot": "Ekran görüntüsü",
+      "pbr": "PBR",
+      "coloredLighting": "Renkli aydınlatma",
+      "pathTracing": "Path tracing",
+      "foliage": "Bitki örtüsü",
+      "coreShaders": "Core shader'lar"
+    }
+  },
+  "project": {
+    "stats": {
+      "author": "Yazar",
+      "by": "{author} tarafından",
+      "downloadsLabel": "İndirmeler",
+      "downloads": "{count} indirme | {count} indirme",
+      "followersLabel": "Takipçiler",
+      "followers": "{count} takipçi | {count} takipçi",
+      "updatedLabel": "Güncellendi",
+      "updated": "Güncellendi: {time}"
+    },
+    "pack": {
+      "title": "Modpack",
+      "hint": "Tüm modlarıyla yeni bir kurulum olarak oluşturulur.",
+      "installingLabel": "Yükleniyor, yüzde {percent} – görev panelinde göster",
+      "installingPercent": "Yükleniyor … %{percent}",
+      "pausedPercent": "Duraklatıldı %{percent}",
+      "openInstance": "Kurulumu aç",
+      "reinstall": "Tekrar yükle",
+      "install": "Kurulum olarak yükle"
+    },
+    "install": {
+      "target": "Yükleneceği yer",
+      "noInstance": "Henüz kurulum yok",
+      "installed": "Yüklü: {version}",
+      "updateTo": "Güncelle: {version}",
+      "modsBlocked": "Bu vanilla kurulumda TRS optimizasyonu kapalı ve mod yüklemiyor – kurulum ayarlarından aç veya mod yükleyicili bir kurulum seç.",
+      "noVersion": "{version} ({loader}) için sürüm yok.",
+      "switchVersion": "Sürümü değiştir",
+      "otherVersion": "Başka bir sürüm seç"
+    },
+    "links": {
+      "modrinth": "Modrinth'te",
+      "source": "Kaynak kodu",
+      "issues": "Sorun bildir",
+      "wiki": "Wiki",
+      "discord": "Discord"
+    },
+    "tabs": {
+      "label": "Bölümler",
+      "gallery": "Galeri",
+      "versions": "Sürümler",
+      "dependencies": "Bağımlılıklar"
+    },
+    "noDescription": "Açıklama yok.",
+    "info": {
+      "title": "Bilgi",
+      "license": "Lisans",
+      "published": "Yayınlandı"
+    },
+    "versions": {
+      "gameVersionLabel": "Minecraft sürümü",
+      "allVersions": "Tüm sürümler",
+      "allLoaders": "Tüm yükleyiciler",
+      "showPrerelease": "Beta ve alfa göster",
+      "count": "{shown} / {total}",
+      "noMatch": "Bu filtreyle eşleşen sürüm yok.",
+      "expandChangelog": "Değişiklik günlüğünü göster",
+      "collapseChangelog": "Değişiklik günlüğünü gizle",
+      "installed": "Yüklü",
+      "newestFitting": "En yeni uyumlu",
+      "incompatibleTitle": "Uyumlu değil: {version} ({loader})",
+      "incompatible": "Uyumsuz",
+      "showMore": "Daha fazla göster",
+      "action": {
+        "switch": "Değiştir",
+        "update": "Güncelle",
+        "downgrade": "Düşür"
+      }
+    },
+    "dependencies": {
+      "noVersion": "Gösterilecek sürüm yok.",
+      "none": "Sürüm {version} başka proje gerektirmiyor.",
+      "intro": "Sürüm: {version}. Launcher gerekli bağımlılıkları otomatik yükler.",
+      "group": {
+        "required": "Gerekli",
+        "optional": "İsteğe bağlı",
+        "incompatible": "Uyumsuz",
+        "embedded": "Gömülü"
+      }
+    },
+    "gallery": {
+      "empty": "Bu projenin galerisi yok.",
+      "image": "Görsel",
+      "prev": "Önceki görsel",
+      "next": "Sonraki görsel"
+    }
+  },
+  "changelog": {
+    "title": "Değişiklik günlüğü – {name}",
+    "installedVersion": "yüklü sürüm",
+    "searching": "Daha yeni sürümler aranıyor …",
+    "newVersions": "{n} yeni sürüm | {n} yeni sürüm",
+    "upToDate": "En yeni uyumlu sürüm zaten sende ({version}).",
+    "noChangelog": "Değişiklik günlüğü yok.",
+    "updateTo": "Güncelle: {version}"
+  },
+  "content": {
+    "toasts": {
+      "upToDate": "Her şey güncel",
+      "fileAdded": "Eklendi: {name}",
+      "filesAdded": "{n} dosya eklendi | {n} dosya eklendi"
+    },
+    "bulk": {
+      "done": {
+        "enable": "{n} öğe etkinleştirildi | {n} öğe etkinleştirildi",
+        "disable": "{n} öğe devre dışı bırakıldı | {n} öğe devre dışı bırakıldı",
+        "delete": "{n} öğe silindi | {n} öğe silindi"
+      },
+      "partial": {
+        "enable": "{changed} etkinleştirildi, {failed} başarısız",
+        "disable": "{changed} devre dışı bırakıldı, {failed} başarısız",
+        "delete": "{changed} silindi, {failed} başarısız"
+      }
+    },
+    "updates": {
+      "stage": "{n} güncelleme | {n} güncelleme",
+      "done": "{n} güncelleme yüklendi | {n} güncelleme yüklendi",
+      "partial": "{total} güncellemeden {failed} tanesi başarısız oldu. | {total} güncellemeden {failed} tanesi başarısız oldu."
+    },
+    "perfPack": {
+      "taskTitle": "Performans paketi – {name}",
+      "stage": "Modlar yükleniyor",
+      "done": "Performans paketi yüklendi ({n} dosya) | Performans paketi yüklendi ({n} dosya)",
+      "title": "Sodium, Lithium ve diğerleri – yalnızca bu sürüm için mevcut olanlar",
+      "installing": "Performans paketi yükleniyor …",
+      "button": "+ Performans paketi"
+    },
+    "toolbar": {
+      "searchPlaceholder": "{n} projede ara … | {n} projede ara …",
+      "searchLabel": "Proje ara",
+      "sortLabel": "Sırala",
+      "refreshTitle": "Yenile (listeyi yeniden yükle ve güncellemeleri kontrol et)",
+      "updating": "Güncelleniyor …",
+      "updateAll": "Tümünü güncelle ({n})",
+      "addFiles": "Dosya ekle",
+      "browse": "İçeriğe göz at"
+    },
+    "sort": {
+      "name": "Ada göre",
+      "enabled": "Önce etkinler",
+      "updates": "Önce güncellemeler",
+      "kind": "Türe göre"
+    },
+    "boostOff": "TRS optimizasyonu kapalı – bu kurulum saf vanilla olarak başlar ve mod yüklemez.",
+    "boostOn": "TRS optimizasyonu: kurulum Fabric, TRS Client ve performans modlarıyla başlar.",
+    "selection": {
+      "selectAll": "Tümünü seç",
+      "selected": "{n} seçildi | {n} seçildi",
+      "update": "Güncelle ({n})",
+      "clear": "Seçimi temizle"
+    },
+    "columns": {
+      "project": "Proje",
+      "actions": "İşlemler"
+    },
+    "row": {
+      "select": "Seç: {name}",
+      "by": "{author} tarafından",
+      "unknownAuthor": "Bilinmeyen yazar",
+      "updateTitle": "Güncelle: {version}",
+      "updateBadge": "Güncelleme",
+      "switchVersion": "Sürümü değiştir",
+      "onlyModrinth": "Yalnızca Modrinth içeriği için",
+      "switchVersionOf": "Sürümü değiştir: {name}",
+      "enable": "Etkinleştir: {name}",
+      "disable": "Devre dışı bırak: {name}",
+      "delete": "Sil: {name}",
+      "moreActions": "Diğer işlemler: {name}"
+    },
+    "menu": {
+      "updateTo": "Güncelle: {version}",
+      "changelog": "Değişiklik günlüğünü gör",
+      "projectPage": "Proje sayfası",
+      "notModrinth": "Modrinth'ten yüklenmedi – sürümler ve değişiklik günlükleri yalnızca Modrinth içeriği için mevcut."
+    },
+    "empty": {
+      "noMatchTitle": "Sinyal yok",
+      "noMatchText": "Filtre veya aramayla eşleşen bir şey yok.",
+      "title": "Henüz içerik yok",
+      "text": "Burada her şey hâlâ kapalı. Modrinth'e göz at, dosya ekle veya .jar ve .zip dosyalarını pencereye sürükle."
+    },
+    "drop": {
+      "title": "Eklemek için bırak",
+      "hint": ".jar = mod · .zip = kaynak paketi, shader veya veri paketi"
+    },
+    "deleteDialog": {
+      "titleOne": "Dosya silinsin mi?",
+      "titleMany": "{n} dosya silinsin mi? | {n} dosya silinsin mi?",
+      "textOne": "{name} bu kurulumdan silinecek.",
+      "textMany": "{n} öğe bu kurulumdan silinecek. | {n} öğe bu kurulumdan silinecek."
+    }
+  },
+  "screenshots": {
+    "title": "Ekran görüntüleri",
+    "subtitle": "Tüm kurulumlardan {n} görsel | Tüm kurulumlardan {n} görsel",
+    "noDate": "Tarih yok",
+    "instanceLabel": "Kurulum",
+    "allInstances": "Tüm kurulumlar",
+    "reload": "Yeniden yükle",
+    "toasts": {
+      "copied": "Görsel panoya kopyalandı",
+      "trashed": "Geri Dönüşüm Kutusu'na taşındı"
+    },
+    "empty": {
+      "title": "Henüz ekran görüntüsü yok",
+      "text": "Oyunda F2'ye bas – her görsel burada bir lamba daha yakar. Tüm kurulumlardaki ekran görüntüleri burada toplanır."
+    },
+    "open": "Aç: {name}",
+    "copyTitle": "Panoya kopyala",
+    "showInFolder": "Klasörde göster",
+    "viewer": {
+      "label": "Ekran görüntüsü",
+      "closeLabel": "Tam ekranı kapat",
+      "prev": "Önceki",
+      "prevLabel": "Önceki görsel",
+      "next": "Sonraki",
+      "nextLabel": "Sonraki görsel",
+      "hint": "Gezinmek için ok tuşları · Esc kapatır · “Kopyala” görseli yapıştırmak için panoya alır"
+    },
+    "deleteDialog": {
+      "title": "Ekran görüntüsü silinsin mi?",
+      "text": "{name} Windows Geri Dönüşüm Kutusu'na gider – oradan geri yükleyebilirsin."
+    }
+  },
+  "servers": {
+    "title": "Sunucular",
+    "subtitle": "Bir kez ekle – canlı durum ve tek tıkla katılma ile her kurulumda kullanılabilir.",
+    "refreshing": "Yenileniyor …",
+    "add": "Sunucu ekle",
+    "joinWith": "Şununla katıl",
+    "lastPlayed": "{name} (son oynanan)",
+    "joinHint": "“{name}” başlatılır ve doğrudan bağlanır",
+    "noInstance": "Önce bir kurulum oluştur",
+    "empty": {
+      "title": "Henüz sunucu yok",
+      "text": "Favori sunucuna bir kablo çek: adresi gir – launcher oyuncu sayısını ve pingi canlı gösterir ve sunucuyu her kurulumun sunucu listesine ekler."
+    },
+    "card": {
+      "checking": "Kontrol ediliyor …",
+      "unreachable": "Ulaşılamıyor",
+      "join": "Katıl"
+    }
+  },
+  "serverDialog": {
+    "addTitle": "Sunucu ekle",
+    "editTitle": "Sunucuyu düzenle",
+    "address": "Adres",
+    "namePlaceholder": "Sunucunun adı ne olsun",
+    "autoResourcePack": "Sunucu kaynak paketini otomatik kabul et",
+    "autoResourcePackHint": "Böylece sunucunun rütbeleri, simgeleri ve sesleri sormadan yüklenir.",
+    "toasts": {
+      "saved": "Sunucu kaydedildi",
+      "added": "Sunucu eklendi",
+      "removed": "Sunucu kaldırıldı"
+    }
+  },
+  "library": {
+    "title": "Kütüphane",
+    "subtitle": "Her kurulumun kendi dünyaları, modları ve ayarları vardır.",
+    "newGroup": "Yeni grup",
+    "newInstance": "Yeni kurulum",
+    "searchPlaceholder": "{n} kurulumda ara … | {n} kurulumda ara …",
+    "searchLabel": "Kurulum ara",
+    "sortLabel": "Sırala",
+    "groupLabel": "Grup",
+    "filter": "Filtre",
+    "resetFilters": "Filtreleri sıfırla",
+    "sort": {
+      "played": "Son oynanan",
+      "name": "Ad",
+      "created": "Oluşturulma",
+      "playtime": "Oynama süresi",
+      "version": "Sürüm"
+    },
+    "groupBy": {
+      "none": "Yok",
+      "loader": "Mod yükleyici",
+      "version": "Minecraft sürümü",
+      "custom": "Özel gruplar"
+    },
+    "ungrouped": "Grup yok",
+    "noMatch": {
+      "title": "Sinyal yok",
+      "text": "Aramanla veya filtrelerinle eşleşen kurulum yok."
+    },
+    "empty": {
+      "title": "Henüz kurulum yok",
+      "text": "Kablo döşendi, sadece lamba eksik: ilk kurulumunu oluştur – vanilla veya Fabric, Quilt, Forge ya da NeoForge ile.",
+      "create": "Kurulum oluştur",
+      "import": "Başka bir launcher'dan içe aktar"
+    },
+    "toasts": {
+      "movedToGroup": "“{name}” artık şu grupta: “{group}”",
+      "removedFromGroup": "“{name}” grubundan çıkarıldı"
+    },
+    "delete": {
+      "title": "Kurulum silinsin mi?",
+      "text": "{name} tüm dünyaları, modları ve ekran görüntüleriyle birlikte kalıcı olarak silinecek.",
+      "deleting": "Siliniyor …",
+      "confirm": "Kalıcı olarak sil"
+    }
+  },
+  "instance": {
+    "settingsGeneral": "Ayarlar: Genel",
+    "changeVersion": "Sürümü değiştir",
+    "settings": "Ayarlar",
+    "tabsLabel": "Bölümler",
+    "tabs": {
+      "content": "İçerik",
+      "history": "Geçmiş",
+      "screenshots": "Ekran görüntüleri",
+      "worlds": "Dünyalar",
+      "logs": "Günlükler"
+    },
+    "gallery": {
+      "bannerSet": "Banner ayarlandı",
+      "noScreenshots": {
+        "title": "Henüz ekran görüntüsü yok",
+        "text": "Oyunda F2'ye bas – her görsel burada bir lamba daha yakar."
+      },
+      "noWorlds": {
+        "title": "Henüz dünya yok",
+        "text": "Henüz hiçbir şey inşa edilmedi: bu kurulumun tek oyunculu dünyaları burada görünür."
+      },
+      "openScreenshot": "Aç: {name}",
+      "useAsBannerLabel": "Banner olarak kullan: {name}",
+      "useAsBannerTitle": "Kurulum banner'ı olarak kullan",
+      "deleteScreenshot": "Ekran görüntüsünü sil",
+      "lastPlayed": "Son oynanma: {date}",
+      "deleteTitle": "Ekran görüntüsü silinsin mi?",
+      "deleteText": "Ekran görüntüsü diskinden silinecek."
+    }
+  },
+  "instanceSettings": {
+    "title": "Ayarlar · {name}",
+    "sections": {
+      "general": "Genel",
+      "installation": "Yükleme",
+      "window": "Pencere",
+      "java": "Java ve bellek",
+      "hooks": "Başlatma kancaları",
+      "sync": "Eşitleme"
+    },
+    "general": {
+      "changeImage": "Görseli değiştir",
+      "removeImage": "Görseli kaldır",
+      "bannerTitle": "Banner",
+      "bannerDescription": "Ana sayfa ve kurulum başlığı için geniş kapak görseli. PNG, JPEG veya WebP, en fazla 10 MB – ya da “Ekran görüntüleri” sekmesinden kendi görsellerinden birini kullan.",
+      "bannerPicking": "Seçiliyor …",
+      "bannerChange": "Banner'ı değiştir",
+      "bannerPick": "Banner seç",
+      "groupTitle": "Kütüphane grubu",
+      "groupDescription": "Gruplar kütüphanendeki kurulumları düzenler. Bir kurulum en fazla bir gruba ait olabilir.",
+      "groupNone": "Yok",
+      "groupNamePlaceholder": "Grup adı",
+      "groupNameLabel": "Yeni grubun adı",
+      "groupCreate": "Oluştur",
+      "groupNew": "+ Yeni grup",
+      "channelTitle": "İçerik güncelleme kanalı",
+      "channelDescription": "“Güncelle” ve “en son uyumlu sürüm” hangi Modrinth sürümlerini seçsin.",
+      "channel": {
+        "release": {
+          "label": "Kararlı",
+          "hint": "Yalnızca bitmiş sürümler"
+        },
+        "beta": {
+          "label": "Beta",
+          "hint": "Kararlı + betalar"
+        },
+        "alpha": {
+          "label": "Alfa",
+          "hint": "Alfalar dahil her şey"
+        }
+      },
+      "duplicateTitle": "Çoğalt",
+      "duplicateDescription": "Tüm dünyalar, modlar ve ayarlarla bir kopya oluşturur – sürüm değiştirmeden önce kullanışlı.",
+      "duplicating": "Kopyalanıyor …",
+      "copyName": "{name} (kopya)",
+      "copyStage": "Dosyalar kopyalanıyor",
+      "copyDone": "Kopya oluşturuldu: “{name}”",
+      "exportTitle": "Modpack olarak dışa aktar",
+      "exportDescription": "Paylaşmak veya yedeklemek için bir .mrpack dosyası yazar. Modrinth'ten gelen modlar kopyalanmak yerine bağlantı olarak eklenir.",
+      "deleteTitle": "Kurulumu sil",
+      "deleteDescription": "Kurulumu tüm dünyaları, modları ve ekran görüntüleriyle kalıcı olarak siler.",
+      "deleted": "Silindi: “{name}”"
+    },
+    "installation": {
+      "platform": "Platform",
+      "loaderVersion": "{loader} sürümü",
+      "latestStable": "En son kararlı",
+      "currently": "(şu an {version})",
+      "changeHint": "Değiştirdiğinde dünyalar ve ayarlar korunur; Modrinth'ten yüklenen modlar sonra uyumlu sürümlere güncellenebilir. Dünyalar ilk başlatmada dönüştürülür – güvende olmak için önce kurulumu çoğalt.",
+      "boostTitle": "TRS optimizasyonu",
+      "boostDescription": "Kurulumu arka planda Fabric, TRS Client ve Sodium gibi performans modlarıyla çalıştırır – çok daha fazla FPS. Kapalı = saf vanilla.",
+      "clientDescription": "FPS, CPS, tuş vuruşları ve ping içeren HUD, yakınlaştırma (V) ve tam parlaklık. Oyun içi menüyü Sağ Shift ile aç.",
+      "maintenance": "Bakım",
+      "repairTitle": "Onar",
+      "repairDescription": "Her oyun dosyasını sağlama toplamıyla kontrol eder ve bozuk olanları yeniden indirir. Dünyalara ve modlara dokunulmaz.",
+      "reinstallTitle": "Yeniden yükle",
+      "reinstallDescription": "Oyun sürümünü, mod yükleyiciyi ve kütüphaneleri sıfırdan yeniden indirir. Dünyalar, modlar ve ayarlar korunur.",
+      "reinstallConfirmTitle": "Yeniden yüklensin mi?",
+      "reinstallConfirmText": "Oyun sürümü ve kütüphaneler yeniden indirilecek. Dünyalar, modlar ve ayarlar korunur."
+    },
+    "window": {
+      "customTitle": "Özel pencere ayarları",
+      "customDescription": "Kapalı = genel ayarlar geçerli olur.",
+      "fullscreenTitle": "Tam ekran",
+      "fullscreenDescription": "Oyunu doğrudan tam ekranda başlatır.",
+      "widthTitle": "Genişlik",
+      "widthDescription": "Oyun penceresinin piksel cinsinden genişliği.",
+      "heightTitle": "Yükseklik",
+      "heightDescription": "Oyun penceresinin piksel cinsinden yüksekliği."
+    },
+    "java": {
+      "customTitle": "Özel Java ve bellek ayarları",
+      "customDescription": "Kapalı = genel ayarlar geçerli olur. Boş alanlar da genel değerleri kullanır.",
+      "installTitle": "Java kurulumu",
+      "installDescriptionGlobal": "Bu sürüm Java {major} gerektirir. Boş = genel yol.",
+      "installDescriptionAuto": "Bu sürüm Java {major} gerektirir. Boş = otomatik yükle.",
+      "autoPlaceholder": "Otomatik (Java {major})",
+      "memoryTitle": "Bellek",
+      "memoryDescription": "Oyunun kullanabileceği en fazla RAM. Bilgisayarının belleğinin yarısından fazlası nadiren mantıklıdır.",
+      "memoryMbLabel": "MB cinsinden bellek",
+      "jvmArgsTitle": "JVM argümanları",
+      "jvmArgsDescription": "Java için ek argümanlar, boşlukla ayrılmış.",
+      "jvmArgsNone": "Yok",
+      "optimizedTitle": "Kanıtlanmış G1 ayarları",
+      "optimized": "Optimize edilmiş argümanlar",
+      "envTitle": "Ortam değişkenleri",
+      "envDescription": "Oyun ve başlatma kancaları için geçerlidir."
+    },
+    "hooks": {
+      "intro": "Komutlar {cmd} üzerinden penceresiz olarak, en fazla 2 dakika çalışır. Kullanılabilir: {id}, {name}, {dir}, {mcDir} ve {java}.",
+      "customTitle": "Özel başlatma kancaları",
+      "customDescription": "Kapalı = genel kancalar geçerli olur.",
+      "preLaunchTitle": "Başlatmadan önce",
+      "preLaunchDescription": "Oyun başlamadan önce çalışır. Başarısız olursa oyun başlamaz.",
+      "preLaunchLabel": "Başlatmadan önceki komut",
+      "noCommand": "Komut yok",
+      "wrapperTitle": "Sarmalayıcı",
+      "wrapperDescription": "Java komut satırının önüne eklenir, ör. bir profiler veya başlatıcı.",
+      "wrapperLabel": "Sarmalayıcı komutu",
+      "noWrapper": "Sarmalayıcı yok",
+      "postExitTitle": "Çıkıştan sonra",
+      "postExitDescription": "Oyun kapandıktan sonra çalışır. Hatalar bildirim olarak görünür.",
+      "postExitLabel": "Çıkıştan sonraki komut"
+    },
+    "sync": {
+      "intro": "Genel olarak açılan öğeler başlatmadan önce ortak depodan alınır ve oyun kapandıktan sonra geri yazılır. Burada bunları bu kurulum için ayrı tutabilirsin. Üzerine yazılan dosyalar önce yedeklenir.",
+      "globallyOff": "Genel olarak kapalı – Ayarlar'da Kurulumlar altından aç.",
+      "toggleLabel": "Eşitle: {item}"
+    }
+  },
+  "createInstance": {
+    "title": "Yeni kurulum",
+    "namePlaceholder": "Dünyam",
+    "gameVersion": "Minecraft sürümü",
+    "showSnapshots": "Snapshot'lar ve eski sürümler",
+    "loadingVersions": "Sürümler yükleniyor …",
+    "creating": "Oluşturuluyor …"
+  },
+  "changeVersion": {
+    "title": "Sürümü değiştir",
+    "migrateTitle": "İçeriği uyarla",
+    "current": "Şu an: {version}, {loader} ile",
+    "gameVersion": "Minecraft sürümü",
+    "showSnapshots": "Snapshot'lar ve eski sürümler",
+    "loadingVersions": "Sürümler yükleniyor …",
+    "optionCurrent": "{version} (mevcut)",
+    "optionBeta": "{version} (beta)",
+    "optionBetaCurrent": "{version} (beta, mevcut)",
+    "loaderVersion": "{loader} sürümü",
+    "showBetas": "Betaları göster",
+    "loaderEmptyPlaceholder": "Boş = en son kararlı",
+    "latestRecommended": "En son kararlı (önerilen)",
+    "loaderUnavailable": "{loader}, Minecraft {version} için (henüz) mevcut değil.",
+    "notice": {
+      "title": "Lütfen önce oku",
+      "downgradeLabel": "Daha eski sürüm:",
+      "downgrade": "{label} Daha yeni bir sürümle oynanan dünyalar bozulabilir.",
+      "worlds": "Dünyalar ilk başlatmada dönüştürülür ve sonrasında eski sürümde açılamaz. Daha güvenli: önce kurulumu çoğalt.",
+      "loaderChanged": "{from} modları {to} ile çalışmaz.",
+      "migrate": "Sonrasında Modrinth'ten yüklenen modları otomatik olarak uyumlu sürümlere güncelleyebilirsin."
+    },
+    "planning": "İçeriğin için uyumlu sürümler aranıyor …",
+    "updateCount": "{n} yeni sürümlü | {n} yeni sürümlü",
+    "fineCount": "{n} zaten uyumlu | {n} zaten uyumlu",
+    "missingCount": "{n} uyumlu sürümsüz | {n} uyumlu sürümsüz",
+    "itemChange": "{from} → {to}",
+    "noMatch": "Uyumlu sürüm yok",
+    "fits": "Uyumlu",
+    "saving": "Değiştiriliyor …",
+    "disableMissing": "Uyumsuzları devre dışı bırak",
+    "applyUpdates": "Modları uyumlu sürümlere güncelle",
+    "toasts": {
+      "changed": "Kurulum artık şu sürümde çalışıyor: {version} ({loader})",
+      "disabledMissing": "Uyumsuz içerik devre dışı bırakıldı"
+    },
+    "task": {
+      "stage": "İçerik uyarlanıyor",
+      "done": "{n} öğe uyumlu bir sürüme güncellendi | {n} öğe uyumlu sürümlere güncellendi",
+      "partial": "{total} güncellemeden {n} tanesi başarısız oldu. | {total} güncellemeden {n} tanesi başarısız oldu."
+    }
+  },
+  "versionPicker": {
+    "titleChange": "Sürümü değiştir – {title}",
+    "titlePick": "Sürüm seç – {title}",
+    "compatibleWith": "Uyumlu: {version} ({loader})",
+    "showPrerelease": "Beta ve alfa göster",
+    "none": "Uyumlu sürüm bulunamadı.",
+    "hideChangelog": "Değişiklik günlüğünü gizle",
+    "showChangelog": "Değişiklik günlüğünü göster",
+    "installed": "Yüklü",
+    "latest": "En son",
+    "newer": "Daha yeni",
+    "older": "Daha eski",
+    "type": {
+      "release": "Kararlı",
+      "beta": "Beta",
+      "alpha": "Alfa"
+    },
+    "downgrade": "Düşür",
+    "switch": "Değiştir"
+  },
+  "newGroup": {
+    "title": "Yeni grup",
+    "placeholder": "ör. PvP, Modpack'ler, Arkadaşlarla",
+    "instances": "Kurulumlar",
+    "nameRequired": "Lütfen bir ad gir",
+    "pickInstance": "En az bir kurulum seç – boş grup olmaz.",
+    "created": "Grup oluşturuldu: “{name}”",
+    "creating": "Oluşturuluyor …",
+    "submit": "Grup oluştur"
+  },
+  "history": {
+    "filters": {
+      "all": "Tümü",
+      "play": "Oynama",
+      "content": "İçerik",
+      "instance": "Kurulum"
+    },
+    "entryCount": "{n} kayıt | {n} kayıt",
+    "empty": {
+      "title": "Henüz bir şey olmadı",
+      "text": "Başlatmalar, çökmeler, yüklenen modlar ve sürüm değişiklikleri burada görünür."
+    },
+    "today": "Bugün",
+    "yesterday": "Dün",
+    "titles": {
+      "createdFromModpack": "“{name}” modpack'inden oluşturuldu",
+      "createdAsCopy": "“{name}” kurulumunun kopyası olarak oluşturuldu",
+      "created": "Kurulum oluşturuldu",
+      "imported": "{source} kaynağından içe aktarıldı",
+      "importedUnknown": "Başka bir launcher'dan içe aktarıldı",
+      "launchedServer": "Başlatıldı ve “{server}” sunucusuna bağlanıldı",
+      "launched": "Başlatıldı",
+      "stopped": "Oyun kapatıldı",
+      "crashed": "Çöktü",
+      "modInstalled": "Yüklendi: {name}",
+      "modDowngraded": "Düşürüldü: {name}",
+      "modUpdated": "Güncellendi: {name}",
+      "modRemoved": "Kaldırıldı: {name}",
+      "modEnabled": "Etkinleştirildi: {name}",
+      "modDisabled": "Devre dışı bırakıldı: {name}",
+      "versionSwitched": "Sürüm değiştirildi",
+      "repaired": "Dosyalar kontrol edildi ve onarıldı",
+      "iconChanged": "Görsel değiştirildi",
+      "filesAdded": "{n} dosya eklendi",
+      "fileAdded": "Eklendi: {name}",
+      "bulk": {
+        "enable": "{n} öğe etkinleştirildi | {n} öğe etkinleştirildi",
+        "disable": "{n} öğe devre dışı bırakıldı | {n} öğe devre dışı bırakıldı",
+        "delete": "{n} öğe silindi | {n} öğe silindi",
+        "changed": "{n} öğe değiştirildi | {n} öğe değiştirildi"
+      },
+      "bulkSeveral": {
+        "enable": "Birden fazla öğe etkinleştirildi",
+        "disable": "Birden fazla öğe devre dışı bırakıldı",
+        "delete": "Birden fazla öğe silindi",
+        "changed": "Birden fazla öğe değiştirildi"
+      },
+      "hooksGlobal": "Başlatma kancaları genele sıfırlandı",
+      "hooksCustom": "Özel başlatma kancaları ayarlandı",
+      "movedToGroup": "“{group}” grubuna taşındı",
+      "removedFromGroup": "Gruptan çıkarıldı",
+      "renamed": "Yeniden adlandırıldı"
+    },
+    "details": {
+      "played": "Oynandı: {time}",
+      "exitCode": "Çıkış kodu {code}",
+      "after": "{time} sonra",
+      "asDependencyVersion": "{version} · bağımlılık olarak",
+      "asDependency": "Bağımlılık olarak",
+      "renamed": "“{from}” → “{to}”",
+      "previousGroup": "önceki: {group}"
+    }
+  },
+  "logConsole": {
+    "warnings": "Uyarılar",
+    "errors": "Hatalar",
+    "search": "Ara …",
+    "lineCount": "{n} satır | {n} satır",
+    "copied": "Kopyalandı",
+    "empty": "Henüz çıktı yok – günlükleri canlı görmek için kurulumu başlat.",
+    "jumpToEnd": "↓ Sona git"
+  },
+  "crash": {
+    "crashed": "Oyun çöktü",
+    "exitedUnexpectedly": "Oyun beklenmedik şekilde kapandı (çıkış kodu {code})",
+    "hint": "Günlüğün son satırları genellikle nedeni gösterir. Yardım almak için günlüğü paylaşabilirsin.",
+    "checkFiles": "Dosyaları kontrol et",
+    "uploading": "Yükleniyor …",
+    "shareLog": "Günlüğü paylaş",
+    "linkCopied": "Bağlantı kopyalandı",
+    "shareTitle": "Günlük herkese açık paylaşılsın mı?",
+    "shareText": "Günlük {site} sitesine yüklenecek; bağlantıya sahip herkes okuyabilir. Giriş token'ları ve Windows kullanıcı adın önce kaldırılır.",
+    "upload": "Yükle",
+    "cause": {
+      "corrupt_files": "Bozuk dosyalar",
+      "out_of_memory": "Bellek yetersiz",
+      "wrong_java": "Yanlış Java sürümü",
+      "missing_dependency": "Eksik bağımlılık",
+      "mod_conflict": "Mod çakışması",
+      "graphics_driver": "Ekran kartı sürücüsü"
+    },
+    "diagnosis": {
+      "corrupt_files": "Bir oyun dosyası bozuk (ör. yarıda kalan bir indirme sonrası). “Dosyaları kontrol et” onu yeniden indirir.",
+      "out_of_memory": "Oyunun belleği yetmedi. Kurulum ayarlarından belleği artır.",
+      "wrong_java": "Bir mod daha yeni bir Java sürümüne ihtiyaç duyuyor. Ayarlardaki özel Java yolunu kaldır, launcher doğru sürümü otomatik seçer.",
+      "missing_dependency": "Bir mod, ihtiyaç duyduğu başka bir modu bulamıyor. Hangisi olduğu günlükte hatanın hemen üstünde yazıyor.",
+      "mod_conflict": "İki mod birbiriyle uyuşmuyor. En son eklediğin modları devre dışı bırak ve tekrar başlat.",
+      "graphics_driver": "Ekran kartı sürücüsü çöktü veya OpenGL'i desteklemiyor. Ekran kartı sürücünü güncelle."
+    }
+  },
+  "exportPack": {
+    "title": "Modpack olarak dışa aktar",
+    "summary": "Kısa açıklama (isteğe bağlı)",
+    "summaryPlaceholder": "Bu paket ne hakkında?",
+    "included": "Neler dahil",
+    "nothing": "Bu kurulumda henüz dışa aktarılacak bir şey yok.",
+    "dirSize": "{n} dosya · {size} | {n} dosya · {size}",
+    "hint": "Modrinth'te bulunan modlar yalnızca bağlantı olarak eklenir – paket küçük kalır ve kolayca paylaşılır. Geri kalan her şey içine kopyalanır. Seçilen: {size}.",
+    "runsInBackground": "{stage} – bunu kapatırsan arka planda devam eder.",
+    "exporting": "Dışa aktarılıyor …",
+    "saveAs": "Farklı kaydet …",
+    "phase": {
+      "hashing": "Dosyalar kontrol ediliyor",
+      "lookup": "Modrinth ile eşleştiriliyor",
+      "writing": "Modpack yazılıyor"
+    },
+    "pickLocation": "Konum seç …",
+    "done": "“{file}” yazıldı – Modrinth'ten {downloads} dosya, {overrides} kopyalandı ({size})"
+  },
+  "import": {
+    "title": "Başka bir launcher'dan içe aktar",
+    "intro": "Dünyalar, modlar, ayarlar ve sunucular kopyalanır; orijinale dokunulmaz. Diğer launcher'lardaki giriş verileri asla aktarılmaz.",
+    "search": "Ara …",
+    "searchLabel": "Kurulum ara",
+    "sourceLabel": "Kaynak",
+    "allSources": "Tüm kaynaklar",
+    "scanning": "Taranıyor …",
+    "browseFolder": "Klasöre göz at …",
+    "packProgress": "Modpack %{percent}",
+    "packFile": "Modpack dosyası (.mrpack) …",
+    "nothingFound": "Otomatik olarak hiçbir şey bulunamadı. “Klasöre göz at” ile Minecraft verisi içeren herhangi bir klasörü seçebilirsin, örneğin başka bir istemciden.",
+    "noMatch": "Aramanla eşleşen kurulum yok.",
+    "modCount": "{n} mod | {n} mod",
+    "worldCount": "{n} dünya | {n} dünya",
+    "imported": "İçe aktarıldı",
+    "checkVersion": "Sürümü ve mod yükleyiciyi kontrol et:",
+    "gameVersion": "Minecraft sürümü",
+    "backgroundHint": "Bunu kapatırsan arka planda devam eder.",
+    "task": {
+      "stage": "Kopyalanıyor: {source}",
+      "filesCopied": "{done} / {total} dosya kopyalandı",
+      "done": "İçe aktarıldı: “{name}”",
+      "packTitle": "Dosyadan modpack",
+      "pickFile": "Dosya seç …",
+      "packDone": "Modpack içe aktarıldı"
+    }
+  },
+  "envEditor": {
+    "valuePlaceholder": "Değer",
+    "nameLabel": "Değişken {n} adı",
+    "valueLabel": "Değişken {n} değeri",
+    "remove": "Değişkeni kaldır: {name}",
+    "global": "Genel: {vars}",
+    "add": "Değişken ekle"
+  },
+  "javaPath": {
+    "foundUnknown": "Bulundu (sürüm bilinmiyor)",
+    "wrongMajor": "Java {found} – burada Java {expected} bekleniyor",
+    "notFoundMajor": "Java {major} bulunamadı",
+    "notFound": "Java kurulumu bulunamadı",
+    "searching": "Aranıyor …",
+    "detect": "Algıla",
+    "managed": "launcher'dan"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "footer": {
+      "clientModUpdate": "TRS Client: güncelleme indirildi ({version})",
+      "clientModCurrent": "TRS Client: sürüm {version} (güncel)"
+    },
+    "appearance": {
+      "colorScheme": "Renk teması",
+      "themes": {
+        "dark": "Koyu",
+        "oled": "OLED",
+        "light": "Açık",
+        "system": "Sistem"
+      },
+      "accents": {
+        "redstone": "Redstone",
+        "lamp": "Lamba",
+        "emerald": "Zümrüt",
+        "lapis": "Lapis",
+        "amethyst": "Ametist"
+      },
+      "accentTitle": "Vurgu rengi",
+      "accentDescription": "Düğmeler, etkin öğeler ve redstone kablosu için renk.",
+      "accentLabel": "Vurgu rengi: {name}",
+      "advancedRenderingTitle": "Gelişmiş görüntüleme",
+      "advancedRenderingDescription": "Pencerelerin ve çubukların arkasında bulanıklık efektleri. Kapatmak yavaş bilgisayarlarda biraz performans kazandırır.",
+      "animatedBackgroundTitle": "Animasyonlu arka plan",
+      "animatedBackgroundDescription": "Her sayfanın arkasında sakin bir redstone devresi. Kapalıyken yalnızca derin kayrak deseni gösterilir."
+    },
+    "features": {
+      "instancePage": "Kurulum sayfası",
+      "historyTabTitle": "Geçmiş sekmesi",
+      "historyTabDescription": "Kurulum başına başlatmalar, çökmeler, yüklenen modlar ve sürüm değişiklikleri.",
+      "screenshotsTabTitle": "Ekran görüntüleri sekmesi",
+      "screenshotsTabDescription": "Bir kurulumun ekran görüntülerinden oluşan galeri.",
+      "worldsTabTitle": "Dünyalar sekmesi",
+      "worldsTabDescription": "Bir kurulumun dünyalarının listesi.",
+      "sidebar": "Sol kenar çubuğu",
+      "sidebarRecentTitle": "Hızlı kurulumlar",
+      "sidebarRecentDescription": "Son oynadığın kurulumlar, simgeleriyle birlikte gezinmenin altında.",
+      "sidebarAccountTitle": "Hesap kutucuğu",
+      "sidebarAccountDescription": "Kenar çubuğunun altında skin kafasıyla birlikte etkin hesap."
+    },
+    "behavior": {
+      "title": "Davranış",
+      "closeOnLaunchTitle": "Oyun başlayınca launcher'ı küçült",
+      "closeOnLaunchDescription": "Pencere başlatmada yoldan çekilir; launcher'ı kapatsan bile oyun çalışmaya devam eder.",
+      "compactLibraryTitle": "Kompakt kütüphane",
+      "compactLibraryDescription": "Daha küçük kutucuklar – bir bakışta daha fazla kurulum.",
+      "showPlayTimeTitle": "Oynama süresini göster",
+      "showPlayTimeDescription": "Kutucuklarda ve kurulum sayfalarında toplam oynama süresi.",
+      "showSnapshotsTitle": "Snapshot'ları göster",
+      "showSnapshotsDescription": "Sürüm seçicide snapshot'ları ve eski sürümleri varsayılan olarak dahil et.",
+      "restartOnboardingTitle": "Başlangıç sihirbazını tekrar çalıştır",
+      "restartOnboardingDescription": "Giriş yapma ve ilk kurulum adımlarında sana bir kez daha rehberlik eder."
+    },
+    "profile": {
+      "title": "Minecraft hesapları",
+      "added": "Eklendi: {time}",
+      "use": "Kullan",
+      "none": "Henüz giriş yapılmış hesap yok.",
+      "manage": "Hesapları yönet"
+    },
+    "privacy": {
+      "title": "Gizlilik",
+      "logUploadTitle": "Günlük paylaşımına izin ver",
+      "logUploadDescription": "“Günlüğü paylaş” oyun günlüğünü mclo.gs'e yükler – kimlik bilgileri ve kullanıcı adı önce gizlenir. Kapalıyken düğme çalışmaz.",
+      "telemetryTitle": "Telemetri",
+      "telemetryDescription": "TRS Launcher hiçbir kullanım veya çökme verisi toplamaz. Açılacak bir şey yok."
+    },
+    "defaults": {
+      "title": "Tüm kurulumlar için varsayılanlar",
+      "hint": "Kurulumlar tek tek değerleri kendi ayarlarında geçersiz kılabilir.",
+      "memoryTitle": "Bellek",
+      "memoryDescription": "Oyunun kullanabileceği en fazla RAM miktarı.",
+      "maxMemoryLabel": "Maksimum bellek",
+      "maxMemoryMbLabel": "MB cinsinden maksimum bellek",
+      "minMemoryTitle": "Minimum bellek",
+      "minMemoryDescription": "Java için başlangıç değeri (-Xms), MB cinsinden.",
+      "jvmArgsTitle": "JVM argümanları",
+      "jvmArgsDescription": "Java için ek argümanlar.",
+      "optimizedArgs": "Optimize edilmiş argümanlar",
+      "envTitle": "Ortam değişkenleri",
+      "envDescription": "Oyun ve başlatma kancaları için geçerlidir.",
+      "fullscreenTitle": "Tam ekran",
+      "fullscreenDescription": "Oyunları tam ekranda başlat.",
+      "resolutionTitle": "Pencere boyutu",
+      "resolutionDescription": "Oyun penceresinin genişliği × yüksekliği.",
+      "windowWidth": "Pencere genişliği",
+      "windowHeight": "Pencere yüksekliği",
+      "dedicatedGpuTitle": "Yüksek performanslı ekran kartı",
+      "dedicatedGpuDescription": "İki grafik çipli dizüstü bilgisayarlar için: Windows oyuna harici GPU'yu verir."
+    },
+    "hooks": {
+      "title": "Başlatma kancaları",
+      "noCommand": "Komut yok",
+      "preLaunchTitle": "Başlatmadan önce",
+      "preLaunchDescription": "Her başlatmadan önce cmd /C ile çalışır; başarısız olursa oyun başlamaz.",
+      "preLaunchLabel": "Başlatmadan önceki komut",
+      "wrapperTitle": "Sarmalayıcı",
+      "wrapperDescription": "Java komut satırının önüne eklenir.",
+      "wrapperPlaceholder": "Sarmalayıcı yok",
+      "wrapperLabel": "Sarmalayıcı komutu",
+      "postExitTitle": "Çıkıştan sonra",
+      "postExitDescription": "Oyun kapandıktan sonra çalışır.",
+      "postExitLabel": "Çıkıştan sonraki komut"
+    },
+    "sync": {
+      "title": "Eşitleme",
+      "description": "Açık olan her şey başlatmadan önce ortak depodan alınır ve çıkıştan sonra geri yazılır – böylece her kurulumda aynı ayarlar olur. Bir dosyaya sahip ilk kurulum başlangıç noktasını sağlar; üzerine yazılan dosyalar yedeklenir.",
+      "toggleLabel": "Eşitle: {item}"
+    },
+    "java": {
+      "title": "Java kurulumları",
+      "hint": "Boş = launcher doğru Java sürümünü Mojang'dan otomatik olarak yükler.",
+      "slots": {
+        "java8": "Minecraft 1.16'ya kadar",
+        "java17": "Minecraft 1.17 – 1.20.4",
+        "java21": "Minecraft 1.20.5 – 1.21.x",
+        "java25": "Minecraft 26.x"
+      },
+      "installing": "Yükleniyor … %{percent}",
+      "installRecommended": "Önerileni yükle",
+      "autoPlaceholder": "Otomatik (Java {major})",
+      "taskStage": "Java çalışma ortamı indiriliyor",
+      "taskDone": "Java {major} yüklendi",
+      "globalTitle": "Tüm sürümler için",
+      "globalDescription": "Yalnızca her şey için tek bir Java kullanılacaksa gerekir – yukarıdaki girdiler önceliklidir.",
+      "notSet": "Ayarlanmadı"
+    },
+    "storage": {
+      "title": "Depolama",
+      "instances": "Kurulumlar",
+      "sharedFiles": "Ortak oyun dosyaları",
+      "unused": "Artık gerekmiyor",
+      "verifyTitle": "Kontrol et ve onar",
+      "verifyDescription": "Ortak oyun dosyalarını sağlama toplamıyla kontrol eder. Bozuk dosyalar kaldırılır ve bir sonraki başlatmada yeniden indirilir.",
+      "verifying": "Kontrol ediliyor …",
+      "verifyRemoved": "{checked} dosya kontrol edildi, {removed} bozuk dosya kaldırıldı – bir sonraki başlatmada yeniden indirilecek.",
+      "verifyOk": "{checked} dosya kontrol edildi – her şey yolunda.",
+      "cleanTitle": "Kullanılmayanları sil",
+      "cleanDescription": "{n} oyun sürümüne artık hiçbir kurulum ihtiyaç duymuyor ({size}). Gerekirse yeniden indirilir. | {n} oyun sürümüne artık hiçbir kurulum ihtiyaç duymuyor ({size}). Gerekirse yeniden indirilir.",
+      "cleanDescriptionEmpty": "Artık hiçbir kurulumun ihtiyaç duymadığı oyun sürümleri.",
+      "cleaning": "Siliniyor …",
+      "freed": "{size} boşaltıldı",
+      "confirmTitle": "Kullanılmayanlar silinsin mi?",
+      "confirmText": "{n} oyun sürümü ({size}) silinecek. Kurulumlara, dünyalara ve modlara dokunulmaz. | {n} oyun sürümü ({size}) silinecek. Kurulumlara, dünyalara ve modlara dokunulmaz.",
+      "dataDirTitle": "Uygulama klasörü"
+    },
+    "network": {
+      "title": "Ağ",
+      "autoFirewallTitle": "Java sürümlerine otomatik izin ver",
+      "autoFirewallDescription": "Aksi halde Windows her Java sürümü için Minecraft'ın ağa erişip erişemeyeceğini sorar (ör. LAN dünyaları için). Yeni Java sürümlerine başlatmadan önce tek bir yönetici istemiyle izin verilir.",
+      "firewallTitle": "Güvenlik duvarı erişimi",
+      "firewallDescription": "Kuralı launcher'ın tüm Java sürümleri için tek seferde ekler – tek bir yönetici istemi.",
+      "noJava": "Henüz Java sürümü yüklü değil",
+      "missing": "{total} sürümden {missing} tanesine henüz izin verilmedi",
+      "allAllowed": "Tümüne izin verildi",
+      "waitingForWindows": "Windows bekleniyor …",
+      "allowAll": "Şimdi tümüne izin ver",
+      "allowed": "{n} Java programına ağ erişimi izni verildi | {n} Java programına ağ erişimi izni verildi",
+      "downloadsTitle": "Paralel indirmeler",
+      "downloadsDescription": "Aynı anda kaç dosya indirileceği. Yavaş bağlantıda daha az kullan."
+    }
+  },
+  "settingsShell": {
+    "sectionsLabel": "Bölümler"
+  },
+  "onboarding": {
+    "steps": {
+      "language": "Dil",
+      "welcome": "Hoş geldin",
+      "login": "Giriş yap",
+      "import": "İçe aktar",
+      "instance": "İlk kurulum",
+      "done": "Bitti"
+    },
+    "skipSetup": "Sihirbazı atla",
+    "welcome": {
+      "text": "Her Minecraft sürümü, her mod yükleyici, modlar ve modpack'ler – tek bir yerde ve oynamaya sadece bir tık uzaklıkta.",
+      "start": "Başlayalım"
+    },
+    "login": {
+      "title": "Giriş yap",
+      "text": "Minecraft'ı satın aldığın Microsoft hesabıyla. Şifreni yalnızca tarayıcında Microsoft'a girersin – launcher onu asla görmez.",
+      "signedIn": "Giriş yapıldı"
+    },
+    "import": {
+      "title": "İçe aktar",
+      "text": "Diğer launcher'lardan dünyaları, modları, ayarları ve sunucuları getir. Orijinale dokunulmaz ve giriş verileri asla kopyalanmaz.",
+      "none": "Başka launcher bulunamadı – hemen devam edebilirsin.",
+      "modCount": "{n} mod | {n} mod",
+      "worldCount": "{n} dünya | {n} dünya",
+      "imported": "İçe aktarıldı",
+      "importedToast": "İçe aktarıldı: “{name}”"
+    },
+    "instance": {
+      "title": "İlk kurulum",
+      "text": "Kurulum; kendi sürümü, modları ve dünyaları olan ayrı bir Minecraft kurulumudur. Daha sonra istediğin kadar oluşturabilirsin.",
+      "presetLabel": "Şablon",
+      "vanillaText": "Oyun, tam olarak Mojang'ın sunduğu haliyle.",
+      "fabricTitle": "Fabric + Performans",
+      "fabricText": "Daha fazla FPS için Sodium, Lithium ve diğerleriyle.",
+      "customTitle": "Özel sürüm",
+      "customText": "Sürümü ve mod yükleyiciyi kendin seç.",
+      "allVersions": "Tüm sürümler",
+      "creatingPack": "Kurulum hazır – performans modları Modrinth'ten indiriliyor …",
+      "creatingInstance": "Kurulum oluşturuluyor …",
+      "chooseVersion": "Sürüm seç",
+      "installingPack": "Performans paketi yükleniyor …",
+      "creating": "Oluşturuluyor …",
+      "create": "Kurulum oluştur",
+      "packInstalled": "Performans paketi yüklendi ({n} dosya) | Performans paketi yüklendi ({n} dosya)"
+    },
+    "done": {
+      "title": "Her şey hazır",
+      "text": "Ayarladıkların burada – her şeyi daha sonra istediğin zaman değiştirebilirsin.",
+      "account": "Hesap",
+      "notSignedIn": "Giriş yapılmadı",
+      "notSignedInHint": "Bunu istediğin zaman Hesaplar bölümünden yapabilirsin.",
+      "noInstance": "Henüz kurulum yok",
+      "noInstanceHint": "İstediğin zaman ana sayfada veya Kütüphane'de bir tane oluştur.",
+      "home": "Ana sayfaya git",
+      "playNow": "Şimdi oyna"
+    }
+  },
+  "accounts": {
+    "title": "Hesaplar",
+    "subtitle": "Birden fazla Microsoft hesabı – tek tıkla geçiş yap.",
+    "signInWithCode": "Kodla giriş yap",
+    "add": "Hesap ekle",
+    "activeHint": "Etkin – oyun başlatılırken kullanılır",
+    "microsoftAccount": "Microsoft hesabı",
+    "use": "Kullan",
+    "signOut": "Çıkış yap",
+    "empty": {
+      "title": "Henüz hesap yok",
+      "text": "Minecraft'ı satın aldığın Microsoft hesabıyla giriş yap. Şifreni yalnızca tarayıcında Microsoft'a girersin – launcher onu asla görmez."
+    },
+    "login": {
+      "signInMicrosoft": "Microsoft ile giriş yap",
+      "browserOpened": "Giriş tarayıcında açıldı. Orada tamamla – launcher otomatik olarak devam eder.",
+      "enterCode": "Bu kodu az önce açılan Microsoft sayfasına gir:",
+      "copyCode": "Kodu kopyala",
+      "clickToCopy": "Kopyalamak için tıkla",
+      "page": "Sayfa: {url}",
+      "requestingCode": "Kod isteniyor …",
+      "waiting": "Microsoft bekleniyor …",
+      "notApprovedHint": "Bu bir launcher hatası değil: Microsoft ve Xbox girişi çalıştı, yalnızca Mojang'ın uygulama onayı hâlâ bekliyor. Onay verilir verilmez giriş güncelleme gerekmeden çalışacak."
+    },
+    "remove": {
+      "title": "Hesaptan çıkış yapılsın mı?",
+      "text": "{name} launcher'dan kaldırılacak. Dünyalar ve kurulumlar korunur."
+    }
+  },
+  "skins": {
+    "title": "Skinler",
+    "subtitle": "Seç, önizlemede dene, sonra her şeyi tek seferde uygula.",
+    "savingCurrent": "Kaydediliyor …",
+    "saveCurrent": "Mevcut skini kaydet",
+    "add": "Skin ekle",
+    "loadErrorHint": "Kayıtlı skinlerini yine de yönetebilirsin – hesabındaki skini değiştirmek için giriş ve internet bağlantısı gerekir.",
+    "previewLabel": "Önizleme ve taslak",
+    "previewHint": "Döndürmek için sürükle · Yakınlaştırmak için kaydır",
+    "unapplied": "Uygulanmadı",
+    "endTrsPreview": "TRS önizlemesini bitir",
+    "animation": {
+      "walk": "Yürü",
+      "idle": "Boşta",
+      "none": "Dur"
+    },
+    "model": "Model",
+    "variants": {
+      "classic": "Klasik",
+      "slim": "İnce"
+    },
+    "variantHints": {
+      "classic": "4 piksel genişliğinde kollar (Steve)",
+      "slim": "3 piksel genişliğinde kollar (Alex)"
+    },
+    "skin": "Skin",
+    "cape": "Pelerin",
+    "defaultSkin": "Varsayılan skin",
+    "currentSkin": "Mevcut skin",
+    "noCape": "Yok",
+    "submitting": "Gönderiliyor …",
+    "discard": "Vazgeç",
+    "applyHint": "Bir skin, model ve pelerin seç – “Uygula”ya tıklayana kadar hiçbir şey değişmez.",
+    "mySkins": "Skinlerim",
+    "onAccount": "{variant} · hesabında",
+    "defaultSkinHint": "Mojang'dan Steve / Alex",
+    "tryOnLabel": "Dene: {name}",
+    "selected": "Seçildi",
+    "tryOn": "Dene",
+    "empty": {
+      "title": "Henüz kendi skinin yok",
+      "text": "Koleksiyonuna 64×64 PNG dosyaları ekle – sonra onları deneyip birlikte uygulayabilirsin."
+    },
+    "mojangCapes": "Mojang pelerinleri",
+    "worn": "giyiliyor",
+    "noCapes": "Bu hesabın hiç pelerini yok. Pelerinler yalnızca Mojang'dan gelir – Migrator pelerini gibi.",
+    "addDialog": {
+      "namePlaceholder": "ör. Kış skini",
+      "fileHint": "Sonra dosya penceresi açılır. 64×64 (eski skinler için 64×32) PNG dosyalarına izin verilir.",
+      "chooseFile": "Dosya seç"
+    },
+    "addedToast": "“{name}” koleksiyonuna eklendi",
+    "savedToast": "Mevcut skin kaydedildi: “{name}”",
+    "deleteDialog": {
+      "title": "Skin silinsin mi?",
+      "text": "{name} koleksiyonundan kaldırılacak. Giydiğin skin değişmez."
+    },
+    "sync": {
+      "applying": "Uygulanıyor …",
+      "rateLimited": "Mojang yavaşlatıyor – otomatik uygulanacak: {time}",
+      "rateLimitedSoon": "Mojang yavaşlatıyor – birazdan otomatik uygulanacak",
+      "network": "Mojang'a ulaşılamıyor – yeniden denenecek: {time}",
+      "networkSoon": "Mojang'a ulaşılamıyor – birazdan yeniden denenecek",
+      "pacing": "Art arda çok fazla değişiklik – uygulanacak: {time}",
+      "pacingSoon": "Art arda çok fazla değişiklik – birazdan uygulanacak",
+      "failed": "Değişiklik uygulanamadı."
+    },
+    "viewer": {
+      "label": "3D skin önizlemesi",
+      "failed": "3D önizleme başlatılamadı. Ekran kartı sürücülerin muhtemelen WebGL'i desteklemiyor."
+    }
+  },
+  "validation": {
+    "invalidCharacters": "Geçersiz karakterler içeriyor",
+    "nameRequired": "Lütfen bir ad gir",
+    "maxChars": "En fazla {max} karakter",
+    "javaPathInvalid": "Java yolu geçersiz",
+    "javaPathNotJava": "Java yolu java.exe veya javaw.exe dosyasını göstermeli",
+    "commandTooLong": "Komutlar: en fazla {max} karakter",
+    "commandInvalidChars": "Komut geçersiz karakterler içeriyor",
+    "envKeyTooLong": "Değişken adları: en fazla {max} karakter",
+    "envKeyFormat": "Değişken adları: yalnızca harf, rakam ve _ (başta olamaz)",
+    "envValueTooLong": "Değerler: en fazla {max} karakter",
+    "envValueInvalidChars": "Değer geçersiz karakterler içeriyor",
+    "envTooMany": "En fazla {max} ortam değişkeni",
+    "envDuplicate": "Bir ortam değişkeni iki kez geçiyor",
+    "jvmArgsInvalidChars": "JVM argümanları geçersiz karakterler içeriyor",
+    "groupTooLong": "Grup adları: en fazla {max} karakter",
+    "groupInvalidChars": "Grup adı geçersiz karakterler içeriyor",
+    "minAboveMax": "Minimum, maksimumdan yüksek olamaz",
+    "addressRequired": "Lütfen bir adres gir",
+    "addressFormat": "play.example.com veya play.example.com:25565 biçimini kullan",
+    "nameInvalidChars": "Ad geçersiz karakterler içeriyor",
+    "versionRequired": "Lütfen bir sürüm gir",
+    "versionFormat": "Yalnızca harf, rakam ve . - _ +",
+    "descriptionInvalidChars": "Açıklama geçersiz karakterler içeriyor",
+    "folderRequired": "Lütfen en az bir klasör seç",
+    "invalidInput": "Geçersiz giriş"
+  },
+  "titleBar": {
+    "forward": "İleri",
+    "ctrl": "Ctrl",
+    "minimize": "Simge durumuna küçült",
+    "maximize": "Büyüt",
+    "restore": "Önceki boyut",
+    "running": {
+      "none": "Çalışan kurulum yok",
+      "count": "{n} kurulum çalışıyor | {n} kurulum çalışıyor",
+      "menuLabel": "Çalışan kurulumlar",
+      "firstStarted": "İlk başlatılan",
+      "uptime": "{time} süredir çalışıyor",
+      "openLogs": "Günlükleri aç",
+      "openLogsNamed": "Günlükleri aç: {name}"
+    }
+  },
+  "nav": {
+    "mainLabel": "Ana gezinme",
+    "home": "Ana sayfa",
+    "library": "Kütüphane",
+    "discover": "Keşfet",
+    "servers": "Sunucular",
+    "screenshots": "Ekran görüntüleri",
+    "skins": "Skinler",
+    "friends": "Arkadaşlar",
+    "admin": "Yönetim",
+    "runningCount": "{n} çalışıyor | {n} çalışıyor",
+    "friendRequests": "{n} bekleyen arkadaşlık isteği | {n} bekleyen arkadaşlık isteği",
+    "quickLaunch": "Hızlı başlat",
+    "openNamed": "Aç: {name}",
+    "newInstance": "Yeni kurulum",
+    "searchShortcut": "Ara (Ctrl+K)",
+    "searchTip": "Ara · Ctrl K",
+    "settings": "Ayarlar",
+    "accountNamed": "Hesap: {name}",
+    "signIn": "Giriş yap",
+    "collapseLabel": "Kenar çubuğunu daralt",
+    "expandLabel": "Kenar çubuğunu genişlet",
+    "collapse": "Daralt",
+    "expand": "Genişlet"
+  },
+  "accountMenu": {
+    "menuLabel": "Hesaplar",
+    "playingAs": "Oynayan",
+    "switching": "Geçiliyor …",
+    "switch": "Geç",
+    "noAccount": "Henüz hesap yok – giriş yapmadan yalnızca demo modu başlar.",
+    "add": "Hesap ekle",
+    "manage": "Hesapları yönet"
+  },
+  "palette": {
+    "dialogLabel": "Arama ve komutlar",
+    "placeholder": "Kurulum, mod, ayar veya işlem …",
+    "resultsLabel": "Sonuçlar",
+    "noResults": "Hiçbir şey bulunamadı – farklı bir yazım denesen?",
+    "hints": {
+      "select": "seç",
+      "open": "aç",
+      "second": "ikinci işlem"
+    },
+    "resultCount": "{n} sonuç | {n} sonuç",
+    "groups": {
+      "instances": "Kurulumlar",
+      "mods": "Modlar",
+      "servers": "Sunucular",
+      "settings": "Ayarlar",
+      "pages": "Sayfalar",
+      "actions": "İşlemler"
+    },
+    "pages": {
+      "accounts": "Hesaplar"
+    },
+    "openPage": "Sayfayı aç",
+    "running": "çalışıyor",
+    "modEnabled": "etkin",
+    "modDisabled": "devre dışı",
+    "projectPage": "Proje sayfası",
+    "joinWith": "“{name}” ile katıl",
+    "keywords": {
+      "home": "ana sayfa başlangıç home start",
+      "library": "kurulumlar kütüphane instances library",
+      "discover": "modrinth modlar modpack ara keşfet göz at mods search browse",
+      "servers": "sunucu listesi server list",
+      "accounts": "hesap giriş oturum microsoft account sign in login",
+      "screenshots": "görseller resimler galeri ekran görüntüsü images gallery",
+      "skins": "pelerin skin cape",
+      "friends": "arkadaşlar çevrimiçi istekler trs friends online requests",
+      "settings": "ayarlar seçenekler tercihler settings options",
+      "newInstance": "ekle oluştur yeni add create new",
+      "import": "içe aktar taşı prism multimc curseforge import migrate",
+      "modpacks": "modpack paket yükle pack install",
+      "dataDir": "klasör gezgin dosyalar folder explorer files"
+    },
+    "actions": {
+      "newInstance": {
+        "title": "Yeni kurulum oluştur",
+        "subtitle": "Vanilla, Fabric, Quilt, Forge veya NeoForge"
+      },
+      "import": {
+        "title": "Başka bir launcher'dan içe aktar",
+        "subtitle": "Vanilla launcher, Prism/MultiMC, CurseForge"
+      },
+      "modpacks": {
+        "title": "Modpack'lere göz at",
+        "subtitle": "Modrinth'ten hazır paketler"
+      },
+      "dataDir": {
+        "title": "Veri klasörünü aç",
+        "subtitle": "Kurulumları ve ayarları içeren klasör"
+      }
+    }
+  },
+  "tasks": {
+    "title": "Görevler",
+    "launcherUpdate": "Launcher güncellemesi",
+    "launcherUpdatePercent": "Launcher güncellemesi %{percent}",
+    "percent": "%{percent}",
+    "paused": "Duraklatıldı",
+    "pausedShort": "duraklatıldı",
+    "remaining": "{time} kaldı",
+    "failed": "başarısız",
+    "showNamed": "Görevleri göster: {title}",
+    "activeCount": "Görevler: {count} etkin",
+    "close": "Görevleri kapat",
+    "empty": {
+      "title": "Çalışan bir şey yok",
+      "text": "İndirmeler, yüklemeler ve içe aktarmalar burada görünür – sayfa değiştirsen bile."
+    },
+    "activeSection": "Etkin görevler",
+    "doneSection": "Biten görevler",
+    "resume": "Devam et",
+    "pause": "Duraklat",
+    "resumeNamed": "Devam et: {title}",
+    "pauseNamed": "Duraklat: {title}",
+    "cancelNamed": "İptal et: {title}",
+    "progressNamed": "{title}: ilerleme",
+    "updateBackground": "Güncelleme arka planda indiriliyor",
+    "clearAll": "Tümünü temizle",
+    "retryShort": "Yeniden dene",
+    "retryNamed": "Yeniden dene: {title}",
+    "openNamed": "Aç: {title}",
+    "removeNamed": "Geçmişten kaldır: {title}",
+    "justNow": "az önce",
+    "eta": {
+      "seconds": "{seconds} sn",
+      "minutes": "{minutes} dk",
+      "hours": "{hours} sa",
+      "hoursMinutes": "{hours} sa {minutes} dk"
+    },
+    "kind": {
+      "modpack": "Modpack",
+      "modpackFile": "Dosyadan modpack",
+      "content": "İçerik yüklendi",
+      "contentUpdate": "İçerik güncellendi",
+      "performancePack": "Performans paketi",
+      "java": "Java yüklendi",
+      "import": "Kurulum içe aktarıldı",
+      "export": "Modpack dışa aktarıldı",
+      "create": "Yeni kurulum",
+      "duplicate": "Kurulum çoğaltıldı",
+      "repair": "Kurulum onarıldı",
+      "reinstall": "Yeniden yüklendi",
+      "versionChange": "Sürüm değiştirildi",
+      "launch": "Oyun başlatma"
+    },
+    "stage": {
+      "preparing": "Hazırlanıyor",
+      "cancelling": "İptal ediliyor …",
+      "packLoading": "Modpack indiriliyor",
+      "packFiles": "Modlar indiriliyor",
+      "packOverrides": "Dosyalar çıkarılıyor",
+      "checkingFiles": "Dosyalar kontrol ediliyor",
+      "reinstalling": "Yeniden yükleniyor",
+      "installingInto": "Yükleniyor: {name}"
+    },
+    "toast": {
+      "done": "{title} tamamlandı",
+      "failed": "{title}: {error}",
+      "openInstance": "Kurulumu aç",
+      "showTasks": "Görevleri göster",
+      "details": "Ayrıntılar",
+      "modpackReady": "Modpack hazır: “{name}”",
+      "repairDone": "Tüm dosyalar kontrol edildi – bozuk olanlar yeniden indirildi",
+      "reinstallDone": "Kurulum yeniden yüklendi",
+      "contentVersionInstalled": "{title}: sürüm {version} yüklendi",
+      "contentInstalled": "{title} yüklendi",
+      "contentWithDependencies": "{title} ve {n} bağımlılık yüklendi | {title} ve {n} bağımlılık yüklendi"
+    }
+  },
+  "toasts": {
+    "times": "{count} kez"
+  },
+  "updater": {
+    "restartToUpdate": "Güncellemek için yeniden başlat",
+    "installing": "Güncelleniyor …",
+    "retry": "Güncellemeyi yeniden dene",
+    "downloading": "TRS Launcher {version} indiriliyor … %{percent}",
+    "failed": "Güncelleme başarısız: {reason}",
+    "ready": "TRS Launcher {version} hazır.",
+    "readyRunning": "TRS Launcher {version} hazır. Çalışan oyunlar çalışmaya devam eder.",
+    "downloadInstaller": "Yükleyiciyi indir",
+    "splash": "Güncelleniyor – birazdan yeniden başlatılıyor …"
+  },
+  "play": {
+    "stopGame": "Oyunu durdur",
+    "cancelLaunch": "Başlatmayı iptal et",
+    "runningStop": "Çalışıyor – durdur",
+    "playNamed": "Oyna: {name}",
+    "stopNamed": "Durdur: {name}",
+    "starting": "Başlatılıyor …",
+    "startingShort": "Başlatılıyor",
+    "runningNow": "Şu an çalışıyor",
+    "preparing": "Hazırlanıyor …"
+  },
+  "instanceCard": {
+    "actionsFor": "İşlemler: {name}",
+    "settings": "Ayarlar",
+    "moveToGroup": "Gruba taşı",
+    "removeFromGroup": "Gruptan çıkar",
+    "newGroup": "+ Yeni grup …"
+  },
+  "home": {
+    "greeting": {
+      "lateNight": "İyi geceler",
+      "lateNightNamed": "İyi geceler, {name}",
+      "morning": "Günaydın",
+      "morningNamed": "Günaydın, {name}",
+      "day": "Merhaba",
+      "dayNamed": "Merhaba, {name}",
+      "evening": "İyi akşamlar",
+      "eveningNamed": "İyi akşamlar, {name}"
+    },
+    "lastPlayed": "Son oynanan: {name}",
+    "playedTime": "Oynandı: {time}",
+    "openInstance": "Kurulumu aç",
+    "empty": {
+      "title": "Oynamaya hazır",
+      "text": "İlk kurulumunu oluştur – vanilla veya mod yükleyiciyle – ya da hemen hazır bir modpack al.",
+      "create": "Kurulum oluştur",
+      "modpacks": "Modpack'leri gör"
+    },
+    "continue": {
+      "title": "Kaldığın yerden devam et",
+      "totalPlayed": "Toplam oynama: {time}",
+      "toLibrary": "Kütüphaneye git"
+    },
+    "add": {
+      "newInstanceHint": "Vanilla veya mod yükleyiciyle",
+      "discoverModpack": "Modpack keşfet",
+      "discoverModpackHint": "Modrinth'ten hazır paketler",
+      "importHint": "Prism, CurseForge veya vanilla'dan"
+    },
+    "servers": {
+      "manageAll": "Tümünü yönet",
+      "joinHint": "“{name}” başlatılır ve doğrudan bağlanır",
+      "joinHintNone": "Önce bir kurulum oluştur",
+      "add": "Sunucu ekle",
+      "addHint": "Canlı durum ve tek tıkla katılma",
+      "addHintEmpty": "Sunucuların canlı durumuyla – tek tıkla katıl"
+    }
+  },
+  "news": {
+    "title": "Haberler",
+    "filters": {
+      "all": "Tümü",
+      "patchNotes": "Güncellemeler",
+      "mojang": "Minecraft",
+      "modrinth": "Modlar",
+      "launcher": "Launcher"
+    },
+    "sourceMinecraftUpdate": "Minecraft güncellemesi",
+    "offlineHint": "Son kayıtlı sürüm – şu an çevrimdışı",
+    "sourceLabel": "Kaynak",
+    "reload": "Yeniden yükle",
+    "reloadLabel": "Haberleri yeniden yükle",
+    "empty": "Şu an burada yeni bir şey yok.",
+    "readPatchNotes": "Yama notlarını oku",
+    "openInBrowser": "Tarayıcıda aç",
+    "launcherReleased": "{title} çıktı"
+  },
+  "game": {
+    "preparing": "Minecraft hazırlanıyor",
+    "crashed": "Oyun beklenmedik şekilde kapandı – nedeni genellikle günlüklerde görünür."
+  },
+  "settingsSections": {
+    "groups": {
+      "interface": "Arayüz",
+      "account": "Hesap",
+      "instances": "Kurulumlar"
+    },
+    "app": {
+      "appearance": "Görünüm",
+      "features": "Özellikler",
+      "behavior": "Davranış",
+      "language": "Dil",
+      "profile": "Profil",
+      "privacy": "Gizlilik",
+      "defaults": "Varsayılan ayarlar",
+      "java": "Java kurulumları",
+      "storage": "Depolama",
+      "network": "Ağ"
+    },
+    "instance": {
+      "general": "Genel",
+      "installation": "Yükleme",
+      "window": "Pencere",
+      "java": "Java ve bellek",
+      "hooks": "Başlatma kancaları",
+      "sync": "Eşitleme"
+    }
+  },
+  "trs": {
+    "invalidData": "TRS verileri geçersiz.",
+    "validation": {
+      "playerName": "Minecraft adları 1–16 karakterlidir (A–Z, 0–9, _).",
+      "target": "Lütfen bir Minecraft adı gir (1–16 karakter: A–Z, 0–9, _).",
+      "codeTooLong": "Kod çok uzun.",
+      "codeFormat": "Kodlar 20 karakterlidir, ör. 7K3QF-M2XPA-9RTVB-C4HJN.",
+      "max32": "En fazla 32 karakter.",
+      "capeNameChars": "Yalnızca harf, rakam, boşluk ve . , ' ! ? & ( ) + - _",
+      "max200": "En fazla 200 karakter.",
+      "invalidChars": "Geçersiz karakterler içeriyor.",
+      "minUses": "En az 1 kullanım.",
+      "maxUses": "En fazla 100.000 kullanım.",
+      "minCount": "En az 1 kod.",
+      "maxCount": "Aynı anda en fazla 100 kod.",
+      "invalidExpiry": "Geçersiz son kullanma tarihi.",
+      "expiryPast": "Son kullanma tarihi geçmişte."
+    },
+    "unlock": {
+      "own": "Özel",
+      "free": "Ücretsiz",
+      "code": "Kod",
+      "team": "Ekip",
+      "locked": "Kilitli"
+    },
+    "status": {
+      "pending": "Onay bekliyor",
+      "rejected": "Reddedildi"
+    },
+    "presence": {
+      "online": "Launcher'da çevrimiçi",
+      "inGame": "Oyunda",
+      "playing": "Oynuyor: {version}",
+      "playingLoader": "Oynuyor: {version} ({loader})",
+      "playingServer": "{server} sunucusunda {version} oynuyor",
+      "playingLoaderServer": "{server} sunucusunda {version} ({loader}) oynuyor"
+    },
+    "toasts": {
+      "friendRequest": "{name} seninle arkadaş olmak istiyor."
+    }
+  },
+  "trsGate": {
+    "consent": {
+      "title": "TRS hizmetleri kapalı",
+      "friends": "Arkadaş listeni göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
+      "capes": "TRS pelerinlerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
+      "button": "Daha fazla bilgi ve aç"
+    },
+    "account": {
+      "title": "Giriş yapılmış hesap yok",
+      "text": "“Hesaplar” bölümünden Minecraft hesabınla giriş yap.",
+      "button": "Hesaplara git"
+    },
+    "banned": {
+      "title": "Hesabın TRS hizmetlerinden yasaklandı",
+      "text": "Bu yüzden pelerinler ve arkadaşlar kullanılamıyor."
+    }
+  },
+  "trsConsent": {
+    "title": "TRS hizmetleri kullanılsın mı?",
+    "intro": "TRS hizmetleriyle {capes} ve çevrimiçi durumlu bir {friendsList} elde edersin, ayrıca arkadaşlarının sunucusuna katılabilirsin. Bunun için launcher, Minecraft hesabınla TRS sunucusuna ({host}) giriş yapar – tıpkı bir Minecraft sunucusuna katılmak gibi. Sunucu şifreni veya Minecraft token'ını asla almaz.",
+    "capes": "TRS pelerinleri",
+    "friendsList": "arkadaş listesi",
+    "storedTitle": "Neler saklanır",
+    "stored": {
+      "identity": "Minecraft UUID'n ve oyuncu adın",
+      "capes": "seçtiğin pelerin, kullandığın kodlar ve yüklediğin pelerin görselleri",
+      "friends": "arkadaşlar, istekler ve engellemeler",
+      "settings": "gizlilik ayarların ve zaman damgaları (giriş, oluşturma)",
+      "presence": "çevrimiçi durumun (launcher açık / oyunda, sürüm ve istersen sunucu) – yalnızca bellekte tutulur, 3 dakika sonra sona erer"
+    },
+    "footer": "Hizmetleri istediğin zaman {path} bölümünden kapatabilir ve tüm TRS verilerini orada silebilirsin. Onayın olmadan launcher TRS sunucusuna hiçbir şey göndermez.",
+    "settingsPath": "Ayarlar → Gizlilik",
+    "readPolicy": "Gizlilik politikasını oku",
+    "decline": "Hayır, teşekkürler",
+    "wait": "Bir saniye …",
+    "accept": "TRS hizmetlerini kullan",
+    "enabled": "TRS hizmetleri açık."
+  },
+  "trsPrivacy": {
+    "heading": "TRS hizmetleri",
+    "intro": "TRS sunucusu üzerinden pelerinler, arkadaşlar ve çevrimiçi durum.",
+    "whatStored": "Neler saklanır?",
+    "services": {
+      "title": "TRS hizmetlerini kullan",
+      "description": "Kapalı = launcher TRS sunucusuna hiçbir şey göndermez ve oradan çıkış yapmanı sağlar. TRS Client da oyunda hizmetleri kullanmaz."
+    },
+    "turnedOff": "TRS hizmetleri kapatıldı – launcher artık TRS sunucusuna hiçbir şey göndermiyor.",
+    "noAccount": "Bu ayarları değiştirmek için bir Minecraft hesabıyla giriş yap.",
+    "offline": "TRS sunucusuna şu anda ulaşılamıyor.",
+    "loading": "Ayarlar yükleniyor …",
+    "perAccount": "Geçerli hesap: {name} – her hesabın kendi ayarları vardır.",
+    "badge": {
+      "title": "TRS rozetini göster",
+      "description": "Diğer TRS oyuncuları oyunda TRS kullandığını görebilir."
+    },
+    "cape": {
+      "title": "Pelerin başkalarına görünür",
+      "description": "Kapalı = TRS pelerinini yalnızca sen görebilirsin."
+    },
+    "presence": {
+      "title": "Çevrimiçi durum",
+      "description": "Çevrimiçi olup olmadığını ve ne oynadığını kimlerin görebileceği.",
+      "label": "Çevrimiçi durumu görebilenler",
+      "friends": "Arkadaşlar",
+      "nobody": "Hiç kimse"
+    },
+    "server": {
+      "title": "Sunucuyu paylaş",
+      "description": "Arkadaşlar hangi sunucuda oynadığını görebilir ve sana katılabilir."
+    },
+    "delete": {
+      "title": "Tüm TRS verilerini sil",
+      "description": "TRS hesabını pelerinler, yüklemeler, kodlar, arkadaşlar ve çevrimiçi durumla birlikte sunucudan hemen siler. Sonrasında TRS hizmetleri kapatılır.",
+      "button": "Tüm TRS verilerini sil …",
+      "confirm": "{name} hesabındaki her şey gerçekten silinsin mi? Açılan pelerinler ve arkadaşlar gidecek – bu geri alınamaz.",
+      "deleting": "Siliniyor …",
+      "confirmButton": "Evet, kalıcı olarak sil",
+      "done": "Bu hesabın tüm TRS verileri silindi. TRS hizmetleri artık kapalı."
+    }
+  },
+  "capes": {
+    "title": "TRS pelerinleri",
+    "wearing": "Giyilen: {name}",
+    "redeem": "Kod kullan",
+    "upload": "Kendi pelerinini yükle",
+    "intro": "TRS pelerinleri Mojang pelerinlerinden ayrıdır: TRS Client ile oynayan herkes onları görebilir. Mojang pelerinini yukarıda değiştirirsin – ikisi ayrı kalır.",
+    "offline": "TRS sunucusuna şu anda ulaşılamıyor.",
+    "tryOn": "Dene: {name}",
+    "tryOnLocked": "{name} – hâlâ kilitli (yine de deneyebilirsin)",
+    "locked": "kilitli",
+    "animated": "animasyonlu",
+    "worn": "giyiliyor",
+    "empty": "Şu anda TRS pelerini yok.",
+    "selected": {
+      "pending": "Ekip onayı bekleniyor – o zamana kadar yalnızca sen görebilirsin.",
+      "rejected": "Reddedildi.",
+      "rejectedReason": "Reddedildi: {reason}.",
+      "lockedCode": "Kilitli – bir kodla açılabilir.",
+      "lockedTeam": "Kilitli – yalnızca TRS ekibi için veya kodla.",
+      "active": "Bu pelerini giyiyorsun.",
+      "free": "Serbestçe kullanılabilir – başkaları görsün diye giy.",
+      "unlocked": "Senin için açıldı – başkaları görsün diye giy."
+    },
+    "actions": {
+      "wearing": "Giyiliyor …",
+      "wear": "Giy",
+      "removing": "Çıkarılıyor …",
+      "remove": "Çıkar",
+      "endPreview": "Önizlemeyi bitir"
+    },
+    "pendingCount": "{n} pelerin onay bekliyor. | {n} pelerin onay bekliyor.",
+    "redeemDialog": {
+      "codeLabel": "Kod",
+      "hint": "Büyük/küçük harf ve tireler önemli değil.",
+      "checking": "Kontrol ediliyor …",
+      "submit": "Kullan"
+    },
+    "uploadDialog": {
+      "nameLabel": "Ad (isteğe bağlı)",
+      "placeholder": "ör. Pelerinim",
+      "rules": {
+        "size": "64×32 piksel (veya 128×64, 192×96, 256×128) ya da 22×17 pelerin biçiminde PNG – en fazla 256 KB.",
+        "review": "Animasyon yok. Ekip her pelerini inceler; o zamana kadar yalnızca sen görebilirsin.",
+        "rights": "Yalnızca kendi görsellerin veya kullanma iznin olanlar – rahatsız edici hiçbir şey olmasın."
+      },
+      "uploading": "Yükleniyor …",
+      "chooseFile": "Dosya seç"
+    },
+    "deleteDialog": {
+      "title": "Pelerin silinsin mi?",
+      "text": "{name} kalıcı olarak silinecek."
+    },
+    "toasts": {
+      "worn": "Giyildi: “{name}”",
+      "removed": "TRS pelerini çıkarıldı",
+      "alreadyOwned": "“{name}” zaten sendeydi.",
+      "unlocked": "“{name}” açıldı!",
+      "uploaded": "Yüklendi – pelerinin onay bekliyor.",
+      "deleted": "Pelerin silindi"
+    }
+  },
+  "friends": {
+    "title": "Arkadaşlar",
+    "subtitle": "Kim çevrimiçi, kim ne oynuyor – ve tek tıkla onlara katıl.",
+    "add": "Arkadaş ekle",
+    "offline": "TRS sunucusuna şu anda ulaşılamıyor – liste güncel olmayabilir.",
+    "tabs": {
+      "label": "Görünüm",
+      "friends": "Arkadaşlar",
+      "requests": "İstekler",
+      "blocked": "Engellenenler"
+    },
+    "join": {
+      "withLabel": "Şununla katıl",
+      "auto": "Uygun kurulum (otomatik)",
+      "button": "Katıl",
+      "withInstance": "Şununla katıl: {name}",
+      "noInstance": "Kullanılabilir kurulum yok",
+      "starting": "{instance} başlatılıyor ve {server} sunucusuna bağlanılıyor …"
+    },
+    "list": {
+      "usesTrs": "TRS kullanıyor",
+      "capeOf": "TRS pelerini: {name}",
+      "moreActions": "Diğer işlemler: {name}",
+      "block": "Engelle",
+      "reportCape": "Pelerini bildir"
+    },
+    "empty": {
+      "title": "Henüz arkadaş yok",
+      "text": "Sinyalin şu anda kimseye ulaşmıyor. Arkadaşlarını Minecraft adlarıyla ekle – kabul ettiklerinde lambaları burada yanar."
+    },
+    "requests": {
+      "empty": "Bekleyen istek yok",
+      "incoming": "Sana gelen",
+      "incomingText": "seninle arkadaş olmak istiyor · {date}",
+      "accept": "Kabul et",
+      "decline": "Reddet",
+      "outgoing": "Senden giden",
+      "outgoingText": "yanıt bekleniyor · {date}",
+      "withdraw": "Geri çek"
+    },
+    "blocked": {
+      "placeholder": "Bir Minecraft adını engelle",
+      "inputLabel": "Engellenecek ad",
+      "hint": "Engellenen oyuncular seni bulamaz, sana istek gönderemez ve TRS rozetini veya pelerinini göremez. Bundan haberdar edilmezler.",
+      "since": "Tarih: {date}",
+      "unblock": "Engeli kaldır",
+      "empty": "Engellenen kimse yok"
+    },
+    "addDialog": {
+      "nameLabel": "Minecraft adı",
+      "placeholder": "ör. Theredstonee",
+      "hint": "Arkadaşının TRS Launcher'ı TRS hizmetleriyle en az bir kez kullanmış olması gerekir.",
+      "sending": "Gönderiliyor …",
+      "send": "İstek gönder"
+    },
+    "confirm": {
+      "removeTitle": "Arkadaş kaldırılsın mı?",
+      "blockTitle": "Oyuncu engellensin mi?",
+      "removeText": "{name} arkadaş listenden kaldırılacak.",
+      "blockText": "{name} engellenecek: arkadaşlığınız ve bekleyen tüm istekler kaldırılır ve seni artık bulamaz."
+    },
+    "report": {
+      "title": "Pelerini bildir",
+      "text": "Bu oyuncunun yüklediği pelerin TRS ekibine bildirilecek: {name}.",
+      "reason": "Sebep",
+      "reasons": {
+        "inappropriate": "Uygunsuz",
+        "copyright": "Telif hakkı",
+        "impersonation": "Başkasını taklit ediyor",
+        "other": "Diğer"
+      },
+      "note": "Not (isteğe bağlı)",
+      "submit": "Bildir",
+      "thanks": "Teşekkürler – ekip pelerine bir göz atacak."
+    },
+    "toasts": {
+      "nowFriends": "{name} ile artık arkadaşsınız.",
+      "requestSent": "İstek gönderildi: {name}.",
+      "removed": "{name} artık arkadaş listende değil.",
+      "blocked": "{name} engellendi.",
+      "unblocked": "{name} artık engelli değil."
+    }
+  },
+  "admin": {
+    "title": "Yönetim",
+    "subtitle": "TRS hizmetleri: pelerinleri, kodları, oyuncuları ve istatistikleri incele.",
+    "notAdmin": "Bu sayfa yalnızca TRS hizmetleri yöneticileri içindir.",
+    "tabs": {
+      "label": "Bölüm",
+      "overview": "Genel bakış",
+      "capes": "Pelerinleri incele",
+      "codes": "Kodlar",
+      "players": "Oyuncular"
+    },
+    "stats": {
+      "users": "Kullanıcılar",
+      "usersHint": "{count} etkin (24 sa)",
+      "online": "Çevrimiçi",
+      "onlineHint": "{count} canlı bağlantı",
+      "pending": "Bekleyen pelerinler",
+      "pendingHint": "{count} bildirildi",
+      "worn": "Giyilen pelerinler",
+      "wornHint": "{count} yükleme onaylandı",
+      "codes": "Etkin kodlar",
+      "codesHint": "{count} kullanıldı",
+      "friendships": "Arkadaşlıklar",
+      "friendshipsHint": "{count} bekleyen istek",
+      "banned": "Yasaklı",
+      "bannedHint": "{count} oturum"
+    },
+    "review": {
+      "lists": {
+        "pending": "Bekleyen",
+        "reported": "Bildirilen",
+        "approved": "Onaylanan",
+        "rejected": "Reddedilen"
+      },
+      "emptyPending": "Hepsi onaylandı – bekleyen pelerin yok.",
+      "empty": "Burada bir şey yok.",
+      "fullTexture": "Tam doku",
+      "byOwner": "{owner} tarafından · {date} · {size}",
+      "deletedAccount": "silinmiş bir hesap",
+      "reported": "{count}× bildirildi: {reasons}",
+      "reasons": {
+        "inappropriate": "uygunsuz",
+        "copyright": "telif hakkı",
+        "impersonation": "taklit",
+        "other": "diğer"
+      },
+      "rejectReason": "Sebep: {reason}",
+      "reviewed": "İncelendi: {date}",
+      "approve": "Onayla",
+      "reject": "Reddet"
+    },
+    "codes": {
+      "cape": "Pelerin",
+      "chooseCape": "Pelerin seç …",
+      "usesPerCode": "Kod başına kullanım",
+      "count": "Kod sayısı",
+      "validUntil": "Geçerlilik sonu (isteğe bağlı)",
+      "note": "Not (isteğe bağlı)",
+      "notePlaceholder": "ör. Discord çekilişi",
+      "creating": "Oluşturuluyor …",
+      "create": "Kod oluştur",
+      "pickCape": "Lütfen bir pelerin seç.",
+      "newCodes": "Yeni kodlar – yalnızca şimdi görünür, hemen kaydet!",
+      "copyAll": "Tümünü kopyala",
+      "hide": "Gizle",
+      "empty": "Henüz kod yok",
+      "table": {
+        "code": "Kod",
+        "cape": "Pelerin",
+        "redeemed": "Kullanıldı",
+        "validUntil": "Geçerlilik sonu",
+        "note": "Not"
+      },
+      "unlimited": "sınırsız",
+      "revoked": "iptal edildi",
+      "revoke": "İptal et"
+    },
+    "players": {
+      "placeholder": "Minecraft adı veya UUID",
+      "searchLabel": "Oyuncu ara",
+      "searching": "Aranıyor …",
+      "admin": "Yönetici",
+      "banned": "Yasaklı",
+      "copyUuid": "UUID'yi kopyala",
+      "since": "Üyelik tarihi",
+      "lastLogin": "Son giriş",
+      "friends": "Arkadaşlar",
+      "uploadsSessions": "Yüklemeler / oturumlar",
+      "neverUsed": "TRS hizmetlerini hiç kullanmadı – yalnızca yasaklama mümkün.",
+      "bannedOn": "Yasaklanma tarihi: {date}",
+      "bannedOnReason": "Yasaklanma tarihi: {date} – {reason}",
+      "capes": "Pelerinler",
+      "revokeCape": "Geri al: {cape}",
+      "noCapes": "Verilmiş pelerin yok.",
+      "grantLabel": "Pelerin ver",
+      "grantPlaceholder": "Pelerin ver …",
+      "grant": "Ver",
+      "ban": "Yasakla",
+      "unban": "Yasağı kaldır",
+      "reasonPlaceholder": "Sebep (isteğe bağlı)",
+      "reasonLabel": "Yasaklama sebebi",
+      "banButton": "Yasakla …",
+      "adminsNotBannable": "Yöneticiler yasaklanamaz."
+    },
+    "dialogs": {
+      "rejectTitle": "Pelerin reddedilsin mi?",
+      "rejectText": "{name} reddedilecek ve artık kimse onu giymeyecek.",
+      "rejectReasonLabel": "Sebep (yükleyene gösterilir)",
+      "rejectPlaceholder": "ör. telif hakkı",
+      "deleteTitle": "Pelerin silinsin mi?",
+      "deleteText": "{owner} tarafından yüklenen {name}, dosyası dahil kalıcı olarak silinecek.",
+      "unknownOwner": "bilinmiyor",
+      "revokeTitle": "Kod iptal edilsin mi?",
+      "revokeText": "{cape} için {code} kodu artık kullanılamayacak. Zaten açılmış pelerinler kalır.",
+      "banTitle": "Oyuncu yasaklansın mı?",
+      "banText": "{name} tüm TRS hizmetlerine erişimini hemen kaybeder: oturumlar sona erer ve çevrimiçi durumu kaybolur.",
+      "banConfirm": "Yasakla"
+    },
+    "toasts": {
+      "approved": "Onaylandı: “{name}”",
+      "rejected": "Reddedildi: “{name}”",
+      "capeDeleted": "Pelerin silindi",
+      "codesCreated": "{n} kod oluşturuldu | {n} kod oluşturuldu",
+      "copied": {
+        "code": "Kod kopyalandı",
+        "all": "Tüm kodlar kopyalandı",
+        "uuid": "UUID kopyalandı"
+      },
+      "copyFailed": "Kopyalanamadı.",
+      "codeRevoked": "Kod iptal edildi",
+      "alreadyHad": "Pelerin zaten vardı.",
+      "granted": "{player} oyuncusuna verildi: {cape}",
+      "playerFallback": "oyuncu",
+      "grantRevoked": "Pelerin geri alındı",
+      "banned": "Oyuncu yasaklandı",
+      "unbanned": "Yasak kaldırıldı"
+    }
+  }
+}

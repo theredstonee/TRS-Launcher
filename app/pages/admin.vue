@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TrsAdminCape, TrsAdminStats, TrsAdminUser, TrsCape, TrsCode, TrsReviewList } from '~/utils/trs'
+import type { TrsAdminCape, TrsAdminStats, TrsAdminUser, TrsCape, TrsCode, TrsReportReason, TrsReviewList } from '~/utils/trs'
 
 // Verwaltung der TRS-Dienste – nur für Admins (der Server prüft das bei jeder
 // Anfrage selbst; die Seite blendet sich für alle anderen nur aus).
@@ -8,6 +8,7 @@ const toasts = useToasts()
 
 type Tab = 'overview' | 'capes' | 'codes' | 'players'
 const tab = ref<Tab>('overview')
+const tabs: Tab[] = ['overview', 'capes', 'codes', 'players']
 const busy = ref<string | null>(null)
 
 const stats = ref<TrsAdminStats | null>(null)
@@ -47,17 +48,14 @@ async function loadCatalog() {
 
 const list = ref<TrsReviewList>('pending')
 const reviewCapes = ref<TrsAdminCape[] | null>(null)
-const lists: [TrsReviewList, string][] = [
-  ['pending', 'Wartend'],
-  ['reported', 'Gemeldet'],
-  ['approved', 'Freigegeben'],
-  ['rejected', 'Abgelehnt'],
-]
-const reasonNames: Record<string, string> = {
-  inappropriate: 'unangemessen',
-  copyright: 'Urheberrecht',
-  impersonation: 'Identität',
-  other: 'sonstiges',
+const lists: TrsReviewList[] = ['pending', 'reported', 'approved', 'rejected']
+const reportReasons: readonly string[] = ['inappropriate', 'copyright', 'impersonation', 'other'] satisfies TrsReportReason[]
+
+/** Meldegründe mit Anzahl („unangemessen (2), Urheberrecht (1)“); unbekannte Gründe roh. */
+function reportSummary(reasons: Record<string, number>): string {
+  return Object.entries(reasons)
+    .map(([r, n]) => `${reportReasons.includes(r) ? t(`admin.review.reasons.${r as TrsReportReason}`) : r} (${n})`)
+    .join(', ')
 }
 
 async function loadReview() {
@@ -73,7 +71,7 @@ async function loadReview() {
 const approve = (cape: TrsAdminCape) =>
   run(`approve:${cape.id}`, async () => {
     await backend.trs.adminApprove(cape.id)
-    toasts.ok(`„${cape.name}“ freigegeben`)
+    toasts.ok(t('admin.toasts.approved', { name: cape.name }))
     await Promise.all([loadReview(), loadStats()])
   })
 
@@ -96,7 +94,7 @@ async function confirmReject() {
   rejecting.value = null
   await run(`reject:${cape.id}`, async () => {
     await backend.trs.adminReject(cape.id, reason.data || null)
-    toasts.ok(`„${cape.name}“ abgelehnt`)
+    toasts.ok(t('admin.toasts.rejected', { name: cape.name }))
     await Promise.all([loadReview(), loadStats()])
   })
 }
@@ -108,7 +106,7 @@ async function confirmDeleteCape() {
   if (!cape) return
   await run(`delete:${cape.id}`, async () => {
     await backend.trs.adminDeleteCape(cape.id)
-    toasts.ok('Umhang gelöscht')
+    toasts.ok(t('admin.toasts.capeDeleted'))
     await Promise.all([loadReview(), loadStats()])
   })
 }
@@ -140,7 +138,7 @@ async function createCodes() {
     note: codeForm.note.trim() || null,
   })
   if (!parsed.success) {
-    codeError.value = codeForm.capeId ? firstIssue(parsed.error) : 'Bitte einen Umhang wählen.'
+    codeError.value = codeForm.capeId ? firstIssue(parsed.error) : t('admin.codes.pickCape')
     return
   }
   codeError.value = null
@@ -153,17 +151,17 @@ async function createCodes() {
       ...(at ? { expiresAt: at } : {}),
       ...(note ? { note } : {}),
     })
-    toasts.ok(`${created.value.length} ${created.value.length === 1 ? 'Code' : 'Codes'} erstellt`)
+    toasts.ok(t('admin.toasts.codesCreated', created.value.length))
     await Promise.all([loadCodes(), loadStats()])
   })
 }
 
-async function copy(text: string, what = 'Code') {
+async function copy(text: string, what: 'code' | 'all' | 'uuid' = 'code') {
   try {
     await navigator.clipboard.writeText(text)
-    toasts.ok(`${what} kopiert`)
+    toasts.ok(t(`admin.toasts.copied.${what}`))
   } catch {
-    toasts.error('Kopieren nicht möglich.')
+    toasts.error(t('admin.toasts.copyFailed'))
   }
 }
 
@@ -174,7 +172,7 @@ async function confirmRevoke() {
   if (!code) return
   await run(`revoke:${code.id}`, async () => {
     await backend.trs.adminRevokeCode(code.id)
-    toasts.ok('Code widerrufen')
+    toasts.ok(t('admin.toasts.codeRevoked'))
     await loadCodes()
   })
 }
@@ -218,7 +216,11 @@ async function grant() {
   if (!p || !grantCape.value) return
   await run('grant', async () => {
     const already = await backend.trs.adminGrant(p.uuid, grantCape.value)
-    toasts.ok(already ? 'Hatte den Umhang schon.' : `${capeName(grantCape.value)} an ${p.name ?? 'Spieler'} vergeben`)
+    toasts.ok(
+      already
+        ? t('admin.toasts.alreadyHad')
+        : t('admin.toasts.granted', { cape: capeName(grantCape.value), player: p.name ?? t('admin.toasts.playerFallback') }),
+    )
     await reloadPlayer()
   })
 }
@@ -228,7 +230,7 @@ const revokeGrant = (capeId: string) =>
     const p = player.value
     if (!p) return
     await backend.trs.adminRevokeGrant(p.uuid, capeId)
-    toasts.ok('Umhang entzogen')
+    toasts.ok(t('admin.toasts.grantRevoked'))
     await reloadPlayer()
   })
 
@@ -244,7 +246,7 @@ async function confirmBan() {
   await run('ban', async () => {
     player.value = await backend.trs.adminBan(p.uuid, reason.data || null)
     banReason.value = ''
-    toasts.ok('Spieler gesperrt')
+    toasts.ok(t('admin.toasts.banned'))
     await loadStats()
   })
 }
@@ -254,7 +256,7 @@ const unban = () =>
     const p = player.value
     if (!p) return
     await backend.trs.adminUnban(p.uuid)
-    toasts.ok('Sperre aufgehoben')
+    toasts.ok(t('admin.toasts.unbanned'))
     await reloadPlayer()
     await loadStats()
   })
@@ -270,40 +272,52 @@ onMounted(async () => {
   await init()
 })
 watch(() => trs.isAdmin, init)
-watch(tab, (t) => {
-  if (t === 'capes' && !reviewCapes.value) void loadReview()
-  if (t === 'codes' && !codes.value) void loadCodes()
-  if (t === 'overview') void loadStats()
+watch(tab, (value) => {
+  if (value === 'capes' && !reviewCapes.value) void loadReview()
+  if (value === 'codes' && !codes.value) void loadCodes()
+  if (value === 'overview') void loadStats()
 })
 watch(list, loadReview)
 
 const statTiles = computed(() => {
   const s = stats.value
   if (!s) return []
+  const count = (n: number) => ({ count: formatNumber(n) })
   return [
-    { label: 'Nutzer', value: s.users.total, hint: `${s.users.activeLast24h} aktiv (24 h)` },
-    { label: 'Online', value: s.users.online, hint: `${s.eventStreams} Live-Verbindungen` },
-    { label: 'Wartende Umhänge', value: s.capes.pending, hint: `${s.capes.reported} gemeldet`, alert: s.capes.pending > 0 },
-    { label: 'Umhänge getragen', value: s.capes.activeUsers, hint: `${s.capes.approved} Uploads freigegeben` },
-    { label: 'Aktive Codes', value: s.codes.active, hint: `${s.codes.redemptions} eingelöst` },
-    { label: 'Freundschaften', value: s.friendships, hint: `${s.pendingFriendRequests} offene Anfragen` },
-    { label: 'Gesperrt', value: s.users.banned, hint: `${s.sessions} Sitzungen` },
+    { id: 'users', label: t('admin.stats.users'), value: s.users.total, hint: t('admin.stats.usersHint', count(s.users.activeLast24h)) },
+    { id: 'online', label: t('admin.stats.online'), value: s.users.online, hint: t('admin.stats.onlineHint', count(s.eventStreams)) },
+    {
+      id: 'pending',
+      label: t('admin.stats.pending'),
+      value: s.capes.pending,
+      hint: t('admin.stats.pendingHint', count(s.capes.reported)),
+      alert: s.capes.pending > 0,
+    },
+    { id: 'worn', label: t('admin.stats.worn'), value: s.capes.activeUsers, hint: t('admin.stats.wornHint', count(s.capes.approved)) },
+    { id: 'codes', label: t('admin.stats.codes'), value: s.codes.active, hint: t('admin.stats.codesHint', count(s.codes.redemptions)) },
+    {
+      id: 'friendships',
+      label: t('admin.stats.friendships'),
+      value: s.friendships,
+      hint: t('admin.stats.friendshipsHint', count(s.pendingFriendRequests)),
+    },
+    { id: 'banned', label: t('admin.stats.banned'), value: s.users.banned, hint: t('admin.stats.bannedHint', count(s.sessions)) },
   ]
 })
 </script>
 
 <template>
   <div class="mx-auto max-w-5xl p-6">
-    <PageHeader title="Verwaltung" subtitle="TRS-Dienste: Umhänge prüfen, Codes, Spieler und Zahlen." />
+    <PageHeader :title="t('admin.title')" :subtitle="t('admin.subtitle')" />
 
     <div v-if="!trs.isAdmin" class="card px-4 py-6 text-center text-sm text-base-400">
-      Diese Seite ist nur für Admins der TRS-Dienste.
+      {{ t('admin.notAdmin') }}
     </div>
 
     <template v-else>
-      <div class="mb-5 flex gap-1 rounded-lg bg-base-850 p-1 text-xs" role="tablist" aria-label="Bereich">
+      <div class="mb-5 flex gap-1 rounded-lg bg-base-850 p-1 text-xs" role="tablist" :aria-label="t('admin.tabs.label')">
         <button
-          v-for="[key, label] in ([['overview', 'Übersicht'], ['capes', 'Umhänge prüfen'], ['codes', 'Codes'], ['players', 'Spieler']] as const)"
+          v-for="key in tabs"
           :key="key"
           class="seg flex flex-1 items-center justify-center gap-1.5 rounded-md"
           :class="{ 'seg-on': tab === key }"
@@ -311,7 +325,7 @@ const statTiles = computed(() => {
           :aria-selected="tab === key"
           @click="tab = key"
         >
-          {{ label }}
+          {{ t(`admin.tabs.${key}`) }}
           <span v-if="key === 'capes' && stats?.capes.pending" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">
             {{ stats.capes.pending }}
           </span>
@@ -319,32 +333,32 @@ const statTiles = computed(() => {
       </div>
 
       <!-- Übersicht --------------------------------------------------------------- -->
-      <section v-if="tab === 'overview'" aria-label="Übersicht">
+      <section v-if="tab === 'overview'" :aria-label="t('admin.tabs.overview')">
         <div v-if="!stats" class="grid grid-cols-2 gap-3 md:grid-cols-4">
           <div v-for="i in 7" :key="i" class="skeleton h-24" />
         </div>
         <div v-else class="grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="admin-stats">
-          <div v-for="t in statTiles" :key="t.label" class="card px-4 py-3" :class="{ 'border-lamp-400/40': t.alert }">
-            <p class="text-xs text-base-400">{{ t.label }}</p>
-            <p class="display mt-1 text-3xl tabular-nums" :class="t.alert ? 'text-lamp-300' : 'text-base-50'">{{ t.value }}</p>
-            <p class="mt-0.5 text-[11px] text-base-600">{{ t.hint }}</p>
+          <div v-for="tile in statTiles" :key="tile.id" class="card px-4 py-3" :class="{ 'border-lamp-400/40': tile.alert }">
+            <p class="text-xs text-base-400">{{ tile.label }}</p>
+            <p class="display mt-1 text-3xl tabular-nums" :class="tile.alert ? 'text-lamp-300' : 'text-base-50'">{{ formatNumber(tile.value) }}</p>
+            <p class="mt-0.5 text-[11px] text-base-600">{{ tile.hint }}</p>
           </div>
         </div>
-        <button class="btn btn-ghost mt-3 px-3 py-1.5 text-xs" @click="loadStats">Aktualisieren</button>
+        <button class="btn btn-ghost mt-3 px-3 py-1.5 text-xs" @click="loadStats">{{ t('common.actions.refresh') }}</button>
       </section>
 
       <!-- Umhänge prüfen ---------------------------------------------------------- -->
-      <section v-else-if="tab === 'capes'" aria-label="Umhänge prüfen">
+      <section v-else-if="tab === 'capes'" :aria-label="t('admin.tabs.capes')">
         <div class="mb-3 flex flex-wrap gap-1.5">
           <button
-            v-for="[key, label] in lists"
+            v-for="key in lists"
             :key="key"
             class="chip"
             :class="{ 'border-redstone-500 bg-redstone-900/40 text-base-50': list === key }"
             :aria-pressed="list === key"
             @click="list = key"
           >
-            {{ label }}
+            {{ t(`admin.review.lists.${key}`) }}
           </button>
         </div>
         <div v-if="!reviewCapes" class="space-y-2">
@@ -352,7 +366,7 @@ const statTiles = computed(() => {
         </div>
         <RedstoneEmpty
           v-else-if="!reviewCapes.length"
-          :title="list === 'pending' ? 'Alles freigegeben – keine Umhänge warten.' : 'Hier ist nichts.'"
+          :title="list === 'pending' ? t('admin.review.emptyPending') : t('admin.review.empty')"
           compact
           :seed="0x5c"
         />
@@ -363,22 +377,22 @@ const statTiles = computed(() => {
               <img
                 v-if="cape.texture"
                 :src="cape.texture"
-                alt="Ganze Textur"
+                :alt="t('admin.review.fullTexture')"
                 class="h-16 w-32 rounded object-contain [image-rendering:pixelated]"
               />
             </div>
             <div class="min-w-0 flex-1 text-sm">
               <p class="truncate font-semibold text-base-50">{{ cape.name }}</p>
-              <p class="text-xs text-base-400">
-                von <strong class="text-base-200">{{ cape.owner?.name ?? 'gelöschtem Konto' }}</strong> ·
-                {{ trsDate(cape.createdAt) }} · {{ cape.width }}×{{ cape.height }}
-              </p>
+              <i18n-t keypath="admin.review.byOwner" tag="p" scope="global" class="text-xs text-base-400">
+                <template #owner><strong class="text-base-200">{{ cape.owner?.name ?? t('admin.review.deletedAccount') }}</strong></template>
+                <template #date>{{ trsDate(cape.createdAt) }}</template>
+                <template #size>{{ cape.width }}×{{ cape.height }}</template>
+              </i18n-t>
               <p v-if="cape.reports.count" class="mt-0.5 text-xs text-warn">
-                {{ cape.reports.count }}× gemeldet:
-                {{ Object.entries(cape.reports.reasons).map(([r, n]) => `${reasonNames[r] ?? r} (${n})`).join(', ') }}
+                {{ t('admin.review.reported', { count: cape.reports.count, reasons: reportSummary(cape.reports.reasons) }) }}
               </p>
-              <p v-if="cape.rejectReason" class="mt-0.5 text-xs text-redstone-300">Grund: {{ cape.rejectReason }}</p>
-              <p v-if="cape.reviewedBy" class="mt-0.5 text-[11px] text-base-600">Geprüft {{ trsDate(cape.reviewedAt) }}</p>
+              <p v-if="cape.rejectReason" class="mt-0.5 text-xs text-redstone-300">{{ t('admin.review.rejectReason', { reason: cape.rejectReason }) }}</p>
+              <p v-if="cape.reviewedBy" class="mt-0.5 text-[11px] text-base-600">{{ t('admin.review.reviewed', { date: trsDate(cape.reviewedAt) }) }}</p>
             </div>
             <div class="flex gap-2">
               <button
@@ -387,74 +401,74 @@ const statTiles = computed(() => {
                 :disabled="!!busy"
                 @click="approve(cape)"
               >
-                Freigeben
+                {{ t('admin.review.approve') }}
               </button>
               <button v-if="cape.status !== 'rejected'" class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="startReject(cape)">
-                Ablehnen
+                {{ t('admin.review.reject') }}
               </button>
-              <button class="btn btn-ghost px-3 py-1.5 text-xs hover:text-redstone-300" :disabled="!!busy" @click="deleting = cape">Löschen</button>
+              <button class="btn btn-ghost px-3 py-1.5 text-xs hover:text-redstone-300" :disabled="!!busy" @click="deleting = cape">{{ t('common.actions.delete') }}</button>
             </div>
           </li>
         </ul>
       </section>
 
       <!-- Codes ------------------------------------------------------------------- -->
-      <section v-else-if="tab === 'codes'" aria-label="Codes" class="space-y-4">
+      <section v-else-if="tab === 'codes'" :aria-label="t('admin.tabs.codes')" class="space-y-4">
         <form class="card grid grid-cols-1 gap-3 p-4 md:grid-cols-[2fr_1fr_1fr_1.4fr]" @submit.prevent="createCodes">
           <label class="block">
-            <span class="label">Umhang</span>
+            <span class="label">{{ t('admin.codes.cape') }}</span>
             <select v-model="codeForm.capeId" class="field">
-              <option value="" disabled>Umhang wählen …</option>
+              <option value="" disabled>{{ t('admin.codes.chooseCape') }}</option>
               <option v-for="c in grantable" :key="c.id" :value="c.id">{{ c.name }} ({{ trsUnlockLabel(c) }})</option>
             </select>
           </label>
           <label class="block">
-            <span class="label">Einlösungen je Code</span>
+            <span class="label">{{ t('admin.codes.usesPerCode') }}</span>
             <input v-model.number="codeForm.maxUses" type="number" min="1" max="100000" class="field" />
           </label>
           <label class="block">
-            <span class="label">Anzahl Codes</span>
+            <span class="label">{{ t('admin.codes.count') }}</span>
             <input v-model.number="codeForm.count" type="number" min="1" max="100" class="field" />
           </label>
           <label class="block">
-            <span class="label">Gültig bis (optional)</span>
+            <span class="label">{{ t('admin.codes.validUntil') }}</span>
             <input v-model="codeForm.expires" type="date" class="field" />
           </label>
           <label class="block md:col-span-3">
-            <span class="label">Notiz (optional)</span>
-            <input v-model="codeForm.note" class="field" maxlength="200" placeholder="z. B. Discord-Gewinnspiel" />
+            <span class="label">{{ t('admin.codes.note') }}</span>
+            <input v-model="codeForm.note" class="field" maxlength="200" :placeholder="t('admin.codes.notePlaceholder')" />
           </label>
           <div class="flex items-end">
-            <button class="btn btn-primary w-full" :disabled="!!busy">{{ busy === 'codes' ? 'Erstelle …' : 'Codes erstellen' }}</button>
+            <button class="btn btn-primary w-full" :disabled="!!busy">{{ busy === 'codes' ? t('admin.codes.creating') : t('admin.codes.create') }}</button>
           </div>
           <p v-if="codeError" role="alert" class="text-xs text-redstone-300 md:col-span-4">{{ codeError }}</p>
         </form>
 
         <div v-if="created.length" class="card border-lamp-400/40 p-4" data-testid="admin-created-codes">
           <div class="mb-2 flex items-center gap-2">
-            <p class="flex-1 text-sm font-semibold text-lamp-300">Neue Codes – nur jetzt sichtbar, gleich sichern!</p>
-            <button class="btn btn-ghost px-3 py-1 text-xs" @click="copy(created.map((c) => c.code).join('\n'), 'Alle Codes')">Alle kopieren</button>
-            <button class="btn btn-ghost px-3 py-1 text-xs" @click="created = []">Ausblenden</button>
+            <p class="flex-1 text-sm font-semibold text-lamp-300">{{ t('admin.codes.newCodes') }}</p>
+            <button class="btn btn-ghost px-3 py-1 text-xs" @click="copy(created.map((c) => c.code).join('\n'), 'all')">{{ t('admin.codes.copyAll') }}</button>
+            <button class="btn btn-ghost px-3 py-1 text-xs" @click="created = []">{{ t('admin.codes.hide') }}</button>
           </div>
           <ul class="grid gap-1.5 sm:grid-cols-2">
             <li v-for="c in created" :key="c.id" class="flex items-center gap-2 rounded-md bg-base-850 px-3 py-1.5">
               <code class="flex-1 font-mono text-sm tracking-wider text-base-50 select-all">{{ c.code }}</code>
-              <button class="btn btn-ghost px-2 py-0.5 text-[11px]" @click="copy(c.code ?? '')">Kopieren</button>
+              <button class="btn btn-ghost px-2 py-0.5 text-[11px]" @click="copy(c.code ?? '')">{{ t('common.actions.copy') }}</button>
             </li>
           </ul>
         </div>
 
         <div v-if="!codes" class="skeleton h-40" />
-        <RedstoneEmpty v-else-if="!codes.length" title="Noch keine Codes" compact :seed="0x19" />
+        <RedstoneEmpty v-else-if="!codes.length" :title="t('admin.codes.empty')" compact :seed="0x19" />
         <div v-else class="card overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="text-base-400">
               <tr class="border-b border-base-800">
-                <th class="px-3 py-2 font-medium">Code</th>
-                <th class="px-3 py-2 font-medium">Umhang</th>
-                <th class="px-3 py-2 font-medium">Eingelöst</th>
-                <th class="px-3 py-2 font-medium">Gültig bis</th>
-                <th class="px-3 py-2 font-medium">Notiz</th>
+                <th class="px-3 py-2 font-medium">{{ t('admin.codes.table.code') }}</th>
+                <th class="px-3 py-2 font-medium">{{ t('admin.codes.table.cape') }}</th>
+                <th class="px-3 py-2 font-medium">{{ t('admin.codes.table.redeemed') }}</th>
+                <th class="px-3 py-2 font-medium">{{ t('admin.codes.table.validUntil') }}</th>
+                <th class="px-3 py-2 font-medium">{{ t('admin.codes.table.note') }}</th>
                 <th class="px-3 py-2" />
               </tr>
             </thead>
@@ -463,11 +477,11 @@ const statTiles = computed(() => {
                 <td class="px-3 py-2 font-mono text-base-200">…{{ c.hint }}</td>
                 <td class="px-3 py-2">{{ capeName(c.capeId) }}</td>
                 <td class="px-3 py-2 tabular-nums">{{ c.uses }} / {{ c.maxUses }}</td>
-                <td class="px-3 py-2">{{ c.expiresAt ? trsDate(c.expiresAt) : 'unbegrenzt' }}</td>
+                <td class="px-3 py-2">{{ c.expiresAt ? trsDate(c.expiresAt) : t('admin.codes.unlimited') }}</td>
                 <td class="max-w-48 truncate px-3 py-2 text-base-400" :title="c.note ?? ''">{{ c.note ?? '–' }}</td>
                 <td class="px-3 py-2 text-right">
-                  <span v-if="c.revokedAt" class="text-base-600">widerrufen</span>
-                  <button v-else class="btn btn-ghost px-2 py-0.5 text-[11px] hover:text-redstone-300" :disabled="!!busy" @click="revoking = c">Widerrufen</button>
+                  <span v-if="c.revokedAt" class="text-base-600">{{ t('admin.codes.revoked') }}</span>
+                  <button v-else class="btn btn-ghost px-2 py-0.5 text-[11px] hover:text-redstone-300" :disabled="!!busy" @click="revoking = c">{{ t('admin.codes.revoke') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -476,10 +490,10 @@ const statTiles = computed(() => {
       </section>
 
       <!-- Spieler ----------------------------------------------------------------- -->
-      <section v-else aria-label="Spieler" class="space-y-4">
+      <section v-else :aria-label="t('admin.tabs.players')" class="space-y-4">
         <form class="card flex flex-wrap items-center gap-2 px-3 py-2.5" @submit.prevent="lookup">
-          <input v-model="query" class="field min-w-0 flex-1 py-1.5" maxlength="36" placeholder="Minecraft-Name oder UUID" aria-label="Spieler suchen" />
-          <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!!busy">{{ busy === 'lookup' ? 'Suche …' : 'Suchen' }}</button>
+          <input v-model="query" class="field min-w-0 flex-1 py-1.5" maxlength="36" :placeholder="t('admin.players.placeholder')" :aria-label="t('admin.players.searchLabel')" />
+          <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!!busy">{{ busy === 'lookup' ? t('admin.players.searching') : t('common.actions.search') }}</button>
           <p v-if="queryError" role="alert" class="w-full text-xs text-redstone-300">{{ queryError }}</p>
         </form>
 
@@ -488,106 +502,109 @@ const statTiles = computed(() => {
             <span class="block size-12 overflow-hidden rounded-md"><PixelIdenticon :seed="player.uuid" :letter="(player.name ?? '?').charAt(0).toUpperCase()" /></span>
             <div class="min-w-0 flex-1">
               <p class="flex items-center gap-2 text-base font-semibold text-base-50">
-                {{ player.name ?? 'Unbekannt' }}
-                <span v-if="player.admin" class="badge bg-redstone-900/50 text-redstone-300">Admin</span>
-                <span v-if="player.banned" class="badge bg-redstone-600/30 text-redstone-300">Gesperrt</span>
-                <span v-if="player.online" class="badge bg-ok/10 text-ok">Online</span>
+                {{ player.name ?? t('common.status.unknown') }}
+                <span v-if="player.admin" class="badge bg-redstone-900/50 text-redstone-300">{{ t('admin.players.admin') }}</span>
+                <span v-if="player.banned" class="badge bg-redstone-600/30 text-redstone-300">{{ t('admin.players.banned') }}</span>
+                <span v-if="player.online" class="badge bg-ok/10 text-ok">{{ t('common.status.online') }}</span>
               </p>
               <p class="font-mono text-[11px] text-base-400 select-all">{{ player.uuid }}</p>
             </div>
-            <button class="btn btn-ghost px-2 py-1 text-[11px]" @click="copy(player.uuid, 'UUID')">UUID kopieren</button>
+            <button class="btn btn-ghost px-2 py-1 text-[11px]" @click="copy(player.uuid, 'uuid')">{{ t('admin.players.copyUuid') }}</button>
           </div>
 
           <dl v-if="player.known" class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs md:grid-cols-4">
-            <div><dt class="text-base-400">Dabei seit</dt><dd class="text-base-50">{{ trsDate(player.createdAt) }}</dd></div>
-            <div><dt class="text-base-400">Letzte Anmeldung</dt><dd class="text-base-50">{{ trsDate(player.lastLoginAt) }}</dd></div>
-            <div><dt class="text-base-400">Freunde</dt><dd class="text-base-50">{{ player.friends }}</dd></div>
-            <div><dt class="text-base-400">Uploads / Sitzungen</dt><dd class="text-base-50">{{ player.uploads }} / {{ player.sessions }}</dd></div>
+            <div><dt class="text-base-400">{{ t('admin.players.since') }}</dt><dd class="text-base-50">{{ trsDate(player.createdAt) }}</dd></div>
+            <div><dt class="text-base-400">{{ t('admin.players.lastLogin') }}</dt><dd class="text-base-50">{{ trsDate(player.lastLoginAt) }}</dd></div>
+            <div><dt class="text-base-400">{{ t('admin.players.friends') }}</dt><dd class="text-base-50">{{ player.friends }}</dd></div>
+            <div><dt class="text-base-400">{{ t('admin.players.uploadsSessions') }}</dt><dd class="text-base-50">{{ player.uploads }} / {{ player.sessions }}</dd></div>
           </dl>
-          <p v-else class="text-xs text-base-400">Hat die TRS-Dienste noch nie benutzt – nur eine Sperre ist möglich.</p>
+          <p v-else class="text-xs text-base-400">{{ t('admin.players.neverUsed') }}</p>
 
           <div v-if="player.banned" class="rounded-lg border border-redstone-600/50 bg-redstone-900/30 px-3 py-2 text-xs text-redstone-300">
-            Gesperrt am {{ trsDate(player.banned.bannedAt) }}{{ player.banned.reason ? ` – ${player.banned.reason}` : '' }}
+            {{
+              player.banned.reason
+                ? t('admin.players.bannedOnReason', { date: trsDate(player.banned.bannedAt), reason: player.banned.reason })
+                : t('admin.players.bannedOn', { date: trsDate(player.banned.bannedAt) })
+            }}
           </div>
 
           <div v-if="player.known">
-            <p class="label">Umhänge</p>
+            <p class="label">{{ t('admin.players.capes') }}</p>
             <ul v-if="player.grantedCapes.length" class="mb-2 flex flex-wrap gap-1.5">
               <li v-for="g in player.grantedCapes" :key="g.capeId" class="chip gap-1.5">
                 {{ capeName(g.capeId) }}
                 <span class="text-[10px] text-base-600">{{ g.source }}</span>
-                <button class="text-base-400 hover:text-redstone-300" :aria-label="`${capeName(g.capeId)} entziehen`" :disabled="!!busy" @click="revokeGrant(g.capeId)">✕</button>
+                <button class="text-base-400 hover:text-redstone-300" :aria-label="t('admin.players.revokeCape', { cape: capeName(g.capeId) })" :disabled="!!busy" @click="revokeGrant(g.capeId)">✕</button>
               </li>
             </ul>
-            <p v-else class="mb-2 text-xs text-base-600">Keine vergebenen Umhänge.</p>
+            <p v-else class="mb-2 text-xs text-base-600">{{ t('admin.players.noCapes') }}</p>
             <div class="flex gap-2">
-              <select v-model="grantCape" class="field w-64 py-1.5" aria-label="Umhang vergeben">
-                <option value="" disabled>Umhang vergeben …</option>
+              <select v-model="grantCape" class="field w-64 py-1.5" :aria-label="t('admin.players.grantLabel')">
+                <option value="" disabled>{{ t('admin.players.grantPlaceholder') }}</option>
                 <option v-for="c in grantable" :key="c.id" :value="c.id">{{ c.name }} ({{ trsUnlockLabel(c) }})</option>
               </select>
-              <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!grantCape || !!busy" @click="grant">Vergeben</button>
+              <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!grantCape || !!busy" @click="grant">{{ t('admin.players.grant') }}</button>
             </div>
           </div>
 
           <div class="border-t border-base-800 pt-3">
-            <p class="label">Sperre</p>
+            <p class="label">{{ t('admin.players.ban') }}</p>
             <div v-if="player.banned" class="flex gap-2">
-              <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="unban">Sperre aufheben</button>
+              <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="unban">{{ t('admin.players.unban') }}</button>
             </div>
             <div v-else-if="!player.admin" class="flex flex-wrap gap-2">
-              <input v-model="banReason" class="field min-w-0 flex-1 py-1.5" maxlength="200" placeholder="Grund (optional)" aria-label="Grund der Sperre" />
-              <button class="btn btn-danger px-3 py-1.5 text-xs" :disabled="!!busy" @click="banning = true">Sperren …</button>
+              <input v-model="banReason" class="field min-w-0 flex-1 py-1.5" maxlength="200" :placeholder="t('admin.players.reasonPlaceholder')" :aria-label="t('admin.players.reasonLabel')" />
+              <button class="btn btn-danger px-3 py-1.5 text-xs" :disabled="!!busy" @click="banning = true">{{ t('admin.players.banButton') }}</button>
             </div>
-            <p v-else class="text-xs text-base-600">Admins können nicht gesperrt werden.</p>
+            <p v-else class="text-xs text-base-600">{{ t('admin.players.adminsNotBannable') }}</p>
           </div>
         </div>
       </section>
     </template>
 
     <!-- Dialoge -------------------------------------------------------------------- -->
-    <BaseDialog v-if="rejecting" title="Umhang ablehnen?" @close="rejecting = null">
-      <p class="mb-3 text-sm text-base-200">
-        <strong class="text-base-50">{{ rejecting.name }}</strong> wird abgelehnt und von niemandem mehr getragen.
-      </p>
-      <label class="label" for="reject-reason">Grund (sieht der Uploader)</label>
-      <input id="reject-reason" v-model="rejectReason" class="field" maxlength="200" placeholder="z. B. Urheberrecht" @keydown.enter="confirmReject" />
+    <BaseDialog v-if="rejecting" :title="t('admin.dialogs.rejectTitle')" @close="rejecting = null">
+      <i18n-t keypath="admin.dialogs.rejectText" tag="p" scope="global" class="mb-3 text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ rejecting.name }}</strong></template>
+      </i18n-t>
+      <label class="label" for="reject-reason">{{ t('admin.dialogs.rejectReasonLabel') }}</label>
+      <input id="reject-reason" v-model="rejectReason" class="field" maxlength="200" :placeholder="t('admin.dialogs.rejectPlaceholder')" @keydown.enter="confirmReject" />
       <p v-if="rejectError" role="alert" class="mt-2 text-xs text-redstone-300">{{ rejectError }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="rejecting = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmReject">Ablehnen</button>
+        <button class="btn btn-ghost" @click="rejecting = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmReject">{{ t('admin.review.reject') }}</button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="deleting" title="Umhang löschen?" @close="deleting = null">
-      <p class="text-sm text-base-200">
-        <strong class="text-base-50">{{ deleting.name }}</strong> von {{ deleting.owner?.name ?? 'unbekannt' }} wird endgültig
-        gelöscht, auch die Datei.
-      </p>
+    <BaseDialog v-if="deleting" :title="t('admin.dialogs.deleteTitle')" @close="deleting = null">
+      <i18n-t keypath="admin.dialogs.deleteText" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ deleting.name }}</strong></template>
+        <template #owner>{{ deleting.owner?.name ?? t('admin.dialogs.unknownOwner') }}</template>
+      </i18n-t>
       <template #actions>
-        <button class="btn btn-ghost" @click="deleting = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmDeleteCape">Löschen</button>
+        <button class="btn btn-ghost" @click="deleting = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmDeleteCape">{{ t('common.actions.delete') }}</button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="revoking" title="Code widerrufen?" @close="revoking = null">
-      <p class="text-sm text-base-200">
-        Der Code <span class="font-mono">…{{ revoking.hint }}</span> für {{ capeName(revoking.capeId) }} kann danach nicht mehr
-        eingelöst werden. Schon freigeschaltete Umhänge bleiben.
-      </p>
+    <BaseDialog v-if="revoking" :title="t('admin.dialogs.revokeTitle')" @close="revoking = null">
+      <i18n-t keypath="admin.dialogs.revokeText" tag="p" scope="global" class="text-sm text-base-200">
+        <template #code><span class="font-mono">…{{ revoking.hint }}</span></template>
+        <template #cape>{{ capeName(revoking.capeId) }}</template>
+      </i18n-t>
       <template #actions>
-        <button class="btn btn-ghost" @click="revoking = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmRevoke">Widerrufen</button>
+        <button class="btn btn-ghost" @click="revoking = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmRevoke">{{ t('admin.codes.revoke') }}</button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="banning && player" title="Spieler sperren?" @close="banning = false">
-      <p class="text-sm text-base-200">
-        <strong class="text-base-50">{{ player.name ?? player.uuid }}</strong> verliert sofort den Zugang zu allen TRS-Diensten:
-        Sitzungen enden, Online-Status verschwindet.
-      </p>
+    <BaseDialog v-if="banning && player" :title="t('admin.dialogs.banTitle')" @close="banning = false">
+      <i18n-t keypath="admin.dialogs.banText" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ player.name ?? player.uuid }}</strong></template>
+      </i18n-t>
       <template #actions>
-        <button class="btn btn-ghost" @click="banning = false">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmBan">Sperren</button>
+        <button class="btn btn-ghost" @click="banning = false">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmBan">{{ t('admin.dialogs.banConfirm') }}</button>
       </template>
     </BaseDialog>
   </div>

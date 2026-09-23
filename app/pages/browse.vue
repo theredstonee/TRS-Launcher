@@ -15,7 +15,6 @@ const instances = useInstancesStore()
 const toasts = useToasts()
 
 const kinds: ProjectKind[] = ['mod', 'resourcepack', 'datapack', 'shaderpack', 'modpack']
-const kindLabels: Record<ProjectKind, string> = { ...contentKindLabels, modpack: 'Modpacks' }
 const searchLoaders = ['fabric', 'quilt', 'forge', 'neoforge'] as const
 /** Farbe der Kategorie-Icons (base-400) – im <img> gilt kein CSS. */
 const ICON_COLOR = '#8b8ba2'
@@ -82,10 +81,10 @@ const kindCategories = computed(() => {
   const type = categoryProjectType(kind.value)
   const groups = new Map<string, CategoryTag[]>()
   for (const c of categories.value) {
-    if (c.projectType !== type || !(c.header in categoryHeaderLabels)) continue
+    if (c.projectType !== type || !(c.header in categoryHeaderKeys)) continue
     groups.set(c.header, [...(groups.get(c.header) ?? []), c])
   }
-  for (const list of groups.values()) list.sort((a, b) => catLabel(a.name).localeCompare(catLabel(b.name), 'de'))
+  for (const list of groups.values()) list.sort((a, b) => compareText(categoryLabel(a.name), categoryLabel(b.name)))
   return [...groups.entries()]
 })
 const categoryIcons = computed(() => {
@@ -201,7 +200,7 @@ watch(target, loadInstalled, { immediate: true })
 // Inhalte, die (auch im Hintergrund) fertig geworden sind, als installiert markieren.
 const finishedForTarget = computed(
   () =>
-    Object.values(tasks.tasks).filter((t) => t.kind === 'content' && t.status === 'done' && t.instanceId === target.value?.id)
+    Object.values(tasks.tasks).filter((task) => task.kind === 'content' && task.status === 'done' && task.instanceId === target.value?.id)
       .length,
 )
 watch(finishedForTarget, (n, before) => {
@@ -219,10 +218,6 @@ watch(
   },
   { immediate: true },
 )
-
-function catLabel(name: string) {
-  return categoryLabels[name] ?? name.charAt(0).toUpperCase() + name.slice(1).replaceAll('-', ' ')
-}
 
 function toggled<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
@@ -306,14 +301,14 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
     <!-- Kopf: Instanz oder Auswahl -->
     <header class="flex items-center gap-4 px-6 pt-6 pb-4">
       <template v-if="instanceMode && target">
-        <NuxtLink :to="`/instances/${target.id}`" class="btn-icon rounded-full" aria-label="Zurück zur Instanz">
+        <NuxtLink :to="`/instances/${target.id}`" class="btn-icon rounded-full" :aria-label="t('browse.backToInstance')">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
         </NuxtLink>
         <InstanceIcon :instance="target" :size="48" />
         <div class="min-w-0">
           <h1 class="truncate text-xl font-semibold tracking-tight">{{ target.name }}</h1>
           <p class="mt-0.5 flex items-center gap-1.5 text-sm text-base-400">
-            Inhalte installieren
+            {{ t('browse.installContent') }}
             <span aria-hidden="true">·</span>
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" /><path d="M12 12 4 7.5M12 12l8-4.5M12 12v9" /></svg>
             Minecraft {{ target.gameVersion }}
@@ -324,26 +319,26 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
       </template>
       <template v-else>
         <div class="min-w-0 flex-1">
-          <h1 class="text-xl font-semibold tracking-tight">Entdecken</h1>
-          <p class="mt-0.5 text-sm text-base-400">Mods, Modpacks, Ressourcenpakete, Datenpakete und Shader von Modrinth.</p>
+          <h1 class="text-xl font-semibold tracking-tight">{{ t('browse.title') }}</h1>
+          <p class="mt-0.5 text-sm text-base-400">{{ t('browse.subtitle') }}</p>
         </div>
         <label v-if="!isPack" class="flex items-center gap-2 text-xs text-base-400">
-          Installieren in
+          {{ t('browse.installInto') }}
           <select v-model="instanceId" class="field w-60 py-1.5" :disabled="!instances.items.length">
-            <option v-if="!instances.items.length" value="">Keine Instanz vorhanden</option>
+            <option v-if="!instances.items.length" value="">{{ t('browse.noInstance') }}</option>
             <option v-for="i in instances.items" :key="i.id" :value="i.id">
               {{ i.name }} ({{ i.gameVersion }}, {{ loaderLabels[i.loader.kind] }})
             </option>
           </select>
         </label>
-        <p v-else class="text-xs text-base-400">Ein Modpack wird als neue Instanz angelegt.</p>
+        <p v-else class="text-xs text-base-400">{{ t('browse.packHint') }}</p>
       </template>
     </header>
 
     <div class="flex min-h-0 flex-1 gap-5 px-6 pb-6">
       <!-- Ergebnisse -->
       <div ref="listEl" class="min-w-0 flex-1 overflow-y-auto pr-1">
-        <div class="mb-3 inline-flex flex-wrap rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="tablist" aria-label="Art">
+        <div class="mb-3 inline-flex flex-wrap rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="tablist" :aria-label="t('browse.kindTabs')">
           <button
             v-for="k in kinds"
             :key="k"
@@ -353,7 +348,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             :class="{ 'tab-on': kind === k }"
             @click="kind = k"
           >
-            {{ kindLabels[k] }}
+            {{ k === 'modpack' ? t('contentKind.modpack') : contentKindLabel(k) }}
           </button>
         </div>
 
@@ -363,33 +358,33 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             v-model="query"
             class="field rounded-lg py-2.5 pl-10"
             maxlength="100"
-            :placeholder="`${kindLabels[kind]} suchen …`"
+            :placeholder="t(`browse.searchPlaceholder.${kind}`)"
             spellcheck="false"
             autofocus
-            aria-label="Suchen"
+            :aria-label="t('common.actions.search')"
           />
-          <button v-if="query" class="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-base-400 hover:text-base-50" aria-label="Suche leeren" @click="query = ''">
+          <button v-if="query" class="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-base-400 hover:text-base-50" :aria-label="t('browse.clearSearch')" @click="query = ''">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
         </div>
 
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800">
-            Sortieren nach
+            {{ t('browse.sortBy') }}
             <select v-model="index" class="rounded-md bg-base-800 px-2 py-1 text-sm text-base-50 outline-none">
-              <option v-for="o in sortOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+              <option v-for="o in sortIndexes" :key="o" :value="o">{{ sortLabel(o) }}</option>
             </select>
           </label>
           <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800">
-            Anzeigen
+            {{ t('browse.perPage') }}
             <select v-model.number="limit" class="rounded-md bg-base-800 px-2 py-1 text-sm text-base-50 outline-none">
               <option v-for="n in pageSizes" :key="n" :value="n">{{ n }}</option>
             </select>
           </label>
-          <span class="text-xs text-base-400 tabular-nums">{{ formatCount(totalHits) }} Ergebnisse</span>
+          <span class="text-xs text-base-400 tabular-nums">{{ t('browse.results', { count: formatCount(totalHits) }, totalHits) }}</span>
 
-          <nav v-if="totalPages > 1" class="ml-auto flex items-center gap-1" aria-label="Seiten">
-            <button class="btn-icon size-8" :disabled="page <= 1" aria-label="Vorherige Seite" @click="goToPage(page - 1)">
+          <nav v-if="totalPages > 1" class="ml-auto flex items-center gap-1" :aria-label="t('browse.pages')">
+            <button class="btn-icon size-8" :disabled="page <= 1" :aria-label="t('browse.prevPage')" @click="goToPage(page - 1)">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
             </button>
             <template v-for="(p, i) in pageItems(page, totalPages)" :key="i">
@@ -404,7 +399,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                 {{ p }}
               </button>
             </template>
-            <button class="btn-icon size-8" :disabled="page >= totalPages" aria-label="Nächste Seite" @click="goToPage(page + 1)">
+            <button class="btn-icon size-8" :disabled="page >= totalPages" :aria-label="t('browse.nextPage')" @click="goToPage(page + 1)">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
             </button>
           </nav>
@@ -412,11 +407,11 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
 
         <!-- Aktive Filter -->
         <div v-if="versionIsLocked || loaderIsLocked || activeFilterCount" class="mb-3 flex flex-wrap items-center gap-1.5">
-          <span v-if="versionIsLocked" class="chip gap-1.5 text-base-400" title="Von der Instanz vorgegeben">
+          <span v-if="versionIsLocked" class="chip gap-1.5 text-base-400" :title="t('browse.lockedByInstance')">
             <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
             {{ bound?.gameVersion }}
           </span>
-          <span v-if="hasLoaders && loaderIsLocked" class="chip gap-1.5 text-base-400" title="Von der Instanz vorgegeben">
+          <span v-if="hasLoaders && loaderIsLocked" class="chip gap-1.5 text-base-400" :title="t('browse.lockedByInstance')">
             <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
             {{ loaderLabels[effectiveLoader(bound) ?? 'vanilla'] }}
           </span>
@@ -431,35 +426,41 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             </button>
           </template>
           <button v-for="c in includeCats" :key="`i-${c}`" class="chip gap-1 hover:bg-base-700" @click="toggleInclude(c)">
-            {{ catLabel(c) }} <span aria-hidden="true" class="text-base-400">×</span>
+            {{ categoryLabel(c) }} <span aria-hidden="true" class="text-base-400">×</span>
           </button>
           <button v-for="c in excludeCats" :key="`e-${c}`" class="chip gap-1 text-redstone-300 line-through hover:bg-base-700" @click="toggleExclude(c)">
-            {{ catLabel(c) }} <span aria-hidden="true" class="text-base-400 no-underline">×</span>
+            {{ categoryLabel(c) }} <span aria-hidden="true" class="text-base-400 no-underline">×</span>
           </button>
           <template v-if="hasLoaders">
             <button v-for="e in environments" :key="`env-${e}`" class="chip gap-1 hover:bg-base-700" @click="environments = toggled(environments, e)">
-              {{ e === 'client' ? 'Client' : 'Server' }} <span aria-hidden="true" class="text-base-400">×</span>
+              {{ t(`modrinth.environment.${e}`) }} <span aria-hidden="true" class="text-base-400">×</span>
             </button>
           </template>
           <button v-if="openSource" class="chip gap-1 hover:bg-base-700" @click="openSource = false">
-            Open Source <span aria-hidden="true" class="text-base-400">×</span>
+            {{ t('browse.chips.openSource') }} <span aria-hidden="true" class="text-base-400">×</span>
           </button>
           <button v-if="hideInstalled" class="chip gap-1 hover:bg-base-700" @click="hideInstalled = false">
-            Installierte ausgeblendet <span aria-hidden="true" class="text-base-400">×</span>
+            {{ t('browse.chips.hideInstalled') }} <span aria-hidden="true" class="text-base-400">×</span>
           </button>
           <button v-if="activeFilterCount" class="ml-1 text-xs text-base-400 underline-offset-2 hover:text-base-50 hover:underline" @click="resetFilters">
-            Alle zurücksetzen
+            {{ t('browse.chips.resetAll') }}
           </button>
         </div>
 
         <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
         <p v-if="modsBlocked" class="card mb-3 border-warn/40 px-4 py-2.5 text-sm text-warn">
-          „{{ target?.name }}“ ist eine Vanilla-Instanz. Für Mods bitte eine Instanz mit Modloader wählen.
+          {{ t('browse.vanillaBlocked', { name: target?.name ?? '' }) }}
         </p>
-        <p v-if="kind === 'datapack' && !isPack" class="card mb-3 px-4 py-2.5 text-xs leading-relaxed text-base-400">
-          Datenpakete landen im Ordner <span class="font-mono text-base-200">datapacks</span> der Instanz. Beim Erstellen einer Welt
-          lassen sie sich dort unter „Datenpakete“ auswählen; für bestehende Welten in <span class="font-mono text-base-200">saves/&lt;Welt&gt;/datapacks</span> kopieren.
-        </p>
+        <i18n-t
+          v-if="kind === 'datapack' && !isPack"
+          keypath="browse.datapackHint.text"
+          tag="p"
+          scope="global"
+          class="card mb-3 px-4 py-2.5 text-xs leading-relaxed text-base-400"
+        >
+          <template #folder><span class="font-mono text-base-200">datapacks</span></template>
+          <template #worldFolder><span class="font-mono text-base-200">saves/&lt;{{ t('browse.datapackHint.world') }}&gt;/datapacks</span></template>
+        </i18n-t>
 
         <ul v-if="loading && !hits.length" class="flex flex-col gap-2.5">
           <li v-for="i in 6" :key="i" class="skeleton h-[124px] rounded-xl" />
@@ -472,7 +473,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
               <div class="min-w-0 flex-1">
                 <p class="flex items-baseline gap-2">
                   <span class="truncate text-base font-semibold group-hover:text-redstone-300">{{ hit.title }}</span>
-                  <span class="shrink-0 truncate text-xs text-base-400">von {{ hit.author }}</span>
+                  <span class="shrink-0 truncate text-xs text-base-400">{{ t('browse.hit.by', { author: hit.author }) }}</span>
                 </p>
                 <p class="mt-1 line-clamp-2 text-sm leading-relaxed text-base-200">{{ hit.description }}</p>
                 <div class="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -482,7 +483,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   </span>
                   <span v-for="c in hitCategories(hit)" :key="c" class="badge bg-base-800 text-base-200">
                     <img v-if="categoryIcons.get(c)" :src="categoryIcons.get(c)" alt="" class="size-3" draggable="false" />
-                    {{ catLabel(c) }}
+                    {{ categoryLabel(c) }}
                   </span>
                   <span
                     v-for="l in hitLoaders(hit)"
@@ -502,10 +503,10 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                 <template v-if="hitTask(hit)?.status === 'running'">
                   <button
                     class="display text-center text-sm tabular-nums text-redstone-300 hover:text-redstone-200"
-                    :aria-label="`${hit.title} wird installiert – im Aufgaben-Panel anzeigen`"
+                    :aria-label="t('browse.hit.installingLabel', { title: hit.title })"
                     @click="tasks.openPanel(hitTask(hit)!.key)"
                   >
-                    {{ hitTask(hit)!.percent === null ? 'Lädt …' : `${hitTask(hit)!.percent} %` }}
+                    {{ hitTask(hit)!.percent === null ? t('common.status.loading') : t('browse.hit.percent', { percent: hitTask(hit)!.percent! }) }}
                   </button>
                   <RedstoneWire :percent="hitTask(hit)!.percent ?? 50" :segments="12" />
                 </template>
@@ -514,14 +515,14 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   :to="`/instances/${hitTask(hit)!.instanceId}`"
                   class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50 hover:bg-base-800"
                 >
-                  Instanz öffnen
+                  {{ t('browse.hit.openInstance') }}
                 </NuxtLink>
                 <span
                   v-else-if="!isPack && installed.has(hit.projectId)"
                   class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50"
                 >
                   <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5 9-10" /></svg>
-                  Installiert
+                  {{ t('browse.hit.installed') }}
                 </span>
                 <template v-else>
                   <button
@@ -530,7 +531,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                     @click="install(hit)"
                   >
                     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14" /></svg>
-                    {{ isPack ? 'Als Instanz' : 'Installieren' }}
+                    {{ isPack ? t('browse.hit.asInstance') : t('common.actions.install') }}
                   </button>
                   <button
                     v-if="!isPack"
@@ -538,16 +539,16 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                     :disabled="!target || modsBlocked"
                     @click="picking = hit"
                   >
-                    Version wählen
+                    {{ t('browse.hit.chooseVersion') }}
                   </button>
                 </template>
               </div>
               <div class="flex flex-col items-end gap-0.5 text-xs text-base-400 tabular-nums">
-                <span class="flex items-center gap-1.5" :title="`${hit.downloads.toLocaleString('de')} Downloads`">
+                <span class="flex items-center gap-1.5" :title="t('browse.hit.downloads', { count: formatNumber(hit.downloads) }, hit.downloads)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
                   <span class="font-medium text-base-200">{{ formatCount(hit.downloads) }}</span>
                 </span>
-                <span class="flex items-center gap-1.5" :title="`${hit.follows.toLocaleString('de')} Follower`">
+                <span class="flex items-center gap-1.5" :title="t('browse.hit.followers', { count: formatNumber(hit.follows) }, hit.follows)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" /></svg>
                   <span class="font-medium text-base-200">{{ formatCount(hit.follows) }}</span>
                 </span>
@@ -564,14 +565,14 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           v-if="!loading && !hits.length && !error"
           compact
           :seed="0x88"
-          title="Kein Signal"
-          :text="`Nichts gefunden${bound ? ` für ${activeVersions.join(', ') || 'alle Versionen'}` : ''} – andere Suchbegriffe oder Filter probieren.`"
+          :title="t('browse.empty.title')"
+          :text="bound ? t('browse.empty.textFor', { versions: activeVersions.join(', ') || t('browse.empty.allVersions') }) : t('browse.empty.text')"
         >
-          <button v-if="activeFilterCount" class="btn btn-ghost" @click="resetFilters">Filter zurücksetzen</button>
+          <button v-if="activeFilterCount" class="btn btn-ghost" @click="resetFilters">{{ t('browse.empty.resetFilters') }}</button>
         </RedstoneEmpty>
 
-        <nav v-if="totalPages > 1 && hits.length" class="flex items-center justify-center gap-1 py-4" aria-label="Seiten unten">
-          <button class="btn-icon size-8" :disabled="page <= 1" aria-label="Vorherige Seite" @click="goToPage(page - 1)">
+        <nav v-if="totalPages > 1 && hits.length" class="flex items-center justify-center gap-1 py-4" :aria-label="t('browse.pagesBottom')">
+          <button class="btn-icon size-8" :disabled="page <= 1" :aria-label="t('browse.prevPage')" @click="goToPage(page - 1)">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
           </button>
           <template v-for="(p, i) in pageItems(page, totalPages)" :key="i">
@@ -586,17 +587,17 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
               {{ p }}
             </button>
           </template>
-          <button class="btn-icon size-8" :disabled="page >= totalPages" aria-label="Nächste Seite" @click="goToPage(page + 1)">
+          <button class="btn-icon size-8" :disabled="page >= totalPages" :aria-label="t('browse.nextPage')" @click="goToPage(page + 1)">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
           </button>
         </nav>
       </div>
 
       <!-- Filterleiste -->
-      <aside class="card max-h-full w-72 shrink-0 self-start overflow-y-auto px-4 py-1" aria-label="Filter">
+      <aside class="card max-h-full w-72 shrink-0 self-start overflow-y-auto px-4 py-1" :aria-label="t('browse.filters.label')">
         <section v-if="bound" class="border-b border-base-800 py-3">
           <label class="flex cursor-pointer items-center justify-between gap-3 text-sm text-base-200">
-            Bereits installierte ausblenden
+            {{ t('browse.filters.hideInstalled') }}
             <button
               role="switch"
               :aria-checked="hideInstalled"
@@ -609,16 +610,16 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           </label>
         </section>
 
-        <FilterSection title="Spielversion" :locked="versionIsLocked" :count="versionIsLocked ? 0 : pickedVersions.length">
+        <FilterSection :title="t('common.labels.gameVersion')" :locked="versionIsLocked" :count="versionIsLocked ? 0 : pickedVersions.length">
           <div v-if="versionIsLocked" class="rounded-lg bg-base-850 p-3 text-xs leading-relaxed text-base-400">
-            <p>Die Spielversion wird von der Instanz vorgegeben ({{ bound?.gameVersion }}).</p>
+            <p>{{ t('browse.filters.versionLocked', { version: bound?.gameVersion ?? '' }) }}</p>
             <button class="btn btn-ghost mt-2 w-full py-1.5 text-xs" @click="unlockVersion">
               <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 7.5-2" /></svg>
-              Filter entsperren
+              {{ t('browse.filters.unlock') }}
             </button>
           </div>
           <template v-else>
-            <input v-model="versionFilter" class="field mb-2 py-1.5 text-xs" placeholder="Version suchen …" maxlength="32" spellcheck="false" aria-label="Version suchen" />
+            <input v-model="versionFilter" class="field mb-2 py-1.5 text-xs" :placeholder="t('browse.filters.searchVersionPlaceholder')" maxlength="32" spellcheck="false" :aria-label="t('browse.filters.searchVersionLabel')" />
             <ul class="max-h-56 overflow-y-auto pr-1">
               <li v-for="v in filteredVersions" :key="v">
                 <label class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850">
@@ -626,18 +627,18 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   {{ v }}
                 </label>
               </li>
-              <li v-if="!filteredVersions.length" class="px-1.5 py-1 text-xs text-base-400">Keine Version gefunden.</li>
+              <li v-if="!filteredVersions.length" class="px-1.5 py-1 text-xs text-base-400">{{ t('browse.filters.noVersion') }}</li>
             </ul>
-            <button v-if="bound" class="mt-2 text-xs text-base-400 hover:text-base-50" @click="versionLocked = true">Wieder an Instanz binden</button>
+            <button v-if="bound" class="mt-2 text-xs text-base-400 hover:text-base-50" @click="versionLocked = true">{{ t('browse.filters.rebind') }}</button>
           </template>
         </FilterSection>
 
-        <FilterSection v-if="hasLoaders" title="Loader" :locked="loaderIsLocked" :count="loaderIsLocked ? 0 : pickedLoaders.length">
+        <FilterSection v-if="hasLoaders" :title="t('browse.filters.loader')" :locked="loaderIsLocked" :count="loaderIsLocked ? 0 : pickedLoaders.length">
           <div v-if="loaderIsLocked" class="rounded-lg bg-base-850 p-3 text-xs leading-relaxed text-base-400">
-            <p>Der Loader wird von der Instanz vorgegeben ({{ loaderLabels[effectiveLoader(bound) ?? 'vanilla'] }}).</p>
+            <p>{{ t('browse.filters.loaderLocked', { loader: loaderLabels[effectiveLoader(bound) ?? 'vanilla'] }) }}</p>
             <button class="btn btn-ghost mt-2 w-full py-1.5 text-xs" @click="unlockLoader">
               <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 7.5-2" /></svg>
-              Filter entsperren
+              {{ t('browse.filters.unlock') }}
             </button>
           </div>
           <template v-else>
@@ -647,7 +648,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
               {{ loaderNames[l] }}
             </label>
             <button v-if="bound && instanceLoaderTags.length" class="mt-2 text-xs text-base-400 hover:text-base-50" @click="loaderLocked = true">
-              Wieder an Instanz binden
+              {{ t('browse.filters.rebind') }}
             </button>
           </template>
         </FilterSection>
@@ -655,26 +656,26 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
         <FilterSection
           v-for="[header, list] in kindCategories"
           :key="header"
-          :title="categoryHeaderLabels[header] ?? header"
+          :title="categoryHeaderLabel(header)"
           :count="list.filter((c) => includeCats.includes(c.name) || excludeCats.includes(c.name)).length"
         >
           <div v-if="header === 'categories' && includeCats.length > 1" class="mb-2 flex rounded-md bg-base-850 p-0.5 text-xs">
-            <button class="seg flex-1 rounded" :class="{ 'seg-on': categoryMatch === 'all' }" @click="categoryMatch = 'all'">Alle</button>
-            <button class="seg flex-1 rounded" :class="{ 'seg-on': categoryMatch === 'any' }" @click="categoryMatch = 'any'">Mindestens eine</button>
+            <button class="seg flex-1 rounded" :class="{ 'seg-on': categoryMatch === 'all' }" @click="categoryMatch = 'all'">{{ t('common.labels.all') }}</button>
+            <button class="seg flex-1 rounded" :class="{ 'seg-on': categoryMatch === 'any' }" @click="categoryMatch = 'any'">{{ t('browse.filters.matchAny') }}</button>
           </div>
           <ul>
             <li v-for="c in list" :key="c.name" class="group/cat flex items-center gap-1 rounded-md hover:bg-base-850">
               <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-1.5 py-1 text-sm" :class="excludeCats.includes(c.name) ? 'text-redstone-300 line-through' : 'text-base-200'">
                 <input type="checkbox" class="accent-redstone-500" :checked="includeCats.includes(c.name)" @change="toggleInclude(c.name)" />
                 <img v-if="categoryIcons.get(c.name)" :src="categoryIcons.get(c.name)" alt="" class="size-4 shrink-0" draggable="false" />
-                <span class="truncate">{{ catLabel(c.name) }}</span>
+                <span class="truncate">{{ categoryLabel(c.name) }}</span>
               </label>
               <button
                 class="mr-1 rounded p-1 text-base-400 transition-opacity hover:text-redstone-300"
                 :class="excludeCats.includes(c.name) ? 'text-redstone-300 opacity-100' : 'opacity-0 group-hover/cat:opacity-100 focus-visible:opacity-100'"
                 :aria-pressed="excludeCats.includes(c.name)"
-                :aria-label="`${catLabel(c.name)} ausschließen`"
-                :title="`${catLabel(c.name)} ausschließen`"
+                :aria-label="t('browse.filters.exclude', { category: categoryLabel(c.name) })"
+                :title="t('browse.filters.exclude', { category: categoryLabel(c.name) })"
                 @click="toggleExclude(c.name)"
               >
                 <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8" /><path d="m6.5 6.5 11 11" /></svg>
@@ -682,18 +683,18 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             </li>
           </ul>
         </FilterSection>
-        <p v-if="!kindCategories.length" class="border-b border-base-800 py-3 text-xs text-base-400">Kategorien werden geladen …</p>
+        <p v-if="!kindCategories.length" class="border-b border-base-800 py-3 text-xs text-base-400">{{ t('browse.filters.loadingCategories') }}</p>
 
-        <FilterSection v-if="hasLoaders" title="Umgebung" :count="environments.length">
+        <FilterSection v-if="hasLoaders" :title="t('browse.filters.environment')" :count="environments.length">
           <label v-for="e in (['client', 'server'] as const)" :key="e" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850">
             <input type="checkbox" class="accent-redstone-500" :checked="environments.includes(e)" @change="environments = toggled(environments, e)" />
-            {{ e === 'client' ? 'Client' : 'Server' }}
+            {{ t(`modrinth.environment.${e}`) }}
           </label>
         </FilterSection>
 
-        <FilterSection title="Lizenz" :count="openSource ? 1 : 0">
+        <FilterSection :title="t('browse.filters.license')" :count="openSource ? 1 : 0">
           <label class="flex cursor-pointer items-center justify-between gap-3 px-1.5 py-1 text-sm text-base-200">
-            Nur Open Source
+            {{ t('browse.filters.openSourceOnly') }}
             <button
               role="switch"
               :aria-checked="openSource"

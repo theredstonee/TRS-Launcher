@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { setLocale } from '../app/utils/i18n'
 import { exportOptionsSchema, firstIssue, skinNameSchema } from '../app/utils/schemas'
 
 // Die gleichen Regeln prüft der Kern noch einmal (modpack_export.rs, skins.rs);
 // hier geht es darum, dass der Dialog früh und verständlich meckert.
+
+beforeAll(() => setLocale('de'))
 
 describe('exportOptionsSchema', () => {
   const valid = { name: 'Mein Pack', version: '1.0.0', summary: 'Kurz', include: ['mods', 'config'] }
@@ -19,6 +22,16 @@ describe('exportOptionsSchema', () => {
     const empty = exportOptionsSchema.safeParse({ ...valid, include: [] })
     expect(empty.success).toBe(false)
     if (!empty.success) expect(firstIssue(empty.error)).toContain('mindestens einen Ordner')
+  })
+
+  it('übersetzt Meldungen erst beim Prüfen – in der aktuellen Sprache', async () => {
+    await setLocale('en')
+    const tooLong = exportOptionsSchema.safeParse({ ...valid, name: 'x'.repeat(65) })
+    expect(tooLong.success).toBe(false)
+    if (!tooLong.success) expect(firstIssue(tooLong.error)).toBe('No more than 64 characters')
+    await setLocale('de')
+    const again = exportOptionsSchema.safeParse({ ...valid, name: 'x'.repeat(65) })
+    if (!again.success) expect(firstIssue(again.error)).toBe('Maximal 64 Zeichen')
   })
 
   it('lässt in der Version nur unbedenkliche Zeichen zu', () => {

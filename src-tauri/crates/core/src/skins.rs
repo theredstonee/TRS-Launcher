@@ -67,14 +67,20 @@ fn png_size(bytes: &[u8]) -> Option<(u32, u32)> {
 /// Prüft Magic-Bytes, Größe und Maße einer Skin-Textur (64×64 oder 64×32).
 pub fn validate_skin_png(bytes: &[u8]) -> Result<(u32, u32)> {
     if bytes.len() > MAX_SKIN_BYTES {
-        return Err(Error::validation("Die Skin-Datei ist zu groß (höchstens 128 KB)."));
+        return Err(Error::validation(crate::msg!(
+            "skins.fileTooLarge",
+            "Die Skin-Datei ist zu groß (höchstens 128 KB)."
+        )));
     }
     let (width, height) =
-        png_size(bytes).ok_or_else(|| Error::validation("Das ist keine PNG-Datei."))?;
+        png_size(bytes).ok_or_else(|| Error::validation(crate::msg!("skins.notPng", "Das ist keine PNG-Datei.")))?;
     if width == 64 && (height == 64 || height == 32) {
         Ok((width, height))
     } else {
-        Err(Error::validation("Ein Skin muss 64×64 (oder 64×32 für alte Skins) Pixel groß sein."))
+        Err(Error::validation(crate::msg!(
+            "skins.invalidSize",
+            "Ein Skin muss 64×64 (oder 64×32 für alte Skins) Pixel groß sein."
+        )))
     }
 }
 
@@ -170,10 +176,14 @@ pub(crate) enum ApiError {
 impl From<ApiError> for Error {
     fn from(e: ApiError) -> Self {
         match e {
-            ApiError::RateLimited(_) => Error::validation("Mojang bremst gerade – bitte ein paar Minuten warten."),
-            ApiError::Transient => {
-                Error::Launch("Mojang ist gerade nicht erreichbar – bitte später erneut versuchen.".into())
-            }
+            ApiError::RateLimited(_) => Error::validation(crate::msg!(
+                "skins.rateLimited",
+                "Mojang bremst gerade – bitte ein paar Minuten warten."
+            )),
+            ApiError::Transient => Error::launch(crate::msg!(
+                "skins.mojangUnavailable",
+                "Mojang ist gerade nicht erreichbar – bitte später erneut versuchen."
+            )),
             ApiError::Fatal(e) => e,
         }
     }
@@ -198,12 +208,24 @@ pub(crate) fn classify(response: reqwest::Response, action: &str) -> std::result
                 .and_then(|v| crate::skin_sync::parse_retry_after(v, Utc::now()));
             ApiError::RateLimited(retry_after)
         }
-        401 | 403 => ApiError::Fatal(Error::auth("Die Anmeldung ist abgelaufen – bitte den Account neu anmelden.")),
-        404 => ApiError::Fatal(Error::validation("Dieses Konto hat noch kein Minecraft-Profil.")),
+        401 | 403 => ApiError::Fatal(Error::auth(crate::msg!(
+            "skins.sessionExpired",
+            "Die Anmeldung ist abgelaufen – bitte den Account neu anmelden."
+        ))),
+        404 => ApiError::Fatal(Error::validation(crate::msg!(
+            "skins.noProfile",
+            "Dieses Konto hat noch kein Minecraft-Profil."
+        ))),
         400 | 422 if action == UPLOAD_ACTION => {
-            ApiError::Fatal(Error::validation("Mojang hat die Datei abgelehnt. Ist es ein gültiger 64×64-Skin?"))
+            ApiError::Fatal(Error::validation(crate::msg!(
+                "skins.fileRejected",
+                "Mojang hat die Datei abgelehnt. Ist es ein gültiger 64×64-Skin?"
+            )))
         }
-        400 | 422 => ApiError::Fatal(Error::validation("Mojang hat die Änderung abgelehnt.")),
+        400 | 422 => ApiError::Fatal(Error::validation(crate::msg!(
+            "skins.changeRejected",
+            "Mojang hat die Änderung abgelehnt."
+        ))),
         _ => ApiError::Transient,
     })
 }
@@ -266,7 +288,7 @@ pub(crate) fn set_cape_request(
     cape_id: &str,
 ) -> Result<reqwest::RequestBuilder> {
     if !is_cape_id(cape_id) {
-        return Err(Error::validation("Ungültiger Umhang."));
+        return Err(Error::validation(crate::msg!("skins.invalidCape", "Ungültiger Umhang.")));
     }
     Ok(http
         .put(format!("{base}/minecraft/profile/capes/active"))
@@ -289,7 +311,10 @@ pub(crate) async fn active_skin_bytes(
         .iter()
         .filter(|s| s.state.eq_ignore_ascii_case("ACTIVE"))
         .find_map(|s| normalize_texture_url(&s.url))
-        .ok_or_else(|| ApiError::Fatal(Error::validation("Dieses Konto trägt gerade keinen eigenen Skin.")))?;
+        .ok_or_else(|| ApiError::Fatal(Error::validation(crate::msg!(
+            "skins.noCustomSkin",
+            "Dieses Konto trägt gerade keinen eigenen Skin."
+        ))))?;
     texture_bytes(http, paths, &url).await.map_err(|e| match e {
         Error::Http(_) => ApiError::Transient,
         other => ApiError::Fatal(other),
@@ -306,7 +331,10 @@ fn textures_dir(paths: &Paths) -> PathBuf {
 /// Liefert die Bytes; ungültige Bilder werden abgelehnt.
 async fn texture_bytes(http: &reqwest::Client, paths: &Paths, url: &str) -> Result<Vec<u8>> {
     if !is_texture_url(url) {
-        return Err(Error::validation("Diese Texturquelle ist nicht erlaubt."));
+        return Err(Error::validation(crate::msg!(
+            "skins.textureSourceNotAllowed",
+            "Diese Texturquelle ist nicht erlaubt."
+        )));
     }
     let id = &url[TEXTURE_PREFIX.len()..];
     let file = textures_dir(paths).join(format!("{id}.png"));
@@ -318,7 +346,7 @@ async fn texture_bytes(http: &reqwest::Client, paths: &Paths, url: &str) -> Resu
     let response = http.get(url).send().await?.error_for_status()?;
     let bytes = response.bytes().await?.to_vec();
     if bytes.len() > MAX_SKIN_BYTES || png_size(&bytes).is_none() {
-        return Err(Error::validation("Die Textur von Mojang ist ungültig."));
+        return Err(Error::validation(crate::msg!("skins.invalidTexture", "Die Textur von Mojang ist ungültig.")));
     }
     fsutil::write_atomic(&file, &bytes).await?;
     Ok(bytes)
@@ -365,7 +393,10 @@ fn library_file(paths: &Paths) -> PathBuf {
 /// Namen sind frei wählbar, aber kurz und ohne Steuerzeichen.
 pub fn clean_name(name: &str) -> Result<String> {
     let cleaned: String = name.trim().chars().filter(|c| !c.is_control()).take(48).collect();
-    if cleaned.is_empty() { Err(Error::validation("Bitte einen Namen für den Skin eingeben.")) } else { Ok(cleaned) }
+    if cleaned.is_empty() { Err(Error::validation(crate::msg!(
+        "skins.nameRequired",
+        "Bitte einen Namen für den Skin eingeben."
+    ))) } else { Ok(cleaned) }
 }
 
 fn is_library_id(id: &str) -> bool {
@@ -383,7 +414,10 @@ impl Launcher {
             .active_session()
             .await?
             .filter(|s| !s.demo)
-            .ok_or_else(|| Error::auth("Bitte melde dich zuerst unter „Accounts“ an."))
+            .ok_or_else(|| Error::auth(crate::msg!(
+                "skins.signInFirst",
+                "Bitte melde dich zuerst unter „Accounts“ an."
+            )))
     }
 
     /// Profil des aktiven Accounts inklusive Skin- und Umhang-Texturen.
@@ -461,7 +495,10 @@ impl Launcher {
     pub async fn add_skin_from_file(&self, file: &Path, name: &str, variant: SkinVariant) -> Result<LibrarySkinView> {
         let meta = tokio::fs::metadata(file).await.map_err(|e| Error::io(file, e))?;
         if !meta.is_file() || meta.len() as usize > MAX_SKIN_BYTES {
-            return Err(Error::validation("Die Skin-Datei ist zu groß (höchstens 128 KB)."));
+            return Err(Error::validation(crate::msg!(
+                "skins.fileTooLarge",
+                "Die Skin-Datei ist zu groß (höchstens 128 KB)."
+            )));
         }
         let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
         self.add_skin_bytes(&bytes, name, variant).await
@@ -474,7 +511,10 @@ impl Launcher {
         let paths = self.paths();
         let mut library = read_library(paths).await;
         if library.skins.len() >= MAX_LIBRARY {
-            return Err(Error::validation("Die Skin-Bibliothek ist voll – bitte erst einen Skin löschen."));
+            return Err(Error::validation(crate::msg!(
+                "skins.libraryFull",
+                "Die Skin-Bibliothek ist voll – bitte erst einen Skin löschen."
+            )));
         }
         let id = uuid::Uuid::new_v4().simple().to_string()[..12].to_owned();
         let file = format!("skin-{id}.png");
@@ -499,7 +539,10 @@ impl Launcher {
             .skins
             .iter()
             .find(|s| s.state.eq_ignore_ascii_case("ACTIVE") && normalize_texture_url(&s.url).is_some())
-            .ok_or_else(|| Error::validation("Dieses Konto trägt gerade keinen eigenen Skin."))?;
+            .ok_or_else(|| Error::validation(crate::msg!(
+                "skins.noCustomSkin",
+                "Dieses Konto trägt gerade keinen eigenen Skin."
+            )))?;
         let variant = SkinVariant::from_api(&active.variant);
         let url = normalize_texture_url(&active.url).unwrap_or_default();
         let bytes = texture_bytes(self.http(), self.paths(), &url).await?;
@@ -508,12 +551,12 @@ impl Launcher {
 
     pub async fn delete_skin(&self, id: &str) -> Result<()> {
         if !is_library_id(id) {
-            return Err(Error::validation("Diesen Skin gibt es nicht."));
+            return Err(Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")));
         }
         let paths = self.paths();
         let mut library = read_library(paths).await;
         let Some(index) = library.skins.iter().position(|s| s.id == id) else {
-            return Err(Error::validation("Diesen Skin gibt es nicht."));
+            return Err(Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")));
         };
         let removed = library.skins.remove(index);
         fsutil::write_json(&library_file(paths), &library).await?;
@@ -524,14 +567,14 @@ impl Launcher {
     /// Bytes eines Bibliotheks-Skins (geprüft) – Grundlage für einen Upload.
     pub(crate) async fn library_skin_bytes(&self, id: &str) -> Result<Vec<u8>> {
         if !is_library_id(id) {
-            return Err(Error::validation("Diesen Skin gibt es nicht."));
+            return Err(Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")));
         }
         let library = read_library(self.paths()).await;
         let entry = library
             .skins
             .into_iter()
             .find(|s| s.id == id)
-            .ok_or_else(|| Error::validation("Diesen Skin gibt es nicht."))?;
+            .ok_or_else(|| Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")))?;
         let path = skins_dir(self.paths()).join(&entry.file);
         let bytes = tokio::fs::read(&path).await.map_err(|e| Error::io(&path, e))?;
         validate_skin_png(&bytes)?;

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Settings, UiSettings } from '~/types'
+import type { Locale } from '~/utils/i18n'
 
 /** Theme, Akzentfarbe und Unschärfe sofort auf das Dokument anwenden. */
 export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'advancedRendering'> | undefined) {
@@ -23,12 +24,14 @@ export const useSettingsStore = defineStore('settings', () => {
   async function load() {
     current.value = await backend.getSettings()
     applyAppearance(current.value.ui)
+    void setLocale(current.value.ui.language)
     return current.value
   }
 
   async function save(settings: Settings) {
     current.value = await backend.updateSettings(settings)
     applyAppearance(current.value.ui)
+    void setLocale(current.value.ui.language)
     return current.value
   }
 
@@ -37,9 +40,17 @@ export const useSettingsStore = defineStore('settings', () => {
     matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => applyAppearance(current.value?.ui))
   }
 
+  /** Sprache sofort umschalten und speichern (lädt die Einstellungen bei Bedarf). */
+  async function setLanguage(language: Locale) {
+    await setLocale(language)
+    const base = current.value ?? (await load())
+    if (base.ui.language === language) return
+    await save({ ...base, ui: { ...base.ui, language } })
+  }
+
   function open(section = 'appearance') {
     dialog.value = section
   }
 
-  return { current, dialog, load, save, open }
+  return { current, dialog, load, save, setLanguage, open }
 })

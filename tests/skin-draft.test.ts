@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import type { SkinProfile, SkinSyncStatus } from '../app/types'
 import {
   baseDraft,
@@ -10,6 +10,7 @@ import {
   syncLabel,
   type SkinDraft,
 } from '../app/utils/skinDraft'
+import { setLocale } from '../app/utils/i18n'
 
 function profile(extra: Partial<SkinProfile> = {}): SkinProfile {
   return {
@@ -119,6 +120,8 @@ describe('rebaseDraft', () => {
 })
 
 describe('Status', () => {
+  beforeAll(() => setLocale('de'))
+
   it('formatiert den Countdown', () => {
     expect(formatCountdown(42_000)).toBe('0:42')
     expect(formatCountdown(41_001)).toBe('0:42')
@@ -138,9 +141,21 @@ describe('Status', () => {
     expect(syncLabel(status({ state: 'applying' }), 0)).toBe('Wird angewendet …')
     expect(syncLabel(status({ state: 'waiting', reason: 'network', retryAt: 30_000 }), 0)).toContain('neuer Versuch in 0:30')
     expect(syncLabel(status({ state: 'waiting', reason: 'pacing', retryAt: 5_000 }), 0)).toContain('0:05')
+    expect(syncLabel(status({ state: 'waiting', reason: 'network', retryAt: null }), 0)).toBe('Mojang nicht erreichbar – neuer Versuch in Kürze')
     expect(syncLabel(status({ state: 'failed', message: 'Abgelehnt' }), 0)).toBe('Abgelehnt')
+    expect(syncLabel(status({ state: 'failed' }), 0)).toBe('Die Änderung konnte nicht angewendet werden.')
     expect(syncLabel(status({ state: 'done' }), 0)).toBeNull()
     expect(syncBusy(status({ state: 'done' }))).toBe(false)
     expect(syncBusy(null)).toBe(false)
+  })
+
+  it('folgt der eingestellten Sprache', async () => {
+    const s = status({ state: 'waiting', reason: 'rateLimited', retryAt: 42_000 })
+    await setLocale('en')
+    expect(syncLabel(s, 0)).toBe('Mojang is throttling – applying automatically in 0:42')
+    await setLocale('es')
+    expect(syncLabel(s, 0)).toContain('0:42')
+    expect(syncLabel(s, 0)).not.toBe('Mojang is throttling – applying automatically in 0:42')
+    await setLocale('de')
   })
 })

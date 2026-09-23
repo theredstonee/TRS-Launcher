@@ -71,10 +71,10 @@ pub async fn list_screenshots(paths: &Paths, instance_id: &str) -> Result<Vec<Sc
 pub fn screenshot_path(paths: &Paths, instance_id: &str, file_name: &str) -> Result<PathBuf> {
     validate_id(instance_id)?;
     if !is_plain_file_name(file_name, ".png") {
-        return Err(Error::validation("Ungültiger Dateiname"));
+        return Err(Error::validation(crate::msg!("content.invalidFileName", "Ungültiger Dateiname")));
     }
     let path = screenshots_dir(paths, instance_id).join(file_name);
-    if path.is_file() { Ok(path) } else { Err(Error::validation("Der Screenshot existiert nicht mehr.")) }
+    if path.is_file() { Ok(path) } else { Err(Error::validation(crate::msg!("extras.screenshotGone", "Der Screenshot existiert nicht mehr."))) }
 }
 
 pub async fn delete_screenshot(paths: &Paths, instance_id: &str, file_name: &str) -> Result<()> {
@@ -130,7 +130,7 @@ impl Launcher {
     pub async fn duplicate_instance(&self, id: &str, new_name: &str) -> Result<Instance> {
         let source = self.instances().get(id).await?;
         if self.games().is_running(id) {
-            return Err(Error::launch("Die Instanz läuft gerade – bitte erst beenden."));
+            return Err(Error::launch(crate::msg!("launcher.instanceRunningStopFirst", "Die Instanz läuft gerade – bitte erst beenden.")));
         }
 
         let copy = self

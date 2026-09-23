@@ -11,7 +11,7 @@ async function decide(accepted: boolean) {
   busy.value = true
   try {
     await trs.setConsent(accepted)
-    if (accepted) toasts.ok('TRS-Dienste sind eingeschaltet.')
+    if (accepted) toasts.ok(t('trsConsent.enabled'))
   } catch (e) {
     toasts.error(e)
   } finally {
@@ -25,38 +25,35 @@ function openPrivacy() {
 </script>
 
 <template>
-  <BaseDialog title="TRS-Dienste nutzen?" wide @close="trs.consentOpen = false">
+  <BaseDialog :title="t('trsConsent.title')" wide @close="trs.consentOpen = false">
     <div class="space-y-3 text-sm text-base-200">
-      <p>
-        Mit den TRS-Diensten bekommst du <strong class="text-base-50">TRS-Umhänge</strong>, eine
-        <strong class="text-base-50">Freundesliste</strong> mit Online-Status und kannst Freunden auf ihren Server
-        folgen. Dafür meldet sich der Launcher mit deinem Minecraft-Account beim TRS-Server
-        (<span class="font-mono text-xs">api.theredstonee.de</span>) an – wie beim Beitritt zu einem Minecraft-Server.
-        Dein Passwort und dein Minecraft-Token bekommt der Server nie.
-      </p>
+      <i18n-t keypath="trsConsent.intro" tag="p" scope="global">
+        <template #capes><strong class="text-base-50">{{ t('trsConsent.capes') }}</strong></template>
+        <template #friendsList><strong class="text-base-50">{{ t('trsConsent.friendsList') }}</strong></template>
+        <template #host><span class="font-mono text-xs">api.theredstonee.de</span></template>
+      </i18n-t>
       <div class="rounded-lg border border-base-700 bg-base-850 px-3 py-2.5">
-        <p class="mb-1.5 text-xs font-semibold text-base-50">Gespeichert werden</p>
+        <p class="mb-1.5 text-xs font-semibold text-base-50">{{ t('trsConsent.storedTitle') }}</p>
         <ul class="list-disc space-y-0.5 pl-4 text-xs text-base-200">
-          <li>deine Minecraft-UUID und dein Spielername</li>
-          <li>gewählter Umhang, eingelöste Codes und hochgeladene Umhang-Bilder</li>
-          <li>Freunde, Anfragen und Blockierungen</li>
-          <li>deine Datenschutz-Einstellungen und Zeitpunkte (Anmeldung, Erstellung)</li>
-          <li>
-            der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher,
-            er verfällt nach 3 Minuten
-          </li>
+          <li>{{ t('trsConsent.stored.identity') }}</li>
+          <li>{{ t('trsConsent.stored.capes') }}</li>
+          <li>{{ t('trsConsent.stored.friends') }}</li>
+          <li>{{ t('trsConsent.stored.settings') }}</li>
+          <li>{{ t('trsConsent.stored.presence') }}</li>
         </ul>
       </div>
       <p class="text-xs text-base-400">
-        Du kannst die Dienste jederzeit unter <em>Einstellungen → Datenschutz</em> ausschalten und dort alle deine
-        TRS-Daten löschen. Ohne Zustimmung sendet der Launcher nichts an den TRS-Server.
-        <button class="text-redstone-300 hover:underline" @click="openPrivacy">Datenschutzerklärung lesen</button>
+        <i18n-t keypath="trsConsent.footer" tag="span" scope="global">
+          <template #path><em>{{ t('trsConsent.settingsPath') }}</em></template>
+        </i18n-t>
+        {{ ' ' }}
+        <button class="text-redstone-300 hover:underline" @click="openPrivacy">{{ t('trsConsent.readPolicy') }}</button>
       </p>
     </div>
     <template #actions>
-      <button class="btn btn-ghost" :disabled="busy" @click="decide(false)">Nein, danke</button>
+      <button class="btn btn-ghost" :disabled="busy" @click="decide(false)">{{ t('trsConsent.decline') }}</button>
       <button class="btn btn-primary" :disabled="busy" data-testid="trs-consent-accept" @click="decide(true)">
-        {{ busy ? 'Einen Moment …' : 'TRS-Dienste nutzen' }}
+        {{ busy ? t('trsConsent.wait') : t('trsConsent.accept') }}
       </button>
     </template>
   </BaseDialog>

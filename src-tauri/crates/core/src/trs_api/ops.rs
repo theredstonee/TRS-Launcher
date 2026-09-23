@@ -20,19 +20,21 @@ use crate::{Error, Launcher, Result};
 const PRESENCE_BACKOFF: Duration = Duration::from_secs(5 * 60);
 
 fn bad_response() -> Error {
-    Error::TrsApi {
-        kind: "trs_api",
-        code: "bad_response".into(),
-        message: "Die TRS API hat unerwartet geantwortet.".into(),
-    }
+    super::bad_response()
 }
 
 fn uuid_arg(input: &str) -> Result<String> {
-    validate::uuid(input).ok_or_else(|| Error::validation("Ungültige Spieler-ID."))
+    validate::uuid(input).ok_or_else(|| Error::validation(crate::msg!(
+        "trsOps.invalidPlayerId",
+        "Ungültige Spieler-ID."
+    )))
 }
 
 fn cape_arg(input: &str) -> Result<&str> {
-    if validate::cape_id(input) { Ok(input) } else { Err(Error::validation("Ungültige Umhang-ID.")) }
+    if validate::cape_id(input) { Ok(input) } else { Err(Error::validation(crate::msg!(
+        "trsOps.invalidCapeId",
+        "Ungültige Umhang-ID."
+    ))) }
 }
 
 /// Prozent-Kodierung für Query-Werte (alles außer `A–Z a–z 0–9 - _ . ~`).
@@ -166,7 +168,7 @@ impl Launcher {
 
     pub async fn trs_update_me(&self, patch: SettingsPatch) -> Result<Me> {
         if patch.is_empty() {
-            return Err(Error::validation("Keine Änderung angegeben."));
+            return Err(Error::validation(crate::msg!("trsOps.noChange", "Keine Änderung angegeben.")));
         }
         let body = serde_json::to_value(&patch).map_err(|e| Error::json("Einstellungen", e))?;
         me_view(self.trs_get::<ApiMe>(Req::patch("/v1/me", body)).await?)
@@ -231,7 +233,10 @@ impl Launcher {
         let name = name.map(str::trim).filter(|n| !n.is_empty()).map(validate::upload_name).transpose()?;
         let meta = tokio::fs::metadata(file).await.map_err(|e| Error::io(file, e))?;
         if meta.len() > png::MAX_UPLOAD_BYTES as u64 {
-            return Err(Error::validation("Die Datei ist zu groß (höchstens 256 KB)."));
+            return Err(Error::validation(crate::msg!(
+                "trsPng.fileTooLarge",
+                "Die Datei ist zu groß (höchstens 256 KB)."
+            )));
         }
         let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
         png::validate_upload(&bytes)?;
@@ -253,7 +258,10 @@ impl Launcher {
     /// Eigenen Upload löschen.
     pub async fn trs_delete_cape(&self, id: &str) -> Result<()> {
         if !validate::is_upload_id(id) {
-            return Err(Error::validation("Nur eigene Umhänge können gelöscht werden."));
+            return Err(Error::validation(crate::msg!(
+                "trsOps.onlyOwnCapesDeletable",
+                "Nur eigene Umhänge können gelöscht werden."
+            )));
         }
         self.trs_do(Req::delete(format!("/v1/capes/{id}"))).await
     }
@@ -261,18 +269,24 @@ impl Launcher {
     /// Umhang eines anderen Spielers melden.
     pub async fn trs_report_cape(&self, id: &str, reason: ReportReason, note: Option<&str>) -> Result<()> {
         if !validate::is_upload_id(id) {
-            return Err(Error::validation("Nur hochgeladene Umhänge können gemeldet werden."));
+            return Err(Error::validation(crate::msg!(
+                "trsOps.onlyUploadedReportable",
+                "Nur hochgeladene Umhänge können gemeldet werden."
+            )));
         }
         let mut body = json!({ "reason": reason });
         if let Some(note) = note.map(str::trim).filter(|n| !n.is_empty()) {
-            body["note"] = json!(validate::plain_text(note, 200, "Hinweis")?);
+            body["note"] = json!(validate::plain_text(note, 200, validate::TextField::Comment)?);
         }
         self.trs_do(Req::post(format!("/v1/capes/{id}/report"), body)).await
     }
 
     pub async fn trs_redeem(&self, code: &str) -> Result<super::types::RedeemResult> {
         let code = validate::redeem_code(code)
-            .ok_or_else(|| Error::validation("Codes haben 20 Zeichen, z. B. 7K3QF-M2XPA-9RTVB-C4HJN."))?;
+            .ok_or_else(|| Error::validation(crate::msg!(
+                "trsOps.invalidCodeFormat",
+                "Codes haben 20 Zeichen, z. B. 7K3QF-M2XPA-9RTVB-C4HJN."
+            )))?;
         let result: ApiRedeem = self.trs_get(Req::post("/v1/capes/redeem", json!({ "code": code }))).await?;
         if !validate::cape_id(&result.cape.id) {
             return Err(bad_response());
@@ -293,7 +307,7 @@ impl Launcher {
             return Ok(Vec::new());
         }
         if list.len() > 100 {
-            return Err(Error::validation("Höchstens 100 Spieler auf einmal."));
+            return Err(Error::validation(crate::msg!("trsOps.tooManyPlayers", "Höchstens 100 Spieler auf einmal.")));
         }
         let lookup: ApiLookup = self.trs_get(Req::post("/v1/players/lookup", json!({ "uuids": list }))).await?;
         let mut jobs = Vec::with_capacity(lookup.players.len());
@@ -391,7 +405,7 @@ impl Launcher {
         let req = match reason.map(str::trim).filter(|r| !r.is_empty()) {
             Some(r) => Req::post(
                 format!("/v1/admin/capes/{id}/reject"),
-                json!({ "reason": validate::plain_text(r, 200, "Grund")? }),
+                json!({ "reason": validate::plain_text(r, 200, validate::TextField::Reason)? }),
             ),
             None => Req::post_empty(format!("/v1/admin/capes/{id}/reject")),
         };
@@ -400,7 +414,10 @@ impl Launcher {
 
     pub async fn trs_admin_delete_cape(&self, id: &str) -> Result<()> {
         if !validate::is_upload_id(id) {
-            return Err(Error::validation("Nur hochgeladene Umhänge können gelöscht werden."));
+            return Err(Error::validation(crate::msg!(
+                "trsOps.onlyUploadedDeletable",
+                "Nur hochgeladene Umhänge können gelöscht werden."
+            )));
         }
         self.trs_do(Req::delete(format!("/v1/admin/capes/{id}"))).await
     }
@@ -418,7 +435,7 @@ impl Launcher {
 
     pub async fn trs_admin_revoke_code(&self, id: u64) -> Result<()> {
         if id == 0 || id > (1u64 << 53) {
-            return Err(Error::validation("Ungültige Code-ID."));
+            return Err(Error::validation(crate::msg!("trsOps.invalidCodeId", "Ungültige Code-ID.")));
         }
         self.trs_do(Req::delete(format!("/v1/admin/codes/{id}"))).await
     }
@@ -478,7 +495,7 @@ impl Launcher {
         let uuid = self.trs_admin_resolve(player, false).await?;
         let req = match reason.map(str::trim).filter(|r| !r.is_empty()) {
             Some(r) => {
-                Req::post(format!("/v1/admin/users/{uuid}/ban"), json!({ "reason": validate::plain_text(r, 200, "Grund")? }))
+                Req::post(format!("/v1/admin/users/{uuid}/ban"), json!({ "reason": validate::plain_text(r, 200, validate::TextField::Reason)? }))
             }
             None => Req::post_empty(format!("/v1/admin/users/{uuid}/ban")),
         };
@@ -572,24 +589,30 @@ fn clean_admin_user(mut user: AdminUser) -> Result<AdminUser> {
 fn validate_new_codes(new: NewCodes) -> Result<NewCodes> {
     cape_arg(&new.cape_id)?;
     if !(1..=100_000).contains(&new.max_uses) {
-        return Err(Error::validation("Einlösungen je Code: 1 bis 100 000."));
+        return Err(Error::validation(crate::msg!("trsOps.redemptionsRange", "Einlösungen je Code: 1 bis 100 000.")));
     }
     if !(1..=100).contains(&new.count) {
-        return Err(Error::validation("Anzahl: 1 bis 100 Codes auf einmal."));
+        return Err(Error::validation(crate::msg!("trsOps.countRange", "Anzahl: 1 bis 100 Codes auf einmal.")));
     }
     let expires_at = match new.expires_at.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
         Some(at) => {
             let at = validate::iso_datetime(at)?;
-            let parsed = chrono::DateTime::parse_from_rfc3339(&at).map_err(|_| Error::validation("Ungültiges Ablaufdatum."))?;
+            let parsed = chrono::DateTime::parse_from_rfc3339(&at).map_err(|_| Error::validation(crate::msg!(
+                "trsValidate.invalidExpiry",
+                "Ungültiges Ablaufdatum."
+            )))?;
             if parsed < chrono::Utc::now() {
-                return Err(Error::validation("Das Ablaufdatum liegt in der Vergangenheit."));
+                return Err(Error::validation(crate::msg!(
+                    "trsOps.expiryInPast",
+                    "Das Ablaufdatum liegt in der Vergangenheit."
+                )));
             }
             Some(at)
         }
         None => None,
     };
     let note = match new.note.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
-        Some(n) => Some(validate::plain_text(n, 200, "Notiz")?),
+        Some(n) => Some(validate::plain_text(n, 200, validate::TextField::Note)?),
         None => None,
     };
     Ok(NewCodes { expires_at, note, ..new })

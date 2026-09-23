@@ -20,7 +20,6 @@ use crate::{Error, Launcher, Result, fsutil};
 pub const MAX_ICON_BYTES: u64 = 5 * 1024 * 1024;
 /// Banner sind meist Screenshots in voller Auflösung.
 pub const MAX_BANNER_BYTES: u64 = 10 * 1024 * 1024;
-const BANNER_TOO_LARGE: &str = "Das Banner darf höchstens 10 MB groß sein.";
 const MODRINTH_CDN: &str = "https://cdn.modrinth.com/";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,9 +55,9 @@ pub fn sniff(bytes: &[u8]) -> Option<ImageFormat> {
 /// Prüft Größe und Format; liefert das erkannte Format.
 pub fn validate_image(bytes: &[u8]) -> Result<ImageFormat> {
     if bytes.is_empty() || bytes.len() as u64 > MAX_ICON_BYTES {
-        return Err(Error::validation("Das Bild darf höchstens 5 MB groß sein."));
+        return Err(Error::validation(crate::msg!("icon.imageTooLarge", "Das Bild darf höchstens 5 MB groß sein.")));
     }
-    sniff(bytes).ok_or_else(|| Error::validation("Nur PNG-, JPEG- und WebP-Bilder werden unterstützt."))
+    sniff(bytes).ok_or_else(|| Error::validation(crate::msg!("icon.unsupportedFormat", "Nur PNG-, JPEG- und WebP-Bilder werden unterstützt.")))
 }
 
 /// Bild-URLs aus Modrinth-Daten: nur Modrinths eigenes CDN, nur HTTPS, keine
@@ -97,11 +96,15 @@ fn new_named(prefix: &str, format: ImageFormat) -> String {
 }
 
 /// Wie [`validate_image`], nur mit der Größengrenze für Banner.
+fn banner_too_large() -> Error {
+    Error::validation(crate::msg!("icon.bannerTooLarge", "Das Banner darf höchstens 10 MB groß sein."))
+}
+
 pub fn validate_banner(bytes: &[u8]) -> Result<ImageFormat> {
     if bytes.is_empty() || bytes.len() as u64 > MAX_BANNER_BYTES {
-        return Err(Error::validation(BANNER_TOO_LARGE));
+        return Err(banner_too_large());
     }
-    sniff(bytes).ok_or_else(|| Error::validation("Nur PNG-, JPEG- und WebP-Bilder werden unterstützt."))
+    sniff(bytes).ok_or_else(|| Error::validation(crate::msg!("icon.unsupportedFormat", "Nur PNG-, JPEG- und WebP-Bilder werden unterstützt.")))
 }
 
 /// Das Banner im Instanz-Ordner (bei mehreren – nur nach einem Wettlauf
@@ -131,7 +134,7 @@ impl Launcher {
     pub async fn set_instance_icon_from_file(&self, id: &str, file: &Path) -> Result<Instance> {
         let meta = tokio::fs::metadata(file).await.map_err(|e| Error::io(file, e))?;
         if !meta.is_file() || meta.len() > MAX_ICON_BYTES {
-            return Err(Error::validation("Das Bild darf höchstens 5 MB groß sein."));
+            return Err(Error::validation(crate::msg!("icon.imageTooLarge", "Das Bild darf höchstens 5 MB groß sein.")));
         }
         let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
         self.set_instance_icon_bytes(id, &bytes).await
@@ -140,11 +143,11 @@ impl Launcher {
     /// Lädt ein Bild von Modrinths CDN (z. B. das Modpack-Icon).
     pub async fn set_instance_icon_from_url(&self, id: &str, url: &str) -> Result<Instance> {
         if !is_allowed_icon_url(url) {
-            return Err(Error::validation("Bildquelle nicht erlaubt"));
+            return Err(Error::validation(crate::msg!("icon.sourceNotAllowed", "Bildquelle nicht erlaubt")));
         }
         let response = self.http().get(url).send().await?.error_for_status()?;
         if response.content_length().is_some_and(|len| len > MAX_ICON_BYTES) {
-            return Err(Error::validation("Das Bild darf höchstens 5 MB groß sein."));
+            return Err(Error::validation(crate::msg!("icon.imageTooLarge", "Das Bild darf höchstens 5 MB groß sein.")));
         }
         let bytes = response.bytes().await?;
         self.set_instance_icon_bytes(id, &bytes).await
@@ -181,7 +184,7 @@ impl Launcher {
     pub async fn set_instance_banner_from_file(&self, id: &str, file: &Path) -> Result<Instance> {
         let meta = tokio::fs::metadata(file).await.map_err(|e| Error::io(file, e))?;
         if !meta.is_file() || meta.len() > MAX_BANNER_BYTES {
-            return Err(Error::validation(BANNER_TOO_LARGE));
+            return Err(banner_too_large());
         }
         let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
         self.set_instance_banner_bytes(id, &bytes).await

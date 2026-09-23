@@ -103,7 +103,7 @@ pub async fn allow(paths: &Paths, programs: Vec<PathBuf>) -> Result<usize> {
     // Nur unsere eigenen Runtimes – nie beliebige Programme freigeben.
     let java_dir = paths.java_dir();
     if programs.len() > MAX_HELPER_PROGRAMS || programs.iter().any(|p| !p.starts_with(&java_dir) || !helper_accepts(p)) {
-        return Err(Error::validation("Nur Java-Versionen des Launchers können freigegeben werden."));
+        return Err(Error::validation(crate::msg!("firewall.onlyLauncherJava", "Nur Java-Versionen des Launchers können freigegeben werden.")));
     }
     let Some(exe) = HELPER_EXE.get().cloned() else { return Ok(0) };
 
@@ -116,7 +116,7 @@ pub async fn allow(paths: &Paths, programs: Vec<PathBuf>) -> Result<usize> {
         0 => {}
         code => {
             tracing::warn!("Firewall-Hilfsmodus endete mit Code {code}");
-            return Err(Error::launch("Die Firewall-Freigabe konnte nicht eingetragen werden."));
+            return Err(Error::launch(crate::msg!("firewall.ruleFailed", "Die Firewall-Freigabe konnte nicht eingetragen werden.")));
         }
     }
 
@@ -167,10 +167,10 @@ fn run_elevated_helper(exe: &Path, params: &str) -> Result<u32> {
             if GetLastError() == ERROR_CANCELLED {
                 return Err(Error::Cancelled);
             }
-            return Err(Error::launch("Die Admin-Abfrage konnte nicht geöffnet werden."));
+            return Err(Error::launch(crate::msg!("firewall.elevationFailed", "Die Admin-Abfrage konnte nicht geöffnet werden.")));
         }
         if info.hProcess.is_invalid() {
-            return Err(Error::launch("Die Firewall-Freigabe wurde nicht gestartet."));
+            return Err(Error::launch(crate::msg!("firewall.helperNotStarted", "Die Firewall-Freigabe wurde nicht gestartet.")));
         }
         WaitForSingleObject(info.hProcess, INFINITE);
         let mut code = 1u32;

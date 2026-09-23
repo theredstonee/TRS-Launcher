@@ -7,6 +7,7 @@ use trs_core::skin_sync::{SkinChanges, SkinSyncStatus};
 use trs_core::skins::{LibrarySkinView, Profile, SkinVariant};
 
 use crate::LauncherState;
+use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 /// Profil des aktiven Accounts: aktiver Skin, Modell und verfügbare Umhänge.
@@ -30,8 +31,13 @@ pub async fn add_skin_file(
     name: String,
     variant: SkinVariant,
 ) -> CommandResult<Option<LibrarySkinView>> {
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog().file().set_title("Skin-Datei wählen (PNG, 64×64)").add_filter("Skins", &["png"]).blocking_pick_file()
+        app.dialog()
+            .file()
+            .set_title(DialogText::PickSkin.text(lang))
+            .add_filter(DialogText::Skins.text(lang), &["png"])
+            .blocking_pick_file()
     })
     .await
     .ok()

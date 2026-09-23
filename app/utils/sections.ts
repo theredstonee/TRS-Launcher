@@ -1,25 +1,44 @@
 import type { ShellSection } from '~/components/SettingsShell.vue'
+import type { IconName } from '~/utils/icons'
+import type { MessageKey } from '~/utils/i18n'
+
+/**
+ * Bereich mit übersetztem Namen: `label` und `group` sind Getter und liefern
+ * immer die aktuelle Sprache – in Templates und `computed` also reaktiv.
+ */
+function section(key: string, labelKey: MessageKey, icon: IconName, groupKey?: MessageKey): ShellSection {
+  return {
+    key,
+    icon,
+    get label() {
+      return t(labelKey)
+    },
+    get group() {
+      return groupKey ? t(groupKey) : undefined
+    },
+  }
+}
 
 /** Bereiche der globalen Einstellungen – auch die Befehlspalette springt hierher. */
 export const appSettingsSections: ShellSection[] = [
-  { key: 'appearance', label: 'Aussehen', icon: 'palette', group: 'Darstellung' },
-  { key: 'features', label: 'Funktionen', icon: 'toggles', group: 'Darstellung' },
-  { key: 'behavior', label: 'Verhalten', icon: 'behavior', group: 'Darstellung' },
-  { key: 'language', label: 'Sprache', icon: 'language', group: 'Darstellung' },
-  { key: 'profile', label: 'Profil', icon: 'user', group: 'Konto' },
-  { key: 'privacy', label: 'Datenschutz', icon: 'shield', group: 'Konto' },
-  { key: 'defaults', label: 'Standard-Einstellungen', icon: 'defaults', group: 'Instanzen' },
-  { key: 'java', label: 'Java-Installationen', icon: 'java', group: 'Instanzen' },
-  { key: 'storage', label: 'Speicherverwaltung', icon: 'storage', group: 'Instanzen' },
-  { key: 'network', label: 'Netzwerk', icon: 'network', group: 'Instanzen' },
+  section('appearance', 'settingsSections.app.appearance', 'palette', 'settingsSections.groups.interface'),
+  section('features', 'settingsSections.app.features', 'toggles', 'settingsSections.groups.interface'),
+  section('behavior', 'settingsSections.app.behavior', 'behavior', 'settingsSections.groups.interface'),
+  section('language', 'settingsSections.app.language', 'language', 'settingsSections.groups.interface'),
+  section('profile', 'settingsSections.app.profile', 'user', 'settingsSections.groups.account'),
+  section('privacy', 'settingsSections.app.privacy', 'shield', 'settingsSections.groups.account'),
+  section('defaults', 'settingsSections.app.defaults', 'defaults', 'settingsSections.groups.instances'),
+  section('java', 'settingsSections.app.java', 'java', 'settingsSections.groups.instances'),
+  section('storage', 'settingsSections.app.storage', 'storage', 'settingsSections.groups.instances'),
+  section('network', 'settingsSections.app.network', 'network', 'settingsSections.groups.instances'),
 ]
 
 /** Bereiche der Instanz-Einstellungen. */
 export const instanceSettingsSections: ShellSection[] = [
-  { key: 'general', label: 'Allgemein', icon: 'general' },
-  { key: 'installation', label: 'Installation', icon: 'install' },
-  { key: 'window', label: 'Fenster', icon: 'window' },
-  { key: 'java', label: 'Java & Arbeitsspeicher', icon: 'java' },
-  { key: 'hooks', label: 'Start-Hooks', icon: 'hooks' },
-  { key: 'sync', label: 'Synchronisierung', icon: 'sync' },
+  section('general', 'settingsSections.instance.general', 'general'),
+  section('installation', 'settingsSections.instance.installation', 'install'),
+  section('window', 'settingsSections.instance.window', 'window'),
+  section('java', 'settingsSections.instance.java', 'java'),
+  section('hooks', 'settingsSections.instance.hooks', 'hooks'),
+  section('sync', 'settingsSections.instance.sync', 'sync'),
 ]

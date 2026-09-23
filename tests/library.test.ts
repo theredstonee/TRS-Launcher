@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import type { Instance, LoaderKind } from '../app/types'
+import { setLocale } from '../app/utils/i18n'
 import { compareGameVersions, customGroups, filterInstances, groupInstances, majorVersion, sortInstances } from '../app/utils/library'
 
 function inst(name: string, gameVersion: string, kind: LoaderKind, extra: Partial<Instance> = {}): Instance {
@@ -59,9 +60,18 @@ describe('Bibliothek', () => {
     expect(custom.map((g) => [g.label, names(g.items)])).toEqual([
       ['PvP', ['Alpha', 'Delta']],
       ['Technik', ['Gamma']],
-      ['Ohne Gruppe', ['beta']],
+      ['No group', ['beta']],
     ])
     expect(groupInstances(list, 'none')).toHaveLength(1)
     expect(customGroups(list)).toEqual(['PvP', 'Technik'])
   })
+
+  it('beschriftet „Ohne Gruppe“ in der eingestellten Sprache', async () => {
+    await setLocale('de')
+    expect(groupInstances(list, 'custom').at(-1)?.label).toBe('Ohne Gruppe')
+    await setLocale('es')
+    expect(groupInstances(list, 'custom').at(-1)?.label).toBe('Sin grupo')
+  })
+
+  afterAll(() => setLocale('en'))
 })

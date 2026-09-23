@@ -73,7 +73,7 @@ async fn token_request(http: &reqwest::Client, form: &[(&str, &str)]) -> Result<
     if response.status().is_success() {
         return Ok(Ok(response.json().await?));
     }
-    let err: OAuthError = response.json().await.map_err(|_| Error::auth("Microsoft hat die Anmeldung abgelehnt."))?;
+    let err: OAuthError = response.json().await.map_err(|_| Error::auth(crate::msg!("auth.microsoftRejected", "Microsoft hat die Anmeldung abgelehnt.")))?;
     Ok(Err(err.error))
 }
 
@@ -87,7 +87,7 @@ pub async fn device_code_start(http: &reqwest::Client) -> Result<DeviceCode> {
         .await?;
     if !response.status().is_success() {
         tracing::error!("devicecode fehlgeschlagen: {}", response.status());
-        return Err(Error::auth("Microsoft hat die Anmeldung abgelehnt."));
+        return Err(Error::auth(crate::msg!("auth.microsoftRejected", "Microsoft hat die Anmeldung abgelehnt.")));
     }
     Ok(response.json().await?)
 }
@@ -99,7 +99,7 @@ pub async fn device_code_poll(http: &reqwest::Client, code: &DeviceCode) -> Resu
     loop {
         tokio::time::sleep(Duration::from_secs(interval)).await;
         if tokio::time::Instant::now() >= deadline {
-            return Err(Error::auth("Der Anmeldecode ist abgelaufen – bitte erneut versuchen."));
+            return Err(Error::auth(crate::msg!("auth.deviceCodeExpired", "Der Anmeldecode ist abgelaufen – bitte erneut versuchen.")));
         }
         let form = [
             ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
@@ -112,11 +112,11 @@ pub async fn device_code_poll(http: &reqwest::Client, code: &DeviceCode) -> Resu
             Err(e) if e == "slow_down" => interval += 5,
             Err(e) if e == "authorization_declined" => return Err(Error::Cancelled),
             Err(e) if e == "expired_token" => {
-                return Err(Error::auth("Der Anmeldecode ist abgelaufen – bitte erneut versuchen."));
+                return Err(Error::auth(crate::msg!("auth.deviceCodeExpired", "Der Anmeldecode ist abgelaufen – bitte erneut versuchen.")));
             }
             Err(e) => {
                 tracing::error!("Device-Code-Token fehlgeschlagen: {e}");
-                return Err(Error::auth("Microsoft hat die Anmeldung abgelehnt."));
+                return Err(Error::auth(crate::msg!("auth.microsoftRejected", "Microsoft hat die Anmeldung abgelehnt.")));
             }
         }
     }
@@ -190,7 +190,7 @@ pub async fn browser_login(http: &reqwest::Client, open_url: &(dyn Fn(&str) + Sy
 
     let code = tokio::time::timeout(BROWSER_LOGIN_TIMEOUT, wait_for_redirect(&listener, &state))
         .await
-        .map_err(|_| Error::auth("Zeitüberschreitung bei der Anmeldung – bitte erneut versuchen."))??;
+        .map_err(|_| Error::auth(crate::msg!("auth.loginTimeout", "Zeitüberschreitung bei der Anmeldung – bitte erneut versuchen.")))??;
 
     let form = [
         ("grant_type", "authorization_code"),
@@ -202,7 +202,7 @@ pub async fn browser_login(http: &reqwest::Client, open_url: &(dyn Fn(&str) + Sy
     ];
     token_request(http, &form).await?.map_err(|e| {
         tracing::error!("Code-Einlösung fehlgeschlagen: {e}");
-        Error::auth("Microsoft hat die Anmeldung abgelehnt.")
+        Error::auth(crate::msg!("auth.microsoftRejected", "Microsoft hat die Anmeldung abgelehnt."))
     })
 }
 
@@ -251,7 +251,7 @@ async fn wait_for_redirect(listener: &TcpListener, expected_state: &str) -> Resu
                 Err(Error::Cancelled)
             } else {
                 tracing::error!("Authorize-Fehler: {error}");
-                Err(Error::auth("Microsoft hat die Anmeldung abgelehnt."))
+                Err(Error::auth(crate::msg!("auth.microsoftRejected", "Microsoft hat die Anmeldung abgelehnt.")))
             };
         }
         if let Some(code) = param("code") {
@@ -273,7 +273,7 @@ pub async fn refresh(http: &reqwest::Client, refresh_token: &str) -> Result<MsTo
     ];
     token_request(http, &form).await?.map_err(|e| {
         tracing::warn!("Token-Refresh fehlgeschlagen: {e}");
-        Error::auth("Die Anmeldung ist abgelaufen – bitte den Account erneut anmelden.")
+        Error::auth(crate::msg!("auth.sessionExpired", "Die Anmeldung ist abgelaufen – bitte den Account erneut anmelden."))
     })
 }
 
@@ -328,14 +328,22 @@ struct Skin {
     url: String,
 }
 
-fn xsts_error_message(x_err: u64) -> &'static str {
+fn xsts_error_message(x_err: u64) -> crate::error::Msg {
     match x_err {
-        2_148_916_227 => "Dieses Xbox-Konto ist gesperrt.",
-        2_148_916_233 => "Zu diesem Microsoft-Konto gibt es noch kein Xbox-Profil. Bitte einmal auf xbox.com anmelden und eines anlegen.",
-        2_148_916_235 => "Xbox Live ist in deinem Land nicht verfügbar.",
-        2_148_916_236 | 2_148_916_237 => "Für dieses Konto ist eine Altersverifikation bei Xbox nötig.",
-        2_148_916_238 => "Dieses Konto gehört einem Kind und muss erst von einem Erwachsenen zu einer Microsoft-Familie hinzugefügt werden.",
-        _ => "Die Anmeldung bei Xbox Live ist fehlgeschlagen.",
+        2_148_916_227 => crate::msg!("auth.xboxBanned", "Dieses Xbox-Konto ist gesperrt."),
+        2_148_916_233 => crate::msg!(
+            "auth.xboxNoProfile",
+            "Zu diesem Microsoft-Konto gibt es noch kein Xbox-Profil. Bitte einmal auf xbox.com anmelden und eines anlegen."
+        ),
+        2_148_916_235 => crate::msg!("auth.xboxRegionBlocked", "Xbox Live ist in deinem Land nicht verfügbar."),
+        2_148_916_236 | 2_148_916_237 => {
+            crate::msg!("auth.xboxAgeVerification", "Für dieses Konto ist eine Altersverifikation bei Xbox nötig.")
+        }
+        2_148_916_238 => crate::msg!(
+            "auth.xboxChildAccount",
+            "Dieses Konto gehört einem Kind und muss erst von einem Erwachsenen zu einer Microsoft-Familie hinzugefügt werden."
+        ),
+        _ => crate::msg!("auth.xboxFailed", "Die Anmeldung bei Xbox Live ist fehlgeschlagen."),
     }
 }
 
@@ -356,7 +364,7 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
         .error_for_status()
         .map_err(|e| {
             tracing::error!("XBL fehlgeschlagen: {}", e.without_url());
-            Error::auth("Die Anmeldung bei Xbox Live ist fehlgeschlagen.")
+            Error::auth(crate::msg!("auth.xboxFailed", "Die Anmeldung bei Xbox Live ist fehlgeschlagen."))
         })?
         .json()
         .await?;
@@ -378,7 +386,7 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
     }
     let xsts: XboxResponse = response
         .error_for_status()
-        .map_err(|_| Error::auth("Die Anmeldung bei Xbox Live ist fehlgeschlagen."))?
+        .map_err(|_| Error::auth(crate::msg!("auth.xboxFailed", "Die Anmeldung bei Xbox Live ist fehlgeschlagen.")))?
         .json()
         .await?;
 
@@ -395,7 +403,7 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
         .error_for_status()
         .map_err(|e| {
             tracing::error!("login_with_xbox fehlgeschlagen: {}", e.without_url());
-            Error::auth("Die Anmeldung bei den Minecraft-Diensten ist fehlgeschlagen.")
+            Error::auth(crate::msg!("auth.minecraftServicesFailed", "Die Anmeldung bei den Minecraft-Diensten ist fehlgeschlagen."))
         })?
         .json()
         .await?;
@@ -406,28 +414,26 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
         .send()
         .await?
         .error_for_status()
-        .map_err(|_| Error::auth("Der Spielbesitz konnte nicht geprüft werden."))?
+        .map_err(|_| Error::auth(crate::msg!("auth.entitlementCheckFailed", "Der Spielbesitz konnte nicht geprüft werden.")))?
         .json()
         .await?;
     if entitlements.items.is_empty() {
-        return Err(Error::auth("Dieses Konto besitzt Minecraft: Java Edition nicht."));
+        return Err(Error::auth(crate::msg!("auth.noJavaEdition", "Dieses Konto besitzt Minecraft: Java Edition nicht.")));
     }
 
     let response = http.get(MC_PROFILE_URL).bearer_auth(&mc.access_token).send().await?;
     if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Err(Error::auth(
-            "Für dieses Konto gibt es noch kein Minecraft-Profil. Bitte einmal im offiziellen Launcher anmelden und einen Spielernamen festlegen.",
-        ));
+        return Err(Error::auth(crate::msg!("auth.noProfile", "Für dieses Konto gibt es noch kein Minecraft-Profil. Bitte einmal im offiziellen Launcher anmelden und einen Spielernamen festlegen.")));
     }
     let profile: Profile = response
         .error_for_status()
-        .map_err(|_| Error::auth("Das Minecraft-Profil konnte nicht geladen werden."))?
+        .map_err(|_| Error::auth(crate::msg!("auth.profileLoadFailed", "Das Minecraft-Profil konnte nicht geladen werden.")))?
         .json()
         .await?;
 
     let valid_uuid = profile.id.len() == 32 && profile.id.bytes().all(|b| b.is_ascii_hexdigit());
     if !valid_uuid {
-        return Err(Error::auth("Das Minecraft-Profil enthält ungültige Daten."));
+        return Err(Error::auth(crate::msg!("auth.profileInvalid", "Das Minecraft-Profil enthält ungültige Daten.")));
     }
 
     Ok(MinecraftSession {

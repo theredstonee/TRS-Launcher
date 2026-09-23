@@ -63,29 +63,29 @@ async function submit() {
 </script>
 
 <template>
-  <BaseDialog title="Neue Instanz" @close="emit('close')">
+  <BaseDialog :title="t('createInstance.title')" @close="emit('close')">
     <form id="create-instance" class="space-y-4" @submit.prevent="submit">
       <div>
-        <label class="label" for="ci-name">Name</label>
-        <input id="ci-name" v-model="name" class="field" maxlength="64" placeholder="Meine Welt" autofocus />
+        <label class="label" for="ci-name">{{ t('common.labels.name') }}</label>
+        <input id="ci-name" v-model="name" class="field" maxlength="64" :placeholder="t('createInstance.namePlaceholder')" autofocus />
       </div>
 
       <div>
         <div class="flex items-center justify-between">
-          <label class="label" for="ci-version">Minecraft-Version</label>
+          <label class="label" for="ci-version">{{ t('createInstance.gameVersion') }}</label>
           <label class="mb-1.5 flex items-center gap-1.5 text-xs text-base-400">
             <input v-model="showSnapshots" type="checkbox" class="accent-redstone-500" />
-            Snapshots &amp; alte Versionen
+            {{ t('createInstance.showSnapshots') }}
           </label>
         </div>
         <select id="ci-version" v-model="gameVersion" class="field font-mono" :disabled="loadingVersions || !versions.length">
-          <option v-if="loadingVersions" value="">Lade Versionen …</option>
+          <option v-if="loadingVersions" value="">{{ t('createInstance.loadingVersions') }}</option>
           <option v-for="v in versions" :key="v.id" :value="v.id">{{ v.id }}</option>
         </select>
       </div>
 
       <div>
-        <span class="label">Modloader</span>
+        <span class="label">{{ t('common.labels.loader') }}</span>
         <div class="grid grid-cols-5 gap-1.5">
           <button
             v-for="kind in loaderKinds"
@@ -106,9 +106,9 @@ async function submit() {
     </form>
 
     <template #actions>
-      <button type="button" class="btn btn-ghost" @click="emit('close')">Abbrechen</button>
+      <button type="button" class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.cancel') }}</button>
       <button type="submit" form="create-instance" class="btn btn-primary" :disabled="submitting || loadingVersions || !gameVersion">
-        {{ submitting ? 'Erstelle …' : 'Erstellen' }}
+        {{ submitting ? t('createInstance.creating') : t('common.actions.create') }}
       </button>
     </template>
   </BaseDialog>

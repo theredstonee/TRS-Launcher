@@ -98,7 +98,7 @@ impl AccountStore {
         let _guard = self.file_lock.lock().await;
         let mut file = self.read().await?;
         if !file.accounts.iter().any(|a| a.id == id) {
-            return Err(Error::auth("Dieser Account existiert nicht mehr."));
+            return Err(Error::auth(crate::msg!("auth.accountMissing", "Dieser Account existiert nicht mehr.")));
         }
         file.active = Some(id.to_owned());
         self.write(&file).await
@@ -166,7 +166,7 @@ impl AccountStore {
     async fn begin_login(&self) -> Result<Arc<Notify>> {
         let mut slot = self.login.lock().await;
         if slot.is_some() {
-            return Err(Error::auth("Es läuft bereits eine Anmeldung."));
+            return Err(Error::auth(crate::msg!("auth.loginInProgress", "Es läuft bereits eine Anmeldung.")));
         }
         let notify = Arc::new(Notify::new());
         *slot = Some(notify.clone());
@@ -274,7 +274,7 @@ impl AccountStore {
             Err(e) => return Err(e),
         };
         if session.uuid != account.id {
-            return Err(Error::auth("Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden."));
+            return Err(Error::auth(crate::msg!("auth.accountMismatch", "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.")));
         }
         self.upsert(&tokens, &session, false).await?;
 

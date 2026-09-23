@@ -26,7 +26,7 @@ function update(i: number, field: keyof EnvVar, value: string) {
         placeholder="NAME"
         spellcheck="false"
         :disabled="disabled"
-        :aria-label="`Name der Variable ${i + 1}`"
+        :aria-label="t('envEditor.nameLabel', { n: i + 1 })"
         @input="update(i, 'key', ($event.target as HTMLInputElement).value)"
       />
       <span class="text-base-600">=</span>
@@ -34,22 +34,22 @@ function update(i: number, field: keyof EnvVar, value: string) {
         :value="v.value"
         class="field min-w-0 flex-1 font-mono text-xs"
         maxlength="1024"
-        placeholder="Wert"
+        :placeholder="t('envEditor.valuePlaceholder')"
         spellcheck="false"
         :disabled="disabled"
-        :aria-label="`Wert der Variable ${i + 1}`"
+        :aria-label="t('envEditor.valueLabel', { n: i + 1 })"
         @input="update(i, 'value', ($event.target as HTMLInputElement).value)"
       />
-      <button type="button" class="btn-icon size-8 hover:text-redstone-300" :disabled="disabled" :aria-label="`Variable ${v.key || i + 1} entfernen`" @click="remove(i)">
+      <button type="button" class="btn-icon size-8 hover:text-redstone-300" :disabled="disabled" :aria-label="t('envEditor.remove', { name: v.key || i + 1 })" @click="remove(i)">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.close" /></svg>
       </button>
     </div>
     <p v-if="!model.length && placeholder?.length" class="font-mono text-xs text-base-600">
-      Global: {{ placeholder.map((p) => `${p.key}=${p.value}`).join('  ') }}
+      {{ t('envEditor.global', { vars: placeholder.map((p) => `${p.key}=${p.value}`).join('  ') }) }}
     </p>
     <button type="button" class="btn btn-ghost py-1.5 text-xs" :disabled="disabled || model.length >= 32" @click="add">
       <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-      Variable hinzufügen
+      {{ t('envEditor.add') }}
     </button>
   </div>
 </template>

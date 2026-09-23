@@ -36,10 +36,10 @@ function isBusy(item: ContentItem): boolean {
 const finishedHere = computed(
   () =>
     Object.values(tasks.tasks).filter(
-      (t) =>
-        t.instanceId === props.instance.id &&
-        (t.kind === 'content' || t.kind === 'content-update' || t.kind === 'performance-pack') &&
-        t.status !== 'running',
+      (task) =>
+        task.instanceId === props.instance.id &&
+        (task.kind === 'content' || task.kind === 'content-update' || task.kind === 'performance-pack') &&
+        task.status !== 'running',
     ).length,
 )
 watch(finishedHere, (n, before) => {
@@ -77,7 +77,7 @@ async function checkUpdates(silent = false) {
   checking.value = true
   try {
     updates.value = await backend.checkContentUpdates(props.instance.id)
-    if (!silent && !updates.value.length) toasts.info('Alles ist aktuell')
+    if (!silent && !updates.value.length) toasts.info(t('content.toasts.upToDate'))
   } catch (e) {
     if (!silent) toasts.error(e)
   } finally {
@@ -119,7 +119,7 @@ const visible = computed(() => {
       (filter.value === 'all' || i.kind === filter.value) &&
       (!needle || `${i.title ?? ''} ${i.fileName} ${i.author ?? ''}`.toLowerCase().includes(needle)),
   )
-  const byName = (a: ContentItem, b: ContentItem) => titleOf(a).localeCompare(titleOf(b), 'de', { sensitivity: 'base' })
+  const byName = (a: ContentItem, b: ContentItem) => compareText(titleOf(a), titleOf(b))
   const rank: Record<typeof sort.value, (i: ContentItem) => number> = {
     name: () => 0,
     enabled: (i) => (i.enabled ? 0 : 1),
@@ -163,11 +163,10 @@ async function bulk(action: BulkAction, targets: ContentItem[]) {
     const r = await backend.bulkContent(
       props.instance.id,
       action,
-      targets.map((t) => ({ kind: t.kind, fileName: t.fileName })),
+      targets.map((item) => ({ kind: item.kind, fileName: item.fileName })),
     )
-    const verb = { enable: 'aktiviert', disable: 'deaktiviert', delete: 'gelöscht' }[action]
-    if (r.failed) toasts.error(`${r.changed} ${verb}, ${r.failed} fehlgeschlagen`)
-    else toasts.ok(`${r.changed} ${r.changed === 1 ? 'Inhalt' : 'Inhalte'} ${verb}`)
+    if (r.failed) toasts.error(t(`content.bulk.partial.${action}`, { changed: r.changed, failed: r.failed }))
+    else toasts.ok(t(`content.bulk.done.${action}`, r.changed))
     if (action === 'delete') selected.value = new Set()
   } catch (e) {
     toasts.error(e)
@@ -187,10 +186,10 @@ function applyUpdates(list: ContentUpdate[]) {
       key: updatesKey.value,
       kind: 'content-update',
       title: instance.name,
-      stage: `${total} ${total === 1 ? 'Update' : 'Updates'}`,
+      stage: t('content.updates.stage', total),
       instanceId: instance.id,
       cancellable: true,
-      doneText: `${total} ${total === 1 ? 'Update' : 'Updates'} installiert`,
+      doneText: t('content.updates.done', total),
     },
     async (ctx) => {
       const failed: ContentUpdate[] = []
@@ -208,7 +207,7 @@ function applyUpdates(list: ContentUpdate[]) {
       }
       remaining = failed
       ctx.update({ tag: null })
-      if (failed.length) throw new BackendError('partial', `${failed.length} von ${count} Updates sind fehlgeschlagen.`)
+      if (failed.length) throw new BackendError('partial', t('content.updates.partial', { failed: failed.length, total: count }, failed.length))
     },
   )
 }
@@ -248,10 +247,16 @@ async function confirmDelete() {
 function installPerformancePack() {
   const instance = props.instance
   tasks.run(
-    { key: packKey.value, kind: 'performance-pack', title: `Performance-Paket für ${instance.name}`, stage: 'Mods werden geladen', instanceId: instance.id },
+    {
+      key: packKey.value,
+      kind: 'performance-pack',
+      title: t('content.perfPack.taskTitle', { name: instance.name }),
+      stage: t('content.perfPack.stage'),
+      instanceId: instance.id,
+    },
     async (ctx) => {
       const files = await backend.installPerformancePack(instance.id, ctx.taskId)
-      ctx.update({ doneText: `Performance-Paket installiert (${files.length} Dateien)` })
+      ctx.update({ doneText: t('content.perfPack.done', files.length) })
       return files
     },
   )
@@ -260,8 +265,8 @@ function installPerformancePack() {
 // --- Dateien hinzufügen ------------------------------------------------------------
 function reportUploads(results: UploadResult[]) {
   const ok = results.filter((r) => !r.error)
-  if (ok.length) toasts.ok(ok.length === 1 ? `${ok[0]!.fileName} hinzugefügt` : `${ok.length} Dateien hinzugefügt`)
-  for (const r of results.filter((r) => r.error)) toasts.error(`${r.fileName}: ${r.error}`)
+  if (ok.length) toasts.ok(ok.length === 1 ? t('content.toasts.fileAdded', { name: ok[0]!.fileName }) : t('content.toasts.filesAdded', ok.length))
+  for (const r of results.filter((r) => r.error)) toasts.error(`${r.fileName}: ${r.errorInfo ? userErrorText(r.errorInfo) : r.error}`)
   if (ok.length) load(true)
 }
 
@@ -312,46 +317,44 @@ const pendingUpdates = computed(() => updates.value ?? [])
     <div class="mb-3 flex flex-wrap items-center gap-2">
       <div class="relative min-w-52 flex-1">
         <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-600" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
-        <input v-model="search" class="field h-9 rounded-full py-0 pl-9 text-sm" maxlength="100" :placeholder="`${items.length} Projekte durchsuchen …`" spellcheck="false" aria-label="Projekte durchsuchen" />
+        <input v-model="search" class="field h-9 rounded-full py-0 pl-9 text-sm" maxlength="100" :placeholder="t('content.toolbar.searchPlaceholder', items.length)" spellcheck="false" :aria-label="t('content.toolbar.searchLabel')" />
       </div>
-      <select v-model="sort" class="field h-9 w-auto py-0 text-xs" aria-label="Sortieren">
-        <option value="name">Nach Name</option>
-        <option value="enabled">Aktive zuerst</option>
-        <option value="updates">Updates zuerst</option>
-        <option value="kind">Nach Art</option>
+      <select v-model="sort" class="field h-9 w-auto py-0 text-xs" :aria-label="t('content.toolbar.sortLabel')">
+        <option value="name">{{ t('content.sort.name') }}</option>
+        <option value="enabled">{{ t('content.sort.enabled') }}</option>
+        <option value="updates">{{ t('content.sort.updates') }}</option>
+        <option value="kind">{{ t('content.sort.kind') }}</option>
       </select>
-      <button class="btn-icon" :disabled="checking || loading" title="Aktualisieren (Liste neu laden und nach Updates suchen)" aria-label="Aktualisieren" @click="refresh">
+      <button class="btn-icon" :disabled="checking || loading" :title="t('content.toolbar.refreshTitle')" :aria-label="t('common.actions.refresh')" @click="refresh">
         <svg viewBox="0 0 24 24" class="size-4" :class="{ 'animate-spin': checking }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.sync" /></svg>
       </button>
       <button v-if="pendingUpdates.length" class="btn h-9 bg-lamp-900 py-0 text-xs text-lamp-300 ring-1 ring-lamp-400/40 hover:bg-base-800" :disabled="!!bulkBusy" @click="applyUpdates([...pendingUpdates])">
-        {{ bulkBusy === 'update' ? 'Aktualisiere …' : `Alle aktualisieren (${pendingUpdates.length})` }}
+        {{ bulkBusy === 'update' ? t('content.toolbar.updating') : t('content.toolbar.updateAll', { n: pendingUpdates.length }) }}
       </button>
       <button class="btn btn-ghost h-9 py-0 text-xs" @click="pickFiles">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 3H6v18h12V7zM14 3v4h4M12 11v6m-3-3h6" /></svg>
-        Dateien hinzufügen
+        {{ t('content.toolbar.addFiles') }}
       </button>
       <NuxtLink :to="{ path: '/browse', query: { instance: instance.id, kind: browseKind } }" class="btn btn-primary h-9 py-0 text-xs">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        Inhalte durchsuchen
+        {{ t('content.toolbar.browse') }}
       </NuxtLink>
     </div>
 
     <!-- Filter-Chips -->
     <div class="mb-3 flex flex-wrap items-center gap-1.5">
-      <button class="filter-chip" :class="{ 'filter-chip-on': filter === 'all' }" @click="filter = 'all'">Alle <span class="opacity-60">{{ items.length }}</span></button>
+      <button class="filter-chip" :class="{ 'filter-chip-on': filter === 'all' }" @click="filter = 'all'">{{ t('common.labels.all') }} <span class="opacity-60">{{ items.length }}</span></button>
       <button v-for="k in chips" :key="k" class="filter-chip" :class="{ 'filter-chip-on': filter === k }" @click="filter = k">
-        {{ contentKindLabels[k] }} <span class="opacity-60">{{ counts[k] }}</span>
+        {{ contentKindLabel(k) }} <span class="opacity-60">{{ counts[k] }}</span>
       </button>
-      <button v-if="!isVanilla" class="ml-auto text-xs text-base-400 hover:text-base-50 disabled:opacity-50" :disabled="packBusy" title="Sodium, Lithium & Co. – nur was es für diese Version gibt" @click="installPerformancePack">
-        {{ packBusy ? 'Installiere Performance-Paket …' : '+ Performance-Paket' }}
+      <button v-if="!isVanilla" class="ml-auto text-xs text-base-400 hover:text-base-50 disabled:opacity-50" :disabled="packBusy" :title="t('content.perfPack.title')" @click="installPerformancePack">
+        {{ packBusy ? t('content.perfPack.installing') : t('content.perfPack.button') }}
       </button>
     </div>
 
     <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
     <p v-if="isVanilla && (filter === 'mod' || filter === 'all') && counts.mod" class="mb-3 text-xs text-base-400">
-      {{ instance.overrides.boost === false
-        ? 'TRS-Optimierung ist aus – diese Instanz startet als echtes Vanilla und lädt keine Mods.'
-        : 'TRS-Optimierung: Die Instanz startet mit Fabric, dem TRS Client und Performance-Mods.' }}
+      {{ instance.overrides.boost === false ? t('content.boostOff') : t('content.boostOn') }}
     </p>
 
     <div v-if="loading && !items.length" class="card divide-y divide-base-800">
@@ -370,23 +373,23 @@ const pendingUpdates = computed(() => updates.value ?? [])
           class="size-4 accent-redstone-500"
           :checked="allVisibleSelected"
           :indeterminate.prop="someVisibleSelected && !allVisibleSelected"
-          aria-label="Alle auswählen"
+          :aria-label="t('content.selection.selectAll')"
           @change="toggleAll"
         />
         <template v-if="selectedItems.length">
           <div class="col-span-3 flex flex-wrap items-center gap-1.5 text-xs">
-            <span class="mr-1 font-semibold text-base-50">{{ selectedItems.length }} ausgewählt</span>
-            <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('enable', selectedItems)">Aktivieren</button>
-            <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('disable', selectedItems)">Deaktivieren</button>
-            <button v-if="selectedUpdates.length" class="bulk-btn text-lamp-300" :disabled="!!bulkBusy" @click="applyUpdates(selectedUpdates)">Aktualisieren ({{ selectedUpdates.length }})</button>
-            <button class="bulk-btn text-redstone-300" :disabled="!!bulkBusy" @click="toDelete = [...selectedItems]">Löschen</button>
-            <button class="ml-auto text-base-400 hover:text-base-50" @click="selected = new Set()">Auswahl aufheben</button>
+            <span class="mr-1 font-semibold text-base-50">{{ t('content.selection.selected', selectedItems.length) }}</span>
+            <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('enable', selectedItems)">{{ t('common.actions.enable') }}</button>
+            <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('disable', selectedItems)">{{ t('common.actions.disable') }}</button>
+            <button v-if="selectedUpdates.length" class="bulk-btn text-lamp-300" :disabled="!!bulkBusy" @click="applyUpdates(selectedUpdates)">{{ t('content.selection.update', { n: selectedUpdates.length }) }}</button>
+            <button class="bulk-btn text-redstone-300" :disabled="!!bulkBusy" @click="toDelete = [...selectedItems]">{{ t('common.actions.delete') }}</button>
+            <button class="ml-auto text-base-400 hover:text-base-50" @click="selected = new Set()">{{ t('content.selection.clear') }}</button>
           </div>
         </template>
         <template v-else>
-          <span>Projekt</span>
-          <span>Version</span>
-          <span class="text-right">Aktionen</span>
+          <span>{{ t('content.columns.project') }}</span>
+          <span>{{ t('common.labels.version') }}</span>
+          <span class="text-right">{{ t('content.columns.actions') }}</span>
         </template>
       </div>
 
@@ -397,7 +400,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
           class="group grid grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-base-850"
           :class="{ 'bg-redstone-900/15': selected.has(keyOf(item)) }"
         >
-          <input type="checkbox" class="size-4 accent-redstone-500" :checked="selected.has(keyOf(item))" :aria-label="`${titleOf(item)} auswählen`" @change="toggleOne(item)" />
+          <input type="checkbox" class="size-4 accent-redstone-500" :checked="selected.has(keyOf(item))" :aria-label="t('content.row.select', { name: titleOf(item) })" @change="toggleOne(item)" />
 
           <div class="flex min-w-0 items-center gap-3" :class="{ 'opacity-55': !item.enabled }">
             <ModIcon :src="item.iconUrl" :name="titleOf(item)" :size="40" :class="{ grayscale: !item.enabled }" />
@@ -405,9 +408,9 @@ const pendingUpdates = computed(() => updates.value ?? [])
               <NuxtLink v-if="projectLink(item)" :to="projectLink(item)!" class="block truncate text-sm font-semibold hover:text-redstone-300">{{ titleOf(item) }}</NuxtLink>
               <p v-else class="truncate text-sm font-semibold">{{ titleOf(item) }}</p>
               <p class="truncate text-xs text-base-400">
-                <template v-if="item.author">von {{ item.author }}</template>
-                <template v-else>Unbekannter Autor</template>
-                <template v-if="filter === 'all'"><span class="text-base-600"> · </span>{{ contentKindLabels[item.kind] }}</template>
+                <template v-if="item.author">{{ t('content.row.by', { author: item.author }) }}</template>
+                <template v-else>{{ t('content.row.unknownAuthor') }}</template>
+                <template v-if="filter === 'all'"><span class="text-base-600"> · </span>{{ contentKindLabel(item.kind) }}</template>
               </p>
             </div>
           </div>
@@ -418,11 +421,11 @@ const pendingUpdates = computed(() => updates.value ?? [])
               <button
                 v-if="updateFor(item) && !isBusy(item)"
                 class="badge shrink-0 bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/30 hover:bg-lamp-400 hover:text-base-950"
-                :title="`Update auf ${updateFor(item)!.versionNumber}`"
+                :title="t('content.row.updateTitle', { version: updateFor(item)!.versionNumber })"
                 @click="item.source ? (changelogFor = item) : applyUpdates([updateFor(item)!])"
               >
                 <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5m0 0-6 6m6-6 6 6" /></svg>
-                Update
+                {{ t('content.row.updateBadge') }}
               </button>
             </div>
             <span v-if="isBusy(item)" class="mt-1 block w-24"><RedstoneWire :percent="60" :segments="8" /></span>
@@ -433,8 +436,8 @@ const pendingUpdates = computed(() => updates.value ?? [])
             <button
               class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 disabled:opacity-25"
               :disabled="!item.source"
-              :title="item.source ? 'Version wechseln' : 'Nur für Modrinth-Inhalte'"
-              :aria-label="`Version von ${titleOf(item)} wechseln`"
+              :title="item.source ? t('content.row.switchVersion') : t('content.row.onlyModrinth')"
+              :aria-label="t('content.row.switchVersionOf', { name: titleOf(item) })"
               @click="switching = item"
             >
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h13m0 0-4-4m4 4-4 4M20 16H7m0 0 4-4m-4 4 4 4" /></svg>
@@ -442,27 +445,27 @@ const pendingUpdates = computed(() => updates.value ?? [])
             <button
               role="switch"
               :aria-checked="item.enabled"
-              :aria-label="`${titleOf(item)} ${item.enabled ? 'deaktivieren' : 'aktivieren'}`"
+              :aria-label="t(item.enabled ? 'content.row.disable' : 'content.row.enable', { name: titleOf(item) })"
               class="relative mx-1 h-5 w-9 shrink-0 rounded-full transition-colors"
               :class="item.enabled ? 'bg-redstone-500' : 'bg-base-700'"
               @click="toggle(item)"
             >
               <span class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform" :class="{ 'translate-x-4': item.enabled }" />
             </button>
-            <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 hover:text-redstone-300" :aria-label="`${titleOf(item)} löschen`" title="Löschen" @click="toDelete = [item]">
+            <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 hover:text-redstone-300" :aria-label="t('content.row.delete', { name: titleOf(item) })" :title="t('common.actions.delete')" @click="toDelete = [item]">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
             </button>
             <div class="relative" data-row-menu>
-              <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100" :aria-label="`Weitere Aktionen für ${titleOf(item)}`" :aria-expanded="menuFor === keyOf(item)" @click="menuFor = menuFor === keyOf(item) ? null : keyOf(item)">
+              <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100" :aria-label="t('content.row.moreActions', { name: titleOf(item) })" :aria-expanded="menuFor === keyOf(item)" @click="menuFor = menuFor === keyOf(item) ? null : keyOf(item)">
                 <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
               </button>
               <div v-if="menuFor === keyOf(item)" class="menu top-9 right-0" role="menu">
                 <button v-if="updateFor(item)" class="menu-item text-lamp-300" role="menuitem" @click="menuFor = null; applyUpdates([updateFor(item)!])">
-                  Auf {{ updateFor(item)!.versionNumber }} aktualisieren
+                  {{ t('content.menu.updateTo', { version: updateFor(item)!.versionNumber }) }}
                 </button>
-                <button v-if="item.source" class="menu-item" role="menuitem" @click="menuFor = null; changelogFor = item">Changelog ansehen</button>
-                <NuxtLink v-if="projectLink(item)" :to="projectLink(item)!" class="menu-item" role="menuitem">Projektseite</NuxtLink>
-                <p v-if="!item.source" class="px-2.5 py-1.5 text-xs text-base-400">Nicht über Modrinth installiert – Versionen und Changelog gibt es nur für Modrinth-Inhalte.</p>
+                <button v-if="item.source" class="menu-item" role="menuitem" @click="menuFor = null; changelogFor = item">{{ t('content.menu.changelog') }}</button>
+                <NuxtLink v-if="projectLink(item)" :to="projectLink(item)!" class="menu-item" role="menuitem">{{ t('content.menu.projectPage') }}</NuxtLink>
+                <p v-if="!item.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
               </div>
             </div>
           </div>
@@ -474,12 +477,12 @@ const pendingUpdates = computed(() => updates.value ?? [])
       v-else-if="!loading"
       :compact="items.length > 0"
       :seed="0x55"
-      :title="items.length ? 'Kein Signal' : 'Noch keine Inhalte'"
-      :text="items.length ? 'Kein Eintrag passt zu Filter oder Suche.' : 'Hier ist noch alles aus. Durchsuche Modrinth, füge Dateien hinzu oder ziehe .jar- und .zip-Dateien einfach ins Fenster.'"
+      :title="items.length ? t('content.empty.noMatchTitle') : t('content.empty.title')"
+      :text="items.length ? t('content.empty.noMatchText') : t('content.empty.text')"
     >
       <template v-if="!items.length">
-        <NuxtLink :to="{ path: '/browse', query: { instance: instance.id, kind: browseKind } }" class="btn btn-primary">Inhalte durchsuchen</NuxtLink>
-        <button class="btn btn-ghost" @click="pickFiles">Dateien hinzufügen</button>
+        <NuxtLink :to="{ path: '/browse', query: { instance: instance.id, kind: browseKind } }" class="btn btn-primary">{{ t('content.toolbar.browse') }}</NuxtLink>
+        <button class="btn btn-ghost" @click="pickFiles">{{ t('content.toolbar.addFiles') }}</button>
       </template>
     </RedstoneEmpty>
 
@@ -488,8 +491,8 @@ const pendingUpdates = computed(() => updates.value ?? [])
       <div v-if="dragging" class="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-black/55 backdrop-blur-sm">
         <div class="rounded-2xl border-2 border-dashed border-redstone-400 bg-base-900/90 px-12 py-10 text-center">
           <svg viewBox="0 0 24 24" class="mx-auto size-10 text-redstone-400" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3" /></svg>
-          <p class="display mt-3 text-2xl">Loslassen zum Hinzufügen</p>
-          <p class="mt-1 text-sm text-base-400">.jar = Mod · .zip = Ressourcenpaket, Shader oder Datenpaket</p>
+          <p class="display mt-3 text-2xl">{{ t('content.drop.title') }}</p>
+          <p class="mt-1 text-sm text-base-400">{{ t('content.drop.hint') }}</p>
         </div>
       </div>
     </Transition>
@@ -507,14 +510,18 @@ const pendingUpdates = computed(() => updates.value ?? [])
 
     <ChangelogDialog v-if="changelogFor?.source" :instance="instance" :item="changelogFor" @close="changelogFor = null" @install="switchVersion(changelogFor!, $event)" />
 
-    <BaseDialog v-if="toDelete" :title="toDelete.length === 1 ? 'Datei löschen?' : `${toDelete.length} Dateien löschen?`" @close="toDelete = null">
-      <p class="text-sm text-base-200">
-        <template v-if="toDelete.length === 1"><strong class="text-base-50">{{ titleOf(toDelete[0]!) }}</strong> wird aus dieser Instanz gelöscht.</template>
-        <template v-else>{{ toDelete.length }} Inhalte werden aus dieser Instanz gelöscht.</template>
-      </p>
+    <BaseDialog
+      v-if="toDelete"
+      :title="toDelete.length === 1 ? t('content.deleteDialog.titleOne') : t('content.deleteDialog.titleMany', toDelete.length)"
+      @close="toDelete = null"
+    >
+      <i18n-t v-if="toDelete.length === 1" keypath="content.deleteDialog.textOne" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ titleOf(toDelete[0]!) }}</strong></template>
+      </i18n-t>
+      <p v-else class="text-sm text-base-200">{{ t('content.deleteDialog.textMany', toDelete.length) }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="toDelete = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmDelete">Löschen</button>
+        <button class="btn btn-ghost" @click="toDelete = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmDelete">{{ t('common.actions.delete') }}</button>
       </template>
     </BaseDialog>
   </div>

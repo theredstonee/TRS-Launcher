@@ -30,7 +30,8 @@ const counts = computed(() => ({
   error: props.lines.filter((l) => rank[l.level] >= 4).length,
 }))
 
-const timeFormat = new Intl.DateTimeFormat('de', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+// Uhrzeit mit Sekunden in der eingestellten Sprache (intlLocale ist reaktiv).
+const timeFormat = computed(() => new Intl.DateTimeFormat(intlLocale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
 
 function onScroll() {
   const el = scroller.value
@@ -49,7 +50,7 @@ watch(
 
 async function copyAll() {
   const text = visible.value
-    .map((l) => `[${timeFormat.format(l.time)}] [${l.thread ?? '-'}/${l.level.toUpperCase()}] ${l.message}`)
+    .map((l) => `[${timeFormat.value.format(l.time)}] [${l.thread ?? '-'}/${l.level.toUpperCase()}] ${l.message}`)
     .join('\n')
   try {
     await navigator.clipboard.writeText(text)
@@ -65,24 +66,24 @@ async function copyAll() {
   <div class="card flex min-h-0 flex-1 flex-col overflow-hidden">
     <div class="flex flex-wrap items-center gap-2 border-b border-base-800 px-3 py-2">
       <div class="flex overflow-hidden rounded-md border border-base-700 text-xs">
-        <button class="seg" :class="{ 'seg-on': filter === 'all' }" @click="filter = 'all'">Alle</button>
+        <button class="seg" :class="{ 'seg-on': filter === 'all' }" @click="filter = 'all'">{{ t('common.labels.all') }}</button>
         <button class="seg" :class="{ 'seg-on': filter === 'warn' }" @click="filter = 'warn'">
-          Warnungen <span class="text-warn">{{ counts.warn }}</span>
+          {{ t('logConsole.warnings') }} <span class="text-warn">{{ counts.warn }}</span>
         </button>
         <button class="seg" :class="{ 'seg-on': filter === 'error' }" @click="filter = 'error'">
-          Fehler <span class="text-redstone-300">{{ counts.error }}</span>
+          {{ t('logConsole.errors') }} <span class="text-redstone-300">{{ counts.error }}</span>
         </button>
       </div>
-      <input v-model="search" class="field h-7 max-w-56 py-0 text-xs" maxlength="200" placeholder="Suchen …" spellcheck="false" />
-      <span class="ml-auto text-xs text-base-600">{{ lines.length }} Zeilen</span>
+      <input v-model="search" class="field h-7 max-w-56 py-0 text-xs" maxlength="200" :placeholder="t('logConsole.search')" :aria-label="t('logConsole.search')" spellcheck="false" />
+      <span class="ml-auto text-xs text-base-600">{{ t('logConsole.lineCount', lines.length) }}</span>
       <button class="btn btn-ghost h-7 px-2.5 py-0 text-xs" :disabled="!visible.length" @click="copyAll">
-        {{ copied ? 'Kopiert' : 'Kopieren' }}
+        {{ copied ? t('logConsole.copied') : t('common.actions.copy') }}
       </button>
     </div>
 
     <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto bg-base-950 p-3 font-mono text-xs leading-5 select-text" @scroll.passive="onScroll">
       <p v-if="!lines.length" class="py-10 text-center font-sans text-sm text-base-600">
-        Noch keine Ausgabe – starte die Instanz, um die Logs live zu sehen.
+        {{ t('logConsole.empty') }}
       </p>
       <div v-for="(l, i) in visible" :key="i" class="flex gap-2 whitespace-pre-wrap break-all" :class="`lv-${l.level}`">
         <span class="shrink-0 text-base-600">{{ timeFormat.format(l.time) }}</span>
@@ -92,7 +93,7 @@ async function copyAll() {
     </div>
 
     <button v-if="!follow && lines.length" class="border-t border-base-800 bg-base-850 py-1 text-xs text-base-400 hover:text-base-50" @click="follow = true; onScroll(); scroller?.scrollTo({ top: scroller.scrollHeight })">
-      ↓ Zum Ende springen
+      {{ t('logConsole.jumpToEnd') }}
     </button>
   </div>
 </template>

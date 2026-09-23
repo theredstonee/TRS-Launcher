@@ -21,17 +21,17 @@ async function submit() {
   error.value = null
   const parsed = groupSchema.safeParse(name.value)
   if (!parsed.success || !parsed.data) {
-    error.value = parsed.success ? 'Bitte einen Namen eingeben' : firstIssue(parsed.error)
+    error.value = parsed.success ? t('newGroup.nameRequired') : firstIssue(parsed.error)
     return
   }
   if (!chosen.value.size) {
-    error.value = 'Wähle mindestens eine Instanz – leere Gruppen gibt es nicht.'
+    error.value = t('newGroup.pickInstance')
     return
   }
   saving.value = true
   try {
     for (const id of chosen.value) await backend.setInstanceGroup(id, parsed.data)
-    toasts.ok(`Gruppe „${parsed.data}“ angelegt`)
+    toasts.ok(t('newGroup.created', { name: parsed.data }))
     emit('done')
   } catch (e) {
     error.value = errorMessage(e)
@@ -42,14 +42,14 @@ async function submit() {
 </script>
 
 <template>
-  <BaseDialog title="Neue Gruppe" @close="emit('close')">
+  <BaseDialog :title="t('newGroup.title')" @close="emit('close')">
     <form id="new-group" class="space-y-4" @submit.prevent="submit">
       <div>
-        <label class="label" for="ng-name">Name</label>
-        <input id="ng-name" v-model="name" class="field" maxlength="32" placeholder="z. B. PvP, Modpacks, Mit Freunden" autofocus />
+        <label class="label" for="ng-name">{{ t('common.labels.name') }}</label>
+        <input id="ng-name" v-model="name" class="field" maxlength="32" :placeholder="t('newGroup.placeholder')" autofocus />
       </div>
       <div>
-        <span class="label">Instanzen</span>
+        <span class="label">{{ t('newGroup.instances') }}</span>
         <ul class="-mr-2 max-h-64 space-y-1 overflow-y-auto pr-2">
           <li v-for="i in instances" :key="i.id">
             <label class="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-base-800">
@@ -64,8 +64,8 @@ async function submit() {
       <p v-if="error" role="alert" class="text-sm text-redstone-300">{{ error }}</p>
     </form>
     <template #actions>
-      <button class="btn btn-ghost" @click="emit('close')">Abbrechen</button>
-      <button type="submit" form="new-group" class="btn btn-primary" :disabled="saving">{{ saving ? 'Lege an …' : 'Gruppe anlegen' }}</button>
+      <button class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.cancel') }}</button>
+      <button type="submit" form="new-group" class="btn btn-primary" :disabled="saving">{{ saving ? t('newGroup.creating') : t('newGroup.submit') }}</button>
     </template>
   </BaseDialog>
 </template>

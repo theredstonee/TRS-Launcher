@@ -5,6 +5,7 @@ use trs_core::import::{ImportCandidate, ImportProgress};
 use trs_core::instance::{Instance, Loader};
 
 use crate::LauncherState;
+use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 /// Installationen anderer Launcher auf diesem Rechner.
@@ -21,8 +22,9 @@ pub async fn pick_import_folder(
     app: AppHandle,
     launcher: State<'_, LauncherState>,
 ) -> CommandResult<Option<Vec<ImportCandidate>>> {
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog().file().set_title("Ordner mit Minecraft-Daten wählen").blocking_pick_folder()
+        app.dialog().file().set_title(DialogText::PickImportFolder.text(lang)).blocking_pick_folder()
     })
     .await
     .ok()

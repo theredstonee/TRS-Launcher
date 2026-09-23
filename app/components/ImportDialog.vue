@@ -13,11 +13,11 @@ const loading = ref(true)
 const picking = ref(false)
 const error = ref<string | null>(null)
 const running = computed(() => {
-  const t = Object.values(tasks.tasks).find((t) => t.kind === 'import' && t.status === 'running')
-  return t ? { id: t.tag ?? '', percent: t.percent ?? 0 } : null
+  const task = Object.values(tasks.tasks).find((x) => x.kind === 'import' && x.status === 'running')
+  return task ? { id: task.tag ?? '', percent: task.percent ?? 0 } : null
 })
 const done = computed(
-  () => new Set(Object.values(tasks.tasks).filter((t) => t.kind === 'import' && t.status === 'done').map((t) => t.tag ?? '')),
+  () => new Set(Object.values(tasks.tasks).filter((x) => x.kind === 'import' && x.status === 'done').map((x) => x.tag ?? '')),
 )
 const query = ref('')
 const source = ref<ImportSource | 'all'>('all')
@@ -29,7 +29,7 @@ const releases = computed(() => (meta.manifest?.versions ?? []).filter((v) => v.
 
 const sources = computed(() => {
   const present = new Set(candidates.value.map((c) => c.source))
-  return (Object.keys(importSourceLabels) as ImportSource[]).filter((s) => present.has(s))
+  return importSources.filter((s) => present.has(s))
 })
 
 const visible = computed(() => {
@@ -90,7 +90,7 @@ function run(candidate: ImportCandidate) {
       key: taskKey('import', candidate.id),
       kind: 'import',
       title: candidate.name,
-      stage: `Wird aus ${importSourceLabels[candidate.source]} kopiert`,
+      stage: t('import.task.stage', { source: importSourceLabel(candidate.source) }),
       tag: candidate.id,
     },
     async (ctx) => {
@@ -98,9 +98,9 @@ function run(candidate: ImportCandidate) {
         candidate.id,
         o?.gameVersion ?? null,
         o ? { kind: o.loader, version: null } : null,
-        (p) => ctx.progress(p.percent, p.totalFiles ? `${p.doneFiles} / ${p.totalFiles} Dateien kopiert` : undefined),
+        (p) => ctx.progress(p.percent, p.totalFiles ? t('import.task.filesCopied', { done: p.doneFiles, total: p.totalFiles }) : undefined),
       )
-      ctx.update({ instanceId: instance.id, doneText: `„${instance.name}“ importiert` })
+      ctx.update({ instanceId: instance.id, doneText: t('import.task.done', { name: instance.name }) })
       await instances.load()
       return instance
     },
@@ -115,9 +115,9 @@ function importPack() {
   if (packing.value !== null || running.value) return
   error.value = null
   tasks.run(
-    { key: PACK_FILE_KEY, kind: 'modpack-file', title: 'Modpack aus Datei', stage: 'Datei wählen …', cancellable: true },
+    { key: PACK_FILE_KEY, kind: 'modpack-file', title: t('import.task.packTitle'), stage: t('import.task.pickFile'), cancellable: true },
     async (ctx) => {
-      const id = await backend.importModpackFile((p) => ctx.progress(packPercent(p), packStageLabels[p.phase]), ctx.taskId)
+      const id = await backend.importModpackFile((p) => ctx.progress(packPercent(p), packStageLabel(p.phase)), ctx.taskId)
       if (!id) {
         // Dateidialog abgebrochen – keine Aufgabe, kein Verlauf.
         ctx.discard()
@@ -128,7 +128,7 @@ function importPack() {
       ctx.update({
         instanceId: id,
         title: instance?.name ?? 'Modpack',
-        doneText: instance ? `„${instance.name}“ importiert` : 'Modpack importiert',
+        doneText: instance ? t('import.task.done', { name: instance.name }) : t('import.task.packDone'),
       })
       return id
     },
@@ -141,23 +141,20 @@ function loaderText(c: ImportCandidate) {
 </script>
 
 <template>
-  <BaseDialog title="Aus anderem Launcher importieren" wide @close="emit('close')">
-    <p class="mb-3 text-sm text-base-400">
-      Welten, Mods, Einstellungen und Server werden kopiert, das Original bleibt unverändert. Anmeldedaten anderer
-      Launcher werden nie übernommen.
-    </p>
+  <BaseDialog :title="t('import.title')" wide @close="emit('close')">
+    <p class="mb-3 text-sm text-base-400">{{ t('import.intro') }}</p>
 
     <div class="mb-3 flex flex-wrap items-center gap-2">
-      <input v-model="query" class="field h-9 min-w-0 flex-1" maxlength="100" placeholder="Suchen …" spellcheck="false" aria-label="Installationen durchsuchen" />
-      <select v-if="sources.length > 1" v-model="source" class="field h-9 w-44 py-1" aria-label="Quelle">
-        <option value="all">Alle Quellen</option>
-        <option v-for="s in sources" :key="s" :value="s">{{ importSourceLabels[s] }}</option>
+      <input v-model="query" class="field h-9 min-w-0 flex-1" maxlength="100" :placeholder="t('import.search')" spellcheck="false" :aria-label="t('import.searchLabel')" />
+      <select v-if="sources.length > 1" v-model="source" class="field h-9 w-44 py-1" :aria-label="t('import.sourceLabel')">
+        <option value="all">{{ t('import.allSources') }}</option>
+        <option v-for="s in sources" :key="s" :value="s">{{ importSourceLabel(s) }}</option>
       </select>
       <button class="btn btn-ghost h-9" :disabled="picking || !!running" @click="browse">
-        {{ picking ? 'Durchsuche …' : 'Ordner durchsuchen …' }}
+        {{ picking ? t('import.scanning') : t('import.browseFolder') }}
       </button>
       <button class="btn btn-ghost h-9" :disabled="packing !== null || !!running" @click="importPack">
-        {{ packing !== null ? `Modpack ${packing} %` : 'Modpack-Datei (.mrpack) …' }}
+        {{ packing !== null ? t('import.packProgress', { percent: packing }) : t('import.packFile') }}
       </button>
     </div>
 
@@ -165,10 +162,9 @@ function loaderText(c: ImportCandidate) {
       <div v-for="i in 4" :key="i" class="skeleton h-14" />
     </div>
     <p v-else-if="!candidates.length && !error" class="py-6 text-center text-sm text-base-400">
-      Nichts automatisch gefunden. Mit „Ordner durchsuchen“ kannst du jeden Ordner mit Minecraft-Daten wählen,
-      zum Beispiel von einem anderen Client.
+      {{ t('import.nothingFound') }}
     </p>
-    <p v-else-if="!visible.length" class="py-6 text-center text-sm text-base-400">Keine Installation passt zur Suche.</p>
+    <p v-else-if="!visible.length" class="py-6 text-center text-sm text-base-400">{{ t('import.noMatch') }}</p>
 
     <ul v-else class="-mr-2 max-h-[26rem] space-y-1.5 overflow-y-auto pr-2">
       <li
@@ -181,21 +177,21 @@ function loaderText(c: ImportCandidate) {
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium">{{ c.name }}</p>
             <p class="truncate text-xs text-base-400">
-              {{ importSourceLabels[c.source] }}<template v-if="!c.versionGuessed">, <span class="font-mono text-base-200">{{ c.gameVersion }}</span> {{ loaderText(c) }}</template><template v-if="c.modCount">, {{ c.modCount }} Mods</template><template v-if="c.worldCount">, {{ c.worldCount }} {{ c.worldCount === 1 ? 'Welt' : 'Welten' }}</template>
+              {{ importSourceLabel(c.source) }}<template v-if="!c.versionGuessed">, <span class="font-mono text-base-200">{{ c.gameVersion }}</span> {{ loaderText(c) }}</template><template v-if="c.modCount">, {{ t('import.modCount', c.modCount) }}</template><template v-if="c.worldCount">, {{ t('import.worldCount', c.worldCount) }}</template>
             </p>
           </div>
-          <span v-if="done.has(c.id)" class="shrink-0 text-xs text-ok">Importiert</span>
+          <span v-if="done.has(c.id)" class="shrink-0 text-xs text-ok">{{ t('import.imported') }}</span>
           <span v-else-if="running?.id === c.id" class="display shrink-0 text-sm tabular-nums text-redstone-300">{{ running.percent }} %</span>
-          <button v-else class="btn btn-primary shrink-0 px-3 py-1.5 text-xs" :disabled="!!running" @click="run(c)">Importieren</button>
+          <button v-else class="btn btn-primary shrink-0 px-3 py-1.5 text-xs" :disabled="!!running" @click="run(c)">{{ t('common.actions.import') }}</button>
         </div>
 
         <!-- Selbst gewählter Ordner: Version ist nur geraten, deshalb vor dem Import anpassbar. -->
         <div v-if="c.versionGuessed && overrides[c.id] && !done.has(c.id)" v-for="o in [overrides[c.id]!]" :key="c.id + '-o'" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-base-400">
-          <span>Version und Modloader prüfen:</span>
-          <select v-model="o.gameVersion" class="field h-7 w-28 py-0 font-mono text-xs" :disabled="!!running" aria-label="Minecraft-Version">
+          <span>{{ t('import.checkVersion') }}</span>
+          <select v-model="o.gameVersion" class="field h-7 w-28 py-0 font-mono text-xs" :disabled="!!running" :aria-label="t('import.gameVersion')">
             <option v-for="v in releases.length ? releases : [c.gameVersion]" :key="v" :value="v">{{ v }}</option>
           </select>
-          <select v-model="o.loader" class="field h-7 w-32 py-0 text-xs" :disabled="!!running" aria-label="Modloader">
+          <select v-model="o.loader" class="field h-7 w-32 py-0 text-xs" :disabled="!!running" :aria-label="t('common.labels.loader')">
             <option v-for="k in loaderKinds" :key="k" :value="k">{{ loaderLabels[k] }}</option>
           </select>
         </div>
@@ -207,8 +203,8 @@ function loaderText(c: ImportCandidate) {
     <p v-if="error" role="alert" class="mt-3 text-sm text-redstone-300">{{ error }}</p>
 
     <template #actions>
-      <p v-if="running || packing !== null" class="mr-auto text-xs text-base-400">Läuft im Hintergrund weiter, wenn du schließt.</p>
-      <button class="btn btn-ghost" @click="emit('close')">Fertig</button>
+      <p v-if="running || packing !== null" class="mr-auto text-xs text-base-400">{{ t('import.backgroundHint') }}</p>
+      <button class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.done') }}</button>
     </template>
   </BaseDialog>
 </template>

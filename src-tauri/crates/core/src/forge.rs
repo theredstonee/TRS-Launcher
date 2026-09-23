@@ -206,7 +206,11 @@ fn pick_neoforge(versions: &[String], game_version: &str) -> Option<String> {
 }
 
 fn not_available(game_version: &str) -> Error {
-    Error::launch(format!("Für Minecraft {game_version} gibt es diesen Modloader (noch) nicht."))
+    Error::launch(crate::msg!(
+        "loaders.notAvailable",
+        "Für Minecraft {version} gibt es diesen Modloader (noch) nicht.",
+        version = game_version
+    ))
 }
 
 async fn fetch_json<T: serde::de::DeserializeOwned>(http: &reqwest::Client, url: &str) -> Result<T> {
@@ -269,7 +273,14 @@ async fn resolve_forge(ctx: &InstallContext<'_>) -> Result<InstallerRef> {
             .get(mc)
             .and_then(|versions| forge_full_version(versions, mc, &short))
             .map(InstallerRef::forge)
-            .ok_or_else(|| Error::launch(format!("Forge {short} gibt es für Minecraft {mc} nicht."))),
+            .ok_or_else(|| {
+                Error::launch(crate::msg!(
+                    "forge.versionUnavailable",
+                    "Forge {forge} gibt es für Minecraft {version} nicht.",
+                    forge = &short,
+                    version = mc
+                ))
+            }),
         Err(e) => {
             tracing::warn!("Forge-Metadaten nicht erreichbar, verwende Standardschema: {e}");
             Ok(InstallerRef::forge(format!("{mc}-{short}")))
@@ -304,7 +315,7 @@ async fn resolve_installer(ctx: &InstallContext<'_>) -> Result<InstallerRef> {
     if let Some(v) = ctx.loader.version.as_deref()
         && !is_safe_version(v)
     {
-        return Err(Error::launch("Die Loader-Version enthält ungültige Zeichen."));
+        return Err(Error::launch(crate::msg!("forge.invalidLoaderVersion", "Die Loader-Version enthält ungültige Zeichen.")));
     }
     let installer = match ctx.loader.kind {
         LoaderKind::Forge => resolve_forge(ctx).await?,
@@ -314,7 +325,7 @@ async fn resolve_installer(ctx: &InstallContext<'_>) -> Result<InstallerRef> {
     if is_safe_version(&installer.version) {
         Ok(installer)
     } else {
-        Err(Error::launch("Die Loader-Version enthält ungültige Zeichen."))
+        Err(Error::launch(crate::msg!("forge.invalidLoaderVersion", "Die Loader-Version enthält ungültige Zeichen.")))
     }
 }
 
@@ -459,7 +470,7 @@ fn parse_data_value(raw: &str) -> Result<DataValue> {
     if is_safe_rel_path(entry) {
         Ok(DataValue::InstallerEntry(entry.to_owned()))
     } else {
-        Err(Error::launch("Das Installer-Profil enthält einen ungültigen Dateiverweis."))
+        Err(Error::launch(crate::msg!("forge.invalidFileReference", "Das Installer-Profil enthält einen ungültigen Dateiverweis.")))
     }
 }
 
@@ -483,12 +494,12 @@ fn substitute_tokens(template: &str, data: &HashMap<String, String>) -> Result<S
     while let Some(start) = rest.find('{') {
         out.push_str(&rest[..start]);
         let Some(len) = rest[start + 1..].find('}') else {
-            return Err(Error::launch("Das Installer-Profil enthält ein fehlerhaftes Argument."));
+            return Err(Error::launch(crate::msg!("forge.invalidArgument", "Das Installer-Profil enthält ein fehlerhaftes Argument.")));
         };
         let key = &rest[start + 1..start + 1 + len];
         let value = data.get(key).ok_or_else(|| {
             tracing::error!("Unbekannter Platzhalter im Installer-Profil: {{{key}}}");
-            Error::launch("Das Installer-Profil verwendet einen unbekannten Platzhalter.")
+            Error::launch(crate::msg!("forge.unknownPlaceholder", "Das Installer-Profil verwendet einen unbekannten Platzhalter."))
         })?;
         out.push_str(value);
         rest = &rest[start + 2 + len..];
@@ -572,7 +583,7 @@ fn console_java(java: &Path) -> PathBuf {
 // --- Zip-Helfer (blockierend, laufen in `spawn_blocking`) ---------------------
 
 fn corrupt_installer() -> Error {
-    Error::launch("Der Modloader-Installer ist beschädigt. Bitte erneut versuchen.")
+    Error::launch(crate::msg!("forge.installerCorrupt", "Der Modloader-Installer ist beschädigt. Bitte erneut versuchen."))
 }
 
 fn open_archive(path: &Path) -> Result<zip::ZipArchive<std::fs::File>> {
@@ -779,7 +790,7 @@ pub async fn ensure_installed(
         InstallerContents { profile: InstallProfile { install: Some(install), version_info: Some(info), .. }, .. } => {
             install_legacy(ctx, &installer_jar, install, info, &report).await?
         }
-        _ => return Err(Error::launch("Dieses Installer-Format wird nicht unterstützt.")),
+        _ => return Err(Error::launch(crate::msg!("forge.unsupportedInstaller", "Dieses Installer-Format wird nicht unterstützt."))),
     };
 
     // Für Offline-Starts cachen; der Marker kommt zuletzt.
@@ -810,10 +821,8 @@ async fn download_installer(
     .await
     .map_err(|e| {
         tracing::error!("Installer-Download fehlgeschlagen: {e}");
-        Error::launch(
-            "Der Modloader-Installer konnte nicht heruntergeladen werden. \
-             Bitte Internetverbindung und Loader-Version prüfen.",
-        )
+        Error::launch(crate::msg!("forge.installerDownloadFailed", "Der Modloader-Installer konnte nicht heruntergeladen werden. \
+             Bitte Internetverbindung und Loader-Version prüfen."))
     })?;
     Ok(path)
 }
@@ -828,10 +837,10 @@ async fn fetch_sha1(http: &reqwest::Client, url: &str) -> Option<String> {
 fn parse_profile(json: &str, game_version: &str) -> Result<VersionInfo> {
     let profile: VersionInfo = serde_json::from_str(json).map_err(|e| Error::json("Loader-Profil", e))?;
     if !is_safe_id(&profile.id) {
-        return Err(Error::launch("Das Loader-Profil enthält eine ungültige ID."));
+        return Err(Error::launch(crate::msg!("loaders.invalidProfileId", "Das Loader-Profil enthält eine ungültige ID.")));
     }
     if profile.inherits_from.as_deref().is_some_and(|parent| parent != game_version) {
-        return Err(Error::launch("Der Modloader-Installer passt nicht zur Minecraft-Version."));
+        return Err(Error::launch(crate::msg!("forge.installerVersionMismatch", "Der Modloader-Installer passt nicht zur Minecraft-Version.")));
     }
     Ok(profile)
 }
@@ -845,7 +854,7 @@ async fn install_modern(
 ) -> Result<(VersionInfo, Vec<String>)> {
     let paths = ctx.paths;
     if install.minecraft.as_deref().is_some_and(|mc| mc != ctx.game_version) {
-        return Err(Error::launch("Der Modloader-Installer passt nicht zur Minecraft-Version."));
+        return Err(Error::launch(crate::msg!("forge.installerVersionMismatch", "Der Modloader-Installer passt nicht zur Minecraft-Version.")));
     }
     let profile = parse_profile(version_json, ctx.game_version)?;
 
@@ -902,7 +911,7 @@ async fn install_modern(
             if resolved.url.is_empty() {
                 if !library_file(paths, &resolved.path).is_file() {
                     tracing::error!("Nach der Installation fehlt die Library {}", resolved.path);
-                    return Err(Error::launch("Die Modloader-Installation ist unvollständig. Bitte erneut versuchen."));
+                    return Err(Error::launch(crate::msg!("forge.installIncomplete", "Die Modloader-Installation ist unvollständig. Bitte erneut versuchen.")));
                 }
                 tracked.push(resolved.path);
             }
@@ -991,7 +1000,7 @@ async fn run_processor(
     }
     if let Some(missing) = classpath.iter().find(|p| !p.is_file()) {
         tracing::error!("Processor-Library fehlt: {}", missing.display());
-        return Err(Error::launch("Die Modloader-Installation ist unvollständig. Bitte erneut versuchen."));
+        return Err(Error::launch(crate::msg!("forge.installIncomplete", "Die Modloader-Installation ist unvollständig. Bitte erneut versuchen.")));
     }
 
     let main_class = {
@@ -1027,7 +1036,7 @@ async fn run_processor(
     .await?
     .map_err(|e| {
         tracing::error!("Java für Processor nicht startbar ({}): {e}", java.display());
-        Error::launch("Java konnte für die Modloader-Installation nicht gestartet werden.")
+        Error::launch(crate::msg!("forge.javaStartFailed", "Java konnte für die Modloader-Installation nicht gestartet werden."))
     })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1036,7 +1045,7 @@ async fn run_processor(
         tracing::trace!("[{}] {line}", processor.jar);
     }
 
-    let failed = Error::launch("Die Modloader-Installation ist fehlgeschlagen. Details stehen im Launcher-Log.");
+    let failed = Error::launch(crate::msg!("forge.installFailed", "Die Modloader-Installation ist fehlgeschlagen. Details stehen im Launcher-Log."));
     if !output.status.success() {
         tracing::error!("Processor {} endete mit {}", processor.jar, output.status);
         let lines: Vec<&str> = stdout.lines().chain(stderr.lines()).collect();
@@ -1097,7 +1106,7 @@ async fn install_legacy(
 ) -> Result<(VersionInfo, Vec<String>)> {
     let paths = ctx.paths;
     if install.minecraft != ctx.game_version {
-        return Err(Error::launch("Der Modloader-Installer passt nicht zur Minecraft-Version."));
+        return Err(Error::launch(crate::msg!("forge.installerVersionMismatch", "Der Modloader-Installer passt nicht zur Minecraft-Version.")));
     }
 
     let legacy_libs: Vec<LegacyLibrary> = version_info
@@ -1111,9 +1120,7 @@ async fn install_legacy(
     // Ohne `inheritsFrom` (vor 1.7) bringt das Profil eigene Natives im ganz
     // alten Format mit – das unterstützen wir nicht.
     if profile.inherits_from.is_none() {
-        return Err(Error::launch(
-            "Forge wird für diese Minecraft-Version noch nicht unterstützt (erst ab 1.7).",
-        ));
+        return Err(Error::launch(crate::msg!("forge.legacyUnsupported", "Forge wird für diese Minecraft-Version noch nicht unterstützt (erst ab 1.7).")));
     }
     for lib in &mut profile.libraries {
         if let Some(url) = &lib.url {

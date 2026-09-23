@@ -19,7 +19,10 @@ pub struct Resolution {
 impl Resolution {
     pub fn validate(&self) -> Result<()> {
         if !(320..=16_384).contains(&self.width) || !(240..=16_384).contains(&self.height) {
-            return Err(Error::validation("Auflösung liegt außerhalb des erlaubten Bereichs"));
+            return Err(Error::validation(crate::msg!(
+                "settings.resolutionRange",
+                "Auflösung liegt außerhalb des erlaubten Bereichs"
+            )));
         }
         Ok(())
     }
@@ -79,11 +82,46 @@ pub enum Accent {
     Amethyst,
 }
 
+/// Sprache der Oberfläche. Neue Installationen starten auf Englisch (der
+/// Einrichtungs-Assistent schlägt die Windows-Sprache vor); bestehende
+/// Einstellungen ohne Sprachfeld bleiben Deutsch (siehe [`Settings::load`]).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
 pub enum Language {
     #[default]
+    #[serde(rename = "en")]
+    En,
+    #[serde(rename = "de")]
     De,
+    #[serde(rename = "es")]
+    Es,
+    #[serde(rename = "fr")]
+    Fr,
+    #[serde(rename = "pl")]
+    Pl,
+    #[serde(rename = "pt-BR")]
+    PtBr,
+    #[serde(rename = "tr")]
+    Tr,
+    #[serde(rename = "nl")]
+    Nl,
+}
+
+impl Language {
+    pub const ALL: [Language; 8] = [Self::En, Self::De, Self::Es, Self::Fr, Self::Pl, Self::PtBr, Self::Tr, Self::Nl];
+
+    /// BCP-47-Code wie in `app/locales/<code>.json`.
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::En => "en",
+            Self::De => "de",
+            Self::Es => "es",
+            Self::Fr => "fr",
+            Self::Pl => "pl",
+            Self::PtBr => "pt-BR",
+            Self::Tr => "tr",
+            Self::Nl => "nl",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -123,7 +161,7 @@ impl Default for UiSettings {
             hide_right_sidebar: false,
             compact_library: false,
             show_play_time: true,
-            language: Language::De,
+            language: Language::En,
         }
     }
 }
@@ -198,25 +236,35 @@ impl Settings {
     /// Eine kaputte oder ungültige Datei darf den Start nicht verhindern –
     /// dann gelten die Standardwerte.
     pub async fn load(path: &Path) -> Result<Self> {
-        match fsutil::read_json::<Self>(path).await {
-            Ok(Some(s)) if s.validate().is_ok() => Ok(s),
-            // Nur ein einzelner Wert ungültig (z. B. ein Java-Pfad aus einer
-            // älteren Version, die noch nicht so streng prüfte)? Dann nur den
-            // zurücksetzen statt alle Einstellungen.
-            Ok(Some(s)) if s.clone().repaired().validate().is_ok() => {
-                tracing::warn!("settings.json: ungültigen Java-Pfad bzw. Hooks zurückgesetzt");
-                Ok(s.repaired())
-            }
-            Ok(Some(_)) => {
-                tracing::warn!("settings.json enthält ungültige Werte – verwende Standardwerte");
-                Ok(Self::default())
-            }
+        match fsutil::read_json::<serde_json::Value>(path).await {
+            Ok(Some(value)) => Ok(Self::from_value(migrate(value))),
             Ok(None) => Ok(Self::default()),
             Err(Error::Json { .. }) => {
                 tracing::warn!("settings.json ist beschädigt – verwende Standardwerte");
                 Ok(Self::default())
             }
             Err(e) => Err(e),
+        }
+    }
+
+    fn from_value(value: serde_json::Value) -> Self {
+        match serde_json::from_value::<Self>(value) {
+            Ok(s) if s.validate().is_ok() => s,
+            // Nur ein einzelner Wert ungültig (z. B. ein Java-Pfad aus einer
+            // älteren Version, die noch nicht so streng prüfte)? Dann nur den
+            // zurücksetzen statt alle Einstellungen.
+            Ok(s) if s.clone().repaired().validate().is_ok() => {
+                tracing::warn!("settings.json: ungültigen Java-Pfad bzw. Hooks zurückgesetzt");
+                s.repaired()
+            }
+            Ok(_) => {
+                tracing::warn!("settings.json enthält ungültige Werte – verwende Standardwerte");
+                Self::default()
+            }
+            Err(e) => {
+                tracing::warn!("settings.json ist beschädigt ({e}) – verwende Standardwerte");
+                Self::default()
+            }
         }
     }
 
@@ -253,12 +301,16 @@ impl Settings {
         hooks::validate_env(&self.env)?;
         self.java.validate()?;
         if self.min_memory_mb < 128 || self.min_memory_mb > self.max_memory_mb {
-            return Err(Error::validation(
-                "Minimaler Arbeitsspeicher muss zwischen 128 MB und dem Maximum liegen",
-            ));
+            return Err(Error::validation(crate::msg!(
+                "settings.minMemoryRange",
+                "Minimaler Arbeitsspeicher muss zwischen 128 MB und dem Maximum liegen"
+            )));
         }
         if !(1..=64).contains(&self.concurrent_downloads) {
-            return Err(Error::validation("Parallele Downloads müssen zwischen 1 und 64 liegen"));
+            return Err(Error::validation(crate::msg!(
+                "settings.downloadsRange",
+                "Parallele Downloads müssen zwischen 1 und 64 liegen"
+            )));
         }
         validate_jvm_args(&self.jvm_args)?;
         if let Some(p) = &self.java_path {
@@ -268,10 +320,38 @@ impl Settings {
     }
 }
 
+/// Bestehende Einstellungen stammen aus der Zeit, als der Launcher nur
+/// Deutsch konnte: Fehlt die Sprache, bleibt es Deutsch. Unbekannte Sprachen
+/// (z. B. aus einer neueren Version) fallen auf Englisch zurück, statt die
+/// ganze Datei zu verwerfen.
+fn migrate(mut value: serde_json::Value) -> serde_json::Value {
+    let Some(root) = value.as_object_mut() else { return value };
+    let ui = root.entry("ui").or_insert_with(|| serde_json::json!({}));
+    if let Some(ui) = ui.as_object_mut() {
+        let known = ui
+            .get("language")
+            .and_then(|l| l.as_str())
+            .map(|code| Language::ALL.iter().any(|l| l.code() == code));
+        match known {
+            None => {
+                ui.insert("language".into(), Language::De.code().into());
+            }
+            Some(false) => {
+                ui.insert("language".into(), Language::En.code().into());
+            }
+            Some(true) => {}
+        }
+    }
+    value
+}
+
 pub fn validate_memory(mb: u32) -> Result<()> {
     if !(MIN_MEMORY_MB..=MAX_MEMORY_MB).contains(&mb) {
-        return Err(Error::validation(format!(
-            "Arbeitsspeicher muss zwischen {MIN_MEMORY_MB} und {MAX_MEMORY_MB} MB liegen"
+        return Err(Error::validation(crate::msg!(
+            "settings.memoryRange",
+            "Arbeitsspeicher muss zwischen {min} und {max} MB liegen",
+            min = MIN_MEMORY_MB,
+            max = MAX_MEMORY_MB
         )));
     }
     Ok(())
@@ -279,7 +359,10 @@ pub fn validate_memory(mb: u32) -> Result<()> {
 
 pub fn validate_jvm_args(args: &str) -> Result<()> {
     if args.len() > MAX_JVM_ARGS_LEN || args.contains(['\0', '\n', '\r']) {
-        return Err(Error::validation("JVM-Argumente sind ungültig oder zu lang"));
+        return Err(Error::validation(crate::msg!(
+            "settings.jvmArgsInvalid",
+            "JVM-Argumente sind ungültig oder zu lang"
+        )));
     }
     Ok(())
 }
@@ -287,12 +370,15 @@ pub fn validate_jvm_args(args: &str) -> Result<()> {
 /// Muss als absoluter Pfad auf `java.exe` oder `javaw.exe` zeigen.
 pub fn validate_java_path(path: &str) -> Result<()> {
     if path.is_empty() || path.len() > 1024 || path.chars().any(char::is_control) {
-        return Err(Error::validation("Java-Pfad ist ungültig"));
+        return Err(Error::validation(crate::msg!("settings.javaPathInvalid", "Java-Pfad ist ungültig")));
     }
     let p = Path::new(path);
     let file = p.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_ascii_lowercase();
     if !p.is_absolute() || !matches!(file.as_str(), "java.exe" | "javaw.exe") {
-        return Err(Error::validation("Der Java-Pfad muss auf java.exe oder javaw.exe zeigen"));
+        return Err(Error::validation(crate::msg!(
+            "settings.javaPathNotJava",
+            "Der Java-Pfad muss auf java.exe oder javaw.exe zeigen"
+        )));
     }
     Ok(())
 }
@@ -359,6 +445,43 @@ mod tests {
         let file = dir.path().join("settings.json");
         tokio::fs::write(&file, b"{ not json").await.unwrap();
         assert_eq!(Settings::load(&file).await.unwrap(), Settings::default());
+    }
+
+    #[tokio::test]
+    async fn language_migration() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("settings.json");
+
+        // Neue Installation: Englisch.
+        assert_eq!(Settings::load(&file).await.unwrap().ui.language, Language::En);
+
+        // Alte Datei ohne `ui` bzw. ohne Sprache: bleibt Deutsch.
+        tokio::fs::write(&file, r#"{"maxMemoryMb":6144}"#).await.unwrap();
+        let old = Settings::load(&file).await.unwrap();
+        assert_eq!((old.ui.language, old.max_memory_mb), (Language::De, 6144));
+        tokio::fs::write(&file, r#"{"ui":{"theme":"light"}}"#).await.unwrap();
+        let old = Settings::load(&file).await.unwrap();
+        assert_eq!((old.ui.language, old.ui.theme), (Language::De, Theme::Light));
+
+        // Bisher gespeichertes "de" bleibt, neue Sprachen werden gelesen.
+        tokio::fs::write(&file, r#"{"ui":{"language":"de"}}"#).await.unwrap();
+        assert_eq!(Settings::load(&file).await.unwrap().ui.language, Language::De);
+        tokio::fs::write(&file, r#"{"ui":{"language":"pt-BR","accent":"lapis"}}"#).await.unwrap();
+        let s = Settings::load(&file).await.unwrap();
+        assert_eq!((s.ui.language, s.ui.accent), (Language::PtBr, Accent::Lapis));
+
+        // Unbekannte Sprache verwirft nicht die übrigen Einstellungen.
+        tokio::fs::write(&file, r#"{"maxMemoryMb":8192,"ui":{"language":"xx"}}"#).await.unwrap();
+        let s = Settings::load(&file).await.unwrap();
+        assert_eq!((s.ui.language, s.max_memory_mb), (Language::En, 8192));
+
+        // Nach dem Speichern steht die Sprache in der Datei.
+        let s = Settings { ui: UiSettings { language: Language::Es, ..Default::default() }, ..Default::default() };
+        s.save(&file).await.unwrap();
+        assert_eq!(Settings::load(&file).await.unwrap().ui.language, Language::Es);
+        for lang in Language::ALL {
+            assert_eq!(serde_json::to_value(lang).unwrap(), lang.code());
+        }
     }
 
     #[tokio::test]

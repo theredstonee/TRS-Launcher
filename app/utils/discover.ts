@@ -1,14 +1,15 @@
 import type { ModrinthHit, ProjectKind, SortIndex } from '~/types'
+// Relativ importiert, damit Tests die Helfer ohne Nuxt laden können.
+import { t } from './i18n'
 
 // Hilfen für die Entdecken-Seite (Sortierung, Seiten, Tags).
 
-export const sortOptions: { value: SortIndex; label: string }[] = [
-  { value: 'relevance', label: 'Relevanz' },
-  { value: 'downloads', label: 'Downloads' },
-  { value: 'follows', label: 'Follower' },
-  { value: 'newest', label: 'Neueste' },
-  { value: 'updated', label: 'Aktualisiert' },
-]
+/** Sortierungen der Suche; Anzeige über `sortLabel`. */
+export const sortIndexes: SortIndex[] = ['relevance', 'downloads', 'follows', 'newest', 'updated']
+
+export function sortLabel(index: SortIndex): string {
+  return t(`modrinth.sort.${index}`)
+}
 
 export const pageSizes = [20, 50, 100] as const
 
@@ -23,22 +24,28 @@ export function categoryProjectType(kind: ProjectKind): string {
   return kind
 }
 
-/** Überschriften der Kategorie-Gruppen aus Modrinths Tag-API. */
-export const categoryHeaderLabels: Record<string, string> = {
-  categories: 'Kategorie',
-  features: 'Merkmale',
-  resolutions: 'Auflösung',
-  'performance impact': 'Leistungsbedarf',
+/** Überschriften der Kategorie-Gruppen aus Modrinths Tag-API → Übersetzungsschlüssel. */
+export const categoryHeaderKeys: Record<string, 'categories' | 'features' | 'resolutions' | 'performanceImpact'> = {
+  categories: 'categories',
+  features: 'features',
+  resolutions: 'resolutions',
+  'performance impact': 'performanceImpact',
+}
+
+/** Anzeigename einer Kategorie-Gruppe (unbekannte bleiben, wie sie sind). */
+export function categoryHeaderLabel(header: string): string {
+  const key = categoryHeaderKeys[header]
+  return key ? t(`modrinth.categoryHeader.${key}`) : header
 }
 
 /** Wo läuft das Projekt? `null` = unbekannt. */
 export function environmentLabel(hit: Pick<ModrinthHit, 'clientSide' | 'serverSide'>): string | null {
   const client = hit.clientSide === 'required' || hit.clientSide === 'optional'
   const server = hit.serverSide === 'required' || hit.serverSide === 'optional'
-  if (hit.clientSide === 'required' && hit.serverSide === 'required') return 'Client und Server'
-  if (client && hit.serverSide === 'unsupported') return 'Client'
-  if (server && hit.clientSide === 'unsupported') return 'Server'
-  if (client && server) return 'Client oder Server'
+  if (hit.clientSide === 'required' && hit.serverSide === 'required') return t('modrinth.environment.both')
+  if (client && hit.serverSide === 'unsupported') return t('modrinth.environment.client')
+  if (server && hit.clientSide === 'unsupported') return t('modrinth.environment.server')
+  if (client && server) return t('modrinth.environment.either')
   return null
 }
 

@@ -21,6 +21,7 @@ use std::time::{Duration, Instant};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::error::UserError;
 use crate::skins::{self, ApiError, Profile, SkinVariant};
 use crate::{Error, Launcher, Result};
 
@@ -354,6 +355,9 @@ pub struct SkinSyncStatus {
     /// Wann es weitergeht (Unix-Zeit in Millisekunden).
     pub retry_at: Option<i64>,
     pub message: Option<String>,
+    /// Dieselbe Meldung mit Übersetzungs-Code (`errors.<code>`) und Parametern.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_info: Option<UserError>,
     pub pending_skin: bool,
     pub pending_cape: bool,
     pub profile: Option<Profile>,
@@ -368,6 +372,7 @@ impl Default for SkinSyncStatus {
             reason: None,
             retry_at: None,
             message: None,
+            error_info: None,
             pending_skin: false,
             pending_cape: false,
             profile: None,
@@ -383,7 +388,7 @@ struct Inner {
     /// Läuft gerade ein Abarbeiter?
     worker: bool,
     /// Fehler aus diesem Durchlauf (für den Abschluss).
-    error: Option<String>,
+    error: Option<UserError>,
 }
 
 impl Inner {
@@ -401,6 +406,7 @@ impl Inner {
         status.pending_cape = self.queue.cape.pending();
         if !matches!(state, SyncState::Done | SyncState::Failed) {
             status.message = None;
+            status.error_info = None;
             status.profile = None;
         }
     }
@@ -467,8 +473,8 @@ pub(crate) trait Backend {
 }
 
 /// Meldung, wenn ein Auftrag aufgegeben wird.
-fn failure_message(error: ApiError) -> String {
-    Error::from(error).public_message()
+fn failure_message(error: ApiError) -> UserError {
+    Error::from(error).to_user()
 }
 
 /// Arbeitet die Warteschlange ab, bis nichts mehr zu tun ist.
@@ -540,7 +546,7 @@ pub(crate) async fn drive<B: Backend>(sync: &SkinSync, backend: &B) {
             Err(error) => {
                 attempt = 0;
                 let message = failure_message(error);
-                tracing::warn!("Skin-Änderung aufgegeben: {message}");
+                tracing::warn!("Skin-Änderung aufgegeben: {}", message.message);
                 sync.with(|inner| {
                     inner.queue.finish(kind, Outcome::Failed);
                     inner.error = Some(message);
@@ -564,7 +570,8 @@ async fn finish<B: Backend>(sync: &SkinSync, backend: &B) -> bool {
         let error = inner.error.take();
         let state = if error.is_some() { SyncState::Failed } else { SyncState::Done };
         inner.set(state, None, None);
-        inner.status.message = error;
+        inner.status.message = error.as_ref().map(|e| e.message.clone());
+        inner.status.error_info = error;
         match profile {
             Ok(profile) => inner.status.profile = Some(profile),
             Err(e) => {
@@ -587,9 +594,10 @@ impl LauncherBackend {
             other => ApiError::Fatal(other),
         })?;
         if !session.uuid.eq_ignore_ascii_case(account) {
-            return Err(ApiError::Fatal(Error::auth(
-                "Das aktive Konto wurde gewechselt – die Änderungen wurden verworfen.",
-            )));
+            return Err(ApiError::Fatal(Error::auth(crate::msg!(
+                "skinSync.accountSwitched",
+                "Das aktive Konto wurde gewechselt – die Änderungen wurden verworfen."
+            ))));
         }
         Ok(session.access_token)
     }
@@ -647,7 +655,10 @@ impl Launcher {
         let session = self.skin_session().await?;
         let account = session.uuid.to_ascii_lowercase();
         if !account.eq_ignore_ascii_case(expected_account.trim()) {
-            return Err(Error::validation("Das aktive Konto hat gewechselt – bitte die Seite neu laden."));
+            return Err(Error::validation(crate::msg!(
+                "skinSync.accountChanged",
+                "Das aktive Konto hat gewechselt – bitte die Seite neu laden."
+            )));
         }
 
         // Alles vorher prüfen: Was hier durchfällt, geht gar nicht erst in die Schlange.
@@ -663,7 +674,10 @@ impl Launcher {
         let cape = match changes.cape {
             None => None,
             Some(CapeChange { id: Some(id) }) if skins::is_cape_id(&id) => Some(CapeOp::Show(id)),
-            Some(CapeChange { id: Some(_) }) => return Err(Error::validation("Ungültiger Umhang.")),
+            Some(CapeChange { id: Some(_) }) => return Err(Error::validation(crate::msg!(
+                "skins.invalidCape",
+                "Ungültiger Umhang."
+            ))),
             Some(CapeChange { id: None }) => Some(CapeOp::Hide),
         };
 
@@ -955,12 +969,16 @@ mod tests {
     async fn worker_gives_up_on_fatal_errors_and_keeps_going_with_the_rest() {
         let sync = SkinSync::default();
         sync.enqueue("acc", Some(upload("a")), Some(CapeOp::Hide));
-        let fake = Fake::new(&sync, vec![Err(ApiError::Fatal(Error::validation("Datei abgelehnt"))), Ok(())]);
+        let fake = Fake::new(&sync, vec![Err(ApiError::Fatal(Error::validation(crate::msg!(
+            "skins.fileRejected",
+            "Datei abgelehnt"
+        )))), Ok(())]);
         drive(&sync, &fake).await;
         assert_eq!(fake.sent.borrow().len(), 2, "Umhang wird trotzdem gesetzt");
         let status = sync.status();
         assert_eq!(status.state, SyncState::Failed);
         assert_eq!(status.message.as_deref(), Some("Datei abgelehnt"));
+        assert_eq!(status.error_info.as_ref().map(|e| e.code.as_str()), Some("skins.fileRejected"));
         assert!(status.profile.is_some(), "neuer Stand kommt trotzdem mit");
     }
 

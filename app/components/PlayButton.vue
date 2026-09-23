@@ -10,12 +10,12 @@ const game = computed(() => games.state(props.instanceId))
 const percent = computed(() =>
   game.value.progress ? Math.floor(overallPercent(game.value.progress.stage, game.value.progress.percent)) : 0,
 )
-const stage = computed(() => (game.value.progress ? stageLabels[game.value.progress.stage] : ''))
+const stage = computed(() => (game.value.progress ? stageLabel(game.value.progress.stage) : ''))
 // Die Vorbereitung ist eine Aufgabe – abbrechbar, bis das Spiel startet.
 const tasks = useTasksStore()
 const canCancel = computed(() => {
-  const t = tasks.get(taskKey('launch', props.instanceId))
-  return t?.status === 'running' && t.cancellable && !t.cancelling
+  const task = tasks.get(taskKey('launch', props.instanceId))
+  return task?.status === 'running' && task.cancellable && !task.cancelling
 })
 const files = computed(() => {
   const p = game.value.progress
@@ -35,7 +35,7 @@ const files = computed(() => {
       <span class="lamp-glass" />
       <span class="relative flex items-center gap-2.5">
         <svg viewBox="0 0 24 24" class="size-5" fill="currentColor"><path d="M7 4v16l13-8z" /></svg>
-        <span class="display text-xl">Spielen</span>
+        <span class="display text-xl">{{ t('common.actions.play') }}</span>
       </span>
     </button>
 
@@ -54,24 +54,24 @@ const files = computed(() => {
         <span class="min-w-0 truncate text-left text-xs font-medium">
           {{ stage }}<span v-if="files" class="ml-1.5 font-normal opacity-70">{{ files }}</span>
         </span>
-        <span class="display shrink-0 text-xl tabular-nums">{{ percent }} %</span>
+        <span class="display shrink-0 text-xl tabular-nums">{{ t('tasks.percent', { percent }) }}</span>
       </span>
     </div>
 
-    <button v-else class="lamp pixel-corners" title="Spiel beenden" @click="games.stop(instanceId)">
+    <button v-else class="lamp pixel-corners" :title="t('play.stopGame')" @click="games.stop(instanceId)">
       <span class="lamp-light" />
       <span class="lamp-glass" />
       <span class="relative flex items-center gap-2.5">
-        <span class="display text-xl">Läuft</span>
-        <span class="text-xs font-medium opacity-75">Stoppen</span>
+        <span class="display text-xl">{{ t('common.status.running') }}</span>
+        <span class="text-xs font-medium opacity-75">{{ t('common.actions.stop') }}</span>
       </span>
     </button>
     <!-- Nach der v-if-Kette, sonst hinge der Stopp-Knopf an dieser Bedingung. -->
     <button
       v-if="game.phase === 'preparing' && canCancel"
       class="absolute -top-2 -right-2 z-10 grid size-6 place-items-center rounded-full bg-base-850 text-base-300 ring-1 ring-base-700 hover:text-redstone-300"
-      aria-label="Start abbrechen"
-      title="Start abbrechen"
+      :aria-label="t('play.cancelLaunch')"
+      :title="t('play.cancelLaunch')"
       @click="games.cancelLaunch(instanceId)"
     >
       <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -82,7 +82,7 @@ const files = computed(() => {
   <div v-else class="min-w-0 flex-1">
     <button v-if="game.phase === 'idle'" class="btn btn-primary w-full" @click="games.launch(instanceId)">
       <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><path d="M7 4v16l13-8z" /></svg>
-      Spielen
+      {{ t('common.actions.play') }}
     </button>
 
     <div
@@ -97,12 +97,12 @@ const files = computed(() => {
       <div class="flex items-baseline justify-between gap-2 text-xs font-medium">
         <span class="truncate">{{ stage }}</span>
         <span class="flex items-center gap-1.5">
-          <span class="display tabular-nums text-redstone-300">{{ percent }} %</span>
+          <span class="display tabular-nums text-redstone-300">{{ t('tasks.percent', { percent }) }}</span>
           <button
             v-if="canCancel"
             class="grid size-4 place-items-center rounded text-base-400 hover:text-redstone-300"
-            aria-label="Start abbrechen"
-            title="Start abbrechen"
+            :aria-label="t('play.cancelLaunch')"
+            :title="t('play.cancelLaunch')"
             @click="games.cancelLaunch(instanceId)"
           >
             <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -114,7 +114,7 @@ const files = computed(() => {
 
     <button v-else class="btn w-full bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/40 hover:bg-base-800" @click="games.stop(instanceId)">
       <span class="size-2 animate-lamp rounded-full bg-lamp-400" />
-      Läuft – stoppen
+      {{ t('play.runningStop') }}
     </button>
   </div>
 </template>

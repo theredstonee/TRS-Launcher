@@ -80,7 +80,10 @@ pub fn parse_address(address: &str) -> Result<(String, Option<u16>)> {
     let (host, port) = match address.rsplit_once(':') {
         Some((h, p)) => {
             let port: u16 =
-                p.parse().ok().filter(|&p| p != 0).ok_or_else(|| Error::validation("Ungültiger Port"))?;
+                p.parse().ok().filter(|&p| p != 0).ok_or_else(|| Error::validation(crate::msg!(
+                    "servers.invalidPort",
+                    "Ungültiger Port"
+                )))?;
             (h, Some(port))
         }
         None => (address, None),
@@ -92,7 +95,7 @@ pub fn parse_address(address: &str) -> Result<(String, Option<u16>)> {
         && !host.contains("..")
         && host.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'));
     if !host_ok {
-        return Err(Error::validation("Ungültige Server-Adresse"));
+        return Err(Error::validation(crate::msg!("servers.invalidAddress", "Ungültige Server-Adresse")));
     }
     Ok((host.to_ascii_lowercase(), port))
 }
@@ -108,7 +111,10 @@ fn normalized(address: &str) -> Result<String> {
 fn validate_name(name: &str) -> Result<String> {
     let name: String = name.trim().chars().filter(|c| !c.is_control()).collect();
     if name.is_empty() || name.chars().count() > 64 {
-        return Err(Error::validation("Der Servername muss zwischen 1 und 64 Zeichen lang sein"));
+        return Err(Error::validation(crate::msg!(
+            "servers.nameLength",
+            "Der Servername muss zwischen 1 und 64 Zeichen lang sein"
+        )));
     }
     Ok(name)
 }
@@ -139,11 +145,14 @@ impl ServerStore {
         let _guard = self.lock.lock().await;
         let mut list = self.list().await?;
         if list.len() >= MAX_SERVERS {
-            return Err(Error::validation("Mehr als 100 Server werden nicht unterstützt."));
+            return Err(Error::validation(crate::msg!(
+                "servers.tooMany",
+                "Mehr als 100 Server werden nicht unterstützt."
+            )));
         }
         let address = normalized(&input.address)?;
         if list.iter().any(|s| s.address == address) {
-            return Err(Error::validation("Dieser Server steht schon in der Liste."));
+            return Err(Error::validation(crate::msg!("servers.duplicate", "Dieser Server steht schon in der Liste.")));
         }
         let server = Server {
             id: uuid::Uuid::new_v4().simple().to_string(),
@@ -161,13 +170,13 @@ impl ServerStore {
         let mut list = self.list().await?;
         let address = normalized(&input.address)?;
         if list.iter().any(|s| s.id != id && s.address == address) {
-            return Err(Error::validation("Dieser Server steht schon in der Liste."));
+            return Err(Error::validation(crate::msg!("servers.duplicate", "Dieser Server steht schon in der Liste.")));
         }
         let name = validate_name(&input.name)?;
         let server = list
             .iter_mut()
             .find(|s| s.id == id)
-            .ok_or_else(|| Error::validation("Dieser Server existiert nicht mehr."))?;
+            .ok_or_else(|| Error::validation(crate::msg!("servers.notFound", "Dieser Server existiert nicht mehr.")))?;
         server.name = name;
         server.address = address;
         server.auto_resource_pack = input.auto_resource_pack;
@@ -188,7 +197,7 @@ impl ServerStore {
             .await?
             .into_iter()
             .find(|s| s.id == id)
-            .ok_or_else(|| Error::validation("Dieser Server existiert nicht mehr."))
+            .ok_or_else(|| Error::validation(crate::msg!("servers.notFound", "Dieser Server existiert nicht mehr.")))
     }
 
     /// Trägt alle Launcher-Server in die `servers.dat` der Instanz ein. Im

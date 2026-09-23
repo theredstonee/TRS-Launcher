@@ -79,7 +79,10 @@ impl PackIndex {
         self.dependencies
             .get("minecraft")
             .map(String::as_str)
-            .ok_or_else(|| Error::validation("Das Modpack nennt keine Minecraft-Version."))
+            .ok_or_else(|| Error::validation(crate::msg!(
+                "modpack.noGameVersion",
+                "Das Modpack nennt keine Minecraft-Version."
+            )))
     }
 }
 
@@ -98,25 +101,34 @@ fn safe_relative(path: &str) -> Option<PathBuf> {
 
 pub(crate) fn read_index(pack: &Path) -> Result<PackIndex> {
     let file = std::fs::File::open(pack).map_err(|e| Error::io(pack, e))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|_| Error::validation("Das Modpack ist beschädigt."))?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|_| Error::validation(crate::msg!(
+        "modpack.corrupt",
+        "Das Modpack ist beschädigt."
+    )))?;
     let entry = archive
         .by_name("modrinth.index.json")
-        .map_err(|_| Error::validation("Das ist kein gültiges Modrinth-Modpack."))?;
+        .map_err(|_| Error::validation(crate::msg!(
+            "modpack.notModrinthPack",
+            "Das ist kein gültiges Modrinth-Modpack."
+        )))?;
     if entry.size() > MAX_INDEX_BYTES {
-        return Err(Error::validation("Das Modpack ist beschädigt."));
+        return Err(Error::validation(crate::msg!("modpack.corrupt", "Das Modpack ist beschädigt.")));
     }
     let mut text = String::new();
     entry
         .take(MAX_INDEX_BYTES)
         .read_to_string(&mut text)
-        .map_err(|_| Error::validation("Das Modpack ist beschädigt."))?;
+        .map_err(|_| Error::validation(crate::msg!("modpack.corrupt", "Das Modpack ist beschädigt.")))?;
     let index: PackIndex =
         serde_json::from_str(&text).map_err(|e| Error::json("modrinth.index.json", e))?;
     if index.format_version != 1 || index.game != "minecraft" {
-        return Err(Error::validation("Dieses Modpack-Format wird nicht unterstützt."));
+        return Err(Error::validation(crate::msg!(
+            "modpack.unsupportedFormat",
+            "Dieses Modpack-Format wird nicht unterstützt."
+        )));
     }
     if index.files.len() > MAX_PACK_FILES {
-        return Err(Error::validation("Das Modpack enthält zu viele Dateien."));
+        return Err(Error::validation(crate::msg!("modpack.tooManyFiles", "Das Modpack enthält zu viele Dateien.")));
     }
     Ok(index)
 }
@@ -124,11 +136,17 @@ pub(crate) fn read_index(pack: &Path) -> Result<PackIndex> {
 /// Entpackt `overrides/` und danach `client-overrides/` in den Spielordner.
 pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
     let file = std::fs::File::open(pack).map_err(|e| Error::io(pack, e))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|_| Error::validation("Das Modpack ist beschädigt."))?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|_| Error::validation(crate::msg!(
+        "modpack.corrupt",
+        "Das Modpack ist beschädigt."
+    )))?;
 
     for prefix in ["overrides/", "client-overrides/"] {
         for i in 0..archive.len() {
-            let mut entry = archive.by_index(i).map_err(|_| Error::validation("Das Modpack ist beschädigt."))?;
+            let mut entry = archive.by_index(i).map_err(|_| Error::validation(crate::msg!(
+                "modpack.corrupt",
+                "Das Modpack ist beschädigt."
+            )))?;
             // `enclosed_name` verhindert Zip-Slip.
             let Some(name) = entry.enclosed_name() else { continue };
             let name = name.to_string_lossy().replace('\\', "/");
@@ -154,15 +172,24 @@ pub(crate) fn download_tasks(index: &PackIndex, game_dir: &Path) -> Result<Vec<T
             continue;
         }
         let rel = safe_relative(&file.path)
-            .ok_or_else(|| Error::validation("Das Modpack enthält einen ungültigen Dateipfad."))?;
+            .ok_or_else(|| Error::validation(crate::msg!(
+                "modpack.invalidFilePath",
+                "Das Modpack enthält einen ungültigen Dateipfad."
+            )))?;
         let url = file
             .downloads
             .iter()
             .find(|u| ALLOWED_HOSTS.iter().any(|host| u.starts_with(host)))
-            .ok_or_else(|| Error::validation("Das Modpack verweist auf eine nicht erlaubte Download-Quelle."))?;
+            .ok_or_else(|| Error::validation(crate::msg!(
+                "modpack.disallowedSource",
+                "Das Modpack verweist auf eine nicht erlaubte Download-Quelle."
+            )))?;
         let sha1_ok = file.hashes.sha1.len() == 40 && file.hashes.sha1.bytes().all(|b| b.is_ascii_hexdigit());
         if !sha1_ok {
-            return Err(Error::validation("Das Modpack enthält eine ungültige Prüfsumme."));
+            return Err(Error::validation(crate::msg!(
+                "modpack.invalidChecksum",
+                "Das Modpack enthält eine ungültige Prüfsumme."
+            )));
         }
         tasks.push(Task {
             url: url.clone(),
@@ -183,7 +210,7 @@ impl Launcher {
         on_progress: &PackProgressFn,
     ) -> Result<Instance> {
         if !modrinth::is_safe_project_id(project_id) {
-            return Err(Error::validation("Ungültige Projekt-ID"));
+            return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
         }
         let http = self.http();
         on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
@@ -198,7 +225,10 @@ impl Launcher {
                     .error_for_status()?
                     .json()
                     .await?;
-                versions.into_iter().next().ok_or_else(|| Error::validation("Dieses Modpack hat keine Version."))?
+                versions.into_iter().next().ok_or_else(|| Error::validation(crate::msg!(
+                    "modpack.noVersion",
+                    "Dieses Modpack hat keine Version."
+                )))?
             }
         };
         let file = version
@@ -206,7 +236,10 @@ impl Launcher {
             .iter()
             .find(|f| f.primary && f.filename.ends_with(".mrpack"))
             .or_else(|| version.files.iter().find(|f| f.filename.ends_with(".mrpack")))
-            .ok_or_else(|| Error::validation("Diese Version enthält kein Modpack."))?;
+            .ok_or_else(|| Error::validation(crate::msg!(
+                "modpack.versionHasNoPack",
+                "Diese Version enthält kein Modpack."
+            )))?;
         if !file.url.starts_with(CDN_PREFIX) {
             return Err(Error::download(&file.url, "Download liegt nicht auf Modrinths CDN"));
         }
@@ -238,7 +271,7 @@ impl Launcher {
     pub async fn import_modpack_file(&self, pack: &Path, on_progress: &PackProgressFn) -> Result<Instance> {
         let meta = tokio::fs::metadata(pack).await.map_err(|e| Error::io(pack, e))?;
         if !meta.is_file() {
-            return Err(Error::validation("Das ist keine Modpack-Datei."));
+            return Err(Error::validation(crate::msg!("modpack.notPackFile", "Das ist keine Modpack-Datei.")));
         }
         on_progress(PackProgress { phase: PackPhase::Pack, percent: 100.0 });
         self.install_local_pack(pack, on_progress).await

@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { setLocale } from '../app/utils/i18n'
 import {
   trsCapeNameSchema,
   trsCapeSchema,
+  trsDate,
   trsFrameIndex,
   trsFriendsSchema,
   trsJoinInstance,
@@ -11,10 +13,16 @@ import {
   trsPresenceText,
   trsRedeemCodeSchema,
   trsSortFriends,
+  trsStatusLabel,
   trsStatusSchema,
   trsTargetSchema,
   trsUnlockLabel,
 } from '../app/utils/trs'
+
+// Die meisten Erwartungen sind die deutschen Texte; Englisch wird extra geprüft.
+beforeEach(async () => {
+  await setLocale('de')
+})
 
 const cape = {
   id: 'team',
@@ -78,6 +86,15 @@ describe('Animierte Umhänge', () => {
     expect(trsUnlockLabel({ kind: 'builtin', unlock: 'code' })).toBe('Code')
     expect(trsUnlockLabel({ kind: 'builtin', unlock: 'admin' })).toBe('Team')
     expect(trsUnlockLabel({ kind: 'upload', unlock: 'owner' })).toBe('Eigener')
+    expect(trsStatusLabel('pending')).toBe('Wartet auf Freigabe')
+    expect(trsStatusLabel('approved')).toBeNull()
+  })
+
+  it('beschriftet auf Englisch', async () => {
+    await setLocale('en')
+    expect(trsUnlockLabel({ kind: 'builtin', unlock: 'free' })).toBe('Free')
+    expect(trsUnlockLabel({ kind: 'builtin', unlock: 'other' })).toBe('Locked')
+    expect(trsStatusLabel('rejected')).toBe('Rejected')
   })
 })
 
@@ -107,6 +124,15 @@ describe('Eingaben', () => {
     expect(trsNewCodesSchema.safeParse({ ...base, expiresAt: '2001-01-01T00:00:00Z' }).success).toBe(false)
     expect(trsNewCodesSchema.safeParse({ ...base, expiresAt: '2999-01-01T00:00:00Z' }).success).toBe(true)
   })
+
+  it('meldet Fehler in der eingestellten Sprache', async () => {
+    const tooMany = { capeId: 'team', maxUses: 1, count: 101, expiresAt: null, note: null }
+    expect(trsNewCodesSchema.safeParse(tooMany).error?.issues[0]?.message).toBe('Höchstens 100 Codes auf einmal.')
+    expect(trsRedeemCodeSchema.safeParse('kurz').error?.issues[0]?.message).toContain('20 Zeichen')
+    await setLocale('en')
+    expect(trsNewCodesSchema.safeParse(tooMany).error?.issues[0]?.message).toBe('At most 100 codes at once.')
+    expect(trsTargetSchema.safeParse('zwei Wörter').error?.issues[0]?.message).toContain('Minecraft name')
+  })
 })
 
 describe('Freunde', () => {
@@ -117,6 +143,25 @@ describe('Freunde', () => {
     expect(trsPresenceText({ state: 'online', game: null, updatedAt: null })).toBe('Online im Launcher')
     expect(trsPresenceText({ state: 'in-game', game, updatedAt: null })).toBe('Spielt 1.21.1 (Fabric) auf play.example.net')
     expect(trsPresenceText({ state: 'in-game', game: { version: '1.8.9', loader: 'vanilla' }, updatedAt: null })).toBe('Spielt 1.8.9')
+    expect(trsPresenceText({ state: 'in-game', game: { version: '1.8.9', loader: 'vanilla', server: 'mc.example.net' }, updatedAt: null })).toBe(
+      'Spielt 1.8.9 auf mc.example.net',
+    )
+  })
+
+  it('beschreibt den Status auf Englisch', async () => {
+    await setLocale('en')
+    expect(trsPresenceText(null)).toBe('Offline')
+    expect(trsPresenceText({ state: 'online', game: null, updatedAt: null })).toBe('Online in the launcher')
+    expect(trsPresenceText({ state: 'in-game', game, updatedAt: null })).toBe('Playing 1.21.1 (Fabric) on play.example.net')
+    expect(trsPresenceText({ state: 'in-game', game: null, updatedAt: null })).toBe('In game')
+  })
+
+  it('formatiert Daten nach Sprache', async () => {
+    expect(trsDate(null)).toBe('–')
+    expect(trsDate('kaputt')).toBe('–')
+    expect(trsDate('2026-09-23T12:00:00Z')).toBe('23.09.2026')
+    await setLocale('en')
+    expect(trsDate('2026-09-23T12:00:00Z')).toBe('09/23/2026')
   })
 
   it('sortiert: im Spiel, online, offline', () => {

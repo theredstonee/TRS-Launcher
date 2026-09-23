@@ -57,7 +57,10 @@ pub fn target(input: &str) -> Result<String> {
     if mc_name(t) {
         return Ok(t.to_owned());
     }
-    Err(Error::validation("Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) eingeben."))
+    Err(Error::validation(crate::msg!(
+        "trsValidate.invalidName",
+        "Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) eingeben."
+    )))
 }
 
 /// Einlösecode normalisieren: Groß, ohne Trenner, O→0, I/L→1, 20 Zeichen Crockford-Base32.
@@ -78,14 +81,43 @@ pub fn redeem_code(input: &str) -> Option<String> {
     (s.chars().count() == 20 && s.chars().all(crockford)).then_some(s)
 }
 
+/// Welches Freitextfeld geprüft wird – bestimmt die Fehlermeldung.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TextField {
+    /// Hinweis zu einer Meldung.
+    Comment,
+    /// Grund (Ablehnung, Sperre).
+    Reason,
+    /// Notiz zu Einlösecodes.
+    Note,
+}
+
+impl TextField {
+    fn length_error(self, limit: usize) -> Error {
+        Error::validation(match self {
+            Self::Comment => crate::msg!("trsValidate.commentLength", "Hinweis: 1 bis {max} Zeichen.", max = limit),
+            Self::Reason => crate::msg!("trsValidate.reasonLength", "Grund: 1 bis {max} Zeichen.", max = limit),
+            Self::Note => crate::msg!("trsValidate.noteLength", "Notiz: 1 bis {max} Zeichen.", max = limit),
+        })
+    }
+
+    fn chars_error(self) -> Error {
+        Error::validation(match self {
+            Self::Comment => crate::msg!("trsValidate.commentInvalidChars", "Hinweis enthält ungültige Zeichen."),
+            Self::Reason => crate::msg!("trsValidate.reasonInvalidChars", "Grund enthält ungültige Zeichen."),
+            Self::Note => crate::msg!("trsValidate.noteInvalidChars", "Notiz enthält ungültige Zeichen."),
+        })
+    }
+}
+
 /// Freitext ohne Steuerzeichen (`plainText` der API): getrimmt, 1..=max Zeichen.
-pub fn plain_text(input: &str, max: usize, what: &str) -> Result<String> {
+pub fn plain_text(input: &str, max: usize, field: TextField) -> Result<String> {
     let t = input.trim();
     if t.is_empty() || t.chars().count() > max {
-        return Err(Error::validation(format!("{what}: 1 bis {max} Zeichen.")));
+        return Err(field.length_error(max));
     }
     if t.chars().any(is_forbidden_char) {
-        return Err(Error::validation(format!("{what} enthält ungültige Zeichen.")));
+        return Err(field.chars_error());
     }
     Ok(t.to_owned())
 }
@@ -106,9 +138,10 @@ pub fn upload_name(input: &str) -> Result<String> {
     if ok {
         Ok(t.to_owned())
     } else {
-        Err(Error::validation(
-            "Name: 1–32 Zeichen – Buchstaben, Ziffern, Leerzeichen und . , ' ! ? & ( ) + - _",
-        ))
+        Err(Error::validation(crate::msg!(
+            "trsValidate.invalidUploadName",
+            "Name: 1–32 Zeichen – Buchstaben, Ziffern, Leerzeichen und . , ' ! ? & ( ) + - _"
+        )))
     }
 }
 
@@ -132,7 +165,7 @@ pub fn cape_name(input: &str, id: &str) -> String {
 pub fn iso_datetime(input: &str) -> Result<String> {
     chrono::DateTime::parse_from_rfc3339(input.trim())
         .map(|d| d.with_timezone(&chrono::Utc).to_rfc3339_opts(chrono::SecondsFormat::Millis, true))
-        .map_err(|_| Error::validation("Ungültiges Ablaufdatum."))
+        .map_err(|_| Error::validation(crate::msg!("trsValidate.invalidExpiry", "Ungültiges Ablaufdatum.")))
 }
 
 #[cfg(test)]
@@ -169,10 +202,14 @@ mod tests {
 
     #[test]
     fn text_rules() {
-        assert!(plain_text("  ok ", 200, "Notiz").is_ok());
-        assert!(plain_text("", 200, "Notiz").is_err());
-        assert!(plain_text("a\u{202E}b", 200, "Notiz").is_err());
-        assert!(plain_text(&"x".repeat(201), 200, "Notiz").is_err());
+        assert!(plain_text("  ok ", 200, TextField::Note).is_ok());
+        let empty = plain_text("", 200, TextField::Note).unwrap_err();
+        assert_eq!(empty.message_code(), "trsValidate.noteLength");
+        assert_eq!(empty.message_params()["max"], "200");
+        assert_eq!(empty.public_message(), "Notiz: 1 bis 200 Zeichen.");
+        let bidi = plain_text("a\u{202E}b", 200, TextField::Reason).unwrap_err();
+        assert_eq!(bidi.message_code(), "trsValidate.reasonInvalidChars");
+        assert!(plain_text(&"x".repeat(201), 200, TextField::Comment).is_err());
         assert_eq!(upload_name(" Mein Umhang! ").unwrap(), "Mein Umhang!");
         assert!(upload_name("<script>").is_err());
         assert_eq!(text("a\u{0007}b", 10), "ab");

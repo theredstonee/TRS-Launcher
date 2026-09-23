@@ -181,7 +181,7 @@ pub fn validate_file_name(kind: ContentKind, file_name: &str) -> Result<()> {
         && !file_name.ends_with('.')
         && !file_name.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'))
         && kind.extensions().iter().any(|ext| lower.ends_with(ext));
-    if ok { Ok(()) } else { Err(Error::validation("Ungültiger Dateiname")) }
+    if ok { Ok(()) } else { Err(Error::validation(crate::msg!("content.invalidFileName", "Ungültiger Dateiname"))) }
 }
 
 pub async fn list(paths: &Paths, instance_id: &str, kind: ContentKind) -> Result<Vec<ContentItem>> {
@@ -275,7 +275,7 @@ async fn rename_enabled(paths: &Paths, instance_id: &str, kind: ContentKind, fil
     validate_file_name(kind, file_name)?;
     let dir = content_dir(paths, instance_id, kind);
     let (current, is_enabled) =
-        existing_path(&dir, file_name).ok_or_else(|| Error::validation("Die Datei existiert nicht mehr."))?;
+        existing_path(&dir, file_name).ok_or_else(|| Error::validation(crate::msg!("content.fileGone", "Die Datei existiert nicht mehr.")))?;
     if is_enabled == enabled {
         return Ok(false);
     }
@@ -342,7 +342,11 @@ pub struct BulkResult {
 pub async fn bulk(paths: &Paths, instance_id: &str, action: BulkAction, targets: &[BulkTarget]) -> Result<BulkResult> {
     validate_id(instance_id)?;
     if targets.len() > MAX_BULK_ITEMS {
-        return Err(Error::validation(format!("Höchstens {MAX_BULK_ITEMS} Einträge auf einmal")));
+        return Err(Error::validation(crate::msg!(
+            "content.tooManyItems",
+            "Höchstens {max} Einträge auf einmal",
+            max = MAX_BULK_ITEMS
+        )));
     }
     for t in targets {
         validate_file_name(t.kind, &t.file_name)?;

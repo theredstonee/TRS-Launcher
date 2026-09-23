@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { categoryProjectType, environmentLabel, pageCount, pageItems, svgIconUrl } from '../app/utils/discover'
+import { categoryHeaderLabel, categoryProjectType, environmentLabel, pageCount, pageItems, svgIconUrl } from '../app/utils/discover'
+import { setLocale } from '../app/utils/i18n'
+import { categoryLabel } from '../app/utils/modrinth'
 import { modrinthSearchSchema } from '../app/utils/schemas'
 import type { ModrinthSearchParams } from '../app/types'
 
@@ -42,9 +44,35 @@ describe('Umgebung', () => {
   it('liest client_side/server_side wie Modrinth', () => {
     expect(environmentLabel({ clientSide: 'required', serverSide: 'unsupported' })).toBe('Client')
     expect(environmentLabel({ clientSide: 'unsupported', serverSide: 'required' })).toBe('Server')
-    expect(environmentLabel({ clientSide: 'optional', serverSide: 'optional' })).toBe('Client oder Server')
-    expect(environmentLabel({ clientSide: 'required', serverSide: 'required' })).toBe('Client und Server')
+    expect(environmentLabel({ clientSide: 'optional', serverSide: 'optional' })).toBe('Client or server')
+    expect(environmentLabel({ clientSide: 'required', serverSide: 'required' })).toBe('Client and server')
     expect(environmentLabel({ clientSide: 'unknown', serverSide: 'unknown' })).toBeNull()
+  })
+
+  it('folgt der eingestellten Sprache', async () => {
+    await setLocale('de')
+    try {
+      expect(environmentLabel({ clientSide: 'optional', serverSide: 'optional' })).toBe('Client oder Server')
+      expect(environmentLabel({ clientSide: 'required', serverSide: 'required' })).toBe('Client und Server')
+    } finally {
+      await setLocale('en')
+    }
+  })
+})
+
+describe('Kategorien', () => {
+  it('übersetzt bekannte Tags und lässt unbekannte lesbar', async () => {
+    expect(categoryLabel('game-mechanics')).toBe('Game mechanics')
+    expect(categoryLabel('some-new-tag')).toBe('Some new tag')
+    expect(categoryHeaderLabel('performance impact')).toBe('Performance impact')
+    expect(categoryHeaderLabel('unknown header')).toBe('unknown header')
+    await setLocale('de')
+    try {
+      expect(categoryLabel('game-mechanics')).toBe('Spielmechanik')
+      expect(categoryLabel('worldgen')).toBe('Weltgenerierung')
+    } finally {
+      await setLocale('en')
+    }
   })
 })
 

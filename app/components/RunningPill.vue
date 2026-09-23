@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
     <!-- Nichts läuft: ruhiger Zustand. -->
     <span v-if="!primary" class="pill text-base-400" role="status">
       <span class="dot bg-base-600" aria-hidden="true" />
-      <span class="hidden md:inline">Keine Instanz läuft</span>
+      <span class="hidden md:inline">{{ t('titleBar.running.none') }}</span>
     </span>
 
     <div v-else class="pill gap-1 pr-1 text-base-50">
@@ -95,7 +95,7 @@ onBeforeUnmount(() => {
         ref="trigger"
         class="flex min-w-0 items-center gap-2"
         :class="rows.length > 1 ? 'rounded-sm pr-0.5 hover:text-base-50' : ''"
-        v-bind="rows.length > 1 ? { 'aria-expanded': open, 'aria-haspopup': 'menu', 'aria-label': `${rows.length} Instanzen laufen` } : { role: 'status' }"
+        v-bind="rows.length > 1 ? { 'aria-expanded': open, 'aria-haspopup': 'menu', 'aria-label': t('titleBar.running.count', rows.length) } : { role: 'status' }"
         @click="rows.length > 1 && (open = !open)"
       >
         <span class="dot animate-lamp bg-ok shadow-[0_0_6px_var(--color-ok)]" aria-hidden="true" />
@@ -106,35 +106,35 @@ onBeforeUnmount(() => {
       <template v-if="rows.length === 1">
         <button
           class="stop-btn"
-          :aria-label="`${primary.name} stoppen`"
-          title="Stoppen"
+          :aria-label="t('play.stopNamed', { name: primary.name })"
+          :title="t('common.actions.stop')"
           :disabled="stopping.has(primary.id)"
           @click="stop(primary.id)"
         >
           <span class="size-1.5 bg-current" />
         </button>
-        <button class="icon-btn" :aria-label="`Logs von ${primary.name} öffnen`" title="Logs öffnen" @click="logs(primary.id)">
+        <button class="icon-btn" :aria-label="t('titleBar.running.openLogsNamed', { name: primary.name })" :title="t('titleBar.running.openLogs')" @click="logs(primary.id)">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM7.5 10l2.5 2-2.5 2M12.5 14.5h4" /></svg>
         </button>
       </template>
     </div>
 
-    <div v-if="open && rows.length > 1" class="menu top-full right-0 mt-1.5 w-72 animate-pop" role="menu" aria-label="Laufende Instanzen">
-      <p class="px-2.5 pt-1.5 pb-1 text-[11px] text-base-400">Läuft</p>
+    <div v-if="open && rows.length > 1" class="menu top-full right-0 mt-1.5 w-72 animate-pop" role="menu" :aria-label="t('titleBar.running.menuLabel')">
+      <p class="px-2.5 pt-1.5 pb-1 text-[11px] text-base-400">{{ t('common.status.running') }}</p>
       <div v-for="(r, i) in rows" :key="r.id" class="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 hover:bg-base-800">
         <span class="dot shrink-0 bg-ok shadow-[0_0_6px_var(--color-ok)]" aria-hidden="true" />
         <InstanceIcon v-if="r.instance" :instance="r.instance" :size="24" />
         <span class="min-w-0 flex-1">
           <span class="flex items-center gap-1 truncate text-sm text-base-50">
             {{ r.name }}
-            <svg v-if="i === 0" viewBox="0 0 24 24" class="size-3 shrink-0 text-lamp-400" fill="currentColor" role="img" aria-label="Zuerst gestartet"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>
+            <svg v-if="i === 0" viewBox="0 0 24 24" class="size-3 shrink-0 text-lamp-400" fill="currentColor" role="img" :aria-label="t('titleBar.running.firstStarted')"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>
           </span>
-          <span class="block font-mono text-[10px] tabular-nums text-base-400">läuft seit {{ uptime(r.startedAt) }}</span>
+          <span class="block font-mono text-[10px] tabular-nums text-base-400">{{ t('titleBar.running.uptime', { time: uptime(r.startedAt) }) }}</span>
         </span>
-        <button class="stop-btn" role="menuitem" :aria-label="`${r.name} stoppen`" title="Stoppen" :disabled="stopping.has(r.id)" @click="stop(r.id)">
+        <button class="stop-btn" role="menuitem" :aria-label="t('play.stopNamed', { name: r.name })" :title="t('common.actions.stop')" :disabled="stopping.has(r.id)" @click="stop(r.id)">
           <span class="size-1.5 bg-current" />
         </button>
-        <button class="icon-btn" role="menuitem" :aria-label="`Logs von ${r.name} öffnen`" title="Logs öffnen" @click="logs(r.id)">
+        <button class="icon-btn" role="menuitem" :aria-label="t('titleBar.running.openLogsNamed', { name: r.name })" :title="t('titleBar.running.openLogs')" @click="logs(r.id)">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM7.5 10l2.5 2-2.5 2M12.5 14.5h4" /></svg>
         </button>
       </div>

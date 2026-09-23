@@ -30,20 +30,20 @@ function join(server: Server) {
 
 <template>
   <div class="mx-auto max-w-3xl p-6">
-    <PageHeader title="Server" subtitle="Einmal eintragen – in jeder Instanz verfügbar, mit Live-Status und Beitritt per Klick.">
+    <PageHeader :title="t('servers.title')" :subtitle="t('servers.subtitle')">
       <button class="btn btn-ghost" :disabled="refreshing || !servers.items.length" @click="refresh">
-        {{ refreshing ? 'Aktualisiere …' : 'Aktualisieren' }}
+        {{ refreshing ? t('servers.refreshing') : t('common.actions.refresh') }}
       </button>
       <button class="btn btn-primary" @click="adding = true">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        Server hinzufügen
+        {{ t('servers.add') }}
       </button>
     </PageHeader>
 
     <label v-if="instances.items.length > 1 && servers.items.length" class="mb-4 flex items-center gap-2 text-xs text-base-400">
-      Beitreten mit
+      {{ t('servers.joinWith') }}
       <select v-model="instanceId" class="field w-64 py-1.5">
-        <option value="">{{ instances.items[0]?.name }} (zuletzt gespielt)</option>
+        <option value="">{{ t('servers.lastPlayed', { name: instances.items[0]?.name ?? '' }) }}</option>
         <option v-for="i in instances.items.slice(1)" :key="i.id" :value="i.id">{{ i.name }} ({{ i.gameVersion }})</option>
       </select>
     </label>
@@ -58,7 +58,7 @@ function join(server: Server) {
         :key="s.id"
         :server="s"
         :join-disabled="!target || busy"
-        :join-hint="target ? `Startet „${target.name}“ und verbindet direkt` : 'Erst eine Instanz anlegen'"
+        :join-hint="target ? t('servers.joinHint', { name: target.name }) : t('servers.noInstance')"
         @join="join"
         @edit="editing = $event"
       />
@@ -67,10 +67,10 @@ function join(server: Server) {
     <RedstoneEmpty
       v-else
       :seed="0x33"
-      title="Noch kein Server"
-      text="Leg eine Leitung zu deinem Lieblingsserver: Adresse eintragen – der Launcher zeigt Spielerzahl und Ping live an und setzt den Server in die Serverliste jeder Instanz."
+      :title="t('servers.empty.title')"
+      :text="t('servers.empty.text')"
     >
-      <button class="btn btn-primary" @click="adding = true">Server hinzufügen</button>
+      <button class="btn btn-primary" @click="adding = true">{{ t('servers.add') }}</button>
     </RedstoneEmpty>
 
     <ServerDialog v-if="adding" @close="adding = false" />

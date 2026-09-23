@@ -219,11 +219,11 @@ impl ClientModUpdater {
     /// herunter und prüft Größe + SHA-256.
     pub async fn jar(&self, manifest: &Manifest, build: &Build) -> Result<PathBuf> {
         let (Some(sha256), Some(size)) = (build.sha256.as_deref(), build.size) else {
-            return Err(Error::validation("TRS-Client-Build ohne Prüfsumme"));
+            return Err(Error::validation(crate::msg!("clientModUpdate.missingChecksum", "TRS-Client-Build ohne Prüfsumme")));
         };
         client_mod::validate_build_file(&build.file)?;
         if !is_valid_version(&manifest.version) {
-            return Err(Error::validation("Ungültige TRS-Client-Version"));
+            return Err(Error::validation(crate::msg!("clientModUpdate.invalidVersion", "Ungültige TRS-Client-Version")));
         }
         let dir = self.dir.join(&manifest.version);
         let path = dir.join(&build.file);
@@ -353,9 +353,9 @@ fn hex(bytes: &[u8]) -> String {
 /// signierten Kommentar, eine gültige Version und je Build Prüfsumme + Größe.
 pub fn verify_manifest(public_key: &str, bytes: &[u8], signature: &[u8]) -> Result<Manifest> {
     verify_signature(public_key, bytes, signature, MANIFEST_FILE)?;
-    let manifest = client_mod::parse_manifest(bytes).ok_or_else(|| Error::validation("TRS-Client-Manifest unlesbar"))?;
+    let manifest = client_mod::parse_manifest(bytes).ok_or_else(|| Error::validation(crate::msg!("clientModUpdate.manifestUnreadable", "TRS-Client-Manifest unlesbar")))?;
     if !is_valid_version(&manifest.version) {
-        return Err(Error::validation("TRS-Client-Manifest ohne gültige Version"));
+        return Err(Error::validation(crate::msg!("clientModUpdate.manifestWithoutVersion", "TRS-Client-Manifest ohne gültige Version")));
     }
     let builds = manifest
         .builds
@@ -370,16 +370,22 @@ pub fn verify_manifest(public_key: &str, bytes: &[u8], signature: &[u8]) -> Resu
 }
 
 pub fn verify_signature(public_key: &str, data: &[u8], signature: &[u8], file_name: &str) -> Result<()> {
-    let invalid = |what: &str| Error::validation(format!("Signatur ungültig ({what})"));
-    let key_text = decode_base64_text(public_key.as_bytes()).ok_or_else(|| invalid("Schlüssel"))?;
-    let key = minisign_verify::PublicKey::decode(&key_text).map_err(|_| invalid("Schlüssel"))?;
-    let sig_text = decode_base64_text(signature).ok_or_else(|| invalid("Format"))?;
-    let sig = minisign_verify::Signature::decode(&sig_text).map_err(|_| invalid("Format"))?;
+    let bad_key = || Error::validation(crate::msg!("clientModUpdate.signatureBadKey", "Signatur ungültig (Schlüssel)"));
+    let bad_format = || Error::validation(crate::msg!("clientModUpdate.signatureBadFormat", "Signatur ungültig (Format)"));
+    let key_text = decode_base64_text(public_key.as_bytes()).ok_or_else(bad_key)?;
+    let key = minisign_verify::PublicKey::decode(&key_text).map_err(|_| bad_key())?;
+    let sig_text = decode_base64_text(signature).ok_or_else(bad_format)?;
+    let sig = minisign_verify::Signature::decode(&sig_text).map_err(|_| bad_format())?;
     // Nur Prehash-Signaturen (so signiert `tauri signer sign`).
-    key.verify(data, &sig, false).map_err(|_| invalid("Prüfung"))?;
+    key.verify(data, &sig, false).map_err(|_| {
+        Error::validation(crate::msg!("clientModUpdate.signatureMismatch", "Signatur ungültig (Prüfung)"))
+    })?;
     let expected = format!("file:{file_name}");
     if !sig.trusted_comment().split('\t').any(|part| part == expected) {
-        return Err(invalid("falsche Datei"));
+        return Err(Error::validation(crate::msg!(
+            "clientModUpdate.signatureWrongFile",
+            "Signatur ungültig (falsche Datei)"
+        )));
     }
     Ok(())
 }

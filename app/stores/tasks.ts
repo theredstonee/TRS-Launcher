@@ -3,8 +3,9 @@ import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 // Relativ importiert, damit tests/tasks.test.ts den Store ohne Nuxt laden kann.
-import type { NewTaskRecord, TaskKind, TaskProgressEvent, TaskRecord } from '../types'
+import type { NewTaskRecord, TaskKind, TaskProgressEvent, TaskRecord, TextRef } from '../types'
 import { BackendError, backend, errorMessage, isCancelled } from '../utils/backend'
+import { t } from '../utils/i18n'
 import { SpeedMeter } from '../utils/tasks'
 import { useToasts } from './toasts'
 
@@ -23,12 +24,17 @@ export interface Task {
   key: string
   kind: TaskKind
   title: string
-  /** Was gerade passiert („Mods werden geladen“). */
+  /**
+   * Was gerade passiert („Mods werden geladen“) – schon übersetzt; der nächste
+   * Fortschritt setzt den Text neu (nach einem Sprachwechsel dann in der neuen Sprache).
+   */
   stage: string
   /** 0–100; `null` = unbestimmt. */
   percent: number | null
   status: TaskStatus
   error: string | null
+  /** Derselbe Fehler als Übersetzungs-Schlüssel (für den Verlauf). */
+  errorRef?: TextRef | null
   startedAt: number
   finishedAt: number | null
   instanceId: string | null
@@ -84,7 +90,7 @@ export type TaskResult<T> =
 
 /** Wirft den Abbruch-Fehler, den auch der Kern liefert. */
 export function cancelledError(): BackendError {
-  return new BackendError('cancelled', 'Vorgang abgebrochen')
+  return new BackendError('cancelled', 'Vorgang abgebrochen', 'cancelled')
 }
 
 export const useTasksStore = defineStore('tasks', () => {
@@ -191,17 +197,22 @@ export const useTasksStore = defineStore('tasks', () => {
     addRecord(record).catch(() => {})
   }
 
-  function notify(t: Task, spec: TaskSpec, doneText: string | undefined) {
+  function notify(task: Task, spec: TaskSpec, doneText: string | undefined) {
     if (spec.notify === false) return
     const toasts = useToasts()
-    if (t.status === 'done') {
-      const id = t.instanceId
+    if (task.status === 'done') {
+      const id = task.instanceId
       toasts.ok(
-        doneText ?? `${t.title} ist fertig`,
-        id ? { label: 'Instanz öffnen', run: () => openInstance(id) } : { label: 'Aufgaben anzeigen', run: () => openPanel() },
+        doneText ?? t('tasks.toast.done', { title: task.title }),
+        id
+          ? { label: t('tasks.toast.openInstance'), run: () => openInstance(id) }
+          : { label: t('tasks.toast.showTasks'), run: () => openPanel() },
       )
-    } else if (t.status === 'failed') {
-      toasts.error(`${t.title}: ${t.error ?? 'fehlgeschlagen'}`, { label: 'Details', run: () => openPanel(t.key) })
+    } else if (task.status === 'failed') {
+      toasts.error(t('tasks.toast.failed', { title: task.title, error: task.error ?? t('tasks.failed') }), {
+        label: t('tasks.toast.details'),
+        run: () => openPanel(task.key),
+      })
     }
   }
 
@@ -217,7 +228,7 @@ export const useTasksStore = defineStore('tasks', () => {
       key: spec.key,
       kind: spec.kind,
       title: spec.title,
-      stage: spec.stage ?? 'Wird vorbereitet',
+      stage: spec.stage ?? t('tasks.stage.preparing'),
       percent: null,
       status: 'running',
       error: null,
@@ -236,7 +247,7 @@ export const useTasksStore = defineStore('tasks', () => {
       recordId: null,
     }
     // Über den Store-Proxy ändern, damit alles reaktiv bleibt.
-    const t = tasks.value[spec.key]!
+    const task = tasks.value[spec.key]!
     meters.set(spec.key, new SpeedMeter())
     startTicker()
 
@@ -245,16 +256,16 @@ export const useTasksStore = defineStore('tasks', () => {
     const ctx: TaskContext = {
       taskId: spec.key,
       progress(percent, stage) {
-        if (t.status !== 'running') return
-        t.percent = percent === null ? null : Math.max(0, Math.min(100, Math.floor(percent)))
-        if (stage) t.stage = stage
+        if (task.status !== 'running') return
+        task.percent = percent === null ? null : Math.max(0, Math.min(100, Math.floor(percent)))
+        if (stage) task.stage = stage
       },
       update(patch) {
         const { doneText: text, ...rest } = patch
         if (text !== undefined) doneText = text
-        Object.assign(t, rest)
+        Object.assign(task, rest)
       },
-      cancelled: () => t.cancelling,
+      cancelled: () => task.cancelling,
       discard() {
         discarded = true
       },
@@ -267,35 +278,36 @@ export const useTasksStore = defineStore('tasks', () => {
           delete tasks.value[spec.key]
           return { ok: false, cancelled: true, discarded: true, error: null }
         }
-        t.status = 'done'
-        t.percent = 100
-        t.finishedAt = Date.now()
-        notify(t, spec, doneText)
-        if (spec.record !== false) await remember(t, spec)
+        task.status = 'done'
+        task.percent = 100
+        task.finishedAt = Date.now()
+        notify(task, spec, doneText)
+        if (spec.record !== false) await remember(task, spec)
         return { ok: true, value }
       } catch (e) {
         if (discarded) {
           delete tasks.value[spec.key]
           return { ok: false, cancelled: true, discarded: true, error: e }
         }
-        t.finishedAt = Date.now()
+        task.finishedAt = Date.now()
         if (isCancelled(e)) {
           // Selbst abgebrochen – kein Toast, kein Verlaufseintrag.
-          t.status = 'cancelled'
+          task.status = 'cancelled'
           return { ok: false, cancelled: true, discarded: false, error: e }
         }
-        t.status = 'failed'
-        t.error = errorMessage(e)
-        notify(t, spec, doneText)
+        task.status = 'failed'
+        task.error = errorMessage(e)
+        task.errorRef = e instanceof BackendError && e.code ? { key: `errors.${e.code}`, params: e.params } : null
+        notify(task, spec, doneText)
         if (spec.record !== false) {
-          await remember(t, spec)
-          if (t.recordId) retries.set(t.recordId, () => void run(spec, work))
+          await remember(task, spec)
+          if (task.recordId) retries.set(task.recordId, () => void run(spec, work))
         }
         return { ok: false, cancelled: false, discarded: false, error: e }
       } finally {
-        t.paused = false
-        t.speed = 0
-        t.cancelling = false
+        task.paused = false
+        task.speed = 0
+        task.cancelling = false
         pending.delete(spec.key)
         meters.delete(spec.key)
       }
@@ -304,24 +316,25 @@ export const useTasksStore = defineStore('tasks', () => {
     return promise
   }
 
-  async function remember(t: Task, spec: TaskSpec) {
+  async function remember(task: Task, spec: TaskSpec) {
     const record = await addRecord({
       kind: spec.kind,
-      title: t.title,
-      outcome: t.status === 'done' ? 'done' : 'failed',
-      instanceId: t.instanceId,
-      iconUrl: t.iconUrl,
-      detail: t.status === 'failed' ? t.error : null,
-      bytes: t.doneBytes > 0 ? t.doneBytes : null,
+      title: task.title,
+      outcome: task.status === 'done' ? 'done' : 'failed',
+      instanceId: task.instanceId,
+      iconUrl: task.iconUrl,
+      detail: task.status === 'failed' ? task.error : null,
+      detailRef: task.status === 'failed' ? (task.errorRef ?? null) : null,
+      bytes: task.doneBytes > 0 ? task.doneBytes : null,
     })
-    t.recordId = record.id
+    task.recordId = record.id
   }
 
   async function cancel(key: string) {
-    const t = tasks.value[key]
-    if (!t || t.status !== 'running' || !t.cancellable || t.cancelling) return
-    t.cancelling = true
-    t.stage = 'Wird abgebrochen …'
+    const task = tasks.value[key]
+    if (!task || task.status !== 'running' || !task.cancellable || task.cancelling) return
+    task.cancelling = true
+    task.stage = t('tasks.stage.cancelling')
     try {
       await backend.cancelTask(key)
     } catch {
@@ -330,17 +343,17 @@ export const useTasksStore = defineStore('tasks', () => {
   }
 
   async function pause(key: string, paused: boolean) {
-    const t = tasks.value[key]
-    if (!t || t.status !== 'running' || !t.pausable || t.cancelling) return
-    t.paused = paused
+    const task = tasks.value[key]
+    if (!task || task.status !== 'running' || !task.pausable || task.cancelling) return
+    task.paused = paused
     if (paused) {
       meters.get(key)?.reset()
-      t.speed = 0
+      task.speed = 0
     }
     try {
       await backend.pauseTask(key, paused)
     } catch {
-      t.paused = false
+      task.paused = false
     }
   }
 

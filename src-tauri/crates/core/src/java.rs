@@ -86,7 +86,7 @@ pub async fn ensure_runtime(
     on_progress: &(dyn Fn(Progress) + Sync),
 ) -> Result<PathBuf> {
     if !is_safe_component(component) {
-        return Err(Error::launch("Unbekannte Java-Runtime angefordert."));
+        return Err(Error::launch(crate::msg!("java.unknownRuntime", "Unbekannte Java-Runtime angefordert.")));
     }
     let dir = paths.java_dir().join(component);
     let javaw = dir.join("bin").join("javaw.exe");
@@ -122,12 +122,12 @@ pub async fn ensure_runtime(
     .await?;
     let manifest: RuntimeManifest = fsutil::read_json(&manifest_file)
         .await?
-        .ok_or_else(|| Error::launch("Java-Runtime-Manifest fehlt."))?;
+        .ok_or_else(|| Error::launch(crate::msg!("java.manifestMissing", "Java-Runtime-Manifest fehlt.")))?;
 
     let mut tasks = Vec::new();
     for (rel, file) in &manifest.files {
         if !is_safe_rel_path(rel) {
-            return Err(Error::launch("Java-Runtime-Manifest enthält einen ungültigen Pfad."));
+            return Err(Error::launch(crate::msg!("java.manifestInvalidPath", "Java-Runtime-Manifest enthält einen ungültigen Pfad.")));
         }
         let target = dir.join(rel);
         match (file.kind.as_str(), &file.downloads) {
@@ -150,7 +150,7 @@ pub async fn ensure_runtime(
     fsutil::write_atomic(&marker, entry.version.name.as_bytes()).await?;
 
     if !javaw.is_file() {
-        return Err(Error::launch("Die Java-Runtime wurde installiert, enthält aber kein javaw.exe."));
+        return Err(Error::launch(crate::msg!("java.javawMissing", "Die Java-Runtime wurde installiert, enthält aber kein javaw.exe.")));
     }
     Ok(javaw)
 }
@@ -168,9 +168,11 @@ async fn find_runtime(http: &reqwest::Client, component: &str) -> Result<Runtime
         .and_then(|mut p| p.remove(component))
         .and_then(|entries| entries.into_iter().next())
         .ok_or_else(|| {
-            Error::launch(format!(
+            Error::launch(crate::msg!(
+                "java.noRuntimeForPlatform",
                 "Für diese Plattform gibt es keine passende Java-Runtime ({component}). \
-                 Bitte in den Einstellungen einen Java-Pfad angeben."
+                 Bitte in den Einstellungen einen Java-Pfad angeben.",
+                component = &component
             ))
         })
 }

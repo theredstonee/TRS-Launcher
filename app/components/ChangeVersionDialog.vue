@@ -25,9 +25,9 @@ const planning = ref(false)
 const tasks = useTasksStore()
 const migrateKey = computed(() => taskKey('migrate', props.instance.id))
 const applying = computed(() => {
-  const t = tasks.get(migrateKey.value)
-  if (t?.status !== 'running') return null
-  const [done, total] = (t.tag ?? '0/0').split('/').map(Number)
+  const task = tasks.get(migrateKey.value)
+  if (task?.status !== 'running') return null
+  const [done, total] = (task.tag ?? '0/0').split('/').map(Number)
   return { done: done ?? 0, total: total ?? 0 }
 })
 let dialogOpen = true
@@ -101,6 +101,13 @@ const visibleLoaderOptions = computed(() => {
   return list
 })
 
+/** Eintrag der Loader-Versionsliste mit Hinweis auf Beta und aktuelle Version. */
+function loaderOptionLabel(v: LoaderVersionInfo): string {
+  const current = v.version === props.instance.loader.version
+  if (!v.stable) return current ? t('changeVersion.optionBetaCurrent', { version: v.version }) : t('changeVersion.optionBeta', { version: v.version })
+  return current ? t('changeVersion.optionCurrent', { version: v.version }) : v.version
+}
+
 async function submit() {
   error.value = null
   const parsed = newInstanceSchema.pick({ gameVersion: true, loader: true }).safeParse({
@@ -115,7 +122,7 @@ async function submit() {
   try {
     const updated = await backend.changeInstanceVersion(props.instance.id, parsed.data.gameVersion, parsed.data.loader)
     emit('changed', updated)
-    toasts.ok(`Instanz läuft jetzt mit ${updated.gameVersion} (${loaderLabels[updated.loader.kind]})`)
+    toasts.ok(t('changeVersion.toasts.changed', { version: updated.gameVersion, loader: loaderLabels[updated.loader.kind] }))
     tasks.note({
       kind: 'version-change',
       title: `${updated.name} → ${updated.gameVersion}`,
@@ -155,13 +162,13 @@ async function applyPlan() {
       key: migrateKey.value,
       kind: 'content-update',
       title: instance.name,
-      stage: 'Inhalte werden angepasst',
+      stage: t('changeVersion.task.stage'),
       instanceId: instance.id,
       tag: `0/${list.length}`,
       cancellable: true,
       // Der Versionswechsel steht schon im Verlauf.
       record: false,
-      doneText: `${list.length} ${list.length === 1 ? 'Inhalt' : 'Inhalte'} auf passende Versionen gebracht`,
+      doneText: t('changeVersion.task.done', list.length),
     },
     async (ctx) => {
       let failed = 0
@@ -181,7 +188,7 @@ async function applyPlan() {
         }
         ctx.update({ tag: `${i + 1}/${list.length}` })
       }
-      if (failed) throw new BackendError('partial', `${failed} von ${list.length} Updates sind fehlgeschlagen.`)
+      if (failed) throw new BackendError('partial', t('changeVersion.task.partial', { total: list.length }, failed))
     },
   )
   if (dialogOpen) await loadPlan()
@@ -195,34 +202,35 @@ async function disableMissing() {
       toasts.error(e)
     }
   }
-  toasts.ok('Nicht passende Inhalte deaktiviert')
+  toasts.ok(t('changeVersion.toasts.disabledMissing'))
   await loadPlan()
 }
 </script>
 
 <template>
-  <BaseDialog :title="step === 'choose' ? 'Version wechseln' : 'Inhalte anpassen'" wide @close="emit('close')">
+  <BaseDialog :title="step === 'choose' ? t('changeVersion.title') : t('changeVersion.migrateTitle')" wide @close="emit('close')">
     <form v-if="step === 'choose'" id="change-version" class="space-y-4" @submit.prevent="submit">
-      <p class="text-sm text-base-400">
-        Aktuell: <span class="font-mono text-base-200">{{ instance.gameVersion }}</span> mit {{ loaderLabels[instance.loader.kind] }}<span v-if="instance.loader.version"> {{ instance.loader.version }}</span>
-      </p>
+      <i18n-t keypath="changeVersion.current" tag="p" scope="global" class="text-sm text-base-400">
+        <template #version><span class="font-mono text-base-200">{{ instance.gameVersion }}</span></template>
+        <template #loader>{{ loaderLabels[instance.loader.kind] }}<span v-if="instance.loader.version"> {{ instance.loader.version }}</span></template>
+      </i18n-t>
 
       <div>
         <div class="flex items-center justify-between">
-          <label class="label" for="cv-version">Minecraft-Version</label>
+          <label class="label" for="cv-version">{{ t('changeVersion.gameVersion') }}</label>
           <label class="mb-1.5 flex items-center gap-1.5 text-xs text-base-400">
             <input v-model="showSnapshots" type="checkbox" class="accent-redstone-500" />
-            Snapshots &amp; alte Versionen
+            {{ t('changeVersion.showSnapshots') }}
           </label>
         </div>
         <select id="cv-version" v-model="gameVersion" class="field font-mono" :disabled="loadingVersions">
-          <option v-if="loadingVersions" :value="gameVersion">Lade Versionen …</option>
-          <option v-for="v in versions" :key="v.id" :value="v.id">{{ v.id }}{{ v.id === instance.gameVersion ? ' (aktuell)' : '' }}</option>
+          <option v-if="loadingVersions" :value="gameVersion">{{ t('changeVersion.loadingVersions') }}</option>
+          <option v-for="v in versions" :key="v.id" :value="v.id">{{ v.id === instance.gameVersion ? t('changeVersion.optionCurrent', { version: v.id }) : v.id }}</option>
         </select>
       </div>
 
       <div>
-        <span class="label">Modloader</span>
+        <span class="label">{{ t('common.labels.loader') }}</span>
         <div class="grid grid-cols-5 gap-1.5">
           <button
             v-for="kind in loaderKinds"
@@ -239,31 +247,31 @@ async function disableMissing() {
 
       <div v-if="loaderKind !== 'vanilla'">
         <div class="flex items-center justify-between">
-          <label class="label" for="cv-loader">{{ loaderLabels[loaderKind] }}-Version</label>
+          <label class="label" for="cv-loader">{{ t('changeVersion.loaderVersion', { loader: loaderLabels[loaderKind] }) }}</label>
           <label v-if="loaderOptions?.some((v) => !v.stable)" class="mb-1.5 flex items-center gap-1.5 text-xs text-base-400">
             <input v-model="showUnstable" type="checkbox" class="accent-redstone-500" />
-            Betas anzeigen
+            {{ t('changeVersion.showBetas') }}
           </label>
         </div>
-        <input v-if="loaderListFailed" id="cv-loader" v-model="loaderVersion" class="field font-mono" maxlength="64" placeholder="Leer = neueste stabile" spellcheck="false" />
+        <input v-if="loaderListFailed" id="cv-loader" v-model="loaderVersion" class="field font-mono" maxlength="64" :placeholder="t('changeVersion.loaderEmptyPlaceholder')" spellcheck="false" />
         <select v-else id="cv-loader" v-model="loaderVersion" class="field font-mono" :disabled="!loaderOptions">
-          <option value="">{{ loaderOptions ? 'Neueste stabile (empfohlen)' : 'Lade Versionen …' }}</option>
-          <option v-for="v in visibleLoaderOptions" :key="v.version" :value="v.version">
-            {{ v.version }}{{ v.stable ? '' : ' (Beta)' }}{{ v.version === instance.loader.version ? ' (aktuell)' : '' }}
-          </option>
+          <option value="">{{ loaderOptions ? t('changeVersion.latestRecommended') : t('changeVersion.loadingVersions') }}</option>
+          <option v-for="v in visibleLoaderOptions" :key="v.version" :value="v.version">{{ loaderOptionLabel(v) }}</option>
         </select>
         <p v-if="loaderOptions && !loaderOptions.length" class="mt-1 text-xs text-warn">
-          Für Minecraft {{ gameVersion }} gibt es {{ loaderLabels[loaderKind] }} (noch) nicht.
+          {{ t('changeVersion.loaderUnavailable', { version: gameVersion, loader: loaderLabels[loaderKind] }) }}
         </p>
       </div>
 
       <div class="rounded-lg border border-warn/40 bg-lamp-900/40 px-4 py-3 text-sm text-base-200" role="note">
-        <p class="font-medium text-warn">Bitte vorher lesen</p>
+        <p class="font-medium text-warn">{{ t('changeVersion.notice.title') }}</p>
         <ul class="mt-1 list-disc space-y-0.5 pl-5 text-xs text-base-200">
-          <li v-if="isDowngrade"><strong>Ältere Version:</strong> Welten, die mit einer neueren Version gespielt wurden, können dabei kaputtgehen.</li>
-          <li>Welten werden beim ersten Start umgewandelt und lassen sich danach nicht mehr in der alten Version öffnen. Sicherer: Instanz vorher duplizieren.</li>
-          <li v-if="loaderChanged">Mods für {{ loaderLabels[instance.loader.kind] }} laufen nicht mit {{ loaderLabels[loaderKind] }}.</li>
-          <li>Danach kannst du über Modrinth installierte Mods automatisch auf passende Versionen bringen.</li>
+          <i18n-t v-if="isDowngrade" keypath="changeVersion.notice.downgrade" tag="li" scope="global">
+            <template #label><strong>{{ t('changeVersion.notice.downgradeLabel') }}</strong></template>
+          </i18n-t>
+          <li>{{ t('changeVersion.notice.worlds') }}</li>
+          <li v-if="loaderChanged">{{ t('changeVersion.notice.loaderChanged', { from: loaderLabels[instance.loader.kind], to: loaderLabels[loaderKind] }) }}</li>
+          <li>{{ t('changeVersion.notice.migrate') }}</li>
         </ul>
       </div>
 
@@ -272,24 +280,25 @@ async function disableMissing() {
 
     <div v-else>
       <div v-if="planning" class="space-y-2">
-        <p class="mb-3 text-sm text-base-400">Suche passende Versionen für deine Inhalte …</p>
+        <p class="mb-3 text-sm text-base-400">{{ t('changeVersion.planning') }}</p>
         <div v-for="i in 4" :key="i" class="skeleton h-12" />
       </div>
       <template v-else-if="plan">
         <p class="mb-3 text-sm text-base-200">
-          <span class="text-lamp-300">{{ toUpdate.length }} mit neuer Version</span>,
-          <span class="text-ok">{{ fine.length }} passen schon</span>,
-          <span :class="missing.length ? 'text-redstone-300' : 'text-base-400'">{{ missing.length }} ohne passende Version</span>
+          <span class="text-lamp-300">{{ t('changeVersion.updateCount', toUpdate.length) }}</span>,
+          <span class="text-ok">{{ t('changeVersion.fineCount', fine.length) }}</span>,
+          <span :class="missing.length ? 'text-redstone-300' : 'text-base-400'">{{ t('changeVersion.missingCount', missing.length) }}</span>
         </p>
         <ul class="-mr-2 max-h-80 space-y-1 overflow-y-auto pr-2">
           <li v-for="p in [...missing, ...toUpdate, ...fine]" :key="`${p.kind}/${p.fileName}`" class="flex items-center gap-3 rounded-lg bg-base-900 px-2.5 py-2">
             <ModIcon :src="p.iconUrl" :name="p.title" :size="32" />
             <span class="min-w-0 flex-1 truncate text-sm">{{ p.title }}</span>
-            <span v-if="p.status === 'update'" class="font-mono text-xs text-base-400">
-              {{ p.currentVersion ?? '?' }} <span class="text-base-600">zu</span> <span class="text-lamp-300">{{ p.targetVersionNumber }}</span>
-            </span>
-            <span v-else-if="p.status === 'missing'" class="badge bg-redstone-900 text-redstone-300">Keine passende Version</span>
-            <span v-else class="badge bg-ok/10 text-ok">Passt</span>
+            <i18n-t v-if="p.status === 'update'" keypath="changeVersion.itemChange" tag="span" scope="global" class="font-mono text-xs text-base-600">
+              <template #from><span class="text-base-400">{{ p.currentVersion ?? '?' }}</span></template>
+              <template #to><span class="text-lamp-300">{{ p.targetVersionNumber }}</span></template>
+            </i18n-t>
+            <span v-else-if="p.status === 'missing'" class="badge bg-redstone-900 text-redstone-300">{{ t('changeVersion.noMatch') }}</span>
+            <span v-else class="badge bg-ok/10 text-ok">{{ t('changeVersion.fits') }}</span>
           </li>
         </ul>
         <div v-if="applying" class="mt-4 flex items-center gap-3">
@@ -302,16 +311,16 @@ async function disableMissing() {
 
     <template #actions>
       <template v-if="step === 'choose'">
-        <button type="button" class="btn btn-ghost" @click="emit('close')">Abbrechen</button>
+        <button type="button" class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.cancel') }}</button>
         <button type="submit" form="change-version" class="btn btn-primary" :disabled="saving || loadingVersions || unchanged">
-          {{ saving ? 'Wechsle …' : 'Version wechseln' }}
+          {{ saving ? t('changeVersion.saving') : t('changeVersion.title') }}
         </button>
       </template>
       <template v-else>
-        <button class="btn btn-ghost" :disabled="!!applying" @click="emit('close')">{{ toUpdate.length ? 'Später' : 'Fertig' }}</button>
-        <button v-if="missing.length" class="btn btn-ghost" :disabled="!!applying || planning" @click="disableMissing">Nicht passende deaktivieren</button>
+        <button class="btn btn-ghost" :disabled="!!applying" @click="emit('close')">{{ toUpdate.length ? t('common.actions.later') : t('common.actions.done') }}</button>
+        <button v-if="missing.length" class="btn btn-ghost" :disabled="!!applying || planning" @click="disableMissing">{{ t('changeVersion.disableMissing') }}</button>
         <button v-if="toUpdate.length" class="btn btn-primary" :disabled="!!applying || planning" @click="applyPlan">
-          Mods auf passende Versionen aktualisieren
+          {{ t('changeVersion.applyUpdates') }}
         </button>
       </template>
     </template>

@@ -15,6 +15,7 @@ const toasts = useToasts()
 
 type Tab = 'friends' | 'requests' | 'blocked'
 const tab = ref<Tab>('friends')
+const tabs: Tab[] = ['friends', 'requests', 'blocked']
 const loading = ref(true)
 const offline = ref(false)
 const busy = ref<string | null>(null)
@@ -95,8 +96,8 @@ watch(
     void refresh()
   },
 )
-watch(tab, (t) => {
-  if (t === 'blocked') void loadBlocked()
+watch(tab, (value) => {
+  if (value === 'blocked') void loadBlocked()
 })
 
 async function run(key: string, action: () => Promise<void>) {
@@ -136,8 +137,8 @@ async function sendRequest() {
     adding.value = false
     toasts.ok(
       result.status === 'accepted'
-        ? `Du und ${result.user.name} seid jetzt befreundet.`
-        : `Anfrage an ${result.user.name} gesendet.`,
+        ? t('friends.toasts.nowFriends', { name: result.user.name })
+        : t('friends.toasts.requestSent', { name: result.user.name }),
     )
     await refresh()
   } catch (e) {
@@ -152,7 +153,7 @@ async function sendRequest() {
 const accept = (uuid: string, name: string) =>
   run(`accept:${uuid}`, async () => {
     await backend.trs.acceptFriend(uuid)
-    toasts.ok(`Du und ${name} seid jetzt befreundet.`)
+    toasts.ok(t('friends.toasts.nowFriends', { name }))
     await refresh()
   })
 const decline = (uuid: string) =>
@@ -174,10 +175,10 @@ async function confirmAction() {
   await run(`${c.kind}:${c.uuid}`, async () => {
     if (c.kind === 'remove') {
       await backend.trs.removeFriend(c.uuid)
-      toasts.ok(`${c.name} ist nicht mehr in deiner Freundesliste.`)
+      toasts.ok(t('friends.toasts.removed', { name: c.name }))
     } else {
       await backend.trs.block(c.uuid)
-      toasts.ok(`${c.name} ist blockiert.`)
+      toasts.ok(t('friends.toasts.blocked', { name: c.name }))
       await loadBlocked()
     }
     await refresh()
@@ -197,7 +198,7 @@ async function blockByName() {
     try {
       const user = await backend.trs.block(parsed.data)
       blockName.value = ''
-      toasts.ok(`${user.name} ist blockiert.`)
+      toasts.ok(t('friends.toasts.blocked', { name: user.name }))
       await Promise.all([loadBlocked(), refresh()])
     } catch (e) {
       blockError.value = errorMessage(e)
@@ -208,7 +209,7 @@ async function blockByName() {
 const unblock = (user: TrsBlocked) =>
   run(`unblock:${user.uuid}`, async () => {
     await backend.trs.unblock(user.uuid)
-    toasts.ok(`${user.name} ist nicht mehr blockiert.`)
+    toasts.ok(t('friends.toasts.unblocked', { name: user.name }))
     await loadBlocked()
   })
 
@@ -218,12 +219,7 @@ const reporting = ref<{ friend: TrsFriend; capeId: string } | null>(null)
 const reportReason = ref<TrsReportReason>('inappropriate')
 const reportNote = ref('')
 const reportError = ref<string | null>(null)
-const reasons: [TrsReportReason, string][] = [
-  ['inappropriate', 'Unangemessen'],
-  ['copyright', 'Urheberrecht'],
-  ['impersonation', 'Gibt sich als jemand anderes aus'],
-  ['other', 'Sonstiges'],
-]
+const reasons: TrsReportReason[] = ['inappropriate', 'copyright', 'impersonation', 'other']
 
 function startReport(friend: TrsFriend) {
   const cape = capes.value[friend.uuid]
@@ -246,7 +242,7 @@ async function sendReport() {
     try {
       await backend.trs.reportCape(r.capeId, reportReason.value, note.data || null)
       reporting.value = null
-      toasts.ok('Danke – das Team schaut sich den Umhang an.')
+      toasts.ok(t('friends.report.thanks'))
     } catch (e) {
       reportError.value = errorMessage(e)
     }
@@ -269,7 +265,7 @@ function join(friend: TrsFriend) {
   const server = friend.presence?.game?.server
   const target = joinTarget(friend)
   if (!server || !target) return
-  toasts.info(`Starte ${target.name} und verbinde mit ${server} …`)
+  toasts.info(t('friends.join.starting', { instance: target.name, server }))
   void games.launch(target.id, null, server)
 }
 
@@ -282,24 +278,24 @@ function dotClass(friend: TrsFriend) {
 
 <template>
   <div class="mx-auto max-w-3xl p-6">
-    <PageHeader title="Freunde" subtitle="Wer ist online, wer spielt was – und mit einem Klick hinterher.">
+    <PageHeader :title="t('friends.title')" :subtitle="t('friends.subtitle')">
       <button class="btn btn-primary" :disabled="!trs.enabled || !accounts.active" data-testid="friends-add" @click="startAdd">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        Freund hinzufügen
+        {{ t('friends.add') }}
       </button>
     </PageHeader>
 
-    <TrsGate what="die Freundesliste">
+    <TrsGate what="friends">
       <div v-if="offline" class="card mb-4 flex items-center gap-3 px-4 py-3 text-sm text-base-400">
         <span class="size-2 rounded-full bg-base-600" />
-        <span class="flex-1">Der TRS-Server ist gerade nicht erreichbar – die Liste kann veraltet sein.</span>
-        <button class="btn btn-ghost px-3 py-1 text-xs" @click="refresh(true)">Erneut versuchen</button>
+        <span class="flex-1">{{ t('friends.offline') }}</span>
+        <button class="btn btn-ghost px-3 py-1 text-xs" @click="refresh(true)">{{ t('common.actions.retry') }}</button>
       </div>
 
       <div class="mb-4 flex flex-wrap items-center gap-2">
-        <div class="flex gap-1 rounded-lg bg-base-850 p-1 text-xs" role="tablist" aria-label="Ansicht">
+        <div class="flex gap-1 rounded-lg bg-base-850 p-1 text-xs" role="tablist" :aria-label="t('friends.tabs.label')">
           <button
-            v-for="[key, label] in ([['friends', 'Freunde'], ['requests', 'Anfragen'], ['blocked', 'Blockiert']] as const)"
+            v-for="key in tabs"
             :key="key"
             class="seg flex items-center gap-1.5 rounded-md px-3"
             :class="{ 'seg-on': tab === key }"
@@ -307,7 +303,7 @@ function dotClass(friend: TrsFriend) {
             :aria-selected="tab === key"
             @click="tab = key"
           >
-            {{ label }}
+            {{ t(`friends.tabs.${key}`) }}
             <span v-if="key === 'friends' && friends.length" class="text-base-400">{{ onlineCount }}/{{ friends.length }}</span>
             <span v-if="key === 'requests' && incoming.length" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">
               {{ incoming.length }}
@@ -315,9 +311,9 @@ function dotClass(friend: TrsFriend) {
           </button>
         </div>
         <label v-if="tab === 'friends' && instances.items.length > 1 && friends.some((f) => f.presence?.game?.server)" class="ml-auto flex items-center gap-2 text-xs text-base-400">
-          Beitreten mit
+          {{ t('friends.join.withLabel') }}
           <select v-model="joinWith" class="field w-56 py-1.5">
-            <option value="">Passende Instanz (automatisch)</option>
+            <option value="">{{ t('friends.join.auto') }}</option>
             <option v-for="i in instances.items" :key="i.id" :value="i.id">{{ i.name }} ({{ i.gameVersion }})</option>
           </select>
         </label>
@@ -339,7 +335,7 @@ function dotClass(friend: TrsFriend) {
             <div class="min-w-0 flex-1">
               <p class="flex items-center gap-2 truncate text-sm font-semibold text-base-50">
                 {{ f.name }}
-                <span v-if="capes[f.uuid]?.badge" class="badge bg-redstone-900/50 px-1.5 py-0 text-[10px] text-redstone-300" title="Nutzt TRS">TRS</span>
+                <span v-if="capes[f.uuid]?.badge" class="badge bg-redstone-900/50 px-1.5 py-0 text-[10px] text-redstone-300" :title="t('friends.list.usesTrs')">TRS</span>
               </p>
               <p class="truncate text-xs" :class="f.presence ? 'text-base-200' : 'text-base-400'">{{ trsPresenceText(f.presence) }}</p>
             </div>
@@ -350,73 +346,73 @@ function dotClass(friend: TrsFriend) {
               :frames="capes[f.uuid]!.frames"
               :frame-time-ms="capes[f.uuid]!.frameTimeMs"
               :width="18"
-              :title="`TRS-Umhang von ${f.name}`"
+              :title="t('friends.list.capeOf', { name: f.name })"
             />
             <button
               v-if="f.presence?.game?.server"
               class="btn btn-primary px-3 py-1.5 text-xs"
               :disabled="joinBusy(f)"
-              :title="joinTarget(f) ? `Mit ${joinTarget(f)!.name} beitreten` : 'Keine Instanz vorhanden'"
+              :title="joinTarget(f) ? t('friends.join.withInstance', { name: joinTarget(f)!.name }) : t('friends.join.noInstance')"
               data-testid="friend-join"
               @click="join(f)"
             >
-              Beitreten
+              {{ t('friends.join.button') }}
             </button>
             <div class="relative" data-row-menu>
               <button
                 class="btn-icon size-8 bg-transparent opacity-70 hover:opacity-100"
-                :aria-label="`Weitere Aktionen für ${f.name}`"
+                :aria-label="t('friends.list.moreActions', { name: f.name })"
                 :aria-expanded="menuFor === f.uuid"
                 @click="menuFor = menuFor === f.uuid ? null : f.uuid"
               >
                 <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
               </button>
               <div v-if="menuFor === f.uuid" class="menu top-9 right-0 w-48" role="menu">
-                <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'remove', uuid: f.uuid, name: f.name }">Entfernen</button>
-                <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'block', uuid: f.uuid, name: f.name }">Blockieren</button>
-                <button v-if="capes[f.uuid]?.upload" class="menu-item" role="menuitem" @click="menuFor = null; startReport(f)">Umhang melden</button>
+                <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'remove', uuid: f.uuid, name: f.name }">{{ t('common.actions.remove') }}</button>
+                <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'block', uuid: f.uuid, name: f.name }">{{ t('friends.list.block') }}</button>
+                <button v-if="capes[f.uuid]?.upload" class="menu-item" role="menuitem" @click="menuFor = null; startReport(f)">{{ t('friends.list.reportCape') }}</button>
               </div>
             </div>
           </li>
         </ul>
         <RedstoneEmpty
           v-else
-          title="Noch keine Freunde"
-          text="Dein Signal erreicht gerade niemanden. Füge Freunde über ihren Minecraft-Namen hinzu – sobald sie annehmen, leuchtet hier ihre Lampe."
+          :title="t('friends.empty.title')"
+          :text="t('friends.empty.text')"
           :seed="0x7f"
         >
-          <button class="btn btn-primary" @click="startAdd">Freund hinzufügen</button>
+          <button class="btn btn-primary" @click="startAdd">{{ t('friends.add') }}</button>
         </RedstoneEmpty>
       </template>
 
       <!-- Anfragen ---------------------------------------------------------------- -->
       <template v-else-if="tab === 'requests'">
-        <RedstoneEmpty v-if="!incoming.length && !outgoing.length" title="Keine offenen Anfragen" compact :seed="0x3a" />
+        <RedstoneEmpty v-if="!incoming.length && !outgoing.length" :title="t('friends.requests.empty')" compact :seed="0x3a" />
         <div v-else class="space-y-5">
           <section v-if="incoming.length">
-            <h2 class="section-title mb-2">An dich</h2>
+            <h2 class="section-title mb-2">{{ t('friends.requests.incoming') }}</h2>
             <ul class="space-y-2">
               <li v-for="r in incoming" :key="r.uuid" class="card flex items-center gap-3 px-3 py-2.5">
                 <span class="block size-9 shrink-0 overflow-hidden rounded-md"><PixelIdenticon :seed="r.uuid" :letter="r.name.charAt(0).toUpperCase()" /></span>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-base-50">{{ r.name }}</p>
-                  <p class="text-xs text-base-400">möchte mit dir befreundet sein · {{ trsDate(r.createdAt) }}</p>
+                  <p class="text-xs text-base-400">{{ t('friends.requests.incomingText', { date: trsDate(r.createdAt) }) }}</p>
                 </div>
-                <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!!busy" @click="accept(r.uuid, r.name)">Annehmen</button>
-                <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="decline(r.uuid)">Ablehnen</button>
+                <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!!busy" @click="accept(r.uuid, r.name)">{{ t('friends.requests.accept') }}</button>
+                <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="decline(r.uuid)">{{ t('friends.requests.decline') }}</button>
               </li>
             </ul>
           </section>
           <section v-if="outgoing.length">
-            <h2 class="section-title mb-2">Von dir</h2>
+            <h2 class="section-title mb-2">{{ t('friends.requests.outgoing') }}</h2>
             <ul class="space-y-2">
               <li v-for="r in outgoing" :key="r.uuid" class="card flex items-center gap-3 px-3 py-2.5">
                 <span class="block size-9 shrink-0 overflow-hidden rounded-md"><PixelIdenticon :seed="r.uuid" :letter="r.name.charAt(0).toUpperCase()" /></span>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-base-50">{{ r.name }}</p>
-                  <p class="text-xs text-base-400">wartet auf Antwort · {{ trsDate(r.createdAt) }}</p>
+                  <p class="text-xs text-base-400">{{ t('friends.requests.outgoingText', { date: trsDate(r.createdAt) }) }}</p>
                 </div>
-                <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="cancel(r.uuid)">Zurückziehen</button>
+                <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="cancel(r.uuid)">{{ t('friends.requests.withdraw') }}</button>
               </li>
             </ul>
           </section>
@@ -426,91 +422,87 @@ function dotClass(friend: TrsFriend) {
       <!-- Blockiert --------------------------------------------------------------- -->
       <template v-else>
         <form class="card mb-3 flex flex-wrap items-center gap-2 px-3 py-2.5" @submit.prevent="blockByName">
-          <input v-model="blockName" class="field min-w-0 flex-1 py-1.5" maxlength="36" placeholder="Minecraft-Name blockieren" aria-label="Name zum Blockieren" />
-          <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy">Blockieren</button>
+          <input v-model="blockName" class="field min-w-0 flex-1 py-1.5" maxlength="36" :placeholder="t('friends.blocked.placeholder')" :aria-label="t('friends.blocked.inputLabel')" />
+          <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy">{{ t('friends.list.block') }}</button>
           <p v-if="blockError" role="alert" class="w-full text-xs text-redstone-300">{{ blockError }}</p>
         </form>
-        <p class="mb-3 text-xs text-base-400">
-          Blockierte Spieler können dich nicht finden, dir keine Anfragen schicken und sehen dein TRS-Symbol und deinen
-          Umhang nicht. Sie erfahren nichts davon.
-        </p>
+        <p class="mb-3 text-xs text-base-400">{{ t('friends.blocked.hint') }}</p>
         <ul v-if="blocked.length" class="space-y-2">
           <li v-for="b in blocked" :key="b.uuid" class="card flex items-center gap-3 px-3 py-2.5">
             <span class="block size-9 shrink-0 overflow-hidden rounded-md opacity-60"><PixelIdenticon :seed="b.uuid" :letter="b.name.charAt(0).toUpperCase()" /></span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-semibold text-base-50">{{ b.name }}</p>
-              <p class="text-xs text-base-400">seit {{ trsDate(b.since) }}</p>
+              <p class="text-xs text-base-400">{{ t('friends.blocked.since', { date: trsDate(b.since) }) }}</p>
             </div>
-            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="unblock(b)">Entsperren</button>
+            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="unblock(b)">{{ t('friends.blocked.unblock') }}</button>
           </li>
         </ul>
-        <RedstoneEmpty v-else title="Niemand blockiert" compact :seed="0x21" />
+        <RedstoneEmpty v-else :title="t('friends.blocked.empty')" compact :seed="0x21" />
       </template>
     </TrsGate>
 
     <!-- Dialoge -------------------------------------------------------------------- -->
-    <BaseDialog v-if="adding" title="Freund hinzufügen" @close="adding = false">
-      <label class="label" for="friend-name">Minecraft-Name</label>
+    <BaseDialog v-if="adding" :title="t('friends.add')" @close="adding = false">
+      <label class="label" for="friend-name">{{ t('friends.addDialog.nameLabel') }}</label>
       <input
         id="friend-name"
         v-model="addName"
         class="field"
         maxlength="36"
-        placeholder="z. B. Theredstonee"
+        :placeholder="t('friends.addDialog.placeholder')"
         autocomplete="off"
         spellcheck="false"
         autofocus
         @keydown.enter="sendRequest"
       />
-      <p class="mt-2 text-xs text-base-400">Dein Freund muss den TRS Launcher mindestens einmal mit den TRS-Diensten benutzt haben.</p>
+      <p class="mt-2 text-xs text-base-400">{{ t('friends.addDialog.hint') }}</p>
       <p v-if="addError" role="alert" class="mt-2 text-xs text-redstone-300">{{ addError }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="adding = false">Abbrechen</button>
+        <button class="btn btn-ghost" @click="adding = false">{{ t('common.actions.cancel') }}</button>
         <button class="btn btn-primary" :disabled="busy === 'add'" @click="sendRequest">
-          {{ busy === 'add' ? 'Sende …' : 'Anfrage senden' }}
+          {{ busy === 'add' ? t('friends.addDialog.sending') : t('friends.addDialog.send') }}
         </button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="confirm" :title="confirm.kind === 'remove' ? 'Freund entfernen?' : 'Spieler blockieren?'" @close="confirm = null">
-      <p class="text-sm text-base-200">
-        <template v-if="confirm.kind === 'remove'">
-          <strong class="text-base-50">{{ confirm.name }}</strong> wird aus deiner Freundesliste entfernt.
-        </template>
-        <template v-else>
-          <strong class="text-base-50">{{ confirm.name }}</strong> wird blockiert: Eure Freundschaft und offene Anfragen
-          werden entfernt, und er kann dich nicht mehr finden.
-        </template>
-      </p>
+    <BaseDialog v-if="confirm" :title="confirm.kind === 'remove' ? t('friends.confirm.removeTitle') : t('friends.confirm.blockTitle')" @close="confirm = null">
+      <i18n-t
+        :keypath="confirm.kind === 'remove' ? 'friends.confirm.removeText' : 'friends.confirm.blockText'"
+        tag="p"
+        scope="global"
+        class="text-sm text-base-200"
+      >
+        <template #name><strong class="text-base-50">{{ confirm.name }}</strong></template>
+      </i18n-t>
       <template #actions>
-        <button class="btn btn-ghost" @click="confirm = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmAction">{{ confirm.kind === 'remove' ? 'Entfernen' : 'Blockieren' }}</button>
+        <button class="btn btn-ghost" @click="confirm = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmAction">{{ confirm.kind === 'remove' ? t('common.actions.remove') : t('friends.list.block') }}</button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="reporting" title="Umhang melden" @close="reporting = null">
-      <p class="mb-3 text-sm text-base-200">
-        Der hochgeladene Umhang von <strong class="text-base-50">{{ reporting.friend.name }}</strong> wird dem TRS-Team gemeldet.
-      </p>
-      <p class="label">Grund</p>
+    <BaseDialog v-if="reporting" :title="t('friends.report.title')" @close="reporting = null">
+      <i18n-t keypath="friends.report.text" tag="p" scope="global" class="mb-3 text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ reporting.friend.name }}</strong></template>
+      </i18n-t>
+      <p class="label">{{ t('friends.report.reason') }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button
-          v-for="[key, label] in reasons"
+          v-for="key in reasons"
           :key="key"
           class="rounded-lg border px-3 py-2 text-left text-sm transition-colors"
           :class="reportReason === key ? 'border-redstone-500 bg-redstone-900/40' : 'border-base-700 hover:border-base-600'"
           :aria-pressed="reportReason === key"
           @click="reportReason = key"
         >
-          {{ label }}
+          {{ t(`friends.report.reasons.${key}`) }}
         </button>
       </div>
-      <label class="label mt-3" for="report-note">Hinweis (optional)</label>
+      <label class="label mt-3" for="report-note">{{ t('friends.report.note') }}</label>
       <textarea id="report-note" v-model="reportNote" class="field h-20 resize-none" maxlength="200" />
       <p v-if="reportError" role="alert" class="mt-2 text-xs text-redstone-300">{{ reportError }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="reporting = null">Abbrechen</button>
-        <button class="btn btn-danger" :disabled="busy === 'report'" @click="sendReport">Melden</button>
+        <button class="btn btn-ghost" @click="reporting = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" :disabled="busy === 'report'" @click="sendReport">{{ t('friends.report.submit') }}</button>
       </template>
     </BaseDialog>
   </div>

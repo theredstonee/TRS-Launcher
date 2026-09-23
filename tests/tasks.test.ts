@@ -1,15 +1,19 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
 import type { NewTaskRecord, TaskRecord } from '../app/types'
+import { setLocale } from '../app/utils/i18n'
 import {
   formatAgo,
   formatEta,
   formatProgressBytes,
   formatSize,
   packPercent,
+  packStageLabel,
+  packStageLabels,
   SpeedMeter,
   taskKey,
+  taskKindLabel,
 } from '../app/utils/tasks'
 
 // Kern-Aufrufe nachgebildet: Verlauf im Speicher, Abbrechen/Pausieren protokolliert.
@@ -49,6 +53,14 @@ vi.mock('../app/utils/backend', async (importOriginal) => {
 })
 
 describe('Formatierung', () => {
+  // Die Beispiele sind deutsch (Dezimalkomma, „vor 2 Monaten“); Englisch unten.
+  beforeEach(async () => {
+    await setLocale('de')
+  })
+  afterAll(async () => {
+    await setLocale('en')
+  })
+
   it('Größen mit drei Stellen', () => {
     expect(formatSize(0)).toBe('0 B')
     expect(formatSize(512)).toBe('512 B')
@@ -75,6 +87,22 @@ describe('Formatierung', () => {
     expect(formatAgo(now - 10_000, now)).toBe('gerade eben')
     expect(formatAgo(now - 8 * 86_400_000, now)).toBe('letzte Woche')
     expect(formatAgo(now - 70 * 86_400_000, now)).toBe('vor 2 Monaten')
+  })
+
+  it('folgt der eingestellten Sprache', async () => {
+    await setLocale('en')
+    const now = Date.UTC(2026, 8, 23)
+    expect(formatSize(20.6 * 1024 * 1024)).toBe('20.6 MB')
+    expect(formatProgressBytes(17.9 * 1048576, 172.2 * 1048576)).toBe('17.9 / 172 MB')
+    expect(formatEta(65 * 60 * 100, 100)).toBe('1 h 5 min')
+    expect(formatAgo(now - 10_000, now)).toBe('just now')
+    expect(formatAgo(now - 70 * 86_400_000, now)).toBe('2 months ago')
+    expect(taskKindLabel('modpack-file')).toBe('Modpack from file')
+    expect(packStageLabel('files')).toBe('Downloading mods')
+    await setLocale('de')
+    expect(taskKindLabel('modpack-file')).toBe('Modpack aus Datei')
+    // Das Objekt übersetzt beim Lesen – nach dem Wechsel also deutsch.
+    expect(packStageLabels.files).toBe('Mods werden geladen')
   })
 
   it('Modpack-Prozent und Aufgaben-IDs', () => {

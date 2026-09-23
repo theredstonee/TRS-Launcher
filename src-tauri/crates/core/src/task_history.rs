@@ -5,6 +5,7 @@
 //! höchstens [`MAX_RECORDS`] Einträge. Reine Komfort-Information – die
 //! Aufgabe selbst hängt nie davon ab.
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use chrono::{DateTime, Utc};
@@ -19,6 +20,10 @@ pub const MAX_RECORDS: usize = 50;
 const MAX_TITLE: usize = 120;
 const MAX_DETAIL: usize = 200;
 const MAX_ICON_URL: usize = 512;
+const MAX_TEXT_KEY: usize = 100;
+const MAX_TEXT_PARAMS: usize = 8;
+const MAX_PARAM_NAME: usize = 32;
+const MAX_PARAM_VALUE: usize = 200;
 const ICON_PREFIX: &str = "https://cdn.modrinth.com/";
 
 static WRITE_LOCK: Mutex<()> = Mutex::const_new(());
@@ -68,6 +73,64 @@ pub struct TaskRecord {
     /// Geladene Bytes, falls die Aufgabe etwas heruntergeladen hat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bytes: Option<u64>,
+    /// Übersetzbare Fassung von `title` (Schlüssel + Parameter).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title_ref: Option<TextRef>,
+    /// Übersetzbare Fassung von `detail`, z. B. `errors.<code>` eines Fehlers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detail_ref: Option<TextRef>,
+}
+
+/// Verweis auf einen Text der Oberfläche: Schlüssel aus `app/locales/*.json`
+/// (z. B. `tasks.title.modpack` oder `errors.upload.tooLarge`) und Parameter.
+/// So bleibt der Verlauf auch nach einem Sprachwechsel lesbar; `title` bzw.
+/// `detail` sind der Text in der Sprache von damals.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TextRef {
+    pub key: String,
+    #[serde(default, deserialize_with = "text_params", skip_serializing_if = "BTreeMap::is_empty")]
+    pub params: BTreeMap<String, String>,
+}
+
+/// Parameter dürfen Texte oder Zahlen sein; alles andere wird verworfen.
+fn text_params<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<BTreeMap<String, String>, D::Error> {
+    let raw = BTreeMap::<String, serde_json::Value>::deserialize(d)?;
+    Ok(raw
+        .into_iter()
+        .filter_map(|(k, v)| match v {
+            serde_json::Value::String(s) => Some((k, s)),
+            serde_json::Value::Number(n) => Some((k, n.to_string())),
+            _ => None,
+        })
+        .collect())
+}
+
+impl TextRef {
+    /// Nur harmlose Schlüssel und kurze Parameter ohne Steuerzeichen; sonst `None`
+    /// (reine Komfort-Information – dann bleibt es beim gespeicherten Text).
+    fn validated(self) -> Option<Self> {
+        let key_ok = !self.key.is_empty()
+            && self.key.len() <= MAX_TEXT_KEY
+            && self.key.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
+            && !self.key.starts_with('.')
+            && !self.key.ends_with('.');
+        let names_ok = self.params.len() <= MAX_TEXT_PARAMS
+            && self.params.keys().all(|k| {
+                !k.is_empty() && k.len() <= MAX_PARAM_NAME && k.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
+            });
+        if !key_ok || !names_ok {
+            return None;
+        }
+        let params = self
+            .params
+            .into_iter()
+            .map(|(k, v)| {
+                let v: String = v.chars().filter(|c| !c.is_control()).take(MAX_PARAM_VALUE).collect();
+                (k, v)
+            })
+            .collect();
+        Some(Self { key: self.key, params })
+    }
 }
 
 /// Was das Frontend meldet; ID und Zeit vergibt der Kern.
@@ -85,6 +148,10 @@ pub struct NewTaskRecord {
     pub detail: Option<String>,
     #[serde(default)]
     pub bytes: Option<u64>,
+    #[serde(default)]
+    pub title_ref: Option<TextRef>,
+    #[serde(default)]
+    pub detail_ref: Option<TextRef>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -103,7 +170,10 @@ fn clean(text: &str, max: usize) -> Option<String> {
 }
 
 fn validate(new: NewTaskRecord) -> Result<TaskRecord> {
-    let title = clean(&new.title, MAX_TITLE).ok_or_else(|| Error::validation("Aufgabe ohne Namen"))?;
+    let title = clean(&new.title, MAX_TITLE).ok_or_else(|| Error::validation(crate::msg!(
+        "taskHistory.untitled",
+        "Aufgabe ohne Namen"
+    )))?;
     if let Some(id) = &new.instance_id {
         validate_id(id)?;
     }
@@ -121,6 +191,8 @@ fn validate(new: NewTaskRecord) -> Result<TaskRecord> {
         icon_url,
         detail: new.detail.as_deref().and_then(|d| clean(d, MAX_DETAIL)),
         bytes: new.bytes,
+        title_ref: new.title_ref.and_then(TextRef::validated),
+        detail_ref: new.detail_ref.and_then(TextRef::validated),
     })
 }
 
@@ -147,7 +219,7 @@ pub async fn add(paths: &Paths, new: NewTaskRecord) -> Result<TaskRecord> {
 
 pub async fn remove(paths: &Paths, id: &str) -> Result<()> {
     if id.is_empty() || id.len() > 64 || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err(Error::validation("Ungültiger Eintrag"));
+        return Err(Error::validation(crate::msg!("taskHistory.invalidEntry", "Ungültiger Eintrag")));
     }
     let _guard = WRITE_LOCK.lock().await;
     let mut history = read(paths).await;
@@ -173,6 +245,8 @@ mod tests {
             icon_url: None,
             detail: None,
             bytes: None,
+            title_ref: None,
+            detail_ref: None,
         }
     }
 
@@ -218,5 +292,29 @@ mod tests {
         let parsed: NewTaskRecord =
             serde_json::from_value(serde_json::json!({ "kind": "version-change", "title": "a", "outcome": "failed" })).unwrap();
         assert_eq!(parsed.kind, TaskKind::VersionChange);
+        assert!(parsed.title_ref.is_none());
+    }
+
+    #[test]
+    fn keeps_valid_text_refs_only() {
+        let parsed: NewTaskRecord = serde_json::from_value(serde_json::json!({
+            "kind": "modpack", "title": "Modpack „X“ installiert", "outcome": "done",
+            "titleRef": { "key": "tasks.title.modpack", "params": { "name": "X", "count": 3, "bad": null } },
+            "detailRef": { "key": "../evil" }
+        }))
+        .unwrap();
+        let r = validate(parsed).unwrap();
+        let title = r.title_ref.as_ref().unwrap();
+        assert_eq!(title.key, "tasks.title.modpack");
+        assert_eq!(title.params.get("count").map(String::as_str), Some("3"));
+        assert!(!title.params.contains_key("bad"));
+        assert!(r.detail_ref.is_none(), "ungültiger Schlüssel fällt weg");
+
+        let json = serde_json::to_value(&r).unwrap();
+        assert_eq!(json["titleRef"]["params"]["name"], "X");
+        assert!(json.get("detailRef").is_none());
+
+        let err = validate(new(" ")).unwrap_err();
+        assert_eq!(err.message_code(), "taskHistory.untitled");
     }
 }

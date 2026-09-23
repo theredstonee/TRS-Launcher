@@ -1,3 +1,5 @@
+import type { Locale } from '../utils/i18n'
+
 // Spiegelt die serde-Typen aus `src-tauri/crates/core`.
 
 export type LoaderKind = 'vanilla' | 'fabric' | 'quilt' | 'forge' | 'neoforge'
@@ -72,7 +74,7 @@ export interface UiSettings {
   hideRightSidebar: boolean
   compactLibrary: boolean
   showPlayTime: boolean
-  language: 'de'
+  language: Locale
 }
 
 export interface JavaPaths {
@@ -119,6 +121,8 @@ export interface UploadResult {
   fileName: string
   kind: ContentKind | null
   error: string | null
+  /** Derselbe Fehler übersetzbar (`userErrorText(errorInfo)`). */
+  errorInfo?: CommandError
 }
 
 export type BulkAction = 'enable' | 'disable' | 'delete'
@@ -202,10 +206,16 @@ export interface ClientModStatus {
   update: string | null
 }
 
+/** Fehler vom Kern (`UserError` in `crates/core/src/error.rs`). */
 export interface CommandError {
   kind: string
+  /** Deutsche Rückfall-Meldung. */
   message: string
+  /** Übersetzungs-Code: `errors.<code>` in `app/locales/*.json`. */
   code?: string
+  params?: Record<string, string>
+  /** Fehlercode der TRS API (z. B. `cape_locked`). */
+  apiCode?: string
 }
 
 export interface Account {
@@ -258,11 +268,21 @@ export type GameEvent =
       playSeconds: number
       diagnosis: Diagnosis | null
     }
-  | { type: 'notice'; instanceId: string; message: string }
+  | {
+      type: 'notice'
+      instanceId: string
+      /** Deutsche Rückfall-Meldung. */
+      message: string
+      /** Übersetzungs-Code (`errors.<code>`), z. B. `hooks.postExitExitCode`. */
+      code?: string
+      params?: Record<string, string>
+    }
 
 export interface Diagnosis {
   kind: 'corrupt_files' | 'out_of_memory' | 'wrong_java' | 'missing_dependency' | 'mod_conflict' | 'graphics_driver'
   message: string
+  /** Übersetzungs-Code der Meldung (`errors.<code>`), z. B. `process.crashOutOfMemory`. */
+  code?: string
   canRepair: boolean
 }
 
@@ -568,6 +588,8 @@ export interface SkinSyncStatus {
   /** Unix-Zeit (ms), wann es automatisch weitergeht. */
   retryAt: number | null
   message: string | null
+  /** `message` übersetzbar (`userErrorText(errorInfo)`), nur bei `failed`. */
+  errorInfo?: CommandError
   pendingSkin: boolean
   pendingCape: boolean
   /** Neuer Stand nach `done`/`failed` (fehlt, wenn er nicht geladen werden konnte). */
@@ -586,6 +608,10 @@ export interface NewsItem {
   summary: string
   date: string | null
   tag: string | null
+  /** `tag` übersetzbar, wenn der Text vom Launcher stammt (`errors.news.tag*`). */
+  tagInfo?: TranslatableText
+  /** Downloads (Modrinth) – für `errors.news.tagDownloads` mit `formatCount`. */
+  downloads?: number
   imageUrl?: string
   link?: string
   /** Pfad für den vollen Patchnotes-Text. */
@@ -668,6 +694,10 @@ export interface TaskRecord {
   iconUrl?: string
   detail?: string
   bytes?: number
+  /** Übersetzbare Fassung von `title` (Schlüssel + Parameter). */
+  titleRef?: TextRef
+  /** Übersetzbare Fassung von `detail`, z. B. `errors.<code>`. */
+  detailRef?: TextRef
 }
 
 export interface NewTaskRecord {
@@ -678,6 +708,21 @@ export interface NewTaskRecord {
   iconUrl?: string | null
   detail?: string | null
   bytes?: number | null
+  titleRef?: TextRef | null
+  detailRef?: TextRef | null
+}
+
+/** Verweis auf einen Oberflächentext: Schlüssel aus `app/locales/*.json` + Parameter. */
+export interface TextRef {
+  key: string
+  params?: Record<string, string | number>
+}
+
+/** Übersetzbarer Text aus dem Kern (wie `Msg`): `errors.<code>`, sonst `message`. */
+export interface TranslatableText {
+  code: string
+  params?: Record<string, string>
+  message: string
 }
 
 /** Event `task-progress`: Byte-Stand einer laufenden Aufgabe. */

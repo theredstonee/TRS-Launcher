@@ -38,7 +38,7 @@ async function useAsBanner(entry: ImageEntry) {
   try {
     emit('updated', await backend.setInstanceBannerFromScreenshot(props.instance.id, entry.name))
     instances.load()
-    toasts.ok('Banner gesetzt')
+    toasts.ok(t('instance.gallery.bannerSet'))
   } catch (e) {
     toasts.error(e)
   }
@@ -66,22 +66,22 @@ async function confirmDelete() {
     <RedstoneEmpty
       v-else-if="!entries.length"
       :seed="mode === 'screenshots' ? 0x44 : 0x66"
-      :title="mode === 'screenshots' ? 'Noch keine Screenshots' : 'Noch keine Welten'"
-      :text="mode === 'screenshots' ? 'Drück im Spiel F2 – jedes Bild lässt hier eine Lampe mehr leuchten.' : 'Noch nichts gebaut: Einzelspieler-Welten dieser Instanz erscheinen hier.'"
+      :title="mode === 'screenshots' ? t('instance.gallery.noScreenshots.title') : t('instance.gallery.noWorlds.title')"
+      :text="mode === 'screenshots' ? t('instance.gallery.noScreenshots.text') : t('instance.gallery.noWorlds.text')"
     />
 
     <ul v-else-if="mode === 'screenshots'" class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
       <li v-for="e in entries" :key="e.name" class="group relative overflow-hidden rounded-lg border border-base-800 bg-base-900">
-        <button class="block w-full" :title="`${e.name} öffnen`" @click="open(e)">
+        <button class="block w-full" :title="t('instance.gallery.openScreenshot', { name: e.name })" @click="open(e)">
           <img v-if="src(e)" :src="src(e)!" alt="" loading="lazy" class="aspect-video w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
           <div v-else class="aspect-video bg-base-800" />
         </button>
         <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs">
           <span class="min-w-0 flex-1 truncate text-base-400">{{ formatDate(e.date) }}</span>
-          <button class="shrink-0 text-base-600 transition-colors hover:text-base-50" :aria-label="`${e.name} als Banner verwenden`" title="Als Banner der Instanz verwenden" @click="useAsBanner(e)">
+          <button class="shrink-0 text-base-600 transition-colors hover:text-base-50" :aria-label="t('instance.gallery.useAsBannerLabel', { name: e.name })" :title="t('instance.gallery.useAsBannerTitle')" @click="useAsBanner(e)">
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.image" /></svg>
           </button>
-          <button class="shrink-0 text-base-600 hover:text-redstone-300" aria-label="Screenshot löschen" @click="toDelete = e">
+          <button class="shrink-0 text-base-600 hover:text-redstone-300" :aria-label="t('instance.gallery.deleteScreenshot')" @click="toDelete = e">
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
           </button>
         </div>
@@ -96,16 +96,16 @@ async function confirmDelete() {
         </div>
         <div class="min-w-0">
           <p class="truncate text-sm font-medium">{{ e.name }}</p>
-          <p class="text-xs text-base-400">Zuletzt gespielt {{ formatDate(e.date) }}</p>
+          <p class="text-xs text-base-400">{{ t('instance.gallery.lastPlayed', { date: formatDate(e.date) }) }}</p>
         </div>
       </li>
     </ul>
 
-    <BaseDialog v-if="toDelete" title="Screenshot löschen?" @close="toDelete = null">
-      <p class="text-sm text-base-200">Der Screenshot wird von der Festplatte gelöscht.</p>
+    <BaseDialog v-if="toDelete" :title="t('instance.gallery.deleteTitle')" @close="toDelete = null">
+      <p class="text-sm text-base-200">{{ t('instance.gallery.deleteText') }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="toDelete = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmDelete">Löschen</button>
+        <button class="btn btn-ghost" @click="toDelete = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmDelete">{{ t('common.actions.delete') }}</button>
       </template>
     </BaseDialog>
   </div>

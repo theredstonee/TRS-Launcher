@@ -33,6 +33,7 @@ use serde::de::DeserializeOwned;
 use crate::auth::AccountStore;
 use crate::launch::Session;
 use crate::paths::Paths;
+use crate::error::Msg;
 use crate::{Error, Result, USER_AGENT};
 pub use presence::PRESENCE_INTERVAL;
 use presence::PresenceState;
@@ -114,88 +115,112 @@ impl Failure {
 }
 
 pub(crate) fn offline() -> Error {
-    Error::TrsApi {
-        kind: "trs_offline",
-        code: String::new(),
-        message: "Der TRS-Server ist gerade nicht erreichbar.".into(),
-    }
+    trs_error("trs_offline", "", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar."))
 }
 
 pub(crate) fn disabled() -> Error {
-    Error::TrsApi {
-        kind: "trs_disabled",
-        code: String::new(),
-        message: "Die TRS-Dienste sind ausgeschaltet (Einstellungen → Datenschutz).".into(),
-    }
+    trs_error(
+        "trs_disabled",
+        "",
+        crate::msg!("trs.disabled", "Die TRS-Dienste sind ausgeschaltet (Einstellungen → Datenschutz)."),
+    )
 }
 
 pub(crate) fn no_account() -> Error {
-    Error::TrsApi {
-        kind: "trs_no_account",
-        code: String::new(),
-        message: "Bitte melde dich zuerst unter „Accounts“ mit deinem Minecraft-Konto an.".into(),
-    }
+    trs_error(
+        "trs_no_account",
+        "",
+        crate::msg!("trs.noAccount", "Bitte melde dich zuerst unter „Accounts“ mit deinem Minecraft-Konto an."),
+    )
 }
 
-fn auth_failed(message: &str) -> Error {
-    Error::TrsApi { kind: "trs_auth", code: String::new(), message: message.into() }
+pub(crate) fn bad_response() -> Error {
+    trs_error("trs_api", "bad_response", crate::msg!("trs.badResponse", "Die TRS API hat unerwartet geantwortet."))
 }
 
-/// API-Fehler → stabiler `kind` + deutsche Meldung.
+fn auth_failed(msg: Msg) -> Error {
+    trs_error("trs_auth", "", msg)
+}
+
+fn trs_error(kind: &'static str, code: &str, msg: Msg) -> Error {
+    Error::TrsApi { kind, code: code.to_owned(), msg }
+}
+
+/// API-Fehler → stabiler `kind` + Meldung mit Übersetzungs-Code.
 pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Error {
-    let (kind, message): (&'static str, String) = match (status, code) {
-        (_, "banned") => ("trs_banned", "Dein Konto ist für die TRS-Dienste gesperrt.".into()),
+    let (kind, msg): (&'static str, Msg) = match (status, code) {
+        (_, "banned") => ("trs_banned", crate::msg!("trs.banned", "Dein Konto ist für die TRS-Dienste gesperrt.")),
         (429, _) => (
             "trs_rate_limited",
-            format!("Zu viele Anfragen – bitte in {} s erneut versuchen.", retry_after.unwrap_or(60).max(1)),
+            crate::msg!(
+                "trs.rateLimited",
+                "Zu viele Anfragen – bitte in {seconds} s erneut versuchen.",
+                seconds = retry_after.unwrap_or(60).max(1)
+            ),
         ),
-        (401, "not_joined") => ("trs_auth", "Mojang hat die Anmeldung nicht bestätigt – bitte später erneut versuchen.".into()),
-        (401, "invalid_challenge") => ("trs_auth", "Die Anmeldung hat zu lange gedauert – bitte erneut versuchen.".into()),
-        (401, _) => ("trs_auth", "Die TRS-Anmeldung ist abgelaufen – bitte erneut versuchen.".into()),
-        (403, "forbidden") => ("trs_forbidden", "Dafür fehlen dir die Rechte.".into()),
-        (500..=599, _) => ("trs_offline", "Der TRS-Server ist gerade nicht erreichbar.".into()),
-        (_, code) => ("trs_api", message_for(code).into()),
+        (401, "not_joined") => (
+            "trs_auth",
+            crate::msg!("trs.notJoined", "Mojang hat die Anmeldung nicht bestätigt – bitte später erneut versuchen."),
+        ),
+        (401, "invalid_challenge") => (
+            "trs_auth",
+            crate::msg!("trs.challengeExpired", "Die Anmeldung hat zu lange gedauert – bitte erneut versuchen."),
+        ),
+        (401, _) => {
+            ("trs_auth", crate::msg!("trs.sessionExpired", "Die TRS-Anmeldung ist abgelaufen – bitte erneut versuchen."))
+        }
+        (403, "forbidden") => ("trs_forbidden", crate::msg!("trs.forbidden", "Dafür fehlen dir die Rechte.")),
+        (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
+        (_, code) => ("trs_api", message_for(code)),
     };
-    Error::TrsApi { kind, code: code.to_owned(), message }
+    trs_error(kind, code, msg)
 }
 
-fn message_for(code: &str) -> &'static str {
+fn message_for(code: &str) -> Msg {
+    use crate::msg;
     match code {
-        "cape_not_found" => "Diesen Umhang gibt es nicht (mehr).",
-        "cape_locked" => "Dieser Umhang ist für dich noch nicht freigeschaltet.",
-        "invalid_code" => "Dieser Code ist ungültig.",
-        "code_expired" => "Dieser Code ist abgelaufen.",
-        "code_used_up" => "Dieser Code wurde bereits zu oft eingelöst.",
-        "player_not_found" => "Spieler nicht gefunden – er muss den TRS Launcher schon einmal benutzt haben.",
-        "cannot_target_self" => "Das bist du selbst.",
-        "blocked" => "Du hast diesen Spieler blockiert – entsperre ihn zuerst.",
-        "already_friends" => "Ihr seid schon befreundet.",
-        "already_requested" => "Du hast diesem Spieler schon eine Anfrage geschickt.",
-        "too_many_requests" => "Du hast zu viele offene Anfragen (höchstens 50).",
-        "target_inbox_full" => "Dieser Spieler hat zu viele offene Anfragen.",
-        "friend_limit" => "Deine Freundesliste ist voll (höchstens 200).",
-        "target_friend_limit" => "Die Freundesliste dieses Spielers ist voll.",
-        "request_not_found" => "Diese Anfrage gibt es nicht mehr.",
-        "friend_not_found" => "Ihr seid nicht (mehr) befreundet.",
-        "block_not_found" => "Dieser Spieler ist nicht blockiert.",
-        "invalid_png" => "Die Datei ist kein gültiges PNG-Bild.",
-        "animated_png" => "Animierte PNGs sind für eigene Umhänge nicht erlaubt.",
-        "invalid_dimensions" => "Das Bild hat nicht die richtige Größe für einen Umhang.",
-        "empty_cape" => "Der Umhang ist komplett durchsichtig.",
-        "too_many_pending" => "Du hast schon 3 Umhänge in Prüfung – warte auf die Freigabe.",
-        "upload_limit" => "Du hast schon 10 eigene Umhänge.",
-        "duplicate_cape" => "Diesen Umhang hast du schon hochgeladen.",
-        "payload_too_large" => "Die Datei ist zu groß.",
-        "unsupported_media_type" => "Dieses Dateiformat wird nicht unterstützt.",
-        "user_not_found" => "Dieser Spieler hat die TRS-Dienste noch nie benutzt.",
-        "builtin_cape" => "Standard-Umhänge können nicht gelöscht werden.",
-        "cape_is_free" => "Für freie Umhänge braucht es keinen Code.",
-        "grant_not_found" => "Dieser Spieler hat den Umhang nicht.",
-        "cannot_ban_admin" => "Admins können nicht gesperrt werden.",
-        "not_banned" => "Dieser Spieler ist nicht gesperrt.",
-        "invalid_request" | "invalid_json" => "Die Anfrage war ungültig.",
-        "not_found" => "Nicht gefunden.",
-        _ => "Die TRS API hat die Anfrage abgelehnt.",
+        "cape_not_found" => msg!("trsApi.cape_not_found", "Diesen Umhang gibt es nicht (mehr)."),
+        "cape_locked" => msg!("trsApi.cape_locked", "Dieser Umhang ist für dich noch nicht freigeschaltet."),
+        "invalid_code" => msg!("trsApi.invalid_code", "Dieser Code ist ungültig."),
+        "code_expired" => msg!("trsApi.code_expired", "Dieser Code ist abgelaufen."),
+        "code_used_up" => msg!("trsApi.code_used_up", "Dieser Code wurde bereits zu oft eingelöst."),
+        "player_not_found" => msg!(
+            "trsApi.player_not_found",
+            "Spieler nicht gefunden – er muss den TRS Launcher schon einmal benutzt haben."
+        ),
+        "cannot_target_self" => msg!("trsApi.cannot_target_self", "Das bist du selbst."),
+        "blocked" => msg!("trsApi.blocked", "Du hast diesen Spieler blockiert – entsperre ihn zuerst."),
+        "already_friends" => msg!("trsApi.already_friends", "Ihr seid schon befreundet."),
+        "already_requested" => msg!("trsApi.already_requested", "Du hast diesem Spieler schon eine Anfrage geschickt."),
+        "too_many_requests" => msg!("trsApi.too_many_requests", "Du hast zu viele offene Anfragen (höchstens 50)."),
+        "target_inbox_full" => msg!("trsApi.target_inbox_full", "Dieser Spieler hat zu viele offene Anfragen."),
+        "friend_limit" => msg!("trsApi.friend_limit", "Deine Freundesliste ist voll (höchstens 200)."),
+        "target_friend_limit" => msg!("trsApi.target_friend_limit", "Die Freundesliste dieses Spielers ist voll."),
+        "request_not_found" => msg!("trsApi.request_not_found", "Diese Anfrage gibt es nicht mehr."),
+        "friend_not_found" => msg!("trsApi.friend_not_found", "Ihr seid nicht (mehr) befreundet."),
+        "block_not_found" => msg!("trsApi.block_not_found", "Dieser Spieler ist nicht blockiert."),
+        "invalid_png" => msg!("trsApi.invalid_png", "Die Datei ist kein gültiges PNG-Bild."),
+        "animated_png" => msg!("trsApi.animated_png", "Animierte PNGs sind für eigene Umhänge nicht erlaubt."),
+        "invalid_dimensions" => {
+            msg!("trsApi.invalid_dimensions", "Das Bild hat nicht die richtige Größe für einen Umhang.")
+        }
+        "empty_cape" => msg!("trsApi.empty_cape", "Der Umhang ist komplett durchsichtig."),
+        "too_many_pending" => {
+            msg!("trsApi.too_many_pending", "Du hast schon 3 Umhänge in Prüfung – warte auf die Freigabe.")
+        }
+        "upload_limit" => msg!("trsApi.upload_limit", "Du hast schon 10 eigene Umhänge."),
+        "duplicate_cape" => msg!("trsApi.duplicate_cape", "Diesen Umhang hast du schon hochgeladen."),
+        "payload_too_large" => msg!("trsApi.payload_too_large", "Die Datei ist zu groß."),
+        "unsupported_media_type" => msg!("trsApi.unsupported_media_type", "Dieses Dateiformat wird nicht unterstützt."),
+        "user_not_found" => msg!("trsApi.user_not_found", "Dieser Spieler hat die TRS-Dienste noch nie benutzt."),
+        "builtin_cape" => msg!("trsApi.builtin_cape", "Standard-Umhänge können nicht gelöscht werden."),
+        "cape_is_free" => msg!("trsApi.cape_is_free", "Für freie Umhänge braucht es keinen Code."),
+        "grant_not_found" => msg!("trsApi.grant_not_found", "Dieser Spieler hat den Umhang nicht."),
+        "cannot_ban_admin" => msg!("trsApi.cannot_ban_admin", "Admins können nicht gesperrt werden."),
+        "not_banned" => msg!("trsApi.not_banned", "Dieser Spieler ist nicht gesperrt."),
+        "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
+        "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
+        _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
     }
 }
 
@@ -349,7 +374,7 @@ impl TrsApi {
                 }
                 Err(Failure::Api { status: 401, .. }) => {
                     let _ = self.store.take_token(account).await;
-                    return Err(auth_failed("Die TRS-Anmeldung wurde abgelehnt – bitte später erneut versuchen."));
+                    return Err(auth_failed(crate::msg!("trs.loginRejected", "Die TRS-Anmeldung wurde abgelehnt – bitte später erneut versuchen.")));
                 }
                 Err(Failure::Api { status: 403, code, .. }) if code == "banned" => {
                     return Err(api_error(403, &code, None));
@@ -381,7 +406,7 @@ impl TrsApi {
             "challenge",
         )?;
         if !validate::server_id(&challenge.server_id) {
-            return Err(auth_failed("Die TRS API hat eine ungültige Anmelde-Aufgabe geschickt."));
+            return Err(auth_failed(crate::msg!("trs.badChallenge", "Die TRS API hat eine ungültige Anmelde-Aufgabe geschickt.")));
         }
 
         let name = match self.mojang_join(&session, &challenge.server_id).await {
@@ -406,10 +431,10 @@ impl TrsApi {
             "verify",
         )?;
         if !validate::session_token(&verify.token) {
-            return Err(auth_failed("Die TRS API hat einen ungültigen Token geschickt."));
+            return Err(auth_failed(crate::msg!("trs.badToken", "Die TRS API hat einen ungültigen Token geschickt.")));
         }
         if verify.user.uuid != account {
-            return Err(auth_failed("Die TRS-Anmeldung gehört zu einem anderen Account."));
+            return Err(auth_failed(crate::msg!("trs.wrongAccount", "Die TRS-Anmeldung gehört zu einem anderen Account.")));
         }
         let expires_at = chrono::DateTime::parse_from_rfc3339(&verify.expires_at)
             .map(|d| d.with_timezone(&chrono::Utc))
@@ -472,15 +497,27 @@ impl JoinError {
     fn into_error(self) -> Error {
         match self {
             Self::Network => offline(),
-            Self::Rejected => {
-                auth_failed("Mojang hat die Anmeldung abgelehnt – bitte melde deinen Account unter „Accounts“ neu an.")
-            }
-            Self::RateLimited => Error::TrsApi {
-                kind: "trs_rate_limited",
-                code: String::new(),
-                message: "Mojang begrenzt gerade die Anmeldungen – bitte in einer Minute erneut versuchen.".into(),
-            },
-            Self::Other => auth_failed("Die Mojang-Anmeldung ist fehlgeschlagen – bitte später erneut versuchen."),
+            Self::Rejected => trs_error(
+                "trs_auth",
+                "",
+                crate::msg!(
+                    "trs.mojangRejected",
+                    "Mojang hat die Anmeldung abgelehnt – bitte melde deinen Account unter „Accounts“ neu an."
+                ),
+            ),
+            Self::RateLimited => trs_error(
+                "trs_rate_limited",
+                "",
+                crate::msg!(
+                    "trs.mojangRateLimited",
+                    "Mojang begrenzt gerade die Anmeldungen – bitte in einer Minute erneut versuchen."
+                ),
+            ),
+            Self::Other => trs_error(
+                "trs_auth",
+                "",
+                crate::msg!("trs.mojangFailed", "Die Mojang-Anmeldung ist fehlgeschlagen – bitte später erneut versuchen."),
+            ),
         }
     }
 }
@@ -489,21 +526,13 @@ fn parse<T: DeserializeOwned>(bytes: &[u8], context: &str) -> Result<T> {
     let bytes = if bytes.is_empty() { b"null".as_slice() } else { bytes };
     serde_json::from_slice(bytes).map_err(|e| {
         tracing::warn!("Unerwartete Antwort der TRS API ({context}): {e}");
-        Error::TrsApi {
-            kind: "trs_api",
-            code: "bad_response".into(),
-            message: "Die TRS API hat unerwartet geantwortet.".into(),
-        }
+        bad_response()
     })
 }
 
 /// `ApiMe` → Ansicht; kaputte Antworten werden zum Fehler.
 pub(crate) fn me_view(me: ApiMe) -> Result<types::Me> {
-    me.into_view().ok_or_else(|| Error::TrsApi {
-        kind: "trs_api",
-        code: "bad_response".into(),
-        message: "Die TRS API hat unerwartet geantwortet.".into(),
-    })
+    me.into_view().ok_or_else(bad_response)
 }
 
 #[cfg(test)]

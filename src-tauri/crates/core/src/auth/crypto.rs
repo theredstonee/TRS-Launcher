@@ -61,7 +61,7 @@ pub fn protect(plain: &str) -> Result<String> {
 pub fn unprotect(encoded: &str) -> Result<String> {
     let cipher = STANDARD
         .decode(encoded)
-        .map_err(|_| Error::auth("Gespeicherte Anmeldedaten sind beschädigt – bitte erneut anmelden."))?;
+        .map_err(|_| Error::auth(crate::msg!("auth.storedCredentialsCorrupt", "Gespeicherte Anmeldedaten sind beschädigt – bitte erneut anmelden.")))?;
     let input = blob(&cipher);
     let entropy = blob(ENTROPY);
     let mut out = CRYPT_INTEGER_BLOB::default();
@@ -69,11 +69,11 @@ pub fn unprotect(encoded: &str) -> Result<String> {
     let bytes = unsafe {
         CryptUnprotectData(&input, None, Some(&entropy), None, None, CRYPTPROTECT_UI_FORBIDDEN, &mut out)
             .map_err(|_| {
-                Error::auth("Gespeicherte Anmeldedaten konnten nicht entschlüsselt werden – bitte erneut anmelden.")
+                Error::auth(crate::msg!("auth.storedCredentialsUndecryptable", "Gespeicherte Anmeldedaten konnten nicht entschlüsselt werden – bitte erneut anmelden."))
             })?;
         take(out)
     };
-    String::from_utf8(bytes).map_err(|_| Error::auth("Gespeicherte Anmeldedaten sind beschädigt."))
+    String::from_utf8(bytes).map_err(|_| Error::auth(crate::msg!("auth.storedCredentialsInvalid", "Gespeicherte Anmeldedaten sind beschädigt.")))
 }
 
 #[cfg(test)]

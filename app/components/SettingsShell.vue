@@ -48,13 +48,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <slot name="title-icon" />
         <h2 class="min-w-0 flex-1 truncate text-lg font-semibold">{{ title }}</h2>
         <span v-if="status" role="status" class="text-xs" :class="status.ok ? 'text-base-400' : 'text-redstone-300'">{{ status.text }}</span>
-        <button class="grid size-9 place-items-center rounded-full bg-base-800 text-base-200 transition-colors hover:bg-base-700 hover:text-base-50" aria-label="Schließen" @click="emit('close')">
+        <button class="grid size-9 place-items-center rounded-full bg-base-800 text-base-200 transition-colors hover:bg-base-700 hover:text-base-50" :aria-label="t('common.actions.close')" @click="emit('close')">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.close" /></svg>
         </button>
       </header>
 
       <div class="flex min-h-0 flex-1">
-        <nav class="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-base-800 p-3" aria-label="Bereiche">
+        <nav class="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-base-800 p-3" :aria-label="t('settingsShell.sectionsLabel')">
           <div v-for="(g, i) in grouped" :key="i" :class="{ 'mt-4': i > 0 && g.group }">
             <p v-if="g.group" class="mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-base-600 uppercase">{{ g.group }}</p>
             <button
@@ -66,7 +66,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
               @click="active = s.key"
             >
               <svg viewBox="0 0 24 24" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons[s.icon]" /></svg>
-              {{ s.label }}
+              <span class="min-w-0 leading-tight">{{ s.label }}</span>
             </button>
           </div>
           <div class="mt-auto pt-4 px-3 text-[11px] leading-5 text-base-600">

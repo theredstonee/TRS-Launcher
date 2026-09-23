@@ -477,7 +477,7 @@ impl Launcher {
     /// was darin gefunden wurde.
     pub async fn add_import_folder(&self, dir: PathBuf) -> Result<Vec<ImportCandidate>> {
         if !dir.is_dir() {
-            return Err(Error::validation("Dieser Ordner existiert nicht."));
+            return Err(Error::validation(crate::msg!("import.folderMissing", "Dieser Ordner existiert nicht.")));
         }
         {
             let mut folders = self.import_folders.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -490,10 +490,8 @@ impl Launcher {
             .await
             .map_err(|e| Error::Internal(e.to_string()))?;
         if found.is_empty() {
-            return Err(Error::validation(
-                "In diesem Ordner wurde keine Minecraft-Installation gefunden. Wähle den Ordner, in dem \
-                 mods, saves oder options.txt liegen.",
-            ));
+            return Err(Error::validation(crate::msg!("import.noInstallation", "In diesem Ordner wurde keine Minecraft-Installation gefunden. Wähle den Ordner, in dem \
+                 mods, saves oder options.txt liegen.")));
         }
         Ok(found)
     }
@@ -511,7 +509,7 @@ impl Launcher {
             .await?
             .into_iter()
             .find(|c| c.id == candidate_id)
-            .ok_or_else(|| Error::validation("Diese Installation wurde nicht mehr gefunden."))?;
+            .ok_or_else(|| Error::validation(crate::msg!("import.installationGone", "Diese Installation wurde nicht mehr gefunden.")))?;
         if candidate.version_guessed {
             if let Some(v) = game_version {
                 candidate.game_version = v;

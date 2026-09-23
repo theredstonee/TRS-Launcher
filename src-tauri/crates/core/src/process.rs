@@ -22,6 +22,7 @@ use windows::Win32::System::Threading::{
     PROCESS_SYNCHRONIZE, PROCESS_TERMINATE, TerminateProcess, WaitForSingleObject,
 };
 
+use crate::error::Msg;
 use crate::gamelog::{LogLine, LogParser};
 use crate::launch::Command;
 use crate::{Error, Result};
@@ -50,7 +51,28 @@ pub enum GameEvent {
     },
     /// Ein Start-Hook oder die Synchronisierung nach dem Beenden ist
     /// fehlgeschlagen – das Frontend zeigt die Meldung als Hinweis.
-    Notice { instance_id: String, message: String },
+    /// `message` ist die deutsche Rückfall-Meldung, `code`/`params` die
+    /// übersetzbare Fassung (`errors.<code>`).
+    Notice {
+        instance_id: String,
+        message: String,
+        code: String,
+        #[serde(skip_serializing_if = "serde_json::Map::is_empty")]
+        params: serde_json::Map<String, serde_json::Value>,
+    },
+}
+
+impl GameEvent {
+    /// Hinweis aus einer übersetzbaren Meldung.
+    pub fn notice(instance_id: String, msg: &Msg) -> Self {
+        Self::Notice { instance_id, message: msg.text.clone(), code: msg.code.to_owned(), params: msg.params_json() }
+    }
+
+    /// Hinweis aus einem Fehler – ohne Pfade oder interne Details.
+    pub fn notice_error(instance_id: String, err: &Error) -> Self {
+        let user = err.to_user();
+        Self::Notice { instance_id, message: user.message, code: user.code, params: user.params }
+    }
 }
 
 pub type EventSink = Arc<dyn Fn(GameEvent) + Send + Sync>;
@@ -83,8 +105,11 @@ pub enum DiagnosisKind {
 #[serde(rename_all = "camelCase")]
 pub struct Diagnosis {
     pub kind: DiagnosisKind,
-    /// Für den Nutzer formuliert – was los ist und was hilft.
+    /// Für den Nutzer formuliert – was los ist und was hilft (deutsche
+    /// Rückfall-Meldung).
     pub message: String,
+    /// Übersetzungs-Code der Meldung (`errors.<code>`).
+    pub code: &'static str,
     /// „Dateien prüfen & reparieren“ anbieten.
     pub can_repair: bool,
 }
@@ -102,22 +127,31 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     {
         (
             DiagnosisKind::CorruptFiles,
-            "Eine Spieldatei ist beschädigt (z. B. nach einem abgebrochenen Download). \
-             „Dateien prüfen“ lädt sie neu herunter.",
+            crate::msg!(
+                "process.crashCorruptFiles",
+                "Eine Spieldatei ist beschädigt (z. B. nach einem abgebrochenen Download). \
+                 „Dateien prüfen“ lädt sie neu herunter."
+            ),
             true,
         )
     } else if has("java.lang.OutOfMemoryError") {
         (
             DiagnosisKind::OutOfMemory,
-            "Dem Spiel ist der Arbeitsspeicher ausgegangen. Erhöhe den Arbeitsspeicher der Instanz \
-             in den Einstellungen.",
+            crate::msg!(
+                "process.crashOutOfMemory",
+                "Dem Spiel ist der Arbeitsspeicher ausgegangen. Erhöhe den Arbeitsspeicher der Instanz \
+                 in den Einstellungen."
+            ),
             false,
         )
     } else if has("UnsupportedClassVersionError") || has("has been compiled by a more recent version of the Java Runtime") {
         (
             DiagnosisKind::WrongJava,
-            "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den \
-             Einstellungen, dann wählt der Launcher automatisch die passende.",
+            crate::msg!(
+                "process.crashWrongJava",
+                "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den \
+                 Einstellungen, dann wählt der Launcher automatisch die passende."
+            ),
             false,
         )
     } else if has("requires") && (has("which is missing") || has("but it is missing"))
@@ -126,13 +160,19 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     {
         (
             DiagnosisKind::MissingDependency,
-            "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler.",
+            crate::msg!(
+                "process.crashMissingDependency",
+                "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler."
+            ),
             false,
         )
     } else if has("Mixin apply failed") || has("MixinApplyError") || has("InvalidInjectionException") || has("Incompatible mods found") {
         (
             DiagnosisKind::ModConflict,
-            "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut.",
+            crate::msg!(
+                "process.crashModConflict",
+                "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut."
+            ),
             false,
         )
     } else if has("EXCEPTION_ACCESS_VIOLATION") && (has("atio6axx") || has("nvoglv") || has("ig9icd") || has("ig7icd"))
@@ -142,14 +182,17 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     {
         (
             DiagnosisKind::GraphicsDriver,
-            "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den \
-             Treiber deiner Grafikkarte.",
+            crate::msg!(
+                "process.crashGraphicsDriver",
+                "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den \
+                 Treiber deiner Grafikkarte."
+            ),
             false,
         )
     } else {
         return None;
     };
-    Some(Diagnosis { kind, message: message.to_owned(), can_repair })
+    Some(Diagnosis { kind, message: message.text, code: message.code, can_repair })
 }
 
 // --- Windows-Prozess-Handle ------------------------------------------------------
@@ -309,7 +352,7 @@ impl GameManager {
         use std::os::windows::process::CommandExt;
 
         if self.is_running(instance_id) {
-            return Err(Error::launch("Diese Instanz läuft bereits."));
+            return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
         }
         std::fs::create_dir_all(log_dir).map_err(|e| Error::io(log_dir, e))?;
         let stdout_log = log_dir.join("launcher-stdout.log");
@@ -329,11 +372,11 @@ impl GameManager {
             .spawn()
             .map_err(|e| {
                 tracing::error!("Java konnte nicht gestartet werden ({}): {e}", command.program.display());
-                Error::launch("Java konnte nicht gestartet werden.")
+                Error::launch(crate::msg!("process.javaStartFailed", "Java konnte nicht gestartet werden."))
             })?;
         let pid = child.id();
         // Solange `child` lebt, existiert das Prozessobjekt sicher – erst öffnen, dann loslassen.
-        let process = ProcessHandle::open(pid).ok_or_else(|| Error::launch("Das Spiel wurde sofort wieder beendet."))?;
+        let process = ProcessHandle::open(pid).ok_or_else(|| Error::launch(crate::msg!("process.exitedImmediately", "Das Spiel wurde sofort wieder beendet.")))?;
         drop(child);
 
         let record = SessionRecord {
@@ -643,13 +686,13 @@ pub async fn share_log(http: &reqwest::Client, text: &str) -> Result<String> {
         content = content[cut..].to_owned();
     }
     if content.trim().is_empty() {
-        return Err(Error::validation("Es gibt noch keinen Log zum Teilen."));
+        return Err(Error::validation(crate::msg!("launcher.noLogToShare", "Es gibt noch keinen Log zum Teilen.")));
     }
     let response: MclogsResponse =
         http.post(MCLOGS_API).form(&[("content", content)]).send().await?.error_for_status()?.json().await?;
     match response.url {
         Some(url) if response.success && url.starts_with("https://mclo.gs/") => Ok(url),
-        _ => Err(Error::validation("Der Log konnte nicht hochgeladen werden.")),
+        _ => Err(Error::validation(crate::msg!("process.logUploadFailed", "Der Log konnte nicht hochgeladen werden."))),
     }
 }
 
@@ -690,6 +733,28 @@ mod tests {
         );
         assert_eq!(diagnose(&[line("Mixin apply failed foo.mixins.json:BarMixin")]).unwrap().kind, DiagnosisKind::ModConflict);
         assert!(diagnose(&[line("Stopping!")]).is_none());
+        assert_eq!(d.code, "process.crashCorruptFiles");
+        let json = serde_json::to_value(&d).unwrap();
+        assert_eq!(json["code"], "process.crashCorruptFiles");
+        assert!(json["message"].as_str().unwrap().starts_with("Eine Spieldatei ist beschädigt"));
+    }
+
+    #[test]
+    fn notice_carries_code_and_params() {
+        let err = Error::launch(crate::msg!("hooks.postExitExitCode", "Fehlgeschlagen (Exit-Code {code}).", code = 3));
+        let json = serde_json::to_value(GameEvent::notice_error("a".into(), &err)).unwrap();
+        assert_eq!(json["type"], "notice");
+        assert_eq!(json["instanceId"], "a");
+        assert_eq!(json["code"], "hooks.postExitExitCode");
+        assert_eq!(json["params"]["code"], "3");
+        assert_eq!(json["message"], "Fehlgeschlagen (Exit-Code 3).");
+
+        // Fehler ohne eigene Meldung: fester Code, keine Pfade, keine leeren Parameter.
+        let io = Error::io("C:\\geheim", std::io::Error::other("x"));
+        let json = serde_json::to_value(GameEvent::notice_error("a".into(), &io)).unwrap();
+        assert_eq!(json["code"], "io");
+        assert!(json.get("params").is_none());
+        assert!(!json["message"].as_str().unwrap().contains("geheim"));
     }
 
     #[test]

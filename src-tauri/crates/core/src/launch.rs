@@ -156,7 +156,7 @@ pub fn build_command(
                 args.push("--demo".into());
             }
         }
-        _ => return Err(Error::launch("Die Versions-Metadaten enthalten keine Startargumente.")),
+        _ => return Err(Error::launch(crate::msg!("launch.noArguments", "Die Versions-Metadaten enthalten keine Startargumente."))),
     }
 
     if instance.overrides.fullscreen.unwrap_or(settings.fullscreen) {
@@ -220,7 +220,7 @@ fn main_class(version: &VersionInfo) -> Result<&str> {
     version
         .main_class
         .as_deref()
-        .ok_or_else(|| Error::launch("Die Versions-Metadaten enthalten keine Hauptklasse."))
+        .ok_or_else(|| Error::launch(crate::msg!("launch.noMainClass", "Die Versions-Metadaten enthalten keine Hauptklasse.")))
 }
 
 fn expand<'a>(args: &'a [Argument], features: &'a Features) -> impl Iterator<Item = &'a str> {

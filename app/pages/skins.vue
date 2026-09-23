@@ -110,11 +110,11 @@ const unapplied = computed(() => !!changes.value && !(working.value && sameDraft
 
 const skinLabel = computed(() => {
   const skin = draft.value.skin
-  if (skin.source === 'default') return 'Standard-Skin'
-  const name = skin.source === 'library' ? (draftLibrary.value?.name ?? 'Skin') : 'Getragener Skin'
-  return `${name} · ${draft.value.variant === 'slim' ? 'Slim' : 'Klassisch'}`
+  if (skin.source === 'default') return t('skins.defaultSkin')
+  const name = skin.source === 'library' ? (draftLibrary.value?.name ?? t('skins.skin')) : t('skins.currentSkin')
+  return `${name} · ${t(`skins.variants.${draft.value.variant}`)}`
 })
-const capeLabel = computed(() => profile.value?.capes.find((c) => c.id === draft.value.cape)?.name ?? 'Keiner')
+const capeLabel = computed(() => profile.value?.capes.find((c) => c.id === draft.value.cape)?.name ?? t('skins.noCape'))
 
 function selectLibrary(skin: LibrarySkin) {
   draft.value = { ...draft.value, skin: { source: 'library', id: skin.id }, variant: skin.variant }
@@ -172,7 +172,7 @@ async function settle(status: SkinSyncStatus) {
     // Übernommenes wird zu „getragen“, spätere Bearbeitungen bleiben.
     draft.value = rebaseDraft(draft.value, reference, profile.value)
   } else {
-    applyError.value = status.message
+    applyError.value = status.errorInfo ? userErrorText(status.errorInfo) : status.message
   }
   accounts.load().catch(() => {})
 }
@@ -312,16 +312,16 @@ async function addSkin() {
     if (!added) return
     await loadLibrary()
     selectLibrary(added)
-    toasts.ok(`„${added.name}“ zur Sammlung hinzugefügt`)
+    toasts.ok(t('skins.addedToast', { name: added.name }))
   })
 }
 
 async function saveActive() {
-  const name = `${profile.value?.name ?? 'Skin'} ${new Date().toLocaleDateString('de-DE')}`
+  const name = `${profile.value?.name ?? 'Skin'} ${formatShortDate(new Date().toISOString())}`
   await run('save', async () => {
     const saved = await backend.saveActiveSkin(name.slice(0, 48))
     await loadLibrary()
-    toasts.ok(`Aktueller Skin als „${saved.name}“ gesichert`)
+    toasts.ok(t('skins.savedToast', { name: saved.name }))
   })
 }
 
@@ -366,28 +366,25 @@ function capeStyle(texture: string, width = 30) {
 
 <template>
   <div class="flex h-full min-h-0 flex-col p-6">
-    <PageHeader title="Skins & Umhänge" subtitle="Auswählen, in der Vorschau anprobieren und dann gesammelt anwenden.">
+    <PageHeader :title="t('skins.title')" :subtitle="t('skins.subtitle')">
       <button class="btn btn-ghost" :disabled="!!busy || !profile" @click="saveActive">
-        {{ busy === 'save' ? 'Sichere …' : 'Getragenen Skin sichern' }}
+        {{ busy === 'save' ? t('skins.savingCurrent') : t('skins.saveCurrent') }}
       </button>
       <button class="btn btn-primary" :disabled="!!busy" @click="startAdd">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        Skin hinzufügen
+        {{ t('skins.add') }}
       </button>
     </PageHeader>
 
     <div v-if="loadError" role="alert" class="card mb-4 border-warn/40 px-4 py-3 text-sm text-warn">
       {{ loadError }}
-      <p class="mt-1 text-xs text-base-400">
-        Deine gespeicherten Skins lassen sich trotzdem verwalten – zum Wechseln auf dem Konto braucht es eine
-        Anmeldung und Internet.
-      </p>
+      <p class="mt-1 text-xs text-base-400">{{ t('skins.loadErrorHint') }}</p>
     </div>
 
     <div class="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto pr-1 lg:grid-cols-[320px_1fr]">
       <!-- 3D-Vorschau + Entwurf ----------------------------------------------- -->
-      <section class="card flex h-fit flex-col p-4 lg:sticky lg:top-0" aria-label="Vorschau und Entwurf">
-        <div class="relative rounded-lg bg-gradient-to-b from-base-850 to-base-950" title="Ziehen zum Drehen · Mausrad zum Zoomen">
+      <section class="card flex h-fit flex-col p-4 lg:sticky lg:top-0" :aria-label="t('skins.previewLabel')">
+        <div class="relative rounded-lg bg-gradient-to-b from-base-850 to-base-950" :title="t('skins.previewHint')">
           <div v-if="loading" class="skeleton h-[280px] w-full rounded-lg" />
           <ClientOnly v-else>
             <SkinViewer
@@ -402,25 +399,25 @@ function capeStyle(texture: string, width = 30) {
           </ClientOnly>
           <span v-if="unapplied" class="badge absolute top-2 left-2 bg-warn/15 text-warn" data-testid="skin-unapplied">
             <span class="size-1.5 rounded-full bg-warn" />
-            Nicht angewendet
+            {{ t('skins.unapplied') }}
           </span>
           <button
             v-if="trsPreview"
             class="badge absolute top-2 right-2 bg-redstone-900/70 text-redstone-300 hover:text-base-50"
-            title="TRS-Vorschau beenden"
+            :title="t('skins.endTrsPreview')"
             @click="trsPreview = null"
           >
             TRS: {{ trsPreview.name }} ✕
           </button>
           <div class="absolute inset-x-2 bottom-2 flex items-center gap-1 rounded-md bg-base-950/70 p-0.5 text-[11px] backdrop-blur-sm">
             <button
-              v-for="[key, label] in ([['walk', 'Laufen'], ['idle', 'Ruhig'], ['none', 'Stehen']] as const)"
+              v-for="key in (['walk', 'idle', 'none'] as const)"
               :key="key"
               class="seg flex-1 rounded px-2 py-1"
               :class="{ 'seg-on': animation === key }"
               @click="animation = key"
             >
-              {{ label }}
+              {{ t(`skins.animation.${key}`) }}
             </button>
           </div>
         </div>
@@ -428,10 +425,10 @@ function capeStyle(texture: string, width = 30) {
         <template v-if="profile">
           <!-- Modell (Armbreite) -->
           <div v-if="draft.skin.source !== 'default'" class="mt-3">
-            <p class="label">Modell</p>
-            <div class="flex gap-1 rounded-lg bg-base-850 p-1 text-xs" role="radiogroup" aria-label="Modell">
+            <p class="label">{{ t('skins.model') }}</p>
+            <div class="flex gap-1 rounded-lg bg-base-850 p-1 text-xs" role="radiogroup" :aria-label="t('skins.model')">
               <button
-                v-for="[v, label] in ([['classic', 'Klassisch'], ['slim', 'Slim']] as const)"
+                v-for="v in skinVariants"
                 :key="v"
                 class="seg flex-1 rounded-md"
                 :class="{ 'seg-on': draft.variant === v }"
@@ -439,7 +436,7 @@ function capeStyle(texture: string, width = 30) {
                 :aria-checked="draft.variant === v"
                 @click="selectVariant(v)"
               >
-                {{ label }}
+                {{ t(`skins.variants.${v}`) }}
               </button>
             </div>
           </div>
@@ -447,11 +444,11 @@ function capeStyle(texture: string, width = 30) {
           <!-- Zusammenfassung + Anwenden -->
           <dl class="mt-3 space-y-1 text-xs">
             <div class="flex justify-between gap-3">
-              <dt class="text-base-400">Skin</dt>
+              <dt class="text-base-400">{{ t('skins.skin') }}</dt>
               <dd class="truncate text-right font-medium text-base-50">{{ skinLabel }}</dd>
             </div>
             <div class="flex justify-between gap-3">
-              <dt class="text-base-400">Umhang</dt>
+              <dt class="text-base-400">{{ t('skins.cape') }}</dt>
               <dd class="truncate text-right font-medium text-base-50">{{ capeLabel }}</dd>
             </div>
           </dl>
@@ -463,10 +460,10 @@ function capeStyle(texture: string, width = 30) {
               data-testid="skin-apply"
               @click="applyDraft"
             >
-              {{ submitting ? 'Wird übergeben …' : 'Anwenden' }}
+              {{ submitting ? t('skins.submitting') : t('common.actions.apply') }}
             </button>
             <button class="btn btn-ghost py-1.5 text-xs" :disabled="!unapplied" data-testid="skin-discard" @click="discard">
-              Verwerfen
+              {{ t('skins.discard') }}
             </button>
           </div>
 
@@ -485,14 +482,14 @@ function capeStyle(texture: string, width = 30) {
             </svg>
             <p class="min-w-0 flex-1 tabular-nums">{{ statusLine }}</p>
             <button v-if="sync?.state === 'waiting'" class="shrink-0 text-base-400 hover:text-base-50 hover:underline" @click="cancelSync">
-              Abbrechen
+              {{ t('common.actions.cancel') }}
             </button>
           </div>
           <p v-else-if="applyError" role="alert" class="mt-3 rounded-lg border border-redstone-600/50 bg-redstone-900/30 px-3 py-2 text-xs text-redstone-300">
             {{ applyError }}
           </p>
           <p v-else-if="!unapplied" class="mt-3 text-center text-[11px] text-base-600">
-            Wähle Skin, Modell und Umhang – angewendet wird erst mit „Anwenden“.
+            {{ t('skins.applyHint') }}
           </p>
         </template>
       </section>
@@ -500,7 +497,7 @@ function capeStyle(texture: string, width = 30) {
       <div class="min-w-0 space-y-5">
         <!-- Skins ---------------------------------------------------------------- -->
         <section>
-          <h2 class="section-title mb-2">Meine Skins</h2>
+          <h2 class="section-title mb-2">{{ t('skins.mySkins') }}</h2>
           <div v-if="loading" class="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3">
             <div v-for="i in 4" :key="i" class="skeleton h-28" />
           </div>
@@ -516,8 +513,8 @@ function capeStyle(texture: string, width = 30) {
                 <span v-if="profile.skin" class="shrink-0 rounded [image-rendering:pixelated]" :style="faceStyle(profile.skin)" />
                 <span v-else class="size-12 shrink-0 rounded bg-base-800" />
                 <span class="min-w-0 flex-1">
-                  <span class="block truncate text-sm font-medium">Getragener Skin</span>
-                  <span class="block text-[11px] text-base-400">{{ profile.variant === 'slim' ? 'Slim' : 'Klassisch' }} · auf dem Konto</span>
+                  <span class="block truncate text-sm font-medium">{{ t('skins.currentSkin') }}</span>
+                  <span class="block text-[11px] text-base-400">{{ t('skins.onAccount', { variant: t(`skins.variants.${profile.variant}`) }) }}</span>
                 </span>
               </button>
             </li>
@@ -532,8 +529,8 @@ function capeStyle(texture: string, width = 30) {
                   <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /></svg>
                 </span>
                 <span class="min-w-0 flex-1">
-                  <span class="block truncate text-sm font-medium">Standard-Skin</span>
-                  <span class="block text-[11px] text-base-400">Steve / Alex von Mojang</span>
+                  <span class="block truncate text-sm font-medium">{{ t('skins.defaultSkin') }}</span>
+                  <span class="block text-[11px] text-base-400">{{ t('skins.defaultSkinHint') }}</span>
                 </span>
               </button>
             </li>
@@ -543,35 +540,35 @@ function capeStyle(texture: string, width = 30) {
               class="card card-hover flex items-center gap-3 p-3"
               :class="{ 'border-redstone-600/60 bg-redstone-900/20': draft.skin.source === 'library' && draft.skin.id === skin.id }"
             >
-              <button class="shrink-0 rounded [image-rendering:pixelated]" :style="faceStyle(skin.texture)" :aria-label="`${skin.name} anprobieren`" @click="selectLibrary(skin)" />
+              <button class="shrink-0 rounded [image-rendering:pixelated]" :style="faceStyle(skin.texture)" :aria-label="t('skins.tryOnLabel', { name: skin.name })" @click="selectLibrary(skin)" />
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium">{{ skin.name }}</p>
-                <p class="text-[11px] text-base-400">{{ skin.variant === 'slim' ? 'Slim' : 'Klassisch' }} · {{ formatDate(skin.addedAt) }}</p>
+                <p class="text-[11px] text-base-400">{{ t(`skins.variants.${skin.variant}`) }} · {{ formatDate(skin.addedAt) }}</p>
                 <div class="mt-1.5 flex gap-1.5">
                   <button
                     class="btn btn-ghost px-2 py-1 text-[11px]"
                     :aria-pressed="draft.skin.source === 'library' && draft.skin.id === skin.id"
                     @click="selectLibrary(skin)"
                   >
-                    {{ draft.skin.source === 'library' && draft.skin.id === skin.id ? 'Ausgewählt' : 'Anprobieren' }}
+                    {{ draft.skin.source === 'library' && draft.skin.id === skin.id ? t('skins.selected') : t('skins.tryOn') }}
                   </button>
-                  <button class="btn btn-ghost px-2 py-1 text-[11px] hover:text-redstone-300" :disabled="!!busy" @click="toDelete = skin">Löschen</button>
+                  <button class="btn btn-ghost px-2 py-1 text-[11px] hover:text-redstone-300" :disabled="!!busy" @click="toDelete = skin">
+                    {{ t('common.actions.delete') }}
+                  </button>
                 </div>
               </div>
             </li>
           </ul>
           <div v-if="!loading && !library.length" class="card mt-3 px-6 py-8 text-center">
-            <h3 class="font-semibold">Noch keine eigenen Skins</h3>
-            <p class="mx-auto mt-1 max-w-md text-sm text-base-400">
-              Lege 64×64-PNG-Dateien in deine Sammlung – dann kannst du sie anprobieren und gesammelt anwenden.
-            </p>
-            <button class="btn btn-primary mt-4" @click="startAdd">Skin hinzufügen</button>
+            <h3 class="font-semibold">{{ t('skins.empty.title') }}</h3>
+            <p class="mx-auto mt-1 max-w-md text-sm text-base-400">{{ t('skins.empty.text') }}</p>
+            <button class="btn btn-primary mt-4" @click="startAdd">{{ t('skins.add') }}</button>
           </div>
         </section>
 
         <!-- Umhänge -------------------------------------------------------------- -->
         <section v-if="profile">
-          <h2 class="section-title mb-2">Mojang-Umhänge</h2>
+          <h2 class="section-title mb-2">{{ t('skins.mojangCapes') }}</h2>
           <ul v-if="profile.capes.length" class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3">
             <li>
               <button
@@ -581,7 +578,7 @@ function capeStyle(texture: string, width = 30) {
                 @click="selectCape(null)"
               >
                 <span class="grid h-[48px] w-[30px] place-items-center rounded bg-base-800 text-base-600">–</span>
-                <span class="text-xs">Keiner</span>
+                <span class="text-xs">{{ t('skins.noCape') }}</span>
               </button>
             </li>
             <li v-for="cape in profile.capes" :key="cape.id">
@@ -594,12 +591,12 @@ function capeStyle(texture: string, width = 30) {
                 <span v-if="cape.texture" class="rounded [image-rendering:pixelated]" :style="capeStyle(cape.texture)" />
                 <span v-else class="h-[48px] w-[30px] rounded bg-base-800" />
                 <span class="w-full truncate text-center text-xs">{{ cape.name }}</span>
-                <span v-if="cape.active" class="text-[10px] text-base-400">getragen</span>
+                <span v-if="cape.active" class="text-[10px] text-base-400">{{ t('skins.worn') }}</span>
               </button>
             </li>
           </ul>
           <p v-else class="card px-4 py-6 text-center text-sm text-base-400">
-            Für dieses Konto gibt es keine Umhänge. Die gibt es nur von Mojang – etwa den Migrator-Umhang.
+            {{ t('skins.noCapes') }}
           </p>
         </section>
 
@@ -609,41 +606,46 @@ function capeStyle(texture: string, width = 30) {
     </div>
 
     <!-- Dialoge -------------------------------------------------------------------- -->
-    <BaseDialog v-if="adding" title="Skin hinzufügen" @close="adding = false">
-      <label class="label" for="skin-name">Name</label>
-      <input id="skin-name" v-model="newName" class="field" maxlength="48" placeholder="z. B. Winter-Skin" autofocus @keydown.enter="addSkin" />
-      <p class="label mt-4">Modell</p>
+    <BaseDialog v-if="adding" :title="t('skins.add')" @close="adding = false">
+      <label class="label" for="skin-name">{{ t('common.labels.name') }}</label>
+      <input
+        id="skin-name"
+        v-model="newName"
+        class="field"
+        maxlength="48"
+        :placeholder="t('skins.addDialog.namePlaceholder')"
+        autofocus
+        @keydown.enter="addSkin"
+      />
+      <p class="label mt-4">{{ t('skins.model') }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button
-          v-for="v in ([['classic', 'Klassisch', '4 Pixel breite Arme (Steve)'], ['slim', 'Slim', '3 Pixel breite Arme (Alex)']] as const)"
-          :key="v[0]"
+          v-for="v in skinVariants"
+          :key="v"
           class="rounded-lg border px-3 py-2.5 text-left transition-colors"
-          :class="newVariant === v[0] ? 'border-redstone-500 bg-redstone-900/40' : 'border-base-700 hover:border-base-600'"
-          :aria-pressed="newVariant === v[0]"
-          @click="newVariant = v[0]"
+          :class="newVariant === v ? 'border-redstone-500 bg-redstone-900/40' : 'border-base-700 hover:border-base-600'"
+          :aria-pressed="newVariant === v"
+          @click="newVariant = v"
         >
-          <span class="block text-sm font-semibold">{{ v[1] }}</span>
-          <span class="block text-xs text-base-400">{{ v[2] }}</span>
+          <span class="block text-sm font-semibold">{{ t(`skins.variants.${v}`) }}</span>
+          <span class="block text-xs text-base-400">{{ t(`skins.variantHints.${v}`) }}</span>
         </button>
       </div>
-      <p class="mt-4 text-xs text-base-400">
-        Danach öffnet sich der Dateidialog. Erlaubt sind PNG-Dateien mit 64×64 (oder 64×32 für alte Skins).
-      </p>
+      <p class="mt-4 text-xs text-base-400">{{ t('skins.addDialog.fileHint') }}</p>
       <p v-if="formError" role="alert" class="mt-2 text-xs text-redstone-300">{{ formError }}</p>
       <template #actions>
-        <button class="btn btn-ghost" @click="adding = false">Abbrechen</button>
-        <button class="btn btn-primary" @click="addSkin">Datei wählen</button>
+        <button class="btn btn-ghost" @click="adding = false">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-primary" @click="addSkin">{{ t('skins.addDialog.chooseFile') }}</button>
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="toDelete" title="Skin löschen?" @close="toDelete = null">
-      <p class="text-sm text-base-200">
-        <strong class="text-base-50">{{ toDelete.name }}</strong> wird aus deiner Sammlung entfernt. Dein getragener
-        Skin ändert sich dadurch nicht.
-      </p>
+    <BaseDialog v-if="toDelete" :title="t('skins.deleteDialog.title')" @close="toDelete = null">
+      <i18n-t keypath="skins.deleteDialog.text" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ toDelete.name }}</strong></template>
+      </i18n-t>
       <template #actions>
-        <button class="btn btn-ghost" @click="toDelete = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmDelete">Löschen</button>
+        <button class="btn btn-ghost" @click="toDelete = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmDelete">{{ t('common.actions.delete') }}</button>
       </template>
     </BaseDialog>
   </div>

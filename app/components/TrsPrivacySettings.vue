@@ -29,7 +29,7 @@ async function toggleServices(on: boolean) {
   switching.value = true
   try {
     await trs.setConsent(false)
-    toasts.ok('TRS-Dienste ausgeschaltet – der Launcher sendet nichts mehr an den TRS-Server.')
+    toasts.ok(t('trsPrivacy.turnedOff'))
   } catch (e) {
     toasts.error(e)
   } finally {
@@ -54,7 +54,7 @@ async function deleteAll() {
   try {
     await trs.deleteAll()
     confirmDelete.value = false
-    toasts.ok('Alle TRS-Daten dieses Accounts sind gelöscht. Die TRS-Dienste sind jetzt aus.')
+    toasts.ok(t('trsPrivacy.delete.done'))
   } catch (e) {
     toasts.error(e)
   } finally {
@@ -69,85 +69,81 @@ function openPrivacy() {
 
 <template>
   <div class="mt-6">
-    <h3 class="section-heading">TRS-Dienste</h3>
+    <h3 class="section-heading">{{ t('trsPrivacy.heading') }}</h3>
     <p class="mb-2 text-xs text-base-400">
-      Umhänge, Freunde und Online-Status über den TRS-Server.
-      <button class="text-redstone-300 hover:underline" @click="openPrivacy">Was wird gespeichert?</button>
+      {{ t('trsPrivacy.intro') }}
+      <button class="text-redstone-300 hover:underline" @click="openPrivacy">{{ t('trsPrivacy.whatStored') }}</button>
     </p>
 
-    <SettingRow
-      title="TRS-Dienste nutzen"
-      description="Aus = der Launcher sendet nichts an den TRS-Server und meldet dich dort ab. Im Spiel nutzt der TRS Client die Dienste dann auch nicht."
-    >
+    <SettingRow :title="t('trsPrivacy.services.title')" :description="t('trsPrivacy.services.description')">
       <ToggleSwitch
         :model-value="trs.enabled"
-        label="TRS-Dienste nutzen"
+        :label="t('trsPrivacy.services.title')"
         :disabled="switching || !trs.status"
         @update:model-value="toggleServices"
       />
     </SettingRow>
 
     <template v-if="trs.enabled">
-      <p v-if="!accounts.active" class="mt-2 text-xs text-base-400">Melde dich mit einem Minecraft-Account an, um diese Einstellungen zu ändern.</p>
+      <p v-if="!accounts.active" class="mt-2 text-xs text-base-400">{{ t('trsPrivacy.noAccount') }}</p>
       <p v-else-if="!settings" class="mt-2 text-xs text-base-400">
-        {{ trs.problem === 'offline' ? 'Der TRS-Server ist gerade nicht erreichbar.' : 'Lade Einstellungen …' }}
+        {{ trs.problem === 'offline' ? t('trsPrivacy.offline') : t('trsPrivacy.loading') }}
       </p>
       <template v-else>
-        <p class="mt-3 mb-1 text-[11px] text-base-600">Gilt für {{ trs.me?.name }} – jeder Account hat eigene Einstellungen.</p>
-        <SettingRow title="TRS-Symbol zeigen" description="Andere TRS-Spieler sehen im Spiel, dass du TRS nutzt.">
+        <p class="mt-3 mb-1 text-[11px] text-base-600">{{ t('trsPrivacy.perAccount', { name: trs.me?.name ?? '' }) }}</p>
+        <SettingRow :title="t('trsPrivacy.badge.title')" :description="t('trsPrivacy.badge.description')">
           <ToggleSwitch
             :model-value="settings.showBadge"
-            label="TRS-Symbol zeigen"
+            :label="t('trsPrivacy.badge.title')"
             :disabled="saving !== null"
             @update:model-value="update('showBadge', $event)"
           />
         </SettingRow>
-        <SettingRow title="Umhang für andere sichtbar" description="Aus = nur du siehst deinen TRS-Umhang.">
+        <SettingRow :title="t('trsPrivacy.cape.title')" :description="t('trsPrivacy.cape.description')">
           <ToggleSwitch
             :model-value="settings.showCapeToOthers"
-            label="Umhang für andere sichtbar"
+            :label="t('trsPrivacy.cape.title')"
             :disabled="saving !== null"
             @update:model-value="update('showCapeToOthers', $event)"
           />
         </SettingRow>
-        <SettingRow title="Online-Status" description="Wer sieht, ob du online bist und was du spielst.">
+        <SettingRow :title="t('trsPrivacy.presence.title')" :description="t('trsPrivacy.presence.description')">
           <select
             class="field w-40 py-1.5"
             :value="settings.presenceVisibility"
             :disabled="saving !== null"
-            aria-label="Online-Status sichtbar für"
+            :aria-label="t('trsPrivacy.presence.label')"
             @change="update('presenceVisibility', ($event.target as HTMLSelectElement).value === 'nobody' ? 'nobody' : 'friends')"
           >
-            <option value="friends">Freunde</option>
-            <option value="nobody">Niemand</option>
+            <option value="friends">{{ t('trsPrivacy.presence.friends') }}</option>
+            <option value="nobody">{{ t('trsPrivacy.presence.nobody') }}</option>
           </select>
         </SettingRow>
-        <SettingRow title="Server teilen" description="Freunde sehen, auf welchem Server du spielst, und können beitreten.">
+        <SettingRow :title="t('trsPrivacy.server.title')" :description="t('trsPrivacy.server.description')">
           <ToggleSwitch
             :model-value="settings.shareServer"
-            label="Server teilen"
+            :label="t('trsPrivacy.server.title')"
             :disabled="saving !== null"
             @update:model-value="update('shareServer', $event)"
           />
         </SettingRow>
 
         <SettingRow
-          title="Alle TRS-Daten löschen"
-          description="Löscht dein TRS-Konto mit Umhängen, Uploads, Codes, Freunden und Online-Status sofort vom Server. Danach sind die TRS-Dienste aus."
+          :title="t('trsPrivacy.delete.title')"
+          :description="t('trsPrivacy.delete.description')"
           danger
           stacked
         >
-          <button v-if="!confirmDelete" class="btn btn-danger" data-testid="trs-delete" @click="confirmDelete = true">Alle TRS-Daten löschen …</button>
+          <button v-if="!confirmDelete" class="btn btn-danger" data-testid="trs-delete" @click="confirmDelete = true">{{ t('trsPrivacy.delete.button') }}</button>
           <div v-else class="rounded-lg border border-redstone-600/50 bg-redstone-900/30 px-3 py-3" role="alert">
-            <p class="text-sm text-redstone-300">
-              Wirklich alles von <strong>{{ trs.me?.name }}</strong> löschen? Freigeschaltete Umhänge und Freunde sind
-              danach weg – das lässt sich nicht rückgängig machen.
-            </p>
+            <i18n-t keypath="trsPrivacy.delete.confirm" tag="p" scope="global" class="text-sm text-redstone-300">
+              <template #name><strong>{{ trs.me?.name }}</strong></template>
+            </i18n-t>
             <div class="mt-3 flex gap-2">
               <button class="btn btn-danger" :disabled="deleting" data-testid="trs-delete-confirm" @click="deleteAll">
-                {{ deleting ? 'Lösche …' : 'Ja, endgültig löschen' }}
+                {{ deleting ? t('trsPrivacy.delete.deleting') : t('trsPrivacy.delete.confirmButton') }}
               </button>
-              <button class="btn btn-ghost" :disabled="deleting" @click="confirmDelete = false">Abbrechen</button>
+              <button class="btn btn-ghost" :disabled="deleting" @click="confirmDelete = false">{{ t('common.actions.cancel') }}</button>
             </div>
           </div>
         </SettingRow>

@@ -12,13 +12,20 @@ export default defineNuxtConfig({
     pageTransition: { name: "page", mode: "out-in" },
     head: {
       title: 'TRS Launcher',
-      htmlAttrs: { lang: 'de' },
+      htmlAttrs: { lang: 'en' },
     },
   },
   devServer: { port: 3000 },
   ignore: ['**/src-tauri/**'],
   vite: {
     clearScreen: false,
+    // vue-i18n: nur Composition API; Nachrichten werden ohne eval übersetzt (CSP bleibt streng).
+    define: {
+      __VUE_I18N_FULL_INSTALL__: true,
+      __VUE_I18N_LEGACY_API__: false,
+      __INTLIFY_PROD_DEVTOOLS__: false,
+      __INTLIFY_DROP_MESSAGE_COMPILER__: false,
+    },
     envPrefix: ['VITE_', 'TAURI_'],
     server: {
       strictPort: true,

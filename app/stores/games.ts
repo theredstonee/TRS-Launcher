@@ -33,7 +33,7 @@ export const useGamesStore = defineStore('games', () => {
   function onEvent(event: GameEvent) {
     // Hook oder Synchronisierung nach dem Beenden fehlgeschlagen.
     if (event.type === 'notice') {
-      useToasts().error(event.message)
+      useToasts().error(userErrorText(event))
       return
     }
     const s = state(event.instanceId)
@@ -48,7 +48,7 @@ export const useGamesStore = defineStore('games', () => {
       s.phase = 'idle'
       s.startedAt = null
       s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis }
-      if (event.crashed) useToasts().error(event.diagnosis?.message ?? 'Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache.')
+      if (event.crashed) useToasts().error(event.diagnosis ? userErrorText(event.diagnosis) : t('game.crashed'))
       // Spielzeit und "zuletzt gespielt" haben sich geändert.
       useInstancesStore().load()
     }
@@ -90,7 +90,7 @@ export const useGamesStore = defineStore('games', () => {
         key: taskKey('launch', id),
         kind: 'launch',
         title: instance?.name ?? id,
-        stage: 'Minecraft wird vorbereitet',
+        stage: t('game.preparing'),
         instanceId: id,
         cancellable: true,
         pausable: true,
@@ -104,7 +104,7 @@ export const useGamesStore = defineStore('games', () => {
           joinServer,
           (p) => {
             s.progress = p
-            ctx.progress(overallPercent(p.stage, p.percent), stageLabels[p.stage])
+            ctx.progress(overallPercent(p.stage, p.percent), stageLabel(p.stage))
             // Ab hier startet das Spiel – nichts mehr anzuhalten.
             if (p.stage === 'starting') ctx.update({ cancellable: false, pausable: false })
           },

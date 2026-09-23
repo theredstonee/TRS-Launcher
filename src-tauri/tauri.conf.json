@@ -68,9 +68,19 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": [
+          "English",
           "German",
-          "English"
-        ]
+          "Spanish",
+          "French",
+          "Polish",
+          "PortugueseBR",
+          "Turkish",
+          "Dutch"
+        ],
+        "displayLanguageSelector": true,
+        "customLanguageFiles": {
+          "Polish": "nsis/Polish.nsh"
+        }
       },
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

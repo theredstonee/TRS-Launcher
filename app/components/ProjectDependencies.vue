@@ -10,14 +10,13 @@ const error = ref<string | null>(null)
 
 const groups = computed(() => {
   const deps = (props.version?.dependencies ?? []).filter((d) => d.projectId)
-  const order: [string, string][] = [
-    ['required', 'Benötigt'],
-    ['optional', 'Optional'],
-    ['incompatible', 'Nicht kompatibel'],
-    ['embedded', 'Eingebaut'],
-  ]
+  const order = ['required', 'optional', 'incompatible', 'embedded'] as const
   return order
-    .map(([type, label]) => ({ type, label, ids: deps.filter((d) => d.dependencyType === type).map((d) => d.projectId!) }))
+    .map((type) => ({
+      type,
+      label: t(`project.dependencies.group.${type}`),
+      ids: deps.filter((d) => d.dependencyType === type).map((d) => d.projectId!),
+    }))
     .filter((g) => g.ids.length)
 })
 
@@ -50,15 +49,14 @@ const tone: Record<string, string> = {
 
 <template>
   <div>
-    <p v-if="!version" class="card px-4 py-10 text-center text-sm text-base-400">Keine Version zum Anzeigen.</p>
+    <p v-if="!version" class="card px-4 py-10 text-center text-sm text-base-400">{{ t('project.dependencies.noVersion') }}</p>
     <p v-else-if="!groups.length" class="card px-4 py-10 text-center text-sm text-base-400">
-      Version {{ version.versionNumber }} braucht keine weiteren Projekte.
+      {{ t('project.dependencies.none', { version: version.versionNumber }) }}
     </p>
     <template v-else>
-      <p class="mb-3 text-xs text-base-400">
-        Für Version <span class="font-mono text-base-200">{{ version.versionNumber }}</span>. Benötigte Abhängigkeiten installiert der
-        Launcher automatisch mit.
-      </p>
+      <i18n-t keypath="project.dependencies.intro" tag="p" scope="global" class="mb-3 text-xs text-base-400">
+        <template #version><span class="font-mono text-base-200">{{ version.versionNumber }}</span></template>
+      </i18n-t>
       <p v-if="error" role="alert" class="mb-3 text-sm text-redstone-300">{{ error }}</p>
       <section v-for="g in groups" :key="g.type" class="mb-5">
         <h3 class="mb-2 text-xs font-medium text-base-400">{{ g.label }}</h3>

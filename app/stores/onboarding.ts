@@ -24,6 +24,8 @@ function writeDone(done: boolean) {
 /** Steuert den Einrichtungs-Assistenten beim ersten Start. */
 export const useOnboardingStore = defineStore('onboarding', () => {
   const open = ref(false)
+  /** Echter erster Start (nicht „Einrichtung erneut starten“) – dann wird die Windows-Sprache vorgeschlagen. */
+  const firstRun = ref(false)
 
   /**
    * Nur aufrufen, wenn Accounts UND Instanzen geladen sind – sonst würde der
@@ -35,6 +37,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     if (!accounts.loaded || !instances.loaded) return
     if (accounts.items.length || instances.items.length) return
     if (readDone()) return
+    firstRun.value = true
     open.value = true
   }
 
@@ -47,8 +50,9 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   /** Aus den Einstellungen: Merker löschen und neu starten. */
   function restart() {
     writeDone(false)
+    firstRun.value = false
     open.value = true
   }
 
-  return { open, openIfFirstRun, finish, restart }
+  return { open, firstRun, openIfFirstRun, finish, restart }
 })

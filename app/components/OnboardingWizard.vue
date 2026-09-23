@@ -1,19 +1,16 @@
 <script setup lang="ts">
+import type { Locale } from '~/utils/i18n'
 import type { ImportCandidate, Instance, LoaderKind } from '~/types'
 
 // Einrichtung beim ersten Start: anmelden, andere Launcher übernehmen, erste Instanz.
 // Jeder Schritt ist überspringbar; Escape beendet den Assistenten.
 
-type StepKey = 'welcome' | 'login' | 'import' | 'instance' | 'done'
+type StepKey = 'language' | 'welcome' | 'login' | 'import' | 'instance' | 'done'
 type Preset = 'vanilla' | 'fabric' | 'custom'
 
-const steps: { key: StepKey; label: string }[] = [
-  { key: 'welcome', label: 'Willkommen' },
-  { key: 'login', label: 'Anmelden' },
-  { key: 'import', label: 'Importieren' },
-  { key: 'instance', label: 'Erste Instanz' },
-  { key: 'done', label: 'Fertig' },
-]
+/** Reihenfolge der Schritte; die Beschriftung kommt aus `onboarding.steps.<key>`. */
+const stepOrder: StepKey[] = ['language', 'welcome', 'login', 'import', 'instance', 'done']
+const steps = computed(() => stepOrder.map((key) => ({ key, label: t(`onboarding.steps.${key}`) })))
 
 const onboarding = useOnboardingStore()
 const accounts = useAccountsStore()
@@ -23,8 +20,8 @@ const games = useGamesStore()
 const toasts = useToasts()
 
 const root = ref<HTMLElement | null>(null)
-const step = ref<StepKey>('welcome')
-const stepIndex = computed(() => steps.findIndex((s) => s.key === step.value))
+const step = ref<StepKey>('language')
+const stepIndex = computed(() => stepOrder.indexOf(step.value))
 
 // --- Anmelden ---------------------------------------------------------------
 const loggingIn = ref(false)
@@ -84,7 +81,7 @@ async function runImport(candidate: ImportCandidate) {
     imported.value = new Set(imported.value).add(candidate.id)
     latestInstance.value = instance
     await instances.load()
-    toasts.ok(`„${instance.name}“ importiert`)
+    toasts.ok(t('onboarding.import.importedToast', { name: instance.name }))
   } catch (e) {
     importError.value = errorMessage(e)
   } finally {
@@ -142,7 +139,7 @@ async function createInstance() {
       creating.value = 'pack'
       try {
         const files = await backend.installPerformancePack(instance.id)
-        toasts.ok(`Performance-Paket installiert (${files.length} Dateien)`)
+        toasts.ok(t('onboarding.instance.packInstalled', files.length))
       } catch (e) {
         // Die Instanz steht trotzdem – das Paket lässt sich später unter „Inhalte“ nachinstallieren.
         toasts.error(e)
@@ -166,28 +163,28 @@ const presetCards = computed(() => [
   {
     key: 'vanilla' as const,
     title: 'Vanilla',
-    text: 'Das Spiel so, wie Mojang es ausliefert.',
+    text: t('onboarding.instance.vanillaText'),
     version: latestRelease.value,
   },
   {
     key: 'fabric' as const,
-    title: 'Fabric + Performance',
-    text: 'Mit Sodium, Lithium und Co. für mehr FPS.',
+    title: t('onboarding.instance.fabricTitle'),
+    text: t('onboarding.instance.fabricText'),
     version: latestRelease.value,
   },
   {
     key: 'custom' as const,
-    title: 'Eigene Version',
-    text: 'Version und Modloader selbst wählen.',
+    title: t('onboarding.instance.customTitle'),
+    text: t('onboarding.instance.customText'),
     version: null,
   },
 ])
 
 const createLabel = computed(() => {
-  if (preset.value === 'custom') return 'Version wählen'
-  if (creating.value === 'pack') return 'Installiere Performance-Paket …'
-  if (creating.value === 'create') return 'Erstelle …'
-  return 'Instanz erstellen'
+  if (preset.value === 'custom') return t('onboarding.instance.chooseVersion')
+  if (creating.value === 'pack') return t('onboarding.instance.installingPack')
+  if (creating.value === 'create') return t('onboarding.instance.creating')
+  return t('onboarding.instance.create')
 })
 
 // --- Fertig -----------------------------------------------------------------
@@ -200,6 +197,32 @@ function finish(play: boolean) {
   if (play && id) games.launch(id)
 }
 
+// --- Sprache ----------------------------------------------------------------
+// Erster Start: die Windows-Sprache vorschlagen (sonst Englisch) und gleich
+// übernehmen; bei „Einrichtung erneut starten“ die eingestellte Sprache.
+const settings = useSettingsStore()
+const language = ref<Locale>(currentLocale.value)
+const detected = ref(false)
+
+async function chooseLanguage(code: Locale) {
+  language.value = code
+  try {
+    await settings.setLanguage(code)
+  } catch (e) {
+    toasts.error(e)
+  }
+}
+
+onMounted(async () => {
+  if (!onboarding.firstRun) {
+    language.value = settings.current?.ui.language ?? currentLocale.value
+    return
+  }
+  const code = detectSystemLocale()
+  detected.value = code !== 'en'
+  await chooseLanguage(code)
+})
+
 // --- Navigation -------------------------------------------------------------
 function goTo(key: StepKey) {
   step.value = key
@@ -208,7 +231,8 @@ function goTo(key: StepKey) {
 }
 
 function next() {
-  if (step.value === 'welcome') goTo('login')
+  if (step.value === 'language') goTo('welcome')
+  else if (step.value === 'welcome') goTo('login')
   else if (step.value === 'login') goTo('import')
   // Wer schon eine Instanz hat (z. B. gerade importiert), braucht keine neue.
   else if (step.value === 'import') goTo(instances.items.length ? 'done' : 'instance')
@@ -294,50 +318,56 @@ onBeforeUnmount(() => {
             {{ s.label }}
           </li>
         </ol>
-        <button v-if="step !== 'welcome' && step !== 'done'" class="shrink-0 text-xs text-base-400 hover:text-base-50" @click="skip">
-          Einrichtung überspringen
+        <button v-if="step !== 'language' && step !== 'welcome' && step !== 'done'" class="shrink-0 text-xs text-base-400 hover:text-base-50" @click="skip">
+          {{ t('onboarding.skipSetup') }}
         </button>
       </div>
-      <RedstoneWire class="mt-3" :segments="30" :percent="((stepIndex + 1) / steps.length) * 100" />
+      <RedstoneWire class="mt-3" :segments="30" :percent="((stepIndex + 1) / stepOrder.length) * 100" />
     </header>
 
     <div class="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-10">
       <Transition name="step" mode="out-in" @after-enter="focusPrimary">
-        <!-- 1 · Willkommen -->
-        <div v-if="step === 'welcome'" key="welcome">
-          <h1 id="onboarding-title" class="display text-6xl leading-tight text-base-50">TRS Launcher</h1>
-          <p class="mt-3 max-w-lg text-base-200">
-            Jede Minecraft-Version, jeder Modloader, Mods und Modpacks – an einem Ort und mit einem Klick im Spiel.
-          </p>
-          <div class="mt-8 flex gap-3">
-            <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="next">Los geht's</button>
-            <button class="btn btn-ghost h-11 px-5" @click="skip">Überspringen</button>
+        <!-- 1 · Sprache -->
+        <div v-if="step === 'language'" key="language">
+          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('language.onboardingTitle') }}</h1>
+          <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('language.onboardingText') }}</p>
+          <p v-if="detected" class="mt-1 text-xs text-base-600">{{ t('language.detected') }}</p>
+          <div class="onboarding-languages mt-6">
+            <LanguagePicker :model-value="language" :search="false" compact @update:model-value="chooseLanguage" />
+          </div>
+          <div class="mt-6 flex gap-3">
+            <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="next">{{ t('common.actions.continue') }}</button>
+            <button class="btn btn-ghost h-11 px-5" @click="skip">{{ t('common.actions.skip') }}</button>
           </div>
         </div>
 
-        <!-- 2 · Anmelden -->
+        <!-- 2 · Willkommen -->
+        <div v-else-if="step === 'welcome'" key="welcome">
+          <h1 id="onboarding-title" class="display text-6xl leading-tight text-base-50">TRS Launcher</h1>
+          <p class="mt-3 max-w-lg text-base-200">{{ t('onboarding.welcome.text') }}</p>
+          <div class="mt-8 flex gap-3">
+            <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="next">{{ t('onboarding.welcome.start') }}</button>
+            <button class="btn btn-ghost h-11 px-5" @click="skip">{{ t('common.actions.skip') }}</button>
+          </div>
+        </div>
+
+        <!-- 3 · Anmelden -->
         <div v-else-if="step === 'login'" key="login">
-          <h1 id="onboarding-title" class="display text-4xl leading-tight">Anmelden</h1>
-          <p class="mt-2 max-w-lg text-sm text-base-400">
-            Mit dem Microsoft-Konto, mit dem du Minecraft gekauft hast. Dein Passwort gibst du nur bei Microsoft im
-            Browser ein – der Launcher bekommt es nie zu sehen.
-          </p>
+          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('onboarding.login.title') }}</h1>
+          <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('onboarding.login.text') }}</p>
 
           <div v-if="accounts.active" class="card mt-6 flex items-center gap-3 p-4">
             <SkinHead :skin-url="accounts.active.skinUrl" :name="accounts.active.name" :size="48" />
             <div class="min-w-0">
               <p class="truncate font-medium">{{ accounts.active.name }}</p>
-              <p class="text-xs text-ok">Angemeldet</p>
+              <p class="text-xs text-ok">{{ t('onboarding.login.signedIn') }}</p>
             </div>
           </div>
 
           <div v-else-if="loggingIn" class="card mt-6 p-4">
-            <p class="text-sm text-base-200">
-              Die Anmeldung wurde in deinem Browser geöffnet. Schließe sie dort ab – der Launcher macht dann
-              automatisch weiter.
-            </p>
+            <p class="text-sm text-base-200">{{ t('accounts.login.browserOpened') }}</p>
             <p class="mt-3 flex items-center gap-2 text-xs text-base-400">
-              <span class="size-2 animate-pulse rounded-full bg-redstone-400" /> Warte auf Microsoft …
+              <span class="size-2 animate-pulse rounded-full bg-redstone-400" /> {{ t('accounts.login.waiting') }}
             </p>
           </div>
 
@@ -348,73 +378,64 @@ onBeforeUnmount(() => {
             :class="notApproved ? 'border-warn/40 text-warn' : 'border-redstone-600/50 text-redstone-300'"
           >
             {{ loginError }}
-            <p v-if="notApproved" class="mt-1 text-xs text-base-400">
-              Das ist kein Fehler im Launcher: Microsoft-Login und Xbox-Anmeldung haben funktioniert, nur Mojangs
-              Freigabe der App steht noch aus. Sobald sie da ist, klappt die Anmeldung ohne Update.
-            </p>
+            <p v-if="notApproved" class="mt-1 text-xs text-base-400">{{ t('accounts.login.notApprovedHint') }}</p>
           </div>
 
           <div class="mt-8 flex gap-3">
             <template v-if="accounts.active">
-              <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="next">Weiter</button>
+              <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="next">{{ t('common.actions.continue') }}</button>
             </template>
             <template v-else-if="loggingIn">
-              <button data-primary class="btn btn-ghost h-11 px-5" @click="cancelLogin">Abbrechen</button>
+              <button data-primary class="btn btn-ghost h-11 px-5" @click="cancelLogin">{{ t('common.actions.cancel') }}</button>
             </template>
             <template v-else>
-              <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="login">Mit Microsoft anmelden</button>
-              <button class="btn btn-ghost h-11 px-5" @click="next">Später</button>
+              <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="login">{{ t('accounts.login.signInMicrosoft') }}</button>
+              <button class="btn btn-ghost h-11 px-5" @click="next">{{ t('common.actions.later') }}</button>
             </template>
           </div>
         </div>
 
         <!-- 3 · Importieren -->
         <div v-else-if="step === 'import'" key="import">
-          <h1 id="onboarding-title" class="display text-4xl leading-tight">Importieren</h1>
-          <p class="mt-2 max-w-lg text-sm text-base-400">
-            Welten, Mods, Einstellungen und Server aus anderen Launchern übernehmen. Das Original bleibt unverändert,
-            Anmeldedaten werden nie übernommen.
-          </p>
+          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('onboarding.import.title') }}</h1>
+          <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('onboarding.import.text') }}</p>
 
           <div v-if="scanning" class="mt-6 space-y-2">
             <div v-for="i in 3" :key="i" class="skeleton h-14" />
           </div>
           <p v-else-if="!candidates.length && !importError" class="card mt-6 px-4 py-6 text-center text-sm text-base-400">
-            Keine anderen Launcher gefunden – du kannst direkt weitermachen.
+            {{ t('onboarding.import.none') }}
           </p>
           <ul v-else-if="candidates.length" class="-mr-2 mt-6 max-h-80 space-y-1.5 overflow-y-auto pr-2">
             <li v-for="c in candidates" :key="c.id" class="flex items-center gap-3 rounded-md border border-base-700 bg-base-900 px-3 py-2">
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium">{{ c.name }}</p>
                 <p class="truncate text-xs text-base-400">
-                  {{ importSourceLabels[c.source] }} · <span class="font-mono text-base-200">{{ c.gameVersion }}</span> {{ loaderText(c) }}
-                  <template v-if="c.modCount"> · {{ c.modCount }} Mods</template>
-                  <template v-if="c.worldCount"> · {{ c.worldCount }} {{ c.worldCount === 1 ? 'Welt' : 'Welten' }}</template>
+                  {{ importSourceLabel(c.source) }} · <span class="font-mono text-base-200">{{ c.gameVersion }}</span> {{ loaderText(c) }}
+                  <template v-if="c.modCount"> · {{ t('onboarding.import.modCount', c.modCount) }}</template>
+                  <template v-if="c.worldCount"> · {{ t('onboarding.import.worldCount', c.worldCount) }}</template>
                 </p>
                 <RedstoneWire v-if="importing?.id === c.id" :percent="importing.percent" :segments="28" class="mt-1.5" />
               </div>
-              <span v-if="imported.has(c.id)" class="shrink-0 text-xs text-ok">Importiert</span>
+              <span v-if="imported.has(c.id)" class="shrink-0 text-xs text-ok">{{ t('onboarding.import.imported') }}</span>
               <span v-else-if="importing?.id === c.id" class="display shrink-0 text-sm tabular-nums text-redstone-300">{{ importing.percent }} %</span>
-              <button v-else class="btn btn-ghost shrink-0 px-3 py-1.5 text-xs" :disabled="!!importing" @click="runImport(c)">Importieren</button>
+              <button v-else class="btn btn-ghost shrink-0 px-3 py-1.5 text-xs" :disabled="!!importing" @click="runImport(c)">{{ t('common.actions.import') }}</button>
             </li>
           </ul>
 
           <p v-if="importError" role="alert" class="mt-3 text-sm text-redstone-300">{{ importError }}</p>
 
           <div class="mt-8 flex gap-3">
-            <button data-primary class="btn btn-primary h-11 px-6 text-base" :disabled="!!importing" @click="next">Weiter</button>
+            <button data-primary class="btn btn-primary h-11 px-6 text-base" :disabled="!!importing" @click="next">{{ t('common.actions.continue') }}</button>
           </div>
         </div>
 
         <!-- 4 · Erste Instanz -->
         <div v-else-if="step === 'instance'" key="instance">
-          <h1 id="onboarding-title" class="display text-4xl leading-tight">Erste Instanz</h1>
-          <p class="mt-2 max-w-lg text-sm text-base-400">
-            Eine Instanz ist eine eigene Minecraft-Installation mit Version, Mods und Welten. Du kannst später
-            beliebig viele weitere anlegen.
-          </p>
+          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('onboarding.instance.title') }}</h1>
+          <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('onboarding.instance.text') }}</p>
 
-          <div role="radiogroup" aria-label="Vorlage" class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div role="radiogroup" :aria-label="t('onboarding.instance.presetLabel')" class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button
               v-for="card in presetCards"
               :key="card.key"
@@ -435,7 +456,7 @@ onBeforeUnmount(() => {
                   <span v-if="card.version" class="display text-lg text-redstone-300">{{ card.version }}</span>
                   <span v-else-if="!manifestError" class="skeleton block h-5 w-16" />
                 </template>
-                <span v-else class="text-xs text-base-400">Alle Versionen</span>
+                <span v-else class="text-xs text-base-400">{{ t('onboarding.instance.allVersions') }}</span>
               </span>
             </button>
           </div>
@@ -445,7 +466,7 @@ onBeforeUnmount(() => {
           </p>
           <p v-if="creating" role="status" class="mt-4 flex items-center gap-2 text-xs text-base-400">
             <span class="size-2 animate-pulse rounded-full bg-redstone-400" />
-            {{ creating === 'pack' ? 'Instanz steht – lade Performance-Mods von Modrinth …' : 'Lege Instanz an …' }}
+            {{ creating === 'pack' ? t('onboarding.instance.creatingPack') : t('onboarding.instance.creatingInstance') }}
           </p>
 
           <div class="mt-8 flex gap-3">
@@ -457,14 +478,14 @@ onBeforeUnmount(() => {
             >
               {{ createLabel }}
             </button>
-            <button class="btn btn-ghost h-11 px-5" :disabled="!!creating" @click="next">Später</button>
+            <button class="btn btn-ghost h-11 px-5" :disabled="!!creating" @click="next">{{ t('common.actions.later') }}</button>
           </div>
         </div>
 
         <!-- 5 · Fertig -->
         <div v-else key="done">
-          <h1 id="onboarding-title" class="display text-5xl leading-tight">Alles bereit</h1>
-          <p class="mt-2 text-sm text-base-400">Das hast du eingerichtet – alles lässt sich später jederzeit ändern.</p>
+          <h1 id="onboarding-title" class="display text-5xl leading-tight">{{ t('onboarding.done.title') }}</h1>
+          <p class="mt-2 text-sm text-base-400">{{ t('onboarding.done.text') }}</p>
 
           <ul class="mt-6 space-y-2">
             <li class="card flex items-center gap-3 p-3">
@@ -472,14 +493,14 @@ onBeforeUnmount(() => {
                 <SkinHead :skin-url="accounts.active.skinUrl" :name="accounts.active.name" :size="40" />
                 <div class="min-w-0">
                   <p class="truncate font-medium">{{ accounts.active.name }}</p>
-                  <p class="text-xs text-base-400">Account</p>
+                  <p class="text-xs text-base-400">{{ t('onboarding.done.account') }}</p>
                 </div>
               </template>
               <template v-else>
                 <span class="flex size-10 shrink-0 items-center justify-center rounded bg-base-800 text-base-400">–</span>
                 <div class="min-w-0">
-                  <p class="font-medium text-base-200">Nicht angemeldet</p>
-                  <p class="text-xs text-base-400">Unter Accounts kannst du das jederzeit nachholen.</p>
+                  <p class="font-medium text-base-200">{{ t('onboarding.done.notSignedIn') }}</p>
+                  <p class="text-xs text-base-400">{{ t('onboarding.done.notSignedInHint') }}</p>
                 </div>
               </template>
             </li>
@@ -498,18 +519,18 @@ onBeforeUnmount(() => {
               <template v-else>
                 <span class="flex size-10 shrink-0 items-center justify-center rounded bg-base-800 text-base-400">–</span>
                 <div class="min-w-0">
-                  <p class="font-medium text-base-200">Noch keine Instanz</p>
-                  <p class="text-xs text-base-400">Leg sie an, wann immer du willst – auf der Startseite oder unter Instanzen.</p>
+                  <p class="font-medium text-base-200">{{ t('onboarding.done.noInstance') }}</p>
+                  <p class="text-xs text-base-400">{{ t('onboarding.done.noInstanceHint') }}</p>
                 </div>
               </template>
             </li>
           </ul>
 
           <div class="mt-8 flex gap-3">
-            <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="finish(false)">Zur Startseite</button>
+            <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="finish(false)">{{ t('onboarding.done.home') }}</button>
             <button v-if="summaryInstance" class="btn btn-ghost h-11 px-5" @click="finish(true)">
               <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><path d="M7 4v16l13-8z" /></svg>
-              Jetzt spielen
+              {{ t('onboarding.done.playNow') }}
             </button>
           </div>
         </div>

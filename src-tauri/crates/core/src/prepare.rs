@@ -109,7 +109,7 @@ pub async fn prepare(
         Some(path) => {
             let path = PathBuf::from(path);
             if !path.is_file() {
-                return Err(Error::launch("Der eingestellte Java-Pfad existiert nicht."));
+                return Err(Error::launch(crate::msg!("prepare.javaPathMissing", "Der eingestellte Java-Pfad existiert nicht.")));
             }
             path
         }
@@ -130,7 +130,7 @@ pub async fn prepare(
         .downloads
         .as_ref()
         .and_then(|d| d.client.as_ref())
-        .ok_or_else(|| Error::launch("Diese Version enthält keinen Client-Download."))?;
+        .ok_or_else(|| Error::launch(crate::msg!("prepare.noClientDownload", "Diese Version enthält keinen Client-Download.")))?;
     let client_task =
         Task { url: client.url.clone(), path: client_jar.clone(), sha1: client.sha1.clone(), size: client.size };
 
@@ -173,7 +173,7 @@ pub async fn prepare(
     // Libraries ohne URL hat der Loader-Installer lokal erzeugt.
     if let Some(missing) = libraries.iter().find(|l| l.is_local() && !library_path(paths, l).is_file()) {
         tracing::error!("Lokale Library fehlt: {}", missing.path);
-        return Err(Error::launch("Eine vom Modloader erzeugte Datei fehlt. Bitte die Instanz erneut starten."));
+        return Err(Error::launch(crate::msg!("prepare.loaderFileMissing", "Eine vom Modloader erzeugte Datei fehlt. Bitte die Instanz erneut starten.")));
     }
     let mut tasks: Vec<Task> = libraries
         .iter()
@@ -282,10 +282,10 @@ fn validate_version(version: &VersionInfo) -> Result<()> {
         && version.assets.as_deref().is_none_or(is_safe_id)
         && version.asset_index.as_ref().is_none_or(|a| is_safe_id(&a.id));
     if !ids_ok {
-        return Err(Error::launch("Die Versions-Metadaten enthalten ungültige Bezeichner."));
+        return Err(Error::launch(crate::msg!("prepare.invalidIdentifiers", "Die Versions-Metadaten enthalten ungültige Bezeichner.")));
     }
     if version.main_class.is_none() {
-        return Err(Error::launch("Die Versions-Metadaten enthalten keine Hauptklasse."));
+        return Err(Error::launch(crate::msg!("launch.noMainClass", "Die Versions-Metadaten enthalten keine Hauptklasse.")));
     }
     Ok(())
 }
@@ -320,12 +320,12 @@ async fn install_assets(
     }
     let index: AssetIndex = fsutil::read_json(&index_file)
         .await?
-        .ok_or_else(|| Error::launch("Der Asset-Index fehlt."))?;
+        .ok_or_else(|| Error::launch(crate::msg!("prepare.assetIndexMissing", "Der Asset-Index fehlt.")))?;
 
     for (name, obj) in &index.objects {
         let hash_ok = obj.hash.len() == 40 && obj.hash.bytes().all(|b| b.is_ascii_hexdigit());
         if !hash_ok || !is_safe_asset_name(name) {
-            return Err(Error::launch("Der Asset-Index enthält ungültige Einträge."));
+            return Err(Error::launch(crate::msg!("prepare.assetIndexInvalid", "Der Asset-Index enthält ungültige Einträge.")));
         }
     }
 
@@ -391,12 +391,12 @@ async fn extract_natives(paths: &Paths, libraries: &[ResolvedLibrary], natives_d
         tokio::task::spawn_blocking(move || -> Result<()> {
             let file = std::fs::File::open(&jar).map_err(|e| Error::io(&jar, e))?;
             let mut archive = zip::ZipArchive::new(file)
-                .map_err(|e| Error::launch(format!("Natives-Archiv ist beschädigt: {e}")))?;
+                .map_err(|e| Error::launch(crate::msg!("prepare.nativesCorrupt", "Natives-Archiv ist beschädigt: {error}", error = e)))?;
 
             for i in 0..archive.len() {
                 let mut entry = archive
                     .by_index(i)
-                    .map_err(|e| Error::launch(format!("Natives-Archiv ist beschädigt: {e}")))?;
+                    .map_err(|e| Error::launch(crate::msg!("prepare.nativesCorrupt", "Natives-Archiv ist beschädigt: {error}", error = e)))?;
                 // `enclosed_name` verhindert Zip-Slip.
                 let Some(rel) = entry.enclosed_name() else { continue };
                 let rel_str = rel.to_string_lossy().replace('\\', "/");

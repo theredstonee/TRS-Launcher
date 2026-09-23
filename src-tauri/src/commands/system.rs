@@ -15,6 +15,7 @@ use trs_core::storage::{StorageStats, VerifyReport};
 use trs_core::upload::{self, UploadResult};
 
 use crate::LauncherState;
+use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 /// Zuletzt ins Fenster gezogene Dateien. Das Webview bekommt nur die Namen
@@ -69,7 +70,10 @@ pub async fn add_dropped_files(
     let instance = launcher.instances().get(&id).await?;
     let files = drops
         .take(token)
-        .ok_or_else(|| trs_core::Error::validation("Die gezogenen Dateien sind nicht mehr verfügbar – bitte erneut ziehen."))?;
+        .ok_or_else(|| trs_core::Error::validation(trs_core::msg!(
+            "commands.dropExpired",
+            "Die gezogenen Dateien sind nicht mehr verfügbar – bitte erneut ziehen."
+        )))?;
     Ok(upload::import_files(launcher.paths(), &instance, files).await?)
 }
 
@@ -82,11 +86,12 @@ pub async fn pick_content_files(
     id: String,
 ) -> CommandResult<Option<Vec<UploadResult>>> {
     let instance = launcher.instances().get(&id).await?;
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         app.dialog()
             .file()
-            .set_title("Mods, Ressourcenpakete oder Shader hinzufügen")
-            .add_filter("Minecraft-Inhalte", &["jar", "zip"])
+            .set_title(DialogText::AddContent.text(lang))
+            .add_filter(DialogText::MinecraftContent.text(lang), &["jar", "zip"])
             .blocking_pick_files()
     })
     .await
@@ -99,9 +104,10 @@ pub async fn pick_content_files(
 
 /// Wählt `java.exe`/`javaw.exe` im nativen Dialog. `None` = abgebrochen.
 #[tauri::command]
-pub async fn pick_java_path(app: AppHandle) -> CommandResult<Option<String>> {
+pub async fn pick_java_path(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Option<String>> {
+    let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog().file().set_title("java.exe oder javaw.exe wählen").add_filter("Java", &["exe"]).blocking_pick_file()
+        app.dialog().file().set_title(DialogText::PickJava.text(lang)).add_filter("Java", &["exe"]).blocking_pick_file()
     })
     .await
     .ok()
@@ -126,7 +132,10 @@ pub fn check_java(path: String) -> CommandResult<JavaCheck> {
     validate_java_path(&path)?;
     let exe = PathBuf::from(&path);
     if !exe.is_file() {
-        return Err(trs_core::Error::validation("Unter diesem Pfad gibt es keine Java-Datei.").into());
+        return Err(trs_core::Error::validation(trs_core::msg!(
+            "commands.noJavaAtPath",
+            "Unter diesem Pfad gibt es keine Java-Datei."
+        )).into());
     }
     let found = trs_core::java::inspect(&exe);
     Ok(JavaCheck { major: found.as_ref().map(|f| f.0), version: found.map(|f| f.1) })

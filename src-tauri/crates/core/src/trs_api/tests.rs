@@ -215,12 +215,14 @@ async fn rate_limits_and_errors_are_translated() {
     let err = trs.call_raw(&sessions, ACC, &Req::get("/v1/blocks")).await.unwrap_err();
     assert_eq!(err.kind(), "trs_rate_limited");
     assert!(err.public_message().contains("30 s"));
+    assert_eq!((err.message_code(), err.message_params()["seconds"].as_str()), ("trs.rateLimited", Some("30")));
     assert_eq!(server.hits("GET", "/v1/blocks").len(), 1);
 
     assert_eq!(trs.call_raw(&sessions, ACC, &Req::get("/v1/me")).await.unwrap_err().kind(), "trs_banned");
     let expired = trs.call_raw(&sessions, ACC, &Req::post("/v1/capes/redeem", json!({}))).await.unwrap_err();
     assert_eq!((expired.kind(), expired.code()), ("trs_api", Some("code_expired")));
     assert!(expired.public_message().contains("abgelaufen"));
+    assert_eq!(expired.to_user().code, "trsApi.code_expired");
     assert_eq!(trs.call_raw(&sessions, ACC, &Req::get("/v1/health")).await.unwrap_err().kind(), "trs_offline");
 }
 

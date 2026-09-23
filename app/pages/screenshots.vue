@@ -22,7 +22,7 @@ const key = (shot: GalleryShot) => `${shot.instanceId}/${shot.fileName}`
 const usedInstances = computed(() => {
   const seen = new Map<string, string>()
   for (const shot of shots.value) seen.set(shot.instanceId, shot.instanceName)
-  return [...seen].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  return [...seen].map(([id, name]) => ({ id, name })).sort((a, b) => compareText(a.name, b.name))
 })
 
 const visible = computed(() =>
@@ -32,8 +32,9 @@ const visible = computed(() =>
 /** Nach Aufnahmetag gruppiert – so liest sich die Galerie wie ein Tagebuch. */
 const groups = computed(() => {
   const map = new Map<string, GalleryShot[]>()
+  const dayFormat = new Intl.DateTimeFormat(intlLocale(), { dateStyle: 'full' })
   for (const shot of visible.value) {
-    const day = shot.takenAt ? new Date(shot.takenAt).toLocaleDateString('de', { dateStyle: 'full' }) : 'Ohne Datum'
+    const day = shot.takenAt ? dayFormat.format(new Date(shot.takenAt)) : t('screenshots.noDate')
     map.set(day, [...(map.get(day) ?? []), shot])
   }
   return [...map].map(([day, items]) => ({ day, items }))
@@ -140,7 +141,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 async function copy(shot: GalleryShot) {
   try {
     await backend.copyScreenshot(shot.instanceId, shot.fileName)
-    toasts.ok('Bild in die Zwischenablage kopiert')
+    toasts.ok(t('screenshots.toasts.copied'))
   } catch (e) {
     toasts.error(e)
   }
@@ -161,7 +162,7 @@ async function confirmDelete() {
     if (viewerIndex.value !== null) {
       viewerIndex.value = visible.value.length ? Math.min(viewerIndex.value, visible.value.length - 1) : null
     }
-    toasts.ok('In den Papierkorb gelegt')
+    toasts.ok(t('screenshots.toasts.trashed'))
   } catch (e) {
     toasts.error(e)
   }
@@ -170,12 +171,12 @@ async function confirmDelete() {
 
 <template>
   <div class="flex h-full min-h-0 flex-col p-6">
-    <PageHeader title="Screenshots" :subtitle="`${shots.length} Bilder aus allen Instanzen`">
-      <select v-if="usedInstances.length > 1" v-model="instanceFilter" class="field h-9 w-56 py-1" aria-label="Instanz">
-        <option value="all">Alle Instanzen</option>
+    <PageHeader :title="t('screenshots.title')" :subtitle="t('screenshots.subtitle', shots.length)">
+      <select v-if="usedInstances.length > 1" v-model="instanceFilter" class="field h-9 w-56 py-1" :aria-label="t('screenshots.instanceLabel')">
+        <option value="all">{{ t('screenshots.allInstances') }}</option>
         <option v-for="i in usedInstances" :key="i.id" :value="i.id">{{ i.name }}</option>
       </select>
-      <button class="btn-icon" title="Neu laden" aria-label="Neu laden" @click="load">
+      <button class="btn-icon" :title="t('screenshots.reload')" :aria-label="t('screenshots.reload')" @click="load">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5" /></svg>
       </button>
     </PageHeader>
@@ -189,8 +190,8 @@ async function confirmDelete() {
     <RedstoneEmpty
       v-else-if="!visible.length"
       :seed="0x44"
-      title="Noch keine Screenshots"
-      text="Drück im Spiel F2 – jedes Bild lässt hier eine Lampe mehr leuchten. Die Screenshots aller Instanzen sammeln sich an dieser Stelle."
+      :title="t('screenshots.empty.title')"
+      :text="t('screenshots.empty.text')"
     />
 
     <div v-else class="min-h-0 flex-1 overflow-y-auto pr-1">
@@ -203,7 +204,7 @@ async function confirmDelete() {
             :ref="(el) => observe(el as Element | null, shot)"
             class="group card card-hover overflow-hidden"
           >
-            <button class="block w-full" :title="`${shot.fileName} öffnen`" @click="openViewer(shot)">
+            <button class="block w-full" :title="t('screenshots.open', { name: shot.fileName })" @click="openViewer(shot)">
               <img
                 v-if="thumbs[key(shot)]"
                 :src="thumbs[key(shot)]"
@@ -218,13 +219,13 @@ async function confirmDelete() {
                 <p class="truncate text-[11px] text-base-600">{{ formatDate(shot.takenAt) }} · {{ formatBytes(shot.size) }}</p>
               </div>
               <div class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                <button class="btn-icon size-7" title="In die Zwischenablage kopieren" aria-label="Kopieren" @click="copy(shot)">
+                <button class="btn-icon size-7" :title="t('screenshots.copyTitle')" :aria-label="t('common.actions.copy')" @click="copy(shot)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1.5" /><path d="M5 15V5a1 1 0 0 1 1-1h9" /></svg>
                 </button>
-                <button class="btn-icon size-7" title="Im Ordner zeigen" aria-label="Im Ordner zeigen" @click="reveal(shot)">
+                <button class="btn-icon size-7" :title="t('screenshots.showInFolder')" :aria-label="t('screenshots.showInFolder')" @click="reveal(shot)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" /></svg>
                 </button>
-                <button class="btn-icon size-7 hover:text-redstone-300" title="Löschen" aria-label="Löschen" @click="toDelete = shot">
+                <button class="btn-icon size-7 hover:text-redstone-300" :title="t('common.actions.delete')" :aria-label="t('common.actions.delete')" @click="toDelete = shot">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
                 </button>
               </div>
@@ -240,7 +241,7 @@ async function confirmDelete() {
       class="fixed inset-0 z-50 flex flex-col bg-black/90 p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Screenshot"
+      :aria-label="t('screenshots.viewer.label')"
       @mousedown.self="viewerIndex = null"
     >
       <header class="flex items-center gap-3 px-2 pb-3 text-sm text-base-200">
@@ -249,38 +250,37 @@ async function confirmDelete() {
           <p class="truncate text-xs text-base-400">{{ current.instanceName }} · {{ formatDate(current.takenAt) }}</p>
         </div>
         <div class="ml-auto flex shrink-0 items-center gap-1.5">
-          <button class="btn btn-ghost py-1.5 text-xs" @click="copy(current)">Kopieren</button>
-          <button class="btn btn-ghost py-1.5 text-xs" @click="reveal(current)">Im Ordner zeigen</button>
-          <button class="btn btn-ghost py-1.5 text-xs hover:text-redstone-300" @click="toDelete = current">Löschen</button>
-          <button class="btn-icon" title="Schließen" aria-label="Vollbild schließen" @click="viewerIndex = null">
+          <button class="btn btn-ghost py-1.5 text-xs" @click="copy(current)">{{ t('common.actions.copy') }}</button>
+          <button class="btn btn-ghost py-1.5 text-xs" @click="reveal(current)">{{ t('screenshots.showInFolder') }}</button>
+          <button class="btn btn-ghost py-1.5 text-xs hover:text-redstone-300" @click="toDelete = current">{{ t('common.actions.delete') }}</button>
+          <button class="btn-icon" :title="t('common.actions.close')" :aria-label="t('screenshots.viewer.closeLabel')" @click="viewerIndex = null">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
       </header>
 
       <div class="relative flex min-h-0 flex-1 items-center justify-center" @mousedown.self="viewerIndex = null">
-        <button v-if="visible.length > 1" class="btn-icon absolute left-2 size-11" title="Vorheriges" aria-label="Vorheriges Bild" @click="step(-1)">
+        <button v-if="visible.length > 1" class="btn-icon absolute left-2 size-11" :title="t('screenshots.viewer.prev')" :aria-label="t('screenshots.viewer.prevLabel')" @click="step(-1)">
           <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
         <img v-if="full[key(current)]" :src="full[key(current)]" :alt="current.fileName" class="max-h-full max-w-full rounded-lg object-contain" />
         <div v-else class="skeleton h-3/4 w-3/4" />
-        <button v-if="visible.length > 1" class="btn-icon absolute right-2 size-11" title="Nächstes" aria-label="Nächstes Bild" @click="step(1)">
+        <button v-if="visible.length > 1" class="btn-icon absolute right-2 size-11" :title="t('screenshots.viewer.next')" :aria-label="t('screenshots.viewer.nextLabel')" @click="step(1)">
           <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>
       <p class="pt-2 text-center text-xs text-base-600">
-        Pfeiltasten zum Blättern · Esc schließt · „Kopieren“ legt das Bild zum Einfügen in die Zwischenablage
+        {{ t('screenshots.viewer.hint') }}
       </p>
     </div>
 
-    <BaseDialog v-if="toDelete" title="Screenshot löschen?" @close="toDelete = null">
-      <p class="text-sm text-base-200">
-        <strong class="text-base-50">{{ toDelete.fileName }}</strong> wandert in den Papierkorb von Windows – von dort
-        lässt er sich zurückholen.
-      </p>
+    <BaseDialog v-if="toDelete" :title="t('screenshots.deleteDialog.title')" @close="toDelete = null">
+      <i18n-t keypath="screenshots.deleteDialog.text" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ toDelete.fileName }}</strong></template>
+      </i18n-t>
       <template #actions>
-        <button class="btn btn-ghost" @click="toDelete = null">Abbrechen</button>
-        <button class="btn btn-danger" @click="confirmDelete">Löschen</button>
+        <button class="btn btn-ghost" @click="toDelete = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmDelete">{{ t('common.actions.delete') }}</button>
       </template>
     </BaseDialog>
   </div>

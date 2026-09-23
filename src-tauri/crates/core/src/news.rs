@@ -6,11 +6,13 @@
 //! (dann mit `stale: true`). Bilder lädt der Kern in seinen eigenen Cache – das
 //! Webview bekommt nur freigegebene lokale Dateien zu sehen.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::error::Msg;
 use crate::modrinth;
 use crate::paths::Paths;
 use crate::{Error, Launcher, Result, fsutil};
@@ -51,6 +53,13 @@ pub struct NewsItem {
     pub date: Option<DateTime<Utc>>,
     /// Einordnung, z. B. `Release`, `Snapshot`, `Mod`.
     pub tag: Option<String>,
+    /// Übersetzbare Fassung von `tag`, falls der Text von uns stammt
+    /// (`errors.<code>` im Frontend). Fehlt bei fremden Bezeichnungen.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag_info: Option<NewsText>,
+    /// Downloads bei Modrinth-Projekten – fürs Formatieren in der UI-Sprache.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub downloads: Option<u64>,
     /// Bild-Adresse für [`Launcher::news_image`] (erlaubte Hosts, HTTPS).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image_url: Option<String>,
@@ -60,6 +69,31 @@ pub struct NewsItem {
     /// Pfad der Patchnotes bei Mojang – für den vollen Text im Launcher.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content_path: Option<String>,
+}
+
+/// Übersetzbarer Text wie [`Msg`] (`{ code, params, message }`), aber auch
+/// aus dem Cache lesbar.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewsText {
+    pub code: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub params: BTreeMap<String, String>,
+    pub message: String,
+}
+
+impl From<Msg> for NewsText {
+    fn from(msg: Msg) -> Self {
+        Self {
+            code: msg.code.to_owned(),
+            params: msg.params.into_iter().map(|(k, v)| (k.to_owned(), v)).collect(),
+            message: msg.text,
+        }
+    }
+}
+
+/// `tag` (deutsch, für alte Oberflächen) und `tag_info` aus einer Meldung.
+fn tag_of(msg: Msg) -> (Option<String>, Option<NewsText>) {
+    (Some(msg.text.clone()), Some(msg.into()))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -259,21 +293,25 @@ fn parse_patch_notes(json: &str) -> Result<Vec<NewsItem>> {
         .into_iter()
         .filter(|e| !e.id.is_empty() && !e.title.is_empty())
         .take(MAX_ITEMS)
-        .map(|e| NewsItem {
-            tag: Some(match e.kind.as_str() {
-                "release" => "Vollversion".into(),
-                "snapshot" => "Snapshot".into(),
-                other => plain_text(other, 24),
-            })
-            .filter(|t: &String| !t.is_empty()),
-            title: clip_title(&e.title),
-            summary: plain_text(&e.short_text, MAX_SUMMARY_CHARS),
-            date: e.date,
-            image_url: e.image.and_then(|i| launcher_content_url(&i.url)),
-            link: None,
-            content_path: is_content_path(&e.content_path).then(|| e.content_path.clone()),
-            id: format!("patch-{}", plain_text(&e.id, 64)),
-            source: NewsSource::PatchNotes,
+        .map(|e| {
+            let (tag, tag_info) = match e.kind.as_str() {
+                "release" => tag_of(crate::msg!("news.tagRelease", "Vollversion")),
+                "snapshot" => tag_of(crate::msg!("news.tagSnapshot", "Snapshot")),
+                other => (Some(plain_text(other, 24)).filter(|t| !t.is_empty()), None),
+            };
+            NewsItem {
+                tag,
+                tag_info,
+                downloads: None,
+                title: clip_title(&e.title),
+                summary: plain_text(&e.short_text, MAX_SUMMARY_CHARS),
+                date: e.date,
+                image_url: e.image.and_then(|i| launcher_content_url(&i.url)),
+                link: None,
+                content_path: is_content_path(&e.content_path).then(|| e.content_path.clone()),
+                id: format!("patch-{}", plain_text(&e.id, 64)),
+                source: NewsSource::PatchNotes,
+            }
         })
         .filter(|item| !item.title.is_empty())
         .collect())
@@ -329,6 +367,8 @@ fn parse_mojang_news(json: &str) -> Result<Vec<NewsItem>> {
             summary: plain_text(&e.text, MAX_SUMMARY_CHARS),
             date: parse_day(&e.date),
             tag: Some("Minecraft".into()),
+            tag_info: None,
+            downloads: None,
             image_url: e
                 .news_page_image
                 .or(e.play_page_image)
@@ -346,16 +386,22 @@ async fn fetch_trending(http: &reqwest::Client) -> Result<Vec<NewsItem>> {
     Ok(hits
         .into_iter()
         .take(MAX_ITEMS)
-        .map(|hit| NewsItem {
-            id: format!("modrinth-{}", plain_text(&hit.project_id, 64)),
-            source: NewsSource::Modrinth,
-            title: clip_title(&hit.title),
-            summary: plain_text(&hit.description, MAX_SUMMARY_CHARS),
-            date: hit.date_modified,
-            tag: Some(format!("{} Downloads", thousands(hit.downloads))),
-            image_url: hit.icon_url.filter(|u| crate::icon::is_allowed_icon_url(u)),
-            link: Some(format!("https://modrinth.com/mod/{}", hit.slug)).filter(|l| modrinth::is_safe_external_url(l)),
-            content_path: None,
+        .map(|hit| {
+            let (tag, tag_info) =
+                tag_of(crate::msg!("news.tagDownloads", "{count} Downloads", count = thousands(hit.downloads)));
+            NewsItem {
+                id: format!("modrinth-{}", plain_text(&hit.project_id, 64)),
+                source: NewsSource::Modrinth,
+                title: clip_title(&hit.title),
+                summary: plain_text(&hit.description, MAX_SUMMARY_CHARS),
+                date: hit.date_modified,
+                tag,
+                tag_info,
+                downloads: Some(hit.downloads),
+                image_url: hit.icon_url.filter(|u| crate::icon::is_allowed_icon_url(u)),
+                link: Some(format!("https://modrinth.com/mod/{}", hit.slug)).filter(|l| modrinth::is_safe_external_url(l)),
+                content_path: None,
+            }
         })
         .collect())
 }
@@ -401,16 +447,25 @@ fn parse_releases(json: &str) -> Result<Vec<NewsItem>> {
         // Der feste Kanal `updater` trägt nur latest.json – keine Meldung wert.
         .filter(|r| !r.draft && r.tag_name.starts_with('v'))
         .take(MAX_ITEMS)
-        .map(|r| NewsItem {
-            id: format!("release-{}", plain_text(&r.tag_name, 40)),
-            source: NewsSource::Launcher,
-            title: clip_title(r.name.as_deref().filter(|n| !n.is_empty()).unwrap_or(&r.tag_name)),
-            summary: plain_text(r.body.as_deref().unwrap_or_default(), MAX_SUMMARY_CHARS),
-            date: r.published_at,
-            tag: Some(if r.prerelease { "Vorschau".into() } else { "Update".into() }),
-            image_url: None,
-            link: Some(r.html_url).filter(|l| modrinth::is_safe_external_url(l)),
-            content_path: None,
+        .map(|r| {
+            let (tag, tag_info) = if r.prerelease {
+                tag_of(crate::msg!("news.tagPreview", "Vorschau"))
+            } else {
+                tag_of(crate::msg!("news.tagUpdate", "Update"))
+            };
+            NewsItem {
+                id: format!("release-{}", plain_text(&r.tag_name, 40)),
+                source: NewsSource::Launcher,
+                title: clip_title(r.name.as_deref().filter(|n| !n.is_empty()).unwrap_or(&r.tag_name)),
+                summary: plain_text(r.body.as_deref().unwrap_or_default(), MAX_SUMMARY_CHARS),
+                date: r.published_at,
+                tag,
+                tag_info,
+                downloads: None,
+                image_url: None,
+                link: Some(r.html_url).filter(|l| modrinth::is_safe_external_url(l)),
+                content_path: None,
+            }
         })
         .collect())
 }
@@ -466,7 +521,7 @@ impl Launcher {
         }
         if items.is_empty() {
             // Nichts geladen und nichts im Cache – das Frontend zeigt „offline“.
-            return Err(Error::validation("Neuigkeiten sind gerade nicht erreichbar."));
+            return Err(Error::validation(crate::msg!("news.unavailable", "Neuigkeiten sind gerade nicht erreichbar.")));
         }
         Ok(NewsFeed { items, fetched_at, stale })
     }
@@ -525,7 +580,7 @@ impl Launcher {
     /// über den DOMPurify-Weg angezeigt.
     pub async fn patch_notes_body(&self, content_path: &str) -> Result<String> {
         if !is_content_path(content_path) {
-            return Err(Error::validation("Diese Patchnotes gibt es nicht."));
+            return Err(Error::validation(crate::msg!("news.patchNotesNotFound", "Diese Patchnotes gibt es nicht.")));
         }
         #[derive(Deserialize)]
         struct Body {
@@ -547,7 +602,10 @@ impl Launcher {
     /// Die Tauri-Schicht gibt genau diese Datei fürs Webview frei.
     pub async fn news_image(&self, url: &str) -> Result<PathBuf> {
         if !is_allowed_image_url(url) {
-            return Err(Error::validation("Diese Bildquelle ist nicht erlaubt."));
+            return Err(Error::validation(crate::msg!(
+                "news.imageSourceNotAllowed",
+                "Diese Bildquelle ist nicht erlaubt."
+            )));
         }
         let dir = images_dir(self.paths());
         // Schon im Cache? Dann ohne Netz antworten.
@@ -559,7 +617,7 @@ impl Launcher {
         }
         let response = self.http().get(url).send().await?.error_for_status()?;
         if response.content_length().is_some_and(|len| len > MAX_IMAGE_BYTES) {
-            return Err(Error::validation("Das Bild ist zu groß."));
+            return Err(Error::validation(crate::msg!("news.imageTooLarge", "Das Bild ist zu groß.")));
         }
         let bytes = response.bytes().await?;
         let format = crate::icon::validate_image(&bytes)?;
@@ -652,6 +710,7 @@ mod tests {
         let items = parse_releases(json).unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].tag.as_deref(), Some("Vorschau"));
+        assert_eq!(items[0].tag_info.as_ref().map(|t| t.code.as_str()), Some("news.tagPreview"));
         assert_eq!(items[0].title, "TRS Launcher v0.2.1");
     }
 
@@ -689,6 +748,8 @@ mod tests {
             summary: "Text".into(),
             date: None,
             tag: None,
+            tag_info: None,
+            downloads: None,
             image_url: None,
             link: None,
             content_path: None,
@@ -700,17 +761,26 @@ mod tests {
         assert!(!feed.stale);
 
         // Zweiter Aufruf nimmt den frischen Cache, ohne zu laden.
-        let feed = cached(&paths, "test", false, async || Err(Error::validation("darf nicht passieren"))).await.unwrap();
+        let feed = cached(&paths, "test", false, async || Err(Error::validation(crate::msg!(
+            "test.unexpected",
+            "darf nicht passieren"
+        )))).await.unwrap();
         assert_eq!(feed.items.len(), 1);
         assert!(!feed.stale);
 
         // Erzwungenes Laden scheitert → alter Stand, als `stale` markiert.
-        let feed = cached(&paths, "test", true, async || Err(Error::validation("offline"))).await.unwrap();
+        let feed = cached(&paths, "test", true, async || Err(Error::validation(crate::msg!(
+            "test.offline",
+            "offline"
+        )))).await.unwrap();
         assert!(feed.stale);
         assert_eq!(feed.items[0].title, "Titel");
 
         // Ohne Cache schlägt der Fehler durch.
-        assert!(cached(&paths, "leer", false, async || Err(Error::validation("offline"))).await.is_err());
+        assert!(cached(&paths, "leer", false, async || Err(Error::validation(crate::msg!(
+            "test.offline",
+            "offline"
+        )))).await.is_err());
     }
 
     #[tokio::test]

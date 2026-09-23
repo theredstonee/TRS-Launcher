@@ -32,9 +32,9 @@ pub fn upload_scale(width: u32, height: u32) -> Option<u32> {
 /// Prüft eine Upload-Datei vollständig. Fehlertexte sind für den Nutzer.
 pub fn validate_upload(bytes: &[u8]) -> Result<(u32, u32)> {
     if bytes.len() > MAX_UPLOAD_BYTES {
-        return Err(Error::validation("Die Datei ist zu groß (höchstens 256 KB)."));
+        return Err(Error::validation(crate::msg!("trsPng.fileTooLarge", "Die Datei ist zu groß (höchstens 256 KB).")));
     }
-    let invalid = || Error::validation("Die Datei ist kein gültiges PNG-Bild.");
+    let invalid = || Error::validation(crate::msg!("trsPng.invalidPng", "Die Datei ist kein gültiges PNG-Bild."));
     if bytes.len() < 8 + 25 + 12 || &bytes[..8] != SIGNATURE {
         return Err(invalid());
     }
@@ -64,7 +64,10 @@ pub fn validate_upload(bytes: &[u8]) -> Result<(u32, u32)> {
             return Err(invalid());
         }
         if ANIMATION.contains(&kind) {
-            return Err(Error::validation("Animierte PNGs sind für eigene Umhänge nicht erlaubt."));
+            return Err(Error::validation(crate::msg!(
+                "trsPng.animated",
+                "Animierte PNGs sind für eigene Umhänge nicht erlaubt."
+            )));
         }
         if !ALLOWED.contains(&kind) {
             return Err(invalid());
@@ -86,10 +89,11 @@ pub fn validate_upload(bytes: &[u8]) -> Result<(u32, u32)> {
     }
     let (w, h) = header.filter(|_| saw_end).ok_or_else(invalid)?;
     if upload_scale(w, h).is_none() {
-        return Err(Error::validation(
+        return Err(Error::validation(crate::msg!(
+            "trsPng.invalidSize",
             "Der Umhang muss 64×32 (oder 128×64, 192×96, 256×128) bzw. im Umhang-Format 22×17 \
-             (oder 44×34, 66×51, 88×68) Pixel groß sein.",
-        ));
+             (oder 44×34, 66×51, 88×68) Pixel groß sein."
+        )));
     }
     Ok((w, h))
 }
@@ -156,7 +160,9 @@ pub(crate) mod tests {
         assert!(validate_upload(&png_with(64, 64, &[])).is_err(), "Skin-Maße");
         assert!(validate_upload(&png_with(320, 160, &[])).is_err(), "zu groß skaliert");
         let apng = png_with(64, 32, &[(b"acTL", &[0, 0, 0, 2, 0, 0, 0, 0])]);
-        assert!(validate_upload(&apng).unwrap_err().to_string().contains("Animierte"));
+        let animated = validate_upload(&apng).unwrap_err();
+        assert!(animated.to_string().contains("Animierte"));
+        assert_eq!(animated.message_code(), "trsPng.animated");
         let mut trailing = png_with(64, 32, &[]);
         trailing.extend_from_slice(b"<?php echo 1; ?>");
         assert!(validate_upload(&trailing).is_err(), "Daten nach IEND");

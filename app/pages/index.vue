@@ -54,8 +54,9 @@ const sceneProgress = computed(() =>
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  const word = hour < 5 ? 'Noch wach' : hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend'
-  return accounts.active ? `${word}, ${accounts.active.name}` : word
+  const part = hour < 5 ? 'lateNight' : hour < 11 ? 'morning' : hour < 18 ? 'day' : 'evening'
+  const name = accounts.active?.name
+  return name ? t(`home.greeting.${part}Named`, { name }) : t(`home.greeting.${part}`)
 })
 
 // Der News-Bereich kommt aus einer eigenen Komponente. `import.meta.glob`
@@ -93,7 +94,7 @@ function play(instance: Instance) {
     <section
       class="hero relative isolate overflow-hidden"
       :class="`hero-${sceneMode}`"
-      :aria-label="featured ? `Zuletzt gespielt: ${featured.name}` : 'Start'"
+      :aria-label="featured ? t('home.lastPlayed', { name: featured.name }) : t('nav.home')"
     >
       <RedstoneScene :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
         <div class="scrim" />
@@ -103,7 +104,7 @@ function play(instance: Instance) {
         <div class="flex items-start justify-between gap-4">
           <p class="display text-base text-base-200">{{ greeting }}</p>
           <span v-if="game?.phase === 'running'" class="badge bg-lamp-400 text-base-950">
-            <span class="size-1.5 animate-lamp bg-base-950" />Läuft gerade
+            <span class="size-1.5 animate-lamp bg-base-950" />{{ t('play.runningNow') }}
           </span>
         </div>
 
@@ -136,7 +137,7 @@ function play(instance: Instance) {
                 <span><span class="font-mono text-base-50">{{ featured.gameVersion }}</span> {{ loaderLabels[featured.loader.kind] }}</span>
               </span>
               <span>{{ formatRelative(featured.lastPlayed) }}</span>
-              <span v-if="showPlayTime && featured.totalPlaySeconds >= 60">{{ formatPlayTime(featured.totalPlaySeconds) }} gespielt</span>
+              <span v-if="showPlayTime && featured.totalPlaySeconds >= 60">{{ t('home.playedTime', { time: formatPlayTime(featured.totalPlaySeconds) }) }}</span>
             </p>
           </div>
 
@@ -146,8 +147,8 @@ function play(instance: Instance) {
               :to="`/instances/${featured.id}`"
               class="btn-icon pixel-corners size-14 bg-base-900/85 backdrop-blur"
               style="--notch: 3px"
-              title="Instanz öffnen"
-              aria-label="Instanz öffnen"
+              :title="t('home.openInstance')"
+              :aria-label="t('home.openInstance')"
             >
               <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </NuxtLink>
@@ -157,14 +158,14 @@ function play(instance: Instance) {
 
         <div v-else class="flex flex-wrap items-end gap-x-8 gap-y-5">
           <div class="min-w-0 flex-1">
-            <h1 class="display text-6xl leading-[1.05] text-base-50">Bereit zum Start</h1>
+            <h1 class="display text-6xl leading-[1.05] text-base-50">{{ t('home.empty.title') }}</h1>
             <p class="mt-3 max-w-md text-sm text-base-200">
-              Lege deine erste Instanz an – Vanilla oder mit Modloader – oder hol dir gleich ein fertiges Modpack.
+              {{ t('home.empty.text') }}
             </p>
           </div>
           <div ref="lamp" class="flex shrink-0 flex-wrap gap-3">
-            <button class="btn btn-primary h-12 px-6 text-base" @click="ui.creating = true">Instanz erstellen</button>
-            <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="btn btn-ghost h-12 px-6 text-base">Modpacks ansehen</NuxtLink>
+            <button class="btn btn-primary h-12 px-6 text-base" @click="ui.creating = true">{{ t('home.empty.create') }}</button>
+            <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="btn btn-ghost h-12 px-6 text-base">{{ t('home.empty.modpacks') }}</NuxtLink>
           </div>
         </div>
       </div>
@@ -174,24 +175,24 @@ function play(instance: Instance) {
       <!-- Weiterspielen: breite Banner-Kacheln, am Ende die Kachel für Neues. -->
       <section v-if="ready && featured" aria-labelledby="continue-heading">
         <div class="mb-3 flex items-end justify-between gap-4">
-          <h2 id="continue-heading" class="heading">Weiterspielen</h2>
+          <h2 id="continue-heading" class="heading">{{ t('home.continue.title') }}</h2>
           <div class="flex items-center gap-4 text-xs text-base-400">
-            <span v-if="showPlayTime && totalSeconds >= 60">Insgesamt {{ formatPlayTime(totalSeconds) }} gespielt</span>
-            <NuxtLink to="/instances" class="hover:text-base-50">Zur Bibliothek</NuxtLink>
+            <span v-if="showPlayTime && totalSeconds >= 60">{{ t('home.continue.totalPlayed', { time: formatPlayTime(totalSeconds) }) }}</span>
+            <NuxtLink to="/instances" class="hover:text-base-50">{{ t('home.continue.toLibrary') }}</NuxtLink>
           </div>
         </div>
 
         <ul ref="strip" class="strip">
           <li v-for="i in shownQuick" :key="i.id" class="strip-card">
             <article class="tile group card relative h-full overflow-hidden" :class="{ 'tile-live': games.state(i.id).phase !== 'idle' }">
-              <NuxtLink :to="`/instances/${i.id}`" class="block outline-none" :aria-label="`${i.name} öffnen`">
+              <NuxtLink :to="`/instances/${i.id}`" class="block outline-none" :aria-label="t('nav.openNamed', { name: i.name })">
                 <InstanceBanner :instance="i" shade="none" class="h-28 w-full" />
                 <div class="flex items-center gap-3 p-3">
                   <InstanceIcon :instance="i" :size="40" class="-mt-9 shrink-0 ring-2 ring-base-900" />
                   <span class="min-w-0 flex-1">
                     <span class="block truncate text-sm font-semibold text-base-50">{{ i.name }}</span>
                     <span class="block truncate text-xs text-base-400">
-                      <span class="font-mono">{{ i.gameVersion }}</span> {{ loaderLabels[i.loader.kind] }}, {{ formatRelative(i.lastPlayed) }}
+                      <span class="font-mono">{{ i.gameVersion }}</span> {{ loaderLabels[i.loader.kind] }}, {{ formatRelative(i.lastPlayed, true) }}
                     </span>
                   </span>
                 </div>
@@ -201,13 +202,13 @@ function play(instance: Instance) {
                 style="--notch: 3px"
                 :class="{ 'tile-play-on': games.state(i.id).phase !== 'idle' }"
                 :disabled="games.state(i.id).phase !== 'idle'"
-                :aria-label="`${i.name} spielen`"
+                :aria-label="t('play.playNamed', { name: i.name })"
                 @click="play(i)"
               >
                 <svg viewBox="0 0 24 24" class="ml-0.5 size-4" fill="currentColor"><path :d="icons.play" /></svg>
               </button>
               <span v-if="games.state(i.id).phase !== 'idle'" class="badge absolute top-2 left-2 bg-lamp-400 text-base-950">
-                <span class="size-1.5 animate-lamp bg-base-950" />{{ games.state(i.id).phase === 'preparing' ? 'Startet' : 'Läuft' }}
+                <span class="size-1.5 animate-lamp bg-base-950" />{{ games.state(i.id).phase === 'preparing' ? t('play.startingShort') : t('common.status.running') }}
               </span>
             </article>
           </li>
@@ -216,23 +217,23 @@ function play(instance: Instance) {
           <li :class="quick.length ? 'strip-add' : 'strip-card'">
             <button class="add-tile" @click="ui.creating = true">
               <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.plus" /></svg></span>
-              <span class="text-sm font-semibold text-base-50">Neue Instanz</span>
-              <span class="text-xs text-base-400">Vanilla oder mit Modloader</span>
+              <span class="text-sm font-semibold text-base-50">{{ t('nav.newInstance') }}</span>
+              <span class="text-xs text-base-400">{{ t('home.add.newInstanceHint') }}</span>
             </button>
           </li>
           <template v-if="!quick.length">
             <li class="strip-card">
               <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="add-tile">
                 <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.compass" /></svg></span>
-                <span class="text-sm font-semibold text-base-50">Modpack entdecken</span>
-                <span class="text-xs text-base-400">Fertige Pakete von Modrinth</span>
+                <span class="text-sm font-semibold text-base-50">{{ t('home.add.discoverModpack') }}</span>
+                <span class="text-xs text-base-400">{{ t('home.add.discoverModpackHint') }}</span>
               </NuxtLink>
             </li>
             <li class="strip-card">
               <button class="add-tile" @click="ui.importing = true">
                 <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.install" /></svg></span>
-                <span class="text-sm font-semibold text-base-50">Importieren</span>
-                <span class="text-xs text-base-400">Aus Prism, CurseForge oder Vanilla</span>
+                <span class="text-sm font-semibold text-base-50">{{ t('common.actions.import') }}</span>
+                <span class="text-xs text-base-400">{{ t('home.add.importHint') }}</span>
               </button>
             </li>
           </template>
@@ -241,7 +242,7 @@ function play(instance: Instance) {
 
       <!-- Weitere laufende Spiele (das oberste zeigt schon die Bühne). -->
       <section v-if="running.length" aria-labelledby="running-heading">
-        <h2 id="running-heading" class="heading mb-3">Läuft gerade</h2>
+        <h2 id="running-heading" class="heading mb-3">{{ t('play.runningNow') }}</h2>
         <ul class="grid gap-2 md:grid-cols-2">
           <li v-for="i in running" :key="i.id" class="card flex items-center gap-3 px-3 py-2.5">
             <NuxtLink :to="`/instances/${i.id}`" class="flex min-w-0 flex-1 items-center gap-3">
@@ -251,7 +252,7 @@ function play(instance: Instance) {
               </span>
               <span class="min-w-0">
                 <span class="block truncate text-sm font-medium">{{ i.name }}</span>
-                <span class="block truncate text-xs text-base-400">{{ games.state(i.id).phase === 'preparing' ? 'Wird vorbereitet …' : 'Läuft' }}</span>
+                <span class="block truncate text-xs text-base-400">{{ games.state(i.id).phase === 'preparing' ? t('play.preparing') : t('common.status.running') }}</span>
               </span>
             </NuxtLink>
             <div class="w-36 shrink-0"><PlayButton :instance-id="i.id" /></div>
@@ -264,8 +265,8 @@ function play(instance: Instance) {
 
         <section aria-labelledby="servers-heading">
           <div class="mb-3 flex items-end justify-between gap-4">
-            <h2 id="servers-heading" class="heading">Server</h2>
-            <NuxtLink v-if="servers.items.length" to="/servers" class="text-xs text-base-400 hover:text-base-50">Alle verwalten</NuxtLink>
+            <h2 id="servers-heading" class="heading">{{ t('nav.servers') }}</h2>
+            <NuxtLink v-if="servers.items.length" to="/servers" class="text-xs text-base-400 hover:text-base-50">{{ t('home.servers.manageAll') }}</NuxtLink>
           </div>
 
           <div v-if="!ready" class="servers">
@@ -278,15 +279,15 @@ function play(instance: Instance) {
               :server="s"
               compact
               :join-disabled="!featured || game?.phase !== 'idle'"
-              :join-hint="featured ? `Startet „${featured.name}“ und verbindet direkt` : 'Erst eine Instanz anlegen'"
+              :join-hint="featured ? t('home.servers.joinHint', { name: featured.name }) : t('home.servers.joinHintNone')"
               @join="join"
             />
             <button class="add-tile add-tile-row" @click="addingServer = true">
               <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.plus" /></svg></span>
               <span class="min-w-0 text-left">
-                <span class="block text-sm font-semibold text-base-50">Server hinzufügen</span>
+                <span class="block text-sm font-semibold text-base-50">{{ t('home.servers.add') }}</span>
                 <span class="block text-xs text-base-400">
-                  {{ servers.items.length ? 'Live-Status und Beitritt per Klick' : 'Deine Server mit Live-Status – Beitritt per Klick' }}
+                  {{ servers.items.length ? t('home.servers.addHint') : t('home.servers.addHintEmpty') }}
                 </span>
               </span>
             </button>

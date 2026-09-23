@@ -241,7 +241,11 @@ impl MavenCoord {
                 && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '+'))
         };
         if !(3..=4).contains(&parts.len()) || !parts.iter().all(|p| safe(p)) || !safe(ext) {
-            return Err(Error::validation(format!("Ungültige Library-Koordinate: {name}")));
+            return Err(Error::validation(crate::msg!(
+                "meta.invalidLibraryName",
+                "Ungültige Library-Koordinate: {name}",
+                name = &name
+            )));
         }
         Ok(Self {
             group: parts[0].into(),
@@ -385,7 +389,11 @@ fn checked_rel_path(path: String) -> Result<String> {
         || path.contains('\\')
         || path.contains(':')
         || path.split('/').any(|seg| seg.is_empty() || seg == "." || seg == "..");
-    if bad { Err(Error::validation(format!("Unsicherer Library-Pfad: {path}"))) } else { Ok(path) }
+    if bad {
+        Err(Error::validation(crate::msg!("meta.unsafeLibraryPath", "Unsicherer Library-Pfad: {path}", path = &path)))
+    } else {
+        Ok(path)
+    }
 }
 
 impl VersionInfo {

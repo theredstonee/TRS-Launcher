@@ -39,10 +39,10 @@ async function toggleMaximize() {
     </div>
 
     <div class="ml-2 flex items-center gap-0.5">
-      <button class="nav-btn" aria-label="Zurück" title="Zurück" @click="router.back()">
+      <button class="nav-btn" :aria-label="t('common.actions.back')" :title="t('common.actions.back')" @click="router.back()">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7" /></svg>
       </button>
-      <button class="nav-btn" aria-label="Vorwärts" title="Vorwärts" @click="router.forward()">
+      <button class="nav-btn" :aria-label="t('titleBar.forward')" :title="t('titleBar.forward')" @click="router.forward()">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
       </button>
     </div>
@@ -57,25 +57,25 @@ async function toggleMaximize() {
 
     <button class="mr-1 hidden items-center gap-2 rounded-md border border-base-800 bg-base-850 px-2.5 py-1 text-[11px] text-base-400 transition-colors hover:border-base-700 hover:text-base-200 sm:flex" @click="ui.openPalette()">
       <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path :d="icons.search" /></svg>
-      Suchen
-      <kbd class="rounded border border-base-700 px-1 font-mono text-[10px]">Strg K</kbd>
+      {{ t('common.actions.search') }}
+      <kbd class="rounded border border-base-700 px-1 font-mono text-[10px]">{{ t('titleBar.ctrl') }} K</kbd>
     </button>
 
     <AccountMenu />
     <div class="h-4 w-px bg-base-800" />
 
     <div v-if="win" class="flex h-full">
-      <button class="ctl" aria-label="Minimieren" @click="win.minimize()">
+      <button class="ctl" :aria-label="t('titleBar.minimize')" @click="win.minimize()">
         <svg viewBox="0 0 10 10" class="size-2.5"><path d="M0 5h10" stroke="currentColor" /></svg>
       </button>
-      <button class="ctl" :aria-label="maximized ? 'Wiederherstellen' : 'Maximieren'" @click="toggleMaximize">
+      <button class="ctl" :aria-label="maximized ? t('titleBar.restore') : t('titleBar.maximize')" @click="toggleMaximize">
         <svg v-if="maximized" viewBox="0 0 10 10" class="size-2.5" fill="none" stroke="currentColor">
           <rect x=".5" y="2.5" width="7" height="7" />
           <path d="M2.5 2.5v-2h7v7h-2" />
         </svg>
         <svg v-else viewBox="0 0 10 10" class="size-2.5"><rect x=".5" y=".5" width="9" height="9" fill="none" stroke="currentColor" /></svg>
       </button>
-      <button class="ctl ctl-close" aria-label="Schließen" @click="win.close()">
+      <button class="ctl ctl-close" :aria-label="t('common.actions.close')" @click="win.close()">
         <svg viewBox="0 0 10 10" class="size-2.5"><path d="M0 0l10 10M10 0L0 10" stroke="currentColor" /></svg>
       </button>
     </div>

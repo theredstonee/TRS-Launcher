@@ -365,6 +365,8 @@ struct LauncherTheme {
     accent: &'static str,
     /// "#RRGGBB" – passend zum Akzent-Namen, damit der Mod nichts raten muss.
     accent_color: &'static str,
+    /// Sprache des Launchers ("en", "de", "pt-BR", …) – der Mod darf sie übernehmen.
+    language: &'static str,
 }
 
 /// Schreibt `config/trsclient/launcher-theme.json` in die Instanz (nur bekannte, feste Werte).
@@ -377,6 +379,7 @@ pub async fn write_theme(paths: &Paths, instance_id: &str, ui: &UiSettings) -> R
         theme: theme_name(ui.theme),
         accent: accent_name(ui.accent),
         accent_color: accent_color(ui.accent),
+        language: ui.language.code(),
     };
     let json = serde_json::to_string_pretty(&theme).map_err(|e| Error::json("launcher-theme.json", e))?;
     tokio::fs::write(&file, json).await.map_err(|e| Error::io(&file, e))
@@ -631,14 +634,17 @@ mod tests {
         assert_eq!(json["theme"], "oled");
         assert_eq!(json["accent"], "emerald");
         assert_eq!(json["accentColor"], "#17A34A");
+        assert_eq!(json["language"], "en");
 
         // "System" gibt es im Spiel nicht – dort gilt das dunkle Thema.
         ui.theme = Theme::System;
         ui.accent = Accent::Redstone;
+        ui.language = crate::settings::Language::PtBr;
         write_theme(&paths, "test", &ui).await.unwrap();
         let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
         assert_eq!(json["theme"], "dark");
         assert_eq!(json["accentColor"], "#E0281E");
+        assert_eq!(json["language"], "pt-BR");
     }
 
     #[test]

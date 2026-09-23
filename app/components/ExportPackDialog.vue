@@ -23,10 +23,9 @@ const progress = computed(() =>
   exportTask.value?.status === 'running' ? { percent: exportTask.value.percent ?? 0, stage: exportTask.value.stage } : null,
 )
 
-const phaseLabels: Record<ExportProgress['phase'], string> = {
-  hashing: 'Dateien werden geprüft',
-  lookup: 'Abgleich mit Modrinth',
-  writing: 'Modpack wird geschrieben',
+/** Text der Export-Phase („Dateien werden geprüft“ …). */
+function phaseLabel(phase: ExportProgress['phase']): string {
+  return t(`exportPack.phase.${phase}`)
 }
 
 const totalSize = computed(() =>
@@ -64,10 +63,10 @@ async function start() {
   formError.value = null
   const instance = props.instance
   const result = await tasks.run(
-    { key: exportKey.value, kind: 'export', title: parsed.data.name, stage: 'Speicherort wählen …', instanceId: instance.id },
+    { key: exportKey.value, kind: 'export', title: parsed.data.name, stage: t('exportPack.pickLocation'), instanceId: instance.id },
     async (ctx) => {
       const summary = await backend.exportModpack(instance.id, parsed.data, (p) =>
-        ctx.progress(p.percent, `${phaseLabels[p.phase]} …`),
+        ctx.progress(p.percent, `${phaseLabel(p.phase)} …`),
       )
       if (!summary) {
         // Speichern abgebrochen.
@@ -75,9 +74,12 @@ async function start() {
         return null
       }
       ctx.update({
-        doneText:
-          `„${summary.fileName}“ geschrieben – ${summary.downloads} Dateien von Modrinth, ` +
-          `${summary.overrides} mitkopiert (${formatBytes(summary.bytes)})`,
+        doneText: t('exportPack.done', {
+          file: summary.fileName,
+          downloads: summary.downloads,
+          overrides: summary.overrides,
+          size: formatBytes(summary.bytes),
+        }),
       })
       return summary
     },
@@ -87,28 +89,28 @@ async function start() {
 </script>
 
 <template>
-  <BaseDialog title="Als Modpack exportieren" wide @close="emit('close')">
+  <BaseDialog :title="t('exportPack.title')" wide @close="emit('close')">
     <div class="grid gap-3 sm:grid-cols-[1fr_9rem]">
       <div>
-        <label class="label" for="ex-name">Name</label>
+        <label class="label" for="ex-name">{{ t('common.labels.name') }}</label>
         <input id="ex-name" v-model="name" class="field" maxlength="64" :disabled="!!progress" />
       </div>
       <div>
-        <label class="label" for="ex-version">Version</label>
+        <label class="label" for="ex-version">{{ t('common.labels.version') }}</label>
         <input id="ex-version" v-model="version" class="field" maxlength="32" :disabled="!!progress" />
       </div>
     </div>
     <div class="mt-3">
-      <label class="label" for="ex-summary">Kurzbeschreibung (optional)</label>
-      <input id="ex-summary" v-model="summary" class="field" maxlength="512" placeholder="Worum geht es in diesem Pack?" :disabled="!!progress" />
+      <label class="label" for="ex-summary">{{ t('exportPack.summary') }}</label>
+      <input id="ex-summary" v-model="summary" class="field" maxlength="512" :placeholder="t('exportPack.summaryPlaceholder')" :disabled="!!progress" />
     </div>
 
-    <p class="label mt-4">Das kommt mit</p>
+    <p class="label mt-4">{{ t('exportPack.included') }}</p>
     <div v-if="loading" class="space-y-1.5">
       <div v-for="i in 4" :key="i" class="skeleton h-9" />
     </div>
     <p v-else-if="!entries.length" class="text-sm text-base-400">
-      In dieser Instanz liegt noch nichts, was sich exportieren ließe.
+      {{ t('exportPack.nothing') }}
     </p>
     <ul v-else class="max-h-56 space-y-1 overflow-y-auto pr-1">
       <li v-for="entry in entries" :key="entry.name">
@@ -126,28 +128,25 @@ async function start() {
           </svg>
           <span class="min-w-0 flex-1 truncate font-mono text-xs">{{ entry.name }}</span>
           <span class="shrink-0 text-[11px] text-base-400">
-            <template v-if="entry.isDir">{{ entry.files }} Dateien · </template>{{ formatBytes(entry.size) }}
+            {{ entry.isDir ? t('exportPack.dirSize', { size: formatBytes(entry.size) }, entry.files) : formatBytes(entry.size) }}
           </span>
         </label>
       </li>
     </ul>
 
-    <p class="mt-3 text-xs leading-relaxed text-base-400">
-      Mods, die es auf Modrinth gibt, werden nur verlinkt – das Pack bleibt klein und lässt sich weitergeben. Alles
-      andere landet als Kopie darin. Ausgewählt: {{ formatBytes(totalSize) }}.
-    </p>
+    <p class="mt-3 text-xs leading-relaxed text-base-400">{{ t('exportPack.hint', { size: formatBytes(totalSize) }) }}</p>
     <p v-if="formError" role="alert" class="mt-2 text-xs text-redstone-300">{{ formError }}</p>
 
     <div v-if="progress" class="mt-4 flex items-center gap-3">
       <RedstoneWire class="flex-1" :percent="progress.percent" :segments="40" />
       <span class="display shrink-0 text-sm text-redstone-300 tabular-nums">{{ Math.floor(progress.percent) }} %</span>
     </div>
-    <p v-if="progress" class="mt-1 text-xs text-base-400">{{ progress.stage }} – läuft im Hintergrund weiter, wenn du schließt.</p>
+    <p v-if="progress" class="mt-1 text-xs text-base-400">{{ t('exportPack.runsInBackground', { stage: progress.stage }) }}</p>
 
     <template #actions>
-      <button class="btn btn-ghost" @click="emit('close')">{{ progress ? 'Schließen' : 'Abbrechen' }}</button>
+      <button class="btn btn-ghost" @click="emit('close')">{{ progress ? t('common.actions.close') : t('common.actions.cancel') }}</button>
       <button class="btn btn-primary" :disabled="!!progress || loading || !selected.length" @click="start">
-        {{ progress ? 'Exportiere …' : 'Speichern unter …' }}
+        {{ progress ? t('exportPack.exporting') : t('exportPack.saveAs') }}
       </button>
     </template>
   </BaseDialog>
