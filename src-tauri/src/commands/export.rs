@@ -10,6 +10,7 @@ use trs_core::modpack::PackProgress;
 use trs_core::modpack_export::{ExportEntry, ExportOptions, ExportProgress, ExportSummary, suggested_file_name};
 
 use crate::LauncherState;
+use crate::commands::tasks::tracked;
 use crate::error::CommandResult;
 
 /// Was im Spielordner liegt und mitexportiert werden kann.
@@ -56,9 +57,12 @@ pub async fn import_modpack_file(
     app: AppHandle,
     launcher: State<'_, LauncherState>,
     on_progress: Channel<PackProgress>,
+    task_id: Option<String>,
 ) -> CommandResult<Option<String>> {
+    let dialog = app.clone();
     let picked = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog()
+        dialog
+            .dialog()
             .file()
             .set_title("Modpack-Datei wählen")
             .add_filter("Modrinth-Modpack", &["mrpack"])
@@ -70,10 +74,10 @@ pub async fn import_modpack_file(
     .and_then(|p| p.into_path().ok());
     let Some(file) = picked else { return Ok(None) };
 
-    let instance = launcher
-        .import_modpack_file(&file, &move |progress| {
-            let _ = on_progress.send(progress);
-        })
-        .await?;
+    let report = move |progress| {
+        let _ = on_progress.send(progress);
+    };
+    let work = launcher.import_modpack_file(&file, &report);
+    let instance = tracked(&app, task_id, work).await?;
     Ok(Some(instance.id))
 }

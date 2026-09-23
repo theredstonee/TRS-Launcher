@@ -259,6 +259,8 @@ impl Launcher {
             tokio::task::spawn_blocking(move || read_index(&path)).await.map_err(|e| Error::Internal(e.to_string()))??
         };
 
+        // Abgebrochen, während das Pack lud? Dann gar nicht erst eine Instanz anlegen.
+        crate::task::checkpoint().await?;
         let name: String = index.name.chars().filter(|c| !c.is_control()).take(64).collect();
         let instance = self
             .create_instance_as(
@@ -282,16 +284,22 @@ impl Launcher {
                 .await
                 .map_err(|e| Error::Internal(e.to_string()))??;
             on_progress(PackProgress { phase: PackPhase::Overrides, percent: 100.0 });
+            fsutil::ensure_dir(&game_dir).await?;
+            // Während des Entpackens abgebrochen: trotzdem aufräumen.
+            if crate::task::is_cancelled() {
+                return Err(Error::Cancelled);
+            }
             Ok::<_, Error>(())
         }
         .await;
 
-        // Halb installierte Packs nicht herumliegen lassen.
+        // Halb installierte (oder abgebrochene) Packs nicht herumliegen lassen.
         if let Err(e) = files {
-            let _ = self.instances().delete(&instance.id).await;
+            if let Err(cleanup) = self.instances().delete(&instance.id).await {
+                tracing::warn!("Halb installiertes Modpack '{}' konnte nicht entfernt werden: {cleanup}", instance.id);
+            }
             return Err(e);
         }
-        fsutil::ensure_dir(&game_dir).await?;
         Ok(instance)
     }
 }

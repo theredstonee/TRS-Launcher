@@ -16,3 +16,4 @@ pub mod servers;
 pub mod settings;
 pub mod skins;
 pub mod system;
+pub mod tasks;

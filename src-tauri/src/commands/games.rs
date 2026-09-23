@@ -5,6 +5,7 @@ use trs_core::launch::RunningGame;
 use trs_core::prepare::StageProgress;
 
 use crate::LauncherState;
+use crate::commands::tasks::tracked;
 use crate::error::CommandResult;
 
 /// Lädt alles Nötige und startet das Spiel. Fortschritt kommt über den
@@ -16,12 +17,13 @@ pub async fn launch_instance(
     id: String,
     join_server: Option<String>,
     on_progress: Channel<StageProgress>,
+    task_id: Option<String>,
 ) -> CommandResult<u32> {
-    let pid = launcher
-        .launch(&id, join_server.as_deref(), &move |progress| {
-            let _ = on_progress.send(progress);
-        })
-        .await?;
+    let report = move |progress| {
+        let _ = on_progress.send(progress);
+    };
+    let work = launcher.launch(&id, join_server.as_deref(), &report);
+    let pid = tracked(&app, task_id, work).await?;
 
     if launcher.settings().await.close_on_launch
         && let Some(window) = app.get_webview_window("main")
@@ -49,29 +51,33 @@ pub fn get_game_logs(launcher: State<'_, LauncherState>, id: String) -> Vec<LogL
 /// Prüft alle Spieldateien per Prüfsumme und lädt beschädigte neu.
 #[tauri::command]
 pub async fn repair_instance(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
     on_progress: Channel<StageProgress>,
+    task_id: Option<String>,
 ) -> CommandResult<()> {
-    Ok(launcher
-        .repair_instance(&id, &move |progress| {
-            let _ = on_progress.send(progress);
-        })
-        .await?)
+    let report = move |progress| {
+        let _ = on_progress.send(progress);
+    };
+    let work = launcher.repair_instance(&id, &report);
+    Ok(tracked(&app, task_id, work).await?)
 }
 
 /// Lädt Spielversion und Bibliotheken der Instanz komplett neu.
 #[tauri::command]
 pub async fn reinstall_instance(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
     on_progress: Channel<StageProgress>,
+    task_id: Option<String>,
 ) -> CommandResult<()> {
-    Ok(launcher
-        .reinstall_instance(&id, &move |progress| {
-            let _ = on_progress.send(progress);
-        })
-        .await?)
+    let report = move |progress| {
+        let _ = on_progress.send(progress);
+    };
+    let work = launcher.reinstall_instance(&id, &report);
+    Ok(tracked(&app, task_id, work).await?)
 }
 
 /// Lädt den neuesten Log (Tokens und Benutzername geschwärzt) auf mclo.gs hoch

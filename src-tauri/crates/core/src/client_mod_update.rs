@@ -257,9 +257,15 @@ impl ClientModUpdater {
         let mut hasher = Sha256::new();
         let mut written = 0u64;
         let mut stream = response.bytes_stream();
-        while let Some(chunk) = stream.next().await {
+        // Läuft das in einer Aufgabe (Spielstart), zählt es dort mit und
+        // lässt sich pausieren/abbrechen.
+        crate::task::add_total(size);
+        loop {
+            crate::task::checkpoint().await?;
+            let Some(chunk) = stream.next().await else { break };
             let chunk = chunk?;
             written += chunk.len() as u64;
+            crate::task::add_done(chunk.len() as i64);
             if written > size {
                 return Err(Error::download(url, "unerwartete Größe"));
             }

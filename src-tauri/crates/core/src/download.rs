@@ -9,7 +9,7 @@ use futures::StreamExt;
 use sha1::{Digest, Sha1};
 use tokio::io::AsyncWriteExt;
 
-use crate::{Error, Result, fsutil};
+use crate::{Error, Result, fsutil, task};
 
 const MAX_ATTEMPTS: u32 = 4;
 const PROGRESS_INTERVAL_MS: u64 = 80;
@@ -104,7 +104,9 @@ fn retry_delay(err: &Error, attempt: u32) -> Duration {
 }
 
 pub async fn fetch_one(http: &reqwest::Client, task: &Task) -> Result<()> {
-    fetch_with_retries(http, task, &|_| {}).await
+    // Zählt in eine laufende Aufgabe (Geschwindigkeit/Größe im Aufgaben-Panel).
+    task::add_total(task.size.unwrap_or(0));
+    fetch_with_retries(http, task, &task::add_done).await
 }
 
 async fn fetch_with_retries(
@@ -114,6 +116,8 @@ async fn fetch_with_retries(
 ) -> Result<()> {
     let mut last_err = None;
     for attempt in 1..=MAX_ATTEMPTS {
+        // Abgebrochen oder pausiert? Dann keinen neuen Versuch starten.
+        task::checkpoint().await?;
         let counted = AtomicU64::new(0);
         let track = |n: u64| {
             counted.fetch_add(n, Ordering::Relaxed);
@@ -124,11 +128,14 @@ async fn fetch_with_retries(
             Err(e) => {
                 // Bereits gezählte Bytes des Fehlversuchs zurücknehmen.
                 on_bytes(-(counted.load(Ordering::Relaxed) as i64));
+                if matches!(e, Error::Cancelled) {
+                    return Err(e);
+                }
                 tracing::warn!("Download-Versuch {attempt}/{MAX_ATTEMPTS} fehlgeschlagen: {e}");
                 let delay = retry_delay(&e, attempt);
                 last_err = Some(e);
                 if attempt < MAX_ATTEMPTS {
-                    tokio::time::sleep(delay).await;
+                    task::sleep(delay).await?;
                 }
             }
         }
@@ -170,6 +177,9 @@ async fn fetch_attempt(
     }
 
     let tmp = task.path.with_extension(format!("part-{}", uuid::Uuid::new_v4().simple()));
+    // Räumt die Teil-Datei auch dann weg, wenn das Future verworfen wird
+    // (erster Fehler eines Stapels, abgebrochene Aufgabe).
+    let mut part = PartFile(Some(tmp.clone()));
     let result = async {
         let mut file = tokio::fs::File::create(&tmp).await.map_err(|e| Error::io(&tmp, e))?;
         let mut hasher = Sha1::new();
@@ -177,6 +187,8 @@ async fn fetch_attempt(
         let mut stream = response.bytes_stream();
 
         loop {
+            // Pause hält hier an, Abbruch endet hier.
+            task::checkpoint().await?;
             let chunk = tokio::time::timeout(Duration::from_secs(30), stream.next())
                 .await
                 .map_err(|_| Error::download(&url, "Zeitüberschreitung"))?;
@@ -202,10 +214,24 @@ async fn fetch_attempt(
     }
     .await;
 
-    if result.is_err() {
+    if result.is_ok() {
+        part.0 = None;
+    } else if let Some(tmp) = part.0.take() {
         let _ = tokio::fs::remove_file(&tmp).await;
     }
     result
+}
+
+/// Teil-Datei eines Downloads; wird beim Verwerfen gelöscht, solange sie
+/// nicht umbenannt wurde.
+struct PartFile(Option<PathBuf>);
+
+impl Drop for PartFile {
+    fn drop(&mut self) {
+        if let Some(path) = self.0.take() {
+            let _ = std::fs::remove_file(path);
+        }
+    }
 }
 
 /// Lädt alle fehlenden Dateien. `on_progress` wird gedrosselt aufgerufen und
@@ -248,6 +274,7 @@ pub async fn fetch_all_with(
     let done_files = AtomicU64::new(0);
     let started = Instant::now();
     let last_emit = AtomicU64::new(0);
+    task::add_total(total_bytes);
 
     let snapshot = || Progress {
         done_bytes: done_bytes.load(Ordering::Relaxed).min(total_bytes),
@@ -268,6 +295,7 @@ pub async fn fetch_all_with(
     on_progress(snapshot());
 
     let on_bytes = |delta: i64| {
+        task::add_done(delta);
         if delta >= 0 {
             done_bytes.fetch_add(delta as u64, Ordering::Relaxed);
         } else {

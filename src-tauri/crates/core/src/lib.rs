@@ -41,6 +41,8 @@ pub mod skins;
 pub mod storage;
 pub mod sync;
 pub mod system;
+pub mod task;
+pub mod task_history;
 pub mod upload;
 
 use std::collections::HashSet;
@@ -391,6 +393,8 @@ impl Launcher {
             prepare::prepare(&self.http, &self.paths, &settings, instance, &session.features(), false, on_progress)
                 .await?;
 
+        // Letzte Gelegenheit zum Abbrechen – ab hier wird gestartet.
+        task::checkpoint().await?;
         on_progress(StageProgress::begin(Stage::Starting));
         // Neue Java-Version? Einmal die Firewall-Freigabe eintragen, damit Windows
         // nicht bei jeder Instanz einzeln nach dem Netzwerkzugriff fragt.
