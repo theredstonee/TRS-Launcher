@@ -141,18 +141,38 @@ const globalJava = computed({
     if (form.value) form.value.javaPath = v.trim() || null
   },
 })
-const installing = ref<{ major: number; percent: number } | null>(null)
-async function installJava(slot: (typeof javaSlots)[number]) {
-  installing.value = { major: slot.major, percent: 0 }
-  try {
-    const path = await backend.installJava(slot.major, (p) => installing.value && (installing.value.percent = p))
-    javaModels[slot.key].value = path
-    toasts.ok(`Java ${slot.major} installiert`)
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    installing.value = null
-  }
+// Java lädt als Aufgabe weiter, auch wenn der Dialog zugeht.
+const tasks = useTasksStore()
+const installing = computed(() => {
+  const t = tasks.active.find((t) => t.kind === 'java')
+  return t ? { major: Number(t.tag), percent: t.percent ?? 0 } : null
+})
+let dialogOpen = true
+onBeforeUnmount(() => (dialogOpen = false))
+function installJava(slot: (typeof javaSlots)[number]) {
+  tasks.run(
+    {
+      key: taskKey('java', String(slot.major)),
+      kind: 'java',
+      title: `Java ${slot.major}`,
+      stage: 'Java-Runtime wird geladen',
+      tag: String(slot.major),
+      cancellable: true,
+      pausable: true,
+      doneText: `Java ${slot.major} installiert`,
+    },
+    async (ctx) => {
+      const path = await backend.installJava(slot.major, (p) => ctx.progress(p), ctx.taskId)
+      if (dialogOpen && form.value) {
+        // Offener Dialog: über das Formular (speichert selbst).
+        javaModels[slot.key].value = path
+      } else {
+        const current = store.current ?? (await store.load())
+        await store.save({ ...current, java: { ...current.java, [slot.key]: path } })
+      }
+      return path
+    },
+  )
 }
 
 // --- Speicher -----------------------------------------------------------------

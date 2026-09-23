@@ -11,6 +11,12 @@ const percent = computed(() =>
   game.value.progress ? Math.floor(overallPercent(game.value.progress.stage, game.value.progress.percent)) : 0,
 )
 const stage = computed(() => (game.value.progress ? stageLabels[game.value.progress.stage] : ''))
+// Die Vorbereitung ist eine Aufgabe – abbrechbar, bis das Spiel startet.
+const tasks = useTasksStore()
+const canCancel = computed(() => {
+  const t = tasks.get(taskKey('launch', props.instanceId))
+  return t?.status === 'running' && t.cancellable && !t.cancelling
+})
 const files = computed(() => {
   const p = game.value.progress
   return p && p.totalFiles > 1 ? `${p.doneFiles} / ${p.totalFiles}` : ''
@@ -19,7 +25,7 @@ const files = computed(() => {
 
 <template>
   <!-- Groß: Redstone-Lampe -->
-  <div v-if="large" class="lamp-wrap min-w-0 flex-1" :class="`lamp-${game.phase}`" :style="{ '--charge': percent / 100 }">
+  <div v-if="large" class="lamp-wrap relative min-w-0 flex-1" :class="`lamp-${game.phase}`" :style="{ '--charge': percent / 100 }">
     <button
       v-if="game.phase === 'idle'"
       class="lamp pixel-corners"
@@ -51,6 +57,15 @@ const files = computed(() => {
         <span class="display shrink-0 text-xl tabular-nums">{{ percent }} %</span>
       </span>
     </div>
+    <button
+      v-if="game.phase === 'preparing' && canCancel"
+      class="absolute -top-2 -right-2 z-10 grid size-6 place-items-center rounded-full bg-base-850 text-base-300 ring-1 ring-base-700 hover:text-redstone-300"
+      aria-label="Start abbrechen"
+      title="Start abbrechen"
+      @click="games.cancelLaunch(instanceId)"
+    >
+      <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
 
     <button v-else class="lamp pixel-corners" title="Spiel beenden" @click="games.stop(instanceId)">
       <span class="lamp-light" />
@@ -80,7 +95,18 @@ const files = computed(() => {
     >
       <div class="flex items-baseline justify-between gap-2 text-xs font-medium">
         <span class="truncate">{{ stage }}</span>
-        <span class="display tabular-nums text-redstone-300">{{ percent }} %</span>
+        <span class="flex items-center gap-1.5">
+          <span class="display tabular-nums text-redstone-300">{{ percent }} %</span>
+          <button
+            v-if="canCancel"
+            class="grid size-4 place-items-center rounded text-base-400 hover:text-redstone-300"
+            aria-label="Start abbrechen"
+            title="Start abbrechen"
+            @click="games.cancelLaunch(instanceId)"
+          >
+            <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+        </span>
       </div>
       <RedstoneWire :percent="percent" :segments="20" class="mt-1" />
     </div>

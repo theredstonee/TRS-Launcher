@@ -4,12 +4,19 @@
 
 export type ToastKind = 'ok' | 'error' | 'info'
 
+/** Klick auf den Toast, z. B. „Instanz öffnen“ oder „Details“. */
+export interface ToastAction {
+  label: string
+  run: () => void
+}
+
 export interface Toast {
   id: number
   kind: ToastKind
   text: string
   /** Wie oft die gleiche Meldung kam (≥ 1). */
   count: number
+  action?: ToastAction
 }
 
 export const MAX_VISIBLE_TOASTS = 3
@@ -27,14 +34,21 @@ export interface ToastAdd {
  * zählt sie hoch und rückt nach unten (neueste zuletzt). Bei zu vielen fliegen
  * die ältesten raus – bevorzugt keine Fehler, solange andere da sind.
  */
-export function addToast(items: readonly Toast[], kind: ToastKind, text: string, nextId: number, max = MAX_VISIBLE_TOASTS): ToastAdd {
+export function addToast(
+  items: readonly Toast[],
+  kind: ToastKind,
+  text: string,
+  nextId: number,
+  max = MAX_VISIBLE_TOASTS,
+  action?: ToastAction,
+): ToastAdd {
   const existing = items.find((t) => t.kind === kind && t.text === text)
   if (existing) {
-    const merged = { ...existing, count: existing.count + 1 }
+    const merged = { ...existing, count: existing.count + 1, action: action ?? existing.action }
     return { items: [...items.filter((t) => t.id !== existing.id), merged], id: existing.id, dropped: [] }
   }
 
-  const next = [...items, { id: nextId, kind, text, count: 1 }]
+  const next: Toast[] = [...items, { id: nextId, kind, text, count: 1, ...(action ? { action } : {}) }]
   const dropped: number[] = []
   while (next.length > Math.max(1, max)) {
     // Älteste Nicht-Fehlermeldung zuerst opfern, sonst die älteste überhaupt.

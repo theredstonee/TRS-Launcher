@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import type { Toast } from '~/utils/toastQueue'
+
 const toasts = useToasts()
+
+function act(t: Toast) {
+  t.action?.run()
+  toasts.dismiss(t.id)
+}
 </script>
 
 <template>
@@ -16,7 +23,16 @@ const toasts = useToasts()
       :role="t.kind === 'error' ? 'alert' : 'status'"
     >
       <span class="mt-1.5 size-1.5 shrink-0 rounded-full" :class="{ 'bg-ok': t.kind === 'ok', 'bg-redstone-400': t.kind === 'error', 'bg-base-400': t.kind === 'info' }" />
-      <p class="min-w-0 flex-1">{{ t.text }}</p>
+      <p class="min-w-0 flex-1">
+        {{ t.text }}
+        <button
+          v-if="t.action"
+          class="mt-1 block text-xs font-semibold text-redstone-300 underline-offset-2 hover:text-redstone-200 hover:underline focus-visible:underline"
+          @click="act(t)"
+        >
+          {{ t.action.label }}
+        </button>
+      </p>
       <span
         v-if="t.count > 1"
         class="mt-px shrink-0 rounded bg-base-800 px-1.5 text-[11px] font-semibold tabular-nums text-base-200"

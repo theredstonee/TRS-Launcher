@@ -7,6 +7,10 @@ const props = defineProps<{ instance: Instance }>()
 const emit = defineEmits<{ close: [] }>()
 
 const toasts = useToasts()
+// Der Export läuft als Aufgabe – der Dialog darf zu, das Schreiben läuft weiter.
+const tasks = useTasksStore()
+const exportKey = computed(() => taskKey('export', props.instance.id))
+const exportTask = computed(() => tasks.get(exportKey.value))
 
 const entries = ref<ExportEntry[]>([])
 const selected = ref<string[]>([])
@@ -15,7 +19,9 @@ const name = ref(props.instance.name)
 const version = ref('1.0.0')
 const summary = ref('')
 const formError = ref<string | null>(null)
-const progress = ref<ExportProgress | null>(null)
+const progress = computed(() =>
+  exportTask.value?.status === 'running' ? { percent: exportTask.value.percent ?? 0, stage: exportTask.value.stage } : null,
+)
 
 const phaseLabels: Record<ExportProgress['phase'], string> = {
   hashing: 'Dateien werden geprüft',
@@ -56,25 +62,32 @@ async function start() {
     return
   }
   formError.value = null
-  progress.value = { phase: 'hashing', percent: 0 }
-  try {
-    const result = await backend.exportModpack(props.instance.id, parsed.data, (p) => (progress.value = p))
-    if (!result) return // Speichern abgebrochen
-    toasts.ok(
-      `„${result.fileName}“ geschrieben – ${result.downloads} Dateien von Modrinth, ` +
-        `${result.overrides} mitkopiert (${formatBytes(result.bytes)})`,
-    )
-    emit('close')
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    progress.value = null
-  }
+  const instance = props.instance
+  const result = await tasks.run(
+    { key: exportKey.value, kind: 'export', title: parsed.data.name, stage: 'Speicherort wählen …', instanceId: instance.id },
+    async (ctx) => {
+      const summary = await backend.exportModpack(instance.id, parsed.data, (p) =>
+        ctx.progress(p.percent, `${phaseLabels[p.phase]} …`),
+      )
+      if (!summary) {
+        // Speichern abgebrochen.
+        ctx.discard()
+        return null
+      }
+      ctx.update({
+        doneText:
+          `„${summary.fileName}“ geschrieben – ${summary.downloads} Dateien von Modrinth, ` +
+          `${summary.overrides} mitkopiert (${formatBytes(summary.bytes)})`,
+      })
+      return summary
+    },
+  )
+  if (result.ok) emit('close')
 }
 </script>
 
 <template>
-  <BaseDialog title="Als Modpack exportieren" wide @close="progress ? undefined : emit('close')">
+  <BaseDialog title="Als Modpack exportieren" wide @close="emit('close')">
     <div class="grid gap-3 sm:grid-cols-[1fr_9rem]">
       <div>
         <label class="label" for="ex-name">Name</label>
@@ -129,10 +142,10 @@ async function start() {
       <RedstoneWire class="flex-1" :percent="progress.percent" :segments="40" />
       <span class="display shrink-0 text-sm text-redstone-300 tabular-nums">{{ Math.floor(progress.percent) }} %</span>
     </div>
-    <p v-if="progress" class="mt-1 text-xs text-base-400">{{ phaseLabels[progress.phase] }} …</p>
+    <p v-if="progress" class="mt-1 text-xs text-base-400">{{ progress.stage }} – läuft im Hintergrund weiter, wenn du schließt.</p>
 
     <template #actions>
-      <button class="btn btn-ghost" :disabled="!!progress" @click="emit('close')">Abbrechen</button>
+      <button class="btn btn-ghost" @click="emit('close')">{{ progress ? 'Schließen' : 'Abbrechen' }}</button>
       <button class="btn btn-primary" :disabled="!!progress || loading || !selected.length" @click="start">
         {{ progress ? 'Exportiere …' : 'Speichern unter …' }}
       </button>

@@ -5,14 +5,20 @@ const emit = defineEmits<{ close: [] }>()
 
 const instances = useInstancesStore()
 const meta = useMetaStore()
-const toasts = useToasts()
+// Importe laufen als Aufgaben – der Dialog darf zu, die Kopie läuft weiter.
+const tasks = useTasksStore()
 
 const candidates = ref<ImportCandidate[]>([])
 const loading = ref(true)
 const picking = ref(false)
 const error = ref<string | null>(null)
-const running = ref<{ id: string; percent: number } | null>(null)
-const done = ref<Set<string>>(new Set())
+const running = computed(() => {
+  const t = Object.values(tasks.tasks).find((t) => t.kind === 'import' && t.status === 'running')
+  return t ? { id: t.tag ?? '', percent: t.percent ?? 0 } : null
+})
+const done = computed(
+  () => new Set(Object.values(tasks.tasks).filter((t) => t.kind === 'import' && t.status === 'done').map((t) => t.tag ?? '')),
+)
 const query = ref('')
 const source = ref<ImportSource | 'all'>('all')
 /** Bei selbst gewählten Ordnern: Version und Loader vor dem Import anpassbar. */
@@ -75,47 +81,58 @@ async function browse() {
   }
 }
 
-async function run(candidate: ImportCandidate) {
+function run(candidate: ImportCandidate) {
   if (running.value) return
   error.value = null
-  running.value = { id: candidate.id, percent: 0 }
   const o = overrides.value[candidate.id]
-  try {
-    const instance = await backend.importInstance(
-      candidate.id,
-      o?.gameVersion ?? null,
-      o ? { kind: o.loader, version: null } : null,
-      (p) => {
-        if (running.value) running.value.percent = Math.floor(p.percent)
-      },
-    )
-    done.value = new Set(done.value).add(candidate.id)
-    await instances.load()
-    toasts.ok(`„${instance.name}“ importiert`)
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    running.value = null
-  }
+  tasks.run(
+    {
+      key: taskKey('import', candidate.id),
+      kind: 'import',
+      title: candidate.name,
+      stage: `Wird aus ${importSourceLabels[candidate.source]} kopiert`,
+      tag: candidate.id,
+    },
+    async (ctx) => {
+      const instance = await backend.importInstance(
+        candidate.id,
+        o?.gameVersion ?? null,
+        o ? { kind: o.loader, version: null } : null,
+        (p) => ctx.progress(p.percent, p.totalFiles ? `${p.doneFiles} / ${p.totalFiles} Dateien kopiert` : undefined),
+      )
+      ctx.update({ instanceId: instance.id, doneText: `„${instance.name}“ importiert` })
+      await instances.load()
+      return instance
+    },
+  )
 }
 
 /** Eine .mrpack-Datei einlesen – etwa ein eigener Export. */
-const packing = ref<number | null>(null)
-async function importPack() {
+const PACK_FILE_KEY = 'mrpack-file'
+const packTask = computed(() => tasks.get(PACK_FILE_KEY))
+const packing = computed(() => (packTask.value?.status === 'running' ? (packTask.value.percent ?? 0) : null))
+function importPack() {
   if (packing.value !== null || running.value) return
   error.value = null
-  packing.value = 0
-  try {
-    const id = await backend.importModpackFile((p) => (packing.value = Math.floor(p.percent)))
-    if (!id) return
-    await instances.load()
-    const instance = instances.items.find((i) => i.id === id)
-    toasts.ok(instance ? `„${instance.name}“ importiert` : 'Modpack importiert')
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    packing.value = null
-  }
+  tasks.run(
+    { key: PACK_FILE_KEY, kind: 'modpack-file', title: 'Modpack aus Datei', stage: 'Datei wählen …', cancellable: true },
+    async (ctx) => {
+      const id = await backend.importModpackFile((p) => ctx.progress(packPercent(p), packStageLabels[p.phase]), ctx.taskId)
+      if (!id) {
+        // Dateidialog abgebrochen – keine Aufgabe, kein Verlauf.
+        ctx.discard()
+        return null
+      }
+      await instances.load()
+      const instance = instances.items.find((i) => i.id === id)
+      ctx.update({
+        instanceId: id,
+        title: instance?.name ?? 'Modpack',
+        doneText: instance ? `„${instance.name}“ importiert` : 'Modpack importiert',
+      })
+      return id
+    },
+  )
 }
 
 function loaderText(c: ImportCandidate) {
@@ -124,7 +141,7 @@ function loaderText(c: ImportCandidate) {
 </script>
 
 <template>
-  <BaseDialog title="Aus anderem Launcher importieren" wide @close="running ? undefined : emit('close')">
+  <BaseDialog title="Aus anderem Launcher importieren" wide @close="emit('close')">
     <p class="mb-3 text-sm text-base-400">
       Welten, Mods, Einstellungen und Server werden kopiert, das Original bleibt unverändert. Anmeldedaten anderer
       Launcher werden nie übernommen.
@@ -190,7 +207,8 @@ function loaderText(c: ImportCandidate) {
     <p v-if="error" role="alert" class="mt-3 text-sm text-redstone-300">{{ error }}</p>
 
     <template #actions>
-      <button class="btn btn-ghost" :disabled="!!running" @click="emit('close')">Fertig</button>
+      <p v-if="running || packing !== null" class="mr-auto text-xs text-base-400">Läuft im Hintergrund weiter, wenn du schließt.</p>
+      <button class="btn btn-ghost" @click="emit('close')">Fertig</button>
     </template>
   </BaseDialog>
 </template>

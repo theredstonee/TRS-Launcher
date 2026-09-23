@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EnvVar, Instance, InstanceOverrides, StageProgress, SyncItem, UpdateChannel } from '~/types'
+import type { EnvVar, Instance, InstanceOverrides, SyncItem, UpdateChannel } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 
 // Instanz-Einstellungen im Stil der Modrinth App: Modal mit Bereichen links,
@@ -195,19 +195,26 @@ async function setGroup(group: string | null) {
 }
 
 const exporting = ref(false)
-const duplicating = ref(false)
+// Kopieren, Reparieren und Neu installieren laufen als Aufgaben weiter, auch wenn der Dialog zugeht.
+const tasks = useTasksStore()
+const duplicating = computed(() => tasks.isRunning(taskKey('duplicate', inst.value.id)))
+let dialogOpen = true
+onBeforeUnmount(() => (dialogOpen = false))
 async function duplicate() {
-  duplicating.value = true
-  try {
-    const copy = await backend.duplicateInstance(inst.value.id, `${inst.value.name} (Kopie)`.slice(0, 64))
-    await instances.load()
-    toasts.ok(`Kopie „${copy.name}“ angelegt`)
+  const source = inst.value
+  const result = await tasks.run(
+    { key: taskKey('duplicate', source.id), kind: 'duplicate', title: `${source.name} (Kopie)`.slice(0, 64), stage: 'Dateien werden kopiert', instanceId: source.id },
+    async (ctx) => {
+      const copy = await backend.duplicateInstance(source.id, `${source.name} (Kopie)`.slice(0, 64))
+      ctx.update({ instanceId: copy.id, title: copy.name, doneText: `Kopie „${copy.name}“ angelegt` })
+      await instances.load()
+      return copy
+    },
+  )
+  // Wer noch im Dialog wartet, landet direkt bei der Kopie.
+  if (result.ok && dialogOpen) {
     emit('close')
-    router.push(`/instances/${copy.id}`)
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    duplicating.value = false
+    router.push(`/instances/${result.value.id}`)
   }
 }
 
@@ -248,21 +255,14 @@ function onVersionChanged(updated: Instance) {
   loadResolvedLoader()
 }
 
-const repairing = ref<{ kind: 'repair' | 'reinstall'; percent: number } | null>(null)
+const repairTask = computed(() => tasks.get(repairTaskKey(inst.value.id)))
+const repairing = computed(() =>
+  repairTask.value?.status === 'running' ? { kind: repairTask.value.kind, percent: repairTask.value.percent ?? 0 } : null,
+)
 const confirmReinstall = ref(false)
-async function repair(kind: 'repair' | 'reinstall') {
+function repair(kind: 'repair' | 'reinstall') {
   confirmReinstall.value = false
-  repairing.value = { kind, percent: 0 }
-  const onProgress = (p: StageProgress) => repairing.value && (repairing.value.percent = overallPercent(p.stage, p.percent))
-  try {
-    if (kind === 'repair') await backend.repairInstance(inst.value.id, onProgress)
-    else await backend.reinstallInstance(inst.value.id, onProgress)
-    toasts.ok(kind === 'repair' ? 'Alle Dateien geprüft und repariert' : 'Instanz neu installiert')
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    repairing.value = null
-  }
+  repairInstanceTask(inst.value, kind)
 }
 
 // --- Java -----------------------------------------------------------------------

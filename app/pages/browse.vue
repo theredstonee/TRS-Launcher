@@ -51,7 +51,8 @@ const totalHits = ref(0)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const installed = ref<Set<string>>(new Set())
-const installing = ref<Record<string, number | null>>({})
+// Installationen gehören dem Aufgaben-Store – sie laufen weiter, wenn man die Seite verlässt.
+const tasks = useTasksStore()
 const picking = ref<ModrinthHit | null>(null)
 const categories = ref<CategoryTag[]>([])
 const gameVersions = ref<string[]>([])
@@ -198,6 +199,15 @@ watch(
 )
 watch(page, () => listEl.value?.scrollTo({ top: 0 }))
 watch(target, loadInstalled, { immediate: true })
+// Inhalte, die (auch im Hintergrund) fertig geworden sind, als installiert markieren.
+const finishedForTarget = computed(
+  () =>
+    Object.values(tasks.tasks).filter((t) => t.kind === 'content' && t.status === 'done' && t.instanceId === target.value?.id)
+      .length,
+)
+watch(finishedForTarget, (n, before) => {
+  if (n > (before ?? 0)) loadInstalled()
+})
 watch(kind, () => {
   // Kategorien gehören zur jeweiligen Art.
   includeCats.value = []
@@ -267,44 +277,28 @@ function loaderColor(name: string): string | undefined {
   return name in loaderColors ? loaderColors[name as keyof typeof loaderColors] : undefined
 }
 
-function setBusy(id: string, value: number | null | undefined) {
-  const next = { ...installing.value }
-  if (value === undefined) delete next[id]
-  else next[id] = value
-  installing.value = next
+/** Laufende oder (in dieser Sitzung) fertige Installation zu einem Treffer. */
+function hitTask(hit: ModrinthHit) {
+  if (isPack.value) return tasks.get(modpackTaskKey(hit.projectId))
+  return target.value ? tasks.get(contentTaskKey(target.value.id, hit.projectId)) : null
 }
 
-async function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
+function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
   picking.value = null
-  if (hit.projectId in installing.value) return
   error.value = null
-  setBusy(hit.projectId, isPack.value ? 0 : null)
-  try {
-    if (isPack.value) {
-      const instance = await backend.installModpack(hit.projectId, (p) => {
-        // Pack laden 0–10 %, Dateien 10–95 %, Overrides den Rest.
-        const base = { pack: 0, files: 10, overrides: 95 }[p.phase]
-        const span = { pack: 10, files: 85, overrides: 5 }[p.phase]
-        setBusy(hit.projectId, Math.floor(base + (p.percent / 100) * span))
-      })
-      await instances.load()
-      toasts.ok(`Modpack „${instance.name}“ ist bereit`)
-      router.push(`/instances/${instance.id}`)
-      return
-    }
-    if (!target.value) return
-    const files = await backend.modrinthInstall(target.value.id, hit.projectId, kind.value as ContentKind, version?.id ?? null)
-    await loadInstalled()
-    toasts.ok(
-      files.length > 1
-        ? `${hit.title} und ${files.length - 1} benötigte Abhängigkeit(en) installiert`
-        : `${hit.title} installiert`,
-    )
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    setBusy(hit.projectId, undefined)
+  if (isPack.value) {
+    installModpackTask(hit)
+    return
   }
+  if (!target.value) return
+  installContentTask({
+    instance: target.value,
+    projectId: hit.projectId,
+    title: hit.title,
+    iconUrl: hit.iconUrl,
+    kind: kind.value as ContentKind,
+    version,
+  })
 }
 </script>
 
@@ -506,12 +500,23 @@ async function install(hit: ModrinthHit, version: ModrinthVersion | null = null)
 
             <div class="flex w-40 shrink-0 flex-col items-end justify-between gap-2">
               <div class="flex w-full flex-col items-stretch gap-1">
-                <template v-if="hit.projectId in installing">
-                  <span class="display text-center text-sm tabular-nums text-redstone-300">
-                    {{ installing[hit.projectId] === null ? 'Lädt …' : `${installing[hit.projectId]} %` }}
-                  </span>
-                  <RedstoneWire :percent="installing[hit.projectId] ?? 50" :segments="12" />
+                <template v-if="hitTask(hit)?.status === 'running'">
+                  <button
+                    class="display text-center text-sm tabular-nums text-redstone-300 hover:text-redstone-200"
+                    :aria-label="`${hit.title} wird installiert – im Aufgaben-Panel anzeigen`"
+                    @click="tasks.openPanel(hitTask(hit)!.key)"
+                  >
+                    {{ hitTask(hit)!.percent === null ? 'Lädt …' : `${hitTask(hit)!.percent} %` }}
+                  </button>
+                  <RedstoneWire :percent="hitTask(hit)!.percent ?? 50" :segments="12" />
                 </template>
+                <NuxtLink
+                  v-else-if="isPack && hitTask(hit)?.status === 'done' && hitTask(hit)!.instanceId"
+                  :to="`/instances/${hitTask(hit)!.instanceId}`"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50 hover:bg-base-800"
+                >
+                  Instanz öffnen
+                </NuxtLink>
                 <span
                   v-else-if="!isPack && installed.has(hit.projectId)"
                   class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50"
