@@ -5,8 +5,6 @@ import dev.theredstonee.trsclient.core.config.ConfigStore;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
 import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
-import dev.theredstonee.trsclient.core.server.QuickJoin;
-import dev.theredstonee.trsclient.core.server.QuickJoin.Server;
 import dev.theredstonee.trsclient.core.ui.PixelFont;
 import dev.theredstonee.trsclient.core.util.PlatformOpen;
 import org.junit.jupiter.api.Test;
@@ -57,22 +55,6 @@ class MiscLogicTest {
 		assertFalse(f.active());
 		f.start(0F, 120F);
 		assertEquals(90F, f.pitch(), 1e-4);
-	}
-
-	@Test
-	void quickJoinSkipsEmptyAddressesAndLimits() {
-		List<Server> all = Arrays.asList(
-				new Server("Lobby", " play.example.net "),
-				new Server("Kaputt", ""),
-				null,
-				new Server("", "10.0.0.2:25566"),
-				new Server("Drei", "c.example"),
-				new Server("Vier", "d.example"));
-		List<Server> picked = QuickJoin.pick(all, 3);
-		assertEquals(3, picked.size());
-		assertEquals("play.example.net", picked.get(0).address());
-		assertEquals("10.0.0.2:25566", picked.get(1).label());
-		assertEquals("Drei", picked.get(2).label());
 	}
 
 	@Test

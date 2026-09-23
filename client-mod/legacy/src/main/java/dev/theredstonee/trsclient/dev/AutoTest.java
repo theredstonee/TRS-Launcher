@@ -43,6 +43,7 @@ public final class AutoTest {
 
 	private int step;
 	private int wait;
+	private int titlePhase;
 	private int reopenCount;
 	/** Bildschirm, den der Test gerade erwartet (null = Spiel ohne Menü). */
 	private Class<? extends GuiScreen> expected;
@@ -99,7 +100,7 @@ public final class AutoTest {
 				next(20);
 				break;
 			case 1:
-				shot(mc, "title");
+				if (mc.currentScreen instanceof TrsTitleScreen && titleStep(mc, (TrsTitleScreen) mc.currentScreen)) return;
 				mc.displayGuiScreen(new TrsMenuScreen(mc.currentScreen));
 				next(20);
 				break;
@@ -271,6 +272,40 @@ public final class AutoTest {
 
 	private boolean isExpected(GuiScreen current) {
 		return expected == null ? current == null : expected.isInstance(current);
+	}
+
+	/**
+	 * Startbildschirm: Ruhe-Screenshot, eine Lampe per Tastatur-Auswahl an (wie Hover), dann die
+	 * Kosten der Hintergrund-Animation messen (mit und ohne Schaltung). true = noch nicht fertig.
+	 */
+	private boolean titleStep(Minecraft mc, TrsTitleScreen screen) {
+		dev.theredstonee.trsclient.core.ui.title.TitleUi title = screen.titleUi();
+		switch (titlePhase++) {
+			case 0:
+				shot(mc, "title");
+				title.focus(0);
+				wait = 10;
+				return true;
+			case 1:
+				shot(mc, "title-hover");
+				title.focus(-1);
+				wait = 100;
+				return true;
+			case 2:
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm: Szene " + Math.round(title.sceneMicros()) + " µs, Bildschirm "
+						+ Math.round(title.frameMicros()) + " µs (CPU), Bildzeit " + String.format(java.util.Locale.ROOT, "%.2f", title.frameMillis())
+						+ " ms, " + Minecraft.getDebugFPS() + " fps, sparsam=" + title.sparseScene());
+				title.setSceneEnabled(false);
+				wait = 100;
+				return true;
+			case 3:
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm ohne Schaltung: Bildschirm " + Math.round(title.frameMicros())
+						+ " µs (CPU), Bildzeit " + String.format(java.util.Locale.ROOT, "%.2f", title.frameMillis()) + " ms, " + Minecraft.getDebugFPS() + " fps");
+				title.setSceneEnabled(true);
+				return false;
+			default:
+				return false;
+		}
 	}
 
 	private void next(int ticks) {

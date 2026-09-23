@@ -208,4 +208,12 @@ public final class Mc {
 	public static int chatLineHeight() {
 		return (int) (9.0 * (mc().options.chatLineSpacing().get() + 1.0));
 	}
+
+	/** Liest einen Text über den Erzähler vor – nur wenn der Spieler ihn eingeschaltet hat. */
+	public static void narrate(String text) {
+		//? if >=1.21.6 {
+		/*mc().getNarrator().saySystemNow(text);
+		*///?} else
+		mc().getNarrator().sayNow(text);
+	}
 }

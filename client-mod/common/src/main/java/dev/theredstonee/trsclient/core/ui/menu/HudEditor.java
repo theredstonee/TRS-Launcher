@@ -11,6 +11,7 @@ import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.FadeCanvas;
 import dev.theredstonee.trsclient.core.ui.Icons;
 import dev.theredstonee.trsclient.core.ui.Paint;
+import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
@@ -67,8 +68,15 @@ public final class HudEditor extends UiScreen {
 		// Hilfslinien: Bildschirmmitte immer dezent, aktive Einrastung in Akzentfarbe
 		c.fill(width / 2, 0, width / 2 + 1, height, ColorMath.withAlpha(t.text, 26));
 		c.fill(0, height / 2, width, height / 2 + 1, ColorMath.withAlpha(t.text, 26));
-		if (dragging != null && guideX != HudSnap.NO_GUIDE) c.fill(guideX, 0, guideX + 1, height, t.accent);
-		if (dragging != null && guideY != HudSnap.NO_GUIDE) c.fill(0, guideY, width, guideY + 1, t.accent);
+		// Aktive Hilfslinie = bestromter Staub (mit Leuchten)
+		if (dragging != null && guideX != HudSnap.NO_GUIDE) {
+			c.fill(guideX - 1, 0, guideX + 2, height, ColorMath.withAlpha(t.glow, 50));
+			c.fill(guideX, 0, guideX + 1, height, t.dustOn);
+		}
+		if (dragging != null && guideY != HudSnap.NO_GUIDE) {
+			c.fill(0, guideY - 1, width, guideY + 2, ColorMath.withAlpha(t.glow, 50));
+			c.fill(0, guideY, width, guideY + 1, t.dustOn);
+		}
 
 		List<HudItem> items = enabled();
 		HudItem hovered = dragging != null ? dragging : itemAt(mouseX, mouseY, width, height);
@@ -80,8 +88,9 @@ public final class HudEditor extends UiScreen {
 			c.scale(item.module().scale.getFloat());
 			item.draw(c);
 			c.pop();
-			int color = item == dragging ? t.accent : (item == selected ? t.on : (item == hovered ? 0xE0FFFFFF : 0x60FFFFFF));
-			Paint.roundOutline(c, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 3, color);
+			int color = item == dragging ? t.dustOn : (item == selected ? t.lampOn : (item == hovered ? 0xE0FFFFFF : 0x60FFFFFF));
+			if (item == dragging || item == selected) Redstone.glow(c, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, item == dragging ? t.glow : t.lampGlow, 0.6f);
+			Redstone.frame(c, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, color);
 			if (item == hovered || item == selected) {
 				String label = item.module().name();
 				int ly = b[1] - 11 >= 0 ? b[1] - 11 : b[1] + b[3] + 3;
@@ -95,6 +104,7 @@ public final class HudEditor extends UiScreen {
 		c.push();
 		c.raise(300f);
 		topBar(c, width, mouseX, mouseY);
+		if (dragging == null) hint(c, width, height);
 		panelIn = Anim.approach(panelIn, selected != null ? 1f : 0f, dt, 0.07f);
 		if (panelIn > 0.02f) sidePanel(c, width, height, mouseX, mouseY);
 		c.pop();
@@ -102,22 +112,23 @@ public final class HudEditor extends UiScreen {
 
 	private void topBar(Canvas c, int width, int mx, int my) {
 		Theme t = Theme.get();
-		int h = 19;
-		Paint.roundRect(c, 0, -6, width, h + 6, 6, ColorMath.withAlpha(t.background, 215));
-		c.fill(0, h, width, h + 1, t.border);
-		c.fill(8, 4, 10, 15, t.accent);
-		c.text("HUD bearbeiten", 15, 6, t.text, false);
+		int h = 22;
+		c.fill(0, 0, width, h, ColorMath.withAlpha(t.surfaceHigh, 235));
+		c.fill(0, 0, width, 1, ColorMath.lerp(t.surfaceHigh, t.bevelLight, 0.6f));
+		c.fill(0, h - 1, width, h, t.border);
+		// Staubleitung unter der Leiste – ein Hinweis, dass hier "Strom" (Bearbeiten) anliegt.
+		c.fill(0, h, width, h + 1, ColorMath.withAlpha(t.dustOn, 160));
+		Redstone.pip(c, 8, 7, 8, 1f);
+		c.text("HUD bearbeiten", 22, 7, t.text, false);
 
 		// Profilwechsel
 		final HudProfiles profiles = host.modules().profiles;
 		String label = "Profil: " + profiles.activeName();
-		int pw = Math.min(140, c.textWidth(label) + 16);
-		int px = 15 + c.textWidth("HUD bearbeiten") + 10;
-		boolean pHover = inside(mx, my, px, 4, pw, 14);
-		Paint.roundRect(c, px, 3, pw, 14, 3, pHover ? t.surfaceHover : t.surfaceHigh);
-		Paint.roundOutline(c, px, 3, pw, 14, 3, t.border);
-		Paint.textCentered(c, c.clip(label, pw - 6), px + pw / 2, 7, t.text, false);
-		hits.add(px, 3, pw, 14, new Runnable() {
+		int pw = Math.min(150, c.textWidth(label) + 16);
+		int px = 22 + c.textWidth("HUD bearbeiten") + 12;
+		boolean pHover = inside(mx, my, px, 3, pw, 16);
+		Paint.button(c, px, 3, pw, 16, label, false, pHover);
+		hits.add(px, 3, pw, 16, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -126,22 +137,22 @@ public final class HudEditor extends UiScreen {
 			}
 		});
 
-		int doneW = 54;
+		int doneW = 58;
 		int doneX = width - doneW - 8;
-		boolean doneHover = inside(mx, my, doneX, 3, doneW, 14);
-		Paint.button(c, doneX, 3, doneW, 14, "Fertig", true, doneHover);
-		hits.add(doneX, 3, doneW, 14, new Runnable() {
+		boolean doneHover = inside(mx, my, doneX, 3, doneW, 16);
+		Paint.button(c, doneX, 3, doneW, 16, "Fertig", true, doneHover);
+		hits.add(doneX, 3, doneW, 16, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
 				requestClose();
 			}
 		});
-		int menuW = 56;
-		int menuX = doneX - menuW - 5;
-		boolean menuHover = inside(mx, my, menuX, 3, menuW, 14);
-		Paint.button(c, menuX, 3, menuW, 14, "Menü", false, menuHover);
-		hits.add(menuX, 3, menuW, 14, new Runnable() {
+		int menuW = 58;
+		int menuX = doneX - menuW - 6;
+		boolean menuHover = inside(mx, my, menuX, 3, menuW, 16);
+		Paint.button(c, menuX, 3, menuW, 16, "Menü", false, menuHover);
+		hits.add(menuX, 3, menuW, 16, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -150,7 +161,18 @@ public final class HudEditor extends UiScreen {
 			}
 		});
 
-		Paint.textRight(c, c.clip(HINT, Math.max(0, menuX - px - pw - 12)), menuX - 8, 6, t.textDim, false);
+	}
+
+	/** Bedienhinweis unten in der Mitte (weicht keinem Knopf der Leiste). */
+	private static void hint(Canvas c, int width, int height) {
+		Theme t = Theme.get();
+		String text = c.textWidth(HINT) + 16 <= width ? HINT : c.clip(HINT, width - 24) + "…";
+		int tw = c.textWidth(text);
+		int x = (width - tw) / 2 - 7;
+		int y = height - 20;
+		Redstone.block(c, x, y, tw + 14, 15, ColorMath.withAlpha(t.surfaceHigh, 225));
+		Redstone.frame(c, x, y, tw + 14, 15, t.border);
+		c.text(text, x + 7, y + 4, t.textDim, false);
 	}
 
 	private void sidePanel(Canvas c, int width, int height, int mx, int my) {
@@ -164,32 +186,30 @@ public final class HudEditor extends UiScreen {
 		settings.add(module.textShadow);
 		settings.add(module.textColor);
 
-		int h = 40 + panel.height(settings) + 20;
+		int h = 40 + panel.height(settings) + 22;
 		int x = width - PANEL_W - 8 + Math.round((1 - Anim.easeOut(panelIn)) * 20);
-		int y = Math.min(34, Math.max(28, height - h - 8));
-		Paint.shadow(c, x, y, PANEL_W, h, 5, alpha());
-		Paint.roundRect(c, x, y, PANEL_W, h, 5, t.background);
-		Paint.roundOutline(c, x, y, PANEL_W, h, 5, t.border);
+		int y = Math.min(34, Math.max(30, height - h - 8));
+		Redstone.window(c, x, y, PANEL_W, h);
 
-		Icons.draw(c, module.icon(), x + 8, y + 7, 1, t.accent);
-		Paint.textClipped(c, module.name(), x + 19, y + 7, PANEL_W - 46, t.text, false);
-		boolean closeHover = inside(mx, my, x + PANEL_W - 20, y + 5, 12, 12);
-		Paint.iconButton(c, x + PANEL_W - 20, y + 5, 12, "close", closeHover, false);
-		hits.add(x + PANEL_W - 20, y + 5, 12, 12, new Runnable() {
+		Redstone.iconWell(c, x + 6, y + 5, 1, module.icon(), t.dustOn, 1f);
+		Paint.textClipped(c, module.name(), x + 23, y + 8, PANEL_W - 48, t.text, false);
+		boolean closeHover = inside(mx, my, x + PANEL_W - 21, y + 5, 14, 14);
+		Paint.iconButton(c, x + PANEL_W - 21, y + 5, 14, "close", closeHover, false);
+		hits.add(x + PANEL_W - 21, y + 5, 14, 14, new Runnable() {
 			@Override
 			public void run() {
 				selected = null;
 			}
 		});
-		c.fill(x + 6, y + 20, x + PANEL_W - 6, y + 21, t.border);
+		c.fill(x + 6, y + 21, x + PANEL_W - 6, y + 22, t.border);
 
-		int ry = y + 25;
+		int ry = y + 26;
 		ry = panel.draw(c, hits, settings, x + 8, ry, PANEL_W - 16, mx, my);
 
-		boolean resetHover = inside(mx, my, x + 8, ry + 2, PANEL_W - 16, 14);
-		Paint.button(c, x + 8, ry + 2, PANEL_W - 16, 14, "Zurücksetzen", false, resetHover);
+		boolean resetHover = inside(mx, my, x + 8, ry + 2, PANEL_W - 16, 16);
+		Paint.button(c, x + 8, ry + 2, PANEL_W - 16, 16, "Zurücksetzen", false, resetHover);
 		final HudModule resetTarget = module;
-		hits.add(x + 8, ry + 2, PANEL_W - 16, 14, new Runnable() {
+		hits.add(x + 8, ry + 2, PANEL_W - 16, 16, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();

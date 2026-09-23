@@ -73,7 +73,8 @@ public final class TrsModules {
 	public final BoolSetting crosshairAttack;
 	public final ColorSetting hitColorColor;
 	public final NumberSetting hitColorOpacity;
-	public final BoolSetting titleServers;
+	/** Startbildschirm: animierte Redstone-Schaltung im Hintergrund (aus = ruhiges Standbild). */
+	public final BoolSetting titleAnimated;
 
 	// --- PvP-Anzeigen ---
 	public final NumberSetting reachDecimals;
@@ -283,7 +284,7 @@ public final class TrsModules {
 		crosshairAttack = crosshair.add(new BoolSetting("attack", "Angriffs-Abklingzeit", true));
 		hitColorColor = hitColor.add(new ColorSetting("color", "Farbe", 0xB07CFF));
 		hitColorOpacity = hitColor.add(new NumberSetting("opacity", "Deckkraft (%)", 70, 10, 100, 10, ""));
-		titleServers = titleScreen.add(new BoolSetting("servers", "Server-Schnellbeitritt", true));
+		titleAnimated = titleScreen.add(new BoolSetting("animated", "Animierter Hintergrund", true));
 
 		reachDecimals = reach.add(new NumberSetting("decimals", "Nachkommastellen", 2, 0, 3, 1, ""));
 		reachHold = reach.add(new NumberSetting("hold", "Anzeigedauer (s, 0 = immer)", 4, 0, 10, 1, ""));

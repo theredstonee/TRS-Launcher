@@ -53,17 +53,26 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Text-Hotkeys | Four bindable keys send a fixed text or command. Off by default, at most one message per second (3 per 10 s) |
 | Wegpunkte | Own markers per world/server (`config/trsclient-waypoints.json`): name, colour, in-world label with distance and light column, show/hide, automatic death waypoint |
 | Minimap | Top-down map of the loaded chunks (map colours, height shading), rotating or north-up, zoom, waypoints, coordinates. Player dots are off by default and only ever show players the game already knows (normal render range) – no radar, no cave mode |
-| Startbildschirm | TRS title screen (pixel wordmark, Einzelspieler/Mehrspieler/Einstellungen/Mods*/TRS-Menü/Beenden, quick-join strip with the first 4 servers of servers.dat); link "Klassischer Titelbildschirm"; disable the module to always get the vanilla one |
+| Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
 toggle, priority ▲/▼, open folder; applied with one reload).
 
 ## Menu, HUD editor and profiles
 
-The menu (Right Shift) shows every module as a tile with icon, name and switch: a search field, the category
-tabs **HUD / PvP / Chat / Welt / Sonstiges**, and a click on a tile opens that module's settings page. Settings are
-typed and drawn by the same code everywhere: switch, slider, colour picker (hue/saturation field, opacity and
-**Chroma**, plus the brand palette), dropdown and key binding. Panels are rounded, fade in and dim the background.
+The menu (Right Shift) shows every module as a tile with icon, full name (two lines if needed) and switch in a 2–4
+column grid that grows with the window: a search field, the category tabs **HUD / PvP / Chat / Welt / Sonstiges**,
+and a click on a tile (or its gear) opens that module's settings page. Settings are typed and drawn by the same code
+everywhere: switch, slider, colour picker (hue/saturation field, opacity and **Chroma**, plus the brand palette),
+dropdown and key binding.
+
+Everything is drawn in the **redstone style** (`core/ui/Redstone`): deepslate surfaces with pixel edges, redstone
+dust lines whose signal strength fades, lamps that light up (hover, focus, primary buttons), enabled tiles glow like
+powered blocks; the launcher accent tints dust and glow. The title screen lives in `core/ui/title` (`TitleUi` +
+`CircuitScene`, per version only a small `TitleHost`); its background is a procedural circuit (torches, dust,
+repeaters with their delay, lamps, pistons) that is rebuilt only when the window size changes and switches itself to
+a sparser version if drawing it gets expensive (always sparse on Forge 1.8.9–1.12.2). On 1.20–1.21.1 the TRS screens
+draw inside `GuiGraphics#drawManaged`, otherwise every rectangle would be a draw call of its own.
 
 **HUD bearbeiten** drags the modules around: they snap to the screen edges, the screen centre and to the edges and
 centres of the other modules, and the guide line that is being used lights up. Holding Shift moves freely, the mouse
@@ -138,6 +147,7 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | 1.7-Animationen: Hand bleibt oben | Forge 1.8.9–1.12.2 | `ItemRenderer.equippedProgress` is private and there is no hook |
 | Wegpunkte je Dimension | 1.14.4, 1.15.2 | no `Level#dimension()`; waypoints are then valid in every dimension of that world |
 | Treffer-Farbe, niedriges Feuer, Reichweite/Combo, Chat-Tools, Auto-GG, Kein Schadens-Wackeln, Block-Umrandung | Forge 1.14.4 | that build has no Mixin at all – the modules are hidden in the menu |
+| TRS-Startbildschirm | Forge 1.13.2 and 1.7.10 | not ported – the vanilla title screen stays; the menu has the redstone style there too |
 | Alle neuen Module | Forge 1.13.2 and 1.7.10 | not ported yet (see "Open") |
 | Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |
 

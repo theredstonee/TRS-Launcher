@@ -149,6 +149,16 @@ public final class Mc {
 		*///?}
 	}
 
+	/** Liest einen Text über den Erzähler vor – nur wenn der Spieler ihn eingeschaltet hat. */
+	public static void narrate(String text) {
+		//? if >=1.21.6 {
+		/*mc().getNarrator().saySystemNow(text);
+		*///?} elif >=1.19.1 {
+		mc().getNarrator().sayNow(text);
+		//?} else
+		/*net.minecraft.client.gui.chat.NarratorChatListener.INSTANCE.sayNow(text);*/
+	}
+
 	// --- Spieler / Entities ---
 
 	public static float yRot(Entity e) {

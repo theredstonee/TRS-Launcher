@@ -11,6 +11,8 @@ import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.FadeCanvas;
 import dev.theredstonee.trsclient.core.ui.Icons;
 import dev.theredstonee.trsclient.core.ui.Paint;
+import dev.theredstonee.trsclient.core.ui.PixelFont;
+import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.TextInput;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.TileGrid;
@@ -32,12 +34,17 @@ public final class ModMenu extends UiScreen {
 		GRID, SETTINGS, PROFILES
 	}
 
-	private static final int HEADER_H = 24;
-	private static final int RAIL_W = 88;
-	private static final int TILE_MIN_W = 104;
-	private static final int TILE_H = 46;
-	private static final int TILE_GAP = 5;
-	private static final int PAD = 8;
+	private static final int HEADER_H = 30;
+	private static final int RAIL_W = 112;
+	/** Kacheln: 2–4 Spalten, nie schmaler als das, damit Namen ganz passen. */
+	private static final int TILE_MIN_W = 116;
+	private static final int TILE_H = 60;
+	private static final int TILE_GAP = 8;
+	private static final int PAD = 10;
+	private static final int MAX_COLUMNS = 4;
+	/** Breite der Leiste und Mindestbreite der Kacheln – in kleinen Fenstern schmaler (siehe draw). */
+	private int railW = RAIL_W;
+	private int tileMin = TILE_MIN_W;
 
 	private final MenuHost host;
 	private final SettingsPanel panel = new SettingsPanel();
@@ -97,25 +104,29 @@ public final class ModMenu extends UiScreen {
 		Canvas c = FadeCanvas.of(raw, alpha());
 		c.fill(0, 0, width, height, t.scrim);
 
-		int pw = Math.min(width - 16, 440);
-		int ph = Math.min(height - 16, 264);
+		// Fenster: nutzt den Bildschirm (GUI-Pixel – wächst also mit kleinerer GUI-Größe mit).
+		int pw = Math.min(width - 16, Math.max(Math.min(440, width - 16), Math.min(780, Math.round(width * 0.86f))));
+		int ph = Math.min(height - 16, Math.max(Math.min(264, height - 16), Math.min(470, Math.round(height * 0.86f))));
 		int px = (width - pw) / 2;
 		int py = (height - ph) / 2 + Math.round((1 - Anim.easeOut(open)) * 14);
 
 		// Das Fenster liegt über allem, was vorher gezeichnet wurde (HUD-Text hat eigene Tiefe).
 		c.push();
 		c.raise(300f);
-		Paint.shadow(c, px, py, pw, ph, 6, alpha());
-		Paint.roundRect(c, px, py, pw, ph, 6, t.background);
-		Paint.roundOutline(c, px, py, pw, ph, 6, t.border);
+		Redstone.window(c, px, py, pw, ph);
+		boolean narrow = pw < 520;
+		railW = narrow ? 96 : RAIL_W;
+		tileMin = narrow ? 98 : TILE_MIN_W;
 
 		header(c, px, py, pw, mouseX, mouseY);
-		rail(c, px + PAD, py + HEADER_H + 4, RAIL_W - PAD, ph - HEADER_H - PAD - 4, mouseX, mouseY, dt);
+		rail(c, px + PAD, py + HEADER_H + PAD, railW - PAD - 6, ph - HEADER_H - PAD * 2, mouseX, mouseY, dt);
+		// Trennlinie zwischen Leiste und Inhalt: unbestromter Staub.
+		Redstone.dustV(c, px + railW, py + HEADER_H + PAD, py + ph - PAD, Theme.get().dustOff, 0f);
 
-		int cx = px + RAIL_W;
-		int cy = py + HEADER_H + 4;
-		int cw = pw - RAIL_W - PAD;
-		int ch = ph - HEADER_H - PAD - 4;
+		int cx = px + railW + PAD;
+		int cy = py + HEADER_H + PAD;
+		int cw = pw - railW - PAD * 2;
+		int ch = ph - HEADER_H - PAD * 2;
 		contentRect[0] = cx;
 		contentRect[1] = cy;
 		contentRect[2] = cw;
@@ -136,15 +147,20 @@ public final class ModMenu extends UiScreen {
 
 	private void header(Canvas c, int px, int py, int pw, int mx, int my) {
 		Theme t = Theme.get();
-		Paint.roundRect(c, px, py, pw, HEADER_H, 6, t.surfaceHigh);
-		c.fill(px, py + HEADER_H - 6, px + pw, py + HEADER_H, t.surfaceHigh);
-		c.fill(px, py + HEADER_H - 1, px + pw, py + HEADER_H, t.border);
-		c.fill(px + PAD, py + 6, px + PAD + 2, py + HEADER_H - 6, t.accent);
-		c.text("TRS", px + PAD + 7, py + 8, t.accent, false);
-		c.text("CLIENT", px + PAD + 7 + c.textWidth("TRS "), py + 8, t.textDim, false);
+		c.fill(px + 1, py + 2, px + pw - 1, py + HEADER_H, t.surfaceHigh);
+		c.fill(px + 1, py + HEADER_H - 1, px + pw - 1, py + HEADER_H, t.border);
+		// Schriftzug: "TRS" in Pixelschrift mit Leuchten, daneben "Client"
+		int lx = px + PAD;
+		int ly = py + (HEADER_H - PixelFont.HEIGHT * 2) / 2;
+		List<int[]> rects = PixelFont.rects("TRS");
+		int glow = ColorMath.withAlpha(t.glow, 40);
+		for (int[] r : rects) c.fill(lx + r[0] * 2 - 1, ly + r[1] * 2 - 1, lx + r[2] * 2 + 1, ly + r[3] * 2 + 1, glow);
+		int light = ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.3f);
+		for (int[] r : rects) c.fill(lx + r[0] * 2, ly + r[1] * 2, lx + r[2] * 2, ly + r[3] * 2, r[1] == 0 ? light : t.accent);
+		c.text("Client", lx + PixelFont.width("TRS") * 2 + 5, py + (HEADER_H - 8) / 2, t.textDim, false);
 
 		// Schließen
-		int closeSize = 14;
+		int closeSize = 16;
 		int closeX = px + pw - PAD - closeSize;
 		int closeY = py + (HEADER_H - closeSize) / 2;
 		boolean closeHover = inside(mx, my, closeX, closeY, closeSize, closeSize);
@@ -157,22 +173,23 @@ public final class ModMenu extends UiScreen {
 			}
 		});
 
-		// Suchfeld
-		int searchW = Math.min(130, Math.max(70, pw / 3));
-		int searchX = closeX - 6 - searchW;
-		int searchY = py + (HEADER_H - 14) / 2;
-		boolean searchHover = inside(mx, my, searchX, searchY, searchW, 14);
-		Paint.roundRect(c, searchX, searchY, searchW, 14, 3, t.background);
-		Paint.roundOutline(c, searchX, searchY, searchW, 14, 3, search.focused() ? t.accent : (searchHover ? t.textDim : t.border));
-		Icons.draw(c, "search", searchX + 4, searchY + 3, 1, t.textDim);
-		String shown = search.isEmpty() && !search.focused() ? "Suchen …" : search.text();
+		// Suchfeld (Mulde)
+		int searchH = 16;
+		int searchW = Math.min(180, Math.max(80, pw / 3));
+		int searchX = closeX - 8 - searchW;
+		int searchY = py + (HEADER_H - searchH) / 2;
+		boolean searchHover = inside(mx, my, searchX, searchY, searchW, searchH);
+		Redstone.well(c, searchX, searchY, searchW, searchH, search.focused() ? t.accent : (searchHover ? t.textDim : t.border));
+		if (search.focused()) Redstone.glow(c, searchX, searchY, searchW, searchH, t.glow, 0.5f);
+		Icons.draw(c, "search", searchX + 5, searchY + 4, 1, search.focused() ? t.dustOn : t.textDim);
+		String shown = search.isEmpty() && !search.focused() ? "Module suchen" : search.text();
 		int textColor = search.isEmpty() && !search.focused() ? t.textDim : t.text;
-		Paint.textClipped(c, shown, searchX + 14, searchY + 3, searchW - 20, textColor, false);
+		Paint.textClipped(c, shown, searchX + 16, searchY + 4, searchW - 22, textColor, false);
 		if (search.focused() && (System.currentTimeMillis() / 500) % 2 == 0) {
-			int caret = searchX + 14 + c.textWidth(search.text());
-			c.fill(Math.min(caret, searchX + searchW - 3), searchY + 3, Math.min(caret + 1, searchX + searchW - 2), searchY + 11, t.text);
+			int caret = searchX + 16 + c.textWidth(search.text());
+			c.fill(Math.min(caret, searchX + searchW - 3), searchY + 4, Math.min(caret + 1, searchX + searchW - 2), searchY + 12, t.dustOn);
 		}
-		hits.add(searchX, searchY, searchW, 14, new Runnable() {
+		hits.add(searchX, searchY, searchW, searchH, new Runnable() {
 			@Override
 			public void run() {
 				search.setFocused(true);
@@ -182,7 +199,16 @@ public final class ModMenu extends UiScreen {
 
 	private void rail(Canvas c, int x, int y, int w, int h, int mx, int my, float dt) {
 		Theme t = Theme.get();
-		int rowH = 16;
+		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
+		int items = 8 + (host.hasPacks() ? 1 : 0);
+		int rowH = 18;
+		int gap = 3;
+		int footer = 32;
+		while (items * (rowH + gap) + 11 + footer > h && (gap > 1 || rowH > 13)) {
+			if (gap > 1) gap--;
+			else rowH--;
+		}
+		if (items * (rowH + gap) + 11 + footer > h) footer = 0;
 		int cy = y;
 		railItem(c, x, cy, w, rowH, "layers", "Alle", category == null && page == Page.GRID, mx, my, new Runnable() {
 			@Override
@@ -192,7 +218,7 @@ public final class ModMenu extends UiScreen {
 				gridScroll = 0;
 			}
 		});
-		cy += rowH + 2;
+		cy += rowH + gap;
 		Category[] categories = Category.values();
 		for (int i = 0; i < categories.length; i++) {
 			final Category cat = categories[i];
@@ -204,12 +230,12 @@ public final class ModMenu extends UiScreen {
 					gridScroll = 0;
 				}
 			});
-			cy += rowH + 2;
+			cy += rowH + gap;
 		}
 
-		cy += 3;
-		c.fill(x, cy, x + w, cy + 1, t.border);
-		cy += 5;
+		cy += 4;
+		c.fill(x + 2, cy, x + w - 2, cy + 1, t.border);
+		cy += 7;
 
 		railItem(c, x, cy, w, rowH, "move", "HUD-Editor", false, mx, my, new Runnable() {
 			@Override
@@ -218,7 +244,7 @@ public final class ModMenu extends UiScreen {
 				host.openHudEditor();
 			}
 		});
-		cy += rowH + 2;
+		cy += rowH + gap;
 		railItem(c, x, cy, w, rowH, "profile", "Profile", page == Page.PROFILES, mx, my, new Runnable() {
 			@Override
 			public void run() {
@@ -227,7 +253,7 @@ public final class ModMenu extends UiScreen {
 				profileError = null;
 			}
 		});
-		cy += rowH + 2;
+		cy += rowH + gap;
 		if (host.hasPacks()) {
 			railItem(c, x, cy, w, rowH, "packs", "Packs", false, mx, my, new Runnable() {
 				@Override
@@ -236,10 +262,10 @@ public final class ModMenu extends UiScreen {
 					host.openPacks();
 				}
 			});
-			cy += rowH + 2;
+			cy += rowH + gap;
 		}
 
-		// Fußzeile der Leiste: Taste und aktive Module
+		// Fußzeile der Leiste: wie viele Module unter Strom stehen, und die Taste des Menüs.
 		int active = 0;
 		int total = 0;
 		List<Module> all = host.modules().registry.all();
@@ -248,9 +274,11 @@ public final class ModMenu extends UiScreen {
 			total++;
 			if (all.get(i).isEnabled()) active++;
 		}
-		int footerY = y + h - 18;
-		Paint.textClipped(c, active + "/" + total + " an", x, footerY, w, t.textDim, false);
-		Paint.textClipped(c, host.menuKeyLabel(), x, footerY + 9, w, t.textDim, false);
+		int footerY = y + h - 30;
+		if (footer == 0 || footerY < cy + 2) return;
+		Redstone.pip(c, x + 2, footerY + 1, 7, active > 0 ? 1f : 0f);
+		Paint.textClipped(c, active + " von " + total + " an", x + 14, footerY, w - 14, t.text, false);
+		Redstone.keycap(c, x, footerY + 14, host.menuKeyLabel(), w);
 	}
 
 	private void railItem(Canvas c, int x, int y, int w, int h, String icon, String label, boolean active,
@@ -258,13 +286,14 @@ public final class ModMenu extends UiScreen {
 		Theme t = Theme.get();
 		boolean hovered = inside(mx, my, x, y, w, h);
 		if (active) {
-			Paint.roundRect(c, x, y, w, h, 3, ColorMath.withAlpha(t.accent, 46));
-			c.fill(x, y + 2, x + 2, y + h - 2, t.accent);
+			Redstone.block(c, x, y, w, h, ColorMath.withAlpha(t.accent, 44));
+			Redstone.dustV(c, x, y + 2, y + h - 2, t.dustOn, 1f);
 		} else if (hovered) {
-			Paint.roundRect(c, x, y, w, h, 3, t.surfaceHover);
+			Redstone.block(c, x, y, w, h, t.surfaceHover);
+			Redstone.dustV(c, x, y + 3, y + h - 3, t.dustOff, 0f);
 		}
-		Icons.draw(c, icon, x + 6, y + (h - 8) / 2, 1, active ? t.accent : t.textDim);
-		Paint.textClipped(c, label, x + 17, y + (h - 8) / 2, w - 20, active ? t.text : t.textDim, false);
+		Icons.draw(c, icon, x + 7, y + (h - 8) / 2, 1, active ? t.dustOn : (hovered ? t.text : t.textDim));
+		Paint.textClipped(c, label, x + 19, y + (h - 8) / 2, w - 22, active || hovered ? t.text : t.textDim, false);
 		hits.add(x, y, w, h, new Click(action));
 	}
 
@@ -289,58 +318,70 @@ public final class ModMenu extends UiScreen {
 	private void grid(Canvas c, int x, int y, int w, int h, int mx, int my, float dt) {
 		Theme t = Theme.get();
 		List<Module> modules = visibleModules();
-		TileGrid layout = TileGrid.of(w - 4, h, modules.size(), TILE_MIN_W, TILE_H, TILE_GAP);
+		int usable = w - 7;
+		int minW = Math.max(tileMin, (usable - (MAX_COLUMNS - 1) * TILE_GAP) / MAX_COLUMNS);
+		TileGrid layout = TileGrid.of(usable, h - 6, modules.size(), minW, TILE_H, TILE_GAP);
 		gridScroll = layout.clampScroll(gridScroll);
 
 		if (modules.isEmpty()) {
-			Paint.textCentered(c, "Nichts gefunden", x + w / 2, y + h / 2 - 4, t.textDim, false);
+			Paint.textCentered(c, "Kein Modul passt zu \"" + search.text().trim() + "\"", x + w / 2, y + h / 2 - 10, t.text, false);
+			Paint.textCentered(c, "Esc leert die Suche", x + w / 2, y + h / 2 + 2, t.textDim, false);
 			return;
 		}
-
 		c.scissor(x, y, x + w, y + h);
 		hits.clip(x, y, w, h);
 		for (int i = 0; i < modules.size(); i++) {
 			final Module m = modules.get(i);
-			int tx = x + layout.x(i);
-			int ty = y + layout.y(i) - gridScroll;
+			// 3 px Rand für das Leuchten der Kacheln
+			int tx = x + 3 + layout.x(i);
+			int ty = y + 3 + layout.y(i) - gridScroll;
 			if (ty + TILE_H < y || ty > y + h) continue;
 			boolean tileHover = inside(mx, my, tx, ty, layout.tileWidth, TILE_H) && inside(mx, my, x, y, w, h);
 			float hv = Anim.approach(hoverOf(m.id()), tileHover ? 1f : 0f, dt, 0.05f);
 			hover.put(m.id(), Float.valueOf(hv));
-			tile(c, m, tx, Math.round(ty - hv * 1.5f), layout.tileWidth, TILE_H, tileHover, mx, my, dt);
+			tile(c, m, tx, ty, layout.tileWidth, TILE_H, tileHover, mx, my, dt);
 		}
 		hits.noClip();
 		c.noScissor();
 
-		if (layout.maxScroll > 0) {
-			int barH = Math.max(14, h * h / (h + layout.maxScroll));
-			int barY = y + (h - barH) * gridScroll / layout.maxScroll;
-			c.fill(x + w - 2, y, x + w, y + h, t.surface);
-			Paint.roundRect(c, x + w - 2, barY, 2, barH, 1, t.textDim);
-		}
+		if (layout.maxScroll > 0) scrollbar(c, x + w - 2, y, h, gridScroll, layout.maxScroll);
 	}
 
 	private void tile(Canvas c, final Module m, int x, int y, int w, int h, boolean hovered, int mx, int my, float dt) {
 		Theme t = Theme.get();
 		float hv = hoverOf(m.id());
-		Paint.roundRect(c, x, y, w, h, 4, ColorMath.lerp(t.surface, t.surfaceHover, hv));
-		Paint.roundOutline(c, x, y, w, h, 4, m.isEnabled() ? ColorMath.lerp(t.accent, t.accentHover, hv) : ColorMath.lerp(t.border, t.textDim, hv));
-		Icons.draw(c, m.icon(), x + 8, y + 8, 2, m.isEnabled() ? t.accent : t.textDim);
-		Paint.textClipped(c, m.name(), x + 28, y + 9, w - 34, t.text, false);
-		Paint.textClipped(c, m.category().label(), x + 28, y + 19, w - 34, t.textDim, false);
-
-		int tw = 22;
-		int tx = x + w - tw - 7;
-		int ty = y + h - 15;
-		boolean toggleHover = inside(mx, my, tx - 3, ty - 2, tw + 6, 15);
 		float progress = Anim.approach(hoverOf(m.id() + "#on"), m.isEnabled() ? 1f : 0f, dt, 0.05f);
 		hover.put(m.id() + "#on", Float.valueOf(progress));
-		Paint.toggle(c, tx, ty, tw, 11, progress, toggleHover);
 
-		if (!m.settings().isEmpty()) {
-			Icons.draw(c, "gear", x + 8, y + h - 14, 1, hovered ? t.text : t.textDim);
-			Paint.textClipped(c, "Einstellungen", x + 18, y + h - 14, w - 24 - tw, hovered ? t.textDim : ColorMath.withAlpha(t.textDim, 140), false);
+		// Eingeschaltete Kacheln stehen "unter Strom": Akzent-Kante und Leuchten.
+		int fill = ColorMath.lerp(ColorMath.lerp(t.surface, t.surfaceHover, hv), ColorMath.lerp(ColorMath.lerp(t.surface, t.surfaceHover, hv), t.accent, 0.09f), progress);
+		int edge = ColorMath.lerp(ColorMath.lerp(t.border, t.textDim, hv * 0.6f), ColorMath.lerp(t.border, t.accent, 0.75f + 0.25f * hv), progress);
+		if (progress > 0.02f) Redstone.glow(c, x, y, w, h, t.glow, progress * (0.45f + 0.35f * hv));
+		Redstone.stone(c, x, y, w, h, fill, edge);
+
+		int iconColor = ColorMath.lerp(hovered ? t.text : t.textDim, t.dustOn, progress);
+		Redstone.iconWell(c, x + 8, y + 8, 2, m.icon(), iconColor, progress);
+
+		int tw = 24;
+		int tx = x + w - tw - 8;
+		int ty = y + 10;
+		boolean toggleHover = inside(mx, my, tx - 3, ty - 3, tw + 6, 18);
+		Paint.toggle(c, tx, ty, tw, 12, progress, toggleHover);
+
+		// Name ungekürzt: notfalls in zwei Zeilen.
+		boolean gear = !m.settings().isEmpty();
+		int nameW = w - 16 - (gear ? 12 : 0);
+		List<String> lines = Paint.wrap(c, m.name(), nameW);
+		int nameColor = ColorMath.lerp(t.text, 0xFFFFFFFF, progress * 0.4f);
+		if (lines.size() <= 1) {
+			c.text(m.name(), x + 8, y + h - 16, nameColor, false);
+		} else {
+			c.text(lines.get(0), x + 8, y + h - 25, nameColor, false);
+			StringBuilder rest = new StringBuilder(lines.get(1));
+			for (int i = 2; i < lines.size(); i++) rest.append(' ').append(lines.get(i));
+			Paint.textClipped(c, rest.toString(), x + 8, y + h - 15, nameW, nameColor, false);
 		}
+		if (gear) Icons.draw(c, "gear", x + w - 16, y + h - 15, 1, hovered ? t.dustOn : ColorMath.withAlpha(t.textDim, 170));
 
 		hits.add(x, y, w, h, new Runnable() {
 			@Override
@@ -352,13 +393,22 @@ public final class ModMenu extends UiScreen {
 				panel.reset();
 			}
 		});
-		hits.add(tx - 3, ty - 2, tw + 6, 15, new Runnable() {
+		hits.add(tx - 3, ty - 3, tw + 6, 18, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
 				m.toggle();
 			}
 		});
+	}
+
+	/** Schmaler Rollbalken: unbestromter Staub, der sichtbare Teil leuchtet. */
+	private static void scrollbar(Canvas c, int x, int y, int h, int scroll, int maxScroll) {
+		Theme t = Theme.get();
+		int barH = Math.max(14, h * h / (h + maxScroll));
+		int barY = y + (h - barH) * scroll / maxScroll;
+		c.fill(x, y, x + 2, y + h, t.dustOff);
+		c.fill(x, barY, x + 2, barY + barH, t.dustOn);
 	}
 
 	private float hoverOf(String key) {
@@ -375,10 +425,14 @@ public final class ModMenu extends UiScreen {
 			return;
 		}
 		final Module m = selected;
+		float progress = Anim.approach(hoverOf(m.id() + "#on"), m.isEnabled() ? 1f : 0f, dt, 0.05f);
+		hover.put(m.id() + "#on", Float.valueOf(progress));
 
-		boolean backHover = inside(mx, my, x, y, 14, 14);
-		Paint.iconButton(c, x, y, 14, "back", backHover, false);
-		hits.add(x, y, 14, 14, new Runnable() {
+		// Kopf: Zurück, Symbol, Name, Zurücksetzen, Schalter
+		int headH = 22;
+		boolean backHover = inside(mx, my, x, y + 2, 18, 18);
+		Paint.iconButton(c, x, y + 2, 18, "back", backHover, false);
+		hits.add(x, y + 2, 18, 18, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -386,51 +440,50 @@ public final class ModMenu extends UiScreen {
 				panel.reset();
 			}
 		});
-		Icons.draw(c, m.icon(), x + 20, y + 3, 1, t.accent);
-		Paint.textClipped(c, m.name(), x + 31, y + 3, w - 100, t.text, false);
+		Redstone.iconWell(c, x + 24, y + 1, 2, m.icon(), ColorMath.lerp(t.textDim, t.dustOn, progress), progress);
 
-		int tw = 22;
-		int tx = x + w - tw;
-		boolean toggleHover = inside(mx, my, tx - 3, y, tw + 6, 14);
-		float progress = Anim.approach(hoverOf(m.id() + "#on"), m.isEnabled() ? 1f : 0f, dt, 0.05f);
-		hover.put(m.id() + "#on", Float.valueOf(progress));
-		Paint.toggle(c, tx, y + 1, tw, 12, progress, toggleHover);
-		hits.add(tx - 3, y, tw + 6, 14, new Runnable() {
+		int tw = 26;
+		int tx = x + w - tw - 2;
+		boolean toggleHover = inside(mx, my, tx - 3, y + 2, tw + 6, 18);
+		Paint.toggle(c, tx, y + 5, tw, 13, progress, toggleHover);
+		hits.add(tx - 3, y + 2, tw + 6, 18, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
 				m.toggle();
 			}
 		});
-
-		int resetX = tx - 20;
-		boolean resetHover = inside(mx, my, resetX, y, 14, 14);
-		Paint.iconButton(c, resetX, y, 14, "reset", resetHover, false);
-		hits.add(resetX, y, 14, 14, new Runnable() {
+		int resetX = tx - 26;
+		boolean resetHover = inside(mx, my, resetX, y + 2, 18, 18);
+		Paint.iconButton(c, resetX, y + 2, 18, "reset", resetHover, false);
+		hits.add(resetX, y + 2, 18, 18, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
 				m.reset();
 			}
 		});
+		int nameX = x + 52;
+		c.text(c.clip(m.name(), resetX - nameX - 6), nameX, y + 4, t.text, false);
+		String state = m.isEnabled() ? "An" : "Aus";
+		c.text(state + " · " + m.category().label(), nameX, y + 14, m.isEnabled() ? t.dustOn : t.textDim, false);
 
-		int top = y + 18;
+		int top = y + headH + 8;
+		c.fill(x, top - 4, x + w, top - 3, t.border);
 		int bottom = y + h;
 		List<MenuAction> actions = host.actions(m);
-		if (!actions.isEmpty()) bottom -= 18;
+		if (!actions.isEmpty()) bottom -= 24;
 
 		c.scissor(x, top, x + w, bottom);
 		hits.clip(x, top, w, bottom - top);
-		int ry = top - settingsScroll;
-		ry = Paint.paragraph(c, m.description(), x + 2, ry, w - 6, 10, t.textDim) + 4;
-		c.fill(x + 2, ry, x + w - 4, ry + 1, t.border);
-		ry += 5;
+		int ry = top + 2 - settingsScroll;
+		ry = Paint.paragraph(c, m.description(), x + 2, ry, Math.min(w - 8, 360), 10, t.textDim) + 6;
 		List<Setting> settings = m.settings();
 		if (settings.isEmpty()) {
-			c.text("Keine Einstellungen", x + 2, ry + 2, t.textDim, false);
+			c.text("Dieses Modul hat keine Einstellungen – nur an und aus.", x + 2, ry + 2, t.textDim, false);
 			ry += 14;
 		} else {
-			ry = panel.draw(c, hits, settings, x + 2, ry, w - 6, mx, my);
+			ry = panel.draw(c, hits, settings, x + 2, ry, w - 10, mx, my);
 		}
 		settingsHeight = ry + settingsScroll - top;
 		hits.noClip();
@@ -439,20 +492,17 @@ public final class ModMenu extends UiScreen {
 
 		int maxScroll = Math.max(0, settingsHeight - (bottom - top));
 		settingsScroll = Math.max(0, Math.min(settingsScroll, maxScroll));
-		if (maxScroll > 0) {
-			int barH = Math.max(14, (bottom - top) * (bottom - top) / (bottom - top + maxScroll));
-			int barY = top + (bottom - top - barH) * settingsScroll / maxScroll;
-			c.fill(x + w - 2, top, x + w, bottom, t.surface);
-			Paint.roundRect(c, x + w - 2, barY, 2, barH, 1, t.textDim);
-		}
+		if (maxScroll > 0) scrollbar(c, x + w - 2, top, bottom - top, settingsScroll, maxScroll);
 
+		if (actions.isEmpty()) return;
+		c.fill(x, bottom + 3, x + w, bottom + 4, t.border);
 		int bx = x;
 		for (int i = 0; i < actions.size(); i++) {
 			final MenuAction action = actions.get(i);
-			int bw = Math.min(w - (bx - x), c.textWidth(action.label()) + 14);
-			boolean hovered = inside(mx, my, bx, y + h - 15, bw, 14);
-			Paint.button(c, bx, y + h - 15, bw, 14, action.label(), i == 0, hovered);
-			hits.add(bx, y + h - 15, bw, 14, new Runnable() {
+			int bw = Math.min(w - (bx - x), c.textWidth(action.label()) + 20);
+			boolean hovered = inside(mx, my, bx, y + h - 17, bw, 17);
+			Paint.button(c, bx, y + h - 17, bw, 17, action.label(), i == 0, hovered);
+			hits.add(bx, y + h - 17, bw, 17, new Runnable() {
 				@Override
 				public void run() {
 					host.playClick();
@@ -460,7 +510,7 @@ public final class ModMenu extends UiScreen {
 					action.run();
 				}
 			});
-			bx += bw + 5;
+			bx += bw + 6;
 		}
 	}
 
@@ -469,25 +519,36 @@ public final class ModMenu extends UiScreen {
 	private void profilesPage(Canvas c, int x, int y, int w, int h, int mx, int my) {
 		Theme t = Theme.get();
 		final HudProfiles profiles = host.modules().profiles;
-		c.text("HUD-Profile", x + 2, y + 3, t.text, false);
+		c.text("HUD-Profile", x + 2, y + 4, t.text, false);
 		String keyLabel = host.profileKeyLabel();
-		String hint = keyLabel == null || keyLabel.isEmpty() ? "Taste in den Steuerungen belegbar" : "Taste " + keyLabel + " wechselt";
-		Paint.textClipped(c, hint, x + w - Math.min(w - 70, c.textWidth(hint)), y + 4, Math.min(w - 70, c.textWidth(hint)), t.textDim, false);
+		boolean unbound = keyLabel == null || keyLabel.isEmpty();
+		if (!unbound) {
+			String hint = "wechselt";
+			int hw = c.textWidth(hint);
+			Paint.textRight(c, hint, x + w, y + 4, t.textDim, false);
+			int kw = Math.min(90, c.textWidth(keyLabel) + 8);
+			Redstone.keycap(c, x + w - hw - 6 - kw, y + 1, keyLabel, kw);
+		}
 
-		int rowH = 18;
-		int ry = y + 16;
-		int listBottom = y + h - 20;
+		int rowH = 22;
+		int ry = y + 20;
+		int listBottom = y + h - 26;
 		for (int i = 0; i < profiles.size() && ry + rowH <= listBottom; i++) {
 			final int index = i;
 			boolean active = profiles.activeIndex() == i;
-			boolean rowHover = inside(mx, my, x, ry, w, rowH - 2);
-			Paint.roundRect(c, x, ry, w, rowH - 2, 3, active ? ColorMath.withAlpha(t.accent, 46) : (rowHover ? t.surfaceHover : t.surface));
-			if (active) c.fill(x, ry + 2, x + 2, ry + rowH - 4, t.accent);
-			if (editingProfile == index) {
-				drawInput(c, x + 6, ry + 2, w - 70, mx, my);
+			boolean rowHover = inside(mx, my, x, ry, w, rowH - 3);
+			if (active) {
+				Redstone.glow(c, x, ry, w, rowH - 3, t.glow, 0.35f);
+				Redstone.stone(c, x, ry, w, rowH - 3, ColorMath.lerp(t.surface, t.accent, 0.1f), ColorMath.lerp(t.border, t.accent, 0.75f));
 			} else {
-				Paint.textClipped(c, profiles.name(i), x + 8, ry + 4, w - 64, active ? t.text : t.textDim, false);
-				hits.add(x, ry, w - 40, rowH - 2, new Runnable() {
+				Redstone.stone(c, x, ry, w, rowH - 3, rowHover ? t.surfaceHover : t.surface, t.border);
+			}
+			Redstone.pip(c, x + 7, ry + 6, 7, active ? 1f : 0f);
+			if (editingProfile == index) {
+				drawInput(c, x + 20, ry + 2, w - 80, mx, my);
+			} else {
+				Paint.textClipped(c, profiles.name(i), x + 20, ry + 6, w - 76, active ? t.text : t.textDim, false);
+				hits.add(x, ry, w - 44, rowH - 3, new Runnable() {
 					@Override
 					public void run() {
 						host.playClick();
@@ -495,22 +556,22 @@ public final class ModMenu extends UiScreen {
 					}
 				});
 			}
-			int bx = x + w - 16;
-			boolean delHover = inside(mx, my, bx, ry + 2, 14, 14);
-			Paint.iconButton(c, bx, ry + 2, 14, "trash", delHover, false);
-			hits.add(bx, ry + 2, 14, 14, new Runnable() {
+			int bx = x + w - 19;
+			boolean delHover = inside(mx, my, bx, ry + 2, 15, 15);
+			Paint.iconButton(c, bx, ry + 2, 15, "trash", delHover, false);
+			hits.add(bx, ry + 2, 15, 15, new Runnable() {
 				@Override
 				public void run() {
 					host.playClick();
-					if (!profiles.delete(index)) profileError = "Das letzte Profil bleibt";
+					if (!profiles.delete(index)) profileError = "Das letzte Profil kann nicht gelöscht werden";
 					else profileError = null;
 					editingProfile = -1;
 				}
 			});
-			bx -= 17;
-			boolean editHover = inside(mx, my, bx, ry + 2, 14, 14);
-			Paint.iconButton(c, bx, ry + 2, 14, "pencil", editHover, false);
-			hits.add(bx, ry + 2, 14, 14, new Runnable() {
+			bx -= 18;
+			boolean editHover = inside(mx, my, bx, ry + 2, 15, 15);
+			Paint.iconButton(c, bx, ry + 2, 15, "pencil", editHover, false);
+			hits.add(bx, ry + 2, 15, 15, new Runnable() {
 				@Override
 				public void run() {
 					host.playClick();
@@ -524,21 +585,24 @@ public final class ModMenu extends UiScreen {
 		}
 
 		if (editingProfile == -2) {
-			drawInput(c, x, ry + 2, w - 60, mx, my);
-			int okX = x + w - 56;
-			boolean okHover = inside(mx, my, okX, ry + 2, 54, 14);
-			Paint.button(c, okX, ry + 2, 54, 14, "Anlegen", true, okHover);
-			hits.add(okX, ry + 2, 54, 14, new Runnable() {
+			drawInput(c, x, ry + 2, w - 70, mx, my);
+			int okX = x + w - 64;
+			boolean okHover = inside(mx, my, okX, ry + 1, 64, 17);
+			Paint.button(c, okX, ry + 1, 64, 17, "Anlegen", true, okHover);
+			hits.add(okX, ry + 1, 64, 17, new Runnable() {
 				@Override
 				public void run() {
 					confirmProfile();
 				}
 			});
-			ry += 18;
+			ry += 22;
 		} else if (profiles.canCreate()) {
-			boolean addHover = inside(mx, my, x, ry + 2, 96, 14);
-			Paint.button(c, x, ry + 2, 96, 14, "+ Neues Profil", false, addHover);
-			hits.add(x, ry + 2, 96, 14, new Runnable() {
+			int bw = c.textWidth("Neues Profil") + 30;
+			boolean addHover = inside(mx, my, x, ry + 1, bw, 17);
+			Paint.button(c, x, ry + 1, bw, 17, "", false, addHover);
+			Icons.draw(c, "plus", x + 7, ry + 5, 1, addHover ? t.dustOn : t.text);
+			c.text("Neues Profil", x + 20, ry + 5 - (addHover ? 1 : 0), t.text, false);
+			hits.add(x, ry + 1, bw, 17, new Runnable() {
 				@Override
 				public void run() {
 					host.playClick();
@@ -548,27 +612,28 @@ public final class ModMenu extends UiScreen {
 					nameInput.setFocused(true);
 				}
 			});
-			ry += 18;
+			ry += 22;
 		}
 
-		if (profileError != null) {
-			Paint.textClipped(c, profileError, x + 2, y + h - 10, w - 4, t.accent, false);
-		} else {
-			Paint.textClipped(c, "Profile speichern Lage und Aussehen aller HUD-Module.",
-					x + 2, y + h - 10, w - 4, t.textDim, false);
+		String note = profileError != null ? profileError
+				: "Ein Profil speichert Lage und Aussehen aller HUD-Module."
+				+ (unbound ? " Eine Taste zum Wechseln lässt sich in den Steuerungen belegen." : "");
+		List<String> lines = Paint.wrap(c, note, w - 4);
+		int ly = y + h - 9 - (Math.min(2, lines.size()) - 1) * 10;
+		for (int i = 0; i < Math.min(2, lines.size()); i++) {
+			Paint.textClipped(c, lines.get(i), x + 2, ly + i * 10, w - 4, profileError != null ? t.dustOn : t.textDim, false);
 		}
 	}
 
 	private void drawInput(Canvas c, int x, int y, int w, int mx, int my) {
 		Theme t = Theme.get();
-		Paint.roundRect(c, x, y, w, 14, 3, t.background);
-		Paint.roundOutline(c, x, y, w, 14, 3, t.accent);
-		Paint.textClipped(c, nameInput.text(), x + 4, y + 3, w - 8, t.text, false);
+		Redstone.well(c, x, y, w, 15, t.accent);
+		Paint.textClipped(c, nameInput.text(), x + 4, y + 4, w - 8, t.text, false);
 		if ((System.currentTimeMillis() / 500) % 2 == 0) {
 			int caret = x + 4 + c.textWidth(nameInput.text());
-			c.fill(Math.min(caret, x + w - 3), y + 3, Math.min(caret + 1, x + w - 2), y + 11, t.text);
+			c.fill(Math.min(caret, x + w - 3), y + 4, Math.min(caret + 1, x + w - 2), y + 12, t.dustOn);
 		}
-		hits.add(x, y, w, 14, new Runnable() {
+		hits.add(x, y, w, 15, new Runnable() {
 			@Override
 			public void run() {
 				nameInput.setFocused(true);

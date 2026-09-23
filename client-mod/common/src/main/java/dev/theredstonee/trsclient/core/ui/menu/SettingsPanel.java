@@ -13,6 +13,7 @@ import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.Hits;
 import dev.theredstonee.trsclient.core.ui.Icons;
 import dev.theredstonee.trsclient.core.ui.Paint;
+import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.TextInput;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
@@ -71,10 +72,15 @@ public final class SettingsPanel {
 	 * @return y unter der letzten Zeile
 	 */
 	public int draw(Canvas c, Hits hits, List<Setting> settings, int x, int y, int w, int mouseX, int mouseY) {
+		int line = ColorMath.withAlpha(Theme.get().border, 150);
 		for (int i = 0; i < settings.size(); i++) {
 			Setting s = settings.get(i);
 			int rh = rowHeight(s);
+			boolean rowHover = inside(mouseX, mouseY, x - 2, y, w + 4, s instanceof NumberSetting ? ROW_NUMBER : ROW_BOOL);
+			// Die Zeile unter der Maus liegt leicht erhöht – so ist klar, wozu ein Regler gehört.
+			if (rowHover) Redstone.block(c, x - 2, y, w + 4, (s instanceof NumberSetting ? ROW_NUMBER : ROW_BOOL) - 1, ColorMath.withAlpha(Theme.get().surfaceHover, 150));
 			row(c, hits, s, x, y, w, rh, mouseX, mouseY);
+			if (i < settings.size() - 1) c.fill(x, y + rh - 1, x + w, y + rh, line);
 			y += rh;
 		}
 		return y;
@@ -84,14 +90,14 @@ public final class SettingsPanel {
 		Theme t = Theme.get();
 		int right = x + w;
 		// Textzeilen haben rechts ein breites Eingabefeld – dann den Namen früher abschneiden.
-		int labelWidth = s instanceof TextSetting ? w - textFieldWidth(w) - 8 : w - 90;
-		c.text(c.clip(s.label(), labelWidth), x + 2, y + 6, t.text, false);
+		int labelWidth = s instanceof TextSetting ? w - textFieldWidth(c, s, w) - 8 : w - 90;
+		Paint.textClipped(c, s.label(), x + 2, y + 6, labelWidth, t.text, false);
 		if (s instanceof BoolSetting) {
 			BoolSetting b = (BoolSetting) s;
-			int bw = 22;
+			int bw = 24;
 			int bx = right - bw;
-			boolean hover = inside(mx, my, bx, y + 3, bw, 12);
-			Paint.toggle(c, bx, y + 3, bw, 12, b.get() ? 1f : 0f, hover);
+			boolean hover = inside(mx, my, bx - 4, y, bw + 4, 18);
+			Paint.toggle(c, bx, y + 4, bw, 12, b.get() ? 1f : 0f, hover);
 			hits.add(bx - 4, y, bw + 4, 18, new Toggle(b));
 		} else if (s instanceof NumberSetting) {
 			number(c, hits, (NumberSetting) s, x, y, w, mx, my);
@@ -108,7 +114,7 @@ public final class SettingsPanel {
 
 	private void number(Canvas c, Hits hits, final NumberSetting n, int x, int y, int w, int mx, int my) {
 		Theme t = Theme.get();
-		Paint.textRight(c, n.display(), x + w, y + 6, t.accent, false);
+		Paint.textRight(c, n.display(), x + w, y + 6, t.dustOn, false);
 		final int sliderX = x + 2;
 		final int sliderW = Math.max(20, w - 4);
 		int sliderY = y + 17;
@@ -128,9 +134,12 @@ public final class SettingsPanel {
 		int bw = Math.max(34, c.textWidth(label) + 12);
 		int bx = x + w - bw;
 		boolean hover = inside(mx, my, bx, y + 2, bw, 14);
-		Paint.roundRect(c, bx, y + 2, bw, 14, 3, capturing == k ? t.accent : (hover ? t.surfaceHover : t.surfaceHigh));
-		Paint.roundOutline(c, bx, y + 2, bw, 14, 3, capturing == k ? t.accent : t.border);
-		Paint.textCentered(c, label, bx + bw / 2, y + 6, capturing == k ? ColorMath.contrastText(t.accent) : t.text, false);
+		if (capturing == k) {
+			Redstone.lamp(c, bx, y + 2, bw, 15, 1f, 0f);
+			Paint.textCentered(c, label, bx + bw / 2, y + 6, t.lampTextLit, false);
+		} else {
+			Redstone.keycap(c, bx, y + 2, bw, label, hover);
+		}
 		hits.add(bx, y + 2, bw, 14, new Runnable() {
 			@Override
 			public void run() {
@@ -150,18 +159,18 @@ public final class SettingsPanel {
 	private void text(Canvas c, Hits hits, final TextSetting s, int x, int y, int w, int mx, int my) {
 		Theme t = Theme.get();
 		boolean editing = editingText == s;
-		int bw = textFieldWidth(w);
+		int bw = textFieldWidth(c, s, w);
 		int bx = x + w - bw;
 		boolean hover = inside(mx, my, bx, y + 2, bw, 14);
-		Paint.roundRect(c, bx, y + 2, bw, 14, 3, hover || editing ? t.surfaceHover : t.surfaceHigh);
-		Paint.roundOutline(c, bx, y + 2, bw, 14, 3, editing ? t.accent : t.border);
+		Redstone.well(c, bx, y + 2, bw, 15, editing ? t.accent : (hover ? t.textDim : t.border));
+		if (editing) Redstone.glow(c, bx, y + 2, bw, 15, t.glow, 0.5f);
 		String shown = editing ? textInput.text() : s.get();
 		boolean placeholder = shown.isEmpty();
 		if (placeholder) shown = s.placeholder();
 		c.text(c.clip(shown, bw - 8), bx + 4, y + 6, placeholder ? t.textDim : t.text, false);
 		if (editing && (System.currentTimeMillis() / 500) % 2 == 0) {
 			int cursorX = bx + 4 + Math.min(bw - 8, c.textWidth(textInput.text()));
-			c.fill(cursorX, y + 4, cursorX + 1, y + 14, t.accent);
+			c.fill(cursorX, y + 5, cursorX + 1, y + 14, t.dustOn);
 		}
 		hits.add(bx, y + 2, bw, 14, new Runnable() {
 			@Override
@@ -172,8 +181,9 @@ public final class SettingsPanel {
 	}
 
 	/** Breite des Eingabefelds einer Textzeile. */
-	private static int textFieldWidth(int w) {
-		return Math.max(60, w / 2);
+	private static int textFieldWidth(Canvas c, Setting s, int w) {
+		// Die Beschriftung bekommt, was sie braucht – das Feld bleibt aber mindestens 70 px breit.
+		return Math.max(70, Math.min(w / 2, w - c.textWidth(s.label()) - 14));
 	}
 
 	private void startEditing(TextSetting s) {
@@ -256,8 +266,7 @@ public final class SettingsPanel {
 		int bx = x + w - bw;
 		boolean hover = inside(mx, my, bx, y + 2, bw, 14);
 		boolean open = expanded == choice;
-		Paint.roundRect(c, bx, y + 2, bw, 14, 3, hover || open ? t.surfaceHover : t.surfaceHigh);
-		Paint.roundOutline(c, bx, y + 2, bw, 14, 3, open ? t.accent : t.border);
+		Redstone.stone(c, bx, y + 2, bw, 15, hover || open ? t.surfaceHover : t.surfaceHigh, open ? t.accent : (hover ? t.textDim : t.border));
 		Paint.textCentered(c, c.clip(label, bw - 6), bx + bw / 2, y + 6, t.text, false);
 		hits.add(bx, y + 2, bw, 14, new Runnable() {
 			@Override
@@ -269,17 +278,18 @@ public final class SettingsPanel {
 		c.flush();
 		int listY = y + ROW_BOOL;
 		int listH = choice.size() * CHOICE_ITEM + 4;
-		Paint.roundRect(c, bx - 2, listY, bw + 4, listH, 3, t.background);
-		Paint.roundOutline(c, bx - 2, listY, bw + 4, listH, 3, t.border);
+		Redstone.block(c, bx - 2, listY, bw + 4, listH, t.border);
+		c.fill(bx - 1, listY + 1, bx + bw + 1, listY + listH - 1, t.background);
 		for (int i = 0; i < choice.size(); i++) {
 			final int index = i;
 			int iy = listY + 2 + i * CHOICE_ITEM;
 			boolean itemHover = inside(mx, my, bx - 2, iy, bw + 4, CHOICE_ITEM);
 			boolean active = choice.index() == i;
 			if (itemHover || active) {
-				Paint.roundRect(c, bx - 1, iy, bw + 2, CHOICE_ITEM, 2, active ? ColorMath.withAlpha(t.accent, 60) : t.surfaceHover);
+				Redstone.block(c, bx - 1, iy, bw + 2, CHOICE_ITEM, active ? ColorMath.withAlpha(t.accent, 60) : t.surfaceHover);
+				if (active) c.fill(bx - 1, iy + 2, bx + 1, iy + CHOICE_ITEM - 2, t.dustOn);
 			}
-			c.text(c.clip(choice.optionLabel(i), bw - 4), bx + 2, iy + 3, active ? t.accent : t.text, false);
+			c.text(c.clip(choice.optionLabel(i), bw - 8), bx + 4, iy + 3, active ? t.dustOn : t.text, false);
 			hits.add(bx - 2, iy, bw + 4, CHOICE_ITEM, new Runnable() {
 				@Override
 				public void run() {
@@ -296,9 +306,9 @@ public final class SettingsPanel {
 		int sx = x + w - sw;
 		boolean hover = inside(mx, my, sx, y + 2, sw, 14);
 		boolean open = expanded == color;
-		checker(c, sx, y + 2, sw, 14);
-		Paint.roundRect(c, sx, y + 2, sw, 14, 3, color.argb());
-		Paint.roundOutline(c, sx, y + 2, sw, 14, 3, open || hover ? t.accent : t.border);
+		Redstone.block(c, sx, y + 2, sw, 15, open || hover ? t.accent : t.border);
+		checker(c, sx + 1, y + 3, sw - 2, 13);
+		c.fill(sx + 1, y + 3, sx + sw - 1, y + 16, color.argb());
 		if (color.chroma()) Paint.textCentered(c, "RGB", sx + sw / 2, y + 6, ColorMath.contrastText(color.argb()), false);
 		hits.add(sx, y + 2, sw, 14, new Runnable() {
 			@Override
@@ -323,8 +333,8 @@ public final class SettingsPanel {
 	/** Farbwähler: Sättigungs-/Helligkeitsfeld, Farbtonleiste, Deckkraft, Chroma und Palette. */
 	private void picker(Canvas c, Hits hits, final ColorSetting color, int x, int y, int w, int mx, int my) {
 		Theme t = Theme.get();
-		Paint.roundRect(c, x, y, w, PICKER_HEIGHT - 4, 4, t.background);
-		Paint.roundOutline(c, x, y, w, PICKER_HEIGHT - 4, 4, t.border);
+		Redstone.block(c, x, y, w, PICKER_HEIGHT - 4, t.border);
+		c.fill(x + 1, y + 1, x + w - 1, y + PICKER_HEIGHT - 5, t.deep);
 
 		final int fieldX = x + 6;
 		final int fieldY = y + 6;
@@ -415,8 +425,8 @@ public final class SettingsPanel {
 		for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
 			final int rgb = ColorSetting.PALETTE[i];
 			if (px + 10 > controlsX + controlsW) break;
-			Paint.roundRect(c, px, cy, 9, 9, 2, 0xFF000000 | rgb);
-			Paint.roundOutline(c, px, cy, 9, 9, 2, inside(mx, my, px, cy, 9, 9) ? t.text : t.border);
+			Redstone.block(c, px, cy, 9, 9, inside(mx, my, px, cy, 9, 9) ? t.text : t.border);
+			c.fill(px + 1, cy + 1, px + 8, cy + 8, 0xFF000000 | rgb);
 			hits.add(px, cy, 9, 9, new Runnable() {
 				@Override
 				public void run() {

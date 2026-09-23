@@ -69,6 +69,8 @@ public final class AutoTest {
 	/** Echte Eingaben (Klick, Taste): 0..2 laufen, 3 = fertig. */
 	private int inputPhase;
 	private boolean inputClick;
+	private int titlePhase;
+	private float sceneFrameMs;
 	/** Modul-Zustand vor dem Test – wird am Ende wiederhergestellt (die Config bleibt sauber). */
 	private TrsConfig before;
 	/** Vom Test angelegter Wegpunkt – am Ende wieder entfernt. */
@@ -117,7 +119,7 @@ public final class AutoTest {
 					return;
 				}
 				if (!ensureScreen(TrsTitleScreen.class, TrsTitleScreen::new)) return;
-				shot(mc, "trsclient-title");
+				if (titleStep(mc, (TrsTitleScreen) Mc.screen())) return;
 				Mc.setScreen(new TrsMenuScreen(Mc.screen()));
 				next(20);
 				break;
@@ -357,6 +359,40 @@ public final class AutoTest {
 	 * Tastatureingaben des Benutzers können das Spielfenster erreichen und einen Bildschirm schließen.
 	 * Ist der erwartete Bildschirm nicht offen, wird er (höchstens 5-mal) neu geöffnet und kurz gewartet.
 	 */
+	/**
+	 * Startbildschirm: Ruhe-Screenshot, eine Lampe per Tastatur-Auswahl an (wie Hover), dann die
+	 * Kosten der Hintergrund-Animation messen (mit und ohne Schaltung). true = noch nicht fertig.
+	 */
+	private boolean titleStep(Minecraft mc, TrsTitleScreen screen) {
+		dev.theredstonee.trsclient.core.ui.title.TitleUi title = screen.title();
+		switch (titlePhase++) {
+			case 0:
+				shot(mc, "trsclient-title");
+				title.focus(0);
+				wait = 10;
+				return true;
+			case 1:
+				shot(mc, "trsclient-title-hover");
+				title.focus(-1);
+				wait = 100;
+				return true;
+			case 2:
+				sceneFrameMs = title.frameMillis();
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm: Szene {} µs, Bildschirm {} µs (CPU), Bildzeit {} ms, {} fps, sparsam={}",
+						Math.round(title.sceneMicros()), Math.round(title.frameMicros()), String.format(java.util.Locale.ROOT, "%.2f", sceneFrameMs), Mc.fps(), title.sparseScene());
+				title.setSceneEnabled(false);
+				wait = 100;
+				return true;
+			case 3:
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm ohne Schaltung: Bildschirm {} µs (CPU), Bildzeit {} ms, {} fps",
+						Math.round(title.frameMicros()), String.format(java.util.Locale.ROOT, "%.2f", title.frameMillis()), Mc.fps());
+				title.setSceneEnabled(true);
+				return false;
+			default:
+				return false;
+		}
+	}
+
 	private boolean ensureScreen(Class<? extends Screen> type, Supplier<Screen> factory) {
 		if (type.isInstance(Mc.screen()) || reopenCount >= 5) return true;
 		reopenCount++;
@@ -435,6 +471,9 @@ public final class AutoTest {
 		mouse.trsclient$onPress(windowHandle(), left, dev.theredstonee.trsclient.compat.Keys.PRESS, 0);
 		mouse.trsclient$onPress(windowHandle(), left, 0, 0);
 		//?}
+		// Maus danach aus dem Weg (sonst leuchtet der Knopf in späteren Screenshots als Hover).
+		mouse.trsclient$setXpos(0);
+		mouse.trsclient$setYpos(0);
 	}
 
 	/** Taste drücken und loslassen – wie ein echter Tastendruck des Fensters. */

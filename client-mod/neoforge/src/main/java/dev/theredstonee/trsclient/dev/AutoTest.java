@@ -52,6 +52,7 @@ public final class AutoTest {
 
 	private int step;
 	private int wait;
+	private int titlePhase;
 	private int reopenCount;
 	/** Ticks, die in der geladenen Welt schon ein Bildschirm offen ist (Schritt 3). */
 	private int screenWait;
@@ -96,7 +97,7 @@ public final class AutoTest {
 			}
 			case 1 -> {
 				if (!ensureScreen(TrsTitleScreen.class, TrsTitleScreen::new)) return;
-				shot(mc, "trsclient-title");
+				if (titleStep(mc, (TrsTitleScreen) Mc.screen())) return;
 				Mc.setScreen(new TrsMenuScreen(Mc.screen()));
 				next(20);
 			}
@@ -339,6 +340,40 @@ public final class AutoTest {
 	/** Demo-Hinweis (DemoIntroScreen; Paket wechselt ab 26.1) – über den Klassennamen erkannt. */
 	private static boolean isDemoIntro(Screen screen) {
 		return screen != null && screen.getClass().getSimpleName().equals("DemoIntroScreen");
+	}
+
+	/**
+	 * Startbildschirm: Ruhe-Screenshot, eine Lampe per Tastatur-Auswahl an (wie Hover), dann die
+	 * Kosten der Hintergrund-Animation messen (mit und ohne Schaltung). true = noch nicht fertig.
+	 */
+	private boolean titleStep(Minecraft mc, TrsTitleScreen screen) {
+		dev.theredstonee.trsclient.core.ui.title.TitleUi title = screen.title();
+		switch (titlePhase++) {
+			case 0:
+				shot(mc, "trsclient-title");
+				title.focus(0);
+				wait = 10;
+				return true;
+			case 1:
+				shot(mc, "trsclient-title-hover");
+				title.focus(-1);
+				wait = 100;
+				return true;
+			case 2:
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm: Szene " + Math.round(title.sceneMicros()) + " µs, Bildschirm "
+						+ Math.round(title.frameMicros()) + " µs (CPU), Bildzeit " + String.format(java.util.Locale.ROOT, "%.2f", title.frameMillis())
+						+ " ms, " + mc.getFps() + " fps, sparsam=" + title.sparseScene());
+				title.setSceneEnabled(false);
+				wait = 100;
+				return true;
+			case 3:
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm ohne Schaltung: Bildschirm " + Math.round(title.frameMicros())
+						+ " µs (CPU), Bildzeit " + String.format(java.util.Locale.ROOT, "%.2f", title.frameMillis()) + " ms, " + mc.getFps() + " fps");
+				title.setSceneEnabled(true);
+				return false;
+			default:
+				return false;
+		}
 	}
 
 	private void next(int ticks) {

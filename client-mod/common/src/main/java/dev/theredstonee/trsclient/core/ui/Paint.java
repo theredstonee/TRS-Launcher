@@ -145,49 +145,25 @@ public final class Paint {
 	}
 
 	/**
-	 * An/Aus-Schalter (Pille mit Knopf). {@code progress} 0 = aus, 1 = an – dazwischen
-	 * wandert der Knopf (weiche Animation).
+	 * An/Aus-Schalter im Redstone-Stil. {@code progress} 0 = aus, 1 = an – dazwischen wandert der
+	 * Knopf (weiche Animation). Siehe {@link Redstone#toggle}.
 	 */
 	public static void toggle(Canvas c, int x, int y, int w, int h, float progress, boolean hover) {
-		Theme t = Theme.get();
-		int off = hover ? ColorMath.lerp(t.off, 0xFFFFFFFF, 0.12f) : t.off;
-		int track = ColorMath.lerp(off, t.accent, ColorMath.clamp01(progress));
-		roundRect(c, x, y, w, h, h / 2, track);
-		int knob = h - 4;
-		int travel = w - knob - 4;
-		int kx = x + 2 + Math.round(travel * ColorMath.clamp01(progress));
-		roundRect(c, kx, y + 2, knob, knob, knob / 2, 0xFFFFFFFF);
+		Redstone.toggle(c, x, y, w, h, progress, hover);
 	}
 
-	/** Schieberegler; liefert nichts – die Trefferfläche verwaltet der Aufrufer. */
+	/** Schieberegler; die Trefferfläche verwaltet der Aufrufer. Siehe {@link Redstone#slider}. */
 	public static void slider(Canvas c, int x, int y, int w, int h, float fraction, boolean hover) {
-		Theme t = Theme.get();
-		int trackY = y + h / 2 - 1;
-		roundRect(c, x, trackY, w, 3, 1, t.off);
-		int filled = Math.round(w * ColorMath.clamp01(fraction));
-		roundRect(c, x, trackY, filled, 3, 1, t.accent);
-		int knobSize = hover ? 8 : 6;
-		int kx = x + filled - knobSize / 2;
-		roundRect(c, kx, y + h / 2 - knobSize / 2, knobSize, knobSize, knobSize / 2, 0xFFFFFFFF);
+		Redstone.slider(c, x, y, w, h, fraction, hover);
 	}
 
-	/** Knopf mit Beschriftung. {@code primary} = Akzentfarbe. */
+	/** Knopf mit Beschriftung. {@code primary} = leuchtende Redstone-Lampe. */
 	public static void button(Canvas c, int x, int y, int w, int h, String label, boolean primary, boolean hover) {
-		Theme t = Theme.get();
-		int bg = primary ? (hover ? t.accentHover : t.accent) : (hover ? t.surfaceHover : t.surfaceHigh);
-		roundRect(c, x, y, w, h, 3, bg);
-		if (!primary) roundOutline(c, x, y, w, h, 3, hover ? t.textDim : t.border);
-		int fg = primary ? ColorMath.contrastText(bg) : t.text;
-		textCentered(c, c.clip(label, w - 6), x + w / 2, y + (h - 8) / 2 + 1, fg, false);
+		Redstone.button(c, x, y, w, h, label, primary, hover);
 	}
 
 	/** Kleiner Symbol-Knopf (quadratisch). */
 	public static void iconButton(Canvas c, int x, int y, int size, String icon, boolean hover, boolean primary) {
-		Theme t = Theme.get();
-		int bg = primary ? (hover ? t.accentHover : t.accent) : (hover ? t.surfaceHover : t.surfaceHigh);
-		roundRect(c, x, y, size, size, 3, bg);
-		int px = Math.max(1, (size - 4) / 8);
-		int iconSize = px * 8;
-		Icons.draw(c, icon, x + (size - iconSize) / 2, y + (size - iconSize) / 2, px, primary ? ColorMath.contrastText(bg) : t.text);
+		Redstone.iconButton(c, x, y, size, icon, hover, primary);
 	}
 }
