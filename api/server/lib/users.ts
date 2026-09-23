@@ -16,6 +16,7 @@ export interface UserRow {
   presence_visibility: 'friends' | 'nobody'
   share_server: number
   active_cape_id: string | null
+  show_cosmetics: number
 }
 
 export interface Settings {
@@ -23,6 +24,7 @@ export interface Settings {
   showCapeToOthers: boolean
   presenceVisibility: 'friends' | 'nobody'
   shareServer: boolean
+  showCosmeticsToOthers: boolean
 }
 
 export interface MeView {
@@ -73,6 +75,7 @@ export function settingsOf(u: UserRow): Settings {
     showCapeToOthers: u.show_cape === 1,
     presenceVisibility: u.presence_visibility,
     shareServer: u.share_server === 1,
+    showCosmeticsToOthers: u.show_cosmetics === 1,
   }
 }
 
@@ -109,6 +112,10 @@ export function updateSettings(ctx: AppContext, uuid: string, patch: Partial<Set
     sets.push('share_server = ?')
     params.push(patch.shareServer ? 1 : 0)
   }
+  if (patch.showCosmeticsToOthers !== undefined) {
+    sets.push('show_cosmetics = ?')
+    params.push(patch.showCosmeticsToOthers ? 1 : 0)
+  }
   // Spaltennamen stammen ausschließlich aus der festen Liste oben, Werte gehen als Parameter.
   if (sets.length > 0) run(ctx.db, `UPDATE users SET ${sets.join(', ')} WHERE uuid = ?`, ...params, uuid)
   if (patch.shareServer === false) ctx.presence.stripServer(uuid)
@@ -118,6 +125,7 @@ export function updateSettings(ctx: AppContext, uuid: string, patch: Partial<Set
 /** DSGVO Art. 17: löscht Konto, Sitzungen, Freundschaften, Anfragen, Blockaden, Uploads, Einlösungen, Meldungen. */
 export function deleteUser(ctx: AppContext, uuid: string): void {
   const uploads = all<{ id: string }>(ctx.db, "SELECT id FROM capes WHERE owner_uuid = ? AND kind = 'upload'", uuid)
+  const cosmetics = all<{ id: string }>(ctx.db, "SELECT id FROM cosmetics WHERE owner_uuid = ? AND kind = 'upload'", uuid)
   tx(ctx.db, () => {
     run(ctx.db, 'DELETE FROM users WHERE uuid = ?', uuid)
     run(ctx.db, 'DELETE FROM admin_log WHERE target = ?', uuid)
@@ -125,8 +133,12 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   for (const { id } of uploads) {
     rmSync(join(ctx.capeDir, `${id}.png`), { force: true })
   }
+  for (const { id } of cosmetics) {
+    rmSync(join(ctx.cosmeticDir, `${id}.png`), { force: true })
+  }
   ctx.presence.delete(uuid)
   ctx.events.kick(uuid)
+  ctx.watch.kick(uuid)
 }
 
 export function assertNotBanned(ctx: AppContext, uuid: string): void {

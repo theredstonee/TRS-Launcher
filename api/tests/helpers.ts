@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { crc32 } from 'node:zlib'
@@ -8,16 +8,38 @@ import { verifyLogin, createChallenge } from '../server/lib/auth'
 import { seedBuiltins, type BuiltinCape } from '../server/lib/capes'
 import { loadConfig, type Limits } from '../server/lib/config'
 import { createContext, type AppContext } from '../server/lib/context'
+import { seedBuiltinCosmetics, seedEmotes, type BuiltinCosmetic } from '../server/lib/cosmetics'
 import { openDb } from '../server/lib/db'
-import type { MojangClient, MojangProfile } from '../server/lib/mojang'
+import type { MojangClient, MojangProfile, SkinProfile } from '../server/lib/mojang'
+import { parseTemplates, type TemplateSet } from '../server/lib/templates'
 
 export const ADMIN = '75c1a6f3112240abbdb57b9d21c64232'
 
 /** Mojang-Attrappe: `join(name, uuid, serverId)` merkt sich einen Beitritt wie der echte Session-Server. */
 export class FakeMojang implements MojangClient {
   joins = new Map<string, MojangProfile>()
+  /** Konten für Namens-/Skin-Abfragen (Name klein → Profil). */
+  accounts = new Map<string, SkinProfile>()
   fail = false
   calls = 0
+  profileCalls = 0
+  async profileByName(name: string): Promise<MojangProfile | null> {
+    this.profileCalls++
+    if (this.fail) {
+      const { MojangUnavailable } = await import('../server/lib/mojang')
+      throw new MojangUnavailable('down')
+    }
+    const a = this.accounts.get(name.toLowerCase())
+    return a ? { uuid: a.uuid, name: a.name } : null
+  }
+  async skinProfile(uuid: string): Promise<SkinProfile | null> {
+    this.profileCalls++
+    if (this.fail) {
+      const { MojangUnavailable } = await import('../server/lib/mojang')
+      throw new MojangUnavailable('down')
+    }
+    return [...this.accounts.values()].find((a) => a.uuid === uuid) ?? null
+  }
   join(name: string, uuid: string, serverId: string): void {
     this.joins.set(serverId, { uuid, name })
   }
@@ -65,8 +87,22 @@ export function makeEnv(opts: { limits?: Partial<Limits>, env?: Record<string, s
     opts.limits,
   )
   const mojang = new FakeMojang()
-  const ctx = createContext({ config, db: openDb(':memory:'), mojang, capeDir: join(dir, 'capes'), now: () => clock.t })
+  const ctx = createContext({
+    config,
+    db: openDb(':memory:'),
+    mojang,
+    capeDir: join(dir, 'capes'),
+    cosmeticDir: join(dir, 'cosmetics'),
+    templates: bundledTemplates(),
+    now: () => clock.t,
+  })
+  seedEmotes(ctx)
   return { ctx, mojang, clock, dir }
+}
+
+/** Die mitgelieferten Vorlagen aus assets/cosmetics/templates.json. */
+export function bundledTemplates(): TemplateSet {
+  return parseTemplates(JSON.parse(readFileSync(join(__dirname, '..', 'assets', 'cosmetics', 'templates.json'), 'utf8')))
 }
 
 let serial = 0
@@ -133,4 +169,24 @@ export function fixtureBuiltins(): BuiltinCape[] {
 
 export function seedFixtures(env: TestEnv): void {
   seedBuiltins(env.ctx, fixtureBuiltins())
+}
+
+/** Textur für eine Vorlage: jeder benutzte Pixel deckend (scale k, n Frames). */
+export function templatePng(env: TestEnv, template: string, scale = 1, frames = 1, rgba: [number, number, number, number] = [200, 30, 20, 255]): Buffer {
+  const t = env.ctx.templates.get(template)!
+  return solidPng(t.textureWidth * scale, t.textureHeight * scale * frames, rgba)
+}
+
+/** Mitgelieferte Kosmetik für Tests: freie Krone, Code-Flügel (animiert), Admin-Krone, freie Aura. */
+export function fixtureCosmetics(env: TestEnv): BuiltinCosmetic[] {
+  return [
+    { id: 'free_crown', name: 'Krone', template: 'crown', unlock: 'free', sort: 0, scale: 2, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'crown', 2) },
+    { id: 'code_wings', name: 'Flügel', template: 'wings', unlock: 'code', sort: 1, scale: 2, frames: 4, frameTimeMs: 120, emissive: true, png: templatePng(env, 'wings', 2, 4) },
+    { id: 'team_crown', name: 'Team', template: 'crown', unlock: 'admin', sort: 2, scale: 1, frames: 1, frameTimeMs: null, emissive: true, png: templatePng(env, 'crown', 1) },
+    { id: 'free_aura', name: 'Aura', template: 'orbit', unlock: 'free', sort: 3, scale: 2, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'orbit', 2) },
+  ]
+}
+
+export function seedCosmeticFixtures(env: TestEnv): void {
+  seedBuiltinCosmetics(env.ctx, fixtureCosmetics(env))
 }

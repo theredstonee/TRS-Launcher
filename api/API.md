@@ -14,8 +14,8 @@ The German deployment guide is in [README.md](README.md).
 
 | Topic | Rule |
 |---|---|
-| Body format | JSON (`Content-Type: application/json`, UTF-8). The only exception is the cape upload, which sends raw `image/png`. |
-| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **256 KiB**. Anything larger gets `413`. |
+| Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`. |
+| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **256 KiB**, a cosmetic upload at most **512 KiB**. Anything larger gets `413`. |
 | Unknown fields | They are **rejected** with `400 invalid_request`. All request objects are strict. |
 | UUIDs | Requests accept 32 hex digits with or without dashes, in any case. **Responses always use 32 lowercase hex digits without dashes**, for example `75c1a6f3112240abbdb57b9d21c64232`. |
 | Minecraft names | `^[A-Za-z0-9_]{1,16}$` |
@@ -60,7 +60,7 @@ Every error has the same shape:
 | 415 | `unsupported_media_type` | Wrong `Content-Type`. |
 | 429 | `rate_limited` | Too many requests. Honour `Retry-After`. |
 | 500 | `internal_error` | Server bug. |
-| 502 | `upstream_unavailable` | The Mojang session server is unreachable. Only on `/v1/auth/verify`. |
+| 502 | `upstream_unavailable` | Mojang is unreachable. Only on `/v1/auth/verify` and `/v1/skins/*`. |
 | 503 | `database_unavailable` / `too_many_streams` | Temporary. Retry later. |
 
 ### 1.3 Rate limits
@@ -85,6 +85,14 @@ All limits use a token bucket that refills evenly across the window.
 | `POST /v1/capes/upload`, per account | 5 / 24 h |
 | `POST /v1/capes/{id}/report`, per account | 10 / h |
 | `GET /v1/events` connects, per account | 10 / min (and at most 3 open streams) |
+| `GET /v1/events/players` connects, per account | 20 / min (and at most 3 open streams) |
+| `POST /v1/cosmetics/upload`, per account | 5 / 24 h |
+| `POST /v1/cosmetics/{id}/report`, per account | shares the 10 / h bucket with cape reports |
+| `POST /v1/redeem` | same buckets as `POST /v1/capes/redeem` (they share them) |
+| `POST /v1/emotes/play`, per account | **1 / 2 s** (only valid, unlocked emotes count) |
+| `POST /v1/me/skin-changed`, per account | 6 / min |
+| `GET /v1/skins/*`, per account | 30 / min |
+| Mojang profile requests made by the server (cache misses), total | 100 / min. Beyond that `/v1/skins/*` answers `429`. |
 | `DELETE /v1/me`, per account | 3 / h |
 | Admin, per admin (or API key) | 240 / min |
 
@@ -198,7 +206,8 @@ Auth required.
     "showBadge": true,
     "showCapeToOthers": true,
     "presenceVisibility": "friends",
-    "shareServer": false
+    "shareServer": false,
+    "showCosmeticsToOthers": true
   },
   "activeCape": null
 }
@@ -211,6 +220,7 @@ Auth required.
 | `showCapeToOthers` | `true` | Others see the active cape. You always see your own. |
 | `presenceVisibility` | `"friends"` | `"friends"`: friends see your online state. `"nobody"`: you always appear offline. |
 | `shareServer` | `false` | Friends see the server address while you're `in-game`. |
+| `showCosmeticsToOthers` | `true` | Others see your equipped cosmetics (§11). You always see your own. Emotes are sent regardless. |
 
 ### 3.2 `PATCH /v1/me`
 
@@ -230,7 +240,8 @@ Auth required. Send any non-empty subset of `settings`:
 Auth required. Deletes everything immediately:
 
 - account, sessions, friendships, requests and blocks (both directions)
-- uploaded capes and their files
+- uploaded capes and cosmetics and their files
+- equipped cosmetics, cape and cosmetic grants
 - code redemptions, reports and presence
 
 Only an existing **ban record** survives (keyed by UUID) so a ban can't be escaped by re-registering.
@@ -291,13 +302,30 @@ Auth required. Send 1–100 UUIDs, dashed or not. Duplicates are ignored.
         "animated": true,
         "frames": 8,
         "frameTimeMs": 150
+      },
+      "cosmetics": {
+        "hat": {
+          "id": "redstone_crown",
+          "template": "crown",
+          "url": "https://api.theredstonee.de/v1/cosmetics/redstone_crown.png?v=9b1f0c77aa21",
+          "scale": 2,
+          "animated": true,
+          "frames": 8,
+          "frameTimeMs": 120,
+          "emissive": true
+        },
+        "wings": null,
+        "back": null,
+        "aura": null
       }
     }
   ]
 }
 ```
 
-Only players who **use TRS and show something** appear in the list. A missing UUID means "no badge, no cape": render vanilla.
+Only players who **use TRS and show something** (badge, cape or at least one cosmetic) appear in the list. A missing UUID means "no badge, no cape, no cosmetics": render vanilla.
+
+`cosmetics` always has the four keys `hat`, `wings`, `back` and `aura`. Each is `null` or a **LookupCosmetic**. Render it with the template named in `template` from `GET /v1/cosmetics/templates` (§11). The texture and frame fields work exactly like the cape fields.
 
 Privacy rules, enforced server-side:
 
@@ -306,12 +334,14 @@ Privacy rules, enforced server-side:
 - `badge` is the player's `showBadge` setting.
 - `cape` is set only when the player has an active cape **and** `showCapeToOthers` is on **and** the cape is `approved`.
 - For your **own** UUID you also get your own `pending` upload, and your cape even with `showCapeToOthers=false`.
+- Cosmetics follow the same rules: others get a slot only if the player has `showCosmeticsToOthers` on **and** the item is `approved`. You always see your own equipped items, including `pending` uploads.
 
 Suggested client behaviour:
 
 - Batch the UUIDs of visible players.
 - Cache results for about 5 minutes per UUID.
 - Refresh when players join the tab list.
+- For live changes (emotes, skin, cape and cosmetic changes), subscribe to the visible players with `GET /v1/events/players` (§13) instead of polling.
 
 ### 4.2 `POST /v1/presence` (heartbeat)
 
@@ -496,9 +526,9 @@ Auth required. Reports an `approved` upload by **another** user.
 Returns **204**. Reporting the same cape again updates your existing report.
 Built-in capes, pending uploads and your own uploads return `404 cape_not_found`.
 
-### 5.9 `POST /v1/capes/redeem`
+### 5.9 `POST /v1/redeem` (old path: `POST /v1/capes/redeem`)
 
-Auth required.
+Auth required. Both paths behave identically and share the rate-limit buckets. A code unlocks **either** a cape **or** a cosmetic or emote (§11, §12).
 
 ```json
 { "code": "7K3QF-M2XPA-9RTVB-C4HJN" }
@@ -509,9 +539,14 @@ Auth required.
 
 **200**
 ```json
-{ "cape": { "…": "CapeView" }, "alreadyOwned": false }
+{ "kind": "cape", "cape": { "…": "CapeView" }, "cosmetic": null, "alreadyOwned": false }
 ```
-`alreadyOwned: true` means the cape was already unlocked. In that case the code is **not** consumed.
+```json
+{ "kind": "cosmetic", "cape": null, "cosmetic": { "…": "CosmeticView (§11.6)" }, "alreadyOwned": false }
+```
+`alreadyOwned: true` means the item was already unlocked. In that case the code is **not** consumed.
+
+> **Compatibility:** for cape codes, the old fields `cape` and `alreadyOwned` are unchanged. A client that only knows capes must treat `cape: null` (a cosmetic code) as "unlocked something else". The redemption itself succeeded.
 
 | HTTP | code |
 |---|---|
@@ -610,6 +645,8 @@ and returns **201**:
 
 ## 7. Events (optional SSE)
 
+> This stream is about **your own account** (friends, presence). Live events about **other players you can see in-game** (emotes, skin, cape and cosmetic changes) come from a separate stream, `GET /v1/events/players` (§13).
+
 `GET /v1/events` requires auth (`Authorization` header).
 The response is `Content-Type: text/event-stream`. Each event has the form:
 
@@ -643,26 +680,34 @@ Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in 
 
 | Method and path | Body | Response |
 |---|---|---|
-| `GET /v1/admin/stats` | – | `{ users:{total,banned,activeLast24h,online}, sessions, capes:{builtin,approved,pending,rejected,reported,activeUsers}, codes:{active,redemptions}, friendships, pendingFriendRequests, eventStreams }` |
+| `GET /v1/admin/stats` | – | `{ users:{total,banned,activeLast24h,online}, sessions, capes:{builtin,approved,pending,rejected,reported,activeUsers}, cosmetics:{builtin,emotes,approved,pending,rejected,reported,equippedUsers}, codes:{active,redemptions}, friendships, pendingFriendRequests, eventStreams, playerStreams }` |
 | `GET /v1/admin/capes?status=pending\|approved\|rejected\|reported` | – | `{ capes: [CapeView + { owner:{uuid,name}\|null, createdAt, reviewedAt, reviewedBy, rejectReason, reports:{count, reasons:{<reason>:n}} }] }`. The default status is `pending`. |
 | `POST /v1/admin/capes/{id}/approve` | – | `{ cape }`. Also clears open reports. |
 | `POST /v1/admin/capes/{id}/reject` | `{ "reason"?: string≤200 }` or none | `{ cape }`. Also takes the cape off its wearer. |
 | `DELETE /v1/admin/capes/{id}` | – | 204. Uploads only; built-in capes return `409 builtin_cape`. |
 | `GET /v1/admin/codes` | – | `{ codes: [CodeView] }` (the newest 1000) |
-| `POST /v1/admin/codes` | `{ capeId, maxUses?=1 (1–100000), count?=1 (1–100), expiresAt?: ISO, note?: ≤200 }` | **201** `{ codes: [CodeView + { code }] }`. **This is the only time the plain code is ever shown.** Free capes return `400 cape_is_free`. |
+| `POST /v1/admin/codes` | `{ capeId` **or** `cosmeticId, maxUses?=1 (1–100000), count?=1 (1–100), expiresAt?: ISO, note?: ≤200 }`. Exactly one of `capeId` and `cosmeticId`; `cosmeticId` can be an emote id. | **201** `{ codes: [CodeView + { code }] }`. **This is the only time the plain code is ever shown.** Free items return `400 cape_is_free` or `400 cosmetic_is_free`; unknown ones `404 cape_not_found` or `404 cosmetic_not_found`. |
 | `DELETE /v1/admin/codes/{id}` | – | 204 (revoke). Already unlocked capes stay unlocked. |
-| `GET /v1/admin/users/{uuid-or-name}` | – | `{ user: { uuid, name, known, admin, banned:{reason,bannedAt,bannedBy}\|null, createdAt, lastLoginAt, settings, activeCapeId, grantedCapes:[{capeId,source,grantedAt}], uploads, friends, sessions, online } }` |
+| `GET /v1/admin/users/{uuid-or-name}` | – | `{ user: { uuid, name, known, admin, banned:{reason,bannedAt,bannedBy}\|null, createdAt, lastLoginAt, settings, activeCapeId, grantedCapes:[{capeId,source,grantedAt}], uploads, grantedCosmetics:[{cosmeticId,source,grantedAt}], equippedCosmetics:{<slot>:<id>}, cosmeticUploads, friends, sessions, online } }` |
 | `POST /v1/admin/users/{uuid}/capes` | `{ capeId }` | **201** `{ cape, alreadyOwned }`. The user must have logged in once (`404 user_not_found`); otherwise use a code. |
 | `DELETE /v1/admin/users/{uuid}/capes/{capeId}` | – | 204, or `404 grant_not_found`. Takes the cape off if it is active. |
 | `POST /v1/admin/users/{uuid}/ban` | `{ "reason"?: string≤200 }` or none | `{ user }`. Revokes sessions, clears presence, closes streams. Also works for UUIDs that never logged in. Admins return `409 cannot_ban_admin`. |
 | `DELETE /v1/admin/users/{uuid}/ban` | – | 204, or `404 not_banned` |
+| `GET /v1/admin/cosmetics?status=pending\|approved\|rejected\|reported` | – | `{ cosmetics: [CosmeticView + { owner:{uuid,name}\|null, createdAt, reviewedAt, reviewedBy, rejectReason, reports:{count, reasons:{<reason>:n}} }] }`. Uploads only. The default status is `pending`. |
+| `POST /v1/admin/cosmetics/{id}/approve` | – | `{ cosmetic }`. Also clears open reports. Watchers of the wearer get a `cosmetics` event. |
+| `POST /v1/admin/cosmetics/{id}/reject` | `{ "reason"?: string≤200 }` or none | `{ cosmetic }`. Also takes the item off its wearer. |
+| `DELETE /v1/admin/cosmetics/{id}` | – | 204. Uploads only; built-in items return `409 builtin_cosmetic`. |
+| `POST /v1/admin/users/{uuid}/cosmetics` | `{ cosmeticId }` (cosmetic or emote) | **201** `{ cosmetic, alreadyOwned }`. `404 user_not_found` or `cosmetic_not_found`, `400 cosmetic_is_free`. |
+| `DELETE /v1/admin/users/{uuid}/cosmetics/{cosmeticId}` | – | 204, or `404 grant_not_found`. Takes the item off if it is equipped. |
 
 **CodeView:**
 
 ```json
-{ "id": 12, "hint": "HJN4", "capeId": "team", "maxUses": 1, "uses": 0, "expiresAt": null, "revokedAt": null,
+{ "id": 12, "hint": "HJN4", "capeId": "team", "cosmeticId": null, "maxUses": 1, "uses": 0, "expiresAt": null, "revokedAt": null,
   "note": "Discord giveaway", "createdAt": "…", "createdBy": "api-key" }
 ```
+
+Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for cosmetic and emote codes.
 
 `hint` is the last 4 characters of the normalised code. The full code is stored only as an HMAC-SHA256 hash.
 
@@ -693,12 +738,506 @@ Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in 
    - Send `offline` on exit.
 4. Friends view: poll `GET /v1/friends` and optionally open the SSE stream.
 5. Cape picker: `GET /v1/capes`, `PUT /v1/me/cape`, upload, redeem.
+6. Cosmetics picker (§11):
+   - `GET /v1/cosmetics` gives the templates and the catalog. `GET /v1/me/cosmetics` gives what is equipped.
+   - Preview with three.js/skinview3d, following §11.2–§11.5 exactly.
+   - Equip with `PUT /v1/me/cosmetics`. Redeem codes with `POST /v1/redeem`.
+   - Paint editor: start from `GET /v1/cosmetics/templates/{id}.png?scale=k`, then upload with `POST /v1/cosmetics/upload`.
+7. After changing the Mojang skin, call `POST /v1/me/skin-changed` (§13.4).
 
 **Mod (Java):**
 
 1. Use the launcher's TRS token if the launcher passes one. Otherwise run the auth flow with the in-game session, which has the access token.
-2. Batch-lookup visible players (at most 100 per call). Cache about 5 minutes. Treat a missing UUID as "no badge, no cape".
+2. Batch-lookup visible players (at most 100 per call). Cache about 5 minutes. Treat a missing UUID as "no badge, no cape, no cosmetics".
 3. Download the texture once per `url`. The `?v=` part changes with the content.
    - Pick the frame with `f = floor(now / frameTimeMs) % frames`.
-   - Scale UVs by `scale` (§5.2).
+   - Scale UVs by `scale` (§5.2 for capes, §11.3 for cosmetics).
 4. Never send `game.server` unless the user enabled `shareServer`. The server also drops it.
+5. Load `GET /v1/cosmetics/templates` once per session and revalidate it with `If-None-Match`. Render `cosmetics` from the lookup with it (§11).
+6. Open `GET /v1/events/players?uuids=…` for the players you render (§13). Apply `emote`, `skin`, `cape` and `cosmetics` events live.
+7. Emote wheel: `GET /v1/me/cosmetics` → `emotes` lists the unlocked ones. Play one with `POST /v1/emotes/play`, then start the animation locally right away (§12).
+
+---
+
+## 11. Cosmetics
+
+Cosmetics are 3D items worn in four **slots**. Each slot holds at most one item:
+
+| Slot | Items |
+|---|---|
+| `hat` | hats, crowns, helmets |
+| `wings` | wings |
+| `back` | backpacks and other items on the back |
+| `aura` | halos (small models) **or** particle effects |
+
+In addition, **emotes** (§12) are unlockable items of type `emote`. They are never equipped.
+
+An item is a **template** plus a **texture**:
+
+- The **template** is a fixed 3D shape. It is either a voxel model made of cubes, or a particle definition.
+- The **texture** is a PNG laid out to the template's UV net. It can be animated, like capes.
+
+All clients (launcher and mod) render from the same template data, which the server publishes at `GET /v1/cosmetics/templates`.
+
+Unlocking works exactly like capes:
+
+- `free` items: everyone.
+- `code` and `admin` items: holders of a grant or a redeemed code. Admins can use every built-in item.
+- Own uploads (`owner`): while `pending` or `approved`, never once `rejected`.
+
+### 11.1 Template JSON
+
+`GET /v1/cosmetics/templates` returns this. The source is `api/assets/cosmetics/templates.json`.
+
+```json
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "wings", "name": "Flügel", "kind": "model", "slot": "wings",
+      "textureWidth": 64, "textureHeight": 32,
+      "cubes": [
+        { "from": [-16, -13, -3], "to": [-1, 5, -2], "uv": [0, 0],  "attach": "back", "pivot": [-1, 0, -2.5], "anim": "flap" },
+        { "from": [1, -13, -3],   "to": [16, 5, -2], "uv": [32, 0], "attach": "back", "pivot": [1, 0, -2.5],  "anim": "flap" }
+      ]
+    },
+    {
+      "id": "orbit", "name": "Partikel-Wirbel", "kind": "particles", "slot": "aura",
+      "textureWidth": 16, "textureHeight": 8,
+      "particles": {
+        "pattern": "orbit", "attach": "root", "center": [0, 16, 0], "radius": 12, "count": 8,
+        "speedDegPerSec": 60, "height": 10, "periodMs": 4000, "size": 2.5, "orientation": "billboard",
+        "sprites": [ { "uv": [0, 0], "size": [8, 8] }, { "uv": [8, 0], "size": [8, 8] } ]
+      }
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `id` | `^[a-z][a-z0-9_]{0,31}$`. Stable. |
+| `kind` | `model` (cubes) or `particles`. Particle templates always have slot `aura`. |
+| `textureWidth`, `textureHeight` | Texture size at **scale 1**, in texels (8–128). A real texture is `textureWidth·scale × textureHeight·scale·frames` pixels. |
+| `cubes[]` | 1–32 cubes. See §11.2 and §11.3. |
+| `cubes[].from`, `cubes[].to` | Opposite corners `[x, y, z]` in model units (§11.2). Multiples of 0.5. `to − from` is a whole number from 1 to 32 on every axis. |
+| `cubes[].uv` | `[u, v]`: top-left corner of the cube's UV net in the texture, at scale 1 (§11.3). |
+| `cubes[].attach` | `head`, `body` or `back`: the frame the cube lives in (§11.2). |
+| `cubes[].pivot` | `[x, y, z]` in the same frame. Required for `flap` and `spin`. |
+| `cubes[].anim` | Optional: `flap`, `bob` or `spin` (§11.4). |
+| `particles` | Particle definition (§11.5). |
+
+Templates **never change** after release. A new shape gets a new id, so uploaded textures always stay valid. The server checks at startup that every net lies inside the texture and that no two nets overlap.
+
+`GET /v1/cosmetics/templates` needs no auth. It sends `ETag` and `Cache-Control: public, max-age=300`. Send `If-None-Match` to get `304`.
+
+`GET /v1/cosmetics/templates/{id}` returns `{ "template": { … } }` for one template.
+
+`GET /v1/cosmetics/templates/{id}.png?scale=1..4` returns a **paint guide** PNG (no auth). It is exactly the texture size at that scale. Every used face is filled with a colour (top light blue, bottom dark blue, right orange, front red, left green, back purple, particle sprites yellow) and has a darker 1-pixel border. Everything transparent in the guide is never rendered.
+
+### 11.2 Coordinate system and attach points
+
+One **model unit** is one skin pixel, 1/16 block. The axes are right-handed and fixed to the player:
+
+- **+x** = the player's **left**, −x = the player's right
+- **+y** = up
+- **+z** = the player's **front**, the direction the face looks
+
+These are the same axes three.js and skinview3d use for the player (the player faces +z, the right arm is at −x). World-space in Minecraft matches them too for a player with body yaw 0 (facing south).
+
+Every cube is given in the frame of its `attach` point. The frame moves and rotates with that body part:
+
+| attach | Origin | Occupied by the vanilla part | Follows |
+|---|---|---|---|
+| `head` | Head pivot = the neck joint, the centre of the bottom face of the head | Head: x −4…4, y 0…8, z −4…4. The hat layer extends 0.5 further. | head yaw and pitch |
+| `body` | Body pivot = the centre of the top face of the torso (also at the neck) | Torso: x −4…4, y −12…0, z −2…2 | body, including sneak lean |
+| `back` | The body frame moved to the back surface: body (0, 0, −2) | Torso: z 0…4, so **z < 0 is behind the player** | body |
+| `root` | Particles only: the player's feet (entity position). No pitch or roll. | – | body yaw |
+
+In the standing pose, with the feet at y = 0 in `root`:
+
+```
+          side view, player looks to the right (+z)
+
+   y=32 ─ ┌────────┐
+          │  head  │          head frame:  origin = (0, 24, 0) in root
+   y=24 ─ ├──┬─────┤ ◄─ neck  body frame:  origin = (0, 24, 0) in root
+          │  │body │          back frame:  origin = (0, 24, −2) in root
+          │  │     │                        (= back surface of the torso)
+   y=12 ─ ├──┴─────┤
+          │  legs  │
+    y=0 ─ └────────┘ ◄─ root origin (feet)
+          z=−2    z=+2
+          ▲ back   ▲ front
+```
+
+Examples from the bundled templates:
+
+- `crown`: `[-5, 7, -5]…[5, 11, 5]` on `head`, a 10×4×10 ring around the top of the head.
+- `wings`: two 15×18×1 plates at z −3…−2 on `back`, one unit behind the back.
+
+**Conversion to vanilla `ModelPart` space** (y points down, front is −z): `x' = x`, `y' = −y`, `z' = −z`.
+
+- A `head` cube is `texOffs(u, v).addBox(from.x, −to.y, −to.z, w, h, d)` on the head part.
+- A `body` cube is the same call on the body part.
+- A `back` cube goes on the body part with z shifted: `addBox(from.x, −to.y, 2 − to.z, w, h, d)`.
+- Here `w, h, d = to − from`, and the part's texture size is `textureWidth × textureHeight`. Use no mirror.
+
+### 11.3 UV net and texture layout
+
+Every cube uses the **vanilla box UV net**, the same as `ModelPart` `texOffs(u, v)` and the skin's head. For a cube of size **w** (x) × **h** (y) × **d** (z) with `uv = [u, v]`:
+
+```
+        u        u+d       u+d+w     u+2d+w    u+2d+2w
+   v    ┌─────────┬─────────┬─────────┐
+        │ (empty) │   top   │ bottom  │          height d
+   v+d  ├─────────┼─────────┼─────────┼─────────┐
+        │  right  │  front  │  left   │  back   │  height h
+        │  (−x)   │  (+z)   │  (+x)   │  (−z)   │
+ v+d+h  └─────────┴─────────┴─────────┴─────────┘
+          width d   width w   width d   width w
+```
+
+Orientation of each region, as texel `(i, j)` from the region's top-left corner:
+
+| Face | Region (x, y, w, h) | i → (right in the texture) | j ↓ (down in the texture) |
+|---|---|---|---|
+| top (+y) | (u+d, v, w, d) | +x | +z (towards the front) |
+| bottom (−y) | (u+d+w, v, w, d) | +x | +z (same as top; vanilla does this) |
+| right (−x) | (u, v+d, d, h) | +z (back → front) | −y |
+| front (+z) | (u+d, v+d, w, h) | +x (player's right → left) | −y |
+| left (+x) | (u+d+w, v+d, d, h) | −z (front → back) | −y |
+| back (−z) | (u+2d+w, v+d, w, h) | −x | −y |
+
+Put another way, looking at a face from outside with up = +y, the region is not mirrored.
+
+Precisely, the centre of texel `(i, j)` at scale `k` lies at:
+
+| Face | Point (x, y, z) |
+|---|---|
+| front | (x0 + (i+½)/k, y1 − (j+½)/k, z1) |
+| back | (x1 − (i+½)/k, y1 − (j+½)/k, z0) |
+| right | (x0, y1 − (j+½)/k, z0 + (i+½)/k) |
+| left | (x1, y1 − (j+½)/k, z1 − (i+½)/k) |
+| top | (x0 + (i+½)/k, y1, z0 + (j+½)/k) |
+| bottom | (x0 + (i+½)/k, y0, z0 + (j+½)/k) |
+
+Here `(x0, y0, z0) = from` and `(x1, y1, z1) = to`. The bundled textures are painted with this exact mapping (`scripts/generate-cosmetics.mjs`), and so are the previews.
+
+**Texture file:**
+
+- The file is `textureWidth·scale` × `textureHeight·scale·frames` pixels.
+- Animated textures are a vertical strip, with frame 0 at the top.
+- `scale` is 1–4 for built-ins and 1–2 for uploads.
+- **Normalised UV** of a net coordinate `(u, v)` (scale-1 units) in frame `f`:
+  - `u' = u / textureWidth`
+  - `v' = (f·textureHeight + v) / (textureHeight·frames)`
+  - The scale does not appear in the formula.
+- **Frame:** `f = floor(currentTimeMillis / frameTimeMs) mod frames`, the same as for capes.
+
+**Rendering rules for model templates:**
+
+- Alpha test: texels with alpha < 128 are invisible. Everything else is opaque. The server stores model textures with alpha 0 or 255 only.
+- Draw **both sides** of every face (no back-face culling), so open shapes like the crown look right from inside. In Minecraft use `RenderType.entityCutoutNoCull`.
+- `emissive: true` means render at full brightness and ignore world light: `LightTexture.FULL_BRIGHT` in Minecraft, `MeshBasicMaterial` in three.js. Only built-in items can be emissive.
+
+### 11.4 Animations (`cubes[].anim`)
+
+`t` is the wall clock in milliseconds (`currentTimeMillis`), so every client shows the same phase.
+
+| anim | Effect |
+|---|---|
+| `bob` | Translate the cube along y by `0.5 · sin(2π · t / 2000)` units. |
+| `spin` | Rotate around the vertical axis through `pivot` by `θ = 2π · (t mod 4000) / 4000`. |
+| `flap` | Rotate around the vertical axis through `pivot` by `θ = s · 15° · (1 − cos(2π · t / 1600))`. `s = +1` if the cube's centre x is greater than `pivot.x` (left wing), otherwise `−1`. θ goes from 0° to 30°, so the wings fold backwards and open again. |
+
+The rotation is right-handed around +y, applied relative to the pivot:
+
+- `x' = x·cos θ + z·sin θ`
+- `z' = −x·sin θ + z·cos θ`
+
+A positive θ turns +x towards −z. In `ModelPart` space (y and z negated), the same rotation is `yRot = −θ`, with the pivot at `(pivot.x, −pivot.y, −pivot.z)` (for `back`: `2 − pivot.z`).
+
+### 11.5 Particle templates (`kind: "particles"`)
+
+The texture holds **sprites** (`sprites[]`, regions in scale-1 units). Each particle is a quad showing one sprite:
+
+- The **longer side** of the quad is `size` model units, and the sprite's aspect ratio is kept.
+- It is alpha-blended, not alpha-tested, so soft alpha is allowed.
+- It is emissive only if the item is.
+
+`orientation` sets how the quad lies:
+
+- `billboard`: the quad always faces the camera.
+- `ground`: the quad lies flat, 0.01 blocks above the feet. The sprite's top edge points in the player's facing direction at spawn. Its left edge (texel column 0) is on the player's left (+x).
+
+Positions are in the frame of `attach` (`root`, `head` or `body`, §11.2). `t` is the wall clock in seconds.
+
+**`ring`**: `count` particles that always exist, on a horizontal circle:
+
+- `pos_i(t) = center + (r · sin φ_i, 0, r · cos φ_i)`
+- `φ_i(t) = 2π · i / count + rad(speedDegPerSec) · t`
+- `i = 0…count−1`, and `r = radius`.
+- φ = 0 is straight ahead (+z) and φ = 90° is the player's left (+x).
+- Particle `i` shows `sprites[i mod sprites.length]`.
+
+**`orbit`**: the same as `ring`, plus a vertical wave:
+
+- `pos_i(t).y = center.y + height · sin(2π · t_ms / periodMs + 2π · i / count)`
+
+**`trail`**: particles left behind in the world. They do **not** follow the player.
+
+- Each time the anchor has moved `spacingBlocks` blocks horizontally since the last spawn, spawn particle number `k`, counting per player from 0.
+- It spawns at `anchor + offset + (side · sideOffset, 0, 0)` in the anchor frame at that moment. `side = +1` (left) for even `k` and `−1` (right) for odd `k`.
+- It uses `sprites[k mod sprites.length]`. For `trail`, sprite 0 is the left foot and sprite 1 the right foot.
+- It lives `lifetimeMs` milliseconds. Its alpha fades linearly from 1 to 0.
+- At most `maxParticles` are alive per player. The oldest is dropped first.
+- Nothing spawns while the player is not moving.
+
+Animated particle textures use the same frame formula as models. All particles of an item show the same frame.
+
+### 11.6 CosmeticView
+
+```json
+{
+  "id": "redstone_wings",
+  "name": "Redstone-Flügel",
+  "slot": "wings",
+  "kind": "builtin",
+  "unlock": "code",
+  "status": "approved",
+  "template": "wings",
+  "texture": {
+    "url": "https://api.theredstonee.de/v1/cosmetics/redstone_wings.png?v=1c0ffee0dead",
+    "width": 128, "height": 64, "scale": 2,
+    "animated": true, "frames": 8, "frameTimeMs": 120
+  },
+  "emissive": true,
+  "emote": null
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `id` | `^[a-z0-9][a-z0-9_-]{0,39}$`. Uploads use `c` followed by 20 hex digits. Emotes use their emote id (§12). |
+| `slot` | `hat` \| `wings` \| `back` \| `aura` \| `emote` |
+| `kind`, `unlock`, `status` | As for capes (§5.1). Emotes are always `builtin`. |
+| `template` | Template id, or `null` for emotes. |
+| `texture` | `null` for emotes. `width`/`height` are the size of **one frame** in pixels (`textureWidth·scale` × `textureHeight·scale`). `url` works like a cape URL (§5.4). |
+| `emissive` | Render at full brightness (§11.3). |
+| `emote` | `{ "durationMs", "loop" }` for emotes, otherwise `null`. |
+
+**LookupCosmetic** is the flat form used in the lookup and in events: `{ id, template, url, scale, animated, frames, frameTimeMs, emissive }`.
+
+### 11.7 Endpoints
+
+| Request | Auth | Response |
+|---|---|---|
+| `GET /v1/cosmetics` | yes | `{ templates: [Template], cosmetics: [CosmeticView + { owned, equipped, rejectReason? }] }`. Lists all built-in items and emotes, plus your own uploads in any status. `rejectReason` is present only for uploads. |
+| `GET /v1/cosmetics/templates` | no | See §11.1. |
+| `GET /v1/cosmetics/templates/{id}` / `{id}.png?scale=k` | no | One template, or its paint guide (§11.1). `404 template_not_found`. |
+| `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura }, emotes: [emoteId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. |
+| `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
+| `GET /v1/cosmetics/{id}.png` | optional | The texture. Caching, `ETag`/`304` and the pending/private rules are the same as §5.4. Otherwise `404 cosmetic_not_found`. |
+| `GET /v1/cosmetics/{id}` | optional | `{ cosmetic: CosmeticView }`. Same visibility as the texture. |
+| `POST /v1/cosmetics/upload?template=<id>&name=<opt>&frameTimeMs=<opt>` | yes | Raw PNG body (`Content-Type: image/png`, at most 512 KiB). **201** `{ cosmetic }` with `status: "pending"`. |
+| `DELETE /v1/cosmetics/{id}` | yes | Deletes your own upload. **204**, or `404 cosmetic_not_found`. |
+| `POST /v1/cosmetics/{id}/report` | yes | `{ reason, note? }` as §5.8. Only `approved` uploads of other users. **204**, or `404 cosmetic_not_found`. |
+| `POST /v1/redeem` | yes | §5.9. It also unlocks cosmetics and emotes. |
+
+`PUT /v1/me/cosmetics` errors:
+
+| HTTP | code | Meaning |
+|---|---|---|
+| 404 | `cosmetic_not_found` | Unknown id, someone else's upload, or an unknown template. |
+| 400 | `wrong_slot` | The item belongs to another slot. This includes emotes, which can't be equipped. |
+| 403 | `cosmetic_locked` | Not unlocked, a rejected upload, or a retired built-in item you don't wear. |
+
+**Upload rules:**
+
+- `template` is required. An unknown template returns `400 unknown_template`.
+- `name` follows the cape name rules (§5.6). The default is `"<template name> (eigene)"`.
+- Size: width = `textureWidth · k` with **k = 1 or 2**. Height = `textureHeight · k · frames` with **1–16 frames**. Anything else returns `400 invalid_dimensions`.
+- For more than one frame, `frameTimeMs` (50–10000) is required. Without it you get `400 frame_time_required`. For one frame it is ignored.
+- The PNG structure checks are the same as for capes (§5.6): `invalid_png`, `animated_png`, no data after `IEND`, bomb protection.
+- The server re-encodes the image as RGBA:
+  - Every pixel **outside the template's used areas** is set to transparent.
+  - Fully transparent pixels are zeroed.
+  - For model templates, alpha becomes 0 or 255 (the cutoff is 128).
+- If nothing visible remains, you get `400 empty_cosmetic`.
+- `409 too_many_pending` (at most 3 pending), `409 upload_limit` (at most 10 that aren't rejected), `409 duplicate_cosmetic` (same texture for the same template).
+- Uploads start as `pending`. The uploader sees and wears them right away. Nobody else sees them until an admin approves them.
+- Uploads are never emissive.
+
+**Recommended client behaviour** (the server doesn't enforce this):
+
+- Hide the cape while a `back` item is worn.
+- Hide `wings` while an elytra is worn.
+- Hide `hat` items while a helmet is visible.
+- Respect the player's own "hide cosmetics" setting in the mod.
+
+### 11.8 Built-in items
+
+| id | Name | Template | Unlock | Animated |
+|---|---|---|---|---|
+| `redstone_crown` | Redstone-Krone | `crown` | code | 8 × 120 ms, emissive |
+| `team_crown` | Team-Krone | `crown` | **admin** | 8 × 150 ms, emissive |
+| `trs_cap` | TRS-Cap | `cap` | free | – |
+| `lamp_helmet` | Redstone-Lampen-Helm | `lamp_helmet` | free | 8 × 150 ms, emissive |
+| `top_hat` | Zylinder | `tophat` | free | – |
+| `redstone_wings` | Redstone-Flügel | `wings` | code | 8 × 120 ms, emissive |
+| `dragon_wings` | Drachenflügel | `wings` | free | – |
+| `backpack` | Rucksack | `backpack` | free | – |
+| `halo` | Heiligenschein | `halo` (aura) | code | 8 × 125 ms, emissive |
+| `redstone_aura` | Redstone-Partikel-Aura | `orbit` (aura) | free | 4 × 150 ms, emissive |
+| `footprints` | Fußspuren | `trail` (aura) | free | – |
+
+Templates without a built-in item (`ring`) are available for uploads.
+
+---
+
+## 12. Emotes
+
+Emotes are a **fixed list**. Launcher and mod contain the animations; the server only knows the ids. Ids never change. Clients ignore ids they don't know.
+
+| id | Name | Unlock | `durationMs` | `loop` |
+|---|---|---|---|---|
+| `winken` | Winken | free | 2000 | no |
+| `klatschen` | Klatschen | free | 2500 | no |
+| `jubeln` | Jubeln | free | 2500 | no |
+| `verbeugen` | Verbeugen | free | 2000 | no |
+| `facepalm` | Facepalm | free | 2000 | no |
+| `schulterzucken` | Schulterzucken | free | 1500 | no |
+| `daumen_hoch` | Daumen hoch | free | 1500 | no |
+| `tanzen` | Tanzen | code | 6000 | yes |
+| `salutieren` | Salutieren | code | 2000 | no |
+| `luftgitarre` | Luftgitarre | code | 5000 | yes |
+| `redstone_tanz` | Redstone-Tanz | admin | 6000 | yes |
+
+Emotes appear in `GET /v1/cosmetics` with `slot: "emote"` and in `GET /v1/me/cosmetics` → `emotes`. They are unlocked with codes (`cosmeticId` = emote id) or admin grants, like other cosmetics.
+
+### 12.1 `POST /v1/emotes/play`
+
+Auth required.
+
+```json
+{ "emote": "winken" }
+```
+
+**200**
+```json
+{ "emote": "winken", "durationMs": 2000, "at": "2026-09-23T18:10:00.000Z" }
+```
+
+- The limit is **one emote per 2 seconds** (`429` with `Retry-After`). Unknown or locked emotes don't count against it.
+- The server sends an `emote` event to every stream that watches this player (§13).
+- The sender's own streams get the event only if they watch the sender's own UUID.
+
+| HTTP | code |
+|---|---|
+| 404 | `emote_not_found` |
+| 403 | `emote_locked` |
+| 429 | `rate_limited` |
+
+How to play an emote:
+
+- The sender starts the animation locally right away.
+- Receivers start it when the event arrives.
+- The animation runs for `durationMs`. When `loop` is set, repeat the animation cycle until `durationMs` is over.
+- Stop early when the player moves (horizontal speed > 0.05 blocks/tick), attacks, or starts another emote.
+
+---
+
+## 13. Player events (SSE for the mod)
+
+### 13.1 `GET /v1/events/players?uuids=<uuid>,<uuid>,…`
+
+Auth required. `uuids` holds 1–200 UUIDs, comma-separated, dashed or not. Duplicates count once. Invalid input returns `400 invalid_request`.
+
+The response is `Content-Type: text/event-stream`, in the same frame format as §7. It only delivers events **about the listed players**.
+
+**To change the set**, open a new stream with the new list, then close the old one. Debounce this: at most every 5 s.
+
+| event | data |
+|---|---|
+| `hello` | `{"type":"hello","keepaliveSec":25,"watching":<n>}` (first message) |
+| `ping` | `{}` every 25 s |
+| `emote` | `{"type":"emote","uuid":"…","emote":"winken","durationMs":2000,"at":"…"}` |
+| `skin` | `{"type":"skin","uuid":"…","at":"…"}`. The player changed their Mojang skin. Load it again from Mojang or `GET /v1/skins/by-uuid/{uuid}`. |
+| `cape` | `{"type":"cape","uuid":"…","cape":LookupCape\|null}`. The cape as **you** may see it (§4.1 rules). |
+| `cosmetics` | `{"type":"cosmetics","uuid":"…","cosmetics":{"hat":…,"wings":…,"back":…,"aura":…}}`. All four slots as **you** may see them. |
+
+Rules:
+
+- Events are sent **only on changes**:
+  - equip or unequip
+  - cape change
+  - approval or rejection of an item the player wears
+  - admin revocation
+  - a change of `showCapeToOthers` or `showCosmeticsToOthers`
+  - emote
+  - `skin-changed`
+- A player who has **blocked you** never produces events for you. Banned players produce none.
+- For your own UUID you get your own view (including pending uploads).
+- A stream lasts **at most 1 hour**. It closes immediately on logout-all, a ban or account deletion.
+- Reconnect with backoff (1 s, 2 s, 5 s, … up to 60 s).
+- After a reconnect, run a lookup (§4.1) again, because events are not replayed.
+- Each account can have at most **3** parallel player streams. A fourth gets `503 too_many_streams`.
+- Connects are limited to 20 per minute.
+
+### 13.2 What the mod should watch
+
+Watch the UUIDs of players you currently render (tab list or tracked entities) that appeared in the lookup, plus your own UUID.
+
+### 13.3 Launcher
+
+The launcher can open the same stream for its own UUID, so its preview updates when the mod changes something. This is optional.
+
+### 13.4 `POST /v1/me/skin-changed`
+
+Auth required. The body is empty or `{}`. Returns **204**.
+
+Call it right after the client changed the account's skin at Mojang. The server then:
+
+- drops its cached skin for this account (§14)
+- sends a `skin` event to every stream that watches the player
+
+The limit is 6 per minute.
+
+---
+
+## 14. Skins (Mojang proxy with cache)
+
+Launcher and mod can also call Mojang directly. These endpoints exist so that many clients don't send the same Mojang requests.
+
+| Request | Response |
+|---|---|
+| `GET /v1/skins/by-name/{name}` | **200** SkinView |
+| `GET /v1/skins/by-uuid/{uuid}` | **200** SkinView |
+
+**SkinView:**
+
+```json
+{ "uuid": "5ce0000000000000000000000000abcd", "name": "Skinny", "model": "slim",
+  "textureUrl": "https://textures.minecraft.net/texture/5ce1…", "capeUrl": null }
+```
+
+- Auth is required. The limit is 30 per minute per account.
+- `name` must be a valid Minecraft name, and `uuid` a UUID. Otherwise the answer is `404 not_found`.
+- `model` is `classic` or `slim`.
+- `textureUrl` and `capeUrl` are always `https://textures.minecraft.net/texture/<hex>`. The server rewrites Mojang's `http://` and drops anything else.
+- `textureUrl: null` means the player uses a default skin. Pick it from the UUID like vanilla does.
+- `capeUrl` is the **Mojang** cape, not the TRS one.
+
+Errors:
+
+- `404 player_not_found`: there is no such account.
+- `502 upstream_unavailable`: Mojang is down.
+- `429 rate_limited`: your account limit, or the global Mojang budget, is used up.
+
+Caching:
+
+- Names are cached for 10 minutes and profiles for 2 minutes. Unknown names and UUIDs are cached for 2 minutes.
+- `POST /v1/me/skin-changed` drops the cached profile.
+- Parallel requests for the same key share one Mojang call.
+- The cache lives in memory only.

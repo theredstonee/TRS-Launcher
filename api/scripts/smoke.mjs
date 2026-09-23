@@ -24,12 +24,28 @@ const ORIGIN = 'https://allowed.example'
 
 // ------------------------------------------------------------ Mojang-Mock
 const joins = new Map()
+// Konten für Skin-Abfragen (Name → UUID → Textur)
+const SKIN_UUID = '5ce0000000000000000000000000abcd'
+const skinTextures = Buffer.from(JSON.stringify({
+  timestamp: 1, profileId: SKIN_UUID, profileName: 'Skinny',
+  textures: { SKIN: { url: 'http://textures.minecraft.net/texture/5ce1', metadata: { model: 'slim' } } },
+})).toString('base64')
+let mojangProfileCalls = 0
 const mojang = createServer((req, res) => {
   const u = new URL(req.url, 'http://x')
   const p = joins.get(u.searchParams.get('serverId'))
-  if (u.pathname === '/session/minecraft/hasJoined' && p && p.name.toLowerCase() === u.searchParams.get('username')?.toLowerCase()) {
+  const json = (body) => {
     res.writeHead(200, { 'content-type': 'application/json' })
-    res.end(JSON.stringify({ id: p.uuid, name: p.name, properties: [] }))
+    res.end(JSON.stringify(body))
+  }
+  if (u.pathname === '/users/profiles/minecraft/Skinny') {
+    mojangProfileCalls++
+    json({ id: SKIN_UUID, name: 'Skinny' })
+  } else if (u.pathname === `/session/minecraft/profile/${SKIN_UUID}`) {
+    mojangProfileCalls++
+    json({ id: SKIN_UUID, name: 'Skinny', properties: [{ name: 'textures', value: skinTextures }] })
+  } else if (u.pathname === '/session/minecraft/hasJoined' && p && p.name.toLowerCase() === u.searchParams.get('username')?.toLowerCase()) {
+    json({ id: p.uuid, name: p.name, properties: [] })
   } else {
     res.writeHead(204)
     res.end()
@@ -51,6 +67,7 @@ const api = spawn(process.env.NODE_BIN ?? process.execPath, [join(ROOT, '.output
     ADMIN_UUIDS: ADMIN_UUID,
     CORS_ORIGINS: ORIGIN,
     MOJANG_SESSIONSERVER_URL: MOJANG,
+    MOJANG_API_URL: MOJANG,
     ALLOW_INSECURE_MOJANG_URL: 'true',
     PUBLIC_BASE_URL: BASE,
     TRUST_PROXY: 'cloudflare',
@@ -255,6 +272,127 @@ try {
   ac.abort()
   await sse
 
+  console.log('cosmetics + emotes + player events + skins')
+  const BOB = 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0'
+  const tpl = await fetch(`${BASE}/v1/cosmetics/templates`)
+  const tplJson = await tpl.json()
+  check('templates public + cacheable', tpl.status === 200 && tpl.headers.get('cache-control') === 'public, max-age=300' && tplJson.templates.some((t) => t.id === 'crown' && t.textureWidth === 64))
+  const tpl304 = await fetch(`${BASE}/v1/cosmetics/templates`, { headers: { 'if-none-match': tpl.headers.get('etag') } })
+  check('templates 304', tpl304.status === 304)
+  const guide = await fetch(`${BASE}/v1/cosmetics/templates/crown.png?scale=2`)
+  const guideBuf = Buffer.from(await guide.arrayBuffer())
+  check('template guide png', guide.status === 200 && guide.headers.get('content-type') === 'image/png' && guideBuf.readUInt32BE(16) === 128 && guideBuf.readUInt32BE(20) === 32)
+  const one = await http('GET', '/v1/cosmetics/templates/wings')
+  check('single template', one.json?.template?.cubes?.length === 2 && one.json.template.cubes[0].anim === 'flap')
+  const ccat = await http('GET', '/v1/cosmetics', { token: B })
+  const ids = ccat.json?.cosmetics?.map((c) => c.id) ?? []
+  check('cosmetic catalog', ccat.status === 200 && ccat.json.templates.length >= 10 && ['redstone_crown', 'team_crown', 'trs_cap', 'redstone_wings', 'footprints', 'winken', 'tanzen'].every((i) => ids.includes(i)), ids.join(','))
+  check('team crown locked for Bob', ccat.json.cosmetics.find((c) => c.id === 'team_crown')?.owned === false)
+  const eqLocked = await http('PUT', '/v1/me/cosmetics', { token: B, body: { hat: 'team_crown' } })
+  check('equip locked → 403', eqLocked.status === 403 && eqLocked.json.error.code === 'cosmetic_locked')
+  const eqSlot = await http('PUT', '/v1/me/cosmetics', { token: B, body: { wings: 'trs_cap' } })
+  check('equip wrong slot → 400', eqSlot.status === 400 && eqSlot.json.error.code === 'wrong_slot')
+  const eqEmpty = await http('PUT', '/v1/me/cosmetics', { token: B, body: {} })
+  check('equip empty body → 400', eqEmpty.status === 400 && eqEmpty.json.error.code === 'invalid_request')
+
+  // A beobachtet Bob über den Spieler-Stream
+  const pac = new AbortController()
+  const pevents = []
+  const psse = fetch(`${BASE}/v1/events/players?uuids=${BOB},ffffffff-ffff-ffff-ffff-ffffffffffff`, { headers: { authorization: `Bearer ${A}` }, signal: pac.signal }).then(async (res) => {
+    check('player sse content-type', res.headers.get('content-type') === 'text/event-stream')
+    const reader = res.body.getReader()
+    const dec = new TextDecoder()
+    let buf = ''
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buf += dec.decode(value)
+      for (const m of buf.matchAll(/event: (\S+)\ndata: (.*)\n\n/g)) pevents.push({ event: m[1], data: JSON.parse(m[2]) })
+      buf = buf.slice(buf.lastIndexOf('\n\n') + 2)
+    }
+  }).catch(() => {})
+  await new Promise((r) => setTimeout(r, 300))
+  const badStream = await http('GET', '/v1/events/players?uuids=nope', { token: A })
+  check('player sse bad uuids → 400', badStream.status === 400)
+  const eq = await http('PUT', '/v1/me/cosmetics', { token: B, body: { hat: 'trs_cap', aura: 'footprints' } })
+  check('equip free', eq.status === 200 && eq.json.equipped.hat?.id === 'trs_cap' && eq.json.equipped.aura?.template === 'trail' && eq.json.equipped.wings === null, JSON.stringify(eq.json))
+  const emote = await http('POST', '/v1/emotes/play', { token: B, body: { emote: 'winken' } })
+  check('emote play', emote.status === 200 && emote.json.emote === 'winken' && emote.json.durationMs === 2000)
+  const emote2 = await http('POST', '/v1/emotes/play', { token: B, body: { emote: 'jubeln' } })
+  check('emote rate limit 429', emote2.status === 429 && Number(emote2.headers.get('retry-after')) >= 1)
+  const emoteLocked = await http('POST', '/v1/emotes/play', { token: B, body: { emote: 'tanzen' } })
+  check('locked emote 403', emoteLocked.status === 403 && emoteLocked.json.error.code === 'emote_locked')
+  const skinChanged = await http('POST', '/v1/me/skin-changed', { token: B })
+  check('skin-changed 204', skinChanged.status === 204)
+
+  // Uploads
+  const upc = await http('POST', '/v1/cosmetics/upload?template=crown&name=Bobs%20Krone', { token: B, raw: png(64, 16), headers: { 'content-type': 'image/png' } })
+  check('cosmetic upload 201 pending', upc.status === 201 && upc.json.cosmetic.status === 'pending' && upc.json.cosmetic.texture.scale === 1, JSON.stringify(upc.json))
+  const cid = upc.json.cosmetic.id
+  const upAnimNoTime = await http('POST', '/v1/cosmetics/upload?template=halo', { token: B, raw: png(32, 32), headers: { 'content-type': 'image/png' } })
+  check('animated without frameTimeMs → 400', upAnimNoTime.json?.error.code === 'frame_time_required')
+  const upAnim = await http('POST', '/v1/cosmetics/upload?template=halo&frameTimeMs=100', { token: B, raw: png(64, 64, [250, 200, 60, 255]), headers: { 'content-type': 'image/png' } })
+  check('animated strip upload', upAnim.status === 201 && upAnim.json.cosmetic.texture.frames === 4 && upAnim.json.cosmetic.texture.scale === 2 && upAnim.json.cosmetic.texture.frameTimeMs === 100, JSON.stringify(upAnim.json))
+  const upBad = await http('POST', '/v1/cosmetics/upload?template=crown', { token: B, raw: png(60, 16), headers: { 'content-type': 'image/png' } })
+  check('wrong size → 400', upBad.json?.error.code === 'invalid_dimensions')
+  const upNoTpl = await http('POST', '/v1/cosmetics/upload?template=nope', { token: B, raw: png(64, 16), headers: { 'content-type': 'image/png' } })
+  check('unknown template → 400', upNoTpl.json?.error.code === 'unknown_template')
+  const hiddenC = await http('GET', `/v1/cosmetics/${cid}.png`)
+  check('pending cosmetic texture hidden', hiddenC.status === 404 && hiddenC.json.error.code === 'cosmetic_not_found')
+  const ownC = await fetch(`${BASE}/v1/cosmetics/${cid}.png`, { headers: { authorization: `Bearer ${B}` } })
+  check('owner sees pending cosmetic (private)', ownC.status === 200 && ownC.headers.get('cache-control') === 'private, no-store')
+  await ownC.arrayBuffer()
+  const eqOwn = await http('PUT', '/v1/me/cosmetics', { token: B, body: { hat: cid } })
+  check('equip own pending upload', eqOwn.json?.equipped?.hat?.id === cid)
+  const lkc = await http('POST', '/v1/players/lookup', { token: A, body: { uuids: [BOB] } })
+  check('lookup: pending hat hidden from others, aura shown', lkc.json.players[0].cosmetics.hat === null && lkc.json.players[0].cosmetics.aura?.id === 'footprints', JSON.stringify(lkc.json))
+  const lkSelf = await http('POST', '/v1/players/lookup', { token: B, body: { uuids: [BOB] } })
+  check('lookup: owner sees own pending hat', lkSelf.json.players[0].cosmetics.hat?.id === cid)
+  const pendC = await http('GET', '/v1/admin/cosmetics?status=pending', { headers: { 'x-admin-key': ADMIN_KEY } })
+  check('admin lists pending cosmetics', pendC.json.cosmetics.some((c) => c.id === cid && c.owner.name === 'Bob'))
+  const apprC = await http('POST', `/v1/admin/cosmetics/${cid}/approve`, { headers: { 'x-admin-key': ADMIN_KEY } })
+  check('approve cosmetic', apprC.json?.cosmetic?.status === 'approved')
+  const pubC = await fetch(apprC.json.cosmetic.texture.url)
+  check('approved cosmetic texture public', pubC.status === 200 && pubC.headers.get('cache-control') === 'public, max-age=31536000, immutable')
+  await pubC.arrayBuffer()
+  const lkc2 = await http('POST', '/v1/players/lookup', { token: A, body: { uuids: [BOB] } })
+  check('lookup: approved hat visible', lkc2.json.players[0].cosmetics.hat?.id === cid && lkc2.json.players[0].cosmetics.hat.template === 'crown')
+  const hideC = await http('PATCH', '/v1/me', { token: B, body: { showCosmeticsToOthers: false } })
+  check('setting showCosmeticsToOthers', hideC.json?.settings?.showCosmeticsToOthers === false)
+  const lkc3 = await http('POST', '/v1/players/lookup', { token: A, body: { uuids: [BOB] } })
+  check('lookup: hidden cosmetics', lkc3.json.players[0].cosmetics.hat === null && lkc3.json.players[0].cosmetics.aura === null)
+  await http('PATCH', '/v1/me', { token: B, body: { showCosmeticsToOthers: true } })
+
+  // Codes für Kosmetik/Emotes
+  const cc = await http('POST', '/v1/admin/codes', { headers: { 'x-admin-key': ADMIN_KEY }, body: { cosmeticId: 'tanzen', count: 1 } })
+  check('create emote code', cc.status === 201 && cc.json.codes[0].cosmeticId === 'tanzen' && cc.json.codes[0].capeId === null)
+  const rd = await http('POST', '/v1/redeem', { token: B, body: { code: cc.json.codes[0].code } })
+  check('redeem emote code', rd.status === 200 && rd.json.kind === 'cosmetic' && rd.json.cosmetic.id === 'tanzen' && rd.json.cape === null && rd.json.alreadyOwned === false, JSON.stringify(rd.json))
+  const mine = await http('GET', '/v1/me/cosmetics', { token: B })
+  check('me/cosmetics lists unlocked emote', mine.json.emotes.includes('tanzen') && mine.json.equipped.hat?.id === cid)
+  const both = await http('POST', '/v1/admin/codes', { headers: { 'x-admin-key': ADMIN_KEY }, body: { cosmeticId: 'tanzen', capeId: 'team' } })
+  check('code with capeId and cosmeticId → 400', both.status === 400)
+
+  // Skins
+  const sk = await http('GET', '/v1/skins/by-name/Skinny', { token: B })
+  check('skin by name', sk.status === 200 && sk.json.uuid === '5ce0000000000000000000000000abcd' && sk.json.model === 'slim' && sk.json.textureUrl === 'https://textures.minecraft.net/texture/5ce1', JSON.stringify(sk.json))
+  const calls = mojangProfileCalls
+  const sk2 = await http('GET', '/v1/skins/by-uuid/5ce00000-0000-0000-0000-00000000abcd', { token: B })
+  check('skin by uuid from cache', sk2.json?.name === 'Skinny' && mojangProfileCalls === calls)
+  const skNone = await http('GET', '/v1/skins/by-name/NoSuchPlayer', { token: B })
+  check('unknown skin 404', skNone.status === 404 && skNone.json.error.code === 'player_not_found')
+  const skAnon = await http('GET', '/v1/skins/by-name/Skinny')
+  check('skin lookup needs auth', skAnon.status === 401)
+
+  await new Promise((r) => setTimeout(r, 300))
+  const types = pevents.map((e) => e.event)
+  check('player sse hello', pevents[0]?.event === 'hello' && pevents[0].data.watching === 2, JSON.stringify(pevents[0]))
+  check('player sse emote/skin/cosmetics', types.includes('emote') && types.includes('skin') && types.includes('cosmetics'), types.join(','))
+  check('player sse only for watched uuid', pevents.filter((e) => e.event !== 'hello').every((e) => e.data.uuid === BOB))
+  check('player sse: cosmetics event after approval shows hat', pevents.some((e) => e.event === 'cosmetics' && e.data.cosmetics.hat?.id === cid))
+  pac.abort()
+  await psse
+
   console.log('redeem brute force + rate limits')
   const statuses = []
   for (let i = 0; i < 7; i++) {
@@ -268,7 +406,7 @@ try {
 
   console.log('admin + deletion')
   const stats = await http('GET', '/v1/admin/stats', { token: A })
-  check('stats', stats.json.users.total === 2 && stats.json.capes.approved === 1, JSON.stringify(stats.json))
+  check('stats', stats.json.users.total === 2 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 11 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
   const ban = await http('POST', '/v1/admin/users/b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0/ban', { headers: { 'x-admin-key': ADMIN_KEY }, body: { reason: 'smoke' } })
   check('ban', ban.json.user.banned?.reason === 'smoke')
   const banned = await http('GET', '/v1/me', { token: B })

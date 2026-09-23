@@ -15,7 +15,11 @@ export default defineNuxtConfig({
     preset: 'node-server',
     // Eigene Fehlerbehandlung: nie Stack-Traces an Clients.
     errorHandler: '~~/server/error-handler.ts',
-    serverAssets: [{ baseName: 'capes', dir: '../assets/capes' }],
+    serverAssets: [
+      { baseName: 'capes', dir: '../assets/capes' },
+      // templates.json + catalog.json + PNGs der mitgelieferten Kosmetik
+      { baseName: 'cosmetics', dir: '../assets/cosmetics' },
+    ],
     experimental: { asyncContext: false },
     externals: { external: ['node:sqlite'] },
   },

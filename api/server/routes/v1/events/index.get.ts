@@ -1,8 +1,8 @@
 import { createEventStream, defineEventHandler, setResponseHeader } from 'h3'
-import { useCtx } from '../../lib/context'
-import { unavailable } from '../../lib/errors'
-import { limit, requireUser } from '../../lib/http'
-import { RULES } from '../../lib/ratelimit'
+import { useCtx } from '../../../lib/context'
+import { unavailable } from '../../../lib/errors'
+import { limit, requireUser } from '../../../lib/http'
+import { RULES } from '../../../lib/ratelimit'
 
 const KEEPALIVE_MS = 25_000
 const MAX_LIFETIME_MS = 60 * 60_000

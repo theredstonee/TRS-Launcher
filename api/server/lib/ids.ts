@@ -71,3 +71,11 @@ export function newUploadCapeId(): string {
 }
 
 export const CAPE_ID = /^[a-z0-9][a-z0-9_-]{0,39}$/
+
+/** ID für hochgeladene Kosmetik: `c` + 20 Hex-Zeichen. */
+export function newUploadCosmeticId(): string {
+  return `c${randomBytes(10).toString('hex')}`
+}
+
+/** Kosmetik- und Emote-IDs (gleiches Format wie Umhang-IDs). */
+export const COSMETIC_ID = CAPE_ID

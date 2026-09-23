@@ -1,6 +1,6 @@
 # TRS API
 
-Server für den **TRS Launcher** und den **TRS Client** (In-Game-Mod): Anmeldung über die Mojang-Session, Profile, TRS-Abzeichen, Umhänge, Freunde und Online-Status.
+Server für den **TRS Launcher** und den **TRS Client** (In-Game-Mod): Anmeldung über die Mojang-Session, Profile, TRS-Abzeichen, Umhänge, Kosmetik (Hüte, Flügel, Rücken, Aura), Emotes, Live-Ereignisse für sichtbare Spieler, Skin-Abfrage, Freunde und Online-Status.
 
 - Nuxt 4 / Nitro (`node-server`), Node 24 LTS, SQLite (`node:sqlite`, WAL) im Volume `/data`.
 - Betrieb zu Hause in Docker hinter einem **Cloudflare Tunnel**. Es gibt keinen offenen Port und keine Portweiterleitung am Router.
@@ -18,8 +18,11 @@ api/
 │  ├─ lib/               Logik: auth, capes, codes, png, friends, lookup, admin, db, ratelimit …
 │  └─ error-handler.ts   einheitliche Fehler, niemals Stack-Traces an Clients
 ├─ assets/capes/         Standard-Umhänge: catalog.json + PNGs (im Build enthalten)
-├─ tests/                vitest (Validierung, Login, Codes, PNG-Prüfung, Freunde, Lookup, Limits)
+├─ assets/cosmetics/     Kosmetik: templates.json (3D-Vorlagen) + catalog.json + PNGs (im Build enthalten)
+├─ assets/cosmetic-previews/  erzeugte Vorschauen (nicht im Git, nicht im Build)
+├─ tests/                vitest (Validierung, Login, Codes, PNG-Prüfung, Freunde, Lookup, Kosmetik, Emotes, Ereignisse, Skins, Migration)
 ├─ scripts/smoke.mjs     End-to-End-Test gegen den gebauten Server (mit Mojang-Mock)
+├─ scripts/generate-*.mjs  Generatoren für die mitgelieferten Umhänge und Kosmetik-Teile
 ├─ Dockerfile, docker-compose.yml, docker-compose.local.yml, .env.example
 └─ API.md                genauer Vertrag mit Beispielen
 ```
@@ -169,6 +172,56 @@ Format von `catalog.json`:
 
 Beim Start spielt die API den Katalog in die DB ein und kopiert die PNGs nach `/data/capes`. Designs, die im Katalog fehlen, werden „ausgemustert": Nutzer, die sie schon tragen, behalten sie.
 
+## Kosmetik und Emotes
+
+Alles liegt in `assets/cosmetics/`:
+
+- `templates.json`: die festen 3D-Vorlagen. Das sind Voxel-Würfel mit UV-Netz oder Partikel-Definitionen. Das genaue Format mit Koordinatensystem und UV-Layout steht in API.md §11.
+- `catalog.json` + PNGs: die mitgelieferten Teile.
+
+Regeln:
+
+- **Vorlagen nie ändern**, nur neue anhängen. Hochgeladene Texturen hängen an Form und Texturgröße.
+- Beim Start prüft die API alle Vorlagen: Jedes Netz muss in der Textur liegen, und keine zwei Netze dürfen sich überlappen. Danach spielt sie den Katalog in die DB ein und kopiert die PNGs nach `/data/cosmetics`.
+- Fehlt `templates.json`, startet die API ohne Kosmetik und ändert nichts am Bestand.
+- Die Emote-Liste steht fest im Code (`server/lib/emotes.ts`). IDs nie umbenennen, nur anhängen: Launcher und Mod bringen die Animationen mit.
+
+Neu erzeugen (Pixel-Art, scale 2, animierte Teile als senkrechte Streifen):
+
+```bash
+node scripts/generate-cosmetics.mjs   # oder: pnpm cosmetics
+```
+
+Das schreibt `assets/cosmetics/*.png` und `catalog.json`. Die Vorschauen landen in `assets/cosmetic-previews/`: Frontansicht ×8, Flügel und Rucksack von hinten, die Spur von oben.
+
+Mitgeliefert:
+
+| Teil | Freischaltung |
+|---|---|
+| Redstone-Krone | Code |
+| Team-Krone | **nur Admin** |
+| TRS-Cap | frei |
+| Redstone-Lampen-Helm | frei |
+| Zylinder | frei |
+| Redstone-Flügel | Code |
+| Drachenflügel | frei |
+| Rucksack | frei |
+| Heiligenschein | Code |
+| Redstone-Partikel-Aura | frei |
+| Fußspuren | frei |
+
+Emotes:
+
+- Frei: winken, klatschen, jubeln, verbeugen, facepalm, schulterzucken, daumen_hoch
+- Per Code: tanzen, salutieren, luftgitarre
+- Nur Admin: redstone_tanz
+
+Uploads von Nutzern:
+
+- Eine Textur für eine Vorlage, scale 1 oder 2, bis zu 16 Frames.
+- Die Textur wird neu kodiert. Alles außerhalb des UV-Netzes wird gelöscht.
+- Uploads warten auf Freigabe, genau wie Umhang-Uploads.
+
 ## Admin-Beispiele
 
 ```bash
@@ -209,12 +262,36 @@ curl -s -X POST -H "X-Admin-Key: $KEY" -H "Content-Type: application/json" \
   -d '{"reason":"Spam"}' "$API/v1/admin/users/<uuid>/ban"
 ```
 
+Wartende Kosmetik-Uploads anzeigen und freigeben:
+
+```bash
+curl -s -H "X-Admin-Key: $KEY" "$API/v1/admin/cosmetics?status=pending"
+curl -s -X POST -H "X-Admin-Key: $KEY" "$API/v1/admin/cosmetics/<id>/approve"
+```
+
+Codes für Kosmetik oder Emotes (`cosmeticId` statt `capeId`):
+
+```bash
+curl -s -X POST -H "X-Admin-Key: $KEY" -H "Content-Type: application/json" \
+  -d '{"cosmeticId":"redstone_crown","count":5,"note":"Giveaway"}' "$API/v1/admin/codes"
+curl -s -X POST -H "X-Admin-Key: $KEY" -H "Content-Type: application/json" \
+  -d '{"cosmeticId":"tanzen","count":1}' "$API/v1/admin/codes"
+```
+
+Team-Krone direkt zuteilen:
+
+```bash
+curl -s -X POST -H "X-Admin-Key: $KEY" -H "Content-Type: application/json" \
+  -d '{"cosmeticId":"team_crown"}' "$API/v1/admin/users/<uuid>/cosmetics"
+```
+
 ## Backups
 
 Alle Daten liegen im Docker-Volume `trs-api_trs-data`:
 
 - `trs.db` mit den WAL-Dateien `trs.db-wal` und `trs.db-shm`
 - `capes/*.png`
+- `cosmetics/*.png`
 
 **Variante A (Online-Backup, ohne Stopp).** SQLite erzeugt dabei eine konsistente Kopie trotz WAL:
 
@@ -223,6 +300,7 @@ docker compose exec api node -e "const {DatabaseSync,backup}=require('node:sqlit
 mkdir -p backups
 docker compose cp api:/data/backup-trs.db backups/trs-$(date +%F).db
 docker compose cp api:/data/capes backups/capes-$(date +%F)
+docker compose cp api:/data/cosmetics backups/cosmetics-$(date +%F)
 docker compose exec api rm /data/backup-trs.db
 ```
 
@@ -253,11 +331,17 @@ Empfehlung:
   - UUID und zuletzt gesehener Minecraft-Name
   - Einstellungen
   - Freundschaften, Anfragen und Blockaden
-  - hochgeladene Umhänge
+  - hochgeladene Umhänge und Kosmetik-Texturen, ausgerüstete Kosmetik, freigeschaltete Teile
   - Sitzungen: nur der SHA-256-Hash des Tokens, Zeitpunkte
   - Einlösungen und Meldungen
-- **Nur im Arbeitsspeicher** liegen der Online-Status (verfällt nach 3 Minuten) und die Rate-Limit-Zähler (mit IPs).
+- **Nur im Arbeitsspeicher** liegen:
+  - der Online-Status (verfällt nach 3 Minuten)
+  - die Rate-Limit-Zähler (mit IPs)
+  - die Beobachter-Listen der Spieler-Streams (welche UUIDs ein Client gerade sieht)
+  - der Skin-Cache (öffentliche Mojang-Profildaten, höchstens 10 Minuten)
+- Emotes werden nicht gespeichert, nur weitergeleitet.
 - **Im Log** steht keine IP.
 - **Löschung:** `DELETE /v1/me` entfernt sofort alle Daten des Kontos (Art. 17). Nur ein bestehender Sperr-Eintrag bleibt; das ist ein berechtigtes Interesse, damit Sperren nicht per Neuanmeldung umgangen werden.
 - **Cloudflare ist Auftragsverarbeiter:** Sämtlicher Verkehr läuft über Cloudflare, einschließlich IP-Adressen und TLS-Terminierung. Deshalb musst du im Cloudflare-Dashboard unter **Manage Account → Configurations → Privacy** (bzw. im Rahmen der Self-Serve Subscription Agreement) das **Data Processing Addendum (DPA / AVV)** von Cloudflare **akzeptieren**. Außerdem gehört Cloudflare in die Datenschutzerklärung (`PRIVACY.md` im Repo-Root): Zweck, Empfänger, Drittlandübermittlung (EU-US Data Privacy Framework / Standardvertragsklauseln).
 - Mojang/Microsoft bekommt bei der Anmeldung Name und serverId (`hasJoined`). Das ist nötig, um den Kontobesitz zu prüfen.
+- Bei `GET /v1/skins/*` fragt die API Mojang nach öffentlichen Profildaten (Name → UUID → Skin-URL). Dabei gehen keine Daten des Fragenden an Mojang.

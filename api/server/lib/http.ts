@@ -1,5 +1,5 @@
 import { isIP } from 'node:net'
-import { getHeader, getQuery, getRouterParam, setResponseStatus, type H3Event } from 'h3'
+import { getHeader, getQuery, getRouterParam, setResponseHeaders, setResponseStatus, type H3Event } from 'h3'
 import type { z } from 'zod'
 import { authenticate, authenticateAdmin, type AuthedUser } from './auth'
 import { useCtx } from './context'
@@ -121,6 +121,28 @@ export function requireAdmin(event: H3Event): string {
   })
   limit(`admin:${actor}`, RULES.adminActor)
   return actor
+}
+
+/**
+ * PNG ausliefern mit ETag/304. Öffentliche Texturen sind lange cachebar, wenn
+ * `?v=` zum Inhalt passt; private (wartende/abgelehnte) nie.
+ */
+export function sendPng(event: H3Event, filename: string, tex: { png: Buffer, sha256: string, public: boolean }): Buffer | string {
+  const etag = `"${tex.sha256}"`
+  const v = getQuery(event).v
+  const current = typeof v !== 'string' || tex.sha256.startsWith(v)
+  setResponseHeaders(event, {
+    'Content-Type': 'image/png',
+    'Content-Disposition': `inline; filename="${filename}"`,
+    'Cross-Origin-Resource-Policy': 'cross-origin',
+    ETag: etag,
+    'Cache-Control': !tex.public ? 'private, no-store' : current ? 'public, max-age=31536000, immutable' : 'public, max-age=300',
+  })
+  if (getHeader(event, 'if-none-match') === etag) {
+    setResponseStatus(event, 304)
+    return ''
+  }
+  return tex.png
 }
 
 export function noContent(event: H3Event): null {

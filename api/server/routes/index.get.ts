@@ -23,7 +23,7 @@ const HTML = `<!doctype html>
 <style>${STYLE}</style></head>
 <body><main>
 <h1><span class="dot"></span>TRS API</h1>
-<p>Dienst für den TRS Launcher und den TRS Client (Konten, Umhänge, Freunde).</p>
+<p>Dienst für den TRS Launcher und den TRS Client (Konten, Umhänge, Kosmetik, Emotes, Freunde).</p>
 <p>Status: <code>GET /v1/health</code></p>
 <p><a href="https://github.com/theredstonee/TRS-Launcher">github.com/theredstonee/TRS-Launcher</a></p>
 </main></body></html>`

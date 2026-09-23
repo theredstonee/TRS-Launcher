@@ -108,6 +108,7 @@ export function logout(ctx: AppContext, auth: AuthedUser, everywhere: boolean): 
     run(ctx.db, 'DELETE FROM sessions WHERE uuid = ?', auth.uuid)
     ctx.presence.delete(auth.uuid)
     ctx.events.kick(auth.uuid)
+    ctx.watch.kick(auth.uuid)
   } else {
     run(ctx.db, 'DELETE FROM sessions WHERE token_hash = ?', auth.tokenHash)
   }

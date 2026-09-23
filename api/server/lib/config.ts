@@ -11,6 +11,7 @@ export interface Config {
   corsOrigins: ReadonlySet<string>
   trustProxy: 'cloudflare' | 'none'
   mojangSessionUrl: string
+  mojangApiUrl: string
   logRequests: boolean
   limits: Limits
 }
@@ -27,6 +28,12 @@ export interface Limits {
   maxPendingUploadsPerUser: number
   maxSseStreamsPerUser: number
   maxSseStreamsTotal: number
+  maxCosmeticUploadsPerUser: number
+  maxPendingCosmeticUploadsPerUser: number
+  maxPlayerStreamsPerUser: number
+  maxPlayerStreamsTotal: number
+  /** Höchstzahl beobachteter Spieler je `GET /v1/events/players`-Stream. */
+  maxWatchedPerStream: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -41,6 +48,11 @@ export const DEFAULT_LIMITS: Limits = {
   maxPendingUploadsPerUser: 3,
   maxSseStreamsPerUser: 3,
   maxSseStreamsTotal: 2000,
+  maxCosmeticUploadsPerUser: 10,
+  maxPendingCosmeticUploadsPerUser: 3,
+  maxPlayerStreamsPerUser: 3,
+  maxPlayerStreamsTotal: 2000,
+  maxWatchedPerStream: 200,
 }
 
 const bool = z
@@ -90,6 +102,10 @@ const envSchema = z.object({
     .url({ protocol: /^https?$/ })
     .default('https://sessionserver.mojang.com')
     .transform((s) => s.replace(/\/+$/, '')),
+  MOJANG_API_URL: z
+    .url({ protocol: /^https?$/ })
+    .default('https://api.mojang.com')
+    .transform((s) => s.replace(/\/+$/, '')),
   // Nur für lokale Tests mit einem Mojang-Mock (http://…). Nie in Produktion setzen.
   ALLOW_INSECURE_MOJANG_URL: bool.default(false),
   LOG_REQUESTS: bool.default(false),
@@ -105,8 +121,10 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     throw new ConfigError(`Invalid configuration: ${keys.join(', ')}`)
   }
   const e = parsed.data
-  if (e.MOJANG_SESSIONSERVER_URL.startsWith('http:') && !e.ALLOW_INSECURE_MOJANG_URL) {
-    throw new ConfigError('Invalid configuration: MOJANG_SESSIONSERVER_URL (must be https)')
+  for (const key of ['MOJANG_SESSIONSERVER_URL', 'MOJANG_API_URL'] as const) {
+    if (e[key].startsWith('http:') && !e.ALLOW_INSECURE_MOJANG_URL) {
+      throw new ConfigError(`Invalid configuration: ${key} (must be https)`)
+    }
   }
   return {
     dataDir: e.DATA_DIR,
@@ -117,6 +135,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     corsOrigins: e.CORS_ORIGINS,
     trustProxy: e.TRUST_PROXY,
     mojangSessionUrl: e.MOJANG_SESSIONSERVER_URL,
+    mojangApiUrl: e.MOJANG_API_URL,
     logRequests: e.LOG_REQUESTS,
     limits: { ...DEFAULT_LIMITS, ...limits },
   }

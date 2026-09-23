@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { CAPE_ID, SERVER_ID, normalizeRedeemCode, normalizeUuid } from './ids'
+import { CAPE_ID, COSMETIC_ID, SERVER_ID, normalizeRedeemCode, normalizeUuid } from './ids'
+import { TEMPLATE_ID, WEARABLE_SLOTS } from './templates'
 
 /** Alle Eingaben laufen durch diese Schemas (Whitelist, `strict` = unbekannte Felder → 400). */
 
@@ -22,6 +23,8 @@ export const mcNameSchema = z
 export const serverIdSchema = z.string().regex(SERVER_ID, 'must be the serverId returned by /v1/auth/challenge')
 
 export const capeIdSchema = z.string().regex(CAPE_ID, 'invalid cape id')
+
+export const cosmeticIdSchema = z.string().regex(COSMETIC_ID, 'invalid cosmetic id')
 
 /** Freitext ohne Steuerzeichen, getrimmt. */
 const plainText = (max: number) =>
@@ -52,6 +55,7 @@ export const settingsPatch = z
     showCapeToOthers: z.boolean(),
     presenceVisibility: z.enum(['friends', 'nobody']),
     shareServer: z.boolean(),
+    showCosmeticsToOthers: z.boolean(),
   })
   .partial()
   .refine((o) => Object.keys(o).length > 0, 'at least one setting is required')
@@ -121,18 +125,73 @@ export const targetBody = z.strictObject({
 
 export const reasonBody = z.strictObject({ reason: plainText(200).optional() }).optional()
 
-export const createCodesBody = z.strictObject({
-  capeId: capeIdSchema,
-  maxUses: z.int().min(1).max(100_000).default(1),
-  count: z.int().min(1).max(100).default(1),
-  expiresAt: z.iso.datetime({ offset: true }).optional(),
-  note: plainText(200).optional(),
-})
+export const createCodesBody = z
+  .strictObject({
+    capeId: capeIdSchema.optional(),
+    cosmeticId: cosmeticIdSchema.optional(),
+    maxUses: z.int().min(1).max(100_000).default(1),
+    count: z.int().min(1).max(100).default(1),
+    expiresAt: z.iso.datetime({ offset: true }).optional(),
+    note: plainText(200).optional(),
+  })
+  .refine((o) => (o.capeId === undefined) !== (o.cosmeticId === undefined), 'exactly one of capeId or cosmeticId is required')
 
 export const grantCapeBody = z.strictObject({ capeId: capeIdSchema })
 
 export const adminCapeListQuery = z.strictObject({
   status: z.enum(['pending', 'approved', 'rejected', 'reported']).default('pending'),
+})
+
+// ---------------------------------------------------------------- Kosmetik, Emotes, Skins
+
+export const templateIdSchema = z.string().regex(TEMPLATE_ID, 'invalid template id')
+
+/** `{ hat?, wings?, back?, aura? }`: ID = anlegen, null = ablegen, fehlend = unverändert. */
+const slotValue = cosmeticIdSchema.nullable().optional()
+export const equipBody = z
+  .strictObject({ hat: slotValue, wings: slotValue, back: slotValue, aura: slotValue } satisfies
+    Record<(typeof WEARABLE_SLOTS)[number], typeof slotValue>)
+  .refine((o) => Object.values(o).some((v) => v !== undefined), 'at least one slot is required')
+
+export const cosmeticUploadQuery = z.strictObject({
+  template: templateIdSchema,
+  name: capeNameSchema.optional(),
+  frameTimeMs: z.coerce.number().int().min(50).max(10_000).optional(),
+})
+
+export const grantCosmeticBody = z.strictObject({ cosmeticId: cosmeticIdSchema })
+
+export const adminCosmeticListQuery = adminCapeListQuery
+
+export const guideQuery = z.strictObject({
+  scale: z.coerce.number().int().min(1).max(4).default(1),
+})
+
+export const emoteBody = z.strictObject({ emote: cosmeticIdSchema })
+
+export const skinChangedBody = z.strictObject({}).optional()
+
+/** `?uuids=a,b,c` – 1–200 UUIDs (mit oder ohne Bindestriche), Duplikate zählen einmal. */
+export const playerStreamQuery = z.strictObject({
+  uuids: z
+    .string()
+    .max(200 * 37)
+    .transform((raw, ctx) => {
+      const out = new Set<string>()
+      for (const part of raw.split(',')) {
+        const u = normalizeUuid(part)
+        if (!u) {
+          ctx.addIssue({ code: 'custom', message: 'must be a comma-separated list of Minecraft UUIDs' })
+          return z.NEVER
+        }
+        out.add(u)
+      }
+      if (out.size === 0 || out.size > 200) {
+        ctx.addIssue({ code: 'custom', message: 'must contain 1 to 200 UUIDs' })
+        return z.NEVER
+      }
+      return [...out]
+    }),
 })
 
 export const codeIdSchema = z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER)

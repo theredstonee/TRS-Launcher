@@ -4,6 +4,9 @@ import { EventHub } from './events'
 import type { MojangClient } from './mojang'
 import { PresenceStore } from './presence'
 import { RateLimiter } from './ratelimit'
+import { SkinService } from './skins'
+import { TemplateSet } from './templates'
+import { PlayerWatchHub } from './watch'
 
 /** Alles, was die Dienste brauchen – im Server einmal erzeugt, in Tests frisch je Test. */
 export interface AppContext {
@@ -12,10 +15,17 @@ export interface AppContext {
   mojang: MojangClient
   presence: PresenceStore
   events: EventHub
+  /** Spieler-Stream (`GET /v1/events/players`): Emotes, Skin-, Umhang- und Kosmetik-Änderungen. */
+  watch: PlayerWatchHub
   limiter: RateLimiter
+  skins: SkinService
+  /** Kosmetik-Vorlagen (beim Start aus assets/cosmetics/templates.json). */
+  templates: TemplateSet
   now: () => number
   /** Ordner für Umhang-PNGs (`<DATA_DIR>/capes`). */
   capeDir: string
+  /** Ordner für Kosmetik-PNGs (`<DATA_DIR>/cosmetics`). */
+  cosmeticDir: string
 }
 
 export function createContext(opts: {
@@ -23,18 +33,26 @@ export function createContext(opts: {
   db: Db
   mojang: MojangClient
   capeDir: string
+  cosmeticDir: string
+  templates?: TemplateSet
   now?: () => number
 }): AppContext {
   const now = opts.now ?? Date.now
+  const limiter = new RateLimiter(now)
+  const lim = opts.config.limits
   return {
     config: opts.config,
     db: opts.db,
     mojang: opts.mojang,
-    presence: new PresenceStore(opts.config.limits.presenceTtlMs, now),
-    events: new EventHub(opts.config.limits.maxSseStreamsPerUser, opts.config.limits.maxSseStreamsTotal),
-    limiter: new RateLimiter(now),
+    presence: new PresenceStore(lim.presenceTtlMs, now),
+    events: new EventHub(lim.maxSseStreamsPerUser, lim.maxSseStreamsTotal),
+    watch: new PlayerWatchHub(lim.maxPlayerStreamsPerUser, lim.maxPlayerStreamsTotal),
+    limiter,
+    skins: new SkinService(opts.mojang, limiter, now),
+    templates: opts.templates ?? TemplateSet.empty(),
     now,
     capeDir: opts.capeDir,
+    cosmeticDir: opts.cosmeticDir,
   }
 }
 

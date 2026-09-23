@@ -112,4 +112,11 @@ export const RULES = {
   eventsUser: { limit: 10, windowMs: MIN },
   adminActor: { limit: 240, windowMs: MIN },
   deleteUser: { limit: 3, windowMs: HOUR },
+  cosmeticUploadUser: { limit: 5, windowMs: 24 * HOUR },
+  emoteUser: { limit: 1, windowMs: 2000 },
+  skinChangedUser: { limit: 6, windowMs: MIN },
+  skinLookupUser: { limit: 30, windowMs: MIN },
+  /** Ausgehende Mojang-Profilabfragen insgesamt (nur Cache-Fehlschläge). */
+  mojangGlobal: { limit: 100, windowMs: MIN },
+  playerEventsUser: { limit: 20, windowMs: MIN },
 } satisfies Record<string, Rule>

@@ -1,17 +1,19 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { sweepExpired } from '../lib/auth'
-import { loadBuiltins } from '../lib/builtin'
+import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
 import { seedBuiltins } from '../lib/capes'
-import { ConfigError, loadConfig } from '../lib/config'
+import { seedBuiltinCosmetics, seedEmotes } from '../lib/cosmetics'
+import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
 import { openDb } from '../lib/db'
 import { broadcastPresence } from '../lib/friends'
 import { createMojangClient } from '../lib/mojang'
+import { parseTemplates } from '../lib/templates'
 
 /** Startet die App: Konfiguration prüfen, DB öffnen + migrieren, Katalog einspielen, Aufräum-Timer. */
 export default defineNitroPlugin((nitroApp) => {
-  let config
+  let config: Config
   try {
     config = loadConfig(process.env)
   } catch (err) {
@@ -22,25 +24,51 @@ export default defineNitroPlugin((nitroApp) => {
     throw err
   }
   const capeDir = join(config.dataDir, 'capes')
+  const cosmeticDir = join(config.dataDir, 'cosmetics')
   mkdirSync(capeDir, { recursive: true })
+  mkdirSync(cosmeticDir, { recursive: true })
   const db = openDb(join(config.dataDir, 'trs.db'))
-  const ctx = createContext({ config, db, mojang: createMojangClient(config.mojangSessionUrl), capeDir })
+  const mojang = createMojangClient(config.mojangSessionUrl, fetch, config.mojangApiUrl)
+  const ctx = createContext({ config, db, mojang, capeDir, cosmeticDir })
   setContext(ctx)
 
-  const storage = useStorage('assets:capes')
   const toBuffer = (v: unknown): Buffer | null =>
     v == null ? null : Buffer.isBuffer(v) ? v : v instanceof Uint8Array ? Buffer.from(v) : typeof v === 'string' ? Buffer.from(v) : null
+  const assets = (base: string) => {
+    const storage = useStorage(`assets:${base}`)
+    return {
+      json: async (name: string) => JSON.parse(toBuffer(await storage.getItemRaw(name))?.toString('utf8') ?? 'null') as unknown,
+      file: async (name: string) => toBuffer(await storage.getItemRaw(name)),
+    }
+  }
+  const capeAssets = assets('capes')
+  const cosmeticAssets = assets('cosmetics')
+
+  async function start(): Promise<void> {
+    const capes = await loadBuiltins(() => capeAssets.json('catalog.json'), capeAssets.file)
+    // Ohne Katalog nichts ausmustern – bestehende Einträge bleiben, wie sie sind.
+    if (capes.length === 0) console.warn('[trs-api] assets/capes/catalog.json not found – built-in capes unchanged')
+    else seedBuiltins(ctx, capes)
+
+    seedEmotes(ctx)
+    const templates = await cosmeticAssets.json('templates.json')
+    let cosmetics = 0
+    if (templates === null) {
+      console.warn('[trs-api] assets/cosmetics/templates.json not found – cosmetics disabled, built-ins unchanged')
+    } else {
+      ctx.templates = parseTemplates(templates)
+      const list = await loadBuiltinCosmetics(() => cosmeticAssets.json('catalog.json'), cosmeticAssets.file)
+      if (list.length === 0) console.warn('[trs-api] assets/cosmetics/catalog.json not found – built-in cosmetics unchanged')
+      else seedBuiltinCosmetics(ctx, list)
+      cosmetics = list.length
+    }
+    console.info(
+      `[trs-api] ready – ${capes.length} built-in capes, ${ctx.templates.list.length} templates, ${cosmetics} built-in cosmetics, data in ${config.dataDir}`,
+    )
+  }
   setReady(
-    loadBuiltins(
-      async () => JSON.parse(toBuffer(await storage.getItemRaw('catalog.json'))?.toString('utf8') ?? 'null'),
-      async (name) => toBuffer(await storage.getItemRaw(name)),
-    ).then((capes) => {
-      // Ohne Katalog nichts ausmustern – bestehende Einträge bleiben, wie sie sind.
-      if (capes.length === 0) console.warn('[trs-api] assets/capes/catalog.json not found – built-in capes unchanged')
-      else seedBuiltins(ctx, capes)
-      console.info(`[trs-api] ready – ${capes.length} built-in capes, data in ${config.dataDir}`)
-    }).catch((err) => {
-      console.error('[trs-api] failed to load built-in capes', err)
+    start().catch((err) => {
+      console.error('[trs-api] failed to load built-in capes/cosmetics', err)
       process.exit(1)
     }),
   )

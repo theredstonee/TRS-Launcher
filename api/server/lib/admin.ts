@@ -1,8 +1,17 @@
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { conflict, notFound } from './errors'
-import { capeView, getCape, removeCape, type CapeRow, type CapeView } from './capes'
+import { capeView, capeWearers, getCape, removeCape, type CapeRow, type CapeView } from './capes'
+import {
+  cosmeticView,
+  getCosmetic,
+  removeCosmetic,
+  setReviewStatus,
+  type CosmeticRow,
+  type CosmeticView,
+} from './cosmetics'
 import { broadcastPresence } from './friends'
+import { emitCape } from './playerevents'
 import { getUser, isAdmin, settingsOf, type Settings } from './users'
 
 export function audit(ctx: AppContext, actor: string, action: string, target: string | null, detail?: string): void {
@@ -65,6 +74,7 @@ function uploadOr404(ctx: AppContext, id: string): CapeRow {
 
 export function approveCape(ctx: AppContext, actor: string, id: string): CapeView {
   const c = uploadOr404(ctx, id)
+  const worn = capeWearers(ctx, c.id)
   tx(ctx.db, () => {
     run(
       ctx.db,
@@ -75,11 +85,14 @@ export function approveCape(ctx: AppContext, actor: string, id: string): CapeVie
     run(ctx.db, 'DELETE FROM cape_reports WHERE cape_id = ?', c.id)
     audit(ctx, actor, 'cape.approve', c.owner_uuid, c.id)
   })
+  // Ab jetzt sehen auch andere den Umhang.
+  for (const u of worn) emitCape(ctx, u)
   return capeView(ctx, getCape(ctx, c.id)!)
 }
 
 export function rejectCape(ctx: AppContext, actor: string, id: string, reason: string | undefined): CapeView {
   const c = uploadOr404(ctx, id)
+  const worn = capeWearers(ctx, c.id)
   tx(ctx.db, () => {
     run(
       ctx.db,
@@ -89,6 +102,7 @@ export function rejectCape(ctx: AppContext, actor: string, id: string, reason: s
     run(ctx.db, 'UPDATE users SET active_cape_id = NULL WHERE active_cape_id = ?', c.id)
     audit(ctx, actor, 'cape.reject', c.owner_uuid, c.id)
   })
+  for (const u of worn) emitCape(ctx, u)
   return capeView(ctx, getCape(ctx, c.id)!)
 }
 
@@ -98,6 +112,75 @@ export function deleteCapeAdmin(ctx: AppContext, actor: string, id: string): voi
   if (c.kind === 'builtin') throw conflict('builtin_cape', 'Built-in capes are managed by the generator, not deletable')
   removeCape(ctx, c.id)
   audit(ctx, actor, 'cape.delete', c.owner_uuid, c.id)
+}
+
+// ---------------------------------------------------------------- Kosmetik-Moderation
+
+export interface AdminCosmeticView extends CosmeticView {
+  owner: { uuid: string, name: string } | null
+  createdAt: string
+  reviewedAt: string | null
+  reviewedBy: string | null
+  rejectReason: string | null
+  reports: { count: number, reasons: Record<string, number> }
+}
+
+export function listCosmeticsForReview(
+  ctx: AppContext,
+  status: 'pending' | 'approved' | 'rejected' | 'reported',
+): AdminCosmeticView[] {
+  const rows = status === 'reported'
+    ? all<CosmeticRow & { owner_name: string | null }>(
+      ctx.db,
+      `SELECT c.*, u.name AS owner_name FROM cosmetics c LEFT JOIN users u ON u.uuid = c.owner_uuid
+       WHERE c.kind = 'upload' AND EXISTS (SELECT 1 FROM cosmetic_reports r WHERE r.cosmetic_id = c.id)
+       ORDER BY c.created_at LIMIT 500`,
+    )
+    : all<CosmeticRow & { owner_name: string | null }>(
+      ctx.db,
+      `SELECT c.*, u.name AS owner_name FROM cosmetics c LEFT JOIN users u ON u.uuid = c.owner_uuid
+       WHERE c.kind = 'upload' AND c.status = ? ORDER BY c.created_at LIMIT 500`,
+      status,
+    )
+  return rows.map((c) => {
+    const reports = all<{ reason: string, n: number }>(
+      ctx.db,
+      'SELECT reason, COUNT(*) AS n FROM cosmetic_reports WHERE cosmetic_id = ? GROUP BY reason',
+      c.id,
+    )
+    return {
+      ...cosmeticView(ctx, c),
+      owner: c.owner_uuid ? { uuid: c.owner_uuid, name: c.owner_name ?? '' } : null,
+      createdAt: new Date(c.created_at).toISOString(),
+      reviewedAt: c.reviewed_at ? new Date(c.reviewed_at).toISOString() : null,
+      reviewedBy: c.reviewed_by,
+      rejectReason: c.reject_reason,
+      reports: {
+        count: reports.reduce((s, r) => s + r.n, 0),
+        reasons: Object.fromEntries(reports.map((r) => [r.reason, r.n])),
+      },
+    }
+  })
+}
+
+export function approveCosmetic(ctx: AppContext, actor: string, id: string): CosmeticView {
+  const view = setReviewStatus(ctx, actor, id, 'approved', undefined)
+  audit(ctx, actor, 'cosmetic.approve', getCosmetic(ctx, id)?.owner_uuid ?? null, id)
+  return view
+}
+
+export function rejectCosmetic(ctx: AppContext, actor: string, id: string, reason: string | undefined): CosmeticView {
+  const view = setReviewStatus(ctx, actor, id, 'rejected', reason)
+  audit(ctx, actor, 'cosmetic.reject', getCosmetic(ctx, id)?.owner_uuid ?? null, id)
+  return view
+}
+
+export function deleteCosmeticAdmin(ctx: AppContext, actor: string, id: string): void {
+  const c = getCosmetic(ctx, id)
+  if (!c) throw notFound('cosmetic_not_found', 'Cosmetic not found')
+  if (c.kind === 'builtin') throw conflict('builtin_cosmetic', 'Built-in cosmetics are managed by the generator, not deletable')
+  removeCosmetic(ctx, c.id)
+  audit(ctx, actor, 'cosmetic.delete', c.owner_uuid, c.id)
 }
 
 export function banUser(ctx: AppContext, actor: string, uuid: string, reason: string | undefined): void {
@@ -114,6 +197,7 @@ export function banUser(ctx: AppContext, actor: string, uuid: string, reason: st
   })
   if (ctx.presence.delete(uuid)) broadcastPresence(ctx, uuid)
   ctx.events.kick(uuid)
+  ctx.watch.kick(uuid)
 }
 
 export function unbanUser(ctx: AppContext, actor: string, uuid: string): void {
@@ -134,6 +218,9 @@ export interface AdminUserView {
   activeCapeId: string | null
   grantedCapes: { capeId: string, source: string, grantedAt: string }[]
   uploads: number
+  grantedCosmetics: { cosmeticId: string, source: string, grantedAt: string }[]
+  equippedCosmetics: Record<string, string>
+  cosmeticUploads: number
   friends: number
   sessions: number
   online: boolean
@@ -160,6 +247,14 @@ export function userInfo(ctx: AppContext, uuid: string): AdminUserView {
       ctx.db, 'SELECT cape_id, source, granted_at FROM user_capes WHERE uuid = ? ORDER BY granted_at', uuid,
     ).map((g) => ({ capeId: g.cape_id, source: g.source, grantedAt: new Date(g.granted_at).toISOString() })),
     uploads: count("SELECT COUNT(*) AS n FROM capes WHERE owner_uuid = ? AND kind = 'upload'", uuid),
+    grantedCosmetics: all<{ cosmetic_id: string, source: string, granted_at: number }>(
+      ctx.db, 'SELECT cosmetic_id, source, granted_at FROM user_cosmetics WHERE uuid = ? ORDER BY granted_at', uuid,
+    ).map((g) => ({ cosmeticId: g.cosmetic_id, source: g.source, grantedAt: new Date(g.granted_at).toISOString() })),
+    equippedCosmetics: Object.fromEntries(
+      all<{ slot: string, cosmetic_id: string }>(ctx.db, 'SELECT slot, cosmetic_id FROM equipped_cosmetics WHERE uuid = ? ORDER BY slot', uuid)
+        .map((e) => [e.slot, e.cosmetic_id]),
+    ),
+    cosmeticUploads: count("SELECT COUNT(*) AS n FROM cosmetics WHERE owner_uuid = ? AND kind = 'upload'", uuid),
     friends: count('SELECT COUNT(*) AS n FROM friendships WHERE a = ? OR b = ?', uuid, uuid),
     sessions: count('SELECT COUNT(*) AS n FROM sessions WHERE uuid = ?', uuid),
     online: ctx.presence.get(uuid) !== null,
@@ -185,6 +280,15 @@ export function stats(ctx: AppContext) {
       reported: n('SELECT COUNT(DISTINCT cape_id) AS n FROM cape_reports'),
       activeUsers: n('SELECT COUNT(*) AS n FROM users WHERE active_cape_id IS NOT NULL'),
     },
+    cosmetics: {
+      builtin: n("SELECT COUNT(*) AS n FROM cosmetics WHERE kind = 'builtin' AND slot <> 'emote' AND retired = 0"),
+      emotes: n("SELECT COUNT(*) AS n FROM cosmetics WHERE slot = 'emote' AND retired = 0"),
+      approved: n("SELECT COUNT(*) AS n FROM cosmetics WHERE kind = 'upload' AND status = 'approved'"),
+      pending: n("SELECT COUNT(*) AS n FROM cosmetics WHERE kind = 'upload' AND status = 'pending'"),
+      rejected: n("SELECT COUNT(*) AS n FROM cosmetics WHERE kind = 'upload' AND status = 'rejected'"),
+      reported: n('SELECT COUNT(DISTINCT cosmetic_id) AS n FROM cosmetic_reports'),
+      equippedUsers: n('SELECT COUNT(DISTINCT uuid) AS n FROM equipped_cosmetics'),
+    },
     codes: {
       active: n(
         'SELECT COUNT(*) AS n FROM codes WHERE revoked_at IS NULL AND uses < max_uses AND (expires_at IS NULL OR expires_at > ?)',
@@ -195,6 +299,7 @@ export function stats(ctx: AppContext) {
     friendships: n('SELECT COUNT(*) AS n FROM friendships'),
     pendingFriendRequests: n('SELECT COUNT(*) AS n FROM friend_requests'),
     eventStreams: ctx.events.size,
+    playerStreams: ctx.watch.size,
   }
 }
 

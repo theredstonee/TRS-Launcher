@@ -4,6 +4,7 @@ import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { conflict, forbidden, notFound } from './errors'
 import { newUploadCapeId, sha256Hex } from './ids'
+import { emitCape } from './playerevents'
 import { capeLayout, inspectPng, sanitizeCapeUpload } from './png'
 import { isAdmin } from './users'
 
@@ -79,7 +80,7 @@ export function getCape(ctx: AppContext, id: string): CapeRow | undefined {
   return one<CapeRow>(ctx.db, 'SELECT * FROM capes WHERE id = ?', id)
 }
 
-function writeAtomic(dir: string, file: string, data: Buffer): void {
+export function writeAtomic(dir: string, file: string, data: Buffer): void {
   mkdirSync(dir, { recursive: true })
   const tmp = join(dir, `.${file}.${process.pid}.tmp`)
   writeFileSync(tmp, data, { mode: 0o640 })
@@ -166,14 +167,26 @@ export function catalog(ctx: AppContext, uuid: string): CatalogEntry[] {
 
 export function setActiveCape(ctx: AppContext, uuid: string, capeId: string | null): CapeView | null {
   if (capeId === null) {
-    run(ctx.db, 'UPDATE users SET active_cape_id = NULL WHERE uuid = ?', uuid)
+    if (run(ctx.db, 'UPDATE users SET active_cape_id = NULL WHERE uuid = ? AND active_cape_id IS NOT NULL', uuid) > 0) {
+      emitCape(ctx, uuid)
+    }
     return null
   }
   const c = getCape(ctx, capeId)
   if (!c || (c.kind === 'upload' && c.owner_uuid !== uuid)) throw notFound('cape_not_found', 'Cape not found')
   if (!canUse(ctx, uuid, c)) throw forbidden('cape_locked', 'You have not unlocked this cape')
-  run(ctx.db, 'UPDATE users SET active_cape_id = ? WHERE uuid = ?', c.id, uuid)
+  const changed = run(
+    ctx.db,
+    'UPDATE users SET active_cape_id = ? WHERE uuid = ? AND (active_cape_id IS NULL OR active_cape_id <> ?)',
+    c.id, uuid, c.id,
+  )
+  if (changed > 0) emitCape(ctx, uuid)
   return capeView(ctx, c)
+}
+
+/** Wer trägt diesen Umhang gerade? */
+export function capeWearers(ctx: AppContext, capeId: string): string[] {
+  return all<{ uuid: string }>(ctx.db, 'SELECT uuid FROM users WHERE active_cape_id = ?', capeId).map((r) => r.uuid)
 }
 
 // ---------------------------------------------------------------- Uploads
@@ -223,8 +236,10 @@ export function deleteOwnUpload(ctx: AppContext, uuid: string, capeId: string): 
 
 /** Entfernt einen hochgeladenen Umhang samt Datei (aktive Auswahl wird per FK zurückgesetzt). */
 export function removeCape(ctx: AppContext, capeId: string): void {
+  const worn = capeWearers(ctx, capeId)
   run(ctx.db, 'DELETE FROM capes WHERE id = ?', capeId)
   rmSync(join(ctx.capeDir, `${capeId}.png`), { force: true })
+  for (const u of worn) emitCape(ctx, u)
 }
 
 export function reportCape(
@@ -286,9 +301,10 @@ export function grantCape(ctx: AppContext, uuid: string, capeId: string, source:
 }
 
 export function revokeCape(ctx: AppContext, uuid: string, capeId: string): boolean {
-  return tx(ctx.db, () => {
-    const n = run(ctx.db, 'DELETE FROM user_capes WHERE uuid = ? AND cape_id = ?', uuid, capeId)
-    run(ctx.db, 'UPDATE users SET active_cape_id = NULL WHERE uuid = ? AND active_cape_id = ?', uuid, capeId)
-    return n > 0
-  })
+  const { n, off } = tx(ctx.db, () => ({
+    n: run(ctx.db, 'DELETE FROM user_capes WHERE uuid = ? AND cape_id = ?', uuid, capeId),
+    off: run(ctx.db, 'UPDATE users SET active_cape_id = NULL WHERE uuid = ? AND active_cape_id = ?', uuid, capeId),
+  }))
+  if (off > 0) emitCape(ctx, uuid)
+  return n > 0
 }
