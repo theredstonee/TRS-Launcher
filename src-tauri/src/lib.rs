@@ -67,6 +67,7 @@ pub fn run() {
             });
             app.manage::<LauncherState>(launcher);
             app.manage(commands::system::DropState::default());
+            app.manage(commands::tasks::TaskRegistry::default());
             Ok(())
         })
         // Dateien, die ins Fenster gezogen werden: Pfade bleiben in Rust,
@@ -86,6 +87,12 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            commands::tasks::cancel_task,
+            commands::tasks::pause_task,
+            commands::tasks::task_history,
+            commands::tasks::record_task,
+            commands::tasks::remove_task_record,
+            commands::tasks::clear_task_history,
             commands::system::add_dropped_files,
             commands::system::pick_content_files,
             commands::system::pick_java_path,

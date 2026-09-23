@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Instance, LoaderKind, LoaderVersionInfo, MigrationItem } from '~/types'
+import { cancelledError } from '~/stores/tasks'
 
 // Minecraft-Version und/oder Modloader einer Instanz wechseln. Danach werden
 // die über Modrinth installierten Inhalte auf passende Versionen gebracht.
@@ -20,7 +21,17 @@ const error = ref<string | null>(null)
 
 const plan = ref<MigrationItem[] | null>(null)
 const planning = ref(false)
-const applying = ref<{ done: number; total: number } | null>(null)
+// Das Nachziehen der Inhalte läuft als Aufgabe weiter, auch wenn der Dialog zugeht.
+const tasks = useTasksStore()
+const migrateKey = computed(() => taskKey('migrate', props.instance.id))
+const applying = computed(() => {
+  const t = tasks.get(migrateKey.value)
+  if (t?.status !== 'running') return null
+  const [done, total] = (t.tag ?? '0/0').split('/').map(Number)
+  return { done: done ?? 0, total: total ?? 0 }
+})
+let dialogOpen = true
+onBeforeUnmount(() => (dialogOpen = false))
 
 const versions = computed(() => {
   const list = (meta.manifest?.versions ?? []).filter((v) => v.type === 'release' || showSnapshots.value)
@@ -105,6 +116,12 @@ async function submit() {
     const updated = await backend.changeInstanceVersion(props.instance.id, parsed.data.gameVersion, parsed.data.loader)
     emit('changed', updated)
     toasts.ok(`Instanz läuft jetzt mit ${updated.gameVersion} (${loaderLabels[updated.loader.kind]})`)
+    tasks.note({
+      kind: 'version-change',
+      title: `${updated.name} → ${updated.gameVersion}`,
+      outcome: 'done',
+      instanceId: updated.id,
+    })
     step.value = 'migrate'
     await loadPlan()
   } catch (e) {
@@ -132,26 +149,42 @@ const fine = computed(() => (plan.value ?? []).filter((p) => p.status === 'compa
 
 async function applyPlan() {
   const list = toUpdate.value
-  applying.value = { done: 0, total: list.length }
-  let failed = 0
-  for (const p of list) {
-    try {
-      await backend.applyContentUpdate(props.instance.id, {
-        kind: p.kind,
-        fileName: p.fileName,
-        projectId: p.projectId,
-        versionId: p.targetVersionId!,
-        versionNumber: p.targetVersionNumber ?? '',
-      })
-    } catch {
-      failed++
-    }
-    applying.value = { done: applying.value.done + 1, total: list.length }
-  }
-  applying.value = null
-  if (failed) toasts.error(`${failed} von ${list.length} Updates sind fehlgeschlagen.`)
-  else toasts.ok(`${list.length} ${list.length === 1 ? 'Inhalt' : 'Inhalte'} auf passende Versionen gebracht`)
-  await loadPlan()
+  const instance = props.instance
+  await tasks.run(
+    {
+      key: migrateKey.value,
+      kind: 'content-update',
+      title: instance.name,
+      stage: 'Inhalte werden angepasst',
+      instanceId: instance.id,
+      tag: `0/${list.length}`,
+      cancellable: true,
+      // Der Versionswechsel steht schon im Verlauf.
+      record: false,
+      doneText: `${list.length} ${list.length === 1 ? 'Inhalt' : 'Inhalte'} auf passende Versionen gebracht`,
+    },
+    async (ctx) => {
+      let failed = 0
+      for (const [i, p] of list.entries()) {
+        if (ctx.cancelled()) throw cancelledError()
+        ctx.progress((i / list.length) * 100, p.title || p.fileName)
+        try {
+          await backend.applyContentUpdate(instance.id, {
+            kind: p.kind,
+            fileName: p.fileName,
+            projectId: p.projectId,
+            versionId: p.targetVersionId!,
+            versionNumber: p.targetVersionNumber ?? '',
+          })
+        } catch {
+          failed++
+        }
+        ctx.update({ tag: `${i + 1}/${list.length}` })
+      }
+      if (failed) throw new BackendError('partial', `${failed} von ${list.length} Updates sind fehlgeschlagen.`)
+    },
+  )
+  if (dialogOpen) await loadPlan()
 }
 
 async function disableMissing() {

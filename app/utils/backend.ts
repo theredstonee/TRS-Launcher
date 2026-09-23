@@ -42,6 +42,7 @@ import type {
   ModrinthSearchResult,
   ModrinthVersion,
   NewInstance,
+  NewTaskRecord,
   PackProgress,
   ProjectCard,
   ProjectDetails,
@@ -51,6 +52,7 @@ import type {
   ServerStatus,
   Settings,
   StageProgress,
+  TaskRecord,
   VersionManifest,
 } from '~/types'
 
@@ -124,15 +126,15 @@ export const backend = {
     call<LoaderVersionInfo[]>('loader_versions', { kind, gameVersion }),
   latestLoaderVersion: (kind: LoaderKind, gameVersion: string) =>
     call<string | null>('latest_loader_version', { kind, gameVersion }),
-  reinstallInstance: (id: string, onProgress: (p: StageProgress) => void) =>
-    call<void>('reinstall_instance', { id, onProgress: channel(onProgress) }),
+  reinstallInstance: (id: string, onProgress: (p: StageProgress) => void, taskId: string | null = null) =>
+    call<void>('reinstall_instance', { id, onProgress: channel(onProgress), taskId }),
 
   /** Öffnet den Dateidialog für java.exe/javaw.exe; `null` = abgebrochen. */
   pickJavaPath: () => call<string | null>('pick_java_path'),
   checkJava: (path: string) => call<JavaCheck>('check_java', { path }),
   detectJava: () => call<JavaInstall[]>('detect_java'),
-  installJava: (major: number, onProgress: (percent: number) => void) =>
-    call<string>('install_java', { major, onProgress: channel(onProgress) }),
+  installJava: (major: number, onProgress: (percent: number) => void, taskId: string | null = null) =>
+    call<string>('install_java', { major, onProgress: channel(onProgress), taskId }),
   storageStats: () => call<StorageStats>('storage_stats'),
   cleanUnusedStorage: () => call<number>('clean_unused_storage'),
   verifyStorage: () => call<VerifyReport>('verify_storage'),
@@ -144,13 +146,17 @@ export const backend = {
    * Löst erst auf, wenn das Spiel gestartet ist; Fortschritt kommt über `onProgress`.
    * `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich dann direkt.
    */
-  launchInstance: (id: string, joinServer: string | null, onProgress: (p: StageProgress) => void) =>
-    call<number>('launch_instance', { id, joinServer, onProgress: channel(onProgress) }),
+  launchInstance: (
+    id: string,
+    joinServer: string | null,
+    onProgress: (p: StageProgress) => void,
+    taskId: string | null = null,
+  ) => call<number>('launch_instance', { id, joinServer, onProgress: channel(onProgress), taskId }),
   stopInstance: (id: string) => call<boolean>('stop_instance', { id }),
   runningGames: () => call<RunningGame[]>('running_games'),
   getGameLogs: (id: string) => call<LogLine[]>('get_game_logs', { id }),
-  repairInstance: (id: string, onProgress: (p: StageProgress) => void) =>
-    call<void>('repair_instance', { id, onProgress: channel(onProgress) }),
+  repairInstance: (id: string, onProgress: (p: StageProgress) => void, taskId: string | null = null) =>
+    call<void>('repair_instance', { id, onProgress: channel(onProgress), taskId }),
   /** Lädt den Log geschwärzt auf mclo.gs hoch; liefert den Link. */
   shareLog: (id: string) => call<string>('share_log', { id }),
 
@@ -175,14 +181,16 @@ export const backend = {
   addDroppedFiles: (id: string, token: number) => call<UploadResult[]>('add_dropped_files', { id, token }),
   installedProjects: (id: string) => call<string[]>('installed_projects', { id }),
   checkContentUpdates: (id: string) => call<ContentUpdate[]>('check_content_updates', { id }),
-  applyContentUpdate: (id: string, update: ContentUpdate) =>
+  applyContentUpdate: (id: string, update: ContentUpdate, taskId: string | null = null) =>
     call<string>('apply_content_update', {
       id,
       kind: update.kind,
       fileName: update.fileName,
       versionId: update.versionId,
+      taskId,
     }),
-  installPerformancePack: (id: string) => call<string[]>('install_performance_pack', { id }),
+  installPerformancePack: (id: string, taskId: string | null = null) =>
+    call<string[]>('install_performance_pack', { id, taskId }),
   /** Icons, Titel, Autoren von Modrinth nachladen; `true` = Liste neu laden. */
   refreshContentMeta: (id: string) => call<boolean>('refresh_content_meta', { id }),
   /** Neuere passende Versionen seit der installierten, mit Changelog. */
@@ -202,10 +210,16 @@ export const backend = {
   modrinthVersions: (id: string, projectId: string, kind: ContentKind) =>
     call<ModrinthVersion[]>('modrinth_versions', { id, projectId, kind }),
   /** Ohne `versionId` die neueste passende Version; Pflicht-Abhängigkeiten kommen immer mit. */
-  modrinthInstall: (id: string, projectId: string, kind: ContentKind, versionId: string | null = null) =>
-    call<string[]>('modrinth_install', { id, projectId, kind, versionId }),
-  installModpack: (projectId: string, onProgress: (p: PackProgress) => void) =>
-    call<Instance>('install_modpack', { projectId, onProgress: channel(onProgress) }),
+  modrinthInstall: (
+    id: string,
+    projectId: string,
+    kind: ContentKind,
+    versionId: string | null = null,
+    taskId: string | null = null,
+  ) => call<string[]>('modrinth_install', { id, projectId, kind, versionId, taskId }),
+  /** `taskId`: Aufgabe im Kern (Abbrechen, Pause, Byte-Stand über `task-progress`). */
+  installModpack: (projectId: string, onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
+    call<Instance>('install_modpack', { projectId, onProgress: channel(onProgress), taskId }),
 
   listServers: () => call<Server[]>('list_servers'),
   addServer: (server: ServerInput) => call<Server>('add_server', { server }),
@@ -243,8 +257,18 @@ export const backend = {
   exportModpack: (id: string, options: ExportOptions, onProgress: (p: ExportProgress) => void) =>
     call<ExportSummary | null>('export_modpack', { id, options, onProgress: channel(onProgress) }),
   /** Öffnet eine .mrpack-Datei und legt daraus eine Instanz an; `null` = abgebrochen. */
-  importModpackFile: (onProgress: (p: PackProgress) => void) =>
-    call<string | null>('import_modpack_file', { onProgress: channel(onProgress) }),
+  importModpackFile: (onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
+    call<string | null>('import_modpack_file', { onProgress: channel(onProgress), taskId }),
+
+  /** Laufende Aufgabe abbrechen; `false` = läuft nicht (mehr). */
+  cancelTask: (taskId: string) => call<boolean>('cancel_task', { taskId }),
+  /** Downloads der Aufgabe anhalten bzw. fortsetzen. */
+  pauseTask: (taskId: string, paused: boolean) => call<boolean>('pause_task', { taskId, paused }),
+  /** Verlauf fertiger Aufgaben, neueste zuerst (höchstens 50). */
+  taskHistory: () => call<TaskRecord[]>('task_history'),
+  recordTask: (record: NewTaskRecord) => call<TaskRecord>('record_task', { record }),
+  removeTaskRecord: (id: string) => call<void>('remove_task_record', { id }),
+  clearTaskHistory: () => call<void>('clear_task_history'),
 
   /** Screenshots aller Instanzen, neueste zuerst. */
   allScreenshots: () => call<GalleryShot[]>('all_screenshots'),

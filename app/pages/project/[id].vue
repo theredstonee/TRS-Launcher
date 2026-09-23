@@ -6,6 +6,7 @@ import type { ContentItem, ContentKind, ModrinthVersion, ProjectDetails, Project
 const route = useRoute()
 const router = useRouter()
 const instances = useInstancesStore()
+const tasks = useTasksStore()
 const toasts = useToasts()
 
 const projectId = computed(() => String(route.params.id))
@@ -29,8 +30,12 @@ const modsBlocked = computed(
 )
 
 const installed = ref<ContentItem | null>(null)
-const busy = ref<string | null>(null)
-const packPercent = ref<number | null>(null)
+// Installationen laufen im Aufgaben-Store – zurück auf der Seite sieht man sie wieder.
+const packTask = computed(() => (details.value ? tasks.get(modpackTaskKey(details.value.projectId)) : null))
+const contentTask = computed(() =>
+  details.value && target.value ? tasks.get(contentTaskKey(target.value.id, details.value.projectId)) : null,
+)
+const busy = computed(() => (contentTask.value?.status === 'running' ? (contentTask.value.tag ?? 'latest') : null))
 
 const categories = computed(() => (details.value?.categories ?? []).filter((c) => !(c in loaderNames)))
 const newestFitting = computed(() =>
@@ -84,54 +89,30 @@ onMounted(async () => {
 })
 watch(projectId, load, { immediate: true })
 watch([target, details], loadInstalled)
+// Fertig installiert (auch während man woanders war): Stand neu laden.
+watch(
+  () => contentTask.value?.status,
+  (status) => {
+    if (status === 'done') loadInstalled()
+  },
+)
 
-async function installVersion(version: ModrinthVersion | null) {
+function installVersion(version: ModrinthVersion | null) {
   if (!details.value || !target.value || !contentKind.value || busy.value) return
-  busy.value = version?.id ?? 'latest'
-  try {
-    const current = installed.value
-    if (current && version) {
-      await backend.applyContentUpdate(target.value.id, {
-        kind: contentKind.value,
-        fileName: current.fileName,
-        projectId: details.value.projectId,
-        versionId: version.id,
-        versionNumber: version.versionNumber,
-      })
-      toasts.ok(`${details.value.title}: Version ${version.versionNumber} installiert`)
-    } else {
-      const files = await backend.modrinthInstall(target.value.id, details.value.projectId, contentKind.value, version?.id ?? null)
-      toasts.ok(
-        files.length > 1
-          ? `${details.value.title} und ${files.length - 1} Abhängigkeit(en) installiert`
-          : `${details.value.title} installiert`,
-      )
-    }
-    await loadInstalled()
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    busy.value = null
-  }
+  installContentTask({
+    instance: target.value,
+    projectId: details.value.projectId,
+    title: details.value.title,
+    iconUrl: details.value.iconUrl,
+    kind: contentKind.value,
+    version,
+    replace: version ? (installed.value?.fileName ?? null) : null,
+  })
 }
 
-async function installPack() {
-  if (!details.value || packPercent.value !== null) return
-  packPercent.value = 0
-  try {
-    const instance = await backend.installModpack(details.value.projectId, (p) => {
-      const base = { pack: 0, files: 10, overrides: 95 }[p.phase]
-      const span = { pack: 10, files: 85, overrides: 5 }[p.phase]
-      packPercent.value = Math.floor(base + (p.percent / 100) * span)
-    })
-    await instances.load()
-    toasts.ok(`Modpack „${instance.name}“ ist bereit`)
-    router.push(`/instances/${instance.id}`)
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    packPercent.value = null
-  }
+function installPack() {
+  if (!details.value) return
+  installModpackTask(details.value)
 }
 
 const linkLabels: Record<ProjectLink['kind'], string> = {
@@ -208,10 +189,21 @@ function back() {
           <template v-if="isPack">
             <p class="text-sm font-medium">Modpack</p>
             <p class="mt-0.5 mb-3 text-xs text-base-400">Wird als neue Instanz mit allen Mods angelegt.</p>
-            <div v-if="packPercent !== null" class="space-y-1.5">
-              <p class="display text-center text-lg text-redstone-300 tabular-nums">{{ packPercent }} %</p>
-              <RedstoneWire :percent="packPercent" :segments="24" />
+            <div v-if="packTask?.status === 'running'" class="space-y-2">
+              <button
+                class="btn btn-ghost w-full tabular-nums"
+                :aria-label="`Wird installiert, ${packTask.percent ?? 0} Prozent – im Aufgaben-Panel anzeigen`"
+                @click="tasks.openPanel(packTask.key)"
+              >
+                {{ packTask.paused ? 'Pausiert' : 'Wird installiert …' }} {{ packTask.percent ?? 0 }} %
+              </button>
+              <RedstoneWire :percent="packTask.percent ?? 0" :segments="24" />
+              <p class="text-center text-xs text-base-400">{{ packTask.stage }}</p>
             </div>
+            <template v-else-if="packTask?.status === 'done' && packTask.instanceId">
+              <button class="btn btn-primary w-full" @click="router.push(`/instances/${packTask.instanceId}`)">Instanz öffnen</button>
+              <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-200" @click="installPack">Noch einmal installieren</button>
+            </template>
             <button v-else class="btn btn-primary w-full" @click="installPack">Als Instanz installieren</button>
           </template>
           <template v-else>

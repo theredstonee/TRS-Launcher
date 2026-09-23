@@ -888,6 +888,7 @@ async fn install_modern(
         for (index, processor) in processors.iter().enumerate() {
             let done = index as u64;
             report(PERCENT_LIBRARIES + (100.0 - PERCENT_LIBRARIES) * done as f64 / total as f64, done, total);
+            crate::task::checkpoint().await?;
             run_processor(paths, &java, &work_dir, processor, &data).await?;
         }
         report(100.0, total, total);
@@ -1007,24 +1008,27 @@ async fn run_processor(
 
     fsutil::ensure_dir(work_dir).await?;
     tracing::info!("Starte Processor {} ({main_class})", processor.jar);
-    let output = tokio::process::Command::new(java)
-        .arg("-cp")
-        .arg(&classpath)
-        .arg(&main_class)
-        .args(&args)
-        .current_dir(work_dir)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .creation_flags(CREATE_NO_WINDOW)
-        // Bricht der Start ab, soll kein verwaister Java-Prozess weiterlaufen.
-        .kill_on_drop(true)
-        .output()
-        .await
-        .map_err(|e| {
-            tracing::error!("Java für Processor nicht startbar ({}): {e}", java.display());
-            Error::launch("Java konnte für die Modloader-Installation nicht gestartet werden.")
-        })?;
+    // Abbrechen verwirft das Future – `kill_on_drop` beendet dann den Processor.
+    let output = crate::task::or_cancel(
+        tokio::process::Command::new(java)
+            .arg("-cp")
+            .arg(&classpath)
+            .arg(&main_class)
+            .args(&args)
+            .current_dir(work_dir)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .creation_flags(CREATE_NO_WINDOW)
+            // Bricht der Start ab, soll kein verwaister Java-Prozess weiterlaufen.
+            .kill_on_drop(true)
+            .output(),
+    )
+    .await?
+    .map_err(|e| {
+        tracing::error!("Java für Processor nicht startbar ({}): {e}", java.display());
+        Error::launch("Java konnte für die Modloader-Installation nicht gestartet werden.")
+    })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);

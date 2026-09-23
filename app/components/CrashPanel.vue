@@ -4,21 +4,16 @@ import type { Diagnosis } from '~/types'
 const props = defineProps<{ instanceId: string; exitCode: number | null; diagnosis: Diagnosis | null }>()
 
 const toasts = useToasts()
-const repairing = ref<number | null>(null)
+const tasks = useTasksStore()
+const repairTask = computed(() => tasks.get(repairTaskKey(props.instanceId)))
+const repairing = computed(() => (repairTask.value?.status === 'running' ? (repairTask.value.percent ?? 0) : null))
 const sharing = ref(false)
 const confirmShare = ref(false)
 const sharedUrl = ref<string | null>(null)
 
-async function repair() {
-  repairing.value = 0
-  try {
-    await backend.repairInstance(props.instanceId, (p) => (repairing.value = Math.floor(overallPercent(p.stage, p.percent))))
-    toasts.ok('Alle Dateien geprüft – beschädigte wurden neu geladen')
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    repairing.value = null
-  }
+function repair() {
+  const instance = useInstancesStore().items.find((i) => i.id === props.instanceId)
+  repairInstanceTask({ id: props.instanceId, name: instance?.name ?? props.instanceId }, 'repair')
 }
 
 async function share() {

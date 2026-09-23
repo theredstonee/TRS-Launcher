@@ -636,3 +636,53 @@ export interface GalleryShot {
   size: number
   takenAt: string | null
 }
+
+// --- Hintergrund-Aufgaben ------------------------------------------------------------
+
+/** Art einer Hintergrund-Aufgabe (Aufgaben-Panel, Verlauf im Kern). */
+export type TaskKind =
+  | 'modpack'
+  | 'modpack-file'
+  | 'content'
+  | 'content-update'
+  | 'performance-pack'
+  | 'java'
+  | 'import'
+  | 'export'
+  | 'create'
+  | 'duplicate'
+  | 'repair'
+  | 'reinstall'
+  | 'version-change'
+  | 'launch'
+
+/** Eintrag im Verlauf fertiger Aufgaben (`task-history.json`, neueste zuerst). */
+export interface TaskRecord {
+  id: string
+  kind: TaskKind
+  title: string
+  outcome: 'done' | 'failed'
+  finishedAt: string
+  instanceId?: string
+  iconUrl?: string
+  detail?: string
+  bytes?: number
+}
+
+export interface NewTaskRecord {
+  kind: TaskKind
+  title: string
+  outcome: 'done' | 'failed'
+  instanceId?: string | null
+  iconUrl?: string | null
+  detail?: string | null
+  bytes?: number | null
+}
+
+/** Event `task-progress`: Byte-Stand einer laufenden Aufgabe. */
+export interface TaskProgressEvent {
+  taskId: string
+  doneBytes: number
+  totalBytes: number
+  paused: boolean
+}

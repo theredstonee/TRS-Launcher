@@ -139,15 +139,17 @@ pub async fn detect_java(launcher: State<'_, LauncherState>) -> CommandResult<Ve
 
 #[tauri::command]
 pub async fn install_java(
+    app: tauri::AppHandle,
     launcher: State<'_, LauncherState>,
     major: u32,
     on_progress: Channel<f64>,
+    task_id: Option<String>,
 ) -> CommandResult<String> {
-    let path = launcher
-        .install_java(major, &move |p: Progress| {
-            let _ = on_progress.send(p.percent().floor());
-        })
-        .await?;
+    let report = move |p: Progress| {
+        let _ = on_progress.send(p.percent().floor());
+    };
+    let work = launcher.install_java(major, &report);
+    let path = crate::commands::tasks::tracked(&app, task_id, work).await?;
     Ok(path.display().to_string())
 }
 

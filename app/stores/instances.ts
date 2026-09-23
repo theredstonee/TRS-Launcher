@@ -24,6 +24,8 @@ export const useInstancesStore = defineStore('instances', () => {
   async function create(instance: NewInstance) {
     const created = await backend.createInstance(instance)
     items.value = [created, ...items.value]
+    // „Neue Instanz“ im Aufgaben-Verlauf (Titelleiste).
+    useTasksStore().note({ kind: 'create', title: created.name, outcome: 'done', instanceId: created.id })
     return created
   }
 

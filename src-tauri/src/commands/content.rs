@@ -9,6 +9,7 @@ use trs_core::modrinth::{
 };
 
 use crate::commands::instances::{InstanceView, view};
+use crate::commands::tasks::tracked;
 
 use crate::LauncherState;
 use crate::error::CommandResult;
@@ -83,15 +84,17 @@ pub async fn modrinth_categories(launcher: State<'_, LauncherState>) -> CommandR
 /// neueste passende.
 #[tauri::command]
 pub async fn modrinth_install(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
     project_id: String,
     kind: ContentKind,
     version_id: Option<String>,
+    task_id: Option<String>,
 ) -> CommandResult<Vec<String>> {
     let instance = launcher.instances().get(&id).await?;
-    Ok(modrinth::install(launcher.http(), launcher.paths(), &instance, &project_id, kind, version_id.as_deref())
-        .await?)
+    let work = modrinth::install(launcher.http(), launcher.paths(), &instance, &project_id, kind, version_id.as_deref());
+    Ok(tracked(&app, task_id, work).await?)
 }
 
 #[tauri::command]
@@ -116,25 +119,31 @@ pub async fn check_content_updates(
 
 #[tauri::command]
 pub async fn apply_content_update(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
     kind: ContentKind,
     file_name: String,
     version_id: String,
+    task_id: Option<String>,
 ) -> CommandResult<String> {
     let instance = launcher.instances().get(&id).await?;
-    Ok(modrinth::apply_update(launcher.http(), launcher.paths(), &instance, kind, &file_name, &version_id).await?)
+    let work = modrinth::apply_update(launcher.http(), launcher.paths(), &instance, kind, &file_name, &version_id);
+    Ok(tracked(&app, task_id, work).await?)
 }
 
 /// Sodium, Lithium & Co. in einem Rutsch – was es für die Instanz nicht gibt,
 /// wird übersprungen.
 #[tauri::command]
 pub async fn install_performance_pack(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
+    task_id: Option<String>,
 ) -> CommandResult<Vec<String>> {
     let instance = launcher.instances().get(&id).await?;
-    Ok(modrinth::install_performance_pack(launcher.http(), launcher.paths(), &instance).await?)
+    let work = modrinth::install_performance_pack(launcher.http(), launcher.paths(), &instance);
+    Ok(tracked(&app, task_id, work).await?)
 }
 
 /// Legt aus einem Modrinth-Modpack eine neue Instanz an.
@@ -144,12 +153,14 @@ pub async fn install_modpack(
     launcher: State<'_, LauncherState>,
     project_id: String,
     on_progress: Channel<PackProgress>,
+    task_id: Option<String>,
 ) -> CommandResult<InstanceView> {
-    let instance = launcher
-        .install_modpack(&project_id, None, &move |progress| {
-            let _ = on_progress.send(progress);
-        })
-        .await?;
+    // Sendefehler ignorieren: Ist die Seite weg, läuft die Installation trotzdem weiter.
+    let report = move |progress| {
+        let _ = on_progress.send(progress);
+    };
+    let work = launcher.install_modpack(&project_id, None, &report);
+    let instance = tracked(&app, task_id, work).await?;
     Ok(view(&app, &launcher, instance))
 }
 

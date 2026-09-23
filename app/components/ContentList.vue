@@ -2,6 +2,7 @@
 import { isTauri } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, Instance, ModrinthVersion, UploadResult } from '~/types'
+import { cancelledError } from '~/stores/tasks'
 
 // Inhalte einer Instanz als EINE Tabelle wie in der Modrinth App: Filter-Chips,
 // Suche, Sortierung, Mehrfachauswahl mit Sammelaktionen, Dateien per Dialog
@@ -18,9 +19,32 @@ const selected = ref<Set<string>>(new Set())
 const toasts = useToasts()
 const updates = ref<ContentUpdate[] | null>(null)
 const checking = ref(false)
-const bulkBusy = ref<string | null>(null)
-const packBusy = ref(false)
-const busyFile = ref<string | null>(null)
+const localBulk = ref<string | null>(null)
+// Updates und Performance-Paket laufen als Aufgaben weiter, auch wenn die Seite wechselt.
+const tasks = useTasksStore()
+const updatesKey = computed(() => taskKey('updates', props.instance.id))
+const packKey = computed(() => taskKey('perf', props.instance.id))
+const updatesTask = computed(() => tasks.get(updatesKey.value))
+const bulkBusy = computed(() => (updatesTask.value?.status === 'running' ? 'update' : localBulk.value))
+const packBusy = computed(() => tasks.isRunning(packKey.value))
+/** Wird die Datei gerade aktualisiert bzw. gewechselt? */
+function isBusy(item: ContentItem): boolean {
+  if (updatesTask.value?.status === 'running' && updatesTask.value.tag === item.fileName) return true
+  return !!item.source && tasks.isRunning(contentTaskKey(props.instance.id, item.source.projectId))
+}
+// Fertig gewordene Aufgaben dieser Instanz (auch im Hintergrund) → Liste neu laden.
+const finishedHere = computed(
+  () =>
+    Object.values(tasks.tasks).filter(
+      (t) =>
+        t.instanceId === props.instance.id &&
+        (t.kind === 'content' || t.kind === 'content-update' || t.kind === 'performance-pack') &&
+        t.status !== 'running',
+    ).length,
+)
+watch(finishedHere, (n, before) => {
+  if (n > (before ?? 0)) load(true)
+})
 const menuFor = ref<string | null>(null)
 const switching = ref<ContentItem | null>(null)
 const changelogFor = ref<ContentItem | null>(null)
@@ -134,7 +158,7 @@ async function toggle(item: ContentItem) {
 }
 
 async function bulk(action: BulkAction, targets: ContentItem[]) {
-  bulkBusy.value = action
+  localBulk.value = action
   try {
     const r = await backend.bulkContent(
       props.instance.id,
@@ -148,51 +172,61 @@ async function bulk(action: BulkAction, targets: ContentItem[]) {
   } catch (e) {
     toasts.error(e)
   } finally {
-    bulkBusy.value = null
+    localBulk.value = null
     load(true)
   }
 }
 
-async function applyUpdates(list: ContentUpdate[]) {
-  bulkBusy.value = 'update'
-  let failed = 0
-  for (const u of list) {
-    busyFile.value = u.fileName
-    try {
-      await backend.applyContentUpdate(props.instance.id, u)
-      updates.value = (updates.value ?? []).filter((x) => x !== u)
-    } catch {
-      failed++
-    }
-  }
-  busyFile.value = null
-  bulkBusy.value = null
-  if (failed) toasts.error(`${failed} von ${list.length} Updates sind fehlgeschlagen.`)
-  else toasts.ok(`${list.length} ${list.length === 1 ? 'Update' : 'Updates'} installiert`)
-  load(true)
+function applyUpdates(list: ContentUpdate[]) {
+  const instance = props.instance
+  // „Erneut versuchen“ nimmt nur, was noch fehlt.
+  let remaining = [...list]
+  const total = list.length
+  tasks.run(
+    {
+      key: updatesKey.value,
+      kind: 'content-update',
+      title: instance.name,
+      stage: `${total} ${total === 1 ? 'Update' : 'Updates'}`,
+      instanceId: instance.id,
+      cancellable: true,
+      doneText: `${total} ${total === 1 ? 'Update' : 'Updates'} installiert`,
+    },
+    async (ctx) => {
+      const failed: ContentUpdate[] = []
+      const count = remaining.length
+      for (const [i, u] of remaining.entries()) {
+        if (ctx.cancelled()) throw cancelledError()
+        ctx.update({ tag: u.fileName })
+        ctx.progress((i / count) * 100, `${u.fileName} → ${u.versionNumber}`)
+        try {
+          await backend.applyContentUpdate(instance.id, u)
+          updates.value = (updates.value ?? []).filter((x) => !(x.kind === u.kind && x.fileName === u.fileName))
+        } catch {
+          failed.push(u)
+        }
+      }
+      remaining = failed
+      ctx.update({ tag: null })
+      if (failed.length) throw new BackendError('partial', `${failed.length} von ${count} Updates sind fehlgeschlagen.`)
+    },
+  )
 }
 
 async function switchVersion(item: ContentItem, version: ModrinthVersion) {
   switching.value = null
   changelogFor.value = null
   if (!item.source) return
-  busyFile.value = item.fileName
-  try {
-    await backend.applyContentUpdate(props.instance.id, {
-      kind: item.kind,
-      fileName: item.fileName,
-      projectId: item.source.projectId,
-      versionId: version.id,
-      versionNumber: version.versionNumber,
-    })
-    updates.value = (updates.value ?? []).filter((u) => !(u.kind === item.kind && u.fileName === item.fileName))
-    toasts.ok(`${titleOf(item)}: Version ${version.versionNumber} installiert`)
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    busyFile.value = null
-    load(true)
-  }
+  const result = await installContentTask({
+    instance: props.instance,
+    projectId: item.source.projectId,
+    title: titleOf(item),
+    iconUrl: item.iconUrl ?? null,
+    kind: item.kind,
+    version,
+    replace: item.fileName,
+  })
+  if (result.ok) updates.value = (updates.value ?? []).filter((u) => !(u.kind === item.kind && u.fileName === item.fileName))
 }
 
 async function confirmDelete() {
@@ -211,17 +245,16 @@ async function confirmDelete() {
   }
 }
 
-async function installPerformancePack() {
-  packBusy.value = true
-  try {
-    const files = await backend.installPerformancePack(props.instance.id)
-    toasts.ok(`Performance-Paket installiert (${files.length} Dateien)`)
-    load(true)
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    packBusy.value = false
-  }
+function installPerformancePack() {
+  const instance = props.instance
+  tasks.run(
+    { key: packKey.value, kind: 'performance-pack', title: `Performance-Paket für ${instance.name}`, stage: 'Mods werden geladen', instanceId: instance.id },
+    async (ctx) => {
+      const files = await backend.installPerformancePack(instance.id, ctx.taskId)
+      ctx.update({ doneText: `Performance-Paket installiert (${files.length} Dateien)` })
+      return files
+    },
+  )
 }
 
 // --- Dateien hinzufügen ------------------------------------------------------------
@@ -383,7 +416,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
             <div class="flex items-center gap-1.5">
               <span class="truncate font-mono text-xs text-base-200" :title="displayVersion(item) ?? ''">{{ displayVersion(item) ?? '–' }}</span>
               <button
-                v-if="updateFor(item) && busyFile !== item.fileName"
+                v-if="updateFor(item) && !isBusy(item)"
                 class="badge shrink-0 bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/30 hover:bg-lamp-400 hover:text-base-950"
                 :title="`Update auf ${updateFor(item)!.versionNumber}`"
                 @click="item.source ? (changelogFor = item) : applyUpdates([updateFor(item)!])"
@@ -392,7 +425,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
                 Update
               </button>
             </div>
-            <span v-if="busyFile === item.fileName" class="mt-1 block w-24"><RedstoneWire :percent="60" :segments="8" /></span>
+            <span v-if="isBusy(item)" class="mt-1 block w-24"><RedstoneWire :percent="60" :segments="8" /></span>
             <p v-else class="truncate text-[11px] text-base-600" :title="item.fileName">{{ item.fileName }}</p>
           </div>
 

@@ -11,13 +11,15 @@ export interface GameState {
   error: string | null
   logs: LogLine[]
   lastExit: { exitCode: number | null; crashed: boolean; diagnosis: Diagnosis | null } | null
+  /** Startzeit (ms) des laufenden Spiels – für die Laufzeit in der Titelleiste. */
+  startedAt: number | null
 }
 
 // Das Backend hält dieselbe Menge vor; mehr bremst nur das Rendering.
 const MAX_LOG_LINES = 5000
 
 function emptyState(): GameState {
-  return { phase: 'idle', progress: null, error: null, logs: [], lastExit: null }
+  return { phase: 'idle', progress: null, error: null, logs: [], lastExit: null, startedAt: null }
 }
 
 export const useGamesStore = defineStore('games', () => {
@@ -38,11 +40,13 @@ export const useGamesStore = defineStore('games', () => {
     if (event.type === 'started') {
       s.phase = 'running'
       s.progress = null
+      s.startedAt = Date.now()
     } else if (event.type === 'logs') {
       s.logs.push(...event.lines)
       if (s.logs.length > MAX_LOG_LINES) s.logs.splice(0, s.logs.length - MAX_LOG_LINES)
     } else {
       s.phase = 'idle'
+      s.startedAt = null
       s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis }
       if (event.crashed) useToasts().error(event.diagnosis?.message ?? 'Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache.')
       // Spielzeit und "zuletzt gespielt" haben sich geändert.
@@ -59,6 +63,7 @@ export const useGamesStore = defineStore('games', () => {
       for (const game of await backend.runningGames()) {
         const s = state(game.instanceId)
         s.phase = 'running'
+        s.startedAt = Date.parse(game.startedAt) || Date.now()
         s.logs = await backend.getGameLogs(game.instanceId)
       }
     } catch {
@@ -66,7 +71,10 @@ export const useGamesStore = defineStore('games', () => {
     }
   }
 
-  /** `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich nach dem Start direkt. */
+  /**
+   * `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich nach dem Start direkt.
+   * Die Vorbereitung läuft als Aufgabe (Titelleiste: Fortschritt, Pause, Abbrechen).
+   */
   async function launch(id: string, joinServer: string | null = null) {
     const s = state(id)
     if (s.phase !== 'idle') return
@@ -75,17 +83,50 @@ export const useGamesStore = defineStore('games', () => {
     s.lastExit = null
     s.logs = []
     s.progress = { stage: 'version', percent: 0, doneFiles: 0, totalFiles: 0 }
-    try {
-      await backend.launchInstance(id, joinServer, (p) => (s.progress = p))
+    const instance = useInstancesStore().items.find((i) => i.id === id)
+    const result = await useTasksStore().run(
+      {
+        key: taskKey('launch', id),
+        kind: 'launch',
+        title: instance?.name ?? id,
+        stage: 'Minecraft wird vorbereitet',
+        instanceId: id,
+        cancellable: true,
+        pausable: true,
+        // Das Spiel selbst ist die Rückmeldung; Fehler meldet dieser Store.
+        record: false,
+        notify: false,
+      },
+      (ctx) =>
+        backend.launchInstance(
+          id,
+          joinServer,
+          (p) => {
+            s.progress = p
+            ctx.progress(overallPercent(p.stage, p.percent), stageLabels[p.stage])
+            // Ab hier startet das Spiel – nichts mehr anzuhalten.
+            if (p.stage === 'starting') ctx.update({ cancellable: false, pausable: false })
+          },
+          ctx.taskId,
+        ),
+    )
+    s.progress = null
+    if (result.ok) {
       // Das `started`-Event kann vor oder nach der Antwort ankommen.
       if (s.phase === 'preparing') s.phase = 'running'
-    } catch (e) {
-      s.phase = 'idle'
-      s.error = errorMessage(e)
-      useToasts().error(e)
-    } finally {
-      s.progress = null
+      s.startedAt ??= Date.now()
+      return
     }
+    s.phase = 'idle'
+    if (!result.cancelled) {
+      s.error = errorMessage(result.error)
+      useToasts().error(result.error)
+    }
+  }
+
+  /** Vorbereitung abbrechen (solange das Spiel noch nicht startet). */
+  function cancelLaunch(id: string) {
+    return useTasksStore().cancel(taskKey('launch', id))
   }
 
   async function stop(id: string) {
@@ -98,5 +139,13 @@ export const useGamesStore = defineStore('games', () => {
 
   const runningCount = computed(() => Object.values(states.value).filter((s) => s.phase !== 'idle').length)
 
-  return { states, state, init, launch, stop, runningCount }
+  /** Laufende Spiele, zuerst gestartetes zuerst (das erste ist das „Haupt“-Spiel). */
+  const running = computed(() =>
+    Object.entries(states.value)
+      .filter(([, s]) => s.phase === 'running')
+      .map(([instanceId, s]) => ({ instanceId, startedAt: s.startedAt ?? Date.now() }))
+      .sort((a, b) => a.startedAt - b.startedAt),
+  )
+
+  return { states, state, init, launch, cancelLaunch, stop, runningCount, running }
 })

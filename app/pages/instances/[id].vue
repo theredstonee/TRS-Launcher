@@ -56,6 +56,14 @@ onMounted(() => {
   if (wanted && tabs.value.some(([key]) => key === wanted)) tab.value = wanted as Tab
 })
 
+// Titelleiste „Logs öffnen“, während die Seite schon offen ist.
+watch(
+  () => route.query.tab,
+  (wanted) => {
+    if (typeof wanted === 'string' && tabs.value.some(([key]) => key === wanted)) tab.value = wanted as Tab
+  },
+)
+
 // Nach Spielende lädt der Instanz-Store neu – Spielzeit hier mitziehen.
 watch(
   () => instances.items.find((i) => i.id === id.value),
