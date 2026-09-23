@@ -307,9 +307,6 @@ async function allowFirewall() {
       <SettingRow title="Launcher beim Spielstart minimieren" description="Das Fenster geht beim Start aus dem Weg; das Spiel läuft weiter, auch wenn der Launcher geschlossen wird.">
         <ToggleSwitch v-model="form.closeOnLaunch" label="Launcher beim Spielstart minimieren" />
       </SettingRow>
-      <SettingRow title="Rechte Leiste ausblenden" description="Blendet „Spielt als“ mit dem Account-Wechsel auf Start- und Instanzseite aus.">
-        <ToggleSwitch v-model="form.ui.hideRightSidebar" label="Rechte Leiste ausblenden" />
-      </SettingRow>
       <SettingRow title="Kompakte Bibliothek" description="Kleinere Kacheln – mehr Instanzen auf einen Blick.">
         <ToggleSwitch v-model="form.ui.compactLibrary" label="Kompakte Bibliothek" />
       </SettingRow>

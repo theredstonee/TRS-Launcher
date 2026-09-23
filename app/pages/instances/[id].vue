@@ -172,6 +172,5 @@ function openFolder() {
       </template>
     </div>
 
-    <AccountPanel v-if="ui?.hideRightSidebar !== true" class="hidden lg:flex" />
   </div>
 </template>

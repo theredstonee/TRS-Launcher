@@ -10,7 +10,21 @@ const notApproved = ref(false)
 const copied = ref(false)
 const toRemove = ref<Account | null>(null)
 
+const route = useRoute()
+const router = useRouter()
+
 onMounted(() => accounts.load().catch((e) => (error.value = errorMessage(e))))
+
+// „Account hinzufügen“ aus dem Konto-Menü der Titelleiste startet die Anmeldung direkt.
+watch(
+  () => route.query.add,
+  (add) => {
+    if (add !== 'browser') return
+    router.replace({ query: {} })
+    if (!login.value) start('browser')
+  },
+  { immediate: true },
+)
 
 async function start(mode: LoginMode) {
   error.value = null

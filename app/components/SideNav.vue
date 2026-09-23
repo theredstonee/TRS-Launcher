@@ -197,11 +197,13 @@ function play(id: string) {
 }
 .rail-on {
   @apply bg-base-800 text-base-50;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-redstone-500) 28%, transparent);
 }
-/* Aktiver Bereich bekommt einen Redstone-Streifen am linken Rand. */
+/* Aktiver Bereich: ein geladenes Stück Redstone am linken Rand, das leicht glüht. */
 .rail-on::before {
   content: "";
-  @apply absolute top-1/2 -left-2 h-5 w-1 -translate-y-1/2 rounded-r bg-redstone-500;
+  @apply absolute top-1/2 -left-2 h-6 w-1 -translate-y-1/2 bg-redstone-400;
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--color-redstone-500) 70%, transparent);
 }
 .tip {
   @apply pointer-events-none absolute top-1/2 left-full z-50 ml-2 -translate-y-1/2 scale-95 rounded-md border border-base-700 bg-base-850 px-2 py-1 text-xs whitespace-nowrap text-base-50 opacity-0 shadow-lg shadow-black/40 transition-[opacity,transform] duration-150;

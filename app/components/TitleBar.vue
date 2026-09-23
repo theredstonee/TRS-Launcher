@@ -31,11 +31,11 @@ async function toggleMaximize() {
 <template>
   <header
     data-tauri-drag-region
-    class="flex h-9 shrink-0 items-center gap-2 border-b border-base-800 bg-base-900 pl-3"
+    class="titlebar relative z-40 flex h-9 shrink-0 items-center gap-2 border-b border-base-800 bg-base-900 pl-3"
   >
-    <div data-tauri-drag-region class="flex items-center gap-2 text-xs font-semibold tracking-wide text-base-200">
+    <div data-tauri-drag-region class="flex items-center gap-2 text-base-200">
       <img src="/icon.png" alt="" class="pointer-events-none size-4 [image-rendering:pixelated]" />
-      <span data-tauri-drag-region>TRS LAUNCHER</span>
+      <span data-tauri-drag-region class="display text-[13px] leading-none">TRS Launcher</span>
     </div>
 
     <div class="ml-2 flex items-center gap-0.5">
@@ -54,6 +54,9 @@ async function toggleMaximize() {
       Suchen
       <kbd class="rounded border border-base-700 px-1 font-mono text-[10px]">Strg K</kbd>
     </button>
+
+    <AccountMenu />
+    <div class="h-4 w-px bg-base-800" />
 
     <div v-if="win" class="flex h-full">
       <button class="ctl" aria-label="Minimieren" @click="win.minimize()">
@@ -76,6 +79,18 @@ async function toggleMaximize() {
 <style scoped>
 @reference "~/assets/css/main.css";
 
+/* Eine Redstone-Leitung unter dem Logo, die nach rechts ausläuft. */
+.titlebar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: min(22rem, 40%);
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-redstone-500), transparent);
+  opacity: 0.7;
+  pointer-events: none;
+}
 .ctl {
   @apply flex h-full w-11 items-center justify-center text-base-400 transition-colors hover:bg-base-700 hover:text-base-50;
 }

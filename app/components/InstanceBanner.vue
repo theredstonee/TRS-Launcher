@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Instance } from '~/types'
+import { generatedBanner } from '~/utils/redstone/banner'
 
-// Breites Titelbild einer Instanz. Ohne eigenes Banner entsteht eines aus dem
-// Instanz-Bild (weich gezeichnet) bzw. aus der Farbe des Modloaders – so hat
-// jede Instanz von Anfang an einen eigenen Auftritt.
+// Breites Titelbild einer Instanz. Ohne eigenes Banner entsteht ein Pixel-Motiv:
+// eine kleine Redstone-Schaltung aus der Instanz-ID, leicht in der Farbe des
+// Modloaders getönt – so hat jede Instanz von Anfang an einen eigenen Auftritt.
 const props = withDefaults(
   defineProps<{
     instance: Pick<Instance, 'id' | 'name' | 'loader' | 'iconPath' | 'bannerPath'>
@@ -18,6 +19,17 @@ const icon = computed(() => instanceIconSrc(props.instance))
 const color = computed(() => loaderColors[props.instance.loader.kind])
 const failed = ref(false)
 watch(banner, () => (failed.value = false))
+
+// Das Motiv folgt Theme und Akzent; erzeugt wird es erst im Browser.
+const settings = useSettingsStore()
+const generated = ref<string | null>(null)
+function regenerate() {
+  generated.value = banner.value && !failed.value ? null : generatedBanner(props.instance.id)
+}
+onMounted(regenerate)
+watch([banner, failed, () => props.instance.id, () => settings.current?.ui.theme, () => settings.current?.ui.accent], () =>
+  nextTick(regenerate),
+)
 </script>
 
 <template>
@@ -31,8 +43,9 @@ watch(banner, () => (failed.value = false))
       @error="failed = true"
     />
     <template v-else>
-      <img v-if="icon" :src="icon" alt="" class="absolute inset-0 size-full scale-125 object-cover opacity-35 blur-2xl" draggable="false" />
-      <div class="absolute inset-0 pixels" />
+      <img v-if="generated" :src="generated" alt="" class="absolute inset-0 size-full object-cover [image-rendering:pixelated]" draggable="false" />
+      <img v-else-if="icon" :src="icon" alt="" class="absolute inset-0 size-full scale-125 object-cover opacity-35 blur-2xl" draggable="false" />
+      <div class="tint absolute inset-0" />
     </template>
 
     <!-- Der Schleier ist bewusst schwarz statt aus den Theme-Farben: Text auf
@@ -52,10 +65,9 @@ watch(banner, () => (failed.value = false))
     radial-gradient(120% 160% at 12% 0%, color-mix(in srgb, var(--loader) 38%, transparent), transparent 60%),
     linear-gradient(120deg, var(--color-base-850), var(--color-base-950));
 }
-/* Deepslate-Raster – derselbe Look wie die Startrampe, nur als Füllung. */
-.pixels {
-  background:
-    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 34px),
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 34px);
+/* Tönung in der Loader-Farbe über dem Pixel-Motiv. */
+.tint {
+  background: radial-gradient(120% 140% at 85% 0%, color-mix(in srgb, var(--loader) 30%, transparent), transparent 65%);
+  mix-blend-mode: soft-light;
 }
 </style>

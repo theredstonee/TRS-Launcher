@@ -2,9 +2,9 @@
 import type { Component } from 'vue'
 import type { Instance, Server } from '~/types'
 
-// Startseite im Stil moderner Launcher: großer Kopf mit der zuletzt gespielten
-// Instanz (Banner, Spielzeit, Spielen-Knopf mit Fortschritt), darunter
-// Schnellstart, laufende Spiele, Neuigkeiten und die Serverliste.
+// Startseite: oben eine lebendige Redstone-Schaltung als Bühne für die zuletzt
+// gespielte Instanz – die Hauptleitung läuft in die Spielen-Lampe und lädt sich
+// beim Start auf. Darunter „Weiterspielen“, laufende Spiele, Neuigkeiten und Server.
 const instances = useInstancesStore()
 const accounts = useAccountsStore()
 const servers = useServersStore()
@@ -14,14 +14,43 @@ const ui = useUiStore()
 
 const addingServer = ref(false)
 const ready = ref(false)
+const lamp = ref<HTMLElement | null>(null)
 
 // Die Instanzliste ist nach „zuletzt gespielt“ sortiert.
 const featured = computed<Instance | null>(() => instances.items[0] ?? null)
 const game = computed(() => (featured.value ? games.state(featured.value.id) : null))
 const quick = computed(() => instances.items.slice(1, 9))
-const running = computed(() => instances.items.filter((i) => games.state(i.id).phase !== 'idle'))
+
+// „Weiterspielen“ bleibt eine Reihe: so viele Kacheln, wie nebeneinander passen.
+const strip = ref<HTMLElement | null>(null)
+const stripWidth = ref(0)
+const CARD_MIN = 240
+const ADD_TILE = 176
+const GAP = 12
+const shownQuick = computed(() => {
+  if (!stripWidth.value) return quick.value.slice(0, 3)
+  const fit = Math.floor((stripWidth.value - ADD_TILE) / (CARD_MIN + GAP))
+  return quick.value.slice(0, Math.max(1, fit))
+})
+let stripObserver: ResizeObserver | undefined
+watch(strip, (el, _, onCleanup) => {
+  if (!el) return
+  stripObserver = new ResizeObserver(([entry]) => (stripWidth.value = entry?.contentRect.width ?? 0))
+  stripObserver.observe(el)
+  onCleanup(() => stripObserver?.disconnect())
+})
+const running = computed(() =>
+  instances.items.filter((i) => i.id !== featured.value?.id && games.state(i.id).phase !== 'idle'),
+)
 const totalSeconds = computed(() => instances.items.reduce((sum, i) => sum + i.totalPlaySeconds, 0))
 const showPlayTime = computed(() => settings.current?.ui.showPlayTime !== false)
+
+const sceneMode = computed(() =>
+  game.value?.phase === 'running' ? 'running' : game.value?.phase === 'preparing' ? 'starting' : 'idle',
+)
+const sceneProgress = computed(() =>
+  game.value?.progress ? overallPercent(game.value.progress.stage, game.value.progress.percent) : 0,
+)
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -29,9 +58,8 @@ const greeting = computed(() => {
   return accounts.active ? `${word}, ${accounts.active.name}` : word
 })
 
-// Der News-Bereich wird von einer anderen Baustelle geliefert. Solange es die
-// Komponente nicht gibt, steht hier ein Platzhalter – `import.meta.glob` findet
-// eine fehlende Datei einfach nicht, statt den Build scheitern zu lassen.
+// Der News-Bereich kommt aus einer eigenen Komponente. `import.meta.glob`
+// findet eine fehlende Datei einfach nicht, statt den Build scheitern zu lassen.
 const newsSources = import.meta.glob('../components/NewsFeed.vue')
 const NewsFeed = shallowRef<Component | null>(null)
 
@@ -60,119 +88,118 @@ function play(instance: Instance) {
 </script>
 
 <template>
-  <div class="flex min-h-full">
-    <div class="flex min-w-0 flex-1 flex-col gap-6 p-6">
-      <!-- Startrampe: die zuletzt gespielte Instanz, ein Klick bis ins Spiel. -->
-      <section v-if="!ready" class="space-y-3">
-        <div class="skeleton h-64 rounded-2xl" />
-      </section>
+  <div class="pb-10">
+    <!-- Bühne: Redstone-Schaltung, darüber die zuletzt gespielte Instanz. -->
+    <section
+      class="hero relative isolate overflow-hidden"
+      :class="`hero-${sceneMode}`"
+      :aria-label="featured ? `Zuletzt gespielt: ${featured.name}` : 'Start'"
+    >
+      <RedstoneScene :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
+        <div class="scrim" />
+      </RedstoneScene>
 
-      <InstanceBanner
-        v-else-if="featured"
-        :instance="featured"
-        class="hero rounded-2xl border border-base-800"
-        :class="{ 'hero-live': game?.phase === 'running' }"
-      >
-        <div class="flex h-full flex-col justify-between gap-6 p-7">
-          <div class="flex items-start justify-between gap-4">
-            <p class="text-sm text-white/80 drop-shadow">{{ greeting }}</p>
-            <span v-if="game?.phase === 'running'" class="badge bg-lamp-400 text-base-950">
-              <span class="size-1.5 animate-lamp rounded-full bg-base-950" />Läuft gerade
-            </span>
-          </div>
+      <div class="relative flex h-full flex-col justify-between gap-6 px-8 pt-7 pb-8">
+        <div class="flex items-start justify-between gap-4">
+          <p class="display text-base text-base-200">{{ greeting }}</p>
+          <span v-if="game?.phase === 'running'" class="badge bg-lamp-400 text-base-950">
+            <span class="size-1.5 animate-lamp bg-base-950" />Läuft gerade
+          </span>
+        </div>
 
-          <div class="flex flex-wrap items-end gap-5">
+        <div v-if="!ready" class="flex items-end gap-6">
+          <div class="skeleton size-24 rounded-xl" />
+          <div class="flex-1 space-y-3"><div class="skeleton h-12 w-96" /><div class="skeleton h-4 w-72" /></div>
+          <div class="skeleton h-14 w-72" />
+        </div>
+
+        <div v-else-if="featured" class="flex flex-wrap items-end gap-x-6 gap-y-5">
+          <NuxtLink
+            :to="`/instances/${featured.id}`"
+            class="icon-frame shrink-0 outline-none"
+            tabindex="-1"
+            aria-hidden="true"
+          >
+            <InstanceIcon :instance="featured" :size="96" />
+          </NuxtLink>
+
+          <div class="min-w-64 flex-1">
             <NuxtLink
               :to="`/instances/${featured.id}`"
-              class="shrink-0 rounded-2xl outline-none transition-transform duration-150 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-redstone-500"
-              tabindex="-1"
-              aria-hidden="true"
+              class="hero-title display block truncate text-6xl leading-[1.05] text-base-50 transition-colors hover:text-redstone-300"
             >
-              <InstanceIcon :instance="featured" :size="104" class="shadow-2xl shadow-black/60" />
+              {{ featured.name }}
             </NuxtLink>
-
-            <div class="min-w-64 flex-1">
-              <NuxtLink :to="`/instances/${featured.id}`" class="display block truncate text-5xl leading-tight text-white drop-shadow-lg transition-colors hover:text-redstone-300">
-                {{ featured.name }}
-              </NuxtLink>
-              <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/85">
-                <span class="flex items-center gap-1.5">
-                  <span class="size-2 rounded-full" :style="{ background: loaderColors[featured.loader.kind] }" />
-                  <span class="font-mono text-white">{{ featured.gameVersion }}</span> {{ loaderLabels[featured.loader.kind] }}
-                </span>
-                <span>{{ formatRelative(featured.lastPlayed) }}</span>
-                <span v-if="showPlayTime && featured.totalPlaySeconds >= 60">{{ formatPlayTime(featured.totalPlaySeconds) }} gespielt</span>
-              </p>
-            </div>
-
-            <div class="flex w-full items-center gap-2 sm:w-80">
-              <PlayButton :instance-id="featured.id" large />
-              <NuxtLink
-                :to="`/instances/${featured.id}`"
-                class="btn-icon size-12 bg-base-900/80 backdrop-blur"
-                title="Instanz öffnen"
-                aria-label="Instanz öffnen"
-              >
-                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              </NuxtLink>
-            </div>
+            <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-base-200">
+              <span class="flex items-center gap-2">
+                <span class="size-2.5" :style="{ background: loaderColors[featured.loader.kind] }" />
+                <span><span class="font-mono text-base-50">{{ featured.gameVersion }}</span> {{ loaderLabels[featured.loader.kind] }}</span>
+              </span>
+              <span>{{ formatRelative(featured.lastPlayed) }}</span>
+              <span v-if="showPlayTime && featured.totalPlaySeconds >= 60">{{ formatPlayTime(featured.totalPlaySeconds) }} gespielt</span>
+            </p>
           </div>
 
-          <p v-if="game?.error" role="alert" class="text-sm text-redstone-300">{{ game.error }}</p>
+          <div ref="lamp" class="flex w-full items-center gap-2 sm:w-80">
+            <PlayButton :instance-id="featured.id" large />
+            <NuxtLink
+              :to="`/instances/${featured.id}`"
+              class="btn-icon pixel-corners size-14 bg-base-900/85 backdrop-blur"
+              style="--notch: 3px"
+              title="Instanz öffnen"
+              aria-label="Instanz öffnen"
+            >
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </NuxtLink>
+          </div>
+          <p v-if="game?.error" role="alert" class="w-full text-sm text-redstone-300">{{ game.error }}</p>
         </div>
 
-        <!-- Die Leitung unter der Rampe: lädt beim Start auf, glimmt, solange gespielt wird. -->
-        <RedstoneWire
-          v-if="game && game.phase !== 'idle'"
-          class="absolute inset-x-0 bottom-0 px-7 pb-4"
-          :segments="64"
-          :percent="game?.progress ? overallPercent(game.progress.stage, game.progress.percent) : 0"
-          :powered="game?.phase === 'running'"
-        />
-      </InstanceBanner>
-
-      <section v-else class="card flex flex-col items-start gap-6 rounded-2xl p-8 md:flex-row md:items-center">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm text-base-400">{{ greeting }}</p>
-          <h1 class="display mt-1 text-5xl leading-tight">Bereit zum Start</h1>
-          <p class="mt-2 max-w-md text-sm text-base-400">
-            Lege deine erste Instanz an – Vanilla oder mit Modloader – oder hol dir gleich ein fertiges Modpack.
-          </p>
+        <div v-else class="flex flex-wrap items-end gap-x-8 gap-y-5">
+          <div class="min-w-0 flex-1">
+            <h1 class="display text-6xl leading-[1.05] text-base-50">Bereit zum Start</h1>
+            <p class="mt-3 max-w-md text-sm text-base-200">
+              Lege deine erste Instanz an – Vanilla oder mit Modloader – oder hol dir gleich ein fertiges Modpack.
+            </p>
+          </div>
+          <div ref="lamp" class="flex shrink-0 flex-wrap gap-3">
+            <button class="btn btn-primary h-12 px-6 text-base" @click="ui.creating = true">Instanz erstellen</button>
+            <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="btn btn-ghost h-12 px-6 text-base">Modpacks ansehen</NuxtLink>
+          </div>
         </div>
-        <div class="flex shrink-0 flex-wrap gap-3">
-          <button class="btn btn-primary h-12 px-6 text-base" @click="ui.creating = true">Instanz erstellen</button>
-          <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="btn btn-ghost h-12 px-6 text-base">Modpacks ansehen</NuxtLink>
-        </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Weiterspielen: zuletzt gespielte Instanzen als Kacheln -->
-      <section v-if="quick.length">
+    <div class="space-y-10 px-8">
+      <!-- Weiterspielen: breite Banner-Kacheln, am Ende die Kachel für Neues. -->
+      <section v-if="ready && featured" aria-labelledby="continue-heading">
         <div class="mb-3 flex items-end justify-between gap-4">
-          <h2 class="font-semibold">Weiterspielen</h2>
-          <div class="flex items-center gap-3 text-xs text-base-400">
-            <span v-if="showPlayTime && totalSeconds >= 60">Insgesamt {{ formatPlayTime(totalSeconds) }}</span>
-            <NuxtLink to="/instances" class="hover:text-base-50">Alle Instanzen</NuxtLink>
+          <h2 id="continue-heading" class="heading">Weiterspielen</h2>
+          <div class="flex items-center gap-4 text-xs text-base-400">
+            <span v-if="showPlayTime && totalSeconds >= 60">Insgesamt {{ formatPlayTime(totalSeconds) }} gespielt</span>
+            <NuxtLink to="/instances" class="hover:text-base-50">Zur Bibliothek</NuxtLink>
           </div>
         </div>
 
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
-          <li v-for="i in quick" :key="i.id">
-            <article class="tile group card relative overflow-hidden">
+        <ul ref="strip" class="strip">
+          <li v-for="i in shownQuick" :key="i.id" class="strip-card">
+            <article class="tile group card relative h-full overflow-hidden" :class="{ 'tile-live': games.state(i.id).phase !== 'idle' }">
               <NuxtLink :to="`/instances/${i.id}`" class="block outline-none" :aria-label="`${i.name} öffnen`">
-                <InstanceBanner :instance="i" class="h-24 w-full" />
-                <div class="flex items-center gap-2.5 p-2.5">
-                  <InstanceIcon :instance="i" :size="36" class="-mt-8 shadow-lg shadow-black/50 ring-2 ring-base-900" />
+                <InstanceBanner :instance="i" shade="none" class="h-28 w-full" />
+                <div class="flex items-center gap-3 p-3">
+                  <InstanceIcon :instance="i" :size="40" class="-mt-9 shrink-0 ring-2 ring-base-900" />
                   <span class="min-w-0 flex-1">
-                    <span class="block truncate text-sm font-medium text-base-50">{{ i.name }}</span>
-                    <span class="block truncate text-[11px] text-base-400">
-                      <span class="font-mono">{{ i.gameVersion }}</span> · {{ formatRelative(i.lastPlayed) }}
+                    <span class="block truncate text-sm font-semibold text-base-50">{{ i.name }}</span>
+                    <span class="block truncate text-xs text-base-400">
+                      <span class="font-mono">{{ i.gameVersion }}</span> {{ loaderLabels[i.loader.kind] }}, {{ formatRelative(i.lastPlayed) }}
                     </span>
                   </span>
                 </div>
               </NuxtLink>
               <button
-                class="absolute top-16 right-2.5 grid size-9 translate-y-1 place-items-center rounded-full bg-redstone-500 text-white opacity-0 shadow-lg shadow-black/50 transition-[opacity,transform,background-color] group-hover:translate-y-0 group-hover:opacity-100 hover:bg-redstone-400 focus-visible:translate-y-0 focus-visible:opacity-100"
-                :class="{ 'translate-y-0 opacity-100': games.state(i.id).phase !== 'idle' }"
+                class="tile-play pixel-corners"
+                style="--notch: 3px"
+                :class="{ 'tile-play-on': games.state(i.id).phase !== 'idle' }"
                 :disabled="games.state(i.id).phase !== 'idle'"
                 :aria-label="`${i.name} spielen`"
                 @click="play(i)"
@@ -180,22 +207,47 @@ function play(instance: Instance) {
                 <svg viewBox="0 0 24 24" class="ml-0.5 size-4" fill="currentColor"><path :d="icons.play" /></svg>
               </button>
               <span v-if="games.state(i.id).phase !== 'idle'" class="badge absolute top-2 left-2 bg-lamp-400 text-base-950">
-                <span class="size-1.5 animate-lamp rounded-full bg-base-950" />Läuft
+                <span class="size-1.5 animate-lamp bg-base-950" />{{ games.state(i.id).phase === 'preparing' ? 'Startet' : 'Läuft' }}
               </span>
             </article>
           </li>
+
+          <!-- Neues: immer da; ohne weitere Instanzen zeigt die Reihe die Wege zur nächsten. -->
+          <li :class="quick.length ? 'strip-add' : 'strip-card'">
+            <button class="add-tile" @click="ui.creating = true">
+              <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.plus" /></svg></span>
+              <span class="text-sm font-semibold text-base-50">Neue Instanz</span>
+              <span class="text-xs text-base-400">Vanilla oder mit Modloader</span>
+            </button>
+          </li>
+          <template v-if="!quick.length">
+            <li class="strip-card">
+              <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="add-tile">
+                <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.compass" /></svg></span>
+                <span class="text-sm font-semibold text-base-50">Modpack entdecken</span>
+                <span class="text-xs text-base-400">Fertige Pakete von Modrinth</span>
+              </NuxtLink>
+            </li>
+            <li class="strip-card">
+              <button class="add-tile" @click="ui.importing = true">
+                <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.install" /></svg></span>
+                <span class="text-sm font-semibold text-base-50">Importieren</span>
+                <span class="text-xs text-base-400">Aus Prism, CurseForge oder Vanilla</span>
+              </button>
+            </li>
+          </template>
         </ul>
       </section>
 
-      <!-- Läuft gerade -->
-      <section v-if="running.length">
-        <h2 class="mb-3 font-semibold">Läuft gerade</h2>
+      <!-- Weitere laufende Spiele (das oberste zeigt schon die Bühne). -->
+      <section v-if="running.length" aria-labelledby="running-heading">
+        <h2 id="running-heading" class="heading mb-3">Läuft gerade</h2>
         <ul class="grid gap-2 md:grid-cols-2">
-          <li v-for="i in running" :key="i.id" class="card card-hover flex items-center gap-3 px-3 py-2.5">
+          <li v-for="i in running" :key="i.id" class="card flex items-center gap-3 px-3 py-2.5">
             <NuxtLink :to="`/instances/${i.id}`" class="flex min-w-0 flex-1 items-center gap-3">
               <span class="relative">
                 <InstanceIcon :instance="i" :size="40" />
-                <span class="absolute -right-1 -bottom-1 size-2.5 animate-lamp rounded-full bg-lamp-400 ring-2 ring-base-900" />
+                <span class="absolute -right-1 -bottom-1 size-2.5 animate-lamp bg-lamp-400 ring-2 ring-base-900" />
               </span>
               <span class="min-w-0">
                 <span class="block truncate text-sm font-medium">{{ i.name }}</span>
@@ -207,32 +259,21 @@ function play(instance: Instance) {
         </ul>
       </section>
 
-      <div class="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-2">
-        <!-- Neuigkeiten (eigene Komponente, sobald sie da ist) -->
-        <section>
-          <h2 class="mb-3 font-semibold">Neuigkeiten</h2>
-          <component :is="NewsFeed" v-if="NewsFeed" />
-          <div v-else class="card px-5 py-10 text-center">
-            <p class="text-sm text-base-200">Hier erscheinen Neuigkeiten zum Launcher und zum TRS Client.</p>
-            <p class="mt-1 text-xs text-base-400">Updates, neue Versionen und Tipps – direkt auf der Startseite.</p>
-          </div>
-        </section>
+      <div class="lower">
+        <component :is="NewsFeed" v-if="NewsFeed" class="@container" />
 
-        <section>
-          <div class="mb-3 flex items-center justify-between">
-            <h2 class="font-semibold">Server</h2>
-            <div class="flex items-center gap-2">
-              <NuxtLink v-if="servers.items.length" to="/servers" class="text-xs text-base-400 hover:text-base-50">Alle verwalten</NuxtLink>
-              <button class="btn btn-ghost px-2.5 py-1 text-xs" @click="addingServer = true">Hinzufügen</button>
-            </div>
+        <section aria-labelledby="servers-heading">
+          <div class="mb-3 flex items-end justify-between gap-4">
+            <h2 id="servers-heading" class="heading">Server</h2>
+            <NuxtLink v-if="servers.items.length" to="/servers" class="text-xs text-base-400 hover:text-base-50">Alle verwalten</NuxtLink>
           </div>
 
-          <div v-if="!ready" class="space-y-2">
-            <div v-for="i in 2" :key="i" class="skeleton h-[74px]" />
+          <div v-if="!ready" class="servers">
+            <div v-for="i in 2" :key="i" class="skeleton h-[74px] rounded-xl" />
           </div>
-          <div v-else-if="servers.items.length" class="space-y-2">
+          <div v-else class="servers">
             <ServerCard
-              v-for="s in servers.items.slice(0, 5)"
+              v-for="s in servers.items.slice(0, 4)"
               :key="s.id"
               :server="s"
               compact
@@ -240,36 +281,130 @@ function play(instance: Instance) {
               :join-hint="featured ? `Startet „${featured.name}“ und verbindet direkt` : 'Erst eine Instanz anlegen'"
               @join="join"
             />
-          </div>
-          <div v-else class="card px-5 py-8 text-center">
-            <p class="text-sm text-base-200">Deine Server an einem Ort – mit Live-Status und Beitritt per Klick.</p>
-            <p class="mt-1 text-xs text-base-400">Sie stehen danach in jeder Instanz in der Serverliste.</p>
-            <button class="btn btn-primary mt-4" @click="addingServer = true">Ersten Server hinzufügen</button>
+            <button class="add-tile add-tile-row" @click="addingServer = true">
+              <span class="add-icon"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.plus" /></svg></span>
+              <span class="min-w-0 text-left">
+                <span class="block text-sm font-semibold text-base-50">Server hinzufügen</span>
+                <span class="block text-xs text-base-400">
+                  {{ servers.items.length ? 'Live-Status und Beitritt per Klick' : 'Deine Server mit Live-Status – Beitritt per Klick' }}
+                </span>
+              </span>
+            </button>
           </div>
         </section>
       </div>
 
       <ServerDialog v-if="addingServer" @close="addingServer = false" />
     </div>
-
-    <AccountPanel v-if="settings.current?.ui.hideRightSidebar !== true" class="hidden lg:flex" />
   </div>
 </template>
 
 <style scoped>
+@reference "~/assets/css/main.css";
+
 .hero {
-  min-height: 17rem;
-  transition: box-shadow 0.3s ease;
+  height: 22rem;
+  margin-bottom: 1.5rem;
 }
-/* Läuft das Spiel, glimmt der Kopf wie eine Redstone-Lampe. */
-.hero-live {
-  box-shadow: 0 0 40px -14px var(--color-lamp-400);
+/*
+ * Schleier über der Schaltung: links (hinter dem Text) dicht, nach rechts
+ * offen, unten weich in die Seite – dazu eine leichte Vignette.
+ */
+.scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-base-950) 86%, transparent) 0%, color-mix(in srgb, var(--color-base-950) 58%, transparent) 30%, color-mix(in srgb, var(--color-base-950) 14%, transparent) 62%, transparent 85%),
+    linear-gradient(0deg, var(--color-base-950) 0%, color-mix(in srgb, var(--color-base-950) 45%, transparent) 26%, transparent 55%),
+    radial-gradient(140% 120% at 70% 40%, transparent 55%, color-mix(in srgb, var(--color-base-950) 70%, transparent) 100%);
+}
+.hero-title {
+  text-shadow: 0 2px 0 color-mix(in srgb, var(--color-base-950) 80%, transparent);
+}
+/* Instanz-Bild im Pixelrahmen. */
+.icon-frame {
+  padding: 3px;
+  background: var(--color-base-900);
+  box-shadow:
+    0 0 0 2px var(--color-base-700),
+    0 12px 30px -10px rgb(0 0 0 / 0.6);
+  transition: transform 0.15s ease;
+}
+.icon-frame:hover {
+  transform: translateY(-2px);
+}
+.hero-running .icon-frame {
+  box-shadow:
+    0 0 0 2px var(--color-lamp-400),
+    0 0 26px -4px var(--color-lamp-400);
+}
+
+/* Weiterspielen: Spalten füllen die ganze Breite, egal wie viele Kacheln. */
+.strip {
+  display: flex;
+  gap: 0.75rem;
+}
+.strip-card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.strip-add {
+  flex: 0 0 11rem;
 }
 .tile {
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
 }
 .tile:hover {
   transform: translateY(-2px);
   border-color: var(--color-base-700);
+}
+.tile-live {
+  border-color: color-mix(in srgb, var(--color-lamp-400) 55%, transparent);
+  box-shadow: 0 0 22px -8px var(--color-lamp-400);
+}
+.tile-play {
+  @apply absolute top-[4.25rem] right-3 grid size-10 place-items-center bg-redstone-500 text-white opacity-0 transition-[opacity,transform,background-color] group-hover:opacity-100 hover:bg-redstone-400 focus-visible:opacity-100 disabled:cursor-default;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.25),
+    inset 0 -3px 0 rgb(0 0 0 / 0.3);
+}
+.tile-play-on {
+  @apply bg-lamp-400 text-base-950 opacity-100;
+}
+
+/* Kachel für Neues: gestrichelter Pixelrahmen statt Karte. */
+.add-tile {
+  @apply flex h-full min-h-[10.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-base-700 bg-base-900/40 p-4 text-center transition-colors hover:border-redstone-500/70 hover:bg-base-900;
+}
+.add-tile-row {
+  @apply min-h-[4.6rem] flex-row justify-start gap-3 px-3 text-left;
+}
+.add-icon {
+  @apply grid size-10 shrink-0 place-items-center bg-base-800 text-base-200 transition-colors;
+}
+.add-tile:hover .add-icon {
+  @apply bg-redstone-500 text-white;
+}
+
+/* Neuigkeiten und Server: nebeneinander, sobald Platz ist; sonst untereinander. */
+.lower {
+  display: grid;
+  gap: 2.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+.servers {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+}
+@media (min-width: 1500px) {
+  .lower {
+    grid-template-columns: minmax(0, 1fr) minmax(21rem, 26rem);
+    gap: 2rem;
+  }
+  .servers {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>
