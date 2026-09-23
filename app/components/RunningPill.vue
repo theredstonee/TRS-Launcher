@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
       <span class="hidden md:inline">Keine Instanz läuft</span>
     </span>
 
-    <div v-else class="pill gap-1 pr-1 text-base-100">
+    <div v-else class="pill gap-1 pr-1 text-base-50">
       <component
         :is="rows.length > 1 ? 'button' : 'span'"
         ref="trigger"

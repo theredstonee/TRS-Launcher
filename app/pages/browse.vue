@@ -11,7 +11,6 @@ import type {
 } from '~/types'
 
 const route = useRoute()
-const router = useRouter()
 const instances = useInstancesStore()
 const toasts = useToasts()
 

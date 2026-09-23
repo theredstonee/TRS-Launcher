@@ -21,8 +21,12 @@ const now = ref(Date.now())
 onMounted(() => {
   tasks.init((path) => router.push(path))
   document.addEventListener('pointerdown', onDocPointer)
+  document.addEventListener('keydown', onDocKey)
 })
-onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer))
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', onDocPointer)
+  document.removeEventListener('keydown', onDocKey)
+})
 
 /** Launcher-Update zählt als Aufgabe, gehört aber dem Updater-Store. */
 const updating = computed(() => updater.phase === 'downloading')
@@ -85,7 +89,12 @@ watch(
     now.value = Date.now()
     clock = setInterval(() => (now.value = Date.now()), 30_000)
     await nextTick()
-    const focusedRow = tasks.focused ? panel.value?.querySelector<HTMLElement>(`[data-task="${CSS.escape(tasks.focused)}"]`) : null
+    // Laufende Aufgabe – oder ihr Verlaufseintrag, wenn sie schon fertig ist.
+    const recordId = tasks.focused ? tasks.get(tasks.focused)?.recordId : null
+    const selector = tasks.focused
+      ? `[data-task="${CSS.escape(tasks.focused)}"]${recordId ? `, [data-task="record:${CSS.escape(recordId)}"]` : ''}`
+      : null
+    const focusedRow = selector ? panel.value?.querySelector<HTMLElement>(selector) : null
     if (focusedRow) {
       focusedRow.scrollIntoView({ block: 'nearest' })
       focusedRow.focus()
@@ -104,6 +113,11 @@ function toggle() {
 function close(returnFocus = true) {
   tasks.closePanel()
   if (returnFocus) trigger.value?.focus()
+}
+
+/** Esc schließt auch, wenn der Fokus gerade nicht im Panel liegt. */
+function onDocKey(e: KeyboardEvent) {
+  if (e.key === 'Escape' && tasks.panelOpen && !panel.value?.contains(document.activeElement)) close()
 }
 
 function onDocPointer(e: PointerEvent) {
@@ -147,7 +161,8 @@ function open(id: string) {
           <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-dasharray="10 28" class="ring text-redstone-400" />
         </svg>
       </span>
-      <span class="max-w-36 truncate text-base-100 lg:max-w-48">{{ lead?.title ?? 'Launcher-Update' }}</span>
+      <span class="max-w-36 truncate text-base-50 lg:max-w-48">{{ lead?.title ?? 'Launcher-Update' }}</span>
+      <RedstoneWire class="hidden w-14 lg:flex" :percent="lead ? (lead.percent ?? 0) : updater.percent" :segments="8" />
       <span v-if="leadLabel" class="font-mono text-[10px] tabular-nums text-base-400">{{ leadLabel }}</span>
     </button>
 
@@ -179,18 +194,20 @@ function open(id: string) {
         <h2 class="display text-sm text-base-50">Aufgaben</h2>
         <span v-if="count" class="badge bg-redstone-900 text-redstone-300">{{ count }}</span>
         <span v-if="tasks.totalSpeed > 0" class="ml-auto font-mono text-[11px] tabular-nums text-base-400">{{ formatSpeed(tasks.totalSpeed) }}</span>
-        <button class="ml-auto grid size-6 place-items-center rounded-md text-base-400 hover:bg-base-700 hover:text-base-50" :class="{ 'ml-2': tasks.totalSpeed > 0 }" aria-label="Aufgaben schließen" @click="close()">
+        <button class="grid size-6 place-items-center rounded-md text-base-400 hover:bg-base-700 hover:text-base-50" :class="tasks.totalSpeed > 0 ? 'ml-2' : 'ml-auto'" aria-label="Aufgaben schließen" @click="close()">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path :d="icons.close" /></svg>
         </button>
       </header>
 
       <div class="min-h-0 flex-1 overflow-y-auto p-1.5">
         <!-- Ruhezustand -->
-        <div v-if="!count && !tasks.history.length" class="flex flex-col items-center gap-2 px-4 py-8 text-center">
-          <span class="size-3 bg-base-700" aria-hidden="true" />
-          <p class="text-sm text-base-200">Nichts läuft</p>
-          <p class="text-xs text-base-400">Downloads, Installationen und Importe erscheinen hier – auch wenn du die Seite wechselst.</p>
-        </div>
+        <RedstoneEmpty
+          v-if="!count && !tasks.history.length"
+          compact
+          :seed="0x3a"
+          title="Nichts läuft"
+          text="Downloads, Installationen und Importe erscheinen hier – auch wenn du die Seite wechselst."
+        />
 
         <!-- Aktiv -->
         <section v-if="count" aria-label="Aktive Aufgaben">
@@ -240,15 +257,15 @@ function open(id: string) {
                   </button>
                 </div>
                 <div
-                  class="bar mt-1.5"
+                  class="mt-1.5"
+                  :class="{ 'opacity-50 grayscale': t.paused }"
                   role="progressbar"
                   :aria-label="`${t.title}: Fortschritt`"
                   aria-valuemin="0"
                   aria-valuemax="100"
                   :aria-valuenow="t.percent ?? undefined"
                 >
-                  <span v-if="t.percent !== null" class="bar-fill" :class="{ 'bar-paused': t.paused }" :style="{ width: `${t.percent}%` }" />
-                  <span v-else class="bar-indeterminate" />
+                  <RedstoneWire :percent="t.percent ?? 0" :segments="28" />
                 </div>
                 <p class="mt-1 flex justify-between gap-2 font-mono text-[10px] tabular-nums text-base-400">
                   <span class="truncate">{{ rowMeta(t) }}</span>
@@ -261,8 +278,8 @@ function open(id: string) {
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium text-base-50">TRS Launcher {{ updater.version }}</p>
                 <p class="truncate text-[11px] text-base-400">Update wird im Hintergrund geladen</p>
-                <div class="bar mt-1.5" role="progressbar" aria-label="Launcher-Update" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="updater.percent">
-                  <span class="bar-fill" :style="{ width: `${updater.percent}%` }" />
+                <div class="mt-1.5" role="progressbar" aria-label="Launcher-Update" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="updater.percent">
+                  <RedstoneWire :percent="updater.percent" :segments="28" />
                 </div>
                 <p class="mt-1 text-right font-mono text-[10px] tabular-nums text-base-400">{{ updater.percent }} %</p>
               </div>
@@ -293,7 +310,7 @@ function open(id: string) {
               <ModIcon v-else-if="r.iconUrl" :src="r.iconUrl" :name="r.title" :size="28" />
               <span v-else class="kind-icon size-7"><svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="kindIcon(r.kind)" /></svg></span>
               <div class="min-w-0 flex-1">
-                <p class="truncate text-[13px] text-base-100">{{ r.title }}</p>
+                <p class="truncate text-[13px] text-base-50">{{ r.title }}</p>
                 <p class="truncate text-[11px]" :class="r.outcome === 'failed' ? 'text-redstone-300' : 'text-base-400'" :title="r.detail">
                   {{ recordMeta(r) }}<template v-if="r.outcome === 'failed' && r.detail"> – {{ r.detail }}</template>
                 </p>
@@ -367,40 +384,11 @@ function open(id: string) {
   @apply grid size-6 shrink-0 place-items-center rounded-md text-base-400 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-40;
 }
 .kind-icon {
-  @apply grid size-9 shrink-0 place-items-center rounded-lg bg-base-800 text-base-300 ring-1 ring-white/5;
-}
-.bar {
-  @apply relative h-1.5 overflow-hidden rounded-[1px] bg-redstone-900;
-}
-.bar-fill {
-  @apply absolute inset-y-0 left-0 bg-redstone-500 transition-[width] duration-300;
-  box-shadow: 0 0 6px var(--color-redstone-600);
-}
-.bar-paused {
-  @apply bg-base-500;
-  box-shadow: none;
-}
-.bar-indeterminate {
-  @apply absolute inset-y-0 w-1/3 bg-redstone-500;
-  animation: sweep 1.3s ease-in-out infinite;
-}
-@keyframes sweep {
-  from {
-    left: -33%;
-  }
-  to {
-    left: 100%;
-  }
+  @apply grid size-9 shrink-0 place-items-center rounded-lg bg-base-800 text-base-200 ring-1 ring-white/5;
 }
 @media (prefers-reduced-motion: reduce) {
   .charge .ring {
     animation: none;
-  }
-  .bar-indeterminate {
-    animation: none;
-    left: 0;
-    width: 100%;
-    opacity: 0.5;
   }
 }
 </style>
