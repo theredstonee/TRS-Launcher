@@ -19,8 +19,10 @@ const props = withDefaults(
     progress?: number
     /** Element, unter dem die Hauptleitung endet (der Spielen-Knopf). */
     anchor?: HTMLElement | null
+    /** Ganze Fläche füllen (Seiten-Hintergrund) statt eines Streifens über der Leitung. */
+    fill?: boolean
   }>(),
-  { mode: 'idle', progress: 0, anchor: null },
+  { mode: 'idle', progress: 0, anchor: null, fill: false },
 )
 
 const root = useTemplateRef<HTMLDivElement>('root')
@@ -83,7 +85,7 @@ function layout() {
   if (key === layoutKey && circuit) return
   layoutKey = key
   busEnd = end
-  circuit = buildScene({ cols, rows, busRow, busEnd: end, seed: 0x7e5 })
+  circuit = buildScene({ cols, rows, busRow, busEnd: end, seed: 0x7e5, fill: props.fill })
   particles = []
   applyMode()
   // Etwas vorlaufen lassen, damit die Takte nicht alle im Gleichschritt starten.

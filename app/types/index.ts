@@ -63,6 +63,7 @@ export interface UiSettings {
   theme: Theme
   accent: Accent
   advancedRendering: boolean
+  animatedBackground: boolean
   worldsTab: boolean
   screenshotsTab: boolean
   historyTab: boolean

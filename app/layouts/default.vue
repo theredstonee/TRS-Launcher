@@ -24,6 +24,8 @@ function onKey(e: KeyboardEvent) {
 // Jede Seite fängt oben an – sonst hängt die neue Seite auf der alten Scrollhöhe.
 const main = useTemplateRef<HTMLElement>('main')
 const route = useRoute()
+// Die Startseite zeigt die Schaltung schon groß im Kopfbereich.
+const appBackground = computed(() => settings.current?.ui.animatedBackground !== false && route.path !== '/')
 watch(
   () => route.fullPath,
   () => main.value?.scrollTo({ top: 0 }),
@@ -55,9 +57,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <div class="relative flex min-h-0 flex-1 flex-col">
       <div class="flex min-h-0 flex-1">
         <SideNav />
-        <main ref="main" class="deepslate min-w-0 flex-1 overflow-y-auto">
+        <!-- Redstone-Schaltung hinter allen Seiten (die Startseite hat ihre eigene im Kopfbereich). -->
+        <div class="relative min-w-0 flex-1">
+          <div v-if="appBackground" class="app-bg" aria-hidden="true">
+            <RedstoneScene fill />
+          </div>
+        <main ref="main" class="deepslate relative min-w-0 h-full overflow-y-auto" :class="{ 'deepslate-over-scene': appBackground }">
           <slot />
         </main>
+        </div>
       </div>
       <Transition name="onboarding" appear>
         <OnboardingWizard v-if="onboarding.open" />

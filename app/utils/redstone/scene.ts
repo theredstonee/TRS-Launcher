@@ -13,6 +13,8 @@ export interface SceneSpec {
   /** Spalte, in der die Leitung unter dem Spielen-Knopf endet (exklusiv). */
   busEnd: number
   seed?: number
+  /** Ganze Fläche in mehreren Streifen füllen (Seiten-Hintergrund) statt nur eines Streifens. */
+  fill?: boolean
 }
 
 interface Module {
@@ -135,11 +137,38 @@ export function buildScene(spec: SceneSpec): Circuit {
     }
   }
 
-  // Oberhalb der Leitung (mit einer freien Zeile Abstand) die kleinen Schaltungen.
-  const bandTop = 0
-  const bandBottom = busRow >= 0 ? busRow - 2 : rows - 1
+  // Oberhalb der Leitung (mit einer freien Zeile Abstand) die kleinen Schaltungen –
+  // als Seiten-Hintergrund in mehreren Streifen übereinander.
+  const lastRow = busRow >= 0 ? busRow - 2 : rows - 1
+  if (spec.fill) {
+    const step = MAX_MODULE_ROWS + 2 + Math.floor(random() * 2)
+    for (let top = Math.floor(random() * 2); top + MIN_MODULE_ROWS - 1 <= lastRow; top += step) {
+      fillBand(circuit, random, top, Math.min(lastRow, top + step - 2), cols)
+    }
+  } else {
+    fillBand(circuit, random, 0, lastRow, cols)
+  }
+
+  // Ein paar Deepslate-Blöcke als Struktur auf leeren Feldern.
+  for (let y = 0; y < rows; y++) {
+    for (let cx = 0; cx < cols; cx++) {
+      if (y === busRow || y === busRow - 1 || y === busRow + 1) continue
+      const c = circuit.at(cx, y)
+      if (!c || c.kind !== 'floor' || !isolated(circuit, cx, y)) continue
+      if (random() < 0.05) circuit.set(cx, y, parseStencil(['##'])[0]![0]!)
+    }
+  }
+
+  return circuit.finish()
+}
+
+const MAX_MODULE_ROWS = Math.max(...MODULES.map((m) => m.rows.length))
+const MIN_MODULE_ROWS = Math.min(...MODULES.map((m) => m.rows.length))
+
+/** Eine Reihe kleiner Schaltungen nebeneinander zwischen bandTop und bandBottom. */
+function fillBand(circuit: Circuit, random: () => number, bandTop: number, bandBottom: number, cols: number) {
   const bandHeight = bandBottom - bandTop + 1
-  let x = 1 + Math.floor(random() * 2)
+  let x = 1 + Math.floor(random() * 3)
   let last = ''
   let guard = 0
   while (x < cols && guard++ < 64) {
@@ -163,18 +192,6 @@ export function buildScene(spec: SceneSpec): Circuit {
     last = m.name
     x += w + 1 + Math.floor(random() * 2)
   }
-
-  // Ein paar Deepslate-Blöcke als Struktur auf leeren Feldern.
-  for (let y = 0; y < rows; y++) {
-    for (let cx = 0; cx < cols; cx++) {
-      if (y === busRow || y === busRow - 1 || y === busRow + 1) continue
-      const c = circuit.at(cx, y)
-      if (!c || c.kind !== 'floor' || !isolated(circuit, cx, y)) continue
-      if (random() < 0.05) circuit.set(cx, y, parseStencil(['##'])[0]![0]!)
-    }
-  }
-
-  return circuit.finish()
 }
 
 /** Keine Schaltung rundherum – dort darf ein Block stehen, ohne etwas zu verbinden. */

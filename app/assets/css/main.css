@@ -273,6 +273,19 @@ textarea {
     /* Vektor-Quadrate mit crispEdges – bleiben auch skaliert scharf. */
     background-size: 48px 48px;
   }
+  /* Redstone-Schaltung hinter allen Seiten (Einstellung „Animierter Hintergrund“). */
+  .app-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.55;
+  }
+  /* Über der Schaltung: halbdurchsichtiger Schleier statt des Deepslate-Musters, damit Inhalte lesbar bleiben. */
+  .deepslate.deepslate-over-scene {
+    background-color: color-mix(in srgb, var(--color-base-950) 62%, transparent);
+    background-image: none;
+  }
   /* Platzhalter, während Daten laden. */
   .skeleton {
     @apply animate-shimmer rounded-md;

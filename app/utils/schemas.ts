@@ -101,6 +101,7 @@ export const uiSettingsSchema = z.object({
   theme: z.enum(['dark', 'oled', 'light', 'system']),
   accent: z.enum(['redstone', 'lamp', 'emerald', 'lapis', 'amethyst']),
   advancedRendering: z.boolean(),
+  animatedBackground: z.boolean(),
   worldsTab: z.boolean(),
   screenshotsTab: z.boolean(),
   historyTab: z.boolean(),

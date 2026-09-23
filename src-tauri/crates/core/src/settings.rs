@@ -93,6 +93,8 @@ pub struct UiSettings {
     pub accent: Accent,
     /// Unschärfe-Effekte (Backdrop-Blur) – aus spart GPU auf schwachen Rechnern.
     pub advanced_rendering: bool,
+    /// Animierte Redstone-Schaltung als Hintergrund aller Seiten.
+    pub animated_background: bool,
     pub worlds_tab: bool,
     pub screenshots_tab: bool,
     pub history_tab: bool,
@@ -112,6 +114,7 @@ impl Default for UiSettings {
             theme: Theme::Dark,
             accent: Accent::Redstone,
             advanced_rendering: true,
+            animated_background: true,
             worlds_tab: true,
             screenshots_tab: true,
             history_tab: true,

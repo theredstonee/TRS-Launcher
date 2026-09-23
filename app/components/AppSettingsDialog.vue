@@ -278,6 +278,9 @@ async function allowFirewall() {
       <SettingRow title="Erweitertes Rendering" description="Unschärfe-Effekte hinter Dialogen und Leisten. Aus spart auf schwachen Rechnern etwas Leistung.">
         <ToggleSwitch v-model="form.ui.advancedRendering" label="Erweitertes Rendering" />
       </SettingRow>
+      <SettingRow title="Animierter Hintergrund" description="Eine ruhige Redstone-Schaltung hinter allen Seiten. Aus zeigt nur das Deepslate-Muster.">
+        <ToggleSwitch v-model="form.ui.animatedBackground" label="Animierter Hintergrund" />
+      </SettingRow>
     </div>
 
     <!-- Funktionen ------------------------------------------------------------- -->
