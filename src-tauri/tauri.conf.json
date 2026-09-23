@@ -88,7 +88,7 @@
         "https://github.com/theredstonee/TRS-Launcher/releases/download/updater/latest.json"
       ],
       "windows": {
-        "installMode": "passive"
+        "installMode": "quiet"
       }
     }
   }

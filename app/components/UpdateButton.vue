@@ -1,0 +1,91 @@
+<script setup lang="ts">
+// Kleiner Update-Knopf in der Titelleiste (wie „Reload to update“ in der Modrinth App).
+const updater = useUpdaterStore()
+const games = useGamesStore()
+onMounted(() => updater.start())
+
+const running = computed(() => games.runningCount > 0)
+const label = computed(() => {
+  switch (updater.phase) {
+    case 'ready':
+      return 'Neu starten zum Aktualisieren'
+    case 'installing':
+      return 'Wird aktualisiert …'
+    case 'failed':
+      return 'Update erneut versuchen'
+    default:
+      return ''
+  }
+})
+const title = computed(() => {
+  if (updater.phase === 'downloading') return `TRS Launcher ${updater.version} wird geladen … ${updater.percent} %`
+  if (updater.phase === 'failed') return `Update fehlgeschlagen: ${updater.failReason}`
+  const note = running.value ? ' Laufende Spiele laufen weiter.' : ''
+  return `TRS Launcher ${updater.version} ist bereit.${note}`
+})
+
+function openRelease() {
+  if (updater.version) backend.openExternalUrl(`https://github.com/theredstonee/TRS-Launcher/releases/tag/v${updater.version}`).catch(() => {})
+}
+</script>
+
+<template>
+  <!-- Während des Downloads nur ein dezenter Fortschrittsring. -->
+  <span
+    v-if="updater.phase === 'downloading'"
+    class="mr-1 grid size-6 place-items-center"
+    :title="title"
+    role="status"
+    :aria-label="title"
+  >
+    <svg viewBox="0 0 20 20" class="size-4 -rotate-90">
+      <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2.5" class="text-base-800" />
+      <circle
+        cx="10"
+        cy="10"
+        r="8"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        class="text-redstone-500 transition-[stroke-dashoffset] duration-300"
+        :stroke-dasharray="50.27"
+        :stroke-dashoffset="50.27 * (1 - updater.percent / 100)"
+      />
+    </svg>
+  </span>
+
+  <div v-else-if="label" class="mr-1 flex items-center gap-1.5">
+    <button
+      v-if="updater.phase === 'failed' && updater.failures > 1"
+      class="text-[11px] text-base-400 underline-offset-2 hover:text-base-200 hover:underline"
+      @click="openRelease"
+    >
+      Installer laden
+    </button>
+    <button
+      class="update-pill"
+      :class="{ 'update-pill-failed': updater.phase === 'failed' }"
+      :disabled="updater.phase === 'installing'"
+      :title="title"
+      @click="updater.restart()"
+    >
+      <svg viewBox="0 0 24 24" class="size-3.5" :class="{ 'animate-spin': updater.phase === 'installing' }" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+        <path d="M20 4v5h-5" />
+      </svg>
+      {{ label }}
+    </button>
+  </div>
+</template>
+
+<style scoped>
+@reference "~/assets/css/main.css";
+
+.update-pill {
+  @apply flex items-center gap-1.5 rounded-md bg-redstone-500 px-2.5 py-1 text-[11px] font-semibold text-white shadow-[0_0_12px_-2px_var(--color-redstone-500)] transition-colors hover:bg-redstone-400 disabled:opacity-70;
+}
+.update-pill-failed {
+  @apply bg-base-800 text-lamp-300 shadow-none hover:bg-base-700;
+}
+</style>

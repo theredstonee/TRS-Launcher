@@ -49,6 +49,8 @@ async function toggleMaximize() {
 
     <div data-tauri-drag-region class="min-w-0 flex-1" />
 
+    <UpdateButton />
+
     <button class="mr-1 hidden items-center gap-2 rounded-md border border-base-800 bg-base-850 px-2.5 py-1 text-[11px] text-base-400 transition-colors hover:border-base-700 hover:text-base-200 sm:flex" @click="ui.openPalette()">
       <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path :d="icons.search" /></svg>
       Suchen
