@@ -47,6 +47,12 @@ pub enum Error {
     #[error("Vorgang abgebrochen")]
     Cancelled,
 
+    /// Fehler der TRS API. `kind` ist stabil (`trs_offline`, `trs_banned`, …),
+    /// `code` der Fehlercode der API (z. B. `cape_locked`), die Meldung ist für
+    /// den Nutzer formuliert.
+    #[error("{message}")]
+    TrsApi { kind: &'static str, code: String, message: String },
+
     #[error("Interner Fehler: {0}")]
     Internal(String),
 }
@@ -90,7 +96,16 @@ impl Error {
             Self::Auth(_) => "auth",
             Self::AuthNotApproved => "auth_not_approved",
             Self::Cancelled => "cancelled",
+            Self::TrsApi { kind, .. } => kind,
             Self::Internal(_) => "internal",
+        }
+    }
+
+    /// Genauer Fehlercode (bisher nur für die TRS API).
+    pub fn code(&self) -> Option<&str> {
+        match self {
+            Self::TrsApi { code, .. } if !code.is_empty() => Some(code),
+            _ => None,
         }
     }
 
@@ -115,6 +130,7 @@ impl Error {
             | Self::UnknownGameVersion(_)
             | Self::Launch(_)
             | Self::Auth(_)
+            | Self::TrsApi { .. }
             | Self::Cancelled => self.to_string(),
         }
     }

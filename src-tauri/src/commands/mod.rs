@@ -17,3 +17,4 @@ pub mod settings;
 pub mod skins;
 pub mod system;
 pub mod tasks;
+pub mod trs;

@@ -51,10 +51,15 @@ pub async fn cancel_login(launcher: State<'_, LauncherState>) -> CommandResult<(
 
 #[tauri::command]
 pub async fn set_active_account(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
-    Ok(launcher.accounts().set_active(&id).await?)
+    launcher.accounts().set_active(&id).await?;
+    // Präsenz sofort auf den neuen Account umstellen.
+    launcher.trs().presence_kick();
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn remove_account(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    // Vorher bei der TRS API abmelden (Präsenz zurück, Token widerrufen).
+    launcher.trs_forget_account(&id).await;
     Ok(launcher.accounts().remove(&id).await?)
 }

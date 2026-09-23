@@ -43,6 +43,7 @@ pub mod sync;
 pub mod system;
 pub mod task;
 pub mod task_history;
+pub mod trs_api;
 pub mod upload;
 
 use std::collections::HashSet;
@@ -87,6 +88,8 @@ pub struct Launcher {
     preparing: Mutex<HashSet<String>>,
     /// Warteschlange für Skin-/Umhang-Änderungen.
     skin_sync: skin_sync::SkinSync,
+    /// TRS API (Umhänge, Freunde, Präsenz) – nur mit Einwilligung.
+    trs: trs_api::TrsApi,
 }
 
 impl Launcher {
@@ -137,6 +140,7 @@ impl Launcher {
             client_mod_updates: client_mod_update::ClientModUpdater::new(&paths)?,
             preparing: Mutex::default(),
             skin_sync: skin_sync::SkinSync::default(),
+            trs: trs_api::TrsApi::new(paths.clone())?,
             settings: RwLock::new(settings),
             paths,
             http,
@@ -146,9 +150,13 @@ impl Launcher {
         // nach ihrem Ende auch synchronisieren und den Nach-Beenden-Hook ausführen.
         let paths = launcher.paths.clone();
         let sink = launcher.games.sink();
+        let presence = Arc::clone(&launcher.trs.presence);
         launcher.games.recover(|id| {
-            let (paths, id, sink) = (paths.clone(), id.to_owned(), sink.clone());
+            // Mit welchem Account das Spiel lief, ist nach dem Neustart unbekannt.
+            presence.game_started(id, None);
+            let (paths, id, sink, presence) = (paths.clone(), id.to_owned(), sink.clone(), presence.clone());
             Box::new(move |seconds| {
+                presence.game_exited(&id);
                 tokio::spawn(async move {
                     let store = InstanceStore::new(paths.clone());
                     if let Err(e) = store.add_play_time(&id, seconds).await {
@@ -332,12 +340,12 @@ impl Launcher {
 
     /// Lädt alles Nötige herunter und startet das Spiel. Liefert die PID.
     ///
-    /// `join_server`: ID eines Servers aus der Launcher-Liste, auf den direkt
-    /// verbunden werden soll.
+    /// `join`: Server, auf den direkt verbunden werden soll – aus der
+    /// Launcher-Liste oder eine Adresse (z. B. der geteilte Server eines Freundes).
     pub async fn launch(
         self: &Arc<Self>,
         instance_id: &str,
-        join_server: Option<&str>,
+        join: Option<Join<'_>>,
         on_progress: &ProgressFn,
     ) -> Result<u32> {
         let instance = self.instances.get(instance_id).await?;
@@ -351,7 +359,7 @@ impl Launcher {
             }
         }
 
-        let result = self.launch_inner(&instance, join_server, on_progress).await;
+        let result = self.launch_inner(&instance, join, on_progress).await;
         self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&instance.id);
         result
     }
@@ -359,12 +367,20 @@ impl Launcher {
     async fn launch_inner(
         self: &Arc<Self>,
         instance: &Instance,
-        join_server: Option<&str>,
+        join_request: Option<Join<'_>>,
         on_progress: &ProgressFn,
     ) -> Result<u32> {
-        let join = match join_server {
-            Some(id) => Some(servers::join_target(&self.servers.get(id).await?.address).await?),
-            None => None,
+        let (join, join_label) = match join_request {
+            Some(Join::Server(id)) => {
+                let server = self.servers.get(id).await?;
+                (Some(servers::join_target(&server.address).await?), Some(server.name))
+            }
+            Some(Join::Address(address)) => {
+                let target = servers::join_target(address).await?;
+                let label = target.address.clone();
+                (Some(target), Some(label))
+            }
+            None => (None, None),
         };
         let session = match self.accounts.active_session().await? {
             Some(session) => session,
@@ -384,7 +400,11 @@ impl Launcher {
         let instance = &effective;
 
         let updates = Some(&self.client_mod_updates);
-        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), updates, instance, &settings.ui).await
+        // Der Mod liest daraus, ob er die TRS API benutzen darf (nur feste Werte, kein Token).
+        let trs_enabled = self.trs.enabled().await;
+        if let Err(e) =
+            client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), updates, instance, &settings.ui, trs_enabled)
+                .await
         {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
@@ -444,6 +464,8 @@ impl Launcher {
         let sink = self.games.sink();
         let plan = exit_plan.clone();
         let on_exit = Box::new(move |play_seconds: u64| {
+            // Spiel zu: Der Launcher meldet sofort wieder „online“.
+            launcher.trs.presence.game_exited(&id);
             tokio::spawn(async move {
                 if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
                     tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
@@ -460,13 +482,19 @@ impl Launcher {
             hooks::apply_wrapper(&mut command, wrapper);
         }
         let log_dir = self.paths.instance_dir(&instance.id).join("launcher-logs");
-        let pid = self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit)?;
+        // Vor dem Start eintragen, damit der Launcher ab jetzt schweigt (der Mod meldet "in-game").
+        self.trs.presence.game_started(&instance.id, Some(&session.uuid));
+        let pid = match self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit) {
+            Ok(pid) => pid,
+            Err(e) => {
+                self.trs.presence.game_exited(&instance.id);
+                return Err(e);
+            }
+        };
         self.instances.touch_last_played(&instance.id).await?;
         let mut entry = HistoryEntry::new(HistoryKind::Launched);
-        if let Some(id) = join_server
-            && let Ok(server) = self.servers.get(id).await
-        {
-            entry = entry.subject(&server.name);
+        if let Some(label) = &join_label {
+            entry = entry.subject(label);
         }
         history::record(&self.paths, &instance.id, entry).await;
         Ok(pid)
@@ -565,6 +593,13 @@ impl Launcher {
         let concurrency = usize::from(self.settings().await.concurrent_downloads);
         java::ensure_runtime(&self.http, &self.paths, component, concurrency, on_progress).await
     }
+}
+
+/// Direkt beitreten: Server aus der Launcher-Liste (ID) oder freie Adresse.
+#[derive(Debug, Clone, Copy)]
+pub enum Join<'a> {
+    Server(&'a str),
+    Address(&'a str),
 }
 
 /// Was vor dem Start feststeht und nach dem Spielende passieren soll:
