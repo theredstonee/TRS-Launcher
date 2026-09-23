@@ -745,7 +745,13 @@ mod tests {
         let saved = std::fs::read_to_string(dir.path().join("running.json")).unwrap();
         assert!(saved.contains("\"instanceId\": \"test\""));
 
-        tokio::time::sleep(Duration::from_millis(1500)).await;
+        // Unter Last (parallele Tests) kann die erste Ausgabe etwas dauern.
+        for _ in 0..50 {
+            if !manager.logs("test").is_empty() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
         assert!(!manager.logs("test").is_empty(), "stdout sollte mitgelesen werden");
         assert!(manager.kill("test"));
         for _ in 0..50 {

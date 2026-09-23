@@ -162,7 +162,7 @@ function open(id: string) {
         </svg>
       </span>
       <span class="max-w-36 truncate text-base-50 lg:max-w-48">{{ lead?.title ?? 'Launcher-Update' }}</span>
-      <RedstoneWire class="hidden w-14 lg:flex" :percent="lead ? (lead.percent ?? 0) : updater.percent" :segments="8" />
+      <RedstoneWire class="hidden w-14 lg:flex" :percent="lead ? (lead.percent ?? 0) : updater.percent" :indeterminate="!!lead && lead.percent == null" :segments="8" />
       <span v-if="leadLabel" class="font-mono text-[10px] tabular-nums text-base-400">{{ leadLabel }}</span>
     </button>
 
@@ -265,7 +265,7 @@ function open(id: string) {
                   aria-valuemax="100"
                   :aria-valuenow="t.percent ?? undefined"
                 >
-                  <RedstoneWire :percent="t.percent ?? 0" :segments="28" />
+                  <RedstoneWire :percent="t.percent ?? 0" :indeterminate="t.percent == null" :segments="28" />
                 </div>
                 <p class="mt-1 flex justify-between gap-2 font-mono text-[10px] tabular-nums text-base-400">
                   <span class="truncate">{{ rowMeta(t) }}</span>

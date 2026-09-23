@@ -219,10 +219,8 @@ async function duplicate() {
 }
 
 const deleting = ref(false)
-const deleteConfirm = ref('')
 const deleteBusy = ref(false)
 async function confirmDelete() {
-  if (deleteConfirm.value.trim() !== inst.value.name) return
   deleteBusy.value = true
   try {
     await instances.remove(inst.value.id)
@@ -369,7 +367,7 @@ const loaderLine = computed(() => {
       </SettingRow>
 
       <SettingRow title="Instanz löschen" description="Löscht die Instanz mit allen Welten, Mods und Screenshots unwiderruflich." danger>
-        <button class="btn btn-danger" :disabled="running" @click="deleting = true; deleteConfirm = ''">Instanz löschen</button>
+        <button class="btn btn-danger" :disabled="running" @click="deleting = true">Instanz löschen</button>
       </SettingRow>
     </div>
 
@@ -533,11 +531,9 @@ const loaderLine = computed(() => {
     <p class="text-sm text-base-200">
       <strong class="text-base-50">{{ inst.name }}</strong> wird mit allen Welten, Mods und Screenshots unwiderruflich gelöscht.
     </p>
-    <label class="label mt-4" for="is-del">Zur Bestätigung den Namen eingeben</label>
-    <input id="is-del" v-model="deleteConfirm" class="field" :placeholder="inst.name" autocomplete="off" spellcheck="false" @keydown.enter="confirmDelete" />
     <template #actions>
       <button class="btn btn-ghost" @click="deleting = false">Abbrechen</button>
-      <button class="btn btn-danger" :disabled="deleteBusy || deleteConfirm.trim() !== inst.name" @click="confirmDelete">
+      <button class="btn btn-danger" :disabled="deleteBusy" @click="confirmDelete">
         {{ deleteBusy ? 'Lösche …' : 'Endgültig löschen' }}
       </button>
     </template>
