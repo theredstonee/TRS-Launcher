@@ -1,3 +1,5 @@
+[**English**](PRIVACY.md) · [Deutsch](PRIVACY.de.md) · [Español](PRIVACY.es.md)
+
 # Privacy
 
 TRS Launcher runs on your computer. It has **no telemetry, analytics, crash reporting or advertising**. It only sends

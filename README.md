@@ -1,5 +1,7 @@
 <div align="center">
 
+[**English**](README.md) · [Deutsch](README.de.md) · [Español](README.es.md)
+
 <img src="docs/logo.png" alt="TRS Launcher" width="96" height="96" />
 
 # TRS Launcher
@@ -36,31 +38,43 @@
 - Every Minecraft version from 1.5.2 to the latest 26.x, including snapshots
 - **Fabric, Quilt, Forge and NeoForge** — Forge/NeoForge are installed with our own installer and processor runner
 - Automatic Java: the right Mojang runtime is downloaded for each version
-- **TRS Boost** — vanilla instances start with Fabric, the TRS Client and proven performance mods (Sodium, Lithium, FerriteCore, ImmediatelyFast, ModernFix, …). You can turn it off per instance for real vanilla
+- **TRS Boost** — vanilla instances start with Fabric, the TRS Client and proven performance mods (Sodium, Lithium, FerriteCore, ImmediatelyFast, ModernFix, …). Versions without Fabric use Forge with the TRS Client. You can turn it off per instance for real vanilla
 - Tuned JVM defaults (G1/ZGC by Java version) and the dedicated GPU on laptops
 - Games keep running when you close the launcher and are picked up again on the next start
 
 **TRS Client (in-game mod)**
-- HUD with FPS, CPS, keystrokes and ping; the editor snaps modules to the screen and to each other
-- Several HUD layouts as profiles (PvP, building, recording) – switchable by a key
-- Zoom, fullbright and an in-game menu (Right Shift) with search, categories and per-module settings
-- Takes the launcher's theme and accent colour, and is installed automatically in every matching instance
+- Bundled for **Fabric/Quilt 1.14.4–26.3, Forge 1.7.10–26.3 and NeoForge 1.20.2–26.3**, installed automatically in every matching instance
+- In-game menu (Right Shift) with tiles, search, categories and per-module settings, including a colour picker with alpha and chroma
+- HUD with FPS, CPS, keystrokes, ping, armour, effects, coordinates and more; the HUD editor snaps modules to the screen and to each other, and several layouts can be kept as profiles and switched by a key
+- PvP displays (reach, combo, speed), custom crosshair, hit colour, 1.7 animations, low fire, block outline, hitboxes and no hurt cam
+- **Minimap** and **waypoints** per world or server, with distance, light beam and a death point
+- Chat improvements (timestamps, stacking of repeated messages, Ctrl+click to copy), zoom (V), fullbright and freelook
+- A redstone-styled title screen and menu that take the launcher's theme and accent colour
+- Fair play: no reach or hitbox changes, no auto-clicking; the minimap only shows loaded chunks, without cave view
+- Updates through its own signed channel, without a launcher release
 
 **Content**
-- Browse and install mods, modpacks, resource packs and shaders from **Modrinth**, dependencies included
-- Pick any version, check for updates, enable or disable mods per instance
+- Browse and install mods, modpacks, resource packs, data packs and shaders from **Modrinth**, dependencies included, with a project page for description, gallery, versions and dependencies
+- Pick any version, check for updates, read changelogs, enable or disable mods per instance
 - Import instances from the **official launcher, Modrinth App, CurseForge, Prism Launcher, MultiMC** or any folder
 - Export any instance as a **`.mrpack`** — mods that exist on Modrinth are linked, everything else is packed as overrides — and import pack files again
 
+**TRS services (optional)**
+- **TRS capes**: pick from the TRS cape collection (some of them animated), unlock capes with codes or upload your own, which the team reviews before others see it
+- **Friends**: friend requests, blocking, who is online and what they are playing, and one click to join them on their server
+- Everything is **off until you agree**; see [PRIVACY.md](PRIVACY.md#trs-services)
+
 **Everything else**
-- Multiple Microsoft accounts with one-click switching (tokens encrypted with Windows DPAPI)
+- **Redstone look**: a live redstone circuit on the start page and behind every page, a lamp as the play button, dark, OLED, light or system theme and five accent colours
+- Multiple Microsoft accounts, switched from the title bar (tokens encrypted with Windows DPAPI)
+- **Background tasks**: installs and downloads keep running while you use the launcher, with a tasks panel to pause, resume or cancel them and a history of finished tasks
 - Server list with live player count and ping, one-click join
-- **Skins & capes** with a 3D preview: keep your own skin library, switch model (classic/slim) and pick any cape you own
+- **Skins & capes** with a 3D preview: keep your own skin library, switch model (classic/slim), pick any Mojang cape you own and apply all changes at once
 - **Screenshot gallery** across all instances with a fullscreen viewer, copy to clipboard and recycle bin
 - **News** on the start page: Minecraft patch notes, Mojang news, trending Modrinth projects and launcher releases
 - Live game log with filters, crash diagnosis, file repair and log sharing via mclo.gs (tokens redacted)
-- Worlds, play time and instance duplication
-- Signed automatic updates
+- Worlds, play time, instance banners and duplication, a command palette (Ctrl+K)
+- **Silent updates**: new versions are signed, download in the background and install when you restart from the title bar; running games keep running
 
 ## Installation
 
@@ -71,7 +85,7 @@
 > [!TIP]
 > The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC". Choose **More info → Run anyway**.
 
-Your data lives in `%APPDATA%\TRS-Launcher`.
+Your data lives in `%APPDATA%\TRS-Launcher`. Step-by-step guides are in the [wiki](https://github.com/theredstonee/TRS-Launcher/wiki).
 
 ## Fair play
 
@@ -93,9 +107,10 @@ pnpm app:dev      # Nuxt dev server + Tauri window with hot reload
 |---|---|
 | `pnpm app:build` | Release build and NSIS installer (`src-tauri/target/release/bundle`) |
 | `pnpm typecheck` | Type-check TypeScript/Vue |
+| `pnpm test` | Frontend tests (Vitest) |
 | `cargo test --workspace` (in `src-tauri`) | Rust tests |
 | `cargo clippy --workspace --all-targets` (in `src-tauri`) | Rust lints |
-| `./gradlew build` (in `client-mod/…`) | Build the TRS Client mod |
+| `./gradlew collectLauncherJars` (in `client-mod/…`) | Build the TRS Client jars for the launcher |
 
 Set `TRS_LAUNCHER_HOME` to use a different data directory, which is handy for testing. The launch pipeline can also be tested without the UI:
 
@@ -126,7 +141,7 @@ The script signs with `%USERPROFILE%\.tauri\trs-launcher.key` (password from `tr
 ```
 app/                    Nuxt 4 frontend (SPA, no SSR)
 src-tauri/
-  src/                  Tauri app: commands, error mapping, plugins
+  src/                  Tauri app: commands, task registry, error mapping, plugins
   crates/core/          trs-core: the UI-independent launcher core
     meta/ prepare.rs    Version metadata, libraries, natives, assets
     forge.rs loaders.rs Forge/NeoForge installer, Fabric/Quilt profiles
@@ -134,10 +149,13 @@ src-tauri/
     auth/               Microsoft → Xbox Live → Minecraft, encrypted account store
     modrinth.rs modpack.rs content.rs  Modrinth, modpacks, per-instance content
     modpack_export.rs   .mrpack export (Modrinth lookup by hash, overrides)
-    skins.rs news.rs screenshots.rs    Minecraft profile/skins, news cache, screenshot gallery
-    import.rs servers.rs boost.rs client_mod.rs
+    skins.rs skin_sync.rs news.rs screenshots.rs  Minecraft profile/skins, news cache, screenshot gallery
+    task.rs task_history.rs  Cancellable, pausable background tasks and their history
+    trs_api/            Client for the optional TRS services (capes, friends, presence)
+    client_mod.rs client_mod_update.rs  Bundled TRS Client builds and the signed update channel
+    import.rs servers.rs boost.rs hooks.rs sync.rs
   resources/client-mod/ Bundled TRS Client builds + builds.json (manifest with version + checksums)
-client-mod/             TRS Client (Fabric multi-version, Forge 1.8.9)
+client-mod/             TRS Client: common core + Fabric 1.14.4–26.3, Forge 1.7.10–26.3, NeoForge 1.20.2–26.3
 ```
 
 Principles:
@@ -160,7 +178,7 @@ Windows releases are signed so that Windows can verify who published them.
 | Committers and reviewers | [theredstonee](https://github.com/theredstonee) |
 | Approvers | [theredstonee](https://github.com/theredstonee) |
 
-**Privacy:** this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. See [PRIVACY.md](PRIVACY.md) for the services the launcher contacts and when.
+**Privacy:** this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. The optional TRS services (capes, friends, online status) only connect after you agree in the launcher. See [PRIVACY.md](PRIVACY.md) ([Deutsch](PRIVACY.de.md) · [Español](PRIVACY.es.md)) for the services the launcher contacts and when.
 
 ## Acknowledgements
 
