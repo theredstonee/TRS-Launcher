@@ -22,6 +22,8 @@ export const icons = {
   server: 'M4 5h16v5H4zM4 14h16v5H4zM7.5 7.5h.01M7.5 16.5h.01',
   screenshots: 'M4 8h3l1.5-2h7L17 8h3v11H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
   skins: 'M8 4h8l4 3-2.5 3.5L16 9v11H8V9l-1.5 1.5L4 7z',
+  friends: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14.5a6 6 0 0 1 4 6.5',
+  admin: 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6zM9 12l2 2 4-4',
   search: 'M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM20 20l-4-4',
   plus: 'M12 5v14M5 12h14',
   play: 'M8 5.5v13l11-6.5z',

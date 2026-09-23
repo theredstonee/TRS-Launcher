@@ -10,6 +10,8 @@ interface NavItem {
   icon: IconName
   /** Seiten, die ein anderer Bereich baut – fehlen sie noch, bleibt der Punkt ruhig stehen. */
   optional?: boolean
+  /** Nur für Admins der TRS-Dienste. */
+  admin?: boolean
 }
 
 const items: NavItem[] = [
@@ -19,6 +21,8 @@ const items: NavItem[] = [
   { to: '/servers', label: 'Server', icon: 'server' },
   { to: '/screenshots', label: 'Screenshots', icon: 'screenshots', optional: true },
   { to: '/skins', label: 'Skins', icon: 'skins', optional: true },
+  { to: '/friends', label: 'Freunde', icon: 'friends' },
+  { to: '/admin', label: 'Verwaltung', icon: 'admin', admin: true },
 ]
 
 const route = useRoute()
@@ -28,6 +32,7 @@ const games = useGamesStore()
 const instances = useInstancesStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
+const trs = useTrsStore()
 
 const uiSettings = computed(() => settings.current?.ui)
 const expanded = computed(() => ui.navExpanded)
@@ -40,7 +45,9 @@ const quick = computed(() => {
 
 // Seiten anderer Bereiche erscheinen erst, wenn es sie wirklich gibt.
 const visibleItems = computed(() =>
-  items.filter((item) => !item.optional || router.resolve(item.to).matched.length > 0),
+  items.filter(
+    (item) => (!item.optional || router.resolve(item.to).matched.length > 0) && (!item.admin || trs.isAdmin),
+  ),
 )
 
 function isActive(to: string) {
@@ -87,6 +94,14 @@ function play(id: string) {
         :class="expanded ? 'ml-auto' : 'absolute top-1.5 right-1.5'"
         :title="`${games.runningCount} laufend`"
       />
+      <span
+        v-if="item.to === '/friends' && trs.incomingCount"
+        class="grid min-w-4 place-items-center rounded-full bg-redstone-500 px-1 text-[10px] leading-4 font-bold text-white"
+        :class="expanded ? 'ml-auto' : 'absolute top-0.5 right-0.5'"
+        :title="`${trs.incomingCount} offene Freundschaftsanfragen`"
+      >
+        {{ trs.incomingCount }}
+      </span>
       <span v-if="!expanded" class="tip" role="tooltip">{{ item.label }}</span>
     </NuxtLink>
 

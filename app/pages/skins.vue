@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Cape, LibrarySkin, SkinProfile, SkinSyncStatus, SkinVariant } from '~/types'
+import type { TrsCape } from '~/utils/trs'
 import {
   baseDraft,
   draftChanges,
@@ -96,7 +97,11 @@ function defaultSkinTexture(): string | null {
   return defaultTexture
 }
 const previewVariant = computed<SkinVariant>(() => (draft.value.skin.source === 'default' ? 'classic' : draft.value.variant))
-const previewCape = computed(() => profile.value?.capes.find((c) => c.id === draft.value.cape)?.texture ?? null)
+/** Angeprobter TRS-Umhang (ersetzt in der Vorschau den Mojang-Umhang, ändert aber nichts am Konto). */
+const trsPreview = ref<TrsCape | null>(null)
+const previewCape = computed(
+  () => trsPreview.value?.texture ?? profile.value?.capes.find((c) => c.id === draft.value.cape)?.texture ?? null,
+)
 
 const changes = computed(() => draftChanges(draft.value, profile.value))
 const working = computed(() => syncBusy(sync.value))
@@ -124,6 +129,7 @@ function selectVariant(variant: SkinVariant) {
   draft.value = { ...draft.value, variant }
 }
 function selectCape(cape: Cape | null) {
+  trsPreview.value = null
   draft.value = { ...draft.value, cape: cape?.id ?? null }
 }
 
@@ -384,12 +390,28 @@ function capeStyle(texture: string, width = 30) {
         <div class="relative rounded-lg bg-gradient-to-b from-base-850 to-base-950" title="Ziehen zum Drehen · Mausrad zum Zoomen">
           <div v-if="loading" class="skeleton h-[280px] w-full rounded-lg" />
           <ClientOnly v-else>
-            <SkinViewer :skin="previewSkin" :cape="previewCape" :variant="previewVariant" :animation="animation" :height="280" />
+            <SkinViewer
+              :skin="previewSkin"
+              :cape="previewCape"
+              :variant="previewVariant"
+              :animation="animation"
+              :height="280"
+              :cape-frames="trsPreview?.frames ?? 1"
+              :cape-frame-time="trsPreview?.frameTimeMs ?? null"
+            />
           </ClientOnly>
           <span v-if="unapplied" class="badge absolute top-2 left-2 bg-warn/15 text-warn" data-testid="skin-unapplied">
             <span class="size-1.5 rounded-full bg-warn" />
             Nicht angewendet
           </span>
+          <button
+            v-if="trsPreview"
+            class="badge absolute top-2 right-2 bg-redstone-900/70 text-redstone-300 hover:text-base-50"
+            title="TRS-Vorschau beenden"
+            @click="trsPreview = null"
+          >
+            TRS: {{ trsPreview.name }} ✕
+          </button>
           <div class="absolute inset-x-2 bottom-2 flex items-center gap-1 rounded-md bg-base-950/70 p-0.5 text-[11px] backdrop-blur-sm">
             <button
               v-for="[key, label] in ([['walk', 'Laufen'], ['idle', 'Ruhig'], ['none', 'Stehen']] as const)"
@@ -549,7 +571,7 @@ function capeStyle(texture: string, width = 30) {
 
         <!-- Umhänge -------------------------------------------------------------- -->
         <section v-if="profile">
-          <h2 class="section-title mb-2">Umhänge</h2>
+          <h2 class="section-title mb-2">Mojang-Umhänge</h2>
           <ul v-if="profile.capes.length" class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3">
             <li>
               <button
@@ -580,6 +602,9 @@ function capeStyle(texture: string, width = 30) {
             Für dieses Konto gibt es keine Umhänge. Die gibt es nur von Mojang – etwa den Migrator-Umhang.
           </p>
         </section>
+
+        <!-- TRS-Umhänge (eigener Dienst, getrennt von Mojang) ------------------------ -->
+        <TrsCapes :preview-id="trsPreview?.id ?? null" @preview="trsPreview = $event" />
       </div>
     </div>
 

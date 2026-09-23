@@ -11,8 +11,14 @@ const props = withDefaults(
     variant?: SkinVariant
     animation?: 'walk' | 'idle' | 'none'
     height?: number
+    /**
+     * Animierter Umhang (TRS): Die Textur ist ein senkrechter Streifen mit
+     * `frames` Bildern; gezeigt wird Frame floor(jetzt / frameTimeMs) % frames.
+     */
+    capeFrames?: number
+    capeFrameTime?: number | null
   }>(),
-  { cape: null, variant: 'classic', animation: 'walk', height: 340 },
+  { cape: null, variant: 'classic', animation: 'walk', height: 340, capeFrames: 1, capeFrameTime: null },
 )
 
 type Viewer = import('skinview3d').SkinViewer
@@ -21,6 +27,8 @@ const box = ref<HTMLElement | null>(null)
 const failed = ref(false)
 let viewer: Viewer | null = null
 let observer: ResizeObserver | null = null
+let capeTimer: ReturnType<typeof setInterval> | null = null
+let capeToken = 0
 
 /** Armbreite: `slim` = Alex, `default` = Steve. */
 const model = computed<'slim' | 'default'>(() => (props.variant === 'slim' ? 'slim' : 'default'))
@@ -59,11 +67,62 @@ async function build() {
   }
 }
 
+function stopCapeAnimation() {
+  if (capeTimer) clearInterval(capeTimer)
+  capeTimer = null
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('Umhang-Textur konnte nicht geladen werden'))
+    img.src = src
+  })
+}
+
+/** Streifen-Textur: aktuellen Frame auf eine eigene Leinwand kopieren und als Umhang setzen. */
+async function applyAnimatedCape(src: string, frames: number, frameTime: number) {
+  const token = ++capeToken
+  const img = await loadImage(src)
+  if (token !== capeToken || !viewer) return
+  const width = img.naturalWidth
+  const frameHeight = Math.floor(img.naturalHeight / frames)
+  if (!width || !frameHeight) return
+  const frame = document.createElement('canvas')
+  frame.width = width
+  frame.height = frameHeight
+  const ctx = frame.getContext('2d')
+  if (!ctx) return
+  let shown = -1
+  const draw = () => {
+    if (!viewer || token !== capeToken) return
+    const f = trsFrameIndex(Date.now(), frames, frameTime)
+    if (f === shown) return
+    shown = f
+    ctx.clearRect(0, 0, width, frameHeight)
+    ctx.drawImage(img, 0, f * frameHeight, width, frameHeight, 0, 0, width, frameHeight)
+    void viewer.loadCape(frame)
+  }
+  draw()
+  // Kürzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
+  capeTimer = setInterval(draw, Math.max(20, Math.min(frameTime / 2, 250)))
+}
+
 async function applySkin() {
   if (!viewer) return
   if (props.skin) await viewer.loadSkin(props.skin, { model: model.value })
   else viewer.resetSkin()
-  if (props.cape) await viewer.loadCape(props.cape)
+  stopCapeAnimation()
+  capeToken++
+  if (props.cape && props.capeFrames > 1 && props.capeFrameTime) {
+    try {
+      await applyAnimatedCape(props.cape, props.capeFrames, props.capeFrameTime)
+    } catch (e) {
+      console.warn(e)
+      viewer.resetCape()
+    }
+  } else if (props.cape) await viewer.loadCape(props.cape)
   else viewer.resetCape()
 }
 
@@ -82,12 +141,14 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  stopCapeAnimation()
+  capeToken++
   observer?.disconnect()
   viewer?.dispose()
   viewer = null
 })
 
-watch(() => [props.skin, props.cape, props.variant], () => void applySkin())
+watch(() => [props.skin, props.cape, props.variant, props.capeFrames, props.capeFrameTime], () => void applySkin())
 watch(() => props.animation, (kind) => void setAnimation(kind))
 watch(() => props.height, resize)
 </script>

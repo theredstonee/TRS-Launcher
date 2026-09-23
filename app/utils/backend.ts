@@ -1,4 +1,25 @@
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
+import { z } from 'zod'
+import {
+  trsAdminCapeSchema,
+  trsAdminStatsSchema,
+  trsAdminUserSchema,
+  trsBlockedSchema,
+  trsCapeSchema,
+  trsCodeSchema,
+  trsFriendRequestResultSchema,
+  trsFriendSchema,
+  trsFriendsSchema,
+  trsMeSchema,
+  trsParse,
+  trsPlayerCapeSchema,
+  trsRedeemSchema,
+  trsStatusSchema,
+  trsUserRefSchema,
+  type TrsPrivacy,
+  type TrsReportReason,
+  type TrsReviewList,
+} from './trs'
 import type {
   Account,
   BulkAction,
@@ -60,6 +81,8 @@ export class BackendError extends Error {
   constructor(
     public readonly kind: string,
     message: string,
+    /** Genauer Fehlercode (z. B. von der TRS API: `cape_locked`). */
+    public readonly code?: string,
   ) {
     super(message)
     this.name = 'BackendError'
@@ -77,9 +100,14 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
   try {
     return await invoke<T>(command, args)
   } catch (e) {
-    if (isCommandError(e)) throw new BackendError(e.kind, e.message)
+    if (isCommandError(e)) throw new BackendError(e.kind, e.message, typeof e.code === 'string' ? e.code : undefined)
     throw new BackendError('unknown', 'Ein unerwarteter Fehler ist aufgetreten.')
   }
+}
+
+/** Wie `call`, prüft die Antwort aber mit einem zod-Schema (TRS-Daten). */
+async function checked<S extends z.ZodType>(schema: S, command: string, args?: Record<string, unknown>): Promise<z.output<S>> {
+  return trsParse(schema, await call<unknown>(command, args))
 }
 
 function channel<T>(onMessage: (message: T) => void): Channel<T> {
@@ -145,13 +173,15 @@ export const backend = {
   /**
    * Löst erst auf, wenn das Spiel gestartet ist; Fortschritt kommt über `onProgress`.
    * `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich dann direkt.
+   * `joinAddress`: freie Adresse (z. B. der geteilte Server eines Freundes); prüft der Kern.
    */
   launchInstance: (
     id: string,
     joinServer: string | null,
     onProgress: (p: StageProgress) => void,
     taskId: string | null = null,
-  ) => call<number>('launch_instance', { id, joinServer, onProgress: channel(onProgress), taskId }),
+    joinAddress: string | null = null,
+  ) => call<number>('launch_instance', { id, joinServer, joinAddress, onProgress: channel(onProgress), taskId }),
   stopInstance: (id: string) => call<boolean>('stop_instance', { id }),
   runningGames: () => call<RunningGame[]>('running_games'),
   getGameLogs: (id: string) => call<LogLine[]>('get_game_logs', { id }),
@@ -295,6 +325,51 @@ export const backend = {
     loader: Loader | null,
     onProgress: (p: ImportProgress) => void,
   ) => call<Instance>('import_instance', { id, gameVersion, loader, onProgress: channel(onProgress) }),
+
+  /** TRS-Dienste (Umhänge, Freunde, Verwaltung). Der Token bleibt im Kern. */
+  trs: {
+    status: () => checked(trsStatusSchema, 'trs_status'),
+    setConsent: (accepted: boolean) => checked(trsStatusSchema, 'trs_set_consent', { accepted }),
+    me: () => checked(trsMeSchema, 'trs_me'),
+    updateMe: (patch: Partial<TrsPrivacy>) => checked(trsMeSchema, 'trs_update_me', { patch }),
+    /** Löscht alle TRS-Daten des aktiven Accounts und schaltet die Dienste aus. */
+    deleteMe: () => checked(trsStatusSchema, 'trs_delete_me'),
+    capes: () => checked(z.array(trsCapeSchema), 'trs_capes'),
+    setCape: (capeId: string | null) => checked(z.string().nullable(), 'trs_set_cape', { capeId }),
+    /** Öffnet den Dateidialog im Kern; `null` = abgebrochen. */
+    uploadCape: (name: string | null) => checked(trsCapeSchema.nullable(), 'trs_upload_cape', { name }),
+    deleteCape: (id: string) => call<void>('trs_delete_cape', { id }),
+    reportCape: (id: string, reason: TrsReportReason, note: string | null) =>
+      call<void>('trs_report_cape', { id, reason, note }),
+    redeem: (code: string) => checked(trsRedeemSchema, 'trs_redeem', { code }),
+    playerCapes: (uuids: string[]) => checked(z.array(trsPlayerCapeSchema), 'trs_player_capes', { uuids }),
+    friends: () => checked(trsFriendsSchema, 'trs_friends'),
+    blocks: () => checked(z.array(trsBlockedSchema), 'trs_blocks'),
+    friendRequest: (target: string) => checked(trsFriendRequestResultSchema, 'trs_friend_request', { target }),
+    acceptFriend: (uuid: string) => checked(trsFriendSchema, 'trs_friend_accept', { uuid }),
+    declineFriend: (uuid: string) => call<void>('trs_friend_decline', { uuid }),
+    cancelRequest: (uuid: string) => call<void>('trs_friend_cancel', { uuid }),
+    removeFriend: (uuid: string) => call<void>('trs_friend_remove', { uuid }),
+    block: (target: string) => checked(trsUserRefSchema, 'trs_block', { target }),
+    unblock: (uuid: string) => call<void>('trs_unblock', { uuid }),
+
+    adminStats: () => checked(trsAdminStatsSchema, 'trs_admin_stats'),
+    adminCapes: (list: TrsReviewList) => checked(z.array(trsAdminCapeSchema), 'trs_admin_capes', { list }),
+    adminApprove: (id: string) => call<void>('trs_admin_approve', { id }),
+    adminReject: (id: string, reason: string | null) => call<void>('trs_admin_reject', { id, reason }),
+    adminDeleteCape: (id: string) => call<void>('trs_admin_delete_cape', { id }),
+    adminCodes: () => checked(z.array(trsCodeSchema), 'trs_admin_codes'),
+    /** Die Klartext-Codes gibt es nur in dieser Antwort. */
+    adminCreateCodes: (request: { capeId: string; maxUses: number; count: number; expiresAt?: string; note?: string }) =>
+      checked(z.array(trsCodeSchema), 'trs_admin_create_codes', { request }),
+    adminRevokeCode: (id: number) => call<void>('trs_admin_revoke_code', { id }),
+    adminUser: (query: string) => checked(trsAdminUserSchema, 'trs_admin_user', { query }),
+    /** `true` = hatte den Umhang schon. */
+    adminGrant: (player: string, capeId: string) => checked(z.boolean(), 'trs_admin_grant', { player, capeId }),
+    adminRevokeGrant: (uuid: string, capeId: string) => call<void>('trs_admin_revoke_grant', { uuid, capeId }),
+    adminBan: (player: string, reason: string | null) => checked(trsAdminUserSchema, 'trs_admin_ban', { player, reason }),
+    adminUnban: (uuid: string) => call<void>('trs_admin_unban', { uuid }),
+  },
 }
 
 export function isCancelled(e: unknown): boolean {

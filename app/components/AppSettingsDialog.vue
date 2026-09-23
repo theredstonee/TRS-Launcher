@@ -404,6 +404,7 @@ async function allowFirewall() {
       <SettingRow title="Telemetrie" description="Der TRS Launcher sammelt keine Nutzungs- oder Absturzdaten. Es gibt nichts einzuschalten.">
         <ToggleSwitch :model-value="false" label="Telemetrie" disabled />
       </SettingRow>
+      <TrsPrivacySettings />
     </div>
 
     <!-- Standard-Einstellungen ------------------------------------------------------ -->

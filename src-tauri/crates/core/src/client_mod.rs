@@ -670,9 +670,15 @@ mod tests {
         sync(&http, &paths, Some(&res), None, &on, &ui, true).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v1");
         assert!(theme_path(&paths, "test").is_file(), "Farben des Launchers liegen in der Instanz");
+        let trs: serde_json::Value =
+            serde_json::from_slice(&tokio::fs::read(trs_api_path(&paths, "test")).await.unwrap()).unwrap();
+        assert_eq!(trs, serde_json::json!({ "version": 1, "enabled": true }), "Einwilligung für den Mod, kein Token");
 
         tokio::fs::write(res.join("trsclient-fabric-1.21.jar"), b"v2").await.unwrap();
-        sync(&http, &paths, Some(&res), None, &on, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &on, &ui, false).await.unwrap();
+        let trs: serde_json::Value =
+            serde_json::from_slice(&tokio::fs::read(trs_api_path(&paths, "test")).await.unwrap()).unwrap();
+        assert_eq!(trs["enabled"], false, "ohne Einwilligung darf der Mod die API nicht nutzen");
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v2");
 
         // Versionswechsel auf eine Version ohne Build: alte Kopie verschwindet.
@@ -685,6 +691,7 @@ mod tests {
         sync(&http, &paths, Some(&res), None, &off, &ui, true).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
         assert!(!theme_path(&paths, "test").exists(), "abgeschaltet: auch die Farbdatei ist weg");
+        assert!(!trs_api_path(&paths, "test").exists());
     }
 
     // --- Update-Kanal ---------------------------------------------------------

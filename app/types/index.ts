@@ -205,6 +205,7 @@ export interface ClientModStatus {
 export interface CommandError {
   kind: string
   message: string
+  code?: string
 }
 
 export interface Account {
