@@ -73,9 +73,10 @@ export const useGamesStore = defineStore('games', () => {
 
   /**
    * `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich nach dem Start direkt.
+   * `joinAddress`: freie Adresse (Server eines Freundes); prüft der Kern.
    * Die Vorbereitung läuft als Aufgabe (Titelleiste: Fortschritt, Pause, Abbrechen).
    */
-  async function launch(id: string, joinServer: string | null = null) {
+  async function launch(id: string, joinServer: string | null = null, joinAddress: string | null = null) {
     const s = state(id)
     if (s.phase !== 'idle') return
     s.phase = 'preparing'
@@ -108,6 +109,7 @@ export const useGamesStore = defineStore('games', () => {
             if (p.stage === 'starting') ctx.update({ cancellable: false, pausable: false })
           },
           ctx.taskId,
+          joinAddress,
         ),
     )
     s.progress = null

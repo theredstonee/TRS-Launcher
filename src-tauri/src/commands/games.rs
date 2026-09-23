@@ -16,13 +16,20 @@ pub async fn launch_instance(
     launcher: State<'_, LauncherState>,
     id: String,
     join_server: Option<String>,
+    join_address: Option<String>,
     on_progress: Channel<StageProgress>,
     task_id: Option<String>,
 ) -> CommandResult<u32> {
+    // Eine freie Adresse (Server eines Freundes) prüft der Kern wie jede Server-Adresse.
+    let join = match (join_server.as_deref(), join_address.as_deref()) {
+        (Some(id), _) => Some(trs_core::Join::Server(id)),
+        (None, Some(address)) => Some(trs_core::Join::Address(address)),
+        (None, None) => None,
+    };
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };
-    let work = launcher.launch(&id, join_server.as_deref(), &report);
+    let work = launcher.launch(&id, join, &report);
     let pid = tracked(&app, task_id, work).await?;
 
     if launcher.settings().await.close_on_launch

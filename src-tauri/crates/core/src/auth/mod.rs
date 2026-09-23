@@ -1,6 +1,6 @@
 //! Account-Verwaltung: mehrere Microsoft-Accounts, einer ist aktiv.
 
-mod crypto;
+pub(crate) mod crypto;
 pub mod microsoft;
 
 use std::sync::Arc;
@@ -218,13 +218,27 @@ impl AccountStore {
     /// `Ok(None)`, wenn niemand angemeldet ist.
     pub async fn active_session(&self) -> Result<Option<Session>> {
         let file = self.read().await?;
-        let Some(account) = file.active.as_ref().and_then(|id| file.accounts.iter().find(|a| &a.id == id))
-        else {
+        let Some(id) = file.active.clone() else { return Ok(None) };
+        self.session_for(&id, false).await
+    }
+
+    /// ID des aktiven Accounts (ohne Tokens anzufassen).
+    pub async fn active_id(&self) -> Result<Option<String>> {
+        let file = self.read().await?;
+        Ok(file.active.filter(|id| file.accounts.iter().any(|a| &a.id == id)))
+    }
+
+    /// Spielsitzung für einen bestimmten Account; erneuert abgelaufene Tokens.
+    /// `force_refresh` erneuert auch ein noch gültiges Token (z. B. wenn Mojang
+    /// es abgelehnt hat). `Ok(None)`, wenn es den Account nicht (mehr) gibt.
+    pub async fn session_for(&self, id: &str, force_refresh: bool) -> Result<Option<Session>> {
+        let file = self.read().await?;
+        let Some(account) = file.accounts.iter().find(|a| a.id == id) else {
             return Ok(None);
         };
 
         let fresh = account.access_expires_at - Utc::now() > chrono::Duration::seconds(REFRESH_MARGIN_SECS);
-        if fresh {
+        if fresh && !force_refresh {
             return Ok(Some(Session {
                 player_name: account.name.clone(),
                 uuid: account.id.clone(),

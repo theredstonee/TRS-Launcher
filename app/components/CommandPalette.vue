@@ -65,6 +65,7 @@ const pages = computed<Command[]>(() => {
     { to: '/accounts', label: 'Accounts', icon: 'user', keywords: 'konto anmelden microsoft' },
     { to: '/screenshots', label: 'Screenshots', icon: 'screenshots', keywords: 'bilder galerie' },
     { to: '/skins', label: 'Skins', icon: 'skins', keywords: 'umhang cape' },
+    { to: '/friends', label: 'Freunde', icon: 'friends', keywords: 'freunde friends online anfragen trs' },
   ]
   return list
     .filter((p) => router.resolve(p.to).matched.length > 0)

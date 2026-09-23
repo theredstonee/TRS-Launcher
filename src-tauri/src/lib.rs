@@ -65,6 +65,8 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 updates.check_client_mod_updates().await;
             });
+            // TRS-Präsenz im 60-s-Takt (ohne Einwilligung passiert nichts).
+            tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
             app.manage::<LauncherState>(launcher);
             app.manage(commands::system::DropState::default());
             app.manage(commands::tasks::TaskRegistry::default());
@@ -192,7 +194,51 @@ pub fn run() {
             commands::export::export_candidates,
             commands::export::export_modpack,
             commands::export::import_modpack_file,
+            commands::trs::trs_status,
+            commands::trs::trs_set_consent,
+            commands::trs::trs_me,
+            commands::trs::trs_update_me,
+            commands::trs::trs_delete_me,
+            commands::trs::trs_capes,
+            commands::trs::trs_set_cape,
+            commands::trs::trs_upload_cape,
+            commands::trs::trs_delete_cape,
+            commands::trs::trs_report_cape,
+            commands::trs::trs_redeem,
+            commands::trs::trs_player_capes,
+            commands::trs::trs_friends,
+            commands::trs::trs_blocks,
+            commands::trs::trs_friend_request,
+            commands::trs::trs_friend_accept,
+            commands::trs::trs_friend_decline,
+            commands::trs::trs_friend_cancel,
+            commands::trs::trs_friend_remove,
+            commands::trs::trs_block,
+            commands::trs::trs_unblock,
+            commands::trs::trs_admin_stats,
+            commands::trs::trs_admin_capes,
+            commands::trs::trs_admin_approve,
+            commands::trs::trs_admin_reject,
+            commands::trs::trs_admin_delete_cape,
+            commands::trs::trs_admin_codes,
+            commands::trs::trs_admin_create_codes,
+            commands::trs::trs_admin_revoke_code,
+            commands::trs::trs_admin_user,
+            commands::trs::trs_admin_grant,
+            commands::trs::trs_admin_revoke_grant,
+            commands::trs::trs_admin_ban,
+            commands::trs::trs_admin_unban,
         ])
-        .run(tauri::generate_context!())
-        .expect("TRS Launcher konnte nicht gestartet werden");
+        .build(tauri::generate_context!())
+        .expect("TRS Launcher konnte nicht gestartet werden")
+        .run(|app, event| {
+            // Beim Beenden die TRS-Präsenz zurücknehmen (kurz, offline egal).
+            if let tauri::RunEvent::Exit = event
+                && let Some(launcher) = app.try_state::<LauncherState>()
+            {
+                let launcher = Arc::clone(&launcher);
+                // trs_shutdown hat eigene kurze Timeouts (höchstens ~3 s).
+                tauri::async_runtime::block_on(async move { launcher.trs_shutdown().await });
+            }
+        });
 }

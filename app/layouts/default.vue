@@ -6,6 +6,7 @@ const instances = useInstancesStore()
 const onboarding = useOnboardingStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
+const trs = useTrsStore()
 const router = useRouter()
 
 /** Strg+K öffnet überall die Suche; Strg+N legt eine Instanz an. */
@@ -45,7 +46,27 @@ onMounted(async () => {
   // Erst wenn beides geladen ist, entscheiden, ob der Einrichtungs-Assistent kommt.
   await Promise.allSettled([accounts.load(), instances.load()])
   onboarding.openIfFirstRun()
+  await trs.init()
 })
+
+// TRS-Dienste: nach einem Account-Wechsel neu laden. Noch nicht entschieden?
+// Dann einmal fragen, sobald ein Account da ist (nicht während der Einrichtung).
+watch(
+  () => accounts.active?.id,
+  (id, before) => {
+    if (before !== undefined && id !== before) void trs.init()
+  },
+)
+watch(
+  () => [trs.undecided, accounts.active?.id, onboarding.open] as const,
+  ([undecided, account, onboardingOpen]) => {
+    if (undecided && account && !onboardingOpen && !consentAsked) {
+      consentAsked = true
+      trs.askConsent()
+    }
+  },
+)
+let consentAsked = false
 
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
@@ -78,6 +99,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <CreateInstanceDialog v-if="ui.creating" @close="ui.creating = false" @created="onCreated" />
     <ImportDialog v-if="ui.importing" @close="ui.importing = false" />
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
+    <TrsConsentDialog v-if="trs.consentOpen" />
     <ToastHost />
   </div>
 </template>
