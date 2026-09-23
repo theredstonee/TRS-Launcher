@@ -591,9 +591,11 @@ export function paintGlow(target: CanvasRenderingContext2D, circuit: Circuit, p:
       if (c.bus) g.fillRect(x, y + 1, 4, 2)
       else g.fillRect(x + 1, y + 1, 2, 2)
     } else if (c.kind === 'lamp' && c.on) {
-      g.fillStyle = `rgb(${lamp} / 0.55)`
+      // Anzeige-Lampen stehen dicht an dicht – schwächer, sonst überstrahlen sie alles.
+      const display = c.pattern >= 0
+      g.fillStyle = `rgb(${lamp} / ${display ? 0.22 : 0.55})`
       g.fillRect(x - 2, y - 2, 8, 8)
-      g.fillStyle = `rgb(${lamp} / 0.95)`
+      g.fillStyle = `rgb(${lamp} / ${display ? 0.5 : 0.95})`
       g.fillRect(x, y, 4, 4)
     } else if ((c.kind === 'torch' || c.kind === 'wallTorch' || c.kind === 'source') && c.on) {
       g.fillStyle = `rgb(${glow} / 0.7)`

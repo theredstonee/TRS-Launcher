@@ -117,9 +117,20 @@ export function stencilFor(m: Module, random: () => number): Cell[][] {
 }
 
 /** Eine zufällige Schaltung, die in w × h passt (seltene nur manchmal). */
-export function pickModule(random: () => number, maxW: number, maxH: number, avoid = ''): Module | null {
+export function pickModule(
+  random: () => number,
+  maxW: number,
+  maxH: number,
+  avoid = '',
+  used: ReadonlySet<string> = new Set(),
+): Module | null {
+  // Große Anzeigen (TRS-Schriftzug, Pfeil) höchstens einmal je Szene.
   const fitting = MODULES.filter(
-    (m) => moduleWidth(m) <= maxW && moduleHeight(m) <= maxH && m.name !== avoid && (!m.rare || random() < 0.35),
+    (m) =>
+      moduleWidth(m) <= maxW &&
+      moduleHeight(m) <= maxH &&
+      m.name !== avoid &&
+      (!m.rare || (!used.has(m.name) && random() < 0.35)),
   )
   if (!fitting.length) return null
   return fitting[Math.floor(random() * fitting.length)]!
@@ -206,7 +217,8 @@ function fillBand(circuit: Circuit, random: () => number, bandTop: number, bandB
   let last = ''
   let guard = 0
   while (x < cols && guard++ < 64) {
-    const m = pickModule(random, cols - x, bandHeight, last)
+    const used = new Set((placements.get(circuit) ?? []).map((p) => p.name))
+    const m = pickModule(random, cols - x, bandHeight, last, used)
     if (!m) break
     const y = bandTop + Math.floor(random() * (bandHeight - moduleHeight(m) + 1))
     placeModule(circuit, m, x, y, random)

@@ -235,7 +235,8 @@ function stepRebuild() {
         if (c && c.kind !== 'floor') remove.push(y * circuit.w + x)
       }
     remove.sort(() => chance() - 0.5)
-    const m = pickModule(chance, spot.w, spot.h, spot.name) ?? pickModule(chance, spot.w, spot.h)
+    const used = new Set(list.map((p) => p.name))
+    const m = pickModule(chance, spot.w, spot.h, spot.name, used) ?? pickModule(chance, spot.w, spot.h, '', used)
     const add: { i: number; cell: Cell }[] = []
     if (m) {
       const cells = stencilFor(m, chance)
