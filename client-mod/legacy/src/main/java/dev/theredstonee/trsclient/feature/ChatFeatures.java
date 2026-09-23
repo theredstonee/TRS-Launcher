@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.feature;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.ChatCompat;
 import dev.theredstonee.trsclient.compat.Mc;
@@ -111,11 +113,11 @@ public final class ChatFeatures {
 		if (Mc.player() == null || Mc.screen() != null) return;
 		String text = ChatOut.sanitize(modules.hotkeyTexts[index].get());
 		if (text.isEmpty()) {
-			Mc.actionBar("Text-Hotkey " + (index + 1) + " ist leer");
+			Mc.actionBar(I18n.tr("chat.hotkeyEmpty", index + 1));
 			return;
 		}
 		if (!hotkeys.tryAcquire(System.currentTimeMillis())) {
-			Mc.actionBar("Text-Hotkey: zu schnell hintereinander");
+			Mc.actionBar(I18n.tr("chat.hotkeyTooFast"));
 			return;
 		}
 		Mc.sendChat(text);
@@ -131,7 +133,7 @@ public final class ChatFeatures {
 			String line = ChatCompat.componentAt(rawMouseX, rawMouseY);
 			if (line == null || line.isEmpty()) return false;
 			Mc.setClipboard(line);
-			Mc.actionBar("Zeile kopiert");
+			Mc.actionBar(I18n.tr("chat.lineCopied"));
 			return true;
 		} catch (RuntimeException e) {
 			// Der Chat darf nie am Client scheitern.

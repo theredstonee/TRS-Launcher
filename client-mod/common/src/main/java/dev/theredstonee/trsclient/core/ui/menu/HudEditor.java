@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.ui.menu;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.hud.HudLayout;
 import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudSnap;
@@ -26,7 +27,6 @@ import java.util.List;
  */
 public final class HudEditor extends UiScreen {
 	private static final int PANEL_W = 174;
-	private static final String HINT = "Ziehen · Mausrad: Größe · Rechtsklick: Reset · Shift: frei";
 
 	private final MenuHost host;
 	private final SettingsPanel panel = new SettingsPanel();
@@ -119,13 +119,14 @@ public final class HudEditor extends UiScreen {
 		// Staubleitung unter der Leiste – ein Hinweis, dass hier "Strom" (Bearbeiten) anliegt.
 		c.fill(0, h, width, h + 1, ColorMath.withAlpha(t.dustOn, 160));
 		Redstone.pip(c, 8, 7, 8, 1f);
-		c.text("HUD bearbeiten", 22, 7, t.text, false);
+		String title = I18n.tr("editor.title");
+		c.text(title, 22, 7, t.text, false);
 
 		// Profilwechsel
 		final HudProfiles profiles = host.modules().profiles;
-		String label = "Profil: " + profiles.activeName();
+		String label = I18n.tr("editor.profile", profiles.activeName());
 		int pw = Math.min(150, c.textWidth(label) + 16);
-		int px = 22 + c.textWidth("HUD bearbeiten") + 12;
+		int px = 22 + c.textWidth(title) + 12;
 		boolean pHover = inside(mx, my, px, 3, pw, 16);
 		Paint.button(c, px, 3, pw, 16, label, false, pHover);
 		hits.add(px, 3, pw, 16, new Runnable() {
@@ -137,10 +138,12 @@ public final class HudEditor extends UiScreen {
 			}
 		});
 
-		int doneW = 58;
+		String doneLabel = I18n.tr("common.done");
+		String menuLabel = I18n.tr("editor.menu");
+		int doneW = Math.max(58, c.textWidth(doneLabel) + 16);
 		int doneX = width - doneW - 8;
 		boolean doneHover = inside(mx, my, doneX, 3, doneW, 16);
-		Paint.button(c, doneX, 3, doneW, 16, "Fertig", true, doneHover);
+		Paint.button(c, doneX, 3, doneW, 16, doneLabel, true, doneHover);
 		hits.add(doneX, 3, doneW, 16, new Runnable() {
 			@Override
 			public void run() {
@@ -148,10 +151,10 @@ public final class HudEditor extends UiScreen {
 				requestClose();
 			}
 		});
-		int menuW = 58;
+		int menuW = Math.max(58, c.textWidth(menuLabel) + 16);
 		int menuX = doneX - menuW - 6;
 		boolean menuHover = inside(mx, my, menuX, 3, menuW, 16);
-		Paint.button(c, menuX, 3, menuW, 16, "Menü", false, menuHover);
+		Paint.button(c, menuX, 3, menuW, 16, menuLabel, false, menuHover);
 		hits.add(menuX, 3, menuW, 16, new Runnable() {
 			@Override
 			public void run() {
@@ -166,7 +169,8 @@ public final class HudEditor extends UiScreen {
 	/** Bedienhinweis unten in der Mitte (weicht keinem Knopf der Leiste). */
 	private static void hint(Canvas c, int width, int height) {
 		Theme t = Theme.get();
-		String text = c.textWidth(HINT) + 16 <= width ? HINT : c.clip(HINT, width - 24) + "…";
+		String hint = I18n.tr("editor.hint");
+		String text = c.textWidth(hint) + 16 <= width ? hint : c.clip(hint, width - 24) + "…";
 		int tw = c.textWidth(text);
 		int x = (width - tw) / 2 - 7;
 		int y = height - 20;
@@ -207,7 +211,7 @@ public final class HudEditor extends UiScreen {
 		ry = panel.draw(c, hits, settings, x + 8, ry, PANEL_W - 16, mx, my);
 
 		boolean resetHover = inside(mx, my, x + 8, ry + 2, PANEL_W - 16, 16);
-		Paint.button(c, x + 8, ry + 2, PANEL_W - 16, 16, "Zurücksetzen", false, resetHover);
+		Paint.button(c, x + 8, ry + 2, PANEL_W - 16, 16, I18n.tr("common.reset"), false, resetHover);
 		final HudModule resetTarget = module;
 		hits.add(x + 8, ry + 2, PANEL_W - 16, 16, new Runnable() {
 			@Override

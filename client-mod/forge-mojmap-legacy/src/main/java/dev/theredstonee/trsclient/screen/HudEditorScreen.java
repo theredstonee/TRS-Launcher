@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.core.ui.menu.HudEditor;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.gui.screens.Screen;
@@ -16,7 +18,7 @@ public final class HudEditorScreen extends TrsUiScreen {
 	}
 
 	private HudEditorScreen(HudEditor editor) {
-		super("HUD bearbeiten", editor);
+		super(I18n.tr("editor.title"), editor);
 		this.editor = editor;
 	}
 

@@ -133,7 +133,7 @@ public final class WaypointStore {
 				if (list.get(i).death) list.remove(i);
 			}
 		}
-		Waypoint death = new Waypoint("Tod", x, y, z, dimension, color);
+		Waypoint death = new Waypoint(dev.theredstonee.trsclient.core.i18n.I18n.tr("waypoint.deathName"), x, y, z, dimension, color);
 		death.death = true;
 		return add(worldKey, death);
 	}

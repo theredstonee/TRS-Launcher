@@ -41,6 +41,7 @@ tasks.withType(JavaCompile).configureEach {
 // Die versionsunabhängige Logik wird mit dem Java-Level DIESER Version mitkompiliert
 // (1.14–1.16 laufen auf Java 8!) und landet direkt in der Mod-JAR – common ist deshalb reines Java 8.
 sourceSets.main.java.srcDir(rootProject.file('common/src/main/java'))
+sourceSets.main.resources.srcDir(rootProject.file('common/src/main/resources'))
 
 loom {
 	runs {

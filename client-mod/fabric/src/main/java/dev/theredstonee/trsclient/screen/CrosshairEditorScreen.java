@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.core.module.Module;
@@ -17,7 +19,7 @@ import net.minecraft.network.chat.Component;
  * Rechtsklick auf eine Auswahl blättert rückwärts.
  */
 public final class CrosshairEditorScreen extends TrsScreen {
-	private static final Component TITLE = Mc.text("Fadenkreuz bearbeiten").withStyle(ChatFormatting.BOLD);
+	private final Component TITLE = Mc.text(I18n.tr("crosshairEditor.title")).withStyle(ChatFormatting.BOLD);
 	private static final int PREVIEW_SCALE = 4;
 
 	private final Screen parent;
@@ -26,7 +28,7 @@ public final class CrosshairEditorScreen extends TrsScreen {
 	private final Hotspots hot = new Hotspots();
 
 	public CrosshairEditorScreen(Screen parent) {
-		super(Mc.text("Fadenkreuz bearbeiten"));
+		super(Mc.text(I18n.tr("crosshairEditor.title")));
 		this.parent = parent;
 	}
 
@@ -58,7 +60,7 @@ public final class CrosshairEditorScreen extends TrsScreen {
 		drawScaled(g, prevX + prevW / 2, prevY + prevH / 4, PREVIEW_SCALE);
 		drawScaled(g, prevX + prevW / 2, prevY + prevH * 3 / 4, PREVIEW_SCALE);
 		g.noScissor();
-		g.text(font, "Vorschau ×" + PREVIEW_SCALE, prevX + 3, prevY + prevH - 10, 0xFFFFFFFF, true);
+		g.text(font, I18n.tr("crosshairEditor.preview", PREVIEW_SCALE), prevX + 3, prevY + prevH - 10, 0xFFFFFFFF, true);
 
 		// Einstellungen
 		int sx = prevX + prevW + 12;
@@ -66,7 +68,7 @@ public final class CrosshairEditorScreen extends TrsScreen {
 		SettingRows.draw(g, font, module.settings(), sx, prevY, sw, py + ph - 26, mouseX, mouseY, hot);
 
 		int by = py + ph - 22;
-		String reset = "Zurücksetzen";
+		String reset = I18n.tr("common.reset");
 		int rw = font.width(reset) + 10;
 		Brand.button(g, font, sx, by, rw, 14, reset, false, inside(mouseX, mouseY, sx, by, rw, 14));
 		hot.add(sx, by, rw, 14, () -> {
@@ -76,7 +78,7 @@ public final class CrosshairEditorScreen extends TrsScreen {
 		});
 		int dw = 50;
 		int dx = px + pw - 10 - dw;
-		Brand.button(g, font, dx, by, dw, 14, "Fertig", true, inside(mouseX, mouseY, dx, by, dw, 14));
+		Brand.button(g, font, dx, by, dw, 14, I18n.tr("common.done"), true, inside(mouseX, mouseY, dx, by, dw, 14));
 		hot.add(dx, by, dw, 14, this::onClose);
 	}
 

@@ -190,6 +190,7 @@ tasks.withType(JavaCompile).configureEach {
 // (1.20.2–1.20.4 laufen auf Java 17) und landet direkt in der Mod-JAR. Ihre Tests laufen mit.
 sourceSets {
 	main.java.srcDir(rootProject.file('../common/src/main/java'))
+	main.resources.srcDir(rootProject.file('../common/src/main/resources'))
 	test.java.srcDir(rootProject.file('../common/src/test/java'))
 }
 

@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.core.config.ConfigStore;
 import dev.theredstonee.trsclient.core.input.ClickCounter;
 import dev.theredstonee.trsclient.core.module.TrsModules;
@@ -109,6 +111,7 @@ public final class TrsClient {
 				.map(c -> c.getModInfo().getVersion().toString()).orElse("?");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(FMLPaths.CONFIGDIR.get());
+		dev.theredstonee.trsclient.core.i18n.I18n.init(FMLPaths.CONFIGDIR.get());
 		client.config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = client.config.load(client.modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -142,7 +145,7 @@ public final class TrsClient {
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.isPressed()) {
 			String name = modules.profiles.cycle();
-			if (mc.ingameGUI != null) mc.ingameGUI.setOverlayMessage("HUD-Profil: " + name, false);
+			if (mc.ingameGUI != null) mc.ingameGUI.setOverlayMessage(I18n.tr("toast.hudProfile", name), false);
 			saveConfig();
 		}
 		while (TrsKeys.menu.isPressed()) {
@@ -151,7 +154,7 @@ public final class TrsClient {
 		while (TrsKeys.fullbright.isPressed()) {
 			modules.fullbright.toggle();
 			if (mc.ingameGUI != null) {
-				mc.ingameGUI.setOverlayMessage("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus"), false);
+				mc.ingameGUI.setOverlayMessage(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")), false);
 			}
 			saveConfig();
 		}

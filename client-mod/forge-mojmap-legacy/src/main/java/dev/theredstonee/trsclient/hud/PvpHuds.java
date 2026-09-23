@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.hud;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.TrsModules;
@@ -51,8 +53,8 @@ public final class PvpHuds {
 			int count = combo.combo();
 			if (preview && count == 0) count = 3;
 			if (count <= 0) return;
-			String text = count + "er Combo";
-			if (modules.comboBest.get() && combo.best() > 0) text += "  (best " + combo.best() + ")";
+			String text = I18n.tr("hud.combo", count);
+			if (modules.comboBest.get() && combo.best() > 0) text += "  " + I18n.tr("hud.comboBest", combo.best());
 			line(text);
 		}
 	}

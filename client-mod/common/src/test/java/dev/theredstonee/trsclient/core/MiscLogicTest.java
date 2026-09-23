@@ -110,6 +110,6 @@ class MiscLogicTest {
 		assertFalse(m.freelook.isEnabled(), "Freelook ist standardmäßig aus (auf manchen Servern verboten)");
 		assertTrue(m.titleScreen.isEnabled());
 		assertFalse(m.crosshair.isEnabled());
-		assertTrue(m.freelook.description().contains("Server"));
+		assertTrue(m.freelook.description().toLowerCase(java.util.Locale.ROOT).contains("server"));
 	}
 }

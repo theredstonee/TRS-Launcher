@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.ColorSetting;
@@ -26,7 +28,7 @@ public final class WaypointEditScreen extends TrsScreen {
 	private int color;
 
 	public WaypointEditScreen(Screen parent, Waypoint editing) {
-		super(Mc.text(editing == null ? "Wegpunkt anlegen" : "Wegpunkt bearbeiten"));
+		super(Mc.text(editing == null ? I18n.tr("waypoint.create") : I18n.tr("waypoint.edit")));
 		this.parent = parent;
 		this.editing = editing;
 		this.name = new TextField(editing == null ? defaultName() : editing.name, 32);
@@ -34,7 +36,7 @@ public final class WaypointEditScreen extends TrsScreen {
 	}
 
 	private static String defaultName() {
-		return "Punkt " + (TrsClient.get().waypoints().all().size() + 1);
+		return I18n.tr("waypoint.suggest", TrsClient.get().waypoints().all().size() + 1);
 	}
 
 	@Override
@@ -45,12 +47,12 @@ public final class WaypointEditScreen extends TrsScreen {
 		int y = height / 2 - 40;
 		g.fill(x - 10, y - 10, x + w + 10, y + 108, Brand.BG);
 		Brand.outline(g, x - 11, y - 11, w + 22, 120, Brand.BORDER);
-		g.text(font, editing == null ? "Wegpunkt anlegen" : "Wegpunkt bearbeiten", x, y, Brand.TEXT, false);
+		g.text(font, editing == null ? I18n.tr("waypoint.create") : I18n.tr("waypoint.edit"), x, y, Brand.TEXT, false);
 
-		g.text(font, "Name", x, y + 16, Brand.TEXT_DIM, false);
-		name.draw(g, font, x, y + 26, w, 18, "Name des Wegpunkts");
+		g.text(font, I18n.tr("waypoint.name"), x, y + 16, Brand.TEXT_DIM, false);
+		name.draw(g, font, x, y + 26, w, 18, I18n.tr("waypoint.namePlaceholder"));
 
-		g.text(font, "Farbe", x, y + 50, Brand.TEXT_DIM, false);
+		g.text(font, I18n.tr("waypoint.color"), x, y + 50, Brand.TEXT_DIM, false);
 		int swatch = 16;
 		for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
 			int cx = x + i * (swatch + 4);
@@ -62,12 +64,12 @@ public final class WaypointEditScreen extends TrsScreen {
 		}
 
 		String position = editing == null ? playerPosition() : (editing.x + " / " + editing.y + " / " + editing.z);
-		g.text(font, "Position: " + position, x, y + 82, Brand.TEXT_DIM, false);
+		g.text(font, I18n.tr("waypoint.position", position), x, y + 82, Brand.TEXT_DIM, false);
 
 		int by = y + 92;
 		int bw = 76;
-		button(g, mouseX, mouseY, x, by, bw, 16, "Abbrechen", false, this::onClose);
-		button(g, mouseX, mouseY, x + w - bw, by, bw, 16, editing == null ? "Anlegen" : "Speichern", true, this::apply);
+		button(g, mouseX, mouseY, x, by, bw, 16, I18n.tr("common.cancel"), false, this::onClose);
+		button(g, mouseX, mouseY, x + w - bw, by, bw, 16, editing == null ? I18n.tr("common.create") : I18n.tr("common.save"), true, this::apply);
 	}
 
 	private String playerPosition() {
@@ -84,10 +86,10 @@ public final class WaypointEditScreen extends TrsScreen {
 	private void apply() {
 		String text = name.value().trim();
 		if (editing == null) {
-			TrsClient.get().waypoints().create(text.isEmpty() ? "Wegpunkt" : text, color);
-			Mc.actionBar(Mc.text("Wegpunkt angelegt"));
+			TrsClient.get().waypoints().create(text.isEmpty() ? dev.theredstonee.trsclient.core.waypoint.Waypoint.defaultName() : text, color);
+			Mc.actionBar(Mc.text(I18n.tr("waypoint.created")));
 		} else {
-			editing.name = text.isEmpty() ? "Wegpunkt" : text;
+			editing.name = text.isEmpty() ? dev.theredstonee.trsclient.core.waypoint.Waypoint.defaultName() : text;
 			editing.color = color;
 			TrsClient.get().waypoints().save();
 		}

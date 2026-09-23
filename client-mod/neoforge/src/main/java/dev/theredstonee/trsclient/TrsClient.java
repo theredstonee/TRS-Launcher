@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.config.ConfigStore;
@@ -97,6 +99,7 @@ public final class TrsClient {
 		instance = this;
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(FMLPaths.CONFIGDIR.get());
+		dev.theredstonee.trsclient.core.i18n.I18n.init(FMLPaths.CONFIGDIR.get());
 		config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -207,7 +210,7 @@ public final class TrsClient {
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.consumeClick()) {
 			String name = modules.profiles.cycle();
-			Mc.actionBar(Component.literal("HUD-Profil: " + name));
+			Mc.actionBar(Component.literal(I18n.tr("toast.hudProfile", name)));
 			saveConfig();
 		}
 		while (TrsKeys.menu.consumeClick()) {
@@ -215,7 +218,7 @@ public final class TrsClient {
 		}
 		while (TrsKeys.fullbright.consumeClick()) {
 			modules.fullbright.toggle();
-			Mc.actionBar(Component.literal("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus")));
+			Mc.actionBar(Component.literal(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
 			saveConfig();
 		}
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).

@@ -65,7 +65,8 @@ public final class Projection {
 
 	/** Entfernung als "12 m" bzw. "1,2 km". */
 	public static String distanceLabel(double blocks) {
-		if (blocks >= 1000) return String.format(Locale.GERMANY, "%.1f km", blocks / 1000.0);
+		// Dezimaltrennzeichen der aktiven Sprache ("1.2 km" / "1,2 km").
+		if (blocks >= 1000) return String.format(dev.theredstonee.trsclient.core.i18n.I18n.locale(), "%.1f km", blocks / 1000.0);
 		return String.format(Locale.ROOT, "%d m", Math.round(blocks));
 	}
 }

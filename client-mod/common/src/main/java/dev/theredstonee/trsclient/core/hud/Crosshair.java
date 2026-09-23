@@ -13,12 +13,12 @@ import java.util.List;
 public final class Crosshair {
 	/** Formen des Fadenkreuzes. */
 	public enum Shape implements ChoiceSetting.Option {
-		CROSS("Kreuz"),
-		CROSS_DOT("Kreuz mit Punkt"),
-		DOT("Punkt"),
-		T("T-Form"),
-		CIRCLE("Kreis"),
-		CIRCLE_DOT("Kreis mit Punkt");
+		CROSS("Cross"),
+		CROSS_DOT("Cross with dot"),
+		DOT("Dot"),
+		T("T shape"),
+		CIRCLE("Circle"),
+		CIRCLE_DOT("Circle with dot");
 
 		private final String label;
 

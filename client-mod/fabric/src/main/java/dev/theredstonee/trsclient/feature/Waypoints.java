@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.feature;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.TrsModules;
@@ -64,7 +66,7 @@ public final class Waypoints {
 			store.setDeath(worldKey, floor(Mc.x(player)), floor(Mc.y(player)), floor(Mc.z(player)),
 					Mc.dimensionId(), 0xE0281E);
 			save();
-			Mc.actionBar(Mc.text("Todespunkt gesetzt"));
+			Mc.actionBar(Mc.text(I18n.tr("waypoint.deathSet")));
 		}
 		wasDead = dead;
 	}

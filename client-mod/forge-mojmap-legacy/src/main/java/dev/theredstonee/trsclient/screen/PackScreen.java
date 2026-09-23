@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.pack.PackList;
@@ -21,7 +23,7 @@ import java.util.List;
  * Das Suchfeld ist selbst gezeichnet (EditBox hat sich zwischen 1.14 und 1.19 zu oft geändert).
  */
 public final class PackScreen extends TrsScreen {
-	private static final String TITLE = "§lResourcepacks";
+	private final String TITLE = "§l" + I18n.tr("packs.title");
 	private static final int ROW_H = 24;
 	private static final int MAX_QUERY = 64;
 
@@ -42,7 +44,7 @@ public final class PackScreen extends TrsScreen {
 	private String status = "";
 
 	public PackScreen(Screen parent) {
-		super("Resourcepacks");
+		super(I18n.tr("packs.title"));
 		this.parent = parent;
 	}
 
@@ -94,7 +96,7 @@ public final class PackScreen extends TrsScreen {
 		g.fill(px, py, px + 3, py + 26, Brand.RED);
 		Brand.outline(g, px - 1, py - 1, pw + 2, ph + 2, Brand.BORDER);
 		g.text(font, TITLE, px + 11, py + 9, Brand.TEXT, false);
-		String count = enabledCount() + " aktiv · " + entries.size() + " verfügbar";
+		String count = I18n.tr("packs.count", enabledCount(), entries.size());
 		g.text(font, count, px + pw - 10 - font.width(count), py + 9, Brand.TEXT_DIM, false);
 
 		// Suchfeld
@@ -105,7 +107,7 @@ public final class PackScreen extends TrsScreen {
 		Brand.outline(g, sx, sy, sw, 16, Brand.AMBER);
 		boolean caret = (System.currentTimeMillis() / 500) % 2 == 0;
 		if (query.isEmpty()) {
-			g.text(font, "Packs durchsuchen …", sx + 4, sy + 4, Brand.TEXT_DIM, false);
+			g.text(font, I18n.tr("packs.searchHint"), sx + 4, sy + 4, Brand.TEXT_DIM, false);
 		} else {
 			String shown = query;
 			while (font.width(shown) > sw - 12 && shown.length() > 1) shown = shown.substring(1);
@@ -114,7 +116,7 @@ public final class PackScreen extends TrsScreen {
 
 		// Filter-Knopf rechts neben der Suche
 		int fx = px + pw - 10 - 90;
-		String fl = "Filter: " + filter.label;
+		String fl = I18n.tr("packs.filter", filter.display());
 		Brand.button(g, font, fx, py + 30, 90, 16, fl, false, inside(mouseX, mouseY, fx, py + 30, 90, 16));
 		hot.add(fx, py + 30, 90, 16, () -> {
 			filter = filter.next();
@@ -139,7 +141,7 @@ public final class PackScreen extends TrsScreen {
 		}
 		g.noScissor();
 		if (visible.isEmpty()) {
-			g.centered(font, "Keine Packs gefunden", listX + listW / 2, listY + listH / 2 - 4, Brand.TEXT_DIM);
+			g.centered(font, I18n.tr("packs.empty"), listX + listW / 2, listY + listH / 2 - 4, Brand.TEXT_DIM);
 		}
 		if (maxScroll > 0) {
 			int barH = Math.max(12, listH * listH / (listH + maxScroll));
@@ -150,7 +152,7 @@ public final class PackScreen extends TrsScreen {
 		// Fußzeile
 		int by = py + ph - 24;
 		int ow = 92;
-		Brand.button(g, font, px + 10, by, ow, 16, "Ordner öffnen", false, inside(mouseX, mouseY, px + 10, by, ow, 16));
+		Brand.button(g, font, px + 10, by, ow, 16, I18n.tr("packs.openFolder"), false, inside(mouseX, mouseY, px + 10, by, ow, 16));
 		hot.add(px + 10, by, ow, 16, this::openFolder);
 		if (!status.isEmpty()) g.text(font, status, px + 10 + ow + 8, by + 4, Brand.TEXT_DIM, false);
 		int dw = 76;
@@ -158,9 +160,9 @@ public final class PackScreen extends TrsScreen {
 		int dx = px + pw - 10 - dw;
 		int cx = dx - 6 - cw;
 		boolean changed = !enabledIds.equals(originalIds);
-		Brand.button(g, font, dx, by, dw, 16, changed ? "Übernehmen" : "Fertig", true, inside(mouseX, mouseY, dx, by, dw, 16));
+		Brand.button(g, font, dx, by, dw, 16, changed ? I18n.tr("common.apply") : I18n.tr("common.done"), true, inside(mouseX, mouseY, dx, by, dw, 16));
 		hot.add(dx, by, dw, 16, this::apply);
-		Brand.button(g, font, cx, by, cw, 16, "Abbrechen", false, inside(mouseX, mouseY, cx, by, cw, 16));
+		Brand.button(g, font, cx, by, cw, 16, I18n.tr("common.cancel"), false, inside(mouseX, mouseY, cx, by, cw, 16));
 		hot.add(cx, by, cw, 16, this::onClose);
 	}
 
@@ -170,14 +172,14 @@ public final class PackScreen extends TrsScreen {
 		g.fill(x + 1, y + 1, x + w - 1, y + ROW_H - 1, hover ? Brand.SURFACE_HOVER : Brand.SURFACE);
 		g.fill(x + 1, y + 1, x + 3, y + ROW_H - 1, on ? Brand.AMBER : Brand.OFF);
 		int textRight = x + w - 8 - 26 - (on ? 30 : 0);
-		String title = e.title() + (e.compatible() ? "" : "  (nicht kompatibel)");
+		String title = e.title() + (e.compatible() ? "" : "  " + I18n.tr("packs.incompatible"));
 		g.text(font, Gfx.trim(font, title, textRight - x - 10), x + 8, y + 4, e.compatible() ? Brand.TEXT : 0xFFFF8080, false);
 		g.text(font, Gfx.trim(font, e.description().replace('\n', ' '), textRight - x - 10), x + 8, y + 14, Brand.TEXT_DIM, false);
 
 		int pillX = x + w - 8 - 26;
 		int pillY = y + 7;
 		if (e.required()) {
-			g.text(font, "Pflicht", pillX - 2, pillY + 2, Brand.TEXT_DIM, false);
+			g.text(font, I18n.tr("packs.required"), pillX - 2, pillY + 2, Brand.TEXT_DIM, false);
 		} else {
 			Brand.pill(g, font, pillX, pillY, on, mouseInList && inside(mx, my, pillX, pillY, 26, 11));
 			if (mouseInList) hot.add(pillX, pillY, 26, 11, () -> enabledIds = new ArrayList<>(PackList.toggle(enabledIds, e)));
@@ -210,10 +212,10 @@ public final class PackScreen extends TrsScreen {
 	private void openFolder() {
 		try {
 			PlatformOpen.open(Mc.resourcePackDir());
-			status = "Ordner geöffnet";
+			status = I18n.tr("packs.folderOpened");
 		} catch (IOException | RuntimeException e) {
 			TrsClient.LOGGER.warn("Resourcepack-Ordner konnte nicht geöffnet werden", e);
-			status = "Ordner konnte nicht geöffnet werden";
+			status = I18n.tr("packs.folderFailed");
 		}
 	}
 

@@ -40,6 +40,7 @@ tasks.withType(JavaCompile).configureEach {
 // Versionsunabhängige Logik direkt aus ../common (mit dem Java-Level DIESER Version kompiliert).
 sourceSets {
 	main.java.srcDir(rootProject.file('../common/src/main/java'))
+	main.resources.srcDir(rootProject.file('../common/src/main/resources'))
 	test.java.srcDir(rootProject.file('../common/src/test/java'))
 }
 

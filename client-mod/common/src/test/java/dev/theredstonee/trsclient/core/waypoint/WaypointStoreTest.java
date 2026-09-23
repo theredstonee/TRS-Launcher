@@ -74,7 +74,7 @@ class WaypointStoreTest {
 
 		Waypoint w = new Waypoint("  ", 0, 0, 0, null, 0x1FFFFFF);
 		w.normalized();
-		assertEquals("Wegpunkt", w.name);
+		assertEquals("Waypoint", w.name);
 		assertEquals(0xFFFFFF, w.color);
 		assertTrue(w.inDimension("minecraft:overworld"), "ohne Dimension gilt überall");
 	}

@@ -66,9 +66,9 @@ public final class KeystrokesHud extends HudElement {
 		long now = System.currentTimeMillis();
 		int mh = mouseHeight();
 		boolean showCps = modules.keystrokesShowCps.get();
-		mouse(font, 0, y, mh, "LMT", mc.gameSettings.keyBindAttack.isKeyDown(), bg, color, module.shadow(),
+		mouse(font, 0, y, mh, dev.theredstonee.trsclient.core.i18n.I18n.tr("hud.keystrokes.lmb"), mc.gameSettings.keyBindAttack.isKeyDown(), bg, color, module.shadow(),
 				showCps ? TrsClient.get().leftClicks().count(now) : -1);
-		mouse(font, MOUSE_W + GAP, y, mh, "RMT", mc.gameSettings.keyBindUseItem.isKeyDown(), bg, color, module.shadow(),
+		mouse(font, MOUSE_W + GAP, y, mh, dev.theredstonee.trsclient.core.i18n.I18n.tr("hud.keystrokes.rmb"), mc.gameSettings.keyBindUseItem.isKeyDown(), bg, color, module.shadow(),
 				showCps ? TrsClient.get().rightClicks().count(now) : -1);
 		y += mh;
 

@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.TrsKeys;
 import dev.theredstonee.trsclient.compat.Keys;
@@ -72,7 +74,7 @@ public final class TrsMenuHost implements MenuHost {
 	public List<MenuAction> actions(Module module) {
 		List<MenuAction> actions = new ArrayList<MenuAction>();
 		if (module == modules().crosshair) {
-			actions.add(new MenuAction("Fadenkreuz bearbeiten", "crosshair", new Runnable() {
+			actions.add(new MenuAction(I18n.tr("crosshairEditor.title"), "crosshair", new Runnable() {
 				@Override
 				public void run() {
 					Mc.setScreen(new CrosshairEditorScreen(new TrsMenuScreen(parent)));
@@ -80,7 +82,7 @@ public final class TrsMenuHost implements MenuHost {
 			}));
 		}
 		if (module == modules().waypoints) {
-			actions.add(new MenuAction("Wegpunkte verwalten", "compass", new Runnable() {
+			actions.add(new MenuAction(I18n.tr("menu.action.waypoints"), "compass", new Runnable() {
 				@Override
 				public void run() {
 					Mc.setScreen(new WaypointListScreen(new TrsMenuScreen(parent)));
@@ -88,7 +90,7 @@ public final class TrsMenuHost implements MenuHost {
 			}));
 		}
 		if (module instanceof HudModule) {
-			actions.add(new MenuAction("Im HUD-Editor zeigen", "move", new Runnable() {
+			actions.add(new MenuAction(I18n.tr("menu.action.showInEditor"), "move", new Runnable() {
 				@Override
 				public void run() {
 					openHudEditor();

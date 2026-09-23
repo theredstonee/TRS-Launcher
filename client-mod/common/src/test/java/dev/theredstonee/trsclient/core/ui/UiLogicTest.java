@@ -102,8 +102,8 @@ class UiLogicTest {
 		TrsModules modules = new TrsModules();
 		assertTrue(modules.zoom.matches("zoo"));
 		assertTrue(modules.zoom.matches("ZOOM"));
-		assertTrue(modules.fps.matches("bilder"), "Beschreibung zählt auch");
-		assertTrue(modules.crosshair.matches("Form"), "Einstellungsnamen zählen auch");
+		assertTrue(modules.fps.matches("frames"), "Beschreibung zählt auch");
+		assertTrue(modules.crosshair.matches("Thickness"), "Einstellungsnamen zählen auch");
 		assertFalse(modules.fps.matches("waypoint"));
 		assertTrue(modules.fps.matches(""));
 		assertTrue(modules.fps.matches(null));

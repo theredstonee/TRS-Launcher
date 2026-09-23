@@ -32,6 +32,7 @@ tasks.withType(JavaCompile).configureEach {
 // Versionsunabhängige Logik direkt aus ../common – das ist reines Java 8 und passt damit
 // auch zu 1.14.4–1.16.5 (Java 8) und 1.17.1 (Java 16).
 sourceSets.main.java.srcDir(rootProject.file('../common/src/main/java'))
+sourceSets.main.resources.srcDir(rootProject.file('../common/src/main/resources'))
 // Die Unit-Tests von common laufen einmal (mit der neuesten Version dieses Baums).
 def runsCommonTests = mc == '1.19.4'
 if (runsCommonTests) {

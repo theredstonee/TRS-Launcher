@@ -37,8 +37,8 @@ public final class HudManager {
 				new InfoHuds.Memory(modules.memory),
 				new InfoHuds.Server(modules.server),
 				new InfoHuds.Packs(modules.packs),
-				new InfoHuds.ToggleIndicator(modules.toggleSprint, "Sprinten", true),
-				new InfoHuds.ToggleIndicator(modules.toggleSneak, "Schleichen", false)));
+				new InfoHuds.ToggleIndicator(modules.toggleSprint, "hud.sprinting", true),
+				new InfoHuds.ToggleIndicator(modules.toggleSneak, "hud.sneaking", false)));
 	}
 
 	public CrosshairRenderer crosshair() {

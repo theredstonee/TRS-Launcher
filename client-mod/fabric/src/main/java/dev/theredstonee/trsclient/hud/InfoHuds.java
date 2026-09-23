@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.hud;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.format.HudFormat;
@@ -38,8 +40,8 @@ public final class InfoHuds {
 				}
 			}
 			if (preview && count == 0) {
-				line("Schnelligkeit II  1:30", 0xFF33EBFF);
-				line("Stärke  0:45", 0xFFFFC700);
+				line(I18n.tr("hud.preview.effect1"), 0xFF33EBFF);
+				line(I18n.tr("hud.preview.effect2"), 0xFFFFC700);
 			}
 		}
 	}
@@ -63,10 +65,10 @@ public final class InfoHuds {
 			line(HudFormat.coords(Mc.x(p), Mc.y(p), Mc.z(p)));
 			if (modules.coordsDirection.get()) {
 				float yaw = Mc.yRot(p);
-				line("Richtung: " + HudFormat.directionName(yaw) + " (" + HudFormat.direction(yaw) + ")");
+				line(I18n.tr("hud.coords.direction", HudFormat.directionName(yaw), HudFormat.direction(yaw)));
 			}
 			if (modules.coordsBiome.get() && mc.level != null) {
-				line("Biom: " + Mc.biomeName(p));
+				line(I18n.tr("hud.coords.biome", Mc.biomeName(p)));
 			}
 		}
 	}
@@ -126,7 +128,7 @@ public final class InfoHuds {
 		protected void build(boolean preview) {
 			java.util.List<String> titles = dev.theredstonee.trsclient.compat.Packs.activeTitles();
 			for (String title : titles) line(title);
-			if (preview && titles.isEmpty()) line("Keine zusätzlichen Packs aktiv");
+			if (preview && titles.isEmpty()) line(I18n.tr("hud.packs.none"));
 		}
 	}
 
@@ -144,7 +146,7 @@ public final class InfoHuds {
 		@Override
 		protected void build(boolean preview) {
 			ToggleState state = sprint ? TrsClient.get().sprintToggle() : TrsClient.get().sneakToggle();
-			if (preview || state.active()) line("[" + label + " (umgeschaltet)]");
+			if (preview || state.active()) line("[" + I18n.tr("hud.toggled", I18n.tr(label)) + "]");
 		}
 	}
 }

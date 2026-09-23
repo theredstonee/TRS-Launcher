@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.hud.CrosshairRenderer;
@@ -15,7 +17,7 @@ import org.lwjgl.opengl.GL11;
  * Rechtsklick auf eine Auswahl blättert rückwärts.
  */
 public final class CrosshairEditorScreen extends GuiScreen {
-	private static final String TITLE = EnumChatFormatting.BOLD + "Fadenkreuz bearbeiten";
+	private final String TITLE = EnumChatFormatting.BOLD + I18n.tr("crosshairEditor.title");
 	private static final int PREVIEW_SCALE = 4;
 
 	private final GuiScreen parent;
@@ -56,7 +58,7 @@ public final class CrosshairEditorScreen extends GuiScreen {
 		drawScaled(prevX + prevW / 2, prevY + prevH / 4);
 		drawScaled(prevX + prevW / 2, prevY + prevH * 3 / 4);
 		Brand.noScissor();
-		Brand.text(fontRendererObj, "Vorschau ×" + PREVIEW_SCALE, prevX + 3, prevY + prevH - 10, 0xFFFFFFFF, true);
+		Brand.text(fontRendererObj, I18n.tr("crosshairEditor.preview", PREVIEW_SCALE), prevX + 3, prevY + prevH - 10, 0xFFFFFFFF, true);
 
 		// Einstellungen
 		int sx = prevX + prevW + 12;
@@ -64,7 +66,7 @@ public final class CrosshairEditorScreen extends GuiScreen {
 		SettingRows.draw(fontRendererObj, module.settings(), sx, prevY, sw, py + ph - 26, mouseX, mouseY, hot);
 
 		int by = py + ph - 22;
-		String reset = "Zurücksetzen";
+		String reset = I18n.tr("common.reset");
 		int rw = fontRendererObj.getStringWidth(reset) + 10;
 		Brand.button(fontRendererObj, sx, by, rw, 14, reset, false, SettingRows.inside(mouseX, mouseY, sx, by, rw, 14));
 		hot.add(sx, by, rw, 14, () -> {
@@ -74,7 +76,7 @@ public final class CrosshairEditorScreen extends GuiScreen {
 		});
 		int dw = 50;
 		int dx = px + pw - 10 - dw;
-		Brand.button(fontRendererObj, dx, by, dw, 14, "Fertig", true, SettingRows.inside(mouseX, mouseY, dx, by, dw, 14));
+		Brand.button(fontRendererObj, dx, by, dw, 14, I18n.tr("common.done"), true, SettingRows.inside(mouseX, mouseY, dx, by, dw, 14));
 		hot.add(dx, by, dw, 14, this::close);
 	}
 

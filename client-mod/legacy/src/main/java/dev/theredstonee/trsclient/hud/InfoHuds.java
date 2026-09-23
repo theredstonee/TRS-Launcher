@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.hud;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.format.HudFormat;
@@ -7,7 +9,6 @@ import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.client.resources.ResourcePackRepository;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.Potion;
@@ -37,14 +38,14 @@ public final class InfoHuds {
 					Potion potion = Mc.potion(e);
 					if (potion == null) continue;
 					String level = HudFormat.level(e.getAmplifier());
-					String name = I18n.format(potion.getName()) + (level.isEmpty() ? "" : " " + level);
+					String name = net.minecraft.client.resources.I18n.format(potion.getName()) + (level.isEmpty() ? "" : " " + level);
 					line(name + "  " + HudFormat.duration(e.getDuration(), e.getIsPotionDurationMax()), 0xFF000000 | potion.getLiquidColor());
 					count++;
 				}
 			}
 			if (preview && count == 0) {
-				line("Schnelligkeit II  1:30", 0xFF7CAFC6);
-				line("Stärke  0:45", 0xFF932423);
+				line(I18n.tr("hud.preview.effect1"), 0xFF7CAFC6);
+				line(I18n.tr("hud.preview.effect2"), 0xFF932423);
 			}
 		}
 	}
@@ -68,11 +69,11 @@ public final class InfoHuds {
 			line(HudFormat.coords(p.posX, p.posY, p.posZ));
 			if (modules.coordsDirection.get()) {
 				float yaw = p.rotationYaw;
-				line("Richtung: " + HudFormat.directionName(yaw) + " (" + HudFormat.direction(yaw) + ")");
+				line(I18n.tr("hud.coords.direction", HudFormat.directionName(yaw), HudFormat.direction(yaw)));
 			}
 			World world = Mc.world();
 			if (modules.coordsBiome.get() && world != null) {
-				line("Biom: " + Mc.biomeName(world, Mc.blockPos(p)));
+				line(I18n.tr("hud.coords.biome", Mc.biomeName(world, Mc.blockPos(p))));
 			}
 		}
 	}
@@ -133,7 +134,7 @@ public final class InfoHuds {
 			// Minecraft-Reihenfolge: letzter Eintrag = höchste Priorität.
 			List<ResourcePackRepository.Entry> selected = mc.getResourcePackRepository().getRepositoryEntries();
 			for (int i = selected.size() - 1; i >= 0; i--) line(selected.get(i).getResourcePackName());
-			if (preview && selected.isEmpty()) line("Keine zusätzlichen Packs aktiv");
+			if (preview && selected.isEmpty()) line(I18n.tr("hud.packs.none"));
 		}
 	}
 
@@ -151,7 +152,7 @@ public final class InfoHuds {
 		@Override
 		protected void build(boolean preview) {
 			ToggleState state = sprint ? TrsClient.get().sprintToggle() : TrsClient.get().sneakToggle();
-			if (preview || state.active()) line("[" + label + " (umgeschaltet)]");
+			if (preview || state.active()) line("[" + I18n.tr("hud.toggled", I18n.tr(label)) + "]");
 		}
 	}
 }

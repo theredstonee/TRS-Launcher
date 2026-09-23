@@ -433,7 +433,7 @@ public final class AutoTest {
 					wait = 10;
 					return;
 				}
-				int[] r = ((TrsTitleScreen) Mc.screen()).spot("TRS-Menü");
+				int[] r = ((TrsTitleScreen) Mc.screen()).spot("trsMenu");
 				if (r == null) {
 					wait = 2;
 					return;

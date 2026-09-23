@@ -2,7 +2,7 @@ package dev.theredstonee.trsclient.core.waypoint;
 
 /** Ein gespeicherter Wegpunkt (Gson-DTO – alle Felder öffentlich und einfach). */
 public final class Waypoint {
-	public String name = "Wegpunkt";
+	public String name = defaultName();
 	public int x;
 	public int y;
 	public int z;
@@ -21,12 +21,17 @@ public final class Waypoint {
 	}
 
 	public Waypoint(String name, int x, int y, int z, String dimension, int color) {
-		this.name = name == null || name.isEmpty() ? "Wegpunkt" : name;
+		this.name = name == null || name.isEmpty() ? defaultName() : name;
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.dimension = dimension == null ? "" : dimension;
 		this.color = color & 0xFFFFFF;
+	}
+
+	/** Name für Wegpunkte ohne Namen in der aktiven Sprache ("Waypoint", "Wegpunkt" …). */
+	public static String defaultName() {
+		return dev.theredstonee.trsclient.core.i18n.I18n.tr("waypoint.defaultName");
 	}
 
 	/** Gilt der Wegpunkt in dieser Dimension? */
@@ -44,7 +49,7 @@ public final class Waypoint {
 
 	/** Fehlende/kaputte Werte einer geladenen Datei geradeziehen. */
 	public Waypoint normalized() {
-		if (name == null || name.trim().isEmpty()) name = "Wegpunkt";
+		if (name == null || name.trim().isEmpty()) name = defaultName();
 		if (name.length() > 32) name = name.substring(0, 32);
 		if (dimension == null) dimension = "";
 		color &= 0xFFFFFF;

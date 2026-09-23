@@ -114,6 +114,8 @@ public final class Paint {
 
 	/**
 	 * Umbricht Text auf {@code maxWidth} (an Leerzeichen) und liefert die Zeilen.
+	 * Zu lange Wörter mit Bindestrich ("TRS-Online-Funktionen") werden hinter einem
+	 * Bindestrich getrennt; was dann noch übersteht, kürzt der Aufrufer.
 	 * Eigene Umbruchlogik, weil die Vanilla-Funktion je Version anders heißt.
 	 */
 	public static java.util.List<String> wrap(Canvas c, String text, int maxWidth) {
@@ -122,17 +124,52 @@ public final class Paint {
 		StringBuilder line = new StringBuilder();
 		for (String word : text.split(" ")) {
 			String candidate = line.length() == 0 ? word : line + " " + word;
-			if (c.textWidth(candidate) <= maxWidth || line.length() == 0) {
+			if (c.textWidth(candidate) <= maxWidth) {
 				line.setLength(0);
 				line.append(candidate);
-			} else {
+				continue;
+			}
+			String rest = word;
+			if (line.length() > 0) {
+				// Passt der Anfang eines Bindestrich-Worts noch in die Zeile ("Kein Schadens-")?
+				int cut = hyphenCut(c, line + " ", rest, maxWidth);
+				if (cut > 0) {
+					line.append(' ').append(rest, 0, cut);
+					rest = rest.substring(cut);
+				}
 				lines.add(line.toString());
 				line.setLength(0);
-				line.append(word);
 			}
+			// Das Wort allein ist zu breit: an Bindestrichen trennen (Trennzeichen bleibt vorne).
+			while (c.textWidth(rest) > maxWidth) {
+				int cut = hyphenCut(c, "", rest, maxWidth);
+				if (cut < 0) break;
+				lines.add(rest.substring(0, cut));
+				rest = rest.substring(cut);
+			}
+			line.append(rest);
 		}
 		if (line.length() > 0) lines.add(line.toString());
 		return lines;
+	}
+
+	/** Längster Anfang von {@code word} bis einschließlich eines Bindestrichs, der hinter {@code prefix} passt; sonst -1. */
+	private static int hyphenCut(Canvas c, String prefix, String word, int maxWidth) {
+		for (int i = word.length() - 2; i > 0; i--) {
+			if (word.charAt(i) == '-' && c.textWidth(prefix + word.substring(0, i + 1)) <= maxWidth) return i + 1;
+		}
+		return -1;
+	}
+
+	/** Fügt umbrochene Zeilen wieder zusammen (nach einem Trenn-Bindestrich ohne Leerzeichen). */
+	public static String join(java.util.List<String> lines, int from) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = from; i < lines.size(); i++) {
+			String l = lines.get(i);
+			if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '-') sb.append(' ');
+			sb.append(l);
+		}
+		return sb.toString();
 	}
 
 	/** Mehrzeiliger Text; liefert das y unter der letzten Zeile. */

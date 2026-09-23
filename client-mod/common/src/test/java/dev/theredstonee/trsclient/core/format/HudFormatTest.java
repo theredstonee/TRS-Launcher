@@ -45,13 +45,20 @@ class HudFormatTest {
 		assertEquals("W", HudFormat.direction(90));
 		assertEquals("N", HudFormat.direction(180));
 		assertEquals("N", HudFormat.direction(-180));
-		assertEquals("O", HudFormat.direction(-90));
-		assertEquals("O", HudFormat.direction(270));
+		assertEquals("E", HudFormat.direction(-90));
+		assertEquals("E", HudFormat.direction(270));
 		assertEquals("SW", HudFormat.direction(45));
 		assertEquals("S", HudFormat.direction(22));
 		assertEquals("SW", HudFormat.direction(23));
 		assertEquals("S", HudFormat.direction(720 + 10));
-		assertEquals("Nordosten", HudFormat.directionName(-135));
+		assertEquals("Northeast", HudFormat.directionName(-135));
+		dev.theredstonee.trsclient.core.i18n.I18n.use("de");
+		try {
+			assertEquals("O", HudFormat.direction(-90));
+			assertEquals("Nordosten", HudFormat.directionName(-135));
+		} finally {
+			dev.theredstonee.trsclient.core.i18n.I18n.use("en");
+		}
 	}
 
 	@Test

@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.module;
 
 import dev.theredstonee.trsclient.core.config.ModuleConfig;
+import dev.theredstonee.trsclient.core.i18n.I18n;
 
 /**
  * Auswahl aus festen Optionen (Klick = nächste Option). Gespeichert wird die Options-ID,
@@ -8,12 +9,14 @@ import dev.theredstonee.trsclient.core.config.ModuleConfig;
  * das {@link Option} implementiert.
  */
 public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> extends Setting {
-	/** Eine wählbare Option mit deutschem Anzeigenamen. */
+	/** Eine wählbare Option; {@link #label()} ist der englische Rückfall-Name. */
 	public interface Option {
 		String label();
 	}
 
 	private final E[] options;
+	/** Übersetzungsschlüssel je Option ("setting.<modul>.<key>.<option>"). */
+	private String[] optionKeys;
 	private final E defaultValue;
 	private E value;
 
@@ -47,9 +50,22 @@ public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> exten
 		return options.length;
 	}
 
-	/** Anzeigename der Option {@code i}. */
+	@Override
+	protected void onBound() {
+		optionKeys = new String[options.length];
+		for (int i = 0; i < options.length; i++) {
+			optionKeys[i] = labelKey() + "." + options[i].name().toLowerCase(java.util.Locale.ROOT);
+		}
+	}
+
+	/** Übersetzungsschlüssel der Option {@code i} (null, solange ungebunden). */
+	public String optionKey(int i) {
+		return optionKeys == null ? null : optionKeys[i];
+	}
+
+	/** Anzeigename der Option {@code i} in der aktiven Sprache. */
 	public String optionLabel(int i) {
-		return options[i].label();
+		return optionKeys == null ? options[i].label() : I18n.trOr(optionKeys[i], options[i].label());
 	}
 
 	/** Index der aktuellen Option. */
@@ -63,7 +79,7 @@ public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> exten
 	}
 
 	public String display() {
-		return value.label();
+		return optionLabel(value.ordinal());
 	}
 
 	@Override

@@ -7,8 +7,16 @@ import java.util.Locale;
 public final class HudFormat {
 	private static final String[] ROMAN = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
 	/** Himmelsrichtungen ab Süden (Minecraft: Yaw 0 = Süden, 90 = Westen). */
-	private static final String[] DIRECTIONS = {"S", "SW", "W", "NW", "N", "NO", "O", "SO"};
-	private static final String[] DIRECTION_NAMES = {"Süden", "Südwesten", "Westen", "Nordwesten", "Norden", "Nordosten", "Osten", "Südosten"};
+	/** Übersetzungsschlüssel der Richtungen ab Süden ("direction.<x>" bzw. "direction.<x>.short"). */
+	private static final String[] DIRECTION_KEYS = {"south", "southwest", "west", "northwest", "north", "northeast", "east", "southeast"};
+	private static final String[] DIRECTIONS = new String[8];
+	private static final String[] DIRECTION_NAMES = new String[8];
+	static {
+		for (int i = 0; i < 8; i++) {
+			DIRECTIONS[i] = "direction." + DIRECTION_KEYS[i] + ".short";
+			DIRECTION_NAMES[i] = "direction." + DIRECTION_KEYS[i];
+		}
+	}
 
 	private HudFormat() {
 	}
@@ -51,14 +59,14 @@ public final class HudFormat {
 		return (int) Math.floor((d + 22.5) / 45.0) % 8;
 	}
 
-	/** Kurzform der Blickrichtung, z. B. "NO". */
+	/** Kurzform der Blickrichtung in der aktiven Sprache, z. B. "NE" / "NO". */
 	public static String direction(float yaw) {
-		return DIRECTIONS[octant(yaw)];
+		return dev.theredstonee.trsclient.core.i18n.I18n.tr(DIRECTIONS[octant(yaw)]);
 	}
 
-	/** Ausgeschriebene Blickrichtung, z. B. "Nordosten". */
+	/** Ausgeschriebene Blickrichtung in der aktiven Sprache, z. B. "Northeast" / "Nordosten". */
 	public static String directionName(float yaw) {
-		return DIRECTION_NAMES[octant(yaw)];
+		return dev.theredstonee.trsclient.core.i18n.I18n.tr(DIRECTION_NAMES[octant(yaw)]);
 	}
 
 	/** Uhrzeit "HH:mm" bzw. "HH:mm:ss", 24 h oder 12 h mit "AM/PM". */

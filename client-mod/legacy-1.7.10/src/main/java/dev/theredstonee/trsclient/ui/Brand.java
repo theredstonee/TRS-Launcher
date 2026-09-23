@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.ui;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -61,7 +63,7 @@ public final class Brand {
 
 	/** An/Aus-Pille; liefert die Breite. */
 	public static int pill(FontRenderer font, int x, int y, boolean on, boolean hover) {
-		String label = on ? "An" : "Aus";
+		String label = on ? I18n.tr("common.on") : I18n.tr("common.off");
 		int w = 26;
 		int h = 11;
 		int bg = on ? AMBER : (hover ? 0xFF4A4A5A : OFF);

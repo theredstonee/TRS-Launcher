@@ -13,12 +13,18 @@ import java.util.Objects;
 public final class PackList {
 	/** Anzeige-Filter. */
 	public enum Filter {
-		ALL("Alle"), ENABLED("Aktiv"), AVAILABLE("Verfügbar");
+		ALL("All"), ENABLED("Active"), AVAILABLE("Available");
 
+		/** Englischer Rückfall-Name. */
 		public final String label;
 
 		Filter(String label) {
 			this.label = label;
+		}
+
+		/** Name in der aktiven Sprache ("packs.filter.<name>"). */
+		public String display() {
+			return dev.theredstonee.trsclient.core.i18n.I18n.trOr("packs.filter." + name().toLowerCase(Locale.ROOT), label);
 		}
 
 		public Filter next() {

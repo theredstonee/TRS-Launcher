@@ -25,11 +25,17 @@ public class HudModule extends Module {
 		super(id, name, description, defaultEnabled);
 		this.defaultPosition = defaultPosition.copy();
 		this.position = defaultPosition.copy();
-		this.textColor = add(new ColorSetting("textColor", "Textfarbe", 0xFFFFFF));
-		this.textShadow = add(new BoolSetting("shadow", "Textschatten", true));
-		this.background = add(new BoolSetting("background", "Hintergrund", true));
-		this.backgroundOpacity = add(new NumberSetting("backgroundOpacity", "Deckkraft", 56, 0, 100, 1, "", "%"));
-		this.scale = add(new NumberSetting("scale", "Größe", 1.0, 0.5, 2.0, 0.05, "×"));
+		// Gemeinsame Einstellungen aller HUD-Module teilen sich die Übersetzung "setting.hud.<key>".
+		this.textColor = add(hud(new ColorSetting("textColor", "Text colour", 0xFFFFFF)));
+		this.textShadow = add(hud(new BoolSetting("shadow", "Text shadow", true)));
+		this.background = add(hud(new BoolSetting("background", "Background", true)));
+		this.backgroundOpacity = add(hud(new NumberSetting("backgroundOpacity", "Opacity", 56, 0, 100, 1, "", "%")));
+		this.scale = add(hud(new NumberSetting("scale", "Size", 1.0, 0.5, 2.0, 0.05, "×")));
+	}
+
+	private static <S extends Setting> S hud(S setting) {
+		setting.i18n("setting.hud." + setting.key());
+		return setting;
 	}
 
 	/** Aktuelle Position (veränderbares Objekt – im Editor direkt gesetzt). */

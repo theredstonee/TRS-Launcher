@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Keys;
 import dev.theredstonee.trsclient.core.render.Projection;
@@ -18,7 +20,7 @@ import java.util.List;
  * Die Wegpunkte gehören immer zur aktuellen Welt bzw. zum aktuellen Server.
  */
 public final class WaypointListScreen extends TrsScreen {
-	private static final Component TITLE = Component.literal("Wegpunkte").withStyle(ChatFormatting.BOLD);
+	private final Component TITLE = Component.literal(I18n.tr("waypoints.title")).withStyle(ChatFormatting.BOLD);
 	private static final int ROW_H = 18;
 
 	private final Screen parent;
@@ -31,7 +33,7 @@ public final class WaypointListScreen extends TrsScreen {
 	private int listH;
 
 	public WaypointListScreen(Screen parent) {
-		super(Component.literal("Wegpunkte"));
+		super(Component.literal(I18n.tr("waypoints.title")));
 		this.parent = parent;
 	}
 
@@ -48,7 +50,7 @@ public final class WaypointListScreen extends TrsScreen {
 		g.fill(px, py, px + 3, py + 24, Brand.RED);
 		g.text(font, TITLE, px + 11, py + 8, Brand.TEXT, false);
 		String world = TrsClient.get().waypoints().worldKey();
-		g.text(font, Gfx.clip(font, world.isEmpty() ? "keine Welt" : world, pw / 2), px + pw - 10 - Math.min(pw / 2,
+		g.text(font, Gfx.clip(font, world.isEmpty() ? I18n.tr("waypoints.noWorld") : world, pw / 2), px + pw - 10 - Math.min(pw / 2,
 				font.width(world)), py + 8, Brand.TEXT_DIM, false);
 
 		List<Waypoint> list = TrsClient.get().waypoints().all();
@@ -62,8 +64,7 @@ public final class WaypointListScreen extends TrsScreen {
 		g.scissor(listX, listY, listX + listW, listY + listH);
 		if (list.isEmpty()) {
 			String key = TrsClient.get().modules().waypointAddKey.get();
-			g.text(font, "Noch keine Wegpunkte – Taste " + Keys.display(key)
-					+ " im Spiel legt einen an.", listX, listY + 4, Brand.TEXT_DIM, false);
+			g.text(font, I18n.tr("waypoints.empty", Keys.display(key)), listX, listY + 4, Brand.TEXT_DIM, false);
 		}
 		for (int i = 0; i < list.size(); i++) {
 			Waypoint waypoint = list.get(i);
@@ -73,7 +74,7 @@ public final class WaypointListScreen extends TrsScreen {
 					&& inside(mouseX, mouseY, listX, listY, listW, listH);
 			g.fill(listX, ry, listX + listW, ry + ROW_H - 2, hover ? Brand.SURFACE_HOVER : Brand.SURFACE);
 			g.fill(listX + 4, ry + 5, listX + 10, ry + 11, 0xFF000000 | waypoint.color);
-			String label = waypoint.name + (waypoint.death ? " (Tod)" : "");
+			String label = waypoint.name + (waypoint.death ? " (" + I18n.tr("waypoints.death") + ")" : "");
 			g.text(font, Gfx.clip(font, label, listW - 190), listX + 16, ry + 5, Brand.TEXT, false);
 			String info = waypoint.x + " / " + waypoint.y + " / " + waypoint.z;
 			if (minecraft != null && minecraft.player != null) {
@@ -98,13 +99,13 @@ public final class WaypointListScreen extends TrsScreen {
 		g.noScissor();
 
 		int by = py + ph - 20;
-		String add = "Hier anlegen";
+		String add = I18n.tr("waypoints.addHere");
 		int aw = font.width(add) + 12;
 		Brand.button(g, font, px + 10, by, aw, 16, add, true, inside(mouseX, mouseY, px + 10, by, aw, 16));
 		hot.add(px + 10, by, aw, 16, () -> open(new WaypointEditScreen(this, null)));
 		int cw = 58;
 		int cx = px + pw - 10 - cw;
-		Brand.button(g, font, cx, by, cw, 16, "Schließen", false, inside(mouseX, mouseY, cx, by, cw, 16));
+		Brand.button(g, font, cx, by, cw, 16, I18n.tr("common.close"), false, inside(mouseX, mouseY, cx, by, cw, 16));
 		hot.add(cx, by, cw, 16, this::onClose);
 	}
 

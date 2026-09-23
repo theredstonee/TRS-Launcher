@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.ui.title;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.FadeCanvas;
@@ -30,10 +31,13 @@ public final class TitleUi extends UiScreen {
 	private static final float SIGNAL_OUT = 0.08f;
 	/** Verzögerung zwischen Drücken und Aktion – so ist das Aufblitzen sichtbar. */
 	private static final float PRESS_DELAY = 0.07f;
-	private static final String CLASSIC = "Klassischer Titelbildschirm";
+	/** Link unten rechts (Übersetzung beim Erstellen – der Startbildschirm wird je Öffnen neu gebaut). */
+	private final String classic;
 
 	/** Ein Lampen-Knopf. */
 	private static final class Lamp {
+		/** Feste ID für Selbsttest/Verknüpfungen ("singleplayer", "trsMenu" …). */
+		final String id;
 		final String label;
 		final Runnable action;
 		/** Wird von rechts gespeist (rechte Hälfte einer Zeile). */
@@ -45,8 +49,9 @@ public final class TitleUi extends UiScreen {
 		float power;
 		float flash;
 
-		Lamp(String label, boolean right, Runnable action) {
-			this.label = label;
+		Lamp(String id, boolean right, Runnable action) {
+			this.id = id;
+			this.label = I18n.tr("title." + id);
 			this.right = right;
 			this.action = action;
 		}
@@ -86,41 +91,43 @@ public final class TitleUi extends UiScreen {
 
 	public TitleUi(TitleHost host) {
 		this.host = host;
+		I18n.refresh();
+		this.classic = I18n.tr("title.classic");
 		scene.setSimple(host.simpleAnimation());
 		final TitleHost h = host;
-		lamps.add(new Lamp("Einzelspieler", false, new Runnable() {
+		lamps.add(new Lamp("singleplayer", false, new Runnable() {
 			@Override
 			public void run() {
 				h.singleplayer();
 			}
 		}));
-		lamps.add(new Lamp("Mehrspieler", false, new Runnable() {
+		lamps.add(new Lamp("multiplayer", false, new Runnable() {
 			@Override
 			public void run() {
 				h.multiplayer();
 			}
 		}));
-		lamps.add(new Lamp("Einstellungen", false, new Runnable() {
+		lamps.add(new Lamp("options", false, new Runnable() {
 			@Override
 			public void run() {
 				h.options();
 			}
 		}));
-		lamps.add(new Lamp("TRS-Menü", true, new Runnable() {
+		lamps.add(new Lamp("trsMenu", true, new Runnable() {
 			@Override
 			public void run() {
 				h.trsMenu();
 			}
 		}));
 		if (host.hasMods()) {
-			lamps.add(new Lamp("Mods", false, new Runnable() {
+			lamps.add(new Lamp("mods", false, new Runnable() {
 				@Override
 				public void run() {
 					h.mods();
 				}
 			}));
 		}
-		lamps.add(new Lamp("Beenden", host.hasMods(), new Runnable() {
+		lamps.add(new Lamp("quit", host.hasMods(), new Runnable() {
 			@Override
 			public void run() {
 				h.quit();
@@ -140,7 +147,7 @@ public final class TitleUi extends UiScreen {
 		if (frames == 0) return null;
 		for (int i = 0; i < lamps.size(); i++) {
 			Lamp l = lamps.get(i);
-			if (l.label.equals(label)) return new int[]{l.x, l.y, l.w, BTN_H};
+			if (l.id.equals(label) || l.label.equals(label)) return new int[]{l.x, l.y, l.w, BTN_H};
 		}
 		return null;
 	}
@@ -410,7 +417,7 @@ public final class TitleUi extends UiScreen {
 	}
 
 	private void footer(Canvas c, Theme t, int width, int height, int mx, int my, float dt) {
-		int cw = c.textWidth(CLASSIC);
+		int cw = c.textWidth(classic);
 		int lx = width - cw - 4;
 		// Versionszeile weicht dem Link aus (schmale Fenster).
 		String version = host.versionLine();
@@ -421,7 +428,7 @@ public final class TitleUi extends UiScreen {
 		boolean on = hover || focus == lamps.size();
 		linkLit = on ? Math.min(1f, linkLit + dt / 0.08f) : Math.max(0f, linkLit - dt / 0.08f);
 		Redstone.pip(c, lx - 9, height - 9, 5, linkLit);
-		labels.add(new Label(CLASSIC, lx, height - 10, ColorMath.lerp(0xFF8F8B89, t.lampOn, linkLit), false));
+		labels.add(new Label(classic, lx, height - 10, ColorMath.lerp(0xFF8F8B89, t.lampOn, linkLit), false));
 		hits.add(lx - 10, height - 12, cw + 14, 12, new Runnable() {
 			@Override
 			public void run() {
@@ -474,7 +481,7 @@ public final class TitleUi extends UiScreen {
 	private void moveFocus(int step, int count) {
 		if (focus < 0) focus = step > 0 ? 0 : count - 1;
 		else focus = (focus + step + count) % count;
-		host.narrate((focus < lamps.size() ? lamps.get(focus).label : CLASSIC) + ", Schaltfläche");
+		host.narrate(I18n.tr("title.narrateButton", focus < lamps.size() ? lamps.get(focus).label : classic));
 	}
 
 	/** Der Startbildschirm schließt nicht (Esc tut nichts). */

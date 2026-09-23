@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
+
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.config.ConfigStore;
 import dev.theredstonee.trsclient.core.input.ClickCounter;
@@ -127,6 +129,7 @@ public final class TrsClient {
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
+		dev.theredstonee.trsclient.core.i18n.I18n.init(file.getParentFile().toPath());
 		initWaypoints(event.getModConfigurationDirectory());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
@@ -174,7 +177,7 @@ public final class TrsClient {
 		Minecraft mc = Minecraft.getMinecraft();
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.isPressed()) {
-			Mc.actionBar("HUD-Profil: " + modules.profiles.cycle());
+			Mc.actionBar(I18n.tr("toast.hudProfile", modules.profiles.cycle()));
 			saveConfig();
 		}
 		while (TrsKeys.menu.isPressed()) {
@@ -182,7 +185,7 @@ public final class TrsClient {
 		}
 		while (TrsKeys.fullbright.isPressed()) {
 			modules.fullbright.toggle();
-			Mc.actionBar("Fullbright: " + (modules.fullbright.isEnabled() ? "An" : "Aus"));
+			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
 			saveConfig();
 		}
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).

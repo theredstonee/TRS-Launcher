@@ -26,6 +26,7 @@ tasks.withType(JavaCompile).configureEach {
 
 // Versionsunabhängige Logik direkt aus ../common (reines Java 8 – keine Kopie mehr nötig).
 sourceSets.main.java.srcDir(file('../common/src/main/java'))
+sourceSets.main.resources.srcDir(file('../common/src/main/resources'))
 
 minecraft {
 	mappings channel: mcp_channel, version: mcp_version

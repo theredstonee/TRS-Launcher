@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.ui.menu;
 
 import dev.theredstonee.trsclient.core.hud.HudProfiles;
+import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.module.Category;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.Module;
@@ -66,6 +67,8 @@ public final class ModMenu extends UiScreen {
 
 	public ModMenu(MenuHost host) {
 		this.host = host;
+		// Sprache neu lesen (Launcher-Datei oder Minecraft-Sprache geändert?) – zwei Zeitstempel.
+		I18n.refresh();
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
 			@Override
 			public String label(String keyName) {
@@ -157,7 +160,7 @@ public final class ModMenu extends UiScreen {
 		for (int[] r : rects) c.fill(lx + r[0] * 2 - 1, ly + r[1] * 2 - 1, lx + r[2] * 2 + 1, ly + r[3] * 2 + 1, glow);
 		int light = ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.3f);
 		for (int[] r : rects) c.fill(lx + r[0] * 2, ly + r[1] * 2, lx + r[2] * 2, ly + r[3] * 2, r[1] == 0 ? light : t.accent);
-		c.text("Client", lx + PixelFont.width("TRS") * 2 + 5, py + (HEADER_H - 8) / 2, t.textDim, false);
+		c.text(I18n.tr("menu.client"), lx + PixelFont.width("TRS") * 2 + 5, py + (HEADER_H - 8) / 2, t.textDim, false);
 
 		// Schließen
 		int closeSize = 16;
@@ -182,7 +185,7 @@ public final class ModMenu extends UiScreen {
 		Redstone.well(c, searchX, searchY, searchW, searchH, search.focused() ? t.accent : (searchHover ? t.textDim : t.border));
 		if (search.focused()) Redstone.glow(c, searchX, searchY, searchW, searchH, t.glow, 0.5f);
 		Icons.draw(c, "search", searchX + 5, searchY + 4, 1, search.focused() ? t.dustOn : t.textDim);
-		String shown = search.isEmpty() && !search.focused() ? "Module suchen" : search.text();
+		String shown = search.isEmpty() && !search.focused() ? I18n.tr("menu.search") : search.text();
 		int textColor = search.isEmpty() && !search.focused() ? t.textDim : t.text;
 		Paint.textClipped(c, shown, searchX + 16, searchY + 4, searchW - 22, textColor, false);
 		if (search.focused() && (System.currentTimeMillis() / 500) % 2 == 0) {
@@ -210,7 +213,7 @@ public final class ModMenu extends UiScreen {
 		}
 		if (items * (rowH + gap) + 11 + footer > h) footer = 0;
 		int cy = y;
-		railItem(c, x, cy, w, rowH, "layers", "Alle", category == null && page == Page.GRID, mx, my, new Runnable() {
+		railItem(c, x, cy, w, rowH, "layers", I18n.tr("menu.all"), category == null && page == Page.GRID, mx, my, new Runnable() {
 			@Override
 			public void run() {
 				category = null;
@@ -237,7 +240,7 @@ public final class ModMenu extends UiScreen {
 		c.fill(x + 2, cy, x + w - 2, cy + 1, t.border);
 		cy += 7;
 
-		railItem(c, x, cy, w, rowH, "move", "HUD-Editor", false, mx, my, new Runnable() {
+		railItem(c, x, cy, w, rowH, "move", I18n.tr("menu.hudEditor"), false, mx, my, new Runnable() {
 			@Override
 			public void run() {
 				host.save();
@@ -245,7 +248,7 @@ public final class ModMenu extends UiScreen {
 			}
 		});
 		cy += rowH + gap;
-		railItem(c, x, cy, w, rowH, "profile", "Profile", page == Page.PROFILES, mx, my, new Runnable() {
+		railItem(c, x, cy, w, rowH, "profile", I18n.tr("menu.profiles"), page == Page.PROFILES, mx, my, new Runnable() {
 			@Override
 			public void run() {
 				page = Page.PROFILES;
@@ -255,7 +258,7 @@ public final class ModMenu extends UiScreen {
 		});
 		cy += rowH + gap;
 		if (host.hasPacks()) {
-			railItem(c, x, cy, w, rowH, "packs", "Packs", false, mx, my, new Runnable() {
+			railItem(c, x, cy, w, rowH, "packs", I18n.tr("menu.packs"), false, mx, my, new Runnable() {
 				@Override
 				public void run() {
 					host.save();
@@ -277,7 +280,7 @@ public final class ModMenu extends UiScreen {
 		int footerY = y + h - 30;
 		if (footer == 0 || footerY < cy + 2) return;
 		Redstone.pip(c, x + 2, footerY + 1, 7, active > 0 ? 1f : 0f);
-		Paint.textClipped(c, active + " von " + total + " an", x + 14, footerY, w - 14, t.text, false);
+		Paint.textClipped(c, I18n.tr("menu.activeCount", active, total), x + 14, footerY, w - 14, t.text, false);
 		Redstone.keycap(c, x, footerY + 14, host.menuKeyLabel(), w);
 	}
 
@@ -324,8 +327,8 @@ public final class ModMenu extends UiScreen {
 		gridScroll = layout.clampScroll(gridScroll);
 
 		if (modules.isEmpty()) {
-			Paint.textCentered(c, "Kein Modul passt zu \"" + search.text().trim() + "\"", x + w / 2, y + h / 2 - 10, t.text, false);
-			Paint.textCentered(c, "Esc leert die Suche", x + w / 2, y + h / 2 + 2, t.textDim, false);
+			Paint.textCentered(c, I18n.tr("menu.noMatch", search.text().trim()), x + w / 2, y + h / 2 - 10, t.text, false);
+			Paint.textCentered(c, I18n.tr("menu.clearSearch"), x + w / 2, y + h / 2 + 2, t.textDim, false);
 			return;
 		}
 		c.scissor(x, y, x + w, y + h);
@@ -374,12 +377,10 @@ public final class ModMenu extends UiScreen {
 		List<String> lines = Paint.wrap(c, m.name(), nameW);
 		int nameColor = ColorMath.lerp(t.text, 0xFFFFFFFF, progress * 0.4f);
 		if (lines.size() <= 1) {
-			c.text(m.name(), x + 8, y + h - 16, nameColor, false);
+			Paint.textClipped(c, m.name(), x + 8, y + h - 16, nameW, nameColor, false);
 		} else {
-			c.text(lines.get(0), x + 8, y + h - 25, nameColor, false);
-			StringBuilder rest = new StringBuilder(lines.get(1));
-			for (int i = 2; i < lines.size(); i++) rest.append(' ').append(lines.get(i));
-			Paint.textClipped(c, rest.toString(), x + 8, y + h - 15, nameW, nameColor, false);
+			Paint.textClipped(c, lines.get(0), x + 8, y + h - 25, nameW, nameColor, false);
+			Paint.textClipped(c, Paint.join(lines, 1), x + 8, y + h - 15, nameW, nameColor, false);
 		}
 		if (gear) Icons.draw(c, "gear", x + w - 16, y + h - 15, 1, hovered ? t.dustOn : ColorMath.withAlpha(t.textDim, 170));
 
@@ -465,8 +466,8 @@ public final class ModMenu extends UiScreen {
 		});
 		int nameX = x + 52;
 		c.text(c.clip(m.name(), resetX - nameX - 6), nameX, y + 4, t.text, false);
-		String state = m.isEnabled() ? "An" : "Aus";
-		c.text(state + " · " + m.category().label(), nameX, y + 14, m.isEnabled() ? t.dustOn : t.textDim, false);
+		String state = m.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled");
+		c.text(c.clip(state + " · " + m.category().label(), resetX - nameX - 6), nameX, y + 14, m.isEnabled() ? t.dustOn : t.textDim, false);
 
 		int top = y + headH + 8;
 		c.fill(x, top - 4, x + w, top - 3, t.border);
@@ -480,8 +481,7 @@ public final class ModMenu extends UiScreen {
 		ry = Paint.paragraph(c, m.description(), x + 2, ry, Math.min(w - 8, 360), 10, t.textDim) + 6;
 		List<Setting> settings = m.settings();
 		if (settings.isEmpty()) {
-			c.text("Dieses Modul hat keine Einstellungen – nur an und aus.", x + 2, ry + 2, t.textDim, false);
-			ry += 14;
+			ry = Paint.paragraph(c, I18n.tr("menu.noSettings"), x + 2, ry + 2, Math.min(w - 8, 360), 10, t.textDim) + 4;
 		} else {
 			ry = panel.draw(c, hits, settings, x + 2, ry, w - 10, mx, my);
 		}
@@ -519,11 +519,11 @@ public final class ModMenu extends UiScreen {
 	private void profilesPage(Canvas c, int x, int y, int w, int h, int mx, int my) {
 		Theme t = Theme.get();
 		final HudProfiles profiles = host.modules().profiles;
-		c.text("HUD-Profile", x + 2, y + 4, t.text, false);
+		c.text(c.clip(I18n.tr("profiles.title"), w - 4), x + 2, y + 4, t.text, false);
 		String keyLabel = host.profileKeyLabel();
 		boolean unbound = keyLabel == null || keyLabel.isEmpty();
 		if (!unbound) {
-			String hint = "wechselt";
+			String hint = I18n.tr("profiles.switches");
 			int hw = c.textWidth(hint);
 			Paint.textRight(c, hint, x + w, y + 4, t.textDim, false);
 			int kw = Math.min(90, c.textWidth(keyLabel) + 8);
@@ -563,7 +563,7 @@ public final class ModMenu extends UiScreen {
 				@Override
 				public void run() {
 					host.playClick();
-					if (!profiles.delete(index)) profileError = "Das letzte Profil kann nicht gelöscht werden";
+					if (!profiles.delete(index)) profileError = I18n.tr("profiles.error.last");
 					else profileError = null;
 					editingProfile = -1;
 				}
@@ -588,7 +588,7 @@ public final class ModMenu extends UiScreen {
 			drawInput(c, x, ry + 2, w - 70, mx, my);
 			int okX = x + w - 64;
 			boolean okHover = inside(mx, my, okX, ry + 1, 64, 17);
-			Paint.button(c, okX, ry + 1, 64, 17, "Anlegen", true, okHover);
+			Paint.button(c, okX, ry + 1, 64, 17, I18n.tr("common.create"), true, okHover);
 			hits.add(okX, ry + 1, 64, 17, new Runnable() {
 				@Override
 				public void run() {
@@ -597,11 +597,12 @@ public final class ModMenu extends UiScreen {
 			});
 			ry += 22;
 		} else if (profiles.canCreate()) {
-			int bw = c.textWidth("Neues Profil") + 30;
+			String newLabel = I18n.tr("profiles.new");
+			int bw = Math.min(w, c.textWidth(newLabel) + 30);
 			boolean addHover = inside(mx, my, x, ry + 1, bw, 17);
 			Paint.button(c, x, ry + 1, bw, 17, "", false, addHover);
 			Icons.draw(c, "plus", x + 7, ry + 5, 1, addHover ? t.dustOn : t.text);
-			c.text("Neues Profil", x + 20, ry + 5 - (addHover ? 1 : 0), t.text, false);
+			Paint.textClipped(c, newLabel, x + 20, ry + 5 - (addHover ? 1 : 0), bw - 24, t.text, false);
 			hits.add(x, ry + 1, bw, 17, new Runnable() {
 				@Override
 				public void run() {
@@ -616,11 +617,10 @@ public final class ModMenu extends UiScreen {
 		}
 
 		String note = profileError != null ? profileError
-				: "Ein Profil speichert Lage und Aussehen aller HUD-Module."
-				+ (unbound ? " Eine Taste zum Wechseln lässt sich in den Steuerungen belegen." : "");
+				: I18n.tr("profiles.note") + (unbound ? " " + I18n.tr("profiles.noteKey") : "");
 		List<String> lines = Paint.wrap(c, note, w - 4);
-		int ly = y + h - 9 - (Math.min(2, lines.size()) - 1) * 10;
-		for (int i = 0; i < Math.min(2, lines.size()); i++) {
+		int ly = y + h - 9 - (Math.min(3, lines.size()) - 1) * 10;
+		for (int i = 0; i < Math.min(3, lines.size()); i++) {
 			Paint.textClipped(c, lines.get(i), x + 2, ly + i * 10, w - 4, profileError != null ? t.dustOn : t.textDim, false);
 		}
 	}

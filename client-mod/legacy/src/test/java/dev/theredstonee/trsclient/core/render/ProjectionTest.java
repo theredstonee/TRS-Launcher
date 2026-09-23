@@ -56,6 +56,12 @@ class ProjectionTest {
 	void distanceLabel() {
 		assertEquals("12 m", Projection.distanceLabel(12.4));
 		assertEquals("13 m", Projection.distanceLabel(12.6));
-		assertEquals("1,2 km", Projection.distanceLabel(1234));
+		assertEquals("1.2 km", Projection.distanceLabel(1234));
+		dev.theredstonee.trsclient.core.i18n.I18n.use("de");
+		try {
+			assertEquals("1,2 km", Projection.distanceLabel(1234), "Dezimalkomma der aktiven Sprache");
+		} finally {
+			dev.theredstonee.trsclient.core.i18n.I18n.use("en");
+		}
 	}
 }

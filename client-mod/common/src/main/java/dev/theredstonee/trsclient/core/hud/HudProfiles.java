@@ -98,7 +98,7 @@ public final class HudProfiles implements ConfigPart {
 	 * @return Fehlermeldung oder null bei Erfolg
 	 */
 	public String create(String name) {
-		if (!canCreate()) return "Höchstens " + MAX_PROFILES + " Profile";
+		if (!canCreate()) return dev.theredstonee.trsclient.core.i18n.I18n.tr("profiles.error.max", MAX_PROFILES);
 		String clean = clean(name);
 		String error = validate(clean, -1);
 		if (error != null) return error;
@@ -110,7 +110,7 @@ public final class HudProfiles implements ConfigPart {
 
 	/** @return Fehlermeldung oder null bei Erfolg */
 	public String rename(int index, String name) {
-		if (index < 0 || index >= profiles.size()) return "Unbekanntes Profil";
+		if (index < 0 || index >= profiles.size()) return dev.theredstonee.trsclient.core.i18n.I18n.tr("profiles.error.unknown");
 		String clean = clean(name);
 		String error = validate(clean, index);
 		if (error != null) return error;
@@ -135,7 +135,7 @@ public final class HudProfiles implements ConfigPart {
 	/** Freier Vorschlagsname, z. B. "Profil 2". */
 	public String suggestName() {
 		for (int i = profiles.size() + 1; ; i++) {
-			String candidate = "Profil " + i;
+			String candidate = dev.theredstonee.trsclient.core.i18n.I18n.tr("profiles.suggest", i);
 			if (indexOf(candidate) < 0) return candidate;
 		}
 	}
@@ -143,10 +143,10 @@ public final class HudProfiles implements ConfigPart {
 	/** Prüft einen Namen; {@code ignoreIndex} = eigenes Profil beim Umbenennen. @return Fehler oder null */
 	public String validate(String name, int ignoreIndex) {
 		String clean = clean(name);
-		if (clean.isEmpty()) return "Name fehlt";
-		if (clean.length() > MAX_NAME_LENGTH) return "Höchstens " + MAX_NAME_LENGTH + " Zeichen";
+		if (clean.isEmpty()) return dev.theredstonee.trsclient.core.i18n.I18n.tr("profiles.error.empty");
+		if (clean.length() > MAX_NAME_LENGTH) return dev.theredstonee.trsclient.core.i18n.I18n.tr("profiles.error.long", MAX_NAME_LENGTH);
 		int existing = indexOf(clean);
-		if (existing >= 0 && existing != ignoreIndex) return "Name schon vergeben";
+		if (existing >= 0 && existing != ignoreIndex) return dev.theredstonee.trsclient.core.i18n.I18n.tr("profiles.error.taken");
 		return null;
 	}
 

@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.module;
 
 import dev.theredstonee.trsclient.core.config.ModuleConfig;
+import dev.theredstonee.trsclient.core.i18n.I18n;
 
 /**
  * Freier Text (z. B. Auto-GG-Nachricht, Text-Hotkeys). Wird im Menü als Zeile mit
@@ -45,13 +46,20 @@ public final class TextSetting extends Setting {
 		return maxLength;
 	}
 
+	/** Platzhalter in der aktiven Sprache ("setting.<modul>.<key>.hint"). */
 	public String placeholder() {
-		return placeholder;
+		if (placeholder.isEmpty() || labelKey() == null) return placeholder;
+		return I18n.trOr(labelKey() + ".hint", placeholder);
+	}
+
+	/** Übersetzungsschlüssel des Platzhalters oder null (kein Platzhalter). */
+	public String placeholderKey() {
+		return placeholder.isEmpty() || labelKey() == null ? null : labelKey() + ".hint";
 	}
 
 	/** Anzeige im Menü: der Text oder der Platzhalter. */
 	public String display() {
-		return value.isEmpty() ? placeholder : value;
+		return value.isEmpty() ? placeholder() : value;
 	}
 
 	public boolean isEmpty() {

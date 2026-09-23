@@ -90,7 +90,8 @@ public final class SettingsPanel {
 		Theme t = Theme.get();
 		int right = x + w;
 		// Textzeilen haben rechts ein breites Eingabefeld – dann den Namen früher abschneiden.
-		int labelWidth = s instanceof TextSetting ? w - textFieldWidth(c, s, w) - 8 : w - 90;
+		// Schalter sind schmal (24 px) – dort bekommt der Name fast die ganze Zeile.
+		int labelWidth = s instanceof TextSetting ? w - textFieldWidth(c, s, w) - 8 : s instanceof BoolSetting ? w - 34 : w - 90;
 		Paint.textClipped(c, s.label(), x + 2, y + 6, labelWidth, t.text, false);
 		if (s instanceof BoolSetting) {
 			BoolSetting b = (BoolSetting) s;
@@ -130,7 +131,7 @@ public final class SettingsPanel {
 
 	private void key(Canvas c, Hits hits, final KeySetting k, int x, int y, int w, int mx, int my) {
 		Theme t = Theme.get();
-		String label = capturing == k ? "Taste drücken …" : (k.isBound() ? keyLabel.label(k.get()) : "—");
+		String label = capturing == k ? dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.pressKey") : (k.isBound() ? keyLabel.label(k.get()) : "—");
 		int bw = Math.max(34, c.textWidth(label) + 12);
 		int bx = x + w - bw;
 		boolean hover = inside(mx, my, bx, y + 2, bw, 14);
@@ -411,7 +412,7 @@ public final class SettingsPanel {
 		// Chroma
 		boolean chromaHover = inside(mx, my, controlsX, cy, controlsW, 12);
 		Paint.toggle(c, controlsX, cy, 22, 11, color.chroma() ? 1f : 0f, chromaHover);
-		c.text(c.clip("Chroma", controlsW - 26), controlsX + 26, cy + 2, t.textDim, false);
+		c.text(c.clip(dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.chroma"), controlsW - 26), controlsX + 26, cy + 2, t.textDim, false);
 		hits.add(controlsX, cy, controlsW, 12, new Runnable() {
 			@Override
 			public void run() {

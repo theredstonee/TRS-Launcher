@@ -172,6 +172,30 @@ rebound in the TRS menu, not in the vanilla controls screen.
 | Left Alt (hold) | Freelook (module must be enabled) |
 
 
+## Languages
+
+The whole client (menu, modules, settings, HUD texts, title screen, HUD editor, profiles, packs, waypoints, chat
+messages, key binding names) is translated like the launcher: **English** (default and fallback), **German** and
+**Spanish** complete, **French, Polish, Portuguese (Brazil), Turkish, Dutch** as beta (machine quality).
+
+- Source of truth: flat UTF-8 JSON files `common/src/main/resources/assets/trsclient/i18n/<code>.json`, bundled into
+  every jar (all builds add `common/src/main/resources`). Placeholders are `{0}`, `{1}` …
+- `core/i18n/I18n`: one merged table per language (English + language), lookup is a single map access; module and
+  setting labels cache their text per language (`I18n.generation()`), so drawing a frame allocates nothing extra.
+  Missing key → English → the key itself.
+- Language: `"language"` in `config/trsclient/launcher-theme.json` (written by the launcher before every start);
+  without it the language selected in Minecraft (`lang:` in `options.txt`, all regional variants such as `es_mx`,
+  `de_at`, `fr_ca` map to the base language), otherwise English. Both files are re-checked (timestamps only) when the
+  TRS menu or the title screen opens.
+- Key binding names/category for the vanilla controls screen come from Minecraft's own lang files
+  (`assets/trsclient/lang/*.json`, `.lang` for Forge 1.7.10–1.12.2; `legacy` renames them to `xx_XX.lang` below 1.11).
+  They are generated from the i18n files: `node client-mod/scripts/gen-lang.mjs` (after changing a `key.trsclient.*`
+  text).
+- Tests: `I18nTest` (every language has all keys of English – the coverage is printed like in the launcher –,
+  placeholders match, every key used in the code of all loader trees exists, fallback, language detection) and
+  `TextFitTest` (names fit the menu tiles, rail, title buttons and the HUD-editor panel in the default 854×480
+  window, measured with Minecraft's glyph widths; beta languages are only reported).
+
 ## Fair play
 
 The client never automates anything and never shows more than the game already knows:
@@ -284,6 +308,10 @@ automatically. The API for that:
 | `… new ColorSetting(key, label, defaultArgb[, alphaEditable])` | colour picker; `argb()` already includes chroma |
 | `… new ChoiceSetting<>(key, label, EnumType.class, default)` | dropdown (enum implements `ChoiceSetting.Option`) |
 | `… new KeySetting(key, label[, "key.keyboard.v"])` | key binding, stored as the version-neutral vanilla key name |
+
+Names and labels in the code are only English fallbacks: every module, setting and choice option also needs its
+translation keys (`module.<id>`, `module.<id>.desc`, `setting.<module>.<key>`, `setting.<module>.<key>.<option>`,
+text placeholders `….hint`) in the language files – see "Languages" below. `I18nTest` fails if a key is missing.
 
 The version-specific side only implements `core/ui/Canvas` (see `ui/GfxCanvas`) and `core/ui/menu/MenuHost`
 (open screens, sounds, key names, HUD elements for the editor); menu, settings pages, profiles and the HUD editor

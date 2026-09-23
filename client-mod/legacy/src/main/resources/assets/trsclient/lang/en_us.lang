@@ -1,6 +1,7 @@
 key.categories.trsclient=TRS Client
-key.trsclient.menu=TRS-Menü öffnen
-key.trsclient.zoom=Zoom (halten)
-key.trsclient.fullbright=Fullbright umschalten
-key.trsclient.freelook=Freelook (halten)
-key.trsclient.hudProfile=HUD-Profil wechseln
+key.category.trsclient.main=TRS Client
+key.trsclient.menu=Open TRS menu
+key.trsclient.zoom=Zoom (hold)
+key.trsclient.fullbright=Toggle fullbright
+key.trsclient.freelook=Freelook (hold)
+key.trsclient.hudProfile=Switch HUD profile

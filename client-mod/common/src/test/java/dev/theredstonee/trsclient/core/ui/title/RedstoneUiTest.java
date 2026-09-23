@@ -115,13 +115,13 @@ class RedstoneUiTest {
 		CountingCanvas canvas = new CountingCanvas();
 		ui.render(canvas, W, H, -1, -1);
 		assertTrue(ui.keyPressed(0, UiKey.TAB, false));
-		assertEquals("Einzelspieler, Schaltfläche", host.narrated.get(host.narrated.size() - 1));
+		assertEquals("Singleplayer, button", host.narrated.get(host.narrated.size() - 1));
 		ui.keyPressed(0, UiKey.DOWN, false);
-		assertEquals("Mehrspieler, Schaltfläche", host.narrated.get(host.narrated.size() - 1));
+		assertEquals("Multiplayer, button", host.narrated.get(host.narrated.size() - 1));
 		// Rückwärts über den Anfang hinaus landet beim Link am Ende
 		ui.keyPressed(0, UiKey.UP, false);
 		ui.keyPressed(0, UiKey.UP, false);
-		assertEquals("Klassischer Titelbildschirm, Schaltfläche", host.narrated.get(host.narrated.size() - 1));
+		assertEquals("Classic title screen, button", host.narrated.get(host.narrated.size() - 1));
 		ui.keyPressed(0, UiKey.TAB, false);
 		assertTrue(ui.keyPressed(0, UiKey.ENTER, false));
 		assertEquals(1, host.clicks);
