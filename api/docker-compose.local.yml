@@ -1,0 +1,14 @@
+# Lokaler Test OHNE Tunnel: API nur auf 127.0.0.1:3000 des eigenen Rechners.
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build api
+# cloudflared liegt hier im Profil "tunnel" und startet daher nicht mit.
+services:
+  api:
+    ports:
+      - '127.0.0.1:3000:3000'
+    environment:
+      TRUST_PROXY: none
+      PUBLIC_BASE_URL: http://127.0.0.1:3000
+      LOG_REQUESTS: 'true'
+
+  cloudflared:
+    profiles: [tunnel]

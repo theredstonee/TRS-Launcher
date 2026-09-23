@@ -1,0 +1,67 @@
+# TRS API hinter einem Cloudflare-Tunnel (siehe README.md).
+# Die API veröffentlicht KEINEN Port – erreichbar ist sie nur über cloudflared
+# im internen Netz. Werte kommen aus .env (siehe .env.example).
+name: trs-api
+
+services:
+  api:
+    build: .
+    image: trs-api:latest
+    restart: unless-stopped
+    # Nur die Variablen, die die API braucht (TUNNEL_TOKEN bleibt bei cloudflared).
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY fehlt in .env}
+      ADMIN_UUIDS: ${ADMIN_UUIDS:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://api.theredstonee.de}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      TRUST_PROXY: ${TRUST_PROXY:-cloudflare}
+      LOG_REQUESTS: ${LOG_REQUESTS:-false}
+    volumes:
+      - trs-data:/data
+    networks:
+      - tunnel
+      - egress
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    pids_limit: 200
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+
+  cloudflared:
+    # Für reproduzierbare Deployments eine feste Version eintragen (z. B. cloudflare/cloudflared:2026.9.0).
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      # Ohne Token beendet sich cloudflared mit Fehlermeldung (docker compose logs cloudflared).
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - tunnel
+      - egress
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+
+networks:
+  # Nur api <-> cloudflared, ohne Verbindung nach außen.
+  tunnel:
+    internal: true
+  # Ausgehend: cloudflared → Cloudflare, api → sessionserver.mojang.com. Keine veröffentlichten Ports.
+  egress: {}
+
+volumes:
+  trs-data:
