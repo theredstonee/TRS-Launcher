@@ -25,7 +25,7 @@ public class TrsUiScreen extends TrsScreen {
 
 	@Override
 	protected void draw(Gfx g, int mouseX, int mouseY, float partialTick) {
-		ui.render(GfxCanvas.of(g, font), width, height, mouseX, mouseY);
+		g.managed(() -> ui.render(GfxCanvas.of(g, font), width, height, mouseX, mouseY));
 	}
 
 	@Override

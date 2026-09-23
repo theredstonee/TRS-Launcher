@@ -247,6 +247,17 @@ public final class Gfx {
 	}
 
 	/**
+	 * Zeichnet alles in {@code draw} gesammelt: 1.20–1.21.1 schicken sonst jedes Rechteck einzeln an
+	 * die Grafikkarte (flushIfUnmanaged) – bei Hunderten Rechtecken des TRS-Menüs teuer.
+	 */
+	public void managed(Runnable draw) {
+		//? if >=1.20 && <1.21.2 {
+		g.drawManaged(draw);
+		//?} else
+		/*draw.run();*/
+	}
+
+	/**
 	 * Zeichnet gepufferten Text sofort. 1.20–1.21.5 sammelt GuiGraphics den Text und zeichnet ihn
 	 * erst am Ende – ohne das läge er über später gezeichneten Flächen. Davor und ab 1.21.6
 	 * wird sofort bzw. in Reihenfolge gezeichnet.
