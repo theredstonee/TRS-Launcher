@@ -16,7 +16,8 @@
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
     "test": "vitest run",
-    "capes": "node scripts/generate-capes.ts",
+    "capes": "node scripts/generate-capes.mjs",
+    "cosmetics": "node scripts/generate-cosmetics.mjs",
     "smoke": "node scripts/smoke.mjs"
   },
   "packageManager": "pnpm@11.24.0",

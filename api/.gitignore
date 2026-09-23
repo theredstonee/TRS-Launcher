@@ -11,3 +11,6 @@ coverage
 .env
 .env.*
 !.env.example
+
+# Erzeugte Vorschauen (node scripts/generate-cosmetics.mjs)
+assets/cosmetic-previews

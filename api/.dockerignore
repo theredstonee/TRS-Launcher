@@ -18,3 +18,5 @@ Dockerfile
 eslint.config.mjs
 vitest.config.ts
 assets/previews
+assets/cosmetic-previews
+assets/previews

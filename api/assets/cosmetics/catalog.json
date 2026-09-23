@@ -1,0 +1,129 @@
+[
+  {
+    "id": "redstone_crown",
+    "name": "Redstone-Krone",
+    "template": "crown",
+    "file": "redstone_crown.png",
+    "unlock": "code",
+    "scale": 2,
+    "animated": true,
+    "frames": 8,
+    "frameTimeMs": 120,
+    "emissive": true
+  },
+  {
+    "id": "team_crown",
+    "name": "Team-Krone",
+    "template": "crown",
+    "file": "team_crown.png",
+    "unlock": "admin",
+    "scale": 2,
+    "animated": true,
+    "frames": 8,
+    "frameTimeMs": 150,
+    "emissive": true
+  },
+  {
+    "id": "trs_cap",
+    "name": "TRS-Cap",
+    "template": "cap",
+    "file": "trs_cap.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "lamp_helmet",
+    "name": "Redstone-Lampen-Helm",
+    "template": "lamp_helmet",
+    "file": "lamp_helmet.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": true,
+    "frames": 8,
+    "frameTimeMs": 150,
+    "emissive": true
+  },
+  {
+    "id": "top_hat",
+    "name": "Zylinder",
+    "template": "tophat",
+    "file": "top_hat.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "redstone_wings",
+    "name": "Redstone-Flügel",
+    "template": "wings",
+    "file": "redstone_wings.png",
+    "unlock": "code",
+    "scale": 2,
+    "animated": true,
+    "frames": 8,
+    "frameTimeMs": 120,
+    "emissive": true
+  },
+  {
+    "id": "dragon_wings",
+    "name": "Drachenflügel",
+    "template": "wings",
+    "file": "dragon_wings.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "backpack",
+    "name": "Rucksack",
+    "template": "backpack",
+    "file": "backpack.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "halo",
+    "name": "Heiligenschein",
+    "template": "halo",
+    "file": "halo.png",
+    "unlock": "code",
+    "scale": 2,
+    "animated": true,
+    "frames": 8,
+    "frameTimeMs": 125,
+    "emissive": true
+  },
+  {
+    "id": "redstone_aura",
+    "name": "Redstone-Partikel-Aura",
+    "template": "orbit",
+    "file": "redstone_aura.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150,
+    "emissive": true
+  },
+  {
+    "id": "footprints",
+    "name": "Fußspuren",
+    "template": "trail",
+    "file": "footprints.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  }
+]

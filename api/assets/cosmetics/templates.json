@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "crown",
+      "name": "Krone",
+      "kind": "model",
+      "slot": "hat",
+      "textureWidth": 64,
+      "textureHeight": 16,
+      "cubes": [
+        { "from": [-5, 7, -5], "to": [5, 11, 5], "uv": [0, 0], "attach": "head" }
+      ]
+    },
+    {
+      "id": "cap",
+      "name": "Kappe",
+      "kind": "model",
+      "slot": "hat",
+      "textureWidth": 64,
+      "textureHeight": 32,
+      "cubes": [
+        { "from": [-5, 6, -5], "to": [5, 10, 5], "uv": [0, 0], "attach": "head" },
+        { "from": [-5, 6, 5], "to": [5, 7, 10], "uv": [0, 14], "attach": "head" }
+      ]
+    },
+    {
+      "id": "lamp_helmet",
+      "name": "Lampen-Helm",
+      "kind": "model",
+      "slot": "hat",
+      "textureWidth": 64,
+      "textureHeight": 32,
+      "cubes": [
+        { "from": [-5, 0, -5], "to": [5, 10, 5], "uv": [0, 0], "attach": "head" },
+        { "from": [-1, 10, -1], "to": [1, 14, 1], "uv": [40, 0], "attach": "head" }
+      ]
+    },
+    {
+      "id": "tophat",
+      "name": "Zylinder",
+      "kind": "model",
+      "slot": "hat",
+      "textureWidth": 64,
+      "textureHeight": 32,
+      "cubes": [
+        { "from": [-6, 8.5, -6], "to": [6, 9.5, 6], "uv": [0, 0], "attach": "head" },
+        { "from": [-4, 9.5, -4], "to": [4, 17.5, 4], "uv": [0, 13], "attach": "head" }
+      ]
+    },
+    {
+      "id": "wings",
+      "name": "Flügel",
+      "kind": "model",
+      "slot": "wings",
+      "textureWidth": 64,
+      "textureHeight": 32,
+      "cubes": [
+        { "from": [-16, -13, -3], "to": [-1, 5, -2], "uv": [0, 0], "attach": "back", "pivot": [-1, 0, -2.5], "anim": "flap" },
+        { "from": [1, -13, -3], "to": [16, 5, -2], "uv": [32, 0], "attach": "back", "pivot": [1, 0, -2.5], "anim": "flap" }
+      ]
+    },
+    {
+      "id": "backpack",
+      "name": "Rucksack",
+      "kind": "model",
+      "slot": "back",
+      "textureWidth": 32,
+      "textureHeight": 32,
+      "cubes": [
+        { "from": [-4, -11, -4], "to": [4, -1, 0], "uv": [0, 0], "attach": "back" },
+        { "from": [-3, -9, -5], "to": [3, -5, -4], "uv": [0, 14], "attach": "back" }
+      ]
+    },
+    {
+      "id": "halo",
+      "name": "Heiligenschein",
+      "kind": "model",
+      "slot": "aura",
+      "textureWidth": 32,
+      "textureHeight": 8,
+      "cubes": [
+        { "from": [-2, 10.5, 3], "to": [2, 11.5, 4], "uv": [0, 0], "attach": "head", "anim": "bob" },
+        { "from": [-2, 10.5, -4], "to": [2, 11.5, -3], "uv": [10, 0], "attach": "head", "anim": "bob" },
+        { "from": [3, 10.5, -2], "to": [4, 11.5, 2], "uv": [0, 2], "attach": "head", "anim": "bob" },
+        { "from": [-4, 10.5, -2], "to": [-3, 11.5, 2], "uv": [10, 2], "attach": "head", "anim": "bob" },
+        { "from": [2, 10.5, 2], "to": [3, 11.5, 3], "uv": [20, 0], "attach": "head", "anim": "bob" },
+        { "from": [-3, 10.5, 2], "to": [-2, 11.5, 3], "uv": [24, 0], "attach": "head", "anim": "bob" },
+        { "from": [2, 10.5, -3], "to": [3, 11.5, -2], "uv": [20, 2], "attach": "head", "anim": "bob" },
+        { "from": [-3, 10.5, -3], "to": [-2, 11.5, -2], "uv": [24, 2], "attach": "head", "anim": "bob" }
+      ]
+    },
+    {
+      "id": "ring",
+      "name": "Partikel-Ring",
+      "kind": "particles",
+      "slot": "aura",
+      "textureWidth": 16,
+      "textureHeight": 8,
+      "particles": {
+        "pattern": "ring",
+        "attach": "root",
+        "center": [0, 1, 0],
+        "radius": 10,
+        "count": 12,
+        "speedDegPerSec": 30,
+        "size": 2,
+        "orientation": "billboard",
+        "sprites": [
+          { "uv": [0, 0], "size": [8, 8] },
+          { "uv": [8, 0], "size": [8, 8] }
+        ]
+      }
+    },
+    {
+      "id": "orbit",
+      "name": "Partikel-Wirbel",
+      "kind": "particles",
+      "slot": "aura",
+      "textureWidth": 16,
+      "textureHeight": 8,
+      "particles": {
+        "pattern": "orbit",
+        "attach": "root",
+        "center": [0, 16, 0],
+        "radius": 12,
+        "count": 8,
+        "speedDegPerSec": 60,
+        "height": 10,
+        "periodMs": 4000,
+        "size": 2.5,
+        "orientation": "billboard",
+        "sprites": [
+          { "uv": [0, 0], "size": [8, 8] },
+          { "uv": [8, 0], "size": [8, 8] }
+        ]
+      }
+    },
+    {
+      "id": "trail",
+      "name": "Spur",
+      "kind": "particles",
+      "slot": "aura",
+      "textureWidth": 16,
+      "textureHeight": 8,
+      "particles": {
+        "pattern": "trail",
+        "attach": "root",
+        "offset": [0, 0, 0],
+        "sideOffset": 2,
+        "spacingBlocks": 0.6,
+        "lifetimeMs": 3000,
+        "maxParticles": 24,
+        "size": 4,
+        "orientation": "ground",
+        "sprites": [
+          { "uv": [0, 0], "size": [8, 8] },
+          { "uv": [8, 0], "size": [8, 8] }
+        ]
+      }
+    }
+  ]
+}
