@@ -205,6 +205,17 @@ textarea {
       inset 0 1px 0 rgb(255 255 255 / 0.22),
       inset 0 -2px 0 rgb(0 0 0 / 0.25);
   }
+  /* Wie eine Redstone-Lampe: beim Drücken blitzt sie warm auf. */
+  .btn-primary:not(:disabled):hover:active,
+  .btn-primary:not(:disabled):active {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      inset 0 0 12px color-mix(in srgb, var(--color-lamp-300) 55%, transparent),
+      0 0 18px -2px color-mix(in srgb, var(--color-lamp-400) 70%, transparent);
+  }
+  .btn-ghost:not(:disabled):hover {
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-redstone-500) 55%, transparent);
+  }
   .btn-primary:not(:disabled):hover {
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.25),
@@ -228,7 +239,7 @@ textarea {
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
   }
   .card-hover {
-    @apply transition-[border-color,background-color] duration-150 hover:border-base-700 hover:bg-base-850;
+    @apply relative transition-[border-color,background-color] duration-150 hover:border-base-700 hover:bg-base-850;
   }
   .btn-icon {
     @apply inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-base-800 text-base-200 transition-colors hover:bg-base-700 hover:text-base-50 disabled:cursor-not-allowed disabled:opacity-50;
@@ -286,11 +297,52 @@ textarea {
     background-color: color-mix(in srgb, var(--color-base-950) 62%, transparent);
     background-image: none;
   }
-  /* Platzhalter, während Daten laden. */
+  /* Platzhalter, während Daten laden: dunkle Platte, unten läuft ein Redstone-Signal durch. */
   .skeleton {
-    @apply animate-shimmer rounded-md;
-    background: linear-gradient(90deg, var(--color-base-850) 25%, var(--color-base-800) 50%, var(--color-base-850) 75%);
-    background-size: 200% 100%;
+    @apply relative overflow-hidden rounded-md bg-base-850;
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-redstone-600) 25%, transparent);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 35%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-redstone-500), var(--color-redstone-300), var(--color-redstone-500), transparent);
+    box-shadow: 0 0 6px var(--color-redstone-500);
+    animation: signal-run 1.8s steps(24) infinite;
+  }
+
+  /* Karten: beim Drüberfahren läuft ein Signal einmal um den Rand. */
+  .card-hover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--signal-angle),
+      transparent 0deg 250deg,
+      var(--color-redstone-600) 290deg,
+      var(--color-redstone-300) 330deg,
+      transparent 350deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .card-hover:hover::before {
+    opacity: 1;
+    animation: signal-spin 2.6s linear infinite;
+  }
+
+  /* Menüs „schalten sich ein“: kurzes Aufglühen beim Öffnen. */
+  .menu {
+    animation: power-on 0.35s ease-out;
   }
   .seg {
     @apply px-3 py-1.5 text-base-400 transition-colors hover:text-base-50;
@@ -389,5 +441,71 @@ textarea {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Redstone-Animationen im ganzen Launcher ------------------------------- */
+@property --signal-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes signal-spin {
+  to {
+    --signal-angle: 360deg;
+  }
+}
+/* Ein Signal läuft einmal über die Breite (Ladeplatzhalter, Seitenwechsel). */
+@keyframes signal-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(290%);
+  }
+}
+@keyframes power-on {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  45% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-redstone-500) 60%, transparent));
+  }
+  100% {
+    transform: none;
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+/* Seitenwechsel: ein kurzer Impuls läuft oben am Inhalt entlang. */
+.route-signal {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 5;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.route-signal::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, var(--color-redstone-500), var(--color-redstone-300), transparent);
+  box-shadow: 0 0 8px var(--color-redstone-500);
+  animation: signal-run 0.7s steps(18) 1 forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after,
+  .card-hover:hover::before,
+  .route-signal::after {
+    animation: none;
+  }
+  .menu {
+    animation: none;
   }
 }

@@ -109,14 +109,14 @@ async function confirmRemove() {
       </li>
     </ul>
 
-    <div v-else-if="accounts.loaded" class="card px-6 py-12 text-center">
-      <h2 class="font-semibold">Noch kein Account</h2>
-      <p class="mx-auto mt-1 max-w-md text-sm text-base-400">
-        Melde dich mit dem Microsoft-Konto an, mit dem du Minecraft gekauft hast. Dein Passwort gibst du nur bei
-        Microsoft im Browser ein – der Launcher bekommt es nie zu sehen.
-      </p>
-      <button class="btn btn-primary mt-5" :disabled="!!login" @click="start('browser')">Mit Microsoft anmelden</button>
-    </div>
+    <RedstoneEmpty
+      v-else-if="accounts.loaded"
+      :seed="0x77"
+      title="Noch kein Account"
+      text="Melde dich mit dem Microsoft-Konto an, mit dem du Minecraft gekauft hast. Dein Passwort gibst du nur bei Microsoft im Browser ein – der Launcher bekommt es nie zu sehen."
+    >
+      <button class="btn btn-primary" :disabled="!!login" @click="start('browser')">Mit Microsoft anmelden</button>
+    </RedstoneEmpty>
 
     <BaseDialog v-if="login" title="Mit Microsoft anmelden" @close="cancel">
       <template v-if="login.mode === 'browser'">

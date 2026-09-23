@@ -72,16 +72,13 @@ function paintBlock(g: Ctx, ox: number, oy: number, bx: number, by: number, p: P
   g.fillRect(ox + TEX - 1, oy, 1, TEX)
 }
 
-/** Boden-Ebene einer ganzen Schaltung (inkl. Blöcken) – einmal je Aufbau/Theme. */
+/** Boden-Ebene einer ganzen Schaltung – einmal je Aufbau/Theme. Blöcke kommen als Sprites
+ *  darüber, damit der Umbau sie jederzeit setzen und entfernen kann. */
 export function paintFloor(circuit: Circuit, p: Palette): Surface {
   const s = surface(circuit.w * TEX, circuit.h * TEX)
   const g = ctx2d(s)
   for (let by = 0; by < circuit.h; by++) {
-    for (let bx = 0; bx < circuit.w; bx++) {
-      const c = circuit.at(bx, by)!
-      if (c.kind === 'block') paintBlock(g, bx * TEX, by * TEX, bx, by, p)
-      else paintFloorBlock(g, bx * TEX, by * TEX, bx, by, p)
-    }
+    for (let bx = 0; bx < circuit.w; bx++) paintFloorBlock(g, bx * TEX, by * TEX, bx, by, p)
   }
   return s
 }
@@ -290,18 +287,165 @@ export class Sprites {
     })
   }
 
-  /** Ausgefahrener Kolbenkopf im Feld davor. */
-  pistonHead(dir: Dir): Surface {
-    return this.get(`h${dir}`, (g) => {
+  /** Ausgefahrener Kolbenkopf im Feld davor (Klebekolben mit grünem Schleim). */
+  pistonHead(dir: Dir, sticky = false): Surface {
+    return this.get(`h${dir}${sticky ? 's' : ''}`, (g) => {
       const p = this.p
       g.fillStyle = p.pistonArm
       rectAlong(g, dir, 0, 6, 12, 4)
       g.fillStyle = p.pistonHead
       rectAlong(g, dir, 12, 0, 4, 16)
+      if (sticky) {
+        g.fillStyle = SLIME
+        rectAlong(g, dir, 13, 3, 3, 10)
+      }
       g.fillStyle = p.pistonEdge
       rectAlong(g, dir, 12, 0, 1, 16)
     })
   }
+
+  /** Klebekolben: Körper mit grünem Kopf. */
+  stickyPiston(dir: Dir, extended: boolean): Surface {
+    return this.get(`q${dir}:${extended ? 1 : 0}`, (g) => {
+      g.drawImage(this.piston(dir, extended), 0, 0)
+      if (!extended) {
+        g.fillStyle = SLIME
+        rectAlong(g, dir, 13, 3, 3, 10)
+      }
+    })
+  }
+
+  /** Deepslate-Ziegel als erhöhter Block (vier Varianten). */
+  block(variant: number): Surface {
+    return this.get(`b${variant}`, (g) => paintBlock(g, 0, 0, variant * 3 + 1, variant * 5 + 2, this.p))
+  }
+
+  /** Trichter von oben mit Komparator-Glühen: die Füllung zeigt den Takt. */
+  hopper(on: boolean, fill: number): Surface {
+    return this.get(`o${on ? 1 : 0}:${fill}`, (g) => {
+      for (let y = 0; y < TEX; y++) {
+        for (let x = 0; x < TEX; x++) {
+          const rim = x <= 1 || y <= 1 || x >= 14 || y >= 14
+          const inner = x >= 4 && x <= 11 && y >= 4 && y <= 11
+          const n = noise(x, y, 71)
+          g.fillStyle = rim ? (n < 0.3 ? HOPPER[2]! : HOPPER[1]!) : inner ? HOPPER[3]! : HOPPER[0]!
+          g.fillRect(x, y, 1, 1)
+        }
+      }
+      // Items im Trichter: je voller, desto mehr Pixel.
+      const items = Math.round(fill * 12)
+      for (let k = 0; k < items; k++) {
+        g.fillStyle = ITEMS[k % ITEMS.length]!
+        g.fillRect(5 + ((k * 3) % 6), 5 + ((k * 5) % 6), 2, 1)
+      }
+      g.fillStyle = on ? this.p.dust[15]! : this.p.dust[0]!
+      g.fillRect(7, 14, 2, 2)
+    })
+  }
+
+  /** Beobachter: „Gesicht“ zur beobachteten Seite, roter Punkt am Ausgang. */
+  observer(dir: Dir, on: boolean): Surface {
+    return this.get(`v${dir}:${on ? 1 : 0}`, (g) => {
+      for (let a = 0; a < TEX; a++) {
+        for (let c = 0; c < TEX; c++) {
+          const [x, y] = along(dir, a, c)
+          const edge = c === 0 || c === 15 || a === 0 || a === 15
+          g.fillStyle = edge ? STONE[2]! : noise(x, y, 81) < 0.2 ? STONE[1]! : STONE[0]!
+          g.fillRect(x, y, 1, 1)
+        }
+      }
+      g.fillStyle = STONE[3]!
+      rectAlong(g, dir, 1, 3, 3, 3)
+      rectAlong(g, dir, 1, 10, 3, 3)
+      g.fillStyle = on ? this.p.dust[15]! : this.p.torchOff
+      rectAlong(g, dir, 12, 6, 3, 4)
+    })
+  }
+
+  /** Notenblock: Holz mit Notensymbol; beim Klingen hell. */
+  note(on: boolean): Surface {
+    return this.get(`n${on ? 1 : 0}`, (g) => {
+      for (let y = 0; y < TEX; y++) {
+        for (let x = 0; x < TEX; x++) {
+          const edge = x === 0 || y === 0 || x === 15 || y === 15
+          const grain = (y + (x >> 2)) % 5 === 0
+          g.fillStyle = edge ? WOOD[2]! : grain ? WOOD[1]! : WOOD[0]!
+          g.fillRect(x, y, 1, 1)
+        }
+      }
+      g.fillStyle = on ? '#fff3c4' : WOOD[3]!
+      g.fillRect(9, 3, 1, 8)
+      g.fillRect(10, 3, 2, 1)
+      g.fillRect(11, 4, 1, 2)
+      g.fillRect(6, 10, 4, 3)
+    })
+  }
+
+  /** Spender: Stein mit Auswurföffnung. */
+  dispenser(dir: Dir, on: boolean): Surface {
+    return this.get(`x${dir}:${on ? 1 : 0}`, (g) => {
+      for (let y = 0; y < TEX; y++) {
+        for (let x = 0; x < TEX; x++) {
+          const edge = x === 0 || y === 0 || x === 15 || y === 15
+          g.fillStyle = edge ? STONE[2]! : noise(x, y, 91) < 0.25 ? STONE[1]! : STONE[0]!
+          g.fillRect(x, y, 1, 1)
+        }
+      }
+      g.fillStyle = on ? this.p.dust[12]! : STONE[3]!
+      rectAlong(g, dir, 11, 5, 5, 6)
+      g.fillStyle = '#0d0d10'
+      rectAlong(g, dir, 12, 6, 3, 4)
+    })
+  }
+
+  /** TNT von oben: rot-weißes Band; gezündet blinkt es weiß. */
+  tnt(flash: boolean): Surface {
+    return this.get(`k${flash ? 1 : 0}`, (g) => {
+      for (let y = 0; y < TEX; y++) {
+        for (let x = 0; x < TEX; x++) {
+          const band = y >= 6 && y <= 9
+          const edge = x === 0 || y === 0 || x === 15 || y === 15
+          let c = edge ? '#7a1712' : noise(x, y, 97) < 0.2 ? '#b8261b' : '#d8382a'
+          if (band) c = (x + y) % 5 === 0 ? '#9a9a9a' : '#e8e4dc'
+          if (flash) c = band ? '#ffffff' : '#fff0e6'
+          g.fillStyle = c
+          g.fillRect(x, y, 1, 1)
+        }
+      }
+      g.fillStyle = flash ? '#ff5a2a' : '#3a3a3a'
+      g.fillRect(7, 7, 2, 2)
+    })
+  }
+
+  /** Tageslichtsensor: Holzplatte mit Glasfeldern; nachts bläulich (liefert dann Strom). */
+  sensor(on: boolean): Surface {
+    return this.get(`y${on ? 1 : 0}`, (g) => {
+      for (let y = 0; y < TEX; y++) {
+        for (let x = 0; x < TEX; x++) {
+          const edge = x === 0 || y === 0 || x === 15 || y === 15
+          const glass = x >= 3 && x <= 12 && y >= 3 && y <= 12 && (x - 3) % 3 !== 2 && (y - 3) % 3 !== 2
+          let c = edge ? WOOD[2]! : WOOD[1]!
+          if (glass) c = on ? (noise(x, y, 99) < 0.3 ? '#7fa8ff' : '#4d6fd6') : noise(x, y, 99) < 0.3 ? '#e9e6d6' : '#c9c3a5'
+          g.fillStyle = c
+          g.fillRect(x, y, 1, 1)
+        }
+      }
+    })
+  }
+}
+
+const SLIME = '#6fbf4a'
+const HOPPER = ['#4a4a52', '#3a3a41', '#5a5a64', '#26262c']
+const STONE = ['#76767e', '#65656c', '#55555c', '#3f3f46']
+const WOOD = ['#6b4a2e', '#5a3d25', '#46301d', '#2e1f12']
+const ITEMS = ['#e2c24a', '#5fd3e8', '#3fcf6e', '#c87cf0', '#e8e4dc']
+/** Farben für Items, die Spender auswerfen. */
+export const ITEM_COLORS = ITEMS
+
+/** Notenfarben wie im Spiel: Farbton je Tonhöhe. */
+export function noteColor(pitch: number): string {
+  const hue = Math.round((pitch / 24) * 330)
+  return `hsl(${hue} 90% 60%)`
 }
 
 
@@ -313,6 +457,12 @@ export interface Particle {
   life: number
   max: number
   power: number
+  /** Eigene Farbe (Noten, Items, Funken, Bruchstücke) statt Staubfarbe. */
+  color?: string
+  /** Note (kleines Symbol) oder 2×2-Item; sonst ein Pixel. */
+  shape?: 'note' | 'item'
+  /** Schwerkraft je Tick (Items fallen, Noten steigen). */
+  gravity?: number
 }
 
 /** Ein Bild der Schaltung: Boden-Ebene, dann alle Teile, dann Funken. */
@@ -329,27 +479,53 @@ export function paintFrame(
   const { w } = circuit
   for (let i = 0; i < circuit.cells.length; i++) {
     const c = circuit.cells[i]!
-    if (c.kind === 'floor' || c.kind === 'block') continue
-    const x = (i % w) * TEX
-    const y = ((i / w) | 0) * TEX
-    const s = spriteFor(c, sprites, flicker(i))
+    if (c.kind === 'floor') continue
+    const bx = i % w
+    const by = (i / w) | 0
+    const x = bx * TEX
+    const y = by * TEX
+    if (c.kind === 'block') {
+      g.drawImage(sprites.block((bx * 7 + by * 3) & 3), x, y)
+      continue
+    }
+    const s = spriteFor(c, sprites, flicker(i), circuit.ticks)
     if (s) g.drawImage(s, x, y)
-    if (c.kind === 'piston' && c.on) {
+    if (c.kind === 'piston') {
       const hx = x + DX[c.dir] * TEX
       const hy = y + DY[c.dir] * TEX
-      g.drawImage(sprites.pistonHead(c.dir), hx, hy)
+      if (c.on) g.drawImage(sprites.pistonHead(c.dir, c.sticky), hx, hy)
+      // Der Klebekolben trägt einen Block: eingefahren direkt davor, ausgefahren ein Feld weiter.
+      if (c.sticky) {
+        const k = c.on ? 2 : 1
+        g.drawImage(sprites.block(2), x + DX[c.dir] * TEX * k, y + DY[c.dir] * TEX * k)
+      }
     }
   }
   for (const part of particles) {
     const fade = part.life / part.max
     g.globalAlpha = Math.min(1, fade * 1.6)
-    g.fillStyle = fade > 0.5 ? p.dustHi[part.power]! : p.dust[part.power]!
-    g.fillRect(Math.round(part.x), Math.round(part.y), 1, 1)
+    g.fillStyle = part.color ?? (fade > 0.5 ? p.dustHi[part.power]! : p.dust[part.power]!)
+    const px = Math.round(part.x)
+    const py = Math.round(part.y)
+    if (part.shape === 'note') {
+      g.fillRect(px + 2, py, 1, 4)
+      g.fillRect(px + 3, py, 1, 1)
+      g.fillRect(px, py + 3, 3, 2)
+    } else if (part.shape === 'item') {
+      g.fillRect(px, py, 2, 2)
+    } else {
+      g.fillRect(px, py, 1, 1)
+    }
   }
   g.globalAlpha = 1
+  // Nacht (Tageslichtsensor-Ereignis): alles etwas dunkler, die Lampen strahlen.
+  if (circuit.night) {
+    g.fillStyle = 'rgb(8 10 30 / 0.35)'
+    g.fillRect(0, 0, g.canvas.width, g.canvas.height)
+  }
 }
 
-function spriteFor(c: Cell, s: Sprites, flicker: boolean): Surface | null {
+function spriteFor(c: Cell, s: Sprites, flicker: boolean, tick: number): Surface | null {
   switch (c.kind) {
     case 'dust':
       return s.dust(c.mask, c.power)
@@ -366,7 +542,23 @@ function spriteFor(c: Cell, s: Sprites, flicker: boolean): Surface | null {
     case 'source':
       return s.source(c.on)
     case 'piston':
-      return s.piston(c.dir, c.on)
+      return c.sticky ? s.stickyPiston(c.dir, c.on) : s.piston(c.dir, c.on)
+    case 'hopper': {
+      // Füllstand in 4 Stufen: läuft über die Periode voll und leert sich im Impuls.
+      const t = (tick + c.phase) % Math.max(1, c.period)
+      const fill = c.on ? 1 - t / Math.max(1, c.pulse) : (t - c.pulse) / Math.max(1, c.period - c.pulse)
+      return s.hopper(c.on, Math.max(0, Math.min(4, Math.round(fill * 4))) / 4)
+    }
+    case 'observer':
+      return s.observer(c.dir, c.on)
+    case 'note':
+      return s.note(c.on)
+    case 'dispenser':
+      return s.dispenser(c.dir, c.on)
+    case 'tnt':
+      return s.tnt(c.on)
+    case 'sensor':
+      return s.sensor(c.on)
     default:
       return null
   }
@@ -406,9 +598,15 @@ export function paintGlow(target: CanvasRenderingContext2D, circuit: Circuit, p:
     } else if ((c.kind === 'torch' || c.kind === 'wallTorch' || c.kind === 'source') && c.on) {
       g.fillStyle = `rgb(${glow} / 0.7)`
       g.fillRect(x + 1, y + 1, 2, 2)
-    } else if ((c.kind === 'repeater' || c.kind === 'comparator') && c.on) {
+    } else if ((c.kind === 'repeater' || c.kind === 'comparator' || c.kind === 'observer' || c.kind === 'hopper') && c.on) {
       g.fillStyle = `rgb(${glow} / 0.4)`
       g.fillRect(x + 1, y + 1, 2, 2)
+    } else if (c.kind === 'tnt' && c.on) {
+      g.fillStyle = 'rgb(255 244 230 / 0.85)'
+      g.fillRect(x - 2, y - 2, 8, 8)
+    } else if (c.kind === 'sensor' && c.on) {
+      g.fillStyle = 'rgb(120 160 255 / 0.5)'
+      g.fillRect(x, y, 4, 4)
     }
   }
   target.clearRect(0, 0, W, H)

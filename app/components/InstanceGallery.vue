@@ -63,12 +63,12 @@ async function confirmDelete() {
       <div v-for="i in 6" :key="i" class="skeleton aspect-video" />
     </div>
 
-    <div v-else-if="!entries.length" class="card px-6 py-12 text-center">
-      <h2 class="font-semibold">{{ mode === 'screenshots' ? 'Noch keine Screenshots' : 'Noch keine Welten' }}</h2>
-      <p class="mx-auto mt-1 max-w-md text-sm text-base-400">
-        {{ mode === 'screenshots' ? 'Drück im Spiel F2 – die Bilder landen hier.' : 'Einzelspieler-Welten dieser Instanz erscheinen hier.' }}
-      </p>
-    </div>
+    <RedstoneEmpty
+      v-else-if="!entries.length"
+      :seed="mode === 'screenshots' ? 0x44 : 0x66"
+      :title="mode === 'screenshots' ? 'Noch keine Screenshots' : 'Noch keine Welten'"
+      :text="mode === 'screenshots' ? 'Drück im Spiel F2 – jedes Bild lässt hier eine Lampe mehr leuchten.' : 'Noch nichts gebaut: Einzelspieler-Welten dieser Instanz erscheinen hier.'"
+    />
 
     <ul v-else-if="mode === 'screenshots'" class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
       <li v-for="e in entries" :key="e.name" class="group relative overflow-hidden rounded-lg border border-base-800 bg-base-900">

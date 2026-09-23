@@ -437,19 +437,18 @@ const pendingUpdates = computed(() => updates.value ?? [])
       </ul>
     </div>
 
-    <div v-else-if="!loading" class="card flex flex-col items-center px-6 py-14 text-center">
-      <div class="mb-4 grid size-14 place-items-center rounded-xl bg-base-800 text-base-400">
-        <svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z" /><path d="m4 7.5 8 4.5 8-4.5M12 12v9" /></svg>
-      </div>
-      <h2 class="font-semibold">{{ items.length ? 'Nichts gefunden' : 'Noch keine Inhalte' }}</h2>
-      <p class="mx-auto mt-1 max-w-md text-sm text-base-400">
-        {{ items.length ? 'Kein Eintrag passt zu Filter oder Suche.' : 'Durchsuche Modrinth, füge Dateien hinzu oder ziehe .jar- und .zip-Dateien einfach ins Fenster.' }}
-      </p>
-      <div v-if="!items.length" class="mt-5 flex gap-2">
+    <RedstoneEmpty
+      v-else-if="!loading"
+      :compact="items.length > 0"
+      :seed="0x55"
+      :title="items.length ? 'Kein Signal' : 'Noch keine Inhalte'"
+      :text="items.length ? 'Kein Eintrag passt zu Filter oder Suche.' : 'Hier ist noch alles aus. Durchsuche Modrinth, füge Dateien hinzu oder ziehe .jar- und .zip-Dateien einfach ins Fenster.'"
+    >
+      <template v-if="!items.length">
         <NuxtLink :to="{ path: '/browse', query: { instance: instance.id, kind: browseKind } }" class="btn btn-primary">Inhalte durchsuchen</NuxtLink>
         <button class="btn btn-ghost" @click="pickFiles">Dateien hinzufügen</button>
-      </div>
-    </div>
+      </template>
+    </RedstoneEmpty>
 
     <!-- Drag & Drop -->
     <Transition name="toast">

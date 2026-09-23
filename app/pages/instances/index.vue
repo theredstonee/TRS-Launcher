@@ -197,17 +197,23 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
         </div>
       </section>
     </template>
-    <p v-else-if="instances.items.length" class="py-16 text-center text-sm text-base-400">Keine Instanz passt zu Suche oder Filter.</p>
+    <RedstoneEmpty
+      v-else-if="instances.items.length"
+      compact
+      :seed="0x21"
+      title="Kein Signal"
+      text="Keine Instanz passt zu Suche oder Filter."
+    />
 
-    <div v-else-if="!instances.loading && !instances.error" class="card flex flex-col items-center px-6 py-16 text-center">
-      <img src="/icon.png" alt="" class="size-14 opacity-80 [image-rendering:pixelated]" />
-      <h2 class="mt-5 font-semibold">Noch keine Instanz</h2>
-      <p class="mt-1 max-w-sm text-sm text-base-400">Erstelle deine erste Instanz – Vanilla oder mit Fabric, Quilt, Forge oder NeoForge.</p>
-      <div class="mt-5 flex justify-center gap-2">
-        <button class="btn btn-primary" @click="shell.creating = true">Instanz erstellen</button>
-        <button class="btn btn-ghost" @click="shell.importing = true">Aus anderem Launcher importieren</button>
-      </div>
-    </div>
+    <RedstoneEmpty
+      v-else-if="!instances.loading && !instances.error"
+      :seed="0x11"
+      title="Noch keine Instanz"
+      text="Die Leitung liegt, nur die Lampe fehlt noch: Erstelle deine erste Instanz – Vanilla oder mit Fabric, Quilt, Forge oder NeoForge."
+    >
+      <button class="btn btn-primary" @click="shell.creating = true">Instanz erstellen</button>
+      <button class="btn btn-ghost" @click="shell.importing = true">Aus anderem Launcher importieren</button>
+    </RedstoneEmpty>
 
     <NewGroupDialog v-if="newGroupFor" :instances="instances.items" :preselect="newGroupFor.preselect" @close="newGroupFor = null" @done="onGroupCreated" />
 

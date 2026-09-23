@@ -62,6 +62,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <div v-if="appBackground" class="app-bg" aria-hidden="true">
             <RedstoneScene fill />
           </div>
+        <!-- Seitenwechsel: ein kurzer Redstone-Impuls läuft oben entlang. -->
+        <div :key="route.path" class="route-signal" aria-hidden="true" />
         <main ref="main" class="deepslate relative min-w-0 h-full overflow-y-auto" :class="{ 'deepslate-over-scene': appBackground }">
           <slot />
         </main>

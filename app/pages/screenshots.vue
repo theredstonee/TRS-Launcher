@@ -186,12 +186,12 @@ async function confirmDelete() {
       <div v-for="i in 8" :key="i" class="skeleton aspect-video" />
     </div>
 
-    <div v-else-if="!visible.length" class="card px-6 py-12 text-center">
-      <h2 class="font-semibold">Noch keine Screenshots</h2>
-      <p class="mx-auto mt-1 max-w-md text-sm text-base-400">
-        Drück im Spiel F2 – die Bilder aller Instanzen sammeln sich hier.
-      </p>
-    </div>
+    <RedstoneEmpty
+      v-else-if="!visible.length"
+      :seed="0x44"
+      title="Noch keine Screenshots"
+      text="Drück im Spiel F2 – jedes Bild lässt hier eine Lampe mehr leuchten. Die Screenshots aller Instanzen sammeln sich an dieser Stelle."
+    />
 
     <div v-else class="min-h-0 flex-1 overflow-y-auto pr-1">
       <section v-for="group in groups" :key="group.day" class="mb-6">

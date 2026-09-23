@@ -556,10 +556,15 @@ async function install(hit: ModrinthHit, version: ModrinthVersion | null = null)
           </li>
         </ul>
 
-        <p v-if="!loading && !hits.length && !error" class="py-16 text-center text-sm text-base-400">
-          Nichts gefunden{{ bound ? ` für ${activeVersions.join(', ') || 'alle Versionen'}` : '' }}.
-          <button v-if="activeFilterCount" class="ml-1 text-redstone-300 hover:underline" @click="resetFilters">Filter zurücksetzen</button>
-        </p>
+        <RedstoneEmpty
+          v-if="!loading && !hits.length && !error"
+          compact
+          :seed="0x88"
+          title="Kein Signal"
+          :text="`Nichts gefunden${bound ? ` für ${activeVersions.join(', ') || 'alle Versionen'}` : ''} – andere Suchbegriffe oder Filter probieren.`"
+        >
+          <button v-if="activeFilterCount" class="btn btn-ghost" @click="resetFilters">Filter zurücksetzen</button>
+        </RedstoneEmpty>
 
         <nav v-if="totalPages > 1 && hits.length" class="flex items-center justify-center gap-1 py-4" aria-label="Seiten unten">
           <button class="btn-icon size-8" :disabled="page <= 1" aria-label="Vorherige Seite" @click="goToPage(page - 1)">

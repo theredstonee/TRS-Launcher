@@ -64,14 +64,14 @@ function join(server: Server) {
       />
     </div>
 
-    <div v-else class="card px-6 py-14 text-center">
-      <h2 class="font-semibold">Noch kein Server</h2>
-      <p class="mx-auto mt-1 max-w-md text-sm text-base-400">
-        Trage die Adresse deines Lieblingsservers ein. Der Launcher zeigt Spielerzahl und Ping live an und setzt den
-        Server in die Serverliste jeder Instanz.
-      </p>
-      <button class="btn btn-primary mt-5" @click="adding = true">Server hinzufügen</button>
-    </div>
+    <RedstoneEmpty
+      v-else
+      :seed="0x33"
+      title="Noch kein Server"
+      text="Leg eine Leitung zu deinem Lieblingsserver: Adresse eintragen – der Launcher zeigt Spielerzahl und Ping live an und setzt den Server in die Serverliste jeder Instanz."
+    >
+      <button class="btn btn-primary" @click="adding = true">Server hinzufügen</button>
+    </RedstoneEmpty>
 
     <ServerDialog v-if="adding" @close="adding = false" />
     <ServerDialog v-if="editing" :server="editing" @close="editing = null" />
