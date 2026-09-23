@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { documentPalette, type Palette } from '~/utils/redstone/palette'
-import { ITEM_COLORS, TEX, Sprites, noise, noteColor, paintFloor, paintFrame, paintGlow, type Particle } from '~/utils/redstone/paint'
-import { buildScene, pickModule, placements, rng, stencilFor, type Placement } from '~/utils/redstone/scene'
-import { DX, DY, floorCell, type Cell, type Circuit } from '~/utils/redstone/sim'
+import { TEX, Sprites, noise, paintFloor, paintFrame, paintGlow, type Particle } from '~/utils/redstone/paint'
+import { buildScene, cableBox, pickModule, placements, planCable, rng, stencilFor, type Placement } from '~/utils/redstone/scene'
+import { floorCell, type Cell, type Circuit } from '~/utils/redstone/sim'
 
 // Lebendiger Hintergrund der Startseite: eine Redstone-Schaltung von oben –
 // Takte, Lauflicht, Kolben, flackernde Fackeln. Die Hauptleitung läuft zur
@@ -47,20 +47,14 @@ let reduced = false
 /** Ein Redstone-Tick – mehr Bilder braucht die Pixel-Szene nicht. */
 const TICK_MS = 100
 
-// Ereignisse (Kettenreaktion, TNT-Funke, Nacht) und der langsame Umbau kommen
-// alle paar Minuten – in Ticks gerechnet, damit sie mit der Szene pausieren.
-const EVENT_MIN = 1500 // 2,5 min
-const EVENT_SPAN = 1500
+// Der langsame Umbau kommt alle paar Minuten – in Ticks gerechnet, damit er mit der Szene pausiert.
 const REBUILD_MIN = 1800 // 3 min
 const REBUILD_SPAN = 1800
-const NIGHT_TICKS = 140
 const chance = rng(Date.now() & 0xffffff)
-let nextEvent = EVENT_MIN + Math.floor(chance() * EVENT_SPAN)
 let nextRebuild = REBUILD_MIN + Math.floor(chance() * REBUILD_SPAN)
-let nightUntil = 0
 
 /** Laufender Umbau: erst Blöcke abbauen, dann die neue Schaltung Block für Block setzen. */
-let rebuild: { spot: Placement; remove: number[]; add: { i: number; cell: Cell }[] } | null = null
+let rebuild: { spot: Placement; remove: number[]; add: { i: number; cell: Cell }[] | null } | null = null
 
 function applyMode() {
   if (!circuit) return
@@ -168,60 +162,10 @@ function spawnParticles() {
   }
 }
 
-/** Noten, ausgeworfene Items und Funken aus der Simulation. */
-function eventParticles() {
-  if (!circuit) return
-  for (const e of circuit.events) {
-    const cx = e.x * TEX + 6
-    const cy = e.y * TEX + 4
-    if (e.type === 'note') {
-      particles.push({ x: cx, y: cy, vx: (Math.random() - 0.5) * 0.3, vy: -0.6, life: 14, max: 14, power: 15, color: noteColor(e.pitch ?? 0), shape: 'note' })
-    } else if (e.type === 'item') {
-      const d = e.dir ?? 1
-      particles.push({
-        x: e.x * TEX + 7 + DX[d] * 9,
-        y: e.y * TEX + 7 + DY[d] * 9,
-        vx: DX[d] * (1.2 + Math.random()) + (Math.random() - 0.5) * 0.4,
-        vy: DY[d] * (1.2 + Math.random()) - 0.8,
-        life: 16,
-        max: 16,
-        power: 15,
-        color: ITEM_COLORS[Math.floor(Math.random() * ITEM_COLORS.length)],
-        shape: 'item',
-        gravity: 0.12,
-      })
-    } else {
-      for (let k = 0; k < 3; k++) {
-        particles.push({ x: cx + Math.random() * 6, y: cy, vx: (Math.random() - 0.5) * 1.2, vy: -0.5 - Math.random(), life: 8, max: 8, power: 15, color: k ? '#ffd24a' : '#ffffff', gravity: 0.05 })
-      }
-    }
-  }
-  circuit.events.length = 0
-}
-
-/** Alle paar Minuten etwas Besonderes: Kettenreaktion, TNT-Funke oder Nacht. */
-function maybeEvent() {
-  if (!circuit) return
-  if (circuit.night && gameTick >= nightUntil) circuit.night = false
-  if (gameTick < nextEvent) return
-  nextEvent = gameTick + EVENT_MIN + Math.floor(chance() * EVENT_SPAN)
-  const tnts: number[] = []
-  circuit.cells.forEach((c, i) => c.kind === 'tnt' && tnts.push(i))
-  const options = ['flash', 'night', ...(tnts.length ? ['tnt'] : [])]
-  const pick = options[Math.floor(chance() * options.length)]
-  if (pick === 'flash') circuit.flashCol = 0
-  else if (pick === 'night') {
-    circuit.night = true
-    nightUntil = gameTick + NIGHT_TICKS
-  } else {
-    const i = tnts[Math.floor(chance() * tnts.length)]!
-    circuit.prime(i % circuit.w, (i / circuit.w) | 0, 50)
-  }
-}
-
-/** Langsamer Umbau: eine Schaltung zerfällt Block für Block, eine neue entsteht. */
+/** Langsamer Umbau: eine Schaltung oder ein Kabel zerfällt Block für Block, ein neues entsteht. */
 function stepRebuild() {
   if (!circuit) return
+  const w = circuit.w
   if (!rebuild) {
     if (gameTick < nextRebuild) return
     nextRebuild = gameTick + REBUILD_MIN + Math.floor(chance() * REBUILD_SPAN)
@@ -229,34 +173,21 @@ function stepRebuild() {
     if (!list.length) return
     const spot = list[Math.floor(chance() * list.length)]!
     const remove: number[] = []
-    for (let y = spot.y; y < spot.y + spot.h; y++)
-      for (let x = spot.x; x < spot.x + spot.w; x++) {
-        const c = circuit.at(x, y)
-        if (c && c.kind !== 'floor') remove.push(y * circuit.w + x)
-      }
-    remove.sort(() => chance() - 0.5)
-    const used = new Set(list.map((p) => p.name))
-    const m = pickModule(chance, spot.w, spot.h, spot.name, used) ?? pickModule(chance, spot.w, spot.h, '', used)
-    const add: { i: number; cell: Cell }[] = []
-    if (m) {
-      const cells = stencilFor(m, chance)
-      const oy = spot.y + Math.floor(chance() * (spot.h - cells.length + 1))
-      const ox = spot.x + Math.floor(chance() * (spot.w - cells[0]!.length + 1))
-      cells.forEach((row, dy) =>
-        row.forEach((cell, dx) => {
-          if (cell.kind !== 'floor') add.push({ i: (oy + dy) * circuit!.w + ox + dx, cell })
-        }),
-      )
-      // Uhren und Fackeln zuletzt – erst wenn die Leitung steht, geht es los.
-      add.sort((a, b) => Number(a.cell.kind === 'hopper' || a.cell.kind === 'torch') - Number(b.cell.kind === 'hopper' || b.cell.kind === 'torch'))
-      spot.name = m.name
-    }
-    rebuild = { spot, remove, add }
+    if (spot.cells) remove.push(...spot.cells.filter((i) => circuit!.cells[i]?.kind !== 'floor'))
+    else
+      for (let y = spot.y; y < spot.y + spot.h; y++)
+        for (let x = spot.x; x < spot.x + spot.w; x++) {
+          const c = circuit.at(x, y)
+          if (c && c.kind !== 'floor') remove.push(y * w + x)
+        }
+    // Kabel werden vom Ende her abgebaut, Schaltungen durcheinander.
+    if (spot.cells) remove.reverse()
+    else remove.sort(() => chance() - 0.5)
+    rebuild = { spot, remove, add: null }
     return
   }
   // Etwa zwei Blöcke pro Sekunde abbauen, dann aufbauen.
   if (gameTick % 5 !== 0) return
-  const w = circuit.w
   const next = rebuild.remove.shift()
   if (next !== undefined) {
     const x = next % w
@@ -267,6 +198,34 @@ function stepRebuild() {
       particles.push({ x: x * TEX + 4 + Math.random() * 8, y: y * TEX + 4 + Math.random() * 8, vx: (Math.random() - 0.5) * 1.4, vy: -Math.random() * 1.2, life: 9, max: 9, power: 15, color: old.kind === 'dust' ? '#b31a12' : '#55555c', gravity: 0.15 })
     }
     circuit.relink()
+    return
+  }
+  // Abgebaut – jetzt das Neue planen (erst jetzt ist der Platz frei).
+  if (!rebuild.add) {
+    const spot = rebuild.spot
+    if (spot.cells) {
+      const planned = planCable(circuit, chance) ?? []
+      spot.cells = planned.map((p) => p.i)
+      if (planned.length) Object.assign(spot, cableBox(circuit, spot.cells))
+      rebuild.add = planned
+    } else {
+      const m = pickModule(chance, spot.w, spot.h, spot.name) ?? pickModule(chance, spot.w, spot.h)
+      const add: { i: number; cell: Cell }[] = []
+      if (m) {
+        const cells = stencilFor(m, chance)
+        const oy = spot.y + Math.floor(chance() * (spot.h - cells.length + 1))
+        const ox = spot.x + Math.floor(chance() * (spot.w - cells[0]!.length + 1))
+        cells.forEach((row, dy) =>
+          row.forEach((cell, dx) => {
+            if (cell.kind !== 'floor') add.push({ i: (oy + dy) * w + ox + dx, cell })
+          }),
+        )
+        // Takt-Fackeln zuletzt – erst wenn die Leitung steht, geht es los.
+        add.sort((a, b) => Number(a.cell.kind === 'torch') - Number(b.cell.kind === 'torch'))
+        spot.name = m.name
+      }
+      rebuild.add = add
+    }
     return
   }
   const put = rebuild.add.shift()
@@ -281,10 +240,8 @@ function stepRebuild() {
 function tick() {
   if (!circuit) return
   gameTick++
-  maybeEvent()
   stepRebuild()
   const changed = circuit.step()
-  eventParticles()
   for (const p of particles) {
     p.x += p.vx
     p.y += p.vy
@@ -352,10 +309,9 @@ function onMotion() {
   } else syncRunning()
 }
 
-/** Strg+Alt+R: sofort ein Ereignis und einen Umbau auslösen (zum Ausprobieren). */
+/** Strg+Alt+R: sofort einen Umbau auslösen (zum Ausprobieren). */
 function onShortcut(e: KeyboardEvent) {
   if (!e.ctrlKey || !e.altKey || e.key.toLowerCase() !== 'r') return
-  nextEvent = gameTick
   if (!rebuild) nextRebuild = gameTick
 }
 

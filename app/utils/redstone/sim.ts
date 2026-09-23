@@ -133,7 +133,7 @@ export interface StencilOptions {
  * `r>` Verstärker mit anfänglichem Impuls · `C>` Komparator · `T.` Fackel ·
  * `I<` Wandfackel am Block in Richtung · `L.` Lampe · `l.` Anzeige-Lampe ·
  * `P>` Kolben · `Q>` Klebekolben mit Block · `S.` Redstone-Block ·
- * `H.` Trichter-Uhr · `O>` Beobachter (Ausgang in Richtung, schaut nach hinten) ·
+ * `K.` Takt-Fackel (langsamer eigener Takt) · `H.` Trichter-Uhr · `O>` Beobachter (Ausgang in Richtung, schaut nach hinten) ·
  * `N.` Notenblock · `D>` Spender · `X.` TNT · `Y.` Tageslichtsensor.
  *
  * `delays` gilt der Reihe nach (zeilenweise) für alle Verstärker.
@@ -165,6 +165,15 @@ export function parseStencil(rows: string[], delays: number[] = [], pulse = 1, o
         case 'T': {
           const c = cell('torch')
           c.on = true
+          return c
+        }
+        case 'K': {
+          // Takt-Fackel: geht im eigenen, langsamen Takt an und aus.
+          const c = cell('torch')
+          c.period = Math.max(4, opts.period ?? 32)
+          c.pulse = Math.min(c.period - 2, Math.max(2, opts.clockPulse ?? 8))
+          c.phase = opts.phase ?? 0
+          c.on = (c.phase % c.period) < c.pulse
           return c
         }
         case 'I': {
@@ -588,6 +597,9 @@ export class Circuit {
           break
         case 'sensor':
           c.on = this.night
+          break
+        case 'torch':
+          if (c.period > 0) c.on = (this.ticks + c.phase) % c.period < c.pulse
           break
       }
     }

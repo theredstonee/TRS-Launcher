@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MODULES, buildScene, moduleWidth, placements, rng, stencilFor } from '../app/utils/redstone/scene'
+import { MODULES, buildScene, moduleWidth, placements, planCable, rng, stencilFor } from '../app/utils/redstone/scene'
 import { Circuit, displayOn, parseStencil, type StencilOptions } from '../app/utils/redstone/sim'
 
 function circuit(rows: string[], opts: StencilOptions = {}, delays: number[] = []): Circuit {
@@ -130,16 +130,36 @@ describe('Redstone-Maschinen', () => {
     }
   })
 
-  it('der Seiten-Hintergrund füllt mehrere Streifen und merkt sich die Plätze', () => {
+  it('der Seiten-Hintergrund hat lange Kabel und versetzte Takt-Fackeln', () => {
     const c = buildScene({ cols: 60, rows: 30, busRow: -1, busEnd: 0, seed: 7, fill: true })
     const list = placements.get(c) ?? []
-    expect(list.length).toBeGreaterThan(8)
-    expect(new Set(list.map((p) => p.y)).size).toBeGreaterThan(2)
+    const cables = list.filter((p) => p.name === 'cable')
+    expect(cables.length).toBeGreaterThan(6)
+    expect(cables.length).toBeGreaterThan(list.length - cables.length)
     expect(c.dustSpeed).toBe(2)
-    // Takte laufen versetzt: nicht alle Uhren gleichzeitig an
-    run(c, 30)
-    const hoppers = c.cells.filter((x) => x.kind === 'hopper')
-    expect(hoppers.length).toBeGreaterThan(2)
-    expect(new Set(hoppers.map((h) => h.period)).size).toBeGreaterThan(1)
+    const clocks = c.cells.filter((x) => x.kind === 'torch' && x.period > 0)
+    expect(clocks.length).toBeGreaterThan(5)
+    expect(new Set(clocks.map((h) => h.period)).size).toBeGreaterThan(2)
+    // Perioden wie im Spiel: 2,4–5,6 s
+    expect(clocks.every((k) => k.period >= 24 && k.period <= 56)).toBe(true)
+  })
+
+  it('ein Kabel ist zusammenhängend und berührt keine fremden Leitungen', () => {
+    const c = buildScene({ cols: 50, rows: 24, busRow: -1, busEnd: 0, seed: 3, fill: true })
+    for (const p of (placements.get(c) ?? []).filter((q) => q.name === 'cable')) {
+      const own = new Set(p.cells)
+      for (const i of p.cells!) {
+        const x = i % c.w
+        const y = (i / c.w) | 0
+        const around = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (y + dy!) * c.w + x + dx!)
+        // jedes Feld hat mindestens einen eigenen Nachbarn, aber keinen fremden (außer Boden/Block)
+        expect(around.some((n) => own.has(n))).toBe(true)
+        for (const n of around) {
+          const k = c.cells[n]?.kind
+          if (!own.has(n)) expect(k === 'floor' || k === 'block' || k === undefined).toBe(true)
+        }
+      }
+    }
+    expect(planCable(c, rng(1))).toBeTypeOf('object')
   })
 })
