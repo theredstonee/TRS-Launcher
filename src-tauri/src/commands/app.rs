@@ -23,6 +23,12 @@ pub fn app_info(launcher: State<'_, LauncherState>) -> AppInfo {
     }
 }
 
+/// TRS Client: mitgelieferte Version und ein bereits geladenes Update.
+#[tauri::command]
+pub async fn client_mod_status(launcher: State<'_, LauncherState>) -> CommandResult<trs_core::client_mod::ClientModStatus> {
+    Ok(launcher.client_mod_status().await)
+}
+
 #[tauri::command]
 pub fn open_data_dir(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<()> {
     let path = launcher.paths().root().display().to_string();

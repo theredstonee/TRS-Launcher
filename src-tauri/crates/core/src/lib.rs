@@ -7,6 +7,7 @@
 pub mod auth;
 pub mod boost;
 pub mod client_mod;
+pub mod client_mod_update;
 pub mod content;
 pub mod download;
 pub mod error;
@@ -78,6 +79,8 @@ pub struct Launcher {
     import_folders: Mutex<Vec<PathBuf>>,
     /// Mitgelieferte TRS-Client-Jars (Tauri-Ressourcen).
     client_mod_dir: std::sync::RwLock<Option<PathBuf>>,
+    /// Update-Kanal für den TRS Client (GitHub-Release `client-mod`).
+    client_mod_updates: client_mod_update::ClientModUpdater,
     /// Instanzen, die gerade vorbereitet werden (Schutz vor Doppelklicks).
     preparing: Mutex<HashSet<String>>,
     /// Warteschlange für Skin-/Umhang-Änderungen.
@@ -129,6 +132,7 @@ impl Launcher {
             servers: ServerStore::new(paths.clone()),
             import_folders: Mutex::default(),
             client_mod_dir: std::sync::RwLock::default(),
+            client_mod_updates: client_mod_update::ClientModUpdater::new(&paths)?,
             preparing: Mutex::default(),
             skin_sync: skin_sync::SkinSync::default(),
             settings: RwLock::new(settings),
@@ -181,6 +185,30 @@ impl Launcher {
     /// Ordner mit den mitgelieferten TRS-Client-Jars.
     pub fn set_client_mod_dir(&self, dir: PathBuf) {
         *self.client_mod_dir.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(dir);
+    }
+
+    fn bundled_client_mod_dir(&self) -> Option<PathBuf> {
+        self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    }
+
+    /// Sieht im Update-Kanal des TRS Clients nach (beim Launcher-Start und vor
+    /// jedem Spielstart, höchstens alle 30 Minuten). Offline passiert nichts.
+    pub async fn check_client_mod_updates(&self) -> client_mod_update::CheckOutcome {
+        let bundled = self.bundled_client_mod_dir().as_deref().map(client_mod::load_manifest).unwrap_or_default();
+        let bundled_version = Some(bundled.version.as_str()).filter(|v| !v.is_empty());
+        self.client_mod_updates.check_if_due(bundled_version).await
+    }
+
+    /// Welche TRS-Client-Version gerade gilt (für die Einstellungen).
+    pub async fn client_mod_status(&self) -> client_mod::ClientModStatus {
+        let dir = self.bundled_client_mod_dir();
+        client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await.status()
+    }
+
+    async fn client_mod_catalog(&self) -> (Option<PathBuf>, client_mod::Catalog) {
+        let dir = self.bundled_client_mod_dir();
+        let catalog = client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await;
+        (dir, catalog)
     }
 
     pub fn servers(&self) -> &ServerStore {
@@ -342,17 +370,20 @@ impl Launcher {
         };
         let settings = self.settings().await;
 
+        // Neuer TRS Client im Update-Kanal? (kurzer Timeout, offline egal)
+        self.check_client_mod_updates().await;
         // Vanilla mit TRS-Optimierung läuft unter der Haube als Fabric.
-        let client_mod_dir = self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
-        let builds = client_mod_dir.as_deref().map(client_mod::load_builds).unwrap_or_default();
-        let effective = boost::effective_instance(&self.http, &self.paths, &builds, instance).await;
+        let (client_mod_dir, catalog) = self.client_mod_catalog().await;
+        let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), instance).await;
         // Performance-Mods gibt es nur für Fabric; Forge-Boost (1.8.9) bekommt nur den TRS Client.
         if effective.loader.kind == LoaderKind::Fabric && instance.loader.kind != LoaderKind::Fabric {
             boost::ensure_performance(&self.http, &self.paths, &effective).await?;
         }
         let instance = &effective;
 
-        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), instance, &settings.ui).await {
+        let updates = Some(&self.client_mod_updates);
+        if let Err(e) = client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), updates, instance, &settings.ui).await
+        {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
 
@@ -446,9 +477,8 @@ impl Launcher {
         if self.games.is_running(&instance.id) {
             return Err(Error::launch("Die Instanz läuft gerade – bitte erst beenden."));
         }
-        let client_mod_dir = self.client_mod_dir.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
-        let builds = client_mod_dir.as_deref().map(client_mod::load_builds).unwrap_or_default();
-        let effective = boost::effective_instance(&self.http, &self.paths, &builds, &instance).await;
+        let (_, catalog) = self.client_mod_catalog().await;
+        let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), &instance).await;
         let settings = self.settings().await;
         let features = meta::version::Features { custom_resolution: true, ..Default::default() };
         prepare::prepare(&self.http, &self.paths, &settings, &effective, &features, true, on_progress).await?;

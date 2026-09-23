@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Accent, Settings, StorageStats, Theme } from '~/types'
+import type { Accent, ClientModStatus, Settings, StorageStats, Theme } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 
 // Globale Einstellungen im Stil der Modrinth App. Alles speichert
@@ -17,6 +17,7 @@ const active = computed({
 
 const form = ref<Settings | null>(null)
 const info = ref<{ version: string; os: string; dataDir: string } | null>(null)
+const clientMod = ref<ClientModStatus | null>(null)
 const status = ref<{ ok: boolean; text: string } | null>(null)
 let lastSaved = ''
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -30,6 +31,15 @@ onMounted(async () => {
     status.value = { ok: false, text: errorMessage(e) }
   }
   if (!accounts.loaded) accounts.load().catch(() => {})
+  backend.clientModStatus().then((s) => (clientMod.value = s)).catch(() => {})
+})
+
+// Der TRS Client aktualisiert sich still über seinen eigenen Kanal – hier nur der Stand.
+const clientModLine = computed(() => {
+  const s = clientMod.value
+  if (!s) return null
+  if (s.update) return `TRS Client: Update auf ${s.update} geladen`
+  return s.bundled ? `TRS Client: Version ${s.bundled} (aktuell)` : null
 })
 
 // Darstellung sofort anwenden, gespeichert wird gleich danach.
@@ -227,6 +237,7 @@ async function allowFirewall() {
     <template #nav-footer>
       <p v-if="info">TRS Launcher v{{ info.version }}</p>
       <p v-if="info">{{ info.os }}</p>
+      <p v-if="clientModLine">{{ clientModLine }}</p>
     </template>
 
     <div v-if="!form" class="space-y-3">

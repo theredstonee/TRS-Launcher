@@ -7,8 +7,8 @@ License: GPL-3.0-only, author: theredstonee.
 ## Projects
 
 Each loader family is its own Gradle build (own wrapper, own README with hooks and pitfalls); all of them put
-their jars and a `builds-<project>.json` into `dist/`, which the launcher bundles as
-`src-tauri/resources/client-mod/builds.json`.
+their jars and a `builds-<project>.json` into `dist/`. `scripts/publish-client-mod.mjs` merges them into the
+signed update channel and into `src-tauri/resources/client-mod/builds.json` (see "Publishing" below).
 
 | Directory | Loader / versions | Tooling | Rebuild |
 | --- | --- | --- | --- |
@@ -187,6 +187,24 @@ Self-test screenshots: `run/screenshots/trsclient-<minecraft>-*.png` (one test w
 
 `minecraft` lists every exact game version the jar supports. Entries of other projects/loaders already present
 in `builds.json` are kept (only Fabric entries for the built versions are replaced).
+
+### Publishing (update channel)
+
+The launcher updates the TRS Client on its own, without a launcher release: it polls the GitHub release
+`client-mod` (at start and at most every 30 minutes before a game starts), verifies the signed
+`client-mod.json` and downloads only the jar an instance needs. To ship a new version:
+
+```sh
+node scripts/publish-client-mod.mjs --bump patch   # raises mod_version in every gradle.properties
+# rebuild: collectLauncherJars in each project, one after another (they share dist/)
+node scripts/publish-client-mod.mjs --dry-run      # writes + signs + verifies dist/channel/client-mod.json
+node scripts/publish-client-mod.mjs                # the same, then uploads to the client-mod release
+```
+
+The manifest is `{ "version": "0.3.0", "builds": [{ loader, minecraft[], file, requires[], sha256, size }] }`,
+signed with the Tauri updater key (`tauri signer sign`). The same file, unsigned, plus the jars are written to
+`src-tauri/resources/client-mod/`, so the next launcher release bundles that state (commit it). Launchers only
+accept a channel version that is newer than the bundled one.
 
 ## Adding modules and settings
 

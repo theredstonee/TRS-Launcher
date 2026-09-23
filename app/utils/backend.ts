@@ -11,6 +11,7 @@ import type {
   UploadResult,
   VerifyReport,
   AppInfo,
+  ClientModStatus,
   CategoryTag,
   CommandError,
   ExportEntry,
@@ -88,6 +89,8 @@ function channel<T>(onMessage: (message: T) => void): Channel<T> {
 /** Typisierte Wrapper um die Rust-Commands aus `src-tauri/src/commands`. */
 export const backend = {
   appInfo: () => call<AppInfo>('app_info'),
+  /** TRS Client: mitgelieferte Version und ein schon geladenes Update aus dem Kanal. */
+  clientModStatus: () => call<ClientModStatus>('client_mod_status'),
   openDataDir: () => call<void>('open_data_dir'),
   firewallStatus: () => call<{ total: number; missing: number }>('firewall_status'),
   /** Eine Windows-Admin-Abfrage; danach fragt Windows bei keiner Instanz mehr nach dem Netzwerk. */

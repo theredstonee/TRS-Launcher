@@ -196,6 +196,12 @@ export interface AppInfo {
   os: string
 }
 
+/** TRS Client (In-Game-Mod): mitgelieferte Version, `update` = neuere aus dem Update-Kanal. */
+export interface ClientModStatus {
+  bundled: string | null
+  update: string | null
+}
+
 export interface CommandError {
   kind: string
   message: string
