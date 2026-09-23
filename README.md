@@ -109,6 +109,18 @@ Development builds without a signed-in account start the game in its official **
 
 Pushing a tag like `v0.2.0` runs [`release.yml`](.github/workflows/release.yml). It builds and signs the installer, publishes a release and refreshes the update channel the built-in updater polls.
 
+### TRS Client updates
+
+The in-game TRS Client has its own update channel, so it can be updated without a launcher release. The GitHub release `client-mod` holds `client-mod.json` (mod version plus every build with SHA-256 and size), its minisign signature `client-mod.json.sig` and all jars. The launcher checks the channel at startup and at most every 30 minutes before a game starts (short timeout; offline it keeps using what it has), accepts only manifests signed with the updater key and newer than the bundled version, and downloads only the jar the instance being launched needs into `<data>/client-mod/<version>/`, verified against the manifest. On any error it falls back to the bundled jar.
+
+```sh
+node scripts/publish-client-mod.mjs --bump patch   # raise mod_version, then rebuild the jars (collectLauncherJars)
+node scripts/publish-client-mod.mjs --dry-run      # merge client-mod/dist, sign, verify, update src-tauri/resources/client-mod
+node scripts/publish-client-mod.mjs                # same, then upload to the client-mod release (needs gh)
+```
+
+The script signs with `%USERPROFILE%\.tauri\trs-launcher.key` (password from `trs-launcher.key.password`) and checks the signature against `plugins.updater.pubkey` before uploading. To check a produced manifest with the launcher's own verifier: `TRS_CLIENT_MOD_CHANNEL_DIR=client-mod/dist/channel TRS_CLIENT_MOD_DIST=client-mod/dist cargo test -p trs-core published_manifest -- --ignored`.
+
 ## Architecture
 
 ```
@@ -124,7 +136,7 @@ src-tauri/
     modpack_export.rs   .mrpack export (Modrinth lookup by hash, overrides)
     skins.rs news.rs screenshots.rs    Minecraft profile/skins, news cache, screenshot gallery
     import.rs servers.rs boost.rs client_mod.rs
-  resources/client-mod/ Bundled TRS Client builds + builds.json
+  resources/client-mod/ Bundled TRS Client builds + builds.json (manifest with version + checksums)
 client-mod/             TRS Client (Fabric multi-version, Forge 1.8.9)
 ```
 

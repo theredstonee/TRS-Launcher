@@ -59,7 +59,13 @@ pub fn run() {
                 Ok(dir) => launcher.set_client_mod_dir(dir.join("client-mod")),
                 Err(e) => log::warn!("Ressourcen-Ordner nicht gefunden: {e}"),
             }
-            app.manage::<LauncherState>(Arc::new(launcher));
+            let launcher = Arc::new(launcher);
+            // Neuer TRS Client im Update-Kanal? Läuft im Hintergrund, offline egal.
+            let updates = Arc::clone(&launcher);
+            tauri::async_runtime::spawn(async move {
+                updates.check_client_mod_updates().await;
+            });
+            app.manage::<LauncherState>(launcher);
             app.manage(commands::system::DropState::default());
             Ok(())
         })
@@ -95,6 +101,7 @@ pub fn run() {
             commands::content::bulk_content,
             commands::games::reinstall_instance,
             commands::app::app_info,
+            commands::app::client_mod_status,
             commands::app::open_data_dir,
             commands::app::firewall_status,
             commands::app::firewall_allow_all,

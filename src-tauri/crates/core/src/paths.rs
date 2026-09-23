@@ -13,6 +13,7 @@ use crate::{Result, fsutil};
 ///   assets/{indexes,objects}/
 ///   java/<component>/     von uns installierte Runtimes
 ///   accounts.json         Accounts (Tokens DPAPI-verschlüsselt)
+///   client-mod/           TRS-Client-Updates (signiertes Manifest + <version>/*.jar)
 ///   instances/<id>/
 ///     instance.json
 ///     minecraft/          Game-Directory (.minecraft-Äquivalent)
@@ -90,6 +91,11 @@ impl Paths {
     /// Gemeinsame Dateien für die Synchronisierung (siehe [`crate::sync`]).
     pub fn shared_dir(&self) -> PathBuf {
         self.root.join("shared")
+    }
+
+    /// Aus dem Update-Kanal geladene TRS-Client-Versionen (siehe [`crate::client_mod_update`]).
+    pub fn client_mod_cache_dir(&self) -> PathBuf {
+        self.root.join("client-mod")
     }
 
     pub fn accounts_file(&self) -> PathBuf {

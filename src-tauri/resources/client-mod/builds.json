@@ -1,990 +1,1203 @@
-[
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.14.4"
-    ],
-    "file": "trsclient-fabric-1.14.4.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.15.2"
-    ],
-    "file": "trsclient-fabric-1.15.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.16.2"
-    ],
-    "file": "trsclient-fabric-1.16.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.16.3"
-    ],
-    "file": "trsclient-fabric-1.16.3.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.16.4"
-    ],
-    "file": "trsclient-fabric-1.16.4.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.16.5"
-    ],
-    "file": "trsclient-fabric-1.16.5.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.17"
-    ],
-    "file": "trsclient-fabric-1.17.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.17.1"
-    ],
-    "file": "trsclient-fabric-1.17.1.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.18"
-    ],
-    "file": "trsclient-fabric-1.18.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.18.1"
-    ],
-    "file": "trsclient-fabric-1.18.1.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.18.2"
-    ],
-    "file": "trsclient-fabric-1.18.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.19"
-    ],
-    "file": "trsclient-fabric-1.19.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.19.1"
-    ],
-    "file": "trsclient-fabric-1.19.1.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.19.2"
-    ],
-    "file": "trsclient-fabric-1.19.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.19.3"
-    ],
-    "file": "trsclient-fabric-1.19.3.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.19.4"
-    ],
-    "file": "trsclient-fabric-1.19.4.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.20.1"
-    ],
-    "file": "trsclient-fabric-1.20.1.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.20.2"
-    ],
-    "file": "trsclient-fabric-1.20.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.20.3"
-    ],
-    "file": "trsclient-fabric-1.20.3.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.20.4"
-    ],
-    "file": "trsclient-fabric-1.20.4.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.20.5"
-    ],
-    "file": "trsclient-fabric-1.20.5.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.20.6"
-    ],
-    "file": "trsclient-fabric-1.20.6.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21"
-    ],
-    "file": "trsclient-fabric-1.21.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.1"
-    ],
-    "file": "trsclient-fabric-1.21.1.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.2"
-    ],
-    "file": "trsclient-fabric-1.21.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.3"
-    ],
-    "file": "trsclient-fabric-1.21.3.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.4"
-    ],
-    "file": "trsclient-fabric-1.21.4.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.5"
-    ],
-    "file": "trsclient-fabric-1.21.5.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.6"
-    ],
-    "file": "trsclient-fabric-1.21.6.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.7"
-    ],
-    "file": "trsclient-fabric-1.21.7.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.8"
-    ],
-    "file": "trsclient-fabric-1.21.8.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.9"
-    ],
-    "file": "trsclient-fabric-1.21.9.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.10"
-    ],
-    "file": "trsclient-fabric-1.21.10.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "1.21.11"
-    ],
-    "file": "trsclient-fabric-1.21.11.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "26.1"
-    ],
-    "file": "trsclient-fabric-26.1.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "26.1.1"
-    ],
-    "file": "trsclient-fabric-26.1.1.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "26.1.2"
-    ],
-    "file": "trsclient-fabric-26.1.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "26.2"
-    ],
-    "file": "trsclient-fabric-26.2.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "fabric",
-    "minecraft": [
-      "26.3"
-    ],
-    "file": "trsclient-fabric-26.3.jar",
-    "requires": [
-      "fabric-api"
-    ]
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.13.2"
-    ],
-    "file": "trsclient-forge-1.13.2.jar",
-    "requires": [],
-    "forge": "1.13.2-25.0.223"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.14.4"
-    ],
-    "file": "trsclient-forge-1.14.4.jar",
-    "requires": [],
-    "forge": "1.14.4-28.2.26"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.15.2"
-    ],
-    "file": "trsclient-forge-1.15.2.jar",
-    "requires": [],
-    "forge": "1.15.2-31.2.57"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.16.2"
-    ],
-    "file": "trsclient-forge-1.16.2.jar",
-    "requires": [],
-    "forge": "1.16.2-33.0.61"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.16.4"
-    ],
-    "file": "trsclient-forge-1.16.4.jar",
-    "requires": [],
-    "forge": "1.16.4-35.1.4"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.16.5"
-    ],
-    "file": "trsclient-forge-1.16.5.jar",
-    "requires": [],
-    "forge": "1.16.5-36.2.34"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.17.1"
-    ],
-    "file": "trsclient-forge-1.17.1.jar",
-    "requires": [],
-    "forge": "1.17.1-37.1.1"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.18"
-    ],
-    "file": "trsclient-forge-1.18.jar",
-    "requires": [],
-    "forge": "1.18-38.0.17"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.18.1"
-    ],
-    "file": "trsclient-forge-1.18.1.jar",
-    "requires": [],
-    "forge": "1.18.1-39.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.18.2"
-    ],
-    "file": "trsclient-forge-1.18.2.jar",
-    "requires": [],
-    "forge": "1.18.2-40.3.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.19"
-    ],
-    "file": "trsclient-forge-1.19.jar",
-    "requires": [],
-    "forge": "1.19-41.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.19.1"
-    ],
-    "file": "trsclient-forge-1.19.1.jar",
-    "requires": [],
-    "forge": "1.19.1-42.0.9"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.19.2"
-    ],
-    "file": "trsclient-forge-1.19.2.jar",
-    "requires": [],
-    "forge": "1.19.2-43.5.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.19.3"
-    ],
-    "file": "trsclient-forge-1.19.3.jar",
-    "requires": [],
-    "forge": "1.19.3-44.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.19.4"
-    ],
-    "file": "trsclient-forge-1.19.4.jar",
-    "requires": [],
-    "forge": "1.19.4-45.4.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.20"
-    ],
-    "file": "trsclient-forge-1.20.jar",
-    "requires": [],
-    "forge": "1.20-46.0.14"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.20.1"
-    ],
-    "file": "trsclient-forge-1.20.1.jar",
-    "requires": [],
-    "forge": "1.20.1-47.4.10"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.20.2"
-    ],
-    "file": "trsclient-forge-1.20.2.jar",
-    "requires": [],
-    "forge": "1.20.2-48.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.20.3"
-    ],
-    "file": "trsclient-forge-1.20.3.jar",
-    "requires": [],
-    "forge": "1.20.3-49.0.2"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.20.4"
-    ],
-    "file": "trsclient-forge-1.20.4.jar",
-    "requires": [],
-    "forge": "1.20.4-49.2.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.20.6"
-    ],
-    "file": "trsclient-forge-1.20.6.jar",
-    "requires": [],
-    "forge": "1.20.6-50.2.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21"
-    ],
-    "file": "trsclient-forge-1.21.jar",
-    "requires": [],
-    "forge": "1.21-51.0.33"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.1"
-    ],
-    "file": "trsclient-forge-1.21.1.jar",
-    "requires": [],
-    "forge": "1.21.1-52.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.3"
-    ],
-    "file": "trsclient-forge-1.21.3.jar",
-    "requires": [],
-    "forge": "1.21.3-53.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.4"
-    ],
-    "file": "trsclient-forge-1.21.4.jar",
-    "requires": [],
-    "forge": "1.21.4-54.1.14"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.5"
-    ],
-    "file": "trsclient-forge-1.21.5.jar",
-    "requires": [],
-    "forge": "1.21.5-55.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.6"
-    ],
-    "file": "trsclient-forge-1.21.6.jar",
-    "requires": [],
-    "forge": "1.21.6-56.0.9"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.7"
-    ],
-    "file": "trsclient-forge-1.21.7.jar",
-    "requires": [],
-    "forge": "1.21.7-57.0.3"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.8"
-    ],
-    "file": "trsclient-forge-1.21.8.jar",
-    "requires": [],
-    "forge": "1.21.8-58.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.9"
-    ],
-    "file": "trsclient-forge-1.21.9.jar",
-    "requires": [],
-    "forge": "1.21.9-59.0.5"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.10"
-    ],
-    "file": "trsclient-forge-1.21.10.jar",
-    "requires": [],
-    "forge": "1.21.10-60.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.21.11"
-    ],
-    "file": "trsclient-forge-1.21.11.jar",
-    "requires": [],
-    "forge": "1.21.11-61.2.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "26.1"
-    ],
-    "file": "trsclient-forge-26.1.jar",
-    "requires": [],
-    "forge": "26.1-62.0.9"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "26.1.1"
-    ],
-    "file": "trsclient-forge-26.1.1.jar",
-    "requires": [],
-    "forge": "26.1.1-63.0.2"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "26.1.2"
-    ],
-    "file": "trsclient-forge-26.1.2.jar",
-    "requires": [],
-    "forge": "26.1.2-64.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "26.2"
-    ],
-    "file": "trsclient-forge-26.2.jar",
-    "requires": [],
-    "forge": "26.2-65.1.0"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "26.3"
-    ],
-    "file": "trsclient-forge-26.3.jar",
-    "requires": [],
-    "forge": "26.3-66.0.2"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.7.10"
-    ],
-    "file": "trsclient-forge-1.7.10.jar",
-    "requires": [],
-    "forge": "1.7.10-10.13.4.1614"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.8.9"
-    ],
-    "file": "trsclient-forge-1.8.9.jar",
-    "requires": [],
-    "forge": "1.8.9-11.15.1.2318"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.9"
-    ],
-    "file": "trsclient-forge-1.9.jar",
-    "requires": [],
-    "forge": "1.9-12.16.1.1887"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.9.4"
-    ],
-    "file": "trsclient-forge-1.9.4.jar",
-    "requires": [],
-    "forge": "1.9.4-12.17.0.2317"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.10",
-      "1.10.2"
-    ],
-    "file": "trsclient-forge-1.10.2.jar",
-    "requires": [],
-    "forge": "1.10.2-12.18.3.2511"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.11",
-      "1.11.2"
-    ],
-    "file": "trsclient-forge-1.11.2.jar",
-    "requires": [],
-    "forge": "1.11.2-13.20.1.2588"
-  },
-  {
-    "loader": "forge",
-    "minecraft": [
-      "1.12",
-      "1.12.1",
-      "1.12.2"
-    ],
-    "file": "trsclient-forge-1.12.2.jar",
-    "requires": [],
-    "forge": "1.12.2-14.23.5.2859"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.20.2"
-    ],
-    "file": "trsclient-neoforge-1.20.2.jar",
-    "requires": [],
-    "neoforge": "20.2.93"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.20.3"
-    ],
-    "file": "trsclient-neoforge-1.20.3.jar",
-    "requires": [],
-    "neoforge": "20.3.8-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.20.4"
-    ],
-    "file": "trsclient-neoforge-1.20.4.jar",
-    "requires": [],
-    "neoforge": "20.4.251"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.20.5"
-    ],
-    "file": "trsclient-neoforge-1.20.5.jar",
-    "requires": [],
-    "neoforge": "20.5.21-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.20.6"
-    ],
-    "file": "trsclient-neoforge-1.20.6.jar",
-    "requires": [],
-    "neoforge": "20.6.141"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21"
-    ],
-    "file": "trsclient-neoforge-1.21.jar",
-    "requires": [],
-    "neoforge": "21.0.167"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.1"
-    ],
-    "file": "trsclient-neoforge-1.21.1.jar",
-    "requires": [],
-    "neoforge": "21.1.251"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.2"
-    ],
-    "file": "trsclient-neoforge-1.21.2.jar",
-    "requires": [],
-    "neoforge": "21.2.1-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.3"
-    ],
-    "file": "trsclient-neoforge-1.21.3.jar",
-    "requires": [],
-    "neoforge": "21.3.97"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.4"
-    ],
-    "file": "trsclient-neoforge-1.21.4.jar",
-    "requires": [],
-    "neoforge": "21.4.157"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.5"
-    ],
-    "file": "trsclient-neoforge-1.21.5.jar",
-    "requires": [],
-    "neoforge": "21.5.98"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.6"
-    ],
-    "file": "trsclient-neoforge-1.21.6.jar",
-    "requires": [],
-    "neoforge": "21.6.20-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.7"
-    ],
-    "file": "trsclient-neoforge-1.21.7.jar",
-    "requires": [],
-    "neoforge": "21.7.25-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.8"
-    ],
-    "file": "trsclient-neoforge-1.21.8.jar",
-    "requires": [],
-    "neoforge": "21.8.54"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.9"
-    ],
-    "file": "trsclient-neoforge-1.21.9.jar",
-    "requires": [],
-    "neoforge": "21.9.16-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.10"
-    ],
-    "file": "trsclient-neoforge-1.21.10.jar",
-    "requires": [],
-    "neoforge": "21.10.64"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "1.21.11"
-    ],
-    "file": "trsclient-neoforge-1.21.11.jar",
-    "requires": [],
-    "neoforge": "21.11.45"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "26.1"
-    ],
-    "file": "trsclient-neoforge-26.1.jar",
-    "requires": [],
-    "neoforge": "26.1.0.19-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "26.1.1"
-    ],
-    "file": "trsclient-neoforge-26.1.1.jar",
-    "requires": [],
-    "neoforge": "26.1.1.15-beta"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "26.1.2"
-    ],
-    "file": "trsclient-neoforge-26.1.2.jar",
-    "requires": [],
-    "neoforge": "26.1.2.109"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "26.2"
-    ],
-    "file": "trsclient-neoforge-26.2.jar",
-    "requires": [],
-    "neoforge": "26.2.0.88"
-  },
-  {
-    "loader": "neoforge",
-    "minecraft": [
-      "26.3"
-    ],
-    "file": "trsclient-neoforge-26.3.jar",
-    "requires": [],
-    "neoforge": "26.3.0.8-beta"
-  }
-]
+{
+  "version": "0.2.0",
+  "builds": [
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.14.4"
+      ],
+      "file": "trsclient-fabric-1.14.4.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "e4cba41a3a6b5c1153a7903cc2cda54ee8c8f184393f1bf2fac796458d7fd0d3",
+      "size": 373691
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.15.2"
+      ],
+      "file": "trsclient-fabric-1.15.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "bc457a3e3ee4023d8805cae1cab3056fd39f2741abb8ae4c8f8f0d3f0faa3806",
+      "size": 379477
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.16.2"
+      ],
+      "file": "trsclient-fabric-1.16.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "aac8ea0f9a7ce6ccb7c3102ec96662f8f2f6ffde2b548a5c9a35ada9ba737f95",
+      "size": 380513
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.16.3"
+      ],
+      "file": "trsclient-fabric-1.16.3.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "383cece7e429ad91082f2752246d5cfd45bc7198bee3bd59767f4a5836341ce4",
+      "size": 380513
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.16.4"
+      ],
+      "file": "trsclient-fabric-1.16.4.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "824f12bc0850cd3745aa21fa4a23288813cc069f39b9cfed7781ef18a57e5bd6",
+      "size": 380513
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.16.5"
+      ],
+      "file": "trsclient-fabric-1.16.5.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "edad5efa395e3b9a6e5efaf98a8ac29ac3c9b2df7c7ce2f67e8e3b8ebf54d015",
+      "size": 380513
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.17"
+      ],
+      "file": "trsclient-fabric-1.17.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "38f84928200320b0c1a5542c9723d47535da811851177c4934a95204c37cbb87",
+      "size": 384302
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.17.1"
+      ],
+      "file": "trsclient-fabric-1.17.1.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "14fc67999cdcc84866f7749dc7b58804513958519f73a4b1f1019e99c829e44c",
+      "size": 384269
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.18"
+      ],
+      "file": "trsclient-fabric-1.18.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "f9578e21f9ac8dbb1f95373783f5bcdc355e0d0d71b1ae05d622b6666f4f48df",
+      "size": 384188
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.18.1"
+      ],
+      "file": "trsclient-fabric-1.18.1.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "4f30abd164587d1b3e9ed08c40db5436115e49ccc579ccf3cc462f3dedc4de29",
+      "size": 384189
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.18.2"
+      ],
+      "file": "trsclient-fabric-1.18.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "8a17100f6bae09a2436697636277daba8ac44715fa50e7eceb9bc77218f075f1",
+      "size": 384311
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.19"
+      ],
+      "file": "trsclient-fabric-1.19.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "714f978e4bc99d193f2ef928f469b72bbe7680b96716f253462fe147291c8377",
+      "size": 384644
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.19.1"
+      ],
+      "file": "trsclient-fabric-1.19.1.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "2f5d9c2d8b34e8dab6bfd0f6030623c1057efa12ffbd210328906e5a9c9872f2",
+      "size": 384855
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.19.2"
+      ],
+      "file": "trsclient-fabric-1.19.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "50b726b236115aa05c71cd2702d516e3a03444036ac503e3d13e90598083f2da",
+      "size": 384857
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.19.3"
+      ],
+      "file": "trsclient-fabric-1.19.3.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "77c626e78b6070100f3f1cdeb5fd8b475f366d67647f7df3a154ff22c8efe26b",
+      "size": 384604
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.19.4"
+      ],
+      "file": "trsclient-fabric-1.19.4.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "e2aacdf0a7f975c522fbd913387565a8745bede214a846152a5e2dc2d22ba6b4",
+      "size": 384257
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.20.1"
+      ],
+      "file": "trsclient-fabric-1.20.1.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "138801108f003afefa78ea3ca34538c14423e8895fd4b0af4778546824dd79c7",
+      "size": 384024
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.20.2"
+      ],
+      "file": "trsclient-fabric-1.20.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "86a840d00ca3a6236ba7029069edfae6b128e0954de3a43ad15b07eb6c595aa8",
+      "size": 384107
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.20.3"
+      ],
+      "file": "trsclient-fabric-1.20.3.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "d03600ec1e1a1df4581a67611e6abcb5f7fb20a155c7d3caf3ac0d879db72264",
+      "size": 384182
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.20.4"
+      ],
+      "file": "trsclient-fabric-1.20.4.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "98acca2769d1ff5e3370eeba60a6a44e9549d5ac885a8bc6b0b2b726d74ac4ee",
+      "size": 384181
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.20.5"
+      ],
+      "file": "trsclient-fabric-1.20.5.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "1be5fed3f6858e9c88d0ae80e4a8fa6acef54d8d3c1b532a08ff9dcd5dddfeb2",
+      "size": 383396
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.20.6"
+      ],
+      "file": "trsclient-fabric-1.20.6.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "87bf389b3bae1b8927b9c9eefc45dba4239032dd23b43ece374af8aa13dfef9c",
+      "size": 383397
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21"
+      ],
+      "file": "trsclient-fabric-1.21.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "9a476bb2dfb9ecaa6767f875d3a5dc0db96e4db3ae9919b140edf5af66cdd7c7",
+      "size": 383400
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.1"
+      ],
+      "file": "trsclient-fabric-1.21.1.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "679a9ed8c519cdf6531ac74d863a6858ac3d8ac465d405a57f12d184aee1fffb",
+      "size": 383404
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.2"
+      ],
+      "file": "trsclient-fabric-1.21.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "681f66adf0f7f61b5a4907097aff8aec9c42a20f5f50811f5e5978cc32d801db",
+      "size": 383415
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.3"
+      ],
+      "file": "trsclient-fabric-1.21.3.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "c5f745c73e19ed681f51f61999a40d6b4be26f0348b98070a0218dfb3ce96738",
+      "size": 383415
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.4"
+      ],
+      "file": "trsclient-fabric-1.21.4.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "8459a5868cd44c53c7198e9a8894f10bcf99f3bd4e01f447b6d3e4d4100b30ae",
+      "size": 383413
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.5"
+      ],
+      "file": "trsclient-fabric-1.21.5.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "3729dc9071dd4157d7ec86cb320f9d752243215b5cae6c71d3302b3cbab283a7",
+      "size": 383377
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.6"
+      ],
+      "file": "trsclient-fabric-1.21.6.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "7c5758fa63d3f2f80b815f56f2da8a6add9bbc7e4eafc9832497ed6d4a37259d",
+      "size": 383504
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.7"
+      ],
+      "file": "trsclient-fabric-1.21.7.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "d91839d61420de1542771df17c627a86e83545cfc67f46cc26c9ea45e187c105",
+      "size": 383504
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.8"
+      ],
+      "file": "trsclient-fabric-1.21.8.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "dfcde75ca938dbd2ee7487212f99ff07b884baa08eb1ca165c6a68d368522f79",
+      "size": 383504
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.9"
+      ],
+      "file": "trsclient-fabric-1.21.9.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "23e4b375c879c89b466a3454c80fea51f38eb65c13d525aa7ce327195d7135fc",
+      "size": 383911
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.10"
+      ],
+      "file": "trsclient-fabric-1.21.10.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "9614ab05e84ec37bc1ccd98e4b04b9974ae3d8a4b07e3eb5b14935db7f756d05",
+      "size": 383911
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "1.21.11"
+      ],
+      "file": "trsclient-fabric-1.21.11.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "76515d97d138c261379f03622f866897934eacaf84e1213ab1b439152c4f0532",
+      "size": 383910
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "26.1"
+      ],
+      "file": "trsclient-fabric-26.1.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "bc41b0cf245c92bf3dc0ea05922a8d32d2d1f74267e5a998fb4f8c70ee3798e9",
+      "size": 383359
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "26.1.1"
+      ],
+      "file": "trsclient-fabric-26.1.1.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "c592d54c38e611b04df8be6c478b060277fe6b4897e24527d45aaab10bbe0176",
+      "size": 383362
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "26.1.2"
+      ],
+      "file": "trsclient-fabric-26.1.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "763aff594be9bc4f55c5cd2ca12fa15c184979d9ca9013feae4d020abb39dc00",
+      "size": 383364
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "26.2"
+      ],
+      "file": "trsclient-fabric-26.2.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "25509e20f6ca842a638081bc8932214bf39b215206f2424e5dfd210872f53a0b",
+      "size": 383406
+    },
+    {
+      "loader": "fabric",
+      "minecraft": [
+        "26.3"
+      ],
+      "file": "trsclient-fabric-26.3.jar",
+      "requires": [
+        "fabric-api"
+      ],
+      "sha256": "9ea3d6d368c7e292216b6c8970bee9e7cbe3e80e18fddf22b6b25e0434cef2f5",
+      "size": 383237
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.13.2"
+      ],
+      "file": "trsclient-forge-1.13.2.jar",
+      "requires": [],
+      "forge": "1.13.2-25.0.223",
+      "sha256": "f4fd06e3ef1a3b5438ccc34aad47388211f8da9df2388a3fd340d20b5ff44fbe",
+      "size": 296240
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.14.4"
+      ],
+      "file": "trsclient-forge-1.14.4.jar",
+      "requires": [],
+      "forge": "1.14.4-28.2.26",
+      "sha256": "e1dbffbdf78aef7e32b8a9017212c060f2ecccc8d4143cec7d4a1d4b0513ca8a",
+      "size": 359954
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.15.2"
+      ],
+      "file": "trsclient-forge-1.15.2.jar",
+      "requires": [],
+      "forge": "1.15.2-31.2.57",
+      "sha256": "308ab1f37d23fdfcad02f6a97b66ae5133bc4f428b55e84f6122e64a42d74e93",
+      "size": 375958
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.16.2"
+      ],
+      "file": "trsclient-forge-1.16.2.jar",
+      "requires": [],
+      "forge": "1.16.2-33.0.61",
+      "sha256": "a69475d6a5075bf740b270e6b5f6f58b23e44bd2aa1420399141f76a9fee1151",
+      "size": 377494
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.16.4"
+      ],
+      "file": "trsclient-forge-1.16.4.jar",
+      "requires": [],
+      "forge": "1.16.4-35.1.4",
+      "sha256": "da1f1cb991d0233667bb76090153fd38cad3dd058c5cdc5c97d46bdbeebbef14",
+      "size": 377451
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.16.5"
+      ],
+      "file": "trsclient-forge-1.16.5.jar",
+      "requires": [],
+      "forge": "1.16.5-36.2.34",
+      "sha256": "1918a4cf6f0e6960b62291a897cc9ff834478ae1f280d5072f80941172bf8c6c",
+      "size": 377451
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.17.1"
+      ],
+      "file": "trsclient-forge-1.17.1.jar",
+      "requires": [],
+      "forge": "1.17.1-37.1.1",
+      "sha256": "ea8eeb37e40e652e37b5c940a64143dd2294f89002a048b01a9db2fbae8e177b",
+      "size": 379911
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.18"
+      ],
+      "file": "trsclient-forge-1.18.jar",
+      "requires": [],
+      "forge": "1.18-38.0.17",
+      "sha256": "4ece200efd37a7dbd68434021c1dff119cfe2143c86b941d30e1038dee13ab65",
+      "size": 379910
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.18.1"
+      ],
+      "file": "trsclient-forge-1.18.1.jar",
+      "requires": [],
+      "forge": "1.18.1-39.1.0",
+      "sha256": "d84124ecf5892b20cfc4fd435d15a7a7b1b22ef04b26cf26d539cc7ac83823d0",
+      "size": 379912
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.18.2"
+      ],
+      "file": "trsclient-forge-1.18.2.jar",
+      "requires": [],
+      "forge": "1.18.2-40.3.0",
+      "sha256": "8c2d4ad4c65771bc1fe0ef9bb58e855596762d9d8a0693dd52efadf647d704bd",
+      "size": 379867
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.19"
+      ],
+      "file": "trsclient-forge-1.19.jar",
+      "requires": [],
+      "forge": "1.19-41.1.0",
+      "sha256": "59beb108e7b39e862492510119d5e60d1b43f37f36b2326e8cbd9d691fc8f47c",
+      "size": 379881
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.19.1"
+      ],
+      "file": "trsclient-forge-1.19.1.jar",
+      "requires": [],
+      "forge": "1.19.1-42.0.9",
+      "sha256": "370f25575a74e9d9856d4d0089a28272aee004a675a341b99a1f503ae79f6aa2",
+      "size": 380030
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.19.2"
+      ],
+      "file": "trsclient-forge-1.19.2.jar",
+      "requires": [],
+      "forge": "1.19.2-43.5.0",
+      "sha256": "03eb7304f18ab1c3d79915fa02a522fcb99dac5d6566dd37a79e8cc20bcb3469",
+      "size": 380032
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.19.3"
+      ],
+      "file": "trsclient-forge-1.19.3.jar",
+      "requires": [],
+      "forge": "1.19.3-44.1.0",
+      "sha256": "573691c3e550df079756c18e0e0029d3d0c697c3f32fd9f8529d2dbd833ac726",
+      "size": 379880
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.19.4"
+      ],
+      "file": "trsclient-forge-1.19.4.jar",
+      "requires": [],
+      "forge": "1.19.4-45.4.0",
+      "sha256": "a325cd48c9207bd6cdf4bb60a1b23aed3bce468c7c2699c2a0acec962971b8d1",
+      "size": 379748
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.20"
+      ],
+      "file": "trsclient-forge-1.20.jar",
+      "requires": [],
+      "forge": "1.20-46.0.14",
+      "sha256": "f23dcfbb73d5082377950198c2c7f30310e5edba275d692d96a09781fb0b4146",
+      "size": 377623
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.20.1"
+      ],
+      "file": "trsclient-forge-1.20.1.jar",
+      "requires": [],
+      "forge": "1.20.1-47.4.10",
+      "sha256": "09f1936f34687cc03e813e421e613c427a1f1734a1bab74311afa6e4b46c6fdf",
+      "size": 377625
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.20.2"
+      ],
+      "file": "trsclient-forge-1.20.2.jar",
+      "requires": [],
+      "forge": "1.20.2-48.1.0",
+      "sha256": "18f52adfb2ce78450bec2b3f46bb2a23a5aaa0900cf8544bbc4c7b48c0bef5dd",
+      "size": 377698
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.20.3"
+      ],
+      "file": "trsclient-forge-1.20.3.jar",
+      "requires": [],
+      "forge": "1.20.3-49.0.2",
+      "sha256": "bf06946fe689485ed933f5b11ebea85cc99efc98c8a65c32f7df903c9877508e",
+      "size": 377762
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.20.4"
+      ],
+      "file": "trsclient-forge-1.20.4.jar",
+      "requires": [],
+      "forge": "1.20.4-49.2.0",
+      "sha256": "da3d9f1fdb35f032176139a5ca9a36f830e998c4e867b9c551664c0b2e661a29",
+      "size": 377761
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.20.6"
+      ],
+      "file": "trsclient-forge-1.20.6.jar",
+      "requires": [],
+      "forge": "1.20.6-50.2.0",
+      "sha256": "7ca04bfff4eb73fb0a8ae3947fcfdb50041e5f9d0d45e8f008c7c8ec9da8b11a",
+      "size": 372129
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21"
+      ],
+      "file": "trsclient-forge-1.21.jar",
+      "requires": [],
+      "forge": "1.21-51.0.33",
+      "sha256": "526137848cb51680fac3fe852f07d2dc48e424e6f0a907f73a861f9a3c95f356",
+      "size": 372135
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.1"
+      ],
+      "file": "trsclient-forge-1.21.1.jar",
+      "requires": [],
+      "forge": "1.21.1-52.1.0",
+      "sha256": "30a4aeee37d249a60993d13a20302f9dbb879b0bbb1e661fc37574f1be4893a3",
+      "size": 372139
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.3"
+      ],
+      "file": "trsclient-forge-1.21.3.jar",
+      "requires": [],
+      "forge": "1.21.3-53.1.0",
+      "sha256": "b88836efb54a8fc5b2210a5ce63f9df6e6f3592337bf1b0b6df42b54c300b644",
+      "size": 371912
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.4"
+      ],
+      "file": "trsclient-forge-1.21.4.jar",
+      "requires": [],
+      "forge": "1.21.4-54.1.14",
+      "sha256": "1112373c17ee09b46dc60a59585532f7300f6defef1412ae6fd19bf40e9f9665",
+      "size": 371919
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.5"
+      ],
+      "file": "trsclient-forge-1.21.5.jar",
+      "requires": [],
+      "forge": "1.21.5-55.1.0",
+      "sha256": "401aef1f2a3dff3981e58c350a662ed0abd723dbf3da17451b119341ba7d2545",
+      "size": 371952
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.6"
+      ],
+      "file": "trsclient-forge-1.21.6.jar",
+      "requires": [],
+      "forge": "1.21.6-56.0.9",
+      "sha256": "e80bccded8f7af2a6456cc4e3f1034e001d6dd9899df70dc9416e6c5215faa77",
+      "size": 372168
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.7"
+      ],
+      "file": "trsclient-forge-1.21.7.jar",
+      "requires": [],
+      "forge": "1.21.7-57.0.3",
+      "sha256": "d09a6eb349c9673fef87041ce722028400ed56cccb8da395108a9393869b0c9b",
+      "size": 372168
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.8"
+      ],
+      "file": "trsclient-forge-1.21.8.jar",
+      "requires": [],
+      "forge": "1.21.8-58.1.0",
+      "sha256": "5a37500af7f05fdb6e866cb8d88923e5cb9a2f454f5358180cf3f82d7e7e7da8",
+      "size": 372168
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.9"
+      ],
+      "file": "trsclient-forge-1.21.9.jar",
+      "requires": [],
+      "forge": "1.21.9-59.0.5",
+      "sha256": "9ddf320df72c9d3d21f9e3e69468bcb3f2f7d220c7e098a7e12d18b95888ae83",
+      "size": 371237
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.10"
+      ],
+      "file": "trsclient-forge-1.21.10.jar",
+      "requires": [],
+      "forge": "1.21.10-60.1.0",
+      "sha256": "ef9ec98c385abade3077c52dc0afbbcd9dea755e7345e516428e8b22a5fbaa54",
+      "size": 371238
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.21.11"
+      ],
+      "file": "trsclient-forge-1.21.11.jar",
+      "requires": [],
+      "forge": "1.21.11-61.2.0",
+      "sha256": "b9fc93bb8e63bb238f21a7def68a3fd9bec67933884a5a03ed469f94287f9a49",
+      "size": 50542
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "26.1"
+      ],
+      "file": "trsclient-forge-26.1.jar",
+      "requires": [],
+      "forge": "26.1-62.0.9",
+      "sha256": "7b4b8968dba4ab9475aa942bba83de9bb6b4ef32b1e913594dce62fe6c29e8eb",
+      "size": 372753
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "26.1.1"
+      ],
+      "file": "trsclient-forge-26.1.1.jar",
+      "requires": [],
+      "forge": "26.1.1-63.0.2",
+      "sha256": "a1626cc0ebe2daa67ce468faee87308600c648974844aaa61e105d8dca19b2b0",
+      "size": 372756
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "26.1.2"
+      ],
+      "file": "trsclient-forge-26.1.2.jar",
+      "requires": [],
+      "forge": "26.1.2-64.1.0",
+      "sha256": "09cd3c6259fe38889ac33849a519e6716a1fac469d777850df5896afb5c0143a",
+      "size": 372758
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "26.2"
+      ],
+      "file": "trsclient-forge-26.2.jar",
+      "requires": [],
+      "forge": "26.2-65.1.0",
+      "sha256": "499b2d03620dba708cf05a93b8d79d1bd0868cb0e272ded5c3fe5319ae19b193",
+      "size": 372810
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "26.3"
+      ],
+      "file": "trsclient-forge-26.3.jar",
+      "requires": [],
+      "forge": "26.3-66.0.2",
+      "sha256": "42a5b479898c7da09d6e7a54225d6a53654b5001edaf203fa9d26a363e2d91bc",
+      "size": 50938
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.7.10"
+      ],
+      "file": "trsclient-forge-1.7.10.jar",
+      "requires": [],
+      "forge": "1.7.10-10.13.4.1614",
+      "sha256": "6170c3457e5f51ebbd18f03dece84a95c022f6b7fdd96ec6cfb1465838a23832",
+      "size": 296687
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.8.9"
+      ],
+      "file": "trsclient-forge-1.8.9.jar",
+      "requires": [],
+      "forge": "1.8.9-11.15.1.2318",
+      "sha256": "d6e38e6aff22929dad7fd62f97fe56f8c0faaaad36e63605500b158b7ff05de8",
+      "size": 361587
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.9"
+      ],
+      "file": "trsclient-forge-1.9.jar",
+      "requires": [],
+      "forge": "1.9-12.16.1.1887",
+      "sha256": "9abad08f784e759867ab1675b90aef139d4e34e016e6178997aea1510fd2d627",
+      "size": 361845
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.9.4"
+      ],
+      "file": "trsclient-forge-1.9.4.jar",
+      "requires": [],
+      "forge": "1.9.4-12.17.0.2317",
+      "sha256": "df6b8da566232513c9d5905ae72989edf6d7e1c6711f2a568388b7624b745949",
+      "size": 361848
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.10",
+        "1.10.2"
+      ],
+      "file": "trsclient-forge-1.10.2.jar",
+      "requires": [],
+      "forge": "1.10.2-12.18.3.2511",
+      "sha256": "533f199380b6920227e98f3617b050032a84e10cc729e59b5d2c2c1393745d67",
+      "size": 361835
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.11",
+        "1.11.2"
+      ],
+      "file": "trsclient-forge-1.11.2.jar",
+      "requires": [],
+      "forge": "1.11.2-13.20.1.2588",
+      "sha256": "ce4dc0b1171e5c2d96db8a7c8565e775d9021115a79b362ed248a540b5552401",
+      "size": 361800
+    },
+    {
+      "loader": "forge",
+      "minecraft": [
+        "1.12",
+        "1.12.1",
+        "1.12.2"
+      ],
+      "file": "trsclient-forge-1.12.2.jar",
+      "requires": [],
+      "forge": "1.12.2-14.23.5.2859",
+      "sha256": "c06f134f6cd5fea6fed4bdb4f2dc7cd514e4a86402ef8220a0fb99bda439e41a",
+      "size": 361954
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.20.2"
+      ],
+      "file": "trsclient-neoforge-1.20.2.jar",
+      "requires": [],
+      "neoforge": "20.2.93",
+      "sha256": "ee8df3e3fb0f4f1ba8bd006917c416ae706ad4d461f3a6af7a61b86e9ec5da78",
+      "size": 370031
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.20.3"
+      ],
+      "file": "trsclient-neoforge-1.20.3.jar",
+      "requires": [],
+      "neoforge": "20.3.8-beta",
+      "sha256": "252d05eb5053d44d26928c29b4c8984d9f3dc3872873ebffdf326214480361eb",
+      "size": 370110
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.20.4"
+      ],
+      "file": "trsclient-neoforge-1.20.4.jar",
+      "requires": [],
+      "neoforge": "20.4.251",
+      "sha256": "71d0ef0e4ea32ece600435a8cc7d4286f01836451d89969678343dca467c1609",
+      "size": 370109
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.20.5"
+      ],
+      "file": "trsclient-neoforge-1.20.5.jar",
+      "requires": [],
+      "neoforge": "20.5.21-beta",
+      "sha256": "259157927bfd05474083f807ba357189b4a94f5634f80f8370b5a8c682e31fb8",
+      "size": 369596
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.20.6"
+      ],
+      "file": "trsclient-neoforge-1.20.6.jar",
+      "requires": [],
+      "neoforge": "20.6.141",
+      "sha256": "b107eac6bcc4882083afa8c591dbd248c6a54a20294376345448521978acb5a0",
+      "size": 369597
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21"
+      ],
+      "file": "trsclient-neoforge-1.21.jar",
+      "requires": [],
+      "neoforge": "21.0.167",
+      "sha256": "e98719e7c6d5b4c8ea8a525b201c0b9eab044851ad1f5317355aa1003ff7f1e2",
+      "size": 369591
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.1"
+      ],
+      "file": "trsclient-neoforge-1.21.1.jar",
+      "requires": [],
+      "neoforge": "21.1.251",
+      "sha256": "4eabadd6c4ac785ca30801347827e6def4014f1b2b133da79372700d3a6e2826",
+      "size": 369592
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.2"
+      ],
+      "file": "trsclient-neoforge-1.21.2.jar",
+      "requires": [],
+      "neoforge": "21.2.1-beta",
+      "sha256": "f6abd5988d0376abc9a933967def0acca68b84b95be22d5eaed3c09f2f580302",
+      "size": 369636
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.3"
+      ],
+      "file": "trsclient-neoforge-1.21.3.jar",
+      "requires": [],
+      "neoforge": "21.3.97",
+      "sha256": "5d2a662c1fa76e20340c442035908d5c6a54a948fa3fc494b6f9ba1e98326bd1",
+      "size": 369637
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.4"
+      ],
+      "file": "trsclient-neoforge-1.21.4.jar",
+      "requires": [],
+      "neoforge": "21.4.157",
+      "sha256": "9f3fea6ec1a6f1eaf960def4b7695e3cc7ddc3c6ac89b9308e99df4f564c2521",
+      "size": 369541
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.5"
+      ],
+      "file": "trsclient-neoforge-1.21.5.jar",
+      "requires": [],
+      "neoforge": "21.5.98",
+      "sha256": "821ee1c6fa86a92738098cce813465f85cf0268496abdda220f68930d8611d75",
+      "size": 369541
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.6"
+      ],
+      "file": "trsclient-neoforge-1.21.6.jar",
+      "requires": [],
+      "neoforge": "21.6.20-beta",
+      "sha256": "a39c20aa5bea46374ccd215c7e0c7f1b72a2f248866f186505fc02e808774e18",
+      "size": 369724
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.7"
+      ],
+      "file": "trsclient-neoforge-1.21.7.jar",
+      "requires": [],
+      "neoforge": "21.7.25-beta",
+      "sha256": "e99558f26ec1076d4200d60c6ad5696e89b1e39583db309838a2580c5f30812a",
+      "size": 369725
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.8"
+      ],
+      "file": "trsclient-neoforge-1.21.8.jar",
+      "requires": [],
+      "neoforge": "21.8.54",
+      "sha256": "f022dd39e5cf9ccd5ef2aa5cc71738ac3fa30c8cc260c9f20365f426ce80a723",
+      "size": 369725
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.9"
+      ],
+      "file": "trsclient-neoforge-1.21.9.jar",
+      "requires": [],
+      "neoforge": "21.9.16-beta",
+      "sha256": "cf85f00541ac00170c993aabfdd87b7fb46d97d1ba3e0e5589a249aad3bb2c21",
+      "size": 370089
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.10"
+      ],
+      "file": "trsclient-neoforge-1.21.10.jar",
+      "requires": [],
+      "neoforge": "21.10.64",
+      "sha256": "d19355d777ce8c07436a5e4cd2cb0b2cab74f7ee848710db867549f1d78b03c5",
+      "size": 370091
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "1.21.11"
+      ],
+      "file": "trsclient-neoforge-1.21.11.jar",
+      "requires": [],
+      "neoforge": "21.11.45",
+      "sha256": "88a99b76c06817101999b40d8e390058b53d343f7844681ea1991c9aa5015564",
+      "size": 370081
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "26.1"
+      ],
+      "file": "trsclient-neoforge-26.1.jar",
+      "requires": [],
+      "neoforge": "26.1.0.19-beta",
+      "sha256": "c62982717b1a1d89c2b6aff2f36729049e6d730dd8a2f7eb3834fa872a39399b",
+      "size": 372669
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "26.1.1"
+      ],
+      "file": "trsclient-neoforge-26.1.1.jar",
+      "requires": [],
+      "neoforge": "26.1.1.15-beta",
+      "sha256": "5ef3539c023fd54c626f1d0c39b73ebac7b2b97a3313382bce3fe3c7f582c47e",
+      "size": 372672
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "26.1.2"
+      ],
+      "file": "trsclient-neoforge-26.1.2.jar",
+      "requires": [],
+      "neoforge": "26.1.2.109",
+      "sha256": "317e4f8183b014c68470d7dff42df52d1825da15158d1be18847e40d656d9e76",
+      "size": 372675
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "26.2"
+      ],
+      "file": "trsclient-neoforge-26.2.jar",
+      "requires": [],
+      "neoforge": "26.2.0.88",
+      "sha256": "8e4cbd39acb4cb10c2dc1cd53239fd2e66fa142ca4c0ec4e278a7ece89226cb1",
+      "size": 372726
+    },
+    {
+      "loader": "neoforge",
+      "minecraft": [
+        "26.3"
+      ],
+      "file": "trsclient-neoforge-26.3.jar",
+      "requires": [],
+      "neoforge": "26.3.0.8-beta",
+      "sha256": "4c0ab00ac6bb803f8cec23b3617df3d45be573cb6f7d71a8893b15ce9a07b787",
+      "size": 372549
+    }
+  ]
+}

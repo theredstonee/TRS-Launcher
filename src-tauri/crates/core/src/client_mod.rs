@@ -1,27 +1,33 @@
 //! TRS Client: unser eigener In-Game-Mod (HUD, Zoom, Fullbright, Menü).
 //! Der Launcher bringt die Jars samt `builds.json` mit und legt beim Start
 //! automatisch den passenden Build in jede Instanz – inklusive benötigter
-//! Abhängigkeiten wie Fabric API.
+//! Abhängigkeiten wie Fabric API. Neuere Versionen kommen über den eigenen
+//! Update-Kanal ([`crate::client_mod_update`]) auch ohne Launcher-Update.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::client_mod_update::{self, ClientModUpdater};
 use crate::content::{self, ContentKind};
 use crate::download;
+use crate::history::{self, HistoryEntry, HistoryKind};
 use crate::instance::{Instance, LoaderKind};
 use crate::paths::Paths;
 use crate::settings::{Accent, Theme, UiSettings};
-use crate::{Error, Result, modrinth};
+use crate::{Error, Result, fsutil, modrinth};
 
 /// So heißt die Datei im Mods-Ordner – fester Name, damit Updates sie ersetzen.
 const INSTALLED_NAME: &str = "trsclient.jar";
 const FABRIC_API_PROJECT: &str = "P7dR8mSH";
 const MANIFEST: &str = "builds.json";
+/// Zuletzt in die Instanz gelegte TRS-Client-Version (für den Verlauf).
+const VERSION_MARKER: &str = "trsclient-version";
 /// Farben des Launchers für das In-Game-Menü (relativ zum Config-Ordner der Instanz).
 const THEME_FILE: &str = "trsclient/launcher-theme.json";
 
-/// Ein Eintrag aus `builds.json` (erzeugt vom Gradle-Task `collectLauncherJars`).
+/// Ein Build aus dem Manifest (erzeugt von `scripts/publish-client-mod.mjs`
+/// aus den `collectLauncherJars`-Ausgaben).
 #[derive(Debug, Clone, Deserialize)]
 pub struct Build {
     /// `fabric`, `forge`, `neoforge`
@@ -31,6 +37,152 @@ pub struct Build {
     pub file: String,
     #[serde(default)]
     pub requires: Vec<String>,
+    /// Pflicht im Update-Kanal, in der mitgelieferten Datei zur Kontrolle.
+    #[serde(default)]
+    pub sha256: Option<String>,
+    #[serde(default)]
+    pub size: Option<u64>,
+    /// Stammt aus dem Update-Kanal (nicht Teil der Datei).
+    #[serde(skip)]
+    pub from_channel: bool,
+}
+
+/// `builds.json` bzw. `client-mod.json`: `{ "version": "0.3.0", "builds": [...] }`.
+/// Die alte Form (nur die Liste, ohne Version) wird weiter gelesen.
+#[derive(Debug, Clone, Default)]
+pub struct Manifest {
+    /// Version des Mods (`mod_version` aus client-mod/gradle.properties); leer = unbekannt.
+    pub version: String,
+    pub builds: Vec<Build>,
+}
+
+/// Liest ein Manifest in neuer oder alter Form; Builds mit unsicheren
+/// Dateinamen fallen heraus. `None`, wenn es gar nicht lesbar ist.
+pub fn parse_manifest(bytes: &[u8]) -> Option<Manifest> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Raw {
+        Current { version: String, builds: Vec<Build> },
+        Legacy(Vec<Build>),
+    }
+    let (version, mut builds) = match serde_json::from_slice::<Raw>(bytes).ok()? {
+        Raw::Current { version, builds } => (version, builds),
+        Raw::Legacy(builds) => (String::new(), builds),
+    };
+    // Dateinamen stammen aus unserer eigenen Datei – trotzdem nur einfache Namen zulassen.
+    builds.retain(|b| validate_build_file(&b.file).is_ok());
+    Some(Manifest { version, builds })
+}
+
+/// Nur einfache Jar-Namen ohne Pfadanteile.
+pub fn validate_build_file(file: &str) -> Result<()> {
+    content::validate_file_name(ContentKind::Mod, file)
+}
+
+/// Das mitgelieferte Manifest aus dem Ressourcen-Ordner; kaputt oder fehlend = leer.
+pub fn load_manifest(dir: &Path) -> Manifest {
+    std::fs::read(dir.join(MANIFEST)).ok().and_then(|b| parse_manifest(&b)).unwrap_or_default()
+}
+
+/// Was der Launcher gerade vom TRS Client kennt: die mitgelieferten Builds und –
+/// falls neuer – die aus dem Update-Kanal.
+#[derive(Debug, Clone, Default)]
+pub struct Catalog {
+    bundled_dir: Option<PathBuf>,
+    bundled: Manifest,
+    channel: Option<Manifest>,
+    /// Kanal-Builds zuerst, danach die mitgelieferten (Rückfall für Versionen,
+    /// die der Kanal nicht oder nicht mehr hat).
+    merged: Vec<Build>,
+}
+
+impl Catalog {
+    pub async fn load(bundled_dir: Option<&Path>, updater: Option<&ClientModUpdater>) -> Self {
+        let bundled = bundled_dir.map(load_manifest).unwrap_or_default();
+        let channel = match updater {
+            Some(u) => u.stored().await.filter(|c| client_mod_update::is_newer(&c.version, &bundled.version)),
+            None => None,
+        };
+        let merged = channel
+            .iter()
+            .flat_map(|c| c.builds.iter().cloned().map(|b| Build { from_channel: true, ..b }))
+            .chain(bundled.builds.iter().cloned())
+            .collect();
+        Self { bundled_dir: bundled_dir.map(Path::to_owned), bundled, channel, merged }
+    }
+
+    /// Alle bekannten Builds, neueste Quelle zuerst.
+    pub fn builds(&self) -> &[Build] {
+        &self.merged
+    }
+
+    pub fn bundled_version(&self) -> Option<&str> {
+        Some(self.bundled.version.as_str()).filter(|v| !v.is_empty())
+    }
+
+    /// Kanal-Version, sofern neuer als die mitgelieferte.
+    pub fn channel_version(&self) -> Option<&str> {
+        self.channel.as_ref().map(|c| c.version.as_str())
+    }
+
+    pub fn status(&self) -> ClientModStatus {
+        ClientModStatus {
+            bundled: self.bundled_version().map(str::to_owned),
+            update: self.channel_version().map(str::to_owned),
+        }
+    }
+
+    /// Jar-Datei für die Instanz: bevorzugt aus dem Kanal (lädt bei Bedarf),
+    /// bei jedem Fehler aus dem Launcher-Paket.
+    /// `installed`: die Kopie in der Instanz – ist sie schon genau dieser Kanal-Build,
+    /// bleibt sie auch dann, wenn der Cache fehlt und gerade nichts ladbar ist.
+    async fn resolve(
+        &self,
+        updater: Option<&ClientModUpdater>,
+        kind: LoaderKind,
+        game_version: &str,
+        installed: &Path,
+    ) -> Option<Resolved> {
+        if let (Some(channel), Some(updater)) = (&self.channel, updater)
+            && let Some(build) = build_for(&self.merged, kind, game_version).filter(|b| b.from_channel)
+        {
+            let resolved = |path| Resolved { path, version: channel.version.clone(), build: build.clone() };
+            match updater.jar(channel, build).await {
+                Ok(path) => return Some(resolved(path)),
+                Err(e) => {
+                    if let (Some(sha256), Some(size)) = (build.sha256.as_deref(), build.size)
+                        && client_mod_update::file_matches(installed, sha256, size).await
+                    {
+                        return Some(resolved(installed.to_owned()));
+                    }
+                    tracing::warn!("TRS Client {} nicht ladbar, nehme den mitgelieferten: {e}", channel.version);
+                }
+            }
+        }
+        let dir = self.bundled_dir.as_deref()?;
+        let build = build_for(&self.bundled.builds, kind, game_version)?;
+        let path = dir.join(&build.file);
+        if !path.is_file() {
+            tracing::warn!("TRS Client fehlt im Launcher-Paket: {}", path.display());
+            return None;
+        }
+        Some(Resolved { path, version: self.bundled.version.clone(), build: build.clone() })
+    }
+}
+
+/// Für die Einstellungen: mitgelieferte Version und – falls neuer – die aus dem Kanal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClientModStatus {
+    pub bundled: Option<String>,
+    /// Neuere, geprüfte Version aus dem Update-Kanal (wird beim nächsten Start verwendet).
+    pub update: Option<String>,
+}
+
+struct Resolved {
+    path: PathBuf,
+    version: String,
+    build: Build,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -41,16 +193,9 @@ pub enum Availability {
     Disabled,
 }
 
-/// Liest `builds.json` aus dem Ressourcen-Ordner; kaputt oder fehlend = leer.
+/// Builds aus `builds.json` im Ressourcen-Ordner; kaputt oder fehlend = leer.
 pub fn load_builds(dir: &Path) -> Vec<Build> {
-    std::fs::read(dir.join(MANIFEST))
-        .ok()
-        .and_then(|b| serde_json::from_slice::<Vec<Build>>(&b).ok())
-        .unwrap_or_default()
-        .into_iter()
-        // Dateinamen stammen aus unserer eigenen Datei – trotzdem nur einfache Namen zulassen.
-        .filter(|b| content::validate_file_name(ContentKind::Mod, &b.file).is_ok())
-        .collect()
+    load_manifest(dir).builds
 }
 
 fn loader_matches(build: &str, kind: LoaderKind) -> bool {
@@ -87,40 +232,48 @@ pub fn availability(builds: &[Build], instance: &Instance) -> Availability {
 
 /// Sorgt vor dem Start dafür, dass der TRS Client (und seine Abhängigkeiten)
 /// in der Instanz liegt – bzw. entfernt ihn, wenn er abgeschaltet wurde oder
-/// für die Version keinen Build mehr hat.
+/// für die Version keinen Build mehr hat. Quelle ist die neueste geprüfte
+/// Version: Update-Kanal (falls neuer und ladbar), sonst das Launcher-Paket.
 pub async fn sync(
     http: &reqwest::Client,
     paths: &Paths,
     bundled_dir: Option<&Path>,
+    updater: Option<&ClientModUpdater>,
     instance: &Instance,
     ui: &UiSettings,
 ) -> Result<()> {
-    let Some(dir) = bundled_dir else { return Ok(()) };
-    let builds = load_builds(dir);
+    let catalog = Catalog::load(bundled_dir, updater).await;
+    // Weder Launcher-Paket noch Kanal bekannt: nichts anfassen.
+    if bundled_dir.is_none() && catalog.channel.is_none() {
+        return Ok(());
+    }
     let mods = content::content_dir(paths, &instance.id, ContentKind::Mod);
     let target = mods.join(INSTALLED_NAME);
     let disabled_copy = mods.join(format!("{INSTALLED_NAME}.disabled"));
 
-    let build = build_for(&builds, instance.loader.kind, &instance.game_version);
-    let Some(build) = build.filter(|_| instance.overrides.trs_client != Some(false)) else {
+    let build = build_for(catalog.builds(), instance.loader.kind, &instance.game_version);
+    if build.is_none() || instance.overrides.trs_client == Some(false) {
         // Abgeschaltet oder nicht passend (z. B. nach Versionswechsel): alte Kopie weg.
         for file in [&target, &disabled_copy] {
             if file.is_file() {
                 tokio::fs::remove_file(file).await.map_err(|e| Error::io(file, e))?;
             }
         }
-        let theme = theme_path(paths, &instance.id);
-        if theme.is_file() {
-            let _ = tokio::fs::remove_file(&theme).await;
+        for file in [theme_path(paths, &instance.id), paths.instance_dir(&instance.id).join(VERSION_MARKER)] {
+            if file.is_file() {
+                let _ = tokio::fs::remove_file(&file).await;
+            }
         }
         return Ok(());
-    };
-
-    let source = dir.join(&build.file);
-    if !source.is_file() {
-        tracing::warn!("TRS Client fehlt im Launcher-Paket: {}", source.display());
-        return Ok(());
     }
+
+    // Es gibt einen Build, aber keine Datei (Kanal-Jar nicht ladbar und nichts
+    // mitgeliefert): Instanz so lassen, wie sie ist.
+    let Some(Resolved { path: source, version, build }) =
+        catalog.resolve(updater, instance.loader.kind, &instance.game_version, &target).await
+    else {
+        return Ok(());
+    };
     // In der Mod-Liste deaktiviert (trsclient.jar.disabled): Das bleibt so – nur die
     // deaktivierte Kopie wird aktuell gehalten, damit ein späteres Einschalten passt.
     if disabled_copy.is_file() && !target.exists() {
@@ -129,12 +282,30 @@ pub async fn sync(
         }
         return Ok(());
     }
-    // Nur kopieren, wenn sich etwas geändert hat (Launcher-Update bringt neue Version).
+    // Nur kopieren, wenn sich etwas geändert hat (neue Version aus Kanal oder Launcher-Update).
+    let marker = paths.instance_dir(&instance.id).join(VERSION_MARKER);
     if !same_file(&source, &target).await {
+        let replaced = target.is_file();
         tokio::fs::create_dir_all(&mods).await.map_err(|e| Error::io(&mods, e))?;
         tokio::fs::copy(&source, &target).await.map_err(|e| Error::io(&target, e))?;
         let _ = tokio::fs::remove_file(&disabled_copy).await;
-        tracing::info!("TRS Client ({}) in '{}' installiert", build.file, instance.id);
+        let label = if version.is_empty() { build.file.clone() } else { format!("{} {version}", build.file) };
+        tracing::info!("TRS Client ({label}) in '{}' installiert", instance.id);
+        let previous = tokio::fs::read_to_string(&marker).await.ok().map(|v| v.trim().to_owned());
+        if replaced && !version.is_empty() && previous.as_deref() != Some(version.as_str()) {
+            // Im Verlauf der Instanz sichtbar: "TRS Client aktualisiert 0.2.0 → 0.3.0".
+            let mut entry = HistoryEntry::new(HistoryKind::ModUpdated).subject("TRS Client").to(&version);
+            if let Some(previous) = previous.filter(|p| client_mod_update::is_valid_version(p)) {
+                if client_mod_update::is_newer(&previous, &version) {
+                    entry = entry.detail("downgrade");
+                }
+                entry = entry.from(previous);
+            }
+            history::record(paths, &instance.id, entry).await;
+        }
+    }
+    if !version.is_empty() && tokio::fs::read_to_string(&marker).await.ok().as_deref() != Some(version.as_str()) {
+        let _ = fsutil::write_atomic(&marker, version.as_bytes()).await;
     }
 
     // Der Mod übernimmt Thema und Akzentfarbe des Launchers.
@@ -308,13 +479,13 @@ mod tests {
         let ui = UiSettings::default();
         let mods = content::content_dir(&paths, &inst.id, ContentKind::Mod);
 
-        sync(&http, &paths, Some(bundle.path()), &inst, &ui).await.unwrap();
+        sync(&http, &paths, Some(bundle.path()), None, &inst, &ui).await.unwrap();
         assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"neu");
 
         // Nutzer schaltet ihn in der Mod-Liste aus, danach kommt ein Launcher-Update.
         std::fs::rename(mods.join(INSTALLED_NAME), mods.join("trsclient.jar.disabled")).unwrap();
         std::fs::write(bundle.path().join("trsclient-forge-1.8.9.jar"), b"neuer").unwrap();
-        sync(&http, &paths, Some(bundle.path()), &inst, &ui).await.unwrap();
+        sync(&http, &paths, Some(bundle.path()), None, &inst, &ui).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists(), "darf nicht wieder eingeschaltet werden");
         assert_eq!(std::fs::read(mods.join("trsclient.jar.disabled")).unwrap(), b"neuer");
     }
@@ -324,13 +495,18 @@ mod tests {
     #[test]
     fn bundled_manifest_is_consistent() {
         let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/client-mod");
-        let raw: Vec<Build> = serde_json::from_slice(&std::fs::read(dir.join(MANIFEST)).unwrap()).unwrap();
-        let builds = load_builds(&dir);
-        assert_eq!(builds.len(), raw.len(), "unsichere Dateinamen in builds.json");
+        let raw: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join(MANIFEST)).unwrap()).unwrap();
+        let manifest = load_manifest(&dir);
+        let builds = manifest.builds;
+        assert_eq!(builds.len(), raw["builds"].as_array().unwrap().len(), "unsichere Dateinamen in builds.json");
+        assert!(client_mod_update::is_valid_version(&manifest.version), "Version: {}", manifest.version);
         let mut seen = std::collections::HashSet::new();
         for b in &builds {
             assert!(matches!(b.loader.as_str(), "fabric" | "forge" | "neoforge"), "{}", b.loader);
             assert!(dir.join(&b.file).is_file(), "{} fehlt", b.file);
+            let data = std::fs::read(dir.join(&b.file)).unwrap();
+            assert_eq!(b.size, Some(data.len() as u64), "{}: Größe", b.file);
+            assert_eq!(b.sha256.as_deref(), Some(client_mod_update::tests::sha256_hex(&data).as_str()), "{}: SHA-256", b.file);
             assert!(!b.minecraft.is_empty(), "{}", b.file);
             for v in &b.minecraft {
                 assert!(seen.insert((b.loader.clone(), v.clone())), "doppelt: {} {v}", b.loader);
@@ -459,23 +635,154 @@ mod tests {
         let ui = UiSettings::default();
 
         let on = instance("1.21.1", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&res), &on, &ui).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &on, &ui).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v1");
         assert!(theme_path(&paths, "test").is_file(), "Farben des Launchers liegen in der Instanz");
 
         tokio::fs::write(res.join("trsclient-fabric-1.21.jar"), b"v2").await.unwrap();
-        sync(&http, &paths, Some(&res), &on, &ui).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &on, &ui).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v2");
 
         // Versionswechsel auf eine Version ohne Build: alte Kopie verschwindet.
         let other = instance("1.20.4", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&res), &other, &ui).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &other, &ui).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
 
-        sync(&http, &paths, Some(&res), &on, &ui).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &on, &ui).await.unwrap();
         let off = instance("1.21.1", LoaderKind::Fabric, Some(false));
-        sync(&http, &paths, Some(&res), &off, &ui).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &off, &ui).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
         assert!(!theme_path(&paths, "test").exists(), "abgeschaltet: auch die Farbdatei ist weg");
+    }
+
+    // --- Update-Kanal ---------------------------------------------------------
+
+    use crate::client_mod_update::tests::{TestKey, TestServer, publish};
+
+    /// Mitgeliefertes Manifest im neuen Format mit einem Fabric-Build (1.21/1.21.1).
+    fn bundle_version(dir: &Path, version: &str, jar: &[u8]) {
+        let manifest = serde_json::json!({
+            "version": version,
+            "builds": [{"loader":"fabric","minecraft":["1.21","1.21.1"],"file":"trsclient-fabric-1.21.jar","requires":["fabric-api"]}]
+        });
+        std::fs::create_dir_all(dir).unwrap();
+        std::fs::write(dir.join(MANIFEST), manifest.to_string()).unwrap();
+        std::fs::write(dir.join("trsclient-fabric-1.21.jar"), jar).unwrap();
+    }
+
+    fn offline_http() -> reqwest::Client {
+        reqwest::Client::builder().proxy(reqwest::Proxy::all("http://127.0.0.1:9").unwrap()).build().unwrap()
+    }
+
+    #[test]
+    fn reads_new_manifest_format() {
+        let dir = tempfile::tempdir().unwrap();
+        bundle_version(dir.path(), "0.2.0", b"x");
+        let manifest = load_manifest(dir.path());
+        assert_eq!(manifest.version, "0.2.0");
+        assert_eq!(manifest.builds.len(), 1);
+        // Alte Liste ohne Version: Version unbekannt, Builds wie gehabt.
+        let legacy = parse_manifest(MANIFEST_JSON.as_bytes()).unwrap();
+        assert_eq!((legacy.version.as_str(), legacy.builds.len()), ("", 2));
+        assert!(parse_manifest(b"{kaputt").is_none());
+    }
+
+    #[tokio::test]
+    async fn newer_channel_client_wins_until_the_launcher_brings_a_newer_one() {
+        let key = TestKey::generate();
+        let (server, url) = TestServer::start().await;
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path().join("root"));
+        paths.ensure().await.unwrap();
+        let res = dir.path().join("bundled");
+        bundle_version(&res, "0.2.0", b"v2");
+        let updater = ClientModUpdater::for_tests(paths.client_mod_cache_dir(), &url, &key.public);
+        let (http, ui) = (offline_http(), UiSettings::default());
+        let inst = instance("1.21.1", LoaderKind::Fabric, None);
+        let jar = content::content_dir(&paths, "test", ContentKind::Mod).join(INSTALLED_NAME);
+        // Der Verlauf schreibt nur für angelegte Instanzen.
+        std::fs::create_dir_all(paths.instance_dir("test")).unwrap();
+        std::fs::write(paths.instance_file("test"), "{}").unwrap();
+
+        // Noch nichts im Kanal: mitgelieferte Version.
+        assert_eq!(updater.check_now(Some("0.2.0")).await, client_mod_update::CheckOutcome::Failed);
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(&jar).unwrap(), b"v2");
+
+        // Neuere Version im Kanal: wird geladen, geprüft und installiert.
+        publish(&server, &key, "0.3.0", b"v3");
+        updater.check_now(Some("0.2.0")).await;
+        let catalog = Catalog::load(Some(&res), Some(&updater)).await;
+        assert_eq!(catalog.status(), ClientModStatus { bundled: Some("0.2.0".into()), update: Some("0.3.0".into()) });
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(&jar).unwrap(), b"v3");
+        let entry = history::list(&paths, "test").await.unwrap().into_iter().next().unwrap();
+        assert_eq!(entry.kind, HistoryKind::ModUpdated);
+        assert_eq!((entry.from.as_deref(), entry.to.as_deref()), (Some("0.2.0"), Some("0.3.0")));
+
+        // Zweiter Start: nichts Neues zu laden, nichts Neues im Verlauf.
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui).await.unwrap();
+        assert_eq!(server.hits("trsclient-fabric-1.21.jar"), 1);
+        assert_eq!(history::list(&paths, "test").await.unwrap().len(), 1);
+
+        // Launcher-Update bringt 0.4.0 mit: das ist neuer als der Kanal.
+        bundle_version(&res, "0.4.0", b"v4");
+        let catalog = Catalog::load(Some(&res), Some(&updater)).await;
+        assert_eq!(catalog.status(), ClientModStatus { bundled: Some("0.4.0".into()), update: None });
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(&jar).unwrap(), b"v4");
+        updater.cleanup(Some("0.4.0")).await;
+        assert!(!paths.client_mod_cache_dir().join("0.3.0").exists());
+    }
+
+    #[tokio::test]
+    async fn channel_problems_fall_back_to_the_bundled_client() {
+        let key = TestKey::generate();
+        let (server, url) = TestServer::start().await;
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path().join("root"));
+        paths.ensure().await.unwrap();
+        let res = dir.path().join("bundled");
+        bundle_version(&res, "0.2.0", b"v2");
+        let updater = ClientModUpdater::for_tests(paths.client_mod_cache_dir(), &url, &key.public);
+        let (http, ui) = (offline_http(), UiSettings::default());
+        let inst = instance("1.21.1", LoaderKind::Fabric, None);
+        let mods = content::content_dir(&paths, "test", ContentKind::Mod);
+
+        // Signiertes Manifest, aber der Jar auf dem Server passt nicht zur Prüfsumme.
+        publish(&server, &key, "0.3.0", b"v3");
+        updater.check_now(Some("0.2.0")).await;
+        server.put("trsclient-fabric-1.21.jar", b"v3-manipuliert".to_vec());
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v2", "Rückfall auf die mitgelieferte Version");
+
+        // In der Mod-Liste deaktiviert: bleibt aus, die deaktivierte Kopie bekommt das Update.
+        std::fs::rename(mods.join(INSTALLED_NAME), mods.join("trsclient.jar.disabled")).unwrap();
+        server.put("trsclient-fabric-1.21.jar", b"v3".to_vec());
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui).await.unwrap();
+        assert!(!mods.join(INSTALLED_NAME).exists(), "darf nicht wieder eingeschaltet werden");
+        assert_eq!(std::fs::read(mods.join("trsclient.jar.disabled")).unwrap(), b"v3");
+        std::fs::rename(mods.join("trsclient.jar.disabled"), mods.join(INSTALLED_NAME)).unwrap();
+
+        // Offline: geprüftes Manifest + Jar aus dem Cache reichen.
+        let offline = ClientModUpdater::for_tests(paths.client_mod_cache_dir(), "http://127.0.0.1:9/", &key.public);
+        assert_eq!(offline.check_now(Some("0.2.0")).await, client_mod_update::CheckOutcome::Failed);
+        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v3");
+
+        // Offline und Cache weg: die installierte Kopie ist genau dieser Build und bleibt.
+        std::fs::remove_dir_all(paths.client_mod_cache_dir().join("0.3.0")).unwrap();
+        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v3");
+
+        // Offline, kein Cache und keine passende Kopie: mitgelieferte Version.
+        std::fs::remove_file(mods.join(INSTALLED_NAME)).unwrap();
+        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui).await.unwrap();
+        assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v2");
+
+        // Keine Quelle hat einen Build für die Version: Kopie wird entfernt.
+        let other = instance("1.8.9", LoaderKind::Forge, None);
+        sync(&http, &paths, Some(&res), Some(&offline), &other, &ui).await.unwrap();
+        assert!(!mods.join(INSTALLED_NAME).exists(), "kein Build für 1.8.9: entfernt");
     }
 }
