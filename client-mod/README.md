@@ -53,10 +53,69 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Text-Hotkeys | Four bindable keys send a fixed text or command. Off by default, at most one message per second (3 per 10 s) |
 | Wegpunkte | Own markers per world/server (`config/trsclient-waypoints.json`): name, colour, in-world label with distance and light column, show/hide, automatic death waypoint |
 | Minimap | Top-down map of the loaded chunks (map colours, height shading), rotating or north-up, zoom, waypoints, coordinates. Player dots are off by default and only ever show players the game already knows (normal render range) – no radar, no cave mode |
+| TRS-Online-Funktionen | TRS badge (a pixel redstone block) in front of the names of TRS users in the tab list and on name tags, TRS capes (own and other players', HD and animated), in-game presence for friends. Talks to the TRS API (see below); switchable as a whole, per badge place and for capes |
+| Umhang-Physik | Every rendered cape (Mojang, OptiFine, TRS, own and other players') moves like cloth instead of a rigid plank: swings when walking, turning, jumping and falling, rests on the back and bends at the hips when sneaking. Settings: *Stärke*, *Wind*, *Für* (nur eigener / alle Spieler). Elytras stay vanilla |
 | Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
 toggle, priority ▲/▼, open folder; applied with one reload).
+
+## TRS API: badges, TRS capes, presence
+
+The client talks to the TRS API (`https://api.theredstonee.de`, contract: `api/API.md` on the `trs-api` branch) on its
+own; the logic is version independent in `common/core/online` and `common/core/cape`:
+
+- **Login like a Minecraft server:** `POST /v1/auth/challenge` → Mojang `session/minecraft/join` with the game's own
+  access token and UUID (the `serverId` is passed unhashed) → `POST /v1/auth/verify`. The bearer token only lives in
+  memory; a `401` logs in again once. Offline/demo accounts (no real token) never contact Mojang. Failed logins back
+  off (30 s, 2 min, 10 min, 30 min), a `banned` account switches everything off for the session.
+- **Off switch:** the launcher writes `config/trsclient/trs-api.json` (`{"version":1,"enabled":true|false}`) before
+  every start; `false` means the mod makes no API call at all. Without the file the API is on; in game the module
+  *TRS-Online-Funktionen* switches it off as well.
+- **Lookup:** UUIDs from the tab list and the render distance are batched (≤ 100 per call, at most one call every 2 s),
+  cached for 5 minutes (also "not a TRS user"), players who re-join the tab list are asked again after 30 s, and
+  `429`/`Retry-After` pauses all lookups. Fair play: the only information shown is "uses TRS" and the cape.
+- **Presence:** `POST /v1/presence` every 60 s while the game runs (`in-game` with version and loader); the server
+  address is only sent when `GET /v1/me` says `shareServer` is on. Nothing is sent on quit (presence expires).
+- **Capes:** the PNG is downloaded once per URL (the API's `?v=` changes with the content) into
+  `config/trsclient/capes/<id>.png` with its `.etag`; a changed URL asks with `If-None-Match`. Only URLs of the API
+  host are loaded, the PNG is decoded without AWT (`PngDecoder`), split into its vertical frames (64·scale × 32·scale
+  each, scale 1–4) and every frame becomes its own texture, so cape **and elytra** use the vanilla UVs; the frame shown
+  is `floor(now / frameTimeMs) % frames` (wall clock – every player sees the same frame). A TRS cape replaces the
+  Mojang/OptiFine cape only when one is set; unused textures are released after 3 minutes.
+- Networking runs in two daemon threads; the game thread only hands over work and reads results. Nothing in these
+  features may crash the game: errors are logged at most once a minute and the vanilla cape is drawn instead.
+- HTTPS works down to Mojang's Java 8u51 (`jre-legacy`, checked against the live API).
+
+Per loader only a thin layer is needed: `online/OnlineHooks` (Fabric, NeoForge, Forge, Forge-Mojmap-legacy – one file,
+Stonecutter branches for 1.14.4–26.3) plus the mixins `CapeTextureMixin` (TRS texture: `getCloakTextureLocation`
+until 1.20.1, `getSkin()` → `PlayerSkin` from 1.20.2, `ClientAsset.ResourceTexture` from 1.21.9), `CapeLayerMixin`
+(physics), `TabBadgeMixin` (`getNameForDisplay`) and `NameTagBadgeMixin` (`renderNameTag` until 1.21.1,
+`extractRenderState` → `nameTag` from 1.21.2). The badge is a glyph of the mod's own bitmap font `trsclient:badge`
+(a private-use character, so no resource pack can collide); before 1.16 (no fonts per text style) it is a dark red
+`■`. Forge 1.8.9–1.12.2 has no mixins: `online/LegacyOnline` writes the TRS cape into the player's tab list entry
+(cape and, from 1.9, elytra read it from there), prefixes the tab list display name and the name tag
+(`PlayerEvent.NameFormat`) and replaces the vanilla `LayerCape` of both player renderers with `ClothCapeLayer`.
+Private fields are found by type there, so the SRG-named release jars need no field names.
+
+**Test against a local mock:** `-PtrsApi=http://127.0.0.1:<port>` on `runClient` points the API *and* the Mojang join at
+a local server (plain HTTP is only accepted for localhost); the autotest then waits for the own TRS cape and takes
+screenshots in third-person view (`cape-stand`, `cape-frame` = next animation frame, `cape-walk`, `cape-jump`,
+`cape-sneak`, `cape-tab` with the badge).
+
+## Umhang-Physik
+
+`core/cape/ClothSim` is a verlet cloth (10 × 16 cells near, 5 × 8 further away) in the player's body frame
+(x left, y down, z back, in model pixels), pinned at the shoulders. Free points keep their momentum in the world: when
+the body moves or turns, they are shifted/rotated the opposite way (spread over 4 sub-steps per tick), so the cape
+trails when starting to run, swings when turning and flutters when jumping or falling (vertical inertia damped, it never
+rises more than 2 px above the shoulders). Gravity is tilted with the torso when sneaking, quadratic air drag (*Wind*)
+lifts it when running, the body and legs are a half-space it cannot enter (the leg that swings back pushes it out),
+and long-range tethers keep it from stretching. It is simulated in the client tick and drawn interpolated.
+
+Level of detail (`CapePhysics`): own player always fine, others fine up to 16 blocks (at most 8), coarse up to 40
+blocks, at most 24 simulated capes; everyone else keeps the rigid vanilla cape. `ClothMesh` emits outer face, inner
+face and all four edges with the vanilla cape UVs (the fractions are the same for every HD scale).
 
 ## Menu, HUD editor and profiles
 
@@ -149,6 +208,11 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | Treffer-Farbe, niedriges Feuer, Reichweite/Combo, Chat-Tools, Auto-GG, Kein Schadens-Wackeln, Block-Umrandung | Forge 1.14.4 | that build has no Mixin at all – the modules are hidden in the menu |
 | TRS-Startbildschirm | Forge 1.13.2 and 1.7.10 | not ported – the vanilla title screen stays; the menu has the redstone style there too |
 | Alle neuen Module | Forge 1.13.2 and 1.7.10 | not ported yet (see "Open") |
+| TRS-Online-Funktionen, Umhang-Physik | Forge 1.13.2 and 1.7.10 | not ported – hidden in the menu |
+| Umhang-Physik | Fabric/Forge 1.14.4 | the cape is still drawn with fixed GL calls there – the cape stays rigid (TRS capes and badges work on Fabric 1.14.4) |
+| TRS-Umhang, TRS-Abzeichen | Forge 1.14.4 | no Mixin in that build – only login and presence |
+| Abzeichen als Pixel-Redstone-Block | 1.14.4, 1.15.2, Forge 1.8.9–1.12.2 | no per-text font – a dark red `■` instead |
+| TRS-Umhang über OptiFine | Forge 1.8.9–1.12.2 with OptiFine | OptiFine's own cape getter wins there |
 | Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |
 
 ### Open

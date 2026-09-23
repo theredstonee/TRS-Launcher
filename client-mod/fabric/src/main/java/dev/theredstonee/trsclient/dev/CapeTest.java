@@ -168,6 +168,6 @@ public final class CapeTest {
 		//? if >=1.15 {
 		key.setDown(down);
 		//?} else
-		/*KeyMapping.set(key.getKey(), down);*/
+		/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) key).trsclient$setDown(down);*/
 	}
 }
