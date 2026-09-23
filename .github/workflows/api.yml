@@ -3,7 +3,7 @@ name: API
 # TRS API (api/) – eigenständig, läuft nur bei Änderungen unter api/.
 on:
   push:
-    branches: [main]
+    branches: [main, trs-api]
     paths: ['api/**', '.github/workflows/api.yml']
   pull_request:
     paths: ['api/**', '.github/workflows/api.yml']
