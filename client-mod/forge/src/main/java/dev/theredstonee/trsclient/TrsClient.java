@@ -84,6 +84,9 @@ public final class TrsClient {
 		TrsKeys.create();
 		waypoints = new Waypoints(modules, Platform.configDir().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
+		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
+		dev.theredstonee.trsclient.online.OnlineHooks.init(Platform.configDir(), modules, Platform.modVersion(MOD_ID),
+				Platform.modVersion("minecraft"), "forge", message -> LOGGER.info(message));
 		autoTest = AutoTest.createIfRequested();
 		// Beim Beenden speichern (Forge-unabhängig; Änderungen im Menü werden ohnehin sofort gespeichert).
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -166,6 +169,7 @@ public final class TrsClient {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		hud.tick();
+		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		if (autoTest != null) autoTest.tick(mc);
 	}
 

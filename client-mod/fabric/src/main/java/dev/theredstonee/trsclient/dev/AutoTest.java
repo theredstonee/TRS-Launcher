@@ -191,7 +191,7 @@ public final class AutoTest {
 				//? if >=1.19.4 {
 				command(mc, "damage @e[type=pig,limit=1,sort=nearest] 1");
 				//?} else
-				/*command(mc, "effect give @e[type=pig,limit=1,sort=nearest] instant_damage 1 0 true");*/
+				//command(mc, "effect give @e[type=pig,limit=1,sort=nearest] instant_damage 1 0 true");
 				next(2);
 				break;
 			case 9:
@@ -294,7 +294,17 @@ public final class AutoTest {
 				break;
 			case 21:
 				// TRS-Umhang, Umhang-Physik und Abzeichen (mit lokaler API-Attrappe, siehe -PtrsApi)
-				if (capeStep(mc, modules)) return;
+				if (capeTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
 				next(5);
 				break;
 			case 22:
@@ -314,138 +324,7 @@ public final class AutoTest {
 		}
 	}
 
-	private int capePhase;
-	private int capeWait;
-
-	/**
-	 * Umhang-Test in der Third-Person-Ansicht von hinten: warten, bis der TRS-Umhang (Attrappe) geladen ist,
-	 * dann Stehen, nächstes Animationsbild, Laufen, Springen, Schleichen, Tabliste mit Abzeichen.
-	 * true = noch nicht fertig.
-	 */
-	private boolean capeStep(Minecraft mc, TrsModules modules) {
-		if (mc.player == null) return false;
-		if (capePhase > 1) {
-			// Das Testfenster kann den Fokus bekommen – Mausbewegungen des Benutzers sollen die Kamera nicht drehen.
-			mc.mouseHandler.releaseMouse();
-			face(mc, 0f, 15f);
-		}
-		if (capeWait > 0) {
-			capeWait--;
-			return true;
-		}
-		switch (capePhase++) {
-			case 0:
-				modules.trsOnline.setEnabled(true);
-				modules.trsCapes.set(true);
-				modules.badgeTab.set(true);
-				modules.badgeNametag.set(true);
-				modules.capePhysics.setEnabled(true);
-				modules.minimap.setEnabled(false);
-				TrsClient.get().sprintToggle().set(false);
-				//? if >=1.17 {
-				command(mc, "item replace entity @p armor.chest with air");
-				//?} else
-				/*command(mc, "replaceitem entity @p armor.chest air");*/
-				command(mc, "time set day");
-				command(mc, "weather clear");
-				// Freie, ebene Bahn nach Süden (Blickrichtung), damit Laufen/Springen frei sichtbar ist.
-				command(mc, "execute as @p at @s run fill ~-6 ~ ~-8 ~6 ~7 ~28 air");
-				command(mc, "execute as @p at @s run fill ~-6 ~-1 ~-8 ~6 ~-1 ~28 grass_block");
-				command(mc, "scoreboard objectives add trstest dummy");
-				command(mc, "scoreboard objectives setdisplay list trstest");
-				command(mc, "execute as @p at @s run tp @s ~ ~ ~ 0 5");
-				Mc.setCameraMode(1);
-				Mc.setHudHidden(true);
-				modules.zoomFactor.set(2.0);
-				TrsClient.get().setForceZoom(true);
-				capeWait = 5;
-				return true;
-			case 1: {
-				// Auf Anmeldung + Textur warten (höchstens 20 s)
-				Object tex = dev.theredstonee.trsclient.online.OnlineHooks.capeTexture(mc.player);
-				if (tex == null && capeTries++ < 400) {
-					capePhase = 1;
-					return true;
-				}
-				TrsClient.LOGGER.info("[Autotest] TRS-Umhang: {} (Status {}, Physik aktiv für {} Spieler)",
-						tex != null ? tex : "NICHT geladen",
-						dev.theredstonee.trsclient.online.OnlineHooks.features().online().status(),
-						dev.theredstonee.trsclient.online.OnlineHooks.features().physics().active());
-				capeWait = 40;
-				return true;
-			}
-			case 2:
-				shot(mc, "trsclient-cape-stand");
-				capeWait = 3;
-				return true;
-			case 3:
-				shot(mc, "trsclient-cape-frame");
-				hold(mc.options.keyUp, true);
-				mc.player.setSprinting(true);
-				capeWait = 25;
-				return true;
-			case 4:
-				shot(mc, "trsclient-cape-walk");
-				hold(mc.options.keyUp, false);
-				hold(mc.options.keyJump, true);
-				capeWait = 2;
-				return true;
-			case 5:
-				hold(mc.options.keyJump, false);
-				capeWait = 7;
-				return true;
-			case 6:
-				shot(mc, "trsclient-cape-jump");
-				capeWait = 20;
-				return true;
-			case 7:
-				hold(mc.options.keyShift, true);
-				capeWait = 25;
-				return true;
-			case 8:
-				shot(mc, "trsclient-cape-sneak");
-				hold(mc.options.keyShift, false);
-				Mc.setHudHidden(false);
-				TrsClient.get().setForceZoom(false);
-				hold(mc.options.keyPlayerList, true);
-				capeWait = 5;
-				return true;
-			case 9:
-				shot(mc, "trsclient-cape-tab");
-				hold(mc.options.keyPlayerList, false);
-				TrsClient.LOGGER.info("[Autotest] Abzeichen Tabliste={} Name={} → \"{}\"",
-						dev.theredstonee.trsclient.online.OnlineHooks.badge(mc.player.getUUID(), true),
-						dev.theredstonee.trsclient.online.OnlineHooks.badge(mc.player.getUUID(), false),
-						dev.theredstonee.trsclient.online.OnlineHooks.badged(Mc.text("Spieler")).getString());
-				command(mc, "scoreboard objectives remove trstest");
-				Mc.setCameraMode(0);
-				KeyMapping.releaseAll();
-				return false;
-			default:
-				return false;
-		}
-	}
-
-	/** Blickrichtung des Spielers setzen (Süden = 0). */
-	private static void face(Minecraft mc, float yaw, float pitch) {
-		//? if >=1.17 {
-		mc.player.setYRot(yaw);
-		mc.player.setXRot(pitch);
-		//?} else {
-		/*mc.player.yRot = yaw;
-		mc.player.xRot = pitch;
-		*///?}
-		mc.player.yHeadRot = yaw;
-	}
-
-	private static void hold(KeyMapping key, boolean down) {
-		//? if >=1.15 {
-		key.setDown(down);
-		//?} else
-		/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) key).trsclient$setDown(down);*/
-	}
-
-	private int capeTries;
+	private final CapeTest capeTest = new CapeTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {
@@ -490,7 +369,7 @@ public final class AutoTest {
 		//? if >=1.19 {
 		server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command));
 		//?} else
-		/*server.execute(() -> server.getCommands().performCommand(server.createCommandSourceStack(), command));*/
+		//server.execute(() -> server.getCommands().performCommand(server.createCommandSourceStack(), command));
 	}
 
 	/**
@@ -671,7 +550,7 @@ public final class AutoTest {
 					//? if >=1.20.3 {
 					WorldPresets::createNormalWorldDimensions, new TitleScreen());
 					//?} else
-					/*WorldPresets::createNormalWorldDimensions);*/
+					//WorldPresets::createNormalWorldDimensions);
 			//?} elif >=1.19 {
 			/*RegistryAccess registries = RegistryAccess.builtinCopy().freeze();
 			mc.createWorldOpenFlows().createFreshLevel(WORLD, settings, registries, WorldPresets.createNormalWorldFromPreset(registries));
@@ -711,7 +590,7 @@ public final class AutoTest {
 		// run/screenshots/trsclient-<minecraft>-<name>.png
 		Screenshot.grab(mc.gameDirectory, name.replace("trsclient-", "trsclient-" + MC_VERSION + "-") + ".png",
 				//? if <1.17.1
-				/*Mc.window().getWidth(), Mc.window().getHeight(),*/
+				//Mc.window().getWidth(), Mc.window().getHeight(),
 				Mc.mainRenderTarget(),
 				//? if >=1.21.6
 				//1,

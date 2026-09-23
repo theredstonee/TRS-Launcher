@@ -191,6 +191,9 @@ public final class TrsClient {
 		ctx.registerExtensionPoint(ExtensionPoint.DISPLAYTEST,
 				() -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (remote, network) -> true));
 		//?}
+		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
+		dev.theredstonee.trsclient.online.OnlineHooks.init(FMLPaths.CONFIGDIR.get(), modules, Mc.modVersion(MOD_ID),
+				Mc.modVersion("minecraft"), "forge", message -> LOGGER.info(message));
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (Forge {}) – {} Module, Config {} ({})",
@@ -302,6 +305,7 @@ public final class TrsClient {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		hud.tick();
+		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 	}
 
 	/**

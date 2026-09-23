@@ -124,7 +124,7 @@ public final class OnlineHooks {
 		*///?} elif >=1.20.2 {
 		return p.getSkin().capeTexture() != null;
 		//?} else
-		//return p.isCapeLoaded() && p.getCloakTextureLocation() != null;
+		/*return p.isCapeLoaded() && p.getCloakTextureLocation() != null;*/
 	}
 
 	// --- Texturen / Abzeichen (Aufrufe aus den Mixins) ---
@@ -330,7 +330,7 @@ public final class OnlineHooks {
 			//? if >=1.20.2 {
 			String uuid = user.getProfileId() == null ? null : user.getProfileId().toString();
 			//?} else
-			//String uuid = user.getUuid();
+			/*String uuid = user.getUuid();*/
 			return new GameSession(uuid, user.getName(), user.getAccessToken());
 		}
 

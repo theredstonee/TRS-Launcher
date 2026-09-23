@@ -59,6 +59,8 @@ public final class AutoTest {
 	/** Modul-Zustand vor dem Test – wird am Ende wiederhergestellt (die Config bleibt sauber). */
 	private TrsConfig before;
 
+	private final CapeTest capeTest = new CapeTest();
+
 	private AutoTest() {
 	}
 
@@ -73,7 +75,7 @@ public final class AutoTest {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
 		// Ohne Lizenz (Demo-Modus, z. B. Rauchtest über den Launcher) öffnet sich zusätzlich der Demo-Hinweis.
-		if (step >= 3 && step < 23 && (Mc.screen() instanceof PauseScreen || isDemoIntro(Mc.screen()))) {
+		if (step >= 3 && step < 24 && (Mc.screen() instanceof PauseScreen || isDemoIntro(Mc.screen()))) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -268,6 +270,21 @@ public final class AutoTest {
 				next(5);
 			}
 			case 21 -> {
+				// TRS-Umhang, Umhang-Physik und Abzeichen (mit lokaler API-Attrappe, siehe -PtrsApi)
+				if (capeTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				next(5);
+			}
+			case 22 -> {
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -277,8 +294,8 @@ public final class AutoTest {
 				next(20);
 			}
 			default -> {
-				if (step == 22) mc.stop();
-				step = 23;
+				if (step == 23) mc.stop();
+				step = 24;
 			}
 		}
 	}

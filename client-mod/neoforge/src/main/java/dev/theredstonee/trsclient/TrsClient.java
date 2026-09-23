@@ -137,6 +137,9 @@ public final class TrsClient {
 		container.registerExtensionPoint(IConfigScreenFactory.class, (c, parent) -> new TrsMenuScreen(parent));
 		//?} else
 		/*container.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new TrsMenuScreen(parent)));*/
+		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
+		dev.theredstonee.trsclient.online.OnlineHooks.init(FMLPaths.CONFIGDIR.get(), modules, modVersion(MOD_ID),
+				modVersion("minecraft"), "neoforge", message -> LOGGER.info(message));
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (NeoForge {}) – {} Module, Config {} ({})",
@@ -232,6 +235,7 @@ public final class TrsClient {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		hud().tick();
+		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 	}
 
 	/**

@@ -122,9 +122,9 @@ public final class OnlineHooks {
 		//? if >=1.21.9 {
 		/*return p.getSkin().cape() != null;
 		*///?} elif >=1.20.2 {
-		return p.getSkin().capeTexture() != null;
-		//?} else
-		//return p.isCapeLoaded() && p.getCloakTextureLocation() != null;
+		/*return p.getSkin().capeTexture() != null;
+		*///?} else
+		return p.isCapeLoaded() && p.getCloakTextureLocation() != null;
 	}
 
 	// --- Texturen / Abzeichen (Aufrufe aus den Mixins) ---
@@ -159,14 +159,14 @@ public final class OnlineHooks {
 
 	/** Text-Komponente (ab 1.19 Component.literal, davor TextComponent). */
 	//? if >=1.19 {
-	public static net.minecraft.network.chat.MutableComponent text(String text) {
+	/*public static net.minecraft.network.chat.MutableComponent text(String text) {
 		return Component.literal(text);
 	}
-	//?} elif >=1.16 {
-	/*public static net.minecraft.network.chat.MutableComponent text(String text) {
+	*///?} elif >=1.16 {
+	public static net.minecraft.network.chat.MutableComponent text(String text) {
 		return new net.minecraft.network.chat.TextComponent(text);
 	}
-	*///?} else {
+	//?} else {
 	/*public static Component text(String text) {
 		return new net.minecraft.network.chat.TextComponent(text);
 	}
@@ -238,15 +238,15 @@ public final class OnlineHooks {
 		int overlay = OverlayTexture.NO_OVERLAY;
 		return (x, y, z, u, v, nx, ny, nz) -> {
 			//? if >=1.21 {
-			vc.addVertex(last, x, y, z + zOff).setColor(-1).setUv(u, v).setOverlay(overlay).setLight(light)
+			/*vc.addVertex(last, x, y, z + zOff).setColor(-1).setUv(u, v).setOverlay(overlay).setLight(light)
 					.setNormal(last, nx, ny, nz);
-			//?} elif >=1.20.5 {
+			*///?} elif >=1.20.5 {
 			/*vc.vertex(last, x, y, z + zOff).color(255, 255, 255, 255).uv(u, v).overlayCoords(overlay).uv2(light)
 					.normal(last, nx, ny, nz).endVertex();
 			*///?} else {
-			/*vc.vertex(last.pose(), x, y, z + zOff).color(255, 255, 255, 255).uv(u, v).overlayCoords(overlay).uv2(light)
+			vc.vertex(last.pose(), x, y, z + zOff).color(255, 255, 255, 255).uv(u, v).overlayCoords(overlay).uv2(light)
 					.normal(last.normal(), nx, ny, nz).endVertex();
-			*///?}
+			//?}
 		};
 	}
 	//?}
@@ -263,14 +263,14 @@ public final class OnlineHooks {
 		return net.minecraft.resources.Identifier.fromNamespaceAndPath("trsclient", path);
 	}
 	*///?} elif >=1.21 {
-	public static net.minecraft.resources.ResourceLocation id(String path) {
+	/*public static net.minecraft.resources.ResourceLocation id(String path) {
 		return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("trsclient", path);
 	}
-	//?} else {
-	/*public static net.minecraft.resources.ResourceLocation id(String path) {
+	*///?} else {
+	public static net.minecraft.resources.ResourceLocation id(String path) {
 		return new net.minecraft.resources.ResourceLocation("trsclient", path);
 	}
-	*///?}
+	//?}
 
 	/** Umhang-Bilder als dynamische Texturen ({@code trsclient:capes/<id>_<n>/<bild>}). */
 	static final class Textures implements CapeTextures.Backend<Object> {
@@ -328,9 +328,9 @@ public final class OnlineHooks {
 			User user = Minecraft.getInstance().getUser();
 			if (user == null) return null;
 			//? if >=1.20.2 {
-			String uuid = user.getProfileId() == null ? null : user.getProfileId().toString();
-			//?} else
-			//String uuid = user.getUuid();
+			/*String uuid = user.getProfileId() == null ? null : user.getProfileId().toString();
+			*///?} else
+			String uuid = user.getUuid();
 			return new GameSession(uuid, user.getName(), user.getAccessToken());
 		}
 
