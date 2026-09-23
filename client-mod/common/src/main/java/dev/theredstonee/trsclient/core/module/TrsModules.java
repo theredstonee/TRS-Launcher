@@ -49,6 +49,10 @@ public final class TrsModules {
 	public final Module autoGg;
 	public final Module textHotkeys;
 	public final Module waypoints;
+	/** TRS API: Abzeichen, TRS-Umhänge, Online-Status (siehe core.online). */
+	public final Module trsOnline;
+	/** Stoff-Simulation für alle Umhänge (Vanilla, OptiFine, TRS). */
+	public final Module capePhysics;
 
 	public final BoolSetting keystrokesShowCps;
 	public final BoolSetting keystrokesShowSpace;
@@ -116,6 +120,31 @@ public final class TrsModules {
 	public final BoolSetting minimapWaypoints;
 	public final BoolSetting minimapPlayers;
 	public final BoolSetting minimapCoords;
+
+	// --- TRS-Online / Umhänge ---
+	public final BoolSetting badgeTab;
+	public final BoolSetting badgeNametag;
+	public final BoolSetting trsCapes;
+	public final NumberSetting capeStrength;
+	public final NumberSetting capeWind;
+	public final ChoiceSetting<CapeScope> capeScope;
+
+	/** Für wen die Umhang-Physik rechnet. */
+	public enum CapeScope implements ChoiceSetting.Option {
+		OWN("Nur eigener"),
+		ALL("Alle Spieler");
+
+		private final String label;
+
+		CapeScope(String label) {
+			this.label = label;
+		}
+
+		@Override
+		public String label() {
+			return label;
+		}
+	}
 
 	/** Zoomstufen der Minimap: Zellgröße in Pixeln und Blöcke je Zelle. */
 	public enum MinimapZoom implements ChoiceSetting.Option {
@@ -227,6 +256,13 @@ public final class TrsModules {
 		waypoints = registry.register(new Module("waypoints", "Wegpunkte",
 				"Eigene Markierungen je Welt/Server: Taste drücken, Name und Farbe wählen; "
 						+ "im Spiel mit Entfernung und Lichtsäule, dazu ein Todespunkt.", true));
+		trsOnline = registry.register(new Module("trsOnline", "TRS-Online-Funktionen",
+				"TRS-Abzeichen und TRS-Umhänge anderer Spieler, dein eigener Umhang und dein Online-Status für Freunde. "
+						+ "Meldet sich wie bei einem Server über dein Minecraft-Konto an. Zeigt nur, dass jemand TRS nutzt.",
+				true));
+		capePhysics = registry.register(new Module("capePhysics", "Umhang-Physik",
+				"Umhänge (Mojang, OptiFine, TRS) bewegen sich wie Stoff: schwingen beim Laufen, Drehen, Springen und Schleichen.",
+				true));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);
@@ -260,6 +296,8 @@ public final class TrsModules {
 		autoGg.icon("chat").category(Category.CHAT);
 		textHotkeys.icon("keyboard").category(Category.CHAT);
 		waypoints.icon("compass").category(Category.WORLD);
+		trsOnline.icon("redstone");
+		capePhysics.icon("cape");
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS unter Maustasten", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Leertaste anzeigen", true));
@@ -325,6 +363,12 @@ public final class TrsModules {
 		minimapWaypoints = minimap.add(new BoolSetting("showWaypoints", "Wegpunkte anzeigen", true));
 		minimapPlayers = minimap.add(new BoolSetting("showPlayers", "Spieler anzeigen (nur in Sichtweite)", false));
 		minimapCoords = minimap.add(new BoolSetting("coords", "Koordinaten unter der Karte", true));
+		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Abzeichen in der Tabliste", true));
+		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Abzeichen über Namen", true));
+		trsCapes = trsOnline.add(new BoolSetting("capes", "TRS-Umhänge anzeigen", true));
+		capeStrength = capePhysics.add(new NumberSetting("strength", "Stärke", 100, 20, 200, 10, "", "%"));
+		capeWind = capePhysics.add(new NumberSetting("wind", "Wind", 100, 0, 200, 10, "", "%"));
+		capeScope = capePhysics.add(new ChoiceSetting<>("scope", "Für", CapeScope.class, CapeScope.ALL));
 
 		registry.addPart(keyDefaults);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.

@@ -102,10 +102,15 @@ public final class TrsClient implements ClientModInitializer {
 			saveConfig();
 			waypoints.save();
 		});
-		AutoTest.installIfRequested();
-
 		String version = FabricLoader.getInstance().getModContainer(MOD_ID)
 				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("?");
+		String minecraft = FabricLoader.getInstance().getModContainer("minecraft")
+				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown");
+		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
+		dev.theredstonee.trsclient.online.OnlineHooks.init(FabricLoader.getInstance().getConfigDir(), modules, version,
+				minecraft, "fabric", message -> LOGGER.info(message));
+		AutoTest.installIfRequested();
+
 		LOGGER.info("TRS Client {} initialisiert – {} Module, Config {} ({})",
 				version, modules.registry.all().size(), status, config.file());
 	}
@@ -198,6 +203,7 @@ public final class TrsClient implements ClientModInitializer {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		hud.tick();
+		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 	}
 
 	/**

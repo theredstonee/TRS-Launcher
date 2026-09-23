@@ -53,6 +53,11 @@ loom {
 			if (project.hasProperty('trsAutotest')) {
 				vmArg '-Dtrsclient.autotest=true'
 			}
+			// -PtrsApi=http://127.0.0.1:8787 → TRS API + Mojang-Join gegen eine lokale Attrappe (Umhang-/Abzeichen-Tests)
+			if (project.hasProperty('trsApi')) {
+				vmArg "-Dtrsclient.api.url=${project.trsApi}"
+				vmArg "-Dtrsclient.session.url=${project.trsApi}"
+			}
 		}
 		server {
 			ideConfigGenerated = false
@@ -99,7 +104,11 @@ dependencies {
 // Mixin-Liste je Version: 1.14 braucht eigene HUD-/Tasten-Hooks, die Overlay-Textur gibt es erst ab 1.15.
 def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin', 'MouseHandlerMixin', 'TitleScreenMixin',
 		'MouseHandlerAccessor', 'KeyboardHandlerAccessor',
-		'AttackMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin', 'HurtCamMixin', 'OldAnimationsMixin']
+		'AttackMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin', 'HurtCamMixin', 'OldAnimationsMixin',
+		// TRS API: TRS-Umhang-Textur, Abzeichen in Tabliste und über dem Namen
+		'CapeTextureMixin', 'TabBadgeMixin', 'NameTagBadgeMixin']
+// Umhang-Physik: ab 1.15 (1.14 zeichnet den Umhang mit festen GL-Aufrufen, dort bleibt er starr).
+if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']
 // ScreenEffectRenderer (niedriges Feuer) und die Block-Umrandung mit Farbe gibt es erst ab 1.15.

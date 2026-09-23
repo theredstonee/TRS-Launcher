@@ -86,6 +86,14 @@ public final class Mc {
 		return mc().options.hideGui;
 	}
 
+	/** HUD aus-/einblenden (wie F1). */
+	public static void setHudHidden(boolean hidden) {
+		//? if >=26.2 {
+		/*if (mc().gui.hud.isHidden() != hidden) mc().gui.hud.toggle();
+		*///?} else
+		mc().options.hideGui = hidden;
+	}
+
 	/** Kurzer Hinweis über der Hotbar. */
 	public static void actionBar(Component message) {
 		//? if >=26.2 {
