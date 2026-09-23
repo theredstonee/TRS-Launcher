@@ -35,6 +35,7 @@ pub mod process;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;
+pub mod skin_sync;
 pub mod skins;
 pub mod storage;
 pub mod sync;
@@ -79,6 +80,8 @@ pub struct Launcher {
     client_mod_dir: std::sync::RwLock<Option<PathBuf>>,
     /// Instanzen, die gerade vorbereitet werden (Schutz vor Doppelklicks).
     preparing: Mutex<HashSet<String>>,
+    /// Warteschlange für Skin-/Umhang-Änderungen.
+    skin_sync: skin_sync::SkinSync,
 }
 
 impl Launcher {
@@ -127,6 +130,7 @@ impl Launcher {
             import_folders: Mutex::default(),
             client_mod_dir: std::sync::RwLock::default(),
             preparing: Mutex::default(),
+            skin_sync: skin_sync::SkinSync::default(),
             settings: RwLock::new(settings),
             paths,
             http,

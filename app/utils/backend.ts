@@ -20,7 +20,9 @@ import type {
   GalleryShot,
   LibrarySkin,
   NewsFeed,
+  SkinChanges,
   SkinProfile,
+  SkinSyncStatus,
   SkinVariant,
   ContentItem,
   ContentKind,
@@ -215,10 +217,15 @@ export const backend = {
   addSkinFile: (name: string, variant: SkinVariant) => call<LibrarySkin | null>('add_skin_file', { name, variant }),
   saveActiveSkin: (name: string) => call<LibrarySkin>('save_active_skin', { name }),
   deleteSkin: (id: string) => call<void>('delete_skin', { id }),
-  applySkin: (id: string, variant: SkinVariant | null = null) => call<SkinProfile>('apply_skin', { id, variant }),
-  resetSkin: () => call<SkinProfile>('reset_skin'),
-  /** `null` = keinen Umhang tragen. */
-  chooseCape: (capeId: string | null) => call<SkinProfile>('choose_cape', { capeId }),
+  /**
+   * Schickt den fertigen Entwurf (nur den Unterschied) an die Warteschlange im
+   * Kern und kehrt sofort zurück. `account` = UUID des gezeigten Profils.
+   */
+  applySkinChanges: (account: string, changes: SkinChanges) =>
+    call<SkinSyncStatus>('apply_skin_changes', { account, changes }),
+  skinSyncStatus: () => call<SkinSyncStatus>('skin_sync_status'),
+  /** Noch nicht gesendete Änderungen verwerfen. */
+  cancelSkinSync: () => call<SkinSyncStatus>('cancel_skin_sync'),
 
   /** Neuigkeiten für die Startseite (Kern cacht sie; `force` lädt neu). */
   getNews: (force = false) => call<NewsFeed>('get_news', { force }),

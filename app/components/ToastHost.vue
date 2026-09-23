@@ -17,6 +17,11 @@ const toasts = useToasts()
     >
       <span class="mt-1.5 size-1.5 shrink-0 rounded-full" :class="{ 'bg-ok': t.kind === 'ok', 'bg-redstone-400': t.kind === 'error', 'bg-base-400': t.kind === 'info' }" />
       <p class="min-w-0 flex-1">{{ t.text }}</p>
+      <span
+        v-if="t.count > 1"
+        class="mt-px shrink-0 rounded bg-base-800 px-1.5 text-[11px] font-semibold tabular-nums text-base-200"
+        :aria-label="`${t.count}-mal`"
+      >×{{ t.count }}</span>
       <button class="shrink-0 text-base-400 hover:text-base-50" aria-label="Schließen" @click="toasts.dismiss(t.id)">
         <svg viewBox="0 0 10 10" class="size-2.5"><path d="M0 0l10 10M10 0L0 10" stroke="currentColor" stroke-width="1.5" /></svg>
       </button>
