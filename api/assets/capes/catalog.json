@@ -1,0 +1,92 @@
+[
+  {
+    "id": "redstone",
+    "name": "Redstone",
+    "file": "redstone.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  },
+  {
+    "id": "lamp",
+    "name": "Redstone-Lampe",
+    "file": "lamp.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  },
+  {
+    "id": "deepslate",
+    "name": "Deepslate",
+    "file": "deepslate.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  },
+  {
+    "id": "lapis",
+    "name": "Lapis",
+    "file": "lapis.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  },
+  {
+    "id": "emerald",
+    "name": "Smaragd",
+    "file": "emerald.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  },
+  {
+    "id": "amethyst",
+    "name": "Amethyst",
+    "file": "amethyst.png",
+    "unlock": "free",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  },
+  {
+    "id": "trs",
+    "name": "TRS",
+    "file": "trs.png",
+    "unlock": "code",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  },
+  {
+    "id": "team",
+    "name": "Team",
+    "file": "team.png",
+    "unlock": "admin",
+    "scale": 2,
+    "animated": true,
+    "frames": 8,
+    "frameTimeMs": 150
+  },
+  {
+    "id": "tester",
+    "name": "Tester",
+    "file": "tester.png",
+    "unlock": "admin",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "frameTimeMs": 0
+  }
+]
