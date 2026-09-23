@@ -20,6 +20,21 @@ public final class Keys {
 	private Keys() {
 	}
 
+	/** Linke/rechte Maustaste dieser Version (ab 26.3 SDL-Zählung: 1 und 3). */
+	public static final int MOUSE_LEFT = InputConstants.MOUSE_BUTTON_LEFT;
+	public static final int MOUSE_RIGHT = InputConstants.MOUSE_BUTTON_RIGHT;
+
+	/**
+	 * Maustaste in der Zählung der TRS-Oberfläche: 0 links, 1 rechts, 2 Mitte. Bis 26.2 ist das
+	 * GLFWs Zählung; ab 26.3 (SDL) zählt Minecraft ab 1 und die rechte Taste ist 3 – ohne diese
+	 * Umrechnung wäre jeder Linksklick in einem TRS-Bildschirm ein Rechtsklick.
+	 */
+	public static int uiButton(int button) {
+		if (button == MOUSE_LEFT) return 0;
+		if (button == MOUSE_RIGHT) return 1;
+		return button;
+	}
+
 	/** Tastencode zum Namen ("key.keyboard.v"); unbekannt → {@link #UNBOUND}. */
 	public static int code(String keyName) {
 		try {

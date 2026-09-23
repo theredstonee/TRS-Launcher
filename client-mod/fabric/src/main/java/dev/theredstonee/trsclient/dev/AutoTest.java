@@ -66,6 +66,9 @@ public final class AutoTest {
 	private int step;
 	private int wait;
 	private int reopenCount;
+	/** Echte Eingaben (Klick, Taste): 0..2 laufen, 3 = fertig. */
+	private int inputPhase;
+	private boolean inputClick;
 	/** Modul-Zustand vor dem Test – wird am Ende wiederhergestellt (die Config bleibt sauber). */
 	private TrsConfig before;
 	/** Vom Test angelegter Wegpunkt – am Ende wieder entfernt. */
@@ -108,6 +111,11 @@ public final class AutoTest {
 				next(20);
 				break;
 			case 1:
+				// Zuerst echte Eingaben: Klick und Taste über Minecrafts Maus-/Tastatur-Verarbeitung.
+				if (inputPhase < 3) {
+					realInput(mc);
+					return;
+				}
 				if (!ensureScreen(TrsTitleScreen.class, TrsTitleScreen::new)) return;
 				shot(mc, "trsclient-title");
 				Mc.setScreen(new TrsMenuScreen(Mc.screen()));
@@ -357,6 +365,95 @@ public final class AutoTest {
 		Mc.setScreen(factory.get());
 		wait = 10;
 		return false;
+	}
+
+	/**
+	 * Klickt "TRS-Menü" auf dem Startbildschirm und schließt das Menü mit Esc – beides über
+	 * MouseHandler/KeyboardHandler, also genau den Weg echter Eingaben (Maustasten-Zählung je
+	 * Version, Ereignis-Objekte ab 1.21.9, SDL ab 26.3).
+	 */
+	private void realInput(Minecraft mc) {
+		switch (inputPhase) {
+			case 0: {
+				if (!(Mc.screen() instanceof TrsTitleScreen)) {
+					Mc.setScreen(new TrsTitleScreen());
+					wait = 10;
+					return;
+				}
+				int[] r = ((TrsTitleScreen) Mc.screen()).spot("TRS-Menü");
+				if (r == null) {
+					wait = 2;
+					return;
+				}
+				click(mc, r[0] + r[2] / 2.0, r[1] + r[3] / 2.0);
+				inputPhase = 1;
+				wait = 10;
+				return;
+			}
+			case 1: {
+				inputClick = Mc.screen() instanceof TrsMenuScreen;
+				if (inputClick) {
+					key(mc, dev.theredstonee.trsclient.compat.Keys.code("key.keyboard.escape"));
+					inputPhase = 2;
+					wait = 25;
+				} else {
+					report(false, false);
+					inputPhase = 3;
+				}
+				return;
+			}
+			case 2: {
+				report(true, Mc.screen() instanceof TrsTitleScreen);
+				inputPhase = 3;
+				return;
+			}
+			default:
+				return;
+		}
+	}
+
+	private void report(boolean click, boolean key) {
+		String line = "[Autotest] Echte Eingabe über MouseHandler/KeyboardHandler: Klick " + (click ? "OK" : "FEHLER")
+				+ ", Taste " + (key ? "OK" : "FEHLER") + " (Bildschirm: " + (Mc.screen() == null ? "-" : Mc.screen().getClass().getSimpleName()) + ")";
+		if (click && key) TrsClient.LOGGER.info(line);
+		else TrsClient.LOGGER.error(line);
+		if (!(Mc.screen() instanceof TrsTitleScreen)) Mc.setScreen(new TrsTitleScreen());
+		wait = 10;
+	}
+
+	/** Linksklick an einer GUI-Position – wie ein echter Klick des Fensters. */
+	private static void click(Minecraft mc, double guiX, double guiY) {
+		com.mojang.blaze3d.platform.Window w = Mc.window();
+		dev.theredstonee.trsclient.mixin.MouseHandlerAccessor mouse = (dev.theredstonee.trsclient.mixin.MouseHandlerAccessor) mc.mouseHandler;
+		mouse.trsclient$setXpos(guiX * w.getScreenWidth() / (double) w.getGuiScaledWidth());
+		mouse.trsclient$setYpos(guiY * w.getScreenHeight() / (double) w.getGuiScaledHeight());
+		int left = dev.theredstonee.trsclient.compat.Keys.MOUSE_LEFT;
+		//? if >=1.21.9 {
+		/*mouse.trsclient$onButton(windowHandle(), new net.minecraft.client.input.MouseButtonInfo(left, 0), dev.theredstonee.trsclient.compat.Keys.PRESS);
+		mouse.trsclient$onButton(windowHandle(), new net.minecraft.client.input.MouseButtonInfo(left, 0), 0);
+		*///?} else {
+		mouse.trsclient$onPress(windowHandle(), left, dev.theredstonee.trsclient.compat.Keys.PRESS, 0);
+		mouse.trsclient$onPress(windowHandle(), left, 0, 0);
+		//?}
+	}
+
+	/** Taste drücken und loslassen – wie ein echter Tastendruck des Fensters. */
+	private static void key(Minecraft mc, int code) {
+		dev.theredstonee.trsclient.mixin.KeyboardHandlerAccessor keyboard = (dev.theredstonee.trsclient.mixin.KeyboardHandlerAccessor) mc.keyboardHandler;
+		//? if >=1.21.9 {
+		/*keyboard.trsclient$keyPress(windowHandle(), dev.theredstonee.trsclient.compat.Keys.PRESS, new net.minecraft.client.input.KeyEvent(code, 0, 0));
+		keyboard.trsclient$keyPress(windowHandle(), 0, new net.minecraft.client.input.KeyEvent(code, 0, 0));
+		*///?} else {
+		keyboard.trsclient$keyPress(windowHandle(), code, 0, dev.theredstonee.trsclient.compat.Keys.PRESS, 0);
+		keyboard.trsclient$keyPress(windowHandle(), code, 0, 0, 0);
+		//?}
+	}
+
+	private static long windowHandle() {
+		//? if >=1.21.9 {
+		/*return Mc.window().handle();
+		*///?} else
+		return Mc.window().getWindow();
 	}
 
 	private void next(int ticks) {

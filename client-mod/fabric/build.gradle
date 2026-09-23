@@ -98,6 +98,7 @@ dependencies {
 
 // Mixin-Liste je Version: 1.14 braucht eigene HUD-/Tasten-Hooks, die Overlay-Textur gibt es erst ab 1.15.
 def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin', 'MouseHandlerMixin', 'TitleScreenMixin',
+		'MouseHandlerAccessor', 'KeyboardHandlerAccessor',
 		'AttackMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin', 'HurtCamMixin', 'OldAnimationsMixin']
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']

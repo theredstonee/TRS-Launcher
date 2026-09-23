@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.screen;
 
 import dev.theredstonee.trsclient.TrsClient;
+import dev.theredstonee.trsclient.compat.Keys;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.gui.screens.Screen;
@@ -135,17 +136,17 @@ public abstract class TrsScreen extends Screen {
 	//? if >=1.21.9 {
 	/*@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		return onClick(event.x(), event.y(), event.button()) || super.mouseClicked(event, doubleClick);
+		return onClick(event.x(), event.y(), Keys.uiButton(event.button())) || super.mouseClicked(event, doubleClick);
 	}
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent event) {
-		return onRelease(event.x(), event.y(), event.button()) || super.mouseReleased(event);
+		return onRelease(event.x(), event.y(), Keys.uiButton(event.button())) || super.mouseReleased(event);
 	}
 
 	@Override
 	public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-		return onDrag(event.x(), event.y(), event.button()) || super.mouseDragged(event, dragX, dragY);
+		return onDrag(event.x(), event.y(), Keys.uiButton(event.button())) || super.mouseDragged(event, dragX, dragY);
 	}
 
 	@Override

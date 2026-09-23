@@ -38,6 +38,8 @@ public final class TrsTitleScreen extends TrsScreen {
 	private static final String MODMENU_SCREEN = "com.terraformersmc.modmenu.gui.ModsScreen";
 
 	private final Hotspots hot = new Hotspots();
+	/** Zuletzt gezeichnete Knöpfe {x, y, w, h} nach Beschriftung (Selbsttest: echte Klicks). */
+	private final java.util.Map<String, int[]> spots = new java.util.HashMap<>();
 	private final List<QuickJoin.Server> servers = new ArrayList<>();
 	private final List<ServerData> serverData = new ArrayList<>();
 	private final String versionLine;
@@ -214,12 +216,14 @@ public final class TrsTitleScreen extends TrsScreen {
 
 	private int button(Gfx g, int mx, int my, int x, int y, String label, boolean primary, Runnable action) {
 		Brand.button(g, font, x, y, BTN_W, BTN_H, label, primary, inside(mx, my, x, y, BTN_W, BTN_H));
+		spots.put(label, new int[]{x, y, BTN_W, BTN_H});
 		hot.add(x, y, BTN_W, BTN_H, action);
 		return y + BTN_H + BTN_GAP;
 	}
 
 	private void halfButton(Gfx g, int mx, int my, int x, int y, int w, String label, Runnable action) {
 		Brand.button(g, font, x, y, w, BTN_H, label, false, inside(mx, my, x, y, w, BTN_H));
+		spots.put(label, new int[]{x, y, w, BTN_H});
 		hot.add(x, y, w, BTN_H, action);
 	}
 
@@ -230,6 +234,11 @@ public final class TrsTitleScreen extends TrsScreen {
 			return true;
 		}
 		return false;
+	}
+
+	/** Lage eines Knopfs {x, y, w, h} im letzten Bild oder null (Selbsttest). */
+	public int[] spot(String label) {
+		return spots.get(label);
 	}
 
 	@Override

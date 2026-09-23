@@ -16,7 +16,7 @@ public abstract class ChatScreenMixin {
 	//? if >=1.21.9 {
 	/*@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true, require = 1)
 	private void trsclient$copyLine(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
-		if (event.button() != 0) return;
+		if (event.button() != dev.theredstonee.trsclient.compat.Keys.MOUSE_LEFT) return;
 		if (TrsClient.get().chat().onChatClick(event.x(), event.y(), trsclient$control())) cir.setReturnValue(true);
 	}
 	*///?} else {
