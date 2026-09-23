@@ -57,15 +57,6 @@ const files = computed(() => {
         <span class="display shrink-0 text-xl tabular-nums">{{ percent }} %</span>
       </span>
     </div>
-    <button
-      v-if="game.phase === 'preparing' && canCancel"
-      class="absolute -top-2 -right-2 z-10 grid size-6 place-items-center rounded-full bg-base-850 text-base-300 ring-1 ring-base-700 hover:text-redstone-300"
-      aria-label="Start abbrechen"
-      title="Start abbrechen"
-      @click="games.cancelLaunch(instanceId)"
-    >
-      <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
-    </button>
 
     <button v-else class="lamp pixel-corners" title="Spiel beenden" @click="games.stop(instanceId)">
       <span class="lamp-light" />
@@ -74,6 +65,16 @@ const files = computed(() => {
         <span class="display text-xl">Läuft</span>
         <span class="text-xs font-medium opacity-75">Stoppen</span>
       </span>
+    </button>
+    <!-- Nach der v-if-Kette, sonst hinge der Stopp-Knopf an dieser Bedingung. -->
+    <button
+      v-if="game.phase === 'preparing' && canCancel"
+      class="absolute -top-2 -right-2 z-10 grid size-6 place-items-center rounded-full bg-base-850 text-base-300 ring-1 ring-base-700 hover:text-redstone-300"
+      aria-label="Start abbrechen"
+      title="Start abbrechen"
+      @click="games.cancelLaunch(instanceId)"
+    >
+      <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
     </button>
   </div>
 
