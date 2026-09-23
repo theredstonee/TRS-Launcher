@@ -56,7 +56,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <UpdateBanner />
       <div class="flex min-h-0 flex-1">
         <SideNav />
-        <main ref="main" class="min-w-0 flex-1 overflow-y-auto bg-base-950">
+        <main ref="main" class="deepslate min-w-0 flex-1 overflow-y-auto">
           <slot />
         </main>
       </div>

@@ -22,13 +22,13 @@ const pingClass = computed(() => {
 <template>
   <article class="card flex items-center gap-3 p-3 transition-colors hover:border-base-700">
     <div class="relative shrink-0">
-      <img v-if="favicon" :src="favicon" alt="" class="size-12 rounded-md [image-rendering:pixelated]" />
-      <div v-else class="display flex size-12 items-center justify-center rounded-md bg-base-800 text-xl text-base-600">
+      <img v-if="favicon" :src="favicon" alt="" class="size-12 ring-2 ring-base-800 [image-rendering:pixelated]" />
+      <div v-else class="display flex size-12 items-center justify-center bg-base-800 text-xl text-base-600 ring-2 ring-base-700">
         {{ server.name.charAt(0).toUpperCase() }}
       </div>
       <span
-        class="absolute -right-1 -bottom-1 size-3 rounded-full border-2 border-base-900"
-        :class="status === undefined ? 'animate-lamp bg-base-600' : status.online ? 'bg-ok' : 'bg-redstone-500'"
+        class="absolute -right-1 -bottom-1 size-3 border-2 border-base-900"
+        :class="status === undefined ? 'animate-lamp bg-base-600' : status.online ? 'bg-ok shadow-[0_0_8px_var(--color-ok)]' : 'bg-redstone-500'"
         :title="status === undefined ? 'Wird abgefragt' : status.online ? 'Online' : 'Nicht erreichbar'"
       />
     </div>
@@ -36,7 +36,7 @@ const pingClass = computed(() => {
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline gap-2">
         <h3 class="truncate text-sm font-medium">{{ server.name }}</h3>
-        <span class="truncate font-mono text-[11px] text-base-600">{{ server.address }}</span>
+        <span v-if="!compact" class="truncate font-mono text-[11px] text-base-600">{{ server.address }}</span>
       </div>
       <template v-if="status === undefined">
         <div class="skeleton mt-1.5 h-3 w-40" />
