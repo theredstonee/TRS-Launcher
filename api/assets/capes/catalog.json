@@ -6,8 +6,7 @@
     "unlock": "free",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   },
   {
     "id": "lamp",
@@ -16,8 +15,7 @@
     "unlock": "free",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   },
   {
     "id": "deepslate",
@@ -26,8 +24,7 @@
     "unlock": "free",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   },
   {
     "id": "lapis",
@@ -36,8 +33,7 @@
     "unlock": "free",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   },
   {
     "id": "emerald",
@@ -46,8 +42,7 @@
     "unlock": "free",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   },
   {
     "id": "amethyst",
@@ -56,8 +51,7 @@
     "unlock": "free",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   },
   {
     "id": "trs",
@@ -66,8 +60,7 @@
     "unlock": "code",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   },
   {
     "id": "team",
@@ -86,7 +79,6 @@
     "unlock": "admin",
     "scale": 2,
     "animated": false,
-    "frames": 1,
-    "frameTimeMs": 0
+    "frames": 1
   }
 ]

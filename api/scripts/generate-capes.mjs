@@ -406,7 +406,7 @@ const catalog = capes.map((c) => {
     scale: SCALE,
     animated: frames.length > 1,
     frames: frames.length,
-    frameTimeMs: c.frameTimeMs ?? 0,
+    ...(frames.length > 1 ? { frameTimeMs: c.frameTimeMs } : {}),
   }
 })
 writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(catalog, null, 2)}\n`)
