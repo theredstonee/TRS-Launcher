@@ -85,6 +85,8 @@ export const useUpdaterStore = defineStore('updater', () => {
       if ((phase.value as UpdatePhase) !== 'ready') return
     }
     phase.value = 'installing'
+    // Den Ladebildschirm erst zeigen, dann installieren (der Launcher beendet sich dabei).
+    await new Promise((resolve) => setTimeout(resolve, 400))
     try {
       await update.install()
     } catch (e) {
