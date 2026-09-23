@@ -5,11 +5,14 @@
 //! heruntergeladen, geprüft und als Data-URL ans Webview gegeben; dadurch
 //! bleibt die CSP eng (kein `textures.minecraft.net` nötig) und WebGL kann
 //! die Bilder ohne CORS-Probleme lesen.
+//!
+//! Änderungen am Konto (Skin hochladen, Umhang wechseln) laufen nicht direkt,
+//! sondern über die Warteschlange in [`crate::skin_sync`]: Das Webview schickt
+//! nur den fertigen Wunschzustand, der Kern sendet höchstens eine Anfrage je
+//! Art gleichzeitig und wartet bei Mojang-429 selbst ab.
 
-use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use std::sync::{LazyLock, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -37,7 +40,7 @@ pub enum SkinVariant {
 
 impl SkinVariant {
     /// So heißt die Variante in der Mojang-API (Feld `variant` bzw. Upload-Feld).
-    fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::Classic => "classic",
             Self::Slim => "slim",
@@ -92,50 +95,10 @@ fn data_url(bytes: &[u8]) -> String {
     format!("data:image/png;base64,{}", STANDARD.encode(bytes))
 }
 
-// --- Rate-Limit ----------------------------------------------------------------
-
-/// Bremst Profil-Änderungen aus: Mojang antwortet sonst mit 429.
-#[derive(Debug)]
-struct RateLimiter {
-    min_gap: Duration,
-    window: Duration,
-    max_in_window: usize,
-    recent: VecDeque<Instant>,
-}
-
-impl RateLimiter {
-    const fn new(min_gap: Duration, window: Duration, max_in_window: usize) -> Self {
-        Self { min_gap, window, max_in_window, recent: VecDeque::new() }
-    }
-
-    fn check(&mut self, now: Instant) -> Result<()> {
-        while let Some(front) = self.recent.front() {
-            if now.duration_since(*front) > self.window {
-                self.recent.pop_front();
-            } else {
-                break;
-            }
-        }
-        let too_fast = self.recent.back().is_some_and(|last| now.duration_since(*last) < self.min_gap);
-        if too_fast || self.recent.len() >= self.max_in_window {
-            return Err(Error::validation("Zu viele Änderungen kurz hintereinander – bitte einen Moment warten."));
-        }
-        self.recent.push_back(now);
-        Ok(())
-    }
-}
-
-static PROFILE_LIMIT: LazyLock<Mutex<RateLimiter>> =
-    LazyLock::new(|| Mutex::new(RateLimiter::new(Duration::from_secs(2), Duration::from_secs(600), 20)));
-
-fn check_rate_limit() -> Result<()> {
-    PROFILE_LIMIT.lock().unwrap_or_else(std::sync::PoisonError::into_inner).check(Instant::now())
-}
-
 // --- API -----------------------------------------------------------------------
 
 #[derive(Debug, Clone, Deserialize)]
-struct ApiProfile {
+pub(crate) struct ApiProfile {
     id: String,
     name: String,
     #[serde(default)]
@@ -188,74 +151,149 @@ pub struct Cape {
     pub texture: Option<String>,
 }
 
-fn is_cape_id(id: &str) -> bool {
+pub(crate) fn is_cape_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
 }
 
-/// Mojang-Fehler in Meldungen übersetzen, die dem Nutzer weiterhelfen.
-async fn check_response(response: reqwest::Response, action: &str) -> Result<reqwest::Response> {
+/// Wie eine Mojang-Anfrage gescheitert ist – davon hängt ab, ob die
+/// Warteschlange es später erneut versucht.
+#[derive(Debug)]
+pub(crate) enum ApiError {
+    /// HTTP 429: Mojang bremst. Enthält `Retry-After`, falls mitgeschickt.
+    RateLimited(Option<Duration>),
+    /// Netzwerkfehler oder 5xx – ein neuer Versuch kann klappen.
+    Transient,
+    /// Abgelehnt (Anmeldung, Datei, Konto) – ein neuer Versuch bringt nichts.
+    Fatal(Error),
+}
+
+impl From<ApiError> for Error {
+    fn from(e: ApiError) -> Self {
+        match e {
+            ApiError::RateLimited(_) => Error::validation("Mojang bremst gerade – bitte ein paar Minuten warten."),
+            ApiError::Transient => {
+                Error::Launch("Mojang ist gerade nicht erreichbar – bitte später erneut versuchen.".into())
+            }
+            ApiError::Fatal(e) => e,
+        }
+    }
+}
+
+/// Aktionsname beim Hochladen – bei 400 heißt das: Datei abgelehnt.
+pub(crate) const UPLOAD_ACTION: &str = "Skin hochladen";
+
+/// Mojang-Antworten einordnen und in Meldungen übersetzen, die dem Nutzer weiterhelfen.
+pub(crate) fn classify(response: reqwest::Response, action: &str) -> std::result::Result<reqwest::Response, ApiError> {
     let status = response.status();
     if status.is_success() {
         return Ok(response);
     }
     tracing::warn!("{action} fehlgeschlagen: HTTP {status}");
     Err(match status.as_u16() {
-        401 | 403 => Error::auth("Die Anmeldung ist abgelaufen – bitte den Account neu anmelden."),
-        404 => Error::validation("Dieses Konto hat noch kein Minecraft-Profil."),
-        429 => Error::validation("Mojang bremst gerade – bitte ein paar Minuten warten."),
-        400 | 422 => Error::validation("Mojang hat die Datei abgelehnt. Ist es ein gültiger 64×64-Skin?"),
-        _ => Error::Launch("Mojang ist gerade nicht erreichbar – bitte später erneut versuchen.".into()),
+        429 => {
+            let retry_after = response
+                .headers()
+                .get(reqwest::header::RETRY_AFTER)
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| crate::skin_sync::parse_retry_after(v, Utc::now()));
+            ApiError::RateLimited(retry_after)
+        }
+        401 | 403 => ApiError::Fatal(Error::auth("Die Anmeldung ist abgelaufen – bitte den Account neu anmelden.")),
+        404 => ApiError::Fatal(Error::validation("Dieses Konto hat noch kein Minecraft-Profil.")),
+        400 | 422 if action == UPLOAD_ACTION => {
+            ApiError::Fatal(Error::validation("Mojang hat die Datei abgelehnt. Ist es ein gültiger 64×64-Skin?"))
+        }
+        400 | 422 => ApiError::Fatal(Error::validation("Mojang hat die Änderung abgelehnt.")),
+        _ => ApiError::Transient,
+    })
+}
+
+/// Schickt eine Anfrage ab; Verbindungsfehler gelten als vorübergehend.
+pub(crate) async fn send(
+    request: reqwest::RequestBuilder,
+    action: &str,
+) -> std::result::Result<reqwest::Response, ApiError> {
+    match request.send().await {
+        Ok(response) => classify(response, action),
+        Err(e) => {
+            tracing::warn!("{action} fehlgeschlagen: {e}");
+            Err(ApiError::Transient)
+        }
+    }
+}
+
+pub(crate) async fn fetch_profile(
+    http: &reqwest::Client,
+    base: &str,
+    token: &str,
+) -> std::result::Result<ApiProfile, ApiError> {
+    let response = send(http.get(format!("{base}/minecraft/profile")).bearer_auth(token), "Profil laden").await?;
+    response.json().await.map_err(|e| {
+        tracing::warn!("Profil von Mojang unlesbar: {e}");
+        ApiError::Transient
     })
 }
 
 async fn get_profile(http: &reqwest::Client, base: &str, token: &str) -> Result<ApiProfile> {
-    let response = http.get(format!("{base}/minecraft/profile")).bearer_auth(token).send().await?;
-    Ok(check_response(response, "Profil laden").await?.json().await?)
+    Ok(fetch_profile(http, base, token).await?)
 }
 
-/// Lädt einen Skin hoch (multipart wie der offizielle Launcher).
-async fn upload_skin(
+/// Skin hochladen (multipart wie der offizielle Launcher). Die Datei wird vorher geprüft.
+pub(crate) fn upload_skin_request(
     http: &reqwest::Client,
     base: &str,
     token: &str,
     variant: SkinVariant,
     bytes: Vec<u8>,
-) -> Result<ApiProfile> {
+) -> Result<reqwest::RequestBuilder> {
     validate_skin_png(&bytes)?;
     let part = reqwest::multipart::Part::bytes(bytes)
         .file_name("skin.png")
         .mime_str("image/png")
         .map_err(|e| Error::Internal(e.to_string()))?;
     let form = reqwest::multipart::Form::new().text("variant", variant.as_str()).part("file", part);
-    let response =
-        http.post(format!("{base}/minecraft/profile/skins")).bearer_auth(token).multipart(form).send().await?;
-    Ok(check_response(response, "Skin hochladen").await?.json().await?)
+    Ok(http.post(format!("{base}/minecraft/profile/skins")).bearer_auth(token).multipart(form))
 }
 
-async fn reset_skin(http: &reqwest::Client, base: &str, token: &str) -> Result<()> {
-    let response = http.delete(format!("{base}/minecraft/profile/skins/active")).bearer_auth(token).send().await?;
-    check_response(response, "Skin zurücksetzen").await?;
-    Ok(())
+pub(crate) fn reset_skin_request(http: &reqwest::Client, base: &str, token: &str) -> reqwest::RequestBuilder {
+    http.delete(format!("{base}/minecraft/profile/skins/active")).bearer_auth(token)
 }
 
-async fn set_cape(http: &reqwest::Client, base: &str, token: &str, cape_id: &str) -> Result<()> {
+pub(crate) fn set_cape_request(
+    http: &reqwest::Client,
+    base: &str,
+    token: &str,
+    cape_id: &str,
+) -> Result<reqwest::RequestBuilder> {
     if !is_cape_id(cape_id) {
         return Err(Error::validation("Ungültiger Umhang."));
     }
-    let response = http
+    Ok(http
         .put(format!("{base}/minecraft/profile/capes/active"))
         .bearer_auth(token)
-        .json(&serde_json::json!({ "capeId": cape_id }))
-        .send()
-        .await?;
-    check_response(response, "Umhang setzen").await?;
-    Ok(())
+        .json(&serde_json::json!({ "capeId": cape_id })))
 }
 
-async fn hide_cape(http: &reqwest::Client, base: &str, token: &str) -> Result<()> {
-    let response = http.delete(format!("{base}/minecraft/profile/capes/active")).bearer_auth(token).send().await?;
-    check_response(response, "Umhang abnehmen").await?;
-    Ok(())
+pub(crate) fn hide_cape_request(http: &reqwest::Client, base: &str, token: &str) -> reqwest::RequestBuilder {
+    http.delete(format!("{base}/minecraft/profile/capes/active")).bearer_auth(token)
+}
+
+/// Bytes des gerade getragenen Skins (für einen Modellwechsel ohne neue Datei).
+pub(crate) async fn active_skin_bytes(
+    http: &reqwest::Client,
+    paths: &Paths,
+    profile: &ApiProfile,
+) -> std::result::Result<Vec<u8>, ApiError> {
+    let url = profile
+        .skins
+        .iter()
+        .filter(|s| s.state.eq_ignore_ascii_case("ACTIVE"))
+        .find_map(|s| normalize_texture_url(&s.url))
+        .ok_or_else(|| ApiError::Fatal(Error::validation("Dieses Konto trägt gerade keinen eigenen Skin.")))?;
+    texture_bytes(http, paths, &url).await.map_err(|e| match e {
+        Error::Http(_) => ApiError::Transient,
+        other => ApiError::Fatal(other),
+    })
 }
 
 // --- Texturen-Cache ------------------------------------------------------------
@@ -340,7 +378,7 @@ async fn read_library(paths: &Paths) -> LibraryFile {
 
 impl Launcher {
     /// Minecraft-Token des aktiven Accounts (wird bei Bedarf erneuert).
-    async fn skin_session(&self) -> Result<crate::launch::Session> {
+    pub(crate) async fn skin_session(&self) -> Result<crate::launch::Session> {
         self.accounts()
             .active_session()
             .await?
@@ -355,7 +393,7 @@ impl Launcher {
         self.to_profile(profile).await
     }
 
-    async fn to_profile(&self, profile: ApiProfile) -> Result<Profile> {
+    pub(crate) async fn to_profile(&self, profile: ApiProfile) -> Result<Profile> {
         let active = profile.skins.iter().find(|s| s.state.eq_ignore_ascii_case("ACTIVE"));
         let variant = active.map_or(SkinVariant::Classic, |s| SkinVariant::from_api(&s.variant));
         let skin_url = active.and_then(|s| normalize_texture_url(&s.url));
@@ -483,8 +521,8 @@ impl Launcher {
         Ok(())
     }
 
-    /// Setzt einen Skin aus der Bibliothek auf das Mojang-Konto.
-    pub async fn apply_skin(&self, id: &str, variant: Option<SkinVariant>) -> Result<Profile> {
+    /// Bytes eines Bibliotheks-Skins (geprüft) – Grundlage für einen Upload.
+    pub(crate) async fn library_skin_bytes(&self, id: &str) -> Result<Vec<u8>> {
         if !is_library_id(id) {
             return Err(Error::validation("Diesen Skin gibt es nicht."));
         }
@@ -497,33 +535,7 @@ impl Launcher {
         let path = skins_dir(self.paths()).join(&entry.file);
         let bytes = tokio::fs::read(&path).await.map_err(|e| Error::io(&path, e))?;
         validate_skin_png(&bytes)?;
-
-        let session = self.skin_session().await?;
-        check_rate_limit()?;
-        let profile =
-            upload_skin(self.http(), API, &session.access_token, variant.unwrap_or(entry.variant), bytes).await?;
-        self.to_profile(profile).await
-    }
-
-    /// Zurück zum Standard-Skin (Steve/Alex).
-    pub async fn reset_skin(&self) -> Result<Profile> {
-        let session = self.skin_session().await?;
-        check_rate_limit()?;
-        reset_skin(self.http(), API, &session.access_token).await?;
-        let profile = get_profile(self.http(), API, &session.access_token).await?;
-        self.to_profile(profile).await
-    }
-
-    /// Wählt einen Umhang aus (`None` = keinen tragen).
-    pub async fn choose_cape(&self, cape_id: Option<&str>) -> Result<Profile> {
-        let session = self.skin_session().await?;
-        check_rate_limit()?;
-        match cape_id {
-            Some(id) => set_cape(self.http(), API, &session.access_token, id).await?,
-            None => hide_cape(self.http(), API, &session.access_token).await?,
-        }
-        let profile = get_profile(self.http(), API, &session.access_token).await?;
-        self.to_profile(profile).await
+        Ok(bytes)
     }
 }
 
@@ -550,6 +562,15 @@ mod tests {
 
     /// Nimmt genau eine HTTP-Anfrage an, antwortet mit `body` und liefert die Anfrage zurück.
     async fn one_shot_server(status: &'static str, body: &'static str) -> (String, tokio::task::JoinHandle<String>) {
+        one_shot_server_with(status, "", body).await
+    }
+
+    /// Wie [`one_shot_server`], mit zusätzlichen Antwort-Headern (`"name: wert\r\n"`).
+    async fn one_shot_server_with(
+        status: &'static str,
+        headers: &'static str,
+        body: &'static str,
+    ) -> (String, tokio::task::JoinHandle<String>) {
         let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
         let port = listener.local_addr().unwrap().port();
         let handle = tokio::spawn(async move {
@@ -566,7 +587,7 @@ mod tests {
                 }
             }
             let response = format!(
-                "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                "HTTP/1.1 {status}\r\ncontent-type: application/json\r\n{headers}content-length: {}\r\nconnection: close\r\n\r\n{body}",
                 body.len()
             );
             stream.write_all(response.as_bytes()).await.unwrap();
@@ -620,19 +641,6 @@ mod tests {
     }
 
     #[test]
-    fn rate_limiter_blocks_bursts_and_recovers() {
-        let mut limiter = RateLimiter::new(Duration::from_secs(2), Duration::from_secs(60), 3);
-        let start = Instant::now();
-        assert!(limiter.check(start).is_ok());
-        assert!(limiter.check(start + Duration::from_millis(500)).is_err(), "zu schnell hintereinander");
-        assert!(limiter.check(start + Duration::from_secs(3)).is_ok());
-        assert!(limiter.check(start + Duration::from_secs(6)).is_ok());
-        assert!(limiter.check(start + Duration::from_secs(9)).is_err(), "Fenster voll");
-        // Nach dem Fenster ist wieder Platz.
-        assert!(limiter.check(start + Duration::from_secs(90)).is_ok());
-    }
-
-    #[test]
     fn cape_ids_are_checked() {
         assert!(is_cape_id("2340c0e0-3a24-4b8a-9d54-1d1a1b1c1d1e"));
         assert!(!is_cape_id(""));
@@ -643,7 +651,8 @@ mod tests {
     async fn upload_sends_multipart_with_variant_and_token() {
         let (base, server) = one_shot_server("200 OK", PROFILE_JSON).await;
         let http = reqwest::Client::new();
-        let profile = upload_skin(&http, &base, "geheimes-token", SkinVariant::Slim, png(64, 64)).await.unwrap();
+        let request = upload_skin_request(&http, &base, "geheimes-token", SkinVariant::Slim, png(64, 64)).unwrap();
+        let profile: ApiProfile = send(request, UPLOAD_ACTION).await.unwrap().json().await.unwrap();
         assert_eq!(profile.name, "Theredstonee");
 
         let request = server.await.unwrap();
@@ -660,8 +669,38 @@ mod tests {
     async fn upload_rejects_invalid_png_before_sending() {
         let http = reqwest::Client::new();
         // Ein Server wird gar nicht erst gebraucht – die Prüfung greift vorher.
-        let err = upload_skin(&http, "http://127.0.0.1:1", "t", SkinVariant::Classic, png(128, 128)).await;
+        let err = upload_skin_request(&http, "http://127.0.0.1:1", "t", SkinVariant::Classic, png(128, 128));
         assert!(matches!(err, Err(Error::Validation(_))));
+    }
+
+    #[tokio::test]
+    async fn rate_limit_carries_retry_after() {
+        let (base, server) = one_shot_server_with("429 Too Many Requests", "retry-after: 42\r\n", "{}").await;
+        let result = fetch_profile(&reqwest::Client::new(), &base, "t").await;
+        assert!(matches!(result, Err(ApiError::RateLimited(Some(d))) if d == Duration::from_secs(42)), "{result:?}");
+        server.await.unwrap();
+
+        // Ohne Header bleibt es ein 429 – die Wartezeit bestimmt dann der Backoff.
+        let (base, server) = one_shot_server("429 Too Many Requests", "{}").await;
+        let result = fetch_profile(&reqwest::Client::new(), &base, "t").await;
+        assert!(matches!(result, Err(ApiError::RateLimited(None))), "{result:?}");
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn errors_are_sorted_into_retry_or_give_up() {
+        for (status, retry) in
+            [("500 Internal Server Error", true), ("503 Service Unavailable", true), ("400 Bad Request", false)]
+        {
+            let (base, server) = one_shot_server(status, "{}").await;
+            let request = set_cape_request(&reqwest::Client::new(), &base, "t", "cape-1").unwrap();
+            let result = send(request, "Umhang").await;
+            assert_eq!(matches!(result, Err(ApiError::Transient)), retry, "{status}");
+            server.await.unwrap();
+        }
+        // Keine Verbindung: später erneut versuchen.
+        let result = send(reqwest::Client::new().get("http://127.0.0.1:1/"), "x").await;
+        assert!(matches!(result, Err(ApiError::Transient)));
     }
 
     #[tokio::test]
@@ -678,16 +717,20 @@ mod tests {
     #[tokio::test]
     async fn cape_requests_use_the_right_verbs() {
         let (base, server) = one_shot_server("200 OK", "{}").await;
-        set_cape(&reqwest::Client::new(), &base, "t", "cape-1").await.unwrap();
+        send(set_cape_request(&reqwest::Client::new(), &base, "t", "cape-1").unwrap(), "Umhang").await.unwrap();
         let request = server.await.unwrap();
         assert!(request.starts_with("PUT /minecraft/profile/capes/active "), "{request}");
         assert!(request.contains("\"capeId\":\"cape-1\""));
 
         let (base, server) = one_shot_server("200 OK", "{}").await;
-        hide_cape(&reqwest::Client::new(), &base, "t").await.unwrap();
+        send(hide_cape_request(&reqwest::Client::new(), &base, "t"), "Umhang").await.unwrap();
         assert!(server.await.unwrap().starts_with("DELETE /minecraft/profile/capes/active "));
 
-        assert!(set_cape(&reqwest::Client::new(), "http://127.0.0.1:1", "t", "böse/../id").await.is_err());
+        assert!(set_cape_request(&reqwest::Client::new(), "http://127.0.0.1:1", "t", "böse/../id").is_err());
+
+        let (base, server) = one_shot_server("200 OK", "{}").await;
+        send(reset_skin_request(&reqwest::Client::new(), &base, "t"), "Skin").await.unwrap();
+        assert!(server.await.unwrap().starts_with("DELETE /minecraft/profile/skins/active "));
     }
 
     #[tokio::test]
@@ -717,6 +760,6 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let launcher = Launcher::init(dir.path(), Arc::new(|_| {})).await.unwrap();
         assert!(matches!(launcher.skin_profile().await, Err(Error::Auth(_))));
-        assert!(matches!(launcher.reset_skin().await, Err(Error::Auth(_))));
+        assert!(launcher.library_skin_bytes("gibt-es-nicht").await.is_err());
     }
 }

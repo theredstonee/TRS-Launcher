@@ -536,6 +536,36 @@ export interface LibrarySkin {
   texture: string
 }
 
+/** Gewünschter Skin: aus der Sammlung, getragener mit anderem Modell oder Standard. */
+export type SkinChange =
+  | { kind: 'library'; id: string; variant: SkinVariant }
+  | { kind: 'current'; variant: SkinVariant }
+  | { kind: 'default' }
+
+/** Unterschied zwischen Entwurf und Konto – was fehlt, bleibt unverändert. */
+export interface SkinChanges {
+  skin: SkinChange | null
+  /** `{ id: null }` = keinen Umhang tragen. */
+  cape: { id: string | null } | null
+}
+
+export type SkinSyncState = 'idle' | 'applying' | 'waiting' | 'done' | 'failed'
+
+export interface SkinSyncStatus {
+  /** Zählt bei jeder Änderung hoch. */
+  version: number
+  state: SkinSyncState
+  account: string | null
+  reason: 'rateLimited' | 'pacing' | 'network' | null
+  /** Unix-Zeit (ms), wann es automatisch weitergeht. */
+  retryAt: number | null
+  message: string | null
+  pendingSkin: boolean
+  pendingCape: boolean
+  /** Neuer Stand nach `done`/`failed` (fehlt, wenn er nicht geladen werden konnte). */
+  profile: SkinProfile | null
+}
+
 // --- Neuigkeiten ------------------------------------------------------------------
 
 export type NewsSource = 'patchNotes' | 'mojang' | 'modrinth' | 'launcher'

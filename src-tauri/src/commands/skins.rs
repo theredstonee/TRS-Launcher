@@ -3,6 +3,7 @@
 
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
+use trs_core::skin_sync::{SkinChanges, SkinSyncStatus};
 use trs_core::skins::{LibrarySkinView, Profile, SkinVariant};
 
 use crate::LauncherState;
@@ -51,24 +52,26 @@ pub async fn delete_skin(launcher: State<'_, LauncherState>, id: String) -> Comm
     Ok(launcher.delete_skin(&id).await?)
 }
 
-/// Setzt einen Skin aus der Sammlung auf das Mojang-Konto.
+/// Nimmt den fertigen Entwurf (nur den Unterschied zum Konto) entgegen und
+/// kehrt sofort zurück. Gesendet wird im Kern über eine Warteschlange, die bei
+/// Mojang-429 selbst wartet – den Fortschritt liefert `skin_sync_status`.
 #[tauri::command]
-pub async fn apply_skin(
+pub async fn apply_skin_changes(
     launcher: State<'_, LauncherState>,
-    id: String,
-    variant: Option<SkinVariant>,
-) -> CommandResult<Profile> {
-    Ok(launcher.apply_skin(&id, variant).await?)
+    account: String,
+    changes: SkinChanges,
+) -> CommandResult<SkinSyncStatus> {
+    Ok(launcher.inner().submit_skin_changes(&account, changes).await?)
 }
 
-/// Zurück zum Standard-Skin.
+/// Stand der Warteschlange (Warten mit Countdown, fertiges Profil, Fehler).
 #[tauri::command]
-pub async fn reset_skin(launcher: State<'_, LauncherState>) -> CommandResult<Profile> {
-    Ok(launcher.reset_skin().await?)
+pub fn skin_sync_status(launcher: State<'_, LauncherState>) -> SkinSyncStatus {
+    launcher.skin_sync_status()
 }
 
-/// Umhang wählen; `None` = keinen tragen.
+/// Noch nicht gesendete Änderungen verwerfen.
 #[tauri::command]
-pub async fn choose_cape(launcher: State<'_, LauncherState>, cape_id: Option<String>) -> CommandResult<Profile> {
-    Ok(launcher.choose_cape(cape_id.as_deref()).await?)
+pub fn cancel_skin_sync(launcher: State<'_, LauncherState>) -> SkinSyncStatus {
+    launcher.cancel_skin_sync()
 }
