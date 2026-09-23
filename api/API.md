@@ -402,7 +402,7 @@ This object is used everywhere a cape is returned.
 | `status` | `approved` \| `pending` \| `rejected`. Built-in capes are always `approved`. |
 | `url` | Absolute texture URL. `?v=` changes whenever the content changes. **Use the URL as given.** |
 | `width`, `height` | Size of **one frame** in pixels. Always `64·scale × 32·scale`. |
-| `scale` | 1–4. The resolution factor relative to the vanilla 64×32 layout. |
+| `scale` | The resolution factor relative to the vanilla 64×32 layout: 1–4 for uploads, 1–8 for built-in capes. |
 | `animated` | `frames > 1` |
 | `frames` | 1–64 |
 | `frameTimeMs` | Duration of each frame (20–10000), or `null` for a static cape. |
@@ -928,7 +928,7 @@ Here `(x0, y0, z0) = from` and `(x1, y1, z1) = to`. The bundled textures are pai
 
 - The file is `textureWidth·scale` × `textureHeight·scale·frames` pixels.
 - Animated textures are a vertical strip, with frame 0 at the top.
-- `scale` is 1–4 for built-ins and 1–2 for uploads.
+- `scale` is 1–8 for built-ins and 1–2 for uploads.
 - **Normalised UV** of a net coordinate `(u, v)` (scale-1 units) in frame `f`:
   - `u' = u / textureWidth`
   - `v' = (f·textureHeight + v) / (textureHeight·frames)`

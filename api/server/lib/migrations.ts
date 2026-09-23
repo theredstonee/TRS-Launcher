@@ -163,7 +163,7 @@ CREATE TABLE cosmetics (
   -- Maße EINES Frames in Pixeln (Vorlagen-Texturgröße × scale); Frames liegen senkrecht übereinander.
   width INTEGER,
   height INTEGER,
-  scale INTEGER CHECK (scale IS NULL OR (scale >= 1 AND scale <= 4)),
+  scale INTEGER CHECK (scale IS NULL OR (scale >= 1 AND scale <= 8)),
   frames INTEGER NOT NULL DEFAULT 1 CHECK (frames >= 1 AND frames <= 64),
   frame_time_ms INTEGER CHECK (frame_time_ms IS NULL OR (frame_time_ms >= 20 AND frame_time_ms <= 10000)),
   emissive INTEGER NOT NULL DEFAULT 0,

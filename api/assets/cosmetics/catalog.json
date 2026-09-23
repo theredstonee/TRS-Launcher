@@ -125,5 +125,95 @@
     "animated": false,
     "frames": 1,
     "emissive": false
+  },
+  {
+    "id": "drachenfluegel",
+    "name": "Drachenflügel",
+    "template": "wings",
+    "file": "drachenfluegel.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "goldkrone",
+    "name": "Goldkrone",
+    "template": "crown",
+    "file": "goldkrone.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "redstone_zylinder",
+    "name": "Redstone-Zylinder",
+    "template": "tophat",
+    "file": "redstone_zylinder.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "lampen_kappe",
+    "name": "Lampen-Kappe",
+    "template": "cap",
+    "file": "lampen_kappe.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "grubenhelm",
+    "name": "Grubenhelm",
+    "template": "lamp_helmet",
+    "file": "grubenhelm.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "redstone_heiligenschein",
+    "name": "Redstone-Heiligenschein",
+    "template": "halo_hd",
+    "file": "redstone_heiligenschein.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150,
+    "emissive": true
+  },
+  {
+    "id": "abenteuer_rucksack",
+    "name": "Abenteuer-Rucksack",
+    "template": "backpack",
+    "file": "abenteuer_rucksack.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1,
+    "emissive": false
+  },
+  {
+    "id": "redstone_funken",
+    "name": "Redstone-Funken",
+    "template": "orbit",
+    "file": "redstone_funken.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150,
+    "emissive": true
   }
 ]

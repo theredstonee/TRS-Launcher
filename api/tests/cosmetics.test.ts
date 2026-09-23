@@ -86,7 +86,7 @@ describe('templates', () => {
     expect(mutate((f) => { crown(f).cubes[0]!.anim = 'flap' })).toThrow(/pivot/)
     expect(mutate((f) => { crown(f).cubes[0]!.extra = 1 })).toThrow()
     expect(mutate((f) => { f.templates.push(f.templates[0]!) })).toThrow(/duplicate/)
-    expect(mutate((f) => { (f.templates[7] as { slot: string }).slot = 'hat' })).toThrow() // Partikel nur als aura
+    expect(mutate((f) => { (f.templates.find((t) => t.kind === 'particles') as { slot: string }).slot = 'hat' })).toThrow() // Partikel nur als aura
   })
 
   it('computes the paintable mask per scale', () => {

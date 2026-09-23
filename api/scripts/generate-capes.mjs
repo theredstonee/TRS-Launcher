@@ -6,7 +6,7 @@
 // Ausgabe: api/assets/capes/*.png + catalog.json, Vorschauen in api/assets/previews/.
 // Keine Abhängigkeiten: PNG wird mit node:zlib selbst geschrieben.
 
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { deflateSync } from 'node:zlib'
@@ -409,5 +409,8 @@ const catalog = capes.map((c) => {
     ...(frames.length > 1 ? { frameTimeMs: c.frameTimeMs } : {}),
   }
 })
+// Im TRS Studio gestaltete Umhänge (studio.json + PNGs) bleiben erhalten und kommen ans Ende.
+const studioFile = join(OUT, 'studio.json')
+if (existsSync(studioFile)) catalog.push(...JSON.parse(readFileSync(studioFile, 'utf8')))
 writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(catalog, null, 2)}\n`)
 console.log(`${catalog.length} Umhänge → ${OUT}`)

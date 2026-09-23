@@ -1,0 +1,11 @@
+[
+  {
+    "id": "phoenix",
+    "name": "Phönix",
+    "file": "phoenix.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1
+  }
+]

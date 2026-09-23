@@ -5,7 +5,7 @@ import { all, one, run, tx } from './db'
 import { conflict, forbidden, notFound } from './errors'
 import { newUploadCapeId, sha256Hex } from './ids'
 import { emitCape } from './playerevents'
-import { capeLayout, inspectPng, sanitizeCapeUpload } from './png'
+import { BUILTIN_MAX_SCALE, capeLayout, inspectPng, sanitizeCapeUpload } from './png'
 import { isAdmin } from './users'
 
 export type CapeUnlock = 'free' | 'code' | 'admin' | 'owner'
@@ -42,7 +42,7 @@ export interface CapeView {
   /** Maße EINES Frames (64·scale × 32·scale). */
   width: number
   height: number
-  /** Auflösungsfaktor gegenüber dem Vanilla-Layout 64×32 (1–4). UVs = Vanilla-UV × scale. */
+  /** Auflösungsfaktor gegenüber dem Vanilla-Layout 64×32 (Uploads 1–4, mitgelieferte 1–8). UVs = Vanilla-UV × scale. */
   scale: number
   animated: boolean
   frames: number
@@ -112,7 +112,7 @@ export function seedBuiltins(ctx: AppContext, capes: BuiltinCape[]): void {
     const frames = c.frames
     if (frames < 1 || frames > 64 || header.height % frames !== 0) throw new Error(`builtin cape ${c.id}: bad frame count`)
     const frameH = header.height / frames
-    const layout = capeLayout(header.width, frameH)
+    const layout = capeLayout(header.width, frameH, BUILTIN_MAX_SCALE)
     if (!layout || layout.source !== 'full' || layout.scale !== c.scale) {
       throw new Error(`builtin cape ${c.id}: ${header.width}x${header.height} does not match scale ${c.scale} x ${frames} frames`)
     }

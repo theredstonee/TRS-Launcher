@@ -3,8 +3,10 @@ import { PNG } from 'pngjs'
 import { ApiError } from './errors'
 
 export const MAX_UPLOAD_BYTES = 256 * 1024
-/** Größter Faktor gegenüber 64×32 (→ 256×128). */
+/** Größter Faktor gegenüber 64×32 für Uploads (→ 256×128). */
 export const MAX_SCALE = 4
+/** Größter Faktor für mitgelieferte Designs (HD-Pixel-Art, → 512×256 beim Umhang). */
+export const BUILTIN_MAX_SCALE = 8
 
 const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
@@ -149,9 +151,9 @@ export interface CapeLayout {
   source: 'full' | 'cape-only'
 }
 
-/** Erlaubte Maße: 64k×32k oder das reine Umhang-Format 22k×17k (k = 1…4). */
-export function capeLayout(width: number, height: number): CapeLayout | null {
-  for (let k = 1; k <= MAX_SCALE; k++) {
+/** Erlaubte Maße: 64k×32k oder das reine Umhang-Format 22k×17k (k = 1…maxScale). */
+export function capeLayout(width: number, height: number, maxScale = MAX_SCALE): CapeLayout | null {
+  for (let k = 1; k <= maxScale; k++) {
     if (width === 64 * k && height === 32 * k) return { width, height, scale: k, source: 'full' }
     if (width === 22 * k && height === 17 * k) return { width: 64 * k, height: 32 * k, scale: k, source: 'cape-only' }
   }

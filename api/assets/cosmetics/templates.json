@@ -91,6 +91,17 @@
       ]
     },
     {
+      "id": "halo_hd",
+      "name": "Heiligenschein (HD)",
+      "kind": "model",
+      "slot": "aura",
+      "textureWidth": 48,
+      "textureHeight": 16,
+      "cubes": [
+        { "from": [-6, 10.5, -6], "to": [6, 11.5, 6], "uv": [0, 0], "attach": "head", "anim": "bob" }
+      ]
+    },
+    {
       "id": "ring",
       "name": "Partikel-Ring",
       "kind": "particles",

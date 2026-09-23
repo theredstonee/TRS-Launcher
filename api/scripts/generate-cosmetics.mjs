@@ -14,7 +14,7 @@
 // Vorder- und Rückseite, Kanten und Silhouetten automatisch zusammen – und die
 // Vorschau liest die Textur über dieselbe Abbildung zurück (prüft das UV-Netz).
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { deflateSync } from 'node:zlib'
@@ -738,5 +738,8 @@ const catalog = cosmetics.map((c) => {
     emissive: c.emissive === true,
   }
 })
+// Im TRS Studio gestaltete Teile (studio.json + PNGs) bleiben erhalten und kommen ans Ende.
+const studioFile = join(OUT, 'studio.json')
+if (existsSync(studioFile)) catalog.push(...JSON.parse(readFileSync(studioFile, 'utf8')))
 writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(catalog, null, 2)}\n`)
 console.log(`${catalog.length} Kosmetik-Teile → ${OUT}, Vorschauen → ${PREVIEW}`)
