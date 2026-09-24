@@ -23,6 +23,7 @@ How to write an entry:
   timeouts and busy servers are retried patiently for about a minute; only files that really don't exist fail
   right away.
 - **Changelog.** Every update now comes with notes in English and German, shown once after updating.
+- **Publisher.** The launcher now shows "Theredstonee" as publisher in Windows (apps list and file properties).
 
 ### Deutsch
 
@@ -34,6 +35,8 @@ How to write an entry:
   Dateien, die es wirklich nicht gibt, schlagen sofort fehl.
 - **Changelog.** Jedes Update bringt jetzt Hinweise auf Englisch und Deutsch mit, die einmal nach dem Update
   erscheinen.
+- **Herausgeber.** Der Launcher nennt in Windows jetzt „Theredstonee“ als Herausgeber (App-Liste und
+  Dateieigenschaften).
 
 ## 0.4.3 – 2026-09-24
 

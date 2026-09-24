@@ -56,7 +56,8 @@
     "targets": [
       "nsis"
     ],
-    "publisher": "theredstonee",
+    "publisher": "Theredstonee",
+    "copyright": "© 2026 Theredstonee",
     "shortDescription": "Minecraft-Launcher",
     "icon": [
       "icons/32x32.png",
