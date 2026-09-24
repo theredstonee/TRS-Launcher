@@ -1499,6 +1499,8 @@
       "title": "Confidentialité",
       "logUploadTitle": "Autoriser le partage des journaux",
       "logUploadDescription": "« Partager le journal » envoie le journal du jeu sur mclo.gs – les identifiants et le nom d'utilisateur sont masqués au préalable. Désactivé, le bouton ne fonctionne pas.",
+      "discordTitle": "Afficher le statut Discord",
+      "discordDescription": "Ton profil Discord affiche « Joue à TRS Launcher » – pendant que tu joues, aussi la version de Minecraft, le chargeur de mods et le temps de jeu. Jamais d'adresse de serveur ni de nom d'instance ou de joueur. Le launcher ne communique qu'avec l'application Discord de ce PC.",
       "telemetryTitle": "Télémétrie",
       "telemetryDescription": "TRS Launcher ne collecte aucune donnée d'utilisation ni de plantage. Il n'y a rien à activer."
     },

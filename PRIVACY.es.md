@@ -20,9 +20,26 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 | Servidores de Minecraft de tu lista | Para mostrar su estado en directo | Un ping estándar de lista de servidores |
 | mclo.gs | Solo cuando pulsas «Log teilen» (compartir registro) y lo confirmas | El registro del juego, sin tokens de acceso ni tu nombre de usuario de Windows |
 | GitHub (`github.com`) | Al buscar actualizaciones del launcher | Una solicitud del manifiesto de actualización |
+| App de Discord en tu ordenador (solo local, sin internet) | Mientras el launcher está abierto y «Mostrar estado en Discord» está activado (por defecto), ver [más abajo](#discord) | Tu estado de Discord: «In the TRS Launcher» (en inglés), o la versión de Minecraft, el cargador de mods y el tiempo de juego de la partida en curso |
 
 Los tokens de las cuentas se guardan solo en tu ordenador, cifrados con DPAPI de Windows. Al desinstalar el launcher se
 elimina el programa; puedes borrar tus datos de `%APPDATA%\TRS-Launcher` cuando quieras.
+
+## Discord
+
+Si la app de Discord está abierta en tu ordenador, el launcher muestra un estado en tu perfil de Discord («Jugando a TRS
+Launcher»): «In the TRS Launcher» mientras solo está abierto el launcher y, mientras juegas, **la versión de Minecraft,
+el cargador de mods (p. ej. Fabric) y cuánto tiempo llevas jugando**. Nunca muestra direcciones de servidor ni nombres
+de instancias o jugadores.
+
+- El launcher solo habla con la app de Discord **de tu propio ordenador** (la interfaz local de Discord, una tubería con
+  nombre o un socket local). Él mismo no envía nada por internet y no necesita tu inicio de sesión de Discord.
+- La app de Discord muestra después este estado en tu perfil, **visible públicamente para quien pueda ver tu perfil de
+  Discord** (amigos, miembros de servidores en común). Lo que Discord hace con él se rige por la
+  [política de privacidad de Discord](https://discord.com/privacy).
+- El estado desaparece al cerrar el launcher. Si Discord no está abierto, no pasa nada.
+- Está **activado por defecto** y puedes desactivarlo cuando quieras en *Ajustes → Privacidad → Mostrar estado en Discord*
+  o, en Discord, en *Ajustes de usuario → Privacidad de la actividad*.
 
 ## Servicios TRS
 

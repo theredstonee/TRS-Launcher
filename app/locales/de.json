@@ -1499,6 +1499,8 @@
       "title": "Datenschutz",
       "logUploadTitle": "Logs teilen erlauben",
       "logUploadDescription": "„Log teilen“ lädt den Spiel-Log auf mclo.gs hoch – Zugangsdaten und Benutzername werden vorher geschwärzt. Aus = der Knopf funktioniert nicht.",
+      "discordTitle": "Discord-Status zeigen",
+      "discordDescription": "Dein Discord-Profil zeigt „Spielt TRS Launcher“ – beim Spielen auch Minecraft-Version, Modloader und Spielzeit. Nie Server-Adressen, Instanz- oder Spielernamen. Der Launcher spricht nur mit der Discord-App auf diesem PC.",
       "telemetryTitle": "Telemetrie",
       "telemetryDescription": "Der TRS Launcher sammelt keine Nutzungs- oder Absturzdaten. Es gibt nichts einzuschalten."
     },

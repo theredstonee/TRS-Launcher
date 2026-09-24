@@ -182,6 +182,8 @@ export interface Settings {
   sync: SyncSettings
   ui: UiSettings
   allowLogUpload: boolean
+  /** Discord-Status „Spielt TRS Launcher“ (Version, Loader, Spielzeit) – ab Werk an */
+  discordPresence: boolean
   java: JavaPaths
   clips: ClipSettings
 }

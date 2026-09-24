@@ -63,6 +63,8 @@ pub struct Settings {
     pub ui: UiSettings,
     /// Logs dürfen (geschwärzt) auf mclo.gs hochgeladen werden.
     pub allow_log_upload: bool,
+    /// Discord-Status („Spielt TRS Launcher“) zeigen – ab Werk an.
+    pub discord_presence: bool,
     /// Eigene Java-Installationen je Hauptversion; leer = automatisch.
     pub java: JavaPaths,
     /// Clips & Aufnahme (Standard aus).
@@ -238,6 +240,7 @@ impl Default for Settings {
             sync: SyncSettings::default(),
             ui: UiSettings::default(),
             allow_log_upload: true,
+            discord_presence: true,
             java: JavaPaths::default(),
             clips: ClipSettings::default(),
         }
@@ -453,6 +456,10 @@ mod tests {
         // Alte settings.json ohne `ui` bekommt sinnvolle Standardwerte.
         let old: Settings = serde_json::from_str(r#"{"maxMemoryMb":4096}"#).unwrap();
         assert!(old.ui.worlds_tab && old.ui.show_play_time && old.allow_log_upload);
+        // Ohne Feld (ältere Versionen) ist der Discord-Status an.
+        assert!(old.discord_presence);
+        let off: Settings = serde_json::from_str(r#"{"discordPresence":false}"#).unwrap();
+        assert!(!off.discord_presence);
         assert_eq!(serde_json::to_value(Theme::Oled).unwrap(), "oled");
         assert!(serde_json::from_str::<UiSettings>(r#"{"theme":"neon"}"#).is_err());
     }

@@ -23,12 +23,18 @@ How to write an entry:
 - **No more freezes when players join or leave.** With the TRS Client, the game could freeze for up to a minute
   as soon as another player came online or left – for both players at the same moment. Fixed in TRS Client
   0.4.1, which installs itself automatically.
+- **Show off on Discord.** With Discord open, your profile now shows "Playing TRS Launcher" – while you play also the
+  Minecraft version, the mod loader and your play time, plus a button for friends to get the launcher. Server
+  addresses and names are never shown. Turn it off under Settings → Privacy.
 
 ### Deutsch
 
 - **Kein Einfrieren mehr, wenn Spieler kommen oder gehen.** Mit dem TRS Client konnte das Spiel bis zu einer Minute
   einfrieren, sobald ein anderer Spieler online kam oder ging – bei beiden gleichzeitig. Behoben im TRS Client
   0.4.1, der sich automatisch aktualisiert.
+- **Zeig auf Discord, was du spielst.** Ist Discord offen, steht auf deinem Profil jetzt „Spielt TRS Launcher“ – beim
+  Spielen auch Minecraft-Version, Modloader und Spielzeit, dazu ein Knopf, mit dem sich Freunde den Launcher holen
+  können. Server-Adressen und Namen werden nie gezeigt. Abschaltbar unter Einstellungen → Datenschutz.
 
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 

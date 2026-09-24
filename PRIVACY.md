@@ -20,9 +20,26 @@ The launcher only connects to other services when that is needed for something y
 | Minecraft servers in your server list | Showing live status | A standard server-list ping |
 | mclo.gs | Only when you click "Log teilen" and confirm | The game log, with access tokens and your Windows user name removed |
 | GitHub (`github.com`) | Checking for launcher updates | A request for the update manifest |
+| Discord app on your computer (local only, no internet) | While the launcher is open and "Show Discord status" is on (default), see [below](#discord) | Your Discord status: "In the TRS Launcher", or the Minecraft version, mod loader and play time of the running game |
 
 Account tokens are stored only on your computer, encrypted with Windows DPAPI. Uninstalling the launcher removes the
 program; your data in `%APPDATA%\TRS-Launcher` can be deleted at any time.
+
+## Discord
+
+If the Discord app is running on your computer, the launcher shows a status on your Discord profile ("Playing TRS
+Launcher"): "In the TRS Launcher" while only the launcher is open, and while you play the **Minecraft version, the mod
+loader (e.g. Fabric) and how long you have been playing**. It never shows server addresses, instance names or player
+names.
+
+- The launcher only talks to the Discord app **on your own computer** (Discord's local interface, a named pipe or local
+  socket). It sends nothing over the internet itself and doesn't need your Discord login.
+- The Discord app then shows this status on your profile – **publicly visible to the people who can see your Discord
+  profile** (friends, members of shared servers). What Discord does with it is covered by
+  [Discord's privacy policy](https://discord.com/privacy).
+- The status disappears when you close the launcher. If Discord isn't running, nothing happens.
+- It is **on by default** and can be turned off at any time under *Settings → Privacy → Show Discord status* (or hide it
+  in Discord under *User Settings → Activity Privacy*).
 
 ## TRS services
 

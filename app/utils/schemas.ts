@@ -167,6 +167,7 @@ export const settingsSchema = z
     sync: syncSettingsSchema,
     ui: uiSettingsSchema,
     allowLogUpload: z.boolean(),
+    discordPresence: z.boolean().default(true),
     java: z.object({
       java8: javaPathSchema.nullable(),
       java17: javaPathSchema.nullable(),
