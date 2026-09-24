@@ -11,6 +11,8 @@ const uuid = z.string().regex(/^[0-9a-f]{32}$/)
 const capeId = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,39}$/)
 const text = (max: number) => z.string().max(max)
 const pngDataUrl = z.string().startsWith('data:image/png;base64,').nullable()
+/** Umhang-Faktor: mitgelieferte HD-Umhänge bis 8 (512×256), eigene Uploads 1–4 – wie `MAX_CAPE_SCALE` im Kern. */
+const capeScale = z.number().int().min(1).max(8)
 
 export const trsStatusSchema = z.object({
   consent: z.enum(['accepted', 'declined']).nullable(),
@@ -42,7 +44,7 @@ export const trsCapeSchema = z.object({
   status: z.enum(['approved', 'pending', 'rejected', 'other']),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
-  scale: z.number().int().min(1).max(4),
+  scale: capeScale,
   frames: z.number().int().min(1).max(64),
   frameTimeMs: z.number().int().min(20).max(10_000).nullable(),
   owned: z.boolean(),
@@ -58,7 +60,7 @@ export const trsPlayerCapeSchema = z.object({
   badge: z.boolean(),
   capeId: capeId.nullable(),
   upload: z.boolean(),
-  scale: z.number().int().min(1).max(4),
+  scale: capeScale,
   frames: z.number().int().min(1).max(64),
   frameTimeMs: z.number().int().nullable(),
   texture: pngDataUrl,

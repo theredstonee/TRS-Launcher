@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Vorderseite eines Umhangs als kleines Bild. TRS-Umhänge können animiert
 // sein (senkrechter Streifen, Frame = floor(jetzt / frameTimeMs) % frames)
-// und in höherer Auflösung (scale 1–4) vorliegen.
+// und in höherer Auflösung (scale 1–8) vorliegen.
 const props = withDefaults(
   defineProps<{
     texture: string | null

@@ -50,6 +50,9 @@ describe('TRS-Daten aus dem Kern', () => {
     expect(trsCapeSchema.safeParse({ ...cape, texture: 'https://evil.example/x.png' }).success).toBe(false)
     expect(trsCapeSchema.safeParse({ ...cape, id: '../x' }).success).toBe(false)
     expect(() => trsParse(trsCapeSchema, { ...cape, frames: 0 })).toThrow('ungültig')
+    // HD-Umhänge bis Faktor 8 (512×256) – darüber nicht.
+    expect(trsCapeSchema.safeParse({ ...cape, width: 512, height: 256, scale: 8 }).success).toBe(true)
+    expect(trsCapeSchema.safeParse({ ...cape, width: 576, height: 288, scale: 9 }).success).toBe(false)
   })
 
   it('prüft die Freundesliste', () => {

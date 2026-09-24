@@ -11,7 +11,11 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{Error, Result, fsutil, task};
 
-const MAX_ATTEMPTS: u32 = 4;
+/// Versuche bei vorübergehenden Fehlern (Verbindungsabbruch, Zeitüberschreitung, 429, 5xx):
+/// mit den Wartezeiten aus [`retry_delay`] gut eine Minute Geduld.
+const MAX_ATTEMPTS: u32 = 8;
+/// Falsche Prüfsumme kann ein abgeschnittener Download sein – ein paar Mal neu laden, dann aufgeben.
+const MAX_CHECKSUM_ATTEMPTS: u32 = 3;
 const PROGRESS_INTERVAL_MS: u64 = 80;
 
 #[derive(Debug, Clone)]
@@ -44,10 +48,19 @@ impl Progress {
 
 /// Ist die Datei schon da? Ohne `verify_hash` reicht Existenz + passende Größe
 /// (schnell genug, um es bei jedem Start für tausende Assets zu prüfen).
+///
+/// Die Prüfsumme hat Vorrang vor der Größe: Manche Modpacks geben die Größe falsch an
+/// (z. B. um ein Byte), die SHA1 stimmt aber. Passt die Größe nicht, entscheidet dann der Hash.
 pub async fn is_valid(task: &Task, verify_hash: bool) -> bool {
     let Ok(meta) = tokio::fs::metadata(&task.path).await else { return false };
-    if !meta.is_file() || task.size.is_some_and(|s| s != meta.len()) {
+    if !meta.is_file() {
         return false;
+    }
+    if task.size.is_some_and(|s| s != meta.len()) {
+        return match &task.sha1 {
+            Some(expected) => sha1_of_file(&task.path).await.is_ok_and(|h| h.eq_ignore_ascii_case(expected)),
+            None => false,
+        };
     }
     match (&task.sha1, verify_hash) {
         (Some(expected), true) => {
@@ -93,14 +106,49 @@ fn secure_url(url: &str) -> Result<String> {
 }
 
 /// Wartezeit vor dem nächsten Versuch: Retry-After des Servers (höchstens
-/// 30 s), sonst exponentiell 0,5 s → 1 s → 2 s.
+/// 60 s), sonst exponentiell 1 s → 2 s → 4 s → … höchstens 30 s.
 fn retry_delay(err: &Error, attempt: u32) -> Duration {
     if let Error::Download { reason, .. } = err
         && let Some(secs) = reason.split("retry-after ").nth(1).and_then(|s| s.trim_end_matches(')').parse::<u64>().ok())
     {
-        return Duration::from_secs(secs.min(30));
+        return Duration::from_secs(secs.min(60));
     }
-    Duration::from_millis(500 * (1 << (attempt - 1).min(4)))
+    Duration::from_secs((1u64 << (attempt - 1).min(5)).min(30))
+}
+
+/// Wie viele Versuche lohnen sich? Dauerhafte Fehler (Datei gibt es nicht, kein Zugriff,
+/// ungültige Adresse) sofort melden, vorübergehende (Netz, Drosselung, Serverfehler) geduldig wiederholen.
+fn attempts_for(err: &Error) -> u32 {
+    let Error::Download { reason, .. } = err else { return MAX_ATTEMPTS };
+    if reason.starts_with("nicht unterstütztes URL-Schema") {
+        return 1;
+    }
+    if reason == "Prüfsumme stimmt nicht" {
+        return MAX_CHECKSUM_ATTEMPTS;
+    }
+    if let Some(code) = reason.strip_prefix("HTTP ").and_then(|r| r.get(..3)).and_then(|c| c.parse::<u16>().ok()) {
+        // 408 (Timeout), 425 (zu früh) und 429 (gedrosselt) sind vorübergehend, andere 4xx nicht.
+        if (400..500).contains(&code) && !matches!(code, 408 | 425 | 429) {
+            return 1;
+        }
+    }
+    MAX_ATTEMPTS
+}
+
+/// Ist der geladene Inhalt der richtige? Mit Prüfsumme zählt nur die Prüfsumme (die Größe
+/// in Modpacks ist manchmal falsch); ohne Prüfsumme muss wenigstens die Größe stimmen.
+fn check_content(task: &Task, url: &str, written: u64, sha1: &str) -> Result<()> {
+    match &task.sha1 {
+        Some(expected) if !sha1.eq_ignore_ascii_case(expected) => Err(Error::download(url, "Prüfsumme stimmt nicht")),
+        Some(_) => {
+            if task.size.is_some_and(|s| s != written) {
+                tracing::debug!("Größe weicht ab ({written} statt {:?}), Prüfsumme stimmt: {url}", task.size);
+            }
+            Ok(())
+        }
+        None if task.size.is_some_and(|s| s != written) => Err(Error::download(url, "unerwartete Dateigröße")),
+        None => Ok(()),
+    }
 }
 
 pub async fn fetch_one(http: &reqwest::Client, task: &Task) -> Result<()> {
@@ -114,8 +162,9 @@ async fn fetch_with_retries(
     task: &Task,
     on_bytes: &(dyn Fn(i64) + Sync),
 ) -> Result<()> {
-    let mut last_err = None;
-    for attempt in 1..=MAX_ATTEMPTS {
+    let mut attempt = 0;
+    loop {
+        attempt += 1;
         // Abgebrochen oder pausiert? Dann keinen neuen Versuch starten.
         task::checkpoint().await?;
         let counted = AtomicU64::new(0);
@@ -131,16 +180,15 @@ async fn fetch_with_retries(
                 if matches!(e, Error::Cancelled) {
                     return Err(e);
                 }
-                tracing::warn!("Download-Versuch {attempt}/{MAX_ATTEMPTS} fehlgeschlagen: {e}");
-                let delay = retry_delay(&e, attempt);
-                last_err = Some(e);
-                if attempt < MAX_ATTEMPTS {
-                    task::sleep(delay).await?;
+                let allowed = attempts_for(&e);
+                tracing::warn!("Download-Versuch {attempt}/{allowed} fehlgeschlagen: {e}");
+                if attempt >= allowed {
+                    return Err(e);
                 }
+                task::sleep(retry_delay(&e, attempt)).await?;
             }
         }
     }
-    Err(last_err.expect("mindestens ein Versuch"))
 }
 
 async fn fetch_attempt(
@@ -202,14 +250,7 @@ async fn fetch_attempt(
         file.flush().await.map_err(|e| Error::io(&tmp, e))?;
         drop(file);
 
-        if task.size.is_some_and(|s| s != written) {
-            return Err(Error::download(&url, "unerwartete Dateigröße"));
-        }
-        if let Some(expected) = &task.sha1
-            && !hex(&hasher.finalize()).eq_ignore_ascii_case(expected)
-        {
-            return Err(Error::download(&url, "Prüfsumme stimmt nicht"));
-        }
+        check_content(task, &url, written, &hex(&hasher.finalize()))?;
         tokio::fs::rename(&tmp, &task.path).await.map_err(|e| Error::io(&task.path, e))
     }
     .await;
@@ -358,10 +399,40 @@ mod tests {
         let throttled = Error::download("https://x", "HTTP 429 (retry-after 7)");
         assert_eq!(retry_delay(&throttled, 1), Duration::from_secs(7));
         let huge = Error::download("https://x", "HTTP 429 (retry-after 9999)");
-        assert_eq!(retry_delay(&huge, 1), Duration::from_secs(30));
+        assert_eq!(retry_delay(&huge, 1), Duration::from_secs(60));
         let other = Error::download("https://x", "HTTP 503");
-        assert_eq!(retry_delay(&other, 1), Duration::from_millis(500));
-        assert_eq!(retry_delay(&other, 3), Duration::from_millis(2000));
+        assert_eq!(retry_delay(&other, 1), Duration::from_secs(1));
+        assert_eq!(retry_delay(&other, 3), Duration::from_secs(4));
+        assert_eq!(retry_delay(&other, 8), Duration::from_secs(30));
+        // Insgesamt gut eine Minute Geduld bei vorübergehenden Fehlern.
+        let total: Duration = (1..MAX_ATTEMPTS).map(|a| retry_delay(&other, a)).sum();
+        assert!(total >= Duration::from_secs(60), "{total:?}");
+    }
+
+    #[test]
+    fn permanent_errors_fail_fast_transient_ones_wait() {
+        let e = |r: &str| Error::download("https://x", r);
+        assert_eq!(attempts_for(&e("HTTP 404")), 1);
+        assert_eq!(attempts_for(&e("HTTP 403")), 1);
+        assert_eq!(attempts_for(&e("nicht unterstütztes URL-Schema")), 1);
+        assert_eq!(attempts_for(&e("HTTP 429 (retry-after 5)")), MAX_ATTEMPTS);
+        assert_eq!(attempts_for(&e("HTTP 408")), MAX_ATTEMPTS);
+        assert_eq!(attempts_for(&e("HTTP 503")), MAX_ATTEMPTS);
+        assert_eq!(attempts_for(&e("Zeitüberschreitung")), MAX_ATTEMPTS);
+        assert_eq!(attempts_for(&e("connection reset")), MAX_ATTEMPTS);
+        assert_eq!(attempts_for(&e("Prüfsumme stimmt nicht")), MAX_CHECKSUM_ATTEMPTS);
+    }
+
+    #[test]
+    fn checksum_wins_over_a_wrong_size() {
+        // Better MC (BMC4) nennt für Balm 591397 Bytes, die Datei hat 591398 – die SHA1 stimmt.
+        let sha = "c689f4cbe1a5250177aced15b66ca251d9476d35";
+        let task = Task { url: String::new(), path: PathBuf::new(), sha1: Some(sha.into()), size: Some(591_397) };
+        assert!(check_content(&task, "https://x", 591_398, sha).is_ok());
+        assert!(check_content(&task, "https://x", 591_398, &"0".repeat(40)).is_err());
+        let no_hash = Task { sha1: None, ..task };
+        assert!(check_content(&no_hash, "https://x", 591_398, sha).is_err());
+        assert!(check_content(&no_hash, "https://x", 591_397, sha).is_ok());
     }
 
     #[test]
@@ -381,8 +452,13 @@ mod tests {
         let ok = Task { url: String::new(), path: path.clone(), sha1: Some(sha.into()), size: Some(5) };
         assert!(is_valid(&ok, true).await);
 
+        // Falsche Größe, aber passende Prüfsumme: die Datei ist richtig (Modpack-Angabe falsch).
         let wrong_size = Task { size: Some(6), ..ok.clone() };
-        assert!(!is_valid(&wrong_size, false).await);
+        assert!(is_valid(&wrong_size, false).await);
+        let wrong_size_no_hash = Task { size: Some(6), sha1: None, ..ok.clone() };
+        assert!(!is_valid(&wrong_size_no_hash, false).await);
+        let wrong_size_and_hash = Task { size: Some(6), sha1: Some("00".repeat(20)), ..ok.clone() };
+        assert!(!is_valid(&wrong_size_and_hash, false).await);
 
         let wrong_hash = Task { sha1: Some("00".repeat(20)), ..ok.clone() };
         assert!(is_valid(&wrong_hash, false).await);
