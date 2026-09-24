@@ -1,12 +1,13 @@
 <script setup lang="ts">
-// Icon einer Mod bzw. eines Modrinth-Projekts. Erlaubt sind nur Modrinths CDN
-// und Data-URLs, die der Launcher selbst aus der Datei erzeugt hat.
+// Icon einer Mod bzw. eines Projekts. Erlaubt sind nur die Bild-CDNs von
+// Modrinth und CurseForge und Data-URLs, die der Launcher selbst aus der Datei erzeugt hat.
 const props = withDefaults(defineProps<{ src: string | null | undefined; name: string; size?: number }>(), { size: 40 })
 
 const safe = computed(() => {
   const s = props.src
   if (!s) return null
-  return s.startsWith('https://cdn.modrinth.com/') || s.startsWith('data:image/png;base64,') ? s : null
+  const allowed = s.startsWith('https://cdn.modrinth.com/') || s.startsWith('data:image/png;base64,') || isCurseForgeImage(s)
+  return allowed ? s : null
 })
 const failed = ref(false)
 watch(safe, () => (failed.value = false))

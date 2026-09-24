@@ -9,6 +9,7 @@ pub mod boost;
 pub mod client_mod;
 pub mod client_mod_update;
 pub mod content;
+pub mod curseforge;
 pub mod download;
 pub mod error;
 pub mod extras;
@@ -91,6 +92,8 @@ pub struct Launcher {
     skin_sync: skin_sync::SkinSync,
     /// TRS API (Umhänge, Freunde, Präsenz) – nur mit Einwilligung.
     trs: trs_api::TrsApi,
+    /// CurseForge – nur, wenn der Build einen API-Schlüssel hat.
+    curseforge: Option<curseforge::CurseForge>,
 }
 
 impl Launcher {
@@ -148,6 +151,7 @@ impl Launcher {
             preparing: Mutex::default(),
             skin_sync: skin_sync::SkinSync::default(),
             trs: trs_api::TrsApi::new(paths.clone())?,
+            curseforge: curseforge::CurseForge::from_build()?,
             settings: RwLock::new(settings),
             paths,
             http,
@@ -197,6 +201,16 @@ impl Launcher {
 
     pub fn games(&self) -> &GameManager {
         &self.games
+    }
+
+    /// CurseForge-Zugang; Fehler, wenn dieser Build keinen API-Schlüssel hat.
+    pub fn curseforge(&self) -> Result<&curseforge::CurseForge> {
+        self.curseforge.as_ref().ok_or_else(curseforge::disabled)
+    }
+
+    /// Ob CurseForge in diesem Build verfügbar ist (ohne Schlüssel preiszugeben).
+    pub fn curseforge_status(&self) -> curseforge::CurseForgeStatus {
+        curseforge::CurseForgeStatus { available: self.curseforge.is_some() }
     }
 
     /// Ordner mit den mitgelieferten TRS-Client-Jars.

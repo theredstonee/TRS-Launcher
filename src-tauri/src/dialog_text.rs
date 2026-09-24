@@ -28,6 +28,8 @@ pub enum DialogText {
     PickCape,
     /// Filtername für Umhang-PNGs.
     Cape,
+    /// Filtername für `.mrpack` und CurseForge-`.zip`.
+    AnyModpack,
     /// Java-Auswahl unter Linux (`…/bin/java`).
     PickJavaUnix,
 }
@@ -41,7 +43,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 15] = [
+const TEXTS: [[&str; 8]; 16] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -156,6 +158,16 @@ const TEXTS: [[&str; 8]; 15] = [
     ],
     ["Cape", "Umhang", "Capa", "Cape", "Peleryna", "Capa", "Pelerin", "Cape"],
     [
+        "Modpack (Modrinth, CurseForge)",
+        "Modpack (Modrinth, CurseForge)",
+        "Modpack (Modrinth, CurseForge)",
+        "Modpack (Modrinth, CurseForge)",
+        "Modpack (Modrinth, CurseForge)",
+        "Modpack (Modrinth, CurseForge)",
+        "Mod paketi (Modrinth, CurseForge)",
+        "Modpack (Modrinth, CurseForge)",
+    ],
+    [
         "Choose the java program (…/bin/java)",
         "Java-Programm wählen (…/bin/java)",
         "Elige el programa java (…/bin/java)",
@@ -185,7 +197,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 15] = [
+    const ALL: [DialogText; 16] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -200,6 +212,7 @@ mod tests {
         DialogText::PickJava,
         DialogText::PickCape,
         DialogText::Cape,
+        DialogText::AnyModpack,
         DialogText::PickJavaUnix,
     ];
 

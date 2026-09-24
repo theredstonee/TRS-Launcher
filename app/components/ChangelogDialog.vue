@@ -11,12 +11,20 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const latest = computed(() => versions.value[0] ?? null)
 const installedLabel = computed(() => props.item.version ?? props.item.source?.versionNumber ?? t('changelog.installedVersion'))
+/** CurseForge-Changelogs sind HTML. */
+const isCf = computed(() => sourcePlatform(props.item.source) === 'curseforge')
 
 onMounted(async () => {
   const source = props.item.source
   if (!source) return
   try {
-    versions.value = await backend.contentChangelog(props.instance.id, source.projectId, props.item.kind, source.versionId)
+    versions.value = await backend.contentChangelog(
+      props.instance.id,
+      source.projectId,
+      props.item.kind,
+      source.versionId,
+      sourcePlatform(source),
+    )
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -54,7 +62,7 @@ onMounted(async () => {
           <span class="badge" :class="v.versionType === 'release' ? 'bg-ok/10 text-ok' : 'bg-lamp-900 text-lamp-300'">{{ versionTypeLabel(v.versionType) }}</span>
           <span class="text-xs font-normal text-base-400">{{ formatDate(v.datePublished) }}</span>
         </p>
-        <MarkdownView v-if="v.changelog" :source="v.changelog" class="mt-1.5" />
+        <MarkdownView v-if="v.changelog" :source="v.changelog" :html="isCf" class="mt-1.5" />
         <p v-else class="mt-1 text-xs text-base-400">{{ t('changelog.noChangelog') }}</p>
       </li>
     </ol>

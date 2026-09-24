@@ -189,6 +189,29 @@ pub fn os_description() -> String {
     }
 }
 
+// --- Download-Ordner -------------------------------------------------------------------------
+
+/// `XDG_DOWNLOAD_DIR="$HOME/Downloads"` aus dem Inhalt von `user-dirs.dirs`.
+fn parse_user_dirs(text: &str, home: &Path) -> Option<PathBuf> {
+    let value = text.lines().find_map(|l| l.trim().strip_prefix("XDG_DOWNLOAD_DIR="))?;
+    let value = value.trim().trim_matches('"');
+    let path = match value.strip_prefix("$HOME") {
+        Some(rest) => home.join(rest.trim_start_matches('/')),
+        None => PathBuf::from(value),
+    };
+    (path.is_absolute() && path != home).then_some(path)
+}
+
+/// Download-Ordner des Nutzers (xdg-user-dirs, sonst `~/Downloads`).
+pub fn downloads_dir() -> Option<PathBuf> {
+    let home = PathBuf::from(std::env::var_os("HOME")?);
+    let config = std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).filter(|p| p.is_absolute()).unwrap_or_else(|| home.join(".config"));
+    std::fs::read_to_string(config.join("user-dirs.dirs"))
+        .ok()
+        .and_then(|text| parse_user_dirs(&text, &home))
+        .or_else(|| Some(home.join("Downloads")))
+}
+
 // --- Papierkorb (freedesktop.org Trash) ------------------------------------------------------
 
 fn data_home() -> Option<PathBuf> {
@@ -520,6 +543,16 @@ mod tests {
         assert_eq!(pretty_name("PRETTY_NAME='Ubuntu 24.04.1 LTS'").as_deref(), Some("Ubuntu 24.04.1 LTS"));
         assert_eq!(pretty_name("ID=x"), None);
         assert!(os_description().len() > 3);
+    }
+
+    #[test]
+    fn download_dir_from_user_dirs() {
+        let home = Path::new("/home/max");
+        let text = "# xdg\nXDG_DESKTOP_DIR=\"$HOME/Schreibtisch\"\nXDG_DOWNLOAD_DIR=\"$HOME/Downloads\"\n";
+        assert_eq!(parse_user_dirs(text, home), Some(PathBuf::from("/home/max/Downloads")));
+        assert_eq!(parse_user_dirs("XDG_DOWNLOAD_DIR=\"/data/dl\"", home), Some(PathBuf::from("/data/dl")));
+        assert_eq!(parse_user_dirs("XDG_DOWNLOAD_DIR=\"$HOME/\"", home), None);
+        assert_eq!(parse_user_dirs("", home), None);
     }
 
     #[test]

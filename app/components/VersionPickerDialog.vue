@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContentKind, Instance, ModrinthVersion } from '~/types'
+import type { ContentKind, Instance, ModrinthVersion, Platform } from '~/types'
 
 // Wählt eine zur Instanz passende Version – zum Installieren oder, mit
 // `currentVersionId`, zum Wechseln (auch auf ältere Versionen).
@@ -9,6 +9,7 @@ const props = defineProps<{
   title: string
   kind: ContentKind
   currentVersionId?: string | null
+  platform?: Platform
 }>()
 const emit = defineEmits<{ close: []; pick: [version: ModrinthVersion] }>()
 
@@ -17,6 +18,14 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const showPrerelease = ref(false)
 const open = ref<string | null>(null)
+const isCf = computed(() => props.platform === 'curseforge')
+// CurseForge liefert Changelogs nur einzeln – beim Aufklappen nachladen.
+const changelogs = useLazyChangelogs(() => props.projectId)
+
+function toggle(v: ModrinthVersion) {
+  open.value = open.value === v.id ? null : v.id
+  if (open.value && isCf.value) changelogs.load(v.id)
+}
 
 const currentIndex = computed(() => versions.value.findIndex((v) => v.id === props.currentVersionId))
 const visible = computed(() =>
@@ -27,7 +36,7 @@ const visible = computed(() =>
 
 onMounted(async () => {
   try {
-    versions.value = await backend.modrinthVersions(props.instance.id, props.projectId, props.kind)
+    versions.value = await platformApi.versions(props.platform ?? 'modrinth', props.instance.id, props.projectId, props.kind)
     // Gibt es nur Betas, sollen die nicht hinter dem Schalter verschwinden.
     if (!versions.value.some((v) => v.versionType === 'release')) showPrerelease.value = true
   } catch (e) {
@@ -77,10 +86,10 @@ function actionLabel(v: ModrinthVersion): string {
         <div class="flex items-center gap-2 px-2 py-2">
           <button
             class="flex size-7 shrink-0 items-center justify-center rounded-md text-base-400 hover:bg-base-800 hover:text-base-50 disabled:opacity-30"
-            :disabled="!v.changelog"
+            :disabled="!v.changelog && !isCf"
             :aria-expanded="open === v.id"
             :aria-label="open === v.id ? t('versionPicker.hideChangelog') : t('versionPicker.showChangelog')"
-            @click="open = open === v.id ? null : v.id"
+            @click="toggle(v)"
           >
             <svg viewBox="0 0 24 24" class="size-4 transition-transform" :class="{ 'rotate-90': open === v.id }" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 6 6 6-6 6" /></svg>
           </button>
@@ -105,7 +114,12 @@ function actionLabel(v: ModrinthVersion): string {
             {{ actionLabel(v) }}
           </button>
         </div>
-        <div v-if="open === v.id && v.changelog" class="border-t border-base-800 bg-base-950/40 px-4 py-3">
+        <div v-if="open === v.id && isCf" class="border-t border-base-800 bg-base-950/40 px-4 py-3">
+          <p v-if="changelogs.state(v.id) === 'loading'" class="text-xs text-base-400">{{ t('common.status.loading') }}</p>
+          <MarkdownView v-else-if="changelogs.text(v.id)" :source="changelogs.text(v.id)" html />
+          <p v-else class="text-xs text-base-400">{{ t('changelog.noChangelog') }}</p>
+        </div>
+        <div v-else-if="open === v.id && v.changelog" class="border-t border-base-800 bg-base-950/40 px-4 py-3">
           <MarkdownView :source="v.changelog" />
         </div>
       </li>

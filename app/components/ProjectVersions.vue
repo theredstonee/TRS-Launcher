@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContentKind, Instance, ModrinthVersion } from '~/types'
+import type { ContentKind, Instance, ModrinthVersion, Platform } from '~/types'
 
 // Versionsliste eines Projekts: filterbar nach Spielversion und Loader, mit
 // aufklappbarem Changelog und Installieren/Wechseln je Version.
@@ -11,7 +11,12 @@ const props = defineProps<{
   kind: ContentKind | null
   installedVersionId: string | null
   busyVersionId: string | null
+  projectId?: string
+  platform?: Platform
 }>()
+const isCf = computed(() => props.platform === 'curseforge')
+// CurseForge-Changelogs kommen einzeln beim Aufklappen.
+const changelogs = useLazyChangelogs(() => props.projectId ?? '')
 const emit = defineEmits<{ install: [version: ModrinthVersion] }>()
 
 const gameVersion = ref<string>(props.instance?.gameVersion ?? '')
@@ -67,6 +72,7 @@ function actionLabel(v: ModrinthVersion): string {
 
 function toggle(id: string) {
   open.value = open.value === id ? null : id
+  if (open.value && isCf.value && props.projectId) changelogs.load(id)
 }
 </script>
 
@@ -102,7 +108,7 @@ function toggle(id: string) {
             class="flex size-7 shrink-0 items-center justify-center rounded-md text-base-400 transition-colors hover:bg-base-800 hover:text-base-50 disabled:opacity-30"
             :aria-expanded="open === v.id"
             :aria-label="open === v.id ? t('project.versions.collapseChangelog') : t('project.versions.expandChangelog')"
-            :disabled="!v.changelog"
+            :disabled="!v.changelog && !isCf"
             @click="toggle(v.id)"
           >
             <svg viewBox="0 0 24 24" class="size-4 transition-transform" :class="{ 'rotate-90': open === v.id }" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 6 6 6-6 6" /></svg>
@@ -136,7 +142,12 @@ function toggle(id: string) {
             <span v-else class="w-28 shrink-0" />
           </template>
         </div>
-        <div v-if="open === v.id && v.changelog" class="border-t border-base-800 bg-base-950/40 px-5 py-4">
+        <div v-if="open === v.id && isCf" class="border-t border-base-800 bg-base-950/40 px-5 py-4">
+          <p v-if="changelogs.state(v.id) === 'loading'" class="text-xs text-base-400">{{ t('common.status.loading') }}</p>
+          <MarkdownView v-else-if="changelogs.text(v.id)" :source="changelogs.text(v.id)" html />
+          <p v-else class="text-xs text-base-400">{{ t('changelog.noChangelog') }}</p>
+        </div>
+        <div v-else-if="open === v.id && v.changelog" class="border-t border-base-800 bg-base-950/40 px-5 py-4">
           <MarkdownView :source="v.changelog" />
         </div>
       </li>

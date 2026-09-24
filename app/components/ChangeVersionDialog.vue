@@ -177,6 +177,7 @@ async function applyPlan() {
         ctx.progress((i / list.length) * 100, p.title || p.fileName)
         try {
           await backend.applyContentUpdate(instance.id, {
+            platform: p.platform,
             kind: p.kind,
             fileName: p.fileName,
             projectId: p.projectId,

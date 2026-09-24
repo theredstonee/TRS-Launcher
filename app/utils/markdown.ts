@@ -51,26 +51,46 @@ function configure(purify: Purifier): Purifier {
 const marked = new Marked({ gfm: true, breaks: true, async: false })
 let render: ((markdown: string) => string) | null = null
 
+const SANITIZE = {
+  ALLOWED_TAGS,
+  ALLOWED_ATTR,
+  ALLOW_DATA_ATTR: false,
+  ALLOW_ARIA_ATTR: false,
+  FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form', 'input', 'svg', 'math'],
+  FORBID_ATTR: ['style', 'class', 'id', 'srcset'],
+  KEEP_CONTENT: true,
+}
+
 /** Für Tests: eigene DOMPurify-Instanz (z. B. mit jsdom-Window). */
 export function createRenderer(purify: Purifier) {
   const configured = configure(purify)
   return (markdown: string): string => {
     const html = marked.parse(markdown.slice(0, 200_000)) as string
-    return configured.sanitize(html, {
-      ALLOWED_TAGS,
-      ALLOWED_ATTR,
-      ALLOW_DATA_ATTR: false,
-      ALLOW_ARIA_ATTR: false,
-      FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form', 'input', 'svg', 'math'],
-      FORBID_ATTR: ['style', 'class', 'id', 'srcset'],
-      KEEP_CONTENT: true,
-    }) as string
+    return configured.sanitize(html, SANITIZE) as string
   }
 }
+
+/**
+ * Für fremdes HTML (Beschreibungen und Changelogs von CurseForge): ohne
+ * Markdown-Schritt, aber mit derselben Whitelist. Für Tests mit eigener Instanz.
+ */
+export function createHtmlRenderer(purify: Purifier) {
+  const configured = configure(purify)
+  return (html: string): string => configured.sanitize(html.slice(0, 200_000), SANITIZE) as string
+}
+
+let renderHtmlFn: ((html: string) => string) | null = null
 
 /** Markdown → bereinigtes HTML. Einziger erlaubter Weg zu `v-html`. */
 export function renderMarkdown(markdown: string | null | undefined): string {
   if (!markdown) return ''
   render ??= createRenderer(DOMPurify(window))
   return render(markdown)
+}
+
+/** Fremdes HTML → bereinigtes HTML (wie `renderMarkdown`, nur ohne Markdown). */
+export function renderHtml(html: string | null | undefined): string {
+  if (!html) return ''
+  renderHtmlFn ??= createHtmlRenderer(DOMPurify(window))
+  return renderHtmlFn(html)
 }

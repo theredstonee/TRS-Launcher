@@ -508,11 +508,30 @@
       "noJavaAtPath": "Bu yolda Java çalıştırılabilir dosyası yok.",
       "invalidTaskId": "Geçersiz görev kimliği",
       "taskRunning": "Bu görev zaten çalışıyor."
+    },
+    "curseforge": {
+      "disabled": "CurseForge bu başlatıcı sürümünde kullanılamıyor.",
+      "rateLimited": "CurseForge şu anda istekleri yavaşlatıyor – lütfen {seconds} saniye sonra tekrar dene.",
+      "accessDenied": "CurseForge başlatıcının isteğini reddetti. Lütfen daha sonra tekrar dene veya başlatıcıyı güncelle.",
+      "notFound": "Bu CurseForge'da yok (artık).",
+      "unavailable": "CurseForge'a şu anda ulaşılamıyor. Lütfen daha sonra tekrar dene.",
+      "badResponse": "CurseForge beklenmeyen veriler gönderdi.",
+      "invalidProjectId": "Geçersiz CurseForge proje kimliği",
+      "invalidFileId": "Geçersiz CurseForge dosya kimliği",
+      "fileNotInProject": "Bu dosya projeye ait değil.",
+      "downloadBlocked": "“{name}” yazarı başka uygulamalar üzerinden indirmeye izin vermiyor – lütfen dosyayı CurseForge'dan indir.",
+      "noCompatibleFile": "CurseForge'da Minecraft {version} ve bu mod yükleyici için uygun dosya yok.",
+      "wrongKind": "Bu CurseForge projesi bu içerik türüne uymuyor.",
+      "manifestInvalid": "Mod paketinin manifest.json dosyası geçersiz.",
+      "unsupportedLoader": "Mod paketi, başlatıcının tanımadığı bir mod yükleyici kullanıyor: {loader}",
+      "notAModpack": "Bu bir CurseForge mod paketi değil.",
+      "packFileMissing": "Mod paketinin bir dosyası artık CurseForge'da yok (proje {project}).",
+      "packBlocked": "“{name}” yazarı başka uygulamalar üzerinden indirmeye izin vermiyor – lütfen mod paketini CurseForge'dan indirip buraya aktar."
     }
   },
   "browse": {
     "title": "Keşfet",
-    "subtitle": "Modrinth'ten modlar, modpack'ler, kaynak paketleri, veri paketleri ve shader'lar.",
+    "subtitle": "Modrinth ve CurseForge'dan modlar, modpack'ler, kaynak paketleri, veri paketleri ve shader'lar.",
     "backToInstance": "Kuruluma dön",
     "installContent": "İçerik yükle",
     "installInto": "Yükleneceği yer",
@@ -581,7 +600,15 @@
       "license": "Lisans",
       "openSourceOnly": "Yalnızca açık kaynak",
       "locked": "Kilitli"
-    }
+    },
+    "source": {
+      "label": "Kaynak",
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "unavailable": "CurseForge bu başlatıcı sürümünde kullanılamıyor."
+    },
+    "viaCurseForge": "Sonuçlar CurseForge üzerinden – her proje kendi yazarlarına aittir.",
+    "cfPopularity": "Popülerlik"
   },
   "modrinth": {
     "sort": {
@@ -708,7 +735,8 @@
       "source": "Kaynak kodu",
       "issues": "Sorun bildir",
       "wiki": "Wiki",
-      "discord": "Discord"
+      "discord": "Discord",
+      "curseforge": "CurseForge'da"
     },
     "tabs": {
       "label": "Bölümler",
@@ -758,7 +786,8 @@
       "image": "Görsel",
       "prev": "Önceki görsel",
       "next": "Sonraki görsel"
-    }
+    },
+    "viaCurseForge": "CurseForge üzerinden"
   },
   "changelog": {
     "title": "Değişiklik günlüğü – {name}",
@@ -835,24 +864,25 @@
       "updateTitle": "Güncelle: {version}",
       "updateBadge": "Güncelleme",
       "switchVersion": "Sürümü değiştir",
-      "onlyModrinth": "Yalnızca Modrinth içeriği için",
+      "onlyModrinth": "Yalnızca Modrinth veya CurseForge içeriği için",
       "switchVersionOf": "Sürümü değiştir: {name}",
       "enable": "Etkinleştir: {name}",
       "disable": "Devre dışı bırak: {name}",
       "delete": "Sil: {name}",
-      "moreActions": "Diğer işlemler: {name}"
+      "moreActions": "Diğer işlemler: {name}",
+      "viaCurseForge": "CurseForge üzerinden"
     },
     "menu": {
       "updateTo": "Güncelle: {version}",
       "changelog": "Değişiklik günlüğünü gör",
       "projectPage": "Proje sayfası",
-      "notModrinth": "Modrinth'ten yüklenmedi – sürümler ve değişiklik günlükleri yalnızca Modrinth içeriği için mevcut."
+      "notModrinth": "Modrinth veya CurseForge'dan yüklenmedi – sürümler ve değişiklik günlükleri yalnızca onların içeriği için mevcut."
     },
     "empty": {
       "noMatchTitle": "Sinyal yok",
       "noMatchText": "Filtre veya aramayla eşleşen bir şey yok.",
       "title": "Henüz içerik yok",
-      "text": "Burada her şey hâlâ kapalı. Modrinth'e göz at, dosya ekle veya .jar ve .zip dosyalarını pencereye sürükle."
+      "text": "Burada her şey hâlâ kapalı. Modrinth ve CurseForge'a göz at, dosya ekle veya .jar ve .zip dosyalarını pencereye sürükle."
     },
     "drop": {
       "title": "Eklemek için bırak",
@@ -1033,7 +1063,7 @@
       "groupCreate": "Oluştur",
       "groupNew": "+ Yeni grup",
       "channelTitle": "İçerik güncelleme kanalı",
-      "channelDescription": "“Güncelle” ve “en son uyumlu sürüm” hangi Modrinth sürümlerini seçsin.",
+      "channelDescription": "“Güncelle” ve “en son uyumlu sürüm” hangi sürümleri seçsin.",
       "channel": {
         "release": {
           "label": "Kararlı",
@@ -1065,7 +1095,7 @@
       "loaderVersion": "{loader} sürümü",
       "latestStable": "En son kararlı",
       "currently": "(şu an {version})",
-      "changeHint": "Değiştirdiğinde dünyalar ve ayarlar korunur; Modrinth'ten yüklenen modlar sonra uyumlu sürümlere güncellenebilir. Dünyalar ilk başlatmada dönüştürülür – güvende olmak için önce kurulumu çoğalt.",
+      "changeHint": "Değiştirdiğinde dünyalar ve ayarlar korunur; Modrinth veya CurseForge'dan yüklenen modlar sonra uyumlu sürümlere güncellenebilir. Dünyalar ilk başlatmada dönüştürülür – güvende olmak için önce kurulumu çoğalt.",
       "boostTitle": "TRS optimizasyonu",
       "boostDescription": "Kurulumu arka planda Fabric, TRS Client ve Sodium gibi performans modlarıyla çalıştırır – çok daha fazla FPS. Kapalı = saf vanilla.",
       "clientDescription": "FPS, CPS, tuş vuruşları ve ping içeren HUD, yakınlaştırma (V) ve tam parlaklık. Oyun içi menüyü Sağ Shift ile aç.",
@@ -1156,7 +1186,7 @@
       "downgrade": "{label} Daha yeni bir sürümle oynanan dünyalar bozulabilir.",
       "worlds": "Dünyalar ilk başlatmada dönüştürülür ve sonrasında eski sürümde açılamaz. Daha güvenli: önce kurulumu çoğalt.",
       "loaderChanged": "{from} modları {to} ile çalışmaz.",
-      "migrate": "Sonrasında Modrinth'ten yüklenen modları otomatik olarak uyumlu sürümlere güncelleyebilirsin."
+      "migrate": "Sonrasında Modrinth veya CurseForge'dan yüklenen modları otomatik olarak uyumlu sürümlere güncelleyebilirsin."
     },
     "planning": "İçeriğin için uyumlu sürümler aranıyor …",
     "updateCount": "{n} yeni sürümlü | {n} yeni sürümlü",
@@ -1338,7 +1368,7 @@
     "scanning": "Taranıyor …",
     "browseFolder": "Klasöre göz at …",
     "packProgress": "Modpack %{percent}",
-    "packFile": "Modpack dosyası (.mrpack) …",
+    "packFile": "Modpack dosyası (.mrpack, .zip) …",
     "nothingFound": "Otomatik olarak hiçbir şey bulunamadı. “Klasöre göz at” ile Minecraft verisi içeren herhangi bir klasörü seçebilirsin, örneğin başka bir istemciden.",
     "noMatch": "Aramanla eşleşen kurulum yok.",
     "modCount": "{n} mod | {n} mod",
@@ -1839,7 +1869,7 @@
       },
       "modpacks": {
         "title": "Modpack'lere göz at",
-        "subtitle": "Modrinth'ten hazır paketler"
+        "subtitle": "Modrinth ve CurseForge'dan hazır paketler"
       },
       "dataDir": {
         "title": "Veri klasörünü aç",
@@ -1921,7 +1951,9 @@
       "reinstallDone": "Kurulum yeniden yüklendi",
       "contentVersionInstalled": "{title}: sürüm {version} yüklendi",
       "contentInstalled": "{title} yüklendi",
-      "contentWithDependencies": "{title} ve {n} bağımlılık yüklendi | {title} ve {n} bağımlılık yüklendi"
+      "contentWithDependencies": "{title} ve {n} bağımlılık yüklendi | {title} ve {n} bağımlılık yüklendi",
+      "modpackReadyBlocked": "“{name}” mod paketi hazır – {count} dosyayı elle indirmen gerekiyor | “{name}” mod paketi hazır – {count} dosyayı elle indirmen gerekiyor",
+      "contentBlocked": "{title}: {count} dosyayı CurseForge'dan elle indirmen gerekiyor | {title}: {count} dosyayı CurseForge'dan elle indirmen gerekiyor"
     }
   },
   "toasts": {
@@ -1986,7 +2018,7 @@
     "add": {
       "newInstanceHint": "Vanilla veya mod yükleyiciyle",
       "discoverModpack": "Modpack keşfet",
-      "discoverModpackHint": "Modrinth'ten hazır paketler",
+      "discoverModpackHint": "Modrinth ve CurseForge'dan hazır paketler",
       "importHint": "Prism, CurseForge veya vanilla'dan"
     },
     "servers": {
@@ -2456,5 +2488,24 @@
     "version": "Sürüm {version}",
     "close": "Anladım",
     "englishOnly": "Bu notlar yalnızca İngilizce ve Almanca olarak mevcuttur."
+  },
+  "curseforge": {
+    "openOnCurseForge": "CurseForge'da aç",
+    "packBlocked": "Yazar bu mod paketini yalnızca doğrudan CurseForge'da sunuyor. Oradan indir ve dosyayı buraya aktar (İçe aktar → mod paketi dosyası).",
+    "blocked": {
+      "title": "Elle indir – {name}",
+      "intro": "Bu dosyaların yazarları başka uygulamalar üzerinden indirmeye izin vermiyor, bu yüzden başlatıcı onları indirmez. Her dosyayı CurseForge'da aç ve indir – ad ve sağlama toplamı eşleşir eşleşmez başlatıcı onu indirilenler klasöründen otomatik olarak alır. Dosyaları klasöre kendin de koyabilirsin.",
+      "watching": "İndirilenler klasörün izleniyor: {folder}",
+      "noWatchFolder": "İndirilenler klasörü bulunamadı – dosyaları klasöre kendin koy.",
+      "noChecksum": "Sağlama toplamı bilinmiyor – dosyayı klasöre kendin koy.",
+      "waiting": "İndirme bekleniyor …",
+      "skip": "Atla",
+      "skipAll": "Tümünü atla",
+      "openFolder": "Klasörü aç",
+      "adopted": "{count} dosya alındı | {count} dosya alındı",
+      "allDone": "Tüm dosyalar yerinde.",
+      "banner": "{count} dosyayı CurseForge'dan elle indirmen gerekiyor. | {count} dosyayı CurseForge'dan elle indirmen gerekiyor.",
+      "show": "Göster"
+    }
   }
 }

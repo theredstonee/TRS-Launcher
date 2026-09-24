@@ -1,35 +1,78 @@
-import type { AppInfo, PlatformCapabilities } from '~/types'
+import type { CategoryTag, ContentKind, ContentSource, Platform, ProjectKind, SortIndex } from '~/types'
+// Relativ importiert, damit Tests die Helfer ohne Nuxt laden können.
+import { backend } from './backend'
 
-export type Platform = 'windows' | 'linux' | 'macos'
+// Zwei Quellen, eine Oberfläche: Modrinth und CurseForge liefern (im Kern
+// umgewandelt) dieselben Datenformen. Hier sitzt, was sich unterscheidet.
+
+export const platforms: Platform[] = ['modrinth', 'curseforge']
+
+export function isPlatform(value: unknown): value is Platform {
+  return value === 'modrinth' || value === 'curseforge'
+}
+
+/** Plattform einer installierten Datei (alte Einträge ohne Angabe = Modrinth). */
+export function sourcePlatform(source: Pick<ContentSource, 'platform'> | null | undefined): Platform {
+  return source?.platform === 'curseforge' ? 'curseforge' : 'modrinth'
+}
 
 /**
- * Betriebssystem aus dem User-Agent des Webviews – sofort verfügbar, ohne
- * Rust-Aufruf: WebView2 meldet „Windows NT“, WebKitGTK „X11; Linux“.
- * Für Texte und das Ein-/Ausblenden von Einstellungen reicht das; was das
- * System wirklich kann, steht in `appInfo().capabilities`.
+ * Eindeutiger Schlüssel über beide Plattformen – so meldet der Kern
+ * installierte Projekte (`installedProjects`): Modrinth-IDs ohne,
+ * CurseForge-IDs mit Präfix `cf:`.
  */
-export function detectPlatform(userAgent = globalThis.navigator?.userAgent ?? ''): Platform {
-  if (/Windows|Win64|WOW64/i.test(userAgent)) return 'windows'
-  if (/Macintosh|Mac OS X/i.test(userAgent)) return 'macos'
-  if (/Linux|X11|FreeBSD/i.test(userAgent)) return 'linux'
-  return 'windows'
+export function projectKey(platform: Platform, projectId: string): string {
+  return platform === 'curseforge' ? `cf:${projectId}` : projectId
 }
 
-export const platform: Platform = detectPlatform()
-export const isLinux = platform === 'linux'
-
-/** Rückfall, solange `appInfo` noch nicht geladen ist (oder im Browser ohne Tauri). */
-export function defaultCapabilities(p: Platform = platform): PlatformCapabilities {
-  return { platform: p, firewall: p === 'windows', trash: true, clips: p === 'windows', updates: p === 'windows' ? 'auto' : 'package' }
+/** Link zur Projektseite im Launcher. */
+export function projectRoute(platform: Platform, projectId: string, instanceId?: string | null) {
+  const query: Record<string, string> = {}
+  if (platform === 'curseforge') query.platform = 'curseforge'
+  if (instanceId) query.instance = instanceId
+  return { path: `/project/${projectId}`, query }
 }
 
-let cached: Promise<AppInfo> | null = null
+/** Sortierungen je Quelle – CurseForge kennt keine „Follower“. */
+export function sortIndexesFor(platform: Platform): SortIndex[] {
+  return platform === 'curseforge'
+    ? ['relevance', 'downloads', 'newest', 'updated']
+    : ['relevance', 'downloads', 'follows', 'newest', 'updated']
+}
 
-/** `app_info` einmal pro Sitzung (Version, Datenordner, Fähigkeiten). */
-export function loadAppInfo(): Promise<AppInfo> {
-  cached ??= backend.appInfo().catch((e) => {
-    cached = null
-    throw e
-  })
-  return cached
+/** CurseForge liefert höchstens 50 Treffer je Seite. */
+export function pageSizesFor(platform: Platform): number[] {
+  return platform === 'curseforge' ? [20, 50] : [20, 50, 100]
+}
+
+/** Projekttyp, unter dem die Kategorien einer Art geführt werden. */
+export function categoryTypeFor(platform: Platform, kind: ProjectKind): string {
+  if (kind === 'shaderpack') return 'shader'
+  // Modrinth-Datenpakete nutzen die Mod-Kategorien, CurseForge hat eigene.
+  if (kind === 'datapack') return platform === 'curseforge' ? 'datapack' : 'mod'
+  return kind
+}
+
+/** Anzeigenamen der CurseForge-Kategorien (ID → Name). */
+export function categoryLabels(tags: CategoryTag[]): Map<string, string> {
+  return new Map(tags.filter((c) => c.label).map((c) => [c.name, c.label!]))
+}
+
+/** Nur Bilder von CurseForges Bild-CDN (wie im Kern). */
+export function isCurseForgeImage(url: string | null | undefined): url is string {
+  return !!url && url.startsWith('https://media.forgecdn.net/') && url.length > 'https://media.forgecdn.net/'.length && !/[\s"'<>\\@]/.test(url)
+}
+
+/** Dieselben Abfragen für beide Quellen. */
+export const platformApi = {
+  project: (platform: Platform, projectId: string) =>
+    platform === 'curseforge' ? backend.curseforge.project(projectId) : backend.modrinthProject(projectId),
+  projectVersions: (platform: Platform, projectId: string) =>
+    platform === 'curseforge' ? backend.curseforge.projectVersions(projectId) : backend.modrinthProjectVersions(projectId),
+  projects: (platform: Platform, ids: string[]) =>
+    platform === 'curseforge' ? backend.curseforge.projects(ids) : backend.modrinthProjects(ids),
+  versions: (platform: Platform, instanceId: string, projectId: string, kind: ContentKind) =>
+    platform === 'curseforge'
+      ? backend.curseforge.versions(instanceId, projectId, kind)
+      : backend.modrinthVersions(instanceId, projectId, kind),
 }

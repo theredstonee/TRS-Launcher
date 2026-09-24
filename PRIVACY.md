@@ -16,6 +16,7 @@ The launcher only connects to other services when that is needed for something y
 | TRS services (`api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status |
 | Fabric, Quilt, Forge, NeoForge maven/meta servers | Installing a mod loader | Download requests |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Browsing, installing or updating content | Search queries, file hashes of installed mods (for update checks) |
+| CurseForge (`api.curseforge.com`; files and images from `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Only when you pick CurseForge as the source, install a CurseForge modpack or have content from CurseForge installed | Search queries and filters, the project and file IDs of content installed from CurseForge (for details and update checks), download requests. Like every web request, this includes your IP address. You don't need a CurseForge account – the launcher identifies itself with its own API key, not with anything about you. |
 | Minecraft servers in your server list | Showing live status | A standard server-list ping |
 | mclo.gs | Only when you click "Log teilen" and confirm | The game log, with access tokens and your Windows user name removed |
 | GitHub (`github.com`) | Checking for launcher updates | A request for the update manifest |
