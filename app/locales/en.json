@@ -2437,5 +2437,11 @@
       "banned": "Player banned",
       "unbanned": "Ban lifted"
     }
+  },
+  "whatsNew": {
+    "title": "What's new in {version}",
+    "version": "Version {version}",
+    "close": "Got it",
+    "englishOnly": "These notes are available in English and German."
   }
 }

@@ -7,6 +7,7 @@ const onboarding = useOnboardingStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 const trs = useTrsStore()
+const whatsNew = useWhatsNewStore()
 const router = useRouter()
 
 /** Strg+K öffnet überall die Suche; Strg+N legt eine Instanz an. */
@@ -46,6 +47,8 @@ onMounted(async () => {
   // Erst wenn beides geladen ist, entscheiden, ob der Einrichtungs-Assistent kommt.
   await Promise.allSettled([accounts.load(), instances.load()])
   onboarding.openIfFirstRun()
+  // Nach einem Update einmal zeigen, was neu ist (beim allerersten Start nicht).
+  void whatsNew.check(onboarding.open)
   await trs.init()
 })
 
@@ -100,6 +103,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <ImportDialog v-if="ui.importing" @close="ui.importing = false" />
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <TrsConsentDialog v-if="trs.consentOpen" />
+    <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <ToastHost />
   </div>
 </template>

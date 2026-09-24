@@ -2437,5 +2437,11 @@
       "banned": "Spieler gesperrt",
       "unbanned": "Sperre aufgehoben"
     }
+  },
+  "whatsNew": {
+    "title": "Neu in Version {version}",
+    "version": "Version {version}",
+    "close": "Alles klar",
+    "englishOnly": "Diese Hinweise gibt es auf Englisch und Deutsch."
   }
 }

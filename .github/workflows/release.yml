@@ -43,6 +43,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Ohne Changelog-Eintrag (Englisch + Deutsch) für diese Version kein Release –
+      # vor dem langen Build prüfen. Der Text landet im Release und im Auto-Update.
+      - name: Release notes from CHANGELOG.md
+        shell: bash
+        run: node --experimental-strip-types scripts/changelog.mjs notes "${TAG#v}" > release-notes.md
+
       # Nur bauen und signieren – veröffentlicht wird unten selbst.
       - name: Build signed installer
         env:
@@ -66,7 +72,7 @@ jobs:
             const signature = fs.readFileSync(`out/${exe}.sig`, "utf8").trim();
             const manifest = {
               version,
-              notes: `TRS Launcher ${tag}`,
+              notes: fs.readFileSync("release-notes.md", "utf8").trim(),
               pub_date: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
               platforms: { "windows-x86_64": { signature, url: `https://github.com/${repo}/releases/download/${tag}/${exe}` } },
             };
@@ -82,9 +88,9 @@ jobs:
           set -euo pipefail
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" out/* --clobber
+            gh release edit "$TAG" --notes-file release-notes.md
           else
-            gh release create "$TAG" out/* --prerelease --title "TRS Launcher $TAG" \
-              --notes "Neue Version des TRS Launchers. Installer herunterladen und ausführen – bestehende Installationen aktualisieren sich automatisch."
+            gh release create "$TAG" out/* --prerelease --title "TRS Launcher $TAG" --notes-file release-notes.md
           fi
           # Der Updater fragt einen festen Kanal ab (Release "updater"), damit
           # auch Vorabversionen gefunden werden.

@@ -2437,5 +2437,11 @@
       "banned": "Speler verbannen",
       "unbanned": "Ban opgeheven"
     }
+  },
+  "whatsNew": {
+    "title": "Nieuw in versie {version}",
+    "version": "Versie {version}",
+    "close": "Begrepen",
+    "englishOnly": "Deze notities zijn alleen in het Engels en Duits beschikbaar."
   }
 }

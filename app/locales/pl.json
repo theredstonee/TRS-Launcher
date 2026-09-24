@@ -2437,5 +2437,11 @@
       "banned": "Zbanowano gracza",
       "unbanned": "Zdjęto bana"
     }
+  },
+  "whatsNew": {
+    "title": "Nowości w wersji {version}",
+    "version": "Wersja {version}",
+    "close": "Rozumiem",
+    "englishOnly": "Te informacje są dostępne tylko po angielsku i niemiecku."
   }
 }

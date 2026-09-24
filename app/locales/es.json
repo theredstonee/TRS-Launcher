@@ -2437,5 +2437,11 @@
       "banned": "Jugador baneado",
       "unbanned": "Baneo levantado"
     }
+  },
+  "whatsNew": {
+    "title": "Novedades de la versión {version}",
+    "version": "Versión {version}",
+    "close": "Entendido",
+    "englishOnly": "Estas notas solo están disponibles en inglés y alemán."
   }
 }

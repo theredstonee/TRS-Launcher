@@ -2437,5 +2437,11 @@
       "banned": "Oyuncu yasaklandı",
       "unbanned": "Yasak kaldırıldı"
     }
+  },
+  "whatsNew": {
+    "title": "{version} sürümündeki yenilikler",
+    "version": "Sürüm {version}",
+    "close": "Anladım",
+    "englishOnly": "Bu notlar yalnızca İngilizce ve Almanca olarak mevcuttur."
   }
 }
