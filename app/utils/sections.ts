@@ -29,6 +29,7 @@ export const appSettingsSections: ShellSection[] = [
   section('privacy', 'settingsSections.app.privacy', 'shield', 'settingsSections.groups.account'),
   section('defaults', 'settingsSections.app.defaults', 'defaults', 'settingsSections.groups.instances'),
   section('java', 'settingsSections.app.java', 'java', 'settingsSections.groups.instances'),
+  section('clips', 'settingsSections.app.clips', 'clips', 'settingsSections.groups.instances'),
   section('storage', 'settingsSections.app.storage', 'storage', 'settingsSections.groups.instances'),
   section('network', 'settingsSections.app.network', 'network', 'settingsSections.groups.instances'),
 ]

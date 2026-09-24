@@ -2,6 +2,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::clips::settings::ClipSettings;
 use crate::hooks::{self, EnvVar, LaunchHooks};
 use crate::sync::SyncSettings;
 use crate::{Error, Result, fsutil};
@@ -64,6 +65,9 @@ pub struct Settings {
     pub allow_log_upload: bool,
     /// Eigene Java-Installationen je Hauptversion; leer = automatisch.
     pub java: JavaPaths,
+    /// Clips & Aufnahme (Standard aus).
+    #[serde(deserialize_with = "crate::clips::settings::lenient")]
+    pub clips: ClipSettings,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -235,6 +239,7 @@ impl Default for Settings {
             ui: UiSettings::default(),
             allow_log_upload: true,
             java: JavaPaths::default(),
+            clips: ClipSettings::default(),
         }
     }
 }
@@ -283,6 +288,7 @@ impl Settings {
     pub fn normalized(mut self) -> Self {
         self.hooks = self.hooks.normalized();
         self.env = hooks::normalize_env(self.env);
+        self.clips = self.clips.normalized();
         self
     }
 
@@ -299,6 +305,9 @@ impl Settings {
         if hooks::validate_env(&self.env).is_err() {
             self.env = Vec::new();
         }
+        if self.clips.validate().is_err() {
+            self.clips = ClipSettings::default();
+        }
         self
     }
 
@@ -307,6 +316,7 @@ impl Settings {
         self.hooks.validate()?;
         hooks::validate_env(&self.env)?;
         self.java.validate()?;
+        self.clips.validate()?;
         if self.min_memory_mb < 128 || self.min_memory_mb > self.max_memory_mb {
             return Err(Error::validation(crate::msg!(
                 "settings.minMemoryRange",

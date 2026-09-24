@@ -34,11 +34,12 @@ pub enum DialogText {
     PickPreset,
     /// Filtername für Preset-Dateien.
     PresetFile,
+    PickClipsFolder,
 }
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 18] = [
+const TEXTS: [[&str; 8]; 19] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -192,6 +193,16 @@ const TEXTS: [[&str; 8]; 18] = [
         "TRS ön ayarı",
         "TRS-preset",
     ],
+    [
+        "Choose a folder for clips",
+        "Ordner für Clips wählen",
+        "Elige una carpeta para los clips",
+        "Choisir un dossier pour les clips",
+        "Wybierz folder na klipy",
+        "Escolher uma pasta para os clipes",
+        "Klipler için klasör seç",
+        "Map voor clips kiezen",
+    ],
 ];
 
 impl DialogText {
@@ -212,7 +223,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 18] = [
+    const ALL: [DialogText; 19] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -231,6 +242,7 @@ mod tests {
         DialogText::SavePreset,
         DialogText::PickPreset,
         DialogText::PresetFile,
+        DialogText::PickClipsFolder,
     ];
 
     #[test]

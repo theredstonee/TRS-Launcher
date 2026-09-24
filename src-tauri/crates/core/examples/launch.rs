@@ -7,6 +7,10 @@
 //!
 //! Lädt alles herunter, startet das Spiel, gibt Logs aus und beendet es nach
 //! `sekunden` (Standard 25) wieder.
+//!
+//! `TRS_MUTE=1` setzt vor dem Start `soundCategory_master:0.0` im Spielordner
+//! (für Tests auf dem Rechner des Entwicklers). Clip-Ereignisse (Einstellungen →
+//! `clips.enabled` im Datenordner) werden mit ausgegeben.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -56,6 +60,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?,
     );
 
+    launcher.clips().set_sink(Arc::new(|event| {
+        println!("== Clip: {}", serde_json::to_string(&event).unwrap_or_default());
+    }));
+
     let pinned = loader_version.as_deref().map(|v| format!("-{v}")).unwrap_or_default();
     // Optional: mitgelieferte TRS-Client-Builds wie in der App verwenden.
     if let Ok(dir) = std::env::var("TRS_CLIENT_MOD_DIR") {
@@ -76,6 +84,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    if std::env::var_os("TRS_MUTE").is_some() {
+        let game_dir = launcher.paths().instance_game_dir(&instance.id);
+        std::fs::create_dir_all(&game_dir)?;
+        let options = game_dir.join("options.txt");
+        let mut lines: Vec<String> = std::fs::read_to_string(&options)
+            .unwrap_or_default()
+            .lines()
+            .filter(|l| !l.starts_with("soundCategory_master:"))
+            .map(str::to_owned)
+            .collect();
+        lines.push("soundCategory_master:0.0".into());
+        std::fs::write(&options, lines.join("\n") + "\n")?;
+    }
+
     let last = AtomicU64::new(u64::MAX);
     launcher
         .launch(&instance.id, None, &move |p| {
@@ -95,8 +117,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let _ = exit_rx.recv().await;
         }
     }
-    // Dem on_exit-Task Zeit geben, die Spielzeit zu speichern.
+    // Dem on_exit-Task Zeit geben, die Spielzeit zu speichern (und laufende Clips zu sichern).
     tokio::time::sleep(Duration::from_millis(300)).await;
+    launcher.clips_shutdown().await;
     let inst = launcher.instances().get(&instance.id).await?;
     println!("== gespeicherte Spielzeit: {}s", inst.total_play_seconds);
     Ok(())

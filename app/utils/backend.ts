@@ -50,6 +50,10 @@ import type {
   ExportProgress,
   ExportSummary,
   GalleryShot,
+  Clip,
+  ClipState,
+  ClipUsage,
+  FfmpegStatus,
   LibrarySkin,
   NewsFeed,
   SkinChanges,
@@ -380,6 +384,25 @@ export const backend = {
   recordTask: (record: NewTaskRecord) => call<TaskRecord>('record_task', { record }),
   removeTaskRecord: (id: string) => call<void>('remove_task_record', { id }),
   clearTaskHistory: () => call<void>('clear_task_history'),
+
+  // --- Clips & Aufnahme ---
+  /** Alle Clips aller Instanzen, neueste zuerst. */
+  listClips: () => call<Clip[]>('list_clips'),
+  clipUsage: () => call<ClipUsage>('clip_usage'),
+  /** Gibt genau dieses Video fürs Abspielen frei (Pfad fürs Asset-Protokoll). */
+  clipVideo: (id: string, fileName: string) => call<string | null>('clip_video', { id, fileName }),
+  clipThumbnail: (id: string, fileName: string) => call<string | null>('clip_thumbnail', { id, fileName }),
+  renameClip: (id: string, fileName: string, newName: string) => call<string>('rename_clip', { id, fileName, newName }),
+  trashClip: (id: string, fileName: string) => call<void>('trash_clip', { id, fileName }),
+  revealClip: (id: string, fileName: string) => call<void>('reveal_clip', { id, fileName }),
+  openClipsFolder: () => call<void>('open_clips_folder'),
+  clipStates: () => call<ClipState[]>('clip_states'),
+  /** Wie die Tasten im Spiel: Clip speichern bzw. Aufnahme starten/stoppen. */
+  clipAction: (id: string, record: boolean) => call<void>('clip_action', { id, record }),
+  ffmpegStatus: () => call<FfmpegStatus>('ffmpeg_status'),
+  installFfmpeg: (onProgress: (percent: number) => void, taskId: string | null = null) =>
+    call<void>('install_ffmpeg', { onProgress: channel(onProgress), taskId }),
+  pickClipsFolder: () => call<string | null>('pick_clips_folder'),
 
   /** Screenshots aller Instanzen, neueste zuerst. */
   allScreenshots: () => call<GalleryShot[]>('all_screenshots'),

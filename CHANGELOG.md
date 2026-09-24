@@ -26,6 +26,15 @@ How to write an entry:
 - **More FPS at launch.** Tuned Java settings per Java version and memory (ZGC or G1, memory reserved up front),
   optional higher process priority, and the dedicated graphics card is now only set for the launcher’s own Java –
   switching it off undoes it.
+- **Clips & recording (like ShadowPlay/Medal).** Turn it on under Settings → Clips: while a game from the launcher
+  runs, **F9** saves the last 15–120 seconds as an MP4 and **F10** starts and stops a normal recording. Only the
+  game window is recorded, with system sound (microphone optional, off by default), using your graphics card
+  (NVIDIA, AMD, Intel) or software as a fallback. The recorder (FFmpeg) is downloaded once when you switch it on.
+  The new **Clips** page plays, renames, deletes and shows your clips, with running recordings and storage use;
+  a storage limit moves the oldest clips to the recycle bin. Everything stays on your PC. Off by default.
+- **TRS Client: clip keys and recording display.** F9/F10 (changeable in the Minecraft controls) with a small HUD
+  element – red dot and time while recording, "Clip saved (30 s)" – movable in the HUD editor. Without the TRS
+  Launcher the keys only show a hint.
 - **TRS capes load again.** The cape page failed as soon as one of the new HD capes (up to 512×256) was in the
   list.
 - **Modpack downloads no longer give up so quickly.** Better MC and other packs sometimes list a file size that is
@@ -72,6 +81,16 @@ How to write an entry:
 - **Mehr FPS beim Start.** Abgestimmte Java-Einstellungen je Java-Version und Speicher (ZGC oder G1, Speicher gleich
   reserviert), auf Wunsch höhere Prozesspriorität, und die leistungsstarke Grafikkarte wird nur noch für das Java
   des Launchers eingetragen – Abschalten nimmt es wieder zurück.
+- **Clips & Aufnahme (wie ShadowPlay/Medal).** Unter Einstellungen → Clips einschalten: Solange ein Spiel aus dem
+  Launcher läuft, speichert **F9** die letzten 15–120 Sekunden als MP4, **F10** startet und stoppt eine normale
+  Aufnahme. Aufgenommen wird nur das Spielfenster, mit Systemton (Mikrofon wählbar, standardmäßig aus), über die
+  Grafikkarte (NVIDIA, AMD, Intel) oder notfalls per Software. Die Aufnahme-Komponente (FFmpeg) wird beim
+  Einschalten einmal geladen. Die neue Seite **Clips** spielt Clips ab, benennt sie um, löscht sie und zeigt sie
+  im Ordner – mit laufenden Aufnahmen und Speicherplatz; ein Speicher-Limit schiebt die ältesten Clips in den
+  Papierkorb. Alles bleibt auf deinem PC. Standardmäßig aus.
+- **TRS Client: Clip-Tasten und Aufnahme-Anzeige.** F9/F10 (in der Minecraft-Steuerung änderbar) mit kleinem
+  HUD-Element – roter Punkt und Zeit während der Aufnahme, „Clip gespeichert (30 s)“ – im HUD-Editor verschiebbar.
+  Ohne TRS Launcher zeigen die Tasten nur einen Hinweis.
 - **TRS-Umhänge laden wieder.** Die Umhang-Seite schlug fehl, sobald einer der neuen HD-Umhänge (bis 512×256) in
   der Liste war.
 - **Modpack-Downloads geben nicht mehr so schnell auf.** Better MC und andere Packs geben manchmal eine um ein Byte

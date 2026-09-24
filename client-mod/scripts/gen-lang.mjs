@@ -37,6 +37,8 @@ const KEYS = [
   ['key.trsclient.hudProfile', 'key.trsclient.hudProfile'],
   ['key.trsclient.emoteWheel', 'key.trsclient.emoteWheel'],
   ['key.trsclient.redstoneOverlay', 'key.trsclient.redstoneOverlay'],
+  ['key.trsclient.saveClip', 'key.trsclient.saveClip'],
+  ['key.trsclient.toggleRecording', 'key.trsclient.toggleRecording'],
 ];
 
 const load = (code) => JSON.parse(readFileSync(join(i18nDir, `${code}.json`), 'utf8'));

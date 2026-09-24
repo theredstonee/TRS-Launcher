@@ -46,6 +46,8 @@ pub enum TaskKind {
     Reinstall,
     VersionChange,
     Launch,
+    /// FFmpeg für Clips & Aufnahme geladen.
+    Ffmpeg,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

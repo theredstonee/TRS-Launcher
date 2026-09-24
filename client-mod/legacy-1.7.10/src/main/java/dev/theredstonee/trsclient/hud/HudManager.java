@@ -43,7 +43,8 @@ public final class HudManager {
 				new InfoHuds.ToggleIndicator(modules.toggleSprint, true),
 				new InfoHuds.ToggleIndicator(modules.toggleSneak, false),
 				new RedstoneHuds.Signal(modules, redstone),
-				new RedstoneHuds.Clock(modules, redstone)));
+				new RedstoneHuds.Clock(modules, redstone),
+				new ClipHud(modules)));
 	}
 
 	public CrosshairRenderer crosshair() {

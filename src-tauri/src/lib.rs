@@ -60,7 +60,16 @@ pub fn run() {
                 Ok(dir) => launcher.set_client_mod_dir(dir.join("client-mod")),
                 Err(e) => log::warn!("Ressourcen-Ordner nicht gefunden: {e}"),
             }
+            // Clips: Status, gespeicherte Clips und Fehler gehen als Event ans Frontend.
+            let handle = app.handle().clone();
+            launcher.clips().set_sink(Arc::new(move |event| {
+                if let Err(e) = handle.emit("clip-event", &event) {
+                    log::warn!("clip-event konnte nicht gesendet werden: {e}");
+                }
+            }));
             let launcher = Arc::new(launcher);
+            // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
+            tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
             // Neuer TRS Client im Update-Kanal? Läuft im Hintergrund, offline egal.
             let updates = Arc::clone(&launcher);
             tauri::async_runtime::spawn(async move {
@@ -215,6 +224,19 @@ pub fn run() {
             commands::screenshots::copy_screenshot,
             commands::screenshots::reveal_screenshot,
             commands::screenshots::trash_screenshot,
+            commands::clips::list_clips,
+            commands::clips::clip_usage,
+            commands::clips::clip_video,
+            commands::clips::clip_thumbnail,
+            commands::clips::rename_clip,
+            commands::clips::trash_clip,
+            commands::clips::reveal_clip,
+            commands::clips::open_clips_folder,
+            commands::clips::clip_states,
+            commands::clips::clip_action,
+            commands::clips::ffmpeg_status,
+            commands::clips::install_ffmpeg,
+            commands::clips::pick_clips_folder,
             commands::export::export_candidates,
             commands::export::export_modpack,
             commands::export::import_modpack_file,
@@ -262,8 +284,12 @@ pub fn run() {
                 && let Some(launcher) = app.try_state::<LauncherState>()
             {
                 let launcher = Arc::clone(&launcher);
-                // trs_shutdown hat eigene kurze Timeouts (höchstens ~3 s).
-                tauri::async_runtime::block_on(async move { launcher.trs_shutdown().await });
+                // Laufende Aufnahmen sichern (höchstens ~5 s), dann die TRS-Präsenz
+                // (trs_shutdown hat eigene kurze Timeouts, höchstens ~3 s).
+                tauri::async_runtime::block_on(async move {
+                    launcher.clips_shutdown().await;
+                    launcher.trs_shutdown().await;
+                });
             }
         });
 }

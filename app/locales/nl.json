@@ -545,6 +545,17 @@
       "expired": "De aanmeldcode is verlopen – herlaad de website en voer de nieuwe code in.",
       "notAdmin": "Alleen TRS-beheerders kunnen zich op de website aanmelden.",
       "alreadyUsed": "Deze aanmeldcode is al bevestigd."
+    },
+    "clips": {
+      "bufferRange": "De cliplengte moet tussen {min} en {max} seconden liggen",
+      "fpsInvalid": "Beelden per seconde: alleen 30 of 60",
+      "storageRange": "De ruimte voor clips moet tussen {min} en {max} GB liggen",
+      "folderInvalid": "De clipmap moet een volledig lokaal pad zijn",
+      "gone": "De clip bestaat niet meer.",
+      "invalidName": "Deze naam is niet toegestaan als bestandsnaam.",
+      "nameTaken": "Er is al een clip met deze naam.",
+      "noFrames": "Er is nog niets opgenomen.",
+      "notRecording": "Voor dit spel loopt geen opname."
     }
   },
   "browse": {
@@ -1583,6 +1594,55 @@
       "allowed": "Netwerktoegang toegestaan voor {n} Java-programma | Netwerktoegang toegestaan voor {n} Java-programma’s",
       "downloadsTitle": "Parallelle downloads",
       "downloadsDescription": "Hoeveel bestanden tegelijk worden gedownload. Gebruik er minder bij een trage verbinding."
+    },
+    "clips": {
+      "title": "Clips en opnemen",
+      "intro": "Zoals ShadowPlay of Medal: de launcher neemt alleen het spelvenster op zolang er een spel van deze launcher draait. Alles blijft op je pc.",
+      "enabledTitle": "Clips en opnemen",
+      "enabledDescription": "Houdt de laatste seconden in een buffer op de schijf, zodat één toets ze als clip opslaat. Standaard uit.",
+      "ffmpegTitle": "Recorder (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} is geïnstalleerd en gecontroleerd.",
+      "ffmpegMissing": "Wordt eenmalig gedownload als je clips aanzet ({size}, controlesom gecontroleerd).",
+      "ffmpegDownload": "Downloaden",
+      "ffmpegDownloading": "Downloaden … {percent} %",
+      "ffmpegTaskTitle": "Recorder (FFmpeg)",
+      "ffmpegTaskStage": "FFmpeg wordt gedownload",
+      "ffmpegTaskDone": "Recorder klaar",
+      "captureTitle": "Beeld",
+      "bufferTitle": "Cliplengte",
+      "bufferDescription": "Hoeveel seconden een clip teruggaat.",
+      "seconds": "{n} s",
+      "resolutionTitle": "Resolutie",
+      "resolutionDescription": "Grotere spelvensters worden verkleind.",
+      "resolution": {
+        "native": "Venstergrootte",
+        "1080p": "Tot 1080p",
+        "720p": "Tot 720p"
+      },
+      "fpsTitle": "Beeldsnelheid",
+      "qualityTitle": "Kwaliteit",
+      "qualityDescription": "Hogere kwaliteit betekent grotere bestanden.",
+      "quality": {
+        "low": "Laag",
+        "medium": "Gemiddeld",
+        "high": "Hoog"
+      },
+      "encoderTitle": "Encoder",
+      "encoderDescription": "Automatisch gebruikt je videokaart (NVIDIA, AMD, Intel) en valt terug op software.",
+      "audioTitle": "Geluid",
+      "systemAudioTitle": "Systeemgeluid",
+      "systemAudioDescription": "Neemt op wat je luidsprekers afspelen (spel, muziek, voicechat).",
+      "microphoneTitle": "Microfoon",
+      "microphoneDescription": "Voegt je standaardmicrofoon toe. Standaard uit.",
+      "storageTitle": "Opslag",
+      "folderTitle": "Clipmap",
+      "folderDefault": "Gegevensmap van de launcher (clips)",
+      "folderReset": "Standaard gebruiken",
+      "limitTitle": "Opslaglimiet",
+      "limitDescription": "Boven deze grootte gaan de oudste clips naar de prullenbak.",
+      "keysTitle": "Toetsen in het spel (TRS Client)",
+      "keysText": "F9 slaat een clip op, F10 start en stopt een opname. Wijzig ze in de Minecraft-besturing onder \"TRS Client\".",
+      "privacy": "Niets verlaat je pc: geen upload, geen account; de recorder draait alleen als er een spel van deze launcher open is."
     }
   },
   "settingsShell": {
@@ -1772,7 +1832,9 @@
     "versionFormat": "Alleen letters, cijfers en . - _ +",
     "descriptionInvalidChars": "De beschrijving bevat ongeldige tekens",
     "folderRequired": "Selecteer minstens één map",
-    "invalidInput": "Ongeldige invoer"
+    "invalidInput": "Ongeldige invoer",
+    "clipBufferRange": "De cliplengte moet tussen {min} en {max} seconden liggen",
+    "clipStorageRange": "De ruimte voor clips moet tussen {min} en {max} GB liggen"
   },
   "titleBar": {
     "forward": "Vooruit",
@@ -1814,7 +1876,8 @@
     "expandLabel": "Zijbalk uitklappen",
     "collapse": "Inklappen",
     "expand": "Uitklappen",
-    "presets": "Presets"
+    "presets": "Presets",
+    "clips": "Clips"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -1867,7 +1930,8 @@
       "import": "importeren prism multimc curseforge migreren",
       "modpacks": "modpack pack installeren",
       "dataDir": "map verkenner bestanden",
-      "webLogin": "website web login aanmelden admin code browser"
+      "webLogin": "website web login aanmelden admin code browser",
+      "clips": "clips opname opnemen video replay shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1943,7 +2007,8 @@
       "reinstall": "Opnieuw geïnstalleerd",
       "versionChange": "Versie gewijzigd",
       "launch": "Spelstart",
-      "presets": "Presets geïnstalleerd"
+      "presets": "Presets geïnstalleerd",
+      "ffmpeg": "Recorder geïnstalleerd"
     },
     "stage": {
       "preparing": "Voorbereiden",
@@ -2082,7 +2147,8 @@
       "defaults": "Standaardinstellingen",
       "java": "Java-installaties",
       "storage": "Opslag",
-      "network": "Netwerk"
+      "network": "Netwerk",
+      "clips": "Clips en opnemen"
     },
     "instance": {
       "general": "Algemeen",
@@ -2650,5 +2716,85 @@
     "needsAccount": "Meld je eerst aan met je Minecraft-account onder \"Accounts\".",
     "settingsDescription": "Aanmelden in het beheergedeelte op {host} met de code die daar staat.",
     "open": "Code invoeren"
+  },
+  "clips": {
+    "title": "Clips",
+    "subtitle": "{n} clip of opname | {n} clips en opnames",
+    "instanceLabel": "Filteren op instantie",
+    "allInstances": "Alle instanties",
+    "settings": "Clipinstellingen",
+    "reload": "Opnieuw laden",
+    "noDate": "Onbekende datum",
+    "play": "{name} afspelen",
+    "rename": "Hernoemen",
+    "showInFolder": "In map tonen",
+    "usage": "{used} van {limit} gebruikt",
+    "free": "{free} vrij op de schijf",
+    "off": {
+      "title": "Clips staan uit",
+      "text": "Zet ze aan om tijdens het spelen met F9 de laatste seconden op te slaan of met F10 op te nemen.",
+      "action": "Aanzetten"
+    },
+    "live": {
+      "label": "Lopende opnames",
+      "recording": "Opname · {time}",
+      "buffer": "Buffer actief · laatste {seconds} s",
+      "saveClip": "Clip opslaan",
+      "record": "Opname starten",
+      "stop": "Opname stoppen"
+    },
+    "empty": {
+      "title": "Nog geen clips",
+      "text": "Druk in het spel op F9 om de laatste seconden op te slaan, of op F10 om een opname te starten en te stoppen."
+    },
+    "player": {
+      "label": "Clip afspelen",
+      "close": "Speler sluiten",
+      "hint": "Esc sluit · Alt+←/→ vorige/volgende clip"
+    },
+    "renameDialog": {
+      "title": "Clip hernoemen",
+      "label": "Nieuwe naam",
+      "invalid": "Niet toegestaan: lege namen, \\ / : * ? \" < > {'|'} en gereserveerde Windows-namen."
+    },
+    "deleteDialog": {
+      "title": "Clip verwijderen?",
+      "text": "{name} wordt naar de prullenbak verplaatst."
+    },
+    "toasts": {
+      "clipSaved": "Clip opgeslagen ({duration}) – {instance}",
+      "recordingSaved": "Opname opgeslagen ({duration}) – {instance}",
+      "show": "Tonen",
+      "limitCleanup": "Opslaglimiet bereikt: {n} oude clip naar de prullenbak verplaatst | Opslaglimiet bereikt: {n} oude clips naar de prullenbak verplaatst",
+      "renamed": "Clip hernoemd",
+      "trashed": "Clip naar de prullenbak verplaatst"
+    },
+    "errors": {
+      "disabled": "Clips staan uit – zet ze aan onder Instellingen → Clips.",
+      "starting": "De opname start nog – probeer het zo opnieuw.",
+      "noWindow": "Spelvenster niet gevonden – er is niets opgenomen.",
+      "ffmpeg": "De recorder (FFmpeg) wordt nog gedownload.",
+      "noFrames": "Nog niets opgenomen – probeer het over een paar seconden opnieuw.",
+      "busy": "De vorige clip wordt nog opgeslagen.",
+      "error": "De clip kon niet worden opgeslagen.",
+      "ffmpegDownload": "De recorder (FFmpeg) kon niet worden gedownload."
+    },
+    "reason": {
+      "starting": "Wachten op het spelvenster …",
+      "noWindow": "Spelvenster niet gevonden",
+      "ffmpeg": "Recorder (FFmpeg) wordt gedownload …",
+      "error": "Opname start niet – zie het logboek",
+      "disabled": "Clips staan uit"
+    },
+    "status": {
+      "buffer": "Buffer actief"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Software (x264)"
+    }
   }
 }

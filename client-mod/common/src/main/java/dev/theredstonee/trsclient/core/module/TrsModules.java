@@ -68,6 +68,8 @@ public final class TrsModules {
 	public final Module redstoneOverlay;
 	/** Redstone: Takt-Messer mit Oszilloskop (HUD). */
 	public final HudModule redstoneClock;
+	/** Clips & Aufnahme: Status der Aufnahme im Launcher (Tasten: Steuerung → TRS Client). */
+	public final HudModule clips;
 
 	// --- Leistung (Logik in core.perf, siehe Performance) ---
 	/** FPS-Boost: Hauptschalter aller Leistungs-Funktionen, Voreinstellungen, Leistungs-Check. */
@@ -236,6 +238,7 @@ public final class TrsModules {
 	public final NumberSetting redstoneClockWindow;
 	public final BoolSetting redstoneClockScope;
 	public final BoolSetting redstoneClockKeep;
+	public final BoolSetting clipsBufferIcon;
 
 	/** Für wen die Umhang-Physik rechnet. */
 	public enum CapeScope implements ChoiceSetting.Option {
@@ -395,6 +398,11 @@ public final class TrsModules {
 				"Measures how fast the redstone component you look at switches: frequency in Hz, period and pulse "
 						+ "length in redstone ticks, plus a small oscilloscope.", true,
 				new HudPosition(HudAnchor.CENTER, 0.2, 0.16)));
+		clips = registry.register(new HudModule("clips", "Clips & Recording",
+				"Save the last seconds as a clip (F9) or start and stop a recording (F10) – the TRS Launcher records "
+						+ "the game window, nothing leaves your PC. Turn it on in the launcher under Settings → Clips. "
+						+ "Shows a red dot while recording and a message when a clip is saved.", true,
+				new HudPosition(HudAnchor.CENTER_RIGHT, -0.005, -0.2)));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);
@@ -458,6 +466,7 @@ public final class TrsModules {
 		particles.icon("sparkle").category(Category.PERFORMANCE);
 		worldDetails.icon("cloud").category(Category.PERFORMANCE);
 		for (Module m : new Module[]{fpsBoost, dynamicFps, entityCulling, particles, worldDetails}) m.profiled();
+		clips.icon("record").category(Category.MISC);
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS below mouse buttons", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Show space bar", true));
@@ -575,6 +584,7 @@ public final class TrsModules {
 		redstoneClockWindow = redstoneClock.add(new NumberSetting("window", "Measuring window (s)", 5, 2, 10, 1, ""));
 		redstoneClockScope = redstoneClock.add(new BoolSetting("scope", "Oscilloscope", true));
 		redstoneClockKeep = redstoneClock.add(new BoolSetting("keep", "Keep measuring after looking away", true));
+		clipsBufferIcon = clips.add(new BoolSetting("bufferIcon", "Show buffer indicator", true));
 
 		dynamicFpsUnfocused = dynamicFps.add(new NumberSetting("unfocused", "FPS in the background", 15, 1, 60, 1, "", " FPS"));
 		dynamicFpsMinimized = dynamicFps.add(new NumberSetting("minimized", "FPS when minimized", 1, 1, 30, 1, "", " FPS"));

@@ -43,6 +43,7 @@ onMounted(async () => {
   ui.restore()
   window.addEventListener('keydown', onKey)
   games.init()
+  void useClipsStore().init()
   // Darstellung (Theme, Akzent) und Oberflächen-Schalter früh laden.
   settings.load().catch(() => {})
   // Erst wenn beides geladen ist, entscheiden, ob der Einrichtungs-Assistent kommt.

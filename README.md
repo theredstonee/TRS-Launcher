@@ -71,6 +71,7 @@
 - Server list with live player count and ping, one-click join
 - **Skins & capes** with a 3D preview: keep your own skin library, switch model (classic/slim), pick any Mojang cape you own and apply all changes at once
 - **Screenshot gallery** across all instances with a fullscreen viewer, copy to clipboard and recycle bin
+- **Clips & recording** like ShadowPlay/Medal (off by default): F9 in game saves the last 15–120 seconds, F10 starts and stops a recording — only the game window, hardware-encoded, with system sound (microphone optional). A Clips page plays, renames and deletes them, with a storage limit. Nothing leaves your PC ([details](#clips--recording))
 - **News** on the start page: Minecraft patch notes, Mojang news, trending Modrinth projects and launcher releases
 - Live game log with filters, crash diagnosis, file repair and log sharing via mclo.gs (tokens redacted)
 - Worlds, play time, instance banners and duplication, a command palette (Ctrl+K)
@@ -153,6 +154,7 @@ src-tauri/
     task.rs task_history.rs  Cancellable, pausable background tasks and their history
     trs_api/            Client for the optional TRS services (capes, friends, presence)
     client_mod.rs client_mod_update.rs  Bundled TRS Client builds and the signed update channel
+    clips/              Clips & recording: FFmpeg (on demand), window capture, WASAPI sound, ring buffer, local link to the mod
     import.rs servers.rs boost.rs hooks.rs sync.rs
   resources/client-mod/ Bundled TRS Client builds + builds.json (manifest with version + checksums)
 client-mod/             TRS Client: common core + Fabric 1.14.4–26.3, Forge 1.7.10–26.3, NeoForge 1.20.2–26.3
@@ -163,6 +165,43 @@ Principles:
 - **Logic lives in `trs-core`**, and the Tauri layer stays thin. The core validates every input itself.
 - **The webview gets no file system, network or shell permissions.** Everything goes through dedicated commands, under a strict CSP.
 - **Only a stable error kind and a readable message reach the UI.** Details go to the log.
+
+## Clips & recording
+
+The **launcher** records, not the mod – that way it works the same in all TRS Client builds (1.7.10 to 26.3) and
+costs the game nothing but a key binding.
+
+- **Why FFmpeg:** FFmpeg 8.1+ has `gfxcapture`, a filter built on Windows Graphics Capture. It captures one window
+  by its handle (never the screen, no yellow border, no cursor tricks) and hands D3D11 frames straight to the
+  hardware encoders NVENC, AMF and Quick Sync (plus Media Foundation and libx264 as fallbacks) – no copies through
+  the CPU. Writing this ourselves on Media Foundation would mean re-implementing capture, scaling, encoder
+  fallbacks, segmenting and MP4 muxing. FFmpeg is **not bundled**: when clips are switched on, the launcher downloads
+  one fixed build (Gyan's `ffmpeg-9.0.2-essentials`, GPL-3.0 like the launcher) over HTTPS from the permanent
+  GitHub mirror, checks the SHA-256 of the ZIP and of `ffmpeg.exe` against values in the code
+  (`clips/ffmpeg.rs`) and keeps only `ffmpeg.exe` + its licence in `<data>/tools/ffmpeg-9.0.2`. The hash of the exe
+  is re-checked before use.
+- **Encoder:** "Automatic" test-encodes a few frames once per session and uses the first that works: NVENC → AMF →
+  QSV → Media Foundation → x264 (x264 runs at lower priority).
+- **Sound:** FFmpeg has no WASAPI input, so the launcher captures the default output device in loopback mode (and
+  the default microphone if enabled) with the `wasapi` crate, mixes them to 48 kHz stereo and pipes the PCM into
+  FFmpeg's stdin. Picture and sound share one clock: video timestamps are moved onto the wall clock
+  (`setpts` with `RTCTIME`), and every audio sample is placed by its WASAPI timestamp on the same clock; gaps
+  (loopback delivers nothing while it is silent) become silence, so sound never drifts.
+- **Ring buffer:** FFmpeg writes 2-second MPEG-TS segments (a keyframe at every segment start) into
+  `<data>/cache/clip-buffer/`; the launcher deletes segments older than the clip length – RAM use stays flat.
+  **F9** waits for the running segment to finish and joins the last *n* segments into an MP4 without re-encoding
+  (`-c copy`, `+faststart`) in `<clip folder>/<instance>/<instance> <date> <time>.mp4`. **F10** keeps all
+  segments from the start of the recording until F10 again (a recording stops by itself below 2 GB free space).
+  Over the storage limit the oldest clips go to the recycle bin.
+- **When:** only while a game started by this launcher runs and clips are on. The launcher finds the game window
+  through the game's process tree; resizing is handled by FFmpeg (scaled into the chosen resolution), closing the
+  game ends the session and any running recording is still saved.
+- **Link to the mod:** before every start the launcher writes `config/trsclient/clips.json` into the instance:
+  `{"version":1,"enabled":true,"port":…,"token":"<64 hex>"}` (or `enabled:false`). The server listens on
+  **127.0.0.1 only**, on a random port; the token is new for every game start, compared in constant time, and
+  invalid once the game ends. Line-based JSON (max. 1 KB per line): the mod sends `hello` with the token and then
+  only `clip`/`record`; the launcher answers with the recording state and `saved`/`failed`. Nothing else is
+  accepted, nothing leaves the PC.
 
 ## Code signing policy
 

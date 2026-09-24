@@ -22,6 +22,8 @@ export const icons = {
   presets: 'M4 6h10M4 12h7M4 18h7M17 4v6M14 7h6M15 15l2 2 4-4',
   server: 'M4 5h16v5H4zM4 14h16v5H4zM7.5 7.5h.01M7.5 16.5h.01',
   screenshots: 'M4 8h3l1.5-2h7L17 8h3v11H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
+  clips: 'M3 6h13v12H3zM16 10l5-3v10l-5-3',
+  record: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z',
   skins: 'M8 4h8l4 3-2.5 3.5L16 9v11H8V9l-1.5 1.5L4 7z',
   friends: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14.5a6 6 0 0 1 4 6.5',
   admin: 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6zM9 12l2 2 4-4',

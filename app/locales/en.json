@@ -545,6 +545,17 @@
       "expired": "The sign-in code has expired – reload the website and enter the new code.",
       "notAdmin": "Only TRS admins can sign in on the website.",
       "alreadyUsed": "This sign-in code has already been confirmed."
+    },
+    "clips": {
+      "bufferRange": "Clip length must be between {min} and {max} seconds",
+      "fpsInvalid": "Frames per second: only 30 or 60",
+      "storageRange": "Clip storage must be between {min} and {max} GB",
+      "folderInvalid": "The clip folder must be a full local path",
+      "gone": "The clip no longer exists.",
+      "invalidName": "This name is not allowed as a file name.",
+      "nameTaken": "There already is a clip with this name.",
+      "noFrames": "Nothing has been recorded yet.",
+      "notRecording": "No recording is running for this game."
     }
   },
   "browse": {
@@ -1583,6 +1594,55 @@
       "allowed": "Network access allowed for {n} Java program | Network access allowed for {n} Java programs",
       "downloadsTitle": "Parallel downloads",
       "downloadsDescription": "How many files are downloaded at the same time. Use fewer on a slow connection."
+    },
+    "clips": {
+      "title": "Clips & recording",
+      "intro": "Like ShadowPlay or Medal: the launcher records only the game window while a game from this launcher runs. Everything stays on your PC.",
+      "enabledTitle": "Clips & recording",
+      "enabledDescription": "Keeps the last seconds in a buffer on disk so a key press saves them as a clip. Off by default.",
+      "ffmpegTitle": "Recorder (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} is installed and verified.",
+      "ffmpegMissing": "Downloaded once when you turn clips on ({size}, checksum verified).",
+      "ffmpegDownload": "Download",
+      "ffmpegDownloading": "Downloading … {percent} %",
+      "ffmpegTaskTitle": "Recorder (FFmpeg)",
+      "ffmpegTaskStage": "Downloading FFmpeg",
+      "ffmpegTaskDone": "Recorder ready",
+      "captureTitle": "Picture",
+      "bufferTitle": "Clip length",
+      "bufferDescription": "How many seconds a clip goes back.",
+      "seconds": "{n} s",
+      "resolutionTitle": "Resolution",
+      "resolutionDescription": "Larger game windows are scaled down.",
+      "resolution": {
+        "native": "Window size",
+        "1080p": "Up to 1080p",
+        "720p": "Up to 720p"
+      },
+      "fpsTitle": "Frame rate",
+      "qualityTitle": "Quality",
+      "qualityDescription": "Higher quality means larger files.",
+      "quality": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "encoderTitle": "Encoder",
+      "encoderDescription": "Automatic uses your graphics card (NVIDIA, AMD, Intel) and falls back to software.",
+      "audioTitle": "Sound",
+      "systemAudioTitle": "System sound",
+      "systemAudioDescription": "Records what your speakers play (game, music, voice chat).",
+      "microphoneTitle": "Microphone",
+      "microphoneDescription": "Adds your default microphone. Off by default.",
+      "storageTitle": "Storage",
+      "folderTitle": "Clip folder",
+      "folderDefault": "Launcher data folder (clips)",
+      "folderReset": "Use default",
+      "limitTitle": "Storage limit",
+      "limitDescription": "Above this size the oldest clips are moved to the recycle bin.",
+      "keysTitle": "Keys in game (TRS Client)",
+      "keysText": "F9 saves a clip, F10 starts and stops a recording. Change them in the Minecraft controls under “TRS Client”.",
+      "privacy": "Nothing leaves your PC: no upload, no account, the recorder only runs while a game from this launcher is open."
     }
   },
   "settingsShell": {
@@ -1772,7 +1832,9 @@
     "versionFormat": "Only letters, digits and . - _ +",
     "descriptionInvalidChars": "The description contains invalid characters",
     "folderRequired": "Please select at least one folder",
-    "invalidInput": "Invalid input"
+    "invalidInput": "Invalid input",
+    "clipBufferRange": "Clip length must be between {min} and {max} seconds",
+    "clipStorageRange": "Clip storage must be between {min} and {max} GB"
   },
   "titleBar": {
     "forward": "Forward",
@@ -1814,7 +1876,8 @@
     "expandLabel": "Expand sidebar",
     "collapse": "Collapse",
     "expand": "Expand",
-    "presets": "Presets"
+    "presets": "Presets",
+    "clips": "Clips"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -1867,7 +1930,8 @@
       "import": "import prism multimc curseforge migrate",
       "modpacks": "modpack pack install",
       "dataDir": "folder explorer files",
-      "webLogin": "website web login sign in admin code browser"
+      "webLogin": "website web login sign in admin code browser",
+      "clips": "clips recording record video replay shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1943,7 +2007,8 @@
       "reinstall": "Reinstalled",
       "versionChange": "Version changed",
       "launch": "Game launch",
-      "presets": "Presets installed"
+      "presets": "Presets installed",
+      "ffmpeg": "Recorder installed"
     },
     "stage": {
       "preparing": "Preparing",
@@ -2082,7 +2147,8 @@
       "defaults": "Default settings",
       "java": "Java installations",
       "storage": "Storage",
-      "network": "Network"
+      "network": "Network",
+      "clips": "Clips & recording"
     },
     "instance": {
       "general": "General",
@@ -2650,5 +2716,85 @@
     "needsAccount": "Please sign in with your Minecraft account under \"Accounts\" first.",
     "settingsDescription": "Sign in to the admin area on {host} with the code shown there.",
     "open": "Enter code"
+  },
+  "clips": {
+    "title": "Clips",
+    "subtitle": "{n} clip or recording | {n} clips and recordings",
+    "instanceLabel": "Filter by instance",
+    "allInstances": "All instances",
+    "settings": "Clip settings",
+    "reload": "Reload",
+    "noDate": "Unknown date",
+    "play": "Play {name}",
+    "rename": "Rename",
+    "showInFolder": "Show in folder",
+    "usage": "{used} of {limit} used",
+    "free": "{free} free on the drive",
+    "off": {
+      "title": "Clips are off",
+      "text": "Turn them on to save the last seconds with F9 or record with F10 while you play.",
+      "action": "Turn on"
+    },
+    "live": {
+      "label": "Running recordings",
+      "recording": "Recording · {time}",
+      "buffer": "Buffer active · last {seconds} s",
+      "saveClip": "Save clip",
+      "record": "Start recording",
+      "stop": "Stop recording"
+    },
+    "empty": {
+      "title": "No clips yet",
+      "text": "Press F9 in game to save the last seconds, or F10 to start and stop a recording."
+    },
+    "player": {
+      "label": "Play clip",
+      "close": "Close player",
+      "hint": "Esc closes · Alt+←/→ previous/next clip"
+    },
+    "renameDialog": {
+      "title": "Rename clip",
+      "label": "New name",
+      "invalid": "Not allowed: empty names, \\ / : * ? \" < > {'|'} and reserved Windows names."
+    },
+    "deleteDialog": {
+      "title": "Delete clip?",
+      "text": "{name} is moved to the recycle bin."
+    },
+    "toasts": {
+      "clipSaved": "Clip saved ({duration}) – {instance}",
+      "recordingSaved": "Recording saved ({duration}) – {instance}",
+      "show": "Show",
+      "limitCleanup": "Storage limit reached: {n} old clip moved to the recycle bin | Storage limit reached: {n} old clips moved to the recycle bin",
+      "renamed": "Clip renamed",
+      "trashed": "Clip moved to the recycle bin"
+    },
+    "errors": {
+      "disabled": "Clips are off – turn them on under Settings → Clips.",
+      "starting": "Recording is still starting – try again in a moment.",
+      "noWindow": "Game window not found – nothing was recorded.",
+      "ffmpeg": "The recorder (FFmpeg) is still downloading.",
+      "noFrames": "Nothing recorded yet – try again in a few seconds.",
+      "busy": "The last clip is still being saved.",
+      "error": "The clip could not be saved.",
+      "ffmpegDownload": "The recorder (FFmpeg) could not be downloaded."
+    },
+    "reason": {
+      "starting": "Waiting for the game window …",
+      "noWindow": "Game window not found",
+      "ffmpeg": "Downloading the recorder (FFmpeg) …",
+      "error": "Recording does not start – see the log",
+      "disabled": "Clips are off"
+    },
+    "status": {
+      "buffer": "Buffer active"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Software (x264)"
+    }
   }
 }

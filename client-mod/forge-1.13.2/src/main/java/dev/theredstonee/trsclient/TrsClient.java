@@ -125,6 +125,7 @@ public final class TrsClient {
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(FMLPaths.CONFIGDIR.get());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(FMLPaths.CONFIGDIR.get());
+		dev.theredstonee.trsclient.core.clips.Clips.init(FMLPaths.CONFIGDIR.get());
 		client.config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = client.config.load(client.modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -147,6 +148,12 @@ public final class TrsClient {
 	}
 
 	// --- Ticks ---
+
+	/** Meldungen der Clips in der Aktionsleiste. */
+	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.ingameGUI != null) minecraft.ingameGUI.setOverlayMessage(text, false);
+	};
 
 	@SubscribeEvent
 	public void onClientTick(TickEvent.ClientTickEvent event) {
@@ -174,6 +181,10 @@ public final class TrsClient {
 			saveConfig();
 		}
 		tickRedstone();
+		// Clips & Aufnahme: aufgenommen wird im Launcher, hier nur die Tasten melden.
+		while (TrsKeys.saveClip.isPressed()) dev.theredstonee.trsclient.core.clips.Clips.get().saveClip();
+		while (TrsKeys.toggleRecording.isPressed()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
+		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.isPressed()) {
 			modules.fullbright.toggle();
 			if (mc.ingameGUI != null) {

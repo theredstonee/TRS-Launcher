@@ -183,6 +183,71 @@ export interface Settings {
   ui: UiSettings
   allowLogUpload: boolean
   java: JavaPaths
+  clips: ClipSettings
+}
+
+// --- Clips & Aufnahme ------------------------------------------------------------------
+
+export type ClipResolution = 'native' | '1080p' | '720p'
+export type ClipQuality = 'low' | 'medium' | 'high'
+export type ClipEncoder = 'auto' | 'nvenc' | 'amf' | 'qsv' | 'x264'
+/** Tatsächlich verwendeter Encoder (mf = Media Foundation). */
+export type ClipCodec = 'nvenc' | 'amf' | 'qsv' | 'mf' | 'x264'
+
+export interface ClipSettings {
+  enabled: boolean
+  bufferSeconds: number
+  resolution: ClipResolution
+  fps: 30 | 60
+  quality: ClipQuality
+  encoder: ClipEncoder
+  systemAudio: boolean
+  microphone: boolean
+  folder: string | null
+  maxStorageGb: number
+}
+
+export interface Clip {
+  instanceId: string
+  instanceName: string
+  fileName: string
+  size: number
+  createdAt: string | null
+  durationMs: number | null
+}
+
+export interface ClipUsage {
+  usedBytes: number
+  limitBytes: number
+  count: number
+  freeBytes: number | null
+}
+
+/** Warum gerade nicht aufgenommen wird. */
+export type ClipReason = 'starting' | 'noWindow' | 'ffmpeg' | 'error' | 'disabled'
+
+export interface ClipState {
+  instanceId: string
+  buffer: boolean
+  recording: boolean
+  recordingMs: number
+  reason: ClipReason | null
+  encoder: ClipCodec | null
+}
+
+export type ClipFailure = 'disabled' | 'starting' | 'noWindow' | 'ffmpeg' | 'noFrames' | 'busy' | 'error'
+
+export type ClipEvent =
+  | ({ type: 'state' } & ClipState)
+  | { type: 'saved'; instanceId: string; fileName: string; kind: 'clip' | 'recording'; seconds: number; removed: number }
+  | { type: 'failed'; instanceId: string; code: ClipFailure }
+  | { type: 'ended'; instanceId: string }
+  | { type: 'ffmpeg'; state: 'downloading' | 'ready' | 'failed' }
+
+export interface FfmpegStatus {
+  installed: boolean
+  version: string
+  downloadBytes: number
 }
 
 export type VersionType = 'release' | 'snapshot' | 'old_beta' | 'old_alpha'
@@ -743,6 +808,7 @@ export type TaskKind =
   | 'reinstall'
   | 'version-change'
   | 'launch'
+  | 'ffmpeg'
 
 /** Eintrag im Verlauf fertiger Aufgaben (`task-history.json`, neueste zuerst). */
 export interface TaskRecord {

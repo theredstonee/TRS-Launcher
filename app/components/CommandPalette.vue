@@ -70,6 +70,7 @@ const pages = computed<Command[]>(() => {
     { to: '/servers', label: 'nav.servers', icon: 'server', keywords: 'palette.keywords.servers' },
     { to: '/accounts', label: 'palette.pages.accounts', icon: 'user', keywords: 'palette.keywords.accounts' },
     { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', keywords: 'palette.keywords.screenshots' },
+    { to: '/clips', label: 'nav.clips', icon: 'clips', keywords: 'palette.keywords.clips' },
     { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
     { to: '/friends', label: 'nav.friends', icon: 'friends', keywords: 'palette.keywords.friends' },
   ]
