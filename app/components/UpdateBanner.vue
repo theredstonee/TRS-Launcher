@@ -149,7 +149,15 @@ const style = computed(() => ({ '--accent': props.accent && /^#[0-9a-f]{6}$/i.te
 .ub-sm .ub-text {
   left: 1.1rem;
   bottom: 1.15rem;
-  right: 38%;
+  right: 44%;
+}
+.ub-sm .ub-motif {
+  height: 74%;
+  right: 3%;
+}
+.ub-sm .ub-kicker {
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
 }
 .ub-md .ub-title {
   font-size: 2.25rem;
