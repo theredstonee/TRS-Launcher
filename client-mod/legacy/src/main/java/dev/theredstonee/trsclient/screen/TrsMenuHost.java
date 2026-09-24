@@ -9,6 +9,9 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.online.LegacyOnline;
+import dev.theredstonee.trsclient.online.PlayerPreview;
 import dev.theredstonee.trsclient.core.ui.menu.HudItem;
 import dev.theredstonee.trsclient.core.ui.menu.MenuAction;
 import dev.theredstonee.trsclient.core.ui.menu.MenuHost;
@@ -67,6 +70,7 @@ public final class TrsMenuHost implements MenuHost {
 	/** Was unter Legacy-Forge nicht umsetzbar ist (Treffer-Farbe, niedriges Feuer), bleibt aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {
+		if (module == modules().colors && !dev.theredstonee.trsclient.render.ColorPass.supported()) return false;
 		return TrsClient.get().menuModules().contains(module);
 	}
 
@@ -139,5 +143,31 @@ public final class TrsMenuHost implements MenuHost {
 	@Override
 	public boolean inWorld() {
 		return Mc.world() != null;
+	}
+
+	// --- Spieler-Vorschau (Umhang-Physik) ---
+
+	@Override
+	public int playerPreviewState() {
+		if (!supports(modules().capePhysics)) return PREVIEW_UNSUPPORTED;
+		return Mc.player() == null ? PREVIEW_NO_PLAYER : PREVIEW_OK;
+	}
+
+	@Override
+	public boolean previewHasCape() {
+		net.minecraft.client.entity.EntityPlayerSP p = Mc.player();
+		return p != null && p.hasPlayerInfo() && p.isWearing(net.minecraft.entity.player.EnumPlayerModelParts.CAPE)
+				&& p.getLocationCape() != null;
+	}
+
+	@Override
+	public boolean previewWalking() {
+		return LegacyOnline.features() != null && LegacyOnline.features().physics().previewWalking();
+	}
+
+	@Override
+	public void drawPlayerPreview(Canvas c, int x, int y, int w, int h, float yawDegrees) {
+		if (LegacyOnline.features() != null) LegacyOnline.features().physics().preview();
+		PlayerPreview.draw(x, y, w, h, yawDegrees);
 	}
 }

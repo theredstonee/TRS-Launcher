@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class OnlineTest {
 	static final String OWN = "75c1a6f3112240abbdb57b9d21c64232";
 	static final String TOKEN = "trs_" + repeat('A', 43);
-	static final OnlineConfig CONFIG = new OnlineConfig(true, "https://api.theredstonee.de", "https://sessionserver.mojang.com");
+	static final OnlineConfig CONFIG = new OnlineConfig(true, "https://trs-launcher.theredstonee.de", "https://sessionserver.mojang.com");
 
 	@TempDir
 	Path dir;
@@ -61,9 +61,39 @@ class OnlineTest {
 		assertEquals(d, OnlineConfig.baseUrl("https://example.org/pfad", d));
 		assertEquals(d, OnlineConfig.baseUrl("ftp://localhost", d));
 		assertEquals(d, OnlineConfig.baseUrl("", d));
-		assertTrue(CONFIG.isApiUrl("https://api.theredstonee.de/v1/capes/team.png?v=1"));
-		assertFalse(CONFIG.isApiUrl("https://api.theredstonee.de.evil.com/v1/capes/team.png"));
+		assertTrue(CONFIG.isApiUrl("https://trs-launcher.theredstonee.de/v1/capes/team.png?v=1"));
+		assertFalse(CONFIG.isApiUrl("https://trs-launcher.theredstonee.de.evil.com/v1/capes/team.png"));
 		assertFalse(CONFIG.isApiUrl("https://evil.com/cape.png"));
+	}
+
+	@Test
+	void newAndOldApiAddressesAreBothAllowed() {
+		assertEquals("https://trs-launcher.theredstonee.de", OnlineConfig.DEFAULT_API);
+		assertEquals(OnlineConfig.DEFAULT_API, OnlineConfig.load(null).apiBase(), "Standard ist die neue Adresse");
+		String[] hosts = {"https://trs-launcher.theredstonee.de", "https://api.theredstonee.de"};
+		// Egal welche Adresse eingestellt ist (neu, alt, lokale Attrappe): beide echten Hosts sind erlaubt.
+		OnlineConfig[] configs = {
+				CONFIG,
+				new OnlineConfig(true, OnlineConfig.LEGACY_API, OnlineConfig.DEFAULT_SESSION),
+				new OnlineConfig(true, "http://127.0.0.1:8787", OnlineConfig.DEFAULT_SESSION)};
+		for (OnlineConfig config : configs) {
+			for (String host : hosts) {
+				assertTrue(config.isApiUrl(host + "/v1/capes/team.png?v=1"), host);
+				assertNotNull(CapeInfo.of("team", host + "/v1/capes/team.png?v=1", 2, 8, 150, config), host);
+				assertFalse(config.isApiUrl(host + ".evil.com/v1/capes/team.png"), host);
+				assertFalse(config.isApiUrl(host + "@evil.com/v1/capes/team.png"), host);
+				assertFalse(config.isApiUrl(host), "ohne Pfad");
+			}
+			assertFalse(config.isApiUrl("https://evil.com/v1/capes/team.png"));
+			assertFalse(config.isApiUrl("https://theredstonee.de/v1/capes/team.png"));
+			assertFalse(config.isApiUrl("http://trs-launcher.theredstonee.de/v1/capes/team.png"), "nur HTTPS");
+			assertFalse(config.isApiUrl("http://api.theredstonee.de/v1/capes/team.png"), "nur HTTPS");
+			assertFalse(config.isApiUrl(null));
+			assertFalse(config.isApiUrl("https://trs-launcher.theredstonee.de/" + repeat('x', 600)), "zu lang");
+		}
+		// Die lokale Attrappe selbst bleibt erlaubt, fremde lokale Ports nicht.
+		assertTrue(configs[2].isApiUrl("http://127.0.0.1:8787/v1/capes/team.png"));
+		assertFalse(CONFIG.isApiUrl("http://127.0.0.1:8787/v1/capes/team.png"));
 	}
 
 	@Test
@@ -75,18 +105,18 @@ class OnlineTest {
 
 	@Test
 	void capeInfoIsStrictAndPicksFramesByWallClock() {
-		CapeInfo team = CapeInfo.of("team", "https://api.theredstonee.de/v1/capes/team.png?v=6", 2, 8, 150, CONFIG);
+		CapeInfo team = CapeInfo.of("team", "https://trs-launcher.theredstonee.de/v1/capes/team.png?v=6", 2, 8, 150, CONFIG);
 		assertNotNull(team);
 		assertEquals(0, team.frameAt(0));
 		assertEquals(1, team.frameAt(150));
 		assertEquals(7, team.frameAt(150 * 7 + 149));
 		assertEquals(0, team.frameAt(150 * 8));
 		assertNull(CapeInfo.of("team", "https://evil.com/x.png", 2, 1, null, CONFIG), "fremde URL");
-		assertNull(CapeInfo.of("Team!", "https://api.theredstonee.de/v1/capes/x.png", 1, 1, null, CONFIG));
-		assertNull(CapeInfo.of("x", "https://api.theredstonee.de/v1/capes/x.png", 9, 1, null, CONFIG), "scale 9");
-		assertNull(CapeInfo.of("x", "https://api.theredstonee.de/v1/capes/x.png", 1, 3, null, CONFIG),
+		assertNull(CapeInfo.of("Team!", "https://trs-launcher.theredstonee.de/v1/capes/x.png", 1, 1, null, CONFIG));
+		assertNull(CapeInfo.of("x", "https://trs-launcher.theredstonee.de/v1/capes/x.png", 9, 1, null, CONFIG), "scale 9");
+		assertNull(CapeInfo.of("x", "https://trs-launcher.theredstonee.de/v1/capes/x.png", 1, 3, null, CONFIG),
 				"animiert ohne Bilddauer");
-		CapeInfo still = CapeInfo.of("x", "https://api.theredstonee.de/v1/capes/x.png", 1, 1, null, CONFIG);
+		CapeInfo still = CapeInfo.of("x", "https://trs-launcher.theredstonee.de/v1/capes/x.png", 1, 1, null, CONFIG);
 		assertFalse(still.animated());
 		assertEquals(0, still.frameAt(123456));
 	}
@@ -127,7 +157,7 @@ class OnlineTest {
 	@Test
 	void lookupParsesPlayersAndDropsInvalidCapes() throws Exception {
 		FakeHttp http = new FakeHttp().json("POST /v1/players/lookup", 200, "{\"players\":["
-				+ "{\"uuid\":\"" + OWN + "\",\"badge\":true,\"cape\":{\"id\":\"team\",\"url\":\"https://api.theredstonee.de/v1/capes/team.png?v=1\",\"scale\":2,\"animated\":true,\"frames\":8,\"frameTimeMs\":150}},"
+				+ "{\"uuid\":\"" + OWN + "\",\"badge\":true,\"cape\":{\"id\":\"team\",\"url\":\"https://trs-launcher.theredstonee.de/v1/capes/team.png?v=1\",\"scale\":2,\"animated\":true,\"frames\":8,\"frameTimeMs\":150}},"
 				+ "{\"uuid\":\"ffffffffffffffffffffffffffffffff\",\"badge\":false,\"cape\":{\"id\":\"evil\",\"url\":\"https://evil.com/a.png\",\"scale\":1,\"frames\":1}},"
 				+ "{\"uuid\":\"kaputt\",\"badge\":true}]}");
 		Map<String, PlayerInfo> out = new TrsApi(http, CONFIG).lookup(TOKEN,

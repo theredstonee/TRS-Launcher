@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { convertFileSrc } from '@tauri-apps/api/core'
+import changelogText from '~~/CHANGELOG.md?raw'
 import type { NewsItem, NewsSource } from '~/types'
 
-// Neuigkeiten für die Startseite im Magazin-Stil: ein großer Aufmacher mit
-// Bild, daneben eine kompakte Liste. Quellen: Minecraft-Patchnotes, Mojang-News,
-// gerade beliebte Modrinth-Projekte und neue Launcher-Versionen. Geholt, geprüft
-// und zwischengespeichert wird alles im Kern; Bilder kommen aus dessen Cache.
-const props = withDefaults(defineProps<{ listLimit?: number }>(), { listLimit: 5 })
+// Neuigkeiten für die Startseite im Blog-Stil: jede Meldung als Karte mit Titelbild, die neueste
+// groß als Aufmacher. Quellen: Minecraft-Patchnotes, Mojang-News, gerade beliebte Modrinth-Projekte
+// und neue Launcher-Versionen. Geholt, geprüft und zwischengespeichert wird alles im Kern; Bilder
+// kommen aus dessen Cache. Ohne Bild: Launcher-Versionen bekommen ihre Redstone-Szene als Banner,
+// Modrinth-Projekte ihr Icon groß auf einem weichgezeichneten Hintergrund aus sich selbst.
+const props = withDefaults(defineProps<{ listLimit?: number }>(), { listLimit: 6 })
 
 const toasts = useToasts()
 const items = ref<NewsItem[]>([])
@@ -18,6 +20,9 @@ const refreshing = ref(false)
 
 const filters: (NewsSource | 'all')[] = ['all', 'patchNotes', 'mojang', 'modrinth', 'launcher']
 const filter = ref<NewsSource | 'all'>('all')
+
+const changelog = parseChangelog(changelogText)
+const german = computed(() => currentLocale.value === 'de')
 
 function sourceLabel(source: NewsSource): string {
   switch (source) {
@@ -52,6 +57,13 @@ const featured = computed<NewsItem | null>(() => {
 })
 const list = computed(() => visible.value.filter((i) => i !== featured.value).slice(0, props.listLimit))
 
+/** Changelog-Beitrag zu einer Launcher-Version („TRS Launcher v0.4.3“ → Abschnitt 0.4.3). */
+function launcherPost(item: NewsItem): ChangelogEntry | null {
+  if (item.source !== 'launcher') return null
+  const version = /v?(\d+\.\d+\.\d+(?:-[\w.]+)?)/.exec(item.title)?.[1]
+  return version ? changelogFor(changelog, version) : null
+}
+
 /** Schlagwort in der eingestellten Sprache (vom Kern erzeugte Tags kommen mit Code). */
 function tagOf(item: NewsItem): string | null {
   if (item.tagInfo?.code === 'news.tagDownloads' && item.downloads != null) {
@@ -61,7 +73,9 @@ function tagOf(item: NewsItem): string | null {
 }
 
 function titleOf(item: NewsItem): string {
-  // „TRS Launcher v0.3.0“ → „TRS Launcher v0.3.0 ist da“
+  // Launcher-Version mit Update-Namen: „Das Clip-Update“; sonst „TRS Launcher v0.3.0 ist da“.
+  const post = launcherPost(item)
+  if (post?.title) return german.value ? post.title.de : post.title.en
   if (item.source === 'launcher' && /v?\d+\.\d+/.test(item.title)) return t('news.launcherReleased', { title: item.title })
   return item.title
 }
@@ -93,7 +107,7 @@ async function loadImages() {
       const path = await backend.newsImage(item.imageUrl!)
       if (path) images.value = { ...images.value, [item.id]: convertFileSrc(path) }
     } catch {
-      // Ohne Bild bleibt die Kachel eben beim Platzhalter.
+      // Ohne Bild bleibt die Karte eben beim Platzhalter.
     }
   }
 }
@@ -101,6 +115,11 @@ async function loadImages() {
 onMounted(() => load())
 
 function open(item: NewsItem) {
+  const post = launcherPost(item)
+  if (post) {
+    reading.value = { entry: post, title: titleOf(item) }
+    return
+  }
   if (item.contentPath) {
     showPatchNotes(item)
     return
@@ -109,15 +128,17 @@ function open(item: NewsItem) {
 }
 
 function actionLabel(item: NewsItem) {
+  if (launcherPost(item)) return t('updateNews.read')
   return item.contentPath ? t('news.readPatchNotes') : item.link ? t('news.openInBrowser') : item.title
 }
 
-// --- Patchnotes im Launcher ------------------------------------------------------
+// --- Beiträge im Launcher ----------------------------------------------------------
 
-const notes = ref<{ title: string; body: string | null; error: string | null } | null>(null)
+const reading = ref<{ entry: ChangelogEntry; title: string } | null>(null)
+const notes = ref<{ title: string; cover: string | null; body: string | null; error: string | null } | null>(null)
 
 async function showPatchNotes(item: NewsItem) {
-  notes.value = { title: item.title, body: null, error: null }
+  notes.value = { title: item.title, cover: images.value[item.id] ?? null, body: null, error: null }
   try {
     const body = await backend.patchNotesBody(item.contentPath!)
     if (notes.value) notes.value.body = body
@@ -153,10 +174,10 @@ async function showPatchNotes(item: NewsItem) {
       </div>
     </header>
 
-    <div v-if="loading" class="magazine">
-      <div class="skeleton h-[22rem] rounded-xl" />
-      <div class="flex flex-col gap-2">
-        <div v-for="i in listLimit" :key="i" class="skeleton flex-1 rounded-lg" />
+    <div v-if="loading" class="space-y-3">
+      <div class="skeleton aspect-[21/9] rounded-xl" />
+      <div class="blog-grid">
+        <div v-for="i in 3" :key="i" class="skeleton aspect-[4/3] rounded-xl" />
       </div>
     </div>
 
@@ -169,71 +190,65 @@ async function showPatchNotes(item: NewsItem) {
       {{ t('news.empty') }}
     </p>
 
-    <div v-else class="magazine" :class="{ 'magazine-solo': !list.length }">
-      <!-- Aufmacher -->
+    <div v-else class="space-y-3">
+      <!-- Aufmacher: großes Titelbild, Titel darauf. -->
       <article class="card card-hover group overflow-hidden">
-        <button class="flex h-full w-full flex-col text-left" :title="actionLabel(featured)" @click="open(featured)">
-          <div class="featured-image relative w-full shrink-0 overflow-hidden bg-base-850">
-            <img
-              v-if="images[featured.id] && featured.source !== 'modrinth'"
-              :src="images[featured.id]"
-              alt=""
-              class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            />
-            <div v-else class="featured-fallback size-full" />
+        <button class="block w-full text-left" :title="actionLabel(featured)" @click="open(featured)">
+          <div class="relative aspect-[21/9] max-h-80 w-full overflow-hidden bg-base-850">
+            <NewsCover :item="featured" :image="images[featured.id]" :post="launcherPost(featured)" large />
+            <div class="cover-shade absolute inset-0" />
             <span class="badge absolute top-3 left-3 bg-black/65 text-white backdrop-blur">{{ sourceLabel(featured.source) }}</span>
+            <div class="absolute inset-x-5 bottom-4">
+              <p class="flex items-center gap-2 text-xs text-base-200">
+                <span v-if="tagOf(featured)" class="truncate">{{ tagOf(featured) }}</span>
+                <span v-if="featured.date" class="shrink-0">· {{ formatRelative(featured.date) }}</span>
+              </p>
+              <h3 class="display mt-1 line-clamp-2 text-3xl leading-tight text-base-50 drop-shadow">{{ titleOf(featured) }}</h3>
+            </div>
           </div>
-          <div class="flex min-w-0 flex-1 flex-col gap-1.5 p-4">
-            <p class="flex items-center gap-2 text-xs text-base-400">
-              <span v-if="tagOf(featured)" class="truncate">{{ tagOf(featured) }}</span>
-              <span v-if="featured.date" class="ml-auto shrink-0">{{ formatRelative(featured.date) }}</span>
-            </p>
-            <h3 class="line-clamp-2 text-lg leading-snug font-semibold text-base-50">{{ titleOf(featured) }}</h3>
-            <p class="line-clamp-2 text-sm leading-relaxed text-base-400">{{ featured.summary }}</p>
-            <span v-if="featured.contentPath || featured.link" class="mt-auto pt-1 text-xs font-medium text-redstone-300">
-              {{ featured.contentPath ? t('news.readPatchNotes') : t('news.openInBrowser') }}
-            </span>
+          <div class="flex items-center gap-4 px-5 py-3">
+            <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-base-400">{{ featured.summary }}</p>
+            <span class="shrink-0 text-xs font-medium text-redstone-300">{{ actionLabel(featured) }}</span>
           </div>
         </button>
       </article>
 
-      <!-- Kompakte Liste daneben: gleich hohe Zeilen, füllt die Höhe des Aufmachers. -->
-      <ul v-if="list.length" class="flex min-w-0 flex-col gap-2">
-        <li v-for="item in list" :key="item.id" class="flex min-h-[4.25rem] flex-1">
+      <!-- Weitere Beiträge als Blog-Karten mit Titelbild. -->
+      <ul v-if="list.length" class="blog-grid">
+        <li v-for="item in list" :key="item.id" class="min-w-0">
           <button
-            class="card card-hover flex w-full min-w-0 items-center gap-3 p-2.5 text-left"
+            class="card card-hover group flex h-full w-full flex-col overflow-hidden text-left"
             :class="{ 'launcher-item': item.source === 'launcher' }"
             :title="actionLabel(item)"
             @click="open(item)"
           >
-            <span class="thumb shrink-0 overflow-hidden rounded-md bg-base-800">
-              <img
-                v-if="images[item.id]"
-                :src="images[item.id]"
-                alt=""
-                loading="lazy"
-                class="size-full"
-                :class="item.source === 'modrinth' ? 'object-contain [image-rendering:pixelated]' : 'object-cover'"
-              />
-              <span v-else-if="item.source === 'launcher'" class="grid size-full place-items-center">
-                <img src="/icon.png" alt="" class="size-7 [image-rendering:pixelated]" />
-              </span>
-              <span v-else class="thumb-fallback block size-full" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="line-clamp-2 text-sm leading-snug font-medium text-base-50">{{ titleOf(item) }}</span>
-              <span class="mt-0.5 flex items-center gap-2 text-[11px] text-base-400">
-                <span :class="item.source === 'launcher' ? 'text-redstone-300' : ''">{{ sourceLabel(item.source) }}</span>
+            <div class="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-base-850">
+              <NewsCover :item="item" :image="images[item.id]" :post="launcherPost(item)" />
+              <span class="badge absolute top-2 left-2 bg-black/65 text-[11px] text-white backdrop-blur">{{ sourceLabel(item.source) }}</span>
+            </div>
+            <div class="flex min-w-0 flex-1 flex-col gap-1 p-3">
+              <h3 class="line-clamp-2 text-sm leading-snug font-semibold text-base-50">{{ titleOf(item) }}</h3>
+              <p class="mt-auto flex items-center gap-2 pt-1 text-[11px] text-base-400">
+                <span v-if="tagOf(item)" class="truncate">{{ tagOf(item) }}</span>
                 <span v-if="item.date" class="ml-auto shrink-0">{{ formatRelative(item.date) }}</span>
-              </span>
-            </span>
+              </p>
+            </div>
           </button>
         </li>
       </ul>
     </div>
 
+    <UpdatePostDialog
+      v-if="reading"
+      :entry="reading.entry"
+      :title="reading.title"
+      :seed="versionSeed(reading.entry.version ?? '')"
+      @close="reading = null"
+    />
+
     <BaseDialog v-if="notes" :title="notes.title" wide @close="notes = null">
-      <div class="max-h-[60vh] overflow-y-auto pr-1">
+      <img v-if="notes.cover" :src="notes.cover" alt="" class="-mx-5 -mt-4 mb-4 aspect-[21/9] w-[calc(100%+2.5rem)] max-w-none object-cover" />
+      <div class="max-h-[55vh] overflow-y-auto pr-1">
         <p v-if="notes.error" role="alert" class="text-sm text-redstone-300">{{ notes.error }}</p>
         <div v-else-if="notes.body === null" class="space-y-2">
           <div class="skeleton h-4 w-3/4" />
@@ -250,37 +265,13 @@ async function showPatchNotes(item: NewsItem) {
 </template>
 
 <style scoped>
-.magazine {
+.blog-grid {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
 }
-/* Nebeneinander, sobald die Spalte breit genug ist (Container, nicht Fenster). */
-@container (min-width: 44rem) {
-  .magazine {
-    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  }
-  .magazine-solo {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-.featured-image {
-  height: clamp(11rem, 19vw, 17rem);
-}
-.thumb {
-  width: 3.25rem;
-  height: 3.25rem;
-}
-/* Platzhalter ohne Bild: Deepslate mit einem Staubfaden. */
-.thumb-fallback,
-.featured-fallback {
-  background:
-    linear-gradient(90deg, transparent 46%, color-mix(in srgb, var(--color-redstone-500) 55%, transparent) 46% 54%, transparent 54%) center / 100% 6px no-repeat,
-    var(--deepslate) 0 0 / 24px 24px,
-    var(--color-base-850);
-}
-.featured-fallback {
-  background-size: 100% 8px, 48px 48px, auto;
+.cover-shade {
+  background: linear-gradient(to top, rgb(12 11 14 / 0.9), rgb(12 11 14 / 0.25) 55%, transparent);
 }
 .launcher-item {
   border-color: color-mix(in srgb, var(--color-redstone-500) 35%, var(--color-base-800));

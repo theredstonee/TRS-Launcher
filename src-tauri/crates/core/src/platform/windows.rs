@@ -14,13 +14,16 @@ use crate::{Error, Result};
 const DETACHED_PROCESS: u32 = 0x0000_0008;
 const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+const ABOVE_NORMAL_PRIORITY_CLASS: u32 = 0x0000_8000;
 
 // --- Prozesse ----------------------------------------------------------------------
 
 /// Eigene Prozessgruppe ohne Konsole: Das Spiel überlebt den Launcher.
-pub fn detach(cmd: &mut std::process::Command) {
+/// `high_priority`: Prioritätsklasse „Höher als normal“.
+pub fn detach(cmd: &mut std::process::Command, high_priority: bool) {
     use std::os::windows::process::CommandExt;
-    cmd.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
+    let priority = if high_priority { ABOVE_NORMAL_PRIORITY_CLASS } else { 0 };
+    cmd.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | priority);
 }
 
 /// Kein Konsolenfenster für Hilfsprozesse (Hooks, Forge-Processors).
@@ -109,28 +112,9 @@ impl Drop for ProcessHandle {
 
 // --- Grafikkarte ---------------------------------------------------------------------
 
-/// Windows soll für dieses Programm die leistungsstarke Grafikkarte nehmen
-/// (dieselbe Einstellung wie unter „Grafikeinstellungen“ in Windows). Liefert
-/// zusätzliche Umgebungsvariablen – unter Windows keine.
-pub fn dedicated_gpu_env(program: &Path) -> Vec<(String, String)> {
-    use windows::Win32::System::Registry::{HKEY_CURRENT_USER, REG_SZ, RegSetKeyValueW};
-    use windows::core::{HSTRING, w};
-
-    let value: Vec<u16> = "GpuPreference=2;".encode_utf16().chain(std::iter::once(0)).collect();
-    // SAFETY: alle Strings sind nullterminiert, die Datenlänge stimmt in Bytes.
-    let status = unsafe {
-        RegSetKeyValueW(
-            HKEY_CURRENT_USER,
-            w!("Software\\Microsoft\\DirectX\\UserGpuPreferences"),
-            &HSTRING::from(program.as_os_str()),
-            REG_SZ.0,
-            Some(value.as_ptr().cast()),
-            (value.len() * 2) as u32,
-        )
-    };
-    if status.is_err() {
-        tracing::warn!("GPU-Präferenz konnte nicht gesetzt werden: {status:?}");
-    }
+/// Unter Windows setzt [`crate::gpu`] die Grafikeinstellung in der Registry –
+/// zusätzliche Umgebungsvariablen braucht es nicht.
+pub fn dedicated_gpu_env(_program: &Path) -> Vec<(String, String)> {
     Vec::new()
 }
 

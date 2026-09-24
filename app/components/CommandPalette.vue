@@ -15,6 +15,7 @@ const games = useGamesStore()
 const settings = useSettingsStore()
 const toasts = useToasts()
 const ui = useUiStore()
+const trs = useTrsStore()
 
 type Group = 'instances' | 'mods' | 'servers' | 'settings' | 'pages' | 'actions'
 
@@ -69,11 +70,13 @@ const pages = computed<Command[]>(() => {
     { to: '/servers', label: 'nav.servers', icon: 'server', keywords: 'palette.keywords.servers' },
     { to: '/accounts', label: 'palette.pages.accounts', icon: 'user', keywords: 'palette.keywords.accounts' },
     { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', keywords: 'palette.keywords.screenshots' },
+    { to: '/clips', label: 'nav.clips', icon: 'clips', keywords: 'palette.keywords.clips' },
     { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
     { to: '/friends', label: 'nav.friends', icon: 'friends', keywords: 'palette.keywords.friends' },
   ]
   return list
-    .filter((p) => router.resolve(p.to).matched.length > 0)
+    // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
+    .filter((p) => router.resolve(p.to).matched.length > 0 && (p.to !== '/clips' || !isLinux))
     .map((p) => ({
       id: `page:${p.to}`,
       group: 'pages' as const,
@@ -182,6 +185,23 @@ const commands = computed<Command[]>(() => [
     icon: 'compass',
     run: () => go('/browse?kind=modpack'),
   },
+  // Nur für TRS-Admins – die Website-Anmeldung ist deren Verwaltungszugang.
+  ...(trs.isAdmin
+    ? [
+        {
+          id: 'action:web-login',
+          group: 'actions',
+          title: t('webLogin.title'),
+          subtitle: t('palette.actions.webLogin.subtitle', { host: TRS_HOST }),
+          keywords: t('palette.keywords.webLogin'),
+          icon: 'shield',
+          run: () => {
+            trs.openWebLogin()
+            close()
+          },
+        } satisfies Command,
+      ]
+    : []),
   {
     id: 'action:data-dir',
     group: 'actions',

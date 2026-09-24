@@ -27,6 +27,10 @@ public final class TrsKeys {
 	public static KeyMapping emoteWheel;
 	/** Schaltet das Redstone-Signal-Overlay (F6 – in keiner Vanilla-Version ab 1.9 belegt). */
 	public static KeyMapping redstoneOverlay;
+	/** Clip der letzten Sekunden speichern (F9 – in keiner Vanilla-Version belegt). */
+	public static KeyMapping saveClip;
+	/** Aufnahme starten/stoppen (F10 – in keiner Vanilla-Version belegt). */
+	public static KeyMapping toggleRecording;
 
 	private TrsKeys() {
 	}
@@ -48,6 +52,8 @@ public final class TrsKeys {
 		hudProfile = register(new KeyMapping("key.trsclient.hudProfile", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		emoteWheel = register(new KeyMapping("key.trsclient.emoteWheel", KEYBOARD, Keys.code("key.keyboard.g"), CATEGORY));
 		redstoneOverlay = register(new KeyMapping("key.trsclient.redstoneOverlay", KEYBOARD, Keys.code("key.keyboard.f6"), CATEGORY));
+		saveClip = register(new KeyMapping("key.trsclient.saveClip", KEYBOARD, Keys.code("key.keyboard.f9"), CATEGORY));
+		toggleRecording = register(new KeyMapping("key.trsclient.toggleRecording", KEYBOARD, Keys.code("key.keyboard.f10"), CATEGORY));
 	}
 
 	/**

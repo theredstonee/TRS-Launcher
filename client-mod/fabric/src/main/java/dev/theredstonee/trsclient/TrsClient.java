@@ -94,6 +94,7 @@ public final class TrsClient implements ClientModInitializer {
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		Theme.loadFrom(FabricLoader.getInstance().getConfigDir());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(FabricLoader.getInstance().getConfigDir());
+		dev.theredstonee.trsclient.core.clips.Clips.init(FabricLoader.getInstance().getConfigDir());
 		config = new ConfigStore(FabricLoader.getInstance().getConfigDir().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -122,6 +123,9 @@ public final class TrsClient implements ClientModInitializer {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.OnlineHooks.init(FabricLoader.getInstance().getConfigDir(), modules, version,
 				minecraft, "fabric", message -> LOGGER.info(message));
+		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
+		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> FabricLoader.getInstance().isModLoaded(id),
+				dev.theredstonee.trsclient.core.perf.PerfCompat.FABRIC, minecraft, message -> LOGGER.info(message), true);
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert – {} Module, Config {} ({})",
@@ -184,6 +188,9 @@ public final class TrsClient implements ClientModInitializer {
 	}
 	*///?}
 
+	/** Meldungen der Clips in der Aktionsleiste. */
+	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> Mc.actionBar(Mc.text(text));
+
 	private void onTick(Minecraft mc) {
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.consumeClick()) {
@@ -199,6 +206,10 @@ public final class TrsClient implements ClientModInitializer {
 			Mc.actionBar(Mc.text(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
 			saveConfig();
 		}
+		// Clips & Aufnahme: aufgenommen wird im Launcher, hier nur die Tasten melden.
+		while (TrsKeys.saveClip.consumeClick()) dev.theredstonee.trsclient.core.clips.Clips.get().saveClip();
+		while (TrsKeys.toggleRecording.consumeClick()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
+		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.consumeClick()) {
 			modules.fullbright.toggle();
 			Mc.actionBar(Mc.text(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
@@ -230,6 +241,7 @@ public final class TrsClient implements ClientModInitializer {
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
+		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
 	}
 
 	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */

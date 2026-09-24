@@ -23,6 +23,8 @@ export interface InstanceOverrides {
   trsClient: boolean | null
   /** TRS-Optimierung für Vanilla (Fabric + Performance-Mods); null = an */
   boost: boolean | null
+  /** FPS-Boost beim Start (JVM-Abstimmung); null = global */
+  performanceTuning: boolean | null
   /** Welche Modrinth-Versionen Updates nehmen; null = stabil */
   updateChannel: UpdateChannel | null
   /** Vollbild beim Start; null = global */
@@ -169,6 +171,10 @@ export interface Settings {
   closeOnLaunch: boolean
   showSnapshots: boolean
   preferDedicatedGpu: boolean
+  /** FPS-Boost beim Start: abgestimmte GC-Flags, Xms = Xmx (nur ohne eigene JVM-Argumente) */
+  performanceTuning: boolean
+  /** Prozesspriorität „Höher als normal“ */
+  highPriority: boolean
   autoFirewall: boolean
   fullscreen: boolean
   hooks: LaunchHooks
@@ -177,6 +183,71 @@ export interface Settings {
   ui: UiSettings
   allowLogUpload: boolean
   java: JavaPaths
+  clips: ClipSettings
+}
+
+// --- Clips & Aufnahme ------------------------------------------------------------------
+
+export type ClipResolution = 'native' | '1080p' | '720p'
+export type ClipQuality = 'low' | 'medium' | 'high'
+export type ClipEncoder = 'auto' | 'nvenc' | 'amf' | 'qsv' | 'x264'
+/** Tatsächlich verwendeter Encoder (mf = Media Foundation). */
+export type ClipCodec = 'nvenc' | 'amf' | 'qsv' | 'mf' | 'x264'
+
+export interface ClipSettings {
+  enabled: boolean
+  bufferSeconds: number
+  resolution: ClipResolution
+  fps: 30 | 60
+  quality: ClipQuality
+  encoder: ClipEncoder
+  systemAudio: boolean
+  microphone: boolean
+  folder: string | null
+  maxStorageGb: number
+}
+
+export interface Clip {
+  instanceId: string
+  instanceName: string
+  fileName: string
+  size: number
+  createdAt: string | null
+  durationMs: number | null
+}
+
+export interface ClipUsage {
+  usedBytes: number
+  limitBytes: number
+  count: number
+  freeBytes: number | null
+}
+
+/** Warum gerade nicht aufgenommen wird. */
+export type ClipReason = 'starting' | 'noWindow' | 'ffmpeg' | 'error' | 'disabled'
+
+export interface ClipState {
+  instanceId: string
+  buffer: boolean
+  recording: boolean
+  recordingMs: number
+  reason: ClipReason | null
+  encoder: ClipCodec | null
+}
+
+export type ClipFailure = 'disabled' | 'starting' | 'noWindow' | 'ffmpeg' | 'noFrames' | 'busy' | 'error'
+
+export type ClipEvent =
+  | ({ type: 'state' } & ClipState)
+  | { type: 'saved'; instanceId: string; fileName: string; kind: 'clip' | 'recording'; seconds: number; removed: number }
+  | { type: 'failed'; instanceId: string; code: ClipFailure }
+  | { type: 'ended'; instanceId: string }
+  | { type: 'ffmpeg'; state: 'downloading' | 'ready' | 'failed' }
+
+export interface FfmpegStatus {
+  installed: boolean
+  version: string
+  downloadBytes: number
 }
 
 export type VersionType = 'release' | 'snapshot' | 'old_beta' | 'old_alpha'
@@ -742,6 +813,7 @@ export type TaskKind =
   | 'content'
   | 'content-update'
   | 'performance-pack'
+  | 'presets'
   | 'java'
   | 'import'
   | 'export'
@@ -751,6 +823,7 @@ export type TaskKind =
   | 'reinstall'
   | 'version-change'
   | 'launch'
+  | 'ffmpeg'
 
 /** Eintrag im Verlauf fertiger Aufgaben (`task-history.json`, neueste zuerst). */
 export interface TaskRecord {
@@ -800,4 +873,80 @@ export interface TaskProgressEvent {
   doneBytes: number
   totalBytes: number
   paused: boolean
+}
+
+// --- Mod-Presets -------------------------------------------------------------
+
+/** Woher ein Preset-Eintrag stammt (später auch CurseForge). */
+export type PresetSource = 'modrinth'
+
+export interface PresetItem {
+  source: PresetSource
+  projectId: string
+  title: string
+  iconUrl: string | null
+  kind: ContentKind
+}
+
+/** Fertige TRS-Presets (Name/Beschreibung: `presets.builtin.<key>`). */
+export type BuiltinPreset = 'fpsBoost' | 'nvidium' | 'voiceChat' | 'replay'
+
+export interface Preset {
+  id: string
+  /** Eigener Name; leer bei fertigen Presets. */
+  name: string
+  builtin: BuiltinPreset | null
+  /** Bei jeder neuen Instanz vorausgewählt. */
+  auto: boolean
+  /** Wird bei Modpacks mit angeboten. */
+  modpackSafe: boolean
+  /** Passt zu diesem PC (Nvidium nur mit passender NVIDIA-Karte). */
+  available: boolean
+  items: PresetItem[]
+}
+
+export interface PresetInput {
+  name: string
+  auto: boolean
+  items: PresetItem[]
+}
+
+export type PresetItemStatus =
+  | 'installed'
+  | 'alreadyInstalled'
+  | 'duplicate'
+  | 'notAvailable'
+  | 'missingDependency'
+  | 'incompatible'
+  | 'needsLoader'
+  | 'failed'
+
+export interface PresetItemOutcome {
+  presetId: string
+  projectId: string | null
+  title: string
+  iconUrl: string | null
+  kind: ContentKind
+  status: PresetItemStatus
+  /** Teil einer Sammlung (FPS-Boost) – „nicht verfügbar“ ist dann normal. */
+  optional: boolean
+  versionNumber: string | null
+  /** Fehlende Abhängigkeit bzw. womit es sich nicht verträgt. */
+  detail: string | null
+  error: CommandError | null
+}
+
+export interface PresetApplyReport {
+  gameVersion: string
+  loader: LoaderKind
+  items: PresetItemOutcome[]
+  files: string[]
+  dependencies: number
+}
+
+export interface PresetProgress {
+  phase: 'resolve' | 'install'
+  done: number
+  total: number
+  title: string | null
 }

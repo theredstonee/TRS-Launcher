@@ -2,6 +2,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::clips::settings::ClipSettings;
 use crate::hooks::{self, EnvVar, LaunchHooks};
 use crate::sync::SyncSettings;
 use crate::{Error, Result, fsutil};
@@ -43,6 +44,11 @@ pub struct Settings {
     pub show_snapshots: bool,
     /// Windows soll dem Spiel die leistungsstarke Grafikkarte geben.
     pub prefer_dedicated_gpu: bool,
+    /// FPS-Boost für den Start: abgestimmte GC-Flags je Java-Version und
+    /// Xms = Xmx – nur ohne eigene JVM-Argumente. Instanzen können abweichen.
+    pub performance_tuning: bool,
+    /// Spiel mit Prozesspriorität „Höher als normal“ starten.
+    pub high_priority: bool,
     /// Netzwerkzugriff für neue Java-Versionen automatisch freigeben (eine Admin-Abfrage).
     pub auto_firewall: bool,
     /// Spiel im Vollbild starten (`--fullscreen`); Instanzen können abweichen.
@@ -59,6 +65,9 @@ pub struct Settings {
     pub allow_log_upload: bool,
     /// Eigene Java-Installationen je Hauptversion; leer = automatisch.
     pub java: JavaPaths,
+    /// Clips & Aufnahme (Standard aus).
+    #[serde(deserialize_with = "crate::clips::settings::lenient")]
+    pub clips: ClipSettings,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -220,6 +229,8 @@ impl Default for Settings {
             close_on_launch: false,
             show_snapshots: false,
             prefer_dedicated_gpu: true,
+            performance_tuning: true,
+            high_priority: false,
             auto_firewall: true,
             fullscreen: false,
             hooks: LaunchHooks::default(),
@@ -228,6 +239,7 @@ impl Default for Settings {
             ui: UiSettings::default(),
             allow_log_upload: true,
             java: JavaPaths::default(),
+            clips: ClipSettings::default(),
         }
     }
 }
@@ -276,6 +288,7 @@ impl Settings {
     pub fn normalized(mut self) -> Self {
         self.hooks = self.hooks.normalized();
         self.env = hooks::normalize_env(self.env);
+        self.clips = self.clips.normalized();
         self
     }
 
@@ -292,6 +305,9 @@ impl Settings {
         if hooks::validate_env(&self.env).is_err() {
             self.env = Vec::new();
         }
+        if self.clips.validate().is_err() {
+            self.clips = ClipSettings::default();
+        }
         self
     }
 
@@ -300,6 +316,7 @@ impl Settings {
         self.hooks.validate()?;
         hooks::validate_env(&self.env)?;
         self.java.validate()?;
+        self.clips.validate()?;
         if self.min_memory_mb < 128 || self.min_memory_mb > self.max_memory_mb {
             return Err(Error::validation(crate::msg!(
                 "settings.minMemoryRange",

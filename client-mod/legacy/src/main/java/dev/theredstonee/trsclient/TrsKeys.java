@@ -18,6 +18,10 @@ public final class TrsKeys {
 	public static KeyBinding emoteWheel;
 	/** Schaltet das Redstone-Signal-Overlay (F6; in 1.8.9 ist F6 "Stream starten" → dort F8). */
 	public static KeyBinding redstoneOverlay;
+	/** Clip der letzten Sekunden speichern (F9 – in keiner Vanilla-Version belegt). */
+	public static KeyBinding saveClip;
+	/** Aufnahme starten/stoppen (F10 – in keiner Vanilla-Version belegt). */
+	public static KeyBinding toggleRecording;
 
 	private TrsKeys() {
 	}
@@ -36,6 +40,8 @@ public final class TrsKeys {
 		/*redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", Keyboard.KEY_F6, CATEGORY));
 		*///?} else
 		redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", Keyboard.KEY_F8, CATEGORY));
+		saveClip = register(new KeyBinding("key.trsclient.saveClip", Keyboard.KEY_F9, CATEGORY));
+		toggleRecording = register(new KeyBinding("key.trsclient.toggleRecording", Keyboard.KEY_F10, CATEGORY));
 	}
 
 	/**

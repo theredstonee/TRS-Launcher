@@ -10,6 +10,7 @@ import dev.theredstonee.trsclient.core.ui.Anim;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.FadeCanvas;
+import dev.theredstonee.trsclient.core.ui.Hits;
 import dev.theredstonee.trsclient.core.ui.Icons;
 import dev.theredstonee.trsclient.core.ui.Paint;
 import dev.theredstonee.trsclient.core.ui.PixelFont;
@@ -64,6 +65,10 @@ public final class ModMenu extends UiScreen {
 	private String profileError;
 	/** Zuletzt gezeichneter Inhaltsbereich (für das Mausrad). */
 	private final int[] contentRect = new int[4];
+	/** Spieler-Vorschau: Drehung (Grad), letzte Maus-x beim Ziehen, Zeitpunkt der letzten Bedienung. */
+	private float previewYaw = 150f;
+	private double previewDragX = Double.NaN;
+	private long previewTouched;
 
 	public ModMenu(MenuHost host) {
 		this.host = host;
@@ -84,6 +89,19 @@ public final class ModMenu extends UiScreen {
 			page = Page.SETTINGS;
 			panel.reset();
 		}
+		return this;
+	}
+
+	/** Einstellungsseite nach unten rollen (Autotest: untere Teile einer langen Seite zeigen). */
+	public ModMenu scrollSettings(int pixels) {
+		settingsScroll = Math.max(0, settingsScroll + pixels);
+		return this;
+	}
+
+	/** Öffnet das Menü direkt bei einer Kategorie (Kachel-Ansicht). */
+	public ModMenu showCategory(Category category) {
+		this.category = category;
+		page = Page.GRID;
 		return this;
 	}
 
@@ -226,6 +244,8 @@ public final class ModMenu extends UiScreen {
 		Category[] categories = Category.values();
 		for (int i = 0; i < categories.length; i++) {
 			final Category cat = categories[i];
+			// Reiter ohne ein einziges Modul dieser Version (z. B. Leistung in Forge 1.7.10) weglassen.
+			if (!hasModules(cat)) continue;
 			railItem(c, x, cy, w, rowH, cat.icon(), cat.label(), category == cat && page == Page.GRID, mx, my, new Runnable() {
 				@Override
 				public void run() {
@@ -283,6 +303,14 @@ public final class ModMenu extends UiScreen {
 		Redstone.pip(c, x + 2, footerY + 1, 7, active > 0 ? 1f : 0f);
 		Paint.textClipped(c, I18n.tr("menu.activeCount", active, total), x + 14, footerY, w - 14, t.text, false);
 		Redstone.keycap(c, x, footerY + 14, host.menuKeyLabel(), w);
+	}
+
+	private boolean hasModules(Category cat) {
+		List<Module> all = host.modules().registry.all();
+		for (int i = 0; i < all.size(); i++) {
+			if (all.get(i).category() == cat && host.supports(all.get(i))) return true;
+		}
+		return false;
 	}
 
 	private void railItem(Canvas c, int x, int y, int w, int h, String icon, String label, boolean active,
@@ -476,24 +504,52 @@ public final class ModMenu extends UiScreen {
 		List<MenuAction> actions = host.actions(m);
 		if (!actions.isEmpty()) bottom -= 24;
 
-		c.scissor(x, top, x + w, bottom);
-		hits.clip(x, top, w, bottom - top);
-		int ry = top + 2 - settingsScroll;
-		ry = Paint.paragraph(c, m.description(), x + 2, ry, Math.min(w - 8, 360), 10, t.textDim) + 6;
-		List<Setting> settings = m.settings();
-		if (settings.isEmpty()) {
-			ry = Paint.paragraph(c, I18n.tr("menu.noSettings"), x + 2, ry + 2, Math.min(w - 8, 360), 10, t.textDim) + 4;
-		} else {
-			ry = panel.draw(c, hits, settings, x + 2, ry, w - 10, mx, my);
+		// Umhang-Physik: Live-Vorschau des eigenen Spielers – rechts daneben oder (schmal) darüber.
+		int listX = x;
+		int listW = w;
+		int listTop = top;
+		boolean preview = m == host.modules().capePhysics && host.playerPreviewState() != MenuHost.PREVIEW_UNSUPPORTED;
+		if (preview) {
+			if (w >= 260) {
+				int pw = Math.max(100, Math.min(170, Math.round(w * 0.38f)));
+				previewPanel(c, x + w - pw, top, pw, bottom - top, mx, my, dt);
+				listW = w - pw - 8;
+			} else {
+				int ph = Math.min(130, Math.max(90, (bottom - top) / 2));
+				previewPanel(c, x, top, w, ph, mx, my, dt);
+				listTop = top + ph + 6;
+			}
 		}
-		settingsHeight = ry + settingsScroll - top;
+
+		c.scissor(listX, listTop, listX + listW, bottom);
+		hits.clip(listX, listTop, listW, bottom - listTop);
+		int ry = listTop + 2 - settingsScroll;
+		ry = Paint.paragraph(c, m.description(), listX + 2, ry, Math.min(listW - 8, 360), 10, t.textDim) + 6;
+		ModulePanel extra = ModulePanel.Registry.of(m);
+		if (extra != null) {
+			ry = extra.draw(c, hits, listX + 2, ry, listW - 10, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					host.playClick();
+				}
+			});
+		}
+		List<Setting> settings = m.settings();
+		if (settings.isEmpty() && extra != null) {
+			// Nur der Zusatzbereich (z. B. FPS-Boost) – kein „keine Einstellungen“.
+		} else if (settings.isEmpty()) {
+			ry = Paint.paragraph(c, I18n.tr("menu.noSettings"), listX + 2, ry + 2, Math.min(listW - 8, 360), 10, t.textDim) + 4;
+		} else {
+			ry = panel.draw(c, hits, settings, listX + 2, ry, listW - 10, mx, my);
+		}
+		settingsHeight = ry + settingsScroll - listTop;
 		hits.noClip();
 		c.noScissor();
 		c.flush();
 
-		int maxScroll = Math.max(0, settingsHeight - (bottom - top));
+		int maxScroll = Math.max(0, settingsHeight - (bottom - listTop));
 		settingsScroll = Math.max(0, Math.min(settingsScroll, maxScroll));
-		if (maxScroll > 0) scrollbar(c, x + w - 2, top, bottom - top, settingsScroll, maxScroll);
+		if (maxScroll > 0) scrollbar(c, listX + listW - 2, listTop, bottom - listTop, settingsScroll, maxScroll);
 
 		if (actions.isEmpty()) return;
 		c.fill(x, bottom + 3, x + w, bottom + 4, t.border);
@@ -513,6 +569,58 @@ public final class ModMenu extends UiScreen {
 			});
 			bx += bw + 6;
 		}
+	}
+
+	/**
+	 * Vorschau-Feld: der eigene Spieler dreht sich langsam (Ziehen mit der Maus dreht von Hand), darunter
+	 * ob er gerade „steht“ oder „geht“ und ein Knopf zum Zurücksetzen aller Umhang-Einstellungen.
+	 */
+	private void previewPanel(Canvas c, int x, int y, int w, int h, int mx, int my, float dt) {
+		Theme t = Theme.get();
+		final Module m = selected;
+		int buttonH = 17;
+		int boxH = h - buttonH - 16;
+		Redstone.well(c, x, y, w, boxH, t.border);
+		long now = System.currentTimeMillis();
+		boolean dragging = !Double.isNaN(previewDragX);
+		// Nach 2 s ohne Bedienung dreht sich der Spieler wieder von selbst.
+		if (!dragging && now - previewTouched > 2000) previewYaw = (previewYaw + dt * 30f) % 360f;
+		int state = host.playerPreviewState();
+		if (state == MenuHost.PREVIEW_OK) {
+			c.flush();
+			host.drawPlayerPreview(c, x + 1, y + 1, w - 2, boxH - 12, previewYaw);
+			String caption = host.previewHasCape()
+					? I18n.tr(host.previewWalking() ? "preview.walking" : "preview.standing")
+					: I18n.tr("preview.noCape");
+			Paint.textClipped(c, caption, x + 4, y + boxH - 11, w - 8, host.previewHasCape() ? t.textDim : t.dustOn, false);
+			hits.addDrag(x, y, w, boxH, new Hits.Drag() {
+				@Override
+				public void to(double mouseX, double mouseY) {
+					if (!Double.isNaN(previewDragX)) previewYaw = ((previewYaw + (float) (mouseX - previewDragX) * 2f) % 360f + 360f) % 360f;
+					previewDragX = mouseX;
+					previewTouched = System.currentTimeMillis();
+				}
+			});
+		} else {
+			List<String> lines = Paint.wrap(c, I18n.tr("preview.noPlayer"), w - 10);
+			int ly = y + boxH / 2 - lines.size() * 5;
+			for (int i = 0; i < lines.size(); i++) {
+				Paint.textCentered(c, lines.get(i), x + w / 2, ly + i * 10, t.textDim, false);
+			}
+		}
+		String label = I18n.tr("preview.reset");
+		int by = y + boxH + 6;
+		boolean hovered = inside(mx, my, x, by, w, buttonH);
+		Paint.button(c, x, by, w, buttonH, label, false, hovered);
+		hits.add(x, by, w, buttonH, new Runnable() {
+			@Override
+			public void run() {
+				host.playClick();
+				boolean on = m.isEnabled();
+				m.reset();
+				m.setEnabled(on);
+			}
+		});
 	}
 
 	// --- Profile ---
@@ -666,6 +774,12 @@ public final class ModMenu extends UiScreen {
 			if (panel.collapse()) return true;
 		}
 		return hit;
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		previewDragX = Double.NaN;
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override

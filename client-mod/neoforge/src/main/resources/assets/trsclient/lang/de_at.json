@@ -7,5 +7,7 @@
 	"key.trsclient.freelook": "Freelook",
 	"key.trsclient.hudProfile": "HUD-Profil wechseln",
 	"key.trsclient.emoteWheel": "Emote-Rad (halten)",
-	"key.trsclient.redstoneOverlay": "Signal-Overlay umschalten"
+	"key.trsclient.redstoneOverlay": "Signal-Overlay umschalten",
+	"key.trsclient.saveClip": "Clip speichern",
+	"key.trsclient.toggleRecording": "Aufnahme starten/stoppen"
 }

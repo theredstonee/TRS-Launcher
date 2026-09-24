@@ -16,7 +16,8 @@ import java.util.Map;
 /**
  * HUD-Profile: mehrere gespeicherte HUD-Layouts (z. B. "PvP", "Bauen", "Aufnahme").
  * Ein Profil enthält den vollständigen Zustand aller HUD-Module (An/Aus, Position, Größe, Aussehen
- * und Modul-Einstellungen). Andere Module (Zoom, Fullbright, …) sind profilunabhängig.
+ * und Modul-Einstellungen) sowie der Module mit {@link Module#profiled()} (Umhang-Physik, Farben,
+ * Leistung). Andere Module (Zoom, Fullbright, …) sind profilunabhängig.
  * Der Zustand des aktiven Profils steht in den Modulen selbst; beim Wechsel wird er ins Profil
  * zurückgeschrieben und das Ziel-Profil angewendet.
  */
@@ -173,7 +174,7 @@ public final class HudProfiles implements ConfigPart {
 	private Map<String, ModuleConfig> snapshot() {
 		Map<String, ModuleConfig> map = new LinkedHashMap<>();
 		for (Module m : registry.all()) {
-			if (m.isHud()) map.put(m.id(), m.write());
+			if (m.inProfiles()) map.put(m.id(), m.write());
 		}
 		return map;
 	}
@@ -182,7 +183,7 @@ public final class HudProfiles implements ConfigPart {
 	private void applyActive() {
 		Map<String, ModuleConfig> map = profiles.get(active).modules;
 		for (Module m : registry.all()) {
-			if (!m.isHud()) continue;
+			if (!m.inProfiles()) continue;
 			ModuleConfig c = map.get(m.id());
 			if (c != null) m.read(c.copy().normalized());
 		}

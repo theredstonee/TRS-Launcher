@@ -13,14 +13,18 @@ interface NavItem {
   optional?: boolean
   /** Nur für Admins der TRS-Dienste. */
   admin?: boolean
+  /** Nur unter Windows (z. B. Clips). */
+  windowsOnly?: boolean
 }
 
 const items: NavItem[] = [
   { to: '/', label: 'nav.home', icon: 'home' },
   { to: '/instances', label: 'nav.library', icon: 'library' },
   { to: '/browse', label: 'nav.discover', icon: 'compass' },
+  { to: '/presets', label: 'nav.presets', icon: 'presets' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
+  { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, windowsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/friends', label: 'nav.friends', icon: 'friends' },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
@@ -47,7 +51,11 @@ const quick = computed(() => {
 // Seiten anderer Bereiche erscheinen erst, wenn es sie wirklich gibt.
 const visibleItems = computed(() =>
   items.filter(
-    (item) => (!item.optional || router.resolve(item.to).matched.length > 0) && (!item.admin || trs.isAdmin),
+    (item) =>
+      (!item.optional || router.resolve(item.to).matched.length > 0) &&
+      (!item.admin || trs.isAdmin) &&
+      // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
+      (!item.windowsOnly || !isLinux),
   ),
 )
 

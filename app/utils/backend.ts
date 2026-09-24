@@ -41,11 +41,19 @@ import type {
   ClientModStatus,
   CategoryTag,
   CommandError,
+  Preset,
+  PresetApplyReport,
+  PresetInput,
+  PresetProgress,
   ExportEntry,
   ExportOptions,
   ExportProgress,
   ExportSummary,
   GalleryShot,
+  Clip,
+  ClipState,
+  ClipUsage,
+  FfmpegStatus,
   LibrarySkin,
   NewsFeed,
   SkinChanges,
@@ -309,6 +317,24 @@ export const backend = {
     /** `fileId: null` = alle verwerfen. */
     dismissBlocked: (id: string, fileId: string | null) => call<BlockedFile[]>('curseforge_dismiss_blocked', { id, fileId }),
   },
+  listPresets: () => call<Preset[]>('list_presets'),
+  createPreset: (preset: PresetInput) => call<Preset>('create_preset', { preset }),
+  updatePreset: (id: string, preset: PresetInput) => call<Preset>('update_preset', { id, preset }),
+  /** „Immer automatisch“ – auch für fertige TRS-Presets. */
+  setPresetAuto: (id: string, auto: boolean) => call<Preset>('set_preset_auto', { id, auto }),
+  deletePreset: (id: string) => call<void>('delete_preset', { id }),
+  reorderPresets: (ids: string[]) => call<Preset[]>('reorder_presets', { ids }),
+  /** Fragt nach dem Speicherort; `false` = abgebrochen. */
+  exportPreset: (id: string) => call<boolean>('export_preset', { id }),
+  /** Öffnet eine Preset-Datei und legt ein neues Preset an; `null` = abgebrochen. */
+  importPreset: () => call<Preset | null>('import_preset'),
+  /** Installiert Presets in die Instanz – nur, was für Version + Loader passt. */
+  applyPresets: (
+    id: string,
+    presetIds: string[],
+    onProgress: (p: PresetProgress) => void,
+    taskId: string | null = null,
+  ) => call<PresetApplyReport>('apply_presets', { id, presetIds, onProgress: channel(onProgress), taskId }),
 
   listServers: () => call<Server[]>('list_servers'),
   addServer: (server: ServerInput) => call<Server>('add_server', { server }),
@@ -358,6 +384,25 @@ export const backend = {
   recordTask: (record: NewTaskRecord) => call<TaskRecord>('record_task', { record }),
   removeTaskRecord: (id: string) => call<void>('remove_task_record', { id }),
   clearTaskHistory: () => call<void>('clear_task_history'),
+
+  // --- Clips & Aufnahme ---
+  /** Alle Clips aller Instanzen, neueste zuerst. */
+  listClips: () => call<Clip[]>('list_clips'),
+  clipUsage: () => call<ClipUsage>('clip_usage'),
+  /** Gibt genau dieses Video fürs Abspielen frei (Pfad fürs Asset-Protokoll). */
+  clipVideo: (id: string, fileName: string) => call<string | null>('clip_video', { id, fileName }),
+  clipThumbnail: (id: string, fileName: string) => call<string | null>('clip_thumbnail', { id, fileName }),
+  renameClip: (id: string, fileName: string, newName: string) => call<string>('rename_clip', { id, fileName, newName }),
+  trashClip: (id: string, fileName: string) => call<void>('trash_clip', { id, fileName }),
+  revealClip: (id: string, fileName: string) => call<void>('reveal_clip', { id, fileName }),
+  openClipsFolder: () => call<void>('open_clips_folder'),
+  clipStates: () => call<ClipState[]>('clip_states'),
+  /** Wie die Tasten im Spiel: Clip speichern bzw. Aufnahme starten/stoppen. */
+  clipAction: (id: string, record: boolean) => call<void>('clip_action', { id, record }),
+  ffmpegStatus: () => call<FfmpegStatus>('ffmpeg_status'),
+  installFfmpeg: (onProgress: (percent: number) => void, taskId: string | null = null) =>
+    call<void>('install_ffmpeg', { onProgress: channel(onProgress), taskId }),
+  pickClipsFolder: () => call<string | null>('pick_clips_folder'),
 
   /** Screenshots aller Instanzen, neueste zuerst. */
   allScreenshots: () => call<GalleryShot[]>('all_screenshots'),
@@ -411,6 +456,8 @@ export const backend = {
     removeFriend: (uuid: string) => call<void>('trs_friend_remove', { uuid }),
     block: (target: string) => checked(trsUserRefSchema, 'trs_block', { target }),
     unblock: (uuid: string) => call<void>('trs_unblock', { uuid }),
+    /** Anmeldung auf der Website bestätigen – der Kern schickt den Code mit dem TRS-Token. */
+    webLoginApprove: (code: string) => call<void>('trs_web_login_approve', { code }),
 
     adminStats: () => checked(trsAdminStatsSchema, 'trs_admin_stats'),
     adminCapes: (list: TrsReviewList) => checked(z.array(trsAdminCapeSchema), 'trs_admin_capes', { list }),

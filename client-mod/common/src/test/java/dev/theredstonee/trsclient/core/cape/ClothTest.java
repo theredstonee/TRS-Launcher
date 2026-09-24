@@ -83,10 +83,10 @@ class ClothTest {
 		float running = hemZ(sim);
 		assertTrue(running > rest + 4f, "weht nach hinten: " + rest + " → " + running);
 		ClothSim.Params calm = new ClothSim.Params();
-		calm.wind = 0f;
-		ClothSim noWind = new ClothSim(10, 16);
-		for (int i = 0; i < 60; i++) noWind.tick(run, calm);
-		assertTrue(hemZ(noWind) < running, "ohne Wind weniger Auftrieb");
+		calm.lift = 0f;
+		ClothSim noLift = new ClothSim(10, 16);
+		for (int i = 0; i < 60; i++) noLift.tick(run, calm);
+		assertTrue(hemZ(noLift) < running, "ohne Anhebung weniger Auftrieb");
 	}
 
 	@Test
@@ -208,7 +208,7 @@ class ClothTest {
 		CapePhysics.Sample noCape = sample(98, 2, false);
 		noCape.hasCape = false;
 		samples.add(noCape);
-		physics.tick(samples, true, false, 1f, 1f);
+		physics.tick(samples, true, false, new CapeSettings());
 		assertEquals(CapePhysics.MAX_TOTAL, physics.active());
 		assertEquals(CapePhysics.FINE_COLS, physics.sim(0).cols(), "eigener Spieler immer fein");
 		assertEquals(CapePhysics.FINE_COLS, physics.sim(3).cols());
@@ -216,10 +216,10 @@ class ClothTest {
 		assertNull(physics.sim(99), "zu weit weg → Vanilla");
 		assertNull(physics.sim(98), "ohne Umhang keine Simulation");
 
-		physics.tick(Collections.singletonList(sample(0, 0, true)), true, true, 1f, 1f);
+		physics.tick(Collections.singletonList(sample(0, 0, true)), true, true, new CapeSettings());
 		assertEquals(1, physics.active(), "Nur eigener + verschwundene Spieler aufgeräumt");
 		assertNotNull(physics.sim(0));
-		physics.tick(samples, false, false, 1f, 1f);
+		physics.tick(samples, false, false, new CapeSettings());
 		assertEquals(0, physics.active(), "aus → alles weg");
 	}
 
@@ -229,12 +229,12 @@ class ClothTest {
 		CapePhysics.Sample s = sample(1, 0, true);
 		s.bodyYaw = 90f; // blickt nach Westen (−x)
 		List<CapePhysics.Sample> list = Collections.singletonList(s);
-		for (int i = 0; i < 20; i++) physics.tick(list, true, false, 1f, 1f);
+		for (int i = 0; i < 20; i++) physics.tick(list, true, false, new CapeSettings());
 		ClothSim sim = physics.sim(1);
 		float rest = hemZ(sim);
 		for (int i = 0; i < 40; i++) {
 			s.x -= 0.28; // sprintet nach Westen = vorwärts
-			physics.tick(list, true, false, 1f, 1f);
+			physics.tick(list, true, false, new CapeSettings());
 		}
 		assertTrue(hemZ(sim) > rest + 4f, "weht nach hinten, nicht zur Seite");
 		assertEquals(0f, hemX(sim), 1f);

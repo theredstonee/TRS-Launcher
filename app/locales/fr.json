@@ -483,7 +483,8 @@
       "invalidCodeId": "ID de code invalide.",
       "redemptionsRange": "Utilisations par code : de 1 à 100 000.",
       "countRange": "Quantité : de 1 à 100 codes à la fois.",
-      "expiryInPast": "La date d'expiration est dans le passé."
+      "expiryInPast": "La date d'expiration est dans le passé.",
+      "invalidWebLoginCode": "Le code a la forme ABCD-1234 (lettres et chiffres)."
     },
     "trsPng": {
       "fileTooLarge": "Le fichier est trop volumineux (256 Ko max.).",
@@ -527,6 +528,35 @@
       "notAModpack": "Ce n'est pas un modpack CurseForge.",
       "packFileMissing": "Un fichier du modpack n'existe plus sur CurseForge (projet {project}).",
       "packBlocked": "L'auteur de « {name} » n'autorise pas les téléchargements via d'autres applications – télécharge le modpack sur CurseForge et importe-le ici."
+    },
+    "presets": {
+      "nameLength": "Le nom doit contenir entre 1 et {max} caractères.",
+      "invalidProject": "Projet non valide dans le préréglage.",
+      "tooManyItems": "Un préréglage peut contenir au maximum {max} entrées.",
+      "notFound": "Ce préréglage n’existe plus.",
+      "builtinReadOnly": "Les préréglages TRS ne peuvent être ni modifiés ni supprimés.",
+      "tooMany": "Plus de {max} préréglages personnels ne sont pas pris en charge.",
+      "invalidOrder": "L’ordre ne correspond pas à la liste des préréglages.",
+      "invalidFile": "Ce n’est pas un fichier de préréglage valide.",
+      "fileTooLarge": "Le fichier de préréglage est trop volumineux.",
+      "noneSelected": "Aucun préréglage sélectionné."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Ce code de connexion n’existe pas – compare-le avec le code affiché sur le site.",
+      "expired": "Le code de connexion a expiré – recharge le site et saisis le nouveau code.",
+      "notAdmin": "Seuls les admins TRS peuvent se connecter au site.",
+      "alreadyUsed": "Ce code de connexion a déjà été confirmé."
+    },
+    "clips": {
+      "bufferRange": "La durée du clip doit être comprise entre {min} et {max} secondes",
+      "fpsInvalid": "Images par seconde : seulement 30 ou 60",
+      "storageRange": "L'espace pour les clips doit être compris entre {min} et {max} Go",
+      "folderInvalid": "Le dossier des clips doit être un chemin local complet",
+      "gone": "Le clip n'existe plus.",
+      "invalidName": "Ce nom n'est pas autorisé comme nom de fichier.",
+      "nameTaken": "Un clip porte déjà ce nom.",
+      "noFrames": "Rien n'a encore été enregistré.",
+      "notRecording": "Aucun enregistrement en cours pour ce jeu."
     }
   },
   "browse": {
@@ -821,14 +851,6 @@
       "done": "{n} mise à jour installée | {n} mises à jour installées",
       "partial": "{failed} mise à jour sur {total} a échoué. | {failed} mises à jour sur {total} ont échoué."
     },
-    "perfPack": {
-      "taskTitle": "Pack de performance pour {name}",
-      "stage": "Chargement des mods",
-      "done": "Pack de performance installé ({n} fichier) | Pack de performance installé ({n} fichiers)",
-      "title": "Sodium, Lithium & Co. – uniquement ce qui est disponible pour cette version",
-      "installing": "Installation du pack de performance…",
-      "button": "+ Pack de performance"
-    },
     "toolbar": {
       "searchPlaceholder": "Rechercher parmi {n} projet… | Rechercher parmi {n} projets…",
       "searchLabel": "Rechercher des projets",
@@ -1105,7 +1127,12 @@
       "reinstallTitle": "Réinstaller",
       "reinstallDescription": "Retélécharge entièrement la version du jeu, le chargeur de mods et les bibliothèques. Les mondes, mods et paramètres sont conservés.",
       "reinstallConfirmTitle": "Réinstaller ?",
-      "reinstallConfirmText": "La version du jeu et les bibliothèques seront retéléchargées. Les mondes, mods et paramètres sont conservés."
+      "reinstallConfirmText": "La version du jeu et les bibliothèques seront retéléchargées. Les mondes, mods et paramètres sont conservés.",
+      "tuningTitle": "Boost FPS au lancement",
+      "tuningDescription": "Réglages Java pour plus de FPS et moins de saccades. Les arguments JVM personnalisés sont prioritaires.",
+      "tuningGlobal": "Comme le réglage global ({state})",
+      "tuningOn": "Activé",
+      "tuningOff": "Désactivé"
     },
     "window": {
       "customTitle": "Paramètres de fenêtre personnalisés",
@@ -1496,7 +1523,11 @@
       "windowWidth": "Largeur de la fenêtre",
       "windowHeight": "Hauteur de la fenêtre",
       "dedicatedGpuTitle": "Carte graphique hautes performances",
-      "dedicatedGpuDescription": "Pour les portables à deux puces graphiques : Windows attribue au jeu le GPU dédié.",
+      "dedicatedGpuDescription": "Minecraft utilise la carte graphique dédiée (important sur les portables). Ne concerne que le Java du launcher et est annulé si vous le désactivez.",
+      "tuningTitle": "Boost FPS au lancement",
+      "tuningDescription": "Réglages Java adaptés à votre version de Java et à la mémoire (ZGC ou G1, mémoire réservée dès le départ). Uniquement sans arguments JVM personnalisés.",
+      "priorityTitle": "Priorité de processus plus élevée",
+      "priorityDescription": "Lance le jeu avec la priorité « Supérieure à la normale » – peut lisser les saccades quand d’autres programmes travaillent.",
       "dedicatedGpuDescriptionLinux": "Pour les portables à deux puces graphiques : le jeu est rendu sur le GPU dédié (PRIME offload – DRI_PRIME ou les variables NVIDIA)."
     },
     "hooks": {
@@ -1574,6 +1605,55 @@
       "allowed": "Accès réseau autorisé pour {n} programme Java | Accès réseau autorisé pour {n} programmes Java",
       "downloadsTitle": "Téléchargements simultanés",
       "downloadsDescription": "Nombre de fichiers téléchargés en même temps. Réduis-le avec une connexion lente."
+    },
+    "clips": {
+      "title": "Clips et enregistrement",
+      "intro": "Comme ShadowPlay ou Medal : le launcher n'enregistre que la fenêtre du jeu tant qu'un jeu de ce launcher tourne. Tout reste sur ton PC.",
+      "enabledTitle": "Clips et enregistrement",
+      "enabledDescription": "Garde les dernières secondes dans un tampon sur le disque pour qu'une touche les enregistre en clip. Désactivé par défaut.",
+      "ffmpegTitle": "Enregistreur (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} est installé et vérifié.",
+      "ffmpegMissing": "Téléchargé une fois à l'activation ({size}, somme de contrôle vérifiée).",
+      "ffmpegDownload": "Télécharger",
+      "ffmpegDownloading": "Téléchargement … {percent} %",
+      "ffmpegTaskTitle": "Enregistreur (FFmpeg)",
+      "ffmpegTaskStage": "Téléchargement de FFmpeg",
+      "ffmpegTaskDone": "Enregistreur prêt",
+      "captureTitle": "Image",
+      "bufferTitle": "Durée du clip",
+      "bufferDescription": "Combien de secondes en arrière un clip remonte.",
+      "seconds": "{n} s",
+      "resolutionTitle": "Résolution",
+      "resolutionDescription": "Les fenêtres de jeu plus grandes sont réduites.",
+      "resolution": {
+        "native": "Taille de la fenêtre",
+        "1080p": "Jusqu'à 1080p",
+        "720p": "Jusqu'à 720p"
+      },
+      "fpsTitle": "Fréquence d'images",
+      "qualityTitle": "Qualité",
+      "qualityDescription": "Une meilleure qualité donne des fichiers plus gros.",
+      "quality": {
+        "low": "Basse",
+        "medium": "Moyenne",
+        "high": "Haute"
+      },
+      "encoderTitle": "Encodeur",
+      "encoderDescription": "Automatique utilise ta carte graphique (NVIDIA, AMD, Intel), sinon le logiciel.",
+      "audioTitle": "Son",
+      "systemAudioTitle": "Son du système",
+      "systemAudioDescription": "Enregistre ce que jouent tes haut-parleurs (jeu, musique, chat vocal).",
+      "microphoneTitle": "Microphone",
+      "microphoneDescription": "Ajoute ton microphone par défaut. Désactivé par défaut.",
+      "storageTitle": "Stockage",
+      "folderTitle": "Dossier des clips",
+      "folderDefault": "Dossier de données du launcher (clips)",
+      "folderReset": "Utiliser le dossier par défaut",
+      "limitTitle": "Limite d'espace",
+      "limitDescription": "Au-delà, les clips les plus anciens vont dans la corbeille.",
+      "keysTitle": "Touches en jeu (TRS Client)",
+      "keysText": "F9 enregistre un clip, F10 démarre et arrête un enregistrement. Modifiables dans les commandes de Minecraft, sous « TRS Client ».",
+      "privacy": "Rien ne quitte ton PC : pas d'envoi, pas de compte, l'enregistreur ne tourne que lorsqu'un jeu de ce launcher est ouvert."
     }
   },
   "settingsShell": {
@@ -1763,7 +1843,9 @@
     "versionFormat": "Uniquement lettres, chiffres et . - _ +",
     "descriptionInvalidChars": "La description contient des caractères invalides",
     "folderRequired": "Sélectionne au moins un dossier",
-    "invalidInput": "Saisie invalide"
+    "invalidInput": "Saisie invalide",
+    "clipBufferRange": "La durée du clip doit être comprise entre {min} et {max} secondes",
+    "clipStorageRange": "L'espace pour les clips doit être compris entre {min} et {max} Go"
   },
   "titleBar": {
     "forward": "Suivant",
@@ -1804,7 +1886,9 @@
     "collapseLabel": "Réduire la barre latérale",
     "expandLabel": "Déplier la barre latérale",
     "collapse": "Réduire",
-    "expand": "Déplier"
+    "expand": "Déplier",
+    "presets": "Préréglages",
+    "clips": "Clips"
   },
   "accountMenu": {
     "menuLabel": "Comptes",
@@ -1856,7 +1940,9 @@
       "newInstance": "ajouter créer nouvelle",
       "import": "importer prism multimc curseforge migrer",
       "modpacks": "modpack pack installer",
-      "dataDir": "dossier explorateur fichiers"
+      "dataDir": "dossier explorateur fichiers",
+      "webLogin": "site web connexion login admin code navigateur",
+      "clips": "clips enregistrement enregistrer vidéo replay shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1874,6 +1960,9 @@
       "dataDir": {
         "title": "Ouvrir le dossier de données",
         "subtitle": "Dossier des instances et paramètres"
+      },
+      "webLogin": {
+        "subtitle": "Saisir le code de {host}"
       }
     }
   },
@@ -1928,7 +2017,9 @@
       "repair": "Instance réparée",
       "reinstall": "Réinstallée",
       "versionChange": "Version changée",
-      "launch": "Lancement du jeu"
+      "launch": "Lancement du jeu",
+      "presets": "Préréglages installés",
+      "ffmpeg": "Enregistreur installé"
     },
     "stage": {
       "preparing": "Préparation",
@@ -2069,7 +2160,8 @@
       "defaults": "Réglages par défaut",
       "java": "Installations Java",
       "storage": "Stockage",
-      "network": "Réseau"
+      "network": "Réseau",
+      "clips": "Clips et enregistrement"
     },
     "instance": {
       "general": "Général",
@@ -2096,7 +2188,8 @@
       "minCount": "Au moins 1 code.",
       "maxCount": "100 codes au maximum à la fois.",
       "invalidExpiry": "Date d'expiration invalide.",
-      "expiryPast": "La date d'expiration est dans le passé."
+      "expiryPast": "La date d'expiration est dans le passé.",
+      "webLoginCode": "Le code a la forme ABCD-1234 (lettres et chiffres)."
     },
     "unlock": {
       "own": "Perso",
@@ -2506,6 +2599,215 @@
       "allDone": "Tous les fichiers sont en place.",
       "banner": "{count} fichier doit être téléchargé à la main sur CurseForge. | {count} fichiers doivent être téléchargés à la main sur CurseForge.",
       "show": "Afficher"
+    }
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Toujours automatique",
+    "autoHint": "Présélectionné pour chaque nouvelle instance – et ajouté aux nouveaux modpacks quand c’est adapté.",
+    "itemCount": "{n} projet | {n} projets",
+    "builtin": {
+      "fpsBoost": {
+        "name": "Boost FPS",
+        "description": "Sodium ou Embeddium, Lithium, FerriteCore, ModernFix et plus – selon la version et le loader"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Affiche le terrain avec des mesh shaders – pour votre carte NVIDIA (Fabric, nécessite Sodium)"
+      },
+      "voiceChat": {
+        "name": "Chat vocal",
+        "description": "Simple Voice Chat – parlez aux joueurs proches sur les serveurs compatibles"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback si disponible, sinon ReplayMod – enregistrer et monter des parties"
+      }
+    },
+    "picker": {
+      "title": "Préréglages",
+      "manage": "Gérer les préréglages",
+      "vanillaBoost": "Vanilla l’obtient déjà via l’optimisation TRS",
+      "needsLoader": "Les mods ont besoin d’un chargeur de mods – dans une instance vanilla, seuls les packs de ressources et les shaders sont installés.",
+      "useFabric": "Utiliser Fabric"
+    },
+    "apply": {
+      "title": "Appliquer un préréglage",
+      "intro": "Tout ce qui existe pour {name} ({version}, {loader}) est installé – dépendances obligatoires comprises. Le reste est ignoré.",
+      "running": "Des préréglages sont déjà en cours d’installation dans cette instance.",
+      "install": "Installer {n} préréglage | Installer {n} préréglages",
+      "button": "+ Appliquer un préréglage",
+      "buttonTitle": "Installer des préréglages de mods (p. ex. boost FPS, chat vocal) – seulement ce qui existe pour cette version",
+      "installing": "Installation des préréglages …"
+    },
+    "report": {
+      "title": "Préréglages pour {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "plus {n} dépendance | plus {n} dépendances",
+      "skipped": "Ignorés ({n}) | Ignorés ({n})",
+      "included": "Inclus ({n}) | Inclus ({n})",
+      "notNeeded": "{n} élément du boost FPS n’est pas prévu pour cette version | {n} éléments du boost FPS ne sont pas prévus pour cette version",
+      "nothing": "Rien à installer",
+      "allDone": "{n} projet installé | Les {n} projets installés",
+      "partial": "{done} sur {total} installés",
+      "more": "(+{n} autre) | (+{n} autres)",
+      "details": "Détails"
+    },
+    "reason": {
+      "installed": "Installé",
+      "alreadyInstalled": "Était déjà installé",
+      "duplicate": "Déjà inclus par un autre préréglage",
+      "notAvailable": "{title} n’existe pas pour {version}",
+      "notAvailableLoader": "{title} n’existe pas pour {version} ({loader})",
+      "missingDependency": "{title} nécessite {dependency}, qui n’existe pas pour cette version",
+      "incompatible": "{title} ne fonctionne pas avec {other}",
+      "needsLoader": "{title} nécessite un chargeur de mods",
+      "failed": "{title} n’a pas pu être téléchargé"
+    },
+    "status": {
+      "installed": "Installé",
+      "alreadyInstalled": "Déjà là",
+      "duplicate": "Inclus",
+      "skipped": "Ignoré"
+    },
+    "task": {
+      "title": "Préréglages pour {name}",
+      "preparing": "Préparation …",
+      "resolving": "Vérification des versions ({done}/{total})",
+      "installing": "Téléchargement de {title} ({done}/{total})",
+      "finishing": "Finalisation"
+    },
+    "editor": {
+      "newTitle": "Nouveau préréglage",
+      "editTitle": "Modifier le préréglage",
+      "namePlaceholder": "p. ex. Mes indispensables",
+      "contents": "Contenu ({n}) | Contenu ({n})",
+      "remove": "Retirer {title}",
+      "empty": "Encore vide – ajoutez des projets depuis la recherche.",
+      "searchPlaceholder": "Rechercher sur Modrinth …",
+      "searchLabel": "Rechercher des projets",
+      "added": "Ajouté",
+      "add": "Ajouter",
+      "noResults": "Aucun résultat",
+      "hint": "Les préréglages ne dépendent pas de la version : à l’installation, la bonne version est choisie pour chaque instance – ce qui n’existe pas est ignoré.",
+      "tooManyItems": "Au maximum {max} entrées par préréglage",
+      "duplicate": "Chaque projet ne peut figurer qu’une fois dans un préréglage"
+    },
+    "page": {
+      "title": "Préréglages",
+      "subtitle": "Les mods que vous voulez toujours – installés automatiquement là où ils existent",
+      "new": "Nouveau préréglage",
+      "exported": "« {name} » enregistré",
+      "deleted": "« {name} » supprimé",
+      "imported": "« {name} » importé",
+      "emptyPreset": "Aucun projet pour l’instant",
+      "builtinHint": "Le launcher tient les préréglages TRS à jour. Vous pouvez les activer ou désactiver à tout moment pour les nouvelles instances.",
+      "confirmDelete": "Vraiment supprimer ?",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "footer": "Partagez des préréglages avec vos amis via Exporter – ils peuvent charger le fichier avec Importer."
+    }
+  },
+  "updateNews": {
+    "kicker": "Mise à jour {version}",
+    "version": "Version {version}",
+    "read": "Lire l’article",
+    "hide": "Masquer jusqu’à la prochaine mise à jour"
+  },
+  "webLogin": {
+    "title": "Confirmer la connexion au site",
+    "intro": "Le site {host} t’affiche un code. Saisis-le ici pour t’y connecter avec ton compte TRS.",
+    "codeLabel": "Code du site",
+    "question": "Se connecter en tant que {name} sur {host} ?",
+    "codeShown": "Code :",
+    "warningTitle": "Ne confirme que si tu es toi-même sur le site en ce moment.",
+    "warning": "Ne donne jamais ce code à personne. Celui qui te le demande veut prendre ton compte.",
+    "approve": "Confirmer la connexion",
+    "approving": "Confirmation …",
+    "done": "Connexion confirmée – tu peux retourner sur {host}.",
+    "needsServices": "Active d’abord les services TRS (Paramètres → Confidentialité).",
+    "needsAccount": "Connecte-toi d’abord avec ton compte Minecraft dans « Comptes ».",
+    "settingsDescription": "Se connecter à l’espace admin sur {host} avec le code affiché là-bas.",
+    "open": "Saisir le code"
+  },
+  "clips": {
+    "title": "Clips",
+    "subtitle": "{n} clip ou enregistrement | {n} clips et enregistrements",
+    "instanceLabel": "Filtrer par instance",
+    "allInstances": "Toutes les instances",
+    "settings": "Paramètres des clips",
+    "reload": "Recharger",
+    "noDate": "Date inconnue",
+    "play": "Lire {name}",
+    "rename": "Renommer",
+    "showInFolder": "Afficher dans le dossier",
+    "usage": "{used} sur {limit} utilisés",
+    "free": "{free} libres sur le disque",
+    "off": {
+      "title": "Les clips sont désactivés",
+      "text": "Active-les pour enregistrer les dernières secondes avec F9 ou filmer avec F10 pendant que tu joues.",
+      "action": "Activer"
+    },
+    "live": {
+      "label": "Enregistrements en cours",
+      "recording": "Enregistrement · {time}",
+      "buffer": "Tampon actif · dernières {seconds} s",
+      "saveClip": "Enregistrer un clip",
+      "record": "Démarrer l'enregistrement",
+      "stop": "Arrêter l'enregistrement"
+    },
+    "empty": {
+      "title": "Pas encore de clips",
+      "text": "Appuie sur F9 en jeu pour garder les dernières secondes, ou sur F10 pour démarrer et arrêter un enregistrement."
+    },
+    "player": {
+      "label": "Lire le clip",
+      "close": "Fermer le lecteur",
+      "hint": "Échap ferme · Alt+←/→ clip précédent/suivant"
+    },
+    "renameDialog": {
+      "title": "Renommer le clip",
+      "label": "Nouveau nom",
+      "invalid": "Interdit : noms vides, \\ / : * ? \" < > {'|'} et noms réservés de Windows."
+    },
+    "deleteDialog": {
+      "title": "Supprimer le clip ?",
+      "text": "{name} sera déplacé dans la corbeille."
+    },
+    "toasts": {
+      "clipSaved": "Clip enregistré ({duration}) – {instance}",
+      "recordingSaved": "Enregistrement sauvegardé ({duration}) – {instance}",
+      "show": "Afficher",
+      "limitCleanup": "Limite d'espace atteinte : {n} ancien clip déplacé dans la corbeille | Limite d'espace atteinte : {n} anciens clips déplacés dans la corbeille",
+      "renamed": "Clip renommé",
+      "trashed": "Clip déplacé dans la corbeille"
+    },
+    "errors": {
+      "disabled": "Les clips sont désactivés – active-les dans Paramètres → Clips.",
+      "starting": "L'enregistrement démarre encore – réessaie dans un instant.",
+      "noWindow": "Fenêtre du jeu introuvable – rien n'a été enregistré.",
+      "ffmpeg": "L'enregistreur (FFmpeg) est encore en téléchargement.",
+      "noFrames": "Rien n'est encore enregistré – réessaie dans quelques secondes.",
+      "busy": "Le dernier clip est encore en cours de sauvegarde.",
+      "error": "Le clip n'a pas pu être enregistré.",
+      "ffmpegDownload": "L'enregistreur (FFmpeg) n'a pas pu être téléchargé."
+    },
+    "reason": {
+      "starting": "En attente de la fenêtre du jeu …",
+      "noWindow": "Fenêtre du jeu introuvable",
+      "ffmpeg": "Téléchargement de l'enregistreur (FFmpeg) …",
+      "error": "L'enregistrement ne démarre pas – voir le journal",
+      "disabled": "Les clips sont désactivés"
+    },
+    "status": {
+      "buffer": "Tampon actif"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Logiciel (x264)"
     }
   }
 }

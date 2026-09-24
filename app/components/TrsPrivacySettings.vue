@@ -128,6 +128,10 @@ function openPrivacy() {
           />
         </SettingRow>
 
+        <SettingRow v-if="trs.isAdmin" :title="t('webLogin.title')" :description="t('webLogin.settingsDescription', { host: TRS_HOST })">
+          <button class="btn btn-ghost" data-testid="settings-web-login" @click="trs.openWebLogin()">{{ t('webLogin.open') }}</button>
+        </SettingRow>
+
         <SettingRow
           :title="t('trsPrivacy.delete.title')"
           :description="t('trsPrivacy.delete.description')"

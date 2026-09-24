@@ -30,7 +30,7 @@ function openPrivacy() {
       <i18n-t keypath="trsConsent.intro" tag="p" scope="global">
         <template #capes><strong class="text-base-50">{{ t('trsConsent.capes') }}</strong></template>
         <template #friendsList><strong class="text-base-50">{{ t('trsConsent.friendsList') }}</strong></template>
-        <template #host><span class="font-mono text-xs">api.theredstonee.de</span></template>
+        <template #host><span class="font-mono text-xs">{{ TRS_HOST }}</span></template>
       </i18n-t>
       <div class="rounded-lg border border-base-700 bg-base-850 px-3 py-2.5">
         <p class="mb-1.5 text-xs font-semibold text-base-50">{{ t('trsConsent.storedTitle') }}</p>

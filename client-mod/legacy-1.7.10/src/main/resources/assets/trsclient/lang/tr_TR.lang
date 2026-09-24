@@ -7,3 +7,5 @@ key.trsclient.freelook=Serbest bakış
 key.trsclient.hudProfile=HUD profilini değiştir
 key.trsclient.emoteWheel=İfade çarkı (basılı tut)
 key.trsclient.redstoneOverlay=Sinyal katmanını aç/kapat
+key.trsclient.saveClip=Klip kaydet
+key.trsclient.toggleRecording=Kaydı başlat/durdur

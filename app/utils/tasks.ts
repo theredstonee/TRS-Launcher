@@ -9,6 +9,7 @@ const taskKindKeys: Record<TaskKind, MessageKey> = {
   content: 'tasks.kind.content',
   'content-update': 'tasks.kind.contentUpdate',
   'performance-pack': 'tasks.kind.performancePack',
+  presets: 'tasks.kind.presets',
   java: 'tasks.kind.java',
   import: 'tasks.kind.import',
   export: 'tasks.kind.export',
@@ -18,6 +19,7 @@ const taskKindKeys: Record<TaskKind, MessageKey> = {
   reinstall: 'tasks.kind.reinstall',
   'version-change': 'tasks.kind.versionChange',
   launch: 'tasks.kind.launch',
+  ffmpeg: 'tasks.kind.ffmpeg',
 }
 
 /** Beschriftung im Verlauf („vor 2 Monaten · Modpack“) in der eingestellten Sprache. */

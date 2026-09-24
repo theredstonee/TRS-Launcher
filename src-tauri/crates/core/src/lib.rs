@@ -7,6 +7,7 @@
 pub mod auth;
 pub mod boost;
 pub mod client_mod;
+pub mod clips;
 pub mod client_mod_update;
 pub mod content;
 pub mod curseforge;
@@ -17,6 +18,7 @@ pub mod firewall;
 pub mod forge;
 pub mod fsutil;
 pub mod gamelog;
+pub mod gpu;
 pub mod history;
 pub mod hooks;
 pub mod icon;
@@ -34,6 +36,7 @@ pub mod nbt;
 pub mod paths;
 pub mod platform;
 pub mod prepare;
+pub mod presets;
 pub mod process;
 pub mod screenshots;
 pub mod servers;
@@ -94,6 +97,8 @@ pub struct Launcher {
     trs: trs_api::TrsApi,
     /// CurseForge – nur, wenn der Build einen API-Schlüssel hat.
     curseforge: Option<curseforge::CurseForge>,
+    /// Clips & Aufnahme (nimmt das Spielfenster auf, die Mod meldet nur Tasten).
+    clips: Arc<clips::ClipService>,
 }
 
 impl Launcher {
@@ -140,7 +145,9 @@ impl Launcher {
             events(event);
         });
 
+        let clips = Arc::new(clips::ClipService::new(&paths));
         let launcher = Self {
+            clips: clips.clone(),
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
@@ -165,9 +172,11 @@ impl Launcher {
         launcher.games.recover(|id| {
             // Mit welchem Account das Spiel lief, ist nach dem Neustart unbekannt.
             presence.game_started(id, None);
-            let (paths, id, sink, presence) = (paths.clone(), id.to_owned(), sink.clone(), presence.clone());
+            let (paths, id, sink, presence, clips) =
+                (paths.clone(), id.to_owned(), sink.clone(), presence.clone(), clips.clone());
             Box::new(move |seconds| {
                 presence.game_exited(&id);
+                clips.game_exited(&id);
                 tokio::spawn(async move {
                     let store = InstanceStore::new(paths.clone());
                     if let Err(e) = store.add_play_time(&id, seconds).await {
@@ -255,8 +264,59 @@ impl Launcher {
         new.validate()?;
         let mut guard = self.settings.write().await;
         new.save(&self.paths.settings_file()).await?;
+        if guard.prefer_dedicated_gpu && !new.prefer_dedicated_gpu {
+            // Abgeschaltet: unsere GPU-Einträge in Windows wieder entfernen.
+            let java_dir = self.paths.java_dir();
+            let removed = tokio::task::spawn_blocking(move || {
+                gpu::revert(&gpu::WindowsGpuPreferences, &java_dir, &gpu::own_runtimes(&java_dir))
+            })
+            .await
+            .unwrap_or_default();
+            tracing::info!("GPU-Präferenz für {removed} Java-Runtimes entfernt");
+        }
+        let clips_changed = guard.clips != new.clips;
         *guard = new.clone();
+        drop(guard);
+        if clips_changed {
+            let running = self.running_for_clips().await;
+            self.clips.settings_changed(&new.clips, running).await;
+        }
         Ok(new)
+    }
+
+    /// Clips & Aufnahme.
+    pub fn clips(&self) -> &clips::ClipService {
+        &self.clips
+    }
+
+    /// Laufende Spiele mit Name und Spielordner (für die Aufnahme).
+    async fn running_for_clips(&self) -> Vec<clips::RunningGame> {
+        let mut games = Vec::new();
+        for game in self.games.running() {
+            let name = self.instances.get(&game.instance_id).await.map(|i| i.name).unwrap_or_else(|_| game.instance_id.clone());
+            games.push(clips::RunningGame {
+                game_dir: self.paths.instance_game_dir(&game.instance_id),
+                instance_name: name,
+                pid: game.pid,
+                instance_id: game.instance_id,
+            });
+        }
+        games
+    }
+
+    /// Nach einem Launcher-Neustart: Aufnahme für übernommene Spiele wieder aufnehmen
+    /// (neues Token – die Mod liest die Datei beim nächsten Verbindungsversuch neu).
+    pub async fn resume_clips(self: Arc<Self>) {
+        let settings = self.settings().await.clips;
+        if settings.enabled {
+            let running = self.running_for_clips().await;
+            self.clips.settings_changed(&settings, running).await;
+        }
+    }
+
+    /// Beim Beenden des Launchers: laufende Aufnahmen sichern und FFmpeg beenden.
+    pub async fn clips_shutdown(&self) {
+        self.clips.shutdown().await;
     }
 
     pub async fn version_manifest(&self, force_refresh: bool) -> Result<meta::VersionManifest> {
@@ -487,6 +547,7 @@ impl Launcher {
         let on_exit = Box::new(move |play_seconds: u64| {
             // Spiel zu: Der Launcher meldet sofort wieder „online“.
             launcher.trs.presence.game_exited(&id);
+            launcher.clips.game_exited(&id);
             tokio::spawn(async move {
                 if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
                     tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
@@ -495,6 +556,11 @@ impl Launcher {
             });
         });
 
+        // Windows: Eintrag unter „Grafikeinstellungen“ (Registry), Linux: PRIME-Variablen (unten).
+        if settings.prefer_dedicated_gpu {
+            gpu::prefer_for_launch(&gpu::WindowsGpuPreferences, &self.paths.java_dir(), &command.program);
+        }
+        command.high_priority = settings.high_priority;
         command.env = exit_plan.env.clone();
         if settings.prefer_dedicated_gpu {
             for (key, value) in process::prefer_dedicated_gpu(&command.program) {
@@ -508,15 +574,27 @@ impl Launcher {
             hooks::apply_wrapper(&mut command, wrapper);
         }
         let log_dir = self.paths.instance_dir(&instance.id).join("launcher-logs");
+        // Port + Einmal-Token für die Clip-Tasten der Mod (oder "aus").
+        self.clips.prepare(&instance.id, &game_dir, &settings.clips).await;
         // Vor dem Start eintragen, damit der Launcher ab jetzt schweigt (der Mod meldet "in-game").
         self.trs.presence.game_started(&instance.id, Some(&session.uuid));
         let pid = match self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit) {
             Ok(pid) => pid,
             Err(e) => {
                 self.trs.presence.game_exited(&instance.id);
+                self.clips.game_exited(&instance.id);
                 return Err(e);
             }
         };
+        self.clips.game_started(
+            clips::RunningGame {
+                instance_id: instance.id.clone(),
+                instance_name: instance.name.clone(),
+                pid,
+                game_dir: game_dir.clone(),
+            },
+            &settings.clips,
+        );
         self.instances.touch_last_played(&instance.id).await?;
         let mut entry = HistoryEntry::new(HistoryKind::Launched);
         if let Some(label) = &join_label {

@@ -123,6 +123,7 @@ public final class TrsClient {
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
+		dev.theredstonee.trsclient.core.clips.Clips.init(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
 		config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
@@ -138,7 +139,8 @@ public final class TrsClient {
 			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor
 					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
 					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline
-					|| m == modules.capePhysics || m == modules.emotes)) {
+					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors
+					|| m == modules.entityCulling || m == modules.particles || m == modules.worldDetails)) {
 				continue;
 			}
 			visibleModules.add(m);
@@ -208,6 +210,14 @@ public final class TrsClient {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.OnlineHooks.init(FMLPaths.CONFIGDIR.get(), modules, Mc.modVersion(MOD_ID),
 				Mc.modVersion("minecraft"), "forge", message -> LOGGER.info(message));
+		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
+		// Forge 1.14.4 hat kein Mixin – dort nur Dynamische FPS (Bild-Event in legacyHooks).
+		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> net.minecraftforge.fml.ModList.get().isLoaded(id),
+				dev.theredstonee.trsclient.core.perf.PerfCompat.FORGE, Mc.modVersion("minecraft"), message -> LOGGER.info(message),
+				//? if >=1.15 {
+				true);
+				//?} else
+				/*false);*/
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (Forge {}) – {} Module, Config {} ({})",
@@ -237,6 +247,7 @@ public final class TrsClient {
 		bus.addListener((RenderWorldLastEvent e) -> handRendering = true);
 		bus.addListener((TickEvent.RenderTickEvent e) -> {
 			if (e.phase == TickEvent.Phase.START) {
+				dev.theredstonee.trsclient.perf.PerfHooks.beforeFrame();
 				handRendering = false;
 				if (fullbright() && Mc.mc().level != null && !(Mc.screen() instanceof net.minecraft.client.gui.screens.VideoSettingsScreen)) {
 					savedGamma = Mc.gamma();
@@ -281,6 +292,9 @@ public final class TrsClient {
 		Mc.setScreen(new TitleScreen());
 	}
 
+	/** Meldungen der Clips in der Aktionsleiste. */
+	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> Mc.actionBar(text);
+
 	private void onTick(Minecraft mc) {
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.consumeClick()) {
@@ -296,6 +310,10 @@ public final class TrsClient {
 			Mc.actionBar(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
 			saveConfig();
 		}
+		// Clips & Aufnahme: aufgenommen wird im Launcher, hier nur die Tasten melden.
+		while (TrsKeys.saveClip.consumeClick()) dev.theredstonee.trsclient.core.clips.Clips.get().saveClip();
+		while (TrsKeys.toggleRecording.consumeClick()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
+		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.consumeClick()) {
 			modules.fullbright.toggle();
 			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
@@ -334,6 +352,7 @@ public final class TrsClient {
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
+		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
 	}
 
 	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */

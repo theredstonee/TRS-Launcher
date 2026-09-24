@@ -483,7 +483,8 @@
       "invalidCodeId": "Invalid code ID.",
       "redemptionsRange": "Redemptions per code: 1 to 100,000.",
       "countRange": "Amount: 1 to 100 codes at once.",
-      "expiryInPast": "The expiry date is in the past."
+      "expiryInPast": "The expiry date is in the past.",
+      "invalidWebLoginCode": "The code looks like ABCD-1234 (letters and digits)."
     },
     "trsPng": {
       "fileTooLarge": "The file is too large (max. 256 KB).",
@@ -527,6 +528,35 @@
       "notAModpack": "This isn't a CurseForge modpack.",
       "packFileMissing": "A file of the modpack no longer exists on CurseForge (project {project}).",
       "packBlocked": "The author of “{name}” doesn't allow downloads through other apps – please download the modpack on CurseForge and import it here."
+    },
+    "presets": {
+      "nameLength": "The name must be between 1 and {max} characters long.",
+      "invalidProject": "Invalid project in the preset.",
+      "tooManyItems": "A preset can have at most {max} entries.",
+      "notFound": "This preset no longer exists.",
+      "builtinReadOnly": "TRS presets can’t be changed or deleted.",
+      "tooMany": "More than {max} custom presets aren’t supported.",
+      "invalidOrder": "The order doesn’t match the preset list.",
+      "invalidFile": "This isn’t a valid preset file.",
+      "fileTooLarge": "The preset file is too large.",
+      "noneSelected": "No preset selected."
+    },
+    "trsWebLogin": {
+      "invalidCode": "This sign-in code doesn't exist – compare it with the code on the website.",
+      "expired": "The sign-in code has expired – reload the website and enter the new code.",
+      "notAdmin": "Only TRS admins can sign in on the website.",
+      "alreadyUsed": "This sign-in code has already been confirmed."
+    },
+    "clips": {
+      "bufferRange": "Clip length must be between {min} and {max} seconds",
+      "fpsInvalid": "Frames per second: only 30 or 60",
+      "storageRange": "Clip storage must be between {min} and {max} GB",
+      "folderInvalid": "The clip folder must be a full local path",
+      "gone": "The clip no longer exists.",
+      "invalidName": "This name is not allowed as a file name.",
+      "nameTaken": "There already is a clip with this name.",
+      "noFrames": "Nothing has been recorded yet.",
+      "notRecording": "No recording is running for this game."
     }
   },
   "browse": {
@@ -821,14 +851,6 @@
       "done": "{n} update installed | {n} updates installed",
       "partial": "{failed} of {total} updates failed. | {failed} of {total} updates failed."
     },
-    "perfPack": {
-      "taskTitle": "Performance pack for {name}",
-      "stage": "Loading mods",
-      "done": "Performance pack installed ({n} file) | Performance pack installed ({n} files)",
-      "title": "Sodium, Lithium & Co. – only what's available for this version",
-      "installing": "Installing performance pack …",
-      "button": "+ Performance pack"
-    },
     "toolbar": {
       "searchPlaceholder": "Search {n} project … | Search {n} projects …",
       "searchLabel": "Search projects",
@@ -1105,7 +1127,12 @@
       "reinstallTitle": "Reinstall",
       "reinstallDescription": "Downloads the game version, mod loader and libraries again from scratch. Worlds, mods and settings are kept.",
       "reinstallConfirmTitle": "Reinstall?",
-      "reinstallConfirmText": "The game version and libraries will be downloaded again. Worlds, mods and settings are kept."
+      "reinstallConfirmText": "The game version and libraries will be downloaded again. Worlds, mods and settings are kept.",
+      "tuningTitle": "FPS boost at launch",
+      "tuningDescription": "Tuned Java settings for more FPS and fewer stutters. Custom JVM arguments take priority.",
+      "tuningGlobal": "Like global ({state})",
+      "tuningOn": "On",
+      "tuningOff": "Off"
     },
     "window": {
       "customTitle": "Custom window settings",
@@ -1496,7 +1523,11 @@
       "windowWidth": "Window width",
       "windowHeight": "Window height",
       "dedicatedGpuTitle": "High-performance graphics card",
-      "dedicatedGpuDescription": "For laptops with two graphics chips: Windows gives the game the dedicated GPU.",
+      "dedicatedGpuDescription": "Minecraft uses the dedicated graphics card (important on laptops). Only applies to the launcher’s own Java and is undone when you switch it off.",
+      "tuningTitle": "FPS boost at launch",
+      "tuningDescription": "Tuned Java settings for your Java version and memory (ZGC or G1, memory reserved up front). Only used when no custom JVM arguments are set.",
+      "priorityTitle": "Higher process priority",
+      "priorityDescription": "Starts the game with the priority “Above normal” – can smooth out stutters while other programs are busy.",
       "dedicatedGpuDescriptionLinux": "For laptops with two graphics chips: the game renders on the dedicated GPU (PRIME offload – DRI_PRIME or the NVIDIA variables)."
     },
     "hooks": {
@@ -1574,6 +1605,55 @@
       "allowed": "Network access allowed for {n} Java program | Network access allowed for {n} Java programs",
       "downloadsTitle": "Parallel downloads",
       "downloadsDescription": "How many files are downloaded at the same time. Use fewer on a slow connection."
+    },
+    "clips": {
+      "title": "Clips & recording",
+      "intro": "Like ShadowPlay or Medal: the launcher records only the game window while a game from this launcher runs. Everything stays on your PC.",
+      "enabledTitle": "Clips & recording",
+      "enabledDescription": "Keeps the last seconds in a buffer on disk so a key press saves them as a clip. Off by default.",
+      "ffmpegTitle": "Recorder (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} is installed and verified.",
+      "ffmpegMissing": "Downloaded once when you turn clips on ({size}, checksum verified).",
+      "ffmpegDownload": "Download",
+      "ffmpegDownloading": "Downloading … {percent} %",
+      "ffmpegTaskTitle": "Recorder (FFmpeg)",
+      "ffmpegTaskStage": "Downloading FFmpeg",
+      "ffmpegTaskDone": "Recorder ready",
+      "captureTitle": "Picture",
+      "bufferTitle": "Clip length",
+      "bufferDescription": "How many seconds a clip goes back.",
+      "seconds": "{n} s",
+      "resolutionTitle": "Resolution",
+      "resolutionDescription": "Larger game windows are scaled down.",
+      "resolution": {
+        "native": "Window size",
+        "1080p": "Up to 1080p",
+        "720p": "Up to 720p"
+      },
+      "fpsTitle": "Frame rate",
+      "qualityTitle": "Quality",
+      "qualityDescription": "Higher quality means larger files.",
+      "quality": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "encoderTitle": "Encoder",
+      "encoderDescription": "Automatic uses your graphics card (NVIDIA, AMD, Intel) and falls back to software.",
+      "audioTitle": "Sound",
+      "systemAudioTitle": "System sound",
+      "systemAudioDescription": "Records what your speakers play (game, music, voice chat).",
+      "microphoneTitle": "Microphone",
+      "microphoneDescription": "Adds your default microphone. Off by default.",
+      "storageTitle": "Storage",
+      "folderTitle": "Clip folder",
+      "folderDefault": "Launcher data folder (clips)",
+      "folderReset": "Use default",
+      "limitTitle": "Storage limit",
+      "limitDescription": "Above this size the oldest clips are moved to the recycle bin.",
+      "keysTitle": "Keys in game (TRS Client)",
+      "keysText": "F9 saves a clip, F10 starts and stops a recording. Change them in the Minecraft controls under “TRS Client”.",
+      "privacy": "Nothing leaves your PC: no upload, no account, the recorder only runs while a game from this launcher is open."
     }
   },
   "settingsShell": {
@@ -1763,7 +1843,9 @@
     "versionFormat": "Only letters, digits and . - _ +",
     "descriptionInvalidChars": "The description contains invalid characters",
     "folderRequired": "Please select at least one folder",
-    "invalidInput": "Invalid input"
+    "invalidInput": "Invalid input",
+    "clipBufferRange": "Clip length must be between {min} and {max} seconds",
+    "clipStorageRange": "Clip storage must be between {min} and {max} GB"
   },
   "titleBar": {
     "forward": "Forward",
@@ -1804,7 +1886,9 @@
     "collapseLabel": "Collapse sidebar",
     "expandLabel": "Expand sidebar",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "presets": "Presets",
+    "clips": "Clips"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -1856,7 +1940,9 @@
       "newInstance": "add create new",
       "import": "import prism multimc curseforge migrate",
       "modpacks": "modpack pack install",
-      "dataDir": "folder explorer files"
+      "dataDir": "folder explorer files",
+      "webLogin": "website web login sign in admin code browser",
+      "clips": "clips recording record video replay shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1874,6 +1960,9 @@
       "dataDir": {
         "title": "Open data folder",
         "subtitle": "Folder with instances and settings"
+      },
+      "webLogin": {
+        "subtitle": "Enter the code from {host}"
       }
     }
   },
@@ -1928,7 +2017,9 @@
       "repair": "Instance repaired",
       "reinstall": "Reinstalled",
       "versionChange": "Version changed",
-      "launch": "Game launch"
+      "launch": "Game launch",
+      "presets": "Presets installed",
+      "ffmpeg": "Recorder installed"
     },
     "stage": {
       "preparing": "Preparing",
@@ -2069,7 +2160,8 @@
       "defaults": "Default settings",
       "java": "Java installations",
       "storage": "Storage",
-      "network": "Network"
+      "network": "Network",
+      "clips": "Clips & recording"
     },
     "instance": {
       "general": "General",
@@ -2096,7 +2188,8 @@
       "minCount": "At least 1 code.",
       "maxCount": "At most 100 codes at once.",
       "invalidExpiry": "Invalid expiry date.",
-      "expiryPast": "The expiry date is in the past."
+      "expiryPast": "The expiry date is in the past.",
+      "webLoginCode": "The code looks like ABCD-1234 (letters and digits)."
     },
     "unlock": {
       "own": "Custom",
@@ -2506,6 +2599,215 @@
       "allDone": "All files are in place.",
       "banner": "{count} file must be downloaded from CurseForge by hand. | {count} files must be downloaded from CurseForge by hand.",
       "show": "Show"
+    }
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Always automatic",
+    "autoHint": "Preselected for every new instance – and added to new modpacks where it fits.",
+    "itemCount": "{n} project | {n} projects",
+    "builtin": {
+      "fpsBoost": {
+        "name": "FPS boost",
+        "description": "Sodium or Embeddium, Lithium, FerriteCore, ModernFix & more – whatever fits the version and loader"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Renders terrain with mesh shaders – for your NVIDIA graphics card (Fabric, needs Sodium)"
+      },
+      "voiceChat": {
+        "name": "Voice chat",
+        "description": "Simple Voice Chat – talk to people nearby on servers that support it"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback where available, otherwise ReplayMod – record and edit gameplay"
+      }
+    },
+    "picker": {
+      "title": "Presets",
+      "manage": "Manage presets",
+      "vanillaBoost": "Vanilla already gets this through the TRS optimization",
+      "needsLoader": "Mods need a mod loader – in a vanilla instance only resource packs and shaders are installed.",
+      "useFabric": "Use Fabric"
+    },
+    "apply": {
+      "title": "Apply preset",
+      "intro": "Everything available for {name} ({version}, {loader}) is installed – including required dependencies. The rest is skipped.",
+      "running": "Presets are already being installed into this instance.",
+      "install": "Install {n} preset | Install {n} presets",
+      "button": "+ Apply preset",
+      "buttonTitle": "Install mod presets (e.g. FPS boost, voice chat) – only what’s available for this version",
+      "installing": "Installing presets …"
+    },
+    "report": {
+      "title": "Presets for {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "plus {n} dependency | plus {n} dependencies",
+      "skipped": "Skipped ({n}) | Skipped ({n})",
+      "included": "Included ({n}) | Included ({n})",
+      "notNeeded": "{n} part of the FPS boost isn’t made for this version | {n} parts of the FPS boost aren’t made for this version",
+      "nothing": "Nothing to install",
+      "allDone": "{n} project installed | All {n} projects installed",
+      "partial": "{done} of {total} installed",
+      "more": "(+{n} more) | (+{n} more)",
+      "details": "Details"
+    },
+    "reason": {
+      "installed": "Installed",
+      "alreadyInstalled": "Was already installed",
+      "duplicate": "Already included through another preset",
+      "notAvailable": "{title} isn’t available for {version}",
+      "notAvailableLoader": "{title} isn’t available for {version} ({loader})",
+      "missingDependency": "{title} needs {dependency}, which isn’t available for this version",
+      "incompatible": "{title} doesn’t work together with {other}",
+      "needsLoader": "{title} needs a mod loader",
+      "failed": "{title} couldn’t be downloaded"
+    },
+    "status": {
+      "installed": "Installed",
+      "alreadyInstalled": "Already there",
+      "duplicate": "Included",
+      "skipped": "Skipped"
+    },
+    "task": {
+      "title": "Presets for {name}",
+      "preparing": "Preparing …",
+      "resolving": "Checking versions ({done}/{total})",
+      "installing": "Loading {title} ({done}/{total})",
+      "finishing": "Finishing up"
+    },
+    "editor": {
+      "newTitle": "New preset",
+      "editTitle": "Edit preset",
+      "namePlaceholder": "e.g. My basics",
+      "contents": "Contents ({n}) | Contents ({n})",
+      "remove": "Remove {title}",
+      "empty": "Still empty – add projects from the search.",
+      "searchPlaceholder": "Search Modrinth …",
+      "searchLabel": "Search projects",
+      "added": "Added",
+      "add": "Add",
+      "noResults": "No results",
+      "hint": "Presets are version-independent: when installing, the matching version is picked for each instance – anything not available is skipped.",
+      "tooManyItems": "At most {max} entries per preset",
+      "duplicate": "Every project can only be in a preset once"
+    },
+    "page": {
+      "title": "Presets",
+      "subtitle": "Mods you always want – installed automatically wherever they’re available",
+      "new": "New preset",
+      "exported": "“{name}” saved",
+      "deleted": "“{name}” deleted",
+      "imported": "“{name}” imported",
+      "emptyPreset": "No projects yet",
+      "builtinHint": "TRS presets are kept up to date by the launcher. You can switch them on or off for new instances at any time.",
+      "confirmDelete": "Really delete?",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "footer": "Share presets with friends via Export – they can load the file with Import."
+    }
+  },
+  "updateNews": {
+    "kicker": "Update {version}",
+    "version": "Version {version}",
+    "read": "Read the post",
+    "hide": "Hide until the next update"
+  },
+  "webLogin": {
+    "title": "Confirm website sign-in",
+    "intro": "The website {host} shows you a code. Enter it here to sign in there with your TRS account.",
+    "codeLabel": "Code from the website",
+    "question": "Sign in as {name} on {host}?",
+    "codeShown": "Code:",
+    "warningTitle": "Only confirm if you are on the website yourself right now.",
+    "warning": "Never give this code to anyone. Whoever asks you for it wants to take over your account.",
+    "approve": "Confirm sign-in",
+    "approving": "Confirming …",
+    "done": "Sign-in confirmed – you can go back to {host}.",
+    "needsServices": "Turn on the TRS services first (Settings → Privacy).",
+    "needsAccount": "Please sign in with your Minecraft account under \"Accounts\" first.",
+    "settingsDescription": "Sign in to the admin area on {host} with the code shown there.",
+    "open": "Enter code"
+  },
+  "clips": {
+    "title": "Clips",
+    "subtitle": "{n} clip or recording | {n} clips and recordings",
+    "instanceLabel": "Filter by instance",
+    "allInstances": "All instances",
+    "settings": "Clip settings",
+    "reload": "Reload",
+    "noDate": "Unknown date",
+    "play": "Play {name}",
+    "rename": "Rename",
+    "showInFolder": "Show in folder",
+    "usage": "{used} of {limit} used",
+    "free": "{free} free on the drive",
+    "off": {
+      "title": "Clips are off",
+      "text": "Turn them on to save the last seconds with F9 or record with F10 while you play.",
+      "action": "Turn on"
+    },
+    "live": {
+      "label": "Running recordings",
+      "recording": "Recording · {time}",
+      "buffer": "Buffer active · last {seconds} s",
+      "saveClip": "Save clip",
+      "record": "Start recording",
+      "stop": "Stop recording"
+    },
+    "empty": {
+      "title": "No clips yet",
+      "text": "Press F9 in game to save the last seconds, or F10 to start and stop a recording."
+    },
+    "player": {
+      "label": "Play clip",
+      "close": "Close player",
+      "hint": "Esc closes · Alt+←/→ previous/next clip"
+    },
+    "renameDialog": {
+      "title": "Rename clip",
+      "label": "New name",
+      "invalid": "Not allowed: empty names, \\ / : * ? \" < > {'|'} and reserved Windows names."
+    },
+    "deleteDialog": {
+      "title": "Delete clip?",
+      "text": "{name} is moved to the recycle bin."
+    },
+    "toasts": {
+      "clipSaved": "Clip saved ({duration}) – {instance}",
+      "recordingSaved": "Recording saved ({duration}) – {instance}",
+      "show": "Show",
+      "limitCleanup": "Storage limit reached: {n} old clip moved to the recycle bin | Storage limit reached: {n} old clips moved to the recycle bin",
+      "renamed": "Clip renamed",
+      "trashed": "Clip moved to the recycle bin"
+    },
+    "errors": {
+      "disabled": "Clips are off – turn them on under Settings → Clips.",
+      "starting": "Recording is still starting – try again in a moment.",
+      "noWindow": "Game window not found – nothing was recorded.",
+      "ffmpeg": "The recorder (FFmpeg) is still downloading.",
+      "noFrames": "Nothing recorded yet – try again in a few seconds.",
+      "busy": "The last clip is still being saved.",
+      "error": "The clip could not be saved.",
+      "ffmpegDownload": "The recorder (FFmpeg) could not be downloaded."
+    },
+    "reason": {
+      "starting": "Waiting for the game window …",
+      "noWindow": "Game window not found",
+      "ffmpeg": "Downloading the recorder (FFmpeg) …",
+      "error": "Recording does not start – see the log",
+      "disabled": "Clips are off"
+    },
+    "status": {
+      "buffer": "Buffer active"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Software (x264)"
     }
   }
 }

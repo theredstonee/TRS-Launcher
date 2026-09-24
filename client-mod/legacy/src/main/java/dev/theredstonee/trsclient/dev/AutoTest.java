@@ -54,6 +54,8 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
+	private final PerfTest perfTest = new PerfTest();
+	private final CapeColorTest capeColorTest = new CapeColorTest();
 
 	private AutoTest() {
 	}
@@ -149,8 +151,14 @@ public final class AutoTest {
 			}
 			case 4:
 				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
-				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))) {
+				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))
+						|| "perf".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 18;
+					break;
+				}
+				// -PtrsAutotestOnly=capecolor: nur Umhang-Einstellungen/Vorschau und Farben
+				if ("capecolor".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 19;
 					break;
 				}
 				shot(mc, "hud");
@@ -277,7 +285,38 @@ public final class AutoTest {
 				break;
 			case 18:
 				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt
-				if (redstoneTest.step(mc, modules, new CapeTest.Actions() {
+				if (!"perf".equals(System.getProperty("trsclient.autotest.only")) && redstoneTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				// Leistung: Testszene, FPS ohne/mit FPS-Boost, Dynamische FPS, Menü, Rückgängig
+				if (!"redstone".equals(System.getProperty("trsclient.autotest.only")) && perfTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				if ("perf".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 20;
+					break;
+				}
+				next(5);
+				break;
+			case 19:
+				// Umhang-Physik-Einstellungen (Vorschau, Wind, Stufen) und Farben (Sättigung 0 %/200 %)
+				if (capeColorTest.step(mc, modules, new CapeTest.Actions() {
 					@Override
 					public void shot(String name) {
 						AutoTest.this.shot(mc, name);
@@ -290,8 +329,9 @@ public final class AutoTest {
 				})) return;
 				next(5);
 				break;
-			case 19:
+			case 20:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
+				TrsClient.LOGGER.info("[Autotest] Leistungs-Hooks: {}", dev.theredstonee.trsclient.perf.LegacyPerf.get().stats());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
 				if (before != null) modules.registry.apply(before);
@@ -305,8 +345,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 20) mc.shutdown();
-				step = 21;
+				if (step == 21) mc.shutdown();
+				step = 22;
 				break;
 		}
 	}

@@ -289,7 +289,8 @@ impl GameManager {
             .stdout(stdout)
             .stderr(stderr);
         // Eigene Prozessgruppe ohne Konsole: Das Spiel überlebt den Launcher.
-        platform::detach(&mut cmd);
+        // „Hohe Priorität“ gibt es nur unter Windows (Linux bräuchte Root-Rechte).
+        platform::detach(&mut cmd, command.high_priority);
         let child = cmd.spawn().map_err(|e| {
             tracing::error!("Java konnte nicht gestartet werden ({}): {e}", command.program.display());
             Error::launch(crate::msg!("process.javaStartFailed", "Java konnte nicht gestartet werden."))
@@ -727,7 +728,8 @@ mod tests {
         } else {
             ("/bin/sh", vec!["-c".into(), "while true; do echo tick; sleep 1; done".into()])
         };
-        let command = Command { program: PathBuf::from(program), args, cwd: dir.path().to_owned(), env: Vec::new() };
+        let command =
+            Command { program: PathBuf::from(program), args, cwd: dir.path().to_owned(), env: Vec::new(), high_priority: false };
         manager.spawn("test", command, &dir.path().join("logs"), vec![], Box::new(|_| {})).unwrap();
         assert!(manager.is_running("test"));
         let saved = std::fs::read_to_string(dir.path().join("running.json")).unwrap();

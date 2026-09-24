@@ -137,6 +137,7 @@ public final class TrsClient {
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(file.getParentFile().toPath());
+		dev.theredstonee.trsclient.core.clips.Clips.init(file.getParentFile().toPath());
 		initWaypoints(event.getModConfigurationDirectory());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
@@ -147,6 +148,8 @@ public final class TrsClient {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.LegacyOnline.init(event.getModConfigurationDirectory().toPath(), modules,
 				version, Mc.version(), message -> LOGGER.info(message));
+		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
+		dev.theredstonee.trsclient.perf.LegacyPerf.init(modules, Mc.version(), message -> LOGGER.info(message));
 	}
 
 	@Mod.EventHandler
@@ -158,6 +161,7 @@ public final class TrsClient {
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
 		AutoTest.installIfRequested();
 		// Legacy-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
@@ -181,6 +185,9 @@ public final class TrsClient {
 
 	// --- Forge-Events ---
 
+	/** Meldungen der Clips in der Aktionsleiste. */
+	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> Mc.actionBar(text);
+
 	@SubscribeEvent
 	public void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
@@ -198,6 +205,10 @@ public final class TrsClient {
 			Mc.actionBar(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
 			saveConfig();
 		}
+		// Clips & Aufnahme: aufgenommen wird im Launcher, hier nur die Tasten melden.
+		while (TrsKeys.saveClip.isPressed()) dev.theredstonee.trsclient.core.clips.Clips.get().saveClip();
+		while (TrsKeys.toggleRecording.isPressed()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
+		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.isPressed()) {
 			modules.fullbright.toggle();
 			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
@@ -284,6 +295,7 @@ public final class TrsClient {
 		Minecraft mc = Minecraft.getMinecraft();
 		if (event.phase == TickEvent.Phase.START) {
 			handPass = false;
+			dev.theredstonee.trsclient.render.ColorPass.frameStart();
 			updateZoom(mc);
 			// Fullbright: Gamma nur bis zur Lightmap-Berechnung ersetzen (siehe restoreGamma).
 			// In den Video-Einstellungen nicht – dort zeigt/ändert der Regler den echten Wert.
@@ -302,6 +314,10 @@ public final class TrsClient {
 		} else {
 			restoreGamma(mc);
 			restoreHurtTime();
+			// Farben bei ausgeblendeter Oberfläche (F1): dann gibt es kein Overlay-Ereignis.
+			if (Mc.world() != null && Mc.hudHidden() && mc.currentScreen == null) {
+				dev.theredstonee.trsclient.render.ColorPass.afterLevel(event.renderTickTime);
+			}
 		}
 	}
 
@@ -374,6 +390,13 @@ public final class TrsClient {
 			zoom.scroll(wheel);
 			event.setCanceled(true);
 		}
+	}
+
+	/** Farben: Welt und Hand sind gezeichnet, HUD und Menüs kommen erst danach. */
+	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
+	public void onOverlayColors(RenderGameOverlayEvent.Pre event) {
+		if (Mc.overlayType(event) != RenderGameOverlayEvent.ElementType.ALL) return;
+		dev.theredstonee.trsclient.render.ColorPass.afterLevel(Mc.partialTicks(event));
 	}
 
 	/** Vanilla-Fadenkreuz ausblenden, solange das eigene aktiv ist. */

@@ -483,7 +483,8 @@
       "invalidCodeId": "Geçersiz kod kimliği.",
       "redemptionsRange": "Kod başına kullanım: 1 ile 100.000 arası.",
       "countRange": "Miktar: aynı anda 1 ile 100 kod arası.",
-      "expiryInPast": "Son kullanma tarihi geçmişte."
+      "expiryInPast": "Son kullanma tarihi geçmişte.",
+      "invalidWebLoginCode": "Kod ABCD-1234 biçimindedir (harfler ve rakamlar)."
     },
     "trsPng": {
       "fileTooLarge": "Dosya çok büyük (en fazla 256 KB).",
@@ -527,6 +528,35 @@
       "notAModpack": "Bu bir CurseForge mod paketi değil.",
       "packFileMissing": "Mod paketinin bir dosyası artık CurseForge'da yok (proje {project}).",
       "packBlocked": "“{name}” yazarı başka uygulamalar üzerinden indirmeye izin vermiyor – lütfen mod paketini CurseForge'dan indirip buraya aktar."
+    },
+    "presets": {
+      "nameLength": "Ad 1 ile {max} karakter arasında olmalıdır.",
+      "invalidProject": "Ön ayarda geçersiz proje.",
+      "tooManyItems": "Bir ön ayarda en fazla {max} öğe olabilir.",
+      "notFound": "Bu ön ayar artık yok.",
+      "builtinReadOnly": "TRS ön ayarları değiştirilemez veya silinemez.",
+      "tooMany": "{max} adetten fazla kendi ön ayarı desteklenmez.",
+      "invalidOrder": "Sıralama ön ayar listesiyle uyuşmuyor.",
+      "invalidFile": "Bu geçerli bir ön ayar dosyası değil.",
+      "fileTooLarge": "Ön ayar dosyası çok büyük.",
+      "noneSelected": "Hiçbir ön ayar seçilmedi."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Böyle bir giriş kodu yok – web sitesindeki kodla karşılaştır.",
+      "expired": "Giriş kodunun süresi doldu – web sitesini yenile ve yeni kodu gir.",
+      "notAdmin": "Web sitesine yalnızca TRS yöneticileri giriş yapabilir.",
+      "alreadyUsed": "Bu giriş kodu zaten onaylandı."
+    },
+    "clips": {
+      "bufferRange": "Klip uzunluğu {min} ile {max} saniye arasında olmalı",
+      "fpsInvalid": "Saniyedeki kare: yalnızca 30 veya 60",
+      "storageRange": "Klip alanı {min} ile {max} GB arasında olmalı",
+      "folderInvalid": "Klip klasörü tam bir yerel yol olmalı",
+      "gone": "Klip artık mevcut değil.",
+      "invalidName": "Bu ad dosya adı olarak kullanılamaz.",
+      "nameTaken": "Bu adla bir klip zaten var.",
+      "noFrames": "Henüz hiçbir şey kaydedilmedi.",
+      "notRecording": "Bu oyun için çalışan bir kayıt yok."
     }
   },
   "browse": {
@@ -821,14 +851,6 @@
       "done": "{n} güncelleme yüklendi | {n} güncelleme yüklendi",
       "partial": "{total} güncellemeden {failed} tanesi başarısız oldu. | {total} güncellemeden {failed} tanesi başarısız oldu."
     },
-    "perfPack": {
-      "taskTitle": "Performans paketi – {name}",
-      "stage": "Modlar yükleniyor",
-      "done": "Performans paketi yüklendi ({n} dosya) | Performans paketi yüklendi ({n} dosya)",
-      "title": "Sodium, Lithium ve diğerleri – yalnızca bu sürüm için mevcut olanlar",
-      "installing": "Performans paketi yükleniyor …",
-      "button": "+ Performans paketi"
-    },
     "toolbar": {
       "searchPlaceholder": "{n} projede ara … | {n} projede ara …",
       "searchLabel": "Proje ara",
@@ -1105,7 +1127,12 @@
       "reinstallTitle": "Yeniden yükle",
       "reinstallDescription": "Oyun sürümünü, mod yükleyiciyi ve kütüphaneleri sıfırdan yeniden indirir. Dünyalar, modlar ve ayarlar korunur.",
       "reinstallConfirmTitle": "Yeniden yüklensin mi?",
-      "reinstallConfirmText": "Oyun sürümü ve kütüphaneler yeniden indirilecek. Dünyalar, modlar ve ayarlar korunur."
+      "reinstallConfirmText": "Oyun sürümü ve kütüphaneler yeniden indirilecek. Dünyalar, modlar ve ayarlar korunur.",
+      "tuningTitle": "Başlangıçta FPS artışı",
+      "tuningDescription": "Daha fazla FPS ve daha az takılma için Java ayarları. Özel JVM argümanları önceliklidir.",
+      "tuningGlobal": "Genel ayar gibi ({state})",
+      "tuningOn": "Açık",
+      "tuningOff": "Kapalı"
     },
     "window": {
       "customTitle": "Özel pencere ayarları",
@@ -1496,7 +1523,11 @@
       "windowWidth": "Pencere genişliği",
       "windowHeight": "Pencere yüksekliği",
       "dedicatedGpuTitle": "Yüksek performanslı ekran kartı",
-      "dedicatedGpuDescription": "İki grafik çipli dizüstü bilgisayarlar için: Windows oyuna harici GPU'yu verir.",
+      "dedicatedGpuDescription": "Minecraft harici ekran kartını kullanır (dizüstü bilgisayarlarda önemli). Yalnızca başlatıcının Java’sı için geçerlidir ve kapatınca geri alınır.",
+      "tuningTitle": "Başlangıçta FPS artışı",
+      "tuningDescription": "Java sürümüne ve belleğe göre ayarlanmış Java ayarları (ZGC veya G1, bellek baştan ayrılır). Yalnızca özel JVM argümanları yoksa.",
+      "priorityTitle": "Daha yüksek işlem önceliği",
+      "priorityDescription": "Oyunu “Normalin üstünde” öncelikle başlatır – diğer programlar meşgulken takılmaları azaltabilir.",
       "dedicatedGpuDescriptionLinux": "İki grafik çipli dizüstü bilgisayarlar için: oyun harici GPU’da işlenir (PRIME offload – DRI_PRIME veya NVIDIA değişkenleri)."
     },
     "hooks": {
@@ -1574,6 +1605,55 @@
       "allowed": "{n} Java programına ağ erişimi izni verildi | {n} Java programına ağ erişimi izni verildi",
       "downloadsTitle": "Paralel indirmeler",
       "downloadsDescription": "Aynı anda kaç dosya indirileceği. Yavaş bağlantıda daha az kullan."
+    },
+    "clips": {
+      "title": "Klipler ve kayıt",
+      "intro": "ShadowPlay veya Medal gibi: bu launcher’dan bir oyun çalıştığı sürece launcher yalnızca oyun penceresini kaydeder. Her şey bilgisayarında kalır.",
+      "enabledTitle": "Klipler ve kayıt",
+      "enabledDescription": "Son saniyeleri diskte bir arabellekte tutar; bir tuşla klip olarak kaydedilir. Varsayılan olarak kapalı.",
+      "ffmpegTitle": "Kaydedici (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} kurulu ve doğrulandı.",
+      "ffmpegMissing": "Klipleri açtığında bir kez indirilir ({size}, sağlama toplamı doğrulanır).",
+      "ffmpegDownload": "İndir",
+      "ffmpegDownloading": "İndiriliyor … %{percent}",
+      "ffmpegTaskTitle": "Kaydedici (FFmpeg)",
+      "ffmpegTaskStage": "FFmpeg indiriliyor",
+      "ffmpegTaskDone": "Kaydedici hazır",
+      "captureTitle": "Görüntü",
+      "bufferTitle": "Klip uzunluğu",
+      "bufferDescription": "Bir klibin kaç saniye geriye gittiği.",
+      "seconds": "{n} sn",
+      "resolutionTitle": "Çözünürlük",
+      "resolutionDescription": "Daha büyük oyun pencereleri küçültülür.",
+      "resolution": {
+        "native": "Pencere boyutu",
+        "1080p": "1080p’ye kadar",
+        "720p": "720p’ye kadar"
+      },
+      "fpsTitle": "Kare hızı",
+      "qualityTitle": "Kalite",
+      "qualityDescription": "Daha yüksek kalite daha büyük dosya demektir.",
+      "quality": {
+        "low": "Düşük",
+        "medium": "Orta",
+        "high": "Yüksek"
+      },
+      "encoderTitle": "Kodlayıcı",
+      "encoderDescription": "Otomatik, ekran kartını (NVIDIA, AMD, Intel) kullanır; gerekirse yazılıma geçer.",
+      "audioTitle": "Ses",
+      "systemAudioTitle": "Sistem sesi",
+      "systemAudioDescription": "Hoparlörlerinin çaldığını kaydeder (oyun, müzik, sesli sohbet).",
+      "microphoneTitle": "Mikrofon",
+      "microphoneDescription": "Varsayılan mikrofonunu ekler. Varsayılan olarak kapalı.",
+      "storageTitle": "Depolama",
+      "folderTitle": "Klip klasörü",
+      "folderDefault": "Launcher veri klasörü (clips)",
+      "folderReset": "Varsayılanı kullan",
+      "limitTitle": "Alan sınırı",
+      "limitDescription": "Bu boyutun üstünde en eski klipler geri dönüşüm kutusuna gider.",
+      "keysTitle": "Oyundaki tuşlar (TRS Client)",
+      "keysText": "F9 klip kaydeder, F10 kaydı başlatıp durdurur. Minecraft kontrollerinde “TRS Client” altından değiştir.",
+      "privacy": "Hiçbir şey bilgisayarından çıkmaz: yükleme yok, hesap yok; kaydedici yalnızca bu launcher’dan bir oyun açıkken çalışır."
     }
   },
   "settingsShell": {
@@ -1763,7 +1843,9 @@
     "versionFormat": "Yalnızca harf, rakam ve . - _ +",
     "descriptionInvalidChars": "Açıklama geçersiz karakterler içeriyor",
     "folderRequired": "Lütfen en az bir klasör seç",
-    "invalidInput": "Geçersiz giriş"
+    "invalidInput": "Geçersiz giriş",
+    "clipBufferRange": "Klip uzunluğu {min} ile {max} saniye arasında olmalı",
+    "clipStorageRange": "Klip alanı {min} ile {max} GB arasında olmalı"
   },
   "titleBar": {
     "forward": "İleri",
@@ -1804,7 +1886,9 @@
     "collapseLabel": "Kenar çubuğunu daralt",
     "expandLabel": "Kenar çubuğunu genişlet",
     "collapse": "Daralt",
-    "expand": "Genişlet"
+    "expand": "Genişlet",
+    "presets": "Ön ayarlar",
+    "clips": "Klipler"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -1856,7 +1940,9 @@
       "newInstance": "ekle oluştur yeni add create new",
       "import": "içe aktar taşı prism multimc curseforge import migrate",
       "modpacks": "modpack paket yükle pack install",
-      "dataDir": "klasör gezgin dosyalar folder explorer files"
+      "dataDir": "klasör gezgin dosyalar folder explorer files",
+      "webLogin": "web site giriş oturum admin kod tarayıcı",
+      "clips": "klipler kayıt kaydet video tekrar shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1874,6 +1960,9 @@
       "dataDir": {
         "title": "Veri klasörünü aç",
         "subtitle": "Kurulumları ve ayarları içeren klasör"
+      },
+      "webLogin": {
+        "subtitle": "{host} kodunu gir"
       }
     }
   },
@@ -1928,7 +2017,9 @@
       "repair": "Kurulum onarıldı",
       "reinstall": "Yeniden yüklendi",
       "versionChange": "Sürüm değiştirildi",
-      "launch": "Oyun başlatma"
+      "launch": "Oyun başlatma",
+      "presets": "Ön ayarlar yüklendi",
+      "ffmpeg": "Kaydedici kuruldu"
     },
     "stage": {
       "preparing": "Hazırlanıyor",
@@ -2069,7 +2160,8 @@
       "defaults": "Varsayılan ayarlar",
       "java": "Java kurulumları",
       "storage": "Depolama",
-      "network": "Ağ"
+      "network": "Ağ",
+      "clips": "Klipler ve kayıt"
     },
     "instance": {
       "general": "Genel",
@@ -2096,7 +2188,8 @@
       "minCount": "En az 1 kod.",
       "maxCount": "Aynı anda en fazla 100 kod.",
       "invalidExpiry": "Geçersiz son kullanma tarihi.",
-      "expiryPast": "Son kullanma tarihi geçmişte."
+      "expiryPast": "Son kullanma tarihi geçmişte.",
+      "webLoginCode": "Kod ABCD-1234 biçimindedir (harfler ve rakamlar)."
     },
     "unlock": {
       "own": "Özel",
@@ -2506,6 +2599,215 @@
       "allDone": "Tüm dosyalar yerinde.",
       "banner": "{count} dosyayı CurseForge'dan elle indirmen gerekiyor. | {count} dosyayı CurseForge'dan elle indirmen gerekiyor.",
       "show": "Göster"
+    }
+  },
+  "presets": {
+    "auto": "Otomatik",
+    "autoLabel": "Her zaman otomatik",
+    "autoHint": "Her yeni örnekte önceden seçilir – ve uygun olduğunda yeni mod paketlerine eklenir.",
+    "itemCount": "{n} proje | {n} proje",
+    "builtin": {
+      "fpsBoost": {
+        "name": "FPS artışı",
+        "description": "Sodium veya Embeddium, Lithium, FerriteCore, ModernFix ve dahası – sürüme ve yükleyiciye uyan ne varsa"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Araziyi mesh shader ile çizer – NVIDIA ekran kartın için (Fabric, Sodium gerekir)"
+      },
+      "voiceChat": {
+        "name": "Sesli sohbet",
+        "description": "Simple Voice Chat – destekleyen sunucularda yakındaki oyuncularla konuş"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Mümkünse Flashback, değilse ReplayMod – oyun kaydet ve düzenle"
+      }
+    },
+    "picker": {
+      "title": "Ön ayarlar",
+      "manage": "Ön ayarları yönet",
+      "vanillaBoost": "Vanilla bunu zaten TRS optimizasyonuyla alıyor",
+      "needsLoader": "Modlar bir mod yükleyicisi gerektirir – vanilla örnekte yalnızca kaynak paketleri ve gölgelendiriciler yüklenir.",
+      "useFabric": "Fabric kullan"
+    },
+    "apply": {
+      "title": "Ön ayar uygula",
+      "intro": "{name} ({version}, {loader}) için mevcut olan her şey yüklenir – zorunlu bağımlılıklar dahil. Gerisi atlanır.",
+      "running": "Bu örneğe zaten ön ayarlar yükleniyor.",
+      "install": "{n} ön ayarı yükle | {n} ön ayarı yükle",
+      "button": "+ Ön ayar uygula",
+      "buttonTitle": "Mod ön ayarlarını yükle (ör. FPS artışı, sesli sohbet) – yalnızca bu sürüm için mevcut olanlar",
+      "installing": "Ön ayarlar yükleniyor …"
+    },
+    "report": {
+      "title": "{name} için ön ayarlar",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "artı {n} bağımlılık | artı {n} bağımlılık",
+      "skipped": "Atlandı ({n}) | Atlandı ({n})",
+      "included": "Dahil ({n}) | Dahil ({n})",
+      "notNeeded": "FPS artışının {n} parçası bu sürüm için yapılmamış | FPS artışının {n} parçası bu sürüm için yapılmamış",
+      "nothing": "Yüklenecek bir şey yok",
+      "allDone": "{n} proje yüklendi | {n} projenin tümü yüklendi",
+      "partial": "{total} projeden {done} tanesi yüklendi",
+      "more": "(+{n} tane daha) | (+{n} tane daha)",
+      "details": "Ayrıntılar"
+    },
+    "reason": {
+      "installed": "Yüklendi",
+      "alreadyInstalled": "Zaten yüklüydü",
+      "duplicate": "Başka bir ön ayarla zaten dahil",
+      "notAvailable": "{title}, {version} için mevcut değil",
+      "notAvailableLoader": "{title}, {version} ({loader}) için mevcut değil",
+      "missingDependency": "{title} için {dependency} gerekiyor, ancak bu sürüm için mevcut değil",
+      "incompatible": "{title}, {other} ile birlikte çalışmıyor",
+      "needsLoader": "{title} bir mod yükleyicisi gerektirir",
+      "failed": "{title} indirilemedi"
+    },
+    "status": {
+      "installed": "Yüklendi",
+      "alreadyInstalled": "Zaten var",
+      "duplicate": "Dahil",
+      "skipped": "Atlandı"
+    },
+    "task": {
+      "title": "{name} için ön ayarlar",
+      "preparing": "Hazırlanıyor …",
+      "resolving": "Sürümler kontrol ediliyor ({done}/{total})",
+      "installing": "{title} indiriliyor ({done}/{total})",
+      "finishing": "Tamamlanıyor"
+    },
+    "editor": {
+      "newTitle": "Yeni ön ayar",
+      "editTitle": "Ön ayarı düzenle",
+      "namePlaceholder": "ör. Temel modlarım",
+      "contents": "İçerik ({n}) | İçerik ({n})",
+      "remove": "{title} kaldır",
+      "empty": "Henüz boş – aramadan proje ekle.",
+      "searchPlaceholder": "Modrinth’te ara …",
+      "searchLabel": "Proje ara",
+      "added": "Eklendi",
+      "add": "Ekle",
+      "noResults": "Sonuç yok",
+      "hint": "Ön ayarlar sürümden bağımsızdır: yüklerken her örnek için uygun sürüm seçilir – olmayanlar atlanır.",
+      "tooManyItems": "Ön ayar başına en fazla {max} öğe",
+      "duplicate": "Her proje bir ön ayarda yalnızca bir kez olabilir"
+    },
+    "page": {
+      "title": "Ön ayarlar",
+      "subtitle": "Her zaman istediğin modlar – mevcut oldukları yerde otomatik yüklenir",
+      "new": "Yeni ön ayar",
+      "exported": "“{name}” kaydedildi",
+      "deleted": "“{name}” silindi",
+      "imported": "“{name}” içe aktarıldı",
+      "emptyPreset": "Henüz proje yok",
+      "builtinHint": "TRS ön ayarlarını başlatıcı güncel tutar. Yeni örnekler için istediğin zaman açıp kapatabilirsin.",
+      "confirmDelete": "Gerçekten silinsin mi?",
+      "moveUp": "Yukarı taşı",
+      "moveDown": "Aşağı taşı",
+      "footer": "Ön ayarları arkadaşlarınla Dışa aktar ile paylaş – dosyayı İçe aktar ile yükleyebilirler."
+    }
+  },
+  "updateNews": {
+    "kicker": "Güncelleme {version}",
+    "version": "Sürüm {version}",
+    "read": "Yazıyı oku",
+    "hide": "Sonraki güncellemeye kadar gizle"
+  },
+  "webLogin": {
+    "title": "Web sitesi girişini onayla",
+    "intro": "{host} web sitesi sana bir kod gösterir. Oraya TRS hesabınla giriş yapmak için kodu buraya gir.",
+    "codeLabel": "Web sitesindeki kod",
+    "question": "{host} üzerinde {name} olarak giriş yapılsın mı?",
+    "codeShown": "Kod:",
+    "warningTitle": "Yalnızca şu anda web sitesinde bizzat sen isen onayla.",
+    "warning": "Bu kodu asla kimseyle paylaşma. Senden bu kodu isteyen, hesabını ele geçirmek istiyordur.",
+    "approve": "Girişi onayla",
+    "approving": "Onaylanıyor …",
+    "done": "Giriş onaylandı – {host} sitesine geri dönebilirsin.",
+    "needsServices": "Önce TRS hizmetlerini aç (Ayarlar → Gizlilik).",
+    "needsAccount": "Lütfen önce \"Hesaplar\" bölümünden Minecraft hesabınla giriş yap.",
+    "settingsDescription": "{host} üzerindeki yönetim alanına orada gösterilen kodla giriş yap.",
+    "open": "Kodu gir"
+  },
+  "clips": {
+    "title": "Klipler",
+    "subtitle": "{n} klip veya kayıt | {n} klip ve kayıt",
+    "instanceLabel": "Örneğe göre filtrele",
+    "allInstances": "Tüm örnekler",
+    "settings": "Klip ayarları",
+    "reload": "Yenile",
+    "noDate": "Bilinmeyen tarih",
+    "play": "{name} oynat",
+    "rename": "Yeniden adlandır",
+    "showInFolder": "Klasörde göster",
+    "usage": "{limit} alanın {used} kadarı kullanılıyor",
+    "free": "Sürücüde {free} boş",
+    "off": {
+      "title": "Klipler kapalı",
+      "text": "Oynarken F9 ile son saniyeleri kaydetmek veya F10 ile kayıt yapmak için aç.",
+      "action": "Aç"
+    },
+    "live": {
+      "label": "Süren kayıtlar",
+      "recording": "Kaydediliyor · {time}",
+      "buffer": "Arabellek etkin · son {seconds} sn",
+      "saveClip": "Klip kaydet",
+      "record": "Kaydı başlat",
+      "stop": "Kaydı durdur"
+    },
+    "empty": {
+      "title": "Henüz klip yok",
+      "text": "Son saniyeleri kaydetmek için oyunda F9’a, kaydı başlatıp durdurmak için F10’a bas."
+    },
+    "player": {
+      "label": "Klibi oynat",
+      "close": "Oynatıcıyı kapat",
+      "hint": "Esc kapatır · Alt+←/→ önceki/sonraki klip"
+    },
+    "renameDialog": {
+      "title": "Klibi yeniden adlandır",
+      "label": "Yeni ad",
+      "invalid": "İzin verilmez: boş adlar, \\ / : * ? \" < > {'|'} ve Windows’un ayrılmış adları."
+    },
+    "deleteDialog": {
+      "title": "Klip silinsin mi?",
+      "text": "{name} geri dönüşüm kutusuna taşınacak."
+    },
+    "toasts": {
+      "clipSaved": "Klip kaydedildi ({duration}) – {instance}",
+      "recordingSaved": "Kayıt kaydedildi ({duration}) – {instance}",
+      "show": "Göster",
+      "limitCleanup": "Alan sınırına ulaşıldı: {n} eski klip geri dönüşüm kutusuna taşındı | Alan sınırına ulaşıldı: {n} eski klip geri dönüşüm kutusuna taşındı",
+      "renamed": "Klip yeniden adlandırıldı",
+      "trashed": "Klip geri dönüşüm kutusuna taşındı"
+    },
+    "errors": {
+      "disabled": "Klipler kapalı – Ayarlar → Klipler altından aç.",
+      "starting": "Kayıt hâlâ başlıyor – birazdan tekrar dene.",
+      "noWindow": "Oyun penceresi bulunamadı – hiçbir şey kaydedilmedi.",
+      "ffmpeg": "Kaydedici (FFmpeg) hâlâ indiriliyor.",
+      "noFrames": "Henüz bir şey kaydedilmedi – birkaç saniye sonra tekrar dene.",
+      "busy": "Son klip hâlâ kaydediliyor.",
+      "error": "Klip kaydedilemedi.",
+      "ffmpegDownload": "Kaydedici (FFmpeg) indirilemedi."
+    },
+    "reason": {
+      "starting": "Oyun penceresi bekleniyor …",
+      "noWindow": "Oyun penceresi bulunamadı",
+      "ffmpeg": "Kaydedici (FFmpeg) indiriliyor …",
+      "error": "Kayıt başlamıyor – günlüğe bak",
+      "disabled": "Klipler kapalı"
+    },
+    "status": {
+      "buffer": "Arabellek etkin"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Yazılım (x264)"
     }
   }
 }

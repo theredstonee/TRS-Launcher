@@ -377,6 +377,31 @@ impl Launcher {
         self.trs_do(Req::delete(format!("/v1/blocks/{uuid}"))).await
     }
 
+    // --- Website-Anmeldung --------------------------------------------------------------
+
+    /// Bestätigt eine Anmeldung auf der Website (`trs-launcher.theredstonee.de`):
+    /// Die Website zeigt einen Code, der Launcher schickt ihn mit dem TRS-Token
+    /// des **aktiven** Accounts an die API. Der Token verlässt den Kern nie.
+    ///
+    /// Angenommener Vertrag (wird parallel in `api/API.md` festgelegt):
+    /// `POST /v1/web-login/approve` mit `{ "code": "ABCD-1234" }` → `204`
+    /// (jede 2xx-Antwort gilt, ein Body wird ignoriert); Fehler
+    /// `{ "error": { "code": "invalid_code" | "expired" | "not_admin" | "rate_limited" } }`.
+    /// Naheliegende Varianten der Codes (z. B. `code_expired`, `forbidden`,
+    /// `not_found`) werden gleich behandelt.
+    pub async fn trs_web_login_approve(&self, code: &str) -> Result<()> {
+        let code = validate::web_login_code(code).ok_or_else(|| {
+            Error::validation(crate::msg!("trsOps.invalidWebLoginCode", "Der Code hat die Form ABCD-1234 (Buchstaben und Ziffern)."))
+        })?;
+        match self.trs_do(Req::post("/v1/web-login/approve", json!({ "code": code }))).await {
+            Err(Error::TrsApi { kind, code, msg }) => {
+                let msg = web_login_message(kind, &code).unwrap_or(msg);
+                Err(Error::TrsApi { kind, code, msg })
+            }
+            other => other,
+        }
+    }
+
     // --- Verwaltung (nur Admins; der Server prüft das selbst) -------------------------
 
     pub async fn trs_admin_stats(&self) -> Result<AdminStats> {
@@ -570,6 +595,31 @@ impl Launcher {
             self.trs.send_offline(&account).await;
         }
     }
+}
+
+/// Verständliche Meldungen für Fehler der Website-Anmeldung. `None` = die
+/// allgemeine Meldung passt schon (offline, Rate-Limit mit Wartezeit, Sperre …).
+fn web_login_message(kind: &str, code: &str) -> Option<crate::error::Msg> {
+    if !matches!(kind, "trs_api" | "trs_forbidden") {
+        return None;
+    }
+    Some(match code {
+        "invalid_code" | "unknown_code" | "code_not_found" | "not_found" => crate::msg!(
+            "trsWebLogin.invalidCode",
+            "Diesen Anmeldecode gibt es nicht – vergleiche ihn mit dem Code auf der Website."
+        ),
+        "expired" | "code_expired" | "web_login_expired" => crate::msg!(
+            "trsWebLogin.expired",
+            "Der Anmeldecode ist abgelaufen – lade die Website neu und gib den neuen Code ein."
+        ),
+        "not_admin" | "forbidden" => {
+            crate::msg!("trsWebLogin.notAdmin", "Nur TRS-Admins können sich auf der Website anmelden.")
+        }
+        "already_used" | "already_approved" | "code_used" => {
+            crate::msg!("trsWebLogin.alreadyUsed", "Dieser Anmeldecode wurde schon bestätigt.")
+        }
+        _ => return None,
+    })
 }
 
 fn user_not_found() -> Error {

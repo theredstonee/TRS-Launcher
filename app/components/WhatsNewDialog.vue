@@ -19,7 +19,7 @@ function close() {
         <span class="absolute top-1 -left-[5px] size-2 rounded-full bg-redstone-500" />
         <p v-if="whatsNew.entries.length > 1" class="text-sm font-medium">
           {{ t('whatsNew.version', { version: entry.version ?? '' }) }}
-          <span v-if="entry.date" class="ml-2 text-xs font-normal text-base-400">{{ formatDate(entry.date) }}</span>
+          <span v-if="entry.date" class="ml-2 text-xs font-normal text-base-400">{{ formatShortDate(`${entry.date}T12:00:00`) }}</span>
         </p>
         <MarkdownView :source="german ? entry.de : entry.en" class="mt-1.5" />
       </li>

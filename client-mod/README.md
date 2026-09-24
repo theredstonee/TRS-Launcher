@@ -54,11 +54,18 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Wegpunkte | Own markers per world/server (`config/trsclient-waypoints.json`): name, colour, in-world label with distance and light column, show/hide, automatic death waypoint |
 | Minimap | Top-down map of the loaded chunks (map colours, height shading), rotating or north-up, zoom, waypoints, coordinates. Player dots are off by default and only ever show players the game already knows (normal render range) – no radar, no cave mode |
 | TRS-Online-Funktionen | TRS badge (a pixel redstone block) in front of the names of TRS users in the tab list and on name tags, TRS capes (own and other players', HD and animated), in-game presence for friends. Talks to the TRS API (see below); switchable as a whole, per badge place and for capes |
-| Umhang-Physik | Every rendered cape (Mojang, OptiFine, TRS, own and other players') moves like cloth instead of a rigid plank: swings when walking, turning, jumping and falling, rests on the back and bends at the hips when sneaking. Settings: *Stärke*, *Wind*, *Für* (nur eigener / alle Spieler). Elytras stay vanilla |
+| Umhang-Physik | Every rendered cape (Mojang, OptiFine, TRS, own and other players') moves like cloth instead of a rigid plank: swings when walking, turning, jumping and falling, rests on the back and bends at the hips when sneaking. Settings like WaveyCapes: *Stil* (glatt / blockig = vanilla-like steps), *Wind* (aus / Wellen / Böen) + *Windstärke*, *Bewegung* (Vanilla / schwingend / Dungeons = calm and floaty), *Schwerkraft*, *Anhebung beim Laufen*, *Steifheit*, *Detailstufe* (grid size, range and number of simulated capes), *Für* (nur eigener / alle Spieler). The settings page shows a live preview of your own player (turns by itself, drag to turn; alternates standing/walking) and a *Zurücksetzen* button; the settings are part of the HUD profiles. Defaults = the original behaviour. Elytras stay vanilla |
+| Farben | Colour grading of the game image: *Sättigung* (0–200 %), *Kontrast*, *Helligkeit*, *Dynamik* (vibrance) and *Farbtemperatur*, applied right after the world and hand are drawn – HUD and menus keep their colours. Off by default, part of the HUD profiles |
 | Emotes | Hold **G** (rebindable in the vanilla controls) for the emote wheel in the redstone style, point at an emote with the mouse, release to play it – other TRS players see it too. All 11 emotes of the TRS API (Winken, Klatschen, Jubeln, Verbeugen, Facepalm, Schulterzucken, Daumen hoch, Tanzen, Salutieren, Luftgitarre, Redstone-Tanz) are animated; locked ones are shown dark with a lock. Settings: *Kamera beim eigenen Emote* (unverändert / 3. Person von hinten / von vorn), *Emotes anderer Spieler zeigen* |
 | Signalstärke *(Redstone)* | Look at dust, a repeater, comparator, piston, lamp, observer, lever, button, plate, daylight detector, target, door, dispenser, hopper … → HUD panel with the block name, signal strength 0–15 as a 15-segment bar + number, repeater delay (and "locked"), comparator mode and **output** (recomputed from its inputs – the client never receives it), piston extended/retracted, the input strength of consumers, and the comparator output of containers you have opened (the client only knows a chest's content while it is open; otherwise it is left out) |
 | Signal-Overlay *(Redstone)* | Signal strength as a number above every piece of redstone dust within 4–16 blocks, grey (0) → bright red (15), smaller further away. Toggle key **F6** (F8 on Forge 1.7.10/1.8.9, where F6/F7 are the stream keys). Only loaded chunks, by default only dust in sight (line-of-sight check), cached: a budget of 4 096 block reads per tick searches the cube, known dust is re-read every tick |
 | Takt-Messer *(Redstone)* | For the component you look at (keeps measuring after you look away, up to 32 blocks): frequency in Hz, period in redstone ticks (and game ticks), pulse length, and a 5-second oscilloscope. Shown only while the component switches |
+| FPS-Boost (Leistung) | Main switch of the category *Leistung* (off = compare without it). *Niedrig / Mittel / Hoch* set all performance modules and lower (never raise) vanilla video settings in one click; the page shows the FPS right now and before/after every change (own frame counter, 3 s before, 4 s after), a **Leistungs-Check** (VSync, simulation distance ≥ render distance, render distance too high for the measured FPS, Fancy/Fabulous, clouds, particles, mipmaps, entity distance, biome blend, smooth lighting, window vs. fullscreen, onboard GPU although a dedicated one is installed – that one is only a hint, switching is done by the launcher) with *Beheben* per finding and *Alle beheben*, and the detected performance mods. *Rückgängig* restores every vanilla option and module changed by a level or fix – stored in `trsclient.json`, so it also works after a restart |
+| Dynamische FPS | Frame rate limit in the background (1–60, default 15), minimized (default 1) and when AFK (no mouse/key input for N minutes, default 30 FPS after 3 min); optionally quieter in the background (master volume as a factor, the option itself is untouched). Waits in 10 ms slices and asks the OS for focus each slice (GLFW, SDL on 26.3, LWJGL 2 `Display`), so full FPS returns at once |
+| Entity-Culling | Skips mobs hidden behind full opaque blocks (own ray casts to 9 points of the hitbox, 600 rays per tick, result cached 2–4 ticks, never hides wrongly when the budget runs out; glowing entities, your vehicle and giants stay), mobs/chests & signs/dropped items/item frames/name tags beyond a distance. Players are always shown by default |
+| Partikel | Upper limit of particles at once, share of all particles (*Menge*), explosion particles, rain splashes and smoke off |
+| Welt-Details | Sky, stars, distance fog, rain/snow and texture animations (water, lava, fire …) off – each only where the version has a clean hook |
+| Clips & Aufnahme | **F9** saves the last seconds as a clip, **F10** starts/stops a recording (both changeable in the vanilla controls). The TRS Launcher records the game window – the mod only reports the key presses over a local link (see below). HUD element (movable): red dot + time while recording, a subtle ring while the clip buffer runs (*Show buffer indicator*), "Clip saved (30 s)" for a few seconds. Without the TRS Launcher (or with clips off there) the keys only show a hint |
 | Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
@@ -66,8 +73,10 @@ toggle, priority ▲/▼, open folder; applied with one reload).
 
 ## TRS API: badges, TRS capes, presence
 
-The client talks to the TRS API (`https://api.theredstonee.de`, contract: `api/API.md` on the `trs-api` branch) on its
-own; the logic is version independent in `common/core/online` and `common/core/cape`:
+The client talks to the TRS API (`https://trs-launcher.theredstonee.de`, contract: `api/API.md` on the `trs-api`
+branch) on its own; the old address `https://api.theredstonee.de` stays reachable and cape URLs on either host are
+accepted (`OnlineConfig.isApiUrl`), every other host is refused. The logic is version independent in
+`common/core/online` and `common/core/cape`:
 
 - **Login like a Minecraft server:** `POST /v1/auth/challenge` → Mojang `session/minecraft/join` with the game's own
   access token and UUID (the `serverId` is passed unhashed) → `POST /v1/auth/verify`. The bearer token only lives in
@@ -136,6 +145,24 @@ The logic is version independent in `common/core/emote` (definitions, playback, 
   Forge 1.8.9–1.12.2 (no mixins) replaces the vanilla `ModelPlayer`/armor `ModelBiped` of the player renderers with
   subclasses whose `setRotationAngles` applies the pose (`LegacyEmotes`, fields found by type).
 
+## Clips & Aufnahme
+
+Recording happens in the TRS Launcher (FFmpeg window capture, see the launcher README). The mod part is version
+independent in `common/core/clips`:
+
+- `ClipConfig` reads `config/trsclient/clips.json` (≤ 4 KB, Gson 2.2.4-safe DTO): port 1–65535 and a 64-character
+  lower-case hex token, or `enabled:false`. Anything else counts as "no launcher".
+- `ClipLink`: one daemon thread connects to **127.0.0.1**:port, sends `{"type":"hello","v":1,"token":…}` and reads
+  state lines; reconnects with backoff, re-reads the file when the launcher writes a new token (after a denied
+  token only once the file changes). A key press while not connected is kept for 4 s, then "launcher not
+  reachable". The game thread only reads `status()`/`pollNotice()` and calls `press`.
+- `ClipPanel` draws the HUD element through `Canvas`; `Clips` is the facade the loaders call (`init(configDir)`,
+  `saveClip()`, `toggleRecording()`, `tick(hudVisible, actionBar)`). Hints and errors also go to the action bar.
+- Per loader only the two key bindings, one tick block and `hud/ClipHud` (identical in the Mojmap trees). No mixins.
+- Autotest: `-PtrsAutotestOnly=clips` presses F9/F10 through Minecraft's own key handling and takes the screenshots
+  `clips-buffer`, `clips-saved`, `clips-recording`, `clips-recording-saved` (fabric and legacy). Against a
+  launcher attrappe or a real launcher start.
+
 ## Umhang-Physik
 
 `core/cape/ClothSim` is a verlet cloth (10 × 16 cells near, 5 × 8 further away) in the player's body frame
@@ -146,14 +173,68 @@ rises more than 2 px above the shoulders). Gravity is tilted with the torso when
 lifts it when running, the body and legs are a half-space it cannot enter (the leg that swings back pushes it out),
 and long-range tethers keep it from stretching. It is simulated in the client tick and drawn interpolated.
 
-Level of detail (`CapePhysics`): own player always fine, others fine up to 16 blocks (at most 8), coarse up to 40
-blocks, at most 24 simulated capes; everyone else keeps the rigid vanilla cape. `ClothMesh` emits outer face, inner
+Level of detail (`CapePhysics`, *Detailstufe* hoch): own player always fine, others fine up to 16 blocks (at most 8),
+coarse up to 40 blocks, at most 24 simulated capes; everyone else keeps the rigid vanilla cape (mittel/niedrig: smaller
+grids, 12/8 and 32/24 blocks, 16/10 capes).
+
+The settings live in `core/cape/CapeSettings` and map onto `ClothSim.Params`: *Wind* switches the flutter/sway
+(Wellen) and adds gusts (Böen: smooth pseudo-random `gust(t)` per player phase that lifts the hem even while
+standing), *Bewegung* sets inertia, turn inertia, damping and wave speed (Vanilla = follows the body closely,
+Dungeons = heavily damped, slow waves, lighter and floatier), *Schwerkraft* scales gravity, *Anhebung beim Laufen*
+scales the quadratic air drag, *Steifheit* scales the bend/shear constraints. *Blockig* simulates one column of
+16 strips and `ClothMesh#emitBlocky` draws every strip as its own flat box with a flat normal, so bends show as
+vanilla-like steps.
+
+The live preview (`MenuHost#drawPlayerPreview`) draws the own player turned around the vertical axis: an own copy of
+`renderEntityInInventory` up to 1.19.3, `InventoryScreen.renderEntityInInventory` with a rotation quaternion
+1.19.4–1.21.10, the extracted render state via `GuiGraphics#submitEntityRenderState` on 1.21.11 and
+`GuiGraphicsExtractor#entity` on 26.x (`online/PlayerPreview`, one file for the Mojmap trees), an own copy of
+`drawEntityOnScreen` with a pre-rotated GL matrix on Forge 1.8.9–1.12.2. While the preview is open the own cape is
+simulated as if walking every other 3 seconds.
+
+## Farben
+
+`core/render/ColorGrade` turns the sliders into one affine 3×4 colour matrix (brightness → contrast around mid grey
+→ saturation with Rec. 709 luma → temperature) plus a vibrance step, and holds the GLSL sources; `apply()` is the
+same maths on the CPU for the unit tests. The pass runs right after `GameRenderer#renderLevel` (world + hand drawn,
+no HUD/menu yet):
+
+- Fabric, NeoForge, Forge 1.15.2–26.3 (`mixin/ColorGradeMixin` + `render/ColorPass`, one file for the Mojmap trees):
+  own raw OpenGL pass – the main target's colour texture (`colorTextureId` ≤1.15, `getColorTextureId()` 1.16–1.21.4,
+  `GlTexture#glId()` from 1.21.5, `com.mojang.renderpearl` on 26.3) is copied into an own texture and written back
+  through an own program (GLSL 1.20 up to 1.16, 1.50 core from 1.17), own VAO/VBO and FBO. Every GL state it touches
+  is queried before and restored after, so Minecraft's state cache stays valid.
+- Forge 1.8.9–1.12.2 (`render/ColorPass`): an own `ShaderGroup` with the program
+  `assets/minecraft/shaders/program/trsclient_color` (before 1.11 programs must be in the minecraft namespace) and
+  vanilla `blit`, run from `RenderGameOverlayEvent.Pre` (ALL) or, with F1, at the end of the render tick. `ClothMesh` emits outer face, inner
 face and all four edges with the vanilla cape UVs (the fractions are the same for every HD scale).
+
+## Leistung (performance)
+
+All logic lives in `common/core/perf` (`Performance` = one object per client, `DynamicFps`, `FramePacer`, `FpsMeter`,
+`ParticleGate`, `Occlusion`, `PerfCheck`, `BoostPreset`, `UndoLog`, `GpuInfo`, `PerfCompat`, the menu page `PerfPanel`);
+the loaders only report the window state per frame and ask from their hooks. The Mojmap trees (Fabric, NeoForge, Forge)
+share `perf/PerfHooks`, `compat/PerfOptions` and the mixins `FramePaceMixin` (`Minecraft#runTick`), `ParticleLimitMixin`
+(`ParticleEngine#createParticle`/`add`), `EntityCullMixin` (`EntityRenderDispatcher#shouldRender`), `BlockEntityCullMixin`,
+`NameTagCullMixin`/`LivingNameTagCullMixin` (`shouldShowName`), `TextureAnimationMixin` (`TextureManager#tick`), `SkyMixin`,
+`StarsMixin`, `WeatherMixin` and `FogMixin` – all `require = 0` with full descriptors. Forge 1.8.9–1.12.2 uses
+`perf/LegacyPerf` (events, Forge `IRenderHandler` for sky/weather, `FogDensity`, particle lists found by type).
+
+**Other performance mods:** Sodium, Embeddium, Rubidium, OptiFine/OptiFabric, Sodium Extra, EntityCulling, Dynamic FPS,
+MoreCulling, Patcher, ImmediatelyFast, Nvidium, BadOptimizations, ModernFix, FerriteCore, Lithium, VintageFix, VanillaFix and
+FoamFix are detected. A mod that brings the same feature takes it over – the TRS variant stays off (on Fabric the world
+detail mixins are not even applied with OptiFabric/Sodium Extra) and the module page says "Übernimmt <Mod>". Missing
+recommended mods are only listed as a hint (the launcher can add them with its "FPS-Boost" preset).
+
+The performance modules are part of the HUD profiles (e.g. a "PvP" profile with *Hoch* and a "Aufnahme" profile with full
+details). Self-test: `runClient -PtrsAutotest -PtrsAutotestOnly=perf` builds a floating test scene (160 mobs in front of,
+behind and far beyond a wall, 300 chests, constant particles, rain), measures the FPS without the category and after
+*Hoch*, checks Dynamic FPS with a faked background window and undoes everything.
 
 ## Menu, HUD editor and profiles
 
 The menu (Right Shift) shows every module as a tile with icon, full name (two lines if needed) and switch in a 2–4
-column grid that grows with the window: a search field, the category tabs **HUD / PvP / Chat / Welt / Redstone / Sonstiges**,
+column grid that grows with the window: a search field, the category tabs **HUD / PvP / Chat / Welt / Redstone / Leistung / Sonstiges** (tabs without a module in this version are hidden),
 and a click on a tile (or its gear) opens that module's settings page. Settings are typed and drawn by the same code
 everywhere: switch, slider, colour picker (hue/saturation field, opacity and **Chroma**, plus the brand palette),
 dropdown and key binding.
@@ -202,6 +283,8 @@ Listed under **TRS Client** in the vanilla controls menu.
 | unbound | Switch the HUD profile (cycles) |
 | G (hold) | Emote wheel (release to play; tap = click mode) |
 | F6 (Forge 1.7.10/1.8.9: F8) | Toggle the redstone signal overlay |
+| F9 | Save a clip (TRS Launcher records; F9/F10 are free in every vanilla version – ShadowPlay uses Alt+F9/Alt+F10) |
+| F10 | Start/stop a recording |
 
 The waypoint keys (**B** create, **N** list) and the four text hotkeys are settings of their modules and are
 rebound in the TRS menu, not in the vanilla controls screen. Zoom and freelook are vanilla bindings: their *Taste*
@@ -291,13 +374,21 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | Alle neuen Module | Forge 1.13.2 and 1.7.10 | not ported yet (see "Open") |
 | Freelook | Forge 1.7.10, 1.13.2, 1.14.4 | no camera hook (no Mixin there) – hidden in the menu; zoom and toggle sprint/sneak incl. fly boost work |
 | TRS-Online-Funktionen, Umhang-Physik | Forge 1.13.2 and 1.7.10 | not ported – hidden in the menu |
-| Umhang-Physik | Fabric/Forge 1.14.4 | the cape is still drawn with fixed GL calls there – the cape stays rigid (TRS capes and badges work on Fabric 1.14.4) |
+| Umhang-Physik (incl. settings and live preview) | Fabric/Forge 1.14.4 | the cape is still drawn with fixed GL calls there – the cape stays rigid (TRS capes and badges work on Fabric 1.14.4) |
 | TRS-Umhang, TRS-Abzeichen | Forge 1.14.4 | no Mixin in that build – only login and presence |
 | Emotes | Forge 1.14.4, 1.13.2 and 1.7.10 | no model hook there (no Mixin / not ported) – hidden in the menu |
+| Farben | Forge 1.14.4, 1.13.2 and 1.7.10 | no hook after the world pass (no Mixin / not ported) – hidden in the menu |
+| Farben | 26.2+ with the Vulkan backend | the pass is OpenGL; with Vulkan there is no GL texture – hidden in the menu (OpenGL is the default) |
 | Abzeichen als Pixel-Redstone-Block | 1.14.4, 1.15.2, Forge 1.8.9–1.12.2 | no per-text font – a dark red `■` instead |
 | TRS-Umhang über OptiFine | Forge 1.8.9–1.12.2 with OptiFine | OptiFine's own cape getter wins there |
 | Signalstärke: Türen, Falltüren, Zauntore, Notenblöcke | Forge 1.7.10 | no "powered" bit in their metadata – not recognised as components |
 | Signal-Overlay: FOV of sprint/speed | Forge 1.7.10 | the FOV modifier is private there – numbers sit slightly off while sprinting |
+| Leistung: Sterne einzeln, Block-Entity-/Item-/Rahmen-Distanz, Partikel-Menge | Forge 1.8.9–1.12.2 | no hook without mixins (sky off still hides the stars) – listed as "nicht verfügbar" on the module page |
+| Leistung: Nebel aus | Fabric/Forge 1.14.4–1.16.5 and 1.21.6+ | fixed GL fog before 1.17, fog values in a GPU buffer from 1.21.6 |
+| Leistung: Regen/Schnee aus | Fabric 1.14.4 | weather is still drawn in the GameRenderer there |
+| Leistung: leiser im Hintergrund | 1.21.9, 1.21.10 | master volume only through the option itself there |
+| Leistung (Culling, Partikel, Welt-Details) | Forge 1.14.4 | no Mixin – only Dynamic FPS and FPS-Boost |
+| Leistung (ganze Kategorie) | Forge 1.13.2 and 1.7.10 | not ported – hidden |
 | Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |
 
 ### Open

@@ -1,11 +1,13 @@
 package dev.theredstonee.trsclient.core.module;
 
 import dev.theredstonee.trsclient.core.camera.FreelookState;
+import dev.theredstonee.trsclient.core.cape.CapeSettings;
 import dev.theredstonee.trsclient.core.config.KeyDefaults;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
 import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudAnchor;
 import dev.theredstonee.trsclient.core.hud.HudPosition;
+import dev.theredstonee.trsclient.core.render.ColorGrade;
 
 /**
  * Alle Module des TRS Clients mit ihren Standardwerten.
@@ -17,6 +19,8 @@ public final class TrsModules {
 	public final HudProfiles profiles;
 	/** Stand der Standard-Tastenbelegungen (Migration alter Belegungen). */
 	public final KeyDefaults keyDefaults = new KeyDefaults();
+	/** Leistung: alte Werte vor FPS-Boost/Leistungs-Check (für „Rückgängig“, wird gespeichert). */
+	public final dev.theredstonee.trsclient.core.perf.UndoLog perfUndo = new dev.theredstonee.trsclient.core.perf.UndoLog();
 
 	public final HudModule fps;
 	public final HudModule cps;
@@ -54,6 +58,8 @@ public final class TrsModules {
 	public final Module trsOnline;
 	/** Stoff-Simulation für alle Umhänge (Vanilla, OptiFine, TRS). */
 	public final Module capePhysics;
+	/** Farb-Nachbearbeitung des Spielbilds (Sättigung, Kontrast, Helligkeit …), HUD und Menüs bleiben unberührt. */
+	public final Module colors;
 	/** Emote-Rad und Emote-Animationen (braucht die TRS API, siehe core.emote). */
 	public final Module emotes;
 	/** Redstone: Signalstärke des angeschauten Bauteils (HUD). */
@@ -62,6 +68,40 @@ public final class TrsModules {
 	public final Module redstoneOverlay;
 	/** Redstone: Takt-Messer mit Oszilloskop (HUD). */
 	public final HudModule redstoneClock;
+	/** Clips & Aufnahme: Status der Aufnahme im Launcher (Tasten: Steuerung → TRS Client). */
+	public final HudModule clips;
+
+	// --- Leistung (Logik in core.perf, siehe Performance) ---
+	/** FPS-Boost: Hauptschalter aller Leistungs-Funktionen, Voreinstellungen, Leistungs-Check. */
+	public final Module fpsBoost;
+	public final Module dynamicFps;
+	public final Module entityCulling;
+	public final Module particles;
+	public final Module worldDetails;
+
+	public final NumberSetting dynamicFpsUnfocused;
+	public final NumberSetting dynamicFpsMinimized;
+	public final NumberSetting dynamicFpsAfk;
+	public final NumberSetting dynamicFpsAfkMinutes;
+	public final BoolSetting dynamicFpsQuieter;
+	public final NumberSetting dynamicFpsVolume;
+	public final BoolSetting cullOcclusion;
+	public final NumberSetting cullEntities;
+	public final BoolSetting cullKeepPlayers;
+	public final NumberSetting cullBlockEntities;
+	public final NumberSetting cullNameTags;
+	public final NumberSetting cullItems;
+	public final NumberSetting cullFrames;
+	public final NumberSetting particleLimit;
+	public final NumberSetting particleAmount;
+	public final BoolSetting particleNoExplosions;
+	public final BoolSetting particleNoRain;
+	public final BoolSetting particleNoSmoke;
+	public final BoolSetting detailNoSky;
+	public final BoolSetting detailNoStars;
+	public final BoolSetting detailNoFog;
+	public final BoolSetting detailNoWeather;
+	public final BoolSetting detailNoAnimations;
 
 	public final BoolSetting keystrokesShowCps;
 	public final BoolSetting keystrokesShowSpace;
@@ -151,9 +191,22 @@ public final class TrsModules {
 	public final BoolSetting badgeTab;
 	public final BoolSetting badgeNametag;
 	public final BoolSetting trsCapes;
-	public final NumberSetting capeStrength;
+	public final ChoiceSetting<CapeSettings.Style> capeStyle;
+	public final ChoiceSetting<CapeSettings.Wind> capeWindMode;
 	public final NumberSetting capeWind;
+	public final ChoiceSetting<CapeSettings.Movement> capeMovement;
+	public final NumberSetting capeGravity;
+	public final NumberSetting capeHeight;
+	public final NumberSetting capeStiffness;
+	public final ChoiceSetting<CapeSettings.Detail> capeDetail;
 	public final ChoiceSetting<CapeScope> capeScope;
+
+	// --- Farben ---
+	public final NumberSetting colorSaturation;
+	public final NumberSetting colorContrast;
+	public final NumberSetting colorBrightness;
+	public final NumberSetting colorVibrance;
+	public final NumberSetting colorTemperature;
 	public final ChoiceSetting<EmoteCamera> emoteCamera;
 	public final BoolSetting emoteOthers;
 
@@ -185,6 +238,7 @@ public final class TrsModules {
 	public final NumberSetting redstoneClockWindow;
 	public final BoolSetting redstoneClockScope;
 	public final BoolSetting redstoneClockKeep;
+	public final BoolSetting clipsBufferIcon;
 
 	/** Für wen die Umhang-Physik rechnet. */
 	public enum CapeScope implements ChoiceSetting.Option {
@@ -325,6 +379,9 @@ public final class TrsModules {
 		capePhysics = registry.register(new Module("capePhysics", "Cape Physics",
 				"Capes (Mojang, OptiFine, TRS) move like cloth: they swing when you walk, turn, jump and sneak.",
 				true));
+		colors = registry.register(new Module("colors", "Colors",
+				"Color grading of the game image: saturation, contrast, brightness, vibrance and color temperature. "
+						+ "The HUD and menus stay untouched.", false));
 		emotes = registry.register(new Module("emotes", "Emotes",
 				"Hold G for the emote wheel, point with the mouse and release to play the emote. Other TRS players "
 						+ "see it too. Uses the TRS Online Features; only unlocked emotes can be played.",
@@ -341,6 +398,11 @@ public final class TrsModules {
 				"Measures how fast the redstone component you look at switches: frequency in Hz, period and pulse "
 						+ "length in redstone ticks, plus a small oscilloscope.", true,
 				new HudPosition(HudAnchor.CENTER, 0.2, 0.16)));
+		clips = registry.register(new HudModule("clips", "Clips & Recording",
+				"Save the last seconds as a clip (F9) or start and stop a recording (F10) – the TRS Launcher records "
+						+ "the game window, nothing leaves your PC. Turn it on in the launcher under Settings → Clips. "
+						+ "Shows a red dot while recording and a message when a clip is saved.", true,
+				new HudPosition(HudAnchor.CENTER_RIGHT, -0.005, -0.2)));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);
@@ -375,11 +437,36 @@ public final class TrsModules {
 		textHotkeys.icon("keyboard").category(Category.CHAT);
 		waypoints.icon("compass").category(Category.WORLD);
 		trsOnline.icon("redstone");
-		capePhysics.icon("cape");
+		capePhysics.icon("cape").profiled();
+		colors.icon("palette").category(Category.WORLD).profiled();
 		emotes.icon("wave");
+		fpsBoost = registry.register(new Module("fpsBoost", "FPS Boost",
+				"Main switch of all performance features (off = compare without them). One click sets everything to "
+						+ "Low, Medium or High, the performance check finds FPS killers in your video settings, and you "
+						+ "see the FPS before and after. Every change can be undone.", true));
+		dynamicFps = registry.register(new Module("dynamicFps", "Dynamic FPS",
+				"Limits the frame rate while the game is in the background, minimized or you are AFK, and makes it "
+						+ "quieter. Full FPS the moment you come back.", true));
+		entityCulling = registry.register(new Module("entityCulling", "Entity Culling",
+				"Skips drawing mobs, chests, signs, dropped items and item frames that are hidden behind walls or "
+						+ "further away than you set. Display only – nothing changes in the world.", false));
+		particles = registry.register(new Module("particles", "Particles",
+				"Fewer particles: an upper limit, a share of all particles and single kinds switched off "
+						+ "(explosions, rain splashes, smoke).", false));
+		worldDetails = registry.register(new Module("worldDetails", "World Details",
+				"Switch off details that cost frames: sky, stars, fog, rain and snow, animated textures "
+						+ "(water, lava, fire). Only what works cleanly in this version.", false));
+
 		redstoneSignal.icon("strength").category(Category.REDSTONE);
 		redstoneOverlay.icon("digits").category(Category.REDSTONE);
 		redstoneClock.icon("wave").category(Category.REDSTONE);
+		fpsBoost.icon("bolt").category(Category.PERFORMANCE);
+		dynamicFps.icon("moon").category(Category.PERFORMANCE);
+		entityCulling.icon("cull").category(Category.PERFORMANCE);
+		particles.icon("sparkle").category(Category.PERFORMANCE);
+		worldDetails.icon("cloud").category(Category.PERFORMANCE);
+		for (Module m : new Module[]{fpsBoost, dynamicFps, entityCulling, particles, worldDetails}) m.profiled();
+		clips.icon("record").category(Category.MISC);
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS below mouse buttons", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Show space bar", true));
@@ -470,9 +557,21 @@ public final class TrsModules {
 		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Badge in the tab list", true));
 		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Badge above names", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));
-		capeStrength = capePhysics.add(new NumberSetting("strength", "Strength", 100, 20, 200, 10, "", "%"));
-		capeWind = capePhysics.add(new NumberSetting("wind", "Wind", 100, 0, 200, 10, "", "%"));
+		capeStyle = capePhysics.add(new ChoiceSetting<>("style", "Style", CapeSettings.Style.class, CapeSettings.Style.SMOOTH));
+		capeWindMode = capePhysics.add(new ChoiceSetting<>("windMode", "Wind", CapeSettings.Wind.class, CapeSettings.Wind.WAVES));
+		capeWind = capePhysics.add(new NumberSetting("wind", "Wind strength", 100, 0, 200, 10, "", "%"));
+		capeMovement = capePhysics.add(new ChoiceSetting<>("movement", "Movement", CapeSettings.Movement.class,
+				CapeSettings.Movement.SWINGING));
+		capeGravity = capePhysics.add(new NumberSetting("gravity", "Gravity", 100, 25, 200, 5, "", "%"));
+		capeHeight = capePhysics.add(new NumberSetting("height", "Lift when moving", 100, 0, 200, 10, "", "%"));
+		capeStiffness = capePhysics.add(new NumberSetting("stiffness", "Stiffness", 100, 0, 200, 10, "", "%"));
+		capeDetail = capePhysics.add(new ChoiceSetting<>("detail", "Detail", CapeSettings.Detail.class, CapeSettings.Detail.HIGH));
 		capeScope = capePhysics.add(new ChoiceSetting<>("scope", "For", CapeScope.class, CapeScope.ALL));
+		colorSaturation = colors.add(new NumberSetting("saturation", "Saturation", 100, 0, 200, 5, "", "%"));
+		colorContrast = colors.add(new NumberSetting("contrast", "Contrast", 100, 50, 150, 5, "", "%"));
+		colorBrightness = colors.add(new NumberSetting("brightness", "Brightness", 100, 50, 150, 5, "", "%"));
+		colorVibrance = colors.add(new NumberSetting("vibrance", "Vibrance", 0, -100, 100, 5, "", "%"));
+		colorTemperature = colors.add(new NumberSetting("temperature", "Color temperature", 0, -100, 100, 5, "", "%"));
 		emoteCamera = emotes.add(new ChoiceSetting<>("camera", "Camera during your emote", EmoteCamera.class,
 				EmoteCamera.FRONT));
 		emoteOthers = emotes.add(new BoolSetting("others", "Show emotes of other players", true));
@@ -485,9 +584,54 @@ public final class TrsModules {
 		redstoneClockWindow = redstoneClock.add(new NumberSetting("window", "Measuring window (s)", 5, 2, 10, 1, ""));
 		redstoneClockScope = redstoneClock.add(new BoolSetting("scope", "Oscilloscope", true));
 		redstoneClockKeep = redstoneClock.add(new BoolSetting("keep", "Keep measuring after looking away", true));
+		clipsBufferIcon = clips.add(new BoolSetting("bufferIcon", "Show buffer indicator", true));
+
+		dynamicFpsUnfocused = dynamicFps.add(new NumberSetting("unfocused", "FPS in the background", 15, 1, 60, 1, "", " FPS"));
+		dynamicFpsMinimized = dynamicFps.add(new NumberSetting("minimized", "FPS when minimized", 1, 1, 30, 1, "", " FPS"));
+		dynamicFpsAfk = dynamicFps.add(new NumberSetting("afk", "FPS when AFK (0 = off)", 30, 0, 60, 5, "", " FPS"));
+		dynamicFpsAfkMinutes = dynamicFps.add(new NumberSetting("afkMinutes", "AFK after (minutes)", 3, 1, 15, 1, ""));
+		dynamicFpsQuieter = dynamicFps.add(new BoolSetting("quieter", "Quieter in the background", true));
+		dynamicFpsVolume = dynamicFps.add(new NumberSetting("volume", "Background volume", 30, 0, 100, 10, "", "%"));
+		cullOcclusion = entityCulling.add(new BoolSetting("occlusion", "Hide entities behind walls", true));
+		cullEntities = entityCulling.add(new NumberSetting("entities", "Mobs up to (blocks, 0 = all)", 64, 0, 160, 8, ""));
+		cullKeepPlayers = entityCulling.add(new BoolSetting("players", "Always show players at any distance", true));
+		cullBlockEntities = entityCulling.add(new NumberSetting("blockEntities", "Chests & signs up to (blocks)", 48, 0, 128, 8, ""));
+		cullNameTags = entityCulling.add(new NumberSetting("nameTags", "Name tags up to (blocks)", 32, 0, 64, 4, ""));
+		cullItems = entityCulling.add(new NumberSetting("items", "Dropped items up to (blocks)", 32, 0, 128, 8, ""));
+		cullFrames = entityCulling.add(new NumberSetting("frames", "Item frames up to (blocks)", 32, 0, 128, 8, ""));
+		particleLimit = particles.add(new NumberSetting("limit", "Max. particles (0 = no limit)", 2000, 0, 8000, 250, ""));
+		particleAmount = particles.add(new NumberSetting("amount", "Amount", 100, 10, 100, 10, "", "%"));
+		particleNoExplosions = particles.add(new BoolSetting("explosions", "No explosion particles", false));
+		particleNoRain = particles.add(new BoolSetting("rain", "No rain splashes", true));
+		particleNoSmoke = particles.add(new BoolSetting("smoke", "No smoke", false));
+		detailNoSky = worldDetails.add(new BoolSetting("sky", "Hide the sky", false));
+		detailNoStars = worldDetails.add(new BoolSetting("stars", "Hide the stars", true));
+		detailNoFog = worldDetails.add(new BoolSetting("fog", "No distance fog", false));
+		detailNoWeather = worldDetails.add(new BoolSetting("weather", "No rain and snow", false));
+		detailNoAnimations = worldDetails.add(new BoolSetting("animations", "No texture animations (water, lava, fire)", false));
 
 		registry.addPart(keyDefaults);
+		registry.addPart(perfUndo);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.
 		profiles = new HudProfiles(registry);
+	}
+
+	/** Aktuelle Umhang-Einstellungen in {@code out} (je Tick, keine Allokation). */
+	public CapeSettings capeSettings(CapeSettings out) {
+		out.style = capeStyle.get();
+		out.wind = capeWindMode.get();
+		out.windStrength = (float) (capeWind.get() / 100.0);
+		out.movement = capeMovement.get();
+		out.gravity = (float) (capeGravity.get() / 100.0);
+		out.height = (float) (capeHeight.get() / 100.0);
+		out.stiffness = (float) (capeStiffness.get() / 100.0);
+		out.detail = capeDetail.get();
+		return out;
+	}
+
+	/** Aktuelle Farb-Einstellungen in {@code out}. */
+	public ColorGrade colorGrade(ColorGrade out) {
+		return out.set(colorSaturation.get(), colorContrast.get(), colorBrightness.get(), colorVibrance.get(),
+				colorTemperature.get());
 	}
 }

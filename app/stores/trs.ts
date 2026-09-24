@@ -14,6 +14,8 @@ export const useTrsStore = defineStore('trs', () => {
   /** Letzter „stiller“ Zustand: offline, gesperrt usw. */
   const problem = ref<'offline' | 'banned' | 'auth' | null>(null)
   const consentOpen = ref(false)
+  /** Dialog „Website-Anmeldung bestätigen“ (global, auch aus der Befehlspalette). */
+  const webLoginOpen = ref(false)
   let timer: ReturnType<typeof setInterval> | null = null
   let knownIncoming: Set<string> | null = null
 
@@ -119,12 +121,18 @@ export const useTrsStore = defineStore('trs', () => {
     consentOpen.value = true
   }
 
+  function openWebLogin() {
+    webLoginOpen.value = true
+  }
+
   return {
     status,
     me,
     friends,
     problem,
     consentOpen,
+    webLoginOpen,
+    openWebLogin,
     enabled,
     undecided,
     isAdmin,

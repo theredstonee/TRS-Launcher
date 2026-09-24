@@ -7,3 +7,5 @@ key.trsclient.freelook=Visão livre
 key.trsclient.hudProfile=Trocar perfil de HUD
 key.trsclient.emoteWheel=Roda de emotes (segurar)
 key.trsclient.redstoneOverlay=Alternar sobreposição de sinal
+key.trsclient.saveClip=Salvar clipe
+key.trsclient.toggleRecording=Iniciar/parar gravação

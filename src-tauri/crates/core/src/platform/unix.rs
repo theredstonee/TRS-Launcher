@@ -14,7 +14,9 @@ use crate::{Error, Result};
 /// Eigene Prozessgruppe: Strg+C im Terminal des Launchers trifft das Spiel
 /// nicht, und „Beenden“ erreicht auch Wrapper-Kinder (`gamemoderun`, …).
 /// Kinder leben unter Linux ohnehin weiter, wenn der Launcher endet.
-pub fn detach(cmd: &mut std::process::Command) {
+/// `high_priority` wird ignoriert: Eine höhere Priorität (negativer Nice-Wert)
+/// dürfte nur root setzen.
+pub fn detach(cmd: &mut std::process::Command, _high_priority: bool) {
     use std::os::unix::process::CommandExt;
     cmd.process_group(0);
 }
@@ -577,7 +579,7 @@ mod tests {
     fn own_child_is_tracked_and_terminated() {
         let mut cmd = std::process::Command::new("/bin/sh");
         cmd.arg("-c").arg("sleep 30");
-        detach(&mut cmd);
+        detach(&mut cmd, false);
         let handle = ProcessHandle::from_child(cmd.spawn().unwrap()).unwrap();
         assert!(handle.is_alive());
         assert!(handle.creation_time().is_some());

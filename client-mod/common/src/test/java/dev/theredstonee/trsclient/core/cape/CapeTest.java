@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Umhang-Texturen: PNG-Dekoder, Zerlegen in Bilder, Platten-Cache mit ETag, Hochladen im Spiel. */
 class CapeTest {
-	static final OnlineConfig CONFIG = new OnlineConfig(true, "https://api.theredstonee.de", "https://sessionserver.mojang.com");
+	static final OnlineConfig CONFIG = new OnlineConfig(true, "https://trs-launcher.theredstonee.de", "https://sessionserver.mojang.com");
 
 	@TempDir
 	Path dir;
@@ -80,7 +80,7 @@ class CapeTest {
 
 	@Test
 	void framesAreSplitVertically() throws IOException {
-		CapeInfo team = CapeInfo.of("team", "https://api.theredstonee.de/v1/capes/team.png?v=1", 2, 8, 150, CONFIG);
+		CapeInfo team = CapeInfo.of("team", "https://trs-launcher.theredstonee.de/v1/capes/team.png?v=1", 2, 8, 150, CONFIG);
 		CapeFrames frames = CapeFrames.split(PngDecoder.decode(png(strip(2, 8, BufferedImage.TYPE_INT_ARGB))), team);
 		assertEquals(8, frames.count());
 		assertEquals(128, frames.width);
@@ -94,12 +94,12 @@ class CapeTest {
 
 	@Test
 	void hdCapesUpToScale8AreAccepted() throws IOException {
-		CapeInfo nether = CapeInfo.of("nether", "https://api.theredstonee.de/v1/capes/nether.png?v=1", 8, 4, 150, CONFIG);
+		CapeInfo nether = CapeInfo.of("nether", "https://trs-launcher.theredstonee.de/v1/capes/nether.png?v=1", 8, 4, 150, CONFIG);
 		assertNotNull(nether);
 		CapeFrames frames = CapeFrames.split(PngDecoder.decode(png(strip(8, 4, BufferedImage.TYPE_INT_ARGB))), nether);
 		assertEquals(512, frames.width);
 		assertEquals(4, frames.count());
-		assertNull(CapeInfo.of("big", "https://api.theredstonee.de/v1/capes/big.png?v=1", 9, 1, null, CONFIG));
+		assertNull(CapeInfo.of("big", "https://trs-launcher.theredstonee.de/v1/capes/big.png?v=1", 9, 1, null, CONFIG));
 		assertThrows(IOException.class, () -> CapeFrames.split(new PngDecoder.Image(576, 288, new int[576 * 288]), nether));
 	}
 
@@ -116,13 +116,13 @@ class CapeTest {
 		};
 		TrsApi api = new TrsApi(http, CONFIG);
 		CapeDiskCache cache = new CapeDiskCache(dir.resolve("capes"));
-		CapeInfo v1 = CapeInfo.of("red", "https://api.theredstonee.de/v1/capes/red.png?v=1", 1, 1, null, CONFIG);
+		CapeInfo v1 = CapeInfo.of("red", "https://trs-launcher.theredstonee.de/v1/capes/red.png?v=1", 1, 1, null, CONFIG);
 		assertArrayEquals(body, cache.load(v1, api, null));
 		assertEquals(1, seen.size());
 		assertNull(seen.get(0).headers.get("If-None-Match"));
 		assertArrayEquals(body, cache.load(v1, api, null));
 		assertEquals(1, seen.size(), "gleiche URL → Platte, kein Netz");
-		CapeInfo v2 = CapeInfo.of("red", "https://api.theredstonee.de/v1/capes/red.png?v=2", 1, 1, null, CONFIG);
+		CapeInfo v2 = CapeInfo.of("red", "https://trs-launcher.theredstonee.de/v1/capes/red.png?v=2", 1, 1, null, CONFIG);
 		status[0] = 304;
 		assertArrayEquals(body, cache.load(v2, api, null));
 		assertEquals(2, seen.size());
@@ -148,7 +148,7 @@ class CapeTest {
 
 	@Test
 	void texturesUploadInSmallStepsAndFollowTheClock() throws IOException {
-		CapeInfo team = CapeInfo.of("team", "https://api.theredstonee.de/v1/capes/team.png?v=1", 1, 12, 100, CONFIG);
+		CapeInfo team = CapeInfo.of("team", "https://trs-launcher.theredstonee.de/v1/capes/team.png?v=1", 1, 12, 100, CONFIG);
 		CapeFrames frames = CapeFrames.split(PngDecoder.decode(png(strip(1, 12, BufferedImage.TYPE_INT_ARGB))), team);
 		List<Consumer<CapeFrames>> pending = new ArrayList<>();
 		Backend backend = new Backend();
@@ -170,7 +170,7 @@ class CapeTest {
 
 	@Test
 	void failedLoadsAreRetriedLater() {
-		CapeInfo red = CapeInfo.of("red", "https://api.theredstonee.de/v1/capes/red.png?v=1", 1, 1, null, CONFIG);
+		CapeInfo red = CapeInfo.of("red", "https://trs-launcher.theredstonee.de/v1/capes/red.png?v=1", 1, 1, null, CONFIG);
 		List<Runnable> fails = new ArrayList<>();
 		CapeTextures<String> tex = new CapeTextures<>(new Backend(), (cape, done, failed) -> fails.add(failed));
 		assertNull(tex.texture(red, 0));

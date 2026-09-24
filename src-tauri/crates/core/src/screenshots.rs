@@ -179,7 +179,7 @@ fn write_thumbnail(source: &Path, target: &Path) -> Result<()> {
 }
 
 /// Datei in den Papierkorb verschieben (Windows-Papierkorb bzw. XDG-Trash).
-fn recycle(path: &Path) -> Result<()> {
+pub(crate) fn recycle(path: &Path) -> Result<()> {
     crate::platform::move_to_trash(path)
 }
 

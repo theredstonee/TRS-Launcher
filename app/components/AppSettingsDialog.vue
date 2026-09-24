@@ -464,6 +464,12 @@ async function allowFirewall() {
       >
         <ToggleSwitch v-model="form.preferDedicatedGpu" :label="t('settings.defaults.dedicatedGpuTitle')" />
       </SettingRow>
+      <SettingRow :title="t('settings.defaults.tuningTitle')" :description="t('settings.defaults.tuningDescription')">
+        <ToggleSwitch v-model="form.performanceTuning" :label="t('settings.defaults.tuningTitle')" />
+      </SettingRow>
+      <SettingRow :title="t('settings.defaults.priorityTitle')" :description="t('settings.defaults.priorityDescription')">
+        <ToggleSwitch v-model="form.highPriority" :label="t('settings.defaults.priorityTitle')" />
+      </SettingRow>
 
       <h3 class="section-heading mt-6">{{ t('settings.hooks.title') }}</h3>
       <SettingRow :title="t('settings.hooks.preLaunchTitle')" :description="t('settings.hooks.preLaunchDescription')" stacked>
@@ -532,6 +538,11 @@ async function allowFirewall() {
           <JavaPathField v-model="globalJava" :placeholder="t('settings.java.notSet')" />
         </section>
       </div>
+    </div>
+
+    <!-- Clips & Aufnahme -------------------------------------------------------------- -->
+    <div v-else-if="active === 'clips'">
+      <ClipsSettings v-model="form.clips" />
     </div>
 
     <!-- Speicherverwaltung --------------------------------------------------------------- -->

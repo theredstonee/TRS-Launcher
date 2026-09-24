@@ -483,7 +483,8 @@
       "invalidCodeId": "Ongeldige code-ID.",
       "redemptionsRange": "Inwisselingen per code: 1 tot 100.000.",
       "countRange": "Aantal: 1 tot 100 codes tegelijk.",
-      "expiryInPast": "De vervaldatum ligt in het verleden."
+      "expiryInPast": "De vervaldatum ligt in het verleden.",
+      "invalidWebLoginCode": "De code heeft de vorm ABCD-1234 (letters en cijfers)."
     },
     "trsPng": {
       "fileTooLarge": "Het bestand is te groot (max. 256 KB).",
@@ -527,6 +528,35 @@
       "notAModpack": "Dit is geen CurseForge-modpack.",
       "packFileMissing": "Een bestand van het modpack bestaat niet meer op CurseForge (project {project}).",
       "packBlocked": "De maker van “{name}” staat geen downloads via andere apps toe – download het modpack op CurseForge en importeer het hier."
+    },
+    "presets": {
+      "nameLength": "De naam moet tussen 1 en {max} tekens lang zijn.",
+      "invalidProject": "Ongeldig project in de preset.",
+      "tooManyItems": "Een preset kan hoogstens {max} items hebben.",
+      "notFound": "Deze preset bestaat niet meer.",
+      "builtinReadOnly": "TRS-presets kunnen niet worden gewijzigd of verwijderd.",
+      "tooMany": "Meer dan {max} eigen presets worden niet ondersteund.",
+      "invalidOrder": "De volgorde past niet bij de presetlijst.",
+      "invalidFile": "Dit is geen geldig presetbestand.",
+      "fileTooLarge": "Het presetbestand is te groot.",
+      "noneSelected": "Geen preset geselecteerd."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Deze aanmeldcode bestaat niet – vergelijk hem met de code op de website.",
+      "expired": "De aanmeldcode is verlopen – herlaad de website en voer de nieuwe code in.",
+      "notAdmin": "Alleen TRS-beheerders kunnen zich op de website aanmelden.",
+      "alreadyUsed": "Deze aanmeldcode is al bevestigd."
+    },
+    "clips": {
+      "bufferRange": "De cliplengte moet tussen {min} en {max} seconden liggen",
+      "fpsInvalid": "Beelden per seconde: alleen 30 of 60",
+      "storageRange": "De ruimte voor clips moet tussen {min} en {max} GB liggen",
+      "folderInvalid": "De clipmap moet een volledig lokaal pad zijn",
+      "gone": "De clip bestaat niet meer.",
+      "invalidName": "Deze naam is niet toegestaan als bestandsnaam.",
+      "nameTaken": "Er is al een clip met deze naam.",
+      "noFrames": "Er is nog niets opgenomen.",
+      "notRecording": "Voor dit spel loopt geen opname."
     }
   },
   "browse": {
@@ -821,14 +851,6 @@
       "done": "{n} update geïnstalleerd | {n} updates geïnstalleerd",
       "partial": "{failed} van {total} updates mislukt. | {failed} van {total} updates mislukt."
     },
-    "perfPack": {
-      "taskTitle": "Prestatiepakket voor {name}",
-      "stage": "Mods laden",
-      "done": "Prestatiepakket geïnstalleerd ({n} bestand) | Prestatiepakket geïnstalleerd ({n} bestanden)",
-      "title": "Sodium, Lithium & co. – alleen wat voor deze versie beschikbaar is",
-      "installing": "Prestatiepakket installeren …",
-      "button": "+ Prestatiepakket"
-    },
     "toolbar": {
       "searchPlaceholder": "{n} project zoeken … | {n} projecten zoeken …",
       "searchLabel": "Projecten zoeken",
@@ -1105,7 +1127,12 @@
       "reinstallTitle": "Opnieuw installeren",
       "reinstallDescription": "Downloadt de spelversie, modloader en bibliotheken helemaal opnieuw. Werelden, mods en instellingen blijven behouden.",
       "reinstallConfirmTitle": "Opnieuw installeren?",
-      "reinstallConfirmText": "De spelversie en bibliotheken worden opnieuw gedownload. Werelden, mods en instellingen blijven behouden."
+      "reinstallConfirmText": "De spelversie en bibliotheken worden opnieuw gedownload. Werelden, mods en instellingen blijven behouden.",
+      "tuningTitle": "FPS-boost bij het starten",
+      "tuningDescription": "Afgestemde Java-instellingen voor meer FPS en minder haperingen. Eigen JVM-argumenten gaan voor.",
+      "tuningGlobal": "Zoals globaal ({state})",
+      "tuningOn": "Aan",
+      "tuningOff": "Uit"
     },
     "window": {
       "customTitle": "Eigen vensterinstellingen",
@@ -1496,7 +1523,11 @@
       "windowWidth": "Vensterbreedte",
       "windowHeight": "Vensterhoogte",
       "dedicatedGpuTitle": "Krachtige videokaart",
-      "dedicatedGpuDescription": "Voor laptops met twee grafische chips: Windows geeft het spel de dedicated GPU.",
+      "dedicatedGpuDescription": "Minecraft gebruikt de losse videokaart (belangrijk bij laptops). Geldt alleen voor de Java van de launcher en wordt teruggedraaid als je het uitzet.",
+      "tuningTitle": "FPS-boost bij het starten",
+      "tuningDescription": "Afgestemde Java-instellingen voor jouw Java-versie en geheugen (ZGC of G1, geheugen meteen gereserveerd). Alleen zonder eigen JVM-argumenten.",
+      "priorityTitle": "Hogere procesprioriteit",
+      "priorityDescription": "Start het spel met prioriteit ‘Boven normaal’ – kan haperingen verminderen als andere programma’s druk bezig zijn.",
       "dedicatedGpuDescriptionLinux": "Voor laptops met twee grafische chips: het spel rendert op de dedicated GPU (PRIME-offload – DRI_PRIME of de NVIDIA-variabelen)."
     },
     "hooks": {
@@ -1574,6 +1605,55 @@
       "allowed": "Netwerktoegang toegestaan voor {n} Java-programma | Netwerktoegang toegestaan voor {n} Java-programma’s",
       "downloadsTitle": "Parallelle downloads",
       "downloadsDescription": "Hoeveel bestanden tegelijk worden gedownload. Gebruik er minder bij een trage verbinding."
+    },
+    "clips": {
+      "title": "Clips en opnemen",
+      "intro": "Zoals ShadowPlay of Medal: de launcher neemt alleen het spelvenster op zolang er een spel van deze launcher draait. Alles blijft op je pc.",
+      "enabledTitle": "Clips en opnemen",
+      "enabledDescription": "Houdt de laatste seconden in een buffer op de schijf, zodat één toets ze als clip opslaat. Standaard uit.",
+      "ffmpegTitle": "Recorder (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} is geïnstalleerd en gecontroleerd.",
+      "ffmpegMissing": "Wordt eenmalig gedownload als je clips aanzet ({size}, controlesom gecontroleerd).",
+      "ffmpegDownload": "Downloaden",
+      "ffmpegDownloading": "Downloaden … {percent} %",
+      "ffmpegTaskTitle": "Recorder (FFmpeg)",
+      "ffmpegTaskStage": "FFmpeg wordt gedownload",
+      "ffmpegTaskDone": "Recorder klaar",
+      "captureTitle": "Beeld",
+      "bufferTitle": "Cliplengte",
+      "bufferDescription": "Hoeveel seconden een clip teruggaat.",
+      "seconds": "{n} s",
+      "resolutionTitle": "Resolutie",
+      "resolutionDescription": "Grotere spelvensters worden verkleind.",
+      "resolution": {
+        "native": "Venstergrootte",
+        "1080p": "Tot 1080p",
+        "720p": "Tot 720p"
+      },
+      "fpsTitle": "Beeldsnelheid",
+      "qualityTitle": "Kwaliteit",
+      "qualityDescription": "Hogere kwaliteit betekent grotere bestanden.",
+      "quality": {
+        "low": "Laag",
+        "medium": "Gemiddeld",
+        "high": "Hoog"
+      },
+      "encoderTitle": "Encoder",
+      "encoderDescription": "Automatisch gebruikt je videokaart (NVIDIA, AMD, Intel) en valt terug op software.",
+      "audioTitle": "Geluid",
+      "systemAudioTitle": "Systeemgeluid",
+      "systemAudioDescription": "Neemt op wat je luidsprekers afspelen (spel, muziek, voicechat).",
+      "microphoneTitle": "Microfoon",
+      "microphoneDescription": "Voegt je standaardmicrofoon toe. Standaard uit.",
+      "storageTitle": "Opslag",
+      "folderTitle": "Clipmap",
+      "folderDefault": "Gegevensmap van de launcher (clips)",
+      "folderReset": "Standaard gebruiken",
+      "limitTitle": "Opslaglimiet",
+      "limitDescription": "Boven deze grootte gaan de oudste clips naar de prullenbak.",
+      "keysTitle": "Toetsen in het spel (TRS Client)",
+      "keysText": "F9 slaat een clip op, F10 start en stopt een opname. Wijzig ze in de Minecraft-besturing onder \"TRS Client\".",
+      "privacy": "Niets verlaat je pc: geen upload, geen account; de recorder draait alleen als er een spel van deze launcher open is."
     }
   },
   "settingsShell": {
@@ -1763,7 +1843,9 @@
     "versionFormat": "Alleen letters, cijfers en . - _ +",
     "descriptionInvalidChars": "De beschrijving bevat ongeldige tekens",
     "folderRequired": "Selecteer minstens één map",
-    "invalidInput": "Ongeldige invoer"
+    "invalidInput": "Ongeldige invoer",
+    "clipBufferRange": "De cliplengte moet tussen {min} en {max} seconden liggen",
+    "clipStorageRange": "De ruimte voor clips moet tussen {min} en {max} GB liggen"
   },
   "titleBar": {
     "forward": "Vooruit",
@@ -1804,7 +1886,9 @@
     "collapseLabel": "Zijbalk inklappen",
     "expandLabel": "Zijbalk uitklappen",
     "collapse": "Inklappen",
-    "expand": "Uitklappen"
+    "expand": "Uitklappen",
+    "presets": "Presets",
+    "clips": "Clips"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -1856,7 +1940,9 @@
       "newInstance": "toevoegen aanmaken nieuw",
       "import": "importeren prism multimc curseforge migreren",
       "modpacks": "modpack pack installeren",
-      "dataDir": "map verkenner bestanden"
+      "dataDir": "map verkenner bestanden",
+      "webLogin": "website web login aanmelden admin code browser",
+      "clips": "clips opname opnemen video replay shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1874,6 +1960,9 @@
       "dataDir": {
         "title": "Gegevensmap openen",
         "subtitle": "Map met instanties en instellingen"
+      },
+      "webLogin": {
+        "subtitle": "Code van {host} invoeren"
       }
     }
   },
@@ -1928,7 +2017,9 @@
       "repair": "Instantie gerepareerd",
       "reinstall": "Opnieuw geïnstalleerd",
       "versionChange": "Versie gewijzigd",
-      "launch": "Spelstart"
+      "launch": "Spelstart",
+      "presets": "Presets geïnstalleerd",
+      "ffmpeg": "Recorder geïnstalleerd"
     },
     "stage": {
       "preparing": "Voorbereiden",
@@ -2069,7 +2160,8 @@
       "defaults": "Standaardinstellingen",
       "java": "Java-installaties",
       "storage": "Opslag",
-      "network": "Netwerk"
+      "network": "Netwerk",
+      "clips": "Clips en opnemen"
     },
     "instance": {
       "general": "Algemeen",
@@ -2096,7 +2188,8 @@
       "minCount": "Minstens 1 code.",
       "maxCount": "Maximaal 100 codes tegelijk.",
       "invalidExpiry": "Ongeldige vervaldatum.",
-      "expiryPast": "De vervaldatum ligt in het verleden."
+      "expiryPast": "De vervaldatum ligt in het verleden.",
+      "webLoginCode": "De code heeft de vorm ABCD-1234 (letters en cijfers)."
     },
     "unlock": {
       "own": "Eigen",
@@ -2506,6 +2599,215 @@
       "allDone": "Alle bestanden staan klaar.",
       "banner": "{count} bestand moet je zelf van CurseForge downloaden. | {count} bestanden moet je zelf van CurseForge downloaden.",
       "show": "Tonen"
+    }
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Altijd automatisch",
+    "autoHint": "Vooraf geselecteerd bij elke nieuwe instantie – en toegevoegd aan nieuwe modpacks waar het past.",
+    "itemCount": "{n} project | {n} projecten",
+    "builtin": {
+      "fpsBoost": {
+        "name": "FPS-boost",
+        "description": "Sodium of Embeddium, Lithium, FerriteCore, ModernFix en meer – wat bij de versie en loader past"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Rendert terrein met mesh-shaders – voor je NVIDIA-videokaart (Fabric, heeft Sodium nodig)"
+      },
+      "voiceChat": {
+        "name": "Voicechat",
+        "description": "Simple Voice Chat – praat met spelers in de buurt op servers die het ondersteunen"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback waar beschikbaar, anders ReplayMod – gameplay opnemen en monteren"
+      }
+    },
+    "picker": {
+      "title": "Presets",
+      "manage": "Presets beheren",
+      "vanillaBoost": "Vanilla krijgt dit al via de TRS-optimalisatie",
+      "needsLoader": "Mods hebben een modloader nodig – in een vanilla-instantie worden alleen resourcepacks en shaders geïnstalleerd.",
+      "useFabric": "Fabric gebruiken"
+    },
+    "apply": {
+      "title": "Preset toepassen",
+      "intro": "Alles wat er voor {name} ({version}, {loader}) is, wordt geïnstalleerd – inclusief verplichte afhankelijkheden. De rest wordt overgeslagen.",
+      "running": "Er worden al presets in deze instantie geïnstalleerd.",
+      "install": "{n} preset installeren | {n} presets installeren",
+      "button": "+ Preset toepassen",
+      "buttonTitle": "Mod-presets installeren (bijv. FPS-boost, voicechat) – alleen wat er voor deze versie is",
+      "installing": "Presets worden geïnstalleerd …"
+    },
+    "report": {
+      "title": "Presets voor {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "plus {n} afhankelijkheid | plus {n} afhankelijkheden",
+      "skipped": "Overgeslagen ({n}) | Overgeslagen ({n})",
+      "included": "Inbegrepen ({n}) | Inbegrepen ({n})",
+      "notNeeded": "{n} onderdeel van de FPS-boost is niet voor deze versie gemaakt | {n} onderdelen van de FPS-boost zijn niet voor deze versie gemaakt",
+      "nothing": "Niets te installeren",
+      "allDone": "{n} project geïnstalleerd | Alle {n} projecten geïnstalleerd",
+      "partial": "{done} van {total} geïnstalleerd",
+      "more": "(+{n} andere) | (+{n} andere)",
+      "details": "Details"
+    },
+    "reason": {
+      "installed": "Geïnstalleerd",
+      "alreadyInstalled": "Was al geïnstalleerd",
+      "duplicate": "Al inbegrepen via een andere preset",
+      "notAvailable": "{title} bestaat niet voor {version}",
+      "notAvailableLoader": "{title} bestaat niet voor {version} ({loader})",
+      "missingDependency": "{title} heeft {dependency} nodig, maar dat bestaat niet voor deze versie",
+      "incompatible": "{title} werkt niet samen met {other}",
+      "needsLoader": "{title} heeft een modloader nodig",
+      "failed": "{title} kon niet worden gedownload"
+    },
+    "status": {
+      "installed": "Geïnstalleerd",
+      "alreadyInstalled": "Was er al",
+      "duplicate": "Inbegrepen",
+      "skipped": "Overgeslagen"
+    },
+    "task": {
+      "title": "Presets voor {name}",
+      "preparing": "Voorbereiden …",
+      "resolving": "Versies controleren ({done}/{total})",
+      "installing": "{title} downloaden ({done}/{total})",
+      "finishing": "Afronden"
+    },
+    "editor": {
+      "newTitle": "Nieuwe preset",
+      "editTitle": "Preset bewerken",
+      "namePlaceholder": "bijv. Mijn basis",
+      "contents": "Inhoud ({n}) | Inhoud ({n})",
+      "remove": "{title} verwijderen",
+      "empty": "Nog leeg – voeg projecten toe via het zoeken.",
+      "searchPlaceholder": "Modrinth doorzoeken …",
+      "searchLabel": "Projecten zoeken",
+      "added": "Toegevoegd",
+      "add": "Toevoegen",
+      "noResults": "Geen resultaten",
+      "hint": "Presets zijn versie-onafhankelijk: bij het installeren wordt per instantie de passende versie gekozen – wat er niet is, wordt overgeslagen.",
+      "tooManyItems": "Hoogstens {max} items per preset",
+      "duplicate": "Elk project kan maar één keer in een preset staan"
+    },
+    "page": {
+      "title": "Presets",
+      "subtitle": "Mods die je altijd wilt – automatisch geïnstalleerd waar ze bestaan",
+      "new": "Nieuwe preset",
+      "exported": "‘{name}’ opgeslagen",
+      "deleted": "‘{name}’ verwijderd",
+      "imported": "‘{name}’ geïmporteerd",
+      "emptyPreset": "Nog geen projecten",
+      "builtinHint": "De launcher houdt TRS-presets actueel. Je kunt ze altijd aan- of uitzetten voor nieuwe instanties.",
+      "confirmDelete": "Echt verwijderen?",
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "footer": "Deel presets met vrienden via Exporteren – zij laden het bestand met Importeren."
+    }
+  },
+  "updateNews": {
+    "kicker": "Update {version}",
+    "version": "Versie {version}",
+    "read": "Lees het bericht",
+    "hide": "Verbergen tot de volgende update"
+  },
+  "webLogin": {
+    "title": "Aanmelding op de website bevestigen",
+    "intro": "De website {host} toont je een code. Voer die hier in om je daar met je TRS-account aan te melden.",
+    "codeLabel": "Code van de website",
+    "question": "Aanmelden als {name} op {host}?",
+    "codeShown": "Code:",
+    "warningTitle": "Bevestig alleen als je nu zelf op de website bent.",
+    "warning": "Geef deze code nooit aan iemand anders. Wie erom vraagt, wil je account overnemen.",
+    "approve": "Aanmelding bevestigen",
+    "approving": "Bevestigen …",
+    "done": "Aanmelding bevestigd – je kunt terug naar {host}.",
+    "needsServices": "Zet eerst de TRS-diensten aan (Instellingen → Privacy).",
+    "needsAccount": "Meld je eerst aan met je Minecraft-account onder \"Accounts\".",
+    "settingsDescription": "Aanmelden in het beheergedeelte op {host} met de code die daar staat.",
+    "open": "Code invoeren"
+  },
+  "clips": {
+    "title": "Clips",
+    "subtitle": "{n} clip of opname | {n} clips en opnames",
+    "instanceLabel": "Filteren op instantie",
+    "allInstances": "Alle instanties",
+    "settings": "Clipinstellingen",
+    "reload": "Opnieuw laden",
+    "noDate": "Onbekende datum",
+    "play": "{name} afspelen",
+    "rename": "Hernoemen",
+    "showInFolder": "In map tonen",
+    "usage": "{used} van {limit} gebruikt",
+    "free": "{free} vrij op de schijf",
+    "off": {
+      "title": "Clips staan uit",
+      "text": "Zet ze aan om tijdens het spelen met F9 de laatste seconden op te slaan of met F10 op te nemen.",
+      "action": "Aanzetten"
+    },
+    "live": {
+      "label": "Lopende opnames",
+      "recording": "Opname · {time}",
+      "buffer": "Buffer actief · laatste {seconds} s",
+      "saveClip": "Clip opslaan",
+      "record": "Opname starten",
+      "stop": "Opname stoppen"
+    },
+    "empty": {
+      "title": "Nog geen clips",
+      "text": "Druk in het spel op F9 om de laatste seconden op te slaan, of op F10 om een opname te starten en te stoppen."
+    },
+    "player": {
+      "label": "Clip afspelen",
+      "close": "Speler sluiten",
+      "hint": "Esc sluit · Alt+←/→ vorige/volgende clip"
+    },
+    "renameDialog": {
+      "title": "Clip hernoemen",
+      "label": "Nieuwe naam",
+      "invalid": "Niet toegestaan: lege namen, \\ / : * ? \" < > {'|'} en gereserveerde Windows-namen."
+    },
+    "deleteDialog": {
+      "title": "Clip verwijderen?",
+      "text": "{name} wordt naar de prullenbak verplaatst."
+    },
+    "toasts": {
+      "clipSaved": "Clip opgeslagen ({duration}) – {instance}",
+      "recordingSaved": "Opname opgeslagen ({duration}) – {instance}",
+      "show": "Tonen",
+      "limitCleanup": "Opslaglimiet bereikt: {n} oude clip naar de prullenbak verplaatst | Opslaglimiet bereikt: {n} oude clips naar de prullenbak verplaatst",
+      "renamed": "Clip hernoemd",
+      "trashed": "Clip naar de prullenbak verplaatst"
+    },
+    "errors": {
+      "disabled": "Clips staan uit – zet ze aan onder Instellingen → Clips.",
+      "starting": "De opname start nog – probeer het zo opnieuw.",
+      "noWindow": "Spelvenster niet gevonden – er is niets opgenomen.",
+      "ffmpeg": "De recorder (FFmpeg) wordt nog gedownload.",
+      "noFrames": "Nog niets opgenomen – probeer het over een paar seconden opnieuw.",
+      "busy": "De vorige clip wordt nog opgeslagen.",
+      "error": "De clip kon niet worden opgeslagen.",
+      "ffmpegDownload": "De recorder (FFmpeg) kon niet worden gedownload."
+    },
+    "reason": {
+      "starting": "Wachten op het spelvenster …",
+      "noWindow": "Spelvenster niet gevonden",
+      "ffmpeg": "Recorder (FFmpeg) wordt gedownload …",
+      "error": "Opname start niet – zie het logboek",
+      "disabled": "Clips staan uit"
+    },
+    "status": {
+      "buffer": "Buffer actief"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Software (x264)"
     }
   }
 }

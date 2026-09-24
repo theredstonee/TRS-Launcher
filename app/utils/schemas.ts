@@ -94,6 +94,7 @@ export const updateInstanceSchema = z.object({
     resolution: resolutionSchema.nullable(),
     trsClient: z.boolean().nullable(),
     boost: z.boolean().nullable(),
+    performanceTuning: z.boolean().nullable().default(null),
     updateChannel: z.enum(['release', 'beta', 'alpha']).nullable(),
     fullscreen: z.boolean().nullable(),
     hooks: hooksSchema.nullable(),
@@ -124,6 +125,28 @@ export const uiSettingsSchema = z.object({
   language: z.enum(supportedLocales),
 })
 
+/** Clips & Aufnahme – gleiche Grenzen wie `trs_core::clips::settings`. */
+export const clipSettingsSchema = z.object({
+  enabled: z.boolean(),
+  bufferSeconds: z
+    .number()
+    .int()
+    .min(15, msg('validation.clipBufferRange', { min: 15, max: 120 }))
+    .max(120, msg('validation.clipBufferRange', { min: 15, max: 120 })),
+  resolution: z.enum(['native', '1080p', '720p']),
+  fps: z.union([z.literal(30), z.literal(60)]),
+  quality: z.enum(['low', 'medium', 'high']),
+  encoder: z.enum(['auto', 'nvenc', 'amf', 'qsv', 'x264']),
+  systemAudio: z.boolean(),
+  microphone: z.boolean(),
+  folder: z.string().max(400).regex(noControl, msg('validation.invalidCharacters')).nullable(),
+  maxStorageGb: z
+    .number()
+    .int()
+    .min(1, msg('validation.clipStorageRange', { min: 1, max: 2000 }))
+    .max(2000, msg('validation.clipStorageRange', { min: 1, max: 2000 })),
+})
+
 export const settingsSchema = z
   .object({
     minMemoryMb: z.number().int().min(128),
@@ -135,6 +158,8 @@ export const settingsSchema = z
     closeOnLaunch: z.boolean(),
     showSnapshots: z.boolean(),
     preferDedicatedGpu: z.boolean(),
+    performanceTuning: z.boolean().default(true),
+    highPriority: z.boolean().default(false),
     autoFirewall: z.boolean(),
     fullscreen: z.boolean(),
     hooks: hooksSchema,
@@ -148,6 +173,7 @@ export const settingsSchema = z
       java21: javaPathSchema.nullable(),
       java25: javaPathSchema.nullable(),
     }),
+    clips: clipSettingsSchema,
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {
@@ -217,3 +243,34 @@ export const exportOptionsSchema = z.object({
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? t('validation.invalidInput')
 }
+
+// --- Mod-Presets (Regeln wie in `trs_core::presets`) ---------------------------
+
+export const PRESET_NAME_MAX = 48
+export const PRESET_ITEMS_MAX = 100
+
+export const presetItemSchema = z.object({
+  source: z.literal('modrinth'),
+  projectId: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
+  title: z.string().trim().min(1).max(100),
+  iconUrl: z
+    .string()
+    .max(512)
+    .refine((u) => u.startsWith('https://cdn.modrinth.com/'))
+    .nullable(),
+  kind: z.enum(['mod', 'resourcepack', 'shaderpack', 'datapack']),
+})
+
+export const presetInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, msg('validation.nameRequired'))
+    .max(PRESET_NAME_MAX, msg('validation.maxChars', { max: PRESET_NAME_MAX }))
+    .regex(noControl, msg('validation.invalidCharacters')),
+  auto: z.boolean(),
+  items: z
+    .array(presetItemSchema)
+    .max(PRESET_ITEMS_MAX, msg('presets.editor.tooManyItems', { max: PRESET_ITEMS_MAX }))
+    .refine((items) => new Set(items.map((i) => i.projectId)).size === items.length, msg('presets.editor.duplicate')),
+})

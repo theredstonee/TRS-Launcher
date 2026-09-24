@@ -43,6 +43,7 @@ onMounted(async () => {
   ui.restore()
   window.addEventListener('keydown', onKey)
   games.init()
+  void useClipsStore().init()
   // Darstellung (Theme, Akzent) und Oberflächen-Schalter früh laden.
   settings.load().catch(() => {})
   // Erst wenn beides geladen ist, entscheiden, ob der Einrichtungs-Assistent kommt.
@@ -102,8 +103,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <!-- Global, damit Seitenleiste und Befehlspalette sie überall öffnen können. -->
     <CreateInstanceDialog v-if="ui.creating" @close="ui.creating = false" @created="onCreated" />
     <ImportDialog v-if="ui.importing" @close="ui.importing = false" />
+    <PresetReportDialog />
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <TrsConsentDialog v-if="trs.consentOpen" />
+    <TrsWebLoginDialog v-if="trs.webLoginOpen && !trs.consentOpen" />
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
     <ToastHost />

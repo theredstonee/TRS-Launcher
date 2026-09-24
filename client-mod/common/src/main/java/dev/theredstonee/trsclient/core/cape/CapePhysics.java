@@ -55,6 +55,9 @@ public final class CapePhysics {
 	private static final class Body {
 		ClothSim sim;
 		boolean fine;
+		/** Gittergröße, mit der die Simulation angelegt wurde (Stil/Detailstufe geändert → neu). */
+		int cols;
+		int rows;
 		double x;
 		double y;
 		double z;
@@ -66,26 +69,36 @@ public final class CapePhysics {
 	private final Map<Integer, Body> bodies = new HashMap<>();
 	private final ClothSim.Motion motion = new ClothSim.Motion();
 	private final ClothSim.Params params = new ClothSim.Params();
+	private CapeSettings settings = new CapeSettings();
 	private long ticks;
 	private volatile long lastTickNanos = System.nanoTime();
+	/** Vorschau im Menü: bis wann (nanoTime) sie als offen gilt, und wie lange sie schon läuft (Ticks). */
+	private volatile long previewUntil;
+	private int previewTicks;
 
 	/**
 	 * Ein Tick. {@code enabled}=false → alle Simulationen weg. {@code ownOnly} → nur der eigene Spieler.
 	 */
-	public void tick(List<Sample> samples, boolean enabled, boolean ownOnly, float strength, float wind) {
+	public void tick(List<Sample> samples, boolean enabled, boolean ownOnly, CapeSettings settings) {
 		ticks++;
 		lastTickNanos = System.nanoTime();
+		if (previewing()) previewTicks++;
+		else previewTicks = 0;
 		if (!enabled) {
 			bodies.clear();
 			return;
 		}
-		params.strength = strength;
-		params.wind = wind;
+		this.settings = settings;
+		settings.apply(params);
+		double far = settings.farBlocks();
+		double near = settings.nearBlocks();
+		int maxFine = settings.maxFine();
+		int maxTotal = settings.maxTotal();
 		List<Sample> wanted = new ArrayList<>();
 		for (Sample s : samples) {
 			if (!s.hasCape || s.special) continue;
 			if (ownOnly && !s.self) continue;
-			if (s.distanceSq > FAR_BLOCKS * FAR_BLOCKS) continue;
+			if (s.distanceSq > far * far) continue;
 			wanted.add(s);
 		}
 		// Eigener Spieler zuerst, dann nach Entfernung.
@@ -98,14 +111,18 @@ public final class CapePhysics {
 		int total = 0;
 		float time = (ticks % 72000) * ClothSim.TICK_SECONDS;
 		for (Sample s : wanted) {
-			if (total >= MAX_TOTAL) break;
+			if (total >= maxTotal) break;
 			Body body = bodies.get(s.id);
-			double limit = body != null && body.fine ? NEAR_LEAVE : NEAR_BLOCKS;
-			boolean wantFine = (s.self || s.distanceSq <= limit * limit) && fine < MAX_FINE;
-			if (body == null || body.fine != wantFine) {
+			double limit = body != null && body.fine ? near + (NEAR_LEAVE - NEAR_BLOCKS) : near;
+			boolean wantFine = (s.self || s.distanceSq <= limit * limit) && fine < maxFine;
+			int cols = settings.cols(wantFine);
+			int rows = settings.rows(wantFine);
+			if (body == null || body.fine != wantFine || body.cols != cols || body.rows != rows) {
 				body = new Body();
 				body.fine = wantFine;
-				body.sim = wantFine ? new ClothSim(FINE_COLS, FINE_ROWS) : new ClothSim(COARSE_COLS, COARSE_ROWS);
+				body.cols = cols;
+				body.rows = rows;
+				body.sim = new ClothSim(cols, rows);
 				body.x = s.x;
 				body.y = s.y;
 				body.z = s.z;
@@ -144,6 +161,13 @@ public final class CapePhysics {
 				: (float) (Math.sqrt(dxw * dxw + dzw * dzw) / 16.0 / 0.22);
 		motion.legSwing = Math.max(0f, Math.min(1f, swing)) * 0.6f;
 		motion.time = time;
+		// Jeder Spieler bekommt seine eigenen Böen.
+		motion.phase = (s.id * 0.618034f % 1f) * 60f;
+		if (s.self && previewWalking()) {
+			// Vorschau im Menü: so tun, als ginge der Spieler vorwärts (≈ 0,22 Blöcke/Tick).
+			motion.dz -= 0.22f * 16f;
+			motion.legSwing = 0.6f;
+		}
 		body.sim.tick(motion, params);
 		if (!body.sim.healthy()) body.sim.reset(motion.tilt);
 		body.x = s.x;
@@ -160,6 +184,33 @@ public final class CapePhysics {
 	public float partial() {
 		float p = (System.nanoTime() - lastTickNanos) / 50_000_000f;
 		return p < 0f ? 0f : (p > 1f ? 1f : p);
+	}
+
+	/** Vorschau im Menü ist offen (einmal je Bild aufrufen; gilt 300 ms). */
+	public void preview() {
+		previewUntil = System.nanoTime() + 300_000_000L;
+	}
+
+	public boolean previewing() {
+		return previewUntil - System.nanoTime() > 0;
+	}
+
+	/**
+	 * Läuft der eigene Umhang in der Vorschau gerade „gehend“? Die Vorschau wechselt alle 3 Sekunden
+	 * zwischen Stehen und Gehen, damit Wind, Schwerkraft und Anhebung beide zu sehen sind.
+	 */
+	public boolean previewWalking() {
+		return previewing() && (previewTicks / 60) % 2 == 1;
+	}
+
+	/** Aktuelle Einstellungen (Stil beim Zeichnen). */
+	public CapeSettings settings() {
+		return settings;
+	}
+
+	/** Umhang im Stufen-Stil zeichnen? */
+	public boolean blocky() {
+		return settings.blocky();
 	}
 
 	/** Simulation eines Spielers (null = keine → Vanilla zeichnen). */

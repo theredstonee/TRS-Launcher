@@ -130,6 +130,8 @@ function importPack() {
         title: instance?.name ?? 'Modpack',
         doneText: instance ? t('import.task.done', { name: instance.name }) : t('import.task.packDone'),
       })
+      // Presets mit „immer automatisch“ laufen danach als eigene Aufgabe.
+      if (instance) void applyAutoPresetsTask(instance)
       return id
     },
   )

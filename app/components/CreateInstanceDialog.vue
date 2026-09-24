@@ -12,6 +12,9 @@ const gameVersion = ref('')
 const loaderKind = ref<LoaderKind>('vanilla')
 const showSnapshots = ref(settings.current?.showSnapshots ?? false)
 
+/** Presets, die nach dem Anlegen installiert werden (Hintergrund-Aufgabe). */
+const presetIds = ref<string[]>([])
+
 const loadingVersions = ref(true)
 const submitting = ref(false)
 const error = ref<string | null>(null)
@@ -53,7 +56,10 @@ async function submit() {
 
   submitting.value = true
   try {
-    emit('created', await instances.create(parsed.data))
+    const instance = await instances.create(parsed.data)
+    // Nur was es für Version + Loader gibt – der Rest steht im Bericht.
+    if (presetIds.value.length) void applyPresetsTask(instance, [...presetIds.value])
+    emit('created', instance)
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -101,6 +107,8 @@ async function submit() {
           </button>
         </div>
       </div>
+
+      <PresetPicker v-model="presetIds" :loader="loaderKind" preselect @use-fabric="loaderKind = 'fabric'" @manage="emit('close')" />
 
       <p v-if="error" role="alert" class="text-sm text-redstone-300">{{ error }}</p>
     </form>

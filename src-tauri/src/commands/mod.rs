@@ -3,6 +3,7 @@
 
 pub mod accounts;
 pub mod app;
+pub mod clips;
 pub mod content;
 pub mod curseforge;
 pub mod export;
@@ -12,6 +13,7 @@ pub mod import;
 pub mod instances;
 pub mod meta;
 pub mod news;
+pub mod presets;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;
