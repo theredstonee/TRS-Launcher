@@ -35,8 +35,8 @@ finish-args:
   - --filesystem=xdg-data/multimc:ro
   - --filesystem=~/.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher:ro
   - --filesystem=~/.var/app/com.modrinth.ModrinthApp/data/ModrinthApp:ro
-  # Gamepads (Controller-Mods).
-  - --device=input
+  # Kein `--device=input` (Gamepads): kennt erst Flatpak ≥ 1.15.6, ältere Systeme
+  # (z. B. Ubuntu 24.04) könnten die App sonst nicht installieren.
 modules:
   # Minecraft 1.12.2 und älter (LWJGL 2) fragen die Bildschirmmodi über `xrandr` ab.
   - name: xrandr
