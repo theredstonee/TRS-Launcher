@@ -1500,6 +1500,8 @@
       "title": "Privacy",
       "logUploadTitle": "Logs delen toestaan",
       "logUploadDescription": "“Log delen” uploadt het spellog naar mclo.gs – inloggegevens en gebruikersnaam worden eerst weggelaten. Als dit uit staat, werkt de knop niet.",
+      "discordTitle": "Discord-status tonen",
+      "discordDescription": "Je Discord-profiel toont ‘Speelt TRS Launcher’ – tijdens het spelen ook de Minecraft-versie, modloader en speeltijd. Nooit serveradressen, instantie- of spelersnamen. De launcher praat alleen met de Discord-app op deze pc.",
       "telemetryTitle": "Telemetrie",
       "telemetryDescription": "TRS Launcher verzamelt geen gebruiks- of crashgegevens. Er valt niets in te schakelen."
     },

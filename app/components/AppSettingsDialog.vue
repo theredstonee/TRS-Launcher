@@ -411,6 +411,9 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.privacy.logUploadTitle')" :description="t('settings.privacy.logUploadDescription')">
         <ToggleSwitch v-model="form.allowLogUpload" :label="t('settings.privacy.logUploadTitle')" />
       </SettingRow>
+      <SettingRow :title="t('settings.privacy.discordTitle')" :description="t('settings.privacy.discordDescription')">
+        <ToggleSwitch v-model="form.discordPresence" :label="t('settings.privacy.discordTitle')" />
+      </SettingRow>
       <SettingRow :title="t('settings.privacy.telemetryTitle')" :description="t('settings.privacy.telemetryDescription')">
         <ToggleSwitch :model-value="false" :label="t('settings.privacy.telemetryTitle')" disabled />
       </SettingRow>

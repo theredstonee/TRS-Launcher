@@ -1500,6 +1500,8 @@
       "title": "Privacidade",
       "logUploadTitle": "Permitir compartilhar logs",
       "logUploadDescription": "“Compartilhar log” envia o log do jogo para o mclo.gs – credenciais e nome de usuário são ocultados antes. Quando desativado, o botão não funciona.",
+      "discordTitle": "Mostrar status no Discord",
+      "discordDescription": "Seu perfil do Discord mostra “Jogando TRS Launcher” – enquanto você joga, também a versão do Minecraft, o mod loader e o tempo de jogo. Nunca endereços de servidor nem nomes de instâncias ou jogadores. O launcher só se comunica com o app do Discord neste PC.",
       "telemetryTitle": "Telemetria",
       "telemetryDescription": "O TRS Launcher não coleta dados de uso nem de travamentos. Não há nada para ativar."
     },

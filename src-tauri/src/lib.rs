@@ -78,6 +78,8 @@ pub fn run() {
             });
             // TRS-Präsenz im 60-s-Takt (ohne Einwilligung passiert nichts).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
+            // Discord-Status (nur lokal mit der Discord-App; läuft Discord nicht, passiert nichts).
+            tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
             app.manage::<LauncherState>(launcher);
             app.manage(commands::system::DropState::default());
             app.manage(commands::tasks::TaskRegistry::default());
@@ -288,10 +290,14 @@ pub fn run() {
             {
                 let launcher = Arc::clone(&launcher);
                 // Laufende Aufnahmen sichern (höchstens ~5 s), dann die TRS-Präsenz
-                // (trs_shutdown hat eigene kurze Timeouts, höchstens ~3 s).
+                // (trs_shutdown hat eigene kurze Timeouts, höchstens ~3 s) und den
+                // Discord-Status (höchstens ~1,5 s, parallel dazu).
                 tauri::async_runtime::block_on(async move {
+                    let discord = Arc::clone(&launcher);
+                    let discord = tauri::async_runtime::spawn(async move { discord.discord_shutdown().await });
                     launcher.clips_shutdown().await;
                     launcher.trs_shutdown().await;
+                    let _ = discord.await;
                 });
             }
         });

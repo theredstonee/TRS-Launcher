@@ -42,6 +42,9 @@ How to write an entry:
 - **FPS boost for existing instances.** Instances with a mod loader but without Sodium, Embeddium or OptiFine now
   show a small hint with the level choice – one click installs the boost. Hide it once and it stays hidden for that
   instance; modpacks never show it.
+- **Show off on Discord.** With Discord open, your profile now shows "Playing TRS Launcher" – while you play also the
+  Minecraft version, the mod loader and your play time, plus a button for friends to get the launcher. Server
+  addresses and names are never shown. Turn it off under Settings → Privacy.
 
 ### Deutsch
 
@@ -69,6 +72,9 @@ How to write an entry:
 - **FPS-Boost für bestehende Instanzen.** Instanzen mit Modloader, aber ohne Sodium, Embeddium oder OptiFine zeigen
   jetzt einen kleinen Hinweis mit Stufenwahl – ein Klick installiert den Boost. Einmal ausgeblendet, bleibt er für
   diese Instanz weg; bei Modpacks erscheint er nie.
+- **Zeig auf Discord, was du spielst.** Ist Discord offen, steht auf deinem Profil jetzt „Spielt TRS Launcher“ – beim
+  Spielen auch Minecraft-Version, Modloader und Spielzeit, dazu ein Knopf, mit dem sich Freunde den Launcher holen
+  können. Server-Adressen und Namen werden nie gezeigt. Abschaltbar unter Einstellungen → Datenschutz.
 
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 

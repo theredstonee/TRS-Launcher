@@ -1500,6 +1500,8 @@
       "title": "Gizlilik",
       "logUploadTitle": "Günlük paylaşımına izin ver",
       "logUploadDescription": "“Günlüğü paylaş” oyun günlüğünü mclo.gs'e yükler – kimlik bilgileri ve kullanıcı adı önce gizlenir. Kapalıyken düğme çalışmaz.",
+      "discordTitle": "Discord durumunu göster",
+      "discordDescription": "Discord profilin “TRS Launcher oynuyor” gösterir – oynarken Minecraft sürümünü, mod yükleyiciyi ve oyun süresini de. Asla sunucu adresleri, kurulum veya oyuncu adları gösterilmez. Başlatıcı yalnızca bu bilgisayardaki Discord uygulamasıyla konuşur.",
       "telemetryTitle": "Telemetri",
       "telemetryDescription": "TRS Launcher hiçbir kullanım veya çökme verisi toplamaz. Açılacak bir şey yok."
     },

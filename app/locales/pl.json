@@ -1500,6 +1500,8 @@
       "title": "Prywatność",
       "logUploadTitle": "Zezwalaj na udostępnianie logów",
       "logUploadDescription": "„Udostępnij log” przesyła log gry na mclo.gs – dane logowania i nazwa użytkownika są wcześniej usuwane. Po wyłączeniu przycisk nie działa.",
+      "discordTitle": "Pokazuj status w Discordzie",
+      "discordDescription": "Twój profil Discord pokazuje „Gra w TRS Launcher” – podczas gry także wersję Minecrafta, mod loader i czas gry. Nigdy adresów serwerów, nazw instancji ani graczy. Launcher komunikuje się tylko z aplikacją Discord na tym komputerze.",
       "telemetryTitle": "Telemetria",
       "telemetryDescription": "TRS Launcher nie zbiera żadnych danych o użyciu ani awariach. Nie ma czego włączać."
     },

@@ -21,9 +21,26 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Minecraft-Server in deiner Serverliste | Live-Status anzeigen | Ein üblicher Serverlisten-Ping |
 | mclo.gs | Nur wenn du auf „Log teilen“ klickst und bestätigst | Der Spiel-Log, ohne Zugriffstokens und ohne deinen Windows-Benutzernamen |
 | GitHub (`github.com`) | Nach Launcher-Updates suchen | Eine Anfrage nach dem Update-Manifest |
+| Discord-App auf deinem Computer (nur lokal, kein Internet) | Solange der Launcher offen ist und „Discord-Status zeigen“ an ist (Standard), siehe [unten](#discord) | Dein Discord-Status: „Im TRS Launcher“ bzw. Minecraft-Version, Modloader und Spielzeit des laufenden Spiels |
 
 Account-Tokens werden nur auf deinem Computer gespeichert, verschlüsselt mit Windows DPAPI. Beim Deinstallieren wird das
 Programm entfernt; deine Daten in `%APPDATA%\TRS-Launcher` kannst du jederzeit löschen.
+
+## Discord
+
+Läuft die Discord-App auf deinem Computer, zeigt der Launcher einen Status auf deinem Discord-Profil („Spielt TRS
+Launcher“): „Im TRS Launcher“, solange nur der Launcher offen ist, und beim Spielen die **Minecraft-Version, den
+Modloader (z. B. Fabric) und wie lange du schon spielst**. Server-Adressen, Instanz- oder Spielernamen zeigt er nie.
+
+- Der Launcher spricht nur mit der Discord-App **auf deinem eigenen Computer** (Discords lokale Schnittstelle, eine
+  Named Pipe bzw. ein lokaler Socket). Er selbst sendet dafür nichts ins Internet und braucht deine Discord-Anmeldung
+  nicht.
+- Die Discord-App zeigt diesen Status dann auf deinem Profil an – **öffentlich sichtbar für alle, die dein
+  Discord-Profil sehen können** (Freunde, Mitglieder gemeinsamer Server). Was Discord damit macht, regelt
+  [Discords Datenschutzerklärung](https://discord.com/privacy).
+- Beim Schließen des Launchers verschwindet der Status. Läuft Discord nicht, passiert nichts.
+- Der Status ist **ab Werk an** und jederzeit abschaltbar unter *Einstellungen → Datenschutz → Discord-Status zeigen*
+  (oder in Discord unter *Benutzereinstellungen → Aktivitäts-Privatsphäre*).
 
 ## TRS-Dienste
 

@@ -11,6 +11,7 @@ pub mod clips;
 pub mod client_mod_update;
 pub mod content;
 pub mod curseforge;
+pub mod discord;
 pub mod download;
 pub mod error;
 pub mod extras;
@@ -99,6 +100,8 @@ pub struct Launcher {
     curseforge: Option<curseforge::CurseForge>,
     /// Clips & Aufnahme (nimmt das Spielfenster auf, die Mod meldet nur Tasten).
     clips: Arc<clips::ClipService>,
+    /// Discord-Status („Spielt TRS Launcher“) über die lokale Discord-App.
+    discord: Arc<discord::DiscordPresence>,
 }
 
 impl Launcher {
@@ -146,8 +149,11 @@ impl Launcher {
         });
 
         let clips = Arc::new(clips::ClipService::new(&paths));
+        let discord = Arc::new(discord::DiscordPresence::from_build());
+        discord.configure(settings.discord_presence, settings.ui.language);
         let launcher = Self {
             clips: clips.clone(),
+            discord: discord.clone(),
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
@@ -172,11 +178,12 @@ impl Launcher {
         launcher.games.recover(|id| {
             // Mit welchem Account das Spiel lief, ist nach dem Neustart unbekannt.
             presence.game_started(id, None);
-            let (paths, id, sink, presence, clips) =
-                (paths.clone(), id.to_owned(), sink.clone(), presence.clone(), clips.clone());
+            let (paths, id, sink, presence, clips, discord) =
+                (paths.clone(), id.to_owned(), sink.clone(), presence.clone(), clips.clone(), discord.clone());
             Box::new(move |seconds| {
                 presence.game_exited(&id);
                 clips.game_exited(&id);
+                discord.game_exited(&id);
                 tokio::spawn(async move {
                     let store = InstanceStore::new(paths.clone());
                     if let Err(e) = store.add_play_time(&id, seconds).await {
@@ -189,7 +196,37 @@ impl Launcher {
                 });
             })
         });
+        launcher.discord_recovered_games().await;
         Ok(launcher)
+    }
+
+    /// Übernommene Spiele auch im Discord-Status zeigen (mit ihrer echten Startzeit).
+    async fn discord_recovered_games(&self) {
+        let mut games = self.games.running();
+        games.sort_by_key(|g| g.started_at);
+        for game in games {
+            let Ok(instance) = self.instances.get(&game.instance_id).await else { continue };
+            self.discord.game_started(discord::GameInfo {
+                instance_id: instance.id.clone(),
+                game_version: instance.game_version.clone(),
+                loader: instance.loader.kind,
+                started_at: game.started_at.timestamp(),
+            });
+            // Inzwischen beendet? Dann kam die Abmeldung schon – wieder entfernen.
+            if !self.games.is_running(&instance.id) {
+                self.discord.game_exited(&instance.id);
+            }
+        }
+    }
+
+    /// Hintergrund-Schleife für den Discord-Status (still, solange Discord nicht läuft).
+    pub async fn run_discord(self: Arc<Self>) {
+        self.discord.run(discord::ipc::IpcConnector).await;
+    }
+
+    /// Beim Beenden des Launchers: Discord-Status löschen (höchstens ~1,5 s).
+    pub async fn discord_shutdown(&self) {
+        self.discord.shutdown().await;
     }
 
     pub fn paths(&self) -> &Paths {
@@ -277,6 +314,7 @@ impl Launcher {
         let clips_changed = guard.clips != new.clips;
         *guard = new.clone();
         drop(guard);
+        self.discord.configure(new.discord_presence, new.ui.language);
         if clips_changed {
             let running = self.running_for_clips().await;
             self.clips.settings_changed(&new.clips, running).await;
@@ -468,6 +506,14 @@ impl Launcher {
             None => demo_session()?,
         };
         let settings = self.settings().await;
+        // Für Discord zählt, was der Nutzer gewählt hat (Vanilla bleibt Vanilla,
+        // auch wenn die TRS-Optimierung unter der Haube Fabric nutzt).
+        let discord_game = discord::GameInfo {
+            instance_id: instance.id.clone(),
+            game_version: instance.game_version.clone(),
+            loader: instance.loader.kind,
+            started_at: 0,
+        };
 
         // Neuer TRS Client im Update-Kanal? (kurzer Timeout, offline egal)
         self.check_client_mod_updates().await;
@@ -549,6 +595,7 @@ impl Launcher {
             // Spiel zu: Der Launcher meldet sofort wieder „online“.
             launcher.trs.presence.game_exited(&id);
             launcher.clips.game_exited(&id);
+            launcher.discord.game_exited(&id);
             tokio::spawn(async move {
                 if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
                     tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
@@ -579,11 +626,13 @@ impl Launcher {
         self.clips.prepare(&instance.id, &game_dir, &settings.clips).await;
         // Vor dem Start eintragen, damit der Launcher ab jetzt schweigt (der Mod meldet "in-game").
         self.trs.presence.game_started(&instance.id, Some(&session.uuid));
+        self.discord.game_started(discord::GameInfo { started_at: chrono::Utc::now().timestamp(), ..discord_game });
         let pid = match self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit) {
             Ok(pid) => pid,
             Err(e) => {
                 self.trs.presence.game_exited(&instance.id);
                 self.clips.game_exited(&instance.id);
+                self.discord.game_exited(&instance.id);
                 return Err(e);
             }
         };
