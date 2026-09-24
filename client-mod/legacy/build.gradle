@@ -136,3 +136,6 @@ jar {
 // Die fertige, auf SRG-Namen remappte Mod-JAR dieser Version (für collectLauncherJars im Controller).
 ext.trsModJar = tasks.named('remapJar')
 ext.trsLauncherVersions = project.launcher_versions.split(',').collect { it.trim() }
+
+// Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')

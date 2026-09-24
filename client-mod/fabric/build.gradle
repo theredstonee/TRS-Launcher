@@ -153,3 +153,6 @@ tasks.withType(Jar).configureEach {
 		rename { "${it}_trsclient" }
 	}
 }
+
+// Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')

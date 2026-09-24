@@ -153,3 +153,6 @@ ext.trsModFile = srg ? tasks.named('renameJar').flatMap { it.output } : tasks.na
 if (srg) {
 	tasks.named('assemble') { dependsOn 'renameJar' }
 }
+
+// Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')

@@ -1,0 +1,18 @@
+// Autotests laufen auf dem Rechner des Entwicklers, während er arbeitet – deshalb ohne Ton.
+// Vor jedem `runClient -PtrsAutotest` wird im Spielordner `soundCategory_master:0.0` gesetzt.
+// Eingebunden von jedem Loader-Build: apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
+
+def autotest = project.hasProperty('trsAutotest') || rootProject.hasProperty('trsAutotest')
+
+tasks.matching { it.name == 'runClient' }.configureEach { task ->
+	if (!autotest) return
+	task.doFirst {
+		File dir = task.workingDir
+		dir.mkdirs()
+		File options = new File(dir, 'options.txt')
+		List<String> lines = options.exists() ? options.readLines('UTF-8').findAll { !it.startsWith('soundCategory_master:') } : []
+		lines << 'soundCategory_master:0.0'
+		options.write(lines.join('\n') + '\n', 'UTF-8')
+		logger.lifecycle("Autotest: Ton aus (${options})")
+	}
+}

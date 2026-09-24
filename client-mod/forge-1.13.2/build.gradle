@@ -125,3 +125,6 @@ tasks.register('collectLauncherJars', Copy) {
 tasks.named('build') {
 	finalizedBy 'collectLauncherJars'
 }
+
+// Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')

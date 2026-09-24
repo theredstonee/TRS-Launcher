@@ -134,3 +134,6 @@ tasks.withType(Jar).configureEach {
 // Die fertige, auf SRG-Namen remappte Mod-JAR dieser Version (für die Produktion).
 ext.trsModJar = tasks.named('remapJar')
 ext.trsForgeVersion = project.forge_version
+
+// Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
