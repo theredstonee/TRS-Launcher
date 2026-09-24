@@ -50,7 +50,7 @@ jobs:
   # Gleiche Prüfungen unter Linux (ubuntu-22.04 = Untergrenze der Release-Builds)
   # plus die Paket-Hilfsskripte und die Metadaten für AUR/Flatpak.
   linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04  # aktuelles appstream (kennt <developer>, vcs-browser); Release baut weiter auf 22.04
     steps:
       - uses: actions/checkout@v4
 
