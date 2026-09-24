@@ -131,7 +131,7 @@ How to write an entry:
   ein und bestätigst. Der Launcher fragt vorher deutlich nach – nur bestätigen, wenn du gerade selbst auf der
   Website bist, und den Code niemals weitergeben.
 
-## 0.4.3 – 2026-09-24
+## 0.4.3 – 2026-09-24 – The Friends Update | Das Freunde-Update
 
 ### English
 
@@ -145,6 +145,9 @@ How to write an entry:
   move like cloth.
 - **Background installs.** Installs keep running when you leave the page; the tasks panel in the title bar shows
   everything that is installing or running, with pause and cancel.
+
+![The tasks panel in the title bar while a modpack installs](/news/0.4.3/tasks.png)
+
 - **Calmer redstone.** The animated redstone background is slower and more varied, with long cables and the classic
   circuits.
 - **Smaller fixes.** Deleting an instance needs just one confirmation, and the big play button no longer shows
@@ -162,7 +165,237 @@ How to write an entry:
   Umhang wie Stoff schwingen.
 - **Installationen im Hintergrund.** Installationen laufen weiter, wenn du die Seite verlässt; die Aufgabenleiste in
   der Titelleiste zeigt alles, was installiert wird oder läuft, mit Pause und Abbrechen.
+
+![Die Aufgabenleiste in der Titelleiste, während ein Modpack installiert wird](/news/0.4.3/tasks.png)
+
 - **Ruhigerer Redstone.** Der animierte Redstone-Hintergrund ist langsamer und abwechslungsreicher, mit langen Kabeln
   und den klassischen Schaltungen.
 - **Kleinere Korrekturen.** Eine Instanz löschst du mit einer einzigen Bestätigung, und der große Spielen-Knopf zeigt
   nicht mehr gleichzeitig „Spielen“ und „Läuft“.
+
+## 0.4.2 – 2026-09-23 – Quiet Updates | Leise Updates
+
+### English
+
+- **Updates without waiting.** New launcher versions download in the background, like in the Modrinth App. When
+  one is ready, a button in the title bar restarts into it – while it installs you see a loading screen instead of
+  a frozen window.
+- **TRS Client updates on its own.** The in-game client now has its own signed update channel, so it can get fixes
+  without a new launcher.
+- **Redstone everywhere.** The live redstone circuit now runs quietly behind every page, not just the start page.
+
+### Deutsch
+
+- **Updates ohne Warten.** Neue Launcher-Versionen laden im Hintergrund, wie in der Modrinth App. Ist eine fertig,
+  startest du sie mit einem Knopf in der Titelleiste neu – während der Installation siehst du einen Ladebildschirm
+  statt eines eingefrorenen Fensters.
+- **Der TRS Client aktualisiert sich selbst.** Der Client im Spiel hat jetzt einen eigenen, signierten Update-Kanal
+  und bekommt Korrekturen auch ohne neuen Launcher.
+- **Redstone überall.** Die lebendige Redstone-Schaltung läuft jetzt ruhig hinter jeder Seite, nicht nur auf der
+  Startseite.
+
+## 0.4.1 – 2026-09-23 – Redstone Title | Redstone-Titelbild
+
+### English
+
+- **A redstone title screen.** The TRS Client greets you with a title screen in the launcher’s redstone look –
+  glowing dust, lamps and a torch – in every Minecraft version.
+- **The TRS menu in the same style.** Buttons, panels and switches of the TRS menu match the launcher.
+- **Smoother menus on 1.20 to 1.21.1.** TRS screens are drawn in one go and stay fluid.
+
+![The TRS Client title screen](/news/0.4.1/title-screen.png)
+
+### Deutsch
+
+- **Ein Titelbildschirm aus Redstone.** Der TRS Client begrüßt dich mit einem Titelbildschirm im Redstone-Look des
+  Launchers – glühender Staub, Lampen und eine Fackel – in jeder Minecraft-Version.
+- **Das TRS-Menü im selben Stil.** Knöpfe, Flächen und Schalter des TRS-Menüs passen zum Launcher.
+- **Flüssigere Menüs auf 1.20 bis 1.21.1.** TRS-Fenster werden in einem Rutsch gezeichnet und bleiben flüssig.
+
+![Der Titelbildschirm des TRS Clients](/news/0.4.1/title-screen.png)
+
+## 0.4.0 – 2026-09-23 – The Redstone Update | Das Redstone-Update
+
+### English
+
+- **A start page that lives.** A real redstone circuit runs across the top: clocks, pistons, lamps and flickering
+  torches. The main line leads to the play button and charges up while your game starts – when it runs, the lamp
+  glows.
+- **News as a magazine.** One lead story with a big picture, the rest next to it.
+- **Your account in the title bar.** Switch accounts right from the top of the window.
+- **Skins without waiting.** Edit skins locally; the launcher sends them to Mojang in the background and bundles
+  quick changes into one.
+- **Calmer notifications.** Identical messages are merged and only a few are shown at once.
+
+![The new start page with the redstone circuit](/news/0.4.0/start.png)
+
+![While the game runs, the lamp glows](/news/0.4.0/running.png)
+
+### Deutsch
+
+- **Eine Startseite, die lebt.** Oben läuft eine echte Redstone-Schaltung: Takte, Kolben, Lampen und flackernde
+  Fackeln. Die Hauptleitung führt zum Spielen-Knopf und lädt sich beim Spielstart auf – läuft das Spiel, leuchtet
+  die Lampe.
+- **Neuigkeiten als Magazin.** Eine Titelgeschichte mit großem Bild, der Rest daneben.
+- **Dein Konto in der Titelleiste.** Wechsle das Konto direkt oben im Fenster.
+- **Skins ohne Warten.** Bearbeite Skins lokal; der Launcher schickt sie im Hintergrund an Mojang und fasst schnelle
+  Änderungen zusammen.
+- **Ruhigere Meldungen.** Gleiche Meldungen werden zusammengefasst, und es sind nur wenige gleichzeitig zu sehen.
+
+![Die neue Startseite mit der Redstone-Schaltung](/news/0.4.0/start.png)
+
+![Während das Spiel läuft, leuchtet die Lampe](/news/0.4.0/running.png)
+
+## 0.3.1 – 2026-09-23 – Fabric Fix | Fabric-Fix
+
+### English
+
+- **Fabric starts again.** Fixes a crash when starting Fabric instances from 1.15 to 1.21.8.
+- **Off means off.** A TRS Client you switched off for an instance stays off.
+
+### Deutsch
+
+- **Fabric startet wieder.** Behebt einen Absturz beim Start von Fabric-Instanzen von 1.15 bis 1.21.8.
+- **Aus heißt aus.** Ein TRS Client, den du für eine Instanz ausgeschaltet hast, bleibt aus.
+
+## 0.3.0 – 2026-09-22 – The HUD Update | Das HUD-Update
+
+### English
+
+- **A new TRS menu.** Right Shift opens the TRS menu: modules in categories (HUD, PvP, chat, world), search,
+  settings for every module and HUD profiles you can switch between.
+- **HUD editor.** Drag every display where you want it, scroll to resize, right-click to reset.
+- **More for PvP and exploring.** Custom crosshair, hit colour, CPS and keystrokes, waypoints with beams, a minimap
+  and chat tools that copy lines without colour codes.
+- **Skins & capes page.** Collect skins, try them on in a 3D preview and put them on your account.
+- **Screenshot gallery.** All screenshots from all instances in one place.
+- **Share instances.** Export an instance as a .mrpack and import pack files.
+- **Ctrl+K.** A command palette that finds instances, pages and actions.
+- **Fresh look.** A slim icon sidebar, banners for your instances and a start page with a quick start.
+
+![The TRS menu in game](/news/0.3.0/trs-menu.png)
+
+![Moving the HUD with the HUD editor](/news/0.3.0/hud-editor.png)
+
+![Skins & capes with the 3D preview](/news/0.3.0/skins.png)
+
+![The screenshot gallery](/news/0.3.0/gallery.png)
+
+### Deutsch
+
+- **Ein neues TRS-Menü.** Die rechte Umschalttaste öffnet das TRS-Menü: Module in Kategorien (HUD, PvP, Chat, Welt),
+  Suche, Einstellungen für jedes Modul und HUD-Profile zum Umschalten.
+- **HUD-Editor.** Zieh jede Anzeige dorthin, wo du sie willst, Mausrad für die Größe, Rechtsklick setzt zurück.
+- **Mehr für PvP und Erkundung.** Eigenes Fadenkreuz, Trefferfarbe, CPS und Tastenanzeige, Wegpunkte mit Strahl,
+  eine Minikarte und Chat-Werkzeuge, die Zeilen ohne Farbcodes kopieren.
+- **Seite für Skins & Umhänge.** Sammle Skins, probiere sie in einer 3D-Vorschau an und setze sie auf dein Konto.
+- **Screenshot-Galerie.** Alle Screenshots aller Instanzen an einem Ort.
+- **Instanzen teilen.** Exportiere eine Instanz als .mrpack und importiere Pack-Dateien.
+- **Strg+K.** Eine Befehlspalette, die Instanzen, Seiten und Aktionen findet.
+- **Frischer Look.** Eine schmale Symbolleiste, Banner für deine Instanzen und eine Startseite mit Schnellstart.
+
+![Das TRS-Menü im Spiel](/news/0.3.0/trs-menu.png)
+
+![Das HUD mit dem HUD-Editor verschieben](/news/0.3.0/hud-editor.png)
+
+![Skins & Umhänge mit der 3D-Vorschau](/news/0.3.0/skins.png)
+
+![Die Screenshot-Galerie](/news/0.3.0/gallery.png)
+
+## 0.2.2 – 2026-09-22 – Quiet Firewall | Leise Firewall
+
+### English
+
+- **Firewall without a blue window.** The launcher adds its firewall rules directly through Windows instead of a
+  PowerShell window.
+
+### Deutsch
+
+- **Firewall ohne blaues Fenster.** Der Launcher legt seine Firewall-Regeln direkt über Windows an statt über ein
+  PowerShell-Fenster.
+
+## 0.2.1 – 2026-09-22 – The Library Update | Das Bibliotheks-Update
+
+### English
+
+- **A library like the Modrinth App.** Square cards, sorting, filters and your own groups.
+- **One content list.** Mods, resource packs, shaders and data packs in one table with filter chips, selection and
+  bulk actions.
+- **A new discover page.** Browse Modrinth like in the Modrinth App.
+- **Settings as a window.** Global and per-instance settings in clear sections that save by themselves, with Java
+  per Minecraft version, storage management and start hooks.
+- **The TRS Client for (almost) every version.** Fabric from 1.14.4, Forge from 1.7.10 and NeoForge from 1.20.2 up
+  to 26.3 – with a new title screen, more HUD modules and PvP features.
+- **Clearer update errors.** If a launcher update fails, you see why and can try again.
+
+![The library with your own groups](/news/0.2.1/library.png)
+
+### Deutsch
+
+- **Eine Bibliothek wie in der Modrinth App.** Quadratische Karten, Sortieren, Filter und eigene Gruppen.
+- **Eine Liste für alle Inhalte.** Mods, Ressourcenpakete, Shader und Datenpakete in einer Tabelle mit Filtern,
+  Auswahl und Sammelaktionen.
+- **Eine neue Entdecken-Seite.** Stöbere durch Modrinth wie in der Modrinth App.
+- **Einstellungen als Fenster.** Globale und Instanz-Einstellungen in klaren Bereichen, die sich selbst speichern,
+  mit Java pro Minecraft-Version, Speicherverwaltung und Start-Hooks.
+- **Der TRS Client für (fast) jede Version.** Fabric ab 1.14.4, Forge ab 1.7.10 und NeoForge ab 1.20.2 bis 26.3 –
+  mit neuem Titelbildschirm, mehr HUD-Modulen und PvP-Funktionen.
+- **Klarere Update-Fehler.** Schlägt ein Launcher-Update fehl, siehst du warum und kannst es erneut versuchen.
+
+![Die Bibliothek mit eigenen Gruppen](/news/0.2.1/library.png)
+
+## 0.2.0 – 2026-09-22 – The Modrinth Update | Das Modrinth-Update
+
+### English
+
+- **Pages like the Modrinth App.** Every mod and modpack gets its own page with description, gallery, versions and
+  dependencies.
+- **Images for your instances.** Give every instance its own picture.
+- **History and version switching.** See what changed in an instance, switch mods to another version and spot
+  downgrades at a glance.
+- **More TRS Client.** Now also for NeoForge 1.21.1 and Forge 1.20.1.
+
+![Managing the content of an instance](/news/0.2.0/content.png)
+
+### Deutsch
+
+- **Seiten wie in der Modrinth App.** Jede Mod und jedes Modpack hat eine eigene Seite mit Beschreibung, Galerie,
+  Versionen und Abhängigkeiten.
+- **Bilder für deine Instanzen.** Gib jeder Instanz ihr eigenes Bild.
+- **Verlauf und Versionswechsel.** Sieh, was sich in einer Instanz geändert hat, wechsle Mods auf eine andere
+  Version und erkenne Downgrades auf einen Blick.
+- **Mehr TRS Client.** Jetzt auch für NeoForge 1.21.1 und Forge 1.20.1.
+
+![Die Inhalte einer Instanz verwalten](/news/0.2.0/content.png)
+
+## 0.1.0 – 2026-09-22 – The First Block | Der erste Block
+
+### English
+
+- **The first TRS Launcher.** Install and start every Minecraft version – Vanilla, Fabric, Quilt, Forge and
+  NeoForge – with several Microsoft accounts.
+- **Mods and modpacks from Modrinth.** Search, install and update content per instance.
+- **Bring what you have.** Import instances from the official launcher, Prism, MultiMC and the Modrinth App, or
+  from any folder.
+- **Servers, screenshots and updates.** A server list with live status, screenshots per instance and a launcher
+  that updates itself.
+- **Help when it crashes.** Games run on their own with log files; after a crash the launcher explains what went
+  wrong.
+- **The TRS Client.** Our own client mod ships with the launcher and is added automatically.
+
+![The very first start page](/news/0.1.0/start.png)
+
+### Deutsch
+
+- **Der erste TRS Launcher.** Installiere und starte jede Minecraft-Version – Vanilla, Fabric, Quilt, Forge und
+  NeoForge – mit mehreren Microsoft-Konten.
+- **Mods und Modpacks von Modrinth.** Inhalte pro Instanz suchen, installieren und aktualisieren.
+- **Nimm mit, was du hast.** Importiere Instanzen aus dem offiziellen Launcher, Prism, MultiMC und der Modrinth App
+  oder aus einem beliebigen Ordner.
+- **Server, Screenshots und Updates.** Eine Serverliste mit Live-Status, Screenshots pro Instanz und ein Launcher,
+  der sich selbst aktualisiert.
+- **Hilfe bei Abstürzen.** Spiele laufen eigenständig mit Log-Dateien; nach einem Absturz erklärt der Launcher, was
+  schiefging.
+- **Der TRS Client.** Unsere eigene Client-Mod kommt mit dem Launcher und wird automatisch hinzugefügt.
+
+![Die allererste Startseite](/news/0.1.0/start.png)
