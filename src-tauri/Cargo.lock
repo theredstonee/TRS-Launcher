@@ -5429,7 +5429,7 @@ dependencies = [
 
 [[package]]
 name = "trs-core"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "base64 0.23.1",
  "chacha20poly1305",
@@ -5460,7 +5460,7 @@ dependencies = [
 
 [[package]]
 name = "trs-launcher"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "arboard",
  "chrono",
