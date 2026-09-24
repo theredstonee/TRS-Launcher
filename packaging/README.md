@@ -56,7 +56,7 @@ ebenfalls; `node scripts/aur.mjs --srcinfo PKGBUILD` liefert dieselbe Ausgabe).
    `<release>`-Eintrag ergänzen.
 2. Lokal prüfen:
    ```sh
-   flatpak install flathub org.gnome.Platform//48 org.gnome.Sdk//48 org.flatpak.Builder
+   flatpak install flathub org.gnome.Platform//50 org.gnome.Sdk//50 org.flatpak.Builder
    flatpak run org.flatpak.Builder --user --install --force-clean build flatpak/dev.theredstonee.trslauncher.yml
    flatpak run dev.theredstonee.trslauncher
    flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest flatpak/dev.theredstonee.trslauncher.yml

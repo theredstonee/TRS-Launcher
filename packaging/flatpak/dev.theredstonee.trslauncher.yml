@@ -9,7 +9,8 @@
 #   flatpak run dev.theredstonee.trslauncher
 app-id: dev.theredstonee.trslauncher
 runtime: org.gnome.Platform
-runtime-version: '48'
+# GNOME-Laufzeiten gelten ~1 Jahr (48 ist seit März 2026 EOL) – bei Bedarf anheben.
+runtime-version: '50'
 sdk: org.gnome.Sdk
 command: trs-launcher
 finish-args:
