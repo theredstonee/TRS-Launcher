@@ -39,6 +39,7 @@ public final class Performance {
 	private double nameTagDistSq;
 	private int particleLimit;
 	private int afkFps;
+	private boolean afkBefore;
 	private double particleAmount = 1;
 	private boolean keepPlayers = true;
 	private long ticks;
@@ -221,6 +222,9 @@ public final class Performance {
 	 */
 	public int frameLimit(long nowMillis, boolean focused, boolean minimized, double mouseX, double mouseY, boolean anyKey) {
 		boolean afk = afkActive();
+		// Gerade eingeschaltet: AFK-Zeit ab jetzt zählen (nicht ab der letzten Eingabe vor dem Ausschalten).
+		if (afk && !afkBefore) dynamicFps.touch(nowMillis);
+		afkBefore = afk;
 		if (afk) dynamicFps.input(nowMillis, mouseX, mouseY, anyKey);
 		DynamicFps.State state = dynamicFps.update(nowMillis, focused, minimized, afk ? m.dynamicFpsAfkMinutes.get() : 0);
 		int limit = 0;

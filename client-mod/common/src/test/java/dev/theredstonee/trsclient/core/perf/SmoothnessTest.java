@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.core.perf;
 
+import com.google.gson.Gson;
 import dev.theredstonee.trsclient.core.config.ConfigStore;
+import dev.theredstonee.trsclient.core.config.TrsConfig;
 import dev.theredstonee.trsclient.core.hud.ArmorLayout;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.util.LongObjectMap;
@@ -81,26 +83,30 @@ class SmoothnessTest {
 		modules.fps.setEnabled(true);
 		modules.cps.setEnabled(false);
 		store.saveLater(modules.registry);
+		// Nur lesen (ConfigStore#load würde bei einem Lesefehler selbst schreiben).
 		long until = System.currentTimeMillis() + 5000;
-		String text = "";
+		TrsConfig read = null;
 		while (System.currentTimeMillis() < until) {
-			text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
-			TrsModules check = new TrsModules();
-			new ConfigStore(file).load(check.registry);
-			if (check.fps.isEnabled() && !check.cps.isEnabled()) break;
+			read = read(file);
+			if (read != null && Boolean.TRUE.equals(read.modules.get("fps").enabled)
+					&& Boolean.FALSE.equals(read.modules.get("cps").enabled)) break;
 			Thread.sleep(20);
 		}
-		TrsModules check = new TrsModules();
-		new ConfigStore(file).load(check.registry);
-		assertTrue(check.fps.isEnabled(), text);
-		assertFalse(check.cps.isEnabled(), "neuester Stand geschrieben");
+		assertTrue(read != null && Boolean.TRUE.equals(read.modules.get("fps").enabled));
+		assertEquals(Boolean.FALSE, read.modules.get("cps").enabled, "neuester Stand geschrieben");
 		// Sofortiges Speichern gewinnt nicht gegen einen älteren Stand im Hintergrund.
 		modules.cps.setEnabled(true);
 		store.save(modules.registry);
 		store.flush();
-		TrsModules again = new TrsModules();
-		new ConfigStore(file).load(again.registry);
-		assertTrue(again.cps.isEnabled());
+		assertEquals(Boolean.TRUE, read(file).modules.get("cps").enabled);
+	}
+
+	private static TrsConfig read(Path file) {
+		try {
+			return new Gson().fromJson(new String(Files.readAllBytes(file), StandardCharsets.UTF_8), TrsConfig.class);
+		} catch (Exception e) {
+			return null; // gerade ersetzt – gleich noch einmal
+		}
 	}
 
 	@Test
