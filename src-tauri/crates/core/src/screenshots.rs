@@ -180,7 +180,7 @@ fn write_thumbnail(source: &Path, target: &Path) -> Result<()> {
 
 /// Datei in den Windows-Papierkorb verschieben (`SHFileOperationW`).
 #[cfg(windows)]
-fn recycle(path: &Path) -> Result<()> {
+pub(crate) fn recycle(path: &Path) -> Result<()> {
     use std::os::windows::ffi::OsStrExt;
 
     use windows::Win32::UI::Shell::{
@@ -213,7 +213,7 @@ fn recycle(path: &Path) -> Result<()> {
 }
 
 #[cfg(not(windows))]
-fn recycle(_path: &Path) -> Result<()> {
+pub(crate) fn recycle(_path: &Path) -> Result<()> {
     Err(Error::Internal("Papierkorb nur unter Windows".into()))
 }
 

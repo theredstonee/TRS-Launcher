@@ -3,6 +3,7 @@
 
 pub mod accounts;
 pub mod app;
+pub mod clips;
 pub mod content;
 pub mod export;
 pub mod extras;

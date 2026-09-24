@@ -62,6 +62,8 @@ public final class TrsModules {
 	public final Module redstoneOverlay;
 	/** Redstone: Takt-Messer mit Oszilloskop (HUD). */
 	public final HudModule redstoneClock;
+	/** Clips & Aufnahme: Status der Aufnahme im Launcher (Tasten: Steuerung → TRS Client). */
+	public final HudModule clips;
 
 	public final BoolSetting keystrokesShowCps;
 	public final BoolSetting keystrokesShowSpace;
@@ -185,6 +187,7 @@ public final class TrsModules {
 	public final NumberSetting redstoneClockWindow;
 	public final BoolSetting redstoneClockScope;
 	public final BoolSetting redstoneClockKeep;
+	public final BoolSetting clipsBufferIcon;
 
 	/** Für wen die Umhang-Physik rechnet. */
 	public enum CapeScope implements ChoiceSetting.Option {
@@ -341,6 +344,11 @@ public final class TrsModules {
 				"Measures how fast the redstone component you look at switches: frequency in Hz, period and pulse "
 						+ "length in redstone ticks, plus a small oscilloscope.", true,
 				new HudPosition(HudAnchor.CENTER, 0.2, 0.16)));
+		clips = registry.register(new HudModule("clips", "Clips & Recording",
+				"Save the last seconds as a clip (F9) or start and stop a recording (F10) – the TRS Launcher records "
+						+ "the game window, nothing leaves your PC. Turn it on in the launcher under Settings → Clips. "
+						+ "Shows a red dot while recording and a message when a clip is saved.", true,
+				new HudPosition(HudAnchor.CENTER_RIGHT, -0.005, -0.1)));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);
@@ -380,6 +388,7 @@ public final class TrsModules {
 		redstoneSignal.icon("strength").category(Category.REDSTONE);
 		redstoneOverlay.icon("digits").category(Category.REDSTONE);
 		redstoneClock.icon("wave").category(Category.REDSTONE);
+		clips.icon("record").category(Category.MISC);
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS below mouse buttons", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Show space bar", true));
@@ -485,6 +494,7 @@ public final class TrsModules {
 		redstoneClockWindow = redstoneClock.add(new NumberSetting("window", "Measuring window (s)", 5, 2, 10, 1, ""));
 		redstoneClockScope = redstoneClock.add(new BoolSetting("scope", "Oscilloscope", true));
 		redstoneClockKeep = redstoneClock.add(new BoolSetting("keep", "Keep measuring after looking away", true));
+		clipsBufferIcon = clips.add(new BoolSetting("bufferIcon", "Show buffer indicator", true));
 
 		registry.addPart(keyDefaults);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.

@@ -7,5 +7,7 @@
 	"key.trsclient.freelook": "Wolna kamera",
 	"key.trsclient.hudProfile": "Zmień profil HUD",
 	"key.trsclient.emoteWheel": "Koło emotek (przytrzymaj)",
-	"key.trsclient.redstoneOverlay": "Przełącz nakładkę sygnału"
+	"key.trsclient.redstoneOverlay": "Przełącz nakładkę sygnału",
+	"key.trsclient.saveClip": "Zapisz klip",
+	"key.trsclient.toggleRecording": "Rozpocznij/zatrzymaj nagrywanie"
 }

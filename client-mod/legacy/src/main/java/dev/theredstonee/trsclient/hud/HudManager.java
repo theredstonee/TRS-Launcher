@@ -54,7 +54,8 @@ public final class HudManager {
 				new PvpHuds.Speed(modules.speed),
 				minimap,
 				new RedstoneHuds.Signal(modules, redstone),
-				new RedstoneHuds.Clock(modules, redstone)));
+				new RedstoneHuds.Clock(modules, redstone),
+				new ClipHud(modules)));
 	}
 
 	public CrosshairRenderer crosshair() {

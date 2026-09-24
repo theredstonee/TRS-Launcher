@@ -39,7 +39,15 @@ public final class TrsKeys {
 	public static final KeyMapping redstoneOverlay =
 			new KeyMapping("key.trsclient.redstoneOverlay", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F6, CATEGORY);
 
-	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay};
+	/** Clip der letzten Sekunden speichern (F9 – in keiner Vanilla-Version belegt). */
+	public static final KeyMapping saveClip =
+			new KeyMapping("key.trsclient.saveClip", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F9, CATEGORY);
+	/** Aufnahme starten/stoppen (F10 – in keiner Vanilla-Version belegt). */
+	public static final KeyMapping toggleRecording =
+			new KeyMapping("key.trsclient.toggleRecording", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F10, CATEGORY);
+
+	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
+			saveClip, toggleRecording};
 
 	private TrsKeys() {
 	}

@@ -7,5 +7,7 @@
 	"key.trsclient.freelook": "Vue libre",
 	"key.trsclient.hudProfile": "Changer de profil de HUD",
 	"key.trsclient.emoteWheel": "Roue d’emotes (maintenir)",
-	"key.trsclient.redstoneOverlay": "Basculer la surimpression du signal"
+	"key.trsclient.redstoneOverlay": "Basculer la surimpression du signal",
+	"key.trsclient.saveClip": "Enregistrer un clip",
+	"key.trsclient.toggleRecording": "Démarrer/arrêter l'enregistrement"
 }

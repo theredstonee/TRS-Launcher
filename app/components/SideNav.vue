@@ -21,6 +21,7 @@ const items: NavItem[] = [
   { to: '/browse', label: 'nav.discover', icon: 'compass' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
+  { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/friends', label: 'nav.friends', icon: 'friends' },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },

@@ -520,6 +520,11 @@ async function allowFirewall() {
       </div>
     </div>
 
+    <!-- Clips & Aufnahme -------------------------------------------------------------- -->
+    <div v-else-if="active === 'clips'">
+      <ClipsSettings v-model="form.clips" />
+    </div>
+
     <!-- Speicherverwaltung --------------------------------------------------------------- -->
     <div v-else-if="active === 'storage'">
       <h3 class="section-heading">{{ t('settings.storage.title') }}</h3>

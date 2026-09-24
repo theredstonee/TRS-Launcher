@@ -15,6 +15,10 @@ public final class TrsKeys {
 	public static KeyBinding hudProfile;
 	/** Schaltet das Redstone-Signal-Overlay (F8 – F6/F7 sind in 1.7.10 die Stream-Tasten). */
 	public static KeyBinding redstoneOverlay;
+	/** Clip der letzten Sekunden speichern (F9 – in keiner Vanilla-Version belegt). */
+	public static KeyBinding saveClip;
+	/** Aufnahme starten/stoppen (F10 – in keiner Vanilla-Version belegt). */
+	public static KeyBinding toggleRecording;
 
 	private TrsKeys() {
 	}
@@ -29,6 +33,8 @@ public final class TrsKeys {
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", Keyboard.KEY_NONE, CATEGORY));
 		redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", Keyboard.KEY_F8, CATEGORY));
+		saveClip = register(new KeyBinding("key.trsclient.saveClip", Keyboard.KEY_F9, CATEGORY));
+		toggleRecording = register(new KeyBinding("key.trsclient.toggleRecording", Keyboard.KEY_F10, CATEGORY));
 	}
 
 	/**

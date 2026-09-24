@@ -507,6 +507,17 @@
       "noJavaAtPath": "Bu yolda Java çalıştırılabilir dosyası yok.",
       "invalidTaskId": "Geçersiz görev kimliği",
       "taskRunning": "Bu görev zaten çalışıyor."
+    },
+    "clips": {
+      "bufferRange": "Klip uzunluğu {min} ile {max} saniye arasında olmalı",
+      "fpsInvalid": "Saniyedeki kare: yalnızca 30 veya 60",
+      "storageRange": "Klip alanı {min} ile {max} GB arasında olmalı",
+      "folderInvalid": "Klip klasörü tam bir yerel yol olmalı",
+      "gone": "Klip artık mevcut değil.",
+      "invalidName": "Bu ad dosya adı olarak kullanılamaz.",
+      "nameTaken": "Bu adla bir klip zaten var.",
+      "noFrames": "Henüz hiçbir şey kaydedilmedi.",
+      "notRecording": "Bu oyun için çalışan bir kayıt yok."
     }
   },
   "browse": {
@@ -1533,6 +1544,55 @@
       "allowed": "{n} Java programına ağ erişimi izni verildi | {n} Java programına ağ erişimi izni verildi",
       "downloadsTitle": "Paralel indirmeler",
       "downloadsDescription": "Aynı anda kaç dosya indirileceği. Yavaş bağlantıda daha az kullan."
+    },
+    "clips": {
+      "title": "Klipler ve kayıt",
+      "intro": "ShadowPlay veya Medal gibi: bu launcher’dan bir oyun çalıştığı sürece launcher yalnızca oyun penceresini kaydeder. Her şey bilgisayarında kalır.",
+      "enabledTitle": "Klipler ve kayıt",
+      "enabledDescription": "Son saniyeleri diskte bir arabellekte tutar; bir tuşla klip olarak kaydedilir. Varsayılan olarak kapalı.",
+      "ffmpegTitle": "Kaydedici (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} kurulu ve doğrulandı.",
+      "ffmpegMissing": "Klipleri açtığında bir kez indirilir ({size}, sağlama toplamı doğrulanır).",
+      "ffmpegDownload": "İndir",
+      "ffmpegDownloading": "İndiriliyor … %{percent}",
+      "ffmpegTaskTitle": "Kaydedici (FFmpeg)",
+      "ffmpegTaskStage": "FFmpeg indiriliyor",
+      "ffmpegTaskDone": "Kaydedici hazır",
+      "captureTitle": "Görüntü",
+      "bufferTitle": "Klip uzunluğu",
+      "bufferDescription": "Bir klibin kaç saniye geriye gittiği.",
+      "seconds": "{n} sn",
+      "resolutionTitle": "Çözünürlük",
+      "resolutionDescription": "Daha büyük oyun pencereleri küçültülür.",
+      "resolution": {
+        "native": "Pencere boyutu",
+        "1080p": "1080p’ye kadar",
+        "720p": "720p’ye kadar"
+      },
+      "fpsTitle": "Kare hızı",
+      "qualityTitle": "Kalite",
+      "qualityDescription": "Daha yüksek kalite daha büyük dosya demektir.",
+      "quality": {
+        "low": "Düşük",
+        "medium": "Orta",
+        "high": "Yüksek"
+      },
+      "encoderTitle": "Kodlayıcı",
+      "encoderDescription": "Otomatik, ekran kartını (NVIDIA, AMD, Intel) kullanır; gerekirse yazılıma geçer.",
+      "audioTitle": "Ses",
+      "systemAudioTitle": "Sistem sesi",
+      "systemAudioDescription": "Hoparlörlerinin çaldığını kaydeder (oyun, müzik, sesli sohbet).",
+      "microphoneTitle": "Mikrofon",
+      "microphoneDescription": "Varsayılan mikrofonunu ekler. Varsayılan olarak kapalı.",
+      "storageTitle": "Depolama",
+      "folderTitle": "Klip klasörü",
+      "folderDefault": "Launcher veri klasörü (clips)",
+      "folderReset": "Varsayılanı kullan",
+      "limitTitle": "Alan sınırı",
+      "limitDescription": "Bu boyutun üstünde en eski klipler geri dönüşüm kutusuna gider.",
+      "keysTitle": "Oyundaki tuşlar (TRS Client)",
+      "keysText": "F9 klip kaydeder, F10 kaydı başlatıp durdurur. Minecraft kontrollerinde “TRS Client” altından değiştir.",
+      "privacy": "Hiçbir şey bilgisayarından çıkmaz: yükleme yok, hesap yok; kaydedici yalnızca bu launcher’dan bir oyun açıkken çalışır."
     }
   },
   "settingsShell": {
@@ -1722,7 +1782,9 @@
     "versionFormat": "Yalnızca harf, rakam ve . - _ +",
     "descriptionInvalidChars": "Açıklama geçersiz karakterler içeriyor",
     "folderRequired": "Lütfen en az bir klasör seç",
-    "invalidInput": "Geçersiz giriş"
+    "invalidInput": "Geçersiz giriş",
+    "clipBufferRange": "Klip uzunluğu {min} ile {max} saniye arasında olmalı",
+    "clipStorageRange": "Klip alanı {min} ile {max} GB arasında olmalı"
   },
   "titleBar": {
     "forward": "İleri",
@@ -1763,7 +1825,8 @@
     "collapseLabel": "Kenar çubuğunu daralt",
     "expandLabel": "Kenar çubuğunu genişlet",
     "collapse": "Daralt",
-    "expand": "Genişlet"
+    "expand": "Genişlet",
+    "clips": "Klipler"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -1815,7 +1878,8 @@
       "newInstance": "ekle oluştur yeni add create new",
       "import": "içe aktar taşı prism multimc curseforge import migrate",
       "modpacks": "modpack paket yükle pack install",
-      "dataDir": "klasör gezgin dosyalar folder explorer files"
+      "dataDir": "klasör gezgin dosyalar folder explorer files",
+      "clips": "klipler kayıt kaydet video tekrar shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1887,7 +1951,8 @@
       "repair": "Kurulum onarıldı",
       "reinstall": "Yeniden yüklendi",
       "versionChange": "Sürüm değiştirildi",
-      "launch": "Oyun başlatma"
+      "launch": "Oyun başlatma",
+      "ffmpeg": "Kaydedici kuruldu"
     },
     "stage": {
       "preparing": "Hazırlanıyor",
@@ -2024,7 +2089,8 @@
       "defaults": "Varsayılan ayarlar",
       "java": "Java kurulumları",
       "storage": "Depolama",
-      "network": "Ağ"
+      "network": "Ağ",
+      "clips": "Klipler ve kayıt"
     },
     "instance": {
       "general": "Genel",
@@ -2443,5 +2509,85 @@
     "version": "Sürüm {version}",
     "close": "Anladım",
     "englishOnly": "Bu notlar yalnızca İngilizce ve Almanca olarak mevcuttur."
+  },
+  "clips": {
+    "title": "Klipler",
+    "subtitle": "{n} klip veya kayıt | {n} klip ve kayıt",
+    "instanceLabel": "Örneğe göre filtrele",
+    "allInstances": "Tüm örnekler",
+    "settings": "Klip ayarları",
+    "reload": "Yenile",
+    "noDate": "Bilinmeyen tarih",
+    "play": "{name} oynat",
+    "rename": "Yeniden adlandır",
+    "showInFolder": "Klasörde göster",
+    "usage": "{limit} alanın {used} kadarı kullanılıyor",
+    "free": "Sürücüde {free} boş",
+    "off": {
+      "title": "Klipler kapalı",
+      "text": "Oynarken F9 ile son saniyeleri kaydetmek veya F10 ile kayıt yapmak için aç.",
+      "action": "Aç"
+    },
+    "live": {
+      "label": "Süren kayıtlar",
+      "recording": "Kaydediliyor · {time}",
+      "buffer": "Arabellek etkin · son {seconds} sn",
+      "saveClip": "Klip kaydet",
+      "record": "Kaydı başlat",
+      "stop": "Kaydı durdur"
+    },
+    "empty": {
+      "title": "Henüz klip yok",
+      "text": "Son saniyeleri kaydetmek için oyunda F9’a, kaydı başlatıp durdurmak için F10’a bas."
+    },
+    "player": {
+      "label": "Klibi oynat",
+      "close": "Oynatıcıyı kapat",
+      "hint": "Esc kapatır · Alt+←/→ önceki/sonraki klip"
+    },
+    "renameDialog": {
+      "title": "Klibi yeniden adlandır",
+      "label": "Yeni ad",
+      "invalid": "İzin verilmez: boş adlar, \\ / : * ? \" < > {'|'} ve Windows’un ayrılmış adları."
+    },
+    "deleteDialog": {
+      "title": "Klip silinsin mi?",
+      "text": "{name} geri dönüşüm kutusuna taşınacak."
+    },
+    "toasts": {
+      "clipSaved": "Klip kaydedildi ({duration}) – {instance}",
+      "recordingSaved": "Kayıt kaydedildi ({duration}) – {instance}",
+      "show": "Göster",
+      "limitCleanup": "Alan sınırına ulaşıldı: {n} eski klip geri dönüşüm kutusuna taşındı | Alan sınırına ulaşıldı: {n} eski klip geri dönüşüm kutusuna taşındı",
+      "renamed": "Klip yeniden adlandırıldı",
+      "trashed": "Klip geri dönüşüm kutusuna taşındı"
+    },
+    "errors": {
+      "disabled": "Klipler kapalı – Ayarlar → Klipler altından aç.",
+      "starting": "Kayıt hâlâ başlıyor – birazdan tekrar dene.",
+      "noWindow": "Oyun penceresi bulunamadı – hiçbir şey kaydedilmedi.",
+      "ffmpeg": "Kaydedici (FFmpeg) hâlâ indiriliyor.",
+      "noFrames": "Henüz bir şey kaydedilmedi – birkaç saniye sonra tekrar dene.",
+      "busy": "Son klip hâlâ kaydediliyor.",
+      "error": "Klip kaydedilemedi.",
+      "ffmpegDownload": "Kaydedici (FFmpeg) indirilemedi."
+    },
+    "reason": {
+      "starting": "Oyun penceresi bekleniyor …",
+      "noWindow": "Oyun penceresi bulunamadı",
+      "ffmpeg": "Kaydedici (FFmpeg) indiriliyor …",
+      "error": "Kayıt başlamıyor – günlüğe bak",
+      "disabled": "Klipler kapalı"
+    },
+    "status": {
+      "buffer": "Arabellek etkin"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Yazılım (x264)"
+    }
   }
 }

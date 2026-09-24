@@ -507,6 +507,17 @@
       "noJavaAtPath": "No hay ningún ejecutable de Java en esta ruta.",
       "invalidTaskId": "ID de tarea no válido",
       "taskRunning": "Esta tarea ya se está ejecutando."
+    },
+    "clips": {
+      "bufferRange": "La duración del clip debe estar entre {min} y {max} segundos",
+      "fpsInvalid": "Imágenes por segundo: solo 30 o 60",
+      "storageRange": "El espacio para clips debe estar entre {min} y {max} GB",
+      "folderInvalid": "La carpeta de clips debe ser una ruta local completa",
+      "gone": "El clip ya no existe.",
+      "invalidName": "Este nombre no está permitido como nombre de archivo.",
+      "nameTaken": "Ya existe un clip con este nombre.",
+      "noFrames": "Todavía no se ha grabado nada.",
+      "notRecording": "No hay ninguna grabación en curso para este juego."
     }
   },
   "browse": {
@@ -1533,6 +1544,55 @@
       "allowed": "Acceso a la red permitido para {n} programa de Java | Acceso a la red permitido para {n} programas de Java",
       "downloadsTitle": "Descargas en paralelo",
       "downloadsDescription": "Cuántos archivos se descargan a la vez. Con una conexión lenta, menos."
+    },
+    "clips": {
+      "title": "Clips y grabación",
+      "intro": "Como ShadowPlay o Medal: el launcher graba solo la ventana del juego mientras se ejecuta un juego de este launcher. Todo se queda en tu PC.",
+      "enabledTitle": "Clips y grabación",
+      "enabledDescription": "Guarda los últimos segundos en un búfer en el disco para que una tecla los guarde como clip. Desactivado por defecto.",
+      "ffmpegTitle": "Grabador (FFmpeg)",
+      "ffmpegReady": "FFmpeg {version} está instalado y verificado.",
+      "ffmpegMissing": "Se descarga una vez al activar los clips ({size}, con suma de comprobación).",
+      "ffmpegDownload": "Descargar",
+      "ffmpegDownloading": "Descargando … {percent} %",
+      "ffmpegTaskTitle": "Grabador (FFmpeg)",
+      "ffmpegTaskStage": "Descargando FFmpeg",
+      "ffmpegTaskDone": "Grabador listo",
+      "captureTitle": "Imagen",
+      "bufferTitle": "Duración del clip",
+      "bufferDescription": "Cuántos segundos hacia atrás abarca un clip.",
+      "seconds": "{n} s",
+      "resolutionTitle": "Resolución",
+      "resolutionDescription": "Las ventanas de juego más grandes se reducen.",
+      "resolution": {
+        "native": "Tamaño de la ventana",
+        "1080p": "Hasta 1080p",
+        "720p": "Hasta 720p"
+      },
+      "fpsTitle": "Imágenes por segundo",
+      "qualityTitle": "Calidad",
+      "qualityDescription": "Más calidad significa archivos más grandes.",
+      "quality": {
+        "low": "Baja",
+        "medium": "Media",
+        "high": "Alta"
+      },
+      "encoderTitle": "Codificador",
+      "encoderDescription": "Automático usa tu tarjeta gráfica (NVIDIA, AMD, Intel) y, si no, el software.",
+      "audioTitle": "Sonido",
+      "systemAudioTitle": "Sonido del sistema",
+      "systemAudioDescription": "Graba lo que suena por tus altavoces (juego, música, chat de voz).",
+      "microphoneTitle": "Micrófono",
+      "microphoneDescription": "Añade tu micrófono predeterminado. Desactivado por defecto.",
+      "storageTitle": "Almacenamiento",
+      "folderTitle": "Carpeta de clips",
+      "folderDefault": "Carpeta de datos del launcher (clips)",
+      "folderReset": "Usar la predeterminada",
+      "limitTitle": "Límite de espacio",
+      "limitDescription": "Por encima de este tamaño, los clips más antiguos van a la papelera.",
+      "keysTitle": "Teclas en el juego (TRS Client)",
+      "keysText": "F9 guarda un clip, F10 inicia y detiene una grabación. Cámbialas en los controles de Minecraft, en «TRS Client».",
+      "privacy": "Nada sale de tu PC: sin subidas, sin cuenta; el grabador solo funciona mientras hay un juego de este launcher abierto."
     }
   },
   "settingsShell": {
@@ -1722,7 +1782,9 @@
     "versionFormat": "Solo letras, dígitos y . - _ +",
     "descriptionInvalidChars": "La descripción contiene caracteres no válidos",
     "folderRequired": "Selecciona al menos una carpeta",
-    "invalidInput": "Entrada no válida"
+    "invalidInput": "Entrada no válida",
+    "clipBufferRange": "La duración del clip debe estar entre {min} y {max} segundos",
+    "clipStorageRange": "El espacio para clips debe estar entre {min} y {max} GB"
   },
   "titleBar": {
     "forward": "Adelante",
@@ -1763,7 +1825,8 @@
     "collapseLabel": "Contraer barra lateral",
     "expandLabel": "Expandir barra lateral",
     "collapse": "Contraer",
-    "expand": "Expandir"
+    "expand": "Expandir",
+    "clips": "Clips"
   },
   "accountMenu": {
     "menuLabel": "Cuentas",
@@ -1815,7 +1878,8 @@
       "newInstance": "añadir crear nueva",
       "import": "importar prism multimc curseforge migrar",
       "modpacks": "modpack paquete instalar",
-      "dataDir": "carpeta explorador archivos"
+      "dataDir": "carpeta explorador archivos",
+      "clips": "clips grabación grabar vídeo repetición shadowplay"
     },
     "actions": {
       "newInstance": {
@@ -1887,7 +1951,8 @@
       "repair": "Instancia reparada",
       "reinstall": "Reinstalada",
       "versionChange": "Versión cambiada",
-      "launch": "Inicio del juego"
+      "launch": "Inicio del juego",
+      "ffmpeg": "Grabador instalado"
     },
     "stage": {
       "preparing": "Preparando",
@@ -2024,7 +2089,8 @@
       "defaults": "Ajustes predeterminados",
       "java": "Instalaciones de Java",
       "storage": "Almacenamiento",
-      "network": "Red"
+      "network": "Red",
+      "clips": "Clips y grabación"
     },
     "instance": {
       "general": "General",
@@ -2443,5 +2509,85 @@
     "version": "Versión {version}",
     "close": "Entendido",
     "englishOnly": "Estas notas solo están disponibles en inglés y alemán."
+  },
+  "clips": {
+    "title": "Clips",
+    "subtitle": "{n} clip o grabación | {n} clips y grabaciones",
+    "instanceLabel": "Filtrar por instancia",
+    "allInstances": "Todas las instancias",
+    "settings": "Ajustes de clips",
+    "reload": "Recargar",
+    "noDate": "Fecha desconocida",
+    "play": "Reproducir {name}",
+    "rename": "Renombrar",
+    "showInFolder": "Mostrar en la carpeta",
+    "usage": "{used} de {limit} en uso",
+    "free": "{free} libres en la unidad",
+    "off": {
+      "title": "Los clips están desactivados",
+      "text": "Actívalos para guardar los últimos segundos con F9 o grabar con F10 mientras juegas.",
+      "action": "Activar"
+    },
+    "live": {
+      "label": "Grabaciones en curso",
+      "recording": "Grabando · {time}",
+      "buffer": "Búfer activo · últimos {seconds} s",
+      "saveClip": "Guardar clip",
+      "record": "Iniciar grabación",
+      "stop": "Detener grabación"
+    },
+    "empty": {
+      "title": "Aún no hay clips",
+      "text": "Pulsa F9 en el juego para guardar los últimos segundos, o F10 para iniciar y detener una grabación."
+    },
+    "player": {
+      "label": "Reproducir clip",
+      "close": "Cerrar reproductor",
+      "hint": "Esc cierra · Alt+←/→ clip anterior/siguiente"
+    },
+    "renameDialog": {
+      "title": "Renombrar clip",
+      "label": "Nuevo nombre",
+      "invalid": "No permitido: nombres vacíos, \\ / : * ? \" < > {'|'} y nombres reservados de Windows."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar el clip?",
+      "text": "{name} se moverá a la papelera de reciclaje."
+    },
+    "toasts": {
+      "clipSaved": "Clip guardado ({duration}) – {instance}",
+      "recordingSaved": "Grabación guardada ({duration}) – {instance}",
+      "show": "Ver",
+      "limitCleanup": "Límite de espacio alcanzado: {n} clip antiguo movido a la papelera | Límite de espacio alcanzado: {n} clips antiguos movidos a la papelera",
+      "renamed": "Clip renombrado",
+      "trashed": "Clip movido a la papelera"
+    },
+    "errors": {
+      "disabled": "Los clips están desactivados: actívalos en Ajustes → Clips.",
+      "starting": "La grabación aún se está iniciando; inténtalo de nuevo en un momento.",
+      "noWindow": "No se encontró la ventana del juego; no se grabó nada.",
+      "ffmpeg": "El grabador (FFmpeg) aún se está descargando.",
+      "noFrames": "Aún no hay nada grabado; inténtalo en unos segundos.",
+      "busy": "Aún se está guardando el último clip.",
+      "error": "No se pudo guardar el clip.",
+      "ffmpegDownload": "No se pudo descargar el grabador (FFmpeg)."
+    },
+    "reason": {
+      "starting": "Esperando la ventana del juego …",
+      "noWindow": "No se encontró la ventana del juego",
+      "ffmpeg": "Descargando el grabador (FFmpeg) …",
+      "error": "La grabación no se inicia; revisa el registro",
+      "disabled": "Los clips están desactivados"
+    },
+    "status": {
+      "buffer": "Búfer activo"
+    },
+    "encoders": {
+      "nvenc": "NVIDIA (NVENC)",
+      "amf": "AMD (AMF)",
+      "qsv": "Intel (Quick Sync)",
+      "mf": "Windows (Media Foundation)",
+      "x264": "Software (x264)"
+    }
   }
 }
