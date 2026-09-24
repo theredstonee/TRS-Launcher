@@ -6,6 +6,10 @@
 //   ## 0.5.0 – 2026-09-25 – The Clip Update | Das Clip-Update
 // Screenshots stehen als eigene Zeile „![Bildunterschrift](/news/<version>/<datei>.png)“ im Text;
 // die Dateien liegen in public/news/.
+//
+// Das Banner jedes Updates hat einen festen Stil (Deepslate, Redstone-Rahmen, Pixel-Schrift); je Version
+// ändern sich nur Akzentfarbe und Motiv (freigestellte HD-Pixel-Art aus TRS Studio, Vorlage „Update-Banner“):
+//   <!-- banner: accent=#ff7ab8 motif=/news/0.4.3/banner.png -->
 
 export interface ChangelogEntry {
   /** z. B. „0.4.4“; der Abschnitt „Unreleased“ hat `null`. */
@@ -15,6 +19,27 @@ export interface ChangelogEntry {
   de: string
   /** Update-Name wie „The Clip Update“ / „Das Clip-Update“, sonst `null`. */
   title: { en: string; de: string } | null
+  /** Banner: Akzentfarbe und Motiv des Updates, sonst `null`. */
+  banner: UpdateBanner | null
+}
+
+export interface UpdateBanner {
+  /** `#rrggbb` */
+  accent: string
+  /** Eigenes Bild unter `/news/…`, sonst `null`. */
+  motif: string | null
+}
+
+const BANNER_COMMENT = /^<!-- *banner: *(.*?) *-->$/
+/** Platzhalter für gesicherte Banner-Zeilen, bevor die übrigen Kommentare entfernt werden. */
+const BANNER_MARK = '\u0001banner '
+
+/** „accent=#ff7ab8 motif=/news/0.4.3/banner.png“ → Banner; ungültige Werte werden ignoriert. */
+export function parseBanner(raw: string): UpdateBanner | null {
+  const accent = /(?:^|\s)accent=(#[0-9a-fA-F]{6})(?:\s|$)/.exec(raw)?.[1]
+  if (!accent) return null
+  const motif = /(?:^|\s)motif=(\/news\/[\w.-]+\/[\w.-]+\.(?:png|webp))(?:\s|$)/.exec(raw)?.[1] ?? null
+  return { accent: accent.toLowerCase(), motif: motif && !motif.includes('..') ? motif : null }
 }
 
 const VERSION_HEADING =
@@ -30,7 +55,14 @@ function parseTitle(raw: string | undefined): ChangelogEntry['title'] {
 
 /** Alle Abschnitte in Dateireihenfolge (neueste zuerst, wie im Changelog). */
 export function parseChangelog(text: string): ChangelogEntry[] {
-  const withoutComments = text.replace(/<!--[\s\S]*?-->/g, '')
+  const withoutComments = text
+    .split(/\r?\n/)
+    .map((line) => {
+      const m = BANNER_COMMENT.exec(line.trim())
+      return m ? BANNER_MARK + m[1] : line
+    })
+    .join('\n')
+    .replace(/<!--[\s\S]*?-->/g, '')
   const entries: ChangelogEntry[] = []
   let current: ChangelogEntry | null = null
   let lang: 'en' | 'de' | null = null
@@ -44,7 +76,7 @@ export function parseChangelog(text: string): ChangelogEntry[] {
     const heading = VERSION_HEADING.exec(line)
     if (heading) {
       push()
-      current = { version: heading[1] ?? null, date: heading[3] ?? null, en: '', de: '', title: parseTitle(heading[4]) }
+      current = { version: heading[1] ?? null, date: heading[3] ?? null, en: '', de: '', title: parseTitle(heading[4]), banner: null }
       lang = null
       continue
     }
@@ -56,6 +88,10 @@ export function parseChangelog(text: string): ChangelogEntry[] {
       continue
     }
     if (!current) continue
+    if (line.startsWith(BANNER_MARK)) {
+      current.banner ??= parseBanner(line.slice(BANNER_MARK.length))
+      continue
+    }
     const sub = /^### +(.+?) *$/.exec(line)
     if (sub) {
       const name = sub[1]!.toLowerCase()

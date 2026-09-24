@@ -24,6 +24,7 @@ export interface BlogPostSummary {
   date: string | null
   title: { en: string, de: string } | null
   headlines: { en: string[], de: string[] }
+  banner: { accent: string, motif: string | null } | null
 }
 
 export interface BlogPost extends BlogPostSummary {

@@ -84,6 +84,21 @@ const powered = ref(false)
       </div>
     </section>
 
+    <!-- Große Bild-Kacheln: echter Screenshot, kleine Zeile, riesiges Wort -->
+    <section class="relative z-10 mx-auto -mt-6 max-w-6xl px-4 sm:px-6" aria-label="Highlights">
+      <ul class="tiles">
+        <li v-for="tile in m.home.tiles" :key="tile.title">
+          <NuxtLink :to="tile.to" class="tile">
+            <img :src="`/shots/${tile.img}`" alt="" loading="lazy" class="tile-img" />
+            <span class="tile-text">
+              <span class="tile-kicker">{{ tile.kicker }}</span>
+              <span class="tile-title">{{ tile.title }}</span>
+            </span>
+          </NuxtLink>
+        </li>
+      </ul>
+    </section>
+
     <!-- Funktionen -->
     <section id="features" class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="features-title">
       <h2 id="features-title" class="heading text-3xl">{{ m.home.featuresTitle }}</h2>
@@ -96,15 +111,39 @@ const powered = ref(false)
       </ul>
     </section>
 
-    <!-- Bilder aus dem Spiel -->
-    <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="shots-title">
-      <h2 id="shots-title" class="heading text-3xl">{{ m.home.shotsTitle }}</h2>
-      <div class="shots mt-8">
-        <figure v-for="(s, i) in m.home.shots" :key="s.src" class="shot" :class="{ 'shot-big': i === 0 }">
-          <img :src="`/shots/${s.src}`" :alt="s.caption" loading="lazy" class="size-full object-cover" />
-          <figcaption>{{ s.caption }}</figcaption>
-        </figure>
+    <!-- Vergleich -->
+    <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="compare-title">
+      <h2 id="compare-title" class="heading text-3xl">{{ m.home.compare.title }}</h2>
+      <p class="mt-3 max-w-2xl text-base-400">{{ m.home.compare.lead }}</p>
+      <div class="compare-wrap mt-8">
+        <table class="compare">
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr-only">Feature</span></th>
+              <th v-for="(c, i) in m.home.compare.columns" :key="c" scope="col" :class="{ 'col-trs': i === 0 }">{{ c }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in m.home.compare.rows" :key="row.label">
+              <th scope="row">{{ row.label }}</th>
+              <td v-for="(v, i) in row.values" :key="i" :class="{ 'col-trs': i === 0 }">
+                <span class="mark" :class="`mark-${v}`">
+                  <SiteIcon v-if="v === 'yes'" name="check" class="size-4" />
+                  <span v-else-if="v === 'partial'" class="mark-dot" />
+                  <SiteIcon v-else name="close" class="size-3.5" />
+                  <span class="sr-only">{{ v === 'yes' ? m.home.compare.yes : v === 'partial' ? m.home.compare.partial : m.home.compare.no }}</span>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      <p class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-base-600">
+        <span class="inline-flex items-center gap-1.5"><span class="mark mark-yes small"><SiteIcon name="check" class="size-3" /></span>{{ m.home.compare.yes }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="mark mark-partial small"><span class="mark-dot" /></span>{{ m.home.compare.partial }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="mark mark-no small"><SiteIcon name="close" class="size-2.5" /></span>{{ m.home.compare.no }}</span>
+        <span>{{ m.home.compare.note }}</span>
+      </p>
     </section>
 
     <!-- Umhänge -->
@@ -206,38 +245,147 @@ const powered = ref(false)
     0 0 18px -6px var(--color-lamp-400);
 }
 
-.shots {
+.tiles {
   display: grid;
-  gap: 1rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--color-base-800);
+  box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8);
 }
 @media (min-width: 900px) {
-  .shots {
-    grid-template-columns: 2fr 1fr 1fr;
-    grid-template-rows: repeat(2, 13rem);
-  }
-  .shot-big {
-    grid-row: span 2;
-  }
-  .shots .shot:nth-child(4) {
-    grid-column: span 2;
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
-.shot {
+.tile {
   position: relative;
+  display: grid;
+  place-items: center;
+  height: 15rem;
   overflow: hidden;
-  min-height: 11rem;
+  isolation: isolate;
+  text-align: center;
+}
+.tile-img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(3px) saturate(1.1);
+  scale: 1.08;
+  transition: filter 0.35s ease, scale 0.35s ease;
+}
+.tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to top, rgb(12 11 14 / 0.85), rgb(12 11 14 / 0.35));
+  transition: background 0.35s ease;
+}
+.tile:hover .tile-img,
+.tile:focus-visible .tile-img {
+  filter: blur(0) saturate(1.15);
+  scale: 1.02;
+}
+.tile:hover::after {
+  background: linear-gradient(to top, rgb(12 11 14 / 0.8), rgb(12 11 14 / 0.15));
+}
+.tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem;
+}
+.tile-kicker {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-lamp-300);
+}
+.tile-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--color-base-50);
+  text-shadow: 0 3px 0 rgb(12 11 14 / 0.7);
+}
+
+.compare-wrap {
+  overflow-x: auto;
   border-radius: 0.75rem;
   border: 1px solid var(--color-base-800);
   background: var(--color-base-900);
 }
-.shot figcaption {
-  position: absolute;
-  inset: auto 0 0 0;
-  padding: 2rem 1rem 0.75rem;
-  font-size: 0.8125rem;
+.compare {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.compare th,
+.compare td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--color-base-800);
+}
+.compare tbody tr:last-child th,
+.compare tbody tr:last-child td {
+  border-bottom: 0;
+}
+.compare thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-base-400);
+  text-align: center;
+}
+.compare tbody th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--color-base-200);
+}
+.compare td {
+  text-align: center;
+}
+.compare .col-trs {
+  background: color-mix(in srgb, var(--color-redstone-500) 9%, transparent);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--color-redstone-500) 40%, transparent), inset -1px 0 0 color-mix(in srgb, var(--color-redstone-500) 40%, transparent);
+}
+.compare thead .col-trs {
+  font-family: var(--font-display);
+  font-size: 1rem;
   color: var(--color-base-50);
-  background: linear-gradient(to top, rgb(12 11 14 / 0.9), transparent);
+}
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.mark.small {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.mark-yes {
+  color: #0d0d10;
+  background: var(--color-ok);
+}
+.mark-no {
+  color: var(--color-base-400);
+  background: var(--color-base-800);
+}
+.mark-partial {
+  background: var(--color-lamp-900);
+}
+.mark-dot {
+  width: 40%;
+  height: 40%;
+  background: var(--color-lamp-400);
 }
 
 .capes-band {

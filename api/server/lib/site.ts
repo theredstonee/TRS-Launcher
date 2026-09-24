@@ -1,6 +1,6 @@
 import type { AppContext } from './context'
 import { all } from './db'
-import { changelogFor, parseChangelog, splitPost, type ChangelogEntry, type PostBlock } from './changelog'
+import { changelogFor, parseChangelog, splitPost, type ChangelogEntry, type PostBlock, type UpdateBanner } from './changelog'
 
 // Daten für die Website: neueste Launcher-Version (GitHub Releases), Blog (CHANGELOG.md aus dem
 // Repo) und die öffentlichen TRS-Umhänge. Externe Quellen werden zwischengespeichert; schlägt ein
@@ -115,6 +115,8 @@ export interface BlogPostSummary {
   title: { en: string, de: string } | null
   /** Die fetten Schlagzeilen der Punkte (für Karten). */
   headlines: { en: string[], de: string[] }
+  /** Akzentfarbe + Motiv (absolute Bildadresse) des Update-Banners. */
+  banner: UpdateBanner | null
 }
 
 export interface BlogPost extends BlogPostSummary {
@@ -131,7 +133,8 @@ function headlines(text: string): string[] {
 }
 
 function summary(e: ChangelogEntry & { version: string }): BlogPostSummary {
-  return { version: e.version, date: e.date, title: e.title, headlines: { en: headlines(e.en), de: headlines(e.de) } }
+  const banner = e.banner ? { accent: e.banner.accent, motif: e.banner.motif ? `${RAW}/public${e.banner.motif}` : null } : null
+  return { version: e.version, date: e.date, title: e.title, headlines: { en: headlines(e.en), de: headlines(e.de) }, banner }
 }
 
 function changelog(): Promise<ChangelogEntry[]> {

@@ -12,6 +12,7 @@ if (!data.value?.post) throw createError({ statusCode: 404, statusMessage: 'Not 
 const post = computed(() => data.value!.post)
 
 const title = computed(() => postTitle(post.value, lang.value, fill(m.value.common.version, { version: post.value.version })))
+const kicker = computed(() => (post.value.date ? `v${post.value.version} · ${date(post.value.date)}` : `v${post.value.version}`))
 /** Spanisch hat keinen eigenen Changelog-Text – dann Englisch. */
 const blocks = computed(() => (lang.value === 'de' ? post.value.blocks.de : post.value.blocks.en))
 const rendered = computed(() =>
@@ -27,21 +28,12 @@ useSeoMeta({
 
 <template>
   <article>
-    <header class="post-banner relative isolate overflow-hidden">
-      <ClientOnly>
-        <RedstoneScene fill :seed="versionSeed(post.version)" class="absolute inset-0" />
-        <template #fallback><div class="deepslate absolute inset-0" /></template>
-      </ClientOnly>
-      <div class="banner-shade absolute inset-0" />
-      <div class="relative mx-auto flex h-full max-w-3xl flex-col justify-end px-4 pb-10 sm:px-6">
-        <NuxtLink to="/blog" class="mb-auto mt-6 inline-flex w-fit items-center gap-1.5 text-sm text-base-200 hover:text-base-50">
+    <header class="post-banner">
+      <UpdateBanner :kicker="kicker" :title="title" :accent="post.banner?.accent" :motif="post.banner?.motif" size="lg" tag="h1">
+        <NuxtLink to="/blog" class="back-link">
           <SiteIcon name="back" class="size-4" />{{ m.blog.back }}
         </NuxtLink>
-        <p class="text-xs font-semibold tracking-[0.2em] text-lamp-300 uppercase">
-          v{{ post.version }}<span v-if="post.date" class="font-normal text-base-200"> · {{ date(post.date) }}</span>
-        </p>
-        <h1 class="display mt-2 text-5xl leading-[1.05] text-balance text-base-50 drop-shadow sm:text-6xl">{{ title }}</h1>
-      </div>
+      </UpdateBanner>
     </header>
 
     <div class="mx-auto max-w-3xl px-4 pt-10 sm:px-6">
@@ -64,10 +56,20 @@ useSeoMeta({
 
 <style scoped>
 .post-banner {
-  height: 22rem;
+  height: 24rem;
 }
-.banner-shade {
-  background: linear-gradient(to top, var(--color-base-950), rgb(12 11 14 / 0.45) 55%, rgb(12 11 14 / 0.15));
+.back-link {
+  position: absolute;
+  top: 1.75rem;
+  left: clamp(1.5rem, 6vw, 4rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--color-base-200);
+}
+.back-link:hover {
+  color: var(--color-base-50);
 }
 .post-text {
   font-size: 1.0625rem;
