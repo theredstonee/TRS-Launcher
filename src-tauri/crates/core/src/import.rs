@@ -257,7 +257,7 @@ struct CurseLoader {
 }
 
 /// `forge-47.3.33`, `neoforge-21.1.77`, `fabric-0.16.10-1.21.1`, `quilt-0.26.0-1.20.1`
-fn parse_curse_loader(name: &str, game_version: &str) -> Loader {
+pub(crate) fn parse_curse_loader(name: &str, game_version: &str) -> Loader {
     let (kind, rest) = match name.split_once('-') {
         Some(("forge", rest)) => (LoaderKind::Forge, rest),
         Some(("neoforge", rest)) => (LoaderKind::NeoForge, rest),

@@ -75,18 +75,61 @@ impl ContentKind {
     }
 }
 
+/// Plattform, von der ein Inhalt stammt.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Platform {
+    #[default]
+    Modrinth,
+    CurseForge,
+}
+
+impl Platform {
+    pub fn is_modrinth(&self) -> bool {
+        *self == Self::Modrinth
+    }
+}
+
+/// Präfix, unter dem CurseForge-Projekte im Index geführt werden
+/// (`cf:238222`) – Modrinth-IDs stehen dort ohne Präfix.
+pub const CURSEFORGE_KEY_PREFIX: &str = "cf:";
+
+/// Eindeutiger Schlüssel eines Projekts über beide Plattformen hinweg.
+pub fn project_key(platform: Platform, project_id: &str) -> String {
+    match platform {
+        Platform::Modrinth => project_id.to_owned(),
+        Platform::CurseForge => format!("{CURSEFORGE_KEY_PREFIX}{project_id}"),
+    }
+}
+
 /// Woher eine Datei stammt – Grundlage für „bereits installiert“ und Updates.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Source {
+    /// Modrinth-Projekt-ID bzw. CurseForge-Projekt-ID (Zahl als Text).
     pub project_id: String,
+    /// Modrinth-Versions-ID bzw. CurseForge-Datei-ID.
     pub version_id: String,
-    /// Anzeige-Version laut Modrinth (z. B. `mc1.21.1-0.6.0`).
+    /// Anzeige-Version (z. B. `mc1.21.1-0.6.0`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version_number: Option<String>,
+    /// Fehlt in alten Indizes – dann Modrinth.
+    #[serde(default, skip_serializing_if = "Platform::is_modrinth")]
+    pub platform: Platform,
 }
 
-/// Zwischengespeicherte Projekt-Infos von Modrinth (Titel, Autor, Icon).
+impl Source {
+    pub fn modrinth(project_id: String, version_id: String, version_number: Option<String>) -> Self {
+        Self { project_id, version_id, version_number, platform: Platform::Modrinth }
+    }
+
+    /// Schlüssel für [`ContentIndex::projects`] und „bereits installiert“.
+    pub fn project_key(&self) -> String {
+        project_key(self.platform, &self.project_id)
+    }
+}
+
+/// Zwischengespeicherte Projekt-Infos von Modrinth bzw. CurseForge (Titel, Autor, Icon).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectMeta {
@@ -97,7 +140,7 @@ pub struct ProjectMeta {
     pub author: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
-    /// Nur `https://cdn.modrinth.com/…` (siehe [`icon::is_allowed_icon_url`]).
+    /// Nur Modrinths bzw. CurseForges Bild-CDN (siehe [`icon::is_allowed_icon_url`]).
     #[serde(default)]
     pub icon_url: Option<String>,
     pub fetched_at: DateTime<Utc>,
@@ -126,7 +169,7 @@ pub(crate) struct ContentIndex {
     /// Schlüssel: `<ordner>/<dateiname>`.
     #[serde(default)]
     pub files: HashMap<String, Source>,
-    /// Schlüssel: Modrinth-Projekt-ID.
+    /// Schlüssel: [`Source::project_key`] (Modrinth-ID bzw. `cf:<id>`).
     #[serde(default)]
     pub projects: HashMap<String, ProjectMeta>,
     /// Dateien, die Modrinth per Hash nicht kennt – Schlüssel wie `files`,
@@ -211,7 +254,7 @@ pub async fn list(paths: &Paths, instance_id: &str, kind: ContentKind) -> Result
         }
 
         let source = index.files.get(&index_key(kind, &file_name)).cloned();
-        let project = source.as_ref().and_then(|s| index.projects.get(&s.project_id));
+        let project = source.as_ref().and_then(|s| index.projects.get(&s.project_key()));
         let remote_icon = project.and_then(|p| p.icon_url.clone()).filter(|u| icon::is_allowed_icon_url(u));
         // Das eingebettete Icon nur lesen, wenn Modrinth keins liefert.
         let local = match kind {
@@ -264,7 +307,7 @@ pub(crate) async fn display_name(paths: &Paths, instance_id: &str, kind: Content
     index
         .files
         .get(&index_key(kind, file_name))
-        .and_then(|s| index.projects.get(&s.project_id))
+        .and_then(|s| index.projects.get(&s.project_key()))
         .map(|p| p.title.clone())
         .unwrap_or_else(|| file_name.to_owned())
 }
@@ -400,7 +443,8 @@ pub async fn remember_source(
     let key = index_key(kind, file_name);
     modify_index(paths, instance_id, |index| {
         // Alte Version desselben Projekts vergessen (wurde beim Update ersetzt).
-        index.files.retain(|_, s| s.project_id != source.project_id);
+        let project = source.project_key();
+        index.files.retain(|_, s| s.project_key() != project);
         index.unknown.remove(&key);
         index.files.insert(key, source);
     })
@@ -420,22 +464,25 @@ async fn forget_source(paths: &Paths, instance_id: &str, kind: ContentKind, file
     .await
 }
 
-/// Dateien, die zu einem Modrinth-Projekt gehören (für Updates: alte Datei ersetzen).
-pub async fn files_of_project(paths: &Paths, instance_id: &str, project_id: &str) -> Vec<(ContentKind, String)> {
+/// Dateien, die zu einem Projekt gehören (für Updates: alte Datei ersetzen).
+/// `project_key` wie [`Source::project_key`].
+pub async fn files_of_project(paths: &Paths, instance_id: &str, project_key: &str) -> Vec<(ContentKind, String)> {
     let index = read_index(paths, instance_id).await;
     index
         .files
         .iter()
-        .filter(|(_, s)| s.project_id == project_id)
+        .filter(|(_, s)| s.project_key() == project_key)
         .filter_map(|(key, _)| split_key(key).map(|(kind, file)| (kind, file.to_owned())))
         .collect()
 }
 
 /// Installierte Quelle eines Projekts (für „Update von … auf …“).
-pub(crate) async fn source_of_project(paths: &Paths, instance_id: &str, project_id: &str) -> Option<Source> {
-    read_index(paths, instance_id).await.files.into_values().find(|s| s.project_id == project_id)
+pub(crate) async fn source_of_project(paths: &Paths, instance_id: &str, project_key: &str) -> Option<Source> {
+    read_index(paths, instance_id).await.files.into_values().find(|s| s.project_key() == project_key)
 }
 
+/// Schlüssel ([`Source::project_key`]) aller installierten Projekte –
+/// Modrinth-IDs ohne, CurseForge-IDs mit Präfix `cf:`.
 pub async fn installed_project_ids(paths: &Paths, instance_id: &str) -> Result<Vec<String>> {
     validate_id(instance_id)?;
     let index = read_index(paths, instance_id).await;
@@ -444,7 +491,7 @@ pub async fn installed_project_ids(paths: &Paths, instance_id: &str) -> Result<V
         let Some((dir, file)) = key.split_once('/') else { continue };
         // Von Hand gelöschte Dateien zählen nicht mehr als installiert.
         if existing_path(&paths.instance_game_dir(instance_id).join(dir), file).is_some() {
-            ids.push(source.project_id.clone());
+            ids.push(source.project_key());
         }
     }
     Ok(ids)
@@ -672,7 +719,31 @@ mod tests {
     }
 
     fn source(project: &str, version: &str) -> Source {
-        Source { project_id: project.into(), version_id: version.into(), version_number: None }
+        Source::modrinth(project.into(), version.into(), None)
+    }
+
+    #[tokio::test]
+    async fn curseforge_sources_are_keyed_separately() {
+        let (_dir, paths) = setup().await;
+        let mods = content_dir(&paths, "test", ContentKind::Mod);
+        write_jar(&mods.join("jei.jar"), &[("x.txt", b"x")]);
+        write_jar(&mods.join("same-id.jar"), &[("x.txt", b"x")]);
+        let cf = Source { platform: Platform::CurseForge, ..source("238222", "8947447") };
+        remember_source(&paths, "test", ContentKind::Mod, "jei.jar", cf.clone()).await.unwrap();
+        // Gleiche Zahl als Modrinth-ID: darf den CurseForge-Eintrag nicht verdrängen.
+        remember_source(&paths, "test", ContentKind::Mod, "same-id.jar", source("238222", "v1")).await.unwrap();
+
+        let mut ids = installed_project_ids(&paths, "test").await.unwrap();
+        ids.sort();
+        assert_eq!(ids, ["238222", "cf:238222"]);
+        assert_eq!(files_of_project(&paths, "test", "cf:238222").await, [(ContentKind::Mod, "jei.jar".to_owned())]);
+
+        // Alte Indizes ohne `platform` bleiben Modrinth; Modrinth wird nicht mitgeschrieben.
+        let json = serde_json::to_value(&cf).unwrap();
+        assert_eq!(json["platform"], "curseforge");
+        assert!(serde_json::to_value(source("a", "b")).unwrap().get("platform").is_none());
+        let old: Source = serde_json::from_str(r#"{"projectId":"a","versionId":"b"}"#).unwrap();
+        assert_eq!(old.platform, Platform::Modrinth);
     }
 
     #[test]

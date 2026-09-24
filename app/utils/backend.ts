@@ -23,6 +23,11 @@ import {
 } from './trs'
 import type {
   Account,
+  AdoptResult,
+  BlockedFile,
+  CurseForgeInstallOutcome,
+  CurseForgePackResult,
+  Platform,
   BulkAction,
   BulkResult,
   JavaCheck,
@@ -230,15 +235,23 @@ export const backend = {
       kind: update.kind,
       fileName: update.fileName,
       versionId: update.versionId,
+      platform: update.platform ?? null,
       taskId,
     }),
+  /** Öffnet z. B. den Mods-Ordner der Instanz im Explorer. */
+  openContentDir: (id: string, kind: ContentKind) => call<void>('open_content_dir', { id, kind }),
   installPerformancePack: (id: string, taskId: string | null = null) =>
     call<string[]>('install_performance_pack', { id, taskId }),
   /** Icons, Titel, Autoren von Modrinth nachladen; `true` = Liste neu laden. */
   refreshContentMeta: (id: string) => call<boolean>('refresh_content_meta', { id }),
   /** Neuere passende Versionen seit der installierten, mit Changelog. */
-  contentChangelog: (id: string, projectId: string, kind: ContentKind, installedVersionId: string) =>
-    call<ModrinthVersion[]>('content_changelog', { id, projectId, kind, installedVersionId }),
+  contentChangelog: (
+    id: string,
+    projectId: string,
+    kind: ContentKind,
+    installedVersionId: string,
+    platform: Platform = 'modrinth',
+  ) => call<ModrinthVersion[]>('content_changelog', { id, projectId, kind, installedVersionId, platform }),
   planContentMigration: (id: string) => call<MigrationItem[]>('plan_content_migration', { id }),
 
   modrinthProject: (projectId: string) => call<ProjectDetails>('modrinth_project', { projectId }),
@@ -263,6 +276,39 @@ export const backend = {
   /** `taskId`: Aufgabe im Kern (Abbrechen, Pause, Byte-Stand über `task-progress`). */
   installModpack: (projectId: string, onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
     call<Instance>('install_modpack', { projectId, onProgress: channel(onProgress), taskId }),
+
+  /**
+   * CurseForge – alle Aufrufe laufen im Kern (der API-Schlüssel bleibt dort).
+   * Die Antworten haben dieselbe Form wie bei Modrinth; IDs sind Zahlen als Text.
+   */
+  curseforge: {
+    /** Hat dieser Build einen API-Schlüssel? Sonst CurseForge ausblenden. */
+    status: () => call<{ available: boolean }>('curseforge_status'),
+    search: (params: ModrinthSearchParams) => call<ModrinthSearchResult>('curseforge_search', { params }),
+    categories: () => call<CategoryTag[]>('curseforge_categories'),
+    project: (projectId: string) => call<ProjectDetails>('curseforge_project', { projectId }),
+    projectVersions: (projectId: string) => call<ModrinthVersion[]>('curseforge_project_versions', { projectId }),
+    projects: (ids: string[]) => call<ProjectCard[]>('curseforge_projects', { ids }),
+    versions: (id: string, projectId: string, kind: ContentKind) =>
+      call<ModrinthVersion[]>('curseforge_versions', { id, projectId, kind }),
+    /** Changelog einer Datei – HTML, nur über MarkdownView (`html`) anzeigen. */
+    changelog: (projectId: string, fileId: string) => call<string>('curseforge_changelog', { projectId, fileId }),
+    /** Gesperrte Dateien kommen als `blocked` zurück (von Hand laden). */
+    install: (id: string, projectId: string, kind: ContentKind, fileId: string | null = null, taskId: string | null = null) =>
+      call<CurseForgeInstallOutcome>('curseforge_install', { id, projectId, kind, fileId, taskId }),
+    installModpack: (
+      projectId: string,
+      onProgress: (p: PackProgress) => void,
+      taskId: string | null = null,
+      fileId: string | null = null,
+    ) => call<CurseForgePackResult>('install_curseforge_modpack', { projectId, fileId, onProgress: channel(onProgress), taskId }),
+    /** Dateien, die der Nutzer für die Instanz selbst laden muss. */
+    blocked: (id: string) => call<BlockedFile[]>('curseforge_blocked', { id }),
+    /** Übernimmt passende Dateien aus dem Download-Ordner (Name + SHA1). */
+    adoptDownloads: (id: string) => call<AdoptResult>('curseforge_adopt_downloads', { id }),
+    /** `fileId: null` = alle verwerfen. */
+    dismissBlocked: (id: string, fileId: string | null) => call<BlockedFile[]>('curseforge_dismiss_blocked', { id, fileId }),
+  },
 
   listServers: () => call<Server[]>('list_servers'),
   addServer: (server: ServerInput) => call<Server>('add_server', { server }),

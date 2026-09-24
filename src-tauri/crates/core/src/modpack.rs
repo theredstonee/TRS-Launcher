@@ -135,13 +135,19 @@ pub(crate) fn read_index(pack: &Path) -> Result<PackIndex> {
 
 /// Entpackt `overrides/` und danach `client-overrides/` in den Spielordner.
 pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
+    extract_folders(pack, game_dir, &["overrides/", "client-overrides/"])
+}
+
+/// Entpackt die Ordner `prefixes` (in dieser Reihenfolge, spätere gewinnen)
+/// in den Spielordner – nur sichere, relative Pfade.
+pub(crate) fn extract_folders(pack: &Path, game_dir: &Path, prefixes: &[&str]) -> Result<()> {
     let file = std::fs::File::open(pack).map_err(|e| Error::io(pack, e))?;
     let mut archive = zip::ZipArchive::new(file).map_err(|_| Error::validation(crate::msg!(
         "modpack.corrupt",
         "Das Modpack ist beschädigt."
     )))?;
 
-    for prefix in ["overrides/", "client-overrides/"] {
+    for prefix in prefixes.iter().copied() {
         for i in 0..archive.len() {
             let mut entry = archive.by_index(i).map_err(|_| Error::validation(crate::msg!(
                 "modpack.corrupt",
@@ -266,14 +272,23 @@ impl Launcher {
         Ok(instance)
     }
 
-    /// Legt aus einer `.mrpack`-Datei auf der Platte eine Instanz an – etwa
-    /// aus einem eigenen Export oder von einem anderen Launcher.
+    /// Legt aus einer Modpack-Datei auf der Platte eine Instanz an – `.mrpack`
+    /// (etwa ein eigener Export) oder ein CurseForge-Zip mit `manifest.json`.
     pub async fn import_modpack_file(&self, pack: &Path, on_progress: &PackProgressFn) -> Result<Instance> {
         let meta = tokio::fs::metadata(pack).await.map_err(|e| Error::io(pack, e))?;
         if !meta.is_file() {
             return Err(Error::validation(crate::msg!("modpack.notPackFile", "Das ist keine Modpack-Datei.")));
         }
         on_progress(PackProgress { phase: PackPhase::Pack, percent: 100.0 });
+        let path = pack.to_owned();
+        let curseforge = tokio::task::spawn_blocking(move || crate::curseforge::is_curseforge_pack(&path))
+            .await
+            .map_err(|e| Error::Internal(e.to_string()))?;
+        if curseforge {
+            // Die Dateien des Packs löst nur die CurseForge-API auf.
+            let cf = self.curseforge()?;
+            return Ok(self.install_curseforge_pack(cf, pack, on_progress).await?.instance);
+        }
         self.install_local_pack(pack, on_progress).await
     }
 

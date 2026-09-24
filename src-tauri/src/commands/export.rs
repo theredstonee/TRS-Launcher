@@ -68,6 +68,7 @@ pub async fn import_modpack_file(
             .dialog()
             .file()
             .set_title(DialogText::PickModpack.text(lang))
+            .add_filter(DialogText::AnyModpack.text(lang), &["mrpack", "zip"])
             .add_filter(DialogText::ModrinthModpack.text(lang), &["mrpack"])
             .blocking_pick_file()
     })

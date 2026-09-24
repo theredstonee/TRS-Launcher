@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import DOMPurify from 'dompurify'
 import { describe, expect, it } from 'vitest'
-import { createRenderer, isSafeLink } from '../app/utils/markdown'
+import { createHtmlRenderer, createRenderer, isSafeLink } from '../app/utils/markdown'
 
 const render = createRenderer(DOMPurify(window))
 
@@ -41,5 +41,30 @@ describe('renderMarkdown', () => {
     for (const bad of ['javascript:alert(1)', 'http://x.de', ' https://x.de', 'https://a:b@x.de', '', null, 'file:///C:/']) {
       expect(isSafeLink(bad)).toBe(false)
     }
+  })
+})
+
+describe('renderHtml (CurseForge-Beschreibungen)', () => {
+  const renderHtml = createHtmlRenderer(DOMPurify(window))
+
+  it('lässt normales HTML stehen, ohne es als Markdown zu lesen', () => {
+    const html = renderHtml(
+      '<p>Hallo <strong>Welt</strong></p>\n\n    <p>eingerückt</p><a href="https://www.curseforge.com/linkout?remoteUrl=x">Link</a>',
+    )
+    expect(html).toContain('<strong>Welt</strong>')
+    expect(html).toContain('<p>eingerückt</p>')
+    expect(html).not.toContain('<pre>')
+    expect(html).toContain('rel="noopener noreferrer nofollow"')
+  })
+
+  it('entfernt Skripte, iframes, Styles und unsichere Links', () => {
+    const html = renderHtml(
+      '<script>alert(1)</script><iframe src="https://www.youtube.com/embed/x"></iframe><p style="color:red" onclick="x()">Text</p>' +
+        '<img src="http://media.forgecdn.net/x.png"><img src="https://media.forgecdn.net/attachments/1/2/x.png" onerror="x()">' +
+        '<a href="javascript:alert(1)">böse</a>',
+    )
+    expect(html).not.toMatch(/<script|<iframe|style=|onclick|onerror|javascript:|http:\/\//i)
+    expect(html).toContain('src="https://media.forgecdn.net/attachments/1/2/x.png"')
+    expect(html).toContain('Text')
   })
 })

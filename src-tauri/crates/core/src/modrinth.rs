@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::content::{self, ContentKind, ProjectMeta, Source};
+use crate::content::{self, ContentKind, Platform, ProjectMeta, Source};
 use crate::download::{self, Task};
 use crate::history::{self, HistoryEntry, HistoryKind};
 use crate::icon::is_allowed_icon_url;
@@ -83,7 +83,7 @@ impl ProjectKind {
     }
 
     /// Nur bei Mods und Modpacks unterscheidet Modrinth nach Modloader.
-    fn has_loaders(self) -> bool {
+    pub(crate) fn has_loaders(self) -> bool {
         matches!(self, Self::Mod | Self::Modpack)
     }
 }
@@ -327,6 +327,7 @@ pub struct VersionSummary {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateInfo {
+    pub platform: Platform,
     pub kind: ContentKind,
     pub file_name: String,
     pub project_id: String,
@@ -336,13 +337,13 @@ pub struct UpdateInfo {
 
 /// Für welchen Loader Mods passen müssen: Vanilla mit TRS-Optimierung läuft
 /// als Fabric und nimmt deshalb Fabric-Mods.
-fn content_loader(instance: &Instance) -> LoaderKind {
+pub(crate) fn content_loader(instance: &Instance) -> LoaderKind {
     if crate::boost::wants_boost(instance) { LoaderKind::Fabric } else { instance.loader.kind }
 }
 
 /// Loader-Namen, mit denen Modrinth Mods für diese Instanz kennzeichnet.
 /// Quilt lädt auch Fabric-Mods.
-fn loader_tags(loader: LoaderKind) -> &'static [&'static str] {
+pub(crate) fn loader_tags(loader: LoaderKind) -> &'static [&'static str] {
     match loader {
         LoaderKind::Fabric => &["fabric"],
         LoaderKind::Quilt => &["quilt", "fabric"],
@@ -385,12 +386,12 @@ fn json<T: Serialize + ?Sized>(value: &T) -> Result<String> {
     serde_json::to_string(value).map_err(|e| Error::Internal(e.to_string()))
 }
 
-fn clip(text: String, max: usize) -> String {
+pub(crate) fn clip(text: String, max: usize) -> String {
     text.chars().filter(|c| !c.is_control()).take(max).collect()
 }
 
 /// Wie [`clip`], behält aber Zeilenumbrüche (für Markdown).
-fn clip_markdown(text: String, max: usize) -> String {
+pub(crate) fn clip_markdown(text: String, max: usize) -> String {
     text.chars().filter(|c| !c.is_control() || matches!(c, '\n' | '\t')).take(max).collect()
 }
 
@@ -432,7 +433,7 @@ fn is_safe_category(c: &str) -> bool {
 
 /// Prüft alle Filter streng (Whitelist) – nichts davon landet ungeprüft in
 /// der Anfrage an Modrinth.
-fn validate_search(params: &SearchParams) -> Result<()> {
+pub(crate) fn validate_search(params: &SearchParams) -> Result<()> {
     if params.query.chars().count() > MAX_QUERY_LEN {
         return Err(Error::validation(crate::msg!("modrinth.queryTooLong", "Suchbegriff ist zu lang")));
     }
@@ -624,6 +625,13 @@ pub struct CategoryTag {
     /// Reines SVG-Markup von Modrinth. Das Frontend zeigt es nur als
     /// `<img src="data:image/svg+xml,…">` an – dort laufen keine Skripte.
     pub icon: Option<String>,
+    /// Anzeigename, wenn die Plattform einen mitliefert (CurseForge; `name`
+    /// ist dort die Kategorie-ID).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// Bild-URL statt SVG (CurseForge, nur `media.forgecdn.net`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon_url: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -661,6 +669,8 @@ fn categories_from_raw(raw: Vec<RawCategory>) -> Vec<CategoryTag> {
             project_type: clip(c.project_type, 20),
             header: clip(c.header, 40),
             icon: safe_svg(c.icon),
+            label: None,
+            icon_url: None,
         })
         .collect()
 }
@@ -1069,7 +1079,7 @@ pub async fn changelog_since(
     Ok(newer_than(versions, installed_version_id, installed_date).into_iter().filter_map(summarize).take(50).collect())
 }
 
-fn ensure_mods_allowed(kind: ContentKind, instance: &Instance) -> Result<()> {
+pub(crate) fn ensure_mods_allowed(kind: ContentKind, instance: &Instance) -> Result<()> {
     if kind == ContentKind::Mod && loader_tags(content_loader(instance)).is_empty() {
         return Err(Error::validation(crate::msg!(
             "modrinth.vanillaNoMods",
@@ -1217,11 +1227,11 @@ async fn install_version(
         &instance.id,
         kind,
         &file.filename,
-        Source {
-            project_id: version.project_id.clone(),
-            version_id: version.id.clone(),
-            version_number: Some(version_number.clone()).filter(|v| !v.is_empty()),
-        },
+        Source::modrinth(
+            version.project_id.clone(),
+            version.id.clone(),
+            Some(version_number.clone()).filter(|v| !v.is_empty()),
+        ),
     )
     .await?;
     Ok(Installed {
@@ -1231,7 +1241,7 @@ async fn install_version(
         published: version.date_published,
         // Von Hand ersetzte Datei ohne Index-Eintrag zählt auch als Update.
         previous: previous.or_else(|| {
-            replaced_any.then(|| Source { project_id: String::new(), version_id: String::new(), version_number: None })
+            replaced_any.then(|| Source::modrinth(String::new(), String::new(), None))
         }),
         dependency,
     })
@@ -1343,11 +1353,14 @@ pub async fn refresh_metadata(http: &reqwest::Client, paths: &Paths, instance: &
         for (hash, version) in found {
             let Some((kind, file_name, _)) = by_hash.get(&hash) else { continue };
             if is_safe_project_id(&version.project_id) && is_safe_project_id(&version.id) {
-                identified.push((content::index_key(*kind, file_name), Source {
-                    project_id: version.project_id,
-                    version_id: version.id,
-                    version_number: Some(clip(version.version_number, 60)).filter(|v| !v.is_empty()),
-                }));
+                identified.push((
+                    content::index_key(*kind, file_name),
+                    Source::modrinth(
+                        version.project_id,
+                        version.id,
+                        Some(clip(version.version_number, 60)).filter(|v| !v.is_empty()),
+                    ),
+                ));
             }
         }
         content::modify_index(paths, &instance.id, |index| {
@@ -1371,6 +1384,8 @@ pub async fn refresh_metadata(http: &reqwest::Client, paths: &Paths, instance: &
     let mut missing: Vec<String> = index
         .files
         .values()
+        // CurseForge-Projekte lädt `curseforge::refresh_metadata` nach.
+        .filter(|s| s.platform == Platform::Modrinth)
         .map(|s| s.project_id.clone())
         .filter(|id| index.projects.get(id).is_none_or(|p| p.fetched_at < stale))
         .collect();
@@ -1482,12 +1497,16 @@ pub async fn check_updates(http: &reqwest::Client, paths: &Paths, instance: &Ins
         }
 
         let mut by_hash = HashMap::new();
-        for item in items {
+        // Von CurseForge installiert: Updates kommen auch von dort.
+        for item in items.into_iter().filter(|i| !from_curseforge(i)) {
             if let Some(path) = content::existing_file(paths, &instance.id, kind, &item.file_name)
                 && let Ok(hash) = download::sha1_of_file(&path).await
             {
                 by_hash.insert(hash, item.file_name);
             }
+        }
+        if by_hash.is_empty() {
+            continue;
         }
 
         let hashes: Vec<&String> = by_hash.keys().collect();
@@ -1501,6 +1520,7 @@ pub async fn check_updates(http: &reqwest::Client, paths: &Paths, instance: &Ins
             let is_newer = is_update(&hash, current.get(&hash), &version);
             if is_newer && is_safe_project_id(&version.project_id) && is_safe_project_id(&version.id) {
                 updates.push(UpdateInfo {
+                    platform: Platform::Modrinth,
                     kind,
                     file_name: file_name.clone(),
                     project_id: version.project_id,
@@ -1512,6 +1532,10 @@ pub async fn check_updates(http: &reqwest::Client, paths: &Paths, instance: &Ins
     }
     updates.sort_by_key(|u| u.file_name.to_lowercase());
     Ok(updates)
+}
+
+fn from_curseforge(item: &content::ContentItem) -> bool {
+    item.source.as_ref().is_some_and(|s| s.platform == Platform::CurseForge)
 }
 
 /// Ersetzt `file_name` durch die angegebene Version (Update, Wechsel oder
@@ -1548,6 +1572,7 @@ pub enum MigrationStatus {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MigrationItem {
+    pub platform: Platform,
     pub kind: ContentKind,
     pub file_name: String,
     pub title: String,
@@ -1567,7 +1592,11 @@ pub async fn plan_migration(http: &reqwest::Client, paths: &Paths, instance: &In
         if kind == ContentKind::Mod && loader_tags(content_loader(instance)).is_empty() {
             continue;
         }
-        let items: Vec<_> = content::list(paths, &instance.id, kind).await?.into_iter().filter(|i| i.source.is_some()).collect();
+        let items: Vec<_> = content::list(paths, &instance.id, kind)
+            .await?
+            .into_iter()
+            .filter(|i| i.source.as_ref().is_some_and(|s| s.platform == Platform::Modrinth))
+            .collect();
         let mut by_hash = HashMap::new();
         for item in items {
             if let Some(path) = content::existing_file(paths, &instance.id, kind, &item.file_name)
@@ -1592,6 +1621,7 @@ pub async fn plan_migration(http: &reqwest::Client, paths: &Paths, instance: &In
                 Some(v) => (MigrationStatus::Update, Some(v)),
             };
             plan.push(MigrationItem {
+                platform: Platform::Modrinth,
                 kind,
                 title: item.title.clone().unwrap_or_else(|| item.file_name.clone()),
                 icon_url: item.icon_url.clone().filter(|u| is_allowed_icon_url(u)),
