@@ -130,11 +130,13 @@ public final class HudManager {
 		// Alle Anzeigen gesammelt zeichnen: 1.20–1.21.1 schicken sonst jedes Rechteck und jeden Text einzeln
 		// an die Grafikkarte (Hunderte Zeichenaufrufe je Bild bei Tastenanzeige, Minimap, Wegpunkten …).
 		frame = g;
+		long t0 = dev.theredstonee.trsclient.perf.PerfHooks.profile ? System.nanoTime() : 0;
 		try {
 			if (dev.theredstonee.trsclient.perf.PerfHooks.batchHud()) g.managed(drawAll);
 			else drawAll();
 		} finally {
 			frame = null;
+			if (t0 != 0) dev.theredstonee.trsclient.perf.PerfHooks.hudNanos += System.nanoTime() - t0;
 		}
 	}
 

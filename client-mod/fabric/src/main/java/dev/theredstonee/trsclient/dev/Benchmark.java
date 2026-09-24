@@ -113,24 +113,53 @@ public final class Benchmark {
 				stats.start(System.nanoTime());
 				wait = COLOR_TICKS;
 				return true;
-			case 4: {
+			case 4:
 				stats.stop(System.nanoTime());
 				report("mit Farben", stats);
 				modules.colors.setEnabled(false);
 				modules.colorSaturation.set(100);
+				// Zeit in den TRS-Hooks: HUD gesammelt gezeichnet
+				startProfile(stats);
+				wait = PROFILE_TICKS;
+				return true;
+			case 5:
+				stopProfile(stats, "HUD gesammelt");
+				// … und wie früher Stück für Stück (1.20–1.21.1: ein Zeichenaufruf je Rechteck/Text)
+				PerfHooks.forceUnbatchedHud = true;
+				startProfile(stats);
+				wait = PROFILE_TICKS;
+				return true;
+			case 6:
+				stopProfile(stats, "HUD einzeln (wie früher)");
+				PerfHooks.forceUnbatchedHud = false;
+				PerfHooks.profile = false;
+				// Zum Vergleich: alle TRS-Module aus (Restkosten der Mod ohne Funktionen)
+				saved = modules.registry.capture();
+				for (dev.theredstonee.trsclient.core.module.Module m : modules.registry.all()) m.setEnabled(false);
+				if (PerfHooks.get() != null) PerfHooks.get().refresh();
+				wait = 40;
+				return true;
+			case 7:
+				stats.start(System.nanoTime());
+				wait = PROFILE_TICKS;
+				return true;
+			case 8:
+				stats.stop(System.nanoTime());
+				report("alle TRS-Module aus", stats);
+				if (saved != null) modules.registry.apply(saved);
+				if (PerfHooks.get() != null) PerfHooks.get().refresh();
 				rotate = false;
 				// Rüstungsanzeige quer: HUD und HUD-Editor als Bild (Größe/Ankerung prüfen)
 				modules.armor.setEnabled(true);
 				modules.armorLayout.set(dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.HORIZONTAL);
 				wait = 20;
 				return true;
-			}
-			case 5:
+			case 9:
 				actions.shot("trsclient-armor-horizontal");
 				dev.theredstonee.trsclient.compat.Mc.setScreen(new dev.theredstonee.trsclient.screen.HudEditorScreen(null).selectFirst());
 				wait = 20;
 				return true;
-			case 6: {
+			case 10: {
 				actions.shot("trsclient-armor-horizontal-editor");
 				dev.theredstonee.trsclient.compat.Mc.setScreen(null);
 				modules.armorLayout.set(dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.VERTICAL);
@@ -145,6 +174,24 @@ public final class Benchmark {
 			default:
 				return false;
 		}
+	}
+
+	private static final int PROFILE_TICKS = 400;
+	private dev.theredstonee.trsclient.core.config.TrsConfig saved;
+
+	private static void startProfile(FrameStats stats) {
+		PerfHooks.hudNanos = 0;
+		PerfHooks.cullNanos = 0;
+		PerfHooks.profile = true;
+		stats.start(System.nanoTime());
+	}
+
+	private void stopProfile(FrameStats stats, String label) {
+		stats.stop(System.nanoTime());
+		int frames = Math.max(1, stats.frames());
+		report(label, stats);
+		TrsClient.LOGGER.info(String.format(Locale.ROOT, "[Benchmark] %s: HUD %.1f µs/Bild, Entity-Culling %.1f µs/Bild", label,
+				PerfHooks.hudNanos / 1000.0 / frames, PerfHooks.cullNanos / 1000.0 / frames));
 	}
 
 	private static final String NBT = "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b,PersistenceRequired:1b}";

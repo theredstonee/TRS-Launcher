@@ -113,6 +113,7 @@ public final class PerfHooks {
 	 * doppelt gesammelt würde nur früher geleert.
 	 */
 	public static boolean batchHud() {
+		if (forceUnbatchedHud) return false;
 		Performance p = perf;
 		return p == null || !p.compat().has(dev.theredstonee.trsclient.core.perf.PerfMod.IMMEDIATELY_FAST);
 	}
@@ -309,8 +310,24 @@ public final class PerfHooks {
 
 	// --- Wesen, Block-Entities, Namensschilder ---
 
+	/** Nur Benchmark: Zeit in einzelnen Hooks messen (Summe in ns) und das Sammeln des HUD abschalten. */
+	public static volatile boolean profile;
+	public static long cullNanos;
+	public static long hudNanos;
+	public static volatile boolean forceUnbatchedHud;
+
 	/** Aus EntityRenderDispatcher#shouldRender: true = nicht zeichnen. */
 	public static boolean cullEntity(Entity e, double camX, double camY, double camZ) {
+		if (!profile) return cullEntityNow(e, camX, camY, camZ);
+		long t0 = System.nanoTime();
+		try {
+			return cullEntityNow(e, camX, camY, camZ);
+		} finally {
+			cullNanos += System.nanoTime() - t0;
+		}
+	}
+
+	private static boolean cullEntityNow(Entity e, double camX, double camY, double camZ) {
 		Performance p = perf;
 		if (p == null || e == null || !p.entitiesActive()) return false;
 		try {
