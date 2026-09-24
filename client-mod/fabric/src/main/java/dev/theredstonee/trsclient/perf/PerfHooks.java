@@ -5,6 +5,7 @@ import dev.theredstonee.trsclient.compat.PerfOptions;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.perf.DynamicFps;
 import dev.theredstonee.trsclient.core.perf.FramePacer;
+import dev.theredstonee.trsclient.core.perf.FrameStats;
 import dev.theredstonee.trsclient.core.perf.GpuInfo;
 import dev.theredstonee.trsclient.core.perf.Occlusion;
 import dev.theredstonee.trsclient.core.perf.ParticleGate;
@@ -38,6 +39,8 @@ import java.util.function.Consumer;
  */
 public final class PerfHooks {
 	private static Performance perf;
+	/** Bildzeiten für den Benchmark (nimmt nur während einer Messung auf). */
+	public static final FrameStats FRAME_STATS = new FrameStats();
 	private static final PerfOptions OPTIONS = new PerfOptions();
 	private static final WorldBlocks BLOCKS = new WorldBlocks();
 	private static final FramePacer.Wake WAKE = new FramePacer.Wake() {
@@ -161,6 +164,7 @@ public final class PerfHooks {
 
 	/** Vor jedem Bild (Minecraft#runTick). Begrenzt ggf. die Bildrate und passt die Lautstärke an. */
 	public static void beforeFrame() {
+		FRAME_STATS.frame(System.nanoTime());
 		Performance p = perf;
 		if (p == null) return;
 		frames++;

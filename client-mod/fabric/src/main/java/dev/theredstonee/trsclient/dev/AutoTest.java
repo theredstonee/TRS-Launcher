@@ -175,6 +175,11 @@ public final class AutoTest {
 					step = 23;
 					break;
 				}
+				// -PtrsAutotestOnly=bench: nur der FPS-Benchmark (Durchschnitt und 1 %-Low)
+				if ("bench".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 27;
+					break;
+				}
 				shot(mc, "trsclient-hud");
 				TrsClient.LOGGER.info("[Autotest] Toggle-Anzeige: {} {}", TrsClient.get().pvp().toggles().sprintStatus().text(),
 						TrsClient.get().pvp().toggles().sneakStatus().text());
@@ -380,6 +385,22 @@ public final class AutoTest {
 				disconnect(mc);
 				next(20);
 				break;
+			case 27:
+				// FPS-Benchmark: feste Szene, drehende Kamera, Bildzeiten → Ø und 1 %-Low
+				if (benchmark.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			default:
 				if (step == 25) mc.stop();
 				step = 26;
@@ -392,6 +413,7 @@ public final class AutoTest {
 	private final RedstoneTest redstoneTest = new RedstoneTest();
 	private final CapeColorTest capeColorTest = new CapeColorTest();
 	private final PerfTest perfTest = new PerfTest();
+	private final Benchmark benchmark = new Benchmark();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {
