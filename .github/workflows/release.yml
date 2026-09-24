@@ -160,6 +160,8 @@ jobs:
           name: linux
           path: out/
           if-no-files-found: error
+          # .SRCINFO (AUR) beginnt mit einem Punkt – ohne das lässt upload-artifact@v4 sie weg.
+          include-hidden-files: true
 
   publish:
     name: Publish
