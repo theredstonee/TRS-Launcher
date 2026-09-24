@@ -32,7 +32,7 @@ export interface BlogPost extends BlogPostSummary {
 
 export const REPO_URL = 'https://github.com/theredstonee/TRS-Launcher'
 export const RELEASES_URL = `${REPO_URL}/releases`
-export const DISCORD_URL = 'https://discord.com/invite/eaGxPmmE5R'
+export const DISCORD_URL = 'https://dc.theredstonee.de'
 export const WIKI_URL = `${REPO_URL}/wiki`
 export const IMPRINT_URL = 'https://theredstonee.de/imprint/'
 
