@@ -53,6 +53,12 @@ public final class TrsModules {
 	public final Module trsOnline;
 	/** Stoff-Simulation für alle Umhänge (Vanilla, OptiFine, TRS). */
 	public final Module capePhysics;
+	/** Redstone: Signalstärke des angeschauten Bauteils (HUD). */
+	public final HudModule redstoneSignal;
+	/** Redstone: Signalstärke als Zahl über jedem Staub in der Nähe (Taste zum Umschalten). */
+	public final Module redstoneOverlay;
+	/** Redstone: Takt-Messer mit Oszilloskop (HUD). */
+	public final HudModule redstoneClock;
 
 	public final BoolSetting keystrokesShowCps;
 	public final BoolSetting keystrokesShowSpace;
@@ -128,6 +134,17 @@ public final class TrsModules {
 	public final NumberSetting capeStrength;
 	public final NumberSetting capeWind;
 	public final ChoiceSetting<CapeScope> capeScope;
+
+	// --- Redstone ---
+	public final BoolSetting redstoneSignalName;
+	public final BoolSetting redstoneSignalBar;
+	public final BoolSetting redstoneSignalDetails;
+	public final NumberSetting redstoneOverlayRadius;
+	public final BoolSetting redstoneOverlayVisibleOnly;
+	public final BoolSetting redstoneOverlayZero;
+	public final NumberSetting redstoneClockWindow;
+	public final BoolSetting redstoneClockScope;
+	public final BoolSetting redstoneClockKeep;
 
 	/** Für wen die Umhang-Physik rechnet. */
 	public enum CapeScope implements ChoiceSetting.Option {
@@ -263,6 +280,18 @@ public final class TrsModules {
 		capePhysics = registry.register(new Module("capePhysics", "Cape Physics",
 				"Capes (Mojang, OptiFine, TRS) move like cloth: they swing when you walk, turn, jump and sneak.",
 				true));
+		redstoneSignal = registry.register(new HudModule("redstoneSignal", "Signal Strength",
+				"Look at dust, repeaters, comparators, pistons, lamps, levers and more: shows the block, its signal "
+						+ "strength (0–15), repeater delay, comparator mode and output, piston state and the comparator "
+						+ "output of containers you have opened.", true,
+				new HudPosition(HudAnchor.CENTER, 0.12, 0.06)));
+		redstoneOverlay = registry.register(new Module("redstoneOverlay", "Signal Overlay",
+				"Shows the signal strength as a number above every piece of redstone dust around you, from grey (0) "
+						+ "to bright red (15). Switch it on and off with its key (controls menu).", false));
+		redstoneClock = registry.register(new HudModule("redstoneClock", "Clock Meter",
+				"Measures how fast the redstone component you look at switches: frequency in Hz, period and pulse "
+						+ "length in redstone ticks, plus a small oscilloscope.", true,
+				new HudPosition(HudAnchor.CENTER, 0.12, 0.22)));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);
@@ -298,6 +327,9 @@ public final class TrsModules {
 		waypoints.icon("compass").category(Category.WORLD);
 		trsOnline.icon("redstone");
 		capePhysics.icon("cape");
+		redstoneSignal.icon("strength").category(Category.REDSTONE);
+		redstoneOverlay.icon("digits").category(Category.REDSTONE);
+		redstoneClock.icon("wave").category(Category.REDSTONE);
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS below mouse buttons", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Show space bar", true));
@@ -374,6 +406,15 @@ public final class TrsModules {
 		capeStrength = capePhysics.add(new NumberSetting("strength", "Strength", 100, 20, 200, 10, "", "%"));
 		capeWind = capePhysics.add(new NumberSetting("wind", "Wind", 100, 0, 200, 10, "", "%"));
 		capeScope = capePhysics.add(new ChoiceSetting<>("scope", "For", CapeScope.class, CapeScope.ALL));
+		redstoneSignalName = redstoneSignal.add(new BoolSetting("name", "Block name", true));
+		redstoneSignalBar = redstoneSignal.add(new BoolSetting("bar", "Signal bar", true));
+		redstoneSignalDetails = redstoneSignal.add(new BoolSetting("details", "Details (delay, mode, state)", true));
+		redstoneOverlayRadius = redstoneOverlay.add(new NumberSetting("radius", "Radius (blocks)", 8, 4, 16, 1, ""));
+		redstoneOverlayVisibleOnly = redstoneOverlay.add(new BoolSetting("visibleOnly", "Only dust in sight", true));
+		redstoneOverlayZero = redstoneOverlay.add(new BoolSetting("zero", "Also label 0", true));
+		redstoneClockWindow = redstoneClock.add(new NumberSetting("window", "Measuring window (s)", 5, 2, 10, 1, ""));
+		redstoneClockScope = redstoneClock.add(new BoolSetting("scope", "Oscilloscope", true));
+		redstoneClockKeep = redstoneClock.add(new BoolSetting("keep", "Keep measuring after looking away", true));
 
 		registry.addPart(keyDefaults);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.

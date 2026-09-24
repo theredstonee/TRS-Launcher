@@ -59,7 +59,7 @@ class TextFitTest {
 				if (!fits) problems.add(lang + " Kachel: " + m.name() + " " + lines);
 			}
 			for (String key : new String[]{"menu.all", "menu.hudEditor", "menu.profiles", "menu.packs",
-					"category.hud", "category.pvp", "category.chat", "category.world", "category.misc"}) {
+					"category.hud", "category.pvp", "category.chat", "category.world", "category.redstone", "category.misc"}) {
 				String s = I18n.tr(key);
 				if (c.textWidth(s) > RAIL_TEXT_W) problems.add(lang + " Leiste: " + s + " (" + c.textWidth(s) + " px)");
 			}

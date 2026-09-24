@@ -6,6 +6,7 @@ public enum Category {
 	PVP("PvP", "sword"),
 	CHAT("Chat", "chat"),
 	WORLD("World", "globe"),
+	REDSTONE("Redstone", "torch"),
 	MISC("Other", "gear");
 
 	private final String label;
