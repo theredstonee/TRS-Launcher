@@ -1,18 +1,38 @@
 // Autotests laufen auf dem Rechner des Entwicklers, während er arbeitet – deshalb ohne Ton.
-// Vor jedem `runClient -PtrsAutotest` wird im Spielordner `soundCategory_master:0.0` gesetzt.
+// Vor jedem `runClient -PtrsAutotest` wird im Spielordner `soundCategory_master:0.0` gesetzt und die
+// OpenAL-Ausgabe per ALSOFT_DRIVERS=null ganz abgeschaltet.
 // Eingebunden von jedem Loader-Build: apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
 
 def autotest = project.hasProperty('trsAutotest') || rootProject.hasProperty('trsAutotest')
 
+/** Spielordner: bei Loom der eingestellte runDir (relativ zum Projekt), sonst der Arbeitsordner der Aufgabe. */
+def gameDirs = { task ->
+	Set<File> dirs = [] as Set
+	def loom = project.extensions.findByName('loom')
+	if (loom != null) {
+		try {
+			def run = loom.runConfigs.findByName('client')
+			if (run != null && run.runDir != null) dirs << project.file(run.runDir)
+		} catch (Exception ignored) {
+			// ältere Loom-Fassungen ohne runConfigs – dann der Arbeitsordner
+		}
+	}
+	if (dirs.isEmpty()) dirs << task.workingDir
+	dirs
+}
+
 tasks.matching { it.name == 'runClient' }.configureEach { task ->
 	if (!autotest) return
 	task.doFirst {
-		File dir = task.workingDir
-		dir.mkdirs()
-		File options = new File(dir, 'options.txt')
-		List<String> lines = options.exists() ? options.readLines('UTF-8').findAll { !it.startsWith('soundCategory_master:') } : []
-		lines << 'soundCategory_master:0.0'
-		options.write(lines.join('\n') + '\n', 'UTF-8')
-		logger.lifecycle("Autotest: Ton aus (${options})")
+		gameDirs(task).each { File dir ->
+			dir.mkdirs()
+			File options = new File(dir, 'options.txt')
+			List<String> lines = options.exists() ? options.readLines('UTF-8').findAll { !it.startsWith('soundCategory_master:') } : []
+			lines << 'soundCategory_master:0.0'
+			options.write(lines.join('\n') + '\n', 'UTF-8')
+			logger.lifecycle("Autotest: Ton aus (${options})")
+		}
 	}
+	// Zusätzlich die OpenAL-Ausgabe ganz abschalten (kein Ton, auch nicht bei zurückgesetzten Optionen).
+	if (task.metaClass.respondsTo(task, 'environment', String, Object)) task.environment('ALSOFT_DRIVERS', 'null')
 }

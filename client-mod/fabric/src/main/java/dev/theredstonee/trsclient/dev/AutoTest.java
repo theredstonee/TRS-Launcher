@@ -131,6 +131,9 @@ public final class AutoTest {
 				break;
 			case 3:
 				if (mc.level == null || mc.player == null) return;
+				// Launcher-Konto ohne Kauf = Demo-Modus: der Hinweis erscheint beim Öffnen der Welt.
+				if (mc.isDemo() && Mc.screen() != null
+						&& Mc.screen().getTitle().getString().equals(net.minecraft.client.resources.language.I18n.get("demo.help.title"))) Mc.setScreen(null);
 				if (Mc.screen() != null) return; // Ladebildschirm
 				TrsClient.LOGGER.info("[Autotest] Welt geladen");
 				KeyMapping.releaseAll();
@@ -165,7 +168,8 @@ public final class AutoTest {
 				break;
 			case 4:
 				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
-				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))) {
+				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))
+						|| "clips".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 22;
 					break;
 				}
@@ -322,8 +326,8 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 22:
-				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt
-				if (redstoneTest.step(mc, modules, new CapeTest.Actions() {
+				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt; danach Clips (F9/F10)
+				CapeTest.Actions testActions = new CapeTest.Actions() {
 					@Override
 					public void shot(String name) {
 						AutoTest.shot(mc, name);
@@ -333,7 +337,10 @@ public final class AutoTest {
 					public void command(String command) {
 						AutoTest.command(mc, command);
 					}
-				})) return;
+				};
+				String only = System.getProperty("trsclient.autotest.only");
+				if (!"clips".equals(only) && redstoneTest.step(mc, modules, testActions)) return;
+				if (!"redstone".equals(only) && clipsTest.step(mc, modules, testActions)) return;
 				next(5);
 				break;
 			case 23:
@@ -356,6 +363,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
+	private final ClipsTest clipsTest = new ClipsTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {
@@ -525,7 +533,7 @@ public final class AutoTest {
 	}
 
 	/** Taste drücken und loslassen – wie ein echter Tastendruck des Fensters. */
-	private static void key(Minecraft mc, int code) {
+	static void key(Minecraft mc, int code) {
 		dev.theredstonee.trsclient.mixin.KeyboardHandlerAccessor keyboard = (dev.theredstonee.trsclient.mixin.KeyboardHandlerAccessor) mc.keyboardHandler;
 		//? if >=1.21.9 {
 		/*keyboard.trsclient$keyPress(windowHandle(), dev.theredstonee.trsclient.compat.Keys.PRESS, new net.minecraft.client.input.KeyEvent(code, 0, 0));

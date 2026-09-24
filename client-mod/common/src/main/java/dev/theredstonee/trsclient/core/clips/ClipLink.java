@@ -31,6 +31,12 @@ public final class ClipLink {
 	private static final int READ_TIMEOUT_MS = 15000;
 	/** Ein vorgemerkter Tastendruck verfällt, wenn die Verbindung nicht zustande kommt. */
 	private static final long PENDING_MS = 4000;
+	/** Diagnose nur im Autotest (stdout landet im Spiel-Log). */
+	private static final boolean DEBUG = Boolean.getBoolean("trsclient.autotest");
+
+	private static void debug(String message) {
+		if (DEBUG) System.out.println("[TRS Clips] " + message);
+	}
 
 	private final Path configDir;
 	private final Object wake = new Object();
@@ -86,6 +92,7 @@ public final class ClipLink {
 	 */
 	public void press(String command) {
 		OutputStream o = out;
+		debug("Taste " + command + ": verbunden=" + status.connected + " out=" + (o != null));
 		if (o != null && status.connected && send(o, "{\"type\":\"" + command + "\"}")) return;
 		ClipConfig fresh = ClipConfig.load(configDir);
 		config = fresh;
@@ -122,6 +129,7 @@ public final class ClipLink {
 			}
 			return true;
 		} catch (IOException e) {
+			debug("Senden fehlgeschlagen: " + e);
 			closeQuietly();
 			return false;
 		}
@@ -172,6 +180,7 @@ public final class ClipLink {
 				continue;
 			}
 			Session result = session(cfg);
+			debug("Verbindung beendet: " + result);
 			status = ClipStatus.OFFLINE;
 			if (result == Session.DENIED) {
 				deniedModified = cfg.modified;

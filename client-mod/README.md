@@ -59,6 +59,7 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Signalstärke *(Redstone)* | Look at dust, a repeater, comparator, piston, lamp, observer, lever, button, plate, daylight detector, target, door, dispenser, hopper … → HUD panel with the block name, signal strength 0–15 as a 15-segment bar + number, repeater delay (and "locked"), comparator mode and **output** (recomputed from its inputs – the client never receives it), piston extended/retracted, the input strength of consumers, and the comparator output of containers you have opened (the client only knows a chest's content while it is open; otherwise it is left out) |
 | Signal-Overlay *(Redstone)* | Signal strength as a number above every piece of redstone dust within 4–16 blocks, grey (0) → bright red (15), smaller further away. Toggle key **F6** (F8 on Forge 1.7.10/1.8.9, where F6/F7 are the stream keys). Only loaded chunks, by default only dust in sight (line-of-sight check), cached: a budget of 4 096 block reads per tick searches the cube, known dust is re-read every tick |
 | Takt-Messer *(Redstone)* | For the component you look at (keeps measuring after you look away, up to 32 blocks): frequency in Hz, period in redstone ticks (and game ticks), pulse length, and a 5-second oscilloscope. Shown only while the component switches |
+| Clips & Aufnahme | **F9** saves the last seconds as a clip, **F10** starts/stops a recording (both changeable in the vanilla controls). The TRS Launcher records the game window – the mod only reports the key presses over a local link (see below). HUD element (movable): red dot + time while recording, a subtle ring while the clip buffer runs (*Show buffer indicator*), "Clip saved (30 s)" for a few seconds. Without the TRS Launcher (or with clips off there) the keys only show a hint |
 | Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
@@ -136,6 +137,24 @@ The logic is version independent in `common/core/emote` (definitions, playback, 
   Forge 1.8.9–1.12.2 (no mixins) replaces the vanilla `ModelPlayer`/armor `ModelBiped` of the player renderers with
   subclasses whose `setRotationAngles` applies the pose (`LegacyEmotes`, fields found by type).
 
+## Clips & Aufnahme
+
+Recording happens in the TRS Launcher (FFmpeg window capture, see the launcher README). The mod part is version
+independent in `common/core/clips`:
+
+- `ClipConfig` reads `config/trsclient/clips.json` (≤ 4 KB, Gson 2.2.4-safe DTO): port 1–65535 and a 64-character
+  lower-case hex token, or `enabled:false`. Anything else counts as "no launcher".
+- `ClipLink`: one daemon thread connects to **127.0.0.1**:port, sends `{"type":"hello","v":1,"token":…}` and reads
+  state lines; reconnects with backoff, re-reads the file when the launcher writes a new token (after a denied
+  token only once the file changes). A key press while not connected is kept for 4 s, then "launcher not
+  reachable". The game thread only reads `status()`/`pollNotice()` and calls `press`.
+- `ClipPanel` draws the HUD element through `Canvas`; `Clips` is the facade the loaders call (`init(configDir)`,
+  `saveClip()`, `toggleRecording()`, `tick(hudVisible, actionBar)`). Hints and errors also go to the action bar.
+- Per loader only the two key bindings, one tick block and `hud/ClipHud` (identical in the Mojmap trees). No mixins.
+- Autotest: `-PtrsAutotestOnly=clips` presses F9/F10 through Minecraft's own key handling and takes the screenshots
+  `clips-buffer`, `clips-saved`, `clips-recording`, `clips-recording-saved` (fabric and legacy). Against a
+  launcher attrappe or a real launcher start.
+
 ## Umhang-Physik
 
 `core/cape/ClothSim` is a verlet cloth (10 × 16 cells near, 5 × 8 further away) in the player's body frame
@@ -202,6 +221,8 @@ Listed under **TRS Client** in the vanilla controls menu.
 | unbound | Switch the HUD profile (cycles) |
 | G (hold) | Emote wheel (release to play; tap = click mode) |
 | F6 (Forge 1.7.10/1.8.9: F8) | Toggle the redstone signal overlay |
+| F9 | Save a clip (TRS Launcher records; F9/F10 are free in every vanilla version – ShadowPlay uses Alt+F9/Alt+F10) |
+| F10 | Start/stop a recording |
 
 The waypoint keys (**B** create, **N** list) and the four text hotkeys are settings of their modules and are
 rebound in the TRS menu, not in the vanilla controls screen. Zoom and freelook are vanilla bindings: their *Taste*

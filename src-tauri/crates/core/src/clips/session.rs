@@ -117,6 +117,9 @@ pub async fn run(mut ctx: Context, mut commands: mpsc::UnboundedReceiver<Command
             }
             () = &mut wait => None,
         };
+        if let Some(c) = &command {
+            tracing::debug!("Clip-Sitzung '{}': {c:?}", ctx.instance_id);
+        }
         match command {
             Some(Command::Stop) => break,
             Some(Command::Settings(new)) => {
@@ -189,12 +192,8 @@ pub async fn run(mut ctx: Context, mut commands: mpsc::UnboundedReceiver<Command
         ctx.shared.publish(&ctx.instance_id, state, live.as_ref().map(|l| l.codec));
     }
 
-    // Ende: laufende Aufnahme noch sichern, dann aufräumen.
-    if let Some((from, _)) = recording.take() {
-        let current = recorder::segments(&dir).last().copied().unwrap_or(from);
-        let pid = live.as_ref().map_or(0, |l| l.pid());
-        exports.spawn(export(Export::for_ctx(&ctx, &dir, &pins, "recording", from, current, pid)));
-    }
+    // Ende: laufende Exporte abwarten, FFmpeg beenden (schließt das letzte Segment ab)
+    // und eine laufende Aufnahme vollständig sichern, dann aufräumen.
     while let Some(done) = exports.join_next().await {
         if let Ok(result) = done {
             finish_export(&ctx, result);
@@ -202,6 +201,10 @@ pub async fn run(mut ctx: Context, mut commands: mpsc::UnboundedReceiver<Command
     }
     if let Some(mut l) = live.take() {
         stop_live(&mut l, &dir, &mut next_segment);
+    }
+    if let Some((from, _)) = recording.take() {
+        let current = recorder::segments(&dir).last().copied().unwrap_or(from);
+        finish_export(&ctx, export(Export::for_ctx(&ctx, &dir, &pins, "recording", from, current, 0)).await);
     }
     let _ = tokio::fs::remove_dir_all(&dir).await;
     ctx.shared.ended(&ctx.instance_id);

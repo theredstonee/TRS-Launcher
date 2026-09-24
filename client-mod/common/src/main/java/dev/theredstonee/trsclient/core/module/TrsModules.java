@@ -348,7 +348,7 @@ public final class TrsModules {
 				"Save the last seconds as a clip (F9) or start and stop a recording (F10) – the TRS Launcher records "
 						+ "the game window, nothing leaves your PC. Turn it on in the launcher under Settings → Clips. "
 						+ "Shows a red dot while recording and a message when a clip is saved.", true,
-				new HudPosition(HudAnchor.CENTER_RIGHT, -0.005, -0.1)));
+				new HudPosition(HudAnchor.CENTER_RIGHT, -0.005, -0.2)));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);

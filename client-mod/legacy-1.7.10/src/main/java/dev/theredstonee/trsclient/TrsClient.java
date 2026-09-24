@@ -152,13 +152,13 @@ public final class TrsClient {
 
 	/** Tick-Events kommen in 1.7.10 nur über den FML-Bus. */
 	public final class TickHandler {
-		@SubscribeEvent
 		/** Meldungen der Clips in der Aktionsleiste. */
 		private final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> {
 			Minecraft minecraft = Minecraft.getMinecraft();
 			if (minecraft.ingameGUI != null) minecraft.ingameGUI.func_110326_a(text, false);
 		};
 
+		@SubscribeEvent
 		public void onClientTick(TickEvent.ClientTickEvent event) {
 			Minecraft mc = Minecraft.getMinecraft();
 			if (event.phase == TickEvent.Phase.START) {

@@ -17,7 +17,7 @@ public final class ClipPanel {
 	private static final int LINE_H = 10;
 	private static final int DOT = 7;
 	/** So lange steht eine Meldung im HUD. */
-	static final long NOTICE_MS = 3500;
+	static final long NOTICE_MS = 4000;
 	private static final int RED = 0xFFE5322D;
 	private static final int OK = 0xFF55D86A;
 	private static final int WARN = 0xFFF2C744;

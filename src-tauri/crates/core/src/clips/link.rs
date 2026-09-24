@@ -236,6 +236,7 @@ async fn serve(stream: TcpStream, hub: Arc<Mutex<Hub>>, commands: mpsc::Unbounde
             })
         })
         .flatten();
+    tracing::debug!("Clip-Kanal: Anmeldung {}", if found.is_some() { "ok" } else { "abgewiesen" });
     let Some((instance_id, token, mut state_rx, mut events_rx)) = found else {
         // Kurz bremsen, damit Raten sinnlos bleibt.
         tokio::time::sleep(Duration::from_millis(300)).await;
@@ -266,7 +267,10 @@ async fn serve(stream: TcpStream, hub: Arc<Mutex<Hub>>, commands: mpsc::Unbounde
                 };
                 if last_command.elapsed() >= COMMAND_COOLDOWN && valid() {
                     last_command = Instant::now();
+                    tracing::debug!("Clip-Kanal: {command:?} von '{instance_id}'");
                     let _ = commands.send((instance_id.clone(), command));
+                } else {
+                    tracing::debug!("Clip-Kanal: {command:?} verworfen (Sperrzeit)");
                 }
             }
         })
@@ -380,6 +384,24 @@ mod tests {
         let (mut r2, mut w2) = connect(link.port()).await;
         w2.write_all(format!("{{\"type\":\"hello\",\"v\":1,\"token\":\"{token}\"}}\n").as_bytes()).await.unwrap();
         assert_eq!(line(&mut r2).await["type"], "denied");
+    }
+
+    #[tokio::test]
+    async fn einzelner_tastendruck_kommt_sofort_an() {
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let link = ClipLink::start(tx).await.unwrap();
+        let token = link.open_session("survival").token.unwrap();
+        let (mut r, mut w) = connect(link.port()).await;
+        w.write_all(format!("{{\"type\":\"hello\",\"v\":1,\"token\":\"{token}\"}}\n").as_bytes()).await.unwrap();
+        assert_eq!(line(&mut r).await["type"], "state");
+        // Nur eine Zeile, danach nichts mehr – sie muss trotzdem sofort ankommen.
+        w.write_all(b"{\"type\":\"record\"}\n").await.unwrap();
+        let (_, cmd) = tokio::time::timeout(Duration::from_secs(2), rx.recv()).await.expect("kam nicht an").unwrap();
+        assert_eq!(cmd, LinkCommand::ToggleRecording);
+        tokio::time::sleep(Duration::from_millis(800)).await;
+        w.write_all(b"{\"type\":\"clip\"}\n").await.unwrap();
+        let (_, cmd) = tokio::time::timeout(Duration::from_secs(2), rx.recv()).await.expect("kam nicht an").unwrap();
+        assert_eq!(cmd, LinkCommand::SaveClip);
     }
 
     #[tokio::test]

@@ -54,6 +54,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
+	private final ClipsTest clipsTest = new ClipsTest();
 
 	private AutoTest() {
 	}
@@ -149,7 +150,8 @@ public final class AutoTest {
 			}
 			case 4:
 				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
-				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))) {
+				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))
+						|| "clips".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 18;
 					break;
 				}
@@ -276,8 +278,8 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 18:
-				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt
-				if (redstoneTest.step(mc, modules, new CapeTest.Actions() {
+				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt; danach Clips (F9/F10)
+				CapeTest.Actions testActions = new CapeTest.Actions() {
 					@Override
 					public void shot(String name) {
 						AutoTest.this.shot(mc, name);
@@ -287,7 +289,10 @@ public final class AutoTest {
 					public void command(String command) {
 						AutoTest.command(mc, command);
 					}
-				})) return;
+				};
+				String only = System.getProperty("trsclient.autotest.only");
+				if (!"clips".equals(only) && redstoneTest.step(mc, modules, testActions)) return;
+				if (!"redstone".equals(only) && clipsTest.step(mc, modules, testActions)) return;
 				next(5);
 				break;
 			case 19:
