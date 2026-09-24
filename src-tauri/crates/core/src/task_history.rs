@@ -24,7 +24,6 @@ const MAX_TEXT_KEY: usize = 100;
 const MAX_TEXT_PARAMS: usize = 8;
 const MAX_PARAM_NAME: usize = 32;
 const MAX_PARAM_VALUE: usize = 200;
-const ICON_PREFIX: &str = "https://cdn.modrinth.com/";
 
 static WRITE_LOCK: Mutex<()> = Mutex::const_new(());
 
@@ -177,10 +176,8 @@ fn validate(new: NewTaskRecord) -> Result<TaskRecord> {
     if let Some(id) = &new.instance_id {
         validate_id(id)?;
     }
-    // Nur Modrinths CDN – dasselbe, was `ModIcon` anzeigt.
-    let icon_url = new.icon_url.filter(|u| {
-        u.len() <= MAX_ICON_URL && u.starts_with(ICON_PREFIX) && !u.chars().any(|c| c.is_control() || c.is_whitespace())
-    });
+    // Nur die Bild-CDNs von Modrinth und CurseForge – dasselbe, was `ModIcon` anzeigt.
+    let icon_url = new.icon_url.filter(|u| u.len() <= MAX_ICON_URL && crate::icon::is_allowed_icon_url(u));
     Ok(TaskRecord {
         id: uuid::Uuid::new_v4().simple().to_string(),
         kind: new.kind,

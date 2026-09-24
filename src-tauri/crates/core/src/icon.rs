@@ -21,6 +21,8 @@ pub const MAX_ICON_BYTES: u64 = 5 * 1024 * 1024;
 /// Banner sind meist Screenshots in voller Auflösung.
 pub const MAX_BANNER_BYTES: u64 = 10 * 1024 * 1024;
 const MODRINTH_CDN: &str = "https://cdn.modrinth.com/";
+/// Logos und Screenshots von CurseForge.
+const CURSEFORGE_MEDIA: &str = "https://media.forgecdn.net/";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
@@ -60,12 +62,11 @@ pub fn validate_image(bytes: &[u8]) -> Result<ImageFormat> {
     sniff(bytes).ok_or_else(|| Error::validation(crate::msg!("icon.unsupportedFormat", "Nur PNG-, JPEG- und WebP-Bilder werden unterstützt.")))
 }
 
-/// Bild-URLs aus Modrinth-Daten: nur Modrinths eigenes CDN, nur HTTPS, keine
-/// Tricks mit Zugangsdaten, Backslashes oder Leerzeichen.
+/// Bild-URLs aus Modrinth- bzw. CurseForge-Daten: nur deren eigenes Bild-CDN,
+/// nur HTTPS, keine Tricks mit Zugangsdaten, Backslashes oder Leerzeichen.
 pub fn is_allowed_icon_url(url: &str) -> bool {
     url.len() <= 512
-        && url.starts_with(MODRINTH_CDN)
-        && url.len() > MODRINTH_CDN.len()
+        && [MODRINTH_CDN, CURSEFORGE_MEDIA].iter().any(|cdn| url.starts_with(cdn) && url.len() > cdn.len())
         && !url.chars().any(|c| c.is_whitespace() || c.is_control() || matches!(c, '\\' | '"' | '\'' | '<' | '>' | '@'))
 }
 
@@ -256,7 +257,11 @@ mod tests {
     #[test]
     fn icon_url_allow_list() {
         assert!(is_allowed_icon_url("https://cdn.modrinth.com/data/AANobbMI/icon.png"));
+        assert!(is_allowed_icon_url("https://media.forgecdn.net/avatars/thumbnails/29/69/256/256/635838945588716414.jpeg"));
         for bad in [
+            "https://media.forgecdn.net/",
+            "https://media.forgecdn.net.evil.example/x.png",
+            "https://edge.forgecdn.net/files/1/2/x.jar",
             "http://cdn.modrinth.com/data/x/icon.png",
             "https://cdn.modrinth.com.evil.example/icon.png",
             "https://evil.example/https://cdn.modrinth.com/",

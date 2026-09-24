@@ -1,11 +1,11 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
-use trs_core::content::{self, ContentItem, ContentKind};
+use trs_core::content::{self, ContentItem, ContentKind, Platform};
 use trs_core::modpack::PackProgress;
 use trs_core::modrinth::{
-    self, CategoryTag, MigrationItem, ProjectCard, ProjectDetails, SearchParams, SearchResult, UpdateInfo,
-    VersionSummary,
+    self, CategoryTag, MigrationItem, MigrationStatus, ProjectCard, ProjectDetails, SearchParams, SearchResult,
+    UpdateInfo, VersionSummary,
 };
 
 use crate::commands::instances::{InstanceView, view};
@@ -108,16 +108,36 @@ pub async fn modrinth_versions(
     Ok(modrinth::list_versions(launcher.http(), &instance, &project_id, kind).await?)
 }
 
+/// Updates von Modrinth und – für von dort installierte Inhalte – CurseForge.
+/// Fällt eine Quelle aus, zählen die Ergebnisse der anderen.
 #[tauri::command]
 pub async fn check_content_updates(
     launcher: State<'_, LauncherState>,
     id: String,
 ) -> CommandResult<Vec<UpdateInfo>> {
     let instance = launcher.instances().get(&id).await?;
-    Ok(modrinth::check_updates(launcher.http(), launcher.paths(), &instance).await?)
+    let modrinth = modrinth::check_updates(launcher.http(), launcher.paths(), &instance).await;
+    let curseforge = match launcher.curseforge() {
+        Ok(cf) => cf.check_updates(launcher.paths(), &instance).await,
+        Err(_) => Ok(Vec::new()),
+    };
+    let mut updates = match (modrinth, curseforge) {
+        (Ok(mut a), Ok(b)) => {
+            a.extend(b);
+            a
+        }
+        (Ok(list), Err(e)) | (Err(e), Ok(list)) => {
+            log::warn!("Update-Prüfung einer Quelle fehlgeschlagen: {e}");
+            list
+        }
+        (Err(e), Err(_)) => return Err(e.into()),
+    };
+    updates.sort_by_key(|u| u.file_name.to_lowercase());
+    Ok(updates)
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn apply_content_update(
     app: AppHandle,
     launcher: State<'_, LauncherState>,
@@ -125,11 +145,33 @@ pub async fn apply_content_update(
     kind: ContentKind,
     file_name: String,
     version_id: String,
+    platform: Option<Platform>,
     task_id: Option<String>,
 ) -> CommandResult<String> {
     let instance = launcher.instances().get(&id).await?;
+    if platform == Some(Platform::CurseForge) {
+        let cf = launcher.curseforge()?;
+        let work = cf.apply_update(launcher.paths(), &instance, kind, &file_name, &version_id);
+        return Ok(tracked(&app, task_id, work).await?);
+    }
     let work = modrinth::apply_update(launcher.http(), launcher.paths(), &instance, kind, &file_name, &version_id);
     Ok(tracked(&app, task_id, work).await?)
+}
+
+/// Öffnet den Inhaltsordner einer Art (z. B. `mods`) im Explorer – etwa um
+/// von Hand geladene Dateien hineinzulegen.
+#[tauri::command]
+pub async fn open_content_dir(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    kind: ContentKind,
+) -> CommandResult<()> {
+    let instance = launcher.instances().get(&id).await?;
+    let dir = content::content_dir(launcher.paths(), &instance.id, kind);
+    trs_core::fsutil::ensure_dir(&dir).await?;
+    app.opener().open_path(dir.display().to_string(), None::<&str>)?;
+    Ok(())
 }
 
 /// Sodium, Lithium & Co. in einem Rutsch – was es für die Instanz nicht gibt,
@@ -165,11 +207,19 @@ pub async fn install_modpack(
 }
 
 /// Ergänzt Icons, Titel und Autoren von Modrinth (erkennt auch von Hand
-/// abgelegte Dateien per Hash). `true` = Liste neu laden.
+/// abgelegte Dateien per Hash) und CurseForge. `true` = Liste neu laden.
 #[tauri::command]
 pub async fn refresh_content_meta(launcher: State<'_, LauncherState>, id: String) -> CommandResult<bool> {
     let instance = launcher.instances().get(&id).await?;
-    Ok(modrinth::refresh_metadata(launcher.http(), launcher.paths(), &instance).await?)
+    let curseforge = match launcher.curseforge() {
+        Ok(cf) => cf.refresh_metadata(launcher.paths(), &instance).await.unwrap_or_else(|e| {
+            log::debug!("CurseForge-Infos nicht geladen: {e}");
+            false
+        }),
+        Err(_) => false,
+    };
+    let modrinth = modrinth::refresh_metadata(launcher.http(), launcher.paths(), &instance).await?;
+    Ok(modrinth || curseforge)
 }
 
 /// Neuere passende Versionen seit der installierten – mit Changelog.
@@ -180,8 +230,13 @@ pub async fn content_changelog(
     project_id: String,
     kind: ContentKind,
     installed_version_id: String,
+    platform: Option<Platform>,
 ) -> CommandResult<Vec<VersionSummary>> {
     let instance = launcher.instances().get(&id).await?;
+    if platform == Some(Platform::CurseForge) {
+        let cf = launcher.curseforge()?;
+        return Ok(cf.changelog_since(&instance, &project_id, kind, &installed_version_id).await?);
+    }
     Ok(modrinth::changelog_since(launcher.http(), &instance, &project_id, kind, &installed_version_id).await?)
 }
 
@@ -212,7 +267,12 @@ pub async fn plan_content_migration(
     id: String,
 ) -> CommandResult<Vec<MigrationItem>> {
     let instance = launcher.instances().get(&id).await?;
-    Ok(modrinth::plan_migration(launcher.http(), launcher.paths(), &instance).await?)
+    let mut plan = modrinth::plan_migration(launcher.http(), launcher.paths(), &instance).await?;
+    if let Ok(cf) = launcher.curseforge() {
+        plan.extend(cf.plan_migration(launcher.paths(), &instance).await?);
+    }
+    plan.sort_by_key(|p| (p.status != MigrationStatus::Missing, p.title.to_lowercase()));
+    Ok(plan)
 }
 
 /// Öffnet einen Link (Modrinth-Seite, Quelltext, Links aus Beschreibungen)
