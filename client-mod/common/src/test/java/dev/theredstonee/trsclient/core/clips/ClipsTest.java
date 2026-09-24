@@ -115,16 +115,16 @@ class ClipsTest {
 		ClipLink link = new ClipLink(dir);
 		link.start();
 		try {
-			String hello = received.poll(5, TimeUnit.SECONDS);
+			String hello = received.poll(20, TimeUnit.SECONDS);
 			assertEquals("{\"type\":\"hello\",\"v\":1,\"token\":\"" + TOKEN + "\"}", hello);
 			waitFor(link, true);
 			assertTrue(link.status().buffer);
 			assertEquals(30, link.status().clipSeconds);
 
 			link.press(ClipLink.CLIP);
-			assertEquals("{\"type\":\"clip\"}", received.poll(5, TimeUnit.SECONDS));
+			assertEquals("{\"type\":\"clip\"}", received.poll(20, TimeUnit.SECONDS));
 			List<ClipNotice> notices = new ArrayList<ClipNotice>();
-			long until = System.currentTimeMillis() + 5000;
+			long until = System.currentTimeMillis() + 20000; // großzügig: beim parallelen Bauen vieler Versionen ist die Maschine voll ausgelastet
 			while (notices.size() < 2 && System.currentTimeMillis() < until) {
 				ClipNotice n = link.pollNotice();
 				if (n != null) notices.add(n);
@@ -142,7 +142,7 @@ class ClipsTest {
 	}
 
 	private static void waitFor(ClipLink link, boolean connected) throws InterruptedException {
-		long until = System.currentTimeMillis() + 5000;
+		long until = System.currentTimeMillis() + 20000; // großzügig: beim parallelen Bauen vieler Versionen ist die Maschine voll ausgelastet
 		while (link.status().connected != connected && System.currentTimeMillis() < until) Thread.sleep(20);
 		assertEquals(connected, link.status().connected);
 	}

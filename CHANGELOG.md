@@ -16,11 +16,24 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
-## Unreleased – The Showtime Update | Das Showtime-Update
+## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 
 <!-- banner: accent=#ffc24b motif=/news/0.5.0/banner.png -->
 
 ### English
+
+- **TRS Client 0.4.0 – show yourself.** Hold **G** for the emote wheel and wave, dance or cheer – other TRS players
+  see it. New comfort keys: smooth **zoom** (V), **freelook** (Left Alt) and toggle sprint/sneak.
+- **Redstone tools.** See the signal strength over every piece of dust, a redstone overlay (F6) and a clock
+  meter for your circuits – right in the game.
+
+![The emote wheel in the TRS Client](/news/0.5.0/emote-wheel.png)
+
+![Redstone tools: signal strength over every dust](/news/0.5.0/redstone-overlay.png)
+
+![Cape physics with a live preview](/news/0.5.0/cape-physics.png)
+
+![Smooth zoom](/news/0.5.0/zoom.png)
 
 - **Mod presets.** Create your own presets (e.g. “My basics”) with mods, resource packs and shaders from
   Modrinth, tick them when creating an instance or apply them later – mark a preset as “always automatic” and it’s
@@ -86,6 +99,20 @@ How to write an entry:
   their names and pictures too.
 
 ### Deutsch
+
+- **TRS Client 0.4.0 – zeig dich.** Halte **G** für das Emote-Rad und winke, tanze oder jubel – andere TRS-Spieler
+  sehen es. Neue Komfort-Tasten: weicher **Zoom** (V), **Freelook** (linke Alt-Taste) und Sprinten/Schleichen zum
+  Umschalten.
+- **Redstone-Werkzeuge.** Sieh die Signalstärke über jedem Staub, ein Redstone-Overlay (F6) und einen Takt-Messer
+  für deine Schaltungen – direkt im Spiel.
+
+![Das Emote-Rad im TRS Client](/news/0.5.0/emote-wheel.png)
+
+![Redstone-Werkzeuge: Signalstärke über jedem Staub](/news/0.5.0/redstone-overlay.png)
+
+![Umhang-Physik mit Live-Vorschau](/news/0.5.0/cape-physics.png)
+
+![Weicher Zoom](/news/0.5.0/zoom.png)
 
 - **Mod-Presets.** Eigene Presets anlegen (z. B. „Meine Basics“) mit Mods, Ressourcenpaketen und Shadern von
   Modrinth, beim Anlegen einer Instanz ankreuzen oder später anwenden – als „immer automatisch“ markiert, sind sie

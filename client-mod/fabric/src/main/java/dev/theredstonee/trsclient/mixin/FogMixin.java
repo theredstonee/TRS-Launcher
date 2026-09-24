@@ -42,7 +42,7 @@ public abstract class FogMixin {
 		}
 	}
 	*///?}
-	//? if >=1.19.3 && <1.21.2 {
+	//? if >=1.19 && <1.21.2 {
 	@Inject(method = "setupFog(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/FogRenderer$FogMode;FZF)V",
 			at = @At("TAIL"), require = 0)
 	private static void trsclient$noFog(Camera camera, FogRenderer.FogMode mode, float viewDistance, boolean thick, float partial,
@@ -50,7 +50,7 @@ public abstract class FogMixin {
 		if (trsclient$clear(camera, mode, thick, RenderSystem.getShaderFogEnd(), viewDistance)) trsclient$push();
 	}
 	//?}
-	//? if >=1.17 && <1.19.3 {
+	//? if >=1.17 && <1.19 {
 	/*@Inject(method = "setupFog(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/FogRenderer$FogMode;FZ)V",
 			at = @At("TAIL"), require = 0)
 	private static void trsclient$noFog(Camera camera, FogRenderer.FogMode mode, float viewDistance, boolean thick, CallbackInfo ci) {

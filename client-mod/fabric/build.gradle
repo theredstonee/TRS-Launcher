@@ -120,8 +120,8 @@ if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 // Leistung: Dynamische FPS/FPS-Messung, Partikel, Entity-Culling, Welt-Details (alle require = 0).
 mixinClasses += ['FramePaceMixin', 'ParticleLimitMixin', 'EntityCullMixin', 'BlockEntityCullMixin', 'NameTagCullMixin',
 		'LivingNameTagCullMixin', 'TextureAnimationMixin', 'SkyMixin', 'StarsMixin']
-// Regen/Schnee zeichnet 1.14 noch im GameRenderer; Nebel-Werte liegen ab 1.21.6 in einem GPU-Puffer.
-if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'WeatherMixin'
+// Regen/Schnee (1.14 im GameRenderer, sonst LevelRenderer); Nebel-Werte liegen ab 1.21.6 in einem GPU-Puffer.
+mixinClasses << 'WeatherMixin'
 if (stonecutter.eval(mc, '>=1.17') && stonecutter.eval(mc, '<1.21.6')) mixinClasses << 'FogMixin'
 // Umhang-Physik: ab 1.15 (1.14 zeichnet den Umhang mit festen GL-Aufrufen, dort bleibt er starr).
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'
