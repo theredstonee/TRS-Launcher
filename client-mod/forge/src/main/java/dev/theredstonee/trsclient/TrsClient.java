@@ -100,6 +100,9 @@ public final class TrsClient {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.OnlineHooks.init(Platform.configDir(), modules, Platform.modVersion(MOD_ID),
 				Platform.modVersion("minecraft"), "forge", message -> LOGGER.info(message));
+		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
+		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> net.minecraftforge.fml.ModList.get().isLoaded(id),
+				dev.theredstonee.trsclient.core.perf.PerfCompat.FORGE, Platform.modVersion("minecraft"), message -> LOGGER.info(message), true);
 		autoTest = AutoTest.createIfRequested();
 		// Beim Beenden speichern (Forge-unabhängig; Änderungen im Menü werden ohnehin sofort gespeichert).
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -196,6 +199,7 @@ public final class TrsClient {
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
+		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
 		if (autoTest != null) autoTest.tick(mc);
 	}
 

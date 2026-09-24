@@ -147,6 +147,8 @@ public final class TrsClient {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.LegacyOnline.init(event.getModConfigurationDirectory().toPath(), modules,
 				version, Mc.version(), message -> LOGGER.info(message));
+		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
+		dev.theredstonee.trsclient.perf.LegacyPerf.init(modules, Mc.version(), message -> LOGGER.info(message));
 	}
 
 	@Mod.EventHandler
@@ -158,6 +160,7 @@ public final class TrsClient {
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
 		AutoTest.installIfRequested();
 		// Legacy-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));

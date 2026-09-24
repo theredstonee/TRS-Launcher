@@ -44,6 +44,15 @@ How to write an entry:
   stiffness and detail – with a live, turning preview of your own player and a reset button; saved in your
   profiles. The new "Colors" module adjusts saturation (0–200 %), contrast, brightness, vibrance and color
   temperature of the game image right away, while the HUD and menus keep their colors.
+- **TRS Client: new "Performance" category for more FPS.** *FPS Boost* sets everything to Low, Medium or High with
+  one click and shows the FPS before and after; a performance check finds FPS killers in your video settings
+  (VSync, simulation distance, render distance, Fabulous graphics, onboard graphics although a graphics card is
+  installed …) and fixes them with one click – every change can be undone, even after a restart. *Dynamic FPS*
+  limits the frame rate in the background, minimized and when you are AFK and makes the game quieter; full FPS the
+  moment you come back. *Entity Culling* skips mobs behind walls and far away mobs, chests, signs, dropped items,
+  item frames and name tags; *Particles* sets a limit and switches off explosions, rain splashes or smoke; *World
+  Details* hides sky, stars, fog, rain/snow and texture animations. Mods like Sodium, OptiFine, EntityCulling or
+  Dynamic FPS are detected – their part is left to them ("taken over by …"). Everything is saved in your profiles.
 
 ### Deutsch
 
@@ -79,6 +88,16 @@ How to write an entry:
   deines Spielers und einem Knopf zum Zurücksetzen; gespeichert in deinen Profilen. Das neue Modul „Farben“
   ändert Sättigung (0–200 %), Kontrast, Helligkeit, Dynamik und Farbtemperatur des Spielbilds sofort, HUD und
   Menüs behalten ihre Farben.
+- **TRS Client: neue Kategorie „Leistung“ für mehr FPS.** *FPS-Boost* stellt mit einem Klick alles auf Niedrig,
+  Mittel oder Hoch und zeigt die FPS vorher und nachher; ein Leistungs-Check findet FPS-Bremsen in deinen
+  Grafikeinstellungen (VSync, Simulationsdistanz, Sichtweite, Grafik „Fabelhaft“, Onboard-Grafik trotz Grafikkarte …)
+  und behebt sie per Klick – jede Änderung lässt sich rückgängig machen, auch nach einem Neustart. *Dynamische FPS*
+  begrenzt die Bildrate im Hintergrund, minimiert und bei AFK und macht das Spiel leiser; sobald du zurück bist,
+  gibt es sofort volle FPS. *Entity-Culling* lässt Mobs hinter Wänden sowie weit entfernte Mobs, Truhen, Schilder,
+  Items am Boden, Item-Rahmen und Namensschilder weg; *Partikel* setzt eine Obergrenze und schaltet Explosionen,
+  Regen-Spritzer oder Rauch ab; *Welt-Details* blendet Himmel, Sterne, Nebel, Regen/Schnee und Textur-Animationen aus.
+  Mods wie Sodium, OptiFine, EntityCulling oder Dynamic FPS werden erkannt – ihren Teil übernehmen sie („übernimmt …“).
+  Alles wird in deinen Profilen gespeichert.
 
 ## 0.4.3 – 2026-09-24
 

@@ -54,6 +54,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
+	private final PerfTest perfTest = new PerfTest();
 	private final CapeColorTest capeColorTest = new CapeColorTest();
 
 	private AutoTest() {
@@ -150,7 +151,8 @@ public final class AutoTest {
 			}
 			case 4:
 				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
-				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))) {
+				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))
+						|| "perf".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 18;
 					break;
 				}
@@ -283,7 +285,7 @@ public final class AutoTest {
 				break;
 			case 18:
 				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt
-				if (redstoneTest.step(mc, modules, new CapeTest.Actions() {
+				if (!"perf".equals(System.getProperty("trsclient.autotest.only")) && redstoneTest.step(mc, modules, new CapeTest.Actions() {
 					@Override
 					public void shot(String name) {
 						AutoTest.this.shot(mc, name);
@@ -294,6 +296,22 @@ public final class AutoTest {
 						AutoTest.command(mc, command);
 					}
 				})) return;
+				// Leistung: Testszene, FPS ohne/mit FPS-Boost, Dynamische FPS, Menü, Rückgängig
+				if (!"redstone".equals(System.getProperty("trsclient.autotest.only")) && perfTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				if ("perf".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 20;
+					break;
+				}
 				next(5);
 				break;
 			case 19:
@@ -313,6 +331,7 @@ public final class AutoTest {
 				break;
 			case 20:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
+				TrsClient.LOGGER.info("[Autotest] Leistungs-Hooks: {}", dev.theredstonee.trsclient.perf.LegacyPerf.get().stats());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
 				if (before != null) modules.registry.apply(before);

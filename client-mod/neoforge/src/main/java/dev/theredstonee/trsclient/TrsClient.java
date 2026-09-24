@@ -153,6 +153,9 @@ public final class TrsClient {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.OnlineHooks.init(FMLPaths.CONFIGDIR.get(), modules, modVersion(MOD_ID),
 				modVersion("minecraft"), "neoforge", message -> LOGGER.info(message));
+		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
+		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> ModList.get().isLoaded(id),
+				dev.theredstonee.trsclient.core.perf.PerfCompat.NEOFORGE, modVersion("minecraft"), message -> LOGGER.info(message), true);
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (NeoForge {}) – {} Module, Config {} ({})",
@@ -262,6 +265,7 @@ public final class TrsClient {
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
+		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
 	}
 
 	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */

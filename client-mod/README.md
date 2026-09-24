@@ -60,6 +60,11 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Signalstärke *(Redstone)* | Look at dust, a repeater, comparator, piston, lamp, observer, lever, button, plate, daylight detector, target, door, dispenser, hopper … → HUD panel with the block name, signal strength 0–15 as a 15-segment bar + number, repeater delay (and "locked"), comparator mode and **output** (recomputed from its inputs – the client never receives it), piston extended/retracted, the input strength of consumers, and the comparator output of containers you have opened (the client only knows a chest's content while it is open; otherwise it is left out) |
 | Signal-Overlay *(Redstone)* | Signal strength as a number above every piece of redstone dust within 4–16 blocks, grey (0) → bright red (15), smaller further away. Toggle key **F6** (F8 on Forge 1.7.10/1.8.9, where F6/F7 are the stream keys). Only loaded chunks, by default only dust in sight (line-of-sight check), cached: a budget of 4 096 block reads per tick searches the cube, known dust is re-read every tick |
 | Takt-Messer *(Redstone)* | For the component you look at (keeps measuring after you look away, up to 32 blocks): frequency in Hz, period in redstone ticks (and game ticks), pulse length, and a 5-second oscilloscope. Shown only while the component switches |
+| FPS-Boost (Leistung) | Main switch of the category *Leistung* (off = compare without it). *Niedrig / Mittel / Hoch* set all performance modules and lower (never raise) vanilla video settings in one click; the page shows the FPS right now and before/after every change (own frame counter, 3 s before, 4 s after), a **Leistungs-Check** (VSync, simulation distance ≥ render distance, render distance too high for the measured FPS, Fancy/Fabulous, clouds, particles, mipmaps, entity distance, biome blend, smooth lighting, window vs. fullscreen, onboard GPU although a dedicated one is installed – that one is only a hint, switching is done by the launcher) with *Beheben* per finding and *Alle beheben*, and the detected performance mods. *Rückgängig* restores every vanilla option and module changed by a level or fix – stored in `trsclient.json`, so it also works after a restart |
+| Dynamische FPS | Frame rate limit in the background (1–60, default 15), minimized (default 1) and when AFK (no mouse/key input for N minutes, default 30 FPS after 3 min); optionally quieter in the background (master volume as a factor, the option itself is untouched). Waits in 10 ms slices and asks the OS for focus each slice (GLFW, SDL on 26.3, LWJGL 2 `Display`), so full FPS returns at once |
+| Entity-Culling | Skips mobs hidden behind full opaque blocks (own ray casts to 9 points of the hitbox, 600 rays per tick, result cached 2–4 ticks, never hides wrongly when the budget runs out; glowing entities, your vehicle and giants stay), mobs/chests & signs/dropped items/item frames/name tags beyond a distance. Players are always shown by default |
+| Partikel | Upper limit of particles at once, share of all particles (*Menge*), explosion particles, rain splashes and smoke off |
+| Welt-Details | Sky, stars, distance fog, rain/snow and texture animations (water, lava, fire …) off – each only where the version has a clean hook |
 | Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
@@ -183,10 +188,32 @@ no HUD/menu yet):
   vanilla `blit`, run from `RenderGameOverlayEvent.Pre` (ALL) or, with F1, at the end of the render tick. `ClothMesh` emits outer face, inner
 face and all four edges with the vanilla cape UVs (the fractions are the same for every HD scale).
 
+## Leistung (performance)
+
+All logic lives in `common/core/perf` (`Performance` = one object per client, `DynamicFps`, `FramePacer`, `FpsMeter`,
+`ParticleGate`, `Occlusion`, `PerfCheck`, `BoostPreset`, `UndoLog`, `GpuInfo`, `PerfCompat`, the menu page `PerfPanel`);
+the loaders only report the window state per frame and ask from their hooks. The Mojmap trees (Fabric, NeoForge, Forge)
+share `perf/PerfHooks`, `compat/PerfOptions` and the mixins `FramePaceMixin` (`Minecraft#runTick`), `ParticleLimitMixin`
+(`ParticleEngine#createParticle`/`add`), `EntityCullMixin` (`EntityRenderDispatcher#shouldRender`), `BlockEntityCullMixin`,
+`NameTagCullMixin`/`LivingNameTagCullMixin` (`shouldShowName`), `TextureAnimationMixin` (`TextureManager#tick`), `SkyMixin`,
+`StarsMixin`, `WeatherMixin` and `FogMixin` – all `require = 0` with full descriptors. Forge 1.8.9–1.12.2 uses
+`perf/LegacyPerf` (events, Forge `IRenderHandler` for sky/weather, `FogDensity`, particle lists found by type).
+
+**Other performance mods:** Sodium, Embeddium, Rubidium, OptiFine/OptiFabric, Sodium Extra, EntityCulling, Dynamic FPS,
+MoreCulling, Patcher, ImmediatelyFast, Nvidium, BadOptimizations, ModernFix, FerriteCore, Lithium, VintageFix, VanillaFix and
+FoamFix are detected. A mod that brings the same feature takes it over – the TRS variant stays off (on Fabric the world
+detail mixins are not even applied with OptiFabric/Sodium Extra) and the module page says "Übernimmt <Mod>". Missing
+recommended mods are only listed as a hint (the launcher can add them with its "FPS-Boost" preset).
+
+The performance modules are part of the HUD profiles (e.g. a "PvP" profile with *Hoch* and a "Aufnahme" profile with full
+details). Self-test: `runClient -PtrsAutotest -PtrsAutotestOnly=perf` builds a floating test scene (160 mobs in front of,
+behind and far beyond a wall, 300 chests, constant particles, rain), measures the FPS without the category and after
+*Hoch*, checks Dynamic FPS with a faked background window and undoes everything.
+
 ## Menu, HUD editor and profiles
 
 The menu (Right Shift) shows every module as a tile with icon, full name (two lines if needed) and switch in a 2–4
-column grid that grows with the window: a search field, the category tabs **HUD / PvP / Chat / Welt / Redstone / Sonstiges**,
+column grid that grows with the window: a search field, the category tabs **HUD / PvP / Chat / Welt / Redstone / Leistung / Sonstiges** (tabs without a module in this version are hidden),
 and a click on a tile (or its gear) opens that module's settings page. Settings are typed and drawn by the same code
 everywhere: switch, slider, colour picker (hue/saturation field, opacity and **Chroma**, plus the brand palette),
 dropdown and key binding.
@@ -333,6 +360,12 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | TRS-Umhang über OptiFine | Forge 1.8.9–1.12.2 with OptiFine | OptiFine's own cape getter wins there |
 | Signalstärke: Türen, Falltüren, Zauntore, Notenblöcke | Forge 1.7.10 | no "powered" bit in their metadata – not recognised as components |
 | Signal-Overlay: FOV of sprint/speed | Forge 1.7.10 | the FOV modifier is private there – numbers sit slightly off while sprinting |
+| Leistung: Sterne einzeln, Block-Entity-/Item-/Rahmen-Distanz, Partikel-Menge | Forge 1.8.9–1.12.2 | no hook without mixins (sky off still hides the stars) – listed as "nicht verfügbar" on the module page |
+| Leistung: Nebel aus | Fabric/Forge 1.14.4–1.16.5 and 1.21.6+ | fixed GL fog before 1.17, fog values in a GPU buffer from 1.21.6 |
+| Leistung: Regen/Schnee aus | Fabric 1.14.4 | weather is still drawn in the GameRenderer there |
+| Leistung: leiser im Hintergrund | 1.21.9, 1.21.10 | master volume only through the option itself there |
+| Leistung (Culling, Partikel, Welt-Details) | Forge 1.14.4 | no Mixin – only Dynamic FPS and FPS-Boost |
+| Leistung (ganze Kategorie) | Forge 1.13.2 and 1.7.10 | not ported – hidden |
 | Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |
 
 ### Open
