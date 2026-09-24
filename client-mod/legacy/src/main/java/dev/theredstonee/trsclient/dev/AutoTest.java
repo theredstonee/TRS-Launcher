@@ -54,6 +54,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
+	private final CapeColorTest capeColorTest = new CapeColorTest();
 
 	private AutoTest() {
 	}
@@ -151,6 +152,11 @@ public final class AutoTest {
 				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
 				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 18;
+					break;
+				}
+				// -PtrsAutotestOnly=capecolor: nur Umhang-Einstellungen/Vorschau und Farben
+				if ("capecolor".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 19;
 					break;
 				}
 				shot(mc, "hud");
@@ -291,6 +297,21 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 19:
+				// Umhang-Physik-Einstellungen (Vorschau, Wind, Stufen) und Farben (Sättigung 0 %/200 %)
+				if (capeColorTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				next(5);
+				break;
+			case 20:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -305,8 +326,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 20) mc.shutdown();
-				step = 21;
+				if (step == 21) mc.shutdown();
+				step = 22;
 				break;
 		}
 	}

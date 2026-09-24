@@ -284,6 +284,7 @@ public final class TrsClient {
 		Minecraft mc = Minecraft.getMinecraft();
 		if (event.phase == TickEvent.Phase.START) {
 			handPass = false;
+			dev.theredstonee.trsclient.render.ColorPass.frameStart();
 			updateZoom(mc);
 			// Fullbright: Gamma nur bis zur Lightmap-Berechnung ersetzen (siehe restoreGamma).
 			// In den Video-Einstellungen nicht – dort zeigt/ändert der Regler den echten Wert.
@@ -302,6 +303,10 @@ public final class TrsClient {
 		} else {
 			restoreGamma(mc);
 			restoreHurtTime();
+			// Farben bei ausgeblendeter Oberfläche (F1): dann gibt es kein Overlay-Ereignis.
+			if (Mc.world() != null && Mc.hudHidden() && mc.currentScreen == null) {
+				dev.theredstonee.trsclient.render.ColorPass.afterLevel(event.renderTickTime);
+			}
 		}
 	}
 
@@ -374,6 +379,13 @@ public final class TrsClient {
 			zoom.scroll(wheel);
 			event.setCanceled(true);
 		}
+	}
+
+	/** Farben: Welt und Hand sind gezeichnet, HUD und Menüs kommen erst danach. */
+	@SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
+	public void onOverlayColors(RenderGameOverlayEvent.Pre event) {
+		if (Mc.overlayType(event) != RenderGameOverlayEvent.ElementType.ALL) return;
+		dev.theredstonee.trsclient.render.ColorPass.afterLevel(Mc.partialTicks(event));
 	}
 
 	/** Vanilla-Fadenkreuz ausblenden, solange das eigene aktiv ist. */

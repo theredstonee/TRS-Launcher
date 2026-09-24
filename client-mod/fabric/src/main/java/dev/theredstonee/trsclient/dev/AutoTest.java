@@ -169,6 +169,11 @@ public final class AutoTest {
 					step = 22;
 					break;
 				}
+				// -PtrsAutotestOnly=capecolor: nur Umhang-Einstellungen/Vorschau und Farben
+				if ("capecolor".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 23;
+					break;
+				}
 				shot(mc, "trsclient-hud");
 				TrsClient.LOGGER.info("[Autotest] Toggle-Anzeige: {} {}", TrsClient.get().pvp().toggles().sprintStatus().text(),
 						TrsClient.get().pvp().toggles().sneakStatus().text());
@@ -337,6 +342,21 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 23:
+				// Umhang-Physik-Einstellungen (Vorschau, Wind, Stufen) und Farben (Sättigung 0 %/200 %)
+				if (capeColorTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				next(5);
+				break;
+			case 24:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -347,8 +367,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 24) mc.stop();
-				step = 25;
+				if (step == 25) mc.stop();
+				step = 26;
 				break;
 		}
 	}
@@ -356,6 +376,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
+	private final CapeColorTest capeColorTest = new CapeColorTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

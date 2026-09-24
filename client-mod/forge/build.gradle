@@ -115,7 +115,9 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'GuiMixin', 'Li
 		// TRS API: TRS-Umhang-Textur, Umhang-Physik, Abzeichen in Tabliste und über dem Namen
 		'CapeTextureMixin', 'CapeLayerMixin', 'TabBadgeMixin', 'NameTagBadgeMixin',
 		// Emotes: Pose auf HumanoidModel#setupAnim; ab 1.21.2 Spieler über den Render-State zuordnen.
-		'EmoteModelMixin']
+		'EmoteModelMixin',
+		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
+		'ColorGradeMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 // RenderSystem#lineWidth gibt es ab 1.21.11 nicht mehr (Linienstärke dort unveränderbar).
 if (stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'

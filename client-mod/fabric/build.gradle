@@ -113,7 +113,9 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin'
 		// TRS API: TRS-Umhang-Textur, Abzeichen in Tabliste und über dem Namen
 		'CapeTextureMixin', 'TabBadgeMixin', 'NameTagBadgeMixin',
 		// Emotes: Pose auf HumanoidModel#setupAnim; ab 1.21.2 Spieler über den Render-State zuordnen.
-		'EmoteModelMixin']
+		'EmoteModelMixin',
+		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
+		'ColorGradeMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 // Umhang-Physik: ab 1.15 (1.14 zeichnet den Umhang mit festen GL-Aufrufen, dort bleibt er starr).
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'

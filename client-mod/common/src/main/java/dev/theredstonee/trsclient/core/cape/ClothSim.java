@@ -53,12 +53,39 @@ public final class ClothSim {
 		public float legSwing;
 		/** Laufende Zeit in Sekunden (für das Flattern). */
 		public float time;
+		/** Zeitversatz je Spieler (Sekunden), damit Böen nicht bei allen gleichzeitig kommen. */
+		public float phase;
 	}
 
-	/** Einstellungen aus dem Menü (Stärke = Trägheit der Bewegung, Wind = Luftwiderstand + Flattern). */
+	/** Wind ohne eigene Bewegung: keiner. */
+	public static final int WIND_OFF = 0;
+	/** Gleichmäßige Wellen (Flattern beim Laufen, leichtes Wiegen im Stand). */
+	public static final int WIND_WAVES = 1;
+	/** Wellen plus Böen, die den Umhang auch im Stand anheben. */
+	public static final int WIND_GUSTS = 2;
+
+	/**
+	 * Einstellungen aus dem Menü (siehe {@link CapeSettings#apply}). Die Standardwerte sind das
+	 * ursprüngliche Verhalten.
+	 */
 	public static final class Params {
+		/** Anteil der Körperbewegung, den der Stoff in der Welt behält (Trägheit), 0–2. */
 		public float strength = 1f;
+		/** Anteil der Körperdrehung, den der Stoff behält (zusätzlich zu {@link #strength}), 0–1. */
+		public float turn = 1f;
+		/** Stärke von Flattern, Wiegen und Böen, 0–2. */
 		public float wind = 1f;
+		public int windMode = WIND_WAVES;
+		/** Faktor der Schwerkraft. */
+		public float gravity = 1f;
+		/** Anhebung durch Luftwiderstand (Fahrtwind), 0–2. */
+		public float lift = 1f;
+		/** Faktor der Biege-/Scher-Steifheit (0 = weich wie Seide). */
+		public float stiffness = 1f;
+		/** Anteil der Geschwindigkeit, den ein Punkt je Teilschritt behält. */
+		public float damping = 0.995f;
+		/** Tempo der Wellen (1 = normal, kleiner = ruhiger). */
+		public float waveSpeed = 1f;
 	}
 
 	final int cols;
@@ -80,6 +107,8 @@ public final class ClothSim {
 	private final float[] stiff;
 	private final int iterations;
 	private boolean fresh = true;
+	/** Steifheits-Faktor des laufenden Ticks (aus {@link Params#stiffness}). */
+	private float stiffness = 1f;
 
 	/** @param cols Zellen quer (z. B. 10), @param rows Zellen längs (z. B. 16) */
 	public ClothSim(int cols, int rows) {
@@ -183,23 +212,31 @@ public final class ClothSim {
 			return;
 		}
 		float strength = clamp(p.strength, 0f, 2f);
+		float turn = clamp(p.turn, 0f, 1f);
 		float wind = clamp(p.wind, 0f, 2f);
+		float gravity = clamp(p.gravity, 0.1f, 3f);
+		float lift = clamp(p.lift, 0f, 3f);
+		float damping = clamp(p.damping, 0.8f, 1f);
+		float waveSpeed = clamp(p.waveSpeed, 0.1f, 3f);
+		stiffness = clamp(p.stiffness, 0f, 5f);
+		boolean windy = p.windMode != WIND_OFF;
 
 		float hStep = TICK_SECONDS / SUBSTEPS;
-		float gy = GRAVITY * (float) Math.cos(m.tilt);
-		float gz = -GRAVITY * (float) Math.sin(m.tilt);
+		float gy = GRAVITY * gravity * (float) Math.cos(m.tilt);
+		float gz = -GRAVITY * gravity * (float) Math.sin(m.tilt);
 		// Horizontale Geschwindigkeit des Körpers (für das Flattern), Pixel/s.
 		float speed = (float) Math.sqrt(m.dx * m.dx + m.dz * m.dz) / TICK_SECONDS;
-		float flutter = Math.min(1f, speed / 90f) * 0.55f * GRAVITY * wind;
-		float idle = 0.04f * GRAVITY * wind;
-		float dragK = 0.035f * wind;
+		float flutter = windy ? Math.min(1f, speed / 90f) * 0.55f * GRAVITY * wind : 0f;
+		float idle = windy ? 0.04f * GRAVITY * wind : 0f;
+		float dragK = 0.035f * lift;
 		float part = strength / SUBSTEPS;
 		for (int s = 0; s < SUBSTEPS; s++) {
 			float t = m.time + s * hStep;
+			float gust = p.windMode == WIND_GUSTS ? gust(t + m.phase) * wind : 0f;
 			// Körper hat sich bewegt/gedreht: freie Punkte behalten ihre Lage in der Welt (samt Schwung),
 			// verteilt auf die Teilschritte.
-			frameShift(-m.dx * part, -m.dy * part * VERTICAL_INERTIA, -m.dz * part, m.dYaw * part);
-			integrate(hStep, gy, gz, dragK, flutter, idle, t);
+			frameShift(-m.dx * part, -m.dy * part * VERTICAL_INERTIA, -m.dz * part, m.dYaw * part * turn);
+			integrate(hStep, gy, gz, dragK, flutter + gust * 0.3f * GRAVITY, idle, gust, t, t + m.phase, damping, waveSpeed);
 			for (int it = 0; it < iterations; it++) {
 				solve();
 				collide(m.tilt, m.legSwing);
@@ -241,12 +278,25 @@ public final class ClothSim {
 		}
 	}
 
-	private void integrate(float hStep, float gy, float gz, float dragK, float flutter, float idle, float t) {
+	/**
+	 * Böe zur Zeit {@code t} (Sekunden): 0 = Flaute, 1 = volle Böe. Überlagerte Sinuswellen mit
+	 * unterschiedlichen Perioden – wirkt zufällig, ist aber reproduzierbar und stetig.
+	 */
+	static float gust(float t) {
+		double s = Math.sin(t * 0.9) + 0.6 * Math.sin(t * 2.3 + 1.1) + 0.35 * Math.sin(t * 5.1 + 2.3);
+		float v = clamp((float) ((s - 0.35) / 1.6), 0f, 1f);
+		return v * v * (3f - 2f * v);
+	}
+
+	private void integrate(float hStep, float gy, float gz, float dragK, float flutter, float idle, float gust,
+			float t, float tGust, float damping, float waveSpeed) {
 		float h2 = hStep * hStep;
+		float gustBack = gust * 0.7f * GRAVITY;
+		float gustSide = gust * 0.25f * GRAVITY * (float) Math.sin(tGust * 0.37);
 		for (int j = 1; j < h; j++) {
 			float depth = (float) j / rows;
-			float wave = (float) Math.sin(t * 17.0 + j * 0.85) * depth * depth;
-			float sway = (float) Math.sin(t * 2.3 + j * 0.4) * depth;
+			float wave = (float) Math.sin(t * 17.0 * waveSpeed + j * 0.85) * depth * depth;
+			float sway = (float) Math.sin(t * 2.3 * waveSpeed + j * 0.4) * depth;
 			for (int i = 0; i < w; i++) {
 				int p = idx(i, j);
 				float vx = x[p] - ox[p];
@@ -269,10 +319,13 @@ public final class ClothSim {
 				float edge = (i == 0 || i == cols) ? 0.6f : 1f;
 				az += flutter * wave * edge + idle * sway;
 				ax += flutter * 0.25f * wave * (i - cols / 2f) / (cols / 2f);
-				// Leichte Grunddämpfung für Stabilität, Tempo begrenzt (nie mehr als MAX_STEP je Teilschritt).
-				vx *= 0.995f;
-				vy *= 0.995f;
-				vz *= 0.995f;
+				// Böe: drückt den Umhang nach hinten und etwas zur Seite (unten stärker als oben).
+				az += gustBack * depth;
+				ax += gustSide * depth;
+				// Grunddämpfung für Stabilität, Tempo begrenzt (nie mehr als MAX_STEP je Teilschritt).
+				vx *= damping;
+				vy *= damping;
+				vz *= damping;
 				float v2 = vx * vx + vy * vy + vz * vz;
 				if (v2 > MAX_STEP * MAX_STEP) {
 					float k = MAX_STEP / (float) Math.sqrt(v2);
@@ -301,7 +354,9 @@ public final class ClothSim {
 			if (d < 1e-6f) continue;
 			float r = rest[c];
 			// Biegung/Scherung dürfen stauchen, aber nicht dehnen → Stoff wirft Falten statt Gummi.
-			float diff = (d - r) / d * stiff[c];
+			float k = stiff[c];
+			if (k < 1f) k = Math.min(1f, k * stiffness);
+			float diff = (d - r) / d * k;
 			if (stiff[c] < 1f && d < r) diff *= 0.25f;
 			boolean pa = a < w;
 			boolean pb = b < w;

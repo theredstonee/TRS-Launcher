@@ -52,6 +52,14 @@ public final class Gfx {
 	private Gfx() {
 	}
 
+	/** Minecrafts Zeichenobjekt dieses Bilds (GuiGraphics/GuiGraphicsExtractor; PoseStack bis 1.19.4; sonst null). */
+	public Object raw() {
+		//? if >=1.16 {
+		return pose;
+		//?} else
+		/*return null;*/
+	}
+
 	public int width() {
 		return Mc.window().getGuiScaledWidth();
 	}

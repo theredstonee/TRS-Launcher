@@ -1,11 +1,13 @@
 package dev.theredstonee.trsclient.core.module;
 
 import dev.theredstonee.trsclient.core.camera.FreelookState;
+import dev.theredstonee.trsclient.core.cape.CapeSettings;
 import dev.theredstonee.trsclient.core.config.KeyDefaults;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
 import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudAnchor;
 import dev.theredstonee.trsclient.core.hud.HudPosition;
+import dev.theredstonee.trsclient.core.render.ColorGrade;
 
 /**
  * Alle Module des TRS Clients mit ihren Standardwerten.
@@ -54,6 +56,8 @@ public final class TrsModules {
 	public final Module trsOnline;
 	/** Stoff-Simulation für alle Umhänge (Vanilla, OptiFine, TRS). */
 	public final Module capePhysics;
+	/** Farb-Nachbearbeitung des Spielbilds (Sättigung, Kontrast, Helligkeit …), HUD und Menüs bleiben unberührt. */
+	public final Module colors;
 	/** Emote-Rad und Emote-Animationen (braucht die TRS API, siehe core.emote). */
 	public final Module emotes;
 	/** Redstone: Signalstärke des angeschauten Bauteils (HUD). */
@@ -151,9 +155,22 @@ public final class TrsModules {
 	public final BoolSetting badgeTab;
 	public final BoolSetting badgeNametag;
 	public final BoolSetting trsCapes;
-	public final NumberSetting capeStrength;
+	public final ChoiceSetting<CapeSettings.Style> capeStyle;
+	public final ChoiceSetting<CapeSettings.Wind> capeWindMode;
 	public final NumberSetting capeWind;
+	public final ChoiceSetting<CapeSettings.Movement> capeMovement;
+	public final NumberSetting capeGravity;
+	public final NumberSetting capeHeight;
+	public final NumberSetting capeStiffness;
+	public final ChoiceSetting<CapeSettings.Detail> capeDetail;
 	public final ChoiceSetting<CapeScope> capeScope;
+
+	// --- Farben ---
+	public final NumberSetting colorSaturation;
+	public final NumberSetting colorContrast;
+	public final NumberSetting colorBrightness;
+	public final NumberSetting colorVibrance;
+	public final NumberSetting colorTemperature;
 	public final ChoiceSetting<EmoteCamera> emoteCamera;
 	public final BoolSetting emoteOthers;
 
@@ -325,6 +342,9 @@ public final class TrsModules {
 		capePhysics = registry.register(new Module("capePhysics", "Cape Physics",
 				"Capes (Mojang, OptiFine, TRS) move like cloth: they swing when you walk, turn, jump and sneak.",
 				true));
+		colors = registry.register(new Module("colors", "Colors",
+				"Color grading of the game image: saturation, contrast, brightness, vibrance and color temperature. "
+						+ "The HUD and menus stay untouched.", false));
 		emotes = registry.register(new Module("emotes", "Emotes",
 				"Hold G for the emote wheel, point with the mouse and release to play the emote. Other TRS players "
 						+ "see it too. Uses the TRS Online Features; only unlocked emotes can be played.",
@@ -375,7 +395,8 @@ public final class TrsModules {
 		textHotkeys.icon("keyboard").category(Category.CHAT);
 		waypoints.icon("compass").category(Category.WORLD);
 		trsOnline.icon("redstone");
-		capePhysics.icon("cape");
+		capePhysics.icon("cape").profiled();
+		colors.icon("palette").category(Category.WORLD).profiled();
 		emotes.icon("wave");
 		redstoneSignal.icon("strength").category(Category.REDSTONE);
 		redstoneOverlay.icon("digits").category(Category.REDSTONE);
@@ -470,9 +491,21 @@ public final class TrsModules {
 		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Badge in the tab list", true));
 		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Badge above names", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));
-		capeStrength = capePhysics.add(new NumberSetting("strength", "Strength", 100, 20, 200, 10, "", "%"));
-		capeWind = capePhysics.add(new NumberSetting("wind", "Wind", 100, 0, 200, 10, "", "%"));
+		capeStyle = capePhysics.add(new ChoiceSetting<>("style", "Style", CapeSettings.Style.class, CapeSettings.Style.SMOOTH));
+		capeWindMode = capePhysics.add(new ChoiceSetting<>("windMode", "Wind", CapeSettings.Wind.class, CapeSettings.Wind.WAVES));
+		capeWind = capePhysics.add(new NumberSetting("wind", "Wind strength", 100, 0, 200, 10, "", "%"));
+		capeMovement = capePhysics.add(new ChoiceSetting<>("movement", "Movement", CapeSettings.Movement.class,
+				CapeSettings.Movement.SWINGING));
+		capeGravity = capePhysics.add(new NumberSetting("gravity", "Gravity", 100, 25, 200, 5, "", "%"));
+		capeHeight = capePhysics.add(new NumberSetting("height", "Lift when moving", 100, 0, 200, 10, "", "%"));
+		capeStiffness = capePhysics.add(new NumberSetting("stiffness", "Stiffness", 100, 0, 200, 10, "", "%"));
+		capeDetail = capePhysics.add(new ChoiceSetting<>("detail", "Detail", CapeSettings.Detail.class, CapeSettings.Detail.HIGH));
 		capeScope = capePhysics.add(new ChoiceSetting<>("scope", "For", CapeScope.class, CapeScope.ALL));
+		colorSaturation = colors.add(new NumberSetting("saturation", "Saturation", 100, 0, 200, 5, "", "%"));
+		colorContrast = colors.add(new NumberSetting("contrast", "Contrast", 100, 50, 150, 5, "", "%"));
+		colorBrightness = colors.add(new NumberSetting("brightness", "Brightness", 100, 50, 150, 5, "", "%"));
+		colorVibrance = colors.add(new NumberSetting("vibrance", "Vibrance", 0, -100, 100, 5, "", "%"));
+		colorTemperature = colors.add(new NumberSetting("temperature", "Color temperature", 0, -100, 100, 5, "", "%"));
 		emoteCamera = emotes.add(new ChoiceSetting<>("camera", "Camera during your emote", EmoteCamera.class,
 				EmoteCamera.FRONT));
 		emoteOthers = emotes.add(new BoolSetting("others", "Show emotes of other players", true));
@@ -489,5 +522,24 @@ public final class TrsModules {
 		registry.addPart(keyDefaults);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.
 		profiles = new HudProfiles(registry);
+	}
+
+	/** Aktuelle Umhang-Einstellungen in {@code out} (je Tick, keine Allokation). */
+	public CapeSettings capeSettings(CapeSettings out) {
+		out.style = capeStyle.get();
+		out.wind = capeWindMode.get();
+		out.windStrength = (float) (capeWind.get() / 100.0);
+		out.movement = capeMovement.get();
+		out.gravity = (float) (capeGravity.get() / 100.0);
+		out.height = (float) (capeHeight.get() / 100.0);
+		out.stiffness = (float) (capeStiffness.get() / 100.0);
+		out.detail = capeDetail.get();
+		return out;
+	}
+
+	/** Aktuelle Farb-Einstellungen in {@code out}. */
+	public ColorGrade colorGrade(ColorGrade out) {
+		return out.set(colorSaturation.get(), colorContrast.get(), colorBrightness.get(), colorVibrance.get(),
+				colorTemperature.get());
 	}
 }

@@ -24,6 +24,11 @@ How to write an entry:
   right away.
 - **Changelog.** Every update now comes with notes in English and German, shown once after updating.
 - **Publisher.** The launcher now shows "Theredstonee" as publisher in Windows (apps list and file properties).
+- **TRS Client: cape settings and colors.** Cape Physics now has its own settings like WaveyCapes – style (smooth or
+  blocky), wind (off, waves, gusts), movement (vanilla, swinging, calm "Dungeons"), gravity, lift when running,
+  stiffness and detail – with a live, turning preview of your own player and a reset button; saved in your
+  profiles. The new "Colors" module adjusts saturation (0–200 %), contrast, brightness, vibrance and color
+  temperature of the game image right away, while the HUD and menus keep their colors.
 
 ### Deutsch
 
@@ -37,6 +42,12 @@ How to write an entry:
   erscheinen.
 - **Herausgeber.** Der Launcher nennt in Windows jetzt „Theredstonee“ als Herausgeber (App-Liste und
   Dateieigenschaften).
+- **TRS Client: Umhang-Einstellungen und Farben.** Die Umhang-Physik hat jetzt eigene Einstellungen wie
+  WaveyCapes – Stil (glatt oder blockig), Wind (aus, Wellen, Böen), Bewegung (Vanilla, schwingend, ruhig wie in
+  „Dungeons“), Schwerkraft, Anhebung beim Laufen, Steifheit und Detailstufe – mit einer drehenden Live-Vorschau
+  deines Spielers und einem Knopf zum Zurücksetzen; gespeichert in deinen Profilen. Das neue Modul „Farben“
+  ändert Sättigung (0–200 %), Kontrast, Helligkeit, Dynamik und Farbtemperatur des Spielbilds sofort, HUD und
+  Menüs behalten ihre Farben.
 
 ## 0.4.3 – 2026-09-24
 
