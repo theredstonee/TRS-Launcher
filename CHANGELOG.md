@@ -177,7 +177,7 @@ How to write an entry:
 
 ### English
 
-- **Updates without waiting.** New launcher versions download in the background, like in the Modrinth App. When
+- **Updates without waiting.** New launcher versions download in the background while you play. When
   one is ready, a button in the title bar restarts into it – while it installs you see a loading screen instead of
   a frozen window.
 - **TRS Client updates on its own.** The in-game client now has its own signed update channel, so it can get fixes
@@ -186,7 +186,7 @@ How to write an entry:
 
 ### Deutsch
 
-- **Updates ohne Warten.** Neue Launcher-Versionen laden im Hintergrund, wie in der Modrinth App. Ist eine fertig,
+- **Updates ohne Warten.** Neue Launcher-Versionen laden im Hintergrund, während du spielst. Ist eine fertig,
   startest du sie mit einem Knopf in der Titelleiste neu – während der Installation siehst du einen Ladebildschirm
   statt eines eingefrorenen Fensters.
 - **Der TRS Client aktualisiert sich selbst.** Der Client im Spiel hat jetzt einen eigenen, signierten Update-Kanal
@@ -318,10 +318,10 @@ How to write an entry:
 
 ### English
 
-- **A library like the Modrinth App.** Square cards, sorting, filters and your own groups.
+- **A new library.** Square cards, sorting, filters and your own groups.
 - **One content list.** Mods, resource packs, shaders and data packs in one table with filter chips, selection and
   bulk actions.
-- **A new discover page.** Browse Modrinth like in the Modrinth App.
+- **A new discover page.** Browse mods, modpacks, resource packs and shaders with big pictures and filters.
 - **Settings as a window.** Global and per-instance settings in clear sections that save by themselves, with Java
   per Minecraft version, storage management and start hooks.
 - **The TRS Client for (almost) every version.** Fabric from 1.14.4, Forge from 1.7.10 and NeoForge from 1.20.2 up
@@ -332,10 +332,10 @@ How to write an entry:
 
 ### Deutsch
 
-- **Eine Bibliothek wie in der Modrinth App.** Quadratische Karten, Sortieren, Filter und eigene Gruppen.
+- **Eine neue Bibliothek.** Quadratische Karten, Sortieren, Filter und eigene Gruppen.
 - **Eine Liste für alle Inhalte.** Mods, Ressourcenpakete, Shader und Datenpakete in einer Tabelle mit Filtern,
   Auswahl und Sammelaktionen.
-- **Eine neue Entdecken-Seite.** Stöbere durch Modrinth wie in der Modrinth App.
+- **Eine neue Entdecken-Seite.** Stöbere durch Mods, Modpacks, Ressourcen- und Shaderpacks mit großen Bildern und Filtern.
 - **Einstellungen als Fenster.** Globale und Instanz-Einstellungen in klaren Bereichen, die sich selbst speichern,
   mit Java pro Minecraft-Version, Speicherverwaltung und Start-Hooks.
 - **Der TRS Client für (fast) jede Version.** Fabric ab 1.14.4, Forge ab 1.7.10 und NeoForge ab 1.20.2 bis 26.3 –
@@ -344,11 +344,11 @@ How to write an entry:
 
 ![Die Bibliothek mit eigenen Gruppen](/news/0.2.1/library.png)
 
-## 0.2.0 – 2026-09-22 – The Modrinth Update | Das Modrinth-Update
+## 0.2.0 – 2026-09-22 – The Project Update | Das Projekt-Update
 
 ### English
 
-- **Pages like the Modrinth App.** Every mod and modpack gets its own page with description, gallery, versions and
+- **A page for every project.** Every mod and modpack gets its own page with description, gallery, versions and
   dependencies.
 - **Images for your instances.** Give every instance its own picture.
 - **History and version switching.** See what changed in an instance, switch mods to another version and spot
@@ -359,7 +359,7 @@ How to write an entry:
 
 ### Deutsch
 
-- **Seiten wie in der Modrinth App.** Jede Mod und jedes Modpack hat eine eigene Seite mit Beschreibung, Galerie,
+- **Eine Seite für jedes Projekt.** Jede Mod und jedes Modpack hat eine eigene Seite mit Beschreibung, Galerie,
   Versionen und Abhängigkeiten.
 - **Bilder für deine Instanzen.** Gib jeder Instanz ihr eigenes Bild.
 - **Verlauf und Versionswechsel.** Sieh, was sich in einer Instanz geändert hat, wechsle Mods auf eine andere
@@ -374,7 +374,7 @@ How to write an entry:
 
 - **The first TRS Launcher.** Install and start every Minecraft version – Vanilla, Fabric, Quilt, Forge and
   NeoForge – with several Microsoft accounts.
-- **Mods and modpacks from Modrinth.** Search, install and update content per instance.
+- **Mods and modpacks.** Search, install and update content per instance.
 - **Bring what you have.** Import instances from the official launcher, Prism, MultiMC and the Modrinth App, or
   from any folder.
 - **Servers, screenshots and updates.** A server list with live status, screenshots per instance and a launcher
@@ -389,7 +389,7 @@ How to write an entry:
 
 - **Der erste TRS Launcher.** Installiere und starte jede Minecraft-Version – Vanilla, Fabric, Quilt, Forge und
   NeoForge – mit mehreren Microsoft-Konten.
-- **Mods und Modpacks von Modrinth.** Inhalte pro Instanz suchen, installieren und aktualisieren.
+- **Mods und Modpacks.** Inhalte pro Instanz suchen, installieren und aktualisieren.
 - **Nimm mit, was du hast.** Importiere Instanzen aus dem offiziellen Launcher, Prism, MultiMC und der Modrinth App
   oder aus einem beliebigen Ordner.
 - **Server, Screenshots und Updates.** Eine Serverliste mit Live-Status, Screenshots pro Instanz und ein Launcher,
