@@ -130,9 +130,34 @@ fn update_mode() -> &'static str {
     }
 }
 
+/// `MemTotal:       16314280 kB` aus `/proc/meminfo` → MB.
+#[cfg_attr(not(unix), allow(dead_code))]
+pub(crate) fn parse_meminfo(text: &str) -> Option<u32> {
+    let line = text.lines().find_map(|l| l.strip_prefix("MemTotal:"))?;
+    let mut parts = line.split_whitespace();
+    let kb: u64 = parts.next()?.parse().ok()?;
+    if !matches!(parts.next(), Some("kB") | None) {
+        return None;
+    }
+    u32::try_from(kb / 1024).ok().filter(|mb| *mb > 0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn memory_is_detected() {
+        assert_eq!(parse_meminfo("MemTotal:       16314280 kB
+MemFree: 1 kB"), Some(15931));
+        assert_eq!(parse_meminfo("MemFree: 1 kB"), None);
+        assert_eq!(parse_meminfo("MemTotal: viel kB"), None);
+        assert_eq!(parse_meminfo("MemTotal: 0 kB"), None);
+        // Auf dem Test-Rechner gibt es Speicher (Windows und Linux).
+        if cfg!(any(windows, target_os = "linux")) {
+            assert!(total_memory_mb().is_some_and(|mb| mb >= 512));
+        }
+    }
 
     #[test]
     fn host_names_are_consistent() {

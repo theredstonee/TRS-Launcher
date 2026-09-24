@@ -84,6 +84,14 @@ pub async fn import_preset(app: AppHandle, launcher: State<'_, LauncherState>) -
     Ok(Some(presets::import_file(launcher.paths(), &file).await?))
 }
 
+/// Soll die Instanzseite „FPS-Boost anwenden“ vorschlagen? (Modloader, kein
+/// Sodium/Embeddium/OptiFine, kein Modpack.)
+#[tauri::command]
+pub async fn fps_boost_suggested(launcher: State<'_, LauncherState>, id: String) -> CommandResult<bool> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(presets::suggest_fps_boost(launcher.paths(), &instance).await?)
+}
+
 /// Installiert die gewählten Presets in die Instanz (als Aufgabe abbrechbar).
 /// Was es für Version + Loader nicht gibt, steht mit Grund im Bericht.
 #[tauri::command]

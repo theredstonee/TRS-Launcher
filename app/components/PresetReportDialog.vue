@@ -34,6 +34,9 @@ function openInstance() {
       {{ t('presets.report.target', { version: current.report.gameVersion, loader: loaderLabels[current.report.loader] }) }}
       <template v-if="current.report.dependencies"> · {{ t('presets.report.dependencies', current.report.dependencies) }}</template>
     </p>
+    <p v-if="current.report.shaderPack" class="mb-4 rounded-md border border-lamp-400/30 bg-lamp-900 px-3 py-2 text-xs text-lamp-300" role="note">
+      {{ t('presets.report.shaderOn', { name: current.report.shaderPack }) }}
+    </p>
 
     <div class="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
       <section v-if="summary.problems.length">

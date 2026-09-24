@@ -538,6 +538,7 @@ impl Launcher {
                 libraries: &self.paths.libraries_dir(),
             },
             join.as_ref(),
+            platform::total_memory_mb(),
         )?;
 
         let launcher = Arc::clone(self);

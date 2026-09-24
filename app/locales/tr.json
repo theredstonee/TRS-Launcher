@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Yüksek performanslı ekran kartı",
       "dedicatedGpuDescription": "Minecraft harici ekran kartını kullanır (dizüstü bilgisayarlarda önemli). Yalnızca başlatıcının Java’sı için geçerlidir ve kapatınca geri alınır.",
       "tuningTitle": "Başlangıçta FPS artışı",
-      "tuningDescription": "Java sürümüne ve belleğe göre ayarlanmış Java ayarları (ZGC veya G1, bellek baştan ayrılır). Yalnızca özel JVM argümanları yoksa.",
+      "tuningDescription": "Java sürümüne ve belleğe göre ayarlanmış Java ayarları (G1, 12 GB'tan itibaren ZGC; bellek baştan ayrılır). Çakıştıkları yerde kendi JVM argümanların geçerlidir.",
       "priorityTitle": "Daha yüksek işlem önceliği",
       "priorityDescription": "Oyunu “Normalin üstünde” öncelikle başlatır – diğer programlar meşgulken takılmaları azaltabilir.",
       "dedicatedGpuDescriptionLinux": "İki grafik çipli dizüstü bilgisayarlar için: oyun harici GPU’da işlenir (PRIME offload – DRI_PRIME veya NVIDIA değişkenleri)."
@@ -2608,7 +2608,7 @@
     "itemCount": "{n} proje | {n} proje",
     "builtin": {
       "fpsBoost": {
-        "name": "FPS artışı",
+        "name": "FPS artışı: Maks. FPS",
         "description": "Sodium veya Embeddium, Lithium, FerriteCore, ModernFix ve dahası – sürüme ve yükleyiciye uyan ne varsa"
       },
       "nvidium": {
@@ -2622,6 +2622,14 @@
       "replay": {
         "name": "Replay",
         "description": "Mümkünse Flashback, değilse ReplayMod – oyun kaydet ve düzenle"
+      },
+      "fpsShaderLite": {
+        "name": "FPS artışı: Hafif shader",
+        "description": "Maks. FPS'teki her şey, artı Iris ve çok hafif MakeUp – Ultra Fast shader'ı. K tuşu oyunda shader'ları açıp kapatır."
+      },
+      "fpsShader": {
+        "name": "FPS artışı: Güzel shader",
+        "description": "Maks. FPS'teki her şey, artı Iris ve Complementary Reimagined – güzel ışık, gölgeler ve su. K tuşu oyunda shader'ları açıp kapatır."
       }
     },
     "picker": {
@@ -2629,7 +2637,8 @@
       "manage": "Ön ayarları yönet",
       "vanillaBoost": "Vanilla bunu zaten TRS optimizasyonuyla alıyor",
       "needsLoader": "Modlar bir mod yükleyicisi gerektirir – vanilla örnekte yalnızca kaynak paketleri ve gölgelendiriciler yüklenir.",
-      "useFabric": "Fabric kullan"
+      "useFabric": "Fabric kullan",
+      "nvidiumShaders": "Shader'larla birlikte kullanılamaz"
     },
     "apply": {
       "title": "Ön ayar uygula",
@@ -2651,7 +2660,9 @@
       "allDone": "{n} proje yüklendi | {n} projenin tümü yüklendi",
       "partial": "{total} projeden {done} tanesi yüklendi",
       "more": "(+{n} tane daha) | (+{n} tane daha)",
-      "details": "Ayrıntılar"
+      "details": "Ayrıntılar",
+      "shaderOn": "Shader'lar açık: {name}. Oyunda K tuşuyla açıp kapatabilirsin.",
+      "shaderToast": "shader'lar açık (K ile değiştir)"
     },
     "reason": {
       "installed": "Yüklendi",
@@ -2706,6 +2717,31 @@
       "moveUp": "Yukarı taşı",
       "moveDown": "Aşağı taşı",
       "footer": "Ön ayarları arkadaşlarınla Dışa aktar ile paylaş – dosyayı İçe aktar ile yükleyebilirler."
+    },
+    "tiers": {
+      "title": "FPS artışı",
+      "label": "FPS artışı seviyesi",
+      "summary": "Sodium veya Embeddium, Lithium, FerriteCore ve daha fazlası – bir seviye seç",
+      "keyHint": "Shader'ları açıp kapatmak için oyunda K tuşuna bas.",
+      "noShaders": "Shader'lar yalnızca Fabric, Quilt veya NeoForge ile kullanılabilir",
+      "fpsBoost": {
+        "name": "Maks. FPS",
+        "hint": "Yalnızca optimizasyonlar – zayıf bilgisayarlar ve en yüksek FPS için"
+      },
+      "fpsShaderLite": {
+        "name": "Hafif shader",
+        "hint": "Basit ekran kartlarında da çalışan hafif bir shader"
+      },
+      "fpsShader": {
+        "name": "Güzel shader",
+        "hint": "Işık, gölgeler ve su – güçlü ekran kartları için"
+      }
+    },
+    "hint": {
+      "title": "Bu kurulum için daha fazla FPS",
+      "text": "Burada henüz Sodium veya Embeddium yok. FPS artışı uygun optimizasyonları kurar – bir seviye seç:",
+      "apply": "FPS artışını uygula",
+      "dismiss": "Bu ipucunu gizle"
     }
   },
   "updateNews": {

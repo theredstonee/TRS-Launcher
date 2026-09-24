@@ -191,6 +191,13 @@ pub fn os_description() -> String {
     }
 }
 
+// --- Arbeitsspeicher --------------------------------------------------------------------------
+
+/// Eingebauter Arbeitsspeicher in MB (`MemTotal` aus `/proc/meminfo`).
+pub fn total_memory_mb() -> Option<u32> {
+    std::fs::read_to_string("/proc/meminfo").ok().as_deref().and_then(super::parse_meminfo)
+}
+
 // --- Download-Ordner -------------------------------------------------------------------------
 
 /// `XDG_DOWNLOAD_DIR="$HOME/Downloads"` aus dem Inhalt von `user-dirs.dirs`.

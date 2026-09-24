@@ -2,16 +2,25 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Preset, PresetApplyReport, PresetItemOutcome } from '../app/types'
 import { i18n, setLocale } from '../app/utils/i18n'
 import {
+  adjustSelectionForLoader,
   defaultPresetSelection,
+  isFpsTier,
+  isShaderTier,
+  loaderHasShaders,
   movePreset,
+  presetBlocked,
   presetDisabled,
   presetHasMods,
   presetName,
   presetPercent,
+  presetRows,
   presetStage,
   presetSummaryText,
+  selectedFpsTier,
   summarizePresetReport,
+  tierPresetId,
   visiblePresets,
+  withFpsTier,
 } from '../app/utils/presets'
 import { presetInputSchema } from '../app/utils/schemas'
 
@@ -44,7 +53,7 @@ function outcome(title: string, status: PresetItemOutcome['status'], optional = 
 }
 
 function report(items: PresetItemOutcome[]): PresetApplyReport {
-  return { gameVersion: '1.12.2', loader: 'forge', items, files: [], dependencies: 0 }
+  return { gameVersion: '1.12.2', loader: 'forge', items, files: [], dependencies: 0, shaderPack: null }
 }
 
 describe('Presets: Auswahl', () => {
@@ -71,8 +80,74 @@ describe('Presets: Auswahl', () => {
     expect(presetHasMods(packs)).toBe(false)
     expect(presetDisabled(fps, 'vanilla')).toBe(true)
     expect(presetDisabled(fps, 'forge')).toBe(false)
-    expect(presetName(fps)).toBe('FPS-Boost')
+    expect(presetName(fps)).toBe('FPS-Boost: Max FPS')
     expect(presetName(packs)).toBe('own')
+  })
+})
+
+describe('Presets: FPS-Boost-Stufen', () => {
+  const lite = preset('trs-fps-shader-lite', { builtin: 'fpsShaderLite', modpackSafe: false })
+  const pretty = preset('trs-fps-shader', { builtin: 'fpsShader', modpackSafe: false })
+  const nv = preset('trs-nvidium', { builtin: 'nvidium', modpackSafe: false })
+  const list = [fps, lite, pretty, nv, voice]
+  let before: string
+  beforeAll(async () => {
+    before = i18n.global.locale.value
+    await setLocale('de')
+  })
+  afterAll(async () => {
+    await setLocale(before)
+  })
+
+  it('genau eine Stufe – Shader nehmen Nvidium heraus', () => {
+    expect(selectedFpsTier(list, ['trs-voice-chat'])).toBeNull()
+    expect(selectedFpsTier(list, ['trs-voice-chat', 'trs-fps-boost'])).toBe('fpsBoost')
+
+    const shader = withFpsTier(list, ['trs-fps-boost', 'trs-nvidium', 'trs-voice-chat'], 'fpsShader')
+    expect(shader.sort()).toEqual(['trs-fps-shader', 'trs-voice-chat'])
+    expect(withFpsTier(list, shader, 'fpsShaderLite').sort()).toEqual(['trs-fps-shader-lite', 'trs-voice-chat'])
+    expect(withFpsTier(list, shader, null)).toEqual(['trs-voice-chat'])
+    // Max FPS verträgt sich mit Nvidium.
+    expect(withFpsTier(list, ['trs-nvidium'], 'fpsBoost').sort()).toEqual(['trs-fps-boost', 'trs-nvidium'])
+
+    expect(presetBlocked(nv, list, ['trs-fps-shader'])).toBe(true)
+    expect(presetBlocked(nv, list, ['trs-fps-boost'])).toBe(false)
+    expect(presetBlocked(voice, list, ['trs-fps-shader'])).toBe(false)
+  })
+
+  it('Shader nur mit Iris-Loadern, FPS-Boost nie bei Vanilla', () => {
+    expect(loaderHasShaders('fabric') && loaderHasShaders('quilt') && loaderHasShaders('neoforge')).toBe(true)
+    expect(loaderHasShaders('forge')).toBe(false)
+    expect(presetDisabled(lite, 'forge')).toBe(true)
+    expect(presetDisabled(fps, 'forge')).toBe(false)
+    expect(presetDisabled(pretty, 'vanilla')).toBe(true)
+    expect(isFpsTier('fpsShader') && !isFpsTier('nvidium') && isShaderTier('fpsShaderLite') && !isShaderTier('fpsBoost')).toBe(true)
+
+    // Wechsel auf Forge: Shader-Stufe wird zu Max FPS, auf Vanilla fällt alles weg.
+    expect(adjustSelectionForLoader(list, ['trs-fps-shader', 'trs-voice-chat'], 'forge').sort()).toEqual(['trs-fps-boost', 'trs-voice-chat'])
+    expect(adjustSelectionForLoader(list, ['trs-fps-shader', 'trs-voice-chat'], 'vanilla')).toEqual(['trs-voice-chat'])
+    const same = ['trs-fps-shader']
+    expect(adjustSelectionForLoader(list, same, 'fabric')).toBe(same)
+  })
+
+  it('Vorauswahl: höchstens eine automatische Stufe', () => {
+    const autoLite = [fps, { ...lite, auto: true }, { ...nv, auto: true }, voice]
+    // Die Liste hat versehentlich zwei automatische Stufen: die erste gewinnt (Max FPS verträgt Nvidium).
+    expect(defaultPresetSelection(autoLite, { loader: 'fabric', context: 'instance' })).toEqual(['trs-fps-boost', 'trs-nvidium', 'trs-voice-chat'])
+    // Shader-Stufe automatisch: Nvidium fällt weg.
+    const shaderFirst = [{ ...lite, auto: true }, { ...nv, auto: true }, voice]
+    expect(defaultPresetSelection(shaderFirst, { loader: 'fabric', context: 'instance' })).toEqual(['trs-fps-shader-lite', 'trs-voice-chat'])
+    const onlyLite = [{ ...fps, auto: false }, { ...lite, auto: true }, voice]
+    expect(defaultPresetSelection(onlyLite, { loader: 'fabric', context: 'instance' })).toEqual(['trs-fps-shader-lite', 'trs-voice-chat'])
+    // Forge: statt Shader leicht eben Max FPS.
+    expect(defaultPresetSelection(onlyLite, { loader: 'forge', context: 'instance' })).toEqual(['trs-voice-chat', 'trs-fps-boost'])
+  })
+
+  it('zeigt die Stufen als eine Zeile', () => {
+    const rows = presetRows([voice, fps, lite, pretty, packs])
+    expect(rows.map((r) => (r.type === 'fps' ? `fps:${r.tiers.length}` : r.preset.id))).toEqual(['trs-voice-chat', 'fps:3', 'own'])
+    expect(tierPresetId(list, 'fpsShader')).toBe('trs-fps-shader')
+    expect(presetName(lite)).toBe('FPS-Boost: Shader leicht')
   })
 
   it('verschiebt – ausgeblendete Presets bleiben stehen', () => {

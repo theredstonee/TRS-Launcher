@@ -14,6 +14,8 @@ import { t, type MessageKey } from './i18n'
 
 const builtinNames: Record<BuiltinPreset, MessageKey> = {
   fpsBoost: 'presets.builtin.fpsBoost.name',
+  fpsShaderLite: 'presets.builtin.fpsShaderLite.name',
+  fpsShader: 'presets.builtin.fpsShader.name',
   nvidium: 'presets.builtin.nvidium.name',
   voiceChat: 'presets.builtin.voiceChat.name',
   replay: 'presets.builtin.replay.name',
@@ -21,9 +23,85 @@ const builtinNames: Record<BuiltinPreset, MessageKey> = {
 
 const builtinDescriptions: Record<BuiltinPreset, MessageKey> = {
   fpsBoost: 'presets.builtin.fpsBoost.description',
+  fpsShaderLite: 'presets.builtin.fpsShaderLite.description',
+  fpsShader: 'presets.builtin.fpsShader.description',
   nvidium: 'presets.builtin.nvidium.description',
   voiceChat: 'presets.builtin.voiceChat.description',
   replay: 'presets.builtin.replay.description',
+}
+
+// --- FPS-Boost-Stufen --------------------------------------------------------------
+
+/** Die drei Stufen des FPS-Boosts – genau eine ist gewählt (oder keine). */
+export const fpsTiers = ['fpsBoost', 'fpsShaderLite', 'fpsShader'] as const
+export type FpsTier = (typeof fpsTiers)[number]
+
+/** Kurzname und Satz je Stufe (für die Stufenwahl). */
+export const fpsTierTexts: Record<FpsTier, { name: MessageKey; hint: MessageKey }> = {
+  fpsBoost: { name: 'presets.tiers.fpsBoost.name', hint: 'presets.tiers.fpsBoost.hint' },
+  fpsShaderLite: { name: 'presets.tiers.fpsShaderLite.name', hint: 'presets.tiers.fpsShaderLite.hint' },
+  fpsShader: { name: 'presets.tiers.fpsShader.name', hint: 'presets.tiers.fpsShader.hint' },
+}
+
+export function isFpsTier(builtin: BuiltinPreset | null | undefined): builtin is FpsTier {
+  return builtin === 'fpsBoost' || builtin === 'fpsShaderLite' || builtin === 'fpsShader'
+}
+
+/** Stufe mit Iris + Shaderpaket. */
+export function isShaderTier(builtin: BuiltinPreset | null | undefined): boolean {
+  return builtin === 'fpsShaderLite' || builtin === 'fpsShader'
+}
+
+/** Iris gibt es für Fabric, Quilt und NeoForge – nur dort sind Shader-Stufen wählbar. */
+export function loaderHasShaders(loader: LoaderKind | null): boolean {
+  return loader === null || loader === 'fabric' || loader === 'quilt' || loader === 'neoforge'
+}
+
+/** Preset-ID einer Stufe (falls es sie in der Liste gibt). */
+export function tierPresetId(presets: Pick<Preset, 'id' | 'builtin'>[], tier: FpsTier): string | null {
+  return presets.find((p) => p.builtin === tier)?.id ?? null
+}
+
+/** Welche Stufe gerade gewählt ist (`null` = FPS-Boost aus). */
+export function selectedFpsTier(presets: Pick<Preset, 'id' | 'builtin'>[], selected: string[]): FpsTier | null {
+  for (const id of selected) {
+    const builtin = presets.find((p) => p.id === id)?.builtin
+    if (isFpsTier(builtin)) return builtin
+  }
+  return null
+}
+
+/**
+ * Auswahl mit genau dieser Stufe (`null` = FPS-Boost aus). Mit Shadern fällt
+ * Nvidium heraus – es verträgt sich nicht mit Iris.
+ */
+export function withFpsTier(presets: Pick<Preset, 'id' | 'builtin'>[], selected: string[], tier: FpsTier | null): string[] {
+  const builtinOf = (id: string) => presets.find((p) => p.id === id)?.builtin ?? null
+  const next = selected.filter((id) => {
+    const b = builtinOf(id)
+    return !isFpsTier(b) && !(isShaderTier(tier) && b === 'nvidium')
+  })
+  const id = tier ? tierPresetId(presets, tier) : null
+  return id ? [...next, id] : next
+}
+
+/** Nvidium ist mit einer Shader-Stufe nicht kombinierbar. */
+export function presetBlocked(preset: Pick<Preset, 'builtin'>, presets: Pick<Preset, 'id' | 'builtin'>[], selected: string[]): boolean {
+  return preset.builtin === 'nvidium' && isShaderTier(selectedFpsTier(presets, selected))
+}
+
+/** Eine Zeile im Auswahlfeld: ein Preset oder der FPS-Boost mit seinen Stufen. */
+export type PresetRow = { type: 'preset'; preset: Preset } | { type: 'fps'; tiers: Preset[] }
+
+/** Fasst die Stufen zu einer Zeile zusammen – an der Stelle der ersten. */
+export function presetRows(presets: Preset[]): PresetRow[] {
+  const tiers = presets.filter((p) => isFpsTier(p.builtin))
+  const rows: PresetRow[] = []
+  for (const p of presets) {
+    if (!isFpsTier(p.builtin)) rows.push({ type: 'preset', preset: p })
+    else if (p === tiers[0]) rows.push({ type: 'fps', tiers })
+  }
+  return rows
 }
 
 /** Anzeigename – fertige Presets in der eingestellten Sprache. */
@@ -43,10 +121,12 @@ export function presetHasMods(preset: Pick<Preset, 'builtin' | 'items'>): boolea
 
 /**
  * Vanilla-Instanzen bekommen die Performance-Mods über die TRS-Optimierung –
- * dort ist FPS-Boost deshalb nicht wählbar.
+ * dort ist der FPS-Boost (alle Stufen) nicht wählbar. Shader-Stufen brauchen
+ * einen Loader mit Iris.
  */
 export function presetDisabled(preset: Pick<Preset, 'builtin'>, loader: LoaderKind | null): boolean {
-  return loader === 'vanilla' && preset.builtin === 'fpsBoost'
+  if (loader === 'vanilla' && isFpsTier(preset.builtin)) return true
+  return isShaderTier(preset.builtin) && !loaderHasShaders(loader)
 }
 
 /** Was ein Preset-Auswahlfeld anzeigen soll (Nvidium nur mit passender Karte). */
@@ -54,14 +134,33 @@ export function visiblePresets(presets: Preset[], context: 'instance' | 'modpack
   return presets.filter((p) => p.available && (context === 'instance' || p.modpackSafe))
 }
 
-/** Vorausgewählt: alles mit „immer automatisch“, das hier passt. */
+/**
+ * Auswahl an einen neuen Loader anpassen: Unpassendes fällt weg; eine
+ * Shader-Stufe ohne Iris (Forge) wird zu „Max FPS“ statt ganz zu verschwinden.
+ */
+export function adjustSelectionForLoader(presets: Preset[], selected: string[], loader: LoaderKind | null): string[] {
+  const tier = selectedFpsTier(presets, selected)
+  const disabled = new Set(presets.filter((p) => presetDisabled(p, loader)).map((p) => p.id))
+  const next = selected.filter((id) => !disabled.has(id))
+  const maxFps = presets.find((p) => p.builtin === 'fpsBoost')
+  if (tier && tier !== 'fpsBoost' && selectedFpsTier(presets, next) === null && maxFps && !presetDisabled(maxFps, loader)) {
+    return [...next, maxFps.id]
+  }
+  return next.length === selected.length ? selected : next
+}
+
+/** Vorausgewählt: alles mit „immer automatisch“, das hier passt (höchstens eine FPS-Stufe). */
 export function defaultPresetSelection(
   presets: Preset[],
   options: { loader: LoaderKind | null; context: 'instance' | 'modpack' },
 ): string[] {
-  return visiblePresets(presets, options.context)
-    .filter((p) => p.auto && !presetDisabled(p, options.loader))
+  const visible = visiblePresets(presets, options.context)
+  const auto = visible.filter((p) => p.auto)
+  const tier = selectedFpsTier(visible, auto.map((p) => p.id))
+  const selection = auto
+    .filter((p) => (isFpsTier(p.builtin) ? p.builtin === tier : !(p.builtin === 'nvidium' && isShaderTier(tier))))
     .map((p) => p.id)
+  return adjustSelectionForLoader(visible, selection, options.loader)
 }
 
 const okStatuses: PresetItemStatus[] = ['installed', 'alreadyInstalled', 'duplicate']

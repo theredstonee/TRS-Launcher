@@ -159,6 +159,7 @@ function openFolder() {
 
         <p v-if="game.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ game.error }}</p>
         <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" class="mb-4" />
+        <FpsBoostHint :instance="instance" />
 
         <nav class="mb-4 flex flex-wrap gap-1" :aria-label="t('instance.tabsLabel')">
           <button v-for="key in tabs" :key="key" class="tab" :class="{ 'tab-on': tab === key }" @click="tab = key">{{ t(`instance.tabs.${key}`) }}</button>

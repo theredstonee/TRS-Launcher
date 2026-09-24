@@ -57,6 +57,8 @@ pub type ProgressFn = dyn Fn(StageProgress) + Send + Sync;
 pub struct Prepared {
     pub version: VersionInfo,
     pub java: PathBuf,
+    /// Hauptversion dieser Java laut `release`-Datei (`None` = nicht erkennbar).
+    pub java_major: Option<u32>,
     pub classpath: Vec<PathBuf>,
     pub natives_dir: PathBuf,
     /// `${game_assets}`: bei alten Versionen das virtuelle Verzeichnis.
@@ -221,7 +223,9 @@ pub async fn prepare(
         .collect();
     classpath.push(if uses_installer { link_profile_jar(paths, &client_jar, &version.id).await? } else { client_jar });
 
-    Ok(Prepared { version, java, classpath, natives_dir, game_assets, log_config })
+    // Die Flags richten sich nach der Java, die wirklich startet (eigene Pfade inklusive).
+    let java_major = java::inspect(&java).map(|(major, _)| major);
+    Ok(Prepared { version, java, java_major, classpath, natives_dir, game_assets, log_config })
 }
 
 fn loader_progress(percent: f64, done_files: u64, total_files: u64) -> StageProgress {

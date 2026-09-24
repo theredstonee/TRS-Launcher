@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Instance, Preset, PresetApplyReport, PresetInput } from '../types'
 import { backend } from '../utils/backend'
-import { movePreset } from '../utils/presets'
+import { isFpsTier, movePreset } from '../utils/presets'
 
 /**
  * Mod-Presets: die Liste (eigene + fertige TRS-Presets) und der zuletzt
@@ -49,7 +49,12 @@ export const usePresetsStore = defineStore('presets', () => {
   }
 
   async function setAuto(id: string, auto: boolean) {
-    replace(await backend.setPresetAuto(id, auto))
+    const preset = await backend.setPresetAuto(id, auto)
+    // Von den FPS-Stufen ist höchstens eine automatisch – der Kern schaltet die anderen ab.
+    if (auto && isFpsTier(preset.builtin)) {
+      items.value = items.value.map((p) => (isFpsTier(p.builtin) && p.id !== id ? { ...p, auto: false } : p))
+    }
+    replace(preset)
   }
 
   async function remove(id: string) {

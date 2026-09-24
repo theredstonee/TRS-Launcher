@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Krachtige videokaart",
       "dedicatedGpuDescription": "Minecraft gebruikt de losse videokaart (belangrijk bij laptops). Geldt alleen voor de Java van de launcher en wordt teruggedraaid als je het uitzet.",
       "tuningTitle": "FPS-boost bij het starten",
-      "tuningDescription": "Afgestemde Java-instellingen voor jouw Java-versie en geheugen (ZGC of G1, geheugen meteen gereserveerd). Alleen zonder eigen JVM-argumenten.",
+      "tuningDescription": "Afgestemde Java-instellingen voor jouw Java-versie en geheugen (G1, vanaf 12 GB ZGC; geheugen meteen gereserveerd). Je eigen JVM-argumenten winnen waar ze overlappen.",
       "priorityTitle": "Hogere procesprioriteit",
       "priorityDescription": "Start het spel met prioriteit ‘Boven normaal’ – kan haperingen verminderen als andere programma’s druk bezig zijn.",
       "dedicatedGpuDescriptionLinux": "Voor laptops met twee grafische chips: het spel rendert op de dedicated GPU (PRIME-offload – DRI_PRIME of de NVIDIA-variabelen)."
@@ -2608,7 +2608,7 @@
     "itemCount": "{n} project | {n} projecten",
     "builtin": {
       "fpsBoost": {
-        "name": "FPS-boost",
+        "name": "FPS-boost: Max FPS",
         "description": "Sodium of Embeddium, Lithium, FerriteCore, ModernFix en meer – wat bij de versie en loader past"
       },
       "nvidium": {
@@ -2622,6 +2622,14 @@
       "replay": {
         "name": "Replay",
         "description": "Flashback waar beschikbaar, anders ReplayMod – gameplay opnemen en monteren"
+      },
+      "fpsShaderLite": {
+        "name": "FPS-boost: Lichte shaders",
+        "description": "Alles van Max FPS plus Iris en de zeer lichte shader MakeUp – Ultra Fast. Met K zet je shaders in het spel aan en uit."
+      },
+      "fpsShader": {
+        "name": "FPS-boost: Mooie shaders",
+        "description": "Alles van Max FPS plus Iris en Complementary Reimagined – mooi licht, schaduwen en water. Met K zet je shaders in het spel aan en uit."
       }
     },
     "picker": {
@@ -2629,7 +2637,8 @@
       "manage": "Presets beheren",
       "vanillaBoost": "Vanilla krijgt dit al via de TRS-optimalisatie",
       "needsLoader": "Mods hebben een modloader nodig – in een vanilla-instantie worden alleen resourcepacks en shaders geïnstalleerd.",
-      "useFabric": "Fabric gebruiken"
+      "useFabric": "Fabric gebruiken",
+      "nvidiumShaders": "Niet te combineren met shaders"
     },
     "apply": {
       "title": "Preset toepassen",
@@ -2651,7 +2660,9 @@
       "allDone": "{n} project geïnstalleerd | Alle {n} projecten geïnstalleerd",
       "partial": "{done} van {total} geïnstalleerd",
       "more": "(+{n} andere) | (+{n} andere)",
-      "details": "Details"
+      "details": "Details",
+      "shaderOn": "Shaders staan aan: {name}. Druk in het spel op K om ze aan of uit te zetten.",
+      "shaderToast": "shaders aan (K schakelt)"
     },
     "reason": {
       "installed": "Geïnstalleerd",
@@ -2706,6 +2717,31 @@
       "moveUp": "Omhoog",
       "moveDown": "Omlaag",
       "footer": "Deel presets met vrienden via Exporteren – zij laden het bestand met Importeren."
+    },
+    "tiers": {
+      "title": "FPS-boost",
+      "label": "Niveau van de FPS-boost",
+      "summary": "Sodium of Embeddium, Lithium, FerriteCore en meer – kies een niveau",
+      "keyHint": "Druk in het spel op K om shaders aan of uit te zetten.",
+      "noShaders": "Shaders zijn alleen beschikbaar met Fabric, Quilt of NeoForge",
+      "fpsBoost": {
+        "name": "Max FPS",
+        "hint": "Alleen optimalisaties – voor zwakkere pc's en de meeste FPS"
+      },
+      "fpsShaderLite": {
+        "name": "Lichte shaders",
+        "hint": "Een lichte shader die ook op eenvoudige videokaarten draait"
+      },
+      "fpsShader": {
+        "name": "Mooie shaders",
+        "hint": "Licht, schaduwen en water – voor sterke videokaarten"
+      }
+    },
+    "hint": {
+      "title": "Meer FPS voor deze instantie",
+      "text": "Hier zit nog geen Sodium of Embeddium in. De FPS-boost installeert passende optimalisaties – kies een niveau:",
+      "apply": "FPS-boost toepassen",
+      "dismiss": "Deze tip verbergen"
     }
   },
   "updateNews": {

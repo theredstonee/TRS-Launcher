@@ -23,12 +23,48 @@ How to write an entry:
 - **No more freezes when players join or leave.** With the TRS Client, the game could freeze for up to a minute
   as soon as another player came online or left – for both players at the same moment. Fixed in TRS Client
   0.4.1, which installs itself automatically.
+- **Smoother frames, fewer stutters.** The FPS boost at launch now uses a garbage collector setup made for the game
+  client (G1 with short pauses); ZGC is only used from 12 GB of memory, where it no longer causes hitches. The
+  settings follow the Java version the game really starts with – also your own Java.
+- **Your own JVM arguments no longer switch the boost off.** Only the settings you set yourself replace the
+  launcher's (your own memory size, garbage collector or option wins); everything else stays tuned.
+- **Memory that fits your PC.** New installations start with 6 GB on PCs with 16 GB or more, 4 GB from 8 GB and
+  half of the memory below that. If more is set than the PC has, the game gets at most your memory minus 2 GB so
+  Windows doesn't have to swap. Existing settings are kept.
+- **FPS boost with shaders – pick your level.** When creating an instance or applying presets, the FPS boost now
+  comes in three levels: **Max FPS** (optimisations only, for weaker PCs), **Light shaders** (plus Iris and the
+  very light MakeUp – Ultra Fast shader) and **Pretty shaders** (plus Iris and Complementary Reimagined). The shader
+  is switched on right away; press **K** in game to turn shaders on or off. Shaders are available with Fabric,
+  Quilt and NeoForge; elsewhere they are skipped and named in the summary. Nvidium can't be combined with shaders
+  and is left out. New instances still start with Max FPS.
+- **FPS boost for existing instances.** Instances with a mod loader but without Sodium, Embeddium or OptiFine now
+  show a small hint with the level choice – one click installs the boost. Hide it once and it stays hidden for that
+  instance; modpacks never show it.
 
 ### Deutsch
 
 - **Kein Einfrieren mehr, wenn Spieler kommen oder gehen.** Mit dem TRS Client konnte das Spiel bis zu einer Minute
   einfrieren, sobald ein anderer Spieler online kam oder ging – bei beiden gleichzeitig. Behoben im TRS Client
   0.4.1, der sich automatisch aktualisiert.
+- **Flüssigere Bilder, weniger Ruckler.** Der FPS-Boost beim Start nutzt jetzt eine Speicherbereinigung, die für
+  das Spiel gemacht ist (G1 mit kurzen Pausen); ZGC kommt erst ab 12 GB Arbeitsspeicher zum Einsatz, wo es nicht
+  mehr hängt. Die Einstellungen richten sich nach der Java, mit der das Spiel wirklich startet – auch nach deiner
+  eigenen.
+- **Eigene JVM-Argumente schalten den Boost nicht mehr ab.** Nur was du selbst angibst, ersetzt die Werte des
+  Launchers (eigene Speichergröße, eigene Speicherbereinigung oder gleiche Option gewinnt); der Rest bleibt
+  abgestimmt.
+- **Arbeitsspeicher passend zu deinem PC.** Neue Installationen starten mit 6 GB auf PCs ab 16 GB, mit 4 GB ab
+  8 GB und darunter mit der Hälfte. Ist mehr eingestellt, als der PC hat, bekommt das Spiel höchstens deinen
+  Speicher minus 2 GB, damit Windows nicht auslagern muss. Bestehende Einstellungen bleiben.
+- **FPS-Boost mit Shadern – Stufe wählbar.** Beim Anlegen einer Instanz und bei „Preset anwenden“ gibt es den
+  FPS-Boost jetzt in drei Stufen: **Max FPS** (nur Optimierungen, für schwache PCs), **Shader leicht** (dazu Iris
+  und der sehr sparsame Shader MakeUp – Ultra Fast) und **Shader schön** (dazu Iris und Complementary Reimagined).
+  Der Shader ist gleich eingeschaltet; mit der Taste **K** schaltest du Shader im Spiel an und aus. Shader gibt es
+  mit Fabric, Quilt und NeoForge; sonst werden sie übersprungen und in der Zusammenfassung genannt. Nvidium lässt
+  sich nicht mit Shadern kombinieren und bleibt dann weg. Neue Instanzen starten weiterhin mit Max FPS.
+- **FPS-Boost für bestehende Instanzen.** Instanzen mit Modloader, aber ohne Sodium, Embeddium oder OptiFine zeigen
+  jetzt einen kleinen Hinweis mit Stufenwahl – ein Klick installiert den Boost. Einmal ausgeblendet, bleibt er für
+  diese Instanz weg; bei Modpacks erscheint er nie.
 
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 

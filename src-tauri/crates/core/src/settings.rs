@@ -45,7 +45,8 @@ pub struct Settings {
     /// Windows soll dem Spiel die leistungsstarke Grafikkarte geben.
     pub prefer_dedicated_gpu: bool,
     /// FPS-Boost für den Start: abgestimmte GC-Flags je Java-Version und
-    /// Xms = Xmx – nur ohne eigene JVM-Argumente. Instanzen können abweichen.
+    /// Xms = Xmx. Eigene JVM-Argumente gewinnen bei Überschneidungen.
+    /// Instanzen können abweichen.
     pub performance_tuning: bool,
     /// Spiel mit Prozesspriorität „Höher als normal“ starten.
     pub high_priority: bool,
@@ -244,13 +245,33 @@ impl Default for Settings {
     }
 }
 
+/// Vorschlag für den maximalen Arbeitsspeicher je nach eingebautem RAM.
+/// Rechner melden etwas weniger als auf dem Aufkleber steht (die Grafik
+/// reserviert einen Teil) – deshalb die Schwellen knapp darunter.
+pub fn recommended_memory_mb(total_mb: Option<u32>) -> u32 {
+    match total_mb {
+        None => 4096,
+        Some(total) if total >= 15 * 1024 => 6144,
+        Some(total) if total >= 7 * 1024 => 4096,
+        // Die Hälfte, auf 256 MB abgerundet – aber nie unter 2 GB.
+        Some(total) => (total / 2 / 256 * 256).max(2048),
+    }
+}
+
 impl Settings {
+    /// Standardwerte für eine neue Installation: der Arbeitsspeicher passt
+    /// sich an diesen PC an. Bestehende Einstellungen bleiben unberührt.
+    pub fn for_this_pc() -> Self {
+        Self { max_memory_mb: recommended_memory_mb(crate::platform::total_memory_mb()), ..Self::default() }
+    }
+
     /// Eine kaputte oder ungültige Datei darf den Start nicht verhindern –
     /// dann gelten die Standardwerte.
     pub async fn load(path: &Path) -> Result<Self> {
         match fsutil::read_json::<serde_json::Value>(path).await {
             Ok(Some(value)) => Ok(Self::from_value(migrate(value))),
-            Ok(None) => Ok(Self::default()),
+            // Noch keine Datei: neue Installation.
+            Ok(None) => Ok(Self::for_this_pc()),
             Err(Error::Json { .. }) => {
                 tracing::warn!("settings.json ist beschädigt – verwende Standardwerte");
                 Ok(Self::default())
@@ -455,6 +476,30 @@ mod tests {
         assert!(old.ui.worlds_tab && old.ui.show_play_time && old.allow_log_upload);
         assert_eq!(serde_json::to_value(Theme::Oled).unwrap(), "oled");
         assert!(serde_json::from_str::<UiSettings>(r#"{"theme":"neon"}"#).is_err());
+    }
+
+    #[test]
+    fn memory_follows_the_pc_only_for_new_installs() {
+        assert_eq!(recommended_memory_mb(Some(32 * 1024)), 6144);
+        assert_eq!(recommended_memory_mb(Some(15_931)), 6144, "16-GB-Rechner melden etwas weniger");
+        assert_eq!(recommended_memory_mb(Some(7_900)), 4096);
+        assert_eq!(recommended_memory_mb(Some(6_000)), 2816);
+        assert_eq!(recommended_memory_mb(Some(3_000)), 2048);
+        assert_eq!(recommended_memory_mb(None), 4096);
+        let fresh = Settings::for_this_pc();
+        assert_eq!(fresh.max_memory_mb, recommended_memory_mb(crate::platform::total_memory_mb()));
+        fresh.validate().unwrap();
+    }
+
+    #[tokio::test]
+    async fn existing_memory_value_is_kept() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("settings.json");
+        tokio::fs::write(&file, r#"{"maxMemoryMb":3072}"#).await.unwrap();
+        assert_eq!(Settings::load(&file).await.unwrap().max_memory_mb, 3072);
+        // Ohne Datei: Vorschlag für diesen PC.
+        let missing = dir.path().join("neu.json");
+        assert_eq!(Settings::load(&missing).await.unwrap().max_memory_mb, Settings::for_this_pc().max_memory_mb);
     }
 
     #[test]

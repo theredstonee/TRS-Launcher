@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "High-performance graphics card",
       "dedicatedGpuDescription": "Minecraft uses the dedicated graphics card (important on laptops). Only applies to the launcher’s own Java and is undone when you switch it off.",
       "tuningTitle": "FPS boost at launch",
-      "tuningDescription": "Tuned Java settings for your Java version and memory (ZGC or G1, memory reserved up front). Only used when no custom JVM arguments are set.",
+      "tuningDescription": "Tuned Java settings for your Java version and memory (G1, from 12 GB ZGC; memory reserved up front). Your own JVM arguments win where they overlap.",
       "priorityTitle": "Higher process priority",
       "priorityDescription": "Starts the game with the priority “Above normal” – can smooth out stutters while other programs are busy.",
       "dedicatedGpuDescriptionLinux": "For laptops with two graphics chips: the game renders on the dedicated GPU (PRIME offload – DRI_PRIME or the NVIDIA variables)."
@@ -2608,7 +2608,7 @@
     "itemCount": "{n} project | {n} projects",
     "builtin": {
       "fpsBoost": {
-        "name": "FPS boost",
+        "name": "FPS boost: Max FPS",
         "description": "Sodium or Embeddium, Lithium, FerriteCore, ModernFix & more – whatever fits the version and loader"
       },
       "nvidium": {
@@ -2622,6 +2622,14 @@
       "replay": {
         "name": "Replay",
         "description": "Flashback where available, otherwise ReplayMod – record and edit gameplay"
+      },
+      "fpsShaderLite": {
+        "name": "FPS boost: Light shaders",
+        "description": "Everything from Max FPS plus Iris and the very light MakeUp – Ultra Fast shader. K turns shaders on and off in game."
+      },
+      "fpsShader": {
+        "name": "FPS boost: Pretty shaders",
+        "description": "Everything from Max FPS plus Iris and Complementary Reimagined – lovely light, shadows and water. K turns shaders on and off in game."
       }
     },
     "picker": {
@@ -2629,7 +2637,8 @@
       "manage": "Manage presets",
       "vanillaBoost": "Vanilla already gets this through the TRS optimization",
       "needsLoader": "Mods need a mod loader – in a vanilla instance only resource packs and shaders are installed.",
-      "useFabric": "Use Fabric"
+      "useFabric": "Use Fabric",
+      "nvidiumShaders": "Can't be combined with shaders"
     },
     "apply": {
       "title": "Apply preset",
@@ -2651,7 +2660,9 @@
       "allDone": "{n} project installed | All {n} projects installed",
       "partial": "{done} of {total} installed",
       "more": "(+{n} more) | (+{n} more)",
-      "details": "Details"
+      "details": "Details",
+      "shaderOn": "Shaders are on: {name}. Press K in game to turn them on or off.",
+      "shaderToast": "shaders on (K toggles them)"
     },
     "reason": {
       "installed": "Installed",
@@ -2706,6 +2717,31 @@
       "moveUp": "Move up",
       "moveDown": "Move down",
       "footer": "Share presets with friends via Export – they can load the file with Import."
+    },
+    "tiers": {
+      "title": "FPS boost",
+      "label": "FPS boost level",
+      "summary": "Sodium or Embeddium, Lithium, FerriteCore & more – choose a level",
+      "keyHint": "Press K in game to turn shaders on or off.",
+      "noShaders": "Shaders are only available with Fabric, Quilt or NeoForge",
+      "fpsBoost": {
+        "name": "Max FPS",
+        "hint": "Optimisations only – for weaker PCs and the most FPS"
+      },
+      "fpsShaderLite": {
+        "name": "Light shaders",
+        "hint": "A light shader that also runs on simple graphics cards"
+      },
+      "fpsShader": {
+        "name": "Pretty shaders",
+        "hint": "Light, shadows and water – for strong graphics cards"
+      }
+    },
+    "hint": {
+      "title": "More FPS for this instance",
+      "text": "There's no Sodium or Embeddium here yet. The FPS boost installs matching optimisations – pick a level:",
+      "apply": "Apply FPS boost",
+      "dismiss": "Hide this hint"
     }
   },
   "updateNews": {

@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Wydajna karta graficzna",
       "dedicatedGpuDescription": "Minecraft korzysta z dedykowanej karty graficznej (ważne w laptopach). Dotyczy tylko Javy launchera i jest cofane po wyłączeniu.",
       "tuningTitle": "Zwiększenie FPS przy starcie",
-      "tuningDescription": "Dostrojone ustawienia Javy dla twojej wersji Javy i pamięci (ZGC lub G1, pamięć zarezerwowana od razu). Tylko bez własnych argumentów JVM.",
+      "tuningDescription": "Dostrojone ustawienia Javy dla twojej wersji Javy i pamięci (G1, od 12 GB ZGC; pamięć zarezerwowana od razu). Własne argumenty JVM wygrywają tam, gdzie się pokrywają.",
       "priorityTitle": "Wyższy priorytet procesu",
       "priorityDescription": "Uruchamia grę z priorytetem „Powyżej normalnego” – może zmniejszyć przycięcia, gdy inne programy są zajęte.",
       "dedicatedGpuDescriptionLinux": "Dla laptopów z dwoma układami graficznymi: gra renderuje się na dedykowanym GPU (PRIME offload – DRI_PRIME lub zmienne NVIDIA)."
@@ -2608,7 +2608,7 @@
     "itemCount": "{n} projekt | {n} projekty | {n} projektów",
     "builtin": {
       "fpsBoost": {
-        "name": "Zwiększenie FPS",
+        "name": "Zwiększenie FPS: Maks. FPS",
         "description": "Sodium lub Embeddium, Lithium, FerriteCore, ModernFix i inne – to, co pasuje do wersji i loadera"
       },
       "nvidium": {
@@ -2622,6 +2622,14 @@
       "replay": {
         "name": "Replay",
         "description": "Flashback, jeśli dostępny, w przeciwnym razie ReplayMod – nagrywaj i montuj rozgrywkę"
+      },
+      "fpsShaderLite": {
+        "name": "Zwiększenie FPS: lekkie shadery",
+        "description": "Wszystko z Maks. FPS plus Iris i bardzo lekki shader MakeUp – Ultra Fast. Klawisz K włącza i wyłącza shadery w grze."
+      },
+      "fpsShader": {
+        "name": "Zwiększenie FPS: ładne shadery",
+        "description": "Wszystko z Maks. FPS plus Iris i Complementary Reimagined – piękne światło, cienie i woda. Klawisz K włącza i wyłącza shadery w grze."
       }
     },
     "picker": {
@@ -2629,7 +2637,8 @@
       "manage": "Zarządzaj presetami",
       "vanillaBoost": "Vanilla dostaje to już przez optymalizację TRS",
       "needsLoader": "Mody wymagają loadera modów – w instancji vanilla instalowane są tylko paczki zasobów i shadery.",
-      "useFabric": "Użyj Fabric"
+      "useFabric": "Użyj Fabric",
+      "nvidiumShaders": "Nie działa razem z shaderami"
     },
     "apply": {
       "title": "Zastosuj preset",
@@ -2651,7 +2660,9 @@
       "allDone": "Zainstalowano {n} projekt | Zainstalowano wszystkie {n} projekty | Zainstalowano wszystkie {n} projektów",
       "partial": "Zainstalowano {done} z {total}",
       "more": "(+{n} kolejny) | (+{n} kolejne) | (+{n} kolejnych)",
-      "details": "Szczegóły"
+      "details": "Szczegóły",
+      "shaderOn": "Shadery są włączone: {name}. Naciśnij K w grze, aby je włączyć lub wyłączyć.",
+      "shaderToast": "shadery włączone (K przełącza)"
     },
     "reason": {
       "installed": "Zainstalowano",
@@ -2706,6 +2717,31 @@
       "moveUp": "W górę",
       "moveDown": "W dół",
       "footer": "Udostępniaj presety znajomym przez Eksportuj – mogą wczytać plik przez Importuj."
+    },
+    "tiers": {
+      "title": "Zwiększenie FPS",
+      "label": "Poziom zwiększenia FPS",
+      "summary": "Sodium lub Embeddium, Lithium, FerriteCore i inne – wybierz poziom",
+      "keyHint": "Naciśnij K w grze, aby włączyć lub wyłączyć shadery.",
+      "noShaders": "Shadery są dostępne tylko z Fabric, Quilt lub NeoForge",
+      "fpsBoost": {
+        "name": "Maks. FPS",
+        "hint": "Tylko optymalizacje – dla słabszych komputerów i najwięcej FPS"
+      },
+      "fpsShaderLite": {
+        "name": "Lekkie shadery",
+        "hint": "Lekki shader, działa też na prostych kartach graficznych"
+      },
+      "fpsShader": {
+        "name": "Ładne shadery",
+        "hint": "Światło, cienie i woda – dla mocnych kart graficznych"
+      }
+    },
+    "hint": {
+      "title": "Więcej FPS dla tej instancji",
+      "text": "Nie ma tu jeszcze Sodium ani Embeddium. Zwiększenie FPS instaluje pasujące optymalizacje – wybierz poziom:",
+      "apply": "Zastosuj zwiększenie FPS",
+      "dismiss": "Ukryj tę wskazówkę"
     }
   },
   "updateNews": {

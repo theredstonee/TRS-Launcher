@@ -3,8 +3,9 @@
 //! lassen – jeweils nur, was es für Minecraft-Version + Modloader gibt.
 //!
 //! Eigene Presets liegen in `<daten>/presets.json`. Die fertigen TRS-Presets
-//! („FPS-Boost“, „Nvidium“, „Voice Chat“, „Replay“) stehen im Code; von ihnen
-//! merkt sich die Datei nur Position und „immer automatisch“.
+//! („FPS-Boost“ in drei Stufen – Max FPS, Shader leicht, Shader schön –,
+//! „Nvidium“, „Voice Chat“, „Replay“) stehen im Code; von ihnen merkt sich die
+//! Datei nur Position und „immer automatisch“.
 //!
 //! Installiert wird in zwei Schritten: Erst wird alles aufgelöst (passende
 //! Version, Pflicht-Abhängigkeiten, Duplikate, Konflikte) – ohne etwas
@@ -64,18 +65,26 @@ pub struct PresetItem {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Builtin {
+    /// FPS-Boost, Stufe „Max FPS“: nur Optimierungs-Mods.
     FpsBoost,
+    /// FPS-Boost, Stufe „Shader leicht“: dazu Iris + MakeUp – Ultra Fast.
+    FpsShaderLite,
+    /// FPS-Boost, Stufe „Shader schön“: dazu Iris + Complementary Reimagined.
+    FpsShader,
     Nvidium,
     VoiceChat,
     Replay,
 }
 
 impl Builtin {
-    pub const ALL: [Self; 4] = [Self::FpsBoost, Self::Nvidium, Self::VoiceChat, Self::Replay];
+    pub const ALL: [Self; 6] =
+        [Self::FpsBoost, Self::FpsShaderLite, Self::FpsShader, Self::Nvidium, Self::VoiceChat, Self::Replay];
 
     pub fn id(self) -> &'static str {
         match self {
             Self::FpsBoost => "trs-fps-boost",
+            Self::FpsShaderLite => "trs-fps-shader-lite",
+            Self::FpsShader => "trs-fps-shader",
             Self::Nvidium => "trs-nvidium",
             Self::VoiceChat => "trs-voice-chat",
             Self::Replay => "trs-replay",
@@ -86,7 +95,17 @@ impl Builtin {
         Self::ALL.into_iter().find(|b| b.id() == id)
     }
 
-    /// FPS-Boost ist von Anfang an bei neuen Instanzen vorausgewählt.
+    /// Eine der drei FPS-Boost-Stufen – davon ist höchstens eine gewählt.
+    pub fn is_fps_tier(self) -> bool {
+        matches!(self, Self::FpsBoost | Self::FpsShaderLite | Self::FpsShader)
+    }
+
+    /// Stufe mit Shadern (Iris + Shaderpaket).
+    pub fn has_shaders(self) -> bool {
+        matches!(self, Self::FpsShaderLite | Self::FpsShader)
+    }
+
+    /// FPS-Boost „Max FPS“ ist von Anfang an bei neuen Instanzen vorausgewählt.
     fn default_auto(self) -> bool {
         matches!(self, Self::FpsBoost)
     }
@@ -97,13 +116,19 @@ impl Builtin {
         matches!(self, Self::VoiceChat | Self::Replay)
     }
 
-    fn groups(self) -> &'static [Group] {
-        match self {
-            Self::FpsBoost => FPS_BOOST,
+    fn groups(self) -> Vec<&'static Group> {
+        let extra: &'static [Group] = match self {
+            Self::FpsShaderLite => SHADER_LITE,
+            Self::FpsShader => SHADER_PRETTY,
+            _ => &[],
+        };
+        let base: &'static [Group] = match self {
+            Self::FpsBoost | Self::FpsShaderLite | Self::FpsShader => FPS_BOOST,
             Self::Nvidium => NVIDIUM,
             Self::VoiceChat => VOICE_CHAT,
             Self::Replay => REPLAY,
-        }
+        };
+        base.iter().chain(extra).collect()
     }
 }
 
@@ -121,9 +146,15 @@ struct BuiltinMod {
 /// VintageFix UND FoamFix) in derselben Instanz.
 struct Group {
     mods: &'static [BuiltinMod],
+    /// Mod (Standard) oder z. B. Shaderpaket.
+    kind: ContentKind,
     /// Liegt eine Mod-Datei mit diesem Namensteil in der Instanz (z. B. von
     /// Hand installiertes OptiFine), wird die Zeile übersprungen.
     file_conflicts: &'static [&'static str],
+    /// Verträgt sich nicht mit diesen Projekten (in der Instanz oder im Plan).
+    project_conflicts: &'static [&'static str],
+    /// Nur sinnvoll, wenn eines dieser Projekte da ist (Shaderpaket → Iris).
+    requires: &'static [&'static str],
 }
 
 const fn m(id: &'static str, title: &'static str, icon: &'static str) -> BuiltinMod {
@@ -131,8 +162,12 @@ const fn m(id: &'static str, title: &'static str, icon: &'static str) -> Builtin
 }
 
 const fn single(mods: &'static [BuiltinMod]) -> Group {
-    Group { mods, file_conflicts: &[] }
+    Group { mods, kind: ContentKind::Mod, file_conflicts: &[], project_conflicts: &[], requires: &[] }
 }
+
+const IRIS_ID: &str = "YL57xq9U";
+const IRIS_TITLE: &str = "Iris Shaders";
+const NVIDIUM_ID: &str = "SfMw2IZN";
 
 const CDN: &str = "https://cdn.modrinth.com/data/";
 
@@ -145,7 +180,10 @@ const FPS_BOOST: &[Group] = &[
             m("AANobbMI", "Sodium", "AANobbMI/295862f4724dc3f78df3447ad6072b2dcd3ef0c9_96.webp"),
             m("sk9rgfiA", "Embeddium", "sk9rgfiA/55f9c50284f8abbbe2a485abfd6a16209201e451_96.webp"),
         ],
+        kind: ContentKind::Mod,
         file_conflicts: &["optifine"],
+        project_conflicts: &[],
+        requires: &[],
     },
     single(&[m("gvQqBUqZ", "Lithium", "gvQqBUqZ/bcc8686c13af0143adf4285d741256af824f70b7_96.webp")]),
     single(&[m("uXXizFIs", "FerriteCore", "uXXizFIs/222a126f26f8f9ae1eb339f3b767677f18bff31f_96.webp")]),
@@ -173,10 +211,40 @@ const FPS_BOOST: &[Group] = &[
     single(&[m("YknNc5nN", "PolyPatcher", "YknNc5nN/28c08fdc63482c25735ec6a2ee965347dfdadd4d_96.webp")]),
 ];
 
+/// Iris lädt Shaderpakete (Fabric, Quilt, NeoForge) – zusammen mit Sodium.
+/// Nvidium ersetzt den Gelände-Renderer und verträgt sich nicht mit Shadern.
+const IRIS: Group = Group {
+    mods: &[m(IRIS_ID, IRIS_TITLE, "YL57xq9U/18d0e7f076d3d6ed5bedd472b853909aac5da202_96.webp")],
+    kind: ContentKind::Mod,
+    file_conflicts: &["optifine"],
+    project_conflicts: &[NVIDIUM_ID],
+    requires: &[],
+};
+
+/// Ein Shaderpaket, das nur zusammen mit Iris Sinn ergibt.
+const fn shader_pack(mods: &'static [BuiltinMod]) -> Group {
+    Group { mods, kind: ContentKind::ShaderPack, file_conflicts: &[], project_conflicts: &[], requires: &[IRIS_ID] }
+}
+
+/// „Shader leicht“: sehr sparsamer Shader, läuft auch auf schwachen PCs.
+const SHADER_LITE: &[Group] = &[
+    IRIS,
+    shader_pack(&[m("izsIPI7a", "MakeUp – Ultra Fast", "izsIPI7a/a08432baa86b8ffd58c08f4b3a001ef976ff764d_96.webp")]),
+];
+
+/// „Shader schön“: Licht, Schatten und Wasser – braucht eine bessere Grafikkarte.
+const SHADER_PRETTY: &[Group] = &[
+    IRIS,
+    shader_pack(&[m("HVnmMxH1", "Complementary Reimagined", "HVnmMxH1/79cb7c8123bbc54945305b2ebad6b8881efdf5f8_96.webp")]),
+];
+
 /// Nvidium rendert Gelände über Mesh-Shader – nur NVIDIA ab GTX 16xx/RTX 20xx.
 const NVIDIUM: &[Group] = &[Group {
-    mods: &[m("SfMw2IZN", "Nvidium", "SfMw2IZN/2db76d464a0f67cdb9e30fd99040eb096ac62016_96.webp")],
+    mods: &[m(NVIDIUM_ID, "Nvidium", "SfMw2IZN/2db76d464a0f67cdb9e30fd99040eb096ac62016_96.webp")],
+    kind: ContentKind::Mod,
     file_conflicts: &["optifine"],
+    project_conflicts: &[IRIS_ID],
+    requires: &[],
 }];
 
 const VOICE_CHAT: &[Group] = &[single(&[m("9eGKb6K1", "Simple Voice Chat", "9eGKb6K1/icon.png")])];
@@ -388,13 +456,22 @@ fn normalize(stored: Vec<StoredPreset>) -> Vec<StoredPreset> {
         own += 1;
         out.push(StoredPreset { id: p.id, name, auto: p.auto, items });
     }
-    let missing: Vec<StoredPreset> = Builtin::ALL
-        .into_iter()
-        .filter(|b| !ids.contains(b.id()))
-        .map(|b| StoredPreset { id: b.id().to_owned(), name: String::new(), auto: b.default_auto(), items: Vec::new() })
-        .collect();
-    let at = out.iter().rposition(|p| Builtin::from_id(&p.id).is_some()).map_or(0, |i| i + 1);
-    out.splice(at..at, missing);
+    let is_builtin = |p: &StoredPreset, tier_only: bool| Builtin::from_id(&p.id).is_some_and(|b| !tier_only || b.is_fps_tier());
+    for b in Builtin::ALL.into_iter().filter(|b| !ids.contains(b.id())) {
+        // Neue FPS-Stufen direkt hinter die vorhandene(n), sonst hinter das letzte fertige Preset.
+        let after = b
+            .is_fps_tier()
+            .then(|| out.iter().rposition(|p| is_builtin(p, true)))
+            .flatten()
+            .or_else(|| out.iter().rposition(|p| is_builtin(p, false)));
+        let at = after.map_or(0, |i| i + 1);
+        out.insert(at, StoredPreset { id: b.id().to_owned(), name: String::new(), auto: b.default_auto(), items: Vec::new() });
+    }
+    // Von den FPS-Stufen ist höchstens eine automatisch (die erste gewinnt).
+    let mut tier_auto = false;
+    for p in out.iter_mut().filter(|p| p.auto && is_builtin(p, true)) {
+        p.auto = !std::mem::replace(&mut tier_auto, true);
+    }
     out
 }
 
@@ -415,7 +492,7 @@ fn builtin_items(builtin: Builtin) -> Vec<PresetItem> {
                 project_id: first.id.to_owned(),
                 title,
                 icon_url: first.icon.map(|i| format!("{CDN}{i}")),
-                kind: ContentKind::Mod,
+                kind: g.kind,
             }
         })
         .collect()
@@ -507,9 +584,18 @@ pub async fn update(paths: &Paths, id: &str, input: PresetInput) -> Result<Prese
     Ok(view(&stored, true))
 }
 
-/// „Immer automatisch“ – auch für die fertigen Presets.
+/// „Immer automatisch“ – auch für die fertigen Presets. Von den FPS-Stufen
+/// ist höchstens eine automatisch: Eine anschalten schaltet die anderen ab.
 pub async fn set_auto(paths: &Paths, id: &str, auto: bool) -> Result<Preset> {
     let stored = modify(paths, |list| {
+        if !list.iter().any(|p| p.id == id) {
+            return Err(not_found());
+        }
+        if auto && Builtin::from_id(id).is_some_and(Builtin::is_fps_tier) {
+            for other in list.iter_mut().filter(|p| p.id != id && Builtin::from_id(&p.id).is_some_and(Builtin::is_fps_tier)) {
+                other.auto = false;
+            }
+        }
         let preset = list.iter_mut().find(|p| p.id == id).ok_or_else(not_found)?;
         preset.auto = auto;
         Ok(preset.clone())
@@ -688,6 +774,12 @@ pub(crate) struct Wanted {
     pub kind: ContentKind,
     pub candidates: Vec<Candidate>,
     pub file_conflicts: Vec<String>,
+    /// Verträgt sich nicht mit diesen Projekten (Instanz oder Plan).
+    pub project_conflicts: Vec<String>,
+    /// Nur, wenn eines dieser Projekte in der Instanz oder im Plan ist.
+    pub requires: Vec<String>,
+    /// Wird bewusst nicht installiert – wegen dieses Projekts (Titel).
+    pub blocked_by: Option<String>,
     /// Teil einer Sammlung (FPS-Boost): fehlt es für die Version, ist das normal.
     pub optional: bool,
 }
@@ -696,10 +788,10 @@ fn wanted_of(preset: &Preset) -> Vec<Wanted> {
     match preset.builtin {
         Some(b) => b
             .groups()
-            .iter()
+            .into_iter()
             .map(|g| Wanted {
                 preset_id: preset.id.clone(),
-                kind: ContentKind::Mod,
+                kind: g.kind,
                 candidates: g
                     .mods
                     .iter()
@@ -711,7 +803,10 @@ fn wanted_of(preset: &Preset) -> Vec<Wanted> {
                     })
                     .collect(),
                 file_conflicts: g.file_conflicts.iter().map(|f| (*f).to_owned()).collect(),
-                optional: b == Builtin::FpsBoost,
+                project_conflicts: g.project_conflicts.iter().map(|f| (*f).to_owned()).collect(),
+                requires: g.requires.iter().map(|f| (*f).to_owned()).collect(),
+                blocked_by: None,
+                optional: b.is_fps_tier(),
             })
             .collect(),
         None => preset
@@ -727,6 +822,9 @@ fn wanted_of(preset: &Preset) -> Vec<Wanted> {
                     from_1_20: false,
                 }],
                 file_conflicts: Vec::new(),
+                project_conflicts: Vec::new(),
+                requires: Vec::new(),
+                blocked_by: None,
                 optional: false,
             })
             .collect(),
@@ -866,6 +964,8 @@ pub struct ApplyReport {
     pub files: Vec<String>,
     /// Davon Abhängigkeiten.
     pub dependencies: u32,
+    /// Shaderpaket, das jetzt in Iris eingeschaltet ist (Dateiname).
+    pub shader_pack: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -1030,6 +1130,14 @@ async fn resolve_one<L: VersionLookup>(
     if wanted.kind == ContentKind::Mod && target.loaders.is_empty() {
         return Ok(outcome(ItemStatus::NeedsLoader, None));
     }
+    if let Some(other) = &wanted.blocked_by {
+        return Ok(ItemOutcome { detail: Some(other.clone()), ..outcome(ItemStatus::Incompatible, None) });
+    }
+    let present = |id: &String| existing.projects.contains_key(id) || planned.contains_key(id);
+    // Shaderpaket ohne Iris (Forge, Vanilla, Iris gibt es hier nicht): fällt weg.
+    if !wanted.requires.is_empty() && !wanted.requires.iter().any(present) {
+        return Ok(outcome(ItemStatus::NotAvailable, None));
+    }
     if let Some(c) = wanted.candidates.iter().find(|c| existing.projects.contains_key(&c.project_id)) {
         return Ok(outcome(ItemStatus::AlreadyInstalled, Some(c)));
     }
@@ -1038,6 +1146,10 @@ async fn resolve_one<L: VersionLookup>(
     }
     if let Some(file) = existing.mod_files.iter().find(|f| wanted.file_conflicts.iter().any(|c| f.contains(c.as_str()))) {
         return Ok(ItemOutcome { detail: Some(file.clone()), ..outcome(ItemStatus::Incompatible, None) });
+    }
+    if let Some(other) = wanted.project_conflicts.iter().find(|id| present(id)) {
+        let detail = lookup.title(other).await.unwrap_or_else(|| other.clone());
+        return Ok(ItemOutcome { detail: Some(detail), ..outcome(ItemStatus::Incompatible, None) });
     }
 
     let mut last = outcome(ItemStatus::NotAvailable, None);
@@ -1157,6 +1269,7 @@ async fn execute(
         items,
         files: installed.into_iter().map(|i| i.file_name).collect(),
         dependencies,
+        shader_pack: None,
     })
 }
 
@@ -1191,16 +1304,158 @@ pub async fn apply(
         return Err(too_many());
     }
     let all = list(paths).await?;
-    let mut wanted = Vec::new();
-    let mut seen = HashSet::new();
-    for id in preset_ids {
-        if !seen.insert(id.as_str()) {
-            continue;
-        }
-        let preset = all.iter().find(|p| &p.id == id).ok_or_else(not_found)?;
-        wanted.extend(wanted_of(preset));
+    if preset_ids.iter().any(|id| !all.iter().any(|p| &p.id == id)) {
+        return Err(not_found());
     }
-    run(http, paths, instance, &wanted, progress).await
+    let chosen: Vec<&Preset> = all.iter().filter(|p| preset_ids.contains(&p.id)).collect();
+    let wanted = wanted_for(&chosen);
+    let mut report = run(http, paths, instance, &wanted, progress).await?;
+    // Shader-Stufe: das Paket gleich in Iris einschalten.
+    let tier = chosen.iter().filter_map(|p| p.builtin).find(|b| b.is_fps_tier());
+    if let Some(shader_id) = tier.and_then(shader_project) {
+        report.shader_pack = activate_shader(paths, instance, &report, shader_id).await;
+    }
+    Ok(report)
+}
+
+/// Was installiert werden soll – in der gespeicherten Reihenfolge der Presets.
+/// Von den FPS-Stufen zählt nur die erste; mit einer Shader-Stufe bleibt
+/// Nvidium draußen (es verträgt sich nicht mit Iris).
+fn wanted_for(chosen: &[&Preset]) -> Vec<Wanted> {
+    let tier = chosen.iter().filter_map(|p| p.builtin).find(|b| b.is_fps_tier());
+    let shaders = tier.is_some_and(Builtin::has_shaders);
+    let mut wanted = Vec::new();
+    for preset in chosen {
+        match preset.builtin {
+            Some(b) if b.is_fps_tier() && Some(b) != tier => {
+                tracing::info!("FPS-Stufe {} übersprungen – es gilt {}", b.id(), tier.map_or("", Builtin::id));
+            }
+            Some(Builtin::Nvidium) if shaders => {
+                wanted.extend(wanted_of(preset).into_iter().map(|w| Wanted { blocked_by: Some(IRIS_TITLE.to_owned()), ..w }));
+            }
+            _ => wanted.extend(wanted_of(preset)),
+        }
+    }
+    wanted
+}
+
+/// Projekt-ID des Shaderpakets einer FPS-Stufe.
+fn shader_project(tier: Builtin) -> Option<&'static str> {
+    tier.groups().into_iter().find(|g| g.kind == ContentKind::ShaderPack).map(|g| g.mods[0].id)
+}
+
+/// Schaltet das Shaderpaket in `config/iris.properties` ein – nur, wenn Iris
+/// und das Paket da sind. Liefert den Dateinamen des Pakets.
+async fn activate_shader(paths: &Paths, instance: &Instance, report: &ApplyReport, shader_id: &str) -> Option<String> {
+    let ok = |id: &str| {
+        report.items.iter().any(|i| {
+            i.project_id.as_deref() == Some(id)
+                && matches!(i.status, ItemStatus::Installed | ItemStatus::AlreadyInstalled | ItemStatus::Duplicate)
+        })
+    };
+    if !ok(IRIS_ID) || !ok(shader_id) {
+        return None;
+    }
+    let file = content::files_of_project(paths, &instance.id, shader_id)
+        .await
+        .into_iter()
+        .find(|(kind, _)| *kind == ContentKind::ShaderPack)
+        .map(|(_, file)| file)?;
+    let config = paths.instance_game_dir(&instance.id).join("config").join("iris.properties");
+    let before = tokio::fs::read(&config).await.map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_default();
+    let text = set_properties(&before, &[("enableShaders", "true"), ("shaderPack", &file)]);
+    match fsutil::write_atomic(&config, text.as_bytes()).await {
+        Ok(()) => Some(file),
+        Err(e) => {
+            tracing::warn!("iris.properties konnte nicht geschrieben werden: {e}");
+            None
+        }
+    }
+}
+
+/// Setzt Schlüssel in einer Java-Properties-Datei (andere Zeilen bleiben).
+fn set_properties(text: &str, pairs: &[(&str, &str)]) -> String {
+    let mut lines: Vec<String> = text.lines().map(str::to_owned).collect();
+    for (key, value) in pairs {
+        let line = format!("{key}={}", escape_property(value));
+        match lines.iter().position(|l| property_key(l) == Some(*key)) {
+            Some(i) => {
+                lines[i] = line;
+                // Doppelte Einträge desselben Schlüssels entfernen (sonst gilt der letzte).
+                let mut n = i + 1;
+                while n < lines.len() {
+                    if property_key(&lines[n]) == Some(*key) {
+                        lines.remove(n);
+                    } else {
+                        n += 1;
+                    }
+                }
+            }
+            None => lines.push(line),
+        }
+    }
+    let mut out = lines.join("\n");
+    out.push('\n');
+    out
+}
+
+/// Schlüssel einer Properties-Zeile (ohne Kommentare/Leerzeilen).
+fn property_key(line: &str) -> Option<&str> {
+    let line = line.trim_start();
+    if line.is_empty() || line.starts_with(['#', '!']) {
+        return None;
+    }
+    let end = line.find(['=', ':', ' ', '\t']).unwrap_or(line.len());
+    Some(&line[..end])
+}
+
+/// Wert für `Properties.load` (ISO-8859-1): Sonderzeichen und alles außerhalb ASCII escapen.
+fn escape_property(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for (i, c) in value.chars().enumerate() {
+        match c {
+            '\\' => out.push_str("\\\\"),
+            '=' | ':' | '#' | '!' => {
+                out.push('\\');
+                out.push(c);
+            }
+            ' ' if i == 0 => out.push_str("\\ "),
+            c if c.is_ascii() && !c.is_ascii_control() => out.push(c),
+            c => {
+                let mut buf = [0u16; 2];
+                for unit in c.encode_utf16(&mut buf) {
+                    out.push_str(&format!("\\u{unit:04x}"));
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Namensteile von Mod-Dateien, die schon einen eigenen Renderer mitbringen.
+const RENDERER_FILES: &[&str] = &["sodium", "embeddium", "rubidium", "optifine", "optifabric", "magnesium", "celeritas"];
+
+/// Soll die Instanzseite „FPS-Boost anwenden“ vorschlagen? Nur bei Instanzen
+/// mit Modloader, die weder Sodium/Embeddium noch OptiFine haben – und nie
+/// bei Modpacks (die bringen ihre eigene Auswahl mit).
+pub async fn suggest_fps_boost(paths: &Paths, instance: &Instance) -> Result<bool> {
+    if !matches!(instance.loader.kind, LoaderKind::Fabric | LoaderKind::Quilt | LoaderKind::Forge | LoaderKind::NeoForge) {
+        return Ok(false);
+    }
+    let from_modpack = crate::history::list(paths, &instance.id).await?.iter().any(|e| {
+        e.kind == crate::history::HistoryKind::Created && e.detail.as_deref() == Some("modpack")
+    });
+    if from_modpack {
+        return Ok(false);
+    }
+    let existing = existing(paths, &instance.id).await?;
+    Ok(!has_renderer(&existing))
+}
+
+fn has_renderer(existing: &Existing) -> bool {
+    let renderer_ids = FPS_BOOST[0].mods.iter().map(|m| m.id);
+    renderer_ids.into_iter().any(|id| existing.projects.contains_key(id))
+        || existing.mod_files.iter().any(|f| RENDERER_FILES.iter().any(|r| f.contains(r)))
 }
 
 /// Das FPS-Boost-Preset (für die TRS-Optimierung und den Einrichtungs-
@@ -1297,6 +1552,9 @@ mod tests {
                 .map(|id| Candidate { project_id: (*id).into(), title: format!("T-{id}"), icon_url: None, from_1_20: false })
                 .collect(),
             file_conflicts: Vec::new(),
+            project_conflicts: Vec::new(),
+            requires: Vec::new(),
+            blocked_by: None,
             optional: false,
         }
     }
@@ -1457,6 +1715,227 @@ mod tests {
         let legacy = FPS_BOOST.iter().find(|g| g.mods.iter().any(|m| m.title == "VintageFix")).unwrap();
         assert!(legacy.mods.iter().any(|m| m.title == "FoamFix"));
         assert!(!Builtin::FpsBoost.modpack_safe() && Builtin::VoiceChat.modpack_safe());
+
+        // Stufen: alle mit dem ganzen FPS-Boost; Shader-Stufen dazu Iris + genau ein Shaderpaket, das Iris braucht.
+        let tiers: Vec<Builtin> = Builtin::ALL.into_iter().filter(|b| b.is_fps_tier()).collect();
+        assert_eq!(tiers, [Builtin::FpsBoost, Builtin::FpsShaderLite, Builtin::FpsShader]);
+        for tier in tiers {
+            assert!(!tier.modpack_safe());
+            assert_eq!(tier.default_auto(), tier == Builtin::FpsBoost, "Standard bleibt „Max FPS“");
+            let groups = tier.groups();
+            assert!(FPS_BOOST.iter().all(|g| groups.iter().any(|x| x.mods[0].id == g.mods[0].id)));
+            let packs: Vec<_> = groups.iter().filter(|g| g.kind == ContentKind::ShaderPack).collect();
+            let has_iris = groups.iter().any(|g| g.mods[0].id == IRIS_ID);
+            assert_eq!(tier.has_shaders(), has_iris);
+            assert_eq!(packs.len(), usize::from(tier.has_shaders()));
+            for p in packs {
+                assert_eq!(p.requires, [IRIS_ID]);
+            }
+        }
+        assert_eq!(shader_project(Builtin::FpsShaderLite), Some("izsIPI7a"));
+        assert_eq!(shader_project(Builtin::FpsShader), Some("HVnmMxH1"));
+        assert_eq!(shader_project(Builtin::FpsBoost), None);
+        // Nvidium und Iris schließen sich gegenseitig aus.
+        assert_eq!(NVIDIUM[0].project_conflicts, [IRIS_ID]);
+        assert_eq!(IRIS.project_conflicts, [NVIDIUM_ID]);
+        let items = builtin_items(Builtin::FpsShader);
+        assert_eq!(items.last().unwrap().kind, ContentKind::ShaderPack);
+    }
+
+    fn builtin_view(b: Builtin) -> Preset {
+        view(&StoredPreset { id: b.id().into(), name: String::new(), auto: false, items: Vec::new() }, true)
+    }
+
+    fn ids_of(wanted: &[Wanted]) -> Vec<&str> {
+        wanted.iter().map(|w| w.candidates[0].project_id.as_str()).collect()
+    }
+
+    #[test]
+    fn only_one_fps_tier_and_no_nvidium_with_shaders() {
+        let (max, lite, pretty, nv) = (
+            builtin_view(Builtin::FpsBoost),
+            builtin_view(Builtin::FpsShaderLite),
+            builtin_view(Builtin::FpsShader),
+            builtin_view(Builtin::Nvidium),
+        );
+        // Zwei Stufen gewählt: nur die erste zählt (kein doppeltes Shaderpaket).
+        let wanted = wanted_for(&[&lite, &pretty]);
+        let ids = ids_of(&wanted);
+        assert!(ids.contains(&"izsIPI7a") && !ids.contains(&"HVnmMxH1"));
+        assert_eq!(ids.iter().filter(|id| **id == IRIS_ID).count(), 1);
+        assert!(wanted.iter().all(|w| w.optional));
+
+        // Shader + Nvidium: Nvidium wird mit Grund übersprungen.
+        let wanted = wanted_for(&[&pretty, &nv]);
+        let nvidium = wanted.iter().find(|w| w.candidates[0].project_id == NVIDIUM_ID).unwrap();
+        assert_eq!(nvidium.blocked_by.as_deref(), Some(IRIS_TITLE));
+        // Max FPS + Nvidium: geht wie bisher.
+        let wanted = wanted_for(&[&max, &nv]);
+        assert!(wanted.iter().all(|w| w.blocked_by.is_none()));
+        assert!(!ids_of(&wanted).contains(&IRIS_ID));
+    }
+
+    fn shader_wanted() -> [Wanted; 2] {
+        let mut iris = want("tier", &[IRIS_ID]);
+        iris.project_conflicts = vec![NVIDIUM_ID.into()];
+        iris.optional = true;
+        let mut pack = want("tier", &["makeup"]);
+        pack.kind = ContentKind::ShaderPack;
+        pack.requires = vec![IRIS_ID.into()];
+        pack.optional = true;
+        [iris, pack]
+    }
+
+    #[tokio::test]
+    async fn shader_pack_needs_iris() {
+        let mock = Mock::default().with(version("iris1", IRIS_ID, &[])).with(version("mu1", "makeup", &[]));
+        let plan = plan_for(&mock, &target("1.21.1"), &Existing::default(), &shader_wanted()).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Installed]);
+        assert_eq!(plan.steps[1].kind, ContentKind::ShaderPack);
+
+        // Kein Iris (z. B. Forge): Paket fällt still weg, ohne nachzuschlagen.
+        let mock = Mock::default().with(version("mu1", "makeup", &[]));
+        let plan = plan_for(&mock, &target("1.20.1"), &Existing::default(), &shader_wanted()).await;
+        assert_eq!(statuses(&plan), [ItemStatus::NotAvailable, ItemStatus::NotAvailable]);
+        assert!(plan.items.iter().all(|i| i.optional) && plan.steps.is_empty());
+        assert!(!mock.calls.lock().unwrap().contains(&"makeup".to_owned()));
+
+        // Iris schon in der Instanz: Paket kommt dazu.
+        let existing = Existing { projects: HashMap::from([(IRIS_ID.into(), None)]), mod_files: Vec::new() };
+        let plan = plan_for(&mock, &target("1.21.1"), &existing, &shader_wanted()).await;
+        assert_eq!(statuses(&plan), [ItemStatus::AlreadyInstalled, ItemStatus::Installed]);
+    }
+
+    #[tokio::test]
+    async fn nvidium_in_the_instance_blocks_iris() {
+        let mock = Mock::default().with(version("iris1", IRIS_ID, &[])).with(version("mu1", "makeup", &[]));
+        let existing = Existing { projects: HashMap::from([(NVIDIUM_ID.into(), None)]), mod_files: Vec::new() };
+        let plan = plan_for(&mock, &target("1.21.1"), &existing, &shader_wanted()).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Incompatible, ItemStatus::NotAvailable]);
+        assert_eq!(plan.items[0].detail.as_deref(), Some(format!("Titel {NVIDIUM_ID}").as_str()));
+
+        // Bewusst ausgeschlossen: Grund steht im Bericht.
+        let mut nv = want("nv", &[NVIDIUM_ID]);
+        nv.blocked_by = Some(IRIS_TITLE.into());
+        let plan = plan_for(&mock, &target("1.21.1"), &Existing::default(), &[nv]).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Incompatible]);
+        assert_eq!(plan.items[0].detail.as_deref(), Some(IRIS_TITLE));
+    }
+
+    #[test]
+    fn iris_properties_keep_other_keys() {
+        let before = "# Iris\ncolorSpace=SRGB\nenableShaders=false\nshaderPack=Alt.zip\nshaderPack=Doppelt.zip\n";
+        let after = set_properties(before, &[("enableShaders", "true"), ("shaderPack", "MakeUp-UltraFast-9.5e.zip")]);
+        assert_eq!(after, "# Iris\ncolorSpace=SRGB\nenableShaders=true\nshaderPack=MakeUp-UltraFast-9.5e.zip\n");
+        assert_eq!(set_properties("", &[("enableShaders", "true")]), "enableShaders=true\n");
+        // Sonderzeichen und Umlaute so, wie Properties.load sie liest.
+        assert_eq!(escape_property("a=b:c#ä \\"), "a\\=b\\:c\\#\\u00e4 \\\\");
+        assert_eq!(escape_property(" x"), "\\ x");
+        assert_eq!(property_key("  shaderPack = x"), Some("shaderPack"));
+        assert_eq!(property_key("# shaderPack=x"), None);
+    }
+
+    #[tokio::test]
+    async fn shader_is_switched_on_after_install() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let inst = Instance {
+            id: "shader".into(),
+            name: "S".into(),
+            game_version: "1.21.1".into(),
+            loader: crate::instance::Loader { kind: LoaderKind::Fabric, version: None },
+            created_at: chrono::Utc::now(),
+            last_played: None,
+            total_play_seconds: 0,
+            icon: None,
+            group: None,
+            overrides: Default::default(),
+        };
+        let file = "MakeUp-UltraFast-9.5e.zip";
+        content::remember_source(
+            &paths,
+            &inst.id,
+            ContentKind::ShaderPack,
+            file,
+            content::Source::modrinth("izsIPI7a".into(), "v1".into(), None),
+        )
+        .await
+        .unwrap();
+        let config = paths.instance_game_dir(&inst.id).join("config/iris.properties");
+        tokio::fs::create_dir_all(config.parent().unwrap()).await.unwrap();
+        tokio::fs::write(&config, "maxShadowRenderDistance=16\n").await.unwrap();
+
+        let item = |id: &str, status| ItemOutcome {
+            preset_id: "trs-fps-shader-lite".into(),
+            project_id: Some(id.into()),
+            title: id.into(),
+            icon_url: None,
+            kind: ContentKind::Mod,
+            status,
+            optional: true,
+            version_number: None,
+            detail: None,
+            error: None,
+        };
+        let mut report = ApplyReport {
+            game_version: "1.21.1".into(),
+            loader: LoaderKind::Fabric,
+            items: vec![item(IRIS_ID, ItemStatus::Installed), item("izsIPI7a", ItemStatus::AlreadyInstalled)],
+            files: Vec::new(),
+            dependencies: 0,
+            shader_pack: None,
+        };
+        assert_eq!(activate_shader(&paths, &inst, &report, "izsIPI7a").await.as_deref(), Some(file));
+        let text = tokio::fs::read_to_string(&config).await.unwrap();
+        assert_eq!(text, format!("maxShadowRenderDistance=16\nenableShaders=true\nshaderPack={file}\n"));
+
+        // Iris fehlt: nichts einschalten.
+        report.items[0].status = ItemStatus::NotAvailable;
+        assert_eq!(activate_shader(&paths, &inst, &report, "izsIPI7a").await, None);
+    }
+
+    #[test]
+    fn renderer_mods_hide_the_boost_hint() {
+        assert!(!has_renderer(&Existing::default()));
+        let sodium = Existing { projects: HashMap::from([("AANobbMI".into(), None)]), mod_files: Vec::new() };
+        assert!(has_renderer(&sodium));
+        for file in ["optifine_1.20.1_hd_u_i6.jar", "rubidium-0.7.1.jar", "embeddium-1.0.jar"] {
+            assert!(has_renderer(&Existing { projects: HashMap::new(), mod_files: vec![file.into()] }), "{file}");
+        }
+        assert!(!has_renderer(&Existing { projects: HashMap::new(), mod_files: vec!["lithium.jar".into()] }));
+    }
+
+    #[tokio::test]
+    async fn boost_hint_only_for_modded_non_pack_instances() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let mut inst = Instance {
+            id: "hint".into(),
+            name: "H".into(),
+            game_version: "1.21.1".into(),
+            loader: crate::instance::Loader { kind: LoaderKind::Fabric, version: None },
+            created_at: chrono::Utc::now(),
+            last_played: None,
+            total_play_seconds: 0,
+            icon: None,
+            group: None,
+            overrides: Default::default(),
+        };
+        tokio::fs::create_dir_all(paths.instance_game_dir(&inst.id)).await.unwrap();
+        tokio::fs::write(paths.instance_file(&inst.id), b"{}").await.unwrap();
+        assert!(suggest_fps_boost(&paths, &inst).await.unwrap());
+        inst.loader = crate::instance::Loader::vanilla();
+        assert!(!suggest_fps_boost(&paths, &inst).await.unwrap());
+        inst.loader = crate::instance::Loader { kind: LoaderKind::Forge, version: None };
+        assert!(suggest_fps_boost(&paths, &inst).await.unwrap());
+        // Aus einem Modpack: kein Hinweis.
+        crate::history::record(
+            &paths,
+            &inst.id,
+            crate::history::HistoryEntry::new(crate::history::HistoryKind::Created).detail("modpack"),
+        )
+        .await;
+        assert!(!suggest_fps_boost(&paths, &inst).await.unwrap());
     }
 
     #[test]
@@ -1471,13 +1950,28 @@ mod tests {
             own("fedcba9876543210fedcba9876543210", "   "),
         ]);
         let ids: Vec<&str> = list.iter().map(|p| p.id.as_str()).collect();
-        // Fehlende fertige Presets landen hinter den vorhandenen fertigen.
-        assert_eq!(ids, [good, "trs-replay", "trs-fps-boost", "trs-nvidium", "trs-voice-chat"]);
+        // Fehlende fertige Presets landen hinter den vorhandenen fertigen, die Stufen beisammen.
+        assert_eq!(
+            ids,
+            [good, "trs-replay", "trs-fps-boost", "trs-fps-shader-lite", "trs-fps-shader", "trs-nvidium", "trs-voice-chat"]
+        );
         assert!(list[1].name.is_empty());
         assert!(list.iter().find(|p| p.id == "trs-fps-boost").unwrap().auto);
+        assert!(!list.iter().find(|p| p.id == "trs-fps-shader").unwrap().auto);
 
         let fresh: Vec<String> = normalize(Vec::new()).into_iter().map(|p| p.id).collect();
         assert_eq!(fresh, Builtin::ALL.map(|b| b.id().to_owned()));
+
+        // Bestehende Liste aus 0.5.0: neue Stufen direkt hinter „FPS-Boost“.
+        let old = normalize(["trs-voice-chat", "trs-fps-boost", "trs-nvidium", "trs-replay"].map(|id| own(id, "")).to_vec());
+        let ids: Vec<&str> = old.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(ids, ["trs-voice-chat", "trs-fps-boost", "trs-fps-shader-lite", "trs-fps-shader", "trs-nvidium", "trs-replay"]);
+
+        // Zwei Stufen automatisch (von Hand bearbeitet): nur die erste bleibt es.
+        let auto = |id: &str| StoredPreset { id: id.into(), name: String::new(), auto: true, items: Vec::new() };
+        let fixed = normalize(vec![auto("trs-fps-shader"), auto("trs-fps-boost")]);
+        let on: Vec<&str> = fixed.iter().filter(|p| p.auto).map(|p| p.id.as_str()).collect();
+        assert_eq!(on, ["trs-fps-shader"]);
     }
 
     fn item(id: &str) -> PresetItem {
@@ -1548,6 +2042,12 @@ mod tests {
         assert!(update(&paths, "trs-replay", PresetInput { name: "x".into(), auto: false, items: vec![] }).await.is_err());
         assert!(delete(&paths, "trs-fps-boost").await.is_err());
         assert!(set_auto(&paths, "trs-voice-chat", true).await.unwrap().auto);
+        // FPS-Stufen: eine automatisch schaltet die anderen ab.
+        assert!(set_auto(&paths, "trs-fps-shader-lite", true).await.unwrap().auto);
+        let auto_tiers: Vec<String> =
+            list(&paths).await.unwrap().into_iter().filter(|p| p.auto && p.builtin.is_some_and(Builtin::is_fps_tier)).map(|p| p.id).collect();
+        assert_eq!(auto_tiers, ["trs-fps-shader-lite"]);
+        assert!(set_auto(&paths, "gibt-es-nicht", true).await.is_err());
 
         let mut ids: Vec<String> = list(&paths).await.unwrap().into_iter().map(|p| p.id).collect();
         ids.reverse();
