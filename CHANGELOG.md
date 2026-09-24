@@ -28,6 +28,15 @@ How to write an entry:
 - **Memory that fits your PC.** New installations start with 6 GB on PCs with 16 GB or more, 4 GB from 8 GB and
   half of the memory below that. If more is set than the PC has, the game gets at most your memory minus 2 GB so
   Windows doesn't have to swap. Existing settings are kept.
+- **FPS boost with shaders – pick your level.** When creating an instance or applying presets, the FPS boost now
+  comes in three levels: **Max FPS** (optimisations only, for weaker PCs), **Light shaders** (plus Iris and the
+  very light MakeUp – Ultra Fast shader) and **Pretty shaders** (plus Iris and Complementary Reimagined). The shader
+  is switched on right away; press **K** in game to turn shaders on or off. Shaders are available with Fabric,
+  Quilt and NeoForge; elsewhere they are skipped and named in the summary. Nvidium can't be combined with shaders
+  and is left out. New instances still start with Max FPS.
+- **FPS boost for existing instances.** Instances with a mod loader but without Sodium, Embeddium or OptiFine now
+  show a small hint with the level choice – one click installs the boost. Hide it once and it stays hidden for that
+  instance; modpacks never show it.
 
 ### Deutsch
 
@@ -41,6 +50,15 @@ How to write an entry:
 - **Arbeitsspeicher passend zu deinem PC.** Neue Installationen starten mit 6 GB auf PCs ab 16 GB, mit 4 GB ab
   8 GB und darunter mit der Hälfte. Ist mehr eingestellt, als der PC hat, bekommt das Spiel höchstens deinen
   Speicher minus 2 GB, damit Windows nicht auslagern muss. Bestehende Einstellungen bleiben.
+- **FPS-Boost mit Shadern – Stufe wählbar.** Beim Anlegen einer Instanz und bei „Preset anwenden“ gibt es den
+  FPS-Boost jetzt in drei Stufen: **Max FPS** (nur Optimierungen, für schwache PCs), **Shader leicht** (dazu Iris
+  und der sehr sparsame Shader MakeUp – Ultra Fast) und **Shader schön** (dazu Iris und Complementary Reimagined).
+  Der Shader ist gleich eingeschaltet; mit der Taste **K** schaltest du Shader im Spiel an und aus. Shader gibt es
+  mit Fabric, Quilt und NeoForge; sonst werden sie übersprungen und in der Zusammenfassung genannt. Nvidium lässt
+  sich nicht mit Shadern kombinieren und bleibt dann weg. Neue Instanzen starten weiterhin mit Max FPS.
+- **FPS-Boost für bestehende Instanzen.** Instanzen mit Modloader, aber ohne Sodium, Embeddium oder OptiFine zeigen
+  jetzt einen kleinen Hinweis mit Stufenwahl – ein Klick installiert den Boost. Einmal ausgeblendet, bleibt er für
+  diese Instanz weg; bei Modpacks erscheint er nie.
 
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 

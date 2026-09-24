@@ -216,7 +216,8 @@ export async function applyPresetsTask(instance: Pick<Instance, 'id' | 'name'>, 
   if (result.ok) {
     const report = result.value
     const action = { label: t('presets.report.details'), run: () => presets.openReport(report, instance) }
-    const text = `${instance.name}: ${presetSummaryText(report)}`
+    const shader = report.shaderPack ? ` · ${t('presets.report.shaderToast')}` : ''
+    const text = `${instance.name}: ${presetSummaryText(report)}${shader}`
     if (summarizePresetReport(report).problems.length) toasts.info(text, action)
     else toasts.ok(text, action)
   } else if (!result.cancelled && !result.discarded) {

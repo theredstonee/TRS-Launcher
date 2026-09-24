@@ -2608,7 +2608,7 @@
     "itemCount": "{n} Projekt | {n} Projekte",
     "builtin": {
       "fpsBoost": {
-        "name": "FPS-Boost",
+        "name": "FPS-Boost: Max FPS",
         "description": "Sodium oder Embeddium, Lithium, FerriteCore, ModernFix & Co. – was zu Version und Loader passt"
       },
       "nvidium": {
@@ -2622,6 +2622,14 @@
       "replay": {
         "name": "Replay",
         "description": "Flashback, wo verfügbar, sonst ReplayMod – Spielszenen aufnehmen und schneiden"
+      },
+      "fpsShaderLite": {
+        "name": "FPS-Boost: Shader leicht",
+        "description": "Alles aus Max FPS plus Iris und der sehr sparsame Shader MakeUp – Ultra Fast. Taste K schaltet Shader im Spiel an und aus."
+      },
+      "fpsShader": {
+        "name": "FPS-Boost: Shader schön",
+        "description": "Alles aus Max FPS plus Iris und Complementary Reimagined – schönes Licht, Schatten und Wasser. Taste K schaltet Shader im Spiel an und aus."
       }
     },
     "picker": {
@@ -2629,7 +2637,8 @@
       "manage": "Presets verwalten",
       "vanillaBoost": "Vanilla bekommt das schon über die TRS-Optimierung",
       "needsLoader": "Mods brauchen einen Modloader – in einer Vanilla-Instanz kommen nur Ressourcenpakete und Shader dazu.",
-      "useFabric": "Fabric nehmen"
+      "useFabric": "Fabric nehmen",
+      "nvidiumShaders": "Nicht mit Shadern kombinierbar"
     },
     "apply": {
       "title": "Preset anwenden",
@@ -2651,7 +2660,9 @@
       "allDone": "{n} Projekt installiert | Alle {n} Projekte installiert",
       "partial": "{done} von {total} installiert",
       "more": "(+{n} weiteres) | (+{n} weitere)",
-      "details": "Details"
+      "details": "Details",
+      "shaderOn": "Shader sind an: {name}. Mit der Taste K schaltest du sie im Spiel an und aus.",
+      "shaderToast": "Shader an (K schaltet um)"
     },
     "reason": {
       "installed": "Installiert",
@@ -2706,6 +2717,31 @@
       "moveUp": "Nach oben",
       "moveDown": "Nach unten",
       "footer": "Presets mit Freunden teilen: über Exportieren speichern – mit Importieren lässt sich die Datei laden."
+    },
+    "tiers": {
+      "title": "FPS-Boost",
+      "label": "Stufe des FPS-Boosts",
+      "summary": "Sodium oder Embeddium, Lithium, FerriteCore & Co. – wähle eine Stufe",
+      "keyHint": "Mit der Taste K schaltest du Shader im Spiel an und aus.",
+      "noShaders": "Shader gibt es nur mit Fabric, Quilt oder NeoForge",
+      "fpsBoost": {
+        "name": "Max FPS",
+        "hint": "Nur Optimierungen – für schwache PCs und die meisten FPS"
+      },
+      "fpsShaderLite": {
+        "name": "Shader leicht",
+        "hint": "Leichter Shader, läuft auch auf einfachen Grafikkarten"
+      },
+      "fpsShader": {
+        "name": "Shader schön",
+        "hint": "Licht, Schatten und Wasser – für starke Grafikkarten"
+      }
+    },
+    "hint": {
+      "title": "Mehr FPS für diese Instanz",
+      "text": "Hier ist noch kein Sodium oder Embeddium drin. Der FPS-Boost installiert passende Optimierungen – wähle eine Stufe:",
+      "apply": "FPS-Boost anwenden",
+      "dismiss": "Hinweis ausblenden"
     }
   },
   "updateNews": {

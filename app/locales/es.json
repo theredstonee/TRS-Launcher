@@ -2608,7 +2608,7 @@
     "itemCount": "{n} proyecto | {n} proyectos",
     "builtin": {
       "fpsBoost": {
-        "name": "Impulso de FPS",
+        "name": "Impulso de FPS: Máx. FPS",
         "description": "Sodium o Embeddium, Lithium, FerriteCore, ModernFix y más: lo que encaje con la versión y el loader"
       },
       "nvidium": {
@@ -2622,6 +2622,14 @@
       "replay": {
         "name": "Replay",
         "description": "Flashback donde esté disponible; si no, ReplayMod: graba y edita partidas"
+      },
+      "fpsShaderLite": {
+        "name": "Impulso de FPS: Shaders ligeros",
+        "description": "Todo lo de Máx. FPS más Iris y el shader muy ligero MakeUp – Ultra Fast. La tecla K activa y desactiva los shaders en el juego."
+      },
+      "fpsShader": {
+        "name": "Impulso de FPS: Shaders bonitos",
+        "description": "Todo lo de Máx. FPS más Iris y Complementary Reimagined: luz, sombras y agua preciosas. La tecla K activa y desactiva los shaders en el juego."
       }
     },
     "picker": {
@@ -2629,7 +2637,8 @@
       "manage": "Gestionar presets",
       "vanillaBoost": "Vanilla ya lo obtiene con la optimización de TRS",
       "needsLoader": "Los mods necesitan un cargador de mods: en una instancia vanilla solo se instalan paquetes de recursos y shaders.",
-      "useFabric": "Usar Fabric"
+      "useFabric": "Usar Fabric",
+      "nvidiumShaders": "No se puede combinar con shaders"
     },
     "apply": {
       "title": "Aplicar preset",
@@ -2651,7 +2660,9 @@
       "allDone": "{n} proyecto instalado | Los {n} proyectos instalados",
       "partial": "{done} de {total} instalados",
       "more": "(+{n} más) | (+{n} más)",
-      "details": "Detalles"
+      "details": "Detalles",
+      "shaderOn": "Los shaders están activados: {name}. Pulsa K en el juego para activarlos o desactivarlos.",
+      "shaderToast": "shaders activados (K los alterna)"
     },
     "reason": {
       "installed": "Instalado",
@@ -2706,6 +2717,31 @@
       "moveUp": "Subir",
       "moveDown": "Bajar",
       "footer": "Comparte presets con amigos mediante Exportar; ellos pueden cargar el archivo con Importar."
+    },
+    "tiers": {
+      "title": "Impulso de FPS",
+      "label": "Nivel del impulso de FPS",
+      "summary": "Sodium o Embeddium, Lithium, FerriteCore y más: elige un nivel",
+      "keyHint": "Pulsa K en el juego para activar o desactivar los shaders.",
+      "noShaders": "Los shaders solo están disponibles con Fabric, Quilt o NeoForge",
+      "fpsBoost": {
+        "name": "Máx. FPS",
+        "hint": "Solo optimizaciones: para PCs modestos y el máximo de FPS"
+      },
+      "fpsShaderLite": {
+        "name": "Shaders ligeros",
+        "hint": "Un shader ligero que funciona también en gráficas sencillas"
+      },
+      "fpsShader": {
+        "name": "Shaders bonitos",
+        "hint": "Luz, sombras y agua: para gráficas potentes"
+      }
+    },
+    "hint": {
+      "title": "Más FPS para esta instancia",
+      "text": "Aquí todavía no hay Sodium ni Embeddium. El impulso de FPS instala las optimizaciones adecuadas: elige un nivel:",
+      "apply": "Aplicar impulso de FPS",
+      "dismiss": "Ocultar este aviso"
     }
   },
   "updateNews": {

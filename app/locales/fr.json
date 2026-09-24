@@ -2608,7 +2608,7 @@
     "itemCount": "{n} projet | {n} projets",
     "builtin": {
       "fpsBoost": {
-        "name": "Boost FPS",
+        "name": "Boost FPS : FPS max",
         "description": "Sodium ou Embeddium, Lithium, FerriteCore, ModernFix et plus – selon la version et le loader"
       },
       "nvidium": {
@@ -2622,6 +2622,14 @@
       "replay": {
         "name": "Replay",
         "description": "Flashback si disponible, sinon ReplayMod – enregistrer et monter des parties"
+      },
+      "fpsShaderLite": {
+        "name": "Boost FPS : shaders légers",
+        "description": "Tout de FPS max, plus Iris et le shader très léger MakeUp – Ultra Fast. La touche K active ou désactive les shaders en jeu."
+      },
+      "fpsShader": {
+        "name": "Boost FPS : beaux shaders",
+        "description": "Tout de FPS max, plus Iris et Complementary Reimagined : belle lumière, ombres et eau. La touche K active ou désactive les shaders en jeu."
       }
     },
     "picker": {
@@ -2629,7 +2637,8 @@
       "manage": "Gérer les préréglages",
       "vanillaBoost": "Vanilla l’obtient déjà via l’optimisation TRS",
       "needsLoader": "Les mods ont besoin d’un chargeur de mods – dans une instance vanilla, seuls les packs de ressources et les shaders sont installés.",
-      "useFabric": "Utiliser Fabric"
+      "useFabric": "Utiliser Fabric",
+      "nvidiumShaders": "Incompatible avec les shaders"
     },
     "apply": {
       "title": "Appliquer un préréglage",
@@ -2651,7 +2660,9 @@
       "allDone": "{n} projet installé | Les {n} projets installés",
       "partial": "{done} sur {total} installés",
       "more": "(+{n} autre) | (+{n} autres)",
-      "details": "Détails"
+      "details": "Détails",
+      "shaderOn": "Les shaders sont activés : {name}. Appuyez sur K en jeu pour les activer ou les désactiver.",
+      "shaderToast": "shaders activés (K pour basculer)"
     },
     "reason": {
       "installed": "Installé",
@@ -2706,6 +2717,31 @@
       "moveUp": "Monter",
       "moveDown": "Descendre",
       "footer": "Partagez des préréglages avec vos amis via Exporter – ils peuvent charger le fichier avec Importer."
+    },
+    "tiers": {
+      "title": "Boost FPS",
+      "label": "Niveau du boost FPS",
+      "summary": "Sodium ou Embeddium, Lithium, FerriteCore et plus – choisissez un niveau",
+      "keyHint": "Appuyez sur K en jeu pour activer ou désactiver les shaders.",
+      "noShaders": "Les shaders ne sont disponibles qu'avec Fabric, Quilt ou NeoForge",
+      "fpsBoost": {
+        "name": "FPS max",
+        "hint": "Optimisations uniquement – pour les PC modestes et un maximum de FPS"
+      },
+      "fpsShaderLite": {
+        "name": "Shaders légers",
+        "hint": "Un shader léger qui tourne aussi sur des cartes graphiques simples"
+      },
+      "fpsShader": {
+        "name": "Beaux shaders",
+        "hint": "Lumière, ombres et eau – pour les cartes graphiques puissantes"
+      }
+    },
+    "hint": {
+      "title": "Plus de FPS pour cette instance",
+      "text": "Il n'y a pas encore de Sodium ni d'Embeddium ici. Le boost FPS installe les optimisations adaptées – choisissez un niveau :",
+      "apply": "Appliquer le boost FPS",
+      "dismiss": "Masquer ce conseil"
     }
   },
   "updateNews": {

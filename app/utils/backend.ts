@@ -335,6 +335,8 @@ export const backend = {
     onProgress: (p: PresetProgress) => void,
     taskId: string | null = null,
   ) => call<PresetApplyReport>('apply_presets', { id, presetIds, onProgress: channel(onProgress), taskId }),
+  /** Instanz mit Modloader ohne Sodium/Embeddium/OptiFine (kein Modpack) → „FPS-Boost anwenden“ anbieten. */
+  fpsBoostSuggested: (id: string) => call<boolean>('fps_boost_suggested', { id }),
 
   listServers: () => call<Server[]>('list_servers'),
   addServer: (server: ServerInput) => call<Server>('add_server', { server }),

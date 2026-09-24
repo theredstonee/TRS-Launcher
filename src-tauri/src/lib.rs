@@ -195,6 +195,7 @@ pub fn run() {
             commands::presets::export_preset,
             commands::presets::import_preset,
             commands::presets::apply_presets,
+            commands::presets::fps_boost_suggested,
             commands::servers::list_servers,
             commands::servers::add_server,
             commands::servers::update_server,

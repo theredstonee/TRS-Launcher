@@ -888,8 +888,12 @@ export interface PresetItem {
   kind: ContentKind
 }
 
-/** Fertige TRS-Presets (Name/Beschreibung: `presets.builtin.<key>`). */
-export type BuiltinPreset = 'fpsBoost' | 'nvidium' | 'voiceChat' | 'replay'
+/**
+ * Fertige TRS-Presets (Name/Beschreibung: `presets.builtin.<key>`). `fpsBoost`,
+ * `fpsShaderLite` und `fpsShader` sind die drei Stufen des FPS-Boosts
+ * (Max FPS / Shader leicht / Shader schön) – höchstens eine davon ist gewählt.
+ */
+export type BuiltinPreset = 'fpsBoost' | 'fpsShaderLite' | 'fpsShader' | 'nvidium' | 'voiceChat' | 'replay'
 
 export interface Preset {
   id: string
@@ -942,6 +946,8 @@ export interface PresetApplyReport {
   items: PresetItemOutcome[]
   files: string[]
   dependencies: number
+  /** Shaderpaket, das jetzt in Iris eingeschaltet ist (Dateiname). */
+  shaderPack: string | null
 }
 
 export interface PresetProgress {
