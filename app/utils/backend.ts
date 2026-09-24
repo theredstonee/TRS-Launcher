@@ -433,6 +433,8 @@ export const backend = {
     removeFriend: (uuid: string) => call<void>('trs_friend_remove', { uuid }),
     block: (target: string) => checked(trsUserRefSchema, 'trs_block', { target }),
     unblock: (uuid: string) => call<void>('trs_unblock', { uuid }),
+    /** Anmeldung auf der Website bestätigen – der Kern schickt den Code mit dem TRS-Token. */
+    webLoginApprove: (code: string) => call<void>('trs_web_login_approve', { code }),
 
     adminStats: () => checked(trsAdminStatsSchema, 'trs_admin_stats'),
     adminCapes: (list: TrsReviewList) => checked(z.array(trsAdminCapeSchema), 'trs_admin_capes', { list }),

@@ -193,11 +193,11 @@ class EmoteOnlineTest {
 	@Test
 	void streamSwapsAfterHelloAndDebouncesChanges() throws Exception {
 		FakeOpener opener = new FakeOpener();
-		PlayerEventStream s = new PlayerEventStream(opener, "https://api.theredstonee.de");
+		PlayerEventStream s = new PlayerEventStream(opener, "https://trs-launcher.theredstonee.de");
 		List<String> watch = new ArrayList<>(Collections.singletonList(OWN));
 		s.update(0, "tok", watch);
 		waitFor(() -> opener.connections.size() == 1);
-		assertEquals("https://api.theredstonee.de/v1/events/players?uuids=" + OWN, opener.urls.get(0));
+		assertEquals("https://trs-launcher.theredstonee.de/v1/events/players?uuids=" + OWN, opener.urls.get(0));
 		opener.last().send("hello", "{\"type\":\"hello\",\"keepaliveSec\":25,\"watching\":1}");
 		waitFor(() -> {
 			s.update(10, "tok", watch);
@@ -239,7 +239,7 @@ class EmoteOnlineTest {
 	void streamBacksOffAndReportsUnauthorized() throws Exception {
 		FakeOpener opener = new FakeOpener();
 		opener.status = 401;
-		PlayerEventStream s = new PlayerEventStream(opener, "https://api.theredstonee.de");
+		PlayerEventStream s = new PlayerEventStream(opener, "https://trs-launcher.theredstonee.de");
 		List<String> watch = Collections.singletonList(OWN);
 		s.update(0, "tok", watch);
 		waitFor(() -> {

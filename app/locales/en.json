@@ -482,7 +482,8 @@
       "invalidCodeId": "Invalid code ID.",
       "redemptionsRange": "Redemptions per code: 1 to 100,000.",
       "countRange": "Amount: 1 to 100 codes at once.",
-      "expiryInPast": "The expiry date is in the past."
+      "expiryInPast": "The expiry date is in the past.",
+      "invalidWebLoginCode": "The code looks like ABCD-1234 (letters and digits)."
     },
     "trsPng": {
       "fileTooLarge": "The file is too large (max. 256 KB).",
@@ -538,6 +539,12 @@
       "invalidFile": "This isn’t a valid preset file.",
       "fileTooLarge": "The preset file is too large.",
       "noneSelected": "No preset selected."
+    },
+    "trsWebLogin": {
+      "invalidCode": "This sign-in code doesn't exist – compare it with the code on the website.",
+      "expired": "The sign-in code has expired – reload the website and enter the new code.",
+      "notAdmin": "Only TRS admins can sign in on the website.",
+      "alreadyUsed": "This sign-in code has already been confirmed."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "add create new",
       "import": "import prism multimc curseforge migrate",
       "modpacks": "modpack pack install",
-      "dataDir": "folder explorer files"
+      "dataDir": "folder explorer files",
+      "webLogin": "website web login sign in admin code browser"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Open data folder",
         "subtitle": "Folder with instances and settings"
+      },
+      "webLogin": {
+        "subtitle": "Enter the code from {host}"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "At least 1 code.",
       "maxCount": "At most 100 codes at once.",
       "invalidExpiry": "Invalid expiry date.",
-      "expiryPast": "The expiry date is in the past."
+      "expiryPast": "The expiry date is in the past.",
+      "webLoginCode": "The code looks like ABCD-1234 (letters and digits)."
     },
     "unlock": {
       "own": "Custom",
@@ -2622,5 +2634,21 @@
     "version": "Version {version}",
     "read": "Read the post",
     "hide": "Hide until the next update"
+  },
+  "webLogin": {
+    "title": "Confirm website sign-in",
+    "intro": "The website {host} shows you a code. Enter it here to sign in there with your TRS account.",
+    "codeLabel": "Code from the website",
+    "question": "Sign in as {name} on {host}?",
+    "codeShown": "Code:",
+    "warningTitle": "Only confirm if you are on the website yourself right now.",
+    "warning": "Never give this code to anyone. Whoever asks you for it wants to take over your account.",
+    "approve": "Confirm sign-in",
+    "approving": "Confirming …",
+    "done": "Sign-in confirmed – you can go back to {host}.",
+    "needsServices": "Turn on the TRS services first (Settings → Privacy).",
+    "needsAccount": "Please sign in with your Minecraft account under \"Accounts\" first.",
+    "settingsDescription": "Sign in to the admin area on {host} with the code shown there.",
+    "open": "Enter code"
   }
 }

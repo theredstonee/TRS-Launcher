@@ -239,6 +239,7 @@ pub fn run() {
             commands::trs::trs_friend_remove,
             commands::trs::trs_block,
             commands::trs::trs_unblock,
+            commands::trs::trs_web_login_approve,
             commands::trs::trs_admin_stats,
             commands::trs::trs_admin_capes,
             commands::trs::trs_admin_approve,

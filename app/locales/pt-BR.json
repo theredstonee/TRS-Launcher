@@ -482,7 +482,8 @@
       "invalidCodeId": "ID de código inválido.",
       "redemptionsRange": "Resgates por código: 1 a 100.000.",
       "countRange": "Quantidade: 1 a 100 códigos de uma vez.",
-      "expiryInPast": "A data de validade está no passado."
+      "expiryInPast": "A data de validade está no passado.",
+      "invalidWebLoginCode": "O código tem o formato ABCD-1234 (letras e números)."
     },
     "trsPng": {
       "fileTooLarge": "O arquivo é grande demais (máx. 256 KB).",
@@ -538,6 +539,12 @@
       "invalidFile": "Este não é um arquivo de predefinição válido.",
       "fileTooLarge": "O arquivo de predefinição é grande demais.",
       "noneSelected": "Nenhuma predefinição selecionada."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Este código de login não existe – compare com o código no site.",
+      "expired": "O código de login expirou – recarregue o site e digite o novo código.",
+      "notAdmin": "Só administradores do TRS podem entrar no site.",
+      "alreadyUsed": "Este código de login já foi confirmado."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "adicionar criar nova",
       "import": "importar prism multimc curseforge migrar",
       "modpacks": "modpack pack instalar",
-      "dataDir": "pasta explorador arquivos"
+      "dataDir": "pasta explorador arquivos",
+      "webLogin": "site web login entrar admin código navegador"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Abrir pasta de dados",
         "subtitle": "Pasta com instâncias e configurações"
+      },
+      "webLogin": {
+        "subtitle": "Digite o código de {host}"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "Pelo menos 1 código.",
       "maxCount": "No máximo 100 códigos de uma vez.",
       "invalidExpiry": "Data de validade inválida.",
-      "expiryPast": "A data de validade está no passado."
+      "expiryPast": "A data de validade está no passado.",
+      "webLoginCode": "O código tem o formato ABCD-1234 (letras e números)."
     },
     "unlock": {
       "own": "Própria",
@@ -2622,5 +2634,21 @@
     "version": "Versão {version}",
     "read": "Ler a publicação",
     "hide": "Ocultar até a próxima atualização"
+  },
+  "webLogin": {
+    "title": "Confirmar login no site",
+    "intro": "O site {host} mostra um código. Digite-o aqui para entrar lá com sua conta TRS.",
+    "codeLabel": "Código do site",
+    "question": "Entrar como {name} em {host}?",
+    "codeShown": "Código:",
+    "warningTitle": "Só confirme se você mesmo estiver no site agora.",
+    "warning": "Nunca passe este código para ninguém. Quem pede por ele quer roubar sua conta.",
+    "approve": "Confirmar login",
+    "approving": "Confirmando …",
+    "done": "Login confirmado – você pode voltar para {host}.",
+    "needsServices": "Ative primeiro os serviços TRS (Configurações → Privacidade).",
+    "needsAccount": "Primeiro entre com sua conta do Minecraft em \"Contas\".",
+    "settingsDescription": "Entre na área de administração em {host} com o código mostrado lá.",
+    "open": "Digitar código"
   }
 }

@@ -53,6 +53,12 @@ How to write an entry:
   item frames and name tags; *Particles* sets a limit and switches off explosions, rain splashes or smoke; *World
   Details* hides sky, stars, fog, rain/snow and texture animations. Mods like Sodium, OptiFine, EntityCulling or
   Dynamic FPS are detected – their part is left to them ("taken over by …"). Everything is saved in your profiles.
+- **New address for the TRS services.** Launcher and TRS Client now talk to trs-launcher.theredstonee.de, where the
+  TRS website will live too. The old address keeps working, so capes, friends and your online status carry on
+  without you doing anything.
+- **Website sign-in.** TRS admins can sign in to the website with the launcher: the website shows a code, enter it
+  under Admin, Settings → Privacy or via Ctrl+K ("Confirm website sign-in") and confirm. The launcher clearly asks
+  first – only confirm if you are on the website yourself right now, and never give the code to anyone.
 
 ### Deutsch
 
@@ -98,6 +104,13 @@ How to write an entry:
   Regen-Spritzer oder Rauch ab; *Welt-Details* blendet Himmel, Sterne, Nebel, Regen/Schnee und Textur-Animationen aus.
   Mods wie Sodium, OptiFine, EntityCulling oder Dynamic FPS werden erkannt – ihren Teil übernehmen sie („übernimmt …“).
   Alles wird in deinen Profilen gespeichert.
+- **Neue Adresse für die TRS-Dienste.** Launcher und TRS Client sprechen jetzt mit trs-launcher.theredstonee.de,
+  wo künftig auch die TRS-Website liegt. Die alte Adresse funktioniert weiter – Umhänge, Freunde und dein
+  Online-Status laufen ohne dein Zutun weiter.
+- **Website-Anmeldung.** TRS-Admins können sich mit dem Launcher auf der Website anmelden: Die Website zeigt einen
+  Code, den gibst du unter Admin, Einstellungen → Datenschutz oder über Strg+K („Website-Anmeldung bestätigen“)
+  ein und bestätigst. Der Launcher fragt vorher deutlich nach – nur bestätigen, wenn du gerade selbst auf der
+  Website bist, und den Code niemals weitergeben.
 
 ## 0.4.3 – 2026-09-24
 

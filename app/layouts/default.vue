@@ -105,6 +105,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <PresetReportDialog />
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <TrsConsentDialog v-if="trs.consentOpen" />
+    <TrsWebLoginDialog v-if="trs.webLoginOpen && !trs.consentOpen" />
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
     <ToastHost />

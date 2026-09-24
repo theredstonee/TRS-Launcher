@@ -482,7 +482,8 @@
       "invalidCodeId": "Ongeldige code-ID.",
       "redemptionsRange": "Inwisselingen per code: 1 tot 100.000.",
       "countRange": "Aantal: 1 tot 100 codes tegelijk.",
-      "expiryInPast": "De vervaldatum ligt in het verleden."
+      "expiryInPast": "De vervaldatum ligt in het verleden.",
+      "invalidWebLoginCode": "De code heeft de vorm ABCD-1234 (letters en cijfers)."
     },
     "trsPng": {
       "fileTooLarge": "Het bestand is te groot (max. 256 KB).",
@@ -538,6 +539,12 @@
       "invalidFile": "Dit is geen geldig presetbestand.",
       "fileTooLarge": "Het presetbestand is te groot.",
       "noneSelected": "Geen preset geselecteerd."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Deze aanmeldcode bestaat niet – vergelijk hem met de code op de website.",
+      "expired": "De aanmeldcode is verlopen – herlaad de website en voer de nieuwe code in.",
+      "notAdmin": "Alleen TRS-beheerders kunnen zich op de website aanmelden.",
+      "alreadyUsed": "Deze aanmeldcode is al bevestigd."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "toevoegen aanmaken nieuw",
       "import": "importeren prism multimc curseforge migreren",
       "modpacks": "modpack pack installeren",
-      "dataDir": "map verkenner bestanden"
+      "dataDir": "map verkenner bestanden",
+      "webLogin": "website web login aanmelden admin code browser"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Gegevensmap openen",
         "subtitle": "Map met instanties en instellingen"
+      },
+      "webLogin": {
+        "subtitle": "Code van {host} invoeren"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "Minstens 1 code.",
       "maxCount": "Maximaal 100 codes tegelijk.",
       "invalidExpiry": "Ongeldige vervaldatum.",
-      "expiryPast": "De vervaldatum ligt in het verleden."
+      "expiryPast": "De vervaldatum ligt in het verleden.",
+      "webLoginCode": "De code heeft de vorm ABCD-1234 (letters en cijfers)."
     },
     "unlock": {
       "own": "Eigen",
@@ -2622,5 +2634,21 @@
     "version": "Versie {version}",
     "read": "Lees het bericht",
     "hide": "Verbergen tot de volgende update"
+  },
+  "webLogin": {
+    "title": "Aanmelding op de website bevestigen",
+    "intro": "De website {host} toont je een code. Voer die hier in om je daar met je TRS-account aan te melden.",
+    "codeLabel": "Code van de website",
+    "question": "Aanmelden als {name} op {host}?",
+    "codeShown": "Code:",
+    "warningTitle": "Bevestig alleen als je nu zelf op de website bent.",
+    "warning": "Geef deze code nooit aan iemand anders. Wie erom vraagt, wil je account overnemen.",
+    "approve": "Aanmelding bevestigen",
+    "approving": "Bevestigen …",
+    "done": "Aanmelding bevestigd – je kunt terug naar {host}.",
+    "needsServices": "Zet eerst de TRS-diensten aan (Instellingen → Privacy).",
+    "needsAccount": "Meld je eerst aan met je Minecraft-account onder \"Accounts\".",
+    "settingsDescription": "Aanmelden in het beheergedeelte op {host} met de code die daar staat.",
+    "open": "Code invoeren"
   }
 }

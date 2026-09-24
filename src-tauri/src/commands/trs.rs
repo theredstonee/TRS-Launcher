@@ -143,6 +143,13 @@ pub async fn trs_unblock(launcher: State<'_, LauncherState>, uuid: String) -> Co
     Ok(launcher.trs_unblock(&uuid).await?)
 }
 
+/// Anmeldung auf der Website bestätigen (Code von der Website). Der Kern
+/// schickt ihn mit dem TRS-Token des aktiven Accounts – der Token bleibt dort.
+#[tauri::command]
+pub async fn trs_web_login_approve(launcher: State<'_, LauncherState>, code: String) -> CommandResult<()> {
+    Ok(launcher.trs_web_login_approve(&code).await?)
+}
+
 // --- Verwaltung ------------------------------------------------------------------------
 
 #[tauri::command]
