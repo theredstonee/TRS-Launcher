@@ -16,7 +16,9 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
-## Unreleased
+## Unreleased – The Turbo Update | Das Turbo-Update
+
+<!-- banner: accent=#3dd6ff motif=/news/0.5.1/banner.png -->
 
 ### English
 
