@@ -37,6 +37,8 @@ How to write an entry:
   is switched on right away; press **K** in game to turn shaders on or off. Shaders are available with Fabric,
   Quilt and NeoForge; elsewhere they are skipped and named in the summary. Nvidium can't be combined with shaders
   and is left out. New instances still start with Max FPS.
+- **Real faces for your friends.** The friends list and the admin player search show each player's Minecraft face
+  instead of a placeholder.
 - **FPS boost for existing instances.** Instances with a mod loader but without Sodium, Embeddium or OptiFine now
   show a small hint with the level choice – one click installs the boost. Hide it once and it stays hidden for that
   instance; modpacks never show it.
@@ -62,6 +64,8 @@ How to write an entry:
   Der Shader ist gleich eingeschaltet; mit der Taste **K** schaltest du Shader im Spiel an und aus. Shader gibt es
   mit Fabric, Quilt und NeoForge; sonst werden sie übersprungen und in der Zusammenfassung genannt. Nvidium lässt
   sich nicht mit Shadern kombinieren und bleibt dann weg. Neue Instanzen starten weiterhin mit Max FPS.
+- **Echte Gesichter bei Freunden.** Die Freundesliste und die Admin-Spielersuche zeigen das Minecraft-Gesicht jedes
+  Spielers statt eines Platzhalters.
 - **FPS-Boost für bestehende Instanzen.** Instanzen mit Modloader, aber ohne Sodium, Embeddium oder OptiFine zeigen
   jetzt einen kleinen Hinweis mit Stufenwahl – ein Klick installiert den Boost. Einmal ausgeblendet, bleibt er für
   diese Instanz weg; bei Modpacks erscheint er nie.

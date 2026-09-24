@@ -449,7 +449,8 @@
       "nameRequired": "Lütfen skin için bir ad gir.",
       "signInFirst": "Lütfen önce “Hesaplar” bölümünden giriş yap.",
       "libraryFull": "Skin kütüphanesi dolu – önce bir skin sil.",
-      "notFound": "Bu skin mevcut değil."
+      "notFound": "Bu skin mevcut değil.",
+      "invalidUuid": "Bu geçerli bir oyuncu kimliği değil."
     },
     "skinSync": {
       "accountSwitched": "Etkin hesap değiştirildi – değişiklikler atıldı.",

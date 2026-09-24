@@ -328,7 +328,7 @@ function dotClass(friend: TrsFriend) {
           <li v-for="f in friends" :key="f.uuid" class="card flex items-center gap-3 px-3 py-2.5">
             <span class="relative shrink-0">
               <span class="block size-10 overflow-hidden rounded-md">
-                <PixelIdenticon :seed="f.uuid" :letter="f.name.charAt(0).toUpperCase()" />
+                <PlayerFace :uuid="f.uuid" :name="f.name" />
               </span>
               <span class="absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-2 ring-base-900" :class="dotClass(f)" />
             </span>
@@ -393,7 +393,7 @@ function dotClass(friend: TrsFriend) {
             <h2 class="section-title mb-2">{{ t('friends.requests.incoming') }}</h2>
             <ul class="space-y-2">
               <li v-for="r in incoming" :key="r.uuid" class="card flex items-center gap-3 px-3 py-2.5">
-                <span class="block size-9 shrink-0 overflow-hidden rounded-md"><PixelIdenticon :seed="r.uuid" :letter="r.name.charAt(0).toUpperCase()" /></span>
+                <span class="block size-9 shrink-0 overflow-hidden rounded-md"><PlayerFace :uuid="r.uuid" :name="r.name" /></span>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-base-50">{{ r.name }}</p>
                   <p class="text-xs text-base-400">{{ t('friends.requests.incomingText', { date: trsDate(r.createdAt) }) }}</p>
@@ -407,7 +407,7 @@ function dotClass(friend: TrsFriend) {
             <h2 class="section-title mb-2">{{ t('friends.requests.outgoing') }}</h2>
             <ul class="space-y-2">
               <li v-for="r in outgoing" :key="r.uuid" class="card flex items-center gap-3 px-3 py-2.5">
-                <span class="block size-9 shrink-0 overflow-hidden rounded-md"><PixelIdenticon :seed="r.uuid" :letter="r.name.charAt(0).toUpperCase()" /></span>
+                <span class="block size-9 shrink-0 overflow-hidden rounded-md"><PlayerFace :uuid="r.uuid" :name="r.name" /></span>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-base-50">{{ r.name }}</p>
                   <p class="text-xs text-base-400">{{ t('friends.requests.outgoingText', { date: trsDate(r.createdAt) }) }}</p>
@@ -429,7 +429,7 @@ function dotClass(friend: TrsFriend) {
         <p class="mb-3 text-xs text-base-400">{{ t('friends.blocked.hint') }}</p>
         <ul v-if="blocked.length" class="space-y-2">
           <li v-for="b in blocked" :key="b.uuid" class="card flex items-center gap-3 px-3 py-2.5">
-            <span class="block size-9 shrink-0 overflow-hidden rounded-md opacity-60"><PixelIdenticon :seed="b.uuid" :letter="b.name.charAt(0).toUpperCase()" /></span>
+            <span class="block size-9 shrink-0 overflow-hidden rounded-md opacity-60"><PlayerFace :uuid="b.uuid" :name="b.name" /></span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-semibold text-base-50">{{ b.name }}</p>
               <p class="text-xs text-base-400">{{ t('friends.blocked.since', { date: trsDate(b.since) }) }}</p>

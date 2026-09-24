@@ -210,6 +210,7 @@ pub fn run() {
             commands::import::pick_import_folder,
             commands::import::import_instance,
             commands::skins::skin_profile,
+            commands::skins::player_skin_url,
             commands::skins::skin_library,
             commands::skins::add_skin_file,
             commands::skins::save_active_skin,

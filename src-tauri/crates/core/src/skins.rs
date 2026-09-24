@@ -407,7 +407,66 @@ async fn read_library(paths: &Paths) -> LibraryFile {
     fsutil::read_json(&library_file(paths)).await.ok().flatten().unwrap_or_default()
 }
 
+// --- Köpfe anderer Spieler (Freunde, Admin-Suche) ---------------------------------
+
+const SESSION_PROFILE: &str = "https://sessionserver.mojang.com/session/minecraft/profile/";
+/// Wie lange ein Skin-Link (oder „kein Skin“) im Speicher bleibt.
+const PLAYER_SKIN_TTL: Duration = Duration::from_secs(30 * 60);
+
+type SkinCache = std::sync::Mutex<std::collections::HashMap<String, (std::time::Instant, Option<String>)>>;
+
+fn player_skin_cache() -> &'static SkinCache {
+    static CACHE: std::sync::OnceLock<SkinCache> = std::sync::OnceLock::new();
+    CACHE.get_or_init(Default::default)
+}
+
+/// UUID mit oder ohne Bindestriche → 32 Hex-Zeichen klein, sonst `None`.
+fn compact_uuid(uuid: &str) -> Option<String> {
+    let s: String = uuid.chars().filter(|c| *c != '-').collect::<String>().to_ascii_lowercase();
+    (s.len() == 32 && s.bytes().all(|b| b.is_ascii_hexdigit())).then_some(s)
+}
+
+/// Skin-Link aus der Antwort des Session-Servers (Eigenschaft `textures`, Base64-JSON).
+fn skin_url_from_session_profile(body: &serde_json::Value) -> Option<String> {
+    let props = body.get("properties")?.as_array()?;
+    let textures = props.iter().find(|p| p.get("name").and_then(|n| n.as_str()) == Some("textures"))?;
+    let decoded = STANDARD.decode(textures.get("value")?.as_str()?).ok()?;
+    let json: serde_json::Value = serde_json::from_slice(&decoded).ok()?;
+    normalize_texture_url(json.pointer("/textures/SKIN/url")?.as_str()?)
+}
+
 impl Launcher {
+    /// Skin-Link eines beliebigen Spielers für das kleine Gesicht in Listen. `None` = Standard-Skin oder
+    /// unbekannt. Öffentlicher Session-Server von Mojang, 30 Minuten im Speicher.
+    pub async fn player_skin_url(&self, uuid: &str) -> Result<Option<String>> {
+        let Some(id) = compact_uuid(uuid) else {
+            return Err(Error::validation(crate::msg!("skins.invalidUuid", "Das ist keine gültige Spieler-ID.")));
+        };
+        if let Some((at, url)) = player_skin_cache().lock().map_err(|_| Error::Internal("Skin-Cache gesperrt".into()))?.get(&id) {
+            if at.elapsed() < PLAYER_SKIN_TTL {
+                return Ok(url.clone());
+            }
+        }
+        let response = self
+            .http()
+            .get(format!("{SESSION_PROFILE}{id}"))
+            .timeout(Duration::from_secs(10))
+            .send()
+            .await?;
+        let url = match response.status().as_u16() {
+            200 => response.json::<serde_json::Value>().await.ok().and_then(|b| skin_url_from_session_profile(&b)),
+            204 | 404 => None,
+            s => return Err(Error::download(format!("{SESSION_PROFILE}{id}"), format!("HTTP {s}"))),
+        };
+        if let Ok(mut cache) = player_skin_cache().lock() {
+            if cache.len() > 2000 {
+                cache.clear();
+            }
+            cache.insert(id, (std::time::Instant::now(), url.clone()));
+        }
+        Ok(url)
+    }
+
     /// Minecraft-Token des aktiven Accounts (wird bei Bedarf erneuert).
     pub(crate) async fn skin_session(&self) -> Result<crate::launch::Session> {
         self.accounts()
@@ -584,6 +643,22 @@ impl Launcher {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn player_skin_from_session_profile() {
+        use super::{compact_uuid, skin_url_from_session_profile};
+        let textures = serde_json::json!({ "textures": { "SKIN": { "url": "http://textures.minecraft.net/texture/abc123" } } });
+        let value = base64::engine::general_purpose::STANDARD.encode(textures.to_string());
+        let body = serde_json::json!({ "id": "x", "name": "Steve", "properties": [{ "name": "textures", "value": value }] });
+        assert_eq!(skin_url_from_session_profile(&body).as_deref(), Some("https://textures.minecraft.net/texture/abc123"));
+        // Fremde Hosts und fehlende Skins ergeben nichts.
+        let evil = serde_json::json!({ "textures": { "SKIN": { "url": "https://evil.example/x.png" } } });
+        let value = base64::engine::general_purpose::STANDARD.encode(evil.to_string());
+        assert!(skin_url_from_session_profile(&serde_json::json!({ "properties": [{ "name": "textures", "value": value }] })).is_none());
+        assert!(skin_url_from_session_profile(&serde_json::json!({ "properties": [] })).is_none());
+        assert_eq!(compact_uuid("1EEFDEDC-86BD-4905-86E0-F5B716CD280E").as_deref(), Some("1eefdedc86bd490586e0f5b716cd280e"));
+        assert!(compact_uuid("../etc").is_none());
+    }
+
     use std::sync::Arc;
 
     use tokio::io::{AsyncReadExt, AsyncWriteExt};

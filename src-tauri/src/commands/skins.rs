@@ -16,6 +16,12 @@ pub async fn skin_profile(launcher: State<'_, LauncherState>) -> CommandResult<P
     Ok(launcher.skin_profile().await?)
 }
 
+/// Skin-Link eines anderen Spielers (Gesicht in Freundesliste und Admin-Suche); `None` = Standard-Skin.
+#[tauri::command]
+pub async fn player_skin_url(launcher: State<'_, LauncherState>, uuid: String) -> CommandResult<Option<String>> {
+    Ok(launcher.player_skin_url(&uuid).await?)
+}
+
 /// Eigene Skin-Sammlung (lokal, auch ohne Internet).
 #[tauri::command]
 pub async fn skin_library(launcher: State<'_, LauncherState>) -> CommandResult<Vec<LibrarySkinView>> {

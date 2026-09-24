@@ -449,7 +449,8 @@
       "nameRequired": "Digite um nome para a skin.",
       "signInFirst": "Primeiro entre em “Contas”.",
       "libraryFull": "A biblioteca de skins está cheia – exclua uma skin primeiro.",
-      "notFound": "Esta skin não existe."
+      "notFound": "Esta skin não existe.",
+      "invalidUuid": "Isso não é um ID de jogador válido."
     },
     "skinSync": {
       "accountSwitched": "A conta ativa foi trocada – as alterações foram descartadas.",

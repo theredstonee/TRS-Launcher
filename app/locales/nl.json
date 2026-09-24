@@ -449,7 +449,8 @@
       "nameRequired": "Voer een naam in voor de skin.",
       "signInFirst": "Log eerst in onder “Accounts”.",
       "libraryFull": "De skinbibliotheek is vol – verwijder eerst een skin.",
-      "notFound": "Deze skin bestaat niet."
+      "notFound": "Deze skin bestaat niet.",
+      "invalidUuid": "Dit is geen geldige speler-ID."
     },
     "skinSync": {
       "accountSwitched": "Het actieve account is gewisseld – de wijzigingen zijn verworpen.",

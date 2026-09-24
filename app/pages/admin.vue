@@ -503,7 +503,7 @@ const statTiles = computed(() => {
 
         <div v-if="player" class="card space-y-4 p-4" data-testid="admin-player">
           <div class="flex flex-wrap items-center gap-3">
-            <span class="block size-12 overflow-hidden rounded-md"><PixelIdenticon :seed="player.uuid" :letter="(player.name ?? '?').charAt(0).toUpperCase()" /></span>
+            <span class="block size-12 overflow-hidden rounded-md"><PlayerFace :uuid="player.uuid" :name="player.name ?? '?'" /></span>
             <div class="min-w-0 flex-1">
               <p class="flex items-center gap-2 text-base font-semibold text-base-50">
                 {{ player.name ?? t('common.status.unknown') }}

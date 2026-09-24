@@ -449,7 +449,8 @@
       "nameRequired": "Please enter a name for the skin.",
       "signInFirst": "Please sign in under “Accounts” first.",
       "libraryFull": "The skin library is full – delete a skin first.",
-      "notFound": "This skin doesn't exist."
+      "notFound": "This skin doesn't exist.",
+      "invalidUuid": "That is not a valid player ID."
     },
     "skinSync": {
       "accountSwitched": "The active account was switched – the changes were discarded.",

@@ -346,6 +346,8 @@ export const backend = {
 
   /** Profil des aktiven Accounts (Skin, Modell, Umhänge) – Texturen als Data-URL. */
   skinProfile: () => call<SkinProfile>('skin_profile'),
+  /** Skin-Link eines anderen Spielers (nur textures.minecraft.net), `null` = Standard-Skin. */
+  playerSkinUrl: (uuid: string) => call<string | null>('player_skin_url', { uuid }),
   skinLibrary: () => call<LibrarySkin[]>('skin_library'),
   /** Öffnet den Dateidialog für ein 64×64-PNG; `null` = abgebrochen. */
   addSkinFile: (name: string, variant: SkinVariant) => call<LibrarySkin | null>('add_skin_file', { name, variant }),
