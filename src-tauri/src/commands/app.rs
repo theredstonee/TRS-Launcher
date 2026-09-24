@@ -1,6 +1,5 @@
 use serde::Serialize;
 use tauri::{AppHandle, State};
-use tauri_plugin_opener::OpenerExt;
 
 use crate::LauncherState;
 use crate::error::CommandResult;
@@ -38,7 +37,7 @@ pub async fn client_mod_status(launcher: State<'_, LauncherState>) -> CommandRes
 #[tauri::command]
 pub fn open_data_dir(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<()> {
     let path = launcher.paths().root().display().to_string();
-    app.opener().open_path(path, None::<&str>)?;
+    crate::open::path(&app, path)?;
     Ok(())
 }
 

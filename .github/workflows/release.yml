@@ -122,9 +122,13 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # linuxdeploy ist selbst ein AppImage – ohne FUSE im Runner entpacken statt einhängen.
           APPIMAGE_EXTRACT_AND_RUN: "1"
+          NO_STRIP: "true"
         run: pnpm tauri build --bundles appimage,deb,rpm
 
       - name: Collect release files
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           version="${TAG#v}"
@@ -134,10 +138,13 @@ jobs:
           deb="TRS-Launcher_${version}_amd64.deb"
           rpm="TRS-Launcher-${version}-1.x86_64.rpm"
           cp "$(ls $bundle/appimage/*.AppImage | head -1)" "out/$appimage"
-          cp "$(ls $bundle/appimage/*.AppImage.sig | head -1)" "out/$appimage.sig"
           cp "$(ls $bundle/deb/*.deb | head -1)" "out/$deb"
           cp "$(ls $bundle/rpm/*.rpm | head -1)" "out/$rpm"
-          chmod +x "out/$appimage"
+          # Ohne die mitgebündelten libwayland-* (sonst leeres Fenster auf Arch/Fedora),
+          # danach neu signieren – die Signatur von tauri build passt nicht mehr.
+          bash scripts/fix-appimage.sh "out/$appimage"
+          pnpm tauri signer sign "out/$appimage" > /dev/null
+          test -s "out/$appimage.sig"
           # Der Auto-Updater kann sich unter Linux nur als AppImage selbst ersetzen.
           node scripts/updater-manifest.mjs platform linux-x86_64 "out/$appimage" > out/platform-linux.json
           (cd out && sha256sum "$appimage" "$deb" "$rpm" > SHA256SUMS-linux.txt)

@@ -1,6 +1,5 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
-use tauri_plugin_opener::OpenerExt;
 use trs_core::content::{self, ContentItem, ContentKind, Platform};
 use trs_core::modpack::PackProgress;
 use trs_core::modrinth::{
@@ -170,7 +169,7 @@ pub async fn open_content_dir(
     let instance = launcher.instances().get(&id).await?;
     let dir = content::content_dir(launcher.paths(), &instance.id, kind);
     trs_core::fsutil::ensure_dir(&dir).await?;
-    app.opener().open_path(dir.display().to_string(), None::<&str>)?;
+    crate::open::path(&app, dir.display().to_string())?;
     Ok(())
 }
 
@@ -285,6 +284,6 @@ pub fn open_external_url(app: AppHandle, url: String) -> CommandResult<()> {
             "Dieser Link kann nicht geöffnet werden."
         )).into());
     }
-    app.opener().open_url(url, None::<&str>)?;
+    crate::open::url(&app, url)?;
     Ok(())
 }

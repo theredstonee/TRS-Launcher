@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use serde::Serialize;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
-use tauri_plugin_opener::OpenerExt;
 use trs_core::Launcher;
 use trs_core::history::HistoryEntry;
 use trs_core::instance::{Instance, Loader, LoaderKind, NewInstance, UpdateInstance};
@@ -110,7 +109,7 @@ pub async fn open_instance_dir(
     // `get` validiert die ID und stellt sicher, dass die Instanz existiert.
     let instance = launcher.instances().get(&id).await?;
     let path = launcher.paths().instance_game_dir(&instance.id).display().to_string();
-    app.opener().open_path(path, None::<&str>)?;
+    crate::open::path(&app, path)?;
     Ok(())
 }
 
