@@ -358,6 +358,7 @@ mod tests {
             args: vec!["-Xmx2G".into(), "Main".into()],
             cwd: PathBuf::from(r"C:\game"),
             env: Vec::new(),
+            high_priority: false,
         };
         apply_wrapper(&mut command, r#""C:\Tools\my wrap.exe" --gpu 1"#);
         assert_eq!(command.program, PathBuf::from(r"C:\Tools\my wrap.exe"));

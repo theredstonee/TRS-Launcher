@@ -17,7 +17,7 @@ use crate::{Error, Result, fsutil};
 pub(crate) const API: &str = "https://api.modrinth.com/v2";
 pub(crate) const CDN_PREFIX: &str = "https://cdn.modrinth.com/";
 const MAX_QUERY_LEN: usize = 100;
-const MAX_DEPENDENCY_DEPTH: u8 = 4;
+pub(crate) const MAX_DEPENDENCY_DEPTH: u8 = 4;
 /// Projekt-Infos (Titel, Icon) so lange nicht neu laden.
 const META_MAX_AGE_DAYS: i64 = 7;
 /// Modrinth erlaubt lange Query-Strings, aber nicht beliebig lange.
@@ -25,40 +25,6 @@ const IDS_PER_REQUEST: usize = 100;
 const MAX_CHANGELOG_CHARS: usize = 16_000;
 const MAX_BODY_CHARS: usize = 100_000;
 const MAX_ALL_VERSIONS: usize = 250;
-
-/// Bewährte Client-Optimierungen. Pro Gruppe wird die erste Mod genommen, die
-/// es für Version + Modloader der Instanz gibt – so landet nie Sodium UND
-/// Embeddium in derselben Instanz.
-const PERFORMANCE_PACK: &[&[&str]] = &[
-    &["sodium", "embeddium"],
-    &["lithium"],
-    &["ferrite-core"],
-    &["entityculling"],
-    &["immediatelyfast"],
-    &["modernfix"],
-    &["dynamic-fps"],
-    &["moreculling"],
-    &["badoptimizations"],
-    &["krypton"],
-    // Nur für alte Versionen (bis 1.19) sinnvoll; neuere gibt es dort nicht.
-    &["lazydfu"],
-];
-
-/// ModernFix blockiert vor 1.20 zusammen mit Lithium die Weltenerstellung
-/// („Spawn-Bereich wird vorbereitet: 0 %“) – dort weglassen.
-fn pack_mod_fits(slug: &str, game_version: &str) -> bool {
-    slug != "modernfix" || at_least_1_20(game_version)
-}
-
-/// 1.20+ oder die neue Jahres-Zählung (26.x).
-fn at_least_1_20(game_version: &str) -> bool {
-    let mut parts = game_version.split(['.', '-', ' ']).map(|p| p.parse::<u32>().ok());
-    match (parts.next().flatten(), parts.next().flatten()) {
-        (Some(1), Some(minor)) => minor >= 20,
-        (Some(major), _) => major > 1,
-        _ => true,
-    }
-}
 
 /// Was sich suchen lässt – Instanz-Inhalte plus Modpacks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -283,10 +249,10 @@ pub(crate) struct Hashes {
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Dependency {
-    project_id: Option<String>,
+    pub project_id: Option<String>,
     #[serde(default)]
-    version_id: Option<String>,
-    dependency_type: String,
+    pub version_id: Option<String>,
+    pub dependency_type: String,
 }
 
 impl Version {
@@ -342,7 +308,7 @@ fn content_loader(instance: &Instance) -> LoaderKind {
 
 /// Loader-Namen, mit denen Modrinth Mods für diese Instanz kennzeichnet.
 /// Quilt lädt auch Fabric-Mods.
-fn loader_tags(loader: LoaderKind) -> &'static [&'static str] {
+pub(crate) fn loader_tags(loader: LoaderKind) -> &'static [&'static str] {
     match loader {
         LoaderKind::Fabric => &["fabric"],
         LoaderKind::Quilt => &["quilt", "fabric"],
@@ -986,7 +952,7 @@ pub async fn project_versions(http: &reqwest::Client, project_id: &str) -> Resul
 // --- Versionen & Installation ------------------------------------------------------
 
 /// Alle zur Instanz passenden Versionen, neueste zuerst.
-async fn compatible_versions(
+pub(crate) async fn compatible_versions(
     http: &reqwest::Client,
     project_id: &str,
     kind: ContentKind,
@@ -1009,7 +975,7 @@ async fn compatible_versions(
 /// Neueste Version im Update-Kanal der Instanz (`versions` neueste zuerst).
 /// Gibt es im Kanal nichts (Projekt veröffentlicht nur Betas), dann die
 /// neueste überhaupt – sonst ließe sich so ein Projekt gar nicht installieren.
-fn newest_in_channel(versions: Vec<Version>, channel: UpdateChannel) -> Option<Version> {
+pub(crate) fn newest_in_channel(versions: Vec<Version>, channel: UpdateChannel) -> Option<Version> {
     let fallback = versions.first().cloned();
     versions.into_iter().find(|v| channel.allows(&v.version_type)).or(fallback)
 }
@@ -1080,8 +1046,8 @@ fn ensure_mods_allowed(kind: ContentKind, instance: &Instance) -> Result<()> {
 }
 
 /// Was eine einzelne Installation verändert hat (für Verlauf und Projekt-Infos).
-struct Installed {
-    file_name: String,
+pub(crate) struct Installed {
+    pub file_name: String,
     project_id: String,
     version_number: String,
     published: Option<DateTime<Utc>>,
@@ -1164,7 +1130,7 @@ fn dependencies_of(version: &Version, kind: ContentKind, depth: u8) -> Vec<(Stri
 
 /// `replace`: Datei, die durch diese Version ersetzt wird (Update einer von
 /// Hand hinzugefügten Mod, die nicht im Herkunfts-Index steht).
-async fn install_version(
+pub(crate) async fn install_version(
     http: &reqwest::Client,
     paths: &Paths,
     instance: &Instance,
@@ -1238,7 +1204,7 @@ async fn install_version(
 }
 
 /// Projekt-Infos nachladen und den Verlauf schreiben.
-async fn after_install(http: &reqwest::Client, paths: &Paths, instance_id: &str, installed: &[Installed]) {
+pub(crate) async fn after_install(http: &reqwest::Client, paths: &Paths, instance_id: &str, installed: &[Installed]) {
     let ids: Vec<String> = installed.iter().map(|i| i.project_id.clone()).collect();
     if let Err(e) = store_project_meta(http, paths, instance_id, &ids).await {
         tracing::debug!("Projekt-Infos konnten nicht geladen werden: {e}");
@@ -1381,39 +1347,6 @@ pub async fn refresh_metadata(http: &reqwest::Client, paths: &Paths, instance: &
         changed = true;
     }
     Ok(changed)
-}
-
-/// Installiert das Performance-Paket; nicht verfügbare Mods werden übersprungen.
-pub async fn install_performance_pack(
-    http: &reqwest::Client,
-    paths: &Paths,
-    instance: &Instance,
-) -> Result<Vec<String>> {
-    ensure_mods_allowed(ContentKind::Mod, instance)?;
-    let mut installed = Vec::new();
-    for group in PERFORMANCE_PACK {
-        for slug in group.iter().filter(|s| pack_mod_fits(s, &instance.game_version)) {
-            match install(http, paths, instance, slug, ContentKind::Mod, None).await {
-                Ok(files) => {
-                    installed.extend(files);
-                    break;
-                }
-                // Keine passende Version / Projekt unbekannt: nächste Alternative.
-                Err(Error::Validation(_)) => {}
-                Err(Error::Http(e)) if e.status() == Some(reqwest::StatusCode::NOT_FOUND) => {}
-                Err(e) => return Err(e),
-            }
-        }
-    }
-    if installed.is_empty() {
-        return Err(Error::validation(crate::msg!(
-            "modrinth.noPerformanceMods",
-            "Für diese Version gibt es keine der Optimierungs-Mods."
-        )));
-    }
-    installed.sort();
-    installed.dedup();
-    Ok(installed)
 }
 
 /// Neueste zur Instanz passende Version je Datei-Hash.
@@ -1664,24 +1597,6 @@ mod tests {
     fn quilt_accepts_fabric_mods() {
         assert_eq!(loader_tags(LoaderKind::Quilt), ["quilt", "fabric"]);
         assert!(loader_tags(LoaderKind::Vanilla).is_empty());
-    }
-
-    #[test]
-    fn modernfix_only_from_1_20() {
-        assert!(!pack_mod_fits("modernfix", "1.16.5"));
-        assert!(!pack_mod_fits("modernfix", "1.19.4"));
-        assert!(pack_mod_fits("modernfix", "1.20.1"));
-        assert!(pack_mod_fits("modernfix", "1.21.11"));
-        assert!(pack_mod_fits("modernfix", "26.1"));
-        assert!(pack_mod_fits("lithium", "1.16.5"));
-    }
-
-    #[test]
-    fn performance_pack_never_pairs_renderers() {
-        let group = PERFORMANCE_PACK.iter().find(|g| g.contains(&"sodium")).unwrap();
-        assert!(group.contains(&"embeddium"));
-        let all: Vec<_> = PERFORMANCE_PACK.iter().flat_map(|g| g.iter()).collect();
-        assert!(all.iter().all(|s| is_safe_project_id(s)));
     }
 
     #[test]

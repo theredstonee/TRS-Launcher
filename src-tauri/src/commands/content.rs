@@ -132,8 +132,8 @@ pub async fn apply_content_update(
     Ok(tracked(&app, task_id, work).await?)
 }
 
-/// Sodium, Lithium & Co. in einem Rutsch – was es für die Instanz nicht gibt,
-/// wird übersprungen.
+/// Das FPS-Boost-Preset (Sodium, Lithium & Co.) in einem Rutsch – was es für
+/// die Instanz nicht gibt, wird übersprungen.
 #[tauri::command]
 pub async fn install_performance_pack(
     app: AppHandle,
@@ -142,7 +142,7 @@ pub async fn install_performance_pack(
     task_id: Option<String>,
 ) -> CommandResult<Vec<String>> {
     let instance = launcher.instances().get(&id).await?;
-    let work = modrinth::install_performance_pack(launcher.http(), launcher.paths(), &instance);
+    let work = trs_core::presets::install_fps_boost(launcher.http(), launcher.paths(), &instance);
     Ok(tracked(&app, task_id, work).await?)
 }
 

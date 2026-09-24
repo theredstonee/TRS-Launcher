@@ -507,6 +507,18 @@
       "noJavaAtPath": "Não há executável Java neste caminho.",
       "invalidTaskId": "ID de tarefa inválido",
       "taskRunning": "Esta tarefa já está em execução."
+    },
+    "presets": {
+      "nameLength": "O nome deve ter entre 1 e {max} caracteres.",
+      "invalidProject": "Projeto inválido na predefinição.",
+      "tooManyItems": "Uma predefinição pode ter no máximo {max} itens.",
+      "notFound": "Esta predefinição não existe mais.",
+      "builtinReadOnly": "As predefinições do TRS não podem ser alteradas nem excluídas.",
+      "tooMany": "Mais de {max} predefinições próprias não são suportadas.",
+      "invalidOrder": "A ordem não corresponde à lista de predefinições.",
+      "invalidFile": "Este não é um arquivo de predefinição válido.",
+      "fileTooLarge": "O arquivo de predefinição é grande demais.",
+      "noneSelected": "Nenhuma predefinição selecionada."
     }
   },
   "browse": {
@@ -791,14 +803,6 @@
       "done": "{n} atualização instalada | {n} atualizações instaladas",
       "partial": "{failed} de {total} atualizações falhou. | {failed} de {total} atualizações falharam."
     },
-    "perfPack": {
-      "taskTitle": "Pacote de desempenho para {name}",
-      "stage": "Carregando mods",
-      "done": "Pacote de desempenho instalado ({n} arquivo) | Pacote de desempenho instalado ({n} arquivos)",
-      "title": "Sodium, Lithium e cia. – só o que está disponível para esta versão",
-      "installing": "Instalando pacote de desempenho …",
-      "button": "+ Pacote de desempenho"
-    },
     "toolbar": {
       "searchPlaceholder": "Pesquisar {n} projeto … | Pesquisar {n} projetos …",
       "searchLabel": "Pesquisar projetos",
@@ -1073,7 +1077,12 @@
       "reinstallTitle": "Reinstalar",
       "reinstallDescription": "Baixa de novo, do zero, a versão do jogo, o mod loader e as bibliotecas. Mundos, mods e configurações são mantidos.",
       "reinstallConfirmTitle": "Reinstalar?",
-      "reinstallConfirmText": "A versão do jogo e as bibliotecas serão baixadas novamente. Mundos, mods e configurações são mantidos."
+      "reinstallConfirmText": "A versão do jogo e as bibliotecas serão baixadas novamente. Mundos, mods e configurações são mantidos.",
+      "tuningTitle": "Aumento de FPS ao iniciar",
+      "tuningDescription": "Configurações de Java para mais FPS e menos travadas. Argumentos JVM próprios têm prioridade.",
+      "tuningGlobal": "Como o global ({state})",
+      "tuningOn": "Ligado",
+      "tuningOff": "Desligado"
     },
     "window": {
       "customTitle": "Configurações de janela personalizadas",
@@ -1461,7 +1470,11 @@
       "windowWidth": "Largura da janela",
       "windowHeight": "Altura da janela",
       "dedicatedGpuTitle": "Placa de vídeo de alto desempenho",
-      "dedicatedGpuDescription": "Para notebooks com dois chips gráficos: o Windows dá ao jogo a GPU dedicada."
+      "dedicatedGpuDescription": "O Minecraft usa a placa de vídeo dedicada (importante em notebooks). Vale só para o Java do launcher e é desfeito ao desativar.",
+      "tuningTitle": "Aumento de FPS ao iniciar",
+      "tuningDescription": "Configurações de Java ajustadas à sua versão do Java e à memória (ZGC ou G1, memória reservada desde o início). Só sem argumentos JVM próprios.",
+      "priorityTitle": "Prioridade de processo maior",
+      "priorityDescription": "Inicia o jogo com prioridade “Acima do normal” – pode suavizar travadas quando outros programas estão ocupados."
     },
     "hooks": {
       "title": "Hooks de inicialização",
@@ -1763,7 +1776,8 @@
     "collapseLabel": "Recolher barra lateral",
     "expandLabel": "Expandir barra lateral",
     "collapse": "Recolher",
-    "expand": "Expandir"
+    "expand": "Expandir",
+    "presets": "Predefinições"
   },
   "accountMenu": {
     "menuLabel": "Contas",
@@ -1887,7 +1901,8 @@
       "repair": "Instância reparada",
       "reinstall": "Reinstalada",
       "versionChange": "Versão alterada",
-      "launch": "Inicialização do jogo"
+      "launch": "Inicialização do jogo",
+      "presets": "Predefinições instaladas"
     },
     "stage": {
       "preparing": "Preparando",
@@ -2443,5 +2458,112 @@
     "version": "Versão {version}",
     "close": "Entendi",
     "englishOnly": "Estas notas estão disponíveis apenas em inglês e alemão."
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Sempre automático",
+    "autoHint": "Pré-selecionada em cada nova instância – e adicionada a novos modpacks quando fizer sentido.",
+    "itemCount": "{n} projeto | {n} projetos",
+    "builtin": {
+      "fpsBoost": {
+        "name": "Aumento de FPS",
+        "description": "Sodium ou Embeddium, Lithium, FerriteCore, ModernFix e mais – o que combinar com a versão e o loader"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Renderiza o terreno com mesh shaders – para sua placa NVIDIA (Fabric, precisa do Sodium)"
+      },
+      "voiceChat": {
+        "name": "Chat de voz",
+        "description": "Simple Voice Chat – converse com quem está perto em servidores compatíveis"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback quando disponível, senão ReplayMod – grave e edite partidas"
+      }
+    },
+    "picker": {
+      "title": "Predefinições",
+      "manage": "Gerenciar predefinições",
+      "vanillaBoost": "O vanilla já recebe isso pela otimização TRS",
+      "needsLoader": "Mods precisam de um carregador de mods – numa instância vanilla só pacotes de recursos e shaders são instalados.",
+      "useFabric": "Usar Fabric"
+    },
+    "apply": {
+      "title": "Aplicar predefinição",
+      "intro": "Tudo o que existe para {name} ({version}, {loader}) é instalado – incluindo dependências obrigatórias. O resto é ignorado.",
+      "running": "Predefinições já estão sendo instaladas nesta instância.",
+      "install": "Instalar {n} predefinição | Instalar {n} predefinições",
+      "button": "+ Aplicar predefinição",
+      "buttonTitle": "Instalar predefinições de mods (ex.: aumento de FPS, chat de voz) – só o que existe para esta versão",
+      "installing": "Instalando predefinições …"
+    },
+    "report": {
+      "title": "Predefinições para {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "mais {n} dependência | mais {n} dependências",
+      "skipped": "Ignorados ({n}) | Ignorados ({n})",
+      "included": "Incluídos ({n}) | Incluídos ({n})",
+      "notNeeded": "{n} parte do aumento de FPS não é feita para esta versão | {n} partes do aumento de FPS não são feitas para esta versão",
+      "nothing": "Nada para instalar",
+      "allDone": "{n} projeto instalado | Todos os {n} projetos instalados",
+      "partial": "{done} de {total} instalados",
+      "more": "(+{n} outro) | (+{n} outros)",
+      "details": "Detalhes"
+    },
+    "reason": {
+      "installed": "Instalado",
+      "alreadyInstalled": "Já estava instalado",
+      "duplicate": "Já incluído por outra predefinição",
+      "notAvailable": "{title} não existe para {version}",
+      "notAvailableLoader": "{title} não existe para {version} ({loader})",
+      "missingDependency": "{title} precisa de {dependency}, que não existe para esta versão",
+      "incompatible": "{title} não funciona junto com {other}",
+      "needsLoader": "{title} precisa de um carregador de mods",
+      "failed": "Não foi possível baixar {title}"
+    },
+    "status": {
+      "installed": "Instalado",
+      "alreadyInstalled": "Já estava",
+      "duplicate": "Incluído",
+      "skipped": "Ignorado"
+    },
+    "task": {
+      "title": "Predefinições para {name}",
+      "preparing": "Preparando …",
+      "resolving": "Verificando versões ({done}/{total})",
+      "installing": "Baixando {title} ({done}/{total})",
+      "finishing": "Finalizando"
+    },
+    "editor": {
+      "newTitle": "Nova predefinição",
+      "editTitle": "Editar predefinição",
+      "namePlaceholder": "ex.: Meus básicos",
+      "contents": "Conteúdo ({n}) | Conteúdo ({n})",
+      "remove": "Remover {title}",
+      "empty": "Ainda vazia – adicione projetos pela busca.",
+      "searchPlaceholder": "Buscar no Modrinth …",
+      "searchLabel": "Buscar projetos",
+      "added": "Adicionado",
+      "add": "Adicionar",
+      "noResults": "Nenhum resultado",
+      "hint": "Predefinições não dependem da versão: ao instalar, a versão certa é escolhida para cada instância – o que não existir é ignorado.",
+      "tooManyItems": "No máximo {max} itens por predefinição",
+      "duplicate": "Cada projeto só pode aparecer uma vez numa predefinição"
+    },
+    "page": {
+      "title": "Predefinições",
+      "subtitle": "Mods que você sempre quer – instalados automaticamente onde existirem",
+      "new": "Nova predefinição",
+      "exported": "“{name}” salva",
+      "deleted": "“{name}” excluída",
+      "imported": "“{name}” importada",
+      "emptyPreset": "Nenhum projeto ainda",
+      "builtinHint": "O launcher mantém as predefinições do TRS atualizadas. Você pode ativá-las ou desativá-las para novas instâncias quando quiser.",
+      "confirmDelete": "Excluir mesmo?",
+      "moveUp": "Mover para cima",
+      "moveDown": "Mover para baixo",
+      "footer": "Compartilhe predefinições com amigos em Exportar – eles podem carregar o arquivo em Importar."
+    }
   }
 }

@@ -36,6 +36,7 @@ const DIAGNOSIS_LINES: usize = 400;
 
 const DETACHED_PROCESS: u32 = 0x0000_0008;
 const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+const ABOVE_NORMAL_PRIORITY_CLASS: u32 = 0x0000_8000;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
@@ -251,29 +252,6 @@ impl Drop for ProcessHandle {
     }
 }
 
-/// Windows soll für dieses Programm die leistungsstarke Grafikkarte nehmen
-/// (dieselbe Einstellung wie unter „Grafikeinstellungen“ in Windows).
-pub fn prefer_dedicated_gpu(program: &Path) {
-    use windows::Win32::System::Registry::{HKEY_CURRENT_USER, REG_SZ, RegSetKeyValueW};
-    use windows::core::{HSTRING, w};
-
-    let value: Vec<u16> = "GpuPreference=2;".encode_utf16().chain(std::iter::once(0)).collect();
-    // SAFETY: alle Strings sind nullterminiert, die Datenlänge stimmt in Bytes.
-    let status = unsafe {
-        RegSetKeyValueW(
-            HKEY_CURRENT_USER,
-            w!("Software\\Microsoft\\DirectX\\UserGpuPreferences"),
-            &HSTRING::from(program.as_os_str()),
-            REG_SZ.0,
-            Some(value.as_ptr().cast()),
-            (value.len() * 2) as u32,
-        )
-    };
-    if status.is_err() {
-        tracing::warn!("GPU-Präferenz konnte nicht gesetzt werden: {status:?}");
-    }
-}
-
 // --- Verwaltung ---------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -368,7 +346,11 @@ impl GameManager {
             .stdout(stdout)
             .stderr(stderr)
             // Eigene Prozessgruppe ohne Konsole: Das Spiel überlebt den Launcher.
-            .creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+            .creation_flags(
+                DETACHED_PROCESS
+                    | CREATE_NEW_PROCESS_GROUP
+                    | if command.high_priority { ABOVE_NORMAL_PRIORITY_CLASS } else { 0 },
+            )
             .spawn()
             .map_err(|e| {
                 tracing::error!("Java konnte nicht gestartet werden ({}): {e}", command.program.display());
@@ -804,6 +786,7 @@ mod tests {
             args: vec!["-n".into(), "30".into(), "127.0.0.1".into()],
             cwd: dir.path().to_owned(),
             env: Vec::new(),
+            high_priority: false,
         };
         manager.spawn("test", command, &dir.path().join("logs"), vec![], Box::new(|_| {})).unwrap();
         assert!(manager.is_running("test"));

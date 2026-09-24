@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::client_mod::{self, Build};
 use crate::instance::{Instance, Loader, LoaderKind};
 use crate::paths::Paths;
-use crate::{Result, fsutil, loaders, modrinth};
+use crate::{Result, fsutil, loaders, presets};
 
 /// Bei Änderungen am Performance-Paket hochzählen – dann wird es einmal neu
 /// geprüft und ergänzt.
@@ -51,7 +51,7 @@ pub async fn ensure_performance(http: &reqwest::Client, paths: &Paths, effective
     if marker.pack_revision == PACK_REVISION && marker.game_version == effective.game_version {
         return Ok(());
     }
-    match modrinth::install_performance_pack(http, paths, effective).await {
+    match presets::install_fps_boost(http, paths, effective).await {
         Ok(files) => {
             tracing::info!("TRS-Optimierung für '{}': {} Dateien", effective.id, files.len());
             fsutil::write_json(

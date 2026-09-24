@@ -507,6 +507,18 @@
       "noJavaAtPath": "There's no Java executable at this path.",
       "invalidTaskId": "Invalid task ID",
       "taskRunning": "This task is already running."
+    },
+    "presets": {
+      "nameLength": "The name must be between 1 and {max} characters long.",
+      "invalidProject": "Invalid project in the preset.",
+      "tooManyItems": "A preset can have at most {max} entries.",
+      "notFound": "This preset no longer exists.",
+      "builtinReadOnly": "TRS presets can’t be changed or deleted.",
+      "tooMany": "More than {max} custom presets aren’t supported.",
+      "invalidOrder": "The order doesn’t match the preset list.",
+      "invalidFile": "This isn’t a valid preset file.",
+      "fileTooLarge": "The preset file is too large.",
+      "noneSelected": "No preset selected."
     }
   },
   "browse": {
@@ -791,14 +803,6 @@
       "done": "{n} update installed | {n} updates installed",
       "partial": "{failed} of {total} updates failed. | {failed} of {total} updates failed."
     },
-    "perfPack": {
-      "taskTitle": "Performance pack for {name}",
-      "stage": "Loading mods",
-      "done": "Performance pack installed ({n} file) | Performance pack installed ({n} files)",
-      "title": "Sodium, Lithium & Co. – only what's available for this version",
-      "installing": "Installing performance pack …",
-      "button": "+ Performance pack"
-    },
     "toolbar": {
       "searchPlaceholder": "Search {n} project … | Search {n} projects …",
       "searchLabel": "Search projects",
@@ -1073,7 +1077,12 @@
       "reinstallTitle": "Reinstall",
       "reinstallDescription": "Downloads the game version, mod loader and libraries again from scratch. Worlds, mods and settings are kept.",
       "reinstallConfirmTitle": "Reinstall?",
-      "reinstallConfirmText": "The game version and libraries will be downloaded again. Worlds, mods and settings are kept."
+      "reinstallConfirmText": "The game version and libraries will be downloaded again. Worlds, mods and settings are kept.",
+      "tuningTitle": "FPS boost at launch",
+      "tuningDescription": "Tuned Java settings for more FPS and fewer stutters. Custom JVM arguments take priority.",
+      "tuningGlobal": "Like global ({state})",
+      "tuningOn": "On",
+      "tuningOff": "Off"
     },
     "window": {
       "customTitle": "Custom window settings",
@@ -1461,7 +1470,11 @@
       "windowWidth": "Window width",
       "windowHeight": "Window height",
       "dedicatedGpuTitle": "High-performance graphics card",
-      "dedicatedGpuDescription": "For laptops with two graphics chips: Windows gives the game the dedicated GPU."
+      "dedicatedGpuDescription": "Minecraft uses the dedicated graphics card (important on laptops). Only applies to the launcher’s own Java and is undone when you switch it off.",
+      "tuningTitle": "FPS boost at launch",
+      "tuningDescription": "Tuned Java settings for your Java version and memory (ZGC or G1, memory reserved up front). Only used when no custom JVM arguments are set.",
+      "priorityTitle": "Higher process priority",
+      "priorityDescription": "Starts the game with the priority “Above normal” – can smooth out stutters while other programs are busy."
     },
     "hooks": {
       "title": "Launch hooks",
@@ -1763,7 +1776,8 @@
     "collapseLabel": "Collapse sidebar",
     "expandLabel": "Expand sidebar",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "presets": "Presets"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -1887,7 +1901,8 @@
       "repair": "Instance repaired",
       "reinstall": "Reinstalled",
       "versionChange": "Version changed",
-      "launch": "Game launch"
+      "launch": "Game launch",
+      "presets": "Presets installed"
     },
     "stage": {
       "preparing": "Preparing",
@@ -2443,5 +2458,112 @@
     "version": "Version {version}",
     "close": "Got it",
     "englishOnly": "These notes are available in English and German."
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Always automatic",
+    "autoHint": "Preselected for every new instance – and added to new modpacks where it fits.",
+    "itemCount": "{n} project | {n} projects",
+    "builtin": {
+      "fpsBoost": {
+        "name": "FPS boost",
+        "description": "Sodium or Embeddium, Lithium, FerriteCore, ModernFix & more – whatever fits the version and loader"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Renders terrain with mesh shaders – for your NVIDIA graphics card (Fabric, needs Sodium)"
+      },
+      "voiceChat": {
+        "name": "Voice chat",
+        "description": "Simple Voice Chat – talk to people nearby on servers that support it"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback where available, otherwise ReplayMod – record and edit gameplay"
+      }
+    },
+    "picker": {
+      "title": "Presets",
+      "manage": "Manage presets",
+      "vanillaBoost": "Vanilla already gets this through the TRS optimization",
+      "needsLoader": "Mods need a mod loader – in a vanilla instance only resource packs and shaders are installed.",
+      "useFabric": "Use Fabric"
+    },
+    "apply": {
+      "title": "Apply preset",
+      "intro": "Everything available for {name} ({version}, {loader}) is installed – including required dependencies. The rest is skipped.",
+      "running": "Presets are already being installed into this instance.",
+      "install": "Install {n} preset | Install {n} presets",
+      "button": "+ Apply preset",
+      "buttonTitle": "Install mod presets (e.g. FPS boost, voice chat) – only what’s available for this version",
+      "installing": "Installing presets …"
+    },
+    "report": {
+      "title": "Presets for {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "plus {n} dependency | plus {n} dependencies",
+      "skipped": "Skipped ({n}) | Skipped ({n})",
+      "included": "Included ({n}) | Included ({n})",
+      "notNeeded": "{n} part of the FPS boost isn’t made for this version | {n} parts of the FPS boost aren’t made for this version",
+      "nothing": "Nothing to install",
+      "allDone": "{n} project installed | All {n} projects installed",
+      "partial": "{done} of {total} installed",
+      "more": "(+{n} more) | (+{n} more)",
+      "details": "Details"
+    },
+    "reason": {
+      "installed": "Installed",
+      "alreadyInstalled": "Was already installed",
+      "duplicate": "Already included through another preset",
+      "notAvailable": "{title} isn’t available for {version}",
+      "notAvailableLoader": "{title} isn’t available for {version} ({loader})",
+      "missingDependency": "{title} needs {dependency}, which isn’t available for this version",
+      "incompatible": "{title} doesn’t work together with {other}",
+      "needsLoader": "{title} needs a mod loader",
+      "failed": "{title} couldn’t be downloaded"
+    },
+    "status": {
+      "installed": "Installed",
+      "alreadyInstalled": "Already there",
+      "duplicate": "Included",
+      "skipped": "Skipped"
+    },
+    "task": {
+      "title": "Presets for {name}",
+      "preparing": "Preparing …",
+      "resolving": "Checking versions ({done}/{total})",
+      "installing": "Loading {title} ({done}/{total})",
+      "finishing": "Finishing up"
+    },
+    "editor": {
+      "newTitle": "New preset",
+      "editTitle": "Edit preset",
+      "namePlaceholder": "e.g. My basics",
+      "contents": "Contents ({n}) | Contents ({n})",
+      "remove": "Remove {title}",
+      "empty": "Still empty – add projects from the search.",
+      "searchPlaceholder": "Search Modrinth …",
+      "searchLabel": "Search projects",
+      "added": "Added",
+      "add": "Add",
+      "noResults": "No results",
+      "hint": "Presets are version-independent: when installing, the matching version is picked for each instance – anything not available is skipped.",
+      "tooManyItems": "At most {max} entries per preset",
+      "duplicate": "Every project can only be in a preset once"
+    },
+    "page": {
+      "title": "Presets",
+      "subtitle": "Mods you always want – installed automatically wherever they’re available",
+      "new": "New preset",
+      "exported": "“{name}” saved",
+      "deleted": "“{name}” deleted",
+      "imported": "“{name}” imported",
+      "emptyPreset": "No projects yet",
+      "builtinHint": "TRS presets are kept up to date by the launcher. You can switch them on or off for new instances at any time.",
+      "confirmDelete": "Really delete?",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "footer": "Share presets with friends via Export – they can load the file with Import."
+    }
   }
 }

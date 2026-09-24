@@ -507,6 +507,18 @@
       "noJavaAtPath": "Unter diesem Pfad gibt es keine Java-Datei.",
       "invalidTaskId": "Ungültige Aufgaben-ID",
       "taskRunning": "Diese Aufgabe läuft bereits."
+    },
+    "presets": {
+      "nameLength": "Der Name muss zwischen 1 und {max} Zeichen lang sein.",
+      "invalidProject": "Ungültiges Projekt im Preset.",
+      "tooManyItems": "Ein Preset kann höchstens {max} Einträge haben.",
+      "notFound": "Dieses Preset gibt es nicht mehr.",
+      "builtinReadOnly": "Fertige TRS-Presets lassen sich nicht ändern oder löschen.",
+      "tooMany": "Mehr als {max} eigene Presets werden nicht unterstützt.",
+      "invalidOrder": "Die Reihenfolge passt nicht zur Preset-Liste.",
+      "invalidFile": "Das ist keine gültige Preset-Datei.",
+      "fileTooLarge": "Die Preset-Datei ist zu groß.",
+      "noneSelected": "Kein Preset ausgewählt."
     }
   },
   "browse": {
@@ -791,14 +803,6 @@
       "done": "{n} Update installiert | {n} Updates installiert",
       "partial": "{failed} von {total} Updates ist fehlgeschlagen. | {failed} von {total} Updates sind fehlgeschlagen."
     },
-    "perfPack": {
-      "taskTitle": "Performance-Paket für {name}",
-      "stage": "Mods werden geladen",
-      "done": "Performance-Paket installiert ({n} Datei) | Performance-Paket installiert ({n} Dateien)",
-      "title": "Sodium, Lithium & Co. – nur was es für diese Version gibt",
-      "installing": "Installiere Performance-Paket …",
-      "button": "+ Performance-Paket"
-    },
     "toolbar": {
       "searchPlaceholder": "{n} Projekt durchsuchen … | {n} Projekte durchsuchen …",
       "searchLabel": "Projekte durchsuchen",
@@ -1073,7 +1077,12 @@
       "reinstallTitle": "Neu installieren",
       "reinstallDescription": "Lädt Spielversion, Modloader und Bibliotheken komplett neu. Welten, Mods und Einstellungen bleiben erhalten.",
       "reinstallConfirmTitle": "Neu installieren?",
-      "reinstallConfirmText": "Spielversion und Bibliotheken werden neu heruntergeladen. Welten, Mods und Einstellungen bleiben erhalten."
+      "reinstallConfirmText": "Spielversion und Bibliotheken werden neu heruntergeladen. Welten, Mods und Einstellungen bleiben erhalten.",
+      "tuningTitle": "FPS-Boost beim Start",
+      "tuningDescription": "Abgestimmte Java-Einstellungen für mehr FPS und weniger Ruckler. Eigene JVM-Argumente haben Vorrang.",
+      "tuningGlobal": "Wie global ({state})",
+      "tuningOn": "An",
+      "tuningOff": "Aus"
     },
     "window": {
       "customTitle": "Eigene Fenstereinstellungen",
@@ -1461,7 +1470,11 @@
       "windowWidth": "Fensterbreite",
       "windowHeight": "Fensterhöhe",
       "dedicatedGpuTitle": "Leistungsstarke Grafikkarte",
-      "dedicatedGpuDescription": "Für Laptops mit zwei Grafikchips: Windows gibt dem Spiel die dedizierte GPU."
+      "dedicatedGpuDescription": "Minecraft nutzt die dedizierte Grafikkarte (wichtig bei Laptops). Gilt nur für das Java des Launchers und wird beim Abschalten zurückgenommen.",
+      "tuningTitle": "FPS-Boost beim Start",
+      "tuningDescription": "Abgestimmte Java-Einstellungen für deine Java-Version und deinen Speicher (ZGC oder G1, Speicher gleich reserviert). Nur ohne eigene JVM-Argumente.",
+      "priorityTitle": "Höhere Prozesspriorität",
+      "priorityDescription": "Startet das Spiel mit der Priorität „Höher als normal“ – kann Ruckler glätten, wenn andere Programme viel zu tun haben."
     },
     "hooks": {
       "title": "Start-Hooks",
@@ -1763,7 +1776,8 @@
     "collapseLabel": "Leiste einklappen",
     "expandLabel": "Leiste ausklappen",
     "collapse": "Einklappen",
-    "expand": "Ausklappen"
+    "expand": "Ausklappen",
+    "presets": "Presets"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -1887,7 +1901,8 @@
       "repair": "Instanz repariert",
       "reinstall": "Neu installiert",
       "versionChange": "Version gewechselt",
-      "launch": "Spielstart"
+      "launch": "Spielstart",
+      "presets": "Presets installiert"
     },
     "stage": {
       "preparing": "Wird vorbereitet",
@@ -2443,5 +2458,112 @@
     "version": "Version {version}",
     "close": "Alles klar",
     "englishOnly": "Diese Hinweise gibt es auf Englisch und Deutsch."
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Immer automatisch",
+    "autoHint": "Bei jeder neuen Instanz vorausgewählt – und bei neuen Modpacks ergänzt, wo es passt.",
+    "itemCount": "{n} Projekt | {n} Projekte",
+    "builtin": {
+      "fpsBoost": {
+        "name": "FPS-Boost",
+        "description": "Sodium oder Embeddium, Lithium, FerriteCore, ModernFix & Co. – was zu Version und Loader passt"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Rendert Gelände mit Mesh-Shadern – für deine NVIDIA-Grafikkarte (Fabric, braucht Sodium)"
+      },
+      "voiceChat": {
+        "name": "Voice Chat",
+        "description": "Simple Voice Chat – mit Leuten in der Nähe reden, auf Servern, die es unterstützen"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback, wo verfügbar, sonst ReplayMod – Spielszenen aufnehmen und schneiden"
+      }
+    },
+    "picker": {
+      "title": "Presets",
+      "manage": "Presets verwalten",
+      "vanillaBoost": "Vanilla bekommt das schon über die TRS-Optimierung",
+      "needsLoader": "Mods brauchen einen Modloader – in einer Vanilla-Instanz kommen nur Ressourcenpakete und Shader dazu.",
+      "useFabric": "Fabric nehmen"
+    },
+    "apply": {
+      "title": "Preset anwenden",
+      "intro": "Installiert wird alles, was es für {name} ({version}, {loader}) gibt – samt Pflicht-Abhängigkeiten. Der Rest wird übersprungen.",
+      "running": "In diese Instanz werden gerade schon Presets installiert.",
+      "install": "{n} Preset installieren | {n} Presets installieren",
+      "button": "+ Preset anwenden",
+      "buttonTitle": "Mod-Presets installieren (z. B. FPS-Boost, Voice Chat) – nur, was es für diese Version gibt",
+      "installing": "Presets werden installiert …"
+    },
+    "report": {
+      "title": "Presets für {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "dazu {n} Abhängigkeit | dazu {n} Abhängigkeiten",
+      "skipped": "Übersprungen ({n}) | Übersprungen ({n})",
+      "included": "Dabei ({n}) | Dabei ({n})",
+      "notNeeded": "{n} Teil des FPS-Boosts ist nicht für diese Version gemacht | {n} Teile des FPS-Boosts sind nicht für diese Version gemacht",
+      "nothing": "Nichts zu installieren",
+      "allDone": "{n} Projekt installiert | Alle {n} Projekte installiert",
+      "partial": "{done} von {total} installiert",
+      "more": "(+{n} weiteres) | (+{n} weitere)",
+      "details": "Details"
+    },
+    "reason": {
+      "installed": "Installiert",
+      "alreadyInstalled": "War schon installiert",
+      "duplicate": "Kommt schon über ein anderes Preset",
+      "notAvailable": "{title} gibt es für {version} nicht",
+      "notAvailableLoader": "{title} gibt es für {version} ({loader}) nicht",
+      "missingDependency": "{title} braucht {dependency}, das es für diese Version nicht gibt",
+      "incompatible": "{title} verträgt sich nicht mit {other}",
+      "needsLoader": "{title} braucht einen Modloader",
+      "failed": "{title} konnte nicht geladen werden"
+    },
+    "status": {
+      "installed": "Installiert",
+      "alreadyInstalled": "Schon da",
+      "duplicate": "Dabei",
+      "skipped": "Übersprungen"
+    },
+    "task": {
+      "title": "Presets für {name}",
+      "preparing": "Wird vorbereitet …",
+      "resolving": "Versionen werden geprüft ({done}/{total})",
+      "installing": "{title} wird geladen ({done}/{total})",
+      "finishing": "Wird abgeschlossen"
+    },
+    "editor": {
+      "newTitle": "Neues Preset",
+      "editTitle": "Preset bearbeiten",
+      "namePlaceholder": "z. B. Meine Basics",
+      "contents": "Inhalt ({n}) | Inhalt ({n})",
+      "remove": "{title} entfernen",
+      "empty": "Noch leer – füge Projekte aus der Suche hinzu.",
+      "searchPlaceholder": "Modrinth durchsuchen …",
+      "searchLabel": "Projekte suchen",
+      "added": "Dabei",
+      "add": "Hinzufügen",
+      "noResults": "Keine Treffer",
+      "hint": "Presets sind versionsunabhängig: Beim Installieren wird für jede Instanz die passende Version gewählt – was es nicht gibt, wird übersprungen.",
+      "tooManyItems": "Höchstens {max} Einträge pro Preset",
+      "duplicate": "Jedes Projekt kann nur einmal in einem Preset stehen"
+    },
+    "page": {
+      "title": "Presets",
+      "subtitle": "Mods, die du immer willst – automatisch installiert, wo es sie gibt",
+      "new": "Neues Preset",
+      "exported": "„{name}“ gespeichert",
+      "deleted": "„{name}“ gelöscht",
+      "imported": "„{name}“ importiert",
+      "emptyPreset": "Noch keine Projekte",
+      "builtinHint": "TRS-Presets hält der Launcher aktuell. Du kannst sie jederzeit für neue Instanzen an- oder abwählen.",
+      "confirmDelete": "Wirklich löschen?",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "footer": "Presets mit Freunden teilen: über Exportieren speichern – mit Importieren lässt sich die Datei laden."
+    }
   }
 }

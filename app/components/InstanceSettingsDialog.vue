@@ -27,6 +27,8 @@ const name = ref(inst.value.name)
 const channel = ref<UpdateChannel>(o.updateChannel ?? 'release')
 const trsClient = ref(o.trsClient !== false)
 const boost = ref(o.boost !== false)
+/** FPS-Boost beim Start: wie global, an oder aus. */
+const tuning = ref<'global' | 'on' | 'off'>(o.performanceTuning == null ? 'global' : o.performanceTuning ? 'on' : 'off')
 
 const customWindow = ref(o.fullscreen !== null || o.resolution !== null)
 const fullscreen = ref(o.fullscreen ?? false)
@@ -61,6 +63,7 @@ function overrides(): InstanceOverrides {
     updateChannel: channel.value === 'release' ? null : channel.value,
     trsClient: trsClient.value ? null : false,
     boost: boost.value ? null : false,
+    performanceTuning: tuning.value === 'global' ? null : tuning.value === 'on',
     fullscreen: customWindow.value ? fullscreen.value : null,
     resolution:
       customWindow.value && width.value && height.value ? { width: width.value, height: height.value } : null,
@@ -418,6 +421,13 @@ const loaderLine = computed(() => {
       </SettingRow>
       <SettingRow title="TRS Client" :description="t('instanceSettings.installation.clientDescription')">
         <ToggleSwitch v-model="trsClient" label="TRS Client" />
+      </SettingRow>
+      <SettingRow :title="t('instanceSettings.installation.tuningTitle')" :description="t('instanceSettings.installation.tuningDescription')">
+        <select v-model="tuning" class="field w-44 py-1.5" :aria-label="t('instanceSettings.installation.tuningTitle')">
+          <option value="global">{{ t('instanceSettings.installation.tuningGlobal', { state: g?.performanceTuning === false ? t('instanceSettings.installation.tuningOff') : t('instanceSettings.installation.tuningOn') }) }}</option>
+          <option value="on">{{ t('instanceSettings.installation.tuningOn') }}</option>
+          <option value="off">{{ t('instanceSettings.installation.tuningOff') }}</option>
+        </select>
       </SettingRow>
 
       <h3 class="section-heading mt-6">{{ t('instanceSettings.installation.maintenance') }}</h3>
