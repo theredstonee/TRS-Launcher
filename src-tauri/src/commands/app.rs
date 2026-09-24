@@ -1,6 +1,5 @@
 use serde::Serialize;
 use tauri::{AppHandle, State};
-use tauri_plugin_opener::OpenerExt;
 
 use crate::LauncherState;
 use crate::error::CommandResult;
@@ -10,8 +9,12 @@ use crate::error::CommandResult;
 pub struct AppInfo {
     version: &'static str,
     data_dir: String,
-    /// z. B. „Windows 11 (24H2, Build 26100)“.
+    /// z. B. „Windows 11 (24H2, Build 26100)“ oder „Arch Linux (Kernel 6.10.2)“.
     os: String,
+    /// Was es auf diesem System gibt (Plattform, Firewall, Papierkorb, Clips, Update-Weg).
+    capabilities: trs_core::platform::Capabilities,
+    /// Schutz der gespeicherten Anmeldedaten: `dpapi`, `keyring`, `file` oder `none`.
+    token_protection: &'static str,
 }
 
 #[tauri::command]
@@ -20,6 +23,8 @@ pub fn app_info(launcher: State<'_, LauncherState>) -> AppInfo {
         version: trs_core::LAUNCHER_VERSION,
         data_dir: launcher.paths().root().display().to_string(),
         os: trs_core::system::os_description(),
+        capabilities: trs_core::platform::capabilities(),
+        token_protection: trs_core::auth::crypto::protection(),
     }
 }
 
@@ -32,7 +37,7 @@ pub async fn client_mod_status(launcher: State<'_, LauncherState>) -> CommandRes
 #[tauri::command]
 pub fn open_data_dir(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<()> {
     let path = launcher.paths().root().display().to_string();
-    app.opener().open_path(path, None::<&str>)?;
+    crate::open::path(&app, path)?;
     Ok(())
 }
 

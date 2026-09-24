@@ -1,6 +1,7 @@
 mod commands;
 mod dialog_text;
 mod error;
+mod open;
 
 use std::path::PathBuf;
 use std::sync::Arc;

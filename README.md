@@ -6,14 +6,15 @@
 
 # TRS Launcher
 
-**A fast, modern Minecraft: Java Edition launcher for Windows, with a built-in client for FPS, HUD and PvP features.**
+**A fast, modern Minecraft: Java Edition launcher for Windows and Linux, with a built-in client for FPS, HUD and PvP features.**
 
 [![Latest release](https://img.shields.io/github/v/release/theredstonee/TRS-Launcher?include_prereleases&sort=semver&label=release&color=e0281e)](https://github.com/theredstonee/TRS-Launcher/releases)
 [![Release build](https://img.shields.io/github/actions/workflow/status/theredstonee/TRS-Launcher/release.yml?label=build)](https://github.com/theredstonee/TRS-Launcher/actions/workflows/release.yml)
 [![Downloads](https://img.shields.io/github/downloads/theredstonee/TRS-Launcher/total?color=ffb84d)](https://github.com/theredstonee/TRS-Launcher/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 <br />
-[![Platform: Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)](#installation)
+[![Platform: Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)](#windows)
+[![Platform: Linux](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black)](#linux)
 [![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
 [![Rust](https://img.shields.io/badge/Rust-2024-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt&logoColor=white)](https://nuxt.com)
@@ -66,7 +67,7 @@
 
 **Everything else**
 - **Redstone look**: a live redstone circuit on the start page and behind every page, a lamp as the play button, dark, OLED, light or system theme and five accent colours
-- Multiple Microsoft accounts, switched from the title bar (tokens encrypted with Windows DPAPI)
+- Multiple Microsoft accounts, switched from the title bar (tokens encrypted with Windows DPAPI, on Linux with a key from the system keyring)
 - **Background tasks**: installs and downloads keep running while you use the launcher, with a tasks panel to pause, resume or cancel them and a history of finished tasks
 - Server list with live player count and ping, one-click join
 - **Skins & capes** with a 3D preview: keep your own skin library, switch model (classic/slim), pick any Mojang cape you own and apply all changes at once
@@ -79,6 +80,8 @@
 
 ## Installation
 
+### Windows
+
 1. Download `TRS-Launcher_<version>_x64-setup.exe` from the [releases page](https://github.com/theredstonee/TRS-Launcher/releases).
 2. Run it. It installs for your Windows user only and needs no administrator rights.
 3. Sign in with the Microsoft account that owns Minecraft.
@@ -87,6 +90,26 @@
 > The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC". Choose **More info → Run anyway**.
 
 Your data lives in `%APPDATA%\TRS-Launcher`. Step-by-step guides are in the [wiki](https://github.com/theredstonee/TRS-Launcher/wiki).
+
+### Linux
+
+Every release has an **AppImage**, a **.deb** and an **.rpm** for x86_64 (built on Ubuntu 22.04, so any distribution with glibc 2.35 or newer works). You don't need Java — the launcher downloads the right Mojang runtime itself.
+
+| Distribution | Install |
+|---|---|
+| **Arch Linux**, Manjaro, EndeavourOS | `yay -S trs-launcher-bin` (or `paru -S trs-launcher-bin`) from the AUR |
+| **Debian, Ubuntu**, Linux Mint, Pop!_OS | `sudo apt install ./TRS-Launcher_<version>_amd64.deb` |
+| **Fedora**, openSUSE | `sudo dnf install ./TRS-Launcher-<version>-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
+| **Any distribution** | `chmod +x TRS-Launcher_<version>_amd64.AppImage && ./TRS-Launcher_<version>_amd64.AppImage` |
+| **Flatpak** | `flatpak install flathub dev.theredstonee.trslauncher` (once it is published on Flathub) |
+
+- **Updates:** the AppImage updates itself like the Windows version. The .deb, .rpm, AUR and Flatpak packages are updated by your package manager; the launcher only tells you when a new version is out.
+- Your data lives in `~/.local/share/TRS-Launcher` (Flatpak: `~/.var/app/dev.theredstonee.trslauncher/data/TRS-Launcher`).
+- Sign-in keys are stored in the system keyring (GNOME Keyring, KWallet, KeePassXC …). Without a keyring they are kept in a file only your user can read, and the settings show a hint.
+- Minecraft 1.12.2 and older (LWJGL 2) need the `xrandr` tool: `xorg-xrandr` (Arch), `x11-xserver-utils` (Debian/Ubuntu), `xrandr` (Fedora).
+- Works on Wayland and X11 (the game itself runs through XWayland). With the proprietary NVIDIA driver the launcher turns off WebKit's DMA-BUF renderer to avoid a blank window.
+- The AppImage needs FUSE 2 (`libfuse2`/`fuse2`); without it, run it with `--appimage-extract-and-run`.
+- Not available on Linux yet: the Windows firewall helper (not needed) and clip recording. ARM64 has no Mojang Java runtime — set your own Java in the settings.
 
 ## Fair play
 
@@ -98,6 +121,19 @@ Your data lives in `%APPDATA%\TRS-Launcher`. Step-by-step guides are in the [wik
 ## Building from source
 
 **Requirements:** Node.js 22+ with pnpm, Rust (stable, MSVC toolchain), the Visual Studio Build Tools ("Desktop development with C++") and WebView2 (preinstalled on Windows 10/11).
+
+**On Linux** you need Node.js 22+ with pnpm, Rust (stable) and the WebKitGTK/GTK development packages:
+
+```sh
+# Debian/Ubuntu
+sudo apt install build-essential curl file pkg-config libssl-dev libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev
+# Arch
+sudo pacman -S --needed base-devel webkit2gtk-4.1 gtk3 libayatana-appindicator librsvg openssl xdotool
+# Fedora
+sudo dnf install gcc-c++ openssl-devel webkit2gtk4.1-devel gtk3-devel libappindicator-gtk3-devel librsvg2-devel libxdo-devel
+```
+
+`pnpm tauri build --bundles appimage,deb,rpm` builds the Linux packages. The AUR and Flatpak recipes are in [`packaging/`](packaging/).
 
 ```sh
 pnpm install
@@ -123,7 +159,7 @@ Development builds without a signed-in account start the game in its official **
 
 ### Releases
 
-Pushing a tag like `v0.2.0` runs [`release.yml`](.github/workflows/release.yml). It builds and signs the installer, publishes a release and refreshes the update channel the built-in updater polls.
+Pushing a tag like `v0.2.0` runs [`release.yml`](.github/workflows/release.yml). It builds and signs the Windows installer and the Linux AppImage, .deb and .rpm, publishes a release (with a ready-made AUR `PKGBUILD`) and, once both platforms are done, refreshes the update channel the built-in updater polls.
 
 ### TRS Client updates
 

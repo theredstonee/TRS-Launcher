@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=TRS Launcher
+GenericName=Minecraft Launcher
+Comment=Minecraft launcher for every version and mod loader
+Comment[de]=Minecraft-Launcher für alle Versionen und Modloader
+Comment[es]=Launcher de Minecraft para todas las versiones y cargadores de mods
+Exec=trs-launcher
+Icon=trs-launcher
+Terminal=false
+Categories=Game;
+Keywords=minecraft;launcher;mods;fabric;forge;neoforge;quilt;modrinth;curseforge;
+StartupWMClass=trs-launcher

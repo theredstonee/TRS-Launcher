@@ -90,7 +90,7 @@ pub async fn reveal_clip(
 pub async fn open_clips_folder(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<()> {
     let root = launcher.clips_root().await;
     trs_core::fsutil::ensure_dir(&root).await?;
-    app.opener().open_path(root.display().to_string(), None::<&str>)?;
+    crate::open::path(&app, root.display().to_string())?;
     Ok(())
 }
 

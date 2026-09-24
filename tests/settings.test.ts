@@ -67,5 +67,10 @@ describe('Instanz-Einstellungen', () => {
     expect(groupSchema.safeParse('g'.repeat(33)).success).toBe(false)
     expect(groupSchema.parse('  PvP  ')).toBe('PvP')
     expect(javaPathSchema.safeParse('D:\\jdk-21\\bin\\java.exe').success).toBe(true)
+    // Linux: absoluter Pfad auf `…/bin/java`.
+    expect(javaPathSchema.safeParse('/usr/lib/jvm/java-21-openjdk/bin/java').success).toBe(true)
+    for (const bad of ['java', '/bin/sh', 'bin/java', 'C:\\x\\cmd.exe', '/usr/bin/java\n']) {
+      expect(javaPathSchema.safeParse(bad).success, bad).toBe(false)
+    }
   })
 })

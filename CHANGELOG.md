@@ -68,6 +68,13 @@ How to write an entry:
 - **Website sign-in.** TRS admins can sign in to the website with the launcher: the website shows a code, enter it
   under Admin, Settings → Privacy or via Ctrl+K ("Confirm website sign-in") and confirm. The launcher clearly asks
   first – only confirm if you are on the website yourself right now, and never give the code to anyone.
+- **Linux support.** The launcher now runs on Linux – Arch, Ubuntu/Debian, Fedora and others – as AppImage (updates
+  itself), .deb, .rpm, in the AUR (`trs-launcher-bin`) and ready for Flatpak. Java, all mod loaders and old versions
+  like 1.8.9 work just like on Windows; sign-in keys go into your system keyring. Instances from Prism Launcher,
+  MultiMC, the Modrinth App (also as Flatpak) and `~/.minecraft` can be imported. Windows-only features (firewall
+  helper, clips) are hidden there for now.
+- **Dedicated GPU on Linux too.** On laptops with two graphics chips, the game runs on the stronger one
+  (PRIME offload).
 
 ### Deutsch
 
@@ -130,6 +137,13 @@ How to write an entry:
   Code, den gibst du unter Admin, Einstellungen → Datenschutz oder über Strg+K („Website-Anmeldung bestätigen“)
   ein und bestätigst. Der Launcher fragt vorher deutlich nach – nur bestätigen, wenn du gerade selbst auf der
   Website bist, und den Code niemals weitergeben.
+- **Linux-Unterstützung.** Der Launcher läuft jetzt unter Linux – Arch, Ubuntu/Debian, Fedora und andere – als
+  AppImage (aktualisiert sich selbst), .deb, .rpm, im AUR (`trs-launcher-bin`) und bereit für Flatpak. Java, alle
+  Modloader und alte Versionen wie 1.8.9 funktionieren wie unter Windows; Anmeldeschlüssel liegen im Schlüsselbund
+  des Systems. Instanzen aus Prism Launcher, MultiMC, der Modrinth App (auch als Flatpak) und `~/.minecraft` lassen
+  sich importieren. Reine Windows-Funktionen (Firewall-Freigabe, Clips) sind dort vorerst ausgeblendet.
+- **Starke Grafikkarte auch unter Linux.** Auf Laptops mit zwei Grafikchips läuft das Spiel auf dem stärkeren
+  (PRIME-Offload).
 
 ## 0.4.3 – 2026-09-24 – The Friends Update | Das Freunde-Update
 

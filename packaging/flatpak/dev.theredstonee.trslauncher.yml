@@ -1,0 +1,72 @@
+# Flatpak-Manifest für den TRS Launcher.
+#
+# Verpackt den fertigen Build aus dem .deb des GitHub-Releases (wie viele
+# Tauri-Apps auf Flathub). Version + Prüfsumme bei jedem Release anpassen
+# (`node scripts/aur.mjs` gibt die sha256 des .deb aus, oder SHA256SUMS-linux.txt
+# im Release). Lokal bauen:
+#
+#   flatpak-builder --user --install --force-clean build packaging/flatpak/dev.theredstonee.trslauncher.yml
+#   flatpak run dev.theredstonee.trslauncher
+app-id: dev.theredstonee.trslauncher
+runtime: org.gnome.Platform
+# GNOME-Laufzeiten gelten ~1 Jahr (48 ist seit März 2026 EOL) – bei Bedarf anheben.
+runtime-version: '50'
+sdk: org.gnome.Sdk
+command: trs-launcher
+finish-args:
+  # Oberfläche (Wayland bevorzugt, X11 als Rückfall – Minecraft/GLFW nutzt XWayland).
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  # OpenGL fürs Spiel und die WebKit-Oberfläche.
+  - --device=dri
+  # Ton im Spiel.
+  - --socket=pulseaudio
+  # Downloads (Mojang, Modrinth, CurseForge), Anmeldung, Server-Liste, LAN-Welten.
+  - --share=network
+  # Schlüsselbund (Secret Service) für den Anmeldeschlüssel.
+  - --talk-name=org.freedesktop.secrets
+  # CurseForge-Dateien, die nur per Browser geladen werden dürfen, im Download-Ordner finden.
+  - --filesystem=xdg-download:ro
+  # Import aus anderen Launchern (nur lesen).
+  - --filesystem=~/.minecraft:ro
+  - --filesystem=xdg-data/PrismLauncher:ro
+  - --filesystem=xdg-data/ModrinthApp:ro
+  - --filesystem=xdg-data/multimc:ro
+  - --filesystem=~/.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher:ro
+  - --filesystem=~/.var/app/com.modrinth.ModrinthApp/data/ModrinthApp:ro
+  # Kein `--device=input` (Gamepads): kennt erst Flatpak ≥ 1.15.6, ältere Systeme
+  # (z. B. Ubuntu 24.04) könnten die App sonst nicht installieren.
+modules:
+  # Minecraft 1.12.2 und älter (LWJGL 2) fragen die Bildschirmmodi über `xrandr` ab.
+  - name: xrandr
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://xorg.freedesktop.org/archive/individual/app/xrandr-1.5.3.tar.xz
+        sha256: f8dd7566adb74147fab9964680b6bbadee87cf406a7fcff51718a5e6949b841c
+
+  - name: trs-launcher
+    buildsystem: simple
+    sources:
+      - type: file
+        dest-filename: trs-launcher.deb
+        url: https://github.com/theredstonee/TRS-Launcher/releases/download/v0.4.3/TRS-Launcher_0.4.3_amd64.deb
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+        only-arches: [x86_64]
+      - type: file
+        path: dev.theredstonee.trslauncher.desktop
+      - type: file
+        path: dev.theredstonee.trslauncher.metainfo.xml
+    build-commands:
+      - ar x trs-launcher.deb
+      - tar -xf data.tar.gz
+      - install -Dm755 usr/bin/trs-launcher /app/bin/trs-launcher
+      # Tauri sucht Ressourcen neben /app/bin unter /app/lib/<Produktname>.
+      - mkdir -p "/app/lib/TRS Launcher"
+      - cp -r "usr/lib/TRS Launcher/client-mod" "/app/lib/TRS Launcher/"
+      - install -Dm644 usr/share/icons/hicolor/32x32/apps/trs-launcher.png /app/share/icons/hicolor/32x32/apps/dev.theredstonee.trslauncher.png
+      - install -Dm644 usr/share/icons/hicolor/128x128/apps/trs-launcher.png /app/share/icons/hicolor/128x128/apps/dev.theredstonee.trslauncher.png
+      - install -Dm644 usr/share/icons/hicolor/256x256@2/apps/trs-launcher.png /app/share/icons/hicolor/256x256/apps/dev.theredstonee.trslauncher.png
+      - install -Dm644 dev.theredstonee.trslauncher.desktop /app/share/applications/dev.theredstonee.trslauncher.desktop
+      - install -Dm644 dev.theredstonee.trslauncher.metainfo.xml /app/share/metainfo/dev.theredstonee.trslauncher.metainfo.xml

@@ -1,6 +1,5 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
-use tauri_plugin_opener::OpenerExt;
 use trs_core::auth::{Account, DeviceCode};
 
 use crate::LauncherState;
@@ -15,7 +14,7 @@ pub async fn list_accounts(launcher: State<'_, LauncherState>) -> CommandResult<
 #[tauri::command]
 pub async fn login_browser(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Account> {
     let open = move |url: &str| {
-        if let Err(e) = app.opener().open_url(url, None::<&str>) {
+        if let Err(e) = crate::open::url(&app, url) {
             log::error!("Browser konnte nicht geöffnet werden: {e}");
         }
     };
@@ -36,7 +35,7 @@ pub async fn login_device_code(
         let trusted = ["https://www.microsoft.com/", "https://microsoft.com/", "https://login.microsoftonline.com/", "https://login.live.com/"]
             .iter()
             .any(|prefix| code.verification_uri.starts_with(prefix));
-        if trusted && let Err(e) = app.opener().open_url(&code.verification_uri, None::<&str>) {
+        if trusted && let Err(e) = crate::open::url(&app, &code.verification_uri) {
             log::error!("Browser konnte nicht geöffnet werden: {e}");
         }
     };

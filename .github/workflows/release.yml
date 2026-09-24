@@ -1,8 +1,9 @@
 name: Release
 
-# Baut bei jedem Versions-Tag (v1.2.3) den signierten Windows-Installer,
-# legt ein (Vorab-)Release an und aktualisiert den Update-Kanal, den der
-# eingebaute Auto-Updater abfragt.
+# Baut bei jedem Versions-Tag (v1.2.3) den signierten Windows-Installer und die
+# Linux-Pakete (AppImage, .deb, .rpm), legt ein (Vorab-)Release an und
+# aktualisiert den Update-Kanal, den der eingebaute Auto-Updater abfragt.
+# `latest.json` entsteht erst, wenn Windows UND Linux fertig gebaut sind.
 on:
   push:
     tags: ["v*"]
@@ -20,6 +21,7 @@ env:
 
 jobs:
   build:
+    name: Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,12 +51,12 @@ jobs:
         shell: bash
         run: node --experimental-strip-types scripts/changelog.mjs notes "${TAG#v}" > release-notes.md
 
-      # Nur bauen und signieren – veröffentlicht wird unten selbst.
+      # Nur bauen und signieren – veröffentlicht wird im Job „publish“.
       - name: Build signed installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # Wird beim Bauen eingebettet (crates/core/build.rs); ohne ihn bleibt CurseForge aus.
+          # Ohne Secret bleibt CurseForge im Build ausgeschaltet (siehe crates/core/build.rs).
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         run: pnpm tauri build
 
@@ -68,22 +70,130 @@ jobs:
           exe="TRS-Launcher_${version}_x64-setup.exe"
           cp "$src" "out/$exe"
           cp "$src.sig" "out/$exe.sig"
-          node -e '
-            const fs = require("fs");
-            const [version, exe, repo, tag] = process.argv.slice(1);
-            const signature = fs.readFileSync(`out/${exe}.sig`, "utf8").trim();
-            const manifest = {
-              version,
-              notes: fs.readFileSync("release-notes.md", "utf8").trim(),
-              pub_date: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
-              platforms: { "windows-x86_64": { signature, url: `https://github.com/${repo}/releases/download/${tag}/${exe}` } },
-            };
-            fs.writeFileSync("out/latest.json", JSON.stringify(manifest, null, 2));
-          ' "$version" "$exe" "$GITHUB_REPOSITORY" "$TAG"
+          cp release-notes.md out/
+          # Eintrag für latest.json – zusammengeführt wird im Job „publish“.
+          node scripts/updater-manifest.mjs platform windows-x86_64 "out/$exe" > out/platform-windows.json
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: out/
+          if-no-files-found: error
+
+  linux:
+    name: Linux
+    # Ältestes unterstütztes Ubuntu-LTS: das glibc hier ist die Untergrenze für
+    # AppImage, .deb und .rpm (neuere Distributionen laufen damit alle).
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: System libraries (WebKitGTK 4.1, GTK 3)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libssl-dev libxdo-dev patchelf file
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: release-linux
+          cache-on-failure: true
+
+      - run: pnpm install --frozen-lockfile
+
+      # Gleiche Prüfung wie unter Windows – ohne Eintrag bricht der Release früh ab.
+      - name: Release notes from CHANGELOG.md
+        run: node --experimental-strip-types scripts/changelog.mjs notes "${TAG#v}" > /dev/null
+
+      - name: Build signed AppImage, .deb and .rpm
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          # linuxdeploy ist selbst ein AppImage – ohne FUSE im Runner entpacken statt einhängen.
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          NO_STRIP: "true"
+        run: pnpm tauri build --bundles appimage,deb,rpm
+
+      - name: Collect release files
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          bundle=src-tauri/target/release/bundle
+          mkdir -p out
+          appimage="TRS-Launcher_${version}_amd64.AppImage"
+          deb="TRS-Launcher_${version}_amd64.deb"
+          rpm="TRS-Launcher-${version}-1.x86_64.rpm"
+          cp "$(ls $bundle/appimage/*.AppImage | head -1)" "out/$appimage"
+          cp "$(ls $bundle/deb/*.deb | head -1)" "out/$deb"
+          cp "$(ls $bundle/rpm/*.rpm | head -1)" "out/$rpm"
+          # Ohne die mitgebündelten libwayland-* (sonst leeres Fenster auf Arch/Fedora),
+          # danach neu signieren – die Signatur von tauri build passt nicht mehr.
+          bash scripts/fix-appimage.sh "out/$appimage"
+          pnpm tauri signer sign "out/$appimage" > /dev/null
+          test -s "out/$appimage.sig"
+          # Der Auto-Updater kann sich unter Linux nur als AppImage selbst ersetzen.
+          node scripts/updater-manifest.mjs platform linux-x86_64 "out/$appimage" > out/platform-linux.json
+          (cd out && sha256sum "$appimage" "$deb" "$rpm" > SHA256SUMS-linux.txt)
+          # AUR-Paket (trs-launcher-bin) mit Prüfsumme dieses Releases.
+          node scripts/aur.mjs --version "$version" --deb "out/$deb" --out out/aur
+          ls -la out out/aur
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: out/
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: [build, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Assemble release files and latest.json
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp artifacts/windows/TRS-Launcher_* out/
+          cp artifacts/linux/TRS-Launcher* artifacts/linux/SHA256SUMS-linux.txt out/
+          # PKGBUILD + .SRCINFO für das AUR als eigene Dateien im Release.
+          cp artifacts/linux/aur/PKGBUILD out/trs-launcher-bin.PKGBUILD
+          cp artifacts/linux/aur/.SRCINFO out/trs-launcher-bin.SRCINFO
+          cp artifacts/windows/release-notes.md .
+          node scripts/updater-manifest.mjs merge "${TAG#v}" release-notes.md "$GITHUB_REPOSITORY" "$TAG" \
+            artifacts/windows/platform-windows.json artifacts/linux/platform-linux.json > out/latest.json
+          cat out/latest.json
           ls -la out
 
       - name: Publish release and update channel
-        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

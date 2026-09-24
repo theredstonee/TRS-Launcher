@@ -68,7 +68,7 @@ async function share() {
     </div>
 
     <BaseDialog v-if="confirmShare" :title="t('crash.shareTitle')" @close="confirmShare = false">
-      <i18n-t keypath="crash.shareText" tag="p" scope="global" class="text-sm text-base-200">
+      <i18n-t :keypath="isLinux ? 'crash.shareTextLinux' : 'crash.shareText'" tag="p" scope="global" class="text-sm text-base-200">
         <template #site><strong>mclo.gs</strong></template>
       </i18n-t>
       <template #actions>

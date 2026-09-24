@@ -17,6 +17,7 @@ use crate::paths::Paths;
 use crate::{Error, Result, fsutil};
 
 const STATE_FILE: &str = "firewall.json";
+#[cfg(windows)]
 const RULE_PREFIX: &str = "TRS Launcher - Java";
 /// Startet den Launcher im Firewall-Hilfsmodus statt der App.
 pub const HELPER_FLAG: &str = "--trs-firewall-helper";
@@ -42,7 +43,11 @@ struct State {
 }
 
 /// Alle Java-Programme unserer Runtimes (`java/<component>/bin/java[w].exe`).
+/// Unter Linux gibt es keine Programm-Freigaben – dort immer leer.
 pub fn runtime_programs(paths: &Paths) -> Vec<PathBuf> {
+    if !cfg!(windows) {
+        return Vec::new();
+    }
     let Ok(entries) = std::fs::read_dir(paths.java_dir()) else { return Vec::new() };
     let mut out = Vec::new();
     for entry in entries.flatten() {
@@ -82,6 +87,7 @@ pub async fn remember_declined(paths: &Paths, programs: &[PathBuf]) -> Result<()
     fsutil::write_json(&file, &state).await
 }
 
+#[cfg(windows)]
 fn rule_name(program: &Path) -> String {
     // z. B. "TRS Launcher - Java (java-runtime-delta, javaw.exe)"
     let component = program
@@ -142,7 +148,13 @@ fn helper_params(programs: &[PathBuf]) -> String {
     params
 }
 
+#[cfg(not(windows))]
+fn run_elevated_helper(_exe: &Path, _params: &str) -> Result<u32> {
+    Err(Error::validation(crate::msg!("firewall.onlyLauncherJava", "Nur Java-Versionen des Launchers können freigegeben werden.")))
+}
+
 /// Startet die Launcher-EXE mit Admin-Rechten (UAC) im Hilfsmodus und wartet.
+#[cfg(windows)]
 fn run_elevated_helper(exe: &Path, params: &str) -> Result<u32> {
     use windows::Win32::Foundation::{CloseHandle, ERROR_CANCELLED, GetLastError};
     use windows::Win32::System::Threading::{GetExitCodeProcess, INFINITE, WaitForSingleObject};
@@ -198,6 +210,9 @@ fn helper_accepts(program: &Path) -> bool {
 /// Wird ganz am Anfang von `main` aufgerufen: Läuft der Prozess im
 /// Hilfsmodus, trägt er die Regeln ein und liefert den Exit-Code.
 pub fn helper_main_if_requested() -> Option<i32> {
+    if !cfg!(windows) {
+        return None;
+    }
     let mut args = std::env::args_os().skip(1);
     if args.next()? != HELPER_FLAG {
         return None;
@@ -215,7 +230,13 @@ pub fn helper_main_if_requested() -> Option<i32> {
     })
 }
 
+#[cfg(not(windows))]
+fn add_rules(_programs: &[PathBuf]) -> std::io::Result<()> {
+    Err(std::io::Error::other("Firewall-Regeln gibt es nur unter Windows"))
+}
+
 /// Legt je Programm eine Regel für TCP und UDP an (alte gleichen Namens werden ersetzt).
+#[cfg(windows)]
 fn add_rules(programs: &[PathBuf]) -> windows::core::Result<()> {
     use windows::Win32::Foundation::VARIANT_TRUE;
     use windows::Win32::NetworkManagement::WindowsFirewall::{
@@ -259,7 +280,26 @@ fn add_rules(programs: &[PathBuf]) -> windows::core::Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(windows)))]
+mod tests_unix {
+    use super::*;
+
+    #[tokio::test]
+    async fn nothing_to_allow_outside_windows() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        paths.ensure().await.unwrap();
+        let bin = paths.java_dir().join("java-runtime-delta").join("bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        std::fs::write(bin.join("java"), b"x").unwrap();
+        assert!(runtime_programs(&paths).is_empty());
+        assert!(missing_for_auto(&paths).await.is_empty());
+        assert_eq!(allow(&paths, vec![]).await.unwrap(), 0);
+        assert_eq!(helper_main_if_requested(), None);
+    }
+}
+
+#[cfg(all(test, windows))]
 mod tests {
     use super::*;
 

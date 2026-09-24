@@ -22,9 +22,21 @@ thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["fs", "sync", "macros", "rt-multi-thread", "process", "io-util", "net", "time"] }
 tracing = { version = "0.1.44", features = ["log"] }
 uuid = { version = "1.26.1", features = ["v4"] }
+zip = "8.6.0"
+
+# Windows: DPAPI, Registry, Firewall, Papierkorb, DNS, GPU (DXGI) und Clips (WASAPI).
+[target.'cfg(windows)'.dependencies]
 wasapi = "0.24.0"
 windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_NetworkManagement_Dns", "Win32_NetworkManagement_WindowsFirewall", "Win32_Security_Cryptography", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Ole", "Win32_System_Performance", "Win32_System_Registry", "Win32_System_Threading", "Win32_System_Variant", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
-zip = "8.6.0"
+
+# Linux: Prozessgruppen/Signale, Token-Schlüssel im Schlüsselbund (Secret Service
+# über zbus, reines Rust ohne libdbus) und ChaCha20-Poly1305 für die Tokens.
+[target.'cfg(unix)'.dependencies]
+chacha20poly1305 = "0.10.1"
+getrandom = "0.3.4"
+keyring-core = "1.0.0"
+libc = "0.2.189"
+zbus-secret-service-keyring-store = { version = "1.0.1", features = ["crypto-rust"] }
 
 [dev-dependencies]
 minisign = "0.9.1"

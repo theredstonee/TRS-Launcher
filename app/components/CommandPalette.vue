@@ -75,7 +75,8 @@ const pages = computed<Command[]>(() => {
     { to: '/friends', label: 'nav.friends', icon: 'friends', keywords: 'palette.keywords.friends' },
   ]
   return list
-    .filter((p) => router.resolve(p.to).matched.length > 0)
+    // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
+    .filter((p) => router.resolve(p.to).matched.length > 0 && (p.to !== '/clips' || !isLinux))
     .map((p) => ({
       id: `page:${p.to}`,
       group: 'pages' as const,

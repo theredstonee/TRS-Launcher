@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.theredstonee.trslauncher</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <name>TRS Launcher</name>
+  <summary>Minecraft launcher for every version and mod loader</summary>
+  <summary xml:lang="de">Minecraft-Launcher für alle Versionen und Modloader</summary>
+  <summary xml:lang="es">Launcher de Minecraft para todas las versiones y cargadores de mods</summary>
+  <developer id="dev.theredstonee">
+    <name>Theredstonee</name>
+  </developer>
+  <description>
+    <p>
+      TRS Launcher is a Minecraft: Java Edition launcher with instances for every game version and
+      every mod loader – Vanilla, Fabric, Quilt, Forge and NeoForge.
+    </p>
+    <ul>
+      <li>Sign in with your Microsoft account</li>
+      <li>Browse and install mods, resource packs, shaders and modpacks from Modrinth and CurseForge</li>
+      <li>Import instances from the official launcher, Prism Launcher, MultiMC, the Modrinth App and CurseForge</li>
+      <li>Java is downloaded automatically in the right version</li>
+      <li>Server list, skins, screenshots, crash diagnosis and the optional TRS Client mod</li>
+    </ul>
+    <p>A Minecraft: Java Edition account is required to play.</p>
+  </description>
+  <launchable type="desktop-id">dev.theredstonee.trslauncher.desktop</launchable>
+  <url type="homepage">https://github.com/theredstonee/TRS-Launcher</url>
+  <url type="bugtracker">https://github.com/theredstonee/TRS-Launcher/issues</url>
+  <url type="vcs-browser">https://github.com/theredstonee/TRS-Launcher</url>
+  <categories>
+    <category>Game</category>
+  </categories>
+  <keywords>
+    <keyword>minecraft</keyword>
+    <keyword>launcher</keyword>
+    <keyword>mods</keyword>
+    <keyword>modpacks</keyword>
+  </keywords>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-info">mild</content_attribute>
+  </content_rating>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <requires>
+    <display_length compare="ge">940</display_length>
+  </requires>
+  <branding>
+    <color type="primary" scheme_preference="light">#f4d4d0</color>
+    <color type="primary" scheme_preference="dark">#5a1612</color>
+  </branding>
+  <releases>
+    <release version="0.4.3" date="2026-09-24">
+      <url type="details">https://github.com/theredstonee/TRS-Launcher/releases/tag/v0.4.3</url>
+    </release>
+  </releases>
+</component>

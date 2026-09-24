@@ -70,7 +70,8 @@
     "betaGroup": "Beta-Sprachen",
     "onboardingTitle": "Wähle deine Sprache",
     "onboardingText": "Du kannst sie jederzeit unter Einstellungen → Sprache ändern.",
-    "detected": "Aus Windows übernommen"
+    "detected": "Aus Windows übernommen",
+    "detectedSystem": "Vom System übernommen"
   },
   "format": {
     "neverPlayed": "Noch nie gespielt",
@@ -945,7 +946,8 @@
     },
     "deleteDialog": {
       "title": "Screenshot löschen?",
-      "text": "{name} wandert in den Papierkorb von Windows – von dort lässt er sich zurückholen."
+      "text": "{name} wandert in den Papierkorb von Windows – von dort lässt er sich zurückholen.",
+      "textLinux": "{name} wandert in den Papierkorb – im Dateimanager lässt er sich von dort zurückholen."
     }
   },
   "servers": {
@@ -1361,7 +1363,8 @@
       "missing_dependency": "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler.",
       "mod_conflict": "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut.",
       "graphics_driver": "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den Treiber deiner Grafikkarte."
-    }
+    },
+    "shareTextLinux": "Der Log wird auf {site} hochgeladen und ist über den Link für alle lesbar. Login-Tokens und dein Benutzername werden vorher entfernt."
   },
   "exportPack": {
     "title": "Als Modpack exportieren",
@@ -1431,7 +1434,9 @@
     "title": "Einstellungen",
     "footer": {
       "clientModUpdate": "TRS Client: Update auf {version} geladen",
-      "clientModCurrent": "TRS Client: Version {version} (aktuell)"
+      "clientModCurrent": "TRS Client: Version {version} (aktuell)",
+      "updatesPackage": "Updates kommen über deine Paketverwaltung",
+      "updatesFlatpak": "Updates kommen über Flatpak"
     },
     "appearance": {
       "colorScheme": "Farbschema",
@@ -1522,7 +1527,8 @@
       "tuningTitle": "FPS-Boost beim Start",
       "tuningDescription": "Abgestimmte Java-Einstellungen für deine Java-Version und deinen Speicher (ZGC oder G1, Speicher gleich reserviert). Nur ohne eigene JVM-Argumente.",
       "priorityTitle": "Höhere Prozesspriorität",
-      "priorityDescription": "Startet das Spiel mit der Priorität „Höher als normal“ – kann Ruckler glätten, wenn andere Programme viel zu tun haben."
+      "priorityDescription": "Startet das Spiel mit der Priorität „Höher als normal“ – kann Ruckler glätten, wenn andere Programme viel zu tun haben.",
+      "dedicatedGpuDescriptionLinux": "Für Laptops mit zwei Grafikchips: Das Spiel rechnet auf der dedizierten GPU (PRIME-Offload – DRI_PRIME bzw. die NVIDIA-Variablen)."
     },
     "hooks": {
       "title": "Start-Hooks",
@@ -1578,7 +1584,12 @@
       "freed": "{size} freigegeben",
       "confirmTitle": "Unbenutztes löschen?",
       "confirmText": "{n} Spielversion ({size}) wird gelöscht. Instanzen, Welten und Mods bleiben unberührt. | {n} Spielversionen ({size}) werden gelöscht. Instanzen, Welten und Mods bleiben unberührt.",
-      "dataDirTitle": "App-Ordner"
+      "dataDirTitle": "App-Ordner",
+      "credentialsTitle": "Gespeicherte Anmeldungen",
+      "credentialsKeyring": "Der Schlüssel für deine Microsoft-Anmeldungen liegt im Schlüsselbund deines Systems (z. B. GNOME Keyring oder KWallet).",
+      "credentialsFile": "Es wurde kein Schlüsselbund gefunden – deine Anmeldungen sind deshalb nur durch Dateirechte geschützt (nur dein Benutzer kann sie lesen). Für besseren Schutz einen Schlüsselbund wie GNOME Keyring oder KWallet einrichten und entsperren.",
+      "credentialsKeyringShort": "Schlüsselbund",
+      "credentialsFileShort": "Nur Dateirechte"
     },
     "network": {
       "title": "Netzwerk",
@@ -2048,7 +2059,9 @@
     "ready": "TRS Launcher {version} ist bereit.",
     "readyRunning": "TRS Launcher {version} ist bereit. Laufende Spiele laufen weiter.",
     "downloadInstaller": "Installer laden",
-    "splash": "Wird aktualisiert – startet gleich neu …"
+    "splash": "Wird aktualisiert – startet gleich neu …",
+    "availableExternal": "Update {version} verfügbar",
+    "externalHint": "Installiere es über deine Paketverwaltung (z. B. yay/paru für das AUR, apt oder dnf) – oder lade es von GitHub."
   },
   "play": {
     "stopGame": "Spiel beenden",

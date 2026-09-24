@@ -275,7 +275,12 @@ async function confirmDelete() {
     </div>
 
     <BaseDialog v-if="toDelete" :title="t('screenshots.deleteDialog.title')" @close="toDelete = null">
-      <i18n-t keypath="screenshots.deleteDialog.text" tag="p" scope="global" class="text-sm text-base-200">
+      <i18n-t
+        :keypath="isLinux ? 'screenshots.deleteDialog.textLinux' : 'screenshots.deleteDialog.text'"
+        tag="p"
+        scope="global"
+        class="text-sm text-base-200"
+      >
         <template #name><strong class="text-base-50">{{ toDelete.fileName }}</strong></template>
       </i18n-t>
       <template #actions>

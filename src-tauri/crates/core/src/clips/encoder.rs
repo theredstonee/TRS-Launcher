@@ -296,6 +296,8 @@ mod tests {
         assert!(bitrate_kbps(ClipQuality::Low, 64, 64, 30) >= 1500);
     }
 
+    // Fensteraufnahme (gdigrab) gibt es nur unter Windows.
+    #[cfg(windows)]
     #[test]
     fn aufnahme_nimmt_nur_das_fenster_auf() {
         let settings = ClipSettings { enabled: true, ..Default::default() };

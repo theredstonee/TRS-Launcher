@@ -13,12 +13,15 @@ const label = computed(() => {
       return t('updater.installing')
     case 'failed':
       return t('updater.retry')
+    case 'external':
+      return t('updater.availableExternal', { version: updater.version ?? '' })
     default:
       return ''
   }
 })
 const title = computed(() => {
   const version = updater.version ?? ''
+  if (updater.phase === 'external') return t('updater.externalHint')
   if (updater.phase === 'downloading') return t('updater.downloading', { version, percent: updater.percent })
   if (updater.phase === 'failed') return t('updater.failed', { reason: updater.failReason })
   return running.value ? t('updater.readyRunning', { version }) : t('updater.ready', { version })
@@ -68,7 +71,7 @@ function openRelease() {
       :class="{ 'update-pill-failed': updater.phase === 'failed' }"
       :disabled="updater.phase === 'installing'"
       :title="title"
-      @click="updater.restart()"
+      @click="updater.phase === 'external' ? openRelease() : updater.restart()"
     >
       <svg viewBox="0 0 24 24" class="size-3.5" :class="{ 'animate-spin': updater.phase === 'installing' }" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 12a8 8 0 1 1-2.34-5.66" />

@@ -147,7 +147,7 @@ function loaderText(c: ImportCandidate) {
     <p class="mb-3 text-sm text-base-400">{{ t('import.intro') }}</p>
 
     <div class="mb-3 flex flex-wrap items-center gap-2">
-      <input v-model="query" class="field h-9 min-w-0 flex-1" maxlength="100" :placeholder="t('import.search')" spellcheck="false" :aria-label="t('import.searchLabel')" />
+      <input v-model="query" class="field h-9 min-w-48 flex-1" maxlength="100" :placeholder="t('import.search')" spellcheck="false" :aria-label="t('import.searchLabel')" />
       <select v-if="sources.length > 1" v-model="source" class="field h-9 w-44 py-1" :aria-label="t('import.sourceLabel')">
         <option value="all">{{ t('import.allSources') }}</option>
         <option v-for="s in sources" :key="s" :value="s">{{ importSourceLabel(s) }}</option>

@@ -331,7 +331,7 @@ onBeforeUnmount(() => {
         <div v-if="step === 'language'" key="language">
           <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('language.onboardingTitle') }}</h1>
           <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('language.onboardingText') }}</p>
-          <p v-if="detected" class="mt-1 text-xs text-base-600">{{ t('language.detected') }}</p>
+          <p v-if="detected" class="mt-1 text-xs text-base-600">{{ isLinux ? t('language.detectedSystem') : t('language.detected') }}</p>
           <div class="onboarding-languages mt-6">
             <LanguagePicker :model-value="language" :search="false" compact @update:model-value="chooseLanguage" />
           </div>

@@ -70,7 +70,8 @@
     "betaGroup": "Beta languages",
     "onboardingTitle": "Choose your language",
     "onboardingText": "You can change it any time in Settings → Language.",
-    "detected": "Detected from Windows"
+    "detected": "Detected from Windows",
+    "detectedSystem": "Detected from your system"
   },
   "format": {
     "neverPlayed": "Never played",
@@ -945,7 +946,8 @@
     },
     "deleteDialog": {
       "title": "Delete screenshot?",
-      "text": "{name} goes to the Windows Recycle Bin – you can restore it from there."
+      "text": "{name} goes to the Windows Recycle Bin – you can restore it from there.",
+      "textLinux": "{name} goes to the trash – you can restore it from there in your file manager."
     }
   },
   "servers": {
@@ -1361,7 +1363,8 @@
       "missing_dependency": "A mod is missing another mod it requires. The log shows which one right above the error.",
       "mod_conflict": "Two mods don't get along. Disable the mods you added most recently and launch again.",
       "graphics_driver": "The graphics driver crashed or doesn't support OpenGL. Update your graphics card driver."
-    }
+    },
+    "shareTextLinux": "The log will be uploaded to {site}, where anyone with the link can read it. Login tokens and your user name are removed first."
   },
   "exportPack": {
     "title": "Export as modpack",
@@ -1431,7 +1434,9 @@
     "title": "Settings",
     "footer": {
       "clientModUpdate": "TRS Client: update to {version} downloaded",
-      "clientModCurrent": "TRS Client: version {version} (up to date)"
+      "clientModCurrent": "TRS Client: version {version} (up to date)",
+      "updatesPackage": "Updates come through your package manager",
+      "updatesFlatpak": "Updates come through Flatpak"
     },
     "appearance": {
       "colorScheme": "Color theme",
@@ -1522,7 +1527,8 @@
       "tuningTitle": "FPS boost at launch",
       "tuningDescription": "Tuned Java settings for your Java version and memory (ZGC or G1, memory reserved up front). Only used when no custom JVM arguments are set.",
       "priorityTitle": "Higher process priority",
-      "priorityDescription": "Starts the game with the priority “Above normal” – can smooth out stutters while other programs are busy."
+      "priorityDescription": "Starts the game with the priority “Above normal” – can smooth out stutters while other programs are busy.",
+      "dedicatedGpuDescriptionLinux": "For laptops with two graphics chips: the game renders on the dedicated GPU (PRIME offload – DRI_PRIME or the NVIDIA variables)."
     },
     "hooks": {
       "title": "Launch hooks",
@@ -1578,7 +1584,12 @@
       "freed": "{size} freed",
       "confirmTitle": "Delete unused?",
       "confirmText": "{n} game version ({size}) will be deleted. Instances, worlds and mods stay untouched. | {n} game versions ({size}) will be deleted. Instances, worlds and mods stay untouched.",
-      "dataDirTitle": "App folder"
+      "dataDirTitle": "App folder",
+      "credentialsTitle": "Stored sign-ins",
+      "credentialsKeyring": "The key for your Microsoft sign-ins is kept in your system keyring (e.g. GNOME Keyring or KWallet).",
+      "credentialsFile": "No system keyring was found, so your sign-ins are only protected by file permissions (only your user can read them). Install and unlock a keyring such as GNOME Keyring or KWallet for better protection.",
+      "credentialsKeyringShort": "Keyring",
+      "credentialsFileShort": "File permissions only"
     },
     "network": {
       "title": "Network",
@@ -2048,7 +2059,9 @@
     "ready": "TRS Launcher {version} is ready.",
     "readyRunning": "TRS Launcher {version} is ready. Running games keep running.",
     "downloadInstaller": "Download installer",
-    "splash": "Updating – restarting in a moment …"
+    "splash": "Updating – restarting in a moment …",
+    "availableExternal": "Update {version} available",
+    "externalHint": "Install it with your package manager (e.g. yay/paru for the AUR, apt or dnf) – or download it from GitHub."
   },
   "play": {
     "stopGame": "Stop game",

@@ -16,15 +16,11 @@ use std::time::Duration;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
-use windows::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, WAIT_OBJECT_0};
-use windows::Win32::System::Threading::{
-    GetExitCodeProcess, GetProcessTimes, INFINITE, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
-    PROCESS_SYNCHRONIZE, PROCESS_TERMINATE, TerminateProcess, WaitForSingleObject,
-};
 
 use crate::error::Msg;
 use crate::gamelog::{LogLine, LogParser};
 use crate::launch::Command;
+use crate::platform::{self, ProcessHandle};
 use crate::{Error, Result};
 
 const LOG_HISTORY: usize = 5000;
@@ -33,10 +29,6 @@ const LOG_BATCH_INTERVAL: Duration = Duration::from_millis(60);
 const TAIL_INTERVAL: Duration = Duration::from_millis(150);
 /// Für die Diagnose reicht das Ende des Logs.
 const DIAGNOSIS_LINES: usize = 400;
-
-const DETACHED_PROCESS: u32 = 0x0000_0008;
-const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
-const ABOVE_NORMAL_PRIORITY_CLASS: u32 = 0x0000_8000;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
@@ -196,60 +188,11 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     Some(Diagnosis { kind, message: message.text, code: message.code, can_repair })
 }
 
-// --- Windows-Prozess-Handle ------------------------------------------------------
-
-struct ProcessHandle(HANDLE);
-
-// SAFETY: Ein Prozess-Handle ist ein Kernel-Objekt; es darf von beliebigen
-// Threads benutzt werden. Geschlossen wird es genau einmal im Drop.
-unsafe impl Send for ProcessHandle {}
-unsafe impl Sync for ProcessHandle {}
-
-impl ProcessHandle {
-    fn open(pid: u32) -> Option<Self> {
-        let access = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SYNCHRONIZE | PROCESS_TERMINATE;
-        // SAFETY: reiner API-Aufruf; ein ungültiger PID liefert einen Fehler.
-        unsafe { OpenProcess(access, false, pid) }.ok().map(Self)
-    }
-
-    /// Startzeit als FILETIME-Wert – unterscheidet einen wiederverwendeten PID.
-    fn creation_time(&self) -> Option<u64> {
-        let (mut created, mut exited, mut kernel, mut user) =
-            (FILETIME::default(), FILETIME::default(), FILETIME::default(), FILETIME::default());
-        // SAFETY: gültiges Handle, alle Ausgabezeiger zeigen auf lokale Werte.
-        unsafe { GetProcessTimes(self.0, &mut created, &mut exited, &mut kernel, &mut user) }.ok()?;
-        Some((u64::from(created.dwHighDateTime) << 32) | u64::from(created.dwLowDateTime))
-    }
-
-    fn is_alive(&self) -> bool {
-        // SAFETY: gültiges Handle; Timeout 0 fragt nur den Zustand ab.
-        (unsafe { WaitForSingleObject(self.0, 0) }) != WAIT_OBJECT_0
-    }
-
-    /// Blockiert bis zum Prozessende.
-    fn wait(&self) -> Option<i32> {
-        // SAFETY: gültiges Handle.
-        unsafe {
-            WaitForSingleObject(self.0, INFINITE);
-            let mut code = 0u32;
-            GetExitCodeProcess(self.0, &mut code).ok()?;
-            Some(code as i32)
-        }
-    }
-
-    fn terminate(&self) -> bool {
-        // SAFETY: gültiges Handle mit PROCESS_TERMINATE.
-        unsafe { TerminateProcess(self.0, 1) }.is_ok()
-    }
-}
-
-impl Drop for ProcessHandle {
-    fn drop(&mut self) {
-        // SAFETY: Handle stammt aus OpenProcess und wird nur hier geschlossen.
-        unsafe {
-            let _ = CloseHandle(self.0);
-        }
-    }
+/// Für dieses Programm die leistungsstarke Grafikkarte wählen (Windows:
+/// Grafikeinstellungen in der Registry, Linux: PRIME-Umgebungsvariablen).
+/// Liefert zusätzliche Umgebungsvariablen für den Spielprozess.
+pub fn prefer_dedicated_gpu(program: &Path) -> Vec<(String, String)> {
+    platform::dedicated_gpu_env(program)
 }
 
 // --- Verwaltung ---------------------------------------------------------------
@@ -327,8 +270,6 @@ impl GameManager {
         secrets: Vec<String>,
         on_exit: OnExit,
     ) -> Result<u32> {
-        use std::os::windows::process::CommandExt;
-
         if self.is_running(instance_id) {
             return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
         }
@@ -338,28 +279,25 @@ impl GameManager {
         let stdout = std::fs::File::create(&stdout_log).map_err(|e| Error::io(&stdout_log, e))?;
         let stderr = std::fs::File::create(&stderr_log).map_err(|e| Error::io(&stderr_log, e))?;
 
-        let child = std::process::Command::new(&command.program)
-            .args(&command.args)
+        let mut cmd = std::process::Command::new(&command.program);
+        // AppImage-Pfade gehören nicht ins Spiel (siehe `platform::env`).
+        platform::env::clean_std(&mut cmd);
+        cmd.args(&command.args)
             .current_dir(&command.cwd)
             .envs(command.env.iter().map(|(k, v)| (k, v)))
             .stdin(std::process::Stdio::null())
             .stdout(stdout)
-            .stderr(stderr)
-            // Eigene Prozessgruppe ohne Konsole: Das Spiel überlebt den Launcher.
-            .creation_flags(
-                DETACHED_PROCESS
-                    | CREATE_NEW_PROCESS_GROUP
-                    | if command.high_priority { ABOVE_NORMAL_PRIORITY_CLASS } else { 0 },
-            )
-            .spawn()
-            .map_err(|e| {
-                tracing::error!("Java konnte nicht gestartet werden ({}): {e}", command.program.display());
-                Error::launch(crate::msg!("process.javaStartFailed", "Java konnte nicht gestartet werden."))
-            })?;
+            .stderr(stderr);
+        // Eigene Prozessgruppe ohne Konsole: Das Spiel überlebt den Launcher.
+        // „Hohe Priorität“ gibt es nur unter Windows (Linux bräuchte Root-Rechte).
+        platform::detach(&mut cmd, command.high_priority);
+        let child = cmd.spawn().map_err(|e| {
+            tracing::error!("Java konnte nicht gestartet werden ({}): {e}", command.program.display());
+            Error::launch(crate::msg!("process.javaStartFailed", "Java konnte nicht gestartet werden."))
+        })?;
         let pid = child.id();
-        // Solange `child` lebt, existiert das Prozessobjekt sicher – erst öffnen, dann loslassen.
-        let process = ProcessHandle::open(pid).ok_or_else(|| Error::launch(crate::msg!("process.exitedImmediately", "Das Spiel wurde sofort wieder beendet.")))?;
-        drop(child);
+        let process = ProcessHandle::from_child(child)
+            .ok_or_else(|| Error::launch(crate::msg!("process.exitedImmediately", "Das Spiel wurde sofort wieder beendet.")))?;
 
         let record = SessionRecord {
             instance_id: instance_id.to_owned(),
@@ -432,7 +370,8 @@ impl GameManager {
 
             let play_seconds = (Utc::now() - record.started_at).num_seconds().max(0) as u64;
             let was_killed = killed.load(Ordering::Relaxed);
-            let crashed = !was_killed && exit_code != Some(0);
+            // Wiedergefundene Spiele unter Linux: Exit-Code unbekannt – dann kein Absturz melden.
+            let crashed = !was_killed && exit_code.map_or(process.exit_code_known(), |code| code != 0);
             let diagnosis = {
                 let mut state = state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
                 state.running.remove(&id);
@@ -631,13 +570,14 @@ fn redact_line(line: &str) -> String {
     words.join(" ")
 }
 
-/// `C:\Users\<Name>\…` → `C:\Users\<user>\…` (Namen dürfen Leerzeichen enthalten).
+/// `C:\Users\<Name>\…` → `C:\Users\<user>\…`, ebenso `/home/<name>/…` unter
+/// Linux (Namen dürfen Leerzeichen enthalten).
 fn hide_user_dirs(line: &str) -> String {
     let mut out = String::with_capacity(line.len());
     let mut rest = line;
     loop {
         let lower = rest.to_ascii_lowercase();
-        let hit = [r"\users\", "/users/"].iter().filter_map(|m| lower.find(m).map(|i| (i, *m))).min();
+        let hit = [r"\users\", "/users/", "/home/"].iter().filter_map(|m| lower.find(m).map(|i| (i, *m))).min();
         let Some((start, marker)) = hit else {
             out.push_str(rest);
             return out;
@@ -744,6 +684,7 @@ mod tests {
         let raw = "Setting user: Steve\n(Session ID is token:abcdefghijklmnop:1234)\n\
                    args --accessToken eyJhbGciOi.xyz.abc --version 1.8.9\n\
                    Loading C:\\Users\\Max Mustermann\\AppData\\x.jar and /Users/max/y.jar\n\
+                   Linux: /home/max/.local/share/TRS-Launcher/z.jar\n\
                    geheim-token-12345 im Text";
         let out = redact(raw, &["geheim-token-12345".into()]);
         assert!(!out.contains("abcdefghijklmnop"));
@@ -752,6 +693,7 @@ mod tests {
         assert!(out.contains("--version 1.8.9"));
         assert!(out.contains("C:\\Users\\<user>\\AppData"), "{out}");
         assert!(out.contains("/Users/<user>/y.jar"));
+        assert!(out.contains("/home/<user>/.local/share/TRS-Launcher/z.jar"), "{out}");
     }
 
     #[test]
@@ -781,13 +723,13 @@ mod tests {
             dir.path().join("running.json"),
         );
         // Ein harmloser Dauerläufer statt Java.
-        let command = Command {
-            program: PathBuf::from(r"C:\Windows\System32\PING.EXE"),
-            args: vec!["-n".into(), "30".into(), "127.0.0.1".into()],
-            cwd: dir.path().to_owned(),
-            env: Vec::new(),
-            high_priority: false,
+        let (program, args): (&str, Vec<String>) = if cfg!(windows) {
+            (r"C:\Windows\System32\PING.EXE", vec!["-n".into(), "30".into(), "127.0.0.1".into()])
+        } else {
+            ("/bin/sh", vec!["-c".into(), "while true; do echo tick; sleep 1; done".into()])
         };
+        let command =
+            Command { program: PathBuf::from(program), args, cwd: dir.path().to_owned(), env: Vec::new(), high_priority: false };
         manager.spawn("test", command, &dir.path().join("logs"), vec![], Box::new(|_| {})).unwrap();
         assert!(manager.is_running("test"));
         let saved = std::fs::read_to_string(dir.path().join("running.json")).unwrap();

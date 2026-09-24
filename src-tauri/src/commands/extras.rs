@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
-use tauri_plugin_opener::OpenerExt;
 use trs_core::extras;
 use trs_core::instance::Instance;
 
@@ -52,7 +51,7 @@ pub async fn open_screenshot(
     file_name: String,
 ) -> CommandResult<()> {
     let path = extras::screenshot_path(launcher.paths(), &id, &file_name)?;
-    app.opener().open_path(path.display().to_string(), None::<&str>)?;
+    crate::open::path(&app, path.display().to_string())?;
     Ok(())
 }
 

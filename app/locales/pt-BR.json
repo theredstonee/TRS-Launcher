@@ -70,7 +70,8 @@
     "betaGroup": "Idiomas beta",
     "onboardingTitle": "Escolha seu idioma",
     "onboardingText": "Você pode alterá-lo a qualquer momento em Configurações → Idioma.",
-    "detected": "Detectado pelo Windows"
+    "detected": "Detectado pelo Windows",
+    "detectedSystem": "Detectado pelo sistema"
   },
   "format": {
     "neverPlayed": "Nunca jogado",
@@ -945,7 +946,8 @@
     },
     "deleteDialog": {
       "title": "Excluir captura de tela?",
-      "text": "{name} vai para a Lixeira do Windows – você pode restaurá-la de lá."
+      "text": "{name} vai para a Lixeira do Windows – você pode restaurá-la de lá.",
+      "textLinux": "{name} vai para a lixeira – você pode restaurá-la de lá no gerenciador de arquivos."
     }
   },
   "servers": {
@@ -1361,7 +1363,8 @@
       "missing_dependency": "Um mod precisa de outro mod que está faltando. O log mostra qual logo acima do erro.",
       "mod_conflict": "Dois mods não se dão bem. Desative os mods adicionados mais recentemente e inicie novamente.",
       "graphics_driver": "O driver de vídeo travou ou não é compatível com OpenGL. Atualize o driver da sua placa de vídeo."
-    }
+    },
+    "shareTextLinux": "O log será enviado para {site}, onde qualquer pessoa com o link pode lê-lo. Tokens de login e seu nome de usuário são removidos antes."
   },
   "exportPack": {
     "title": "Exportar como modpack",
@@ -1431,7 +1434,9 @@
     "title": "Configurações",
     "footer": {
       "clientModUpdate": "TRS Client: atualização para {version} baixada",
-      "clientModCurrent": "TRS Client: versão {version} (atualizado)"
+      "clientModCurrent": "TRS Client: versão {version} (atualizado)",
+      "updatesPackage": "As atualizações chegam pelo seu gerenciador de pacotes",
+      "updatesFlatpak": "As atualizações chegam pelo Flatpak"
     },
     "appearance": {
       "colorScheme": "Tema de cores",
@@ -1522,7 +1527,8 @@
       "tuningTitle": "Aumento de FPS ao iniciar",
       "tuningDescription": "Configurações de Java ajustadas à sua versão do Java e à memória (ZGC ou G1, memória reservada desde o início). Só sem argumentos JVM próprios.",
       "priorityTitle": "Prioridade de processo maior",
-      "priorityDescription": "Inicia o jogo com prioridade “Acima do normal” – pode suavizar travadas quando outros programas estão ocupados."
+      "priorityDescription": "Inicia o jogo com prioridade “Acima do normal” – pode suavizar travadas quando outros programas estão ocupados.",
+      "dedicatedGpuDescriptionLinux": "Para notebooks com dois chips gráficos: o jogo é renderizado na GPU dedicada (PRIME offload – DRI_PRIME ou as variáveis da NVIDIA)."
     },
     "hooks": {
       "title": "Hooks de inicialização",
@@ -1578,7 +1584,12 @@
       "freed": "{size} liberados",
       "confirmTitle": "Excluir não usados?",
       "confirmText": "{n} versão do jogo ({size}) será excluída. Instâncias, mundos e mods não são tocados. | {n} versões do jogo ({size}) serão excluídas. Instâncias, mundos e mods não são tocados.",
-      "dataDirTitle": "Pasta do aplicativo"
+      "dataDirTitle": "Pasta do aplicativo",
+      "credentialsTitle": "Logins salvos",
+      "credentialsKeyring": "A chave dos seus logins da Microsoft fica no chaveiro do sistema (ex.: GNOME Keyring ou KWallet).",
+      "credentialsFile": "Nenhum chaveiro do sistema foi encontrado, então seus logins são protegidos apenas por permissões de arquivo (só o seu usuário pode lê-los). Para mais proteção, instale e desbloqueie um chaveiro como GNOME Keyring ou KWallet.",
+      "credentialsKeyringShort": "Chaveiro",
+      "credentialsFileShort": "Só permissões de arquivo"
     },
     "network": {
       "title": "Rede",
@@ -2048,7 +2059,9 @@
     "ready": "O TRS Launcher {version} está pronto.",
     "readyRunning": "O TRS Launcher {version} está pronto. Jogos em execução continuam rodando.",
     "downloadInstaller": "Baixar instalador",
-    "splash": "Atualizando – reiniciando em instantes …"
+    "splash": "Atualizando – reiniciando em instantes …",
+    "availableExternal": "Atualização {version} disponível",
+    "externalHint": "Instale pelo seu gerenciador de pacotes (ex.: yay/paru para o AUR, apt ou dnf) – ou baixe do GitHub."
   },
   "play": {
     "stopGame": "Parar jogo",

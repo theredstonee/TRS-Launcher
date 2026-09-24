@@ -441,53 +441,17 @@ fn is_safe_favicon(favicon: &str) -> bool {
 }
 
 /// `_minecraft._tcp.<host>` – viele Server (gerade mit Subdomain) sind nur
-/// darüber erreichbar. Nutzt den Windows-Resolver, damit kein DNS-Crate nötig ist.
+/// darüber erreichbar. Windows: System-Resolver, Linux: eigene kleine
+/// DNS-Anfrage (siehe `platform::dns`) – beides ohne DNS-Crate.
 async fn resolve_srv(host: &str) -> Option<(String, u16)> {
     if host.parse::<std::net::Ipv4Addr>().is_ok() {
         return None;
     }
     let name = format!("_minecraft._tcp.{host}");
-    let result = tokio::task::spawn_blocking(move || srv_lookup(&name)).await.ok().flatten()?;
+    let result = tokio::task::spawn_blocking(move || crate::platform::lookup_srv(&name)).await.ok().flatten()?;
     // Das Ziel kommt aus dem DNS – gleiche Regeln wie für Nutzereingaben.
     let (target, _) = parse_address(result.0.trim_end_matches('.')).ok()?;
     Some((target, result.1))
-}
-
-fn srv_lookup(name: &str) -> Option<(String, u16)> {
-    use windows::Win32::NetworkManagement::Dns::{
-        DNS_QUERY_STANDARD, DNS_RECORDW, DNS_TYPE_SRV, DnsFree, DnsFreeRecordList, DnsQuery_W,
-    };
-    use windows::core::HSTRING;
-
-    let mut records: *mut DNS_RECORDW = std::ptr::null_mut();
-    // SAFETY: `records` wird von der API befüllt und unten mit DnsFree
-    // freigegeben; gelesen wird nur, solange die Liste lebt.
-    unsafe {
-        // Die Bindings deklarieren den Ausgabeparameter als ANSI-Variante; bei
-        // DnsQuery_W liegen dort tatsächlich die (gleich aufgebauten) W-Records.
-        let out = (&raw mut records).cast();
-        let status = DnsQuery_W(&HSTRING::from(name), DNS_TYPE_SRV, DNS_QUERY_STANDARD, None, out, None);
-        if status.is_err() || records.is_null() {
-            return None;
-        }
-        let mut found = None;
-        let mut current = records;
-        while !current.is_null() {
-            let record = &*current;
-            if record.wType == DNS_TYPE_SRV.0 {
-                let srv = record.Data.SRV;
-                if !srv.pNameTarget.is_null()
-                    && let Ok(target) = srv.pNameTarget.to_string()
-                {
-                    found = Some((target, srv.wPort));
-                    break;
-                }
-            }
-            current = record.pNext;
-        }
-        DnsFree(Some(records.cast()), DnsFreeRecordList);
-        found
-    }
 }
 
 #[cfg(test)]

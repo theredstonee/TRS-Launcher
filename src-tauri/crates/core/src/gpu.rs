@@ -11,6 +11,7 @@ use std::sync::OnceLock;
 
 /// Wert für „Hohe Leistung“ unter `UserGpuPreferences`.
 pub const HIGH_PERFORMANCE: &str = "GpuPreference=2;";
+#[cfg(windows)]
 const PREFERENCES_KEY: &str = "Software\\Microsoft\\DirectX\\UserGpuPreferences";
 const NVIDIA: u32 = 0x10DE;
 
@@ -22,7 +23,39 @@ pub struct Adapter {
     pub software: bool,
 }
 
+/// Linux: NVIDIA-Karten mit Modellnamen aus `/proc/driver/nvidia/gpus/*/information`
+/// (proprietärer Treiber), alle anderen nur mit Hersteller-ID aus `/sys/class/drm`.
+#[cfg(not(windows))]
+pub fn adapters() -> Vec<Adapter> {
+    let mut out = Vec::new();
+    if let Ok(gpus) = std::fs::read_dir("/proc/driver/nvidia/gpus") {
+        for gpu in gpus.flatten() {
+            let info = std::fs::read_to_string(gpu.path().join("information")).unwrap_or_default();
+            if let Some(model) = info.lines().find_map(|l| l.strip_prefix("Model:")) {
+                out.push(Adapter { name: model.trim().to_owned(), vendor_id: NVIDIA, software: false });
+            }
+        }
+    }
+    let named_nvidia = !out.is_empty();
+    if let Ok(cards) = std::fs::read_dir("/sys/class/drm") {
+        for card in cards.flatten() {
+            let name = card.file_name().to_string_lossy().into_owned();
+            if !name.strip_prefix("card").is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit())) {
+                continue;
+            }
+            let vendor = std::fs::read_to_string(card.path().join("device/vendor")).unwrap_or_default();
+            let Ok(vendor_id) = u32::from_str_radix(vendor.trim().trim_start_matches("0x"), 16) else { continue };
+            // NVIDIA-Karten stehen schon oben (mit Namen).
+            if vendor_id != NVIDIA || !named_nvidia {
+                out.push(Adapter { name: format!("{name} ({vendor_id:04x})"), vendor_id, software: false });
+            }
+        }
+    }
+    out
+}
+
 /// Alle Grafikadapter laut DXGI; leer, wenn die Abfrage scheitert.
+#[cfg(windows)]
 pub fn adapters() -> Vec<Adapter> {
     use windows::Win32::Graphics::Dxgi::{CreateDXGIFactory1, DXGI_ADAPTER_FLAG_SOFTWARE, IDXGIFactory1};
 
@@ -68,9 +101,24 @@ pub trait GpuPreferences {
     fn remove(&self, program: &Path) -> bool;
 }
 
-/// Die echte Registry (HKCU).
+/// Die echte Registry (HKCU). Unter Linux gibt es sie nicht – dort wählt
+/// [`crate::platform::dedicated_gpu_env`] die GPU über PRIME-Variablen.
 pub struct WindowsGpuPreferences;
 
+#[cfg(not(windows))]
+impl GpuPreferences for WindowsGpuPreferences {
+    fn get(&self, _program: &Path) -> Option<String> {
+        None
+    }
+    fn set(&self, _program: &Path, _value: &str) -> bool {
+        false
+    }
+    fn remove(&self, _program: &Path) -> bool {
+        false
+    }
+}
+
+#[cfg(windows)]
 impl GpuPreferences for WindowsGpuPreferences {
     fn get(&self, program: &Path) -> Option<String> {
         use windows::Win32::System::Registry::{HKEY_CURRENT_USER, RRF_RT_REG_SZ, RegGetValueW};
@@ -199,6 +247,7 @@ mod tests {
     use super::*;
 
     #[derive(Default)]
+    #[cfg_attr(not(windows), allow(dead_code))]
     struct FakeRegistry(RefCell<HashMap<PathBuf, String>>);
 
     impl GpuPreferences for FakeRegistry {
@@ -230,6 +279,8 @@ mod tests {
         assert!(!nvidia_mesh_shaders(&Adapter { software: true, ..adapter("NVIDIA GeForce RTX 3060", NVIDIA) }));
     }
 
+    // Windows-Pfade und Registry-Semantik – unter Linux gibt es beides nicht.
+    #[cfg(windows)]
     #[test]
     fn only_own_runtimes_get_a_preference() {
         let java_dir = Path::new(r"C:\trs\java");

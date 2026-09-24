@@ -207,9 +207,10 @@ fn known_downloads_dir() -> Option<PathBuf> {
     }
 }
 
+/// Linux: `XDG_DOWNLOAD_DIR` aus `user-dirs.dirs`, sonst `~/Downloads`.
 #[cfg(not(windows))]
 fn known_downloads_dir() -> Option<PathBuf> {
-    None
+    crate::platform::downloads_dir()
 }
 
 /// Heißt die Datei im Download-Ordner so wie erwartet? Auch „name (1).jar“,

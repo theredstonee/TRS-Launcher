@@ -178,43 +178,9 @@ fn write_thumbnail(source: &Path, target: &Path) -> Result<()> {
     })
 }
 
-/// Datei in den Windows-Papierkorb verschieben (`SHFileOperationW`).
-#[cfg(windows)]
+/// Datei in den Papierkorb verschieben (Windows-Papierkorb bzw. XDG-Trash).
 pub(crate) fn recycle(path: &Path) -> Result<()> {
-    use std::os::windows::ffi::OsStrExt;
-
-    use windows::Win32::UI::Shell::{
-        FO_DELETE, FOF_ALLOWUNDO, FOF_NOCONFIRMATION, FOF_NOERRORUI, FOF_SILENT, SHFILEOPSTRUCTW, SHFileOperationW,
-    };
-    use windows::core::PCWSTR;
-
-    // Der Pfad muss doppelt nullterminiert sein (Liste von Dateien).
-    let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
-    if wide.contains(&0) {
-        return Err(Error::validation(crate::msg!("screenshots.invalidPath", "Ungültiger Pfad")));
-    }
-    wide.push(0);
-    wide.push(0);
-
-    let mut op = SHFILEOPSTRUCTW {
-        wFunc: FO_DELETE,
-        pFrom: PCWSTR(wide.as_ptr()),
-        fFlags: (FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI).0 as u16,
-        ..Default::default()
-    };
-    // SAFETY: `op` zeigt auf den doppelt nullterminierten Puffer oben, der
-    // während des Aufrufs am Leben bleibt.
-    let code = unsafe { SHFileOperationW(&raw mut op) };
-    if code == 0 && !op.fAnyOperationsAborted.as_bool() {
-        Ok(())
-    } else {
-        Err(Error::Internal(format!("SHFileOperation: {code}")))
-    }
-}
-
-#[cfg(not(windows))]
-pub(crate) fn recycle(_path: &Path) -> Result<()> {
-    Err(Error::Internal("Papierkorb nur unter Windows".into()))
+    crate::platform::move_to_trash(path)
 }
 
 #[cfg(test)]

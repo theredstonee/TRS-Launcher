@@ -20,7 +20,7 @@ function section(key: string, labelKey: MessageKey, icon: IconName, groupKey?: M
 }
 
 /** Bereiche der globalen Einstellungen – auch die Befehlspalette springt hierher. */
-export const appSettingsSections: ShellSection[] = [
+const allAppSettingsSections: ShellSection[] = [
   section('appearance', 'settingsSections.app.appearance', 'palette', 'settingsSections.groups.interface'),
   section('features', 'settingsSections.app.features', 'toggles', 'settingsSections.groups.interface'),
   section('behavior', 'settingsSections.app.behavior', 'behavior', 'settingsSections.groups.interface'),
@@ -33,6 +33,9 @@ export const appSettingsSections: ShellSection[] = [
   section('storage', 'settingsSections.app.storage', 'storage', 'settingsSections.groups.instances'),
   section('network', 'settingsSections.app.network', 'network', 'settingsSections.groups.instances'),
 ]
+
+/** Clips (Spielaufnahme) gibt es vorerst nur unter Windows. */
+export const appSettingsSections: ShellSection[] = allAppSettingsSections.filter((s) => s.key !== 'clips' || !isLinux)
 
 /** Bereiche der Instanz-Einstellungen. */
 export const instanceSettingsSections: ShellSection[] = [

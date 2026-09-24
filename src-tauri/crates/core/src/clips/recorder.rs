@@ -12,7 +12,9 @@ use super::audio::AudioPipe;
 use super::encoder::{self, Codec, Plan};
 use crate::{Error, Result};
 
+#[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+#[cfg(windows)]
 const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x0000_4000;
 const TAIL_LINES: usize = 40;
 

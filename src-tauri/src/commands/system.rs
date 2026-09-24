@@ -102,12 +102,15 @@ pub async fn pick_content_files(
     Ok(Some(upload::import_files(launcher.paths(), &instance, files).await?))
 }
 
-/// Wählt `java.exe`/`javaw.exe` im nativen Dialog. `None` = abgebrochen.
+/// Wählt `java.exe`/`javaw.exe` (Linux: `bin/java`) im nativen Dialog. `None` = abgebrochen.
 #[tauri::command]
 pub async fn pick_java_path(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Option<String>> {
     let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog().file().set_title(DialogText::PickJava.text(lang)).add_filter("Java", &["exe"]).blocking_pick_file()
+        let dialog = app.dialog().file().set_title(DialogText::pick_java().text(lang));
+        // Unter Linux hat `java` keine Dateiendung – dort gibt es keinen Filter.
+        let dialog = if cfg!(windows) { dialog.add_filter("Java", &["exe"]) } else { dialog };
+        dialog.blocking_pick_file()
     })
     .await
     .ok()
@@ -184,7 +187,7 @@ mod tests {
     #[test]
     fn drop_tokens_are_single_use() {
         let state = DropState::default();
-        let DropEvent::Drop { token, names } = state.store(vec![PathBuf::from(r"C:\x\a.jar")]) else { panic!() };
+        let DropEvent::Drop { token, names } = state.store(vec![std::env::temp_dir().join("x").join("a.jar")]) else { panic!() };
         assert_eq!(names, ["a.jar"]);
         assert!(state.take(token + 1).is_none(), "falsche Marke");
         assert_eq!(state.take(token).unwrap().len(), 1);

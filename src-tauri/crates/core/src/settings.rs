@@ -384,14 +384,14 @@ pub fn validate_jvm_args(args: &str) -> Result<()> {
     Ok(())
 }
 
-/// Muss als absoluter Pfad auf `java.exe` oder `javaw.exe` zeigen.
+/// Muss als absoluter Pfad auf `java.exe` oder `javaw.exe` zeigen (Linux: `…/java`).
 pub fn validate_java_path(path: &str) -> Result<()> {
     if path.is_empty() || path.len() > 1024 || path.chars().any(char::is_control) {
         return Err(Error::validation(crate::msg!("settings.javaPathInvalid", "Java-Pfad ist ungültig")));
     }
     let p = Path::new(path);
-    let file = p.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_ascii_lowercase();
-    if !p.is_absolute() || !matches!(file.as_str(), "java.exe" | "javaw.exe") {
+    let file = p.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+    if !p.is_absolute() || !crate::platform::is_java_binary_name(file) {
         return Err(Error::validation(crate::msg!(
             "settings.javaPathNotJava",
             "Der Java-Pfad muss auf java.exe oder javaw.exe zeigen"
@@ -411,10 +411,17 @@ mod tests {
 
     #[test]
     fn java_path_must_be_java_exe() {
-        assert!(validate_java_path(r"C:\Program Files\Java\bin\javaw.exe").is_ok());
-        assert!(validate_java_path(r"C:\jdk\bin\JAVA.EXE").is_ok());
-        for bad in [r"C:\Windows\System32\cmd.exe", "javaw.exe", r"C:\jdk\bin\java", "C:\\x\\javaw.exe\n", ""] {
-            assert!(validate_java_path(bad).is_err(), "{bad:?}");
+        if cfg!(windows) {
+            assert!(validate_java_path(r"C:\Program Files\Java\bin\javaw.exe").is_ok());
+            assert!(validate_java_path(r"C:\jdk\bin\JAVA.EXE").is_ok());
+            for bad in [r"C:\Windows\System32\cmd.exe", "javaw.exe", r"C:\jdk\bin\java", "C:\\x\\javaw.exe\n", ""] {
+                assert!(validate_java_path(bad).is_err(), "{bad:?}");
+            }
+        } else {
+            assert!(validate_java_path("/usr/lib/jvm/java-21-openjdk/bin/java").is_ok());
+            for bad in ["/bin/sh", "java", "/usr/bin/javaw.exe", "/usr/bin/java\n", "", "/usr/bin/JAVA"] {
+                assert!(validate_java_path(bad).is_err(), "{bad:?}");
+            }
         }
     }
 

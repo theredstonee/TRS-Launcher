@@ -199,6 +199,8 @@ mod tests {
         s.validate().unwrap();
     }
 
+    // Windows-Pfade (Laufwerksbuchstaben, UNC) – Clips gibt es nur unter Windows.
+    #[cfg(windows)]
     #[test]
     fn ordner_muss_absolut_und_lokal_sein() {
         assert!(validate_folder("clips").is_err());

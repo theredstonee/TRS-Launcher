@@ -30,9 +30,10 @@
   --color-ok: #5ee08a;
   --color-warn: #ffb84d;
 
-  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "Cascadia Mono", Consolas, monospace;
+  /* Windows zuerst, danach übliche Linux-Schriften (GNOME/KDE/Ubuntu/Fedora). */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, "Inter", "Cantarell", "Noto Sans", "Ubuntu", "DejaVu Sans", sans-serif;
+  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, "Noto Sans", sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, "JetBrains Mono", "Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
 
   --animate-shimmer: shimmer 1.4s linear infinite;
   --animate-pop: pop 0.18s ease-out;
@@ -508,4 +509,57 @@ textarea {
   .menu {
     animation: none;
   }
+}
+
+/*
+ * Linux (WebKitGTK): Auswahllisten zeichnet GTK sonst im hellen System-Stil –
+ * weißer Kasten mit weißer Schrift. Eigener Pfeil statt nativer Darstellung;
+ * Windows (WebView2) bleibt unverändert.
+ */
+html.os-linux select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--color-base-900);
+  color: var(--color-base-50);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8ba2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 0.9rem;
+  padding-right: 1.9rem;
+}
+html.os-linux select option {
+  background-color: var(--color-base-900);
+  color: var(--color-base-50);
+}
+html.os-linux:not([data-theme="light"]) {
+  color-scheme: dark;
+}
+/* Kontrollkästchen: WebKitGTK kennt `accent-color` nicht und zeichnet weiße Kästchen. */
+html.os-linux input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  border: 1.5px solid var(--color-base-600);
+  border-radius: 0.25rem;
+  background-color: var(--color-base-900);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 0.75rem;
+  cursor: pointer;
+}
+html.os-linux input[type="checkbox"]:checked {
+  border-color: var(--color-redstone-500);
+  background-color: var(--color-redstone-500);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E");
+}
+html.os-linux input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--color-redstone-500);
+  outline-offset: 2px;
+}
+html.os-linux input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

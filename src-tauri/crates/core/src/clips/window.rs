@@ -126,6 +126,7 @@ pub fn find(_pids: &HashSet<u32>) -> Option<GameWindow> {
 
 /// Auswahl: Minecraft-Klasse vor anderen, dann die größte Fläche; winzige Fenster (Ladebalken,
 /// unsichtbare Hilfsfenster) zählen nicht.
+#[cfg_attr(not(windows), allow(dead_code))]
 fn best(mut found: Vec<GameWindow>) -> Option<GameWindow> {
     found.retain(|w| w.width >= 64 && w.height >= 64);
     found.sort_by_key(|w| (w.minecraft_class, u64::from(w.width) * u64::from(w.height)));

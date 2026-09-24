@@ -47,6 +47,13 @@ struct RuntimeFile {
     #[serde(rename = "type")]
     kind: String,
     downloads: Option<RuntimeDownloads>,
+    /// Unter Linux/macOS: Datei muss ausführbar sein (`bin/java`, `jspawnhelper`).
+    #[serde(default)]
+    #[cfg_attr(not(unix), allow(dead_code))]
+    executable: bool,
+    /// Ziel eines Symlinks (`type: "link"`, nur Linux-/macOS-Runtimes).
+    #[cfg_attr(not(unix), allow(dead_code))]
+    target: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -54,12 +61,64 @@ struct RuntimeDownloads {
     raw: RemoteFile,
 }
 
-fn platform_key() -> &'static str {
-    match std::env::consts::ARCH {
-        "aarch64" => "windows-arm64",
-        "x86" => "windows-x86",
-        _ => "windows-x64",
+/// Programm, mit dem das Spiel gestartet wird (`bin/javaw.exe` bzw. `bin/java`).
+fn java_in(home: &Path) -> PathBuf {
+    home.join("bin").join(crate::platform::JAVA_GUI_BIN)
+}
+
+/// Symlink-Ziel aus dem Manifest: relativ und innerhalb der Runtime.
+#[cfg_attr(not(unix), allow(dead_code))]
+fn safe_link_target(link: &str, target: &str) -> bool {
+    if target.is_empty() || target.starts_with('/') || target.contains('\\') || target.contains(':') {
+        return false;
     }
+    let mut depth: Vec<&str> = link.split('/').collect();
+    depth.pop(); // Dateiname des Links
+    for seg in target.split('/') {
+        match seg {
+            "" | "." => {}
+            ".." => {
+                if depth.pop().is_none() {
+                    return false;
+                }
+            }
+            s => depth.push(s),
+        }
+    }
+    !depth.is_empty()
+}
+
+/// Setzt Ausführrechte und legt Symlinks an (nur Unix; Windows-Runtimes haben keine).
+#[cfg(unix)]
+fn finish_unix_files(dir: &Path, manifest: &RuntimeManifest) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    for (rel, file) in &manifest.files {
+        let path = dir.join(rel);
+        match (file.kind.as_str(), file.target.as_deref()) {
+            ("file", _) if file.executable => {
+                std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).map_err(|e| Error::io(&path, e))?;
+            }
+            ("link", Some(target)) if safe_link_target(rel, target) => {
+                if std::fs::symlink_metadata(&path).is_ok() {
+                    continue;
+                }
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent).map_err(|e| Error::io(parent, e))?;
+                }
+                std::os::unix::fs::symlink(target, &path).map_err(|e| Error::io(&path, e))?;
+            }
+            ("link", _) => {
+                return Err(Error::launch(crate::msg!("java.manifestInvalidPath", "Java-Runtime-Manifest enthält einen ungültigen Pfad.")));
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn finish_unix_files(_dir: &Path, _manifest: &RuntimeManifest) -> Result<()> {
+    Ok(())
 }
 
 fn is_safe_component(component: &str) -> bool {
@@ -77,7 +136,7 @@ fn is_safe_rel_path(path: &str) -> bool {
 }
 
 /// Stellt sicher, dass die Runtime `component` installiert ist, und liefert
-/// den Pfad zu `javaw.exe`.
+/// den Pfad zu `javaw.exe` (Linux: `bin/java`).
 pub async fn ensure_runtime(
     http: &reqwest::Client,
     paths: &Paths,
@@ -89,7 +148,7 @@ pub async fn ensure_runtime(
         return Err(Error::launch(crate::msg!("java.unknownRuntime", "Unbekannte Java-Runtime angefordert.")));
     }
     let dir = paths.java_dir().join(component);
-    let javaw = dir.join("bin").join("javaw.exe");
+    let javaw = java_in(&dir);
     let marker = dir.join(MARKER_FILE);
     let installed = tokio::fs::read_to_string(&marker).await.ok();
 
@@ -138,7 +197,7 @@ pub async fn ensure_runtime(
                 sha1: Some(d.raw.sha1.clone()),
                 size: Some(d.raw.size),
             }),
-            // Symlinks gibt es nur in den Linux-/macOS-Runtimes.
+            // Symlinks (nur Linux-/macOS-Runtimes) entstehen nach dem Download.
             _ => {}
         }
     }
@@ -147,6 +206,12 @@ pub async fn ensure_runtime(
     // Installation ab, wird beim nächsten Start einfach fortgesetzt.
     let _ = tokio::fs::remove_file(&marker).await;
     download::fetch_all(http, tasks, concurrency, on_progress).await?;
+    {
+        let dir = dir.clone();
+        tokio::task::spawn_blocking(move || finish_unix_files(&dir, &manifest))
+            .await
+            .map_err(|e| Error::Internal(e.to_string()))??;
+    }
     fsutil::write_atomic(&marker, entry.version.name.as_bytes()).await?;
 
     if !javaw.is_file() {
@@ -164,7 +229,8 @@ async fn find_runtime(http: &reqwest::Client, component: &str) -> Result<Runtime
         .json()
         .await?;
 
-    all.remove(platform_key())
+    crate::platform::java_runtime_platform()
+        .and_then(|key| all.remove(key))
         .and_then(|mut p| p.remove(component))
         .and_then(|entries| entries.into_iter().next())
         .ok_or_else(|| {
@@ -227,7 +293,7 @@ pub fn inspect(java_exe: &Path) -> Option<(u32, String)> {
 fn scan_homes(homes: impl IntoIterator<Item = (PathBuf, bool)>) -> Vec<JavaInstall> {
     let mut out: Vec<JavaInstall> = Vec::new();
     for (home, managed) in homes {
-        let exe = home.join("bin").join("javaw.exe");
+        let exe = java_in(&home);
         if !exe.is_file() {
             continue;
         }
@@ -248,31 +314,16 @@ fn child_dirs(dir: &Path) -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
-/// Sucht Java in den üblichen Ordnern: Launcher-Runtimes, `JAVA_HOME`,
-/// Program Files (Oracle, Adoptium, Microsoft, Zulu, …) und `~/.jdks`.
+/// Sucht Java in den üblichen Ordnern: Launcher-Runtimes, `JAVA_HOME` und je
+/// System Program Files/`~/.jdks` (Windows) bzw. `/usr/lib/jvm`, `/opt`,
+/// SDKMAN und `~/.jdks` (Linux).
 pub fn detect(paths: &Paths) -> Vec<JavaInstall> {
     let mut homes: Vec<(PathBuf, bool)> = child_dirs(&paths.java_dir()).into_iter().map(|d| (d, true)).collect();
     if let Some(home) = std::env::var_os("JAVA_HOME").filter(|v| !v.is_empty()) {
         homes.push((PathBuf::from(home), false));
     }
-    const VENDORS: [&str; 10] = [
-        "Java", "Eclipse Adoptium", "Microsoft", "Zulu", "BellSoft", "Amazon Corretto", "Semeru",
-        "Eclipse Foundation", "AdoptOpenJDK", "OpenJDK",
-    ];
-    let mut bases: Vec<PathBuf> = ["ProgramFiles", "ProgramFiles(x86)", "ProgramW6432"]
-        .iter()
-        .filter_map(|v| std::env::var_os(v).map(PathBuf::from))
-        .collect();
-    if let Some(local) = std::env::var_os("LOCALAPPDATA") {
-        bases.push(PathBuf::from(local).join("Programs"));
-    }
-    for base in bases {
-        for vendor in VENDORS {
-            homes.extend(child_dirs(&base.join(vendor)).into_iter().map(|d| (d, false)));
-        }
-    }
-    if let Some(profile) = std::env::var_os("USERPROFILE") {
-        homes.extend(child_dirs(&PathBuf::from(profile).join(".jdks")).into_iter().map(|d| (d, false)));
+    for base in crate::platform::java_search_dirs() {
+        homes.extend(child_dirs(&base).into_iter().map(|d| (d, false)));
     }
     scan_homes(homes)
 }
@@ -299,7 +350,7 @@ mod tests {
         let make = |name: &str, release: Option<&str>| {
             let home = dir.path().join(name);
             std::fs::create_dir_all(home.join("bin")).unwrap();
-            std::fs::write(home.join("bin/javaw.exe"), b"MZ").unwrap();
+            std::fs::write(java_in(&home), b"MZ").unwrap();
             if let Some(r) = release {
                 std::fs::write(home.join("release"), r).unwrap();
             }
@@ -312,7 +363,42 @@ mod tests {
         assert_eq!(found.len(), 2, "doppelt und ohne release-Datei fallen raus");
         assert_eq!((found[0].major, found[0].managed), (21, true));
         assert_eq!(found[1].major, 8);
-        assert_eq!(inspect(&j8.join("bin/javaw.exe")).unwrap().0, 8);
+        assert_eq!(inspect(&java_in(&j8)).unwrap().0, 8);
+    }
+
+    #[test]
+    fn link_targets_stay_inside() {
+        assert!(safe_link_target("legal/java.base/LICENSE", "../java.desktop/LICENSE"));
+        assert!(safe_link_target("lib/a.so", "b.so"));
+        for (link, target) in [("a", "../x"), ("a/b", "../../x"), ("a/b", "/etc/passwd"), ("a/b", ""), ("a/b", "c:\\x")] {
+            assert!(!safe_link_target(link, target), "{link} -> {target}");
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn unix_files_get_modes_and_links() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("bin")).unwrap();
+        std::fs::create_dir_all(dir.path().join("legal/a")).unwrap();
+        std::fs::write(dir.path().join("bin/java"), b"\x7fELF").unwrap();
+        std::fs::write(dir.path().join("legal/a/LICENSE"), b"x").unwrap();
+        let m: RuntimeManifest = serde_json::from_str(
+            r#"{"files":{
+                "bin/java":{"type":"file","executable":true,"downloads":{"raw":{"sha1":"b","size":2,"url":"https://x/r"}}},
+                "legal/b/LICENSE":{"type":"link","target":"../a/LICENSE"}}}"#,
+        )
+        .unwrap();
+        finish_unix_files(dir.path(), &m).unwrap();
+        let mode = std::fs::metadata(dir.path().join("bin/java")).unwrap().permissions().mode();
+        assert_eq!(mode & 0o111, 0o111);
+        assert_eq!(std::fs::read(dir.path().join("legal/b/LICENSE")).unwrap(), b"x");
+        // Zweiter Lauf: vorhandener Link stört nicht.
+        finish_unix_files(dir.path(), &m).unwrap();
+
+        let evil: RuntimeManifest = serde_json::from_str(r#"{"files":{"x":{"type":"link","target":"../../etc/passwd"}}}"#).unwrap();
+        assert!(finish_unix_files(dir.path(), &evil).is_err());
     }
 
     #[test]

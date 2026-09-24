@@ -70,7 +70,8 @@
     "betaGroup": "Bètatalen",
     "onboardingTitle": "Kies je taal",
     "onboardingText": "Je kunt dit altijd wijzigen via Instellingen → Taal.",
-    "detected": "Herkend via Windows"
+    "detected": "Herkend via Windows",
+    "detectedSystem": "Herkend via het systeem"
   },
   "format": {
     "neverPlayed": "Nooit gespeeld",
@@ -945,7 +946,8 @@
     },
     "deleteDialog": {
       "title": "Screenshot verwijderen?",
-      "text": "{name} gaat naar de Windows-Prullenbak – daar kun je het terugzetten."
+      "text": "{name} gaat naar de Windows-Prullenbak – daar kun je het terugzetten.",
+      "textLinux": "{name} gaat naar de prullenbak – daar kun je het terugzetten via je bestandsbeheerder."
     }
   },
   "servers": {
@@ -1361,7 +1363,8 @@
       "missing_dependency": "Een mod mist een andere mod die hij nodig heeft. Het log toont vlak boven de fout welke.",
       "mod_conflict": "Twee mods kunnen niet met elkaar overweg. Schakel de laatst toegevoegde mods uit en start opnieuw.",
       "graphics_driver": "Het grafische stuurprogramma is gecrasht of ondersteunt geen OpenGL. Werk het stuurprogramma van je videokaart bij."
-    }
+    },
+    "shareTextLinux": "Het log wordt geüpload naar {site}, waar iedereen met de link het kan lezen. Inlogtokens en je gebruikersnaam worden eerst verwijderd."
   },
   "exportPack": {
     "title": "Exporteren als modpack",
@@ -1431,7 +1434,9 @@
     "title": "Instellingen",
     "footer": {
       "clientModUpdate": "TRS Client: update naar {version} gedownload",
-      "clientModCurrent": "TRS Client: versie {version} (up-to-date)"
+      "clientModCurrent": "TRS Client: versie {version} (up-to-date)",
+      "updatesPackage": "Updates komen via je pakketbeheerder",
+      "updatesFlatpak": "Updates komen via Flatpak"
     },
     "appearance": {
       "colorScheme": "Kleurthema",
@@ -1522,7 +1527,8 @@
       "tuningTitle": "FPS-boost bij het starten",
       "tuningDescription": "Afgestemde Java-instellingen voor jouw Java-versie en geheugen (ZGC of G1, geheugen meteen gereserveerd). Alleen zonder eigen JVM-argumenten.",
       "priorityTitle": "Hogere procesprioriteit",
-      "priorityDescription": "Start het spel met prioriteit ‘Boven normaal’ – kan haperingen verminderen als andere programma’s druk bezig zijn."
+      "priorityDescription": "Start het spel met prioriteit ‘Boven normaal’ – kan haperingen verminderen als andere programma’s druk bezig zijn.",
+      "dedicatedGpuDescriptionLinux": "Voor laptops met twee grafische chips: het spel rendert op de dedicated GPU (PRIME-offload – DRI_PRIME of de NVIDIA-variabelen)."
     },
     "hooks": {
       "title": "Starthooks",
@@ -1578,7 +1584,12 @@
       "freed": "{size} vrijgemaakt",
       "confirmTitle": "Ongebruikte verwijderen?",
       "confirmText": "{n} spelversie ({size}) wordt verwijderd. Instanties, werelden en mods blijven onaangeroerd. | {n} spelversies ({size}) worden verwijderd. Instanties, werelden en mods blijven onaangeroerd.",
-      "dataDirTitle": "App-map"
+      "dataDirTitle": "App-map",
+      "credentialsTitle": "Opgeslagen aanmeldingen",
+      "credentialsKeyring": "De sleutel voor je Microsoft-aanmeldingen staat in de sleutelbos van je systeem (bijv. GNOME Keyring of KWallet).",
+      "credentialsFile": "Er is geen sleutelbos gevonden, dus je aanmeldingen zijn alleen beschermd door bestandsrechten (alleen jouw gebruiker kan ze lezen). Installeer en ontgrendel voor betere bescherming een sleutelbos zoals GNOME Keyring of KWallet.",
+      "credentialsKeyringShort": "Sleutelbos",
+      "credentialsFileShort": "Alleen bestandsrechten"
     },
     "network": {
       "title": "Netwerk",
@@ -2048,7 +2059,9 @@
     "ready": "TRS Launcher {version} is klaar.",
     "readyRunning": "TRS Launcher {version} is klaar. Actieve games blijven draaien.",
     "downloadInstaller": "Installatieprogramma downloaden",
-    "splash": "Bijwerken – zo meteen herstarten …"
+    "splash": "Bijwerken – zo meteen herstarten …",
+    "availableExternal": "Update {version} beschikbaar",
+    "externalHint": "Installeer het met je pakketbeheerder (bijv. yay/paru voor de AUR, apt of dnf) – of download het van GitHub."
   },
   "play": {
     "stopGame": "Spel stoppen",
