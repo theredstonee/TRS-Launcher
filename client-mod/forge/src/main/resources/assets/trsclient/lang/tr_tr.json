@@ -5,5 +5,6 @@
 	"key.trsclient.zoom": "Yakınlaştır (basılı tut)",
 	"key.trsclient.fullbright": "Fullbright aç/kapat",
 	"key.trsclient.freelook": "Serbest bakış (basılı tut)",
-	"key.trsclient.hudProfile": "HUD profilini değiştir"
+	"key.trsclient.hudProfile": "HUD profilini değiştir",
+	"key.trsclient.redstoneOverlay": "Sinyal katmanını aç/kapat"
 }

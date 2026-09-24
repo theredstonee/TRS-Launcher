@@ -66,6 +66,10 @@ public final class TrsClient {
 	private final ClickCounter rightClicks = new ClickCounter();
 	private final ZoomState zoom = new ZoomState();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
+	/** Redstone-Werkzeuge: Signalstärke, Takt-Messer, Signal-Overlay (Logik in core.redstone). */
+	private final dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone =
+			new dev.theredstonee.trsclient.core.redstone.RedstoneTools(modules);
+	private long redstoneErrorLogged;
 	private ConfigStore config;
 	private HudManager hud;
 	private String version = Tags.VERSION;
@@ -158,6 +162,14 @@ public final class TrsClient {
 			while (TrsKeys.menu.isPressed()) {
 				if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
 			}
+			while (TrsKeys.redstoneOverlay.isPressed()) {
+				modules.redstoneOverlay.toggle();
+				if (mc.ingameGUI != null) {
+					mc.ingameGUI.func_110326_a(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")), false);
+				}
+				saveConfig();
+			}
+			tickRedstone();
 			while (TrsKeys.fullbright.isPressed()) {
 				modules.fullbright.toggle();
 				if (mc.ingameGUI != null) {
@@ -237,7 +249,7 @@ public final class TrsClient {
 	public void onOverlay(RenderGameOverlayEvent.Post event) {
 		if (event.type != RenderGameOverlayEvent.ElementType.ALL) return;
 		HookStats.hud++;
-		hud.render(event.resolution.getScaledWidth(), event.resolution.getScaledHeight());
+		hud.render(event.resolution.getScaledWidth(), event.resolution.getScaledHeight(), event.partialTicks);
 	}
 
 	/** Direkt vor {@code EntityPlayerSP.onLivingUpdate}: umgeschaltete Sprint-/Schleich-Taste halten. */
@@ -279,6 +291,20 @@ public final class TrsClient {
 	 * Einmalige Umstellung alter Standard-Tasten: Zoom lag auf C, was ab Minecraft 1.12 mit
 	 * "Schnellleiste speichern" kollidiert. Selbst belegte Tasten bleiben unangetastet.
 	 */
+	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */
+	private void tickRedstone() {
+		try {
+			dev.theredstonee.trsclient.compat.RedstoneProbe.tick(redstone);
+		} catch (RuntimeException e) {
+			redstone.reset();
+			long now = System.currentTimeMillis();
+			if (now - redstoneErrorLogged > 60000) {
+				redstoneErrorLogged = now;
+				LOGGER.warn("Redstone-Werkzeuge: " + e);
+			}
+		}
+	}
+
 	private void migrateKeys(Minecraft mc) {
 		if (!modules.keyDefaults.needsZoomKeyMigration() || mc.gameSettings == null) return;
 		if (TrsKeys.migrateZoomKey()) {
@@ -306,6 +332,10 @@ public final class TrsClient {
 
 	public HudManager hud() {
 		return hud;
+	}
+
+	public dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone() {
+		return redstone;
 	}
 
 	public PvpFeatures pvp() {

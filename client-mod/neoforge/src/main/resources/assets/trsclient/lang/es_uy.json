@@ -5,5 +5,6 @@
 	"key.trsclient.zoom": "Zoom (mantener)",
 	"key.trsclient.fullbright": "Activar/desactivar fullbright",
 	"key.trsclient.freelook": "Vista libre (mantener)",
-	"key.trsclient.hudProfile": "Cambiar perfil de HUD"
+	"key.trsclient.hudProfile": "Cambiar perfil de HUD",
+	"key.trsclient.redstoneOverlay": "Alternar superposición de señal"
 }

@@ -21,7 +21,10 @@ public final class FrequencyMeter {
 	private long samples;
 	private int lastLevel;
 	private long onSince = -1;
-	private int lastPulse = -1;
+	/** Die letzten Pulslängen (Mittelwert glättet das Ruckeln der Paket-Ankunft). */
+	private final int[] pulses = new int[8];
+	private int pulseCount;
+	private int pulseNext;
 
 	/** Alles vergessen (neues Bauteil, Weltwechsel). */
 	public void reset() {
@@ -31,7 +34,8 @@ public final class FrequencyMeter {
 		samples = 0;
 		lastLevel = 0;
 		onSince = -1;
-		lastPulse = -1;
+		pulseCount = 0;
+		pulseNext = 0;
 	}
 
 	/**
@@ -54,7 +58,9 @@ public final class FrequencyMeter {
 			addRise(tick);
 			onSince = tick;
 		} else if (samples > 0 && !on && wasOn && onSince >= 0) {
-			lastPulse = (int) (tick - onSince);
+			pulses[pulseNext] = (int) (tick - onSince);
+			pulseNext = (pulseNext + 1) % pulses.length;
+			if (pulseCount < pulses.length) pulseCount++;
 			onSince = -1;
 		}
 		levels[(int) Math.floorMod(tick, (long) HISTORY)] = level;
@@ -117,9 +123,12 @@ public final class FrequencyMeter {
 		return hertz(now, window) * 2;
 	}
 
-	/** Länge des letzten vollständigen An-Pulses in Spiel-Ticks oder -1. */
-	public int lastPulseTicks() {
-		return lastPulse;
+	/** Mittlere Länge der letzten (bis zu 8) An-Pulse in Spiel-Ticks oder -1. */
+	public double pulseTicks() {
+		if (pulseCount == 0) return -1;
+		int sum = 0;
+		for (int i = 0; i < pulseCount; i++) sum += pulses[i];
+		return (double) sum / pulseCount;
 	}
 
 	/** Messwert von vor {@code ago} Ticks (0 = letzter) oder -1, wenn es ihn (noch) nicht gibt. */

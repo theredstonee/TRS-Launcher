@@ -31,7 +31,11 @@ public final class TrsKeys {
 	public static final KeyMapping hudProfile =
 			new KeyMapping("key.trsclient.hudProfile", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 
-	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile};
+	/** Schaltet das Redstone-Signal-Overlay (F6 – in keiner Vanilla-Version ab 1.9 belegt). */
+	public static final KeyMapping redstoneOverlay =
+			new KeyMapping("key.trsclient.redstoneOverlay", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F6, CATEGORY);
+
+	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, redstoneOverlay};
 
 	private TrsKeys() {
 	}

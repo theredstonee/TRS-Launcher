@@ -19,6 +19,8 @@ public final class TrsKeys {
 	public static KeyMapping freelook;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyMapping hudProfile;
+	/** Schaltet das Redstone-Signal-Overlay (F6 – in keiner Vanilla-Version ab 1.9 belegt). */
+	public static KeyMapping redstoneOverlay;
 
 	private TrsKeys() {
 	}
@@ -41,6 +43,7 @@ public final class TrsKeys {
 		freelook = new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY);
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = new KeyMapping("key.trsclient.hudProfile", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
+		redstoneOverlay = new KeyMapping("key.trsclient.redstoneOverlay", KEYBOARD, InputConstants.KEY_F6, CATEGORY);
 	}
 
 	/**
@@ -64,6 +67,7 @@ public final class TrsKeys {
 		event.register(fullbright);
 		event.register(freelook);
 		event.register(hudProfile);
+		event.register(redstoneOverlay);
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */

@@ -13,6 +13,8 @@ public final class TrsKeys {
 	public static KeyBinding fullbright;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyBinding hudProfile;
+	/** Schaltet das Redstone-Signal-Overlay (F6 – in keiner Vanilla-Version ab 1.9 belegt). */
+	public static KeyBinding redstoneOverlay;
 
 	private TrsKeys() {
 	}
@@ -25,6 +27,7 @@ public final class TrsKeys {
 		fullbright = register(new KeyBinding("key.trsclient.fullbright", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
+		redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", GLFW.GLFW_KEY_F6, CATEGORY));
 	}
 
 	/**

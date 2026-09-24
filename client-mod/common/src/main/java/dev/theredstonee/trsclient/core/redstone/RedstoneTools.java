@@ -148,26 +148,36 @@ public final class RedstoneTools {
 		int output = meterProbe.kind == RedstoneKind.COMPARATOR
 				? ComparatorMath.output(world, meterX, meterY, meterZ, meterProbe, containers) : -1;
 		meter.sample(tick, RedstoneReadout.activity(meterProbe, output));
-		buildClock(lookingAtMeter);
+		buildClock();
 	}
 
-	private void buildClock(boolean lookingAtMeter) {
+	private void buildClock() {
 		int window = windowTicks();
-		double period = meter.periodTicks(tick, window);
+		double period = snap(meter.periodTicks(tick, window));
 		int rises = meter.risesWithin(tick, window);
-		clockVisible = lookingAtMeter || rises > 0;
+		// Nur zeigen, wenn das Bauteil schaltet – ein ruhiger Block braucht keinen Takt-Messer.
+		clockVisible = rises > 0;
 		clockLines.clear();
 		if (!clockVisible) return;
 		if (period > 0) {
 			clockLines.add(I18n.tr("hud.redstone.hz", String.format(I18n.locale(), "%.2f", 20.0 / period)));
 			clockLines.add(I18n.tr("hud.redstone.period", ticks(period / 2.0), ticks(period)));
-			int pulse = meter.lastPulseTicks();
+			double pulse = snap(meter.pulseTicks());
 			if (pulse > 0) clockLines.add(I18n.tr("hud.redstone.pulse", ticks(pulse / 2.0)));
 		} else if (meter.samples() < window && rises < 2) {
 			clockLines.add(I18n.tr("hud.redstone.measuring"));
 		} else {
 			clockLines.add(I18n.tr("hud.redstone.noClock"));
 		}
+	}
+
+	/**
+	 * Echte Takte haben ganze Spiel-Ticks; kleine Abweichungen kommen nur vom Eintreffen der
+	 * Pakete beim Client (5,9 → 6).
+	 */
+	static double snap(double ticks) {
+		double whole = Math.rint(ticks);
+		return Math.abs(ticks - whole) < 0.25 ? whole : ticks;
 	}
 
 	/** "4" oder "1.5" (halbe Redstone-Ticks bei ungeraden Spiel-Ticks). */

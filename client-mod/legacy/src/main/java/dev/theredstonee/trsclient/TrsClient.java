@@ -83,6 +83,10 @@ public final class TrsClient {
 	private final ZoomState zoom = new ZoomState();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
 	private final ChatFeatures chat = new ChatFeatures(modules);
+	/** Redstone-Werkzeuge: Signalstärke, Takt-Messer, Signal-Overlay (Logik in core.redstone). */
+	private final dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone =
+			new dev.theredstonee.trsclient.core.redstone.RedstoneTools(modules);
+	private long redstoneErrorLogged;
 	/** Tastendruck-Erkennung für die Modul-Tasten (Wegpunkte, Text-Hotkeys). */
 	private final dev.theredstonee.trsclient.core.input.KeyPresses moduleKeys =
 			new dev.theredstonee.trsclient.core.input.KeyPresses(dev.theredstonee.trsclient.compat.Keys::isDown);
@@ -183,6 +187,11 @@ public final class TrsClient {
 		while (TrsKeys.menu.isPressed()) {
 			if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
 		}
+		while (TrsKeys.redstoneOverlay.isPressed()) {
+			modules.redstoneOverlay.toggle();
+			Mc.actionBar(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
+			saveConfig();
+		}
 		while (TrsKeys.fullbright.isPressed()) {
 			modules.fullbright.toggle();
 			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
@@ -207,6 +216,7 @@ public final class TrsClient {
 		chat.tick(mc);
 		waypoints.tick();
 		hud.tick();
+		tickRedstone();
 		dev.theredstonee.trsclient.online.LegacyOnline.tick(mc);
 	}
 
@@ -406,6 +416,20 @@ public final class TrsClient {
 	 * Einmalige Umstellung alter Standard-Tasten: Zoom lag auf C, was ab Minecraft 1.12 mit
 	 * "Schnellleiste speichern" kollidiert. Selbst belegte Tasten bleiben unangetastet.
 	 */
+	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */
+	private void tickRedstone() {
+		try {
+			dev.theredstonee.trsclient.compat.RedstoneProbe.tick(redstone);
+		} catch (RuntimeException e) {
+			redstone.reset();
+			long now = System.currentTimeMillis();
+			if (now - redstoneErrorLogged > 60000) {
+				redstoneErrorLogged = now;
+				LOGGER.warn("Redstone-Werkzeuge: " + e);
+			}
+		}
+	}
+
 	private void migrateKeys(Minecraft mc) {
 		if (!modules.keyDefaults.needsZoomKeyMigration() || mc.gameSettings == null) return;
 		if (TrsKeys.migrateZoomKey()) {
@@ -462,6 +486,10 @@ public final class TrsClient {
 
 	public ChatFeatures chat() {
 		return chat;
+	}
+
+	public dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone() {
+		return redstone;
 	}
 
 	public Waypoints waypoints() {

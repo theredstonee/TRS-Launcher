@@ -54,6 +54,10 @@ public final class TrsClient {
 	private final HudManager hud;
 	private final PvpFeatures pvp = new PvpFeatures(modules);
 	private final ChatFeatures chat = new ChatFeatures(modules);
+	/** Redstone-Werkzeuge: Signalstärke, Takt-Messer, Signal-Overlay (Logik in core.redstone). */
+	private final dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone =
+			new dev.theredstonee.trsclient.core.redstone.RedstoneTools(modules);
+	private long redstoneErrorLogged;
 	private final Waypoints waypoints;
 	/** Tastendruck-Erkennung für die Modul-Tasten (Wegpunkte, Text-Hotkeys). */
 	private final KeyPresses moduleKeys = new KeyPresses(dev.theredstonee.trsclient.compat.Keys::isDown);
@@ -150,6 +154,11 @@ public final class TrsClient {
 		while (TrsKeys.menu.consumeClick()) {
 			if (Mc.screen() == null) Mc.setScreen(new TrsMenuScreen(null));
 		}
+		while (TrsKeys.redstoneOverlay.consumeClick()) {
+			modules.redstoneOverlay.toggle();
+			Mc.actionBar(Component.literal(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
+			saveConfig();
+		}
 		while (TrsKeys.fullbright.consumeClick()) {
 			modules.fullbright.toggle();
 			Mc.actionBar(Component.literal(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
@@ -172,8 +181,23 @@ public final class TrsClient {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		hud.tick();
+		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		if (autoTest != null) autoTest.tick(mc);
+	}
+
+	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */
+	private void tickRedstone() {
+		try {
+			dev.theredstonee.trsclient.compat.RedstoneProbe.tick(redstone);
+		} catch (RuntimeException e) {
+			redstone.reset();
+			long now = System.currentTimeMillis();
+			if (now - redstoneErrorLogged > 60_000) {
+				redstoneErrorLogged = now;
+				LOGGER.warn("Redstone-Werkzeuge: {}", e.toString());
+			}
+		}
 	}
 
 	/**
@@ -257,6 +281,10 @@ public final class TrsClient {
 
 	public ChatFeatures chat() {
 		return chat;
+	}
+
+	public dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone() {
+		return redstone;
 	}
 
 	public Waypoints waypoints() {

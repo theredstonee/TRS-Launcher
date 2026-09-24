@@ -5,5 +5,6 @@
 	"key.trsclient.zoom": "Zoom (halten)",
 	"key.trsclient.fullbright": "Fullbright umschalten",
 	"key.trsclient.freelook": "Freelook (halten)",
-	"key.trsclient.hudProfile": "HUD-Profil wechseln"
+	"key.trsclient.hudProfile": "HUD-Profil wechseln",
+	"key.trsclient.redstoneOverlay": "Signal-Overlay umschalten"
 }

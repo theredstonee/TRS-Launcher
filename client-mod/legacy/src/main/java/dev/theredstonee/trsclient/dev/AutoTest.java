@@ -52,6 +52,7 @@ public final class AutoTest {
 	private TrsConfig before;
 
 	private final CapeTest capeTest = new CapeTest();
+	private final RedstoneTest redstoneTest = new RedstoneTest();
 
 	private AutoTest() {
 	}
@@ -143,6 +144,11 @@ public final class AutoTest {
 				break;
 			}
 			case 4:
+				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
+				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 18;
+					break;
+				}
 				shot(mc, "hud");
 				TrsClient.get().setForceZoom(true);
 				next(30);
@@ -260,6 +266,21 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 18:
+				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt
+				if (redstoneTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				next(5);
+				break;
+			case 19:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -274,8 +295,8 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 19) mc.shutdown();
-				step = 20;
+				if (step == 20) mc.shutdown();
+				step = 21;
 				break;
 		}
 	}

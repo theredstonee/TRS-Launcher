@@ -133,7 +133,7 @@ class RedstoneToolsTest {
 		assertEquals(8.0, m.periodTicks(99, 100), 1e-9);
 		assertEquals(2.5, m.hertz(99, 100), 1e-9);
 		assertEquals(5.0, m.changesPerSecond(99, 100), 1e-9);
-		assertEquals(4, m.lastPulseTicks());
+		assertEquals(4.0, m.pulseTicks(), 1e-9);
 		assertEquals(15, m.level(0), "t = 99: 99 % 8 = 3 < 4 → an");
 		assertEquals(0, m.level(4), "t = 95: 95 % 8 = 7 → aus");
 	}
@@ -143,7 +143,10 @@ class RedstoneToolsTest {
 		FrequencyMeter fast = new FrequencyMeter();
 		for (long t = 0; t < 60; t++) fast.sample(t, (t % 2) == 0 ? 15 : 0); // 2 Ticks = 10 Hz
 		assertEquals(10.0, fast.hertz(59, 60), 1e-9);
-		assertEquals(1, fast.lastPulseTicks());
+		assertEquals(1.0, fast.pulseTicks(), 1e-9);
+		FrequencyMeter none = new FrequencyMeter();
+		none.sample(0, 15);
+		assertEquals(-1.0, none.pulseTicks(), 1e-9, "noch kein Puls zu Ende");
 
 		FrequencyMeter slow = new FrequencyMeter();
 		for (long t = 0; t < 200; t++) slow.sample(t, (t % 40) < 20 ? 7 : 0); // 2 s Periode
@@ -409,5 +412,8 @@ class RedstoneToolsTest {
 		assertNotEquals("1.50", RedstoneTools.ticks(1.5));
 		I18n.use("de");
 		assertEquals("1,5", RedstoneTools.ticks(1.5));
+		assertEquals(6.0, RedstoneTools.snap(5.9), 1e-9, "Paket-Ruckeln");
+		assertEquals(6.5, RedstoneTools.snap(6.5), 1e-9);
+		assertEquals(0.0, RedstoneTools.snap(0.0), 1e-9);
 	}
 }

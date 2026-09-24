@@ -89,7 +89,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 24 && Mc.screen() instanceof PauseScreen) {
+		if (step >= 3 && step < 25 && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -161,6 +161,11 @@ public final class AutoTest {
 				next(230);
 				break;
 			case 4:
+				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
+				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 22;
+					break;
+				}
 				shot(mc, "trsclient-hud");
 				TrsClient.get().setForceZoom(true);
 				next(30);
@@ -308,6 +313,21 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 22:
+				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt
+				if (redstoneTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				next(5);
+				break;
+			case 23:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] fertig, verlasse Welt und beende das Spiel");
 				TrsClient.get().sprintToggle().set(false);
@@ -318,13 +338,14 @@ public final class AutoTest {
 				next(20);
 				break;
 			default:
-				if (step == 23) mc.stop();
-				step = 24;
+				if (step == 24) mc.stop();
+				step = 25;
 				break;
 		}
 	}
 
 	private final CapeTest capeTest = new CapeTest();
+	private final RedstoneTest redstoneTest = new RedstoneTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

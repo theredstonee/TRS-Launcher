@@ -66,6 +66,10 @@ public final class TrsClient implements ClientModInitializer {
 	private final PvpFeatures pvp = new PvpFeatures(modules);
 	private final dev.theredstonee.trsclient.feature.ChatFeatures chat =
 			new dev.theredstonee.trsclient.feature.ChatFeatures(modules);
+	/** Redstone-Werkzeuge: Signalstärke, Takt-Messer, Signal-Overlay (Logik in core.redstone). */
+	private final dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone =
+			new dev.theredstonee.trsclient.core.redstone.RedstoneTools(modules);
+	private long redstoneErrorLogged;
 	private dev.theredstonee.trsclient.feature.Waypoints waypoints;
 	/** Tastendruck-Erkennung für die Modul-Tasten (Wegpunkte, Text-Hotkeys). */
 	private final dev.theredstonee.trsclient.core.input.KeyPresses moduleKeys =
@@ -184,6 +188,11 @@ public final class TrsClient implements ClientModInitializer {
 		while (TrsKeys.menu.consumeClick()) {
 			if (Mc.screen() == null) Mc.setScreen(new TrsMenuScreen(null));
 		}
+		while (TrsKeys.redstoneOverlay.consumeClick()) {
+			modules.redstoneOverlay.toggle();
+			Mc.actionBar(Mc.text(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
+			saveConfig();
+		}
 		while (TrsKeys.fullbright.consumeClick()) {
 			modules.fullbright.toggle();
 			Mc.actionBar(Mc.text(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
@@ -206,7 +215,22 @@ public final class TrsClient implements ClientModInitializer {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		hud.tick();
+		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
+	}
+
+	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */
+	private void tickRedstone() {
+		try {
+			dev.theredstonee.trsclient.compat.RedstoneProbe.tick(redstone);
+		} catch (RuntimeException e) {
+			redstone.reset();
+			long now = System.currentTimeMillis();
+			if (now - redstoneErrorLogged > 60_000) {
+				redstoneErrorLogged = now;
+				LOGGER.warn("Redstone-Werkzeuge: {}", e.toString());
+			}
+		}
 	}
 
 	/**
@@ -296,6 +320,10 @@ public final class TrsClient implements ClientModInitializer {
 
 	public dev.theredstonee.trsclient.feature.Waypoints waypoints() {
 		return waypoints;
+	}
+
+	public dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone() {
+		return redstone;
 	}
 
 	/** Zuletzt gezeichnetes Sichtfeld der Welt (Grad) – Grundlage der Wegpunkt-Projektion. */

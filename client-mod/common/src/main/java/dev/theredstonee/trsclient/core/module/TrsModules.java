@@ -284,14 +284,14 @@ public final class TrsModules {
 				"Look at dust, repeaters, comparators, pistons, lamps, levers and more: shows the block, its signal "
 						+ "strength (0–15), repeater delay, comparator mode and output, piston state and the comparator "
 						+ "output of containers you have opened.", true,
-				new HudPosition(HudAnchor.CENTER, 0.12, 0.06)));
+				new HudPosition(HudAnchor.CENTER, 0.2, -0.1)));
 		redstoneOverlay = registry.register(new Module("redstoneOverlay", "Signal Overlay",
 				"Shows the signal strength as a number above every piece of redstone dust around you, from grey (0) "
 						+ "to bright red (15). Switch it on and off with its key (controls menu).", false));
 		redstoneClock = registry.register(new HudModule("redstoneClock", "Clock Meter",
 				"Measures how fast the redstone component you look at switches: frequency in Hz, period and pulse "
 						+ "length in redstone ticks, plus a small oscilloscope.", true,
-				new HudPosition(HudAnchor.CENTER, 0.12, 0.22)));
+				new HudPosition(HudAnchor.CENTER, 0.2, 0.16)));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);

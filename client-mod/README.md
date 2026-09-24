@@ -55,6 +55,9 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Minimap | Top-down map of the loaded chunks (map colours, height shading), rotating or north-up, zoom, waypoints, coordinates. Player dots are off by default and only ever show players the game already knows (normal render range) – no radar, no cave mode |
 | TRS-Online-Funktionen | TRS badge (a pixel redstone block) in front of the names of TRS users in the tab list and on name tags, TRS capes (own and other players', HD and animated), in-game presence for friends. Talks to the TRS API (see below); switchable as a whole, per badge place and for capes |
 | Umhang-Physik | Every rendered cape (Mojang, OptiFine, TRS, own and other players') moves like cloth instead of a rigid plank: swings when walking, turning, jumping and falling, rests on the back and bends at the hips when sneaking. Settings: *Stärke*, *Wind*, *Für* (nur eigener / alle Spieler). Elytras stay vanilla |
+| Signalstärke *(Redstone)* | Look at dust, a repeater, comparator, piston, lamp, observer, lever, button, plate, daylight detector, target, door, dispenser, hopper … → HUD panel with the block name, signal strength 0–15 as a 15-segment bar + number, repeater delay (and "locked"), comparator mode and **output** (recomputed from its inputs – the client never receives it), piston extended/retracted, the input strength of consumers, and the comparator output of containers you have opened (the client only knows a chest's content while it is open; otherwise it is left out) |
+| Signal-Overlay *(Redstone)* | Signal strength as a number above every piece of redstone dust within 4–16 blocks, grey (0) → bright red (15), smaller further away. Toggle key **F6** (F8 on Forge 1.7.10/1.8.9, where F6/F7 are the stream keys). Only loaded chunks, by default only dust in sight (line-of-sight check), cached: a budget of 4 096 block reads per tick searches the cube, known dust is re-read every tick |
+| Takt-Messer *(Redstone)* | For the component you look at (keeps measuring after you look away, up to 32 blocks): frequency in Hz, period in redstone ticks (and game ticks), pulse length, and a 5-second oscilloscope. Shown only while the component switches |
 | Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
@@ -120,7 +123,7 @@ face and all four edges with the vanilla cape UVs (the fractions are the same fo
 ## Menu, HUD editor and profiles
 
 The menu (Right Shift) shows every module as a tile with icon, full name (two lines if needed) and switch in a 2–4
-column grid that grows with the window: a search field, the category tabs **HUD / PvP / Chat / Welt / Sonstiges**,
+column grid that grows with the window: a search field, the category tabs **HUD / PvP / Chat / Welt / Redstone / Sonstiges**,
 and a click on a tile (or its gear) opens that module's settings page. Settings are typed and drawn by the same code
 everywhere: switch, slider, colour picker (hue/saturation field, opacity and **Chroma**, plus the brand palette),
 dropdown and key binding.
@@ -166,6 +169,7 @@ Listed under **TRS Client** in the vanilla controls menu.
 | V (hold) | Zoom (V is free in every vanilla version; C is "save hotbar activator" from 1.12 on) |
 | unbound | Toggle Fullbright (also switchable in the menu) |
 | unbound | Switch the HUD profile (cycles) |
+| F6 (Forge 1.7.10/1.8.9: F8) | Toggle the redstone signal overlay |
 
 The waypoint keys (**B** create, **N** list) and the four text hotkeys are settings of their modules and are
 rebound in the TRS menu, not in the vanilla controls screen.
@@ -195,6 +199,19 @@ messages, key binding names) is translated like the launcher: **English** (defau
   placeholders match, every key used in the code of all loader trees exists, fallback, language detection) and
   `TextFitTest` (names fit the menu tiles, rail, title buttons and the HUD-editor panel in the default 854×480
   window, measured with Minecraft's glyph widths; beta languages are only reported).
+
+## Redstone-Werkzeuge
+
+Category **Redstone** in the menu. The logic is version independent in `common/core/redstone`: `RedstoneTools`
+(one call per client tick), `RedstoneReadout` (what the panel shows), `ComparatorMath` (container signal
+`⌊fill·14⌋+1`, compare/subtract, rear input through a solid block, comparator chains), `FrequencyMeter` (rising
+edges → Hz/period, averaged pulse length, 200-tick history), `SignalCache` + `LineOfSight` (overlay), `SignalColors`,
+`RedstonePanels`/`SignalOverlay` (drawn through `Canvas`, the overlay with the same own projection as the waypoints –
+no world rendering, no mixin). Per loader only a small adapter `compat/RedstoneProbe` (`RedstoneWorld`: probe a block,
+dust power, vanilla `getSignal`/direct signal, comparator input override, conductor/opaque) and `hud/RedstoneHuds`:
+one identical file for the Mojmap trees (1.14.4–26.3; the only branch is `getAnalogOutputSignal` with a direction from
+1.21.9), block IDs + state property names for Forge 1.8.9–1.12.2, block + metadata for 1.7.10, MCP names for 1.13.2.
+Fair on every server: only block states the client already has are read, nothing is sent.
 
 ## Fair play
 
@@ -237,6 +254,8 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | TRS-Umhang, TRS-Abzeichen | Forge 1.14.4 | no Mixin in that build – only login and presence |
 | Abzeichen als Pixel-Redstone-Block | 1.14.4, 1.15.2, Forge 1.8.9–1.12.2 | no per-text font – a dark red `■` instead |
 | TRS-Umhang über OptiFine | Forge 1.8.9–1.12.2 with OptiFine | OptiFine's own cape getter wins there |
+| Signalstärke: Türen, Falltüren, Zauntore, Notenblöcke | Forge 1.7.10 | no "powered" bit in their metadata – not recognised as components |
+| Signal-Overlay: FOV of sprint/speed | Forge 1.7.10 | the FOV modifier is private there – numbers sit slightly off while sprinting |
 | Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |
 
 ### Open

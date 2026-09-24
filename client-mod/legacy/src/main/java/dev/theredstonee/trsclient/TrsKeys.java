@@ -14,6 +14,8 @@ public final class TrsKeys {
 	public static KeyBinding freelook;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyBinding hudProfile;
+	/** Schaltet das Redstone-Signal-Overlay (F6; in 1.8.9 ist F6 "Stream starten" → dort F8). */
+	public static KeyBinding redstoneOverlay;
 
 	private TrsKeys() {
 	}
@@ -27,6 +29,10 @@ public final class TrsKeys {
 		freelook = register(new KeyBinding("key.trsclient.freelook", Keyboard.KEY_LMENU, CATEGORY));
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", Keyboard.KEY_NONE, CATEGORY));
+		//? if >=1.9 {
+		/*redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", Keyboard.KEY_F6, CATEGORY));
+		*///?} else
+		redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", Keyboard.KEY_F8, CATEGORY));
 	}
 
 	/**
