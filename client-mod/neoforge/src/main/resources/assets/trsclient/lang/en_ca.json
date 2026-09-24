@@ -5,5 +5,6 @@
 	"key.trsclient.zoom": "Zoom (hold)",
 	"key.trsclient.fullbright": "Toggle fullbright",
 	"key.trsclient.freelook": "Freelook (hold)",
-	"key.trsclient.hudProfile": "Switch HUD profile"
+	"key.trsclient.hudProfile": "Switch HUD profile",
+	"key.trsclient.emoteWheel": "Emote wheel (hold)"
 }

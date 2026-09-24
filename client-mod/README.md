@@ -55,6 +55,7 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Minimap | Top-down map of the loaded chunks (map colours, height shading), rotating or north-up, zoom, waypoints, coordinates. Player dots are off by default and only ever show players the game already knows (normal render range) – no radar, no cave mode |
 | TRS-Online-Funktionen | TRS badge (a pixel redstone block) in front of the names of TRS users in the tab list and on name tags, TRS capes (own and other players', HD and animated), in-game presence for friends. Talks to the TRS API (see below); switchable as a whole, per badge place and for capes |
 | Umhang-Physik | Every rendered cape (Mojang, OptiFine, TRS, own and other players') moves like cloth instead of a rigid plank: swings when walking, turning, jumping and falling, rests on the back and bends at the hips when sneaking. Settings: *Stärke*, *Wind*, *Für* (nur eigener / alle Spieler). Elytras stay vanilla |
+| Emotes | Hold **G** (rebindable in the vanilla controls) for the emote wheel in the redstone style, point at an emote with the mouse, release to play it – other TRS players see it too. All 11 emotes of the TRS API (Winken, Klatschen, Jubeln, Verbeugen, Facepalm, Schulterzucken, Daumen hoch, Tanzen, Salutieren, Luftgitarre, Redstone-Tanz) are animated; locked ones are shown dark with a lock. Settings: *Kamera beim eigenen Emote* (unverändert / 3. Person von hinten / von vorn), *Emotes anderer Spieler zeigen* |
 | Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
@@ -102,6 +103,35 @@ Private fields are found by type there, so the SRG-named release jars need no fi
 a local server (plain HTTP is only accepted for localhost); the autotest then waits for the own TRS cape and takes
 screenshots in third-person view (`cape-stand`, `cape-frame` = next animation frame, `cape-walk`, `cape-jump`,
 `cape-sneak`, `cape-tab` with the badge).
+
+## Emotes
+
+The logic is version independent in `common/core/emote` (definitions, playback, pose maths) and
+`common/core/ui/wheel/EmoteWheel` (the wheel); per loader only the model hook and the screen remain:
+
+- **Wheel:** holding the key opens `EmoteWheelScreen`; the physical key is polled every frame (a screen stops the key
+  bindings) and releasing it plays the emote the mouse points at (direction from the centre, dead zone in the
+  middle). A short tap keeps the wheel open (then click or press again), Esc closes. Unlocked emotes are lamps,
+  locked ones dark stones with a lock; without consent, account or connection the wheel only shows a hint.
+- **API** (contract `api/API.md` §12/§13, same login as the badges): `GET /v1/me/cosmetics` → unlocked emotes
+  (after login, every 10 min, when the wheel opens and the list is older than 60 s), `POST /v1/emotes/play`
+  (the animation starts locally right away; at most one emote every 2 s, `429`/`Retry-After` extends the wait,
+  `403` stops it and reloads the list). Other players' emotes come from the SSE stream
+  `GET /v1/events/players?uuids=` (own UUID + visible TRS users from the lookup, ≤ 200; a new list opens a new stream
+  at most every 10 s and closes the old one after its `hello`; reconnect with backoff 1 s … 60 s, `401` logs in again).
+  The stream only runs while the module and *Emotes anderer Spieler zeigen* are on; the own echo is ignored.
+  `trs-api.json` with `enabled:false` means no emote request at all.
+- **Animation:** keyframes per channel (torso lean/twist/roll around the hips, whole-body offset, head on top of the
+  look direction, arms/legs, shoulders) in `Emotes`, eased in/out; loops repeat their cycle until `durationMs`.
+  `EmoteRig` turns a frame into the six model parts in Minecraft's Z·Y·X order (neck and shoulders follow the torso),
+  limbs an emote does not use keep their vanilla pose. An emote ends when the player moves (> 0.05 blocks/tick after
+  a 250 ms grace), sneaks, attacks or starts another one. During the own emote the camera switches to third person
+  (option) and back afterwards if the player did not change it.
+- **Model hook:** `HumanoidModel#setupAnim` TAIL (`EmoteModelMixin`, player and armor models); until 1.21.1 the
+  entity is known there and the rest pose of a touched model is restored at HEAD (vanilla does not reset every
+  channel), from 1.21.2 the render state is mapped to the player in `extractRenderState` (`EmoteStateMixin`).
+  Forge 1.8.9–1.12.2 (no mixins) replaces the vanilla `ModelPlayer`/armor `ModelBiped` of the player renderers with
+  subclasses whose `setRotationAngles` applies the pose (`LegacyEmotes`, fields found by type).
 
 ## Umhang-Physik
 
@@ -166,6 +196,7 @@ Listed under **TRS Client** in the vanilla controls menu.
 | V (hold) | Zoom (V is free in every vanilla version; C is "save hotbar activator" from 1.12 on) |
 | unbound | Toggle Fullbright (also switchable in the menu) |
 | unbound | Switch the HUD profile (cycles) |
+| G (hold) | Emote wheel (release to play; tap = click mode) |
 
 The waypoint keys (**B** create, **N** list) and the four text hotkeys are settings of their modules and are
 rebound in the TRS menu, not in the vanilla controls screen.
@@ -235,6 +266,7 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | TRS-Online-Funktionen, Umhang-Physik | Forge 1.13.2 and 1.7.10 | not ported – hidden in the menu |
 | Umhang-Physik | Fabric/Forge 1.14.4 | the cape is still drawn with fixed GL calls there – the cape stays rigid (TRS capes and badges work on Fabric 1.14.4) |
 | TRS-Umhang, TRS-Abzeichen | Forge 1.14.4 | no Mixin in that build – only login and presence |
+| Emotes | Forge 1.14.4, 1.13.2 and 1.7.10 | no model hook there (no Mixin / not ported) – hidden in the menu |
 | Abzeichen als Pixel-Redstone-Block | 1.14.4, 1.15.2, Forge 1.8.9–1.12.2 | no per-text font – a dark red `■` instead |
 | TRS-Umhang über OptiFine | Forge 1.8.9–1.12.2 with OptiFine | OptiFine's own cape getter wins there |
 | Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |

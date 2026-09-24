@@ -30,6 +30,11 @@ import java.util.concurrent.TimeUnit;
 public final class TrsOnline {
 	public static final long PRESENCE_INTERVAL_MS = 60_000L;
 	static final long ME_INTERVAL_MS = 10 * 60_000L;
+	/** Liste der freigeschalteten Emotes: so oft neu holen (bzw. bei Fehlern erneut versuchen). */
+	static final long EMOTES_INTERVAL_MS = 10 * 60_000L;
+	static final long EMOTES_RETRY_MS = 30_000L;
+	/** Frühestens so bald nach dem letzten Abruf auf Wunsch (Rad geöffnet, Emote gesperrt) erneut. */
+	static final long EMOTES_MIN_REFRESH_MS = 5_000L;
 	static final long[] LOGIN_BACKOFF_MS = {30_000L, 2 * 60_000L, 10 * 60_000L, 30 * 60_000L};
 
 	/** Zustand für das Menü. */
@@ -58,6 +63,10 @@ public final class TrsOnline {
 	private final ThreadPoolExecutor capeWorker;
 	/** Ergebnisse der Hintergrund-Threads, abgearbeitet im nächsten {@link #tick}. */
 	private final ConcurrentLinkedQueue<Runnable> results = new ConcurrentLinkedQueue<>();
+	/** Live-Ereignisse über sichtbare Spieler (Emotes), nur solange Emotes sie brauchen. */
+	private final PlayerEventStream events;
+	private final List<PlayerEvent> eventBuffer = new ArrayList<>();
+	private final List<PlayerEvent> emoteEvents = new ArrayList<>();
 
 	// Nur Spiel-Thread:
 	private String sessionUuid;
@@ -70,28 +79,43 @@ public final class TrsOnline {
 	private boolean banned;
 	private long lastPrune;
 	private boolean active;
+	private boolean wantEmotes;
+	private boolean wantEvents;
+	private long lastEmoteFetch = Long.MIN_VALUE / 2;
+	private boolean emoteFetchInFlight;
+	private boolean emoteFetchFailed;
 
 	// Aus beiden Threads gelesen:
 	private volatile String token;
 	private volatile Boolean shareServer;
 	private volatile Status status = Status.OFF;
 	private volatile String ownUuid;
+	/** Freigeschaltete Emotes laut API (null = noch unbekannt). */
+	private volatile List<String> unlockedEmotes;
 
 	public TrsOnline(OnlineConfig config, OnlinePlatform platform, Http http, Path capeDir) {
+		this(config, platform, http, capeDir, new PlayerEventStream.UrlOpener("TRS-Client"));
+	}
+
+	public TrsOnline(OnlineConfig config, OnlinePlatform platform, Http http, Path capeDir,
+			PlayerEventStream.Opener eventOpener) {
 		this.config = config;
 		this.platform = platform;
 		this.api = new TrsApi(http, config);
 		this.capeCache = new CapeDiskCache(capeDir);
 		this.apiWorker = worker("TRS-Online");
 		this.capeWorker = worker("TRS-Umhaenge");
+		this.events = new PlayerEventStream(eventOpener, config.apiBase());
 	}
 
 	/** Standard: HttpURLConnection, Umhang-Cache unter {@code <configDir>/trsclient/capes}. */
 	public static TrsOnline create(Path configDir, OnlinePlatform platform, String modVersion) {
 		OnlineConfig config = OnlineConfig.load(configDir);
-		Http http = new Http.UrlConnection("TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion()
-				+ "; " + platform.loader() + ")");
-		return new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"));
+		String userAgent = "TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion() + "; "
+				+ platform.loader() + ")";
+		Http http = new Http.UrlConnection(userAgent);
+		return new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
+				new PlayerEventStream.UrlOpener(userAgent));
 	}
 
 	private static ThreadPoolExecutor worker(String name) {
@@ -114,16 +138,20 @@ public final class TrsOnline {
 		Runnable r;
 		while ((r = results.poll()) != null) r.run();
 		if (!config.launcherEnabled()) {
+			// Keine Einwilligung im Launcher: kein einziger Aufruf.
 			status = Status.LAUNCHER_OFF;
+			events.stop();
 			return;
 		}
 		if (!moduleEnabled) {
 			status = Status.OFF;
 			active = false;
+			events.stop();
 			return;
 		}
 		if (banned) {
 			status = Status.BANNED;
+			events.stop();
 			return;
 		}
 		GameSession session = platform.session();
@@ -134,6 +162,7 @@ public final class TrsOnline {
 		}
 		if (session == null || session.uuid == null || !(session.usable() || devMock())) {
 			status = Status.NO_ACCOUNT;
+			events.stop();
 			return;
 		}
 		if (!session.uuid.equals(sessionUuid)) {
@@ -145,11 +174,15 @@ public final class TrsOnline {
 			directory.clear();
 			loginFailures = 0;
 			nextLoginAt = 0;
+			unlockedEmotes = null;
+			lastEmoteFetch = Long.MIN_VALUE / 2;
+			events.stop();
 		}
 		active = true;
 		if (token == null) {
 			if (!loginInFlight && now >= nextLoginAt) login(session);
 			if (status != Status.RETRY) status = Status.CONNECTING;
+			events.stop();
 			return;
 		}
 		status = Status.ONLINE;
@@ -169,6 +202,140 @@ public final class TrsOnline {
 			lastPrune = now;
 			directory.prune(now);
 		}
+		tickEmotes(now, session.uuid);
+	}
+
+	// --- Emotes (API.md §12, §13) ---
+
+	/**
+	 * Emote-Liste bei Bedarf holen und den Ereignis-Stream (eigene UUID + sichtbare TRS-Spieler) pflegen –
+	 * beides nur, solange das Emote-Modul es verlangt ({@link #wantEmotes}).
+	 */
+	private void tickEmotes(long now, String self) {
+		if (wantEmotes && !emoteFetchInFlight) {
+			long age = now - lastEmoteFetch;
+			boolean due = unlockedEmotes == null || emoteFetchFailed ? age >= EMOTES_RETRY_MS : age >= EMOTES_INTERVAL_MS;
+			if (due) fetchEmotes(now);
+		}
+		if (!wantEvents) {
+			events.stop();
+			return;
+		}
+		List<String> watch = new ArrayList<>();
+		watch.add(self);
+		watch.addAll(directory.visibleUsers());
+		events.update(now, token, watch);
+		if (events.takeUnauthorized()) relogin(token);
+		eventBuffer.clear();
+		events.drain(eventBuffer);
+		for (PlayerEvent e : eventBuffer) {
+			if (e.type.equals("emote")) {
+				if (emoteEvents.size() < 256) emoteEvents.add(e);
+			} else if (e.uuid != null) {
+				// Umhang/Kosmetik/Skin geändert → beim nächsten Stapel neu nachschlagen.
+				directory.invalidate(e.uuid);
+			}
+		}
+	}
+
+	private void fetchEmotes(long now) {
+		String t = token;
+		emoteFetchInFlight = true;
+		lastEmoteFetch = now;
+		if (!submit(apiWorker, () -> {
+			try {
+				List<String> ids = api.emotes(t);
+				results.add(() -> {
+					emoteFetchInFlight = false;
+					emoteFetchFailed = false;
+					unlockedEmotes = java.util.Collections.unmodifiableList(ids);
+				});
+			} catch (ApiException e) {
+				results.add(() -> {
+					emoteFetchInFlight = false;
+					emoteFetchFailed = true;
+					if (e.unauthorized()) relogin(t);
+					else if (e.rateLimited()) lastEmoteFetch = System.currentTimeMillis() + e.retryAfterMs() - EMOTES_RETRY_MS;
+				});
+			} catch (IOException | RuntimeException e) {
+				results.add(() -> {
+					emoteFetchInFlight = false;
+					emoteFetchFailed = true;
+				});
+			}
+		})) emoteFetchInFlight = false;
+	}
+
+	/**
+	 * Vom Emote-Modul in jedem Tick: {@code list} = freigeschaltete Emotes gebraucht, {@code stream} = Ereignisse
+	 * anderer Spieler gebraucht. Ohne beides macht TrsOnline keine Emote-Anfragen.
+	 */
+	public void wantEmotes(boolean list, boolean stream) {
+		wantEmotes = list;
+		wantEvents = stream;
+	}
+
+	/** Freigeschaltete Emote-IDs laut API (null = noch unbekannt). */
+	public List<String> unlockedEmotes() {
+		return unlockedEmotes;
+	}
+
+	/**
+	 * Liste bald neu holen (Rad geöffnet, Emote war gesperrt), wenn der letzte Abruf älter als {@code maxAgeMs}
+	 * ist – nie öfter als alle {@link #EMOTES_MIN_REFRESH_MS}.
+	 */
+	public void refreshEmotes(long now, long maxAgeMs) {
+		if (now - lastEmoteFetch < Math.max(EMOTES_MIN_REFRESH_MS, maxAgeMs)) return;
+		lastEmoteFetch = Long.MIN_VALUE / 2;
+	}
+
+	/** Ergebnis von {@link #playEmote} (im Spiel-Thread). */
+	public interface PlayCallback {
+		/** {@code error} null = gespielt ({@code durationMs} laut Server, 0 = keine Angabe). */
+		void done(int durationMs, ApiException error);
+	}
+
+	/**
+	 * {@code POST /v1/emotes/play} im Hintergrund. Ohne Anmeldung sofort Fehler {@code offline}. Die Wartezeit
+	 * zwischen zwei Emotes (1 / 2 s) hält der Aufrufer ein.
+	 */
+	public void playEmote(String emote, PlayCallback callback) {
+		String t = token;
+		if (t == null || !active || !config.launcherEnabled()) {
+			callback.done(0, new ApiException(0, "offline", 0));
+			return;
+		}
+		if (!submit(apiWorker, () -> {
+			try {
+				int duration = api.playEmote(t, emote);
+				results.add(() -> callback.done(duration, null));
+			} catch (ApiException e) {
+				results.add(() -> {
+					if (e.unauthorized()) relogin(t);
+					callback.done(0, e);
+				});
+			} catch (IOException | RuntimeException e) {
+				results.add(() -> callback.done(0, new ApiException(0, "offline", 0)));
+			}
+		})) callback.done(0, new ApiException(0, "busy", 0));
+	}
+
+	/** Seit dem letzten Aufruf empfangene Emote-Ereignisse (älteste zuerst); leert die Liste. */
+	public List<PlayerEvent> pollEmoteEvents() {
+		if (emoteEvents.isEmpty()) return java.util.Collections.emptyList();
+		List<PlayerEvent> out = new ArrayList<>(emoteEvents);
+		emoteEvents.clear();
+		return out;
+	}
+
+	/** Steht der Ereignis-Stream? */
+	public boolean eventsConnected() {
+		return events.connected();
+	}
+
+	/** Hat der Launcher die TRS API erlaubt (Einwilligung)? */
+	public boolean launcherEnabled() {
+		return config.launcherEnabled();
 	}
 
 	private boolean devMock() {
@@ -189,6 +356,7 @@ public final class TrsOnline {
 					applyMe(s.me);
 					lastMe = System.currentTimeMillis();
 					lastPresence = Long.MIN_VALUE / 2;
+					lastEmoteFetch = Long.MIN_VALUE / 2;
 					directory.invalidate(session.uuid);
 					platform.log("TRS API: angemeldet");
 				});

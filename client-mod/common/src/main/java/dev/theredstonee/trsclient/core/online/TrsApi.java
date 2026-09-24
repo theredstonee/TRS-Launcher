@@ -96,6 +96,19 @@ public final class TrsApi {
 		String server;
 	}
 
+	static final class MeCosmetics {
+		List<String> emotes;
+	}
+
+	static final class PlayRequest {
+		String emote;
+	}
+
+	static final class PlayResponse {
+		String emote;
+		Integer durationMs;
+	}
+
 	static final class ErrorBody {
 		ErrorInfo error;
 	}
@@ -194,6 +207,35 @@ public final class TrsApi {
 		game.server = server;
 		body.game = game;
 		call("POST", "/v1/presence", GSON.toJson(body), token, 200);
+	}
+
+	// --- Emotes (API.md §12) ---
+
+	/**
+	 * {@code GET /v1/me/cosmetics} → die IDs der Emotes, die dieses Konto abspielen darf (in Listen-Reihenfolge).
+	 * Ungültige Einträge fallen weg; unbekannte IDs bleiben drin (der Aufrufer ignoriert sie).
+	 */
+	public List<String> emotes(String token) throws IOException, ApiException {
+		MeCosmetics body = parse(call("GET", "/v1/me/cosmetics", null, token, 200), MeCosmetics.class);
+		List<String> out = new ArrayList<>();
+		if (body == null || body.emotes == null) return out;
+		for (String id : body.emotes) {
+			if (id != null && id.matches("[a-z0-9][a-z0-9_-]{0,39}") && !out.contains(id) && out.size() < 256) out.add(id);
+		}
+		return out;
+	}
+
+	/**
+	 * {@code POST /v1/emotes/play}. Rückgabe: Dauer laut Server (ms, 0 = keine Angabe).
+	 *
+	 * @throws ApiException 403 {@code emote_locked}, 404 {@code emote_not_found}, 429 (höchstens 1 / 2 s)
+	 */
+	public int playEmote(String token, String emote) throws IOException, ApiException {
+		PlayRequest body = new PlayRequest();
+		body.emote = emote;
+		PlayResponse response = parse(call("POST", "/v1/emotes/play", GSON.toJson(body), token, 200), PlayResponse.class);
+		if (response == null || response.durationMs == null) return 0;
+		return Math.max(0, Math.min(60_000, response.durationMs));
 	}
 
 	/** Umhang-PNG laden (mit ETag). 304 → Response mit leerem Körper. */

@@ -155,6 +155,12 @@ public final class TrsClient {
 			Mc.actionBar(Component.literal(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
 			saveConfig();
 		}
+		// Emote-Rad: Taste halten öffnet es, Loslassen (im Rad abgefragt) spielt das gezeigte Emote.
+		while (TrsKeys.emoteWheel.consumeClick()) {
+			if (Mc.screen() == null && mc.player != null && dev.theredstonee.trsclient.online.EmoteHooks.enabled()) {
+				Mc.setScreen(new dev.theredstonee.trsclient.screen.EmoteWheelScreen());
+			}
+		}
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
 		if (Mc.screen() == null) {
 			if (moduleKeys.pressed(modules.waypointAddKey) && mc.player != null && modules.waypoints.isEnabled()) {
@@ -173,6 +179,7 @@ public final class TrsClient {
 		chat.tick(mc);
 		hud.tick();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
+		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
 		if (autoTest != null) autoTest.tick(mc);
 	}
 
@@ -205,8 +212,12 @@ public final class TrsClient {
 	public void onMouseClick(int button) {
 		if (Mc.screen() != null) return;
 		long now = System.currentTimeMillis();
-		if (button == InputConstants.MOUSE_BUTTON_LEFT) leftClicks.record(now);
-		else if (button == InputConstants.MOUSE_BUTTON_RIGHT) rightClicks.record(now);
+		if (button == InputConstants.MOUSE_BUTTON_LEFT) {
+			leftClicks.record(now);
+			// Angreifen/Abbauen beendet das eigene Emote (wie Bewegung).
+			dev.theredstonee.trsclient.online.EmoteHooks.onAttack();
+		}
+		if (button == InputConstants.MOUSE_BUTTON_RIGHT) rightClicks.record(now);
 	}
 
 	/** Pro Frame aus getFov: aktualisiert den Zoom und liefert den FOV-Divisor. */

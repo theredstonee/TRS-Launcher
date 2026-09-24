@@ -144,6 +144,19 @@ public final class PlayerDirectory {
 		}
 	}
 
+	/**
+	 * Sichtbare Spieler, die laut Lookup TRS nutzen (für den Ereignis-Stream, API.md §13.2). Aus dem
+	 * Spiel-Thread.
+	 */
+	public List<String> visibleUsers() {
+		List<String> out = new ArrayList<>();
+		for (String uuid : visible) {
+			Entry e = entries.get(uuid);
+			if (e != null && e.info != PlayerInfo.NONE) out.add(uuid);
+		}
+		return out;
+	}
+
 	/** Alle aktuell bekannten Umhänge (für das Vorladen der Texturen). */
 	public Set<CapeInfo> capes() {
 		Set<CapeInfo> out = new LinkedHashSet<>();

@@ -52,6 +52,7 @@ public final class AutoTest {
 	private TrsConfig before;
 
 	private final CapeTest capeTest = new CapeTest();
+	private final EmoteTest emoteTest = new EmoteTest();
 
 	private AutoTest() {
 	}
@@ -246,7 +247,7 @@ public final class AutoTest {
 				break;
 			case 17:
 				// TRS-Umhang, Umhang-Physik und Abzeichen (mit lokaler API-Attrappe, siehe -PtrsApi)
-				if (capeTest.step(mc, modules, new CapeTest.Actions() {
+				CapeTest.Actions actions = new CapeTest.Actions() {
 					@Override
 					public void shot(String name) {
 						AutoTest.this.shot(mc, name);
@@ -256,7 +257,10 @@ public final class AutoTest {
 					public void command(String command) {
 						AutoTest.command(mc, command);
 					}
-				})) return;
+				};
+				if (capeTest.step(mc, modules, actions)) return;
+				// Emote-Rad und Emotes (gleiche Attrappe)
+				if (emoteTest.step(mc, modules, actions)) return;
 				next(5);
 				break;
 			case 18:
@@ -288,6 +292,8 @@ public final class AutoTest {
 	}
 
 	private boolean isExpected(GuiScreen current) {
+		// Das Emote-Rad öffnet der Emote-Test selbst.
+		if (current instanceof dev.theredstonee.trsclient.screen.EmoteWheelScreen) return true;
 		return expected == null ? current == null : expected.isInstance(current);
 	}
 

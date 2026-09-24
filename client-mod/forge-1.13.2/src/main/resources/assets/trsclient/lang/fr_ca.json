@@ -5,5 +5,6 @@
 	"key.trsclient.zoom": "Zoom (maintenir)",
 	"key.trsclient.fullbright": "Activer/désactiver le fullbright",
 	"key.trsclient.freelook": "Vue libre (maintenir)",
-	"key.trsclient.hudProfile": "Changer de profil de HUD"
+	"key.trsclient.hudProfile": "Changer de profil de HUD",
+	"key.trsclient.emoteWheel": "Roue d’emotes (maintenir)"
 }

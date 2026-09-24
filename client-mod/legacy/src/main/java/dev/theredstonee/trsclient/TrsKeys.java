@@ -14,6 +14,8 @@ public final class TrsKeys {
 	public static KeyBinding freelook;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyBinding hudProfile;
+	/** Emote-Rad (halten, Standard G – in keiner Vanilla-Version belegt). */
+	public static KeyBinding emoteWheel;
 
 	private TrsKeys() {
 	}
@@ -27,6 +29,7 @@ public final class TrsKeys {
 		freelook = register(new KeyBinding("key.trsclient.freelook", Keyboard.KEY_LMENU, CATEGORY));
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", Keyboard.KEY_NONE, CATEGORY));
+		emoteWheel = register(new KeyBinding("key.trsclient.emoteWheel", Keyboard.KEY_G, CATEGORY));
 	}
 
 	/**
