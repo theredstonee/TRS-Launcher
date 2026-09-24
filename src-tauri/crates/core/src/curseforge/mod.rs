@@ -661,7 +661,8 @@ fn details_from_raw(m: RawMod, body: String) -> ProjectDetails {
         game_versions: m.game_versions().into_iter().take(300).collect(),
         gallery,
         updated: m.date_modified,
-        published: m.date_released.or(m.date_created),
+        // `dateReleased` ist die neueste Datei – veröffentlicht wurde das Projekt beim Anlegen.
+        published: m.date_created.or(m.date_released),
         license: None,
         client_side: "unknown".into(),
         server_side: "unknown".into(),

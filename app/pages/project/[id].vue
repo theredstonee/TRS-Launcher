@@ -181,7 +181,8 @@ function back() {
                 <template #count><span class="display text-base text-base-50 tabular-nums">{{ formatCount(details.downloads) }}</span></template>
               </i18n-t>
             </div>
-            <div class="flex items-baseline gap-1.5">
+            <!-- CurseForge kennt keine Follower. -->
+            <div v-if="!isCf" class="flex items-baseline gap-1.5">
               <dt class="sr-only">{{ t('project.stats.followersLabel') }}</dt>
               <i18n-t keypath="project.stats.followers" tag="dd" scope="global" :plural="details.followers">
                 <template #count><span class="display text-base text-base-50 tabular-nums">{{ formatCount(details.followers) }}</span></template>
