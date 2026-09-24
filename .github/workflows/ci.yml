@@ -46,3 +46,58 @@ jobs:
       - name: Tests
         working-directory: src-tauri
         run: cargo test --workspace
+
+  # Gleiche Prüfungen unter Linux (ubuntu-22.04 = Untergrenze der Release-Builds)
+  # plus die Paket-Hilfsskripte und die Metadaten für AUR/Flatpak.
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System libraries (WebKitGTK 4.1, GTK 3)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libssl-dev libxdo-dev desktop-file-utils appstream
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: check-linux
+          cache-on-failure: true
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Frontend tests
+        run: pnpm test
+
+      # generate_context! braucht ein gebautes Frontend.
+      - name: Frontend build
+        run: pnpm generate
+
+      - name: Clippy
+        working-directory: src-tauri
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests
+        working-directory: src-tauri
+        run: cargo test --workspace
+
+      - name: Packaging metadata
+        run: |
+          desktop-file-validate packaging/linux/trs-launcher.desktop packaging/flatpak/dev.theredstonee.trslauncher.desktop
+          appstreamcli validate --no-net --explain packaging/flatpak/dev.theredstonee.trslauncher.metainfo.xml
+          for p in trs-launcher trs-launcher-bin; do
+            node scripts/aur.mjs --srcinfo packaging/aur/$p/PKGBUILD | diff - packaging/aur/$p/.SRCINFO
+          done

@@ -1,0 +1,34 @@
+# Maintainer: Theredstonee <193012863+theredstonee@users.noreply.github.com>
+#
+# Installiert den fertigen Build aus dem .deb des GitHub-Releases.
+# pkgver und Prüfsumme setzt `node scripts/aur.mjs` (läuft auch im Release-Workflow;
+# das Ergebnis hängt als trs-launcher-bin.PKGBUILD/.SRCINFO am Release).
+
+pkgname=trs-launcher-bin
+_pkgname=trs-launcher
+pkgver=0.4.3
+pkgrel=1
+pkgdesc="Minecraft launcher for every version and mod loader (Fabric, Quilt, Forge, NeoForge) with Modrinth, CurseForge, modpacks and the TRS Client"
+arch=('x86_64')
+url="https://github.com/theredstonee/TRS-Launcher"
+license=('GPL-3.0-only')
+depends=('webkit2gtk-4.1' 'gtk3' 'glib2' 'cairo' 'gdk-pixbuf2' 'pango' 'libsoup3' 'openssl' 'dbus' 'hicolor-icon-theme' 'gcc-libs' 'glibc')
+optdepends=('xorg-xrandr: required by Minecraft 1.12.2 and older (LWJGL 2)'
+            'gnome-keyring: keep the sign-in key in the system keyring (or any Secret Service, e.g. KWallet)'
+            'java-runtime: use your own Java instead of the runtimes the launcher downloads'
+            'gamemode: use gamemoderun as launch wrapper'
+            'xdg-utils: open folders and links')
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
+options=('!strip' '!debug')
+source_x86_64=("${_pkgname}-${pkgver}_amd64.deb::https://github.com/theredstonee/TRS-Launcher/releases/download/v${pkgver}/TRS-Launcher_${pkgver}_amd64.deb")
+sha256sums_x86_64=('SKIP')
+noextract=("${_pkgname}-${pkgver}_amd64.deb")
+
+package() {
+  cd "${srcdir}"
+  bsdtar -xf "${_pkgname}-${pkgver}_amd64.deb" data.tar.gz
+  bsdtar -xpf data.tar.gz -C "${pkgdir}"
+  # Die Paketverwaltung aktualisiert, nicht der eingebaute Updater (der ersetzt nur AppImages).
+  chmod 755 "${pkgdir}/usr/bin/${_pkgname}"
+}

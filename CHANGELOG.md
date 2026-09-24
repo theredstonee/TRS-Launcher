@@ -29,6 +29,13 @@ How to write an entry:
   along, and updates are found just like for Modrinth content. CurseForge modpacks (also as a downloaded .zip) become a
   new instance. If an author only allows downloads on CurseForge itself, the launcher doesn't sneak around that: it
   shows the files with a button to their CurseForge page and picks them up from your downloads folder automatically.
+- **Linux support.** The launcher now runs on Linux – Arch, Ubuntu/Debian, Fedora and others – as AppImage (updates
+  itself), .deb, .rpm, in the AUR (`trs-launcher-bin`) and ready for Flatpak. Java, all mod loaders and old versions
+  like 1.8.9 work just like on Windows; sign-in keys go into your system keyring. Instances from Prism Launcher,
+  MultiMC, the Modrinth App (also as Flatpak) and `~/.minecraft` can be imported. Windows-only options (firewall) are
+  hidden there.
+- **Dedicated GPU on Linux too.** On laptops with two graphics chips, the game runs on the stronger one
+  (PRIME offload).
 
 ### Deutsch
 
@@ -48,6 +55,13 @@ How to write an entry:
   (auch als heruntergeladene .zip) werden zur neuen Instanz. Erlaubt ein Autor Downloads nur direkt auf CurseForge,
   umgeht der Launcher das nicht: Er zeigt die Dateien mit einem Knopf zur CurseForge-Seite und übernimmt sie
   automatisch aus deinem Download-Ordner.
+- **Linux-Unterstützung.** Der Launcher läuft jetzt unter Linux – Arch, Ubuntu/Debian, Fedora und andere – als
+  AppImage (aktualisiert sich selbst), .deb, .rpm, im AUR (`trs-launcher-bin`) und bereit für Flatpak. Java, alle
+  Modloader und alte Versionen wie 1.8.9 funktionieren wie unter Windows; Anmeldeschlüssel liegen im Schlüsselbund
+  des Systems. Instanzen aus Prism Launcher, MultiMC, der Modrinth App (auch als Flatpak) und `~/.minecraft` lassen
+  sich importieren. Reine Windows-Optionen (Firewall) sind dort ausgeblendet.
+- **Starke Grafikkarte auch unter Linux.** Auf Laptops mit zwei Grafikchips läuft das Spiel auf dem stärkeren
+  (PRIME-Offload).
 
 ## 0.4.3 – 2026-09-24
 

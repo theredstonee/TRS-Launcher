@@ -1,0 +1,59 @@
+# Maintainer: Theredstonee <193012863+theredstonee@users.noreply.github.com>
+#
+# Baut den Launcher aus den Quellen (Tag v${pkgver}). Für die fertige Version
+# ohne Rust/Node-Build gibt es `trs-launcher-bin`.
+
+pkgname=trs-launcher
+pkgver=0.4.3
+pkgrel=1
+pkgdesc="Minecraft launcher for every version and mod loader (Fabric, Quilt, Forge, NeoForge) with Modrinth, CurseForge, modpacks and the TRS Client"
+arch=('x86_64' 'aarch64')
+url="https://github.com/theredstonee/TRS-Launcher"
+license=('GPL-3.0-only')
+depends=('webkit2gtk-4.1' 'gtk3' 'glib2' 'cairo' 'gdk-pixbuf2' 'pango' 'libsoup3' 'openssl' 'dbus' 'hicolor-icon-theme' 'gcc-libs' 'glibc')
+makedepends=('git' 'rust' 'cargo' 'nodejs' 'pnpm')
+optdepends=('xorg-xrandr: required by Minecraft 1.12.2 and older (LWJGL 2)'
+            'gnome-keyring: keep the sign-in key in the system keyring (or any Secret Service, e.g. KWallet)'
+            'java-runtime: use your own Java instead of the runtimes the launcher downloads'
+            'gamemode: use gamemoderun as launch wrapper'
+            'xdg-utils: open folders and links')
+provides=("${pkgname}")
+conflicts=("${pkgname}-bin")
+options=('!lto' '!debug')
+source=("${pkgname}::git+https://github.com/theredstonee/TRS-Launcher.git#tag=v${pkgver}")
+sha256sums=('SKIP')
+
+prepare() {
+  cd "${pkgname}"
+  export CARGO_HOME="${srcdir}/cargo-home"
+  pnpm install --frozen-lockfile
+  cargo fetch --locked --manifest-path src-tauri/Cargo.toml
+}
+
+build() {
+  cd "${pkgname}"
+  export CARGO_HOME="${srcdir}/cargo-home"
+  export CARGO_TARGET_DIR="${srcdir}/target"
+  # Nur die ausführbare Datei – Paketieren übernimmt package().
+  pnpm tauri build --no-bundle --config '{"bundle":{"createUpdaterArtifacts":false}}'
+}
+
+check() {
+  cd "${pkgname}/src-tauri"
+  export CARGO_HOME="${srcdir}/cargo-home"
+  export CARGO_TARGET_DIR="${srcdir}/target"
+  cargo test --locked -p trs-core --release
+}
+
+package() {
+  cd "${pkgname}"
+  install -Dm755 "${srcdir}/target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
+  # Tauri sucht Ressourcen einer Installation in /usr/bin unter /usr/lib/<Produktname>.
+  install -dm755 "${pkgdir}/usr/lib/TRS Launcher/client-mod"
+  cp -r --no-preserve=ownership src-tauri/resources/client-mod/. "${pkgdir}/usr/lib/TRS Launcher/client-mod/"
+  install -Dm644 packaging/linux/trs-launcher.desktop "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+  for size in 32x32 128x128; do
+    install -Dm644 "src-tauri/icons/${size}.png" "${pkgdir}/usr/share/icons/hicolor/${size}/apps/${pkgname}.png"
+  done
+  install -Dm644 "src-tauri/icons/128x128@2x.png" "${pkgdir}/usr/share/icons/hicolor/256x256/apps/${pkgname}.png"
+}
