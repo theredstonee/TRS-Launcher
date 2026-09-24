@@ -53,9 +53,9 @@ class SmoothnessTest {
 		// Senkrecht wie bisher: 5 Zeilen à 17, Breite Symbol + 3 + breitester Text.
 		assertEquals(3 * 2 + 16 + 3 + 30, ArmorLayout.width(false, 5, widths));
 		assertEquals(3 * 2 + 5 * 17 - 1, ArmorLayout.height(false, 5, widths));
-		// Waagerecht: Zellen max(16, Text) + 2 Abstand, darunter eine Textzeile.
+		// Waagerecht: Zellen max(16, Text + 2) + 4 Abstand, darunter eine Textzeile.
 		int w = ArmorLayout.width(true, 5, widths);
-		assertEquals(3 * 2 + 16 + 16 + 30 + 16 + 18 + 4 * 2, w);
+		assertEquals(3 * 2 + 16 + 16 + 32 + 16 + 20 + 4 * 4, w);
 		assertEquals(3 * 2 + 16 + 10, ArmorLayout.height(true, 5, widths));
 		int[] places = new int[20];
 		ArmorLayout.place(true, 5, widths, places);
@@ -66,8 +66,9 @@ class SmoothnessTest {
 			if (i > 0) assertTrue(places[4 * i] >= places[4 * (i - 1)] + 16, "Symbol " + i);
 			assertTrue(places[4 * i] + 16 <= w - 3);
 		}
-		// Text 30 px breit: Zelle 30, Symbol darin mittig (7 px Rand), Text füllt die Zelle.
+		// Text 30 px breit: Zelle 32, Symbol darin mittig (8 px Rand), Text mit 1 px Luft je Seite.
 		assertEquals(places[4 * 2 + 2] + 7, places[4 * 2]);
+		assertTrue(places[4 * 2 + 2] + 30 < places[4 * 3], "Zahl endet vor dem nächsten Symbol");
 		// Ohne Haltbarkeit keine Textzeile.
 		assertEquals(3 * 2 + 16, ArmorLayout.height(true, 2, new int[]{0, 0}));
 	}

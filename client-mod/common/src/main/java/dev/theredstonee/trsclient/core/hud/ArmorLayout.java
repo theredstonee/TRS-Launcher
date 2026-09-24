@@ -34,8 +34,8 @@ public final class ArmorLayout {
 	public static final int ICON = 16;
 	/** Zeilenhöhe senkrecht (Symbol + 1 Pixel Abstand). */
 	public static final int ROW = 17;
-	/** Abstand zwischen den Symbolen waagerecht. */
-	public static final int GAP = 2;
+	/** Abstand zwischen den Zellen waagerecht (Zahlen darunter bleiben so gut lesbar). */
+	public static final int GAP = 4;
 	/** Abstand Symbol → Text senkrecht (rechts daneben). */
 	public static final int TEXT_GAP = 3;
 	/** Höhe der Textzeile unter den Symbolen (waagerecht). */
@@ -88,13 +88,14 @@ public final class ArmorLayout {
 			int cell = cell(widths[i]);
 			out[4 * i] = x + (cell - ICON) / 2;
 			out[4 * i + 1] = PAD;
-			out[4 * i + 2] = x + (cell - widths[i]) / 2;
+			out[4 * i + 2] = x + (cell - widths[i] + 1) / 2;
 			out[4 * i + 3] = PAD + ICON + 1;
 			x += cell + GAP;
 		}
 	}
 
+	/** Zellenbreite: Symbol oder Zahl (+ 2 Pixel Luft), je nachdem, was breiter ist. */
 	private static int cell(int textWidth) {
-		return Math.max(ICON, textWidth);
+		return Math.max(ICON, textWidth > 0 ? textWidth + 2 : 0);
 	}
 }

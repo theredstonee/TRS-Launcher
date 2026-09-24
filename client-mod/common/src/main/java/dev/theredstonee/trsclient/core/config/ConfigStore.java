@@ -141,10 +141,24 @@ public final class ConfigStore {
 			pending = null;
 		}
 		if (snapshot == null) return;
-		try {
-			write(snapshot, seq);
-		} catch (IOException e) {
-			lastError = e;
+		// Windows: solange jemand die Datei gerade liest (Virenscanner, Launcher), schlägt das Ersetzen fehl –
+		// dann kurz warten und erneut versuchen.
+		for (int attempt = 0; ; attempt++) {
+			try {
+				write(snapshot, seq);
+				return;
+			} catch (IOException e) {
+				if (attempt >= 9) {
+					lastError = e;
+					return;
+				}
+			}
+			try {
+				Thread.sleep(25L * (attempt + 1));
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
 		}
 	}
 
