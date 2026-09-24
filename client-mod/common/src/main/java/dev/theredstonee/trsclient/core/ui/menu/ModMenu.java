@@ -92,6 +92,19 @@ public final class ModMenu extends UiScreen {
 		return this;
 	}
 
+	/** Einstellungsseite nach unten rollen (Autotest: untere Teile einer langen Seite zeigen). */
+	public ModMenu scrollSettings(int pixels) {
+		settingsScroll = Math.max(0, settingsScroll + pixels);
+		return this;
+	}
+
+	/** Öffnet das Menü direkt bei einer Kategorie (Kachel-Ansicht). */
+	public ModMenu showCategory(Category category) {
+		this.category = category;
+		page = Page.GRID;
+		return this;
+	}
+
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
 	public ModMenu showProfiles() {
 		page = Page.PROFILES;
@@ -231,6 +244,8 @@ public final class ModMenu extends UiScreen {
 		Category[] categories = Category.values();
 		for (int i = 0; i < categories.length; i++) {
 			final Category cat = categories[i];
+			// Reiter ohne ein einziges Modul dieser Version (z. B. Leistung in Forge 1.7.10) weglassen.
+			if (!hasModules(cat)) continue;
 			railItem(c, x, cy, w, rowH, cat.icon(), cat.label(), category == cat && page == Page.GRID, mx, my, new Runnable() {
 				@Override
 				public void run() {
@@ -288,6 +303,14 @@ public final class ModMenu extends UiScreen {
 		Redstone.pip(c, x + 2, footerY + 1, 7, active > 0 ? 1f : 0f);
 		Paint.textClipped(c, I18n.tr("menu.activeCount", active, total), x + 14, footerY, w - 14, t.text, false);
 		Redstone.keycap(c, x, footerY + 14, host.menuKeyLabel(), w);
+	}
+
+	private boolean hasModules(Category cat) {
+		List<Module> all = host.modules().registry.all();
+		for (int i = 0; i < all.size(); i++) {
+			if (all.get(i).category() == cat && host.supports(all.get(i))) return true;
+		}
+		return false;
 	}
 
 	private void railItem(Canvas c, int x, int y, int w, int h, String icon, String label, boolean active,
@@ -502,8 +525,19 @@ public final class ModMenu extends UiScreen {
 		hits.clip(listX, listTop, listW, bottom - listTop);
 		int ry = listTop + 2 - settingsScroll;
 		ry = Paint.paragraph(c, m.description(), listX + 2, ry, Math.min(listW - 8, 360), 10, t.textDim) + 6;
+		ModulePanel extra = ModulePanel.Registry.of(m);
+		if (extra != null) {
+			ry = extra.draw(c, hits, listX + 2, ry, listW - 10, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					host.playClick();
+				}
+			});
+		}
 		List<Setting> settings = m.settings();
-		if (settings.isEmpty()) {
+		if (settings.isEmpty() && extra != null) {
+			// Nur der Zusatzbereich (z. B. FPS-Boost) – kein „keine Einstellungen“.
+		} else if (settings.isEmpty()) {
 			ry = Paint.paragraph(c, I18n.tr("menu.noSettings"), listX + 2, ry + 2, Math.min(listW - 8, 360), 10, t.textDim) + 4;
 		} else {
 			ry = panel.draw(c, hits, settings, listX + 2, ry, listW - 10, mx, my);

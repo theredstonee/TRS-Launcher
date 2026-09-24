@@ -27,6 +27,16 @@ public final class TrsMenuScreen extends TrsUiScreen {
 	}
 
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
+	public TrsMenuScreen scrollSettings(int pixels) {
+		menu.scrollSettings(pixels);
+		return this;
+	}
+
+	public TrsMenuScreen showCategory(dev.theredstonee.trsclient.core.module.Category category) {
+		menu.showCategory(category);
+		return this;
+	}
+
 	public TrsMenuScreen showProfiles() {
 		menu.showProfiles();
 		return this;

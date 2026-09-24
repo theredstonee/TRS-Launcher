@@ -117,6 +117,9 @@ public final class TrsClient {
 		// TRS-Online-Funktionen (Abzeichen, TRS-Umhänge, Umhang-Physik, Emotes) sind für 1.13.2 nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.trsOnline, client.modules.capePhysics, client.modules.emotes,
 				client.modules.colors));
+		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
+		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.fpsBoost, client.modules.dynamicFps, client.modules.entityCulling, client.modules.particles,
+				client.modules.worldDetails));
 		client.version = ModList.get().getModContainerById(MOD_ID)
 				.map(c -> c.getModInfo().getVersion().toString()).orElse("?");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.

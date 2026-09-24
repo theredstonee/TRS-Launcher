@@ -15,12 +15,33 @@ import java.util.Set;
 public final class TrsMixinPlugin implements IMixinConfigPlugin {
 	private static final String[] TEST_ONLY = {"MouseHandlerAccessor", "KeyboardHandlerAccessor"};
 
+	/**
+	 * Welt-Details, die OptiFine (OptiFabric) bzw. Sodium Extra selbst mitbringen: deren Mixins bleiben
+	 * dann ganz weg – keine zwei Eingriffe an derselben Stelle (das Menü zeigt „übernimmt …“).
+	 */
+	private static final String[] DETAIL_MIXINS = {"SkyMixin", "StarsMixin", "WeatherMixin", "FogMixin", "TextureAnimationMixin"};
+	private static final String[] DETAIL_MODS = {"optifabric", "sodium-extra", "sodiumextra"};
+
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
 		for (String name : TEST_ONLY) {
 			if (mixinClassName.endsWith("." + name)) return Boolean.getBoolean("trsclient.autotest");
 		}
+		for (String name : DETAIL_MIXINS) {
+			if (mixinClassName.endsWith("." + name)) return !anyLoaded(DETAIL_MODS);
+		}
 		return true;
+	}
+
+	private static boolean anyLoaded(String[] ids) {
+		try {
+			for (String id : ids) {
+				if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(id)) return true;
+			}
+		} catch (RuntimeException | LinkageError e) {
+			// Loader noch nicht bereit – dann lieber anwenden (require = 0, Laufzeitprüfung greift trotzdem).
+		}
+		return false;
 	}
 
 	@Override

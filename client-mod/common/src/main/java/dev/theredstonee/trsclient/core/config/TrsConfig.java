@@ -24,6 +24,14 @@ public final class TrsConfig {
 	public HudProfiles hudProfiles;
 	/** Stand der Standard-Tastenbelegungen; fehlt in Version 1. */
 	public Integer keyDefaults;
+	/** Leistung: ursprüngliche Werte vor „FPS-Boost“/„Beheben“ (für „Rückgängig“); optional. */
+	public PerfUndo perfUndo;
+
+	/** Alte Werte der Vanilla-Optionen (Name → Wert) und der Leistungs-Module vor der ersten Änderung. */
+	public static final class PerfUndo {
+		public Map<String, Integer> options = new LinkedHashMap<>();
+		public Map<String, ModuleConfig> modules = new LinkedHashMap<>();
+	}
 
 	/** HUD-Profile: Name des aktiven Profils + alle Profile. */
 	public static final class HudProfiles {

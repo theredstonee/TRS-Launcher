@@ -119,6 +119,11 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'GuiMixin', 'Li
 		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
 		'ColorGradeMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
+// Leistung: Dynamische FPS/FPS-Messung, Partikel, Entity-Culling, Welt-Details (alle require = 0).
+mixinClasses += ['FramePaceMixin', 'ParticleLimitMixin', 'EntityCullMixin', 'BlockEntityCullMixin', 'NameTagCullMixin',
+		'LivingNameTagCullMixin', 'TextureAnimationMixin', 'SkyMixin', 'StarsMixin', 'WeatherMixin']
+// Nebel-Werte liegen ab 1.21.6 in einem GPU-Puffer – dort kein Nebel-Mixin.
+if (stonecutter.eval(mc, '<1.21.6')) mixinClasses << 'FogMixin'
 // RenderSystem#lineWidth gibt es ab 1.21.11 nicht mehr (Linienstärke dort unveränderbar).
 if (stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
 // Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.

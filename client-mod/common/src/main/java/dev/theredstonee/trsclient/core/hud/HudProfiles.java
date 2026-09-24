@@ -16,8 +16,8 @@ import java.util.Map;
 /**
  * HUD-Profile: mehrere gespeicherte HUD-Layouts (z. B. "PvP", "Bauen", "Aufnahme").
  * Ein Profil enthält den vollständigen Zustand aller HUD-Module (An/Aus, Position, Größe, Aussehen
- * und Modul-Einstellungen) sowie der Module mit {@link Module#profiled()} (Umhang-Physik, Farben).
- * Andere Module (Zoom, Fullbright, …) sind profilunabhängig.
+ * und Modul-Einstellungen) sowie der Module mit {@link Module#profiled()} (Umhang-Physik, Farben,
+ * Leistung). Andere Module (Zoom, Fullbright, …) sind profilunabhängig.
  * Der Zustand des aktiven Profils steht in den Modulen selbst; beim Wechsel wird er ins Profil
  * zurückgeschrieben und das Ziel-Profil angewendet.
  */

@@ -138,7 +138,8 @@ public final class TrsClient {
 			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor
 					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
 					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline
-					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors)) {
+					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors
+					|| m == modules.entityCulling || m == modules.particles || m == modules.worldDetails)) {
 				continue;
 			}
 			visibleModules.add(m);
@@ -208,6 +209,14 @@ public final class TrsClient {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.OnlineHooks.init(FMLPaths.CONFIGDIR.get(), modules, Mc.modVersion(MOD_ID),
 				Mc.modVersion("minecraft"), "forge", message -> LOGGER.info(message));
+		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
+		// Forge 1.14.4 hat kein Mixin – dort nur Dynamische FPS (Bild-Event in legacyHooks).
+		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> net.minecraftforge.fml.ModList.get().isLoaded(id),
+				dev.theredstonee.trsclient.core.perf.PerfCompat.FORGE, Mc.modVersion("minecraft"), message -> LOGGER.info(message),
+				//? if >=1.15 {
+				true);
+				//?} else
+				/*false);*/
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (Forge {}) – {} Module, Config {} ({})",
@@ -237,6 +246,7 @@ public final class TrsClient {
 		bus.addListener((RenderWorldLastEvent e) -> handRendering = true);
 		bus.addListener((TickEvent.RenderTickEvent e) -> {
 			if (e.phase == TickEvent.Phase.START) {
+				dev.theredstonee.trsclient.perf.PerfHooks.beforeFrame();
 				handRendering = false;
 				if (fullbright() && Mc.mc().level != null && !(Mc.screen() instanceof net.minecraft.client.gui.screens.VideoSettingsScreen)) {
 					savedGamma = Mc.gamma();
@@ -334,6 +344,7 @@ public final class TrsClient {
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
+		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
 	}
 
 	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */
