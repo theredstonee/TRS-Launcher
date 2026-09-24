@@ -27,7 +27,7 @@ public final class CapeFrames {
 	public static CapeFrames split(PngDecoder.Image image, CapeInfo info) throws IOException {
 		int w = image.width;
 		int frameH = w / 2;
-		if (w < 64 || w > 256 || w % 64 != 0 || frameH == 0) throw new IOException("Umhang-Breite " + w);
+		if (w < 64 || w > 64 * CapeInfo.MAX_SCALE || w % 64 != 0 || frameH == 0) throw new IOException("Umhang-Breite " + w);
 		if (image.height % frameH != 0) throw new IOException("Umhang-Höhe " + image.height);
 		int count = image.height / frameH;
 		if (count < 1 || count > 64) throw new IOException("Bildzahl " + count);

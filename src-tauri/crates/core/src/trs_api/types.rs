@@ -11,6 +11,10 @@ use serde::{Deserialize, Serialize};
 
 use super::validate;
 
+/// Größter Umhang-Faktor, den der Launcher anzeigt (mitgelieferte HD-Umhänge bis 512×256;
+/// eigene Uploads bleiben bei 1–4, siehe `png::upload_scale`).
+pub(crate) const MAX_CAPE_SCALE: u32 = 8;
+
 // --- Profil -------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -148,7 +152,7 @@ impl ApiCape {
     /// Plausibel nach §5.1? Sonst wird der Umhang nicht angezeigt.
     pub(crate) fn is_valid(&self) -> bool {
         validate::cape_id(&self.id)
-            && (1..=4).contains(&self.scale)
+            && (1..=MAX_CAPE_SCALE).contains(&self.scale)
             && self.width == 64 * self.scale
             && self.height == 32 * self.scale
             && (1..=64).contains(&self.frames)

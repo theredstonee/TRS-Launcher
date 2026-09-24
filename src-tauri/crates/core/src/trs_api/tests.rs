@@ -531,3 +531,19 @@ async fn opting_out_and_deleting_data() {
     launcher.presence_tick().await;
     assert_eq!(server.requests().len(), before, "nach dem Abschalten keine Anfragen mehr");
 }
+
+#[test]
+fn hd_builtin_capes_up_to_scale_8_are_shown() {
+    let cape = |scale: u32, width: u32| -> types::ApiCape {
+        serde_json::from_value(json!({
+            "id": "nether", "name": "Nether", "kind": "builtin", "unlock": "free", "status": "approved",
+            "url": "https://api.theredstonee.de/v1/capes/nether.png?v=1",
+            "width": width, "height": width / 2, "scale": scale, "frames": 4, "frameTimeMs": 150
+        }))
+        .unwrap()
+    };
+    assert!(cape(4, 256).is_valid());
+    assert!(cape(8, 512).is_valid());
+    assert!(!cape(8, 256).is_valid(), "Breite muss zum Faktor passen");
+    assert!(!cape(9, 576).is_valid(), "mehr als Faktor 8 wird nicht angezeigt");
+}

@@ -7,6 +7,9 @@ package dev.theredstonee.trsclient.core.online;
 public final class CapeInfo {
 	public final String id;
 	public final String url;
+	/** Größter Faktor gegenüber 64×32 (mitgelieferte HD-Umhänge bis 512×256; Uploads der API bleiben bei 1–4). */
+	public static final int MAX_SCALE = 8;
+
 	public final int scale;
 	public final int frames;
 	/** Dauer je Bild in ms; 0 = statisch. */
@@ -27,7 +30,7 @@ public final class CapeInfo {
 		if (!config.isApiUrl(url)) return null;
 		int s = scale == null ? 1 : scale;
 		int f = frames == null ? 1 : frames;
-		if (s < 1 || s > 4 || f < 1 || f > 64) return null;
+		if (s < 1 || s > MAX_SCALE || f < 1 || f > 64) return null;
 		int t = 0;
 		if (f > 1) {
 			if (frameTimeMs == null || frameTimeMs < 20 || frameTimeMs > 10000) return null;

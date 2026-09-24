@@ -11,7 +11,8 @@ import java.util.zip.Inflater;
  * Umhänge der TRS API ab (die API kodiert jedes Bild als RGBA neu). Ergebnis: ARGB-Pixel.
  */
 public final class PngDecoder {
-	private static final long MAX_PIXELS = 256L * 128 * 64;
+	/** Größter Umhang: Faktor 8 (512×256) mit 64 Bildern. */
+	private static final long MAX_PIXELS = 512L * 256 * 64;
 
 	private PngDecoder() {
 	}

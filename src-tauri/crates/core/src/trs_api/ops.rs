@@ -71,7 +71,7 @@ async fn player_item(trs: &TrsApi, player: super::types::ApiLookupPlayer) -> Opt
     let uuid = validate::uuid(&player.uuid)?;
     let cape = player.cape.filter(|c| {
         validate::cape_id(&c.id)
-            && (1..=4).contains(&c.scale)
+            && (1..=super::types::MAX_CAPE_SCALE).contains(&c.scale)
             && (1..=64).contains(&c.frames.max(1))
             && (c.frames <= 1 || c.frame_time_ms.is_some_and(|t| (20..=10_000).contains(&t)))
     });

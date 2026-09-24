@@ -93,6 +93,17 @@ class CapeTest {
 	}
 
 	@Test
+	void hdCapesUpToScale8AreAccepted() throws IOException {
+		CapeInfo nether = CapeInfo.of("nether", "https://api.theredstonee.de/v1/capes/nether.png?v=1", 8, 4, 150, CONFIG);
+		assertNotNull(nether);
+		CapeFrames frames = CapeFrames.split(PngDecoder.decode(png(strip(8, 4, BufferedImage.TYPE_INT_ARGB))), nether);
+		assertEquals(512, frames.width);
+		assertEquals(4, frames.count());
+		assertNull(CapeInfo.of("big", "https://api.theredstonee.de/v1/capes/big.png?v=1", 9, 1, null, CONFIG));
+		assertThrows(IOException.class, () -> CapeFrames.split(new PngDecoder.Image(576, 288, new int[576 * 288]), nether));
+	}
+
+	@Test
 	void diskCacheUsesEtagAndSkipsTheNetworkForTheSameUrl() throws Exception {
 		byte[] body = png(strip(1, 1, BufferedImage.TYPE_INT_ARGB));
 		List<Http.Request> seen = new ArrayList<>();

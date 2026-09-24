@@ -17,7 +17,7 @@ import java.nio.file.StandardCopyOption;
  * {@code If-None-Match} fragen, 304 → Cache weiter benutzen.
  */
 public final class CapeDiskCache {
-	private static final int MAX_BYTES = 1024 * 1024;
+	private static final int MAX_BYTES = 8 * 1024 * 1024;
 
 	private final Path dir;
 

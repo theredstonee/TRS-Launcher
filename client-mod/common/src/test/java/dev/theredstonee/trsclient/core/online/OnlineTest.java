@@ -83,7 +83,7 @@ class OnlineTest {
 		assertEquals(0, team.frameAt(150 * 8));
 		assertNull(CapeInfo.of("team", "https://evil.com/x.png", 2, 1, null, CONFIG), "fremde URL");
 		assertNull(CapeInfo.of("Team!", "https://api.theredstonee.de/v1/capes/x.png", 1, 1, null, CONFIG));
-		assertNull(CapeInfo.of("x", "https://api.theredstonee.de/v1/capes/x.png", 5, 1, null, CONFIG), "scale 5");
+		assertNull(CapeInfo.of("x", "https://api.theredstonee.de/v1/capes/x.png", 9, 1, null, CONFIG), "scale 9");
 		assertNull(CapeInfo.of("x", "https://api.theredstonee.de/v1/capes/x.png", 1, 3, null, CONFIG),
 				"animiert ohne Bilddauer");
 		CapeInfo still = CapeInfo.of("x", "https://api.theredstonee.de/v1/capes/x.png", 1, 1, null, CONFIG);
