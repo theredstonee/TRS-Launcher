@@ -25,6 +25,8 @@ public final class TrsKeys {
 	public static KeyMapping hudProfile;
 	/** Emote-Rad (halten, Standard G – in keiner Vanilla-Version belegt). */
 	public static KeyMapping emoteWheel;
+	/** Schaltet das Redstone-Signal-Overlay (F6 – in keiner Vanilla-Version ab 1.9 belegt). */
+	public static KeyMapping redstoneOverlay;
 
 	private TrsKeys() {
 	}
@@ -45,6 +47,7 @@ public final class TrsKeys {
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyMapping("key.trsclient.hudProfile", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		emoteWheel = register(new KeyMapping("key.trsclient.emoteWheel", KEYBOARD, Keys.code("key.keyboard.g"), CATEGORY));
+		redstoneOverlay = register(new KeyMapping("key.trsclient.redstoneOverlay", KEYBOARD, Keys.code("key.keyboard.f6"), CATEGORY));
 	}
 
 	/**

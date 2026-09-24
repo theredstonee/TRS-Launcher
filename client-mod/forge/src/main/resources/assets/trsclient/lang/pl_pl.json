@@ -6,5 +6,6 @@
 	"key.trsclient.fullbright": "Przełącz fullbright",
 	"key.trsclient.freelook": "Wolna kamera",
 	"key.trsclient.hudProfile": "Zmień profil HUD",
-	"key.trsclient.emoteWheel": "Koło emotek (przytrzymaj)"
+	"key.trsclient.emoteWheel": "Koło emotek (przytrzymaj)",
+	"key.trsclient.redstoneOverlay": "Przełącz nakładkę sygnału"
 }

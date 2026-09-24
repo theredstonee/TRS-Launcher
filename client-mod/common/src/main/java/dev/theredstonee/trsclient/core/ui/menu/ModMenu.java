@@ -203,7 +203,8 @@ public final class ModMenu extends UiScreen {
 	private void rail(Canvas c, int x, int y, int w, int h, int mx, int my, float dt) {
 		Theme t = Theme.get();
 		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
-		int items = 8 + (host.hasPacks() ? 1 : 0);
+		// "Alle" + Kategorien + HUD-Editor + Profile (+ Packs)
+		int items = 3 + Category.values().length + (host.hasPacks() ? 1 : 0);
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;

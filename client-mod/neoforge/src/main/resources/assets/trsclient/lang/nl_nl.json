@@ -6,5 +6,6 @@
 	"key.trsclient.fullbright": "Fullbright aan/uit",
 	"key.trsclient.freelook": "Vrij kijken",
 	"key.trsclient.hudProfile": "HUD-profiel wisselen",
-	"key.trsclient.emoteWheel": "Emotewiel (ingedrukt houden)"
+	"key.trsclient.emoteWheel": "Emotewiel (ingedrukt houden)",
+	"key.trsclient.redstoneOverlay": "Signaaloverlay aan/uit"
 }

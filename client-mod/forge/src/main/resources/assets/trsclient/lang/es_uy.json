@@ -6,5 +6,6 @@
 	"key.trsclient.fullbright": "Activar/desactivar fullbright",
 	"key.trsclient.freelook": "Vista libre",
 	"key.trsclient.hudProfile": "Cambiar perfil de HUD",
-	"key.trsclient.emoteWheel": "Rueda de emotes (mantener)"
+	"key.trsclient.emoteWheel": "Rueda de emotes (mantener)",
+	"key.trsclient.redstoneOverlay": "Alternar superposición de señal"
 }

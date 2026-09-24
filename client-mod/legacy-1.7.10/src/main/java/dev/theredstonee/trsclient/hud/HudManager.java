@@ -22,9 +22,12 @@ public final class HudManager {
 	/** Wiederverwendeter Puffer für {@link #bounds}: x, y, Breite, Höhe (skaliert). */
 	private final int[] box = new int[4];
 	private final CrosshairRenderer crosshair;
+	private final RedstoneHuds.Overlay redstoneOverlay;
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
+		dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone = dev.theredstonee.trsclient.TrsClient.get().redstone();
+		this.redstoneOverlay = new RedstoneHuds.Overlay(modules, redstone);
 		this.elements = Collections.unmodifiableList(Arrays.<HudElement>asList(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
@@ -38,7 +41,9 @@ public final class HudManager {
 				new InfoHuds.Server(modules.server),
 				new InfoHuds.Packs(modules.packs),
 				new InfoHuds.ToggleIndicator(modules.toggleSprint, true),
-				new InfoHuds.ToggleIndicator(modules.toggleSneak, false)));
+				new InfoHuds.ToggleIndicator(modules.toggleSneak, false),
+				new RedstoneHuds.Signal(modules, redstone),
+				new RedstoneHuds.Clock(modules, redstone)));
 	}
 
 	public CrosshairRenderer crosshair() {
@@ -96,9 +101,11 @@ public final class HudManager {
 	}
 
 	/** Aus RenderGameOverlayEvent.Post (jeden Frame), Größe in GUI-Pixeln. */
-	public void render(int sw, int sh) {
+	public void render(int sw, int sh, float partialTicks) {
 		if (mc.gameSettings.hideGUI || mc.currentScreen instanceof TrsUiScreen) return;
 		FontRenderer font = mc.fontRenderer;
+		// Signal-Overlay liegt in der Welt – vor den Anzeigen zeichnen.
+		redstoneOverlay.render(font, sw, sh, partialTicks);
 		for (int i = 0, n = elements.size(); i < n; i++) {
 			HudElement e = elements.get(i);
 			if (e.module().isEnabled() && e.visible()) draw(font, e, sw, sh, false);

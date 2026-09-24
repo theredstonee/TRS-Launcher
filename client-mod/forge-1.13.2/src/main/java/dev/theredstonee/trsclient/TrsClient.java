@@ -72,6 +72,12 @@ public final class TrsClient {
 	private final dev.theredstonee.trsclient.core.util.FlagOverride zoomCinematic =
 			new dev.theredstonee.trsclient.core.util.FlagOverride();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
+	/** Redstone-Werkzeuge: Signalstärke, Takt-Messer, Signal-Overlay (Logik in core.redstone). */
+	private final dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone =
+			new dev.theredstonee.trsclient.core.redstone.RedstoneTools(modules);
+	private long redstoneErrorLogged;
+	/** Zuletzt benutztes Welt-Sichtfeld (inkl. Zoom) – für die Projektion des Signal-Overlays. */
+	private double worldFov = 70;
 	private ConfigStore config;
 	private HudManager hud;
 	private String version = "?";
@@ -156,6 +162,14 @@ public final class TrsClient {
 		while (TrsKeys.menu.isPressed()) {
 			if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
 		}
+		while (TrsKeys.redstoneOverlay.isPressed()) {
+			modules.redstoneOverlay.toggle();
+			if (mc.ingameGUI != null) {
+				mc.ingameGUI.setOverlayMessage(I18n.tr("toast.redstoneOverlay", modules.redstoneOverlay.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")), false);
+			}
+			saveConfig();
+		}
+		tickRedstone();
 		while (TrsKeys.fullbright.isPressed()) {
 			modules.fullbright.toggle();
 			if (mc.ingameGUI != null) {
@@ -211,6 +225,8 @@ public final class TrsClient {
 		}
 		double factor = zoom.factor();
 		if (factor != 1.0) event.setFOV(event.getFOV() / factor);
+		double fov = event.getFOV();
+		if (fov > 1 && fov < 180) worldFov = fov;
 	}
 
 	/** Direkt danach zeichnet {@code GameRenderer.renderHand} die Hand und fragt dafür das Sichtfeld ab. */
@@ -233,7 +249,7 @@ public final class TrsClient {
 		if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
 		HookStats.hud++;
 		Minecraft mc = Minecraft.getInstance();
-		hud.render(mc.mainWindow.getScaledWidth(), mc.mainWindow.getScaledHeight());
+		hud.render(mc.mainWindow.getScaledWidth(), mc.mainWindow.getScaledHeight(), event.getPartialTicks());
 	}
 
 	// --- Eingabe ---
@@ -334,6 +350,20 @@ public final class TrsClient {
 	 * Einmalige Umstellung alter Standard-Tasten: Zoom lag auf C, was ab Minecraft 1.12 mit
 	 * "Schnellleiste speichern" kollidiert. Selbst belegte Tasten bleiben unangetastet.
 	 */
+	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */
+	private void tickRedstone() {
+		try {
+			dev.theredstonee.trsclient.compat.RedstoneProbe.tick(redstone);
+		} catch (RuntimeException e) {
+			redstone.reset();
+			long now = System.currentTimeMillis();
+			if (now - redstoneErrorLogged > 60000) {
+				redstoneErrorLogged = now;
+				LOGGER.warn("Redstone-Werkzeuge: " + e);
+			}
+		}
+	}
+
 	private void migrateKeys(Minecraft mc) {
 		if (!modules.keyDefaults.needsZoomKeyMigration() || mc.gameSettings == null) return;
 		if (TrsKeys.migrateZoomKey()) {
@@ -361,6 +391,15 @@ public final class TrsClient {
 
 	public HudManager hud() {
 		return hud;
+	}
+
+	public dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone() {
+		return redstone;
+	}
+
+	/** Zuletzt benutztes Welt-Sichtfeld (Grad). */
+	public double worldFov() {
+		return worldFov;
 	}
 
 	public PvpFeatures pvp() {

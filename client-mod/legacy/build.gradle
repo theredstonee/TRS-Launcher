@@ -40,6 +40,10 @@ loom {
 			if (project.hasProperty('trsAutotest')) {
 				vmArg '-Dtrsclient.autotest=true'
 			}
+			// -PtrsAutotestOnly=redstone → nur den Redstone-Teil des Autotests
+			if (project.hasProperty('trsAutotestOnly')) {
+				vmArg "-Dtrsclient.autotest.only=${project.trsAutotestOnly}"
+			}
 			// -PtrsApi=http://127.0.0.1:8787 → TRS API + Mojang-Join gegen eine lokale Attrappe (Umhang-/Abzeichen-Tests)
 			if (project.hasProperty('trsApi')) {
 				vmArg "-Dtrsclient.api.url=${project.trsApi}"

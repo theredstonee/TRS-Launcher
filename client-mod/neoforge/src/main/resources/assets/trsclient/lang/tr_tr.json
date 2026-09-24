@@ -6,5 +6,6 @@
 	"key.trsclient.fullbright": "Fullbright aç/kapat",
 	"key.trsclient.freelook": "Serbest bakış",
 	"key.trsclient.hudProfile": "HUD profilini değiştir",
-	"key.trsclient.emoteWheel": "İfade çarkı (basılı tut)"
+	"key.trsclient.emoteWheel": "İfade çarkı (basılı tut)",
+	"key.trsclient.redstoneOverlay": "Sinyal katmanını aç/kapat"
 }

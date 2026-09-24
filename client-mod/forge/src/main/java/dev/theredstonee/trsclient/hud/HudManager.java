@@ -24,12 +24,15 @@ public final class HudManager {
 	private final CrosshairRenderer crosshair;
 	private final WaypointOverlay waypointOverlay;
 	private final MinimapHud minimap;
+	private final RedstoneHuds.Overlay redstoneOverlay;
 	private List<HudItem> editorItems;
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
 		this.waypointOverlay = new WaypointOverlay(modules);
 		this.minimap = new MinimapHud(modules.minimap, modules);
+		dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone = dev.theredstonee.trsclient.TrsClient.get().redstone();
+		this.redstoneOverlay = new RedstoneHuds.Overlay(modules, redstone);
 		this.elements = List.of(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
@@ -47,7 +50,9 @@ public final class HudManager {
 				new PvpHuds.Reach(modules.reach, modules),
 				new PvpHuds.Combo(modules.combo, modules),
 				new PvpHuds.Speed(modules.speed),
-				minimap);
+				minimap,
+				new RedstoneHuds.Signal(modules, redstone),
+				new RedstoneHuds.Clock(modules, redstone));
 	}
 
 	public CrosshairRenderer crosshair() {
@@ -117,6 +122,7 @@ public final class HudManager {
 		int sh = g.height();
 		// Wegpunkte liegen in der Welt – vor den Anzeigen zeichnen, damit sie nichts überdecken.
 		waypointOverlay.render(g, font);
+		redstoneOverlay.render(g, font);
 		for (int i = 0, n = elements.size(); i < n; i++) {
 			HudElement e = elements.get(i);
 			if (e.module().isEnabled() && e.visible()) draw(g, font, e, sw, sh, false);
