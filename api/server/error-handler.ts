@@ -1,7 +1,7 @@
 import { STATUS_CODES } from 'node:http'
 import { send, setResponseHeaders, setResponseStatus } from 'h3'
 import { isApiError } from './lib/errors'
-import { SECURITY_HEADERS } from './lib/headers'
+import { SECURITY_HEADERS, isApiPath } from './lib/headers'
 
 /**
  * Einheitliche Fehlerantwort `{ "error": { "code", "message", ...details } }`.
@@ -12,6 +12,8 @@ export default defineNitroErrorHandler((error, event) => {
     event.node.res.end()
     return
   }
+  // Seiten der Website: nicht hier behandeln – Nuxt zeigt dann seine Fehlerseite.
+  if (!isApiPath(event.path)) return
   const cause = (error as { cause?: unknown }).cause
   const api = isApiError(error) ? error : isApiError(cause) ? cause : null
   let status: number

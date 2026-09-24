@@ -4,7 +4,7 @@ This is the binding contract for clients: the TRS Launcher (Rust core) and the T
 Every field, status code and error code listed here is implemented and covered by tests.
 The German deployment guide is in [README.md](README.md).
 
-- **Base URL:** `https://api.theredstonee.de`
+- **Base URL:** `https://trs-launcher.theredstonee.de` (the same app serves the website). The old host `https://api.theredstonee.de` keeps answering `/v1` for older launchers and mods; its other paths redirect to the website.
 - **Version prefix:** `/v1`
 - **Transport:** HTTPS only. Cloudflare terminates TLS and speaks HTTP/1.1, HTTP/2 or HTTP/3 to clients.
 
@@ -1241,3 +1241,36 @@ Caching:
 - `POST /v1/me/skin-changed` drops the cached profile.
 - Parallel requests for the same key share one Mojang call.
 - The cache lives in memory only.
+
+---
+
+## 15. Website sign-in (admins, confirmed in the launcher)
+
+Admins sign in to the website without a password: the website shows a short code, and the admin confirms it in the TRS Launcher, which is already signed in with their Minecraft account.
+
+| Request | Body | Response |
+|---|---|---|
+| `POST /v1/web-login/start` | – | `{ code: "7K3P-QX9M", pollSecret, expiresAt }`. The code is valid for **5 minutes**. Limit: 10 per 10 minutes per IP. |
+| `POST /v1/web-login/approve` | `{ code: string≤20 }` | **204**. Bearer auth (launcher token). `403 not_admin` for non-admins, `400 invalid_code` for a malformed code, `404 invalid_code` for an unknown or used code, `410 expired`. Limit: 10 per 10 minutes per account. |
+| `POST /v1/web-login/poll` | `{ pollSecret }` | `{ status: "pending" }`, `{ status: "expired" }` or `{ status: "approved", name, csrf, expiresAt }`. On approval the session is set as cookie `trs_admin` (httpOnly, Secure, SameSite=Strict, 8 hours). Each code yields one session only. Limit: 90 per minute per IP. |
+| `GET /v1/web-login/me` | – | `{ name, uuid, csrf }` for a valid cookie session, else `401 unauthorized`. |
+| `POST /v1/web-login/logout` | – | **204**. Needs the `X-CSRF-Token` header. |
+
+- Codes use Crockford Base32 (no I, L, O, U). Input is normalised: case and dashes don't matter, `O` reads as `0`, `I`/`L` as `1`.
+- Only hashes of the code, the poll secret and the session token are stored.
+- With the cookie, every `/v1/admin/*` endpoint works as for an admin bearer token. **Mutating requests need `X-CSRF-Token`** (`403 csrf_failed` otherwise). A request with an `Authorization` or `X-Admin-Key` header ignores the cookie.
+- The cookie also lets the admin see `pending` and `rejected` cape textures (`GET /v1/capes/{id}.png`), read-only.
+- Losing admin rights or getting banned ends the session on the next request.
+
+## 16. Website data
+
+Public, cached for 5 minutes (`Cache-Control: public, max-age=300`). Used by the website itself.
+
+| Request | Response |
+|---|---|
+| `GET /v1/site/releases` | `{ release: { version, tag, publishedAt, pageUrl, assets: [{ platform: "windows"|"appimage"|"deb"|"rpm", name, url, size }] } | null }`. The newest `v*` GitHub release (not drafts, not the `updater`/`client-mod` channels). Only GitHub download URLs of this repository. |
+| `GET /v1/site/blog` | `{ posts: [{ version, date, title: { en, de } | null, headlines: { en: [], de: [] } }] }` from `CHANGELOG.md` on `main`, newest first, released versions only. |
+| `GET /v1/site/blog/{version}` | `{ post: … + blocks: { en: PostBlock[], de: PostBlock[] } }`, or `404 not_found`. A PostBlock is `{ kind: "text", markdown }` or `{ kind: "image", src, caption }`; image `src` points to `raw.githubusercontent.com`. |
+| `GET /v1/site/capes` | `{ capes: [{ id, name, unlock, url, scale, frames, frameTimeMs }] }`. Approved built-in capes only; `url` is relative (`/v1/capes/<id>.png?v=…`). |
+
+If GitHub is unreachable, the last good answer is kept. Without one, `release` is `null` and `posts` is empty.

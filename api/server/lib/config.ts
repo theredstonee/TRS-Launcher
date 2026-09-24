@@ -5,6 +5,10 @@ import { normalizeUuid } from './ids'
 export interface Config {
   dataDir: string
   publicBaseUrl: string
+  /** Adresse der Website (Links, Weiterleitungen, Sitemap). */
+  siteUrl: string
+  /** Hosts, die nur die API bedienen (Seiten dort → 301 zur Website), klein geschrieben. */
+  apiOnlyHosts: ReadonlySet<string>
   adminUuids: ReadonlySet<string>
   adminApiKey: string | null
   secretKey: string
@@ -90,6 +94,15 @@ const envSchema = z.object({
     .url({ protocol: /^https?$/ })
     .default('https://api.theredstonee.de')
     .transform((s) => s.replace(/\/+$/, '')),
+  SITE_URL: z
+    .url({ protocol: /^https?$/ })
+    .default('https://trs-launcher.theredstonee.de')
+    .transform((s) => s.replace(/\/+$/, '')),
+  // Alte Namen, die nur noch API sind (Komma-Liste), z. B. api.theredstonee.de
+  API_ONLY_HOSTS: z
+    .string()
+    .default('api.theredstonee.de')
+    .transform((raw) => new Set(raw.split(',').map((h) => h.trim().toLowerCase()).filter(Boolean))),
   ADMIN_UUIDS: listOf(normalizeUuid, 'uuid').default(new Set<string>()),
   ADMIN_API_KEY: z
     .string()
@@ -129,6 +142,8 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
   return {
     dataDir: e.DATA_DIR,
     publicBaseUrl: e.PUBLIC_BASE_URL,
+    siteUrl: e.SITE_URL,
+    apiOnlyHosts: e.API_ONLY_HOSTS,
     adminUuids: e.ADMIN_UUIDS,
     adminApiKey: e.ADMIN_API_KEY === '' ? null : e.ADMIN_API_KEY,
     secretKey: e.SECRET_KEY,

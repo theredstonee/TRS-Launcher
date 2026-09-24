@@ -119,4 +119,8 @@ export const RULES = {
   /** Ausgehende Mojang-Profilabfragen insgesamt (nur Cache-Fehlschläge). */
   mojangGlobal: { limit: 100, windowMs: MIN },
   playerEventsUser: { limit: 20, windowMs: MIN },
+  /** Website-Login: Codes anfordern (je IP), bestätigen (je Konto), abfragen (je IP). */
+  webLoginStartIp: { limit: 10, windowMs: 10 * MIN },
+  webLoginApproveUser: { limit: 10, windowMs: 10 * MIN },
+  webLoginPollIp: { limit: 90, windowMs: MIN },
 } satisfies Record<string, Rule>

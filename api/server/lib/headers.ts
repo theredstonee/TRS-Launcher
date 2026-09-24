@@ -11,6 +11,12 @@ export const SECURITY_HEADERS: Record<string, string> = {
   'Cache-Control': 'no-store',
 }
 
+/** API-Pfade (JSON, strenge Header); alles andere sind Seiten und Dateien der Website. */
+export function isApiPath(path: string | undefined): boolean {
+  const p = (path ?? '').split('?')[0]!
+  return p === '/v1' || p.startsWith('/v1/')
+}
+
 export const CORS_ALLOWED_METHODS = 'GET, POST, PUT, PATCH, DELETE'
 export const CORS_ALLOWED_HEADERS = 'Authorization, Content-Type'
 export const CORS_EXPOSED_HEADERS = 'Retry-After, ETag, X-Request-Id'

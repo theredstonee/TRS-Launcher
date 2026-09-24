@@ -236,4 +236,27 @@ ALTER TABLE codes_v2 RENAME TO codes;
 ALTER TABLE code_redemptions_v2 RENAME TO code_redemptions;
 `,
   },
+  {
+    // Admin-Login der Website: Code auf der Website, Bestätigung im TRS Launcher, dann Cookie-Sitzung.
+    version: 3,
+    sql: `
+CREATE TABLE web_logins (
+  code_hash TEXT PRIMARY KEY,
+  poll_hash TEXT NOT NULL UNIQUE,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  approved_uuid TEXT REFERENCES users(uuid) ON DELETE CASCADE
+);
+CREATE INDEX web_logins_expires ON web_logins(expires_at);
+
+CREATE TABLE web_sessions (
+  token_hash TEXT PRIMARY KEY,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  csrf TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX web_sessions_uuid ON web_sessions(uuid);
+`,
+  },
 ]

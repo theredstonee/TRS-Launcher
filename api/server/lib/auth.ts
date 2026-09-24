@@ -5,6 +5,7 @@ import { SESSION_TOKEN, newServerId, newSessionToken, safeEqual, sha256Hex } fro
 import { RULES } from './ratelimit'
 import { MojangUnavailable } from './mojang'
 import { getUser, isAdmin, isBanned, upsertOnLogin, meView, type MeView, type UserRow } from './users'
+import { sweepWebLogins } from './weblogin'
 
 export interface Challenge {
   serverId: string
@@ -133,4 +134,5 @@ export function sweepExpired(ctx: AppContext): void {
   const t = ctx.now()
   run(ctx.db, 'DELETE FROM challenges WHERE expires_at <= ?', t)
   run(ctx.db, 'DELETE FROM sessions WHERE expires_at <= ?', t)
+  sweepWebLogins(ctx)
 }

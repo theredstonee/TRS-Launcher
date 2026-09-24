@@ -1,0 +1,531 @@
+@import "tailwindcss";
+@import "@fontsource-variable/pixelify-sans";
+
+/*
+ * Redstone-Look: Deepslate-Grau (leicht violett, wie der Block) als Grund,
+ * Redstone-Rot für Aktionen, Lampen-Bernstein für alles, was "unter Strom"
+ * steht (laufendes Spiel, geladene Leitung).
+ */
+@theme {
+  --color-base-950: #111116;
+  --color-base-900: #17171e;
+  --color-base-850: #1d1d26;
+  --color-base-800: #252531;
+  --color-base-700: #333343;
+  --color-base-600: #4a4a5e;
+  --color-base-400: #8b8ba2;
+  --color-base-200: #c8c8d8;
+  --color-base-50: #f3f3f8;
+
+  --color-redstone-300: #ff8f85;
+  --color-redstone-400: #ff5a4d;
+  --color-redstone-500: #e0281e;
+  --color-redstone-600: #b31a12;
+  --color-redstone-900: #3a0d09;
+
+  --color-lamp-300: #ffd48a;
+  --color-lamp-400: #ffb84d;
+  --color-lamp-900: #3d2a0c;
+
+  --color-ok: #5ee08a;
+  --color-warn: #ffb84d;
+
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, monospace;
+
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-pop: pop 0.18s ease-out;
+  --animate-lamp: lamp 2.4s ease-in-out infinite;
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes lamp {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+}
+
+/*
+ * Themes: überschreiben nur die Deepslate-Skala. „Dunkel“ ist der Standard
+ * oben; OLED geht auf echtes Schwarz, Hell dreht die Skala um.
+ */
+:root[data-theme="oled"] {
+  --color-base-950: #000000;
+  --color-base-900: #060608;
+  --color-base-850: #0c0c10;
+  --color-base-800: #15151b;
+  --color-base-700: #24242e;
+  --color-base-600: #3c3c4c;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-base-950: #eeeef3;
+  --color-base-900: #ffffff;
+  --color-base-850: #f6f6fa;
+  --color-base-800: #e6e6ee;
+  --color-base-700: #d4d4df;
+  --color-base-600: #a9a9bb;
+  --color-base-400: #5f5f75;
+  --color-base-200: #30303c;
+  --color-base-50: #101015;
+  --color-redstone-300: #c81e14;
+  --color-lamp-300: #9a5a00;
+  --color-lamp-900: #fdf0d8;
+  --color-redstone-900: #fde4e1;
+}
+
+/*
+ * Deepslate-Fliesen als Grund (16 × 16 Texel, pixelig auf 48 px skaliert).
+ * Nur Schwarz/Weiß mit wenig Deckkraft – die Theme-Farbe darunter bleibt.
+ */
+:root {
+  --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 7h16v1H0zM0 15h16v1H0zM7 0h1v16H7zM15 0h1v16h-1z' fill-opacity='.28'/><path d='M8 0h7v7H8zM0 8h7v7H0z' fill='%23fff' fill-opacity='.018'/><path d='M2 0h1v1H2zM6 1h1v1H6zM9 2h1v1H9zM14 2h1v1H14zM5 3h1v1H5zM13 5h1v1H13zM12 6h1v1H12zM11 8h1v1H11zM12 9h1v1H12zM11 10h1v1H11zM8 11h1v1H8zM5 12h1v1H5zM12 12h1v1H12zM12 13h1v1H12zM6 14h1v1H6zM8 14h1v1H8z' fill='%23fff' fill-opacity='.045'/><path d='M4 0h1v1H4zM12 0h1v1H12zM14 1h1v1H14zM1 4h1v1H1zM5 6h1v1H5zM6 6h1v1H6zM8 6h1v1H8zM11 6h1v1H11zM4 8h1v1H4zM3 9h1v1H3zM13 9h1v1H13zM14 9h1v1H14zM2 10h1v1H2zM13 11h1v1H13zM11 13h1v1H11z' fill-opacity='.2'/></svg>");
+}
+:root[data-theme="light"] {
+  --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 7h16v1H0zM0 15h16v1H0zM7 0h1v16H7zM15 0h1v16h-1z' fill-opacity='.035'/><path d='M8 0h7v7H8zM0 8h7v7H0z' fill='%23fff' fill-opacity='.2'/><path d='M2 0h1v1H2zM6 1h1v1H6zM9 2h1v1H9zM14 2h1v1H14zM5 3h1v1H5zM13 5h1v1H13zM12 6h1v1H12zM11 8h1v1H11zM12 9h1v1H12zM11 10h1v1H11zM8 11h1v1H8zM5 12h1v1H5zM12 12h1v1H12zM12 13h1v1H12zM6 14h1v1H6zM8 14h1v1H8z' fill='%23fff' fill-opacity='.28'/><path d='M4 0h1v1H4zM12 0h1v1H12zM14 1h1v1H14zM1 4h1v1H1zM5 6h1v1H5zM6 6h1v1H6zM8 6h1v1H8zM11 6h1v1H11zM4 8h1v1H4zM3 9h1v1H3zM13 9h1v1H13zM14 9h1v1H14zM2 10h1v1H2zM13 11h1v1H13zM11 13h1v1H11z' fill-opacity='.05'/></svg>");
+}
+
+/* Akzentfarben: ersetzen die Redstone-Skala (Aktionen, aktive Punkte). */
+:root[data-accent="lamp"] {
+  --color-redstone-300: #ffd48a;
+  --color-redstone-400: #ffb84d;
+  --color-redstone-500: #e0900c;
+  --color-redstone-600: #b06e00;
+  --color-redstone-900: #3d2a0c;
+}
+:root[data-accent="emerald"] {
+  --color-redstone-300: #86efac;
+  --color-redstone-400: #4ade80;
+  --color-redstone-500: #17a34a;
+  --color-redstone-600: #15803d;
+  --color-redstone-900: #0c2a17;
+}
+:root[data-accent="lapis"] {
+  --color-redstone-300: #9dbaff;
+  --color-redstone-400: #6b95ff;
+  --color-redstone-500: #3563e9;
+  --color-redstone-600: #2447b8;
+  --color-redstone-900: #0f1c42;
+}
+:root[data-accent="amethyst"] {
+  --color-redstone-300: #dcbcff;
+  --color-redstone-400: #c38cfb;
+  --color-redstone-500: #9b4ddf;
+  --color-redstone-600: #7a2fc0;
+  --color-redstone-900: #2b1442;
+}
+
+/* „Erweitertes Rendering“ aus: keine Unschärfe-Effekte. */
+:root.no-blur *,
+:root.no-blur *::before,
+:root.no-blur *::after {
+  backdrop-filter: none !important;
+}
+
+html,
+body,
+#__nuxt {
+  height: 100%;
+}
+
+body {
+  background: var(--color-base-950);
+  color: var(--color-base-50);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-redstone-400);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-base-700);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-base-600);
+}
+
+/* Seitenwechsel: kurz genug, um nicht aufzuhalten, aber mit sanftem Aufziehen. */
+.page-enter-active {
+  transition: opacity 0.18s ease-out, transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.page-leave-active {
+  transition: opacity 0.1s ease-in, transform 0.1s ease-in;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px) scale(0.995);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-[background-color,color,transform] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+  }
+  /* Wie ein Minecraft-Knopf: helle Oberkante, dunkle Unterkante, leichtes Glühen. */
+  .btn-primary {
+    @apply bg-redstone-500 text-white hover:bg-redstone-400 active:bg-redstone-600;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      inset 0 -2px 0 rgb(0 0 0 / 0.25);
+  }
+  /* Wie eine Redstone-Lampe: beim Drücken blitzt sie warm auf. */
+  .btn-primary:not(:disabled):hover:active,
+  .btn-primary:not(:disabled):active {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      inset 0 0 12px color-mix(in srgb, var(--color-lamp-300) 55%, transparent),
+      0 0 18px -2px color-mix(in srgb, var(--color-lamp-400) 70%, transparent);
+  }
+  .btn-ghost:not(:disabled):hover {
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-redstone-500) 55%, transparent);
+  }
+  .btn-primary:not(:disabled):hover {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      inset 0 -2px 0 rgb(0 0 0 / 0.2),
+      0 0 14px -2px color-mix(in srgb, var(--color-redstone-500) 70%, transparent);
+  }
+  .btn-ghost {
+    @apply bg-base-800 text-base-200 hover:bg-base-700 hover:text-base-50;
+  }
+  .btn-danger {
+    @apply bg-transparent text-redstone-300 ring-1 ring-redstone-600/60 hover:bg-redstone-900;
+  }
+  .field {
+    @apply w-full rounded-md border border-base-700 bg-base-900 px-3 py-2 text-sm text-base-50 outline-none transition-colors placeholder:text-base-400 focus:border-redstone-500;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium text-base-400;
+  }
+  .card {
+    @apply rounded-xl border border-base-800 bg-base-900;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
+  }
+  .card-hover {
+    @apply relative transition-[border-color,background-color] duration-150 hover:border-base-700 hover:bg-base-850;
+  }
+  .btn-icon {
+    @apply inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-base-800 text-base-200 transition-colors hover:bg-base-700 hover:text-base-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .badge {
+    @apply inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full bg-base-800 px-2.5 py-1 text-xs text-base-200;
+  }
+  .menu {
+    @apply absolute z-40 min-w-48 rounded-lg border border-base-700 bg-base-850 p-1 shadow-xl shadow-black/40;
+  }
+  .menu-item {
+    @apply flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-base-200 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-40;
+  }
+  .section-title {
+    @apply text-sm font-semibold text-base-50;
+  }
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+  /* Abschnittstitel auf der Startseite: Pixelschrift, klar über dem Inhalt. */
+  .heading {
+    font-family: var(--font-display);
+    @apply text-xl leading-none text-base-50;
+  }
+  /* Ecken im Pixel-Raster abgeschnitten (Stufe = --notch). */
+  .pixel-corners {
+    --n: var(--notch, 4px);
+    clip-path: polygon(
+      0 var(--n), var(--n) var(--n), var(--n) 0,
+      calc(100% - var(--n)) 0, calc(100% - var(--n)) var(--n), 100% var(--n),
+      100% calc(100% - var(--n)), calc(100% - var(--n)) calc(100% - var(--n)), calc(100% - var(--n)) 100%,
+      var(--n) 100%, var(--n) calc(100% - var(--n)), 0 calc(100% - var(--n))
+    );
+  }
+  .deepslate {
+    background-color: var(--color-base-950);
+    background-image: var(--deepslate);
+    /* Vektor-Quadrate mit crispEdges – bleiben auch skaliert scharf. */
+    background-size: 48px 48px;
+  }
+  /* Redstone-Schaltung hinter allen Seiten (Einstellung „Animierter Hintergrund“). */
+  .app-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.55;
+  }
+  /* Über der Schaltung: halbdurchsichtiger Schleier statt des Deepslate-Musters, damit Inhalte lesbar bleiben. */
+  .deepslate.deepslate-over-scene {
+    background-color: color-mix(in srgb, var(--color-base-950) 62%, transparent);
+    background-image: none;
+  }
+  /* Platzhalter, während Daten laden: dunkle Platte, unten läuft ein Redstone-Signal durch. */
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-base-850;
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-redstone-600) 25%, transparent);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 35%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-redstone-500), var(--color-redstone-300), var(--color-redstone-500), transparent);
+    box-shadow: 0 0 6px var(--color-redstone-500);
+    animation: signal-run 1.8s steps(24) infinite;
+  }
+
+  /* Karten: beim Drüberfahren läuft ein Signal einmal um den Rand. */
+  .card-hover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--signal-angle),
+      transparent 0deg 250deg,
+      var(--color-redstone-600) 290deg,
+      var(--color-redstone-300) 330deg,
+      transparent 350deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .card-hover:hover::before {
+    opacity: 1;
+    animation: signal-spin 2.6s linear infinite;
+  }
+
+  /* Menüs „schalten sich ein“: kurzes Aufglühen beim Öffnen. */
+  .menu {
+    animation: power-on 0.35s ease-out;
+  }
+  .seg {
+    @apply px-3 py-1.5 text-base-400 transition-colors hover:text-base-50;
+  }
+  .seg-on {
+    @apply bg-base-700 text-base-50;
+  }
+  .tab {
+    @apply relative rounded-full px-3.5 py-1.5 text-sm font-medium text-base-400 transition-colors hover:bg-base-850 hover:text-base-50;
+  }
+  .tab-on {
+    @apply bg-base-800 text-base-50 hover:bg-base-800;
+  }
+}
+
+/* Bereinigtes Markdown von Modrinth (Beschreibungen, Changelogs). */
+.prose-md {
+  @apply text-sm leading-relaxed text-base-200 select-text;
+  overflow-wrap: anywhere;
+}
+.prose-md > :first-child {
+  margin-top: 0;
+}
+.prose-md :where(p, ul, ol, pre, blockquote, table, details) {
+  margin: 0.75em 0;
+}
+.prose-md :where(h1, h2, h3, h4, h5, h6) {
+  @apply font-semibold text-base-50;
+  margin: 1.4em 0 0.5em;
+  line-height: 1.3;
+}
+.prose-md h1 {
+  font-size: 1.35rem;
+}
+.prose-md h2 {
+  font-size: 1.15rem;
+}
+.prose-md h3 {
+  font-size: 1rem;
+}
+.prose-md a {
+  @apply text-redstone-300 underline decoration-redstone-500/40 underline-offset-2 hover:decoration-redstone-300;
+  cursor: pointer;
+}
+.prose-md :where(ul) {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+.prose-md :where(ol) {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.prose-md li + li {
+  margin-top: 0.25em;
+}
+.prose-md img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+.prose-md :where(code) {
+  @apply rounded bg-base-800 px-1 py-0.5 font-mono text-[0.85em] text-lamp-300;
+}
+.prose-md pre {
+  @apply overflow-x-auto rounded-lg bg-base-950 p-3;
+}
+.prose-md pre code {
+  @apply bg-transparent p-0 text-base-200;
+}
+.prose-md blockquote {
+  @apply border-l-2 border-base-600 pl-3 text-base-400;
+}
+.prose-md hr {
+  @apply my-5 border-base-800;
+}
+.prose-md table {
+  @apply block overflow-x-auto text-xs;
+  border-collapse: collapse;
+}
+.prose-md :where(th, td) {
+  @apply border border-base-800 px-2 py-1;
+}
+.prose-md center,
+.prose-md [align="center"] {
+  text-align: center;
+}
+.prose-md summary {
+  @apply cursor-pointer font-medium text-base-50;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Redstone-Animationen im ganzen Launcher ------------------------------- */
+@property --signal-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes signal-spin {
+  to {
+    --signal-angle: 360deg;
+  }
+}
+/* Ein Signal läuft einmal über die Breite (Ladeplatzhalter, Seitenwechsel). */
+@keyframes signal-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(290%);
+  }
+}
+@keyframes power-on {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  45% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-redstone-500) 60%, transparent));
+  }
+  100% {
+    transform: none;
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+/* Seitenwechsel: ein kurzer Impuls läuft oben am Inhalt entlang. */
+.route-signal {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 5;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.route-signal::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, var(--color-redstone-500), var(--color-redstone-300), transparent);
+  box-shadow: 0 0 8px var(--color-redstone-500);
+  animation: signal-run 0.7s steps(18) 1 forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after,
+  .card-hover:hover::before,
+  .route-signal::after {
+    animation: none;
+  }
+  .menu {
+    animation: none;
+  }
+}
+
+/* --- Website: normale, scrollbare Seite statt App-Fenster -------------------------------- */
+html,
+body,
+#__nuxt {
+  height: auto;
+  min-height: 100%;
+}
+body {
+  overflow: auto;
+  user-select: text;
+}
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

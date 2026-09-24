@@ -1,10 +1,11 @@
 import { isIP } from 'node:net'
-import { getHeader, getQuery, getRouterParam, setResponseHeaders, setResponseStatus, type H3Event } from 'h3'
+import { getCookie, getHeader, getQuery, getRouterParam, setResponseHeaders, setResponseStatus, type H3Event } from 'h3'
 import type { z } from 'zod'
 import { authenticate, authenticateAdmin, type AuthedUser } from './auth'
 import { useCtx } from './context'
 import { ApiError, badRequest, tooLarge, tooMany, unsupportedMedia } from './errors'
 import { RULES, type Rule } from './ratelimit'
+import { WEB_SESSION_COOKIE, webSession } from './weblogin'
 
 export const JSON_LIMIT = 16 * 1024
 
@@ -113,8 +114,34 @@ export function optionalUser(event: H3Event): AuthedUser | null {
   }
 }
 
+/**
+ * Wer schaut eine Textur an? Bearer-Nutzer wie bei `optionalUser`, sonst ein Website-Admin mit
+ * Sitzungs-Cookie (nur lesend, damit die Admin-Seite wartende Uploads zeigen kann).
+ */
+export function textureViewer(event: H3Event): { uuid: string, admin: boolean } | null {
+  const user = optionalUser(event)
+  if (user) return { uuid: user.uuid, admin: user.admin }
+  const cookie = getCookie(event, WEB_SESSION_COOKIE)
+  if (!cookie || getHeader(event, 'authorization') !== undefined) return null
+  try {
+    const session = webSession(useCtx(), cookie, undefined, false)
+    return { uuid: session.uuid, admin: true }
+  } catch {
+    return null
+  }
+}
+
 export function requireAdmin(event: H3Event): string {
   const ctx = useCtx()
+  const authorization = getHeader(event, 'authorization')
+  const adminKey = getHeader(event, 'x-admin-key')
+  // Website-Admin: Sitzung aus dem Cookie (nur ohne Bearer/Schlüssel), ändernde Anfragen mit CSRF-Token.
+  if (authorization === undefined && adminKey === undefined && getCookie(event, WEB_SESSION_COOKIE) !== undefined) {
+    const mutating = !['GET', 'HEAD'].includes(event.method)
+    const session = webSession(ctx, getCookie(event, WEB_SESSION_COOKIE), getHeader(event, 'x-csrf-token'), mutating)
+    limit(`admin:${session.uuid}`, RULES.adminActor)
+    return session.uuid
+  }
   const actor = authenticateAdmin(ctx, {
     authorization: getHeader(event, 'authorization'),
     adminKey: getHeader(event, 'x-admin-key'),

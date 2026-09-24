@@ -110,7 +110,9 @@ Erwartet: `{"status":"ok",…}`
 | `SECRET_KEY` | ja | ≥ 32 zufällige Zeichen (`openssl rand -base64 48`). Schlüssel für die Hashes der Einlösecodes. **Nach dem ersten Start nicht mehr ändern**, sonst werden offene Codes ungültig. |
 | `ADMIN_UUIDS` | nein | Admin-Konten (Minecraft-UUIDs, kommagetrennt). Die UUID von „Theredstonee" steht als Kommentar in `.env.example`. |
 | `ADMIN_API_KEY` | nein | ≥ 32 Zeichen, für Skripte über den Header `X-Admin-Key`. Leer heißt: nur Admin-Sitzungen. |
-| `PUBLIC_BASE_URL` | nein | Standard `https://api.theredstonee.de`. Wird für die Umhang-URLs in Antworten verwendet. |
+| `PUBLIC_BASE_URL` | nein | Standard `https://api.theredstonee.de`. Wird für die Umhang-URLs in Antworten verwendet (ältere Mods akzeptieren nur diesen Host). |
+| `SITE_URL` | nein | Standard `https://trs-launcher.theredstonee.de`. Adresse der Website (Sitemap, RSS, Weiterleitungen). |
+| `API_ONLY_HOSTS` | nein | Standard `api.theredstonee.de`. Hosts, die nur noch die API sind; alle anderen Pfade leiten dort per 301 auf `SITE_URL` um. |
 | `CORS_ORIGINS` | nein | Nur nötig, falls eine Webseite die API im Browser aufruft. Exakte `https://`-Origins, kein `*`. |
 | `TRUST_PROXY` | nein | `cloudflare` (Standard): Die Client-IP kommt aus `CF-Connecting-IP`. Das ist sicher, weil nur cloudflared die API erreicht. |
 | `LOG_REQUESTS` | nein | `true` schreibt ein Zugriffslog ohne IPs und Tokens. |

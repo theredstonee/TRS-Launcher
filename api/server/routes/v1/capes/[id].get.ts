@@ -3,7 +3,7 @@ import { capeView, getCape, readTexture } from '../../../lib/capes'
 import { useCtx } from '../../../lib/context'
 import { notFound } from '../../../lib/errors'
 import { CAPE_ID } from '../../../lib/ids'
-import { optionalUser, paramWith } from '../../../lib/http'
+import { paramWith, textureViewer } from '../../../lib/http'
 import { z } from 'zod'
 
 /**
@@ -16,7 +16,7 @@ export default defineEventHandler((event) => {
   const id = isPng ? raw.slice(0, -4) : raw
   if (!CAPE_ID.test(id)) throw notFound('cape_not_found', 'Cape not found')
   const ctx = useCtx()
-  const viewer = optionalUser(event)
+  const viewer = textureViewer(event)
 
   if (!isPng) {
     const c = getCape(ctx, id)
@@ -25,7 +25,7 @@ export default defineEventHandler((event) => {
     return { cape: capeView(ctx, c) }
   }
 
-  const tex = readTexture(ctx, id, viewer ? { uuid: viewer.uuid, admin: viewer.admin } : null)
+  const tex = readTexture(ctx, id, viewer)
   const etag = `"${tex.sha256}"`
   const v = getQuery(event).v
   const current = typeof v !== 'string' || tex.sha256.startsWith(v)
