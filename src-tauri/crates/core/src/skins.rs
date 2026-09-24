@@ -442,10 +442,11 @@ impl Launcher {
         let Some(id) = compact_uuid(uuid) else {
             return Err(Error::validation(crate::msg!("skins.invalidUuid", "Das ist keine gültige Spieler-ID.")));
         };
-        if let Some((at, url)) = player_skin_cache().lock().map_err(|_| Error::Internal("Skin-Cache gesperrt".into()))?.get(&id) {
-            if at.elapsed() < PLAYER_SKIN_TTL {
-                return Ok(url.clone());
-            }
+        let cached = player_skin_cache().lock().map_err(|_| Error::Internal("Skin-Cache gesperrt".into()))?.get(&id).cloned();
+        if let Some((at, url)) = cached
+            && at.elapsed() < PLAYER_SKIN_TTL
+        {
+            return Ok(url);
         }
         let response = self
             .http()
