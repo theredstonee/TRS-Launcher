@@ -81,6 +81,9 @@ public final class TrsClient {
 	private final ClickCounter leftClicks = new ClickCounter();
 	private final ClickCounter rightClicks = new ClickCounter();
 	private final ZoomState zoom = new ZoomState();
+	/** Filmische Kamera nur während des Zooms (stellt den Wert des Spielers danach wieder her). */
+	private final dev.theredstonee.trsclient.core.util.FlagOverride zoomCinematic =
+			new dev.theredstonee.trsclient.core.util.FlagOverride();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
 	private final ChatFeatures chat = new ChatFeatures(modules);
 	/** Tastendruck-Erkennung für die Modul-Tasten (Wegpunkte, Text-Hotkeys). */
@@ -145,6 +148,9 @@ public final class TrsClient {
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event) {
 		TrsKeys.register();
+		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
+		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
+		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
@@ -386,9 +392,12 @@ public final class TrsClient {
 	// --- Logik ---
 
 	private void updateZoom(Minecraft mc) {
-		boolean active = modules.zoom.isEnabled()
+		boolean wanted = modules.zoom.isEnabled()
 				&& (forceZoom || (TrsKeys.zoom.isKeyDown() && mc.currentScreen == null));
-		zoom.update(active, modules.zoomFactor.get(), modules.zoomSmooth.get(), System.nanoTime());
+		// Kein Fernrohr vor 1.17; die filmische Kamera gilt auf Wunsch nur, solange gezoomt wird.
+		zoom.frame(wanted, false, modules.zoomFactor.get(), modules.zoomSmooth.get(), System.nanoTime());
+		boolean smooth = zoomCinematic.update(mc.gameSettings.smoothCamera, zoom.isActive() && modules.zoomCinematic.get());
+		if (smooth != mc.gameSettings.smoothCamera) mc.gameSettings.smoothCamera = smooth;
 	}
 
 	private void restoreGamma(Minecraft mc) {
@@ -399,7 +408,7 @@ public final class TrsClient {
 
 	/** Maus-Divisor während des Zooms (1 = unverändert). */
 	public double mouseDivisor() {
-		return modules.zoom.isEnabled() && modules.zoomSlowMouse.get() ? zoom.factor() : 1.0;
+		return zoom.mouseDivisor(modules.zoom.isEnabled() && modules.zoomSlowMouse.get());
 	}
 
 	/**

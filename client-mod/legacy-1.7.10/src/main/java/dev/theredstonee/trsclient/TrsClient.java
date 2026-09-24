@@ -65,6 +65,9 @@ public final class TrsClient {
 	private final ClickCounter leftClicks = new ClickCounter();
 	private final ClickCounter rightClicks = new ClickCounter();
 	private final ZoomState zoom = new ZoomState();
+	/** Filmische Kamera nur während des Zooms (stellt den Wert des Spielers danach wieder her). */
+	private final dev.theredstonee.trsclient.core.util.FlagOverride zoomCinematic =
+			new dev.theredstonee.trsclient.core.util.FlagOverride();
 	private final PvpFeatures pvp = new PvpFeatures(modules);
 	private ConfigStore config;
 	private HudManager hud;
@@ -118,6 +121,8 @@ public final class TrsClient {
 	public void init(FMLInitializationEvent event) {
 		if (!active) return;
 		TrsKeys.register();
+		// Die Zoom-Taste ist eine Vanilla-Belegung – im TRS-Menü ändert sie dieselbe Belegung.
+		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		FMLCommonHandler.instance().bus().register(new TickHandler());
@@ -254,7 +259,10 @@ public final class TrsClient {
 	private void updateZoom(Minecraft mc) {
 		boolean on = modules.zoom.isEnabled()
 				&& (forceZoom || (TrsKeys.zoom.getIsKeyPressed() && mc.currentScreen == null));
-		zoom.update(on, modules.zoomFactor.get(), modules.zoomSmooth.get(), System.nanoTime());
+		// Kein Fernrohr vor 1.17; die filmische Kamera gilt auf Wunsch nur, solange gezoomt wird.
+		zoom.frame(on, false, modules.zoomFactor.get(), modules.zoomSmooth.get(), System.nanoTime());
+		boolean smooth = zoomCinematic.update(mc.gameSettings.smoothCamera, zoom.isActive() && modules.zoomCinematic.get());
+		if (smooth != mc.gameSettings.smoothCamera) mc.gameSettings.smoothCamera = smooth;
 	}
 
 	private void restoreGamma(Minecraft mc) {
@@ -271,7 +279,7 @@ public final class TrsClient {
 
 	/** Maus-Divisor während des Zooms (1 = unverändert). */
 	public double mouseDivisor() {
-		return modules.zoom.isEnabled() && modules.zoomSlowMouse.get() ? zoom.factor() : 1.0;
+		return zoom.mouseDivisor(modules.zoom.isEnabled() && modules.zoomSlowMouse.get());
 	}
 
 	/** Speichert die Einstellungen (Fehler nur loggen). */

@@ -33,17 +33,17 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | CPS | Left/right clicks within the last 1000 ms |
 | Keystrokes (Tastenanzeige) | W A S D, left/right mouse button (optional CPS), space bar – lit while pressed |
 | Ping | Latency to the current server from the player list (hidden in singleplayer) |
-| Zoom | Hold key → FOV divided by the zoom factor (default ×4), smooth transition, mouse wheel adjusts the zoom, slower mouse while zooming |
+| Zoom | Hold the key (V; changeable under *Taste* in the TRS menu or in the controls) → FOV divided by the strength (×2–×10, default ×4), smooth zoom in/out (switchable), mouse wheel changes the zoom while held, mouse sensitivity drops proportionally to the zoom, optional *Filmische Kamera* only while zooming. The spyglass (1.17+) wins: the TRS zoom ends at once and the wheel stays with the game |
 | Fullbright | Maximum brightness; only overrides the gamma used for the lightmap, the vanilla brightness option is never changed |
 | Rüstung | Worn armor + held item with durability (number or percent, colored green→red) |
 | Trank-Effekte | Active effects with level and remaining time, in the effect color |
 | Koordinaten | Position, facing direction and biome |
 | Uhrzeit / Speicher | Real-time clock (24 h/12 h, optional seconds) / JVM memory usage |
 | Server-Adresse / Aktive Resourcepacks | Current server (hidden in singleplayer) / enabled packs |
-| Toggle-Sprint / Toggle-Schleichen | Press once to keep sprinting/sneaking, HUD indicator while active (inactive if vanilla's own toggle option is on) |
+| Toggle-Sprint / Toggle-Schleichen | Press once to keep sprinting/sneaking (each module on/off). HUD element (movable in the HUD editor) shows `[Sprinting (Toggled)]`, `[Sprinting (Key held)]`, `[Flying (Boost)]`, `[Sneaking (Toggled)]` … Options: *Sprinten nur vorwärts*, *Flug-Boost* in creative flight (×1.5–×5, the previous speed is restored, a speed set by the server is adopted), *Zustand merken* (otherwise death, respawn, dimension and world change reset it; default: sprint remembered, sneak not). Menus never leave a key stuck – Minecraft releases the keys, the toggle resumes when the menu closes. Inactive if vanilla's own toggle option is on |
 | Fadenkreuz | Own crosshair (cross, cross+dot, dot, T, circle, circle+dot; color, size, gap, thickness, outline, attack cooldown) with an editor |
 | Treffer-Farbe | Color/opacity of the hurt tint of entities (recolors the overlay texture) |
-| Freelook | Hold Left Alt to orbit the camera without turning the player. Off by default – some servers forbid it |
+| Freelook | Hold (or, with *Umschalten statt Halten*, toggle) Left Alt to orbit the camera in third person – *Perspektive* behind or in front – while the character keeps walking and looking ahead; releasing restores the previous view. The player is never turned, so the server receives exactly the rotation it would get without freelook. Off by default – some servers forbid it; *Aus auf diesen Servern* (host incl. subdomains, `*.example.net` = only subdomains, empty by default) switches it off there with a hint in the action bar |
 | Reichweite / Combo / Geschwindigkeit | Distance of the last hit (display only – the reach itself is untouched), hits in a row (ends on own damage or a pause) and blocks per second |
 | 1.7-Animationen | Hand stays up during the attack cooldown, swing animation while using an item (visual only, no packet) |
 | Niedriges Feuer / Kein Schadens-Wackeln | Fire overlay pulled down / no camera tilt when taking damage |
@@ -164,12 +164,14 @@ Listed under **TRS Client** in the vanilla controls menu.
 | --- | --- |
 | Right Shift | Open the TRS menu |
 | V (hold) | Zoom (V is free in every vanilla version; C is "save hotbar activator" from 1.12 on) |
+| Left Alt (hold/toggle) | Freelook (module must be enabled) |
 | unbound | Toggle Fullbright (also switchable in the menu) |
 | unbound | Switch the HUD profile (cycles) |
 
 The waypoint keys (**B** create, **N** list) and the four text hotkeys are settings of their modules and are
-rebound in the TRS menu, not in the vanilla controls screen.
-| Left Alt (hold) | Freelook (module must be enabled) |
+rebound in the TRS menu, not in the vanilla controls screen. Zoom and freelook are vanilla bindings: their *Taste*
+row in the TRS menu is linked to the same binding (`KeySetting.link`, stored in `options.txt`), so both places show
+and change one key.
 
 
 ## Languages
@@ -203,7 +205,14 @@ reach/combo/speed only *display* what happened, hitboxes and the block outline a
 shapes (only colour/width change), the minimap reads loaded chunks only (no cave mode, no
 entity radar; player dots are off by default), Auto-GG and text hotkeys are off by default and
 rate limited so they can never flood a chat. Freelook and Auto-GG are forbidden on some servers –
-they stay off until you turn them on.
+they stay off until you turn them on, and freelook has its own server list on which it switches itself off.
+Freelook never turns the player (no extra rotation packets), the fly boost only works in creative flight.
+
+The logic of the comfort modules is version independent in `common`: `core/input/MovementToggles` (toggle state
+machine, death/world reset, fly boost via `FlyBoost`, HUD status `ToggleStatus`), `core/camera/FreelookState`
+(hold/toggle, pitch clamp, perspective) + `ServerList`, `core/zoom/ZoomState#frame` (curve `1 - e^(-14·t)`,
+spyglass, proportional mouse) and `core/util/FlagOverride` (cinematic camera). Per loader only the key state,
+the camera/FOV hooks that already existed and the fly speed are touched.
 
 Configs written before the key moved are migrated once: if zoom is still on the old default C, it moves to V –
 a key the player bound themselves is never touched.
@@ -232,6 +241,7 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | Treffer-Farbe, niedriges Feuer, Reichweite/Combo, Chat-Tools, Auto-GG, Kein Schadens-Wackeln, Block-Umrandung | Forge 1.14.4 | that build has no Mixin at all – the modules are hidden in the menu |
 | TRS-Startbildschirm | Forge 1.13.2 and 1.7.10 | not ported – the vanilla title screen stays; the menu has the redstone style there too |
 | Alle neuen Module | Forge 1.13.2 and 1.7.10 | not ported yet (see "Open") |
+| Freelook | Forge 1.7.10, 1.13.2, 1.14.4 | no camera hook (no Mixin there) – hidden in the menu; zoom and toggle sprint/sneak incl. fly boost work |
 | TRS-Online-Funktionen, Umhang-Physik | Forge 1.13.2 and 1.7.10 | not ported – hidden in the menu |
 | Umhang-Physik | Fabric/Forge 1.14.4 | the cape is still drawn with fixed GL calls there – the cape stays rigid (TRS capes and badges work on Fabric 1.14.4) |
 | TRS-Umhang, TRS-Abzeichen | Forge 1.14.4 | no Mixin in that build – only login and presence |

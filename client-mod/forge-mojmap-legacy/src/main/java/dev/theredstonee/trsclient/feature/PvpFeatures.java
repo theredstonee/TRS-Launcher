@@ -4,6 +4,9 @@ import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.TrsKeys;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.camera.FreelookState;
+import dev.theredstonee.trsclient.core.camera.ServerList;
+import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.input.MovementToggles;
 import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.pvp.ComboTracker;
@@ -35,9 +38,11 @@ public final class PvpFeatures {
 	private static final int VANILLA_HIT = 0xB2FF0000;
 
 	private final TrsModules modules;
-	private final ToggleState sprint = new ToggleState();
-	private final ToggleState sneak = new ToggleState();
+	/** Toggle-Sprint/-Schleichen + Flug-Boost (Logik in common). */
+	private final MovementToggles toggles;
 	private final FreelookState freelook = new FreelookState();
+	/** Server, auf denen Freelook aus ist (zwischengespeichert). */
+	private final ServerList freelookBlocked = new ServerList();
 	private int cameraBeforeFreelook = -1;
 	/** Nur Selbsttest: Freelook ohne Tastendruck, mit Versatz zum Blick der Spielfigur. */
 	private float forcedFreelookYaw = Float.NaN;
@@ -55,6 +60,7 @@ public final class PvpFeatures {
 
 	public PvpFeatures(TrsModules modules) {
 		this.modules = modules;
+		this.toggles = new MovementToggles(modules);
 	}
 
 	/** Gibt es auf dieser Version Mixins (Freelook, Treffer-Farbe, Reichweite, Combo, Chat …)? */
@@ -67,11 +73,8 @@ public final class PvpFeatures {
 
 	public void tick(Minecraft mc) {
 		boolean inGame = mc.player != null && Mc.screen() == null;
-		tickToggle(sprint, mc.options.keySprint, modules.toggleSprint.isEnabled() && !Mc.vanillaToggleSprint(), inGame);
-		tickToggle(sneak, Mc.sneakKey(), modules.toggleSneak.isEnabled() && !Mc.vanillaToggleCrouch(), inGame);
+		tickToggles(mc, inGame);
 		if (mc.player == null) {
-			sprint.reset();
-			sneak.reset();
 			reach.reset();
 			combo.reset();
 			speed.reset();
@@ -168,25 +171,57 @@ public final class PvpFeatures {
 	}
 
 	/**
-	 * Jeder Druck (clickCount der Taste) schaltet um; aktiv → Taste gilt als gehalten.
-	 * Vanillas eigene Umschalt-Option hat Vorrang (dann ist das Modul wirkungslos).
+	 * Toggle-Sprint/-Schleichen und Flug-Boost: Tastendrücke zählen (clickCount), die Logik in
+	 * {@link MovementToggles} entscheiden lassen und das Ergebnis auf die Vanilla-Tasten bzw. die
+	 * Fluggeschwindigkeit übertragen. Läuft vor der Spieler-Bewegung, damit es im selben Tick wirkt.
 	 */
-	private static void tickToggle(ToggleState state, KeyMapping key, boolean enabled, boolean inGame) {
-		int presses = 0;
-		while (key.consumeClick()) presses++;
-		boolean wasActive = state.active();
-		boolean active = state.update(presses, enabled, !inGame);
-		if (active && inGame) Mc.setDown(key, true);
-		else if (wasActive && !active) Mc.setDown(key, false);
+	private void tickToggles(Minecraft mc, boolean inGame) {
+		KeyMapping sprintKey = mc.options.keySprint;
+		KeyMapping sneakKey = Mc.sneakKey();
+		MovementToggles.Input in = toggles.input().clear();
+		while (sprintKey.consumeClick()) in.sprintPresses++;
+		while (sneakKey.consumeClick()) in.sneakPresses++;
+		Player player = mc.player;
+		if (player != null) {
+			in.hasPlayer = true;
+			in.inGame = inGame;
+			in.dead = player.getHealth() <= 0;
+			// Respawn und Dimensionswechsel erzeugen eine neue Spielfigur bzw. Welt.
+			in.context = System.identityHashCode(player) * 31 + System.identityHashCode(mc.level);
+			in.forwardDown = mc.options.keyUp.isDown();
+			in.sprintKeyDown = sprintKey.isDown();
+			in.sneakKeyDown = sneakKey.isDown();
+			in.vanillaToggleSprint = Mc.vanillaToggleSprint();
+			in.vanillaToggleSneak = Mc.vanillaToggleCrouch();
+			in.creativeFlying = Mc.abilities(player).flying && Mc.abilities(player).instabuild;
+			in.sprinting = player.isSprinting();
+		}
+		toggles.tick();
+		apply(sprintKey, toggles.sprintAction());
+		apply(sneakKey, toggles.sneakAction());
+		if (player != null) {
+			net.minecraft.world.entity.player.Abilities abilities = Mc.abilities(player);
+			float current = abilities.getFlyingSpeed();
+			float wanted = toggles.flySpeed(current);
+			if (wanted != current) abilities.setFlyingSpeed(wanted);
+		}
+	}
+
+	private static void apply(KeyMapping key, int action) {
+		if (action == MovementToggles.PRESS) Mc.setDown(key, true);
+		else if (action == MovementToggles.RELEASE) Mc.setDown(key, false);
 	}
 
 	private void tickFreelook(Minecraft mc, boolean inGame) {
 		boolean forced = !Float.isNaN(forcedFreelookYaw);
-		boolean want = (modules.freelook.isEnabled() && inGame && TrsKeys.freelook.isDown()) || (forced && mc.player != null);
+		boolean blocked = freelookBlocked.contains(Mc.serverAddress(), modules.freelookServers.get());
+		boolean want = freelook.wanted(TrsKeys.freelook.isDown(), modules.freelookToggle.get(), inGame,
+				modules.freelook.isEnabled() && mc.player != null, blocked) || (forced && mc.player != null);
+		if (freelook.consumeBlockedNotice()) Mc.actionBar(I18n.tr("toast.freelookBlocked"));
 		if (want && !freelook.active()) {
 			freelook.start(Mc.yRot(mc.player) + (forced ? forcedFreelookYaw : 0), Mc.xRot(mc.player));
 			cameraBeforeFreelook = Mc.cameraMode();
-			if (Mc.firstPerson()) Mc.setCameraMode(1);
+			Mc.setCameraMode(modules.freelookPerspective.get().cameraMode());
 		} else if (!want && freelook.active()) {
 			freelook.stop();
 			if (cameraBeforeFreelook >= 0) Mc.setCameraMode(cameraBeforeFreelook);
@@ -226,11 +261,15 @@ public final class PvpFeatures {
 	}
 
 	public ToggleState sprint() {
-		return sprint;
+		return toggles.sprint();
 	}
 
 	public ToggleState sneak() {
-		return sneak;
+		return toggles.sneak();
+	}
+
+	public MovementToggles toggles() {
+		return toggles;
 	}
 
 	public FreelookState freelook() {

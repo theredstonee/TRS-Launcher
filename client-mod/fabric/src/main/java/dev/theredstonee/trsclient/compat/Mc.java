@@ -278,6 +278,31 @@ public final class Mc {
 		/*return mc().options.attackIndicator == AttackIndicatorStatus.CROSSHAIR;*/
 	}
 
+	/** Fähigkeiten der Spielfigur (Fliegen, Kreativ, Fluggeschwindigkeit); bis 1.16 ein Feld. */
+	public static net.minecraft.world.entity.player.Abilities abilities(Player p) {
+		//? if >=1.17 {
+		return p.getAbilities();
+		//?} else
+		/*return p.abilities;*/
+	}
+
+	/** Schaut die Spielfigur durch ein Fernrohr? (Fernrohr gibt es ab 1.17) */
+	public static boolean scoping() {
+		//? if >=1.17 {
+		return mc().player != null && mc().player.isScoping();
+		//?} else
+		/*return false;*/
+	}
+
+	/** Vanillas filmische Kamera (F8 bzw. Taste „Filmische Kamera“). */
+	public static boolean smoothCamera() {
+		return mc().options.smoothCamera;
+	}
+
+	public static void setSmoothCamera(boolean on) {
+		mc().options.smoothCamera = on;
+	}
+
 	/** Perspektive: 0 = Ego, 1 = von hinten, 2 = von vorne. */
 	public static int cameraMode() {
 		//? if >=1.16 {

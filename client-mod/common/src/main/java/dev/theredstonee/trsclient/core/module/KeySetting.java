@@ -12,8 +12,21 @@ public final class KeySetting extends Setting {
 	/** Keine Taste belegt. */
 	public static final String NONE = "key.keyboard.unknown";
 
+	/**
+	 * Verbindung zu einer Vanilla-Tastenbelegung (Zoom, Freelook): die Taste gehört dann den
+	 * Minecraft-Steuerungen (options.txt) und ist dort wie im TRS-Menü änderbar – eine Quelle.
+	 */
+	public interface Link {
+		/** Aktuelle Belegung als Tastenname ({@code "key.keyboard.v"}). */
+		String get();
+
+		/** Neue Belegung ({@link #NONE} = unbelegt); speichert die Minecraft-Optionen. */
+		void set(String keyName);
+	}
+
 	private final String defaultKey;
 	private String keyName;
+	private Link link;
 
 	public KeySetting(String key, String label, String defaultKey) {
 		super(key, label);
@@ -26,21 +39,47 @@ public final class KeySetting extends Setting {
 		this(key, label, NONE);
 	}
 
+	/**
+	 * Verbindet die Einstellung mit einer Vanilla-Tastenbelegung (vom Loader beim Start gesetzt).
+	 * Ohne Verbindung (z. B. in Tests) speichert die Einstellung die Taste selbst.
+	 */
+	public void link(Link link) {
+		this.link = link;
+	}
+
+	public boolean isLinked() {
+		return link != null;
+	}
+
+	/** Standard-Taste. */
+	public String defaultKey() {
+		return defaultKey;
+	}
+
 	/** Tastenname, z. B. {@code "key.keyboard.v"}; {@link #NONE} = unbelegt. */
 	public String get() {
+		if (link != null) {
+			try {
+				String v = link.get();
+				return valid(v) ? v : NONE;
+			} catch (RuntimeException e) {
+				return NONE;
+			}
+		}
 		return keyName;
 	}
 
 	public boolean isBound() {
-		return !NONE.equals(keyName);
+		return !NONE.equals(get());
 	}
 
 	public void set(String keyName) {
 		this.keyName = valid(keyName) ? keyName : NONE;
+		if (link != null) link.set(this.keyName);
 	}
 
 	public void unbind() {
-		keyName = NONE;
+		set(NONE);
 	}
 
 	/** Nur Namen der Form {@code key.keyboard.*} / {@code key.mouse.*} mit harmlosen Zeichen. */
@@ -56,17 +95,21 @@ public final class KeySetting extends Setting {
 
 	@Override
 	public void read(ModuleConfig config) {
+		// Verbundene Tasten stehen in Minecrafts options.txt, nicht in der TRS-Config.
+		if (link != null) return;
 		String v = config.keys.get(key());
 		keyName = valid(v) ? v : defaultKey;
 	}
 
 	@Override
 	public void write(ModuleConfig config) {
+		if (link != null) return;
 		config.keys.put(key(), keyName);
 	}
 
 	@Override
 	public void reset() {
 		keyName = defaultKey;
+		if (link != null) link.set(defaultKey);
 	}
 }

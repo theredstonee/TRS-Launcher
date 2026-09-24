@@ -64,4 +64,29 @@ public final class TrsKeys {
 		event.register(mapping);
 		return mapping;
 	}
+
+	/**
+	 * Verbindung einer Modul-Tasteneinstellung (TRS-Menü) mit einer Vanilla-Tastenbelegung: gelesen und
+	 * geschrieben wird die Belegung selbst (gespeichert in options.txt). Die Belegung wird erst beim
+	 * Aufruf geholt, weil sie je nach Loader erst später angelegt wird.
+	 */
+	public static dev.theredstonee.trsclient.core.module.KeySetting.Link link(final java.util.function.Supplier<KeyMapping> mapping) {
+		return new dev.theredstonee.trsclient.core.module.KeySetting.Link() {
+			@Override
+			public String get() {
+				KeyMapping m = mapping.get();
+				return m == null ? dev.theredstonee.trsclient.core.module.KeySetting.NONE : m.saveString();
+			}
+
+			@Override
+			public void set(String keyName) {
+				KeyMapping m = mapping.get();
+				if (m == null) return;
+				m.setKey(InputConstants.getKey(keyName));
+				KeyMapping.resetMapping();
+				net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+				if (mc != null && mc.options != null) mc.options.save();
+			}
+		};
+	}
 }

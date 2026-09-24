@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.feature;
 
+import dev.theredstonee.trsclient.core.input.MovementToggles;
 import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import net.minecraft.client.Minecraft;
@@ -16,36 +17,56 @@ import org.lwjgl.glfw.GLFW;
  */
 public final class PvpFeatures {
 	private final TrsModules modules;
-	private final ToggleState sprint = new ToggleState();
-	private final ToggleState sneak = new ToggleState();
+	/** Toggle-Sprint/-Schleichen + Flug-Boost (Logik in common). */
+	private final MovementToggles toggles;
 	private boolean sprintHeld;
 	private boolean sneakHeld;
 
 	public PvpFeatures(TrsModules modules) {
 		this.modules = modules;
+		this.toggles = new MovementToggles(modules);
 	}
 
-	/** Anfang des Client-Ticks: Tastendrücke seit dem letzten Tick zählen und umschalten. */
+	/**
+	 * Anfang des Client-Ticks: Tastendrücke seit dem letzten Tick zählen und die Logik in
+	 * {@link MovementToggles} entscheiden lassen (Umschalten, Tod/Weltwechsel, Flug-Boost).
+	 */
 	public void countPresses(Minecraft mc) {
-		boolean inGame = mc.player != null && mc.currentScreen == null;
-		sprintHeld = tick(mc, sprint, mc.gameSettings.keyBindSprint, modules.toggleSprint.isEnabled(), inGame, sprintHeld);
-		sneakHeld = tick(mc, sneak, mc.gameSettings.keyBindSneak, modules.toggleSneak.isEnabled(), inGame, sneakHeld);
-		if (mc.player == null) {
-			sprint.reset();
-			sneak.reset();
-		}
-	}
-
-	private static boolean tick(Minecraft mc, ToggleState state, KeyBinding key, boolean enabled, boolean inGame, boolean held) {
-		int presses = 0;
+		net.minecraft.entity.player.EntityPlayer player = mc.player;
+		boolean inGame = player != null && mc.currentScreen == null;
+		KeyBinding sprintKey = mc.gameSettings.keyBindSprint;
+		KeyBinding sneakKey = mc.gameSettings.keyBindSneak;
+		MovementToggles.Input in = toggles.input().clear();
 		// isPressed() verbraucht nur den Klick-Zähler; Vanilla liest Sprint/Schleichen über isKeyDown().
-		while (key.isPressed()) presses++;
-		boolean active = state.update(presses, enabled, !inGame);
-		if (held && !active) {
-			// Umschaltung beendet → echten Tastenzustand wiederherstellen.
-			KeyBinding.setKeyBindState(key.getKey(), physicallyDown(mc, key.getKey()));
+		while (sprintKey.isPressed()) in.sprintPresses++;
+		while (sneakKey.isPressed()) in.sneakPresses++;
+		if (player != null) {
+			in.hasPlayer = true;
+			in.inGame = inGame;
+			in.dead = player.getHealth() <= 0;
+			// Respawn und Dimensionswechsel erzeugen eine neue Spielfigur bzw. Welt.
+			in.context = System.identityHashCode(player) * 31 + System.identityHashCode(mc.world);
+			in.forwardDown = mc.gameSettings.keyBindForward.isKeyDown();
+			in.sprintKeyDown = sprintKey.isKeyDown();
+			in.sneakKeyDown = sneakKey.isKeyDown();
+			in.creativeFlying = player.abilities.isFlying && player.abilities.isCreativeMode;
+			in.sprinting = player.isSprinting();
 		}
-		return active;
+		toggles.tick();
+		sprintHeld = toggles.sprintAction() == MovementToggles.PRESS;
+		sneakHeld = toggles.sneakAction() == MovementToggles.PRESS;
+		// Umschaltung beendet → echten Tastenzustand wiederherstellen.
+		if (toggles.sprintAction() == MovementToggles.RELEASE) {
+			KeyBinding.setKeyBindState(sprintKey.getKey(), physicallyDown(mc, sprintKey.getKey()));
+		}
+		if (toggles.sneakAction() == MovementToggles.RELEASE) {
+			KeyBinding.setKeyBindState(sneakKey.getKey(), physicallyDown(mc, sneakKey.getKey()));
+		}
+		if (player != null) {
+			float current = player.abilities.getFlySpeed();
+			float wanted = toggles.flySpeed(current);
+			if (wanted != current) player.abilities.setFlySpeed(wanted);
+		}
 	}
 
 	/** Direkt vor der Bewegungs-Auswertung des Spielers: umgeschaltete Tasten als gehalten markieren. */
@@ -64,10 +85,14 @@ public final class PvpFeatures {
 	}
 
 	public ToggleState sprint() {
-		return sprint;
+		return toggles.sprint();
 	}
 
 	public ToggleState sneak() {
-		return sneak;
+		return toggles.sneak();
+	}
+
+	public MovementToggles toggles() {
+		return toggles;
 	}
 }

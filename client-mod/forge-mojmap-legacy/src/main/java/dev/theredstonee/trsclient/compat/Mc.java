@@ -200,6 +200,31 @@ public final class Mc {
 		mc().options.gamma = value;
 	}
 
+	/** Fähigkeiten der Spielfigur (Fliegen, Kreativ, Fluggeschwindigkeit); bis 1.16 ein Feld. */
+	public static net.minecraft.world.entity.player.Abilities abilities(Player p) {
+		//? if >=1.17 {
+		/*return p.getAbilities();
+		*///?} else
+		return p.abilities;
+	}
+
+	/** Schaut die Spielfigur durch ein Fernrohr? (Fernrohr gibt es ab 1.17) */
+	public static boolean scoping() {
+		//? if >=1.17 {
+		/*return mc().player != null && mc().player.isScoping();
+		*///?} else
+		return false;
+	}
+
+	/** Vanillas filmische Kamera. */
+	public static boolean smoothCamera() {
+		return mc().options.smoothCamera;
+	}
+
+	public static void setSmoothCamera(boolean on) {
+		mc().options.smoothCamera = on;
+	}
+
 	// --- Kamera-Perspektive (bis 1.15.2 ein int, ab 1.16 CameraType) ---
 
 	/** 0 = Ego-Perspektive, 1 = dritte Person hinten, 2 = dritte Person vorne. */

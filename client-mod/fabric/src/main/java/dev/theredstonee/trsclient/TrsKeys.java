@@ -57,6 +57,27 @@ public final class TrsKeys {
 		return true;
 	}
 
+	/**
+	 * Verbindung einer Modul-Tasteneinstellung (TRS-Menü) mit einer Vanilla-Tastenbelegung:
+	 * gelesen/geschrieben wird die Belegung selbst, gespeichert in Minecrafts options.txt.
+	 */
+	public static dev.theredstonee.trsclient.core.module.KeySetting.Link link(final KeyMapping mapping) {
+		return new dev.theredstonee.trsclient.core.module.KeySetting.Link() {
+			@Override
+			public String get() {
+				return mapping.saveString();
+			}
+
+			@Override
+			public void set(String keyName) {
+				mapping.setKey(InputConstants.getKey(keyName));
+				KeyMapping.resetMapping();
+				net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+				if (mc != null && mc.options != null) mc.options.save();
+			}
+		};
+	}
+
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */
 	public static int boundKey(KeyMapping mapping) {
 		//? if >=26.1 {
