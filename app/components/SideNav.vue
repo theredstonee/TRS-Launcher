@@ -19,6 +19,7 @@ const items: NavItem[] = [
   { to: '/', label: 'nav.home', icon: 'home' },
   { to: '/instances', label: 'nav.library', icon: 'library' },
   { to: '/browse', label: 'nav.discover', icon: 'compass' },
+  { to: '/presets', label: 'nav.presets', icon: 'presets' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },

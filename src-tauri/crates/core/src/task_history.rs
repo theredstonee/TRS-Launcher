@@ -36,6 +36,7 @@ pub enum TaskKind {
     Content,
     ContentUpdate,
     PerformancePack,
+    Presets,
     Java,
     Import,
     Export,

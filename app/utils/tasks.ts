@@ -9,6 +9,7 @@ const taskKindKeys: Record<TaskKind, MessageKey> = {
   content: 'tasks.kind.content',
   'content-update': 'tasks.kind.contentUpdate',
   'performance-pack': 'tasks.kind.performancePack',
+  presets: 'tasks.kind.presets',
   java: 'tasks.kind.java',
   import: 'tasks.kind.import',
   export: 'tasks.kind.export',

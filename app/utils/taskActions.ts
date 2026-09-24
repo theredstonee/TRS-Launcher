@@ -75,6 +75,8 @@ export function installModpackTask(
       const instance = await backend.installModpack(pack.projectId, onProgress, ctx.taskId)
       ctx.update({ instanceId: instance.id, doneText: t('tasks.toast.modpackReady', { name: instance.name }) })
       await instances.load()
+      // Presets mit „immer automatisch“ laufen danach als eigene Aufgabe.
+      void applyAutoPresetsTask(instance)
       return instance
     },
   )
@@ -173,4 +175,67 @@ export function installContentTask(options: {
       return files
     },
   )
+}
+
+export function presetsTaskKey(instanceId: string): string {
+  return taskKey('presets', instanceId)
+}
+
+/**
+ * Presets in eine Instanz installieren (abbrechbar). Am Ende genau ein Toast
+ * mit Zusammenfassung („3 von 4 installiert – …“) und „Details“.
+ */
+export async function applyPresetsTask(instance: Pick<Instance, 'id' | 'name'>, presetIds: string[]) {
+  if (!presetIds.length) return null
+  const presets = usePresetsStore()
+  const toasts = useToasts()
+  const title = t('presets.task.title', { name: instance.name })
+  const result = await useTasksStore().run(
+    {
+      key: presetsTaskKey(instance.id),
+      kind: 'presets',
+      title,
+      stage: t('presets.task.preparing'),
+      instanceId: instance.id,
+      cancellable: true,
+      pausable: true,
+      // Den Toast mit „Details“ schicken wir selbst.
+      notify: false,
+    },
+    async (ctx) => {
+      const report = await backend.applyPresets(
+        instance.id,
+        presetIds,
+        (p) => ctx.progress(presetPercent(p), presetStage(p)),
+        ctx.taskId,
+      )
+      ctx.update({ doneText: presetSummaryText(report) })
+      return report
+    },
+  )
+  if (result.ok) {
+    const report = result.value
+    const action = { label: t('presets.report.details'), run: () => presets.openReport(report, instance) }
+    const text = `${instance.name}: ${presetSummaryText(report)}`
+    if (summarizePresetReport(report).problems.length) toasts.info(text, action)
+    else toasts.ok(text, action)
+  } else if (!result.cancelled && !result.discarded) {
+    toasts.error(t('tasks.toast.failed', { title, error: errorMessage(result.error) }))
+  }
+  return result
+}
+
+/**
+ * Nach einem neuen Modpack: Presets mit „immer automatisch“ ergänzen – nur
+ * solche, die sich mit Modpacks vertragen (kein FPS-Boost).
+ */
+export async function applyAutoPresetsTask(instance: Pick<Instance, 'id' | 'name' | 'loader'>) {
+  const presets = usePresetsStore()
+  try {
+    await presets.load()
+  } catch {
+    return null
+  }
+  const ids = defaultPresetSelection(presets.items, { loader: instance.loader.kind, context: 'modpack' })
+  return applyPresetsTask(instance, ids)
 }

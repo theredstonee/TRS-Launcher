@@ -526,6 +526,18 @@
       "notAModpack": "To nie jest modpack z CurseForge.",
       "packFileMissing": "Jednego z plików modpacka nie ma już na CurseForge (projekt {project}).",
       "packBlocked": "Autor „{name}” nie pozwala na pobieranie przez inne aplikacje – pobierz modpack na CurseForge i zaimportuj go tutaj."
+    },
+    "presets": {
+      "nameLength": "Nazwa musi mieć od 1 do {max} znaków.",
+      "invalidProject": "Nieprawidłowy projekt w presecie.",
+      "tooManyItems": "Preset może mieć najwyżej {max} pozycji.",
+      "notFound": "Ten preset już nie istnieje.",
+      "builtinReadOnly": "Presetów TRS nie można zmieniać ani usuwać.",
+      "tooMany": "Więcej niż {max} własnych presetów nie jest obsługiwane.",
+      "invalidOrder": "Kolejność nie pasuje do listy presetów.",
+      "invalidFile": "To nie jest prawidłowy plik presetu.",
+      "fileTooLarge": "Plik presetu jest za duży.",
+      "noneSelected": "Nie wybrano żadnego presetu."
     }
   },
   "browse": {
@@ -820,14 +832,6 @@
       "done": "Zainstalowano {n} aktualizację | Zainstalowano {n} aktualizacje | Zainstalowano {n} aktualizacji",
       "partial": "Nie powiodła się {failed} z {total} aktualizacji. | Nie powiodły się {failed} z {total} aktualizacji. | Nie powiodło się {failed} z {total} aktualizacji."
     },
-    "perfPack": {
-      "taskTitle": "Pakiet wydajności dla {name}",
-      "stage": "Wczytywanie modów",
-      "done": "Zainstalowano pakiet wydajności ({n} plik) | Zainstalowano pakiet wydajności ({n} pliki) | Zainstalowano pakiet wydajności ({n} plików)",
-      "title": "Sodium, Lithium i spółka – tylko to, co jest dostępne dla tej wersji",
-      "installing": "Instalowanie pakietu wydajności …",
-      "button": "+ Pakiet wydajności"
-    },
     "toolbar": {
       "searchPlaceholder": "Szukaj w {n} projekcie … | Szukaj w {n} projektach … | Szukaj w {n} projektach …",
       "searchLabel": "Szukaj projektów",
@@ -1103,7 +1107,12 @@
       "reinstallTitle": "Zainstaluj ponownie",
       "reinstallDescription": "Pobiera od nowa wersję gry, mod loader i biblioteki. Światy, mody i ustawienia zostają zachowane.",
       "reinstallConfirmTitle": "Zainstalować ponownie?",
-      "reinstallConfirmText": "Wersja gry i biblioteki zostaną pobrane ponownie. Światy, mody i ustawienia zostają zachowane."
+      "reinstallConfirmText": "Wersja gry i biblioteki zostaną pobrane ponownie. Światy, mody i ustawienia zostają zachowane.",
+      "tuningTitle": "Zwiększenie FPS przy starcie",
+      "tuningDescription": "Dostrojone ustawienia Javy dla większej liczby FPS i mniejszej liczby przycięć. Własne argumenty JVM mają pierwszeństwo.",
+      "tuningGlobal": "Jak globalnie ({state})",
+      "tuningOn": "Wł.",
+      "tuningOff": "Wył."
     },
     "window": {
       "customTitle": "Własne ustawienia okna",
@@ -1491,7 +1500,11 @@
       "windowWidth": "Szerokość okna",
       "windowHeight": "Wysokość okna",
       "dedicatedGpuTitle": "Wydajna karta graficzna",
-      "dedicatedGpuDescription": "Dla laptopów z dwoma układami graficznymi: Windows przydziela grze dedykowany GPU."
+      "dedicatedGpuDescription": "Minecraft korzysta z dedykowanej karty graficznej (ważne w laptopach). Dotyczy tylko Javy launchera i jest cofane po wyłączeniu.",
+      "tuningTitle": "Zwiększenie FPS przy starcie",
+      "tuningDescription": "Dostrojone ustawienia Javy dla twojej wersji Javy i pamięci (ZGC lub G1, pamięć zarezerwowana od razu). Tylko bez własnych argumentów JVM.",
+      "priorityTitle": "Wyższy priorytet procesu",
+      "priorityDescription": "Uruchamia grę z priorytetem „Powyżej normalnego” – może zmniejszyć przycięcia, gdy inne programy są zajęte."
     },
     "hooks": {
       "title": "Hooki uruchamiania",
@@ -1793,7 +1806,8 @@
     "collapseLabel": "Zwiń pasek boczny",
     "expandLabel": "Rozwiń pasek boczny",
     "collapse": "Zwiń",
-    "expand": "Rozwiń"
+    "expand": "Rozwiń",
+    "presets": "Presety"
   },
   "accountMenu": {
     "menuLabel": "Konta",
@@ -1917,7 +1931,8 @@
       "repair": "Naprawiono instancję",
       "reinstall": "Zainstalowano ponownie",
       "versionChange": "Zmieniono wersję",
-      "launch": "Uruchomienie gry"
+      "launch": "Uruchomienie gry",
+      "presets": "Zainstalowano presety"
     },
     "stage": {
       "preparing": "Przygotowywanie",
@@ -2493,6 +2508,113 @@
       "allDone": "Wszystkie pliki są na miejscu.",
       "banner": "{count} plik musisz pobrać ręcznie z CurseForge. | {count} pliki musisz pobrać ręcznie z CurseForge. | {count} plików musisz pobrać ręcznie z CurseForge.",
       "show": "Pokaż"
+    }
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Zawsze automatycznie",
+    "autoHint": "Wstępnie zaznaczony dla każdej nowej instancji – i dodawany do nowych modpacków, gdy pasuje.",
+    "itemCount": "{n} projekt | {n} projekty | {n} projektów",
+    "builtin": {
+      "fpsBoost": {
+        "name": "Zwiększenie FPS",
+        "description": "Sodium lub Embeddium, Lithium, FerriteCore, ModernFix i inne – to, co pasuje do wersji i loadera"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Renderuje teren za pomocą mesh shaderów – dla twojej karty NVIDIA (Fabric, wymaga Sodium)"
+      },
+      "voiceChat": {
+        "name": "Czat głosowy",
+        "description": "Simple Voice Chat – rozmawiaj z graczami w pobliżu na serwerach, które go obsługują"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback, jeśli dostępny, w przeciwnym razie ReplayMod – nagrywaj i montuj rozgrywkę"
+      }
+    },
+    "picker": {
+      "title": "Presety",
+      "manage": "Zarządzaj presetami",
+      "vanillaBoost": "Vanilla dostaje to już przez optymalizację TRS",
+      "needsLoader": "Mody wymagają loadera modów – w instancji vanilla instalowane są tylko paczki zasobów i shadery.",
+      "useFabric": "Użyj Fabric"
+    },
+    "apply": {
+      "title": "Zastosuj preset",
+      "intro": "Instalowane jest wszystko, co jest dostępne dla {name} ({version}, {loader}) – razem z wymaganymi zależnościami. Reszta jest pomijana.",
+      "running": "Do tej instancji są już instalowane presety.",
+      "install": "Zainstaluj {n} preset | Zainstaluj {n} presety | Zainstaluj {n} presetów",
+      "button": "+ Zastosuj preset",
+      "buttonTitle": "Zainstaluj presety modów (np. zwiększenie FPS, czat głosowy) – tylko to, co jest dostępne dla tej wersji",
+      "installing": "Instalowanie presetów …"
+    },
+    "report": {
+      "title": "Presety dla {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "plus {n} zależność | plus {n} zależności | plus {n} zależności",
+      "skipped": "Pominięte ({n}) | Pominięte ({n}) | Pominięte ({n})",
+      "included": "Uwzględnione ({n}) | Uwzględnione ({n}) | Uwzględnione ({n})",
+      "notNeeded": "{n} element zwiększenia FPS nie jest przeznaczony dla tej wersji | {n} elementy zwiększenia FPS nie są przeznaczone dla tej wersji | {n} elementów zwiększenia FPS nie jest przeznaczonych dla tej wersji",
+      "nothing": "Nic do zainstalowania",
+      "allDone": "Zainstalowano {n} projekt | Zainstalowano wszystkie {n} projekty | Zainstalowano wszystkie {n} projektów",
+      "partial": "Zainstalowano {done} z {total}",
+      "more": "(+{n} kolejny) | (+{n} kolejne) | (+{n} kolejnych)",
+      "details": "Szczegóły"
+    },
+    "reason": {
+      "installed": "Zainstalowano",
+      "alreadyInstalled": "Był już zainstalowany",
+      "duplicate": "Już dodany przez inny preset",
+      "notAvailable": "{title} nie jest dostępny dla {version}",
+      "notAvailableLoader": "{title} nie jest dostępny dla {version} ({loader})",
+      "missingDependency": "{title} wymaga {dependency}, który nie jest dostępny dla tej wersji",
+      "incompatible": "{title} nie działa razem z {other}",
+      "needsLoader": "{title} wymaga loadera modów",
+      "failed": "Nie udało się pobrać {title}"
+    },
+    "status": {
+      "installed": "Zainstalowano",
+      "alreadyInstalled": "Już jest",
+      "duplicate": "Uwzględniony",
+      "skipped": "Pominięty"
+    },
+    "task": {
+      "title": "Presety dla {name}",
+      "preparing": "Przygotowywanie …",
+      "resolving": "Sprawdzanie wersji ({done}/{total})",
+      "installing": "Pobieranie {title} ({done}/{total})",
+      "finishing": "Kończenie"
+    },
+    "editor": {
+      "newTitle": "Nowy preset",
+      "editTitle": "Edytuj preset",
+      "namePlaceholder": "np. Moje podstawy",
+      "contents": "Zawartość ({n}) | Zawartość ({n}) | Zawartość ({n})",
+      "remove": "Usuń {title}",
+      "empty": "Jeszcze pusto – dodaj projekty z wyszukiwarki.",
+      "searchPlaceholder": "Szukaj na Modrinth …",
+      "searchLabel": "Szukaj projektów",
+      "added": "Dodano",
+      "add": "Dodaj",
+      "noResults": "Brak wyników",
+      "hint": "Presety nie zależą od wersji: przy instalacji dla każdej instancji wybierana jest pasująca wersja – czego nie ma, zostaje pominięte.",
+      "tooManyItems": "Najwyżej {max} pozycji na preset",
+      "duplicate": "Każdy projekt może być w presecie tylko raz"
+    },
+    "page": {
+      "title": "Presety",
+      "subtitle": "Mody, które chcesz zawsze – instalowane automatycznie tam, gdzie są dostępne",
+      "new": "Nowy preset",
+      "exported": "Zapisano „{name}”",
+      "deleted": "Usunięto „{name}”",
+      "imported": "Zaimportowano „{name}”",
+      "emptyPreset": "Brak projektów",
+      "builtinHint": "Launcher aktualizuje presety TRS. W każdej chwili możesz je włączyć lub wyłączyć dla nowych instancji.",
+      "confirmDelete": "Na pewno usunąć?",
+      "moveUp": "W górę",
+      "moveDown": "W dół",
+      "footer": "Udostępniaj presety znajomym przez Eksportuj – mogą wczytać plik przez Importuj."
     }
   }
 }

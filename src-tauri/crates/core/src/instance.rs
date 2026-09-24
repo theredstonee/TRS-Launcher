@@ -61,6 +61,8 @@ pub struct InstanceOverrides {
     pub trs_client: Option<bool>,
     /// TRS-Optimierung (nur Vanilla): Fabric + Performance-Mods; `None` = an.
     pub boost: Option<bool>,
+    /// FPS-Boost beim Start (JVM-Abstimmung); `None` = globale Einstellung.
+    pub performance_tuning: Option<bool>,
     /// Welche Modrinth-Versionen Updates und „neueste passende“ nehmen;
     /// `None` = nur stabile.
     pub update_channel: Option<UpdateChannel>,

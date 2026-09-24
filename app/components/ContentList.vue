@@ -20,13 +20,13 @@ const toasts = useToasts()
 const updates = ref<ContentUpdate[] | null>(null)
 const checking = ref(false)
 const localBulk = ref<string | null>(null)
-// Updates und Performance-Paket laufen als Aufgaben weiter, auch wenn die Seite wechselt.
+// Updates und Presets laufen als Aufgaben weiter, auch wenn die Seite wechselt.
 const tasks = useTasksStore()
 const updatesKey = computed(() => taskKey('updates', props.instance.id))
-const packKey = computed(() => taskKey('perf', props.instance.id))
 const updatesTask = computed(() => tasks.get(updatesKey.value))
 const bulkBusy = computed(() => (updatesTask.value?.status === 'running' ? 'update' : localBulk.value))
-const packBusy = computed(() => tasks.isRunning(packKey.value))
+const presetsBusy = computed(() => tasks.isRunning(presetsTaskKey(props.instance.id)))
+const applyingPreset = ref(false)
 /** Wird die Datei gerade aktualisiert bzw. gewechselt? */
 function isBusy(item: ContentItem): boolean {
   if (updatesTask.value?.status === 'running' && updatesTask.value.tag === item.fileName) return true
@@ -47,7 +47,7 @@ const finishedHere = computed(
     Object.values(tasks.tasks).filter(
       (task) =>
         task.instanceId === props.instance.id &&
-        (task.kind === 'content' || task.kind === 'content-update' || task.kind === 'performance-pack') &&
+        (task.kind === 'content' || task.kind === 'content-update' || task.kind === 'performance-pack' || task.kind === 'presets') &&
         task.status !== 'running',
     ).length,
 )
@@ -254,24 +254,6 @@ async function confirmDelete() {
   }
 }
 
-function installPerformancePack() {
-  const instance = props.instance
-  tasks.run(
-    {
-      key: packKey.value,
-      kind: 'performance-pack',
-      title: t('content.perfPack.taskTitle', { name: instance.name }),
-      stage: t('content.perfPack.stage'),
-      instanceId: instance.id,
-    },
-    async (ctx) => {
-      const files = await backend.installPerformancePack(instance.id, ctx.taskId)
-      ctx.update({ doneText: t('content.perfPack.done', files.length) })
-      return files
-    },
-  )
-}
-
 // --- Dateien hinzufügen ------------------------------------------------------------
 function reportUploads(results: UploadResult[]) {
   const ok = results.filter((r) => !r.error)
@@ -357,8 +339,8 @@ const pendingUpdates = computed(() => updates.value ?? [])
       <button v-for="k in chips" :key="k" class="filter-chip" :class="{ 'filter-chip-on': filter === k }" @click="filter = k">
         {{ contentKindLabel(k) }} <span class="opacity-60">{{ counts[k] }}</span>
       </button>
-      <button v-if="!isVanilla" class="ml-auto text-xs text-base-400 hover:text-base-50 disabled:opacity-50" :disabled="packBusy" :title="t('content.perfPack.title')" @click="installPerformancePack">
-        {{ packBusy ? t('content.perfPack.installing') : t('content.perfPack.button') }}
+      <button class="ml-auto text-xs text-base-400 hover:text-base-50 disabled:opacity-50" :disabled="presetsBusy" :title="t('presets.apply.buttonTitle')" @click="applyingPreset = true">
+        {{ presetsBusy ? t('presets.apply.installing') : t('presets.apply.button') }}
       </button>
     </div>
 
@@ -527,6 +509,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
 
     <ChangelogDialog v-if="changelogFor?.source" :instance="instance" :item="changelogFor" @close="changelogFor = null" @install="switchVersion(changelogFor!, $event)" />
 
+    <ApplyPresetDialog v-if="applyingPreset" :instance="instance" @close="applyingPreset = false" />
     <BaseDialog
       v-if="toDelete"
       :title="toDelete.length === 1 ? t('content.deleteDialog.titleOne') : t('content.deleteDialog.titleMany', toDelete.length)"

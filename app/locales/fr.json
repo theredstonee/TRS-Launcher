@@ -526,6 +526,18 @@
       "notAModpack": "Ce n'est pas un modpack CurseForge.",
       "packFileMissing": "Un fichier du modpack n'existe plus sur CurseForge (projet {project}).",
       "packBlocked": "L'auteur de « {name} » n'autorise pas les téléchargements via d'autres applications – télécharge le modpack sur CurseForge et importe-le ici."
+    },
+    "presets": {
+      "nameLength": "Le nom doit contenir entre 1 et {max} caractères.",
+      "invalidProject": "Projet non valide dans le préréglage.",
+      "tooManyItems": "Un préréglage peut contenir au maximum {max} entrées.",
+      "notFound": "Ce préréglage n’existe plus.",
+      "builtinReadOnly": "Les préréglages TRS ne peuvent être ni modifiés ni supprimés.",
+      "tooMany": "Plus de {max} préréglages personnels ne sont pas pris en charge.",
+      "invalidOrder": "L’ordre ne correspond pas à la liste des préréglages.",
+      "invalidFile": "Ce n’est pas un fichier de préréglage valide.",
+      "fileTooLarge": "Le fichier de préréglage est trop volumineux.",
+      "noneSelected": "Aucun préréglage sélectionné."
     }
   },
   "browse": {
@@ -820,14 +832,6 @@
       "done": "{n} mise à jour installée | {n} mises à jour installées",
       "partial": "{failed} mise à jour sur {total} a échoué. | {failed} mises à jour sur {total} ont échoué."
     },
-    "perfPack": {
-      "taskTitle": "Pack de performance pour {name}",
-      "stage": "Chargement des mods",
-      "done": "Pack de performance installé ({n} fichier) | Pack de performance installé ({n} fichiers)",
-      "title": "Sodium, Lithium & Co. – uniquement ce qui est disponible pour cette version",
-      "installing": "Installation du pack de performance…",
-      "button": "+ Pack de performance"
-    },
     "toolbar": {
       "searchPlaceholder": "Rechercher parmi {n} projet… | Rechercher parmi {n} projets…",
       "searchLabel": "Rechercher des projets",
@@ -1103,7 +1107,12 @@
       "reinstallTitle": "Réinstaller",
       "reinstallDescription": "Retélécharge entièrement la version du jeu, le chargeur de mods et les bibliothèques. Les mondes, mods et paramètres sont conservés.",
       "reinstallConfirmTitle": "Réinstaller ?",
-      "reinstallConfirmText": "La version du jeu et les bibliothèques seront retéléchargées. Les mondes, mods et paramètres sont conservés."
+      "reinstallConfirmText": "La version du jeu et les bibliothèques seront retéléchargées. Les mondes, mods et paramètres sont conservés.",
+      "tuningTitle": "Boost FPS au lancement",
+      "tuningDescription": "Réglages Java pour plus de FPS et moins de saccades. Les arguments JVM personnalisés sont prioritaires.",
+      "tuningGlobal": "Comme le réglage global ({state})",
+      "tuningOn": "Activé",
+      "tuningOff": "Désactivé"
     },
     "window": {
       "customTitle": "Paramètres de fenêtre personnalisés",
@@ -1491,7 +1500,11 @@
       "windowWidth": "Largeur de la fenêtre",
       "windowHeight": "Hauteur de la fenêtre",
       "dedicatedGpuTitle": "Carte graphique hautes performances",
-      "dedicatedGpuDescription": "Pour les portables à deux puces graphiques : Windows attribue au jeu le GPU dédié."
+      "dedicatedGpuDescription": "Minecraft utilise la carte graphique dédiée (important sur les portables). Ne concerne que le Java du launcher et est annulé si vous le désactivez.",
+      "tuningTitle": "Boost FPS au lancement",
+      "tuningDescription": "Réglages Java adaptés à votre version de Java et à la mémoire (ZGC ou G1, mémoire réservée dès le départ). Uniquement sans arguments JVM personnalisés.",
+      "priorityTitle": "Priorité de processus plus élevée",
+      "priorityDescription": "Lance le jeu avec la priorité « Supérieure à la normale » – peut lisser les saccades quand d’autres programmes travaillent."
     },
     "hooks": {
       "title": "Hooks de lancement",
@@ -1793,7 +1806,8 @@
     "collapseLabel": "Réduire la barre latérale",
     "expandLabel": "Déplier la barre latérale",
     "collapse": "Réduire",
-    "expand": "Déplier"
+    "expand": "Déplier",
+    "presets": "Préréglages"
   },
   "accountMenu": {
     "menuLabel": "Comptes",
@@ -1917,7 +1931,8 @@
       "repair": "Instance réparée",
       "reinstall": "Réinstallée",
       "versionChange": "Version changée",
-      "launch": "Lancement du jeu"
+      "launch": "Lancement du jeu",
+      "presets": "Préréglages installés"
     },
     "stage": {
       "preparing": "Préparation",
@@ -2493,6 +2508,113 @@
       "allDone": "Tous les fichiers sont en place.",
       "banner": "{count} fichier doit être téléchargé à la main sur CurseForge. | {count} fichiers doivent être téléchargés à la main sur CurseForge.",
       "show": "Afficher"
+    }
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Toujours automatique",
+    "autoHint": "Présélectionné pour chaque nouvelle instance – et ajouté aux nouveaux modpacks quand c’est adapté.",
+    "itemCount": "{n} projet | {n} projets",
+    "builtin": {
+      "fpsBoost": {
+        "name": "Boost FPS",
+        "description": "Sodium ou Embeddium, Lithium, FerriteCore, ModernFix et plus – selon la version et le loader"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Affiche le terrain avec des mesh shaders – pour votre carte NVIDIA (Fabric, nécessite Sodium)"
+      },
+      "voiceChat": {
+        "name": "Chat vocal",
+        "description": "Simple Voice Chat – parlez aux joueurs proches sur les serveurs compatibles"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback si disponible, sinon ReplayMod – enregistrer et monter des parties"
+      }
+    },
+    "picker": {
+      "title": "Préréglages",
+      "manage": "Gérer les préréglages",
+      "vanillaBoost": "Vanilla l’obtient déjà via l’optimisation TRS",
+      "needsLoader": "Les mods ont besoin d’un chargeur de mods – dans une instance vanilla, seuls les packs de ressources et les shaders sont installés.",
+      "useFabric": "Utiliser Fabric"
+    },
+    "apply": {
+      "title": "Appliquer un préréglage",
+      "intro": "Tout ce qui existe pour {name} ({version}, {loader}) est installé – dépendances obligatoires comprises. Le reste est ignoré.",
+      "running": "Des préréglages sont déjà en cours d’installation dans cette instance.",
+      "install": "Installer {n} préréglage | Installer {n} préréglages",
+      "button": "+ Appliquer un préréglage",
+      "buttonTitle": "Installer des préréglages de mods (p. ex. boost FPS, chat vocal) – seulement ce qui existe pour cette version",
+      "installing": "Installation des préréglages …"
+    },
+    "report": {
+      "title": "Préréglages pour {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "plus {n} dépendance | plus {n} dépendances",
+      "skipped": "Ignorés ({n}) | Ignorés ({n})",
+      "included": "Inclus ({n}) | Inclus ({n})",
+      "notNeeded": "{n} élément du boost FPS n’est pas prévu pour cette version | {n} éléments du boost FPS ne sont pas prévus pour cette version",
+      "nothing": "Rien à installer",
+      "allDone": "{n} projet installé | Les {n} projets installés",
+      "partial": "{done} sur {total} installés",
+      "more": "(+{n} autre) | (+{n} autres)",
+      "details": "Détails"
+    },
+    "reason": {
+      "installed": "Installé",
+      "alreadyInstalled": "Était déjà installé",
+      "duplicate": "Déjà inclus par un autre préréglage",
+      "notAvailable": "{title} n’existe pas pour {version}",
+      "notAvailableLoader": "{title} n’existe pas pour {version} ({loader})",
+      "missingDependency": "{title} nécessite {dependency}, qui n’existe pas pour cette version",
+      "incompatible": "{title} ne fonctionne pas avec {other}",
+      "needsLoader": "{title} nécessite un chargeur de mods",
+      "failed": "{title} n’a pas pu être téléchargé"
+    },
+    "status": {
+      "installed": "Installé",
+      "alreadyInstalled": "Déjà là",
+      "duplicate": "Inclus",
+      "skipped": "Ignoré"
+    },
+    "task": {
+      "title": "Préréglages pour {name}",
+      "preparing": "Préparation …",
+      "resolving": "Vérification des versions ({done}/{total})",
+      "installing": "Téléchargement de {title} ({done}/{total})",
+      "finishing": "Finalisation"
+    },
+    "editor": {
+      "newTitle": "Nouveau préréglage",
+      "editTitle": "Modifier le préréglage",
+      "namePlaceholder": "p. ex. Mes indispensables",
+      "contents": "Contenu ({n}) | Contenu ({n})",
+      "remove": "Retirer {title}",
+      "empty": "Encore vide – ajoutez des projets depuis la recherche.",
+      "searchPlaceholder": "Rechercher sur Modrinth …",
+      "searchLabel": "Rechercher des projets",
+      "added": "Ajouté",
+      "add": "Ajouter",
+      "noResults": "Aucun résultat",
+      "hint": "Les préréglages ne dépendent pas de la version : à l’installation, la bonne version est choisie pour chaque instance – ce qui n’existe pas est ignoré.",
+      "tooManyItems": "Au maximum {max} entrées par préréglage",
+      "duplicate": "Chaque projet ne peut figurer qu’une fois dans un préréglage"
+    },
+    "page": {
+      "title": "Préréglages",
+      "subtitle": "Les mods que vous voulez toujours – installés automatiquement là où ils existent",
+      "new": "Nouveau préréglage",
+      "exported": "« {name} » enregistré",
+      "deleted": "« {name} » supprimé",
+      "imported": "« {name} » importé",
+      "emptyPreset": "Aucun projet pour l’instant",
+      "builtinHint": "Le launcher tient les préréglages TRS à jour. Vous pouvez les activer ou désactiver à tout moment pour les nouvelles instances.",
+      "confirmDelete": "Vraiment supprimer ?",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "footer": "Partagez des préréglages avec vos amis via Exporter – ils peuvent charger le fichier avec Importer."
     }
   }
 }

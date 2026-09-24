@@ -52,6 +52,8 @@ pub struct Command {
     pub cwd: PathBuf,
     /// Zusätzliche Umgebungsvariablen (Start-Hooks).
     pub env: Vec<(String, String)>,
+    /// Prozesspriorität „Höher als normal“.
+    pub high_priority: bool,
 }
 
 pub fn build_command(
@@ -68,7 +70,11 @@ pub fn build_command(
     let features = Features { quick_play_multiplayer: quick_play, ..session.features() };
     let resolution = instance.overrides.resolution.unwrap_or(settings.resolution);
     let max_mb = instance.overrides.max_memory_mb.unwrap_or(settings.max_memory_mb);
-    let min_mb = settings.min_memory_mb.min(max_mb);
+    let user_jvm = split_args(instance.overrides.jvm_args.as_deref().unwrap_or(&settings.jvm_args));
+    // Eigene JVM-Argumente haben Vorrang: dann nur die schlichten Voreinstellungen.
+    let tuned = instance.overrides.performance_tuning.unwrap_or(settings.performance_tuning) && user_jvm.is_empty();
+    // Abgestimmt: gleich den ganzen Speicher holen (kein Nachwachsen im Spiel).
+    let min_mb = if tuned { max_mb } else { settings.min_memory_mb.min(max_mb) };
 
     let classpath = prepared
         .classpath
@@ -135,11 +141,10 @@ pub fn build_command(
         args.push(cfg.argument.replace("${path}", &path.display().to_string()));
     }
 
-    let user_jvm = split_args(instance.overrides.jvm_args.as_deref().unwrap_or(&settings.jvm_args));
     // Eigene GC-Wahl des Nutzers hat Vorrang vor unseren Voreinstellungen.
     if !user_jvm.iter().any(|a| is_collector_flag(a)) {
         let java_major = version.java_version.as_ref().map_or(8, |j| j.major_version);
-        args.extend(performance_flags(java_major, max_mb));
+        args.extend(if tuned { tuned_flags(java_major, max_mb) } else { performance_flags(java_major, max_mb) });
     }
     args.extend(user_jvm);
 
@@ -167,7 +172,7 @@ pub fn build_command(
         args.extend(["--server".into(), join.host.clone(), "--port".into(), join.port.to_string()]);
     }
 
-    Ok(Command { program: prepared.java.clone(), args, cwd: game_dir.to_owned(), env: Vec::new() })
+    Ok(Command { program: prepared.java.clone(), args, cwd: game_dir.to_owned(), env: Vec::new(), high_priority: false })
 }
 
 /// GC-Voreinstellungen (angelehnt an OneLauncher `arguments.rs` `performance_flags`):
@@ -195,6 +200,56 @@ fn performance_flags(java_major: u32, max_mb: u32) -> Vec<String> {
         flags.retain(|f| *f != "-XX:+ZGenerational");
     }
     flags.dedup();
+    flags.into_iter().map(str::to_owned).collect()
+}
+
+/// Unter so viel Heap bleibt es bei G1 – ZGC braucht Luft.
+const ZGC_MIN_HEAP_MB: u32 = 4096;
+
+/// FPS-Boost: abgestimmte Flags je Java-Version und Speicher.
+/// - Java 21+ mit mindestens 4 GB: generationelles ZGC (kurze Pausen, kaum Ruckler),
+///   ab Java 24 kompakte Objekt-Header, ab 25 zusätzlich String-Deduplizierung.
+/// - Sonst G1 mit Aikars bewährten Werten (für den Client angepasst).
+///
+/// Alles mit `-XX:+AlwaysPreTouch` – zusammen mit Xms = Xmx liegt der Speicher
+/// von Anfang an bereit. Nur Flags, die es von Java 8 bis 25 gibt.
+fn tuned_flags(java_major: u32, max_mb: u32) -> Vec<String> {
+    let mut flags: Vec<&str> = if java_major >= 21 && max_mb >= ZGC_MIN_HEAP_MB {
+        let mut zgc = vec!["-XX:+UseZGC"];
+        // Ab Java 23 ist ZGC immer generationell, das Flag gilt dort als veraltet.
+        if java_major < 23 {
+            zgc.push("-XX:+ZGenerational");
+        }
+        zgc
+    } else {
+        vec![
+            "-XX:+UseG1GC",
+            "-XX:+ParallelRefProcEnabled",
+            "-XX:MaxGCPauseMillis=50",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+DisableExplicitGC",
+            "-XX:G1NewSizePercent=30",
+            "-XX:G1MaxNewSizePercent=40",
+            "-XX:G1HeapRegionSize=8M",
+            "-XX:G1ReservePercent=20",
+            "-XX:G1HeapWastePercent=5",
+            "-XX:G1MixedGCCountTarget=4",
+            "-XX:InitiatingHeapOccupancyPercent=15",
+            "-XX:G1MixedGCLiveThresholdPercent=90",
+            "-XX:SurvivorRatio=32",
+            "-XX:+PerfDisableSharedMem",
+            "-XX:MaxTenuringThreshold=1",
+        ]
+    };
+    flags.push("-XX:+AlwaysPreTouch");
+    if java_major >= 24 {
+        flags.extend(["-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders"]);
+    }
+    if java_major >= 25 {
+        flags.push("-XX:+UseStringDeduplication");
+    }
+    let mut seen = std::collections::HashSet::new();
+    flags.retain(|f| seen.insert(*f));
     flags.into_iter().map(str::to_owned).collect()
 }
 
@@ -361,6 +416,52 @@ mod tests {
         let args = build(&prepared(MODERN), &inst, &session());
         assert!(args.contains(&"-XX:+UseShenandoahGC".to_owned()));
         assert!(!args.iter().any(|a| a == "-XX:+UseG1GC" || a == "-XX:+UseZGC"));
+    }
+
+    #[test]
+    fn tuned_flags_per_java_and_memory() {
+        let has = |flags: &[String], f: &str| flags.iter().any(|x| x == f);
+        // Java 8 / wenig Speicher: G1 nach Aikar.
+        let old = tuned_flags(8, 8192);
+        assert!(has(&old, "-XX:+UseG1GC") && has(&old, "-XX:G1HeapRegionSize=8M") && has(&old, "-XX:+AlwaysPreTouch"));
+        assert!(!has(&old, "-XX:+UseZGC") && !has(&old, "-XX:+UseCompactObjectHeaders"));
+        let small = tuned_flags(21, 3072);
+        assert!(has(&small, "-XX:+UseG1GC") && !has(&small, "-XX:+UseZGC"));
+        // Java 21–22: generationelles ZGC.
+        let j21 = tuned_flags(21, 4096);
+        assert!(has(&j21, "-XX:+UseZGC") && has(&j21, "-XX:+ZGenerational") && !has(&j21, "-XX:+UseG1GC"));
+        assert!(!has(&j21, "-XX:+UseStringDeduplication"));
+        // Java 24: ohne ZGenerational, mit kompakten Headern (experimentell).
+        let j24 = tuned_flags(24, 8192);
+        assert!(!has(&j24, "-XX:+ZGenerational") && has(&j24, "-XX:+UseCompactObjectHeaders"));
+        assert!(has(&j24, "-XX:+UnlockExperimentalVMOptions"));
+        // Java 25: dazu String-Deduplizierung.
+        let j25 = tuned_flags(25, 8192);
+        assert!(has(&j25, "-XX:+UseStringDeduplication") && has(&j25, "-XX:+AlwaysPreTouch"));
+        // Kein Flag doppelt (Unlock kommt bei G1 + Java 24 sonst zweimal).
+        let g1_24 = tuned_flags(24, 2048);
+        assert_eq!(g1_24.iter().filter(|f| *f == "-XX:+UnlockExperimentalVMOptions").count(), 1);
+    }
+
+    #[test]
+    fn tuning_sets_heap_and_yields_to_user_args() {
+        // Standard (an): Xms = Xmx, abgestimmte Flags.
+        let args = build(&prepared(MODERN), &instance(), &session());
+        assert!(args.contains(&"-Xms4096M".to_owned()) && args.contains(&"-XX:+AlwaysPreTouch".to_owned()));
+
+        // Pro Instanz aus: alte Voreinstellungen, Xms aus den Einstellungen.
+        let mut off = instance();
+        off.overrides.performance_tuning = Some(false);
+        let args = build(&prepared(MODERN), &off, &session());
+        assert!(args.contains(&"-Xms512M".to_owned()) && !args.contains(&"-XX:+AlwaysPreTouch".to_owned()));
+        assert!(args.contains(&"-XX:+UseG1GC".to_owned()));
+
+        // Eigene JVM-Argumente: keine Abstimmung, eigene Werte bleiben.
+        let mut own = instance();
+        own.overrides.jvm_args = Some("-Dfoo=bar".into());
+        let args = build(&prepared(MODERN), &own, &session());
+        assert!(args.contains(&"-Xms512M".to_owned()) && !args.contains(&"-XX:+AlwaysPreTouch".to_owned()));
+        assert!(args.contains(&"-Dfoo=bar".to_owned()));
     }
 
     #[test]

@@ -17,6 +17,7 @@ pub mod firewall;
 pub mod forge;
 pub mod fsutil;
 pub mod gamelog;
+pub mod gpu;
 pub mod history;
 pub mod hooks;
 pub mod icon;
@@ -33,6 +34,7 @@ pub mod news;
 pub mod nbt;
 pub mod paths;
 pub mod prepare;
+pub mod presets;
 pub mod process;
 pub mod screenshots;
 pub mod servers;
@@ -248,6 +250,16 @@ impl Launcher {
         new.validate()?;
         let mut guard = self.settings.write().await;
         new.save(&self.paths.settings_file()).await?;
+        if guard.prefer_dedicated_gpu && !new.prefer_dedicated_gpu {
+            // Abgeschaltet: unsere GPU-Einträge in Windows wieder entfernen.
+            let java_dir = self.paths.java_dir();
+            let removed = tokio::task::spawn_blocking(move || {
+                gpu::revert(&gpu::WindowsGpuPreferences, &java_dir, &gpu::own_runtimes(&java_dir))
+            })
+            .await
+            .unwrap_or_default();
+            tracing::info!("GPU-Präferenz für {removed} Java-Runtimes entfernt");
+        }
         *guard = new.clone();
         Ok(new)
     }
@@ -489,8 +501,9 @@ impl Launcher {
         });
 
         if settings.prefer_dedicated_gpu {
-            process::prefer_dedicated_gpu(&command.program);
+            gpu::prefer_for_launch(&gpu::WindowsGpuPreferences, &self.paths.java_dir(), &command.program);
         }
+        command.high_priority = settings.high_priority;
         command.env = exit_plan.env.clone();
         if let Some(wrapper) = &exit_plan.hooks.wrapper {
             hooks::apply_wrapper(&mut command, wrapper);

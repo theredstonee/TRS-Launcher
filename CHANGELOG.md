@@ -16,6 +16,16 @@ How to write an entry:
 
 ### English
 
+- **Mod presets.** Create your own presets (e.g. “My basics”) with mods, resource packs and shaders from
+  Modrinth, tick them when creating an instance or apply them later – mark a preset as “always automatic” and it’s
+  preselected every time. Each mod is only installed if there’s a version for your Minecraft version and loader
+  (with its required dependencies); anything else is skipped and named in a short summary. Share presets with
+  friends as a small file.
+- **Ready-made TRS presets:** FPS boost (the old performance pack, now also with fixes for Forge 1.12.2/1.8.9),
+  Voice chat (Simple Voice Chat), Replay (Flashback, otherwise ReplayMod) and Nvidium for NVIDIA cards from GTX 16xx.
+- **More FPS at launch.** Tuned Java settings per Java version and memory (ZGC or G1, memory reserved up front),
+  optional higher process priority, and the dedicated graphics card is now only set for the launcher’s own Java –
+  switching it off undoes it.
 - **TRS capes load again.** The cape page failed as soon as one of the new HD capes (up to 512×256) was in the
   list.
 - **Modpack downloads no longer give up so quickly.** Better MC and other packs sometimes list a file size that is
@@ -37,6 +47,16 @@ How to write an entry:
 
 ### Deutsch
 
+- **Mod-Presets.** Eigene Presets anlegen (z. B. „Meine Basics“) mit Mods, Ressourcenpaketen und Shadern von
+  Modrinth, beim Anlegen einer Instanz ankreuzen oder später anwenden – als „immer automatisch“ markiert, sind sie
+  jedes Mal vorausgewählt. Jede Mod wird nur installiert, wenn es eine Version für deine Minecraft-Version und
+  deinen Loader gibt (samt Pflicht-Abhängigkeiten); alles andere wird übersprungen und in einer kurzen
+  Zusammenfassung genannt. Presets lassen sich als kleine Datei mit Freunden teilen.
+- **Fertige TRS-Presets:** FPS-Boost (das bisherige Performance-Paket, jetzt auch mit Fixes für Forge 1.12.2/1.8.9),
+  Voice Chat (Simple Voice Chat), Replay (Flashback, sonst ReplayMod) und Nvidium für NVIDIA-Karten ab GTX 16xx.
+- **Mehr FPS beim Start.** Abgestimmte Java-Einstellungen je Java-Version und Speicher (ZGC oder G1, Speicher gleich
+  reserviert), auf Wunsch höhere Prozesspriorität, und die leistungsstarke Grafikkarte wird nur noch für das Java
+  des Launchers eingetragen – Abschalten nimmt es wieder zurück.
 - **TRS-Umhänge laden wieder.** Die Umhang-Seite schlug fehl, sobald einer der neuen HD-Umhänge (bis 512×256) in
   der Liste war.
 - **Modpack-Downloads geben nicht mehr so schnell auf.** Better MC und andere Packs geben manchmal eine um ein Byte

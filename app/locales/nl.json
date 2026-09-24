@@ -526,6 +526,18 @@
       "notAModpack": "Dit is geen CurseForge-modpack.",
       "packFileMissing": "Een bestand van het modpack bestaat niet meer op CurseForge (project {project}).",
       "packBlocked": "De maker van “{name}” staat geen downloads via andere apps toe – download het modpack op CurseForge en importeer het hier."
+    },
+    "presets": {
+      "nameLength": "De naam moet tussen 1 en {max} tekens lang zijn.",
+      "invalidProject": "Ongeldig project in de preset.",
+      "tooManyItems": "Een preset kan hoogstens {max} items hebben.",
+      "notFound": "Deze preset bestaat niet meer.",
+      "builtinReadOnly": "TRS-presets kunnen niet worden gewijzigd of verwijderd.",
+      "tooMany": "Meer dan {max} eigen presets worden niet ondersteund.",
+      "invalidOrder": "De volgorde past niet bij de presetlijst.",
+      "invalidFile": "Dit is geen geldig presetbestand.",
+      "fileTooLarge": "Het presetbestand is te groot.",
+      "noneSelected": "Geen preset geselecteerd."
     }
   },
   "browse": {
@@ -820,14 +832,6 @@
       "done": "{n} update geïnstalleerd | {n} updates geïnstalleerd",
       "partial": "{failed} van {total} updates mislukt. | {failed} van {total} updates mislukt."
     },
-    "perfPack": {
-      "taskTitle": "Prestatiepakket voor {name}",
-      "stage": "Mods laden",
-      "done": "Prestatiepakket geïnstalleerd ({n} bestand) | Prestatiepakket geïnstalleerd ({n} bestanden)",
-      "title": "Sodium, Lithium & co. – alleen wat voor deze versie beschikbaar is",
-      "installing": "Prestatiepakket installeren …",
-      "button": "+ Prestatiepakket"
-    },
     "toolbar": {
       "searchPlaceholder": "{n} project zoeken … | {n} projecten zoeken …",
       "searchLabel": "Projecten zoeken",
@@ -1103,7 +1107,12 @@
       "reinstallTitle": "Opnieuw installeren",
       "reinstallDescription": "Downloadt de spelversie, modloader en bibliotheken helemaal opnieuw. Werelden, mods en instellingen blijven behouden.",
       "reinstallConfirmTitle": "Opnieuw installeren?",
-      "reinstallConfirmText": "De spelversie en bibliotheken worden opnieuw gedownload. Werelden, mods en instellingen blijven behouden."
+      "reinstallConfirmText": "De spelversie en bibliotheken worden opnieuw gedownload. Werelden, mods en instellingen blijven behouden.",
+      "tuningTitle": "FPS-boost bij het starten",
+      "tuningDescription": "Afgestemde Java-instellingen voor meer FPS en minder haperingen. Eigen JVM-argumenten gaan voor.",
+      "tuningGlobal": "Zoals globaal ({state})",
+      "tuningOn": "Aan",
+      "tuningOff": "Uit"
     },
     "window": {
       "customTitle": "Eigen vensterinstellingen",
@@ -1491,7 +1500,11 @@
       "windowWidth": "Vensterbreedte",
       "windowHeight": "Vensterhoogte",
       "dedicatedGpuTitle": "Krachtige videokaart",
-      "dedicatedGpuDescription": "Voor laptops met twee grafische chips: Windows geeft het spel de dedicated GPU."
+      "dedicatedGpuDescription": "Minecraft gebruikt de losse videokaart (belangrijk bij laptops). Geldt alleen voor de Java van de launcher en wordt teruggedraaid als je het uitzet.",
+      "tuningTitle": "FPS-boost bij het starten",
+      "tuningDescription": "Afgestemde Java-instellingen voor jouw Java-versie en geheugen (ZGC of G1, geheugen meteen gereserveerd). Alleen zonder eigen JVM-argumenten.",
+      "priorityTitle": "Hogere procesprioriteit",
+      "priorityDescription": "Start het spel met prioriteit ‘Boven normaal’ – kan haperingen verminderen als andere programma’s druk bezig zijn."
     },
     "hooks": {
       "title": "Starthooks",
@@ -1793,7 +1806,8 @@
     "collapseLabel": "Zijbalk inklappen",
     "expandLabel": "Zijbalk uitklappen",
     "collapse": "Inklappen",
-    "expand": "Uitklappen"
+    "expand": "Uitklappen",
+    "presets": "Presets"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -1917,7 +1931,8 @@
       "repair": "Instantie gerepareerd",
       "reinstall": "Opnieuw geïnstalleerd",
       "versionChange": "Versie gewijzigd",
-      "launch": "Spelstart"
+      "launch": "Spelstart",
+      "presets": "Presets geïnstalleerd"
     },
     "stage": {
       "preparing": "Voorbereiden",
@@ -2493,6 +2508,113 @@
       "allDone": "Alle bestanden staan klaar.",
       "banner": "{count} bestand moet je zelf van CurseForge downloaden. | {count} bestanden moet je zelf van CurseForge downloaden.",
       "show": "Tonen"
+    }
+  },
+  "presets": {
+    "auto": "Auto",
+    "autoLabel": "Altijd automatisch",
+    "autoHint": "Vooraf geselecteerd bij elke nieuwe instantie – en toegevoegd aan nieuwe modpacks waar het past.",
+    "itemCount": "{n} project | {n} projecten",
+    "builtin": {
+      "fpsBoost": {
+        "name": "FPS-boost",
+        "description": "Sodium of Embeddium, Lithium, FerriteCore, ModernFix en meer – wat bij de versie en loader past"
+      },
+      "nvidium": {
+        "name": "Nvidium",
+        "description": "Rendert terrein met mesh-shaders – voor je NVIDIA-videokaart (Fabric, heeft Sodium nodig)"
+      },
+      "voiceChat": {
+        "name": "Voicechat",
+        "description": "Simple Voice Chat – praat met spelers in de buurt op servers die het ondersteunen"
+      },
+      "replay": {
+        "name": "Replay",
+        "description": "Flashback waar beschikbaar, anders ReplayMod – gameplay opnemen en monteren"
+      }
+    },
+    "picker": {
+      "title": "Presets",
+      "manage": "Presets beheren",
+      "vanillaBoost": "Vanilla krijgt dit al via de TRS-optimalisatie",
+      "needsLoader": "Mods hebben een modloader nodig – in een vanilla-instantie worden alleen resourcepacks en shaders geïnstalleerd.",
+      "useFabric": "Fabric gebruiken"
+    },
+    "apply": {
+      "title": "Preset toepassen",
+      "intro": "Alles wat er voor {name} ({version}, {loader}) is, wordt geïnstalleerd – inclusief verplichte afhankelijkheden. De rest wordt overgeslagen.",
+      "running": "Er worden al presets in deze instantie geïnstalleerd.",
+      "install": "{n} preset installeren | {n} presets installeren",
+      "button": "+ Preset toepassen",
+      "buttonTitle": "Mod-presets installeren (bijv. FPS-boost, voicechat) – alleen wat er voor deze versie is",
+      "installing": "Presets worden geïnstalleerd …"
+    },
+    "report": {
+      "title": "Presets voor {name}",
+      "target": "Minecraft {version} · {loader}",
+      "dependencies": "plus {n} afhankelijkheid | plus {n} afhankelijkheden",
+      "skipped": "Overgeslagen ({n}) | Overgeslagen ({n})",
+      "included": "Inbegrepen ({n}) | Inbegrepen ({n})",
+      "notNeeded": "{n} onderdeel van de FPS-boost is niet voor deze versie gemaakt | {n} onderdelen van de FPS-boost zijn niet voor deze versie gemaakt",
+      "nothing": "Niets te installeren",
+      "allDone": "{n} project geïnstalleerd | Alle {n} projecten geïnstalleerd",
+      "partial": "{done} van {total} geïnstalleerd",
+      "more": "(+{n} andere) | (+{n} andere)",
+      "details": "Details"
+    },
+    "reason": {
+      "installed": "Geïnstalleerd",
+      "alreadyInstalled": "Was al geïnstalleerd",
+      "duplicate": "Al inbegrepen via een andere preset",
+      "notAvailable": "{title} bestaat niet voor {version}",
+      "notAvailableLoader": "{title} bestaat niet voor {version} ({loader})",
+      "missingDependency": "{title} heeft {dependency} nodig, maar dat bestaat niet voor deze versie",
+      "incompatible": "{title} werkt niet samen met {other}",
+      "needsLoader": "{title} heeft een modloader nodig",
+      "failed": "{title} kon niet worden gedownload"
+    },
+    "status": {
+      "installed": "Geïnstalleerd",
+      "alreadyInstalled": "Was er al",
+      "duplicate": "Inbegrepen",
+      "skipped": "Overgeslagen"
+    },
+    "task": {
+      "title": "Presets voor {name}",
+      "preparing": "Voorbereiden …",
+      "resolving": "Versies controleren ({done}/{total})",
+      "installing": "{title} downloaden ({done}/{total})",
+      "finishing": "Afronden"
+    },
+    "editor": {
+      "newTitle": "Nieuwe preset",
+      "editTitle": "Preset bewerken",
+      "namePlaceholder": "bijv. Mijn basis",
+      "contents": "Inhoud ({n}) | Inhoud ({n})",
+      "remove": "{title} verwijderen",
+      "empty": "Nog leeg – voeg projecten toe via het zoeken.",
+      "searchPlaceholder": "Modrinth doorzoeken …",
+      "searchLabel": "Projecten zoeken",
+      "added": "Toegevoegd",
+      "add": "Toevoegen",
+      "noResults": "Geen resultaten",
+      "hint": "Presets zijn versie-onafhankelijk: bij het installeren wordt per instantie de passende versie gekozen – wat er niet is, wordt overgeslagen.",
+      "tooManyItems": "Hoogstens {max} items per preset",
+      "duplicate": "Elk project kan maar één keer in een preset staan"
+    },
+    "page": {
+      "title": "Presets",
+      "subtitle": "Mods die je altijd wilt – automatisch geïnstalleerd waar ze bestaan",
+      "new": "Nieuwe preset",
+      "exported": "‘{name}’ opgeslagen",
+      "deleted": "‘{name}’ verwijderd",
+      "imported": "‘{name}’ geïmporteerd",
+      "emptyPreset": "Nog geen projecten",
+      "builtinHint": "De launcher houdt TRS-presets actueel. Je kunt ze altijd aan- of uitzetten voor nieuwe instanties.",
+      "confirmDelete": "Echt verwijderen?",
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "footer": "Deel presets met vrienden via Exporteren – zij laden het bestand met Importeren."
     }
   }
 }

@@ -43,6 +43,11 @@ pub struct Settings {
     pub show_snapshots: bool,
     /// Windows soll dem Spiel die leistungsstarke Grafikkarte geben.
     pub prefer_dedicated_gpu: bool,
+    /// FPS-Boost für den Start: abgestimmte GC-Flags je Java-Version und
+    /// Xms = Xmx – nur ohne eigene JVM-Argumente. Instanzen können abweichen.
+    pub performance_tuning: bool,
+    /// Spiel mit Prozesspriorität „Höher als normal“ starten.
+    pub high_priority: bool,
     /// Netzwerkzugriff für neue Java-Versionen automatisch freigeben (eine Admin-Abfrage).
     pub auto_firewall: bool,
     /// Spiel im Vollbild starten (`--fullscreen`); Instanzen können abweichen.
@@ -220,6 +225,8 @@ impl Default for Settings {
             close_on_launch: false,
             show_snapshots: false,
             prefer_dedicated_gpu: true,
+            performance_tuning: true,
+            high_priority: false,
             auto_firewall: true,
             fullscreen: false,
             hooks: LaunchHooks::default(),

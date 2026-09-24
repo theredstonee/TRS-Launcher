@@ -30,11 +30,15 @@ pub enum DialogText {
     Cape,
     /// Filtername für `.mrpack` und CurseForge-`.zip`.
     AnyModpack,
+    SavePreset,
+    PickPreset,
+    /// Filtername für Preset-Dateien.
+    PresetFile,
 }
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 15] = [
+const TEXTS: [[&str; 8]; 18] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -158,6 +162,36 @@ const TEXTS: [[&str; 8]; 15] = [
         "Mod paketi (Modrinth, CurseForge)",
         "Modpack (Modrinth, CurseForge)",
     ],
+    [
+        "Save preset",
+        "Preset speichern",
+        "Guardar preset",
+        "Enregistrer le préréglage",
+        "Zapisz preset",
+        "Salvar predefinição",
+        "Ön ayarı kaydet",
+        "Preset opslaan",
+    ],
+    [
+        "Choose a preset file",
+        "Preset-Datei wählen",
+        "Elige un archivo de preset",
+        "Choisir un fichier de préréglage",
+        "Wybierz plik presetu",
+        "Escolher arquivo de predefinição",
+        "Ön ayar dosyası seç",
+        "Presetbestand kiezen",
+    ],
+    [
+        "TRS preset",
+        "TRS-Preset",
+        "Preset de TRS",
+        "Préréglage TRS",
+        "Preset TRS",
+        "Predefinição TRS",
+        "TRS ön ayarı",
+        "TRS-preset",
+    ],
 ];
 
 impl DialogText {
@@ -178,7 +212,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 15] = [
+    const ALL: [DialogText; 18] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -194,6 +228,9 @@ mod tests {
         DialogText::PickCape,
         DialogText::Cape,
         DialogText::AnyModpack,
+        DialogText::SavePreset,
+        DialogText::PickPreset,
+        DialogText::PresetFile,
     ];
 
     #[test]

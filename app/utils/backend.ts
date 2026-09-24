@@ -41,6 +41,10 @@ import type {
   ClientModStatus,
   CategoryTag,
   CommandError,
+  Preset,
+  PresetApplyReport,
+  PresetInput,
+  PresetProgress,
   ExportEntry,
   ExportOptions,
   ExportProgress,
@@ -309,6 +313,24 @@ export const backend = {
     /** `fileId: null` = alle verwerfen. */
     dismissBlocked: (id: string, fileId: string | null) => call<BlockedFile[]>('curseforge_dismiss_blocked', { id, fileId }),
   },
+  listPresets: () => call<Preset[]>('list_presets'),
+  createPreset: (preset: PresetInput) => call<Preset>('create_preset', { preset }),
+  updatePreset: (id: string, preset: PresetInput) => call<Preset>('update_preset', { id, preset }),
+  /** „Immer automatisch“ – auch für fertige TRS-Presets. */
+  setPresetAuto: (id: string, auto: boolean) => call<Preset>('set_preset_auto', { id, auto }),
+  deletePreset: (id: string) => call<void>('delete_preset', { id }),
+  reorderPresets: (ids: string[]) => call<Preset[]>('reorder_presets', { ids }),
+  /** Fragt nach dem Speicherort; `false` = abgebrochen. */
+  exportPreset: (id: string) => call<boolean>('export_preset', { id }),
+  /** Öffnet eine Preset-Datei und legt ein neues Preset an; `null` = abgebrochen. */
+  importPreset: () => call<Preset | null>('import_preset'),
+  /** Installiert Presets in die Instanz – nur, was für Version + Loader passt. */
+  applyPresets: (
+    id: string,
+    presetIds: string[],
+    onProgress: (p: PresetProgress) => void,
+    taskId: string | null = null,
+  ) => call<PresetApplyReport>('apply_presets', { id, presetIds, onProgress: channel(onProgress), taskId }),
 
   listServers: () => call<Server[]>('list_servers'),
   addServer: (server: ServerInput) => call<Server>('add_server', { server }),

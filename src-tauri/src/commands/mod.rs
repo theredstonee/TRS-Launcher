@@ -12,6 +12,7 @@ pub mod import;
 pub mod instances;
 pub mod meta;
 pub mod news;
+pub mod presets;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;
