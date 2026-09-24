@@ -16,6 +16,20 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **No more freezes when players join or leave.** With the TRS Client, the game could freeze for up to a minute
+  as soon as another player came online or left – for both players at the same moment. Fixed in TRS Client
+  0.4.1, which installs itself automatically.
+
+### Deutsch
+
+- **Kein Einfrieren mehr, wenn Spieler kommen oder gehen.** Mit dem TRS Client konnte das Spiel bis zu einer Minute
+  einfrieren, sobald ein anderer Spieler online kam oder ging – bei beiden gleichzeitig. Behoben im TRS Client
+  0.4.1, der sich automatisch aktualisiert.
+
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 
 <!-- banner: accent=#ffc24b motif=/news/0.5.0/banner.png -->

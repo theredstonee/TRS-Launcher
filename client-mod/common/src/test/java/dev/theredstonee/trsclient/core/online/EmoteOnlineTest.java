@@ -124,11 +124,14 @@ class EmoteOnlineTest {
 		final List<String> urls = new CopyOnWriteArrayList<>();
 		final List<FakeConnection> connections = new CopyOnWriteArrayList<>();
 		volatile int status = 200;
+		/** So lange blockiert close() (wie ein SSL-Socket, in dem noch gelesen wird). */
+		volatile long closeDelayMs;
 
 		@Override
 		public PlayerEventStream.Connection open(String url, String token) {
 			urls.add(url);
 			FakeConnection c = new FakeConnection(status);
+			c.closeDelayMs = closeDelayMs;
 			connections.add(c);
 			return c;
 		}
@@ -143,6 +146,7 @@ class EmoteOnlineTest {
 		final LinkedBlockingQueue<String> lines = new LinkedBlockingQueue<>();
 		final int status;
 		volatile boolean closed;
+		volatile long closeDelayMs;
 
 		FakeConnection(int status) {
 			this.status = status;
@@ -177,6 +181,13 @@ class EmoteOnlineTest {
 
 		@Override
 		public void close() {
+			if (closeDelayMs > 0) {
+				try {
+					Thread.sleep(closeDelayMs);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
 			closed = true;
 			lines.add(EOF);
 		}
@@ -232,7 +243,41 @@ class EmoteOnlineTest {
 		assertEquals(2, s.connects());
 		s.stop();
 		assertFalse(s.connected());
-		assertTrue(opener.last().closed);
+		waitFor(() -> opener.last().closed);
+	}
+
+	/** Ein Spieler kommt oder geht → neuer Stream; das Schließen des alten darf den Spiel-Thread nie blockieren. */
+	@Test
+	void closingOldStreamNeverBlocksTheGameThread() throws Exception {
+		FakeOpener opener = new FakeOpener();
+		opener.closeDelayMs = 3_000;
+		PlayerEventStream s = new PlayerEventStream(opener, "https://trs-launcher.theredstonee.de");
+		List<String> watch = new ArrayList<>(Collections.singletonList(OWN));
+		s.update(0, "tok", watch);
+		waitFor(() -> opener.connections.size() == 1);
+		opener.last().send("hello", "{\"type\":\"hello\"}");
+		waitFor(() -> {
+			s.update(10, "tok", watch);
+			return s.connected();
+		});
+		watch.add(OTHER);
+		s.update(PlayerEventStream.DEBOUNCE_MS + 20, "tok", watch);
+		waitFor(() -> opener.connections.size() == 2);
+		opener.last().send("hello", "{\"type\":\"hello\"}");
+		long slowest = 0;
+		long end = System.currentTimeMillis() + 5000;
+		while (!s.watching().contains(OTHER) && System.currentTimeMillis() < end) {
+			long t0 = System.nanoTime();
+			s.update(PlayerEventStream.DEBOUNCE_MS + 30, "tok", watch);
+			slowest = Math.max(slowest, (System.nanoTime() - t0) / 1_000_000);
+			Thread.sleep(5);
+		}
+		assertTrue(s.watching().contains(OTHER));
+		assertTrue(slowest < 500, "update() blockierte " + slowest + " ms");
+		long t0 = System.nanoTime();
+		s.stop();
+		assertTrue((System.nanoTime() - t0) / 1_000_000 < 500, "stop() blockierte");
+		waitFor(() -> opener.connections.get(0).closed);
 	}
 
 	@Test

@@ -103,11 +103,31 @@ public final class PlayerEventStream {
 			}
 		}
 
+		/**
+		 * Aus dem Spiel-Thread: nur markieren und die Verbindung im Hintergrund schließen. Ein SSL-Socket zu
+		 * schließen, während der Lese-Thread noch darin blockiert, kann bis zum Lese-Timeout (60 s) warten –
+		 * im Spiel-Thread fror dadurch das Spiel ein, sobald ein Spieler kam oder ging.
+		 */
 		void close() {
 			closed = true;
-			Connection c = connection;
-			if (c != null) c.close();
+			final Connection c = connection;
+			if (c != null) closeInBackground(c);
 		}
+	}
+
+	private static void closeInBackground(final Connection c) {
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					c.close();
+				} catch (RuntimeException ignored) {
+					// egal – die Verbindung ist ohnehin verworfen
+				}
+			}
+		}, "TRS-Events-Close");
+		t.setDaemon(true);
+		t.start();
 	}
 
 	private final Opener opener;
