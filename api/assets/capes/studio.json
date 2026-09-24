@@ -7,5 +7,81 @@
     "scale": 8,
     "animated": false,
     "frames": 1
+  },
+  {
+    "id": "nether",
+    "name": "Nether",
+    "file": "nether.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150
+  },
+  {
+    "id": "ender",
+    "name": "Ender",
+    "file": "ender.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150
+  },
+  {
+    "id": "ozean",
+    "name": "Ozean",
+    "file": "ozean.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150
+  },
+  {
+    "id": "wald",
+    "name": "Wald",
+    "file": "wald.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1
+  },
+  {
+    "id": "frost",
+    "name": "Frost",
+    "file": "frost.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1
+  },
+  {
+    "id": "kirschbluete",
+    "name": "Kirschblüte",
+    "file": "kirschbluete.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1
+  },
+  {
+    "id": "drache",
+    "name": "Drache",
+    "file": "drache.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": false,
+    "frames": 1
+  },
+  {
+    "id": "sonne",
+    "name": "Sonne",
+    "file": "sonne.png",
+    "unlock": "free",
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150
   }
 ]
