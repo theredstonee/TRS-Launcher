@@ -3,6 +3,9 @@ package dev.theredstonee.trsclient.feature;
 import dev.theredstonee.trsclient.TrsKeys;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.camera.FreelookState;
+import dev.theredstonee.trsclient.core.camera.ServerList;
+import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.input.MovementToggles;
 import dev.theredstonee.trsclient.core.input.ToggleState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.pvp.ComboTracker;
@@ -22,9 +25,11 @@ import net.minecraft.entity.player.EntityPlayer;
  */
 public final class PvpFeatures {
 	private final TrsModules modules;
-	private final ToggleState sprint = new ToggleState();
-	private final ToggleState sneak = new ToggleState();
+	/** Toggle-Sprint/-Schleichen + Flug-Boost (Logik in common). */
+	private final MovementToggles toggles;
 	private final FreelookState freelook = new FreelookState();
+	/** Server, auf denen Freelook aus ist (zwischengespeichert). */
+	private final ServerList freelookBlocked = new ServerList();
 	/** Perspektive vor dem Freelook (0 = Ego), -1 = keine gemerkt. */
 	private int viewBeforeFreelook = -1;
 	/** Nur Selbsttest: Freelook ohne Tastendruck, mit Versatz zum Blick der Spielfigur. */
@@ -41,17 +46,14 @@ public final class PvpFeatures {
 
 	public PvpFeatures(TrsModules modules) {
 		this.modules = modules;
+		this.toggles = new MovementToggles(modules);
 	}
 
 	public void tick(Minecraft mc) {
 		EntityPlayer player = Mc.player();
 		boolean inGame = player != null && mc.currentScreen == null;
-		// Vanilla hat bis 1.12.2 keine eigene Umschalt-Option für Sprint/Schleichen.
-		tickToggle(sprint, mc.gameSettings.keyBindSprint, modules.toggleSprint.isEnabled(), inGame);
-		tickToggle(sneak, mc.gameSettings.keyBindSneak, modules.toggleSneak.isEnabled(), inGame);
+		tickToggles(mc, player, inGame);
 		if (player == null) {
-			sprint.reset();
-			sneak.reset();
 			reach.reset();
 			combo.reset();
 			speed.reset();
@@ -134,25 +136,53 @@ public final class PvpFeatures {
 	}
 
 	/**
-	 * Jeder Druck (isPressed der Taste) schaltet um; aktiv → Taste gilt als gehalten.
+	 * Toggle-Sprint/-Schleichen und Flug-Boost: Tastendrücke zählen (isPressed), die Logik in
+	 * {@link MovementToggles} entscheiden lassen und das Ergebnis auf die Vanilla-Tasten bzw. die
+	 * Fluggeschwindigkeit übertragen. Vanilla hat bis 1.12.2 keine eigene Umschalt-Option.
 	 */
-	private static void tickToggle(ToggleState state, KeyBinding key, boolean enabled, boolean inGame) {
-		int presses = 0;
-		while (key.isPressed()) presses++;
-		boolean wasActive = state.active();
-		boolean active = state.update(presses, enabled, !inGame);
-		if (key.getKeyCode() == 0) return;
-		if (active && inGame) KeyBinding.setKeyBindState(key.getKeyCode(), true);
-		else if (wasActive && !active) KeyBinding.setKeyBindState(key.getKeyCode(), false);
+	private void tickToggles(Minecraft mc, EntityPlayer player, boolean inGame) {
+		KeyBinding sprintKey = mc.gameSettings.keyBindSprint;
+		KeyBinding sneakKey = mc.gameSettings.keyBindSneak;
+		MovementToggles.Input in = toggles.input().clear();
+		while (sprintKey.isPressed()) in.sprintPresses++;
+		while (sneakKey.isPressed()) in.sneakPresses++;
+		if (player != null) {
+			in.hasPlayer = true;
+			in.inGame = inGame;
+			in.dead = player.getHealth() <= 0;
+			// Respawn und Dimensionswechsel erzeugen eine neue Spielfigur bzw. Welt.
+			in.context = System.identityHashCode(player) * 31 + System.identityHashCode(Mc.world());
+			in.forwardDown = mc.gameSettings.keyBindForward.isKeyDown();
+			in.sprintKeyDown = sprintKey.isKeyDown();
+			in.sneakKeyDown = sneakKey.isKeyDown();
+			in.creativeFlying = player.capabilities.isFlying && player.capabilities.isCreativeMode;
+			in.sprinting = player.isSprinting();
+		}
+		toggles.tick();
+		apply(sprintKey, toggles.sprintAction());
+		apply(sneakKey, toggles.sneakAction());
+		if (player != null) {
+			float current = player.capabilities.getFlySpeed();
+			float wanted = toggles.flySpeed(current);
+			if (wanted != current) player.capabilities.setFlySpeed(wanted);
+		}
+	}
+
+	private static void apply(KeyBinding key, int action) {
+		if (key.getKeyCode() == 0 || action == MovementToggles.KEEP) return;
+		KeyBinding.setKeyBindState(key.getKeyCode(), action == MovementToggles.PRESS);
 	}
 
 	private void tickFreelook(Minecraft mc, EntityPlayer player, boolean inGame) {
 		boolean forced = !Float.isNaN(forcedFreelookYaw);
-		boolean want = (modules.freelook.isEnabled() && inGame && TrsKeys.freelook.isKeyDown()) || (forced && player != null);
+		boolean blocked = freelookBlocked.contains(Mc.serverAddress(), modules.freelookServers.get());
+		boolean want = freelook.wanted(TrsKeys.freelook.isKeyDown(), modules.freelookToggle.get(), inGame,
+				modules.freelook.isEnabled() && player != null, blocked) || (forced && player != null);
+		if (freelook.consumeBlockedNotice()) Mc.actionBar(I18n.tr("toast.freelookBlocked"));
 		if (want && !freelook.active()) {
 			freelook.start(player.rotationYaw + (forced ? forcedFreelookYaw : 0), player.rotationPitch);
 			viewBeforeFreelook = mc.gameSettings.thirdPersonView;
-			if (viewBeforeFreelook == 0) mc.gameSettings.thirdPersonView = 1;
+			mc.gameSettings.thirdPersonView = modules.freelookPerspective.get().cameraMode();
 		} else if (!want && freelook.active()) {
 			freelook.stop();
 			if (viewBeforeFreelook >= 0) mc.gameSettings.thirdPersonView = viewBeforeFreelook;
@@ -166,11 +196,15 @@ public final class PvpFeatures {
 	}
 
 	public ToggleState sprint() {
-		return sprint;
+		return toggles.sprint();
 	}
 
 	public ToggleState sneak() {
-		return sneak;
+		return toggles.sneak();
+	}
+
+	public MovementToggles toggles() {
+		return toggles;
 	}
 
 	public FreelookState freelook() {

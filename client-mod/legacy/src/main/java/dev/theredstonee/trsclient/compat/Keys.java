@@ -36,7 +36,9 @@ public final class Keys {
 
 	/** Anzeigename einer Taste ("V", "Leertaste"). */
 	public static String display(String keyName) {
-		int code = code(keyName);
+		// Maustasten (z. B. Freelook auf Maustaste 4) haben in LWJGL 2 negative Codes.
+		int code = keyName != null && keyName.startsWith("key.mouse.")
+				? dev.theredstonee.trsclient.TrsKeys.codeOf(keyName) : code(keyName);
 		if (code == UNBOUND) return "—";
 		String name = GameSettings.getKeyDisplayString(code);
 		return name == null ? "?" : name;

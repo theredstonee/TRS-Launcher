@@ -136,6 +136,9 @@ public final class AutoTest {
 					m.setEnabled(true);
 				}
 				TrsClient.get().sprintToggle().set(true);
+				// Toggle-Schleichen nur für das HUD-Bild: beide Anzeigen "[… (umgeschaltet)]".
+				modules.toggleSneak.setEnabled(true);
+				TrsClient.get().sneakToggle().set(true);
 				modules.crosshairShape.set(Crosshair.Shape.CROSS_DOT);
 				modules.crosshairColor.set(0xFFB84D);
 				// Chat-Meldungen der Befehle verblassen lassen (Chat verblasst nach 10 s)
@@ -144,6 +147,9 @@ public final class AutoTest {
 			}
 			case 4:
 				shot(mc, "hud");
+				TrsClient.LOGGER.info("[Autotest] Toggle-Anzeige: {} {}", TrsClient.get().pvp().toggles().sprintStatus().text(),
+						TrsClient.get().pvp().toggles().sneakStatus().text());
+				TrsClient.get().sneakToggle().set(false);
 				TrsClient.get().setForceZoom(true);
 				next(30);
 				break;
@@ -172,7 +178,7 @@ public final class AutoTest {
 			case 8:
 				shot(mc, "freelook");
 				TrsClient.get().pvp().forceFreelook(Float.NaN);
-				expect(new TrsMenuScreen(null).select(modules.crosshair));
+				expect(new TrsMenuScreen(null).select(modules.freelook));
 				next(20);
 				break;
 			case 9:

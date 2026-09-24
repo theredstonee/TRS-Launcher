@@ -43,4 +43,31 @@ public final class TrsKeys {
 		ClientRegistry.registerKeyBinding(key);
 		return key;
 	}
+
+	/**
+	 * Verbindung der Zoom-Einstellung (TRS-Menü) mit der Vanilla-Tastenbelegung: gelesen und
+	 * geschrieben wird die Belegung selbst (gespeichert in options.txt).
+	 */
+	public static dev.theredstonee.trsclient.core.module.KeySetting.Link link(final KeyBinding binding) {
+		return new dev.theredstonee.trsclient.core.module.KeySetting.Link() {
+			@Override
+			public String get() {
+				return binding.getKey().getTranslationKey();
+			}
+
+			@Override
+			public void set(String keyName) {
+				net.minecraft.client.util.InputMappings.Input input;
+				try {
+					input = net.minecraft.client.util.InputMappings.getInputByName(keyName);
+				} catch (RuntimeException e) {
+					input = net.minecraft.client.util.InputMappings.INPUT_INVALID;
+				}
+				binding.bind(input);
+				KeyBinding.resetKeyBindingArrayAndHash();
+				net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+				if (mc != null && mc.gameSettings != null) mc.gameSettings.saveOptions();
+			}
+		};
+	}
 }

@@ -5,7 +5,7 @@ import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.format.HudFormat;
-import dev.theredstonee.trsclient.core.input.ToggleState;
+import dev.theredstonee.trsclient.core.input.ToggleStatus;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import net.minecraft.client.multiplayer.ServerData;
@@ -134,19 +134,18 @@ public final class InfoHuds {
 
 	/** Anzeige für Toggle-Sprint bzw. Toggle-Schleichen, solange umgeschaltet. */
 	public static final class ToggleIndicator extends LinesHudElement {
-		private final String label;
 		private final boolean sprint;
 
-		public ToggleIndicator(HudModule module, String label, boolean sprint) {
+		/** Anzeige von Toggle-Sprint ({@code sprint}) bzw. Toggle-Schleichen, z. B. „[Sprinten (umgeschaltet)]“. */
+		public ToggleIndicator(HudModule module, boolean sprint) {
 			super(module);
-			this.label = label;
 			this.sprint = sprint;
 		}
 
 		@Override
 		protected void build(boolean preview) {
-			ToggleState state = sprint ? TrsClient.get().sprintToggle() : TrsClient.get().sneakToggle();
-			if (preview || state.active()) line("[" + I18n.tr("hud.toggled", I18n.tr(label)) + "]");
+			ToggleStatus status = TrsClient.get().pvp().toggles().status(sprint, preview);
+			if (status != ToggleStatus.NONE) line(status.text());
 		}
 	}
 }

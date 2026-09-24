@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.module;
 
+import dev.theredstonee.trsclient.core.camera.FreelookState;
 import dev.theredstonee.trsclient.core.config.KeyDefaults;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
 import dev.theredstonee.trsclient.core.hud.HudProfiles;
@@ -56,10 +57,27 @@ public final class TrsModules {
 
 	public final BoolSetting keystrokesShowCps;
 	public final BoolSetting keystrokesShowSpace;
+	public final KeySetting zoomKey;
 	public final NumberSetting zoomFactor;
 	public final BoolSetting zoomSmooth;
 	public final BoolSetting zoomScroll;
 	public final BoolSetting zoomSlowMouse;
+	/** Vanillas filmische Kamera (weiche Maus) nur während des Zooms. */
+	public final BoolSetting zoomCinematic;
+
+	// --- Freelook ---
+	public final KeySetting freelookKey;
+	public final BoolSetting freelookToggle;
+	public final ChoiceSetting<FreelookState.Perspective> freelookPerspective;
+	/** Server, auf denen Freelook automatisch aus ist (Semikolon-getrennt). */
+	public final TextSetting freelookServers;
+
+	// --- Toggle-Sprint/-Schleichen ---
+	public final BoolSetting toggleSprintOnlyForward;
+	public final BoolSetting toggleSprintRemember;
+	public final BoolSetting toggleSprintFlyBoost;
+	public final NumberSetting toggleSprintFlyBoostFactor;
+	public final BoolSetting toggleSneakRemember;
 
 	public final BoolSetting armorDurability;
 	public final BoolSetting armorPercent;
@@ -204,10 +222,12 @@ public final class TrsModules {
 		packs = registry.register(new HudModule("packs", "Active Resource Packs", "List of the enabled resource packs", false,
 				new HudPosition(HudAnchor.BOTTOM_LEFT, 0.005, -0.3)));
 		toggleSprint = registry.register(new HudModule("toggleSprint", "Toggle Sprint",
-				"Press the sprint key once to keep sprinting, press it again to stop. Shown in the HUD while active.", false,
+				"Press the sprint key once to keep sprinting, press it again to stop. "
+						+ "The HUD shows the state, e.g. [Sprinting (Toggled)]. Optional fly boost in creative mode.", false,
 				new HudPosition(HudAnchor.BOTTOM_RIGHT, -0.005, -0.42)));
 		toggleSneak = registry.register(new HudModule("toggleSneak", "Toggle Sneak",
-				"Press the sneak key once to keep sneaking, press it again to stop. Shown in the HUD while active.", false,
+				"Press the sneak key once to keep sneaking, press it again to stop. "
+						+ "The HUD shows the state, e.g. [Sneaking (Toggled)].", false,
 				new HudPosition(HudAnchor.BOTTOM_RIGHT, -0.005, -0.49)));
 		reach = registry.register(new HudModule("reach", "Reach",
 				"Distance of your last hit (display only – your reach itself stays unchanged)", false,
@@ -228,9 +248,12 @@ public final class TrsModules {
 		hitColor = registry.register(new Module("hitColor", "Hit Color",
 				"Color that mobs and players briefly flash in when hit", false));
 		freelook = registry.register(new Module("freelook", "Freelook",
-				"Hold the key to orbit the camera around your character without changing your walking direction. "
-						+ "Some servers forbid freelook – only use it where it is allowed.", false));
-		zoom = registry.register(new Module("zoom", "Zoom", "Hold the key to zoom in", true));
+				"Hold the key to orbit the camera around your character; you keep walking and looking straight ahead "
+						+ "and the server only ever sees your real view direction. Some servers forbid freelook – "
+						+ "respect the server rules. On servers in the list it switches itself off.", false));
+		zoom = registry.register(new Module("zoom", "Zoom",
+				"Hold the key to zoom in smoothly. The mouse wheel changes the zoom while held and the mouse "
+						+ "slows down with it. Pauses while you look through a spyglass.", true));
 		fullbright = registry.register(new Module("fullbright", "Fullbright", "Maximum brightness everywhere", false));
 		titleScreen = registry.register(new Module("titleScreen", "Title Screen",
 				"TRS title screen instead of the vanilla one", true));
@@ -301,10 +324,27 @@ public final class TrsModules {
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS below mouse buttons", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Show space bar", true));
+		// Zoom- und Freelook-Taste sind Vanilla-Tastenbelegungen (Steuerung → TRS Client); der
+		// Loader verbindet sie beim Start (KeySetting.link), dann sind sie auch hier änderbar.
+		zoomKey = zoom.add(new KeySetting("key", "Key", "key.keyboard.v"));
 		zoomFactor = zoom.add(new NumberSetting("factor", "Zoom factor", 4.0, 2.0, 10.0, 0.5, "×"));
 		zoomSmooth = zoom.add(new BoolSetting("smooth", "Smooth transition", true));
 		zoomScroll = zoom.add(new BoolSetting("scroll", "Mouse wheel changes zoom", true));
 		zoomSlowMouse = zoom.add(new BoolSetting("slowMouse", "Slow down mouse", true));
+		zoomCinematic = zoom.add(new BoolSetting("cinematic", "Cinematic camera", false));
+
+		freelookKey = freelook.add(new KeySetting("key", "Key", "key.keyboard.left.alt"));
+		freelookToggle = freelook.add(new BoolSetting("toggle", "Toggle instead of hold", false));
+		freelookPerspective = freelook.add(new ChoiceSetting<>("perspective", "Perspective",
+				FreelookState.Perspective.class, FreelookState.Perspective.BACK));
+		freelookServers = freelook.add(new TextSetting("servers", "Off on these servers", "", 300,
+				"e.g. example.net;other.org"));
+
+		toggleSprintOnlyForward = toggleSprint.add(new BoolSetting("onlyForward", "Sprint only forward", true));
+		toggleSprintRemember = toggleSprint.add(new BoolSetting("remember", "Remember state (death, world change)", true));
+		toggleSprintFlyBoost = toggleSprint.add(new BoolSetting("flyBoost", "Fly boost (creative mode)", false));
+		toggleSprintFlyBoostFactor = toggleSprint.add(new NumberSetting("flyBoostFactor", "Fly boost", 2.0, 1.5, 5.0, 0.5, "×"));
+		toggleSneakRemember = toggleSneak.add(new BoolSetting("remember", "Remember state (death, world change)", false));
 
 		armorDurability = armor.add(new BoolSetting("durability", "Show durability", true));
 		armorPercent = armor.add(new BoolSetting("percent", "Durability in percent", false));

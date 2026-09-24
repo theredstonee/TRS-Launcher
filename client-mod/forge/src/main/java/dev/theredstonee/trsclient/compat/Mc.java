@@ -26,6 +26,20 @@ public final class Mc {
 	private Mc() {
 	}
 
+	/** Schaut die Spielfigur durch ein Fernrohr? */
+	public static boolean scoping() {
+		return mc().player != null && mc().player.isScoping();
+	}
+
+	/** Vanillas filmische Kamera. */
+	public static boolean smoothCamera() {
+		return mc().options.smoothCamera;
+	}
+
+	public static void setSmoothCamera(boolean on) {
+		mc().options.smoothCamera = on;
+	}
+
 	public static Minecraft mc() {
 		return Minecraft.getInstance();
 	}

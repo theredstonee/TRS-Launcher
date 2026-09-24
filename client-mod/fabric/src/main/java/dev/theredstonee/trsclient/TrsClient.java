@@ -61,6 +61,9 @@ public final class TrsClient implements ClientModInitializer {
 	private final ClickCounter leftClicks = new ClickCounter();
 	private final ClickCounter rightClicks = new ClickCounter();
 	private final ZoomState zoom = new ZoomState();
+	/** Filmische Kamera nur während des Zooms (stellt den Wert des Spielers danach wieder her). */
+	private final dev.theredstonee.trsclient.core.util.FlagOverride zoomCinematic =
+			new dev.theredstonee.trsclient.core.util.FlagOverride();
 	private ConfigStore config;
 	private HudManager hud;
 	private final PvpFeatures pvp = new PvpFeatures(modules);
@@ -94,6 +97,9 @@ public final class TrsClient implements ClientModInitializer {
 		}
 
 		TrsKeys.register();
+		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
+		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
+		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
@@ -243,13 +249,17 @@ public final class TrsClient implements ClientModInitializer {
 		else if (button == Keys.MOUSE_RIGHT) rightClicks.record(now);
 	}
 
-	/** Pro Frame aus getFov: aktualisiert den Zoom und liefert den FOV-Divisor. */
+	/**
+	 * Pro Frame aus getFov: aktualisiert den Zoom und liefert den FOV-Divisor. Das Fernrohr (ab 1.17)
+	 * hat Vorrang; die filmische Kamera gilt auf Wunsch nur, solange gezoomt wird.
+	 */
 	public double updateZoom() {
-		Minecraft mc = Minecraft.getInstance();
-		boolean active = modules.zoom.isEnabled()
+		boolean wanted = modules.zoom.isEnabled()
 				&& (forceZoom || (TrsKeys.zoom.isDown() && Mc.screen() == null));
-		zoom.update(active, modules.zoomFactor.get(), modules.zoomSmooth.get(), System.nanoTime());
-		return zoom.factor();
+		double factor = zoom.frame(wanted, Mc.scoping(), modules.zoomFactor.get(), modules.zoomSmooth.get(), System.nanoTime());
+		boolean smooth = zoomCinematic.update(Mc.smoothCamera(), zoom.isActive() && modules.zoomCinematic.get());
+		if (smooth != Mc.smoothCamera()) Mc.setSmoothCamera(smooth);
+		return factor;
 	}
 
 	/** Mausrad während des Zooms; true = Ereignis verbraucht (Hotbar bleibt). */
@@ -259,9 +269,9 @@ public final class TrsClient implements ClientModInitializer {
 		return true;
 	}
 
-	/** Maus-Divisor während des Zooms (1 = unverändert). */
+	/** Maus-Divisor während des Zooms (1 = unverändert), proportional zur Zoomstufe. */
 	public double mouseDivisor() {
-		return modules.zoomSlowMouse.get() ? zoom.factor() : 1.0;
+		return zoom.mouseDivisor(modules.zoomSlowMouse.get());
 	}
 
 	public boolean fullbright() {

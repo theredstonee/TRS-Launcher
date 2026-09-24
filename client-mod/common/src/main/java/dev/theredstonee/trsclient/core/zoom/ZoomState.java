@@ -43,6 +43,29 @@ public final class ZoomState {
 		if (Math.abs(target - current) < 0.001) current = target;
 	}
 
+	/**
+	 * Ein Frame mit allen Regeln des Zoom-Moduls.
+	 *
+	 * @param wanted     Zoom-Taste gehalten, Modul an, kein Menü offen
+	 * @param scoping    die Spielfigur schaut durch ein Fernrohr (ab 1.17): das Fernrohr hat
+	 *                   Vorrang, der TRS-Zoom endet sofort (kein doppelter Zoom, kein Nachgleiten)
+	 * @param baseFactor eingestellte Stärke
+	 * @param smooth     weicher Übergang an/aus
+	 * @return aktueller FOV-Divisor (≥ 1)
+	 */
+	public double frame(boolean wanted, boolean scoping, double baseFactor, boolean smooth, long nowNanos) {
+		update(wanted && !scoping, baseFactor, smooth && !scoping, nowNanos);
+		return current;
+	}
+
+	/**
+	 * Teiler für die Mausbewegung: proportional zur aktuellen Zoomstufe, damit sich ein Pixel
+	 * Mausweg auf dem Bildschirm gleich weit anfühlt. 1 = unverändert.
+	 */
+	public double mouseDivisor(boolean slowMouse) {
+		return slowMouse && current > 1.0 ? current : 1.0;
+	}
+
 	/** Mausrad während des Zooms: positive Werte zoomen hinein. */
 	public void scroll(double amount) {
 		if (!active || amount == 0) return;

@@ -155,6 +155,9 @@ public final class AutoTest {
 					m.setEnabled(true);
 				}
 				TrsClient.get().sprintToggle().set(true);
+				// Toggle-Schleichen nur für das HUD-Bild: beide Anzeigen "[… (umgeschaltet)]".
+				modules.toggleSneak.setEnabled(true);
+				TrsClient.get().sneakToggle().set(true);
 				modules.crosshairShape.set(Crosshair.Shape.CROSS_DOT);
 				modules.crosshairColor.set(0xFFB84D);
 				// Chat-Meldungen und Toasts der Befehle ausblenden lassen (Chat verblasst nach 10 s)
@@ -162,6 +165,9 @@ public final class AutoTest {
 				break;
 			case 4:
 				shot(mc, "trsclient-hud");
+				TrsClient.LOGGER.info("[Autotest] Toggle-Anzeige: {} {}", TrsClient.get().pvp().toggles().sprintStatus().text(),
+						TrsClient.get().pvp().toggles().sneakStatus().text());
+				TrsClient.get().sneakToggle().set(false);
 				TrsClient.get().setForceZoom(true);
 				next(30);
 				break;
@@ -202,11 +208,11 @@ public final class AutoTest {
 			case 10:
 				shot(mc, "trsclient-freelook");
 				TrsClient.get().pvp().forceFreelook(Float.NaN);
-				Mc.setScreen(new TrsMenuScreen(null).select(modules.crosshair));
+				Mc.setScreen(new TrsMenuScreen(null).select(modules.freelook));
 				next(20);
 				break;
 			case 11:
-				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).select(modules.crosshair))) return;
+				if (!ensureScreen(TrsMenuScreen.class, () -> new TrsMenuScreen(null).select(modules.freelook))) return;
 				shot(mc, "trsclient-menu");
 				Mc.setScreen(new CrosshairEditorScreen(null));
 				next(20);
