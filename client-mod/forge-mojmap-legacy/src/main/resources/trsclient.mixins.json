@@ -12,6 +12,7 @@
 		"ChatComponentAccessor",
 		"ChatMixin",
 		"ChatScreenMixin",
+		"EmoteModelMixin",
 		"FovMixin",
 		"HitboxColorMixin",
 		"HurtCamMixin",

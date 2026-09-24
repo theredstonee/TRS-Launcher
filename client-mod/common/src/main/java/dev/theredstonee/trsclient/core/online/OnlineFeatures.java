@@ -24,12 +24,14 @@ public final class OnlineFeatures<T> {
 	private final CapeTextures<T> textures;
 	private final CapePhysics physics = new CapePhysics();
 	private final ClothMesh mesh = new ClothMesh();
+	private final dev.theredstonee.trsclient.core.emote.EmoteController emotes;
 	private volatile Thread gameThread;
 
 	public OnlineFeatures(TrsModules modules, TrsOnline online, CapeTextures.Backend<T> backend) {
 		this.modules = modules;
 		this.online = online;
 		this.textures = new CapeTextures<>(backend, online::loadCape);
+		this.emotes = new dev.theredstonee.trsclient.core.emote.EmoteController(modules, online);
 	}
 
 	/** Standard-Aufbau: Konfiguration aus {@code configDir}, HTTP über HttpURLConnection. */
@@ -97,6 +99,11 @@ public final class OnlineFeatures<T> {
 	/** Gemeinsamer Mesh-Baukasten (nur Render-Thread). */
 	public ClothMesh mesh() {
 		return mesh;
+	}
+
+	/** Emotes (Rad, Animationen, Ereignisse anderer Spieler). */
+	public dev.theredstonee.trsclient.core.emote.EmoteController emotes() {
+		return emotes;
 	}
 
 	public TrsOnline online() {

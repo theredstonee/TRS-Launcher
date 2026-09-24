@@ -10,13 +10,11 @@
   "common.create": "Utwórz",
   "common.save": "Zapisz",
   "common.reset": "Resetuj",
-
   "category.hud": "HUD",
   "category.pvp": "PvP",
   "category.chat": "Czat",
   "category.world": "Świat",
   "category.misc": "Inne",
-
   "menu.client": "Client",
   "menu.search": "Szukaj modułów",
   "menu.all": "Wszystkie",
@@ -29,10 +27,8 @@
   "menu.noSettings": "Ten moduł nie ma ustawień – można go tylko włączyć lub wyłączyć.",
   "menu.action.waypoints": "Zarządzaj punktami",
   "menu.action.showInEditor": "Pokaż w edytorze HUD",
-
   "settings.pressKey": "Naciśnij klawisz …",
   "settings.chroma": "Chroma",
-
   "profiles.title": "Profile HUD",
   "profiles.switches": "przełącza",
   "profiles.new": "Nowy profil",
@@ -45,12 +41,10 @@
   "profiles.error.empty": "Brak nazwy",
   "profiles.error.long": "Maksymalnie {0} znaków",
   "profiles.error.taken": "Ta nazwa jest już zajęta",
-
   "editor.title": "Edytuj HUD",
   "editor.profile": "Profil: {0}",
   "editor.menu": "Menu",
   "editor.hint": "Przeciągnij · Kółko: rozmiar · PPM: reset · Shift: swobodnie",
-
   "title.singleplayer": "Tryb jednoosobowy",
   "title.multiplayer": "Tryb wieloosobowy",
   "title.options": "Opcje",
@@ -59,7 +53,6 @@
   "title.quit": "Wyjdź z gry",
   "title.classic": "Klasyczny ekran tytułowy",
   "title.narrateButton": "{0}, przycisk",
-
   "direction.south": "Południe",
   "direction.southwest": "Południowy zachód",
   "direction.west": "Zachód",
@@ -76,7 +69,6 @@
   "direction.northeast.short": "NE",
   "direction.east.short": "E",
   "direction.southeast.short": "SE",
-
   "hud.coords.direction": "Kierunek: {0} ({1})",
   "hud.coords.biome": "Biom: {0}",
   "hud.packs.none": "Brak dodatkowych aktywnych paczek",
@@ -91,14 +83,11 @@
   "hud.comboBest": "(rekord {0})",
   "hud.preview.effect1": "Szybkość II  1:30",
   "hud.preview.effect2": "Siła  0:45",
-
   "toast.hudProfile": "Profil HUD: {0}",
   "toast.fullbright": "Fullbright: {0}",
   "toast.freelookBlocked": "Wolna kamera jest wyłączona na tym serwerze",
-
   "crosshairEditor.title": "Edytuj celownik",
   "crosshairEditor.preview": "Podgląd ×{0}",
-
   "packs.title": "Paczki zasobów",
   "packs.search": "Szukaj",
   "packs.searchHint": "Szukaj paczek …",
@@ -113,7 +102,6 @@
   "packs.required": "Wymagana",
   "packs.folderOpened": "Folder otwarty",
   "packs.folderFailed": "Nie udało się otworzyć folderu",
-
   "waypoint.create": "Utwórz punkt",
   "waypoint.edit": "Edytuj punkt",
   "waypoint.suggest": "Punkt {0}",
@@ -130,11 +118,9 @@
   "waypoints.empty": "Brak punktów – naciśnij {0} w grze, aby utworzyć punkt.",
   "waypoints.death": "śmierć",
   "waypoints.addHere": "Utwórz tutaj",
-
   "chat.hotkeyEmpty": "Skrót tekstowy {0} jest pusty",
   "chat.hotkeyTooFast": "Skrót tekstowy: za szybko",
   "chat.lineCopied": "Skopiowano linię",
-
   "module.fps": "FPS",
   "module.fps.desc": "Klatki na sekundę",
   "module.cps": "CPS",
@@ -216,7 +202,6 @@
   "module.trsOnline.desc": "Odznaki i peleryny TRS innych graczy, twoja własna peleryna i status online dla znajomych. Loguje się kontem Minecraft jak przy wejściu na serwer. Pokazuje tylko, że ktoś używa TRS.",
   "module.capePhysics": "Fizyka peleryny",
   "module.capePhysics.desc": "Peleryny (Mojang, OptiFine, TRS) poruszają się jak materiał: falują przy chodzeniu, obracaniu, skakaniu i skradaniu.",
-
   "setting.hud.textColor": "Kolor tekstu",
   "setting.hud.shadow": "Cień tekstu",
   "setting.hud.background": "Tło",
@@ -300,11 +285,43 @@
   "setting.capePhysics.scope": "Dla",
   "setting.capePhysics.scope.own": "Tylko moja",
   "setting.capePhysics.scope.all": "Wszyscy gracze",
-
   "key.trsclient.category": "TRS Client",
   "key.trsclient.menu": "Otwórz menu TRS",
   "key.trsclient.zoom": "Zoom (przytrzymaj)",
   "key.trsclient.fullbright": "Przełącz fullbright",
   "key.trsclient.freelook": "Wolna kamera",
-  "key.trsclient.hudProfile": "Zmień profil HUD"
+  "key.trsclient.hudProfile": "Zmień profil HUD",
+  "module.emotes": "Emotki",
+  "module.emotes.desc": "Przytrzymaj klawisz emotek (G), aby otworzyć koło, wskaż emotkę myszą i puść klawisz, aby ją odtworzyć. Inni gracze TRS też ją widzą. Wymaga funkcji online TRS; można używać tylko odblokowanych emotek.",
+  "setting.emotes.camera": "Kamera podczas twojej emotki",
+  "setting.emotes.camera.off": "Bez zmian",
+  "setting.emotes.camera.back": "Trzecia osoba (z tyłu)",
+  "setting.emotes.camera.front": "Trzecia osoba (z przodu)",
+  "setting.emotes.others": "Pokazuj emotki innych graczy",
+  "emote.winken": "Machanie",
+  "emote.klatschen": "Klaskanie",
+  "emote.jubeln": "Wiwatowanie",
+  "emote.verbeugen": "Ukłon",
+  "emote.facepalm": "Facepalm",
+  "emote.schulterzucken": "Wzruszenie ramion",
+  "emote.daumen_hoch": "Kciuk w górę",
+  "emote.tanzen": "Taniec",
+  "emote.salutieren": "Salutowanie",
+  "emote.luftgitarre": "Gitara powietrzna",
+  "emote.redstone_tanz": "Taniec redstone",
+  "wheel.title": "Emotki",
+  "wheel.pick": "Wskaż emotkę",
+  "wheel.locked": "Zablokowana",
+  "wheel.lockedToast": "Ta emotka jest zablokowana – odblokuj ją kodem w launcherze",
+  "wheel.cooldown": "Poczekaj {0} s",
+  "wheel.hintHold": "Wskaż myszą · puść {0}, aby odtworzyć",
+  "wheel.hintClick": "Kliknij emotkę · Esc zamyka",
+  "wheel.loading": "Wczytywanie twoich emotek …",
+  "wheel.offLauncher": "Funkcje online TRS są wyłączone w launcherze (Ustawienia → Prywatność). Emotki ich potrzebują.",
+  "wheel.offModule": "Włącz „Funkcje online TRS” w menu TRS, aby używać emotek.",
+  "wheel.noAccount": "Emotki wymagają konta Minecraft zalogowanego przez Microsoft.",
+  "wheel.banned": "To konto nie może korzystać z funkcji online TRS.",
+  "wheel.retry": "API TRS jest teraz niedostępne. Spróbuj ponownie za chwilę.",
+  "wheel.connecting": "Łączenie z API TRS …",
+  "key.trsclient.emoteWheel": "Koło emotek (przytrzymaj)"
 }

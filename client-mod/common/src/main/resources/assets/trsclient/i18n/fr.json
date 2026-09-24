@@ -10,13 +10,11 @@
   "common.create": "Créer",
   "common.save": "Enregistrer",
   "common.reset": "Réinitialiser",
-
   "category.hud": "HUD",
   "category.pvp": "PvP",
   "category.chat": "Chat",
   "category.world": "Monde",
   "category.misc": "Autres",
-
   "menu.client": "Client",
   "menu.search": "Rechercher des modules",
   "menu.all": "Tous",
@@ -29,10 +27,8 @@
   "menu.noSettings": "Ce module n'a pas de réglages : il s'active ou se désactive, c'est tout.",
   "menu.action.waypoints": "Gérer les points de passage",
   "menu.action.showInEditor": "Afficher dans l'éditeur de HUD",
-
   "settings.pressKey": "Appuie sur une touche …",
   "settings.chroma": "Chroma",
-
   "profiles.title": "Profils de HUD",
   "profiles.switches": "change",
   "profiles.new": "Nouveau profil",
@@ -45,12 +41,10 @@
   "profiles.error.empty": "Le nom est manquant",
   "profiles.error.long": "{0} caractères au maximum",
   "profiles.error.taken": "Ce nom existe déjà",
-
   "editor.title": "Modifier le HUD",
   "editor.profile": "Profil : {0}",
   "editor.menu": "Menu",
   "editor.hint": "Glisser · Molette : taille · Clic droit : réinitialiser · Maj : libre",
-
   "title.singleplayer": "Solo",
   "title.multiplayer": "Multijoueur",
   "title.options": "Options",
@@ -59,7 +53,6 @@
   "title.quit": "Quitter le jeu",
   "title.classic": "Écran titre classique",
   "title.narrateButton": "{0}, bouton",
-
   "direction.south": "Sud",
   "direction.southwest": "Sud-ouest",
   "direction.west": "Ouest",
@@ -76,7 +69,6 @@
   "direction.northeast.short": "NE",
   "direction.east.short": "E",
   "direction.southeast.short": "SE",
-
   "hud.coords.direction": "Direction : {0} ({1})",
   "hud.coords.biome": "Biome : {0}",
   "hud.packs.none": "Aucun pack supplémentaire actif",
@@ -91,14 +83,11 @@
   "hud.comboBest": "(record {0})",
   "hud.preview.effect1": "Rapidité II  1:30",
   "hud.preview.effect2": "Force  0:45",
-
   "toast.hudProfile": "Profil de HUD : {0}",
   "toast.fullbright": "Fullbright : {0}",
   "toast.freelookBlocked": "La vue libre est désactivée sur ce serveur",
-
   "crosshairEditor.title": "Modifier le réticule",
   "crosshairEditor.preview": "Aperçu ×{0}",
-
   "packs.title": "Packs de ressources",
   "packs.search": "Rechercher",
   "packs.searchHint": "Rechercher des packs …",
@@ -113,7 +102,6 @@
   "packs.required": "Requis",
   "packs.folderOpened": "Dossier ouvert",
   "packs.folderFailed": "Impossible d'ouvrir le dossier",
-
   "waypoint.create": "Créer un point de passage",
   "waypoint.edit": "Modifier le point de passage",
   "waypoint.suggest": "Point {0}",
@@ -130,11 +118,9 @@
   "waypoints.empty": "Aucun point de passage : appuie sur {0} en jeu pour en créer un.",
   "waypoints.death": "mort",
   "waypoints.addHere": "Créer ici",
-
   "chat.hotkeyEmpty": "Le raccourci texte {0} est vide",
   "chat.hotkeyTooFast": "Raccourci texte : trop rapide",
   "chat.lineCopied": "Ligne copiée",
-
   "module.fps": "FPS",
   "module.fps.desc": "Images par seconde",
   "module.cps": "CPS",
@@ -216,7 +202,6 @@
   "module.trsOnline.desc": "Badges et capes TRS des autres joueurs, ta propre cape et ton statut en ligne pour tes amis. Se connecte avec ton compte Minecraft, comme pour rejoindre un serveur. Montre seulement que quelqu'un utilise TRS.",
   "module.capePhysics": "Physique des capes",
   "module.capePhysics.desc": "Les capes (Mojang, OptiFine, TRS) bougent comme du tissu : elles ondulent quand tu marches, tournes, sautes et t'accroupis.",
-
   "setting.hud.textColor": "Couleur",
   "setting.hud.shadow": "Ombre du texte",
   "setting.hud.background": "Fond",
@@ -300,11 +285,43 @@
   "setting.capePhysics.scope": "Pour",
   "setting.capePhysics.scope.own": "Seulement la mienne",
   "setting.capePhysics.scope.all": "Tous les joueurs",
-
   "key.trsclient.category": "TRS Client",
   "key.trsclient.menu": "Ouvrir le menu TRS",
   "key.trsclient.zoom": "Zoom (maintenir)",
   "key.trsclient.fullbright": "Activer/désactiver le fullbright",
   "key.trsclient.freelook": "Vue libre",
-  "key.trsclient.hudProfile": "Changer de profil de HUD"
+  "key.trsclient.hudProfile": "Changer de profil de HUD",
+  "module.emotes": "Emotes",
+  "module.emotes.desc": "Maintiens la touche d’emote (G) pour la roue, vise un emote avec la souris et relâche la touche pour le jouer. Les autres joueurs TRS le voient aussi. Nécessite les fonctions en ligne TRS ; seuls les emotes débloqués sont jouables.",
+  "setting.emotes.camera": "Caméra pendant ton emote",
+  "setting.emotes.camera.off": "Inchangée",
+  "setting.emotes.camera.back": "Troisième personne (derrière)",
+  "setting.emotes.camera.front": "Troisième personne (devant)",
+  "setting.emotes.others": "Afficher les emotes des autres joueurs",
+  "emote.winken": "Saluer",
+  "emote.klatschen": "Applaudir",
+  "emote.jubeln": "Acclamer",
+  "emote.verbeugen": "Révérence",
+  "emote.facepalm": "Facepalm",
+  "emote.schulterzucken": "Hausser les épaules",
+  "emote.daumen_hoch": "Pouce levé",
+  "emote.tanzen": "Danser",
+  "emote.salutieren": "Salut militaire",
+  "emote.luftgitarre": "Air guitar",
+  "emote.redstone_tanz": "Danse redstone",
+  "wheel.title": "Emotes",
+  "wheel.pick": "Vise un emote",
+  "wheel.locked": "Verrouillé",
+  "wheel.lockedToast": "Cet emote est verrouillé – débloque-le avec un code dans le launcher",
+  "wheel.cooldown": "Attends {0} s",
+  "wheel.hintHold": "Vise avec la souris · relâche {0} pour jouer",
+  "wheel.hintClick": "Clique sur un emote · Échap ferme",
+  "wheel.loading": "Chargement de tes emotes …",
+  "wheel.offLauncher": "Les fonctions en ligne TRS sont désactivées dans le launcher (Paramètres → Confidentialité). Les emotes en ont besoin.",
+  "wheel.offModule": "Active « Fonctions en ligne TRS » dans le menu TRS pour utiliser les emotes.",
+  "wheel.noAccount": "Les emotes nécessitent un compte Minecraft connecté avec Microsoft.",
+  "wheel.banned": "Ce compte ne peut pas utiliser les fonctions en ligne TRS.",
+  "wheel.retry": "L’API TRS est injoignable pour le moment. Réessaie dans un instant.",
+  "wheel.connecting": "Connexion à l’API TRS …",
+  "key.trsclient.emoteWheel": "Roue d’emotes (maintenir)"
 }

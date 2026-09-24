@@ -31,7 +31,11 @@ public final class TrsKeys {
 	public static final KeyMapping hudProfile =
 			new KeyMapping("key.trsclient.hudProfile", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 
-	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile};
+	/** Emote-Rad (halten, Standard G – in keiner Vanilla-Version belegt). */
+	public static final KeyMapping emoteWheel =
+			new KeyMapping("key.trsclient.emoteWheel", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
+
+	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel};
 
 	private TrsKeys() {
 	}

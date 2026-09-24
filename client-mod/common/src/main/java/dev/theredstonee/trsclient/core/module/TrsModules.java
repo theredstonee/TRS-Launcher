@@ -54,6 +54,8 @@ public final class TrsModules {
 	public final Module trsOnline;
 	/** Stoff-Simulation für alle Umhänge (Vanilla, OptiFine, TRS). */
 	public final Module capePhysics;
+	/** Emote-Rad und Emote-Animationen (braucht die TRS API, siehe core.emote). */
+	public final Module emotes;
 
 	public final BoolSetting keystrokesShowCps;
 	public final BoolSetting keystrokesShowSpace;
@@ -146,6 +148,26 @@ public final class TrsModules {
 	public final NumberSetting capeStrength;
 	public final NumberSetting capeWind;
 	public final ChoiceSetting<CapeScope> capeScope;
+	public final ChoiceSetting<EmoteCamera> emoteCamera;
+	public final BoolSetting emoteOthers;
+
+	/** Kamera während des eigenen Emotes (nur wenn sie in der Ich-Perspektive ist). */
+	public enum EmoteCamera implements ChoiceSetting.Option {
+		OFF("Unchanged"),
+		BACK("Third person (behind)"),
+		FRONT("Third person (front)");
+
+		private final String label;
+
+		EmoteCamera(String label) {
+			this.label = label;
+		}
+
+		@Override
+		public String label() {
+			return label;
+		}
+	}
 
 	/** Für wen die Umhang-Physik rechnet. */
 	public enum CapeScope implements ChoiceSetting.Option {
@@ -286,6 +308,10 @@ public final class TrsModules {
 		capePhysics = registry.register(new Module("capePhysics", "Cape Physics",
 				"Capes (Mojang, OptiFine, TRS) move like cloth: they swing when you walk, turn, jump and sneak.",
 				true));
+		emotes = registry.register(new Module("emotes", "Emotes",
+				"Hold G for the emote wheel, point with the mouse and release to play the emote. Other TRS players "
+						+ "see it too. Uses the TRS Online Features; only unlocked emotes can be played.",
+				true));
 
 		fps.icon("gauge");
 		cps.icon("mouse").category(Category.PVP);
@@ -321,6 +347,7 @@ public final class TrsModules {
 		waypoints.icon("compass").category(Category.WORLD);
 		trsOnline.icon("redstone");
 		capePhysics.icon("cape");
+		emotes.icon("wave");
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS below mouse buttons", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Show space bar", true));
@@ -414,6 +441,9 @@ public final class TrsModules {
 		capeStrength = capePhysics.add(new NumberSetting("strength", "Strength", 100, 20, 200, 10, "", "%"));
 		capeWind = capePhysics.add(new NumberSetting("wind", "Wind", 100, 0, 200, 10, "", "%"));
 		capeScope = capePhysics.add(new ChoiceSetting<>("scope", "For", CapeScope.class, CapeScope.ALL));
+		emoteCamera = emotes.add(new ChoiceSetting<>("camera", "Camera during your emote", EmoteCamera.class,
+				EmoteCamera.FRONT));
+		emoteOthers = emotes.add(new BoolSetting("others", "Show emotes of other players", true));
 
 		registry.addPart(keyDefaults);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.

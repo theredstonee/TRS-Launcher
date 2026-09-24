@@ -194,6 +194,12 @@ public final class TrsClient {
 			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
 			saveConfig();
 		}
+		// Emote-Rad: Taste halten öffnet es, Loslassen (im Rad abgefragt) spielt das gezeigte Emote.
+		while (TrsKeys.emoteWheel.isPressed()) {
+			if (mc.currentScreen == null && Mc.player() != null && dev.theredstonee.trsclient.online.LegacyEmotes.enabled()) {
+				mc.displayGuiScreen(new dev.theredstonee.trsclient.screen.EmoteWheelScreen());
+			}
+		}
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
 		if (mc.currentScreen == null) {
 			if (moduleKeys.pressed(modules.waypointAddKey) && Mc.player() != null && modules.waypoints.isEnabled()) {
@@ -214,6 +220,7 @@ public final class TrsClient {
 		waypoints.tick();
 		hud.tick();
 		dev.theredstonee.trsclient.online.LegacyOnline.tick(mc);
+		dev.theredstonee.trsclient.online.LegacyEmotes.tick(mc);
 	}
 
 	/** Weltwechsel erkennen (Legacy-Forge hat dafür kein eigenes Ereignis). */
@@ -342,8 +349,13 @@ public final class TrsClient {
 		int button = Mc.mouseButton(event);
 		if (Mc.mouseButtonDown(event)) {
 			long now = System.currentTimeMillis();
-			if (button == 0) leftClicks.record(now);
-			else if (button == 1) rightClicks.record(now);
+			if (button == 0) {
+				leftClicks.record(now);
+				// Angreifen/Abbauen beendet das eigene Emote (wie Bewegung).
+				dev.theredstonee.trsclient.online.LegacyEmotes.onAttack();
+			} else if (button == 1) {
+				rightClicks.record(now);
+			}
 		}
 		// Reines Mausrad-Ereignis während des Zooms → Zoomstufe statt Hotbar.
 		int wheel = Mc.mouseWheel(event);

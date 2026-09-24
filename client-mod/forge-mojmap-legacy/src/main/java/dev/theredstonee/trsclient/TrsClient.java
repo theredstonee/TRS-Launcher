@@ -134,7 +134,7 @@ public final class TrsClient {
 			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor
 					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
 					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline
-					|| m == modules.capePhysics)) {
+					|| m == modules.capePhysics || m == modules.emotes)) {
 				continue;
 			}
 			visibleModules.add(m);
@@ -292,6 +292,13 @@ public final class TrsClient {
 			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
 			saveConfig();
 		}
+		// Emote-Rad: Taste halten öffnet es, Loslassen (im Rad abgefragt) spielt das gezeigte Emote.
+		while (TrsKeys.emoteWheel.consumeClick()) {
+			if (Mc.screen() == null && mc.player != null && visibleModules.contains(modules.emotes)
+					&& dev.theredstonee.trsclient.online.EmoteHooks.enabled()) {
+				Mc.setScreen(new dev.theredstonee.trsclient.screen.EmoteWheelScreen());
+			}
+		}
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
 		if (Mc.screen() == null) {
 			if (moduleKeys.pressed(modules.waypointAddKey) && mc.player != null && modules.waypoints.isEnabled()) {
@@ -316,6 +323,7 @@ public final class TrsClient {
 		chat.tick(mc);
 		hud.tick();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
+		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
 	}
 
 	/**
@@ -347,8 +355,12 @@ public final class TrsClient {
 	public void onMouseClick(int button) {
 		if (Mc.screen() != null) return;
 		long now = System.currentTimeMillis();
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) leftClicks.record(now);
-		else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) rightClicks.record(now);
+		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+			leftClicks.record(now);
+			// Angreifen/Abbauen beendet das eigene Emote (wie Bewegung).
+			dev.theredstonee.trsclient.online.EmoteHooks.onAttack();
+		}
+		if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) rightClicks.record(now);
 	}
 
 	/** Pro Frame aus getFov: aktualisiert den Zoom und liefert den FOV-Divisor. */

@@ -20,6 +20,13 @@ public final class Uuids {
 		return t;
 	}
 
+	/** 32 Hex-Ziffern (mit oder ohne Bindestriche) → UUID; ungültig → null. */
+	public static UUID toUuid(String raw) {
+		String n = normalize(raw);
+		if (n == null) return null;
+		return new UUID(Long.parseUnsignedLong(n.substring(0, 16), 16), Long.parseUnsignedLong(n.substring(16), 16));
+	}
+
 	public static String of(UUID uuid) {
 		if (uuid == null) return null;
 		return normalize(uuid.toString());

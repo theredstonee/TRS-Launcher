@@ -107,7 +107,10 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin'
 		'MouseHandlerAccessor', 'KeyboardHandlerAccessor',
 		'AttackMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin', 'HurtCamMixin', 'OldAnimationsMixin',
 		// TRS API: TRS-Umhang-Textur, Abzeichen in Tabliste und über dem Namen
-		'CapeTextureMixin', 'TabBadgeMixin', 'NameTagBadgeMixin']
+		'CapeTextureMixin', 'TabBadgeMixin', 'NameTagBadgeMixin',
+		// Emotes: Pose auf HumanoidModel#setupAnim; ab 1.21.2 Spieler über den Render-State zuordnen.
+		'EmoteModelMixin']
+if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 // Umhang-Physik: ab 1.15 (1.14 zeichnet den Umhang mit festen GL-Aufrufen, dort bleibt er starr).
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'

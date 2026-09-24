@@ -10,13 +10,11 @@
   "common.create": "Criar",
   "common.save": "Salvar",
   "common.reset": "Redefinir",
-
   "category.hud": "HUD",
   "category.pvp": "PvP",
   "category.chat": "Chat",
   "category.world": "Mundo",
   "category.misc": "Outros",
-
   "menu.client": "Client",
   "menu.search": "Buscar módulos",
   "menu.all": "Todos",
@@ -29,10 +27,8 @@
   "menu.noSettings": "Este módulo não tem ajustes – só liga e desliga.",
   "menu.action.waypoints": "Gerenciar pontos de referência",
   "menu.action.showInEditor": "Mostrar no editor de HUD",
-
   "settings.pressKey": "Pressione uma tecla …",
   "settings.chroma": "Croma",
-
   "profiles.title": "Perfis de HUD",
   "profiles.switches": "alterna",
   "profiles.new": "Novo perfil",
@@ -45,12 +41,10 @@
   "profiles.error.empty": "Falta o nome",
   "profiles.error.long": "No máximo {0} caracteres",
   "profiles.error.taken": "Esse nome já existe",
-
   "editor.title": "Editar HUD",
   "editor.profile": "Perfil: {0}",
   "editor.menu": "Menu",
   "editor.hint": "Arrastar · Roda: tamanho · Clique direito: redefinir · Shift: livre",
-
   "title.singleplayer": "Um jogador",
   "title.multiplayer": "Multijogador",
   "title.options": "Opções",
@@ -59,7 +53,6 @@
   "title.quit": "Sair do jogo",
   "title.classic": "Tela de título clássica",
   "title.narrateButton": "{0}, botão",
-
   "direction.south": "Sul",
   "direction.southwest": "Sudoeste",
   "direction.west": "Oeste",
@@ -76,7 +69,6 @@
   "direction.northeast.short": "NE",
   "direction.east.short": "L",
   "direction.southeast.short": "SE",
-
   "hud.coords.direction": "Direção: {0} ({1})",
   "hud.coords.biome": "Bioma: {0}",
   "hud.packs.none": "Nenhum pacote adicional ativo",
@@ -91,14 +83,11 @@
   "hud.comboBest": "(recorde {0})",
   "hud.preview.effect1": "Velocidade II  1:30",
   "hud.preview.effect2": "Força  0:45",
-
   "toast.hudProfile": "Perfil de HUD: {0}",
   "toast.fullbright": "Fullbright: {0}",
   "toast.freelookBlocked": "A visão livre está desligada neste servidor",
-
   "crosshairEditor.title": "Editar mira",
   "crosshairEditor.preview": "Prévia ×{0}",
-
   "packs.title": "Pacotes de recursos",
   "packs.search": "Buscar",
   "packs.searchHint": "Buscar pacotes …",
@@ -113,7 +102,6 @@
   "packs.required": "Obrigatório",
   "packs.folderOpened": "Pasta aberta",
   "packs.folderFailed": "Não foi possível abrir a pasta",
-
   "waypoint.create": "Criar ponto de referência",
   "waypoint.edit": "Editar ponto de referência",
   "waypoint.suggest": "Ponto {0}",
@@ -130,11 +118,9 @@
   "waypoints.empty": "Nenhum ponto ainda – pressione {0} no jogo para criar um.",
   "waypoints.death": "morte",
   "waypoints.addHere": "Criar aqui",
-
   "chat.hotkeyEmpty": "O atalho de texto {0} está vazio",
   "chat.hotkeyTooFast": "Atalho de texto: rápido demais",
   "chat.lineCopied": "Linha copiada",
-
   "module.fps": "FPS",
   "module.fps.desc": "Quadros por segundo",
   "module.cps": "CPS",
@@ -216,7 +202,6 @@
   "module.trsOnline.desc": "Selos e capas TRS de outros jogadores, sua própria capa e seu status online para amigos. Faz login com sua conta Minecraft, como ao entrar em um servidor. Mostra apenas que alguém usa TRS.",
   "module.capePhysics": "Física da capa",
   "module.capePhysics.desc": "Capas (Mojang, OptiFine, TRS) se movem como tecido: balançam ao andar, virar, pular e agachar.",
-
   "setting.hud.textColor": "Cor do texto",
   "setting.hud.shadow": "Sombra do texto",
   "setting.hud.background": "Fundo",
@@ -300,11 +285,43 @@
   "setting.capePhysics.scope": "Para",
   "setting.capePhysics.scope.own": "Só a minha",
   "setting.capePhysics.scope.all": "Todos os jogadores",
-
   "key.trsclient.category": "TRS Client",
   "key.trsclient.menu": "Abrir menu TRS",
   "key.trsclient.zoom": "Zoom (segurar)",
   "key.trsclient.fullbright": "Alternar fullbright",
   "key.trsclient.freelook": "Visão livre",
-  "key.trsclient.hudProfile": "Trocar perfil de HUD"
+  "key.trsclient.hudProfile": "Trocar perfil de HUD",
+  "module.emotes": "Emotes",
+  "module.emotes.desc": "Segure a tecla de emotes (G) para abrir a roda, aponte para um emote com o mouse e solte a tecla para reproduzi-lo. Outros jogadores TRS também veem. Precisa dos recursos online TRS; só emotes desbloqueados podem ser usados.",
+  "setting.emotes.camera": "Câmera durante seu emote",
+  "setting.emotes.camera.off": "Sem mudança",
+  "setting.emotes.camera.back": "Terceira pessoa (atrás)",
+  "setting.emotes.camera.front": "Terceira pessoa (frente)",
+  "setting.emotes.others": "Mostrar emotes de outros jogadores",
+  "emote.winken": "Acenar",
+  "emote.klatschen": "Aplaudir",
+  "emote.jubeln": "Comemorar",
+  "emote.verbeugen": "Reverência",
+  "emote.facepalm": "Facepalm",
+  "emote.schulterzucken": "Dar de ombros",
+  "emote.daumen_hoch": "Joinha",
+  "emote.tanzen": "Dançar",
+  "emote.salutieren": "Continência",
+  "emote.luftgitarre": "Guitarra imaginária",
+  "emote.redstone_tanz": "Dança de redstone",
+  "wheel.title": "Emotes",
+  "wheel.pick": "Aponte para um emote",
+  "wheel.locked": "Bloqueado",
+  "wheel.lockedToast": "Este emote está bloqueado – desbloqueie com um código no launcher",
+  "wheel.cooldown": "Espere {0} s",
+  "wheel.hintHold": "Aponte com o mouse · solte {0} para reproduzir",
+  "wheel.hintClick": "Clique em um emote · Esc fecha",
+  "wheel.loading": "Carregando seus emotes …",
+  "wheel.offLauncher": "Os recursos online TRS estão desativados no launcher (Configurações → Privacidade). Os emotes precisam deles.",
+  "wheel.offModule": "Ative “Recursos online TRS” no menu TRS para usar emotes.",
+  "wheel.noAccount": "Emotes precisam de uma conta Minecraft conectada com a Microsoft.",
+  "wheel.banned": "Esta conta não pode usar os recursos online TRS.",
+  "wheel.retry": "A API TRS não está acessível agora. Tente de novo em instantes.",
+  "wheel.connecting": "Conectando à API TRS …",
+  "key.trsclient.emoteWheel": "Roda de emotes (segurar)"
 }
