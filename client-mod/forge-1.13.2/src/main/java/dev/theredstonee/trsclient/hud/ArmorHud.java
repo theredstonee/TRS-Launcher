@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.hud;
 
 import dev.theredstonee.trsclient.core.format.HudFormat;
+import dev.theredstonee.trsclient.core.hud.ArmorLayout;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.ui.Brand;
@@ -11,17 +12,20 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
-/** Rüstung (Helm oben) und optional der Gegenstand in der Hand, jeweils mit Haltbarkeit. */
+/**
+ * Rüstung und optional der Gegenstand in der Hand, jeweils mit Haltbarkeit – senkrecht (Helm oben) oder
+ * waagerecht (Symbole in einer Zeile, Haltbarkeit darunter), siehe {@link ArmorLayout}.
+ */
 public final class ArmorHud extends HudElement {
 	/** Zeilen: Helm, Brust, Beine, Schuhe (armorInventory 3..0), Hand. */
 	private static final int SLOTS = 5;
-	private static final int ROW = 17;
-	private static final int PAD = 3;
 
 	private final TrsModules modules;
 	private final ItemStack[] stacks = new ItemStack[SLOTS];
 	private final String[] texts = new String[SLOTS];
 	private final int[] colors = new int[SLOTS];
+	private final int[] widths = new int[SLOTS];
+	private final int[] places = new int[SLOTS * 4];
 	private int rows;
 	private int textWidth;
 	private ItemStack[] previewStacks;
@@ -42,6 +46,10 @@ public final class ArmorHud extends HudElement {
 		return i < 4 ? p.inventory.armorInventory.get(3 - i) : p.getHeldItemMainhand();
 	}
 
+	private boolean horizontal() {
+		return modules.armorLayout.get() == ArmorLayout.Orientation.HORIZONTAL;
+	}
+
 	private void collect(boolean preview) {
 		EntityPlayer p = mc.player;
 		rows = 0;
@@ -53,11 +61,13 @@ public final class ArmorHud extends HudElement {
 			if (s.isEmpty()) continue;
 			stacks[rows] = s;
 			texts[rows] = null;
+			widths[rows] = 0;
 			if (modules.armorDurability.get() && s.isDamageable()) {
 				int pct = HudFormat.durabilityPercent(s.getDamage(), s.getMaxDamage());
 				texts[rows] = modules.armorPercent.get() ? pct + " %" : Integer.toString(s.getMaxDamage() - s.getDamage());
 				colors[rows] = 0xFF000000 | HudFormat.durabilityColor(pct);
-				textWidth = Math.max(textWidth, mc.fontRenderer.getStringWidth(texts[rows]));
+				widths[rows] = mc.fontRenderer.getStringWidth(texts[rows]);
+				textWidth = Math.max(textWidth, widths[rows]);
 			}
 			rows++;
 		}
@@ -74,13 +84,13 @@ public final class ArmorHud extends HudElement {
 	@Override
 	public int width(FontRenderer font, boolean preview) {
 		collect(preview);
-		return PAD * 2 + 16 + (textWidth > 0 ? 3 + textWidth : 0);
+		return ArmorLayout.width(horizontal(), rows, widths);
 	}
 
 	@Override
 	public int height(FontRenderer font, boolean preview) {
 		collect(preview);
-		return PAD * 2 + Math.max(1, rows) * ROW - 1;
+		return ArmorLayout.height(horizontal(), rows, widths);
 	}
 
 	@Override
@@ -89,10 +99,10 @@ public final class ArmorHud extends HudElement {
 		int h = height(font, preview);
 		int bg = module.backgroundArgb();
 		if (bg != 0) Brand.rect(0, 0, w, h, bg);
+		ArmorLayout.place(horizontal(), rows, widths, places);
 		for (int i = 0; i < rows; i++) {
-			int y = PAD + i * ROW;
-			item(stacks[i], PAD, y);
-			if (texts[i] != null) Brand.text(font, texts[i], PAD + 19, y + 4, colors[i], module.shadow());
+			item(stacks[i], places[4 * i], places[4 * i + 1]);
+			if (texts[i] != null) Brand.text(font, texts[i], places[4 * i + 2], places[4 * i + 3], colors[i], module.shadow());
 		}
 	}
 

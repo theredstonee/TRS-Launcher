@@ -65,7 +65,8 @@ public final class EmoteHooks {
 		if (c == null) return;
 		try {
 			List<EmotePlayback.Mover> movers = new ArrayList<>();
-			if (mc.level != null && mc.player != null) {
+			// Ohne Emote-Modul braucht die Steuerung keine Spielerliste (sie räumt nur auf).
+			if (enabled() && mc.level != null && mc.player != null) {
 				for (AbstractClientPlayer p : mc.level.players()) {
 					movers.add(new EmotePlayback.Mover(p.getUUID(), x(p), z(p), crouching(p), p == mc.player));
 				}

@@ -130,6 +130,8 @@ public final class TrsModules {
 	public final BoolSetting armorDurability;
 	public final BoolSetting armorPercent;
 	public final BoolSetting armorHand;
+	/** Rüstungsanzeige senkrecht (untereinander) oder waagerecht (quer, Symbole in einer Zeile). */
+	public final ChoiceSetting<dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation> armorLayout;
 	public final BoolSetting coordsDirection;
 	public final BoolSetting coordsBiome;
 	public final BoolSetting clockSeconds;
@@ -495,6 +497,8 @@ public final class TrsModules {
 		armorDurability = armor.add(new BoolSetting("durability", "Show durability", true));
 		armorPercent = armor.add(new BoolSetting("percent", "Durability in percent", false));
 		armorHand = armor.add(new BoolSetting("hand", "Held item", true));
+		armorLayout = armor.add(new ChoiceSetting<>("layout", "Orientation", dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.class,
+				dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.VERTICAL));
 		coordsDirection = coords.add(new BoolSetting("direction", "Facing direction", true));
 		coordsBiome = coords.add(new BoolSetting("biome", "Biome", true));
 		clockSeconds = clock.add(new BoolSetting("seconds", "Seconds", false));
@@ -588,7 +592,9 @@ public final class TrsModules {
 
 		dynamicFpsUnfocused = dynamicFps.add(new NumberSetting("unfocused", "FPS in the background", 15, 1, 60, 1, "", " FPS"));
 		dynamicFpsMinimized = dynamicFps.add(new NumberSetting("minimized", "FPS when minimized", 1, 1, 30, 1, "", " FPS"));
-		dynamicFpsAfk = dynamicFps.add(new NumberSetting("afk", "FPS when AFK (0 = off)", 30, 0, 60, 5, "", " FPS"));
+		// Neuer Schlüssel „afkLimit“ (Standard aus): alte Werte von „afk“ (früher 30) gelten nicht mehr –
+		// eine AFK-Bremse verfälscht sonst FPS-Messungen und Aufnahmen, ohne dass man es merkt.
+		dynamicFpsAfk = dynamicFps.add(new NumberSetting("afkLimit", "FPS when AFK (0 = off)", 0, 0, 60, 5, "", " FPS"));
 		dynamicFpsAfkMinutes = dynamicFps.add(new NumberSetting("afkMinutes", "AFK after (minutes)", 3, 1, 15, 1, ""));
 		dynamicFpsQuieter = dynamicFps.add(new BoolSetting("quieter", "Quieter in the background", true));
 		dynamicFpsVolume = dynamicFps.add(new NumberSetting("volume", "Background volume", 30, 0, 100, 10, "", "%"));

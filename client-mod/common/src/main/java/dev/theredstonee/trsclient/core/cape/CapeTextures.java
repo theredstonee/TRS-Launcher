@@ -10,7 +10,8 @@ import java.util.Map;
 
 /**
  * Umhang-Texturen im Spiel: lädt jeden Umhang einmal (über den {@link Loader}, im Spiel TrsOnline#loadCape), lädt die
- * Einzelbilder als eigene Texturen hoch (höchstens {@link #UPLOADS_PER_CALL} je Aufruf, damit nichts ruckelt)
+ * Einzelbilder als eigene Texturen hoch (höchstens {@link #UPLOADS_PER_CALL} je Aufruf und {@link #UPLOADS_PER_TICK}
+ * je Tick, damit nichts ruckelt)
  * und liefert das Bild, das gerade dran ist. Nicht benutzte Umhänge werden nach {@link #IDLE_MS} freigegeben.
  *
  * <p>Nur aus dem Spiel-/Render-Thread benutzen.
@@ -19,6 +20,11 @@ import java.util.Map;
  */
 public final class CapeTextures<T> {
 	static final int UPLOADS_PER_CALL = 8;
+	/**
+	 * Höchstens so viele Bilder je Tick insgesamt (über alle Spieler und Bilder): das Hochladen passiert
+	 * mitten im Zeichnen – verteilt auf mehrere Ticks ruckelt es nicht, wenn viele Umhänge auf einmal kommen.
+	 */
+	static final int UPLOADS_PER_TICK = 4;
 	static final long IDLE_MS = 3 * 60_000L;
 	static final long RETRY_MS = 5 * 60_000L;
 
@@ -55,6 +61,7 @@ public final class CapeTextures<T> {
 	private final Loader loader;
 	private final Map<String, Slot<T>> slots = new HashMap<>();
 	private int serial;
+	private int budget = UPLOADS_PER_TICK;
 	private long lastCleanup;
 
 	public CapeTextures(Backend<T> backend, Loader loader) {
@@ -92,8 +99,9 @@ public final class CapeTextures<T> {
 			return;
 		}
 		CapeFrames frames = slot.pending;
-		int budget = UPLOADS_PER_CALL;
-		while (budget-- > 0 && slot.textures.size() < frames.count()) {
+		int calls = UPLOADS_PER_CALL;
+		while (calls-- > 0 && budget > 0 && slot.textures.size() < frames.count()) {
+			budget--;
 			int i = slot.textures.size();
 			T tex = backend.upload(slot.name + "/" + i, frames.width, frames.height, frames.frames[i]);
 			if (tex == null) {
@@ -114,6 +122,7 @@ public final class CapeTextures<T> {
 
 	/** Lange nicht benutzte Umhänge freigeben (einmal pro Sekunde aus dem Tick). */
 	public void cleanup(long now) {
+		budget = UPLOADS_PER_TICK;
 		if (now - lastCleanup < 1000) return;
 		lastCleanup = now;
 		Iterator<Slot<T>> it = slots.values().iterator();

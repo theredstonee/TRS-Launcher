@@ -32,7 +32,7 @@ public abstract class NameTagBadgeMixin {
 	private void trsclient$badge(net.minecraft.world.entity.Avatar entity,
 			net.minecraft.client.renderer.entity.state.AvatarRenderState state, float partial, CallbackInfo ci) {
 		if (state.nameTag != null && OnlineHooks.badge(entity.getUUID(), false)) {
-			state.nameTag = OnlineHooks.badged(state.nameTag);
+			state.nameTag = OnlineHooks.badged(entity.getUUID(), state.nameTag);
 		}
 	}
 	*///?} elif >=1.21.2 {
@@ -41,7 +41,7 @@ public abstract class NameTagBadgeMixin {
 	private void trsclient$badge(net.minecraft.client.player.AbstractClientPlayer entity,
 			net.minecraft.client.renderer.entity.state.PlayerRenderState state, float partial, CallbackInfo ci) {
 		if (state.nameTag != null && OnlineHooks.badge(entity.getUUID(), false)) {
-			state.nameTag = OnlineHooks.badged(state.nameTag);
+			state.nameTag = OnlineHooks.badged(entity.getUUID(), state.nameTag);
 		}
 	}
 	*///?} elif >=1.20.5 {
@@ -59,7 +59,7 @@ public abstract class NameTagBadgeMixin {
 		if (trsclient$inBadge || !OnlineHooks.badge(player.getUUID(), false)) return;
 		trsclient$inBadge = true;
 		try {
-			renderNameTag(player, OnlineHooks.badged(name), pose, buffers, light, partial);
+			renderNameTag(player, OnlineHooks.badged(player.getUUID(), name), pose, buffers, light, partial);
 		} finally {
 			trsclient$inBadge = false;
 		}
@@ -80,7 +80,7 @@ public abstract class NameTagBadgeMixin {
 		if (trsclient$inBadge || !OnlineHooks.badge(player.getUUID(), false)) return;
 		trsclient$inBadge = true;
 		try {
-			renderNameTag(player, OnlineHooks.badged(name), pose, buffers, light);
+			renderNameTag(player, OnlineHooks.badged(player.getUUID(), name), pose, buffers, light);
 		} finally {
 			trsclient$inBadge = false;
 		}

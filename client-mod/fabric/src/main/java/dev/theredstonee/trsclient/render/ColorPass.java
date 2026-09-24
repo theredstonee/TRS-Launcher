@@ -46,6 +46,9 @@ public final class ColorPass {
 	private static int locRowB;
 	private static int locVibrance;
 	private static int attachedTex;
+	/** Wiederverwendete Puffer für das Sichern des Zustands (keine Allokation je Bild). */
+	private static final java.nio.IntBuffer VIEWPORT = BufferUtils.createIntBuffer(16);
+	private static final java.nio.ByteBuffer COLOR_MASK = BufferUtils.createByteBuffer(16);
 
 	private ColorPass() {
 	}
@@ -67,6 +70,8 @@ public final class ColorPass {
 		if (client == null) return;
 		TrsModules modules = client.modules();
 		if (!modules.colors.isEnabled()) return;
+		// Shaderpack aktiv (Iris/Oculus/OptiFine): das Pack macht seine eigene Nachbearbeitung – nicht doppelt färben.
+		if (dev.theredstonee.trsclient.core.perf.ShaderPacks.active()) return;
 		modules.colorGrade(GRADE);
 		if (GRADE.identity()) return;
 		try {
@@ -98,14 +103,16 @@ public final class ColorPass {
 		int prevDraw = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
 		int prevVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
 		int prevVbo = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-		int[] viewport = new int[4];
-		GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+		VIEWPORT.clear();
+		GL11.glGetIntegerv(GL11.GL_VIEWPORT, VIEWPORT);
+		int vx = VIEWPORT.get(0), vy = VIEWPORT.get(1), vw = VIEWPORT.get(2), vh = VIEWPORT.get(3);
 		boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
 		boolean depth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
 		boolean cull = GL11.glIsEnabled(GL11.GL_CULL_FACE);
 		boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
 		boolean depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-		java.nio.ByteBuffer colorMask = BufferUtils.createByteBuffer(16);
+		java.nio.ByteBuffer colorMask = COLOR_MASK;
+		colorMask.clear();
 		GL11.glGetBooleanv(GL11.GL_COLOR_WRITEMASK, colorMask);
 		try {
 			// Kopie des Bilds
@@ -149,7 +156,7 @@ public final class ColorPass {
 			GL13.glActiveTexture(prevActive);
 			GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevRead);
 			GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDraw);
-			GL11.glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+			GL11.glViewport(vx, vy, vw, vh);
 			toggle(GL11.GL_BLEND, blend);
 			toggle(GL11.GL_DEPTH_TEST, depth);
 			toggle(GL11.GL_CULL_FACE, cull);

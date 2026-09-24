@@ -86,9 +86,41 @@ public final class ClipLink {
 		return notices.poll();
 	}
 
+	private java.util.concurrent.ExecutorService presses;
+
 	/**
-	 * Tastendruck (Spiel-Thread). Verbunden → sofort senden; sonst Datei neu lesen und je nach Lage
-	 * vormerken (Verbindung wird aufgebaut) oder einen Hinweis zeigen.
+	 * Tastendruck aus dem Spiel-Thread: Senden (Socket) und ggf. Lesen der Launcher-Datei laufen im Thread
+	 * „TRS-Clips-Taste“ – das Spiel wartet nie auf Netz oder Festplatte. Rückmeldungen kommen wie immer über
+	 * {@link #pollNotice()}.
+	 */
+	public void pressInBackground(final String command) {
+		java.util.concurrent.ExecutorService ex;
+		synchronized (this) {
+			if (presses == null) {
+				presses = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+					Thread t = new Thread(r, "TRS-Clips-Taste");
+					t.setDaemon(true);
+					return t;
+				});
+			}
+			ex = presses;
+		}
+		try {
+			ex.execute(() -> {
+				try {
+					press(command);
+				} catch (RuntimeException e) {
+					notices.add(ClipNotice.hint("unreachable"));
+				}
+			});
+		} catch (java.util.concurrent.RejectedExecutionException e) {
+			notices.add(ClipNotice.hint("unreachable"));
+		}
+	}
+
+	/**
+	 * Tastendruck (blockierend – im Spiel {@link #pressInBackground} benutzen). Verbunden → sofort senden; sonst
+	 * Datei neu lesen und je nach Lage vormerken (Verbindung wird aufgebaut) oder einen Hinweis zeigen.
 	 */
 	public void press(String command) {
 		OutputStream o = out;

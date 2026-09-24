@@ -392,7 +392,7 @@ public final class TrsClient {
 	public void saveConfig() {
 		if (config == null) return;
 		try {
-			config.save(modules.registry);
+			config.saveLater(modules.registry);
 		} catch (IOException e) {
 			LOGGER.error("Config konnte nicht gespeichert werden: " + config.file(), e);
 		}

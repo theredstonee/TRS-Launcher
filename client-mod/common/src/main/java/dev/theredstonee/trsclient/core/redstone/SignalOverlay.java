@@ -15,7 +15,11 @@ public final class SignalOverlay {
 	private static final double FULL_SIZE_DEPTH = 7.0;
 	private static final float MIN_SCALE = 0.55f;
 
+	/** Höchstens so viele Zahlen je Bild – bei sehr viel Staub nur die nächsten. */
+	static final int MAX_LABELS = 400;
+
 	private final double[] point = new double[3];
+	private final int[] bins = new int[34];
 
 	/**
 	 * @param showZero auch Staub ohne Signal ("0") beschriften
@@ -24,10 +28,29 @@ public final class SignalOverlay {
 	public int draw(Canvas c, List<SignalCache.Entry> entries, double camX, double camY, double camZ,
 			float yaw, float pitch, double fov, int width, int height, boolean showZero) {
 		int drawn = 0;
-		for (int i = 0, n = entries.size(); i < n; i++) {
+		int n = entries.size();
+		// Zu viel Staub: Entfernungs-Grenze (ganze Blöcke) so wählen, dass höchstens MAX_LABELS übrig bleiben.
+		int limit = Integer.MAX_VALUE;
+		if (n > MAX_LABELS) {
+			java.util.Arrays.fill(bins, 0);
+			int candidates = 0;
+			for (int i = 0; i < n; i++) {
+				SignalCache.Entry e = entries.get(i);
+				if (!e.visible || (e.power <= 0 && !showZero)) continue;
+				bins[distance(e, camX, camY, camZ)]++;
+				candidates++;
+			}
+			if (candidates > MAX_LABELS) {
+				int sum = 0;
+				limit = -1;
+				while (limit + 1 < bins.length && sum + bins[limit + 1] <= MAX_LABELS) sum += bins[++limit];
+			}
+		}
+		for (int i = 0; i < n; i++) {
 			SignalCache.Entry e = entries.get(i);
 			if (!e.visible) continue;
 			if (e.power <= 0 && !showZero) continue;
+			if (limit != Integer.MAX_VALUE && distance(e, camX, camY, camZ) > limit) continue;
 			// knapp über dem Staub (der liegt flach auf dem Boden)
 			if (!Projection.project(camX, camY, camZ, yaw, pitch, fov, width, height,
 					e.x + 0.5, e.y + 0.3, e.z + 0.5, point)) continue;
@@ -45,5 +68,11 @@ public final class SignalOverlay {
 			drawn++;
 		}
 		return drawn;
+	}
+
+	/** Entfernung in ganzen Blöcken (0–33) für die Auswahl der nächsten Zahlen. */
+	private static int distance(SignalCache.Entry e, double camX, double camY, double camZ) {
+		double dx = e.x + 0.5 - camX, dy = e.y + 0.3 - camY, dz = e.z + 0.5 - camZ;
+		return (int) Math.min(33, Math.sqrt(dx * dx + dy * dy + dz * dz));
 	}
 }

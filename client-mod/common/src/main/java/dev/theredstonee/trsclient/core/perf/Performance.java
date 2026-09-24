@@ -38,6 +38,8 @@ public final class Performance {
 	private double blockEntityDistSq;
 	private double nameTagDistSq;
 	private int particleLimit;
+	private int afkFps;
+	private boolean afkBefore;
 	private double particleAmount = 1;
 	private boolean keepPlayers = true;
 	private long ticks;
@@ -134,6 +136,7 @@ public final class Performance {
 		nameTagDistSq = sq(m.cullNameTags.get());
 		keepPlayers = m.cullKeepPlayers.get();
 		particleLimit = m.particleLimit.getInt();
+		afkFps = m.dynamicFpsAfk.getInt();
 		particleAmount = m.particleAmount.get() / 100.0;
 	}
 
@@ -147,7 +150,9 @@ public final class Performance {
 			case ENTITY_DISTANCE:
 				return m.entityCulling.isEnabled() && m.cullEntities.get() > 0;
 			case ENTITY_OCCLUSION:
-				return m.entityCulling.isEnabled() && m.cullOcclusion.get();
+				// Mit Shaderpack ruht das Ausblenden hinter Wänden: der Schatten-Durchgang braucht auch
+				// Wesen, die die Kamera nicht sieht (sonst fehlen ihre Schatten).
+				return m.entityCulling.isEnabled() && m.cullOcclusion.get() && !ShaderPacks.active();
 			case BLOCK_ENTITY_DISTANCE:
 				return m.entityCulling.isEnabled() && m.cullBlockEntities.get() > 0;
 			case NAMETAG_DISTANCE:
@@ -216,8 +221,12 @@ public final class Performance {
 	 * @return Bildraten-Grenze für dieses Bild (0 = keine)
 	 */
 	public int frameLimit(long nowMillis, boolean focused, boolean minimized, double mouseX, double mouseY, boolean anyKey) {
-		dynamicFps.input(nowMillis, mouseX, mouseY, anyKey);
-		DynamicFps.State state = dynamicFps.update(nowMillis, focused, minimized, m.dynamicFpsAfkMinutes.get());
+		boolean afk = afkActive();
+		// Gerade eingeschaltet: AFK-Zeit ab jetzt zählen (nicht ab der letzten Eingabe vor dem Ausschalten).
+		if (afk && !afkBefore) dynamicFps.touch(nowMillis);
+		afkBefore = afk;
+		if (afk) dynamicFps.input(nowMillis, mouseX, mouseY, anyKey);
+		DynamicFps.State state = dynamicFps.update(nowMillis, focused, minimized, afk ? m.dynamicFpsAfkMinutes.get() : 0);
 		int limit = 0;
 		float vol = 1f;
 		if (active(PerfFeature.DYNAMIC_FPS)) {
@@ -228,6 +237,14 @@ public final class Performance {
 		volume = vol;
 		meter.frame(nowMillis, limit > 0);
 		return limit;
+	}
+
+	/**
+	 * Ist die AFK-Grenze an (Dynamische FPS aktiv und „FPS bei AFK“ &gt; 0)? Nur dann braucht
+	 * {@link #frameLimit} überhaupt Maus und Tasten – sonst fragt der Loader sie gar nicht erst ab.
+	 */
+	public boolean afkActive() {
+		return active[PerfFeature.DYNAMIC_FPS.ordinal()] && afkFps > 0;
 	}
 
 	/** Gewünschter Lautstärke-Faktor (1 = unverändert). */

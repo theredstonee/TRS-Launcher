@@ -84,18 +84,26 @@ public final class MinimapHud extends HudElement {
 		if (!module.isEnabled() || mc.level == null || mc.player == null) return;
 		// Welt oder Dimension gewechselt → alte Kartendaten wegwerfen (sonst zeigt die Karte
 		// kurz das Gelände der vorherigen Welt an denselben Koordinaten).
-		String dimension = Mc.dimensionId() + "@" + TrsClient.get().waypoints().worldKey();
-		if (!dimension.equals(lastDimension)) {
-			cache.clear();
-			lastDimension = dimension;
+		// Den Schlüssel nur neu bauen, wenn sich das Welt-Objekt geändert hat (nicht je Tick einen neuen Text).
+		if (mc.level != lastLevel || lastDimension == null) {
+			lastLevel = mc.level;
+			String dimension = Mc.dimensionId() + "@" + TrsClient.get().waypoints().worldKey();
+			if (!dimension.equals(lastDimension)) {
+				cache.clear();
+				lastDimension = dimension;
+			}
 		}
 		int cx = (int) Math.floor(Mc.x(mc.player)) >> 4;
 		int cz = (int) Math.floor(Mc.z(mc.player)) >> 4;
 		cache.update(sampler, cx, cz, CHUNK_RADIUS, System.currentTimeMillis(), MAX_AGE_MS, CHUNK_BUDGET);
 	}
 
+	/** Welt-Objekt der letzten Prüfung (Wechsel → Dimension neu bestimmen). */
+	private Object lastLevel;
+
 	public void onWorldChange() {
 		cache.clear();
+		lastLevel = null;
 		lastCenterX = Double.NaN;
 	}
 
@@ -133,10 +141,22 @@ public final class MinimapHud extends HudElement {
 		drawSelf(g, cells, px, rotation, Mc.yRot(player));
 
 		if (modules.minimapCoords.get()) {
-			String text = HudFormat.coords(Mc.x(player), Mc.y(player), Mc.z(player));
-			g.text(font, Gfx.clip(font, text, size), 1, size + 3, textColor(), false);
+			// Text nur neu bauen, wenn sich die Blockposition (oder die Kartengröße) geändert hat.
+			long bx = (long) Math.floor(Mc.x(player)), by = (long) Math.floor(Mc.y(player)), bz = (long) Math.floor(Mc.z(player));
+			if (coordsText == null || bx != coordsX || by != coordsY || bz != coordsZ || size != coordsSize) {
+				coordsText = Gfx.clip(font, HudFormat.coords(bx, by, bz), size);
+				coordsX = bx;
+				coordsY = by;
+				coordsZ = bz;
+				coordsSize = size;
+			}
+			g.text(font, coordsText, 1, size + 3, textColor(), false);
 		}
 	}
+
+	private String coordsText;
+	private long coordsX, coordsY, coordsZ;
+	private int coordsSize;
 
 	/** Das Gitter nur neu aufbauen, wenn sich Position, Drehung oder Zeit wirklich geändert haben. */
 	private void rebuildIfNeeded(int cells, double centerX, double centerZ, double rotation) {

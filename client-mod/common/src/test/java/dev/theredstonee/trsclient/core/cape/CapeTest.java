@@ -157,8 +157,14 @@ class CapeTest {
 		assertNull(tex.texture(team, 10));
 		assertEquals(1, pending.size(), "nur eine Ladeanfrage");
 		pending.get(0).accept(frames);
-		assertNull(tex.texture(team, 20), "erst 8 von 12 Bildern hochgeladen");
-		assertEquals(CapeTextures.UPLOADS_PER_CALL, backend.uploaded.size());
+		assertNull(tex.texture(team, 20), "erst 4 von 12 Bildern hochgeladen (Budget je Tick)");
+		assertEquals(CapeTextures.UPLOADS_PER_TICK, backend.uploaded.size());
+		assertNull(tex.texture(team, 21), "im selben Tick nichts mehr");
+		assertEquals(CapeTextures.UPLOADS_PER_TICK, backend.uploaded.size());
+		tex.cleanup(25);
+		assertNull(tex.texture(team, 26));
+		assertEquals(8, backend.uploaded.size());
+		tex.cleanup(28);
 		String f0 = tex.texture(team, 30);
 		assertNotNull(f0);
 		assertEquals(12, backend.uploaded.size());

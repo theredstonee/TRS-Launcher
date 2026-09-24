@@ -185,7 +185,7 @@ class PerformanceTest {
 	}
 
 	@Test
-	void occlusionHidesBehindSolidWallsOnly() {
+	void occlusionHidesBehindSolidWallsOnly() throws InterruptedException {
 		// Wand aus vollen Blöcken bei x = 5 (y 0..10, z -5..5).
 		Occlusion.Blocks wall = new Occlusion.Blocks() {
 			@Override
@@ -193,46 +193,80 @@ class PerformanceTest {
 				return x == 5 && y >= 0 && y <= 10 && z >= -5 && z <= 5;
 			}
 		};
-		Occlusion o = new Occlusion();
-		o.tick(1);
-		assertFalse(o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8, wall), "hinter der Wand");
-		assertTrue(o.visible(2, 0.5, 1.6, 0.5, 9.7, 0, 20.2, 10.3, 1.8, 20.8, wall), "neben der Wand");
+		Occlusion o = Occlusion.manual();
+		o.setBlocks(wall);
+		// Neu gemeldet → erst einmal sichtbar, gerechnet wird im Hintergrund (hier: compute).
+		assertTrue(o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8), "unbekannt = sichtbar");
+		assertTrue(o.visible(2, 0.5, 1.6, 0.5, 9.7, 0, 20.2, 10.3, 1.8, 20.8));
+		assertTrue(o.visible(3, 0.5, 11.6, 0.5, 9.7, 10, 0.2, 10.3, 12.8, 0.8));
+		assertTrue(o.compute(10_000) > 0);
+		assertFalse(o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8), "hinter der Wand");
+		assertTrue(o.visible(2, 0.5, 1.6, 0.5, 9.7, 0, 20.2, 10.3, 1.8, 20.8), "neben der Wand");
 		// Über die Wand hinaus ragend (Kopf sichtbar) → sichtbar.
-		assertTrue(o.visible(3, 0.5, 11.6, 0.5, 9.7, 10, 0.2, 10.3, 12.8, 0.8, wall));
-		// Ohne Wand frei, und das Ergebnis ist zwischengespeichert.
+		assertTrue(o.visible(3, 0.5, 11.6, 0.5, 9.7, 10, 0.2, 10.3, 12.8, 0.8));
 		assertTrue(Occlusion.clear(wall, 0.5, 1.5, 0.5, 4.5, 1.5, 0.5));
 		assertFalse(Occlusion.clear(wall, 0.5, 1.5, 0.5, 8.5, 1.5, 0.5));
-		assertFalse(o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8, new Occlusion.Blocks() {
+		// Wand weg: das alte Ergebnis gilt bis zur nächsten Rechnung, danach sichtbar.
+		o.setBlocks(new Occlusion.Blocks() {
 			@Override
 			public boolean opaque(int x, int y, int z) {
 				return false;
 			}
-		}), "Ergebnis gilt noch im selben Tick");
-		o.tick(10);
-		assertTrue(o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8, new Occlusion.Blocks() {
-			@Override
-			public boolean opaque(int x, int y, int z) {
-				return false;
-			}
-		}), "nach Ablauf neu gerechnet");
+		});
+		assertEquals(0, o.compute(10_000), "gerade erst gerechnet – noch nicht wieder dran");
+		assertFalse(o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8), "Ergebnis gilt noch");
+		Thread.sleep(Occlusion.REFRESH_NS / 1_000_000 + 10);
+		o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8);
+		assertTrue(o.compute(10_000) > 0);
+		assertTrue(o.visible(1, 0.5, 1.6, 0.5, 9.7, 0, 0.2, 10.3, 1.8, 0.8), "nach Ablauf neu gerechnet");
 	}
 
 	@Test
-	void occlusionBudgetNeverHidesWrongly() {
+	void occlusionSkipsNearAndSmallEntitiesAndNeverHidesWithoutResult() {
 		Occlusion.Blocks solid = new Occlusion.Blocks() {
 			@Override
 			public boolean opaque(int x, int y, int z) {
 				return Math.abs(x) == 3;
 			}
 		};
-		Occlusion o = new Occlusion();
-		o.tick(1);
+		Occlusion o = Occlusion.manual();
+		o.setBlocks(solid);
+		for (int i = 0; i < 400; i++) o.visible(1000 + i, 0.5, 1.5, 0.5, 10, 0, i % 20, 10.6, 1.8, i % 20 + 0.6);
+		// Kleines Budget: nur ein Teil wird gerechnet, der Rest bleibt sichtbar (nie fälschlich versteckt).
+		o.compute(50);
 		int hidden = 0;
 		for (int i = 0; i < 400; i++) {
-			if (!o.visible(1000 + i, 0.5, 1.5, 0.5, 10, 0, i % 20, 10.6, 1.8, i % 20 + 0.6, solid)) hidden++;
+			if (!o.visible(1000 + i, 0.5, 1.5, 0.5, 10, 0, i % 20, 10.6, 1.8, i % 20 + 0.6)) hidden++;
 		}
-		// Das Budget reicht nicht für alle – der Rest bleibt sichtbar.
 		assertTrue(hidden > 0 && hidden < 400, "versteckt: " + hidden);
+		// Gegenstand (0,25 Blöcke) und nahes Wesen hinter derselben Wand: gar nicht erst gerechnet.
+		o.visible(5000, 0.5, 1.5, 0.5, 10, 0.5, 0, 10.25, 0.75, 0.25);
+		o.visible(5001, 0.5, 1.5, 0.5, 3.2, 0, 0, 3.8, 1.8, 0.6);
+		o.compute(10_000);
+		assertTrue(o.visible(5000, 0.5, 1.5, 0.5, 10, 0.5, 0, 10.25, 0.75, 0.25), "klein");
+		assertTrue(o.visible(5001, 0.5, 1.5, 0.5, 3.2, 0, 0, 3.8, 1.8, 0.6), "nah");
+		// Ohne Welt wird nichts gerechnet.
+		Occlusion none = Occlusion.manual();
+		none.visible(1, 0.5, 1.5, 0.5, 10, 0, 0, 10.6, 1.8, 0.6);
+		assertEquals(0, none.compute(10_000));
+		assertTrue(none.visible(1, 0.5, 1.5, 0.5, 10, 0, 0, 10.6, 1.8, 0.6));
+	}
+
+	@Test
+	void frameStatsGiveAverageAndOnePercentLow() {
+		FrameStats f = new FrameStats();
+		long t = 1_000_000_000L;
+		f.start(t);
+		f.frame(t);
+		// 990 Bilder à 5 ms (200 FPS) und 10 Ruckler à 50 ms (20 FPS)
+		for (int i = 0; i < 990; i++) f.frame(t += 5_000_000L);
+		for (int i = 0; i < 10; i++) f.frame(t += 50_000_000L);
+		f.stop(t);
+		assertEquals(1000, f.frames());
+		assertEquals(1000 / 5.45, f.averageFps(), 0.5);
+		assertEquals(20, f.lowFps(0.01), 0.01);
+		assertEquals(50, f.worstMillis(), 0.01);
+		assertEquals(10, f.slowerThan(40));
 	}
 
 	// --- FPS vorher/nachher ---

@@ -59,6 +59,8 @@ public final class ColorPass {
 		if (client == null) return;
 		TrsModules modules = client.modules();
 		if (!modules.colors.isEnabled()) return;
+		// OptiFine-Shader aktiv: das Shaderpack macht seine eigene Nachbearbeitung – nicht doppelt färben.
+		if (dev.theredstonee.trsclient.core.perf.ShaderPacks.active()) return;
 		modules.colorGrade(GRADE);
 		if (GRADE.identity()) return;
 		if (!OpenGlHelper.shadersSupported || !OpenGlHelper.isFramebufferEnabled()) return;

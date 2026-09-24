@@ -131,10 +131,22 @@ public final class MinimapHud extends HudElement {
 		drawSelf(g, cells, px, rotation, player.getYRot());
 
 		if (modules.minimapCoords.get()) {
-			String text = HudFormat.coords(player.getX(), player.getY(), player.getZ());
-			g.text(font, Gfx.clip(font, text, size), 1, size + 3, textColor(), false);
+			// Text nur neu bauen, wenn sich die Blockposition (oder die Kartengröße) geändert hat.
+			long bx = (long) Math.floor(player.getX()), by = (long) Math.floor(player.getY()), bz = (long) Math.floor(player.getZ());
+			if (coordsText == null || bx != coordsX || by != coordsY || bz != coordsZ || size != coordsSize) {
+				coordsText = Gfx.clip(font, HudFormat.coords(bx, by, bz), size);
+				coordsX = bx;
+				coordsY = by;
+				coordsZ = bz;
+				coordsSize = size;
+			}
+			g.text(font, coordsText, 1, size + 3, textColor(), false);
 		}
 	}
+
+	private String coordsText;
+	private long coordsX, coordsY, coordsZ;
+	private int coordsSize;
 
 	/** Das Gitter nur neu aufbauen, wenn sich Position, Drehung oder Zeit wirklich geändert haben. */
 	private void rebuildIfNeeded(int cells, double centerX, double centerZ, double rotation) {

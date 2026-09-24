@@ -41,7 +41,8 @@ public final class MapSampler implements MinimapCache.Source {
 				// Vom obersten Block nach unten, bis etwas eine Kartenfarbe hat (Luft/Glas nicht).
 				for (int steps = 0; steps < 16 && y > minY; steps++) {
 					pos.set(worldX, y - 1, worldZ);
-					BlockState state = level.getBlockState(pos);
+					// Direkt aus dem Chunk (spart je Block die Chunk-Suche der Welt).
+					BlockState state = chunk.getBlockState(pos);
 					color = mapColor(state, level, pos);
 					if (color != 0) break;
 					y--;

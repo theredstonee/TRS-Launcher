@@ -31,7 +31,6 @@ import net.minecraft.ChatFormatting;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -67,40 +66,58 @@ public final class OnlineHooks {
 
 	// --- Tick ---
 
+	/** Sichtbare Spieler (Tabliste + Welt) – nur einmal je Sekunde gesammelt, Listen wiederverwendet. */
+	private static final List<UUID> VISIBLE = new ArrayList<>();
+	private static final List<CapePhysics.Sample> SAMPLES = new ArrayList<>();
+	private static final List<CapePhysics.Sample> SAMPLE_POOL = new ArrayList<>();
+	private static int visibleCountdown;
+
 	/** Einmal pro Client-Tick. */
 	public static void tick(Minecraft mc) {
 		if (features == null) return;
-		List<UUID> visible = new ArrayList<>();
-		List<CapePhysics.Sample> samples = new ArrayList<>();
+		// Die Tabliste kann Hunderte Einträge haben: die UUIDs braucht die TRS API nur einmal je Sekunde.
+		boolean collect = --visibleCountdown <= 0;
+		if (collect) visibleCountdown = 20;
+		List<UUID> visible = collect ? VISIBLE : null;
+		SAMPLES.clear();
 		try {
-			if (mc.getConnection() != null) {
-				for (PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
-					//? if >=1.21.9 {
-					/*UUID id = info.getProfile().id();
-					*///?} else
-					UUID id = info.getProfile().getId();
-					if (id != null) visible.add(id);
+			if (collect) {
+				VISIBLE.clear();
+				if (mc.getConnection() != null) {
+					for (PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
+						//? if >=1.21.9 {
+						/*UUID id = info.getProfile().id();
+						*///?} else
+						UUID id = info.getProfile().getId();
+						if (id != null) VISIBLE.add(id);
+					}
 				}
 			}
 			if (mc.level != null && mc.player != null) {
 				for (AbstractClientPlayer p : mc.level.players()) {
-					visible.add(p.getUUID());
+					if (collect) VISIBLE.add(p.getUUID());
 					//? if >=1.15 {
-					samples.add(sample(mc, p));
+					SAMPLES.add(sample(mc, p, SAMPLES.size()));
 					//?}
 				}
 			}
 		} catch (RuntimeException e) {
 			// Liste wird gerade umgebaut (Welt wechselt) – nächster Tick.
-			visible = Collections.emptyList();
-			samples = Collections.emptyList();
+			if (collect) VISIBLE.clear();
+			SAMPLES.clear();
 		}
-		features.tick(visible, samples);
+		features.tick(visible, SAMPLES);
 	}
 
 	//? if >=1.15 {
-	private static CapePhysics.Sample sample(Minecraft mc, AbstractClientPlayer p) {
-		CapePhysics.Sample s = new CapePhysics.Sample();
+	private static CapePhysics.Sample sample(Minecraft mc, AbstractClientPlayer p, int index) {
+		CapePhysics.Sample s;
+		if (index < SAMPLE_POOL.size()) {
+			s = SAMPLE_POOL.get(index);
+		} else {
+			s = new CapePhysics.Sample();
+			SAMPLE_POOL.add(s);
+		}
 		s.id = p.getId();
 		s.x = p.getX();
 		s.y = p.getY();
@@ -140,20 +157,51 @@ public final class OnlineHooks {
 	}
 
 	//? if >=1.16 {
+	/** Das Abzeichen-Zeichen in der eigenen Schrift (einmal gebaut, nie verändert). */
+	private static Component badgeGlyph;
+	/** Letzter Name → Name mit Abzeichen je Spieler (Tabliste und Namensschild fragen je Bild). */
+	private static final java.util.Map<UUID, Component[]> BADGED = new java.util.HashMap<>();
+
+	private static Component glyph() {
+		Component g = badgeGlyph;
+		if (g == null) {
+			//? if >=1.21.9 {
+			/*net.minecraft.network.chat.FontDescription font = new net.minecraft.network.chat.FontDescription.Resource(id("badge"));
+			*///?} else
+			net.minecraft.resources.ResourceLocation font = id("badge");
+			g = text(GLYPH).withStyle(style -> style.withFont(font).withColor(ChatFormatting.WHITE));
+			badgeGlyph = g;
+		}
+		return g;
+	}
+
 	/** Name mit TRS-Abzeichen davor (eigene Pixel-Schrift, weiß, dann ein Leerzeichen). */
 	public static Component badged(Component name) {
 		if (name == null) return null;
-		//? if >=1.21.9 {
-		/*net.minecraft.network.chat.FontDescription font = new net.minecraft.network.chat.FontDescription.Resource(id("badge"));
-		*///?} else
-		net.minecraft.resources.ResourceLocation font = id("badge");
-		return text("").append(text(GLYPH).withStyle(style -> style.withFont(font).withColor(ChatFormatting.WHITE)))
-				.append(text(" ")).append(name);
+		return text("").append(glyph()).append(text(" ")).append(name);
+	}
+
+	/**
+	 * Wie {@link #badged(Component)}, aber je Spieler gemerkt: solange der Name gleich bleibt, kommt dieselbe
+	 * Komponente zurück (keine neuen Objekte je Bild). Nur Render-Thread.
+	 */
+	public static Component badged(UUID id, Component name) {
+		if (name == null || id == null) return badged(name);
+		Component[] last = BADGED.get(id);
+		if (last != null && (last[0] == name || last[0].equals(name))) return last[1];
+		if (BADGED.size() > 512) BADGED.clear();
+		Component out = badged(name);
+		BADGED.put(id, new Component[]{name, out});
+		return out;
 	}
 	//?} else {
 	/*public static Component badged(Component name) {
 		if (name == null) return null;
 		return new net.minecraft.network.chat.TextComponent(LEGACY_BADGE).append(name);
+	}
+
+	public static Component badged(UUID id, Component name) {
+		return badged(name);
 	}
 	*///?}
 

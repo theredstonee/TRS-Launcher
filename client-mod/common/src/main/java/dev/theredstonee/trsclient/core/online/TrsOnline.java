@@ -84,6 +84,8 @@ public final class TrsOnline {
 	private long lastEmoteFetch = Long.MIN_VALUE / 2;
 	private boolean emoteFetchInFlight;
 	private boolean emoteFetchFailed;
+	private long lastEventsUpdate = Long.MIN_VALUE / 2;
+	private boolean observedOnce;
 
 	// Aus beiden Threads gelesen:
 	private volatile String token;
@@ -132,7 +134,8 @@ public final class TrsOnline {
 
 	/**
 	 * Aus dem Client-Tick (Spiel-Thread): Ergebnisse übernehmen, bei Bedarf anmelden, Lookup-Stapel und
-	 * Presence verschicken. {@code visible} = UUIDs aus Tabliste und Sichtweite.
+	 * Presence verschicken. {@code visible} = UUIDs aus Tabliste und Sichtweite, {@code null} = unverändert
+	 * seit dem letzten Aufruf (der Loader sammelt sie nur einmal je Sekunde).
 	 */
 	public void tick(long now, Collection<UUID> visible, boolean moduleEnabled) {
 		Runnable r;
@@ -176,6 +179,8 @@ public final class TrsOnline {
 			nextLoginAt = 0;
 			unlockedEmotes = null;
 			lastEmoteFetch = Long.MIN_VALUE / 2;
+			lastEventsUpdate = Long.MIN_VALUE / 2;
+			observedOnce = false;
 			events.stop();
 		}
 		active = true;
@@ -187,13 +192,19 @@ public final class TrsOnline {
 		}
 		status = Status.ONLINE;
 
-		List<String> uuids = new ArrayList<>(visible.size() + 1);
-		uuids.add(session.uuid);
-		for (UUID u : visible) {
-			String s = Uuids.of(u);
-			if (s != null) uuids.add(s);
+		// Sichtbare Spieler meldet der Loader höchstens einmal je Sekunde (null = diesmal nicht).
+		if (visible != null) {
+			List<String> uuids = new ArrayList<>(visible.size() + 1);
+			uuids.add(session.uuid);
+			for (UUID u : visible) {
+				String s = Uuids.of(u);
+				if (s != null) uuids.add(s);
+			}
+			directory.observe(uuids, now);
+		} else if (!observedOnce) {
+			directory.observe(java.util.Collections.singletonList(session.uuid), now);
 		}
-		directory.observe(uuids, now);
+		observedOnce = true;
 		List<String> batch = directory.nextBatch(now);
 		if (!batch.isEmpty()) lookup(batch);
 		if (!presenceInFlight && now - lastPresence >= PRESENCE_INTERVAL_MS) presence(now);
@@ -221,11 +232,15 @@ public final class TrsOnline {
 			events.stop();
 			return;
 		}
-		List<String> watch = new ArrayList<>();
-		watch.add(self);
-		watch.addAll(directory.visibleUsers());
-		events.update(now, token, watch);
-		if (events.takeUnauthorized()) relogin(token);
+		// Stream-Verwaltung (Spielerliste, Neuverbinden) einmal je Sekunde; Ereignisse jeden Tick abholen.
+		if (now - lastEventsUpdate >= 1000L || now < lastEventsUpdate) {
+			lastEventsUpdate = now;
+			List<String> watch = new ArrayList<>();
+			watch.add(self);
+			watch.addAll(directory.visibleUsers());
+			events.update(now, token, watch);
+			if (events.takeUnauthorized()) relogin(token);
+		}
 		eventBuffer.clear();
 		events.drain(eventBuffer);
 		for (PlayerEvent e : eventBuffer) {
@@ -494,7 +509,7 @@ public final class TrsOnline {
 	/** Lookup-Ergebnis eines Spielers ({@link PlayerInfo#NONE} = unbekannt/kein TRS). */
 	public PlayerInfo info(UUID uuid) {
 		if (!active || uuid == null) return PlayerInfo.NONE;
-		return directory.get(Uuids.of(uuid));
+		return directory.get(uuid);
 	}
 
 	public Status status() {

@@ -24,6 +24,6 @@ public abstract class TabBadgeMixin {
 		/*UUID id = info.getProfile().id();
 		*///?} else
 		UUID id = info.getProfile().getId();
-		if (OnlineHooks.badge(id, true)) cir.setReturnValue(OnlineHooks.badged(cir.getReturnValue()));
+		if (OnlineHooks.badge(id, true)) cir.setReturnValue(OnlineHooks.badged(id, cir.getReturnValue()));
 	}
 }

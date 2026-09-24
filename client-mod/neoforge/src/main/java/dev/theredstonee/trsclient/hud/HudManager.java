@@ -116,10 +116,28 @@ public final class HudManager {
 		}
 	}
 
+	/** Gfx des laufenden Bildes für {@link #drawAll} (nur während {@link #render}). */
+	private Gfx frame;
+	private final Runnable drawAll = this::drawAll;
+
 	/** HUD-Callback (jeden Frame). */
 	public void render(Gfx g) {
 		if (Mc.hudHidden() || Mc.screen() instanceof TrsUiScreen) return;
 		// Das eigene Fadenkreuz zeichnet TrsClient anstelle der Vanilla-Ebene (RenderGuiLayerEvent.Pre).
+		// Alle Anzeigen gesammelt zeichnen: 1.20–1.21.1 schicken sonst jedes Rechteck und jeden Text einzeln
+		// an die Grafikkarte (Hunderte Zeichenaufrufe je Bild bei Tastenanzeige, Minimap, Wegpunkten …).
+		frame = g;
+		try {
+			if (dev.theredstonee.trsclient.perf.PerfHooks.batchHud()) g.managed(drawAll);
+			else drawAll();
+		} finally {
+			frame = null;
+		}
+	}
+
+	private void drawAll() {
+		Gfx g = frame;
+		if (g == null) return;
 		Font font = mc.font;
 		int sw = g.width();
 		int sh = g.height();

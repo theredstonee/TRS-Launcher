@@ -157,12 +157,20 @@ public final class RedstoneTools {
 		int rises = meter.risesWithin(tick, window);
 		// Nur zeigen, wenn das Bauteil schaltet – ein ruhiger Block braucht keinen Takt-Messer.
 		clockVisible = rises > 0;
+		double pulse = clockVisible && period > 0 ? snap(meter.pulseTicks()) : 0;
+		int state = !clockVisible ? 0 : period > 0 ? 1 : (meter.samples() < window && rises < 2 ? 2 : 3);
+		// Texte nur neu bauen, wenn sich etwas geändert hat (sonst je Tick String.format).
+		int gen = I18n.generation();
+		if (state == clockState && period == clockPeriod && pulse == clockPulse && gen == clockGeneration) return;
+		clockState = state;
+		clockPeriod = period;
+		clockPulse = pulse;
+		clockGeneration = gen;
 		clockLines.clear();
 		if (!clockVisible) return;
 		if (period > 0) {
 			clockLines.add(I18n.tr("hud.redstone.hz", String.format(I18n.locale(), "%.2f", 20.0 / period)));
 			clockLines.add(I18n.tr("hud.redstone.period", ticks(period / 2.0), ticks(period)));
-			double pulse = snap(meter.pulseTicks());
 			if (pulse > 0) clockLines.add(I18n.tr("hud.redstone.pulse", ticks(pulse / 2.0)));
 		} else if (meter.samples() < window && rises < 2) {
 			clockLines.add(I18n.tr("hud.redstone.measuring"));
@@ -196,7 +204,14 @@ public final class RedstoneTools {
 		metering = false;
 		clockVisible = false;
 		clockLines.clear();
+		clockState = -1;
 	}
+
+	/** Stand der zuletzt gebauten Takt-Texte. */
+	private int clockState = -1;
+	private double clockPeriod = Double.NaN;
+	private double clockPulse = Double.NaN;
+	private int clockGeneration = -1;
 
 	/**
 	 * Inhalt eines gerade geöffneten Behälters (x, y, z): Anzahl und Stapelgröße je Platz.

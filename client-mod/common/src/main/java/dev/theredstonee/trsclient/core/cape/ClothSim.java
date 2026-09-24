@@ -203,8 +203,18 @@ public final class ClothSim {
 		return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
-	/** Ein Spiel-Tick (50 ms). */
+	/** Ein Spiel-Tick (50 ms) mit voller Genauigkeit ({@link #SUBSTEPS} Teilschritte). */
 	public void tick(Motion m, Params p) {
+		tick(m, p, SUBSTEPS);
+	}
+
+	/**
+	 * Ein Spiel-Tick mit {@code substeps} Teilschritten (1–{@link #SUBSTEPS}). Weniger Teilschritte für ferne
+	 * Umhänge (grobes Gitter) sparen Rechenzeit; die Dämpfung wird so umgerechnet, dass der Stoff gleich
+	 * schnell zur Ruhe kommt.
+	 */
+	public void tick(Motion m, Params p, int substeps) {
+		int sub = Math.max(1, Math.min(SUBSTEPS, substeps));
 		System.arraycopy(cur, 0, prev, 0, cur.length);
 		float move = (float) Math.sqrt(m.dx * m.dx + m.dy * m.dy + m.dz * m.dz);
 		if (move > TELEPORT_PX || Math.abs(m.dYaw) > Math.PI / 2 || !finite(m)) {
@@ -217,11 +227,12 @@ public final class ClothSim {
 		float gravity = clamp(p.gravity, 0.1f, 3f);
 		float lift = clamp(p.lift, 0f, 3f);
 		float damping = clamp(p.damping, 0.8f, 1f);
+		if (sub != SUBSTEPS) damping = (float) Math.pow(damping, (double) SUBSTEPS / sub);
 		float waveSpeed = clamp(p.waveSpeed, 0.1f, 3f);
 		stiffness = clamp(p.stiffness, 0f, 5f);
 		boolean windy = p.windMode != WIND_OFF;
 
-		float hStep = TICK_SECONDS / SUBSTEPS;
+		float hStep = TICK_SECONDS / sub;
 		float gy = GRAVITY * gravity * (float) Math.cos(m.tilt);
 		float gz = -GRAVITY * gravity * (float) Math.sin(m.tilt);
 		// Horizontale Geschwindigkeit des Körpers (für das Flattern), Pixel/s.
@@ -229,8 +240,8 @@ public final class ClothSim {
 		float flutter = windy ? Math.min(1f, speed / 90f) * 0.55f * GRAVITY * wind : 0f;
 		float idle = windy ? 0.04f * GRAVITY * wind : 0f;
 		float dragK = 0.035f * lift;
-		float part = strength / SUBSTEPS;
-		for (int s = 0; s < SUBSTEPS; s++) {
+		float part = strength / sub;
+		for (int s = 0; s < sub; s++) {
 			float t = m.time + s * hStep;
 			float gust = p.windMode == WIND_GUSTS ? gust(t + m.phase) * wind : 0f;
 			// Körper hat sich bewegt/gedreht: freie Punkte behalten ihre Lage in der Welt (samt Schwung),

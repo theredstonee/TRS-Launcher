@@ -47,12 +47,22 @@ public final class Waypoints {
 	}
 
 	/** Sichtbare Wegpunkte der aktuellen Welt und Dimension. */
+	/** Sichtbare Wegpunkte, je Tick einmal gefiltert (HUD und Minimap fragen je Bild). */
+	private List<Waypoint> visibleCache = Collections.<Waypoint>emptyList();
+	private boolean visibleStale = true;
+
 	public List<Waypoint> visible() {
-		return worldKey.isEmpty() ? Collections.<Waypoint>emptyList() : store.visible(worldKey, Mc.dimensionId());
+		if (worldKey.isEmpty()) return Collections.<Waypoint>emptyList();
+		if (visibleStale) {
+			visibleCache = store.visible(worldKey, Mc.dimensionId());
+			visibleStale = false;
+		}
+		return visibleCache;
 	}
 
 	/** Einmal je Client-Tick: Welt erkennen und Todespunkt setzen. */
 	public void tick(Minecraft mc) {
+		visibleStale = true;
 		LocalPlayer player = mc.player;
 		if (player == null || mc.level == null) {
 			worldKey = "";
@@ -80,17 +90,20 @@ public final class Waypoints {
 		Waypoint waypoint = new Waypoint(name, floor(Mc.x(player)), floor(Mc.y(player)), floor(Mc.z(player)),
 				Mc.dimensionId(), color);
 		store.add(worldKey, waypoint);
+		visibleStale = true;
 		save();
 		return waypoint;
 	}
 
 	public void remove(Waypoint waypoint) {
 		store.remove(worldKey, waypoint);
+		visibleStale = true;
 		save();
 	}
 
 	/** Nach Änderungen an Name/Farbe/Sichtbarkeit. */
 	public void save() {
+		visibleStale = true;
 		store.touch();
 		try {
 			store.saveIfDirty();

@@ -1,9 +1,7 @@
 package dev.theredstonee.trsclient.core.redstone;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Redstone-Staub im Umkreis des Spielers für das Welt-Overlay – gecacht statt je Frame gesucht:
@@ -39,7 +37,9 @@ public final class SignalCache {
 
 	private final int scanBudget;
 	private final int sightBudget;
-	private final Map<Long, Entry> byPos = new HashMap<Long, Entry>();
+	/** Position (gepackt) → Eintrag, ohne Long-Boxing (je Tick bis zu 4096 Nachschläge). */
+	private final dev.theredstonee.trsclient.core.util.LongObjectMap<Entry> byPos =
+			new dev.theredstonee.trsclient.core.util.LongObjectMap<Entry>(512);
 	private final List<Entry> entries = new ArrayList<Entry>();
 	private int radius = -1;
 	private int cursor;
@@ -85,7 +85,7 @@ public final class SignalCache {
 			boolean inRange = Math.abs(e.x - cx) <= r && Math.abs(e.y - cy) <= r && Math.abs(e.z - cz) <= r;
 			int power = inRange ? world.dustPower(e.x, e.y, e.z) : -1;
 			if (power < 0) {
-				byPos.remove(Long.valueOf(Dir.pack(e.x, e.y, e.z)));
+				byPos.remove(Dir.pack(e.x, e.y, e.z));
 				continue;
 			}
 			e.power = power;
@@ -113,7 +113,7 @@ public final class SignalCache {
 			int y = cy - r + dy;
 			int z = cz - r + dz;
 			int power = world.dustPower(x, y, z);
-			Long key = Long.valueOf(Dir.pack(x, y, z));
+			long key = Dir.pack(x, y, z);
 			Entry e = byPos.get(key);
 			if (power >= 0) {
 				if (e != null) {

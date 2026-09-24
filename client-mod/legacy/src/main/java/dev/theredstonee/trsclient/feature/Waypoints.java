@@ -46,12 +46,22 @@ public final class Waypoints {
 	}
 
 	/** Sichtbare Wegpunkte der aktuellen Welt und Dimension. */
+	/** Sichtbare Wegpunkte, je Tick einmal gefiltert (HUD und Minimap fragen je Bild). */
+	private List<Waypoint> visibleCache = Collections.<Waypoint>emptyList();
+	private boolean visibleStale = true;
+
 	public List<Waypoint> visible() {
-		return worldKey.isEmpty() ? Collections.<Waypoint>emptyList() : store.visible(worldKey, Mc.dimensionId());
+		if (worldKey.isEmpty()) return Collections.<Waypoint>emptyList();
+		if (visibleStale) {
+			visibleCache = store.visible(worldKey, Mc.dimensionId());
+			visibleStale = false;
+		}
+		return visibleCache;
 	}
 
 	/** Einmal je Client-Tick: Welt erkennen und Todespunkt setzen. */
 	public void tick() {
+		visibleStale = true;
 		EntityPlayerSP player = Mc.player();
 		if (player == null || Mc.world() == null) {
 			worldKey = "";
@@ -78,6 +88,7 @@ public final class Waypoints {
 		Waypoint waypoint = new Waypoint(name, floor(player.posX), floor(player.posY), floor(player.posZ),
 				Mc.dimensionId(), color);
 		store.add(worldKey, waypoint);
+		visibleStale = true;
 		save();
 		return waypoint;
 	}
@@ -93,11 +104,13 @@ public final class Waypoints {
 
 	public void remove(Waypoint waypoint) {
 		store.remove(worldKey, waypoint);
+		visibleStale = true;
 		save();
 	}
 
 	/** Nach Änderungen an Name/Farbe/Sichtbarkeit. */
 	public void save() {
+		visibleStale = true;
 		store.touch();
 		try {
 			store.saveIfDirty();

@@ -63,7 +63,8 @@ public final class Clips {
 			return;
 		}
 		try {
-			link.press(command);
+			// Senden/Datei lesen im Hintergrund – der Spiel-Thread blockiert nie.
+			link.pressInBackground(command);
 		} catch (RuntimeException e) {
 			pendingHint = ClipNotice.hint("unreachable");
 		}
