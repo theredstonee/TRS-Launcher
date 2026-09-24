@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Accent, ClientModStatus, Settings, StorageStats, Theme } from '~/types'
+import type { Accent, AppInfo, ClientModStatus, Settings, StorageStats, Theme } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 import type { Locale } from '~/utils/i18n'
 
@@ -18,7 +18,14 @@ const active = computed({
 })
 
 const form = ref<Settings | null>(null)
-const info = ref<{ version: string; os: string; dataDir: string } | null>(null)
+const info = ref<AppInfo | null>(null)
+/** Was es auf diesem System gibt – bis `appInfo` da ist, aus dem User-Agent geschätzt. */
+const caps = computed(() => info.value?.capabilities ?? defaultCapabilities())
+const updatesLine = computed(() => {
+  if (caps.value.updates === 'package') return t('settings.footer.updatesPackage')
+  if (caps.value.updates === 'flatpak') return t('settings.footer.updatesFlatpak')
+  return null
+})
 const clientMod = ref<ClientModStatus | null>(null)
 /** Speicherstatus: Fehler als fertiger Text, „Speichere/Gespeichert“ als Schlüssel (folgt einem Sprachwechsel). */
 const status = ref<{ ok: boolean; text: string } | { ok: true; state: 'saving' | 'saved' } | null>(null)
@@ -34,7 +41,7 @@ onMounted(async () => {
   try {
     form.value = structuredClone(toRaw(store.current ?? (await store.load())))
     lastSaved = JSON.stringify(form.value)
-    info.value = await backend.appInfo()
+    info.value = await loadAppInfo()
   } catch (e) {
     status.value = { ok: false, text: errorMessage(e) }
   }
@@ -249,9 +256,12 @@ function openDataDir() {
 // --- Netzwerk -----------------------------------------------------------------
 const firewall = ref<{ total: number; missing: number } | null>(null)
 const firewallBusy = ref(false)
-watch(active, (a) => a === 'network' && !firewall.value && backend.firewallStatus().then((s) => (firewall.value = s)).catch(() => {}), {
-  immediate: true,
-})
+// Die Firewall-Freigabe gibt es nur unter Windows.
+watch(
+  active,
+  (a) => a === 'network' && caps.value.firewall && !firewall.value && backend.firewallStatus().then((s) => (firewall.value = s)).catch(() => {}),
+  { immediate: true },
+)
 async function allowFirewall() {
   firewallBusy.value = true
   try {
@@ -272,6 +282,7 @@ async function allowFirewall() {
       <p v-if="info">TRS Launcher v{{ info.version }}</p>
       <p v-if="info">{{ info.os }}</p>
       <p v-if="clientModLine">{{ clientModLine }}</p>
+      <p v-if="updatesLine">{{ updatesLine }}</p>
     </template>
 
     <div v-if="!form" class="space-y-3">
@@ -447,7 +458,10 @@ async function allowFirewall() {
         <span class="text-base-600">×</span>
         <input v-model.number="form.resolution.height" type="number" min="240" class="field w-24 font-mono" :aria-label="t('settings.defaults.windowHeight')" />
       </SettingRow>
-      <SettingRow :title="t('settings.defaults.dedicatedGpuTitle')" :description="t('settings.defaults.dedicatedGpuDescription')">
+      <SettingRow
+        :title="t('settings.defaults.dedicatedGpuTitle')"
+        :description="caps.platform === 'linux' ? t('settings.defaults.dedicatedGpuDescriptionLinux') : t('settings.defaults.dedicatedGpuDescription')"
+      >
         <ToggleSwitch v-model="form.preferDedicatedGpu" :label="t('settings.defaults.dedicatedGpuTitle')" />
       </SettingRow>
 
@@ -553,15 +567,25 @@ async function allowFirewall() {
         </template>
         <button class="btn btn-ghost" @click="openDataDir">{{ t('common.actions.openFolder') }}</button>
       </SettingRow>
+      <!-- Linux: Anmeldedaten im Schlüsselbund oder – ohne Schlüsselbund – nur per Dateirechte geschützt. -->
+      <SettingRow
+        v-if="info && (info.tokenProtection === 'keyring' || info.tokenProtection === 'file')"
+        :title="t('settings.storage.credentialsTitle')"
+        :description="info.tokenProtection === 'keyring' ? t('settings.storage.credentialsKeyring') : t('settings.storage.credentialsFile')"
+      >
+        <span class="text-xs" :class="info.tokenProtection === 'keyring' ? 'text-ok' : 'text-warn'">
+          {{ info.tokenProtection === 'keyring' ? t('settings.storage.credentialsKeyringShort') : t('settings.storage.credentialsFileShort') }}
+        </span>
+      </SettingRow>
     </div>
 
     <!-- Netzwerk --------------------------------------------------------------------- -->
     <div v-else-if="active === 'network'">
       <h3 class="section-heading">{{ t('settings.network.title') }}</h3>
-      <SettingRow :title="t('settings.network.autoFirewallTitle')" :description="t('settings.network.autoFirewallDescription')">
+      <SettingRow v-if="caps.firewall" :title="t('settings.network.autoFirewallTitle')" :description="t('settings.network.autoFirewallDescription')">
         <ToggleSwitch v-model="form.autoFirewall" :label="t('settings.network.autoFirewallTitle')" />
       </SettingRow>
-      <SettingRow :title="t('settings.network.firewallTitle')" :description="t('settings.network.firewallDescription')">
+      <SettingRow v-if="caps.firewall" :title="t('settings.network.firewallTitle')" :description="t('settings.network.firewallDescription')">
         <template #description>
           <p v-if="firewall" class="mt-1 text-xs" :class="firewall.missing ? 'text-warn' : 'text-ok'">
             {{

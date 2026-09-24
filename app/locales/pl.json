@@ -70,7 +70,8 @@
     "betaGroup": "Języki beta",
     "onboardingTitle": "Wybierz język",
     "onboardingText": "Możesz go zmienić w dowolnej chwili w Ustawienia → Język.",
-    "detected": "Wykryto z systemu Windows"
+    "detected": "Wykryto z systemu Windows",
+    "detectedSystem": "Wykryto z systemu"
   },
   "format": {
     "neverPlayed": "Nigdy nie grano",
@@ -893,7 +894,8 @@
     },
     "deleteDialog": {
       "title": "Usunąć zrzut ekranu?",
-      "text": "{name} trafi do Kosza systemu Windows – możesz go stamtąd przywrócić."
+      "text": "{name} trafi do Kosza systemu Windows – możesz go stamtąd przywrócić.",
+      "textLinux": "{name} trafi do kosza – możesz go stamtąd przywrócić w menedżerze plików."
     }
   },
   "servers": {
@@ -1304,7 +1306,8 @@
       "missing_dependency": "Modowi brakuje innego wymaganego moda. Log pokazuje, którego, tuż nad błędem.",
       "mod_conflict": "Dwa mody ze sobą kolidują. Wyłącz ostatnio dodane mody i uruchom ponownie.",
       "graphics_driver": "Sterownik graficzny uległ awarii lub nie obsługuje OpenGL. Zaktualizuj sterownik karty graficznej."
-    }
+    },
+    "shareTextLinux": "Log zostanie przesłany na {site}, gdzie każdy z linkiem może go przeczytać. Tokeny logowania i twoja nazwa użytkownika są wcześniej usuwane."
   },
   "exportPack": {
     "title": "Eksportuj jako modpack",
@@ -1374,7 +1377,9 @@
     "title": "Ustawienia",
     "footer": {
       "clientModUpdate": "TRS Client: pobrano aktualizację do {version}",
-      "clientModCurrent": "TRS Client: wersja {version} (aktualna)"
+      "clientModCurrent": "TRS Client: wersja {version} (aktualna)",
+      "updatesPackage": "Aktualizacje przychodzą przez menedżer pakietów",
+      "updatesFlatpak": "Aktualizacje przychodzą przez Flatpak"
     },
     "appearance": {
       "colorScheme": "Motyw kolorów",
@@ -1461,7 +1466,8 @@
       "windowWidth": "Szerokość okna",
       "windowHeight": "Wysokość okna",
       "dedicatedGpuTitle": "Wydajna karta graficzna",
-      "dedicatedGpuDescription": "Dla laptopów z dwoma układami graficznymi: Windows przydziela grze dedykowany GPU."
+      "dedicatedGpuDescription": "Dla laptopów z dwoma układami graficznymi: Windows przydziela grze dedykowany GPU.",
+      "dedicatedGpuDescriptionLinux": "Dla laptopów z dwoma układami graficznymi: gra renderuje się na dedykowanym GPU (PRIME offload – DRI_PRIME lub zmienne NVIDIA)."
     },
     "hooks": {
       "title": "Hooki uruchamiania",
@@ -1517,7 +1523,12 @@
       "freed": "Zwolniono {size}",
       "confirmTitle": "Usunąć nieużywane?",
       "confirmText": "{n} wersja gry ({size}) zostanie usunięta. Instancje, światy i mody pozostaną nietknięte. | {n} wersje gry ({size}) zostaną usunięte. Instancje, światy i mody pozostaną nietknięte. | {n} wersji gry ({size}) zostanie usuniętych. Instancje, światy i mody pozostaną nietknięte.",
-      "dataDirTitle": "Folder aplikacji"
+      "dataDirTitle": "Folder aplikacji",
+      "credentialsTitle": "Zapisane logowania",
+      "credentialsKeyring": "Klucz do logowań Microsoft jest przechowywany w pęku kluczy systemu (np. GNOME Keyring lub KWallet).",
+      "credentialsFile": "Nie znaleziono pęku kluczy, więc logowania są chronione tylko uprawnieniami plików (odczytać je może tylko twój użytkownik). Dla lepszej ochrony zainstaluj i odblokuj pęk kluczy, np. GNOME Keyring lub KWallet.",
+      "credentialsKeyringShort": "Pęk kluczy",
+      "credentialsFileShort": "Tylko uprawnienia plików"
     },
     "network": {
       "title": "Sieć",
@@ -1925,7 +1936,9 @@
     "ready": "TRS Launcher {version} jest gotowy.",
     "readyRunning": "TRS Launcher {version} jest gotowy. Uruchomione gry działają dalej.",
     "downloadInstaller": "Pobierz instalator",
-    "splash": "Aktualizowanie – za chwilę ponowne uruchomienie …"
+    "splash": "Aktualizowanie – za chwilę ponowne uruchomienie …",
+    "availableExternal": "Dostępna aktualizacja {version}",
+    "externalHint": "Zainstaluj ją menedżerem pakietów (np. yay/paru dla AUR, apt lub dnf) albo pobierz z GitHuba."
   },
   "play": {
     "stopGame": "Zatrzymaj grę",

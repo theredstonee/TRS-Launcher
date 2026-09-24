@@ -116,9 +116,9 @@ impl Rule {
 }
 
 impl OsRule {
-    /// Der Launcher läuft nur auf Windows; `arch: "x86"` meint 32 Bit.
+    /// `name` ist `windows`, `linux` oder `osx`; `arch: "x86"` meint 32 Bit.
     fn matches_host(&self) -> bool {
-        if self.name.as_deref().is_some_and(|n| n != "windows") {
+        if self.name.as_deref().is_some_and(|n| n != crate::platform::MOJANG_OS) {
             return false;
         }
         if let Some(arch) = self.arch.as_deref() {
@@ -130,7 +130,7 @@ impl OsRule {
         // Einziges Vorkommen in Mojangs Daten: `^10\.` (Windows 10 und neuer).
         // Wir unterstützen nur Windows 10+, daher trifft das immer zu; andere
         // Muster behandeln wir konservativ als "passt nicht".
-        self.version.as_deref().is_none_or(|v| v == r"^10\.")
+        self.version.as_deref().is_none_or(|v| v == r"^10\." && cfg!(windows))
     }
 }
 
@@ -353,7 +353,7 @@ impl Library {
         }
 
         if let Some(natives) = &self.natives
-            && let Some(template) = natives.get("windows")
+            && let Some(template) = natives.get(crate::platform::MOJANG_OS)
         {
             let bits = if cfg!(target_pointer_width = "64") { "64" } else { "32" };
             let classifier = template.replace("${arch}", bits);
@@ -375,11 +375,7 @@ impl Library {
 }
 
 fn host_natives_classifier() -> &'static str {
-    match std::env::consts::ARCH {
-        "aarch64" => "natives-windows-arm64",
-        "x86" => "natives-windows-x86",
-        _ => "natives-windows",
-    }
+    crate::platform::natives_classifier()
 }
 
 /// Pfade aus fremden JSONs dürfen nicht aus `libraries/` ausbrechen.
@@ -520,10 +516,18 @@ mod tests {
             assert!(arm.resolve(&f).unwrap().is_empty());
         }
 
-        let linux = lib(r#"{"name":"org.lwjgl:lwjgl:3.3.3:natives-linux",
-            "downloads":{"artifact":{"path":"x/z.jar","sha1":"aa","size":1,"url":"https://x/z.jar"}},
-            "rules":[{"action":"allow","os":{"name":"linux"}}]}"#);
-        assert!(linux.resolve(&f).unwrap().is_empty());
+        let natives_for = |os: &str| {
+            lib(&format!(
+                r#"{{"name":"org.lwjgl:lwjgl:3.3.3:natives-{os}",
+                "downloads":{{"artifact":{{"path":"x/{os}.jar","sha1":"aa","size":1,"url":"https://x/{os}.jar"}}}},
+                "rules":[{{"action":"allow","os":{{"name":"{os}"}}}}]}}"#
+            ))
+        };
+        let (own, foreign) = if cfg!(windows) { ("windows", "linux") } else { ("linux", "windows") };
+        assert!(natives_for(foreign).resolve(&f).unwrap().is_empty(), "fremdes OS");
+        if std::env::consts::ARCH == "x86_64" {
+            assert_eq!(natives_for(own).resolve(&f).unwrap().len(), 1, "eigenes OS");
+        }
     }
 
     #[test]
@@ -532,12 +536,15 @@ mod tests {
             "natives":{"linux":"natives-linux","windows":"natives-windows-${arch}"},
             "extract":{"exclude":["META-INF/"]},
             "downloads":{"classifiers":{
+              "natives-linux":{"path":"p/lwjgl-platform-2.9.1-natives-linux.jar","sha1":"bb","size":1,"url":"https://x/l.jar"},
               "natives-windows-64":{"path":"p/lwjgl-platform-2.9.1-natives-windows-64.jar","sha1":"aa","size":1,"url":"https://x/n.jar"}}}}"#);
         let r = l.resolve(&Features::default()).unwrap();
         if cfg!(target_pointer_width = "64") {
             assert_eq!(r.len(), 1);
             assert!(!r[0].on_classpath);
             assert_eq!(r[0].extract.as_ref().unwrap().exclude, vec!["META-INF/"]);
+            let expected = if cfg!(windows) { "natives-windows-64" } else { "natives-linux" };
+            assert!(r[0].path.ends_with(&format!("{expected}.jar")), "{}", r[0].path);
         }
     }
 
@@ -632,6 +639,8 @@ mod tests {
                 {{"name":"org.lwjgl:lwjgl:3.1.6","downloads":{{"artifact":{jar}}}}},
                 {{"name":"org.lwjgl:lwjgl:3.1.6","natives":{{"windows":"natives-windows","linux":"natives-linux"}},
                   "downloads":{{"artifact":{jar},"classifiers":{{
+                    "natives-linux":{{"path":"org/lwjgl/lwjgl/3.1.6/lwjgl-3.1.6-natives-linux.jar","sha1":"b6","size":1,
+                      "url":"https://libraries.minecraft.net/org/lwjgl/lwjgl/3.1.6/lwjgl-3.1.6-natives-linux.jar"}},
                     "natives-windows":{{"path":"org/lwjgl/lwjgl/3.1.6/lwjgl-3.1.6-natives-windows.jar","sha1":"a6","size":1,
                       "url":"https://libraries.minecraft.net/org/lwjgl/lwjgl/3.1.6/lwjgl-3.1.6-natives-windows.jar"}}}}}}}},
                 {{"name":"com.mojang:brigadier:1.0.14"}}]}}"#
@@ -650,7 +659,8 @@ mod tests {
         let resolved: Vec<ResolvedLibrary> =
             merged.libraries.iter().flat_map(|l| l.resolve(&Features::default()).unwrap()).collect();
         let natives: Vec<_> = resolved.iter().filter(|r| r.extract.is_some()).map(|r| r.path.as_str()).collect();
-        assert_eq!(natives, ["org/lwjgl/lwjgl/3.1.6/lwjgl-3.1.6-natives-windows.jar"]);
+        let os = if cfg!(windows) { "windows" } else { "linux" };
+        assert_eq!(natives, [format!("org/lwjgl/lwjgl/3.1.6/lwjgl-3.1.6-natives-{os}.jar")]);
     }
 
     /// Ein Loader, der selbst eine Natives-Library im alten Format mitbringt,

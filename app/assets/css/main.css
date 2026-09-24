@@ -30,9 +30,10 @@
   --color-ok: #5ee08a;
   --color-warn: #ffb84d;
 
-  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "Cascadia Mono", Consolas, monospace;
+  /* Windows zuerst, danach übliche Linux-Schriften (GNOME/KDE/Ubuntu/Fedora). */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, "Inter", "Cantarell", "Noto Sans", "Ubuntu", "DejaVu Sans", sans-serif;
+  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, "Noto Sans", sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, "JetBrains Mono", "Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
 
   --animate-shimmer: shimmer 1.4s linear infinite;
   --animate-pop: pop 0.18s ease-out;

@@ -10,8 +10,12 @@ use crate::error::CommandResult;
 pub struct AppInfo {
     version: &'static str,
     data_dir: String,
-    /// z. B. „Windows 11 (24H2, Build 26100)“.
+    /// z. B. „Windows 11 (24H2, Build 26100)“ oder „Arch Linux (Kernel 6.10.2)“.
     os: String,
+    /// Was es auf diesem System gibt (Plattform, Firewall, Papierkorb, Clips, Update-Weg).
+    capabilities: trs_core::platform::Capabilities,
+    /// Schutz der gespeicherten Anmeldedaten: `dpapi`, `keyring`, `file` oder `none`.
+    token_protection: &'static str,
 }
 
 #[tauri::command]
@@ -20,6 +24,8 @@ pub fn app_info(launcher: State<'_, LauncherState>) -> AppInfo {
         version: trs_core::LAUNCHER_VERSION,
         data_dir: launcher.paths().root().display().to_string(),
         os: trs_core::system::os_description(),
+        capabilities: trs_core::platform::capabilities(),
+        token_protection: trs_core::auth::crypto::protection(),
     }
 }
 

@@ -194,10 +194,25 @@ export interface VersionManifest {
   versions: ManifestVersion[]
 }
 
+/** Was es auf diesem System gibt (aus `trs_core::platform::capabilities`). */
+export interface PlatformCapabilities {
+  platform: 'windows' | 'linux' | 'macos'
+  /** Windows-Firewall-Freigabe für die Java-Runtimes. */
+  firewall: boolean
+  trash: boolean
+  /** Spiel-Clips aufnehmen (derzeit nur Windows). */
+  clips: boolean
+  /** `auto` = eingebauter Updater, `package` = Paketverwaltung (.deb/.rpm/AUR), `flatpak`. */
+  updates: 'auto' | 'package' | 'flatpak'
+}
+
 export interface AppInfo {
   version: string
   dataDir: string
   os: string
+  capabilities: PlatformCapabilities
+  /** Schutz der gespeicherten Anmeldedaten: `dpapi`, `keyring` (Schlüsselbund), `file` (nur Dateirechte) oder `none`. */
+  tokenProtection: 'dpapi' | 'keyring' | 'file' | 'none'
 }
 
 /** TRS Client (In-Game-Mod): mitgelieferte Version, `update` = neuere aus dem Update-Kanal. */

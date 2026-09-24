@@ -59,6 +59,10 @@
     "publisher": "Theredstonee",
     "copyright": "© 2026 Theredstonee",
     "shortDescription": "Minecraft-Launcher",
+    "longDescription": "Minecraft launcher for every version and mod loader (Fabric, Quilt, Forge, NeoForge) with Modrinth, modpacks and the TRS Client.",
+    "category": "Game",
+    "homepage": "https://github.com/theredstonee/TRS-Launcher",
+    "license": "GPL-3.0-only",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -85,6 +89,18 @@
       },
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
+      }
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      },
+      "deb": {
+        "section": "games",
+        "recommends": ["x11-xserver-utils", "xdg-utils"]
+      },
+      "rpm": {
+        "recommends": ["xrandr", "xdg-utils"]
       }
     },
     "createUpdaterArtifacts": true,

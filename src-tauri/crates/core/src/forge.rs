@@ -42,7 +42,6 @@ const MOJANG_LIBRARIES: &str = "https://libraries.minecraft.net/";
 const NEOFORGE_LEGACY_GAME_VERSION: &str = "1.20.1";
 const MARKER_FILE: &str = "trs-install.json";
 const MARKER_FORMAT: u32 = 1;
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 /// Obergrenze für JSON-/Manifest-Einträge aus Jars (Schutz vor Zip-Bomben).
 const MAX_TEXT_ENTRY: u64 = 16 * 1024 * 1024;
 
@@ -568,11 +567,12 @@ fn parse_main_class(manifest: &str) -> Option<String> {
         .filter(|v| !v.is_empty() && v.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '$')))
 }
 
-/// Processors brauchen die Konsolen-Variante: `java.exe` neben `javaw.exe`.
+/// Processors brauchen die Konsolen-Variante: `java.exe` neben `javaw.exe`
+/// (unter Linux gibt es nur `java`).
 fn console_java(java: &Path) -> PathBuf {
     let is_javaw = java.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.eq_ignore_ascii_case("javaw.exe"));
     if is_javaw {
-        let console = java.with_file_name("java.exe");
+        let console = java.with_file_name(crate::platform::JAVA_CONSOLE_BIN);
         if console.is_file() {
             return console;
         }
@@ -1013,26 +1013,27 @@ async fn run_processor(
     })?;
 
     let args = processor.args.iter().map(|a| resolve_arg(a, data, paths)).collect::<Result<Vec<_>>>()?;
-    let classpath = classpath.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(";");
+    let classpath =
+        classpath.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(crate::platform::CLASSPATH_SEPARATOR);
 
     fsutil::ensure_dir(work_dir).await?;
     tracing::info!("Starte Processor {} ({main_class})", processor.jar);
+    let mut command = tokio::process::Command::new(java);
+    crate::platform::hide_console(&mut command);
+    crate::platform::env::clean_tokio(&mut command);
+    command
+        .arg("-cp")
+        .arg(&classpath)
+        .arg(&main_class)
+        .args(&args)
+        .current_dir(work_dir)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        // Bricht der Start ab, soll kein verwaister Java-Prozess weiterlaufen.
+        .kill_on_drop(true);
     // Abbrechen verwirft das Future – `kill_on_drop` beendet dann den Processor.
-    let output = crate::task::or_cancel(
-        tokio::process::Command::new(java)
-            .arg("-cp")
-            .arg(&classpath)
-            .arg(&main_class)
-            .args(&args)
-            .current_dir(work_dir)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .creation_flags(CREATE_NO_WINDOW)
-            // Bricht der Start ab, soll kein verwaister Java-Prozess weiterlaufen.
-            .kill_on_drop(true)
-            .output(),
-    )
+    let output = crate::task::or_cancel(command.output())
     .await?
     .map_err(|e| {
         tracing::error!("Java für Processor nicht startbar ({}): {e}", java.display());
@@ -1337,10 +1338,13 @@ mod tests {
         assert_eq!(resolve_arg("{ROOT}/libraries/", &data, &paths).unwrap(), r"C:\trs/libraries/");
         assert_eq!(resolve_arg("--side={SIDE}-{SIDE}", &data, &paths).unwrap(), "--side=client-client");
         assert_eq!(resolve_arg("--task", &data, &paths).unwrap(), "--task");
-        assert_eq!(
-            resolve_arg("[net.minecraftforge:forge:1.20.1-47.4.10:client]", &data, &paths).unwrap(),
-            r"C:\trs\libraries\net\minecraftforge\forge\1.20.1-47.4.10\forge-1.20.1-47.4.10-client.jar"
-        );
+        let expected = paths
+            .libraries_dir()
+            .join("net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-client.jar")
+            .display()
+            .to_string();
+        let expected = if cfg!(windows) { expected.replace('/', "\\") } else { expected };
+        assert_eq!(resolve_arg("[net.minecraftforge:forge:1.20.1-47.4.10:client]", &data, &paths).unwrap(), expected);
         assert!(resolve_arg("{UNKNOWN}", &data, &paths).is_err());
         assert!(resolve_arg("{ROOT", &data, &paths).is_err());
         assert!(resolve_arg("[a:b:1/../../x]", &data, &paths).is_err());

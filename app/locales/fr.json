@@ -70,7 +70,8 @@
     "betaGroup": "Langues bêta",
     "onboardingTitle": "Choisis ta langue",
     "onboardingText": "Tu peux la changer à tout moment dans Paramètres → Langue.",
-    "detected": "Détectée depuis Windows"
+    "detected": "Détectée depuis Windows",
+    "detectedSystem": "Détectée depuis le système"
   },
   "format": {
     "neverPlayed": "Jamais joué",
@@ -893,7 +894,8 @@
     },
     "deleteDialog": {
       "title": "Supprimer la capture d'écran ?",
-      "text": "{name} va dans la corbeille de Windows – tu peux l'y restaurer."
+      "text": "{name} va dans la corbeille de Windows – tu peux l'y restaurer.",
+      "textLinux": "{name} va dans la corbeille – tu peux l’y restaurer depuis ton gestionnaire de fichiers."
     }
   },
   "servers": {
@@ -1304,7 +1306,8 @@
       "missing_dependency": "Il manque à un mod un autre mod dont il a besoin. Le journal indique lequel juste au-dessus de l'erreur.",
       "mod_conflict": "Deux mods ne s'entendent pas. Désactive les derniers mods ajoutés et relance.",
       "graphics_driver": "Le pilote graphique a planté ou ne prend pas en charge OpenGL. Mets à jour le pilote de ta carte graphique."
-    }
+    },
+    "shareTextLinux": "Le journal sera envoyé sur {site}, où toute personne ayant le lien pourra le lire. Les jetons de connexion et ton nom d’utilisateur sont d’abord retirés."
   },
   "exportPack": {
     "title": "Exporter en modpack",
@@ -1374,7 +1377,9 @@
     "title": "Paramètres",
     "footer": {
       "clientModUpdate": "TRS Client : mise à jour {version} téléchargée",
-      "clientModCurrent": "TRS Client : version {version} (à jour)"
+      "clientModCurrent": "TRS Client : version {version} (à jour)",
+      "updatesPackage": "Les mises à jour passent par ton gestionnaire de paquets",
+      "updatesFlatpak": "Les mises à jour passent par Flatpak"
     },
     "appearance": {
       "colorScheme": "Thème de couleurs",
@@ -1461,7 +1466,8 @@
       "windowWidth": "Largeur de la fenêtre",
       "windowHeight": "Hauteur de la fenêtre",
       "dedicatedGpuTitle": "Carte graphique hautes performances",
-      "dedicatedGpuDescription": "Pour les portables à deux puces graphiques : Windows attribue au jeu le GPU dédié."
+      "dedicatedGpuDescription": "Pour les portables à deux puces graphiques : Windows attribue au jeu le GPU dédié.",
+      "dedicatedGpuDescriptionLinux": "Pour les portables à deux puces graphiques : le jeu est rendu sur le GPU dédié (PRIME offload – DRI_PRIME ou les variables NVIDIA)."
     },
     "hooks": {
       "title": "Hooks de lancement",
@@ -1517,7 +1523,12 @@
       "freed": "{size} libérés",
       "confirmTitle": "Supprimer l'inutilisé ?",
       "confirmText": "{n} version du jeu ({size}) sera supprimée. Les instances, mondes et mods ne sont pas touchés. | {n} versions du jeu ({size}) seront supprimées. Les instances, mondes et mods ne sont pas touchés.",
-      "dataDirTitle": "Dossier de l'application"
+      "dataDirTitle": "Dossier de l'application",
+      "credentialsTitle": "Connexions enregistrées",
+      "credentialsKeyring": "La clé de tes connexions Microsoft est conservée dans le trousseau du système (p. ex. GNOME Keyring ou KWallet).",
+      "credentialsFile": "Aucun trousseau système trouvé : tes connexions ne sont protégées que par les droits de fichier (seul ton utilisateur peut les lire). Pour une meilleure protection, installe et déverrouille un trousseau comme GNOME Keyring ou KWallet.",
+      "credentialsKeyringShort": "Trousseau",
+      "credentialsFileShort": "Droits de fichier uniquement"
     },
     "network": {
       "title": "Réseau",
@@ -1925,7 +1936,9 @@
     "ready": "TRS Launcher {version} est prêt.",
     "readyRunning": "TRS Launcher {version} est prêt. Les jeux en cours continuent de tourner.",
     "downloadInstaller": "Télécharger l'installateur",
-    "splash": "Mise à jour – redémarrage dans un instant…"
+    "splash": "Mise à jour – redémarrage dans un instant…",
+    "availableExternal": "Mise à jour {version} disponible",
+    "externalHint": "Installe-la avec ton gestionnaire de paquets (p. ex. yay/paru pour l’AUR, apt ou dnf) – ou télécharge-la sur GitHub."
   },
   "play": {
     "stopGame": "Arrêter le jeu",

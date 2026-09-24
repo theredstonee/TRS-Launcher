@@ -75,7 +75,7 @@ pub fn build_command(
         .iter()
         .map(|p| p.display().to_string())
         .collect::<Vec<_>>()
-        .join(";");
+        .join(crate::platform::CLASSPATH_SEPARATOR);
 
     let vars: HashMap<&str, String> = HashMap::from([
         ("auth_player_name", session.player_name.clone()),
@@ -94,7 +94,7 @@ pub fn build_command(
         ("assets_index_name", version.assets.clone().unwrap_or_else(|| "legacy".into())),
         ("natives_directory", prepared.natives_dir.display().to_string()),
         ("library_directory", libraries_dir.display().to_string()),
-        ("classpath_separator", ";".into()),
+        ("classpath_separator", crate::platform::CLASSPATH_SEPARATOR.into()),
         ("classpath", classpath),
         ("launcher_name", LAUNCHER_NAME.into()),
         ("launcher_version", LAUNCHER_VERSION.into()),
@@ -400,10 +400,12 @@ mod tests {
         let joined = args.join(" | ");
 
         assert!(args.contains(&"-Xmx4096M".to_owned()));
-        assert!(args.contains(&"-XX:HeapDumpPath=x.heapdump".to_owned()));
+        // Regeln mit `os.name` gelten nur auf dem passenden System.
+        assert_eq!(args.contains(&"-XX:HeapDumpPath=x.heapdump".to_owned()), cfg!(windows));
         assert!(!joined.contains("XstartOnFirstThread"));
         assert!(args.contains(&r"-Djava.library.path=C:\natives".to_owned()));
-        assert!(args.contains(&r"C:\l\a.jar;C:\v\client.jar".to_owned()));
+        let classpath = format!(r"C:\l\a.jar{}C:\v\client.jar", crate::platform::CLASSPATH_SEPARATOR);
+        assert!(args.contains(&classpath));
         assert!(args.contains(&r"-Dlog4j.configurationFile=C:\assets\log_configs\client.xml".to_owned()));
         // Pfad mit Leerzeichen bleibt EIN Argument.
         assert!(args.contains(&r"C:\game dir".to_owned()));

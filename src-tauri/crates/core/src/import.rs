@@ -547,45 +547,120 @@ impl Launcher {
     }
 }
 
+/// Prism/MultiMC erlauben einen eigenen Instanz-Ordner (`InstanceDir=` in
+/// `prismlauncher.cfg`/`multimc.cfg`, absolut oder relativ zum Datenordner).
+fn mmc_instance_dir(data_dir: PathBuf, cfg_name: &str) -> PathBuf {
+    let configured = std::fs::read_to_string(data_dir.join(cfg_name)).ok().and_then(|text| {
+        text.lines()
+            .find_map(|l| l.trim().strip_prefix("InstanceDir="))
+            .map(|v| v.trim().trim_matches('"').to_owned())
+            .filter(|v| !v.is_empty() && !v.chars().any(char::is_control))
+    });
+    match configured {
+        Some(dir) if Path::new(&dir).is_absolute() => PathBuf::from(dir),
+        Some(dir) if !dir.split(['/', '\\']).any(|s| s == "..") => data_dir.join(dir),
+        _ => data_dir.join("instances"),
+    }
+}
+
+/// Wo andere Launcher ihre Daten ablegen. Je Quelle kann es mehrere Orte
+/// geben (Linux: normale Installation und Flatpak).
+#[derive(Default)]
 struct ImportRoots {
-    minecraft: Option<PathBuf>,
-    prism: Option<PathBuf>,
-    multimc: Option<PathBuf>,
-    curseforge: Option<PathBuf>,
-    modrinth: Option<PathBuf>,
+    minecraft: Vec<PathBuf>,
+    prism: Vec<PathBuf>,
+    multimc: Vec<PathBuf>,
+    curseforge: Vec<PathBuf>,
+    modrinth: Vec<PathBuf>,
 }
 
 impl ImportRoots {
     fn detect() -> Self {
+        let existing = |candidates: Vec<PathBuf>| -> Vec<PathBuf> {
+            let mut out: Vec<PathBuf> = Vec::new();
+            for p in candidates.into_iter().filter(|p| p.is_dir()) {
+                let key = std::fs::canonicalize(&p).unwrap_or_else(|_| p.clone());
+                if !out.iter().any(|o| std::fs::canonicalize(o).unwrap_or_else(|_| o.clone()) == key) {
+                    out.push(p);
+                }
+            }
+            out
+        };
+        let raw = Self::candidates();
+        Self {
+            minecraft: existing(raw.minecraft),
+            prism: existing(raw.prism),
+            multimc: existing(raw.multimc),
+            curseforge: existing(raw.curseforge),
+            modrinth: existing(raw.modrinth).into_iter().filter(|p| p.join("app.db").is_file()).collect(),
+        }
+    }
+
+    /// Windows: `%APPDATA%` bzw. das Benutzerprofil.
+    #[cfg(windows)]
+    fn candidates() -> Self {
         let appdata = std::env::var_os("APPDATA").map(PathBuf::from);
         let home = std::env::var_os("USERPROFILE").map(PathBuf::from);
-        let existing = |p: Option<PathBuf>| p.filter(|p| p.is_dir());
+        let under = |base: &Option<PathBuf>, rel: &[&str]| -> Vec<PathBuf> {
+            base.iter().map(|b| rel.iter().fold(b.clone(), |p, seg| p.join(seg))).collect()
+        };
         Self {
-            minecraft: existing(appdata.as_ref().map(|a| a.join(".minecraft"))),
-            prism: existing(appdata.as_ref().map(|a| a.join("PrismLauncher").join("instances"))),
-            multimc: existing(appdata.as_ref().map(|a| a.join("MultiMC").join("instances"))),
-            curseforge: existing(home.as_ref().map(|h| h.join("curseforge").join("minecraft").join("Instances"))),
-            modrinth: ["ModrinthApp", "com.modrinth.theseus"]
-                .iter()
-                .find_map(|d| existing(appdata.as_ref().map(|a| a.join(d))).filter(|p| p.join("app.db").is_file())),
+            minecraft: under(&appdata, &[".minecraft"]),
+            prism: under(&appdata, &["PrismLauncher"]).into_iter().map(|d| mmc_instance_dir(d, "prismlauncher.cfg")).collect(),
+            multimc: under(&appdata, &["MultiMC"]).into_iter().map(|d| mmc_instance_dir(d, "multimc.cfg")).collect(),
+            curseforge: under(&home, &["curseforge", "minecraft", "Instances"]),
+            modrinth: ["ModrinthApp", "com.modrinth.theseus"].iter().flat_map(|d| under(&appdata, &[d])).collect(),
+        }
+    }
+
+    /// Linux: XDG-Datenordner (`~/.local/share`), Flatpak-Ordner
+    /// (`~/.var/app/<id>/…`) und die üblichen Orte von MultiMC.
+    #[cfg(not(windows))]
+    fn candidates() -> Self {
+        let Some(home) = std::env::var_os("HOME").map(PathBuf::from) else { return Self::default() };
+        let data = std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .filter(|p| p.is_absolute())
+            .unwrap_or_else(|| home.join(".local/share"));
+        let flatpak = |id: &str, rel: &str| home.join(".var/app").join(id).join(rel);
+        Self {
+            minecraft: vec![
+                home.join(".minecraft"),
+                flatpak("com.mojang.Minecraft", ".minecraft"),
+                flatpak("com.mojang.Minecraft", "data/minecraft"),
+            ],
+            prism: [data.join("PrismLauncher"), flatpak("org.prismlauncher.PrismLauncher", "data/PrismLauncher")]
+                .into_iter()
+                .map(|d| mmc_instance_dir(d, "prismlauncher.cfg"))
+                .collect(),
+            multimc: [data.join("multimc"), home.join("MultiMC"), home.join(".local/share/multimc")]
+                .into_iter()
+                .map(|d| mmc_instance_dir(d, "multimc.cfg"))
+                .collect(),
+            curseforge: vec![home.join("curseforge/minecraft/Instances")],
+            modrinth: vec![
+                data.join("ModrinthApp"),
+                data.join("com.modrinth.theseus"),
+                flatpak("com.modrinth.ModrinthApp", "data/ModrinthApp"),
+            ],
         }
     }
 
     fn scan(&self, latest_release: Option<&str>) -> Vec<ImportCandidate> {
         let mut out = Vec::new();
-        if let Some(dir) = &self.minecraft {
+        for dir in &self.minecraft {
             out.extend(scan_vanilla(dir, latest_release));
         }
-        if let Some(dir) = &self.prism {
+        for dir in &self.prism {
             out.extend(scan_mmc(dir, ImportSource::Prism));
         }
-        if let Some(dir) = &self.multimc {
+        for dir in &self.multimc {
             out.extend(scan_mmc(dir, ImportSource::MultiMc));
         }
-        if let Some(dir) = &self.curseforge {
+        for dir in &self.curseforge {
             out.extend(scan_curseforge(dir));
         }
-        if let Some(dir) = &self.modrinth {
+        for dir in &self.modrinth {
             out.extend(scan_modrinth(dir));
         }
         out
@@ -691,6 +766,21 @@ mod tests {
     }
 
     #[test]
+    fn custom_prism_instance_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        let data = dir.path().join("PrismLauncher");
+        std::fs::create_dir_all(&data).unwrap();
+        assert_eq!(mmc_instance_dir(data.clone(), "prismlauncher.cfg"), data.join("instances"));
+        std::fs::write(data.join("prismlauncher.cfg"), "[General]\nInstanceDir=meine\n").unwrap();
+        assert_eq!(mmc_instance_dir(data.clone(), "prismlauncher.cfg"), data.join("meine"));
+        let abs = dir.path().join("woanders");
+        std::fs::write(data.join("prismlauncher.cfg"), format!("InstanceDir={}\n", abs.display())).unwrap();
+        assert_eq!(mmc_instance_dir(data.clone(), "prismlauncher.cfg"), abs);
+        std::fs::write(data.join("prismlauncher.cfg"), "InstanceDir=../../etc\n").unwrap();
+        assert_eq!(mmc_instance_dir(data.clone(), "prismlauncher.cfg"), data.join("instances"));
+    }
+
+    #[test]
     fn scans_all_formats_and_copies() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
@@ -734,7 +824,12 @@ mod tests {
         )
         .unwrap();
 
-        let roots = ImportRoots { minecraft: Some(mc.clone()), prism: Some(prism), multimc: None, curseforge: Some(curse), modrinth: None };
+        let roots = ImportRoots {
+            minecraft: vec![mc.clone()],
+            prism: vec![prism],
+            curseforge: vec![curse],
+            ..Default::default()
+        };
         let found = roots.scan(Some("1.21.4"));
         assert_eq!(found.len(), 4, "{found:#?}");
 

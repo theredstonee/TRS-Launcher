@@ -70,7 +70,8 @@
     "betaGroup": "Beta diller",
     "onboardingTitle": "Dilini seç",
     "onboardingText": "Bunu istediğin zaman Ayarlar → Dil bölümünden değiştirebilirsin.",
-    "detected": "Windows'tan algılandı"
+    "detected": "Windows'tan algılandı",
+    "detectedSystem": "Sistemden algılandı"
   },
   "format": {
     "neverPlayed": "Hiç oynanmadı",
@@ -893,7 +894,8 @@
     },
     "deleteDialog": {
       "title": "Ekran görüntüsü silinsin mi?",
-      "text": "{name} Windows Geri Dönüşüm Kutusu'na gider – oradan geri yükleyebilirsin."
+      "text": "{name} Windows Geri Dönüşüm Kutusu'na gider – oradan geri yükleyebilirsin.",
+      "textLinux": "{name} çöp kutusuna gider – dosya yöneticinden oradan geri yükleyebilirsin."
     }
   },
   "servers": {
@@ -1304,7 +1306,8 @@
       "missing_dependency": "Bir mod, ihtiyaç duyduğu başka bir modu bulamıyor. Hangisi olduğu günlükte hatanın hemen üstünde yazıyor.",
       "mod_conflict": "İki mod birbiriyle uyuşmuyor. En son eklediğin modları devre dışı bırak ve tekrar başlat.",
       "graphics_driver": "Ekran kartı sürücüsü çöktü veya OpenGL'i desteklemiyor. Ekran kartı sürücünü güncelle."
-    }
+    },
+    "shareTextLinux": "Günlük {site} sitesine yüklenecek; bağlantıya sahip herkes okuyabilir. Giriş token’ları ve kullanıcı adın önce kaldırılır."
   },
   "exportPack": {
     "title": "Modpack olarak dışa aktar",
@@ -1374,7 +1377,9 @@
     "title": "Ayarlar",
     "footer": {
       "clientModUpdate": "TRS Client: güncelleme indirildi ({version})",
-      "clientModCurrent": "TRS Client: sürüm {version} (güncel)"
+      "clientModCurrent": "TRS Client: sürüm {version} (güncel)",
+      "updatesPackage": "Güncellemeler paket yöneticin üzerinden gelir",
+      "updatesFlatpak": "Güncellemeler Flatpak üzerinden gelir"
     },
     "appearance": {
       "colorScheme": "Renk teması",
@@ -1461,7 +1466,8 @@
       "windowWidth": "Pencere genişliği",
       "windowHeight": "Pencere yüksekliği",
       "dedicatedGpuTitle": "Yüksek performanslı ekran kartı",
-      "dedicatedGpuDescription": "İki grafik çipli dizüstü bilgisayarlar için: Windows oyuna harici GPU'yu verir."
+      "dedicatedGpuDescription": "İki grafik çipli dizüstü bilgisayarlar için: Windows oyuna harici GPU'yu verir.",
+      "dedicatedGpuDescriptionLinux": "İki grafik çipli dizüstü bilgisayarlar için: oyun harici GPU’da işlenir (PRIME offload – DRI_PRIME veya NVIDIA değişkenleri)."
     },
     "hooks": {
       "title": "Başlatma kancaları",
@@ -1517,7 +1523,12 @@
       "freed": "{size} boşaltıldı",
       "confirmTitle": "Kullanılmayanlar silinsin mi?",
       "confirmText": "{n} oyun sürümü ({size}) silinecek. Kurulumlara, dünyalara ve modlara dokunulmaz. | {n} oyun sürümü ({size}) silinecek. Kurulumlara, dünyalara ve modlara dokunulmaz.",
-      "dataDirTitle": "Uygulama klasörü"
+      "dataDirTitle": "Uygulama klasörü",
+      "credentialsTitle": "Kayıtlı oturumlar",
+      "credentialsKeyring": "Microsoft oturumlarının anahtarı sistem anahtarlığında tutulur (ör. GNOME Keyring veya KWallet).",
+      "credentialsFile": "Sistem anahtarlığı bulunamadı; oturumların yalnızca dosya izinleriyle korunuyor (yalnızca kullanıcın okuyabilir). Daha iyi koruma için GNOME Keyring veya KWallet gibi bir anahtarlık kurup kilidini aç.",
+      "credentialsKeyringShort": "Anahtarlık",
+      "credentialsFileShort": "Yalnızca dosya izinleri"
     },
     "network": {
       "title": "Ağ",
@@ -1925,7 +1936,9 @@
     "ready": "TRS Launcher {version} hazır.",
     "readyRunning": "TRS Launcher {version} hazır. Çalışan oyunlar çalışmaya devam eder.",
     "downloadInstaller": "Yükleyiciyi indir",
-    "splash": "Güncelleniyor – birazdan yeniden başlatılıyor …"
+    "splash": "Güncelleniyor – birazdan yeniden başlatılıyor …",
+    "availableExternal": "{version} güncellemesi mevcut",
+    "externalHint": "Paket yöneticinle kur (ör. AUR için yay/paru, apt veya dnf) ya da GitHub’dan indir."
   },
   "play": {
     "stopGame": "Oyunu durdur",

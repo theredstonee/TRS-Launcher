@@ -70,7 +70,8 @@
     "betaGroup": "Idiomas beta",
     "onboardingTitle": "Elige tu idioma",
     "onboardingText": "Puedes cambiarlo cuando quieras en Ajustes → Idioma.",
-    "detected": "Detectado de Windows"
+    "detected": "Detectado de Windows",
+    "detectedSystem": "Detectado del sistema"
   },
   "format": {
     "neverPlayed": "Nunca jugado",
@@ -893,7 +894,8 @@
     },
     "deleteDialog": {
       "title": "¿Eliminar captura?",
-      "text": "{name} irá a la papelera de reciclaje de Windows; desde allí puedes recuperarla."
+      "text": "{name} irá a la papelera de reciclaje de Windows; desde allí puedes recuperarla.",
+      "textLinux": "{name} irá a la papelera; desde allí puedes recuperarla con tu gestor de archivos."
     }
   },
   "servers": {
@@ -1304,7 +1306,8 @@
       "missing_dependency": "A un mod le falta otro mod que necesita. En el registro, justo encima del error, verás cuál.",
       "mod_conflict": "Dos mods no son compatibles entre sí. Desactiva los últimos mods que añadiste y vuelve a iniciar.",
       "graphics_driver": "El controlador gráfico ha fallado o no admite OpenGL. Actualiza el controlador de tu tarjeta gráfica."
-    }
+    },
+    "shareTextLinux": "El registro se subirá a {site} y cualquiera con el enlace podrá leerlo. Antes se eliminan los tokens de inicio de sesión y tu nombre de usuario."
   },
   "exportPack": {
     "title": "Exportar como modpack",
@@ -1374,7 +1377,9 @@
     "title": "Ajustes",
     "footer": {
       "clientModUpdate": "TRS Client: actualización a {version} descargada",
-      "clientModCurrent": "TRS Client: versión {version} (al día)"
+      "clientModCurrent": "TRS Client: versión {version} (al día)",
+      "updatesPackage": "Las actualizaciones llegan por tu gestor de paquetes",
+      "updatesFlatpak": "Las actualizaciones llegan por Flatpak"
     },
     "appearance": {
       "colorScheme": "Tema de color",
@@ -1461,7 +1466,8 @@
       "windowWidth": "Ancho de ventana",
       "windowHeight": "Alto de ventana",
       "dedicatedGpuTitle": "Tarjeta gráfica de alto rendimiento",
-      "dedicatedGpuDescription": "Para portátiles con dos chips gráficos: Windows asigna al juego la GPU dedicada."
+      "dedicatedGpuDescription": "Para portátiles con dos chips gráficos: Windows asigna al juego la GPU dedicada.",
+      "dedicatedGpuDescriptionLinux": "Para portátiles con dos chips gráficos: el juego se renderiza en la GPU dedicada (PRIME offload: DRI_PRIME o las variables de NVIDIA)."
     },
     "hooks": {
       "title": "Hooks de inicio",
@@ -1517,7 +1523,12 @@
       "freed": "{size} liberados",
       "confirmTitle": "¿Eliminar lo que no se usa?",
       "confirmText": "Se eliminará {n} versión del juego ({size}). Las instancias, los mundos y los mods no se tocan. | Se eliminarán {n} versiones del juego ({size}). Las instancias, los mundos y los mods no se tocan.",
-      "dataDirTitle": "Carpeta de la app"
+      "dataDirTitle": "Carpeta de la app",
+      "credentialsTitle": "Inicios de sesión guardados",
+      "credentialsKeyring": "La clave de tus inicios de sesión de Microsoft se guarda en el llavero del sistema (p. ej. GNOME Keyring o KWallet).",
+      "credentialsFile": "No se encontró ningún llavero del sistema, así que tus inicios de sesión solo están protegidos por permisos de archivo (solo tu usuario puede leerlos). Para más protección, instala y desbloquea un llavero como GNOME Keyring o KWallet.",
+      "credentialsKeyringShort": "Llavero",
+      "credentialsFileShort": "Solo permisos de archivo"
     },
     "network": {
       "title": "Red",
@@ -1925,7 +1936,9 @@
     "ready": "TRS Launcher {version} está listo.",
     "readyRunning": "TRS Launcher {version} está listo. Los juegos abiertos seguirán en marcha.",
     "downloadInstaller": "Descargar instalador",
-    "splash": "Actualizando: se reiniciará enseguida …"
+    "splash": "Actualizando: se reiniciará enseguida …",
+    "availableExternal": "Actualización {version} disponible",
+    "externalHint": "Instálala con tu gestor de paquetes (p. ej. yay/paru para AUR, apt o dnf) o descárgala de GitHub."
   },
   "play": {
     "stopGame": "Cerrar el juego",

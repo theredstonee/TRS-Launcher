@@ -31,6 +31,7 @@ pub mod modrinth;
 pub mod news;
 pub mod nbt;
 pub mod paths;
+pub mod platform;
 pub mod prepare;
 pub mod process;
 pub mod screenshots;
@@ -98,6 +99,12 @@ impl Launcher {
     pub async fn init(root: impl Into<PathBuf>, events: EventSink) -> Result<Self> {
         let paths = Paths::new(root);
         paths.ensure().await?;
+        // Schlüssel für die Token-Verschlüsselung (Linux: Schlüsselbund, ggf. mit
+        // dessen Entsperr-Dialog – deshalb blockierend abseits der Runtime).
+        let key_root = paths.root().to_owned();
+        tokio::task::spawn_blocking(move || auth::crypto::init(&key_root))
+            .await
+            .map_err(|e| Error::Internal(e.to_string()))?;
 
         let http = reqwest::Client::builder()
             .user_agent(USER_AGENT)
@@ -474,10 +481,15 @@ impl Launcher {
             });
         });
 
-        if settings.prefer_dedicated_gpu {
-            process::prefer_dedicated_gpu(&command.program);
-        }
         command.env = exit_plan.env.clone();
+        if settings.prefer_dedicated_gpu {
+            for (key, value) in process::prefer_dedicated_gpu(&command.program) {
+                // Eigene Variablen des Nutzers (Einstellungen oder Umgebung) haben Vorrang.
+                if !command.env.iter().any(|(k, _)| *k == key) && std::env::var_os(&key).is_none() {
+                    command.env.push((key, value));
+                }
+            }
+        }
         if let Some(wrapper) = &exit_plan.hooks.wrapper {
             hooks::apply_wrapper(&mut command, wrapper);
         }

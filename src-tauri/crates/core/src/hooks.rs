@@ -2,7 +2,8 @@
 //! dem Beenden und eigene Umgebungsvariablen – wie bei Prism, Modrinth App und
 //! OneLauncher. Global in den Einstellungen, pro Instanz überschreibbar.
 //!
-//! Befehle laufen über `cmd /C` ohne Konsolenfenster und mit Zeitlimit. Sie
+//! Befehle laufen über `cmd /C` ohne Konsolenfenster (Linux: `/bin/sh -c`)
+//! und mit Zeitlimit. Sie
 //! bekommen `INST_ID`, `INST_NAME`, `INST_DIR`, `INST_MC_DIR` und `INST_JAVA`
 //! als Umgebungsvariablen (dieselben Namen wie bei Prism/MultiMC).
 
@@ -21,8 +22,6 @@ pub const MAX_ENV_KEY_LEN: usize = 64;
 pub const MAX_ENV_VALUE_LEN: usize = 1024;
 /// Länger darf ein Hook nicht laufen – sonst hängt der Start ewig.
 pub const HOOK_TIMEOUT: Duration = Duration::from_secs(120);
-
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -249,18 +248,15 @@ pub fn apply_wrapper(command: &mut Command, wrapper: &str) {
 /// oder ein fehlendes `cmd` sind Fehler mit nutzertauglicher Meldung.
 pub async fn run(kind: HookKind, command: &str, ctx: &HookContext, user_env: &[(String, String)], timeout: Duration) -> Result<()> {
     validate_command(kind.slot(), command)?;
-    let shell = std::env::var_os("ComSpec").filter(|s| !s.is_empty()).unwrap_or_else(|| "cmd.exe".into());
-    let mut cmd = tokio::process::Command::new(shell);
-    // `/S /C "…"`: cmd entfernt genau das äußere Anführungszeichenpaar und
-    // übernimmt den Rest wörtlich.
-    cmd.raw_arg(format!("/D /S /C \"{command}\""))
-        .current_dir(if ctx.game_dir.is_dir() { &ctx.game_dir } else { &ctx.instance_dir })
+    // Windows: `cmd /D /S /C "…"` ohne Konsolenfenster, Linux: `/bin/sh -c "…"`.
+    let mut cmd = crate::platform::shell_command(command);
+    crate::platform::env::clean_tokio(&mut cmd);
+    cmd.current_dir(if ctx.game_dir.is_dir() { &ctx.game_dir } else { &ctx.instance_dir })
         .envs(ctx.env())
         .envs(user_env.iter().cloned())
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
-        .creation_flags(CREATE_NO_WINDOW)
         .kill_on_drop(true);
 
     let child = cmd.spawn().map_err(|e| {
@@ -374,7 +370,12 @@ mod tests {
         let ctx = ctx(dir.path());
         let env = vec![("TRS_TEST".to_owned(), "wert".to_owned())];
         // Schreibt Instanz-ID und eigene Variable in eine Datei im Instanz-Ordner.
-        run(HookKind::PreLaunch, "echo %INST_ID%-%TRS_TEST%> out.txt", &ctx, &env, HOOK_TIMEOUT).await.unwrap();
+        let (write, slow) = if cfg!(windows) {
+            ("echo %INST_ID%-%TRS_TEST%> out.txt", "ping -n 5 127.0.0.1 >nul")
+        } else {
+            ("echo \"$INST_ID-$TRS_TEST\" > out.txt", "sleep 5")
+        };
+        run(HookKind::PreLaunch, write, &ctx, &env, HOOK_TIMEOUT).await.unwrap();
         let out = std::fs::read_to_string(dir.path().join("out.txt")).unwrap();
         assert_eq!(out.trim(), "test-wert");
 
@@ -383,7 +384,7 @@ mod tests {
         assert_eq!(err.message_code(), "hooks.postExitExitCode");
         assert_eq!(err.message_params()["code"], "3");
 
-        let err = run(HookKind::PreLaunch, "ping -n 5 127.0.0.1 >nul", &ctx, &[], Duration::from_millis(300)).await.unwrap_err();
+        let err = run(HookKind::PreLaunch, slow, &ctx, &[], Duration::from_millis(300)).await.unwrap_err();
         assert!(err.to_string().contains("abgebrochen"), "{err}");
     }
 }

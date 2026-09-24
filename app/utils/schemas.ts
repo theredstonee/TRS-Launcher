@@ -41,7 +41,8 @@ export const javaPathSchema = z
   .string()
   .max(1024)
   .regex(noControl, msg('validation.javaPathInvalid'))
-  .regex(/^[A-Za-z]:\\.*\\javaw?\.exe$/i, msg('validation.javaPathNotJava'))
+  // Windows: `C:\…\javaw.exe`, Linux: `/…/bin/java` – der Kern prüft zusätzlich je System.
+  .regex(/^(?:[A-Za-z]:\\.*\\javaw?\.exe|\/.*\/java)$/i, msg('validation.javaPathNotJava'))
 
 const hookCommand = z
   .string()

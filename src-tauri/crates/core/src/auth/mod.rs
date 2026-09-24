@@ -1,6 +1,6 @@
 //! Account-Verwaltung: mehrere Microsoft-Accounts, einer ist aktiv.
 
-pub(crate) mod crypto;
+pub mod crypto;
 pub mod microsoft;
 
 use std::sync::Arc;
