@@ -6,6 +6,8 @@ def autotest = project.hasProperty('trsAutotest') || rootProject.hasProperty('tr
 
 tasks.matching { it.name == 'runClient' }.configureEach { task ->
 	if (!autotest) return
+	// OpenAL Soft (LWJGL 2 und 3) ganz ohne Ausgabegerät – stumm, auch wenn options.txt überschrieben wird.
+	if (task.respondsTo('environment', String, Object)) task.environment('ALSOFT_DRIVERS', 'null')
 	task.doFirst {
 		File dir = task.workingDir
 		dir.mkdirs()
