@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { ContentItem, ContentKind, ModrinthVersion, ProjectDetails, ProjectLink } from '~/types'
+import type { ContentItem, ContentKind, ModrinthVersion, Platform, ProjectDetails, ProjectLink } from '~/types'
 
-// Detailansicht eines Modrinth-Projekts: Beschreibung, Galerie, Versionen
-// (mit Changelog, Installieren/Wechseln) und Abhängigkeiten.
+// Detailansicht eines Modrinth- oder CurseForge-Projekts (`?platform=curseforge`):
+// Beschreibung, Galerie, Versionen (mit Changelog, Installieren/Wechseln) und
+// Abhängigkeiten.
 const route = useRoute()
 const router = useRouter()
 const instances = useInstancesStore()
@@ -10,6 +11,8 @@ const tasks = useTasksStore()
 const toasts = useToasts()
 
 const projectId = computed(() => String(route.params.id))
+const platform = computed<Platform>(() => (route.query.platform === 'curseforge' ? 'curseforge' : 'modrinth'))
+const isCf = computed(() => platform.value === 'curseforge')
 const tab = ref<'description' | 'gallery' | 'versions' | 'dependencies'>('description')
 
 const details = ref<ProjectDetails | null>(null)
@@ -31,10 +34,15 @@ const modsBlocked = computed(
 
 const installed = ref<ContentItem | null>(null)
 // Installationen laufen im Aufgaben-Store – zurück auf der Seite sieht man sie wieder.
-const packTask = computed(() => (details.value ? tasks.get(modpackTaskKey(details.value.projectId)) : null))
-const contentTask = computed(() =>
-  details.value && target.value ? tasks.get(contentTaskKey(target.value.id, details.value.projectId)) : null,
-)
+const key = computed(() => (details.value ? projectKey(platform.value, details.value.projectId) : ''))
+const packTask = computed(() => (details.value ? tasks.get(modpackTaskKey(key.value)) : null))
+const contentTask = computed(() => (details.value && target.value ? tasks.get(contentTaskKey(target.value.id, key.value)) : null))
+/** Der Autor erlaubt das Modpack nur auf CurseForge selbst – dann dorthin verlinken. */
+const packPageUrl = computed(() => {
+  const failure = packTask.value?.status === 'failed' ? packTask.value.errorRef : null
+  const url = failure?.key === 'errors.curseforge.packBlocked' ? failure.params?.url : null
+  return typeof url === 'string' && isSafeLink(url) ? url : null
+})
 const busy = computed(() => (contentTask.value?.status === 'running' ? (contentTask.value.tag ?? 'latest') : null))
 
 const categories = computed(() => (details.value?.categories ?? []).filter((c) => !(c in loaderNames)))
@@ -53,7 +61,7 @@ async function load() {
   details.value = null
   versions.value = []
   try {
-    details.value = await backend.modrinthProject(projectId.value)
+    details.value = await platformApi.project(platform.value, projectId.value)
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -61,7 +69,7 @@ async function load() {
   }
   if (!details.value) return
   try {
-    versions.value = await backend.modrinthProjectVersions(details.value.projectId)
+    versions.value = await platformApi.projectVersions(platform.value, details.value.projectId)
   } catch (e) {
     toasts.error(e)
   } finally {
@@ -75,7 +83,7 @@ async function loadInstalled() {
   const id = details.value.projectId
   try {
     const items = await backend.listContent(target.value.id, contentKind.value)
-    installed.value = items.find((i) => i.source?.projectId === id) ?? null
+    installed.value = items.find((i) => i.source?.projectId === id && sourcePlatform(i.source) === platform.value) ?? null
   } catch {
     installed.value = null
   }
@@ -87,7 +95,7 @@ onMounted(async () => {
     instanceId.value = (instances.items.find((i) => i.loader.kind !== 'vanilla') ?? instances.items[0])?.id ?? ''
   }
 })
-watch(projectId, load, { immediate: true })
+watch([projectId, platform], load, { immediate: true })
 watch([target, details], loadInstalled)
 // Fertig installiert (auch während man woanders war): Stand neu laden.
 watch(
@@ -107,12 +115,17 @@ function installVersion(version: ModrinthVersion | null) {
     kind: contentKind.value,
     version,
     replace: version ? (installed.value?.fileName ?? null) : null,
+    platform: platform.value,
   })
 }
 
 function installPack() {
   if (!details.value) return
-  installModpackTask(details.value)
+  installModpackTask(details.value, platform.value)
+}
+
+function openPackPage() {
+  if (packPageUrl.value) backend.openExternalUrl(packPageUrl.value).catch((e) => toasts.error(e))
 }
 
 function openLink(link: ProjectLink) {
@@ -150,6 +163,10 @@ function back() {
         <ModIcon :src="details.iconUrl" :name="details.title" :size="104" class="shadow-lg shadow-black/30" />
         <div class="min-w-0 flex-1 basis-80">
           <h1 class="display text-4xl leading-tight break-words text-base-50">{{ details.title }}</h1>
+          <p v-if="isCf" class="mt-1 flex items-center gap-1.5 text-xs text-base-400">
+            <span class="size-1.5 rounded-full bg-[#f16436]" aria-hidden="true" />
+            {{ t('project.viaCurseForge') }}
+          </p>
           <p class="mt-1.5 max-w-2xl text-sm text-base-200">{{ details.description }}</p>
           <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-base-400">
             <div v-if="details.author">
@@ -200,6 +217,10 @@ function back() {
             <template v-else-if="packTask?.status === 'done' && packTask.instanceId">
               <button class="btn btn-primary w-full" @click="router.push(`/instances/${packTask.instanceId}`)">{{ t('project.pack.openInstance') }}</button>
               <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-200" @click="installPack">{{ t('project.pack.reinstall') }}</button>
+            </template>
+            <template v-else-if="packPageUrl">
+              <p class="mb-2 text-xs leading-relaxed text-warn">{{ t('curseforge.packBlocked') }}</p>
+              <button class="btn btn-primary w-full" @click="openPackPage">{{ t('curseforge.openOnCurseForge') }}</button>
             </template>
             <button v-else class="btn btn-primary w-full" @click="installPack">{{ t('project.pack.install') }}</button>
           </template>
@@ -260,15 +281,18 @@ function back() {
 
       <div v-if="tab === 'description'" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <article class="card min-w-0 px-6 py-5">
-          <MarkdownView v-if="details.body" :source="details.body" />
+          <MarkdownView v-if="details.body" :source="details.body" :html="isCf" />
           <p v-else class="text-sm text-base-400">{{ t('project.noDescription') }}</p>
         </article>
         <aside class="space-y-3 text-xs">
           <div class="card space-y-2.5 p-4">
             <h2 class="section-title">{{ t('project.info.title') }}</h2>
             <p v-if="details.license" class="flex justify-between gap-2"><span class="text-base-400">{{ t('project.info.license') }}</span><span class="truncate text-right">{{ details.license }}</span></p>
-            <p class="flex justify-between gap-2"><span class="text-base-400">{{ t('modrinth.environment.client') }}</span><span>{{ sideLabel(details.clientSide) }}</span></p>
-            <p class="flex justify-between gap-2"><span class="text-base-400">{{ t('modrinth.environment.server') }}</span><span>{{ sideLabel(details.serverSide) }}</span></p>
+            <template v-if="!isCf">
+              <p class="flex justify-between gap-2"><span class="text-base-400">{{ t('modrinth.environment.client') }}</span><span>{{ sideLabel(details.clientSide) }}</span></p>
+              <p class="flex justify-between gap-2"><span class="text-base-400">{{ t('modrinth.environment.server') }}</span><span>{{ sideLabel(details.serverSide) }}</span></p>
+            </template>
+            <p v-if="details.author" class="flex justify-between gap-2"><span class="text-base-400">{{ t('project.stats.author') }}</span><span class="truncate text-right">{{ details.author }}</span></p>
             <p v-if="details.published" class="flex justify-between gap-2"><span class="text-base-400">{{ t('project.info.published') }}</span><span>{{ formatShortDate(details.published) }}</span></p>
           </div>
           <div v-if="details.gameVersions.length" class="card p-4">
@@ -289,9 +313,11 @@ function back() {
         :kind="contentKind"
         :installed-version-id="installed?.source?.versionId ?? null"
         :busy-version-id="busy"
+        :project-id="details.projectId"
+        :platform="platform"
         @install="installVersion"
       />
-      <ProjectDependencies v-else :version="depsVersion" :instance-id="target?.id ?? null" />
+      <ProjectDependencies v-else :version="depsVersion" :instance-id="target?.id ?? null" :platform="platform" />
     </template>
   </div>
 </template>

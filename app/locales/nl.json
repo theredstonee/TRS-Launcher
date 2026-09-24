@@ -507,11 +507,30 @@
       "noJavaAtPath": "Er staat geen Java-programma op dit pad.",
       "invalidTaskId": "Ongeldige taak-ID",
       "taskRunning": "Deze taak wordt al uitgevoerd."
+    },
+    "curseforge": {
+      "disabled": "CurseForge is niet beschikbaar in deze versie van de launcher.",
+      "rateLimited": "CurseForge remt verzoeken op dit moment af – probeer het over {seconds} seconden opnieuw.",
+      "accessDenied": "CurseForge heeft het verzoek van de launcher geweigerd. Probeer het later opnieuw of werk de launcher bij.",
+      "notFound": "Dat bestaat niet (meer) op CurseForge.",
+      "unavailable": "CurseForge is nu niet bereikbaar. Probeer het later opnieuw.",
+      "badResponse": "CurseForge stuurde onverwachte gegevens.",
+      "invalidProjectId": "Ongeldige CurseForge-project-ID",
+      "invalidFileId": "Ongeldige CurseForge-bestands-ID",
+      "fileNotInProject": "Dit bestand hoort niet bij het project.",
+      "downloadBlocked": "De maker van “{name}” staat geen downloads via andere apps toe – download het bestand op CurseForge.",
+      "noCompatibleFile": "CurseForge heeft geen bestand voor Minecraft {version} met deze modloader.",
+      "wrongKind": "Dit CurseForge-project past niet bij dit soort content.",
+      "manifestInvalid": "De manifest.json van het modpack is ongeldig.",
+      "unsupportedLoader": "Het modpack gebruikt een modloader die de launcher niet kent: {loader}",
+      "notAModpack": "Dit is geen CurseForge-modpack.",
+      "packFileMissing": "Een bestand van het modpack bestaat niet meer op CurseForge (project {project}).",
+      "packBlocked": "De maker van “{name}” staat geen downloads via andere apps toe – download het modpack op CurseForge en importeer het hier."
     }
   },
   "browse": {
     "title": "Ontdekken",
-    "subtitle": "Mods, modpacks, resourcepacks, datapacks en shaders van Modrinth.",
+    "subtitle": "Mods, modpacks, resourcepacks, datapacks en shaders van Modrinth en CurseForge.",
     "backToInstance": "Terug naar instantie",
     "installContent": "Content installeren",
     "installInto": "Installeren in",
@@ -580,7 +599,15 @@
       "license": "Licentie",
       "openSourceOnly": "Alleen open source",
       "locked": "Vergrendeld"
-    }
+    },
+    "source": {
+      "label": "Bron",
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "unavailable": "CurseForge is niet beschikbaar in deze versie van de launcher."
+    },
+    "viaCurseForge": "Resultaten via CurseForge – elk project is van zijn makers.",
+    "cfPopularity": "Populariteit"
   },
   "modrinth": {
     "sort": {
@@ -707,7 +734,8 @@
       "source": "Broncode",
       "issues": "Problemen melden",
       "wiki": "Wiki",
-      "discord": "Discord"
+      "discord": "Discord",
+      "curseforge": "Op CurseForge"
     },
     "tabs": {
       "label": "Onderdelen",
@@ -757,7 +785,8 @@
       "image": "Afbeelding",
       "prev": "Vorige afbeelding",
       "next": "Volgende afbeelding"
-    }
+    },
+    "viaCurseForge": "via CurseForge"
   },
   "changelog": {
     "title": "Changelog – {name}",
@@ -834,24 +863,25 @@
       "updateTitle": "Bijwerken naar {version}",
       "updateBadge": "Update",
       "switchVersion": "Versie wijzigen",
-      "onlyModrinth": "Alleen voor Modrinth-content",
+      "onlyModrinth": "Alleen voor content van Modrinth of CurseForge",
       "switchVersionOf": "Versie van {name} wijzigen",
       "enable": "{name} inschakelen",
       "disable": "{name} uitschakelen",
       "delete": "{name} verwijderen",
-      "moreActions": "Meer acties voor {name}"
+      "moreActions": "Meer acties voor {name}",
+      "viaCurseForge": "via CurseForge"
     },
     "menu": {
       "updateTo": "Bijwerken naar {version}",
       "changelog": "Changelog bekijken",
       "projectPage": "Projectpagina",
-      "notModrinth": "Niet via Modrinth geïnstalleerd – versies en changelogs zijn alleen beschikbaar voor Modrinth-content."
+      "notModrinth": "Niet via Modrinth of CurseForge geïnstalleerd – versies en changelogs zijn alleen beschikbaar voor hun content."
     },
     "empty": {
       "noMatchTitle": "Geen signaal",
       "noMatchText": "Niets past bij het filter of de zoekopdracht.",
       "title": "Nog geen content",
-      "text": "Hier staat nog alles uit. Bekijk Modrinth, voeg bestanden toe of sleep gewoon .jar- en .zip-bestanden naar het venster."
+      "text": "Hier staat nog alles uit. Bekijk Modrinth en CurseForge, voeg bestanden toe of sleep gewoon .jar- en .zip-bestanden naar het venster."
     },
     "drop": {
       "title": "Loslaten om toe te voegen",
@@ -1031,7 +1061,7 @@
       "groupCreate": "Aanmaken",
       "groupNew": "+ Nieuwe groep",
       "channelTitle": "Updatekanaal voor content",
-      "channelDescription": "Welke Modrinth-versies “Bijwerken” en “nieuwste compatibele versie” kiezen.",
+      "channelDescription": "Welke versies “Bijwerken” en “nieuwste compatibele versie” kiezen.",
       "channel": {
         "release": {
           "label": "Stabiel",
@@ -1063,7 +1093,7 @@
       "loaderVersion": "{loader}-versie",
       "latestStable": "Nieuwste stabiele",
       "currently": "(momenteel {version})",
-      "changeHint": "Werelden en instellingen blijven behouden bij het wisselen; mods van Modrinth kunnen daarna naar compatibele versies worden bijgewerkt. Werelden worden bij de eerste start omgezet – dupliceer voor de zekerheid eerst de instantie.",
+      "changeHint": "Werelden en instellingen blijven behouden bij het wisselen; mods van Modrinth of CurseForge kunnen daarna naar compatibele versies worden bijgewerkt. Werelden worden bij de eerste start omgezet – dupliceer voor de zekerheid eerst de instantie.",
       "boostTitle": "TRS-optimalisatie",
       "boostDescription": "Draait de instantie onder de motorkap met Fabric, de TRS Client en prestatiemods zoals Sodium – een stuk meer FPS. Uit = puur vanilla.",
       "clientDescription": "HUD met FPS, CPS, toetsaanslagen en ping, zoom (V) en fullbright. Open het menu in het spel met Rechter Shift.",
@@ -1154,7 +1184,7 @@
       "downgrade": "{label} Werelden die met een nieuwere versie zijn gespeeld, kunnen kapotgaan.",
       "worlds": "Werelden worden bij de eerste start omgezet en kunnen daarna niet meer in de oude versie worden geopend. Veiliger: dupliceer eerst de instantie.",
       "loaderChanged": "Mods voor {from} werken niet met {to}.",
-      "migrate": "Daarna kun je mods van Modrinth automatisch naar compatibele versies bijwerken."
+      "migrate": "Daarna kun je mods van Modrinth of CurseForge automatisch naar compatibele versies bijwerken."
     },
     "planning": "Zoeken naar compatibele versies van je content …",
     "updateCount": "{n} met een nieuwe versie | {n} met een nieuwe versie",
@@ -1335,7 +1365,7 @@
     "scanning": "Scannen …",
     "browseFolder": "Map kiezen …",
     "packProgress": "Modpack {percent} %",
-    "packFile": "Modpackbestand (.mrpack) …",
+    "packFile": "Modpackbestand (.mrpack, .zip) …",
     "nothingFound": "Niets automatisch gevonden. Met “Map kiezen” kun je elke map met Minecraft-gegevens kiezen, bijvoorbeeld van een andere client.",
     "noMatch": "Geen installatie past bij je zoekopdracht.",
     "modCount": "{n} mod | {n} mods",
@@ -1828,7 +1858,7 @@
       },
       "modpacks": {
         "title": "Modpacks bekijken",
-        "subtitle": "Kant-en-klare packs van Modrinth"
+        "subtitle": "Kant-en-klare packs van Modrinth en CurseForge"
       },
       "dataDir": {
         "title": "Gegevensmap openen",
@@ -1910,7 +1940,9 @@
       "reinstallDone": "Instantie opnieuw geïnstalleerd",
       "contentVersionInstalled": "{title}: versie {version} geïnstalleerd",
       "contentInstalled": "{title} geïnstalleerd",
-      "contentWithDependencies": "{title} en {n} afhankelijkheid geïnstalleerd | {title} en {n} afhankelijkheden geïnstalleerd"
+      "contentWithDependencies": "{title} en {n} afhankelijkheid geïnstalleerd | {title} en {n} afhankelijkheden geïnstalleerd",
+      "modpackReadyBlocked": "Modpack “{name}” is klaar – {count} bestand moet je zelf downloaden | Modpack “{name}” is klaar – {count} bestanden moet je zelf downloaden",
+      "contentBlocked": "{title}: {count} bestand moet je zelf van CurseForge downloaden | {title}: {count} bestanden moet je zelf van CurseForge downloaden"
     }
   },
   "toasts": {
@@ -1973,7 +2005,7 @@
     "add": {
       "newInstanceHint": "Vanilla of met een modloader",
       "discoverModpack": "Modpacks ontdekken",
-      "discoverModpackHint": "Kant-en-klare packs van Modrinth",
+      "discoverModpackHint": "Kant-en-klare packs van Modrinth en CurseForge",
       "importHint": "Uit Prism, CurseForge of vanilla"
     },
     "servers": {
@@ -2443,5 +2475,24 @@
     "version": "Versie {version}",
     "close": "Begrepen",
     "englishOnly": "Deze notities zijn alleen in het Engels en Duits beschikbaar."
+  },
+  "curseforge": {
+    "openOnCurseForge": "Openen op CurseForge",
+    "packBlocked": "De maker biedt dit modpack alleen direct op CurseForge aan. Download het daar en importeer het bestand hier (Importeren → modpackbestand).",
+    "blocked": {
+      "title": "Zelf downloaden – {name}",
+      "intro": "De makers van deze bestanden staan geen downloads via andere apps toe, dus de launcher downloadt ze niet zelf. Open elk bestand op CurseForge en download het – de launcher neemt het automatisch over uit je downloadmap zodra naam en checksum kloppen. Je kunt de bestanden ook zelf in de map zetten.",
+      "watching": "Je downloadmap wordt in de gaten gehouden: {folder}",
+      "noWatchFolder": "Downloadmap niet gevonden – zet de bestanden zelf in de map.",
+      "noChecksum": "Checksum onbekend – zet het bestand zelf in de map.",
+      "waiting": "Wachten op de download …",
+      "skip": "Overslaan",
+      "skipAll": "Alles overslaan",
+      "openFolder": "Map openen",
+      "adopted": "{count} bestand overgenomen | {count} bestanden overgenomen",
+      "allDone": "Alle bestanden staan klaar.",
+      "banner": "{count} bestand moet je zelf van CurseForge downloaden. | {count} bestanden moet je zelf van CurseForge downloaden.",
+      "show": "Tonen"
+    }
   }
 }

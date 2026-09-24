@@ -30,8 +30,17 @@ const packBusy = computed(() => tasks.isRunning(packKey.value))
 /** Wird die Datei gerade aktualisiert bzw. gewechselt? */
 function isBusy(item: ContentItem): boolean {
   if (updatesTask.value?.status === 'running' && updatesTask.value.tag === item.fileName) return true
-  return !!item.source && tasks.isRunning(contentTaskKey(props.instance.id, item.source.projectId))
+  return !!item.source && tasks.isRunning(contentTaskKey(props.instance.id, projectKey(sourcePlatform(item.source), item.source.projectId)))
 }
+
+// Dateien, die der Nutzer selbst von CurseForge laden muss (Autor erlaubt keine Downloads über andere Apps).
+const curseforge = useCurseForgeStore()
+const blockedCount = ref(0)
+async function loadBlocked() {
+  blockedCount.value = (await backend.curseforge.blocked(props.instance.id).catch(() => [])).length
+}
+watch(() => curseforge.revision, loadBlocked)
+onMounted(loadBlocked)
 // Fertig gewordene Aufgaben dieser Instanz (auch im Hintergrund) → Liste neu laden.
 const finishedHere = computed(
   () =>
@@ -224,6 +233,7 @@ async function switchVersion(item: ContentItem, version: ModrinthVersion) {
     kind: item.kind,
     version,
     replace: item.fileName,
+    platform: sourcePlatform(item.source),
   })
   if (result.ok) updates.value = (updates.value ?? []).filter((u) => !(u.kind === item.kind && u.fileName === item.fileName))
 }
@@ -299,7 +309,7 @@ onBeforeUnmount(() => unlisten?.())
 
 // --- Menü ------------------------------------------------------------------------
 function projectLink(item: ContentItem) {
-  return item.source ? { path: `/project/${item.source.projectId}`, query: { instance: props.instance.id } } : null
+  return item.source?.projectId ? projectRoute(sourcePlatform(item.source), item.source.projectId, props.instance.id) : null
 }
 function closeMenu(e: MouseEvent) {
   if (!(e.target as HTMLElement | null)?.closest('[data-row-menu]')) menuFor.value = null
@@ -353,6 +363,11 @@ const pendingUpdates = computed(() => updates.value ?? [])
     </div>
 
     <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
+    <div v-if="blockedCount" class="card mb-3 flex flex-wrap items-center gap-3 border-lamp-400/40 px-4 py-2.5 text-sm">
+      <svg viewBox="0 0 24 24" class="size-4 shrink-0 text-lamp-300" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
+      <span class="min-w-0 flex-1 text-base-200">{{ t('curseforge.blocked.banner', { count: blockedCount }, blockedCount) }}</span>
+      <button class="btn btn-ghost px-3 py-1 text-xs" @click="curseforge.openBlocked(instance.id)">{{ t('curseforge.blocked.show') }}</button>
+    </div>
     <p v-if="isVanilla && (filter === 'mod' || filter === 'all') && counts.mod" class="mb-3 text-xs text-base-400">
       {{ instance.overrides.boost === false ? t('content.boostOff') : t('content.boostOn') }}
     </p>
@@ -411,6 +426,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
                 <template v-if="item.author">{{ t('content.row.by', { author: item.author }) }}</template>
                 <template v-else>{{ t('content.row.unknownAuthor') }}</template>
                 <template v-if="filter === 'all'"><span class="text-base-600"> · </span>{{ contentKindLabel(item.kind) }}</template>
+                <template v-if="sourcePlatform(item.source) === 'curseforge' && item.source"><span class="text-base-600"> · </span>{{ t('content.row.viaCurseForge') }}</template>
               </p>
             </div>
           </div>
@@ -504,6 +520,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
       :title="titleOf(switching)"
       :kind="switching.kind"
       :current-version-id="switching.source.versionId"
+      :platform="sourcePlatform(switching.source)"
       @close="switching = null"
       @pick="switchVersion(switching!, $event)"
     />

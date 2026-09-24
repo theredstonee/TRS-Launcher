@@ -23,6 +23,11 @@ How to write an entry:
   timeouts and busy servers are retried patiently for about a minute; only files that really don't exist fail
   right away.
 - **Changelog.** Every update now comes with notes in English and German, shown once after updating.
+- **CurseForge is here.** Discover now has a Modrinth ⇄ CurseForge switch: search mods, resource packs, shaders and
+  data packs on CurseForge with the same filters, open project pages, pick versions, and install – dependencies come
+  along, and updates are found just like for Modrinth content. CurseForge modpacks (also as a downloaded .zip) become a
+  new instance. If an author only allows downloads on CurseForge itself, the launcher doesn't sneak around that: it
+  shows the files with a button to their CurseForge page and picks them up from your downloads folder automatically.
 
 ### Deutsch
 
@@ -34,6 +39,12 @@ How to write an entry:
   Dateien, die es wirklich nicht gibt, schlagen sofort fehl.
 - **Changelog.** Jedes Update bringt jetzt Hinweise auf Englisch und Deutsch mit, die einmal nach dem Update
   erscheinen.
+- **CurseForge ist da.** „Entdecken“ hat jetzt einen Umschalter Modrinth ⇄ CurseForge: Mods, Ressourcenpakete, Shader
+  und Datenpakete auf CurseForge mit denselben Filtern suchen, Projektseiten ansehen, Versionen wählen und installieren
+  – Abhängigkeiten kommen mit, und Updates werden genauso gefunden wie bei Modrinth-Inhalten. CurseForge-Modpacks
+  (auch als heruntergeladene .zip) werden zur neuen Instanz. Erlaubt ein Autor Downloads nur direkt auf CurseForge,
+  umgeht der Launcher das nicht: Er zeigt die Dateien mit einem Knopf zur CurseForge-Seite und übernimmt sie
+  automatisch aus deinem Download-Ordner.
 
 ## 0.4.3 – 2026-09-24
 

@@ -288,6 +288,19 @@ export interface Diagnosis {
 
 export type ContentKind = 'mod' | 'resourcepack' | 'shaderpack' | 'datapack'
 
+/** Woher Inhalte kommen. */
+export type Platform = 'modrinth' | 'curseforge'
+
+export interface ContentSource {
+  /** Modrinth-Projekt-ID bzw. CurseForge-Projekt-ID (Zahl als Text). */
+  projectId: string
+  /** Modrinth-Versions-ID bzw. CurseForge-Datei-ID. */
+  versionId: string
+  versionNumber?: string
+  /** Fehlt bei Modrinth. */
+  platform?: Platform
+}
+
 export interface ContentItem {
   fileName: string
   kind: ContentKind
@@ -296,11 +309,43 @@ export interface ContentItem {
   title: string | null
   version: string | null
   description: string | null
-  source: { projectId: string; versionId: string; versionNumber?: string } | null
+  source: ContentSource | null
   author: string | null
-  /** Modrinth-CDN-URL oder Data-URL aus der Datei */
+  /** Modrinth-/CurseForge-CDN-URL oder Data-URL aus der Datei */
   iconUrl: string | null
   slug: string | null
+}
+
+/** Datei, deren Autor Downloads über andere Apps nicht erlaubt – der Nutzer lädt sie selbst. */
+export interface BlockedFile {
+  projectId: string
+  fileId: string
+  title: string
+  fileName: string
+  kind: ContentKind
+  sha1: string | null
+  size: number
+  /** Dateiseite auf curseforge.com */
+  url: string
+  iconUrl: string | null
+  replace?: string
+  versionNumber?: string
+}
+
+export interface CurseForgeInstallOutcome {
+  files: string[]
+  blocked: BlockedFile[]
+}
+
+export interface CurseForgePackResult {
+  instance: Instance
+  blocked: BlockedFile[]
+}
+
+export interface AdoptResult {
+  adopted: string[]
+  pending: BlockedFile[]
+  watchFolder: string | null
 }
 
 export type ProjectKind = ContentKind | 'modpack'
@@ -330,12 +375,18 @@ export interface ModrinthSearchParams {
   limit: number
 }
 
-/** Kategorie aus Modrinths Tag-API. icon ist SVG-Markup – nur als <img>-Data-URL anzeigen. */
+/**
+ * Kategorie für die Filterleiste. Modrinth: `icon` ist SVG-Markup – nur als
+ * <img>-Data-URL anzeigen. CurseForge: `name` ist die Kategorie-ID, `label`
+ * der Anzeigename, `iconUrl` ein Bild von media.forgecdn.net.
+ */
 export interface CategoryTag {
   name: string
   projectType: string
   header: string
   icon: string | null
+  label?: string
+  iconUrl?: string
 }
 
 export interface ModrinthHit {
@@ -377,6 +428,8 @@ export interface ModrinthVersion {
 }
 
 export interface ContentUpdate {
+  /** Fehlt = Modrinth. */
+  platform?: Platform
   kind: ContentKind
   fileName: string
   projectId: string
@@ -494,7 +547,7 @@ export interface GalleryImage {
 }
 
 export interface ProjectLink {
-  kind: 'source' | 'issues' | 'wiki' | 'discord' | 'modrinth'
+  kind: 'source' | 'issues' | 'wiki' | 'discord' | 'modrinth' | 'curseforge'
   url: string
 }
 
@@ -523,6 +576,7 @@ export interface ProjectDetails {
 }
 
 export interface MigrationItem {
+  platform: Platform
   kind: ContentKind
   fileName: string
   title: string

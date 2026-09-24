@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// Zeigt Markdown von Modrinth an. `v-html` bekommt ausschließlich die Ausgabe
-// von `renderMarkdown` (marked + DOMPurify, siehe utils/markdown.ts).
+// Zeigt Markdown von Modrinth bzw. (mit `html`) HTML von CurseForge an.
+// `v-html` bekommt ausschließlich die Ausgabe von `renderMarkdown`/`renderHtml`
+// (DOMPurify mit fester Whitelist, siehe utils/markdown.ts).
 // Links navigieren nie im Launcher-Fenster, sondern öffnen – nur HTTPS – den Browser.
-const props = defineProps<{ source: string | null | undefined }>()
+const props = defineProps<{ source: string | null | undefined; html?: boolean }>()
 
-const html = computed(() => renderMarkdown(props.source))
+const rendered = computed(() => (props.html ? renderHtml(props.source) : renderMarkdown(props.source)))
 const toasts = useToasts()
 
 function onClick(event: MouseEvent) {
@@ -23,6 +24,6 @@ function onClick(event: MouseEvent) {
 </script>
 
 <template>
-  <!-- eslint-disable-next-line vue/no-v-html -- nur bereinigtes HTML aus renderMarkdown -->
-  <div class="prose-md" @click="onClick" v-html="html" />
+  <!-- eslint-disable-next-line vue/no-v-html -- nur bereinigtes HTML aus renderMarkdown/renderHtml -->
+  <div class="prose-md" @click="onClick" v-html="rendered" />
 </template>

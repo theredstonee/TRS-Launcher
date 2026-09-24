@@ -507,11 +507,30 @@
       "noJavaAtPath": "Aucun exécutable Java à ce chemin.",
       "invalidTaskId": "ID de tâche invalide",
       "taskRunning": "Cette tâche est déjà en cours."
+    },
+    "curseforge": {
+      "disabled": "CurseForge n'est pas disponible dans cette version du launcher.",
+      "rateLimited": "CurseForge ralentit les requêtes en ce moment – réessaie dans {seconds} secondes.",
+      "accessDenied": "CurseForge a refusé la requête du launcher. Réessaie plus tard ou mets à jour le launcher.",
+      "notFound": "Cela n'existe pas (ou plus) sur CurseForge.",
+      "unavailable": "CurseForge est injoignable pour le moment. Réessaie plus tard.",
+      "badResponse": "CurseForge a envoyé des données inattendues.",
+      "invalidProjectId": "ID de projet CurseForge invalide",
+      "invalidFileId": "ID de fichier CurseForge invalide",
+      "fileNotInProject": "Ce fichier n'appartient pas au projet.",
+      "downloadBlocked": "L'auteur de « {name} » n'autorise pas les téléchargements via d'autres applications – télécharge le fichier sur CurseForge.",
+      "noCompatibleFile": "CurseForge n'a aucun fichier pour Minecraft {version} avec ce mod loader.",
+      "wrongKind": "Ce projet CurseForge ne correspond pas à ce type de contenu.",
+      "manifestInvalid": "Le manifest.json du modpack est invalide.",
+      "unsupportedLoader": "Le modpack utilise un mod loader inconnu du launcher : {loader}",
+      "notAModpack": "Ce n'est pas un modpack CurseForge.",
+      "packFileMissing": "Un fichier du modpack n'existe plus sur CurseForge (projet {project}).",
+      "packBlocked": "L'auteur de « {name} » n'autorise pas les téléchargements via d'autres applications – télécharge le modpack sur CurseForge et importe-le ici."
     }
   },
   "browse": {
     "title": "Découvrir",
-    "subtitle": "Mods, modpacks, packs de ressources, packs de données et shaders de Modrinth.",
+    "subtitle": "Mods, modpacks, packs de ressources, packs de données et shaders de Modrinth et CurseForge.",
     "backToInstance": "Retour à l'instance",
     "installContent": "Installer du contenu",
     "installInto": "Installer dans",
@@ -580,7 +599,15 @@
       "license": "Licence",
       "openSourceOnly": "Open source uniquement",
       "locked": "Verrouillé"
-    }
+    },
+    "source": {
+      "label": "Source",
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "unavailable": "CurseForge n'est pas disponible dans cette version du launcher."
+    },
+    "viaCurseForge": "Résultats via CurseForge – chaque projet appartient à ses auteurs.",
+    "cfPopularity": "Popularité"
   },
   "modrinth": {
     "sort": {
@@ -707,7 +734,8 @@
       "source": "Code source",
       "issues": "Signaler un problème",
       "wiki": "Wiki",
-      "discord": "Discord"
+      "discord": "Discord",
+      "curseforge": "Sur CurseForge"
     },
     "tabs": {
       "label": "Sections",
@@ -757,7 +785,8 @@
       "image": "Image",
       "prev": "Image précédente",
       "next": "Image suivante"
-    }
+    },
+    "viaCurseForge": "via CurseForge"
   },
   "changelog": {
     "title": "Journal des modifications – {name}",
@@ -834,24 +863,25 @@
       "updateTitle": "Mettre à jour vers {version}",
       "updateBadge": "Mise à jour",
       "switchVersion": "Changer de version",
-      "onlyModrinth": "Uniquement pour le contenu Modrinth",
+      "onlyModrinth": "Uniquement pour le contenu de Modrinth ou CurseForge",
       "switchVersionOf": "Changer la version de {name}",
       "enable": "Activer {name}",
       "disable": "Désactiver {name}",
       "delete": "Supprimer {name}",
-      "moreActions": "Plus d'actions pour {name}"
+      "moreActions": "Plus d'actions pour {name}",
+      "viaCurseForge": "via CurseForge"
     },
     "menu": {
       "updateTo": "Mettre à jour vers {version}",
       "changelog": "Voir le journal des modifications",
       "projectPage": "Page du projet",
-      "notModrinth": "Non installé depuis Modrinth – les versions et journaux des modifications ne sont disponibles que pour le contenu Modrinth."
+      "notModrinth": "Non installé depuis Modrinth ou CurseForge – les versions et journaux des modifications ne sont disponibles que pour leur contenu."
     },
     "empty": {
       "noMatchTitle": "Aucun signal",
       "noMatchText": "Rien ne correspond au filtre ou à la recherche.",
       "title": "Aucun contenu pour l'instant",
-      "text": "Tout est encore éteint ici. Parcours Modrinth, ajoute des fichiers ou fais simplement glisser des fichiers .jar et .zip dans la fenêtre."
+      "text": "Tout est encore éteint ici. Parcours Modrinth et CurseForge, ajoute des fichiers ou fais simplement glisser des fichiers .jar et .zip dans la fenêtre."
     },
     "drop": {
       "title": "Dépose pour ajouter",
@@ -1031,7 +1061,7 @@
       "groupCreate": "Créer",
       "groupNew": "+ Nouveau groupe",
       "channelTitle": "Canal de mise à jour du contenu",
-      "channelDescription": "Les versions Modrinth choisies par « Mettre à jour » et « dernière version compatible ».",
+      "channelDescription": "Les versions choisies par « Mettre à jour » et « dernière version compatible ».",
       "channel": {
         "release": {
           "label": "Stable",
@@ -1063,7 +1093,7 @@
       "loaderVersion": "Version de {loader}",
       "latestStable": "Dernière stable",
       "currently": "(actuellement {version})",
-      "changeHint": "Les mondes et paramètres sont conservés lors du changement ; les mods installés depuis Modrinth peuvent ensuite être mis à jour vers des versions compatibles. Les mondes sont convertis au premier lancement – par précaution, duplique d'abord l'instance.",
+      "changeHint": "Les mondes et paramètres sont conservés lors du changement ; les mods installés depuis Modrinth ou CurseForge peuvent ensuite être mis à jour vers des versions compatibles. Les mondes sont convertis au premier lancement – par précaution, duplique d'abord l'instance.",
       "boostTitle": "Optimisation TRS",
       "boostDescription": "Lance l'instance avec Fabric, le TRS Client et des mods de performance comme Sodium en arrière-plan – beaucoup plus de FPS. Désactivé = vanilla pur.",
       "clientDescription": "HUD avec FPS, CPS, touches et ping, zoom (V) et fullbright. Ouvre le menu en jeu avec Maj droite.",
@@ -1154,7 +1184,7 @@
       "downgrade": "{label} les mondes joués avec une version plus récente peuvent être endommagés.",
       "worlds": "Les mondes sont convertis au premier lancement et ne peuvent plus être ouverts dans l'ancienne version. Plus sûr : duplique d'abord l'instance.",
       "loaderChanged": "Les mods pour {from} ne fonctionnent pas avec {to}.",
-      "migrate": "Ensuite, tu peux mettre à jour automatiquement les mods installés depuis Modrinth vers des versions compatibles."
+      "migrate": "Ensuite, tu peux mettre à jour automatiquement les mods installés depuis Modrinth ou CurseForge vers des versions compatibles."
     },
     "planning": "Recherche de versions compatibles de ton contenu…",
     "updateCount": "{n} avec une nouvelle version | {n} avec une nouvelle version",
@@ -1335,7 +1365,7 @@
     "scanning": "Analyse…",
     "browseFolder": "Parcourir un dossier…",
     "packProgress": "Modpack {percent} %",
-    "packFile": "Fichier de modpack (.mrpack)…",
+    "packFile": "Fichier de modpack (.mrpack, .zip)…",
     "nothingFound": "Rien trouvé automatiquement. Avec « Parcourir un dossier », tu peux choisir n'importe quel dossier contenant des données Minecraft, par exemple d'un autre client.",
     "noMatch": "Aucune installation ne correspond à ta recherche.",
     "modCount": "{n} mod | {n} mods",
@@ -1828,7 +1858,7 @@
       },
       "modpacks": {
         "title": "Parcourir les modpacks",
-        "subtitle": "Packs prêts à l'emploi de Modrinth"
+        "subtitle": "Packs prêts à l'emploi de Modrinth et CurseForge"
       },
       "dataDir": {
         "title": "Ouvrir le dossier de données",
@@ -1910,7 +1940,9 @@
       "reinstallDone": "Instance réinstallée",
       "contentVersionInstalled": "{title} : version {version} installée",
       "contentInstalled": "{title} installé",
-      "contentWithDependencies": "{title} et {n} dépendance installés | {title} et {n} dépendances installés"
+      "contentWithDependencies": "{title} et {n} dépendance installés | {title} et {n} dépendances installés",
+      "modpackReadyBlocked": "Le modpack « {name} » est prêt – {count} fichier doit être téléchargé à la main | Le modpack « {name} » est prêt – {count} fichiers doivent être téléchargés à la main",
+      "contentBlocked": "{title} : {count} fichier doit être téléchargé à la main sur CurseForge | {title} : {count} fichiers doivent être téléchargés à la main sur CurseForge"
     }
   },
   "toasts": {
@@ -1973,7 +2005,7 @@
     "add": {
       "newInstanceHint": "Vanilla ou avec un chargeur de mods",
       "discoverModpack": "Découvrir des modpacks",
-      "discoverModpackHint": "Packs prêts à l'emploi de Modrinth",
+      "discoverModpackHint": "Packs prêts à l'emploi de Modrinth et CurseForge",
       "importHint": "Depuis Prism, CurseForge ou vanilla"
     },
     "servers": {
@@ -2443,5 +2475,24 @@
     "version": "Version {version}",
     "close": "Compris",
     "englishOnly": "Ces notes ne sont disponibles qu’en anglais et en allemand."
+  },
+  "curseforge": {
+    "openOnCurseForge": "Ouvrir sur CurseForge",
+    "packBlocked": "L'auteur ne propose ce modpack que directement sur CurseForge. Télécharge-le là-bas et importe le fichier ici (Importer → fichier de modpack).",
+    "blocked": {
+      "title": "Télécharger à la main – {name}",
+      "intro": "Les auteurs de ces fichiers n'autorisent pas les téléchargements via d'autres applications, le launcher ne les télécharge donc pas. Ouvre chaque fichier sur CurseForge et télécharge-le : le launcher le récupère automatiquement dans ton dossier de téléchargements dès que le nom et la somme de contrôle correspondent. Tu peux aussi placer les fichiers toi-même dans le dossier.",
+      "watching": "Surveillance de ton dossier de téléchargements : {folder}",
+      "noWatchFolder": "Dossier de téléchargements introuvable – place les fichiers toi-même dans le dossier.",
+      "noChecksum": "Somme de contrôle inconnue – place le fichier toi-même dans le dossier.",
+      "waiting": "En attente du téléchargement…",
+      "skip": "Ignorer",
+      "skipAll": "Tout ignorer",
+      "openFolder": "Ouvrir le dossier",
+      "adopted": "{count} fichier récupéré | {count} fichiers récupérés",
+      "allDone": "Tous les fichiers sont en place.",
+      "banner": "{count} fichier doit être téléchargé à la main sur CurseForge. | {count} fichiers doivent être téléchargés à la main sur CurseForge.",
+      "show": "Afficher"
+    }
   }
 }

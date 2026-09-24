@@ -507,11 +507,30 @@
       "noJavaAtPath": "There's no Java executable at this path.",
       "invalidTaskId": "Invalid task ID",
       "taskRunning": "This task is already running."
+    },
+    "curseforge": {
+      "disabled": "CurseForge isn't available in this version of the launcher.",
+      "rateLimited": "CurseForge is slowing down requests right now – please try again in {seconds} seconds.",
+      "accessDenied": "CurseForge rejected the launcher's request. Please try again later or update the launcher.",
+      "notFound": "That doesn't exist on CurseForge (anymore).",
+      "unavailable": "CurseForge can't be reached right now. Please try again later.",
+      "badResponse": "CurseForge sent unexpected data.",
+      "invalidProjectId": "Invalid CurseForge project ID",
+      "invalidFileId": "Invalid CurseForge file ID",
+      "fileNotInProject": "This file doesn't belong to the project.",
+      "downloadBlocked": "The author of “{name}” doesn't allow downloads through other apps – please download the file on CurseForge.",
+      "noCompatibleFile": "CurseForge has no file for Minecraft {version} with this mod loader.",
+      "wrongKind": "This CurseForge project doesn't match this type of content.",
+      "manifestInvalid": "The modpack's manifest.json is invalid.",
+      "unsupportedLoader": "The modpack uses a mod loader the launcher doesn't know: {loader}",
+      "notAModpack": "This isn't a CurseForge modpack.",
+      "packFileMissing": "A file of the modpack no longer exists on CurseForge (project {project}).",
+      "packBlocked": "The author of “{name}” doesn't allow downloads through other apps – please download the modpack on CurseForge and import it here."
     }
   },
   "browse": {
     "title": "Discover",
-    "subtitle": "Mods, modpacks, resource packs, data packs and shaders from Modrinth.",
+    "subtitle": "Mods, modpacks, resource packs, data packs and shaders from Modrinth and CurseForge.",
     "backToInstance": "Back to instance",
     "installContent": "Install content",
     "installInto": "Install to",
@@ -580,7 +599,15 @@
       "license": "License",
       "openSourceOnly": "Open source only",
       "locked": "Locked"
-    }
+    },
+    "source": {
+      "label": "Source",
+      "modrinth": "Modrinth",
+      "curseforge": "CurseForge",
+      "unavailable": "CurseForge isn't available in this version of the launcher."
+    },
+    "viaCurseForge": "Results via CurseForge – every project belongs to its authors.",
+    "cfPopularity": "Popularity"
   },
   "modrinth": {
     "sort": {
@@ -707,7 +734,8 @@
       "source": "Source code",
       "issues": "Report issues",
       "wiki": "Wiki",
-      "discord": "Discord"
+      "discord": "Discord",
+      "curseforge": "On CurseForge"
     },
     "tabs": {
       "label": "Sections",
@@ -757,7 +785,8 @@
       "image": "Image",
       "prev": "Previous image",
       "next": "Next image"
-    }
+    },
+    "viaCurseForge": "via CurseForge"
   },
   "changelog": {
     "title": "Changelog – {name}",
@@ -834,24 +863,25 @@
       "updateTitle": "Update to {version}",
       "updateBadge": "Update",
       "switchVersion": "Change version",
-      "onlyModrinth": "Only for Modrinth content",
+      "onlyModrinth": "Only for content from Modrinth or CurseForge",
       "switchVersionOf": "Change version of {name}",
       "enable": "Enable {name}",
       "disable": "Disable {name}",
       "delete": "Delete {name}",
-      "moreActions": "More actions for {name}"
+      "moreActions": "More actions for {name}",
+      "viaCurseForge": "via CurseForge"
     },
     "menu": {
       "updateTo": "Update to {version}",
       "changelog": "View changelog",
       "projectPage": "Project page",
-      "notModrinth": "Not installed from Modrinth – versions and changelogs are only available for Modrinth content."
+      "notModrinth": "Not installed from Modrinth or CurseForge – versions and changelogs are only available for their content."
     },
     "empty": {
       "noMatchTitle": "No signal",
       "noMatchText": "Nothing matches the filter or search.",
       "title": "No content yet",
-      "text": "Everything's still switched off here. Browse Modrinth, add files, or just drag .jar and .zip files into the window."
+      "text": "Everything's still switched off here. Browse Modrinth and CurseForge, add files, or just drag .jar and .zip files into the window."
     },
     "drop": {
       "title": "Drop to add",
@@ -1031,7 +1061,7 @@
       "groupCreate": "Create",
       "groupNew": "+ New group",
       "channelTitle": "Update channel for content",
-      "channelDescription": "Which Modrinth versions “Update” and “latest compatible version” pick.",
+      "channelDescription": "Which versions “Update” and “latest compatible version” pick.",
       "channel": {
         "release": {
           "label": "Stable",
@@ -1063,7 +1093,7 @@
       "loaderVersion": "{loader} version",
       "latestStable": "Latest stable",
       "currently": "(currently {version})",
-      "changeHint": "Worlds and settings are kept when you switch; mods installed from Modrinth can then be updated to compatible versions. Worlds are converted on first launch – to be safe, duplicate the instance first.",
+      "changeHint": "Worlds and settings are kept when you switch; mods installed from Modrinth or CurseForge can then be updated to compatible versions. Worlds are converted on first launch – to be safe, duplicate the instance first.",
       "boostTitle": "TRS optimization",
       "boostDescription": "Runs the instance with Fabric, the TRS Client and performance mods like Sodium under the hood – a lot more FPS. Off = pure vanilla.",
       "clientDescription": "HUD with FPS, CPS, keystrokes and ping, zoom (V) and fullbright. Open the in-game menu with Right Shift.",
@@ -1154,7 +1184,7 @@
       "downgrade": "{label} Worlds played with a newer version may break.",
       "worlds": "Worlds are converted on first launch and can't be opened in the old version afterwards. Safer: duplicate the instance first.",
       "loaderChanged": "Mods for {from} don't work with {to}.",
-      "migrate": "Afterwards you can automatically update mods installed from Modrinth to compatible versions."
+      "migrate": "Afterwards you can automatically update mods installed from Modrinth or CurseForge to compatible versions."
     },
     "planning": "Looking for compatible versions of your content …",
     "updateCount": "{n} with a new version | {n} with a new version",
@@ -1335,7 +1365,7 @@
     "scanning": "Scanning …",
     "browseFolder": "Browse folder …",
     "packProgress": "Modpack {percent} %",
-    "packFile": "Modpack file (.mrpack) …",
+    "packFile": "Modpack file (.mrpack, .zip) …",
     "nothingFound": "Nothing found automatically. With “Browse folder” you can pick any folder with Minecraft data, for example from another client.",
     "noMatch": "No installation matches your search.",
     "modCount": "{n} mod | {n} mods",
@@ -1828,7 +1858,7 @@
       },
       "modpacks": {
         "title": "Browse modpacks",
-        "subtitle": "Ready-made packs from Modrinth"
+        "subtitle": "Ready-made packs from Modrinth and CurseForge"
       },
       "dataDir": {
         "title": "Open data folder",
@@ -1910,7 +1940,9 @@
       "reinstallDone": "Instance reinstalled",
       "contentVersionInstalled": "{title}: version {version} installed",
       "contentInstalled": "{title} installed",
-      "contentWithDependencies": "Installed {title} and {n} dependency | Installed {title} and {n} dependencies"
+      "contentWithDependencies": "Installed {title} and {n} dependency | Installed {title} and {n} dependencies",
+      "modpackReadyBlocked": "Modpack “{name}” is ready – {count} file must be downloaded by hand | Modpack “{name}” is ready – {count} files must be downloaded by hand",
+      "contentBlocked": "{title}: {count} file must be downloaded from CurseForge by hand | {title}: {count} files must be downloaded from CurseForge by hand"
     }
   },
   "toasts": {
@@ -1973,7 +2005,7 @@
     "add": {
       "newInstanceHint": "Vanilla or with a mod loader",
       "discoverModpack": "Discover modpacks",
-      "discoverModpackHint": "Ready-made packs from Modrinth",
+      "discoverModpackHint": "Ready-made packs from Modrinth and CurseForge",
       "importHint": "From Prism, CurseForge or vanilla"
     },
     "servers": {
@@ -2443,5 +2475,24 @@
     "version": "Version {version}",
     "close": "Got it",
     "englishOnly": "These notes are available in English and German."
+  },
+  "curseforge": {
+    "openOnCurseForge": "Open on CurseForge",
+    "packBlocked": "The author only offers this modpack on CurseForge itself. Download it there and import the file here (Import → modpack file).",
+    "blocked": {
+      "title": "Download by hand – {name}",
+      "intro": "The authors of these files don't allow downloads through other apps, so the launcher won't fetch them. Open each file on CurseForge and download it – the launcher picks it up from your downloads folder automatically as soon as name and checksum match. You can also put the files into the folder yourself.",
+      "watching": "Watching your downloads folder: {folder}",
+      "noWatchFolder": "Downloads folder not found – put the files into the folder yourself.",
+      "noChecksum": "Checksum unknown – put the file into the folder yourself.",
+      "waiting": "Waiting for the download …",
+      "skip": "Skip",
+      "skipAll": "Skip all",
+      "openFolder": "Open folder",
+      "adopted": "{count} file taken over | {count} files taken over",
+      "allDone": "All files are in place.",
+      "banner": "{count} file must be downloaded from CurseForge by hand. | {count} files must be downloaded from CurseForge by hand.",
+      "show": "Show"
+    }
   }
 }

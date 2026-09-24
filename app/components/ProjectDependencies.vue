@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { ModrinthVersion, ProjectCard } from '~/types'
+import type { ModrinthVersion, Platform, ProjectCard } from '~/types'
 
 // Abhängigkeiten der gewählten Version (neueste passende bzw. neueste).
-const props = defineProps<{ version: ModrinthVersion | null; instanceId: string | null }>()
+const props = defineProps<{ version: ModrinthVersion | null; instanceId: string | null; platform?: Platform }>()
+const source = computed<Platform>(() => props.platform ?? 'modrinth')
 
 const cards = ref<Record<string, ProjectCard>>({})
 const loading = ref(false)
@@ -28,7 +29,7 @@ watch(
     loading.value = true
     error.value = null
     try {
-      const list = await backend.modrinthProjects(ids)
+      const list = await platformApi.projects(source.value, ids)
       cards.value = { ...cards.value, ...Object.fromEntries(list.map((c) => [c.projectId, c])) }
     } catch (e) {
       error.value = errorMessage(e)
@@ -65,7 +66,7 @@ const tone: Record<string, string> = {
             <div v-if="loading && !cards[id]" class="skeleton h-16" />
             <NuxtLink
               v-else
-              :to="{ path: `/project/${id}`, query: instanceId ? { instance: instanceId } : {} }"
+              :to="projectRoute(source, id, instanceId)"
               class="card card-hover flex items-center gap-3 p-2.5"
             >
               <ModIcon :src="cards[id]?.iconUrl" :name="cards[id]?.title ?? id" :size="40" />

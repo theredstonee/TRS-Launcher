@@ -5,6 +5,7 @@ import type {
   ModrinthHit,
   ModrinthSearchParams,
   ModrinthVersion,
+  Platform,
   ProjectKind,
   SearchEnvironment,
   SortIndex,
@@ -13,16 +14,31 @@ import type {
 const route = useRoute()
 const instances = useInstancesStore()
 const toasts = useToasts()
+const curseforge = useCurseForgeStore()
 
 const kinds: ProjectKind[] = ['mod', 'resourcepack', 'datapack', 'shaderpack', 'modpack']
 const searchLoaders = ['fabric', 'quilt', 'forge', 'neoforge'] as const
 /** Farbe der Kategorie-Icons (base-400) – im <img> gilt kein CSS. */
 const ICON_COLOR = '#8b8ba2'
+/** Zuletzt gewählte Quelle (nur Bequemlichkeit, fehlt im Zweifel). */
+const PLATFORM_KEY = 'trs.browse.platform'
 
 const initialKind = route.query.kind as ProjectKind
 const kind = ref<ProjectKind>(kinds.includes(initialKind) ? initialKind : 'mod')
 const routeInstance = typeof route.query.instance === 'string' ? route.query.instance : ''
 const instanceId = ref(routeInstance)
+
+function initialPlatform(): Platform {
+  if (isPlatform(route.query.platform)) return route.query.platform
+  try {
+    const saved = localStorage.getItem(PLATFORM_KEY)
+    return isPlatform(saved) ? saved : 'modrinth'
+  } catch {
+    return 'modrinth'
+  }
+}
+const platform = ref<Platform>(initialPlatform())
+const isCf = computed(() => platform.value === 'curseforge')
 
 // --- Filter ----------------------------------------------------------------------
 const query = ref('')
@@ -52,7 +68,10 @@ const installed = ref<Set<string>>(new Set())
 // Installationen gehören dem Aufgaben-Store – sie laufen weiter, wenn man die Seite verlässt.
 const tasks = useTasksStore()
 const picking = ref<ModrinthHit | null>(null)
-const categories = ref<CategoryTag[]>([])
+const modrinthCategories = ref<CategoryTag[]>([])
+const curseforgeCategories = ref<CategoryTag[]>([])
+const categories = computed(() => (isCf.value ? curseforgeCategories.value : modrinthCategories.value))
+const cfLabels = computed(() => categoryLabels(curseforgeCategories.value))
 const gameVersions = ref<string[]>([])
 const listEl = ref<HTMLElement | null>(null)
 
@@ -77,20 +96,25 @@ const activeLoaders = computed(() => {
   return loaderIsLocked.value ? instanceLoaderTags.value : pickedLoaders.value
 })
 
+/** Anzeigename einer Kategorie – bei CurseForge ist `name` eine ID. */
+function catLabel(name: string): string {
+  return isCf.value ? (cfLabels.value.get(name) ?? name) : categoryLabel(name)
+}
+
 const kindCategories = computed(() => {
-  const type = categoryProjectType(kind.value)
+  const type = categoryTypeFor(platform.value, kind.value)
   const groups = new Map<string, CategoryTag[]>()
   for (const c of categories.value) {
     if (c.projectType !== type || !(c.header in categoryHeaderKeys)) continue
     groups.set(c.header, [...(groups.get(c.header) ?? []), c])
   }
-  for (const list of groups.values()) list.sort((a, b) => compareText(categoryLabel(a.name), categoryLabel(b.name)))
+  for (const list of groups.values()) list.sort((a, b) => compareText(catLabel(a.name), catLabel(b.name)))
   return [...groups.entries()]
 })
 const categoryIcons = computed(() => {
   const map = new Map<string, string>()
   for (const c of categories.value) {
-    const url = c.icon ? svgIconUrl(c.icon, ICON_COLOR) : null
+    const url = c.icon ? svgIconUrl(c.icon, ICON_COLOR) : isCurseForgeImage(c.iconUrl) ? c.iconUrl : null
     if (url && !map.has(c.name)) map.set(c.name, url)
   }
   return map
@@ -106,26 +130,53 @@ const params = computed<ModrinthSearchParams>(() => ({
   gameVersions: activeVersions.value,
   loaders: activeLoaders.value,
   categories: includeCats.value,
-  categoryMatch: categoryMatch.value,
-  excludeCategories: excludeCats.value,
-  environments: hasLoaders.value ? environments.value : [],
-  excludeProjectIds: hideInstalled.value && bound.value ? [...installed.value].slice(0, 300) : [],
-  openSource: openSource.value,
+  // CurseForge kennt nur „alle Kategorien“ und keine Ausschlüsse, Umgebungen oder Lizenzen.
+  categoryMatch: isCf.value ? 'all' : categoryMatch.value,
+  excludeCategories: isCf.value ? [] : excludeCats.value,
+  environments: hasLoaders.value && !isCf.value ? environments.value : [],
+  // Modrinth blendet Installiertes selbst aus (Seitenzahlen stimmen), CurseForge nur hier im Launcher.
+  excludeProjectIds:
+    hideInstalled.value && bound.value && !isCf.value ? [...installed.value].filter((k) => !k.startsWith('cf:')).slice(0, 300) : [],
+  openSource: isCf.value ? false : openSource.value,
   index: index.value,
   offset: (page.value - 1) * limit.value,
   limit: limit.value,
 }))
-const totalPages = computed(() => pageCount(totalHits.value, limit.value))
+/** Für Suche und Seiten-Reset: Quelle + Filter. */
+const requestKey = computed(() => JSON.stringify({ platform: platform.value, ...params.value }))
+const totalPages = computed(() => {
+  const pages = pageCount(totalHits.value, limit.value)
+  // CurseForge: index + pageSize ≤ 10 000.
+  return isCf.value ? Math.max(1, Math.min(pages, Math.floor(MAX_SEARCH_OFFSET / limit.value))) : pages
+})
+const visibleHits = computed(() =>
+  isCf.value && hideInstalled.value && bound.value ? hits.value.filter((h) => !isInstalled(h)) : hits.value,
+)
 const activeFilterCount = computed(
   () =>
     includeCats.value.length +
     excludeCats.value.length +
-    (hasLoaders.value ? environments.value.length : 0) +
-    (openSource.value ? 1 : 0) +
+    (hasLoaders.value && !isCf.value ? environments.value.length : 0) +
+    (openSource.value && !isCf.value ? 1 : 0) +
     (hideInstalled.value ? 1 : 0) +
     (versionIsLocked.value ? 0 : pickedVersions.value.length) +
     (hasLoaders.value && !loaderIsLocked.value ? pickedLoaders.value.length : 0),
 )
+
+function loadCategories() {
+  if (isCf.value) {
+    if (curseforgeCategories.value.length || !curseforge.available) return
+    backend.curseforge
+      .categories()
+      .then((list) => (curseforgeCategories.value = list))
+      .catch(() => {})
+  } else if (!modrinthCategories.value.length) {
+    backend
+      .modrinthCategories()
+      .then((list) => (modrinthCategories.value = list))
+      .catch(() => {})
+  }
+}
 
 onMounted(async () => {
   if (!instances.items.length) await instances.load()
@@ -133,11 +184,36 @@ onMounted(async () => {
     // Für Mods bevorzugt eine Instanz mit Modloader vorschlagen.
     instanceId.value = (instances.items.find((i) => i.loader.kind !== 'vanilla') ?? instances.items[0])?.id ?? ''
   }
-  backend
-    .modrinthCategories()
-    .then((list) => (categories.value = list))
-    .catch(() => {})
+  // Ohne API-Schlüssel im Build gibt es CurseForge nicht – dann zurück zu Modrinth.
+  const available = await curseforge.load()
+  if (!available && isCf.value) platform.value = 'modrinth'
+  loadCategories()
 })
+
+watch(platform, (p) => {
+  try {
+    localStorage.setItem(PLATFORM_KEY, p)
+  } catch {
+    // Ohne Speicher merkt sich die Seite die Quelle eben nicht.
+  }
+  // Sortierung, Seitengröße und Kategorien gibt es je Quelle unterschiedlich.
+  if (!sortIndexesFor(p).includes(index.value)) index.value = 'relevance'
+  if (!pageSizesFor(p).includes(limit.value)) limit.value = 50
+  includeCats.value = []
+  excludeCats.value = []
+  categoryMatch.value = 'all'
+  hits.value = []
+  totalHits.value = 0
+  loadCategories()
+})
+
+function sortOptionLabel(o: SortIndex): string {
+  return isCf.value && o === 'relevance' ? t('browse.cfPopularity') : sortLabel(o)
+}
+
+function isInstalled(hit: ModrinthHit): boolean {
+  return installed.value.has(projectKey(platform.value, hit.projectId))
+}
 
 // Verwirft Antworten überholter Anfragen.
 let requestNo = 0
@@ -149,10 +225,12 @@ async function search() {
     error.value = firstIssue(parsed.error)
     return
   }
+  if (isCf.value && curseforge.available === null) await curseforge.load()
+  if (isCf.value && !curseforge.available) return
   loading.value = true
   error.value = null
   try {
-    const result = await backend.modrinthSearch(parsed.data)
+    const result = isCf.value ? await backend.curseforge.search(parsed.data) : await backend.modrinthSearch(parsed.data)
     if (current !== requestNo) return
     hits.value = result.hits
     totalHits.value = result.totalHits
@@ -186,15 +264,11 @@ onBeforeUnmount(() => clearTimeout(debounce))
 
 // Neue Filter = wieder Seite 1. `sync`, damit die Suche unten nur einmal läuft.
 watch(
-  () => JSON.stringify({ ...params.value, offset: 0, excludeProjectIds: hideInstalled.value }),
+  () => JSON.stringify({ platform: platform.value, ...params.value, offset: 0, excludeProjectIds: hideInstalled.value }),
   () => (page.value = 1),
   { flush: 'sync' },
 )
-watch(
-  () => JSON.stringify(params.value),
-  () => search(),
-  { immediate: true },
-)
+watch(requestKey, () => search(), { immediate: true })
 watch(page, () => listEl.value?.scrollTo({ top: 0 }))
 watch(target, loadInstalled, { immediate: true })
 // Inhalte, die (auch im Hintergrund) fertig geworden sind, als installiert markieren.
@@ -258,7 +332,7 @@ function goToPage(n: number) {
 }
 
 function detailLink(hit: ModrinthHit) {
-  return { path: `/project/${hit.projectId}`, query: !isPack.value && target.value ? { instance: target.value.id } : {} }
+  return projectRoute(platform.value, hit.projectId, !isPack.value && target.value ? target.value.id : null)
 }
 
 function hitLoaders(hit: ModrinthHit) {
@@ -273,15 +347,16 @@ function loaderColor(name: string): string | undefined {
 
 /** Laufende oder (in dieser Sitzung) fertige Installation zu einem Treffer. */
 function hitTask(hit: ModrinthHit) {
-  if (isPack.value) return tasks.get(modpackTaskKey(hit.projectId))
-  return target.value ? tasks.get(contentTaskKey(target.value.id, hit.projectId)) : null
+  const key = projectKey(platform.value, hit.projectId)
+  if (isPack.value) return tasks.get(modpackTaskKey(key))
+  return target.value ? tasks.get(contentTaskKey(target.value.id, key)) : null
 }
 
 function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
   picking.value = null
   error.value = null
   if (isPack.value) {
-    installModpackTask(hit)
+    installModpackTask(hit, platform.value)
     return
   }
   if (!target.value) return
@@ -292,6 +367,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
     iconUrl: hit.iconUrl,
     kind: kind.value as ContentKind,
     version,
+    platform: platform.value,
   })
 }
 </script>
@@ -338,18 +414,37 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
     <div class="flex min-h-0 flex-1 gap-5 px-6 pb-6">
       <!-- Ergebnisse -->
       <div ref="listEl" class="min-w-0 flex-1 overflow-y-auto pr-1">
-        <div class="mb-3 inline-flex flex-wrap rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="tablist" :aria-label="t('browse.kindTabs')">
-          <button
-            v-for="k in kinds"
-            :key="k"
-            role="tab"
-            :aria-selected="kind === k"
-            class="tab px-4 py-1.5"
-            :class="{ 'tab-on': kind === k }"
-            @click="kind = k"
-          >
-            {{ k === 'modpack' ? t('contentKind.modpack') : contentKindLabel(k) }}
-          </button>
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+          <div class="inline-flex flex-wrap rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="tablist" :aria-label="t('browse.kindTabs')">
+            <button
+              v-for="k in kinds"
+              :key="k"
+              role="tab"
+              :aria-selected="kind === k"
+              class="tab px-4 py-1.5"
+              :class="{ 'tab-on': kind === k }"
+              @click="kind = k"
+            >
+              {{ k === 'modpack' ? t('contentKind.modpack') : contentKindLabel(k) }}
+            </button>
+          </div>
+          <!-- Quelle: Modrinth oder CurseForge (ohne API-Schlüssel im Build ausgegraut). -->
+          <div class="ml-auto inline-flex rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="radiogroup" :aria-label="t('browse.source.label')">
+            <button
+              v-for="p in platforms"
+              :key="p"
+              role="radio"
+              :aria-checked="platform === p"
+              class="tab flex items-center gap-1.5 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-40"
+              :class="{ 'tab-on': platform === p }"
+              :disabled="p === 'curseforge' && curseforge.available === false"
+              :title="p === 'curseforge' && curseforge.available === false ? t('browse.source.unavailable') : undefined"
+              @click="platform = p"
+            >
+              <span class="size-2 rounded-full" :class="p === 'curseforge' ? 'bg-[#f16436]' : 'bg-[#1bd96a]'" aria-hidden="true" />
+              {{ t(`browse.source.${p}`) }}
+            </button>
+          </div>
         </div>
 
         <div class="relative mb-3">
@@ -372,13 +467,13 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800">
             {{ t('browse.sortBy') }}
             <select v-model="index" class="rounded-md bg-base-800 px-2 py-1 text-sm text-base-50 outline-none">
-              <option v-for="o in sortIndexes" :key="o" :value="o">{{ sortLabel(o) }}</option>
+              <option v-for="o in sortIndexesFor(platform)" :key="o" :value="o">{{ sortOptionLabel(o) }}</option>
             </select>
           </label>
           <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800">
             {{ t('browse.perPage') }}
             <select v-model.number="limit" class="rounded-md bg-base-800 px-2 py-1 text-sm text-base-50 outline-none">
-              <option v-for="n in pageSizes" :key="n" :value="n">{{ n }}</option>
+              <option v-for="n in pageSizesFor(platform)" :key="n" :value="n">{{ n }}</option>
             </select>
           </label>
           <span class="text-xs text-base-400 tabular-nums">{{ t('browse.results', { count: formatCount(totalHits) }, totalHits) }}</span>
@@ -426,17 +521,17 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             </button>
           </template>
           <button v-for="c in includeCats" :key="`i-${c}`" class="chip gap-1 hover:bg-base-700" @click="toggleInclude(c)">
-            {{ categoryLabel(c) }} <span aria-hidden="true" class="text-base-400">×</span>
+            {{ catLabel(c) }} <span aria-hidden="true" class="text-base-400">×</span>
           </button>
           <button v-for="c in excludeCats" :key="`e-${c}`" class="chip gap-1 text-redstone-300 line-through hover:bg-base-700" @click="toggleExclude(c)">
-            {{ categoryLabel(c) }} <span aria-hidden="true" class="text-base-400 no-underline">×</span>
+            {{ catLabel(c) }} <span aria-hidden="true" class="text-base-400 no-underline">×</span>
           </button>
-          <template v-if="hasLoaders">
+          <template v-if="hasLoaders && !isCf">
             <button v-for="e in environments" :key="`env-${e}`" class="chip gap-1 hover:bg-base-700" @click="environments = toggled(environments, e)">
               {{ t(`modrinth.environment.${e}`) }} <span aria-hidden="true" class="text-base-400">×</span>
             </button>
           </template>
-          <button v-if="openSource" class="chip gap-1 hover:bg-base-700" @click="openSource = false">
+          <button v-if="openSource && !isCf" class="chip gap-1 hover:bg-base-700" @click="openSource = false">
             {{ t('browse.chips.openSource') }} <span aria-hidden="true" class="text-base-400">×</span>
           </button>
           <button v-if="hideInstalled" class="chip gap-1 hover:bg-base-700" @click="hideInstalled = false">
@@ -447,6 +542,11 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           </button>
         </div>
 
+        <!-- Herkunft: dezenter Hinweis, die Projekte gehören ihren Autoren. -->
+        <p v-if="isCf" class="mb-3 flex items-center gap-2 text-xs text-base-400">
+          <span class="size-1.5 rounded-full bg-[#f16436]" aria-hidden="true" />
+          {{ t('browse.viaCurseForge') }}
+        </p>
         <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
         <p v-if="modsBlocked" class="card mb-3 border-warn/40 px-4 py-2.5 text-sm text-warn">
           {{ t('browse.vanillaBlocked', { name: target?.name ?? '' }) }}
@@ -467,7 +567,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
         </ul>
 
         <ul v-else class="flex flex-col gap-2.5 transition-opacity" :class="{ 'opacity-60': loading }">
-          <li v-for="hit in hits" :key="hit.projectId" class="card card-hover group flex gap-4 p-4">
+          <li v-for="hit in visibleHits" :key="hit.projectId" class="card card-hover group flex gap-4 p-4">
             <NuxtLink :to="detailLink(hit)" class="flex min-w-0 flex-1 gap-4 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-redstone-500">
               <ModIcon :src="hit.iconUrl" :name="hit.title" :size="80" />
               <div class="min-w-0 flex-1">
@@ -483,7 +583,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   </span>
                   <span v-for="c in hitCategories(hit)" :key="c" class="badge bg-base-800 text-base-200">
                     <img v-if="categoryIcons.get(c)" :src="categoryIcons.get(c)" alt="" class="size-3" draggable="false" />
-                    {{ categoryLabel(c) }}
+                    {{ catLabel(c) }}
                   </span>
                   <span
                     v-for="l in hitLoaders(hit)"
@@ -518,7 +618,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   {{ t('browse.hit.openInstance') }}
                 </NuxtLink>
                 <span
-                  v-else-if="!isPack && installed.has(hit.projectId)"
+                  v-else-if="!isPack && isInstalled(hit)"
                   class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50"
                 >
                   <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5 9-10" /></svg>
@@ -548,7 +648,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
                   <span class="font-medium text-base-200">{{ formatCount(hit.downloads) }}</span>
                 </span>
-                <span class="flex items-center gap-1.5" :title="t('browse.hit.followers', { count: formatNumber(hit.follows) }, hit.follows)">
+                <span v-if="!isCf" class="flex items-center gap-1.5" :title="t('browse.hit.followers', { count: formatNumber(hit.follows) }, hit.follows)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" /></svg>
                   <span class="font-medium text-base-200">{{ formatCount(hit.follows) }}</span>
                 </span>
@@ -562,7 +662,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
         </ul>
 
         <RedstoneEmpty
-          v-if="!loading && !hits.length && !error"
+          v-if="!loading && !visibleHits.length && !error"
           compact
           :seed="0x88"
           :title="t('browse.empty.title')"
@@ -659,7 +759,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           :title="categoryHeaderLabel(header)"
           :count="list.filter((c) => includeCats.includes(c.name) || excludeCats.includes(c.name)).length"
         >
-          <div v-if="header === 'categories' && includeCats.length > 1" class="mb-2 flex rounded-md bg-base-850 p-0.5 text-xs">
+          <div v-if="!isCf && header === 'categories' && includeCats.length > 1" class="mb-2 flex rounded-md bg-base-850 p-0.5 text-xs">
             <button class="seg flex-1 rounded" :class="{ 'seg-on': categoryMatch === 'all' }" @click="categoryMatch = 'all'">{{ t('common.labels.all') }}</button>
             <button class="seg flex-1 rounded" :class="{ 'seg-on': categoryMatch === 'any' }" @click="categoryMatch = 'any'">{{ t('browse.filters.matchAny') }}</button>
           </div>
@@ -668,14 +768,15 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
               <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-1.5 py-1 text-sm" :class="excludeCats.includes(c.name) ? 'text-redstone-300 line-through' : 'text-base-200'">
                 <input type="checkbox" class="accent-redstone-500" :checked="includeCats.includes(c.name)" @change="toggleInclude(c.name)" />
                 <img v-if="categoryIcons.get(c.name)" :src="categoryIcons.get(c.name)" alt="" class="size-4 shrink-0" draggable="false" />
-                <span class="truncate">{{ categoryLabel(c.name) }}</span>
+                <span class="truncate">{{ catLabel(c.name) }}</span>
               </label>
               <button
+                v-if="!isCf"
                 class="mr-1 rounded p-1 text-base-400 transition-opacity hover:text-redstone-300"
                 :class="excludeCats.includes(c.name) ? 'text-redstone-300 opacity-100' : 'opacity-0 group-hover/cat:opacity-100 focus-visible:opacity-100'"
                 :aria-pressed="excludeCats.includes(c.name)"
-                :aria-label="t('browse.filters.exclude', { category: categoryLabel(c.name) })"
-                :title="t('browse.filters.exclude', { category: categoryLabel(c.name) })"
+                :aria-label="t('browse.filters.exclude', { category: catLabel(c.name) })"
+                :title="t('browse.filters.exclude', { category: catLabel(c.name) })"
                 @click="toggleExclude(c.name)"
               >
                 <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8" /><path d="m6.5 6.5 11 11" /></svg>
@@ -685,14 +786,14 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
         </FilterSection>
         <p v-if="!kindCategories.length" class="border-b border-base-800 py-3 text-xs text-base-400">{{ t('browse.filters.loadingCategories') }}</p>
 
-        <FilterSection v-if="hasLoaders" :title="t('browse.filters.environment')" :count="environments.length">
+        <FilterSection v-if="hasLoaders && !isCf" :title="t('browse.filters.environment')" :count="environments.length">
           <label v-for="e in (['client', 'server'] as const)" :key="e" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850">
             <input type="checkbox" class="accent-redstone-500" :checked="environments.includes(e)" @change="environments = toggled(environments, e)" />
             {{ t(`modrinth.environment.${e}`) }}
           </label>
         </FilterSection>
 
-        <FilterSection :title="t('browse.filters.license')" :count="openSource ? 1 : 0">
+        <FilterSection v-if="!isCf" :title="t('browse.filters.license')" :count="openSource ? 1 : 0">
           <label class="flex cursor-pointer items-center justify-between gap-3 px-1.5 py-1 text-sm text-base-200">
             {{ t('browse.filters.openSourceOnly') }}
             <button
@@ -715,6 +816,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
       :project-id="picking.projectId"
       :title="picking.title"
       :kind="kind as ContentKind"
+      :platform="platform"
       @close="picking = null"
       @pick="install(picking!, $event)"
     />
