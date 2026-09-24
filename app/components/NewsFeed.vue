@@ -242,7 +242,6 @@ async function showPatchNotes(item: NewsItem) {
       v-if="reading"
       :entry="reading.entry"
       :title="reading.title"
-      :seed="versionSeed(reading.entry.version ?? '')"
       @close="reading = null"
     />
 

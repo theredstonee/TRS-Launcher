@@ -10,6 +10,10 @@ How to write an entry:
 - Every version needs both "### English" and "### Deutsch" with the same points. Write for players, not
   developers: what changed for them, in plain words, no file or function names.
 - The release build fails when the section for its version is missing or one language is empty.
+- Every release gets a theme name in the heading ("## 0.5.0 – 2026-09-30 – The Clip Update | Das Clip-Update")
+  and an update banner right below it: an HTML comment with "banner: accent=#rrggbb motif=/news/0.5.0/banner.png".
+  The banner keeps a fixed look (deepslate, redstone wires, pixel font); only the accent colour and the motif change.
+  Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
 ## Unreleased
@@ -75,6 +79,9 @@ How to write an entry:
   helper, clips) are hidden there for now.
 - **Dedicated GPU on Linux too.** On laptops with two graphics chips, the game runs on the stronger one
   (PRIME offload).
+- **Every update has its own banner.** The update card, the news and the update post show a banner with the
+  update's name, its own colour and a pixel-art picture – the same redstone look every time. Older updates got
+  their names and pictures too.
 
 ### Deutsch
 
@@ -144,8 +151,13 @@ How to write an entry:
   sich importieren. Reine Windows-Funktionen (Firewall-Freigabe, Clips) sind dort vorerst ausgeblendet.
 - **Starke Grafikkarte auch unter Linux.** Auf Laptops mit zwei Grafikchips läuft das Spiel auf dem stärkeren
   (PRIME-Offload).
+- **Jedes Update hat sein eigenes Banner.** Update-Karte, Neuigkeiten und der Beitrag zeigen ein Banner mit dem
+  Namen des Updates, einer eigenen Farbe und einem Pixel-Art-Bild – immer im gleichen Redstone-Look. Auch die
+  älteren Updates haben ihre Namen und Bilder bekommen.
 
 ## 0.4.3 – 2026-09-24 – The Friends Update | Das Freunde-Update
+
+<!-- banner: accent=#ff7ab8 motif=/news/0.4.3/banner.png -->
 
 ### English
 
@@ -189,6 +201,8 @@ How to write an entry:
 
 ## 0.4.2 – 2026-09-23 – Quiet Updates | Leise Updates
 
+<!-- banner: accent=#a67bff motif=/news/0.4.2/banner.png -->
+
 ### English
 
 - **Updates without waiting.** New launcher versions download in the background while you play. When
@@ -210,6 +224,8 @@ How to write an entry:
 
 ## 0.4.1 – 2026-09-23 – Redstone Title | Redstone-Titelbild
 
+<!-- banner: accent=#ff8a3d motif=/news/0.4.1/banner.png -->
+
 ### English
 
 - **A redstone title screen.** The TRS Client greets you with a title screen in the launcher’s redstone look –
@@ -229,6 +245,8 @@ How to write an entry:
 ![Der Titelbildschirm des TRS Clients](/news/0.4.1/title-screen.png)
 
 ## 0.4.0 – 2026-09-23 – The Redstone Update | Das Redstone-Update
+
+<!-- banner: accent=#ff5a4d motif=/news/0.4.0/banner.png -->
 
 ### English
 
@@ -262,6 +280,8 @@ How to write an entry:
 
 ## 0.3.1 – 2026-09-23 – Fabric Fix | Fabric-Fix
 
+<!-- banner: accent=#b8c0d0 motif=/news/0.3.1/banner.png -->
+
 ### English
 
 - **Fabric starts again.** Fixes a crash when starting Fabric instances from 1.15 to 1.21.8.
@@ -273,6 +293,8 @@ How to write an entry:
 - **Aus heißt aus.** Ein TRS Client, den du für eine Instanz ausgeschaltet hast, bleibt aus.
 
 ## 0.3.0 – 2026-09-22 – The HUD Update | Das HUD-Update
+
+<!-- banner: accent=#4fd1e0 motif=/news/0.3.0/banner.png -->
 
 ### English
 
@@ -318,6 +340,8 @@ How to write an entry:
 
 ## 0.2.2 – 2026-09-22 – Quiet Firewall | Leise Firewall
 
+<!-- banner: accent=#ffb13d motif=/news/0.2.2/banner.png -->
+
 ### English
 
 - **Firewall without a blue window.** The launcher adds its firewall rules directly through Windows instead of a
@@ -329,6 +353,8 @@ How to write an entry:
   PowerShell-Fenster.
 
 ## 0.2.1 – 2026-09-22 – The Library Update | Das Bibliotheks-Update
+
+<!-- banner: accent=#c9853f motif=/news/0.2.1/banner.png -->
 
 ### English
 
@@ -360,6 +386,8 @@ How to write an entry:
 
 ## 0.2.0 – 2026-09-22 – The Project Update | Das Projekt-Update
 
+<!-- banner: accent=#f0c24b motif=/news/0.2.0/banner.png -->
+
 ### English
 
 - **A page for every project.** Every mod and modpack gets its own page with description, gallery, versions and
@@ -383,6 +411,8 @@ How to write an entry:
 ![Die Inhalte einer Instanz verwalten](/news/0.2.0/content.png)
 
 ## 0.1.0 – 2026-09-22 – The First Block | Der erste Block
+
+<!-- banner: accent=#6fcf4a motif=/news/0.1.0/banner.png -->
 
 ### English
 

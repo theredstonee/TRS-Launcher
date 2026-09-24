@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { changelogFor, changesSince, compareVersions, parseChangelog, releaseNotes, splitPost, versionSeed } from '../app/utils/changelog'
+import { changelogFor, changesSince, compareVersions, parseBanner, parseChangelog, releaseNotes, splitPost, versionSeed } from '../app/utils/changelog'
 
 const root = path.resolve(__dirname, '..')
 
@@ -83,6 +83,32 @@ describe('Changelog', () => {
     expect(versionSeed('0.5.0')).not.toBe(versionSeed('0.5.1'))
   })
 
+  it('liest das Update-Banner (Akzentfarbe + Motiv) und ignoriert Unsinn', () => {
+    const [a, b, c] = parseChangelog(
+      [
+        '## 0.4.4 – 2026-09-25 – The Clip Update | Das Clip-Update',
+        '<!-- banner: accent=#FF7AB8 motif=/news/0.4.4/banner.png -->',
+        '### English',
+        '- A',
+        '### Deutsch',
+        '- A',
+        '## 0.4.3 – 2026-09-24',
+        '<!-- banner: accent=red motif=https://evil.example/x.png -->',
+        '### English',
+        '- B',
+        '## 0.4.2 – 2026-09-23',
+        '<!-- banner: accent=#00ff00 motif=/news/../secret.png -->',
+        '### English',
+        '- C',
+      ].join('\n'),
+    )
+    expect(a!.banner).toEqual({ accent: '#ff7ab8', motif: '/news/0.4.4/banner.png' })
+    expect(a!.en).toBe('- A')
+    expect(b!.banner).toBeNull()
+    expect(c!.banner).toEqual({ accent: '#00ff00', motif: null })
+    expect(parseBanner('motif=/news/1/x.png')).toBeNull()
+  })
+
   it('vergleicht Versionen', () => {
     expect(compareVersions('0.4.10', '0.4.9')).toBe(1)
     expect(compareVersions('v1.0.0', '1.0.0')).toBe(0)
@@ -107,7 +133,12 @@ describe('Changelog', () => {
       expect(e.en, `${e.version ?? 'Unreleased'}: English`).not.toBe('')
       expect(e.de, `${e.version ?? 'Unreleased'}: Deutsch`).not.toBe('')
     }
-    for (const e of released) expect(e.date, `${e.version}: Datum`).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    for (const e of released) {
+      expect(e.date, `${e.version}: Datum`).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(e.title, `${e.version}: Update-Name`).not.toBeNull()
+      expect(e.banner?.motif, `${e.version}: Banner-Motiv`).toBeTruthy()
+      expect(existsSync(path.join(root, 'public', e.banner!.motif!)), `${e.version}: ${e.banner?.motif} fehlt`).toBe(true)
+    }
     const { version } = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')) as { version: string }
     expect(changelogFor(entries, version), `CHANGELOG.md braucht einen Abschnitt „## ${version} – <Datum>“`).not.toBeNull()
   })

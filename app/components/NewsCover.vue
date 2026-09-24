@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import type { NewsItem } from '~/types'
 
-// Titelbild einer Meldung. Mit Bild: das Bild. Launcher-Versionen: ihre eigene Redstone-Szene.
+// Titelbild einer Meldung. Mit Bild: das Bild. Launcher-Versionen: ihr Update-Banner (ohne Schrift – der
+// Titel steht auf der Karte); ohne Changelog-Eintrag die Redstone-Szene.
 // Modrinth (nur Icons): Icon groß und scharf auf einem weichgezeichneten Hintergrund aus sich selbst.
 // Sonst: Deepslate mit einem Staubfaden.
 defineProps<{ item: NewsItem; image?: string; post?: ChangelogEntry | null; large?: boolean }>()
 </script>
 
 <template>
-  <RedstoneScene v-if="item.source === 'launcher'" fill :seed="versionSeed(post?.version ?? item.title)" class="absolute inset-0" />
+  <UpdateBanner
+    v-if="item.source === 'launcher' && post?.banner"
+    kicker=""
+    :title="item.title"
+    :accent="post.banner.accent"
+    :motif="post.banner.motif"
+    bare
+    class="absolute inset-0"
+  />
+  <RedstoneScene v-else-if="item.source === 'launcher'" fill :seed="versionSeed(post?.version ?? item.title)" class="absolute inset-0" />
   <template v-else-if="image && item.source === 'modrinth'">
     <img :src="image" alt="" class="absolute inset-0 size-full scale-125 object-cover opacity-60 blur-xl" />
     <div class="absolute inset-0 grid place-items-center">

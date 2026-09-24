@@ -1,26 +1,24 @@
 <script setup lang="ts">
-// Der ganze Update-Beitrag: Banner aus der Redstone-Szene, Update-Name, Text und Screenshots.
+// Der ganze Update-Beitrag: Update-Banner (feste Vorlage + Motiv), Update-Name, Text und Screenshots.
 // Text läuft über MarkdownView (DOMPurify); Bilder nur aus dem mitgelieferten Ordner /news/.
-const props = defineProps<{ entry: ChangelogEntry; title: string; seed: number }>()
+const props = defineProps<{ entry: ChangelogEntry; title: string }>()
 const emit = defineEmits<{ close: [] }>()
 
 const german = computed(() => currentLocale.value === 'de')
 const englishOnly = computed(() => !['de', 'en'].includes(currentLocale.value))
-const blocks = computed(() => splitPost(german.value ? props.entry.de : props.entry.en))
+/** Umbrüche aus der Datei (eingerückte Folgezeilen) zu einem Absatz zusammenziehen – MarkdownView bricht sonst dort um. */
+const blocks = computed(() =>
+  splitPost(german.value ? props.entry.de : props.entry.en).map((b) =>
+    b.kind === 'text' ? { ...b, markdown: b.markdown.replace(/\n {2,}(?=\S)/g, ' ') } : b,
+  ),
+)
+const kicker = computed(() => updateKicker(props.entry))
 </script>
 
 <template>
   <BaseDialog :title="title" wide @close="emit('close')">
-    <div class="relative -mx-5 -mt-4 mb-4 h-36 overflow-hidden">
-      <RedstoneScene fill :seed="seed" class="absolute inset-0" />
-      <div class="post-shade absolute inset-0" />
-      <div class="absolute inset-x-5 bottom-3">
-        <p class="text-xs font-semibold tracking-[0.18em] text-lamp-300 uppercase">
-          {{ t('updateNews.kicker', { version: entry.version ?? '' }) }}
-          <span v-if="entry.date" class="font-normal text-base-300"> · {{ formatShortDate(`${entry.date}T12:00:00`) }}</span>
-        </p>
-        <p class="display text-3xl leading-tight text-base-50 drop-shadow">{{ title }}</p>
-      </div>
+    <div class="-mx-5 -mt-4 mb-4 h-44">
+      <UpdateBanner :kicker="kicker" :title="title" :accent="entry.banner?.accent" :motif="entry.banner?.motif" tag="p" />
     </div>
     <p v-if="englishOnly" class="mb-3 text-xs text-base-400">{{ t('whatsNew.englishOnly') }}</p>
     <div class="-mr-2 max-h-[26rem] space-y-4 overflow-y-auto pr-2">
@@ -38,8 +36,3 @@ const blocks = computed(() => splitPost(german.value ? props.entry.de : props.en
   </BaseDialog>
 </template>
 
-<style scoped>
-.post-shade {
-  background: linear-gradient(to top, rgb(12 11 14 / 0.9), rgb(12 11 14 / 0.2) 70%);
-}
-</style>

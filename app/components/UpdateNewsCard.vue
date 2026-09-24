@@ -4,7 +4,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import changelogText from '~~/CHANGELOG.md?raw'
 
 // Update-News auf der Startseite: das neueste Update bis zur installierten Version als Karte –
-// Banner aus unserer eigenen Redstone-Szene, großer Update-Name, die Schlagzeilen und „Beitrag lesen“.
+// Update-Banner (feste Vorlage + Motiv), großer Update-Name, die Schlagzeilen und „Beitrag lesen“.
 
 const HIDDEN_KEY = 'trs.updateNews.hidden'
 
@@ -47,8 +47,6 @@ const headlines = computed(() => {
   const text = entry.value ? (german.value ? entry.value.de : entry.value.en) : ''
   return [...text.matchAll(/^- \*\*(.+?)\*\*/gm)].map((m) => m[1]!.replace(/[.!:]$/, '')).slice(0, 4)
 })
-/** Jede Version bekommt ihre eigene, aber immer gleiche Schaltung. */
-const seed = computed(() => versionSeed(entry.value?.version ?? ''))
 
 function hide() {
   const v = entry.value?.version
@@ -63,20 +61,12 @@ function hide() {
 </script>
 
 <template>
-  <section v-if="entry && hidden !== entry.version" class="news card relative overflow-hidden" aria-labelledby="update-news-title">
+  <section v-if="entry && hidden !== entry.version" class="news card relative overflow-hidden" :aria-label="title">
     <div class="relative h-44">
-      <RedstoneScene fill :seed="seed" class="absolute inset-0" />
-      <div class="banner-shade absolute inset-0" />
-      <div class="absolute inset-x-6 bottom-4">
-        <p class="text-xs font-semibold tracking-[0.18em] text-lamp-300 uppercase">
-          {{ t('updateNews.kicker', { version: entry.version ?? '' }) }}
-          <span v-if="entry.date" class="font-normal text-base-300"> · {{ formatShortDate(`${entry.date}T12:00:00`) }}</span>
-        </p>
-        <h2 id="update-news-title" class="display mt-1 text-4xl leading-tight text-base-50 drop-shadow">{{ title }}</h2>
-      </div>
+      <UpdateBanner :kicker="updateKicker(entry)" :title="title" :accent="entry.banner?.accent" :motif="entry.banner?.motif" tag="h2" />
       <button
         type="button"
-        class="btn-icon absolute top-3 right-3 size-8 bg-base-950/60 backdrop-blur"
+        class="btn-icon absolute top-5 right-3 size-8 bg-base-950/60 backdrop-blur"
         :title="t('updateNews.hide')"
         :aria-label="t('updateNews.hide')"
         @click="hide"
@@ -88,12 +78,7 @@ function hide() {
       <span v-for="h in headlines" :key="h" class="badge bg-base-800 text-base-100">{{ h }}</span>
       <button type="button" class="btn btn-primary ml-auto" @click="reading = true">{{ t('updateNews.read') }}</button>
     </div>
-    <UpdatePostDialog v-if="reading" :entry="entry" :title="title" :seed="seed" @close="reading = false" />
+    <UpdatePostDialog v-if="reading" :entry="entry" :title="title" @close="reading = false" />
   </section>
 </template>
 
-<style scoped>
-.banner-shade {
-  background: linear-gradient(to top, rgb(12 11 14 / 0.92), rgb(12 11 14 / 0.35) 55%, rgb(12 11 14 / 0.05));
-}
-</style>
