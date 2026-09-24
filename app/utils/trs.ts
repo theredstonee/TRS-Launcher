@@ -207,6 +207,22 @@ export const trsRedeemCodeSchema = z
   .max(64, { error: () => t('trs.validation.codeTooLong') })
   .refine((s) => trsNormalizeCode(s) !== null, { error: () => t('trs.validation.codeFormat') })
 
+/**
+ * Code der Website-Anmeldung wie der Kern: `ABCD-1234` (A–Z, 0–9). Kleinbuchstaben,
+ * Leerzeichen und ein fehlender Bindestrich sind erlaubt; heraus kommt `XXXX-XXXX`.
+ */
+export function trsNormalizeWebLoginCode(input: string): string | null {
+  if (input.length > 32) return null
+  const s = input.replace(/\s/g, '').toUpperCase()
+  const m = /^([A-Z0-9]{4})-?([A-Z0-9]{4})$/.exec(s)
+  return m ? `${m[1]}-${m[2]}` : null
+}
+
+export const trsWebLoginCodeSchema = z
+  .string()
+  .refine((s) => trsNormalizeWebLoginCode(s) !== null, { error: () => t('trs.validation.webLoginCode') })
+  .transform((s) => trsNormalizeWebLoginCode(s)!)
+
 export const trsCapeNameSchema = z
   .string()
   .trim()
@@ -323,4 +339,10 @@ export function trsDate(iso: string | null | undefined): string {
   return formatShortDate(iso)
 }
 
-export const TRS_PRIVACY_URL = 'https://github.com/theredstonee/TRS-Launcher/blob/main/PRIVACY.md#trs-services'
+/**
+ * Adresse der TRS API und der Website. Die alte Adresse `api.theredstonee.de`
+ * bleibt parallel erreichbar; alle Anfragen stellt ohnehin der Kern.
+ */
+export const TRS_HOST = 'trs-launcher.theredstonee.de'
+
+export const TRS_PRIVACY_URL ='https://github.com/theredstonee/TRS-Launcher/blob/main/PRIVACY.md#trs-services'

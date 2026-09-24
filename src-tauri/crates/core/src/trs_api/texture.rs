@@ -15,9 +15,10 @@ use crate::fsutil;
 /// Animierte HD-Umhänge können groß werden (256 × 128·64 px).
 const MAX_TEXTURE_BYTES: usize = 8 * 1024 * 1024;
 
-/// Was an einer Textur-URL erlaubt ist: `<base>/v1/capes/<id>.png[?v=<token>]`.
-pub(crate) fn parse_texture_url<'a>(base: &str, url: &'a str, id: &str) -> Option<Option<&'a str>> {
-    let rest = url.strip_prefix(base)?.strip_prefix("/v1/capes/")?;
+/// Was an einer Textur-URL erlaubt ist: `<base>/v1/capes/<id>.png[?v=<token>]`
+/// mit einer der vertrauenswürdigen Adressen (neue und alte API-Adresse).
+pub(crate) fn parse_texture_url<'a>(bases: &[&str], url: &'a str, id: &str) -> Option<Option<&'a str>> {
+    let rest = bases.iter().find_map(|base| url.strip_prefix(base)?.strip_prefix("/v1/capes/"))?;
     let (file, query) = match rest.split_once('?') {
         Some((f, q)) => (f, Some(q)),
         None => (rest, None),
@@ -63,7 +64,7 @@ impl TrsApi {
     /// Lädt eine Umhang-Textur (mit Token für eigene/zu prüfende Uploads).
     /// `None`, wenn sie fehlt oder nicht zu den Metadaten passt.
     pub(crate) async fn texture(&self, spec: &TextureSpec<'_>, token: Option<&str>) -> Option<String> {
-        let version = parse_texture_url(&self.base, spec.url, spec.id)?;
+        let version = parse_texture_url(&self.trusted_bases(), spec.url, spec.id)?;
         let valid = |bytes: &[u8]| png::size(bytes) == Some((spec.width, spec.total_height));
         let cache = match version {
             Some(v) if spec.cacheable => Some(self.texture_dir().join(format!("{}-{v}.png", spec.id))),
@@ -120,15 +121,24 @@ fn data_url(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
 
-    const BASE: &str = "https://api.theredstonee.de";
+    const BASES: [&str; 2] = crate::trs_api::KNOWN_BASES;
 
     #[test]
     fn only_api_texture_urls_are_loaded() {
-        assert_eq!(parse_texture_url(BASE, "https://api.theredstonee.de/v1/capes/team.png?v=61749d72f375", "team"), Some(Some("61749d72f375")));
-        assert_eq!(parse_texture_url(BASE, "https://api.theredstonee.de/v1/capes/team.png", "team"), Some(None));
-        assert_eq!(parse_texture_url(BASE, "https://evil.example/v1/capes/team.png", "team"), None);
-        assert_eq!(parse_texture_url(BASE, "https://api.theredstonee.de/v1/capes/other.png", "team"), None);
-        assert_eq!(parse_texture_url(BASE, "https://api.theredstonee.de/v1/capes/team.png?v=../x", "team"), None);
-        assert_eq!(parse_texture_url(BASE, "https://api.theredstonee.de.evil/v1/capes/team.png", "team"), None);
+        // Neue und alte Adresse der API sind gleichwertig.
+        for host in ["https://trs-launcher.theredstonee.de", "https://api.theredstonee.de"] {
+            let url = |rest: &str| format!("{host}{rest}");
+            assert_eq!(parse_texture_url(&BASES, &url("/v1/capes/team.png?v=61749d72f375"), "team"), Some(Some("61749d72f375")));
+            assert_eq!(parse_texture_url(&BASES, &url("/v1/capes/team.png"), "team"), Some(None));
+            assert_eq!(parse_texture_url(&BASES, &url("/v1/capes/other.png"), "team"), None);
+            assert_eq!(parse_texture_url(&BASES, &url("/v1/capes/team.png?v=../x"), "team"), None);
+            assert_eq!(parse_texture_url(&BASES, &url(".evil/v1/capes/team.png"), "team"), None);
+            assert_eq!(parse_texture_url(&BASES, &url("@evil.example/v1/capes/team.png"), "team"), None);
+        }
+        // Fremde Hosts bleiben verboten.
+        assert_eq!(parse_texture_url(&BASES, "https://evil.example/v1/capes/team.png", "team"), None);
+        assert_eq!(parse_texture_url(&BASES, "https://theredstonee.de/v1/capes/team.png", "team"), None);
+        assert_eq!(parse_texture_url(&BASES, "http://trs-launcher.theredstonee.de/v1/capes/team.png", "team"), None, "nur HTTPS");
+        assert_eq!(parse_texture_url(&[], "https://trs-launcher.theredstonee.de/v1/capes/team.png", "team"), None);
     }
 }

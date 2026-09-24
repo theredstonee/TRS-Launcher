@@ -9,6 +9,7 @@ import {
   trsJoinInstance,
   trsNewCodesSchema,
   trsNormalizeCode,
+  trsNormalizeWebLoginCode,
   trsParse,
   trsPresenceText,
   trsRedeemCodeSchema,
@@ -17,6 +18,8 @@ import {
   trsStatusSchema,
   trsTargetSchema,
   trsUnlockLabel,
+  trsWebLoginCodeSchema,
+  TRS_HOST,
 } from '../app/utils/trs'
 
 // Die meisten Erwartungen sind die deutschen Texte; Englisch wird extra geprüft.
@@ -108,6 +111,23 @@ describe('Eingaben', () => {
     expect(trsNormalizeCode('UUUUU-UUUUU-UUUUU-UUUUU')).toBeNull()
     expect(trsRedeemCodeSchema.safeParse('kurz').success).toBe(false)
     expect(trsRedeemCodeSchema.safeParse('7K3QF-M2XPA-9RTVB-C4HJN').success).toBe(true)
+  })
+
+  it('normalisiert Codes der Website-Anmeldung wie der Kern', async () => {
+    expect(trsNormalizeWebLoginCode('ABCD-1234')).toBe('ABCD-1234')
+    expect(trsNormalizeWebLoginCode(' abcd1234 ')).toBe('ABCD-1234')
+    expect(trsNormalizeWebLoginCode('ab cd 12 34')).toBe('ABCD-1234')
+    for (const bad of ['', 'ABCD', 'ABC-12345', 'ABCD--1234', 'ABCD-123', 'ÄBCD-1234', 'ABCD_1234', 'A'.repeat(40)]) {
+      expect(trsNormalizeWebLoginCode(bad), bad).toBeNull()
+    }
+    expect(trsWebLoginCodeSchema.parse('abcd-1234')).toBe('ABCD-1234')
+    expect(trsWebLoginCodeSchema.safeParse('kurz').error?.issues[0]?.message).toContain('ABCD-1234')
+    await setLocale('en')
+    expect(trsWebLoginCodeSchema.safeParse('kurz').error?.issues[0]?.message).toContain('letters and digits')
+  })
+
+  it('kennt die neue Adresse der TRS API', () => {
+    expect(TRS_HOST).toBe('trs-launcher.theredstonee.de')
   })
 
   it('prüft Namen und Ziele', () => {

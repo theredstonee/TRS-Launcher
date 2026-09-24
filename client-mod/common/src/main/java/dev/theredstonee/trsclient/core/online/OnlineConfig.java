@@ -24,7 +24,15 @@ import java.util.Locale;
  * Unverschlüsseltes HTTP ist dabei nur für localhost erlaubt.
  */
 public final class OnlineConfig {
-	public static final String DEFAULT_API = "https://api.theredstonee.de";
+	/** Adresse der TRS API (dort liegt auch die Website). */
+	public static final String DEFAULT_API = "https://trs-launcher.theredstonee.de";
+	/**
+	 * Bisherige Adresse – bleibt parallel erreichbar. Umhang-URLs mit diesem Host (ältere Antworten,
+	 * {@code .url}-Dateien im Umhang-Cache) gelten weiter als TRS-API-Adressen.
+	 */
+	public static final String LEGACY_API = "https://api.theredstonee.de";
+	/** Alle Adressen, unter denen die echte TRS API läuft. */
+	private static final String[] KNOWN_APIS = {DEFAULT_API, LEGACY_API};
 	public static final String DEFAULT_SESSION = "https://sessionserver.mojang.com";
 	private static final long MAX_BYTES = 4096;
 
@@ -93,7 +101,7 @@ public final class OnlineConfig {
 		return launcherEnabled;
 	}
 
-	/** z. B. {@code https://api.theredstonee.de} (ohne Schrägstrich am Ende). */
+	/** z. B. {@code https://trs-launcher.theredstonee.de} (ohne Schrägstrich am Ende). */
 	public String apiBase() {
 		return apiBase;
 	}
@@ -105,10 +113,15 @@ public final class OnlineConfig {
 
 	/**
 	 * Stammt eine Textur-URL aus der Lookup-Antwort wirklich von der TRS API? Nur solche URLs werden
-	 * geladen – der Mod lädt nie Bilder von beliebigen Adressen.
+	 * geladen – der Mod lädt nie Bilder von beliebigen Adressen. Erlaubt sind die eingestellte Adresse
+	 * und die neue wie die alte Adresse der echten API.
 	 */
 	public boolean isApiUrl(String url) {
-		if (url == null) return false;
-		return url.startsWith(apiBase + "/") && url.length() < 512;
+		if (url == null || url.length() >= 512) return false;
+		if (url.startsWith(apiBase + "/")) return true;
+		for (String known : KNOWN_APIS) {
+			if (url.startsWith(known + "/")) return true;
+		}
+		return false;
 	}
 }

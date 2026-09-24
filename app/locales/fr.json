@@ -482,7 +482,8 @@
       "invalidCodeId": "ID de code invalide.",
       "redemptionsRange": "Utilisations par code : de 1 à 100 000.",
       "countRange": "Quantité : de 1 à 100 codes à la fois.",
-      "expiryInPast": "La date d'expiration est dans le passé."
+      "expiryInPast": "La date d'expiration est dans le passé.",
+      "invalidWebLoginCode": "Le code a la forme ABCD-1234 (lettres et chiffres)."
     },
     "trsPng": {
       "fileTooLarge": "Le fichier est trop volumineux (256 Ko max.).",
@@ -538,6 +539,12 @@
       "invalidFile": "Ce n’est pas un fichier de préréglage valide.",
       "fileTooLarge": "Le fichier de préréglage est trop volumineux.",
       "noneSelected": "Aucun préréglage sélectionné."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Ce code de connexion n’existe pas – compare-le avec le code affiché sur le site.",
+      "expired": "Le code de connexion a expiré – recharge le site et saisis le nouveau code.",
+      "notAdmin": "Seuls les admins TRS peuvent se connecter au site.",
+      "alreadyUsed": "Ce code de connexion a déjà été confirmé."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "ajouter créer nouvelle",
       "import": "importer prism multimc curseforge migrer",
       "modpacks": "modpack pack installer",
-      "dataDir": "dossier explorateur fichiers"
+      "dataDir": "dossier explorateur fichiers",
+      "webLogin": "site web connexion login admin code navigateur"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Ouvrir le dossier de données",
         "subtitle": "Dossier des instances et paramètres"
+      },
+      "webLogin": {
+        "subtitle": "Saisir le code de {host}"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "Au moins 1 code.",
       "maxCount": "100 codes au maximum à la fois.",
       "invalidExpiry": "Date d'expiration invalide.",
-      "expiryPast": "La date d'expiration est dans le passé."
+      "expiryPast": "La date d'expiration est dans le passé.",
+      "webLoginCode": "Le code a la forme ABCD-1234 (lettres et chiffres)."
     },
     "unlock": {
       "own": "Perso",
@@ -2622,5 +2634,21 @@
     "version": "Version {version}",
     "read": "Lire l’article",
     "hide": "Masquer jusqu’à la prochaine mise à jour"
+  },
+  "webLogin": {
+    "title": "Confirmer la connexion au site",
+    "intro": "Le site {host} t’affiche un code. Saisis-le ici pour t’y connecter avec ton compte TRS.",
+    "codeLabel": "Code du site",
+    "question": "Se connecter en tant que {name} sur {host} ?",
+    "codeShown": "Code :",
+    "warningTitle": "Ne confirme que si tu es toi-même sur le site en ce moment.",
+    "warning": "Ne donne jamais ce code à personne. Celui qui te le demande veut prendre ton compte.",
+    "approve": "Confirmer la connexion",
+    "approving": "Confirmation …",
+    "done": "Connexion confirmée – tu peux retourner sur {host}.",
+    "needsServices": "Active d’abord les services TRS (Paramètres → Confidentialité).",
+    "needsAccount": "Connecte-toi d’abord avec ton compte Minecraft dans « Comptes ».",
+    "settingsDescription": "Se connecter à l’espace admin sur {host} avec le code affiché là-bas.",
+    "open": "Saisir le code"
   }
 }

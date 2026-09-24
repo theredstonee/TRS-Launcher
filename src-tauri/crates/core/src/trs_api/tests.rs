@@ -328,6 +328,15 @@ fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&R
                       "presence": { "state": "in-game", "game": { "version": "1.21.1", "loader": "fabric", "server": "evil.example/path?x" } } }
                 ], "requests": { "incoming": [ { "uuid": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0", "name": "Alex", "createdAt": "x" } ], "outgoing": [] } }),
             ),
+            ("POST", "/v1/web-login/approve") => match req.json()["code"].as_str().unwrap_or_default() {
+                "ABCD-1234" => Response::empty(204),
+                "WITH-BODY" => Response::json(200, json!({ "approved": true, "extra": [1, 2] })),
+                "EXPI-RED0" => Response::error(410, "expired"),
+                "NOPE-0000" => Response::error(404, "invalid_code"),
+                "USER-0000" => Response::error(403, "not_admin"),
+                "SLOW-0000" => Response::error(429, "rate_limited").with_header("retry-after", "42"),
+                _ => Response::error(400, "invalid_request"),
+            },
             ("GET", "/v1/admin/users/Griefer") => Response::error(404, "user_not_found"),
             ("GET", "/v1/admin/users/Friend") => Response::json(200, json!({ "user": { "uuid": OTHER, "name": "Friend", "known": true } })),
             ("POST", p) if p == format!("/v1/admin/users/{OTHER}/ban") => {
@@ -477,6 +486,60 @@ async fn admin_actions() {
 }
 
 #[tokio::test]
+async fn website_login_is_approved_with_the_token_of_the_active_account() {
+    let (_world, server) = world().await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+
+    // Ungültige Formate gehen gar nicht erst raus.
+    for bad in ["", "ABCD", "ABC-12345", "ABCD-1234-5678", "ÄBCD-1234"] {
+        let err = launcher.trs_web_login_approve(bad).await.unwrap_err();
+        assert_eq!(err.message_code(), "trsOps.invalidWebLoginCode", "{bad}");
+    }
+    assert!(server.hits("POST", "/v1/web-login/approve").is_empty());
+
+    // Kleinbuchstaben/ohne Bindestrich werden normalisiert; 204 = bestätigt.
+    launcher.trs_web_login_approve(" abcd1234 ").await.unwrap();
+    let sent = &server.hits("POST", "/v1/web-login/approve")[0];
+    assert_eq!(sent.json(), json!({ "code": "ABCD-1234" }));
+    assert!(sent.bearer().is_some_and(|t| t.starts_with("trs_")), "mit dem TRS-Token des aktiven Accounts");
+    // Tolerant: auch 200 mit beliebigem Body gilt als bestätigt.
+    launcher.trs_web_login_approve("with-body").await.unwrap();
+
+    for (code, expected) in [
+        ("EXPI-RED0", "trsWebLogin.expired"),
+        ("NOPE-0000", "trsWebLogin.invalidCode"),
+        ("USER-0000", "trsWebLogin.notAdmin"),
+    ] {
+        let err = launcher.trs_web_login_approve(code).await.unwrap_err();
+        assert_eq!((err.kind(), err.message_code()), ("trs_api", expected), "{code}");
+        assert_eq!(err.to_user().code, expected, "übersetzbar im Frontend");
+    }
+    let limited = launcher.trs_web_login_approve("SLOW-0000").await.unwrap_err();
+    assert_eq!((limited.kind(), limited.message_code()), ("trs_rate_limited", "trs.rateLimited"));
+    assert_eq!(limited.message_params()["seconds"], "42");
+    // Unbekannte Fehler behalten die allgemeine Meldung.
+    let other = launcher.trs_web_login_approve("ZZZZ-9999").await.unwrap_err();
+    assert_eq!(other.message_code(), "trsApi.invalid_request");
+
+    // Ohne Einwilligung keine Anfrage.
+    launcher.trs.store.set_consent(Consent::Declined).await;
+    let before = server.hits("POST", "/v1/web-login/approve").len();
+    assert_eq!(launcher.trs_web_login_approve("ABCD-1234").await.unwrap_err().kind(), "trs_disabled");
+    assert_eq!(server.hits("POST", "/v1/web-login/approve").len(), before);
+}
+
+#[test]
+fn both_api_addresses_are_trusted_for_textures() {
+    assert_eq!(DEFAULT_BASE, "https://trs-launcher.theredstonee.de");
+    assert!(KNOWN_BASES.contains(&"https://api.theredstonee.de"), "alte Adresse bleibt erlaubt");
+    let dir = tempfile::tempdir().unwrap();
+    let real = TrsApi::with_endpoints(Paths::new(dir.path()), DEFAULT_BASE, MOJANG_SESSION, MOJANG_API).unwrap();
+    assert_eq!(real.trusted_bases(), KNOWN_BASES.to_vec(), "keine doppelten Einträge");
+    let local = TrsApi::with_endpoints(Paths::new(dir.path()), "http://127.0.0.1:8787/", MOJANG_SESSION, MOJANG_API).unwrap();
+    assert_eq!(local.trusted_bases(), ["http://127.0.0.1:8787", DEFAULT_BASE, LEGACY_BASE]);
+}
+
+#[tokio::test]
 async fn presence_only_while_no_game_of_the_account_runs() {
     let (world, server) = world().await;
     let (_dir, launcher) = launcher(&server, &[ACC, OTHER]).await;
@@ -537,7 +600,7 @@ fn hd_builtin_capes_up_to_scale_8_are_shown() {
     let cape = |scale: u32, width: u32| -> types::ApiCape {
         serde_json::from_value(json!({
             "id": "nether", "name": "Nether", "kind": "builtin", "unlock": "free", "status": "approved",
-            "url": "https://api.theredstonee.de/v1/capes/nether.png?v=1",
+            "url": "https://trs-launcher.theredstonee.de/v1/capes/nether.png?v=1",
             "width": width, "height": width / 2, "scale": scale, "frames": 4, "frameTimeMs": 150
         }))
         .unwrap()

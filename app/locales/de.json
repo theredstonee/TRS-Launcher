@@ -482,7 +482,8 @@
       "invalidCodeId": "Ungültige Code-ID.",
       "redemptionsRange": "Einlösungen je Code: 1 bis 100 000.",
       "countRange": "Anzahl: 1 bis 100 Codes auf einmal.",
-      "expiryInPast": "Das Ablaufdatum liegt in der Vergangenheit."
+      "expiryInPast": "Das Ablaufdatum liegt in der Vergangenheit.",
+      "invalidWebLoginCode": "Der Code hat die Form ABCD-1234 (Buchstaben und Ziffern)."
     },
     "trsPng": {
       "fileTooLarge": "Die Datei ist zu groß (höchstens 256 KB).",
@@ -538,6 +539,12 @@
       "invalidFile": "Das ist keine gültige Preset-Datei.",
       "fileTooLarge": "Die Preset-Datei ist zu groß.",
       "noneSelected": "Kein Preset ausgewählt."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Diesen Anmeldecode gibt es nicht – vergleiche ihn mit dem Code auf der Website.",
+      "expired": "Der Anmeldecode ist abgelaufen – lade die Website neu und gib den neuen Code ein.",
+      "notAdmin": "Nur TRS-Admins können sich auf der Website anmelden.",
+      "alreadyUsed": "Dieser Anmeldecode wurde schon bestätigt."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "anlegen hinzufügen erstellen",
       "import": "import prism multimc curseforge übernehmen",
       "modpacks": "modpack pack installieren",
-      "dataDir": "ordner explorer dateien"
+      "dataDir": "ordner explorer dateien",
+      "webLogin": "website webseite web login anmelden admin code browser"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Datenverzeichnis öffnen",
         "subtitle": "Ordner mit Instanzen und Einstellungen"
+      },
+      "webLogin": {
+        "subtitle": "Code von {host} eingeben"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "Mindestens 1 Code.",
       "maxCount": "Höchstens 100 Codes auf einmal.",
       "invalidExpiry": "Ungültiges Ablaufdatum.",
-      "expiryPast": "Das Ablaufdatum liegt in der Vergangenheit."
+      "expiryPast": "Das Ablaufdatum liegt in der Vergangenheit.",
+      "webLoginCode": "Der Code hat die Form ABCD-1234 (Buchstaben und Ziffern)."
     },
     "unlock": {
       "own": "Eigener",
@@ -2622,5 +2634,21 @@
     "version": "Version {version}",
     "read": "Beitrag lesen",
     "hide": "Bis zum nächsten Update ausblenden"
+  },
+  "webLogin": {
+    "title": "Website-Anmeldung bestätigen",
+    "intro": "Die Website {host} zeigt dir einen Code. Gib ihn hier ein, um dich dort mit deinem TRS-Konto anzumelden.",
+    "codeLabel": "Code von der Website",
+    "question": "Anmelden als {name} auf {host}?",
+    "codeShown": "Code:",
+    "warningTitle": "Nur bestätigen, wenn du gerade selbst auf der Website bist.",
+    "warning": "Gib diesen Code niemals weiter. Wer dich danach fragt, will dein Konto übernehmen.",
+    "approve": "Anmeldung bestätigen",
+    "approving": "Wird bestätigt …",
+    "done": "Anmeldung bestätigt – du kannst zu {host} zurückkehren.",
+    "needsServices": "Schalte zuerst die TRS-Dienste ein (Einstellungen → Datenschutz).",
+    "needsAccount": "Bitte melde dich zuerst unter „Accounts“ mit deinem Minecraft-Konto an.",
+    "settingsDescription": "Im Admin-Bereich auf {host} mit dem dort angezeigten Code anmelden.",
+    "open": "Code eingeben"
   }
 }

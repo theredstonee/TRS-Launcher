@@ -81,6 +81,23 @@ pub fn redeem_code(input: &str) -> Option<String> {
     (s.chars().count() == 20 && s.chars().all(crockford)).then_some(s)
 }
 
+/// Code der Website-Anmeldung (`ABCD-1234`): 2 × 4 Zeichen A–Z/0–9. Groß-/
+/// Kleinschreibung, Leerzeichen und ein fehlender Bindestrich werden toleriert;
+/// heraus geht immer die Form `XXXX-XXXX`.
+pub fn web_login_code(input: &str) -> Option<String> {
+    if input.len() > 32 {
+        return None;
+    }
+    let s: String = input.chars().filter(|c| !c.is_whitespace()).map(|c| c.to_ascii_uppercase()).collect();
+    let plain = match s.len() {
+        9 if s.as_bytes()[4] == b'-' => s.replacen('-', "", 1),
+        8 => s,
+        _ => return None,
+    };
+    (plain.len() == 8 && plain.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit()))
+        .then(|| format!("{}-{}", &plain[..4], &plain[4..]))
+}
+
 /// Welches Freitextfeld geprüft wird – bestimmt die Fehlermeldung.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextField {
@@ -198,6 +215,21 @@ mod tests {
         assert_eq!(redeem_code("OOOOO IIIII LLLLL 22222").as_deref(), Some("00000111111111122222"));
         assert_eq!(redeem_code("UUUUU-UUUUU-UUUUU-UUUUU"), None, "U gibt es in Crockford nicht");
         assert_eq!(redeem_code("abc"), None);
+    }
+
+    #[test]
+    fn web_login_codes() {
+        assert_eq!(web_login_code("ABCD-1234").as_deref(), Some("ABCD-1234"));
+        assert_eq!(web_login_code(" abcd-1234 ").as_deref(), Some("ABCD-1234"));
+        assert_eq!(web_login_code("abcd1234").as_deref(), Some("ABCD-1234"));
+        assert_eq!(web_login_code("ab cd 12 34").as_deref(), Some("ABCD-1234"));
+        assert_eq!(web_login_code("ABC-12345"), None, "Bindestrich an falscher Stelle");
+        assert_eq!(web_login_code("ABCD--1234"), None);
+        assert_eq!(web_login_code("ABCD-123"), None);
+        assert_eq!(web_login_code("ÄBCD-1234"), None);
+        assert_eq!(web_login_code("ABCD_1234"), None);
+        assert_eq!(web_login_code(""), None);
+        assert_eq!(web_login_code(&"A".repeat(40)), None);
     }
 
     #[test]

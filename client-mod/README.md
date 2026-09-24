@@ -67,8 +67,10 @@ toggle, priority ▲/▼, open folder; applied with one reload).
 
 ## TRS API: badges, TRS capes, presence
 
-The client talks to the TRS API (`https://api.theredstonee.de`, contract: `api/API.md` on the `trs-api` branch) on its
-own; the logic is version independent in `common/core/online` and `common/core/cape`:
+The client talks to the TRS API (`https://trs-launcher.theredstonee.de`, contract: `api/API.md` on the `trs-api`
+branch) on its own; the old address `https://api.theredstonee.de` stays reachable and cape URLs on either host are
+accepted (`OnlineConfig.isApiUrl`), every other host is refused. The logic is version independent in
+`common/core/online` and `common/core/cape`:
 
 - **Login like a Minecraft server:** `POST /v1/auth/challenge` → Mojang `session/minecraft/join` with the game's own
   access token and UUID (the `serverId` is passed unhashed) → `POST /v1/auth/verify`. The bearer token only lives in

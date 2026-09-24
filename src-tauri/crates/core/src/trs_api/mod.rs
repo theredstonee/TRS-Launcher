@@ -1,4 +1,5 @@
-//! Anbindung an die TRS API (`api.theredstonee.de`, Vertrag: `api/API.md`).
+//! Anbindung an die TRS API (`trs-launcher.theredstonee.de`, früher nur
+//! `api.theredstonee.de` – beide Adressen bleiben gültig; Vertrag: `api/API.md`).
 //!
 //! - **Anmeldung je Minecraft-Account** wie bei einem Minecraft-Server:
 //!   `challenge` → Mojang `join` mit dem Minecraft-Token des Accounts →
@@ -41,7 +42,13 @@ pub use store::Consent;
 use store::Store;
 use types::{ApiChallenge, ApiMe, ApiVerify};
 
-pub const DEFAULT_BASE: &str = "https://api.theredstonee.de";
+/// Adresse der TRS API (dort liegt auch die Website).
+pub const DEFAULT_BASE: &str = "https://trs-launcher.theredstonee.de";
+/// Bisherige Adresse – bleibt parallel erreichbar. Umhang-URLs mit diesem Host
+/// (z. B. aus älteren Antworten oder Caches) gelten weiter als vertrauenswürdig.
+pub const LEGACY_BASE: &str = "https://api.theredstonee.de";
+/// Alle Adressen, unter denen die echte TRS API läuft.
+pub const KNOWN_BASES: [&str; 2] = [DEFAULT_BASE, LEGACY_BASE];
 pub const MOJANG_SESSION: &str = "https://sessionserver.mojang.com";
 pub const MOJANG_API: &str = "https://api.mojang.com";
 
@@ -264,6 +271,14 @@ impl TrsApi {
             login_lock: tokio::sync::Mutex::new(()),
             presence: Arc::new(PresenceState::default()),
         })
+    }
+
+    /// Adressen, von denen Umhang-Texturen geladen werden dürfen: die
+    /// eingestellte API und die bekannten Adressen der echten API.
+    pub(crate) fn trusted_bases(&self) -> Vec<&str> {
+        let mut bases = vec![self.base.as_str()];
+        bases.extend(KNOWN_BASES.iter().copied().filter(|b| *b != self.base));
+        bases
     }
 
     pub async fn consent(&self) -> Option<Consent> {

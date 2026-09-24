@@ -15,6 +15,7 @@ const games = useGamesStore()
 const settings = useSettingsStore()
 const toasts = useToasts()
 const ui = useUiStore()
+const trs = useTrsStore()
 
 type Group = 'instances' | 'mods' | 'servers' | 'settings' | 'pages' | 'actions'
 
@@ -182,6 +183,23 @@ const commands = computed<Command[]>(() => [
     icon: 'compass',
     run: () => go('/browse?kind=modpack'),
   },
+  // Nur für TRS-Admins – die Website-Anmeldung ist deren Verwaltungszugang.
+  ...(trs.isAdmin
+    ? [
+        {
+          id: 'action:web-login',
+          group: 'actions',
+          title: t('webLogin.title'),
+          subtitle: t('palette.actions.webLogin.subtitle', { host: TRS_HOST }),
+          keywords: t('palette.keywords.webLogin'),
+          icon: 'shield',
+          run: () => {
+            trs.openWebLogin()
+            close()
+          },
+        } satisfies Command,
+      ]
+    : []),
   {
     id: 'action:data-dir',
     group: 'actions',

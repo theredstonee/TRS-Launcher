@@ -482,7 +482,8 @@
       "invalidCodeId": "ID de código no válido.",
       "redemptionsRange": "Canjes por código: de 1 a 100 000.",
       "countRange": "Cantidad: de 1 a 100 códigos a la vez.",
-      "expiryInPast": "La fecha de caducidad ya ha pasado."
+      "expiryInPast": "La fecha de caducidad ya ha pasado.",
+      "invalidWebLoginCode": "El código tiene la forma ABCD-1234 (letras y números)."
     },
     "trsPng": {
       "fileTooLarge": "El archivo es demasiado grande (máx. 256 KB).",
@@ -538,6 +539,12 @@
       "invalidFile": "Este no es un archivo de preset válido.",
       "fileTooLarge": "El archivo de preset es demasiado grande.",
       "noneSelected": "No hay ningún preset seleccionado."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Este código de inicio de sesión no existe: compáralo con el código de la web.",
+      "expired": "El código de inicio de sesión ha caducado: recarga la web e introduce el nuevo código.",
+      "notAdmin": "Solo los administradores de TRS pueden iniciar sesión en la web.",
+      "alreadyUsed": "Este código de inicio de sesión ya se ha confirmado."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "añadir crear nueva",
       "import": "importar prism multimc curseforge migrar",
       "modpacks": "modpack paquete instalar",
-      "dataDir": "carpeta explorador archivos"
+      "dataDir": "carpeta explorador archivos",
+      "webLogin": "web sitio login iniciar sesión admin código navegador"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Abrir carpeta de datos",
         "subtitle": "Carpeta con instancias y ajustes"
+      },
+      "webLogin": {
+        "subtitle": "Introduce el código de {host}"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "Al menos 1 código.",
       "maxCount": "Máximo 100 códigos a la vez.",
       "invalidExpiry": "Fecha de caducidad no válida.",
-      "expiryPast": "La fecha de caducidad ya ha pasado."
+      "expiryPast": "La fecha de caducidad ya ha pasado.",
+      "webLoginCode": "El código tiene la forma ABCD-1234 (letras y números)."
     },
     "unlock": {
       "own": "Propia",
@@ -2622,5 +2634,21 @@
     "version": "Versión {version}",
     "read": "Leer la entrada",
     "hide": "Ocultar hasta la próxima actualización"
+  },
+  "webLogin": {
+    "title": "Confirmar inicio de sesión en la web",
+    "intro": "La web {host} te muestra un código. Introdúcelo aquí para iniciar sesión allí con tu cuenta TRS.",
+    "codeLabel": "Código de la web",
+    "question": "¿Iniciar sesión como {name} en {host}?",
+    "codeShown": "Código:",
+    "warningTitle": "Confirma solo si ahora mismo estás tú en la web.",
+    "warning": "Nunca le des este código a nadie. Quien te lo pida quiere quedarse con tu cuenta.",
+    "approve": "Confirmar inicio de sesión",
+    "approving": "Confirmando …",
+    "done": "Inicio de sesión confirmado: puedes volver a {host}.",
+    "needsServices": "Activa primero los servicios TRS (Ajustes → Privacidad).",
+    "needsAccount": "Primero inicia sesión con tu cuenta de Minecraft en «Cuentas».",
+    "settingsDescription": "Inicia sesión en el área de administración de {host} con el código que aparece allí.",
+    "open": "Introducir código"
   }
 }

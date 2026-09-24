@@ -482,7 +482,8 @@
       "invalidCodeId": "Geçersiz kod kimliği.",
       "redemptionsRange": "Kod başına kullanım: 1 ile 100.000 arası.",
       "countRange": "Miktar: aynı anda 1 ile 100 kod arası.",
-      "expiryInPast": "Son kullanma tarihi geçmişte."
+      "expiryInPast": "Son kullanma tarihi geçmişte.",
+      "invalidWebLoginCode": "Kod ABCD-1234 biçimindedir (harfler ve rakamlar)."
     },
     "trsPng": {
       "fileTooLarge": "Dosya çok büyük (en fazla 256 KB).",
@@ -538,6 +539,12 @@
       "invalidFile": "Bu geçerli bir ön ayar dosyası değil.",
       "fileTooLarge": "Ön ayar dosyası çok büyük.",
       "noneSelected": "Hiçbir ön ayar seçilmedi."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Böyle bir giriş kodu yok – web sitesindeki kodla karşılaştır.",
+      "expired": "Giriş kodunun süresi doldu – web sitesini yenile ve yeni kodu gir.",
+      "notAdmin": "Web sitesine yalnızca TRS yöneticileri giriş yapabilir.",
+      "alreadyUsed": "Bu giriş kodu zaten onaylandı."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "ekle oluştur yeni add create new",
       "import": "içe aktar taşı prism multimc curseforge import migrate",
       "modpacks": "modpack paket yükle pack install",
-      "dataDir": "klasör gezgin dosyalar folder explorer files"
+      "dataDir": "klasör gezgin dosyalar folder explorer files",
+      "webLogin": "web site giriş oturum admin kod tarayıcı"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Veri klasörünü aç",
         "subtitle": "Kurulumları ve ayarları içeren klasör"
+      },
+      "webLogin": {
+        "subtitle": "{host} kodunu gir"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "En az 1 kod.",
       "maxCount": "Aynı anda en fazla 100 kod.",
       "invalidExpiry": "Geçersiz son kullanma tarihi.",
-      "expiryPast": "Son kullanma tarihi geçmişte."
+      "expiryPast": "Son kullanma tarihi geçmişte.",
+      "webLoginCode": "Kod ABCD-1234 biçimindedir (harfler ve rakamlar)."
     },
     "unlock": {
       "own": "Özel",
@@ -2622,5 +2634,21 @@
     "version": "Sürüm {version}",
     "read": "Yazıyı oku",
     "hide": "Sonraki güncellemeye kadar gizle"
+  },
+  "webLogin": {
+    "title": "Web sitesi girişini onayla",
+    "intro": "{host} web sitesi sana bir kod gösterir. Oraya TRS hesabınla giriş yapmak için kodu buraya gir.",
+    "codeLabel": "Web sitesindeki kod",
+    "question": "{host} üzerinde {name} olarak giriş yapılsın mı?",
+    "codeShown": "Kod:",
+    "warningTitle": "Yalnızca şu anda web sitesinde bizzat sen isen onayla.",
+    "warning": "Bu kodu asla kimseyle paylaşma. Senden bu kodu isteyen, hesabını ele geçirmek istiyordur.",
+    "approve": "Girişi onayla",
+    "approving": "Onaylanıyor …",
+    "done": "Giriş onaylandı – {host} sitesine geri dönebilirsin.",
+    "needsServices": "Önce TRS hizmetlerini aç (Ayarlar → Gizlilik).",
+    "needsAccount": "Lütfen önce \"Hesaplar\" bölümünden Minecraft hesabınla giriş yap.",
+    "settingsDescription": "{host} üzerindeki yönetim alanına orada gösterilen kodla giriş yap.",
+    "open": "Kodu gir"
   }
 }

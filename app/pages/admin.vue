@@ -308,7 +308,11 @@ const statTiles = computed(() => {
 
 <template>
   <div class="mx-auto max-w-5xl p-6">
-    <PageHeader :title="t('admin.title')" :subtitle="t('admin.subtitle')" />
+    <PageHeader :title="t('admin.title')" :subtitle="t('admin.subtitle')">
+      <button v-if="trs.isAdmin" class="btn btn-ghost px-3 py-1.5 text-xs" data-testid="admin-web-login" @click="trs.openWebLogin()">
+        {{ t('webLogin.title') }}
+      </button>
+    </PageHeader>
 
     <div v-if="!trs.isAdmin" class="card px-4 py-6 text-center text-sm text-base-400">
       {{ t('admin.notAdmin') }}

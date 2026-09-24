@@ -482,7 +482,8 @@
       "invalidCodeId": "Nieprawidłowy identyfikator kodu.",
       "redemptionsRange": "Liczba użyć na kod: od 1 do 100 000.",
       "countRange": "Ilość: od 1 do 100 kodów naraz.",
-      "expiryInPast": "Data wygaśnięcia jest w przeszłości."
+      "expiryInPast": "Data wygaśnięcia jest w przeszłości.",
+      "invalidWebLoginCode": "Kod ma postać ABCD-1234 (litery i cyfry)."
     },
     "trsPng": {
       "fileTooLarge": "Plik jest za duży (maks. 256 KB).",
@@ -538,6 +539,12 @@
       "invalidFile": "To nie jest prawidłowy plik presetu.",
       "fileTooLarge": "Plik presetu jest za duży.",
       "noneSelected": "Nie wybrano żadnego presetu."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Taki kod logowania nie istnieje – porównaj go z kodem na stronie.",
+      "expired": "Kod logowania wygasł – odśwież stronę i wpisz nowy kod.",
+      "notAdmin": "Na stronie mogą logować się tylko administratorzy TRS.",
+      "alreadyUsed": "Ten kod logowania został już potwierdzony."
     }
   },
   "browse": {
@@ -1859,7 +1866,8 @@
       "newInstance": "dodaj utwórz nowa",
       "import": "import importuj prism multimc curseforge migracja",
       "modpacks": "modpack paczka zainstaluj",
-      "dataDir": "folder eksplorator pliki"
+      "dataDir": "folder eksplorator pliki",
+      "webLogin": "strona www logowanie zaloguj admin kod przeglądarka"
     },
     "actions": {
       "newInstance": {
@@ -1877,6 +1885,9 @@
       "dataDir": {
         "title": "Otwórz folder danych",
         "subtitle": "Folder z instancjami i ustawieniami"
+      },
+      "webLogin": {
+        "subtitle": "Wpisz kod z {host}"
       }
     }
   },
@@ -2098,7 +2109,8 @@
       "minCount": "Co najmniej 1 kod.",
       "maxCount": "Maksymalnie 100 kodów naraz.",
       "invalidExpiry": "Nieprawidłowa data wygaśnięcia.",
-      "expiryPast": "Data wygaśnięcia jest w przeszłości."
+      "expiryPast": "Data wygaśnięcia jest w przeszłości.",
+      "webLoginCode": "Kod ma postać ABCD-1234 (litery i cyfry)."
     },
     "unlock": {
       "own": "Własna",
@@ -2622,5 +2634,21 @@
     "version": "Wersja {version}",
     "read": "Czytaj wpis",
     "hide": "Ukryj do następnej aktualizacji"
+  },
+  "webLogin": {
+    "title": "Potwierdź logowanie na stronie",
+    "intro": "Strona {host} pokazuje ci kod. Wpisz go tutaj, aby zalogować się tam kontem TRS.",
+    "codeLabel": "Kod ze strony",
+    "question": "Zalogować jako {name} na {host}?",
+    "codeShown": "Kod:",
+    "warningTitle": "Potwierdzaj tylko, jeśli właśnie sam jesteś na stronie.",
+    "warning": "Nigdy nikomu nie podawaj tego kodu. Kto o niego prosi, chce przejąć twoje konto.",
+    "approve": "Potwierdź logowanie",
+    "approving": "Potwierdzanie …",
+    "done": "Logowanie potwierdzone – możesz wrócić na {host}.",
+    "needsServices": "Najpierw włącz usługi TRS (Ustawienia → Prywatność).",
+    "needsAccount": "Najpierw zaloguj się kontem Minecraft w „Konta”.",
+    "settingsDescription": "Zaloguj się do panelu administracyjnego na {host} kodem, który się tam wyświetla.",
+    "open": "Wpisz kod"
   }
 }
