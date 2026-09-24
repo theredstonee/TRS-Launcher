@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const { lang, m } = useLang()
-const url = useRequestURL()
 
 useHead({
   htmlAttrs: { lang },
@@ -11,7 +10,7 @@ useSeoMeta({
   description: () => m.value.meta.description,
   ogSiteName: 'TRS Launcher',
   ogType: 'website',
-  ogImage: `${url.origin}/og.png`,
+  ogImage: 'https://trs-launcher.theredstonee.de/og.png',
   twitterCard: 'summary_large_image',
 })
 </script>
