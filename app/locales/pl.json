@@ -2616,5 +2616,11 @@
       "moveDown": "W dół",
       "footer": "Udostępniaj presety znajomym przez Eksportuj – mogą wczytać plik przez Importuj."
     }
+  },
+  "updateNews": {
+    "kicker": "Aktualizacja {version}",
+    "version": "Wersja {version}",
+    "read": "Czytaj wpis",
+    "hide": "Ukryj do następnej aktualizacji"
   }
 }

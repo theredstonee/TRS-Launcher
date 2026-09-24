@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { changelogFor, changesSince, compareVersions, parseChangelog, releaseNotes } from '../app/utils/changelog'
+import { changelogFor, changesSince, compareVersions, parseChangelog, releaseNotes, splitPost, versionSeed } from '../app/utils/changelog'
 
 const root = path.resolve(__dirname, '..')
 
@@ -48,6 +48,39 @@ describe('Changelog', () => {
     expect(v.de).toBe('- **Umhänge** repariert.')
     expect(changelogFor(entries, '9.9.9')).toBeNull()
     expect(releaseNotes(v)).toContain("## What's new\n\n- Fixed **capes**.\n\n## Neu in dieser Version\n\n- **Umhänge** repariert.")
+  })
+
+  it('liest Update-Namen und eigene Screenshots', () => {
+    const post = `## 0.5.0 – 2026-09-25 – The Clip Update | Das Clip-Update
+
+### English
+
+- **Clips.** Save the last 30 seconds.
+
+![Emote wheel](/news/0.5.0/emote-wheel.png)
+
+![Fremd](https://evil.example/x.png)
+![Ausbruch](/news/../secret.png)
+
+### Deutsch
+
+- **Clips.** Die letzten 30 Sekunden speichern.
+`
+    const [entry] = parseChangelog(post)
+    expect(entry!.title).toEqual({ en: 'The Clip Update', de: 'Das Clip-Update' })
+    const blocks = splitPost(entry!.en)
+    expect(blocks[1]).toEqual({ kind: 'image', src: '/news/0.5.0/emote-wheel.png', caption: 'Emote wheel' })
+    // Fremde Adressen und Pfad-Ausbrüche bleiben normaler (bereinigter) Markdown-Text.
+    expect(blocks.filter((b) => b.kind === 'image')).toHaveLength(1)
+    const notes = releaseNotes(entry!)
+    expect(notes.startsWith('# The Clip Update')).toBe(true)
+    expect(notes).toContain('# Das Clip-Update')
+    expect(notes).toContain('https://raw.githubusercontent.com/theredstonee/TRS-Launcher/v0.5.0/public/news/0.5.0/emote-wheel.png')
+    // Ohne „|“ gilt der Name für beide Sprachen; ohne Namen bleibt es null.
+    expect(parseChangelog('## 1.0.0 – 2026-01-01 – Big One\n### English\n- a\n### Deutsch\n- b')[0]!.title).toEqual({ en: 'Big One', de: 'Big One' })
+    expect(parseChangelog('## 1.0.0 – 2026-01-01\n### English\n- a\n### Deutsch\n- b')[0]!.title).toBeNull()
+    expect(versionSeed('0.5.0')).toBe(versionSeed('0.5.0'))
+    expect(versionSeed('0.5.0')).not.toBe(versionSeed('0.5.1'))
   })
 
   it('vergleicht Versionen', () => {

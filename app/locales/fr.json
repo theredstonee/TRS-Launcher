@@ -2616,5 +2616,11 @@
       "moveDown": "Descendre",
       "footer": "Partagez des préréglages avec vos amis via Exporter – ils peuvent charger le fichier avec Importer."
     }
+  },
+  "updateNews": {
+    "kicker": "Mise à jour {version}",
+    "version": "Version {version}",
+    "read": "Lire l’article",
+    "hide": "Masquer jusqu’à la prochaine mise à jour"
   }
 }

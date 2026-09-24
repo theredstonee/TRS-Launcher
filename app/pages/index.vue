@@ -172,6 +172,9 @@ function play(instance: Instance) {
     </section>
 
     <div class="space-y-10 px-8">
+      <!-- Neuestes Update als Blog-Karte (Banner aus der Redstone-Szene). -->
+      <UpdateNewsCard />
+
       <!-- Weiterspielen: breite Banner-Kacheln, am Ende die Kachel für Neues. -->
       <section v-if="ready && featured" aria-labelledby="continue-heading">
         <div class="mb-3 flex items-end justify-between gap-4">

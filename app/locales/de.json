@@ -2616,5 +2616,11 @@
       "moveDown": "Nach unten",
       "footer": "Presets mit Freunden teilen: über Exportieren speichern – mit Importieren lässt sich die Datei laden."
     }
+  },
+  "updateNews": {
+    "kicker": "Update {version}",
+    "version": "Version {version}",
+    "read": "Beitrag lesen",
+    "hide": "Bis zum nächsten Update ausblenden"
   }
 }

@@ -1,6 +1,11 @@
 // Liest CHANGELOG.md: je Version ein Abschnitt „## <version> – <datum>“ mit „### English“ und
 // „### Deutsch“. Dieselbe Funktion nutzt der Release-Build (scripts/changelog.mjs) und der
-// Launcher („Was ist neu“) – daher ohne Nuxt-Abhängigkeiten.
+// Launcher („Was ist neu“, Update-Karte) – daher ohne Nuxt-Abhängigkeiten.
+//
+// Optional trägt die Überschrift einen Update-Namen (Englisch | Deutsch):
+//   ## 0.5.0 – 2026-09-25 – The Clip Update | Das Clip-Update
+// Screenshots stehen als eigene Zeile „![Bildunterschrift](/news/<version>/<datei>.png)“ im Text;
+// die Dateien liegen in public/news/.
 
 export interface ChangelogEntry {
   /** z. B. „0.4.4“; der Abschnitt „Unreleased“ hat `null`. */
@@ -8,9 +13,20 @@ export interface ChangelogEntry {
   date: string | null
   en: string
   de: string
+  /** Update-Name wie „The Clip Update“ / „Das Clip-Update“, sonst `null`. */
+  title: { en: string; de: string } | null
 }
 
-const VERSION_HEADING = /^## +(?:\[?v?(\d+\.\d+\.\d+(?:-[\w.]+)?)\]?|(Unreleased))(?: +[–-] +(\d{4}-\d{2}-\d{2}))? *$/i
+const VERSION_HEADING =
+  /^## +(?:\[?v?(\d+\.\d+\.\d+(?:-[\w.]+)?)\]?|(Unreleased))(?: +[–-] +(\d{4}-\d{2}-\d{2}))?(?: +[–-] +(.+?))? *$/i
+
+/** „The Clip Update | Das Clip-Update“ → beide Namen; ohne „|“ gilt der Name für beide Sprachen. */
+function parseTitle(raw: string | undefined): ChangelogEntry['title'] {
+  if (!raw) return null
+  const [en = '', de] = raw.split('|').map((part) => part.trim())
+  if (!en) return null
+  return { en, de: de || en }
+}
 
 /** Alle Abschnitte in Dateireihenfolge (neueste zuerst, wie im Changelog). */
 export function parseChangelog(text: string): ChangelogEntry[] {
@@ -28,7 +44,7 @@ export function parseChangelog(text: string): ChangelogEntry[] {
     const heading = VERSION_HEADING.exec(line)
     if (heading) {
       push()
-      current = { version: heading[1] ?? null, date: heading[3] ?? null, en: '', de: '' }
+      current = { version: heading[1] ?? null, date: heading[3] ?? null, en: '', de: '', title: parseTitle(heading[4]) }
       lang = null
       continue
     }
@@ -88,7 +104,51 @@ export function changesSince(entries: ChangelogEntry[], seen: string, current: s
     .slice(0, limit)
 }
 
-/** Text für GitHub-Release und Auto-Update: erst Englisch, dann Deutsch. */
+/** Eigene Bilder eines Beitrags: nur Dateien aus public/news/, nie fremde Adressen. */
+export const NEWS_IMAGE = /^!\[([^\]\n]{0,200})\]\((\/news\/[\w.-]+\/[\w.-]+\.(?:png|webp|jpe?g))\) *$/
+
+export type PostBlock = { kind: 'text'; markdown: string } | { kind: 'image'; src: string; caption: string }
+
+/** Teilt einen Changelog-Text in Textblöcke und eigene Screenshots (je eine Zeile „![…](/news/…)“). */
+export function splitPost(markdown: string): PostBlock[] {
+  const blocks: PostBlock[] = []
+  let text: string[] = []
+  const flush = () => {
+    const md = text.join('\n').trim()
+    if (md) blocks.push({ kind: 'text', markdown: md })
+    text = []
+  }
+  for (const line of markdown.split(/\r?\n/)) {
+    const image = NEWS_IMAGE.exec(line.trim())
+    if (image && !image[2]!.includes('..')) {
+      flush()
+      blocks.push({ kind: 'image', src: image[2]!, caption: image[1]!.trim() })
+    } else text.push(line)
+  }
+  flush()
+  return blocks
+}
+
+/** Für GitHub: „/news/…“-Bilder auf die Datei im Repo zum Tag der Version zeigen lassen. */
+function githubImages(markdown: string, version: string): string {
+  return markdown.replace(
+    /\]\((\/news\/[\w.-]+\/[\w.-]+\.(?:png|webp|jpe?g))\)/g,
+    (_, path: string) => `](https://raw.githubusercontent.com/theredstonee/TRS-Launcher/v${version}/public${path})`,
+  )
+}
+
+/** Text für GitHub-Release und Auto-Update: Update-Name, dann Englisch, dann Deutsch. */
 export function releaseNotes(entry: ChangelogEntry): string {
-  return `## What's new\n\n${entry.en}\n\n## Neu in dieser Version\n\n${entry.de}\n`
+  const version = entry.version ?? ''
+  const en = githubImages(entry.en, version)
+  const de = githubImages(entry.de, version)
+  if (entry.title) return `# ${entry.title.en}\n\n${en}\n\n# ${entry.title.de}\n\n${de}\n`
+  return `## What's new\n\n${en}\n\n## Neu in dieser Version\n\n${de}\n`
+}
+
+/** Fester Startwert für die Redstone-Szene eines Updates – jede Version sieht anders, aber immer gleich aus. */
+export function versionSeed(version: string): number {
+  let h = 0x7e5
+  for (const ch of version) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0
+  return h % 0xffffff
 }

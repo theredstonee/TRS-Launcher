@@ -2616,5 +2616,11 @@
       "moveDown": "Move down",
       "footer": "Share presets with friends via Export – they can load the file with Import."
     }
+  },
+  "updateNews": {
+    "kicker": "Update {version}",
+    "version": "Version {version}",
+    "read": "Read the post",
+    "hide": "Hide until the next update"
   }
 }

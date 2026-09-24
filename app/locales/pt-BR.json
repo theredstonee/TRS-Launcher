@@ -2616,5 +2616,11 @@
       "moveDown": "Mover para baixo",
       "footer": "Compartilhe predefinições com amigos em Exportar – eles podem carregar o arquivo em Importar."
     }
+  },
+  "updateNews": {
+    "kicker": "Atualização {version}",
+    "version": "Versão {version}",
+    "read": "Ler a publicação",
+    "hide": "Ocultar até a próxima atualização"
   }
 }

@@ -2616,5 +2616,11 @@
       "moveDown": "Bajar",
       "footer": "Comparte presets con amigos mediante Exportar; ellos pueden cargar el archivo con Importar."
     }
+  },
+  "updateNews": {
+    "kicker": "Actualización {version}",
+    "version": "Versión {version}",
+    "read": "Leer la entrada",
+    "hide": "Ocultar hasta la próxima actualización"
   }
 }

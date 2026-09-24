@@ -2616,5 +2616,11 @@
       "moveDown": "Omlaag",
       "footer": "Deel presets met vrienden via Exporteren – zij laden het bestand met Importeren."
     }
+  },
+  "updateNews": {
+    "kicker": "Update {version}",
+    "version": "Versie {version}",
+    "read": "Lees het bericht",
+    "hide": "Verbergen tot de volgende update"
   }
 }

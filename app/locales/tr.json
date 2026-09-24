@@ -2616,5 +2616,11 @@
       "moveDown": "Aşağı taşı",
       "footer": "Ön ayarları arkadaşlarınla Dışa aktar ile paylaş – dosyayı İçe aktar ile yükleyebilirler."
     }
+  },
+  "updateNews": {
+    "kicker": "Güncelleme {version}",
+    "version": "Sürüm {version}",
+    "read": "Yazıyı oku",
+    "hide": "Sonraki güncellemeye kadar gizle"
   }
 }
