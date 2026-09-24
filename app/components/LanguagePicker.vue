@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LanguageInfo, Locale } from '~/utils/i18n'
 
-// Sprachliste im Stil der Modrinth App: Suche, Flagge, Name in der Sprache
+// Sprachliste: Suche, Flagge, Name in der Sprache
 // selbst + englischer Name, Übersetzungsstand und Beta-Hinweis. Wird in den
 // Einstellungen und im ersten Schritt der Einrichtung benutzt.
 const model = defineModel<Locale>({ required: true })

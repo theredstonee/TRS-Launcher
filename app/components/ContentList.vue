@@ -4,7 +4,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, Instance, ModrinthVersion, UploadResult } from '~/types'
 import { cancelledError } from '~/stores/tasks'
 
-// Inhalte einer Instanz als EINE Tabelle wie in der Modrinth App: Filter-Chips,
+// Inhalte einer Instanz als EINE Tabelle: Filter-Chips,
 // Suche, Sortierung, Mehrfachauswahl mit Sammelaktionen, Dateien per Dialog
 // oder Drag & Drop hinzufügen.
 const props = defineProps<{ instance: Instance }>()

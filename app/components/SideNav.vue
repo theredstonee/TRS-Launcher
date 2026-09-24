@@ -2,7 +2,7 @@
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
 
-// Schmale Icon-Leiste wie in der Modrinth App: oben die Bereiche, darunter der
+// Schmale Icon-Leiste: oben die Bereiche, darunter der
 // Schnellstart der zuletzt gespielten Instanzen, unten Suche, Einstellungen und
 // Konto. Ausklappbar (dann mit Beschriftung), sonst mit Kurzhinweisen.
 interface NavItem {

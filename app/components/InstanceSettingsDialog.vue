@@ -2,7 +2,7 @@
 import type { EnvVar, Instance, InstanceOverrides, SyncItem, UpdateChannel } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 
-// Instanz-Einstellungen im Stil der Modrinth App: Modal mit Bereichen links,
+// Instanz-Einstellungen: Modal mit Bereichen links,
 // alles speichert automatisch (nach kurzer Pause, erst nach Prüfung).
 const props = withDefaults(defineProps<{ instance: Instance; initial?: string }>(), { initial: 'general' })
 const emit = defineEmits<{ close: []; updated: [instance: Instance]; deleted: [] }>()

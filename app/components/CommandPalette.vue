@@ -3,7 +3,7 @@ import type { ContentItem, Instance } from '~/types'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
 
-// Globale Suche (Strg+K) im Stil der Modrinth App: Instanzen starten oder
+// Globale Suche (Strg+K): Instanzen starten oder
 // öffnen, installierte Mods finden, in einen Einstellungs-Bereich springen,
 // Server, Seiten und Aktionen – alles unscharf durchsuchbar.
 const emit = defineEmits<{ close: [] }>()

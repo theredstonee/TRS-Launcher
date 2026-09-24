@@ -51,7 +51,7 @@ async function toggleMaximize() {
 
     <UpdateButton />
 
-    <!-- Laufende Instanzen und Hintergrund-Aufgaben (wie in der Modrinth App). -->
+    <!-- Laufende Instanzen und Hintergrund-Aufgaben. -->
     <RunningPill class="mr-1" />
     <TasksButton class="mr-1" />
 

@@ -3,7 +3,7 @@ import type { SkinChanges, SkinProfile, SkinSyncStatus, SkinVariant } from '~/ty
 import { t } from './i18n'
 import { userErrorText } from './backend'
 
-// Lokaler Entwurf für Skin, Modell und Umhang – wie in der Modrinth App:
+// Lokaler Entwurf für Skin, Modell und Umhang:
 // Auswählen ändert nur den Entwurf (sofort in der 3D-Vorschau, ohne Netzwerk),
 // erst „Anwenden“ schickt den Unterschied an den Kern. Reine Funktionen,
 // getestet in tests/skin-draft.test.ts.

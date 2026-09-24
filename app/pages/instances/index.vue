@@ -2,7 +2,7 @@
 import type { Instance, LoaderKind } from '~/types'
 import type { LibraryGroupBy, LibrarySort } from '~/utils/library'
 
-// Bibliothek wie in der Modrinth App: große Kacheln, Suche, Sortieren,
+// Bibliothek: große Kacheln, Suche, Sortieren,
 // Gruppieren (auch eigene Gruppen) und Filter nach Loader und Version.
 const instances = useInstancesStore()
 const settings = useSettingsStore()

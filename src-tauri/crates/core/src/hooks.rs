@@ -1,6 +1,6 @@
 //! Start-Hooks: ein Befehl vor dem Start, ein Wrapper vor Java, ein Befehl nach
-//! dem Beenden und eigene Umgebungsvariablen – wie bei Prism, Modrinth App und
-//! OneLauncher. Global in den Einstellungen, pro Instanz überschreibbar.
+//! dem Beenden und eigene Umgebungsvariablen. Global in den Einstellungen, pro
+//! Instanz überschreibbar.
 //!
 //! Befehle laufen über `cmd /C` ohne Konsolenfenster (Linux: `/bin/sh -c`)
 //! und mit Zeitlimit. Sie

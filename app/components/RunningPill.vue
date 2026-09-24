@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Titelleiste: laufende Instanzen (wie „No instances running“ in der Modrinth App).
+// Titelleiste: laufende Instanzen.
 // Ohne Spiel ein ruhiger grauer Punkt, mit einem Spiel Name + Stoppen + Logs,
 // mit mehreren ein Menü mit allen.
 const games = useGamesStore()

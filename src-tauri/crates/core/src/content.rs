@@ -34,7 +34,7 @@ pub enum ContentKind {
     Mod,
     ResourcePack,
     ShaderPack,
-    /// Datenpakete landen wie in der Modrinth App im Instanz-Ordner
+    /// Datenpakete landen im Instanz-Ordner
     /// datapacks/. Minecraft liest sie dort nicht selbst – sie werden beim
     /// Anlegen einer Welt ausgewählt bzw. in saves/<welt>/datapacks/
     /// kopiert, oder von Mods wie „Global Packs“/„Paxi“ global geladen.

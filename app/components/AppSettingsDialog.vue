@@ -3,7 +3,7 @@ import type { Accent, AppInfo, ClientModStatus, Settings, StorageStats, Theme } 
 import type { ShellSection } from '~/components/SettingsShell.vue'
 import type { Locale } from '~/utils/i18n'
 
-// Globale Einstellungen im Stil der Modrinth App. Alles speichert
+// Globale Einstellungen. Alles speichert
 // automatisch; Darstellung wirkt sofort als Vorschau.
 const store = useSettingsStore()
 const accounts = useAccountsStore()

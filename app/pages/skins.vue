@@ -11,7 +11,7 @@ import {
   type SkinDraft,
 } from '~/utils/skinDraft'
 
-// Skins & Umhänge des aktiven Accounts. Wie in der Modrinth App wird zuerst
+// Skins & Umhänge des aktiven Accounts. Zuerst wird
 // lokal bearbeitet (Skin, Modell, Umhang – sofort in der 3D-Vorschau, ohne
 // Netzwerk) und erst „Anwenden“ schickt den Unterschied an den Kern. Dort
 // sorgt eine Warteschlange dafür, dass Mojang nur den Endzustand sieht und

@@ -16,7 +16,9 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
-## Unreleased
+## Unreleased – The Showtime Update | Das Showtime-Update
+
+<!-- banner: accent=#ffc24b motif=/news/0.5.0/banner.png -->
 
 ### English
 

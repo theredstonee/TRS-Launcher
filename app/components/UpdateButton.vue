@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Kleiner Update-Knopf in der Titelleiste (wie „Reload to update“ in der Modrinth App).
+// Kleiner Update-Knopf in der Titelleiste: Neustart in die fertig geladene Version.
 const updater = useUpdaterStore()
 const games = useGamesStore()
 onMounted(() => updater.start())

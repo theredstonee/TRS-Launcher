@@ -12,7 +12,7 @@ const RETRY_MS = 15 * 60 * 1000
 export type UpdatePhase = 'idle' | 'downloading' | 'ready' | 'installing' | 'failed' | 'external'
 
 /**
- * Updates wie in der Modrinth App: Die neue Version lädt still im Hintergrund,
+ * Stille Updates: Die neue Version lädt im Hintergrund,
  * danach zeigt die Titelleiste nur „Neu starten zum Aktualisieren“. Ein Klick
  * installiert ohne Installer-Fenster und startet den Launcher neu.
  */
