@@ -15,15 +15,31 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(AbstractClientPlayer.class)
 public abstract class CapeTextureMixin {
+	/**
+	 * getSkin() läuft je Bild mehrmals pro Spieler: der ersetzte Skin wird gemerkt und nur neu gebaut, wenn sich
+	 * Vanillas Skin oder das TRS-Umhangbild (Animation) geändert hat.
+	 */
+	@org.spongepowered.asm.mixin.Unique
+	private Object trsclient$skinIn;
+	@org.spongepowered.asm.mixin.Unique
+	private Object trsclient$texIn;
+	@org.spongepowered.asm.mixin.Unique
+	private Object trsclient$skinOut;
+
 	//? if >=1.21.11 {
 	/*@Inject(method = "getSkin()Lnet/minecraft/world/entity/player/PlayerSkin;", at = @At("RETURN"), cancellable = true, require = 0)
 	private void trsclient$trsCape(CallbackInfoReturnable<net.minecraft.world.entity.player.PlayerSkin> cir) {
 		Object tex = OnlineHooks.capeTexture((AbstractClientPlayer) (Object) this);
 		net.minecraft.world.entity.player.PlayerSkin skin = cir.getReturnValue();
 		if (tex == null || skin == null) return;
-		net.minecraft.core.ClientAsset.ResourceTexture asset = new net.minecraft.core.ClientAsset.ResourceTexture(
-				(net.minecraft.resources.Identifier) tex, (net.minecraft.resources.Identifier) tex);
-		cir.setReturnValue(new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, asset, skin.model(), skin.secure()));
+		if (skin != trsclient$skinIn || tex != trsclient$texIn) {
+			net.minecraft.core.ClientAsset.ResourceTexture asset = new net.minecraft.core.ClientAsset.ResourceTexture(
+					(net.minecraft.resources.Identifier) tex, (net.minecraft.resources.Identifier) tex);
+			trsclient$skinOut = new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, asset, skin.model(), skin.secure());
+			trsclient$skinIn = skin;
+			trsclient$texIn = tex;
+		}
+		cir.setReturnValue((net.minecraft.world.entity.player.PlayerSkin) trsclient$skinOut);
 	}
 	*///?} elif >=1.21.9 {
 	/*@Inject(method = "getSkin()Lnet/minecraft/world/entity/player/PlayerSkin;", at = @At("RETURN"), cancellable = true, require = 0)
@@ -31,9 +47,14 @@ public abstract class CapeTextureMixin {
 		Object tex = OnlineHooks.capeTexture((AbstractClientPlayer) (Object) this);
 		net.minecraft.world.entity.player.PlayerSkin skin = cir.getReturnValue();
 		if (tex == null || skin == null) return;
-		net.minecraft.core.ClientAsset.ResourceTexture asset = new net.minecraft.core.ClientAsset.ResourceTexture(
-				(net.minecraft.resources.ResourceLocation) tex, (net.minecraft.resources.ResourceLocation) tex);
-		cir.setReturnValue(new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, asset, skin.model(), skin.secure()));
+		if (skin != trsclient$skinIn || tex != trsclient$texIn) {
+			net.minecraft.core.ClientAsset.ResourceTexture asset = new net.minecraft.core.ClientAsset.ResourceTexture(
+					(net.minecraft.resources.ResourceLocation) tex, (net.minecraft.resources.ResourceLocation) tex);
+			trsclient$skinOut = new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, asset, skin.model(), skin.secure());
+			trsclient$skinIn = skin;
+			trsclient$texIn = tex;
+		}
+		cir.setReturnValue((net.minecraft.world.entity.player.PlayerSkin) trsclient$skinOut);
 	}
 	*///?} elif >=1.20.2 {
 	@Inject(method = "getSkin()Lnet/minecraft/client/resources/PlayerSkin;", at = @At("RETURN"), cancellable = true, require = 0)
@@ -41,9 +62,14 @@ public abstract class CapeTextureMixin {
 		Object tex = OnlineHooks.capeTexture((AbstractClientPlayer) (Object) this);
 		net.minecraft.client.resources.PlayerSkin skin = cir.getReturnValue();
 		if (tex == null || skin == null) return;
-		net.minecraft.resources.ResourceLocation id = (net.minecraft.resources.ResourceLocation) tex;
-		cir.setReturnValue(new net.minecraft.client.resources.PlayerSkin(skin.texture(), skin.textureUrl(), id, id,
-				skin.model(), skin.secure()));
+		if (skin != trsclient$skinIn || tex != trsclient$texIn) {
+			net.minecraft.resources.ResourceLocation id = (net.minecraft.resources.ResourceLocation) tex;
+			trsclient$skinOut = new net.minecraft.client.resources.PlayerSkin(skin.texture(), skin.textureUrl(), id, id,
+					skin.model(), skin.secure());
+			trsclient$skinIn = skin;
+			trsclient$texIn = tex;
+		}
+		cir.setReturnValue((net.minecraft.client.resources.PlayerSkin) trsclient$skinOut);
 	}
 	//?} else {
 	/*@Inject(method = "getCloakTextureLocation()Lnet/minecraft/resources/ResourceLocation;", at = @At("HEAD"),

@@ -27,6 +27,8 @@ public final class OnlineFeatures<T> {
 	private final ClothMesh mesh = new ClothMesh();
 	private final dev.theredstonee.trsclient.core.emote.EmoteController emotes;
 	private volatile Thread gameThread;
+	/** Wiederverwendet: Umhang-Einstellungen je Tick (keine Allokation). */
+	private final CapeSettings capeSettings = new CapeSettings();
 
 	public OnlineFeatures(TrsModules modules, TrsOnline online, CapeTextures.Backend<T> backend) {
 		this.modules = modules;
@@ -44,7 +46,7 @@ public final class OnlineFeatures<T> {
 	/**
 	 * Einmal pro Client-Tick (Spiel-Thread): API-Verkehr anstoßen, Texturen aufräumen, Umhänge simulieren.
 	 *
-	 * @param visible UUIDs der Spieler in Tabliste und Sichtweite
+	 * @param visible UUIDs der Spieler in Tabliste und Sichtweite ({@code null} = unverändert, siehe {@link TrsOnline#tick})
 	 * @param samples Zustand der Spieler für die Physik (darf leer sein)
 	 */
 	public void tick(Collection<UUID> visible, List<CapePhysics.Sample> samples) {
@@ -59,7 +61,7 @@ public final class OnlineFeatures<T> {
 		}
 		try {
 			physics.tick(samples, modules.capePhysics.isEnabled(),
-					modules.capeScope.get() == TrsModules.CapeScope.OWN, modules.capeSettings(new CapeSettings()));
+					modules.capeScope.get() == TrsModules.CapeScope.OWN, modules.capeSettings(capeSettings));
 		} catch (RuntimeException e) {
 			physics.clear();
 			online.reportError(e);

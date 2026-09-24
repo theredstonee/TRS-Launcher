@@ -53,7 +53,7 @@ public final class TrsClient implements ClientModInitializer {
 	//? if >=1.17 {
 	public static final Logger LOGGER = LoggerFactory.getLogger("TRS Client");
 	//?} else
-	/*public static final Logger LOGGER = LogManager.getLogger("TRS Client");*/
+	//public static final Logger LOGGER = LogManager.getLogger("TRS Client");
 
 	private static TrsClient instance;
 
@@ -276,7 +276,7 @@ public final class TrsClient implements ClientModInitializer {
 	/** Speichert die Einstellungen (Fehler nur loggen). */
 	public void saveConfig() {
 		try {
-			config.save(modules.registry);
+			config.saveLater(modules.registry);
 		} catch (IOException e) {
 			LOGGER.error("Config konnte nicht gespeichert werden: {}", config.file(), e);
 		}

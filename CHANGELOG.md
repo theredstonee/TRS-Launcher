@@ -16,6 +16,43 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **TRS Client runs smoother.** The HUD is now drawn in one go instead of piece by piece (far fewer draw calls,
+  especially on Minecraft 1.20–1.21.1), “Hide entities behind walls” works in the background and no longer causes
+  stutters, capes, badges and the online features do less work per frame, and saving settings never makes the game
+  wait for the disk. The Colors module needs less work per frame, too.
+- **Dynamic FPS: no AFK limit by default.** Standing still no longer lowers your FPS – that also keeps FPS
+  measurements and recordings honest. The limits in the background and when minimized stay; the AFK limit can
+  still be switched on.
+- **Shader packs:** while a shader pack is active (Iris, Oculus or OptiFine), Colors pauses – the pack does its own
+  color work – and hiding entities behind walls rests, so every shadow stays in place.
+- **Armor display across.** New setting “Orientation”: vertical as before or horizontal – the items in one row with
+  the durability below. The HUD editor sizes and anchors it correctly.
+- **New TRS badge:** a small glowing redstone dust pile in front of TRS players’ names in the tab list and above
+  their heads.
+- The clip keys (F9/F10) never make the game wait for the launcher connection.
+
+### Deutsch
+
+- **TRS Client läuft flüssiger.** Das HUD wird jetzt in einem Rutsch gezeichnet statt Stück für Stück (viel
+  weniger Zeichenaufrufe, vor allem in Minecraft 1.20–1.21.1), „Hinter Wänden ausblenden“ rechnet im Hintergrund und
+  sorgt nicht mehr für Ruckler, Umhänge, Abzeichen und die Online-Funktionen machen weniger Arbeit je Bild, und
+  beim Speichern der Einstellungen wartet das Spiel nie auf die Festplatte. Auch das Modul „Farben“ braucht je Bild
+  weniger Arbeit.
+- **Dynamische FPS: keine AFK-Bremse mehr als Standard.** Wer stillsteht, verliert keine FPS mehr – so bleiben auch
+  FPS-Messungen und Aufnahmen ehrlich. Die Grenzen im Hintergrund und minimiert bleiben; die AFK-Grenze lässt sich
+  weiterhin einschalten.
+- **Shaderpacks:** Solange ein Shaderpack aktiv ist (Iris, Oculus oder OptiFine), pausiert „Farben“ – das Pack
+  färbt selbst – und das Ausblenden hinter Wänden ruht, damit jeder Schatten bleibt.
+- **Rüstungsanzeige quer.** Neue Einstellung „Ausrichtung“: senkrecht wie bisher oder waagerecht – die Gegenstände
+  in einer Zeile, die Haltbarkeit darunter. Der HUD-Editor passt Größe und Ankerung richtig an.
+- **Neues TRS-Abzeichen:** ein kleines, leuchtendes Häufchen Redstone-Staub vor den Namen von TRS-Spielern in der
+  Tabliste und über ihren Köpfen.
+- Die Clip-Tasten (F9/F10) lassen das Spiel nie auf die Verbindung zum Launcher warten.
+
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 
 <!-- banner: accent=#ffc24b motif=/news/0.5.0/banner.png -->

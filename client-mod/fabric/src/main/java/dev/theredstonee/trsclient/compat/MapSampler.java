@@ -40,7 +40,8 @@ public final class MapSampler implements MinimapCache.Source {
 				// Vom obersten Block nach unten, bis etwas eine Kartenfarbe hat (Luft/Glas nicht).
 				for (int steps = 0; steps < 16 && y > minY; steps++) {
 					pos.set(worldX, y - 1, worldZ);
-					BlockState state = level.getBlockState(pos);
+					// Direkt aus dem Chunk (spart je Block die Chunk-Suche der Welt).
+					BlockState state = chunk.getBlockState(pos);
 					color = mapColor(state, level, pos);
 					if (color != 0) break;
 					y--;
@@ -57,7 +58,7 @@ public final class MapSampler implements MinimapCache.Source {
 		//? if >=1.20 {
 		net.minecraft.world.level.material.MapColor color = state.getMapColor(level, pos);
 		//?} else
-		/*net.minecraft.world.level.material.MaterialColor color = state.getMapColor(level, pos);*/
+		//net.minecraft.world.level.material.MaterialColor color = state.getMapColor(level, pos);
 		if (color == null) return 0;
 		int rgb = color.col & 0xFFFFFF;
 		return rgb == 0 ? 0 : rgb;
@@ -70,6 +71,6 @@ public final class MapSampler implements MinimapCache.Source {
 		*///?} elif >=1.17 {
 		return level.getMinBuildHeight();
 		//?} else
-		/*return 0;*/
+		//return 0;
 	}
 }

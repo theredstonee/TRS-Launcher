@@ -83,7 +83,9 @@ public final class LegacyPerf implements GameOptions {
 	private boolean animatedSearched;
 	private List<Object> savedAnimations;
 	private boolean forceUnfocused;
-	private final Blocks blocks = new Blocks();
+	/** Tasten für die AFK-Erkennung – nur ein paar Mal je Sekunde gefragt und nur, wenn die AFK-Grenze an ist. */
+	private boolean anyKeyCached;
+	private long anyKeyAt;
 
 	public long frames;
 	public long particlesRemoved;
@@ -147,6 +149,8 @@ public final class LegacyPerf implements GameOptions {
 				skyReplaced = false;
 				weatherReplaced = false;
 				perf.worldChanged();
+				// Eigener Blockzugriff für den Occlusion-Thread.
+				perf.occlusion().setBlocks(world == null ? null : new Blocks(world));
 			}
 			perf.tick(System.currentTimeMillis(), mc.currentScreen != null);
 			renderHandlers(world);
@@ -165,7 +169,14 @@ public final class LegacyPerf implements GameOptions {
 			Minecraft mc = Minecraft.getMinecraft();
 			boolean focused = Display.isActive() && !forceUnfocused;
 			boolean minimized = !Display.isVisible();
-			int limit = perf.frameLimit(System.currentTimeMillis(), focused, minimized, Mouse.getX(), Mouse.getY(), anyKeyDown(mc));
+			boolean afk = perf.afkActive();
+			long now = System.nanoTime();
+			if (afk && (now - anyKeyAt > 250_000_000L || now < anyKeyAt)) {
+				anyKeyAt = now;
+				anyKeyCached = anyKeyDown(mc);
+			}
+			int limit = perf.frameLimit(System.currentTimeMillis(), focused, minimized, afk ? Mouse.getX() : 0, afk ? Mouse.getY() : 0,
+					afk && anyKeyCached);
 			applyVolume(mc, perf.volume());
 			perf.pacer().pace(limit, new FramePacer.Wake() {
 				@Override
@@ -281,19 +292,22 @@ public final class LegacyPerf implements GameOptions {
 		// Kameraposition des laufenden Bildes (die Ereignis-Werte sind relativ dazu).
 		net.minecraft.client.renderer.entity.RenderManager rm = mc.getRenderManager();
 		double camX = rm.viewerPosX, camY = rm.viewerPosY, camZ = rm.viewerPosZ;
-		blocks.world = Mc.world();
+		// Nur das zuletzt berechnete Ergebnis – die Sichtlinien rechnet ein Hintergrund-Thread.
 		return !perf.occlusion().visible(e.getEntityId(), camX, camY, camZ, box.minX, box.minY, box.minZ, box.maxX, box.maxY,
-				box.maxZ, blocks);
+				box.maxZ);
 	}
 
-	/** Voller, undurchsichtiger Block der Client-Welt. */
+	/** Voller, undurchsichtiger Block der Client-Welt (nur vom Occlusion-Thread benutzt). */
 	private static final class Blocks implements Occlusion.Blocks {
-		WorldClient world;
+		private final WorldClient world;
+
+		Blocks(WorldClient world) {
+			this.world = world;
+		}
 
 		@Override
 		public boolean opaque(int x, int y, int z) {
 			WorldClient w = world;
-			if (w == null) return false;
 			IBlockState state = w.getBlockState(new BlockPos(x, y, z));
 			//? if >=1.9 {
 			/*return state.isOpaqueCube() && state.isNormalCube();

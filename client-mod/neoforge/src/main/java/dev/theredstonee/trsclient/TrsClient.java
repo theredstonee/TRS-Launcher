@@ -307,7 +307,7 @@ public final class TrsClient {
 	/** Speichert die Einstellungen (Fehler nur loggen). */
 	public void saveConfig() {
 		try {
-			config.save(modules.registry);
+			config.saveLater(modules.registry);
 		} catch (IOException e) {
 			LOGGER.error("Config konnte nicht gespeichert werden: {}", config.file(), e);
 		}

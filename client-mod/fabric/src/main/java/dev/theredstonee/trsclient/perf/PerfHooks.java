@@ -42,7 +42,6 @@ public final class PerfHooks {
 	/** Bildzeiten für den Benchmark (nimmt nur während einer Messung auf). */
 	public static final FrameStats FRAME_STATS = new FrameStats();
 	private static final PerfOptions OPTIONS = new PerfOptions();
-	private static final WorldBlocks BLOCKS = new WorldBlocks();
 	private static final FramePacer.Wake WAKE = new FramePacer.Wake() {
 		@Override
 		public boolean stillLimited() {
@@ -60,6 +59,13 @@ public final class PerfHooks {
 	private static Object lastLevel;
 	/** Nur für den Autotest: Fenster gilt als im Hintergrund. */
 	private static boolean forceUnfocused;
+	/** Fensterzustand „minimiert“ (vom System) – höchstens alle {@link #WINDOW_POLL_NS} neu gefragt. */
+	private static boolean minimizedCached;
+	private static long minimizedAt;
+	/** Tasten für die AFK-Erkennung – ebenso gedrosselt. */
+	private static boolean anyKeyCached;
+	private static long anyKeyAt;
+	private static final long WINDOW_POLL_NS = 250_000_000L;
 
 	// Aufrufzähler (Nachweis im Autotest, praktisch kostenlos)
 	public static long frames;
@@ -100,6 +106,15 @@ public final class PerfHooks {
 
 	public static Performance get() {
 		return perf;
+	}
+
+	/**
+	 * HUD gesammelt zeichnen (1.20–1.21.1)? Nicht, wenn ImmediatelyFast da ist – das sammelt das HUD schon selbst,
+	 * doppelt gesammelt würde nur früher geleert.
+	 */
+	public static boolean batchHud() {
+		Performance p = perf;
+		return p == null || !p.compat().has(dev.theredstonee.trsclient.core.perf.PerfMod.IMMEDIATELY_FAST);
 	}
 
 	/** Leistungs-Funktionen, die es in dieser Minecraft-Version gibt. */
@@ -144,6 +159,8 @@ public final class PerfHooks {
 			if (mc.level != lastLevel) {
 				lastLevel = mc.level;
 				p.worldChanged();
+				// Eigener Blockzugriff für den Occlusion-Thread (eigene Position, nie mit dem Render-Thread geteilt).
+				p.occlusion().setBlocks(mc.level == null ? null : new WorldBlocks(mc.level));
 			}
 			p.tick(System.currentTimeMillis(), Mc.screen() != null);
 			if (p.particleLimitActive() && mc.particleEngine != null) particleCount = parseCount(mc.particleEngine.countParticles());
@@ -171,9 +188,20 @@ public final class PerfHooks {
 		try {
 			Minecraft mc = Minecraft.getInstance();
 			boolean focused = mc.isWindowActive() && !forceUnfocused;
-			boolean minimized = liveMinimized();
-			int limit = p.frameLimit(System.currentTimeMillis(), focused, minimized, mc.mouseHandler.xpos(), mc.mouseHandler.ypos(),
-					anyKeyDown(mc));
+			long now = System.nanoTime();
+			// Fensterzustand und Tasten nur ein paar Mal je Sekunde (jede Abfrage kostet Zeit im Bild);
+			// Maus und Tasten braucht es überhaupt nur für die AFK-Grenze.
+			if (now - minimizedAt > WINDOW_POLL_NS || now < minimizedAt) {
+				minimizedAt = now;
+				minimizedCached = liveMinimized();
+			}
+			boolean afk = p.afkActive();
+			if (afk && (now - anyKeyAt > WINDOW_POLL_NS || now < anyKeyAt)) {
+				anyKeyAt = now;
+				anyKeyCached = anyKeyDown(mc);
+			}
+			int limit = p.frameLimit(System.currentTimeMillis(), focused, minimizedCached, afk ? mc.mouseHandler.xpos() : 0,
+					afk ? mc.mouseHandler.ypos() : 0, afk && anyKeyCached);
 			applyVolume(mc, p.volume());
 			p.pacer().pace(limit, WAKE);
 		} catch (RuntimeException | LinkageError e) {
@@ -292,7 +320,7 @@ public final class PerfHooks {
 			//? if >=1.17 {
 			if (e.isCurrentlyGlowing()) return false;
 			//?} else
-			/*if (e.isGlowing()) return false;*/
+			//if (e.isGlowing()) return false;
 			double dx = ex(e) - camX, dy = ey(e) - camY, dz = ez(e) - camZ;
 			double distSq = dx * dx + dy * dy + dz * dz;
 			Performance.EntityKind kind = e instanceof Player ? Performance.EntityKind.PLAYER
@@ -306,9 +334,9 @@ public final class PerfHooks {
 			AABB box = e.getBoundingBox();
 			// Riesen (Drache, Wither-Boss-Hitbox, Schiffe aus Mods) nie verstecken.
 			if (box.maxX - box.minX > 6 || box.maxY - box.minY > 6 || box.maxZ - box.minZ > 6) return false;
-			BLOCKS.level = mc.level;
+			// Nur das zuletzt berechnete Ergebnis – die Sichtlinien rechnet ein Hintergrund-Thread.
 			boolean visible = p.occlusion().visible(e.getId(), camX, camY, camZ, box.minX, box.minY, box.minZ, box.maxX, box.maxY,
-					box.maxZ, BLOCKS);
+					box.maxZ);
 			if (!visible) entitiesCulled++;
 			return !visible;
 		} catch (RuntimeException | LinkageError ex) {
@@ -384,15 +412,21 @@ public final class PerfHooks {
 		return p != null && p.active(feature);
 	}
 
-	/** Voller, undurchsichtiger Block der Client-Welt (für „hinter Wänden“). */
+	/**
+	 * Voller, undurchsichtiger Block der Client-Welt (für „hinter Wänden“). Wird nur vom Occlusion-Thread benutzt:
+	 * liest den Block-Zustand aus den geladenen Chunks (fehlt ein Chunk, gilt Luft); Fehler fängt der Thread ab.
+	 */
 	private static final class WorldBlocks implements Occlusion.Blocks {
 		private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-		Level level;
+		private final Level level;
+
+		WorldBlocks(Level level) {
+			this.level = level;
+		}
 
 		@Override
 		public boolean opaque(int x, int y, int z) {
 			Level l = level;
-			if (l == null) return false;
 			pos.set(x, y, z);
 			BlockState state = l.getBlockState(pos);
 			return state.canOcclude() && state.isRedstoneConductor(l, pos);

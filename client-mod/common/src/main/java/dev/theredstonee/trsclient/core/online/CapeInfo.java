@@ -14,6 +14,8 @@ public final class CapeInfo {
 	public final int frames;
 	/** Dauer je Bild in ms; 0 = statisch. */
 	public final int frameTimeMs;
+	/** Einmal gebaut: wird je Bild und Spieler nachgeschlagen. */
+	private final String key;
 
 	public CapeInfo(String id, String url, int scale, int frames, int frameTimeMs) {
 		this.id = id;
@@ -21,6 +23,7 @@ public final class CapeInfo {
 		this.scale = scale;
 		this.frames = frames;
 		this.frameTimeMs = frameTimeMs;
+		this.key = id + "|" + url;
 	}
 
 	/** Prüft die Werte der API streng; ungültig → null (dann Vanilla). */
@@ -51,7 +54,7 @@ public final class CapeInfo {
 
 	/** Schlüssel für Cache/Texturen: gleicher Umhang + gleicher Inhalt (?v=…) → gleicher Schlüssel. */
 	public String key() {
-		return id + "|" + url;
+		return key;
 	}
 
 	@Override

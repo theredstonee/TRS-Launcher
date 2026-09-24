@@ -29,6 +29,8 @@ public final class CapePhysics {
 	static final int FINE_ROWS = 16;
 	static final int COARSE_COLS = 5;
 	static final int COARSE_ROWS = 8;
+	/** Teilschritte je Tick für grobe (ferne) Umhänge. */
+	static final int COARSE_SUBSTEPS = 2;
 
 	/** Zustand eines Spielers in diesem Tick (vom Loader ausgefüllt). */
 	public static final class Sample {
@@ -66,7 +68,13 @@ public final class CapePhysics {
 		boolean seen;
 	}
 
+	/** Eigener Spieler zuerst, dann nach Entfernung. */
+	private static final java.util.Comparator<Sample> ORDER = (a, b) -> {
+		if (a.self != b.self) return a.self ? -1 : 1;
+		return Double.compare(a.distanceSq, b.distanceSq);
+	};
 	private final Map<Integer, Body> bodies = new HashMap<>();
+	private final List<Sample> wanted = new ArrayList<>();
 	private final ClothSim.Motion motion = new ClothSim.Motion();
 	private final ClothSim.Params params = new ClothSim.Params();
 	private CapeSettings settings = new CapeSettings();
@@ -94,7 +102,8 @@ public final class CapePhysics {
 		double near = settings.nearBlocks();
 		int maxFine = settings.maxFine();
 		int maxTotal = settings.maxTotal();
-		List<Sample> wanted = new ArrayList<>();
+		List<Sample> wanted = this.wanted;
+		wanted.clear();
 		for (Sample s : samples) {
 			if (!s.hasCape || s.special) continue;
 			if (ownOnly && !s.self) continue;
@@ -102,10 +111,7 @@ public final class CapePhysics {
 			wanted.add(s);
 		}
 		// Eigener Spieler zuerst, dann nach Entfernung.
-		Collections.sort(wanted, (a, b) -> {
-			if (a.self != b.self) return a.self ? -1 : 1;
-			return Double.compare(a.distanceSq, b.distanceSq);
-		});
+		if (wanted.size() > 1) Collections.sort(wanted, ORDER);
 		for (Body b : bodies.values()) b.seen = false;
 		int fine = 0;
 		int total = 0;
@@ -168,7 +174,8 @@ public final class CapePhysics {
 			motion.dz -= 0.22f * 16f;
 			motion.legSwing = 0.6f;
 		}
-		body.sim.tick(motion, params);
+		// Grobe (ferne) Umhänge mit halb so vielen Teilschritten – aus der Entfernung sieht man keinen Unterschied.
+		body.sim.tick(motion, params, body.fine || s.self ? ClothSim.SUBSTEPS : COARSE_SUBSTEPS);
 		if (!body.sim.healthy()) body.sim.reset(motion.tilt);
 		body.x = s.x;
 		body.y = s.y;

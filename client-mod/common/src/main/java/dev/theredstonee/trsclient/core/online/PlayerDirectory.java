@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,6 +40,8 @@ public final class PlayerDirectory {
 	}
 
 	private final Map<String, Entry> entries = new ConcurrentHashMap<>();
+	/** Dieselben Einträge nach UUID – für {@link #get(UUID)} aus dem Render-Thread ohne Text-Umwandlung. */
+	private final Map<UUID, Entry> byId = new ConcurrentHashMap<>();
 	private Set<String> visible = new HashSet<>();
 	private long lastRequest = Long.MIN_VALUE / 2;
 	private long blockedUntil;
@@ -53,8 +56,7 @@ public final class PlayerDirectory {
 			next.add(uuid);
 			Entry e = entries.get(uuid);
 			if (e == null) {
-				e = new Entry();
-				entries.put(uuid, e);
+				e = add(uuid);
 			} else if (!visible.contains(uuid) && now - e.fetchedAt >= REJOIN_MS) {
 				e.stale = true;
 			}
@@ -91,9 +93,8 @@ public final class PlayerDirectory {
 		for (String uuid : batch) {
 			Entry e = entries.get(uuid);
 			if (e == null) {
-				e = new Entry();
+				e = add(uuid);
 				e.lastSeen = now;
-				entries.put(uuid, e);
 			}
 			PlayerInfo info = results.get(uuid);
 			e.info = info == null ? PlayerInfo.NONE : info;
@@ -114,6 +115,21 @@ public final class PlayerDirectory {
 		lastRequest = Long.MIN_VALUE / 2;
 	}
 
+	private Entry add(String uuid) {
+		Entry e = new Entry();
+		entries.put(uuid, e);
+		UUID id = Uuids.toUuid(uuid);
+		if (id != null) byId.put(id, e);
+		return e;
+	}
+
+	/** Infos zu einem Spieler (aus jedem Thread, ohne Allokation); unbekannt → {@link PlayerInfo#NONE}. */
+	public PlayerInfo get(UUID uuid) {
+		if (uuid == null) return PlayerInfo.NONE;
+		Entry e = byId.get(uuid);
+		return e == null ? PlayerInfo.NONE : e.info;
+	}
+
 	/** Infos zu einem Spieler; unbekannt → {@link PlayerInfo#NONE}. */
 	public PlayerInfo get(String uuid) {
 		if (uuid == null) return PlayerInfo.NONE;
@@ -130,6 +146,7 @@ public final class PlayerDirectory {
 	/** Alles vergessen (Konto gewechselt, API abgeschaltet). */
 	public void clear() {
 		entries.clear();
+		byId.clear();
 		visible = new HashSet<>();
 		inFlight = false;
 		blockedUntil = 0;
@@ -140,7 +157,11 @@ public final class PlayerDirectory {
 		Iterator<Map.Entry<String, Entry>> it = entries.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry<String, Entry> e = it.next();
-			if (!visible.contains(e.getKey()) && now - e.getValue().lastSeen > FORGET_MS) it.remove();
+			if (!visible.contains(e.getKey()) && now - e.getValue().lastSeen > FORGET_MS) {
+				it.remove();
+				UUID id = Uuids.toUuid(e.getKey());
+				if (id != null) byId.remove(id);
+			}
 		}
 	}
 

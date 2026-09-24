@@ -65,14 +65,34 @@ public final class WaypointOverlay {
 			// Markierung (kleine Raute) + Name
 			g.fill(x - 2, y - 2, x + 3, y + 3, color);
 			g.outline(x - 3, y - 3, 7, 7, 0xC0000000);
-			String label = waypoint.name;
-			if (modules.waypointDistance.get()) label += "  " + Projection.distanceLabel(distance);
-			int tw = font.width(label);
+			String label = label(waypoint, distance, font);
+			int tw = labelWidth;
 			int tx = x - tw / 2;
 			int ty = y - 14;
 			g.fill(tx - 2, ty - 2, tx + tw + 2, ty + 9, Brand.HUD_BG);
 			g.text(font, label, tx, ty, color, false);
 		}
+	}
+
+	/** Beschriftung je Wegpunkt: nur neu gebaut, wenn sich Name, angezeigte Entfernung oder Sprache ändern. */
+	private final java.util.IdentityHashMap<Waypoint, Object[]> labels = new java.util.IdentityHashMap<>();
+	private int labelWidth;
+
+	private String label(Waypoint waypoint, double distance, Font font) {
+		boolean withDistance = modules.waypointDistance.get();
+		// Angezeigt wird „123 m“ bzw. „1,2 km“ – der Schlüssel ändert sich genau dann, wenn sich der Text ändert.
+		long key = !withDistance ? -1 : (distance >= 1000 ? 1_000_000L + Math.round(distance / 100.0) : Math.round(distance));
+		int gen = dev.theredstonee.trsclient.core.i18n.I18n.generation();
+		Object[] cached = labels.get(waypoint);
+		if (cached != null && (Long) cached[0] == key && cached[1] == waypoint.name && (Integer) cached[4] == gen) {
+			labelWidth = (Integer) cached[3];
+			return (String) cached[2];
+		}
+		String text = withDistance ? waypoint.name + "  " + Projection.distanceLabel(distance) : waypoint.name;
+		labelWidth = font.width(text);
+		if (labels.size() > 256) labels.clear();
+		labels.put(waypoint, new Object[]{key, waypoint.name, text, labelWidth, gen});
+		return text;
 	}
 
 	/** Lichtsäule als Kette kleiner Rechtecke (in der Projektion sind senkrechte Linien schräg). */

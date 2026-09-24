@@ -38,14 +38,29 @@ public final class ClipPanel {
 		return modules.clipsBufferIcon.get();
 	}
 
-	/** Zeile oben: Aufnahme oder Puffer; null = keine. */
+	/** Zeile oben: Aufnahme oder Puffer; null = keine. Je Bild mehrmals gefragt – nur bei Änderung neu gebaut. */
 	String statusLine(boolean preview, long now) {
 		ClipStatus s = clips().status();
-		if (s.recording) return I18n.tr("hud.clips.rec", ClipNotice.clock(s.recordingMillis(now)));
-		if (s.buffer && bufferIcon()) return I18n.tr("hud.clips.buffer", ClipNotice.duration(s.clipSeconds));
-		if (preview) return I18n.tr("hud.clips.rec", "0:42");
-		return null;
+		long key;
+		if (s.recording) key = 1L << 40 | (s.recordingMillis(now) / 1000);
+		else if (s.buffer && bufferIcon()) key = 2L << 40 | s.clipSeconds;
+		else if (preview) key = 3L << 40;
+		else return null;
+		int gen = I18n.generation();
+		if (key == lineKey && gen == lineGeneration && lineText != null) return lineText;
+		String text;
+		if (s.recording) text = I18n.tr("hud.clips.rec", ClipNotice.clock(s.recordingMillis(now)));
+		else if (s.buffer && bufferIcon()) text = I18n.tr("hud.clips.buffer", ClipNotice.duration(s.clipSeconds));
+		else text = I18n.tr("hud.clips.rec", "0:42");
+		lineKey = key;
+		lineGeneration = gen;
+		lineText = text;
+		return text;
 	}
+
+	private long lineKey = -1;
+	private int lineGeneration = -1;
+	private String lineText;
 
 	private boolean recordingLook(boolean preview) {
 		ClipStatus s = clips().status();

@@ -119,6 +119,21 @@ public final class Benchmark {
 				modules.colors.setEnabled(false);
 				modules.colorSaturation.set(100);
 				rotate = false;
+				// Rüstungsanzeige quer: HUD und HUD-Editor als Bild (Größe/Ankerung prüfen)
+				modules.armor.setEnabled(true);
+				modules.armorLayout.set(dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.HORIZONTAL);
+				wait = 20;
+				return true;
+			}
+			case 5:
+				actions.shot("trsclient-armor-horizontal");
+				dev.theredstonee.trsclient.compat.Mc.setScreen(new dev.theredstonee.trsclient.screen.HudEditorScreen(null).selectFirst());
+				wait = 20;
+				return true;
+			case 6: {
+				actions.shot("trsclient-armor-horizontal-editor");
+				dev.theredstonee.trsclient.compat.Mc.setScreen(null);
+				modules.armorLayout.set(dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.VERTICAL);
 				PerfOptions options = new PerfOptions();
 				if (oldVsync != GameOptions.NONE) options.set(GameOptions.Opt.VSYNC, oldVsync);
 				if (oldLimit > 0) setFramerateLimit(mc, oldLimit);

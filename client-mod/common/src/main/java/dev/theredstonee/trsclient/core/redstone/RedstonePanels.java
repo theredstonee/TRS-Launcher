@@ -70,14 +70,25 @@ public final class RedstonePanels {
 			return modules.redstoneSignalDetails.get();
 		}
 
+		/** Breite je Tick nur einmal messen (Sichtbarkeit, Ankerung und Zeichnen fragen mehrmals je Bild). */
+		private long widthTick = -1;
+		private int widthKey = -1;
+		private int widthValue;
+
 		public int width(TextWidth tw, boolean preview) {
+			int key = (preview ? 1 : 0) | (name() ? 2 : 0) | (details() ? 4 : 0) | (bar() ? 8 : 0) | (I18n.generation() << 4);
+			long tick = tools.tickCount();
+			if (tick == widthTick && key == widthKey) return widthValue;
 			RedstoneReadout r = readout(preview);
 			int w = signalRowWidth(tw, r);
 			if (name()) w = Math.max(w, tw.width(r.name));
 			if (details()) {
 				for (int i = 0; i < r.details.size(); i++) w = Math.max(w, tw.width(r.details.get(i)));
 			}
-			return w + PAD_X * 2 + 2;
+			widthTick = tick;
+			widthKey = key;
+			widthValue = w + PAD_X * 2 + 2;
+			return widthValue;
 		}
 
 		public int height(boolean preview) {
