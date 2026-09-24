@@ -23,6 +23,11 @@ public final class GfxCanvas implements Canvas {
 		return INSTANCE;
 	}
 
+	/** Instanz des laufenden Bilds (z. B. für die Spieler-Vorschau im Menü). */
+	public static GfxCanvas current() {
+		return INSTANCE;
+	}
+
 	/** Darunterliegende Zeichenfläche (für HUD-Elemente, die Minecraft-Dinge zeichnen). */
 	public Gfx gfx() {
 		return g;

@@ -202,7 +202,7 @@ public final class OnlineHooks {
 			body.translateAndRotate(pose);
 			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(
 					(net.minecraft.resources.Identifier) texture), (last, vc) ->
-					features.mesh().emit(sim, partial, sink(vc, last, light, zOff)));
+					features.emitCape(sim, partial, sink(vc, last, light, zOff)));
 			return true;
 		} catch (RuntimeException e) {
 			features.online().reportError(e);
@@ -221,7 +221,7 @@ public final class OnlineHooks {
 			body.translateAndRotate(pose);
 			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.RenderType.entitySolid(
 					(net.minecraft.resources.ResourceLocation) texture), (last, vc) ->
-					features.mesh().emit(sim, partial, sink(vc, last, light, zOff)));
+					features.emitCape(sim, partial, sink(vc, last, light, zOff)));
 			return true;
 		} catch (RuntimeException e) {
 			features.online().reportError(e);
@@ -239,7 +239,7 @@ public final class OnlineHooks {
 			VertexConsumer vc = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(
 				(net.minecraft.resources.ResourceLocation) texture));
 			body.translateAndRotate(pose);
-			features.mesh().emit(sim, partial, sink(vc, pose.last(), light, zOffset(armor)));
+			features.emitCape(sim, partial, sink(vc, pose.last(), light, zOffset(armor)));
 			return true;
 		} catch (RuntimeException e) {
 			features.online().reportError(e);

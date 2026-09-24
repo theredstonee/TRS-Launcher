@@ -2,6 +2,7 @@ package dev.theredstonee.trsclient.core.ui.menu;
 
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.ui.Canvas;
 
 import java.util.List;
 
@@ -60,4 +61,33 @@ public interface MenuHost {
 
 	/** Läuft gerade eine Welt (dann bleibt der HUD-Editor durchsichtig)? */
 	boolean inWorld();
+
+	/** Vorschau des eigenen Spielers geht. */
+	int PREVIEW_OK = 0;
+	/** Diese Minecraft-Version kann den Spieler im Menü nicht zeichnen. */
+	int PREVIEW_UNSUPPORTED = 1;
+	/** Kein Spieler da (Titelbildschirm). */
+	int PREVIEW_NO_PLAYER = 2;
+
+	/** Kann die Live-Vorschau des eigenen Spielers (Umhang-Physik) gerade gezeichnet werden? */
+	default int playerPreviewState() {
+		return PREVIEW_UNSUPPORTED;
+	}
+
+	/** Trägt der eigene Spieler einen sichtbaren Umhang (sonst Hinweis unter der Vorschau)? */
+	default boolean previewHasCape() {
+		return true;
+	}
+
+	/**
+	 * Zeichnet den eigenen Spieler (mit simuliertem Umhang) in das Rechteck, um {@code yawDegrees} um die
+	 * senkrechte Achse gedreht (0 = Blick zum Betrachter, 180 = Rücken). Der Canvas ist vorher geleert.
+	 */
+	default void drawPlayerPreview(Canvas c, int x, int y, int w, int h, float yawDegrees) {
+	}
+
+	/** Die Vorschau zeigt gerade „gehen“ (Umhang weht wie beim Laufen)? */
+	default boolean previewWalking() {
+		return false;
+	}
 }

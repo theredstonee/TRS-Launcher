@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.online;
 
 import dev.theredstonee.trsclient.core.cape.CapePhysics;
+import dev.theredstonee.trsclient.core.cape.CapeSettings;
 import dev.theredstonee.trsclient.core.cape.CapeTextures;
 import dev.theredstonee.trsclient.core.cape.ClothMesh;
 import dev.theredstonee.trsclient.core.cape.ClothSim;
@@ -58,8 +59,7 @@ public final class OnlineFeatures<T> {
 		}
 		try {
 			physics.tick(samples, modules.capePhysics.isEnabled(),
-					modules.capeScope.get() == TrsModules.CapeScope.OWN,
-					(float) (modules.capeStrength.get() / 100.0), (float) (modules.capeWind.get() / 100.0));
+					modules.capeScope.get() == TrsModules.CapeScope.OWN, modules.capeSettings(new CapeSettings()));
 		} catch (RuntimeException e) {
 			physics.clear();
 			online.reportError(e);
@@ -94,6 +94,13 @@ public final class OnlineFeatures<T> {
 	public ClothSim sim(int entityId) {
 		if (!modules.capePhysics.isEnabled()) return null;
 		return physics.sim(entityId);
+	}
+
+	/**
+	 * Zeichnet den simulierten Umhang im eingestellten Stil (glatt oder Stufen) – für alle Loader gleich.
+	 */
+	public void emitCape(ClothSim sim, float partial, ClothMesh.QuadSink sink) {
+		mesh.emit(sim, partial, physics.blocky(), sink);
 	}
 
 	/** Gemeinsamer Mesh-Baukasten (nur Render-Thread). */

@@ -72,7 +72,7 @@ public final class ClothCapeLayer implements LayerRenderer<AbstractClientPlayer>
 		final WorldRenderer buffer = tessellator.getWorldRenderer();
 		buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_NORMAL);
 		try {
-			mesh.emit(sim, partial, new ClothMesh.QuadSink() {
+			mesh.emit(sim, partial, LegacyOnline.features().physics().blocky(), new ClothMesh.QuadSink() {
 				@Override
 				public void vertex(float x, float y, float z, float u, float v, float nx, float ny, float nz) {
 					buffer.pos(x, y, z + zOff).tex(u, v).normal(nx, ny, nz).endVertex();

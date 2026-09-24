@@ -27,6 +27,122 @@ public final class ClothMesh {
 	private final float[] ns = new float[12];
 	private final int[] ids = new int[4];
 
+	/**
+	 * Zeichnet den Umhang im gewählten Stil: {@code blocky} = jede Reihe ein eigener flacher Quader
+	 * (Stufen wie beim Vanilla-Umhang), sonst glatter Stoff.
+	 */
+	public void emit(ClothSim sim, float partial, boolean blocky, QuadSink sink) {
+		if (blocky) emitBlocky(sim, partial, sink);
+		else emit(sim, partial, sink);
+	}
+
+	/**
+	 * Stufen-Stil: je Reihe ein Quader aus den Eckpunkten der Reihe (flache Normale), mit Außen-,
+	 * Innen-, Seiten-, Ober- und Unterseite. Knickt der Umhang, stehen die Kanten wie Stufen vor.
+	 */
+	public void emitBlocky(ClothSim sim, float partial, QuadSink sink) {
+		int w = sim.cols + 1;
+		int h = sim.rows + 1;
+		int n = w * h;
+		if (pos.length != n * 3) {
+			pos = new float[n * 3];
+			nrm = new float[n * 3];
+		}
+		sim.positions(partial, pos);
+		float t = ClothSim.HALF_THICKNESS;
+		int cols = sim.cols;
+		int rows = sim.rows;
+		for (int j = 0; j < rows; j++) {
+			int a = j * w;
+			int b = j * w + cols;
+			int c = (j + 1) * w + cols;
+			int d = (j + 1) * w;
+			// quer (a → b, x fällt) und längs (a → d, nach unten), je über beide Kanten gemittelt
+			float txx = (pos[b * 3] - pos[a * 3] + pos[c * 3] - pos[d * 3]) * 0.5f;
+			float txy = (pos[b * 3 + 1] - pos[a * 3 + 1] + pos[c * 3 + 1] - pos[d * 3 + 1]) * 0.5f;
+			float txz = (pos[b * 3 + 2] - pos[a * 3 + 2] + pos[c * 3 + 2] - pos[d * 3 + 2]) * 0.5f;
+			float tyx = (pos[d * 3] - pos[a * 3] + pos[c * 3] - pos[b * 3]) * 0.5f;
+			float tyy = (pos[d * 3 + 1] - pos[a * 3 + 1] + pos[c * 3 + 1] - pos[b * 3 + 1]) * 0.5f;
+			float tyz = (pos[d * 3 + 2] - pos[a * 3 + 2] + pos[c * 3 + 2] - pos[b * 3 + 2]) * 0.5f;
+			float nx = tyy * txz - tyz * txy;
+			float ny = tyz * txx - tyx * txz;
+			float nz = tyx * txy - tyy * txx;
+			float len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+			if (len < 1e-6f) {
+				nx = 0f;
+				ny = 0f;
+				nz = 1f;
+			} else {
+				nx /= len;
+				ny /= len;
+				nz /= len;
+			}
+			float lx = (float) Math.sqrt(txx * txx + txy * txy + txz * txz);
+			float ly = (float) Math.sqrt(tyx * tyx + tyy * tyy + tyz * tyz);
+			if (lx < 1e-6f || ly < 1e-6f) continue;
+			txx /= lx;
+			txy /= lx;
+			txz /= lx;
+			tyx /= ly;
+			tyy /= ly;
+			tyz /= ly;
+			float v0 = 1f + 16f * j / rows;
+			float v1 = 1f + 16f * (j + 1) / rows;
+			// außen / innen
+			box(a, b, c, d, t, t, t, t, nx, ny, nz);
+			setUv(1f, v0, 11f, v0, 11f, v1, 1f, v1);
+			put(sink, q, uvq, fill(nx, ny, nz), nx, ny, nz);
+			box(a, b, c, d, -t, -t, -t, -t, nx, ny, nz);
+			setUv(22f, v0, 12f, v0, 12f, v1, 22f, v1);
+			put(sink, q, uvq, fill(-nx, -ny, -nz), -nx, -ny, -nz);
+			// linker Rand (i = 0, zeigt gegen die Querrichtung) und rechter Rand
+			box(a, d, d, a, t, t, -t, -t, nx, ny, nz);
+			setUv(0f, v0, 0f, v1, 1f, v1, 1f, v0);
+			put(sink, q, uvq, fill(-txx, -txy, -txz), -txx, -txy, -txz);
+			box(b, c, c, b, t, t, -t, -t, nx, ny, nz);
+			setUv(11f, v0, 11f, v1, 12f, v1, 12f, v0);
+			put(sink, q, uvq, fill(txx, txy, txz), txx, txy, txz);
+			// Oberseite (gegen die Längsrichtung) und Unterseite dieser Stufe
+			box(a, b, b, a, t, t, -t, -t, nx, ny, nz);
+			setUv(1f, 0f, 11f, 0f, 11f, 1f, 1f, 1f);
+			put(sink, q, uvq, fill(-tyx, -tyy, -tyz), -tyx, -tyy, -tyz);
+			box(d, c, c, d, t, t, -t, -t, nx, ny, nz);
+			setUv(11f, 0f, 21f, 0f, 21f, 1f, 11f, 1f);
+			put(sink, q, uvq, fill(tyx, tyy, tyz), tyx, tyy, tyz);
+		}
+	}
+
+	/** Vier Ecken aus Punkten, je um {@code o}·(flache Normale) verschoben → {@link #q}. */
+	private void box(int p0, int p1, int p2, int p3, float o0, float o1, float o2, float o3,
+			float nx, float ny, float nz) {
+		ids[0] = p0;
+		ids[1] = p1;
+		ids[2] = p2;
+		ids[3] = p3;
+		float[] off = ns;
+		off[0] = o0;
+		off[1] = o1;
+		off[2] = o2;
+		off[3] = o3;
+		for (int k = 0; k < 4; k++) {
+			int p = ids[k] * 3;
+			float o = off[k];
+			q[k * 3] = pos[p] + nx * o;
+			q[k * 3 + 1] = pos[p + 1] + ny * o;
+			q[k * 3 + 2] = pos[p + 2] + nz * o;
+		}
+	}
+
+	/** Gleiche Normale für alle vier Ecken → {@link #ns}. */
+	private float[] fill(float nx, float ny, float nz) {
+		for (int k = 0; k < 4; k++) {
+			ns[k * 3] = nx;
+			ns[k * 3 + 1] = ny;
+			ns[k * 3 + 2] = nz;
+		}
+		return ns;
+	}
+
 	/** Zeichnet den Umhang (Interpolation {@code partial} zwischen den letzten Ticks). */
 	public void emit(ClothSim sim, float partial, QuadSink sink) {
 		int w = sim.cols + 1;

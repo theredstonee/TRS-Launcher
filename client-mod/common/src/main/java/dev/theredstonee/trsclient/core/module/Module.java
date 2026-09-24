@@ -23,6 +23,8 @@ public class Module {
 	private Category category;
 	/** Symbol-ID (siehe core.ui.Icons); null = Symbol der Kategorie. */
 	private String icon;
+	/** Wird zusätzlich zu den HUD-Modulen in den Profilen gespeichert (z. B. Umhang-Physik, Farben). */
+	private boolean profiled;
 
 	public Module(String id, String name, String description, boolean defaultEnabled) {
 		this.id = id;
@@ -83,6 +85,17 @@ public class Module {
 
 	public boolean isHud() {
 		return false;
+	}
+
+	/** Gehört der Zustand dieses Moduls zu den Profilen? (HUD-Module immer.) */
+	public boolean inProfiles() {
+		return profiled || isHud();
+	}
+
+	/** Speichert dieses Modul zusätzlich in den Profilen (verkettbar). */
+	public Module profiled() {
+		this.profiled = true;
+		return this;
 	}
 
 	/** Reiter im Menü. */

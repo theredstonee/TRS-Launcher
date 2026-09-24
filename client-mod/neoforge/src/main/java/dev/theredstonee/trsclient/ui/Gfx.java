@@ -39,6 +39,11 @@ public final class Gfx {
 	private Gfx() {
 	}
 
+	/** Minecrafts Zeichenobjekt dieses Bilds (GuiGraphics/GuiGraphicsExtractor; PoseStack bis 1.19.4; sonst null). */
+	public Object raw() {
+		return g;
+	}
+
 	public int width() {
 		return g.guiWidth();
 	}

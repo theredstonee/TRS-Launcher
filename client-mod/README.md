@@ -54,7 +54,8 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Wegpunkte | Own markers per world/server (`config/trsclient-waypoints.json`): name, colour, in-world label with distance and light column, show/hide, automatic death waypoint |
 | Minimap | Top-down map of the loaded chunks (map colours, height shading), rotating or north-up, zoom, waypoints, coordinates. Player dots are off by default and only ever show players the game already knows (normal render range) – no radar, no cave mode |
 | TRS-Online-Funktionen | TRS badge (a pixel redstone block) in front of the names of TRS users in the tab list and on name tags, TRS capes (own and other players', HD and animated), in-game presence for friends. Talks to the TRS API (see below); switchable as a whole, per badge place and for capes |
-| Umhang-Physik | Every rendered cape (Mojang, OptiFine, TRS, own and other players') moves like cloth instead of a rigid plank: swings when walking, turning, jumping and falling, rests on the back and bends at the hips when sneaking. Settings: *Stärke*, *Wind*, *Für* (nur eigener / alle Spieler). Elytras stay vanilla |
+| Umhang-Physik | Every rendered cape (Mojang, OptiFine, TRS, own and other players') moves like cloth instead of a rigid plank: swings when walking, turning, jumping and falling, rests on the back and bends at the hips when sneaking. Settings like WaveyCapes: *Stil* (glatt / blockig = vanilla-like steps), *Wind* (aus / Wellen / Böen) + *Windstärke*, *Bewegung* (Vanilla / schwingend / Dungeons = calm and floaty), *Schwerkraft*, *Anhebung beim Laufen*, *Steifheit*, *Detailstufe* (grid size, range and number of simulated capes), *Für* (nur eigener / alle Spieler). The settings page shows a live preview of your own player (turns by itself, drag to turn; alternates standing/walking) and a *Zurücksetzen* button; the settings are part of the HUD profiles. Defaults = the original behaviour. Elytras stay vanilla |
+| Farben | Colour grading of the game image: *Sättigung* (0–200 %), *Kontrast*, *Helligkeit*, *Dynamik* (vibrance) and *Farbtemperatur*, applied right after the world and hand are drawn – HUD and menus keep their colours. Off by default, part of the HUD profiles |
 | Emotes | Hold **G** (rebindable in the vanilla controls) for the emote wheel in the redstone style, point at an emote with the mouse, release to play it – other TRS players see it too. All 11 emotes of the TRS API (Winken, Klatschen, Jubeln, Verbeugen, Facepalm, Schulterzucken, Daumen hoch, Tanzen, Salutieren, Luftgitarre, Redstone-Tanz) are animated; locked ones are shown dark with a lock. Settings: *Kamera beim eigenen Emote* (unverändert / 3. Person von hinten / von vorn), *Emotes anderer Spieler zeigen* |
 | Signalstärke *(Redstone)* | Look at dust, a repeater, comparator, piston, lamp, observer, lever, button, plate, daylight detector, target, door, dispenser, hopper … → HUD panel with the block name, signal strength 0–15 as a 15-segment bar + number, repeater delay (and "locked"), comparator mode and **output** (recomputed from its inputs – the client never receives it), piston extended/retracted, the input strength of consumers, and the comparator output of containers you have opened (the client only knows a chest's content while it is open; otherwise it is left out) |
 | Signal-Overlay *(Redstone)* | Signal strength as a number above every piece of redstone dust within 4–16 blocks, grey (0) → bright red (15), smaller further away. Toggle key **F6** (F8 on Forge 1.7.10/1.8.9, where F6/F7 are the stream keys). Only loaded chunks, by default only dust in sight (line-of-sight check), cached: a budget of 4 096 block reads per tick searches the cube, known dust is re-read every tick |
@@ -146,8 +147,40 @@ rises more than 2 px above the shoulders). Gravity is tilted with the torso when
 lifts it when running, the body and legs are a half-space it cannot enter (the leg that swings back pushes it out),
 and long-range tethers keep it from stretching. It is simulated in the client tick and drawn interpolated.
 
-Level of detail (`CapePhysics`): own player always fine, others fine up to 16 blocks (at most 8), coarse up to 40
-blocks, at most 24 simulated capes; everyone else keeps the rigid vanilla cape. `ClothMesh` emits outer face, inner
+Level of detail (`CapePhysics`, *Detailstufe* hoch): own player always fine, others fine up to 16 blocks (at most 8),
+coarse up to 40 blocks, at most 24 simulated capes; everyone else keeps the rigid vanilla cape (mittel/niedrig: smaller
+grids, 12/8 and 32/24 blocks, 16/10 capes).
+
+The settings live in `core/cape/CapeSettings` and map onto `ClothSim.Params`: *Wind* switches the flutter/sway
+(Wellen) and adds gusts (Böen: smooth pseudo-random `gust(t)` per player phase that lifts the hem even while
+standing), *Bewegung* sets inertia, turn inertia, damping and wave speed (Vanilla = follows the body closely,
+Dungeons = heavily damped, slow waves, lighter and floatier), *Schwerkraft* scales gravity, *Anhebung beim Laufen*
+scales the quadratic air drag, *Steifheit* scales the bend/shear constraints. *Blockig* simulates one column of
+16 strips and `ClothMesh#emitBlocky` draws every strip as its own flat box with a flat normal, so bends show as
+vanilla-like steps.
+
+The live preview (`MenuHost#drawPlayerPreview`) draws the own player turned around the vertical axis: an own copy of
+`renderEntityInInventory` up to 1.19.3, `InventoryScreen.renderEntityInInventory` with a rotation quaternion
+1.19.4–1.21.10, the extracted render state via `GuiGraphics#submitEntityRenderState` on 1.21.11 and
+`GuiGraphicsExtractor#entity` on 26.x (`online/PlayerPreview`, one file for the Mojmap trees), an own copy of
+`drawEntityOnScreen` with a pre-rotated GL matrix on Forge 1.8.9–1.12.2. While the preview is open the own cape is
+simulated as if walking every other 3 seconds.
+
+## Farben
+
+`core/render/ColorGrade` turns the sliders into one affine 3×4 colour matrix (brightness → contrast around mid grey
+→ saturation with Rec. 709 luma → temperature) plus a vibrance step, and holds the GLSL sources; `apply()` is the
+same maths on the CPU for the unit tests. The pass runs right after `GameRenderer#renderLevel` (world + hand drawn,
+no HUD/menu yet):
+
+- Fabric, NeoForge, Forge 1.15.2–26.3 (`mixin/ColorGradeMixin` + `render/ColorPass`, one file for the Mojmap trees):
+  own raw OpenGL pass – the main target's colour texture (`colorTextureId` ≤1.15, `getColorTextureId()` 1.16–1.21.4,
+  `GlTexture#glId()` from 1.21.5, `com.mojang.renderpearl` on 26.3) is copied into an own texture and written back
+  through an own program (GLSL 1.20 up to 1.16, 1.50 core from 1.17), own VAO/VBO and FBO. Every GL state it touches
+  is queried before and restored after, so Minecraft's state cache stays valid.
+- Forge 1.8.9–1.12.2 (`render/ColorPass`): an own `ShaderGroup` with the program
+  `assets/minecraft/shaders/program/trsclient_color` (before 1.11 programs must be in the minecraft namespace) and
+  vanilla `blit`, run from `RenderGameOverlayEvent.Pre` (ALL) or, with F1, at the end of the render tick. `ClothMesh` emits outer face, inner
 face and all four edges with the vanilla cape UVs (the fractions are the same for every HD scale).
 
 ## Menu, HUD editor and profiles
@@ -291,9 +324,11 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | Alle neuen Module | Forge 1.13.2 and 1.7.10 | not ported yet (see "Open") |
 | Freelook | Forge 1.7.10, 1.13.2, 1.14.4 | no camera hook (no Mixin there) – hidden in the menu; zoom and toggle sprint/sneak incl. fly boost work |
 | TRS-Online-Funktionen, Umhang-Physik | Forge 1.13.2 and 1.7.10 | not ported – hidden in the menu |
-| Umhang-Physik | Fabric/Forge 1.14.4 | the cape is still drawn with fixed GL calls there – the cape stays rigid (TRS capes and badges work on Fabric 1.14.4) |
+| Umhang-Physik (incl. settings and live preview) | Fabric/Forge 1.14.4 | the cape is still drawn with fixed GL calls there – the cape stays rigid (TRS capes and badges work on Fabric 1.14.4) |
 | TRS-Umhang, TRS-Abzeichen | Forge 1.14.4 | no Mixin in that build – only login and presence |
 | Emotes | Forge 1.14.4, 1.13.2 and 1.7.10 | no model hook there (no Mixin / not ported) – hidden in the menu |
+| Farben | Forge 1.14.4, 1.13.2 and 1.7.10 | no hook after the world pass (no Mixin / not ported) – hidden in the menu |
+| Farben | 26.2+ with the Vulkan backend | the pass is OpenGL; with Vulkan there is no GL texture – hidden in the menu (OpenGL is the default) |
 | Abzeichen als Pixel-Redstone-Block | 1.14.4, 1.15.2, Forge 1.8.9–1.12.2 | no per-text font – a dark red `■` instead |
 | TRS-Umhang über OptiFine | Forge 1.8.9–1.12.2 with OptiFine | OptiFine's own cape getter wins there |
 | Signalstärke: Türen, Falltüren, Zauntore, Notenblöcke | Forge 1.7.10 | no "powered" bit in their metadata – not recognised as components |

@@ -115,7 +115,8 @@ public final class TrsClient {
 		// Freelook (Kamera-Hooks) und der TRS-Startbildschirm.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.hitColor, client.modules.freelook, client.modules.titleScreen));
 		// TRS-Online-Funktionen (Abzeichen, TRS-Umhänge, Umhang-Physik, Emotes) sind für 1.13.2 nicht umgesetzt.
-		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.trsOnline, client.modules.capePhysics, client.modules.emotes));
+		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.trsOnline, client.modules.capePhysics, client.modules.emotes,
+				client.modules.colors));
 		client.version = ModList.get().getModContainerById(MOD_ID)
 				.map(c -> c.getModInfo().getVersion().toString()).orElse("?");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.

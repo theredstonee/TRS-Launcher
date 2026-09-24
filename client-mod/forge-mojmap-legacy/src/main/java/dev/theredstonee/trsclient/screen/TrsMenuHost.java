@@ -9,6 +9,10 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.online.OnlineHooks;
+import dev.theredstonee.trsclient.online.PlayerPreview;
+import dev.theredstonee.trsclient.ui.GfxCanvas;
 import dev.theredstonee.trsclient.core.ui.menu.HudItem;
 import dev.theredstonee.trsclient.core.ui.menu.MenuAction;
 import dev.theredstonee.trsclient.core.ui.menu.MenuHost;
@@ -69,6 +73,7 @@ public final class TrsMenuHost implements MenuHost {
 	/** Ohne Mixin (Forge 1.14.4) fehlen einige Module – die bleiben aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {
+		if (module == modules().colors && !dev.theredstonee.trsclient.render.ColorPass.supported()) return false;
 		return TrsClient.get().visibleModules().contains(module);
 	}
 
@@ -140,5 +145,30 @@ public final class TrsMenuHost implements MenuHost {
 	@Override
 	public boolean inWorld() {
 		return Minecraft.getInstance().level != null;
+	}
+
+	// --- Spieler-Vorschau (Umhang-Physik) ---
+
+	@Override
+	public int playerPreviewState() {
+		if (!PlayerPreview.supported() || !supports(modules().capePhysics)) return PREVIEW_UNSUPPORTED;
+		return Minecraft.getInstance().player == null ? PREVIEW_NO_PLAYER : PREVIEW_OK;
+	}
+
+	@Override
+	public boolean previewHasCape() {
+		net.minecraft.client.player.AbstractClientPlayer player = Minecraft.getInstance().player;
+		return player != null && OnlineHooks.hasCapeVisible(player);
+	}
+
+	@Override
+	public boolean previewWalking() {
+		return OnlineHooks.features() != null && OnlineHooks.features().physics().previewWalking();
+	}
+
+	@Override
+	public void drawPlayerPreview(Canvas c, int x, int y, int w, int h, float yawDegrees) {
+		if (OnlineHooks.features() != null) OnlineHooks.features().physics().preview();
+		PlayerPreview.draw(GfxCanvas.current().gfx().raw(), x, y, w, h, yawDegrees);
 	}
 }

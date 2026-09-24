@@ -29,6 +29,11 @@ How to write an entry:
   along, and updates are found just like for Modrinth content. CurseForge modpacks (also as a downloaded .zip) become a
   new instance. If an author only allows downloads on CurseForge itself, the launcher doesn't sneak around that: it
   shows the files with a button to their CurseForge page and picks them up from your downloads folder automatically.
+- **TRS Client: cape settings and colors.** Cape Physics now has its own settings like WaveyCapes – style (smooth or
+  blocky), wind (off, waves, gusts), movement (vanilla, swinging, calm "Dungeons"), gravity, lift when running,
+  stiffness and detail – with a live, turning preview of your own player and a reset button; saved in your
+  profiles. The new "Colors" module adjusts saturation (0–200 %), contrast, brightness, vibrance and color
+  temperature of the game image right away, while the HUD and menus keep their colors.
 
 ### Deutsch
 
@@ -48,6 +53,12 @@ How to write an entry:
   (auch als heruntergeladene .zip) werden zur neuen Instanz. Erlaubt ein Autor Downloads nur direkt auf CurseForge,
   umgeht der Launcher das nicht: Er zeigt die Dateien mit einem Knopf zur CurseForge-Seite und übernimmt sie
   automatisch aus deinem Download-Ordner.
+- **TRS Client: Umhang-Einstellungen und Farben.** Die Umhang-Physik hat jetzt eigene Einstellungen wie
+  WaveyCapes – Stil (glatt oder blockig), Wind (aus, Wellen, Böen), Bewegung (Vanilla, schwingend, ruhig wie in
+  „Dungeons“), Schwerkraft, Anhebung beim Laufen, Steifheit und Detailstufe – mit einer drehenden Live-Vorschau
+  deines Spielers und einem Knopf zum Zurücksetzen; gespeichert in deinen Profilen. Das neue Modul „Farben“
+  ändert Sättigung (0–200 %), Kontrast, Helligkeit, Dynamik und Farbtemperatur des Spielbilds sofort, HUD und
+  Menüs behalten ihre Farben.
 
 ## 0.4.3 – 2026-09-24
 

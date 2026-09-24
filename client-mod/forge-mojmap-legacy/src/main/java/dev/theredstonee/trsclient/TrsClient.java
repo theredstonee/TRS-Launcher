@@ -138,7 +138,7 @@ public final class TrsClient {
 			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor
 					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
 					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline
-					|| m == modules.capePhysics || m == modules.emotes)) {
+					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors)) {
 				continue;
 			}
 			visibleModules.add(m);
