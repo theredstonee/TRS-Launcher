@@ -156,6 +156,17 @@ pub fn os_description() -> String {
     crate::system::describe(build, display.as_deref())
 }
 
+// --- Arbeitsspeicher ------------------------------------------------------------------------
+
+/// Eingebauter Arbeitsspeicher in MB (`GlobalMemoryStatusEx`).
+pub fn total_memory_mb() -> Option<u32> {
+    use windows::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
+    let mut status = MEMORYSTATUSEX { dwLength: std::mem::size_of::<MEMORYSTATUSEX>() as u32, ..Default::default() };
+    // SAFETY: `status` ist initialisiert und `dwLength` gesetzt, wie die API es verlangt.
+    unsafe { GlobalMemoryStatusEx(&mut status) }.ok()?;
+    u32::try_from(status.ullTotalPhys / (1024 * 1024)).ok().filter(|mb| *mb > 0)
+}
+
 // --- Papierkorb ----------------------------------------------------------------------------
 
 /// Datei in den Windows-Papierkorb verschieben (`SHFileOperationW`).

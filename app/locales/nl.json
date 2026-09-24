@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Krachtige videokaart",
       "dedicatedGpuDescription": "Minecraft gebruikt de losse videokaart (belangrijk bij laptops). Geldt alleen voor de Java van de launcher en wordt teruggedraaid als je het uitzet.",
       "tuningTitle": "FPS-boost bij het starten",
-      "tuningDescription": "Afgestemde Java-instellingen voor jouw Java-versie en geheugen (ZGC of G1, geheugen meteen gereserveerd). Alleen zonder eigen JVM-argumenten.",
+      "tuningDescription": "Afgestemde Java-instellingen voor jouw Java-versie en geheugen (G1, vanaf 12 GB ZGC; geheugen meteen gereserveerd). Je eigen JVM-argumenten winnen waar ze overlappen.",
       "priorityTitle": "Hogere procesprioriteit",
       "priorityDescription": "Start het spel met prioriteit ‘Boven normaal’ – kan haperingen verminderen als andere programma’s druk bezig zijn.",
       "dedicatedGpuDescriptionLinux": "Voor laptops met twee grafische chips: het spel rendert op de dedicated GPU (PRIME-offload – DRI_PRIME of de NVIDIA-variabelen)."

@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Yüksek performanslı ekran kartı",
       "dedicatedGpuDescription": "Minecraft harici ekran kartını kullanır (dizüstü bilgisayarlarda önemli). Yalnızca başlatıcının Java’sı için geçerlidir ve kapatınca geri alınır.",
       "tuningTitle": "Başlangıçta FPS artışı",
-      "tuningDescription": "Java sürümüne ve belleğe göre ayarlanmış Java ayarları (ZGC veya G1, bellek baştan ayrılır). Yalnızca özel JVM argümanları yoksa.",
+      "tuningDescription": "Java sürümüne ve belleğe göre ayarlanmış Java ayarları (G1, 12 GB'tan itibaren ZGC; bellek baştan ayrılır). Çakıştıkları yerde kendi JVM argümanların geçerlidir.",
       "priorityTitle": "Daha yüksek işlem önceliği",
       "priorityDescription": "Oyunu “Normalin üstünde” öncelikle başlatır – diğer programlar meşgulken takılmaları azaltabilir.",
       "dedicatedGpuDescriptionLinux": "İki grafik çipli dizüstü bilgisayarlar için: oyun harici GPU’da işlenir (PRIME offload – DRI_PRIME veya NVIDIA değişkenleri)."

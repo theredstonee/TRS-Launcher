@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Leistungsstarke Grafikkarte",
       "dedicatedGpuDescription": "Minecraft nutzt die dedizierte Grafikkarte (wichtig bei Laptops). Gilt nur für das Java des Launchers und wird beim Abschalten zurückgenommen.",
       "tuningTitle": "FPS-Boost beim Start",
-      "tuningDescription": "Abgestimmte Java-Einstellungen für deine Java-Version und deinen Speicher (ZGC oder G1, Speicher gleich reserviert). Nur ohne eigene JVM-Argumente.",
+      "tuningDescription": "Abgestimmte Java-Einstellungen für deine Java-Version und deinen Speicher (G1, ab 12 GB ZGC; Speicher gleich reserviert). Eigene JVM-Argumente gewinnen, wo sie sich überschneiden.",
       "priorityTitle": "Höhere Prozesspriorität",
       "priorityDescription": "Startet das Spiel mit der Priorität „Höher als normal“ – kann Ruckler glätten, wenn andere Programme viel zu tun haben.",
       "dedicatedGpuDescriptionLinux": "Für Laptops mit zwei Grafikchips: Das Spiel rechnet auf der dedizierten GPU (PRIME-Offload – DRI_PRIME bzw. die NVIDIA-Variablen)."

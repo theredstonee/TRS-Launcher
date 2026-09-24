@@ -16,6 +16,32 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **Smoother frames, fewer stutters.** The FPS boost at launch now uses a garbage collector setup made for the game
+  client (G1 with short pauses); ZGC is only used from 12 GB of memory, where it no longer causes hitches. The
+  settings follow the Java version the game really starts with – also your own Java.
+- **Your own JVM arguments no longer switch the boost off.** Only the settings you set yourself replace the
+  launcher's (your own memory size, garbage collector or option wins); everything else stays tuned.
+- **Memory that fits your PC.** New installations start with 6 GB on PCs with 16 GB or more, 4 GB from 8 GB and
+  half of the memory below that. If more is set than the PC has, the game gets at most your memory minus 2 GB so
+  Windows doesn't have to swap. Existing settings are kept.
+
+### Deutsch
+
+- **Flüssigere Bilder, weniger Ruckler.** Der FPS-Boost beim Start nutzt jetzt eine Speicherbereinigung, die für
+  das Spiel gemacht ist (G1 mit kurzen Pausen); ZGC kommt erst ab 12 GB Arbeitsspeicher zum Einsatz, wo es nicht
+  mehr hängt. Die Einstellungen richten sich nach der Java, mit der das Spiel wirklich startet – auch nach deiner
+  eigenen.
+- **Eigene JVM-Argumente schalten den Boost nicht mehr ab.** Nur was du selbst angibst, ersetzt die Werte des
+  Launchers (eigene Speichergröße, eigene Speicherbereinigung oder gleiche Option gewinnt); der Rest bleibt
+  abgestimmt.
+- **Arbeitsspeicher passend zu deinem PC.** Neue Installationen starten mit 6 GB auf PCs ab 16 GB, mit 4 GB ab
+  8 GB und darunter mit der Hälfte. Ist mehr eingestellt, als der PC hat, bekommt das Spiel höchstens deinen
+  Speicher minus 2 GB, damit Windows nicht auslagern muss. Bestehende Einstellungen bleiben.
+
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 
 <!-- banner: accent=#ffc24b motif=/news/0.5.0/banner.png -->

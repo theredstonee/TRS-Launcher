@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Tarjeta gráfica de alto rendimiento",
       "dedicatedGpuDescription": "Minecraft usa la tarjeta gráfica dedicada (importante en portátiles). Solo afecta al Java del launcher y se deshace al desactivarlo.",
       "tuningTitle": "Impulso de FPS al iniciar",
-      "tuningDescription": "Ajustes de Java adaptados a tu versión de Java y memoria (ZGC o G1, memoria reservada desde el inicio). Solo sin argumentos JVM propios.",
+      "tuningDescription": "Ajustes de Java adaptados a tu versión de Java y memoria (G1, desde 12 GB ZGC; memoria reservada desde el inicio). Tus propios argumentos JVM ganan donde coinciden.",
       "priorityTitle": "Mayor prioridad del proceso",
       "priorityDescription": "Inicia el juego con prioridad «Superior a la normal»: puede suavizar tirones cuando otros programas están ocupados.",
       "dedicatedGpuDescriptionLinux": "Para portátiles con dos chips gráficos: el juego se renderiza en la GPU dedicada (PRIME offload: DRI_PRIME o las variables de NVIDIA)."

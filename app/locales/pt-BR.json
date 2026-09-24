@@ -1525,7 +1525,7 @@
       "dedicatedGpuTitle": "Placa de vídeo de alto desempenho",
       "dedicatedGpuDescription": "O Minecraft usa a placa de vídeo dedicada (importante em notebooks). Vale só para o Java do launcher e é desfeito ao desativar.",
       "tuningTitle": "Aumento de FPS ao iniciar",
-      "tuningDescription": "Configurações de Java ajustadas à sua versão do Java e à memória (ZGC ou G1, memória reservada desde o início). Só sem argumentos JVM próprios.",
+      "tuningDescription": "Configurações de Java ajustadas à sua versão do Java e à memória (G1, a partir de 12 GB ZGC; memória reservada desde o início). Seus próprios argumentos JVM prevalecem onde se sobrepõem.",
       "priorityTitle": "Prioridade de processo maior",
       "priorityDescription": "Inicia o jogo com prioridade “Acima do normal” – pode suavizar travadas quando outros programas estão ocupados.",
       "dedicatedGpuDescriptionLinux": "Para notebooks com dois chips gráficos: o jogo é renderizado na GPU dedicada (PRIME offload – DRI_PRIME ou as variáveis da NVIDIA)."
