@@ -3067,7 +3067,8 @@
       "show": "Afficher",
       "limitCleanup": "Limite d'espace atteinte : {n} ancien clip déplacé dans la corbeille | Limite d'espace atteinte : {n} anciens clips déplacés dans la corbeille",
       "renamed": "Clip renommé",
-      "trashed": "Clip déplacé dans la corbeille"
+      "trashed": "Clip déplacé dans la corbeille",
+      "enabledInGame": "Les clips ont été activés en jeu – {instance} enregistre"
     },
     "errors": {
       "disabled": "Les clips sont désactivés – active-les dans Paramètres → Clips.",
@@ -3077,14 +3078,18 @@
       "noFrames": "Rien n'est encore enregistré – réessaie dans quelques secondes.",
       "busy": "Le dernier clip est encore en cours de sauvegarde.",
       "error": "Le clip n'a pas pu être enregistré.",
-      "ffmpegDownload": "L'enregistreur (FFmpeg) n'a pas pu être téléchargé."
+      "ffmpegDownload": "L'enregistreur (FFmpeg) n'a pas pu être téléchargé.",
+      "ffmpegFailed": "L'enregistreur (FFmpeg) n'a pas pu être téléchargé – le launcher réessaie dans une minute.",
+      "encoder": "Aucun encodeur vidéo ne fonctionne – mets à jour le pilote graphique ou choisis x264 dans Paramètres → Clips."
     },
     "reason": {
       "starting": "En attente de la fenêtre du jeu …",
       "noWindow": "Fenêtre du jeu introuvable",
       "ffmpeg": "Téléchargement de l'enregistreur (FFmpeg) …",
       "error": "L'enregistrement ne démarre pas – voir le journal",
-      "disabled": "Les clips sont désactivés"
+      "disabled": "Les clips sont désactivés",
+      "ffmpegFailed": "Échec du téléchargement de l'enregistreur – nouvel essai bientôt",
+      "encoder": "Aucun encodeur vidéo ne fonctionne"
     },
     "status": {
       "buffer": "Tampon actif"

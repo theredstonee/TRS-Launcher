@@ -161,7 +161,17 @@ public final class TrsClient {
 
 	/** Ende des Client-Ticks. */
 	/** Meldungen der Clips in der Aktionsleiste. */
-	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> Mc.actionBar(Component.literal(text));
+	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = new dev.theredstonee.trsclient.core.clips.Clips.ActionBar() {
+		@Override
+		public void show(String text) {
+			Mc.actionBar(Component.literal(text));
+		}
+
+		@Override
+		public String keyLabel(boolean record) {
+			return Mc.keyName(record ? TrsKeys.toggleRecording : TrsKeys.saveClip);
+		}
+	};
 
 	public void onEndTick(Minecraft mc) {
 		if (TrsKeys.menu == null) return;

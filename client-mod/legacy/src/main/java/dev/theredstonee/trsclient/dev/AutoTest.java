@@ -57,6 +57,7 @@ public final class AutoTest {
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
 	private final PerfTest perfTest = new PerfTest();
+	private final ClipsTest clipsTest = new ClipsTest();
 	private final CapeColorTest capeColorTest = new CapeColorTest();
 
 	private AutoTest() {
@@ -171,8 +172,10 @@ public final class AutoTest {
 			}
 			case 4:
 				// -PtrsAutotestOnly=redstone: nur den Redstone-Teil prüfen (schneller Durchlauf)
+				// -PtrsAutotestOnly=clips: nur Clips (F9/F10, mit Launcher-Attrappe auch „Clips einschalten“)
 				if ("redstone".equals(System.getProperty("trsclient.autotest.only"))
-						|| "perf".equals(System.getProperty("trsclient.autotest.only"))) {
+						|| "perf".equals(System.getProperty("trsclient.autotest.only"))
+						|| "clips".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 18;
 					break;
 				}
@@ -304,6 +307,22 @@ public final class AutoTest {
 				next(5);
 				break;
 			case 18:
+				// Clips & Aufnahme (nur mit -PtrsAutotestOnly=clips)
+				if ("clips".equals(System.getProperty("trsclient.autotest.only"))) {
+					if (clipsTest.step(mc, modules, new CapeTest.Actions() {
+						@Override
+						public void shot(String name) {
+							AutoTest.this.shot(mc, name);
+						}
+
+						@Override
+						public void command(String command) {
+							AutoTest.command(mc, command);
+						}
+					})) return;
+					next(5);
+					break;
+				}
 				// Redstone-Werkzeuge: Signalstärke, Komparator, Overlay, Takt
 				if (!"perf".equals(System.getProperty("trsclient.autotest.only")) && redstoneTest.step(mc, modules, new CapeTest.Actions() {
 					@Override

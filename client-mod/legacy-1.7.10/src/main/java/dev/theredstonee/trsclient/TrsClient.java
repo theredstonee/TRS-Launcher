@@ -166,9 +166,18 @@ public final class TrsClient {
 	/** Tick-Events kommen in 1.7.10 nur über den FML-Bus. */
 	public final class TickHandler {
 		/** Meldungen der Clips in der Aktionsleiste. */
-		private final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> {
-			Minecraft minecraft = Minecraft.getMinecraft();
-			if (minecraft.ingameGUI != null) minecraft.ingameGUI.func_110326_a(text, false);
+		private final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = new dev.theredstonee.trsclient.core.clips.Clips.ActionBar() {
+			@Override
+			public void show(String text) {
+				Minecraft minecraft = Minecraft.getMinecraft();
+				if (minecraft.ingameGUI != null) minecraft.ingameGUI.func_110326_a(text, false);
+			}
+
+			@Override
+			public String keyLabel(boolean record) {
+				return net.minecraft.client.settings.GameSettings.getKeyDisplayString(
+						(record ? TrsKeys.toggleRecording : TrsKeys.saveClip).getKeyCode());
+			}
 		};
 
 		@SubscribeEvent

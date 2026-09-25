@@ -52,7 +52,7 @@ async fn v2_login(handoff: &Handoff, tamper: bool) -> std::result::Result<Client
     }
     let nl = challenge["nonce"].as_str().unwrap().to_owned();
     assert_eq!(challenge["proof"].as_str().unwrap(), proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)), "echter Launcher");
-    assert_eq!(challenge["features"], json!(["clips", "accounts"]));
+    assert_eq!(challenge["features"], json!(["clips", "accounts", "clips.enable"]));
     let mut proof = proto::game_proof(&key, &sid, &nc, &nl);
     if tamper {
         proof[0] ^= 1;
@@ -342,4 +342,100 @@ async fn sitzungen_ueberleben_einen_launcher_neustart() {
     let moved = Handoff { port: second.port().unwrap(), env_value: env, secret_hex: proto::hex(&key) };
     assert!(v2_login(&moved, false).await.is_ok());
     assert_eq!(second.clips_config("survival", true), LinkConfig { version: 2, enabled: true, port: second.port(), token: None, clips_dir: None });
+}
+
+/// Zählt `clips.enable` und liefert 30 s bzw. einen festen Fehler.
+fn clips_enabler(calls: Arc<AtomicUsize>, result: HandlerResult<u32>) -> ClipsEnabler {
+    Arc::new(move |instance_id: String| {
+        calls.fetch_add(1, Ordering::SeqCst);
+        assert_eq!(instance_id, "survival");
+        Box::pin(async move { result })
+    })
+}
+
+#[tokio::test]
+async fn clips_einschalten_aus_dem_spiel() {
+    // Ohne Kontenzugriff (kein AccountsHandler) – Clips gehen trotzdem.
+    let link = TrsLink::new(None);
+    let calls = Arc::new(AtomicUsize::new(0));
+    link.set_clips_enabler(clips_enabler(calls.clone(), Ok(30)));
+    let handoff = link.open_session("survival", false).await.unwrap();
+    link.set_pid("survival", std::process::id());
+    link.set_state("survival", LinkState::disabled().capturing(true, false));
+    let mut c = v2_login(&handoff, false).await.expect("Anmeldung");
+    // Die Mod erfährt, was beim Einschalten aufgenommen würde.
+    assert_eq!(
+        (c.first["reason"].clone(), c.first["audio"].clone(), c.first["mic"].clone()),
+        (json!("disabled"), json!(true), json!(false))
+    );
+    assert!(c.first.get("progress").is_none(), "kein Fortschritt ohne Download");
+
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "clips.enable" })).await;
+    let res = response(&mut c.r, 1).await;
+    assert_eq!((res["ok"].clone(), res["clipSeconds"].clone()), (json!(true), json!(30)), "{res}");
+    // Sofort noch einmal: gebremst, der Launcher wird nicht gefragt.
+    send(&mut c.w, json!({ "type": "req", "id": 2, "op": "clips.enable" })).await;
+    assert_eq!(response(&mut c.r, 2).await["error"], "rate_limited");
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+    // Status mit FFmpeg-Fortschritt kommt als Statuszeile an.
+    link.set_state("survival", LinkState { reason: Some("ffmpeg"), progress: Some(42), ..Default::default() }.capturing(true, false));
+    let state = loop {
+        let v = line(&mut c.r).await;
+        if v["type"] == "state" && v["reason"] == "ffmpeg" {
+            break v;
+        }
+    };
+    assert_eq!(state["progress"], 42);
+}
+
+#[tokio::test]
+async fn clips_einschalten_nur_vom_spielprozess_und_nie_mit_altem_token() {
+    let link = TrsLink::new(None);
+    let calls = Arc::new(AtomicUsize::new(0));
+    link.set_clips_enabler(clips_enabler(calls.clone(), Ok(30)));
+    // PID unbekannt → Gegenstelle nicht geprüft → abgelehnt.
+    let handoff = link.open_session("survival", false).await.unwrap();
+    let mut c = v2_login(&handoff, false).await.unwrap();
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "clips.enable" })).await;
+    assert_eq!(response(&mut c.r, 1).await["error"], "not_allowed");
+
+    // Alte Mod (Protokoll v1, Token aus clips.json): keine Anfragen.
+    let _handoff = link.open_session("survival", true).await.unwrap();
+    link.set_pid("survival", std::process::id());
+    let token = link.clips_config("survival", true).token.unwrap();
+    let (mut r, mut w) = connect(link.port().unwrap()).await;
+    send(&mut w, json!({ "type": "hello", "v": 1, "token": token })).await;
+    assert_eq!(line(&mut r).await["type"], "state");
+    send(&mut w, json!({ "type": "req", "id": 2, "op": "clips.enable" })).await;
+    assert_eq!(response(&mut r, 2).await["error"], "not_allowed");
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn clips_einschalten_meldet_fehlercodes() {
+    let link = TrsLink::new(None);
+    let handoff = link.open_session("survival", false).await.unwrap();
+    link.set_pid("survival", std::process::id());
+    let mut c = v2_login(&handoff, false).await.unwrap();
+    // Noch nicht angebunden → neutraler Fehler.
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "clips.enable" })).await;
+    assert_eq!(response(&mut c.r, 1).await["error"], "error");
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    link.set_clips_enabler(clips_enabler(calls.clone(), Err("unsupported")));
+    send(&mut c.w, json!({ "type": "req", "id": 2, "op": "clips.enable" })).await;
+    assert_eq!(response(&mut c.r, 2).await["error"], "unsupported");
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn clips_einschalten_hoechstens_fuenfmal_in_zehn_minuten() {
+    let mut limits = Limits::default();
+    let start = Instant::now();
+    for i in 0..5 {
+        assert!(limits.allow_enable(start + Duration::from_secs(i * 4)), "Versuch {i}");
+    }
+    assert!(!limits.allow_enable(start + Duration::from_secs(30)), "sechster Versuch gebremst");
+    assert!(limits.allow_enable(start + Duration::from_secs(11 * 60)), "nach zehn Minuten wieder frei");
 }

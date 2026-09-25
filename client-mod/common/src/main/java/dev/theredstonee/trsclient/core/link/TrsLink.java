@@ -72,13 +72,23 @@ public final class TrsLink {
 		public final boolean connected;
 		public final int protocol;
 		public final boolean accounts;
+		/** Der Launcher kann Clips auf Wunsch des Spiels einschalten ({@code clips.enable}, ab Launcher 0.6.1). */
+		public final boolean clipsEnable;
 
 		Status(boolean connected, int protocol, boolean accounts) {
+			this(connected, protocol, accounts, false);
+		}
+
+		Status(boolean connected, int protocol, boolean accounts, boolean clipsEnable) {
 			this.connected = connected;
 			this.protocol = protocol;
 			this.accounts = accounts;
+			this.clipsEnable = clipsEnable;
 		}
 	}
+
+	/** Merkmal des Launchers: Clips per Anfrage einschalten. */
+	public static final String FEATURE_CLIPS_ENABLE = "clips.enable";
 
 	static final Status OFFLINE = new Status(false, 0, false);
 
@@ -96,6 +106,12 @@ public final class TrsLink {
 		public Boolean recording;
 		public Long recordingMs;
 		public Integer clipSeconds;
+		/** Download-Fortschritt von FFmpeg in Prozent (nur bei {@code reason = "ffmpeg"}). */
+		public Integer progress;
+		/** Würde/wird Systemton aufgenommen? (null = unbekannt, älterer Launcher) */
+		public Boolean audio;
+		/** Würde/wird das Mikrofon aufgenommen? */
+		public Boolean mic;
 		public String kind;
 		public Integer seconds;
 		public String code;
@@ -244,7 +260,7 @@ public final class TrsLink {
 	 */
 	public void request(String op, Map<String, String> args, long timeoutMs, Callback callback) {
 		Status s = status;
-		if (!s.connected || !s.accounts) {
+		if (!s.connected || s.protocol < 2) {
 			callback.failed("offline");
 			return;
 		}
@@ -427,6 +443,7 @@ public final class TrsLink {
 			InputStream in = new java.io.BufferedInputStream(s.getInputStream());
 			Gson gson = new Gson();
 			boolean accounts = false;
+			boolean clipsEnable = false;
 			String gameNonce = null;
 			if (target.kind == LinkTarget.Kind.V2) {
 				gameNonce = LinkCrypto.randomHex(16);
@@ -447,6 +464,7 @@ public final class TrsLink {
 				if (!write(o, "{\"type\":\"auth\",\"proof\":\"" + proof + "\"}")) return Result.FAILED;
 				sealKey = LinkCrypto.sealKey(target.key, gameNonce, challenge.nonce);
 				accounts = challenge.features != null && challenge.features.contains("accounts");
+				clipsEnable = challenge.features != null && challenge.features.contains(FEATURE_CLIPS_ENABLE);
 			} else {
 				if (!write(o, "{\"type\":\"hello\",\"v\":1,\"token\":\"" + target.token + "\"}")) return Result.FAILED;
 			}
@@ -475,7 +493,7 @@ public final class TrsLink {
 					if (!"state".equals(line.type)) continue;
 					greeted = true;
 					out = o;
-					setStatus(new Status(true, target.kind == LinkTarget.Kind.V2 ? 2 : 1, accounts));
+					setStatus(new Status(true, target.kind == LinkTarget.Kind.V2 ? 2 : 1, accounts, clipsEnable));
 				}
 				if ("res".equals(line.type)) {
 					Pending p = line.id == null ? null : pending.remove(line.id);
@@ -535,7 +553,7 @@ public final class TrsLink {
 
 	private static final List<String> ERRORS = Collections.unmodifiableList(java.util.Arrays.asList(
 			"rate_limited", "unknown_account", "not_allowed", "busy", "cancelled", "auth_failed", "offline",
-			"unknown_op", "timeout", "error"));
+			"unknown_op", "timeout", "unsupported", "error"));
 
 	/** Nur bekannte Fehlercodes durchlassen. */
 	public static String safeError(String code) {

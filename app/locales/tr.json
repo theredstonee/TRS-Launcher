@@ -3067,7 +3067,8 @@
       "show": "Göster",
       "limitCleanup": "Alan sınırına ulaşıldı: {n} eski klip geri dönüşüm kutusuna taşındı | Alan sınırına ulaşıldı: {n} eski klip geri dönüşüm kutusuna taşındı",
       "renamed": "Klip yeniden adlandırıldı",
-      "trashed": "Klip geri dönüşüm kutusuna taşındı"
+      "trashed": "Klip geri dönüşüm kutusuna taşındı",
+      "enabledInGame": "Klipler oyunda açıldı – {instance} kaydediyor"
     },
     "errors": {
       "disabled": "Klipler kapalı – Ayarlar → Klipler altından aç.",
@@ -3077,14 +3078,18 @@
       "noFrames": "Henüz bir şey kaydedilmedi – birkaç saniye sonra tekrar dene.",
       "busy": "Son klip hâlâ kaydediliyor.",
       "error": "Klip kaydedilemedi.",
-      "ffmpegDownload": "Kaydedici (FFmpeg) indirilemedi."
+      "ffmpegDownload": "Kaydedici (FFmpeg) indirilemedi.",
+      "ffmpegFailed": "Kaydedici (FFmpeg) indirilemedi – launcher bir dakika içinde yeniden dener.",
+      "encoder": "Hiçbir video kodlayıcı çalışmıyor – ekran kartı sürücüsünü güncelle veya Ayarlar → Klipler'de x264 seç."
     },
     "reason": {
       "starting": "Oyun penceresi bekleniyor …",
       "noWindow": "Oyun penceresi bulunamadı",
       "ffmpeg": "Kaydedici (FFmpeg) indiriliyor …",
       "error": "Kayıt başlamıyor – günlüğe bak",
-      "disabled": "Klipler kapalı"
+      "disabled": "Klipler kapalı",
+      "ffmpegFailed": "Kaydedici indirilemedi – birazdan yeniden denenecek",
+      "encoder": "Hiçbir video kodlayıcı çalışmıyor"
     },
     "status": {
       "buffer": "Arabellek etkin"

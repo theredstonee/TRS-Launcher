@@ -35,6 +35,14 @@ public final class FakeLauncher implements AutoCloseable {
 	/** Beweis des Launchers absichtlich falsch (fremdes Programm auf dem Port). */
 	public volatile boolean forgeProof;
 	public volatile boolean authOk;
+	/** Merkmale im {@code challenge} (JSON-Liste). */
+	public volatile String features = "[\"clips\",\"accounts\"]";
+	/** Erste Statuszeile nach der Anmeldung. */
+	public volatile String initialState = "{\"type\":\"state\",\"available\":false,\"reason\":\"disabled\",\"buffer\":false,"
+			+ "\"recording\":false,\"recordingMs\":0,\"clipSeconds\":30,\"audio\":true,\"mic\":false}";
+	/** Antwort auf {@code clips.enable}: null = ok (dann FFmpeg-Fortschritt und laufender Puffer), sonst Fehlercode. */
+	public volatile String enableError;
+	public final java.util.concurrent.atomic.AtomicInteger enables = new java.util.concurrent.atomic.AtomicInteger();
 	private final Thread thread;
 	private volatile OutputStream out;
 
@@ -79,7 +87,7 @@ public final class FakeLauncher implements AutoCloseable {
 				String nl = LinkCrypto.randomHex(16);
 				String proof = forgeProof ? LinkCrypto.randomHex(32) : LinkCrypto.launcherProof(KEY, SID, nc, nl);
 				write(o, "{\"type\":\"challenge\",\"nonce\":\"" + nl + "\",\"proof\":\"" + proof
-						+ "\",\"features\":[\"clips\",\"accounts\"]}");
+						+ "\",\"features\":" + features + "}");
 				String auth = in.readLine();
 				if (auth == null) continue;
 				received.add(auth);
@@ -91,8 +99,7 @@ public final class FakeLauncher implements AutoCloseable {
 				authOk = true;
 				byte[] seal = LinkCrypto.sealKey(KEY, nc, nl);
 				out = o;
-				write(o, "{\"type\":\"state\",\"available\":false,\"reason\":\"disabled\",\"buffer\":false,\"recording\":false,"
-						+ "\"recordingMs\":0,\"clipSeconds\":30}");
+				write(o, initialState);
 				String line;
 				while ((line = in.readLine()) != null) {
 					received.add(line);
@@ -117,6 +124,18 @@ public final class FakeLauncher implements AutoCloseable {
 						String token = LinkCrypto.seal(seal, ("mc-token-" + name).getBytes(StandardCharsets.UTF_8), n);
 						write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":true,\"session\":{\"id\":\"" + account
 								+ "\",\"name\":\"" + name + "\",\"xuid\":\"2535400000000000\",\"token\":\"" + token + "\"}}");
+					} else if ("clips.enable".equals(op)) {
+						enables.incrementAndGet();
+						String error = enableError;
+						if (error != null) {
+							write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":false,\"error\":\"" + error + "\"}");
+							continue;
+						}
+						write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":true,\"clipSeconds\":30}");
+						write(o, "{\"type\":\"state\",\"available\":false,\"reason\":\"ffmpeg\",\"progress\":40,\"buffer\":false,"
+								+ "\"recording\":false,\"recordingMs\":0,\"clipSeconds\":30}");
+						write(o, "{\"type\":\"state\",\"available\":true,\"buffer\":true,\"recording\":false,"
+								+ "\"recordingMs\":0,\"clipSeconds\":30}");
 					} else if ("accounts.add".equals(op)) {
 						write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":false,\"error\":\"busy\"}");
 					} else {

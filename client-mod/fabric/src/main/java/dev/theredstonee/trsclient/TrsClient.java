@@ -206,7 +206,17 @@ public final class TrsClient implements ClientModInitializer {
 	*///?}
 
 	/** Meldungen der Clips in der Aktionsleiste. */
-	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> Mc.actionBar(Mc.text(text));
+	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = new dev.theredstonee.trsclient.core.clips.Clips.ActionBar() {
+		@Override
+		public void show(String text) {
+			Mc.actionBar(Mc.text(text));
+		}
+
+		@Override
+		public String keyLabel(boolean record) {
+			return Mc.keyName(record ? TrsKeys.toggleRecording : TrsKeys.saveClip);
+		}
+	};
 
 	private void onTick(Minecraft mc) {
 		migrateKeys(mc);

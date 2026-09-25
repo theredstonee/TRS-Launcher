@@ -156,7 +156,15 @@ independent in `common/core/clips`:
   hex token, or `enabled:false`. Anything else counts as "no launcher".
 - `ClipLink` listens on the link: state lines → `status()`, `saved`/`failed` → notices. A key press while not
   connected is kept for 4 s, then "launcher not reachable". The game thread only reads `status()`/`pollNotice()` and
-  calls `press`.
+  calls `press`. Every press gets a visible answer: saved, the launcher's reason (`starting`, `ffmpeg` with download
+  progress, `ffmpegFailed`, `encoder`, `noFrames` …), "clips need the TRS Launcher", or "clips are off".
+- **Clips off:** if the launcher announces the feature `clips.enable` in its `challenge`, the first F9/F10 shows an
+  offer (what gets recorded: game window, system sound, microphone – from `audio`/`mic` in the state line) and a
+  second press within 8 s sends `req {op:"clips.enable"}`. The launcher switches clips on like the settings toggle
+  (saved, UI updates, ring buffer starts; only for the verified game process, rate-limited) and answers
+  `res {ok,clipSeconds}`; the mod shows "Clips on – recording is starting …", download progress and finally
+  "Clips on – F9 saves the last 30 s". Older launchers (protocol 1 or no feature) only get the hint to use
+  Settings → Clips. The Clips & Images screen has a "Turn on now" button with the same consent text.
 - `ClipPanel` draws the HUD element through `Canvas`; `Clips` is the facade the loaders call (`init(configDir)`,
   `saveClip()`, `toggleRecording()`, `tick(hudVisible, actionBar)`). Hints and errors also go to the action bar.
 - Per loader only the two key bindings, one tick block and `hud/ClipHud` (identical in the Mojmap trees). No mixins.
@@ -171,7 +179,8 @@ independent in `common/core/clips`:
 - Protocol 2: the launcher starts the game with the environment variable `TRS_CLIENT_LINK=2:<port>:<sid>:<key>`
   (never on disk, never on the command line). Handshake: `hello {v:2,sid,nonce}` → `challenge {nonce,proof,features}`
   – the mod checks the launcher's HMAC-SHA256 proof **before** it proves anything itself – → `auth {proof}` → state
-  lines. Requests `req {id,op}` / `res {id,ok,…}` (`accounts.list`, `accounts.session`, `accounts.add`), push
+  lines. Requests `req {id,op}` / `res {id,ok,…}` (`accounts.list`, `accounts.session`, `accounts.add`,
+  `clips.enable`), push
   `accountsChanged`. Access tokens arrive sealed (HMAC-SHA256 key stream + tag with a per-connection key). Test vectors
   are shared with the launcher (`TrsLinkTest` ↔ `src-tauri/crates/core/src/link/proto.rs`).
 - Protocol 1 (older launchers): hello with the token from `clips.json`, clips only.

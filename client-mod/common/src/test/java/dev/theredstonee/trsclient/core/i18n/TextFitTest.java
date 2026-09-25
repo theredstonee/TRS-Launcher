@@ -111,6 +111,40 @@ class TextFitTest {
 		assertTrue(hard.isEmpty(), "Texte zu breit: " + hard);
 	}
 
+	/**
+	 * Clip-Meldungen in der Aktionsleiste (eine Zeile, zentriert): Standardfenster 854×480 mit GUI 2 = 427 px –
+	 * mit etwas Rand 420 px, auch mit dem längsten Tastennamen und Mikrofon.
+	 */
+	@Test
+	void clipMessagesFitTheActionBar() {
+		Canvas c = new McFontCanvas();
+		List<String> problems = new ArrayList<String>();
+		String[] plain = {"clips.enabled", "clips.hint.noLauncher", "clips.hint.disabled", "clips.hint.unreachable",
+				"clips.hint.enableFailed", "clips.hint.unsupported", "clips.hint.wait", "clips.failed.starting",
+				"clips.failed.noWindow", "clips.failed.ffmpeg", "clips.failed.ffmpegFailed", "clips.failed.encoder",
+				"clips.failed.noFrames", "clips.failed.busy", "clips.failed.error", "clips.recording.started"};
+		for (String lang : I18n.LANGUAGES) {
+			I18n.use(lang);
+			List<String> texts = new ArrayList<String>();
+			for (String key : plain) texts.add(I18n.tr(key));
+			String what = I18n.tr("clips.what.window") + " + " + I18n.tr("clips.what.audio") + " + " + I18n.tr("clips.what.mic");
+			texts.add(I18n.tr("clips.offer", "F10", what));
+			texts.add(I18n.tr("clips.ready", "F10", I18n.tr("clips.seconds", "30")));
+			texts.add(I18n.tr("clips.preparing", "100"));
+			texts.add(I18n.tr("clips.failed.ffmpegProgress", "100"));
+			for (String s : texts) {
+				if (c.textWidth(s) > 420) problems.add(lang + " Aktionsleiste: " + s + " (" + c.textWidth(s) + " px)");
+			}
+		}
+		List<String> hard = new ArrayList<String>();
+		for (String p : problems) {
+			System.out.println("Passt nicht ganz: " + p);
+			String lang = p.substring(0, p.indexOf(' '));
+			if (!I18n.BETA.contains(lang)) hard.add(p);
+		}
+		assertTrue(hard.isEmpty(), "Clip-Meldungen zu breit: " + hard);
+	}
+
 	@Test
 	void longHyphenatedWordsBreakAtTheHyphen() {
 		Canvas c = new McFontCanvas();

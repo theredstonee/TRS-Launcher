@@ -3067,7 +3067,8 @@
       "show": "Mostrar",
       "limitCleanup": "Limite de espaço atingido: {n} clipe antigo movido para a lixeira | Limite de espaço atingido: {n} clipes antigos movidos para a lixeira",
       "renamed": "Clipe renomeado",
-      "trashed": "Clipe movido para a lixeira"
+      "trashed": "Clipe movido para a lixeira",
+      "enabledInGame": "Os clipes foram ativados no jogo – {instance} está gravando"
     },
     "errors": {
       "disabled": "Os clipes estão desativados – ative em Configurações → Clipes.",
@@ -3077,14 +3078,18 @@
       "noFrames": "Nada gravado ainda – tente de novo em alguns segundos.",
       "busy": "O último clipe ainda está sendo salvo.",
       "error": "Não foi possível salvar o clipe.",
-      "ffmpegDownload": "Não foi possível baixar o gravador (FFmpeg)."
+      "ffmpegDownload": "Não foi possível baixar o gravador (FFmpeg).",
+      "ffmpegFailed": "Não foi possível baixar o gravador (FFmpeg) – o launcher tenta de novo em um minuto.",
+      "encoder": "Nenhum codificador de vídeo funciona – atualize o driver de vídeo ou escolha x264 em Configurações → Clipes."
     },
     "reason": {
       "starting": "Aguardando a janela do jogo …",
       "noWindow": "Janela do jogo não encontrada",
       "ffmpeg": "Baixando o gravador (FFmpeg) …",
       "error": "A gravação não inicia – veja o log",
-      "disabled": "Os clipes estão desativados"
+      "disabled": "Os clipes estão desativados",
+      "ffmpegFailed": "Falha ao baixar o gravador – nova tentativa em breve",
+      "encoder": "Nenhum codificador de vídeo funciona"
     },
     "status": {
       "buffer": "Buffer ativo"

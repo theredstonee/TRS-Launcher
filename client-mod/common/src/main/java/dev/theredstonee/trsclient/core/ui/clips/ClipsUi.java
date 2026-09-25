@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.ui.clips;
 
 import dev.theredstonee.trsclient.core.clips.ClipLibrary;
+import dev.theredstonee.trsclient.core.clips.ClipNotice;
 import dev.theredstonee.trsclient.core.clips.ClipStatus;
 import dev.theredstonee.trsclient.core.clips.Clips;
 import dev.theredstonee.trsclient.core.clips.Thumbnails;
@@ -184,7 +185,8 @@ public final class ClipsUi extends WindowUi {
 			tx += tw + 3;
 			tabsRight = tx;
 		}
-		ClipStatus st = Clips.get() == null ? ClipStatus.OFFLINE : Clips.get().status();
+		final Clips clips = Clips.get();
+		ClipStatus st = clips == null ? ClipStatus.OFFLINE : clips.status();
 		int right = x + w;
 		// Ordner öffnen
 		int fx = right - 16;
@@ -195,48 +197,80 @@ public final class ClipsUi extends WindowUi {
 			}
 		});
 		right = fx - 4;
-		// Aufnahme
-		String recLabel = st.recording ? I18n.tr("clips.stop", clock(st.recordingMillis(now))) : I18n.tr("clips.record");
-		int rw = Math.min(110, c.textWidth(recLabel) + 26);
-		int rx = right - rw;
-		boolean canRecord = st.connected && (st.available || st.recording);
-		recordButton(c, rx, y, rw, 16, recLabel, st.recording, canRecord, mx, my, now);
-		right = rx - 4;
-		// Clip speichern
-		String clipLabel = I18n.tr("clips.save");
-		int cw = Math.min(100, c.textWidth(clipLabel) + 12);
-		int clipX = right - cw;
-		if (clipX > tabsRight) {
-			button(c, clipX, y, cw, 16, clipLabel, false, st.connected && st.available && st.buffer, mx, my, new Runnable() {
-				@Override
-				public void run() {
-					if (Clips.get() != null) Clips.get().saveClip();
-					setNotice(I18n.tr("clips.saving"), false);
-					lastScan = System.currentTimeMillis() - RESCAN_MS + 2_500L;
-				}
-			});
+		if (st.offersEnable()) {
+			// Clips sind aus: statt Aufnahme/Clip ein deutlicher „Jetzt einschalten“ (Hinweis zur Aufnahme darunter).
+			String label = I18n.tr("clips.enable.button");
+			int ew = Math.min(140, c.textWidth(label) + 16);
+			int ex = right - ew;
+			if (ex > tabsRight) {
+				button(c, ex, y, ew, 16, label, true, true, mx, my, new Runnable() {
+					@Override
+					public void run() {
+						if (clips != null) clips.enableClips();
+					}
+				});
+			}
+		} else {
+			// Aufnahme – immer klickbar: geht es gerade nicht, sagt die Meldung darunter warum.
+			String recLabel = st.recording ? I18n.tr("clips.stop", clock(st.recordingMillis(now))) : I18n.tr("clips.record");
+			int rw = Math.min(110, c.textWidth(recLabel) + 26);
+			int rx = right - rw;
+			boolean canRecord = st.connected && (st.available || st.recording);
+			recordButton(c, rx, y, rw, 16, recLabel, st.recording, canRecord, mx, my, now);
+			right = rx - 4;
+			// Clip speichern
+			String clipLabel = I18n.tr("clips.save");
+			int cw = Math.min(100, c.textWidth(clipLabel) + 12);
+			int clipX = right - cw;
+			final boolean ready = st.connected && st.available && st.buffer;
+			if (clipX > tabsRight) {
+				button(c, clipX, y, cw, 16, clipLabel, false, true, mx, my, new Runnable() {
+					@Override
+					public void run() {
+						if (clips != null) clips.saveClip();
+						if (ready) {
+							setNotice(I18n.tr("clips.saving"), false);
+							lastScan = System.currentTimeMillis() - RESCAN_MS + 2_500L;
+						}
+					}
+				});
+			}
 		}
 		int cy = y + 21;
 
-		// Zustand der Verbindung / Meldung
+		// Zustand der Verbindung / Meldung (die neueste gewinnt)
 		String line;
 		int lineColor = t.textDim;
-		if (notice != null && now - noticeAt < 5_000L) {
+		int maxLines = 2;
+		ClipNotice clipNotice = clips == null ? null : clips.currentNotice();
+		long clipNoticeAt = clipNotice == null ? 0 : clipNoticeAt(clipNotice, now);
+		boolean localNotice = notice != null && now - noticeAt < 5_000L;
+		if (clipNotice != null && clipNotice.type != ClipNotice.Type.OFFER && (!localNotice || clipNoticeAt >= noticeAt)) {
+			line = clipNotice.text();
+			lineColor = clipNotice.success() ? t.text : t.dustOn;
+		} else if (localNotice) {
 			line = notice;
 			lineColor = noticeError ? t.dustOn : t.text;
+		} else if (st.offersEnable()) {
+			line = I18n.tr("clips.enable.text", ClipNotice.what(st.audio, st.mic));
+			lineColor = t.text;
+			maxLines = 3;
 		} else if (!st.connected) {
-			line = I18n.tr("clips.link.none");
+			line = clips == null ? I18n.tr("clips.link.none") : clips.offlineText();
+		} else if (st.disabled()) {
+			line = I18n.tr("clips.hint.disabled");
 		} else if (st.recording) {
 			line = I18n.tr("clips.link.recording", clock(st.recordingMillis(now)));
 			lineColor = t.dustOn;
 		} else if (st.available) {
 			line = st.buffer && st.clipSeconds > 0 ? I18n.tr("clips.link.ready", st.clipSeconds) : I18n.tr("clips.link.readyNoBuffer");
 		} else {
-			line = I18n.tr("clips.link.unavailable");
+			String reason = ClipNotice.reasonText(st);
+			line = reason != null ? reason : I18n.tr("clips.link.unavailable");
 		}
 		List<String> statusLines = Paint.wrap(c, line, w);
-		for (int i = 0; i < Math.min(2, statusLines.size()); i++) {
-			String l = i == 1 && statusLines.size() > 2 ? Paint.join(statusLines, 1) : statusLines.get(i);
+		for (int i = 0; i < Math.min(maxLines, statusLines.size()); i++) {
+			String l = i == maxLines - 1 && statusLines.size() > maxLines ? Paint.join(statusLines, i) : statusLines.get(i);
 			Paint.textClipped(c, l, x, cy, w, lineColor, false);
 			cy += 10;
 		}
@@ -288,15 +322,14 @@ public final class ClipsUi extends WindowUi {
 			Redstone.pip(c, x + 5, y + 5, 6, 0f);
 			Paint.textClipped(c, label, x + 15, y + 4, w - 17, t.textDim, false);
 		}
-		if (enabled) {
-			hits.add(x, y, w, h, new Runnable() {
-				@Override
-				public void run() {
-					host.playClick();
-					if (Clips.get() != null) Clips.get().toggleRecording();
-				}
-			});
-		}
+		// Auch ohne Verbindung klickbar – dann erklärt die Meldung, warum nichts aufgenommen wird.
+		hits.add(x, y, w, h, new Runnable() {
+			@Override
+			public void run() {
+				host.playClick();
+				if (Clips.get() != null) Clips.get().toggleRecording();
+			}
+		});
 	}
 
 	private void grid(Canvas c, final List<ClipLibrary.Entry> list, int x, int y, int w, int h, int mx, int my) {
@@ -511,6 +544,18 @@ public final class ClipsUi extends WindowUi {
 			}
 		}
 		if (dir == null || !OpenPath.open(dir)) setNotice(I18n.tr("clips.openFailed"), true);
+	}
+
+	/** Erster Zeitpunkt, zu dem diese Clip-Meldung hier zu sehen war (zum Vergleich mit eigenen Meldungen). */
+	private ClipNotice seenNotice;
+	private long seenNoticeAt;
+
+	private long clipNoticeAt(ClipNotice n, long now) {
+		if (n != seenNotice) {
+			seenNotice = n;
+			seenNoticeAt = now;
+		}
+		return seenNoticeAt;
 	}
 
 	private void setNotice(String text, boolean error) {

@@ -45,13 +45,15 @@ public final class ClipPanel {
 		if (s.recording) key = 1L << 40 | (s.recordingMillis(now) / 1000);
 		else if (s.buffer && bufferIcon()) key = 2L << 40 | s.clipSeconds;
 		else if (preview) key = 3L << 40;
+		else if (s.connected && "ffmpeg".equals(s.reason) && s.progress >= 0) key = 4L << 40 | s.progress;
 		else return null;
 		int gen = I18n.generation();
 		if (key == lineKey && gen == lineGeneration && lineText != null) return lineText;
 		String text;
 		if (s.recording) text = I18n.tr("hud.clips.rec", ClipNotice.clock(s.recordingMillis(now)));
 		else if (s.buffer && bufferIcon()) text = I18n.tr("hud.clips.buffer", ClipNotice.duration(s.clipSeconds));
-		else text = I18n.tr("hud.clips.rec", "0:42");
+		else if (preview) text = I18n.tr("hud.clips.rec", "0:42");
+		else text = I18n.tr("hud.clips.ffmpeg", String.valueOf(s.progress));
 		lineKey = key;
 		lineGeneration = gen;
 		lineText = text;

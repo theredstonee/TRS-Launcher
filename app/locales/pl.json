@@ -3067,7 +3067,8 @@
       "show": "Pokaż",
       "limitCleanup": "Osiągnięto limit miejsca: {n} stary klip przeniesiono do kosza | Osiągnięto limit miejsca: {n} stare klipy przeniesiono do kosza | Osiągnięto limit miejsca: {n} starych klipów przeniesiono do kosza",
       "renamed": "Zmieniono nazwę klipu",
-      "trashed": "Klip przeniesiono do kosza"
+      "trashed": "Klip przeniesiono do kosza",
+      "enabledInGame": "Klipy zostały włączone w grze – {instance} nagrywa"
     },
     "errors": {
       "disabled": "Klipy są wyłączone – włącz je w Ustawieniach → Klipy.",
@@ -3077,14 +3078,18 @@
       "noFrames": "Jeszcze nic nie nagrano – spróbuj za kilka sekund.",
       "busy": "Poprzedni klip jest jeszcze zapisywany.",
       "error": "Nie udało się zapisać klipu.",
-      "ffmpegDownload": "Nie udało się pobrać nagrywarki (FFmpeg)."
+      "ffmpegDownload": "Nie udało się pobrać nagrywarki (FFmpeg).",
+      "ffmpegFailed": "Nie udało się pobrać nagrywarki (FFmpeg) – launcher spróbuje ponownie za minutę.",
+      "encoder": "Żaden koder wideo nie działa – zaktualizuj sterownik grafiki lub wybierz x264 w Ustawienia → Klipy."
     },
     "reason": {
       "starting": "Czekam na okno gry …",
       "noWindow": "Nie znaleziono okna gry",
       "ffmpeg": "Pobieranie nagrywarki (FFmpeg) …",
       "error": "Nagrywanie się nie uruchamia – zobacz dziennik",
-      "disabled": "Klipy są wyłączone"
+      "disabled": "Klipy są wyłączone",
+      "ffmpegFailed": "Pobieranie nagrywarki nie powiodło się – zaraz kolejna próba",
+      "encoder": "Żaden koder wideo nie działa"
     },
     "status": {
       "buffer": "Bufor aktywny"
