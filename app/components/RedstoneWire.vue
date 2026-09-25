@@ -60,10 +60,8 @@ const lit = computed(() => (props.powered ? props.segments : Math.round((props.p
     box-shadow: none;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .wire-wait {
-    animation: none;
-    background-color: var(--color-redstone-600);
-  }
+:root[data-reduced-motion] .wire-wait {
+  animation: none;
+  background-color: var(--color-redstone-600);
 }
 </style>

@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Geavanceerde weergave",
       "advancedRenderingDescription": "Vervagingseffecten achter dialogen en balken. Uitschakelen bespaart wat prestaties op tragere pc’s.",
       "animatedBackgroundTitle": "Geanimeerde achtergrond",
-      "animatedBackgroundDescription": "Een rustig redstonecircuit achter elke pagina. Als dit uit staat, wordt alleen het deepslate-patroon getoond."
+      "animatedBackgroundDescription": "Een rustig redstonecircuit achter elke pagina. Als dit uit staat, wordt alleen het deepslate-patroon getoond.",
+      "motionTitle": "Animaties",
+      "motionDescription": "Redstone-achtergrond, looplichten en overgangen. „Zoals Windows/systeem” volgt de animatie-instelling van Windows of het bureaublad – die staat op geoptimaliseerde of externe pc’s vaak uit.",
+      "motionModes": {
+        "full": "Altijd aan",
+        "system": "Zoals Windows/systeem",
+        "reduced": "Beperkt"
+      }
     },
     "features": {
       "instancePage": "Instantiepagina",

@@ -393,9 +393,7 @@ function open(id: string) {
 .kind-icon {
   @apply grid size-9 shrink-0 place-items-center rounded-lg bg-base-800 text-base-200 ring-1 ring-white/5;
 }
-@media (prefers-reduced-motion: reduce) {
-  .charge .ring {
-    animation: none;
-  }
+:root[data-reduced-motion] .charge .ring {
+  animation: none;
 }
 </style>

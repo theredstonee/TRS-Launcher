@@ -98,6 +98,28 @@ pub enum Accent {
     Amethyst,
 }
 
+/// Animationen der Oberfläche (Redstone-Hintergrund, Lauflichter, Übergänge).
+///
+/// Ab Werk `Full`: Windows meldet „Bewegung reduzieren“ schon, wenn nur die
+/// Animationseffekte aus sind (Leistungsoptionen, Remotedesktop, Tuning-Tools) –
+/// der Launcher stand dann still, obwohl niemand das wollte. `System` folgt
+/// weiter dieser Einstellung, `Reduced` zeigt immer Standbilder.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Motion {
+    #[default]
+    Full,
+    System,
+    Reduced,
+}
+
+/// Ein unbekannter Wert (z. B. aus einer neueren Version) setzt nur die
+/// Animationen auf den Standard zurück, nicht die ganze `settings.json`.
+fn lenient_motion<'de, D: serde::Deserializer<'de>>(deserializer: D) -> std::result::Result<Motion, D::Error> {
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value(value).unwrap_or_default())
+}
+
 /// Sprache der Oberfläche. Neue Installationen starten auf Englisch (der
 /// Einrichtungs-Assistent schlägt die Windows-Sprache vor); bestehende
 /// Einstellungen ohne Sprachfeld bleiben Deutsch (siehe [`Settings::load`]).
@@ -149,6 +171,9 @@ pub struct UiSettings {
     pub advanced_rendering: bool,
     /// Animierte Redstone-Schaltung als Hintergrund aller Seiten.
     pub animated_background: bool,
+    /// Animationen immer, wie im System eingestellt oder reduziert.
+    #[serde(deserialize_with = "lenient_motion")]
+    pub motion: Motion,
     pub worlds_tab: bool,
     pub screenshots_tab: bool,
     pub history_tab: bool,
@@ -169,6 +194,7 @@ impl Default for UiSettings {
             accent: Accent::Redstone,
             advanced_rendering: true,
             animated_background: true,
+            motion: Motion::Full,
             worlds_tab: true,
             screenshots_tab: true,
             history_tab: true,
@@ -567,6 +593,31 @@ mod tests {
         for lang in Language::ALL {
             assert_eq!(serde_json::to_value(lang).unwrap(), lang.code());
         }
+    }
+
+    #[tokio::test]
+    async fn motion_defaults_to_full_and_survives_unknown_values() {
+        assert_eq!(UiSettings::default().motion, Motion::Full);
+        // Ältere Dateien ohne Feld: Animationen an (nicht dem System folgen).
+        let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
+        assert_eq!((old.ui.motion, old.ui.theme), (Motion::Full, Theme::Light));
+        for (json, motion) in [("full", Motion::Full), ("system", Motion::System), ("reduced", Motion::Reduced)] {
+            assert_eq!(serde_json::to_value(motion).unwrap(), json);
+            let ui: UiSettings = serde_json::from_value(serde_json::json!({ "motion": json })).unwrap();
+            assert_eq!(ui.motion, motion);
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("settings.json");
+        // Unbekannter Wert (neuere Version) verwirft nicht die übrigen Einstellungen.
+        tokio::fs::write(&file, r#"{"maxMemoryMb":8192,"ui":{"motion":"wobbly","accent":"lapis","language":"de"}}"#)
+            .await
+            .unwrap();
+        let s = Settings::load(&file).await.unwrap();
+        assert_eq!((s.ui.motion, s.ui.accent, s.max_memory_mb), (Motion::Full, Accent::Lapis, 8192));
+        let s = Settings { ui: UiSettings { motion: Motion::Reduced, ..Default::default() }, ..Default::default() };
+        s.save(&file).await.unwrap();
+        assert_eq!(Settings::load(&file).await.unwrap().ui.motion, Motion::Reduced);
     }
 
     #[tokio::test]

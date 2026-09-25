@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Zaawansowane renderowanie",
       "advancedRenderingDescription": "Efekty rozmycia za oknami dialogowymi i paskami. Wyłączenie oszczędza trochę wydajności na słabszych komputerach.",
       "animatedBackgroundTitle": "Animowane tło",
-      "animatedBackgroundDescription": "Spokojny obwód z redstone za każdą stroną. Po wyłączeniu widoczny jest tylko wzór z łupka."
+      "animatedBackgroundDescription": "Spokojny obwód z redstone za każdą stroną. Po wyłączeniu widoczny jest tylko wzór z łupka.",
+      "motionTitle": "Animacje",
+      "motionDescription": "Tło z redstone, biegnące światła i przejścia. „Jak Windows/system” stosuje ustawienie animacji z Windows lub pulpitu – na zoptymalizowanych lub zdalnych komputerach jest ono często wyłączone.",
+      "motionModes": {
+        "full": "Zawsze włączone",
+        "system": "Jak Windows/system",
+        "reduced": "Ograniczone"
+      }
     },
     "features": {
       "instancePage": "Strona instancji",

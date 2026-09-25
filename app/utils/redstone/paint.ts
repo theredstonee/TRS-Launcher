@@ -11,8 +11,24 @@ export const TEX = 16
 type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 type Surface = HTMLCanvasElement | OffscreenCanvas
 
+/**
+ * Manche WebViews (ältere WebKitGTK) kennen `OffscreenCanvas`, liefern aber
+ * keinen 2D-Kontext dafür – dann ein normales, unsichtbares Canvas nehmen.
+ */
+let offscreen2d: boolean | undefined
+function offscreenWorks(): boolean {
+  if (offscreen2d === undefined) {
+    try {
+      offscreen2d = typeof OffscreenCanvas !== 'undefined' && !!new OffscreenCanvas(1, 1).getContext('2d')
+    } catch {
+      offscreen2d = false
+    }
+  }
+  return offscreen2d
+}
+
 function surface(w: number, h: number): Surface {
-  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h)
+  if (offscreenWorks()) return new OffscreenCanvas(w, h)
   const c = document.createElement('canvas')
   c.width = w
   c.height = h

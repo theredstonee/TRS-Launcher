@@ -109,10 +109,8 @@ const style = computed(() => ({ '--accent': props.accent && /^#[0-9a-f]{6}$/i.te
     transform: translateY(-4px);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ub-motif {
-    animation: none;
-  }
+:root[data-reduced-motion] .ub-motif {
+  animation: none;
 }
 .ub-text {
   position: absolute;
