@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Rendu avancé",
       "advancedRenderingDescription": "Effets de flou derrière les boîtes de dialogue et les barres. Les désactiver économise un peu de performances sur les PC lents.",
       "animatedBackgroundTitle": "Arrière-plan animé",
-      "animatedBackgroundDescription": "Un circuit de redstone paisible derrière chaque page. Désactivé, seul le motif d'ardoise des abîmes s'affiche."
+      "animatedBackgroundDescription": "Un circuit de redstone paisible derrière chaque page. Désactivé, seul le motif d'ardoise des abîmes s'affiche.",
+      "motionTitle": "Animations",
+      "motionDescription": "Arrière-plan de redstone, lumières défilantes et transitions. « Comme Windows/système » suit le réglage des animations de Windows ou du bureau, souvent désactivé sur les PC optimisés ou à distance.",
+      "motionModes": {
+        "full": "Toujours activées",
+        "system": "Comme Windows/système",
+        "reduced": "Réduites"
+      }
     },
     "features": {
       "instancePage": "Page d'instance",

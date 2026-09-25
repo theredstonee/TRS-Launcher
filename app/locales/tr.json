@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Gelişmiş görüntüleme",
       "advancedRenderingDescription": "Pencerelerin ve çubukların arkasında bulanıklık efektleri. Kapatmak yavaş bilgisayarlarda biraz performans kazandırır.",
       "animatedBackgroundTitle": "Animasyonlu arka plan",
-      "animatedBackgroundDescription": "Her sayfanın arkasında sakin bir redstone devresi. Kapalıyken yalnızca derin kayrak deseni gösterilir."
+      "animatedBackgroundDescription": "Her sayfanın arkasında sakin bir redstone devresi. Kapalıyken yalnızca derin kayrak deseni gösterilir.",
+      "motionTitle": "Animasyonlar",
+      "motionDescription": "Redstone arka planı, akan ışıklar ve geçişler. “Windows/sisteme göre”, Windows’un veya masaüstünün animasyon ayarını izler; bu ayar optimize edilmiş veya uzak bilgisayarlarda genellikle kapalıdır.",
+      "motionModes": {
+        "full": "Her zaman açık",
+        "system": "Windows/sisteme göre",
+        "reduced": "Azaltılmış"
+      }
     },
     "features": {
       "instancePage": "Kurulum sayfası",

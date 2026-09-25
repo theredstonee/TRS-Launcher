@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Advanced rendering",
       "advancedRenderingDescription": "Blur effects behind dialogs and bars. Turning it off saves a little performance on slower PCs.",
       "animatedBackgroundTitle": "Animated background",
-      "animatedBackgroundDescription": "A calm redstone circuit behind every page. When off, only the deepslate pattern is shown."
+      "animatedBackgroundDescription": "A calm redstone circuit behind every page. When off, only the deepslate pattern is shown.",
+      "motionTitle": "Animations",
+      "motionDescription": "Redstone background, running lights and transitions. “Follow Windows/system” uses the animation setting of Windows or your desktop – it is often off on tuned or remote PCs.",
+      "motionModes": {
+        "full": "Always on",
+        "system": "Follow Windows/system",
+        "reduced": "Reduced"
+      }
     },
     "features": {
       "instancePage": "Instance page",

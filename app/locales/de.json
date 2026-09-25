@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Erweitertes Rendering",
       "advancedRenderingDescription": "Unschärfe-Effekte hinter Dialogen und Leisten. Aus spart auf schwachen Rechnern etwas Leistung.",
       "animatedBackgroundTitle": "Animierter Hintergrund",
-      "animatedBackgroundDescription": "Eine ruhige Redstone-Schaltung hinter allen Seiten. Aus zeigt nur das Deepslate-Muster."
+      "animatedBackgroundDescription": "Eine ruhige Redstone-Schaltung hinter allen Seiten. Aus zeigt nur das Deepslate-Muster.",
+      "motionTitle": "Animationen",
+      "motionDescription": "Redstone-Hintergrund, Lauflichter und Übergänge. „Wie Windows/System“ folgt der Animations-Einstellung von Windows bzw. des Desktops – auf optimierten oder Remote-PCs ist sie oft aus.",
+      "motionModes": {
+        "full": "Immer an",
+        "system": "Wie Windows/System",
+        "reduced": "Reduziert"
+      }
     },
     "features": {
       "instancePage": "Instanz-Seite",

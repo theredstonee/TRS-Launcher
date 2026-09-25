@@ -16,6 +16,24 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **The redstone background moves again on every PC.** On some PCs it stood still – Windows reports "reduce motion"
+  as soon as its animation effects are off (performance options, remote desktop, tuning tools). New setting under
+  Settings → Appearance → "Animations": "Always on" (default), "Follow Windows/system" or "Reduced". It applies to all
+  animations in the launcher. The background also picks up again reliably after the window was minimised or
+  restored, and a hiccup in the circuit no longer freezes it.
+
+### Deutsch
+
+- **Der Redstone-Hintergrund bewegt sich wieder auf jedem PC.** Auf manchen PCs stand er still – Windows meldet
+  „Bewegung reduzieren“, sobald die Animationseffekte aus sind (Leistungsoptionen, Remotedesktop, Tuning-Tools). Neue
+  Einstellung unter Einstellungen → Aussehen → „Animationen“: „Immer an“ (Standard), „Wie Windows/System“ oder
+  „Reduziert“. Sie gilt für alle Animationen im Launcher. Außerdem läuft der Hintergrund nach dem Minimieren oder
+  Wiederherstellen des Fensters zuverlässig weiter, und ein Aussetzer in der Schaltung lässt ihn nicht mehr einfrieren.
+
 ## 0.6.0 – 2026-09-25 – The Sync Update | Das Sync-Update
 <!-- banner: accent=#4be38a motif=/news/0.6.0/banner.png -->
 

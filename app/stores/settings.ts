@@ -2,8 +2,9 @@ import { defineStore } from 'pinia'
 import type { Settings, UiSettings } from '~/types'
 import type { Locale } from '~/utils/i18n'
 
-/** Theme, Akzentfarbe und Unschärfe sofort auf das Dokument anwenden. */
-export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'advancedRendering'> | undefined) {
+/** Theme, Akzentfarbe, Unschärfe und Animationen sofort auf das Dokument anwenden. */
+export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'advancedRendering' | 'motion'> | undefined) {
+  applyMotion(ui?.motion)
   if (typeof document === 'undefined') return
   const root = document.documentElement
   const theme = ui?.theme ?? 'dark'

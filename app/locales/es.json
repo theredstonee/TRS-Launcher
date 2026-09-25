@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Renderizado avanzado",
       "advancedRenderingDescription": "Efectos de desenfoque detrás de diálogos y barras. Desactivarlo ahorra algo de rendimiento en equipos modestos.",
       "animatedBackgroundTitle": "Fondo animado",
-      "animatedBackgroundDescription": "Un circuito de redstone tranquilo detrás de todas las páginas. Desactivado, solo se ve el patrón de pizarra profunda."
+      "animatedBackgroundDescription": "Un circuito de redstone tranquilo detrás de todas las páginas. Desactivado, solo se ve el patrón de pizarra profunda.",
+      "motionTitle": "Animaciones",
+      "motionDescription": "Fondo de redstone, luces en movimiento y transiciones. «Como Windows/sistema» sigue el ajuste de animaciones de Windows o del escritorio, que suele estar desactivado en equipos optimizados o remotos.",
+      "motionModes": {
+        "full": "Siempre activadas",
+        "system": "Como Windows/sistema",
+        "reduced": "Reducidas"
+      }
     },
     "features": {
       "instancePage": "Página de instancia",

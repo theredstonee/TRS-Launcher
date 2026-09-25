@@ -54,6 +54,17 @@
 }
 
 /*
+ * Bewegung: Die Launcher-Einstellung „Animationen“ entscheidet, nicht die
+ * Media-Query allein (Windows meldet „reduziert“ schon bei ausgeschalteten
+ * Animationseffekten). `data-reduced-motion` auf <html> setzt `utils/motion.ts`
+ * – auch für „Wie System“. Deshalb nie die Media-Query für reduzierte Bewegung
+ * direkt verwenden, sondern `:root[data-reduced-motion] …` bzw. `motion-reduce:`
+ * (tests/motion.test.ts passt darauf auf).
+ */
+@custom-variant motion-reduce (:root[data-reduced-motion] &);
+@custom-variant motion-safe (:root:not([data-reduced-motion]) &);
+
+/*
  * Themes: überschreiben nur die Deepslate-Skala. „Dunkel“ ist der Standard
  * oben; OLED geht auf echtes Schwarz, Hell dreht die Skala um.
  */
@@ -435,14 +446,12 @@ textarea {
   @apply cursor-pointer font-medium text-base-50;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+:root[data-reduced-motion] *,
+:root[data-reduced-motion] *::before,
+:root[data-reduced-motion] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* --- Redstone-Animationen im ganzen Launcher ------------------------------- */
@@ -500,15 +509,11 @@ textarea {
   box-shadow: 0 0 8px var(--color-redstone-500);
   animation: signal-run 0.7s steps(18) 1 forwards;
 }
-@media (prefers-reduced-motion: reduce) {
-  .skeleton::after,
-  .card-hover:hover::before,
-  .route-signal::after {
-    animation: none;
-  }
-  .menu {
-    animation: none;
-  }
+:root[data-reduced-motion] .skeleton::after,
+:root[data-reduced-motion] .route-signal::after,
+:root[data-reduced-motion] .card-hover:hover::before,
+:root[data-reduced-motion] .menu {
+  animation: none;
 }
 
 /*

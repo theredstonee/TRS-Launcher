@@ -121,9 +121,7 @@ function openRelease() {
   from { transform: translateX(-100%); }
   to { transform: translateX(250%); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .update-wire span { animation: none; @apply w-full; }
-}
+:root[data-reduced-motion] .update-wire span { animation: none; @apply w-full; }
 .fade-enter-active { transition: opacity 0.2s ease; }
 .fade-enter-from { opacity: 0; }
 .update-pill-failed {

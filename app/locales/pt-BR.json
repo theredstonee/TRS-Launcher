@@ -1535,7 +1535,14 @@
       "advancedRenderingTitle": "Renderização avançada",
       "advancedRenderingDescription": "Efeitos de desfoque atrás de diálogos e barras. Desativar economiza um pouco de desempenho em PCs mais lentos.",
       "animatedBackgroundTitle": "Fundo animado",
-      "animatedBackgroundDescription": "Um circuito de redstone tranquilo atrás de cada página. Quando desativado, só o padrão de ardósia profunda é exibido."
+      "animatedBackgroundDescription": "Um circuito de redstone tranquilo atrás de cada página. Quando desativado, só o padrão de ardósia profunda é exibido.",
+      "motionTitle": "Animações",
+      "motionDescription": "Fundo de redstone, luzes em movimento e transições. “Como no Windows/sistema” segue a configuração de animações do Windows ou da área de trabalho, que costuma estar desativada em PCs otimizados ou remotos.",
+      "motionModes": {
+        "full": "Sempre ativadas",
+        "system": "Como no Windows/sistema",
+        "reduced": "Reduzidas"
+      }
     },
     "features": {
       "instancePage": "Página da instância",
