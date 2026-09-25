@@ -342,6 +342,85 @@ impl InstanceStore {
     }
 }
 
+// --- Spiel-Optionen neuer Instanzen ---------------------------------------------------
+
+/// Standard-Werte der `options.txt` neuer Instanzen – als Paare `(Schlüssel, Wert)`.
+///
+/// Vanilla startet mit VSync an und „Max. Bildrate“ 120. Damit bleibt selbst ein
+/// starker PC bei rund 100 FPS hängen, während andere Clients (die das ab Werk
+/// aufheben) ein Vielfaches zeigen. Neue TRS-Instanzen starten deshalb mit
+/// „Unbegrenzt“ (`maxFps:260`, gilt so seit Minecraft 1.7) und ohne VSync; alles
+/// andere bleibt Vanilla. Unbekannte Schlüssel ignorieren alte Versionen einfach.
+///
+/// Geschrieben wird nur, solange die Instanz noch KEINE `options.txt` hat – beim
+/// Anlegen und beim ersten Start (etwa nach einem Import ohne Optionen). Eine
+/// vorhandene Datei des Spielers bleibt immer unangetastet.
+pub const DEFAULT_GAME_OPTIONS: &[(&str, &str)] = &[("maxFps", "260"), ("enableVsync", "false")];
+
+const OPTIONS_FILE: &str = "options.txt";
+
+/// Inhalt der Standard-`options.txt`. Mit `data_version` (Datenversion des Spiels)
+/// steht vorne `version:<n>` – sonst hielte Minecraft die Datei für uralt und
+/// wendete alle Options-Datafixer an (ab 1.19.4 fiele dadurch z. B. der
+/// Barrierefreiheits-Dialog beim ersten Start weg).
+fn default_options_text(data_version: Option<u32>) -> String {
+    let mut text = data_version.map(|v| format!("version:{v}\n")).unwrap_or_default();
+    for (key, value) in DEFAULT_GAME_OPTIONS {
+        text.push_str(&format!("{key}:{value}\n"));
+    }
+    text
+}
+
+/// Legt die Standard-`options.txt` ([`DEFAULT_GAME_OPTIONS`]) im Spielordner an,
+/// wenn es dort noch keine gibt. Stammt die vorhandene Datei unverändert von hier
+/// (beim Anlegen ohne bekannte Datenversion geschrieben) und ist die Datenversion
+/// jetzt bekannt, wird `version:` ergänzt. Liefert `true`, wenn geschrieben wurde.
+pub async fn seed_game_options(game_dir: &std::path::Path, data_version: Option<u32>) -> Result<bool> {
+    let path = game_dir.join(OPTIONS_FILE);
+    match fs::read_to_string(&path).await {
+        Ok(existing) => {
+            // Nur die eigene, noch nie vom Spiel gespeicherte Fassung wird nachgebessert.
+            if data_version.is_some() && existing == default_options_text(None) {
+                fsutil::write_atomic(&path, default_options_text(data_version).as_bytes()).await?;
+                return Ok(true);
+            }
+            Ok(false)
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            fsutil::ensure_dir(game_dir).await?;
+            // create_new: nie eine Datei überschreiben, die gerade erst entstanden ist.
+            let file = fs::OpenOptions::new().write(true).create_new(true).open(&path).await;
+            let mut file = match file {
+                Ok(f) => f,
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => return Ok(false),
+                Err(e) => return Err(Error::io(&path, e)),
+            };
+            use tokio::io::AsyncWriteExt;
+            file.write_all(default_options_text(data_version).as_bytes()).await.map_err(|e| Error::io(&path, e))?;
+            file.flush().await.map_err(|e| Error::io(&path, e))?;
+            Ok(true)
+        }
+        // Nicht lesbar (z. B. kein UTF-8): lieber nichts anfassen.
+        Err(_) => Ok(false),
+    }
+}
+
+/// Datenversion („world_version“) aus der `version.json` im Client-Jar (ab 1.14);
+/// `None`, wenn das Jar fehlt oder keine hat.
+pub async fn client_data_version(client_jar: &std::path::Path) -> Option<u32> {
+    let jar = client_jar.to_owned();
+    tokio::task::spawn_blocking(move || {
+        let mut archive = zip::ZipArchive::new(std::fs::File::open(&jar).ok()?).ok()?;
+        let entry = archive.by_name("version.json").ok()?;
+        // Die Datei ist klein; mehr als 64 KB wäre kein echtes version.json.
+        let json: serde_json::Value = serde_json::from_reader(std::io::Read::take(entry, 64 * 1024)).ok()?;
+        json.get("world_version")?.as_u64().and_then(|v| u32::try_from(v).ok())
+    })
+    .await
+    .ok()
+    .flatten()
+}
+
 /// IDs werden zu Ordnernamen – deshalb strikt `[a-z0-9-]`, kein führender
 /// Bindestrich, keine Windows-Gerätenamen.
 pub fn validate_id(id: &str) -> Result<()> {
@@ -551,6 +630,64 @@ mod tests {
         // Alte instance.json ohne neue Felder lädt weiter.
         let old: InstanceOverrides = serde_json::from_str(r#"{"maxMemoryMb":4096}"#).unwrap();
         assert_eq!(old.channel(), UpdateChannel::Release);
+    }
+
+    #[tokio::test]
+    async fn new_instances_get_unlimited_fps_without_vsync() {
+        let dir = tempfile::tempdir().unwrap();
+        let game = dir.path().join("minecraft");
+        assert!(seed_game_options(&game, None).await.unwrap());
+        let text = std::fs::read_to_string(game.join("options.txt")).unwrap();
+        assert_eq!(text, "maxFps:260\nenableVsync:false\n");
+        // Zweiter Aufruf ohne Datenversion: nichts zu tun.
+        assert!(!seed_game_options(&game, None).await.unwrap());
+        // Beim ersten Start mit bekanntem Jar: `version:` kommt dazu (sonst liefen alle Datafixer).
+        assert!(seed_game_options(&game, Some(3955)).await.unwrap());
+        assert_eq!(std::fs::read_to_string(game.join("options.txt")).unwrap(), "version:3955\nmaxFps:260\nenableVsync:false\n");
+        assert!(!seed_game_options(&game, Some(3955)).await.unwrap());
+
+        // Erster Start einer Instanz ohne options.txt (z. B. Import): gleich mit Version.
+        let other = dir.path().join("other");
+        assert!(seed_game_options(&other, Some(4671)).await.unwrap());
+        assert!(std::fs::read_to_string(other.join("options.txt")).unwrap().starts_with("version:4671\nmaxFps:260\n"));
+    }
+
+    #[tokio::test]
+    async fn existing_options_of_the_player_stay_untouched() {
+        let dir = tempfile::tempdir().unwrap();
+        let own = "version:3955\nmaxFps:120\nenableVsync:true\nfov:0.5\n";
+        std::fs::write(dir.path().join("options.txt"), own).unwrap();
+        assert!(!seed_game_options(dir.path(), Some(3955)).await.unwrap());
+        assert!(!seed_game_options(dir.path(), None).await.unwrap());
+        assert_eq!(std::fs::read_to_string(dir.path().join("options.txt")).unwrap(), own);
+        // Vom Spiel gespeicherte Fassung unserer Standards (anderer Inhalt) bleibt ebenso.
+        let saved = "version:3955\r\nmaxFps:260\r\nenableVsync:false\r\n";
+        std::fs::write(dir.path().join("options.txt"), saved).unwrap();
+        assert!(!seed_game_options(dir.path(), Some(3955)).await.unwrap());
+        assert_eq!(std::fs::read_to_string(dir.path().join("options.txt")).unwrap(), saved);
+    }
+
+    #[tokio::test]
+    async fn reads_the_data_version_from_the_client_jar() {
+        use std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let jar = dir.path().join("1.21.1.jar");
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&jar).unwrap());
+        zip.start_file("version.json", zip::write::SimpleFileOptions::default()).unwrap();
+        zip.write_all(br#"{"id":"1.21.1","world_version":3955,"protocol_version":767}"#).unwrap();
+        zip.finish().unwrap();
+        assert_eq!(client_data_version(&jar).await, Some(3955));
+
+        // Alte Jars ohne version.json, kaputte oder fehlende Dateien: unbekannt.
+        let old = dir.path().join("1.8.9.jar");
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&old).unwrap());
+        zip.start_file("net/minecraft/client/Minecraft.class", zip::write::SimpleFileOptions::default()).unwrap();
+        zip.write_all(b"x").unwrap();
+        zip.finish().unwrap();
+        assert_eq!(client_data_version(&old).await, None);
+        std::fs::write(dir.path().join("broken.jar"), b"no zip").unwrap();
+        assert_eq!(client_data_version(&dir.path().join("broken.jar")).await, None);
+        assert_eq!(client_data_version(&dir.path().join("missing.jar")).await, None);
     }
 
     #[test]

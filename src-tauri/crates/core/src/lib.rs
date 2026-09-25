@@ -363,8 +363,17 @@ impl Launcher {
 
     /// Wie [`InstanceStore::create`], prüft aber vorher gegen das Manifest,
     /// dass es die Spielversion wirklich gibt.
+    ///
+    /// Neue Instanzen bekommen gleich die Standard-`options.txt`
+    /// ([`instance::DEFAULT_GAME_OPTIONS`]: unbegrenzte Bildrate, kein VSync).
+    /// Import, Modpacks und Kopien bringen eigene Optionen mit – dort greift das
+    /// erst beim ersten Start, und nur, wenn dann noch keine da ist.
     pub async fn create_instance(&self, new: NewInstance) -> Result<Instance> {
-        self.create_instance_as(new, HistoryEntry::new(HistoryKind::Created)).await
+        let instance = self.create_instance_as(new, HistoryEntry::new(HistoryKind::Created)).await?;
+        if let Err(e) = instance::seed_game_options(&self.paths.instance_game_dir(&instance.id), None).await {
+            tracing::warn!("Standard-Optionen für '{}' nicht geschrieben: {e}", instance.id);
+        }
+        Ok(instance)
     }
 
     /// Wie [`Self::create_instance`] mit eigenem ersten Verlaufseintrag
@@ -568,6 +577,13 @@ impl Launcher {
         // mit den eigenen Dateien – dann wird auch nichts zurückkopiert.
         if let Err(e) = sync::pull(&exit_plan.sync_dirs, &exit_plan.sync_items).await {
             tracing::warn!("Synchronisierung vor dem Start fehlgeschlagen: {e}");
+        }
+        // Noch keine options.txt (erster Start, auch nach Import/Modpack ohne Optionen):
+        // Standard mit unbegrenzter Bildrate und ohne VSync – nach dem Sync, damit
+        // eine gemeinsame options.txt des Spielers Vorrang hat.
+        let data_version = instance::client_data_version(&self.paths.version_jar(&instance.game_version)).await;
+        if let Err(e) = instance::seed_game_options(&game_dir, data_version).await {
+            tracing::warn!("Standard-Optionen konnten nicht geschrieben werden: {e}");
         }
         // Die Launcher-Server sollen in jeder Instanz in der Serverliste stehen.
         if let Err(e) = self.servers.sync_to_instance(&game_dir).await {

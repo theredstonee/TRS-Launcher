@@ -22,12 +22,29 @@ How to write an entry:
 
 - **The skin preview shows your TRS cape.** After a restart the 3D preview now shows the TRS cape you wear – the way
   other TRS players see you in game – instead of your Mojang cape. Click a Mojang cape to look at that one instead.
+- **Much higher FPS in new instances.** Minecraft starts with VSync on and a frame limit of 120 FPS, so even a
+  strong PC got stuck at around 100 FPS. New instances now start with an unlimited frame rate and VSync off – your
+  own settings in existing instances stay as they are.
+- **TRS Client: performance check finds the frame limit.** The check in the TRS menu now flags a frame limit below
+  "Unlimited" and lifts it with one click, and every FPS Boost level lifts it too. Undo restores it.
+- **TRS Client: no more FPS cap while playing.** If Minecraft missed that its window got the focus back, the
+  background limiter of the TRS Client could hold the running game at about 100 FPS. It now asks the system
+  directly and never slows down the game you are playing.
 
 ### Deutsch
 
 - **Die Skin-Vorschau zeigt deinen TRS-Umhang.** Nach einem Neustart zeigt die 3D-Vorschau jetzt den TRS-Umhang, den du
   trägst – so, wie andere TRS-Spieler dich im Spiel sehen – statt deines Mojang-Umhangs. Klick einen Mojang-Umhang
   an, um den anzusehen.
+- **Deutlich mehr FPS in neuen Instanzen.** Minecraft startet mit VSync und einer Bildraten-Grenze von 120 FPS –
+  selbst ein starker PC blieb so bei rund 100 FPS hängen. Neue Instanzen starten jetzt mit unbegrenzter Bildrate
+  und ohne VSync; deine eigenen Einstellungen in bestehenden Instanzen bleiben, wie sie sind.
+- **TRS Client: Der Leistungs-Check findet die Bildraten-Grenze.** Der Check im TRS-Menü meldet jetzt eine Grenze
+  unter „Unbegrenzt“ und hebt sie mit einem Klick auf; auch jede FPS-Boost-Stufe hebt sie auf. „Rückgängig“ stellt
+  sie wieder her.
+- **TRS Client: Keine FPS-Bremse mehr beim Spielen.** Hat Minecraft verpasst, dass sein Fenster wieder im
+  Vordergrund ist, konnte die Hintergrund-Bremse des TRS Clients das laufende Spiel bei etwa 100 FPS halten. Sie
+  fragt jetzt direkt beim System nach und bremst nie das Spiel, das du gerade spielst.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 
