@@ -91,7 +91,7 @@ public final class MojangProfile {
 	}
 
 	/** Nur textures.minecraft.net, immer HTTPS, ohne Benutzer/Port/Query; sonst null. */
-	static String safeUrl(String url) {
+	public static String safeUrl(String url) {
 		if (url == null || url.length() > 300) return null;
 		try {
 			URI u = URI.create(url.trim());

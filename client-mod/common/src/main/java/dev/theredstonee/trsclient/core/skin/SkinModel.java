@@ -66,6 +66,12 @@ public final class SkinModel {
 	private final float[] view = new float[9];
 	/** Anzahl gezeichneter Flächen im letzten Bild (Test/Messung). */
 	private int faces;
+	/** Treffertest statt Zeichnen ({@link #pick}). */
+	private boolean picking;
+	private float pickX;
+	private float pickY;
+	/** Getroffener Texel (y·64+x), −1 = nichts, −2 = Umhang. */
+	private int pickHit;
 
 	public SkinModel() {
 		for (int i = 0; i < PARTS; i++) parts[i] = new Part();
@@ -101,7 +107,21 @@ public final class SkinModel {
 		faces = 0;
 		if (spec == null || spec.skin == null || !c.images() || scale <= 0f) return false;
 		setup(spec);
-		// Von hinten nach vorn (kleines z = weiter weg).
+		int n = sort();
+		for (int k = 0; k < n; k++) {
+			int i = order[k];
+			Part p = parts[i];
+			TextureRef tex = i == CAPE ? spec.cape : spec.skin;
+			// Texel je Skin-Pixel: Skins 64 breit, Umhänge 64 (Vanilla) bis 512 (TRS, Faktor 8).
+			float unit = tex.width / 64f;
+			if (spec.base || i == CAPE) box(c, p, tex, 0f, p.u, p.v, unit, cx, feetY, scale, spec);
+			if (spec.layers && i != CAPE) box(c, p, tex, p.inflate2, p.u2, p.v2, unit, cx, feetY, scale, spec);
+		}
+		return true;
+	}
+
+	/** Sortiert die sichtbaren Teile von hinten nach vorn (kleines z = weiter weg); liefert ihre Anzahl. */
+	private int sort() {
 		int n = 0;
 		for (int i = 0; i < PARTS; i++) {
 			if (!parts[i].visible) continue;
@@ -112,17 +132,64 @@ public final class SkinModel {
 			}
 			order[k] = i;
 		}
-		for (int k = 0; k < n; k++) {
-			int i = order[k];
-			Part p = parts[i];
-			TextureRef tex = i == CAPE ? spec.cape : spec.skin;
-			// Texel je Skin-Pixel: Skins 64 breit, Umhänge 64 (Vanilla) bis 512 (TRS, Faktor 8).
-			float unit = tex.width / 64f;
-			box(c, p, tex, 0f, p.u, p.v, unit, cx, feetY, scale, spec);
-			if (spec.layers && i != CAPE) box(c, p, tex, p.inflate2, p.u2, p.v2, unit, cx, feetY, scale, spec);
-		}
-		return true;
+		return n;
 	}
+
+	/**
+	 * Welcher Skin-Texel liegt unter dem Punkt ({@code mx}, {@code my})? Gleiche Lage wie {@link #draw}. Geprüft wird
+	 * nur die Ebene {@code layer} (0 = Grund, 1 = zweite Ebene – auch ihre durchsichtigen Stellen, damit man dort
+	 * malen kann); der Umhang verdeckt.
+	 *
+	 * @return Texel-Index (y·64+x) oder −1
+	 */
+	public int pick(float cx, float feetY, float scale, SkinModelSpec spec, float mx, float my, int layer) {
+		if (spec == null || scale <= 0f) return -1;
+		setup(spec);
+		int n = sort();
+		picking = true;
+		pickX = mx;
+		pickY = my;
+		pickHit = -1;
+		try {
+			for (int k = n - 1; k >= 0; k--) {
+				int i = order[k];
+				Part p = parts[i];
+				if (i == CAPE) {
+					box(null, p, null, 0f, p.u, p.v, 1f, cx, feetY, scale, spec);
+				} else if (layer == 1) {
+					box(null, p, null, p.inflate2, p.u2, p.v2, 1f, cx, feetY, scale, spec);
+				} else {
+					box(null, p, null, 0f, p.u, p.v, 1f, cx, feetY, scale, spec);
+				}
+				if (pickHit != -1) return pickHit < 0 ? -1 : pickHit;
+			}
+			return -1;
+		} finally {
+			picking = false;
+		}
+	}
+
+	/**
+	 * Ruhehaltung im Format von {@link SkinModelSpec#pose} (Minecrafts Modellraum): Drehpunkte wie Vanillas
+	 * PlayerModel, alle Winkel 0.
+	 */
+	public static float[] restPose(boolean slim, float[] out) {
+		float[] p = out != null && out.length >= PARTS_POSE * 6 ? out : new float[PARTS_POSE * 6];
+		java.util.Arrays.fill(p, 0f);
+		float armY = slim ? 2.5f : 2f;
+		p[2 * 6] = -5f;
+		p[2 * 6 + 1] = armY;
+		p[3 * 6] = 5f;
+		p[3 * 6 + 1] = armY;
+		p[4 * 6] = -1.9f;
+		p[4 * 6 + 1] = 12f;
+		p[5 * 6] = 1.9f;
+		p[5 * 6 + 1] = 12f;
+		return p;
+	}
+
+	/** Teile einer {@link SkinModelSpec#pose}. */
+	public static final int PARTS_POSE = 6;
 
 	// --- Pose ---
 
@@ -153,8 +220,33 @@ public final class SkinModel {
 		float leg = (float) (Math.cos(phase) * 1.4f * swing);
 		part(RIGHT_LEG, -1.9f, 12f, 0f, leg, 0f, 0f, -2f, -12f, -2f, 4f, 12f, 4f, 0, 16, 0, 32, 0.25f);
 		part(LEFT_LEG, 1.9f, 12f, 0f, -leg, 0f, 0f, -2f, -12f, -2f, 4f, 12f, 4f, 16, 48, 0, 48, 0.25f);
+		if (s.pose != null && s.pose.length >= PARTS_POSE * 6) {
+			// Freie Haltung: Minecrafts Modellraum (y unten, vorn −z) → Figur (y oben, vorn +z): um x um 180° gedreht,
+			// d. h. Drehpunkt (x, 24−y, −z), Winkel (x, −y, −z).
+			for (int i = 0; i < PARTS_POSE; i++) {
+				int o = i * 6;
+				repose(i, s.pose[o], 24f - s.pose[o + 1], -s.pose[o + 2], s.pose[o + 3], -s.pose[o + 4], -s.pose[o + 5]);
+			}
+		}
 		parts[CAPE].visible = s.cape != null;
-		if (s.cape != null) {
+		if (s.cape != null && s.pose != null && s.pose.length >= PARTS_POSE * 6) {
+			// Umhang hängt am (gedrehten) Oberkörper.
+			float lift = 6f + s.capeLift;
+			int o = BODY * 6;
+			float[] rb = new float[9];
+			rotZYX(rb, -s.pose[o + 5], -s.pose[o + 4], s.pose[o + 3]);
+			float[] local = new float[9];
+			rotZYX(local, 0f, (float) Math.PI, (float) -Math.toRadians(lift));
+			float[] comb = new float[9];
+			mul(comb, rb, local);
+			float bx = s.pose[o];
+			float by = 24f - s.pose[o + 1];
+			float bz = -s.pose[o + 2];
+			float px = bx + rb[2] * -2f;
+			float py = by + rb[5] * -2f;
+			float pz = bz + rb[8] * -2f;
+			partMatrix(CAPE, px, py, pz, comb, -5f, -16f, 0f, 10f, 16f, 1f, 0, 0, 0, 0, 0f);
+		} else if (s.cape != null) {
 			// Der Umhang hängt schräg nach hinten (Vanilla ≈ 6°), beim Laufen und Wippen mehr.
 			float lift = 6f + s.capeLift + swing * 22f + (s.idleTime > 0f ? (float) (Math.sin(age * 0.05f) * 1.5f) : 0f);
 			// Wie Vanilla um 180° gewendet (Außenseite = Vorderseiten-UV zeigt nach hinten): Ry(π)·Rx(-a) = Rx(a)·Ry(π).
@@ -166,10 +258,24 @@ public final class SkinModel {
 	/** Setzt ein Teil: Drehpunkt, Drehung (Rz·Ry·Rx wie Vanilla), Quader und UV beider Ebenen. */
 	private void part(int index, float px, float py, float pz, float xRot, float yRot, float zRot, float x0, float y0, float z0,
 			float w, float h, float d, int u, int v, int u2, int v2, float inflate2) {
-		Part p = parts[index];
-		p.visible = true;
 		float[] r = tmpA;
 		rotZYX(r, zRot, yRot, xRot);
+		partMatrix(index, px, py, pz, r, x0, y0, z0, w, h, d, u, v, u2, v2, inflate2);
+	}
+
+	/** Neue Haltung für ein schon gesetztes Teil (Quader bleibt). */
+	private void repose(int index, float px, float py, float pz, float xRot, float yRot, float zRot) {
+		Part p = parts[index];
+		float[] r = tmpB;
+		rotZYX(r, zRot, yRot, xRot);
+		partMatrix(index, px, py, pz, r, p.x0, p.y0, p.z0, p.w, p.h, p.d, p.u, p.v, p.u2, p.v2, p.inflate2);
+	}
+
+	/** Wie {@link #part}, aber mit fertiger Drehmatrix {@code r} (Figurenraum). */
+	private void partMatrix(int index, float px, float py, float pz, float[] r, float x0, float y0, float z0,
+			float w, float h, float d, int u, int v, int u2, int v2, float inflate2) {
+		Part p = parts[index];
+		p.visible = true;
 		mul(p.m, view, r);
 		p.t[0] = view[0] * px + view[1] * py + view[2] * pz;
 		p.t[1] = view[3] * px + view[4] * py + view[5] * pz;
@@ -234,6 +340,22 @@ public final class SkinModel {
 		float svy = -vY * s;
 		float det = sux * svy - suy * svx;
 		if (det <= 0.02f) return; // Rückseite oder hochkant
+		if (picking) {
+			if (pickHit != -1) return;
+			float dx = pickX - (cx + oX * s);
+			float dy = pickY - (cy - oY * s);
+			float a = (dx * svy - dy * svx) / det;
+			float b = (sux * dy - suy * dx) / det;
+			if (a < 0f || a >= 1f || b < 0f || b >= 1f) return;
+			if (tex == null && p == parts[CAPE]) {
+				pickHit = -2;
+				return;
+			}
+			int col = Math.min(tw - 1, (int) (a * tw));
+			int row = Math.min(th - 1, (int) (b * th));
+			pickHit = (tv + row) * 64 + tu + col;
+			return;
+		}
 		int tint = spec.tint;
 		if (spec.shade) {
 			// Normale = V × U (nach außen), normiert

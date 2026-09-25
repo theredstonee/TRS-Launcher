@@ -525,6 +525,32 @@ public final class TrsOnline {
 		return token != null && active;
 	}
 
+	/**
+	 * Token der aktuellen TRS-Anmeldung für weitere Dienste im Hintergrund (Garderobe/Sync) oder null. Nie loggen,
+	 * nie auf Platte schreiben.
+	 */
+	public String token() {
+		return active && config.launcherEnabled() ? token : null;
+	}
+
+	/** Adresse der TRS API (z. B. {@code https://trs-launcher.theredstonee.de}). */
+	public String apiBase() {
+		return config.apiBase();
+	}
+
+	/** 401 eines anderen Dienstes: Token verwerfen und neu anmelden. */
+	public void tokenRejected(String rejected) {
+		results.add(() -> relogin(rejected));
+	}
+
+	/** Eigenen Eintrag (Umhang/Abzeichen) beim nächsten Stapel neu nachschlagen (z. B. nach Umhangwechsel). */
+	public void refreshSelf() {
+		results.add(() -> {
+			String self = ownUuid;
+			if (self != null) directory.invalidate(self);
+		});
+	}
+
 	OnlineConfig config() {
 		return config;
 	}

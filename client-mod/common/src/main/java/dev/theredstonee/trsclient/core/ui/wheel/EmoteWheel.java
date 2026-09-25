@@ -75,7 +75,7 @@ public final class EmoteWheel extends UiScreen {
 	public EmoteWheel(EmoteController emotes, Host host) {
 		this.emotes = emotes;
 		this.host = host;
-		this.defs = emotes.all();
+		this.defs = dev.theredstonee.trsclient.core.wardrobe.EmoteSlots.forWheel(emotes.all());
 		this.lit = new float[defs.size()];
 		emotes.wheelOpened(openedAt);
 	}

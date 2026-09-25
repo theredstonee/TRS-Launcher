@@ -130,6 +130,11 @@ public final class I18n {
 		refresh();
 	}
 
+	/** Config-Ordner der Instanz (aus {@link #init}) oder null – auch für andere Teile, die ihn beim Start nicht bekommen. */
+	public static synchronized Path configDir() {
+		return configDir;
+	}
+
 	/**
 	 * Liest die Sprache neu, wenn sich launcher-theme.json oder options.txt geändert haben
 	 * (beim Öffnen von Menü und Startbildschirm – kostet nur zwei Zeitstempel-Abfragen).
