@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { TrsBlocked, TrsFriend, TrsPlayerCape, TrsReportReason } from '~/utils/trs'
+import type { TrsBlocked, TrsFriend, TrsPlayerCape, TrsReportReason, TrsUserRef } from '~/utils/trs'
 
 // Freundesliste über die TRS API: wer ist online, wer spielt was – und wer
 // seinen Server teilt, dem kann man mit einem Klick folgen (gleicher Start wie
-// auf der Server-Seite, nur mit der geteilten Adresse). Die Seite fragt alle
-// 30 s nach, solange sie sichtbar ist.
+// auf der Server-Seite, nur mit der geteilten Adresse). Unter „Anfragen“ stehen
+// auch Umhang-Angebote von Freunden. Die Seite fragt alle 30 s nach, solange sie
+// sichtbar ist.
 const POLL_MS = 30_000
 
 const trs = useTrsStore()
@@ -29,6 +30,10 @@ const friends = computed(() => trsSortFriends(view.value?.friends ?? []))
 const incoming = computed(() => view.value?.requests.incoming ?? [])
 const outgoing = computed(() => view.value?.requests.outgoing ?? [])
 const onlineCount = computed(() => friends.value.filter((f) => f.presence).length)
+/** Umhang-Angebote an mich / von mir (Reiter „Anfragen“). */
+const offersIn = computed(() => trs.capeOffers?.incoming.length ?? trs.offerCount)
+const offersOut = computed(() => trs.capeOffers?.outgoing.length ?? 0)
+const requestBadge = computed(() => incoming.value.length + offersIn.value)
 
 async function refresh(showErrors = false) {
   if (!trs.enabled || !accounts.active) {
@@ -38,6 +43,8 @@ async function refresh(showErrors = false) {
   try {
     await trs.loadFriends()
     offline.value = trs.problem === 'offline'
+    // Eigene Angebote ändern sich ohne Zähler (Freund nimmt an) – auf dem Reiter mit nachladen.
+    if (tab.value === 'requests') await trs.loadCapeOffers()
     await loadCapes()
   } catch (e) {
     if (showErrors) toasts.error(e)
@@ -98,7 +105,12 @@ watch(
 )
 watch(tab, (value) => {
   if (value === 'blocked') void loadBlocked()
+  if (value === 'requests') void trs.loadCapeOffers()
 })
+
+// --- Umhang teilen ------------------------------------------------------------------
+
+const shareWith = ref<TrsUserRef | null>(null)
 
 async function run(key: string, action: () => Promise<void>) {
   if (busy.value) return
@@ -305,8 +317,8 @@ function dotClass(friend: TrsFriend) {
           >
             {{ t(`friends.tabs.${key}`) }}
             <span v-if="key === 'friends' && friends.length" class="text-base-400">{{ onlineCount }}/{{ friends.length }}</span>
-            <span v-if="key === 'requests' && incoming.length" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">
-              {{ incoming.length }}
+            <span v-if="key === 'requests' && requestBadge" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">
+              {{ requestBadge }}
             </span>
           </button>
         </div>
@@ -368,6 +380,7 @@ function dotClass(friend: TrsFriend) {
                 <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
               </button>
               <div v-if="menuFor === f.uuid" class="menu top-9 right-0 w-48" role="menu">
+                <button class="menu-item" role="menuitem" data-testid="friend-share-cape" @click="menuFor = null; shareWith = { uuid: f.uuid, name: f.name }">{{ t('capeShare.friendMenu') }}</button>
                 <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'remove', uuid: f.uuid, name: f.name }">{{ t('common.actions.remove') }}</button>
                 <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'block', uuid: f.uuid, name: f.name }">{{ t('friends.list.block') }}</button>
                 <button v-if="capes[f.uuid]?.upload" class="menu-item" role="menuitem" @click="menuFor = null; startReport(f)">{{ t('friends.list.reportCape') }}</button>
@@ -387,8 +400,9 @@ function dotClass(friend: TrsFriend) {
 
       <!-- Anfragen ---------------------------------------------------------------- -->
       <template v-else-if="tab === 'requests'">
-        <RedstoneEmpty v-if="!incoming.length && !outgoing.length" :title="t('friends.requests.empty')" compact :seed="0x3a" />
+        <RedstoneEmpty v-if="!incoming.length && !outgoing.length && !offersIn && !offersOut" :title="t('friends.requests.empty')" compact :seed="0x3a" />
         <div v-else class="space-y-5">
+          <CapeOffersList outgoing />
           <section v-if="incoming.length">
             <h2 class="section-title mb-2">{{ t('friends.requests.incoming') }}</h2>
             <ul class="space-y-2">
@@ -464,6 +478,8 @@ function dotClass(friend: TrsFriend) {
         </button>
       </template>
     </BaseDialog>
+
+    <FriendCapeShareDialog v-if="shareWith" :friend="shareWith" @close="shareWith = null; trs.loadCapeOffers()" />
 
     <BaseDialog v-if="confirm" :title="confirm.kind === 'remove' ? t('friends.confirm.removeTitle') : t('friends.confirm.blockTitle')" @close="confirm = null">
       <i18n-t

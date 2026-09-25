@@ -36,6 +36,11 @@ export const trsMeSchema = z.object({
   activeCapeId: capeId.nullable(),
 })
 
+const userRef = z.object({ uuid, name: text(16) })
+
+/** Bei einem geteilten Umhang: wer ihn dir gegeben hat und wer ihn gemacht hat. */
+export const trsCapeShareSourceSchema = z.object({ from: userRef, creator: userRef })
+
 export const trsCapeSchema = z.object({
   id: capeId,
   name: text(48),
@@ -51,6 +56,34 @@ export const trsCapeSchema = z.object({
   active: z.boolean(),
   rejectReason: text(200).nullable(),
   texture: pngDataUrl,
+  /** An Freunde weitergebbar (eigener freigegebener Upload oder angenommener geteilter Umhang). */
+  shareable: z.boolean(),
+  /** Von einem Freund geteilt – sonst null. */
+  shared: trsCapeShareSourceSchema.nullable(),
+  /** Inhaber, die man sieht (als Ersteller alle, sonst der eigene Ast). */
+  holders: z.number().int().min(0).max(1000),
+})
+
+const offerTime = text(40).nullable()
+export const trsIncomingOfferSchema = z.object({ cape: trsCapeSchema, from: userRef, creator: userRef, createdAt: offerTime })
+export const trsOutgoingOfferSchema = z.object({ cape: trsCapeSchema, to: userRef, createdAt: offerTime })
+export const trsCapeOffersSchema = z.object({
+  incoming: z.array(trsIncomingOfferSchema),
+  outgoing: z.array(trsOutgoingOfferSchema),
+})
+
+export const trsCapeHolderSchema = z.object({
+  uuid,
+  name: text(16),
+  status: z.enum(['offered', 'accepted']),
+  grantedBy: userRef,
+  createdAt: offerTime,
+  acceptedAt: offerTime,
+})
+export const trsCapeHoldersSchema = z.object({
+  holders: z.array(trsCapeHolderSchema),
+  count: z.number().int().min(0),
+  limit: z.number().int().min(0),
 })
 
 export const trsRedeemSchema = z.object({ capeId, name: text(48), alreadyOwned: z.boolean() })
@@ -90,9 +123,11 @@ const requestEntry = z.object({ uuid, name: text(16), createdAt: text(40).nullab
 export const trsFriendsSchema = z.object({
   friends: z.array(trsFriendSchema),
   requests: z.object({ incoming: z.array(requestEntry), outgoing: z.array(requestEntry) }),
+  /** Offene Umhang-Angebote an mich (Details über `capeOffers`). */
+  capeOffers: z.number().int().min(0).max(1000),
 })
 
-export const trsUserRefSchema = z.object({ uuid, name: text(16) })
+export const trsUserRefSchema = userRef
 export const trsFriendRequestResultSchema = z.object({ status: z.enum(['sent', 'accepted']), user: trsUserRefSchema })
 export const trsBlockedSchema = z.object({ uuid, name: text(16), since: text(40).nullable() })
 
@@ -189,6 +224,11 @@ export type TrsStatus = z.infer<typeof trsStatusSchema>
 export type TrsPrivacy = z.infer<typeof trsPrivacySchema>
 export type TrsMe = z.infer<typeof trsMeSchema>
 export type TrsCape = z.infer<typeof trsCapeSchema>
+export type TrsIncomingOffer = z.infer<typeof trsIncomingOfferSchema>
+export type TrsOutgoingOffer = z.infer<typeof trsOutgoingOfferSchema>
+export type TrsCapeOffers = z.infer<typeof trsCapeOffersSchema>
+export type TrsCapeHolder = z.infer<typeof trsCapeHolderSchema>
+export type TrsCapeHolders = z.infer<typeof trsCapeHoldersSchema>
 export type TrsRedeem = z.infer<typeof trsRedeemSchema>
 export type TrsPlayerCape = z.infer<typeof trsPlayerCapeSchema>
 export type TrsGame = z.infer<typeof trsGameSchema>
@@ -304,7 +344,8 @@ export function trsFrameIndex(now: number, frames: number, frameTimeMs: number |
 }
 
 /** Kurzlabel, wie man an den Umhang kommt. */
-export function trsUnlockLabel(cape: Pick<TrsCape, 'unlock' | 'kind'>): string {
+export function trsUnlockLabel(cape: Pick<TrsCape, 'unlock' | 'kind'> & { shared?: TrsCape['shared'] }): string {
+  if (cape.shared) return t('trs.unlock.shared')
   if (cape.kind === 'upload') return t('trs.unlock.own')
   switch (cape.unlock) {
     case 'free':

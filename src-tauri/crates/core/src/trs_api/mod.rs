@@ -238,6 +238,15 @@ fn message_for(code: &str) -> Msg {
         "grant_not_found" => msg!("trsApi.grant_not_found", "Dieser Spieler hat den Umhang nicht."),
         "cannot_ban_admin" => msg!("trsApi.cannot_ban_admin", "Admins können nicht gesperrt werden."),
         "not_banned" => msg!("trsApi.not_banned", "Dieser Spieler ist nicht gesperrt."),
+        "cape_not_approved" => {
+            msg!("trsApi.cape_not_approved", "Teilen geht erst, wenn das Team den Umhang freigegeben hat.")
+        }
+        "cape_not_shareable" => msg!("trsApi.cape_not_shareable", "Nur eigene hochgeladene Umhänge können geteilt werden."),
+        "already_shared" => msg!("trsApi.already_shared", "Dieser Spieler hat den Umhang schon oder ein Angebot dafür."),
+        "share_limit" => msg!("trsApi.share_limit", "Dieser Umhang ist schon mit 20 Spielern geteilt."),
+        "offer_inbox_full" => msg!("trsApi.offer_inbox_full", "Dieser Spieler hat zu viele offene Umhang-Angebote."),
+        "offer_not_found" => msg!("trsApi.offer_not_found", "Dieses Angebot gibt es nicht mehr."),
+        "holder_not_found" => msg!("trsApi.holder_not_found", "Dieser Spieler hat den Umhang nicht (mehr) von dir."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),

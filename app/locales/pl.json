@@ -213,7 +213,14 @@
       "invalid_request": "Żądanie było nieprawidłowe.",
       "not_found": "Nie znaleziono.",
       "rejected": "API TRS odrzuciło żądanie.",
-      "frame_time_required": "Animowane peleryny potrzebują tempa."
+      "frame_time_required": "Animowane peleryny potrzebują tempa.",
+      "cape_not_approved": "Pelerynę możesz udostępnić, gdy zespół ją zatwierdzi.",
+      "cape_not_shareable": "Udostępniać można tylko własne przesłane peleryny.",
+      "already_shared": "Ten gracz ma już tę pelerynę lub ofertę na nią.",
+      "share_limit": "Ta peleryna jest już udostępniona 20 graczom.",
+      "offer_inbox_full": "Ten gracz ma za dużo otwartych ofert peleryn.",
+      "offer_not_found": "Ta oferta już nie istnieje.",
+      "holder_not_found": "Ten gracz nie ma (już) tej peleryny od ciebie."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -2345,7 +2352,8 @@
       "free": "Darmowa",
       "code": "Kod",
       "team": "Zespół",
-      "locked": "Zablokowana"
+      "locked": "Zablokowana",
+      "shared": "Udostępniona"
     },
     "status": {
       "pending": "Czeka na zatwierdzenie",
@@ -2360,7 +2368,8 @@
       "playingLoaderServer": "Gra w {version} ({loader}) na {server}"
     },
     "toasts": {
-      "friendRequest": "{name} chce zostać twoim znajomym."
+      "friendRequest": "{name} chce zostać twoim znajomym.",
+      "capeOffer": "{name} oferuje ci pelerynę „{cape}”."
     }
   },
   "trsGate": {
@@ -2564,6 +2573,76 @@
       },
       "upload": "Prześlij",
       "uploading": "Przesyłanie …"
+    }
+  },
+  "capeShare": {
+    "friendMenu": "Udostępnij pelerynę",
+    "toasts": {
+      "accepted": "„{cape}” jest teraz w twoich pelerynach.",
+      "withdrawn": "Wycofano ofertę dla {name}.",
+      "offered": "Zaoferowano „{cape}” graczowi {name}.",
+      "revoked": "{name} nie ma już peleryny.",
+      "givenBack": "Oddano „{cape}”."
+    },
+    "offers": {
+      "incoming": "Oferty peleryn ({count})",
+      "from": "Od {name} · {date}",
+      "fromVia": "Od {name} · autor: {creator} · {date}",
+      "accept": "Przyjmij",
+      "accepting": "Przyjmowanie…",
+      "decline": "Odrzuć",
+      "hint": "Przyjęte peleryny pojawiają się wśród twoich peleryn i możesz je nosić jak własne.",
+      "outgoing": "Twoje otwarte oferty peleryn",
+      "to": "Dla {name} · {date}",
+      "withdraw": "Wycofaj"
+    },
+    "dialog": {
+      "title": "Udostępnij „{cape}”",
+      "intro": "Twój znajomy dostaje ofertę i decyduje, czy ją przyjąć. Kto przyjmie, może nosić pelerynę i przekazać ją swoim znajomym.",
+      "reshare": "Autor: {creator} – możesz przekazać ją swoim znajomym.",
+      "pickFriend": "Udostępnij znajomemu",
+      "search": "Szukaj znajomych",
+      "share": "Udostępnij",
+      "sharing": "Udostępnianie…",
+      "allHaveIt": "Wszyscy twoi znajomi mają już tę pelerynę lub ofertę na nią.",
+      "noFriends": "Nie masz jeszcze znajomych w TRS.",
+      "full": "Ta peleryna jest już udostępniona maksymalnej liczbie {limit} graczy.",
+      "holders": "Udostępniono",
+      "cascade": "Jeśli odbierzesz pelerynę, stracą ją też wszyscy, którym ten gracz ją przekazał."
+    },
+    "holders": {
+      "offered": "Oferta otwarta",
+      "accepted": "Ma pelerynę",
+      "via": "przez {name}",
+      "confirm": "Na pewno?",
+      "withdraw": "Wycofaj",
+      "revoke": "Odbierz",
+      "none": "Nikt jeszcze nie ma tej peleryny od ciebie."
+    },
+    "card": {
+      "holders": "Udostępniono {n} graczowi | Udostępniono {n} graczom | Udostępniono {n} graczom"
+    },
+    "selected": {
+      "from": "{name} udostępnił(a) ci tę pelerynę.",
+      "fromVia": "{name} udostępnił(a) ci tę pelerynę · autor: {creator}.",
+      "afterApproval": "Po zatwierdzeniu możesz udostępnić tę pelerynę znajomym."
+    },
+    "actions": {
+      "share": "Udostępnij znajomemu",
+      "manage": "Udostępniono ({count})",
+      "giveBack": "Oddaj"
+    },
+    "giveBackDialog": {
+      "title": "Oddać pelerynę?",
+      "text": "{name} zniknie z twoich peleryn. Wszyscy, którym ją przekazałeś, też ją stracą."
+    },
+    "deleteWarning": "{n} gracz, który ma ją od ciebie, też ją straci. | {n} graczy, którzy mają ją od ciebie, też ją stracą. | {n} graczy, którzy mają ją od ciebie, też ją stracą.",
+    "friendDialog": {
+      "title": "Udostępnij pelerynę graczowi {name}",
+      "intro": "Wybierz pelerynę – twój znajomy dostanie ofertę i zdecyduje, czy ją przyjąć.",
+      "offered": "Zaoferowano",
+      "none": "Nie masz jeszcze peleryny do udostępnienia. Prześlij własną – po zatwierdzeniu przez zespół możesz ją udostępnić.",
+      "onlyPending": "Twoje peleryny są jeszcze sprawdzane – po zatwierdzeniu możesz je udostępnić."
     }
   },
   "friends": {

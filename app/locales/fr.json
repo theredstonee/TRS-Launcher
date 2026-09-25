@@ -213,7 +213,14 @@
       "invalid_request": "La requête était invalide.",
       "not_found": "Introuvable.",
       "rejected": "L'API TRS a refusé la requête.",
-      "frame_time_required": "Les capes animées ont besoin d’une vitesse."
+      "frame_time_required": "Les capes animées ont besoin d’une vitesse.",
+      "cape_not_approved": "Tu pourras partager la cape une fois qu'elle aura été validée par l'équipe.",
+      "cape_not_shareable": "Seules tes propres capes importées peuvent être partagées.",
+      "already_shared": "Ce joueur a déjà la cape ou une offre pour elle.",
+      "share_limit": "Cette cape est déjà partagée avec 20 joueurs.",
+      "offer_inbox_full": "Ce joueur a trop d'offres de cape en attente.",
+      "offer_not_found": "Cette offre n'existe plus.",
+      "holder_not_found": "Ce joueur n'a pas (plus) la cape de ta part."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -2345,7 +2352,8 @@
       "free": "Gratuite",
       "code": "Code",
       "team": "Équipe",
-      "locked": "Verrouillée"
+      "locked": "Verrouillée",
+      "shared": "Partagée"
     },
     "status": {
       "pending": "En attente d'approbation",
@@ -2360,7 +2368,8 @@
       "playingLoaderServer": "Joue en {version} ({loader}) sur {server}"
     },
     "toasts": {
-      "friendRequest": "{name} veut devenir ton ami."
+      "friendRequest": "{name} veut devenir ton ami.",
+      "capeOffer": "{name} te propose la cape « {cape} »."
     }
   },
   "trsGate": {
@@ -2564,6 +2573,76 @@
       },
       "upload": "Envoyer",
       "uploading": "Envoi …"
+    }
+  },
+  "capeShare": {
+    "friendMenu": "Partager une cape",
+    "toasts": {
+      "accepted": "« {cape} » est maintenant dans tes capes.",
+      "withdrawn": "Offre à {name} retirée.",
+      "offered": "« {cape} » proposée à {name}.",
+      "revoked": "{name} n'a plus la cape.",
+      "givenBack": "Tu as rendu « {cape} »."
+    },
+    "offers": {
+      "incoming": "Offres de capes ({count})",
+      "from": "De {name} · {date}",
+      "fromVia": "De {name} · créée par {creator} · {date}",
+      "accept": "Accepter",
+      "accepting": "Acceptation…",
+      "decline": "Refuser",
+      "hint": "Les capes acceptées apparaissent dans tes capes et se portent comme les tiennes.",
+      "outgoing": "Tes offres de capes en attente",
+      "to": "Pour {name} · {date}",
+      "withdraw": "Retirer"
+    },
+    "dialog": {
+      "title": "Partager « {cape} »",
+      "intro": "Ton ami reçoit une offre et décide s'il l'accepte. S'il accepte, il peut porter la cape et la transmettre à ses propres amis.",
+      "reshare": "Créée par {creator} – tu peux la transmettre à tes amis.",
+      "pickFriend": "Partager avec un ami",
+      "search": "Chercher un ami",
+      "share": "Partager",
+      "sharing": "Partage…",
+      "allHaveIt": "Tous tes amis ont déjà cette cape ou une offre pour elle.",
+      "noFriends": "Tu n'as pas encore d'amis TRS.",
+      "full": "Cette cape est déjà partagée avec le maximum de {limit} joueurs.",
+      "holders": "Partagée avec",
+      "cascade": "Si tu reprends une cape, tous ceux à qui ce joueur l'a transmise la perdent aussi."
+    },
+    "holders": {
+      "offered": "Offre en attente",
+      "accepted": "A la cape",
+      "via": "via {name}",
+      "confirm": "Vraiment ?",
+      "withdraw": "Retirer",
+      "revoke": "Reprendre",
+      "none": "Personne n'a encore cette cape de ta part."
+    },
+    "card": {
+      "holders": "Partagée avec {n} joueur | Partagée avec {n} joueurs"
+    },
+    "selected": {
+      "from": "Partagée avec toi par {name}.",
+      "fromVia": "Partagée avec toi par {name} · créée par {creator}.",
+      "afterApproval": "Une fois validée, tu pourras partager cette cape avec tes amis."
+    },
+    "actions": {
+      "share": "Partager avec un ami",
+      "manage": "Partagée ({count})",
+      "giveBack": "Rendre"
+    },
+    "giveBackDialog": {
+      "title": "Rendre la cape ?",
+      "text": "{name} disparaît de tes capes. Tous ceux à qui tu l'as transmise la perdent aussi."
+    },
+    "deleteWarning": "{n} joueur qui l'a de ta part la perd aussi. | {n} joueurs qui l'ont de ta part la perdent aussi.",
+    "friendDialog": {
+      "title": "Partager une cape avec {name}",
+      "intro": "Choisis une cape – ton ami reçoit une offre et décide s'il l'accepte.",
+      "offered": "Proposée",
+      "none": "Tu n'as pas encore de cape à partager. Importe ta propre cape – une fois validée par l'équipe, tu pourras la partager.",
+      "onlyPending": "Tes capes sont encore en cours de vérification – tu pourras les partager une fois validées."
     }
   },
   "friends": {

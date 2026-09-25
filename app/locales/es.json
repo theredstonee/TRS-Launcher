@@ -213,7 +213,14 @@
       "invalid_request": "La solicitud no era válida.",
       "not_found": "No encontrado.",
       "rejected": "La API de TRS ha rechazado la solicitud.",
-      "frame_time_required": "Las capas animadas necesitan una velocidad."
+      "frame_time_required": "Las capas animadas necesitan una velocidad.",
+      "cape_not_approved": "Podrás compartir la capa cuando el equipo la haya aprobado.",
+      "cape_not_shareable": "Solo se pueden compartir las capas que has subido tú.",
+      "already_shared": "Este jugador ya tiene la capa o una oferta de ella.",
+      "share_limit": "Esta capa ya está compartida con 20 jugadores.",
+      "offer_inbox_full": "Este jugador tiene demasiadas ofertas de capas abiertas.",
+      "offer_not_found": "Esta oferta ya no existe.",
+      "holder_not_found": "Este jugador ya no tiene la capa de tu parte."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -2345,7 +2352,8 @@
       "free": "Gratis",
       "code": "Código",
       "team": "Equipo",
-      "locked": "Bloqueada"
+      "locked": "Bloqueada",
+      "shared": "Compartida"
     },
     "status": {
       "pending": "Pendiente de aprobación",
@@ -2360,7 +2368,8 @@
       "playingLoaderServer": "Jugando a {version} ({loader}) en {server}"
     },
     "toasts": {
-      "friendRequest": "{name} quiere ser tu amigo."
+      "friendRequest": "{name} quiere ser tu amigo.",
+      "capeOffer": "{name} te ofrece la capa «{cape}»."
     }
   },
   "trsGate": {
@@ -2564,6 +2573,76 @@
       },
       "upload": "Subir",
       "uploading": "Subiendo …"
+    }
+  },
+  "capeShare": {
+    "friendMenu": "Compartir capa",
+    "toasts": {
+      "accepted": "«{cape}» ya está en tus capas.",
+      "withdrawn": "Oferta a {name} retirada.",
+      "offered": "Has ofrecido «{cape}» a {name}.",
+      "revoked": "{name} ya no tiene la capa.",
+      "givenBack": "Has devuelto «{cape}»."
+    },
+    "offers": {
+      "incoming": "Ofertas de capas ({count})",
+      "from": "De {name} · {date}",
+      "fromVia": "De {name} · creada por {creator} · {date}",
+      "accept": "Aceptar",
+      "accepting": "Aceptando…",
+      "decline": "Rechazar",
+      "hint": "Las capas aceptadas aparecen en tus capas y puedes llevarlas como las tuyas.",
+      "outgoing": "Tus ofertas de capas abiertas",
+      "to": "Para {name} · {date}",
+      "withdraw": "Retirar"
+    },
+    "dialog": {
+      "title": "Compartir «{cape}»",
+      "intro": "Tu amigo recibe una oferta y decide si la acepta. Quien la acepta puede llevar la capa y pasarla a sus propios amigos.",
+      "reshare": "Creada por {creator}: puedes pasarla a tus amigos.",
+      "pickFriend": "Compartir con un amigo",
+      "search": "Buscar amigos",
+      "share": "Compartir",
+      "sharing": "Compartiendo…",
+      "allHaveIt": "Todos tus amigos ya tienen esta capa o una oferta de ella.",
+      "noFriends": "Aún no tienes amigos en TRS.",
+      "full": "Esta capa ya está compartida con el máximo de {limit} jugadores.",
+      "holders": "Compartida con",
+      "cascade": "Si retiras una capa, también la pierden todos a los que ese jugador se la pasó."
+    },
+    "holders": {
+      "offered": "Oferta abierta",
+      "accepted": "Tiene la capa",
+      "via": "a través de {name}",
+      "confirm": "¿Seguro?",
+      "withdraw": "Retirar",
+      "revoke": "Quitar",
+      "none": "Nadie tiene todavía esta capa de tu parte."
+    },
+    "card": {
+      "holders": "Compartida con {n} jugador | Compartida con {n} jugadores"
+    },
+    "selected": {
+      "from": "{name} la ha compartido contigo.",
+      "fromVia": "{name} la ha compartido contigo · creada por {creator}.",
+      "afterApproval": "Cuando se apruebe, podrás compartir esta capa con tus amigos."
+    },
+    "actions": {
+      "share": "Compartir con un amigo",
+      "manage": "Compartida ({count})",
+      "giveBack": "Devolver"
+    },
+    "giveBackDialog": {
+      "title": "¿Devolver la capa?",
+      "text": "{name} desaparecerá de tus capas. Todos a los que se la pasaste también la perderán."
+    },
+    "deleteWarning": "{n} jugador que la tiene de tu parte también la pierde. | {n} jugadores que la tienen de tu parte también la pierden.",
+    "friendDialog": {
+      "title": "Compartir una capa con {name}",
+      "intro": "Elige una capa: tu amigo recibe una oferta y decide si la acepta.",
+      "offered": "Ofrecida",
+      "none": "Aún no tienes ninguna capa para compartir. Sube una propia: cuando el equipo la apruebe, podrás compartirla.",
+      "onlyPending": "Tus capas aún se están revisando: podrás compartirlas cuando se aprueben."
     }
   },
   "friends": {

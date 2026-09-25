@@ -8,8 +8,9 @@ use tauri_plugin_dialog::DialogExt;
 use trs_core::trs_api::cape_import::{self, CapeSource};
 use trs_core::trs_api::sync::SyncStatus;
 use trs_core::trs_api::types::{
-    AdminCape, AdminStats, AdminUser, BlockedUser, CapeItem, CodeView, Friend, FriendRequestResult, FriendsView, Me,
-    NewCodes, PlayerCape, RedeemResult, ReportReason, ReviewList, SettingsPatch, TrsStatus, UserRef,
+    AdminCape, AdminStats, AdminUser, BlockedUser, CapeHolders, CapeItem, CapeOffers, CodeView, Friend,
+    FriendRequestResult, FriendsView, Me, NewCodes, PlayerCape, RedeemResult, ReportReason, ReviewList,
+    SettingsPatch, TrsStatus, UserRef,
 };
 
 use crate::LauncherState;
@@ -124,6 +125,40 @@ pub async fn trs_redeem(launcher: State<'_, LauncherState>, code: String) -> Com
 #[tauri::command]
 pub async fn trs_player_capes(launcher: State<'_, LauncherState>, uuids: Vec<String>) -> CommandResult<Vec<PlayerCape>> {
     Ok(launcher.trs_player_capes(&uuids).await?)
+}
+
+#[tauri::command]
+pub async fn trs_cape_offers(launcher: State<'_, LauncherState>) -> CommandResult<CapeOffers> {
+    Ok(launcher.trs_cape_offers().await?)
+}
+
+#[tauri::command]
+pub async fn trs_offer_cape(launcher: State<'_, LauncherState>, cape_id: String, friend: String) -> CommandResult<()> {
+    Ok(launcher.trs_offer_cape(&cape_id, &friend).await?)
+}
+
+#[tauri::command]
+pub async fn trs_accept_cape_offer(launcher: State<'_, LauncherState>, cape_id: String) -> CommandResult<()> {
+    Ok(launcher.trs_accept_cape_offer(&cape_id).await?)
+}
+
+#[tauri::command]
+pub async fn trs_decline_cape_offer(launcher: State<'_, LauncherState>, cape_id: String) -> CommandResult<()> {
+    Ok(launcher.trs_decline_cape_offer(&cape_id).await?)
+}
+
+#[tauri::command]
+pub async fn trs_cape_holders(launcher: State<'_, LauncherState>, cape_id: String) -> CommandResult<CapeHolders> {
+    Ok(launcher.trs_cape_holders(&cape_id).await?)
+}
+
+#[tauri::command]
+pub async fn trs_revoke_cape_share(
+    launcher: State<'_, LauncherState>,
+    cape_id: String,
+    holder: String,
+) -> CommandResult<()> {
+    Ok(launcher.trs_revoke_cape_share(&cape_id, &holder).await?)
 }
 
 #[tauri::command]

@@ -127,6 +127,21 @@ described below and stop when you leave the world or the game ends.
 - **Turning it off:** "Show TRS badge" (*Einstellungen → Datenschutz*) hides your badge from everyone. Setting your
   online status to "nobody" only hides you in friends lists – it does **not** hide the badge.
 
+### Sharing capes with friends
+
+You can share a cape you uploaded with a friend once the team has approved it. Your friend gets an offer in the
+launcher and in the game and decides whether to accept it. For this the TRS server stores which cape was offered to
+whom, by whom and when, and whether it was accepted. After accepting, your friend can wear the cape like their own,
+and other TRS players see it on them. A friend may pass the cape on to their own friends (at most 20 players per cape).
+
+- **Who sees what:** the creator sees everyone who has the cape or an open offer for it (with their Minecraft names),
+  also players a friend passed it on to. A holder sees who gave it to them, the creator's name and the players they
+  passed it on to themselves.
+- **Ending it:** the creator can take the cape back from anyone at any time; this also removes it from everyone that
+  player passed it on to. Everyone can give a shared cape back. Removing a friend or blocking a player cancels open
+  offers between you two; capes already accepted stay until someone takes them back. Deleting the cape, a rejection by
+  the team or deleting a TRS account removes the affected shares immediately.
+
 ### What is stored
 
 | Data | Why |
@@ -138,6 +153,7 @@ described below and stop when you leave the world or the game ends.
 | Your chosen cape, capes unlocked by codes or granted by the team | Showing your cape to other TRS players |
 | Capes you upload (the image, re-encoded without metadata), their review status and an optional name | Cape uploads; every upload is reviewed by the team before others see it |
 | Reports you file about other players' capes (reason, optional note) | Moderation |
+| Cape shares: which capes you offered to whom (and who passed them on), open offers to you and the capes friends shared with you, each with the time and whether it was accepted | Sharing capes with friends (see above) |
 | Friends, friend requests and blocks | The friends list |
 | Online status: "online in the launcher" or "in game" (from the launcher or the TRS Client) with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you; showing the TRS badge while you play (see above) |
 | Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
@@ -180,7 +196,8 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Synced skins, presets and settings stay until you delete them in the launcher (a skin deleted on one PC is deleted on
   the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
-  account, sessions, friendships, requests and blocks, uploaded capes and their files, code redemptions, reports,
+  account, sessions, friendships, requests and blocks, uploaded capes and their files, cape shares (your capes with
+  friends and the capes friends shared with you), code redemptions, reports,
   your online status and all synced skins, presets and settings. Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
 - Only an existing ban record (your UUID, the reason and the time) is kept after deletion, so a ban can't be escaped by
