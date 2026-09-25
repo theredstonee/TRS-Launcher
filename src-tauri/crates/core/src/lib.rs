@@ -312,6 +312,8 @@ impl Launcher {
             tracing::info!("GPU-Präferenz für {removed} Java-Runtimes entfernt");
         }
         let clips_changed = guard.clips != new.clips;
+        let old_ui = guard.ui.clone();
+        let sync_switched_on = !guard.trs_sync && new.trs_sync;
         *guard = new.clone();
         drop(guard);
         self.discord.configure(new.discord_presence, new.ui.language);
@@ -319,7 +321,35 @@ impl Launcher {
             let running = self.running_for_clips().await;
             self.clips.settings_changed(&new.clips, running).await;
         }
+        // TRS-Synchronisation: Theme/Akzent/Sprache merken, Schalter an → gleich abgleichen.
+        self.trs_ui_changed(&old_ui, &new.ui).await;
+        if sync_switched_on {
+            self.trs_sync_kick();
+        }
         Ok(new)
+    }
+
+    /// Theme, Akzentfarbe und Sprache vom TRS-Konto übernehmen (ohne sie als
+    /// lokale Änderung zu zählen). Die Oberfläche lädt danach neu.
+    pub(crate) async fn apply_synced_ui(
+        &self,
+        theme: settings::Theme,
+        accent: settings::Accent,
+        language: settings::Language,
+    ) -> Result<()> {
+        let mut guard = self.settings.write().await;
+        let mut new = guard.clone();
+        new.ui.theme = theme;
+        new.ui.accent = accent;
+        new.ui.language = language;
+        if new == *guard {
+            return Ok(());
+        }
+        new.save(&self.paths.settings_file()).await?;
+        *guard = new.clone();
+        drop(guard);
+        self.discord.configure(new.discord_presence, new.ui.language);
+        Ok(())
     }
 
     /// Clips & Aufnahme.

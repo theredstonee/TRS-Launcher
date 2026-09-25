@@ -16,30 +16,37 @@ pub async fn list_presets(launcher: State<'_, LauncherState>) -> CommandResult<V
     Ok(presets::list(launcher.paths()).await?)
 }
 
+/// Nach einer erfolgreichen Änderung: mit dem TRS-Konto abgleichen (entprellt).
+fn synced<T>(launcher: &LauncherState, result: trs_core::Result<T>) -> CommandResult<T> {
+    let value = result?;
+    launcher.trs_sync_touch();
+    Ok(value)
+}
+
 #[tauri::command]
 pub async fn create_preset(launcher: State<'_, LauncherState>, preset: PresetInput) -> CommandResult<Preset> {
-    Ok(presets::create(launcher.paths(), preset).await?)
+    synced(&launcher, presets::create(launcher.paths(), preset).await)
 }
 
 #[tauri::command]
 pub async fn update_preset(launcher: State<'_, LauncherState>, id: String, preset: PresetInput) -> CommandResult<Preset> {
-    Ok(presets::update(launcher.paths(), &id, preset).await?)
+    synced(&launcher, presets::update(launcher.paths(), &id, preset).await)
 }
 
 /// „Immer automatisch“ an/aus – auch für die fertigen TRS-Presets.
 #[tauri::command]
 pub async fn set_preset_auto(launcher: State<'_, LauncherState>, id: String, auto: bool) -> CommandResult<Preset> {
-    Ok(presets::set_auto(launcher.paths(), &id, auto).await?)
+    synced(&launcher, presets::set_auto(launcher.paths(), &id, auto).await)
 }
 
 #[tauri::command]
 pub async fn delete_preset(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
-    Ok(presets::delete(launcher.paths(), &id).await?)
+    synced(&launcher, presets::delete(launcher.paths(), &id).await)
 }
 
 #[tauri::command]
 pub async fn reorder_presets(launcher: State<'_, LauncherState>, ids: Vec<String>) -> CommandResult<Vec<Preset>> {
-    Ok(presets::reorder(launcher.paths(), &ids).await?)
+    synced(&launcher, presets::reorder(launcher.paths(), &ids).await)
 }
 
 /// Fragt nach dem Speicherort und schreibt das Preset. `false` = abgebrochen.
@@ -81,7 +88,7 @@ pub async fn import_preset(app: AppHandle, launcher: State<'_, LauncherState>) -
     .flatten()
     .and_then(|p| p.into_path().ok());
     let Some(file) = picked else { return Ok(None) };
-    Ok(Some(presets::import_file(launcher.paths(), &file).await?))
+    synced(&launcher, presets::import_file(launcher.paths(), &file).await).map(Some)
 }
 
 /// Soll die Instanzseite „FPS-Boost anwenden“ vorschlagen? (Modloader, kein

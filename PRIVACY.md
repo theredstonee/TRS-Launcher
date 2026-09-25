@@ -68,6 +68,13 @@ hands to web content or to the game. The TRS Client mod signs in by itself throu
 | Reports you file about other players' capes (reason, optional note) | Moderation |
 | Friends, friend requests and blocks | The friends list |
 | Online status: "online in the launcher" or "in game" with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you |
+| Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
+
+**Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
+your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your
+PCs. Java, memory and all other settings are **not** synced and never leave your PC. Turn the switch off to stop
+syncing; what was already synced stays on the server until you delete it with "Alle TRS-Daten löschen". Only you can
+read your synced data – there is no admin view of it.
 
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
@@ -76,7 +83,8 @@ Admin actions (such as approving a cape or a ban) are recorded in an audit log t
 
 ### Purpose and legal basis
 
-The data is processed only to provide the TRS services you asked for: capes, the friends list and the online status.
+The data is processed only to provide the TRS services you asked for: capes, the friends list, the online status and
+syncing your skins, presets and launcher look between your PCs.
 The legal basis is the performance of the service you requested (Art. 6(1)(b) GDPR). Keeping the services free of abuse
 (reviewing uploads, reports, bans and rate limits) is based on our legitimate interest in a safe service
 (Art. 6(1)(f) GDPR). There is no advertising, no profiling and no sale of data.
@@ -86,9 +94,12 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Your data is kept as long as your TRS account exists.
 - Session tokens expire after 30 days; signing out or removing an account from the launcher revokes the token.
 - The online status disappears 3 minutes after the last update, or immediately when you close the launcher.
+- Synced skins, presets and settings stay until you delete them in the launcher (a skin deleted on one PC is deleted on
+  the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
-  account, sessions, friendships, requests and blocks, uploaded capes and their files, code redemptions, reports and
-  your online status. Afterwards the TRS services are turned off in the launcher.
+  account, sessions, friendships, requests and blocks, uploaded capes and their files, code redemptions, reports,
+  your online status and all synced skins, presets and settings. Afterwards the TRS services are turned off in the
+  launcher. The skins and presets on your PC are kept.
 - Only an existing ban record (your UUID, the reason and the time) is kept after deletion, so a ban can't be escaped by
   signing in again.
 - Server logs contain only technical data (method, path without query, status, duration, request id) – **no IP

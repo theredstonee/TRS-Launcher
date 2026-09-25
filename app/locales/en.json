@@ -1788,6 +1788,7 @@
     "tryOnLabel": "Try on {name}",
     "selected": "Selected",
     "tryOn": "Try on",
+    "rename": "Rename",
     "empty": {
       "title": "No skins of your own yet",
       "text": "Add 64×64 PNG files to your collection – then you can try them on and apply them together."
@@ -1805,6 +1806,9 @@
     "deleteDialog": {
       "title": "Delete skin?",
       "text": "{name} will be removed from your collection. The skin you're wearing won't change."
+    },
+    "renameDialog": {
+      "title": "Rename skin"
     },
     "sync": {
       "applying": "Applying …",
@@ -2246,6 +2250,7 @@
       "capes": "your selected cape, redeemed codes and uploaded cape images",
       "friends": "friends, requests and blocks",
       "settings": "your privacy settings and timestamps (sign-in, creation)",
+      "sync": "with sync on: your own skins (images and names), your own presets and your theme, accent colour and language – so they are the same on all your PCs",
       "presence": "your online status (launcher open / in game, version, and the server if you choose) – kept in memory only, it expires after 3 minutes"
     },
     "footer": "You can turn the services off at any time under {path} and delete all your TRS data there. Without your consent, the launcher sends nothing to the TRS server.",
@@ -2263,6 +2268,10 @@
     "services": {
       "title": "Use TRS services",
       "description": "Off = the launcher sends nothing to the TRS server and signs you out there. The TRS Client won't use the services in game either."
+    },
+    "sync": {
+      "title": "Sync with TRS account",
+      "description": "Keeps your own skins (\"My skins\"), your own presets, theme, accent colour and language the same on every PC where you use this Minecraft account. Java and memory settings stay on this PC."
     },
     "turnedOff": "TRS services turned off – the launcher no longer sends anything to the TRS server.",
     "noAccount": "Sign in with a Minecraft account to change these settings.",
@@ -2290,13 +2299,19 @@
     },
     "delete": {
       "title": "Delete all TRS data",
-      "description": "Immediately deletes your TRS account with capes, uploads, codes, friends and online status from the server. TRS services are turned off afterwards.",
+      "description": "Immediately deletes your TRS account with capes, uploads, codes, friends, online status and synced skins, presets and settings from the server. TRS services are turned off afterwards. The skins and presets on this PC stay.",
       "button": "Delete all TRS data …",
       "confirm": "Really delete everything from {name}? Unlocked capes and friends will be gone – this can't be undone.",
       "deleting": "Deleting …",
       "confirmButton": "Yes, delete permanently",
       "done": "All TRS data for this account has been deleted. TRS services are now off."
     }
+  },
+  "trsSync": {
+    "syncing": "Syncing with your TRS account …",
+    "offline": "Can't reach your TRS account right now – will sync later",
+    "synced": "Synced with your TRS account · {time}",
+    "pending": "Will sync with your TRS account shortly"
   },
   "capes": {
     "title": "TRS capes",

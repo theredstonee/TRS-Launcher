@@ -1788,6 +1788,7 @@
     "tryOnLabel": "Experimentar {name}",
     "selected": "Selecionada",
     "tryOn": "Experimentar",
+    "rename": "Renomear",
     "empty": {
       "title": "Nenhuma skin própria ainda",
       "text": "Adicione arquivos PNG 64×64 à sua coleção – depois você pode experimentá-los e aplicá-los juntos."
@@ -1805,6 +1806,9 @@
     "deleteDialog": {
       "title": "Excluir skin?",
       "text": "{name} será removida da sua coleção. A skin que você está usando não muda."
+    },
+    "renameDialog": {
+      "title": "Renomear skin"
     },
     "sync": {
       "applying": "Aplicando …",
@@ -2246,6 +2250,7 @@
       "capes": "sua capa selecionada, códigos resgatados e imagens de capa enviadas",
       "friends": "amigos, solicitações e bloqueios",
       "settings": "suas configurações de privacidade e datas (login, criação)",
+      "sync": "com a sincronização ativada: suas próprias skins (imagens e nomes), seus próprios presets e seu tema, cor de destaque e idioma – para que fiquem iguais em todos os seus PCs",
       "presence": "seu status online (launcher aberto / no jogo, versão e, se você quiser, o servidor) – mantido só na memória, expira após 3 minutos"
     },
     "footer": "Você pode desativar os serviços a qualquer momento em {path} e excluir lá todos os seus dados TRS. Sem o seu consentimento, o launcher não envia nada ao servidor TRS.",
@@ -2263,6 +2268,10 @@
     "services": {
       "title": "Usar serviços TRS",
       "description": "Desativado = o launcher não envia nada ao servidor TRS e desconecta você de lá. O TRS Client também não usará os serviços no jogo."
+    },
+    "sync": {
+      "title": "Sincronizar com a conta TRS",
+      "description": "Mantém suas próprias skins (\"Minhas skins\"), seus próprios presets, tema, cor de destaque e idioma iguais em todos os PCs onde você usa esta conta do Minecraft. As configurações de Java e memória ficam neste PC."
     },
     "turnedOff": "Serviços TRS desativados – o launcher não envia mais nada ao servidor TRS.",
     "noAccount": "Entre com uma conta do Minecraft para alterar estas configurações.",
@@ -2290,13 +2299,19 @@
     },
     "delete": {
       "title": "Excluir todos os dados TRS",
-      "description": "Exclui imediatamente do servidor sua conta TRS com capas, envios, códigos, amigos e status online. Depois, os serviços TRS são desativados.",
+      "description": "Exclui imediatamente do servidor sua conta TRS com capas, envios, códigos, amigos, status online e as skins, presets e configurações sincronizados. Depois, os serviços TRS são desativados. As skins e presets deste PC continuam.",
       "button": "Excluir todos os dados TRS …",
       "confirm": "Excluir mesmo tudo de {name}? Capas desbloqueadas e amigos serão perdidos – isto não pode ser desfeito.",
       "deleting": "Excluindo …",
       "confirmButton": "Sim, excluir permanentemente",
       "done": "Todos os dados TRS desta conta foram excluídos. Os serviços TRS agora estão desativados."
     }
+  },
+  "trsSync": {
+    "syncing": "Sincronizando com sua conta TRS …",
+    "offline": "Sua conta TRS não está acessível agora – a sincronização fica para depois",
+    "synced": "Sincronizado com sua conta TRS · {time}",
+    "pending": "A sincronização com sua conta TRS começa em instantes"
   },
   "capes": {
     "title": "Capas TRS",

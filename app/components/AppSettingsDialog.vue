@@ -60,6 +60,21 @@ const clientModLine = computed(() => {
 // Darstellung sofort anwenden, gespeichert wird gleich danach.
 watch(() => form.value?.ui, (ui) => ui && applyAppearance(ui), { deep: true })
 
+// Theme/Akzent/Sprache kamen vom TRS-Konto: ins offene Formular übernehmen,
+// ohne sie als eigene Änderung zurückzuspeichern.
+watch(
+  () => store.syncRevision,
+  () => {
+    const ui = store.current?.ui
+    if (!form.value || !ui) return
+    const unchanged = JSON.stringify(form.value) === lastSaved
+    form.value.ui.theme = ui.theme
+    form.value.ui.accent = ui.accent
+    form.value.ui.language = ui.language
+    if (unchanged) lastSaved = JSON.stringify(form.value)
+  },
+)
+
 watch(
   () => JSON.stringify(form.value),
   (json) => {
@@ -417,7 +432,7 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.privacy.telemetryTitle')" :description="t('settings.privacy.telemetryDescription')">
         <ToggleSwitch :model-value="false" :label="t('settings.privacy.telemetryTitle')" disabled />
       </SettingRow>
-      <TrsPrivacySettings />
+      <TrsPrivacySettings v-model:sync="form.trsSync" />
     </div>
 
     <!-- Standard-Einstellungen ------------------------------------------------------ -->

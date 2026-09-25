@@ -175,6 +175,7 @@ export const settingsSchema = z
       java25: javaPathSchema.nullable(),
     }),
     clips: clipSettingsSchema,
+    trsSync: z.boolean().default(true),
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {

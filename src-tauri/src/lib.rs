@@ -68,6 +68,13 @@ pub fn run() {
                     log::warn!("clip-event konnte nicht gesendet werden: {e}");
                 }
             }));
+            // TRS-Synchronisation: nach jedem Abgleich (Änderungen + Status) ans Frontend.
+            let handle = app.handle().clone();
+            launcher.set_trs_sync_sink(Arc::new(move |event| {
+                if let Err(e) = handle.emit("trs-sync", &event) {
+                    log::warn!("trs-sync konnte nicht gesendet werden: {e}");
+                }
+            }));
             let launcher = Arc::new(launcher);
             // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
             tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
@@ -78,6 +85,8 @@ pub fn run() {
             });
             // TRS-Präsenz im 60-s-Takt (ohne Einwilligung passiert nichts).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
+            // Skins/Presets/Theme/Sprache mit dem TRS-Konto abgleichen (nur mit Einwilligung + Schalter).
+            tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_sync());
             // Discord-Status (nur lokal mit der Discord-App; läuft Discord nicht, passiert nichts).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
             app.manage::<LauncherState>(launcher);
@@ -217,6 +226,7 @@ pub fn run() {
             commands::skins::add_skin_file,
             commands::skins::save_active_skin,
             commands::skins::delete_skin,
+            commands::skins::rename_skin,
             commands::skins::apply_skin_changes,
             commands::skins::skin_sync_status,
             commands::skins::cancel_skin_sync,
@@ -246,6 +256,7 @@ pub fn run() {
             commands::export::export_modpack,
             commands::export::import_modpack_file,
             commands::trs::trs_status,
+            commands::trs::trs_sync_status,
             commands::trs::trs_set_consent,
             commands::trs::trs_me,
             commands::trs::trs_update_me,

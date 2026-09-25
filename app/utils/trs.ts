@@ -1,7 +1,7 @@
 import { z } from 'zod'
 // Relativ importiert, damit Tests die Datei ohne Nuxt laden können.
 import { t } from './i18n'
-import { compareText, formatShortDate, loaderLabels } from './format'
+import { compareText, formatRelative, formatShortDate, loaderLabels } from './format'
 
 // TRS-Dienste (Umhänge, Freunde, Verwaltung): Schemas für das, was der Kern
 // liefert (wird beim Empfang geprüft), und für Eingaben, bevor sie rausgehen.
@@ -148,6 +148,21 @@ export const trsAdminUserSchema = z.object({
   online: z.boolean(),
 })
 
+/** Stand der TRS-Synchronisation (Skins, Presets, Theme/Sprache). */
+export const trsSyncStatusSchema = z.object({
+  active: z.boolean(),
+  syncing: z.boolean(),
+  lastSyncAt: text(40).nullable(),
+  problem: z.enum(['offline', 'error']).nullable(),
+})
+
+/** Event `trs-sync` nach jedem Abgleich: was sich lokal geändert hat. */
+export const trsSyncEventSchema = z.object({
+  account: uuid,
+  changes: z.object({ skins: z.boolean(), presets: z.boolean(), settings: z.boolean() }),
+  status: trsSyncStatusSchema,
+})
+
 export type TrsStatus = z.infer<typeof trsStatusSchema>
 export type TrsPrivacy = z.infer<typeof trsPrivacySchema>
 export type TrsMe = z.infer<typeof trsMeSchema>
@@ -164,6 +179,8 @@ export type TrsAdminStats = z.infer<typeof trsAdminStatsSchema>
 export type TrsAdminCape = z.infer<typeof trsAdminCapeSchema>
 export type TrsCode = z.infer<typeof trsCodeSchema>
 export type TrsAdminUser = z.infer<typeof trsAdminUserSchema>
+export type TrsSyncStatus = z.infer<typeof trsSyncStatusSchema>
+export type TrsSyncEvent = z.infer<typeof trsSyncEventSchema>
 export type TrsReportReason = 'inappropriate' | 'copyright' | 'impersonation' | 'other'
 export type TrsReviewList = 'pending' | 'approved' | 'rejected' | 'reported'
 
@@ -332,6 +349,18 @@ export function trsJoinInstance<T extends InstanceLike>(instances: T[], game: Tr
 /** Fehler, die still als Zustand angezeigt werden statt als Meldung. */
 export function trsIsQuiet(kind: string | undefined): boolean {
   return kind === 'trs_offline' || kind === 'trs_disabled' || kind === 'trs_no_account'
+}
+
+/**
+ * Dezenter Hinweis zur Synchronisation („Mit TRS-Konto synchronisiert · vor 2 Minuten“).
+ * `null` = aus (keine Einwilligung, Schalter aus oder kein Account).
+ */
+export function trsSyncLabel(status: TrsSyncStatus | null): string | null {
+  if (!status?.active) return null
+  if (status.syncing) return t('trsSync.syncing')
+  if (status.problem) return t('trsSync.offline')
+  if (status.lastSyncAt) return t('trsSync.synced', { time: formatRelative(status.lastSyncAt, true) })
+  return t('trsSync.pending')
 }
 
 /** Datum kurz in der eingestellten Sprache („23.09.2026“ / „9/23/26“), unbekannt → „–“. */

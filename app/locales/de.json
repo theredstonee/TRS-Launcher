@@ -1788,6 +1788,7 @@
     "tryOnLabel": "{name} anprobieren",
     "selected": "Ausgewählt",
     "tryOn": "Anprobieren",
+    "rename": "Umbenennen",
     "empty": {
       "title": "Noch keine eigenen Skins",
       "text": "Lege 64×64-PNG-Dateien in deine Sammlung – dann kannst du sie anprobieren und gesammelt anwenden."
@@ -1805,6 +1806,9 @@
     "deleteDialog": {
       "title": "Skin löschen?",
       "text": "{name} wird aus deiner Sammlung entfernt. Dein getragener Skin ändert sich dadurch nicht."
+    },
+    "renameDialog": {
+      "title": "Skin umbenennen"
     },
     "sync": {
       "applying": "Wird angewendet …",
@@ -2246,6 +2250,7 @@
       "capes": "gewählter Umhang, eingelöste Codes und hochgeladene Umhang-Bilder",
       "friends": "Freunde, Anfragen und Blockierungen",
       "settings": "deine Datenschutz-Einstellungen und Zeitpunkte (Anmeldung, Erstellung)",
+      "sync": "bei eingeschalteter Synchronisation: deine eigenen Skins (Bilder und Namen), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache – damit sie auf all deinen PCs gleich sind",
       "presence": "der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher, er verfällt nach 3 Minuten"
     },
     "footer": "Du kannst die Dienste jederzeit unter {path} ausschalten und dort alle deine TRS-Daten löschen. Ohne Zustimmung sendet der Launcher nichts an den TRS-Server.",
@@ -2263,6 +2268,10 @@
     "services": {
       "title": "TRS-Dienste nutzen",
       "description": "Aus = der Launcher sendet nichts an den TRS-Server und meldet dich dort ab. Im Spiel nutzt der TRS Client die Dienste dann auch nicht."
+    },
+    "sync": {
+      "title": "Mit TRS-Konto synchronisieren",
+      "description": "Hält deine eigenen Skins („Meine Skins“), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache auf allen PCs gleich, auf denen du diesen Minecraft-Account nutzt. Java- und Speicher-Einstellungen bleiben auf diesem PC."
     },
     "turnedOff": "TRS-Dienste ausgeschaltet – der Launcher sendet nichts mehr an den TRS-Server.",
     "noAccount": "Melde dich mit einem Minecraft-Account an, um diese Einstellungen zu ändern.",
@@ -2290,13 +2299,19 @@
     },
     "delete": {
       "title": "Alle TRS-Daten löschen",
-      "description": "Löscht dein TRS-Konto mit Umhängen, Uploads, Codes, Freunden und Online-Status sofort vom Server. Danach sind die TRS-Dienste aus.",
+      "description": "Löscht dein TRS-Konto mit Umhängen, Uploads, Codes, Freunden, Online-Status und synchronisierten Skins, Presets und Einstellungen sofort vom Server. Danach sind die TRS-Dienste aus. Die Skins und Presets auf diesem PC bleiben erhalten.",
       "button": "Alle TRS-Daten löschen …",
       "confirm": "Wirklich alles von {name} löschen? Freigeschaltete Umhänge und Freunde sind danach weg – das lässt sich nicht rückgängig machen.",
       "deleting": "Lösche …",
       "confirmButton": "Ja, endgültig löschen",
       "done": "Alle TRS-Daten dieses Accounts sind gelöscht. Die TRS-Dienste sind jetzt aus."
     }
+  },
+  "trsSync": {
+    "syncing": "Synchronisiere mit deinem TRS-Konto …",
+    "offline": "TRS-Konto gerade nicht erreichbar – wird später synchronisiert",
+    "synced": "Mit TRS-Konto synchronisiert · {time}",
+    "pending": "Wird gleich mit deinem TRS-Konto synchronisiert"
   },
   "capes": {
     "title": "TRS-Umhänge",

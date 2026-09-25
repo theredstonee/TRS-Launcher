@@ -71,6 +71,10 @@ pub struct Settings {
     /// Clips & Aufnahme (Standard aus).
     #[serde(deserialize_with = "crate::clips::settings::lenient")]
     pub clips: ClipSettings,
+    /// Eigene Skins, eigene Presets sowie Theme, Akzentfarbe und Sprache mit
+    /// dem TRS-Konto abgleichen – nur mit eingeschalteten TRS-Diensten. Ab
+    /// Werk an; ältere Dateien ohne Feld ebenfalls an.
+    pub trs_sync: bool,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -244,6 +248,7 @@ impl Default for Settings {
             discord_presence: true,
             java: JavaPaths::default(),
             clips: ClipSettings::default(),
+            trs_sync: true,
         }
     }
 }
@@ -481,6 +486,10 @@ mod tests {
         assert!(old.discord_presence);
         let off: Settings = serde_json::from_str(r#"{"discordPresence":false}"#).unwrap();
         assert!(!off.discord_presence);
+        // TRS-Synchronisation: ohne Feld (ältere Versionen) an, abschaltbar.
+        assert!(old.trs_sync && Settings::default().trs_sync);
+        let off: Settings = serde_json::from_str(r#"{"trsSync":false}"#).unwrap();
+        assert!(!off.trs_sync);
         assert_eq!(serde_json::to_value(Theme::Oled).unwrap(), "oled");
         assert!(serde_json::from_str::<UiSettings>(r#"{"theme":"neon"}"#).is_err());
     }

@@ -1788,6 +1788,7 @@
     "tryOnLabel": "Przymierz {name}",
     "selected": "Wybrano",
     "tryOn": "Przymierz",
+    "rename": "Zmień nazwę",
     "empty": {
       "title": "Brak własnych skinów",
       "text": "Dodaj pliki PNG 64×64 do kolekcji – potem możesz je przymierzać i stosować razem."
@@ -1805,6 +1806,9 @@
     "deleteDialog": {
       "title": "Usunąć skin?",
       "text": "{name} zostanie usunięty z kolekcji. Skin, który nosisz, się nie zmieni."
+    },
+    "renameDialog": {
+      "title": "Zmień nazwę skina"
     },
     "sync": {
       "applying": "Stosowanie …",
@@ -2246,6 +2250,7 @@
       "capes": "wybrana peleryna, wykorzystane kody i przesłane obrazy peleryn",
       "friends": "znajomi, zaproszenia i blokady",
       "settings": "twoje ustawienia prywatności i znaczniki czasu (logowanie, utworzenie)",
+      "sync": "przy włączonej synchronizacji: twoje własne skiny (obrazy i nazwy), własne presety oraz motyw, kolor akcentu i język – aby były takie same na wszystkich twoich komputerach",
       "presence": "twój status online (launcher otwarty / w grze, wersja oraz serwer, jeśli tak wybierzesz) – tylko w pamięci, wygasa po 3 minutach"
     },
     "footer": "Możesz w każdej chwili wyłączyć usługi w {path} i tam usunąć wszystkie swoje dane TRS. Bez twojej zgody launcher nie wysyła niczego do serwera TRS.",
@@ -2263,6 +2268,10 @@
     "services": {
       "title": "Korzystaj z usług TRS",
       "description": "Wył. = launcher nie wysyła niczego do serwera TRS i cię tam wylogowuje. TRS Client również nie będzie korzystać z usług w grze."
+    },
+    "sync": {
+      "title": "Synchronizuj z kontem TRS",
+      "description": "Utrzymuje twoje własne skiny („Moje skiny”), własne presety, motyw, kolor akcentu i język takie same na wszystkich komputerach, na których używasz tego konta Minecraft. Ustawienia Javy i pamięci pozostają na tym komputerze."
     },
     "turnedOff": "Usługi TRS wyłączone – launcher nie wysyła już niczego do serwera TRS.",
     "noAccount": "Zaloguj się kontem Minecraft, aby zmienić te ustawienia.",
@@ -2290,13 +2299,19 @@
     },
     "delete": {
       "title": "Usuń wszystkie dane TRS",
-      "description": "Natychmiast usuwa z serwera twoje konto TRS wraz z pelerynami, przesłanymi plikami, kodami, znajomymi i statusem online. Następnie usługi TRS zostaną wyłączone.",
+      "description": "Natychmiast usuwa z serwera twoje konto TRS wraz z pelerynami, przesłanymi plikami, kodami, znajomymi, statusem online oraz zsynchronizowanymi skinami, presetami i ustawieniami. Następnie usługi TRS zostaną wyłączone. Skiny i presety na tym komputerze pozostają.",
       "button": "Usuń wszystkie dane TRS …",
       "confirm": "Naprawdę usunąć wszystko z konta {name}? Odblokowane peleryny i znajomi znikną – tego nie można cofnąć.",
       "deleting": "Usuwanie …",
       "confirmButton": "Tak, usuń trwale",
       "done": "Wszystkie dane TRS tego konta zostały usunięte. Usługi TRS są teraz wyłączone."
     }
+  },
+  "trsSync": {
+    "syncing": "Synchronizacja z kontem TRS …",
+    "offline": "Konto TRS jest teraz niedostępne – synchronizacja nastąpi później",
+    "synced": "Zsynchronizowano z kontem TRS · {time}",
+    "pending": "Za chwilę nastąpi synchronizacja z kontem TRS"
   },
   "capes": {
     "title": "Peleryny TRS",

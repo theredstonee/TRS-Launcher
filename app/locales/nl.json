@@ -1788,6 +1788,7 @@
     "tryOnLabel": "{name} passen",
     "selected": "Geselecteerd",
     "tryOn": "Passen",
+    "rename": "Hernoemen",
     "empty": {
       "title": "Nog geen eigen skins",
       "text": "Voeg PNG-bestanden van 64×64 toe aan je collectie – dan kun je ze passen en samen toepassen."
@@ -1805,6 +1806,9 @@
     "deleteDialog": {
       "title": "Skin verwijderen?",
       "text": "{name} wordt uit je collectie verwijderd. De skin die je draagt, verandert niet."
+    },
+    "renameDialog": {
+      "title": "Skin hernoemen"
     },
     "sync": {
       "applying": "Toepassen …",
@@ -2246,6 +2250,7 @@
       "capes": "je gekozen cape, ingewisselde codes en geüploade cape-afbeeldingen",
       "friends": "vrienden, verzoeken en blokkeringen",
       "settings": "je privacy-instellingen en tijdstempels (inloggen, aanmaken)",
+      "sync": "als synchroniseren aan staat: je eigen skins (afbeeldingen en namen), je eigen presets en je thema, accentkleur en taal – zodat ze op al je pc’s gelijk zijn",
       "presence": "je onlinestatus (launcher open / in het spel, versie en, als je dat wilt, de server) – alleen in het geheugen bewaard, verloopt na 3 minuten"
     },
     "footer": "Je kunt de diensten altijd uitschakelen onder {path} en daar al je TRS-gegevens verwijderen. Zonder jouw toestemming stuurt de launcher niets naar de TRS-server.",
@@ -2263,6 +2268,10 @@
     "services": {
       "title": "TRS-diensten gebruiken",
       "description": "Uit = de launcher stuurt niets naar de TRS-server en logt je daar uit. Ook de TRS Client gebruikt de diensten dan niet in het spel."
+    },
+    "sync": {
+      "title": "Synchroniseren met TRS-account",
+      "description": "Houdt je eigen skins („Mijn skins”), je eigen presets, thema, accentkleur en taal gelijk op elke pc waarop je dit Minecraft-account gebruikt. Java- en geheugeninstellingen blijven op deze pc."
     },
     "turnedOff": "TRS-diensten uitgeschakeld – de launcher stuurt niets meer naar de TRS-server.",
     "noAccount": "Log in met een Minecraft-account om deze instellingen te wijzigen.",
@@ -2290,13 +2299,19 @@
     },
     "delete": {
       "title": "Alle TRS-gegevens verwijderen",
-      "description": "Verwijdert je TRS-account met capes, uploads, codes, vrienden en onlinestatus direct van de server. Daarna worden de TRS-diensten uitgeschakeld.",
+      "description": "Verwijdert je TRS-account met capes, uploads, codes, vrienden, onlinestatus en gesynchroniseerde skins, presets en instellingen direct van de server. Daarna worden de TRS-diensten uitgeschakeld. De skins en presets op deze pc blijven bewaard.",
       "button": "Alle TRS-gegevens verwijderen …",
       "confirm": "Echt alles van {name} verwijderen? Ontgrendelde capes en vrienden zijn dan weg – dit kan niet ongedaan worden gemaakt.",
       "deleting": "Verwijderen …",
       "confirmButton": "Ja, definitief verwijderen",
       "done": "Alle TRS-gegevens van dit account zijn verwijderd. TRS-diensten staan nu uit."
     }
+  },
+  "trsSync": {
+    "syncing": "Synchroniseren met je TRS-account …",
+    "offline": "TRS-account nu niet bereikbaar – wordt later gesynchroniseerd",
+    "synced": "Gesynchroniseerd met je TRS-account · {time}",
+    "pending": "Wordt zo met je TRS-account gesynchroniseerd"
   },
   "capes": {
     "title": "TRS-capes",

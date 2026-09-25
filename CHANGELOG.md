@@ -22,12 +22,21 @@ How to write an entry:
 
 - **The skin preview shows your TRS cape.** After a restart the 3D preview now shows the TRS cape you wear – the way
   other TRS players see you in game – instead of your Mojang cape. Click a Mojang cape to look at that one instead.
+- **Your skins, presets and look follow you to every PC.** With the TRS services on, "My skins", your own presets and
+  your theme, accent colour and language are synced with your Minecraft account – add a skin on one PC and it's there
+  on the next one, delete it and it's gone everywhere. Your Java and memory settings stay on each PC. You can rename
+  skins in your collection now, too. Don't want it? Turn off "Sync with TRS account" under Settings → Privacy.
 
 ### Deutsch
 
 - **Die Skin-Vorschau zeigt deinen TRS-Umhang.** Nach einem Neustart zeigt die 3D-Vorschau jetzt den TRS-Umhang, den du
   trägst – so, wie andere TRS-Spieler dich im Spiel sehen – statt deines Mojang-Umhangs. Klick einen Mojang-Umhang
   an, um den anzusehen.
+- **Deine Skins, Presets und dein Look kommen mit auf jeden PC.** Mit eingeschalteten TRS-Diensten werden „Meine
+  Skins“, deine eigenen Presets sowie Theme, Akzentfarbe und Sprache mit deinem Minecraft-Account synchronisiert – auf
+  einem PC einen Skin hinzufügen, und er ist auf dem nächsten da; löschen, und er ist überall weg. Java- und
+  Speicher-Einstellungen bleiben auf jedem PC. Skins in deiner Sammlung lassen sich jetzt auch umbenennen. Nicht
+  gewollt? Unter Einstellungen → Datenschutz „Mit TRS-Konto synchronisieren“ ausschalten.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

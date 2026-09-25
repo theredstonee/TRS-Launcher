@@ -69,6 +69,14 @@ sesión del juego.
 | Las denuncias que haces sobre capas de otros jugadores (motivo, nota opcional) | Moderación |
 | Amigos, solicitudes de amistad y bloqueos | La lista de amigos |
 | Estado en línea: «en línea en el launcher» o «jugando» con versión y cargador de mods y, solo si has activado «Server teilen» (compartir servidor), la dirección del servidor | Mostrar a tus amigos a qué juegas y permitirles unirse |
+| Solo con «Sincronizar con la cuenta de TRS» activado: tus skins propias de «Mis skins» (la imagen, recodificada sin metadatos, su nombre y modelo), tus presets de mods propios (nombres e ID de proyectos de Modrinth, sin archivos ni rutas de carpetas) y tu tema, color de acento e idioma, cada uno con la fecha del último cambio; las skins y presets eliminados se anotan durante un tiempo | Mantenerlos iguales en todos los PC donde uses esta cuenta de Minecraft |
+
+**Sincronización:** «Sincronizar con la cuenta de TRS» (*Einstellungen → Datenschutz*, activado de fábrica mientras
+los servicios TRS estén activados) mantiene iguales en todos tus PC tus skins propias, tus presets propios y el aspecto
+del launcher (tema, color de acento, idioma). Java, la memoria y los demás ajustes **no** se sincronizan y nunca salen
+de tu PC. Si desactivas el interruptor, se deja de sincronizar; lo ya sincronizado permanece en el servidor hasta que lo
+borres con «Alle TRS-Daten löschen». Solo tú puedes leer tus datos sincronizados: no hay ninguna vista de
+administración para ellos.
 
 El estado en línea se guarda **solo en la memoria del servidor**, nunca se escribe en disco, no tiene historial y
 caduca **3 minutos** después de la última actualización. Solo lo ven tus amigos, y nadie si lo configuras en «nadie».
@@ -78,7 +86,8 @@ la UUID afectada.
 
 ### Finalidad y base jurídica
 
-Los datos se tratan únicamente para prestar los servicios TRS que has pedido: capas, lista de amigos y estado en línea.
+Los datos se tratan únicamente para prestar los servicios TRS que has pedido: capas, lista de amigos, estado en línea y
+la sincronización de tus skins, presets y del aspecto del launcher entre tus PC.
 La base jurídica es la prestación del servicio que has solicitado (art. 6.1.b del RGPD). Mantener los servicios libres
 de abusos (revisión de subidas, denuncias, bloqueos y límites de uso) se basa en nuestro interés legítimo en un servicio
 seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni venta de datos.
@@ -89,10 +98,13 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
 - Los tokens de sesión caducan a los 30 días; cerrar sesión o quitar una cuenta del launcher revoca el token.
 - El estado en línea desaparece 3 minutos después de la última actualización, o en el momento en que cierras el
   launcher.
+- Las skins, presets y ajustes sincronizados se conservan hasta que los borres en el launcher (una skin borrada en un PC
+  también se borra en el servidor). Las notas sobre skins borradas se guardan 30 días para que tus otros PC también
+  puedan borrarlas.
 - **«Alle TRS-Daten löschen»** (borrar todos los datos TRS, en *Einstellungen → Datenschutz*) lo elimina todo al
   instante (art. 17 del RGPD): tu cuenta, sesiones, amistades, solicitudes y bloqueos, las capas subidas y sus archivos,
-  los códigos canjeados, las denuncias y tu estado en línea. Después, los servicios TRS quedan desactivados en el
-  launcher.
+  los códigos canjeados, las denuncias, tu estado en línea y todas las skins, presets y ajustes sincronizados. Después,
+  los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
 - Tras la eliminación solo se conserva un registro de bloqueo existente (tu UUID, el motivo y la fecha), para que no se
   pueda eludir un bloqueo volviendo a iniciar sesión.
 - Los registros del servidor contienen solo datos técnicos (método, ruta sin parámetros de consulta, estado, duración,

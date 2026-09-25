@@ -270,14 +270,43 @@ async function load() {
   }
 }
 
+// --- Synchronisation mit dem TRS-Konto ------------------------------------------------
+// Läuft still im Kern; hier nur ein dezenter Hinweis und Neuladen, wenn ein
+// Abgleich die Sammlung geändert hat.
+const trs = useTrsStore()
+/** Tickt alle 30 s, damit „vor 2 Minuten“ weiterzählt. */
+const syncTick = ref(Date.now())
+let syncTimer: ReturnType<typeof setInterval> | null = null
+const syncLine = computed(() => {
+  void syncTick.value
+  return trsSyncLabel(trs.sync)
+})
+
+watch(
+  () => trs.skinsRevision,
+  () => {
+    loadLibrary()
+      .then(() => {
+        // Ausgewählter Skin wurde woanders gelöscht? Dann zurück zum getragenen.
+        const selected = draft.value.skin
+        if (selected.source === 'library' && !library.value.some((s) => s.id === selected.id)) selectCurrent()
+      })
+      .catch(() => {})
+  },
+)
+
 onMounted(() => {
   if (!accounts.loaded) accounts.load().catch(() => {})
   load()
+  void trs.refreshSync()
+  syncTimer = setInterval(() => (syncTick.value = Date.now()), 30_000)
 })
 
 onBeforeUnmount(() => {
   if (ticker) clearInterval(ticker)
   ticker = null
+  if (syncTimer) clearInterval(syncTimer)
+  syncTimer = null
 })
 
 /** Führt eine Aktion aus und hält so lange die Sammlungs-Knöpfe an. */
@@ -329,6 +358,32 @@ async function saveActive() {
     const saved = await backend.saveActiveSkin(name.slice(0, 48))
     await loadLibrary()
     toasts.ok(t('skins.savedToast', { name: saved.name }))
+  })
+}
+
+const toRename = ref<LibrarySkin | null>(null)
+const renameName = ref('')
+const renameError = ref<string | null>(null)
+
+function startRename(skin: LibrarySkin) {
+  toRename.value = skin
+  renameName.value = skin.name
+  renameError.value = null
+}
+
+async function confirmRename() {
+  const skin = toRename.value
+  if (!skin) return
+  const parsed = skinNameSchema.safeParse(renameName.value)
+  if (!parsed.success) {
+    renameError.value = firstIssue(parsed.error)
+    return
+  }
+  toRename.value = null
+  if (parsed.data === skin.name) return
+  await run('rename', async () => {
+    await backend.renameSkin(skin.id, parsed.data)
+    await loadLibrary()
   })
 }
 
@@ -508,7 +563,32 @@ function capeStyle(texture: string, width = 30) {
       <div class="min-w-0 space-y-5">
         <!-- Skins ---------------------------------------------------------------- -->
         <section>
-          <h2 class="section-title mb-2">{{ t('skins.mySkins') }}</h2>
+          <div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h2 class="section-title">{{ t('skins.mySkins') }}</h2>
+            <p
+              v-if="syncLine"
+              class="flex items-center gap-1.5 text-[11px] text-base-400"
+              role="status"
+              aria-live="polite"
+              data-testid="trs-sync-status"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="size-3.5 shrink-0"
+                :class="{ 'animate-spin': trs.sync?.syncing }"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path v-if="trs.sync?.syncing" d="M4 12a8 8 0 0 1 14-5.3M20 4v4h-4M20 12a8 8 0 0 1-14 5.3M4 20v-4h4" />
+                <path v-else d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 9.1 4.5 4.5 0 0 0 7 18Z" />
+              </svg>
+              {{ syncLine }}
+            </p>
+          </div>
           <div v-if="loading" class="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3">
             <div v-for="i in 4" :key="i" class="skeleton h-28" />
           </div>
@@ -562,6 +642,9 @@ function capeStyle(texture: string, width = 30) {
                     @click="selectLibrary(skin)"
                   >
                     {{ draft.skin.source === 'library' && draft.skin.id === skin.id ? t('skins.selected') : t('skins.tryOn') }}
+                  </button>
+                  <button class="btn btn-ghost px-2 py-1 text-[11px]" :disabled="!!busy" @click="startRename(skin)">
+                    {{ t('skins.rename') }}
                   </button>
                   <button class="btn btn-ghost px-2 py-1 text-[11px] hover:text-redstone-300" :disabled="!!busy" @click="toDelete = skin">
                     {{ t('common.actions.delete') }}
@@ -651,6 +734,23 @@ function capeStyle(texture: string, width = 30) {
       <template #actions>
         <button class="btn btn-ghost" @click="adding = false">{{ t('common.actions.cancel') }}</button>
         <button class="btn btn-primary" @click="addSkin">{{ t('skins.addDialog.chooseFile') }}</button>
+      </template>
+    </BaseDialog>
+
+    <BaseDialog v-if="toRename" :title="t('skins.renameDialog.title')" @close="toRename = null">
+      <label class="label" for="skin-rename">{{ t('common.labels.name') }}</label>
+      <input
+        id="skin-rename"
+        v-model="renameName"
+        class="field"
+        maxlength="48"
+        autofocus
+        @keydown.enter="confirmRename"
+      />
+      <p v-if="renameError" role="alert" class="mt-2 text-xs text-redstone-300">{{ renameError }}</p>
+      <template #actions>
+        <button class="btn btn-ghost" @click="toRename = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-primary" @click="confirmRename">{{ t('common.actions.save') }}</button>
       </template>
     </BaseDialog>
 

@@ -20,6 +20,7 @@ mod ops;
 pub mod png;
 mod presence;
 pub mod store;
+pub mod sync;
 mod texture;
 pub mod types;
 pub mod validate;
@@ -109,16 +110,24 @@ impl Req {
 #[derive(Debug)]
 pub(crate) enum Failure {
     Network,
-    Api { status: u16, code: String, retry_after: Option<u64> },
+    Api { status: u16, code: String, retry_after: Option<u64>, current: Option<serde_json::Value> },
 }
 
 impl Failure {
     fn into_error(self) -> Error {
         match self {
             Self::Network => offline(),
-            Self::Api { status, code, retry_after } => api_error(status, &code, retry_after),
+            Self::Api { status, code, retry_after, .. } => api_error(status, &code, retry_after),
         }
     }
+}
+
+/// Ergebnis einer Anfrage, bei der der Server einen neueren Stand melden darf
+/// (`409 stale` mit `error.current`, „letzter Schreiber gewinnt“).
+#[derive(Debug)]
+pub(crate) enum Outcome {
+    Done(Vec<u8>),
+    Stale(serde_json::Value),
 }
 
 pub(crate) fn offline() -> Error {
@@ -242,6 +251,9 @@ pub struct TrsApi {
     /// Es läuft höchstens eine Anmeldung gleichzeitig.
     login_lock: tokio::sync::Mutex<()>,
     pub(crate) presence: Arc<PresenceState>,
+    /// Takt und Status der TRS-Synchronisation (siehe [`sync`]).
+    pub(crate) sync: Arc<sync::SyncState>,
+    pub(crate) sync_store: sync::SyncStore,
 }
 
 impl TrsApi {
@@ -267,6 +279,8 @@ impl TrsApi {
             session_base: session_base.trim_end_matches('/').to_owned(),
             mojang_api: mojang_api.trim_end_matches('/').to_owned(),
             store: Store::new(paths.root().join("trs-api.json")),
+            sync_store: sync::SyncStore::new(paths.root().join("trs-sync.json")),
+            sync: Arc::default(),
             paths,
             login_lock: tokio::sync::Mutex::new(()),
             presence: Arc::new(PresenceState::default()),
@@ -350,7 +364,10 @@ impl TrsApi {
         {
             tracing::warn!("TRS API lehnt {} {} ab: {fields}", req.method, req.path);
         }
-        Err(Failure::Api { status: status.as_u16(), code, retry_after })
+        let current = (status.as_u16() == 409 && code == "stale")
+            .then(|| error.and_then(|e| e.get("current")).cloned())
+            .flatten();
+        Err(Failure::Api { status: status.as_u16(), code, retry_after, current })
     }
 
     /// Wie [`Self::send_once`], wartet aber kurze `429` einmal selbst ab.
@@ -369,6 +386,14 @@ impl TrsApi {
     /// Angemeldete Anfrage für `account`: holt/erneuert den Token, meldet sich
     /// bei `401` genau einmal neu an.
     pub(crate) async fn call_raw(&self, sessions: &dyn SessionSource, account: &str, req: &Req) -> Result<Vec<u8>> {
+        match self.call_outcome(sessions, account, req).await? {
+            Outcome::Done(bytes) => Ok(bytes),
+            Outcome::Stale(_) => Err(api_error(409, "stale", None)),
+        }
+    }
+
+    /// Wie [`Self::call_raw`], liefert bei `409 stale` aber den Stand des Servers.
+    pub(crate) async fn call_outcome(&self, sessions: &dyn SessionSource, account: &str, req: &Req) -> Result<Outcome> {
         self.ensure_enabled().await?;
         let mut fresh_login = false;
         loop {
@@ -380,7 +405,8 @@ impl TrsApi {
                 }
             };
             match self.send(req, Some(&token)).await {
-                Ok(bytes) => return Ok(bytes),
+                Ok(bytes) => return Ok(Outcome::Done(bytes)),
+                Err(Failure::Api { status: 409, current: Some(current), .. }) => return Ok(Outcome::Stale(current)),
                 Err(Failure::Api { status: 401, .. }) if !fresh_login => {
                     // Token abgelaufen oder widerrufen: einmal neu anmelden.
                     let _ = self.store.take_token(account).await;
@@ -554,3 +580,5 @@ pub(crate) fn me_view(me: ApiMe) -> Result<types::Me> {
 pub(crate) mod testkit;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod sync_tests;

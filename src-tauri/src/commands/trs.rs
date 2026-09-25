@@ -3,6 +3,7 @@
 
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
+use trs_core::trs_api::sync::SyncStatus;
 use trs_core::trs_api::types::{
     AdminCape, AdminStats, AdminUser, BlockedUser, CapeItem, CodeView, Friend, FriendRequestResult, FriendsView, Me,
     NewCodes, PlayerCape, RedeemResult, ReportReason, ReviewList, SettingsPatch, TrsStatus, UserRef,
@@ -15,6 +16,12 @@ use crate::error::CommandResult;
 #[tauri::command]
 pub async fn trs_status(launcher: State<'_, LauncherState>) -> CommandResult<TrsStatus> {
     Ok(launcher.trs_status().await?)
+}
+
+/// Stand der TRS-Synchronisation (kleiner Hinweis auf der Skins-Seite).
+#[tauri::command]
+pub async fn trs_sync_status(launcher: State<'_, LauncherState>) -> CommandResult<SyncStatus> {
+    Ok(launcher.trs_sync_status().await)
 }
 
 /// Einwilligung erteilen oder zurückziehen (dann keine Anfragen mehr).
