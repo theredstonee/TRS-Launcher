@@ -102,6 +102,16 @@ TRS server asks Mojang whether that happened. **The TRS server never sees your p
 token.** It then issues its own token, which the launcher stores encrypted with Windows DPAPI on your computer and never
 hands to web content or to the game. The TRS Client mod signs in by itself through the game session.
 
+### Friends in the game (TRS Client)
+
+With the TRS services on, the TRS Client mod shows your friends list in the game. It asks the TRS server for your
+friends, requests and blocked players only while the friends screen (or the server list / pause menu with friends
+info) is open – about every 30 seconds, otherwise every 90 seconds or not at all. Friend requests, removing and
+blocking are sent only when you click them. Friend faces are loaded from Mojang's public profile service
+(`sessionserver.mojang.com`, `textures.minecraft.net`) and kept in memory only. The mod stores nothing of this on your
+computer – except the servers you pin in the server list (`config/trsclient/server-pins.json`, only addresses, never
+sent anywhere).
+
 ### What is stored
 
 | Data | Why |

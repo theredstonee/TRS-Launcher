@@ -71,6 +71,23 @@ public interface MenuHost {
 		return java.util.Collections.emptyList();
 	}
 
+	/** Freunde-Bildschirm öffnen (nur wenn {@link #hasFriends()}). */
+	default void openFriends() {
+	}
+
+	/** Gibt es in dieser Version Freunde im Spiel (TRS-Online-Funktionen)? */
+	default boolean hasFriends() {
+		return false;
+	}
+
+	/** Bildschirm „Clips &amp; Bilder“ öffnen (nur wenn {@link #hasClips()}). */
+	default void openClips() {
+	}
+
+	default boolean hasClips() {
+		return false;
+	}
+
 	/**
 	 * Gibt es das Modul in dieser Minecraft-Version? Alte Versionen lassen einzelne Module aus
 	 * (z. B. Treffer-Farbe in 1.7.10) – die tauchen dann gar nicht erst im Menü auf.

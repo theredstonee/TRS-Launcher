@@ -49,6 +49,17 @@ How to write an entry:
   restart. Started from the launcher, all your launcher accounts are there, and "Add account" signs in through the
   launcher and saves the new account there too. Started from another launcher, you can sign in with Microsoft in the
   game and keep accounts per game folder. Find it in the TRS menu under "Accounts".
+- **Menus in the redstone look.** The pause menu, server list, loading screens, options and world list now wear the
+  TRS redstone style: redstone background, stone buttons that light up, server cards with redstone ping bars. Every
+  button keeps working – also the ones other mods add. Pin your favourite servers to keep them on top, and see which
+  TRS friends are playing on a server right in the list. The pause menu gets buttons for Wardrobe, Accounts, Clips,
+  Friends and a new "Server info" page. Loading screens and the start-up screen show a row of redstone lamps. Each menu
+  can go back to the classic look in the TRS menu under "Menu Style".
+- **Friends in the game.** See your TRS friends with their Minecraft faces, who is online and what they are playing,
+  answer friend requests, add friends by name, remove or block players – right in the game from the title screen, the
+  TRS menu or the pause menu.
+- **Clips & Images in the game.** All your clips and screenshots as tiles with previews: look at screenshots in full
+  size, start or stop a recording, save a clip, open the folder or delete files (with a safety question).
 - **Safer connection between launcher and game.** Clips and account switching now use a key the game only gets in
   memory – no more secret in a file in your game folder.
 - **The skin preview shows your TRS cape.** After a restart the 3D preview now shows the TRS cape you wear – the way
@@ -141,6 +152,17 @@ How to write an entry:
   Neustart. Über den Launcher gestartet sind alle Launcher-Konten da, und „Konto hinzufügen“ meldet über den Launcher
   an und speichert das neue Konto auch dort. Über einen anderen Launcher gestartet, meldest du dich im Spiel bei
   Microsoft an und behältst Konten je Spielordner. Zu finden im TRS-Menü unter „Konten“.
+- **Menüs im Redstone-Look.** Pausenmenü, Serverliste, Ladebildschirme, Einstellungen und Weltenliste tragen jetzt den
+  TRS-Redstone-Stil: Redstone-Hintergrund, Steinknöpfe, die aufleuchten, Serverkarten mit Redstone-Ping-Balken. Jeder
+  Knopf funktioniert weiter – auch die von anderen Mods. Hefte Lieblingsserver an, damit sie oben bleiben, und sieh
+  direkt in der Liste, welche TRS-Freunde gerade auf einem Server spielen. Das Pausenmenü bekommt Knöpfe für
+  Garderobe, Konten, Clips, Freunde und eine neue Seite „Server-Info“. Ladebildschirme und der Startbildschirm zeigen
+  eine Reihe Redstone-Lampen. Jedes Menü lässt sich im TRS-Menü unter „Menü-Stil“ wieder klassisch stellen.
+- **Freunde im Spiel.** Sieh deine TRS-Freunde mit ihrem Minecraft-Gesicht, wer online ist und was gespielt wird,
+  beantworte Freundschaftsanfragen, füge Freunde per Name hinzu, entferne oder blockiere Spieler – direkt im Spiel
+  über Titelbildschirm, TRS-Menü oder Pausenmenü.
+- **Clips & Bilder im Spiel.** Alle Clips und Bildschirmfotos als Kacheln mit Vorschau: Bilder groß ansehen, Aufnahme
+  starten oder stoppen, Clip speichern, Ordner öffnen oder Dateien löschen (mit Sicherheitsfrage).
 - **Sicherere Verbindung zwischen Launcher und Spiel.** Clips und Kontowechsel nutzen jetzt einen Schlüssel, den das
   Spiel nur im Arbeitsspeicher bekommt – kein Geheimnis mehr in einer Datei im Spielordner.
 - **Die Skin-Vorschau zeigt deinen TRS-Umhang.** Nach einem Neustart zeigt die 3D-Vorschau jetzt den TRS-Umhang, den du

@@ -90,6 +90,16 @@ public final class TrsMenuHost implements MenuHost {
 	}
 
 	@Override
+	public void openClips() {
+		new TrsMenuHost(MenuScreens.clips(new TrsMenuScreen(parent))).closeScreen();
+	}
+
+	@Override
+	public boolean hasClips() {
+		return true;
+	}
+
+	@Override
 	public boolean supports(Module module) {
 		return TrsClient.supported(module);
 	}

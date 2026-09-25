@@ -190,6 +190,17 @@ public final class Gfx {
 		//?}
 	}
 
+	/**
+	 * Alles Folgende über dem bisher Gezeichneten (Überblendungen): ab 1.21.6 nächste Schicht, davor
+	 * gesammelten Text vorher zeichnen (sonst läge er obenauf). Tiefe zusätzlich über {@link #raise}.
+	 */
+	public void overlayLayer() {
+		//? if >=1.21.6 {
+		/*g.nextStratum();
+		*///?} else
+		g.flush();
+	}
+
 	/** Zeichnen auf ein Rechteck begrenzen (Bildschirmkoordinaten), mit {@link #noScissor()} beenden. */
 	public void scissor(int x1, int y1, int x2, int y2) {
 		g.enableScissor(x1, y1, x2, y2);

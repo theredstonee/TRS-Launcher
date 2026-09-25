@@ -128,6 +128,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.perf.FpsConfigMode.init(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
 		config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
+		// Menü-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten).
+		dev.theredstonee.trsclient.core.menus.MenuStyle.install(modules);
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(() -> TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(() -> TrsKeys.freelook));
@@ -142,7 +144,8 @@ public final class TrsClient {
 					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
 					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline
 					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors
-					|| m == modules.entityCulling || m == modules.particles || m == modules.worldDetails)) {
+					|| m == modules.entityCulling || m == modules.particles || m == modules.worldDetails
+					|| m == modules.menuStyle)) {
 				continue;
 			}
 			visibleModules.add(m);

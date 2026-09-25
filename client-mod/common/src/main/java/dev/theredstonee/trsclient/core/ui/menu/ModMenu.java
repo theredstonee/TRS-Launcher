@@ -265,7 +265,7 @@ public final class ModMenu extends UiScreen {
 		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
 		// "Alle" + Kategorien + HUD-Editor + Profile (+ Packs) (+ Konten)
 		int items = 4 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0)
-				+ (host.hasWardrobe() ? 1 : 0);
+				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0);
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -361,6 +361,26 @@ public final class ModMenu extends UiScreen {
 				public void run() {
 					host.save();
 					host.openWardrobe();
+				}
+			});
+			cy += rowH + gap;
+		}
+		if (host.hasFriends()) {
+			railItem(c, x, cy, w, rowH, "friends", I18n.tr("menu.friends"), false, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					host.save();
+					host.openFriends();
+				}
+			});
+			cy += rowH + gap;
+		}
+		if (host.hasClips()) {
+			railItem(c, x, cy, w, rowH, "image", I18n.tr("menu.clips"), false, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					host.save();
+					host.openClips();
 				}
 			});
 			cy += rowH + gap;

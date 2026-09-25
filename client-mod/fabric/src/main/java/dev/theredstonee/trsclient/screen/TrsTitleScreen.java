@@ -118,6 +118,19 @@ public final class TrsTitleScreen extends TrsUiScreen {
 		}
 
 		@Override
+		public boolean openFriends() {
+			if (!MenuScreens.friendsAvailable()) return false;
+			Mc.setScreen(MenuScreens.friends(screen));
+			return true;
+		}
+
+		@Override
+		public boolean openClips() {
+			Mc.setScreen(MenuScreens.clips(screen));
+			return true;
+		}
+
+		@Override
 		public boolean hasMods() {
 			return modMenu;
 		}

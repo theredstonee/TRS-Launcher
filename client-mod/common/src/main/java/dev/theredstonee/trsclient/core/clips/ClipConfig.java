@@ -65,6 +65,8 @@ public final class ClipConfig {
 		Boolean enabled;
 		Integer port;
 		String token;
+		/** Clip-Ordner der Instanz (Launcher ab 0.5.2); nur für die Clip-Liste im Spiel. */
+		String clipsDir;
 	}
 
 	public static Path file(Path configDir) {
@@ -85,6 +87,58 @@ public final class ClipConfig {
 			return parse(parsed, modified);
 		} catch (IOException | RuntimeException e) {
 			return MISSING;
+		}
+	}
+
+	/**
+	 * Clip-Ordner dieser Instanz laut Launcher (absoluter Pfad) oder null. Ohne Angabe (älterer Launcher, Clips
+	 * aus) gilt der Standardordner {@code <Launcher-Daten>/clips/<Instanz>}, wenn das Spiel im üblichen
+	 * Instanzordner {@code <Launcher-Daten>/instances/<Instanz>/minecraft} läuft.
+	 */
+	public static Path clipsDir(Path configDir, Path gameDir) {
+		if (configDir != null) {
+			Path file = file(configDir);
+			try {
+				if (Files.isRegularFile(file) && Files.size(file) <= MAX_BYTES) {
+					File parsed;
+					try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+						parsed = new Gson().fromJson(reader, File.class);
+					}
+					Path dir = safeDir(parsed == null ? null : parsed.clipsDir);
+					if (dir != null) return dir;
+				}
+			} catch (IOException | RuntimeException ignored) {
+				// Standardordner versuchen
+			}
+		}
+		return defaultClipsDir(gameDir);
+	}
+
+	/** {@code <root>/instances/<id>/minecraft} → {@code <root>/clips/<id>}; sonst null. */
+	static Path defaultClipsDir(Path gameDir) {
+		if (gameDir == null) return null;
+		Path game = gameDir.toAbsolutePath().normalize();
+		Path instance = game.getParent();
+		Path instances = instance == null ? null : instance.getParent();
+		Path root = instances == null ? null : instances.getParent();
+		if (root == null || game.getFileName() == null || !"minecraft".equals(game.getFileName().toString())
+				|| !"instances".equals(instances.getFileName().toString())) {
+			return null;
+		}
+		return root.resolve("clips").resolve(instance.getFileName().toString());
+	}
+
+	/** Nur ein absoluter, unauffälliger Pfad (keine Steuerzeichen, nicht zu lang). */
+	static Path safeDir(String raw) {
+		if (raw == null || raw.isEmpty() || raw.length() > 1024) return null;
+		for (int i = 0; i < raw.length(); i++) {
+			if (raw.charAt(i) < ' ') return null;
+		}
+		try {
+			Path p = java.nio.file.Paths.get(raw);
+			return p.isAbsolute() ? p.normalize() : null;
+		} catch (RuntimeException e) {
+			return null;
 		}
 	}
 

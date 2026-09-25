@@ -79,6 +79,10 @@ public final class AutoTest {
 			WardrobeTest.install();
 			return;
 		}
+		if ("menus".equals(System.getProperty("trsclient.autotest.only"))) {
+			MenusTest.install();
+			return;
+		}
 		MinecraftForge.EVENT_BUS.register(new AutoTest());
 	}
 

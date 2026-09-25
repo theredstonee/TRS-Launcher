@@ -106,6 +106,16 @@ dein Minecraft-Zugriffstoken.** Danach stellt er ein eigenes Token aus, das der 
 auf deinem Computer speichert und nie an Webinhalte oder an das Spiel weitergibt. Die TRS-Client-Mod meldet sich selbst
 über die Spielsitzung an.
 
+### Freunde im Spiel (TRS Client)
+
+Sind die TRS-Dienste an, zeigt die TRS-Client-Mod deine Freundesliste im Spiel. Sie fragt Freunde, Anfragen und
+Blockierte beim TRS-Server nur ab, solange der Freunde-Bildschirm (bzw. Serverliste/Pausenmenü mit Freunde-Anzeige)
+offen ist – etwa alle 30 Sekunden, sonst alle 90 Sekunden oder gar nicht. Anfragen, Entfernen und Blockieren werden nur
+gesendet, wenn du sie anklickst. Die Gesichter der Freunde kommen vom öffentlichen Profildienst von Mojang
+(`sessionserver.mojang.com`, `textures.minecraft.net`) und bleiben nur im Arbeitsspeicher. Die Mod speichert davon
+nichts auf deinem Computer – außer den Servern, die du in der Serverliste anheftest
+(`config/trsclient/server-pins.json`, nur Adressen, wird nirgendwohin gesendet).
+
 ### Was gespeichert wird
 
 | Daten | Wozu |

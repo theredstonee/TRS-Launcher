@@ -341,5 +341,5 @@ async fn sitzungen_ueberleben_einen_launcher_neustart() {
     let env = format!("2:{}:{}:{}", second.port().unwrap(), parse_env(&handoff).1, proto::hex(&key));
     let moved = Handoff { port: second.port().unwrap(), env_value: env, secret_hex: proto::hex(&key) };
     assert!(v2_login(&moved, false).await.is_ok());
-    assert_eq!(second.clips_config("survival", true), LinkConfig { version: 2, enabled: true, port: second.port(), token: None });
+    assert_eq!(second.clips_config("survival", true), LinkConfig { version: 2, enabled: true, port: second.port(), token: None, clips_dir: None });
 }

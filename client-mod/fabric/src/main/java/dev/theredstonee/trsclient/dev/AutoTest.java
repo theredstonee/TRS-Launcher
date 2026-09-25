@@ -98,6 +98,10 @@ public final class AutoTest {
 			WardrobeTest.install();
 			return;
 		}
+		if ("menus".equals(System.getProperty("trsclient.autotest.only"))) {
+			MenusTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}
@@ -681,7 +685,7 @@ public final class AutoTest {
 		wait = ticks;
 	}
 
-	private static void startWorld(Minecraft mc) {
+	static void startWorld(Minecraft mc) {
 		startWorld(mc, WORLD, null);
 	}
 

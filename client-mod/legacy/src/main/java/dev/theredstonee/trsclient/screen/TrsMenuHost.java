@@ -116,6 +116,26 @@ public final class TrsMenuHost implements MenuHost {
 
 	/** Was unter Legacy-Forge nicht umsetzbar ist (Treffer-Farbe, niedriges Feuer), bleibt aus dem Menü heraus. */
 	@Override
+	public void openFriends() {
+		new TrsMenuHost(MenuScreens.friends(new TrsMenuScreen(parent))).closeScreen();
+	}
+
+	@Override
+	public boolean hasFriends() {
+		return MenuScreens.friendsAvailable();
+	}
+
+	@Override
+	public void openClips() {
+		new TrsMenuHost(MenuScreens.clips(new TrsMenuScreen(parent))).closeScreen();
+	}
+
+	@Override
+	public boolean hasClips() {
+		return true;
+	}
+
+	@Override
 	public boolean supports(Module module) {
 		if (module == modules().colors && !dev.theredstonee.trsclient.render.ColorPass.supported()) return false;
 		return TrsClient.get().menuModules().contains(module);

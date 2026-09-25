@@ -120,6 +120,26 @@ public final class TrsMenuHost implements MenuHost {
 		return WardrobeScreen.available();
 	}
 
+	@Override
+	public void openFriends() {
+		Mc.setScreen(MenuScreens.friends(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasFriends() {
+		return MenuScreens.friendsAvailable();
+	}
+
+	@Override
+	public void openClips() {
+		Mc.setScreen(MenuScreens.clips(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasClips() {
+		return true;
+	}
+
 	/** In diesen Versionen gibt es jedes Modul. */
 	@Override
 	public boolean supports(Module module) {

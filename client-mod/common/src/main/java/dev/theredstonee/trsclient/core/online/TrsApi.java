@@ -115,6 +115,50 @@ public final class TrsApi {
 		Integer durationMs;
 	}
 
+	// Freunde (API.md §6)
+
+	static final class FriendsResponse {
+		List<FriendDto> friends;
+		RequestsDto requests;
+	}
+
+	static final class FriendDto {
+		String uuid;
+		String name;
+		String since;
+		PresenceDto presence;
+	}
+
+	static final class PresenceDto {
+		String state;
+		Game game;
+	}
+
+	static final class RequestsDto {
+		List<UserDto> incoming;
+		List<UserDto> outgoing;
+	}
+
+	static final class UserDto {
+		String uuid;
+		String name;
+		String createdAt;
+		String since;
+	}
+
+	static final class BlocksResponse {
+		List<UserDto> blocked;
+	}
+
+	static final class TargetRequest {
+		String target;
+	}
+
+	static final class RequestResult {
+		String status;
+		UserDto user;
+	}
+
 	static final class ErrorBody {
 		ErrorInfo error;
 	}
@@ -244,6 +288,113 @@ public final class TrsApi {
 		return Math.max(0, Math.min(60_000, response.durationMs));
 	}
 
+	// --- Freunde (API.md §6) ---
+
+	/** {@code GET /v1/friends}: Freunde mit Online-Status und offene Anfragen, bereinigt. */
+	public FriendsView friends(String token) throws IOException, ApiException {
+		FriendsResponse body = parse(call("GET", "/v1/friends", null, token, 200), FriendsResponse.class);
+		List<FriendsView.Friend> friends = new ArrayList<>();
+		List<FriendsView.User> incoming = new ArrayList<>();
+		List<FriendsView.User> outgoing = new ArrayList<>();
+		if (body != null && body.friends != null) {
+			for (FriendDto f : body.friends) {
+				if (f == null || friends.size() >= 500) continue;
+				String uuid = Uuids.normalize(f.uuid);
+				String name = FriendsView.name(f.name);
+				if (uuid == null || name == null) continue;
+				String state = null;
+				String version = null;
+				String loader = null;
+				String server = null;
+				if (f.presence != null) {
+					state = FriendsView.state(f.presence.state);
+					if (state != null && f.presence.game != null) {
+						version = FriendsView.version(f.presence.game.version);
+						loader = FriendsView.loader(f.presence.game.loader);
+						server = FriendsView.server(f.presence.game.server);
+					}
+				}
+				friends.add(new FriendsView.Friend(uuid, name, state, version, loader, server));
+			}
+		}
+		if (body != null && body.requests != null) {
+			users(body.requests.incoming, incoming);
+			users(body.requests.outgoing, outgoing);
+		}
+		return new FriendsView(FriendsView.sorted(friends), incoming, outgoing);
+	}
+
+	private static void users(List<UserDto> in, List<FriendsView.User> out) {
+		if (in == null) return;
+		for (UserDto u : in) {
+			if (u == null || out.size() >= 500) continue;
+			String uuid = Uuids.normalize(u.uuid);
+			String name = FriendsView.name(u.name);
+			if (uuid == null || name == null) continue;
+			out.add(new FriendsView.User(uuid, name, FriendsView.time(u.createdAt != null ? u.createdAt : u.since)));
+		}
+	}
+
+	/** {@code GET /v1/blocks}. */
+	public List<FriendsView.User> blocks(String token) throws IOException, ApiException {
+		BlocksResponse body = parse(call("GET", "/v1/blocks", null, token, 200), BlocksResponse.class);
+		List<FriendsView.User> out = new ArrayList<>();
+		if (body != null) users(body.blocked, out);
+		return out;
+	}
+
+	/**
+	 * {@code POST /v1/friends/requests}: Anfrage an einen Namen oder eine UUID. Rückgabe {@code "sent"} (201) oder
+	 * {@code "accepted"} (200 – sie hatte schon angefragt, jetzt befreundet).
+	 */
+	public String requestFriend(String token, String target) throws IOException, ApiException {
+		TargetRequest body = new TargetRequest();
+		body.target = target;
+		Http.Response response = call("POST", "/v1/friends/requests", GSON.toJson(body), token, 201, 200);
+		RequestResult result = parse(response, RequestResult.class);
+		if (response.status == 200 || (result != null && "accepted".equals(result.status))) return "accepted";
+		return "sent";
+	}
+
+	/** {@code POST /v1/friends/requests/{uuid}/accept}. */
+	public void acceptFriend(String token, String uuid) throws IOException, ApiException {
+		call("POST", "/v1/friends/requests/" + path(uuid) + "/accept", null, token, 200);
+	}
+
+	/** {@code POST /v1/friends/requests/{uuid}/decline}. */
+	public void declineFriend(String token, String uuid) throws IOException, ApiException {
+		call("POST", "/v1/friends/requests/" + path(uuid) + "/decline", null, token, 204, 200);
+	}
+
+	/** {@code DELETE /v1/friends/requests/{uuid}}: eigene Anfrage zurückziehen. */
+	public void cancelRequest(String token, String uuid) throws IOException, ApiException {
+		call("DELETE", "/v1/friends/requests/" + path(uuid), null, token, 204, 200);
+	}
+
+	/** {@code DELETE /v1/friends/{uuid}}. */
+	public void removeFriend(String token, String uuid) throws IOException, ApiException {
+		call("DELETE", "/v1/friends/" + path(uuid), null, token, 204, 200);
+	}
+
+	/** {@code POST /v1/blocks}. */
+	public void block(String token, String target) throws IOException, ApiException {
+		TargetRequest body = new TargetRequest();
+		body.target = target;
+		call("POST", "/v1/blocks", GSON.toJson(body), token, 201, 200);
+	}
+
+	/** {@code DELETE /v1/blocks/{uuid}}. */
+	public void unblock(String token, String uuid) throws IOException, ApiException {
+		call("DELETE", "/v1/blocks/" + path(uuid), null, token, 204, 200);
+	}
+
+	/** UUID für den Pfad (nur 32 Hex-Zeichen – nie beliebiger Text in der Adresse). */
+	private static String path(String uuid) throws ApiException {
+		String n = Uuids.normalize(uuid);
+		if (n == null) throw new ApiException(0, "invalid_request", 0);
+		return n;
+	}
+
 	/** Umhang-PNG laden (mit ETag). 304 → Response mit leerem Körper. */
 	public Http.Response texture(String url, String etag, String token) throws IOException, ApiException {
 		if (!config.isApiUrl(url)) throw new ApiException(0, "foreign_url", 0);
@@ -261,6 +412,12 @@ public final class TrsApi {
 
 	private Http.Response call(String method, String path, String json, String token, int expected)
 			throws IOException, ApiException {
+		return call(method, path, json, token, expected, expected);
+	}
+
+	/** Wie {@link #call(String, String, String, String, int)}, aber zwei erlaubte Statuscodes. */
+	private Http.Response call(String method, String path, String json, String token, int expected, int alsoOk)
+			throws IOException, ApiException {
 		Http.Request request = new Http.Request(method, config.apiBase() + path).header("Accept", JSON);
 		if (json != null) {
 			request.header("Content-Type", JSON);
@@ -268,7 +425,7 @@ public final class TrsApi {
 		}
 		if (token != null) request.header("Authorization", "Bearer " + token);
 		Http.Response response = http.send(request);
-		if (response.status != expected) {
+		if (response.status != expected && response.status != alsoOk) {
 			throw new ApiException(response.status, errorCode(response), retryAfter(response));
 		}
 		return response;

@@ -105,6 +105,16 @@ de acceso de Minecraft.** Después emite su propio token, que el launcher guarda
 Windows y que nunca entrega a contenido web ni al juego. El mod TRS Client inicia sesión por su cuenta a través de la
 sesión del juego.
 
+### Amigos en el juego (TRS Client)
+
+Con los servicios TRS activados, el mod TRS Client muestra tu lista de amigos en el juego. Solo consulta al servidor
+TRS tus amigos, solicitudes y jugadores bloqueados mientras la pantalla de amigos (o la lista de servidores / el menú de
+pausa con información de amigos) está abierta: más o menos cada 30 segundos, si no cada 90 segundos o nunca. Las
+solicitudes, eliminaciones y bloqueos solo se envían cuando haces clic. Las caras de los amigos se cargan del servicio
+público de perfiles de Mojang (`sessionserver.mojang.com`, `textures.minecraft.net`) y solo se guardan en memoria. El
+mod no guarda nada de esto en tu ordenador, salvo los servidores que fijas en la lista de servidores
+(`config/trsclient/server-pins.json`, solo direcciones, nunca se envían).
+
 ### Qué se guarda
 
 | Datos | Para qué |
