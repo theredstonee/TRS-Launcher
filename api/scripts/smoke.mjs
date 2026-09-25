@@ -158,7 +158,7 @@ try {
   const nf = await http('GET', '/v1/does-not-exist')
   check('404 json', nf.status === 404 && nf.json.error.code === 'not_found')
   const page = await http('GET', '/')
-  check('status page', page.status === 200 && page.headers.get('content-type')?.startsWith('text/html') && page.headers.get('content-security-policy')?.includes("style-src 'unsafe-inline'"))
+  check('website start page', page.status === 200 && page.headers.get('content-type')?.startsWith('text/html') && /script-src [^;]*'nonce-/.test(page.headers.get('content-security-policy') ?? ''))
 
   console.log('CORS')
   const pf = await http('OPTIONS', '/v1/me', { headers: { origin: 'https://evil.example', 'access-control-request-method': 'GET' } })
