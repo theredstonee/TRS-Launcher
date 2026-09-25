@@ -150,18 +150,50 @@ The logic is version independent in `common/core/emote` (definitions, playback, 
 Recording happens in the TRS Launcher (FFmpeg window capture, see the launcher README). The mod part is version
 independent in `common/core/clips`:
 
-- `ClipConfig` reads `config/trsclient/clips.json` (≤ 4 KB, Gson 2.2.4-safe DTO): port 1–65535 and a 64-character
-  lower-case hex token, or `enabled:false`. Anything else counts as "no launcher".
-- `ClipLink`: one daemon thread connects to **127.0.0.1**:port, sends `{"type":"hello","v":1,"token":…}` and reads
-  state lines; reconnects with backoff, re-reads the file when the launcher writes a new token (after a denied
-  token only once the file changes). A key press while not connected is kept for 4 s, then "launcher not
-  reachable". The game thread only reads `status()`/`pollNotice()` and calls `press`.
+- The connection is the shared **TRS Link** (`common/core/link`, see below). `ClipConfig` reads
+  `config/trsclient/clips.json` (≤ 4 KB, Gson 2.2.4-safe DTO): protocol 2 `{"version":2,"enabled":…,"port":…}` (no
+  secret; the port is re-read after a launcher restart), protocol 1 (older launchers) port + 64-character lower-case
+  hex token, or `enabled:false`. Anything else counts as "no launcher".
+- `ClipLink` listens on the link: state lines → `status()`, `saved`/`failed` → notices. A key press while not
+  connected is kept for 4 s, then "launcher not reachable". The game thread only reads `status()`/`pollNotice()` and
+  calls `press`.
 - `ClipPanel` draws the HUD element through `Canvas`; `Clips` is the facade the loaders call (`init(configDir)`,
   `saveClip()`, `toggleRecording()`, `tick(hudVisible, actionBar)`). Hints and errors also go to the action bar.
 - Per loader only the two key bindings, one tick block and `hud/ClipHud` (identical in the Mojmap trees). No mixins.
 - Autotest: `-PtrsAutotestOnly=clips` presses F9/F10 through Minecraft's own key handling and takes the screenshots
   `clips-buffer`, `clips-saved`, `clips-recording`, `clips-recording-saved` (fabric and legacy). Against a
   launcher attrappe or a real launcher start.
+
+## TRS Link & Kontowechsel
+
+**TRS Link** (`common/core/link`): one daemon thread „TRS-Link“ to the launcher on **127.0.0.1**.
+
+- Protocol 2: the launcher starts the game with the environment variable `TRS_CLIENT_LINK=2:<port>:<sid>:<key>`
+  (never on disk, never on the command line). Handshake: `hello {v:2,sid,nonce}` → `challenge {nonce,proof,features}`
+  – the mod checks the launcher's HMAC-SHA256 proof **before** it proves anything itself – → `auth {proof}` → state
+  lines. Requests `req {id,op}` / `res {id,ok,…}` (`accounts.list`, `accounts.session`, `accounts.add`), push
+  `accountsChanged`. Access tokens arrive sealed (HMAC-SHA256 key stream + tag with a per-connection key). Test vectors
+  are shared with the launcher (`TrsLinkTest` ↔ `src-tauri/crates/core/src/link/proto.rs`).
+- Protocol 1 (older launchers): hello with the token from `clips.json`, clips only.
+
+**Accounts** (`common/core/account`, UI `common/core/ui/account/AccountsUi`):
+
+- `AccountManager` (thread „TRS-Accounts“): started by the TRS Launcher → the launcher's accounts over the link;
+  otherwise the startup account plus accounts added in game (`MsAuth`: browser + PKCE on a loopback port or device
+  code, own Azure app only; `AccountVault` = `config/trsclient/accounts.json`, refresh tokens encrypted by `SecretBox`:
+  DPAPI via JNA reflection on Windows, else AES-GCM with a key file in the user folder). Access tokens stay in memory.
+  Switching only without a world; `prepare` (network, account thread) + `apply` (game thread).
+- Mojmap trees: `online/SessionSwap` (identical file) swaps `User` and everything built from the token – profile
+  properties (≤ 1.20.1) / `profileFuture` (1.20.2+), `UserApiService`/`SocialInteractionsService`, `userPropertiesFuture`
+  (1.20.3+), `PlayerSocialManager` (+ friend list 26.2+), `ProfileKeyPairManager` (chat signing, 1.19+),
+  `ReportingContext` (1.19.1+), `ClientTelemetryManager` (1.19.3+), Realms client/`RealmsDataFetcher` (1.19.1+) and the
+  `RealmsAvailability` cache (1.20.2+). Final fields are assigned by reflection over their **type** (names are
+  obfuscated); authlib is called by name. Legacy trees (1.7.10–1.13.2): `core/account/LegacySessionSwap` swaps the
+  `Session` and the profile properties, run from the client tick.
+- Entry points: `screen/AccountsScreen.create(parent)` (all trees), `MenuHost/TitleHost.openAccounts()`, rail entry
+  „Konten“ in the TRS menu.
+- Autotest `-PtrsAutotestOnly=accounts` (fabric, legacy) with the launcher attrappe (`TRS_CLIENT_LINK` from a mock):
+  screenshots `accounts`, `accounts-switched`, `menu-accounts`.
 
 ## Umhang-Physik
 

@@ -13,6 +13,15 @@ public interface TitleHost {
 
 	void trsMenu();
 
+	/** Kontobildschirm öffnen (Kontowechsel ohne Neustart); nur wenn {@link #hasAccounts()}. */
+	default void openAccounts() {
+	}
+
+	/** Gibt es in dieser Version den Kontobildschirm? */
+	default boolean hasAccounts() {
+		return false;
+	}
+
 	/** Gibt es eine Mod-Liste (Forge immer, Fabric nur mit ModMenu)? */
 	boolean hasMods();
 

@@ -84,6 +84,16 @@ public final class TrsTitleScreen extends TrsUiScreen {
 			Mc.setScreen(new TrsMenuScreen(screen));
 		}
 
+		@Override
+		public void openAccounts() {
+			Mc.setScreen(AccountsScreen.create(screen));
+		}
+
+		@Override
+		public boolean hasAccounts() {
+			return AccountsScreen.available();
+		}
+
 		/** Die NeoForge-Modliste gibt es immer. */
 		@Override
 		public boolean hasMods() {

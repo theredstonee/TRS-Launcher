@@ -25,6 +25,21 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 Los tokens de las cuentas se guardan solo en tu ordenador, cifrados con DPAPI de Windows. Al desinstalar el launcher se
 elimina el programa; puedes borrar tus datos de `%APPDATA%\TRS-Launcher` cuando quieras.
 
+## Cambiar de cuenta en el juego (TRS Client)
+
+- **Juego iniciado con el TRS Launcher:** el TRS Client puede mostrar las cuentas del launcher y cambiar entre ellas
+  sin reiniciar. Al elegir una cuenta, el launcher entrega al juego un token de acceso de Minecraft nuevo solo por una
+  conexión local de tu ordenador (`127.0.0.1`), cifrada y solo al proceso del juego que él mismo inició. La clave de esa
+  conexión se entrega al juego en memoria al iniciarlo y nunca se guarda en el disco. Para esto no sale nada de tu PC.
+  «Añadir cuenta» en el juego abre el inicio de sesión normal de Microsoft del launcher en tu navegador.
+- **Juego iniciado sin el TRS Launcher:** las cuentas que añadas en el juego inician sesión directamente con Microsoft,
+  Xbox Live y los servicios de Minecraft (con la propia app de inicio de sesión del TRS Launcher). Solo se guarda el
+  token de actualización, cifrado (DPAPI de Windows; en otros sistemas AES con un archivo de clave en tu carpeta de
+  usuario), en `config/trsclient/accounts.json` de esa carpeta del juego. Los tokens de acceso se quedan en memoria.
+  Si eliminas una cuenta en el juego, se borra.
+- Para las caras pequeñas de la lista, el juego carga el skin desde `textures.minecraft.net` y, si hace falta, el
+  perfil público desde `sessionserver.mojang.com`.
+
 ## Discord
 
 Si la app de Discord está abierta en tu ordenador, el launcher muestra un estado en tu perfil de Discord («Jugando a TRS

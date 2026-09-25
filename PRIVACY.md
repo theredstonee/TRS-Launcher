@@ -25,6 +25,20 @@ The launcher only connects to other services when that is needed for something y
 Account tokens are stored only on your computer, encrypted with Windows DPAPI. Uninstalling the launcher removes the
 program; your data in `%APPDATA%\TRS-Launcher` can be deleted at any time.
 
+## Switching accounts in the game (TRS Client)
+
+- **Game started with the TRS Launcher:** the TRS Client can show your launcher accounts and switch between them
+  without restarting. When you pick an account, the launcher hands a fresh Minecraft access token to the game over a
+  local connection on your computer only (`127.0.0.1`), encrypted and only to the game process it started itself. The
+  key for that connection is handed to the game in memory when it starts and is never written to disk. Nothing leaves
+  your PC for this. "Add account" in the game opens the normal Microsoft sign-in of the launcher in your browser.
+- **Game started without the TRS Launcher:** accounts you add in the game sign in directly with Microsoft, Xbox Live and
+  the Minecraft services (with the TRS Launcher's own sign-in app). Only the refresh token is kept, encrypted (Windows
+  DPAPI; elsewhere AES with a key file in your user folder), in `config/trsclient/accounts.json` of that game folder.
+  Access tokens stay in memory. Remove an account in the game to delete it.
+- For the small faces in the list, the game loads the skin from `textures.minecraft.net` and, if needed, the public
+  profile from `sessionserver.mojang.com`.
+
 ## Discord
 
 If the Discord app is running on your computer, the launcher shows a status on your Discord profile ("Playing TRS

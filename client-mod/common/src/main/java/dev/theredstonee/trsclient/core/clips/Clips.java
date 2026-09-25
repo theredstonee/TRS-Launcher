@@ -22,12 +22,14 @@ public final class Clips {
 		this.link = link;
 	}
 
-	/** Beim Start des Clients (Config-Ordner des Spiels). Fehler werden nie nach außen gereicht. */
+	/**
+	 * Beim Start des Clients (Config-Ordner des Spiels): startet auch die gemeinsame Verbindung zum Launcher
+	 * ({@link dev.theredstonee.trsclient.core.link.TrsLink}, auch für Konten). Fehler werden nie nach außen gereicht.
+	 */
 	public static synchronized void init(Path configDir) {
 		try {
 			if (instance.link != null) return;
-			ClipLink link = new ClipLink(configDir);
-			link.start();
+			ClipLink link = new ClipLink(dev.theredstonee.trsclient.core.link.TrsLink.initShared(configDir));
 			instance = new Clips(link);
 		} catch (RuntimeException e) {
 			// Clips sind ein Zusatz – das Spiel läuft ohne weiter.

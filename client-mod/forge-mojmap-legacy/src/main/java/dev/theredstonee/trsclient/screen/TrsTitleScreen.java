@@ -80,6 +80,16 @@ public final class TrsTitleScreen extends TrsUiScreen {
 			Mc.setScreen(new TrsMenuScreen(screen));
 		}
 
+		@Override
+		public void openAccounts() {
+			Mc.setScreen(AccountsScreen.create(screen));
+		}
+
+		@Override
+		public boolean hasAccounts() {
+			return AccountsScreen.available();
+		}
+
 		/** Forge bringt immer eine Mod-Liste mit. */
 		@Override
 		public boolean hasMods() {

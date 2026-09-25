@@ -221,8 +221,8 @@ public final class ModMenu extends UiScreen {
 	private void rail(Canvas c, int x, int y, int w, int h, int mx, int my, float dt) {
 		Theme t = Theme.get();
 		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
-		// "Alle" + Kategorien + HUD-Editor + Profile (+ Packs)
-		int items = 3 + Category.values().length + (host.hasPacks() ? 1 : 0);
+		// "Alle" + Kategorien + HUD-Editor + Profile (+ Packs) (+ Konten)
+		int items = 3 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0);
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -284,6 +284,16 @@ public final class ModMenu extends UiScreen {
 				public void run() {
 					host.save();
 					host.openPacks();
+				}
+			});
+			cy += rowH + gap;
+		}
+		if (host.hasAccounts()) {
+			railItem(c, x, cy, w, rowH, "accounts", I18n.tr("menu.accounts"), false, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					host.save();
+					host.openAccounts();
 				}
 			});
 			cy += rowH + gap;

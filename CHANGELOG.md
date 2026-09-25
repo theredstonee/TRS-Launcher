@@ -20,6 +20,12 @@ How to write an entry:
 
 ### English
 
+- **Switch accounts in the game.** With the TRS Client you can now switch Minecraft accounts right in the game – no
+  restart. Started from the launcher, all your launcher accounts are there, and "Add account" signs in through the
+  launcher and saves the new account there too. Started from another launcher, you can sign in with Microsoft in the
+  game and keep accounts per game folder. Find it in the TRS menu under "Accounts".
+- **Safer connection between launcher and game.** Clips and account switching now use a key the game only gets in
+  memory – no more secret in a file in your game folder.
 - **The skin preview shows your TRS cape.** After a restart the 3D preview now shows the TRS cape you wear – the way
   other TRS players see you in game – instead of your Mojang cape. Click a Mojang cape to look at that one instead.
 - **Your skins, presets and look follow you to every PC.** With the TRS services on, "My skins", your own presets and
@@ -29,6 +35,12 @@ How to write an entry:
 
 ### Deutsch
 
+- **Konten im Spiel wechseln.** Mit dem TRS Client wechselst du dein Minecraft-Konto jetzt direkt im Spiel – ohne
+  Neustart. Über den Launcher gestartet sind alle Launcher-Konten da, und „Konto hinzufügen“ meldet über den Launcher
+  an und speichert das neue Konto auch dort. Über einen anderen Launcher gestartet, meldest du dich im Spiel bei
+  Microsoft an und behältst Konten je Spielordner. Zu finden im TRS-Menü unter „Konten“.
+- **Sicherere Verbindung zwischen Launcher und Spiel.** Clips und Kontowechsel nutzen jetzt einen Schlüssel, den das
+  Spiel nur im Arbeitsspeicher bekommt – kein Geheimnis mehr in einer Datei im Spielordner.
 - **Die Skin-Vorschau zeigt deinen TRS-Umhang.** Nach einem Neustart zeigt die 3D-Vorschau jetzt den TRS-Umhang, den du
   trägst – so, wie andere TRS-Spieler dich im Spiel sehen – statt deines Mojang-Umhangs. Klick einen Mojang-Umhang
   an, um den anzusehen.

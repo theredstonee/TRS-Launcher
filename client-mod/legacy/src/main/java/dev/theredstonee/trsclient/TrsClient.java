@@ -70,6 +70,8 @@ import java.util.List;
 @Mod(modid = TrsClient.MOD_ID, name = "TRS Client", version = BuildInfo.VERSION, useMetadata = true, clientSideOnly = true,
 		acceptedMinecraftVersions = BuildInfo.ACCEPTED_MINECRAFT)
 public final class TrsClient {
+	/** Kontowechsel (Spiel-Thread über den Client-Tick). */
+	static dev.theredstonee.trsclient.core.account.LegacySessionSwap accountSwap;
 	public static final String MOD_ID = "trsclient";
 	public static final Logger LOGGER = LogManager.getLogger("TRS Client");
 	/** Gamma für Fullbright (Vanilla-Maximum ist 1.0). */
@@ -138,6 +140,13 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(file.getParentFile().toPath());
 		dev.theredstonee.trsclient.core.clips.Clips.init(file.getParentFile().toPath());
+		// Konten: Wechsel ohne Neustart (mit TRS Launcher dessen Konten, sonst eigene Anmeldung je Instanz).
+		accountSwap = new dev.theredstonee.trsclient.core.account.LegacySessionSwap(() -> Minecraft.getMinecraft(),
+				net.minecraft.util.Session.class, () -> {
+					net.minecraft.util.Session s = Minecraft.getMinecraft().getSession();
+					return s == null ? null : new dev.theredstonee.trsclient.core.account.SessionData(s.getPlayerID(), s.getUsername(), s.getToken(), null);
+				}, () -> Mc.world() != null, file.getParentFile().toPath(), "TRS-Client/" + version + " (Minecraft " + Mc.version() + "; forge)", message -> LOGGER.info(message));
+		dev.theredstonee.trsclient.core.account.AccountManager.init(accountSwap);
 		initWaypoints(event.getModConfigurationDirectory());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
@@ -191,6 +200,7 @@ public final class TrsClient {
 	@SubscribeEvent
 	public void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
+		if (accountSwap != null) accountSwap.drain();
 		Minecraft mc = Minecraft.getMinecraft();
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.isPressed()) {
