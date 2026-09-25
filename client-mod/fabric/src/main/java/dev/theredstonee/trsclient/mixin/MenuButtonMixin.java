@@ -70,8 +70,8 @@ public abstract class MenuButtonMixin {
 		if (!((Object) this instanceof AbstractButton)) return;
 		AbstractWidget w = (AbstractWidget) (Object) this;
 		Gfx g = Gfx.of(pose);
-		if (VanillaMenus.drawButton(this, g, w.x, w.y, w.getWidth(), w.getHeight(), w.isHoveredOrFocused(), w.active)) {
-			VanillaMenus.label(g, w.getMessage().getString(), w.x, w.y, w.getWidth(), w.getHeight(), w.active);
+		if (VanillaMenus.drawButton(this, g, VanillaMenus.x(w), VanillaMenus.y(w), w.getWidth(), w.getHeight(), w.isHoveredOrFocused(), w.active)) {
+			VanillaMenus.label(g, w.getMessage().getString(), VanillaMenus.x(w), VanillaMenus.y(w), w.getWidth(), w.getHeight(), w.active);
 			ci.cancel();
 		}
 	}

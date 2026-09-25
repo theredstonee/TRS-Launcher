@@ -232,6 +232,8 @@ dependencies {
 	testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
 	testImplementation 'org.junit.jupiter:junit-jupiter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// DPAPI-Test (Kontenspeicher) wie in common: JNA liegt sonst nicht im Testpfad.
+	testRuntimeOnly 'net.java.dev.jna:jna:3.4.0'
 }
 
 test {

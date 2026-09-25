@@ -274,12 +274,28 @@ public final class VanillaMenus {
 
 	/** {x, y, w, h} eines Widgets. */
 	static int[] rect(AbstractWidget b) {
-		//? if >=1.19.4 {
+		//? if >=1.19.3 {
 		return new int[]{b.getX(), b.getY(), b.getWidth(), b.getHeight()};
 		//?} elif >=1.16 {
 		/*return new int[]{b.x, b.y, b.getWidth(), b.getHeight()};
 		*///?} else
 		/*return new int[]{b.x, b.y, b.getWidth(), 20};*/
+	}
+
+	/** Linke Kante eines Widgets (ab 1.19.3 sind x/y privat). */
+	public static int x(AbstractWidget b) {
+		//? if >=1.19.3 {
+		return b.getX();
+		//?} else
+		/*return b.x;*/
+	}
+
+	/** Obere Kante eines Widgets (ab 1.19.3 sind x/y privat). */
+	public static int y(AbstractWidget b) {
+		//? if >=1.19.3 {
+		return b.getY();
+		//?} else
+		/*return b.y;*/
 	}
 
 	// --- Nach init(): Listen, TRS-Knöpfe, Anheften ---
@@ -313,12 +329,13 @@ public final class VanillaMenus {
 		}
 	}
 
-	/** Bis 1.20.4 zeichnen Listen Erde hinter sich und oben/unten – das übernimmt der Redstone-Hintergrund. */
+	/** Bis 1.20.4 zeichnen Listen Erde hinter sich und oben/unten – das übernimmt der Redstone-Hintergrund
+	 * (1.16.2/1.16.3 haben die Schalter noch nicht, dort bleibt die Erde in der Liste). */
 	static void plainList(AbstractSelectionList<?> l) {
-		//? if >=1.16 && <1.20.5 {
+		//? if >=1.16.4 && <1.20.5 {
 		/*l.setRenderBackground(false);
 		*///?}
-		//? if >=1.16 && <1.20.2 {
+		//? if >=1.16.4 && <1.20.2 {
 		/*l.setRenderTopAndBottom(false);
 		*///?}
 	}

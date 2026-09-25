@@ -265,14 +265,14 @@ public final class LegacyMenus {
 	}
 
 	private static int x(GuiButton b) {
-		//? if >=1.12 {
+		//? if >=1.11 {
 		/*return b.x;
 		*///?} else
 		return b.xPosition;
 	}
 
 	private static int y(GuiButton b) {
-		//? if >=1.12 {
+		//? if >=1.11 {
 		/*return b.y;
 		*///?} else
 		return b.yPosition;
