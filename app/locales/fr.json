@@ -365,7 +365,8 @@
       "crashWrongJava": "Un mod nécessite une version de Java plus récente. Retire le chemin Java personnalisé dans les paramètres et le launcher choisira automatiquement la bonne.",
       "exitedImmediately": "Le jeu s'est fermé immédiatement.",
       "javaStartFailed": "Impossible de démarrer Java.",
-      "logUploadFailed": "Impossible d'envoyer le journal."
+      "logUploadFailed": "Impossible d'envoyer le journal.",
+      "crashIncompatibleMod": "{name} ne fonctionne pas avec {other} dans cette version. Le launcher peut remplacer {name} par une version compatible."
     },
     "modpack": {
       "noGameVersion": "Le modpack n'indique pas de version de Minecraft.",
@@ -917,7 +918,9 @@
       "disable": "Désactiver {name}",
       "delete": "Supprimer {name}",
       "moreActions": "Plus d'actions pour {name}",
-      "viaCurseForge": "via CurseForge"
+      "viaCurseForge": "via CurseForge",
+      "compatBadge": "Corriger",
+      "compatTitle": "Passer à {version} – fonctionne avec {other}"
     },
     "menu": {
       "updateTo": "Mettre à jour vers {version}",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Mauvaise version de Java",
       "missing_dependency": "Dépendance manquante",
       "mod_conflict": "Conflit de mods",
-      "graphics_driver": "Pilote graphique"
+      "graphics_driver": "Pilote graphique",
+      "incompatible_mod": "Version de mod incompatible"
     },
     "diagnosis": {
       "corrupt_files": "Un fichier du jeu est corrompu (par ex. après un téléchargement interrompu). « Vérifier les fichiers » le télécharge à nouveau.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "Un mod nécessite une version de Java plus récente. Retire le chemin Java personnalisé dans les paramètres et le launcher choisira automatiquement la bonne.",
       "missing_dependency": "Il manque à un mod un autre mod dont il a besoin. Le journal indique lequel juste au-dessus de l'erreur.",
       "mod_conflict": "Deux mods ne s'entendent pas. Désactive les derniers mods ajoutés et relance.",
-      "graphics_driver": "Le pilote graphique a planté ou ne prend pas en charge OpenGL. Mets à jour le pilote de ta carte graphique."
+      "graphics_driver": "Le pilote graphique a planté ou ne prend pas en charge OpenGL. Mets à jour le pilote de ta carte graphique.",
+      "incompatible_mod": "{name} ne fonctionne pas avec {other}. Le launcher peut remplacer {name} par une version qui convient."
     },
-    "shareTextLinux": "Le journal sera envoyé sur {site}, où toute personne ayant le lien pourra le lire. Les jetons de connexion et ton nom d’utilisateur sont d’abord retirés."
+    "shareTextLinux": "Le journal sera envoyé sur {site}, où toute personne ayant le lien pourra le lire. Les jetons de connexion et ton nom d’utilisateur sont d’abord retirés.",
+    "fixConflict": "Remplacer {name} par une version compatible",
+    "fixing": "Recherche de versions de mods compatibles …",
+    "fixDone": "Remplacé par des versions compatibles : {list}",
+    "fixNothing": "Aucune version compatible n'a été trouvée automatiquement. Désactive l'un des deux mods et relance."
   },
   "exportPack": {
     "title": "Exporter en modpack",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} autre) | (+{n} autres)",
       "details": "Détails",
       "shaderOn": "Les shaders sont activés : {name}. Appuyez sur K en jeu pour les activer ou les désactiver.",
-      "shaderToast": "shaders activés (K pour basculer)"
+      "shaderToast": "shaders activés (K pour basculer)",
+      "compatWith": "Version choisie pour fonctionner avec {other}"
     },
     "reason": {
       "installed": "Installé",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} nécessite {dependency}, qui n’existe pas pour cette version",
       "incompatible": "{title} ne fonctionne pas avec {other}",
       "needsLoader": "{title} nécessite un chargeur de mods",
-      "failed": "{title} n’a pas pu être téléchargé"
+      "failed": "{title} n’a pas pu être téléchargé",
+      "swapped": "Remplacé par une version qui fonctionne avec {other}"
     },
     "status": {
       "installed": "Installé",
       "alreadyInstalled": "Déjà là",
       "duplicate": "Inclus",
-      "skipped": "Ignoré"
+      "skipped": "Ignoré",
+      "swapped": "Remplacé"
     },
     "task": {
       "title": "Préréglages pour {name}",

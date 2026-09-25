@@ -27,6 +27,7 @@ import type {
   Account,
   AdoptResult,
   BlockedFile,
+  CompatReport,
   CurseForgeInstallOutcome,
   CurseForgePackResult,
   Platform,
@@ -244,6 +245,9 @@ export const backend = {
   addDroppedFiles: (id: string, token: number) => call<UploadResult[]>('add_dropped_files', { id, token }),
   installedProjects: (id: string) => call<string[]>('installed_projects', { id }),
   checkContentUpdates: (id: string) => call<ContentUpdate[]>('check_content_updates', { id }),
+  /** Tauscht unverträgliche Mods gegen passende Versionen (`prefer` = Mod-ID aus der Absturz-Meldung). */
+  fixModConflicts: (id: string, prefer: string | null, taskId: string | null = null) =>
+    call<CompatReport>('fix_mod_conflicts', { id, prefer, taskId }),
   applyContentUpdate: (id: string, update: ContentUpdate, taskId: string | null = null) =>
     call<string>('apply_content_update', {
       id,

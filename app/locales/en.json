@@ -365,7 +365,8 @@
       "crashWrongJava": "A mod needs a newer Java version. Remove the custom Java path in the settings and the launcher will pick the right one automatically.",
       "exitedImmediately": "The game closed right away.",
       "javaStartFailed": "Java couldn't be started.",
-      "logUploadFailed": "The log couldn't be uploaded."
+      "logUploadFailed": "The log couldn't be uploaded.",
+      "crashIncompatibleMod": "{name} doesn't work with {other} in this version. The launcher can switch {name} to a compatible version."
     },
     "modpack": {
       "noGameVersion": "The modpack doesn't specify a Minecraft version.",
@@ -917,7 +918,9 @@
       "disable": "Disable {name}",
       "delete": "Delete {name}",
       "moreActions": "More actions for {name}",
-      "viaCurseForge": "via CurseForge"
+      "viaCurseForge": "via CurseForge",
+      "compatBadge": "Fix",
+      "compatTitle": "Switch to {version} – works with {other}"
     },
     "menu": {
       "updateTo": "Update to {version}",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Wrong Java version",
       "missing_dependency": "Missing dependency",
       "mod_conflict": "Mod conflict",
-      "graphics_driver": "Graphics driver"
+      "graphics_driver": "Graphics driver",
+      "incompatible_mod": "Incompatible mod version"
     },
     "diagnosis": {
       "corrupt_files": "A game file is corrupted (e.g. after an interrupted download). “Check files” downloads it again.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "A mod needs a newer Java version. Remove the custom Java path in the settings and the launcher will pick the right one automatically.",
       "missing_dependency": "A mod is missing another mod it requires. The log shows which one right above the error.",
       "mod_conflict": "Two mods don't get along. Disable the mods you added most recently and launch again.",
-      "graphics_driver": "The graphics driver crashed or doesn't support OpenGL. Update your graphics card driver."
+      "graphics_driver": "The graphics driver crashed or doesn't support OpenGL. Update your graphics card driver.",
+      "incompatible_mod": "{name} doesn't work with {other}. The launcher can switch {name} to a version that fits."
     },
-    "shareTextLinux": "The log will be uploaded to {site}, where anyone with the link can read it. Login tokens and your user name are removed first."
+    "shareTextLinux": "The log will be uploaded to {site}, where anyone with the link can read it. Login tokens and your user name are removed first.",
+    "fixConflict": "Switch {name} to a compatible version",
+    "fixing": "Looking for compatible mod versions …",
+    "fixDone": "Switched to compatible versions: {list}",
+    "fixNothing": "No compatible version was found automatically. Disable one of the two mods and launch again."
   },
   "exportPack": {
     "title": "Export as modpack",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} more) | (+{n} more)",
       "details": "Details",
       "shaderOn": "Shaders are on: {name}. Press K in game to turn them on or off.",
-      "shaderToast": "shaders on (K toggles them)"
+      "shaderToast": "shaders on (K toggles them)",
+      "compatWith": "Version chosen to work with {other}"
     },
     "reason": {
       "installed": "Installed",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} needs {dependency}, which isn’t available for this version",
       "incompatible": "{title} doesn’t work together with {other}",
       "needsLoader": "{title} needs a mod loader",
-      "failed": "{title} couldn’t be downloaded"
+      "failed": "{title} couldn’t be downloaded",
+      "swapped": "Switched to a version that works with {other}"
     },
     "status": {
       "installed": "Installed",
       "alreadyInstalled": "Already there",
       "duplicate": "Included",
-      "skipped": "Skipped"
+      "skipped": "Skipped",
+      "swapped": "Switched"
     },
     "task": {
       "title": "Presets for {name}",

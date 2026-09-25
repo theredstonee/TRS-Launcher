@@ -365,7 +365,8 @@
       "crashWrongJava": "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den Einstellungen, dann wählt der Launcher automatisch die passende.",
       "exitedImmediately": "Das Spiel wurde sofort wieder beendet.",
       "javaStartFailed": "Java konnte nicht gestartet werden.",
-      "logUploadFailed": "Der Log konnte nicht hochgeladen werden."
+      "logUploadFailed": "Der Log konnte nicht hochgeladen werden.",
+      "crashIncompatibleMod": "{name} verträgt sich in dieser Version nicht mit {other}. Der Launcher kann {name} gegen eine passende Version tauschen."
     },
     "modpack": {
       "noGameVersion": "Das Modpack nennt keine Minecraft-Version.",
@@ -917,7 +918,9 @@
       "disable": "{name} deaktivieren",
       "delete": "{name} löschen",
       "moreActions": "Weitere Aktionen für {name}",
-      "viaCurseForge": "über CurseForge"
+      "viaCurseForge": "über CurseForge",
+      "compatBadge": "Beheben",
+      "compatTitle": "Auf {version} wechseln – läuft mit {other}"
     },
     "menu": {
       "updateTo": "Auf {version} aktualisieren",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Falsche Java-Version",
       "missing_dependency": "Fehlende Abhängigkeit",
       "mod_conflict": "Mod-Konflikt",
-      "graphics_driver": "Grafiktreiber"
+      "graphics_driver": "Grafiktreiber",
+      "incompatible_mod": "Unverträgliche Mod-Version"
     },
     "diagnosis": {
       "corrupt_files": "Eine Spieldatei ist beschädigt (z. B. nach einem abgebrochenen Download). „Dateien prüfen“ lädt sie neu herunter.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den Einstellungen, dann wählt der Launcher automatisch die passende.",
       "missing_dependency": "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler.",
       "mod_conflict": "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut.",
-      "graphics_driver": "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den Treiber deiner Grafikkarte."
+      "graphics_driver": "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den Treiber deiner Grafikkarte.",
+      "incompatible_mod": "{name} verträgt sich nicht mit {other}. Der Launcher kann {name} gegen eine passende Version tauschen."
     },
-    "shareTextLinux": "Der Log wird auf {site} hochgeladen und ist über den Link für alle lesbar. Login-Tokens und dein Benutzername werden vorher entfernt."
+    "shareTextLinux": "Der Log wird auf {site} hochgeladen und ist über den Link für alle lesbar. Login-Tokens und dein Benutzername werden vorher entfernt.",
+    "fixConflict": "{name} gegen passende Version tauschen",
+    "fixing": "Suche passende Mod-Versionen …",
+    "fixDone": "Gegen passende Versionen getauscht: {list}",
+    "fixNothing": "Es wurde keine passende Version gefunden. Deaktiviere eine der beiden Mods und starte erneut."
   },
   "exportPack": {
     "title": "Als Modpack exportieren",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} weiteres) | (+{n} weitere)",
       "details": "Details",
       "shaderOn": "Shader sind an: {name}. Mit der Taste K schaltest du sie im Spiel an und aus.",
-      "shaderToast": "Shader an (K schaltet um)"
+      "shaderToast": "Shader an (K schaltet um)",
+      "compatWith": "Version passend zu {other} gewählt"
     },
     "reason": {
       "installed": "Installiert",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} braucht {dependency}, das es für diese Version nicht gibt",
       "incompatible": "{title} verträgt sich nicht mit {other}",
       "needsLoader": "{title} braucht einen Modloader",
-      "failed": "{title} konnte nicht geladen werden"
+      "failed": "{title} konnte nicht geladen werden",
+      "swapped": "Gegen eine Version getauscht, die mit {other} läuft"
     },
     "status": {
       "installed": "Installiert",
       "alreadyInstalled": "Schon da",
       "duplicate": "Dabei",
-      "skipped": "Übersprungen"
+      "skipped": "Übersprungen",
+      "swapped": "Getauscht"
     },
     "task": {
       "title": "Presets für {name}",

@@ -365,7 +365,8 @@
       "crashWrongJava": "Een mod heeft een nieuwere Java-versie nodig. Verwijder het eigen Java-pad in de instellingen; de launcher kiest dan automatisch de juiste.",
       "exitedImmediately": "Het spel sloot meteen af.",
       "javaStartFailed": "Java kon niet worden gestart.",
-      "logUploadFailed": "Het log kon niet worden geüpload."
+      "logUploadFailed": "Het log kon niet worden geüpload.",
+      "crashIncompatibleMod": "{name} werkt in deze versie niet samen met {other}. De launcher kan {name} vervangen door een passende versie."
     },
     "modpack": {
       "noGameVersion": "Het modpack geeft geen Minecraft-versie op.",
@@ -917,7 +918,9 @@
       "disable": "{name} uitschakelen",
       "delete": "{name} verwijderen",
       "moreActions": "Meer acties voor {name}",
-      "viaCurseForge": "via CurseForge"
+      "viaCurseForge": "via CurseForge",
+      "compatBadge": "Oplossen",
+      "compatTitle": "Overschakelen naar {version} – werkt met {other}"
     },
     "menu": {
       "updateTo": "Bijwerken naar {version}",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Verkeerde Java-versie",
       "missing_dependency": "Ontbrekende afhankelijkheid",
       "mod_conflict": "Modconflict",
-      "graphics_driver": "Grafisch stuurprogramma"
+      "graphics_driver": "Grafisch stuurprogramma",
+      "incompatible_mod": "Onverenigbare modversie"
     },
     "diagnosis": {
       "corrupt_files": "Een spelbestand is beschadigd (bijv. na een onderbroken download). “Bestanden controleren” downloadt het opnieuw.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "Een mod heeft een nieuwere Java-versie nodig. Verwijder het eigen Java-pad in de instellingen; de launcher kiest dan automatisch de juiste.",
       "missing_dependency": "Een mod mist een andere mod die hij nodig heeft. Het log toont vlak boven de fout welke.",
       "mod_conflict": "Twee mods kunnen niet met elkaar overweg. Schakel de laatst toegevoegde mods uit en start opnieuw.",
-      "graphics_driver": "Het grafische stuurprogramma is gecrasht of ondersteunt geen OpenGL. Werk het stuurprogramma van je videokaart bij."
+      "graphics_driver": "Het grafische stuurprogramma is gecrasht of ondersteunt geen OpenGL. Werk het stuurprogramma van je videokaart bij.",
+      "incompatible_mod": "{name} werkt niet samen met {other}. De launcher kan {name} vervangen door een versie die past."
     },
-    "shareTextLinux": "Het log wordt geüpload naar {site}, waar iedereen met de link het kan lezen. Inlogtokens en je gebruikersnaam worden eerst verwijderd."
+    "shareTextLinux": "Het log wordt geüpload naar {site}, waar iedereen met de link het kan lezen. Inlogtokens en je gebruikersnaam worden eerst verwijderd.",
+    "fixConflict": "{name} vervangen door een passende versie",
+    "fixing": "Passende modversies zoeken …",
+    "fixDone": "Vervangen door passende versies: {list}",
+    "fixNothing": "Er is automatisch geen passende versie gevonden. Schakel een van de twee mods uit en start opnieuw."
   },
   "exportPack": {
     "title": "Exporteren als modpack",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} andere) | (+{n} andere)",
       "details": "Details",
       "shaderOn": "Shaders staan aan: {name}. Druk in het spel op K om ze aan of uit te zetten.",
-      "shaderToast": "shaders aan (K schakelt)"
+      "shaderToast": "shaders aan (K schakelt)",
+      "compatWith": "Versie gekozen die werkt met {other}"
     },
     "reason": {
       "installed": "Geïnstalleerd",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} heeft {dependency} nodig, maar dat bestaat niet voor deze versie",
       "incompatible": "{title} werkt niet samen met {other}",
       "needsLoader": "{title} heeft een modloader nodig",
-      "failed": "{title} kon niet worden gedownload"
+      "failed": "{title} kon niet worden gedownload",
+      "swapped": "Vervangen door een versie die werkt met {other}"
     },
     "status": {
       "installed": "Geïnstalleerd",
       "alreadyInstalled": "Was er al",
       "duplicate": "Inbegrepen",
-      "skipped": "Overgeslagen"
+      "skipped": "Overgeslagen",
+      "swapped": "Vervangen"
     },
     "task": {
       "title": "Presets voor {name}",

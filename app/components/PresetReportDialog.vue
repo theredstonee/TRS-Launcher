@@ -15,6 +15,8 @@ function chip(item: PresetItemOutcome): { text: string; cls: string } {
       return { text: t('presets.status.alreadyInstalled'), cls: 'bg-base-800 text-base-400' }
     case 'duplicate':
       return { text: t('presets.status.duplicate'), cls: 'bg-base-800 text-base-400' }
+    case 'swapped':
+      return { text: item.versionNumber ?? t('presets.status.swapped'), cls: 'bg-lamp-900 text-lamp-300' }
     default:
       return { text: t('presets.status.skipped'), cls: 'bg-lamp-900 text-lamp-300' }
   }
@@ -60,7 +62,11 @@ function openInstance() {
         <ul class="space-y-1">
           <li v-for="(item, i) in installed" :key="`o${i}`" class="flex items-center gap-3 px-1 py-1">
             <ModIcon :src="item.iconUrl" :name="item.title" :size="24" />
-            <span class="min-w-0 flex-1 truncate text-sm">{{ item.title }}</span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm">{{ item.title }}</span>
+              <span v-if="item.status === 'swapped'" class="block text-xs text-lamp-300">{{ presetReason(item, current.report) }}</span>
+              <span v-else-if="item.compatWith" class="block text-xs text-base-400">{{ t('presets.report.compatWith', { other: item.compatWith }) }}</span>
+            </span>
             <span class="badge font-mono" :class="chip(item).cls">{{ chip(item).text }}</span>
           </li>
         </ul>

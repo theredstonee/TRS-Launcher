@@ -30,6 +30,7 @@ pub mod launch;
 pub mod link;
 pub mod loaders;
 pub mod meta;
+pub mod modcompat;
 pub mod modpack;
 pub mod modpack_export;
 pub mod modrinth;

@@ -365,7 +365,8 @@
       "crashWrongJava": "Bir mod daha yeni bir Java sürümüne ihtiyaç duyuyor. Ayarlardaki özel Java yolunu kaldır, launcher doğru sürümü otomatik seçer.",
       "exitedImmediately": "Oyun hemen kapandı.",
       "javaStartFailed": "Java başlatılamadı.",
-      "logUploadFailed": "Günlük yüklenemedi."
+      "logUploadFailed": "Günlük yüklenemedi.",
+      "crashIncompatibleMod": "{name} bu sürümde {other} ile çalışmıyor. Başlatıcı {name} modunu uyumlu bir sürümle değiştirebilir."
     },
     "modpack": {
       "noGameVersion": "Modpack bir Minecraft sürümü belirtmiyor.",
@@ -917,7 +918,9 @@
       "disable": "Devre dışı bırak: {name}",
       "delete": "Sil: {name}",
       "moreActions": "Diğer işlemler: {name}",
-      "viaCurseForge": "CurseForge üzerinden"
+      "viaCurseForge": "CurseForge üzerinden",
+      "compatBadge": "Düzelt",
+      "compatTitle": "{version} sürümüne geç – {other} ile çalışır"
     },
     "menu": {
       "updateTo": "Güncelle: {version}",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Yanlış Java sürümü",
       "missing_dependency": "Eksik bağımlılık",
       "mod_conflict": "Mod çakışması",
-      "graphics_driver": "Ekran kartı sürücüsü"
+      "graphics_driver": "Ekran kartı sürücüsü",
+      "incompatible_mod": "Uyumsuz mod sürümü"
     },
     "diagnosis": {
       "corrupt_files": "Bir oyun dosyası bozuk (ör. yarıda kalan bir indirme sonrası). “Dosyaları kontrol et” onu yeniden indirir.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "Bir mod daha yeni bir Java sürümüne ihtiyaç duyuyor. Ayarlardaki özel Java yolunu kaldır, launcher doğru sürümü otomatik seçer.",
       "missing_dependency": "Bir mod, ihtiyaç duyduğu başka bir modu bulamıyor. Hangisi olduğu günlükte hatanın hemen üstünde yazıyor.",
       "mod_conflict": "İki mod birbiriyle uyuşmuyor. En son eklediğin modları devre dışı bırak ve tekrar başlat.",
-      "graphics_driver": "Ekran kartı sürücüsü çöktü veya OpenGL'i desteklemiyor. Ekran kartı sürücünü güncelle."
+      "graphics_driver": "Ekran kartı sürücüsü çöktü veya OpenGL'i desteklemiyor. Ekran kartı sürücünü güncelle.",
+      "incompatible_mod": "{name}, {other} ile çalışmıyor. Başlatıcı {name} modunu uygun bir sürümle değiştirebilir."
     },
-    "shareTextLinux": "Günlük {site} sitesine yüklenecek; bağlantıya sahip herkes okuyabilir. Giriş token’ları ve kullanıcı adın önce kaldırılır."
+    "shareTextLinux": "Günlük {site} sitesine yüklenecek; bağlantıya sahip herkes okuyabilir. Giriş token’ları ve kullanıcı adın önce kaldırılır.",
+    "fixConflict": "{name} modunu uyumlu sürümle değiştir",
+    "fixing": "Uyumlu mod sürümleri aranıyor …",
+    "fixDone": "Uyumlu sürümlerle değiştirildi: {list}",
+    "fixNothing": "Otomatik olarak uyumlu bir sürüm bulunamadı. İki moddan birini devre dışı bırakıp yeniden başlat."
   },
   "exportPack": {
     "title": "Modpack olarak dışa aktar",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} tane daha) | (+{n} tane daha)",
       "details": "Ayrıntılar",
       "shaderOn": "Shader'lar açık: {name}. Oyunda K tuşuyla açıp kapatabilirsin.",
-      "shaderToast": "shader'lar açık (K ile değiştir)"
+      "shaderToast": "shader'lar açık (K ile değiştir)",
+      "compatWith": "{other} ile çalışacak sürüm seçildi"
     },
     "reason": {
       "installed": "Yüklendi",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} için {dependency} gerekiyor, ancak bu sürüm için mevcut değil",
       "incompatible": "{title}, {other} ile birlikte çalışmıyor",
       "needsLoader": "{title} bir mod yükleyicisi gerektirir",
-      "failed": "{title} indirilemedi"
+      "failed": "{title} indirilemedi",
+      "swapped": "{other} ile çalışan bir sürümle değiştirildi"
     },
     "status": {
       "installed": "Yüklendi",
       "alreadyInstalled": "Zaten var",
       "duplicate": "Dahil",
-      "skipped": "Atlandı"
+      "skipped": "Atlandı",
+      "swapped": "Değiştirildi"
     },
     "task": {
       "title": "{name} için ön ayarlar",

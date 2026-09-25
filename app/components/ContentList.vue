@@ -419,11 +419,15 @@ const pendingUpdates = computed(() => updates.value ?? [])
               <button
                 v-if="updateFor(item) && !isBusy(item)"
                 class="badge shrink-0 bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/30 hover:bg-lamp-400 hover:text-base-950"
-                :title="t('content.row.updateTitle', { version: updateFor(item)!.versionNumber })"
-                @click="item.source ? (changelogFor = item) : applyUpdates([updateFor(item)!])"
+                :title="
+                  updateFor(item)!.compatWith
+                    ? t('content.row.compatTitle', { version: updateFor(item)!.versionNumber, other: updateFor(item)!.compatWith! })
+                    : t('content.row.updateTitle', { version: updateFor(item)!.versionNumber })
+                "
+                @click="item.source && !updateFor(item)!.compatWith ? (changelogFor = item) : applyUpdates([updateFor(item)!])"
               >
                 <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5m0 0-6 6m6-6 6 6" /></svg>
-                {{ t('content.row.updateBadge') }}
+                {{ updateFor(item)!.compatWith ? t('content.row.compatBadge') : t('content.row.updateBadge') }}
               </button>
             </div>
             <span v-if="isBusy(item)" class="mt-1 block w-24"><RedstoneWire :percent="60" :segments="8" /></span>

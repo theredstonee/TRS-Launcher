@@ -369,11 +369,37 @@ export type GameEvent =
     }
 
 export interface Diagnosis {
-  kind: 'corrupt_files' | 'out_of_memory' | 'wrong_java' | 'missing_dependency' | 'mod_conflict' | 'graphics_driver'
+  kind:
+    | 'corrupt_files'
+    | 'out_of_memory'
+    | 'wrong_java'
+    | 'missing_dependency'
+    | 'mod_conflict'
+    | 'graphics_driver'
+    | 'incompatible_mod'
   message: string
   /** Übersetzungs-Code der Meldung (`errors.<code>`), z. B. `process.crashOutOfMemory`. */
   code?: string
   canRepair: boolean
+  /** Bei `incompatible_mod`: welche Mods sich laut Loader nicht vertragen. */
+  conflict?: ModConflictInfo
+}
+
+/** Aus der Loader-Meldung: `modId` sollte getauscht werden, `otherId` ist der Grund. */
+export interface ModConflictInfo {
+  modId: string
+  modName: string
+  modVersion: string
+  otherId: string
+  otherName: string
+  otherVersion: string | null
+}
+
+/** Ergebnis von „gegen passende Version tauschen“. */
+export interface CompatReport {
+  changes: { title: string; from: string | null; to: string; because: string }[]
+  /** Konflikte ohne passende Version („Sodium 0.8.14 ↔ Iris 1.10.7“). */
+  unresolved: string[]
 }
 
 export type ContentKind = 'mod' | 'resourcepack' | 'shaderpack' | 'datapack'
@@ -525,6 +551,8 @@ export interface ContentUpdate {
   projectId: string
   versionId: string
   versionNumber: string
+  /** Version bewusst so gewählt (evtl. älter), damit es mit dieser Mod läuft. */
+  compatWith?: string
 }
 
 export interface PackProgress {
@@ -973,6 +1001,7 @@ export type PresetItemStatus =
   | 'incompatible'
   | 'needsLoader'
   | 'failed'
+  | 'swapped'
 
 export interface PresetItemOutcome {
   presetId: string
@@ -987,6 +1016,8 @@ export interface PresetItemOutcome {
   /** Fehlende Abhängigkeit bzw. womit es sich nicht verträgt. */
   detail: string | null
   error: CommandError | null
+  /** Version bewusst so gewählt, damit es mit dieser Mod läuft („Iris 1.10.7“). */
+  compatWith: string | null
 }
 
 export interface PresetApplyReport {

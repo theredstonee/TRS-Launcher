@@ -13,6 +13,7 @@ import {
   presetHasMods,
   presetName,
   presetPercent,
+  presetReason,
   presetRows,
   presetStage,
   presetSummaryText,
@@ -49,6 +50,7 @@ function outcome(title: string, status: PresetItemOutcome['status'], optional = 
     versionNumber: null,
     detail: null,
     error: null,
+    compatWith: null,
   }
 }
 
@@ -186,6 +188,14 @@ describe('Presets: Bericht', () => {
     expect(presetSummaryText(report([outcome('X', 'notAvailable', true)]))).toBe('Nichts zu installieren')
     const many = report([outcome('A', 'installed'), outcome('B', 'needsLoader'), outcome('C', 'failed'), outcome('D', 'failed')])
     expect(presetSummaryText(many)).toBe('1 von 4 installiert – B braucht einen Modloader (+2 weitere)')
+  })
+
+  it('getauschte Mods zählen als erledigt und nennen den Grund', () => {
+    const swapped = { ...outcome('Sodium', 'swapped'), versionNumber: 'mc1.21.11-0.8.12-fabric', compatWith: 'Iris 1.10.7+mc1.21.11' }
+    const r = report([swapped, outcome('Iris', 'alreadyInstalled')])
+    expect(summarizePresetReport(r).problems).toEqual([])
+    expect(presetSummaryText(r)).toBe('Alle 2 Projekte installiert')
+    expect(presetReason(swapped, r)).toBe('Gegen eine Version getauscht, die mit Iris 1.10.7+mc1.21.11 läuft')
   })
 
   it('Fortschritt: Prüfen 0–20 %, Laden 20–100 %', () => {

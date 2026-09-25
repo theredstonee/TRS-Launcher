@@ -44,7 +44,15 @@ async function load() {
 }
 watch(() => [props.instance.id, props.refreshKey], load, { immediate: true })
 
-const diagnosisKinds: Diagnosis['kind'][] = ['corrupt_files', 'out_of_memory', 'wrong_java', 'missing_dependency', 'mod_conflict', 'graphics_driver']
+const diagnosisKinds: Diagnosis['kind'][] = [
+  'corrupt_files',
+  'out_of_memory',
+  'wrong_java',
+  'missing_dependency',
+  'mod_conflict',
+  'graphics_driver',
+  'incompatible_mod',
+]
 
 /** Kurzname der Absturzursache; Unbekanntes bleibt, wie der Kern es geschrieben hat. */
 function crashCause(detail: string): string {

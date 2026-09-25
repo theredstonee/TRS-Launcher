@@ -92,6 +92,23 @@ pub enum DiagnosisKind {
     MissingDependency,
     ModConflict,
     GraphicsDriver,
+    /// Eine Mod verlangt/verbietet eine bestimmte Version einer anderen
+    /// (Fabric: „is incompatible with version … of mod …“) – lässt sich durch
+    /// Tausch der Version beheben (`conflict`).
+    IncompatibleMod,
+}
+
+/// Welche zwei Mods sich laut Loader nicht vertragen.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModConflictInfo {
+    /// Die Mod, die getauscht werden sollte (Mod-ID aus dem Jar, z. B. `sodium`).
+    pub mod_id: String,
+    pub mod_name: String,
+    pub mod_version: String,
+    pub other_id: String,
+    pub other_name: String,
+    pub other_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -105,6 +122,70 @@ pub struct Diagnosis {
     pub code: &'static str,
     /// „Dateien prüfen & reparieren“ anbieten.
     pub can_repair: bool,
+    /// Bei `incompatible_mod`: welche Mods – das Frontend bietet den Tausch an.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conflict: Option<ModConflictInfo>,
+}
+
+fn clip_part(text: &str) -> String {
+    text.trim().chars().filter(|c| !c.is_control()).take(100).collect()
+}
+
+fn is_mod_id(id: &str) -> bool {
+    !id.is_empty() && id.len() <= 64 && id.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.'))
+}
+
+/// `'Name' (id) rest` → (Name, id, rest).
+fn mod_ref(text: &str) -> Option<(&str, &str, &str)> {
+    let rest = text.strip_prefix('\'')?;
+    let (name, rest) = rest.split_once("' (")?;
+    let (id, rest) = rest.split_once(')')?;
+    is_mod_id(id).then_some((name, id, rest.trim_start()))
+}
+
+/// Liest Fabrics Meldungen über unverträgliche Versionen:
+/// * `Mod 'Sodium' (sodium) 0.8.14 is incompatible with version 1.10.7 or earlier of mod 'Iris' (iris), yet a conflicting version is present: 1.10.7!`
+/// * `Mod 'A' (a) 1.0 requires version 2.0 or later of mod 'B' (b), but only the wrong version is present: 1.5!`
+/// * `Replace mod 'Sodium' (sodium) 0.8.14 with any 0.8.x version that is compatible with: iris 1.10.7.`
+pub fn parse_mod_conflict(text: &str) -> Option<ModConflictInfo> {
+    let lines = || text.lines().map(|l| l.trim().trim_start_matches(['-', '\t', ' ']).trim());
+    for line in lines() {
+        let Some(rest) = line.strip_prefix("Mod ") else { continue };
+        let Some((name, id, rest)) = mod_ref(rest) else { continue };
+        let Some((version, rest)) = rest.split_once(' ') else { continue };
+        let wrong_version = rest.starts_with("requires") && rest.contains("wrong version is present");
+        if !rest.starts_with("is incompatible with") && !wrong_version {
+            continue;
+        }
+        let Some((_, other)) = rest.split_once("of mod ") else { continue };
+        let Some((other_name, other_id, after)) = mod_ref(other) else { continue };
+        let other_version = after.rsplit_once(": ").map(|(_, v)| clip_part(v.trim_end_matches(['!', '.'])));
+        return Some(ModConflictInfo {
+            mod_id: id.to_owned(),
+            mod_name: clip_part(name),
+            mod_version: clip_part(version),
+            other_id: other_id.to_owned(),
+            other_name: clip_part(other_name),
+            other_version,
+        });
+    }
+    for line in lines() {
+        let Some(rest) = line.strip_prefix("Replace mod ") else { continue };
+        let Some((name, id, rest)) = mod_ref(rest) else { continue };
+        let Some((version, rest)) = rest.split_once(' ') else { continue };
+        let Some((_, other)) = rest.split_once("compatible with: ") else { continue };
+        let mut parts = other.trim_end_matches('.').split_whitespace();
+        let Some(other_id) = parts.next().filter(|i| is_mod_id(i)) else { continue };
+        return Some(ModConflictInfo {
+            mod_id: id.to_owned(),
+            mod_name: clip_part(name),
+            mod_version: clip_part(version),
+            other_id: other_id.to_owned(),
+            other_name: other_id.to_owned(),
+            other_version: parts.next().map(clip_part),
+        });
+    }
+    None
 }
 
 /// Sucht in den letzten Log-Zeilen nach bekannten Absturzursachen.
@@ -112,6 +193,24 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     let text: String = lines.iter().map(|l| l.message.as_str()).collect::<Vec<_>>().join("\n");
     let has = |needle: &str| text.contains(needle);
 
+    if let Some(conflict) = parse_mod_conflict(&text) {
+        let message = crate::msg!(
+            "process.crashIncompatibleMod",
+            "{name} verträgt sich in dieser Version nicht mit {other}. Der Launcher kann {name} gegen eine passende Version tauschen.",
+            name = format!("{} {}", conflict.mod_name, conflict.mod_version),
+            other = match &conflict.other_version {
+                Some(v) => format!("{} {v}", conflict.other_name),
+                None => conflict.other_name.clone(),
+            }
+        );
+        return Some(Diagnosis {
+            kind: DiagnosisKind::IncompatibleMod,
+            message: message.text,
+            code: message.code,
+            can_repair: false,
+            conflict: Some(conflict),
+        });
+    }
     let (kind, message, can_repair) = if has("java.util.zip.ZipException")
         || has("Invalid or corrupt jarfile")
         || has("zip END header not found")
@@ -185,7 +284,7 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     } else {
         return None;
     };
-    Some(Diagnosis { kind, message: message.text, code: message.code, can_repair })
+    Some(Diagnosis { kind, message: message.text, code: message.code, can_repair, conflict: None })
 }
 
 /// Für dieses Programm die leistungsstarke Grafikkarte wählen (Windows:
@@ -659,6 +758,56 @@ mod tests {
         let json = serde_json::to_value(&d).unwrap();
         assert_eq!(json["code"], "process.crashCorruptFiles");
         assert!(json["message"].as_str().unwrap().starts_with("Eine Spieldatei ist beschädigt"));
+    }
+
+    /// Genau die Meldung aus dem Fehlerbericht (Fabric Loader 0.19.5, MC 1.21.11).
+    const SODIUM_IRIS: &str = "Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+\t - Replace mod 'Sodium' (sodium) 0.8.14+mc1.21.11 with any 0.8.x version that is compatible with: iris 1.10.7+mc1.21.11.
+More details:
+\t - Mod 'Sodium' (sodium) 0.8.14+mc1.21.11 is incompatible with version 1.10.7 or earlier of mod 'Iris' (iris), yet a conflicting version is present: 1.10.7+mc1.21.11!";
+
+    #[test]
+    fn diagnoses_incompatible_mod_versions() {
+        let d = diagnose(&[line(SODIUM_IRIS)]).unwrap();
+        assert_eq!(d.kind, DiagnosisKind::IncompatibleMod);
+        let c = d.conflict.as_ref().unwrap();
+        assert_eq!(
+            (c.mod_id.as_str(), c.mod_name.as_str(), c.mod_version.as_str()),
+            ("sodium", "Sodium", "0.8.14+mc1.21.11")
+        );
+        assert_eq!((c.other_id.as_str(), c.other_name.as_str()), ("iris", "Iris"));
+        assert_eq!(c.other_version.as_deref(), Some("1.10.7+mc1.21.11"));
+        assert_eq!(d.code, "process.crashIncompatibleMod");
+        assert!(d.message.contains("Sodium 0.8.14+mc1.21.11") && d.message.contains("Iris 1.10.7+mc1.21.11"));
+        let json = serde_json::to_value(&d).unwrap();
+        assert_eq!(json["kind"], "incompatible_mod");
+        assert_eq!(json["conflict"]["modId"], "sodium");
+
+        // Auch über mehrere Log-Zeilen verteilt und nur mit dem Lösungsvorschlag.
+        let lines: Vec<LogLine> = SODIUM_IRIS.lines().map(line).collect();
+        assert_eq!(diagnose(&lines).unwrap().conflict.unwrap().other_id, "iris");
+        let only_hint = parse_mod_conflict(
+            "\t - Replace mod 'Sodium' (sodium) 0.8.14+mc1.21.11 with any 0.8.x version that is compatible with: iris 1.10.7+mc1.21.11.",
+        )
+        .unwrap();
+        assert_eq!((only_hint.mod_id.as_str(), only_hint.other_id.as_str()), ("sodium", "iris"));
+        assert_eq!(only_hint.other_version.as_deref(), Some("1.10.7+mc1.21.11"));
+
+        // Falsche Version einer Abhängigkeit.
+        let c = parse_mod_conflict(
+            "Mod 'Sodium Extra' (sodium-extra) 0.6.0 requires version 0.9.0 or later of mod 'Sodium' (sodium), but only the wrong version is present: 0.8.14!",
+        )
+        .unwrap();
+        assert_eq!((c.mod_id.as_str(), c.other_id.as_str(), c.other_version.as_deref()), ("sodium-extra", "sodium", Some("0.8.14")));
+        // Fehlende Mod bleibt „fehlende Abhängigkeit“, Mixin-Fehler bleibt „Konflikt“.
+        assert_eq!(
+            diagnose(&[line("Mod 'Sodium Extra' (sodium-extra) requires any version of sodium, which is missing!")]).unwrap().kind,
+            DiagnosisKind::MissingDependency
+        );
+        assert_eq!(diagnose(&[line("Incompatible mods found!")]).unwrap().kind, DiagnosisKind::ModConflict);
+        assert!(parse_mod_conflict("Mod '../x' (bad id!) 1 is incompatible with version 1 of mod 'Y' (y), yet: 1!").is_none());
     }
 
     #[test]
