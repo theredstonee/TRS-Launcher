@@ -110,6 +110,8 @@ public final class TrsClient {
 		// TRS-Startbildschirm, Angriffs-Abklingzeit am Fadenkreuz (Kampfsystem ab 1.9).
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.hitColor, modules.freelook, modules.titleScreen, modules.crosshairAttack,
 				modules.menuStyle));
+		// Wegpunkte (Lichtsäule, Liste) gibt es hier nicht – Wegpunkte und Todespunkt führt die Karte.
+		UNSUPPORTED.add(modules.waypoints);
 		// TRS-Online-Funktionen (Abzeichen, TRS-Umhänge, Umhang-Physik, Emotes) sind für 1.7.10 nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.trsOnline, modules.capePhysics, modules.emotes, modules.colors));
 		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
@@ -141,12 +143,18 @@ public final class TrsClient {
 		TrsKeys.register();
 		// Die Zoom-Taste ist eine Vanilla-Belegung – im TRS-Menü ändert sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
+		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
+		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
+		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, dev.theredstonee.trsclient.core.i18n.I18n.configDir());
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		FMLCommonHandler.instance().bus().register(new TickHandler());
 		AutoTest.installIfRequested();
 		// 1.7.10-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
+		}, "TRS Client map save"));
 	}
 
 	@Mod.EventHandler
@@ -188,6 +196,19 @@ public final class TrsClient {
 			while (TrsKeys.menu.isPressed()) {
 				if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
 			}
+			// Weltkarte (M)
+			while (TrsKeys.worldMap.isPressed()) {
+				if (mc.currentScreen == null && mc.thePlayer != null && modules.worldMap.isEnabled()) {
+					dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
+					if (screen != null) mc.displayGuiScreen(screen);
+				}
+			}
+			if (modules.keyDefaults.needsWorldMapKeyCheck() && mc.gameSettings != null) {
+				modules.keyDefaults.markWorldMapKeyChecked();
+				if (TrsKeys.resolveWorldMapConflict()) LOGGER.info("Weltkarten-Taste M war doppelt belegt – freigegeben");
+				saveConfig();
+			}
+			if (hud != null) hud.tick();
 			// Garderobe (Taste standardmäßig unbelegt)
 			while (TrsKeys.wardrobe.isPressed()) {
 				if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
@@ -250,6 +271,13 @@ public final class TrsClient {
 	 * Lightmap ist berechnet (erstes Ereignis nach {@code updateLightmap} in {@code renderWorld}) →
 	 * echten Gamma-Wert sofort zurück. So sieht nichts anderes (Menüs, Speichern der Optionen) je 16.0.
 	 */
+	/** Fair-Play-Codes der Karten-Mods in Server-Nachrichten. */
+	@SubscribeEvent
+	public void onChat(net.minecraftforge.client.event.ClientChatReceivedEvent event) {
+		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
+		if (maps != null && event.message != null) maps.onServerText(event.message.getFormattedText());
+	}
+
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onFogColors(EntityViewRenderEvent.FogColors event) {
 		restoreGamma(Minecraft.getMinecraft());

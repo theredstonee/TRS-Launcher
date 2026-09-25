@@ -117,6 +117,8 @@ public final class TrsClient {
 		// Freelook (Kamera-Hooks) und der TRS-Startbildschirm.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.hitColor, client.modules.freelook, client.modules.titleScreen,
 				client.modules.menuStyle));
+		// Wegpunkte (Lichtsäule, Liste) gibt es hier nicht – Wegpunkte und Todespunkt führt die Karte.
+		UNSUPPORTED.add(client.modules.waypoints);
 		// TRS-Online-Funktionen (Abzeichen, TRS-Umhänge, Umhang-Physik, Emotes) sind für 1.13.2 nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.trsOnline, client.modules.capePhysics, client.modules.emotes,
 				client.modules.colors));
@@ -149,11 +151,17 @@ public final class TrsClient {
 		TrsKeys.register();
 		// Die Zoom-Taste ist eine Vanilla-Belegung – im TRS-Menü ändert sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
+		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
+		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
+		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FMLPaths.CONFIGDIR.get());
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		AutoTest.installIfRequested();
 		// Beim Beenden speichern (Forge 1.13.2 hat kein zuverlässiges "Client stoppt"-Ereignis).
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
+		}, "TRS Client map save"));
 		LOGGER.info("TRS Client {} initialisiert – {} Module, Forge-Events registriert", version, modules.registry.all().size());
 	}
 
@@ -184,6 +192,19 @@ public final class TrsClient {
 		while (TrsKeys.menu.isPressed()) {
 			if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
 		}
+		// Weltkarte (M)
+		while (TrsKeys.worldMap.isPressed()) {
+			if (mc.currentScreen == null && mc.player != null && modules.worldMap.isEnabled()) {
+				dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
+				if (screen != null) mc.displayGuiScreen(screen);
+			}
+		}
+		if (modules.keyDefaults.needsWorldMapKeyCheck() && mc.gameSettings != null) {
+			modules.keyDefaults.markWorldMapKeyChecked();
+			if (TrsKeys.resolveWorldMapConflict()) LOGGER.info("Weltkarten-Taste M war doppelt belegt – freigegeben");
+			saveConfig();
+		}
+		if (hud != null) hud.tick();
 		// Garderobe (Taste standardmäßig unbelegt)
 		while (TrsKeys.wardrobe.isPressed()) {
 			if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
@@ -211,6 +232,13 @@ public final class TrsClient {
 		}
 		// runTick kann den Blick setzen (Teleport, Reiten) – Referenz für die langsame Maus danach neu setzen.
 		captureLook(mc);
+	}
+
+	/** Fair-Play-Codes der Karten-Mods in Server-Nachrichten. */
+	@SubscribeEvent
+	public void onChat(net.minecraftforge.client.event.ClientChatReceivedEvent event) {
+		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
+		if (maps != null && event.getMessage() != null) maps.onServerText(event.getMessage().getFormattedText());
 	}
 
 	@SubscribeEvent

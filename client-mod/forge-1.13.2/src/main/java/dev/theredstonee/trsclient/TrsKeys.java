@@ -21,6 +21,8 @@ public final class TrsKeys {
 	public static KeyBinding toggleRecording;
 	/** Öffnet die Garderobe (standardmäßig unbelegt). */
 	public static KeyBinding wardrobe;
+	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
+	public static KeyBinding worldMap;
 
 	private TrsKeys() {
 	}
@@ -37,6 +39,7 @@ public final class TrsKeys {
 		saveClip = register(new KeyBinding("key.trsclient.saveClip", GLFW.GLFW_KEY_F9, CATEGORY));
 		toggleRecording = register(new KeyBinding("key.trsclient.toggleRecording", GLFW.GLFW_KEY_F10, CATEGORY));
 		wardrobe = register(new KeyBinding("key.trsclient.wardrobe", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
+		worldMap = register(new KeyBinding("key.trsclient.worldMap", GLFW.GLFW_KEY_M, CATEGORY));
 	}
 
 	/**
@@ -48,6 +51,26 @@ public final class TrsKeys {
 		if (zoom == null || zoom.getKey().getKeyCode() != GLFW.GLFW_KEY_C) return false;
 		zoom.bind(net.minecraft.client.util.InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_V));
 		KeyBinding.resetKeyBindingArrayAndHash();
+		return true;
+	}
+
+	/**
+	 * Einmalig: liegt die Weltkarten-Taste noch auf M und nutzt eine andere Belegung (z. B. eine andere Karten-Mod)
+	 * ebenfalls M, wird die TRS-Taste freigegeben.
+	 * @return true, wenn freigegeben wurde
+	 */
+	public static boolean resolveWorldMapConflict() {
+		if (worldMap == null) return false;
+		net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+		if (mc == null || mc.gameSettings == null) return false;
+		java.util.List<String> others = new java.util.ArrayList<String>();
+		for (KeyBinding k : mc.gameSettings.keyBindings) {
+			if (k != worldMap) others.add(k.getKey().getTranslationKey());
+		}
+		if (!dev.theredstonee.trsclient.core.config.KeyDefaults.conflicts(worldMap.getKey().getTranslationKey(), "key.keyboard.m", others)) return false;
+		worldMap.bind(net.minecraft.client.util.InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_UNKNOWN));
+		KeyBinding.resetKeyBindingArrayAndHash();
+		mc.gameSettings.saveOptions();
 		return true;
 	}
 
