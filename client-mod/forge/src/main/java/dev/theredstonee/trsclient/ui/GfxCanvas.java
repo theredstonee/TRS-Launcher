@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.ui;
 
 import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.core.ui.TextureRef;
+import dev.theredstonee.trsclient.core.ui.Textures;
 import net.minecraft.client.gui.Font;
 
 /**
@@ -10,7 +12,14 @@ import net.minecraft.client.gui.Font;
 public final class GfxCanvas implements Canvas {
 	private static final GfxCanvas INSTANCE = new GfxCanvas();
 
+	static {
+		// Texturen für core.ui (Skins, Umhänge, Vorschaubilder) – ab dem ersten Zeichnen verfügbar.
+		Textures.install(TextureStore.INSTANCE);
+	}
+
 	private Gfx g;
+	/** Seit dem letzten Textur-Bild wurden Flächen/Text gesammelt (Reihenfolge 1.20–1.21.1). */
+	private boolean pending = true;
 	private Font font;
 
 	private GfxCanvas() {
@@ -20,6 +29,7 @@ public final class GfxCanvas implements Canvas {
 	public static GfxCanvas of(Gfx g, Font font) {
 		INSTANCE.g = g;
 		INSTANCE.font = font;
+		INSTANCE.pending = true;
 		return INSTANCE;
 	}
 
@@ -40,11 +50,13 @@ public final class GfxCanvas implements Canvas {
 	@Override
 	public void fill(int x1, int y1, int x2, int y2, int argb) {
 		g.fill(x1, y1, x2, y2, argb);
+		pending = true;
 	}
 
 	@Override
 	public void text(String text, int x, int y, int argb, boolean shadow) {
 		g.text(font, text, x, y, argb, shadow);
+		pending = true;
 	}
 
 	@Override
@@ -100,5 +112,26 @@ public final class GfxCanvas implements Canvas {
 	@Override
 	public void pop() {
 		g.pop();
+	}
+
+	@Override
+	public boolean images() {
+		return true;
+	}
+
+	@Override
+	public void image(TextureRef texture, float u, float v, int w, int h, int argb) {
+		GfxImage.blit(g.raw(), texture, u, v, w, h, argb, pending);
+		pending = false;
+	}
+
+	@Override
+	public void rotate(float radians) {
+		GfxImage.rotate(g.raw(), radians);
+	}
+
+	@Override
+	public void scale(float sx, float sy) {
+		GfxImage.scale(g.raw(), sx, sy);
 	}
 }

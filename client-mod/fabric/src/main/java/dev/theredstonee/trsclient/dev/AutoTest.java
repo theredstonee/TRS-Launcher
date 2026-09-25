@@ -71,6 +71,8 @@ public final class AutoTest {
 	private boolean inputClick;
 	private int titlePhase;
 	private float sceneFrameMs;
+	private int titleScaleBefore;
+	private boolean figureTurned;
 	/** Modul-Zustand vor dem Test – wird am Ende wiederhergestellt (die Config bleibt sauber). */
 	private TrsConfig before;
 	/** Vom Test angelegter Wegpunkt – am Ende wieder entfernt. */
@@ -473,6 +475,14 @@ public final class AutoTest {
 		dev.theredstonee.trsclient.core.ui.title.TitleUi title = screen.title();
 		switch (titlePhase++) {
 			case 0:
+				if (!figureTurned) {
+					// Figur fast von vorn für den Screenshot (ein paar Bilder vorher setzen).
+					figureTurned = true;
+					title.setFigureAngle(20f);
+					titlePhase--;
+					wait = 2;
+					return true;
+				}
 				shot(mc, "trsclient-title");
 				title.focus(0);
 				wait = 10;
@@ -486,6 +496,8 @@ public final class AutoTest {
 				sceneFrameMs = title.frameMillis();
 				TrsClient.LOGGER.info("[Autotest] Startbildschirm: Szene {} µs, Bildschirm {} µs (CPU), Bildzeit {} ms, {} fps, sparsam={}",
 						Math.round(title.sceneMicros()), Math.round(title.frameMicros()), String.format(java.util.Locale.ROOT, "%.2f", sceneFrameMs), Mc.fps(), title.sparseScene());
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm: Figur+Drehscheibe {} µs, {} Flächen, Figur={}, Leiste={}",
+						Math.round(title.modelMicros()), title.modelFaces(), title.figureShown(), title.sideMode());
 				title.setSceneEnabled(false);
 				wait = 100;
 				return true;
@@ -493,10 +505,59 @@ public final class AutoTest {
 				TrsClient.LOGGER.info("[Autotest] Startbildschirm ohne Schaltung: Bildschirm {} µs (CPU), Bildzeit {} ms, {} fps",
 						Math.round(title.frameMicros()), String.format(java.util.Locale.ROOT, "%.2f", title.frameMillis()), Mc.fps());
 				title.setSceneEnabled(true);
-				return false;
+				if (!"title".equals(System.getProperty("trsclient.autotest.only"))) return false;
+				wait = 10;
+				return true;
+			case 4:
+				// Nur -PtrsAutotestOnly=title: große und kleine GUI, „Kommt bald“, dann beenden.
+				titleScaleBefore = guiScale(mc, 1);
+				wait = 30;
+				return true;
+			case 5:
+				shot(mc, "trsclient-title-wide");
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm groß: Figur={}, Leiste={}, {} Flächen", screen.title().figureShown(),
+						screen.title().sideMode(), screen.title().modelFaces());
+				guiScale(mc, 4);
+				wait = 30;
+				return true;
+			case 6:
+				shot(mc, "trsclient-title-narrow");
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm schmal: Figur={}, Leiste={}", screen.title().figureShown(), screen.title().sideMode());
+				guiScale(mc, titleScaleBefore);
+				wait = 30;
+				return true;
+			case 7: {
+				int[] r = screen.spot("wardrobe");
+				if (r != null) click(mc, r[0] + r[2] / 2.0, r[1] + r[3] / 2.0);
+				wait = 12;
+				return true;
+			}
+			case 8:
+				shot(mc, "trsclient-title-soon");
+				TrsClient.LOGGER.info("[Autotest] Garderobe-Knopf: Hinweis \"{}\"", screen.title().toast());
+				TrsClient.LOGGER.info("[Autotest] Startbildschirm-Test fertig");
+				if (before != null) TrsClient.get().modules().registry.apply(before);
+				mc.stop();
+				return true;
 			default:
 				return false;
 		}
+	}
+
+	/** Setzt die GUI-Größe (0 = automatisch) und liefert die vorherige. */
+	private static int guiScale(Minecraft mc, int scale) {
+		//? if >=1.19 {
+		int old = mc.options.guiScale().get();
+		mc.options.guiScale().set(scale);
+		//?} else {
+		/*int old = mc.options.guiScale;
+		mc.options.guiScale = scale;
+		*///?}
+		//? if >=26.1 {
+		/*mc.resizeGui();
+		*///?} else
+		mc.resizeDisplay();
+		return old;
 	}
 
 	private boolean ensureScreen(Class<? extends Screen> type, Supplier<Screen> factory) {

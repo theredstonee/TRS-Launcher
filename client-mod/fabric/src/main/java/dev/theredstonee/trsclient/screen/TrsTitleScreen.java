@@ -150,5 +150,17 @@ public final class TrsTitleScreen extends TrsUiScreen {
 		public boolean simpleAnimation() {
 			return false;
 		}
+
+		/** Eigener Skin/Umhang für die Figur auf der Drehscheibe (kommt aus den TRS-Online-Funktionen). */
+		@Override
+		public dev.theredstonee.trsclient.core.skin.PlayerLook look() {
+			dev.theredstonee.trsclient.core.online.OnlineFeatures<Object> f = dev.theredstonee.trsclient.online.OnlineHooks.features();
+			return f == null ? null : f.look();
+		}
+
+		@Override
+		public String playerName() {
+			return Mc.mc().getUser().getName();
+		}
 	}
 }

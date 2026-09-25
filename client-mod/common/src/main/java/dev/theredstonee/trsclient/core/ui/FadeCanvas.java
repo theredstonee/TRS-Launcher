@@ -102,4 +102,26 @@ public final class FadeCanvas implements Canvas {
 	public void pop() {
 		delegate.pop();
 	}
+
+	@Override
+	public boolean images() {
+		return delegate.images();
+	}
+
+	@Override
+	public void image(TextureRef texture, float u, float v, int w, int h, int argb) {
+		int c = color(argb);
+		if ((c >>> 24) < 4) return;
+		delegate.image(texture, u, v, w, h, c);
+	}
+
+	@Override
+	public void rotate(float radians) {
+		delegate.rotate(radians);
+	}
+
+	@Override
+	public void scale(float sx, float sy) {
+		delegate.scale(sx, sy);
+	}
 }

@@ -48,6 +48,9 @@ public final class CapeTextures<T> {
 		List<T> textures = new ArrayList<>();
 		boolean requested;
 		boolean ready;
+		/** Größe der Einzelbilder (nach dem Hochladen). */
+		int width;
+		int height;
 		long retryAt;
 		long lastUsed;
 
@@ -86,6 +89,18 @@ public final class CapeTextures<T> {
 		return slot.textures.get(Math.min(n - 1, cape.frameAt(now) % n));
 	}
 
+	/** Breite der Bilder eines fertig geladenen Umhangs (0 = noch nicht da). */
+	public int width(CapeInfo cape) {
+		Slot<T> slot = cape == null ? null : slots.get(cape.key());
+		return slot != null && slot.ready ? slot.width : 0;
+	}
+
+	/** Höhe der Bilder eines fertig geladenen Umhangs (0 = noch nicht da). */
+	public int height(CapeInfo cape) {
+		Slot<T> slot = cape == null ? null : slots.get(cape.key());
+		return slot != null && slot.ready ? slot.height : 0;
+	}
+
 	private void advance(Slot<T> slot, long now) {
 		if (slot.pending == null) {
 			if (!slot.requested && now >= slot.retryAt) {
@@ -115,6 +130,8 @@ public final class CapeTextures<T> {
 			slot.textures.add(tex);
 		}
 		if (slot.textures.size() == frames.count()) {
+			slot.width = frames.width;
+			slot.height = frames.height;
 			slot.ready = true;
 			slot.pending = null;
 		}
