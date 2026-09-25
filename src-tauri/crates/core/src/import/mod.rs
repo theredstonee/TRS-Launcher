@@ -308,12 +308,20 @@ pub(crate) fn with_db_copy<T>(db: &Path, read: impl FnOnce(&rusqlite::Connection
     if !small_file(db) {
         return None;
     }
-    let tmp = tempfile::tempdir().ok()?;
-    let copy = tmp.path().join("copy.db");
+    /// Eigener Temp-Ordner, der beim Verlassen wieder gelöscht wird.
+    struct Scratch(PathBuf);
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let tmp = Scratch(std::env::temp_dir().join(format!("trs-import-{}", uuid::Uuid::new_v4().simple())));
+    std::fs::create_dir(&tmp.0).ok()?;
+    let copy = tmp.0.join("copy.db");
     std::fs::copy(db, &copy).ok()?;
     let wal = PathBuf::from(format!("{}-wal", db.display()));
     if small_file(&wal) {
-        std::fs::copy(&wal, tmp.path().join("copy.db-wal")).ok()?;
+        std::fs::copy(&wal, tmp.0.join("copy.db-wal")).ok()?;
     }
     let conn = rusqlite::Connection::open(&copy).ok()?;
     let _ = conn.execute_batch("PRAGMA query_only = ON;");

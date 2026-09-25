@@ -80,7 +80,7 @@ impl Walker {
             if meta.is_dir() {
                 return self.visited.insert(target.clone()).then_some((target, true, 0));
             }
-            return meta.is_file().then(|| (target, false, meta.len()));
+            return meta.is_file().then_some((target, false, meta.len()));
         }
         if kind.is_dir() {
             Some((entry.path(), true, 0))
