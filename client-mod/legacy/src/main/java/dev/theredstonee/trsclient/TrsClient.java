@@ -129,10 +129,14 @@ public final class TrsClient {
 		return instance;
 	}
 
+	private static final boolean BENCH_VANILLA = Boolean.getBoolean("trsclient.bench.vanilla");
+
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		instance = this;
 		version = event.getModMetadata().version;
+		// Benchmark „Vanilla“ (-PtrsBenchVanilla): TRS Client bleibt ganz aus, nur der Messablauf läuft (siehe init).
+		if (BENCH_VANILLA) return;
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
@@ -154,6 +158,11 @@ public final class TrsClient {
 
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event) {
+		if (BENCH_VANILLA) {
+			LOGGER.info("TRS Client aus (Benchmark Vanilla)");
+			AutoTest.installIfRequested();
+			return;
+		}
 		TrsKeys.register();
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
@@ -174,6 +183,7 @@ public final class TrsClient {
 
 	@Mod.EventHandler
 	public void postInit(FMLPostInitializationEvent event) {
+		if (BENCH_VANILLA) return;
 		Minecraft mc = Minecraft.getMinecraft();
 		// Nur den Vanilla-MouseHelper ersetzen – hat ein anderer Mod schon einen eigenen, bleibt der.
 		boolean ownMouse = mc.mouseHelper != null && mc.mouseHelper.getClass() == MouseHelper.class;

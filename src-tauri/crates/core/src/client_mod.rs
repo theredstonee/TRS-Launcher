@@ -38,6 +38,10 @@ pub struct Build {
     pub file: String,
     #[serde(default)]
     pub requires: Vec<String>,
+    /// Eingebaute Optimierungs-Mods (Jar-in-Jar, nur Fabric) – das FPS-Boost-Preset
+    /// lässt sie weg, und abschalten lassen sie sich nur beim Start (siehe [`bundled_jvm_args`]).
+    #[serde(default)]
+    pub bundled: Vec<BundledMod>,
     /// Pflicht im Update-Kanal, in der mitgelieferten Datei zur Kontrolle.
     #[serde(default)]
     pub sha256: Option<String>,
@@ -46,6 +50,16 @@ pub struct Build {
     /// Stammt aus dem Update-Kanal (nicht Teil der Datei).
     #[serde(skip)]
     pub from_channel: bool,
+}
+
+/// Eine im TRS Client eingebettete Optimierungs-Mod (`id` = Mod-ID aus fabric.mod.json).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct BundledMod {
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub version: String,
 }
 
 /// `builds.json` bzw. `client-mod.json`: `{ "version": "0.3.0", "builds": [...] }`.
@@ -329,6 +343,83 @@ pub async fn sync(
     Ok(())
 }
 
+/// Modul „Eingebaute Optimierungen“ des TRS Clients (`config/trsclient.json`); fehlt es, ist es an.
+pub async fn builtin_optimizations_enabled(game_dir: &Path) -> bool {
+    let file = game_dir.join("config").join("trsclient.json");
+    let Ok(bytes) = tokio::fs::read(&file).await else { return true };
+    serde_json::from_slice::<serde_json::Value>(&bytes)
+        .ok()
+        .and_then(|v| v.pointer("/modules/builtinOptimizations/enabled").and_then(serde_json::Value::as_bool))
+        .unwrap_or(true)
+}
+
+/// Mod-IDs, die der TRS Client in dieser Instanz eingebaut mitbringt – leer, wenn er
+/// dort aus ist, es keinen Build gibt oder der Spieler „Eingebaute Optimierungen“
+/// ausgeschaltet hat. Das FPS-Boost-Preset lässt diese Mods weg.
+pub async fn builtin_mod_ids(paths: &Paths, builds: &[Build], instance: &Instance) -> Vec<String> {
+    if instance.overrides.trs_client == Some(false) {
+        return Vec::new();
+    }
+    let Some(build) = build_for(builds, instance.loader.kind, &instance.game_version) else { return Vec::new() };
+    if build.bundled.is_empty() || !builtin_optimizations_enabled(&paths.instance_game_dir(&instance.id)).await {
+        return Vec::new();
+    }
+    build.bundled.iter().map(|b| b.id.clone()).collect()
+}
+
+/// Mod-IDs (fabric.mod.json) der eingeschalteten Mods im Mods-Ordner – ohne den TRS Client selbst.
+async fn own_mod_ids(mods: &Path) -> Vec<String> {
+    let dir = mods.to_owned();
+    tokio::task::spawn_blocking(move || {
+        let mut ids = Vec::new();
+        let Ok(entries) = std::fs::read_dir(&dir) else { return ids };
+        for entry in entries.flatten().take(2000) {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            if !name.ends_with(".jar") || name == INSTALLED_NAME {
+                continue;
+            }
+            let Some(id) = std::fs::File::open(&path).ok().and_then(|f| zip::ZipArchive::new(f).ok()).and_then(|mut z| {
+                let entry = z.by_name("fabric.mod.json").ok()?;
+                let json: serde_json::Value = serde_json::from_reader(std::io::Read::take(entry, 256 * 1024)).ok()?;
+                json.get("id")?.as_str().map(str::to_owned)
+            }) else {
+                continue;
+            };
+            ids.push(id);
+        }
+        ids
+    })
+    .await
+    .unwrap_or_default()
+}
+
+/// JVM-Argumente für die eingebauten Optimierungen: Hat der Spieler das Modul im
+/// TRS-Menü ausgeschaltet, lässt Fabric die eingebetteten Mods weg
+/// (`-Dfabric.debug.disableModIds`) – außer denen, die er selbst in den Mods-Ordner
+/// gelegt hat (die IDs sind gleich, Fabric würde sonst auch seine abschalten).
+pub async fn bundled_jvm_args(paths: &Paths, build: &Build, instance: &Instance) -> Vec<String> {
+    if build.bundled.is_empty() || !loader_matches("fabric", instance.loader.kind) {
+        return Vec::new();
+    }
+    if builtin_optimizations_enabled(&paths.instance_game_dir(&instance.id)).await {
+        return Vec::new();
+    }
+    let own = own_mod_ids(&content::content_dir(paths, &instance.id, ContentKind::Mod)).await;
+    disable_arg(&build.bundled, &own).into_iter().collect()
+}
+
+fn disable_arg(bundled: &[BundledMod], own: &[String]) -> Option<String> {
+    let ids: Vec<&str> = bundled
+        .iter()
+        .map(|b| b.id.as_str())
+        .filter(|id| !own.iter().any(|o| o == id))
+        // Mod-IDs sind [a-z0-9_-]; alles andere wäre ein kaputter Eintrag.
+        .filter(|id| !id.is_empty() && id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b'-'))
+        .collect();
+    (!ids.is_empty()).then(|| format!("-Dfabric.debug.disableModIds={}", ids.join(",")))
+}
+
 /// Datei mit den Farben des Launchers in der Instanz.
 fn theme_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
     paths.instance_game_dir(instance_id).join("config").join(THEME_FILE)
@@ -472,6 +563,83 @@ mod tests {
             group: None,
             overrides: InstanceOverrides { trs_client: enabled, ..Default::default() },
         }
+    }
+
+    #[test]
+    fn bundled_mods_come_from_the_manifest() {
+        let m = parse_manifest(
+            br#"{"version":"0.6.0","builds":[{"loader":"fabric","minecraft":["1.21.1"],"file":"trsclient-fabric-1.21.1.jar",
+                "requires":["fabric-api"],"bundled":[{"id":"lithium","name":"Lithium","version":"0.15.4+mc1.21.1"},{"id":"ferritecore"}]}]}"#,
+        )
+        .unwrap();
+        assert_eq!(m.builds[0].bundled.len(), 2);
+        assert_eq!(m.builds[0].bundled[0].name, "Lithium");
+        // Alte Manifeste ohne Feld: nichts eingebaut.
+        assert!(parse_manifest(MANIFEST_JSON.as_bytes()).unwrap().builds[0].bundled.is_empty());
+    }
+
+    #[test]
+    fn disable_argument_spares_the_players_own_copies() {
+        let bundled: Vec<BundledMod> = ["lithium", "ferritecore", "Bad Id", "modernfix"]
+            .iter()
+            .map(|id| BundledMod { id: (*id).into(), name: String::new(), version: String::new() })
+            .collect();
+        assert_eq!(
+            disable_arg(&bundled, &["ferritecore".into()]).as_deref(),
+            Some("-Dfabric.debug.disableModIds=lithium,modernfix")
+        );
+        assert_eq!(disable_arg(&bundled[..2], &["lithium".into(), "ferritecore".into()]), None);
+    }
+
+    #[tokio::test]
+    async fn builtin_optimizations_follow_the_module_switch() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let inst = instance("1.21.1", LoaderKind::Fabric, None);
+        let game = paths.instance_game_dir(&inst.id);
+        let build = Build {
+            loader: "fabric".into(),
+            minecraft: vec!["1.21.1".into()],
+            file: "trsclient-fabric-1.21.1.jar".into(),
+            requires: Vec::new(),
+            bundled: vec![
+                BundledMod { id: "lithium".into(), name: String::new(), version: String::new() },
+                BundledMod { id: "ferritecore".into(), name: String::new(), version: String::new() },
+            ],
+            sha256: None,
+            size: None,
+            from_channel: false,
+        };
+        let builds = [build.clone()];
+        // Keine Config: Modul an → Preset lässt beide weg, nichts wird abgeschaltet.
+        assert!(builtin_optimizations_enabled(&game).await);
+        assert_eq!(builtin_mod_ids(&paths, &builds, &inst).await, ["lithium", "ferritecore"]);
+        assert!(bundled_jvm_args(&paths, &build, &inst).await.is_empty());
+
+        // Im TRS-Menü ausgeschaltet; der Spieler hat FerriteCore selbst im Mods-Ordner.
+        std::fs::create_dir_all(game.join("config")).unwrap();
+        std::fs::write(
+            game.join("config/trsclient.json"),
+            r#"{"configVersion":2,"modules":{"builtinOptimizations":{"enabled":false}}}"#,
+        )
+        .unwrap();
+        let mods = content::content_dir(&paths, &inst.id, ContentKind::Mod);
+        std::fs::create_dir_all(&mods).unwrap();
+        {
+            use std::io::Write;
+            let mut zip = zip::ZipWriter::new(std::fs::File::create(mods.join("ferritecore-7.jar")).unwrap());
+            zip.start_file("fabric.mod.json", zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(br#"{"schemaVersion":1,"id":"ferritecore","version":"7.1.0"}"#).unwrap();
+            zip.finish().unwrap();
+        }
+        std::fs::write(mods.join("kaputt.jar"), b"kein zip").unwrap();
+        assert!(!builtin_optimizations_enabled(&game).await);
+        assert!(builtin_mod_ids(&paths, &builds, &inst).await.is_empty(), "Preset darf sie wieder installieren");
+        assert_eq!(bundled_jvm_args(&paths, &build, &inst).await, ["-Dfabric.debug.disableModIds=lithium"]);
+        // Forge-Instanz: nie (dort gibt es keine eingebauten Mods).
+        assert!(bundled_jvm_args(&paths, &build, &instance("1.21.1", LoaderKind::Forge, None)).await.is_empty());
+        // TRS Client in der Instanz aus: keine eingebauten Mods.
+        assert!(builtin_mod_ids(&paths, &builds, &instance("1.21.1", LoaderKind::Fabric, Some(false))).await.is_empty());
     }
 
     const MANIFEST_JSON: &str = r#"[

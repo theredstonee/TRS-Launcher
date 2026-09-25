@@ -30,6 +30,10 @@ How to write an entry:
 - **TRS Client: no more FPS cap while playing.** If Minecraft missed that its window got the focus back, the
   background limiter of the TRS Client could hold the running game at about 100 FPS. It now asks the system
   directly and never slows down the game you are playing.
+- **TRS Client: built-in optimizations (Fabric).** The TRS Client now brings free performance mods along – Lithium,
+  FerriteCore, ImmediatelyFast, ModernFix and BadOptimizations, wherever they exist for your Minecraft version – so
+  it is faster even without extra mods. If you install one of them yourself, the newer version is used. You can
+  switch them off in the TRS menu under Performance (takes effect at the next start through the TRS Launcher).
 
 ### Deutsch
 
@@ -45,6 +49,11 @@ How to write an entry:
 - **TRS Client: Keine FPS-Bremse mehr beim Spielen.** Hat Minecraft verpasst, dass sein Fenster wieder im
   Vordergrund ist, konnte die Hintergrund-Bremse des TRS Clients das laufende Spiel bei etwa 100 FPS halten. Sie
   fragt jetzt direkt beim System nach und bremst nie das Spiel, das du gerade spielst.
+- **TRS Client: Eingebaute Optimierungen (Fabric).** Der TRS Client bringt jetzt freie Leistungs-Mods gleich mit –
+  Lithium, FerriteCore, ImmediatelyFast, ModernFix und BadOptimizations, soweit es sie für deine Minecraft-Version
+  gibt – und ist damit auch ohne zusätzliche Mods schneller. Installierst du eine davon selbst, wird die neuere
+  Fassung benutzt. Abschalten kannst du sie im TRS-Menü unter Leistung (wirkt beim nächsten Start über den TRS
+  Launcher).
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

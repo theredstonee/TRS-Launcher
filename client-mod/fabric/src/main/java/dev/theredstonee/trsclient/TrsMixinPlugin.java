@@ -22,8 +22,12 @@ public final class TrsMixinPlugin implements IMixinConfigPlugin {
 	private static final String[] DETAIL_MIXINS = {"SkyMixin", "StarsMixin", "WeatherMixin", "FogMixin", "TextureAnimationMixin"};
 	private static final String[] DETAIL_MODS = {"optifabric", "sodium-extra", "sodiumextra"};
 
+	/** Benchmark „Vanilla“: nur die Bildzeit-Messung vor jedem Bild, sonst kein einziger TRS-Eingriff. */
+	private static final boolean BENCH_VANILLA = Boolean.getBoolean("trsclient.bench.vanilla");
+
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+		if (BENCH_VANILLA) return mixinClassName.endsWith(".FramePaceMixin");
 		for (String name : TEST_ONLY) {
 			if (mixinClassName.endsWith("." + name)) return Boolean.getBoolean("trsclient.autotest");
 		}

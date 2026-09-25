@@ -1,0 +1,1686 @@
+{
+ "1.14.4": [],
+ "1.15.2": [],
+ "1.16.2": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.16.5-0.6.6",
+   "file": "lithium-fabric-mc1.16.5-0.6.6.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.16.5-0.6.6/lithium-fabric-mc1.16.5-0.6.6.jar",
+   "sha512": "bb2dd085a6c5fcf86ba9a63d680fb5144a5788efe9c00a9417d978722dbb84163e47bb545c310869647924dad89bcfe2bbe04cd64476b304eada914083e5c094",
+   "size": 349400,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.6.6"
+  }
+ ],
+ "1.16.3": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.16.5-0.6.6",
+   "file": "lithium-fabric-mc1.16.5-0.6.6.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.16.5-0.6.6/lithium-fabric-mc1.16.5-0.6.6.jar",
+   "sha512": "bb2dd085a6c5fcf86ba9a63d680fb5144a5788efe9c00a9417d978722dbb84163e47bb545c310869647924dad89bcfe2bbe04cd64476b304eada914083e5c094",
+   "size": 349400,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.6.6"
+  }
+ ],
+ "1.16.4": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.16.5-0.6.6",
+   "file": "lithium-fabric-mc1.16.5-0.6.6.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.16.5-0.6.6/lithium-fabric-mc1.16.5-0.6.6.jar",
+   "sha512": "bb2dd085a6c5fcf86ba9a63d680fb5144a5788efe9c00a9417d978722dbb84163e47bb545c310869647924dad89bcfe2bbe04cd64476b304eada914083e5c094",
+   "size": 349400,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.6.6"
+  }
+ ],
+ "1.16.5": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.16.5-0.6.6",
+   "file": "lithium-fabric-mc1.16.5-0.6.6.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.16.5-0.6.6/lithium-fabric-mc1.16.5-0.6.6.jar",
+   "sha512": "bb2dd085a6c5fcf86ba9a63d680fb5144a5788efe9c00a9417d978722dbb84163e47bb545c310869647924dad89bcfe2bbe04cd64476b304eada914083e5c094",
+   "size": 349400,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.6.6"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "2.1.1-fabric",
+   "file": "ferritecore-2.1.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/3UkWIj4a/ferritecore-2.1.1-fabric.jar",
+   "sha512": "77881a04bc28fc409da30dd469fb59d2aae56baad667fe7a811d9b14ce0c255f6a1e5d67d26fb9c0527ba0e28522f073f12a0102f4ea9490bf80492311046422",
+   "size": 109960,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "2.1.1"
+  }
+ ],
+ "1.17": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.17.1-0.7.5",
+   "file": "lithium-fabric-mc1.17.1-0.7.5.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.17.1-0.7.5/lithium-fabric-mc1.17.1-0.7.5.jar",
+   "sha512": "8e8bf5ea7856773d48018b8a1fd3c34306794c79b914beda3466ac43daee53172f610fd39a62801834b4751d83a9b988ad1f3fc9c9bc2ad1787fba19626a684e",
+   "size": 444781,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.7.5"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "3.0.1",
+   "file": "ferritecore-3.0.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/3.0.1/ferritecore-3.0.1-fabric.jar",
+   "sha512": "da299e3de25d3f1cd601c73431014939a32ea1c495a5720d5125b502bd353299381941c72463f7dd1b3894a140df0bb9c78c64a006bea7a5f6f7f37919bae354",
+   "size": 101152,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "3.0.1"
+  }
+ ],
+ "1.17.1": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.17.1-0.7.5",
+   "file": "lithium-fabric-mc1.17.1-0.7.5.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.17.1-0.7.5/lithium-fabric-mc1.17.1-0.7.5.jar",
+   "sha512": "8e8bf5ea7856773d48018b8a1fd3c34306794c79b914beda3466ac43daee53172f610fd39a62801834b4751d83a9b988ad1f3fc9c9bc2ad1787fba19626a684e",
+   "size": 444781,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.7.5"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "3.0.3",
+   "file": "ferritecore-3.0.3-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/3.0.3/ferritecore-3.0.3-fabric.jar",
+   "sha512": "24f293baa8a493c7cd34d810694aef2fe398d1d1ecd6c5ab38ba1888563b8dd3628fe07026739f6840ebe17b894bb54e39344ab2c0f6bc4fcd9ed56ebae6f9e1",
+   "size": 103202,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "3.0.3"
+  }
+ ],
+ "1.18": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.18-0.7.6-rc1",
+   "file": "lithium-fabric-mc1.18-0.7.6-rc1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18-0.7.6-rc1/lithium-fabric-mc1.18-0.7.6-rc1.jar",
+   "sha512": "2396efef36aa280092479d10007be5de6589113cc10b57cf658fa85fc30f3135e0ef2c9172b55ed35ffb38553430795876db17fbd005aedcbf1105ca626a7594",
+   "size": 385473,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.7.6-rc1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "4.0.0",
+   "file": "ferritecore-4.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/4.0.0/ferritecore-4.0.0-fabric.jar",
+   "sha512": "2e5e5d03e21190bf1ebe5889a6387f001cfe8e7d6f90bff6d5f0d4fdfca1bd445c6ee1e5ec64207ba19df35364917b4f8e3a769cc5391ee77dbf81d579cd1e05",
+   "size": 109825,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "4.0.0"
+  }
+ ],
+ "1.18.1": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.18.1-0.7.8",
+   "file": "lithium-fabric-mc1.18.1-0.7.8.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18.1-0.7.8/lithium-fabric-mc1.18.1-0.7.8.jar",
+   "sha512": "21e6c5cbea05e2ebe05b09167b2c7613d441ff5c013560d07921a6a127a82e5573261d5c400c71955a40d52d94941fb816c33f59055a93e1854fed48701dde23",
+   "size": 449519,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.7.8"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "4.1.2",
+   "file": "ferritecore-4.1.2-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/4.1.2/ferritecore-4.1.2-fabric.jar",
+   "sha512": "55481188d960ad1426fde990ca75cde453fee596fd3c745a402a35620128d93657e3ba3b126ad58c31846918ccce17eea66f0167c3f6141ad877b9862ab9910c",
+   "size": 115546,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "4.1.2"
+  }
+ ],
+ "1.18.2": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.18.2-0.10.3",
+   "file": "lithium-fabric-mc1.18.2-0.10.3.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/ALnv7Npy/lithium-fabric-mc1.18.2-0.10.3.jar",
+   "sha512": "46d4cdaf627a20c61fbbbc055d6fbfc422b851d94288b6dd2296fc958c6b32d4d6955bc678e7b9ea9ae69f4a4a54e7b822c164fee849c9b5c7cde0c1c1595413",
+   "size": 555165,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.10.3"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "4.2.1-fabric",
+   "file": "ferritecore-4.2.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/4.2.1/ferritecore-4.2.1-fabric.jar",
+   "sha512": "066a5644191ee45abde5ad4bf7f1662f8aaef842ed24398e311a35d39861b6159fb55ccd18c6ad8940cabed3341c5163462e7c2895631a6d26945f67db326798",
+   "size": 119110,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "4.2.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.1.12+1.18.2",
+   "file": "ImmediatelyFast-1.1.12+1.18.2.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/D73h6MNI/ImmediatelyFast-1.1.12%2B1.18.2.jar",
+   "sha512": "479a0472a2669ad8159a57d0bc279001efb5c693d6b9b2e72b689a7108af27782f4e977d47db7208ac0f54cc5a00623f7b3949a65b3596b52aea83f88fce7f59",
+   "size": 180953,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.1.12"
+  }
+ ],
+ "1.19": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.19-0.8.1",
+   "file": "lithium-fabric-mc1.19-0.8.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.19-0.8.1/lithium-fabric-mc1.19-0.8.1.jar",
+   "sha512": "85dfa5e73ce8dbfd98a0bc27bd8b2ddf4285d0f20e77021f3184b815e8c2df2aa3366c52ce47e756c39d1ee3f8759d2f20744b5e5b0bf2d36b87cbee6a0b5d52",
+   "size": 475664,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.8.1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "5.0.0-fabric",
+   "file": "ferritecore-5.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/5.0.0-fabric/ferritecore-5.0.0-fabric.jar",
+   "sha512": "ea54167b9c054a7e486dc01113ee9fc6d3ed0e527cb2fe238f7f5ba5823ac18f4e7c70bf89d14c9845485ca881b757b7672cda610c7fac580fd55db7070d02b4",
+   "size": 119108,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "4.2.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.4.0+1.19.2-fabric",
+   "file": "ImmediatelyFast-Fabric-1.4.0+1.19.2.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/gPV1o5PO/ImmediatelyFast-Fabric-1.4.0%2B1.19.2.jar",
+   "sha512": "ab5e8ad4bbf1d42886184e38c6397bfe58ec7d15ad98e52f215bde8f6f9213980df9bd892b07482f04abba9c8fdd66a47372353430812b19a1ff1011e6bbfed8",
+   "size": 390584,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.4.0+1.19.2"
+  }
+ ],
+ "1.19.1": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.19.2-0.8.3",
+   "file": "lithium-fabric-mc1.19.2-0.8.3.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.19.2-0.8.3/lithium-fabric-mc1.19.2-0.8.3.jar",
+   "sha512": "d61b1a744fefd13a5ab032d4da6f9d723f008b4afe39863f6b47ae7901a91ed7d326d27bab6b6d2ff9d17447bf2f191c6431253c7973874b6ae17ffbfd71e2a9",
+   "size": 476626,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.8.3"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "5.0.0-fabric",
+   "file": "ferritecore-5.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/5.0.0-fabric/ferritecore-5.0.0-fabric.jar",
+   "sha512": "ea54167b9c054a7e486dc01113ee9fc6d3ed0e527cb2fe238f7f5ba5823ac18f4e7c70bf89d14c9845485ca881b757b7672cda610c7fac580fd55db7070d02b4",
+   "size": 119108,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "4.2.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.4.0+1.19.2-fabric",
+   "file": "ImmediatelyFast-Fabric-1.4.0+1.19.2.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/gPV1o5PO/ImmediatelyFast-Fabric-1.4.0%2B1.19.2.jar",
+   "sha512": "ab5e8ad4bbf1d42886184e38c6397bfe58ec7d15ad98e52f215bde8f6f9213980df9bd892b07482f04abba9c8fdd66a47372353430812b19a1ff1011e6bbfed8",
+   "size": 390584,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.4.0+1.19.2"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.1.4",
+   "file": "BadOptimizations-2.1.4-1.19.1-19.2.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/iULB5JCQ/BadOptimizations-2.1.4-1.19.1-19.2.jar",
+   "sha512": "d1a5387277a6b99391533fc4800eec6d844ae9f9554f11f9fa0f53f2b4175e7fba5ae4dfdf191dba103c151147bbf8647ec498d18d02399fb89c291f53186d84",
+   "size": 421318,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.1.4"
+  }
+ ],
+ "1.19.2": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.19.2-0.11.1",
+   "file": "lithium-fabric-mc1.19.2-0.11.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/m6sVgAi6/lithium-fabric-mc1.19.2-0.11.1.jar",
+   "sha512": "64646e098839d6c5caa47bbc4ece187986567273b1adcb87d2a85bcaa084859b6cc5484ecced545a583fe1e693f69f0184857f0f0074e64c2da436668d34e3b7",
+   "size": 639001,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.11.1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "5.0.3-fabric",
+   "file": "ferritecore-5.0.3-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/kwjHqfz7/ferritecore-5.0.3-fabric.jar",
+   "sha512": "efbea36712322c71aee547ebc71b3644947e40bfa01d721fce5d5ba2db4aa6867e6a76f43d46e33ae8a2672f300bfc5b96510e164b1dd09cfae9cba0a195252d",
+   "size": 119275,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "5.0.3"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.4.0+1.19.2-fabric",
+   "file": "ImmediatelyFast-Fabric-1.4.0+1.19.2.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/gPV1o5PO/ImmediatelyFast-Fabric-1.4.0%2B1.19.2.jar",
+   "sha512": "ab5e8ad4bbf1d42886184e38c6397bfe58ec7d15ad98e52f215bde8f6f9213980df9bd892b07482f04abba9c8fdd66a47372353430812b19a1ff1011e6bbfed8",
+   "size": 390584,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.4.0+1.19.2"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.1.4",
+   "file": "BadOptimizations-2.1.4-1.19.1-19.2.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/iULB5JCQ/BadOptimizations-2.1.4-1.19.1-19.2.jar",
+   "sha512": "d1a5387277a6b99391533fc4800eec6d844ae9f9554f11f9fa0f53f2b4175e7fba5ae4dfdf191dba103c151147bbf8647ec498d18d02399fb89c291f53186d84",
+   "size": 421318,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.1.4"
+  }
+ ],
+ "1.19.3": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.19.3-0.11.1",
+   "file": "lithium-fabric-mc1.19.3-0.11.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/53cwYYb1/lithium-fabric-mc1.19.3-0.11.1.jar",
+   "sha512": "920053ad9a72eab5cde10eaf8ddacdb672e3d3651e7e64b4b82f55c52a3fc3b4024097f05683c3cd1d44bbcb4566a4ae479011ecaa0e2061aef031a860495b0e",
+   "size": 638431,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.11.1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "5.1.0-fabric",
+   "file": "ferritecore-5.1.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/GHcKib6J/ferritecore-5.1.0-fabric.jar",
+   "sha512": "24b5790769a9da3d79a46435012bc6d0972042b874b195dc63aa911dcbcca29496c977477f6ca9e70a850432468e565490f75ba2730eb9ec4c304e03f48c1e1a",
+   "size": 120325,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "5.1.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.1.12+1.19.3",
+   "file": "ImmediatelyFast-1.1.12+1.19.3.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/fnLm3B23/ImmediatelyFast-1.1.12%2B1.19.3.jar",
+   "sha512": "19a333a9629712d6e897bcd8f9a5e412ea725d0148b9fd8a763de9cc8d948d8ddafb75f51d814b8342fbc03a45e56d42845164e2b16766467522b601c1cfc9d2",
+   "size": 180415,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.1.12"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.1.4",
+   "file": "BadOptimizations-2.1.4-1.19.3.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/FPQdPmAW/BadOptimizations-2.1.4-1.19.3.jar",
+   "sha512": "959ef6726e2e45e81de21fbbfda6e381b1c0fc046566008fc2e41da60f401f8483d3024838d8d2a3bfbc0c5704bfbddb00194cce3dbb3701a37752a06438e648",
+   "size": 421522,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.1.4"
+  }
+ ],
+ "1.19.4": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.19.4-0.11.1",
+   "file": "lithium-fabric-mc1.19.4-0.11.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/14hWYkog/lithium-fabric-mc1.19.4-0.11.1.jar",
+   "sha512": "f2bd271e30e5ed9f097d592db5e859208a1c6abe727dc51f83879b837c843b4f6453e99f1ca8d5225f896233ab8f7dbbb3300f10396d2a1cd2957937acfd1aa7",
+   "size": 639391,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.11.1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "5.2.0-fabric",
+   "file": "ferritecore-5.2.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/RbR7EG8T/ferritecore-5.2.0-fabric.jar",
+   "sha512": "56a4ac2ed002260ee451fa9d33169ddcd01473bf46eee97061666b13fa386cd23e15238a72729e55f32d81cce8ae049c80caabf1947ba998258282226289be0c",
+   "size": 124924,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "5.2.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.2.11+1.19.4-fabric",
+   "file": "ImmediatelyFast-Fabric-1.2.11+1.19.4.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/ezKTj0NE/ImmediatelyFast-Fabric-1.2.11%2B1.19.4.jar",
+   "sha512": "c7b3443406357bad283d2214f4f99ff8760a60c60c228b2e40acc33e37409be87c3e7eebd4d33f460dd2697a25188361f8869a96e5cb2d34422a6107248d2e85",
+   "size": 370128,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.2.11+1.19.4"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.1.4",
+   "file": "BadOptimizations-2.1.4-1.19.4.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/xhGlhCut/BadOptimizations-2.1.4-1.19.4.jar",
+   "sha512": "2455f656b056a1e3365a90079a03ef16c0a0bb10571f2ad10f0870f16c55cb32c838d0ecfadc35726b28ee768522dadb80cd3a43aeb878fadcd348405741ee75",
+   "size": 422943,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.1.4"
+  }
+ ],
+ "1.20.1": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.20.1-0.11.4-fabric",
+   "file": "lithium-fabric-mc1.20.1-0.11.4.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/iEcXOkz4/lithium-fabric-mc1.20.1-0.11.4.jar",
+   "sha512": "31938b7e849609892ffa1710e41f2e163d11876f824452540658c4b53cd13c666dbdad8d200989461932bd9952814c5943e64252530c72bdd5d8641775151500",
+   "size": 691483,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.11.4"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "6.0.1",
+   "file": "ferritecore-6.0.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/unerR5MN/ferritecore-6.0.1-fabric.jar",
+   "sha512": "9b7dc686bfa7937815d88c7bbc6908857cd6646b05e7a96ddbdcada328a385bd4ba056532cd1d7df9d2d7f4265fd48bd49ff683f217f6d4e817177b87f6bc457",
+   "size": 125197,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "6.0.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.5.5+1.20.4-fabric",
+   "file": "ImmediatelyFast-Fabric-1.5.5+1.20.4.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/iwYUrQJO/ImmediatelyFast-Fabric-1.5.5%2B1.20.4.jar",
+   "sha512": "8733e4f1fcd64581979f93f2580ae9f530e64ba21e90b2a46d4c1bdcb802e5a53a49a160e4dae06ec9e4d7829ea34715c9c9e1c2bfd7238b4de7fccfbc482ffd",
+   "size": 348818,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.5.5+1.20.4"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.25.2+mc1.20.1",
+   "file": "modernfix-fabric-5.25.2+mc1.20.1.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/rPmgLeZC/modernfix-fabric-5.25.2%2Bmc1.20.1.jar",
+   "sha512": "878e39d182767ffd08ad6a3539fae780739129db133abe02b9b73dc3df6e1ac9ddbe509620356b0aae5e7bfbed535d0e18741703334317a16fefef820269da2d",
+   "size": 545175,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.25.2+mc1.20.1"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.20.1.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/DIugITgU/BadOptimizations-2.4.1-1.20.1.jar",
+   "sha512": "5e02d9c5a5bc3dccfccbfac4809cda4eb755c015060063b696e92568e0be3d8354a01f6ac5dae99bd27111b7e20bb680512287119459ad069dcf3e7d17cace0f",
+   "size": 460234,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.20.2": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.20.2-0.12.0",
+   "file": "lithium-fabric-mc1.20.2-0.12.0.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/qdzL5Hkg/lithium-fabric-mc1.20.2-0.12.0.jar",
+   "sha512": "88df5f96ee5a3011dbb2aae011b5c85166f9942906e4ebc58ebb7b452f01e18020b970aad3facebd02eb67ac4beea03de333414cf66172d817fa5cae50e1c73d",
+   "size": 688442,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.12.0"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "6.0.1",
+   "file": "ferritecore-6.0.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/unerR5MN/ferritecore-6.0.1-fabric.jar",
+   "sha512": "9b7dc686bfa7937815d88c7bbc6908857cd6646b05e7a96ddbdcada328a385bd4ba056532cd1d7df9d2d7f4265fd48bd49ff683f217f6d4e817177b87f6bc457",
+   "size": 125197,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "6.0.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.5.5+1.20.4-fabric",
+   "file": "ImmediatelyFast-Fabric-1.5.5+1.20.4.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/iwYUrQJO/ImmediatelyFast-Fabric-1.5.5%2B1.20.4.jar",
+   "sha512": "8733e4f1fcd64581979f93f2580ae9f530e64ba21e90b2a46d4c1bdcb802e5a53a49a160e4dae06ec9e4d7829ea34715c9c9e1c2bfd7238b4de7fccfbc482ffd",
+   "size": 348818,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.5.5+1.20.4"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.10.1+mc1.20.2",
+   "file": "modernfix-fabric-5.10.1+mc1.20.2.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/rRcwOsPa/modernfix-fabric-5.10.1%2Bmc1.20.2.jar",
+   "sha512": "d6d690f474120e4cd89472b76f4af14388eeb3ba86fc8818068d7a3a47d24b7504a29256c7076d6dcee38c8d7a2f544b9744afebd35fca965535157ce4e892aa",
+   "size": 544965,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.10.1+mc1.20.2"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.20.2-20.4.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/2j7ZpIyw/BadOptimizations-2.4.1-1.20.2-20.4.jar",
+   "sha512": "0a1516a6547f1f2d5180d13cebdecd44c66aad454bd66a265de9b0555505cf7eb4cc318f0cb6b5392aba42a81b708544c20fcb2c4f8fdfc07739c8533d7e7dea",
+   "size": 306487,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.20.3": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.20.3-0.12.1",
+   "file": "lithium-fabric-mc1.20.3-0.12.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/WzQmxYRa/lithium-fabric-mc1.20.3-0.12.1.jar",
+   "sha512": "3145bef2795cb934af069e6bdc23accdd44432aaadb18d6278d84d44a27db7fc0eb97df501193552b5cf08c913b91a67ed272e93f7689a96a071ae07673a5860",
+   "size": 716022,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.12.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.5.5+1.20.4-fabric",
+   "file": "ImmediatelyFast-Fabric-1.5.5+1.20.4.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/iwYUrQJO/ImmediatelyFast-Fabric-1.5.5%2B1.20.4.jar",
+   "sha512": "8733e4f1fcd64581979f93f2580ae9f530e64ba21e90b2a46d4c1bdcb802e5a53a49a160e4dae06ec9e4d7829ea34715c9c9e1c2bfd7238b4de7fccfbc482ffd",
+   "size": 348818,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.5.5+1.20.4"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.10.0+mc1.20.3",
+   "file": "modernfix-fabric-5.10.0+mc1.20.3.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/vxDb5tOq/modernfix-fabric-5.10.0%2Bmc1.20.3.jar",
+   "sha512": "073547a897fb5353672a371738f623999d927472c7fd9025ee1d699d206c88f2b54b3d5ceb1da25b3473a9fce15dab617bb5401f6eb524129445b5e35e934c16",
+   "size": 601319,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.10.0+mc1.20.3"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.20.2-20.4.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/2j7ZpIyw/BadOptimizations-2.4.1-1.20.2-20.4.jar",
+   "sha512": "0a1516a6547f1f2d5180d13cebdecd44c66aad454bd66a265de9b0555505cf7eb4cc318f0cb6b5392aba42a81b708544c20fcb2c4f8fdfc07739c8533d7e7dea",
+   "size": 306487,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.20.4": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.20.4-0.12.1",
+   "file": "lithium-fabric-mc1.20.4-0.12.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/nMhjKWVE/lithium-fabric-mc1.20.4-0.12.1.jar",
+   "sha512": "70bea154eaafb2e4b5cb755cdb12c55d50f9296ab4c2855399da548f72d6d24c0a9f77e3da2b2ea5f47fa91d1258df4d08c6c6f24a25da887ed71cea93502508",
+   "size": 716022,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.12.1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "6.0.3-fabric",
+   "file": "ferritecore-6.0.3-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/pguEMpy9/ferritecore-6.0.3-fabric.jar",
+   "sha512": "709ab6362dd1dcc432edd1e6c33aafba6f2d12be701bc14911107340f8ac2466779c4e57d8a303f0350c46478f23008e6eeca78e4eadedd0bdee63d4ae72ed9a",
+   "size": 125100,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "6.0.3"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.5.5+1.20.4-fabric",
+   "file": "ImmediatelyFast-Fabric-1.5.5+1.20.4.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/iwYUrQJO/ImmediatelyFast-Fabric-1.5.5%2B1.20.4.jar",
+   "sha512": "8733e4f1fcd64581979f93f2580ae9f530e64ba21e90b2a46d4c1bdcb802e5a53a49a160e4dae06ec9e4d7829ea34715c9c9e1c2bfd7238b4de7fccfbc482ffd",
+   "size": 348818,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.5.5+1.20.4"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.17.0+mc1.20.4",
+   "file": "modernfix-fabric-5.17.0+mc1.20.4.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/CV2Vtn5m/modernfix-fabric-5.17.0%2Bmc1.20.4.jar",
+   "sha512": "8404bc285100746ac76467094b2b4feb132e046272780c4c8a6d4bd4336fad70073734438e9f37bf7e46ffa65dbf2f06ab10232b09c3911c08215dfcf71fca0e",
+   "size": 458056,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.17.0+mc1.20.4"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.20.2-20.4.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/2j7ZpIyw/BadOptimizations-2.4.1-1.20.2-20.4.jar",
+   "sha512": "0a1516a6547f1f2d5180d13cebdecd44c66aad454bd66a265de9b0555505cf7eb4cc318f0cb6b5392aba42a81b708544c20fcb2c4f8fdfc07739c8533d7e7dea",
+   "size": 306487,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.20.5": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.20.5-0.12.5",
+   "file": "lithium-fabric-mc1.20.5-0.12.5.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/p25IJhj0/lithium-fabric-mc1.20.5-0.12.5.jar",
+   "sha512": "2a5d82f1794ffa2b9dcb6449d1d4b44b11469e1bbd40cac7fa2f7a48656b657a0453d0613251540123790794c5e5fb51cc4235c0550f36833ef0cd99a0108d75",
+   "size": 684743,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.12.5"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "6.1.1-fabric",
+   "file": "ferritecore-6.1.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/i9RcCdZv/ferritecore-6.1.1-fabric.jar",
+   "sha512": "d07ebedcab096389ceaf17dd7463c165c9455c24300d494e1f394c3e4ed2d43686e35a4fd87280eda2bf4c96695da3e0183a3474016c8d7d13b56c6e04c2acef",
+   "size": 118182,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "6.1.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.3.0+1.20.6-fabric",
+   "file": "ImmediatelyFast-Fabric-1.3.0+1.20.6.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/ISvVqTAo/ImmediatelyFast-Fabric-1.3.0%2B1.20.6.jar",
+   "sha512": "f3caddb282f28109bc37daf20edf13062766c0525afef0cb6719247aeb2bae3ad8c6c1ce1b5af874eabfce568cd376f3e3d6c09e593d8c731f5be14a30f5e4c2",
+   "size": 247953,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.3.0+1.20.6"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.17.0+mc1.20.5",
+   "file": "modernfix-fabric-5.17.0+mc1.20.5.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/tmmvhxCF/modernfix-fabric-5.17.0%2Bmc1.20.5.jar",
+   "sha512": "8fc32d3e06297d8a802b35947b55905c04e0f77eaf917f0df1dfb28c9753ef710bb0653a817f367f2f714e1366548d1f5b82c10b942826f8982d70f09f15a53a",
+   "size": 442677,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.17.0+mc1.20.5"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.20.5-20.6.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/bhv2XUvN/BadOptimizations-2.4.1-1.20.5-20.6.jar",
+   "sha512": "567a4f602825a9b1985a305b3b7bcfbcd994b499f3b1b2877027a83b829c08094f01768f96f376dc72e55d97dfeeb58ad0b985baa8cfffc77af70ba70cb7b321",
+   "size": 283558,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.20.6": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.20.6-0.12.5",
+   "file": "lithium-fabric-mc1.20.6-0.12.5.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/5a3sPIH2/lithium-fabric-mc1.20.6-0.12.5.jar",
+   "sha512": "bbb3869773db7a0f13db6d5ee68f94578b1f573816a92db45d34a4bca0967e228a5c0f683d36277bc801c6965eb3280606d9aaca7ed92e8567f9f894338e8936",
+   "size": 684742,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.12.5"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "6.1.1-fabric",
+   "file": "ferritecore-6.1.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/i9RcCdZv/ferritecore-6.1.1-fabric.jar",
+   "sha512": "d07ebedcab096389ceaf17dd7463c165c9455c24300d494e1f394c3e4ed2d43686e35a4fd87280eda2bf4c96695da3e0183a3474016c8d7d13b56c6e04c2acef",
+   "size": 118182,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "6.1.1"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.3.0+1.20.6-fabric",
+   "file": "ImmediatelyFast-Fabric-1.3.0+1.20.6.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/ISvVqTAo/ImmediatelyFast-Fabric-1.3.0%2B1.20.6.jar",
+   "sha512": "f3caddb282f28109bc37daf20edf13062766c0525afef0cb6719247aeb2bae3ad8c6c1ce1b5af874eabfce568cd376f3e3d6c09e593d8c731f5be14a30f5e4c2",
+   "size": 247953,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.3.0+1.20.6"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.18.0+mc1.20.6",
+   "file": "modernfix-fabric-5.18.0+mc1.20.6.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/dUdr6D7I/modernfix-fabric-5.18.0%2Bmc1.20.6.jar",
+   "sha512": "9ecafd3e46404d85abd63ada4730757f01b3fd7296927c47d28115ba4f32dbf5f9c57a528709cf42717531cfc7ab842ffa4f8688aa7979609122410bd0fdb415",
+   "size": 456037,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.18.0+mc1.20.6"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.20.5-20.6.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/bhv2XUvN/BadOptimizations-2.4.1-1.20.5-20.6.jar",
+   "sha512": "567a4f602825a9b1985a305b3b7bcfbcd994b499f3b1b2877027a83b829c08094f01768f96f376dc72e55d97dfeeb58ad0b985baa8cfffc77af70ba70cb7b321",
+   "size": 283558,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.1-0.15.2-fabric",
+   "file": "lithium-fabric-0.15.2+mc1.21.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/Yu6L8EnD/lithium-fabric-0.15.2%2Bmc1.21.1.jar",
+   "sha512": "0422a6694c997aa91ce01fa038bd5d46d7d8d64f0a5abae7420e5a2a10fdcd1e6cf9033f1d95b402a9ba0f07c8c7cf5cfcd3e50ae7c4fe2ac82f39a58583012e",
+   "size": 797184,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.15.2+mc1.21.1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "7.0.0-fabric",
+   "file": "ferritecore-7.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/wmIZ4wP4/ferritecore-7.0.0-fabric.jar",
+   "sha512": "0f2f9b5aebd71ef3064fc94df964296ac6ee8ea12221098b9df037bdcaaca7bccd473c981795f4d57ff3d49da3ef81f13a42566880b9f11dc64645e9c8ad5d4f",
+   "size": 117333,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "7.0.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.6.14+1.21.1-fabric",
+   "file": "ImmediatelyFast-Fabric-1.6.14+1.21.1.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/7XKnsIC8/ImmediatelyFast-Fabric-1.6.14%2B1.21.1.jar",
+   "sha512": "d3f2748ac2b51548157d0acf9d44e99ab786beab5322cbc452ad7999b187ead2a4ee6bb2aee1a179dc72dbb7bb2b3945b38c529acee454fe4b526648eefab0b4",
+   "size": 340166,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.6.14+1.21.1"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.19.1+mc1.21",
+   "file": "modernfix-fabric-5.19.1+mc1.21.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/i8GSONFm/modernfix-fabric-5.19.1%2Bmc1.21.jar",
+   "sha512": "68b4c5f4be272461a25e61924f6a8b15e50e3c47cef3bcc7866435d186b915574c8cc8adb96116a36fe48f7cf9a3f8e442f9cb85184e50b4cb4348dc4ebb0c84",
+   "size": 421567,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.19.1+mc1.21"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.1.4",
+   "file": "BadOptimizations-2.1.4-1.21.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/XYBqWKD2/BadOptimizations-2.1.4-1.21.jar",
+   "sha512": "6f12d5d7b75ed38f006e4c1e176a2308bf78e6bb5d49601152d7a8fa8e576b3e884bd04fcfb976b82fb67a62408e7efcff3ecc6844cea62b07d4b0538b9f0549",
+   "size": 91292,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.1.4"
+  }
+ ],
+ "1.21.1": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.1-0.15.4-fabric",
+   "file": "lithium-fabric-0.15.4+mc1.21.1.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/N08Z8wog/lithium-fabric-0.15.4%2Bmc1.21.1.jar",
+   "sha512": "182064b00e6315e2255b857eaab8eb759e6b042ebd4cc8b855ff0d93f875a5a7188fac49f878d7b29d4ef7e6b6341190ad7f6f6f39f4a6d2c62003468b08e4c6",
+   "size": 797454,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.15.4+mc1.21.1"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "7.0.3-fabric",
+   "file": "ferritecore-7.0.3-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/sOzRw3CG/ferritecore-7.0.3-fabric.jar",
+   "sha512": "3ad31620fac4ff44327dc7dedbe162b2d978f3f246dc16255a6e400ce9592a0d326fe36a626f3c1bf30a11f813093cbb4dcc107af039cff724d0cdf648541fdf",
+   "size": 123450,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "7.0.3"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.6.14+1.21.1-fabric",
+   "file": "ImmediatelyFast-Fabric-1.6.14+1.21.1.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/7XKnsIC8/ImmediatelyFast-Fabric-1.6.14%2B1.21.1.jar",
+   "sha512": "d3f2748ac2b51548157d0acf9d44e99ab786beab5322cbc452ad7999b187ead2a4ee6bb2aee1a179dc72dbb7bb2b3945b38c529acee454fe4b526648eefab0b4",
+   "size": 340166,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.6.14+1.21.1"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.25.1+mc1.21.1",
+   "file": "modernfix-fabric-5.25.1+mc1.21.1.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/NnNX8LBn/modernfix-fabric-5.25.1%2Bmc1.21.1.jar",
+   "sha512": "dc67d6e023e1fcdeaf7837917c477cba212c611dfc2463c6ea021319c644087c79b477e0ea8194e113ddd7332fd5c6d82baa47c291eaac7f4a86252507b4e19f",
+   "size": 471258,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.25.1+mc1.21.1"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.1.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/S2qthD5S/BadOptimizations-2.4.1-1.21.1.jar",
+   "sha512": "2b66428bd98bd5ec0e09f2ec6af801cefb7b9b99cc4f0993daeaffe8d0ccc5ee0c2a73e9f38d4f92540ead0181704d2c9e946837ec05cf710fc3b20fce3b0cac",
+   "size": 283566,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.2": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.3-0.14.6-fabric",
+   "file": "lithium-fabric-0.14.6+mc1.21.3.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/W0Cc7ZVd/lithium-fabric-0.14.6%2Bmc1.21.3.jar",
+   "sha512": "412f9fb94931b0fde8ef03facde319518f19425be17c1dedba568d400d90dcc3cadcb69cd53dc8d8bfc3178aad480e2b5aac21cd81475aead93d9c9e640518bb",
+   "size": 744541,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.14.6+mc1.21.3"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.7.2+1.21.3-fabric",
+   "file": "ImmediatelyFast-Fabric-1.7.2+1.21.3.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/2zcdbf00/ImmediatelyFast-Fabric-1.7.2%2B1.21.3.jar",
+   "sha512": "1ee3feef88d090b8b8e9a39668993ed33787655bfd617e40ce92525e967908cb7ae1cb4146a72b675d52b62540acbaa091601fbd613e06ac64d48807ec33c9a9",
+   "size": 224895,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.7.2+1.21.3"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/KsC2V6FQ/BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "sha512": "e097cbaf9df0bd82b95d34261f6bd811182c4e2d527e0c352bcb8e7de76ef0e740b8a9f4fa25da24c4bdcf01a8e8bdd9f59b0cd9919d4e9890244ba4f874b4db",
+   "size": 282678,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.3": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.3-0.14.6-fabric",
+   "file": "lithium-fabric-0.14.6+mc1.21.3.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/W0Cc7ZVd/lithium-fabric-0.14.6%2Bmc1.21.3.jar",
+   "sha512": "412f9fb94931b0fde8ef03facde319518f19425be17c1dedba568d400d90dcc3cadcb69cd53dc8d8bfc3178aad480e2b5aac21cd81475aead93d9c9e640518bb",
+   "size": 744541,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.14.6+mc1.21.3"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "7.1.0-hotfix-fabric",
+   "file": "ferritecore-7.1.0-hotfix-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/a3QXXGz2/ferritecore-7.1.0-hotfix-fabric.jar",
+   "sha512": "ae1ab30beb5938643cf2ae7b8220769f2c917e3f5441e46e9bc900295348c0a541a325c30b8dfc38039205620d872c27809acdc6741351f08e4c8edc36ae2bcc",
+   "size": 107124,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "7.1.0-hotfix"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.7.2+1.21.3-fabric",
+   "file": "ImmediatelyFast-Fabric-1.7.2+1.21.3.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/2zcdbf00/ImmediatelyFast-Fabric-1.7.2%2B1.21.3.jar",
+   "sha512": "1ee3feef88d090b8b8e9a39668993ed33787655bfd617e40ce92525e967908cb7ae1cb4146a72b675d52b62540acbaa091601fbd613e06ac64d48807ec33c9a9",
+   "size": 224895,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.7.2+1.21.3"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/KsC2V6FQ/BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "sha512": "e097cbaf9df0bd82b95d34261f6bd811182c4e2d527e0c352bcb8e7de76ef0e740b8a9f4fa25da24c4bdcf01a8e8bdd9f59b0cd9919d4e9890244ba4f874b4db",
+   "size": 282678,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.4": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.4-0.15.3-fabric",
+   "file": "lithium-fabric-0.15.3+mc1.21.4.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/u8pHPXJl/lithium-fabric-0.15.3%2Bmc1.21.4.jar",
+   "sha512": "b8b541c0e968571c8972872b342e34b92573bc9210d455dc1349589f30a67a90d930dbfd99b176ab9b110350ceb53e11118378dc13a35e83a9090826627bdac0",
+   "size": 797555,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.15.3+mc1.21.4"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "7.1.3-fabric",
+   "file": "ferritecore-7.1.3-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/7KqeXPRS/ferritecore-7.1.3-fabric.jar",
+   "sha512": "74487d6efa6e973914665d0fdf366156c47e26a0e52a492ec5d5b68d7ea331535fa2cb46eb95a8846e3b2f0318bbcfdff3885df0bfce1bc83696b211d95e9863",
+   "size": 109879,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "7.1.3"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.8.7+1.21.4-fabric",
+   "file": "ImmediatelyFast-Fabric-1.8.7+1.21.4.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/gF6yVXr9/ImmediatelyFast-Fabric-1.8.7%2B1.21.4.jar",
+   "sha512": "d87936711818545a92b932897a0dd9f3e692470ce9acf3e576b4989bf5c8f8579833b762aa2394f8f05e16b8a613fde666897cd88adccdd29e529d31eb3f8a66",
+   "size": 332486,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.8.7+1.21.4"
+  },
+  {
+   "id": "modernfix",
+   "name": "ModernFix",
+   "version": "5.20.3+mc1.21.4",
+   "file": "modernfix-fabric-5.20.3+mc1.21.4.jar",
+   "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/ZGxQddYr/modernfix-fabric-5.20.3%2Bmc1.21.4.jar",
+   "sha512": "ae49114c92a048c9ce79e197fc4df028e186cf13546e710f72247382fa8076f0b70d6aa3224951f4a36c886ca236f099a011f20b021a2b0d1a75c631da4d7d52",
+   "size": 436498,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/embeddedt/ModernFix",
+   "modVersion": "5.20.3+mc1.21.4"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/KsC2V6FQ/BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "sha512": "e097cbaf9df0bd82b95d34261f6bd811182c4e2d527e0c352bcb8e7de76ef0e740b8a9f4fa25da24c4bdcf01a8e8bdd9f59b0cd9919d4e9890244ba4f874b4db",
+   "size": 282678,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.5": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.5-0.16.3-fabric",
+   "file": "lithium-fabric-0.16.3+mc1.21.5.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/xcELvp6R/lithium-fabric-0.16.3%2Bmc1.21.5.jar",
+   "sha512": "42d1538caa913bb35e76208efc14bce3e89fb01e8dbd7cf2a3b8576377d83d2d2f63a207cb7b6f081e20b00e5edff8d01e94a52d89e8c9ce9e3dfecc3fac4d78",
+   "size": 791052,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.16.3+mc1.21.5"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "8.0.4-fabric",
+   "file": "ferritecore-8.0.4-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/LdlksamY/ferritecore-8.0.4-fabric.jar",
+   "sha512": "8be6c49aa5900f434c082f505a48cf6bafc70bb43e9b9d4e0e42524605d2d22f968bc3a0c0048190a5296fd3cc696d8c3a7329dc8a022792f920e83ece47e5b6",
+   "size": 82475,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "8.0.4"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.9.7+1.21.5-fabric",
+   "file": "ImmediatelyFast-Fabric-1.9.7+1.21.5.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/AJh4ziDx/ImmediatelyFast-Fabric-1.9.7%2B1.21.5.jar",
+   "sha512": "9d44c50c1223f3014891c569d9fa2e64fecbb598df2727672cb89d20a69c8941c3c30de31100f3dc027f277ecf125ae3f238742fc4a1697001108547fed2e54d",
+   "size": 228032,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.9.7+1.21.5"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/KsC2V6FQ/BadOptimizations-2.4.1-1.21.2-21.5.jar",
+   "sha512": "e097cbaf9df0bd82b95d34261f6bd811182c4e2d527e0c352bcb8e7de76ef0e740b8a9f4fa25da24c4bdcf01a8e8bdd9f59b0cd9919d4e9890244ba4f874b4db",
+   "size": 282678,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.6": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.6-0.17.0-fabric",
+   "file": "lithium-fabric-0.17.0+mc1.21.6.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/XWGBHYcB/lithium-fabric-0.17.0%2Bmc1.21.6.jar",
+   "sha512": "a8d6a8b69ae2b10dd0cf8f8149260d5bdbd2583147462bad03380014edd857852972b967d97df69728333d8836b1e9db8997712ea26365ddb8a05b8c845c6534",
+   "size": 792413,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.17.0+mc1.21.6"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "8.0.4-fabric",
+   "file": "ferritecore-8.0.4-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/LdlksamY/ferritecore-8.0.4-fabric.jar",
+   "sha512": "8be6c49aa5900f434c082f505a48cf6bafc70bb43e9b9d4e0e42524605d2d22f968bc3a0c0048190a5296fd3cc696d8c3a7329dc8a022792f920e83ece47e5b6",
+   "size": 82475,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "8.0.4"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.10.3+1.21.6-fabric",
+   "file": "ImmediatelyFast-Fabric-1.10.3+1.21.6.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/9JPEk4KN/ImmediatelyFast-Fabric-1.10.3%2B1.21.6.jar",
+   "sha512": "5ce151a063a5c95b1192cb98af6e6281b463c64dc3ce0f5eeeced1b7f8cc856b54ec5fba965ba71c54d3e9aca175b77406d101b19ef61ad6373884d0beec0996",
+   "size": 194731,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.10.3+1.21.6"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.6-21.8.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/9s4ZpGFq/BadOptimizations-2.4.1-1.21.6-21.8.jar",
+   "sha512": "74b460bb0792e00b5da906f17dba004232268074800c20fd1f365a3550723b9966c068eb66549b1cf74934ab3a84ae31a1b8f1359d3e41d2e179f577dda679a9",
+   "size": 283791,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.7": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.7-0.18.0-fabric",
+   "file": "lithium-fabric-0.18.0+mc1.21.7.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/77EtzYFA/lithium-fabric-0.18.0%2Bmc1.21.7.jar",
+   "sha512": "afaf6ddaf0cbae2050d725efd438c4c98141d738a637f0f058dcbaff077ef85af801e2dca138ce9f7f8ba3a169dc6af1c9f56736b255c6ea13363f8a1be8ecdb",
+   "size": 792413,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.18.0+mc1.21.7"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "8.0.4-fabric",
+   "file": "ferritecore-8.0.4-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/LdlksamY/ferritecore-8.0.4-fabric.jar",
+   "sha512": "8be6c49aa5900f434c082f505a48cf6bafc70bb43e9b9d4e0e42524605d2d22f968bc3a0c0048190a5296fd3cc696d8c3a7329dc8a022792f920e83ece47e5b6",
+   "size": 82475,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "8.0.4"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.11.2+1.21.7-fabric",
+   "file": "ImmediatelyFast-Fabric-1.11.2+1.21.7.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/WbU84LUp/ImmediatelyFast-Fabric-1.11.2%2B1.21.7.jar",
+   "sha512": "af54156c14c6b5b6d4b65e2e8b1350c1c4d59a040fc5807d419bc4aaefc9d10aeb77671c6f91aa263325b57c85787021087ceebb8ff6ad95cb71b4f62694f8a6",
+   "size": 194728,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.11.2+1.21.7"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.6-21.8.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/9s4ZpGFq/BadOptimizations-2.4.1-1.21.6-21.8.jar",
+   "sha512": "74b460bb0792e00b5da906f17dba004232268074800c20fd1f365a3550723b9966c068eb66549b1cf74934ab3a84ae31a1b8f1359d3e41d2e179f577dda679a9",
+   "size": 283791,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.8": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.8-0.18.1-fabric",
+   "file": "lithium-fabric-0.18.1+mc1.21.8.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/qxIL7Kb8/lithium-fabric-0.18.1%2Bmc1.21.8.jar",
+   "sha512": "ef3e0820c7c831c352cbd5afa4a1f4ff73db0fa3c4e4428ba35ad2faeb8e7bce8ae4805a04934be82099012444a70c0a2cf2049f2af95fe688ca84d94d1c4672",
+   "size": 839866,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.18.1+mc1.21.8"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "8.0.4-fabric",
+   "file": "ferritecore-8.0.4-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/LdlksamY/ferritecore-8.0.4-fabric.jar",
+   "sha512": "8be6c49aa5900f434c082f505a48cf6bafc70bb43e9b9d4e0e42524605d2d22f968bc3a0c0048190a5296fd3cc696d8c3a7329dc8a022792f920e83ece47e5b6",
+   "size": 82475,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "8.0.4"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.12.6+1.21.8-fabric",
+   "file": "ImmediatelyFast-Fabric-1.12.6+1.21.8.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/zihthChu/ImmediatelyFast-Fabric-1.12.6%2B1.21.8.jar",
+   "sha512": "ad7c0190b952d4714a77437d91fc58eb7f25955f1c442873b29db060791210c80d0abc6d5de0313cced4d5274bebf72b9460af9f17037488362adb17baf151f1",
+   "size": 300649,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.12.6+1.21.8"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.6-21.8.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/9s4ZpGFq/BadOptimizations-2.4.1-1.21.6-21.8.jar",
+   "sha512": "74b460bb0792e00b5da906f17dba004232268074800c20fd1f365a3550723b9966c068eb66549b1cf74934ab3a84ae31a1b8f1359d3e41d2e179f577dda679a9",
+   "size": 283791,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.9": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.9-0.19.2-fabric",
+   "file": "lithium-fabric-0.19.2+mc1.21.9.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/L1sSIxFm/lithium-fabric-0.19.2%2Bmc1.21.9.jar",
+   "sha512": "ecbebb18f82e589c1d24056b6cfe6a923acb8fea5dd038ed931568db7dc8dad1cfe4b42f9c0f7752ba45f39d4f0cab219deb61fcb54bcc7252c9fe34afc2549a",
+   "size": 830020,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.19.2+mc1.21.9"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "8.1.0-fabric",
+   "file": "ferritecore-8.1.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/bPLllEgi/ferritecore-8.1.0-fabric.jar",
+   "sha512": "0596c83d69867380260e20500e5ab184415a1178317464c2b7c8c68a87db435fbe7a80b22b4f50b56558d6506f7dbb35ad7bda16f46eab5b79d38f0d726f08f5",
+   "size": 82450,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "8.1.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.13.6+1.21.10-fabric",
+   "file": "ImmediatelyFast-Fabric-1.13.6+1.21.10.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/9hztj0xA/ImmediatelyFast-Fabric-1.13.6%2B1.21.10.jar",
+   "sha512": "8a27787f33b524c53d30d95b2fb2eb074d8041d88aebcc7969f25c588a87008c4cd3e09048932a1ff628eb5abc20529173ebbe0ccee92a77bc9ffa5313244db8",
+   "size": 304330,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.13.6+1.21.10"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.3.3",
+   "file": "BadOptimizations-2.3.3-1.21.9-21.10.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/6uGJM3JZ/BadOptimizations-2.3.3-1.21.9-21.10.jar",
+   "sha512": "537ac9bbf9674e6bca4a984bf6638e3912f8426889645485d3903a4af2a1681f4bf117677a4abd5f6bda0ed1700ac7adf83ba84194c66f09fed7849e7bd1e6dc",
+   "size": 270646,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.3.3"
+  }
+ ],
+ "1.21.10": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.10-0.20.1-fabric",
+   "file": "lithium-fabric-0.20.1+mc1.21.10.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/NsswKiwi/lithium-fabric-0.20.1%2Bmc1.21.10.jar",
+   "sha512": "79b2892d123f3bb12649927dd8fccc25c955ff38a19f3aba7cd0180c4cf5506c2a76d49418b13050f90bba7bb59f3623af06e8a275e2ae8c63808084043902bb",
+   "size": 835455,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.20.1+mc1.21.10"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "8.1.0-fabric",
+   "file": "ferritecore-8.1.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/bPLllEgi/ferritecore-8.1.0-fabric.jar",
+   "sha512": "0596c83d69867380260e20500e5ab184415a1178317464c2b7c8c68a87db435fbe7a80b22b4f50b56558d6506f7dbb35ad7bda16f46eab5b79d38f0d726f08f5",
+   "size": 82450,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "8.1.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.13.6+1.21.10-fabric",
+   "file": "ImmediatelyFast-Fabric-1.13.6+1.21.10.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/9hztj0xA/ImmediatelyFast-Fabric-1.13.6%2B1.21.10.jar",
+   "sha512": "8a27787f33b524c53d30d95b2fb2eb074d8041d88aebcc7969f25c588a87008c4cd3e09048932a1ff628eb5abc20529173ebbe0ccee92a77bc9ffa5313244db8",
+   "size": 304330,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.13.6+1.21.10"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.10.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/dOFYYhIv/BadOptimizations-2.4.1-1.21.10.jar",
+   "sha512": "f6a96fb3cbd8db2dc6af402c591f0c6f8259e8df9d7799c55e013fb00503b7585ffb45b6f05d7d4cf9b270af7c625bd74d17e8bd72d2b2e8d1141bde90b35268",
+   "size": 280916,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "1.21.11": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc1.21.11-0.21.4-fabric",
+   "file": "lithium-fabric-0.21.4+mc1.21.11.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/Ow7wA0kG/lithium-fabric-0.21.4%2Bmc1.21.11.jar",
+   "sha512": "f14a5c3d2fad786347ca25083f902139694f618b7c103947f2fd067a7c5ee88a63e1ef8926f7d693ea79ed7d00f57317bae77ef9c2d630bf5ed01ac97a752b94",
+   "size": 900462,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.21.4+mc1.21.11"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "8.2.0-fabric",
+   "file": "ferritecore-8.2.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/Ii0gP3D8/ferritecore-8.2.0-fabric.jar",
+   "sha512": "3210926a82eb32efd9bcebabe2f6c053daf5c4337eebc6d5bacba96d283510afbde646e7e195751de795ec70a2ea44fef77cb54bf22c8e57bb832d6217418869",
+   "size": 80138,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "8.2.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.14.3+1.21.11-fabric",
+   "file": "ImmediatelyFast-Fabric-1.14.3+1.21.11.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/4EwhsTu7/ImmediatelyFast-Fabric-1.14.3%2B1.21.11.jar",
+   "sha512": "2564cb28259352c3aa5759aceca62667de08a7860a40910dad40a043af851a074b2d75cef50b9fa6f1971febb3a5ecebe4067cbd4b60e63ef711b85f4bc21407",
+   "size": 302709,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.14.3+1.21.11"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-1.21.11.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/Q3Dusz2j/BadOptimizations-2.4.1-1.21.11.jar",
+   "sha512": "ff91f1866f21a13a32d379080b8efb5d4e07577591228c1d307b34d052696c9bdcbaf7706208dfbac56abc2c29482a15edcbf11f69fc0a01e459c4c20a5c2c28",
+   "size": 269545,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "26.1": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc26.1.2-0.24.7-fabric",
+   "file": "lithium-fabric-0.24.7+mc26.1.2.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/Oqq8TOAV/lithium-fabric-0.24.7%2Bmc26.1.2.jar",
+   "sha512": "37240bdbf93c19fdc6aa632d89223639f0ef9d923ee1793b33d624946b0482cc972834049ed07d71db3494e16c9de68e755937aac7c4ac5d7291bd38c1425899",
+   "size": 912821,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.24.7+mc26.1.2"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "9.0.0-fabric",
+   "file": "ferritecore-9.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/d5ddUdiB/ferritecore-9.0.0-fabric.jar",
+   "sha512": "d81fa97e11784c19d42f89c2f433831d007603dd7193cee45fa177e4a6a9c52b384b198586e04a0f7f63cd996fed713322578bde9a8db57e1188854ae5cbe584",
+   "size": 72677,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "9.0.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.15.3+26.1-fabric",
+   "file": "ImmediatelyFast-Fabric-1.15.3+26.1.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/xOA9hbpf/ImmediatelyFast-Fabric-1.15.3%2B26.1.jar",
+   "sha512": "b665037aee8e76e330f068f640b340b97ce8c0c0e940dfccda8a5b00f772dfa9b2d20594bb950e4f2595b359ad3c27190a4d998da28d4507a9747ab507980d11",
+   "size": 310057,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.15.3+26.1"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-26.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/gjIvugXc/BadOptimizations-2.4.1-26.1-fabric.jar",
+   "sha512": "efba144dec306767da3aceb4b179e093daa60bc4c0ba6295d64c166092b8f62e4a4cc63a5bae76fb4c608f1dffa8ecd70c6884e48c804915e1b37ef042e31a99",
+   "size": 61928,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "26.1.1": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc26.1.2-0.24.7-fabric",
+   "file": "lithium-fabric-0.24.7+mc26.1.2.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/Oqq8TOAV/lithium-fabric-0.24.7%2Bmc26.1.2.jar",
+   "sha512": "37240bdbf93c19fdc6aa632d89223639f0ef9d923ee1793b33d624946b0482cc972834049ed07d71db3494e16c9de68e755937aac7c4ac5d7291bd38c1425899",
+   "size": 912821,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.24.7+mc26.1.2"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "9.0.0-fabric",
+   "file": "ferritecore-9.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/d5ddUdiB/ferritecore-9.0.0-fabric.jar",
+   "sha512": "d81fa97e11784c19d42f89c2f433831d007603dd7193cee45fa177e4a6a9c52b384b198586e04a0f7f63cd996fed713322578bde9a8db57e1188854ae5cbe584",
+   "size": 72677,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "9.0.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.15.3+26.1-fabric",
+   "file": "ImmediatelyFast-Fabric-1.15.3+26.1.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/xOA9hbpf/ImmediatelyFast-Fabric-1.15.3%2B26.1.jar",
+   "sha512": "b665037aee8e76e330f068f640b340b97ce8c0c0e940dfccda8a5b00f772dfa9b2d20594bb950e4f2595b359ad3c27190a4d998da28d4507a9747ab507980d11",
+   "size": 310057,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.15.3+26.1"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-26.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/gjIvugXc/BadOptimizations-2.4.1-26.1-fabric.jar",
+   "sha512": "efba144dec306767da3aceb4b179e093daa60bc4c0ba6295d64c166092b8f62e4a4cc63a5bae76fb4c608f1dffa8ecd70c6884e48c804915e1b37ef042e31a99",
+   "size": 61928,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "26.1.2": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc26.1.2-0.24.7-fabric",
+   "file": "lithium-fabric-0.24.7+mc26.1.2.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/Oqq8TOAV/lithium-fabric-0.24.7%2Bmc26.1.2.jar",
+   "sha512": "37240bdbf93c19fdc6aa632d89223639f0ef9d923ee1793b33d624946b0482cc972834049ed07d71db3494e16c9de68e755937aac7c4ac5d7291bd38c1425899",
+   "size": 912821,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.24.7+mc26.1.2"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "9.0.0-fabric",
+   "file": "ferritecore-9.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/d5ddUdiB/ferritecore-9.0.0-fabric.jar",
+   "sha512": "d81fa97e11784c19d42f89c2f433831d007603dd7193cee45fa177e4a6a9c52b384b198586e04a0f7f63cd996fed713322578bde9a8db57e1188854ae5cbe584",
+   "size": 72677,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "9.0.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.15.3+26.1-fabric",
+   "file": "ImmediatelyFast-Fabric-1.15.3+26.1.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/xOA9hbpf/ImmediatelyFast-Fabric-1.15.3%2B26.1.jar",
+   "sha512": "b665037aee8e76e330f068f640b340b97ce8c0c0e940dfccda8a5b00f772dfa9b2d20594bb950e4f2595b359ad3c27190a4d998da28d4507a9747ab507980d11",
+   "size": 310057,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.15.3+26.1"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-26.1-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/gjIvugXc/BadOptimizations-2.4.1-26.1-fabric.jar",
+   "sha512": "efba144dec306767da3aceb4b179e093daa60bc4c0ba6295d64c166092b8f62e4a4cc63a5bae76fb4c608f1dffa8ecd70c6884e48c804915e1b37ef042e31a99",
+   "size": 61928,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "26.2": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc26.2-0.25.3-fabric",
+   "file": "lithium-fabric-0.25.3+mc26.2.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/f7vZ0VWU/lithium-fabric-0.25.3%2Bmc26.2.jar",
+   "sha512": "148b638f3c6229fbaf487120a2344a0af5e411a5aa6533d5db9d75da0a8c0d8304f63eb4cca13f4d03b2c9b4c23d559dd74c1d832422ef8a3087bd005e62a8bd",
+   "size": 912850,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.25.3+mc26.2"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "9.0.0-fabric",
+   "file": "ferritecore-9.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/d5ddUdiB/ferritecore-9.0.0-fabric.jar",
+   "sha512": "d81fa97e11784c19d42f89c2f433831d007603dd7193cee45fa177e4a6a9c52b384b198586e04a0f7f63cd996fed713322578bde9a8db57e1188854ae5cbe584",
+   "size": 72677,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "9.0.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.16.5+26.2-fabric",
+   "file": "ImmediatelyFast-Fabric-1.16.5+26.2.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/pMWERcSu/ImmediatelyFast-Fabric-1.16.5%2B26.2.jar",
+   "sha512": "5836b089072c0fd796613d42c3bd01c7e401b6ad53de80328bb9d74d585de9be0ff0cfc4d6ffa1ed41008750573b0525eff8c064162a2f724ad16817a8fdaf22",
+   "size": 100500,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.16.5+26.2"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-26.2-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/JmPs4Wie/BadOptimizations-2.4.1-26.2-fabric.jar",
+   "sha512": "f91c409d4ce68d027ac0a11b6d2828c5f6d057e749ff0ce596f3a84a65fc1e3905b08f4d97a21a7302e2bfaf4ff865907272bd9c7ffa8487701b22e40dfe2f97",
+   "size": 60709,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ],
+ "26.3": [
+  {
+   "id": "lithium",
+   "name": "Lithium",
+   "version": "mc26.3-0.26.1-fabric",
+   "file": "lithium-fabric-0.26.1+mc26.3.jar",
+   "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/WXHRsMRl/lithium-fabric-0.26.1%2Bmc26.3.jar",
+   "sha512": "acbb9b037a203f005e03a20bf1d9866019384abb5ad27664808a12b919639a2501ecb52f8f0d77d27e1409935b0dbdbb70e01ac466480c0ae421ee403f649c59",
+   "size": 915429,
+   "license": "LGPL-3.0-only",
+   "source": "https://github.com/CaffeineMC/lithium",
+   "modVersion": "0.26.1+mc26.3"
+  },
+  {
+   "id": "ferritecore",
+   "name": "FerriteCore",
+   "version": "9.0.0-fabric",
+   "file": "ferritecore-9.0.0-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/d5ddUdiB/ferritecore-9.0.0-fabric.jar",
+   "sha512": "d81fa97e11784c19d42f89c2f433831d007603dd7193cee45fa177e4a6a9c52b384b198586e04a0f7f63cd996fed713322578bde9a8db57e1188854ae5cbe584",
+   "size": 72677,
+   "license": "MIT",
+   "source": "https://github.com/malte0811/FerriteCore",
+   "modVersion": "9.0.0"
+  },
+  {
+   "id": "immediatelyfast",
+   "name": "ImmediatelyFast",
+   "version": "1.17.1+26.3-fabric",
+   "file": "ImmediatelyFast-Fabric-1.17.1+26.3.jar",
+   "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/3MP9UR23/ImmediatelyFast-Fabric-1.17.1%2B26.3.jar",
+   "sha512": "8e139589fd995bce3d485a34d92a07243964212f7ed2e4fc2f6de5b9a74d0f59b03252e7ce40c64e006cf3e21bed5de27b830d33ef048b286e041f6178ad8428",
+   "size": 99586,
+   "license": "LGPL-3.0-or-later",
+   "source": "https://github.com/RaphiMC/ImmediatelyFast",
+   "modVersion": "1.17.1+26.3"
+  },
+  {
+   "id": "badoptimizations",
+   "name": "BadOptimizations",
+   "version": "2.4.1",
+   "file": "BadOptimizations-2.4.1-26.3-fabric.jar",
+   "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/Sp0ctspw/BadOptimizations-2.4.1-26.3-fabric.jar",
+   "sha512": "048a0979807afb96bae7801b7445746c985081bb55fab9b80b286036234a9869cc84f83c40ab77a2600b7e06ad44178ee17935b706b751c9b38f87ebc6e180f8",
+   "size": 60760,
+   "license": "MIT",
+   "source": "https://github.com/ItsThosea/BadOptimizations",
+   "modVersion": "2.4.1"
+  }
+ ]
+}

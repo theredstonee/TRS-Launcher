@@ -78,6 +78,8 @@ public final class TrsModules {
 	public final Module entityCulling;
 	public final Module particles;
 	public final Module worldDetails;
+	/** Eingebaute Optimierungen (freie Leistungs-Mods per Jar-in-Jar, nur Fabric) – wirkt beim nächsten Start. */
+	public final Module builtinOptimizations;
 
 	public final NumberSetting dynamicFpsUnfocused;
 	public final NumberSetting dynamicFpsMinimized;
@@ -459,6 +461,11 @@ public final class TrsModules {
 				"Switch off details that cost frames: sky, stars, fog, rain and snow, animated textures "
 						+ "(water, lava, fire). Only what works cleanly in this version.", false));
 
+		builtinOptimizations = registry.register(new Module("builtinOptimizations", "Built-in Optimizations",
+				"Free performance mods built into the TRS Client (Lithium, FerriteCore, ImmediatelyFast, ModernFix, "
+						+ "BadOptimizations – where available for this version). Your own newer versions take priority. "
+						+ "Switching off takes effect at the next start through the TRS Launcher.", true));
+
 		redstoneSignal.icon("strength").category(Category.REDSTONE);
 		redstoneOverlay.icon("digits").category(Category.REDSTONE);
 		redstoneClock.icon("wave").category(Category.REDSTONE);
@@ -467,6 +474,12 @@ public final class TrsModules {
 		entityCulling.icon("cull").category(Category.PERFORMANCE);
 		particles.icon("sparkle").category(Category.PERFORMANCE);
 		worldDetails.icon("cloud").category(Category.PERFORMANCE);
+		builtinOptimizations.icon("chip").category(Category.PERFORMANCE).availableWhen(new java.util.concurrent.Callable<Boolean>() {
+			@Override
+			public Boolean call() {
+				return dev.theredstonee.trsclient.core.perf.BundledMods.get().available();
+			}
+		});
 		for (Module m : new Module[]{fpsBoost, dynamicFps, entityCulling, particles, worldDetails}) m.profiled();
 		clips.icon("record").category(Category.MISC);
 

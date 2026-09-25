@@ -62,6 +62,8 @@ public final class AutoTest {
 
 	public static void installIfRequested() {
 		if (!Boolean.getBoolean("trsclient.autotest")) return;
+		// -PtrsAutotestOnly=realbench: nur der realistische Benchmark (eigener Ablauf, ohne Menü-Tests)
+		if (RealBenchRunner.installIfRequested()) return;
 		TrsClient.LOGGER.info("[Autotest] aktiv");
 		MinecraftForge.EVENT_BUS.register(new AutoTest());
 	}

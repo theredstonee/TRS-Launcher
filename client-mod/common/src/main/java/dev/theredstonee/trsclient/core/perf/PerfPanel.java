@@ -255,4 +255,46 @@ final class PerfPanel implements ModulePanel {
 			return y == start ? y : y + 6;
 		}
 	}
+
+	/** Seite „Eingebaute Optimierungen“: welche Mods eingebaut sind und ob sie in dieser Sitzung laufen. */
+	static final class Bundled implements ModulePanel {
+		private final Module module;
+
+		Bundled(Module module) {
+			this.module = module;
+		}
+
+		@Override
+		public int draw(Canvas c, Hits hits, int x, int y, int w, int mx, int my, Runnable click) {
+			Theme t = Theme.get();
+			int textW = Math.min(w, 420);
+			BundledMods bundled = BundledMods.get();
+			boolean anyRunning = false;
+			for (BundledMods.Entry e : bundled.entries()) {
+				BundledMods.State state = bundled.state(e);
+				String text;
+				int color = t.textDim;
+				switch (state) {
+					case ACTIVE:
+						text = I18n.tr("perf.bundled.active", e.name, e.version);
+						color = ColorMath.lerp(t.text, t.dustOn, 0.5f);
+						anyRunning = true;
+						break;
+					case OTHER_VERSION:
+						text = I18n.tr("perf.bundled.other", e.name, bundled.runningVersion(e));
+						color = t.text;
+						break;
+					default:
+						text = I18n.tr("perf.bundled.off", e.name, e.version);
+						break;
+				}
+				y = Paint.paragraph(c, text, x, y, textW, LINE, color);
+			}
+			// Umschalten wirkt erst beim nächsten Start (über den TRS Launcher).
+			if (module.isEnabled() != anyRunning && !bundled.entries().isEmpty()) {
+				y = Paint.paragraph(c, I18n.tr("perf.bundled.restart"), x, y + 2, textW, LINE, t.dustOn);
+			}
+			return y + 6;
+		}
+	}
 }

@@ -294,7 +294,7 @@ public final class ModMenu extends UiScreen {
 		int total = 0;
 		List<Module> all = host.modules().registry.all();
 		for (int i = 0; i < all.size(); i++) {
-			if (!host.supports(all.get(i))) continue;
+			if (!shown(all.get(i))) continue;
 			total++;
 			if (all.get(i).isEnabled()) active++;
 		}
@@ -305,10 +305,15 @@ public final class ModMenu extends UiScreen {
 		Redstone.keycap(c, x, footerY + 14, host.menuKeyLabel(), w);
 	}
 
+	/** Modul im Menü zeigen: vom Loader unterstützt und in diesem Build vorhanden. */
+	private boolean shown(Module m) {
+		return host.supports(m) && m.available();
+	}
+
 	private boolean hasModules(Category cat) {
 		List<Module> all = host.modules().registry.all();
 		for (int i = 0; i < all.size(); i++) {
-			if (all.get(i).category() == cat && host.supports(all.get(i))) return true;
+			if (all.get(i).category() == cat && shown(all.get(i))) return true;
 		}
 		return false;
 	}
@@ -337,7 +342,7 @@ public final class ModMenu extends UiScreen {
 		List<Module> all = host.modules().registry.all();
 		for (int i = 0; i < all.size(); i++) {
 			Module m = all.get(i);
-			if (!host.supports(m)) continue;
+			if (!shown(m)) continue;
 			if (!query.isEmpty()) {
 				if (m.matches(query)) out.add(m);
 				continue;

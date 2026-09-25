@@ -64,6 +64,7 @@ public final class Performance {
 		for (Module module : new Module[]{m.dynamicFps, m.entityCulling, m.particles, m.worldDetails}) {
 			ModulePanel.Registry.set(module, new PerfPanel.Notice(this, module));
 		}
+		ModulePanel.Registry.set(m.builtinOptimizations, new PerfPanel.Bundled(m.builtinOptimizations));
 	}
 
 	/** Vanilla-Optionen dieser Version (sobald Minecraft sie geladen hat). */

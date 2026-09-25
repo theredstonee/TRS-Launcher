@@ -603,6 +603,14 @@ impl Launcher {
             platform::total_memory_mb(),
         )?;
 
+        // Eingebaute Optimierungen des TRS Clients im Menü abgeschaltet: Fabric lässt sie weg.
+        if instance.overrides.trs_client != Some(false)
+            && let Some(build) = client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version)
+        {
+            let extra = client_mod::bundled_jvm_args(&self.paths, build, instance).await;
+            launch::insert_jvm_args(&mut command, &prepared, extra);
+        }
+
         let launcher = Arc::clone(self);
         let id = instance.id.clone();
         let sink = self.games.sink();

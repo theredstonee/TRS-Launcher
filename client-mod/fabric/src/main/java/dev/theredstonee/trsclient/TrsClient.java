@@ -91,6 +91,12 @@ public final class TrsClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		instance = this;
+		// Benchmark „Vanilla“ (-PtrsBenchVanilla): TRS Client bleibt ganz aus, nur der Messablauf läuft.
+		if (Boolean.getBoolean("trsclient.bench.vanilla")) {
+			LOGGER.info("TRS Client aus (Benchmark Vanilla)");
+			AutoTest.installIfRequested();
+			return;
+		}
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		Theme.loadFrom(FabricLoader.getInstance().getConfigDir());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(FabricLoader.getInstance().getConfigDir());
@@ -126,6 +132,9 @@ public final class TrsClient implements ClientModInitializer {
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> FabricLoader.getInstance().isModLoaded(id),
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FABRIC, minecraft, message -> LOGGER.info(message), true);
+		// Eingebaute Optimierungen (Jar-in-Jar): welche Fassung lädt Fabric gerade?
+		dev.theredstonee.trsclient.core.perf.BundledMods.setLoaded(id -> FabricLoader.getInstance().getModContainer(id)
+				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse(null));
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert – {} Module, Config {} ({})",
