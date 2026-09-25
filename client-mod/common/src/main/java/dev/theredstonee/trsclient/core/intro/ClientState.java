@@ -16,11 +16,17 @@ import java.util.ArrayList;
  *   Datei des Launchers und das Konto.</li>
  * </ul>
  * Neuinstallation (noch keine {@code trsclient.json}): Einführung offen, nichts „NEU“. Update von 0.5.x (Datei da,
- * aber ohne diesen Teil): Einführung gilt als erledigt („schon eingerichtet“), Neues seit 0.5.0 wird markiert.
+ * aber ohne diesen Teil): Einführung ebenfalls offen (einmal für alle – auch wer schon spielt, lernt die neuen
+ * Bereiche kennen), Neues seit 0.5.0 wird zusätzlich markiert. Hat das TRS-Konto sie schon auf einem anderen PC
+ * erledigt oder übersprungen, kommt sie über den Sync als erledigt an ({@link #ACCOUNT}).
  */
 public final class ClientState implements ConfigPart {
 	public static final String FINISHED = "finished";
 	public static final String SKIPPED = "skipped";
+	/**
+	 * Veraltet: Frühe Testversionen werteten ein Update von 0.5.x als „schon eingerichtet“. Dieser Stand zählt nicht
+	 * mehr als erledigt – die Einführung erscheint dann (einmal) doch.
+	 */
 	public static final String EXISTING = "existing";
 	/** Auf einem anderen PC/in einer anderen Instanz mit demselben TRS-Konto erledigt. */
 	public static final String ACCOUNT = "account";
@@ -140,12 +146,14 @@ public final class ClientState implements ConfigPart {
 	public void read(TrsConfig config) {
 		TrsConfig.ClientStateData d = config.clientState;
 		if (d == null) {
+			// Update von 0.5.x (Module schon eingestellt) oder Neuinstallation: die Einführung ist in beiden Fällen
+			// offen; nur die „NEU“-Markierungen unterscheiden sich.
 			boolean upgrade = config.modules != null && !config.modules.isEmpty();
-			introDone = upgrade;
-			introHow = upgrade ? EXISTING : null;
+			introDone = false;
+			introHow = null;
 			introAt = 0;
 			introPack = null;
-			welcomeShown = upgrade;
+			welcomeShown = false;
 			lookTheme = lookAccent = lookLanguage = null;
 			lookAt = 0;
 			fpsMode = null;
@@ -153,10 +161,12 @@ public final class ClientState implements ConfigPart {
 			revision++;
 			return;
 		}
-		introDone = Boolean.TRUE.equals(d.introDone);
 		introHow = clean(d.introHow, 16);
-		introAt = d.introAt == null ? 0 : Math.max(0, d.introAt);
-		introPack = clean(d.introPack, 24);
+		// „existing“ (frühe Testversionen: Update galt als eingerichtet) zählt nicht als erledigt.
+		introDone = Boolean.TRUE.equals(d.introDone) && !countsAsOpen(introHow);
+		if (!introDone) introHow = null;
+		introAt = introDone && d.introAt != null ? Math.max(0, d.introAt) : 0;
+		introPack = introDone ? clean(d.introPack, 24) : null;
 		welcomeShown = Boolean.TRUE.equals(d.welcomeShown);
 		lookTheme = clean(d.lookTheme, 32);
 		lookAccent = clean(d.lookAccent, 32);
@@ -183,6 +193,11 @@ public final class ClientState implements ConfigPart {
 		d.newBaseline = news.baseline();
 		d.newSeen = new ArrayList<String>(news.seen());
 		config.clientState = d;
+	}
+
+	/** Gilt dieser „Wie erledigt“-Stand als noch offen (Einführung muss noch kommen)? */
+	public static boolean countsAsOpen(String how) {
+		return EXISTING.equals(how);
 	}
 
 	/** Nur harmlose Kennungen ({@code [A-Za-z0-9_-]}), sonst null. */

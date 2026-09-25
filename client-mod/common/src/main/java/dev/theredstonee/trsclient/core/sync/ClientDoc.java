@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import dev.theredstonee.trsclient.core.config.ModuleConfig;
 import dev.theredstonee.trsclient.core.config.TrsConfig;
+import dev.theredstonee.trsclient.core.intro.ClientState;
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.ModuleRegistry;
 
@@ -406,7 +407,7 @@ public final class ClientDoc {
 
 	/** Intro-Abschnitt aus dem Client-Zustand (null = nichts zu melden). */
 	public static JsonObject intro(TrsConfig.ClientStateData cs) {
-		if (cs == null || !Boolean.TRUE.equals(cs.introDone)) return null;
+		if (cs == null || !Boolean.TRUE.equals(cs.introDone) || ClientState.countsAsOpen(cs.introHow)) return null;
 		JsonObject o = new JsonObject();
 		o.addProperty("done", true);
 		if (cs.introHow != null) o.addProperty("how", cs.introHow);

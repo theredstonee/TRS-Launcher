@@ -6,6 +6,7 @@ import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.ModulePacks;
 import dev.theredstonee.trsclient.core.module.NewMarkers;
 import dev.theredstonee.trsclient.core.module.NewSince;
+import dev.theredstonee.trsclient.core.module.Setting;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +47,7 @@ class IntroLogicTest {
 		m.registry.apply(old);
 		NewMarkers news = m.clientState.news();
 		assertEquals(NewSince.LEGACY_BASELINE, news.baseline());
-		assertTrue(m.clientState.introDone());
+		assertFalse(m.clientState.introDone(), "die Einführung kommt auch nach einem Update (einmal)");
 		assertFalse(news.hasNew(m.zoom), "0.1.0 ist alt");
 		assertFalse(news.isNew(m.trsOnline), "das Modul selbst ist alt");
 		assertTrue(news.hasNew(m.trsOnline), "aber es hat eine neue Einstellung");
@@ -66,6 +67,87 @@ class IntroLogicTest {
 		again.registry.apply(saved);
 		assertFalse(again.clientState.news().hasNew(again.trsOnline));
 		assertEquals(Arrays.asList("trsOnline.sync"), saved.clientState.newSeen);
+	}
+
+	@Test
+	void everyModuleAndSettingHasARelease() {
+		TrsModules m = new TrsModules();
+		for (Module module : m.registry.all()) {
+			assertNotNull(NewSince.of(module.id()), "NewSince fehlt für Modul " + module.id());
+			assertTrue(NewSince.compare(NewSince.of(module.id()), NewSince.latest()) <= 0);
+			for (Setting s : module.settings()) {
+				String since = NewSince.of(NewMarkers.id(module, s));
+				// Einstellungen ohne Eintrag gibt es seit ihrem Modul; mit Eintrag nie älter als das Modul.
+				if (since != null) {
+					assertTrue(NewSince.compare(since, NewSince.of(module.id())) >= 0, NewMarkers.id(module, s));
+				}
+			}
+		}
+		for (String extra : NewSince.extras("fpsBoost")) assertNotNull(NewSince.of(extra));
+	}
+
+	@Test
+	void upgradeMarksEverythingNewInThisRelease() {
+		TrsModules m = new TrsModules();
+		TrsConfig old = new TrsConfig();
+		old.modules.put("fps", new dev.theredstonee.trsclient.core.config.ModuleConfig());
+		m.registry.apply(old);
+		NewMarkers news = m.clientState.news();
+		// Neue Module (samt ihrer Einstellungen) …
+		assertTrue(news.isNew(m.menuStyle));
+		assertTrue(news.isNew(m.menuStyle, m.menuPause));
+		assertTrue(news.isNew(m.menuStyle, m.menuWorlds));
+		assertTrue(news.isNew(m.builtinOptimizations));
+		// … ein neuer Bereich auf einer alten Seite (Grafik-Modus auf „FPS-Boost“) markiert die Kachel …
+		assertFalse(news.isNew(m.fpsBoost));
+		assertTrue(news.hasNew(m.fpsBoost));
+		assertTrue(news.badge(NewSince.FPS_MODE));
+		// … Menü-Bereiche und die neue Taste.
+		for (String id : new String[]{NewSince.MENU_WARDROBE, NewSince.MENU_ACCOUNTS, NewSince.MENU_FRIENDS,
+				NewSince.MENU_CLIPS, NewSince.MENU_PACKS, NewSince.KEY_WARDROBE}) {
+			assertTrue(news.isNew(id), id);
+		}
+		// Alte Bereiche bleiben ohne Schild.
+		assertFalse(news.hasNew(m.zoom));
+		assertFalse(news.isNew("menu:unknown"));
+
+		// Seite „FPS-Boost“ geöffnet: Kachel sofort ohne Schild, der Grafik-Modus bis zum Verlassen.
+		news.opened(m.fpsBoost);
+		assertFalse(news.hasNew(m.fpsBoost));
+		assertTrue(news.badge(NewSince.FPS_MODE));
+		news.closed();
+		assertFalse(news.badge(NewSince.FPS_MODE));
+
+		// Menü-Bereich geöffnet: sofort weg (kein Nachleuchten); zweites Mal ändert nichts.
+		assertTrue(news.markSeen(NewSince.MENU_WARDROBE));
+		assertFalse(news.isNew(NewSince.MENU_WARDROBE));
+		assertFalse(news.badge(NewSince.MENU_WARDROBE));
+		assertFalse(news.markSeen(NewSince.MENU_WARDROBE));
+
+		// Taste in der Einführung gezeigt: gesehen, Schild bleibt bis die Einführung zu ist.
+		assertTrue(news.shown(NewSince.KEY_WARDROBE));
+		assertTrue(news.badge(NewSince.KEY_WARDROBE));
+		assertFalse(news.shown(NewSince.KEY_WARDROBE));
+		news.closed();
+		assertFalse(news.badge(NewSince.KEY_WARDROBE));
+
+		// Bleibt über Speichern/Laden erhalten.
+		TrsModules again = new TrsModules();
+		again.registry.apply(m.registry.capture());
+		NewMarkers loaded = again.clientState.news();
+		assertFalse(loaded.isNew(NewSince.MENU_WARDROBE));
+		assertFalse(loaded.hasNew(again.fpsBoost));
+		assertTrue(loaded.isNew(NewSince.MENU_FRIENDS));
+		assertTrue(loaded.hasNew(again.menuStyle));
+	}
+
+	@Test
+	void freshInstallMarksNoMenuAreas() {
+		TrsModules m = new TrsModules();
+		m.registry.apply(new TrsConfig());
+		assertFalse(m.clientState.news().isNew(NewSince.MENU_WARDROBE));
+		assertFalse(m.clientState.news().badge(NewSince.KEY_WARDROBE));
+		assertFalse(m.clientState.news().hasNew(m.fpsBoost));
 	}
 
 	@Test

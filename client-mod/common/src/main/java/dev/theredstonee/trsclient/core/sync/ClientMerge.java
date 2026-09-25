@@ -120,9 +120,11 @@ public final class ClientMerge {
 		TrsConfig.ClientStateData newCs = copy(cs);
 		boolean csChanged = false;
 		JsonObject rIntro = ClientDoc.object(remote, ClientDoc.INTRO);
+		// „existing“ (frühe Testversionen: Update von 0.5.x galt als eingerichtet) zählt nicht – die Einführung
+		// kommt dann einmal für alle.
 		boolean remoteDone = rIntro != null && rIntro.get("done") != null && rIntro.get("done").isJsonPrimitive()
-				&& rIntro.get("done").getAsBoolean();
-		boolean localDone = Boolean.TRUE.equals(cs.introDone);
+				&& rIntro.get("done").getAsBoolean() && !ClientState.countsAsOpen(str(rIntro, "how", 16));
+		boolean localDone = Boolean.TRUE.equals(cs.introDone) && !ClientState.countsAsOpen(cs.introHow);
 		if (remoteDone && !localDone) {
 			newCs.introDone = true;
 			newCs.introHow = ClientState.ACCOUNT;

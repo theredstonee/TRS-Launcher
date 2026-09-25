@@ -4,6 +4,7 @@ import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.module.KeySetting;
 import dev.theredstonee.trsclient.core.module.Module;
 import dev.theredstonee.trsclient.core.module.ModulePacks;
+import dev.theredstonee.trsclient.core.module.NewSince;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.perf.GameOptions;
 import dev.theredstonee.trsclient.core.perf.Performance;
@@ -19,6 +20,7 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
 import dev.theredstonee.trsclient.core.ui.menu.MenuHost;
+import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
 import dev.theredstonee.trsclient.core.ui.menu.PacksPage;
 
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ public final class IntroUi extends UiScreen {
 	private static final String[] ACCENTS = {"redstone", "lamp", "emerald", "lapis", "amethyst"};
 	/** TRS-Tasten des Schritts „Tastenbelegung“ (Reihenfolge der Anzeige). */
 	static final String[] TRS_KEYS = {"key.trsclient.menu", "key.trsclient.zoom", "key.trsclient.freelook",
-			"key.trsclient.emoteWheel", "key.trsclient.saveClip", "key.trsclient.toggleRecording"};
+			"key.trsclient.emoteWheel", NewSince.KEY_WARDROBE, "key.trsclient.saveClip", "key.trsclient.toggleRecording"};
 	private static final int HEADER_H = 30;
 	private static final int FOOTER_H = 28;
 	private static final int PAD = 12;
@@ -146,6 +148,8 @@ public final class IntroUi extends UiScreen {
 		ModulePacks.Pack pack = packs.selected();
 		if (pack != null) packs.applySelected();
 		modules.clientState.markIntro(ClientState.FINISHED, pack == null ? null : pack.id, System.currentTimeMillis());
+		// Die Modul-Pakete hat man hier gerade gesehen – im TRS-Menü brauchen sie kein „NEU“ mehr.
+		modules.clientState.news().markSeen(NewSince.MENU_PACKS);
 		host.save();
 		IntroGate.notice(I18n.tr("intro.doneNotice", host.menuKeyLabel()));
 		requestClose();
@@ -163,6 +167,8 @@ public final class IntroUi extends UiScreen {
 
 	@Override
 	protected void onClosed() {
+		modules.clientState.news().closed();
+		host.save();
 		host.closeScreen();
 	}
 
@@ -541,7 +547,16 @@ public final class IntroUi extends UiScreen {
 			if (ry + 16 > y + h) break;
 			List<KeyBind> conflicts = b.conflicts(allKeys);
 			int labelW = w - capW - 30;
-			Paint.textClipped(c, b.label, x, ry + (rowH >= 22 ? 2 : 3), labelW, t.text, false);
+			// Neue Taste seit dem letzten Update: „NEU“-Schild, solange die Einführung offen ist.
+			modules.clientState.news().shown(b.id);
+			if (modules.clientState.news().badge(b.id)) {
+				int badgeW = NewBadge.width(c);
+				int nameW = Math.min(c.textWidth(b.label), Math.max(0, labelW - badgeW - 4));
+				Paint.textClipped(c, b.label, x, ry + (rowH >= 22 ? 2 : 3), nameW, t.text, false);
+				NewBadge.draw(c, x + nameW + 4, ry + (rowH >= 22 ? 1 : 2));
+			} else {
+				Paint.textClipped(c, b.label, x, ry + (rowH >= 22 ? 2 : 3), labelW, t.text, false);
+			}
 			String status;
 			int statusColor;
 			if (!b.bound()) {
@@ -564,7 +579,7 @@ public final class IntroUi extends UiScreen {
 				Paint.textClipped(c, status, x + 6, ry + 12, labelW - 6, statusColor, false);
 			} else {
 				// Eine Zeile: Name links, Zustand rechtsbündig davor (bei Platzmangel nur ein Lämpchen).
-				int nameW = c.textWidth(b.label);
+				int nameW = c.textWidth(b.label) + (modules.clientState.news().badge(b.id) ? NewBadge.width(c) + 4 : 0);
 				int sw = c.textWidth(status);
 				if (nameW + 12 + sw <= labelW) Paint.textRight(c, status, x + labelW, ry + 3, statusColor, false);
 				else if (!conflicts.isEmpty()) Redstone.pip(c, x + labelW - 6, ry + 4, 5, 1f);

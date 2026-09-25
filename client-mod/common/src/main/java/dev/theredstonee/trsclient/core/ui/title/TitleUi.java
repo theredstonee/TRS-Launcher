@@ -1,6 +1,9 @@
 package dev.theredstonee.trsclient.core.ui.title;
 
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.intro.IntroGate;
+import dev.theredstonee.trsclient.core.module.NewSince;
+import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.skin.PlayerLook;
 import dev.theredstonee.trsclient.core.skin.SkinModel;
 import dev.theredstonee.trsclient.core.skin.SkinModelSpec;
@@ -15,6 +18,7 @@ import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
+import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +59,8 @@ public final class TitleUi extends UiScreen {
 		final boolean right;
 		/** Symbol (Seitenleiste) oder null. */
 		String icon;
+		/** „NEU“-Eintrag des Bereichs ({@link NewSince}) oder null. */
+		String newId;
 		int x;
 		int y;
 		int w;
@@ -146,31 +152,31 @@ public final class TitleUi extends UiScreen {
 		this.rotateHint = I18n.tr("title.rotateHint");
 		scene.setSimple(host.simpleAnimation());
 		final TitleHost h = host;
-		sideLamp("wardrobe", "shirt", new Area() {
+		sideLamp("wardrobe", "shirt", NewSince.MENU_WARDROBE, new Area() {
 			@Override
 			public boolean open() {
 				return h.openWardrobe();
 			}
 		});
-		sideLamp("accounts", "profile", new Area() {
+		sideLamp("accounts", "profile", NewSince.MENU_ACCOUNTS, new Area() {
 			@Override
 			public boolean open() {
 				return h.openAccounts();
 			}
 		});
-		sideLamp("friends", "friends", new Area() {
+		sideLamp("friends", "friends", NewSince.MENU_FRIENDS, new Area() {
 			@Override
 			public boolean open() {
 				return h.openFriends();
 			}
 		});
-		sideLamp("clips", "image", new Area() {
+		sideLamp("clips", "image", NewSince.MENU_CLIPS, new Area() {
 			@Override
 			public boolean open() {
 				return h.openClips();
 			}
 		});
-		sideLamp("trsSettings", "gear", new Area() {
+		sideLamp("trsSettings", "gear", null, new Area() {
 			@Override
 			public boolean open() {
 				h.trsMenu();
@@ -222,17 +228,31 @@ public final class TitleUi extends UiScreen {
 		boolean open();
 	}
 
-	private void sideLamp(String id, String icon, final Area area) {
+	private void sideLamp(String id, String icon, final String newId, final Area area) {
 		final String[] label = new String[1];
 		Lamp l = new Lamp(id, false, new Runnable() {
 			@Override
 			public void run() {
-				if (!area.open()) soon(label[0]);
+				if (area.open()) seen(newId);
+				else soon(label[0]);
 			}
 		});
 		label[0] = l.label;
 		l.icon = icon;
+		l.newId = newId;
 		side.add(l);
+	}
+
+	/** Bereich neu seit dem letzten Update und noch nie geöffnet? */
+	private static boolean isNew(String newId) {
+		TrsModules m = IntroGate.modules();
+		return newId != null && m != null && m.clientState.news().isNew(newId);
+	}
+
+	/** Bereich geöffnet: „NEU“ fällt weg (auch in der Leiste des TRS-Menüs). */
+	private static void seen(String newId) {
+		TrsModules m = IntroGate.modules();
+		if (newId != null && m != null && m.clientState.news().markSeen(newId)) IntroGate.save(m);
 	}
 
 	/** Einführung beim ersten Start (oder kurze Begrüßung, wenn das TRS-Konto sie schon erledigt hat). */
@@ -687,12 +707,24 @@ public final class TitleUi extends UiScreen {
 			int dy = l.flash > 0.45f ? 1 : 0;
 			Redstone.lamp(c, l.x, l.y + dy, l.w, l.h, lit, l.flash);
 			int iconColor = lit > 0.5f ? t.lampTextLit : t.lampText;
+			boolean isNew = isNew(l.newId);
 			if (sideMode == SIDE_FULL) {
 				Icons.draw(c, l.icon, l.x + 7, l.y + dy + (l.h - 8) / 2, 1, iconColor);
-				String s = c.clip(l.label, l.w - 26);
-				labels.add(new Label(s, l.x + 20 + (l.w - 24 - c.textWidth(s)) / 2, l.y + dy + (l.h - 8) / 2,
+				int room = l.w - 24;
+				if (isNew) {
+					int badgeW = NewBadge.width(c);
+					if (room - badgeW - 6 >= Math.min(c.textWidth(l.label), 40)) {
+						NewBadge.draw(c, l.x + l.w - badgeW - 4, l.y + dy + (l.h - NewBadge.HEIGHT) / 2);
+						room -= badgeW + 6;
+					} else {
+						NewBadge.dot(c, l.x + l.w - 8, l.y + dy + 3);
+					}
+				}
+				String s = c.clip(l.label, room - 2);
+				labels.add(new Label(s, l.x + 20 + (room - c.textWidth(s)) / 2, l.y + dy + (l.h - 8) / 2,
 						Redstone.lampTextColor(lit), lit < 0.35f));
 			} else {
+				if (isNew) NewBadge.dot(c, l.x + l.w - 7, l.y + dy + 2);
 				int px = l.w >= 20 ? 2 : 1;
 				int size = 8 * px;
 				Icons.draw(c, l.icon, l.x + (l.w - size) / 2, l.y + dy + (l.h - size) / 2, px, iconColor);
@@ -967,7 +999,8 @@ public final class TitleUi extends UiScreen {
 		} else if (index < accountIndex()) {
 			side.get(index - lamps.size()).action.run();
 		} else if (index == accountIndex()) {
-			if (!host.openAccounts()) soon(side.get(1).label);
+			if (host.openAccounts()) seen(NewSince.MENU_ACCOUNTS);
+			else soon(side.get(1).label);
 		} else {
 			host.classicTitle();
 		}
