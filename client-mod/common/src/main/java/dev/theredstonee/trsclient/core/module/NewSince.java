@@ -43,6 +43,8 @@ public final class NewSince {
 	public static final String MENU_PACKS = "menu:modPacks";
 	/** Taste „Garderobe öffnen“. */
 	public static final String KEY_WARDROBE = "key.trsclient.wardrobe";
+	/** Garderobe → Umhänge: „Mit Freund teilen“ (Umhänge mit Freunden teilen). */
+	public static final String WARDROBE_CAPE_SHARE = "wardrobe:capeShare";
 	/** Grafik-Modus „Schön / Max FPS“ auf der Seite „FPS-Boost“. */
 	public static final String FPS_MODE = "fpsBoost.graphicsMode";
 
@@ -67,6 +69,8 @@ public final class NewSince {
 		add(NEXT, FPS_MODE);
 		extra("fpsBoost", FPS_MODE);
 		add(NEXT, MENU_WARDROBE, MENU_ACCOUNTS, MENU_FRIENDS, MENU_CLIPS, MENU_PACKS, KEY_WARDROBE);
+		// Nach 0.6.1: Umhänge mit Freunden teilen.
+		add("0.6.2", WARDROBE_CAPE_SHARE);
 	}
 
 	private NewSince() {

@@ -6,7 +6,14 @@ import dev.theredstonee.trsclient.core.emote.EmoteDef;
 import dev.theredstonee.trsclient.core.emote.EmoteRig;
 import dev.theredstonee.trsclient.core.emote.Emotes;
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.intro.IntroGate;
+import dev.theredstonee.trsclient.core.module.NewSince;
+import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.online.CapeShare;
+import dev.theredstonee.trsclient.core.online.Friends;
+import dev.theredstonee.trsclient.core.online.FriendsView;
 import dev.theredstonee.trsclient.core.online.OnlineFeatures;
+import dev.theredstonee.trsclient.core.online.TrsOnline;
 import dev.theredstonee.trsclient.core.skin.PlayerLook;
 import dev.theredstonee.trsclient.core.skin.SkinModel;
 import dev.theredstonee.trsclient.core.skin.SkinModelSpec;
@@ -23,19 +30,26 @@ import dev.theredstonee.trsclient.core.ui.TextureRef;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
+import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
 import dev.theredstonee.trsclient.core.wardrobe.SkinEditor;
 import dev.theredstonee.trsclient.core.wardrobe.WardrobeContext;
 import dev.theredstonee.trsclient.core.wardrobe.WardrobeDoc;
 import dev.theredstonee.trsclient.core.wardrobe.WardrobeService;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Die Garderobe im Redstone-Stil (Vorbild Essential): links Kategorien (Skins, Outfits, Umhänge, Emotes), in der
  * Mitte das Raster mit „Favoriten“ und „Bibliothek“ (Herz zum Merken, „+“ zum Hinzufügen), rechts die große
  * 3D-Vorschau mit den Aktionen. Der volle Skin-Editor ({@link SkinEditorView}) übernimmt bei „Bearbeiten“ das Fenster.
+ *
+ * <p>Umhänge mit Freunden teilen (API.md §5.10): Angebote von Freunden stehen oben bei „Umhänge“ (annehmen/ablehnen),
+ * eigene freigegebene und geteilt bekommene Umhänge lassen sich über „Mit Freund teilen“ anbieten; das Fenster dort
+ * zeigt auch, wer ihn hat (entziehen). Die Daten dafür kommen aus {@link Friends} (TRS-Thread).
  *
  * <p>Versionsunabhängig; Minecraft kommt nur über {@link WardrobeHost}, alle Daten über {@link WardrobeService}
  * (Hintergrund-Thread) – hier gibt es kein Netz und keine Datei-Zugriffe.
@@ -100,6 +114,19 @@ public final class WardrobeUi extends UiScreen {
 	private final TextInput field = new TextInput(512);
 	private String armedDelete;
 	private long armedUntil;
+	/** Offenes Fenster „Umhang teilen“ (Umhang-Schlüssel {@code trs:<id>}) oder null. */
+	private String sharePanel;
+	private int shareScroll;
+	private int shareMaxScroll;
+	private final int[] shareRect = new int[4];
+	private final int[] shareListRect = new int[4];
+
+	// Umhänge teilen: was schon übernommen/gemeldet wurde
+	private int seenCapesChanged = -1;
+	private int seenOfferNotice = -1;
+	private long seenFriendsMessageAt = -1;
+	private final Set<String> offerArtRequested = new HashSet<String>();
+	private long capesShownSince;
 
 	// Meldungen
 	private String toast;
@@ -189,6 +216,20 @@ public final class WardrobeUi extends UiScreen {
 		addMenu = false;
 		input = Input.NONE;
 		editing = false;
+		sharePanel = null;
+	}
+
+	/** Selbsttest: Umhang auswählen ({@code trs:<id>}, {@code offer:<id>} …). */
+	public void selectCape(String key) {
+		selectedCape = key;
+	}
+
+	/** Selbsttest: Fenster „Umhang teilen“ für einen TRS-Umhang öffnen (false = nicht teilbar/unbekannt). */
+	public boolean openShareFor(String key) {
+		WardrobeService.Cape cape = trsCape(service.state(), key);
+		if (cape == null || !cape.shareable) return false;
+		openShare(cape);
+		return true;
 	}
 
 	/** Für den Autotest: Editor-Modell. */
@@ -221,6 +262,7 @@ public final class WardrobeUi extends UiScreen {
 		textures.frame();
 		WardrobeService.State s = service.state();
 		react(s);
+		reactShares(s, now);
 		Theme t = Theme.get();
 		Canvas c = FadeCanvas.of(raw, alpha());
 		c.fill(0, 0, width, height, t.scrim);
@@ -229,7 +271,7 @@ public final class WardrobeUi extends UiScreen {
 		int ph = height - PAD * 2;
 		int px = PAD;
 		int py = PAD + Math.round((1 - Anim.easeOut(open)) * 12);
-		boolean modal = addMenu || input != Input.NONE;
+		boolean modal = addMenu || input != Input.NONE || sharePanel != null;
 		int mx = modal ? -1 : mouseX;
 		int my = modal ? -1 : mouseY;
 
@@ -256,7 +298,230 @@ public final class WardrobeUi extends UiScreen {
 		if (editing) editorView.drawOverlay(c);
 		if (addMenu) addMenu(c, mouseX, mouseY);
 		if (input != Input.NONE) inputDialog(c, width, height, mouseX, mouseY);
+		if (sharePanel != null) sharePanel(c, s, width, height, mouseX, mouseY);
 		c.pop();
+	}
+
+	// ============================================================================================
+	// Umhänge teilen
+	// ============================================================================================
+
+	private static Friends friends() {
+		TrsOnline online = TrsOnline.current();
+		return online == null ? null : online.friends();
+	}
+
+	private static String ownUuid() {
+		TrsOnline online = TrsOnline.current();
+		return online == null ? null : online.ownUuid();
+	}
+
+	/** Angebote/Meldungen der Freunde übernehmen: Liste neu laden, Vorschauen holen, Toasts zeigen. */
+	private void reactShares(WardrobeService.State s, long now) {
+		Friends f = friends();
+		if (f == null || !s.trs) return;
+		// Angebote gehören zur Garderobe: im Hintergrund-Takt mit abfragen.
+		f.want(Friends.Interest.BACKGROUND, false);
+		Friends.Snapshot fs = f.snapshot();
+		if (seenCapesChanged == -1) seenCapesChanged = fs.capesChanged;
+		if (fs.capesChanged != seenCapesChanged) {
+			seenCapesChanged = fs.capesChanged;
+			service.refreshCapes();
+			if (selectedCape != null && selectedCape.startsWith("offer:")) selectedCape = "trs:" + selectedCape.substring(6);
+		}
+		if (seenOfferNotice == -1) seenOfferNotice = fs.offerNotice;
+		if (fs.offerNotice != seenOfferNotice) {
+			seenOfferNotice = fs.offerNotice;
+			if (fs.offerNoticeArgs.length == 2) showToast(I18n.tr("wardrobe.share.offerToast", fs.offerNoticeArgs));
+		}
+		if (seenFriendsMessageAt == -1) seenFriendsMessageAt = fs.messageAt;
+		if (fs.message != null && fs.messageAt != seenFriendsMessageAt) {
+			seenFriendsMessageAt = fs.messageAt;
+			showToast(I18n.has(fs.message) ? I18n.tr(fs.message, fs.args) : I18n.tr("friends.error.generic"));
+		}
+		List<CapeShare.Offer> missing = new ArrayList<CapeShare.Offer>();
+		for (CapeShare.Offer o : fs.offerList()) {
+			if (offerArtRequested.add(o.capeId)) missing.add(o);
+		}
+		if (!missing.isEmpty()) service.previewOffers(missing);
+		// Gesehen, sobald die Umhänge eine Weile offen sind (dann fällt „NEU“ weg).
+		if (category == Category.CAPES && !editing) {
+			if (capesShownSince == 0) capesShownSince = now;
+			else if (now - capesShownSince > 2500 && fs.unseenOffers > 0) f.markOffersSeen();
+		} else {
+			capesShownSince = 0;
+		}
+	}
+
+	private static CapeShare.Offer offer(Friends.Snapshot fs, String key) {
+		if (fs == null || key == null || !key.startsWith("offer:")) return null;
+		String id = key.substring(6);
+		for (CapeShare.Offer o : fs.offerList()) if (o.capeId.equals(id)) return o;
+		return null;
+	}
+
+	private static WardrobeService.Cape trsCape(WardrobeService.State s, String key) {
+		if (s.trsCapes == null || key == null) return null;
+		for (WardrobeService.Cape cape : s.trsCapes) if (cape.key.equals(key)) return cape;
+		return null;
+	}
+
+	/** Bereich neu seit dem letzten Update und noch nie benutzt? */
+	private static boolean isNew(String newId) {
+		TrsModules m = IntroGate.modules();
+		return m != null && m.clientState.news().isNew(newId);
+	}
+
+	private static void seen(String newId) {
+		TrsModules m = IntroGate.modules();
+		if (m != null && m.clientState.news().markSeen(newId)) IntroGate.save(m);
+	}
+
+	private void openShare(WardrobeService.Cape cape) {
+		sharePanel = cape.key;
+		shareScroll = 0;
+		addMenu = false;
+		seen(NewSince.WARDROBE_CAPE_SHARE);
+		Friends f = friends();
+		if (f != null) {
+			f.loadHolders(cape.id());
+			f.refresh();
+		}
+	}
+
+	/** Fenster „Umhang teilen“: Freunde zum Anbieten, darunter die Inhaber mit Entziehen. */
+	private void sharePanel(Canvas c, WardrobeService.State s, int width, int height, int mx, int my) {
+		Theme t = Theme.get();
+		final WardrobeService.Cape cape = trsCape(s, sharePanel);
+		Friends f = friends();
+		if (cape == null || !cape.shareable || f == null) {
+			sharePanel = null;
+			return;
+		}
+		Friends.Snapshot fs = f.snapshot();
+		CapeShare.Holders holders = fs.holdersOf(cape.id());
+		int w = Math.min(width - 24, 300);
+		int h = Math.min(height - 24, 250);
+		int x = (width - w) / 2;
+		int y = (height - h) / 2;
+		shareRect[0] = x;
+		shareRect[1] = y;
+		shareRect[2] = w;
+		shareRect[3] = h;
+		c.flush();
+		c.push();
+		c.raise(80f);
+		c.fill(0, 0, width, height, 0x60000000);
+		Redstone.window(c, x, y, w, h);
+		Paint.textClipped(c, I18n.tr("wardrobe.share.title", cape.name), x + 8, y + 7, w - 30, t.text, false);
+		int cs = 14;
+		Paint.iconButton(c, x + w - cs - 5, y + 4, cs, "close", inside(mx, my, x + w - cs - 5, y + 4, cs, cs), false);
+		hits.add(x + w - cs - 5, y + 4, cs, cs, () -> {
+			host.playClick();
+			sharePanel = null;
+		});
+		// Fußzeile
+		List<String> foot = Paint.wrap(c, I18n.tr("wardrobe.share.cascade"), w - 16);
+		int footH = foot.size() * 10 + 4;
+		int fy = y + h - footH - 2;
+		for (String l : foot) {
+			c.text(l, x + 8, fy, t.textDim, false);
+			fy += 10;
+		}
+		// Liste
+		int lx = x + 6;
+		int ly = y + 22;
+		int lw = w - 12;
+		int lh = h - 22 - footH - 6;
+		shareListRect[0] = lx;
+		shareListRect[1] = ly;
+		shareListRect[2] = lw;
+		shareListRect[3] = lh;
+		Redstone.well(c, lx, ly, lw, lh, t.border);
+		c.scissor(lx + 1, ly + 1, lx + lw - 1, ly + lh - 1);
+		hits.clip(lx + 1, ly + 1, lw - 2, lh - 2);
+		int iy = ly + 4 - shareScroll;
+		int ix = lx + 4;
+		int iw = lw - 10;
+		boolean busy = fs.busy != null;
+		// Freunde
+		iy = section(c, I18n.tr("wardrobe.share.pickFriend"), ix, iy, iw);
+		FriendsView view = fs.view;
+		String self = ownUuid();
+		if (holders == null) {
+			iy = note(c, I18n.tr("wardrobe.share.loading"), ix, iy, iw);
+		} else if (holders.full()) {
+			iy = note(c, I18n.tr("wardrobe.share.full", holders.limit), ix, iy, iw);
+		} else {
+			int shown = 0;
+			if (view != null) {
+				for (final FriendsView.Friend fr : view.friends) {
+					if (holders.has(fr.uuid) || fr.uuid.equals(self)) continue;
+					shown++;
+					rowBox(c, ix, iy, iw, mx, my);
+					Paint.textClipped(c, fr.name, ix + 5, iy + 5, iw - 86, t.text, false);
+					final String capeId = cape.id();
+					final String capeName = cape.name;
+					button(c, ix + iw - 76, iy + 2, 74, 14, I18n.tr(("share:" + fr.uuid).equals(fs.busy) ? "wardrobe.share.sharing" : "wardrobe.share.share"),
+							true, !busy, mx, my, () -> {
+								Friends ff = friends();
+								if (ff != null) ff.offerCape(capeId, capeName, fr.uuid, fr.name);
+							});
+					iy += 20;
+				}
+			}
+			if (shown == 0) {
+				iy = note(c, I18n.tr(view == null || view.friends.isEmpty() ? "wardrobe.share.noFriends" : "wardrobe.share.allHaveIt"), ix, iy, iw);
+			}
+		}
+		iy += 4;
+		// Inhaber
+		String heading = I18n.tr("wardrobe.share.holders") + (holders == null ? "" : "  " + holders.count + "/" + holders.limit);
+		iy = section(c, heading, ix, iy, iw);
+		if (holders != null && holders.holders.isEmpty()) {
+			iy = note(c, I18n.tr("wardrobe.share.none"), ix, iy, iw);
+		} else if (holders != null) {
+			long now = System.currentTimeMillis();
+			for (final CapeShare.Holder hd : holders.holders) {
+				rowBox(c, ix, iy, iw, mx, my);
+				Paint.textClipped(c, hd.name, ix + 5, iy + 1, iw - 86, t.text, false);
+				String sub = I18n.tr(hd.offered ? "wardrobe.share.offered" : "wardrobe.share.accepted");
+				if (self != null && !self.equals(hd.grantedByUuid)) sub += " · " + I18n.tr("wardrobe.share.via", hd.grantedByName);
+				Paint.textClipped(c, sub, ix + 5, iy + 10, iw - 86, t.textDim, false);
+				final String armKey = "holder:" + hd.uuid;
+				final boolean armed = armKey.equals(armedDelete) && now < armedUntil;
+				String label = armed ? I18n.tr("wardrobe.share.confirm")
+						: I18n.tr(hd.offered ? "wardrobe.share.withdraw" : "wardrobe.share.revoke");
+				final String capeId = cape.id();
+				button(c, ix + iw - 76, iy + 2, 74, 14, label, armed, !busy, mx, my, () -> {
+					if (armKey.equals(armedDelete) && System.currentTimeMillis() < armedUntil) {
+						armedDelete = null;
+						Friends ff = friends();
+						if (ff != null) ff.revokeShare(capeId, hd.uuid, hd.name, hd.offered, false);
+					} else {
+						armedDelete = armKey;
+						armedUntil = System.currentTimeMillis() + 3000;
+					}
+				});
+				iy += 20;
+			}
+		}
+		int content = iy + shareScroll - (ly + 4);
+		hits.noClip();
+		c.noScissor();
+		shareMaxScroll = Math.max(0, content - (lh - 8));
+		if (shareScroll > shareMaxScroll) shareScroll = shareMaxScroll;
+		if (shareMaxScroll > 0) {
+			int barH = Math.max(12, lh * lh / Math.max(1, content));
+			int barY = ly + (lh - barH) * Math.min(shareScroll, shareMaxScroll) / Math.max(1, shareMaxScroll);
+			c.fill(lx + lw - 3, barY, lx + lw - 1, barY + barH, t.border);
+		}
+		c.pop();
+	}
+
+	private void rowBox(Canvas c, int x, int y, int w, int mx, int my) {
+		Theme t = Theme.get();
+		Redstone.stone(c, x, y, w, 18, inside(mx, my, x, y, w, 18) ? t.surfaceHover : t.surface, t.border);
 	}
 
 	/** Ergebnisse des Dienstes übernehmen (neuer Skin auswählen, Meldungen). */
@@ -360,6 +625,10 @@ public final class WardrobeUi extends UiScreen {
 			} else {
 				Icons.draw(c, cat.icon, x + 5, cy + 6, 1, iconColor);
 				Paint.textClipped(c, I18n.tr(cat.key), x + 17, cy + 6, w - 20, active ? t.text : ColorMath.lerp(t.text, t.textDim, 0.3f), false);
+			}
+			if (cat == Category.CAPES) {
+				Friends f = friends();
+				if (f != null && s.trs && f.snapshot().unseenOffers > 0) NewBadge.dot(c, x + w - 7, cy + 2);
 			}
 			hits.add(x, cy, w, rowH, () -> {
 				host.playClick();
@@ -575,6 +844,15 @@ public final class WardrobeUi extends UiScreen {
 		int cw = (w - (cols - 1) * GAP) / cols;
 		int ch = Math.round(cw * 1.3f);
 		Theme t = Theme.get();
+		Friends f = s.trs ? friends() : null;
+		List<CapeShare.Offer> offers = f == null ? new ArrayList<CapeShare.Offer>() : f.snapshot().offerList();
+		if (!offers.isEmpty()) {
+			y = section(c, I18n.tr("wardrobe.share.offers", offers.size()), x, y, w);
+			for (int i = 0; i < offers.size(); i++) {
+				offerCard(c, s, f, offers.get(i), x + (i % cols) * (cw + GAP), y + (i / cols) * (ch + GAP), cw, ch, mx, my);
+			}
+			y += ((offers.size() + cols - 1) / cols) * (ch + GAP) + 2;
+		}
 		y = section(c, I18n.tr("wardrobe.capes.minecraft"), x, y, w);
 		List<WardrobeService.Cape> list = new ArrayList<WardrobeService.Cape>();
 		if (s.mojangCapes != null) list.addAll(s.mojangCapes);
@@ -628,8 +906,33 @@ public final class WardrobeUi extends UiScreen {
 			else Icons.draw(c, "cape", x + w / 2 - 8, y + (h - 12) / 2 - 8, 2, t.textDim);
 		}
 		if (active) Redstone.pip(c, x + 3, y + 3, 6, 1f);
+		// Geteilt bekommen bzw. mit Freunden geteilt: kleines Freunde-Symbol oben rechts.
+		if (cape != null && (cape.shared() || cape.holders > 0)) {
+			Icons.draw(c, "friends", x + w - 11, y + 3, 1, cape.shared() ? t.dustOn : t.textDim);
+		}
 		String name = cape == null ? I18n.tr("wardrobe.capes.none") : cape.name;
 		Paint.textClipped(c, name, x + 3, y + h - 11, w - 6, sel ? t.text : ColorMath.lerp(t.text, t.textDim, 0.3f), false);
+		hits.add(x, y, w, h, () -> {
+			host.playClick();
+			selectedCape = key;
+		});
+	}
+
+	/** Karte eines Umhang-Angebots (Vorschau, „NEU“ bis angesehen). */
+	private void offerCard(Canvas c, WardrobeService.State s, Friends f, final CapeShare.Offer o, int x, int y, int w, int h,
+			int mx, int my) {
+		Theme t = Theme.get();
+		final String key = WardrobeService.offerKey(o.capeId);
+		boolean sel = key.equals(selectedCape);
+		boolean hov = inside(mx, my, x, y, w, h);
+		if (sel) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
+		Redstone.stone(c, x, y, w, h, hov ? t.surfaceHover : t.surface, sel ? ColorMath.lerp(t.border, t.accent, 0.8f)
+				: ColorMath.lerp(t.border, t.dustOn, 0.5f));
+		TextureRef tex = capeTexture(s, key);
+		if (tex != null) SkinDraw.cape(c, tex, x + 4, y + 4, w - 8, h - 17);
+		else Icons.draw(c, "cape", x + w / 2 - 8, y + (h - 12) / 2 - 8, 2, t.textDim);
+		if (f.unseen(o)) NewBadge.draw(c, x + 2, y + 2);
+		Paint.textClipped(c, o.capeName, x + 3, y + h - 11, w - 6, sel ? t.text : ColorMath.lerp(t.text, t.textDim, 0.3f), false);
 		hits.add(x, y, w, h, () -> {
 			host.playClick();
 			selectedCape = key;
@@ -757,6 +1060,18 @@ public final class WardrobeUi extends UiScreen {
 				String key = selectedCape;
 				if (key != null) cape = "none".equals(key) ? null : capeTexture(s, key);
 				title = key == null ? I18n.tr("wardrobe.cat.capes") : capeName(s, key);
+				CapeShare.Offer o = offer(friends() == null ? null : friends().snapshot(), key);
+				WardrobeService.Cape tc = trsCape(s, key);
+				if (o != null) {
+					title = o.capeName;
+					subtitle = o.reshared() ? I18n.tr("wardrobe.share.fromVia", o.fromName, o.creatorName)
+							: I18n.tr("wardrobe.share.from", o.fromName);
+				} else if (tc != null && tc.shared()) {
+					subtitle = tc.sharedCreator.equals(tc.sharedFrom) ? I18n.tr("wardrobe.share.sharedBy", tc.sharedFrom)
+							: I18n.tr("wardrobe.share.sharedByVia", tc.sharedFrom, tc.sharedCreator);
+				} else if (tc != null && tc.holders > 0) {
+					subtitle = I18n.tr("wardrobe.share.holderCount", tc.holders);
+				}
 				targetYaw = 160f;
 				break;
 			}
@@ -962,12 +1277,61 @@ public final class WardrobeUi extends UiScreen {
 			case CAPES: {
 				final String key = selectedCape;
 				if (key == null) return 0;
+				final Friends f = friends();
+				final CapeShare.Offer o = offer(f == null ? null : f.snapshot(), key);
+				if (o != null) {
+					// Angebot: annehmen / ablehnen
+					boolean fbusy = f.snapshot().busy != null;
+					int half = (w - 3) / 2;
+					button(c, x, y, half, bh, I18n.tr("wardrobe.share.decline"), false, !fbusy, mx, my, () -> {
+						f.declineOffer(o);
+						selectedCape = null;
+					});
+					button(c, x + half + 3, y, w - half - 3, bh, I18n.tr("wardrobe.share.accept"), true, !fbusy, mx, my,
+							() -> f.acceptOffer(o));
+					return bh;
+				}
+				if (key.startsWith("offer:")) {
+					selectedCape = null;
+					return 0;
+				}
 				boolean active = "none".equals(key) ? s.activeMojangCape == null && s.activeTrsCape == null
 						: key.equals(s.activeMojangCape) || key.equals(s.activeTrsCape);
 				boolean possible = key.startsWith("trs:") ? s.trs : (key.startsWith("mojang:") ? s.session : true);
 				button(c, x, y, w, bh, I18n.tr(active ? "wardrobe.worn" : "wardrobe.capes.wear"), !active, !active && possible && !busy,
 						mx, my, () -> service.wearCape(key));
-				return bh;
+				final WardrobeService.Cape tc = trsCape(s, key);
+				if (tc == null || f == null || !s.trs) return bh;
+				int used = bh;
+				int ay = y - bh - 3;
+				if (tc.shared()) {
+					// Geteilt bekommen: zurückgeben (zweiter Klick bestätigt)
+					final String armKey = "giveBack:" + tc.key;
+					boolean armed = armKey.equals(armedDelete) && System.currentTimeMillis() < armedUntil;
+					button(c, x, ay, w, bh, I18n.tr(armed ? "wardrobe.share.confirm" : "wardrobe.share.giveBack"), false,
+							f.snapshot().busy == null, mx, my, () -> {
+								if (armKey.equals(armedDelete) && System.currentTimeMillis() < armedUntil) {
+									armedDelete = null;
+									String self = ownUuid();
+									if (self != null) f.revokeShare(tc.id(), self, tc.name, false, true);
+								} else {
+									armedDelete = armKey;
+									armedUntil = System.currentTimeMillis() + 3000;
+									showToast(I18n.tr("wardrobe.share.giveBackHint"));
+								}
+							});
+					used += bh + 3;
+					ay -= bh + 3;
+				}
+				if (tc.shareable) {
+					String label = tc.holders > 0 ? I18n.tr("wardrobe.share.manage", tc.holders) : I18n.tr("wardrobe.share.button");
+					button(c, x, ay, w, bh, label, false, true, mx, my, () -> openShare(tc));
+					if (isNew(NewSince.WARDROBE_CAPE_SHARE)) NewBadge.draw(c, x + w - NewBadge.width(c) - 2, ay - 5);
+					used += bh + 3;
+				} else if (tc.own && tc.pending) {
+					used += hintAbove(c, I18n.tr("wardrobe.share.afterApproval"), x, ay + bh, w);
+				}
+				return used;
 			}
 			case EMOTES: {
 				if (selectedEmote == null) return 0;
@@ -1220,6 +1584,11 @@ public final class WardrobeUi extends UiScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (sharePanel != null) {
+			if (inside(mouseX, mouseY, shareRect[0], shareRect[1], shareRect[2], shareRect[3])) hits.click(mouseX, mouseY, button);
+			else sharePanel = null;
+			return true;
+		}
 		if (input != Input.NONE) {
 			if (inside(mouseX, mouseY, dialogRect[0], dialogRect[1], dialogRect[2], dialogRect[3])) hits.click(mouseX, mouseY, button);
 			return true;
@@ -1270,6 +1639,10 @@ public final class WardrobeUi extends UiScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+		if (sharePanel != null) {
+			shareScroll = Math.max(0, Math.min(shareMaxScroll, shareScroll - (int) Math.round(amount * 20)));
+			return true;
+		}
 		if (input != Input.NONE || addMenu) return true;
 		if (editing) return editorView.mouseScrolled(mouseX, mouseY, amount);
 		if (inside(mouseX, mouseY, gridRect[0], gridRect[1], gridRect[2], gridRect[3])) {
@@ -1287,6 +1660,10 @@ public final class WardrobeUi extends UiScreen {
 
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
+		if (sharePanel != null) {
+			if (key == UiKey.ESCAPE) sharePanel = null;
+			return true;
+		}
 		if (input != Input.NONE) {
 			if (key == UiKey.ESCAPE) {
 				input = Input.NONE;

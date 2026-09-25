@@ -101,6 +101,21 @@ class TextFitTest {
 			}
 			String soon = I18n.tr("title.soon", I18n.tr("title.trsSettings"));
 			if (c.textWidth(soon) + 22 > 400) problems.add(lang + " Hinweis: " + soon);
+			// Garderobe → Umhänge im Standardfenster (427 px): Vorschau 134 px, Knöpfe 124 px (Text ≤ 118), halbe
+			// Knöpfe (Annehmen/Ablehnen) Text ≤ 54; Fenster „Umhang teilen“: Knöpfe 74 px (Text ≤ 68).
+			for (String s : new String[]{I18n.tr("wardrobe.share.button"), I18n.tr("wardrobe.share.giveBack"),
+					I18n.tr("wardrobe.share.manage", 20)}) {
+				if (c.textWidth(s) > 118) problems.add(lang + " Garderobe: " + s + " (" + c.textWidth(s) + " px)");
+			}
+			for (String key : new String[]{"wardrobe.share.accept", "wardrobe.share.decline"}) {
+				String s = I18n.tr(key);
+				if (c.textWidth(s) > 54) problems.add(lang + " Garderobe: " + s + " (" + c.textWidth(s) + " px)");
+			}
+			for (String key : new String[]{"wardrobe.share.share", "wardrobe.share.sharing", "wardrobe.share.withdraw",
+					"wardrobe.share.revoke", "wardrobe.share.confirm"}) {
+				String s = I18n.tr(key);
+				if (c.textWidth(s) > 68) problems.add(lang + " Umhang teilen: " + s + " (" + c.textWidth(s) + " px)");
+			}
 		}
 		List<String> hard = new ArrayList<String>();
 		for (String p : problems) {

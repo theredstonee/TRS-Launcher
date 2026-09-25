@@ -25,6 +25,14 @@ How to write an entry:
   Settings → Appearance → "Animations": "Always on" (default), "Follow Windows/system" or "Reduced". It applies to all
   animations in the launcher. The background also picks up again reliably after the window was minimised or
   restored, and a hiccup in the circuit no longer freezes it.
+- **Share your own capes with friends.** Once the team has approved a cape you uploaded, "Share with a friend" (skins
+  page in the launcher, or Wardrobe → Capes in the game) offers it to a friend. Your friend sees the offer with a
+  preview in the launcher (Friends → Requests, and above your capes) and in the game (wardrobe and friends screen) and
+  can accept or decline it. Accepted capes show up in their collection, can be worn like any unlocked cape and are
+  visible to other players. Friends may pass a shared cape on to their own friends – up to 20 players per cape. You see
+  who has your cape and can take it back at any time; everyone they passed it on to loses it too. Friends can give a
+  shared cape back. Removing or blocking a friend cancels open offers between you. New offers show up with a note and a
+  "NEW" mark.
 
 ### Deutsch
 
@@ -33,6 +41,14 @@ How to write an entry:
   Einstellung unter Einstellungen → Aussehen → „Animationen“: „Immer an“ (Standard), „Wie Windows/System“ oder
   „Reduziert“. Sie gilt für alle Animationen im Launcher. Außerdem läuft der Hintergrund nach dem Minimieren oder
   Wiederherstellen des Fensters zuverlässig weiter, und ein Aussetzer in der Schaltung lässt ihn nicht mehr einfrieren.
+- **Eigene Umhänge mit Freunden teilen.** Sobald das Team einen hochgeladenen Umhang freigegeben hat, bietet „Mit
+  Freund teilen“ (Skins-Seite im Launcher oder Garderobe → Umhänge im Spiel) ihn einem Freund an. Dein Freund sieht das
+  Angebot mit Vorschau im Launcher (Freunde → Anfragen und über den Umhängen) und im Spiel (Garderobe und Freunde) und
+  kann es annehmen oder ablehnen. Angenommene Umhänge stehen danach in seiner Sammlung, lassen sich wie freigeschaltete
+  tragen und sind für andere sichtbar. Freunde dürfen einen geteilten Umhang an eigene Freunde weitergeben – höchstens
+  20 Spieler je Umhang. Du siehst, wer deinen Umhang hat, und kannst ihn jederzeit zurücknehmen; dann verlieren ihn auch
+  alle, an die er weitergegeben wurde. Freunde können einen geteilten Umhang zurückgeben. Entfernst oder blockierst du
+  einen Freund, fallen offene Angebote zwischen euch weg. Neue Angebote erscheinen mit Hinweis und „NEU“-Markierung.
 
 ## 0.6.0 – 2026-09-25 – The Sync Update | Das Sync-Update
 <!-- banner: accent=#4be38a motif=/news/0.6.0/banner.png -->

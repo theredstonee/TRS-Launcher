@@ -98,6 +98,22 @@ public final class WardrobeApi {
 		public Integer frameTimeMs;
 		public Boolean owned;
 		public Boolean active;
+		/** An Freunde weitergebbar (API.md §5.10). */
+		public Boolean shareable;
+		/** Nur bei Umhängen, die ein Freund geteilt hat. */
+		public Shared shared;
+		/** Sichtbare Inhaber (als Ersteller alle, sonst der eigene Ast). */
+		public Integer holders;
+	}
+
+	public static final class Shared {
+		public UserRef from;
+		public UserRef creator;
+	}
+
+	public static final class UserRef {
+		public String uuid;
+		public String name;
 	}
 
 	static final class CapeList {

@@ -61,11 +61,34 @@ public final class FriendsView {
 	public final List<Friend> friends;
 	public final List<User> incoming;
 	public final List<User> outgoing;
+	/** Zahl der offenen Umhang-Angebote an mich laut {@code GET /v1/friends} (API.md §5.10). */
+	public final int offerCount;
+	/** Die Angebote selbst ({@code GET /v1/cape-offers}; leer, solange nicht geladen). */
+	public final List<CapeShare.Offer> offers;
 
 	public FriendsView(List<Friend> friends, List<User> incoming, List<User> outgoing) {
+		this(friends, incoming, outgoing, 0, Collections.<CapeShare.Offer>emptyList());
+	}
+
+	public FriendsView(List<Friend> friends, List<User> incoming, List<User> outgoing, int offerCount,
+			List<CapeShare.Offer> offers) {
 		this.friends = Collections.unmodifiableList(new ArrayList<>(friends));
 		this.incoming = Collections.unmodifiableList(new ArrayList<>(incoming));
 		this.outgoing = Collections.unmodifiableList(new ArrayList<>(outgoing));
+		this.offers = Collections.unmodifiableList(new ArrayList<>(offers));
+		this.offerCount = Math.max(offerCount, this.offers.size());
+	}
+
+	/** Dieselbe Ansicht mit geladenen Angeboten (die Zahl richtet sich dann nach der Liste). */
+	public FriendsView withOffers(List<CapeShare.Offer> list) {
+		FriendsView v = new FriendsView(friends, incoming, outgoing, 0, list);
+		return v;
+	}
+
+	/** Freund mit dieser UUID oder null. */
+	public Friend friend(String uuid) {
+		for (Friend f : friends) if (f.uuid.equals(uuid)) return f;
+		return null;
 	}
 
 	/** Wie viele Freunde online (im Spiel oder im Launcher) sind. */
