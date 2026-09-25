@@ -14,6 +14,12 @@ public interface OnlinePlatform {
 	/** Aktuelle Server-Adresse ("host[:port]"), null im Einzelspieler/Menü. */
 	String serverAddress();
 
+	/**
+	 * Ist man gerade in einer Welt oder auf einem Server (nicht im Titelbildschirm)? Nur dann meldet der TRS Client
+	 * "in-game" – daran hängt das Live-TRS-Abzeichen.
+	 */
+	boolean inWorld();
+
 	/** Meldung ins Spiel-Log (nie mit Token). */
 	void log(String message);
 }

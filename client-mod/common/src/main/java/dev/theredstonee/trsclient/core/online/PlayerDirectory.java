@@ -19,6 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Gefragt wird in Stapeln von höchstens 100 UUIDs, nie öfter als alle {@link #MIN_INTERVAL_MS}.</li>
  *   <li>Ergebnisse (auch "nichts") gelten {@link #TTL_MS}; betritt ein Spieler die Tabliste neu, wird er nach
  *       {@link #REJOIN_MS} erneut gefragt (neuer Umhang nach Wiederbeitritt).</li>
+ *   <li>Das Abzeichen ist live (nur, solange jemand mit TRS spielt): Wer gerade neu auftaucht und noch kein
+ *       Abzeichen hat, wird nach {@link #JOIN_RECHECK_MS} noch einmal gefragt – sein TRS Client meldet sich oft erst
+ *       einen Moment nach dem Beitritt.</li>
  *   <li>429/Fehler: Retry-After bzw. Backoff für alle Anfragen.</li>
  * </ul>
  * Lesen ({@link #get}) ist aus jedem Thread erlaubt; alles andere nur aus einem Thread (dem Spiel-Thread).
@@ -31,12 +34,21 @@ public final class PlayerDirectory {
 	/** Nicht mehr gesehene Spieler fliegen nach dieser Zeit aus dem Cache. */
 	public static final long FORGET_MS = 15 * 60_000L;
 	private static final long ERROR_BACKOFF_MS = 30_000L;
+	/** Neu aufgetaucht und ohne Abzeichen: nach dieser Zeit einmal nachfragen. */
+	public static final long JOIN_RECHECK_MS = 10_000L;
+	/** Nur Antworten so kurz nach dem Auftauchen lösen die Nachfrage aus. */
+	static final long JOIN_WINDOW_MS = 20_000L;
 
 	private static final class Entry {
 		volatile PlayerInfo info = PlayerInfo.NONE;
 		long fetchedAt;
 		long lastSeen;
 		boolean stale = true;
+		/** Zuletzt (neu) in der Tabliste/Sichtweite aufgetaucht. */
+		long joinedAt;
+		/** Geplante Nachfrage (0 = keine). */
+		long recheckAt;
+		boolean rechecked;
 	}
 
 	private final Map<String, Entry> entries = new ConcurrentHashMap<>();
@@ -57,12 +69,19 @@ public final class PlayerDirectory {
 			Entry e = entries.get(uuid);
 			if (e == null) {
 				e = add(uuid);
-			} else if (!visible.contains(uuid) && now - e.fetchedAt >= REJOIN_MS) {
-				e.stale = true;
+				joined(e, now);
+			} else if (!visible.contains(uuid)) {
+				if (now - e.fetchedAt >= REJOIN_MS) e.stale = true;
+				joined(e, now);
 			}
 			e.lastSeen = now;
 		}
 		visible = next;
+	}
+
+	private static void joined(Entry e, long now) {
+		e.joinedAt = now;
+		e.rechecked = false;
 	}
 
 	/**
@@ -75,7 +94,7 @@ public final class PlayerDirectory {
 		for (String uuid : visible) {
 			Entry e = entries.get(uuid);
 			if (e == null) continue;
-			if (e.stale || now - e.fetchedAt >= TTL_MS) {
+			if (e.stale || now - e.fetchedAt >= TTL_MS || (e.recheckAt != 0 && now >= e.recheckAt)) {
 				batch.add(uuid);
 				if (batch.size() >= MAX_BATCH) break;
 			}
@@ -100,6 +119,11 @@ public final class PlayerDirectory {
 			e.info = info == null ? PlayerInfo.NONE : info;
 			e.fetchedAt = now;
 			e.stale = false;
+			e.recheckAt = 0;
+			if (!e.info.badge && !e.rechecked && now - e.joinedAt <= JOIN_WINDOW_MS) {
+				e.rechecked = true;
+				e.recheckAt = now + JOIN_RECHECK_MS;
+			}
 		}
 	}
 
@@ -141,6 +165,26 @@ public final class PlayerDirectory {
 	public void invalidate(String uuid) {
 		Entry e = entries.get(uuid);
 		if (e != null) e.stale = true;
+	}
+
+	/**
+	 * Alle bekannten Spieler beim nächsten Stapel neu fragen – z. B. sobald man selbst „im Spiel“ gemeldet ist
+	 * (vorher liefert die API die Live-Abzeichen anderer nicht).
+	 */
+	public void invalidateAll() {
+		for (Entry e : entries.values()) e.stale = true;
+	}
+
+	/**
+	 * Live-Abzeichen aus dem Ereignis-Stream übernehmen (ohne neue Anfrage). Unbekannte Spieler werden ignoriert –
+	 * sie werden ohnehin gefragt, sobald sie sichtbar sind.
+	 */
+	public void applyBadge(String uuid, boolean badge) {
+		Entry e = entries.get(uuid);
+		if (e == null || e.info.badge == badge) return;
+		// Bleibt auch ohne Abzeichen ein Eintrag (nicht NONE): So bleibt der Spieler im Ereignis-Stream und
+		// taucht sein Abzeichen wieder auf, kommt das sofort an.
+		e.info = new PlayerInfo(badge, e.info.cape);
 	}
 
 	/** Alles vergessen (Konto gewechselt, API abgeschaltet). */

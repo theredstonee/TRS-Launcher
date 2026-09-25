@@ -29,6 +29,11 @@ import java.util.concurrent.TimeUnit;
  */
 public final class TrsOnline {
 	public static final long PRESENCE_INTERVAL_MS = 60_000L;
+	/**
+	 * Nach dem Verlassen der Welt so lange warten, bevor "offline" (via client) rausgeht – ein schneller
+	 * Wiederbeitritt (Neuverbinden, Serverwechsel) spart so zwei Meldungen.
+	 */
+	static final long LEAVE_GRACE_MS = 5_000L;
 	static final long ME_INTERVAL_MS = 10 * 60_000L;
 	/** Liste der freigeschalteten Emotes: so oft neu holen (bzw. bei Fehlern erneut versuchen). */
 	static final long EMOTES_INTERVAL_MS = 10 * 60_000L;
@@ -86,6 +91,13 @@ public final class TrsOnline {
 	private boolean emoteFetchFailed;
 	private long lastEventsUpdate = Long.MIN_VALUE / 2;
 	private boolean observedOnce;
+	/** In einer Welt / auf einem Server (letzter Tick). */
+	private boolean inWorld;
+	/** Seit dem Betreten der Welt hat der Server "in-game" bestätigt (danach alle neu nachschlagen). */
+	private boolean liveConfirmed;
+	/** Geplantes "offline" nach dem Verlassen der Welt (0 = keins). */
+	private long offlineAt;
+	private boolean wantBadges;
 
 	// Aus beiden Threads gelesen:
 	private volatile String token;
@@ -94,6 +106,8 @@ public final class TrsOnline {
 	private volatile String ownUuid;
 	/** Freigeschaltete Emotes laut API (null = noch unbekannt). */
 	private volatile List<String> unlockedEmotes;
+	/** Der Server hat unsere "in-game"-Meldung (via client) – mit diesem Token; für die Rücknahme. */
+	private volatile String reportedToken;
 	/** Freunde im Spiel (nur abgefragt, solange ein Bildschirm sie braucht). */
 	private final Friends friends;
 	/** Die Verbindung des laufenden Spiels (für Bildschirme ohne eigenen Zugang), null in Tests. */
@@ -149,6 +163,11 @@ public final class TrsOnline {
 		TrsOnline online = new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
 				new PlayerEventStream.UrlOpener(userAgent));
 		current = online;
+		try {
+			Runtime.getRuntime().addShutdownHook(new Thread(online::shutdown, "TRS-Offline"));
+		} catch (RuntimeException ignored) {
+			// Schon beim Beenden – dann läuft die Meldung nach 3 min von selbst ab.
+		}
 		return online;
 	}
 
@@ -181,6 +200,7 @@ public final class TrsOnline {
 		if (!moduleEnabled) {
 			status = Status.OFF;
 			active = false;
+			leaveWorld();
 			events.stop();
 			return;
 		}
@@ -201,7 +221,8 @@ public final class TrsOnline {
 			return;
 		}
 		if (!session.uuid.equals(sessionUuid)) {
-			// Anderes Konto (oder erster Tick): alles neu.
+			// Anderes Konto (oder erster Tick): alles neu – die "in-game"-Meldung des alten Kontos zurücknehmen.
+			leaveWorld();
 			sessionUuid = session.uuid;
 			ownUuid = session.uuid;
 			token = null;
@@ -238,9 +259,11 @@ public final class TrsOnline {
 			directory.observe(java.util.Collections.singletonList(session.uuid), now);
 		}
 		observedOnce = true;
+		// Erst die eigene "in-game"-Meldung, dann die Lookups (gleicher Hintergrund-Thread, der Reihe nach):
+		// Live-Abzeichen anderer liefert die API nur, wenn man selbst gerade im Spiel ist (API.md §4.1).
+		tickPresence(now);
 		List<String> batch = directory.nextBatch(now);
 		if (!batch.isEmpty()) lookup(batch);
-		if (!presenceInFlight && now - lastPresence >= PRESENCE_INTERVAL_MS) presence(now);
 		if (now - lastMe >= ME_INTERVAL_MS) refreshMe(now);
 		if (now - lastPrune > 60_000L) {
 			lastPrune = now;
@@ -262,7 +285,7 @@ public final class TrsOnline {
 			boolean due = unlockedEmotes == null || emoteFetchFailed ? age >= EMOTES_RETRY_MS : age >= EMOTES_INTERVAL_MS;
 			if (due) fetchEmotes(now);
 		}
-		if (!wantEvents) {
+		if (!wantEvents && !(wantBadges && inWorld)) {
 			events.stop();
 			return;
 		}
@@ -279,7 +302,10 @@ public final class TrsOnline {
 		events.drain(eventBuffer);
 		for (PlayerEvent e : eventBuffer) {
 			if (e.type.equals("emote")) {
-				if (emoteEvents.size() < 256) emoteEvents.add(e);
+				if (wantEvents && emoteEvents.size() < 256) emoteEvents.add(e);
+			} else if (e.type.equals("badge")) {
+				// Spielt gerade (nicht mehr) mit TRS → Abzeichen sofort, ohne neue Anfrage.
+				directory.applyBadge(e.uuid, e.badge);
 			} else if (e.uuid != null) {
 				// Umhang/Kosmetik/Skin geändert → beim nächsten Stapel neu nachschlagen.
 				directory.invalidate(e.uuid);
@@ -322,6 +348,11 @@ public final class TrsOnline {
 	public void wantEmotes(boolean list, boolean stream) {
 		wantEmotes = list;
 		wantEvents = stream;
+	}
+
+	/** Werden Abzeichen angezeigt (Tabliste/Namensschild)? Dann hält TrsOnline sie per Ereignis-Stream aktuell. */
+	public void wantBadges(boolean badges) {
+		wantBadges = badges;
 	}
 
 	/** Freigeschaltete Emote-IDs laut API (null = noch unbekannt). */
@@ -468,7 +499,18 @@ public final class TrsOnline {
 		if (!submit(apiWorker, () -> {
 			try {
 				api.presence(t, version, loader, server);
-				results.add(() -> presenceInFlight = false);
+				results.add(() -> {
+					presenceInFlight = false;
+					reportedToken = t;
+					if (!inWorld) {
+						// Inzwischen raus aus der Welt: gleich wieder zurücknehmen.
+						if (offlineAt == 0) offlineAt = System.currentTimeMillis();
+					} else if (!liveConfirmed) {
+						// Jetzt liefert die API auch die Live-Abzeichen der anderen: alle neu nachschlagen.
+						liveConfirmed = true;
+						directory.invalidateAll();
+					}
+				});
 			} catch (ApiException e) {
 				results.add(() -> {
 					presenceInFlight = false;
@@ -481,6 +523,78 @@ public final class TrsOnline {
 				results.add(() -> presenceInFlight = false);
 			}
 		})) presenceInFlight = false;
+	}
+
+	/**
+	 * Presence des TRS Clients (API.md §4.2): "in-game" (via client) alle 60 s, solange man in einer Welt oder auf
+	 * einem Server ist – sofort beim Betreten; nach dem Verlassen (kurz verzögert) "offline" (via client). Die
+	 * Meldung des Launchers für ein von ihm gestartetes Spiel bleibt davon unberührt.
+	 */
+	private void tickPresence(long now) {
+		if (platform.inWorld()) {
+			offlineAt = 0;
+			if (!inWorld) {
+				inWorld = true;
+				liveConfirmed = false;
+				lastPresence = Long.MIN_VALUE / 2;
+			}
+			if (!presenceInFlight && now - lastPresence >= PRESENCE_INTERVAL_MS) presence(now);
+		} else if (inWorld) {
+			inWorld = false;
+			offlineAt = now + LEAVE_GRACE_MS;
+		}
+		if (offlineAt != 0 && now >= offlineAt) {
+			offlineAt = 0;
+			retractPresence();
+		}
+	}
+
+	/** Welt verlassen/Modul aus/Konto gewechselt: "in-game" sofort zurücknehmen. */
+	private void leaveWorld() {
+		inWorld = false;
+		offlineAt = 0;
+		retractPresence();
+	}
+
+	/** "offline" (via client) für die zuletzt bestätigte "in-game"-Meldung – Fehler egal (läuft nach 3 min ab). */
+	private void retractPresence() {
+		if (reportedToken == null) return;
+		// Aktuelles Token bevorzugen (nach einem 401 ist das gemeldete ungültig); beim Kontowechsel ist es noch das alte.
+		String t = token != null ? token : reportedToken;
+		reportedToken = null;
+		submit(apiWorker, () -> {
+			try {
+				api.presenceOffline(t);
+			} catch (IOException | ApiException | RuntimeException ignored) {
+				// läuft nach 3 min von selbst ab
+			}
+		});
+	}
+
+	/** Hat der Server gerade eine "in-game"-Meldung dieses Clients (für Tests)? */
+	boolean reportedInGame() {
+		return reportedToken != null;
+	}
+
+	/** Beim Beenden des Spiels (Shutdown-Hook): "in-game" noch schnell zurücknehmen, höchstens 2 s warten. */
+	void shutdown() {
+		if (reportedToken == null) return;
+		final String t = token != null ? token : reportedToken;
+		reportedToken = null;
+		Thread thread = new Thread(() -> {
+			try {
+				api.presenceOffline(t);
+			} catch (IOException | ApiException | RuntimeException ignored) {
+				// läuft nach 3 min von selbst ab
+			}
+		}, "TRS-Offline-Meldung");
+		thread.setDaemon(true);
+		thread.start();
+		try {
+			thread.join(2000L);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	private void refreshMe(long now) {

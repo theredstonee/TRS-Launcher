@@ -18,6 +18,19 @@ use crate::{Error, Launcher, Result};
 /// Wartezeit nach Fehlern, die sich nicht von selbst lösen (Sperre, Anmeldung abgelehnt).
 const PRESENCE_BACKOFF: Duration = Duration::from_secs(5 * 60);
 
+/// Nächster Versuch nach einer Präsenz-Meldung (`None` = gesendet).
+fn presence_retry(error: Option<Error>) -> Duration {
+    match error {
+        None
+        | Some(Error::TrsApi { kind: "trs_offline" | "trs_disabled", .. }) => PRESENCE_INTERVAL,
+        Some(Error::TrsApi { kind: "trs_rate_limited", .. }) => Duration::from_secs(120),
+        Some(e) => {
+            tracing::debug!("Präsenz nicht gesendet: {e}");
+            PRESENCE_BACKOFF
+        }
+    }
+}
+
 fn bad_response() -> Error {
     super::bad_response()
 }
@@ -152,9 +165,8 @@ impl Launcher {
         } else {
             if self.trs.enabled().await {
                 for account in self.trs.store.accounts().await {
-                    if !self.trs.presence.busy(&account) {
-                        self.trs.send_offline(&account).await;
-                    }
+                    self.trs.send_offline(&account).await;
+                    self.trs.presence.set_in_game(&account, false);
                     self.trs.logout(&account).await;
                 }
             }
@@ -196,9 +208,7 @@ impl Launcher {
     /// Server abmelden, Token vergessen. Fehler sind egal.
     pub async fn trs_forget_account(&self, account: &str) {
         if self.trs.enabled().await {
-            if !self.trs.presence.busy(account) {
-                self.trs.send_offline(account).await;
-            }
+            self.trs.send_offline(account).await;
             self.trs.logout(account).await;
         } else {
             let _ = self.trs.store.take_token(account).await;
@@ -206,6 +216,7 @@ impl Launcher {
         if self.trs.presence.online_for().as_deref() == Some(account) {
             self.trs.presence.set_online_for(None);
         }
+        self.trs.presence.set_in_game(account, false);
         self.trs.presence.kick();
         self.trs.sync_store.forget(account).await;
         self.trs.sync.kick();
@@ -565,7 +576,7 @@ impl Launcher {
         }
         let Ok(active) = self.accounts().active_id().await else { return PRESENCE_INTERVAL };
         let plan = self.trs.presence.plan(active.as_deref());
-        if plan.offline.is_none() && plan.online.is_none() {
+        if plan.is_empty() {
             return PRESENCE_INTERVAL;
         }
         let gap = self.trs.presence.gap_left();
@@ -576,34 +587,50 @@ impl Launcher {
             self.trs.send_offline(previous).await;
             self.trs.presence.set_online_for(None);
         }
-        let Some(account) = plan.online else { return PRESENCE_INTERVAL };
-        let req = Req::post("/v1/presence", json!({ "state": "online" }));
-        let result = self.trs.call_raw(self.accounts(), &account, &req).await;
-        self.trs.presence.mark_sent();
-        match result {
-            Ok(_) => {
-                self.trs.presence.set_online_for(Some(&account));
-                PRESENCE_INTERVAL
+        for account in &plan.ended {
+            self.trs.send_offline(account).await;
+            self.trs.presence.set_in_game(account, false);
+        }
+        let mut wait = PRESENCE_INTERVAL;
+        // Vom Launcher gestartete Spiele: `in-game` (daran hängt das Live-Abzeichen).
+        for (account, game) in &plan.in_game {
+            let mut body = json!({ "state": "in-game", "via": "launcher" });
+            if let Some(g) = game {
+                body["game"] = json!({ "version": g.version, "loader": g.loader });
             }
-            Err(Error::TrsApi { kind: "trs_offline", .. }) => PRESENCE_INTERVAL,
-            Err(Error::TrsApi { kind: "trs_rate_limited", .. }) => Duration::from_secs(120),
-            Err(Error::TrsApi { kind: "trs_disabled", .. }) => PRESENCE_INTERVAL,
-            Err(e) => {
-                tracing::debug!("Präsenz nicht gesendet: {e}");
-                PRESENCE_BACKOFF
+            let result = self.trs.call_raw(self.accounts(), account, &Req::post("/v1/presence", body)).await;
+            self.trs.presence.mark_sent();
+            match result {
+                Ok(_) => self.trs.presence.set_in_game(account, true),
+                // Nur das Rate-Limit bremst die ganze Schleife; sonst (z. B. Demo-Konto ohne TRS) weiter im Takt.
+                Err(e @ Error::TrsApi { kind: "trs_rate_limited", .. }) => wait = wait.max(presence_retry(Some(e))),
+                Err(e) => tracing::debug!("Präsenz (im Spiel) nicht gesendet: {e}"),
             }
         }
+        let Some(account) = plan.online else { return wait };
+        let req = Req::post("/v1/presence", json!({ "state": "online", "via": "launcher" }));
+        let result = self.trs.call_raw(self.accounts(), &account, &req).await;
+        self.trs.presence.mark_sent();
+        if result.is_ok() {
+            self.trs.presence.set_online_for(Some(&account));
+        }
+        wait.max(presence_retry(result.err()))
     }
 
-    /// Beim Beenden des Launchers: „online“ zurücknehmen (kurzer Timeout).
-    /// Läuft noch ein Spiel dieses Accounts, bleibt die Präsenz beim Mod.
+    /// Beim Beenden des Launchers: eigene Meldungen zurücknehmen (kurzer
+    /// Timeout). Läuft ein Spiel weiter, meldet der Mod es selbst, solange man
+    /// in einer Welt ist – dafür weiß der Launcher dann nichts mehr davon.
     pub async fn trs_shutdown(&self) {
         if !self.trs.enabled().await {
             return;
         }
+        let mut accounts = self.trs.presence.in_game_for();
         if let Some(account) = self.trs.presence.online_for()
-            && !self.trs.presence.busy(&account)
+            && !accounts.contains(&account)
         {
+            accounts.push(account);
+        }
+        for account in accounts {
             self.trs.send_offline(&account).await;
         }
     }

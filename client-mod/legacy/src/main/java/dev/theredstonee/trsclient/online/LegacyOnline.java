@@ -448,6 +448,11 @@ public final class LegacyOnline {
 		}
 
 		@Override
+		public boolean inWorld() {
+			return Mc.world() != null && Mc.player() != null;
+		}
+
+		@Override
 		public void log(String message) {
 			log.accept(message);
 		}

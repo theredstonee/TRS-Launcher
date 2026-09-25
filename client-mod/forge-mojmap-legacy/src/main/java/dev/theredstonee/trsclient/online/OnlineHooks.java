@@ -422,6 +422,12 @@ public final class OnlineHooks {
 		}
 
 		@Override
+		public boolean inWorld() {
+			Minecraft mc = Minecraft.getInstance();
+			return mc.level != null && mc.player != null;
+		}
+
+		@Override
 		public void log(String message) {
 			log.accept(message);
 		}

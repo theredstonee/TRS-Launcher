@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 
 /**
  * Ein Ereignis aus {@code GET /v1/events/players} (API.md §13): {@code hello}, {@code emote}, {@code skin},
- * {@code cape}, {@code cosmetics}. Nur die Felder, die der Mod braucht; alles wird streng geprüft.
+ * {@code cape}, {@code cosmetics}, {@code badge}. Nur die Felder, die der Mod braucht; alles wird streng geprüft.
  */
 public final class PlayerEvent {
 	private static final Gson GSON = new Gson();
@@ -16,12 +16,19 @@ public final class PlayerEvent {
 	public final String emote;
 	/** Dauer bei {@code emote} (ms, 0 = keine gültige Angabe). */
 	public final int durationMs;
+	/** Live-Abzeichen bei {@code badge} (spielt gerade mit TRS), sonst false. */
+	public final boolean badge;
 
 	PlayerEvent(String type, String uuid, String emote, int durationMs) {
+		this(type, uuid, emote, durationMs, false);
+	}
+
+	PlayerEvent(String type, String uuid, String emote, int durationMs, boolean badge) {
 		this.type = type;
 		this.uuid = uuid;
 		this.emote = emote;
 		this.durationMs = durationMs;
+		this.badge = badge;
 	}
 
 	static final class Data {
@@ -29,6 +36,7 @@ public final class PlayerEvent {
 		String uuid;
 		String emote;
 		Double durationMs;
+		Boolean badge;
 	}
 
 	/**
@@ -64,6 +72,9 @@ public final class PlayerEvent {
 			case "cape":
 			case "cosmetics":
 				return new PlayerEvent(type, uuid, null, 0);
+			case "badge":
+				if (d.badge == null) return null;
+				return new PlayerEvent(type, uuid, null, 0, d.badge);
 			default:
 				return null;
 		}
@@ -71,6 +82,7 @@ public final class PlayerEvent {
 
 	@Override
 	public String toString() {
-		return "PlayerEvent{" + type + (uuid != null ? " " + uuid : "") + (emote != null ? " " + emote : "") + "}";
+		return "PlayerEvent{" + type + (uuid != null ? " " + uuid : "") + (emote != null ? " " + emote : "")
+				+ (type.equals("badge") ? " " + badge : "") + "}";
 	}
 }

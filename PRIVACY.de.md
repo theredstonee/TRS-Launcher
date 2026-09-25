@@ -116,6 +116,21 @@ gesendet, wenn du sie anklickst. Die Gesichter der Freunde kommen vom öffentlic
 nichts auf deinem Computer – außer den Servern, die du in der Serverliste anheftest
 (`config/trsclient/server-pins.json`, nur Adressen, wird nirgendwohin gesendet).
 
+### TRS-Symbol im Spiel (TRS Client)
+
+Der TRS Client zeigt ein kleines TRS-Symbol neben den Namen von Spielern, die **gerade mit TRS spielen**: solange sie
+mit dem TRS Client in einer Welt oder auf einem Server sind oder ein vom TRS Launcher gestartetes Spiel läuft. Wer nur
+den Launcher offen hat oder mit einem anderen Client spielt, bekommt kein Symbol. Dafür meldet der TRS Client etwa
+einmal pro Minute „im Spiel“ (Version, Modloader und – nur mit „Server teilen“ – die Serveradresse), solange du in
+einer Welt oder auf einem Server bist; der Launcher tut dasselbe, solange ein von ihm gestartetes Spiel läuft. Beides
+ist der unten beschriebene Online-Status und endet, wenn du die Welt verlässt bzw. das Spiel beendet ist.
+
+- **Wer es sieht:** Ob jemand gerade spielt, sehen nur Spieler, die **selbst gerade im Spiel** sind – praktisch andere
+  TRS-Spieler auf demselben Server, neben Namen, die sie ohnehin sehen. Alle anderen bekommen „kein Symbol“. Dein
+  eigenes Symbol siehst du immer. Von dir blockierte Spieler sehen es nie.
+- **Abschalten:** „TRS-Symbol zeigen“ (*Einstellungen → Datenschutz*) blendet dein Symbol für alle aus. Den
+  Online-Status auf „niemand“ zu stellen versteckt dich nur in Freundeslisten – das Symbol **nicht**.
+
 ### Was gespeichert wird
 
 | Daten | Wozu |
@@ -128,7 +143,7 @@ nichts auf deinem Computer – außer den Servern, die du in der Serverliste anh
 | Umhänge, die du hochlädst (das Bild, neu kodiert ohne Metadaten), ihr Prüfstatus und ein optionaler Name | Umhang-Uploads; jeder Upload wird vom Team geprüft, bevor andere ihn sehen |
 | Meldungen, die du zu Umhängen anderer Spieler abgibst (Grund, optionale Notiz) | Moderation |
 | Freunde, Freundschaftsanfragen und Blockierungen | Die Freundesliste |
-| Online-Status: „online im Launcher“ oder „im Spiel“ mit Version und Modloader und – nur wenn du „Server teilen“ eingeschaltet hast – die Serveradresse | Um Freunden zu zeigen, was du spielst, und sie nachkommen zu lassen |
+| Online-Status: „online im Launcher“ oder „im Spiel“ (vom Launcher oder vom TRS Client) mit Version und Modloader und – nur wenn du „Server teilen“ eingeschaltet hast – die Serveradresse | Um Freunden zu zeigen, was du spielst, und sie nachkommen zu lassen; für das TRS-Symbol, während du spielst (siehe oben) |
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
 | Nur mit eingeschalteten TRS-Diensten und eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client (im Spiel): deine TRS-Client-Einstellungen – welche Module an sind und ihre Einstellungen, HUD-Layouts und -Profile, die TRS-Tasten der Module, der Config-Modus für Leistungs-Mods, ob du die Einführung abgeschlossen hast (und das gewählte Modul-Paket) und welche „NEU“-Einträge du geöffnet hast – je Teil mit dem Zeitpunkt der letzten Änderung; keine Wegpunkte, keine Server-Adressen, keine Dateien, Pfade oder Tokens | Damit der TRS Client auf allen PCs und Spielordnern mit diesem Minecraft-Account gleich ist und die Einführung nur einmal erscheint |
 | Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
@@ -150,7 +165,8 @@ auch dieses Dokument.
 
 Der Online-Status liegt **nur im Arbeitsspeicher des Servers**, wird nie auf die Festplatte geschrieben, hat keinen
 Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen können ihn nur deine Freunde – und gar
-niemand, wenn du „niemand“ einstellst.
+niemand, wenn du „niemand“ einstellst. Nur ob du gerade im Spiel bist, kann zusätzlich als TRS-Symbol erscheinen (siehe
+oben).
 
 Admin-Aktionen (etwa das Freigeben eines Umhangs oder eine Sperre) werden zusammen mit der betroffenen UUID in einem
 Audit-Log festgehalten.
@@ -168,7 +184,8 @@ Profiling und keinen Verkauf von Daten.
 
 - Deine Daten bleiben gespeichert, solange dein TRS-Account besteht.
 - Sitzungs-Tokens verfallen nach 30 Tagen; Abmelden oder Entfernen eines Accounts im Launcher widerruft das Token.
-- Der Online-Status verschwindet 3 Minuten nach der letzten Aktualisierung oder sofort, wenn du den Launcher schließt.
+- Der Online-Status verschwindet 3 Minuten nach der letzten Aktualisierung oder sofort, wenn du den Launcher schließt
+  und die Welt verlässt.
 - Synchronisierte Skins, Presets und Einstellungen bleiben, bis du sie im Launcher löschst (ein auf einem PC gelöschter
   Skin wird auch auf dem Server gelöscht). Vermerke über gelöschte Skins bleiben 30 Tage, damit deine anderen PCs sie
   ebenfalls löschen können.

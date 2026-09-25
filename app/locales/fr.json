@@ -2414,7 +2414,7 @@
     "perAccount": "S'applique à {name} – chaque compte a ses propres paramètres.",
     "badge": {
       "title": "Afficher le badge TRS",
-      "description": "Les autres joueurs TRS voient en jeu que tu utilises TRS."
+      "description": "Pendant que tu joues avec TRS, les autres joueurs TRS de la même partie voient le badge à côté de ton nom."
     },
     "cape": {
       "title": "Cape visible par les autres",

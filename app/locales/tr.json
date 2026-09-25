@@ -2414,7 +2414,7 @@
     "perAccount": "Geçerli hesap: {name} – her hesabın kendi ayarları vardır.",
     "badge": {
       "title": "TRS rozetini göster",
-      "description": "Diğer TRS oyuncuları oyunda TRS kullandığını görebilir."
+      "description": "TRS ile oynarken aynı oyundaki diğer TRS oyuncuları adının yanında rozeti görür."
     },
     "cape": {
       "title": "Pelerin başkalarına görünür",

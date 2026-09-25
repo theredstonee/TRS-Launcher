@@ -112,6 +112,21 @@ blocking are sent only when you click them. Friend faces are loaded from Mojang'
 computer – except the servers you pin in the server list (`config/trsclient/server-pins.json`, only addresses, never
 sent anywhere).
 
+### TRS badge in the game (TRS Client)
+
+The TRS Client shows a small TRS badge next to the names of players who are **playing with TRS right now**: while
+they are in a world or on a server with the TRS Client, or while a game started by the TRS Launcher runs. A TRS user
+who only has the launcher open, or who plays with another client, gets no badge. For this, the TRS Client reports
+"in game" (version, mod loader and – only with "Server teilen" – the server address) about once a minute while you are
+in a world or on a server, and the launcher does the same while a game it started runs; both are the online status
+described below and stop when you leave the world or the game ends.
+
+- **Who sees it:** whether someone is playing right now is only shown to players who are **in game themselves** –
+  in practice other TRS players on the same server, next to names they see anyway. Everyone else gets "no badge". You
+  always see your own badge. Players you blocked never see it.
+- **Turning it off:** "Show TRS badge" (*Einstellungen → Datenschutz*) hides your badge from everyone. Setting your
+  online status to "nobody" only hides you in friends lists – it does **not** hide the badge.
+
 ### What is stored
 
 | Data | Why |
@@ -124,7 +139,7 @@ sent anywhere).
 | Capes you upload (the image, re-encoded without metadata), their review status and an optional name | Cape uploads; every upload is reviewed by the team before others see it |
 | Reports you file about other players' capes (reason, optional note) | Moderation |
 | Friends, friend requests and blocks | The friends list |
-| Online status: "online in the launcher" or "in game" with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you |
+| Online status: "online in the launcher" or "in game" (from the launcher or the TRS Client) with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you; showing the TRS badge while you play (see above) |
 | Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
 | Only with the TRS services on and "Sync with TRS account" on in the TRS Client (in game): your TRS Client settings – which modules are on and their settings, HUD layouts and profiles, the TRS keys of the modules, the config mode for performance mods, whether you finished the introduction (and the module pack you picked) and which "NEW" entries you have opened – each part with the time of its last change; no waypoints, no server addresses, no files, paths or tokens | Keeping the TRS Client the same on every PC and game folder where you use this Minecraft account, and showing the introduction only once |
 | Only with the TRS services on: the wardrobe entry of the TRS Client – your favourite skins, outfits (name, skin, cape) and emote wheel slots, with the time of the last change | The same wardrobe on every PC |
@@ -144,6 +159,7 @@ launcher follows. Deleting all TRS data deletes this document too.
 
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
+Only whether you are in game right now can also show up as your TRS badge (see above).
 
 Admin actions (such as approving a cape or a ban) are recorded in an audit log together with the affected UUID.
 
@@ -159,7 +175,8 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 
 - Your data is kept as long as your TRS account exists.
 - Session tokens expire after 30 days; signing out or removing an account from the launcher revokes the token.
-- The online status disappears 3 minutes after the last update, or immediately when you close the launcher.
+- The online status disappears 3 minutes after the last update, or immediately when you close the launcher and leave
+  the world.
 - Synced skins, presets and settings stay until you delete them in the launcher (a skin deleted on one PC is deleted on
   the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your

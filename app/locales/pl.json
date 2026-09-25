@@ -2414,7 +2414,7 @@
     "perAccount": "Dotyczy {name} – każde konto ma własne ustawienia.",
     "badge": {
       "title": "Pokazuj odznakę TRS",
-      "description": "Inni gracze TRS widzą w grze, że używasz TRS."
+      "description": "Gdy grasz z TRS, inni gracze TRS w tej samej grze widzą odznakę obok twojej nazwy."
     },
     "cape": {
       "title": "Peleryna widoczna dla innych",

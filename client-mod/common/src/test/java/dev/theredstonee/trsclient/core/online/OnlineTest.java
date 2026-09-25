@@ -235,7 +235,8 @@ class OnlineTest {
 		PlayerDirectory d = new PlayerDirectory();
 		List<String> one = uuids(7, 1);
 		d.observe(one, 0);
-		d.complete(d.nextBatch(0), new HashMap<String, PlayerInfo>(), 0);
+		// Mit Abzeichen (ohne Abzeichen fragt der Cache neu Aufgetauchte nach 10 s einmal nach, siehe LiveBadgeTest).
+		d.complete(d.nextBatch(0), Collections.singletonMap(one.get(0), new PlayerInfo(true, null)), 0);
 		d.observe(Collections.<String>emptyList(), 10_000);
 		d.observe(one, 20_000);
 		assertTrue(d.nextBatch(20_000).isEmpty(), "zu früh wieder da: Cache reicht");
@@ -259,6 +260,7 @@ class OnlineTest {
 	static final class Platform implements OnlinePlatform {
 		volatile GameSession session = new GameSession(OWN, "Theredstonee", "ey.secret.token");
 		volatile String server = "Play.Example.net:25565";
+		volatile boolean inWorld = true;
 		final List<String> log = Collections.synchronizedList(new ArrayList<String>());
 
 		@Override
@@ -279,6 +281,11 @@ class OnlineTest {
 		@Override
 		public String serverAddress() {
 			return server;
+		}
+
+		@Override
+		public boolean inWorld() {
+			return inWorld;
 		}
 
 		@Override
