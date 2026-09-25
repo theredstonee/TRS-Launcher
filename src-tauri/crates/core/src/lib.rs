@@ -282,6 +282,18 @@ impl Launcher {
         client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await.status()
     }
 
+    /// Grafik-Modus des TRS Clients einer Instanz (`None` = noch nicht gewählt).
+    pub async fn fps_mode(&self, id: &str) -> Result<Option<client_mod::FpsMode>> {
+        let instance = self.instances.get(id).await?;
+        Ok(client_mod::fps_mode(&self.paths, &instance.id).await)
+    }
+
+    /// Grafik-Modus setzen – der TRS Client wendet ihn beim nächsten Start an.
+    pub async fn set_fps_mode(&self, id: &str, mode: client_mod::FpsMode) -> Result<()> {
+        let instance = self.instances.get(id).await?;
+        client_mod::set_fps_mode(&self.paths, &instance.id, mode).await
+    }
+
     async fn client_mod_catalog(&self) -> (Option<PathBuf>, client_mod::Catalog) {
         let dir = self.bundled_client_mod_dir();
         let catalog = client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await;

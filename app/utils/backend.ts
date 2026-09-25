@@ -22,6 +22,7 @@ import {
   type TrsReviewList,
 } from './trs'
 import type {
+  FpsMode,
   Account,
   AdoptResult,
   BlockedFile,
@@ -176,6 +177,9 @@ export const backend = {
     call<Instance>('change_instance_version', { id, gameVersion, loader }),
   instanceHistory: (id: string) => call<HistoryEntry[]>('instance_history', { id }),
   setInstanceGroup: (id: string, group: string | null) => call<Instance>('set_instance_group', { id, group }),
+  /** Grafik-Modus des TRS Clients (null = im Spiel noch nicht gewählt). */
+  getFpsMode: (id: string) => call<FpsMode | null>('get_fps_mode', { id }),
+  setFpsMode: (id: string, mode: FpsMode) => call<void>('set_fps_mode', { id, mode }),
   loaderVersions: (kind: LoaderKind, gameVersion: string) =>
     call<LoaderVersionInfo[]>('loader_versions', { kind, gameVersion }),
   latestLoaderVersion: (kind: LoaderKind, gameVersion: string) =>

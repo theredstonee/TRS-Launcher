@@ -1133,7 +1133,12 @@
       "tuningDescription": "Daha fazla FPS ve daha az takılma için Java ayarları. Özel JVM argümanları önceliklidir.",
       "tuningGlobal": "Genel ayar gibi ({state})",
       "tuningOn": "Açık",
-      "tuningOff": "Kapalı"
+      "tuningOff": "Kapalı",
+      "fpsModeTitle": "Grafik modu",
+      "fpsModeDescription": "TRS Client'ın görüntü ayarlarını ve performans modlarını nasıl ayarladığı. Güzel görünümü korur ve yalnızca performans ayarlarını kullanır; Maks. FPS bulutları, yumuşak aydınlatmayı ve süslü yaprakları kapatır. Bir sonraki başlatmada uygulanır; kendi değişikliklerin kalır.",
+      "fpsModePretty": "Güzel",
+      "fpsModeMax": "Maks. FPS",
+      "fpsModeUnset": "Oyunda seç"
     },
     "window": {
       "customTitle": "Özel pencere ayarları",

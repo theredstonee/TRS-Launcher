@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EnvVar, Instance, InstanceOverrides, SyncItem, UpdateChannel } from '~/types'
+import type { EnvVar, FpsMode, Instance, InstanceOverrides, SyncItem, UpdateChannel } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 
 // Instanz-Einstellungen: Modal mit Bereichen links,
@@ -26,6 +26,23 @@ const o = inst.value.overrides
 const name = ref(inst.value.name)
 const channel = ref<UpdateChannel>(o.updateChannel ?? 'release')
 const trsClient = ref(o.trsClient !== false)
+// Grafik-Modus des TRS Clients (eigene Datei in der Instanz, sofort gespeichert; null = noch nicht gewählt).
+const fpsMode = ref<FpsMode | ''>('')
+async function loadFpsMode() {
+  try {
+    fpsMode.value = (await backend.getFpsMode(props.instance.id)) ?? ''
+  } catch {
+    fpsMode.value = ''
+  }
+}
+async function saveFpsMode() {
+  if (!fpsMode.value) return
+  try {
+    await backend.setFpsMode(props.instance.id, fpsMode.value)
+  } catch (e) {
+    useToasts().error(e)
+  }
+}
 const boost = ref(o.boost !== false)
 /** FPS-Boost beim Start: wie global, an oder aus. */
 const tuning = ref<'global' | 'on' | 'off'>(o.performanceTuning == null ? 'global' : o.performanceTuning ? 'on' : 'off')
@@ -48,6 +65,7 @@ const postExit = ref(o.hooks?.postExit ?? '')
 
 const syncSeparate = ref<SyncItem[]>([...o.syncSeparate])
 
+onMounted(() => void loadFpsMode())
 onMounted(async () => {
   if (!settings.current) await settings.load().catch(() => {})
   // Ohne eigene Werte zeigen die Felder die globalen Werte als Ausgangspunkt.
@@ -421,6 +439,13 @@ const loaderLine = computed(() => {
       </SettingRow>
       <SettingRow title="TRS Client" :description="t('instanceSettings.installation.clientDescription')">
         <ToggleSwitch v-model="trsClient" label="TRS Client" />
+      </SettingRow>
+      <SettingRow v-if="trsClient" :title="t('instanceSettings.installation.fpsModeTitle')" :description="t('instanceSettings.installation.fpsModeDescription')">
+        <select v-model="fpsMode" class="field w-44 py-1.5" :aria-label="t('instanceSettings.installation.fpsModeTitle')" @change="saveFpsMode">
+          <option v-if="!fpsMode" value="" disabled>{{ t('instanceSettings.installation.fpsModeUnset') }}</option>
+          <option value="pretty">{{ t('instanceSettings.installation.fpsModePretty') }}</option>
+          <option value="max">{{ t('instanceSettings.installation.fpsModeMax') }}</option>
+        </select>
       </SettingRow>
       <SettingRow :title="t('instanceSettings.installation.tuningTitle')" :description="t('instanceSettings.installation.tuningDescription')">
         <select v-model="tuning" class="field w-44 py-1.5" :aria-label="t('instanceSettings.installation.tuningTitle')">

@@ -69,6 +69,32 @@ final class PerfPanel implements ModulePanel {
 		Paint.textClipped(c, compare, x + 6, y + 15, w - 12, compareColor, false);
 		y += 36;
 
+		// --- Grafik-Modus: Schön / Max FPS ---
+		String modeTitle = I18n.tr("perf.mode.title");
+		c.text(modeTitle, x, y + 4, t.text, false);
+		int mxPos = x + Math.min(c.textWidth(modeTitle) + 8, w / 3);
+		int myPos = y;
+		for (final FpsConfigMode.Mode mode : FpsConfigMode.Mode.values()) {
+			String label = I18n.tr("perf.mode." + mode.key());
+			int bw = c.textWidth(label) + 16;
+			if (mxPos + bw > x + w) {
+				mxPos = x;
+				myPos += BUTTON_H + 4;
+			}
+			boolean hover = inside(mx, my, mxPos, myPos, bw, BUTTON_H);
+			Paint.button(c, mxPos, myPos, bw, BUTTON_H, label, perf.fpsMode() == mode, hover);
+			hits.add(mxPos, myPos, bw, BUTTON_H, new Runnable() {
+				@Override
+				public void run() {
+					click.run();
+					perf.chooseFpsMode(mode, System.currentTimeMillis());
+				}
+			});
+			mxPos += bw + 4;
+		}
+		y = myPos + BUTTON_H + 4;
+		y = Paint.paragraph(c, I18n.tr("perf.mode.hint." + perf.fpsMode().key()), x, y, textW, LINE, t.textDim) + 6;
+
 		// --- Stufen ---
 		c.text(I18n.tr("perf.boost.title"), x, y + 4, t.text, false);
 		int bx = x + Math.min(c.textWidth(I18n.tr("perf.boost.title")) + 8, w / 3);

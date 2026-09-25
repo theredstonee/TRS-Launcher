@@ -50,7 +50,7 @@ loom {
 				vmArg "-Dtrsclient.session.url=${project.trsApi}"
 			}
 			// Realistischer Benchmark (-PtrsAutotestOnly=realbench, siehe fabric/build.gradle)
-			['trsBenchSeed': 'seed', 'trsBenchCenter': 'center', 'trsBenchJfr': 'jfr', 'trsBenchLabel': 'label'].each { prop, key ->
+			['trsBenchSeed': 'seed', 'trsBenchCenter': 'center', 'trsBenchJfr': 'jfr', 'trsBenchSeconds': 'seconds', 'trsBenchLabel': 'label'].each { prop, key ->
 				if (project.hasProperty(prop)) vmArg "-Dtrsclient.bench.${key}=${project.property(prop)}"
 			}
 			if (project.hasProperty('trsBenchVanilla')) {

@@ -22,12 +22,16 @@ public final class JfrControl {
 			Object profile = config.getMethod("getConfiguration", String.class).invoke(null, "profile");
 			Class<?> rec = Class.forName("jdk.jfr.Recording");
 			Object r = rec.getConstructor(config).newInstance(profile);
+			java.nio.file.Path path = java.nio.file.Paths.get(file).toAbsolutePath();
+			if (path.getParent() != null) java.nio.file.Files.createDirectories(path.getParent());
 			Method dest = rec.getMethod("setDestination", java.nio.file.Path.class);
-			dest.invoke(r, java.nio.file.Paths.get(file));
+			dest.invoke(r, path);
 			rec.getMethod("start").invoke(r);
 			recording = r;
 			return file;
-		} catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+		} catch (java.lang.reflect.InvocationTargetException e) {
+			return "nicht verfügbar: " + e.getCause();
+		} catch (ReflectiveOperationException | java.io.IOException | RuntimeException | LinkageError e) {
 			return "nicht verfügbar: " + e;
 		}
 	}

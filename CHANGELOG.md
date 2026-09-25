@@ -34,6 +34,12 @@ How to write an entry:
   FerriteCore, ImmediatelyFast, ModernFix and BadOptimizations, wherever they exist for your Minecraft version – so
   it is faster even without extra mods. If you install one of them yourself, the newer version is used. You can
   switch them off in the TRS menu under Performance (takes effect at the next start through the TRS Launcher).
+- **TRS Client: graphics mode "Pretty" or "Max FPS".** Pick it in the TRS menu under Performance or in the
+  instance settings of the launcher. Pretty keeps the look; Max FPS turns off clouds and smooth lighting, lowers
+  particles and uses fast graphics and fast leaves. Settings you changed yourself stay as they are, and switching
+  back restores the rest.
+- **TRS Client: lighter HUD on Minecraft 1.21.6 and newer.** HUD texts no longer create lots of short-lived data
+  every frame, which means fewer small stutters.
 
 ### Deutsch
 
@@ -54,6 +60,12 @@ How to write an entry:
   gibt – und ist damit auch ohne zusätzliche Mods schneller. Installierst du eine davon selbst, wird die neuere
   Fassung benutzt. Abschalten kannst du sie im TRS-Menü unter Leistung (wirkt beim nächsten Start über den TRS
   Launcher).
+- **TRS Client: Grafik-Modus „Schön“ oder „Max FPS“.** Wählbar im TRS-Menü unter Leistung oder in den
+  Instanz-Einstellungen des Launchers. „Schön“ behält die Optik; „Max FPS“ schaltet Wolken und weiche Beleuchtung
+  aus, senkt die Partikel und nutzt schnelle Grafik und schnelles Laub. Was du selbst geändert hast, bleibt, und
+  beim Zurückschalten kommt der Rest wieder.
+- **TRS Client: Leichteres HUD ab Minecraft 1.21.6.** HUD-Texte erzeugen nicht mehr in jedem Bild viele kurzlebige
+  Daten – das heißt weniger kleine Ruckler.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

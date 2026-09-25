@@ -127,7 +127,7 @@ public final class RealBenchRunner {
 	}
 
 	private void start(int x, int z) {
-		bench = new RealBench(x, z, label, FRAME_STATS);
+		bench = new RealBench(x, z, label, FRAME_STATS, Integer.getInteger("trsclient.bench.seconds", 20) * 20);
 		step = 2;
 	}
 

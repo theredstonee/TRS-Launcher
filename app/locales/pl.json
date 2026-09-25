@@ -1133,7 +1133,12 @@
       "tuningDescription": "Dostrojone ustawienia Javy dla większej liczby FPS i mniejszej liczby przycięć. Własne argumenty JVM mają pierwszeństwo.",
       "tuningGlobal": "Jak globalnie ({state})",
       "tuningOn": "Wł.",
-      "tuningOff": "Wył."
+      "tuningOff": "Wył.",
+      "fpsModeTitle": "Tryb grafiki",
+      "fpsModeDescription": "Jak TRS Client ustawia opcje grafiki i mody wydajności. Ładna zachowuje wygląd i używa tylko przełączników wydajności; Max FPS wyłącza chmury, gładkie oświetlenie i ozdobne liście. Działa od następnego uruchomienia; twoje własne zmiany zostają.",
+      "fpsModePretty": "Ładna",
+      "fpsModeMax": "Max FPS",
+      "fpsModeUnset": "Wybierz w grze"
     },
     "window": {
       "customTitle": "Własne ustawienia okna",

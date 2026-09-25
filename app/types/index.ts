@@ -917,6 +917,9 @@ export interface PresetInput {
   items: PresetItem[]
 }
 
+/** Grafik-Modus des TRS Clients: nur Leistungs-Schalter ohne Optik-Verlust oder „Max FPS“. */
+export type FpsMode = 'pretty' | 'max'
+
 export type PresetItemStatus =
   | 'installed'
   | 'alreadyInstalled'

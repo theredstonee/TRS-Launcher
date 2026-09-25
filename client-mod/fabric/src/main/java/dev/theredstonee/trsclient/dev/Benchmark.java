@@ -109,12 +109,16 @@ public final class Benchmark {
 				wait = WARMUP_TICKS;
 				return true;
 			}
-			case 1:
+			case 1: {
+				String jfr = dev.theredstonee.trsclient.core.perf.JfrControl.start();
+				if (jfr != null) TrsClient.LOGGER.info("[Benchmark] JFR: {}", jfr);
 				stats.start(System.nanoTime());
 				wait = MEASURE_TICKS;
 				return true;
+			}
 			case 2:
 				stats.stop(System.nanoTime());
+				dev.theredstonee.trsclient.core.perf.JfrControl.stop();
 				report("Standard + Leistung", stats);
 				// Zusätzlich „Farben“ (Vollbild-Farbdurchgang)
 				modules.colors.setEnabled(true);

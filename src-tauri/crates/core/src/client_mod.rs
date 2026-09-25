@@ -420,6 +420,52 @@ fn disable_arg(bundled: &[BundledMod], own: &[String]) -> Option<String> {
     (!ids.is_empty()).then(|| format!("-Dfabric.debug.disableModIds={}", ids.join(",")))
 }
 
+/// Grafik-Modus des TRS Clients: „Schön“ (nur Leistungs-Schalter ohne Optik-Verlust)
+/// oder „Max FPS“. Der Mod wendet ihn beim nächsten Start an (nur Werte, die der
+/// Spieler nicht selbst geändert hat) – Datei `config/trsclient/fps-mode.json`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FpsMode {
+    Pretty,
+    Max,
+}
+
+const FPS_MODE_FILE: &str = "trsclient/fps-mode.json";
+
+fn fps_mode_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
+    paths.instance_game_dir(instance_id).join("config").join(FPS_MODE_FILE)
+}
+
+/// Gewählter Grafik-Modus; `None` = noch nie gewählt (weder im Spiel noch im Launcher).
+pub async fn fps_mode(paths: &Paths, instance_id: &str) -> Option<FpsMode> {
+    let bytes = tokio::fs::read(fps_mode_path(paths, instance_id)).await.ok()?;
+    let json: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
+    if !json.get("chosen").and_then(serde_json::Value::as_bool).unwrap_or(false) {
+        return None;
+    }
+    match json.get("mode").and_then(serde_json::Value::as_str) {
+        Some("max") => Some(FpsMode::Max),
+        _ => Some(FpsMode::Pretty),
+    }
+}
+
+/// Grafik-Modus setzen. Was der Mod sonst in der Datei führt (was er selbst gesetzt
+/// hat), bleibt erhalten – nur `mode`/`chosen` gehören dem Launcher.
+pub async fn set_fps_mode(paths: &Paths, instance_id: &str, mode: FpsMode) -> Result<()> {
+    let file = fps_mode_path(paths, instance_id);
+    let mut json = tokio::fs::read(&file)
+        .await
+        .ok()
+        .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok())
+        .filter(serde_json::Value::is_object)
+        .unwrap_or_else(|| serde_json::json!({ "version": 1 }));
+    let object = json.as_object_mut().expect("Objekt");
+    object.insert("mode".into(), serde_json::to_value(mode).map_err(|e| Error::json("fps-mode.json", e))?);
+    object.insert("chosen".into(), serde_json::Value::Bool(true));
+    let text = serde_json::to_string_pretty(&json).map_err(|e| Error::json("fps-mode.json", e))?;
+    fsutil::write_atomic(&file, text.as_bytes()).await
+}
+
 /// Datei mit den Farben des Launchers in der Instanz.
 fn theme_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
     paths.instance_game_dir(instance_id).join("config").join(THEME_FILE)
@@ -576,6 +622,30 @@ mod tests {
         assert_eq!(m.builds[0].bundled[0].name, "Lithium");
         // Alte Manifeste ohne Feld: nichts eingebaut.
         assert!(parse_manifest(MANIFEST_JSON.as_bytes()).unwrap().builds[0].bundled.is_empty());
+    }
+
+    #[tokio::test]
+    async fn fps_mode_keeps_what_the_mod_wrote() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        assert_eq!(fps_mode(&paths, "a").await, None, "noch nie gewählt");
+        set_fps_mode(&paths, "a", FpsMode::Max).await.unwrap();
+        assert_eq!(fps_mode(&paths, "a").await, Some(FpsMode::Max));
+        // Der Mod führt dort, was er selbst gesetzt hat – das bleibt beim Umschalten erhalten.
+        let file = fps_mode_path(&paths, "a");
+        std::fs::write(&file, r#"{"version":1,"mode":"max","chosen":true,"appliedGame":"max","owned":{"clouds":[2,0]}}"#).unwrap();
+        set_fps_mode(&paths, "a", FpsMode::Pretty).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
+        assert_eq!(json["mode"], "pretty");
+        assert_eq!(json["owned"]["clouds"][1], 0);
+        assert_eq!(json["appliedGame"], "max");
+        // Vom Mod geschrieben, aber noch nicht gewählt (Standard „Schön“): gilt als nicht gewählt.
+        std::fs::write(&file, r#"{"version":1,"mode":"pretty","chosen":false}"#).unwrap();
+        assert_eq!(fps_mode(&paths, "a").await, None);
+        std::fs::write(&file, b"kaputt").unwrap();
+        assert_eq!(fps_mode(&paths, "a").await, None);
+        set_fps_mode(&paths, "a", FpsMode::Max).await.unwrap();
+        assert_eq!(fps_mode(&paths, "a").await, Some(FpsMode::Max));
     }
 
     #[test]

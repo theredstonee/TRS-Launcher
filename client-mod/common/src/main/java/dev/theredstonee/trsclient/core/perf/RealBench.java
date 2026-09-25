@@ -21,7 +21,7 @@ public final class RealBench {
 		/** Höhe der obersten Oberfläche (Blöcke/Flüssigkeit) oder {@link Integer#MIN_VALUE}, solange unbekannt. */
 		int groundY(int x, int z);
 
-		/** Kamera/Spieler setzen (Zuschauermodus, ohne Kollision und ohne eigene Bewegung). */
+		/** Kamera/Spieler setzen (fliegend, ohne eigene Bewegung). */
 		void place(double x, double y, double z, float yaw, float pitch);
 
 		/** Wo der Spieler gerade wirklich ist: {x, y, z} (zur Kontrolle, ob die Kamera hängt). */
@@ -60,7 +60,9 @@ public final class RealBench {
 	static final double STUCK = 1.5;
 
 	/** Stillstand am Start, bis die Chunks um den Startpunkt gebaut sind. */
-	static final int SETTLE_TICKS = 200;
+	static final int SETTLE_TICKS = 100;
+	/** Standard-Messdauer (Ticks): der ganze Rundkurs in 20 s (Aufwärmen: ein Durchgang ohne Messung). */
+	public static final int DEFAULT_LENGTH = 400;
 	/** Längstens so lange auf den Boden warten, dann mit Meereshöhe weitermachen. */
 	static final int GROUND_TIMEOUT = 400;
 
@@ -76,6 +78,8 @@ public final class RealBench {
 	private int t;
 	private int groundY;
 	private boolean finished;
+	/** Ticks je Durchgang (Aufwärmen und Messen); der Pfad wird auf diese Dauer gestaucht. */
+	private final int length;
 	/** Kamerahöhe je Pfad-Tick (aus dem Gelände, einmal nach dem Laden bestimmt). */
 	private double[] heights;
 	private double[] last;
@@ -87,6 +91,12 @@ public final class RealBench {
 	 * @param label Bezeichnung des Laufs im Protokoll (Variante, z. B. „vanilla“, „trs“, „trs+mods“)
 	 */
 	public RealBench(int cx, int cz, String label, FrameStats stats) {
+		this(cx, cz, label, stats, DEFAULT_LENGTH);
+	}
+
+	/** @param length Ticks je Durchgang (20 = 1 s); der Rundkurs bleibt derselbe, nur schneller oder langsamer. */
+	public RealBench(int cx, int cz, String label, FrameStats stats, int length) {
+		this.length = Math.max(100, length);
 		this.cx = cx;
 		this.cz = cz;
 		this.label = label == null || label.isEmpty() ? "?" : label;
@@ -106,8 +116,9 @@ public final class RealBench {
 				}
 				g.command("time set 1000");
 				g.command("weather clear");
-				// Zuschauer: keine Kollision, der Server korrigiert nichts – die Kamera fährt exakt den Pfad.
-				g.command("gamemode spectator");
+				// Kreativ-Flug wie ein Spieler (Hand und Hotbar sichtbar); die Kamera fährt über dem Gelände
+				// ({@link #smoothHeights}), die Abweichung Soll/Ist wird geprüft.
+				g.command("gamemode creative @a");
 				g.command(String.format(Locale.ROOT, "tp @p %d 200 %d", cx, cz));
 				phase = Phase.GROUND;
 				t = 0;
@@ -139,9 +150,8 @@ public final class RealBench {
 				return true;
 			case WARMUP:
 				apply(g, t);
-				if (t == 300) g.shot("realbench-" + safe(label) + "-orbit");
-				if (t == 750) g.shot("realbench-" + safe(label) + "-flyover");
-				if (++t >= PATH_TICKS) {
+				if (t == length / 4) g.shot("realbench-" + safe(label) + "-orbit");
+				if (++t >= length) {
 					phase = Phase.MEASURE;
 					t = 0;
 					apply(g, 0);
@@ -151,12 +161,12 @@ public final class RealBench {
 				return true;
 			case MEASURE:
 				check(g);
-				if (t % 150 == 0) {
+				if (t % (length / 8) == 0) {
 					double[] at = g.position();
 					g.log(String.format(Locale.ROOT, "[RealBench] Tick %d: Kamera %.1f %.1f %.1f", t, at[0], at[1], at[2]));
 				}
 				apply(g, t);
-				if (++t >= PATH_TICKS) {
+				if (++t >= length) {
 					stats.stop(nanoNow);
 					g.profile(false);
 					g.log(String.format(Locale.ROOT, "[RealBench] Pfad \"%s\": größte Abweichung %.2f Blöcke, %d Ticks hängend – %s", label,
@@ -175,8 +185,9 @@ public final class RealBench {
 	}
 
 	private void apply(Game g, int tick) {
-		double[] p = pose(tick, cx + 0.5, groundY, cz + 0.5);
-		if (heights != null) p[1] = heights[((tick % PATH_TICKS) + PATH_TICKS) % PATH_TICKS];
+		int pathTick = (int) ((long) tick * PATH_TICKS / length);
+		double[] p = pose(pathTick, cx + 0.5, groundY, cz + 0.5);
+		if (heights != null) p[1] = heights[((pathTick % PATH_TICKS) + PATH_TICKS) % PATH_TICKS];
 		g.place(p[0], p[1], p[2], (float) p[3], (float) p[4]);
 		last = p;
 	}

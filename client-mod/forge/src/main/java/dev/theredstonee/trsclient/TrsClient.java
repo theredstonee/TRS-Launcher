@@ -87,6 +87,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(Platform.configDir());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(Platform.configDir());
 		dev.theredstonee.trsclient.core.clips.Clips.init(Platform.configDir());
+		// Grafik-Modus „Schön“/„Max FPS“ (config/trsclient/fps-mode.json).
+		dev.theredstonee.trsclient.core.perf.FpsConfigMode.init(Platform.configDir());
 		config = new ConfigStore(Platform.configDir().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.

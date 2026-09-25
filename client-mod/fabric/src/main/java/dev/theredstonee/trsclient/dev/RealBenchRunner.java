@@ -35,7 +35,8 @@ public final class RealBenchRunner {
 		String[] c = System.getProperty("trsclient.bench.center", "0,0").replace("locate", "0,0").split(",");
 		int cx = Integer.parseInt(c[0].trim());
 		int cz = Integer.parseInt(c.length > 1 ? c[1].trim() : "0");
-		bench = new RealBench(cx, cz, System.getProperty("trsclient.bench.label", vanilla ? "vanilla" : "trs"), PerfHooks.FRAME_STATS);
+		bench = new RealBench(cx, cz, System.getProperty("trsclient.bench.label", vanilla ? "vanilla" : "trs"), PerfHooks.FRAME_STATS,
+				Integer.getInteger("trsclient.bench.seconds", 20) * 20);
 	}
 
 	/** true = Benchmark aktiv (dann ohne übrigen Autotest). */
@@ -66,6 +67,20 @@ public final class RealBenchRunner {
 					modules.registry.apply(new TrsModules().registry.capture());
 					// Das Testfenster hat selten den Fokus: Dynamische FPS würde sonst im Hintergrund bremsen.
 					modules.dynamicFps.setEnabled(false);
+					// -Dtrsclient.bench.off=all|hud|<id,id…>: Module für die Kosten-Messung abschalten.
+					String off = System.getProperty("trsclient.bench.off", "");
+					if (!off.isEmpty()) {
+						java.util.List<String> ids = java.util.Arrays.asList(off.split(","));
+						for (dev.theredstonee.trsclient.core.module.Module m : modules.registry.all()) {
+							boolean hud = m instanceof dev.theredstonee.trsclient.core.module.HudModule;
+							if (ids.contains("all") || (ids.contains("hud") && hud) || ids.contains(m.id())) m.setEnabled(false);
+						}
+						StringBuilder on = new StringBuilder();
+						for (dev.theredstonee.trsclient.core.module.Module m : modules.registry.all()) {
+							if (m.isEnabled()) on.append(on.length() == 0 ? "" : ",").append(m.id());
+						}
+						TrsClient.LOGGER.info("[RealBench] Module an: {}", on.length() == 0 ? "keine" : on);
+					}
 					if (PerfHooks.get() != null) PerfHooks.get().refresh();
 				}
 				Mc.setScreen(null);

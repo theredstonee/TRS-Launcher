@@ -24,10 +24,17 @@ public final class TrsMixinPlugin implements IMixinConfigPlugin {
 
 	/** Benchmark „Vanilla“: nur die Bildzeit-Messung vor jedem Bild, sonst kein einziger TRS-Eingriff. */
 	private static final boolean BENCH_VANILLA = Boolean.getBoolean("trsclient.bench.vanilla");
+	private static final java.util.List<String> BENCH_NO_MIXINS = java.util.Arrays.asList(
+			System.getProperty("trsclient.bench.noMixins", "").isEmpty() ? new String[0] : System.getProperty("trsclient.bench.noMixins").split(","));
 
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
 		if (BENCH_VANILLA) return mixinClassName.endsWith(".FramePaceMixin");
+		// Kosten-Messung: -Dtrsclient.bench.noMixins=all|Name,Name – diese Mixins weglassen (Messhaken bleibt).
+		if (!BENCH_NO_MIXINS.isEmpty() && !mixinClassName.endsWith(".FramePaceMixin") && !mixinClassName.endsWith("Accessor")) {
+			String simple = mixinClassName.substring(mixinClassName.lastIndexOf('.') + 1);
+			if (BENCH_NO_MIXINS.contains("all") || BENCH_NO_MIXINS.contains(simple)) return false;
+		}
 		for (String name : TEST_ONLY) {
 			if (mixinClassName.endsWith("." + name)) return Boolean.getBoolean("trsclient.autotest");
 		}

@@ -85,9 +85,40 @@ public final class Gfx {
 		fill(x + w - 1, y + 1, x + w, y + h - 1, argb);
 	}
 
+	//? if >=1.21.6 {
+	/*// Ab 1.21.6 rechnet {@code drawString(String)} bei JEDEM Aufruf die Anzeige-Reihenfolge des Textes neu
+	// (ICU-Bidi, viele kurzlebige Objekte). HUD-Texte ändern sich selten – die Reihenfolge wird je Text gemerkt
+	// (nur Render-Thread, höchstens 512 Einträge, neu bei Sprachwechsel). Ergebnis identisch zu Vanilla.
+	private static final java.util.LinkedHashMap<String, FormattedCharSequence> ORDER =
+			new java.util.LinkedHashMap<String, FormattedCharSequence>(256, 0.75f, true) {
+				@Override
+				protected boolean removeEldestEntry(java.util.Map.Entry<String, FormattedCharSequence> eldest) {
+					return size() > 512;
+				}
+			};
+	private static Object orderLanguage;
+
+	private static FormattedCharSequence visualOrder(String text) {
+		net.minecraft.locale.Language lang = net.minecraft.locale.Language.getInstance();
+		if (lang != orderLanguage) {
+			ORDER.clear();
+			orderLanguage = lang;
+		}
+		FormattedCharSequence seq = ORDER.get(text);
+		if (seq == null) {
+			seq = lang.getVisualOrder(net.minecraft.network.chat.FormattedText.of(text));
+			ORDER.put(text, seq);
+		}
+		return seq;
+	}
+	*///?}
+
 	public void text(Font font, String text, int x, int y, int argb, boolean shadow) {
+		if (text == null) return;
 		//? if >=26.1 {
-		/*g.text(font, text, x, y, argb, shadow);
+		/*g.text(font, visualOrder(text), x, y, argb, shadow);
+		*///?} elif >=1.21.6 {
+		/*g.drawString(font, visualOrder(text), x, y, argb, shadow);
 		*///?} else
 		g.drawString(font, text, x, y, argb, shadow);
 	}

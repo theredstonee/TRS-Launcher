@@ -1133,7 +1133,12 @@
       "tuningDescription": "Configurações de Java para mais FPS e menos travadas. Argumentos JVM próprios têm prioridade.",
       "tuningGlobal": "Como o global ({state})",
       "tuningOn": "Ligado",
-      "tuningOff": "Desligado"
+      "tuningOff": "Desligado",
+      "fpsModeTitle": "Modo gráfico",
+      "fpsModeDescription": "Como o TRS Client ajusta as opções de vídeo e os mods de desempenho. Bonito mantém a aparência e só usa ajustes de desempenho; FPS máx. desliga nuvens, iluminação suave e folhas detalhadas. Vale a partir do próximo início; suas próprias mudanças ficam.",
+      "fpsModePretty": "Bonito",
+      "fpsModeMax": "FPS máx.",
+      "fpsModeUnset": "Escolher no jogo"
     },
     "window": {
       "customTitle": "Configurações de janela personalizadas",

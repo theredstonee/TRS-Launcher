@@ -157,7 +157,7 @@ class RealBenchTest {
 		assertTrue(finished[0], "beendet");
 		assertTrue(log.contains("maximize"));
 		assertTrue(log.contains("/gamerule doMobSpawning false"));
-		assertTrue(log.contains("/gamemode spectator"), "ohne Kollision");
+		assertTrue(log.contains("/gamemode creative @a"), "fliegen können");
 		boolean valid = false;
 		for (String line : log) valid |= line.startsWith("[RealBench] Pfad \"trs\"") && line.endsWith("gültig");
 		assertTrue(valid, log.toString());
@@ -165,7 +165,7 @@ class RealBenchTest {
 		String result = null;
 		for (String line : log) if (line.startsWith("[RealBench] Ergebnis \"trs\"")) result = line;
 		assertFalse(result == null, log.toString());
-		assertTrue(result.contains("Bilder in 60.0 s"), result);
-		assertTrue(placed[0] > 2 * RealBench.PATH_TICKS);
+		assertTrue(result.contains("Bilder in 20.0 s"), result);
+		assertTrue(placed[0] > 2 * RealBench.DEFAULT_LENGTH);
 	}
 }

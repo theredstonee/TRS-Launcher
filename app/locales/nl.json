@@ -1133,7 +1133,12 @@
       "tuningDescription": "Afgestemde Java-instellingen voor meer FPS en minder haperingen. Eigen JVM-argumenten gaan voor.",
       "tuningGlobal": "Zoals globaal ({state})",
       "tuningOn": "Aan",
-      "tuningOff": "Uit"
+      "tuningOff": "Uit",
+      "fpsModeTitle": "Grafische modus",
+      "fpsModeDescription": "Hoe de TRS Client video-instellingen en prestatiemods instelt. Mooi houdt het uiterlijk en gebruikt alleen prestatieschakelaars; Max FPS zet wolken, vloeiende belichting en mooi gebladerte uit. Geldt vanaf de volgende start; je eigen wijzigingen blijven.",
+      "fpsModePretty": "Mooi",
+      "fpsModeMax": "Max FPS",
+      "fpsModeUnset": "In het spel kiezen"
     },
     "window": {
       "customTitle": "Eigen vensterinstellingen",

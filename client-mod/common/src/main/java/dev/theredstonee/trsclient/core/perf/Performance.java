@@ -120,6 +120,43 @@ public final class Performance {
 			double recent = meter.recent(nowMillis, 3000);
 			if (recent > 0) gameFps = recent;
 		}
+		// Grafik-Modus gewechselt (Menü, Einführung oder Launcher)? Dann die Vanilla-Optionen einmal anpassen.
+		FpsConfigMode fps = FpsConfigMode.shared();
+		if (game != null && fps != null && fps.gamePending() && ticks > 20) {
+			int n = fps.applyGame(game, ShaderPacks.active());
+			if (n > 0) findingsAt = 0;
+		}
+	}
+
+	// --- Grafik-Modus („Schön“ / „Max FPS“) ---
+
+	/** Gewählter Grafik-Modus (ohne Datei: Schön). */
+	public FpsConfigMode.Mode fpsMode() {
+		FpsConfigMode fps = FpsConfigMode.shared();
+		return fps == null ? FpsConfigMode.Mode.PRETTY : fps.mode();
+	}
+
+	/** Hat der Spieler den Grafik-Modus schon gewählt (für die Einführung beim ersten Start)? */
+	public boolean fpsModeChosen() {
+		FpsConfigMode fps = FpsConfigMode.shared();
+		return fps != null && fps.chosen();
+	}
+
+	/**
+	 * Grafik-Modus wählen: Vanilla-Optionen sofort, Einstellungen der Optimierungs-Mods beim nächsten Start
+	 * (die lesen ihre Datei nur beim Laden). Nur Werte, die der Spieler nicht selbst verstellt hat.
+	 * @return Anzahl sofort geänderter Optionen
+	 */
+	public int chooseFpsMode(FpsConfigMode.Mode mode, long nowMillis) {
+		FpsConfigMode fps = FpsConfigMode.shared();
+		if (fps == null) return 0;
+		fps.choose(mode);
+		int n = game == null ? 0 : fps.applyGame(game, ShaderPacks.active());
+		fps.applyModFiles();
+		findingsAt = 0;
+		meter.compare(nowMillis, I18n.tr("perf.mode." + fps.mode().key()));
+		say(I18n.tr("perf.mode.applied", I18n.tr("perf.mode." + fps.mode().key()), n));
+		return n;
 	}
 
 	/** Welt verlassen/gewechselt. */

@@ -142,6 +142,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(file.getParentFile().toPath());
 		dev.theredstonee.trsclient.core.clips.Clips.init(file.getParentFile().toPath());
+		// Grafik-Modus „Schön“/„Max FPS“ (config/trsclient/fps-mode.json).
+		dev.theredstonee.trsclient.core.perf.FpsConfigMode.init(file.getParentFile().toPath());
 		initWaypoints(event.getModConfigurationDirectory());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);

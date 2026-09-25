@@ -73,7 +73,8 @@ loom {
 			}
 			// Realistischer Benchmark (-PtrsAutotestOnly=realbench): Welt mit festem Seed, Dorf-Mitte (x,z oder „locate“),
 			// Vanilla ohne TRS Client, JFR-Aufnahme der Messung; Fenster groß (wird auf Bildschirm 2 maximiert).
-			['trsBenchSeed': 'seed', 'trsBenchCenter': 'center', 'trsBenchJfr': 'jfr'].each { prop, key ->
+			['trsBenchSeed': 'seed', 'trsBenchCenter': 'center', 'trsBenchJfr': 'jfr', 'trsBenchSeconds': 'seconds', 'trsBenchOff': 'off',
+			 'trsBenchNoMixins': 'noMixins', 'trsBenchNoHud': 'noHud'].each { prop, key ->
 				if (project.hasProperty(prop)) vmArg "-Dtrsclient.bench.${key}=${project.property(prop)}"
 			}
 			if (project.hasProperty('trsBenchVanilla')) {

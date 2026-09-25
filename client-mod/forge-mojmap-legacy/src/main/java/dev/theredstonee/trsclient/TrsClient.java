@@ -124,6 +124,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
 		dev.theredstonee.trsclient.core.clips.Clips.init(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
+		// Grafik-Modus „Schön“/„Max FPS“ (config/trsclient/fps-mode.json).
+		dev.theredstonee.trsclient.core.perf.FpsConfigMode.init(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get());
 		config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
