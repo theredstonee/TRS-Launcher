@@ -2332,7 +2332,7 @@
       "capes": "your selected cape, redeemed codes and uploaded cape images",
       "friends": "friends, requests and blocks",
       "settings": "your privacy settings and timestamps (sign-in, creation)",
-      "sync": "with sync on: your own skins (images and names), your own presets and your theme, accent colour and language – so they are the same on all your PCs",
+      "sync": "with sync on: your own skins (images and names), your own presets and your theme, accent colour and language – so they are the same on all your PCs; the TRS Client syncs its modules, HUD layouts and keys the same way (switch in the TRS menu)",
       "presence": "your online status (launcher open / in game, version, and the server if you choose) – kept in memory only, it expires after 3 minutes"
     },
     "footer": "You can turn the services off at any time under {path} and delete all your TRS data there. Without your consent, the launcher sends nothing to the TRS server.",
@@ -2353,7 +2353,7 @@
     },
     "sync": {
       "title": "Sync with TRS account",
-      "description": "Keeps your own skins (\"My skins\"), your own presets, theme, accent colour and language the same on every PC where you use this Minecraft account. Java and memory settings stay on this PC."
+      "description": "Keeps your own skins (\"My skins\"), your own presets, theme, accent colour and language the same on every PC where you use this Minecraft account. Java and memory settings stay on this PC. The TRS Client syncs its own settings (modules, HUD, keys) with a switch of its own in the TRS menu."
     },
     "turnedOff": "TRS services turned off – the launcher no longer sends anything to the TRS server.",
     "noAccount": "Sign in with a Minecraft account to change these settings.",

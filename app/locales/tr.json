@@ -2332,7 +2332,7 @@
       "capes": "seçtiğin pelerin, kullandığın kodlar ve yüklediğin pelerin görselleri",
       "friends": "arkadaşlar, istekler ve engellemeler",
       "settings": "gizlilik ayarların ve zaman damgaları (giriş, oluşturma)",
-      "sync": "eşitleme açıksa: kendi skinlerin (görseller ve adlar), kendi hazır ayarların ile temanı, vurgu rengini ve dilini – tüm bilgisayarlarında aynı olsunlar diye",
+      "sync": "eşitleme açıksa: kendi skinlerin (görseller ve adlar), kendi hazır ayarların ile temanı, vurgu rengini ve dilini – tüm bilgisayarlarında aynı olsunlar diye; TRS Client da modüllerini, HUD düzenlerini ve tuşlarını aynı şekilde eşitler (TRS menüsündeki anahtar)",
       "presence": "çevrimiçi durumun (launcher açık / oyunda, sürüm ve istersen sunucu) – yalnızca bellekte tutulur, 3 dakika sonra sona erer"
     },
     "footer": "Hizmetleri istediğin zaman {path} bölümünden kapatabilir ve tüm TRS verilerini orada silebilirsin. Onayın olmadan launcher TRS sunucusuna hiçbir şey göndermez.",
@@ -2353,7 +2353,7 @@
     },
     "sync": {
       "title": "TRS hesabıyla eşitle",
-      "description": "Kendi skinlerini („Skinlerim“), kendi hazır ayarlarını, temayı, vurgu rengini ve dili bu Minecraft hesabını kullandığın tüm bilgisayarlarda aynı tutar. Java ve bellek ayarları bu bilgisayarda kalır."
+      "description": "Kendi skinlerini („Skinlerim“), kendi hazır ayarlarını, temayı, vurgu rengini ve dili bu Minecraft hesabını kullandığın tüm bilgisayarlarda aynı tutar. Java ve bellek ayarları bu bilgisayarda kalır. TRS Client kendi ayarlarını (modüller, HUD, tuşlar) TRS menüsündeki kendi anahtarıyla eşitler."
     },
     "turnedOff": "TRS hizmetleri kapatıldı – launcher artık TRS sunucusuna hiçbir şey göndermiyor.",
     "noAccount": "Bu ayarları değiştirmek için bir Minecraft hesabıyla giriş yap.",
