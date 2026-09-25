@@ -68,6 +68,20 @@ pub fn run() {
                     log::warn!("clip-event konnte nicht gesendet werden: {e}");
                 }
             }));
+            // Kontowechsel im Spiel: „Konto hinzufügen“ öffnet den Browser über die App,
+            // danach lädt die Oberfläche die Accounts neu.
+            let handle = app.handle().clone();
+            launcher.set_url_opener(Arc::new(move |url: &str| {
+                if let Err(e) = crate::open::url(&handle, url) {
+                    log::error!("Browser konnte nicht geöffnet werden: {e}");
+                }
+            }));
+            let handle = app.handle().clone();
+            launcher.set_accounts_sink(Arc::new(move || {
+                if let Err(e) = handle.emit("accounts-changed", ()) {
+                    log::warn!("accounts-changed konnte nicht gesendet werden: {e}");
+                }
+            }));
             // TRS-Synchronisation: nach jedem Abgleich (Änderungen + Status) ans Frontend.
             let handle = app.handle().clone();
             launcher.set_trs_sync_sink(Arc::new(move |event| {

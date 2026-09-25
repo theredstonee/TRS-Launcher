@@ -27,6 +27,7 @@ pub mod import;
 pub mod instance;
 pub mod java;
 pub mod launch;
+pub mod link;
 pub mod loaders;
 pub mod meta;
 pub mod modpack;
@@ -102,7 +103,18 @@ pub struct Launcher {
     clips: Arc<clips::ClipService>,
     /// Discord-Status („Spielt TRS Launcher“) über die lokale Discord-App.
     discord: Arc<discord::DiscordPresence>,
+    /// Kanal zur Mod (Clips, Kontowechsel im Spiel) – nur 127.0.0.1.
+    link: Arc<link::TrsLink>,
+    /// Öffnet Links im Browser (setzt die App; Konto aus dem Spiel hinzufügen).
+    url_opener: std::sync::RwLock<Option<UrlOpener>>,
+    /// Meldet der Oberfläche geänderte Accounts (Tauri: `accounts-changed`).
+    accounts_sink: std::sync::RwLock<Option<AccountsSink>>,
 }
+
+/// Öffnet eine URL im Standardbrowser.
+pub type UrlOpener = Arc<dyn Fn(&str) + Send + Sync>;
+/// Accounts wurden außerhalb der Oberfläche geändert (z. B. aus dem Spiel).
+pub type AccountsSink = Arc<dyn Fn() + Send + Sync>;
 
 impl Launcher {
     /// Legt die Verzeichnisstruktur unter `root` an und lädt die Einstellungen.
@@ -148,12 +160,16 @@ impl Launcher {
             events(event);
         });
 
-        let clips = Arc::new(clips::ClipService::new(&paths));
+        let link = Arc::new(link::TrsLink::new(Some(paths.root().join("link-sessions.json"))));
+        let clips = Arc::new(clips::ClipService::new(&paths, link.clone()));
         let discord = Arc::new(discord::DiscordPresence::from_build());
         discord.configure(settings.discord_presence, settings.ui.language);
         let launcher = Self {
             clips: clips.clone(),
             discord: discord.clone(),
+            link: link.clone(),
+            url_opener: std::sync::RwLock::default(),
+            accounts_sink: std::sync::RwLock::default(),
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
@@ -178,12 +194,13 @@ impl Launcher {
         launcher.games.recover(|id| {
             // Mit welchem Account das Spiel lief, ist nach dem Neustart unbekannt.
             presence.game_started(id, None);
-            let (paths, id, sink, presence, clips, discord) =
-                (paths.clone(), id.to_owned(), sink.clone(), presence.clone(), clips.clone(), discord.clone());
+            let (paths, id, sink, presence, clips, discord, link) =
+                (paths.clone(), id.to_owned(), sink.clone(), presence.clone(), clips.clone(), discord.clone(), link.clone());
             Box::new(move |seconds| {
                 presence.game_exited(&id);
                 clips.game_exited(&id);
                 discord.game_exited(&id);
+                link_game_exited(&link, &paths, &id);
                 tokio::spawn(async move {
                     let store = InstanceStore::new(paths.clone());
                     if let Err(e) = store.add_play_time(&id, seconds).await {
@@ -372,14 +389,72 @@ impl Launcher {
         games
     }
 
-    /// Nach einem Launcher-Neustart: Aufnahme für übernommene Spiele wieder aufnehmen
-    /// (neues Token – die Mod liest die Datei beim nächsten Verbindungsversuch neu).
+    /// Nach einem Launcher-Neustart: TRS-Link-Sitzungen übernommener Spiele
+    /// wiederherstellen (neuer Port in clips.json – die Mod liest ihn beim
+    /// nächsten Verbindungsversuch) und die Aufnahme wieder aufnehmen.
     pub async fn resume_clips(self: Arc<Self>) {
         let settings = self.settings().await.clips;
+        let running = self.running_for_clips().await;
+        if running.is_empty() {
+            // Nichts läuft: alte Sicherungen verwerfen.
+            if let Err(e) = self.link.restore(&[]).await {
+                tracing::warn!("TRS-Link-Sitzungen konnten nicht gelesen werden: {e}");
+            }
+            return;
+        }
+        self.link_attach_accounts();
+        let pairs: Vec<(String, u32)> = running.iter().map(|g| (g.instance_id.clone(), g.pid)).collect();
+        if let Err(e) = self.link.restore(&pairs).await {
+            tracing::warn!("TRS-Link-Sitzungen konnten nicht übernommen werden: {e}");
+        }
+        for game in &running {
+            // Ohne gesicherte Sitzung hilft ein neuer Schlüssel nur alten Mods (Token in clips.json).
+            if !self.link.has_session(&game.instance_id)
+                && client_mod::installed_is_legacy(&self.paths, &game.instance_id).await
+                && self.link.open_session(&game.instance_id, true).await.is_ok()
+            {
+                self.link.set_pid(&game.instance_id, game.pid);
+            }
+            if self.link.has_session(&game.instance_id) {
+                self.clips.prepare(&game.instance_id, &game.game_dir, &settings).await;
+            }
+        }
         if settings.enabled {
-            let running = self.running_for_clips().await;
             self.clips.settings_changed(&settings, running).await;
         }
+    }
+
+    /// Browser-Öffner der App (für „Konto hinzufügen“ aus dem Spiel).
+    pub fn set_url_opener(&self, opener: UrlOpener) {
+        *self.url_opener.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(opener);
+    }
+
+    pub(crate) fn url_opener(&self) -> Option<UrlOpener> {
+        self.url_opener.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    }
+
+    /// Oberfläche über Account-Änderungen informieren (Tauri: `accounts-changed`).
+    pub fn set_accounts_sink(&self, sink: AccountsSink) {
+        *self.accounts_sink.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(sink);
+    }
+
+    /// Account aus dem Spiel hinzugefügt: Oberfläche neu laden lassen.
+    pub(crate) fn emit_accounts_changed(&self) {
+        let sink = self.accounts_sink.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        if let Some(sink) = sink {
+            sink();
+        }
+    }
+
+    /// Accounts im Launcher geändert (hinzugefügt, entfernt, aktiver gewechselt):
+    /// laufende Spiele mit TRS Client laden ihre Kontenliste neu.
+    pub fn link_accounts_changed(&self) {
+        self.link.notify_accounts_changed();
+    }
+
+    /// Kontowechsel im Spiel an die Accounts dieses Launchers anbinden.
+    fn link_attach_accounts(self: &Arc<Self>) {
+        self.link.set_handler(Arc::new(link::bridge::AccountsBridge { launcher: Arc::downgrade(self) }));
     }
 
     /// Beim Beenden des Launchers: laufende Aufnahmen sichern und FFmpeg beenden.
@@ -626,6 +701,7 @@ impl Launcher {
             launcher.trs.presence.game_exited(&id);
             launcher.clips.game_exited(&id);
             launcher.discord.game_exited(&id);
+            link_game_exited(&launcher.link, &launcher.paths, &id);
             tokio::spawn(async move {
                 if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
                     tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
@@ -652,20 +728,34 @@ impl Launcher {
             hooks::apply_wrapper(&mut command, wrapper);
         }
         let log_dir = self.paths.instance_dir(&instance.id).join("launcher-logs");
-        // Port + Einmal-Token für die Clip-Tasten der Mod (oder "aus").
+        // TRS-Link: Schlüssel nur über die Umgebung des Spielprozesses (nie auf die Platte).
+        self.link_attach_accounts();
+        let legacy_mod = client_mod::installed_is_legacy(&self.paths, &instance.id).await;
+        let mut secrets = vec![session.access_token.clone()];
+        match self.link.open_session(&instance.id, legacy_mod).await {
+            Ok(handoff) => {
+                command.env.retain(|(k, _)| k != link::ENV_VAR);
+                command.env.push(handoff.env());
+                secrets.push(handoff.secret().to_owned());
+            }
+            Err(e) => tracing::warn!("TRS-Link startet nicht: {e}"),
+        }
+        // Clips: Port (bzw. altes Token für Mods ≤ 0.5.0) und Status für die Mod.
         self.clips.prepare(&instance.id, &game_dir, &settings.clips).await;
         // Vor dem Start eintragen, damit der Launcher ab jetzt schweigt (der Mod meldet "in-game").
         self.trs.presence.game_started(&instance.id, Some(&session.uuid));
         self.discord.game_started(discord::GameInfo { started_at: chrono::Utc::now().timestamp(), ..discord_game });
-        let pid = match self.games.spawn(&instance.id, command, &log_dir, vec![session.access_token.clone()], on_exit) {
+        let pid = match self.games.spawn(&instance.id, command, &log_dir, secrets, on_exit) {
             Ok(pid) => pid,
             Err(e) => {
                 self.trs.presence.game_exited(&instance.id);
                 self.clips.game_exited(&instance.id);
                 self.discord.game_exited(&instance.id);
+                link_game_exited(&self.link, &self.paths, &instance.id);
                 return Err(e);
             }
         };
+        self.link.set_pid(&instance.id, pid);
         self.clips.game_started(
             clips::RunningGame {
                 instance_id: instance.id.clone(),
@@ -832,6 +922,19 @@ impl ExitPlan {
         {
             sink(GameEvent::notice_error(id, &e));
         }
+    }
+}
+
+/// Spielende: Link-Sitzung schließen und `clips.json` leeren (kein Port, kein Token).
+fn link_game_exited(link: &Arc<link::TrsLink>, paths: &Paths, instance_id: &str) {
+    link.close_session(instance_id);
+    let game_dir = paths.instance_game_dir(instance_id);
+    if let Ok(runtime) = tokio::runtime::Handle::try_current() {
+        runtime.spawn(async move {
+            if let Err(e) = link::write_config(&game_dir, &link::LinkConfig::disabled()).await {
+                tracing::warn!("clips.json konnte nicht zurückgesetzt werden: {e}");
+            }
+        });
     }
 }
 

@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 
 use super::encoder::{self, Codec, Plan, SEGMENT_SECONDS};
-use super::link::{LinkEvent, LinkState};
+use crate::link::{LinkEvent, LinkState};
 use super::recorder::{self, Recorder};
 use super::settings::ClipSettings;
 use super::{ClipEvent, Shared, library, window};

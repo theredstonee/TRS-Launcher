@@ -24,7 +24,8 @@ async fn main() {
     let audio = args.next().is_none_or(|s| s == "1");
 
     let paths = Paths::new(&data);
-    let service = ClipService::new(&paths);
+    let link = Arc::new(trs_core::link::TrsLink::new(None));
+    let service = ClipService::new(&paths, link.clone());
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<ClipEvent>();
     service.set_sink(Arc::new(move |e| {
         println!("Ereignis: {}", serde_json::to_string(&e).unwrap_or_default());
@@ -43,6 +44,7 @@ async fn main() {
         ..Default::default()
     };
     let game_dir = data.join("game");
+    link.open_session("demo", false).await.expect("TRS-Link");
     service.prepare("demo", &game_dir, &settings).await;
     service.game_started(
         RunningGame { instance_id: "demo".into(), instance_name: "Demo".into(), pid, game_dir },

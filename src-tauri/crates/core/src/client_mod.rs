@@ -329,6 +329,22 @@ pub async fn sync(
     Ok(())
 }
 
+/// Version des TRS Client, die der Launcher zuletzt in die Instanz kopiert hat
+/// (`None` = unbekannt, z. B. nie installiert).
+pub async fn installed_version(paths: &Paths, instance_id: &str) -> Option<String> {
+    let marker = paths.instance_dir(instance_id).join(VERSION_MARKER);
+    let version = tokio::fs::read_to_string(&marker).await.ok()?.trim().to_owned();
+    client_mod_update::is_valid_version(&version).then_some(version)
+}
+
+/// Kennt die installierte Mod nur das alte Clip-Token in `clips.json`
+/// (TRS Client ≤ 0.5.0, Protokoll v1)?
+pub async fn installed_is_legacy(paths: &Paths, instance_id: &str) -> bool {
+    installed_version(paths, instance_id)
+        .await
+        .is_some_and(|v| !client_mod_update::is_newer(&v, crate::link::LEGACY_MOD_MAX))
+}
+
 /// Datei mit den Farben des Launchers in der Instanz.
 fn theme_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
     paths.instance_game_dir(instance_id).join("config").join(THEME_FILE)
@@ -829,5 +845,17 @@ mod tests {
         let other = instance("1.8.9", LoaderKind::Forge, None);
         sync(&http, &paths, Some(&res), Some(&offline), &other, &ui, true).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists(), "kein Build für 1.8.9: entfernt");
+    }
+
+    #[tokio::test]
+    async fn alte_mod_wird_am_versionsstempel_erkannt() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        assert!(!installed_is_legacy(&paths, "a").await, "unbekannt = neues Protokoll");
+        std::fs::create_dir_all(paths.instance_dir("a")).unwrap();
+        for (version, legacy) in [("0.3.0", true), ("0.5.0", true), ("0.5.1", false), ("0.6.0", false), ("kaputt", false)] {
+            std::fs::write(paths.instance_dir("a").join(VERSION_MARKER), version).unwrap();
+            assert_eq!(installed_is_legacy(&paths, "a").await, legacy, "{version}");
+        }
     }
 }
