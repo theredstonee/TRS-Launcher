@@ -70,7 +70,7 @@ const COMMAND_COOLDOWN: Duration = Duration::from_millis(700);
 const FIRST_AUTH_TTL: Duration = Duration::from_secs(15 * 60);
 const DENY_DELAY: Duration = Duration::from_millis(300);
 const LEGACY_VERSION: u32 = 1;
-const PROTOCOL_VERSION: u32 = 2;
+pub(crate) const PROTOCOL_VERSION: u32 = 2;
 
 // --- Clips ------------------------------------------------------------------
 
@@ -127,12 +127,15 @@ pub struct LinkConfig {
     /// Nur für Mods ≤ 0.5.0 (Protokoll v1).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    /// Clip-Ordner dieser Instanz (für die Clip-Liste im Spiel); kein Geheimnis.
+    #[serde(default, rename = "clipsDir", skip_serializing_if = "Option::is_none")]
+    pub clips_dir: Option<String>,
 }
 
 impl LinkConfig {
     /// Kein Spiel/kein Link: nichts verbinden.
     pub fn disabled() -> Self {
-        Self { version: PROTOCOL_VERSION, enabled: false, port: None, token: None }
+        Self { version: PROTOCOL_VERSION, enabled: false, port: None, token: None, clips_dir: None }
     }
 }
 
@@ -417,12 +420,12 @@ impl TrsLink {
         let Some(session) = hub.get_mut(instance_id) else { return LinkConfig::disabled() };
         if session.legacy {
             if !clips_enabled {
-                return LinkConfig { version: LEGACY_VERSION, enabled: false, port: None, token: None };
+                return LinkConfig { version: LEGACY_VERSION, enabled: false, port: None, token: None, clips_dir: None };
             }
             let token = session.legacy_token.get_or_insert_with(new_token).clone();
-            return LinkConfig { version: LEGACY_VERSION, enabled: true, port, token: Some(token) };
+            return LinkConfig { version: LEGACY_VERSION, enabled: true, port, token: Some(token), clips_dir: None };
         }
-        LinkConfig { version: PROTOCOL_VERSION, enabled: clips_enabled, port, token: None }
+        LinkConfig { version: PROTOCOL_VERSION, enabled: clips_enabled, port, token: None, clips_dir: None }
     }
 
     pub fn set_state(&self, instance_id: &str, state: LinkState) {

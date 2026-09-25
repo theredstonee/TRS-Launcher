@@ -69,6 +69,10 @@ public final class AutoTest {
 			AccountsTest.install();
 			return;
 		}
+		if ("menus".equals(System.getProperty("trsclient.autotest.only"))) {
+			MenusTest.install();
+			return;
+		}
 		MinecraftForge.EVENT_BUS.register(new AutoTest());
 	}
 

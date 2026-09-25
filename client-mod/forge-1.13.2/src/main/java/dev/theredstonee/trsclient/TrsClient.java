@@ -115,7 +115,8 @@ public final class TrsClient {
 		instance = client;
 		// Gibt es erst in neueren Versionen bzw. braucht Mixins: Treffer-Farbe (Overlay-Textur ab 1.15),
 		// Freelook (Kamera-Hooks) und der TRS-Startbildschirm.
-		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.hitColor, client.modules.freelook, client.modules.titleScreen));
+		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.hitColor, client.modules.freelook, client.modules.titleScreen,
+				client.modules.menuStyle));
 		// TRS-Online-Funktionen (Abzeichen, TRS-Umhänge, Umhang-Physik, Emotes) sind für 1.13.2 nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.trsOnline, client.modules.capePhysics, client.modules.emotes,
 				client.modules.colors));

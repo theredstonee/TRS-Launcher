@@ -150,6 +150,8 @@ public final class TrsClient {
 		initWaypoints(event.getModConfigurationDirectory());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
+		// Menü-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten).
+		dev.theredstonee.trsclient.core.menus.MenuStyle.install(modules);
 		if (status == ConfigStore.Status.RECOVERED) {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
 		}
@@ -169,6 +171,7 @@ public final class TrsClient {
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
 		AutoTest.installIfRequested();

@@ -110,6 +110,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.clips.Clips.init(FMLPaths.CONFIGDIR.get());
 		config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
+		// Menü-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten).
+		dev.theredstonee.trsclient.core.menus.MenuStyle.install(modules);
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(() -> TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(() -> TrsKeys.freelook));

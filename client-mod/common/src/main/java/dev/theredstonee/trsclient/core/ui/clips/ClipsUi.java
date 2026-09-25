@@ -164,14 +164,16 @@ public final class ClipsUi extends WindowUi {
 		if (preview >= list.size()) preview = -1;
 
 		// Werkzeugleiste: Filter links, Aufnahme/Clip/Ordner rechts
-		int tabW = Math.min(84, (w - 8) / 6);
 		String[] labels = {
 				I18n.tr("clips.filter.all", listing.count(null)),
 				I18n.tr("clips.filter.clips", listing.count(ClipLibrary.Type.CLIP)),
 				I18n.tr("clips.filter.screenshots", listing.count(ClipLibrary.Type.SCREENSHOT))};
+		int tabsRight = x;
+		int tx = x;
 		for (int i = 0; i < 3; i++) {
 			final Filter f = Filter.values()[i];
-			tab(c, x + i * (tabW + 3), y, tabW, 16, labels[i], filter == f, mx, my, new Runnable() {
+			int tw = Math.min(c.textWidth(labels[i]) + 14, Math.max(40, (w - 8) / 6));
+			tab(c, tx, y, tw, 16, labels[i], filter == f, mx, my, new Runnable() {
 				@Override
 				public void run() {
 					filter = f;
@@ -179,6 +181,8 @@ public final class ClipsUi extends WindowUi {
 					preview = -1;
 				}
 			});
+			tx += tw + 3;
+			tabsRight = tx;
 		}
 		ClipStatus st = Clips.get() == null ? ClipStatus.OFFLINE : Clips.get().status();
 		int right = x + w;
@@ -202,7 +206,7 @@ public final class ClipsUi extends WindowUi {
 		String clipLabel = I18n.tr("clips.save");
 		int cw = Math.min(100, c.textWidth(clipLabel) + 12);
 		int clipX = right - cw;
-		if (clipX > x + 3 * (tabW + 3)) {
+		if (clipX > tabsRight) {
 			button(c, clipX, y, cw, 16, clipLabel, false, st.connected && st.available && st.buffer, mx, my, new Runnable() {
 				@Override
 				public void run() {
@@ -230,8 +234,13 @@ public final class ClipsUi extends WindowUi {
 		} else {
 			line = I18n.tr("clips.link.unavailable");
 		}
-		Paint.textClipped(c, line, x, cy, w, lineColor, false);
-		cy += 13;
+		List<String> statusLines = Paint.wrap(c, line, w);
+		for (int i = 0; i < Math.min(2, statusLines.size()); i++) {
+			String l = i == 1 && statusLines.size() > 2 ? Paint.join(statusLines, 1) : statusLines.get(i);
+			Paint.textClipped(c, l, x, cy, w, lineColor, false);
+			cy += 10;
+		}
+		cy += 3;
 
 		int gh = y + h - cy;
 		gridRect[0] = x;

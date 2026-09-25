@@ -46,9 +46,12 @@ public final class ServerInfoUi extends WindowUi {
 		host.closeScreen();
 	}
 
+	/** Höhe des Inhalts im letzten Bild (das Fenster passt sich an). */
+	private int contentHeight = 150;
+
 	@Override
 	protected int[] size(int width, int height) {
-		return new int[]{Math.min(width - 16, 320), Math.min(height - 16, 250)};
+		return new int[]{Math.min(width - 16, 320), Math.min(height - 16, HEADER_H + 6 + contentHeight + PAD)};
 	}
 
 	@Override
@@ -126,6 +129,8 @@ public final class ServerInfoUi extends WindowUi {
 				Paint.textClipped(c, f.name, fx + 12, cy, nw - 14, t.text, false);
 				fx += nw;
 			}
+			cy += 12;
 		}
+		contentHeight = Math.max(60, cy - y);
 	}
 }

@@ -152,6 +152,26 @@ public final class Gfx {
 		*///?}
 	}
 
+	/** Bis 1.19.4 zeichnet Minecraft sofort – nichts zu sammeln. */
+	public void managed(Runnable draw) {
+		draw.run();
+	}
+
+	/** Bis 1.19.4 wird sofort gezeichnet – Überblendungen brauchen nur {@link #raise}. */
+	public void overlayLayer() {
+	}
+
+	public void flush() {
+	}
+
+	/** Schneidet {@code text} auf höchstens {@code maxWidth} Pixel ab. */
+	public static String clip(Font font, String text, int maxWidth) {
+		//? if >=1.16 {
+		return font.plainSubstrByWidth(text, maxWidth);
+		//?} else
+		/*return font.substrByWidth(text, maxWidth);*/
+	}
+
 	/** Zeichnen auf ein Rechteck begrenzen (GUI-Koordinaten), mit {@link #noScissor()} beenden. */
 	public void scissor(int x1, int y1, int x2, int y2) {
 		double scale = Mc.window().getGuiScale();

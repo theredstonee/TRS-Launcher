@@ -80,6 +80,26 @@ public final class TrsMenuHost implements MenuHost {
 		return AccountsScreen.available();
 	}
 
+	@Override
+	public void openFriends() {
+		Mc.setScreen(MenuScreens.friends(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasFriends() {
+		return MenuScreens.friendsAvailable();
+	}
+
+	@Override
+	public void openClips() {
+		Mc.setScreen(MenuScreens.clips(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasClips() {
+		return true;
+	}
+
 	/** Ohne Mixin (Forge 1.14.4) fehlen einige Module – die bleiben aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {

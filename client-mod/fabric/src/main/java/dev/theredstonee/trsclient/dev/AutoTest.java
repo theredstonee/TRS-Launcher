@@ -88,6 +88,10 @@ public final class AutoTest {
 			AccountsTest.install();
 			return;
 		}
+		if ("menus".equals(System.getProperty("trsclient.autotest.only"))) {
+			MenusTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}
@@ -671,7 +675,7 @@ public final class AutoTest {
 		wait = ticks;
 	}
 
-	private static void startWorld(Minecraft mc) {
+	static void startWorld(Minecraft mc) {
 		if (mc.getLevelSource().levelExists(WORLD)) {
 			TrsClient.LOGGER.info("[Autotest] öffne Testwelt '{}'", WORLD);
 			//? if >=1.20.5 {

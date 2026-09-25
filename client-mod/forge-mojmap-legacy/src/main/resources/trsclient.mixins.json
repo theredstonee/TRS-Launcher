@@ -35,7 +35,15 @@
 		"NameTagBadgeMixin",
 		"OldAnimationsMixin",
 		"OverlayTextureAccessor",
-		"TabBadgeMixin"
+		"TabBadgeMixin",
+		"MenuScreenMixin",
+		"MenuButtonMixin",
+		"ServerEntryMixin",
+		"WorldEntryMixin",
+		"LoadingOverlayMixin",
+		"LoadingScreenMixin",
+		"JoinMultiplayerAccessor",
+		"SelectionListAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

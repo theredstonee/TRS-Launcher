@@ -131,7 +131,10 @@ public final class Friends {
 
 	/** Die Liste wird gebraucht (jedes Bild bzw. jeden Tick melden; verfällt nach wenigen Sekunden). */
 	public void want(Interest level, boolean blocks) {
-		long now = System.currentTimeMillis();
+		want(level, blocks, System.currentTimeMillis());
+	}
+
+	void want(Interest level, boolean blocks, long now) {
 		if (level == Interest.NONE) return;
 		if (interest != Interest.FOREGROUND || now > interestUntil || level == Interest.FOREGROUND) interest = level;
 		interestUntil = now + INTEREST_MS;

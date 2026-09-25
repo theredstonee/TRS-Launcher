@@ -34,7 +34,7 @@ use tokio::sync::mpsc;
 use crate::paths::Paths;
 use crate::{Error, Result};
 use encoder::Codec;
-use crate::link::{self, LinkCommand, LinkEvent, LinkState, TrsLink};
+use crate::link::{self, LinkCommand, LinkConfig, LinkEvent, LinkState, TrsLink};
 use session::Command;
 use settings::ClipSettings;
 
@@ -250,7 +250,8 @@ impl ClipService {
     /// Clip-Status im Link setzen. Die Link-Sitzung selbst öffnet der Launcher.
     /// Fehler verhindern den Start nie.
     pub async fn prepare(&self, instance_id: &str, game_dir: &Path, settings: &ClipSettings) {
-        let config = self.shared.link.clips_config(instance_id, settings.enabled);
+        let mut config = self.shared.link.clips_config(instance_id, settings.enabled);
+        self.add_clips_dir(&mut config, instance_id, settings);
         let state = if settings.enabled {
             LinkState { reason: Some("starting"), ..Default::default() }
         } else {
@@ -259,6 +260,17 @@ impl ClipService {
         self.shared.link.set_state(instance_id, state);
         if let Err(e) = link::write_config(game_dir, &config).await {
             tracing::warn!("clips.json konnte nicht geschrieben werden: {e}");
+        }
+    }
+
+    /// Protokoll 2: Clip-Ordner der Instanz mitgeben (die Mod zeigt die Clips im Spiel an).
+    fn add_clips_dir(&self, config: &mut LinkConfig, instance_id: &str, settings: &ClipSettings) {
+        if config.version < link::PROTOCOL_VERSION || config.port.is_none() {
+            return;
+        }
+        let root = library::clips_root(&self.shared.paths, settings);
+        if let Ok(dir) = library::instance_dir(&root, instance_id) {
+            config.clips_dir = dir.to_str().map(str::to_owned);
         }
     }
 
@@ -421,7 +433,9 @@ mod tests {
         let text = std::fs::read_to_string(game.join("config/trsclient/clips.json")).unwrap();
         assert!(!text.contains(handoff.secret()), "der Link-Schlüssel steht nie in der Datei");
         let config: LinkConfig = serde_json::from_str(&text).unwrap();
-        assert_eq!(config, LinkConfig { version: 2, enabled: true, port: Some(handoff.port), token: None });
+        let dir = config.clips_dir.clone().expect("Clip-Ordner");
+        assert!(dir.ends_with("survival"), "{dir}");
+        assert_eq!(config, LinkConfig { version: 2, enabled: true, port: Some(handoff.port), token: None, clips_dir: Some(dir) });
         service.game_exited("survival");
     }
 
@@ -438,7 +452,7 @@ mod tests {
         assert_eq!(config.token.as_deref().map(str::len), Some(64));
         service.prepare("survival", &game, &ClipSettings::default()).await;
         let text = std::fs::read_to_string(game.join("config/trsclient/clips.json")).unwrap();
-        assert_eq!(serde_json::from_str::<LinkConfig>(&text).unwrap(), LinkConfig { version: 1, enabled: false, port: None, token: None });
+        assert_eq!(serde_json::from_str::<LinkConfig>(&text).unwrap(), LinkConfig { version: 1, enabled: false, port: None, token: None, clips_dir: None });
     }
 
     #[test]
