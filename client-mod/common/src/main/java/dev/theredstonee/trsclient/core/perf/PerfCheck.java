@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public final class PerfCheck {
 	public enum Level {
-		/** Deutliche Bremse (VSync, Simulationsdistanz, Onboard-Grafik, Fabelhaft). */
+		/** Deutliche Bremse (VSync, Bildraten-Grenze, Simulationsdistanz, Onboard-Grafik, Fabelhaft). */
 		HIGH,
 		/** Lohnt sich bei niedriger Bildrate. */
 		MEDIUM,
@@ -44,6 +44,8 @@ public final class PerfCheck {
 
 	/** Bildrate, unter der Sichtweite & Co. vorgeschlagen werden. */
 	static final int LOW_FPS = 60;
+	/** Bildraten-Grenze bis hierher (Vanilla-Standard 120) gilt als deutliche Bremse. */
+	static final int FPS_LIMIT_HIGH = 120;
 
 	private PerfCheck() {
 	}
@@ -65,6 +67,13 @@ public final class PerfCheck {
 		}
 		int vsync = o.get(GameOptions.Opt.VSYNC);
 		if (vsync == 1) out.add(fix("vsync", Level.HIGH, I18n.tr("perf.check.vsync"), GameOptions.Opt.VSYNC, 0));
+		// „Max. Bildrate“ unter „Unbegrenzt“: frische Vanilla-Optionen stehen auf 120 – das Spiel wird nie schneller,
+		// egal wie stark der PC ist. Ab 144 (Monitor-Takt) hat der Spieler sie vermutlich bewusst gesetzt → nur Tipp.
+		int maxFps = o.get(GameOptions.Opt.MAX_FPS);
+		if (maxFps != GameOptions.NONE && maxFps < GameOptions.UNLIMITED_FPS) {
+			out.add(fix("fpsLimit", maxFps <= FPS_LIMIT_HIGH ? Level.HIGH : Level.TIP, I18n.tr("perf.check.fpsLimit", maxFps),
+					GameOptions.Opt.MAX_FPS, GameOptions.UNLIMITED_FPS));
+		}
 
 		int view = o.get(GameOptions.Opt.VIEW_DISTANCE);
 		int sim = o.get(GameOptions.Opt.SIMULATION_DISTANCE);

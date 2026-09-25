@@ -15,7 +15,9 @@ import java.util.Locale;
  * (Wesen offen, hinter Wänden und mit Namensschild, Truhen, Lagerfeuer-Rauch), die Kamera dreht sich
  * gleichmäßig. Nach dem Aufwärmen werden {@link #MEASURE_TICKS} lang alle Bildzeiten aufgenommen und
  * Durchschnitt sowie 1 %-/0,1 %-Low geloggt – einmal mit den Standard-Modulen plus Leistungs-Kategorie,
- * einmal zusätzlich mit „Farben“. VSync und FPS-Grenze sind für die Messung aus.
+ * einmal zusätzlich mit „Farben“. VSync und FPS-Grenze sind für die Messung aus – außer mit
+ * {@code -Dtrsclient.bench.keepOptions=true} (Gradle: {@code -PtrsBenchOptions=vanilla|trs|keep}): dann misst er mit den
+ * Werten aus options.txt, also so, wie ein Spieler mit frischer Instanz spielt.
  */
 public final class Benchmark {
 	private static final int WARMUP_TICKS = 300;
@@ -29,6 +31,10 @@ public final class Benchmark {
 	private boolean rotate;
 	private int oldVsync = GameOptions.NONE;
 	private int oldLimit = -1;
+	/** VSync und FPS-Grenze aus options.txt lassen (realistische Messung statt „alles offen“). */
+	private static final boolean KEEP_OPTIONS = Boolean.getBoolean("trsclient.bench.keepOptions");
+	/** Bezeichnung des Laufs im Log (z. B. „TRS allein“, „TRS + Max-FPS-Mods“). */
+	private static final String LABEL = System.getProperty("trsclient.bench.label", "");
 
 	/** Ein Tick; true = noch nicht fertig. */
 	public boolean step(Minecraft mc, TrsModules modules, CapeTest.Actions actions) {
@@ -46,10 +52,16 @@ public final class Benchmark {
 		switch (phase++) {
 			case 0: {
 				PerfOptions options = new PerfOptions();
-				oldVsync = options.get(GameOptions.Opt.VSYNC);
-				options.set(GameOptions.Opt.VSYNC, 0);
-				oldLimit = framerateLimit(mc);
-				setFramerateLimit(mc, 260);
+				if (!KEEP_OPTIONS) {
+					oldVsync = options.get(GameOptions.Opt.VSYNC);
+					options.set(GameOptions.Opt.VSYNC, 0);
+					oldLimit = framerateLimit(mc);
+					setFramerateLimit(mc, 260);
+				}
+				TrsClient.LOGGER.info(String.format(Locale.ROOT, "[Benchmark] Setup%s: VSync %s, Max. Bildrate %s, %s, Leistungs-Mods: %s",
+						LABEL.isEmpty() ? "" : " \"" + LABEL + "\"", options.get(GameOptions.Opt.VSYNC) == 1 ? "an" : "aus",
+						framerateLimit(mc) >= GameOptions.UNLIMITED_FPS ? "unbegrenzt" : String.valueOf(framerateLimit(mc)),
+						KEEP_OPTIONS ? "Werte aus options.txt" : "für die Messung geöffnet", perfMods()));
 				// Leistungs-Kategorie an (Standardwerte); Dynamische FPS aus, weil das Testfenster selten den Fokus hat.
 				modules.fpsBoost.setEnabled(true);
 				modules.entityCulling.setEnabled(true);
@@ -203,7 +215,19 @@ public final class Benchmark {
 		return "{NoAI:1b,NoGravity:1b,Silent:1b,Invulnerable:1b,PersistenceRequired:1b,CustomNameVisible:1b,CustomName:'\"" + name + "\"'}";
 	}
 
+	private static String perfMods() {
+		dev.theredstonee.trsclient.core.perf.Performance p = PerfHooks.get();
+		if (p == null || p.compat().detected().isEmpty()) return "keine";
+		StringBuilder sb = new StringBuilder();
+		for (dev.theredstonee.trsclient.core.perf.PerfMod m : p.compat().detected()) {
+			if (sb.length() > 0) sb.append(", ");
+			sb.append(m.displayName());
+		}
+		return sb.toString();
+	}
+
 	private void report(String label, FrameStats stats) {
+		if (!LABEL.isEmpty()) label = LABEL + " – " + label;
 		TrsClient.LOGGER.info(String.format(Locale.ROOT,
 				"[Benchmark] %s: Ø %.1f FPS | 1%%-Low %.1f FPS | 0,1%%-Low %.1f FPS | %d Bilder in %.1f s | längstes Bild %.1f ms | >50 ms: %d",
 				label, stats.averageFps(), stats.lowFps(0.01), stats.lowFps(0.001), stats.frames(), stats.seconds(),

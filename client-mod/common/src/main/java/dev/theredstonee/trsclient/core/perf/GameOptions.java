@@ -8,6 +8,8 @@ package dev.theredstonee.trsclient.core.perf;
 public interface GameOptions {
 	/** Option gibt es in dieser Version nicht. */
 	int NONE = Integer.MIN_VALUE;
+	/** „Max. Bildrate“ auf diesem Wert = unbegrenzt (Vanilla seit 1.7, auch options.txt {@code maxFps:260}). */
+	int UNLIMITED_FPS = 260;
 
 	enum Opt {
 		/** 0 aus, 1 an */
@@ -31,7 +33,9 @@ public interface GameOptions {
 		/** Weiche Beleuchtung: 0 aus, 1 minimal, 2 maximal (ab 1.19.3 nur 0/2) */
 		SMOOTH_LIGHTING(0, 2),
 		/** 0 Fenster, 1 Vollbild (nur Anzeige) */
-		FULLSCREEN(0, 1);
+		FULLSCREEN(0, 1),
+		/** Bildraten-Grenze („Max. Bildrate“) 10–260 in Zehnerschritten; {@link #UNLIMITED_FPS} = unbegrenzt */
+		MAX_FPS(10, UNLIMITED_FPS);
 
 		private final int min;
 		private final int max;

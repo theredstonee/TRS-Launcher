@@ -475,6 +475,8 @@ public final class LegacyPerf implements GameOptions {
 				return s.ambientOcclusion;
 			case FULLSCREEN:
 				return s.fullScreen ? 1 : 0;
+			case MAX_FPS:
+				return s.limitFramerate;
 			default:
 				return NONE;
 		}
@@ -509,6 +511,10 @@ public final class LegacyPerf implements GameOptions {
 				return true;
 			case SMOOTH_LIGHTING:
 				s.setOptionValue(GameSettings.Options.AMBIENT_OCCLUSION, (v - current + 3) % 3);
+				return true;
+			case MAX_FPS:
+				// Zehnerschritte wie der Schieberegler; 260 = unbegrenzt.
+				s.setOptionFloatValue(GameSettings.Options.FRAMERATE_LIMIT, Math.round(v / 10f) * 10);
 				return true;
 			default:
 				return false;

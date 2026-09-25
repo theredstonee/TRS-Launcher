@@ -376,7 +376,8 @@ public final class Performance {
 		if (game != null) {
 			int view = game.get(GameOptions.Opt.VIEW_DISTANCE);
 			boolean smoothBool = game.smoothLightingIsBoolean();
-			GameOptions.Opt[] order = {GameOptions.Opt.VIEW_DISTANCE, GameOptions.Opt.VSYNC, GameOptions.Opt.SIMULATION_DISTANCE,
+			GameOptions.Opt[] order = {GameOptions.Opt.VIEW_DISTANCE, GameOptions.Opt.VSYNC, GameOptions.Opt.MAX_FPS,
+					GameOptions.Opt.SIMULATION_DISTANCE,
 					GameOptions.Opt.GRAPHICS, GameOptions.Opt.CLOUDS, GameOptions.Opt.PARTICLES, GameOptions.Opt.MIPMAP,
 					GameOptions.Opt.BIOME_BLEND, GameOptions.Opt.ENTITY_DISTANCE, GameOptions.Opt.SMOOTH_LIGHTING};
 			for (GameOptions.Opt o : order) {

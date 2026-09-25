@@ -188,7 +188,9 @@ public final class PerfHooks {
 		frames++;
 		try {
 			Minecraft mc = Minecraft.getInstance();
-			boolean focused = mc.isWindowActive() && !forceUnfocused;
+			// Minecrafts Fokus-Merker hängt an Fenster-Ereignissen; geht eines verloren, hielte er das Fenster für
+			// „im Hintergrund“ und Dynamische FPS bremste das laufende Spiel. Im Zweifel zählt, was das System sagt.
+			boolean focused = !forceUnfocused && (mc.isWindowActive() || liveFocused());
 			long now = System.nanoTime();
 			// Fensterzustand und Tasten nur ein paar Mal je Sekunde (jede Abfrage kostet Zeit im Bild);
 			// Maus und Tasten braucht es überhaupt nur für die AFK-Grenze.

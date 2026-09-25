@@ -88,6 +88,11 @@ public final class PerfOptions implements GameOptions {
 				return o.fullscreen().get() ? 1 : 0;
 				//?} else
 				/*return o.fullscreen ? 1 : 0;*/
+			case MAX_FPS:
+				//? if >=1.19 {
+				return o.framerateLimit().get();
+				//?} else
+				/*return o.framerateLimit;*/
 			default:
 				return NONE;
 		}
@@ -185,6 +190,16 @@ public final class PerfOptions implements GameOptions {
 				*///?} else {
 				/*o.ambientOcclusion = net.minecraft.client.AmbientOcclusionStatus.values()[v];
 				mc.levelRenderer.allChanged();
+				*///?}
+				return true;
+			case MAX_FPS:
+				// In Zehnerschritten wie der Schieberegler; 260 = unbegrenzt.
+				v = Math.round(v / 10f) * 10;
+				//? if >=1.19 {
+				o.framerateLimit().set(v);
+				//?} else {
+				/*o.framerateLimit = v;
+				Mc.window().setFramerateLimit(v);
 				*///?}
 				return true;
 			default:

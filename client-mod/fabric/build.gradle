@@ -63,6 +63,14 @@ loom {
 				vmArg "-Dtrsclient.api.url=${project.trsApi}"
 				vmArg "-Dtrsclient.session.url=${project.trsApi}"
 			}
+			// Benchmark (-PtrsAutotestOnly=bench) realistisch: VSync/FPS-Grenze aus options.txt statt „alles offen“
+			// (-PtrsBenchOptions=vanilla|trs|keep, siehe unten), Bezeichnung des Laufs im Log (-PtrsBenchLabel=…).
+			if (project.hasProperty('trsBenchOptions')) {
+				vmArg '-Dtrsclient.bench.keepOptions=true'
+			}
+			if (project.hasProperty('trsBenchLabel')) {
+				vmArg "-Dtrsclient.bench.label=${project.trsBenchLabel}"
+			}
 		}
 		server {
 			ideConfigGenerated = false
@@ -101,6 +109,11 @@ dependencies {
 	if (running) {
 		add(modRuntime, "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}") {
 			exclude group: 'net.fabricmc', module: 'fabric-loader'
+		}
+		// Benchmark mit fremden Mods (z. B. dem „Max FPS“-Preset des Launchers): -PtrsBenchMods=<Ordner mit Mod-JARs
+		// für genau diese Version> – Loom mappt sie für die Entwicklungsumgebung um.
+		if (project.hasProperty('trsBenchMods')) {
+			add(modRuntime, fileTree(dir: project.trsBenchMods, include: '*.jar'))
 		}
 	}
 	compileOnly "com.google.code.gson:gson:${rootProject.gson_version}"
@@ -164,3 +177,27 @@ tasks.withType(Jar).configureEach {
 
 // Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
 apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
+
+// -PtrsBenchOptions: mit welchen Bildraten-Einstellungen der Benchmark misst.
+//   vanilla = frische Vanilla-Optionen (VSync an, Max. Bildrate 120)
+//   trs     = Standard neuer TRS-Instanzen (VSync aus, unbegrenzt)
+//   keep    = options.txt unverändert lassen
+if (project.hasProperty('trsBenchOptions')) {
+	def mode = project.trsBenchOptions.toString()
+	def values = [vanilla: [enableVsync: 'true', maxFps: '120'], trs: [enableVsync: 'false', maxFps: '260'], keep: [:]]
+	if (!values.containsKey(mode)) throw new GradleException("trsBenchOptions: vanilla, trs oder keep (nicht '${mode}')")
+	tasks.matching { it.name == 'runClient' }.configureEach { task ->
+		task.doFirst {
+			if (values[mode].isEmpty()) return
+			File dir = project.file(loom.runConfigs.client.runDir)
+			dir.mkdirs()
+			File options = new File(dir, 'options.txt')
+			List<String> lines = options.exists() ? options.readLines('UTF-8').findAll { line ->
+				!values[mode].keySet().any { line.startsWith(it + ':') }
+			} : []
+			values[mode].each { k, v -> lines << "${k}:${v}".toString() }
+			options.write(lines.join('\n') + '\n', 'UTF-8')
+			logger.lifecycle("Benchmark: ${values[mode]} (${options})")
+		}
+	}
+}

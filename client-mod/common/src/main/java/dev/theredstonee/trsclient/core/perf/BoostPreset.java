@@ -3,8 +3,8 @@ package dev.theredstonee.trsclient.core.perf;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 
 /**
- * Ein-Klick-Stufen des FPS-Boosts. Setzt die Leistungs-Module auf feste Werte und senkt
- * Vanilla-Optionen, die bremsen (erhöht nie etwas). Alles landet vorher in {@link UndoLog}.
+ * Ein-Klick-Stufen des FPS-Boosts. Setzt die Leistungs-Module auf feste Werte, senkt Vanilla-Optionen, die
+ * bremsen (erhöht keine Details), und hebt die Bildraten-Grenze auf. Alles landet vorher in {@link UndoLog}.
  */
 public enum BoostPreset {
 	/** Sanft: kaum sichtbare Unterschiede. */
@@ -48,11 +48,16 @@ public enum BoostPreset {
 		return I18n.trOr("perf.boost." + name().toLowerCase(java.util.Locale.ROOT), name());
 	}
 
-	/** Neue Werte der Vanilla-Optionen (nur Senkungen; {@link GameOptions#NONE} = unverändert). */
+	/**
+	 * Neue Werte der Vanilla-Optionen ({@link GameOptions#NONE} = unverändert). Details werden nur gesenkt; einzige
+	 * Ausnahme ist die Bildraten-Grenze – die hebt jede Stufe auf „Unbegrenzt“, sonst bringt der Boost nichts.
+	 */
 	public int target(GameOptions.Opt opt, int current, int view, boolean smoothIsBoolean) {
 		if (current == GameOptions.NONE) return GameOptions.NONE;
 		int t;
 		switch (opt) {
+			case MAX_FPS:
+				return current < GameOptions.UNLIMITED_FPS ? GameOptions.UNLIMITED_FPS : GameOptions.NONE;
 			case VSYNC:
 				t = 0;
 				break;
