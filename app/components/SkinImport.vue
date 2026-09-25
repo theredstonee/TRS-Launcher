@@ -251,10 +251,13 @@ const groups = computed(() => groupBySource(scan.value?.candidates ?? []))
 /** Gefundene Launcher ohne gespeicherte Skins. */
 const emptySources = computed(() => {
   const withSkins = new Set(groups.value.map((g) => g.source))
-  return (scan.value?.found ?? [])
+  const found = (scan.value?.found ?? [])
     .filter(isLauncherSource)
     .filter((s) => !withSkins.has(s))
     .map((s) => t(`skins.import.sources.${s}`))
+  // Lunar, Badlion, Feather & Co. speichern gar keine Skin-Liste auf der Platte.
+  const without = (scan.value?.withoutSkins ?? []).map((s) => importSourceLabel(s))
+  return [...found, ...without]
 })
 
 async function openLaunchers() {

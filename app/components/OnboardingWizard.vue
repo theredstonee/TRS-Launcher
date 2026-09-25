@@ -75,7 +75,7 @@ async function runImport(candidate: ImportCandidate) {
   importError.value = null
   importing.value = { id: candidate.id, percent: 0 }
   try {
-    const instance = await backend.importInstance(candidate.id, null, null, (p) => {
+    const { instance } = await backend.importInstance(candidate.id, null, null, (p) => {
       if (importing.value) importing.value.percent = Math.floor(p.percent)
     })
     imported.value = new Set(imported.value).add(candidate.id)

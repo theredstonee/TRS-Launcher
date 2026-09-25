@@ -20,6 +20,18 @@ How to write an entry:
 
 ### English
 
+- **Import from many more launchers.** "Import from another launcher" now also finds Lunar Client, Badlion, OneClient,
+  ATLauncher, GDLauncher (old and new) and TLauncher, next to the official launcher, CurseForge, the Modrinth App, Prism
+  and MultiMC. It shows which launchers are on your PC and, per instance, exactly what comes along: worlds, mods,
+  resource and shader packs, settings and your server list. The version and mod loader are detected for you. Lunar
+  and Badlion bring your own worlds, packs, settings and mods – their built-in client mods aren't free and stay behind,
+  TRS Client takes their place. Feather is recognised but keeps no readable list, so pick its folder by hand.
+- **Imported mods stay updatable.** Content from CurseForge, ATLauncher and GDLauncher keeps its origin, so you can
+  update it right away. Files missing from a CurseForge instance are downloaded for you.
+- **Skins from ATLauncher.** "Add skin" → "From other launchers" now also brings over the skins of your ATLauncher
+  accounts.
+- **Safer imports.** Sign-in data of other launchers is never read or copied, other launchers' files are only read,
+  and links that point outside the launcher's own folders are skipped.
 - **New TRS Client title screen: you on a redstone turntable.** Your own skin (and your TRS or Mojang cape) now
   stands on a slowly turning redstone turntable on the left of the title screen – drag it to spin it, and your head
   follows the mouse. Below it are your name and an "Account" button. A new bar on the right leads to Wardrobe,
@@ -53,6 +65,19 @@ How to write an entry:
 
 ### Deutsch
 
+- **Import aus viel mehr Launchern.** „Aus anderem Launcher importieren“ findet jetzt auch Lunar Client, Badlion,
+  OneClient, ATLauncher, GDLauncher (alt und neu) und TLauncher – neben dem offiziellen Launcher, CurseForge, der
+  Modrinth App, Prism und MultiMC. Du siehst, welche Launcher auf deinem PC liegen, und je Instanz genau, was mitkommt:
+  Welten, Mods, Ressourcen- und Shaderpakete, Einstellungen und deine Serverliste. Version und Modloader werden
+  erkannt. Bei Lunar und Badlion kommen deine eigenen Welten, Pakete, Einstellungen und Mods mit – die eingebauten
+  Client-Mods sind nicht frei und bleiben zurück, der TRS Client übernimmt ihren Platz. Feather wird erkannt,
+  speichert aber keine lesbare Liste – wähle seinen Ordner dann von Hand.
+- **Importierte Mods bleiben aktualisierbar.** Inhalte aus CurseForge, ATLauncher und GDLauncher behalten ihre
+  Herkunft, du kannst sie also sofort aktualisieren. Fehlen in einer CurseForge-Instanz Dateien, werden sie geladen.
+- **Skins aus dem ATLauncher.** „Skin hinzufügen“ → „Aus anderen Launchern“ holt jetzt auch die Skins deiner
+  ATLauncher-Konten.
+- **Sicherer importieren.** Anmeldedaten anderer Launcher werden nie gelesen oder kopiert, fremde Dateien nur
+  gelesen, und Verknüpfungen, die aus den Launcher-Ordnern herausführen, werden übersprungen.
 - **Neuer Titelbildschirm im TRS Client: du auf einer Redstone-Drehscheibe.** Dein eigener Skin (mit deinem TRS-
   oder Mojang-Umhang) steht jetzt links auf einer langsam drehenden Redstone-Drehscheibe – zieh daran, um sie zu
   drehen, und dein Kopf folgt der Maus. Darunter stehen dein Name und ein „Konto“-Knopf. Eine neue Leiste rechts führt

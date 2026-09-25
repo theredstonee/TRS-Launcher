@@ -563,7 +563,24 @@ export interface ImageEntry {
   date: string | null
 }
 
-export type ImportSource = 'vanilla' | 'prism' | 'multimc' | 'curseforge' | 'modrinth' | 'folder'
+export type ImportSource =
+  | 'vanilla'
+  | 'prism'
+  | 'multimc'
+  | 'curseforge'
+  | 'modrinth'
+  | 'folder'
+  | 'lunar'
+  | 'badlion'
+  | 'feather'
+  | 'oneclient'
+  | 'atlauncher'
+  | 'gdlauncher'
+  | 'gdlaunchercarbon'
+  | 'tlauncher'
+
+/** Hinweise zur Vorschau eines Imports (erklärt im Dialog). */
+export type ImportNote = 'clientModsSkipped' | 'sharedGameDir' | 'loaderMapped' | 'curseForgeDownloads'
 
 export interface ImportCandidate {
   id: string
@@ -573,7 +590,39 @@ export interface ImportCandidate {
   loader: Loader
   modCount: number
   worldCount: number
+  resourcePackCount: number
+  shaderPackCount: number
+  /** options.txt (Einstellungen, Tastenbelegung) kommt mit. */
+  hasOptions: boolean
+  /** servers.dat (Serverliste) kommt mit. */
+  hasServers: boolean
+  /** Inhalte mit bekannter Herkunft (bleiben aktualisierbar). */
+  trackedCount: number
+  /** Fehlende Dateien, die von CurseForge geladen werden. */
+  missingCount: number
+  notes: ImportNote[]
   versionGuessed: boolean
+}
+
+/** Ein Launcher, dessen Daten auf diesem PC liegen. */
+export interface DetectedLauncher {
+  source: ImportSource
+  instances: number
+  /** false = erkannt, speichert aber keine lesbare Liste. */
+  supported: boolean
+}
+
+export interface ImportOverview {
+  candidates: ImportCandidate[]
+  launchers: DetectedLauncher[]
+}
+
+export interface ImportResult {
+  instance: Instance
+  tracked: number
+  downloaded: number
+  blocked: number
+  failed: number
 }
 
 export interface ImportProgress {
@@ -709,7 +758,7 @@ export interface LibrarySkin {
 }
 
 /** Woher ein Skin beim Hinzufügen kommt (`minecraft` = offizieller Launcher). */
-export type SkinImportSource = 'file' | 'url' | 'player' | 'minecraft' | 'prism' | 'modrinth'
+export type SkinImportSource = 'file' | 'url' | 'player' | 'minecraft' | 'prism' | 'modrinth' | 'atlauncher'
 
 /** Vorgemerkter Skin (geprüft im Kern) – übernommen wird er erst per Marke. */
 export interface SkinImportCandidate {
@@ -740,6 +789,8 @@ export interface LauncherSkinScan {
   candidates: SkinImportCandidate[]
   /** Launcher, deren Daten auf diesem PC liegen (auch ohne Skins). */
   found: SkinImportSource[]
+  /** Launcher, die hier liegen, aber keine lesbare Skin-Liste speichern. */
+  withoutSkins: ImportSource[]
 }
 
 export interface SkinImportRequest {
