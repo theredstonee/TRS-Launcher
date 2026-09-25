@@ -112,7 +112,7 @@ public final class TitleUi extends UiScreen {
 	private final String accountLabel;
 	private final String rotateHint;
 	private int sideMode = SIDE_FULL;
-	/** Konto-Knopf unter der Figur (w = 0: ausgeblendet). */
+	/** Garderobe-Knopf unter der Figur (w = 0: ausgeblendet). */
 	private int accX;
 	private int accY;
 	private int accW;
@@ -132,7 +132,7 @@ public final class TitleUi extends UiScreen {
 	private final List<Lamp> lamps = new ArrayList<Lamp>();
 	private final int[][] reserved = new int[4][4];
 	/**
-	 * Tastatur-Auswahl: 0.. Mitte, dann Seitenleiste, dann Konto-Knopf, zuletzt der Link ({@link #linkIndex()}),
+	 * Tastatur-Auswahl: 0.. Mitte, dann Seitenleiste, dann Garderobe-Knopf, zuletzt der Link ({@link #linkIndex()}),
 	 * -1 = keine.
 	 */
 	private int focus = -1;
@@ -148,16 +148,10 @@ public final class TitleUi extends UiScreen {
 		this.host = host;
 		I18n.refresh();
 		this.classic = I18n.tr("title.classic");
-		this.accountLabel = I18n.tr("title.account");
+		this.accountLabel = I18n.tr("title.wardrobe");
 		this.rotateHint = I18n.tr("title.rotateHint");
 		scene.setSimple(host.simpleAnimation());
 		final TitleHost h = host;
-		sideLamp("wardrobe", "shirt", NewSince.MENU_WARDROBE, new Area() {
-			@Override
-			public boolean open() {
-				return h.openWardrobe();
-			}
-		});
 		sideLamp("accounts", "profile", NewSince.MENU_ACCOUNTS, new Area() {
 			@Override
 			public boolean open() {
@@ -301,7 +295,7 @@ public final class TitleUi extends UiScreen {
 		for (Lamp l : side) {
 			if (l.id.equals(label) || l.label.equals(label)) return new int[]{l.x, l.y, l.w, l.h};
 		}
-		if (("account".equals(label) || accountLabel.equals(label)) && accW > 0) return new int[]{accX, accY, accW, 16};
+		if (("wardrobe".equals(label) || accountLabel.equals(label)) && accW > 0) return new int[]{accX, accY, accW, 16};
 		return null;
 	}
 
@@ -504,7 +498,7 @@ public final class TitleUi extends UiScreen {
 		int radius = Math.round(11f * s);
 		int tableBottom = panelFeetY + Math.round(radius * TABLE_SQUASH) + Math.round(radius * 0.22f) + 2;
 		panelNameY = figure ? tableBottom + 6 : y0;
-		int bw = Math.min(lw - 8, Math.max(64, c.textWidth(accountLabel) + 26));
+		int bw = Math.min(lw, Math.max(64, c.textWidth(accountLabel) + 26));
 		accW = bw;
 		accX = panelCx - bw / 2;
 		accY = panelNameY + 9 + 5;
@@ -564,7 +558,7 @@ public final class TitleUi extends UiScreen {
 				labels.add(new Label(rotateHint, panelCx - hintW / 2, Math.max(1, panel[1] - 4), 0xFF8F8B89, false));
 			}
 		}
-		// Name und Konto-Knopf
+		// Name und Garderobe-Knopf
 		String n = c.clip(name == null ? "" : name, Math.max(10, accW + 20));
 		int nw = c.textWidth(n);
 		labels.add(new Label(n, panelCx - nw / 2, panelNameY, t.text, true));
@@ -575,7 +569,8 @@ public final class TitleUi extends UiScreen {
 		Redstone.stone(c, accX, accY + dy, accW, 16, on ? t.surfaceHover : t.surfaceHigh,
 				on ? ColorMath.lerp(t.border, t.textDim, 0.5f) : t.border);
 		if (on) Redstone.dustH(c, accX + 3, accX + accW - 3, accY + dy + 13, t.dustOn, 0f);
-		Icons.draw(c, "profile", accX + 5, accY + dy + 4, 1, on ? t.dustOn : t.textDim);
+		Icons.draw(c, "shirt", accX + 5, accY + dy + 4, 1, on ? t.dustOn : t.textDim);
+		if (isNew(NewSince.MENU_WARDROBE)) NewBadge.dot(c, accX + accW - 7, accY + dy + 2);
 		String lbl = c.clip(accountLabel, accW - 20);
 		labels.add(new Label(lbl, accX + 16 + (accW - 18 - c.textWidth(lbl)) / 2, accY + dy + 4 - (on ? 1 : 0), t.text, false));
 		if (accFlash > 0.02f) c.fill(accX + 1, accY + 1, accX + accW - 1, accY + 15, ColorMath.withAlpha(0xFFFFF6DC, Math.round(120 * accFlash)));
@@ -999,8 +994,8 @@ public final class TitleUi extends UiScreen {
 		} else if (index < accountIndex()) {
 			side.get(index - lamps.size()).action.run();
 		} else if (index == accountIndex()) {
-			if (host.openAccounts()) seen(NewSince.MENU_ACCOUNTS);
-			else soon(side.get(1).label);
+			if (host.openWardrobe()) seen(NewSince.MENU_WARDROBE);
+			else soon(accountLabel);
 		} else {
 			host.classicTitle();
 		}
@@ -1046,7 +1041,7 @@ public final class TitleUi extends UiScreen {
 	private void moveFocus(int step, int count) {
 		if (focus < 0) focus = step > 0 ? 0 : count - 1;
 		else focus = (focus + step + count) % count;
-		// Ausgeblendeter Konto-Knopf (schmales Fenster) wird übersprungen.
+		// Ausgeblendeter Garderobe-Knopf (schmales Fenster) wird übersprungen.
 		if (focus == accountIndex() && accW <= 0) focus = (focus + step + count) % count;
 		host.narrate(I18n.tr("title.narrateButton", focusLabel(focus)));
 	}

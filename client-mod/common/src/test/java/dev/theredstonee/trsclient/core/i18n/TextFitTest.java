@@ -40,7 +40,7 @@ class TextFitTest {
 	private static final int LAMP_HALF_W = (200 - 6) / 2 - 10;
 	private static final int LAMP_FULL_W = 200 - 10;
 	/** Konto-Knopf im Standardfenster: 63 px breit, 18 px für Symbol und Rand. */
-	private static final int ACCOUNT_W = 63 - 20;
+	private static final int ACCOUNT_W = 77 - 18;
 	/**
 	 * Seitenleiste bei 640 px GUI-Breite (1280×720, GUI 2): rechts neben der Mitte 640 - 420 - 30 - 8 = 182 px,
 	 * davon Rand 14 und Symbol/Abstand 34 – die Beschriftung darf höchstens 134 px breit sein, sonst gibt es nur Symbole.
@@ -91,9 +91,9 @@ class TextFitTest {
 				int max = key.endsWith("player") ? LAMP_FULL_W : LAMP_HALF_W;
 				if (c.textWidth(s) > max) problems.add(lang + " Startbildschirm: " + s + " (" + c.textWidth(s) + " px)");
 			}
-			// Konto-Knopf unter der Figur im Standardfenster (427 px breit): Knopf 63 px, Text daneben ein Symbol.
-			String account = I18n.tr("title.account");
-			if (c.textWidth(account) > ACCOUNT_W) problems.add(lang + " Konto-Knopf: " + account + " (" + c.textWidth(account) + " px)");
+			// Garderobe-Knopf unter der Figur im Standardfenster (427 px breit): Knopf 77 px, links ein Symbol.
+			String account = I18n.tr("title.wardrobe");
+			if (c.textWidth(account) > ACCOUNT_W) problems.add(lang + " Garderobe-Knopf: " + account + " (" + c.textWidth(account) + " px)");
 			// Volle Seitenleiste (ab 1280×720 mit GUI 2): höchstens so breit, dass sie neben die Mitte passt.
 			for (String key : new String[]{"title.wardrobe", "title.accounts", "title.friends", "title.clips", "title.trsSettings"}) {
 				String s = I18n.tr(key);

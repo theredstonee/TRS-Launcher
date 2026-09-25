@@ -163,7 +163,7 @@ class RedstoneUiTest {
 		ui.render(new CountingCanvas(), 854, 480, -1, -1);
 		assertEquals(TitleUi.SIDE_FULL, ui.sideMode());
 		assertTrue(ui.figureShown());
-		assertTrue(ui.buttonRect("account") != null);
+		assertTrue(ui.buttonRect("wardrobe") != null);
 		// Minecraft-Standard 854×480 mit GUI 2 = 427×240: Symbole, Figur bleibt
 		ui.render(new CountingCanvas(), 427, 240, -1, -1);
 		assertEquals(TitleUi.SIDE_ICONS, ui.sideMode());
@@ -172,15 +172,20 @@ class RedstoneUiTest {
 		ui.render(new CountingCanvas(), 213, 120, -1, -1);
 		assertEquals(TitleUi.SIDE_ROW, ui.sideMode());
 		assertFalse(ui.figureShown());
-		assertTrue(ui.buttonRect("account") == null);
+		assertTrue(ui.buttonRect("wardrobe") == null);
 		// Die Leiste liegt nie auf den Knöpfen der Mitte
 		ui.render(new CountingCanvas(), 427, 240, -1, -1);
 		int[] quit = ui.buttonRect("quit");
-		for (String id : new String[]{"wardrobe", "accounts", "friends", "clips", "trsSettings"}) {
+		for (String id : new String[]{"accounts", "friends", "clips", "trsSettings"}) {
 			int[] r = ui.buttonRect(id);
 			assertTrue(r != null, id);
 			assertTrue(r[0] >= quit[0] + quit[2] + 10, id + " überlappt die Mitte");
 		}
+		// Garderobe-Knopf unter der Figur: links neben der Mitte und breit genug für „Garderobe“ mit Symbol
+		int[] single = ui.buttonRect("singleplayer");
+		int[] wardrobe = ui.buttonRect("wardrobe");
+		assertTrue(wardrobe != null && wardrobe[0] + wardrobe[2] + 10 <= single[0], "Garderobe überlappt die Mitte");
+		assertTrue(wardrobe[2] - 18 >= new CountingCanvas().textWidth("Wardrobe"), "Garderobe-Knopf nur " + wardrobe[2] + " px");
 	}
 
 	@Test
@@ -197,9 +202,9 @@ class RedstoneUiTest {
 		ui.mouseClicked(r[0] + 2, r[1] + 2, 0);
 		renderUntil(ui, canvas, () -> host.trsMenu > 0);
 		assertEquals(1, host.trsMenu);
-		// Konto-Knopf → Konten (noch nicht da) → Hinweis
+		// Konten in der Seitenleiste (noch nicht da) → Hinweis
 		host.narrated.clear();
-		r = ui.buttonRect("account");
+		r = ui.buttonRect("accounts");
 		ui.mouseClicked(r[0] + 2, r[1] + 2, 0);
 		renderUntil(ui, canvas, () -> !host.narrated.isEmpty());
 		assertEquals("Coming soon: Accounts", host.narrated.get(0));

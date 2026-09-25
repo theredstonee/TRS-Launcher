@@ -41,8 +41,8 @@ How to write an entry:
   and links that point outside the launcher's own folders are skipped.
 - **New TRS Client title screen: you on a redstone turntable.** Your own skin (and your TRS or Mojang cape) now
   stands on a slowly turning redstone turntable on the left of the title screen – drag it to spin it, and your head
-  follows the mouse. Below it are your name and an "Account" button. A new bar on the right leads to Wardrobe,
-  Accounts, Friends, Clips & Images and the TRS settings; the parts that aren't ready yet say "Coming soon". In small
+  follows the mouse. Below it are your name and a "Wardrobe" button. A new bar on the right leads to Accounts,
+  Friends, Clips & Images and the TRS settings; the parts that aren't ready yet say "Coming soon". In small
   windows the bar shrinks to icons and the figure steps aside. Works in every supported Minecraft version, from 1.8.9
   to 26.3.
 - **Switch accounts in the game.** With the TRS Client you can now switch Minecraft accounts right in the game – no
@@ -155,8 +155,8 @@ How to write an entry:
   gelesen, und Verknüpfungen, die aus den Launcher-Ordnern herausführen, werden übersprungen.
 - **Neuer Titelbildschirm im TRS Client: du auf einer Redstone-Drehscheibe.** Dein eigener Skin (mit deinem TRS-
   oder Mojang-Umhang) steht jetzt links auf einer langsam drehenden Redstone-Drehscheibe – zieh daran, um sie zu
-  drehen, und dein Kopf folgt der Maus. Darunter stehen dein Name und ein „Konto“-Knopf. Eine neue Leiste rechts führt
-  zu Garderobe, Konten, Freunde, Clips & Bilder und den TRS-Einstellungen; was noch nicht fertig ist, meldet „Kommt
+  drehen, und dein Kopf folgt der Maus. Darunter stehen dein Name und ein „Garderobe“-Knopf. Eine neue Leiste rechts führt
+  zu Konten, Freunde, Clips & Bilder und den TRS-Einstellungen; was noch nicht fertig ist, meldet „Kommt
   bald“. In kleinen Fenstern wird die Leiste zu Symbolen und die Figur macht Platz. Klappt in jeder unterstützten
   Minecraft-Version von 1.8.9 bis 26.3.
 - **Konten im Spiel wechseln.** Mit dem TRS Client wechselst du dein Minecraft-Konto jetzt direkt im Spiel – ohne
