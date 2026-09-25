@@ -21,6 +21,8 @@ public final class TrsModules {
 	public final KeyDefaults keyDefaults = new KeyDefaults();
 	/** Leistung: alte Werte vor FPS-Boost/Leistungs-Check (für „Rückgängig“, wird gespeichert). */
 	public final dev.theredstonee.trsclient.core.perf.UndoLog perfUndo = new dev.theredstonee.trsclient.core.perf.UndoLog();
+	/** Einführung, „NEU“-Markierungen, im Client gewähltes Aussehen (siehe core.intro). */
+	public final dev.theredstonee.trsclient.core.intro.ClientState clientState = new dev.theredstonee.trsclient.core.intro.ClientState();
 
 	public final HudModule fps;
 	public final HudModule cps;
@@ -193,6 +195,8 @@ public final class TrsModules {
 	public final BoolSetting badgeTab;
 	public final BoolSetting badgeNametag;
 	public final BoolSetting trsCapes;
+	/** TRS-Client-Einstellungen mit dem TRS-Konto synchronisieren (bleibt selbst lokal, siehe core.sync). */
+	public final BoolSetting syncClient;
 	public final ChoiceSetting<CapeSettings.Style> capeStyle;
 	public final ChoiceSetting<CapeSettings.Wind> capeWindMode;
 	public final NumberSetting capeWind;
@@ -561,6 +565,7 @@ public final class TrsModules {
 		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Badge in the tab list", true));
 		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Badge above names", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));
+		syncClient = trsOnline.add(new BoolSetting("sync", "Sync with TRS account", true));
 		capeStyle = capePhysics.add(new ChoiceSetting<>("style", "Style", CapeSettings.Style.class, CapeSettings.Style.SMOOTH));
 		capeWindMode = capePhysics.add(new ChoiceSetting<>("windMode", "Wind", CapeSettings.Wind.class, CapeSettings.Wind.WAVES));
 		capeWind = capePhysics.add(new NumberSetting("wind", "Wind strength", 100, 0, 200, 10, "", "%"));
@@ -618,8 +623,11 @@ public final class TrsModules {
 
 		registry.addPart(keyDefaults);
 		registry.addPart(perfUndo);
+		registry.addPart(clientState);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.
 		profiles = new HudProfiles(registry);
+		// Einführung/Begrüßung auf dem Startbildschirm brauchen die Module des laufenden Spiels.
+		dev.theredstonee.trsclient.core.intro.IntroGate.register(this);
 	}
 
 	/** Aktuelle Umhang-Einstellungen in {@code out} (je Tick, keine Allokation). */

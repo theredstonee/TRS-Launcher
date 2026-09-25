@@ -87,6 +87,7 @@ sesión del juego.
 | Amigos, solicitudes de amistad y bloqueos | La lista de amigos |
 | Estado en línea: «en línea en el launcher» o «jugando» con versión y cargador de mods y, solo si has activado «Server teilen» (compartir servidor), la dirección del servidor | Mostrar a tus amigos a qué juegas y permitirles unirse |
 | Solo con «Sincronizar con la cuenta de TRS» activado: tus skins propias de «Mis skins» (la imagen, recodificada sin metadatos, su nombre y modelo), tus presets de mods propios (nombres e ID de proyectos de Modrinth, sin archivos ni rutas de carpetas) y tu tema, color de acento e idioma, cada uno con la fecha del último cambio; las skins y presets eliminados se anotan durante un tiempo | Mantenerlos iguales en todos los PC donde uses esta cuenta de Minecraft |
+| Solo con los servicios TRS activados y «Sincronizar con la cuenta de TRS» activado en el TRS Client (en el juego): los ajustes del TRS Client – qué módulos están activados y sus ajustes, los diseños y perfiles de HUD, las teclas TRS de los módulos, el modo de configuración de los mods de rendimiento, si terminaste la introducción (y el paquete de módulos elegido) y qué entradas «NUEVO» has abierto –, cada parte con la fecha de su último cambio; sin puntos de ruta, direcciones de servidor, archivos, rutas ni tokens | Mantener el TRS Client igual en todos los PC y carpetas de juego donde uses esta cuenta de Minecraft y mostrar la introducción solo una vez |
 
 **Sincronización:** «Sincronizar con la cuenta de TRS» (*Einstellungen → Datenschutz*, activado de fábrica mientras
 los servicios TRS estén activados) mantiene iguales en todos tus PC tus skins propias, tus presets propios y el aspecto
@@ -94,6 +95,14 @@ del launcher (tema, color de acento, idioma). Java, la memoria y los demás ajus
 de tu PC. Si desactivas el interruptor, se deja de sincronizar; lo ya sincronizado permanece en el servidor hasta que lo
 borres con «Alle TRS-Daten löschen». Solo tú puedes leer tus datos sincronizados: no hay ninguna vista de
 administración para ellos.
+
+**Sincronización del TRS Client:** el mod TRS Client inicia sesión por sí mismo (ver arriba) y guarda sus propios
+ajustes en el mismo lugar, como un documento de 64 KB como máximo por cuenta. Solo lo hace mientras los servicios TRS
+estén activados en el launcher y su interruptor «Sincronizar con la cuenta de TRS» (menú TRS → *Funciones en línea de
+TRS*, activado de fábrica) esté activado; el propio interruptor, los puntos de ruta, la lista de servidores de la vista
+libre y las opciones de Minecraft (options.txt) se quedan en tu PC. El juego también lee tu tema, color de acento e
+idioma sincronizados y los vuelve a escribir cuando los cambias en la introducción, para que el launcher los siga.
+«Alle TRS-Daten löschen» borra también este documento.
 
 El estado en línea se guarda **solo en la memoria del servidor**, nunca se escribe en disco, no tiene historial y
 caduca **3 minutos** después de la última actualización. Solo lo ven tus amigos, y nadie si lo configuras en «nadie».

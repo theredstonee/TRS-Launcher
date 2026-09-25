@@ -88,6 +88,7 @@ auf deinem Computer speichert und nie an Webinhalte oder an das Spiel weitergibt
 | Freunde, Freundschaftsanfragen und Blockierungen | Die Freundesliste |
 | Online-Status: „online im Launcher“ oder „im Spiel“ mit Version und Modloader und – nur wenn du „Server teilen“ eingeschaltet hast – die Serveradresse | Um Freunden zu zeigen, was du spielst, und sie nachkommen zu lassen |
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
+| Nur mit eingeschalteten TRS-Diensten und eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client (im Spiel): deine TRS-Client-Einstellungen – welche Module an sind und ihre Einstellungen, HUD-Layouts und -Profile, die TRS-Tasten der Module, der Config-Modus für Leistungs-Mods, ob du die Einführung abgeschlossen hast (und das gewählte Modul-Paket) und welche „NEU“-Einträge du geöffnet hast – je Teil mit dem Zeitpunkt der letzten Änderung; keine Wegpunkte, keine Server-Adressen, keine Dateien, Pfade oder Tokens | Damit der TRS Client auf allen PCs und Spielordnern mit diesem Minecraft-Account gleich ist und die Einführung nur einmal erscheint |
 
 **Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
 TRS-Dienste an sind) hält deine eigenen Skins, deine eigenen Presets und das Aussehen des Launchers (Theme, Akzentfarbe,
@@ -95,6 +96,14 @@ Sprache) auf all deinen PCs gleich. Java, Arbeitsspeicher und alle anderen Einst
 synchronisiert und verlassen deinen PC nie. Schalter aus = keine Synchronisation mehr; was schon synchronisiert wurde,
 bleibt auf dem Server, bis du es mit „Alle TRS-Daten löschen“ löschst. Deine synchronisierten Daten kannst nur du
 lesen – es gibt keine Admin-Ansicht dafür.
+
+**TRS-Client-Synchronisation:** Die TRS-Client-Mod meldet sich selbst an (siehe oben) und legt ihre eigenen
+Einstellungen am selben Ort ab – als ein Dokument von höchstens 64 KB je Account. Das tut sie nur, solange die
+TRS-Dienste im Launcher an sind und ihr Schalter „Mit TRS-Konto synchronisieren“ (TRS-Menü → *TRS-Online-Funktionen*,
+ab Werk an) an ist; der Schalter selbst, Wegpunkte, die Freelook-Serverliste und Minecrafts eigene Optionen
+(options.txt) bleiben auf deinem PC. Das Spiel liest außerdem dein synchronisiertes Theme, Akzentfarbe und Sprache und
+schreibt sie zurück, wenn du sie in der Einführung änderst, damit der Launcher folgt. „Alle TRS-Daten löschen“ löscht
+auch dieses Dokument.
 
 Der Online-Status liegt **nur im Arbeitsspeicher des Servers**, wird nie auf die Festplatte geschrieben, hat keinen
 Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen können ihn nur deine Freunde – und gar

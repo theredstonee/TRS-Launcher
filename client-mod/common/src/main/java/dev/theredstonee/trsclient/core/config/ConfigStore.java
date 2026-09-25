@@ -32,9 +32,37 @@ public final class ConfigStore {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
 	private final Path file;
+	/** Zuletzt geladene Config des Spiels (für Dienste ohne direkten Zugriff, z. B. den Client-Sync). */
+	private static volatile ConfigStore active;
+	private volatile Listener listener;
+
+	/** Wird bei jedem Speichern mit dem festgehaltenen Stand aufgerufen (im Thread des Aufrufers). */
+	public interface Listener {
+		void saved(TrsConfig snapshot);
+	}
 
 	public ConfigStore(Path file) {
 		this.file = file;
+	}
+
+	/** Die Config, die das Spiel zuletzt geladen hat (null vor dem Laden). */
+	public static ConfigStore active() {
+		return active;
+	}
+
+	/** Beobachter für Änderungen (ein einziger; null = keiner). */
+	public void setListener(Listener listener) {
+		this.listener = listener;
+	}
+
+	private void notifySaved(TrsConfig snapshot) {
+		Listener l = listener;
+		if (l == null) return;
+		try {
+			l.saved(snapshot);
+		} catch (RuntimeException ignored) {
+			// Ein Beobachter darf das Speichern nie stören.
+		}
 	}
 
 	public Path file() {
@@ -63,6 +91,7 @@ public final class ConfigStore {
 			if (status == Status.RECOVERED) backupBroken();
 		}
 		registry.apply(config != null ? config : new TrsConfig());
+		active = this;
 		if (status != Status.LOADED) {
 			try {
 				save(registry);
@@ -75,7 +104,9 @@ public final class ConfigStore {
 
 	/** Schreibt den aktuellen Zustand sofort und atomar (erst temporäre Datei, dann verschieben). */
 	public void save(ModuleRegistry registry) throws IOException {
-		write(registry.capture(), sequence.incrementAndGet());
+		TrsConfig snapshot = registry.capture();
+		write(snapshot, sequence.incrementAndGet());
+		notifySaved(snapshot);
 	}
 
 	/**
@@ -92,6 +123,7 @@ public final class ConfigStore {
 			pendingSeq = sequence.incrementAndGet();
 		}
 		if (!scheduled.getAndSet(true)) worker().execute(this::flushPending);
+		notifySaved(snapshot);
 		IOException e = lastError;
 		if (e != null) {
 			lastError = null;

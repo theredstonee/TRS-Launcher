@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public final class ModMenu extends UiScreen {
 	private enum Page {
-		GRID, SETTINGS, PROFILES
+		GRID, SETTINGS, PROFILES, PACKS
 	}
 
 	private static final int HEADER_H = 30;
@@ -69,11 +69,34 @@ public final class ModMenu extends UiScreen {
 	private float previewYaw = 150f;
 	private double previewDragX = Double.NaN;
 	private long previewTouched;
+	/** Modul-Pakete (Seite im Menü, dieselbe Auswahl wie in der Einführung). */
+	private final PacksPage packsPage;
+	/** Modul, dessen Seite gerade offen ist (für die „NEU“-Markierungen). */
+	private Module newsOpenFor;
 
 	public ModMenu(MenuHost host) {
 		this.host = host;
 		// Sprache neu lesen (Launcher-Datei oder Minecraft-Sprache geändert?) – zwei Zeitstempel.
 		I18n.refresh();
+		final dev.theredstonee.trsclient.core.module.NewMarkers news = host.modules().clientState.news();
+		panel.setBadge(new SettingsPanel.Badge() {
+			@Override
+			public boolean isNew(Setting setting) {
+				Module m = selected;
+				return m != null && news.isNew(m, setting);
+			}
+		});
+		packsPage = new PacksPage(host.modules(), new dev.theredstonee.trsclient.core.module.ModulePacks.Support() {
+			@Override
+			public boolean supports(Module module) {
+				return ModMenu.this.host.supports(module);
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				ModMenu.this.host.playClick();
+			}
+		});
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
 			@Override
 			public String label(String keyName) {
@@ -105,6 +128,17 @@ public final class ModMenu extends UiScreen {
 		return this;
 	}
 
+	/** Öffnet das Menü direkt bei den Modul-Paketen. */
+	public ModMenu showPacks() {
+		page = Page.PACKS;
+		return this;
+	}
+
+	/** Modul-Pakete-Seite (Selbsttest). */
+	public PacksPage packsPage() {
+		return packsPage;
+	}
+
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
 	public ModMenu showProfiles() {
 		page = Page.PROFILES;
@@ -113,6 +147,7 @@ public final class ModMenu extends UiScreen {
 
 	@Override
 	protected void onClosed() {
+		host.modules().clientState.news().closed();
 		host.save();
 		host.closeScreen();
 	}
@@ -152,12 +187,19 @@ public final class ModMenu extends UiScreen {
 		contentRect[1] = cy;
 		contentRect[2] = cw;
 		contentRect[3] = ch;
+		if (newsOpenFor != null && (page != Page.SETTINGS || selected != newsOpenFor)) {
+			host.modules().clientState.news().closed();
+			newsOpenFor = null;
+		}
 		switch (page) {
 			case SETTINGS:
 				settingsPage(c, cx, cy, cw, ch, mouseX, mouseY, dt);
 				break;
 			case PROFILES:
 				profilesPage(c, cx, cy, cw, ch, mouseX, mouseY);
+				break;
+			case PACKS:
+				packsPage(c, cx, cy, cw, ch, mouseX, mouseY);
 				break;
 			default:
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
@@ -222,7 +264,7 @@ public final class ModMenu extends UiScreen {
 		Theme t = Theme.get();
 		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
 		// "Alle" + Kategorien + HUD-Editor + Profile (+ Packs) (+ Konten)
-		int items = 3 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0);
+		int items = 4 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0);
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -231,6 +273,11 @@ public final class ModMenu extends UiScreen {
 			else rowH--;
 		}
 		if (items * (rowH + gap) + 11 + footer > h) footer = 0;
+		// Sehr kleine Fenster: noch enger, damit alle Einträge im Fenster bleiben.
+		while (items * (rowH + gap) + 11 > h && (gap > 0 || rowH > 11)) {
+			if (gap > 0) gap--;
+			else rowH--;
+		}
 		int cy = y;
 		railItem(c, x, cy, w, rowH, "layers", I18n.tr("menu.all"), category == null && page == Page.GRID, mx, my, new Runnable() {
 			@Override
@@ -240,6 +287,7 @@ public final class ModMenu extends UiScreen {
 				gridScroll = 0;
 			}
 		});
+		if (anyNew(null)) NewBadge.dot(c, x + w - 9, cy + (rowH - 5) / 2);
 		cy += rowH + gap;
 		Category[] categories = Category.values();
 		for (int i = 0; i < categories.length; i++) {
@@ -254,6 +302,7 @@ public final class ModMenu extends UiScreen {
 					gridScroll = 0;
 				}
 			});
+			if (anyNew(cat)) NewBadge.dot(c, x + w - 9, cy + (rowH - 5) / 2);
 			cy += rowH + gap;
 		}
 
@@ -275,6 +324,13 @@ public final class ModMenu extends UiScreen {
 				page = Page.PROFILES;
 				editingProfile = -1;
 				profileError = null;
+			}
+		});
+		cy += rowH + gap;
+		railItem(c, x, cy, w, rowH, "layers", I18n.tr("packs.mod.rail"), page == Page.PACKS, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				page = Page.PACKS;
 			}
 		});
 		cy += rowH + gap;
@@ -313,6 +369,17 @@ public final class ModMenu extends UiScreen {
 		Redstone.pip(c, x + 2, footerY + 1, 7, active > 0 ? 1f : 0f);
 		Paint.textClipped(c, I18n.tr("menu.activeCount", active, total), x + 14, footerY, w - 14, t.text, false);
 		Redstone.keycap(c, x, footerY + 14, host.menuKeyLabel(), w);
+	}
+
+	/** Gibt es in {@code cat} (null = überall) ein „NEU“-Modul dieser Version? */
+	private boolean anyNew(Category cat) {
+		dev.theredstonee.trsclient.core.module.NewMarkers news = host.modules().clientState.news();
+		List<Module> all = host.modules().registry.all();
+		for (int i = 0; i < all.size(); i++) {
+			Module m = all.get(i);
+			if ((cat == null || m.category() == cat) && host.supports(m) && news.hasNew(m)) return true;
+		}
+		return false;
 	}
 
 	private boolean hasModules(Category cat) {
@@ -403,6 +470,7 @@ public final class ModMenu extends UiScreen {
 
 		int iconColor = ColorMath.lerp(hovered ? t.text : t.textDim, t.dustOn, progress);
 		Redstone.iconWell(c, x + 8, y + 8, 2, m.icon(), iconColor, progress);
+		if (host.modules().clientState.news().hasNew(m)) NewBadge.draw(c, x + 34, y + 11);
 
 		int tw = 24;
 		int tx = x + w - tw - 8;
@@ -481,6 +549,11 @@ public final class ModMenu extends UiScreen {
 			}
 		});
 		Redstone.iconWell(c, x + 24, y + 1, 2, m.icon(), ColorMath.lerp(t.textDim, t.dustOn, progress), progress);
+		if (newsOpenFor != m) {
+			// Seite geöffnet: Modul und seine neuen Einstellungen gelten als gesehen (Zeilen-Schilder bleiben bis zum Verlassen).
+			host.modules().clientState.news().opened(m);
+			newsOpenFor = m;
+		}
 
 		int tw = 26;
 		int tx = x + w - tw - 2;
@@ -629,6 +702,36 @@ public final class ModMenu extends UiScreen {
 				boolean on = m.isEnabled();
 				m.reset();
 				m.setEnabled(on);
+			}
+		});
+	}
+
+	// --- Modul-Pakete ---
+
+	private void packsPage(Canvas c, int x, int y, int w, int h, int mx, int my) {
+		Theme t = Theme.get();
+		c.text(c.clip(I18n.tr("packs.mod.title"), w - 4), x + 2, y + 4, t.text, false);
+		int top = y + 16;
+		if (host.hasIntro()) {
+			String label = I18n.tr("intro.restart");
+			int bw = Math.min(w / 2, c.textWidth(label) + 20);
+			int bx = x + w - bw;
+			Paint.button(c, bx, y, bw, 16, label, false, inside(mx, my, bx, y, bw, 16));
+			hits.add(bx, y, bw, 16, new Runnable() {
+				@Override
+				public void run() {
+					host.playClick();
+					host.save();
+					host.openIntro();
+				}
+			});
+			top = y + 20;
+		}
+		top = Paint.paragraph(c, I18n.tr("packs.mod.hint"), x + 2, top, w - 4, 10, t.textDim) + 4;
+		packsPage.draw(c, hits, x + 2, top, w - 6, y + h - top, mx, my, true, new Runnable() {
+			@Override
+			public void run() {
+				host.save();
 			}
 		});
 	}

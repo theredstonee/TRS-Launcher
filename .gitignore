@@ -31,3 +31,6 @@ Thumbs.db
 
 # Gebaute Installer
 release/
+
+# Sperre für Minecraft-Autotests (nie parallel)
+.autotest-lock/

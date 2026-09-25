@@ -85,12 +85,20 @@ hands to web content or to the game. The TRS Client mod signs in by itself throu
 | Friends, friend requests and blocks | The friends list |
 | Online status: "online in the launcher" or "in game" with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you |
 | Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
+| Only with the TRS services on and "Sync with TRS account" on in the TRS Client (in game): your TRS Client settings – which modules are on and their settings, HUD layouts and profiles, the TRS keys of the modules, the config mode for performance mods, whether you finished the introduction (and the module pack you picked) and which "NEW" entries you have opened – each part with the time of its last change; no waypoints, no server addresses, no files, paths or tokens | Keeping the TRS Client the same on every PC and game folder where you use this Minecraft account, and showing the introduction only once |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
 your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your
 PCs. Java, memory and all other settings are **not** synced and never leave your PC. Turn the switch off to stop
 syncing; what was already synced stays on the server until you delete it with "Alle TRS-Daten löschen". Only you can
 read your synced data – there is no admin view of it.
+
+**TRS Client sync:** the TRS Client mod signs in by itself (see above) and keeps its own settings in the same place,
+as one document of at most 64 KB per account. It only does this while the TRS services are on in the launcher and
+its switch "Sync with TRS account" (TRS menu → *TRS Online Features*, on by default) is on; the switch itself,
+waypoints, the freelook server list and Minecraft's own options (options.txt) stay on your PC. The game also reads
+your synced theme, accent colour and language and, when you change them in the introduction, writes them back so the
+launcher follows. Deleting all TRS data deletes this document too.
 
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".

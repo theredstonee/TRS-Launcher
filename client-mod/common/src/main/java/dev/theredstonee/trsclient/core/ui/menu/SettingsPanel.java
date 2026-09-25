@@ -41,6 +41,17 @@ public final class SettingsPanel {
 	/** Farbton/Sättigung/Helligkeit des offenen Farbwählers. */
 	private final float[] hsv = new float[3];
 
+	/** Welche Zeilen ein „NEU“-Schild tragen (null = keine). */
+	public interface Badge {
+		boolean isNew(Setting setting);
+	}
+
+	private Badge badge;
+
+	public void setBadge(Badge badge) {
+		this.badge = badge;
+	}
+
 	public void reset() {
 		expanded = null;
 		capturing = null;
@@ -92,7 +103,10 @@ public final class SettingsPanel {
 		// Textzeilen haben rechts ein breites Eingabefeld – dann den Namen früher abschneiden.
 		// Schalter sind schmal (24 px) – dort bekommt der Name fast die ganze Zeile.
 		int labelWidth = s instanceof TextSetting ? w - textFieldWidth(c, s, w) - 8 : s instanceof BoolSetting ? w - 34 : w - 90;
-		Paint.textClipped(c, s.label(), x + 2, y + 6, labelWidth, t.text, false);
+		boolean isNew = badge != null && badge.isNew(s);
+		int badgeW = isNew ? NewBadge.width(c) + 4 : 0;
+		Paint.textClipped(c, s.label(), x + 2, y + 6, labelWidth - badgeW, t.text, false);
+		if (isNew) NewBadge.draw(c, x + 2 + Math.min(c.textWidth(s.label()), Math.max(0, labelWidth - badgeW)) + 4, y + 5);
 		if (s instanceof BoolSetting) {
 			BoolSetting b = (BoolSetting) s;
 			int bw = 24;

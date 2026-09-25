@@ -56,6 +56,20 @@ How to write an entry:
   version was chosen for that reason), updates that would break another mod are held back, and an instance that
   already has such a pair gets a "Fix" button in the content list. If the game still stops with "Incompatible mods
   found", the crash notice offers to switch the mod to a compatible version with one click.
+- **Your TRS Client settings follow you to every PC.** With the TRS services on, your modules and their settings,
+  HUD layouts and profiles and your TRS keys are saved with your Minecraft account – set up the client once and it
+  looks the same on your next PC or game folder. The theme, accent colour and language from the launcher now also
+  switch in the game right away. Waypoints, server lists and Minecraft's own options stay on each PC. Don't want it?
+  Turn off "Sync with TRS account" on the "TRS Online Features" page in the TRS menu.
+- **A short introduction when you start the TRS Client for the first time.** Four quick steps in the redstone look:
+  language and theme, performance (pretty or maximum FPS, frame limit, VSync, Dynamic FPS), your TRS keys – keys that
+  clash with Minecraft or other mods are highlighted and can be changed right there – and a module pack with a HUD
+  layout. Skip it any time. It shows up only once per TRS account; you can start it again in the TRS menu.
+- **Module packs.** One click sets up the client for your play style – PvP, Redstone, Comfort or Minimal – with a
+  matching HUD layout. You see beforehand what gets turned on, off and moved, and you can undo it. Find them in the
+  TRS menu under "Presets".
+- **"NEW" in the TRS menu.** Modules and settings that arrive with a client update carry a "NEW" sign until you've
+  opened them once – on every PC with your account.
 
 ### Deutsch
 
@@ -100,6 +114,22 @@ How to write an entry:
   zurückgehalten, und eine Instanz, die schon so ein Paar hat, bekommt in der Inhaltsliste einen „Beheben“-Knopf.
   Stoppt das Spiel trotzdem mit „Incompatible mods found“, bietet der Absturz-Hinweis an, die Mod mit einem Klick
   gegen eine passende Version zu tauschen.
+- **Deine TRS-Client-Einstellungen folgen dir auf jeden PC.** Mit eingeschalteten TRS-Diensten werden deine Module
+  und ihre Einstellungen, HUD-Layouts und -Profile und deine TRS-Tasten mit deinem Minecraft-Konto gespeichert – den
+  Client einmal einrichten, und er sieht auf dem nächsten PC oder Spielordner genauso aus. Thema, Akzentfarbe und
+  Sprache aus dem Launcher wechseln jetzt auch im Spiel sofort mit. Wegpunkte, Serverlisten und Minecrafts eigene
+  Optionen bleiben auf jedem PC. Nicht gewünscht? Schalte „Mit TRS-Konto synchronisieren“ auf der Seite
+  „TRS-Online-Funktionen“ im TRS-Menü aus.
+- **Eine kurze Einführung beim ersten Start des TRS Clients.** Vier schnelle Schritte im Redstone-Look: Sprache und
+  Thema, Leistung (schön oder maximale FPS, Bildraten-Grenze, VSync, Dynamische FPS), deine TRS-Tasten – Tasten, die
+  mit Minecraft oder anderen Mods kollidieren, leuchten und lassen sich direkt ändern – und ein Modul-Paket mit
+  HUD-Vorlage. Jederzeit überspringbar. Sie erscheint nur einmal pro TRS-Konto; im TRS-Menü kannst du sie erneut
+  starten.
+- **Modul-Pakete.** Ein Klick richtet den Client für deinen Spielstil ein – PvP, Redstone, Komfort oder Minimal – mit
+  passender HUD-Vorlage. Vorher siehst du, was ein-, aus- und umgestellt wird, und du kannst es rückgängig machen. Zu
+  finden im TRS-Menü unter „Pakete“.
+- **„NEU“ im TRS-Menü.** Module und Einstellungen, die mit einem Client-Update kommen, tragen ein „NEU“-Schild, bis du
+  sie einmal geöffnet hast – auf jedem PC mit deinem Konto.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

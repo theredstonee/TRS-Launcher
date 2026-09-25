@@ -56,7 +56,15 @@ public final class Performance {
 	private String message;
 	private long messageUntil;
 
+	private static volatile Performance current;
+
+	/** Die Leistungs-Steuerung des laufenden Spiels (null, wo es sie nicht gibt – z. B. Forge 1.7.10). */
+	public static Performance current() {
+		return current;
+	}
+
 	public Performance(TrsModules modules, PerfCompat compat) {
+		current = this;
 		this.m = modules;
 		this.compat = compat;
 		refresh();

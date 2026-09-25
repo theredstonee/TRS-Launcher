@@ -2341,7 +2341,7 @@
       "capes": "la capa elegida, los códigos canjeados y las imágenes de capas subidas",
       "friends": "amigos, solicitudes y bloqueos",
       "settings": "tus ajustes de privacidad y marcas de tiempo (inicio de sesión, creación)",
-      "sync": "con la sincronización activada: tus skins propias (imágenes y nombres), tus presets propios y tu tema, color de acento e idioma – para que sean iguales en todos tus PC",
+      "sync": "con la sincronización activada: tus skins propias (imágenes y nombres), tus presets propios y tu tema, color de acento e idioma – para que sean iguales en todos tus PC; el TRS Client sincroniza igual sus módulos, diseños de HUD y teclas (interruptor en el menú TRS)",
       "presence": "el estado en línea (launcher abierto / en el juego, versión y, si quieres, el servidor): solo en memoria, caduca a los 3 minutos"
     },
     "footer": "Puedes desactivar los servicios cuando quieras en {path} y eliminar allí todos tus datos de TRS. Sin tu consentimiento, el launcher no envía nada al servidor de TRS.",
@@ -2362,7 +2362,7 @@
     },
     "sync": {
       "title": "Sincronizar con la cuenta de TRS",
-      "description": "Mantiene iguales tus skins propias («Mis skins»), tus presets propios, el tema, el color de acento y el idioma en todos los PC donde uses esta cuenta de Minecraft. Los ajustes de Java y memoria se quedan en este PC."
+      "description": "Mantiene iguales tus skins propias («Mis skins»), tus presets propios, el tema, el color de acento y el idioma en todos los PC donde uses esta cuenta de Minecraft. Los ajustes de Java y memoria se quedan en este PC. El TRS Client sincroniza sus propios ajustes (módulos, HUD, teclas) con su propio interruptor en el menú TRS."
     },
     "turnedOff": "Servicios de TRS desactivados: el launcher ya no envía nada al servidor de TRS.",
     "noAccount": "Inicia sesión con una cuenta de Minecraft para cambiar estos ajustes.",

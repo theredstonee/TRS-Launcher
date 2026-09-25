@@ -2341,7 +2341,7 @@
       "capes": "je gekozen cape, ingewisselde codes en geüploade cape-afbeeldingen",
       "friends": "vrienden, verzoeken en blokkeringen",
       "settings": "je privacy-instellingen en tijdstempels (inloggen, aanmaken)",
-      "sync": "als synchroniseren aan staat: je eigen skins (afbeeldingen en namen), je eigen presets en je thema, accentkleur en taal – zodat ze op al je pc’s gelijk zijn",
+      "sync": "als synchroniseren aan staat: je eigen skins (afbeeldingen en namen), je eigen presets en je thema, accentkleur en taal – zodat ze op al je pc’s gelijk zijn; de TRS Client synchroniseert zijn modules, HUD-indelingen en toetsen op dezelfde manier (schakelaar in het TRS-menu)",
       "presence": "je onlinestatus (launcher open / in het spel, versie en, als je dat wilt, de server) – alleen in het geheugen bewaard, verloopt na 3 minuten"
     },
     "footer": "Je kunt de diensten altijd uitschakelen onder {path} en daar al je TRS-gegevens verwijderen. Zonder jouw toestemming stuurt de launcher niets naar de TRS-server.",
@@ -2362,7 +2362,7 @@
     },
     "sync": {
       "title": "Synchroniseren met TRS-account",
-      "description": "Houdt je eigen skins („Mijn skins”), je eigen presets, thema, accentkleur en taal gelijk op elke pc waarop je dit Minecraft-account gebruikt. Java- en geheugeninstellingen blijven op deze pc."
+      "description": "Houdt je eigen skins („Mijn skins”), je eigen presets, thema, accentkleur en taal gelijk op elke pc waarop je dit Minecraft-account gebruikt. Java- en geheugeninstellingen blijven op deze pc. De TRS Client synchroniseert zijn eigen instellingen (modules, HUD, toetsen) met een eigen schakelaar in het TRS-menu."
     },
     "turnedOff": "TRS-diensten uitgeschakeld – de launcher stuurt niets meer naar de TRS-server.",
     "noAccount": "Log in met een Minecraft-account om deze instellingen te wijzigen.",

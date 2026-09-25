@@ -80,6 +80,32 @@ public final class TrsMenuHost implements MenuHost {
 		return AccountsScreen.available();
 	}
 
+	@Override
+	public boolean hasIntro() {
+		return true;
+	}
+
+	/** Einführung (Sprache, Leistung, Tasten, Modul-Pakete); „Schließen“ führt zum Bildschirm unter diesem Host. */
+	@Override
+	public void openIntro() {
+		Mc.setScreen(new TrsUiScreen(I18n.tr("intro.title"), new dev.theredstonee.trsclient.core.intro.IntroUi(this)));
+	}
+
+	/** Alle Tastenbelegungen (Vanilla, TRS, andere Mods) – für Konflikte in der Einführung. */
+	@Override
+	public List<dev.theredstonee.trsclient.core.intro.KeyBind> keyBindings() {
+		List<dev.theredstonee.trsclient.core.intro.KeyBind> out = new ArrayList<>();
+		Minecraft mc = Minecraft.getInstance();
+		if (mc == null || mc.options == null) return out;
+		for (net.minecraft.client.KeyMapping k : mc.options.keyMappings) {
+			if (k == null) continue;
+			final net.minecraft.client.KeyMapping km = k;
+			out.add(new dev.theredstonee.trsclient.core.intro.KeyBind(k.getName(),
+					net.minecraft.client.resources.language.I18n.get(k.getName()), k.getDefaultKey().getName(), TrsKeys.link(() -> km)));
+		}
+		return out;
+	}
+
 	/** Ohne Mixin (Forge 1.14.4) fehlen einige Module – die bleiben aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {

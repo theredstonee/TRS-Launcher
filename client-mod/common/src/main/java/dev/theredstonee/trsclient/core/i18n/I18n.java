@@ -52,6 +52,8 @@ public final class I18n {
 	private static volatile int generation;
 
 	private static Path configDir;
+	/** Im Client (Einführung) oder über das TRS-Konto gewählte Sprache – hat dann Vorrang vor den Dateien. */
+	private static volatile String override;
 	private static long themeStamp = Long.MIN_VALUE;
 	private static long optionsStamp = Long.MIN_VALUE;
 
@@ -135,7 +137,7 @@ public final class I18n {
 	 * (beim Öffnen von Menü und Startbildschirm – kostet nur zwei Zeitstempel-Abfragen).
 	 */
 	public static synchronized void refresh() {
-		if (configDir == null) return;
+		if (configDir == null || override != null) return;
 		Path theme = configDir.resolve("trsclient").resolve("launcher-theme.json");
 		Path options = configDir.getParent() != null ? configDir.getParent().resolve("options.txt") : null;
 		long ts = stamp(theme);
@@ -144,6 +146,23 @@ public final class I18n {
 		themeStamp = ts;
 		optionsStamp = os;
 		use(resolve(readLauncherLanguage(theme), readMinecraftLanguage(options)));
+	}
+
+	/**
+	 * Sprache fest wählen (Einführung, Sync mit dem TRS-Konto): gilt vor launcher-theme.json und options.txt, bis
+	 * {@code null} sie wieder freigibt. Unbekannte Codes werden ignoriert.
+	 */
+	public static synchronized void override(String language) {
+		String c = supported(language);
+		if (language != null && c == null) return;
+		override = c;
+		if (c != null) {
+			use(c);
+		} else {
+			themeStamp = Long.MIN_VALUE;
+			optionsStamp = Long.MIN_VALUE;
+			refresh();
+		}
 	}
 
 	/** Setzt die Sprache direkt (Tests, Rückfall); unbekannte Codes → Englisch. */

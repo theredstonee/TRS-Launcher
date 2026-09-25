@@ -118,6 +118,8 @@ public final class TitleUi extends UiScreen {
 	private float headPitch;
 	private String toast;
 	private float toastLeft;
+	private boolean introChecked;
+	private float toastTotal = 2.4f;
 	private float modelMicros;
 	private int modelFrames;
 	private final CircuitScene scene = new CircuitScene();
@@ -233,10 +235,32 @@ public final class TitleUi extends UiScreen {
 		side.add(l);
 	}
 
+	/** Einführung beim ersten Start (oder kurze Begrüßung, wenn das TRS-Konto sie schon erledigt hat). */
+	private void introCheck() {
+		String pending = dev.theredstonee.trsclient.core.intro.IntroGate.takeNotice();
+		if (pending != null) notice(pending);
+		if (introChecked) return;
+		dev.theredstonee.trsclient.core.intro.IntroGate.Decision d =
+				dev.theredstonee.trsclient.core.intro.IntroGate.decide(System.currentTimeMillis());
+		if (d == dev.theredstonee.trsclient.core.intro.IntroGate.Decision.WAIT) return;
+		introChecked = true;
+		if (d == dev.theredstonee.trsclient.core.intro.IntroGate.Decision.SHOW && host.openIntro()) return;
+		if (dev.theredstonee.trsclient.core.intro.IntroGate.takeWelcome()) notice(I18n.tr("intro.welcomeBack"));
+	}
+
+	/** Kurzer Hinweis über der Fußzeile (z. B. nach der Einführung). */
+	public void notice(String text) {
+		toast = text;
+		toastLeft = 4f;
+		toastTotal = 4f;
+		host.narrate(text);
+	}
+
 	/** Kurzer Hinweis „Kommt bald: …“ über der Fußzeile. */
 	void soon(String what) {
 		toast = I18n.tr("title.soon", what);
 		toastLeft = 2.4f;
+		toastTotal = 2.4f;
 		host.narrate(toast);
 	}
 
@@ -320,6 +344,7 @@ public final class TitleUi extends UiScreen {
 	@Override
 	protected void draw(Canvas raw, int width, int height, int mouseX, int mouseY, float dt) {
 		long start = System.nanoTime();
+		introCheck();
 		Theme t = Theme.get();
 		boolean animated = host.animated();
 		float time = animated ? (System.nanoTime() - EPOCH) / 1_000_000_000f : 1.35f;
@@ -710,7 +735,7 @@ public final class TitleUi extends UiScreen {
 	private void drawToast(Canvas c, Theme t, int width, int height, float dt) {
 		if (toastLeft <= 0f || toast == null) return;
 		toastLeft -= dt;
-		float a = ColorMath.clamp01(Math.min(toastLeft / 0.4f, (2.4f - toastLeft) / 0.12f + 0.2f));
+		float a = ColorMath.clamp01(Math.min(toastLeft / 0.4f, (toastTotal - toastLeft) / 0.12f + 0.2f));
 		int tw = c.textWidth(toast) + 22;
 		int x = (width - tw) / 2;
 		int y = height - 34;

@@ -525,6 +525,29 @@ public final class TrsOnline {
 		return token != null && active;
 	}
 
+	/**
+	 * TRS-Token für weitere Dienste des Mods (Client-Sync) – nur im Speicher, nie loggen; null = nicht angemeldet
+	 * oder Online-Funktionen aus.
+	 */
+	public String apiToken() {
+		return active ? token : null;
+	}
+
+	/** Ein anderer Dienst hat für {@code rejected} 401 bekommen: im nächsten Tick neu anmelden. */
+	public void tokenRejected(final String rejected) {
+		results.add(new Runnable() {
+			@Override
+			public void run() {
+				relogin(rejected);
+			}
+		});
+	}
+
+	/** Adresse der TRS API (ohne Schrägstrich am Ende). */
+	public String apiBase() {
+		return config.apiBase();
+	}
+
 	OnlineConfig config() {
 		return config;
 	}

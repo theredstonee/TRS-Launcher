@@ -2341,7 +2341,7 @@
       "capes": "gewählter Umhang, eingelöste Codes und hochgeladene Umhang-Bilder",
       "friends": "Freunde, Anfragen und Blockierungen",
       "settings": "deine Datenschutz-Einstellungen und Zeitpunkte (Anmeldung, Erstellung)",
-      "sync": "bei eingeschalteter Synchronisation: deine eigenen Skins (Bilder und Namen), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache – damit sie auf all deinen PCs gleich sind",
+      "sync": "bei eingeschalteter Synchronisation: deine eigenen Skins (Bilder und Namen), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache – damit sie auf all deinen PCs gleich sind; der TRS Client synchronisiert seine Module, HUD-Layouts und Tasten ebenso (Schalter im TRS-Menü)",
       "presence": "der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher, er verfällt nach 3 Minuten"
     },
     "footer": "Du kannst die Dienste jederzeit unter {path} ausschalten und dort alle deine TRS-Daten löschen. Ohne Zustimmung sendet der Launcher nichts an den TRS-Server.",
@@ -2362,7 +2362,7 @@
     },
     "sync": {
       "title": "Mit TRS-Konto synchronisieren",
-      "description": "Hält deine eigenen Skins („Meine Skins“), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache auf allen PCs gleich, auf denen du diesen Minecraft-Account nutzt. Java- und Speicher-Einstellungen bleiben auf diesem PC."
+      "description": "Hält deine eigenen Skins („Meine Skins“), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache auf allen PCs gleich, auf denen du diesen Minecraft-Account nutzt. Java- und Speicher-Einstellungen bleiben auf diesem PC. Der TRS Client synchronisiert seine eigenen Einstellungen (Module, HUD, Tasten) mit einem eigenen Schalter im TRS-Menü."
     },
     "turnedOff": "TRS-Dienste ausgeschaltet – der Launcher sendet nichts mehr an den TRS-Server.",
     "noAccount": "Melde dich mit einem Minecraft-Account an, um diese Einstellungen zu ändern.",

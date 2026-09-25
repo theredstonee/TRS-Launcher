@@ -67,6 +67,14 @@ public interface TitleHost {
 		return false;
 	}
 
+	/**
+	 * Einführung öffnen (beim ersten Start automatisch, siehe {@link dev.theredstonee.trsclient.core.intro.IntroGate});
+	 * false = gibt es in dieser Version nicht.
+	 */
+	default boolean openIntro() {
+		return false;
+	}
+
 	/** Clips und Bilder öffnen; false = noch nicht verfügbar. */
 	default boolean openClips() {
 		return false;

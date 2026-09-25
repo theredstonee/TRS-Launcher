@@ -72,6 +72,13 @@ public final class TrsTitleScreen extends TrsUiScreen {
 			Mc.setScreen(new TrsMenuScreen(screen));
 		}
 
+		/** Einführung beim ersten Start (über dem Startbildschirm). */
+		@Override
+		public boolean openIntro() {
+			new TrsMenuHost(screen).openIntro();
+			return true;
+		}
+
 		@Override
 		public boolean openAccounts() {
 			if (!AccountsScreen.available()) return false;
