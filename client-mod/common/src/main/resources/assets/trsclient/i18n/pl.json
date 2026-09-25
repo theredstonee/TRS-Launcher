@@ -663,5 +663,6 @@
   "sync.status.offline": "niedostępne – ponowna próba później",
   "sync.status.newer": "zapisane przez nowszy TRS Client – zaktualizuj, aby synchronizować",
   "sync.status.noConsent": "usługi TRS wyłączone w launcherze",
-  "sync.status.off": "wyłączona"
+  "sync.status.off": "wyłączona",
+  "packs.mod.summary": "+{0} wł. · {1} wył. · {2} przeniesione"
 }

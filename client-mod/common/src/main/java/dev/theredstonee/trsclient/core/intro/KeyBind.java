@@ -51,6 +51,8 @@ public final class KeyBind {
 		if (!bound()) return out;
 		String k = key();
 		for (KeyBind b : all) {
+			// F3-Kombinationen (ab 1.21.9 eigene Belegungen „key.debug.*“) gelten nur zusammen mit F3 – kein Konflikt.
+			if (b.id.startsWith("key.debug.")) continue;
 			if (b != this && !b.id.equals(id) && k.equals(b.key())) out.add(b);
 		}
 		return out;

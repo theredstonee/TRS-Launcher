@@ -663,5 +663,6 @@
   "sync.status.offline": "not reachable – trying again later",
   "sync.status.newer": "saved by a newer TRS Client – update to sync",
   "sync.status.noConsent": "TRS services are off in the launcher",
-  "sync.status.off": "off"
+  "sync.status.off": "off",
+  "packs.mod.summary": "+{0} on · {1} off · {2} moved"
 }

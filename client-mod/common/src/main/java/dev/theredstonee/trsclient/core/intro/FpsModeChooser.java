@@ -11,6 +11,10 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
  * liefert das Leistungs-Paket in {@code core.perf} und setzt sie mit {@link #install(FpsModeChooser)}. Bis dahin
  * speichert die {@link Default}-Umsetzung nur den gewählten Modus in der Client-Config ({@link ClientState#fpsMode()});
  * der Modus gehört zum {@code client}-Sync-Dokument (Abschnitt {@code prefs}).
+ *
+ * <p>Für die echte Umsetzung: {@link #apply} bitte ebenfalls {@code modules.clientState.setFpsMode(mode)} aufrufen
+ * (sonst wird der Modus nicht synchronisiert). Kommt über den Sync ein anderer Modus vom TRS-Konto, ruft der Sync
+ * {@link #apply} im Spiel-Thread auf.
  */
 public interface FpsModeChooser {
 	String PRETTY = "pretty";

@@ -193,6 +193,8 @@ public final class IntroUi extends UiScreen {
 		int body = by + Math.max(0, ty - by);
 		int bodyH = by + bh - body;
 		int slide = Math.round((1 - Anim.easeOut(stepAnim)) * 10);
+		c.scissor(bx - 3, body - 2, bx + bw + 3, by + bh + 2);
+		hits.clip(bx - 3, body - 2, bw + 6, by + bh + 4 - body);
 		c.push();
 		c.translate(slide, 0);
 		switch (step) {
@@ -210,6 +212,8 @@ public final class IntroUi extends UiScreen {
 				break;
 		}
 		c.pop();
+		c.noScissor();
+		hits.noClip();
 		footer(c, px, py + ph - FOOTER_H, pw, mouseX, mouseY);
 		c.pop();
 	}
@@ -393,32 +397,33 @@ public final class IntroUi extends UiScreen {
 
 	private void perf(Canvas c, int x, int y, int w, int h, int mx, int my) {
 		Theme t = Theme.get();
+		final int bottom = y + h;
 		final FpsModeChooser chooser = FpsModeChooser.get();
 		String mode = chooser.current(modules);
 		int gap = 6;
 		int cw = (w - gap) / 2;
-		int ch = 40;
+		int ch = h >= 120 ? 40 : 30;
 		if (chooser.available()) {
 			modeCard(c, x, y, cw, ch, FpsModeChooser.PRETTY, "sparkle", FpsModeChooser.PRETTY.equals(mode), mx, my, chooser);
 			modeCard(c, x + cw + gap, y, cw, ch, FpsModeChooser.MAX, "bolt", FpsModeChooser.MAX.equals(mode), mx, my, chooser);
-			y += ch + 8;
+			y += ch + 6;
 		}
 		Performance perf = Performance.current();
 		final GameOptions game = perf == null ? null : perf.game();
-		int rowH = 20;
+		int rowH = 18;
 		// Bildraten-Grenze: „Unbegrenzt“ mit einem Klick (wo die Version es kann), sonst ein Hinweis.
 		final GameOptions.Opt maxFps = maxFpsOption();
 		int limit = game != null && maxFps != null ? game.get(maxFps) : GameOptions.NONE;
 		if (limit != GameOptions.NONE) {
 			boolean unlimited = limit >= 260;
 			String label = I18n.tr("intro.perf.frameLimit", unlimited ? I18n.tr("intro.perf.unlimited") : String.valueOf(limit));
-			Paint.textClipped(c, label, x, y + 6, w - 110, t.text, false);
+			Paint.textClipped(c, label, x, y + 5, w - 110, t.text, false);
 			if (!unlimited) {
 				String fix = I18n.tr("intro.perf.setUnlimited");
 				int fw = c.textWidth(fix) + 16;
 				int fx = x + w - fw;
-				Paint.button(c, fx, y + 1, fw, 16, fix, true, inside(mx, my, fx, y + 1, fw, 16));
-				hits.add(fx, y + 1, fw, 16, new Runnable() {
+				Paint.button(c, fx, y, fw, 16, fix, true, inside(mx, my, fx, y, fw, 16));
+				hits.add(fx, y, fw, 16, new Runnable() {
 					@Override
 					public void run() {
 						host.playClick();
@@ -427,31 +432,40 @@ public final class IntroUi extends UiScreen {
 					}
 				});
 			} else {
-				dev.theredstonee.trsclient.core.ui.Icons.draw(c, "check", x + w - 10, y + 5, 1, t.dustOn);
+				dev.theredstonee.trsclient.core.ui.Icons.draw(c, "check", x + w - 10, y + 4, 1, t.dustOn);
 			}
 			y += rowH;
 		} else {
-			y = Paint.paragraph(c, I18n.tr("intro.perf.frameLimitHint"), x, y + 2, w, 10, t.textDim) + 6;
+			// Hinweis: so viele Zeilen, wie Platz ist (VSync und Dynamische FPS brauchen noch 2 Zeilen).
+			List<String> lines = Paint.wrap(c, I18n.tr("intro.perf.frameLimitHint"), w);
+			int room = Math.max(1, (bottom - y - 2 * rowH - 2) / 10);
+			for (int i = 0; i < lines.size() && i < room; i++) {
+				String line = i == room - 1 && lines.size() > room ? c.clip(lines.get(i), w - 8) + "…" : lines.get(i);
+				c.text(line, x, y + 1 + i * 10, t.textDim, false);
+			}
+			y += Math.min(lines.size(), room) * 10 + 4;
 		}
 		// VSync
 		final int vsync = game != null ? game.get(GameOptions.Opt.VSYNC) : GameOptions.NONE;
-		if (vsync != GameOptions.NONE) {
-			toggleRow(c, x, y, w, I18n.tr("intro.perf.vsync"), vsync == 1, mx, my, new Runnable() {
+		if (vsync != GameOptions.NONE && y + rowH <= bottom) {
+			String label = I18n.tr("intro.perf.vsync");
+			toggleRow(c, x, y, w, label, vsync == 1, mx, my, new Runnable() {
 				@Override
 				public void run() {
 					game.set(GameOptions.Opt.VSYNC, vsync == 1 ? 0 : 1);
 					game.save();
 				}
 			});
-			y += rowH;
-			if (vsync == 1 && y + 10 < y + h) {
-				Paint.textClipped(c, I18n.tr("intro.perf.vsyncHint"), x + 8, y - 4, w - 8, t.dustOn, false);
-				y += 8;
+			if (vsync == 1) {
+				// Hinweis in derselben Zeile, rechts neben „VSync“.
+				int hx = x + c.textWidth(label) + 10;
+				Paint.textClipped(c, I18n.tr("intro.perf.vsyncHint"), hx, y + 5, x + w - 34 - hx, t.on, false);
 			}
+			y += rowH;
 		}
 		// Dynamische FPS
 		final Module dyn = modules.dynamicFps;
-		if (host.supports(dyn)) {
+		if (host.supports(dyn) && y + rowH <= bottom) {
 			toggleRow(c, x, y, w, dyn.name(), dyn.isEnabled(), mx, my, new Runnable() {
 				@Override
 				public void run() {
@@ -459,7 +473,8 @@ public final class IntroUi extends UiScreen {
 				}
 			});
 			y += rowH;
-			Paint.paragraph(c, dyn.description(), x + 8, y - 3, w - 8, 10, t.textDim);
+			List<String> lines = Paint.wrap(c, dyn.description(), w - 8);
+			for (int i = 0; i < lines.size() && y + 9 <= bottom; i++, y += 10) c.text(lines.get(i), x + 8, y - 2, t.textDim, false);
 		}
 	}
 
@@ -480,9 +495,11 @@ public final class IntroUi extends UiScreen {
 		Redstone.stone(c, x, y, w, h, selected ? ColorMath.lerp(t.surfaceHover, t.accent, 0.12f) : (hover ? t.surfaceHover : t.surface),
 				selected ? ColorMath.lerp(t.border, t.accent, 0.85f) : t.border);
 		Redstone.iconWell(c, x + 6, y + (h - 14) / 2, 1, icon, selected ? t.dustOn : t.textDim, selected ? 1f : 0f);
-		Paint.textClipped(c, I18n.tr("intro.perf.mode." + mode), x + 26, y + 7, w - 32, t.text, false);
+		boolean low = h < 36;
+		Paint.textClipped(c, I18n.tr("intro.perf.mode." + mode), x + 26, y + (low ? 5 : 7), w - 32, t.text, false);
 		List<String> lines = Paint.wrap(c, I18n.tr("intro.perf.mode." + mode + ".desc"), w - 32);
-		for (int i = 0; i < lines.size() && i < 2; i++) c.text(lines.get(i), x + 26, y + 18 + i * 10, t.textDim, false);
+		if (low) Paint.textClipped(c, I18n.tr("intro.perf.mode." + mode + ".desc"), x + 26, y + 16, w - 32, t.textDim, false);
+		else for (int i = 0; i < lines.size() && i < 2; i++) c.text(lines.get(i), x + 26, y + 18 + i * 10, t.textDim, false);
 		hits.add(x, y, w, h, new Runnable() {
 			@Override
 			public void run() {
@@ -524,7 +541,7 @@ public final class IntroUi extends UiScreen {
 			if (ry + 16 > y + h) break;
 			List<KeyBind> conflicts = b.conflicts(allKeys);
 			int labelW = w - capW - 30;
-			Paint.textClipped(c, b.label, x, ry + 2, labelW, t.text, false);
+			Paint.textClipped(c, b.label, x, ry + (rowH >= 22 ? 2 : 3), labelW, t.text, false);
 			String status;
 			int statusColor;
 			if (!b.bound()) {
@@ -543,8 +560,15 @@ public final class IntroUi extends UiScreen {
 				status = I18n.tr("intro.keys.conflict", sb.toString());
 				statusColor = t.on;
 			}
-			if (rowH >= 22) Paint.textClipped(c, status, x + 6, ry + 12, labelW - 6, statusColor, false);
-			else if (!conflicts.isEmpty()) Redstone.pip(c, x + labelW - 8, ry + 4, 5, 1f);
+			if (rowH >= 22) {
+				Paint.textClipped(c, status, x + 6, ry + 12, labelW - 6, statusColor, false);
+			} else {
+				// Eine Zeile: Name links, Zustand rechtsbündig davor (bei Platzmangel nur ein Lämpchen).
+				int nameW = c.textWidth(b.label);
+				int sw = c.textWidth(status);
+				if (nameW + 12 + sw <= labelW) Paint.textRight(c, status, x + labelW, ry + 3, statusColor, false);
+				else if (!conflicts.isEmpty()) Redstone.pip(c, x + labelW - 6, ry + 4, 5, 1f);
+			}
 			int kx = x + w - capW - 22;
 			boolean cap = capturing == b;
 			boolean hover = inside(mx, my, kx, ry, capW, 15);

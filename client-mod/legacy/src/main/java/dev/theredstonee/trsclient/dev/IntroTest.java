@@ -86,7 +86,9 @@ public final class IntroTest {
 				TrsClient.LOGGER.info("[Autotest] Einführung: erschien nach {} Ticks, TRS-Tasten={}", waited, ui.trsKeys().size());
 				java.util.List<KeyBind> all = new dev.theredstonee.trsclient.screen.TrsMenuHost(null).keyBindings();
 				for (KeyBind b : ui.trsKeys()) {
-					TrsClient.LOGGER.info("[Autotest] Einführung: Taste {} = {} (Konflikte: {})", b.id, b.key(), b.conflicts(all).size());
+					StringBuilder with = new StringBuilder();
+					for (KeyBind o : b.conflicts(all)) with.append(o.id).append(' ');
+					TrsClient.LOGGER.info("[Autotest] Einführung: Taste {} = {} (Konflikte: {})", b.id, b.key(), with.toString().trim());
 				}
 				phase++;
 				wait = 20;
@@ -122,13 +124,17 @@ public final class IntroTest {
 				TrsClient.LOGGER.info("[Autotest] Einführung: erledigt={} wie={} paket={} reach={} keystrokes={} minimap={}",
 						modules.clientState.introDone(), modules.clientState.introHow(), modules.clientState.introPack(),
 						modules.reach.isEnabled(), modules.keystrokes.isEnabled(), modules.minimap.isEnabled());
-				Mc.setScreen(new TrsMenuScreen(new TrsTitleScreen()));
+				TrsMenuScreen grid = new TrsMenuScreen(new TrsTitleScreen());
+				((ModMenu) grid.ui()).showCategory(dev.theredstonee.trsclient.core.module.Category.REDSTONE);
+				Mc.setScreen(grid);
 				phase++;
 				wait = 20;
 				return;
 			case 7:
 				shot(mc, "trsclient-menu-new");
-				Mc.setScreen(new TrsMenuScreen(new TrsTitleScreen()).select(modules.trsOnline));
+				TrsMenuScreen page = new TrsMenuScreen(new TrsTitleScreen());
+				((ModMenu) page.ui()).select(modules.trsOnline).scrollSettings(400);
+				Mc.setScreen(page);
 				phase++;
 				wait = 20;
 				return;

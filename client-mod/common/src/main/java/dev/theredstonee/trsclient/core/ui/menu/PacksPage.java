@@ -85,8 +85,16 @@ public final class PacksPage {
 		boolean wide = w >= 380;
 		int cardsW = wide ? Math.min(220, Math.round(w * 0.48f)) : w;
 		int columns = wide ? 1 : 2;
-		int cardH = wide ? 34 : 30;
+		int avail = h - (buttons ? 22 : 0);
+		int rowsNeeded = (packs.size() + columns - 1) / columns;
 		int gap = 5;
+		int cardH = wide ? 34 : 30;
+		if (wide) {
+			// Karten füllen die Höhe (kleine Fenster: niedriger, notfalls nur der Name).
+			cardH = Math.max(16, Math.min(34, (avail - gap * (rowsNeeded - 1)) / rowsNeeded));
+			if (cardH < 26) gap = 3;
+			cardH = Math.max(16, Math.min(34, (avail - gap * (rowsNeeded - 1)) / rowsNeeded));
+		}
 		int cardW = columns == 1 ? cardsW : (cardsW - gap) / 2;
 		for (int i = 0; i < packs.size(); i++) {
 			final ModulePacks.Pack p = packs.get(i);
@@ -148,6 +156,7 @@ public final class PacksPage {
 		if (sel) Redstone.glow(c, x, y, w, h, t.glow, 0.7f);
 		Redstone.stone(c, x, y, w, h, fill, edge);
 		int iconY = y + (h - 14) / 2;
+		if (h < 18) iconY = y + 1;
 		Redstone.iconWell(c, x + 5, iconY, 1, p.icon, sel ? t.dustOn : t.textDim, sel ? 1f : 0f);
 		int tx = x + 24;
 		int tw = w - 30;
@@ -156,8 +165,13 @@ public final class PacksPage {
 			dev.theredstonee.trsclient.core.ui.Icons.draw(c, "check", x + w - 12, y + 4, 1, t.dustOn);
 			tw -= 10;
 		}
-		Paint.textClipped(c, name, tx, y + (h >= 34 ? 6 : 4), tw, sel ? t.text : ColorMath.lerp(t.text, t.textDim, 0.2f), false);
-		Paint.textClipped(c, p.description(), tx, y + (h >= 34 ? 18 : 16), tw, t.textDim, false);
+		int nameColor = sel ? t.text : ColorMath.lerp(t.text, t.textDim, 0.2f);
+		if (h < 26) {
+			Paint.textClipped(c, name, tx, y + (h - 8) / 2, tw, nameColor, false);
+		} else {
+			Paint.textClipped(c, name, tx, y + (h >= 34 ? 6 : 4), tw, nameColor, false);
+			Paint.textClipped(c, p.description(), tx, y + (h >= 34 ? 18 : 15), tw, t.textDim, false);
+		}
 		hits.add(x, y, w, h, new Runnable() {
 			@Override
 			public void run() {
@@ -183,6 +197,11 @@ public final class PacksPage {
 		ry += 13;
 		if (p.isEmpty()) {
 			ry = Paint.paragraph(c, I18n.tr("packs.mod.nothing"), ix, ry, iw, 10, t.textDim) + 2;
+		} else if (limit - ry < 40) {
+			// Wenig Platz: nur die Zahlen („+5 an · 3 aus · 6 verschoben“).
+			String summary = I18n.tr("packs.mod.summary", p.enable.size(), p.disable.size(), p.moved.size());
+			Paint.textClipped(c, summary, ix, ry, iw, t.dustOn, false);
+			ry += 12;
 		} else {
 			if (!p.enable.isEmpty() && ry < limit) ry = list(c, "+ " + I18n.tr("packs.mod.enable"), p.enable, ix, ry, iw, limit, t.dustOn);
 			if (!p.disable.isEmpty() && ry < limit) ry = list(c, "- " + I18n.tr("packs.mod.disable"), p.disable, ix, ry, iw, limit, t.textDim);

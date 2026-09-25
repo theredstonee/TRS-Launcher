@@ -663,5 +663,6 @@
   "sync.status.offline": "no disponible: se reintentará más tarde",
   "sync.status.newer": "guardado por un TRS Client más nuevo: actualiza para sincronizar",
   "sync.status.noConsent": "servicios TRS desactivados en el launcher",
-  "sync.status.off": "desactivada"
+  "sync.status.off": "desactivada",
+  "packs.mod.summary": "+{0} activados · {1} desactivados · {2} movidos"
 }

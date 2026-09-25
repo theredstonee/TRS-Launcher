@@ -663,5 +663,6 @@
   "sync.status.offline": "niet bereikbaar – later opnieuw",
   "sync.status.newer": "opgeslagen door een nieuwere TRS Client – update om te synchroniseren",
   "sync.status.noConsent": "TRS-diensten staan uit in de launcher",
-  "sync.status.off": "uit"
+  "sync.status.off": "uit",
+  "packs.mod.summary": "+{0} aan · {1} uit · {2} verplaatst"
 }

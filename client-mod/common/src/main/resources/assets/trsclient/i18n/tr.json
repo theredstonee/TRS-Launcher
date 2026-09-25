@@ -663,5 +663,6 @@
   "sync.status.offline": "ulaşılamıyor – daha sonra tekrar denenecek",
   "sync.status.newer": "daha yeni bir TRS Client kaydetti – eşitlemek için güncelle",
   "sync.status.noConsent": "TRS hizmetleri launcher'da kapalı",
-  "sync.status.off": "kapalı"
+  "sync.status.off": "kapalı",
+  "packs.mod.summary": "+{0} açık · {1} kapalı · {2} taşındı"
 }

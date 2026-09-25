@@ -273,6 +273,11 @@ public final class ModMenu extends UiScreen {
 			else rowH--;
 		}
 		if (items * (rowH + gap) + 11 + footer > h) footer = 0;
+		// Sehr kleine Fenster: noch enger, damit alle Einträge im Fenster bleiben.
+		while (items * (rowH + gap) + 11 > h && (gap > 0 || rowH > 11)) {
+			if (gap > 0) gap--;
+			else rowH--;
+		}
 		int cy = y;
 		railItem(c, x, cy, w, rowH, "layers", I18n.tr("menu.all"), category == null && page == Page.GRID, mx, my, new Runnable() {
 			@Override
