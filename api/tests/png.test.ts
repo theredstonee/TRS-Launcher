@@ -1,7 +1,7 @@
 import { deflateSync } from 'node:zlib'
 import { PNG } from 'pngjs'
 import { describe, expect, it } from 'vitest'
-import { inspectPng, sanitizeCapeUpload } from '../server/lib/png'
+import { inspectPng, MAX_UPLOAD_BYTES, sanitizeCapeUpload } from '../server/lib/png'
 import { chunk, chunks, solidPng, withChunks } from './helpers'
 
 function code(fn: () => unknown): string {
@@ -26,11 +26,72 @@ describe('cape upload sanitizing', () => {
     expect([...img.data.subarray(0, 4)]).toEqual([200, 30, 20, 255])
   })
 
-  it('accepts HD sizes up to 256x128 (scale 4)', () => {
+  it('accepts HD sizes up to 512x256 (scale 8)', () => {
     expect(sanitizeCapeUpload(solidPng(128, 64)).width).toBe(128)
     expect(sanitizeCapeUpload(solidPng(192, 96)).width).toBe(192)
     expect(sanitizeCapeUpload(solidPng(256, 128)).width).toBe(256)
-    expect(code(() => sanitizeCapeUpload(solidPng(512, 256)))).toBe('invalid_dimensions')
+    expect(sanitizeCapeUpload(solidPng(512, 256))).toMatchObject({ width: 512, height: 256, frames: 1, scale: 8, source: 'full' })
+    expect(code(() => sanitizeCapeUpload(solidPng(576, 288)))).toBe('invalid_dimensions')
+  })
+
+  it('accepts vertical strips with up to 16 frames and keeps every frame', () => {
+    const p = new PNG({ width: 512, height: 256 * 16 })
+    for (let f = 0; f < 16; f++) {
+      for (let i = 0; i < 512 * 256; i++) p.data.set([f * 10, 5, 7, 255], (f * 512 * 256 + i) * 4)
+    }
+    const out = sanitizeCapeUpload(PNG.sync.write(p), { frames: 16 })
+    expect(out).toMatchObject({ width: 512, height: 256, frames: 16, scale: 8, source: 'full' })
+    const img = PNG.sync.read(out.png)
+    expect([img.width, img.height]).toEqual([512, 4096])
+    expect([...img.data.subarray((15 * 256 * 512) * 4, (15 * 256 * 512) * 4 + 4)]).toEqual([150, 5, 7, 255])
+    // 64×64 = zwei Frames zu 64×32.
+    expect(sanitizeCapeUpload(solidPng(64, 64))).toMatchObject({ width: 64, height: 32, frames: 2 })
+  })
+
+  it('pads each frame of a 22k x 17k strip into its own 64k x 32k area', () => {
+    const p = new PNG({ width: 44, height: 34 * 3 })
+    for (let f = 0; f < 3; f++) {
+      for (let i = 0; i < 44 * 34; i++) p.data.set([f + 1, 2, 3, 255], (f * 44 * 34 + i) * 4)
+    }
+    const out = sanitizeCapeUpload(PNG.sync.write(p))
+    expect(out).toMatchObject({ width: 128, height: 64, frames: 3, scale: 2, source: 'cape-only' })
+    const img = PNG.sync.read(out.png)
+    expect([img.width, img.height]).toEqual([128, 192])
+    const px = (x: number, y: number) => [...img.data.subarray((y * 128 + x) * 4, (y * 128 + x) * 4 + 4)]
+    for (let f = 0; f < 3; f++) {
+      expect(px(0, f * 64)).toEqual([f + 1, 2, 3, 255])
+      expect(px(43, f * 64 + 33)).toEqual([f + 1, 2, 3, 255])
+      expect(px(44, f * 64)).toEqual([0, 0, 0, 0])
+      expect(px(0, f * 64 + 34)).toEqual([0, 0, 0, 0])
+      expect(px(0, f * 64 + 63)).toEqual([0, 0, 0, 0])
+    }
+  })
+
+  it('rejects more than 16 frames and a frames value that does not match', () => {
+    expect(code(() => sanitizeCapeUpload(solidPng(64, 32 * 17)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(22, 17 * 17)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(64, 32 * 4), { frames: 3 }))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(64, 32), { frames: 2 }))).toBe('invalid_dimensions')
+    expect(sanitizeCapeUpload(solidPng(64, 32 * 4), { frames: 4 }).frames).toBe(4)
+  })
+
+  it('rejects oversized image headers before inflating anything', () => {
+    const ihdr = Buffer.from(chunks(solidPng(64, 32))[0]!.data)
+    ihdr.writeUInt32BE(8192, 0)
+    ihdr.writeUInt32BE(8192, 4)
+    // Wäre das entpackt worden, käme `invalid_png` (Daten passen nicht) – so bleibt es bei den Maßen.
+    const huge = Buffer.concat([
+      solidPng(64, 32).subarray(0, 8),
+      chunk('IHDR', ihdr),
+      chunk('IDAT', deflateSync(Buffer.alloc(1024 * 1024))),
+      chunk('IEND', Buffer.alloc(0)),
+    ])
+    expect(code(() => sanitizeCapeUpload(huge))).toBe('invalid_dimensions')
+    // Auch innerhalb der Pixel-Obergrenze, aber mit falschem Seitenverhältnis.
+    ihdr.writeUInt32BE(512, 0)
+    ihdr.writeUInt32BE(4000, 4)
+    const tall = Buffer.concat([solidPng(64, 32).subarray(0, 8), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(Buffer.alloc(16))), chunk('IEND', Buffer.alloc(0))])
+    expect(code(() => sanitizeCapeUpload(tall))).toBe('invalid_dimensions')
   })
 
   it('converts the 22x17 cape-only format into the 64x32 layout', () => {
@@ -47,13 +108,19 @@ describe('cape upload sanitizing', () => {
 
   it('rejects wrong dimensions', () => {
     expect(code(() => sanitizeCapeUpload(solidPng(65, 32)))).toBe('invalid_dimensions')
-    expect(code(() => sanitizeCapeUpload(solidPng(64, 64)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(64, 48)))).toBe('invalid_dimensions')
     expect(code(() => sanitizeCapeUpload(solidPng(23, 17)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(22, 32)))).toBe('invalid_dimensions')
   })
 
-  it('rejects oversized files before decoding', () => {
-    const big = withChunks(solidPng(64, 32), [text('pad', 'x'.repeat(300 * 1024))])
+  it('rejects files over 5 MB before decoding', () => {
+    const big = withChunks(solidPng(64, 32), [text('pad', 'x'.repeat(MAX_UPLOAD_BYTES))])
+    expect(MAX_UPLOAD_BYTES).toBe(5 * 1024 * 1024)
     expect(code(() => sanitizeCapeUpload(big))).toBe('payload_too_large')
+    // Knapp darunter geht (Metadaten werden verworfen).
+    const ok = withChunks(solidPng(64, 32), [text('pad', 'x'.repeat(MAX_UPLOAD_BYTES - 2048))])
+    expect(ok.length).toBeLessThanOrEqual(MAX_UPLOAD_BYTES)
+    expect(sanitizeCapeUpload(ok).png.length).toBeLessThan(2048)
   })
 
   it('rejects files that are not PNGs', () => {

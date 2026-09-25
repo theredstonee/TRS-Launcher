@@ -1,3 +1,5 @@
+import { statSync } from 'node:fs'
+import { join } from 'node:path'
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { conflict, notFound } from './errors'
@@ -22,6 +24,14 @@ export function audit(ctx: AppContext, actor: string, action: string, target: st
   )
 }
 
+export interface OwnerStats {
+  /** Alle Uploads dieses Besitzers (inkl. des gezeigten). */
+  uploads: number
+  approved: number
+  pending: number
+  rejected: number
+}
+
 export interface AdminCapeView extends CapeView {
   owner: { uuid: string, name: string } | null
   createdAt: string
@@ -29,7 +39,22 @@ export interface AdminCapeView extends CapeView {
   reviewedBy: string | null
   rejectReason: string | null
   reports: { count: number, reasons: Record<string, number> }
+  /** Größe der gespeicherten PNG-Datei in Bytes (0, wenn sie fehlt). */
+  bytes: number
+  /** Upload-Zahlen des Besitzers über ALLE seine Uploads, `null` ohne Besitzer. */
+  ownerStats: OwnerStats | null
 }
+
+function fileSize(path: string): number {
+  try {
+    return statSync(path).size
+  } catch {
+    return 0
+  }
+}
+
+/** `?, ?, ?` für eine IN-Liste (Werte bleiben Parameter). */
+const placeholders = (n: number) => Array.from({ length: n }, () => '?').join(', ')
 
 export function listCapesForReview(ctx: AppContext, status: 'pending' | 'approved' | 'rejected' | 'reported'): AdminCapeView[] {
   const rows = status === 'reported'
@@ -45,12 +70,38 @@ export function listCapesForReview(ctx: AppContext, status: 'pending' | 'approve
        WHERE c.kind = 'upload' AND c.status = ? ORDER BY c.created_at LIMIT 500`,
       status,
     )
-  return rows.map((c) => {
-    const reports = all<{ reason: string, n: number }>(
+  if (rows.length === 0) return []
+
+  // Meldungen und Besitzer-Zahlen je eine gruppierte Abfrage für die ganze Liste.
+  const ids = rows.map((c) => c.id)
+  const reports = new Map<string, { reason: string, n: number }[]>()
+  for (const r of all<{ cape_id: string, reason: string, n: number }>(
+    ctx.db,
+    `SELECT cape_id, reason, COUNT(*) AS n FROM cape_reports WHERE cape_id IN (${placeholders(ids.length)}) GROUP BY cape_id, reason`,
+    ...ids,
+  )) {
+    const list = reports.get(r.cape_id) ?? []
+    list.push({ reason: r.reason, n: r.n })
+    reports.set(r.cape_id, list)
+  }
+  const owners = [...new Set(rows.map((c) => c.owner_uuid).filter((u): u is string => u !== null))]
+  const ownerStats = new Map<string, OwnerStats>()
+  if (owners.length) {
+    for (const o of all<{ owner_uuid: string, uploads: number, approved: number, pending: number, rejected: number }>(
       ctx.db,
-      'SELECT reason, COUNT(*) AS n FROM cape_reports WHERE cape_id = ? GROUP BY reason',
-      c.id,
-    )
+      `SELECT owner_uuid, COUNT(*) AS uploads,
+         COALESCE(SUM(status = 'approved'), 0) AS approved,
+         COALESCE(SUM(status = 'pending'), 0) AS pending,
+         COALESCE(SUM(status = 'rejected'), 0) AS rejected
+       FROM capes WHERE kind = 'upload' AND owner_uuid IN (${placeholders(owners.length)}) GROUP BY owner_uuid`,
+      ...owners,
+    )) {
+      ownerStats.set(o.owner_uuid, { uploads: o.uploads, approved: o.approved, pending: o.pending, rejected: o.rejected })
+    }
+  }
+
+  return rows.map((c) => {
+    const r = reports.get(c.id) ?? []
     return {
       ...capeView(ctx, c),
       owner: c.owner_uuid ? { uuid: c.owner_uuid, name: c.owner_name ?? '' } : null,
@@ -59,9 +110,11 @@ export function listCapesForReview(ctx: AppContext, status: 'pending' | 'approve
       reviewedBy: c.reviewed_by,
       rejectReason: c.reject_reason,
       reports: {
-        count: reports.reduce((s, r) => s + r.n, 0),
-        reasons: Object.fromEntries(reports.map((r) => [r.reason, r.n])),
+        count: r.reduce((s, x) => s + x.n, 0),
+        reasons: Object.fromEntries(r.map((x) => [x.reason, x.n])),
       },
+      bytes: fileSize(join(ctx.capeDir, `${c.id}.png`)),
+      ownerStats: c.owner_uuid ? (ownerStats.get(c.owner_uuid) ?? { uploads: 0, approved: 0, pending: 0, rejected: 0 }) : null,
     }
   })
 }

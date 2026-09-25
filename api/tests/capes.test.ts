@@ -1,5 +1,8 @@
-import { existsSync } from 'node:fs'
+import { existsSync, rmSync, statSync } from 'node:fs'
+import { IncomingMessage, ServerResponse } from 'node:http'
+import { Socket } from 'node:net'
 import { join } from 'node:path'
+import { createEvent } from 'h3'
 import { describe, expect, it } from 'vitest'
 import { approveCape, banUser, deleteCapeAdmin, listCapesForReview, rejectCape, stats } from '../server/lib/admin'
 import { loadBuiltins } from '../server/lib/builtin'
@@ -15,10 +18,12 @@ import {
   setActiveCape,
   uploadCape,
 } from '../server/lib/capes'
+import { setContext } from '../server/lib/context'
 import { block } from '../server/lib/friends'
 import { lookupPlayers } from '../server/lib/lookup'
 import { deleteUser, getUser, updateSettings } from '../server/lib/users'
-import { ADMIN, fixtureBuiltins, login, makeEnv, seedFixtures, solidPng } from './helpers'
+import adminSkinRoute from '../server/routes/v1/admin/users/[uuid]/skin.get'
+import { ADMIN, fixtureBuiltins, login, makeEnv, seedFixtures, solidPng, type TestEnv } from './helpers'
 
 const NO_COSMETICS = { hat: null, wings: null, back: null, aura: null }
 
@@ -207,5 +212,87 @@ describe('account deletion (Art. 17)', () => {
     const s = stats(env.ctx)
     expect(s.users.total).toBe(0)
     expect(s.sessions).toBe(0)
+  })
+})
+
+describe('HD and animated uploads', () => {
+  it('stores one frame size, frame count and frame time; static capes ignore frameTimeMs', async () => {
+    const env = makeEnv()
+    const u = await login(env, 'Animator')
+    const strip = uploadCape(env.ctx, u.user.uuid, solidPng(512, 4096, [9, 9, 9, 255]), 'Blitz', { frames: 16, frameTimeMs: 120 })
+    expect(strip).toMatchObject({ width: 512, height: 256, scale: 8, animated: true, frames: 16, frameTimeMs: 120 })
+    const row = getCape(env.ctx, strip.id)!
+    expect(row).toMatchObject({ width: 512, height: 256, frames: 16, frame_time_ms: 120 })
+
+    const still = uploadCape(env.ctx, u.user.uuid, solidPng(512, 256, [8, 8, 8, 255]), undefined, { frameTimeMs: 300 })
+    expect(still).toMatchObject({ width: 512, height: 256, scale: 8, animated: false, frames: 1, frameTimeMs: null })
+    expect(getCape(env.ctx, still.id)!.frame_time_ms).toBeNull()
+
+    const small = uploadCape(env.ctx, u.user.uuid, solidPng(22, 17 * 4, [7, 7, 7, 255]), undefined, { frameTimeMs: 50 })
+    expect(small).toMatchObject({ width: 64, height: 32, scale: 1, frames: 4, frameTimeMs: 50 })
+  })
+
+  it('animated uploads need frameTimeMs; frames must match; nothing is stored on errors', async () => {
+    const env = makeEnv()
+    const u = await login(env, 'Animator')
+    expect(code(() => uploadCape(env.ctx, u.user.uuid, solidPng(64, 128), undefined))).toBe('frame_time_required')
+    expect(code(() => uploadCape(env.ctx, u.user.uuid, solidPng(64, 128), undefined, { frames: 3, frameTimeMs: 100 }))).toBe('invalid_dimensions')
+    expect(code(() => uploadCape(env.ctx, u.user.uuid, solidPng(64, 32 * 17), undefined, { frameTimeMs: 100 }))).toBe('invalid_dimensions')
+    expect(listCapesForReview(env.ctx, 'pending')).toEqual([])
+  })
+})
+
+describe('admin review details', () => {
+  it('lists file size and upload counts of the owner', async () => {
+    const env = makeEnv()
+    const a = await login(env, 'Alice')
+    const b = await login(env, 'Bob')
+    const a1 = uploadCape(env.ctx, a.user.uuid, solidPng(64, 32, [1, 1, 1, 255]), undefined)
+    const a2 = uploadCape(env.ctx, a.user.uuid, solidPng(64, 32, [2, 2, 2, 255]), undefined)
+    const a3 = uploadCape(env.ctx, a.user.uuid, solidPng(64, 32, [3, 3, 3, 255]), undefined)
+    approveCape(env.ctx, ADMIN, a1.id)
+    rejectCape(env.ctx, ADMIN, a2.id, 'nope')
+    const b1 = uploadCape(env.ctx, b.user.uuid, solidPng(128, 64, [4, 4, 4, 255]), undefined)
+    const list = listCapesForReview(env.ctx, 'pending')
+    expect(list.map((c) => c.id)).toEqual([a3.id, b1.id])
+    expect(list[0]!.ownerStats).toEqual({ uploads: 3, approved: 1, pending: 1, rejected: 1 })
+    expect(list[1]!.ownerStats).toEqual({ uploads: 1, approved: 0, pending: 1, rejected: 0 })
+    expect(list[0]!.bytes).toBe(statSync(join(env.ctx.capeDir, `${a3.id}.png`)).size)
+    expect(list[0]!.bytes).toBeGreaterThan(0)
+    rmSync(join(env.ctx.capeDir, `${b1.id}.png`))
+    expect(listCapesForReview(env.ctx, 'pending')[1]!.bytes).toBe(0)
+    expect(listCapesForReview(env.ctx, 'rejected')[0]).toMatchObject({ id: a2.id, rejectReason: 'nope', ownerStats: { uploads: 3 } })
+  })
+
+  /** Ruft die Admin-Skin-Route direkt auf (ohne Nitro), mit dem Admin-Schlüssel aus den Test-Einstellungen. */
+  async function adminSkin(env: TestEnv, uuid: string, key = env.ctx.config.adminApiKey!) {
+    setContext(env.ctx)
+    const req = new IncomingMessage(new Socket())
+    req.method = 'GET'
+    req.url = `/v1/admin/users/${uuid}/skin`
+    req.headers = { 'x-admin-key': key }
+    const event = createEvent(req, new ServerResponse(req))
+    event.context.params = { uuid }
+    try {
+      return await adminSkinRoute(event)
+    } catch (e) {
+      return { error: (e as { status: number, code: string }) }
+    } finally {
+      setContext(undefined)
+    }
+  }
+
+  it('admin skin route returns the SkinView and 404 for invalid UUIDs', async () => {
+    const env = makeEnv()
+    const STEVE = '0'.repeat(31) + '1'
+    env.mojang.accounts.set('steve', {
+      uuid: STEVE, name: 'Steve', model: 'default', skinUrl: 'https://textures.minecraft.net/texture/abc', capeUrl: null,
+    })
+    expect(await adminSkin(env, STEVE)).toEqual({ uuid: STEVE, name: 'Steve', model: 'default', textureUrl: 'https://textures.minecraft.net/texture/abc', capeUrl: null })
+    expect(await adminSkin(env, 'not-a-uuid')).toMatchObject({ error: { status: 404, code: 'not_found' } })
+    expect(await adminSkin(env, 'f'.repeat(32))).toMatchObject({ error: { status: 404, code: 'player_not_found' } })
+    expect(await adminSkin(env, STEVE, 'wrong-key')).toMatchObject({ error: { status: 401 } })
+    env.mojang.fail = true
+    expect(await adminSkin(env, 'e'.repeat(32))).toMatchObject({ error: { status: 502, code: 'upstream_unavailable' } })
   })
 })

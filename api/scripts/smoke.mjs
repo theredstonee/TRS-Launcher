@@ -208,7 +208,7 @@ try {
   check('polyglot 400', poly.status === 400)
   const dims = await http('POST', '/v1/capes/upload', { token: B, raw: png(100, 50), headers: { 'content-type': 'image/png' } })
   check('wrong dims 400', dims.json?.error.code === 'invalid_dimensions')
-  const huge = await http('POST', '/v1/capes/upload', { token: B, raw: Buffer.alloc(300 * 1024, 1), headers: { 'content-type': 'image/png' } })
+  const huge = await http('POST', '/v1/capes/upload', { token: B, raw: Buffer.alloc(5 * 1024 * 1024 + 1, 1), headers: { 'content-type': 'image/png' } })
   check('oversized 413', huge.status === 413)
   const hidden = await http('GET', `/v1/capes/${capeId}.png`)
   check('pending texture hidden', hidden.status === 404)

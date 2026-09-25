@@ -4,7 +4,7 @@
 
 useHead({ title: 'Admin', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
-const { m, fill, date } = useLang()
+const { m, fill, date, lang } = useLang()
 const { session, load, api, logout } = useAdmin()
 
 type Tab = 'overview' | 'capes' | 'codes' | 'players'
@@ -108,37 +108,56 @@ const statTiles = computed(() => {
 })
 
 // --- Umhänge --------------------------------------------------------------------------------
-interface AdminCape {
-  id: string
-  name: string
-  url: string
-  scale: number
-  frames: number
-  frameTimeMs: number | null
-  owner: { uuid: string, name: string } | null
-  createdAt: string
-  reports: { count: number, reasons: Record<string, number> }
-}
-const reviewStatus = ref<'pending' | 'reported'>('pending')
+type ReviewStatus = 'pending' | 'reported' | 'approved' | 'rejected'
+const REVIEW_STATUSES: ReviewStatus[] = ['pending', 'reported', 'approved', 'rejected']
+const reviewStatus = ref<ReviewStatus>('pending')
 const reviewCapes = ref<AdminCape[]>([])
-const reasons = reactive<Record<string, string>>({})
 const busy = ref('')
+/** Offener Prüf-Dialog: Position in `reviewCapes`, `null` = zu. */
+const reviewIndex = ref<number | null>(null)
+const reviewCape = computed(() => (reviewIndex.value === null ? null : reviewCapes.value[reviewIndex.value] ?? null))
+const reviewError = ref('')
+const locale = computed(() => (lang.value === 'en' ? 'en-GB' : lang.value))
 
 async function loadCapes() {
   const r = await api<{ capes: AdminCape[] }>(`/v1/admin/capes?status=${reviewStatus.value}`)
   reviewCapes.value = r.capes
 }
 
-async function capeAction(c: AdminCape, action: 'approve' | 'reject' | 'delete') {
+function openReview(i: number) {
+  reviewError.value = ''
+  reviewIndex.value = i
+}
+
+function stepReview(dir: 1 | -1) {
+  if (reviewIndex.value === null) return
+  const next = reviewIndex.value + dir
+  if (next < 0 || next >= reviewCapes.value.length) return
+  reviewError.value = ''
+  reviewIndex.value = next
+}
+
+/**
+ * Entscheidung im Dialog. Danach Liste + Zahlen neu laden und zum nächsten Umhang der Liste
+ * weitergehen (am Ende zum letzten übrigen); ist keiner mehr übrig, schließt der Dialog.
+ */
+async function capeAction(action: 'approve' | 'reject' | 'delete', reason?: string) {
+  const c = reviewCape.value
+  if (!c || busy.value) return
+  const i = reviewIndex.value!
+  const nextId = reviewCapes.value[i + 1]?.id ?? null
   busy.value = c.id
-  failure.value = ''
+  reviewError.value = ''
   try {
     if (action === 'delete') await api(`/v1/admin/capes/${c.id}`, { method: 'DELETE' })
-    else if (action === 'reject') await api(`/v1/admin/capes/${c.id}/reject`, { method: 'POST', body: reasons[c.id] ? { reason: reasons[c.id] } : {} })
+    else if (action === 'reject') await api(`/v1/admin/capes/${c.id}/reject`, { method: 'POST', body: reason ? { reason } : {} })
     else await api(`/v1/admin/capes/${c.id}/approve`, { method: 'POST' })
     await Promise.all([loadCapes(), loadStats()])
+    const rest = reviewCapes.value.filter((x) => x.id !== c.id)
+    const target = rest.find((x) => x.id === nextId) ?? rest[rest.length - 1]
+    reviewIndex.value = target ? reviewCapes.value.findIndex((x) => x.id === target.id) : null
   } catch (e) {
-    fail(e)
+    reviewError.value = fill(m.value.admin.failed, { error: apiMessage(e) })
   } finally {
     busy.value = ''
   }
@@ -287,7 +306,11 @@ async function refreshAll() {
 }
 
 watch(tab, () => void refreshAll())
-watch(reviewStatus, () => void loadCapes().catch(fail))
+watch(reviewStatus, () => {
+  reviewIndex.value = null
+  void loadCapes().catch(fail)
+})
+watch(tab, () => (reviewIndex.value = null))
 </script>
 
 <template>
@@ -362,31 +385,63 @@ watch(reviewStatus, () => void loadCapes().catch(fail))
 
       <!-- Umhänge -->
       <div v-else-if="tab === 'capes'" class="mt-8">
-        <div class="seg-row">
-          <button type="button" class="seg-btn" :class="{ 'seg-btn-on': reviewStatus === 'pending' }" @click="reviewStatus = 'pending'">{{ m.admin.review.pending }}</button>
-          <button type="button" class="seg-btn" :class="{ 'seg-btn-on': reviewStatus === 'reported' }" @click="reviewStatus = 'reported'">{{ m.admin.review.reported }}</button>
+        <div class="seg-row flex-wrap">
+          <button
+            v-for="st in REVIEW_STATUSES"
+            :key="st"
+            type="button"
+            class="seg-btn"
+            :class="{ 'seg-btn-on': reviewStatus === st }"
+            :aria-pressed="reviewStatus === st"
+            @click="reviewStatus = st"
+          >
+            {{ m.admin.review[st] }}
+          </button>
         </div>
         <p v-if="!reviewCapes.length" class="mt-8 text-base-400">{{ m.admin.review.none }}</p>
-        <ul class="mt-6 grid gap-4 md:grid-cols-2">
-          <li v-for="c in reviewCapes" :key="c.id" class="card flex gap-5 p-5">
-            <div class="grid w-24 shrink-0 place-items-center rounded-lg bg-base-950 py-3">
-              <CapeThumb :texture="localUrl(c.url)" :scale="c.scale" :frames="c.frames" :frame-time-ms="c.frameTimeMs" :width="50" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <p class="truncate font-semibold text-base-50">{{ c.name || c.id }}</p>
-              <p class="text-xs text-base-400">{{ c.owner?.name ?? '–' }} · {{ date(c.createdAt) }}</p>
-              <p v-if="c.reports.count" class="mt-1 text-xs text-lamp-300">
-                {{ c.reports.count }}× · {{ Object.keys(c.reports.reasons).join(', ') }}
-              </p>
-              <input v-model="reasons[c.id]" class="field mt-3" maxlength="200" :placeholder="m.admin.review.reason" />
-              <div class="mt-3 flex flex-wrap gap-2">
-                <button type="button" class="btn btn-primary" :disabled="busy === c.id" @click="capeAction(c, 'approve')">{{ m.admin.review.approve }}</button>
-                <button type="button" class="btn btn-ghost" :disabled="busy === c.id" @click="capeAction(c, 'reject')">{{ m.admin.review.reject }}</button>
-                <button type="button" class="btn btn-danger" :disabled="busy === c.id" @click="capeAction(c, 'delete')">{{ m.admin.review.delete }}</button>
-              </div>
-            </div>
+        <ul class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <li v-for="(c, i) in reviewCapes" :key="c.id">
+            <button
+              type="button"
+              class="card card-hover flex h-full w-full gap-5 p-5 text-left"
+              @click="openReview(i)"
+            >
+              <span class="grid w-24 shrink-0 place-items-center rounded-lg bg-base-950 py-3">
+                <CapeThumb :texture="localUrl(c.url)" :scale="c.scale" :frames="c.frames" :frame-time-ms="c.frameTimeMs" :width="50" />
+              </span>
+              <span class="block min-w-0 flex-1">
+                <span class="block truncate font-semibold text-base-50">{{ c.name || c.id }}</span>
+                <span class="block text-xs text-base-400">{{ c.owner?.name || '–' }} · {{ date(c.createdAt) }}</span>
+                <span class="mt-2 flex flex-wrap gap-1.5">
+                  <span class="chip tabular-nums">{{ c.width }}×{{ c.height }}</span>
+                  <span v-if="c.frames > 1" class="chip tabular-nums">{{ fill(m.admin.review.framesCount, { n: c.frames }) }}</span>
+                  <span class="chip tabular-nums">{{ formatBytes(c.bytes, locale) }}</span>
+                  <span v-if="c.reports.count" class="badge bg-lamp-900 text-lamp-300">
+                    <SiteIcon name="flag" class="size-3" />{{ c.reports.count }}
+                  </span>
+                </span>
+                <span class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-redstone-300">
+                  {{ m.admin.review.open }}<SiteIcon name="arrow" class="size-3.5" />
+                </span>
+              </span>
+            </button>
           </li>
         </ul>
+
+        <CapeReviewDialog
+          v-if="reviewCape"
+          :cape="reviewCape"
+          :index="reviewIndex ?? 0"
+          :total="reviewCapes.length"
+          :busy="busy !== ''"
+          :error="reviewError"
+          @close="reviewIndex = null"
+          @prev="stepReview(-1)"
+          @next="stepReview(1)"
+          @approve="capeAction('approve')"
+          @reject="(reason) => capeAction('reject', reason)"
+          @delete="capeAction('delete')"
+        />
       </div>
 
       <!-- Codes -->

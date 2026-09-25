@@ -2,9 +2,14 @@ import { crc32, inflateSync } from 'node:zlib'
 import { PNG } from 'pngjs'
 import { ApiError } from './errors'
 
-export const MAX_UPLOAD_BYTES = 256 * 1024
-/** Größter Faktor gegenüber 64×32 für Uploads (→ 256×128). */
-export const MAX_SCALE = 4
+/** Größte Upload-Datei (Streifen mit bis zu 16 Frames in 512×256). */
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+/** Größter Faktor gegenüber 64×32 für Uploads (→ 512×256 je Frame). */
+export const MAX_SCALE = 8
+/** Höchstens so viele Frames hat ein hochgeladener Streifen. */
+export const MAX_UPLOAD_FRAMES = 16
+/** Höchstens so viele Pixel hat ein Upload (512 × 256 × 16 Frames) – geprüft am IHDR, vor dem Entpacken. */
+export const MAX_UPLOAD_PIXELS = 512 * 4096
 /** Größter Faktor für mitgelieferte Designs (HD-Pixel-Art, → 512×256 beim Umhang). */
 export const BUILTIN_MAX_SCALE = 8
 
@@ -160,21 +165,72 @@ export function capeLayout(width: number, height: number, maxScale = MAX_SCALE):
   return null
 }
 
+export interface UploadLayout extends CapeLayout {
+  frames: number
+  /** Maße eines Frames in der hochgeladenen Datei (64k×32k oder 22k×17k). */
+  frameWidth: number
+  frameHeight: number
+}
+
 /**
- * Umhang-Upload säubern: prüfen, dekodieren, auf 64k×32k bringen, unsichtbare
- * Pixel nullen und NEU kodieren (nur IHDR/IDAT/IEND, keine Metadaten).
+ * Maße eines Uploads: Breite 64k (Frame-Höhe 32k) oder 22k (Frame-Höhe 17k), k = 1…MAX_SCALE,
+ * Höhe = Frame-Höhe × Frames (1…MAX_UPLOAD_FRAMES). Die Breite entscheidet – 64k und 22k
+ * treffen sich für k ≤ 8 nie.
  */
-export function sanitizeCapeUpload(buf: Buffer): { png: Buffer, width: number, height: number, source: CapeLayout['source'] } {
-  if (buf.length > MAX_UPLOAD_BYTES) throw new ApiError(413, 'payload_too_large', 'Cape PNG must be at most 256 KB')
+export function uploadLayout(width: number, height: number): UploadLayout | null {
+  let k: number
+  let source: CapeLayout['source']
+  if (width % 64 === 0 && width / 64 >= 1 && width / 64 <= MAX_SCALE) {
+    k = width / 64
+    source = 'full'
+  } else if (width % 22 === 0 && width / 22 >= 1 && width / 22 <= MAX_SCALE) {
+    k = width / 22
+    source = 'cape-only'
+  } else return null
+  const frameHeight = source === 'full' ? 32 * k : 17 * k
+  const frames = height / frameHeight
+  if (!Number.isInteger(frames) || frames < 1 || frames > MAX_UPLOAD_FRAMES) return null
+  return { width: 64 * k, height: 32 * k, scale: k, source, frames, frameWidth: width, frameHeight }
+}
+
+export interface CleanCape {
+  png: Buffer
+  /** Maße EINES Frames (immer 64k×32k). */
+  width: number
+  height: number
+  frames: number
+  scale: number
+  source: CapeLayout['source']
+}
+
+const DIMENSION_RULE = 'Cape must be 64k x 32k pixels per frame (k = 1-8, e.g. 64x32 up to 512x256) or the cape-only format '
+  + `22k x 17k (22x17 up to 176x136); animated capes stack up to ${MAX_UPLOAD_FRAMES} frames vertically`
+
+/**
+ * Umhang-Upload säubern: prüfen, dekodieren, jeden Frame auf 64k×32k bringen (Streifen bleibt
+ * senkrecht), unsichtbare Pixel nullen und NEU kodieren (nur IHDR/IDAT/IEND, keine Metadaten).
+ * `frames` (optional) muss zur erkannten Frame-Zahl passen.
+ */
+export function sanitizeCapeUpload(buf: Buffer, opts: { frames?: number } = {}): CleanCape {
+  if (buf.length > MAX_UPLOAD_BYTES) throw new ApiError(413, 'payload_too_large', 'Cape PNG must be at most 5 MB')
   const { header } = inspectPng(buf)
-  const layout = capeLayout(header.width, header.height)
-  if (!layout) {
-    throw bad('invalid_dimensions', 'Cape must be 64x32, 128x64, 192x96 or 256x128, or the cape-only format 22x17 (or 44x34, 66x51, 88x68)')
+  // Maße zuerst am IHDR prüfen – vor jedem Entpacken (Dekompressionsbomben).
+  if (header.width * header.height > MAX_UPLOAD_PIXELS) throw bad('invalid_dimensions', DIMENSION_RULE)
+  const layout = uploadLayout(header.width, header.height)
+  if (!layout) throw bad('invalid_dimensions', DIMENSION_RULE)
+  if (opts.frames !== undefined && opts.frames !== layout.frames) {
+    throw bad('invalid_dimensions', `The image contains ${layout.frames} frame(s), but frames=${opts.frames} was given`)
   }
-  const img = decodeRgba(buf, 64 * MAX_SCALE * 32 * MAX_SCALE)
-  const out = Buffer.alloc(layout.width * layout.height * 4)
-  for (let y = 0; y < img.height; y++) {
-    img.data.copy(out, y * layout.width * 4, y * img.width * 4, (y + 1) * img.width * 4)
+  const img = decodeRgba(buf, MAX_UPLOAD_PIXELS)
+  const outW = layout.width
+  const outH = layout.height
+  const out = Buffer.alloc(outW * outH * layout.frames * 4)
+  // Jeder Frame oben links in seine 64k×32k-Fläche (beim reinen Umhang-Format bleibt der Rest leer).
+  for (let f = 0; f < layout.frames; f++) {
+    for (let y = 0; y < layout.frameHeight; y++) {
+      const src = (f * layout.frameHeight + y) * img.width * 4
+      img.data.copy(out, (f * outH + y) * outW * 4, src, src + img.width * 4)
+    }
   }
   // Vollständig transparente Pixel tragen keine Farbe weiter (keine versteckten Daten).
   let visible = 0
@@ -187,11 +243,18 @@ export function sanitizeCapeUpload(buf: Buffer): { png: Buffer, width: number, h
       out[i + 2] = 0
     } else {
       const p = i / 4
-      if (p % layout.width < capeW && Math.floor(p / layout.width) < capeH) visible++
+      if (p % outW < capeW && Math.floor(p / outW) % outH < capeH) visible++
     }
   }
   if (visible === 0) throw bad('empty_cape', 'The cape area of the image is fully transparent')
-  return { png: encodeRgba(layout.width, layout.height, out), width: layout.width, height: layout.height, source: layout.source }
+  return {
+    png: encodeRgba(outW, outH * layout.frames, out),
+    width: outW,
+    height: outH,
+    frames: layout.frames,
+    scale: layout.scale,
+    source: layout.source,
+  }
 }
 
 /** Größte Skin-Datei (vor dem Neukodieren). */

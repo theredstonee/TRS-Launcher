@@ -15,7 +15,7 @@ The German deployment guide is in [README.md](README.md).
 | Topic | Rule |
 |---|---|
 | Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`. |
-| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **256 KiB**, a cosmetic upload at most **512 KiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Anything larger gets `413`. |
+| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Anything larger gets `413`. |
 | Unknown fields | They are **rejected** with `400 invalid_request`. All request objects are strict. |
 | UUIDs | Requests accept 32 hex digits with or without dashes, in any case. **Responses always use 32 lowercase hex digits without dashes**, for example `75c1a6f3112240abbdb57b9d21c64232`. |
 | Minecraft names | `^[A-Za-z0-9_]{1,16}$` |
@@ -405,7 +405,7 @@ This object is used everywhere a cape is returned.
 | `status` | `approved` \| `pending` \| `rejected`. Built-in capes are always `approved`. |
 | `url` | Absolute texture URL. `?v=` changes whenever the content changes. **Use the URL as given.** |
 | `width`, `height` | Size of **one frame** in pixels. Always `64·scale × 32·scale`. |
-| `scale` | The resolution factor relative to the vanilla 64×32 layout: 1–4 for uploads, 1–8 for built-in capes. |
+| `scale` | The resolution factor relative to the vanilla 64×32 layout: 1–8 (uploads and built-in capes). |
 | `animated` | `frames > 1` |
 | `frames` | 1–64 |
 | `frameTimeMs` | Duration of each frame (20–10000), or `null` for a static cape. |
@@ -481,34 +481,49 @@ Returns the metadata without the texture. The visibility rules are the same as �
 { "cape": { "…": "CapeView" } }
 ```
 
-### 5.6 `POST /v1/capes/upload?name=<optional>`
+### 5.6 `POST /v1/capes/upload?name=<optional>&frames=<optional>&frameTimeMs=<optional>`
 
-Auth required. Headers: `Content-Type: image/png`. The body is the raw PNG bytes, at most 256 KiB.
+Auth required. Headers: `Content-Type: image/png`. The body is the raw PNG bytes, at most **5 MiB** (5 242 880 bytes).
 
-`name` is optional, 1–32 characters: letters, digits, spaces and `. , ' ! ? & ( ) + - _`.
+Query parameters:
+
+| Parameter | Meaning |
+|---|---|
+| `name` | Optional, 1–32 characters: letters, digits, spaces and `. , ' ! ? & ( ) + - _`. |
+| `frames` | Optional integer 1–16. If given, it must equal the frame count the server reads from the image size, otherwise `400 invalid_dimensions`. |
+| `frameTimeMs` | Integer 50–10000. **Required when the image has more than one frame** (`400 frame_time_required`). Ignored for static capes (stored as `null`). |
+
+Invalid parameter values (not an integer, out of range, unknown parameters) return `400 invalid_request`.
+
+**Sizes.** One frame is **64k×32k** (k = 1–8, so 64×32 up to 512×256) **or** the cape-only format **22k×17k** (22×17 up to 176×136). Animated capes stack **1–16 frames vertically**, like built-in capes: the image is `frameWidth × (frameHeight · frames)`, so at most 512×4096. The **width decides the layout** (64k and 22k never collide for k ≤ 8); the height must be a whole number of frames. Anything else returns `400 invalid_dimensions`.
 
 **201**
 ```json
-{ "cape": { "…": "CapeView", "kind": "upload", "unlock": "owner", "status": "pending" } }
+{ "cape": { "…": "CapeView", "kind": "upload", "unlock": "owner", "status": "pending",
+  "width": 512, "height": 256, "scale": 8, "animated": true, "frames": 16, "frameTimeMs": 120 } }
 ```
+
+`width`/`height` in the response are the size of **one frame** (always 64k×32k). The stored texture (§5.4) is a vertical strip of `frames` frames of that size.
 
 What the server checks:
 
 - The PNG signature and every chunk CRC.
 - A chunk whitelist.
-- **No APNG**, so uploads are always static.
+- **No APNG** (`animated_png`). Animation only works as a vertical frame strip.
 - **No bytes after `IEND`** (polyglot protection).
-- The size must be **64k×32k** (k = 1–4, up to 256×128) **or** the cape-only format **22k×17k**, which is placed into a 64k×32k canvas.
+- The image size (rules above) and at most 512 × 4096 pixels in total. Both are checked on the `IHDR` header **before** anything is decompressed.
 - It checks the decompressed size (bomb protection).
-- It decodes the image and **re-encodes** it as RGBA PNG. All metadata is dropped and fully transparent pixels are zeroed.
-- The cape area must not be fully transparent.
+- It decodes the image and **re-encodes** it as an RGBA PNG strip of `64k × 32k·frames`. A 22k×17k frame is placed at the top left of its own 64k×32k area; the rest stays transparent. All metadata is dropped and fully transparent pixels are zeroed.
+- At least one pixel in the cape area (22k×17k of some frame) must be visible, otherwise `400 empty_cape`.
+- Duplicates are detected on the re-encoded PNG.
 
 | HTTP | code |
 |---|---|
-| 400 | `invalid_png`, `animated_png`, `invalid_dimensions`, `empty_cape` |
+| 400 | `invalid_png`, `animated_png`, `invalid_dimensions`, `frame_time_required`, `empty_cape`, `invalid_request` |
 | 409 | `too_many_pending` (at most 3 pending), `upload_limit` (at most 10 non-rejected), `duplicate_cape` |
-| 413 | `payload_too_large` |
+| 413 | `payload_too_large` (more than 5 MiB) |
 | 415 | `unsupported_media_type` |
+| 429 | `rate_limited` (at most 5 uploads per 24 hours) |
 
 Uploads start as `pending`. An admin approves or rejects them. Until then only the uploader sees the upload, in the catalog and in their own lookup.
 
@@ -684,7 +699,7 @@ Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in 
 | Method and path | Body | Response |
 |---|---|---|
 | `GET /v1/admin/stats` | – | `{ users:{total,banned,activeLast24h,online}, sessions, capes:{builtin,approved,pending,rejected,reported,activeUsers}, cosmetics:{builtin,emotes,approved,pending,rejected,reported,equippedUsers}, codes:{active,redemptions}, friendships, pendingFriendRequests, eventStreams, playerStreams }` |
-| `GET /v1/admin/capes?status=pending\|approved\|rejected\|reported` | – | `{ capes: [CapeView + { owner:{uuid,name}\|null, createdAt, reviewedAt, reviewedBy, rejectReason, reports:{count, reasons:{<reason>:n}} }] }`. The default status is `pending`. |
+| `GET /v1/admin/capes?status=pending\|approved\|rejected\|reported` | – | `{ capes: [CapeView + { owner:{uuid,name}\|null, createdAt, reviewedAt, reviewedBy, rejectReason, reports:{count, reasons:{<reason>:n}}, bytes, ownerStats:{uploads,approved,pending,rejected}\|null }] }`. The default status is `pending`. `bytes` is the size of the stored PNG file (0 if it is missing). `ownerStats` counts **all** uploads of the owner (including this one); `null` without owner. |
 | `POST /v1/admin/capes/{id}/approve` | – | `{ cape }`. Also clears open reports. |
 | `POST /v1/admin/capes/{id}/reject` | `{ "reason"?: string≤200 }` or none | `{ cape }`. Also takes the cape off its wearer. |
 | `DELETE /v1/admin/capes/{id}` | – | 204. Uploads only; built-in capes return `409 builtin_cape`. |
@@ -692,6 +707,7 @@ Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in 
 | `POST /v1/admin/codes` | `{ capeId` **or** `cosmeticId, maxUses?=1 (1–100000), count?=1 (1–100), expiresAt?: ISO, note?: ≤200 }`. Exactly one of `capeId` and `cosmeticId`; `cosmeticId` can be an emote id. | **201** `{ codes: [CodeView + { code }] }`. **This is the only time the plain code is ever shown.** Free items return `400 cape_is_free` or `400 cosmetic_is_free`; unknown ones `404 cape_not_found` or `404 cosmetic_not_found`. |
 | `DELETE /v1/admin/codes/{id}` | – | 204 (revoke). Already unlocked capes stay unlocked. |
 | `GET /v1/admin/users/{uuid-or-name}` | – | `{ user: { uuid, name, known, admin, banned:{reason,bannedAt,bannedBy}\|null, createdAt, lastLoginAt, settings, activeCapeId, grantedCapes:[{capeId,source,grantedAt}], uploads, grantedCosmetics:[{cosmeticId,source,grantedAt}], equippedCosmetics:{<slot>:<id>}, cosmeticUploads, friends, sessions, online } }` |
+| `GET /v1/admin/users/{uuid}/skin` | – | **200** SkinView (§14), like `GET /v1/skins/by-uuid/{uuid}`; used for the uploader's face on the admin website. Invalid UUID `404 not_found`, unknown account `404 player_not_found`, Mojang down `502 upstream_unavailable`, `429 rate_limited` (30/min per admin). |
 | `POST /v1/admin/users/{uuid}/capes` | `{ capeId }` | **201** `{ cape, alreadyOwned }`. The user must have logged in once (`404 user_not_found`); otherwise use a code. |
 | `DELETE /v1/admin/users/{uuid}/capes/{capeId}` | – | 204, or `404 grant_not_found`. Takes the cape off if it is active. |
 | `POST /v1/admin/users/{uuid}/ban` | `{ "reason"?: string≤200 }` or none | `{ user }`. Revokes sessions, clears presence, closes streams. Also works for UUIDs that never logged in. Admins return `409 cannot_ban_admin`. |

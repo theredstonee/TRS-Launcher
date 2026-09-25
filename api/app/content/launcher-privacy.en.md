@@ -1,4 +1,3 @@
-
 TRS Launcher runs on your computer. It has **no telemetry, analytics, crash reporting or advertising**. It only sends
 information to a server run by the TRS Launcher project if you turn on the optional [TRS services](#trs-services)
 (capes, friends, online status). Without your consent, the launcher sends nothing there.
@@ -10,16 +9,35 @@ The launcher only connects to other services when that is needed for something y
 | Microsoft / Xbox Live / Minecraft services | Signing in, starting the game | Standard OAuth sign-in; your Minecraft access token when the game starts |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Installing or starting a version | Download requests for game files |
 | Mojang session server (`sessionserver.mojang.com`) | Signing in to the TRS services (only after you agreed) | The same "join" request a Minecraft server login uses: your access token, UUID and a one-time challenge |
-| TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status; with sync turned on also your own skins, your own presets and your theme, accent colour and language |
+| Mojang profile services (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Importing a skin by player name, showing player faces (friends, admin search) | The player name or UUID being looked up; a download of that skin image |
+| The website of a link you enter | Only when you import a skin "by link" | A normal download request for that image (only HTTPS, no cookies or accounts) |
+| TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status |
 | Fabric, Quilt, Forge, NeoForge maven/meta servers | Installing a mod loader | Download requests |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Browsing, installing or updating content | Search queries, file hashes of installed mods (for update checks) |
 | CurseForge (`api.curseforge.com`; files and images from `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Only when you pick CurseForge as the source, install a CurseForge modpack or have content from CurseForge installed | Search queries and filters, the project and file IDs of content installed from CurseForge (for details and update checks), download requests. Like every web request, this includes your IP address. You don't need a CurseForge account – the launcher identifies itself with its own API key, not with anything about you. |
 | Minecraft servers in your server list | Showing live status | A standard server-list ping |
 | mclo.gs | Only when you click "Log teilen" and confirm | The game log, with access tokens and your Windows user name removed |
 | GitHub (`github.com`) | Checking for launcher updates | A request for the update manifest |
+| Discord app on your computer (local only, no internet) | While the launcher is open and "Show Discord status" is on (default), see [below](#discord) | Your Discord status: "In the TRS Launcher", or the Minecraft version, mod loader and play time of the running game |
 
 Account tokens are stored only on your computer, encrypted with Windows DPAPI. Uninstalling the launcher removes the
 program; your data in `%APPDATA%\TRS-Launcher` can be deleted at any time.
+
+## Discord
+
+If the Discord app is running on your computer, the launcher shows a status on your Discord profile ("Playing TRS
+Launcher"): "In the TRS Launcher" while only the launcher is open, and while you play the **Minecraft version, the mod
+loader (e.g. Fabric) and how long you have been playing**. It never shows server addresses, instance names or player
+names.
+
+- The launcher only talks to the Discord app **on your own computer** (Discord's local interface, a named pipe or local
+  socket). It sends nothing over the internet itself and doesn't need your Discord login.
+- The Discord app then shows this status on your profile – **publicly visible to the people who can see your Discord
+  profile** (friends, members of shared servers). What Discord does with it is covered by
+  [Discord's privacy policy](https://discord.com/privacy).
+- The status disappears when you close the launcher. If Discord isn't running, nothing happens.
+- It is **on by default** and can be turned off at any time under *Settings → Privacy → Show Discord status* (or hide it
+  in Discord under *User Settings → Activity Privacy*).
 
 ## TRS services
 
@@ -48,21 +66,23 @@ hands to web content or to the game. The TRS Client mod signs in by itself throu
 | Reports you file about other players' capes (reason, optional note) | Moderation |
 | Friends, friend requests and blocks | The friends list |
 | Online status: "online in the launcher" or "in game" with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you |
-| Sync (only with your consent **and** the switch "Mit TRS-Konto synchronisieren" turned on): your own skins from "My skins" (the image, re-encoded without metadata, with name and model), your own mod presets (names and mod/pack IDs, no files or paths), the launcher settings theme, accent colour and language, each with the time of the change; for deleted skins only their ID and the deletion time, for 30 days | Keeping your skins, presets and look the same on all your devices. Java and memory settings are never sent |
+| Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
+
+**Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
+your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your
+PCs. Java, memory and all other settings are **not** synced and never leave your PC. Turn the switch off to stop
+syncing; what was already synced stays on the server until you delete it with "Alle TRS-Daten löschen". Only you can
+read your synced data – there is no admin view of it.
 
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
-
-Sync data is visible only to your own account – not to other players and not to the team (there is no admin function
-for it). The switch "Mit TRS-Konto synchronisieren" is under *Einstellungen → Datenschutz*; when it is off, the launcher
-stops syncing. Delete sync data that is already stored with "Alle TRS-Daten löschen".
 
 Admin actions (such as approving a cape or a ban) are recorded in an audit log together with the affected UUID.
 
 ### Purpose and legal basis
 
-The data is processed only to provide the TRS services you asked for: capes, the friends list, the online status and,
-if turned on, sync.
+The data is processed only to provide the TRS services you asked for: capes, the friends list, the online status and
+syncing your skins, presets and launcher look between your PCs.
 The legal basis is the performance of the service you requested (Art. 6(1)(b) GDPR). Keeping the services free of abuse
 (reviewing uploads, reports, bans and rate limits) is based on our legitimate interest in a safe service
 (Art. 6(1)(f) GDPR). There is no advertising, no profiling and no sale of data.
@@ -72,11 +92,12 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Your data is kept as long as your TRS account exists.
 - Session tokens expire after 30 days; signing out or removing an account from the launcher revokes the token.
 - The online status disappears 3 minutes after the last update, or immediately when you close the launcher.
-- When you delete a synced skin, only its ID and the deletion time are kept for 30 days, so your other devices delete
-  it too; after that they are removed automatically.
+- Synced skins, presets and settings stay until you delete them in the launcher (a skin deleted on one PC is deleted on
+  the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
   account, sessions, friendships, requests and blocks, uploaded capes and their files, code redemptions, reports,
-  your online status and all sync data (skins, presets, settings). Afterwards the TRS services are turned off in the launcher.
+  your online status and all synced skins, presets and settings. Afterwards the TRS services are turned off in the
+  launcher. The skins and presets on your PC are kept.
 - Only an existing ban record (your UUID, the reason and the time) is kept after deletion, so a ban can't be escaped by
   signing in again.
 - Server logs contain only technical data (method, path without query, status, duration, request id) – **no IP

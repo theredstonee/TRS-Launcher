@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync, existsSync 
 import { join } from 'node:path'
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
-import { conflict, forbidden, notFound } from './errors'
+import { badRequest, conflict, forbidden, notFound } from './errors'
 import { newUploadCapeId, sha256Hex } from './ids'
 import { emitCape } from './playerevents'
 import { BUILTIN_MAX_SCALE, capeLayout, inspectPng, sanitizeCapeUpload } from './png'
@@ -42,7 +42,7 @@ export interface CapeView {
   /** Maße EINES Frames (64·scale × 32·scale). */
   width: number
   height: number
-  /** Auflösungsfaktor gegenüber dem Vanilla-Layout 64×32 (Uploads 1–4, mitgelieferte 1–8). UVs = Vanilla-UV × scale. */
+  /** Auflösungsfaktor gegenüber dem Vanilla-Layout 64×32 (1–8, Uploads wie mitgelieferte). UVs = Vanilla-UV × scale. */
   scale: number
   animated: boolean
   frames: number
@@ -191,7 +191,17 @@ export function capeWearers(ctx: AppContext, capeId: string): string[] {
 
 // ---------------------------------------------------------------- Uploads
 
-export function uploadCape(ctx: AppContext, uuid: string, body: Buffer, name: string | undefined): CapeView {
+/**
+ * Eigener Umhang (Status `pending`). Animiert = senkrechter Streifen wie bei den mitgelieferten;
+ * dann ist `frameTimeMs` Pflicht. `frames` (optional) muss zur Datei passen.
+ */
+export function uploadCape(
+  ctx: AppContext,
+  uuid: string,
+  body: Buffer,
+  name: string | undefined,
+  anim: { frames?: number, frameTimeMs?: number } = {},
+): CapeView {
   const counts = one<{ total: number, pending: number }>(
     ctx.db,
     `SELECT COUNT(*) AS total, COALESCE(SUM(status = 'pending'), 0) AS pending
@@ -204,7 +214,11 @@ export function uploadCape(ctx: AppContext, uuid: string, body: Buffer, name: st
   if (counts.total >= ctx.config.limits.maxUploadsPerUser) {
     throw conflict('upload_limit', 'You have reached the maximum number of uploaded capes; delete one first')
   }
-  const clean = sanitizeCapeUpload(body)
+  const clean = sanitizeCapeUpload(body, { frames: anim.frames })
+  if (clean.frames > 1 && anim.frameTimeMs === undefined) {
+    throw badRequest('frame_time_required', 'Animated capes need the frameTimeMs query parameter')
+  }
+  const frameTime = clean.frames > 1 ? anim.frameTimeMs! : null
   const sha = sha256Hex(clean.png)
   const dup = one<{ id: string }>(
     ctx.db,
@@ -218,8 +232,8 @@ export function uploadCape(ctx: AppContext, uuid: string, body: Buffer, name: st
     run(
       ctx.db,
       `INSERT INTO capes (id, kind, name, owner_uuid, status, unlock, sha256, width, height, frames, frame_time_ms, sort, retired, created_at)
-       VALUES (?, 'upload', ?, ?, 'pending', 'owner', ?, ?, ?, 1, NULL, 0, 0, ?)`,
-      id, name ?? 'Eigener Umhang', uuid, sha, clean.width, clean.height, ctx.now(),
+       VALUES (?, 'upload', ?, ?, 'pending', 'owner', ?, ?, ?, ?, ?, 0, 0, ?)`,
+      id, name ?? 'Eigener Umhang', uuid, sha, clean.width, clean.height, clean.frames, frameTime, ctx.now(),
     )
   } catch (err) {
     rmSync(join(ctx.capeDir, `${id}.png`), { force: true })

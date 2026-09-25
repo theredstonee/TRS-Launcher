@@ -2,7 +2,11 @@
 import type { SkinViewer } from 'skinview3d'
 
 // 3D-Vorschau eines Umhangs an einer Schaufensterpuppe (skinview3d, mitgebündelt – kein CDN).
-const props = withDefaults(defineProps<{ cape: SiteCape | null, height?: number }>(), { height: 380 })
+// `frame` gesetzt = fester Frame (z. B. in der Admin-Prüfung), sonst läuft die Animation nach der Uhr.
+const props = withDefaults(defineProps<{ cape: CapeTexture | null, height?: number, frame?: number | null }>(), {
+  height: 380,
+  frame: null,
+})
 
 const canvas = shallowRef<HTMLCanvasElement | null>(null)
 const box = shallowRef<HTMLElement | null>(null)
@@ -10,11 +14,13 @@ const failed = ref(false)
 let viewer: SkinViewer | null = null
 let observer: ResizeObserver | null = null
 let capeTimer: ReturnType<typeof setInterval> | null = null
+let redraw: (() => void) | null = null
 let token = 0
 
 function stopAnimation() {
   if (capeTimer) clearInterval(capeTimer)
   capeTimer = null
+  redraw = null
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -52,7 +58,9 @@ async function applyCape() {
   let shown = -1
   const draw = () => {
     if (!viewer || mine !== token) return
-    const f = trsFrameIndex(Date.now(), cape.frames, cape.frameTimeMs)
+    const f = props.frame !== null
+      ? Math.min(Math.max(0, props.frame), cape.frames - 1)
+      : trsFrameIndex(Date.now(), cape.frames, cape.frameTimeMs)
     if (f === shown) return
     shown = f
     ctx.clearRect(0, 0, width, frameHeight)
@@ -60,7 +68,8 @@ async function applyCape() {
     void viewer.loadCape(frame)
   }
   draw()
-  capeTimer = setInterval(draw, Math.max(20, Math.min(cape.frameTimeMs / 2, 250)))
+  redraw = draw
+  if (props.frame === null) capeTimer = setInterval(draw, Math.max(20, Math.min(cape.frameTimeMs / 2, 250)))
 }
 
 onMounted(async () => {
@@ -103,6 +112,11 @@ onBeforeUnmount(() => {
 })
 
 watch(() => props.cape?.id, () => void applyCape().catch(() => viewer?.resetCape()))
+// Fester Frame gewechselt → neu zeichnen; Wechsel zwischen fest und Uhr → Animation neu aufsetzen.
+watch(() => props.frame, (now, before) => {
+  if ((now === null) !== (before === null)) void applyCape().catch(() => viewer?.resetCape())
+  else redraw?.()
+})
 </script>
 
 <template>

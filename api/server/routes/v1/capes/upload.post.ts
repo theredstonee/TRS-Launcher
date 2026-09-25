@@ -6,11 +6,15 @@ import { MAX_UPLOAD_BYTES } from '../../../lib/png'
 import { RULES } from '../../../lib/ratelimit'
 import { uploadQuery } from '../../../lib/schemas'
 
-/** Eigener Umhang: Body = PNG (Content-Type image/png), Name optional per `?name=`. Status danach `pending`. */
+/**
+ * Eigener Umhang: Body = PNG (Content-Type image/png, ≤ 5 MB), Name optional per `?name=`.
+ * Animiert = senkrechter Streifen (≤ 16 Frames) mit `?frameTimeMs=`; `?frames=` optional zur Kontrolle.
+ * Status danach `pending`.
+ */
 export default defineEventHandler(async (event) => {
   const auth = requireUser(event, 'write')
   const query = queryWith(event, uploadQuery)
   limit(`upload:${auth.uuid}`, RULES.uploadUser)
   const body = await readPng(event, MAX_UPLOAD_BYTES)
-  return created(event, { cape: uploadCape(useCtx(), auth.uuid, body, query.name) })
+  return created(event, { cape: uploadCape(useCtx(), auth.uuid, body, query.name, { frames: query.frames, frameTimeMs: query.frameTimeMs }) })
 })

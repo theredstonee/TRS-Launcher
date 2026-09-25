@@ -1,4 +1,3 @@
-
 Der TRS Launcher läuft auf deinem Computer. Er hat **keine Telemetrie, keine Analyse, keine Absturzberichte und keine
 Werbung**. Informationen an einen Server des TRS-Launcher-Projekts schickt er nur, wenn du die optionalen
 [TRS-Dienste](#trs-dienste) (Umhänge, Freunde, Online-Status) einschaltest. Ohne deine Einwilligung sendet der Launcher
@@ -11,16 +10,35 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Microsoft / Xbox Live / Minecraft-Dienste | Anmelden, Spiel starten | Übliche OAuth-Anmeldung; dein Minecraft-Zugriffstoken beim Spielstart |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Eine Version installieren oder starten | Download-Anfragen für Spieldateien |
 | Mojang-Sitzungsserver (`sessionserver.mojang.com`) | Anmeldung bei den TRS-Diensten (nur nach deiner Zustimmung) | Dieselbe „join“-Anfrage wie bei der Anmeldung auf einem Minecraft-Server: dein Zugriffstoken, deine UUID und eine einmalige Challenge |
-| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde und Online-Status; mit eingeschaltetem Sync außerdem deine eigenen Skins, eigenen Presets sowie Theme, Akzentfarbe und Sprache |
+| Mojang-Profildienste (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Skin per Spielername importieren, Spielergesichter anzeigen (Freunde, Admin-Suche) | Der gesuchte Spielername bzw. die UUID; der Download des Skin-Bildes |
+| Die Website eines Links, den du eingibst | Nur wenn du einen Skin „per Link“ importierst | Eine normale Download-Anfrage für dieses Bild (nur HTTPS, ohne Cookies oder Konten) |
+| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde und Online-Status |
 | Maven-/Meta-Server von Fabric, Quilt, Forge, NeoForge | Einen Modloader installieren | Download-Anfragen |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Inhalte durchsuchen, installieren oder aktualisieren | Suchanfragen, Datei-Hashes installierter Mods (für die Update-Prüfung) |
 | CurseForge (`api.curseforge.com`; Dateien und Bilder von `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Nur wenn du CurseForge als Quelle wählst, ein CurseForge-Modpack installierst oder Inhalte von CurseForge installiert hast | Suchanfragen und Filter, die Projekt- und Datei-IDs von CurseForge-Inhalten (für Details und die Update-Prüfung), Download-Anfragen. Wie bei jeder Anfrage im Internet gehört deine IP-Adresse dazu. Ein CurseForge-Konto brauchst du nicht – der Launcher weist sich mit seinem eigenen API-Schlüssel aus, nicht mit Daten über dich. |
 | Minecraft-Server in deiner Serverliste | Live-Status anzeigen | Ein üblicher Serverlisten-Ping |
 | mclo.gs | Nur wenn du auf „Log teilen“ klickst und bestätigst | Der Spiel-Log, ohne Zugriffstokens und ohne deinen Windows-Benutzernamen |
 | GitHub (`github.com`) | Nach Launcher-Updates suchen | Eine Anfrage nach dem Update-Manifest |
+| Discord-App auf deinem Computer (nur lokal, kein Internet) | Solange der Launcher offen ist und „Discord-Status zeigen“ an ist (Standard), siehe [unten](#discord) | Dein Discord-Status: „Im TRS Launcher“ bzw. Minecraft-Version, Modloader und Spielzeit des laufenden Spiels |
 
 Account-Tokens werden nur auf deinem Computer gespeichert, verschlüsselt mit Windows DPAPI. Beim Deinstallieren wird das
 Programm entfernt; deine Daten in `%APPDATA%\TRS-Launcher` kannst du jederzeit löschen.
+
+## Discord
+
+Läuft die Discord-App auf deinem Computer, zeigt der Launcher einen Status auf deinem Discord-Profil („Spielt TRS
+Launcher“): „Im TRS Launcher“, solange nur der Launcher offen ist, und beim Spielen die **Minecraft-Version, den
+Modloader (z. B. Fabric) und wie lange du schon spielst**. Server-Adressen, Instanz- oder Spielernamen zeigt er nie.
+
+- Der Launcher spricht nur mit der Discord-App **auf deinem eigenen Computer** (Discords lokale Schnittstelle, eine
+  Named Pipe bzw. ein lokaler Socket). Er selbst sendet dafür nichts ins Internet und braucht deine Discord-Anmeldung
+  nicht.
+- Die Discord-App zeigt diesen Status dann auf deinem Profil an – **öffentlich sichtbar für alle, die dein
+  Discord-Profil sehen können** (Freunde, Mitglieder gemeinsamer Server). Was Discord damit macht, regelt
+  [Discords Datenschutzerklärung](https://discord.com/privacy).
+- Beim Schließen des Launchers verschwindet der Status. Läuft Discord nicht, passiert nichts.
+- Der Status ist **ab Werk an** und jederzeit abschaltbar unter *Einstellungen → Datenschutz → Discord-Status zeigen*
+  (oder in Discord unter *Benutzereinstellungen → Aktivitäts-Privatsphäre*).
 
 ## TRS-Dienste
 
@@ -50,15 +68,18 @@ auf deinem Computer speichert und nie an Webinhalte oder an das Spiel weitergibt
 | Meldungen, die du zu Umhängen anderer Spieler abgibst (Grund, optionale Notiz) | Moderation |
 | Freunde, Freundschaftsanfragen und Blockierungen | Die Freundesliste |
 | Online-Status: „online im Launcher“ oder „im Spiel“ mit Version und Modloader und – nur wenn du „Server teilen“ eingeschaltet hast – die Serveradresse | Um Freunden zu zeigen, was du spielst, und sie nachkommen zu lassen |
-| Sync (nur mit Einwilligung **und** eingeschaltetem Schalter „Mit TRS-Konto synchronisieren“): deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, mit Name und Modell), deine eigenen Mod-Presets (Namen und Mod-/Paket-IDs, keine Dateien oder Pfade), die Launcher-Einstellungen Theme, Akzentfarbe und Sprache, jeweils mit Änderungszeit; für gelöschte Skins 30 Tage lang nur deren ID und der Löschzeitpunkt | Damit deine Skins, Presets und dein Erscheinungsbild auf allen deinen Geräten gleich sind. Java- und Speicher-Einstellungen werden nie übertragen |
+| Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
+
+**Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
+TRS-Dienste an sind) hält deine eigenen Skins, deine eigenen Presets und das Aussehen des Launchers (Theme, Akzentfarbe,
+Sprache) auf all deinen PCs gleich. Java, Arbeitsspeicher und alle anderen Einstellungen werden **nicht**
+synchronisiert und verlassen deinen PC nie. Schalter aus = keine Synchronisation mehr; was schon synchronisiert wurde,
+bleibt auf dem Server, bis du es mit „Alle TRS-Daten löschen“ löschst. Deine synchronisierten Daten kannst nur du
+lesen – es gibt keine Admin-Ansicht dafür.
 
 Der Online-Status liegt **nur im Arbeitsspeicher des Servers**, wird nie auf die Festplatte geschrieben, hat keinen
 Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen können ihn nur deine Freunde – und gar
 niemand, wenn du „niemand“ einstellst.
-
-Sync-Daten sieht nur dein eigenes Konto – weder andere Spieler noch das Team (es gibt dafür keine Admin-Funktion). Den
-Schalter „Mit TRS-Konto synchronisieren“ findest du unter *Einstellungen → Datenschutz*; ausgeschaltet gleicht der
-Launcher nichts mehr ab. Bereits gespeicherte Sync-Daten löschst du mit „Alle TRS-Daten löschen“.
 
 Admin-Aktionen (etwa das Freigeben eines Umhangs oder eine Sperre) werden zusammen mit der betroffenen UUID in einem
 Audit-Log festgehalten.
@@ -66,7 +87,8 @@ Audit-Log festgehalten.
 ### Zweck und Rechtsgrundlage
 
 Die Daten werden nur verarbeitet, um die TRS-Dienste bereitzustellen, die du angefordert hast: Umhänge, die Freundesliste,
-den Online-Status und – wenn eingeschaltet – den Sync. Rechtsgrundlage ist die Erbringung des von dir gewünschten Dienstes (Art. 6 Abs. 1 lit. b DSGVO).
+den Online-Status und die Synchronisation deiner Skins, Presets und des Launcher-Aussehens zwischen deinen PCs.
+Rechtsgrundlage ist die Erbringung des von dir gewünschten Dienstes (Art. 6 Abs. 1 lit. b DSGVO).
 Die Dienste frei von Missbrauch zu halten (Prüfung von Uploads, Meldungen, Sperren und Ratenbegrenzungen), beruht auf
 unserem berechtigten Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO). Es gibt keine Werbung, kein
 Profiling und keinen Verkauf von Daten.
@@ -76,11 +98,13 @@ Profiling und keinen Verkauf von Daten.
 - Deine Daten bleiben gespeichert, solange dein TRS-Account besteht.
 - Sitzungs-Tokens verfallen nach 30 Tagen; Abmelden oder Entfernen eines Accounts im Launcher widerruft das Token.
 - Der Online-Status verschwindet 3 Minuten nach der letzten Aktualisierung oder sofort, wenn du den Launcher schließt.
-- Löschst du einen synchronisierten Skin, bleiben nur seine ID und der Löschzeitpunkt 30 Tage lang gespeichert, damit
-  deine anderen Geräte ihn ebenfalls löschen; danach werden sie automatisch entfernt.
+- Synchronisierte Skins, Presets und Einstellungen bleiben, bis du sie im Launcher löschst (ein auf einem PC gelöschter
+  Skin wird auch auf dem Server gelöscht). Vermerke über gelöschte Skins bleiben 30 Tage, damit deine anderen PCs sie
+  ebenfalls löschen können.
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, eingelöste Codes, Meldungen,
-  deinen Online-Status und alle Sync-Daten (Skins, Presets, Einstellungen). Danach sind die TRS-Dienste im Launcher ausgeschaltet.
+  deinen Online-Status und alle synchronisierten Skins, Presets und Einstellungen. Danach sind die TRS-Dienste im
+  Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
 - Nach der Löschung bleibt nur ein bestehender Sperr-Eintrag erhalten (deine UUID, der Grund und der Zeitpunkt), damit
   eine Sperre nicht durch erneutes Anmelden umgangen werden kann.
 - Server-Logs enthalten nur technische Daten (Methode, Pfad ohne Query, Status, Dauer, Request-ID) – **keine

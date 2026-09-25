@@ -10,6 +10,42 @@ export interface SiteCape {
   frameTimeMs: number | null
 }
 
+/** Was die Vorschauen von einem Umhang brauchen (Katalog-Umhang oder Upload in der Admin-Prüfung). */
+export interface CapeTexture {
+  id: string
+  url: string
+  frames: number
+  frameTimeMs: number | null
+}
+
+/** Hochgeladener Umhang in der Admin-Prüfung (`GET /v1/admin/capes`). */
+export interface AdminCape extends CapeTexture {
+  name: string
+  status: 'approved' | 'pending' | 'rejected'
+  /** Maße EINES Frames (64·scale × 32·scale). */
+  width: number
+  height: number
+  scale: number
+  animated: boolean
+  owner: { uuid: string, name: string } | null
+  createdAt: string
+  reviewedAt: string | null
+  reviewedBy: string | null
+  rejectReason: string | null
+  reports: { count: number, reasons: Record<string, number> }
+  /** Größe der gespeicherten PNG-Datei. */
+  bytes: number
+  ownerStats: { uploads: number, approved: number, pending: number, rejected: number } | null
+}
+
+/** Dateigröße lesbar: B, KB oder MB (Basis 1024) in der Seitensprache. */
+export function formatBytes(bytes: number, locale: string): string {
+  const num = (v: number, digits: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(v)
+  if (bytes < 1024) return `${num(bytes, 0)} B`
+  if (bytes < 1024 * 1024) return `${num(bytes / 1024, 1)} KB`
+  return `${num(bytes / (1024 * 1024), 2)} MB`
+}
+
 /** Animierte Umhänge: senkrechter Streifen, Frame = floor(jetzt / frameTimeMs) % frames. */
 export function trsFrameIndex(now: number, frames: number, frameTimeMs: number | null): number {
   if (frames <= 1 || !frameTimeMs || frameTimeMs <= 0) return 0

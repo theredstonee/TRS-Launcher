@@ -25,6 +25,13 @@ const PATHS: Record<string, string> = {
   chevron: 'M6 9l6 6 6-6',
   globe: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',
   terminal: 'M4 5h16v14H4zM7 9l3 3-3 3M12 15h5',
+  play: 'M8 5v14l11-7z',
+  pause: 'M8 5v14M16 5v14',
+  plus: 'M12 5v14M5 12h14',
+  minus: 'M5 12h14',
+  fit: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13',
+  flag: 'M5 21V4M5 4h11l-2 4 2 4H5',
 }
 
 // Marken als ausgefüllte Formen.

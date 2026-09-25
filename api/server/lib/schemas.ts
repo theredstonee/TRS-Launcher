@@ -76,8 +76,11 @@ export const redeemBody = z.strictObject({
     }),
 })
 
+/** Umhang-Upload: `frames` (optional) muss zur Datei passen, `frameTimeMs` ist bei Animation Pflicht. */
 export const uploadQuery = z.strictObject({
   name: capeNameSchema.optional(),
+  frames: z.coerce.number().int().min(1).max(16).optional(),
+  frameTimeMs: z.coerce.number().int().min(50).max(10_000).optional(),
 })
 
 export const reportBody = z.strictObject({

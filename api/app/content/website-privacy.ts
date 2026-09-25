@@ -14,7 +14,7 @@ const c = CONTROLLER
 export const WEBSITE_PRIVACY: Record<'en' | 'de' | 'es', { title: string, updated: string, intro: string, body: string, launcher: string }> = {
   en: {
     title: 'Privacy policy',
-    updated: 'Last updated: 24 September 2026',
+    updated: 'Last updated: 25 September 2026',
     intro:
       'This policy covers the website trs-launcher.theredstonee.de, the TRS Launcher, the TRS Client mod and the TRS services. In short: no tracking, no analytics, no advertising – only what is needed for what you use.',
     body: `## Controller
@@ -49,7 +49,7 @@ All details are in the [imprint](https://theredstonee.de/imprint/).
   },
   de: {
     title: 'Datenschutzerklärung',
-    updated: 'Stand: 24. September 2026',
+    updated: 'Stand: 25. September 2026',
     intro:
       'Diese Erklärung gilt für die Website trs-launcher.theredstonee.de, den TRS Launcher, die TRS-Client-Mod und die TRS-Dienste. Kurz gesagt: kein Tracking, keine Analyse, keine Werbung – nur, was für das nötig ist, was du nutzt.',
     body: `## Verantwortlicher
@@ -84,7 +84,7 @@ Alle Angaben stehen im [Impressum](https://theredstonee.de/imprint/).
   },
   es: {
     title: 'Política de privacidad',
-    updated: 'Última actualización: 24 de septiembre de 2026',
+    updated: 'Última actualización: 25 de septiembre de 2026',
     intro:
       'Esta política cubre el sitio web trs-launcher.theredstonee.de, el TRS Launcher, el mod TRS Client y los servicios TRS. En resumen: sin rastreo, sin analíticas, sin publicidad – solo lo necesario para lo que usas. La versión alemana es la vinculante.',
     body: `## Responsable
