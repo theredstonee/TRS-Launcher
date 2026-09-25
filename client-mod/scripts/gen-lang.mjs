@@ -40,6 +40,7 @@ const KEYS = [
   ['key.trsclient.saveClip', 'key.trsclient.saveClip'],
   ['key.trsclient.toggleRecording', 'key.trsclient.toggleRecording'],
   ['key.trsclient.wardrobe', 'key.trsclient.wardrobe'],
+  ['key.trsclient.worldMap', 'key.trsclient.worldMap'],
 ];
 
 const load = (code) => JSON.parse(readFileSync(join(i18nDir, `${code}.json`), 'utf8'));

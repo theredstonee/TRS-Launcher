@@ -10,5 +10,6 @@
 	"key.trsclient.redstoneOverlay": "Signal-Overlay umschalten",
 	"key.trsclient.saveClip": "Clip speichern",
 	"key.trsclient.toggleRecording": "Aufnahme starten/stoppen",
-	"key.trsclient.wardrobe": "Garderobe öffnen"
+	"key.trsclient.wardrobe": "Garderobe öffnen",
+	"key.trsclient.worldMap": "Weltkarte"
 }
