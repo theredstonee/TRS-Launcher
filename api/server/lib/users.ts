@@ -122,7 +122,10 @@ export function updateSettings(ctx: AppContext, uuid: string, patch: Partial<Set
   return getUser(ctx, uuid)!
 }
 
-/** DSGVO Art. 17: löscht Konto, Sitzungen, Freundschaften, Anfragen, Blockaden, Uploads, Einlösungen, Meldungen. */
+/**
+ * DSGVO Art. 17: löscht Konto, Sitzungen, Freundschaften, Anfragen, Blockaden, Uploads, Einlösungen, Meldungen
+ * und alle Sync-Daten (Skins samt Bildern, Grabsteine, Presets, Einstellungen – per ON DELETE CASCADE).
+ */
 export function deleteUser(ctx: AppContext, uuid: string): void {
   const uploads = all<{ id: string }>(ctx.db, "SELECT id FROM capes WHERE owner_uuid = ? AND kind = 'upload'", uuid)
   const cosmetics = all<{ id: string }>(ctx.db, "SELECT id FROM cosmetics WHERE owner_uuid = ? AND kind = 'upload'", uuid)

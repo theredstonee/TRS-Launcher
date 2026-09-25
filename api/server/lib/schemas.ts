@@ -195,3 +195,57 @@ export const playerStreamQuery = z.strictObject({
 })
 
 export const codeIdSchema = z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER)
+
+// ---------------------------------------------------------------- TRS-Sync
+
+/** Skin-ID der Launcher-Bibliothek: 12 Hex-Zeichen klein. */
+export const SYNC_SKIN_ID = /^[0-9a-f]{12}$/
+export const syncSkinIdSchema = z.string().regex(SYNC_SKIN_ID, 'invalid skin id')
+
+/** Skin-Name: 1–48 Zeichen, keine Steuer- und Bidi-Steuerzeichen (Emojis sind erlaubt). */
+const syncSkinName = z
+  .string()
+  .trim()
+  .min(1)
+  .max(48)
+  .refine((s) => !/[\p{Cc}\u2028\u2029\u202a-\u202e\u2066-\u2069]/u.test(s), 'must not contain control characters')
+
+const syncSkinVariant = z.enum(['classic', 'slim'])
+
+/** Standard-Base64 mit Padding. Die Größe begrenzt der Body (s. SYNC_SKIN_BODY_LIMIT) bzw. die PNG-Prüfung. */
+const base64 = z
+  .string()
+  .min(1)
+  .max(256 * 1024)
+  .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/, 'must be standard base64')
+
+export const syncSkinPutBody = z.strictObject({
+  name: syncSkinName,
+  variant: syncSkinVariant,
+  png: base64,
+})
+
+export const syncSkinPatchBody = z
+  .strictObject({ name: syncSkinName.optional(), variant: syncSkinVariant.optional() })
+  .refine((o) => o.name !== undefined || o.variant !== undefined, 'name or variant is required')
+
+const syncUpdatedAt = z.iso.datetime({ offset: true })
+
+/** Beliebiges JSON-Objekt, unverändert durchgereicht (kein Kopieren → kein `__proto__`-Umbiegen). */
+const jsonObject = z.custom<Record<string, unknown>>(
+  (v) => typeof v === 'object' && v !== null && !Array.isArray(v),
+  'must be a JSON object',
+)
+
+export const syncPresetsBody = z.strictObject({ data: jsonObject, updatedAt: syncUpdatedAt })
+
+/** Nur Theme (inkl. Akzent) und Sprache – Java-/Speicher-Optionen werden nie synchronisiert. */
+const settingValue = (max: number) => z.string().min(1).max(max).regex(/^[A-Za-z0-9_-]+$/, 'only letters, digits, _ and -')
+export const syncSettingsBody = z.strictObject({
+  data: z.strictObject({
+    theme: settingValue(32).optional(),
+    accent: settingValue(32).optional(),
+    language: settingValue(16).optional(),
+  }),
+  updatedAt: syncUpdatedAt,
+})

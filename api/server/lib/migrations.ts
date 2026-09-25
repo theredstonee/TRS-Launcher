@@ -259,4 +259,37 @@ CREATE TABLE web_sessions (
 CREATE INDEX web_sessions_uuid ON web_sessions(uuid);
 `,
   },
+  {
+    // TRS-Sync: eigene Skins (PNG als BLOB), Grabsteine gelöschter Skins, Presets + Launcher-Einstellungen.
+    version: 4,
+    sql: `
+CREATE TABLE sync_skins (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  id TEXT NOT NULL CHECK (length(id) = 12),
+  name TEXT NOT NULL,
+  variant TEXT NOT NULL CHECK (variant IN ('classic', 'slim')),
+  png BLOB NOT NULL,
+  sha256 TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, id)
+);
+
+CREATE TABLE sync_skin_tombstones (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  id TEXT NOT NULL CHECK (length(id) = 12),
+  deleted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, id)
+);
+CREATE INDEX sync_skin_tombstones_deleted ON sync_skin_tombstones(deleted_at);
+
+-- Ein JSON-Dokument je Konto und Art; updated_at = Änderungszeit des Clients (letzter Schreiber gewinnt).
+CREATE TABLE sync_docs (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('presets', 'settings')),
+  data TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, kind)
+);
+`,
+  },
 ]

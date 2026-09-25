@@ -58,9 +58,12 @@ export function parseWith<S extends z.ZodType>(schema: S, value: unknown): z.out
   return r.data
 }
 
-/** JSON-Body lesen + validieren. Leerer Body ist nur erlaubt, wenn das Schema `undefined` akzeptiert. */
-export async function readJson<S extends z.ZodType>(event: H3Event, schema: S): Promise<z.output<S>> {
-  const raw = await readLimited(event, JSON_LIMIT)
+/**
+ * JSON-Body lesen + validieren. Leerer Body ist nur erlaubt, wenn das Schema `undefined` akzeptiert.
+ * `max` nur für die wenigen Routen mit größeren Bodies (Sync) anheben.
+ */
+export async function readJson<S extends z.ZodType>(event: H3Event, schema: S, max = JSON_LIMIT): Promise<z.output<S>> {
+  const raw = await readLimited(event, max)
   if (raw.length === 0) return parseWith(schema, undefined)
   if (mediaType(event) !== 'application/json') throw unsupportedMedia('Content-Type must be application/json')
   let json: unknown
@@ -90,11 +93,16 @@ export function paramWith<S extends z.ZodType>(event: H3Event, name: string, sch
   return r.data
 }
 
-/** Angemeldeter Nutzer + Grund-Limit je Konto (lesend/schreibend). */
-export function requireUser(event: H3Event, kind: 'read' | 'write' = 'read'): AuthedUser {
+const USER_RULES = { read: RULES.readUser, write: RULES.writeUser, sync: RULES.syncUser } satisfies Record<string, Rule>
+
+/**
+ * Angemeldeter Nutzer + Grund-Limit je Konto (lesend/schreibend). `sync` = eigener Topf für
+ * `/v1/me/sync*`, damit ein großer Abgleich die übrigen Schreibzugriffe nicht aufbraucht.
+ */
+export function requireUser(event: H3Event, kind: keyof typeof USER_RULES = 'read'): AuthedUser {
   const ctx = useCtx()
   const auth = authenticate(ctx, getHeader(event, 'authorization'))
-  limit(`${kind}:${auth.uuid}`, kind === 'read' ? RULES.readUser : RULES.writeUser)
+  limit(`${kind}:${auth.uuid}`, USER_RULES[kind])
   event.context.uuid = auth.uuid
   return auth
 }

@@ -193,3 +193,21 @@ export function sanitizeCapeUpload(buf: Buffer): { png: Buffer, width: number, h
   if (visible === 0) throw bad('empty_cape', 'The cape area of the image is fully transparent')
   return { png: encodeRgba(layout.width, layout.height, out), width: layout.width, height: layout.height, source: layout.source }
 }
+
+/** Größte Skin-Datei (vor dem Neukodieren). */
+export const MAX_SKIN_BYTES = 128 * 1024
+
+/**
+ * Skin für den Sync säubern: 64×64 oder das alte 64×32, prüfen, dekodieren und NEU kodieren
+ * (nur IHDR/IDAT/IEND, keine Metadaten). Pixel bleiben unverändert – Minecraft zeichnet die
+ * Grundebene deckend, auch „unsichtbare“ Farben gehören also zum Skin.
+ */
+export function sanitizeSkinUpload(buf: Buffer): { png: Buffer, width: number, height: number } {
+  if (buf.length > MAX_SKIN_BYTES) throw new ApiError(413, 'payload_too_large', 'Skin PNG must be at most 128 KB')
+  const { header } = inspectPng(buf)
+  if (header.width !== 64 || (header.height !== 64 && header.height !== 32)) {
+    throw bad('invalid_dimensions', 'Skin must be 64x64 or 64x32')
+  }
+  const img = decodeRgba(buf, 64 * 64)
+  return { png: encodeRgba(img.width, img.height, img.data), width: img.width, height: img.height }
+}

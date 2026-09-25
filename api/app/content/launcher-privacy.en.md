@@ -10,7 +10,7 @@ The launcher only connects to other services when that is needed for something y
 | Microsoft / Xbox Live / Minecraft services | Signing in, starting the game | Standard OAuth sign-in; your Minecraft access token when the game starts |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Installing or starting a version | Download requests for game files |
 | Mojang session server (`sessionserver.mojang.com`) | Signing in to the TRS services (only after you agreed) | The same "join" request a Minecraft server login uses: your access token, UUID and a one-time challenge |
-| TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status |
+| TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status; with sync turned on also your own skins, your own presets and your theme, accent colour and language |
 | Fabric, Quilt, Forge, NeoForge maven/meta servers | Installing a mod loader | Download requests |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Browsing, installing or updating content | Search queries, file hashes of installed mods (for update checks) |
 | CurseForge (`api.curseforge.com`; files and images from `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Only when you pick CurseForge as the source, install a CurseForge modpack or have content from CurseForge installed | Search queries and filters, the project and file IDs of content installed from CurseForge (for details and update checks), download requests. Like every web request, this includes your IP address. You don't need a CurseForge account – the launcher identifies itself with its own API key, not with anything about you. |
@@ -48,15 +48,21 @@ hands to web content or to the game. The TRS Client mod signs in by itself throu
 | Reports you file about other players' capes (reason, optional note) | Moderation |
 | Friends, friend requests and blocks | The friends list |
 | Online status: "online in the launcher" or "in game" with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you |
+| Sync (only with your consent **and** the switch "Mit TRS-Konto synchronisieren" turned on): your own skins from "My skins" (the image, re-encoded without metadata, with name and model), your own mod presets (names and mod/pack IDs, no files or paths), the launcher settings theme, accent colour and language, each with the time of the change; for deleted skins only their ID and the deletion time, for 30 days | Keeping your skins, presets and look the same on all your devices. Java and memory settings are never sent |
 
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
+
+Sync data is visible only to your own account – not to other players and not to the team (there is no admin function
+for it). The switch "Mit TRS-Konto synchronisieren" is under *Einstellungen → Datenschutz*; when it is off, the launcher
+stops syncing. Delete sync data that is already stored with "Alle TRS-Daten löschen".
 
 Admin actions (such as approving a cape or a ban) are recorded in an audit log together with the affected UUID.
 
 ### Purpose and legal basis
 
-The data is processed only to provide the TRS services you asked for: capes, the friends list and the online status.
+The data is processed only to provide the TRS services you asked for: capes, the friends list, the online status and,
+if turned on, sync.
 The legal basis is the performance of the service you requested (Art. 6(1)(b) GDPR). Keeping the services free of abuse
 (reviewing uploads, reports, bans and rate limits) is based on our legitimate interest in a safe service
 (Art. 6(1)(f) GDPR). There is no advertising, no profiling and no sale of data.
@@ -66,9 +72,11 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Your data is kept as long as your TRS account exists.
 - Session tokens expire after 30 days; signing out or removing an account from the launcher revokes the token.
 - The online status disappears 3 minutes after the last update, or immediately when you close the launcher.
+- When you delete a synced skin, only its ID and the deletion time are kept for 30 days, so your other devices delete
+  it too; after that they are removed automatically.
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
-  account, sessions, friendships, requests and blocks, uploaded capes and their files, code redemptions, reports and
-  your online status. Afterwards the TRS services are turned off in the launcher.
+  account, sessions, friendships, requests and blocks, uploaded capes and their files, code redemptions, reports,
+  your online status and all sync data (skins, presets, settings). Afterwards the TRS services are turned off in the launcher.
 - Only an existing ban record (your UUID, the reason and the time) is kept after deletion, so a ban can't be escaped by
   signing in again.
 - Server logs contain only technical data (method, path without query, status, duration, request id) – **no IP

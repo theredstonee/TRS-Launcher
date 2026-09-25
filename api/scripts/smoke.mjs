@@ -393,6 +393,35 @@ try {
   pac.abort()
   await psse
 
+  console.log('sync')
+  const skinB64 = png(64, 64).toString('base64')
+  const sPut = await http('PUT', '/v1/me/sync/skins/a1b2c3d4e5f6', { token: A, body: { name: 'Mein Skin', variant: 'slim', png: skinB64 } })
+  check('sync skin upload', sPut.status === 200 && sPut.json.skin.id === 'a1b2c3d4e5f6' && /^[0-9a-f]{64}$/.test(sPut.json.skin.sha256), JSON.stringify(sPut.json))
+  const sPng = await http('GET', '/v1/me/sync/skins/a1b2c3d4e5f6.png', { token: A })
+  check('sync skin download private', sPng.status === 200 && sPng.headers.get('content-type') === 'image/png' && sPng.headers.get('cache-control') === 'private, no-store')
+  const sPngB = await http('GET', '/v1/me/sync/skins/a1b2c3d4e5f6.png', { token: B })
+  check('sync skin hidden from others', sPngB.status === 404 && sPngB.json.error.code === 'skin_not_found')
+  const sBadPng = await http('PUT', '/v1/me/sync/skins/a1b2c3d4e5f7', { token: A, body: { name: 'x', variant: 'classic', png: png(32, 32).toString('base64') } })
+  check('sync skin wrong size → 400', sBadPng.status === 400 && sBadPng.json.error.code === 'invalid_dimensions')
+  const sBadId = await http('PUT', '/v1/me/sync/skins/NOT-AN-ID', { token: A, body: { name: 'x', variant: 'classic', png: skinB64 } })
+  check('sync skin bad id → 404', sBadId.status === 404)
+  const sPatch = await http('PATCH', '/v1/me/sync/skins/a1b2c3d4e5f6', { token: A, body: { name: 'Neu' } })
+  check('sync skin rename', sPatch.json?.skin?.name === 'Neu' && sPatch.json.skin.variant === 'slim')
+  const sDel = await http('DELETE', '/v1/me/sync/skins/0000000000aa', { token: A })
+  check('sync skin delete unknown 204', sDel.status === 204)
+  const sPre = await http('PUT', '/v1/me/sync/presets', { token: A, body: { data: { presets: [{ name: 'PvP' }] }, updatedAt: '2026-09-25T10:00:00.000Z' } })
+  check('sync presets', sPre.status === 200 && sPre.json.presets.updatedAt === '2026-09-25T10:00:00.000Z')
+  const sStale = await http('PUT', '/v1/me/sync/presets', { token: A, body: { data: {}, updatedAt: '2026-09-25T09:00:00.000Z' } })
+  check('sync presets stale 409 + current', sStale.status === 409 && sStale.json.error.code === 'stale' && sStale.json.error.current.data.presets[0].name === 'PvP', JSON.stringify(sStale.json))
+  const sSet = await http('PUT', '/v1/me/sync/settings', { token: A, body: { data: { theme: 'dark', accent: 'redstone', language: 'de' }, updatedAt: '2026-09-25T10:00:00.000Z' } })
+  check('sync settings', sSet.status === 200 && sSet.json.settings.data.language === 'de')
+  const sSetBad = await http('PUT', '/v1/me/sync/settings', { token: A, body: { data: { maxMemoryMb: 4096 }, updatedAt: '2026-09-25T10:00:00.000Z' } })
+  check('sync settings whitelist → 400', sSetBad.status === 400 && sSetBad.json.error.code === 'invalid_request')
+  const sAll = await http('GET', '/v1/me/sync', { token: A })
+  check('sync overview', sAll.json?.skins?.[0]?.name === 'Neu' && sAll.json.deletedSkins[0]?.id === '0000000000aa' && sAll.json.presets && sAll.json.settings, JSON.stringify(sAll.json))
+  const sAllB = await http('GET', '/v1/me/sync', { token: B })
+  check('sync overview of other account empty', sAllB.json?.skins?.length === 0 && sAllB.json.presets === null)
+
   console.log('redeem brute force + rate limits')
   const statuses = []
   for (let i = 0; i < 7; i++) {
@@ -416,6 +445,9 @@ try {
   check('delete account 204', del.status === 204)
   const after = await http('GET', '/v1/me', { token: A })
   check('token gone after deletion', after.status === 401)
+  const again = (await loginAs('Theredstonee', ADMIN_UUID)).json.token
+  const syncAfter = await http('GET', '/v1/me/sync', { token: again })
+  check('sync data gone after deletion', syncAfter.json?.skins?.length === 0 && syncAfter.json.deletedSkins.length === 0 && syncAfter.json.presets === null && syncAfter.json.settings === null, JSON.stringify(syncAfter.json))
 } catch (err) {
   failures++
   console.error(err)

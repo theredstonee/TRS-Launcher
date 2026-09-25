@@ -10,7 +10,7 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 | Microsoft / Xbox Live / servicios de Minecraft | Al iniciar sesión y al iniciar el juego | El inicio de sesión OAuth estándar; tu token de acceso de Minecraft al iniciar el juego |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Al instalar o iniciar una versión | Solicitudes de descarga de los archivos del juego |
 | Servidor de sesiones de Mojang (`sessionserver.mojang.com`) | Al iniciar sesión en los servicios TRS (solo si lo has aceptado) | La misma solicitud «join» que usa el inicio de sesión en un servidor de Minecraft: tu token de acceso, tu UUID y un desafío de un solo uso |
-| Servicios TRS (`trs-launcher.theredstonee.de`, antes también `api.theredstonee.de`) | Solo si lo has aceptado, ver [más abajo](#servicios-trs) | Tu UUID, tu nombre, la capa que eliges, tus amigos y tu estado en línea |
+| Servicios TRS (`trs-launcher.theredstonee.de`, antes también `api.theredstonee.de`) | Solo si lo has aceptado, ver [más abajo](#servicios-trs) | Tu UUID, tu nombre, la capa que eliges, tus amigos y tu estado en línea; con la sincronización activada, también tus propios skins, tus propios presets y el tema, el color de acento y el idioma |
 | Servidores maven/meta de Fabric, Quilt, Forge y NeoForge | Al instalar un cargador de mods | Solicitudes de descarga |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Al explorar, instalar o actualizar contenido | Búsquedas y los hashes de los mods instalados (para buscar actualizaciones) |
 | CurseForge (`api.curseforge.com`; archivos e imágenes de `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Solo si eliges CurseForge como fuente, instalas un modpack de CurseForge o tienes instalado contenido de CurseForge | Búsquedas y filtros, los ID de proyecto y de archivo del contenido instalado desde CurseForge (para los detalles y la búsqueda de actualizaciones) y solicitudes de descarga. Como en cualquier solicitud web, se incluye tu dirección IP. No necesitas una cuenta de CurseForge: el launcher se identifica con su propia clave de API, no con datos sobre ti. |
@@ -49,16 +49,22 @@ sesión del juego.
 | Las denuncias que haces sobre capas de otros jugadores (motivo, nota opcional) | Moderación |
 | Amigos, solicitudes de amistad y bloqueos | La lista de amigos |
 | Estado en línea: «en línea en el launcher» o «jugando» con versión y cargador de mods y, solo si has activado «Server teilen» (compartir servidor), la dirección del servidor | Mostrar a tus amigos a qué juegas y permitirles unirse |
+| Sincronización (solo con tu consentimiento **y** el interruptor «Mit TRS-Konto synchronisieren» —sincronizar con la cuenta TRS— activado): tus propios skins de «Mis skins» (la imagen, recodificada sin metadatos, con nombre y modelo), tus propios presets de mods (nombres e IDs de mods/paquetes, sin archivos ni rutas), los ajustes del launcher tema, color de acento e idioma, cada uno con la hora del cambio; de los skins borrados, solo su ID y la hora de borrado durante 30 días | Que tus skins, presets y apariencia sean iguales en todos tus dispositivos. Los ajustes de Java y de memoria nunca se envían |
 
 El estado en línea se guarda **solo en la memoria del servidor**, nunca se escribe en disco, no tiene historial y
 caduca **3 minutos** después de la última actualización. Solo lo ven tus amigos, y nadie si lo configuras en «nadie».
+
+Los datos sincronizados solo los ve tu propia cuenta: ni otros jugadores ni el equipo (no existe ninguna función de
+administración para ellos). El interruptor «Mit TRS-Konto synchronisieren» está en *Einstellungen → Datenschutz*; si
+lo desactivas, el launcher deja de sincronizar. Los datos ya guardados se borran con «Alle TRS-Daten löschen».
 
 Las acciones de administración (como aprobar una capa o un bloqueo) se registran en un registro de auditoría junto con
 la UUID afectada.
 
 ### Finalidad y base jurídica
 
-Los datos se tratan únicamente para prestar los servicios TRS que has pedido: capas, lista de amigos y estado en línea.
+Los datos se tratan únicamente para prestar los servicios TRS que has pedido: capas, lista de amigos, estado en línea
+y, si está activada, la sincronización.
 La base jurídica es la prestación del servicio que has solicitado (art. 6.1.b del RGPD). Mantener los servicios libres
 de abusos (revisión de subidas, denuncias, bloqueos y límites de uso) se basa en nuestro interés legítimo en un servicio
 seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni venta de datos.
@@ -69,9 +75,11 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
 - Los tokens de sesión caducan a los 30 días; cerrar sesión o quitar una cuenta del launcher revoca el token.
 - El estado en línea desaparece 3 minutos después de la última actualización, o en el momento en que cierras el
   launcher.
+- Si borras un skin sincronizado, solo se guardan su ID y la hora de borrado durante 30 días, para que tus otros
+  dispositivos también lo borren; después se eliminan automáticamente.
 - **«Alle TRS-Daten löschen»** (borrar todos los datos TRS, en *Einstellungen → Datenschutz*) lo elimina todo al
   instante (art. 17 del RGPD): tu cuenta, sesiones, amistades, solicitudes y bloqueos, las capas subidas y sus archivos,
-  los códigos canjeados, las denuncias y tu estado en línea. Después, los servicios TRS quedan desactivados en el
+  los códigos canjeados, las denuncias, tu estado en línea y todos los datos sincronizados (skins, presets, ajustes). Después, los servicios TRS quedan desactivados en el
   launcher.
 - Tras la eliminación solo se conserva un registro de bloqueo existente (tu UUID, el motivo y la fecha), para que no se
   pueda eludir un bloqueo volviendo a iniciar sesión.

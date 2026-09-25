@@ -15,7 +15,7 @@ The German deployment guide is in [README.md](README.md).
 | Topic | Rule |
 |---|---|
 | Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`. |
-| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **256 KiB**, a cosmetic upload at most **512 KiB**. Anything larger gets `413`. |
+| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **256 KiB**, a cosmetic upload at most **512 KiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Anything larger gets `413`. |
 | Unknown fields | They are **rejected** with `400 invalid_request`. All request objects are strict. |
 | UUIDs | Requests accept 32 hex digits with or without dashes, in any case. **Responses always use 32 lowercase hex digits without dashes**, for example `75c1a6f3112240abbdb57b9d21c64232`. |
 | Minecraft names | `^[A-Za-z0-9_]{1,16}$` |
@@ -94,6 +94,8 @@ All limits use a token bucket that refills evenly across the window.
 | `GET /v1/skins/*`, per account | 30 / min |
 | Mojang profile requests made by the server (cache misses), total | 100 / min. Beyond that `/v1/skins/*` answers `429`. |
 | `DELETE /v1/me`, per account | 3 / h |
+| Every `/v1/me/sync*` request, per account | 120 / min (own bucket, does not use the read/write buckets) |
+| `PUT /v1/me/sync/skins/{id}`, per account | additionally 30 / min |
 | Admin, per admin (or API key) | 240 / min |
 
 ---
@@ -243,6 +245,7 @@ Auth required. Deletes everything immediately:
 - uploaded capes and cosmetics and their files
 - equipped cosmetics, cape and cosmetic grants
 - code redemptions, reports and presence
+- all sync data (§17): skins with their images, deletion markers, presets and settings
 
 Only an existing **ban record** survives (keyed by UUID) so a ban can't be escaped by re-registering.
 
@@ -744,6 +747,7 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
    - Equip with `PUT /v1/me/cosmetics`. Redeem codes with `POST /v1/redeem`.
    - Paint editor: start from `GET /v1/cosmetics/templates/{id}.png?scale=k`, then upload with `POST /v1/cosmetics/upload`.
 7. After changing the Mojang skin, call `POST /v1/me/skin-changed` (§13.4).
+8. Sync own skins, presets and theme/accent/language across devices (§17), only with consent and the sync switch on.
 
 **Mod (Java):**
 
@@ -1274,3 +1278,97 @@ Public, cached for 5 minutes (`Cache-Control: public, max-age=300`). Used by the
 | `GET /v1/site/capes` | `{ capes: [{ id, name, unlock, url, scale, frames, frameTimeMs }] }`. Approved built-in capes only; `url` is relative (`/v1/capes/<id>.png?v=…`). |
 
 If GitHub is unreachable, the last good answer is kept. Without one, `release` is `null` and `posts` is empty.
+
+---
+
+## 17. Sync (own skins, presets, theme and language)
+
+Keeps the launcher's own skin library ("My skins"), the user's own mod presets and the launcher settings **theme (with accent colour) and language** the same on every device of a Minecraft account. Java and memory options are **never** synced.
+
+The launcher only calls these endpoints when the TRS services are on (consent) **and** the switch "Sync with TRS account" is on (Settings → Privacy, on by default).
+
+- Auth: Bearer token like every `/v1/me/*` route.
+- Rate limit: every `/v1/me/sync*` request counts against its own bucket of **120 / min** per account; skin uploads (`PUT …/skins/{id}`) additionally **30 / min**. The regular read/write buckets are not touched, so a big first sync can't block other actions.
+- Only the owner can read their data. There is no admin route for it.
+- `DELETE /v1/me` deletes all of it (§3.3).
+
+### 17.1 `GET /v1/me/sync`
+
+```json
+{
+  "skins": [ { "id": "a1b2c3d4e5f6", "name": "Mein Skin", "variant": "slim", "sha256": "…64 hex…", "updatedAt": "2026-09-25T10:00:00.000Z" } ],
+  "deletedSkins": [ { "id": "0a1b2c3d4e5f", "deletedAt": "2026-09-24T08:00:00.000Z" } ],
+  "presets": { "data": { … }, "updatedAt": "…" },
+  "settings": { "data": { "theme": "dark", "accent": "redstone", "language": "de" }, "updatedAt": "…" }
+}
+```
+
+- `skins`: metadata only, ordered by `updatedAt`. Download the image with §17.2.
+  - `id`: 12 lowercase hex digits (the launcher library's id).
+  - `variant`: `classic` or `slim`.
+  - `sha256`: hex SHA-256 of the **re-encoded** PNG the server stores and serves. Compare it with the hash of the downloaded file, not of the file you uploaded.
+  - `updatedAt`: server time of the last `PUT` or `PATCH`.
+- `deletedSkins`: deletion markers (tombstones) of the last **30 days**, so other devices can delete the skin locally too. At most 500 per account (the oldest are dropped). An id is never in both lists.
+- `presets` / `settings`: `null` until first written. `updatedAt` is the client time sent with the last accepted write.
+
+### 17.2 Skins
+
+| Request | Body | Response |
+|---|---|---|
+| `GET /v1/me/sync/skins/{id}.png` | – | **200** `image/png`, `Cache-Control: private, no-store`, `ETag: "<sha256>"`. `404 skin_not_found` for unknown ids and for ids of other accounts. |
+| `PUT /v1/me/sync/skins/{id}` | `{ name, variant, png }` | **200** `{ skin: { id, name, variant, sha256, updatedAt } }`. Creates or replaces (idempotent). Removes a tombstone with the same id. |
+| `PATCH /v1/me/sync/skins/{id}` | `{ name?, variant? }` (at least one) | **200** `{ skin }`. Rename or change the variant without sending the image again. `404 skin_not_found` if unknown. |
+| `DELETE /v1/me/sync/skins/{id}` | – | **204**. Deletes the skin and records a tombstone. An unknown id also gets **204** with a tombstone. |
+
+- A malformed `{id}` (anything but `^[0-9a-f]{12}$`) gets `404 not_found` (`skin_not_found` on the `.png` route).
+- `name`: 1–48 characters after trimming, no control characters (C0/C1, line/paragraph separators, bidi controls). Emojis are fine.
+- `png`: the PNG file as standard Base64 with padding (no line breaks, no `data:` prefix).
+  - **64×64**, or the old **64×32** format (kept as 64×32), at most **128 KiB** as a file.
+  - The server checks the structure (like cape uploads, §5.6: CRCs, chunk whitelist, no APNG, nothing after `IEND`) and **re-encodes** it as 8-bit RGBA without any metadata. Pixels stay unchanged, including the colour of transparent pixels.
+- At most **60 skins** per account. A new id beyond that gets `409 skin_limit`; replacing an existing id always works. Tombstones don't count.
+- The request body can be at most 192 KiB.
+
+**Skin errors:**
+
+| HTTP | code | When |
+|---|---|---|
+| 400 | `invalid_request` | Schema failed: bad name, variant, Base64, unknown field, empty `PATCH`. |
+| 400 | `invalid_png` | Not a PNG, broken, truncated, bad CRC, data after `IEND`, forbidden chunk. |
+| 400 | `animated_png` | APNG. |
+| 400 | `invalid_dimensions` | Not 64×64 or 64×32. |
+| 404 | `skin_not_found` | `GET …png` or `PATCH` of an unknown skin. |
+| 409 | `skin_limit` | 60 skins reached. |
+| 413 | `payload_too_large` | PNG over 128 KiB, or body over 192 KiB. |
+
+### 17.3 Presets and settings (last writer wins)
+
+| Request | Body | Response |
+|---|---|---|
+| `PUT /v1/me/sync/presets` | `{ data: <JSON object>, updatedAt: "<ISO>" }` | **200** `{ presets: { data, updatedAt } }` |
+| `PUT /v1/me/sync/settings` | `{ data: { theme?, accent?, language? }, updatedAt: "<ISO>" }` | **200** `{ settings: { data, updatedAt } }` |
+
+- `updatedAt` is the time the client changed the data (ISO 8601 with `Z` or offset). The server stores it as sent (millisecond precision) and returns it in UTC.
+- **Last writer wins:** if the stored `updatedAt` is **newer** than the one sent, the write is refused with **`409 stale`** and the stored state:
+  ```json
+  { "error": { "code": "stale", "message": "A newer version is stored on the server",
+    "current": { "data": { … }, "updatedAt": "…" } } }
+  ```
+  Take over `current` locally. The **same** `updatedAt` overwrites (a retry of the same write).
+- `updatedAt` more than **24 hours in the future** (a broken clock that would win every sync) gets `400 invalid_request` with `fields[0].path = "updatedAt"`.
+- A `PUT` replaces the whole document; there is no merge.
+- **Presets:** `data` is any JSON object (no array, no scalar), at most **64 KiB** serialised (`413 payload_too_large` otherwise; request body at most 96 KiB). The launcher decides its structure: only own presets with mod/pack ids and names, **no files, no paths**.
+- **Settings:** only the keys `theme` (≤ 32), `accent` (≤ 32) and `language` (≤ 16), each `^[A-Za-z0-9_-]+$` (for example `dark`, `redstone`, `pt-BR`). Any other key gets `400 invalid_request`. All three are optional; `{}` is allowed.
+
+### 17.4 Launcher flow (summary)
+
+After the TRS login at start, after local changes (debounced about 3 s) and every 5 minutes:
+
+1. `GET /v1/me/sync`.
+2. Skins:
+   - only remote → download the PNG and add it locally;
+   - only local and never synced → `PUT`;
+   - remote tombstone → delete locally;
+   - deleted locally since the last sync → `DELETE`;
+   - name or variant differ → the newer `updatedAt` wins (the launcher keeps a local change time).
+3. Presets and settings: the newer `updatedAt` wins; on `409 stale` take over `current`.
+4. Errors or offline: stay silent, try again later, never block the UI.

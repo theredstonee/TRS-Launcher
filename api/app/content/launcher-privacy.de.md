@@ -11,7 +11,7 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Microsoft / Xbox Live / Minecraft-Dienste | Anmelden, Spiel starten | Übliche OAuth-Anmeldung; dein Minecraft-Zugriffstoken beim Spielstart |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Eine Version installieren oder starten | Download-Anfragen für Spieldateien |
 | Mojang-Sitzungsserver (`sessionserver.mojang.com`) | Anmeldung bei den TRS-Diensten (nur nach deiner Zustimmung) | Dieselbe „join“-Anfrage wie bei der Anmeldung auf einem Minecraft-Server: dein Zugriffstoken, deine UUID und eine einmalige Challenge |
-| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde und Online-Status |
+| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde und Online-Status; mit eingeschaltetem Sync außerdem deine eigenen Skins, eigenen Presets sowie Theme, Akzentfarbe und Sprache |
 | Maven-/Meta-Server von Fabric, Quilt, Forge, NeoForge | Einen Modloader installieren | Download-Anfragen |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Inhalte durchsuchen, installieren oder aktualisieren | Suchanfragen, Datei-Hashes installierter Mods (für die Update-Prüfung) |
 | CurseForge (`api.curseforge.com`; Dateien und Bilder von `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Nur wenn du CurseForge als Quelle wählst, ein CurseForge-Modpack installierst oder Inhalte von CurseForge installiert hast | Suchanfragen und Filter, die Projekt- und Datei-IDs von CurseForge-Inhalten (für Details und die Update-Prüfung), Download-Anfragen. Wie bei jeder Anfrage im Internet gehört deine IP-Adresse dazu. Ein CurseForge-Konto brauchst du nicht – der Launcher weist sich mit seinem eigenen API-Schlüssel aus, nicht mit Daten über dich. |
@@ -50,18 +50,23 @@ auf deinem Computer speichert und nie an Webinhalte oder an das Spiel weitergibt
 | Meldungen, die du zu Umhängen anderer Spieler abgibst (Grund, optionale Notiz) | Moderation |
 | Freunde, Freundschaftsanfragen und Blockierungen | Die Freundesliste |
 | Online-Status: „online im Launcher“ oder „im Spiel“ mit Version und Modloader und – nur wenn du „Server teilen“ eingeschaltet hast – die Serveradresse | Um Freunden zu zeigen, was du spielst, und sie nachkommen zu lassen |
+| Sync (nur mit Einwilligung **und** eingeschaltetem Schalter „Mit TRS-Konto synchronisieren“): deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, mit Name und Modell), deine eigenen Mod-Presets (Namen und Mod-/Paket-IDs, keine Dateien oder Pfade), die Launcher-Einstellungen Theme, Akzentfarbe und Sprache, jeweils mit Änderungszeit; für gelöschte Skins 30 Tage lang nur deren ID und der Löschzeitpunkt | Damit deine Skins, Presets und dein Erscheinungsbild auf allen deinen Geräten gleich sind. Java- und Speicher-Einstellungen werden nie übertragen |
 
 Der Online-Status liegt **nur im Arbeitsspeicher des Servers**, wird nie auf die Festplatte geschrieben, hat keinen
 Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen können ihn nur deine Freunde – und gar
 niemand, wenn du „niemand“ einstellst.
+
+Sync-Daten sieht nur dein eigenes Konto – weder andere Spieler noch das Team (es gibt dafür keine Admin-Funktion). Den
+Schalter „Mit TRS-Konto synchronisieren“ findest du unter *Einstellungen → Datenschutz*; ausgeschaltet gleicht der
+Launcher nichts mehr ab. Bereits gespeicherte Sync-Daten löschst du mit „Alle TRS-Daten löschen“.
 
 Admin-Aktionen (etwa das Freigeben eines Umhangs oder eine Sperre) werden zusammen mit der betroffenen UUID in einem
 Audit-Log festgehalten.
 
 ### Zweck und Rechtsgrundlage
 
-Die Daten werden nur verarbeitet, um die TRS-Dienste bereitzustellen, die du angefordert hast: Umhänge, die Freundesliste
-und den Online-Status. Rechtsgrundlage ist die Erbringung des von dir gewünschten Dienstes (Art. 6 Abs. 1 lit. b DSGVO).
+Die Daten werden nur verarbeitet, um die TRS-Dienste bereitzustellen, die du angefordert hast: Umhänge, die Freundesliste,
+den Online-Status und – wenn eingeschaltet – den Sync. Rechtsgrundlage ist die Erbringung des von dir gewünschten Dienstes (Art. 6 Abs. 1 lit. b DSGVO).
 Die Dienste frei von Missbrauch zu halten (Prüfung von Uploads, Meldungen, Sperren und Ratenbegrenzungen), beruht auf
 unserem berechtigten Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO). Es gibt keine Werbung, kein
 Profiling und keinen Verkauf von Daten.
@@ -71,9 +76,11 @@ Profiling und keinen Verkauf von Daten.
 - Deine Daten bleiben gespeichert, solange dein TRS-Account besteht.
 - Sitzungs-Tokens verfallen nach 30 Tagen; Abmelden oder Entfernen eines Accounts im Launcher widerruft das Token.
 - Der Online-Status verschwindet 3 Minuten nach der letzten Aktualisierung oder sofort, wenn du den Launcher schließt.
+- Löschst du einen synchronisierten Skin, bleiben nur seine ID und der Löschzeitpunkt 30 Tage lang gespeichert, damit
+  deine anderen Geräte ihn ebenfalls löschen; danach werden sie automatisch entfernt.
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
-  Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, eingelöste Codes, Meldungen
-  und deinen Online-Status. Danach sind die TRS-Dienste im Launcher ausgeschaltet.
+  Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, eingelöste Codes, Meldungen,
+  deinen Online-Status und alle Sync-Daten (Skins, Presets, Einstellungen). Danach sind die TRS-Dienste im Launcher ausgeschaltet.
 - Nach der Löschung bleibt nur ein bestehender Sperr-Eintrag erhalten (deine UUID, der Grund und der Zeitpunkt), damit
   eine Sperre nicht durch erneutes Anmelden umgangen werden kann.
 - Server-Logs enthalten nur technische Daten (Methode, Pfad ohne Query, Status, Dauer, Request-ID) – **keine

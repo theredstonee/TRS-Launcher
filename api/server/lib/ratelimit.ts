@@ -123,4 +123,7 @@ export const RULES = {
   webLoginStartIp: { limit: 10, windowMs: 10 * MIN },
   webLoginApproveUser: { limit: 10, windowMs: 10 * MIN },
   webLoginPollIp: { limit: 90, windowMs: MIN },
+  /** TRS-Sync (`/v1/me/sync*`): alle Anfragen je Konto, dazu Skin-Uploads extra. */
+  syncUser: { limit: 120, windowMs: MIN },
+  syncUploadUser: { limit: 30, windowMs: MIN },
 } satisfies Record<string, Rule>

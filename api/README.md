@@ -20,7 +20,7 @@ api/
 ├─ assets/capes/         Standard-Umhänge: catalog.json + PNGs (im Build enthalten)
 ├─ assets/cosmetics/     Kosmetik: templates.json (3D-Vorlagen) + catalog.json + PNGs (im Build enthalten)
 ├─ assets/cosmetic-previews/  erzeugte Vorschauen (nicht im Git, nicht im Build)
-├─ tests/                vitest (Validierung, Login, Codes, PNG-Prüfung, Freunde, Lookup, Kosmetik, Emotes, Ereignisse, Skins, Migration)
+├─ tests/                vitest (Validierung, Login, Codes, PNG-Prüfung, Freunde, Lookup, Kosmetik, Emotes, Ereignisse, Skins, Sync, Migration)
 ├─ scripts/smoke.mjs     End-to-End-Test gegen den gebauten Server (mit Mojang-Mock)
 ├─ scripts/generate-*.mjs  Generatoren für die mitgelieferten Umhänge und Kosmetik-Teile
 ├─ Dockerfile, docker-compose.yml, docker-compose.local.yml, .env.example
