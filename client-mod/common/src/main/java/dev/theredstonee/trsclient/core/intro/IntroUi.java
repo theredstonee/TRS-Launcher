@@ -539,7 +539,8 @@ public final class IntroUi extends UiScreen {
 			Paint.paragraph(c, I18n.tr("intro.keys.unavailable"), x, y, w, 10, t.textDim);
 			return;
 		}
-		int rowH = Math.max(18, Math.min(26, h / Math.max(1, trsKeys.size())));
+		// Tastenkappen sind 15 hoch – in kleinen Fenstern bis 16 zusammenrücken, damit alle Tasten passen.
+		int rowH = Math.max(16, Math.min(26, h / Math.max(1, trsKeys.size())));
 		int capW = Math.min(90, Math.max(60, w / 5));
 		for (int i = 0; i < trsKeys.size(); i++) {
 			final KeyBind b = trsKeys.get(i);

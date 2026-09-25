@@ -713,7 +713,7 @@ public final class TitleUi extends UiScreen {
 				int room = l.w - 24;
 				if (isNew) {
 					int badgeW = NewBadge.width(c);
-					if (room - badgeW - 6 >= Math.min(c.textWidth(l.label), 40)) {
+					if (room - badgeW - 6 >= c.textWidth(l.label) + 2) {
 						NewBadge.draw(c, l.x + l.w - badgeW - 4, l.y + dy + (l.h - NewBadge.HEIGHT) / 2);
 						room -= badgeW + 6;
 					} else {

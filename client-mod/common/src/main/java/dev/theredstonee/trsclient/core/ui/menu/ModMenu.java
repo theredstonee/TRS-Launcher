@@ -455,7 +455,8 @@ public final class ModMenu extends UiScreen {
 		if (isNew) {
 			int badgeW = NewBadge.width(c);
 			int room = w - 22 - badgeW - 4;
-			if (room >= Math.min(c.textWidth(label), 30) && h >= NewBadge.HEIGHT) {
+			// Schild nur, wenn der Name daneben ganz bleibt – sonst (schmale Leiste) ein Punkt wie bei den Kategorien.
+			if (room >= c.textWidth(label) && h >= NewBadge.HEIGHT) {
 				labelW = Math.min(room, c.textWidth(label));
 				NewBadge.draw(c, x + 19 + labelW + 4, y + (h - NewBadge.HEIGHT) / 2);
 			} else {
