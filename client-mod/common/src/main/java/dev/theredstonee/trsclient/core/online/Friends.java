@@ -170,7 +170,8 @@ public final class Friends {
 		if (now < notBefore) return;
 		long gap = now - lastFetch;
 		long period = level == Interest.FOREGROUND ? FOREGROUND_MS : BACKGROUND_MS;
-		boolean due = refreshSoon || snapshot.view == null ? gap >= MIN_GAP_MS : gap >= period;
+		boolean missing = snapshot.view == null || (wantBlocks && snapshot.blocked == null);
+		boolean due = refreshSoon || missing ? gap >= MIN_GAP_MS : gap >= period;
 		if (!due) return;
 		boolean blocks = wantBlocks && (snapshot.blocked == null || refreshSoon || now - lastBlocks >= BLOCKS_MS);
 		fetch(now, currentToken, blocks);

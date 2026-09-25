@@ -345,7 +345,7 @@ public final class VanillaMenus {
 		int widest = 0;
 		for (String id : ids) widest = Math.max(widest, Mc.mc().font.width(I18n.tr("menus.pause." + id)));
 		// Platz für Symbol links + Text in der Mitte: Text darf das Symbol nicht berühren.
-		int want = widest + 40;
+		int want = widest + 32;
 		boolean labels = free >= Math.min(want, 150);
 		if (free < 22) return;
 		int w = labels ? Math.max(86, Math.min(want, free)) : 20;

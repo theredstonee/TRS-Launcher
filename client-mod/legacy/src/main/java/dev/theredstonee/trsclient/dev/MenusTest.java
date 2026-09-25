@@ -159,6 +159,13 @@ public final class MenusTest {
 				wait = 15;
 				return;
 			case 13:
+				if (!(screen instanceof GuiIngameMenu) && waited++ < 5) {
+					// Etwas hat das Pausenmenü geschlossen (z. B. Fokuswechsel) – erneut öffnen.
+					mc.displayGuiScreen(new GuiIngameMenu());
+					wait = 15;
+					return;
+				}
+				waited = 0;
 				shot(mc, "pause");
 				mc.displayGuiScreen(MenuScreens.serverInfo(screen));
 				phase++;

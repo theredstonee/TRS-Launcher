@@ -172,7 +172,7 @@ public final class ClipsUi extends WindowUi {
 		int tx = x;
 		for (int i = 0; i < 3; i++) {
 			final Filter f = Filter.values()[i];
-			int tw = Math.min(c.textWidth(labels[i]) + 14, Math.max(40, (w - 8) / 6));
+			int tw = c.textWidth(labels[i]) + 12;
 			tab(c, tx, y, tw, 16, labels[i], filter == f, mx, my, new Runnable() {
 				@Override
 				public void run() {
@@ -388,7 +388,7 @@ public final class ClipsUi extends WindowUi {
 		int py = window[1] + HEADER_H;
 		int pw = window[2] - 8;
 		int ph = window[3] - HEADER_H - 4;
-		c.fill(px, py, px + pw, py + ph, 0xF00A0808);
+		c.fill(px, py, px + pw, py + ph, 0xFF0A0808);
 		final ClipLibrary.Entry e = list.get(preview);
 		int barH = 22;
 		int ix = px + 6;
