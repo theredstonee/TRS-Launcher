@@ -20,6 +20,13 @@ How to write an entry:
 
 ### English
 
+- **Wardrobe with a full skin editor in the game.** The TRS Client now has a wardrobe (title screen bar, TRS menu or
+  your own key): your skins with favourites and a library, outfits (skin + cape) to flip through, your Minecraft and
+  TRS capes, and your emote wheel – all with a big 3D preview. "Add skin" takes a file, a link or a player name. Apply
+  a skin and it becomes your Minecraft skin right away. The editor lets you paint straight onto the 3D figure or the
+  flat skin: brush, eraser, eyedropper, fill, left/right mirror, undo/redo, colour palette with recent colours and hex
+  input, inner and outer layer, classic or slim arms and blank templates. With the TRS services on, your skins are the
+  same "My skins" as in the launcher, and favourites, outfits and emote wheel follow you to every PC.
 - **New TRS Client title screen: you on a redstone turntable.** Your own skin (and your TRS or Mojang cape) now
   stands on a slowly turning redstone turntable on the left of the title screen – drag it to spin it, and your head
   follows the mouse. Below it are your name and an "Account" button. A new bar on the right leads to Wardrobe,
@@ -53,6 +60,14 @@ How to write an entry:
 
 ### Deutsch
 
+- **Garderobe mit vollem Skin-Editor im Spiel.** Der TRS Client hat jetzt eine Garderobe (Leiste im Titelbildschirm,
+  TRS-Menü oder eigene Taste): deine Skins mit Favoriten und Bibliothek, Outfits (Skin + Umhang) zum Durchblättern,
+  deine Minecraft- und TRS-Umhänge und dein Emote-Rad – alles mit großer 3D-Vorschau. „Skin hinzufügen“ nimmt eine
+  Datei, einen Link oder einen Spielernamen. Ein Klick auf „Anwenden“ macht den Skin sofort zu deinem Minecraft-Skin.
+  Im Editor malst du direkt auf der 3D-Figur oder auf dem flachen Skin: Pinsel, Radierer, Pipette, Füllen,
+  Links/Rechts-Spiegeln, Rückgängig/Wiederholen, Farbpalette mit zuletzt benutzten Farben und Hex-Eingabe, innere und
+  äußere Ebene, Classic- oder Slim-Arme und leere Vorlagen. Mit eingeschalteten TRS-Diensten sind deine Skins dieselben
+  „Meine Skins“ wie im Launcher, und Favoriten, Outfits und Emote-Rad folgen dir auf jeden PC.
 - **Neuer Titelbildschirm im TRS Client: du auf einer Redstone-Drehscheibe.** Dein eigener Skin (mit deinem TRS-
   oder Mojang-Umhang) steht jetzt links auf einer langsam drehenden Redstone-Drehscheibe – zieh daran, um sie zu
   drehen, und dein Kopf folgt der Maus. Darunter stehen dein Name und ein „Konto“-Knopf. Eine neue Leiste rechts führt
