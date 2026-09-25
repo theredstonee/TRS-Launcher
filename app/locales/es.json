@@ -204,7 +204,8 @@
       "not_banned": "Este jugador no está bloqueado.",
       "invalid_request": "La solicitud no era válida.",
       "not_found": "No encontrado.",
-      "rejected": "La API de TRS ha rechazado la solicitud."
+      "rejected": "La API de TRS ha rechazado la solicitud.",
+      "frame_time_required": "Las capas animadas necesitan una velocidad."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -488,10 +489,12 @@
       "invalidWebLoginCode": "El código tiene la forma ABCD-1234 (letras y números)."
     },
     "trsPng": {
-      "fileTooLarge": "El archivo es demasiado grande (máx. 256 KB).",
+      "fileTooLarge": "El archivo es demasiado grande (máx. 5 MB).",
       "invalidPng": "El archivo no es una imagen PNG válida.",
-      "animated": "No se permiten PNG animados en capas propias.",
-      "invalidSize": "La capa debe medir 64×32 píxeles (o 128×64, 192×96, 256×128) o, en formato de capa, 22×17 (o 44×34, 66×51, 88×68)."
+      "animated": "Los PNG animados (APNG) no son compatibles: sube las animaciones como tira.",
+      "invalidSize": "La capa debe medir 64×32 píxeles (o un múltiplo hasta 512×256), o 22×17 en formato de capa (hasta 176×136); animada, como máximo 16 fotogramas en vertical.",
+      "frameTime": "La velocidad debe estar entre 50 y 1000 ms por fotograma.",
+      "emptyCape": "La capa es completamente transparente."
     },
     "trsValidate": {
       "invalidName": "Introduce un nombre de Minecraft (1–16 caracteres: A–Z, 0–9, _).",
@@ -558,6 +561,16 @@
       "nameTaken": "Ya existe un clip con este nombre.",
       "noFrames": "Todavía no se ha grabado nada.",
       "notRecording": "No hay ninguna grabación en curso para este juego."
+    },
+    "trsCapeImport": {
+      "unsupported": "«{name}» no es una imagen compatible (PNG, JPEG, WebP, GIF o JSON de TRS Studio).",
+      "imageTooLarge": "«{name}» es demasiado grande (máx. 4096×4096 píxeles, como GIF 2048×2048).",
+      "broken": "No se pudo leer «{name}».",
+      "tooManyFiles": "Elige como máximo {max} archivos a la vez.",
+      "fileTooLarge": "«{name}» es demasiado grande (máx. 20 MB por archivo).",
+      "totalTooLarge": "En conjunto, los archivos son demasiado grandes (máx. 64 MB).",
+      "studioInvalid": "«{name}» no es una exportación de capa de TRS Studio.",
+      "gifTooLong": "«{name}» tiene demasiados fotogramas (máx. {max})."
     }
   },
   "browse": {
@@ -2350,17 +2363,6 @@
       "checking": "Comprobando …",
       "submit": "Canjear"
     },
-    "uploadDialog": {
-      "nameLabel": "Nombre (opcional)",
-      "placeholder": "p. ej., Mi capa",
-      "rules": {
-        "size": "PNG de 64×32 píxeles (o 128×64, 192×96, 256×128) o en formato de capa 22×17, de 256 KB como máximo.",
-        "review": "Sin animación. El equipo revisa cada capa; hasta entonces, solo tú la ves.",
-        "rights": "Solo imágenes propias o que tengas permiso para usar; nada ofensivo."
-      },
-      "uploading": "Subiendo …",
-      "chooseFile": "Elegir archivo"
-    },
     "deleteDialog": {
       "title": "¿Eliminar capa?",
       "text": "{name} se eliminará definitivamente."
@@ -2372,6 +2374,68 @@
       "unlocked": "¡«{name}» desbloqueada!",
       "uploaded": "Subida: tu capa está pendiente de aprobación.",
       "deleted": "Capa eliminada"
+    },
+    "editor": {
+      "title": "Subir tu propia capa",
+      "pick": {
+        "lead": "Elige una o varias imágenes. Tú decides qué parte va en la capa y la ves al instante en el jugador.",
+        "image": "Cualquier imagen (PNG, JPEG, WebP): tú eliges el recorte",
+        "gif": "GIF animado: se usan sus fotogramas",
+        "frames": "Varias imágenes a la vez: se convierten en fotogramas por orden de nombre",
+        "sheet": "Una textura de capa lista o una hoja de sprites (fotogramas en vertical)",
+        "studio": "Exportaciones de TRS Studio: elige el PNG junto con su .json",
+        "choose": "Elegir archivos",
+        "loading": "Cargando …"
+      },
+      "rules": {
+        "size": "Hasta 512×256 píxeles por fotograma, hasta 16 fotogramas, máx. 5 MB.",
+        "review": "El equipo revisa cada capa; hasta entonces, solo tú puedes verla.",
+        "rights": "Solo imágenes propias o que tengas permiso para usar; nada ofensivo."
+      },
+      "change": "Otros archivos",
+      "frameCount": "{n} fotograma | {n} fotogramas",
+      "mode": {
+        "label": "Usar como",
+        "texture": "Textura de capa completa",
+        "crop": "Recorte de imagen"
+      },
+      "crop": {
+        "viewport": "Recorte de la imagen para la capa: muévelo con las flechas y haz zoom con + y −",
+        "zoom": "Zoom",
+        "reset": "Restablecer",
+        "hint": "Arrastra para mover la imagen; usa la rueda o el control para hacer zoom. El marco muestra la parte trasera de la capa."
+      },
+      "sheet": {
+        "label": "Fotogramas en la imagen",
+        "hint": "Para hojas de sprites: fotogramas en vertical."
+      },
+      "scale": {
+        "label": "Resolución",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Velocidad",
+        "value": "{ms} ms por fotograma · {fps} fps"
+      },
+      "sampled": "{total} fotogramas: se usan {max} elegidos de forma uniforme.",
+      "preview": {
+        "texture": "Textura de la capa"
+      },
+      "sizeLabel": "Tamaño del archivo",
+      "size": "{size} de máx. 5 MB",
+      "nameLabel": "Nombre (opcional)",
+      "placeholder": "p. ej. Mi capa",
+      "errors": {
+        "noImage": "Elige al menos una imagen: un .json solo no basta.",
+        "mixed": "Elige un GIF o imágenes, no ambos.",
+        "sizeMismatch": "Todos los fotogramas deben tener el mismo tamaño.",
+        "frameTooLarge": "Con varios fotogramas, cada imagen puede medir como máximo 2048×2048 píxeles.",
+        "readFailed": "No se pudo leer la imagen.",
+        "tooLarge": "La capa es demasiado grande ({size}, máx. 5 MB): elige una resolución menor o menos fotogramas.",
+        "empty": "La capa es completamente transparente."
+      },
+      "upload": "Subir",
+      "uploading": "Subiendo …"
     }
   },
   "friends": {
@@ -2506,7 +2570,42 @@
       "rejectReason": "Motivo: {reason}",
       "reviewed": "Revisada el {date}",
       "approve": "Aprobar",
-      "reject": "Rechazar"
+      "reject": "Rechazar",
+      "dialog": {
+        "title": "Revisar «{name}»",
+        "open": "Abrir para revisar",
+        "uploaded": "Subida",
+        "fileSize": "Tamaño del archivo",
+        "resolution": "Resolución",
+        "frames": "Fotogramas",
+        "frameTime": "{ms} ms por fotograma",
+        "zoom": "Zoom",
+        "fit": "Ajustar",
+        "frameOf": "Fotograma {n} de {total}",
+        "play": "Reproducir",
+        "pause": "Pausar",
+        "ownerStats": "{uploads} subidas · {approved} aprobadas · {pending} pendientes · {rejected} rechazadas",
+        "reasonTitle": "¿Por qué se rechaza?",
+        "presetLabels": {
+          "inappropriate": "Contenido inapropiado",
+          "copyright": "Derechos de autor / logo ajeno",
+          "quality": "Mala calidad o defectuosa",
+          "format": "No es una capa / formato incorrecto",
+          "other": "Otro motivo (escríbelo tú)"
+        },
+        "presets": {
+          "inappropriate": "Contenido inapropiado.",
+          "copyright": "Derechos de autor o logo ajeno: usa solo diseños propios.",
+          "quality": "La textura está dañada o es de mala calidad.",
+          "format": "Esto no parece una capa: usa el formato de capa."
+        },
+        "keys": "A aprobar · D rechazar · ←/→ pasar · Esc cerrar",
+        "prev": "Capa anterior",
+        "next": "Capa siguiente",
+        "confirmDelete": "¿Borrar de verdad?",
+        "rejectNow": "Rechazar ahora",
+        "working": "Un momento …"
+      }
     },
     "codes": {
       "cape": "Capa",

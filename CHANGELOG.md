@@ -26,6 +26,14 @@ How to write an entry:
   your theme, accent colour and language are synced with your Minecraft account – add a skin on one PC and it's there
   on the next one, delete it and it's gone everywhere. Your Java and memory settings stay on each PC. You can rename
   skins in your collection now, too. Don't want it? Turn off "Sync with TRS account" under Settings → Privacy.
+- **Upload capes the way you want them.** The new cape dialog works like cropping a profile picture: pick any image
+  (PNG, JPEG, WebP), drag and zoom to choose the part that goes on the cape and watch it live on the player in 3D.
+  Animated GIFs, several images at once, sprite sheets and TRS Studio exports become animated capes with up to 16
+  frames – you pick the speed. Custom capes can now be up to 512×256 pixels per frame and 5 MB.
+- **TRS capes in HD in the game.** The TRS Client now also loads large HD capes up to 8 MB.
+- **For the team: reviewing capes is faster.** Click a waiting cape to see it on the player in 3D, the texture pixel
+  by pixel with zoom and every frame, and who uploaded it. Approve with A, reject with D (with a reason to pick) and
+  browse with the arrow keys.
 
 ### Deutsch
 
@@ -37,6 +45,15 @@ How to write an entry:
   einem PC einen Skin hinzufügen, und er ist auf dem nächsten da; löschen, und er ist überall weg. Java- und
   Speicher-Einstellungen bleiben auf jedem PC. Skins in deiner Sammlung lassen sich jetzt auch umbenennen. Nicht
   gewollt? Unter Einstellungen → Datenschutz „Mit TRS-Konto synchronisieren“ ausschalten.
+- **Umhänge hochladen, wie du sie willst.** Der neue Umhang-Dialog funktioniert wie das Zuschneiden eines Profilbilds:
+  beliebiges Bild wählen (PNG, JPEG, WebP), den Ausschnitt verschieben und zoomen und ihn live in 3D am Spieler
+  sehen. Animierte GIFs, mehrere Bilder auf einmal, Sprite-Sheets und TRS-Studio-Exporte werden zu animierten
+  Umhängen mit bis zu 16 Frames – das Tempo bestimmst du. Eigene Umhänge dürfen jetzt bis 512×256 Pixel je Frame und
+  5 MB groß sein.
+- **TRS-Umhänge in HD im Spiel.** Der TRS Client lädt jetzt auch große HD-Umhänge bis 8 MB.
+- **Fürs Team: Umhänge schneller prüfen.** Ein Klick auf einen wartenden Umhang zeigt ihn in 3D am Spieler, die
+  Textur Pixel für Pixel mit Zoom und allen Frames und wer ihn hochgeladen hat. Freigeben mit A, ablehnen mit D (mit
+  auswählbarem Grund), blättern mit den Pfeiltasten.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

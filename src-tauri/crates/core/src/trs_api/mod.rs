@@ -16,6 +16,7 @@
 //!   dem Spielende übernimmt der Launcher sofort wieder. Der Launcher gibt
 //!   seinen Token nie an das Spiel weiter, der Mod meldet sich selbst an.
 
+pub mod cape_import;
 mod ops;
 pub mod png;
 mod presence;
@@ -221,6 +222,9 @@ fn message_for(code: &str) -> Msg {
             msg!("trsApi.invalid_dimensions", "Das Bild hat nicht die richtige Größe für einen Umhang.")
         }
         "empty_cape" => msg!("trsApi.empty_cape", "Der Umhang ist komplett durchsichtig."),
+        "frame_time_required" => {
+            msg!("trsApi.frame_time_required", "Animierte Umhänge brauchen ein Bildtempo.")
+        }
         "too_many_pending" => {
             msg!("trsApi.too_many_pending", "Du hast schon 3 Umhänge in Prüfung – warte auf die Freigabe.")
         }

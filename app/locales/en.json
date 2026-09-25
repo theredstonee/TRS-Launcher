@@ -204,7 +204,8 @@
       "not_banned": "This player isn't banned.",
       "invalid_request": "The request was invalid.",
       "not_found": "Not found.",
-      "rejected": "The TRS API rejected the request."
+      "rejected": "The TRS API rejected the request.",
+      "frame_time_required": "Animated capes need a speed."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -488,10 +489,12 @@
       "invalidWebLoginCode": "The code looks like ABCD-1234 (letters and digits)."
     },
     "trsPng": {
-      "fileTooLarge": "The file is too large (max. 256 KB).",
+      "fileTooLarge": "The file is too large (max. 5 MB).",
       "invalidPng": "The file isn't a valid PNG image.",
-      "animated": "Animated PNGs aren't allowed for custom capes.",
-      "invalidSize": "The cape must be 64×32 pixels (or 128×64, 192×96, 256×128), or 22×17 in cape format (or 44×34, 66×51, 88×68)."
+      "animated": "Animated PNGs (APNG) aren't supported – upload animations as a strip.",
+      "invalidSize": "The cape must be 64×32 pixels (or a multiple up to 512×256), or 22×17 in cape format (up to 176×136); animated capes have at most 16 frames stacked vertically.",
+      "frameTime": "The speed must be between 50 and 1000 ms per frame.",
+      "emptyCape": "The cape is completely transparent."
     },
     "trsValidate": {
       "invalidName": "Please enter a Minecraft name (1–16 characters: A–Z, 0–9, _).",
@@ -558,6 +561,16 @@
       "nameTaken": "There already is a clip with this name.",
       "noFrames": "Nothing has been recorded yet.",
       "notRecording": "No recording is running for this game."
+    },
+    "trsCapeImport": {
+      "unsupported": "“{name}” isn't a supported image (PNG, JPEG, WebP, GIF or TRS Studio JSON).",
+      "imageTooLarge": "“{name}” is too large (at most 4096×4096 pixels, as a GIF 2048×2048).",
+      "broken": "“{name}” couldn't be read.",
+      "tooManyFiles": "Please choose at most {max} files at once.",
+      "fileTooLarge": "“{name}” is too large (at most 20 MB per file).",
+      "totalTooLarge": "Together, the files are too large (at most 64 MB).",
+      "studioInvalid": "“{name}” isn't a cape export from TRS Studio.",
+      "gifTooLong": "“{name}” has too many frames (at most {max})."
     }
   },
   "browse": {
@@ -2350,17 +2363,6 @@
       "checking": "Checking …",
       "submit": "Redeem"
     },
-    "uploadDialog": {
-      "nameLabel": "Name (optional)",
-      "placeholder": "e.g. My cape",
-      "rules": {
-        "size": "PNG with 64×32 pixels (or 128×64, 192×96, 256×128) or in the 22×17 cape format – at most 256 KB.",
-        "review": "No animation. The team reviews every cape; until then, only you can see it.",
-        "rights": "Only your own images or ones you're allowed to use – nothing offensive."
-      },
-      "uploading": "Uploading …",
-      "chooseFile": "Choose file"
-    },
     "deleteDialog": {
       "title": "Delete cape?",
       "text": "{name} will be deleted permanently."
@@ -2372,6 +2374,68 @@
       "unlocked": "“{name}” unlocked!",
       "uploaded": "Uploaded – your cape is awaiting approval.",
       "deleted": "Cape deleted"
+    },
+    "editor": {
+      "title": "Upload your own cape",
+      "pick": {
+        "lead": "Choose one or more images. You pick the part that ends up on the cape and see it live on the player right away.",
+        "image": "Any image (PNG, JPEG, WebP) – you choose the section",
+        "gif": "Animated GIF – its frames are taken over",
+        "frames": "Several images at once – they become the frames, in name order",
+        "sheet": "A finished cape texture or sprite sheet (frames stacked vertically)",
+        "studio": "TRS Studio exports – choose the PNG together with its .json",
+        "choose": "Choose files",
+        "loading": "Loading …"
+      },
+      "rules": {
+        "size": "Up to 512×256 pixels per frame, up to 16 frames, at most 5 MB.",
+        "review": "The team reviews every cape; until then, only you can see it.",
+        "rights": "Only your own images or ones you're allowed to use – nothing offensive."
+      },
+      "change": "Other files",
+      "frameCount": "{n} frame | {n} frames",
+      "mode": {
+        "label": "Use as",
+        "texture": "Whole cape texture",
+        "crop": "Image section"
+      },
+      "crop": {
+        "viewport": "Image section for the cape – move with the arrow keys, zoom with + and −",
+        "zoom": "Zoom",
+        "reset": "Reset",
+        "hint": "Drag to move the image, scroll or use the slider to zoom. The frame shows the back of the cape."
+      },
+      "sheet": {
+        "label": "Frames in the image",
+        "hint": "For sprite sheets: frames stacked vertically."
+      },
+      "scale": {
+        "label": "Resolution",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Speed",
+        "value": "{ms} ms per frame · {fps} fps"
+      },
+      "sampled": "{total} frames – {max} evenly chosen ones are used.",
+      "preview": {
+        "texture": "Cape texture"
+      },
+      "sizeLabel": "File size",
+      "size": "{size} of max. 5 MB",
+      "nameLabel": "Name (optional)",
+      "placeholder": "e.g. My cape",
+      "errors": {
+        "noImage": "Please choose at least one image – a .json alone isn't enough.",
+        "mixed": "Choose either one GIF or images – not both.",
+        "sizeMismatch": "All frames must be the same size.",
+        "frameTooLarge": "With several frames, each image may be at most 2048×2048 pixels.",
+        "readFailed": "The image couldn't be read.",
+        "tooLarge": "The cape is too large ({size}, at most 5 MB) – choose a lower resolution or fewer frames.",
+        "empty": "The cape is completely transparent."
+      },
+      "upload": "Upload",
+      "uploading": "Uploading …"
     }
   },
   "friends": {
@@ -2506,7 +2570,42 @@
       "rejectReason": "Reason: {reason}",
       "reviewed": "Reviewed {date}",
       "approve": "Approve",
-      "reject": "Reject"
+      "reject": "Reject",
+      "dialog": {
+        "title": "Review “{name}”",
+        "open": "Open for review",
+        "uploaded": "Uploaded",
+        "fileSize": "File size",
+        "resolution": "Resolution",
+        "frames": "Frames",
+        "frameTime": "{ms} ms per frame",
+        "zoom": "Zoom",
+        "fit": "Fit",
+        "frameOf": "Frame {n} of {total}",
+        "play": "Play",
+        "pause": "Pause",
+        "ownerStats": "{uploads} uploads · {approved} approved · {pending} pending · {rejected} rejected",
+        "reasonTitle": "Why is it rejected?",
+        "presetLabels": {
+          "inappropriate": "Inappropriate content",
+          "copyright": "Copyright / someone else's logo",
+          "quality": "Poor quality or broken",
+          "format": "Not a cape / wrong layout",
+          "other": "Other (write it yourself)"
+        },
+        "presets": {
+          "inappropriate": "Inappropriate content.",
+          "copyright": "Copyright or someone else's logo – please only use your own designs.",
+          "quality": "The texture is broken or of poor quality.",
+          "format": "This doesn't look like a cape – please use the cape layout."
+        },
+        "keys": "A approve · D reject · ←/→ browse · Esc close",
+        "prev": "Previous cape",
+        "next": "Next cape",
+        "confirmDelete": "Really delete?",
+        "rejectNow": "Reject now",
+        "working": "Working …"
+      }
     },
     "codes": {
       "cape": "Cape",

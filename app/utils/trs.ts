@@ -11,7 +11,7 @@ const uuid = z.string().regex(/^[0-9a-f]{32}$/)
 const capeId = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,39}$/)
 const text = (max: number) => z.string().max(max)
 const pngDataUrl = z.string().startsWith('data:image/png;base64,').nullable()
-/** Umhang-Faktor: mitgelieferte HD-Umhänge bis 8 (512×256), eigene Uploads 1–4 – wie `MAX_CAPE_SCALE` im Kern. */
+/** Umhang-Faktor 1–8 (bis 512×256 je Frame), mitgelieferte wie eigene – wie `MAX_CAPE_SCALE` im Kern. */
 const capeScale = z.number().int().min(1).max(8)
 
 export const trsStatusSchema = z.object({
@@ -113,7 +113,29 @@ export const trsAdminCapeSchema = trsCapeSchema.extend({
   reviewedAt: text(40).nullable(),
   reviewedBy: text(64).nullable(),
   reports: z.object({ count, reasons: z.record(z.string(), count) }),
+  /** Größe der gespeicherten Datei (ältere Server: `null`). */
+  bytes: count.nullable(),
+  /** Alle Uploads des Hochladers nach Status (inklusive dieses). */
+  ownerStats: z.object({ uploads: count, approved: count, pending: count, rejected: count }).nullable(),
 })
+
+// Gewählte Dateien für den Umhang-Dialog (vom Kern geprüft; Bilder als Data-URL).
+const imageDataUrl = z.string().regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/)
+const sourceName = text(64)
+const sourceSide = z.number().int().min(1).max(8192)
+export const trsCapeSourceSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('image'), name: sourceName, dataUrl: imageDataUrl, width: sourceSide, height: sourceSide }),
+  z.object({
+    kind: z.literal('gif'),
+    name: sourceName,
+    width: sourceSide,
+    height: sourceSide,
+    frames: z.array(imageDataUrl).min(1).max(16),
+    durationMs: count,
+    sourceFrames: z.number().int().min(1),
+  }),
+  z.object({ kind: z.literal('studio'), name: sourceName, frames: z.number().int().min(1).max(64), scale: z.number().int().min(1).max(16) }),
+])
 
 export const trsCodeSchema = z.object({
   id: z.number().int().positive(),
@@ -178,6 +200,7 @@ export type TrsBlocked = z.infer<typeof trsBlockedSchema>
 export type TrsAdminStats = z.infer<typeof trsAdminStatsSchema>
 export type TrsAdminCape = z.infer<typeof trsAdminCapeSchema>
 export type TrsCode = z.infer<typeof trsCodeSchema>
+export type TrsCapeSource = z.infer<typeof trsCapeSourceSchema>
 export type TrsAdminUser = z.infer<typeof trsAdminUserSchema>
 export type TrsSyncStatus = z.infer<typeof trsSyncStatusSchema>
 export type TrsSyncEvent = z.infer<typeof trsSyncEventSchema>

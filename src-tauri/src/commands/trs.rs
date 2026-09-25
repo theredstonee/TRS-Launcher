@@ -1,8 +1,11 @@
 //! TRS API: Umhänge, Freunde, Präsenz, Verwaltung. Alle Anfragen laufen im
 //! Kern; das Webview bekommt nur Daten (Texturen als Data-URL), nie den Token.
 
+use std::path::PathBuf;
+
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
+use trs_core::trs_api::cape_import::{self, CapeSource};
 use trs_core::trs_api::sync::SyncStatus;
 use trs_core::trs_api::types::{
     AdminCape, AdminStats, AdminUser, BlockedUser, CapeItem, CodeView, Friend, FriendRequestResult, FriendsView, Me,
@@ -56,28 +59,46 @@ pub async fn trs_set_cape(launcher: State<'_, LauncherState>, cape_id: Option<St
     Ok(launcher.trs_set_cape(cape_id).await?)
 }
 
-/// Öffnet den Dateidialog, prüft das PNG im Kern und lädt es hoch.
-/// `None` = abgebrochen. Der Pfad verlässt Rust nie.
+/// Bilder für den Umhang-Dialog wählen (auch mehrere = Frames). Der Kern erkennt
+/// das Format an den Magic Bytes, prüft die Maße vor dem Dekodieren und zerlegt
+/// GIFs; das Webview bekommt nur Data-URLs. `None` = abgebrochen. Der Pfad
+/// verlässt Rust nie.
 #[tauri::command]
-pub async fn trs_upload_cape(
+pub async fn trs_pick_cape_sources(
     app: AppHandle,
     launcher: State<'_, LauncherState>,
-    name: Option<String>,
-) -> CommandResult<Option<CapeItem>> {
+) -> CommandResult<Option<Vec<CapeSource>>> {
     let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         app.dialog()
             .file()
             .set_title(DialogText::PickCape.text(lang))
-            .add_filter(DialogText::Cape.text(lang), &["png"])
-            .blocking_pick_file()
+            .add_filter(DialogText::Cape.text(lang), &["png", "jpg", "jpeg", "webp", "gif", "json"])
+            .blocking_pick_files()
     })
     .await
     .ok()
-    .flatten()
-    .and_then(|p| p.into_path().ok());
-    let Some(file) = picked else { return Ok(None) };
-    Ok(Some(launcher.trs_upload_cape(&file, name.as_deref()).await?))
+    .flatten();
+    let Some(picked) = picked else { return Ok(None) };
+    let files: Vec<PathBuf> = picked.into_iter().filter_map(|p| p.into_path().ok()).collect();
+    if files.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(cape_import::read_sources(files).await?))
+}
+
+/// Lädt den fertigen Streifen aus dem Zuschneide-Dialog hoch (PNG als Base64,
+/// `frames` Frames untereinander). Der Kern prüft alles noch einmal.
+#[tauri::command]
+pub async fn trs_upload_cape(
+    launcher: State<'_, LauncherState>,
+    png: String,
+    frames: u32,
+    frame_time_ms: Option<u32>,
+    name: Option<String>,
+) -> CommandResult<CapeItem> {
+    let bytes = cape_import::decode_upload(&png)?;
+    Ok(launcher.trs_upload_cape(bytes, frames, frame_time_ms, name.as_deref()).await?)
 }
 
 #[tauri::command]

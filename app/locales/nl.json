@@ -204,7 +204,8 @@
       "not_banned": "Deze speler is niet verbannen.",
       "invalid_request": "Het verzoek was ongeldig.",
       "not_found": "Niet gevonden.",
-      "rejected": "De TRS-API heeft het verzoek geweigerd."
+      "rejected": "De TRS-API heeft het verzoek geweigerd.",
+      "frame_time_required": "Geanimeerde capes hebben een snelheid nodig."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -488,10 +489,12 @@
       "invalidWebLoginCode": "De code heeft de vorm ABCD-1234 (letters en cijfers)."
     },
     "trsPng": {
-      "fileTooLarge": "Het bestand is te groot (max. 256 KB).",
+      "fileTooLarge": "Het bestand is te groot (max. 5 MB).",
       "invalidPng": "Het bestand is geen geldige PNG-afbeelding.",
-      "animated": "Geanimeerde PNG’s zijn niet toegestaan voor eigen capes.",
-      "invalidSize": "De cape moet 64×32 pixels zijn (of 128×64, 192×96, 256×128), of 22×17 in capeformaat (of 44×34, 66×51, 88×68)."
+      "animated": "Geanimeerde PNG’s (APNG) worden niet ondersteund – upload animaties als strook.",
+      "invalidSize": "De cape moet 64×32 pixels zijn (of een veelvoud tot 512×256), of 22×17 in capeformaat (tot 176×136); geanimeerd maximaal 16 frames onder elkaar.",
+      "frameTime": "De snelheid moet tussen 50 en 1000 ms per frame liggen.",
+      "emptyCape": "De cape is volledig doorzichtig."
     },
     "trsValidate": {
       "invalidName": "Voer een Minecraft-naam in (1–16 tekens: A–Z, 0–9, _).",
@@ -558,6 +561,16 @@
       "nameTaken": "Er is al een clip met deze naam.",
       "noFrames": "Er is nog niets opgenomen.",
       "notRecording": "Voor dit spel loopt geen opname."
+    },
+    "trsCapeImport": {
+      "unsupported": "“{name}” is geen ondersteunde afbeelding (PNG, JPEG, WebP, GIF of TRS Studio-JSON).",
+      "imageTooLarge": "“{name}” is te groot (max. 4096×4096 pixels, als GIF 2048×2048).",
+      "broken": "“{name}” kon niet worden gelezen.",
+      "tooManyFiles": "Kies maximaal {max} bestanden tegelijk.",
+      "fileTooLarge": "“{name}” is te groot (max. 20 MB per bestand).",
+      "totalTooLarge": "Samen zijn de bestanden te groot (max. 64 MB).",
+      "studioInvalid": "“{name}” is geen cape-export uit TRS Studio.",
+      "gifTooLong": "“{name}” heeft te veel frames (max. {max})."
     }
   },
   "browse": {
@@ -2350,17 +2363,6 @@
       "checking": "Controleren …",
       "submit": "Inwisselen"
     },
-    "uploadDialog": {
-      "nameLabel": "Naam (optioneel)",
-      "placeholder": "bijv. Mijn cape",
-      "rules": {
-        "size": "PNG van 64×32 pixels (of 128×64, 192×96, 256×128) of in het capeformaat 22×17 – maximaal 256 KB.",
-        "review": "Geen animatie. Het team beoordeelt elke cape; tot die tijd zie alleen jij hem.",
-        "rights": "Alleen je eigen afbeeldingen of afbeeldingen die je mag gebruiken – niets aanstootgevends."
-      },
-      "uploading": "Uploaden …",
-      "chooseFile": "Bestand kiezen"
-    },
     "deleteDialog": {
       "title": "Cape verwijderen?",
       "text": "{name} wordt definitief verwijderd."
@@ -2372,6 +2374,68 @@
       "unlocked": "“{name}” ontgrendeld!",
       "uploaded": "Geüpload – je cape wacht op goedkeuring.",
       "deleted": "Cape verwijderd"
+    },
+    "editor": {
+      "title": "Eigen cape uploaden",
+      "pick": {
+        "lead": "Kies een of meer afbeeldingen. Jij kiest het deel dat op de cape komt en ziet het meteen op de speler.",
+        "image": "Elke afbeelding (PNG, JPEG, WebP) – jij kiest de uitsnede",
+        "gif": "Geanimeerde GIF – de frames worden overgenomen",
+        "frames": "Meerdere afbeeldingen tegelijk – worden frames, op volgorde van naam",
+        "sheet": "Een kant-en-klare cape-textuur of spritesheet (frames onder elkaar)",
+        "studio": "TRS Studio-exports – kies de PNG samen met de .json",
+        "choose": "Bestanden kiezen",
+        "loading": "Laden …"
+      },
+      "rules": {
+        "size": "Tot 512×256 pixels per frame, tot 16 frames, max. 5 MB.",
+        "review": "Het team beoordeelt elke cape; tot die tijd zie alleen jij hem.",
+        "rights": "Alleen je eigen afbeeldingen of afbeeldingen die je mag gebruiken – niets aanstootgevends."
+      },
+      "change": "Andere bestanden",
+      "frameCount": "{n} frame | {n} frames",
+      "mode": {
+        "label": "Gebruiken als",
+        "texture": "Hele cape-textuur",
+        "crop": "Uitsnede van de afbeelding"
+      },
+      "crop": {
+        "viewport": "Uitsnede voor de cape – verplaatsen met de pijltjestoetsen, zoomen met + en −",
+        "zoom": "Zoom",
+        "reset": "Herstellen",
+        "hint": "Sleep om de afbeelding te verplaatsen, scroll of gebruik de schuifregelaar om te zoomen. Het kader toont de achterkant van de cape."
+      },
+      "sheet": {
+        "label": "Frames in de afbeelding",
+        "hint": "Voor spritesheets: frames onder elkaar."
+      },
+      "scale": {
+        "label": "Resolutie",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Snelheid",
+        "value": "{ms} ms per frame · {fps} fps"
+      },
+      "sampled": "{total} frames – er worden {max} gelijkmatig gekozen frames gebruikt.",
+      "preview": {
+        "texture": "Cape-textuur"
+      },
+      "sizeLabel": "Bestandsgrootte",
+      "size": "{size} van max. 5 MB",
+      "nameLabel": "Naam (optioneel)",
+      "placeholder": "bijv. Mijn cape",
+      "errors": {
+        "noImage": "Kies minstens één afbeelding – alleen een .json is niet genoeg.",
+        "mixed": "Kies óf één GIF óf afbeeldingen – niet allebei.",
+        "sizeMismatch": "Alle frames moeten even groot zijn.",
+        "frameTooLarge": "Bij meerdere frames mag elke afbeelding maximaal 2048×2048 pixels zijn.",
+        "readFailed": "De afbeelding kon niet worden gelezen.",
+        "tooLarge": "De cape is te groot ({size}, max. 5 MB) – kies een lagere resolutie of minder frames.",
+        "empty": "De cape is volledig doorzichtig."
+      },
+      "upload": "Uploaden",
+      "uploading": "Uploaden …"
     }
   },
   "friends": {
@@ -2506,7 +2570,42 @@
       "rejectReason": "Reden: {reason}",
       "reviewed": "Beoordeeld {date}",
       "approve": "Goedkeuren",
-      "reject": "Afwijzen"
+      "reject": "Afwijzen",
+      "dialog": {
+        "title": "“{name}” beoordelen",
+        "open": "Openen om te beoordelen",
+        "uploaded": "Geüpload",
+        "fileSize": "Bestandsgrootte",
+        "resolution": "Resolutie",
+        "frames": "Frames",
+        "frameTime": "{ms} ms per frame",
+        "zoom": "Zoom",
+        "fit": "Passend",
+        "frameOf": "Frame {n} van {total}",
+        "play": "Afspelen",
+        "pause": "Pauzeren",
+        "ownerStats": "{uploads} uploads · {approved} goedgekeurd · {pending} wachtend · {rejected} afgewezen",
+        "reasonTitle": "Waarom wordt hij afgewezen?",
+        "presetLabels": {
+          "inappropriate": "Ongepaste inhoud",
+          "copyright": "Auteursrecht / logo van een ander",
+          "quality": "Slechte kwaliteit of kapot",
+          "format": "Geen cape / verkeerde indeling",
+          "other": "Andere reden (zelf schrijven)"
+        },
+        "presets": {
+          "inappropriate": "Ongepaste inhoud.",
+          "copyright": "Auteursrecht of logo van een ander – gebruik alleen je eigen ontwerpen.",
+          "quality": "De textuur is kapot of van slechte kwaliteit.",
+          "format": "Dit lijkt geen cape – gebruik de cape-indeling."
+        },
+        "keys": "A goedkeuren · D afwijzen · ←/→ bladeren · Esc sluiten",
+        "prev": "Vorige cape",
+        "next": "Volgende cape",
+        "confirmDelete": "Echt verwijderen?",
+        "rejectNow": "Nu afwijzen",
+        "working": "Even geduld …"
+      }
     },
     "codes": {
       "cape": "Cape",

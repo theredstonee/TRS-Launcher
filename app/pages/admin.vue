@@ -58,6 +58,19 @@ function reportSummary(reasons: Record<string, number>): string {
     .join(', ')
 }
 
+/** Detail-Dialog: ID des geöffneten Umhangs. */
+const reviewing = ref<string | null>(null)
+
+/** Neu laden ohne Ladeanzeige (der Detail-Dialog bleibt offen). */
+async function refreshReview() {
+  try {
+    reviewCapes.value = await backend.trs.adminCapes(list.value)
+  } catch (e) {
+    toasts.error(e)
+  }
+  await loadStats()
+}
+
 async function loadReview() {
   reviewCapes.value = null
   try {
@@ -376,28 +389,38 @@ const statTiles = computed(() => {
         />
         <ul v-else class="space-y-2" data-testid="admin-capes">
           <li v-for="cape in reviewCapes" :key="cape.id" class="card flex flex-wrap items-center gap-4 px-4 py-3">
-            <div class="flex items-end gap-3 rounded-lg bg-base-850 p-2">
-              <CapeThumb :texture="cape.texture" :scale="cape.scale" :frames="cape.frames" :frame-time-ms="cape.frameTimeMs" :width="40" />
-              <img
-                v-if="cape.texture"
-                :src="cape.texture"
-                :alt="t('admin.review.fullTexture')"
-                class="h-16 w-32 rounded object-contain [image-rendering:pixelated]"
-              />
-            </div>
-            <div class="min-w-0 flex-1 text-sm">
-              <p class="truncate font-semibold text-base-50">{{ cape.name }}</p>
-              <i18n-t keypath="admin.review.byOwner" tag="p" scope="global" class="text-xs text-base-400">
-                <template #owner><strong class="text-base-200">{{ cape.owner?.name ?? t('admin.review.deletedAccount') }}</strong></template>
-                <template #date>{{ trsDate(cape.createdAt) }}</template>
-                <template #size>{{ cape.width }}×{{ cape.height }}</template>
-              </i18n-t>
-              <p v-if="cape.reports.count" class="mt-0.5 text-xs text-warn">
-                {{ t('admin.review.reported', { count: cape.reports.count, reasons: reportSummary(cape.reports.reasons) }) }}
-              </p>
-              <p v-if="cape.rejectReason" class="mt-0.5 text-xs text-redstone-300">{{ t('admin.review.rejectReason', { reason: cape.rejectReason }) }}</p>
-              <p v-if="cape.reviewedBy" class="mt-0.5 text-[11px] text-base-600">{{ t('admin.review.reviewed', { date: trsDate(cape.reviewedAt) }) }}</p>
-            </div>
+            <button
+              class="flex min-w-0 flex-1 items-center gap-4 rounded-lg text-left hover:bg-base-800/40 focus-visible:ring-2 focus-visible:ring-redstone-500 focus-visible:outline-none"
+              :title="t('admin.review.dialog.open')"
+              data-testid="admin-cape-open"
+              @click="reviewing = cape.id"
+            >
+              <span class="flex items-end gap-3 rounded-lg bg-base-850 p-2">
+                <CapeThumb :texture="cape.texture" :scale="cape.scale" :frames="cape.frames" :frame-time-ms="cape.frameTimeMs" :width="40" />
+                <img
+                  v-if="cape.texture"
+                  :src="cape.texture"
+                  :alt="t('admin.review.fullTexture')"
+                  class="h-16 w-32 rounded object-contain object-top [image-rendering:pixelated]"
+                />
+              </span>
+              <span class="min-w-0 flex-1 text-sm">
+                <span class="flex items-center gap-2">
+                  <span class="truncate font-semibold text-base-50">{{ cape.name }}</span>
+                  <span v-if="cape.frames > 1" class="badge bg-base-800 px-1.5 py-0 text-[10px] text-base-200">{{ t('capes.animated') }}</span>
+                </span>
+                <i18n-t keypath="admin.review.byOwner" tag="span" scope="global" class="block text-xs text-base-400">
+                  <template #owner><strong class="text-base-200">{{ cape.owner?.name ?? t('admin.review.deletedAccount') }}</strong></template>
+                  <template #date>{{ trsDate(cape.createdAt) }}</template>
+                  <template #size>{{ cape.width }}×{{ cape.height }}</template>
+                </i18n-t>
+                <span v-if="cape.reports.count" class="mt-0.5 block text-xs text-warn">
+                  {{ t('admin.review.reported', { count: cape.reports.count, reasons: reportSummary(cape.reports.reasons) }) }}
+                </span>
+                <span v-if="cape.rejectReason" class="mt-0.5 block text-xs text-redstone-300">{{ t('admin.review.rejectReason', { reason: cape.rejectReason }) }}</span>
+                <span v-if="cape.reviewedBy" class="mt-0.5 block text-[11px] text-base-600">{{ t('admin.review.reviewed', { date: trsDate(cape.reviewedAt) }) }}</span>
+              </span>
+            </button>
             <div class="flex gap-2">
               <button
                 v-if="cape.status !== 'approved' || cape.reports.count"
@@ -567,6 +590,14 @@ const statTiles = computed(() => {
     </template>
 
     <!-- Dialoge -------------------------------------------------------------------- -->
+    <TrsCapeReviewDialog
+      v-if="reviewing && reviewCapes"
+      :capes="reviewCapes"
+      :start-id="reviewing"
+      :reload="refreshReview"
+      @close="reviewing = null"
+    />
+
     <BaseDialog v-if="rejecting" :title="t('admin.dialogs.rejectTitle')" @close="rejecting = null">
       <i18n-t keypath="admin.dialogs.rejectText" tag="p" scope="global" class="mb-3 text-sm text-base-200">
         <template #name><strong class="text-base-50">{{ rejecting.name }}</strong></template>

@@ -204,7 +204,8 @@
       "not_banned": "Bu oyuncu yasaklı değil.",
       "invalid_request": "İstek geçersizdi.",
       "not_found": "Bulunamadı.",
-      "rejected": "TRS API isteği reddetti."
+      "rejected": "TRS API isteği reddetti.",
+      "frame_time_required": "Hareketli pelerinler bir hıza ihtiyaç duyar."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -488,10 +489,12 @@
       "invalidWebLoginCode": "Kod ABCD-1234 biçimindedir (harfler ve rakamlar)."
     },
     "trsPng": {
-      "fileTooLarge": "Dosya çok büyük (en fazla 256 KB).",
+      "fileTooLarge": "Dosya çok büyük (en fazla 5 MB).",
       "invalidPng": "Dosya geçerli bir PNG görseli değil.",
-      "animated": "Özel pelerinlerde animasyonlu PNG'lere izin verilmez.",
-      "invalidSize": "Pelerin 64×32 piksel (veya 128×64, 192×96, 256×128) ya da pelerin biçiminde 22×17 (veya 44×34, 66×51, 88×68) olmalı."
+      "animated": "Hareketli PNG’ler (APNG) desteklenmiyor – animasyonları şerit olarak yükle.",
+      "invalidSize": "Pelerin 64×32 piksel (veya 512×256’ya kadar katları) ya da pelerin biçiminde 22×17 (176×136’ya kadar) olmalı; hareketliyse en fazla 16 kare alt alta.",
+      "frameTime": "Hız kare başına 50 ile 1000 ms arasında olmalı.",
+      "emptyCape": "Pelerin tamamen saydam."
     },
     "trsValidate": {
       "invalidName": "Lütfen bir Minecraft adı gir (1–16 karakter: A–Z, 0–9, _).",
@@ -558,6 +561,16 @@
       "nameTaken": "Bu adla bir klip zaten var.",
       "noFrames": "Henüz hiçbir şey kaydedilmedi.",
       "notRecording": "Bu oyun için çalışan bir kayıt yok."
+    },
+    "trsCapeImport": {
+      "unsupported": "“{name}” desteklenen bir görsel değil (PNG, JPEG, WebP, GIF veya TRS Studio JSON).",
+      "imageTooLarge": "“{name}” çok büyük (en fazla 4096×4096 piksel, GIF olarak 2048×2048).",
+      "broken": "“{name}” okunamadı.",
+      "tooManyFiles": "Tek seferde en fazla {max} dosya seç.",
+      "fileTooLarge": "“{name}” çok büyük (dosya başına en fazla 20 MB).",
+      "totalTooLarge": "Dosyalar toplamda çok büyük (en fazla 64 MB).",
+      "studioInvalid": "“{name}” TRS Studio’dan bir pelerin dışa aktarımı değil.",
+      "gifTooLong": "“{name}” çok fazla kareye sahip (en fazla {max})."
     }
   },
   "browse": {
@@ -2350,17 +2363,6 @@
       "checking": "Kontrol ediliyor …",
       "submit": "Kullan"
     },
-    "uploadDialog": {
-      "nameLabel": "Ad (isteğe bağlı)",
-      "placeholder": "ör. Pelerinim",
-      "rules": {
-        "size": "64×32 piksel (veya 128×64, 192×96, 256×128) ya da 22×17 pelerin biçiminde PNG – en fazla 256 KB.",
-        "review": "Animasyon yok. Ekip her pelerini inceler; o zamana kadar yalnızca sen görebilirsin.",
-        "rights": "Yalnızca kendi görsellerin veya kullanma iznin olanlar – rahatsız edici hiçbir şey olmasın."
-      },
-      "uploading": "Yükleniyor …",
-      "chooseFile": "Dosya seç"
-    },
     "deleteDialog": {
       "title": "Pelerin silinsin mi?",
       "text": "{name} kalıcı olarak silinecek."
@@ -2372,6 +2374,68 @@
       "unlocked": "“{name}” açıldı!",
       "uploaded": "Yüklendi – pelerinin onay bekliyor.",
       "deleted": "Pelerin silindi"
+    },
+    "editor": {
+      "title": "Kendi pelerinini yükle",
+      "pick": {
+        "lead": "Bir veya birden çok görsel seç. Pelerine gelecek kısmı sen seçersin ve oyuncunun üzerinde hemen görürsün.",
+        "image": "Herhangi bir görsel (PNG, JPEG, WebP) – kırpmayı sen seçersin",
+        "gif": "Hareketli GIF – kareleri alınır",
+        "frames": "Aynı anda birden çok görsel – ad sırasına göre kare olur",
+        "sheet": "Hazır bir pelerin dokusu veya sprite sayfası (kareler alt alta)",
+        "studio": "TRS Studio dışa aktarımları – PNG’yi .json dosyasıyla birlikte seç",
+        "choose": "Dosya seç",
+        "loading": "Yükleniyor …"
+      },
+      "rules": {
+        "size": "Kare başına 512×256 piksele kadar, 16 kareye kadar, en fazla 5 MB.",
+        "review": "Ekip her pelerini inceler; o zamana kadar yalnızca sen görebilirsin.",
+        "rights": "Yalnızca kendi görsellerin veya kullanma iznin olanlar – rahatsız edici hiçbir şey olmasın."
+      },
+      "change": "Başka dosyalar",
+      "frameCount": "{n} kare | {n} kare",
+      "mode": {
+        "label": "Şu şekilde kullan",
+        "texture": "Tüm pelerin dokusu",
+        "crop": "Görsel kırpması"
+      },
+      "crop": {
+        "viewport": "Pelerin için görsel kırpması – ok tuşlarıyla taşı, + ve − ile yakınlaştır",
+        "zoom": "Yakınlaştırma",
+        "reset": "Sıfırla",
+        "hint": "Görseli taşımak için sürükle; yakınlaştırmak için tekerleği veya kaydırıcıyı kullan. Çerçeve pelerinin arkasını gösterir."
+      },
+      "sheet": {
+        "label": "Görseldeki kareler",
+        "hint": "Sprite sayfaları için: kareler alt alta."
+      },
+      "scale": {
+        "label": "Çözünürlük",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Hız",
+        "value": "Kare başına {ms} ms · {fps} kare/sn"
+      },
+      "sampled": "{total} kare – eşit aralıklarla seçilen {max} kare kullanılır.",
+      "preview": {
+        "texture": "Pelerin dokusu"
+      },
+      "sizeLabel": "Dosya boyutu",
+      "size": "{size} / en fazla 5 MB",
+      "nameLabel": "Ad (isteğe bağlı)",
+      "placeholder": "ör. Pelerinim",
+      "errors": {
+        "noImage": "En az bir görsel seç – tek başına bir .json yetmez.",
+        "mixed": "Ya bir GIF ya da görseller seç – ikisini birden değil.",
+        "sizeMismatch": "Tüm kareler aynı boyutta olmalı.",
+        "frameTooLarge": "Birden çok karede her görsel en fazla 2048×2048 piksel olabilir.",
+        "readFailed": "Görsel okunamadı.",
+        "tooLarge": "Pelerin çok büyük ({size}, en fazla 5 MB) – daha düşük bir çözünürlük veya daha az kare seç.",
+        "empty": "Pelerin tamamen saydam."
+      },
+      "upload": "Yükle",
+      "uploading": "Yükleniyor …"
     }
   },
   "friends": {
@@ -2506,7 +2570,42 @@
       "rejectReason": "Sebep: {reason}",
       "reviewed": "İncelendi: {date}",
       "approve": "Onayla",
-      "reject": "Reddet"
+      "reject": "Reddet",
+      "dialog": {
+        "title": "“{name}” incele",
+        "open": "İncelemek için aç",
+        "uploaded": "Yüklenme",
+        "fileSize": "Dosya boyutu",
+        "resolution": "Çözünürlük",
+        "frames": "Kareler",
+        "frameTime": "Kare başına {ms} ms",
+        "zoom": "Yakınlaştırma",
+        "fit": "Sığdır",
+        "frameOf": "Kare {n} / {total}",
+        "play": "Oynat",
+        "pause": "Duraklat",
+        "ownerStats": "{uploads} yükleme · {approved} onaylı · {pending} bekleyen · {rejected} reddedilen",
+        "reasonTitle": "Neden reddediliyor?",
+        "presetLabels": {
+          "inappropriate": "Uygunsuz içerik",
+          "copyright": "Telif hakkı / başkasının logosu",
+          "quality": "Kalitesiz veya bozuk",
+          "format": "Pelerin değil / yanlış düzen",
+          "other": "Başka bir neden (kendin yaz)"
+        },
+        "presets": {
+          "inappropriate": "Uygunsuz içerik.",
+          "copyright": "Telif hakkı veya başkasının logosu – lütfen yalnızca kendi tasarımlarını kullan.",
+          "quality": "Doku bozuk veya kalitesiz.",
+          "format": "Bu bir pelerine benzemiyor – lütfen pelerin düzenini kullan."
+        },
+        "keys": "A onayla · D reddet · ←/→ gez · Esc kapat",
+        "prev": "Önceki pelerin",
+        "next": "Sonraki pelerin",
+        "confirmDelete": "Gerçekten silinsin mi?",
+        "rejectNow": "Şimdi reddet",
+        "working": "Bir saniye …"
+      }
     },
     "codes": {
       "cape": "Pelerin",

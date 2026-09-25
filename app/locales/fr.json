@@ -204,7 +204,8 @@
       "not_banned": "Ce joueur n'est pas banni.",
       "invalid_request": "La requête était invalide.",
       "not_found": "Introuvable.",
-      "rejected": "L'API TRS a refusé la requête."
+      "rejected": "L'API TRS a refusé la requête.",
+      "frame_time_required": "Les capes animées ont besoin d’une vitesse."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -488,10 +489,12 @@
       "invalidWebLoginCode": "Le code a la forme ABCD-1234 (lettres et chiffres)."
     },
     "trsPng": {
-      "fileTooLarge": "Le fichier est trop volumineux (256 Ko max.).",
+      "fileTooLarge": "Le fichier est trop volumineux (5 Mo max.).",
       "invalidPng": "Le fichier n'est pas une image PNG valide.",
-      "animated": "Les PNG animés ne sont pas autorisés pour les capes personnalisées.",
-      "invalidSize": "La cape doit faire 64×32 pixels (ou 128×64, 192×96, 256×128), ou 22×17 au format cape (ou 44×34, 66×51, 88×68)."
+      "animated": "Les PNG animés (APNG) ne sont pas pris en charge – envoie les animations sous forme de bande.",
+      "invalidSize": "La cape doit faire 64×32 pixels (ou un multiple jusqu’à 512×256), ou 22×17 au format cape (jusqu’à 176×136) ; animée, 16 images au plus empilées verticalement.",
+      "frameTime": "La vitesse doit être comprise entre 50 et 1000 ms par image.",
+      "emptyCape": "La cape est entièrement transparente."
     },
     "trsValidate": {
       "invalidName": "Saisis un nom Minecraft (1–16 caractères : A–Z, 0–9, _).",
@@ -558,6 +561,16 @@
       "nameTaken": "Un clip porte déjà ce nom.",
       "noFrames": "Rien n'a encore été enregistré.",
       "notRecording": "Aucun enregistrement en cours pour ce jeu."
+    },
+    "trsCapeImport": {
+      "unsupported": "« {name} » n’est pas une image prise en charge (PNG, JPEG, WebP, GIF ou JSON de TRS Studio).",
+      "imageTooLarge": "« {name} » est trop grande (4096×4096 pixels max., en GIF 2048×2048).",
+      "broken": "Impossible de lire « {name} ».",
+      "tooManyFiles": "Choisis au plus {max} fichiers à la fois.",
+      "fileTooLarge": "« {name} » est trop volumineux (20 Mo max. par fichier).",
+      "totalTooLarge": "Ensemble, les fichiers sont trop volumineux (64 Mo max.).",
+      "studioInvalid": "« {name} » n’est pas un export de cape de TRS Studio.",
+      "gifTooLong": "« {name} » a trop d’images ({max} max.)."
     }
   },
   "browse": {
@@ -2350,17 +2363,6 @@
       "checking": "Vérification…",
       "submit": "Utiliser"
     },
-    "uploadDialog": {
-      "nameLabel": "Nom (facultatif)",
-      "placeholder": "par ex. Ma cape",
-      "rules": {
-        "size": "PNG de 64×32 pixels (ou 128×64, 192×96, 256×128) ou au format cape 22×17 – 256 Ko au maximum.",
-        "review": "Pas d'animation. L'équipe vérifie chaque cape ; d'ici là, toi seul peux la voir.",
-        "rights": "Uniquement tes propres images ou celles que tu as le droit d'utiliser – rien d'offensant."
-      },
-      "uploading": "Envoi…",
-      "chooseFile": "Choisir un fichier"
-    },
     "deleteDialog": {
       "title": "Supprimer la cape ?",
       "text": "{name} sera supprimée définitivement."
@@ -2372,6 +2374,68 @@
       "unlocked": "« {name} » débloquée !",
       "uploaded": "Envoyée – ta cape est en attente d'approbation.",
       "deleted": "Cape supprimée"
+    },
+    "editor": {
+      "title": "Envoyer ta propre cape",
+      "pick": {
+        "lead": "Choisis une ou plusieurs images. Tu choisis la partie qui va sur la cape et tu la vois tout de suite sur le joueur.",
+        "image": "N’importe quelle image (PNG, JPEG, WebP) – tu choisis le cadrage",
+        "gif": "GIF animé – ses images sont reprises",
+        "frames": "Plusieurs images à la fois – elles deviennent les images de l’animation, par ordre de nom",
+        "sheet": "Une texture de cape finie ou une planche de sprites (images empilées verticalement)",
+        "studio": "Exports TRS Studio – choisis le PNG avec son .json",
+        "choose": "Choisir des fichiers",
+        "loading": "Chargement …"
+      },
+      "rules": {
+        "size": "Jusqu’à 512×256 pixels par image, jusqu’à 16 images, 5 Mo max.",
+        "review": "L’équipe vérifie chaque cape ; en attendant, toi seul peux la voir.",
+        "rights": "Uniquement tes propres images ou celles que tu as le droit d’utiliser – rien d’offensant."
+      },
+      "change": "Autres fichiers",
+      "frameCount": "{n} image | {n} images",
+      "mode": {
+        "label": "Utiliser comme",
+        "texture": "Texture de cape complète",
+        "crop": "Cadrage d’image"
+      },
+      "crop": {
+        "viewport": "Cadrage de l’image pour la cape – déplacer avec les flèches, zoomer avec + et −",
+        "zoom": "Zoom",
+        "reset": "Réinitialiser",
+        "hint": "Fais glisser pour déplacer l’image, molette ou curseur pour zoomer. Le cadre montre le dos de la cape."
+      },
+      "sheet": {
+        "label": "Images dans le fichier",
+        "hint": "Pour les planches de sprites : images empilées verticalement."
+      },
+      "scale": {
+        "label": "Résolution",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Vitesse",
+        "value": "{ms} ms par image · {fps} img/s"
+      },
+      "sampled": "{total} images – {max} choisies régulièrement sont utilisées.",
+      "preview": {
+        "texture": "Texture de la cape"
+      },
+      "sizeLabel": "Taille du fichier",
+      "size": "{size} sur 5 Mo max.",
+      "nameLabel": "Nom (facultatif)",
+      "placeholder": "p. ex. Ma cape",
+      "errors": {
+        "noImage": "Choisis au moins une image – un .json seul ne suffit pas.",
+        "mixed": "Choisis soit un GIF, soit des images – pas les deux.",
+        "sizeMismatch": "Toutes les images doivent avoir la même taille.",
+        "frameTooLarge": "Avec plusieurs images, chacune peut faire au plus 2048×2048 pixels.",
+        "readFailed": "Impossible de lire l’image.",
+        "tooLarge": "La cape est trop volumineuse ({size}, 5 Mo max.) – choisis une résolution plus basse ou moins d’images.",
+        "empty": "La cape est entièrement transparente."
+      },
+      "upload": "Envoyer",
+      "uploading": "Envoi …"
     }
   },
   "friends": {
@@ -2506,7 +2570,42 @@
       "rejectReason": "Motif : {reason}",
       "reviewed": "Vérifiée le {date}",
       "approve": "Approuver",
-      "reject": "Refuser"
+      "reject": "Refuser",
+      "dialog": {
+        "title": "Vérifier « {name} »",
+        "open": "Ouvrir pour vérifier",
+        "uploaded": "Envoyée",
+        "fileSize": "Taille du fichier",
+        "resolution": "Résolution",
+        "frames": "Images",
+        "frameTime": "{ms} ms par image",
+        "zoom": "Zoom",
+        "fit": "Ajuster",
+        "frameOf": "Image {n} sur {total}",
+        "play": "Lire",
+        "pause": "Pause",
+        "ownerStats": "{uploads} envois · {approved} approuvées · {pending} en attente · {rejected} refusées",
+        "reasonTitle": "Pourquoi la refuser ?",
+        "presetLabels": {
+          "inappropriate": "Contenu inapproprié",
+          "copyright": "Droits d’auteur / logo d’autrui",
+          "quality": "Mauvaise qualité ou cassée",
+          "format": "Pas une cape / mauvaise disposition",
+          "other": "Autre raison (à écrire)"
+        },
+        "presets": {
+          "inappropriate": "Contenu inapproprié.",
+          "copyright": "Droits d’auteur ou logo d’autrui – utilise uniquement tes propres motifs.",
+          "quality": "La texture est cassée ou de mauvaise qualité.",
+          "format": "Ça ne ressemble pas à une cape – utilise la disposition de cape."
+        },
+        "keys": "A approuver · D refuser · ←/→ parcourir · Échap fermer",
+        "prev": "Cape précédente",
+        "next": "Cape suivante",
+        "confirmDelete": "Vraiment supprimer ?",
+        "rejectNow": "Refuser maintenant",
+        "working": "Un instant …"
+      }
     },
     "codes": {
       "cape": "Cape",
