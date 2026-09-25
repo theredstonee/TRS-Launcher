@@ -46,8 +46,11 @@ public final class TrsKeys {
 	public static final KeyMapping toggleRecording =
 			new KeyMapping("key.trsclient.toggleRecording", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F10, CATEGORY);
 
+	/** Öffnet die Garderobe (standardmäßig unbelegt). */
+	public static final KeyMapping wardrobe =
+			new KeyMapping("key.trsclient.wardrobe", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
-			saveClip, toggleRecording};
+			saveClip, toggleRecording, wardrobe};
 
 	private TrsKeys() {
 	}

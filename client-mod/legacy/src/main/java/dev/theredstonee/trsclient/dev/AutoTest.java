@@ -69,6 +69,10 @@ public final class AutoTest {
 			AccountsTest.install();
 			return;
 		}
+		if ("wardrobe".equals(System.getProperty("trsclient.autotest.only"))) {
+			WardrobeTest.install();
+			return;
+		}
 		MinecraftForge.EVENT_BUS.register(new AutoTest());
 	}
 

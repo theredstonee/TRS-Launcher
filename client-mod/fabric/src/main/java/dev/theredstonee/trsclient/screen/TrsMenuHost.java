@@ -85,6 +85,16 @@ public final class TrsMenuHost implements MenuHost {
 		return AccountsScreen.available();
 	}
 
+	@Override
+	public void openWardrobe() {
+		Mc.setScreen(WardrobeScreen.create(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasWardrobe() {
+		return WardrobeScreen.available();
+	}
+
 	/** In diesen Versionen gibt es jedes Modul. */
 	@Override
 	public boolean supports(Module module) {

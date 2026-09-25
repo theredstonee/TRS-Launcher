@@ -31,6 +31,8 @@ public final class TrsKeys {
 	public static KeyMapping saveClip;
 	/** Aufnahme starten/stoppen (F10 – in keiner Vanilla-Version belegt). */
 	public static KeyMapping toggleRecording;
+	/** Öffnet die Garderobe (standardmäßig unbelegt). */
+	public static KeyMapping wardrobe;
 
 	private TrsKeys() {
 	}
@@ -54,6 +56,7 @@ public final class TrsKeys {
 		redstoneOverlay = register(new KeyMapping("key.trsclient.redstoneOverlay", KEYBOARD, Keys.code("key.keyboard.f6"), CATEGORY));
 		saveClip = register(new KeyMapping("key.trsclient.saveClip", KEYBOARD, Keys.code("key.keyboard.f9"), CATEGORY));
 		toggleRecording = register(new KeyMapping("key.trsclient.toggleRecording", KEYBOARD, Keys.code("key.keyboard.f10"), CATEGORY));
+		wardrobe = register(new KeyMapping("key.trsclient.wardrobe", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 	}
 
 	/**

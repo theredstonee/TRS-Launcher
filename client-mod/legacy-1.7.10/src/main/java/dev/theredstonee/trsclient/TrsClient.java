@@ -187,6 +187,12 @@ public final class TrsClient {
 			while (TrsKeys.menu.isPressed()) {
 				if (mc.currentScreen == null) mc.displayGuiScreen(new TrsMenuScreen(null));
 			}
+			// Garderobe (Taste standardmäßig unbelegt)
+			while (TrsKeys.wardrobe.isPressed()) {
+				if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
+					mc.displayGuiScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));
+				}
+			}
 			while (TrsKeys.redstoneOverlay.isPressed()) {
 				modules.redstoneOverlay.toggle();
 				if (mc.ingameGUI != null) {
