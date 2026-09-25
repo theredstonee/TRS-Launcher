@@ -21,6 +21,7 @@ sha2 = "0.11.0"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["fs", "sync", "macros", "rt-multi-thread", "process", "io-util", "net", "time"] }
 tracing = { version = "0.1.44", features = ["log"] }
+url = "2.5.8"
 uuid = { version = "1.26.1", features = ["v4"] }
 zip = "8.6.0"
 

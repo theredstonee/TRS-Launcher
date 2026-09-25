@@ -451,7 +451,18 @@
       "signInFirst": "Najpierw zaloguj się w sekcji „Konta”.",
       "libraryFull": "Biblioteka skinów jest pełna – najpierw usuń jakiś skin.",
       "notFound": "Ten skin nie istnieje.",
-      "invalidUuid": "To nie jest prawidłowy identyfikator gracza."
+      "invalidUuid": "To nie jest prawidłowy identyfikator gracza.",
+      "tooManyFiles": "Maksymalnie {max} plików naraz.",
+      "urlInvalid": "Wpisz prawidłowy link https.",
+      "urlNotAllowed": "Ten link jest niedozwolony – tylko publiczne adresy https.",
+      "urlUnreachable": "Link jest nieosiągalny.",
+      "urlNotImage": "Pod tym linkiem nie ma obrazu PNG.",
+      "urlFailed": "Link odpowiedział kodem HTTP {status}.",
+      "urlTooManyRedirects": "Link przekierowuje zbyt wiele razy.",
+      "playerNameInvalid": "Nazwy graczy mają 1–16 znaków: litery, cyfry lub _.",
+      "playerNotFound": "Nie ma gracza o nazwie „{name}”.",
+      "playerDefaultSkin": "{name} nosi domyślnego skina – nie ma czego importować.",
+      "importExpired": "Wybór wygasł – dodaj go ponownie."
     },
     "skinSync": {
       "accountSwitched": "Aktywne konto zostało przełączone – zmiany zostały odrzucone.",
@@ -1810,9 +1821,7 @@
     "worn": "noszona",
     "noCapes": "To konto nie ma żadnych peleryn. Pochodzą one tylko od Mojang – jak peleryna Migrator.",
     "addDialog": {
-      "namePlaceholder": "np. Zimowy skin",
-      "fileHint": "Za chwilę otworzy się okno wyboru pliku. Dozwolone są pliki PNG 64×64 (lub 64×32 dla starych skinów).",
-      "chooseFile": "Wybierz plik"
+      "namePlaceholder": "np. Zimowy skin"
     },
     "addedToast": "Dodano „{name}” do kolekcji",
     "savedToast": "Zapisano obecny skin jako „{name}”",
@@ -1837,7 +1846,65 @@
       "label": "Podgląd skina 3D",
       "failed": "Nie udało się uruchomić podglądu 3D. Twoje sterowniki graficzne prawdopodobnie nie obsługują WebGL."
     },
-    "trsCape": "Peleryna TRS"
+    "trsCape": "Peleryna TRS",
+    "import": {
+      "fromFiles": "Wybierz pliki",
+      "fromFilesHint": "Jeden lub więcej plików PNG",
+      "fromUrl": "Z linku",
+      "fromUrlHint": "Bezpośredni link do obrazu PNG",
+      "fromPlayer": "Po nazwie gracza",
+      "fromPlayerHint": "Skin, który gracz ma teraz na sobie",
+      "fromLaunchers": "Z innych launcherów",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "dropTip": "Wskazówka: pliki PNG możesz też przeciągnąć do okna.",
+      "loading": "Ładowanie …",
+      "drop": {
+        "title": "Upuść skiny tutaj",
+        "hint": "Pliki PNG, 64×64 (lub 64×32 dla starych skinów)"
+      },
+      "confirm": {
+        "title": "Dodaj skina",
+        "detected": "Model został rozpoznany automatycznie – zmień go, jeśli ręce wyglądają źle.",
+        "duplicate": "Dokładnie ten skin jest już w twojej kolekcji.",
+        "add": "Dodaj"
+      },
+      "url": {
+        "title": "Dodaj skina z linku",
+        "label": "Link do PNG",
+        "placeholder": "https://example.com/skin.png",
+        "hint": "Tylko publiczne linki https. Obraz jest sprawdzany przed zapisaniem.",
+        "load": "Wczytaj"
+      },
+      "player": {
+        "title": "Dodaj skina po nazwie gracza",
+        "label": "Nazwa gracza",
+        "placeholder": "np. Notch",
+        "hint": "Kopiuje skina, którego gracz ma teraz na sobie.",
+        "load": "Wczytaj"
+      },
+      "launchers": {
+        "title": "Importuj z innych launcherów",
+        "scanning": "Szukanie zapisanych skinów …",
+        "empty": "Nie znaleziono zapisanych skinów w innych launcherach.",
+        "noSkins": "Brak zapisanych skinów w: {names}",
+        "onlineOnly": "Lunar Client, Feather i Essential trzymają skiny tylko na koncie online – dodaj je po nazwie gracza lub z linku.",
+        "selectAll": "Zaznacz wszystko",
+        "selectNone": "Odznacz wszystko",
+        "import": "Importuj {n} skina | Importuj {n} skiny | Importuj {n} skinów",
+        "duplicate": "Już w kolekcji",
+        "count": "{n} skin | {n} skiny | {n} skinów"
+      },
+      "sources": {
+        "minecraft": "Minecraft Launcher",
+        "prism": "Prism Launcher",
+        "modrinth": "Modrinth App"
+      },
+      "toasts": {
+        "imported": "Dodano {n} skina do kolekcji | Dodano {n} skiny do kolekcji | Dodano {n} skinów do kolekcji",
+        "allDuplicates": "Te skiny są już w twojej kolekcji.",
+        "skipped": "{n} skin był już w kolekcji | {n} skiny były już w kolekcji | {n} skinów było już w kolekcji"
+      }
+    }
   },
   "validation": {
     "invalidCharacters": "Zawiera nieprawidłowe znaki",
@@ -1866,7 +1933,9 @@
     "folderRequired": "Wybierz co najmniej jeden folder",
     "invalidInput": "Nieprawidłowe dane",
     "clipBufferRange": "Długość klipu musi wynosić od {min} do {max} sekund",
-    "clipStorageRange": "Miejsce na klipy musi wynosić od {min} do {max} GB"
+    "clipStorageRange": "Miejsce na klipy musi wynosić od {min} do {max} GB",
+    "urlRequired": "Wpisz link",
+    "urlHttps": "Wpisz prawidłowy link https"
   },
   "titleBar": {
     "forward": "Dalej",

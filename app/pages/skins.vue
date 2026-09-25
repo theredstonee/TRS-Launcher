@@ -324,32 +324,18 @@ async function run(key: string, action: () => Promise<void>) {
 
 // --- Sammlung ---------------------------------------------------------------------
 
-const adding = ref(false)
-const newName = ref('')
-const newVariant = ref<SkinVariant>('classic')
-const formError = ref<string | null>(null)
+/** „+ Skin hinzufügen“ (Dateien, Drag & Drop, Link, Spielername, andere Launcher). */
+const importer = useTemplateRef<{ pickFiles: () => Promise<void> }>('importer')
 
-function startAdd() {
-  newName.value = ''
-  newVariant.value = 'classic'
-  formError.value = null
-  adding.value = true
-}
-
-async function addSkin() {
-  const parsed = skinNameSchema.safeParse(newName.value)
-  if (!parsed.success) {
-    formError.value = firstIssue(parsed.error)
-    return
-  }
-  adding.value = false
-  await run('add', async () => {
-    const added = await backend.addSkinFile(parsed.data, newVariant.value)
-    if (!added) return
+/** Neu aufgenommene Skins: Sammlung neu laden, einen einzelnen gleich anprobieren. */
+async function onImported(added: LibrarySkin[]) {
+  try {
     await loadLibrary()
-    selectLibrary(added)
-    toasts.ok(t('skins.addedToast', { name: added.name }))
-  })
+  } catch (e) {
+    toasts.error(e)
+  }
+  const only = added.length === 1 ? library.value.find((s) => s.id === added[0]!.id) : undefined
+  if (only) selectLibrary(only)
 }
 
 async function saveActive() {
@@ -432,10 +418,7 @@ function capeStyle(texture: string, width = 30) {
       <button class="btn btn-ghost" :disabled="!!busy || !profile" @click="saveActive">
         {{ busy === 'save' ? t('skins.savingCurrent') : t('skins.saveCurrent') }}
       </button>
-      <button class="btn btn-primary" :disabled="!!busy" @click="startAdd">
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        {{ t('skins.add') }}
-      </button>
+      <SkinImport ref="importer" :disabled="!!busy" @imported="onImported" />
     </PageHeader>
 
     <div v-if="loadError" role="alert" class="card mb-4 border-warn/40 px-4 py-3 text-sm text-warn">
@@ -656,7 +639,8 @@ function capeStyle(texture: string, width = 30) {
           <div v-if="!loading && !library.length" class="card mt-3 px-6 py-8 text-center">
             <h3 class="font-semibold">{{ t('skins.empty.title') }}</h3>
             <p class="mx-auto mt-1 max-w-md text-sm text-base-400">{{ t('skins.empty.text') }}</p>
-            <button class="btn btn-primary mt-4" @click="startAdd">{{ t('skins.add') }}</button>
+            <button class="btn btn-primary mt-4" :disabled="!!busy" @click="importer?.pickFiles()">{{ t('skins.import.fromFiles') }}</button>
+            <p class="mt-2 text-[11px] text-base-600">{{ t('skins.import.dropTip') }}</p>
           </div>
         </section>
 
@@ -704,39 +688,6 @@ function capeStyle(texture: string, width = 30) {
     </div>
 
     <!-- Dialoge -------------------------------------------------------------------- -->
-    <BaseDialog v-if="adding" :title="t('skins.add')" @close="adding = false">
-      <label class="label" for="skin-name">{{ t('common.labels.name') }}</label>
-      <input
-        id="skin-name"
-        v-model="newName"
-        class="field"
-        maxlength="48"
-        :placeholder="t('skins.addDialog.namePlaceholder')"
-        autofocus
-        @keydown.enter="addSkin"
-      />
-      <p class="label mt-4">{{ t('skins.model') }}</p>
-      <div class="grid grid-cols-2 gap-2">
-        <button
-          v-for="v in skinVariants"
-          :key="v"
-          class="rounded-lg border px-3 py-2.5 text-left transition-colors"
-          :class="newVariant === v ? 'border-redstone-500 bg-redstone-900/40' : 'border-base-700 hover:border-base-600'"
-          :aria-pressed="newVariant === v"
-          @click="newVariant = v"
-        >
-          <span class="block text-sm font-semibold">{{ t(`skins.variants.${v}`) }}</span>
-          <span class="block text-xs text-base-400">{{ t(`skins.variantHints.${v}`) }}</span>
-        </button>
-      </div>
-      <p class="mt-4 text-xs text-base-400">{{ t('skins.addDialog.fileHint') }}</p>
-      <p v-if="formError" role="alert" class="mt-2 text-xs text-redstone-300">{{ formError }}</p>
-      <template #actions>
-        <button class="btn btn-ghost" @click="adding = false">{{ t('common.actions.cancel') }}</button>
-        <button class="btn btn-primary" @click="addSkin">{{ t('skins.addDialog.chooseFile') }}</button>
-      </template>
-    </BaseDialog>
-
     <BaseDialog v-if="toRename" :title="t('skins.renameDialog.title')" @close="toRename = null">
       <label class="label" for="skin-rename">{{ t('common.labels.name') }}</label>
       <input

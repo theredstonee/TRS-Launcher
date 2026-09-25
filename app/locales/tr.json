@@ -451,7 +451,18 @@
       "signInFirst": "Lütfen önce “Hesaplar” bölümünden giriş yap.",
       "libraryFull": "Skin kütüphanesi dolu – önce bir skin sil.",
       "notFound": "Bu skin mevcut değil.",
-      "invalidUuid": "Bu geçerli bir oyuncu kimliği değil."
+      "invalidUuid": "Bu geçerli bir oyuncu kimliği değil.",
+      "tooManyFiles": "Aynı anda en fazla {max} dosya.",
+      "urlInvalid": "Lütfen geçerli bir https bağlantısı gir.",
+      "urlNotAllowed": "Bu bağlantıya izin verilmiyor – yalnızca herkese açık https adresleri.",
+      "urlUnreachable": "Bağlantıya ulaşılamıyor.",
+      "urlNotImage": "Bu bağlantıda PNG resmi yok.",
+      "urlFailed": "Bağlantı HTTP {status} ile yanıt verdi.",
+      "urlTooManyRedirects": "Bağlantı çok fazla yönlendiriyor.",
+      "playerNameInvalid": "Oyuncu adları 1–16 karakterdir: harf, rakam veya _.",
+      "playerNotFound": "“{name}” adında bir oyuncu yok.",
+      "playerDefaultSkin": "{name} varsayılan bir skin giyiyor – içe aktarılacak bir şey yok.",
+      "importExpired": "Seçimin süresi doldu – lütfen yeniden ekle."
     },
     "skinSync": {
       "accountSwitched": "Etkin hesap değiştirildi – değişiklikler atıldı.",
@@ -1810,9 +1821,7 @@
     "worn": "giyiliyor",
     "noCapes": "Bu hesabın hiç pelerini yok. Pelerinler yalnızca Mojang'dan gelir – Migrator pelerini gibi.",
     "addDialog": {
-      "namePlaceholder": "ör. Kış skini",
-      "fileHint": "Sonra dosya penceresi açılır. 64×64 (eski skinler için 64×32) PNG dosyalarına izin verilir.",
-      "chooseFile": "Dosya seç"
+      "namePlaceholder": "ör. Kış skini"
     },
     "addedToast": "“{name}” koleksiyonuna eklendi",
     "savedToast": "Mevcut skin kaydedildi: “{name}”",
@@ -1837,7 +1846,65 @@
       "label": "3D skin önizlemesi",
       "failed": "3D önizleme başlatılamadı. Ekran kartı sürücülerin muhtemelen WebGL'i desteklemiyor."
     },
-    "trsCape": "TRS pelerini"
+    "trsCape": "TRS pelerini",
+    "import": {
+      "fromFiles": "Dosya seç",
+      "fromFilesHint": "Bir veya daha fazla PNG dosyası",
+      "fromUrl": "Bağlantıyla",
+      "fromUrlHint": "PNG resmine doğrudan bağlantı",
+      "fromPlayer": "Oyuncu adıyla",
+      "fromPlayerHint": "Bir oyuncunun şu an giydiği skin",
+      "fromLaunchers": "Diğer başlatıcılardan",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "dropTip": "İpucu: PNG dosyalarını pencereye de sürükleyebilirsin.",
+      "loading": "Yükleniyor …",
+      "drop": {
+        "title": "Skinleri buraya bırak",
+        "hint": "PNG dosyaları, 64×64 (eski skinler için 64×32)"
+      },
+      "confirm": {
+        "title": "Skin ekle",
+        "detected": "Model otomatik algılandı – kollar yanlış görünüyorsa değiştir.",
+        "duplicate": "Bu skin zaten koleksiyonunda.",
+        "add": "Ekle"
+      },
+      "url": {
+        "title": "Bağlantıyla skin ekle",
+        "label": "PNG bağlantısı",
+        "placeholder": "https://example.com/skin.png",
+        "hint": "Yalnızca herkese açık https bağlantıları. Resim kaydedilmeden önce kontrol edilir.",
+        "load": "Yükle"
+      },
+      "player": {
+        "title": "Oyuncu adıyla skin ekle",
+        "label": "Oyuncu adı",
+        "placeholder": "örn. Notch",
+        "hint": "Oyuncunun şu an giydiği skini kopyalar.",
+        "load": "Yükle"
+      },
+      "launchers": {
+        "title": "Diğer başlatıcılardan içe aktar",
+        "scanning": "Kayıtlı skinler aranıyor …",
+        "empty": "Diğer başlatıcılarda kayıtlı skin bulunamadı.",
+        "noSkins": "Kayıtlı skin yok: {names}",
+        "onlineOnly": "Lunar Client, Feather ve Essential skinleri yalnızca çevrim içi hesaplarında tutar – onları oyuncu adı veya bağlantıyla ekle.",
+        "selectAll": "Tümünü seç",
+        "selectNone": "Hiçbirini seçme",
+        "import": "{n} skini içe aktar | {n} skini içe aktar",
+        "duplicate": "Zaten koleksiyonda",
+        "count": "{n} skin | {n} skin"
+      },
+      "sources": {
+        "minecraft": "Minecraft Launcher",
+        "prism": "Prism Launcher",
+        "modrinth": "Modrinth App"
+      },
+      "toasts": {
+        "imported": "{n} skin koleksiyonuna eklendi | {n} skin koleksiyonuna eklendi",
+        "allDuplicates": "Bu skinler zaten koleksiyonunda.",
+        "skipped": "{n} skin zaten koleksiyondaydı | {n} skin zaten koleksiyondaydı"
+      }
+    }
   },
   "validation": {
     "invalidCharacters": "Geçersiz karakterler içeriyor",
@@ -1866,7 +1933,9 @@
     "folderRequired": "Lütfen en az bir klasör seç",
     "invalidInput": "Geçersiz giriş",
     "clipBufferRange": "Klip uzunluğu {min} ile {max} saniye arasında olmalı",
-    "clipStorageRange": "Klip alanı {min} ile {max} GB arasında olmalı"
+    "clipStorageRange": "Klip alanı {min} ile {max} GB arasında olmalı",
+    "urlRequired": "Lütfen bir bağlantı gir",
+    "urlHttps": "Lütfen geçerli bir https bağlantısı gir"
   },
   "titleBar": {
     "forward": "İleri",

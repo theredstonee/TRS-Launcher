@@ -5480,6 +5480,7 @@ dependencies = [
  "thiserror 2.0.20",
  "tokio",
  "tracing",
+ "url",
  "uuid",
  "wasapi",
  "windows 0.62.2",

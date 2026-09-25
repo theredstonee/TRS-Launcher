@@ -451,7 +451,18 @@
       "signInFirst": "Please sign in under “Accounts” first.",
       "libraryFull": "The skin library is full – delete a skin first.",
       "notFound": "This skin doesn't exist.",
-      "invalidUuid": "That is not a valid player ID."
+      "invalidUuid": "That is not a valid player ID.",
+      "tooManyFiles": "No more than {max} files at once.",
+      "urlInvalid": "Please enter a valid https link.",
+      "urlNotAllowed": "This link isn’t allowed – only public https addresses.",
+      "urlUnreachable": "The link can’t be reached.",
+      "urlNotImage": "There’s no PNG image at this link.",
+      "urlFailed": "The link answered with HTTP {status}.",
+      "urlTooManyRedirects": "The link redirects too often.",
+      "playerNameInvalid": "Player names have 1–16 characters: letters, digits or _.",
+      "playerNotFound": "There’s no player called “{name}”.",
+      "playerDefaultSkin": "{name} is wearing a default skin – there’s nothing to import.",
+      "importExpired": "The selection has expired – please add it again."
     },
     "skinSync": {
       "accountSwitched": "The active account was switched – the changes were discarded.",
@@ -1810,9 +1821,7 @@
     "worn": "worn",
     "noCapes": "This account doesn't have any capes. They only come from Mojang – like the Migrator cape.",
     "addDialog": {
-      "namePlaceholder": "e.g. Winter skin",
-      "fileHint": "The file dialog opens next. PNG files with 64×64 (or 64×32 for old skins) are allowed.",
-      "chooseFile": "Choose file"
+      "namePlaceholder": "e.g. Winter skin"
     },
     "addedToast": "Added “{name}” to your collection",
     "savedToast": "Current skin saved as “{name}”",
@@ -1837,7 +1846,65 @@
       "label": "3D skin preview",
       "failed": "The 3D preview couldn't be started. Your graphics drivers probably don't support WebGL."
     },
-    "trsCape": "TRS cape"
+    "trsCape": "TRS cape",
+    "import": {
+      "fromFiles": "Choose files",
+      "fromFilesHint": "One or more PNG files",
+      "fromUrl": "By link",
+      "fromUrlHint": "Direct link to a PNG image",
+      "fromPlayer": "By player name",
+      "fromPlayerHint": "The skin a player is wearing right now",
+      "fromLaunchers": "From other launchers",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "dropTip": "Tip: you can also drag PNG files into the window.",
+      "loading": "Loading …",
+      "drop": {
+        "title": "Drop skins here",
+        "hint": "PNG files, 64×64 (or 64×32 for old skins)"
+      },
+      "confirm": {
+        "title": "Add skin",
+        "detected": "The model was detected automatically – switch it if the arms look wrong.",
+        "duplicate": "This exact skin is already in your collection.",
+        "add": "Add"
+      },
+      "url": {
+        "title": "Add skin by link",
+        "label": "Link to the PNG",
+        "placeholder": "https://example.com/skin.png",
+        "hint": "Only public https links. The image is checked before anything is saved.",
+        "load": "Load"
+      },
+      "player": {
+        "title": "Add skin by player name",
+        "label": "Player name",
+        "placeholder": "e.g. Notch",
+        "hint": "Copies the skin the player is wearing right now.",
+        "load": "Load"
+      },
+      "launchers": {
+        "title": "Import from other launchers",
+        "scanning": "Searching for saved skins …",
+        "empty": "No saved skins found in other launchers.",
+        "noSkins": "No saved skins in: {names}",
+        "onlineOnly": "Lunar Client, Feather and Essential only keep skins in their online account – add those by player name or link instead.",
+        "selectAll": "Select all",
+        "selectNone": "Select none",
+        "import": "Import {n} skin | Import {n} skins",
+        "duplicate": "Already in collection",
+        "count": "{n} skin | {n} skins"
+      },
+      "sources": {
+        "minecraft": "Minecraft Launcher",
+        "prism": "Prism Launcher",
+        "modrinth": "Modrinth App"
+      },
+      "toasts": {
+        "imported": "Added {n} skin to your collection | Added {n} skins to your collection",
+        "allDuplicates": "These skins are already in your collection.",
+        "skipped": "{n} skin was already in your collection | {n} skins were already in your collection"
+      }
+    }
   },
   "validation": {
     "invalidCharacters": "Contains invalid characters",
@@ -1866,7 +1933,9 @@
     "folderRequired": "Please select at least one folder",
     "invalidInput": "Invalid input",
     "clipBufferRange": "Clip length must be between {min} and {max} seconds",
-    "clipStorageRange": "Clip storage must be between {min} and {max} GB"
+    "clipStorageRange": "Clip storage must be between {min} and {max} GB",
+    "urlRequired": "Please enter a link",
+    "urlHttps": "Please enter a valid https link"
   },
   "titleBar": {
     "forward": "Forward",

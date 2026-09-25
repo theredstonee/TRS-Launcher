@@ -224,6 +224,22 @@ export const skinNameSchema = z
 
 export const skinVariants = ['classic', 'slim'] as const
 
+/** Link zu einem Skin-PNG: nur https, ohne Zugangsdaten (Kern prüft zusätzlich Host/IP). */
+export const skinUrlSchema = z
+  .string()
+  .trim()
+  .min(1, msg('validation.urlRequired'))
+  .max(2048, msg('validation.maxChars', { max: 2048 }))
+  .regex(noControl, msg('validation.invalidCharacters'))
+  .refine((value) => {
+    try {
+      const url = new URL(value)
+      return url.protocol === 'https:' && !url.username && !url.password && !!url.hostname
+    } catch {
+      return false
+    }
+  }, msg('validation.urlHttps'))
+
 /** Spiegelt `validate_options` im Kern (modpack_export.rs). */
 export const exportOptionsSchema = z.object({
   name: z.string().trim().min(1, msg('validation.nameRequired')).max(64, msg('validation.maxChars', { max: 64 })),

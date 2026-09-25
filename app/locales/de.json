@@ -451,7 +451,18 @@
       "signInFirst": "Bitte melde dich zuerst unter „Accounts“ an.",
       "libraryFull": "Die Skin-Bibliothek ist voll – bitte erst einen Skin löschen.",
       "notFound": "Diesen Skin gibt es nicht.",
-      "invalidUuid": "Das ist keine gültige Spieler-ID."
+      "invalidUuid": "Das ist keine gültige Spieler-ID.",
+      "tooManyFiles": "Höchstens {max} Dateien auf einmal.",
+      "urlInvalid": "Bitte einen gültigen https-Link eingeben.",
+      "urlNotAllowed": "Dieser Link ist nicht erlaubt – nur öffentliche https-Adressen.",
+      "urlUnreachable": "Der Link ist nicht erreichbar.",
+      "urlNotImage": "Unter diesem Link liegt kein PNG-Bild.",
+      "urlFailed": "Der Link hat mit HTTP {status} geantwortet.",
+      "urlTooManyRedirects": "Der Link leitet zu oft weiter.",
+      "playerNameInvalid": "Spielernamen haben 1–16 Zeichen: Buchstaben, Ziffern oder _.",
+      "playerNotFound": "Es gibt keinen Spieler namens „{name}“.",
+      "playerDefaultSkin": "{name} trägt einen Standard-Skin – da gibt es nichts zu übernehmen.",
+      "importExpired": "Die Auswahl ist abgelaufen – bitte erneut hinzufügen."
     },
     "skinSync": {
       "accountSwitched": "Das aktive Konto wurde gewechselt – die Änderungen wurden verworfen.",
@@ -1810,9 +1821,7 @@
     "worn": "getragen",
     "noCapes": "Für dieses Konto gibt es keine Umhänge. Die gibt es nur von Mojang – etwa den Migrator-Umhang.",
     "addDialog": {
-      "namePlaceholder": "z. B. Winter-Skin",
-      "fileHint": "Danach öffnet sich der Dateidialog. Erlaubt sind PNG-Dateien mit 64×64 (oder 64×32 für alte Skins).",
-      "chooseFile": "Datei wählen"
+      "namePlaceholder": "z. B. Winter-Skin"
     },
     "addedToast": "„{name}“ zur Sammlung hinzugefügt",
     "savedToast": "Aktueller Skin als „{name}“ gesichert",
@@ -1837,7 +1846,65 @@
       "label": "3D-Vorschau des Skins",
       "failed": "Die 3D-Vorschau konnte nicht gestartet werden. Deine Grafiktreiber unterstützen vermutlich kein WebGL."
     },
-    "trsCape": "TRS-Umhang"
+    "trsCape": "TRS-Umhang",
+    "import": {
+      "fromFiles": "Dateien wählen",
+      "fromFilesHint": "Eine oder mehrere PNG-Dateien",
+      "fromUrl": "Per Link",
+      "fromUrlHint": "Direkter Link zu einem PNG-Bild",
+      "fromPlayer": "Per Spielername",
+      "fromPlayerHint": "Der Skin, den ein Spieler gerade trägt",
+      "fromLaunchers": "Aus anderen Launchern",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "dropTip": "Tipp: PNG-Dateien kannst du auch ins Fenster ziehen.",
+      "loading": "Lädt …",
+      "drop": {
+        "title": "Skins hier ablegen",
+        "hint": "PNG-Dateien, 64×64 (oder 64×32 für alte Skins)"
+      },
+      "confirm": {
+        "title": "Skin hinzufügen",
+        "detected": "Das Modell wurde automatisch erkannt – umschalten, falls die Arme falsch aussehen.",
+        "duplicate": "Genau dieser Skin liegt schon in deiner Sammlung.",
+        "add": "Hinzufügen"
+      },
+      "url": {
+        "title": "Skin per Link hinzufügen",
+        "label": "Link zum PNG",
+        "placeholder": "https://example.com/skin.png",
+        "hint": "Nur öffentliche https-Links. Das Bild wird geprüft, bevor etwas gespeichert wird.",
+        "load": "Laden"
+      },
+      "player": {
+        "title": "Skin per Spielername hinzufügen",
+        "label": "Spielername",
+        "placeholder": "z. B. Notch",
+        "hint": "Übernimmt den Skin, den der Spieler gerade trägt.",
+        "load": "Laden"
+      },
+      "launchers": {
+        "title": "Aus anderen Launchern importieren",
+        "scanning": "Suche gespeicherte Skins …",
+        "empty": "In anderen Launchern wurden keine gespeicherten Skins gefunden.",
+        "noSkins": "Keine gespeicherten Skins in: {names}",
+        "onlineOnly": "Lunar Client, Feather und Essential speichern Skins nur in ihrem Online-Konto – die holst du per Spielername oder Link.",
+        "selectAll": "Alle auswählen",
+        "selectNone": "Keine auswählen",
+        "import": "{n} Skin importieren | {n} Skins importieren",
+        "duplicate": "Schon in der Sammlung",
+        "count": "{n} Skin | {n} Skins"
+      },
+      "sources": {
+        "minecraft": "Minecraft Launcher",
+        "prism": "Prism Launcher",
+        "modrinth": "Modrinth App"
+      },
+      "toasts": {
+        "imported": "{n} Skin zur Sammlung hinzugefügt | {n} Skins zur Sammlung hinzugefügt",
+        "allDuplicates": "Diese Skins liegen schon in deiner Sammlung.",
+        "skipped": "{n} Skin lag schon in der Sammlung | {n} Skins lagen schon in der Sammlung"
+      }
+    }
   },
   "validation": {
     "invalidCharacters": "Enthält ungültige Zeichen",
@@ -1866,7 +1933,9 @@
     "folderRequired": "Bitte mindestens einen Ordner auswählen",
     "invalidInput": "Ungültige Eingabe",
     "clipBufferRange": "Die Clip-Länge muss zwischen {min} und {max} Sekunden liegen",
-    "clipStorageRange": "Der Speicherplatz für Clips muss zwischen {min} und {max} GB liegen"
+    "clipStorageRange": "Der Speicherplatz für Clips muss zwischen {min} und {max} GB liegen",
+    "urlRequired": "Bitte einen Link eingeben",
+    "urlHttps": "Bitte einen gültigen https-Link eingeben"
   },
   "titleBar": {
     "forward": "Vorwärts",

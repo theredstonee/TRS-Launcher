@@ -13,6 +13,8 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 | Microsoft / Xbox Live / servicios de Minecraft | Al iniciar sesión y al iniciar el juego | El inicio de sesión OAuth estándar; tu token de acceso de Minecraft al iniciar el juego |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Al instalar o iniciar una versión | Solicitudes de descarga de los archivos del juego |
 | Servidor de sesiones de Mojang (`sessionserver.mojang.com`) | Al iniciar sesión en los servicios TRS (solo si lo has aceptado) | La misma solicitud «join» que usa el inicio de sesión en un servidor de Minecraft: tu token de acceso, tu UUID y un desafío de un solo uso |
+| Servicios de perfil de Mojang (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Al importar un skin por nombre de jugador y al mostrar caras de jugadores (amigos, búsqueda de administración) | El nombre de jugador o UUID buscado; la descarga de esa imagen de skin |
+| El sitio web de un enlace que introduces | Solo al importar un skin «por enlace» | Una solicitud de descarga normal de esa imagen (solo HTTPS, sin cookies ni cuentas) |
 | Servicios TRS (`trs-launcher.theredstonee.de`, antes también `api.theredstonee.de`) | Solo si lo has aceptado, ver [más abajo](#servicios-trs) | Tu UUID, tu nombre, la capa que eliges, tus amigos y tu estado en línea |
 | Servidores maven/meta de Fabric, Quilt, Forge y NeoForge | Al instalar un cargador de mods | Solicitudes de descarga |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Al explorar, instalar o actualizar contenido | Búsquedas y los hashes de los mods instalados (para buscar actualizaciones) |
