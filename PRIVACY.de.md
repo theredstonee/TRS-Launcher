@@ -14,6 +14,8 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Microsoft / Xbox Live / Minecraft-Dienste | Anmelden, Spiel starten | Übliche OAuth-Anmeldung; dein Minecraft-Zugriffstoken beim Spielstart |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Eine Version installieren oder starten | Download-Anfragen für Spieldateien |
 | Mojang-Sitzungsserver (`sessionserver.mojang.com`) | Anmeldung bei den TRS-Diensten (nur nach deiner Zustimmung) | Dieselbe „join“-Anfrage wie bei der Anmeldung auf einem Minecraft-Server: dein Zugriffstoken, deine UUID und eine einmalige Challenge |
+| Mojang-Profildienste (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Skin per Spielername importieren, Spielergesichter anzeigen (Freunde, Admin-Suche) | Der gesuchte Spielername bzw. die UUID; der Download des Skin-Bildes |
+| Die Website eines Links, den du eingibst | Nur wenn du einen Skin „per Link“ importierst | Eine normale Download-Anfrage für dieses Bild (nur HTTPS, ohne Cookies oder Konten) |
 | TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde und Online-Status |
 | Maven-/Meta-Server von Fabric, Quilt, Forge, NeoForge | Einen Modloader installieren | Download-Anfragen |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Inhalte durchsuchen, installieren oder aktualisieren | Suchanfragen, Datei-Hashes installierter Mods (für die Update-Prüfung) |

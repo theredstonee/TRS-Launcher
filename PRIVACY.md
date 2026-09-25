@@ -13,6 +13,8 @@ The launcher only connects to other services when that is needed for something y
 | Microsoft / Xbox Live / Minecraft services | Signing in, starting the game | Standard OAuth sign-in; your Minecraft access token when the game starts |
 | Mojang (`piston-meta`, `libraries`, `resources`) | Installing or starting a version | Download requests for game files |
 | Mojang session server (`sessionserver.mojang.com`) | Signing in to the TRS services (only after you agreed) | The same "join" request a Minecraft server login uses: your access token, UUID and a one-time challenge |
+| Mojang profile services (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Importing a skin by player name, showing player faces (friends, admin search) | The player name or UUID being looked up; a download of that skin image |
+| The website of a link you enter | Only when you import a skin "by link" | A normal download request for that image (only HTTPS, no cookies or accounts) |
 | TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status |
 | Fabric, Quilt, Forge, NeoForge maven/meta servers | Installing a mod loader | Download requests |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Browsing, installing or updating content | Search queries, file hashes of installed mods (for update checks) |
