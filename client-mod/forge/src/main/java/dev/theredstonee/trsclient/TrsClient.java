@@ -101,6 +101,9 @@ public final class TrsClient {
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.OnlineHooks.init(Platform.configDir(), modules, Platform.modVersion(MOD_ID),
 				Platform.modVersion("minecraft"), "forge", message -> LOGGER.info(message));
+		// Konten: Wechsel ohne Neustart (mit TRS Launcher dessen Konten, sonst eigene Anmeldung je Instanz).
+		dev.theredstonee.trsclient.core.account.AccountManager.init(new dev.theredstonee.trsclient.online.SessionSwap(
+				Platform.configDir(), "TRS-Client/" + Platform.modVersion(MOD_ID) + " (Minecraft " + Platform.modVersion("minecraft") + "; forge)", message -> LOGGER.info(message)));
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, dev.theredstonee.trsclient.compat.Platform::isModLoaded,
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FORGE, Platform.modVersion("minecraft"), message -> LOGGER.info(message), true);

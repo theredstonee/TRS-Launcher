@@ -65,6 +65,10 @@ public final class AutoTest {
 	public static void installIfRequested() {
 		if (!Boolean.getBoolean("trsclient.autotest")) return;
 		TrsClient.LOGGER.info("[Autotest] aktiv");
+		if ("accounts".equals(System.getProperty("trsclient.autotest.only"))) {
+			AccountsTest.install();
+			return;
+		}
 		MinecraftForge.EVENT_BUS.register(new AutoTest());
 	}
 

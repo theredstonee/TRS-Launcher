@@ -127,13 +127,19 @@ impl AccountStore {
         self.write(&file).await
     }
 
-    /// Login im Browser (Auth-Code + PKCE über Loopback).
+    /// Login im Browser (Auth-Code + PKCE über Loopback); der neue Account wird aktiv.
     pub async fn login_browser(&self, open_url: &(dyn Fn(&str) + Sync)) -> Result<Account> {
+        self.login_browser_as(open_url, true).await
+    }
+
+    /// Wie [`Self::login_browser`]; `make_active = false` lässt den aktiven Account
+    /// des Launchers unverändert (Konto aus dem Spiel hinzugefügt).
+    pub async fn login_browser_as(&self, open_url: &(dyn Fn(&str) + Sync), make_active: bool) -> Result<Account> {
         let cancel = self.begin_login().await?;
         let result = tokio::select! {
             r = async {
                 let tokens = microsoft::browser_login(&self.http, open_url).await?;
-                self.finish_login(tokens).await
+                self.finish_login(tokens, make_active).await
             } => r,
             () = cancel.notified() => Err(Error::Cancelled),
         };
@@ -149,7 +155,7 @@ impl AccountStore {
                 let code = microsoft::device_code_start(&self.http).await?;
                 on_code(&code);
                 let tokens = microsoft::device_code_poll(&self.http, &code).await?;
-                self.finish_login(tokens).await
+                self.finish_login(tokens, true).await
             } => r,
             () = cancel.notified() => Err(Error::Cancelled),
         };
@@ -177,19 +183,23 @@ impl AccountStore {
         *self.login.lock().await = None;
     }
 
-    async fn finish_login(&self, tokens: MsTokens) -> Result<Account> {
+    async fn finish_login(&self, tokens: MsTokens, make_active: bool) -> Result<Account> {
         let session = microsoft::minecraft_login(&self.http, &tokens.access_token).await?;
-        let stored = self.upsert(&tokens, &session, true).await?;
-        Ok(Account {
-            id: stored.id,
-            name: stored.name,
-            skin_url: stored.skin_url,
-            active: true,
-            added_at: stored.added_at,
-        })
+        let (stored, active) = self.upsert_as(&tokens, &session, make_active).await?;
+        Ok(Account { id: stored.id, name: stored.name, skin_url: stored.skin_url, active, added_at: stored.added_at })
     }
 
     async fn upsert(&self, tokens: &MsTokens, session: &MinecraftSession, make_active: bool) -> Result<StoredAccount> {
+        Ok(self.upsert_as(tokens, session, make_active).await?.0)
+    }
+
+    /// Speichert den Account; liefert ihn und ob er danach der aktive ist.
+    async fn upsert_as(
+        &self,
+        tokens: &MsTokens,
+        session: &MinecraftSession,
+        make_active: bool,
+    ) -> Result<(StoredAccount, bool)> {
         let _guard = self.file_lock.lock().await;
         let mut file = self.read().await?;
         let added_at =
@@ -210,8 +220,9 @@ impl AccountStore {
         if make_active || file.active.is_none() {
             file.active = Some(stored.id.clone());
         }
+        let active = file.active.as_deref() == Some(stored.id.as_str());
         self.write(&file).await?;
-        Ok(stored)
+        Ok((stored, active))
     }
 
     /// Spielsitzung für den aktiven Account; erneuert abgelaufene Tokens.

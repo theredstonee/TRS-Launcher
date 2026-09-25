@@ -70,6 +70,16 @@ public final class TrsMenuHost implements MenuHost {
 		return true;
 	}
 
+	@Override
+	public void openAccounts() {
+		Mc.setScreen(AccountsScreen.create(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasAccounts() {
+		return AccountsScreen.available();
+	}
+
 	/** Ohne Mixin (Forge 1.14.4) fehlen einige Module – die bleiben aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {

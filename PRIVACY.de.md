@@ -28,6 +28,21 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 Account-Tokens werden nur auf deinem Computer gespeichert, verschlüsselt mit Windows DPAPI. Beim Deinstallieren wird das
 Programm entfernt; deine Daten in `%APPDATA%\TRS-Launcher` kannst du jederzeit löschen.
 
+## Kontowechsel im Spiel (TRS Client)
+
+- **Spiel über den TRS Launcher gestartet:** Der TRS Client kann deine Launcher-Konten anzeigen und ohne Neustart
+  wechseln. Wählst du ein Konto, gibt der Launcher dem Spiel ein frisches Minecraft-Zugriffstoken – nur über eine lokale
+  Verbindung auf deinem Computer (`127.0.0.1`), verschlüsselt und nur an den Spielprozess, den er selbst gestartet hat.
+  Der Schlüssel dafür geht beim Start im Speicher an das Spiel und landet nie auf der Festplatte. Dabei verlässt nichts
+  deinen PC. „Konto hinzufügen“ im Spiel öffnet die normale Microsoft-Anmeldung des Launchers im Browser.
+- **Spiel ohne TRS Launcher gestartet:** Im Spiel hinzugefügte Konten melden sich direkt bei Microsoft, Xbox Live und den
+  Minecraft-Diensten an (mit der eigenen Anmelde-App des TRS Launchers). Gespeichert wird nur das Refresh-Token,
+  verschlüsselt (Windows DPAPI, sonst AES mit einer Schlüsseldatei in deinem Benutzerordner), in
+  `config/trsclient/accounts.json` dieses Spielordners. Zugriffstokens bleiben im Arbeitsspeicher. Entfernst du ein
+  Konto im Spiel, wird es gelöscht.
+- Für die kleinen Gesichter in der Liste lädt das Spiel den Skin von `textures.minecraft.net` und bei Bedarf das
+  öffentliche Profil von `sessionserver.mojang.com`.
+
 ## Discord
 
 Läuft die Discord-App auf deinem Computer, zeigt der Launcher einen Status auf deinem Discord-Profil („Spielt TRS

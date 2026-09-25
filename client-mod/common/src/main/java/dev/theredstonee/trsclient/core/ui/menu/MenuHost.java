@@ -31,6 +31,18 @@ public interface MenuHost {
 	boolean hasPacks();
 
 	/**
+	 * Kontobildschirm öffnen (Kontowechsel ohne Neustart, siehe
+	 * {@link dev.theredstonee.trsclient.core.ui.account.AccountsUi}). Nur wenn {@link #hasAccounts()}.
+	 */
+	default void openAccounts() {
+	}
+
+	/** Gibt es in dieser Version den Kontobildschirm? */
+	default boolean hasAccounts() {
+		return false;
+	}
+
+	/**
 	 * Gibt es das Modul in dieser Minecraft-Version? Alte Versionen lassen einzelne Module aus
 	 * (z. B. Treffer-Farbe in 1.7.10) – die tauchen dann gar nicht erst im Menü auf.
 	 */

@@ -97,6 +97,13 @@ public final class TrsTitleScreen extends TrsUiScreen {
 		}
 
 		@Override
+		public boolean openAccounts() {
+			if (!AccountsScreen.available()) return false;
+			Mc.setScreen(AccountsScreen.create(screen));
+			return true;
+		}
+
+		@Override
 		public boolean hasMods() {
 			return modMenu;
 		}

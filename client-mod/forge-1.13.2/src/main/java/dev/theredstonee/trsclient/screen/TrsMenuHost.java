@@ -66,6 +66,17 @@ public final class TrsMenuHost implements MenuHost {
 	}
 
 	@Override
+	public void openAccounts() {
+		// closeScreen() eines Hosts zeigt dessen „parent“ – hier also den Kontobildschirm (zurück führt ins Menü).
+		new TrsMenuHost(AccountsScreen.create(new TrsMenuScreen(parent))).closeScreen();
+	}
+
+	@Override
+	public boolean hasAccounts() {
+		return AccountsScreen.available();
+	}
+
+	@Override
 	public boolean supports(Module module) {
 		return TrsClient.supported(module);
 	}

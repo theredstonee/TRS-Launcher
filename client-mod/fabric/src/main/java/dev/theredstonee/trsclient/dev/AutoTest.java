@@ -84,6 +84,10 @@ public final class AutoTest {
 	public static void installIfRequested() {
 		if (!Boolean.getBoolean("trsclient.autotest")) return;
 		TrsClient.LOGGER.info("[Autotest] aktiv");
+		if ("accounts".equals(System.getProperty("trsclient.autotest.only"))) {
+			AccountsTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}
@@ -736,7 +740,7 @@ public final class AutoTest {
 	}
 
 
-	private static void shot(Minecraft mc, String name) {
+	static void shot(Minecraft mc, String name) {
 		// run/screenshots/trsclient-<minecraft>-<name>.png
 		Screenshot.grab(mc.gameDirectory, name.replace("trsclient-", "trsclient-" + MC_VERSION + "-") + ".png",
 				//? if <1.17.1

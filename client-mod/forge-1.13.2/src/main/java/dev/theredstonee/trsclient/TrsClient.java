@@ -55,6 +55,8 @@ import java.util.Set;
  * </ul>
  */
 public final class TrsClient {
+	/** Kontowechsel (Spiel-Thread über den Client-Tick). */
+	static dev.theredstonee.trsclient.core.account.LegacySessionSwap accountSwap;
 	public static final String MOD_ID = "trsclient";
 	public static final Logger LOGGER = LogManager.getLogger("TRS Client");
 	/** Gamma für Fullbright (Vanilla-Maximum ist 1.0). */
@@ -126,6 +128,13 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(FMLPaths.CONFIGDIR.get());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(FMLPaths.CONFIGDIR.get());
 		dev.theredstonee.trsclient.core.clips.Clips.init(FMLPaths.CONFIGDIR.get());
+		// Konten: Wechsel ohne Neustart (mit TRS Launcher dessen Konten, sonst eigene Anmeldung je Instanz).
+		accountSwap = new dev.theredstonee.trsclient.core.account.LegacySessionSwap(() -> Minecraft.getInstance(),
+				net.minecraft.util.Session.class, () -> {
+					net.minecraft.util.Session s = Minecraft.getInstance().getSession();
+					return s == null ? null : new dev.theredstonee.trsclient.core.account.SessionData(s.getPlayerID(), s.getUsername(), s.getToken(), null);
+				}, () -> Minecraft.getInstance().world != null, FMLPaths.CONFIGDIR.get(), "TRS-Client/" + client.version + " (Minecraft 1.13.2; forge)", message -> LOGGER.info(message));
+		dev.theredstonee.trsclient.core.account.AccountManager.init(accountSwap);
 		client.config = new ConfigStore(FMLPaths.CONFIGDIR.get().resolve("trsclient.json"));
 		ConfigStore.Status status = client.config.load(client.modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -158,6 +167,7 @@ public final class TrsClient {
 	@SubscribeEvent
 	public void onClientTick(TickEvent.ClientTickEvent event) {
 		Minecraft mc = Minecraft.getInstance();
+		if (accountSwap != null) accountSwap.drain();
 		if (event.phase == TickEvent.Phase.START) {
 			// Vor der Tick-Verarbeitung (und vor dem Senden des Hotbar-Slots an den Server).
 			checkZoomScroll(mc);

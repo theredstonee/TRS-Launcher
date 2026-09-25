@@ -67,6 +67,17 @@ public final class TrsMenuHost implements MenuHost {
 		return true;
 	}
 
+	@Override
+	public void openAccounts() {
+		// closeScreen() eines Hosts zeigt dessen „parent“ – hier also den Kontobildschirm (zurück führt ins Menü).
+		new TrsMenuHost(AccountsScreen.create(new TrsMenuScreen(parent))).closeScreen();
+	}
+
+	@Override
+	public boolean hasAccounts() {
+		return AccountsScreen.available();
+	}
+
 	/** Was unter Legacy-Forge nicht umsetzbar ist (Treffer-Farbe, niedriges Feuer), bleibt aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {

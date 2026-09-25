@@ -75,6 +75,16 @@ public final class TrsMenuHost implements MenuHost {
 		return true;
 	}
 
+	@Override
+	public void openAccounts() {
+		Mc.setScreen(AccountsScreen.create(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasAccounts() {
+		return AccountsScreen.available();
+	}
+
 	/** In diesen Versionen gibt es jedes Modul. */
 	@Override
 	public boolean supports(Module module) {

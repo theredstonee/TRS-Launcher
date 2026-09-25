@@ -7,7 +7,7 @@
 //! - Ton: WASAPI-Loopback (Systemton), optional Mikrofon, über stdin.
 //! - Sofort-Clip: Ringpuffer aus 2-s-Segmenten auf der Platte (kein RAM-Puffer),
 //!   Export ohne Neukodierung. Normale Aufnahme: dieselben Segmente von Start bis Stopp.
-//! - Kanal zur Mod: `link` (nur 127.0.0.1, Einmal-Token je Spielstart).
+//! - Kanal zur Mod: der gemeinsame [`crate::link::TrsLink`] (nur 127.0.0.1, Schlüssel je Spielstart).
 //!
 //! Aufgenommen wird nur, solange ein Spiel dieses Launchers läuft und Clips
 //! eingeschaltet sind. Nichts verlässt den PC.
@@ -17,7 +17,6 @@ pub mod audio;
 pub mod encoder;
 pub mod ffmpeg;
 pub mod library;
-pub mod link;
 pub mod recorder;
 pub mod session;
 pub mod settings;
@@ -35,7 +34,7 @@ use tokio::sync::mpsc;
 use crate::paths::Paths;
 use crate::{Error, Result};
 use encoder::Codec;
-use link::{ClipLink, LinkCommand, LinkConfig, LinkEvent, LinkState};
+use crate::link::{self, LinkCommand, LinkEvent, LinkState, TrsLink};
 use session::Command;
 use settings::ClipSettings;
 
@@ -79,7 +78,7 @@ struct SessionEntry {
 pub struct Shared {
     pub(crate) paths: Paths,
     pub(crate) ffmpeg: ffmpeg::Ffmpeg,
-    link: tokio::sync::OnceCell<ClipLink>,
+    link: Arc<TrsLink>,
     sink: RwLock<Option<ClipSink>>,
     sessions: Mutex<HashMap<String, SessionEntry>>,
     states: Mutex<HashMap<String, ClipState>>,
@@ -101,9 +100,7 @@ impl Shared {
     }
 
     pub(crate) fn link_send(&self, instance_id: &str, event: LinkEvent) {
-        if let Some(link) = self.link.get() {
-            link.send(instance_id, event);
-        }
+        self.link.send(instance_id, event);
     }
 
     /// Fehler an Mod und Oberfläche melden.
@@ -121,9 +118,7 @@ impl Shared {
             reason: state.reason,
             encoder: codec,
         };
-        if let Some(link) = self.link.get() {
-            link.set_state(instance_id, state);
-        }
+        self.link.set_state(instance_id, state);
         // Oberfläche nur bei echten Änderungen (die Zeit zählt sie selbst weiter).
         let changed = {
             let mut states = lock(&self.states);
@@ -191,30 +186,6 @@ impl Shared {
         }
         usable
     }
-
-    async fn link(self: &Arc<Self>) -> Result<&ClipLink> {
-        self.link
-            .get_or_try_init(|| async {
-                let (tx, mut rx) = mpsc::unbounded_channel::<(String, LinkCommand)>();
-                let link = ClipLink::start(tx).await?;
-                let shared = Arc::downgrade(self);
-                tokio::spawn(async move {
-                    while let Some((instance_id, command)) = rx.recv().await {
-                        let Some(shared) = shared.upgrade() else { break };
-                        let command = match command {
-                            LinkCommand::SaveClip => Command::SaveClip,
-                            LinkCommand::ToggleRecording => Command::ToggleRecording,
-                        };
-                        let sent = lock(&shared.sessions).get(&instance_id).is_some_and(|s| s.tx.send(command).is_ok());
-                        if !sent {
-                            shared.fail(&instance_id, "disabled");
-                        }
-                    }
-                });
-                Ok::<_, Error>(link)
-            })
-            .await
-    }
 }
 
 /// Clips-Dienst des Launchers.
@@ -232,22 +203,34 @@ pub struct RunningGame {
 }
 
 impl ClipService {
-    pub fn new(paths: &Paths) -> Self {
+    /// `link`: der gemeinsame TRS-Link (Clips melden darüber Status und empfangen die Tasten).
+    pub fn new(paths: &Paths, link: Arc<TrsLink>) -> Self {
         // Reste alter Sitzungen (Absturz, hartes Beenden) entfernen.
         let buffers = paths.root().join("cache").join("clip-buffer");
         let _ = std::fs::remove_dir_all(&buffers);
-        Self {
-            shared: Arc::new(Shared {
-                paths: paths.clone(),
-                ffmpeg: ffmpeg::Ffmpeg::new(paths),
-                link: tokio::sync::OnceCell::new(),
-                sink: RwLock::default(),
-                sessions: Mutex::default(),
-                states: Mutex::default(),
-                codecs: tokio::sync::Mutex::default(),
-                installing: AtomicBool::new(false),
-            }),
-        }
+        let shared = Arc::new(Shared {
+            paths: paths.clone(),
+            ffmpeg: ffmpeg::Ffmpeg::new(paths),
+            link: link.clone(),
+            sink: RwLock::default(),
+            sessions: Mutex::default(),
+            states: Mutex::default(),
+            codecs: tokio::sync::Mutex::default(),
+            installing: AtomicBool::new(false),
+        });
+        let weak = Arc::downgrade(&shared);
+        link.set_command_sink(Arc::new(move |instance_id: &str, command: LinkCommand| {
+            let Some(shared) = weak.upgrade() else { return };
+            let command = match command {
+                LinkCommand::SaveClip => Command::SaveClip,
+                LinkCommand::ToggleRecording => Command::ToggleRecording,
+            };
+            let sent = lock(&shared.sessions).get(instance_id).is_some_and(|s| s.tx.send(command).is_ok());
+            if !sent {
+                shared.fail(instance_id, "disabled");
+            }
+        }));
+        Self { shared }
     }
 
     pub fn set_sink(&self, sink: ClipSink) {
@@ -262,23 +245,18 @@ impl ClipService {
         &self.shared.paths
     }
 
-    /// Vor dem Spielstart: `config/trsclient/clips.json` schreiben (Port + neues
-    /// Token, oder `enabled:false`). Fehler verhindern den Start nie.
+    /// Vor dem Spielstart (bzw. beim Einschalten): `config/trsclient/clips.json`
+    /// schreiben – mit Port (v2) bzw. altem Token für Mods ≤ 0.5.0 – und den
+    /// Clip-Status im Link setzen. Die Link-Sitzung selbst öffnet der Launcher.
+    /// Fehler verhindern den Start nie.
     pub async fn prepare(&self, instance_id: &str, game_dir: &Path, settings: &ClipSettings) {
-        let config = if settings.enabled {
-            match self.shared.link().await {
-                Ok(link) => link.open_session(instance_id),
-                Err(e) => {
-                    tracing::warn!("Clip-Kanal startet nicht: {e}");
-                    LinkConfig::disabled()
-                }
-            }
+        let config = self.shared.link.clips_config(instance_id, settings.enabled);
+        let state = if settings.enabled {
+            LinkState { reason: Some("starting"), ..Default::default() }
         } else {
-            if let Some(link) = self.shared.link.get() {
-                link.close_session(instance_id);
-            }
-            LinkConfig::disabled()
+            LinkState::disabled()
         };
+        self.shared.link.set_state(instance_id, state);
         if let Err(e) = link::write_config(game_dir, &config).await {
             tracing::warn!("clips.json konnte nicht geschrieben werden: {e}");
         }
@@ -304,18 +282,26 @@ impl ClipService {
         tokio::spawn(session::run(ctx, rx));
     }
 
-    /// Spiel beendet: Sitzung stoppen (eine laufende Aufnahme wird noch gespeichert),
-    /// Token ungültig machen und die Datei der Mod leeren.
+    /// Spiel beendet: Aufnahme-Sitzung stoppen (eine laufende Aufnahme wird
+    /// noch gespeichert). Link-Sitzung und clips.json räumt der Launcher auf.
     pub fn game_exited(&self, instance_id: &str) {
         let entry = lock(&self.shared.sessions).remove(instance_id);
-        if let Some(link) = self.shared.link.get() {
-            link.close_session(instance_id);
-        }
         if let Some(entry) = entry {
             let _ = entry.tx.send(Command::Stop);
-            tokio::spawn(async move {
-                let _ = link::write_config(&entry.game_dir, &LinkConfig::disabled()).await;
-            });
+        }
+    }
+
+    /// Clips für ein laufendes Spiel ausgeschaltet: Aufnahme stoppen, der Mod
+    /// „aus“ melden (die Link-Sitzung bleibt – Konten brauchen sie weiter).
+    async fn disable(&self, instance_id: &str) {
+        let game_dir = lock(&self.shared.sessions).get(instance_id).map(|s| s.game_dir.clone());
+        self.game_exited(instance_id);
+        self.shared.link.set_state(instance_id, LinkState::disabled());
+        if let Some(game_dir) = game_dir {
+            let config = self.shared.link.clips_config(instance_id, false);
+            if let Err(e) = link::write_config(&game_dir, &config).await {
+                tracing::warn!("clips.json konnte nicht geschrieben werden: {e}");
+            }
         }
     }
 
@@ -328,7 +314,7 @@ impl ClipService {
                     let _ = tx.send(Command::Settings(settings.clone()));
                 }
                 (Some(_), false) => {
-                    self.game_exited(&game.instance_id);
+                    self.disable(&game.instance_id).await;
                 }
                 (None, true) => {
                     self.prepare(&game.instance_id, &game.game_dir, settings).await;
@@ -398,11 +384,18 @@ impl ClipService {
 mod tests {
     use super::*;
 
+    use crate::link::LinkConfig;
+
+    fn service(dir: &Path) -> (ClipService, Arc<TrsLink>) {
+        let paths = Paths::new(dir);
+        let link = Arc::new(TrsLink::new(None));
+        (ClipService::new(&paths, link.clone()), link)
+    }
+
     #[tokio::test]
     async fn ausgeschaltet_schreibt_nur_enabled_false() {
         let dir = tempfile::tempdir().unwrap();
-        let paths = Paths::new(dir.path());
-        let service = ClipService::new(&paths);
+        let (service, _link) = service(dir.path());
         let game = dir.path().join("game");
         service.prepare("survival", &game, &ClipSettings::default()).await;
         let text = std::fs::read_to_string(game.join("config/trsclient/clips.json")).unwrap();
@@ -418,20 +411,34 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn eingeschaltet_schreibt_port_und_token() {
+    async fn eingeschaltet_schreibt_nur_den_port() {
         let dir = tempfile::tempdir().unwrap();
-        let paths = Paths::new(dir.path());
-        let service = ClipService::new(&paths);
+        let (service, link) = service(dir.path());
+        let handoff = link.open_session("survival", false).await.unwrap();
         let game = dir.path().join("game");
         let settings = ClipSettings { enabled: true, ..Default::default() };
         service.prepare("survival", &game, &settings).await;
         let text = std::fs::read_to_string(game.join("config/trsclient/clips.json")).unwrap();
+        assert!(!text.contains(handoff.secret()), "der Link-Schlüssel steht nie in der Datei");
         let config: LinkConfig = serde_json::from_str(&text).unwrap();
-        assert!(config.enabled);
-        assert!(config.port.is_some_and(|p| p > 0));
-        assert_eq!(config.token.as_deref().map(str::len), Some(64));
-        // Spielende: Datei wieder leer, Token ungültig.
+        assert_eq!(config, LinkConfig { version: 2, enabled: true, port: Some(handoff.port), token: None });
         service.game_exited("survival");
+    }
+
+    #[tokio::test]
+    async fn alte_mod_bekommt_weiter_das_token() {
+        let dir = tempfile::tempdir().unwrap();
+        let (service, link) = service(dir.path());
+        let handoff = link.open_session("survival", true).await.unwrap();
+        let game = dir.path().join("game");
+        service.prepare("survival", &game, &ClipSettings { enabled: true, ..Default::default() }).await;
+        let text = std::fs::read_to_string(game.join("config/trsclient/clips.json")).unwrap();
+        let config: LinkConfig = serde_json::from_str(&text).unwrap();
+        assert_eq!((config.version, config.enabled, config.port), (1, true, Some(handoff.port)));
+        assert_eq!(config.token.as_deref().map(str::len), Some(64));
+        service.prepare("survival", &game, &ClipSettings::default()).await;
+        let text = std::fs::read_to_string(game.join("config/trsclient/clips.json")).unwrap();
+        assert_eq!(serde_json::from_str::<LinkConfig>(&text).unwrap(), LinkConfig { version: 1, enabled: false, port: None, token: None });
     }
 
     #[test]
