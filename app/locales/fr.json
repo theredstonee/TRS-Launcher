@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "Aperçu 3D du skin",
       "failed": "Impossible de démarrer l'aperçu 3D. Tes pilotes graphiques ne prennent probablement pas en charge WebGL."
-    }
+    },
+    "trsCape": "Cape TRS"
   },
   "validation": {
     "invalidCharacters": "Contient des caractères invalides",

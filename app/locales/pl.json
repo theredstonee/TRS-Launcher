@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "Podgląd skina 3D",
       "failed": "Nie udało się uruchomić podglądu 3D. Twoje sterowniki graficzne prawdopodobnie nie obsługują WebGL."
-    }
+    },
+    "trsCape": "Peleryna TRS"
   },
   "validation": {
     "invalidCharacters": "Zawiera nieprawidłowe znaki",

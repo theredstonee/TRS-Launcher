@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "Vista previa 3D de la skin",
       "failed": "No se ha podido iniciar la vista previa 3D. Probablemente tus controladores gráficos no admiten WebGL."
-    }
+    },
+    "trsCape": "Capa TRS"
   },
   "validation": {
     "invalidCharacters": "Contiene caracteres no válidos",

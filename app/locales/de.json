@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "3D-Vorschau des Skins",
       "failed": "Die 3D-Vorschau konnte nicht gestartet werden. Deine Grafiktreiber unterstützen vermutlich kein WebGL."
-    }
+    },
+    "trsCape": "TRS-Umhang"
   },
   "validation": {
     "invalidCharacters": "Enthält ungültige Zeichen",

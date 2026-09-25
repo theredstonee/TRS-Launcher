@@ -16,6 +16,19 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **The skin preview shows your TRS cape.** After a restart the 3D preview now shows the TRS cape you wear – the way
+  other TRS players see you in game – instead of your Mojang cape. Click a Mojang cape to look at that one instead.
+
+### Deutsch
+
+- **Die Skin-Vorschau zeigt deinen TRS-Umhang.** Nach einem Neustart zeigt die 3D-Vorschau jetzt den TRS-Umhang, den du
+  trägst – so, wie andere TRS-Spieler dich im Spiel sehen – statt deines Mojang-Umhangs. Klick einen Mojang-Umhang
+  an, um den anzusehen.
+
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 
 <!-- banner: accent=#3dd6ff motif=/news/0.5.1/banner.png -->

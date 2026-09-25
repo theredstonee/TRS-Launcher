@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "3D-skinpreview",
       "failed": "De 3D-preview kon niet worden gestart. Je grafische stuurprogramma’s ondersteunen waarschijnlijk geen WebGL."
-    }
+    },
+    "trsCape": "TRS-cape"
   },
   "validation": {
     "invalidCharacters": "Bevat ongeldige tekens",

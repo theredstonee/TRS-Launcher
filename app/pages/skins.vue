@@ -99,8 +99,14 @@ function defaultSkinTexture(): string | null {
 const previewVariant = computed<SkinVariant>(() => (draft.value.skin.source === 'default' ? 'classic' : draft.value.variant))
 /** Angeprobter TRS-Umhang (ersetzt in der Vorschau den Mojang-Umhang, ändert aber nichts am Konto). */
 const trsPreview = ref<TrsCape | null>(null)
+/** Getragener TRS-Umhang – im Spiel sehen TRS-Spieler ihn statt des Mojang-Umhangs. */
+const trsActive = ref<TrsCape | null>(null)
+/** Bewusst einen Mojang-Umhang angeklickt: dann zeigt die Vorschau den, nicht den TRS-Umhang. */
+const mojangFocus = ref(false)
+/** TRS-Umhang in der Vorschau: angeprobt, sonst der getragene (außer ein Mojang-Umhang wird angesehen). */
+const shownTrs = computed(() => trsPreview.value ?? (mojangFocus.value ? null : trsActive.value))
 const previewCape = computed(
-  () => trsPreview.value?.texture ?? profile.value?.capes.find((c) => c.id === draft.value.cape)?.texture ?? null,
+  () => shownTrs.value?.texture ?? profile.value?.capes.find((c) => c.id === draft.value.cape)?.texture ?? null,
 )
 
 const changes = computed(() => draftChanges(draft.value, profile.value))
@@ -130,6 +136,7 @@ function selectVariant(variant: SkinVariant) {
 }
 function selectCape(cape: Cape | null) {
   trsPreview.value = null
+  mojangFocus.value = true
   draft.value = { ...draft.value, cape: cape?.id ?? null }
 }
 
@@ -393,8 +400,8 @@ function capeStyle(texture: string, width = 30) {
               :variant="previewVariant"
               :animation="animation"
               :height="280"
-              :cape-frames="trsPreview?.frames ?? 1"
-              :cape-frame-time="trsPreview?.frameTimeMs ?? null"
+              :cape-frames="shownTrs?.frames ?? 1"
+              :cape-frame-time="shownTrs?.frameTimeMs ?? null"
             />
           </ClientOnly>
           <span v-if="unapplied" class="badge absolute top-2 left-2 bg-warn/15 text-warn" data-testid="skin-unapplied">
@@ -450,6 +457,10 @@ function capeStyle(texture: string, width = 30) {
             <div class="flex justify-between gap-3">
               <dt class="text-base-400">{{ t('skins.cape') }}</dt>
               <dd class="truncate text-right font-medium text-base-50">{{ capeLabel }}</dd>
+            </div>
+            <div v-if="shownTrs" class="flex justify-between gap-3">
+              <dt class="text-base-400">{{ t('skins.trsCape') }}</dt>
+              <dd class="truncate text-right font-medium text-base-50">{{ shownTrs.name }}</dd>
             </div>
           </dl>
 
@@ -601,7 +612,11 @@ function capeStyle(texture: string, width = 30) {
         </section>
 
         <!-- TRS-Umhänge (eigener Dienst, getrennt von Mojang) ------------------------ -->
-        <TrsCapes :preview-id="trsPreview?.id ?? null" @preview="trsPreview = $event" />
+        <TrsCapes
+          :preview-id="trsPreview?.id ?? null"
+          @preview="trsPreview = $event"
+          @active="(cape) => ((trsActive = cape), (mojangFocus = false))"
+        />
       </div>
     </div>
 

@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "Prévia 3D da skin",
       "failed": "Não foi possível iniciar a prévia 3D. Seus drivers de vídeo provavelmente não suportam WebGL."
-    }
+    },
+    "trsCape": "Capa TRS"
   },
   "validation": {
     "invalidCharacters": "Contém caracteres inválidos",

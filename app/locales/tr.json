@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "3D skin önizlemesi",
       "failed": "3D önizleme başlatılamadı. Ekran kartı sürücülerin muhtemelen WebGL'i desteklemiyor."
-    }
+    },
+    "trsCape": "TRS pelerini"
   },
   "validation": {
     "invalidCharacters": "Geçersiz karakterler içeriyor",

@@ -1819,7 +1819,8 @@
     "viewer": {
       "label": "3D skin preview",
       "failed": "The 3D preview couldn't be started. Your graphics drivers probably don't support WebGL."
-    }
+    },
+    "trsCape": "TRS cape"
   },
   "validation": {
     "invalidCharacters": "Contains invalid characters",

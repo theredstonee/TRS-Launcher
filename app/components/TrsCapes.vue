@@ -5,7 +5,7 @@ import type { TrsCape } from '~/utils/trs'
 // großen 3D-Ansicht der Seite (per `preview`), Anlegen/Ablegen, Code einlösen
 // und eigene Umhänge hochladen (Prüfung durch das Team).
 const props = defineProps<{ previewId: string | null }>()
-const emit = defineEmits<{ preview: [cape: TrsCape | null] }>()
+const emit = defineEmits<{ preview: [cape: TrsCape | null]; active: [cape: TrsCape | null] }>()
 
 const trs = useTrsStore()
 const accounts = useAccountsStore()
@@ -17,6 +17,8 @@ const offline = ref(false)
 const busy = ref<string | null>(null)
 
 const active = computed(() => capes.value?.find((c) => c.active) ?? null)
+// Die Seite zeigt den getragenen TRS-Umhang in der Vorschau – so wie andere ihn im Spiel sehen.
+watch(active, (cape) => emit('active', cape), { immediate: true })
 const selected = computed(() => capes.value?.find((c) => c.id === props.previewId) ?? null)
 const pendingCount = computed(() => capes.value?.filter((c) => c.kind === 'upload' && c.status === 'pending').length ?? 0)
 
