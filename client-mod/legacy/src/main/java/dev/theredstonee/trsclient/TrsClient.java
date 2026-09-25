@@ -230,6 +230,12 @@ public final class TrsClient {
 				mc.displayGuiScreen(new dev.theredstonee.trsclient.screen.EmoteWheelScreen());
 			}
 		}
+		// Garderobe (Taste standardmäßig unbelegt)
+		while (TrsKeys.wardrobe.isPressed()) {
+			if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
+				mc.displayGuiScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));
+			}
+		}
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
 		if (mc.currentScreen == null) {
 			if (moduleKeys.pressed(modules.waypointAddKey) && Mc.player() != null && modules.waypoints.isEnabled()) {

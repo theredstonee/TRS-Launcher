@@ -103,6 +103,17 @@ public final class TrsMenuHost implements MenuHost {
 		return out;
 	}
 
+	@Override
+	public void openWardrobe() {
+		// closeScreen() eines Hosts zeigt dessen „parent“ – hier also die Garderobe (zurück führt ins Menü).
+		new TrsMenuHost(WardrobeScreen.create(new TrsMenuScreen(parent))).closeScreen();
+	}
+
+	@Override
+	public boolean hasWardrobe() {
+		return WardrobeScreen.available();
+	}
+
 	/** Was unter Legacy-Forge nicht umsetzbar ist (Treffer-Farbe, niedriges Feuer), bleibt aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {

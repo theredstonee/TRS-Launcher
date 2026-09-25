@@ -94,6 +94,13 @@ public final class TrsTitleScreen extends TrsUiScreen {
 			return true;
 		}
 
+		@Override
+		public boolean openWardrobe() {
+			if (!WardrobeScreen.available()) return false;
+			Mc.setScreen(WardrobeScreen.create(screen));
+			return true;
+		}
+
 		/** Forge bringt immer eine eigene Mod-Liste mit. */
 		@Override
 		public boolean hasMods() {

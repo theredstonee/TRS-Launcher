@@ -111,6 +111,13 @@ public final class TrsTitleScreen extends TrsUiScreen {
 		}
 
 		@Override
+		public boolean openWardrobe() {
+			if (!WardrobeScreen.available()) return false;
+			Mc.setScreen(WardrobeScreen.create(screen));
+			return true;
+		}
+
+		@Override
 		public boolean hasMods() {
 			return modMenu;
 		}

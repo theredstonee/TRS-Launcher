@@ -77,6 +77,17 @@ public final class TrsMenuHost implements MenuHost {
 	}
 
 	@Override
+	public void openWardrobe() {
+		// closeScreen() eines Hosts zeigt dessen „parent“ – hier also die Garderobe (zurück führt ins Menü).
+		new TrsMenuHost(WardrobeScreen.create(new TrsMenuScreen(parent))).closeScreen();
+	}
+
+	@Override
+	public boolean hasWardrobe() {
+		return WardrobeScreen.available();
+	}
+
+	@Override
 	public boolean supports(Module module) {
 		return TrsClient.supported(module);
 	}

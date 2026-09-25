@@ -41,6 +41,26 @@ program; your data in `%APPDATA%\TRS-Launcher` can be deleted at any time.
 - For the small faces in the list, the game loads the skin from `textures.minecraft.net` and, if needed, the public
   profile from `sessionserver.mojang.com`.
 
+## Wardrobe in the game (TRS Client)
+
+The wardrobe of the TRS Client (skins, outfits, capes, emotes and the skin editor) only goes online for what you do
+there:
+
+- **Applying a skin or choosing a Minecraft cape** sends the skin image and its model (classic/slim), or the cape
+  choice, together with your Minecraft access token directly to Mojang (`api.minecraftservices.com`), exactly like
+  the official launcher. To show your capes, the game reads your Minecraft profile there and loads the images from
+  `textures.minecraft.net`.
+- **Adding a skin by player name** looks the name up at Mojang (`api.mojang.com`, `sessionserver.mojang.com`) or,
+  with the TRS services on, through the TRS services, and downloads that skin from `textures.minecraft.net`.
+- **Adding a skin by link** downloads that one image from the address you enter – only HTTPS, no cookies, never from
+  addresses in your local network.
+- **Adding a skin from a file** opens your system's file dialog; the file is only read on your PC.
+- **With the TRS services on**, your skins in the wardrobe are the same "My skins" as in the launcher (synced with your
+  TRS account, see below), and your favourites, outfits (name, skin, cape) and emote wheel slots are saved in a small
+  "wardrobe" entry of your TRS account so they are the same on every PC. Choosing a TRS cape saves that choice in your
+  TRS account; after applying a skin the game tells the TRS services, so other TRS players see the new skin sooner.
+- **Without the TRS services** everything stays on your PC in `config/trsclient/wardrobe/` of the game folder.
+
 ## Discord
 
 If the Discord app is running on your computer, the launcher shows a status on your Discord profile ("Playing TRS
@@ -86,6 +106,7 @@ hands to web content or to the game. The TRS Client mod signs in by itself throu
 | Online status: "online in the launcher" or "in game" with version and mod loader, and, only if you turned on "Server teilen", the server address | Showing friends what you play and letting them join you |
 | Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
 | Only with the TRS services on and "Sync with TRS account" on in the TRS Client (in game): your TRS Client settings – which modules are on and their settings, HUD layouts and profiles, the TRS keys of the modules, the config mode for performance mods, whether you finished the introduction (and the module pack you picked) and which "NEW" entries you have opened – each part with the time of its last change; no waypoints, no server addresses, no files, paths or tokens | Keeping the TRS Client the same on every PC and game folder where you use this Minecraft account, and showing the introduction only once |
+| Only with the TRS services on: the wardrobe entry of the TRS Client – your favourite skins, outfits (name, skin, cape) and emote wheel slots, with the time of the last change | The same wardrobe on every PC |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
 your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your

@@ -195,6 +195,24 @@ independent in `common/core/clips`:
 - Autotest `-PtrsAutotestOnly=accounts` (fabric, legacy) with the launcher attrappe (`TRS_CLIENT_LINK` from a mock):
   screenshots `accounts`, `accounts-switched`, `menu-accounts`.
 
+**Wardrobe + skin editor** (`common/core/wardrobe` logic, `common/core/ui/wardrobe` UI):
+
+- `WardrobeService` (thread „TRS-Garderobe“, immutable `State` for the UI): skin library per account in
+  `config/trsclient/wardrobe/<uuid>/` (`SkinLibrary` index + PNGs, offline changes marked and synced later), the
+  `wardrobe` sync document (`WardrobeDoc`: favourites, outfits, emote wheel slots; last writer wins, `409 stale` takes
+  the server state), TRS sync of "My skins" (`WardrobeApi`, API.md §17; PATCH is not possible with `HttpURLConnection`,
+  renames are a PUT), read-only view of the TRS Launcher library (`LauncherLibrary`: `<launcher>/skins/library.json`
+  when the game dir is `<launcher>/instances/<id>/minecraft`), Mojang skin upload / cape select (`MojangServices`,
+  session token from `AccountManager.currentSession()`), imports by file (`FileChooser`: LWJGL TinyFD 1.15.2–26.2 →
+  AWT → OS dialog via PowerShell/zenity/kdialog/osascript), by URL (`SafeFetch`: https only, one DNS lookup with every
+  address checked, pinned IP, redirects re-checked, ≤ 128 KB) and by player name.
+- Editor: `SkinEditor` (tools, mirror via `SkinLayout.mirror`, fill per cube face, undo/redo per stroke, templates),
+  `SkinModel.pick` (texel under the cursor on the 3D figure) and `SkinModelSpec.pose` (emote preview via `EmoteRig`).
+- Entry points: `screen/WardrobeScreen.create(parent)` (all trees; 1.7.10/1.13.2 without TRS features),
+  `TitleHost/MenuHost.openWardrobe()`, rail entry „Garderobe“, key `key.trsclient.wardrobe` (unbound).
+- Autotest `-PtrsAutotestOnly=wardrobe` (fabric, legacy): no world, screenshots `wardrobe`, `-outfits`, `-capes`,
+  `-emotes`, `-add`, `-editor`, `menu-wardrobe`, then quits.
+
 ## Umhang-Physik
 
 `core/cape/ClothSim` is a verlet cloth (10 × 16 cells near, 5 × 8 further away) in the player's body frame

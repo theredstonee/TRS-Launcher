@@ -158,6 +158,17 @@ public final class AccountManager {
 		return state.get();
 	}
 
+	/**
+	 * Aktuelle Spielsitzung (mit Zugangs-Token – nur für Mojang-Dienste im Hintergrund, nie loggen) oder null.
+	 */
+	public SessionData currentSession() {
+		try {
+			return platform.current();
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
 	/** User-Agent für Netzabrufe der Oberfläche (Gesichter). */
 	public String userAgent() {
 		return platform.userAgent();

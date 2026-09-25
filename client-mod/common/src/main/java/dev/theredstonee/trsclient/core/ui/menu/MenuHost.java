@@ -42,6 +42,15 @@ public interface MenuHost {
 		return false;
 	}
 
+	/** Garderobe öffnen (Skins, Outfits, Umhänge, Emotes). Nur wenn {@link #hasWardrobe()}. */
+	default void openWardrobe() {
+	}
+
+	/** Gibt es in dieser Version die Garderobe? */
+	default boolean hasWardrobe() {
+		return false;
+	}
+
 	/**
 	 * Einführung öffnen ({@link dev.theredstonee.trsclient.core.intro.IntroUi}); „Schließen“ führt zurück zum
 	 * Bildschirm unter diesem Host. Nur wenn {@link #hasIntro()}.

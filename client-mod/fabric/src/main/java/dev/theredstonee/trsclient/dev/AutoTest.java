@@ -92,6 +92,10 @@ public final class AutoTest {
 			IntroTest.install();
 			return;
 		}
+		if ("wardrobe".equals(System.getProperty("trsclient.autotest.only"))) {
+			WardrobeTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}

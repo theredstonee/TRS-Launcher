@@ -39,6 +39,7 @@ const KEYS = [
   ['key.trsclient.redstoneOverlay', 'key.trsclient.redstoneOverlay'],
   ['key.trsclient.saveClip', 'key.trsclient.saveClip'],
   ['key.trsclient.toggleRecording', 'key.trsclient.toggleRecording'],
+  ['key.trsclient.wardrobe', 'key.trsclient.wardrobe'],
 ];
 
 const load = (code) => JSON.parse(readFileSync(join(i18nDir, `${code}.json`), 'utf8'));

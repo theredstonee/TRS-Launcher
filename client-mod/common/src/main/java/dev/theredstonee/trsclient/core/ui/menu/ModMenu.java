@@ -264,7 +264,8 @@ public final class ModMenu extends UiScreen {
 		Theme t = Theme.get();
 		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
 		// "Alle" + Kategorien + HUD-Editor + Profile (+ Packs) (+ Konten)
-		int items = 4 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0);
+		int items = 4 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0)
+				+ (host.hasWardrobe() ? 1 : 0);
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -350,6 +351,16 @@ public final class ModMenu extends UiScreen {
 				public void run() {
 					host.save();
 					host.openAccounts();
+				}
+			});
+			cy += rowH + gap;
+		}
+		if (host.hasWardrobe()) {
+			railItem(c, x, cy, w, rowH, "shirt", I18n.tr("menu.wardrobe"), false, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					host.save();
+					host.openWardrobe();
 				}
 			});
 			cy += rowH + gap;

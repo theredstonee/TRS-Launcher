@@ -89,6 +89,52 @@ public final class LocalSkin {
 		return look;
 	}
 
+	/**
+	 * Neues Aussehen sofort übernehmen (nach einem Skin-/Umhangwechsel in der Garderobe), ohne auf Mojangs Cache zu
+	 * warten: schreibt den Platten-Cache und lädt die Pixel neu. {@code skinPng} null = Skin bleibt; {@code capeChanged}
+	 * mit {@code capePng} null = Umhang abgelegt. Aus jedem Thread.
+	 */
+	public void update(final byte[] skinPng, final boolean slim, final byte[] capePng, final boolean capeChanged) {
+		final int gen = generation;
+		final UUID id = uuid;
+		if (sessionKey == null || id == null) return;
+		final String uuid32 = id.toString().replace("-", "").toLowerCase(Locale.ROOT);
+		try {
+			worker.execute(new Runnable() {
+				@Override
+				public void run() {
+					Path skinFile = dir.resolve(uuid32 + ".png");
+					Path metaFile = dir.resolve(uuid32 + ".json");
+					Path capeFile = dir.resolve(uuid32 + "-cape.png");
+					try {
+						Files.createDirectories(dir);
+						byte[] skin = skinPng;
+						boolean isSlim = slim;
+						if (skin != null) {
+							Files.write(skinFile, skin);
+							Files.write(metaFile, ("{\"slim\":" + slim + "}").getBytes(StandardCharsets.UTF_8));
+						} else if (Files.isRegularFile(skinFile) && Files.size(skinFile) <= MAX_PNG) {
+							skin = Files.readAllBytes(skinFile);
+							isSlim = readSlim(metaFile);
+						}
+						byte[] cape = capePng;
+						if (capeChanged) {
+							if (capePng != null) Files.write(capeFile, capePng);
+							else Files.deleteIfExists(capeFile);
+						} else if (Files.isRegularFile(capeFile) && Files.size(capeFile) <= MAX_PNG) {
+							cape = Files.readAllBytes(capeFile);
+						}
+						deliver(gen, skin, isSlim, cape, true);
+					} catch (IOException | RuntimeException e) {
+						log.accept("TRS Client: Skin-Cache nicht schreibbar (" + e.getMessage() + ")");
+					}
+				}
+			});
+		} catch (RuntimeException e) {
+			log.accept("TRS Client: Skin-Aktualisierung abgelehnt");
+		}
+	}
+
 	/** UUID der aktuellen Sitzung (Offline-UUID aus dem Namen, wenn keine da ist) oder null vor dem ersten Bild. */
 	public UUID uuid() {
 		return uuid;

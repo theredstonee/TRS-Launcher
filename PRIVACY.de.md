@@ -43,6 +43,27 @@ Programm entfernt; deine Daten in `%APPDATA%\TRS-Launcher` kannst du jederzeit l
 - Für die kleinen Gesichter in der Liste lädt das Spiel den Skin von `textures.minecraft.net` und bei Bedarf das
   öffentliche Profil von `sessionserver.mojang.com`.
 
+## Garderobe im Spiel (TRS Client)
+
+Die Garderobe des TRS Clients (Skins, Outfits, Umhänge, Emotes und der Skin-Editor) geht nur für das online, was du
+dort tust:
+
+- **Skin anwenden oder Minecraft-Umhang wählen** schickt das Skin-Bild und die Armform (Classic/Slim) bzw. die
+  Umhang-Wahl mit deinem Minecraft-Zugangs-Token direkt an Mojang (`api.minecraftservices.com`) – genau wie der
+  offizielle Launcher. Um deine Umhänge zu zeigen, liest das Spiel dort dein Minecraft-Profil und lädt die Bilder von
+  `textures.minecraft.net`.
+- **Skin per Spielername hinzufügen** sucht den Namen bei Mojang (`api.mojang.com`, `sessionserver.mojang.com`) oder,
+  mit eingeschalteten TRS-Diensten, über die TRS-Dienste und lädt diesen Skin von `textures.minecraft.net`.
+- **Skin per Link hinzufügen** lädt genau dieses eine Bild von der eingegebenen Adresse – nur HTTPS, ohne Cookies und
+  nie von Adressen in deinem lokalen Netz.
+- **Skin aus einer Datei hinzufügen** öffnet den Dateidialog deines Systems; die Datei wird nur auf deinem PC gelesen.
+- **Mit eingeschalteten TRS-Diensten** sind deine Skins in der Garderobe dieselben „Meine Skins“ wie im Launcher (mit
+  deinem TRS-Konto synchronisiert, siehe unten), und deine Favoriten, Outfits (Name, Skin, Umhang) und die Plätze des
+  Emote-Rads werden in einem kleinen Eintrag „wardrobe“ deines TRS-Kontos gespeichert, damit sie auf jedem PC gleich
+  sind. Die Wahl eines TRS-Umhangs wird in deinem TRS-Konto gespeichert; nach dem Anwenden eines Skins meldet das Spiel
+  das den TRS-Diensten, damit andere TRS-Spieler den neuen Skin früher sehen.
+- **Ohne TRS-Dienste** bleibt alles auf deinem PC unter `config/trsclient/wardrobe/` im Spielordner.
+
 ## Discord
 
 Läuft die Discord-App auf deinem Computer, zeigt der Launcher einen Status auf deinem Discord-Profil („Spielt TRS
@@ -89,6 +110,7 @@ auf deinem Computer speichert und nie an Webinhalte oder an das Spiel weitergibt
 | Online-Status: „online im Launcher“ oder „im Spiel“ mit Version und Modloader und – nur wenn du „Server teilen“ eingeschaltet hast – die Serveradresse | Um Freunden zu zeigen, was du spielst, und sie nachkommen zu lassen |
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
 | Nur mit eingeschalteten TRS-Diensten und eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client (im Spiel): deine TRS-Client-Einstellungen – welche Module an sind und ihre Einstellungen, HUD-Layouts und -Profile, die TRS-Tasten der Module, der Config-Modus für Leistungs-Mods, ob du die Einführung abgeschlossen hast (und das gewählte Modul-Paket) und welche „NEU“-Einträge du geöffnet hast – je Teil mit dem Zeitpunkt der letzten Änderung; keine Wegpunkte, keine Server-Adressen, keine Dateien, Pfade oder Tokens | Damit der TRS Client auf allen PCs und Spielordnern mit diesem Minecraft-Account gleich ist und die Einführung nur einmal erscheint |
+| Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
 
 **Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
 TRS-Dienste an sind) hält deine eigenen Skins, deine eigenen Presets und das Aussehen des Launchers (Theme, Akzentfarbe,

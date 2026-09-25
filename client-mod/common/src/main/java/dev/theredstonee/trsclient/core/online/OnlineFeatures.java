@@ -102,6 +102,11 @@ public final class OnlineFeatures<T> {
 		return look;
 	}
 
+	/** Eigener Skin für Menüs (null in Tests). */
+	public LocalSkin localSkin() {
+		return localSkin;
+	}
+
 	/** TRS-Umhang eines Spielers (aktuelles Animationsbild) als zeichenbare Textur, sonst null. */
 	public TextureRef capeRef(UUID uuid) {
 		T tex = capeTexture(uuid);

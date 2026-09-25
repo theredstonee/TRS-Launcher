@@ -106,6 +106,16 @@ public final class TrsMenuHost implements MenuHost {
 		return out;
 	}
 
+	@Override
+	public void openWardrobe() {
+		Mc.setScreen(WardrobeScreen.create(new TrsMenuScreen(parent)));
+	}
+
+	@Override
+	public boolean hasWardrobe() {
+		return WardrobeScreen.available();
+	}
+
 	/** Ohne Mixin (Forge 1.14.4) fehlen einige Module – die bleiben aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {

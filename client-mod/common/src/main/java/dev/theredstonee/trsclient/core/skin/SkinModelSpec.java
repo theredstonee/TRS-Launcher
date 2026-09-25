@@ -34,6 +34,14 @@ public final class SkinModelSpec {
 	public int tint = 0xFFFFFFFF;
 	/** Flächen je nach Lichteinfall abschatten (wie im Spiel). */
 	public boolean shade = true;
+	/**
+	 * Freie Haltung (z. B. Emote-Vorschau) oder null: je Teil (Kopf, Körper, rechter/linker Arm, rechtes/linkes Bein)
+	 * sechs Werte {@code x, y, z, xRot, yRot, zRot} im Modellraum von Minecraft (y nach unten, Vorderseite −z, Winkel
+	 * in Bogenmaß, Reihenfolge Z·Y·X) – genau das Format von {@code EmoteRig}. Ersetzt Lauf-/Kopfwinkel.
+	 */
+	public float[] pose;
+	/** Grundebene zeichnen (der Editor blendet sie aus, um nur die zweite Ebene zu zeigen). */
+	public boolean base = true;
 
 	/** Setzt alles auf die Grundwerte zurück (Skin/Umhang bleiben). */
 	public SkinModelSpec resetPose() {
@@ -46,6 +54,7 @@ public final class SkinModelSpec {
 		idleTime = 0f;
 		capeLift = 0f;
 		tint = 0xFFFFFFFF;
+		pose = null;
 		return this;
 	}
 }
