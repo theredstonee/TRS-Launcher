@@ -132,6 +132,7 @@ public final class OnlineFeatures<T> {
 		long now = System.currentTimeMillis();
 		// Nichts hiervon darf je das Spiel abstürzen lassen.
 		try {
+			online.wantBadges(modules.badgeTab.get() || modules.badgeNametag.get());
 			online.tick(now, visible, modules.trsOnline.isEnabled());
 			textures.cleanup(now);
 			if (sync != null) sync.tick(now);

@@ -38,7 +38,7 @@ use crate::launch::Session;
 use crate::paths::Paths;
 use crate::error::Msg;
 use crate::{Error, Result, USER_AGENT};
-pub use presence::PRESENCE_INTERVAL;
+pub use presence::{PRESENCE_INTERVAL, PresenceGame};
 use presence::PresenceState;
 pub use store::Consent;
 use store::Store;
@@ -525,7 +525,8 @@ impl TrsApi {
     /// Nimmt die Präsenz eines Accounts sofort zurück (ohne neu anzumelden).
     pub(crate) async fn send_offline(&self, account: &str) {
         let Some(token) = self.store.token(account).await else { return };
-        let req = Req::post("/v1/presence", serde_json::json!({ "state": "offline" }));
+        // `via: launcher` nimmt nur die Meldung des Launchers zurück – die des Mods im Spiel bleibt.
+        let req = Req::post("/v1/presence", serde_json::json!({ "state": "offline", "via": "launcher" }));
         let _ = tokio::time::timeout(Duration::from_secs(3), self.send_once(&req, Some(&token))).await;
     }
 }

@@ -124,6 +124,11 @@ How to write an entry:
   back restores the rest.
 - **TRS Client: lighter HUD on Minecraft 1.21.6 and newer.** HUD texts no longer create lots of short-lived data
   every frame, which means fewer small stutters.
+- **The TRS badge is now live.** The badge next to a player's name now means "playing with TRS right now": it shows
+  while someone is in a world or on a server with the TRS Client, or plays a game started by the TRS Launcher – not
+  when a TRS user only has the launcher open or plays with another client. It appears and disappears within seconds.
+  For privacy, you only see other players' badges while you are in game yourself; your own you always see. "Show TRS
+  badge" in the privacy settings still turns yours off.
 
 ### Deutsch
 
@@ -240,6 +245,12 @@ How to write an entry:
   beim Zurückschalten kommt der Rest wieder.
 - **TRS Client: Leichteres HUD ab Minecraft 1.21.6.** HUD-Texte erzeugen nicht mehr in jedem Bild viele kurzlebige
   Daten – das heißt weniger kleine Ruckler.
+- **Das TRS-Symbol ist jetzt live.** Das Symbol neben einem Spielernamen heißt jetzt „spielt gerade mit TRS“: Es
+  erscheint, solange jemand mit dem TRS Client in einer Welt oder auf einem Server ist oder ein vom TRS Launcher
+  gestartetes Spiel spielt – nicht, wenn ein TRS-Nutzer nur den Launcher offen hat oder mit einem anderen Client
+  spielt. Es kommt und geht innerhalb von Sekunden. Zum Schutz deiner Privatsphäre siehst du die Symbole anderer nur,
+  während du selbst im Spiel bist; dein eigenes siehst du immer. „TRS-Symbol zeigen“ in den Datenschutz-Einstellungen
+  schaltet deins weiterhin ab.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

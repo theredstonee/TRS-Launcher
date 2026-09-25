@@ -2414,7 +2414,7 @@
     "perAccount": "Geldt voor {name} – elk account heeft eigen instellingen.",
     "badge": {
       "title": "TRS-badge tonen",
-      "description": "Andere TRS-spelers zien in het spel dat je TRS gebruikt."
+      "description": "Zolang je met TRS speelt, zien andere TRS-spelers in hetzelfde spel de badge naast je naam."
     },
     "cape": {
       "title": "Cape zichtbaar voor anderen",

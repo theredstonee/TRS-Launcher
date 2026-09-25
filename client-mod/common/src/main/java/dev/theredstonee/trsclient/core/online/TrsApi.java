@@ -93,6 +93,8 @@ public final class TrsApi {
 
 	static final class Presence {
 		String state;
+		/** Quelle der Meldung: immer {@code client} (API.md §4.2). */
+		String via;
 		Game game;
 	}
 
@@ -247,15 +249,27 @@ public final class TrsApi {
 		return out;
 	}
 
-	/** {@code POST /v1/presence}: "in-game" mit Version/Loader, Server nur wenn übergeben. */
+	/**
+	 * {@code POST /v1/presence}: "in-game" (via client) mit Version/Loader, Server nur wenn übergeben. Solange diese
+	 * Meldung gilt, zeigen andere Spieler (die selbst im Spiel sind) das Live-TRS-Abzeichen.
+	 */
 	public void presence(String token, String version, String loader, String server) throws IOException, ApiException {
 		Presence body = new Presence();
 		body.state = "in-game";
+		body.via = "client";
 		Game game = new Game();
 		game.version = version;
 		game.loader = loader;
 		game.server = server;
 		body.game = game;
+		call("POST", "/v1/presence", GSON.toJson(body), token, 200);
+	}
+
+	/** {@code POST /v1/presence} "offline" (via client): nimmt nur die Meldung des Mods zurück, nicht die des Launchers. */
+	public void presenceOffline(String token) throws IOException, ApiException {
+		Presence body = new Presence();
+		body.state = "offline";
+		body.via = "client";
 		call("POST", "/v1/presence", GSON.toJson(body), token, 200);
 	}
 

@@ -550,35 +550,67 @@ fn both_api_addresses_are_trusted_for_textures() {
 }
 
 #[tokio::test]
-async fn presence_only_while_no_game_of_the_account_runs() {
+async fn presence_online_while_idle_and_in_game_while_a_launched_game_runs() {
     let (world, server) = world().await;
     let (_dir, launcher) = launcher(&server, &[ACC, OTHER]).await;
-    launcher.trs.store.put_token(OTHER, &token(b'Z'), chrono::Utc::now() + chrono::Duration::days(3)).await.unwrap();
+    let other_token = token(b'Z');
+    launcher.trs.store.put_token(OTHER, &other_token, chrono::Utc::now() + chrono::Duration::days(3)).await.unwrap();
     let presence = || server.hits("POST", "/v1/presence");
 
     launcher.presence_tick().await;
     assert_eq!(presence().len(), 1);
-    assert_eq!(presence()[0].json(), json!({ "state": "online" }));
+    assert_eq!(presence()[0].json(), json!({ "state": "online", "via": "launcher" }));
     assert_eq!(launcher.trs.presence.online_for().as_deref(), Some(ACC));
 
-    // Spiel läuft → der Mod meldet, der Launcher schweigt.
-    launcher.trs.presence.game_started("inst", Some(ACC));
+    // Vom Launcher gestartetes Spiel läuft → `in-game` statt `online` (Live-Abzeichen).
+    let game = PresenceGame::checked("1.21.11", "fabric");
+    launcher.trs.presence.game_started("inst", Some(ACC), game);
     launcher.presence_tick().await;
-    assert_eq!(presence().len(), 1);
+    assert_eq!(presence().len(), 2);
+    assert_eq!(
+        presence()[1].json(),
+        json!({ "state": "in-game", "via": "launcher", "game": { "version": "1.21.11", "loader": "fabric" } })
+    );
+    assert_eq!(launcher.trs.presence.in_game_for(), [ACC]);
 
-    // Spiel zu → sofort wieder online (Mindestabstand wird abgewartet).
-    launcher.trs.presence.game_exited("inst");
-    launcher.trs.presence.set_online_for(Some(OTHER));
+    // Zweites Spiel mit OTHER (nicht der aktive Account): auch dafür `in-game`.
+    launcher.trs.presence.game_started("other", Some(OTHER), None);
     launcher.presence_tick().await;
     let sent = presence();
-    assert_eq!(sent.len(), 3, "offline für den alten + online für den aktiven Account");
-    assert_eq!(sent[1].json(), json!({ "state": "offline" }));
-    assert_eq!(sent[2].json(), json!({ "state": "online" }));
+    assert_eq!(sent.len(), 4);
+    let other_in_game = sent[2..].iter().find(|r| r.bearer() == Some(other_token.as_str())).expect("in-game für OTHER");
+    assert_eq!(other_in_game.json(), json!({ "state": "in-game", "via": "launcher" }), "ohne gültige Spielangabe");
+
+    // Spiel von OTHER zu → dessen `in-game` zurücknehmen; ACC spielt weiter.
+    launcher.trs.presence.game_exited("other");
+    launcher.presence_tick().await;
+    let sent = presence();
+    assert_eq!(sent.len(), 6);
+    assert_eq!(sent[4].json(), json!({ "state": "offline", "via": "launcher" }));
+    assert_eq!(sent[4].bearer(), Some(other_token.as_str()));
+    assert_eq!(sent[5].json()["state"], "in-game");
+    assert_eq!(launcher.trs.presence.in_game_for(), [ACC]);
+
+    // Spiel von ACC zu → sofort wieder `online` (ersetzt `in-game`).
+    launcher.trs.presence.game_exited("inst");
+    launcher.presence_tick().await;
+    assert_eq!(presence().len(), 7);
+    assert_eq!(presence()[6].json(), json!({ "state": "online", "via": "launcher" }));
+    assert!(launcher.trs.presence.in_game_for().is_empty());
     drop(world);
 
-    // Beenden nimmt die Präsenz zurück.
+    // Beenden nimmt die Meldung des Launchers zurück (die des Mods bleibt beim Server).
     launcher.trs_shutdown().await;
-    assert_eq!(presence().last().unwrap().json(), json!({ "state": "offline" }));
+    assert_eq!(presence().last().unwrap().json(), json!({ "state": "offline", "via": "launcher" }));
+}
+
+#[tokio::test]
+async fn unknown_recovered_games_keep_the_launcher_silent() {
+    let (_world, server) = world().await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+    launcher.trs.presence.game_started("recovered", None, None);
+    launcher.presence_tick().await;
+    assert!(server.hits("POST", "/v1/presence").is_empty());
 }
 
 #[tokio::test]

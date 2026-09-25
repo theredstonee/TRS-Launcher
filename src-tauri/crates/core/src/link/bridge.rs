@@ -49,8 +49,7 @@ impl AccountsHandler for AccountsBridge {
             };
             tracing::info!("Kontowechsel im Spiel ('{instance_id}') → {}", session.player_name);
             // In diesem Spiel spielt jetzt dieses Konto (Präsenz des Launchers).
-            launcher.trs.presence.game_started(&instance_id, Some(&session.uuid));
-            launcher.trs.presence_kick();
+            launcher.trs.presence.game_account_changed(&instance_id, &session.uuid);
             Ok(LinkSession { id: session.uuid, name: session.player_name, xuid: session.xuid, token: session.access_token })
         })
     }

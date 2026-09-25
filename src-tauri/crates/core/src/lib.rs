@@ -198,7 +198,7 @@ impl Launcher {
         let presence = Arc::clone(&launcher.trs.presence);
         launcher.games.recover(|id| {
             // Mit welchem Account das Spiel lief, ist nach dem Neustart unbekannt.
-            presence.game_started(id, None);
+            presence.game_started(id, None, None);
             let (paths, id, sink, presence, clips, discord, link) =
                 (paths.clone(), id.to_owned(), sink.clone(), presence.clone(), clips.clone(), discord.clone(), link.clone());
             Box::new(move |seconds| {
@@ -789,8 +789,12 @@ impl Launcher {
         }
         // Clips: Port (bzw. altes Token für Mods ≤ 0.5.0) und Status für die Mod.
         self.clips.prepare(&instance.id, &game_dir, &settings.clips).await;
-        // Vor dem Start eintragen, damit der Launcher ab jetzt schweigt (der Mod meldet "in-game").
-        self.trs.presence.game_started(&instance.id, Some(&session.uuid));
+        // Vor dem Start eintragen: Der Launcher meldet für dieses Konto ab jetzt `in-game`
+        // statt `online` (Live-TRS-Abzeichen), bis das Spiel beendet ist.
+        let presence_game = serde_json::to_value(instance.loader.kind)
+            .ok()
+            .and_then(|v| v.as_str().and_then(|loader| trs_api::PresenceGame::checked(&instance.game_version, loader)));
+        self.trs.presence.game_started(&instance.id, Some(&session.uuid), presence_game);
         self.discord.game_started(discord::GameInfo { started_at: chrono::Utc::now().timestamp(), ..discord_game });
         let pid = match self.games.spawn(&instance.id, command, &log_dir, secrets, on_exit) {
             Ok(pid) => pid,

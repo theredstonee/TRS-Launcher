@@ -115,6 +115,22 @@ público de perfiles de Mojang (`sessionserver.mojang.com`, `textures.minecraft.
 mod no guarda nada de esto en tu ordenador, salvo los servidores que fijas en la lista de servidores
 (`config/trsclient/server-pins.json`, solo direcciones, nunca se envían).
 
+### Insignia TRS en el juego (TRS Client)
+
+El TRS Client muestra una pequeña insignia TRS junto al nombre de los jugadores que **están jugando con TRS en este
+momento**: mientras están en un mundo o en un servidor con el TRS Client, o mientras se ejecuta un juego iniciado por
+el TRS Launcher. Quien solo tiene el launcher abierto o juega con otro cliente no recibe insignia. Para ello, el TRS
+Client informa «jugando» (versión, cargador de mods y, solo con «Server teilen», la dirección del servidor) más o menos
+una vez por minuto mientras estás en un mundo o en un servidor, y el launcher hace lo mismo mientras se ejecuta un
+juego que él ha iniciado; ambas cosas son el estado en línea descrito más abajo y terminan cuando sales del mundo o
+se cierra el juego.
+
+- **Quién la ve:** si alguien está jugando en este momento solo se muestra a jugadores que **están jugando ellos
+  mismos**; en la práctica, otros jugadores TRS en el mismo servidor, junto a nombres que ya ven. Todos los demás
+  reciben «sin insignia». Tu propia insignia la ves siempre. Los jugadores que has bloqueado nunca la ven.
+- **Desactivarla:** «Mostrar insignia de TRS» (*Einstellungen → Datenschutz*) oculta tu insignia a todos. Poner tu
+  estado en línea en «nadie» solo te oculta en las listas de amigos; la insignia **no**.
+
 ### Qué se guarda
 
 | Datos | Para qué |
@@ -127,7 +143,7 @@ mod no guarda nada de esto en tu ordenador, salvo los servidores que fijas en la
 | Las capas que subes (la imagen, recodificada sin metadatos), su estado de revisión y un nombre opcional | Subida de capas; el equipo revisa cada subida antes de que otros la vean |
 | Las denuncias que haces sobre capas de otros jugadores (motivo, nota opcional) | Moderación |
 | Amigos, solicitudes de amistad y bloqueos | La lista de amigos |
-| Estado en línea: «en línea en el launcher» o «jugando» con versión y cargador de mods y, solo si has activado «Server teilen» (compartir servidor), la dirección del servidor | Mostrar a tus amigos a qué juegas y permitirles unirse |
+| Estado en línea: «en línea en el launcher» o «jugando» (del launcher o del TRS Client) con versión y cargador de mods y, solo si has activado «Server teilen» (compartir servidor), la dirección del servidor | Mostrar a tus amigos a qué juegas y permitirles unirse; mostrar la insignia TRS mientras juegas (ver arriba) |
 | Solo con «Sincronizar con la cuenta de TRS» activado: tus skins propias de «Mis skins» (la imagen, recodificada sin metadatos, su nombre y modelo), tus presets de mods propios (nombres e ID de proyectos de Modrinth, sin archivos ni rutas de carpetas) y tu tema, color de acento e idioma, cada uno con la fecha del último cambio; las skins y presets eliminados se anotan durante un tiempo | Mantenerlos iguales en todos los PC donde uses esta cuenta de Minecraft |
 | Solo con los servicios TRS activados y «Sincronizar con la cuenta de TRS» activado en el TRS Client (en el juego): los ajustes del TRS Client – qué módulos están activados y sus ajustes, los diseños y perfiles de HUD, las teclas TRS de los módulos, el modo de configuración de los mods de rendimiento, si terminaste la introducción (y el paquete de módulos elegido) y qué entradas «NUEVO» has abierto –, cada parte con la fecha de su último cambio; sin puntos de ruta, direcciones de servidor, archivos, rutas ni tokens | Mantener el TRS Client igual en todos los PC y carpetas de juego donde uses esta cuenta de Minecraft y mostrar la introducción solo una vez |
 | Solo con los servicios TRS activados: la entrada del vestuario del TRS Client – tus skins favoritas, atuendos (nombre, skin, capa) y las casillas de la rueda de emotes, con la hora del último cambio | El mismo vestuario en cada PC |
@@ -149,6 +165,7 @@ idioma sincronizados y los vuelve a escribir cuando los cambias en la introducci
 
 El estado en línea se guarda **solo en la memoria del servidor**, nunca se escribe en disco, no tiene historial y
 caduca **3 minutos** después de la última actualización. Solo lo ven tus amigos, y nadie si lo configuras en «nadie».
+Solo el hecho de que estés jugando en este momento puede aparecer además como tu insignia TRS (ver arriba).
 
 Las acciones de administración (como aprobar una capa o un bloqueo) se registran en un registro de auditoría junto con
 la UUID afectada.
@@ -166,7 +183,7 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
 - Tus datos se conservan mientras exista tu cuenta TRS.
 - Los tokens de sesión caducan a los 30 días; cerrar sesión o quitar una cuenta del launcher revoca el token.
 - El estado en línea desaparece 3 minutos después de la última actualización, o en el momento en que cierras el
-  launcher.
+  launcher y sales del mundo.
 - Las skins, presets y ajustes sincronizados se conservan hasta que los borres en el launcher (una skin borrada en un PC
   también se borra en el servidor). Las notas sobre skins borradas se guardan 30 días para que tus otros PC también
   puedan borrarlas.

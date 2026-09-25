@@ -2414,7 +2414,7 @@
     "perAccount": "Vale para {name} – cada conta tem suas próprias configurações.",
     "badge": {
       "title": "Mostrar selo TRS",
-      "description": "Outros jogadores TRS podem ver no jogo que você usa TRS."
+      "description": "Enquanto você joga com TRS, outros jogadores TRS na mesma partida veem o selo ao lado do seu nome."
     },
     "cape": {
       "title": "Capa visível para outros",

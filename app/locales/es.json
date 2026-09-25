@@ -2414,7 +2414,7 @@
     "perAccount": "Se aplica a {name}: cada cuenta tiene sus propios ajustes.",
     "badge": {
       "title": "Mostrar insignia de TRS",
-      "description": "Otros jugadores de TRS ven en el juego que usas TRS."
+      "description": "Mientras juegas con TRS, otros jugadores de TRS en la misma partida ven la insignia junto a tu nombre."
     },
     "cape": {
       "title": "Capa visible para otros",

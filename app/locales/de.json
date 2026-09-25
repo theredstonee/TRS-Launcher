@@ -2414,7 +2414,7 @@
     "perAccount": "Gilt für {name} – jeder Account hat eigene Einstellungen.",
     "badge": {
       "title": "TRS-Symbol zeigen",
-      "description": "Andere TRS-Spieler sehen im Spiel, dass du TRS nutzt."
+      "description": "Solange du mit TRS spielst, sehen andere TRS-Spieler im selben Spiel das Symbol neben deinem Namen."
     },
     "cape": {
       "title": "Umhang für andere sichtbar",
