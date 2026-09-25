@@ -42,6 +42,7 @@ pub mod process;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;
+pub mod skin_import;
 pub mod skin_sync;
 pub mod skins;
 pub mod storage;
@@ -94,6 +95,8 @@ pub struct Launcher {
     preparing: Mutex<HashSet<String>>,
     /// Warteschlange für Skin-/Umhang-Änderungen.
     skin_sync: skin_sync::SkinSync,
+    /// Geprüfte Skins, die auf „Übernehmen“ im Import-Dialog warten.
+    skin_imports: skin_import::Staging,
     /// TRS API (Umhänge, Freunde, Präsenz) – nur mit Einwilligung.
     trs: trs_api::TrsApi,
     /// CurseForge – nur, wenn der Build einen API-Schlüssel hat.
@@ -163,6 +166,7 @@ impl Launcher {
             client_mod_updates: client_mod_update::ClientModUpdater::new(&paths)?,
             preparing: Mutex::default(),
             skin_sync: skin_sync::SkinSync::default(),
+            skin_imports: skin_import::Staging::default(),
             trs: trs_api::TrsApi::new(paths.clone())?,
             curseforge: curseforge::CurseForge::from_build()?,
             settings: RwLock::new(settings),

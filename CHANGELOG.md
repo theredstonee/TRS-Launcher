@@ -26,6 +26,10 @@ How to write an entry:
   your theme, accent colour and language are synced with your Minecraft account – add a skin on one PC and it's there
   on the next one, delete it and it's gone everywhere. Your Java and memory settings stay on each PC. You can rename
   skins in your collection now, too. Don't want it? Turn off "Sync with TRS account" under Settings → Privacy.
+- **Adding skins is much easier.** "Add skin" now opens a menu: pick several PNG files at once, drag them straight into
+  the window, paste a link, type a player's name to copy their skin, or bring over the skins you saved in the official
+  Minecraft Launcher, Prism Launcher or the Modrinth App – with a checklist and previews. The launcher recognises slim
+  (Alex) arms by itself; for a single skin you can still change the name and model before it's added.
 
 ### Deutsch
 
@@ -37,6 +41,11 @@ How to write an entry:
   einem PC einen Skin hinzufügen, und er ist auf dem nächsten da; löschen, und er ist überall weg. Java- und
   Speicher-Einstellungen bleiben auf jedem PC. Skins in deiner Sammlung lassen sich jetzt auch umbenennen. Nicht
   gewollt? Unter Einstellungen → Datenschutz „Mit TRS-Konto synchronisieren“ ausschalten.
+- **Skins hinzufügen geht viel leichter.** „Skin hinzufügen“ öffnet jetzt ein Menü: mehrere PNG-Dateien auf einmal
+  wählen, sie direkt ins Fenster ziehen, einen Link einfügen, per Spielername den Skin eines Spielers übernehmen oder
+  die Skins aus dem offiziellen Minecraft Launcher, dem Prism Launcher oder der Modrinth App holen – mit Auswahlliste
+  und Vorschau. Schlanke (Alex-)Arme erkennt der Launcher selbst; bei einem einzelnen Skin kannst du Name und Modell
+  vor dem Hinzufügen noch ändern.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

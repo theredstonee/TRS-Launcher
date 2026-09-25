@@ -47,7 +47,7 @@ impl DropState {
         DropEvent::Drop { token, names }
     }
 
-    fn take(&self, token: u64) -> Option<Vec<PathBuf>> {
+    pub(crate) fn take(&self, token: u64) -> Option<Vec<PathBuf>> {
         let mut pending = self.pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         match pending.take() {
             Some((t, paths)) if t == token => Some(paths),
