@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "builds": [
     {
       "loader": "fabric",
@@ -10,8 +10,8 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "cc9c3ee21230b92f05912145548824087deecedebbbb82dc914c6ddada6330c4",
-      "size": 885176
+      "sha256": "569c823dcb5d31fdb20323d122f3d9fd09d880d563999c1e776fb09ad9a056b9",
+      "size": 1598461
     },
     {
       "loader": "fabric",
@@ -22,8 +22,8 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "789629801ddf8003ba19d7e5aea29eec7c762b21e816cb905b84966c8e889896",
-      "size": 895896
+      "sha256": "1eab808978a9c7d7ab979d45c82dc461eca3fd9611d8edf7428b6c22db8a2350",
+      "size": 1609160
     },
     {
       "loader": "fabric",
@@ -34,8 +34,15 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "608a2c8ab1cb442c92bcaaaff4e77c372afb9e54ebd3aaa87a05b021ab890f4e",
-      "size": 898186
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.6.6"
+        }
+      ],
+      "sha256": "28cd07a00358840e04c0e08d958384b7244be35ab877da0a734152caa7a6aa17",
+      "size": 1899464
     },
     {
       "loader": "fabric",
@@ -46,8 +53,15 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "e8f3b751b378d92fcdce530630b3e0d65027ce1987dcad48ded102272be105c2",
-      "size": 898186
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.6.6"
+        }
+      ],
+      "sha256": "c892d7a56c9d767fdd7995486e7eab88c16e4b673e58699b13d5000965886c17",
+      "size": 1899464
     },
     {
       "loader": "fabric",
@@ -58,8 +72,15 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "2a89ad3fb38578c24a4578afce52812b7c3035701cd1f42d307b5aeb05c32301",
-      "size": 898186
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.6.6"
+        }
+      ],
+      "sha256": "aa2b018d91ee1de960b9f18db3f93a1f8fdddd77b733dc5df584c54f906b7782",
+      "size": 1900472
     },
     {
       "loader": "fabric",
@@ -70,8 +91,20 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "26295d1e2bbf19ec01e57e498f57944474e27a2c750f70c8983d1e21f1994dc3",
-      "size": 898186
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.6.6"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "2.1.1"
+        }
+      ],
+      "sha256": "3b8fc1c9563199e06de1657602434f29cee6c71fc109f7ad9b50c1b02dfb299c",
+      "size": 1993995
     },
     {
       "loader": "fabric",
@@ -82,8 +115,20 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "f8bbd04afb84b9a6ef7df20a8d6f2d77f36784a4999106deaa60c8d16b776c1e",
-      "size": 905232
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.7.5"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "3.0.1"
+        }
+      ],
+      "sha256": "6613caab53dccccf2da616c201f7c4935fd49ed49dcfe7c73dfe12435d14319f",
+      "size": 2072550
     },
     {
       "loader": "fabric",
@@ -94,8 +139,20 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "eacf653c770cd2bbedbe356b81aa8cfaec38b70426dfd69b81544fd97fd6c4b5",
-      "size": 905199
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.7.5"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "3.0.3"
+        }
+      ],
+      "sha256": "ef4bb9e15cb5b2e43565dc6903215c8ca781d9046cfd2e17913b19bfefb471b8",
+      "size": 2074163
     },
     {
       "loader": "fabric",
@@ -106,8 +163,20 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "c15f917a8fbf78f9d14514f4a7ed8031a232c8a09a6a6795aee459eebefc3570",
-      "size": 905166
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.7.6-rc1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "4.0.0"
+        }
+      ],
+      "sha256": "d4e27fe3dda6f17f370ed8a6fd8409b0351584a7f09018faad79d25e12939965",
+      "size": 2031768
     },
     {
       "loader": "fabric",
@@ -118,8 +187,20 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "23ec6bcdbd4996c231f23fffe047c41a7e8c07912ee9b589ba6641ad02c490fd",
-      "size": 905168
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.7.8"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "4.1.2"
+        }
+      ],
+      "sha256": "1eb429cff06d85f37896f9d645f1977af170bf85625cf5a0d70809df1c9b526b",
+      "size": 2086095
     },
     {
       "loader": "fabric",
@@ -130,8 +211,25 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "21e672e28c82bdef0a1bf140eb63fd56f8802bf76de020650e895bfad9ebd192",
-      "size": 905293
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.10.3"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "4.2.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.1.12"
+        }
+      ],
+      "sha256": "be89dda640d37f40e51d19589ea693338f6e01055c11393b029708f12dab700d",
+      "size": 2342282
     },
     {
       "loader": "fabric",
@@ -142,8 +240,25 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "5bbc65f5797a950ed6562f870a63c93e85233cfa341993c8738278eac375c424",
-      "size": 905817
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.8.1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "4.2.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.4.0+1.19.2"
+        }
+      ],
+      "sha256": "1a7488cc5343bc31a71f9ed2652fbc02879f6271aeb40794b5c8fe3dfd829cf6",
+      "size": 2482146
     },
     {
       "loader": "fabric",
@@ -154,8 +269,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "262e71360f5b7f66c406980ee3ca7949106157ebe727b6bda8db51b8efe75b34",
-      "size": 906028
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.8.3"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "4.2.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.4.0+1.19.2"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.1.4"
+        }
+      ],
+      "sha256": "1a4eed81e44a69b06b937b25efc848d5d34ca2923601c4795868d175fee8b882",
+      "size": 2889870
     },
     {
       "loader": "fabric",
@@ -166,8 +303,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "4aab69e774d5cd38ad5efb6db85e8d36bc1aedbf25443265191b995fb35c7ae6",
-      "size": 906031
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.11.1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "5.0.3"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.4.0+1.19.2"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.1.4"
+        }
+      ],
+      "sha256": "35864980d6dccd4bfaf47d1582f3c9e857b454e33e44645c62ebadfe3a07f366",
+      "size": 3003641
     },
     {
       "loader": "fabric",
@@ -178,8 +337,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "012f1b518ac32fd10416f8584941f3ba6c1fdd30e53f31d3653ad4828d379c02",
-      "size": 905773
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.11.1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "5.1.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.1.12"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.1.4"
+        }
+      ],
+      "sha256": "62b2410c09eb330222794efb2c10661ca00fba48b3f2b19510bdaa1c5cc1c513",
+      "size": 2801914
     },
     {
       "loader": "fabric",
@@ -190,8 +371,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "c4bb2d37b63d6b52b1af89524951fa3f10f140b6e6f8fe04fc879dc90dc92418",
-      "size": 904465
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.11.1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "5.2.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.2.11+1.19.4"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.1.4"
+        }
+      ],
+      "sha256": "731dbad63c24e89dc3892fec902186f08f4201137f2b381bfd2f6fe3ad759251",
+      "size": 2989587
     },
     {
       "loader": "fabric",
@@ -202,8 +405,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "53135d6b8f1ef8396dd834be9157f7605acf066163a0aff5b8671e8f1e72a572",
-      "size": 904231
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.11.4"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "6.0.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.5.5+1.20.4"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.25.2+mc1.20.1"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "e9a677efc90774a9dd85dd795d1730f1fc4a444f6755b21a636e227081f829dd",
+      "size": 3530464
     },
     {
       "loader": "fabric",
@@ -214,8 +444,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "fa9fe38da05aea040fe30502320938393664cc36d4681a1996214d7849aec1db",
-      "size": 904605
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.12.0"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "6.0.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.5.5+1.20.4"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.10.1+mc1.20.2"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "bedfa0054a893bac2db2a346f186e75d1f4607a3ab435f508ff5500f2bfb1361",
+      "size": 3375779
     },
     {
       "loader": "fabric",
@@ -226,8 +483,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "3d4cad2d54f1016dcec14ededebacdf380e9a4fe0e37d8abc2d2aaec07d7a31f",
-      "size": 904671
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.12.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.5.5+1.20.4"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.10.0+mc1.20.3"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "e0959971d078163d5206a9356a4cbdb5c857bf16c1dbdb7cdffed1323f0ba091",
+      "size": 3349635
     },
     {
       "loader": "fabric",
@@ -238,8 +517,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "26d99d061617893545f9e31888f9eb0e4af61974e826704f7f11c300a2a5bb08",
-      "size": 904670
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.12.1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "6.0.3"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.5.5+1.20.4"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.17.0+mc1.20.4"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "c294ecf158bcdf115313fb0ce122e3ca4ee5dc9e16e9027c76ede1189582142a",
+      "size": 3312629
     },
     {
       "loader": "fabric",
@@ -250,8 +556,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "5f8a80ba6bf7043986361cefede446778d2fec9a234226d9c64354a33434fa32",
-      "size": 900960
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.12.5"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "6.1.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.3.0+1.20.6"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.17.0+mc1.20.5"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "80a9d27b20b718af0d0e8226ba5228a100c65621cf077330ed04d3b152e68bb7",
+      "size": 3153436
     },
     {
       "loader": "fabric",
@@ -262,8 +595,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "42355b89342a0575cf61ee05726907f878573379e0371a34867d84afade08110",
-      "size": 900961
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.12.5"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "6.1.1"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.3.0+1.20.6"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.18.0+mc1.20.6"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "82c26691ec01cc16a78effed75e77d1e786ef2d9bb25cdcbcb1f6d11a56d6ab8",
+      "size": 3166123
     },
     {
       "loader": "fabric",
@@ -274,8 +634,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "575dc0f3afd75de0d0cddfa9a2078b73203e5de86a8ce38d6a587fbca3442584",
-      "size": 900953
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.15.2+mc1.21.1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "7.0.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.6.14+1.21.1"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.19.1+mc1.21"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.1.4"
+        }
+      ],
+      "sha256": "2f561825a2c51e9965f8db29edf14bbfe1ca4da96c2df3791d66a702548ab50c",
+      "size": 3121897
     },
     {
       "loader": "fabric",
@@ -286,8 +673,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "68bb92150c9e33f1e4fda0e8c014ad575d299ee0f54a468c560c8757515f1415",
-      "size": 900957
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.15.4+mc1.21.1"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "7.0.3"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.6.14+1.21.1"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.25.1+mc1.21.1"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "c747a7e6bf5e46e58a8bdadbefca747213ad28e1f5982b369b44d3e09b28cbd2",
+      "size": 3359477
     },
     {
       "loader": "fabric",
@@ -298,8 +712,25 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "7bbcd78d880a545708450ac7c4efc2210c0a4dc20ff70647d7b713b2d06ae1b4",
-      "size": 900940
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.14.6+mc1.21.3"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.7.2+1.21.3"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "f4baf9a0b9b315ba77f6aae34f89905906bad5737095cf8cdecc4c952b25d34a",
+      "size": 2682240
     },
     {
       "loader": "fabric",
@@ -310,8 +741,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "1f8ce7e9fbbf56cf456b8b2680a6b271be9d616b4b56b075ebc760c131cd3b2b",
-      "size": 900941
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.14.6+mc1.21.3"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "7.1.0-hotfix"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.7.2+1.21.3"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "f540d5ab24a147af937c20abb5ffd9dbd36bf35bf6a35af7c763037b3043dd57",
+      "size": 2775184
     },
     {
       "loader": "fabric",
@@ -322,8 +775,35 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "6b67dec472d3b44b19e59d3dc3d75fba54b4a6285ca7ba7b1c1b49ac975eb643",
-      "size": 900935
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.15.3+mc1.21.4"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "7.1.3"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.8.7+1.21.4"
+        },
+        {
+          "id": "modernfix",
+          "name": "ModernFix",
+          "version": "5.20.3+mc1.21.4"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "22514af0bfb35c8bd78ef1a00fb2902022716d2dd5ac41da003b69e5813a02a5",
+      "size": 3306433
     },
     {
       "loader": "fabric",
@@ -334,8 +814,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "32bb38b5d27b9a66ff3274c1dc49c028a6ff8401ae6b712bca25d7fd7e8d1b78",
-      "size": 901392
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.16.3+mc1.21.5"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "8.0.4"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.9.7+1.21.5"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "ab0b2c3454e52f371a2dcfa1dd7b9be5ad5cf021425447b151966e76a15a6fdc",
+      "size": 2789598
     },
     {
       "loader": "fabric",
@@ -346,8 +848,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "bcbd2a53c5101313ba9ee1eda8e8e057be0c6462f0d1ac8913cb2bb602da87a9",
-      "size": 900637
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.17.0+mc1.21.6"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "8.0.4"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.10.3+1.21.6"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "d14cceb95e18e8f00a5f6a1fdcd637491e37f84846de43f35b487a8b46d094c1",
+      "size": 2765444
     },
     {
       "loader": "fabric",
@@ -358,8 +882,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "e1bcdfc57ed70c800ee7b4b12e9c656d3c710b55da4a316be7fc10bef1efef45",
-      "size": 900638
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.18.0+mc1.21.7"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "8.0.4"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.11.2+1.21.7"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "2c31bec13ba553dd3db8d0dd8afff2dd8e1c55f7f71b5d58fac780372a9f0bd4",
+      "size": 2765445
     },
     {
       "loader": "fabric",
@@ -370,8 +916,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "8f02ec906e472045ecc59f7b530911b3f43e5400697d1b8b3bdec0e597ab1c75",
-      "size": 900638
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.18.1+mc1.21.8"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "8.0.4"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.12.6+1.21.8"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "6b5b2d849f9924ce66b5a8ccefbf15d0808f6287d522f4f0bf9971c68f00945c",
+      "size": 2912031
     },
     {
       "loader": "fabric",
@@ -382,8 +950,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "72cdc5c586922b0954f8a8ccca6b51d8133f9c2c83d6539578ba64c05527ebee",
-      "size": 901377
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.19.2+mc1.21.9"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "8.1.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.13.6+1.21.10"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.3.3"
+        }
+      ],
+      "sha256": "5bf7a86264db1ae544bd2ce4e153d383f3bb47982a903e1be6f49e10a16c4c6b",
+      "size": 2895180
     },
     {
       "loader": "fabric",
@@ -394,8 +984,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "55976aba637f9ad4ba93ca48c657ee2644eba121f85bc0c195b3581ce149a484",
-      "size": 901376
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.20.1+mc1.21.10"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "8.1.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.13.6+1.21.10"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "d3bbac9613390e61a09199dd788386abdf307c2af4cfb3e165d6dd2fd3d3036e",
+      "size": 2908151
     },
     {
       "loader": "fabric",
@@ -406,8 +1018,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "78492af6bd00fa33504af0466dfb9dec998c4496c011a00ac2202f7d5fc3a295",
-      "size": 901880
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.21.4+mc1.21.11"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "8.2.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.14.3+1.21.11"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "e73c8ff2ee36849013db0ae933ee86e5b52e0e2ce42a98fa0972eeb89da5f4e2",
+      "size": 2950104
     },
     {
       "loader": "fabric",
@@ -418,8 +1052,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "17d1dd90aafbe98181889ceb8573952381eb48bb96b3f8b443ffae0faaa08f32",
-      "size": 900250
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.24.7+mc26.1.2"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "9.0.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.15.3+26.1"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "284e2716bc4a4f3c2b310908247f58539c2fd5700b9f245a7cb62b7a7f43aaa1",
+      "size": 2754739
     },
     {
       "loader": "fabric",
@@ -430,8 +1086,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "da56c6d6301867e5430c06ecea664bc1153ae1e86d9ff7fe77b5ebbb0e8a176e",
-      "size": 900252
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.24.7+mc26.1.2"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "9.0.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.15.3+26.1"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "45aa8b174668ac12074bc78addb0bc63191e6429dfb9a168d775ccf5ecaf576a",
+      "size": 2754742
     },
     {
       "loader": "fabric",
@@ -442,8 +1120,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "a712b47a3dcec71d2b3c871746cfe3808bf4d1473a4ec1307a60129447935f75",
-      "size": 900255
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.24.7+mc26.1.2"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "9.0.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.15.3+26.1"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "bc75baaa4ee5e7e74ae590d3cbfaf8f93105407ff09a7bed9beffe7aea17e13d",
+      "size": 2754744
     },
     {
       "loader": "fabric",
@@ -454,8 +1154,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "1c8ceaeb7aad8f6dcb6b231d74512e7e38fcf883bba7110cdadd395fcbe80fd4",
-      "size": 900631
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.25.3+mc26.2"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "9.0.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.16.5+26.2"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "6ba6e056020222d3163f85328edd419a7ee3ecbd9de15ebdabf240b899355440",
+      "size": 2549958
     },
     {
       "loader": "fabric",
@@ -466,8 +1188,30 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "40615ec5d25fb51d155d8e7cc403c4a31ad3682baf82483c2df8cb687cad7074",
-      "size": 900575
+      "bundled": [
+        {
+          "id": "lithium",
+          "name": "Lithium",
+          "version": "0.26.1+mc26.3"
+        },
+        {
+          "id": "ferritecore",
+          "name": "FerriteCore",
+          "version": "9.0.0"
+        },
+        {
+          "id": "immediatelyfast",
+          "name": "ImmediatelyFast",
+          "version": "1.17.1+26.3"
+        },
+        {
+          "id": "badoptimizations",
+          "name": "BadOptimizations",
+          "version": "2.4.1"
+        }
+      ],
+      "sha256": "6870e39d2d780eaf02da2b1365984c8c5a200e97c63aac90431ff64471a961b4",
+      "size": 2546465
     },
     {
       "loader": "forge",
@@ -477,8 +1221,8 @@
       "file": "trsclient-forge-1.13.2.jar",
       "requires": [],
       "forge": "1.13.2-25.0.223",
-      "sha256": "eaba364463efd925a98b1193e8439961c02d80c83f6f0ac3a4238931b8ae7bab",
-      "size": 714646
+      "sha256": "b2d8af83fe56dc787955c86e947d1da5eacd240e33fd8ce1fbc804cf4574565d",
+      "size": 1353382
     },
     {
       "loader": "forge",
@@ -488,8 +1232,8 @@
       "file": "trsclient-forge-1.14.4.jar",
       "requires": [],
       "forge": "1.14.4-28.2.26",
-      "sha256": "9e486a1226b72b5b698172d178ce31cebef6f62e6e2ae5f10d182c67f934e438",
-      "size": 831373
+      "sha256": "55e333269498d76ce1aca8a084318618bfb529918d522cfed87fed6869052a1f",
+      "size": 1506936
     },
     {
       "loader": "forge",
@@ -499,8 +1243,8 @@
       "file": "trsclient-forge-1.15.2.jar",
       "requires": [],
       "forge": "1.15.2-31.2.57",
-      "sha256": "098c40f915b46c0c9aa971bfc4b03c263e4e21059d21930e534cfb6b856fd88f",
-      "size": 868682
+      "sha256": "da803326c9d5fb2ca8830343e085dcbe85227e665f646ff0ebe8f78491590dc0",
+      "size": 1553097
     },
     {
       "loader": "forge",
@@ -510,8 +1254,8 @@
       "file": "trsclient-forge-1.16.2.jar",
       "requires": [],
       "forge": "1.16.2-33.0.61",
-      "sha256": "df62f68c89d040b00d56ca7181bdc8a66438d65732faa2bf6cf92840c053ebd2",
-      "size": 871470
+      "sha256": "27c5e2261503ae2a57e7a51163149fdf2790d1a5a342df7c3586dcfbc3a3da23",
+      "size": 1556447
     },
     {
       "loader": "forge",
@@ -521,8 +1265,8 @@
       "file": "trsclient-forge-1.16.4.jar",
       "requires": [],
       "forge": "1.16.4-35.1.4",
-      "sha256": "c6e22a18d9d79b523829485b156fd9a302b310f0fc6a0e86c0a7af0ce5883b97",
-      "size": 871428
+      "sha256": "55a8abe179660a196b9d3ae2f4c4b569f49d3a2cb7a45e5e481e65f9de8cad2f",
+      "size": 1557433
     },
     {
       "loader": "forge",
@@ -532,8 +1276,8 @@
       "file": "trsclient-forge-1.16.5.jar",
       "requires": [],
       "forge": "1.16.5-36.2.34",
-      "sha256": "4859eb74e85800f7a8f1e49327061bc69fa233e4dcf047734711d518d1d4af59",
-      "size": 871428
+      "sha256": "abbbb1edc766608e87d3f7d372741f71ec27e3b278eccac2bf3b302389bc4056",
+      "size": 1557433
     },
     {
       "loader": "forge",
@@ -543,8 +1287,8 @@
       "file": "trsclient-forge-1.17.1.jar",
       "requires": [],
       "forge": "1.17.1-37.1.1",
-      "sha256": "7e72d418e93d214b21d8c07bbb81cdbbdd7cbef0107d4c3f66004cc81c86e406",
-      "size": 876652
+      "sha256": "5e6e448dd27ef3132d3794f473d4216048f8116ef0a290099e8080ba20380636",
+      "size": 1566607
     },
     {
       "loader": "forge",
@@ -554,8 +1298,8 @@
       "file": "trsclient-forge-1.18.jar",
       "requires": [],
       "forge": "1.18-38.0.17",
-      "sha256": "afa9a3bbd48466971b1573ff2ba404c8bcb824550c3b8c99f1a271cd845db780",
-      "size": 876697
+      "sha256": "812d399089169a0bf43c2ac31b8b5f55353ecfd1b4f000cf99d451fa0c621a4d",
+      "size": 1566901
     },
     {
       "loader": "forge",
@@ -565,8 +1309,8 @@
       "file": "trsclient-forge-1.18.1.jar",
       "requires": [],
       "forge": "1.18.1-39.1.0",
-      "sha256": "cc693d4788ecc502f340f1dd3630f10f3e1de0643fc8ad89a53b858a1cd6654e",
-      "size": 876698
+      "sha256": "927ff12b00f7655387fee3ce6d378208bcebbfec843f29f94e8b71266a1ef198",
+      "size": 1566902
     },
     {
       "loader": "forge",
@@ -576,8 +1320,8 @@
       "file": "trsclient-forge-1.18.2.jar",
       "requires": [],
       "forge": "1.18.2-40.3.0",
-      "sha256": "5a3874dcb5b588869e4a90d24dda9c2cf419d3aa9e458490ff7f3d102ee2387c",
-      "size": 876645
+      "sha256": "ec6b1a75f059913450745dc13f9b8f321f285a0fdeba635af0f5e3509d9f4990",
+      "size": 1566849
     },
     {
       "loader": "forge",
@@ -587,8 +1331,8 @@
       "file": "trsclient-forge-1.19.jar",
       "requires": [],
       "forge": "1.19-41.1.0",
-      "sha256": "17aab13c07fc676afc5ea6953ec8f4cda81eab918857d9cd4f05cdd509332a8f",
-      "size": 876626
+      "sha256": "16bee87053089f8019b8e83c629772573d5474b0c0d462cad555f7c4113203ab",
+      "size": 1566999
     },
     {
       "loader": "forge",
@@ -598,8 +1342,8 @@
       "file": "trsclient-forge-1.19.1.jar",
       "requires": [],
       "forge": "1.19.1-42.0.9",
-      "sha256": "f512fd8f1a27babb32bbdd44fc72ce2059ef90ad9d6270a67d5371859f9a6e84",
-      "size": 876774
+      "sha256": "b5488da6d65d1f8bd5eefd1f36bec8a1b4a9ecabde192c238cdd31d2cdeb964b",
+      "size": 1567401
     },
     {
       "loader": "forge",
@@ -609,8 +1353,8 @@
       "file": "trsclient-forge-1.19.2.jar",
       "requires": [],
       "forge": "1.19.2-43.5.0",
-      "sha256": "9673bbadfd2eeb0a4bee86d8aab623bbf9e37ba02bb4b29296598b6948173551",
-      "size": 876776
+      "sha256": "87ae423fadc11135804c596b226d0a4fd5ea116a95150cf80a10d02e8da2de45",
+      "size": 1567403
     },
     {
       "loader": "forge",
@@ -620,8 +1364,8 @@
       "file": "trsclient-forge-1.19.3.jar",
       "requires": [],
       "forge": "1.19.3-44.1.0",
-      "sha256": "37c5dd6106dfe2b31214d71ea60eaf472416144d90210b52874dc185eb5254ab",
-      "size": 876619
+      "sha256": "86dd0986f100c5a7f68cbad6eb4940fbeced11c4aeec4ca1b68d38c26204299d",
+      "size": 1567506
     },
     {
       "loader": "forge",
@@ -631,8 +1375,8 @@
       "file": "trsclient-forge-1.19.4.jar",
       "requires": [],
       "forge": "1.19.4-45.4.0",
-      "sha256": "8809003964207e445b01f8ad8f7318758169e46c09c0ad958edf3a944752940e",
-      "size": 875527
+      "sha256": "185486c5f98ab395e90a6538dbe655e84bd5a60d54848f7078573a562a9e26e2",
+      "size": 1566141
     },
     {
       "loader": "forge",
@@ -642,8 +1386,8 @@
       "file": "trsclient-forge-1.20.jar",
       "requires": [],
       "forge": "1.20-46.0.14",
-      "sha256": "42ebd51bf3af92ea184278fc2156934d23828d5d9e6a50983af0ec0366c96680",
-      "size": 868813
+      "sha256": "03b8380efad129b0587783383006e6503b5920393135d0fd23115acbd657f14e",
+      "size": 1550111
     },
     {
       "loader": "forge",
@@ -653,8 +1397,8 @@
       "file": "trsclient-forge-1.20.1.jar",
       "requires": [],
       "forge": "1.20.1-47.4.10",
-      "sha256": "e6a0bf2deaaea9043120e1b2a8ec8f7aa56a981127b483a7b33a0d1bc22ffa49",
-      "size": 868817
+      "sha256": "2bf5a161289028bcfd04c64c6541e6b05c5c076eb22e7458b748c524129b037b",
+      "size": 1550114
     },
     {
       "loader": "forge",
@@ -664,8 +1408,8 @@
       "file": "trsclient-forge-1.20.2.jar",
       "requires": [],
       "forge": "1.20.2-48.1.0",
-      "sha256": "d91fffb52001b8d019f5fe63eadbfd676b4b4c56eff0d9222ad36393b3683948",
-      "size": 869133
+      "sha256": "00970a4c0b263d6bf9b75a94149c95a7dfd3c2131f2d70bc9bb277e82e2e805f",
+      "size": 1550561
     },
     {
       "loader": "forge",
@@ -675,8 +1419,8 @@
       "file": "trsclient-forge-1.20.3.jar",
       "requires": [],
       "forge": "1.20.3-49.0.2",
-      "sha256": "65285ef2c81e0cf3d31d3c8caae9f1a5f1512d65d76084d9bb3cb1a8b0c4d630",
-      "size": 869195
+      "sha256": "07aac3c65988ea890ce7cf6cf99b3b28ba36b4271b879aba7975bba072c43cd0",
+      "size": 1550499
     },
     {
       "loader": "forge",
@@ -686,8 +1430,8 @@
       "file": "trsclient-forge-1.20.4.jar",
       "requires": [],
       "forge": "1.20.4-49.2.0",
-      "sha256": "cb17c8af7b66918e5d509d04ccb3f742d36010a2e6601377805cc26f2c96b643",
-      "size": 869195
+      "sha256": "95469bc2d125952fcba07be038194c43fd605949e79d9b714c5a08eb8ff93cda",
+      "size": 1550500
     },
     {
       "loader": "forge",
@@ -697,8 +1441,8 @@
       "file": "trsclient-forge-1.20.6.jar",
       "requires": [],
       "forge": "1.20.6-50.2.0",
-      "sha256": "6678625a0abc020ac66373eab5a32f935aeba8ee52770521d08b47a471ded28a",
-      "size": 857415
+      "sha256": "4955961cbeb8c91c322e86e21de68550b3f65eb04cbc81a144b39bc2a2df01de",
+      "size": 1532302
     },
     {
       "loader": "forge",
@@ -708,8 +1452,8 @@
       "file": "trsclient-forge-1.21.jar",
       "requires": [],
       "forge": "1.21-51.0.33",
-      "sha256": "372a619a73a6169c6b1f278b9c8ce69bf70b039e24018b402b94ea0074dd0af2",
-      "size": 857432
+      "sha256": "28f89c7796437dedd429deb2635db97555362c09e942deae1f200b4e7b9c27a4",
+      "size": 1532321
     },
     {
       "loader": "forge",
@@ -719,8 +1463,8 @@
       "file": "trsclient-forge-1.21.1.jar",
       "requires": [],
       "forge": "1.21.1-52.1.0",
-      "sha256": "f62dab4916323d5bda1e288ecffe7772d0b260a94860eac599d580485f379f6b",
-      "size": 857436
+      "sha256": "f0568b848043b361f4940d87ddd066eaf20450582246f656cebb3a3684e8e328",
+      "size": 1532325
     },
     {
       "loader": "forge",
@@ -730,8 +1474,8 @@
       "file": "trsclient-forge-1.21.3.jar",
       "requires": [],
       "forge": "1.21.3-53.1.0",
-      "sha256": "45d766d16a49abd3c1dd1a51a0e9783340538a3010b9eafd525c0ff155fb6874",
-      "size": 857124
+      "sha256": "b49b67e7e0a47073e82da63dd4bae39fae5368aea92f97c16229ec737f0c392a",
+      "size": 1532018
     },
     {
       "loader": "forge",
@@ -741,8 +1485,8 @@
       "file": "trsclient-forge-1.21.4.jar",
       "requires": [],
       "forge": "1.21.4-54.1.14",
-      "sha256": "dad4ea9826206f453c0779ecda5e7eb4e4ed2079aa8ab431e1adf01e1a61a158",
-      "size": 857118
+      "sha256": "c3bd0bc9b87c6bdc98330a8307f53c47f4b6485e4fa221707383c19069e1c87d",
+      "size": 1532012
     },
     {
       "loader": "forge",
@@ -752,8 +1496,8 @@
       "file": "trsclient-forge-1.21.5.jar",
       "requires": [],
       "forge": "1.21.5-55.1.0",
-      "sha256": "f67e5f8410b0c7e008818d6111167dd552f21302c92fe0d75f6e3ce5c445b67e",
-      "size": 857589
+      "sha256": "49ff60e6e6bc9635ee614761beea5d828adbe7d7d51dd419d37c899e7890c07c",
+      "size": 1532679
     },
     {
       "loader": "forge",
@@ -763,8 +1507,8 @@
       "file": "trsclient-forge-1.21.6.jar",
       "requires": [],
       "forge": "1.21.6-56.0.9",
-      "sha256": "1b2f4b6d940725f48e438bf7720a4db29e9885a205814fb12a5a0689c3feacc8",
-      "size": 856934
+      "sha256": "0337622a7396a6aac0928cf1c5ee74f8a13ac51b9475b79d7d2230c65993c970",
+      "size": 1533004
     },
     {
       "loader": "forge",
@@ -774,8 +1518,8 @@
       "file": "trsclient-forge-1.21.7.jar",
       "requires": [],
       "forge": "1.21.7-57.0.3",
-      "sha256": "14e8512e895d75d03037592097e2334f2497841967ea03356e73ec4e2f68fbdd",
-      "size": 856934
+      "sha256": "d92fc01a4fc6a29497a8105d2d2c9f22dfee08c1ad1aafa4ecbd7c5cd2f3b7aa",
+      "size": 1533005
     },
     {
       "loader": "forge",
@@ -785,8 +1529,8 @@
       "file": "trsclient-forge-1.21.8.jar",
       "requires": [],
       "forge": "1.21.8-58.1.0",
-      "sha256": "d20d9e41b6a888872f766fde460b8da9bd96a5e1df30035054eb759757250efe",
-      "size": 856934
+      "sha256": "d5277acd895700f8d43a46b2477fa3678cf980331bd82cbb80653c65ad35c43c",
+      "size": 1533005
     },
     {
       "loader": "forge",
@@ -796,8 +1540,8 @@
       "file": "trsclient-forge-1.21.9.jar",
       "requires": [],
       "forge": "1.21.9-59.0.5",
-      "sha256": "b18d9e6be3c34f188b28387cbce9ada694eb70b193c73478ea2306508718f627",
-      "size": 856389
+      "sha256": "34b941e6877c4bd1e20d0feb26e626991e816cc2dd6d65633ff33df1f2fc40ca",
+      "size": 1532539
     },
     {
       "loader": "forge",
@@ -807,8 +1551,8 @@
       "file": "trsclient-forge-1.21.10.jar",
       "requires": [],
       "forge": "1.21.10-60.1.0",
-      "sha256": "d5f2df7326b37ffed5204cfe5fe5d3514abb0fcb5d0a6c15aa8910adef969d42",
-      "size": 856390
+      "sha256": "afb3701b9986a8d5b62ac0ace6747d6a10e1d923cce402b6014c806bcba257c9",
+      "size": 1532539
     },
     {
       "loader": "forge",
@@ -818,8 +1562,8 @@
       "file": "trsclient-forge-1.21.11.jar",
       "requires": [],
       "forge": "1.21.11-61.2.0",
-      "sha256": "2158ee93ba971c0c0bbeec46498c9b28d35ed1aa6ca61b5641f9ae4b9ee7c5de",
-      "size": 855968
+      "sha256": "82daf37b4b768b350dc69fd9f2693ff555d1a6d92ed546a8f50e15db925a045d",
+      "size": 1531891
     },
     {
       "loader": "forge",
@@ -829,8 +1573,8 @@
       "file": "trsclient-forge-26.1.jar",
       "requires": [],
       "forge": "26.1-62.0.9",
-      "sha256": "4eca95cd2075e1ea0656d23463236c0dc5b4e5f3fad4efd7cfa2fb9e1f14a977",
-      "size": 859015
+      "sha256": "27f67475f974c79cb0990df5479210379d2ae16123ac1e53b5d82c82d309360e",
+      "size": 1540623
     },
     {
       "loader": "forge",
@@ -840,8 +1584,8 @@
       "file": "trsclient-forge-26.1.1.jar",
       "requires": [],
       "forge": "26.1.1-63.0.2",
-      "sha256": "33d3d5f6b21291123d6d4c4b1220b4294e6a0601fd72372b912ba8e7a2dcf780",
-      "size": 859017
+      "sha256": "7d7ce85f179a04910ffd95f5768f369498abf33825f027ab290846802052d55d",
+      "size": 1540625
     },
     {
       "loader": "forge",
@@ -851,8 +1595,8 @@
       "file": "trsclient-forge-26.1.2.jar",
       "requires": [],
       "forge": "26.1.2-64.1.0",
-      "sha256": "af55e2ac7a944e051b80f2d402cb36fa57d7056cad82a1b5094f6eb9a39eae9a",
-      "size": 859020
+      "sha256": "01145f747851d74fa4fe6aa0a4b37e42dd4a4757dff05dd45c07cb33dcda82c7",
+      "size": 1540628
     },
     {
       "loader": "forge",
@@ -862,8 +1606,8 @@
       "file": "trsclient-forge-26.2.jar",
       "requires": [],
       "forge": "26.2-65.1.0",
-      "sha256": "6d9e4721f30be8c7a235ee4bb0f5879df8a60553e81ee2a653cdbccf00e62ead",
-      "size": 859316
+      "sha256": "cbaf6c416b8c4def5c0fce1114f18248d5636a600a477f8935e33c2fdb4b475b",
+      "size": 1540923
     },
     {
       "loader": "forge",
@@ -873,8 +1617,8 @@
       "file": "trsclient-forge-26.3.jar",
       "requires": [],
       "forge": "26.3-66.0.2",
-      "sha256": "8a1212292ed489900736205664682557d66061b9cd7dd11741b23ab5fff312ef",
-      "size": 859234
+      "sha256": "a272babc9a5cdf51a3a1c28fccb8aebb28b9ffa54dba703cfbea12a48819a5af",
+      "size": 1540858
     },
     {
       "loader": "forge",
@@ -884,8 +1628,8 @@
       "file": "trsclient-forge-1.7.10.jar",
       "requires": [],
       "forge": "1.7.10-10.13.4.1614",
-      "sha256": "0d9b1d5ecd8d5b70fc82a5056dcdc40c342a7be95eec1037da1549a4b387d179",
-      "size": 714238
+      "sha256": "c3c8be9e3f16eca9ddd005191a3fdcffed9a148f796df1231871b3c312db6a1c",
+      "size": 1353562
     },
     {
       "loader": "forge",
@@ -895,8 +1639,8 @@
       "file": "trsclient-forge-1.8.9.jar",
       "requires": [],
       "forge": "1.8.9-11.15.1.2318",
-      "sha256": "ca284704453d8ecd750a61b57ffe17d9969082454b534f5d7f53c75d64f39332",
-      "size": 865640
+      "sha256": "9b002a5e21fe93093d0c5d376333df89f9c6f0ad02d57b4a14f679475d19d884",
+      "size": 1553020
     },
     {
       "loader": "forge",
@@ -906,8 +1650,8 @@
       "file": "trsclient-forge-1.9.jar",
       "requires": [],
       "forge": "1.9-12.16.1.1887",
-      "sha256": "a933f1016f789af09998cfc4be3bfbf21b0f1e83b45adf7379edc771d1b5bf4c",
-      "size": 866123
+      "sha256": "6ae3f16c02361708fbb49a4a407faf5e0d578cd6f3030d89051c1fdef51923c1",
+      "size": 1553561
     },
     {
       "loader": "forge",
@@ -917,8 +1661,8 @@
       "file": "trsclient-forge-1.9.4.jar",
       "requires": [],
       "forge": "1.9.4-12.17.0.2317",
-      "sha256": "2651773a7d7ea9e5cf1df38e415b995849d9424f62cd908dd2d6a10907d0a888",
-      "size": 866124
+      "sha256": "276a9422c2e23b833e8a6e37b07328c5f7bce66e96a2883a9c814a8a7d9487a8",
+      "size": 1553563
     },
     {
       "loader": "forge",
@@ -929,8 +1673,8 @@
       "file": "trsclient-forge-1.10.2.jar",
       "requires": [],
       "forge": "1.10.2-12.18.3.2511",
-      "sha256": "6412b74e97d56e44a33af08b630efbcf92386212c0da0279fa269992152284f3",
-      "size": 866115
+      "sha256": "ac084dd343531fb504d296773f1563616961569691949c0ecdd0e74c97c05592",
+      "size": 1553553
     },
     {
       "loader": "forge",
@@ -941,8 +1685,8 @@
       "file": "trsclient-forge-1.11.2.jar",
       "requires": [],
       "forge": "1.11.2-13.20.1.2588",
-      "sha256": "9580300d43231fdc524b265f0bbd5ca475c2b8bfea0de058289cf83cbaf25932",
-      "size": 866074
+      "sha256": "47d91469846bf00ad17d7e2f44de83c90caad7c1c44428cae4c78293a318b85e",
+      "size": 1553512
     },
     {
       "loader": "forge",
@@ -954,8 +1698,8 @@
       "file": "trsclient-forge-1.12.2.jar",
       "requires": [],
       "forge": "1.12.2-14.23.5.2859",
-      "sha256": "b9d490fb881d712e9a214b9419251735b86add8e096022af51abbba4078ed83e",
-      "size": 866280
+      "sha256": "5ebd779392b237f489f2490cf0d69a67e4736bb6706cee90f45c683e2ac2f6ab",
+      "size": 1553766
     },
     {
       "loader": "neoforge",
@@ -965,8 +1709,8 @@
       "file": "trsclient-neoforge-1.20.2.jar",
       "requires": [],
       "neoforge": "20.2.93",
-      "sha256": "4b3a73e70a8b1d205bac328e6ce39b6303866abf15ff92553144f942285e76aa",
-      "size": 857582
+      "sha256": "d2ba18104fe4053fd2a4ad0e9e12650dfcdd86f533a38e57befbb18dccbcda4e",
+      "size": 1534712
     },
     {
       "loader": "neoforge",
@@ -976,8 +1720,8 @@
       "file": "trsclient-neoforge-1.20.3.jar",
       "requires": [],
       "neoforge": "20.3.8-beta",
-      "sha256": "a56f33bdf29b8ac62296833074ea9a76dd9add7ff8714d79176b5a7392c19df3",
-      "size": 857656
+      "sha256": "20937227941959e29b5e70e7dffcd770efd7bebf2a65334c7696216a5d716d0b",
+      "size": 1534705
     },
     {
       "loader": "neoforge",
@@ -987,8 +1731,8 @@
       "file": "trsclient-neoforge-1.20.4.jar",
       "requires": [],
       "neoforge": "20.4.251",
-      "sha256": "731bad40f75475442c14dfe35a7564bfa32ad3f59e0047baa5dc30106f767b7d",
-      "size": 857655
+      "sha256": "0e50da1e56709d0d5d9ae02d6daca5a123999d750a0d2c929d82f2f2b18fc507",
+      "size": 1534704
     },
     {
       "loader": "neoforge",
@@ -998,8 +1742,8 @@
       "file": "trsclient-neoforge-1.20.5.jar",
       "requires": [],
       "neoforge": "20.5.21-beta",
-      "sha256": "1ce164c420dc95dc49a63e992eff93edc281e09b04b996557e33cfba04996b0f",
-      "size": 854871
+      "sha256": "98b1aa8061d7e15b086a7be6f3d5a53effab6c5439af0c33513d188b6b95918e",
+      "size": 1529749
     },
     {
       "loader": "neoforge",
@@ -1009,8 +1753,8 @@
       "file": "trsclient-neoforge-1.20.6.jar",
       "requires": [],
       "neoforge": "20.6.141",
-      "sha256": "7c0d291268af759b32502799028cce0d78f7216e393b7fe89842cacf371e2a07",
-      "size": 854872
+      "sha256": "c33781e82b4df65510246b992ee90996e4b6a3e49803f7292c6b0ecdea8b453f",
+      "size": 1529750
     },
     {
       "loader": "neoforge",
@@ -1020,8 +1764,8 @@
       "file": "trsclient-neoforge-1.21.jar",
       "requires": [],
       "neoforge": "21.0.167",
-      "sha256": "e03e1a655dda658bfeb5904dd16d3e7b84c2888b928f268df8da60b60b9ebfca",
-      "size": 854881
+      "sha256": "8a5e4ae1033a60a9c99302c17408cafdc48606cef48644cdb4ff30291ffb753d",
+      "size": 1529761
     },
     {
       "loader": "neoforge",
@@ -1031,8 +1775,8 @@
       "file": "trsclient-neoforge-1.21.1.jar",
       "requires": [],
       "neoforge": "21.1.251",
-      "sha256": "b68cac17677e88c3dfc362ce9f57aa99062cc2d6c0e40f26f7e58e591a81d7be",
-      "size": 854882
+      "sha256": "a1dece353fc3f98eb73770163fb315df936d9cbcb3f058ce5f4ce544654965ff",
+      "size": 1529762
     },
     {
       "loader": "neoforge",
@@ -1042,8 +1786,8 @@
       "file": "trsclient-neoforge-1.21.2.jar",
       "requires": [],
       "neoforge": "21.2.1-beta",
-      "sha256": "e40512ed4a070882908d0cc88e555b2ddcdbbb4b5b5d86e2a778eae0866d83cf",
-      "size": 854847
+      "sha256": "051f539555d12da4de0ad957f9828850c9d3cf2abd192b2f999a4a4d599ab087",
+      "size": 1529733
     },
     {
       "loader": "neoforge",
@@ -1053,8 +1797,8 @@
       "file": "trsclient-neoforge-1.21.3.jar",
       "requires": [],
       "neoforge": "21.3.97",
-      "sha256": "729458cab2700eecaa2c273626ffa6f35213c733f00181bfe5adbbae5a81eeaf",
-      "size": 854849
+      "sha256": "3c4ae0c3e1f5b01c2359afd8705f32d1b01e4443ff160946ebd9d1ca7983966a",
+      "size": 1529735
     },
     {
       "loader": "neoforge",
@@ -1064,8 +1808,8 @@
       "file": "trsclient-neoforge-1.21.4.jar",
       "requires": [],
       "neoforge": "21.4.157",
-      "sha256": "c8031a240b90bafe8c5b79e0f1210835caa2a28c6ca8556887dda195b85ac37a",
-      "size": 854738
+      "sha256": "81eb6bfaf83c81217ed87e14bbb770c33fe36f771cccbbfe524da54469fd8fd5",
+      "size": 1529624
     },
     {
       "loader": "neoforge",
@@ -1075,8 +1819,8 @@
       "file": "trsclient-neoforge-1.21.5.jar",
       "requires": [],
       "neoforge": "21.5.98",
-      "sha256": "de8f7bb1799cc00341ba15a9121b24b019f6f31966c3e81aae539c4ddb4e45a5",
-      "size": 855175
+      "sha256": "55fe46824d91f0271060a4a565c4ff73f1650f6ce0c3bc744d6ceb360b273144",
+      "size": 1530258
     },
     {
       "loader": "neoforge",
@@ -1086,8 +1830,8 @@
       "file": "trsclient-neoforge-1.21.6.jar",
       "requires": [],
       "neoforge": "21.6.20-beta",
-      "sha256": "7bac5af3a0c14d8f73f685e562c2f7de69a4dfe77981ce6fe908ff58e25d49de",
-      "size": 854482
+      "sha256": "2c0759a63798ad42ffbe9221decd54ecd272e6aeb5f888fc427a39a1c6840ba3",
+      "size": 1530539
     },
     {
       "loader": "neoforge",
@@ -1097,8 +1841,8 @@
       "file": "trsclient-neoforge-1.21.7.jar",
       "requires": [],
       "neoforge": "21.7.25-beta",
-      "sha256": "2e84866674ca992b7be65db3d6262a0df7ec940313bf9ff950b79128052e8584",
-      "size": 854483
+      "sha256": "16d742e91a57868eaa6e4cc3f9cc01839d957070e6081e4f5fe1417c5075ea6e",
+      "size": 1530539
     },
     {
       "loader": "neoforge",
@@ -1108,8 +1852,8 @@
       "file": "trsclient-neoforge-1.21.8.jar",
       "requires": [],
       "neoforge": "21.8.54",
-      "sha256": "47e25e624cd7e716168c54af1a5803f303d406affc99859f9b0d4414226f88cc",
-      "size": 854483
+      "sha256": "73630ae002fd27c634dca4418c19863a96adfb7b36b206e068c2de43c6a2b3c5",
+      "size": 1530540
     },
     {
       "loader": "neoforge",
@@ -1119,8 +1863,8 @@
       "file": "trsclient-neoforge-1.21.9.jar",
       "requires": [],
       "neoforge": "21.9.16-beta",
-      "sha256": "b5b8359896e6be166c7ed9082f7e194916c143d3107806ff180cd1571ebe46d9",
-      "size": 855228
+      "sha256": "4909421f7a3b42dac8b7ae0040e526f99e0f1a097ebd3bd6710c654d218173c0",
+      "size": 1531362
     },
     {
       "loader": "neoforge",
@@ -1130,8 +1874,8 @@
       "file": "trsclient-neoforge-1.21.10.jar",
       "requires": [],
       "neoforge": "21.10.64",
-      "sha256": "47fbcaed5bb6b284777f0809244382e00e09be9c838bdd36e08e7d45e7d0677b",
-      "size": 855230
+      "sha256": "48af54825304db58a83d22856c88a640c50d7f6b72a21fda6e8ad961104124cc",
+      "size": 1531363
     },
     {
       "loader": "neoforge",
@@ -1141,8 +1885,8 @@
       "file": "trsclient-neoforge-1.21.11.jar",
       "requires": [],
       "neoforge": "21.11.45",
-      "sha256": "5b0631db23b2518a3fe9520c7e29d4db36d717a760646e63d30ff1a63b5e2976",
-      "size": 855761
+      "sha256": "70a0318bd935ad3dba7490501ffe29a4e6c85e28bb108019434e3d0654e56d2f",
+      "size": 1531671
     },
     {
       "loader": "neoforge",
@@ -1152,8 +1896,8 @@
       "file": "trsclient-neoforge-26.1.jar",
       "requires": [],
       "neoforge": "26.1.0.19-beta",
-      "sha256": "1e090405bcfc41778e03fea84484019f8cfd78ab2f29b42dcbf897238277a959",
-      "size": 858914
+      "sha256": "c0a2a9c9e958bafc9a75b766f16eb21dbb3f2d6da180e7f971cd47b2be4960eb",
+      "size": 1540514
     },
     {
       "loader": "neoforge",
@@ -1163,8 +1907,8 @@
       "file": "trsclient-neoforge-26.1.1.jar",
       "requires": [],
       "neoforge": "26.1.1.15-beta",
-      "sha256": "e37cb853ea15fb31c98a1bcf2c717f8e0eb3b0d1d1d449ba929443bc627dcb09",
-      "size": 858918
+      "sha256": "c44f341bd93d560617b277cfcd2f4354763669c4bcc185a0dd3e703e21408088",
+      "size": 1540518
     },
     {
       "loader": "neoforge",
@@ -1174,8 +1918,8 @@
       "file": "trsclient-neoforge-26.1.2.jar",
       "requires": [],
       "neoforge": "26.1.2.109",
-      "sha256": "50957f239776d3b82f59190d08f6cfdb59d8dfd172aecdf5853dfff390f79bbb",
-      "size": 858920
+      "sha256": "1b294c5d197ec7ecc45a6c8af77a36a3454687f8302fa7fdaf13eb4f30e8699c",
+      "size": 1540520
     },
     {
       "loader": "neoforge",
@@ -1185,8 +1929,8 @@
       "file": "trsclient-neoforge-26.2.jar",
       "requires": [],
       "neoforge": "26.2.0.88",
-      "sha256": "3be25f889d57a32c2aa9648b7aa9916e2a89c5628d527894d324ee0bd2fc8ebc",
-      "size": 859223
+      "sha256": "e69ae6febe3e1169e2350eed67ea17864c3a67a1b9842085366864825e0cd10a",
+      "size": 1540822
     },
     {
       "loader": "neoforge",
@@ -1196,8 +1940,8 @@
       "file": "trsclient-neoforge-26.3.jar",
       "requires": [],
       "neoforge": "26.3.0.8-beta",
-      "sha256": "b12a8fd659d9a0d3d7961d6042382115cf5a0a085810a4ca41313aee477aea0d",
-      "size": 859150
+      "sha256": "4b3148033973c619282e60a652872131810bb2ccddca8aa428c4a4961e3520ca",
+      "size": 1540757
     }
   ]
 }
