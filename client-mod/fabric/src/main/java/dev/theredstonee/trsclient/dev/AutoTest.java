@@ -88,6 +88,10 @@ public final class AutoTest {
 			AccountsTest.install();
 			return;
 		}
+		if ("intro".equals(System.getProperty("trsclient.autotest.only"))) {
+			IntroTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}

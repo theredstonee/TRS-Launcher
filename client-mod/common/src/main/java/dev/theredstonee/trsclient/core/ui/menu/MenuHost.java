@@ -43,6 +43,26 @@ public interface MenuHost {
 	}
 
 	/**
+	 * Einführung öffnen ({@link dev.theredstonee.trsclient.core.intro.IntroUi}); „Schließen“ führt zurück zum
+	 * Bildschirm unter diesem Host. Nur wenn {@link #hasIntro()}.
+	 */
+	default void openIntro() {
+	}
+
+	/** Gibt es in dieser Version die Einführung? */
+	default boolean hasIntro() {
+		return false;
+	}
+
+	/**
+	 * Alle Tastenbelegungen von Minecraft (Vanilla, TRS, andere Mods) – für den Einführungsschritt
+	 * „Tastenbelegung“ (Konflikte zeigen, TRS-Tasten ändern). Leer = in dieser Version nicht verfügbar.
+	 */
+	default List<dev.theredstonee.trsclient.core.intro.KeyBind> keyBindings() {
+		return java.util.Collections.emptyList();
+	}
+
+	/**
 	 * Gibt es das Modul in dieser Minecraft-Version? Alte Versionen lassen einzelne Module aus
 	 * (z. B. Treffer-Farbe in 1.7.10) – die tauchen dann gar nicht erst im Menü auf.
 	 */

@@ -85,6 +85,31 @@ public final class TrsMenuHost implements MenuHost {
 		return AccountsScreen.available();
 	}
 
+	@Override
+	public boolean hasIntro() {
+		return true;
+	}
+
+	/** Einführung (Sprache, Leistung, Tasten, Modul-Pakete); „Schließen“ führt zum Bildschirm unter diesem Host. */
+	@Override
+	public void openIntro() {
+		Mc.setScreen(new TrsUiScreen(I18n.tr("intro.title"), new dev.theredstonee.trsclient.core.intro.IntroUi(this)));
+	}
+
+	/** Alle Tastenbelegungen (Vanilla, TRS, andere Mods) – für Konflikte in der Einführung. */
+	@Override
+	public List<dev.theredstonee.trsclient.core.intro.KeyBind> keyBindings() {
+		List<dev.theredstonee.trsclient.core.intro.KeyBind> out = new ArrayList<>();
+		Minecraft mc = Minecraft.getInstance();
+		if (mc == null || mc.options == null) return out;
+		for (net.minecraft.client.KeyMapping k : mc.options.keyMappings) {
+			if (k == null) continue;
+			out.add(new dev.theredstonee.trsclient.core.intro.KeyBind(k.getName(),
+					net.minecraft.client.resources.language.I18n.get(k.getName()), k.getDefaultKey().getName(), TrsKeys.link(k)));
+		}
+		return out;
+	}
+
 	/** In diesen Versionen gibt es jedes Modul. */
 	@Override
 	public boolean supports(Module module) {

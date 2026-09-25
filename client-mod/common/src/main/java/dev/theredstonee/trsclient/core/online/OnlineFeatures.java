@@ -64,7 +64,19 @@ public final class OnlineFeatures<T> {
 		skinWorker.allowCoreThreadTimeOut(true);
 		LocalSkin skin = new LocalSkin(configDir.resolve("trsclient").resolve("skins"), platform::session,
 				new Http.UrlConnection(userAgent), skinWorker, platform::log);
-		return new OnlineFeatures<>(modules, TrsOnline.create(configDir, platform, modVersion), backend, skin);
+		TrsOnline online = TrsOnline.create(configDir, platform, modVersion);
+		OnlineFeatures<T> features = new OnlineFeatures<>(modules, online, backend, skin);
+		// Client-Sync (Einstellungen je TRS-Konto, Launcher-Aussehen live) – läuft über die Anmeldung von TrsOnline.
+		features.sync = dev.theredstonee.trsclient.core.sync.ClientSync.create(modules, online, configDir, userAgent, modVersion,
+				platform::log);
+		return features;
+	}
+
+	/** Client-Sync (null in Tests ohne Konfig-Ordner). */
+	private dev.theredstonee.trsclient.core.sync.ClientSync sync;
+
+	public dev.theredstonee.trsclient.core.sync.ClientSync sync() {
+		return sync;
 	}
 
 	/**
@@ -117,6 +129,7 @@ public final class OnlineFeatures<T> {
 		try {
 			online.tick(now, visible, modules.trsOnline.isEnabled());
 			textures.cleanup(now);
+			if (sync != null) sync.tick(now);
 		} catch (RuntimeException e) {
 			online.reportError(e);
 		}

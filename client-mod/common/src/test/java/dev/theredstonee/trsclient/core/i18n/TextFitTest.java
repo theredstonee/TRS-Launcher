@@ -65,7 +65,7 @@ class TextFitTest {
 				for (String line : lines) fits &= c.textWidth(line) <= TILE_NAME_W;
 				if (!fits) problems.add(lang + " Kachel: " + m.name() + " " + lines);
 			}
-			for (String key : new String[]{"menu.all", "menu.hudEditor", "menu.profiles", "menu.packs", "menu.accounts",
+			for (String key : new String[]{"menu.all", "menu.hudEditor", "menu.profiles", "menu.packs", "menu.accounts", "packs.mod.rail",
 					"category.hud", "category.pvp", "category.chat", "category.world", "category.redstone", "category.performance", "category.misc"}) {
 				String s = I18n.tr(key);
 				if (c.textWidth(s) > RAIL_TEXT_W) problems.add(lang + " Leiste: " + s + " (" + c.textWidth(s) + " px)");

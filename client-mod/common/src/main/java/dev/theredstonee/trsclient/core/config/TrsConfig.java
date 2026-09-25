@@ -26,6 +26,31 @@ public final class TrsConfig {
 	public Integer keyDefaults;
 	/** Leistung: ursprüngliche Werte vor „FPS-Boost“/„Beheben“ (für „Rückgängig“); optional. */
 	public PerfUndo perfUndo;
+	/** Einführung, „NEU“-Markierungen und im Client gewähltes Aussehen; optional (fehlt bis 0.5.x). */
+	public ClientStateData clientState;
+
+	/** Zustand von Einführung, „NEU“-Markierungen und Aussehen (siehe {@code core.intro.ClientState}). */
+	public static final class ClientStateData {
+		/** Einführung erledigt (fertig, übersprungen oder „schon eingerichtet“). */
+		public Boolean introDone;
+		/** "finished", "skipped", "existing" oder "account" (auf einem anderen PC erledigt). */
+		public String introHow;
+		public Long introAt;
+		/** Gewähltes Modul-Paket (nur zur Anzeige). */
+		public String introPack;
+		/** Kurze Begrüßung „schon eingerichtet“ in dieser Instanz gezeigt. */
+		public Boolean welcomeShown;
+		/** Im Client gewähltes Aussehen (Thema, Akzent, Sprache) und wann. */
+		public String lookTheme;
+		public String lookAccent;
+		public String lookLanguage;
+		public Long lookAt;
+		/** „NEU“: Stand, ab dem neue Module markiert werden, und bereits geöffnete Einträge. */
+		public String newBaseline;
+		public List<String> newSeen;
+		/** Config-Modus der Optimierungs-Mods ("pretty" = schön, "max" = maximale FPS); null = nie gewählt. */
+		public String fpsMode;
+	}
 
 	/** Alte Werte der Vanilla-Optionen (Name → Wert) und der Leistungs-Module vor der ersten Änderung. */
 	public static final class PerfUndo {

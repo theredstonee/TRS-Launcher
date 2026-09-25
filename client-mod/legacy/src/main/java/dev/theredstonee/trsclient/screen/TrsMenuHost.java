@@ -78,6 +78,31 @@ public final class TrsMenuHost implements MenuHost {
 		return AccountsScreen.available();
 	}
 
+	@Override
+	public boolean hasIntro() {
+		return true;
+	}
+
+	/** Einführung (Sprache, Leistung, Tasten, Modul-Pakete); „Schließen“ führt zum Bildschirm unter diesem Host. */
+	@Override
+	public void openIntro() {
+		Mc.setScreen(new TrsUiScreen(I18n.tr("intro.title"), new dev.theredstonee.trsclient.core.intro.IntroUi(this)));
+	}
+
+	/** Alle Tastenbelegungen (Vanilla, TRS, andere Mods) – für Konflikte in der Einführung. */
+	@Override
+	public List<dev.theredstonee.trsclient.core.intro.KeyBind> keyBindings() {
+		List<dev.theredstonee.trsclient.core.intro.KeyBind> out = new ArrayList<dev.theredstonee.trsclient.core.intro.KeyBind>();
+		net.minecraft.client.Minecraft mc = Mc.mc();
+		if (mc == null || mc.gameSettings == null) return out;
+		for (net.minecraft.client.settings.KeyBinding k : mc.gameSettings.keyBindings) {
+			if (k == null) continue;
+			out.add(new dev.theredstonee.trsclient.core.intro.KeyBind(k.getKeyDescription(),
+					net.minecraft.client.resources.I18n.format(k.getKeyDescription()), TrsKeys.nameOf(k.getKeyCodeDefault()), TrsKeys.link(k)));
+		}
+		return out;
+	}
+
 	/** Was unter Legacy-Forge nicht umsetzbar ist (Treffer-Farbe, niedriges Feuer), bleibt aus dem Menü heraus. */
 	@Override
 	public boolean supports(Module module) {
