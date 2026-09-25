@@ -3060,7 +3060,8 @@
       "show": "Show",
       "limitCleanup": "Storage limit reached: {n} old clip moved to the recycle bin | Storage limit reached: {n} old clips moved to the recycle bin",
       "renamed": "Clip renamed",
-      "trashed": "Clip moved to the recycle bin"
+      "trashed": "Clip moved to the recycle bin",
+      "enabledInGame": "Clips were turned on in the game – {instance} is recording"
     },
     "errors": {
       "disabled": "Clips are off – turn them on under Settings → Clips.",
@@ -3070,14 +3071,18 @@
       "noFrames": "Nothing recorded yet – try again in a few seconds.",
       "busy": "The last clip is still being saved.",
       "error": "The clip could not be saved.",
-      "ffmpegDownload": "The recorder (FFmpeg) could not be downloaded."
+      "ffmpegDownload": "The recorder (FFmpeg) could not be downloaded.",
+      "ffmpegFailed": "The recorder (FFmpeg) could not be downloaded – the launcher tries again in a minute.",
+      "encoder": "No video encoder works – update your graphics driver or pick x264 under Settings → Clips."
     },
     "reason": {
       "starting": "Waiting for the game window …",
       "noWindow": "Game window not found",
       "ffmpeg": "Downloading the recorder (FFmpeg) …",
       "error": "Recording does not start – see the log",
-      "disabled": "Clips are off"
+      "disabled": "Clips are off",
+      "ffmpegFailed": "Recorder download failed – retrying soon",
+      "encoder": "No video encoder works"
     },
     "status": {
       "buffer": "Buffer active"

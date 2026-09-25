@@ -66,6 +66,11 @@ describe('Clips-Helfer', () => {
     expect(failureText('etwas-neues')).toBe(failureText('error'))
     expect(reasonText('ffmpeg')).toContain('FFmpeg')
     expect(reasonText(null)).toBe('Puffer aktiv')
+    // Neue Gründe des Kerns haben eigene Texte (nicht den allgemeinen Fehler).
+    expect(failureText('encoder')).toContain('x264')
+    expect(failureText('ffmpegFailed')).toContain('FFmpeg')
+    expect(reasonText('encoder')).not.toBe(reasonText('error'))
+    expect(reasonText('ffmpegFailed')).not.toBe(reasonText('error'))
   })
 })
 

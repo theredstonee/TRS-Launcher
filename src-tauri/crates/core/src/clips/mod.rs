@@ -24,9 +24,9 @@ pub mod window;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use tokio::sync::mpsc;
@@ -53,6 +53,9 @@ pub enum ClipEvent {
     /// FFmpeg wird im Hintergrund geladen bzw. ist fertig/fehlgeschlagen.
     #[serde(rename_all = "camelCase")]
     Ffmpeg { state: &'static str },
+    /// Clips wurden aus dem Spiel eingeschaltet (die Einstellungen haben sich geändert).
+    #[serde(rename_all = "camelCase")]
+    Enabled { instance_id: String },
 }
 
 /// Aufnahmestand eines laufenden Spiels.
@@ -85,7 +88,15 @@ pub struct Shared {
     /// Probe-Ergebnisse je Encoder (für diese Launcher-Sitzung).
     codecs: tokio::sync::Mutex<HashMap<Codec, bool>>,
     installing: AtomicBool,
+    /// Download-Fortschritt von FFmpeg in Prozent ([`NO_PROGRESS`] = keiner).
+    ffmpeg_progress: AtomicU8,
+    /// Letzter fehlgeschlagener Download (dann erst nach [`FFMPEG_RETRY`] erneut).
+    ffmpeg_failed_at: Mutex<Option<Instant>>,
 }
+
+const NO_PROGRESS: u8 = u8::MAX;
+/// Nach einem fehlgeschlagenen FFmpeg-Download so lange warten (nicht jede Sekunde neu laden).
+const FFMPEG_RETRY: Duration = Duration::from_secs(60);
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -140,24 +151,56 @@ impl Shared {
     }
 
     pub(crate) async fn waiting_reason(&self) -> &'static str {
-        if self.installing.load(Ordering::Relaxed) { "ffmpeg" } else { "starting" }
+        if self.installing.load(Ordering::Relaxed) {
+            "ffmpeg"
+        } else if self.ffmpeg_failed_recently() {
+            "ffmpegFailed"
+        } else {
+            "starting"
+        }
     }
 
-    /// FFmpeg bereit? Sonst im Hintergrund laden (einmal) und `None`.
+    /// Download-Fortschritt von FFmpeg (nur während des Downloads).
+    pub(crate) fn ffmpeg_progress(&self) -> Option<u8> {
+        let p = self.ffmpeg_progress.load(Ordering::Relaxed);
+        (self.installing.load(Ordering::Relaxed) && p != NO_PROGRESS).then_some(p)
+    }
+
+    fn ffmpeg_failed_recently(&self) -> bool {
+        lock(&self.ffmpeg_failed_at).is_some_and(|t| t.elapsed() < FFMPEG_RETRY)
+    }
+
+    /// FFmpeg bereit? Sonst im Hintergrund laden (einmal gleichzeitig, nach einem
+    /// Fehlschlag erst wieder nach [`FFMPEG_RETRY`]) und `None`.
     pub(crate) async fn ffmpeg_ready_or_install(self: &Arc<Self>) -> Option<PathBuf> {
         if let Some(exe) = self.ffmpeg.ready().await {
             return Some(exe);
         }
+        if self.ffmpeg_failed_recently() {
+            return None;
+        }
         if !self.installing.swap(true, Ordering::SeqCst) {
             let shared = Arc::clone(self);
+            self.ffmpeg_progress.store(0, Ordering::Relaxed);
             tokio::spawn(async move {
                 shared.emit(ClipEvent::Ffmpeg { state: "downloading" });
-                let result = shared.ffmpeg.install().await;
+                let progress = |p: f64| {
+                    // Nur ganze Prozent (0–100); die Mod bekommt sie mit der Statuszeile.
+                    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                    let p = p.clamp(0.0, 100.0) as u8;
+                    shared.ffmpeg_progress.store(p, Ordering::Relaxed);
+                };
+                let result = shared.ffmpeg.install_with(&progress).await;
                 shared.installing.store(false, Ordering::SeqCst);
+                shared.ffmpeg_progress.store(NO_PROGRESS, Ordering::Relaxed);
                 match result {
-                    Ok(_) => shared.emit(ClipEvent::Ffmpeg { state: "ready" }),
+                    Ok(_) => {
+                        *lock(&shared.ffmpeg_failed_at) = None;
+                        shared.emit(ClipEvent::Ffmpeg { state: "ready" });
+                    }
                     Err(e) => {
                         tracing::warn!("FFmpeg konnte nicht geladen werden: {e}");
+                        *lock(&shared.ffmpeg_failed_at) = Some(Instant::now());
                         shared.emit(ClipEvent::Ffmpeg { state: "failed" });
                     }
                 }
@@ -217,6 +260,8 @@ impl ClipService {
             states: Mutex::default(),
             codecs: tokio::sync::Mutex::default(),
             installing: AtomicBool::new(false),
+            ffmpeg_progress: AtomicU8::new(NO_PROGRESS),
+            ffmpeg_failed_at: Mutex::default(),
         });
         let weak = Arc::downgrade(&shared);
         link.set_command_sink(Arc::new(move |instance_id: &str, command: LinkCommand| {
@@ -253,10 +298,11 @@ impl ClipService {
         let mut config = self.shared.link.clips_config(instance_id, settings.enabled);
         self.add_clips_dir(&mut config, instance_id, settings);
         let state = if settings.enabled {
-            LinkState { reason: Some("starting"), ..Default::default() }
+            LinkState { reason: Some("starting"), clip_seconds: settings.buffer_seconds, ..Default::default() }
         } else {
             LinkState::disabled()
         };
+        let state = state.capturing(settings.system_audio, settings.microphone);
         self.shared.link.set_state(instance_id, state);
         if let Err(e) = link::write_config(game_dir, &config).await {
             tracing::warn!("clips.json konnte nicht geschrieben werden: {e}");
@@ -305,10 +351,10 @@ impl ClipService {
 
     /// Clips für ein laufendes Spiel ausgeschaltet: Aufnahme stoppen, der Mod
     /// „aus“ melden (die Link-Sitzung bleibt – Konten brauchen sie weiter).
-    async fn disable(&self, instance_id: &str) {
+    async fn disable(&self, instance_id: &str, settings: &ClipSettings) {
         let game_dir = lock(&self.shared.sessions).get(instance_id).map(|s| s.game_dir.clone());
         self.game_exited(instance_id);
-        self.shared.link.set_state(instance_id, LinkState::disabled());
+        self.shared.link.set_state(instance_id, LinkState::disabled().capturing(settings.system_audio, settings.microphone));
         if let Some(game_dir) = game_dir {
             let config = self.shared.link.clips_config(instance_id, false);
             if let Err(e) = link::write_config(&game_dir, &config).await {
@@ -326,13 +372,18 @@ impl ClipService {
                     let _ = tx.send(Command::Settings(settings.clone()));
                 }
                 (Some(_), false) => {
-                    self.disable(&game.instance_id).await;
+                    self.disable(&game.instance_id, settings).await;
                 }
                 (None, true) => {
                     self.prepare(&game.instance_id, &game.game_dir, settings).await;
                     self.game_started(game, settings);
                 }
-                (None, false) => {}
+                (None, false) => {
+                    // Nur den Hinweis der Mod aktualisieren (was beim Einschalten aufgenommen würde).
+                    self.shared
+                        .link
+                        .set_state(&game.instance_id, LinkState::disabled().capturing(settings.system_audio, settings.microphone));
+                }
             }
         }
     }
@@ -345,6 +396,11 @@ impl ClipService {
         };
         let _ = tx.send(if record { Command::ToggleRecording } else { Command::SaveClip });
         Ok(())
+    }
+
+    /// Clips wurden aus dem Spiel eingeschaltet: Oberfläche informieren (lädt die Einstellungen neu).
+    pub fn announce_enabled(&self, instance_id: &str) {
+        self.shared.emit(ClipEvent::Enabled { instance_id: instance_id.to_owned() });
     }
 
     pub fn states(&self) -> Vec<ClipState> {
@@ -453,6 +509,72 @@ mod tests {
         service.prepare("survival", &game, &ClipSettings::default()).await;
         let text = std::fs::read_to_string(game.join("config/trsclient/clips.json")).unwrap();
         assert_eq!(serde_json::from_str::<LinkConfig>(&text).unwrap(), LinkConfig { version: 1, enabled: false, port: None, token: None, clips_dir: None });
+    }
+
+    /// „Clips einschalten“ aus dem Spiel: wie der Schalter in den Einstellungen –
+    /// gespeichert, Oberfläche informiert, Aufnahme-Sitzung des laufenden Spiels
+    /// gestartet und clips.json auf „an“.
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn einschalten_aus_dem_spiel_speichert_und_startet_die_aufnahme() {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+        let dir = tempfile::tempdir().unwrap();
+        // Ein „Spiel“ ohne Fenster (die Sitzung wartet dann auf das Fenster und lädt kein FFmpeg).
+        let mut game = std::process::Command::new("cmd")
+            .args(["/c", "ping -n 120 127.0.0.1 >nul"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .unwrap();
+        let handle = crate::platform::ProcessHandle::open(game.id()).unwrap();
+        let record = serde_json::json!([{
+            "instanceId": "survival",
+            "pid": game.id(),
+            "startedAt": "2026-09-25T10:00:00Z",
+            "creationTime": handle.creation_time().unwrap(),
+            "stdoutLog": dir.path().join("stdout.log"),
+            "stderrLog": dir.path().join("stderr.log"),
+        }]);
+        std::fs::write(dir.path().join("running.json"), record.to_string()).unwrap();
+        let launcher = Arc::new(crate::Launcher::init(dir.path(), Arc::new(|_| {})).await.unwrap());
+        assert!(launcher.games().is_running("survival"), "Testspiel übernommen");
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let sink = events.clone();
+        launcher.clips().set_sink(Arc::new(move |e| sink.lock().unwrap().push(e)));
+        // Der Link ist beim Spielstart immer offen (auch mit Clips aus).
+        launcher.link.open_session("survival", false).await.unwrap();
+        assert!(!launcher.settings().await.clips.enabled);
+
+        assert_eq!(launcher.enable_clips_from_game("survival").await, Ok(30));
+        assert!(launcher.settings().await.clips.enabled);
+        let saved = crate::settings::Settings::load(&launcher.paths().settings_file()).await.unwrap();
+        assert!(saved.clips.enabled, "dauerhaft gespeichert");
+        assert!(events.lock().unwrap().contains(&ClipEvent::Enabled { instance_id: "survival".into() }), "Oberfläche lädt neu");
+        let text = std::fs::read_to_string(launcher.paths().instance_game_dir("survival").join("config/trsclient/clips.json")).unwrap();
+        let config: LinkConfig = serde_json::from_str(&text).unwrap();
+        assert!(config.enabled && config.version == 2, "{text}");
+        // Die Aufnahme-Sitzung läuft (wartet auf das Spielfenster).
+        let mut started = false;
+        for _ in 0..50 {
+            if launcher.clips().states().iter().any(|s| s.instance_id == "survival") {
+                started = true;
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert!(started, "Aufnahme-Sitzung gestartet");
+
+        // Schon an: kein zweites Ereignis, Sitzung bleibt.
+        let before = events.lock().unwrap().iter().filter(|e| matches!(e, ClipEvent::Enabled { .. })).count();
+        assert_eq!(launcher.enable_clips_from_game("survival").await, Ok(30));
+        assert_eq!(events.lock().unwrap().iter().filter(|e| matches!(e, ClipEvent::Enabled { .. })).count(), before);
+        // Ein Spiel, das nicht läuft, darf nichts einschalten.
+        assert_eq!(launcher.enable_clips_from_game("fremd").await, Err("not_allowed"));
+
+        launcher.clips_shutdown().await;
+        let _ = game.kill();
+        let _ = game.wait();
     }
 
     #[test]

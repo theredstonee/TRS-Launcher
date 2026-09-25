@@ -59,6 +59,11 @@ export const useClipsStore = defineStore('clips', () => {
         ffmpegDownloading.value = event.state === 'downloading'
         if (event.state === 'failed') toasts.error(t('clips.errors.ffmpegDownload'))
         break
+      case 'enabled':
+        // Im Spiel eingeschaltet: Einstellungen (Schalter) sofort nachziehen.
+        void useSettingsStore().reloadExternal().catch(() => {})
+        toasts.info(t('clips.toasts.enabledInGame', { instance: instanceName(event.instanceId) }))
+        break
     }
   }
 

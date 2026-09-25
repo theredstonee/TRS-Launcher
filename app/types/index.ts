@@ -228,7 +228,7 @@ export interface ClipUsage {
 }
 
 /** Warum gerade nicht aufgenommen wird. */
-export type ClipReason = 'starting' | 'noWindow' | 'ffmpeg' | 'error' | 'disabled'
+export type ClipReason = 'starting' | 'noWindow' | 'ffmpeg' | 'ffmpegFailed' | 'encoder' | 'error' | 'disabled'
 
 export interface ClipState {
   instanceId: string
@@ -239,7 +239,16 @@ export interface ClipState {
   encoder: ClipCodec | null
 }
 
-export type ClipFailure = 'disabled' | 'starting' | 'noWindow' | 'ffmpeg' | 'noFrames' | 'busy' | 'error'
+export type ClipFailure =
+  | 'disabled'
+  | 'starting'
+  | 'noWindow'
+  | 'ffmpeg'
+  | 'ffmpegFailed'
+  | 'encoder'
+  | 'noFrames'
+  | 'busy'
+  | 'error'
 
 export type ClipEvent =
   | ({ type: 'state' } & ClipState)
@@ -247,6 +256,8 @@ export type ClipEvent =
   | { type: 'failed'; instanceId: string; code: ClipFailure }
   | { type: 'ended'; instanceId: string }
   | { type: 'ffmpeg'; state: 'downloading' | 'ready' | 'failed' }
+  /** Clips wurden im Spiel eingeschaltet (Einstellungen neu laden). */
+  | { type: 'enabled'; instanceId: string }
 
 export interface FfmpegStatus {
   installed: boolean

@@ -3060,7 +3060,8 @@
       "show": "Anzeigen",
       "limitCleanup": "Speicher-Limit erreicht: {n} alter Clip in den Papierkorb verschoben | Speicher-Limit erreicht: {n} alte Clips in den Papierkorb verschoben",
       "renamed": "Clip umbenannt",
-      "trashed": "Clip in den Papierkorb verschoben"
+      "trashed": "Clip in den Papierkorb verschoben",
+      "enabledInGame": "Clips wurden im Spiel eingeschaltet – {instance} nimmt auf"
     },
     "errors": {
       "disabled": "Clips sind aus – unter Einstellungen → Clips einschalten.",
@@ -3070,14 +3071,18 @@
       "noFrames": "Noch nichts aufgenommen – in ein paar Sekunden noch einmal.",
       "busy": "Der letzte Clip wird noch gespeichert.",
       "error": "Der Clip konnte nicht gespeichert werden.",
-      "ffmpegDownload": "Die Aufnahme-Komponente (FFmpeg) konnte nicht geladen werden."
+      "ffmpegDownload": "Die Aufnahme-Komponente (FFmpeg) konnte nicht geladen werden.",
+      "ffmpegFailed": "Die Aufnahme-Komponente (FFmpeg) konnte nicht geladen werden – der Launcher versucht es in einer Minute erneut.",
+      "encoder": "Kein Video-Encoder läuft – Grafiktreiber aktualisieren oder unter Einstellungen → Clips x264 wählen."
     },
     "reason": {
       "starting": "Warte auf das Spielfenster …",
       "noWindow": "Spielfenster nicht gefunden",
       "ffmpeg": "Lade die Aufnahme-Komponente (FFmpeg) …",
       "error": "Aufnahme startet nicht – siehe Log",
-      "disabled": "Clips sind aus"
+      "disabled": "Clips sind aus",
+      "ffmpegFailed": "Laden von FFmpeg fehlgeschlagen – neuer Versuch gleich",
+      "encoder": "Kein Video-Encoder läuft"
     },
     "status": {
       "buffer": "Puffer aktiv"

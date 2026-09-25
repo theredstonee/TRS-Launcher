@@ -92,12 +92,13 @@ pub async fn run(mut ctx: Context, mut commands: mpsc::UnboundedReceiver<Command
                     reason = Some(ctx.shared.waiting_reason().await);
                     retry_at = Instant::now() + WINDOW_POLL;
                 }
-                Err(e) => {
-                    tracing::warn!("Aufnahme für '{}' startet nicht: {e}", ctx.instance_id);
-                    reason = Some("error");
+                Err(failure) => {
+                    let code = failure.code();
+                    tracing::warn!("Aufnahme für '{}' startet nicht ({code}): {}", ctx.instance_id, failure.error());
+                    reason = Some(code);
                     if !announced_error {
                         announced_error = true;
-                        ctx.shared.emit(ClipEvent::Failed { instance_id: ctx.instance_id.clone(), code: "error" });
+                        ctx.shared.emit(ClipEvent::Failed { instance_id: ctx.instance_id.clone(), code });
                     }
                     retry_at = Instant::now() + Duration::from_secs(30);
                 }
@@ -181,14 +182,18 @@ pub async fn run(mut ctx: Context, mut commands: mpsc::UnboundedReceiver<Command
                 }
             }
         }
+        let reason = if live.is_some() { None } else { reason };
         let state = LinkState {
             available: live.is_some(),
-            reason: if live.is_some() { None } else { reason },
+            reason,
             buffer: live.is_some(),
             recording: recording.is_some(),
             recording_ms: recording.as_ref().map_or(0, |(_, since)| since.elapsed().as_millis() as u64),
             clip_seconds: ctx.settings.buffer_seconds,
-        };
+            progress: if reason == Some("ffmpeg") { ctx.shared.ffmpeg_progress() } else { None },
+            ..LinkState::default()
+        }
+        .capturing(ctx.settings.system_audio, ctx.settings.microphone);
         ctx.shared.publish(&ctx.instance_id, state, live.as_ref().map(|l| l.codec));
     }
 
@@ -225,8 +230,35 @@ fn stop_live(l: &mut Recorder, dir: &Path, next_segment: &mut u64) {
     *next_segment = recorder::segments(dir).last().map_or(*next_segment, |n| n + 1);
 }
 
+/// Warum die Aufnahme nicht startet – als Code für Mod und Oberfläche.
+enum StartFailure {
+    /// Kein Video-Encoder liefert Bilder (Treiber, Einstellung „Encoder“).
+    Encoder(Error),
+    Other(Error),
+}
+
+impl StartFailure {
+    fn code(&self) -> &'static str {
+        match self {
+            Self::Encoder(_) => "encoder",
+            Self::Other(_) => "error",
+        }
+    }
+
+    fn error(&self) -> &Error {
+        match self {
+            Self::Encoder(e) | Self::Other(e) => e,
+        }
+    }
+}
+
 /// Fenster suchen, FFmpeg sicherstellen, Encoder wählen und starten.
-async fn start(ctx: &Context, dir: &Path, first_segment: u64, failed: &mut Vec<Codec>) -> Result<Option<Recorder>> {
+async fn start(
+    ctx: &Context,
+    dir: &Path,
+    first_segment: u64,
+    failed: &mut Vec<Codec>,
+) -> std::result::Result<Option<Recorder>, StartFailure> {
     let tree = window::process_tree(ctx.pid);
     let Some(win) = window::find(&tree) else { return Ok(None) };
     let Some(exe) = ctx.shared.ffmpeg_ready_or_install().await else { return Ok(None) };
@@ -234,12 +266,13 @@ async fn start(ctx: &Context, dir: &Path, first_segment: u64, failed: &mut Vec<C
         encoder::Codec::candidates(ctx.settings.encoder).into_iter().filter(|c| !failed.contains(c)).collect();
     if candidates.is_empty() {
         failed.clear();
-        return Err(Error::Internal("kein Encoder funktioniert".into()));
+        return Err(StartFailure::Encoder(Error::Internal("kein Encoder funktioniert".into())));
     }
     for codec in ctx.shared.usable_codecs(&exe, &candidates).await {
         let mut plan: Plan = Plan::new(&ctx.settings, win.hwnd, (win.width, win.height), codec, super::audio::wall_us());
         plan.first_segment = first_segment;
-        let mut rec = Recorder::spawn(&exe, dir, &plan, ctx.settings.system_audio, ctx.settings.microphone)?;
+        let mut rec =
+            Recorder::spawn(&exe, dir, &plan, ctx.settings.system_audio, ctx.settings.microphone).map_err(StartFailure::Other)?;
         // Läuft er an? (erstes Segment angefangen, Prozess lebt)
         let started = Instant::now();
         let ok = loop {
@@ -265,7 +298,7 @@ async fn start(ctx: &Context, dir: &Path, first_segment: u64, failed: &mut Vec<C
             let _ = std::fs::remove_file(dir.join(encoder::segment_name(n)));
         }
     }
-    Err(Error::Internal("Aufnahme startet mit keinem Encoder".into()))
+    Err(StartFailure::Encoder(Error::Internal("Aufnahme startet mit keinem Encoder".into())))
 }
 
 /// Löscht Segmente, die weder im Puffer noch in einer Aufnahme/einem Export gebraucht werden.

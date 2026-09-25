@@ -61,5 +61,14 @@ export const useSettingsStore = defineStore('settings', () => {
     syncRevision.value++
   }
 
-  return { current, dialog, load, save, setLanguage, open, syncRevision, reloadFromSync }
+  /** Zählt Änderungen, die der Kern selbst gemacht hat (z. B. Clips im Spiel eingeschaltet). */
+  const externalRevision = ref(0)
+
+  /** Der Kern hat Einstellungen geändert: neu laden, ein offenes Einstellungsfenster gleicht an. */
+  async function reloadExternal() {
+    await load()
+    externalRevision.value++
+  }
+
+  return { current, dialog, load, save, setLanguage, open, syncRevision, reloadFromSync, externalRevision, reloadExternal }
 })

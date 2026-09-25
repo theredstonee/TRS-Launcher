@@ -22,6 +22,17 @@ fn code(e: &Error) -> &'static str {
     }
 }
 
+/// `clips.enable` → [`Launcher::enable_clips_from_game`].
+pub(crate) fn clips_enabler(launcher: Weak<Launcher>) -> super::ClipsEnabler {
+    std::sync::Arc::new(move |instance_id: String| {
+        let launcher = launcher.clone();
+        Box::pin(async move {
+            let launcher = launcher.upgrade().ok_or("error")?;
+            launcher.enable_clips_from_game(&instance_id).await
+        })
+    })
+}
+
 impl AccountsHandler for AccountsBridge {
     fn list(&self) -> BoxFuture<'static, HandlerResult<Vec<LinkAccount>>> {
         let launcher = self.launcher.clone();

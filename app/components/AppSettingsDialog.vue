@@ -75,6 +75,19 @@ watch(
   },
 )
 
+// Clips wurden im Spiel eingeschaltet: Schalter im offenen Formular nachziehen,
+// ohne es als eigene Änderung zurückzuspeichern.
+watch(
+  () => store.externalRevision,
+  () => {
+    const clips = store.current?.clips
+    if (!form.value || !clips) return
+    const unchanged = JSON.stringify(form.value) === lastSaved
+    form.value.clips.enabled = clips.enabled
+    if (unchanged) lastSaved = JSON.stringify(form.value)
+  },
+)
+
 watch(
   () => JSON.stringify(form.value),
   (json) => {

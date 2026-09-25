@@ -237,7 +237,10 @@ costs the game nothing but a key binding.
   **127.0.0.1 only**, on a random port; the token is new for every game start, compared in constant time, and
   invalid once the game ends. Line-based JSON (max. 1 KB per line): the mod sends `hello` with the token and then
   only `clip`/`record`; the launcher answers with the recording state and `saved`/`failed`. Nothing else is
-  accepted, nothing leaves the PC.
+  accepted, nothing leaves the PC. Current launchers and mods use the TRS Link protocol 2 instead (key only in the
+  game's environment, see the client-mod README); there the mod can also ask to **switch clips on** (`clips.enable`,
+  after the player pressed F9 twice or "Turn on now"): only from the verified game process, rate-limited, with the
+  same effect as the settings toggle.
 
 ## Code signing policy
 

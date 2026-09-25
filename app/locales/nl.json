@@ -3060,7 +3060,8 @@
       "show": "Tonen",
       "limitCleanup": "Opslaglimiet bereikt: {n} oude clip naar de prullenbak verplaatst | Opslaglimiet bereikt: {n} oude clips naar de prullenbak verplaatst",
       "renamed": "Clip hernoemd",
-      "trashed": "Clip naar de prullenbak verplaatst"
+      "trashed": "Clip naar de prullenbak verplaatst",
+      "enabledInGame": "Clips zijn in het spel aangezet – {instance} neemt op"
     },
     "errors": {
       "disabled": "Clips staan uit – zet ze aan onder Instellingen → Clips.",
@@ -3070,14 +3071,18 @@
       "noFrames": "Nog niets opgenomen – probeer het over een paar seconden opnieuw.",
       "busy": "De vorige clip wordt nog opgeslagen.",
       "error": "De clip kon niet worden opgeslagen.",
-      "ffmpegDownload": "De recorder (FFmpeg) kon niet worden gedownload."
+      "ffmpegDownload": "De recorder (FFmpeg) kon niet worden gedownload.",
+      "ffmpegFailed": "De recorder (FFmpeg) kon niet worden gedownload – de launcher probeert het over een minuut opnieuw.",
+      "encoder": "Geen video-encoder werkt – werk je grafische driver bij of kies x264 onder Instellingen → Clips."
     },
     "reason": {
       "starting": "Wachten op het spelvenster …",
       "noWindow": "Spelvenster niet gevonden",
       "ffmpeg": "Recorder (FFmpeg) wordt gedownload …",
       "error": "Opname start niet – zie het logboek",
-      "disabled": "Clips staan uit"
+      "disabled": "Clips staan uit",
+      "ffmpegFailed": "Downloaden van de recorder mislukt – zo nieuwe poging",
+      "encoder": "Geen video-encoder werkt"
     },
     "status": {
       "buffer": "Buffer actief"

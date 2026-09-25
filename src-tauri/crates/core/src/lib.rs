@@ -475,9 +475,45 @@ impl Launcher {
         self.link.notify_accounts_changed();
     }
 
-    /// Kontowechsel im Spiel an die Accounts dieses Launchers anbinden.
+    /// Kontowechsel im Spiel an die Accounts dieses Launchers anbinden – und
+    /// „Clips einschalten“ aus dem Spiel an die Einstellungen.
     fn link_attach_accounts(self: &Arc<Self>) {
         self.link.set_handler(Arc::new(link::bridge::AccountsBridge { launcher: Arc::downgrade(self) }));
+        self.link.set_clips_enabler(link::bridge::clips_enabler(Arc::downgrade(self)));
+    }
+
+    /// Clips auf Wunsch des Spiels einschalten (`clips.enable` über den TRS-Link):
+    /// wie der Schalter in den Einstellungen – gespeichert, die Oberfläche lädt
+    /// neu, und die Aufnahme des laufenden Spiels startet sofort (Ringpuffer).
+    /// Liefert die Länge eines Sofort-Clips in Sekunden bzw. einen Fehlercode.
+    pub(crate) async fn enable_clips_from_game(&self, instance_id: &str) -> std::result::Result<u32, &'static str> {
+        if !cfg!(windows) {
+            return Err("unsupported");
+        }
+        if !self.games.is_running(instance_id) {
+            return Err("not_allowed");
+        }
+        let current = self.settings().await;
+        let seconds = current.clips.buffer_seconds;
+        if current.clips.enabled {
+            // Schon an (z. B. gerade im Launcher eingeschaltet): nur sicherstellen, dass die Aufnahme läuft.
+            let running = self.running_for_clips().await;
+            self.clips.settings_changed(&current.clips, running).await;
+            return Ok(seconds);
+        }
+        let mut new = current;
+        new.clips.enabled = true;
+        match self.update_settings(new).await {
+            Ok(saved) => {
+                tracing::info!("Clips aus dem Spiel eingeschaltet ('{instance_id}')");
+                self.clips.announce_enabled(instance_id);
+                Ok(saved.clips.buffer_seconds)
+            }
+            Err(e) => {
+                tracing::warn!("Clips ließen sich aus dem Spiel nicht einschalten: {e}");
+                Err("error")
+            }
+        }
     }
 
     /// Beim Beenden des Launchers: laufende Aufnahmen sichern und FFmpeg beenden.

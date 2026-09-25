@@ -80,7 +80,8 @@ pub(crate) const PROTOCOL_VERSION: u32 = 2;
 pub struct LinkState {
     /// Aufnahme grundsätzlich möglich (Clips an, FFmpeg da, Fenster gefunden).
     pub available: bool,
-    /// Warum nicht: `disabled`, `starting`, `noWindow`, `ffmpeg`, `error`.
+    /// Warum nicht: `disabled`, `starting`, `noWindow`, `ffmpeg`, `ffmpegFailed`,
+    /// `encoder`, `error`.
     pub reason: Option<&'static str>,
     /// Ringpuffer läuft.
     pub buffer: bool,
@@ -89,11 +90,28 @@ pub struct LinkState {
     pub recording_ms: u64,
     /// Länge eines Sofort-Clips in Sekunden.
     pub clip_seconds: u32,
+    /// Download-Fortschritt von FFmpeg in Prozent (nur bei `reason = "ffmpeg"`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress: Option<u8>,
+    /// Wird (bzw. würde) der Systemton aufgenommen? Die Mod nennt es beim Einschalten.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio: Option<bool>,
+    /// Wird (bzw. würde) das Mikrofon aufgenommen?
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mic: Option<bool>,
 }
 
 impl LinkState {
     pub fn disabled() -> Self {
         Self { reason: Some("disabled"), ..Default::default() }
+    }
+
+    /// Was aufgenommen wird (bzw. würde) – für den Hinweis in der Mod.
+    #[must_use]
+    pub fn capturing(mut self, audio: bool, mic: bool) -> Self {
+        self.audio = Some(audio);
+        self.mic = Some(mic);
+        self
     }
 }
 
@@ -116,6 +134,12 @@ pub enum LinkCommand {
 
 /// Empfänger der Clip-Tasten (Instanz, Befehl).
 pub type CommandSink = Arc<dyn Fn(&str, LinkCommand) + Send + Sync>;
+
+/// Clips auf Wunsch des Spiels einschalten (Instanz) → Länge eines Sofort-Clips in Sekunden.
+pub type ClipsEnabler = Arc<dyn Fn(String) -> BoxFuture<'static, HandlerResult<u32>> + Send + Sync>;
+
+/// Merkmal im `challenge`: der Launcher kann Clips per `clips.enable` einschalten.
+pub const FEATURE_CLIPS_ENABLE: &str = "clips.enable";
 
 /// Inhalt von `config/trsclient/clips.json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -200,6 +224,8 @@ struct Limits {
     sessions: VecDeque<Instant>,
     add_running: bool,
     adds: VecDeque<Instant>,
+    last_enable: Option<Instant>,
+    enables: VecDeque<Instant>,
 }
 
 const WINDOW: Duration = Duration::from_secs(10 * 60);
@@ -226,6 +252,17 @@ impl Limits {
         }
         self.last_session = Some(now);
         self.sessions.push_back(now);
+        true
+    }
+
+    /// `clips.enable`: höchstens alle 3 s und 5-mal je 10 Minuten.
+    fn allow_enable(&mut self, now: Instant) -> bool {
+        prune(&mut self.enables, now);
+        if self.last_enable.is_some_and(|t| now.duration_since(t) < Duration::from_secs(3)) || self.enables.len() >= 5 {
+            return false;
+        }
+        self.last_enable = Some(now);
+        self.enables.push_back(now);
         true
     }
 
@@ -280,6 +317,7 @@ struct Shared {
     hub: Mutex<HashMap<String, Session>>,
     handler: RwLock<Option<Arc<dyn AccountsHandler>>>,
     on_command: RwLock<Option<CommandSink>>,
+    enable_clips: RwLock<Option<ClipsEnabler>>,
     persist_file: Option<PathBuf>,
     persist_lock: tokio::sync::Mutex<()>,
     first_auth_ttl: Duration,
@@ -292,6 +330,10 @@ impl Shared {
 
     fn handler(&self) -> Option<Arc<dyn AccountsHandler>> {
         self.handler.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    }
+
+    fn clips_enabler(&self) -> Option<ClipsEnabler> {
+        self.enable_clips.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
     }
 
     fn command(&self, instance_id: &str, command: LinkCommand) {
@@ -345,6 +387,7 @@ impl TrsLink {
                 hub: Mutex::default(),
                 handler: RwLock::default(),
                 on_command: RwLock::default(),
+                enable_clips: RwLock::default(),
                 persist_file,
                 persist_lock: tokio::sync::Mutex::new(()),
                 first_auth_ttl,
@@ -359,6 +402,11 @@ impl TrsLink {
 
     pub fn set_command_sink(&self, sink: CommandSink) {
         *self.shared.on_command.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(sink);
+    }
+
+    /// „Clips einschalten“ aus dem Spiel (`clips.enable`) an den Launcher anbinden.
+    pub fn set_clips_enabler(&self, enabler: ClipsEnabler) {
+        *self.shared.enable_clips.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(enabler);
     }
 
     /// Port, falls der Server schon läuft.
@@ -655,7 +703,7 @@ async fn handshake(
         "type": "challenge",
         "nonce": nl,
         "proof": proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)),
-        "features": ["clips", "accounts"],
+        "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE],
     });
     write_json(write, &challenge).await?;
     tokio::time::timeout_at(deadline, read_line(reader, buf)).await.ok()??;
@@ -706,6 +754,9 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
     let op = msg.op.unwrap_or_default();
     let now = Instant::now();
     let limits = || conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    if op == "clips.enable" {
+        return enable_clips(conn, shared, id, now, out);
+    }
     let Some(handler) = shared.handler() else { return reply(error_response(id, "error")) };
     let out = out.clone();
     match op.as_str() {
@@ -767,6 +818,31 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
         }
         _ => reply(error_response(id, "unknown_op")),
     }
+}
+
+/// `clips.enable`: Clips für dieses Spiel einschalten (wie der Schalter in den
+/// Einstellungen). Nur für angemeldete v2-Verbindungen, deren Gegenstelle
+/// nachweislich das Spiel ist – die Aufnahme zeigt Spielfenster und Systemton.
+fn enable_clips(conn: &Conn, shared: &Arc<Shared>, id: u64, now: Instant, out: &mpsc::UnboundedSender<serde_json::Value>) {
+    let reply = |value: serde_json::Value| {
+        let _ = out.send(value);
+    };
+    if conn.peer != Some(true) {
+        return reply(error_response(id, "not_allowed"));
+    }
+    let Some(enabler) = shared.clips_enabler() else { return reply(error_response(id, "error")) };
+    if !conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).allow_enable(now) {
+        return reply(error_response(id, "rate_limited"));
+    }
+    let (instance_id, out) = (conn.instance_id.clone(), out.clone());
+    tracing::info!("TRS-Link: Clips einschalten aus dem Spiel ('{instance_id}')");
+    tokio::spawn(async move {
+        let value = match enabler(instance_id).await {
+            Ok(clip_seconds) => json!({ "type": "res", "id": id, "ok": true, "clipSeconds": clip_seconds }),
+            Err(code) => error_response(id, code),
+        };
+        let _ = out.send(value);
+    });
 }
 
 async fn serve(stream: TcpStream, peer: SocketAddr, port: u16, shared: Arc<Shared>) -> Option<()> {
