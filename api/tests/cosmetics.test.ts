@@ -306,6 +306,9 @@ describe('uploads', () => {
     expect(readCosmeticTexture(env.ctx, c.id, { uuid: ADMIN, admin: true }).public).toBe(false)
     expect(code(() => equipCosmetics(env.ctx, other, { hat: c.id }))).toBe('cosmetic_not_found')
     equipCosmetics(env.ctx, owner, { hat: c.id })
+    // Beide spielen gerade (sonst fehlt der Besitzer ohne Live-Abzeichen ganz in der Antwort).
+    env.ctx.presence.set(owner, 'in-game', { version: '1.21.1', loader: 'fabric' }, 'client')
+    env.ctx.presence.set(other, 'in-game', { version: '1.21.1', loader: 'fabric' }, 'client')
 
     expect(lookupPlayers(env.ctx, owner, [owner]).players[0]!.cosmetics.hat).toMatchObject({ id: c.id, template: 'crown', scale: 1 })
     expect(lookupPlayers(env.ctx, other, [owner]).players[0]!.cosmetics.hat).toBeNull()

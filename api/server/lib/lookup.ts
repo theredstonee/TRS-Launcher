@@ -58,9 +58,27 @@ export function emptyCosmetics(): LookupCosmetics {
 }
 
 /**
+ * Das TRS-Abzeichen ist „live“: Es zeigt, dass jemand **gerade** mit TRS spielt
+ * (TRS Client in einer Welt oder ein vom TRS Launcher gestartetes Spiel, also
+ * Präsenz `in-game`) – und nur, wenn er `showBadge` anhat. Weil das verrät,
+ * dass jemand gerade spielt, sehen es andere nur, wenn sie selbst gerade im
+ * Spiel sind (typisch: Mitspieler auf demselben Server). Das eigene Abzeichen
+ * sieht man immer.
+ */
+export function liveBadge(ctx: AppContext, showBadge: boolean, subject: string, viewerSeesLive: boolean): boolean {
+  return showBadge && viewerSeesLive && ctx.presence.isInGame(subject)
+}
+
+/** Darf `viewer` Live-Abzeichen anderer sehen (ist er selbst gerade im Spiel)? */
+export function seesLiveBadges(ctx: AppContext, viewer: string): boolean {
+  return viewer !== '' && ctx.presence.isInGame(viewer)
+}
+
+/**
  * Sichtbare Abzeichen/Umhänge/Kosmetik für `uuids`. `viewer` ist der Fragende
- * (für „selbst“ und Blockaden); `''` bedeutet „irgendein anderer Spieler“ ohne
- * Blockadeprüfung (die macht dann der Aufrufer). Gesperrte fehlen immer.
+ * (für „selbst“, Blockaden und Live-Abzeichen); `''` bedeutet „irgendein anderer
+ * Spieler“ ohne Blockadeprüfung (die macht dann der Aufrufer) und ohne
+ * Live-Abzeichen. Gesperrte fehlen immer.
  */
 function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[] {
   const unique = [...new Set(uuids)]
@@ -93,6 +111,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
     else worn.set(e.eq_uuid, [e])
   }
 
+  const viewerLive = seesLiveBadges(ctx, viewer)
   const players: LookupEntry[] = []
   for (const r of rows) {
     const self = r.uuid === viewer
@@ -132,7 +151,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
         any = true
       }
     }
-    const badge = r.show_badge === 1
+    const badge = liveBadge(ctx, r.show_badge === 1, r.uuid, self || viewerLive)
     if (!badge && !cape && !any) continue
     players.push({ uuid: r.uuid, badge, cape, cosmetics })
   }
@@ -141,7 +160,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
 
 /**
  * Batch-Abfrage für den In-Game-Mod. Nur TRS-Nutzer, die etwas zeigen,
- * erscheinen in der Antwort. Anderen werden nur freigegebene Umhänge und
+ * erscheinen in der Antwort. `badge` ist live (siehe {@link liveBadge}). Anderen werden nur freigegebene Umhänge und
  * Kosmetik gezeigt; eigene wartende Uploads nur einem selbst. Gesperrte Nutzer
  * und Nutzer, die den Fragenden blockiert haben, fehlen.
  */

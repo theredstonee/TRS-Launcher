@@ -101,6 +101,9 @@ describe('uploads and moderation', () => {
     expect(readTexture(env.ctx, cape.id, { uuid: ADMIN, admin: true }).public).toBe(false)
     expect(code(() => setActiveCape(env.ctx, other.user.uuid, cape.id))).toBe('cape_not_found')
     setActiveCape(env.ctx, owner.user.uuid, cape.id)
+    // Beide spielen gerade (Live-Abzeichen).
+    env.ctx.presence.set(owner.user.uuid, 'in-game', { version: '1.21.1', loader: 'fabric' }, 'client')
+    env.ctx.presence.set(other.user.uuid, 'in-game', { version: '1.21.1', loader: 'fabric' }, 'launcher')
 
     // Lookup: der Besitzer sieht seinen wartenden Umhang, andere nicht.
     expect(lookupPlayers(env.ctx, owner.user.uuid, [owner.user.uuid]).players[0]!.cape?.id).toBe(cape.id)
@@ -167,6 +170,7 @@ describe('player lookup privacy', () => {
     setActiveCape(env.ctx, b.user.uuid, 'redstone')
     updateSettings(env.ctx, b.user.uuid, { showCapeToOthers: false })
     updateSettings(env.ctx, c.user.uuid, { showBadge: false })
+    for (const u of [viewer, a, b, c]) env.ctx.presence.set(u.user.uuid, 'in-game', { version: '1.21.1', loader: 'fabric' }, 'client')
     const notTrs = 'f'.repeat(32)
     const r = lookupPlayers(env.ctx, viewer.user.uuid, [a.user.uuid, b.user.uuid, c.user.uuid, notTrs, a.user.uuid])
     const by = Object.fromEntries(r.players.map((p) => [p.uuid, p]))

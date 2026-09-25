@@ -4,6 +4,7 @@ import { ApiError, forbidden, tooMany, unauthorized, upstreamFailed } from './er
 import { SESSION_TOKEN, newServerId, newSessionToken, safeEqual, sha256Hex } from './ids'
 import { RULES } from './ratelimit'
 import { MojangUnavailable } from './mojang'
+import { updatePresence } from './playerevents'
 import { getUser, isAdmin, isBanned, upsertOnLogin, meView, type MeView, type UserRow } from './users'
 import { sweepSyncTombstones } from './sync'
 import { sweepWebLogins } from './weblogin'
@@ -108,7 +109,7 @@ export function authenticate(ctx: AppContext, authorization: string | undefined)
 export function logout(ctx: AppContext, auth: AuthedUser, everywhere: boolean): void {
   if (everywhere) {
     run(ctx.db, 'DELETE FROM sessions WHERE uuid = ?', auth.uuid)
-    ctx.presence.delete(auth.uuid)
+    updatePresence(ctx, auth.uuid, () => ctx.presence.delete(auth.uuid))
     ctx.events.kick(auth.uuid)
     ctx.watch.kick(auth.uuid)
   } else {

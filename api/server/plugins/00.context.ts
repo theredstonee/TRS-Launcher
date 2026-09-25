@@ -7,8 +7,8 @@ import { seedBuiltinCosmetics, seedEmotes } from '../lib/cosmetics'
 import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
 import { openDb } from '../lib/db'
-import { broadcastPresence } from '../lib/friends'
 import { createMojangClient } from '../lib/mojang'
+import { afterPresenceChange } from '../lib/playerevents'
 import { parseTemplates } from '../lib/templates'
 
 /** Startet die App: Konfiguration prüfen, DB öffnen + migrieren, Katalog einspielen, Aufräum-Timer. */
@@ -85,9 +85,9 @@ export default defineNitroPlugin((nitroApp) => {
     return t
   }
   const timers = [
-    // Abgelaufene Präsenz → Freunde bekommen „offline“.
+    // Abgelaufene Präsenz → Freunde bekommen „offline“, Beobachter ggf. „Abzeichen aus“.
     every(30_000, () => {
-      for (const uuid of ctx.presence.sweep()) broadcastPresence(ctx, uuid)
+      for (const { uuid, wasInGame } of ctx.presence.sweepChanges()) afterPresenceChange(ctx, uuid, true, wasInGame)
     }),
     every(60_000, () => ctx.limiter.sweep()),
     every(10 * 60_000, () => sweepExpired(ctx)),

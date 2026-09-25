@@ -101,6 +101,8 @@ const serverAddress = z
 
 export const presenceBody = z.strictObject({
   state: z.enum(['online', 'in-game', 'offline']),
+  /** Quelle (fehlt bei alten Clients – siehe `POST /v1/presence`). */
+  via: z.enum(['client', 'launcher']).optional(),
   game: z
     .strictObject({
       version: versionString,
@@ -109,6 +111,8 @@ export const presenceBody = z.strictObject({
     })
     .optional(),
 })
+
+export type PresenceBody = z.infer<typeof presenceBody>
 
 /** Ziel einer Freundschaftsanfrage/Blockierung: Minecraft-Name oder UUID. */
 export const targetBody = z.strictObject({

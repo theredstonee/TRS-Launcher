@@ -238,8 +238,16 @@ try {
   check('set active cape', setc.json.activeCape.id === capeId)
 
   console.log('lookup + presence + friends + events')
-  const lk = await http('POST', '/v1/players/lookup', { token: A, body: { uuids: ['b0b0b0b0-b0b0-b0b0-b0b0-b0b0b0b0b0b0', 'ffffffffffffffffffffffffffffffff'] } })
+  const lookupBody = { uuids: ['b0b0b0b0-b0b0-b0b0-b0b0-b0b0b0b0b0b0', 'ffffffffffffffffffffffffffffffff'] }
+  const lk0 = await http('POST', '/v1/players/lookup', { token: A, body: lookupBody })
+  check('lookup: no live badge while nobody plays', lk0.json.players.length === 1 && lk0.json.players[0].cape.id === capeId && lk0.json.players[0].badge === false, JSON.stringify(lk0.json))
+  const game = { version: '1.21.1', loader: 'fabric' }
+  const pa = await http('POST', '/v1/presence', { token: A, body: { state: 'in-game', via: 'client', game } })
+  const pb = await http('POST', '/v1/presence', { token: B, body: { state: 'in-game', via: 'launcher', game } })
+  check('presence with via', pa.status === 200 && pb.status === 200, `${pa.status} ${pb.status}`)
+  const lk = await http('POST', '/v1/players/lookup', { token: A, body: lookupBody })
   check('lookup', lk.json.players.length === 1 && lk.json.players[0].cape.id === capeId && lk.json.players[0].badge === true, JSON.stringify(lk.json))
+  await http('POST', '/v1/presence', { token: B, body: { state: 'offline', via: 'launcher' } })
 
   // SSE-Stream von A öffnen, dann schickt B eine Anfrage.
   const ac = new AbortController()
