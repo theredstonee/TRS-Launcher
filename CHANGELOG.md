@@ -16,6 +16,33 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **Clips always tell you what's going on.** Pressing F9 or F10 in the game now always shows a clear message: clips
+  are off, the game wasn't started from the TRS Launcher, the recorder is still downloading (with progress), no video
+  encoder works, or the clip was saved. The buttons in "Clips & Images" answer the same way.
+- **Turn clips on right from the game.** If clips are off, press F9 (or F10) a second time – or "Turn on now" in
+  "Clips & Images" – and the launcher switches clips on and starts recording straight away. The message says what
+  gets recorded (game window and system sound; the microphone only if you turned it on in the launcher). The switch in
+  the launcher settings follows along. With older launchers the game points you to Settings → Clips instead.
+- **Fewer download retries.** If the recorder (FFmpeg) can't be downloaded, the launcher waits a minute before trying
+  again instead of retrying every second.
+
+### Deutsch
+
+- **Clips sagen dir immer, was los ist.** F9 oder F10 im Spiel zeigt jetzt immer eine klare Meldung: Clips sind aus,
+  das Spiel wurde nicht über den TRS Launcher gestartet, die Aufnahme-Komponente lädt noch (mit Fortschritt), kein
+  Video-Encoder läuft oder der Clip ist gespeichert. Die Knöpfe unter „Clips & Bilder“ antworten genauso.
+- **Clips direkt im Spiel einschalten.** Sind Clips aus, drück F9 (oder F10) ein zweites Mal – oder „Jetzt
+  einschalten“ unter „Clips & Bilder“ – und der Launcher schaltet Clips ein und nimmt sofort auf. Die Meldung sagt, was
+  aufgenommen wird (Spielfenster und Systemton; das Mikrofon nur, wenn du es im Launcher eingeschaltet hast). Der
+  Schalter in den Launcher-Einstellungen zieht mit. Mit älteren Launchern verweist das Spiel stattdessen auf
+  Einstellungen → Clips.
+- **Weniger Download-Versuche.** Lässt sich die Aufnahme-Komponente (FFmpeg) nicht laden, wartet der Launcher eine
+  Minute, statt es jede Sekunde neu zu versuchen.
+
 ## 0.6.0 – 2026-09-25 – The Sync Update | Das Sync-Update
 <!-- banner: accent=#4be38a motif=/news/0.6.0/banner.png -->
 

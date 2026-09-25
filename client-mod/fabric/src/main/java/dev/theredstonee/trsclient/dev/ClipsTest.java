@@ -17,8 +17,9 @@ public final class ClipsTest {
 
 	private static void log(String what) {
 		ClipStatus s = Clips.get().status();
-		TrsClient.LOGGER.info("[Autotest] Clips {}: verbunden={} verfügbar={} grund={} puffer={} aufnahme={} clip={}s", what,
-				s.connected, s.available, s.reason, s.buffer, s.recording, s.clipSeconds);
+		dev.theredstonee.trsclient.core.clips.ClipNotice n = Clips.get().currentNotice();
+		TrsClient.LOGGER.info("[Autotest] Clips {}: verbunden={} verfügbar={} grund={} puffer={} aufnahme={} clip={}s meldung={}", what,
+				s.connected, s.available, s.reason, s.buffer, s.recording, s.clipSeconds, n == null ? "-" : n.text());
 	}
 
 	/**
@@ -46,6 +47,25 @@ public final class ClipsTest {
 				wait = 20;
 				return true;
 			case 1:
+				// Clips im Launcher aus, Launcher kann sie einschalten: F9 zeigt das Angebot, ein zweites F9 schaltet ein.
+				if (Clips.get().status().offersEnable() && offerStep < 2) {
+					if (offerStep == 0) {
+						log("aus – F9 (Angebot)");
+						press("key.keyboard.f9");
+					} else {
+						actions.shot("trsclient-clips-offer");
+						log("F9 noch einmal (einschalten)");
+						press("key.keyboard.f9");
+					}
+					offerStep++;
+					phase--;
+					wait = 20;
+					return true;
+				}
+				if (offerStep == 2 && !shotEnabling) {
+					shotEnabling = true;
+					actions.shot("trsclient-clips-enabling");
+				}
 				if (!Clips.get().status().buffer && waited++ < 60) {
 					phase--;
 					wait = 20;
@@ -79,4 +99,7 @@ public final class ClipsTest {
 	}
 
 	private int waited;
+	/** 0 = noch nicht gedrückt, 1 = Angebot gezeigt, 2 = Einschalten angefragt. */
+	private int offerStep;
+	private boolean shotEnabling;
 }

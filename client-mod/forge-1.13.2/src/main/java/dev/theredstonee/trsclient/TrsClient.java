@@ -160,9 +160,17 @@ public final class TrsClient {
 	// --- Ticks ---
 
 	/** Meldungen der Clips in der Aktionsleiste. */
-	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = text -> {
-		Minecraft minecraft = Minecraft.getInstance();
-		if (minecraft.ingameGUI != null) minecraft.ingameGUI.setOverlayMessage(text, false);
+	private static final dev.theredstonee.trsclient.core.clips.Clips.ActionBar CLIP_MESSAGES = new dev.theredstonee.trsclient.core.clips.Clips.ActionBar() {
+		@Override
+		public void show(String text) {
+			Minecraft minecraft = Minecraft.getInstance();
+			if (minecraft.ingameGUI != null) minecraft.ingameGUI.setOverlayMessage(text, false);
+		}
+
+		@Override
+		public String keyLabel(boolean record) {
+			return (record ? TrsKeys.toggleRecording : TrsKeys.saveClip).getLocalizedName();
+		}
 	};
 
 	@SubscribeEvent
