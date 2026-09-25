@@ -20,6 +20,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
+use crate::client_mod::{self, BundledMod};
 use crate::content::{self, ContentKind};
 use crate::error::UserError;
 use crate::icon::is_allowed_icon_url;
@@ -168,6 +169,8 @@ const fn single(mods: &'static [BuiltinMod]) -> Group {
 }
 
 const IRIS_ID: &str = "YL57xq9U";
+/// `detail` eingebauter Mods im Bericht.
+const BUNDLED_DETAIL: &str = "TRS Client";
 const IRIS_TITLE: &str = "Iris Shaders";
 const NVIDIUM_ID: &str = "SfMw2IZN";
 
@@ -1167,6 +1170,20 @@ fn wanted_of(preset: &Preset) -> Vec<Wanted> {
     }
 }
 
+/// Mod-ID (fabric.mod.json) → Modrinth-Projekt der Optimierungs-Mods, die der TRS
+/// Client per Jar-in-Jar einbauen kann (`client-mod/fabric/bundled-mods.json`).
+const BUNDLED_PROJECTS: &[(&str, &str)] = &[
+    ("lithium", "gvQqBUqZ"),
+    ("ferritecore", "uXXizFIs"),
+    ("immediatelyfast", "5ZwdcRci"),
+    ("modernfix", "nmDcB62a"),
+    ("badoptimizations", "g96Z4WVZ"),
+];
+
+fn bundled_project(mod_id: &str) -> Option<&'static str> {
+    BUNDLED_PROJECTS.iter().find(|(id, _)| *id == mod_id).map(|(_, project)| *project)
+}
+
 /// Wofür installiert wird.
 #[derive(Debug, Clone)]
 pub(crate) struct Target {
@@ -1174,8 +1191,12 @@ pub(crate) struct Target {
     /// Loader-Namen bei Modrinth; leer = Vanilla (keine Mods).
     pub loaders: &'static [&'static str],
     pub channel: UpdateChannel,
-    /// Der Modloader als „Mod“ (z. B. `fabricloader` mit Version) für die Verträglichkeitsprüfung.
+    /// Der Modloader als „Mod“ (z. B. `fabricloader` mit Version) für die Verträglichkeitsprüfung –
+    /// dazu die im TRS Client eingebauten Mods (siehe [`Target::with_bundled`]).
     pub builtins: Vec<ModInfo>,
+    /// Modrinth-Projekte, die der TRS Client in dieser Instanz schon eingebaut mitbringt:
+    /// werden nicht extra geladen, zählen aber als vorhanden.
+    pub bundled: HashSet<String>,
 }
 
 impl Target {
@@ -1191,7 +1212,36 @@ impl Target {
             loaders,
             channel: instance.overrides.channel(),
             builtins: modcompat::loader_builtins(instance),
+            bundled: HashSet::new(),
         }
+    }
+
+    /// Nimmt die eingebauten Mods des TRS Clients auf (leer = keine, z. B. wenn der
+    /// Spieler „Eingebaute Optimierungen“ ausgeschaltet hat oder der TRS Client aus ist).
+    fn with_bundled(mut self, mods: &[BundledMod]) -> Self {
+        for m in mods {
+            if let Some(project) = bundled_project(&m.id) {
+                self.bundled.insert(project.to_owned());
+            }
+            // Auch ohne bekanntes Projekt: Für `depends`/`breaks` anderer Mods ist sie da.
+            if modcompat::meta::is_mod_id(&m.id) && !self.builtins.iter().any(|b| b.id == m.id) {
+                self.builtins.push(ModInfo {
+                    id: m.id.clone(),
+                    name: if m.name.is_empty() { m.id.clone() } else { m.name.clone() },
+                    version: m.version.clone(),
+                    scheme: modcompat::meta::Scheme::Fabric,
+                    provides: Vec::new(),
+                    depends: Vec::new(),
+                    breaks: Vec::new(),
+                });
+            }
+        }
+        self
+    }
+
+    /// Bringt der TRS Client dieses Projekt schon mit?
+    fn is_bundled(&self, project_id: &str) -> bool {
+        self.bundled.contains(project_id)
     }
 
     /// Passt eine (fest vorgegebene) Version zu Spielversion und Loader?
@@ -1317,6 +1367,8 @@ pub enum ItemStatus {
     Failed,
     /// Schon installiert, aber gegen eine verträgliche Version getauscht (`compatWith`).
     Swapped,
+    /// Im TRS Client eingebaut – wird nicht extra installiert (`detail` = „TRS Client“).
+    Bundled,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -1439,6 +1491,10 @@ async fn collect<L: VersionLookup>(
         if local_ids.contains(&id) {
             continue;
         }
+        // Bringt der TRS Client schon mit (Jar-in-Jar) – nicht noch einmal laden.
+        if target.is_bundled(&id) && !existing.projects.contains_key(&id) {
+            continue;
+        }
         if let Some(have) = existing.projects.get(&id) {
             // Schon installiert – außer die Mod verlangt ausdrücklich eine andere Version.
             if let (Some(pin), Some(have)) = (&pin, have)
@@ -1476,7 +1532,12 @@ async fn collect<L: VersionLookup>(
     // Unverträglichkeiten in beide Richtungen: mit der Instanz, dem Plan und untereinander.
     for step in &steps {
         if let Some(other) = incompatible_ids(&step.version)
-            .find(|id| existing.projects.contains_key(*id) || planned.contains_key(*id) || local_ids.contains(*id))
+            .find(|id| {
+                existing.projects.contains_key(*id)
+                    || planned.contains_key(*id)
+                    || local_ids.contains(*id)
+                    || target.is_bundled(id)
+            })
         {
             return Ok(Collected::Incompatible(other.to_owned()));
         }
@@ -1518,13 +1579,20 @@ async fn resolve_one<L: VersionLookup>(
     if let Some(other) = &wanted.blocked_by {
         return Ok(ItemOutcome { detail: Some(other.clone()), ..outcome(ItemStatus::Incompatible, None) });
     }
-    let present = |id: &String| existing.projects.contains_key(id) || planned.contains_key(id);
+    let present =
+        |id: &String| existing.projects.contains_key(id) || planned.contains_key(id) || target.is_bundled(id);
     // Shaderpaket ohne Iris (Forge, Vanilla, Iris gibt es hier nicht): fällt weg.
     if !wanted.requires.is_empty() && !wanted.requires.iter().any(present) {
         return Ok(outcome(ItemStatus::NotAvailable, None));
     }
     if let Some(c) = wanted.candidates.iter().find(|c| existing.projects.contains_key(&c.project_id)) {
         return Ok(outcome(ItemStatus::AlreadyInstalled, Some(c)));
+    }
+    // Eingebaut im TRS Client (eine eigene Kopie des Spielers geht oben vor).
+    if wanted.kind == ContentKind::Mod
+        && let Some(c) = wanted.candidates.iter().find(|c| target.is_bundled(&c.project_id))
+    {
+        return Ok(ItemOutcome { detail: Some(BUNDLED_DETAIL.to_owned()), ..outcome(ItemStatus::Bundled, Some(c)) });
     }
     if let Some(c) = wanted.candidates.iter().find(|c| planned.contains_key(&c.project_id)) {
         return Ok(outcome(ItemStatus::Duplicate, Some(c)));
@@ -1831,12 +1899,15 @@ async fn run(
     http: &reqwest::Client,
     paths: &Paths,
     instance: &Instance,
+    builds: &[client_mod::Build],
     wanted: &[Wanted],
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<ApplyReport> {
     let mut existing = existing(paths, &instance.id).await?;
     existing.mods = modcompat::installed_entries(paths, &instance.id).await?;
-    let target = Target::of(instance);
+    // Was der TRS Client hier schon eingebaut mitbringt, lädt das Preset nicht noch einmal.
+    let bundled = client_mod::builtin_mods(paths, builds, instance).await;
+    let target = Target::of(instance).with_bundled(&bundled);
     let lookup = ModrinthLookup::new(http, paths, instance);
     let resolve_progress = |done, total| progress(ApplyProgress { phase: ApplyPhase::Resolve, done, total, title: None });
     let plan = resolve(&lookup, &target, &existing, wanted, &resolve_progress).await?;
@@ -1844,11 +1915,13 @@ async fn run(
 }
 
 /// Installiert die gewählten Presets in die Instanz – jede Mod nur, wenn es
-/// eine passende Version (samt Pflicht-Abhängigkeiten) gibt.
+/// eine passende Version (samt Pflicht-Abhängigkeiten) gibt. `builds`: die
+/// TRS-Client-Builds (im TRS Client eingebaute Mods fallen weg).
 pub async fn apply(
     http: &reqwest::Client,
     paths: &Paths,
     instance: &Instance,
+    builds: &[client_mod::Build],
     preset_ids: &[String],
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<ApplyReport> {
@@ -1864,7 +1937,7 @@ pub async fn apply(
     }
     let chosen: Vec<&Preset> = all.iter().filter(|p| preset_ids.contains(&p.id)).collect();
     let wanted = wanted_for(&chosen);
-    let mut report = run(http, paths, instance, &wanted, progress).await?;
+    let mut report = run(http, paths, instance, builds, &wanted, progress).await?;
     // Shader-Stufe: das Paket gleich in Iris einschalten.
     let tier = chosen.iter().filter_map(|p| p.builtin).find(|b| b.is_fps_tier());
     if let Some(shader_id) = tier.and_then(shader_project) {
@@ -2016,14 +2089,26 @@ fn has_renderer(existing: &Existing) -> bool {
 /// Das FPS-Boost-Preset (für die TRS-Optimierung und den Einrichtungs-
 /// Assistenten). Liefert die neu installierten Dateien; Fehler nur, wenn es
 /// für diese Version gar nichts davon gibt.
-pub async fn install_fps_boost(http: &reqwest::Client, paths: &Paths, instance: &Instance) -> Result<Vec<String>> {
+pub async fn install_fps_boost(
+    http: &reqwest::Client,
+    paths: &Paths,
+    builds: &[client_mod::Build],
+    instance: &Instance,
+) -> Result<Vec<String>> {
     let preset = view(
         &StoredPreset::new(Builtin::FpsBoost.id(), "", true, Vec::new()),
         false,
     );
-    let report = run(http, paths, instance, &wanted_of(&preset), &|_| {}).await?;
+    let report = run(http, paths, instance, builds, &wanted_of(&preset), &|_| {}).await?;
     let usable = report.items.iter().any(|i| {
-        matches!(i.status, ItemStatus::Installed | ItemStatus::AlreadyInstalled | ItemStatus::Duplicate | ItemStatus::Swapped)
+        matches!(
+            i.status,
+            ItemStatus::Installed
+                | ItemStatus::AlreadyInstalled
+                | ItemStatus::Duplicate
+                | ItemStatus::Swapped
+                | ItemStatus::Bundled
+        )
     });
     if !usable {
         if report.items.iter().all(|i| i.status == ItemStatus::NeedsLoader) {
@@ -2249,7 +2334,13 @@ mod tests {
     }
 
     fn target(game_version: &str) -> Target {
-        Target { game_version: game_version.into(), loaders: &["fabric"], channel: UpdateChannel::Release, builtins: Vec::new() }
+        Target {
+            game_version: game_version.into(),
+            loaders: &["fabric"],
+            channel: UpdateChannel::Release,
+            builtins: Vec::new(),
+            bundled: HashSet::new(),
+        }
     }
 
     fn want(preset: &str, ids: &[&str]) -> Wanted {
@@ -2340,6 +2431,83 @@ mod tests {
         assert_eq!(step_ids(&plan), ["l1"]);
         // Sodium wurde gar nicht erst nachgeschlagen.
         assert!(!mock.calls.lock().unwrap().contains(&"sodium".to_owned()));
+    }
+
+    const LITHIUM: &str = "gvQqBUqZ";
+
+    fn bundled_lithium() -> Vec<BundledMod> {
+        vec![
+            BundledMod { id: "lithium".into(), name: "Lithium".into(), version: "0.15.4".into() },
+            // Unbekannt (kein Modrinth-Projekt hinterlegt): zählt nur für die Verträglichkeit.
+            BundledMod { id: "somethingelse".into(), name: String::new(), version: "1.0.0".into() },
+        ]
+    }
+
+    #[tokio::test]
+    async fn mods_built_into_the_trs_client_are_not_installed_again() {
+        let mock = Mock::default().with(version("s1", "sodium", &[])).with(version("l1", LITHIUM, &[]));
+        let bundled = target("1.21.1").with_bundled(&bundled_lithium());
+        assert!(bundled.is_bundled(LITHIUM));
+        assert_eq!(bundled.builtins.iter().map(|b| b.id.as_str()).collect::<Vec<_>>(), ["lithium", "somethingelse"]);
+        let wanted = [want("fps", &["sodium"]), want("fps", &[LITHIUM])];
+        let plan = plan_for(&mock, &bundled, &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Bundled]);
+        assert_eq!(plan.items[1].detail.as_deref(), Some("TRS Client"));
+        assert_eq!(plan.items[1].project_id.as_deref(), Some(LITHIUM));
+        assert_eq!(step_ids(&plan), ["s1"]);
+        assert!(!mock.calls.lock().unwrap().contains(&LITHIUM.to_owned()), "gar nicht erst nachgeschlagen");
+
+        // Eigene Kopie des Spielers: bleibt „schon installiert“.
+        let existing = Existing { projects: HashMap::from([(LITHIUM.into(), None)]), ..Default::default() };
+        let plan = plan_for(&mock, &bundled, &existing, &wanted[1..]).await;
+        assert_eq!(statuses(&plan), [ItemStatus::AlreadyInstalled]);
+
+        // Eingebaute Optimierungen aus bzw. TRS Client aus (leere Liste): wird wieder installiert.
+        let plan = plan_for(&mock, &target("1.21.1").with_bundled(&[]), &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Installed]);
+        assert_eq!(step_ids(&plan), ["s1", "l1"]);
+    }
+
+    #[tokio::test]
+    async fn a_dependency_built_into_the_trs_client_is_not_downloaded() {
+        let mock = Mock::default()
+            .with(version("x1", "xmod", &[("required", LITHIUM, None)]))
+            .with(version("l1", LITHIUM, &[]))
+            .with(version("y1", "ymod", &[("incompatible", LITHIUM, None)]));
+        let bundled = target("1.21.1").with_bundled(&bundled_lithium());
+        let plan = plan_for(&mock, &bundled, &Existing::default(), &[want("p", &["xmod"]), want("p", &["ymod"])]).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Incompatible]);
+        assert_eq!(step_ids(&plan), ["x1"]);
+    }
+
+    #[tokio::test]
+    async fn constraints_against_built_in_mods_are_still_checked() {
+        let mock = Mock::default()
+            .with(version("x1", "xmod", &[]))
+            .with(version("y1", "ymod", &[]))
+            .with(version("z1", "zmod", &[]))
+            .jar("x1", r#"{"id":"xmod","name":"X","version":"1.0.0","breaks":{"lithium":"<0.20"}}"#)
+            .jar("y1", r#"{"id":"ymod","name":"Y","version":"1.0.0","depends":{"lithium":">=0.20"}}"#)
+            .jar("z1", r#"{"id":"zmod","name":"Z","version":"1.0.0","depends":{"lithium":">=0.15"}}"#);
+        let wanted = [want("p", &["xmod"]), want("p", &["ymod"]), want("p", &["zmod"])];
+        let bundled = target("1.21.1").with_bundled(&bundled_lithium());
+        let plan = plan_for(&mock, &bundled, &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Incompatible, ItemStatus::Incompatible, ItemStatus::Installed]);
+        assert_eq!(plan.items[0].detail.as_deref(), Some("Lithium 0.15.4"));
+        assert_eq!(step_ids(&plan), ["z1"]);
+        // Ohne eingebautes Lithium gibt es nichts zu beanstanden.
+        let plan = plan_for(&mock, &target("1.21.1"), &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Installed, ItemStatus::Installed]);
+    }
+
+    #[test]
+    fn bundled_projects_are_fps_boost_mods() {
+        for (mod_id, project) in BUNDLED_PROJECTS {
+            assert!(modcompat::meta::is_mod_id(mod_id), "{mod_id}");
+            assert!(FPS_BOOST.iter().any(|g| g.mods.iter().any(|m| m.id == *project)), "{mod_id} fehlt im FPS-Boost");
+        }
+        assert_eq!(bundled_project("lithium"), Some(LITHIUM));
+        assert_eq!(bundled_project("sodium"), None, "Sodium baut der TRS Client nicht ein");
     }
 
     #[tokio::test]

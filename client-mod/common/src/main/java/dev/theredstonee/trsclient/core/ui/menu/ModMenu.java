@@ -5,6 +5,8 @@ import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.module.Category;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.Module;
+import dev.theredstonee.trsclient.core.module.NewMarkers;
+import dev.theredstonee.trsclient.core.module.NewSince;
 import dev.theredstonee.trsclient.core.module.Setting;
 import dev.theredstonee.trsclient.core.ui.Anim;
 import dev.theredstonee.trsclient.core.ui.Canvas;
@@ -328,7 +330,7 @@ public final class ModMenu extends UiScreen {
 			}
 		});
 		cy += rowH + gap;
-		railItem(c, x, cy, w, rowH, "layers", I18n.tr("packs.mod.rail"), page == Page.PACKS, mx, my, new Runnable() {
+		railItem(c, x, cy, w, rowH, "layers", I18n.tr("packs.mod.rail"), page == Page.PACKS, mx, my, NewSince.MENU_PACKS, new Runnable() {
 			@Override
 			public void run() {
 				page = Page.PACKS;
@@ -346,7 +348,7 @@ public final class ModMenu extends UiScreen {
 			cy += rowH + gap;
 		}
 		if (host.hasAccounts()) {
-			railItem(c, x, cy, w, rowH, "accounts", I18n.tr("menu.accounts"), false, mx, my, new Runnable() {
+			railItem(c, x, cy, w, rowH, "accounts", I18n.tr("menu.accounts"), false, mx, my, NewSince.MENU_ACCOUNTS, new Runnable() {
 				@Override
 				public void run() {
 					host.save();
@@ -356,7 +358,7 @@ public final class ModMenu extends UiScreen {
 			cy += rowH + gap;
 		}
 		if (host.hasWardrobe()) {
-			railItem(c, x, cy, w, rowH, "shirt", I18n.tr("menu.wardrobe"), false, mx, my, new Runnable() {
+			railItem(c, x, cy, w, rowH, "shirt", I18n.tr("menu.wardrobe"), false, mx, my, NewSince.MENU_WARDROBE, new Runnable() {
 				@Override
 				public void run() {
 					host.save();
@@ -366,7 +368,7 @@ public final class ModMenu extends UiScreen {
 			cy += rowH + gap;
 		}
 		if (host.hasFriends()) {
-			railItem(c, x, cy, w, rowH, "friends", I18n.tr("menu.friends"), false, mx, my, new Runnable() {
+			railItem(c, x, cy, w, rowH, "friends", I18n.tr("menu.friends"), false, mx, my, NewSince.MENU_FRIENDS, new Runnable() {
 				@Override
 				public void run() {
 					host.save();
@@ -376,7 +378,7 @@ public final class ModMenu extends UiScreen {
 			cy += rowH + gap;
 		}
 		if (host.hasClips()) {
-			railItem(c, x, cy, w, rowH, "image", I18n.tr("menu.clips"), false, mx, my, new Runnable() {
+			railItem(c, x, cy, w, rowH, "image", I18n.tr("menu.clips"), false, mx, my, NewSince.MENU_CLIPS, new Runnable() {
 				@Override
 				public void run() {
 					host.save();
@@ -428,6 +430,15 @@ public final class ModMenu extends UiScreen {
 
 	private void railItem(Canvas c, int x, int y, int w, int h, String icon, String label, boolean active,
 			int mx, int my, Runnable action) {
+		railItem(c, x, y, w, h, icon, label, active, mx, my, null, action);
+	}
+
+	/**
+	 * Eintrag der Leiste; {@code newId} (siehe {@link NewSince}) = Bereich mit „NEU“-Schild, bis er einmal geöffnet
+	 * wurde (in schmalen Leisten nur ein Punkt).
+	 */
+	private void railItem(Canvas c, int x, int y, int w, int h, String icon, String label, boolean active,
+			int mx, int my, final String newId, final Runnable action) {
 		Theme t = Theme.get();
 		boolean hovered = inside(mx, my, x, y, w, h);
 		if (active) {
@@ -438,8 +449,30 @@ public final class ModMenu extends UiScreen {
 			Redstone.dustV(c, x, y + 3, y + h - 3, t.dustOff, 0f);
 		}
 		Icons.draw(c, icon, x + 7, y + (h - 8) / 2, 1, active ? t.dustOn : (hovered ? t.text : t.textDim));
-		Paint.textClipped(c, label, x + 19, y + (h - 8) / 2, w - 22, active || hovered ? t.text : t.textDim, false);
-		hits.add(x, y, w, h, new Click(action));
+		final NewMarkers news = host.modules().clientState.news();
+		boolean isNew = newId != null && news.isNew(newId);
+		int labelW = w - 22;
+		if (isNew) {
+			int badgeW = NewBadge.width(c);
+			int room = w - 22 - badgeW - 4;
+			// Schild nur, wenn der Name daneben ganz bleibt – sonst (schmale Leiste) ein Punkt wie bei den Kategorien.
+			if (room >= c.textWidth(label) && h >= NewBadge.HEIGHT) {
+				labelW = Math.min(room, c.textWidth(label));
+				NewBadge.draw(c, x + 19 + labelW + 4, y + (h - NewBadge.HEIGHT) / 2);
+			} else {
+				labelW = w - 32;
+				NewBadge.dot(c, x + w - 9, y + (h - 5) / 2);
+			}
+		}
+		Paint.textClipped(c, label, x + 19, y + (h - 8) / 2, labelW, active || hovered ? t.text : t.textDim, false);
+		hits.add(x, y, w, h, new Click(newId == null ? action : new Runnable() {
+			@Override
+			public void run() {
+				// Bereich geöffnet: kein „NEU“ mehr (auch auf dem Startbildschirm und – über den Sync – anderen PCs).
+				if (news.markSeen(newId)) host.save();
+				action.run();
+			}
+		}));
 	}
 
 	// --- Kachel-Ansicht ---

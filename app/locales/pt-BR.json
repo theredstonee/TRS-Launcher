@@ -2914,14 +2914,16 @@
       "incompatible": "{title} não funciona junto com {other}",
       "needsLoader": "{title} precisa de um carregador de mods",
       "failed": "Não foi possível baixar {title}",
-      "swapped": "Trocado por uma versão que funciona com {other}"
+      "swapped": "Trocado por uma versão que funciona com {other}",
+      "bundled": "Já vem no TRS Client – não é instalado separadamente"
     },
     "status": {
       "installed": "Instalado",
       "alreadyInstalled": "Já estava",
       "duplicate": "Incluído",
       "skipped": "Ignorado",
-      "swapped": "Trocado"
+      "swapped": "Trocado",
+      "bundled": "No TRS Client"
     },
     "task": {
       "title": "Predefinições para {name}",

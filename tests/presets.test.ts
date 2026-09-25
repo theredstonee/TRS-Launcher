@@ -11,6 +11,7 @@ import {
   presetBlocked,
   presetDisabled,
   presetHasMods,
+  presetItemOk,
   presetName,
   presetPercent,
   presetReason,
@@ -196,6 +197,15 @@ describe('Presets: Bericht', () => {
     expect(summarizePresetReport(r).problems).toEqual([])
     expect(presetSummaryText(r)).toBe('Alle 2 Projekte installiert')
     expect(presetReason(swapped, r)).toBe('Gegen eine Version getauscht, die mit Iris 1.10.7+mc1.21.11 läuft')
+  })
+
+  it('im TRS Client eingebaute Mods zählen als erledigt', () => {
+    const bundled = { ...outcome('Lithium', 'bundled'), detail: 'TRS Client' }
+    const r = report([outcome('Sodium', 'installed'), bundled])
+    expect(presetItemOk(bundled)).toBe(true)
+    expect(summarizePresetReport(r).problems).toEqual([])
+    expect(presetSummaryText(r)).toBe('Alle 2 Projekte installiert')
+    expect(presetReason(bundled, r)).toBe('Im TRS Client eingebaut – wird nicht extra installiert')
   })
 
   it('Fortschritt: Prüfen 0–20 %, Laden 20–100 %', () => {

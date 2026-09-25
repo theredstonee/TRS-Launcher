@@ -91,14 +91,25 @@ public final class NewMarkers {
 		return isNew(id(m));
 	}
 
-	/** Modul oder eine seiner Einstellungen ist neu (Schild auf der Kachel). */
+	/** Modul, eine seiner Einstellungen oder ein Zusatzbereich der Seite ist neu (Schild auf der Kachel). */
 	public boolean hasNew(Module m) {
 		if (isNew(m)) return true;
 		List<Setting> settings = m.settings();
 		for (int i = 0; i < settings.size(); i++) {
 			if (isNew(id(m, settings.get(i)))) return true;
 		}
+		for (String extra : NewSince.extras(m.id())) {
+			if (isNew(extra)) return true;
+		}
 		return false;
+	}
+
+	/**
+	 * Schild für einen Eintrag ohne eigene Kachel (Zusatzbereich, Taste): neu – oder gerade geöffnet und die Seite
+	 * noch offen.
+	 */
+	public boolean badge(String id) {
+		return lingering.contains(id) || isNew(id);
 	}
 
 	/** Einstellungszeile mit Schild (auch, solange die Seite nach dem Öffnen noch offen ist). */
@@ -115,18 +126,43 @@ public final class NewMarkers {
 		return false;
 	}
 
-	/** Modulseite geöffnet: Modul und seine Einstellungen gelten als gesehen. */
+	/** Modulseite geöffnet: Modul, seine Einstellungen und Zusatzbereiche gelten als gesehen. */
 	public void opened(Module m) {
 		boolean changed = mark(id(m));
 		List<Setting> settings = m.settings();
 		for (int i = 0; i < settings.size(); i++) {
-			String id = id(m, settings.get(i));
-			if (isNew(id)) {
-				lingering.add(id);
-				changed |= mark(id);
-			}
+			changed |= linger(id(m, settings.get(i)));
 		}
+		for (String extra : NewSince.extras(m.id())) changed |= linger(extra);
 		if (changed) revision++;
+	}
+
+	/**
+	 * Eintrag angezeigt (Taste in der Einführung …): gilt als gesehen, das Schild bleibt aber bis {@link #closed()}.
+	 *
+	 * @return true, wenn er bis eben neu war
+	 */
+	public boolean shown(String id) {
+		boolean changed = linger(id);
+		if (changed) revision++;
+		return changed;
+	}
+
+	/**
+	 * Bereich geöffnet (Menü-Leiste, Startbildschirm): gilt sofort als gesehen, ohne nachleuchtendes Schild.
+	 *
+	 * @return true, wenn er bis eben neu war (dann speichern)
+	 */
+	public boolean markSeen(String id) {
+		boolean changed = mark(id);
+		if (changed) revision++;
+		return changed;
+	}
+
+	private boolean linger(String id) {
+		if (!isNew(id)) return false;
+		lingering.add(id);
+		return mark(id);
 	}
 
 	/** Seite verlassen: die Schilder der Einstellungen verschwinden. */

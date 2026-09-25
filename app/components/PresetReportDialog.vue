@@ -17,6 +17,8 @@ function chip(item: PresetItemOutcome): { text: string; cls: string } {
       return { text: t('presets.status.duplicate'), cls: 'bg-base-800 text-base-400' }
     case 'swapped':
       return { text: item.versionNumber ?? t('presets.status.swapped'), cls: 'bg-lamp-900 text-lamp-300' }
+    case 'bundled':
+      return { text: t('presets.status.bundled'), cls: 'bg-base-800 text-base-400' }
     default:
       return { text: t('presets.status.skipped'), cls: 'bg-lamp-900 text-lamp-300' }
   }

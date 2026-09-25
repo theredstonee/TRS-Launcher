@@ -2914,14 +2914,16 @@
       "incompatible": "{title} no funciona junto con {other}",
       "needsLoader": "{title} necesita un cargador de mods",
       "failed": "No se pudo descargar {title}",
-      "swapped": "Cambiado a una versión que funciona con {other}"
+      "swapped": "Cambiado a una versión que funciona con {other}",
+      "bundled": "Integrado en el TRS Client: no se instala por separado"
     },
     "status": {
       "installed": "Instalado",
       "alreadyInstalled": "Ya estaba",
       "duplicate": "Incluido",
       "skipped": "Omitido",
-      "swapped": "Cambiado"
+      "swapped": "Cambiado",
+      "bundled": "En TRS Client"
     },
     "task": {
       "title": "Presets para {name}",

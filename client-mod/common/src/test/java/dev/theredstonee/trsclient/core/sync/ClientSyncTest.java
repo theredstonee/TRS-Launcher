@@ -239,15 +239,33 @@ class ClientSyncTest {
 	}
 
 	@Test
-	void upgradedInstallCountsAsIntroducedAndMarksNewSettings() throws Exception {
+	void upgradedInstallGetsTheIntroOncePerAccountAndMarksNewSettings() throws Exception {
 		FakeSyncServer server = new FakeSyncServer();
+		// Update von 0.5.x: Einführung trotzdem offen (einmal für alle), Neues ist markiert.
 		Device a = new Device("a", server, true);
-		assertTrue(a.modules.clientState.introDone());
-		assertEquals(ClientState.EXISTING, a.modules.clientState.introHow());
+		assertFalse(a.modules.clientState.introDone(), "auch Updater bekommen die Einführung");
+		assertNull(a.modules.clientState.introHow());
+		assertFalse(a.modules.clientState.welcomeShown());
 		assertTrue(a.modules.clientState.news().isNew(a.modules.trsOnline, a.modules.syncClient));
 		assertTrue(a.modules.clientState.news().hasNew(a.modules.trsOnline));
 		a.sync();
-		// Auf B (Neuinstallation) gilt der Stand des Kontos: die Einstellung ist dort genauso „NEU“.
+		assertFalse(a.modules.clientState.introDone(), "das Konto hat sie auch noch nicht erledigt");
+		assertNull(server.clientDoc(ACCOUNT).get("intro"), "offene Einführung wird nicht gemeldet");
+
+		// Auf A übersprungen → gilt fürs ganze Konto.
+		a.modules.clientState.markIntro(ClientState.SKIPPED, null, System.currentTimeMillis());
+		a.save();
+		a.sync();
+		assertEquals(ClientState.SKIPPED, server.clientDoc(ACCOUNT).getAsJsonObject("intro").get("how").getAsString());
+
+		// Zweiter PC, ebenfalls von 0.5.x aktualisiert: nach dem Abgleich keine Einführung, nur die Begrüßung.
+		Device c = new Device("c", server, true);
+		assertFalse(c.modules.clientState.introDone());
+		c.sync();
+		assertTrue(c.modules.clientState.introDone(), "anderer PC mit demselben Konto: keine Einführung mehr");
+		assertEquals(ClientState.ACCOUNT, c.modules.clientState.introHow());
+
+		// Auf B (Neuinstallation) gilt der NEU-Stand des Kontos: die Einstellung ist dort genauso „NEU“.
 		Device b = new Device("b", server, false);
 		assertFalse(b.modules.clientState.news().hasNew(b.modules.trsOnline));
 		b.sync();
@@ -258,6 +276,37 @@ class ClientSyncTest {
 		b.sync();
 		a.sync();
 		assertFalse(a.modules.clientState.news().hasNew(a.modules.trsOnline));
+	}
+
+	@Test
+	void earlyExistingMarkerDoesNotCountAsIntroduced() throws Exception {
+		FakeSyncServer server = new FakeSyncServer();
+		// Frühe Testversion: Konto und Config tragen „existing“ (Update galt als eingerichtet).
+		Device a = new Device("a", server, false);
+		a.sync();
+		JsonObject doc = server.clientDoc(ACCOUNT);
+		JsonObject intro = new JsonObject();
+		intro.addProperty("done", true);
+		intro.addProperty("how", ClientState.EXISTING);
+		doc.add("intro", intro);
+		server.put(ACCOUNT, doc, System.currentTimeMillis());
+
+		Device b = new Device("b", server, false);
+		b.sync();
+		assertFalse(b.modules.clientState.introDone(), "„existing“ aus dem Konto zählt nicht");
+
+		TrsConfig old = b.modules.registry.capture();
+		old.clientState.introDone = true;
+		old.clientState.introHow = ClientState.EXISTING;
+		TrsModules reloaded = new TrsModules();
+		reloaded.registry.apply(old);
+		assertFalse(reloaded.clientState.introDone(), "„existing“ aus der Config zählt nicht");
+
+		// Einmal erledigt, ersetzt der echte Stand den alten im Konto.
+		b.modules.clientState.markIntro(ClientState.FINISHED, "pvp", System.currentTimeMillis());
+		b.save();
+		b.sync();
+		assertEquals(ClientState.FINISHED, server.clientDoc(ACCOUNT).getAsJsonObject("intro").get("how").getAsString());
 	}
 
 	@Test

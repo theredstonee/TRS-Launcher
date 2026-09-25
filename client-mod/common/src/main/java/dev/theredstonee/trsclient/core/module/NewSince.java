@@ -1,7 +1,9 @@
 package dev.theredstonee.trsclient.core.module;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -9,8 +11,18 @@ import java.util.Map;
  * (siehe {@link NewMarkers}). Module heißen hier wie ihre ID ({@code "zoom"}), Einstellungen
  * {@code "<modul>.<schlüssel>"} ({@code "trsOnline.sync"}).
  *
- * <p><b>Neue Module/Einstellungen bitte hier mit der kommenden Mod-Version eintragen</b> – ohne Eintrag gilt ein
- * Eintrag als alt (nie „NEU“). Die Werte bis 0.4.0 stammen aus den Release-Tags (mod_version je Release).
+ * <p>Außer Modulen und Einstellungen gibt es noch drei Arten von Einträgen:
+ * <ul>
+ *   <li>Bereiche der Menü-Leiste bzw. der Seitenleiste des Startbildschirms ({@code "menu:<bereich>"}, siehe
+ *   {@link #MENU_WARDROBE} …) – verlieren das Schild beim Öffnen.</li>
+ *   <li>Tastenbelegungen ({@code "key.trsclient.<name>"}) – markiert im Einführungsschritt „Tastenbelegung“.</li>
+ *   <li>Zusatzbereiche einer Modulseite ({@link #extras(String)}, z. B. {@link #FPS_MODE}) – zählen für die Kachel
+ *   wie eine Einstellung.</li>
+ * </ul>
+ *
+ * <p><b>Neue Module/Einstellungen/Bereiche bitte hier mit der kommenden Mod-Version eintragen</b> – ohne Eintrag
+ * gilt ein Eintrag als alt (nie „NEU“; ein Test prüft, dass jedes Modul eingetragen ist). Die Werte bis 0.5.0
+ * stammen aus den Release-Tags (mod_version je Release).
  */
 public final class NewSince {
 	/**
@@ -19,7 +31,24 @@ public final class NewSince {
 	 */
 	public static final String LEGACY_BASELINE = "0.5.0";
 
+	/** Kommende Mod-Version (alles, was seit dem letzten Release dazukam). */
+	public static final String NEXT = "0.6.0";
+
+	/** Menü-Bereiche (Leiste im TRS-Menü, Seitenleiste des Startbildschirms). */
+	public static final String MENU_WARDROBE = "menu:wardrobe";
+	public static final String MENU_ACCOUNTS = "menu:accounts";
+	public static final String MENU_FRIENDS = "menu:friends";
+	public static final String MENU_CLIPS = "menu:clips";
+	/** Modul-Pakete + „Einführung erneut starten“. */
+	public static final String MENU_PACKS = "menu:modPacks";
+	/** Taste „Garderobe öffnen“. */
+	public static final String KEY_WARDROBE = "key.trsclient.wardrobe";
+	/** Grafik-Modus „Schön / Max FPS“ auf der Seite „FPS-Boost“. */
+	public static final String FPS_MODE = "fpsBoost.graphicsMode";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
+	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
+	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
 
 	static {
 		add("0.1.0", "fps", "cps", "keystrokes", "ping", "zoom", "fullbright");
@@ -29,8 +58,15 @@ public final class NewSince {
 		add("0.3.0", "trsOnline", "capePhysics");
 		add("0.4.0", "colors", "emotes", "redstoneSignal", "redstoneOverlay", "redstoneClock", "clips", "fpsBoost",
 				"dynamicFps", "entityCulling", "particles", "worldDetails");
-		// Kommende Version (Client-Sync, Einführung, Modul-Pakete):
-		add("0.6.0", "trsOnline.sync");
+		// Kommende Version: Client-Sync, Einführung + Modul-Pakete, Garderobe, Menü-Stil, Freunde, Clips & Bilder,
+		// Konten im Spiel, eingebaute Optimierungen, Grafik-Modus.
+		add(NEXT, "trsOnline.sync");
+		add(NEXT, "menuStyle", "menuStyle.pause", "menuStyle.pauseButtons", "menuStyle.multiplayer", "menuStyle.loading",
+				"menuStyle.options", "menuStyle.worlds");
+		add(NEXT, "builtinOptimizations");
+		add(NEXT, FPS_MODE);
+		extra("fpsBoost", FPS_MODE);
+		add(NEXT, MENU_WARDROBE, MENU_ACCOUNTS, MENU_FRIENDS, MENU_CLIPS, MENU_PACKS, KEY_WARDROBE);
 	}
 
 	private NewSince() {
@@ -38,6 +74,21 @@ public final class NewSince {
 
 	private static void add(String version, String... ids) {
 		for (String id : ids) SINCE.put(id, version);
+	}
+
+	private static void extra(String moduleId, String id) {
+		List<String> list = EXTRAS.get(moduleId);
+		if (list == null) {
+			list = new ArrayList<String>();
+			EXTRAS.put(moduleId, list);
+		}
+		if (!list.contains(id)) list.add(id);
+	}
+
+	/** Zusatzbereiche einer Modulseite, die eine eigene „NEU“-Markierung haben (leer = keine). */
+	public static synchronized List<String> extras(String moduleId) {
+		List<String> list = EXTRAS.get(moduleId);
+		return list == null ? Collections.<String>emptyList() : new ArrayList<String>(list);
 	}
 
 	/** Weiteren Eintrag setzen (Tests, andere Pakete beim Start). */

@@ -2914,14 +2914,16 @@
       "incompatible": "{title}, {other} ile birlikte çalışmıyor",
       "needsLoader": "{title} bir mod yükleyicisi gerektirir",
       "failed": "{title} indirilemedi",
-      "swapped": "{other} ile çalışan bir sürümle değiştirildi"
+      "swapped": "{other} ile çalışan bir sürümle değiştirildi",
+      "bundled": "TRS Client’a yerleşik – ayrıca kurulmaz"
     },
     "status": {
       "installed": "Yüklendi",
       "alreadyInstalled": "Zaten var",
       "duplicate": "Dahil",
       "skipped": "Atlandı",
-      "swapped": "Değiştirildi"
+      "swapped": "Değiştirildi",
+      "bundled": "TRS Client’ta"
     },
     "task": {
       "title": "{name} için ön ayarlar",

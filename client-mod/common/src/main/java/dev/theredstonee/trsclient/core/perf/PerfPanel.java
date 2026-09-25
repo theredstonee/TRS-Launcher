@@ -2,6 +2,7 @@ package dev.theredstonee.trsclient.core.perf;
 
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.module.Module;
+import dev.theredstonee.trsclient.core.module.NewSince;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.Hits;
@@ -9,6 +10,7 @@ import dev.theredstonee.trsclient.core.ui.Paint;
 import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.menu.ModulePanel;
+import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -72,7 +74,14 @@ final class PerfPanel implements ModulePanel {
 		// --- Grafik-Modus: Schön / Max FPS ---
 		String modeTitle = I18n.tr("perf.mode.title");
 		c.text(modeTitle, x, y + 4, t.text, false);
-		int mxPos = x + Math.min(c.textWidth(modeTitle) + 8, w / 3);
+		int titleW = c.textWidth(modeTitle);
+		// Neu seit dem letzten Update: Schild, bis man die Seite wieder verlässt (siehe NewMarkers#opened).
+		if (perf.modules().clientState.news().badge(NewSince.FPS_MODE)) {
+			NewBadge.draw(c, x + titleW + 4, y + 3);
+			titleW += NewBadge.width(c) + 4;
+		}
+		// Passt der erste Knopf nicht mehr daneben, rutschen die Knöpfe in die nächste Zeile (kein Überlappen).
+		int mxPos = x + titleW + 8;
 		int myPos = y;
 		for (final FpsConfigMode.Mode mode : FpsConfigMode.Mode.values()) {
 			String label = I18n.tr("perf.mode." + mode.key());

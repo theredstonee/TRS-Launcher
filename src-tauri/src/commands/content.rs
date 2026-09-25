@@ -200,7 +200,8 @@ pub async fn install_performance_pack(
     task_id: Option<String>,
 ) -> CommandResult<Vec<String>> {
     let instance = launcher.instances().get(&id).await?;
-    let work = trs_core::presets::install_fps_boost(launcher.http(), launcher.paths(), &instance);
+    let builds = launcher.client_mod_builds().await;
+    let work = trs_core::presets::install_fps_boost(launcher.http(), launcher.paths(), &builds, &instance);
     Ok(tracked(&app, task_id, work).await?)
 }
 
