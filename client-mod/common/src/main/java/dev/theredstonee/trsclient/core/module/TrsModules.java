@@ -45,6 +45,8 @@ public final class TrsModules {
 	public final Module zoom;
 	public final Module fullbright;
 	public final Module titleScreen;
+	/** Redstone-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten); je Menü abschaltbar. */
+	public final Module menuStyle;
 	public final Module oldAnimations;
 	public final Module lowFire;
 	public final Module blockOutline;
@@ -147,6 +149,12 @@ public final class TrsModules {
 	public final NumberSetting hitColorOpacity;
 	/** Startbildschirm: animierte Redstone-Schaltung im Hintergrund (aus = ruhiges Standbild). */
 	public final BoolSetting titleAnimated;
+	public final BoolSetting menuPause;
+	public final BoolSetting menuPauseButtons;
+	public final BoolSetting menuMultiplayer;
+	public final BoolSetting menuLoading;
+	public final BoolSetting menuOptions;
+	public final BoolSetting menuWorlds;
 
 	// --- PvP-Anzeigen ---
 	public final NumberSetting reachDecimals;
@@ -352,6 +360,9 @@ public final class TrsModules {
 		fullbright = registry.register(new Module("fullbright", "Fullbright", "Maximum brightness everywhere", false));
 		titleScreen = registry.register(new Module("titleScreen", "Title Screen",
 				"TRS title screen instead of the vanilla one", true));
+		menuStyle = registry.register(new Module("menuStyle", "Menu Style",
+				"Redstone look for the pause menu, server list, loading screens, options and world list. All buttons "
+						+ "(also those of other mods) keep working; turn single menus back to the classic look.", true));
 		oldAnimations = registry.register(new Module("oldAnimations", "1.7 Animations",
 				"Old hand movements: the hand does not dip during the attack cooldown, "
 						+ "swing animation also while using an item (visual only)", false));
@@ -425,6 +436,7 @@ public final class TrsModules {
 		zoom.icon("zoom").category(Category.WORLD);
 		fullbright.icon("sun").category(Category.WORLD);
 		titleScreen.icon("home");
+		menuStyle.icon("palette");
 		reach.icon("sword").category(Category.PVP);
 		combo.icon("hit").category(Category.PVP);
 		speed.icon("run").category(Category.PVP);
@@ -513,6 +525,12 @@ public final class TrsModules {
 		hitColorColor = hitColor.add(new ColorSetting("color", "Color", 0xB07CFF));
 		hitColorOpacity = hitColor.add(new NumberSetting("opacity", "Opacity (%)", 70, 10, 100, 10, ""));
 		titleAnimated = titleScreen.add(new BoolSetting("animated", "Animated background", true));
+		menuPause = menuStyle.add(new BoolSetting("pause", "Pause menu", true));
+		menuPauseButtons = menuStyle.add(new BoolSetting("pauseButtons", "TRS buttons in the pause menu", true));
+		menuMultiplayer = menuStyle.add(new BoolSetting("multiplayer", "Server list", true));
+		menuLoading = menuStyle.add(new BoolSetting("loading", "Loading screens", true));
+		menuOptions = menuStyle.add(new BoolSetting("options", "Options", true));
+		menuWorlds = menuStyle.add(new BoolSetting("worlds", "World list", true));
 
 		reachDecimals = reach.add(new NumberSetting("decimals", "Decimal places", 2, 0, 3, 1, ""));
 		reachHold = reach.add(new NumberSetting("hold", "Display time (s, 0 = always)", 4, 0, 10, 1, ""));

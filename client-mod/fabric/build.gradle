@@ -117,6 +117,13 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin'
 		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
 		'ColorGradeMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
+// Menü-Stil (Pause, Serverliste, Laden, Optionen, Welten): Hintergrund, Knöpfe, Karten, Ladebildschirme.
+mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
+		'JoinMultiplayerAccessor']
+if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
+if (stonecutter.eval(mc, '<1.20.3')) mixinClasses << 'SelectionListAccessor'
+if (stonecutter.eval(mc, '<1.19.4')) mixinClasses << 'LoadingScreenMixin'
+if (stonecutter.eval(mc, '>=26.1')) mixinClasses << 'PauseBackgroundMixin'
 // Leistung: Dynamische FPS/FPS-Messung, Partikel, Entity-Culling, Welt-Details (alle require = 0).
 mixinClasses += ['FramePaceMixin', 'ParticleLimitMixin', 'EntityCullMixin', 'BlockEntityCullMixin', 'NameTagCullMixin',
 		'LivingNameTagCullMixin', 'TextureAnimationMixin', 'SkyMixin', 'StarsMixin']

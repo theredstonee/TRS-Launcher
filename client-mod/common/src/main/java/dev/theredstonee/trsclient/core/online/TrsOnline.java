@@ -94,6 +94,10 @@ public final class TrsOnline {
 	private volatile String ownUuid;
 	/** Freigeschaltete Emotes laut API (null = noch unbekannt). */
 	private volatile List<String> unlockedEmotes;
+	/** Freunde im Spiel (nur abgefragt, solange ein Bildschirm sie braucht). */
+	private final Friends friends;
+	/** Die Verbindung des laufenden Spiels (für Bildschirme ohne eigenen Zugang), null in Tests. */
+	private static volatile TrsOnline current;
 
 	public TrsOnline(OnlineConfig config, OnlinePlatform platform, Http http, Path capeDir) {
 		this(config, platform, http, capeDir, new PlayerEventStream.UrlOpener("TRS-Client"));
@@ -108,6 +112,32 @@ public final class TrsOnline {
 		this.apiWorker = worker("TRS-Online");
 		this.capeWorker = worker("TRS-Umhaenge");
 		this.events = new PlayerEventStream(eventOpener, config.apiBase());
+		this.friends = new Friends(api, new Friends.Backend() {
+			@Override
+			public boolean submit(Runnable task) {
+				return TrsOnline.this.submit(apiWorker, task);
+			}
+
+			@Override
+			public void post(Runnable onGameThread) {
+				results.add(onGameThread);
+			}
+
+			@Override
+			public void unauthorized(String rejectedToken) {
+				relogin(rejectedToken);
+			}
+		});
+	}
+
+	/** Verbindung des laufenden Spiels (null, solange die Online-Funktionen nicht gestartet sind). */
+	public static TrsOnline current() {
+		return current;
+	}
+
+	/** Freunde im Spiel. */
+	public Friends friends() {
+		return friends;
 	}
 
 	/** Standard: HttpURLConnection, Umhang-Cache unter {@code <configDir>/trsclient/capes}. */
@@ -116,8 +146,10 @@ public final class TrsOnline {
 		String userAgent = "TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion() + "; "
 				+ platform.loader() + ")";
 		Http http = new Http.UrlConnection(userAgent);
-		return new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
+		TrsOnline online = new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
 				new PlayerEventStream.UrlOpener(userAgent));
+		current = online;
+		return online;
 	}
 
 	private static ThreadPoolExecutor worker(String name) {
@@ -182,6 +214,7 @@ public final class TrsOnline {
 			lastEventsUpdate = Long.MIN_VALUE / 2;
 			observedOnce = false;
 			events.stop();
+			friends.reset();
 		}
 		active = true;
 		if (token == null) {
@@ -214,6 +247,7 @@ public final class TrsOnline {
 			directory.prune(now);
 		}
 		tickEmotes(now, session.uuid);
+		friends.tick(now, token);
 	}
 
 	// --- Emotes (API.md §12, §13) ---

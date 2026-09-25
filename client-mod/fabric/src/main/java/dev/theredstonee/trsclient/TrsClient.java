@@ -101,6 +101,8 @@ public final class TrsClient implements ClientModInitializer {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
 		}
 
+		// Menü-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten).
+		dev.theredstonee.trsclient.core.menus.MenuStyle.install(modules);
 		TrsKeys.register();
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
