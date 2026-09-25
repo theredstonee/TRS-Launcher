@@ -24,6 +24,8 @@ public final class TrsConfig {
 	public HudProfiles hudProfiles;
 	/** Stand der Standard-Tastenbelegungen; fehlt in Version 1. */
 	public Integer keyDefaults;
+	/** Weltkarten-Taste M einmal auf Doppelbelegung geprüft (null/false = noch nicht). */
+	public Boolean worldMapKeyChecked;
 	/** Leistung: ursprüngliche Werte vor „FPS-Boost“/„Beheben“ (für „Rückgängig“); optional. */
 	public PerfUndo perfUndo;
 	/** Einführung, „NEU“-Markierungen und im Client gewähltes Aussehen; optional (fehlt bis 0.5.x). */

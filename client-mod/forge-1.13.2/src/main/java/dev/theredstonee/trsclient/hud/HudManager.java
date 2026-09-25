@@ -22,12 +22,14 @@ public final class HudManager {
 	private final int[] box = new int[4];
 	private final CrosshairRenderer crosshair;
 	private final RedstoneHuds.Overlay redstoneOverlay;
+	private final MinimapHud minimap;
 	private List<HudItem> editorItems;
 
 	public HudManager(TrsModules modules) {
 		this.crosshair = new CrosshairRenderer(modules);
 		dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone = dev.theredstonee.trsclient.TrsClient.get().redstone();
 		this.redstoneOverlay = new RedstoneHuds.Overlay(modules, redstone);
+		this.minimap = new MinimapHud(modules);
 		this.elements = Collections.unmodifiableList(Arrays.<HudElement>asList(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
@@ -42,9 +44,15 @@ public final class HudManager {
 				new InfoHuds.Packs(modules.packs),
 				new InfoHuds.ToggleIndicator(modules.toggleSprint, true),
 				new InfoHuds.ToggleIndicator(modules.toggleSneak, false),
+				minimap,
 				new RedstoneHuds.Signal(modules, redstone),
 				new RedstoneHuds.Clock(modules, redstone),
 				new ClipHud(modules)));
+	}
+
+	/** Einmal je Client-Tick (Karte abtasten). */
+	public void tick() {
+		minimap.tick();
 	}
 
 	public CrosshairRenderer crosshair() {
@@ -117,6 +125,11 @@ public final class HudManager {
 	public void draw(FontRenderer font, HudElement e, int sw, int sh, boolean preview) {
 		int[] b = bounds(font, e, sw, sh, preview);
 		float scale = e.module().scale.getFloat();
+		if (!preview) {
+			e.originX = b[0];
+			e.originY = b[1];
+			e.originScale = scale;
+		}
 		GlStateManager.pushMatrix();
 		GlStateManager.translatef(b[0], b[1], 0);
 		GlStateManager.scalef(scale, scale, 1f);

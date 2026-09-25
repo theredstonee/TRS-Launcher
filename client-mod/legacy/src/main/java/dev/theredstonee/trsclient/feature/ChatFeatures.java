@@ -44,6 +44,9 @@ public final class ChatFeatures {
 	public void onChatReceived(ClientChatReceivedEvent event) {
 		if (ChatCompat.isActionBar(event)) return;
 		String plain = ChatCompat.plain(event);
+		// Fair-Play-Codes der Karten-Mods (Server erzwingt Fair Play).
+		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
+		if (maps != null) maps.onServerText(ChatCompat.formatted(event));
 		long now = System.currentTimeMillis();
 
 		String prefix = "";

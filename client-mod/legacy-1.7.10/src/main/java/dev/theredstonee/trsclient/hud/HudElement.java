@@ -8,6 +8,8 @@ import net.minecraft.client.gui.FontRenderer;
 public abstract class HudElement {
 	protected final HudModule module;
 	protected final Minecraft mc = Minecraft.getMinecraft();
+	/** Lage im Bild beim letzten Zeichnen im Spiel (GUI-Pixel) und Skalierung – für den GL-Scissor. */
+	protected float originX, originY, originScale = 1f;
 
 	protected HudElement(HudModule module) {
 		this.module = module;

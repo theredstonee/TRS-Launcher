@@ -102,6 +102,10 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		if ("maps".equals(System.getProperty("trsclient.autotest.only"))) {
+			MapsTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}

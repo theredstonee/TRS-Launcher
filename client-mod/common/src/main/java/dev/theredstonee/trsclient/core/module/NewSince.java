@@ -45,6 +45,9 @@ public final class NewSince {
 	public static final String KEY_WARDROBE = "key.trsclient.wardrobe";
 	/** Grafik-Modus „Schön / Max FPS“ auf der Seite „FPS-Boost“. */
 	public static final String FPS_MODE = "fpsBoost.graphicsMode";
+	/** Karten-Paket: flüssige Minimap, Weltkarte, Höhlenansicht, Fair Play. */
+	public static final String MAPS = "0.7.0";
+	public static final String KEY_WORLD_MAP = "key.trsclient.worldMap";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -67,6 +70,9 @@ public final class NewSince {
 		add(NEXT, FPS_MODE);
 		extra("fpsBoost", FPS_MODE);
 		add(NEXT, MENU_WARDROBE, MENU_ACCOUNTS, MENU_FRIENDS, MENU_CLIPS, MENU_PACKS, KEY_WARDROBE);
+		add(MAPS, "worldMap", "minimap.fairPlay", "minimap.shape", "minimap.opacity", "minimap.caveMode", "minimap.showDeath",
+				"minimap.showFriends", "minimap.showHostile", "minimap.showPassive", "minimap.compass", "minimap.biome",
+				"minimap.time", KEY_WORLD_MAP);
 	}
 
 	private NewSince() {

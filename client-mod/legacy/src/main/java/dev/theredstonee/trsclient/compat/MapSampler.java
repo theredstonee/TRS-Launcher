@@ -1,6 +1,6 @@
 package dev.theredstonee.trsclient.compat;
 
-import dev.theredstonee.trsclient.core.minimap.MinimapCache;
+import dev.theredstonee.trsclient.core.map.ChunkReader;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -10,16 +10,17 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.util.BlockPos;
 
 /**
- * Liest für die Minimap den obersten Block jedes Feldes eines Chunks (Kartenfarbe + Höhe).
- * Nur geladene Chunks werden gelesen – die Minimap zeigt also nie mehr, als das Spiel ohnehin kennt.
+ * Chunk-Zugriff der Karte ({@link ChunkReader}) für Forge 1.8.9–1.12.2: Oberkante, Kartenfarbe und Tönung
+ * (Biom-Gras/Laub) der Blöcke eines geladenen Chunks. Alles Weitere rechnet {@code core.map}.
  *
- * <p>Versionsunterschiede: die Kartenfarbe holt man bis 1.10.2 über {@code Block#getMapColor(IBlockState)},
- * in 1.11 über {@code IBlockState#getMapColor()} und ab 1.12 über
- * {@code IBlockState#getMapColor(IBlockAccess, BlockPos)}; {@code BlockPos} liegt ab 1.9 in {@code util.math}.
+ * <p>Versionsunterschiede: Kartenfarbe bis 1.10.2 über {@code Block#getMapColor(IBlockState)}, in 1.11 über
+ * {@code IBlockState#getMapColor()}, ab 1.12 über {@code IBlockState#getMapColor(IBlockAccess, BlockPos)};
+ * Tönung bis 1.8.9 am Block ({@code colorMultiplier}), ab 1.9 über {@code BlockColors}; Luft über das Material.
  */
-public final class MapSampler implements MinimapCache.Source {
-	/** So viele Blöcke wird pro Feld nach unten gesucht, bis etwas eine Kartenfarbe hat. */
-	private static final int MAX_DEPTH = 16;
+public final class MapSampler implements ChunkReader {
+	private World world;
+	private Chunk chunk;
+	private int baseX, baseZ;
 
 	/** Chunk der Client-Welt ({@code getChunkFromChunkCoords} heißt ab 1.12 {@code getChunk}). */
 	private static Chunk chunk(World world, int chunkX, int chunkZ) {
@@ -31,44 +32,45 @@ public final class MapSampler implements MinimapCache.Source {
 
 	@Override
 	public boolean isLoaded(int chunkX, int chunkZ) {
-		World world = Mc.world();
-		if (world == null) return false;
-		Chunk c = chunk(world, chunkX, chunkZ);
+		World w = Mc.world();
+		if (w == null) return false;
+		Chunk c = chunk(w, chunkX, chunkZ);
 		return c != null && !c.isEmpty();
 	}
 
 	@Override
-	public boolean fill(int chunkX, int chunkZ, int[] colors, int[] heights) {
-		World world = Mc.world();
+	public boolean open(int chunkX, int chunkZ) {
+		world = Mc.world();
+		chunk = null;
 		if (world == null) return false;
-		Chunk chunk = chunk(world, chunkX, chunkZ);
-		if (chunk == null || chunk.isEmpty()) return false;
-		for (int z = 0; z < 16; z++) {
-			for (int x = 0; x < 16; x++) {
-				int worldX = (chunkX << 4) + x;
-				int worldZ = (chunkZ << 4) + z;
-				int top = chunk.getHeightValue(x, z);
-				int index = z * 16 + x;
-				int color = 0;
-				int y = top;
-				// Vom obersten Block nach unten, bis etwas eine Kartenfarbe hat (Luft/Glas nicht).
-				for (int steps = 0; steps < MAX_DEPTH && y > 0; steps++) {
-					color = mapColor(world, worldX, y - 1, worldZ);
-					if (color != 0) break;
-					y--;
-				}
-				colors[index] = color;
-				heights[index] = y;
-			}
-		}
+		Chunk c = chunk(world, chunkX, chunkZ);
+		if (c == null || c.isEmpty()) return false;
+		chunk = c;
+		baseX = chunkX << 4;
+		baseZ = chunkZ << 4;
 		return true;
 	}
 
-	/** Kartenfarbe eines Blocks als 0xRRGGBB (0 = keine, z. B. Luft). */
-	private static int mapColor(World world, int x, int y, int z) {
-		BlockPos pos = new BlockPos(x, y, z);
-		IBlockState state = world.getBlockState(pos);
-		if (state == null) return 0;
+	@Override
+	public int minY() {
+		return 0;
+	}
+
+	@Override
+	public int top(int localX, int localZ) {
+		// Die Höhenkarte zählt nur lichtundurchlässige Blöcke – Schnee, Blumen, Glas liegen darüber.
+		return Math.min(255, chunk.getHeightValue(localX, localZ) + 2);
+	}
+
+	@Override
+	public int block(int localX, int y, int localZ) {
+		BlockPos pos = new BlockPos(baseX + localX, y, baseZ + localZ);
+		IBlockState state = chunk.getBlockState(pos);
+		if (state == null) return AIR;
+		//? if >=1.9 {
+		/*if (state.getMaterial() == net.minecraft.block.material.Material.AIR) return AIR;
+		*///?} else
+		if (state.getBlock().getMaterial() == net.minecraft.block.material.Material.air) return AIR;
 		net.minecraft.block.material.MapColor color;
 		//? if >=1.12 {
 		/*color = state.getMapColor(world, pos);
@@ -76,7 +78,21 @@ public final class MapSampler implements MinimapCache.Source {
 		/*color = state.getMapColor();
 		*///?} else
 		color = state.getBlock().getMapColor(state);
-		if (color == null) return 0;
-		return color.colorValue & 0xFFFFFF;
+		return color == null ? 0 : color.colorValue & 0xFFFFFF;
+	}
+
+	@Override
+	public int tint(int localX, int y, int localZ) {
+		BlockPos pos = new BlockPos(baseX + localX, y, baseZ + localZ);
+		IBlockState state = chunk.getBlockState(pos);
+		if (state == null) return -1;
+		int c;
+		//? if >=1.9 {
+		/*c = net.minecraft.client.Minecraft.getMinecraft().getBlockColors().colorMultiplier(state, world, pos, 0);
+		*///?} else
+		c = state.getBlock().colorMultiplier(world, pos, 0);
+		// Ungetönte Blöcke melden bis 1.8.9 Weiß.
+		if (c == -1 || (c & 0xFFFFFF) == 0xFFFFFF) return -1;
+		return c & 0xFFFFFF;
 	}
 }

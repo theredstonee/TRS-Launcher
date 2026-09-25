@@ -29,6 +29,8 @@ public final class TrsKeys {
 	public static KeyMapping toggleRecording;
 	/** Öffnet die Garderobe (standardmäßig unbelegt). */
 	public static KeyMapping wardrobe;
+	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
+	public static KeyMapping worldMap;
 
 	private TrsKeys() {
 	}
@@ -56,6 +58,7 @@ public final class TrsKeys {
 		saveClip = new KeyMapping("key.trsclient.saveClip", KEYBOARD, InputConstants.KEY_F9, CATEGORY);
 		toggleRecording = new KeyMapping("key.trsclient.toggleRecording", KEYBOARD, InputConstants.KEY_F10, CATEGORY);
 		wardrobe = new KeyMapping("key.trsclient.wardrobe", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
+		worldMap = new KeyMapping("key.trsclient.worldMap", KEYBOARD, InputConstants.KEY_M, CATEGORY);
 	}
 
 	/**
@@ -84,6 +87,27 @@ public final class TrsKeys {
 		event.register(saveClip);
 		event.register(toggleRecording);
 		event.register(wardrobe);
+		event.register(worldMap);
+	}
+
+	/**
+	 * Einmalig: liegt die Weltkarten-Taste noch auf M und nutzt eine andere Belegung (z. B. eine andere Karten-Mod)
+	 * ebenfalls M, wird die TRS-Taste freigegeben (im TRS-Menü/in den Steuerungen neu belegbar).
+	 * @return true, wenn freigegeben wurde
+	 */
+	public static boolean resolveWorldMapConflict() {
+		if (worldMap == null) return false;
+		net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+		if (mc == null || mc.options == null) return false;
+		java.util.List<String> others = new java.util.ArrayList<>();
+		for (KeyMapping k : mc.options.keyMappings) {
+			if (k != worldMap) others.add(k.saveString());
+		}
+		if (!dev.theredstonee.trsclient.core.config.KeyDefaults.conflicts(worldMap.saveString(), "key.keyboard.m", others)) return false;
+		worldMap.setKey(InputConstants.UNKNOWN);
+		KeyMapping.resetMapping();
+		mc.options.save();
+		return true;
 	}
 
 	/** Aktuell belegte Taste (Code) einer Tastenbelegung. */

@@ -44,6 +44,9 @@ public final class ChatFeatures {
 	public Component onMessage(Component message) {
 		if (message == null || reentrant) return message;
 		String plain = message.getString();
+		// Fair-Play-Codes der Karten-Mods (Server erzwingt Fair Play).
+		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
+		if (maps != null) maps.onServerText(plain);
 		Component result = message;
 		if (modules.chat.isEnabled()) {
 			long now = System.currentTimeMillis();

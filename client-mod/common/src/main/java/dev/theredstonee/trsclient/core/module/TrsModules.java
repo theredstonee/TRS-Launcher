@@ -200,6 +200,27 @@ public final class TrsModules {
 	public final BoolSetting minimapWaypoints;
 	public final BoolSetting minimapPlayers;
 	public final BoolSetting minimapCoords;
+	/** Fair Play der Karten (Minimap + Weltkarte): keine Höhlenansicht, kein Radar durch Wände. */
+	public final BoolSetting minimapFairPlay;
+	public final ChoiceSetting<MapShape> minimapShape;
+	public final NumberSetting minimapOpacity;
+	public final ChoiceSetting<CaveMode> minimapCaveMode;
+	public final BoolSetting minimapDeath;
+	public final BoolSetting minimapFriends;
+	public final BoolSetting minimapHostile;
+	public final BoolSetting minimapPassive;
+	public final BoolSetting minimapCompass;
+	public final BoolSetting minimapBiome;
+	public final BoolSetting minimapTime;
+	// --- Weltkarte ---
+	public final Module worldMap;
+	public final KeySetting worldMapKey;
+	public final BoolSetting worldMapWaypoints;
+	public final BoolSetting worldMapPlayers;
+	public final BoolSetting worldMapHostile;
+	public final BoolSetting worldMapPassive;
+	public final BoolSetting worldMapGrid;
+	public final NumberSetting worldMapCache;
 
 	// --- TRS-Online / Umhänge ---
 	public final BoolSetting badgeTab;
@@ -273,21 +294,20 @@ public final class TrsModules {
 		}
 	}
 
-	/** Zoomstufen der Minimap: Zellgröße in Pixeln und Blöcke je Zelle. */
+	/** Zoomstufen der Minimap: Bildschirmpixel je Block (ganzzahlig = scharf, unabhängig von der GUI-Größe). */
 	public enum MinimapZoom implements ChoiceSetting.Option {
-		FAR("Far", 1, 2),
-		NORMAL("Normal", 2, 1),
-		NEAR("Near", 3, 1),
-		CLOSE("Very close", 4, 1);
+		VERY_FAR("Very far", 0.5f),
+		FAR("Far", 1f),
+		NORMAL("Normal", 2f),
+		NEAR("Near", 3f),
+		CLOSE("Very close", 4f);
 
 		private final String label;
-		private final int pixels;
-		private final int blocks;
+		private final float pixelsPerBlock;
 
-		MinimapZoom(String label, int pixels, int blocks) {
+		MinimapZoom(String label, float pixelsPerBlock) {
 			this.label = label;
-			this.pixels = pixels;
-			this.blocks = blocks;
+			this.pixelsPerBlock = pixelsPerBlock;
 		}
 
 		@Override
@@ -295,14 +315,43 @@ public final class TrsModules {
 			return label;
 		}
 
-		/** Kantenlänge einer Zelle in GUI-Pixeln. */
-		public int pixels() {
-			return pixels;
+		/** Bildschirmpixel je Block. */
+		public float pixelsPerBlock() {
+			return pixelsPerBlock;
+		}
+	}
+
+	/** Form der Minimap. */
+	public enum MapShape implements ChoiceSetting.Option {
+		ROUND("Round"),
+		SQUARE("Square");
+
+		private final String label;
+
+		MapShape(String label) {
+			this.label = label;
 		}
 
-		/** Blöcke je Zelle. */
-		public int blocks() {
-			return blocks;
+		@Override
+		public String label() {
+			return label;
+		}
+	}
+
+	/** Höhlenansicht der Karten. */
+	public enum CaveMode implements ChoiceSetting.Option {
+		AUTO("Automatic (underground and in the Nether)"),
+		OFF("Off");
+
+		private final String label;
+
+		CaveMode(String label) {
+			this.label = label;
+		}
+
+		@Override
+		public String label() {
+			return label;
 		}
 	}
 
@@ -349,9 +398,12 @@ public final class TrsModules {
 		speed = registry.register(new HudModule("speed", "Speed", "Blocks per second", false,
 				new HudPosition(HudAnchor.CENTER_LEFT, 0.005, -0.18)));
 		minimap = registry.register(new HudModule("minimap", "Minimap",
-				"Small map of your surroundings (block colors from above) with waypoints. "
-						+ "Shows loaded chunks only – no X-ray, no cave view.", false,
+				"Smooth map of your surroundings with real block colors, relief shading, waypoints, players and "
+						+ "an automatic cave view underground. Fair Play turns off everything beyond vanilla sight.", false,
 				new HudPosition(HudAnchor.TOP_RIGHT, -0.005, 0.01)));
+		worldMap = registry.register(new Module("worldMap", "World map",
+				"Fullscreen map of everything you have explored (saved per world, server and dimension): drag, zoom, "
+						+ "create waypoints with a right-click", true));
 		crosshair = registry.register(new Module("crosshair", "Crosshair",
 				"Your own crosshair: shape, color, size and gap are freely adjustable", false));
 		hitColor = registry.register(new Module("hitColor", "Hit Color",
@@ -447,6 +499,7 @@ public final class TrsModules {
 		combo.icon("hit").category(Category.PVP);
 		speed.icon("run").category(Category.PVP);
 		minimap.icon("globe").category(Category.WORLD);
+		worldMap.icon("map").category(Category.WORLD);
 		oldAnimations.icon("sword").category(Category.PVP);
 		lowFire.icon("hit").category(Category.PVP);
 		blockOutline.icon("layers").category(Category.WORLD);
@@ -587,12 +640,30 @@ public final class TrsModules {
 		waypointDistance = waypoints.add(new BoolSetting("distance", "Show distance", true));
 		waypointDeath = waypoints.add(new BoolSetting("death", "Set death point automatically", true));
 		waypointRange = waypoints.add(new NumberSetting("range", "Only up to (blocks, 0 = always)", 0, 0, 2000, 100, ""));
-		minimapSize = minimap.add(new NumberSetting("size", "Size (pixels)", 96, 48, 160, 16, ""));
+		minimapFairPlay = minimap.add(new BoolSetting("fairPlay", "Fair Play (maps show only what you could see)", false));
+		minimapShape = minimap.add(new ChoiceSetting<>("shape", "Shape", MapShape.class, MapShape.ROUND));
+		minimapSize = minimap.add(new NumberSetting("size", "Size (pixels)", 112, 64, 256, 8, ""));
 		minimapZoom = minimap.add(new ChoiceSetting<>("zoom", "Zoom", MinimapZoom.class, MinimapZoom.NORMAL));
 		minimapRotate = minimap.add(new BoolSetting("rotate", "Rotate with view", true));
+		minimapOpacity = minimap.add(new NumberSetting("opacity", "Map opacity", 100, 20, 100, 5, "", "%"));
+		minimapCaveMode = minimap.add(new ChoiceSetting<>("caveMode", "Cave view", CaveMode.class, CaveMode.AUTO));
 		minimapWaypoints = minimap.add(new BoolSetting("showWaypoints", "Show waypoints", true));
-		minimapPlayers = minimap.add(new BoolSetting("showPlayers", "Show players (in view range only)", false));
+		minimapDeath = minimap.add(new BoolSetting("showDeath", "Show last death point", true));
+		minimapPlayers = minimap.add(new BoolSetting("showPlayers", "Show players", true));
+		minimapFriends = minimap.add(new BoolSetting("showFriends", "Highlight TRS friends", true));
+		minimapHostile = minimap.add(new BoolSetting("showHostile", "Show hostile mobs", false));
+		minimapPassive = minimap.add(new BoolSetting("showPassive", "Show animals", false));
+		minimapCompass = minimap.add(new BoolSetting("compass", "Compass directions", true));
 		minimapCoords = minimap.add(new BoolSetting("coords", "Coordinates below the map", true));
+		minimapBiome = minimap.add(new BoolSetting("biome", "Biome below the map", true));
+		minimapTime = minimap.add(new BoolSetting("time", "Time of day below the map", false));
+		worldMapKey = worldMap.add(new KeySetting("key", "Open world map", "key.keyboard.m"));
+		worldMapWaypoints = worldMap.add(new BoolSetting("showWaypoints", "Show waypoints", true));
+		worldMapPlayers = worldMap.add(new BoolSetting("showPlayers", "Show players", true));
+		worldMapHostile = worldMap.add(new BoolSetting("showHostile", "Show hostile mobs", false));
+		worldMapPassive = worldMap.add(new BoolSetting("showPassive", "Show animals", false));
+		worldMapGrid = worldMap.add(new BoolSetting("grid", "Chunk grid when zoomed in", true));
+		worldMapCache = worldMap.add(new NumberSetting("cacheSize", "Map storage on disk (MB)", 256, 32, 2048, 32, "", " MB"));
 		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Badge in the tab list", true));
 		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Badge above names", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));
