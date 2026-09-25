@@ -16,11 +16,12 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
-## Unreleased
+## 0.6.0 – 2026-09-25 – The Sync Update | Das Sync-Update
+<!-- banner: accent=#4be38a motif=/news/0.6.0/banner.png -->
 
 ### English
 
-- **Wardrobe with a full skin editor in the game.** The TRS Client now has a wardrobe (title screen bar, TRS menu or
+- **Wardrobe with a full skin editor in the game.** The TRS Client now has a wardrobe (button under your figure on the title screen, TRS menu or
   your own key): your skins with favourites and a library, outfits (skin + cape) to flip through, your Minecraft and
   TRS capes, and your emote wheel – all with a big 3D preview. "Add skin" takes a file, a link or a player name. Apply
   a skin and it becomes your Minecraft skin right away. The editor lets you paint straight onto the 3D figure or the
@@ -132,7 +133,7 @@ How to write an entry:
 
 ### Deutsch
 
-- **Garderobe mit vollem Skin-Editor im Spiel.** Der TRS Client hat jetzt eine Garderobe (Leiste im Titelbildschirm,
+- **Garderobe mit vollem Skin-Editor im Spiel.** Der TRS Client hat jetzt eine Garderobe (Knopf unter deiner Figur im Titelbildschirm,
   TRS-Menü oder eigene Taste): deine Skins mit Favoriten und Bibliothek, Outfits (Skin + Umhang) zum Durchblättern,
   deine Minecraft- und TRS-Umhänge und dein Emote-Rad – alles mit großer 3D-Vorschau. „Skin hinzufügen“ nimmt eine
   Datei, einen Link oder einen Spielernamen. Ein Klick auf „Anwenden“ macht den Skin sofort zu deinem Minecraft-Skin.
