@@ -1,6 +1,7 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use trs_core::content::{self, ContentItem, ContentKind, Platform};
+use trs_core::modcompat::{self, CompatReport};
 use trs_core::modpack::PackProgress;
 use trs_core::modrinth::{
     self, CategoryTag, MigrationItem, MigrationStatus, ProjectCard, ProjectDetails, SearchParams, SearchResult,
@@ -133,6 +134,22 @@ pub async fn check_content_updates(
     };
     updates.sort_by_key(|u| u.file_name.to_lowercase());
     Ok(updates)
+}
+
+/// Tauscht Mods, die sich laut ihren Jars nicht vertragen, gegen passende
+/// Versionen (Knopf in der Absturz-Diagnose). `prefer` = Mod-ID aus der
+/// Fehlermeldung, die bevorzugt getauscht wird.
+#[tauri::command]
+pub async fn fix_mod_conflicts(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    prefer: Option<String>,
+    task_id: Option<String>,
+) -> CommandResult<CompatReport> {
+    let instance = launcher.instances().get(&id).await?;
+    let work = modcompat::fix_instance(launcher.http(), launcher.paths(), &instance, prefer.as_deref());
+    Ok(tracked(&app, task_id, work).await?)
 }
 
 #[tauri::command]

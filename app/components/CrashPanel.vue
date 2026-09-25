@@ -15,9 +15,23 @@ const sharedUrl = ref<string | null>(null)
 const diagnosisText = computed(() => {
   const d = props.diagnosis
   if (!d) return t('crash.hint')
+  const c = d.conflict
+  if (d.kind === 'incompatible_mod' && c) {
+    const other = c.otherVersion ? `${c.otherName} ${c.otherVersion}` : c.otherName
+    return t('crash.diagnosis.incompatible_mod', { name: `${c.modName} ${c.modVersion}`, other })
+  }
   const key = `crash.diagnosis.${d.kind}`
   return hasKey(key) ? tKey(key) : d.message
 })
+
+// Unverträgliche Versionen: die genannte Mod gegen eine passende tauschen.
+const fixTask = computed(() => tasks.get(modFixTaskKey(props.instanceId)))
+const fixing = computed(() => fixTask.value?.status === 'running')
+
+function fixConflict() {
+  const instance = useInstancesStore().items.find((i) => i.id === props.instanceId)
+  fixModConflictsTask({ id: props.instanceId, name: instance?.name ?? props.instanceId }, props.diagnosis?.conflict?.modId ?? null)
+}
 
 function repair() {
   const instance = useInstancesStore().items.find((i) => i.id === props.instanceId)
@@ -54,7 +68,10 @@ async function share() {
     </p>
 
     <div class="mt-3 flex flex-wrap items-center gap-2">
-      <button v-if="repairing === null" class="btn btn-primary px-3 py-1.5 text-xs" :class="{ 'btn-ghost': !diagnosis?.canRepair }" @click="repair">
+      <button v-if="diagnosis?.conflict" class="btn btn-primary px-3 py-1.5 text-xs" :disabled="fixing" @click="fixConflict">
+        {{ fixing ? t('crash.fixing') : t('crash.fixConflict', { name: diagnosis.conflict.modName }) }}
+      </button>
+      <button v-if="repairing === null" class="btn btn-primary px-3 py-1.5 text-xs" :class="{ 'btn-ghost': !diagnosis?.canRepair || diagnosis?.conflict }" @click="repair">
         {{ t('crash.checkFiles') }}
       </button>
       <div v-else class="flex w-56 items-center gap-2">

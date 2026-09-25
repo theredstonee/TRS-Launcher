@@ -382,6 +382,7 @@ impl CurseForge {
                     project_id: pid.to_string(),
                     version_id: ix.file_id.to_string(),
                     version_number: index_label(ix),
+                    compat_with: None,
                 });
             }
         }

@@ -299,6 +299,10 @@ pub struct UpdateInfo {
     pub project_id: String,
     pub version_id: String,
     pub version_number: String,
+    /// Version bewusst so gewählt (evtl. älter als die neueste oder sogar ein
+    /// Zurückstufen), damit die Mod mit dieser anderen läuft („Iris 1.10.7“).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compat_with: Option<String>,
 }
 
 /// Für welchen Loader Mods passen müssen: Vanilla mit TRS-Optimierung läuft
@@ -1420,6 +1424,8 @@ fn is_update(hash: &str, current: Option<&Version>, candidate: &Version) -> bool
 /// die von Hand in den Ordner gelegt wurden.
 pub async fn check_updates(http: &reqwest::Client, paths: &Paths, instance: &Instance) -> Result<Vec<UpdateInfo>> {
     let mut updates = Vec::new();
+    // Mod-Updates erst gegeneinander prüfen (depends/breaks aus den Jars).
+    let mut mod_updates: HashMap<String, Version> = HashMap::new();
     for kind in ContentKind::ALL {
         if kind == ContentKind::Mod && loader_tags(content_loader(instance)).is_empty() {
             continue;
@@ -1451,20 +1457,60 @@ pub async fn check_updates(http: &reqwest::Client, paths: &Paths, instance: &Ins
         for (hash, version) in latest {
             let Some(file_name) = by_hash.get(&hash) else { continue };
             let is_newer = is_update(&hash, current.get(&hash), &version);
-            if is_newer && is_safe_project_id(&version.project_id) && is_safe_project_id(&version.id) {
-                updates.push(UpdateInfo {
-                    platform: Platform::Modrinth,
-                    kind,
-                    file_name: file_name.clone(),
-                    project_id: version.project_id,
-                    version_id: version.id,
-                    version_number: clip(version.version_number, 60),
-                });
+            if !is_newer || !is_safe_project_id(&version.project_id) || !is_safe_project_id(&version.id) {
+                continue;
+            }
+            if kind == ContentKind::Mod {
+                mod_updates.insert(file_name.clone(), version);
+            } else {
+                updates.push(update_info(kind, file_name.clone(), version, None));
+            }
+        }
+    }
+    if !loader_tags(content_loader(instance)).is_empty() {
+        for (file_name, (version, because)) in vetted_mod_updates(http, paths, instance, mod_updates).await {
+            if is_safe_project_id(&version.project_id) && is_safe_project_id(&version.id) {
+                updates.push(update_info(ContentKind::Mod, file_name, version, because));
             }
         }
     }
     updates.sort_by_key(|u| u.file_name.to_lowercase());
     Ok(updates)
+}
+
+fn update_info(kind: ContentKind, file_name: String, version: Version, compat_with: Option<String>) -> UpdateInfo {
+    UpdateInfo {
+        platform: Platform::Modrinth,
+        kind,
+        file_name,
+        project_id: version.project_id,
+        version_id: version.id,
+        version_number: clip(version.version_number, 60),
+        compat_with: compat_with.map(|c| clip(c, 120)),
+    }
+}
+
+/// Mod-Updates, die die Instanz nicht kaputt machen – plus Tausch-Vorschläge,
+/// wenn sie schon jetzt nicht zusammenpasst. Scheitert die Prüfung (offline),
+/// bleiben die Updates, wie sie sind.
+async fn vetted_mod_updates(
+    http: &reqwest::Client,
+    paths: &Paths,
+    instance: &Instance,
+    updates: HashMap<String, Version>,
+) -> Vec<(String, (Version, Option<String>))> {
+    let lookup = crate::presets::ModrinthLookup::new(http, paths, instance);
+    let checked = match crate::modcompat::installed_entries(paths, &instance.id).await {
+        Ok(entries) => crate::modcompat::vet_updates(&lookup, instance, entries, updates.clone()).await,
+        Err(e) => Err(e),
+    };
+    match checked {
+        Ok(vetted) => vetted.into_iter().collect(),
+        Err(e) => {
+            tracing::warn!("Verträglichkeit der Mod-Updates nicht prüfbar: {e}");
+            updates.into_iter().map(|(file, v)| (file, (v, None))).collect()
+        }
+    }
 }
 
 fn from_curseforge(item: &content::ContentItem) -> bool {

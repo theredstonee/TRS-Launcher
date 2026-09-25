@@ -195,6 +195,7 @@ pub fn run() {
             commands::content::modrinth_versions,
             commands::content::check_content_updates,
             commands::content::apply_content_update,
+            commands::content::fix_mod_conflicts,
             commands::content::install_performance_pack,
             commands::content::install_modpack,
             commands::content::open_content_dir,

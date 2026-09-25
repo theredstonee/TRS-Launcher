@@ -365,7 +365,8 @@
       "crashWrongJava": "Un mod necesita una versión más reciente de Java. Quita la ruta de Java propia en los ajustes y el launcher elegirá automáticamente la adecuada.",
       "exitedImmediately": "El juego se ha cerrado nada más abrirse.",
       "javaStartFailed": "No se ha podido iniciar Java.",
-      "logUploadFailed": "No se ha podido subir el registro."
+      "logUploadFailed": "No se ha podido subir el registro.",
+      "crashIncompatibleMod": "{name} no funciona con {other} en esta versión. El launcher puede cambiar {name} por una versión compatible."
     },
     "modpack": {
       "noGameVersion": "El modpack no indica ninguna versión de Minecraft.",
@@ -917,7 +918,9 @@
       "disable": "Desactivar {name}",
       "delete": "Eliminar {name}",
       "moreActions": "Más acciones para {name}",
-      "viaCurseForge": "vía CurseForge"
+      "viaCurseForge": "vía CurseForge",
+      "compatBadge": "Arreglar",
+      "compatTitle": "Cambiar a {version}: funciona con {other}"
     },
     "menu": {
       "updateTo": "Actualizar a {version}",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Versión de Java incorrecta",
       "missing_dependency": "Falta una dependencia",
       "mod_conflict": "Conflicto de mods",
-      "graphics_driver": "Controlador gráfico"
+      "graphics_driver": "Controlador gráfico",
+      "incompatible_mod": "Versión de mod incompatible"
     },
     "diagnosis": {
       "corrupt_files": "Un archivo del juego está dañado (p. ej., tras una descarga interrumpida). «Comprobar archivos» lo vuelve a descargar.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "Un mod necesita una versión más reciente de Java. Quita la ruta de Java propia en los ajustes y el launcher elegirá automáticamente la adecuada.",
       "missing_dependency": "A un mod le falta otro mod que necesita. En el registro, justo encima del error, verás cuál.",
       "mod_conflict": "Dos mods no son compatibles entre sí. Desactiva los últimos mods que añadiste y vuelve a iniciar.",
-      "graphics_driver": "El controlador gráfico ha fallado o no admite OpenGL. Actualiza el controlador de tu tarjeta gráfica."
+      "graphics_driver": "El controlador gráfico ha fallado o no admite OpenGL. Actualiza el controlador de tu tarjeta gráfica.",
+      "incompatible_mod": "{name} no funciona con {other}. El launcher puede cambiar {name} por una versión que encaje."
     },
-    "shareTextLinux": "El registro se subirá a {site} y cualquiera con el enlace podrá leerlo. Antes se eliminan los tokens de inicio de sesión y tu nombre de usuario."
+    "shareTextLinux": "El registro se subirá a {site} y cualquiera con el enlace podrá leerlo. Antes se eliminan los tokens de inicio de sesión y tu nombre de usuario.",
+    "fixConflict": "Cambiar {name} por una versión compatible",
+    "fixing": "Buscando versiones de mods compatibles …",
+    "fixDone": "Cambiado a versiones compatibles: {list}",
+    "fixNothing": "No se encontró automáticamente ninguna versión compatible. Desactiva uno de los dos mods y vuelve a iniciar."
   },
   "exportPack": {
     "title": "Exportar como modpack",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} más) | (+{n} más)",
       "details": "Detalles",
       "shaderOn": "Los shaders están activados: {name}. Pulsa K en el juego para activarlos o desactivarlos.",
-      "shaderToast": "shaders activados (K los alterna)"
+      "shaderToast": "shaders activados (K los alterna)",
+      "compatWith": "Versión elegida para funcionar con {other}"
     },
     "reason": {
       "installed": "Instalado",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} necesita {dependency}, que no está disponible para esta versión",
       "incompatible": "{title} no funciona junto con {other}",
       "needsLoader": "{title} necesita un cargador de mods",
-      "failed": "No se pudo descargar {title}"
+      "failed": "No se pudo descargar {title}",
+      "swapped": "Cambiado a una versión que funciona con {other}"
     },
     "status": {
       "installed": "Instalado",
       "alreadyInstalled": "Ya estaba",
       "duplicate": "Incluido",
-      "skipped": "Omitido"
+      "skipped": "Omitido",
+      "swapped": "Cambiado"
     },
     "task": {
       "title": "Presets para {name}",

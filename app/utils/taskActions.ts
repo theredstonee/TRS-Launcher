@@ -86,6 +86,33 @@ export function repairTaskKey(instanceId: string): string {
   return taskKey('repair', instanceId)
 }
 
+export function modFixTaskKey(instanceId: string): string {
+  return taskKey('modfix', instanceId)
+}
+
+/**
+ * Unverträgliche Mods (laut Absturz-Meldung) gegen passende Versionen
+ * tauschen. `prefer` = Mod-ID, die zuerst getauscht wird.
+ */
+export function fixModConflictsTask(instance: Pick<Instance, 'id' | 'name'>, prefer: string | null) {
+  return useTasksStore().run(
+    {
+      key: modFixTaskKey(instance.id),
+      kind: 'content-update',
+      title: instance.name,
+      stage: t('crash.fixing'),
+      instanceId: instance.id,
+      cancellable: true,
+    },
+    async (ctx) => {
+      const report = await backend.fixModConflicts(instance.id, prefer, ctx.taskId)
+      const list = report.changes.map((c) => `${c.title} ${c.from ?? ''} → ${c.to}`.replace('  ', ' ')).join(', ')
+      ctx.update({ doneText: report.changes.length ? t('crash.fixDone', { list }) : t('crash.fixNothing') })
+      return report
+    },
+  )
+}
+
 /**
  * Spieldateien prüfen und reparieren bzw. komplett neu laden. Beides teilt
  * sich eine Aufgabe je Instanz – nie zwei gleichzeitig.

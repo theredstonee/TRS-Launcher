@@ -24,6 +24,7 @@ use crate::content::{self, ContentKind};
 use crate::error::UserError;
 use crate::icon::is_allowed_icon_url;
 use crate::instance::{Instance, LoaderKind, UpdateChannel};
+use crate::modcompat::{self, ModInfo};
 use crate::modrinth::{self, Version};
 use crate::paths::Paths;
 use crate::{Error, Result, fsutil, task};
@@ -1173,6 +1174,8 @@ pub(crate) struct Target {
     /// Loader-Namen bei Modrinth; leer = Vanilla (keine Mods).
     pub loaders: &'static [&'static str],
     pub channel: UpdateChannel,
+    /// Der Modloader als „Mod“ (z. B. `fabricloader` mit Version) für die Verträglichkeitsprüfung.
+    pub builtins: Vec<ModInfo>,
 }
 
 impl Target {
@@ -1183,7 +1186,12 @@ impl Target {
             LoaderKind::Vanilla => &[][..],
             kind => modrinth::loader_tags(kind),
         };
-        Self { game_version: instance.game_version.clone(), loaders, channel: instance.overrides.channel() }
+        Self {
+            game_version: instance.game_version.clone(),
+            loaders,
+            channel: instance.overrides.channel(),
+            builtins: modcompat::loader_builtins(instance),
+        }
     }
 
     /// Passt eine (fest vorgegebene) Version zu Spielversion und Loader?
@@ -1200,6 +1208,8 @@ pub(crate) struct Existing {
     pub projects: HashMap<String, Option<String>>,
     /// Dateinamen der Mods, klein geschrieben (für Konflikte wie OptiFine).
     pub mod_files: Vec<String>,
+    /// Aktivierte Mods mit ihren Angaben aus dem Jar (für die Verträglichkeitsprüfung).
+    pub mods: Vec<modcompat::Entry>,
 }
 
 async fn existing(paths: &Paths, instance_id: &str) -> Result<Existing> {
@@ -1210,7 +1220,7 @@ async fn existing(paths: &Paths, instance_id: &str) -> Result<Existing> {
     }
     let mod_files =
         content::list(paths, instance_id, ContentKind::Mod).await?.into_iter().map(|i| i.file_name.to_lowercase()).collect();
-    Ok(Existing { projects, mod_files })
+    Ok(Existing { projects, mod_files, mods: Vec::new() })
 }
 
 /// Woher die Versionsdaten kommen – in Tests eine Attrappe.
@@ -1221,11 +1231,30 @@ pub(crate) trait VersionLookup: Sync {
     fn version(&self, version_id: &str) -> impl Future<Output = Result<Option<Version>>> + Send;
     /// Anzeigename eines Projekts (für den Bericht).
     fn title(&self, project_id: &str) -> impl Future<Output = Option<String>> + Send;
+    /// Was das Jar einer Version über sich sagt (`depends`/`breaks`); leer = unbekannt.
+    fn mod_info(&self, version: &Version) -> impl Future<Output = Vec<ModInfo>> + Send;
 }
 
-struct ModrinthLookup<'a> {
+/// Echte Daten von Modrinth – Versionslisten und Jar-Angaben werden je
+/// Durchgang zwischengespeichert (weniger Anfragen beim Durchprobieren).
+pub(crate) struct ModrinthLookup<'a> {
     http: &'a reqwest::Client,
     instance: &'a Instance,
+    cache_dir: PathBuf,
+    versions: std::sync::Mutex<HashMap<String, Vec<Version>>>,
+    infos: std::sync::Mutex<HashMap<String, Vec<ModInfo>>>,
+}
+
+impl<'a> ModrinthLookup<'a> {
+    pub(crate) fn new(http: &'a reqwest::Client, paths: &Paths, instance: &'a Instance) -> Self {
+        Self {
+            http,
+            instance,
+            cache_dir: modcompat::cache_dir(paths),
+            versions: std::sync::Mutex::default(),
+            infos: std::sync::Mutex::default(),
+        }
+    }
 }
 
 fn not_found_is_empty<T: Default>(result: Result<T>) -> Result<T> {
@@ -1237,7 +1266,13 @@ fn not_found_is_empty<T: Default>(result: Result<T>) -> Result<T> {
 
 impl VersionLookup for ModrinthLookup<'_> {
     async fn versions(&self, project_id: &str, kind: ContentKind) -> Result<Vec<Version>> {
-        not_found_is_empty(modrinth::compatible_versions(self.http, project_id, kind, self.instance).await)
+        let key = format!("{kind:?}/{project_id}");
+        if let Some(list) = self.versions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(&key) {
+            return Ok(list.clone());
+        }
+        let list = not_found_is_empty(modrinth::compatible_versions(self.http, project_id, kind, self.instance).await)?;
+        self.versions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).insert(key, list.clone());
+        Ok(list)
     }
 
     async fn version(&self, version_id: &str) -> Result<Option<Version>> {
@@ -1247,6 +1282,16 @@ impl VersionLookup for ModrinthLookup<'_> {
     async fn title(&self, project_id: &str) -> Option<String> {
         let cards = modrinth::project_cards(self.http, &[project_id.to_owned()]).await.ok()?;
         cards.into_iter().next().map(|c| c.title).filter(|t| !t.is_empty())
+    }
+
+    async fn mod_info(&self, version: &Version) -> Vec<ModInfo> {
+        if let Some(infos) = self.infos.lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(&version.id) {
+            return infos.clone();
+        }
+        let Some(file) = version.primary_file() else { return Vec::new() };
+        let infos = modcompat::remote::mod_info(self.http, &self.cache_dir, file).await;
+        self.infos.lock().unwrap_or_else(std::sync::PoisonError::into_inner).insert(version.id.clone(), infos.clone());
+        infos
     }
 }
 
@@ -1270,6 +1315,8 @@ pub enum ItemStatus {
     NeedsLoader,
     /// Download o. Ä. fehlgeschlagen (`error`).
     Failed,
+    /// Schon installiert, aber gegen eine verträgliche Version getauscht (`compatWith`).
+    Swapped,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -1287,6 +1334,8 @@ pub struct ItemOutcome {
     /// Bei `missingDependency`/`incompatible`: um welches Projekt bzw. welche Datei es geht.
     pub detail: Option<String>,
     pub error: Option<UserError>,
+    /// Version bewusst so gewählt, damit es mit dieser Mod läuft („Iris 1.10.7+mc1.21.11“).
+    pub compat_with: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1460,6 +1509,7 @@ async fn resolve_one<L: VersionLookup>(
         version_number: None,
         detail: None,
         error: None,
+        compat_with: None,
     };
 
     if wanted.kind == ContentKind::Mod && target.loaders.is_empty() {
@@ -1536,12 +1586,181 @@ pub(crate) async fn resolve<L: VersionLookup>(
         let outcome = resolve_one(lookup, target, existing, &mut plan, &mut planned, w).await?;
         plan.items.push(outcome);
     }
+    // Modrinth kennt keine Versions-Bereiche: jetzt prüfen, was die Jars selbst verlangen.
+    harmonize(lookup, target, existing, wanted, &mut plan).await?;
     progress(total, total);
     // Festgelegte Versionen können die Wurzel eines Eintrags ersetzt haben.
     for step in plan.steps.iter().filter(|s| !s.dependency) {
         plan.items[step.item].version_number = Some(step.version.version_number.clone()).filter(|v| !v.is_empty());
     }
     Ok(plan)
+}
+
+// --- Verträglichkeit (depends/breaks aus den Jars) -----------------------------------
+
+/// Woher ein Prüf-Eintrag stammt.
+#[derive(Debug, Clone, Copy)]
+enum Origin {
+    Step(usize),
+    Existing,
+}
+
+/// So oft darf ein unverträglicher Eintrag höchstens herausfallen.
+const MAX_DROPS: usize = 8;
+
+/// Geplante Mods + die übrigen Mods der Instanz als Prüf-Einträge.
+async fn compat_entries<L: VersionLookup>(lookup: &L, existing: &Existing, plan: &Plan) -> (Vec<modcompat::Entry>, Vec<Origin>) {
+    let steps: Vec<usize> = (0..plan.steps.len()).filter(|&i| plan.steps[i].kind == ContentKind::Mod).collect();
+    let infos = futures::future::join_all(steps.iter().map(|&i| lookup.mod_info(&plan.steps[i].version))).await;
+    let mut entries = Vec::new();
+    let mut origins = Vec::new();
+    let mut planned: HashSet<&str> = HashSet::new();
+    for (&i, mods) in steps.iter().zip(infos) {
+        let step = &plan.steps[i];
+        planned.insert(step.version.project_id.as_str());
+        entries.push(modcompat::Entry {
+            project_id: Some(step.version.project_id.clone()),
+            version_id: Some(step.version.id.clone()),
+            version: Some(step.version.clone()),
+            adjustable: !step.pinned && !mods.is_empty(),
+            mods,
+            ..Default::default()
+        });
+        origins.push(Origin::Step(i));
+    }
+    // Was ersetzt wird, zählt nicht mehr.
+    for entry in &existing.mods {
+        if entry.project_id.as_deref().is_some_and(|p| planned.contains(p)) {
+            continue;
+        }
+        entries.push(entry.clone());
+        origins.push(Origin::Existing);
+    }
+    (entries, origins)
+}
+
+/// Welcher geplante Eintrag fällt bei einem unlösbaren Konflikt heraus? Der
+/// spätere (die Grundausstattung wie Sodium hat Vorrang vor Iris). Liefert
+/// Eintrag + die Mod, mit der er sich nicht verträgt.
+fn droppable(conflicts: &[modcompat::Conflict], origins: &[Origin], plan: &Plan) -> Option<(usize, String)> {
+    let item_of = |idx: usize| match origins.get(idx) {
+        Some(Origin::Step(si)) => Some(plan.steps[*si].item),
+        _ => None,
+    };
+    conflicts
+        .iter()
+        .flat_map(|c| {
+            let mut out = vec![(item_of(c.declarer), c.target_label.clone())];
+            if let modcompat::Party::Entry(t) = c.target {
+                out.push((item_of(t), c.declarer_label.clone()));
+            }
+            out
+        })
+        .filter_map(|(item, other)| Some((item?, other)))
+        .max_by_key(|(item, _)| *item)
+}
+
+/// Nimmt einen Eintrag samt Downloads aus dem Plan – und Shaderpakete, denen
+/// damit Iris fehlt.
+fn drop_item(plan: &mut Plan, existing: &Existing, wanted: &[Wanted], item: usize, status: ItemStatus, detail: Option<String>) {
+    plan.steps.retain(|s| s.item != item);
+    let outcome = &mut plan.items[item];
+    outcome.status = status;
+    outcome.detail = detail;
+    outcome.version_number = None;
+    outcome.compat_with = None;
+    for (j, w) in wanted.iter().enumerate() {
+        if j == item || w.requires.is_empty() || !plan.steps.iter().any(|s| s.item == j) {
+            continue;
+        }
+        let still = w
+            .requires
+            .iter()
+            .any(|id| existing.projects.contains_key(id) || plan.steps.iter().any(|s| &s.version.project_id == id));
+        if !still {
+            drop_item(plan, existing, wanted, j, ItemStatus::NotAvailable, None);
+        }
+    }
+}
+
+/// Schreibt die getauschten Versionen in den Plan (geplante Downloads bzw.
+/// Tausch installierter Mods).
+fn apply_swaps(plan: &mut Plan, entries: Vec<modcompat::Entry>, origins: Vec<Origin>) {
+    for (entry, origin) in entries.into_iter().zip(origins) {
+        let (Some(because), Some(version)) = (entry.because, entry.version) else { continue };
+        match origin {
+            Origin::Step(si) => {
+                let step = &mut plan.steps[si];
+                step.version = version;
+                step.pinned = true;
+                if !step.dependency {
+                    plan.items[step.item].compat_with = Some(because);
+                }
+            }
+            Origin::Existing => {
+                let Some(project) = entry.project_id else { continue };
+                let found = plan
+                    .items
+                    .iter()
+                    .position(|i| i.project_id.as_deref() == Some(project.as_str()) && i.status == ItemStatus::AlreadyInstalled);
+                let item = found.unwrap_or_else(|| {
+                    let title = entry.mods.first().map_or_else(|| version.name.clone(), |m| m.display_name().to_owned());
+                    plan.items.push(ItemOutcome {
+                        preset_id: plan.items.first().map(|i| i.preset_id.clone()).unwrap_or_default(),
+                        project_id: Some(project.clone()),
+                        title,
+                        icon_url: None,
+                        kind: ContentKind::Mod,
+                        status: ItemStatus::Swapped,
+                        optional: false,
+                        version_number: None,
+                        detail: None,
+                        error: None,
+                        compat_with: None,
+                    });
+                    plan.items.len() - 1
+                });
+                let outcome = &mut plan.items[item];
+                outcome.status = ItemStatus::Swapped;
+                outcome.compat_with = Some(because);
+                plan.steps.push(Step { kind: ContentKind::Mod, version, dependency: false, pinned: true, item });
+            }
+        }
+    }
+}
+
+/// Prüft `depends`/`breaks` der Jars gegeneinander und gegen die Instanz.
+/// Konflikte werden mit einer anderen Version gelöst (siehe [`modcompat::settle`]);
+/// geht das nicht, fällt der spätere Eintrag als `incompatible` heraus –
+/// lieber ohne Iris als ein Spiel, das nicht startet.
+async fn harmonize<L: VersionLookup>(
+    lookup: &L,
+    target: &Target,
+    existing: &Existing,
+    wanted: &[Wanted],
+    plan: &mut Plan,
+) -> Result<()> {
+    if target.loaders.is_empty() {
+        return Ok(());
+    }
+    for _ in 0..=MAX_DROPS {
+        let (mut entries, origins) = compat_entries(lookup, existing, plan).await;
+        if entries.is_empty() {
+            return Ok(());
+        }
+        let unresolved = modcompat::settle(lookup, target.channel, &mut entries, &target.builtins, None).await?;
+        if let Some((item, other)) = droppable(&unresolved, &origins, plan) {
+            tracing::info!("Preset-Eintrag {} fällt heraus – verträgt sich nicht mit {other}", plan.items[item].title);
+            drop_item(plan, existing, wanted, item, ItemStatus::Incompatible, Some(other));
+            continue;
+        }
+        for c in &unresolved {
+            tracing::warn!("Mod-Konflikt in der Instanz ohne Lösung: {} ↔ {}", c.declarer_label, c.target_label);
+        }
+        apply_swaps(plan, entries, origins);
+        return Ok(());
+    }
+    Ok(())
 }
 
 // --- Installieren --------------------------------------------------------------------
@@ -1615,9 +1834,10 @@ async fn run(
     wanted: &[Wanted],
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<ApplyReport> {
-    let existing = existing(paths, &instance.id).await?;
+    let mut existing = existing(paths, &instance.id).await?;
+    existing.mods = modcompat::installed_entries(paths, &instance.id).await?;
     let target = Target::of(instance);
-    let lookup = ModrinthLookup { http, instance };
+    let lookup = ModrinthLookup::new(http, paths, instance);
     let resolve_progress = |done, total| progress(ApplyProgress { phase: ApplyPhase::Resolve, done, total, title: None });
     let plan = resolve(&lookup, &target, &existing, wanted, &resolve_progress).await?;
     execute(http, paths, instance, plan, progress).await
@@ -1685,7 +1905,7 @@ async fn activate_shader(paths: &Paths, instance: &Instance, report: &ApplyRepor
     let ok = |id: &str| {
         report.items.iter().any(|i| {
             i.project_id.as_deref() == Some(id)
-                && matches!(i.status, ItemStatus::Installed | ItemStatus::AlreadyInstalled | ItemStatus::Duplicate)
+                && matches!(i.status, ItemStatus::Installed | ItemStatus::AlreadyInstalled | ItemStatus::Duplicate | ItemStatus::Swapped)
         })
     };
     if !ok(IRIS_ID) || !ok(shader_id) {
@@ -1803,7 +2023,7 @@ pub async fn install_fps_boost(http: &reqwest::Client, paths: &Paths, instance: 
     );
     let report = run(http, paths, instance, &wanted_of(&preset), &|_| {}).await?;
     let usable = report.items.iter().any(|i| {
-        matches!(i.status, ItemStatus::Installed | ItemStatus::AlreadyInstalled | ItemStatus::Duplicate)
+        matches!(i.status, ItemStatus::Installed | ItemStatus::AlreadyInstalled | ItemStatus::Duplicate | ItemStatus::Swapped)
     });
     if !usable {
         if report.items.iter().all(|i| i.status == ItemStatus::NeedsLoader) {
@@ -1832,12 +2052,19 @@ mod tests {
         versions: HashMap<String, Vec<Version>>,
         by_id: HashMap<String, Version>,
         calls: StdMutex<Vec<String>>,
+        /// Jar-Angaben je Versions-ID (`fabric.mod.json`).
+        infos: HashMap<String, Vec<ModInfo>>,
     }
 
     impl Mock {
         fn with(mut self, v: Version) -> Self {
             self.by_id.insert(v.id.clone(), v.clone());
             self.versions.entry(v.project_id.clone()).or_default().push(v);
+            self
+        }
+        /// Was im Jar der Version steht.
+        fn jar(mut self, version_id: &str, fabric_mod_json: &str) -> Self {
+            self.infos.insert(version_id.into(), vec![modcompat::meta::parse_fabric(fabric_mod_json).unwrap()]);
             self
         }
         /// Nur per ID abrufbar (ältere, festgelegte Version).
@@ -1858,6 +2085,153 @@ mod tests {
         fn title(&self, project_id: &str) -> impl Future<Output = Option<String>> + Send {
             std::future::ready(Some(format!("Titel {project_id}")))
         }
+        fn mod_info(&self, version: &Version) -> impl Future<Output = Vec<ModInfo>> + Send {
+            std::future::ready(self.infos.get(&version.id).cloned().unwrap_or_default())
+        }
+    }
+
+    const SODIUM_14: &str = r#"{"id":"sodium","name":"Sodium","version":"0.8.14+mc1.21.11","breaks":{"iris":"<=1.10.7"}}"#;
+    const SODIUM_13: &str = r#"{"id":"sodium","name":"Sodium","version":"0.8.13+mc1.21.11","breaks":{"iris":"<=1.10.7"}}"#;
+    const SODIUM_12: &str = r#"{"id":"sodium","name":"Sodium","version":"0.8.12+mc1.21.11","breaks":{"iris":"<=1.10.6"}}"#;
+    const IRIS_7: &str = r#"{"id":"iris","name":"Iris","version":"1.10.7+mc1.21.11","depends":{"sodium":["0.8.x"]}}"#;
+
+    /// Sodium 0.8.14/0.8.13 brechen Iris 1.10.7, 0.8.12 nicht (wie auf Modrinth für 1.21.11).
+    fn sodium_iris_mock() -> Mock {
+        Mock::default()
+            .with(version("s14", "sodium", &[]))
+            .with(version("s13", "sodium", &[]))
+            .with(version("s12", "sodium", &[]))
+            .with(version("i7", IRIS_ID, &[]))
+            .jar("s14", SODIUM_14)
+            .jar("s13", SODIUM_13)
+            .jar("s12", SODIUM_12)
+            .jar("i7", IRIS_7)
+    }
+
+    #[tokio::test]
+    async fn shader_tier_gets_a_sodium_that_iris_can_live_with() {
+        let mock = sodium_iris_mock();
+        let wanted = [want("tier", &["sodium"]), want("tier", &[IRIS_ID])];
+        let plan = plan_for(&mock, &target("1.21.11"), &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Installed]);
+        assert_eq!(step_ids(&plan), ["s12", "i7"]);
+        assert_eq!(plan.items[0].version_number.as_deref(), Some("s12-nr"));
+        assert_eq!(plan.items[0].compat_with.as_deref(), Some("Iris 1.10.7+mc1.21.11"));
+        assert_eq!(plan.items[1].compat_with, None);
+    }
+
+    #[tokio::test]
+    async fn broken_instance_is_repaired_when_the_preset_is_applied_again() {
+        let mock = sodium_iris_mock();
+        let entry = |project: &str, id: &str, text: &str| modcompat::Entry {
+            project_id: Some(project.into()),
+            version_id: Some(id.into()),
+            mods: vec![modcompat::meta::parse_fabric(text).unwrap()],
+            adjustable: true,
+            installed: Some((id.into(), vec![modcompat::meta::parse_fabric(text).unwrap()])),
+            file_name: Some(format!("{id}.jar")),
+            ..Default::default()
+        };
+        let existing = Existing {
+            projects: HashMap::from([("sodium".into(), Some("s14".into())), (IRIS_ID.into(), Some("i7".into()))]),
+            mod_files: vec!["s14.jar".into(), "i7.jar".into()],
+            mods: vec![entry("sodium", "s14", SODIUM_14), entry(IRIS_ID, "i7", IRIS_7)],
+        };
+        let wanted = [want("tier", &["sodium"]), want("tier", &[IRIS_ID])];
+        let plan = plan_for(&mock, &target("1.21.11"), &existing, &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Swapped, ItemStatus::AlreadyInstalled]);
+        assert_eq!(step_ids(&plan), ["s12"]);
+        assert_eq!(plan.items[0].version_number.as_deref(), Some("s12-nr"));
+        assert_eq!(plan.items[0].compat_with.as_deref(), Some("Iris 1.10.7+mc1.21.11"));
+
+        // Passt alles, bleibt auch alles, wie es ist.
+        let existing = Existing {
+            projects: HashMap::from([("sodium".into(), Some("s12".into())), (IRIS_ID.into(), Some("i7".into()))]),
+            mod_files: Vec::new(),
+            mods: vec![entry("sodium", "s12", SODIUM_12), entry(IRIS_ID, "i7", IRIS_7)],
+        };
+        let plan = plan_for(&mock, &target("1.21.11"), &existing, &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::AlreadyInstalled, ItemStatus::AlreadyInstalled]);
+        assert!(plan.steps.is_empty());
+    }
+
+    /// Gegen das echte Modrinth (nur lesend): Shader-Stufe für Fabric 1.21.11.
+    /// `cargo test -p trs-core real_modrinth_shader_tier -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore = "braucht Internet (Modrinth)"]
+    async fn real_modrinth_shader_tier_1_21_11() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let instance = Instance {
+            id: "real".into(),
+            name: "Real".into(),
+            game_version: "1.21.11".into(),
+            loader: crate::instance::Loader { kind: LoaderKind::Fabric, version: Some("0.19.5".into()) },
+            created_at: chrono::Utc::now(),
+            last_played: None,
+            total_play_seconds: 0,
+            icon: None,
+            group: None,
+            overrides: Default::default(),
+        };
+        let http = reqwest::Client::builder().user_agent("theredstonee/trs-launcher (compat test)").build().unwrap();
+        let lookup = ModrinthLookup::new(&http, &paths, &instance);
+        let wanted = wanted_for(&[&builtin_view(Builtin::FpsShaderLite)]);
+        let plan = resolve(&lookup, &Target::of(&instance), &Existing::default(), &wanted, &|_, _| {}).await.unwrap();
+        for step in &plan.steps {
+            println!("{} {} {}", step.version.project_id, step.version.version_number, if step.pinned { "(festgelegt)" } else { "" });
+        }
+        for item in &plan.items {
+            println!("{:?} {} {:?} {:?} {:?}", item.status, item.title, item.version_number, item.compat_with, item.detail);
+        }
+        let version_of = |project: &str| plan.steps.iter().find(|s| s.version.project_id == project).map(|s| s.version.version_number.clone());
+        let sodium = version_of("AANobbMI").expect("Sodium im Plan");
+        assert!(version_of(IRIS_ID).is_some(), "Iris im Plan");
+        // Die geplanten Jars dürfen sich nicht widersprechen.
+        let mut entries = Vec::new();
+        for step in plan.steps.iter().filter(|s| s.kind == ContentKind::Mod) {
+            entries.push(modcompat::Entry { mods: lookup.mod_info(&step.version).await, ..Default::default() });
+        }
+        let conflicts = modcompat::find_conflicts(&entries, &modcompat::loader_builtins(&instance));
+        assert!(conflicts.is_empty(), "{conflicts:?}");
+        assert!(!sodium.contains("0.8.14"), "{sodium}");
+
+        // Die kaputte Kombination aus dem Fehlerbericht: Sodium 0.8.14 + Iris 1.10.7.
+        let mut broken = Vec::new();
+        for id in ["rkdTcxoT", "fDpuVzVr"] {
+            let version = lookup.version(id).await.unwrap().unwrap();
+            broken.push(modcompat::Entry {
+                project_id: Some(version.project_id.clone()),
+                version_id: Some(version.id.clone()),
+                mods: lookup.mod_info(&version).await,
+                version: Some(version),
+                adjustable: true,
+                ..Default::default()
+            });
+        }
+        assert_eq!(modcompat::find_conflicts(&broken, &[]).len(), 1);
+        let left = modcompat::settle(&lookup, UpdateChannel::Release, &mut broken, &[], None).await.unwrap();
+        assert!(left.is_empty(), "{left:?}");
+        let fixed = broken[0].version.as_ref().unwrap();
+        println!("Tausch: Sodium → {} (wegen {:?})", fixed.version_number, broken[0].because);
+        assert!(broken[1].because.is_none());
+    }
+
+    #[tokio::test]
+    async fn without_a_consistent_set_the_later_item_is_left_out() {
+        // Nur Sodium 0.8.14 – keine Version verträgt sich mit Iris 1.10.7.
+        let mock = Mock::default()
+            .with(version("s14", "sodium", &[]))
+            .with(version("i7", IRIS_ID, &[]))
+            .with(version("mu1", "makeup", &[]))
+            .jar("s14", SODIUM_14)
+            .jar("i7", IRIS_7);
+        let [iris, pack] = shader_wanted();
+        let wanted = [want("tier", &["sodium"]), iris, pack];
+        let plan = plan_for(&mock, &target("1.21.11"), &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Incompatible, ItemStatus::NotAvailable]);
+        assert_eq!(plan.items[1].detail.as_deref(), Some("Sodium 0.8.14+mc1.21.11"));
+        assert_eq!(step_ids(&plan), ["s14"]);
     }
 
     /// `deps`: (Typ, Projekt, festgelegte Version).
@@ -1875,7 +2249,7 @@ mod tests {
     }
 
     fn target(game_version: &str) -> Target {
-        Target { game_version: game_version.into(), loaders: &["fabric"], channel: UpdateChannel::Release }
+        Target { game_version: game_version.into(), loaders: &["fabric"], channel: UpdateChannel::Release, builtins: Vec::new() }
     }
 
     fn want(preset: &str, ids: &[&str]) -> Wanted {
@@ -1958,7 +2332,7 @@ mod tests {
     #[tokio::test]
     async fn already_installed_and_duplicates_are_not_loaded_again() {
         let mock = Mock::default().with(version("s1", "sodium", &[])).with(version("l1", "lithium", &[]));
-        let existing = Existing { projects: HashMap::from([("embeddium".into(), None)]), mod_files: Vec::new() };
+        let existing = Existing { projects: HashMap::from([("embeddium".into(), None)]), ..Default::default() };
         let wanted = [want("a", &["sodium", "embeddium"]), want("a", &["lithium"]), want("b", &["lithium"])];
         let plan = plan_for(&mock, &target("1.21.1"), &existing, &wanted).await;
         assert_eq!(statuses(&plan), [ItemStatus::AlreadyInstalled, ItemStatus::Installed, ItemStatus::Duplicate]);
@@ -1995,7 +2369,7 @@ mod tests {
         let mock = Mock::default().with(version("s1", "sodium", &[]));
         let mut wanted = want("p", &["sodium"]);
         wanted.file_conflicts = vec!["optifine".into()];
-        let existing = Existing { projects: HashMap::new(), mod_files: vec!["optifine_1.21.1_hd_u_j1.jar".into()] };
+        let existing = Existing { projects: HashMap::new(), mod_files: vec!["optifine_1.21.1_hd_u_j1.jar".into()], ..Default::default() };
         let plan = plan_for(&mock, &target("1.21.1"), &existing, &[wanted]).await;
         assert_eq!(statuses(&plan), [ItemStatus::Incompatible]);
         assert!(plan.steps.is_empty());
@@ -2025,7 +2399,7 @@ mod tests {
         assert_eq!(plan.items[0].version_number.as_deref(), Some("s-old-nr"));
 
         // Installiert ist eine andere Version: nicht einfach ersetzen.
-        let existing = Existing { projects: HashMap::from([("sodium".into(), Some("s-new".into()))]), mod_files: Vec::new() };
+        let existing = Existing { projects: HashMap::from([("sodium".into(), Some("s-new".into()))]), ..Default::default() };
         let plan = plan_for(&mock, &target("1.21.1"), &existing, &[want("b", &["nvidium"])]).await;
         assert_eq!(statuses(&plan), [ItemStatus::Incompatible]);
     }
@@ -2136,7 +2510,7 @@ mod tests {
         assert!(!mock.calls.lock().unwrap().contains(&"makeup".to_owned()));
 
         // Iris schon in der Instanz: Paket kommt dazu.
-        let existing = Existing { projects: HashMap::from([(IRIS_ID.into(), None)]), mod_files: Vec::new() };
+        let existing = Existing { projects: HashMap::from([(IRIS_ID.into(), None)]), ..Default::default() };
         let plan = plan_for(&mock, &target("1.21.1"), &existing, &shader_wanted()).await;
         assert_eq!(statuses(&plan), [ItemStatus::AlreadyInstalled, ItemStatus::Installed]);
     }
@@ -2144,7 +2518,7 @@ mod tests {
     #[tokio::test]
     async fn nvidium_in_the_instance_blocks_iris() {
         let mock = Mock::default().with(version("iris1", IRIS_ID, &[])).with(version("mu1", "makeup", &[]));
-        let existing = Existing { projects: HashMap::from([(NVIDIUM_ID.into(), None)]), mod_files: Vec::new() };
+        let existing = Existing { projects: HashMap::from([(NVIDIUM_ID.into(), None)]), ..Default::default() };
         let plan = plan_for(&mock, &target("1.21.1"), &existing, &shader_wanted()).await;
         assert_eq!(statuses(&plan), [ItemStatus::Incompatible, ItemStatus::NotAvailable]);
         assert_eq!(plan.items[0].detail.as_deref(), Some(format!("Titel {NVIDIUM_ID}").as_str()));
@@ -2211,6 +2585,7 @@ mod tests {
             version_number: None,
             detail: None,
             error: None,
+            compat_with: None,
         };
         let mut report = ApplyReport {
             game_version: "1.21.1".into(),
@@ -2232,12 +2607,12 @@ mod tests {
     #[test]
     fn renderer_mods_hide_the_boost_hint() {
         assert!(!has_renderer(&Existing::default()));
-        let sodium = Existing { projects: HashMap::from([("AANobbMI".into(), None)]), mod_files: Vec::new() };
+        let sodium = Existing { projects: HashMap::from([("AANobbMI".into(), None)]), ..Default::default() };
         assert!(has_renderer(&sodium));
         for file in ["optifine_1.20.1_hd_u_i6.jar", "rubidium-0.7.1.jar", "embeddium-1.0.jar"] {
-            assert!(has_renderer(&Existing { projects: HashMap::new(), mod_files: vec![file.into()] }), "{file}");
+            assert!(has_renderer(&Existing { projects: HashMap::new(), mod_files: vec![file.into()], ..Default::default() }), "{file}");
         }
-        assert!(!has_renderer(&Existing { projects: HashMap::new(), mod_files: vec!["lithium.jar".into()] }));
+        assert!(!has_renderer(&Existing { projects: HashMap::new(), mod_files: vec!["lithium.jar".into()], ..Default::default() }));
     }
 
     #[tokio::test]

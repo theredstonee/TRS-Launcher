@@ -50,6 +50,12 @@ How to write an entry:
 - **For the team: reviewing capes is faster.** Click a waiting cape to see it on the player in 3D, the texture pixel
   by pixel with zoom and every frame, and who uploaded it. Approve with A, reject with D (with a reason to pick) and
   browse with the arrow keys.
+- **Mods that don't get along are caught before the game starts.** Some mods only work with certain versions of
+  other mods (Sodium 0.8.14, for example, refuses Iris 1.10.7) – Modrinth doesn't say so, but the mod files do. The
+  launcher now reads those rules: FPS-Boost and other presets pick versions that fit together (and tell you when a
+  version was chosen for that reason), updates that would break another mod are held back, and an instance that
+  already has such a pair gets a "Fix" button in the content list. If the game still stops with "Incompatible mods
+  found", the crash notice offers to switch the mod to a compatible version with one click.
 
 ### Deutsch
 
@@ -87,6 +93,13 @@ How to write an entry:
 - **Fürs Team: Umhänge schneller prüfen.** Ein Klick auf einen wartenden Umhang zeigt ihn in 3D am Spieler, die
   Textur Pixel für Pixel mit Zoom und allen Frames und wer ihn hochgeladen hat. Freigeben mit A, ablehnen mit D (mit
   auswählbarem Grund), blättern mit den Pfeiltasten.
+- **Mods, die sich nicht vertragen, fallen vor dem Spielstart auf.** Manche Mods laufen nur mit bestimmten Versionen
+  anderer Mods (Sodium 0.8.14 etwa verweigert Iris 1.10.7) – bei Modrinth steht das nicht, in den Mod-Dateien schon.
+  Der Launcher liest diese Regeln jetzt: FPS-Boost und andere Presets wählen Versionen, die zusammenpassen (und sagen
+  dir, wenn eine Version deshalb gewählt wurde), Updates, die eine andere Mod kaputt machen würden, werden
+  zurückgehalten, und eine Instanz, die schon so ein Paar hat, bekommt in der Inhaltsliste einen „Beheben“-Knopf.
+  Stoppt das Spiel trotzdem mit „Incompatible mods found“, bietet der Absturz-Hinweis an, die Mod mit einem Klick
+  gegen eine passende Version zu tauschen.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

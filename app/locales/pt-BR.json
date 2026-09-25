@@ -365,7 +365,8 @@
       "crashWrongJava": "Um mod precisa de uma versão mais nova do Java. Remova o caminho do Java personalizado nas configurações e o launcher escolherá o certo automaticamente.",
       "exitedImmediately": "O jogo fechou logo em seguida.",
       "javaStartFailed": "Não foi possível iniciar o Java.",
-      "logUploadFailed": "Não foi possível enviar o log."
+      "logUploadFailed": "Não foi possível enviar o log.",
+      "crashIncompatibleMod": "{name} não funciona com {other} nesta versão. O launcher pode trocar {name} por uma versão compatível."
     },
     "modpack": {
       "noGameVersion": "O modpack não especifica uma versão do Minecraft.",
@@ -917,7 +918,9 @@
       "disable": "Desativar {name}",
       "delete": "Excluir {name}",
       "moreActions": "Mais ações para {name}",
-      "viaCurseForge": "via CurseForge"
+      "viaCurseForge": "via CurseForge",
+      "compatBadge": "Corrigir",
+      "compatTitle": "Trocar para {version} – funciona com {other}"
     },
     "menu": {
       "updateTo": "Atualizar para {version}",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Versão do Java errada",
       "missing_dependency": "Dependência ausente",
       "mod_conflict": "Conflito de mods",
-      "graphics_driver": "Driver de vídeo"
+      "graphics_driver": "Driver de vídeo",
+      "incompatible_mod": "Versão de mod incompatível"
     },
     "diagnosis": {
       "corrupt_files": "Um arquivo do jogo está corrompido (ex.: após um download interrompido). “Verificar arquivos” baixa-o novamente.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "Um mod precisa de uma versão mais nova do Java. Remova o caminho do Java personalizado nas configurações e o launcher escolherá o certo automaticamente.",
       "missing_dependency": "Um mod precisa de outro mod que está faltando. O log mostra qual logo acima do erro.",
       "mod_conflict": "Dois mods não se dão bem. Desative os mods adicionados mais recentemente e inicie novamente.",
-      "graphics_driver": "O driver de vídeo travou ou não é compatível com OpenGL. Atualize o driver da sua placa de vídeo."
+      "graphics_driver": "O driver de vídeo travou ou não é compatível com OpenGL. Atualize o driver da sua placa de vídeo.",
+      "incompatible_mod": "{name} não funciona com {other}. O launcher pode trocar {name} por uma versão que combine."
     },
-    "shareTextLinux": "O log será enviado para {site}, onde qualquer pessoa com o link pode lê-lo. Tokens de login e seu nome de usuário são removidos antes."
+    "shareTextLinux": "O log será enviado para {site}, onde qualquer pessoa com o link pode lê-lo. Tokens de login e seu nome de usuário são removidos antes.",
+    "fixConflict": "Trocar {name} por uma versão compatível",
+    "fixing": "Procurando versões de mods compatíveis …",
+    "fixDone": "Trocado por versões compatíveis: {list}",
+    "fixNothing": "Nenhuma versão compatível foi encontrada automaticamente. Desative um dos dois mods e inicie de novo."
   },
   "exportPack": {
     "title": "Exportar como modpack",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} outro) | (+{n} outros)",
       "details": "Detalhes",
       "shaderOn": "Os shaders estão ligados: {name}. Aperte K no jogo para ligá-los ou desligá-los.",
-      "shaderToast": "shaders ligados (K alterna)"
+      "shaderToast": "shaders ligados (K alterna)",
+      "compatWith": "Versão escolhida para funcionar com {other}"
     },
     "reason": {
       "installed": "Instalado",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} precisa de {dependency}, que não existe para esta versão",
       "incompatible": "{title} não funciona junto com {other}",
       "needsLoader": "{title} precisa de um carregador de mods",
-      "failed": "Não foi possível baixar {title}"
+      "failed": "Não foi possível baixar {title}",
+      "swapped": "Trocado por uma versão que funciona com {other}"
     },
     "status": {
       "installed": "Instalado",
       "alreadyInstalled": "Já estava",
       "duplicate": "Incluído",
-      "skipped": "Ignorado"
+      "skipped": "Ignorado",
+      "swapped": "Trocado"
     },
     "task": {
       "title": "Predefinições para {name}",

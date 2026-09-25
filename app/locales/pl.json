@@ -365,7 +365,8 @@
       "crashWrongJava": "Mod wymaga nowszej wersji Javy. Usuń własną ścieżkę Javy w ustawieniach, a launcher automatycznie wybierze właściwą.",
       "exitedImmediately": "Gra zamknęła się od razu.",
       "javaStartFailed": "Nie udało się uruchomić Javy.",
-      "logUploadFailed": "Nie udało się przesłać logu."
+      "logUploadFailed": "Nie udało się przesłać logu.",
+      "crashIncompatibleMod": "{name} w tej wersji nie działa z {other}. Launcher może zamienić {name} na zgodną wersję."
     },
     "modpack": {
       "noGameVersion": "Modpack nie określa wersji Minecrafta.",
@@ -917,7 +918,9 @@
       "disable": "Wyłącz {name}",
       "delete": "Usuń {name}",
       "moreActions": "Więcej akcji dla {name}",
-      "viaCurseForge": "przez CurseForge"
+      "viaCurseForge": "przez CurseForge",
+      "compatBadge": "Napraw",
+      "compatTitle": "Zmień na {version} – działa z {other}"
     },
     "menu": {
       "updateTo": "Aktualizuj do {version}",
@@ -1379,7 +1382,8 @@
       "wrong_java": "Zła wersja Javy",
       "missing_dependency": "Brakująca zależność",
       "mod_conflict": "Konflikt modów",
-      "graphics_driver": "Sterownik graficzny"
+      "graphics_driver": "Sterownik graficzny",
+      "incompatible_mod": "Niezgodna wersja moda"
     },
     "diagnosis": {
       "corrupt_files": "Plik gry jest uszkodzony (np. po przerwanym pobieraniu). „Sprawdź pliki” pobierze go ponownie.",
@@ -1387,9 +1391,14 @@
       "wrong_java": "Mod wymaga nowszej wersji Javy. Usuń własną ścieżkę Javy w ustawieniach, a launcher automatycznie wybierze właściwą.",
       "missing_dependency": "Modowi brakuje innego wymaganego moda. Log pokazuje, którego, tuż nad błędem.",
       "mod_conflict": "Dwa mody ze sobą kolidują. Wyłącz ostatnio dodane mody i uruchom ponownie.",
-      "graphics_driver": "Sterownik graficzny uległ awarii lub nie obsługuje OpenGL. Zaktualizuj sterownik karty graficznej."
+      "graphics_driver": "Sterownik graficzny uległ awarii lub nie obsługuje OpenGL. Zaktualizuj sterownik karty graficznej.",
+      "incompatible_mod": "{name} nie działa z {other}. Launcher może zamienić {name} na pasującą wersję."
     },
-    "shareTextLinux": "Log zostanie przesłany na {site}, gdzie każdy z linkiem może go przeczytać. Tokeny logowania i twoja nazwa użytkownika są wcześniej usuwane."
+    "shareTextLinux": "Log zostanie przesłany na {site}, gdzie każdy z linkiem może go przeczytać. Tokeny logowania i twoja nazwa użytkownika są wcześniej usuwane.",
+    "fixConflict": "Zamień {name} na zgodną wersję",
+    "fixing": "Szukanie zgodnych wersji modów …",
+    "fixDone": "Zamieniono na zgodne wersje: {list}",
+    "fixNothing": "Nie znaleziono automatycznie zgodnej wersji. Wyłącz jeden z dwóch modów i uruchom ponownie."
   },
   "exportPack": {
     "title": "Eksportuj jako modpack",
@@ -2849,7 +2858,8 @@
       "more": "(+{n} kolejny) | (+{n} kolejne) | (+{n} kolejnych)",
       "details": "Szczegóły",
       "shaderOn": "Shadery są włączone: {name}. Naciśnij K w grze, aby je włączyć lub wyłączyć.",
-      "shaderToast": "shadery włączone (K przełącza)"
+      "shaderToast": "shadery włączone (K przełącza)",
+      "compatWith": "Wersja wybrana pod {other}"
     },
     "reason": {
       "installed": "Zainstalowano",
@@ -2860,13 +2870,15 @@
       "missingDependency": "{title} wymaga {dependency}, który nie jest dostępny dla tej wersji",
       "incompatible": "{title} nie działa razem z {other}",
       "needsLoader": "{title} wymaga loadera modów",
-      "failed": "Nie udało się pobrać {title}"
+      "failed": "Nie udało się pobrać {title}",
+      "swapped": "Zamieniono na wersję działającą z {other}"
     },
     "status": {
       "installed": "Zainstalowano",
       "alreadyInstalled": "Już jest",
       "duplicate": "Uwzględniony",
-      "skipped": "Pominięty"
+      "skipped": "Pominięty",
+      "swapped": "Zamieniono"
     },
     "task": {
       "title": "Presety dla {name}",

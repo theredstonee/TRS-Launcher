@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 base64 = "0.23.1"
 chrono = { version = "0.4.45", features = ["serde"] }
+flate2 = "1.1.10"
 futures = "0.3.34"
 hmac = "0.13.0"
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
@@ -20,6 +21,7 @@ serde_json = "1.0.151"
 sha1 = "0.11.0"
 sha2 = "0.11.0"
 thiserror = "2.0.20"
+toml = "1.1.6"
 tokio = { version = "1.53.1", features = ["fs", "sync", "macros", "rt-multi-thread", "process", "io-util", "net", "time"] }
 tracing = { version = "0.1.44", features = ["log"] }
 url = "2.5.8"

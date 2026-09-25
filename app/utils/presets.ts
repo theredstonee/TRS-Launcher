@@ -163,7 +163,7 @@ export function defaultPresetSelection(
   return adjustSelectionForLoader(visible, selection, options.loader)
 }
 
-const okStatuses: PresetItemStatus[] = ['installed', 'alreadyInstalled', 'duplicate']
+const okStatuses: PresetItemStatus[] = ['installed', 'alreadyInstalled', 'duplicate', 'swapped']
 
 export function presetItemOk(item: Pick<PresetItemOutcome, 'status'>): boolean {
   return okStatuses.includes(item.status)
@@ -203,6 +203,8 @@ export function presetReason(item: PresetItemOutcome, report: Pick<PresetApplyRe
       return t('presets.reason.needsLoader', { title })
     case 'failed':
       return t('presets.reason.failed', { title })
+    case 'swapped':
+      return t('presets.reason.swapped', { other: item.compatWith ?? '?' })
   }
 }
 
