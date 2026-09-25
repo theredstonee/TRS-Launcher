@@ -1,6 +1,5 @@
 //! TRS-Funktionen des Launchers: immer für den **aktiven** Minecraft-Account.
 
-use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -64,6 +63,8 @@ async fn admin_item(trs: &TrsApi, entry: super::types::ApiAdminCape, token: Opti
         reviewed_at: entry.reviewed_at.map(|t| validate::text(&t, 40)),
         reviewed_by: entry.reviewed_by.map(|t| validate::text(&t, 64)),
         reports: entry.reports,
+        bytes: entry.bytes,
+        owner_stats: entry.owner_stats,
     }
 }
 
@@ -234,22 +235,27 @@ impl Launcher {
         Ok(result.active_cape.map(|c| c.id).filter(|id| validate::cape_id(id)))
     }
 
-    /// Prüft die PNG-Datei und lädt sie als eigenen Umhang hoch (Status „pending“).
-    pub async fn trs_upload_cape(&self, file: &Path, name: Option<&str>) -> Result<CapeItem> {
+    /// Prüft den fertigen Streifen aus dem Zuschneide-Dialog (PNG, `frames` Frames
+    /// untereinander) noch einmal vollständig und lädt ihn als eigenen Umhang hoch
+    /// (Status „pending“).
+    pub async fn trs_upload_cape(
+        &self,
+        bytes: Vec<u8>,
+        frames: u32,
+        frame_time_ms: Option<u32>,
+        name: Option<&str>,
+    ) -> Result<CapeItem> {
         let name = name.map(str::trim).filter(|n| !n.is_empty()).map(validate::upload_name).transpose()?;
-        let meta = tokio::fs::metadata(file).await.map_err(|e| Error::io(file, e))?;
-        if meta.len() > png::MAX_UPLOAD_BYTES as u64 {
-            return Err(Error::validation(crate::msg!(
-                "trsPng.fileTooLarge",
-                "Die Datei ist zu groß (höchstens 256 KB)."
-            )));
+        let layout = png::validate_upload(&bytes, frames, frame_time_ms)?;
+        let mut path = format!("/v1/capes/upload?frames={}", layout.frames);
+        if layout.frames > 1
+            && let Some(ms) = frame_time_ms
+        {
+            path.push_str(&format!("&frameTimeMs={ms}"));
         }
-        let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
-        png::validate_upload(&bytes)?;
-        let path = match &name {
-            Some(n) => format!("/v1/capes/upload?name={}", encode_query(n)),
-            None => "/v1/capes/upload".to_owned(),
-        };
+        if let Some(n) = &name {
+            path.push_str(&format!("&name={}", encode_query(n)));
+        }
         let account = self.trs_account().await?;
         let req = Req { method: reqwest::Method::POST, path, body: super::Body::Png(bytes) };
         let result: ApiCapeEnvelope = self.trs.call(self.accounts(), &account, &req).await?;

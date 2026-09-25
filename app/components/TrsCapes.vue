@@ -106,37 +106,18 @@ async function redeem() {
   })
 }
 
-// --- Hochladen ----------------------------------------------------------------------
+// --- Hochladen (Zuschneide-Dialog) ---------------------------------------------------
 
 const uploading = ref(false)
-const uploadName = ref('')
-const uploadError = ref<string | null>(null)
 
 function startUpload() {
-  uploadName.value = ''
-  uploadError.value = null
   uploading.value = true
 }
 
-async function upload() {
-  const parsed = trsCapeNameSchema.safeParse(uploadName.value)
-  if (!parsed.success) {
-    uploadError.value = firstIssue(parsed.error)
-    return
-  }
-  uploadError.value = null
-  await run('upload', async () => {
-    try {
-      const cape = await backend.trs.uploadCape(parsed.data || null)
-      if (!cape) return
-      uploading.value = false
-      toasts.ok(t('capes.toasts.uploaded'))
-      await load()
-      emit('preview', capes.value?.find((c) => c.id === cape.id) ?? cape)
-    } catch (e) {
-      uploadError.value = errorMessage(e)
-    }
-  })
+async function uploaded(cape: TrsCape) {
+  uploading.value = false
+  await load()
+  emit('preview', capes.value?.find((c) => c.id === cape.id) ?? cape)
 }
 
 const toDelete = ref<TrsCape | null>(null)
@@ -317,30 +298,7 @@ function lockClass(cape: TrsCape) {
       </template>
     </BaseDialog>
 
-    <BaseDialog v-if="uploading" :title="t('capes.upload')" @close="uploading = false">
-      <label class="label" for="trs-cape-name">{{ t('capes.uploadDialog.nameLabel') }}</label>
-      <input
-        id="trs-cape-name"
-        v-model="uploadName"
-        class="field"
-        maxlength="32"
-        :placeholder="t('capes.uploadDialog.placeholder')"
-        autofocus
-        @keydown.enter="upload"
-      />
-      <ul class="mt-3 list-disc space-y-1 pl-4 text-xs text-base-400">
-        <li>{{ t('capes.uploadDialog.rules.size') }}</li>
-        <li>{{ t('capes.uploadDialog.rules.review') }}</li>
-        <li>{{ t('capes.uploadDialog.rules.rights') }}</li>
-      </ul>
-      <p v-if="uploadError" role="alert" class="mt-2 text-xs text-redstone-300">{{ uploadError }}</p>
-      <template #actions>
-        <button class="btn btn-ghost" @click="uploading = false">{{ t('common.actions.cancel') }}</button>
-        <button class="btn btn-primary" :disabled="busy === 'upload'" @click="upload">
-          {{ busy === 'upload' ? t('capes.uploadDialog.uploading') : t('capes.uploadDialog.chooseFile') }}
-        </button>
-      </template>
-    </BaseDialog>
+    <CapeUploadDialog v-if="uploading" @close="uploading = false" @uploaded="uploaded" />
 
     <BaseDialog v-if="toDelete" :title="t('capes.deleteDialog.title')" @close="toDelete = null">
       <i18n-t keypath="capes.deleteDialog.text" tag="p" scope="global" class="text-sm text-base-200">

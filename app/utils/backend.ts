@@ -7,6 +7,7 @@ import {
   trsAdminUserSchema,
   trsBlockedSchema,
   trsCapeSchema,
+  trsCapeSourceSchema,
   trsCodeSchema,
   trsFriendRequestResultSchema,
   trsFriendSchema,
@@ -464,8 +465,11 @@ export const backend = {
     deleteMe: () => checked(trsStatusSchema, 'trs_delete_me'),
     capes: () => checked(z.array(trsCapeSchema), 'trs_capes'),
     setCape: (capeId: string | null) => checked(z.string().nullable(), 'trs_set_cape', { capeId }),
-    /** Öffnet den Dateidialog im Kern; `null` = abgebrochen. */
-    uploadCape: (name: string | null) => checked(trsCapeSchema.nullable(), 'trs_upload_cape', { name }),
+    /** Dateidialog im Kern (auch mehrere Bilder = Frames); `null` = abgebrochen. */
+    pickCapeSources: () => checked(z.array(trsCapeSourceSchema).nullable(), 'trs_pick_cape_sources'),
+    /** Fertiger Streifen aus dem Zuschneide-Dialog (PNG als Base64); der Kern prüft ihn erneut. */
+    uploadCape: (upload: { png: string; frames: number; frameTimeMs: number | null; name: string | null }) =>
+      checked(trsCapeSchema, 'trs_upload_cape', upload),
     deleteCape: (id: string) => call<void>('trs_delete_cape', { id }),
     reportCape: (id: string, reason: TrsReportReason, note: string | null) =>
       call<void>('trs_report_cape', { id, reason, note }),

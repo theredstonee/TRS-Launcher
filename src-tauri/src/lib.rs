@@ -269,6 +269,7 @@ pub fn run() {
             commands::trs::trs_delete_me,
             commands::trs::trs_capes,
             commands::trs::trs_set_cape,
+            commands::trs::trs_pick_cape_sources,
             commands::trs::trs_upload_cape,
             commands::trs::trs_delete_cape,
             commands::trs::trs_report_cape,

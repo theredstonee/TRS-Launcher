@@ -204,7 +204,8 @@
       "not_banned": "Dieser Spieler ist nicht gesperrt.",
       "invalid_request": "Die Anfrage war ungültig.",
       "not_found": "Nicht gefunden.",
-      "rejected": "Die TRS API hat die Anfrage abgelehnt."
+      "rejected": "Die TRS API hat die Anfrage abgelehnt.",
+      "frame_time_required": "Animierte Umhänge brauchen ein Bildtempo."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -499,10 +500,12 @@
       "invalidWebLoginCode": "Der Code hat die Form ABCD-1234 (Buchstaben und Ziffern)."
     },
     "trsPng": {
-      "fileTooLarge": "Die Datei ist zu groß (höchstens 256 KB).",
+      "fileTooLarge": "Die Datei ist zu groß (höchstens 5 MB).",
       "invalidPng": "Die Datei ist kein gültiges PNG-Bild.",
-      "animated": "Animierte PNGs sind für eigene Umhänge nicht erlaubt.",
-      "invalidSize": "Der Umhang muss 64×32 (oder 128×64, 192×96, 256×128) bzw. im Umhang-Format 22×17 (oder 44×34, 66×51, 88×68) Pixel groß sein."
+      "animated": "Animierte PNGs (APNG) werden nicht unterstützt – Animationen als Streifen hochladen.",
+      "invalidSize": "Der Umhang muss 64×32 Pixel groß sein (oder ein Vielfaches bis 512×256) bzw. im Umhang-Format 22×17 (bis 176×136); animiert höchstens 16 Frames untereinander.",
+      "frameTime": "Das Bildtempo muss zwischen 50 und 1000 ms je Frame liegen.",
+      "emptyCape": "Der Umhang ist komplett durchsichtig."
     },
     "trsValidate": {
       "invalidName": "Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) eingeben.",
@@ -569,6 +572,16 @@
       "nameTaken": "Es gibt schon einen Clip mit diesem Namen.",
       "noFrames": "Noch nichts aufgenommen.",
       "notRecording": "Für dieses Spiel läuft keine Aufnahme."
+    },
+    "trsCapeImport": {
+      "unsupported": "„{name}“ ist kein unterstütztes Bild (PNG, JPEG, WebP, GIF oder TRS-Studio-JSON).",
+      "imageTooLarge": "„{name}“ ist zu groß (höchstens 4096×4096 Pixel, als GIF 2048×2048).",
+      "broken": "„{name}“ konnte nicht gelesen werden.",
+      "tooManyFiles": "Bitte höchstens {max} Dateien auf einmal wählen.",
+      "fileTooLarge": "„{name}“ ist zu groß (höchstens 20 MB je Datei).",
+      "totalTooLarge": "Zusammen sind die Dateien zu groß (höchstens 64 MB).",
+      "studioInvalid": "„{name}“ ist kein Umhang-Export aus TRS Studio.",
+      "gifTooLong": "„{name}“ hat zu viele Frames (höchstens {max})."
     }
   },
   "browse": {
@@ -2419,17 +2432,6 @@
       "checking": "Prüfe …",
       "submit": "Einlösen"
     },
-    "uploadDialog": {
-      "nameLabel": "Name (optional)",
-      "placeholder": "z. B. Mein Umhang",
-      "rules": {
-        "size": "PNG mit 64×32 Pixeln (oder 128×64, 192×96, 256×128) bzw. im Umhang-Format 22×17 – höchstens 256 KB.",
-        "review": "Keine Animation. Das Team prüft jeden Umhang, bis dahin siehst nur du ihn.",
-        "rights": "Nur eigene Bilder oder solche, die du verwenden darfst – nichts Anstößiges."
-      },
-      "uploading": "Lade hoch …",
-      "chooseFile": "Datei wählen"
-    },
     "deleteDialog": {
       "title": "Umhang löschen?",
       "text": "{name} wird endgültig gelöscht."
@@ -2441,6 +2443,68 @@
       "unlocked": "„{name}“ freigeschaltet!",
       "uploaded": "Hochgeladen – dein Umhang wartet auf Freigabe.",
       "deleted": "Umhang gelöscht"
+    },
+    "editor": {
+      "title": "Eigenen Umhang hochladen",
+      "pick": {
+        "lead": "Wähle ein oder mehrere Bilder. Du bestimmst den Ausschnitt, der auf den Umhang kommt, und siehst ihn sofort am Spieler.",
+        "image": "Beliebiges Bild (PNG, JPEG, WebP) – du wählst den Ausschnitt",
+        "gif": "Animiertes GIF – die Frames werden übernommen",
+        "frames": "Mehrere Bilder auf einmal – werden in Namensreihenfolge zu Frames",
+        "sheet": "Fertige Umhang-Textur oder Sprite-Sheet (Frames untereinander)",
+        "studio": "TRS-Studio-Exporte – PNG zusammen mit der .json wählen",
+        "choose": "Dateien wählen",
+        "loading": "Wird geladen …"
+      },
+      "rules": {
+        "size": "Bis 512×256 Pixel je Frame, bis zu 16 Frames, höchstens 5 MB.",
+        "review": "Das Team prüft jeden Umhang; bis dahin siehst nur du ihn.",
+        "rights": "Nur eigene Bilder oder solche, die du verwenden darfst – nichts Anstößiges."
+      },
+      "change": "Andere Dateien",
+      "frameCount": "{n} Frame | {n} Frames",
+      "mode": {
+        "label": "Verwenden als",
+        "texture": "Ganze Umhang-Textur",
+        "crop": "Bildausschnitt"
+      },
+      "crop": {
+        "viewport": "Bildausschnitt für den Umhang – mit den Pfeiltasten verschieben, mit + und − zoomen",
+        "zoom": "Zoom",
+        "reset": "Zurücksetzen",
+        "hint": "Ziehen verschiebt das Bild, Mausrad oder Regler zoomt. Der Rahmen zeigt die Rückseite des Umhangs."
+      },
+      "sheet": {
+        "label": "Frames im Bild",
+        "hint": "Für Sprite-Sheets: Frames untereinander."
+      },
+      "scale": {
+        "label": "Auflösung",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Bildtempo",
+        "value": "{ms} ms je Frame · {fps} Bilder/s"
+      },
+      "sampled": "{total} Frames – {max} gleichmäßig ausgewählte werden verwendet.",
+      "preview": {
+        "texture": "Umhang-Textur"
+      },
+      "sizeLabel": "Dateigröße",
+      "size": "{size} von höchstens 5 MB",
+      "nameLabel": "Name (optional)",
+      "placeholder": "z. B. Mein Umhang",
+      "errors": {
+        "noImage": "Bitte mindestens ein Bild wählen – eine .json allein reicht nicht.",
+        "mixed": "Bitte entweder ein GIF oder Bilder wählen – nicht beides.",
+        "sizeMismatch": "Alle Frames müssen gleich groß sein.",
+        "frameTooLarge": "Bei mehreren Frames darf jedes Bild höchstens 2048×2048 Pixel groß sein.",
+        "readFailed": "Das Bild konnte nicht gelesen werden.",
+        "tooLarge": "Der Umhang ist zu groß ({size}, höchstens 5 MB) – wähle eine kleinere Auflösung oder weniger Frames.",
+        "empty": "Der Umhang ist komplett durchsichtig."
+      },
+      "upload": "Hochladen",
+      "uploading": "Wird hochgeladen …"
     }
   },
   "friends": {
@@ -2575,7 +2639,42 @@
       "rejectReason": "Grund: {reason}",
       "reviewed": "Geprüft {date}",
       "approve": "Freigeben",
-      "reject": "Ablehnen"
+      "reject": "Ablehnen",
+      "dialog": {
+        "title": "„{name}“ prüfen",
+        "open": "Zum Prüfen öffnen",
+        "uploaded": "Hochgeladen",
+        "fileSize": "Dateigröße",
+        "resolution": "Auflösung",
+        "frames": "Frames",
+        "frameTime": "{ms} ms je Frame",
+        "zoom": "Zoom",
+        "fit": "Einpassen",
+        "frameOf": "Frame {n} von {total}",
+        "play": "Abspielen",
+        "pause": "Anhalten",
+        "ownerStats": "{uploads} Uploads · {approved} freigegeben · {pending} wartend · {rejected} abgelehnt",
+        "reasonTitle": "Warum wird er abgelehnt?",
+        "presetLabels": {
+          "inappropriate": "Unangemessener Inhalt",
+          "copyright": "Urheberrecht / fremdes Logo",
+          "quality": "Schlechte Qualität oder kaputt",
+          "format": "Kein Umhang / falsches Layout",
+          "other": "Anderer Grund (selbst schreiben)"
+        },
+        "presets": {
+          "inappropriate": "Unangemessener Inhalt.",
+          "copyright": "Urheberrecht oder fremdes Logo – bitte nur eigene Motive verwenden.",
+          "quality": "Die Textur ist kaputt oder von schlechter Qualität.",
+          "format": "Das sieht nicht nach einem Umhang aus – bitte das Umhang-Layout verwenden."
+        },
+        "keys": "A freigeben · D ablehnen · ←/→ blättern · Esc schließen",
+        "prev": "Vorheriger Umhang",
+        "next": "Nächster Umhang",
+        "confirmDelete": "Wirklich löschen?",
+        "rejectNow": "Jetzt ablehnen",
+        "working": "Einen Moment …"
+      }
     },
     "codes": {
       "cape": "Umhang",

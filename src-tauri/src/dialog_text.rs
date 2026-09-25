@@ -26,7 +26,7 @@ pub enum DialogText {
     MinecraftContent,
     PickJava,
     PickCape,
-    /// Filtername für Umhang-PNGs.
+    /// Filtername für Umhang-Bilder (PNG, JPEG, WebP, GIF, Studio-JSON).
     Cape,
     /// Filtername für `.mrpack` und CurseForge-`.zip`.
     AnyModpack,
@@ -152,16 +152,25 @@ const TEXTS: [[&str; 8]; 20] = [
         "java.exe of javaw.exe kiezen",
     ],
     [
-        "Choose a cape image (PNG, 64×32 or 22×17)",
-        "Umhang-Bild wählen (PNG, 64×32 oder 22×17)",
-        "Elige una imagen de capa (PNG, 64×32 o 22×17)",
-        "Choisir une image de cape (PNG, 64×32 ou 22×17)",
-        "Wybierz obraz peleryny (PNG, 64×32 lub 22×17)",
-        "Escolher imagem da capa (PNG, 64×32 ou 22×17)",
-        "Pelerin resmi seç (PNG, 64×32 veya 22×17)",
-        "Cape-afbeelding kiezen (PNG, 64×32 of 22×17)",
+        "Choose images for your cape (PNG, JPEG, WebP, GIF – several = frames)",
+        "Bilder für den Umhang wählen (PNG, JPEG, WebP, GIF – mehrere = Frames)",
+        "Elige imágenes para tu capa (PNG, JPEG, WebP, GIF – varias = fotogramas)",
+        "Choisir des images pour la cape (PNG, JPEG, WebP, GIF – plusieurs = images)",
+        "Wybierz obrazy peleryny (PNG, JPEG, WebP, GIF – kilka = klatki)",
+        "Escolher imagens para a capa (PNG, JPEG, WebP, GIF – várias = quadros)",
+        "Pelerin için resim seç (PNG, JPEG, WebP, GIF – birden çok = kareler)",
+        "Afbeeldingen voor de cape kiezen (PNG, JPEG, WebP, GIF – meerdere = frames)",
     ],
-    ["Cape", "Umhang", "Capa", "Cape", "Peleryna", "Capa", "Pelerin", "Cape"],
+    [
+        "Cape images",
+        "Umhang-Bilder",
+        "Imágenes de capa",
+        "Images de cape",
+        "Obrazy peleryny",
+        "Imagens da capa",
+        "Pelerin resimleri",
+        "Cape-afbeeldingen",
+    ],
     [
         "Modpack (Modrinth, CurseForge)",
         "Modpack (Modrinth, CurseForge)",
@@ -285,9 +294,9 @@ mod tests {
         assert_eq!(DialogText::SaveModpack.text(Language::De), "Modpack speichern");
         assert_eq!(DialogText::Images.text(Language::Es), "Imágenes");
         assert_eq!(DialogText::Images.text(Language::Nl), "Afbeeldingen");
-        assert_eq!(DialogText::Cape.text(Language::Pl), "Peleryna");
-        assert_eq!(DialogText::Cape.text(Language::PtBr), "Capa");
-        assert_eq!(DialogText::Cape.text(Language::Tr), "Pelerin");
-        assert_eq!(DialogText::Cape.text(Language::Fr), "Cape");
+        assert_eq!(DialogText::Cape.text(Language::Pl), "Obrazy peleryny");
+        assert_eq!(DialogText::Cape.text(Language::PtBr), "Imagens da capa");
+        assert_eq!(DialogText::Cape.text(Language::Tr), "Pelerin resimleri");
+        assert_eq!(DialogText::Cape.text(Language::Fr), "Images de cape");
     }
 }

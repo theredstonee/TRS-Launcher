@@ -204,7 +204,8 @@
       "not_banned": "Este jogador não está banido.",
       "invalid_request": "A solicitação era inválida.",
       "not_found": "Não encontrado.",
-      "rejected": "A API TRS recusou a solicitação."
+      "rejected": "A API TRS recusou a solicitação.",
+      "frame_time_required": "Capas animadas precisam de uma velocidade."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -499,10 +500,12 @@
       "invalidWebLoginCode": "O código tem o formato ABCD-1234 (letras e números)."
     },
     "trsPng": {
-      "fileTooLarge": "O arquivo é grande demais (máx. 256 KB).",
+      "fileTooLarge": "O arquivo é grande demais (máx. 5 MB).",
       "invalidPng": "O arquivo não é uma imagem PNG válida.",
-      "animated": "PNGs animados não são permitidos em capas personalizadas.",
-      "invalidSize": "A capa deve ter 64×32 pixels (ou 128×64, 192×96, 256×128), ou 22×17 no formato de capa (ou 44×34, 66×51, 88×68)."
+      "animated": "PNGs animados (APNG) não são suportados – envie animações como tira.",
+      "invalidSize": "A capa precisa ter 64×32 pixels (ou um múltiplo até 512×256) ou 22×17 no formato de capa (até 176×136); animada, no máximo 16 quadros empilhados na vertical.",
+      "frameTime": "A velocidade precisa ficar entre 50 e 1000 ms por quadro.",
+      "emptyCape": "A capa é totalmente transparente."
     },
     "trsValidate": {
       "invalidName": "Digite um nome do Minecraft (1–16 caracteres: A–Z, 0–9, _).",
@@ -569,6 +572,16 @@
       "nameTaken": "Já existe um clipe com este nome.",
       "noFrames": "Nada foi gravado ainda.",
       "notRecording": "Nenhuma gravação está em andamento para este jogo."
+    },
+    "trsCapeImport": {
+      "unsupported": "“{name}” não é uma imagem suportada (PNG, JPEG, WebP, GIF ou JSON do TRS Studio).",
+      "imageTooLarge": "“{name}” é grande demais (máx. 4096×4096 pixels, como GIF 2048×2048).",
+      "broken": "Não foi possível ler “{name}”.",
+      "tooManyFiles": "Escolha no máximo {max} arquivos de uma vez.",
+      "fileTooLarge": "“{name}” é grande demais (máx. 20 MB por arquivo).",
+      "totalTooLarge": "Juntos, os arquivos são grandes demais (máx. 64 MB).",
+      "studioInvalid": "“{name}” não é uma exportação de capa do TRS Studio.",
+      "gifTooLong": "“{name}” tem quadros demais (máx. {max})."
     }
   },
   "browse": {
@@ -2419,17 +2432,6 @@
       "checking": "Verificando …",
       "submit": "Resgatar"
     },
-    "uploadDialog": {
-      "nameLabel": "Nome (opcional)",
-      "placeholder": "ex.: Minha capa",
-      "rules": {
-        "size": "PNG com 64×32 pixels (ou 128×64, 192×96, 256×128) ou no formato de capa 22×17 – no máximo 256 KB.",
-        "review": "Sem animação. A equipe analisa cada capa; até lá, só você pode vê-la.",
-        "rights": "Só imagens suas ou que você tem permissão para usar – nada ofensivo."
-      },
-      "uploading": "Enviando …",
-      "chooseFile": "Escolher arquivo"
-    },
     "deleteDialog": {
       "title": "Excluir capa?",
       "text": "{name} será excluída permanentemente."
@@ -2441,6 +2443,68 @@
       "unlocked": "“{name}” desbloqueada!",
       "uploaded": "Enviada – sua capa está aguardando aprovação.",
       "deleted": "Capa excluída"
+    },
+    "editor": {
+      "title": "Enviar sua própria capa",
+      "pick": {
+        "lead": "Escolha uma ou mais imagens. Você escolhe a parte que vai para a capa e a vê na hora no jogador.",
+        "image": "Qualquer imagem (PNG, JPEG, WebP) – você escolhe o recorte",
+        "gif": "GIF animado – os quadros são aproveitados",
+        "frames": "Várias imagens de uma vez – viram os quadros, em ordem de nome",
+        "sheet": "Uma textura de capa pronta ou sprite sheet (quadros empilhados na vertical)",
+        "studio": "Exportações do TRS Studio – escolha o PNG junto com o .json",
+        "choose": "Escolher arquivos",
+        "loading": "Carregando …"
+      },
+      "rules": {
+        "size": "Até 512×256 pixels por quadro, até 16 quadros, no máximo 5 MB.",
+        "review": "A equipe analisa cada capa; até lá, só você pode vê-la.",
+        "rights": "Só imagens suas ou que você tem permissão para usar – nada ofensivo."
+      },
+      "change": "Outros arquivos",
+      "frameCount": "{n} quadro | {n} quadros",
+      "mode": {
+        "label": "Usar como",
+        "texture": "Textura de capa inteira",
+        "crop": "Recorte da imagem"
+      },
+      "crop": {
+        "viewport": "Recorte da imagem para a capa – mova com as setas, amplie com + e −",
+        "zoom": "Zoom",
+        "reset": "Redefinir",
+        "hint": "Arraste para mover a imagem; use a roda do mouse ou o controle para ampliar. A moldura mostra as costas da capa."
+      },
+      "sheet": {
+        "label": "Quadros na imagem",
+        "hint": "Para sprite sheets: quadros empilhados na vertical."
+      },
+      "scale": {
+        "label": "Resolução",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Velocidade",
+        "value": "{ms} ms por quadro · {fps} qps"
+      },
+      "sampled": "{total} quadros – {max} escolhidos de forma uniforme são usados.",
+      "preview": {
+        "texture": "Textura da capa"
+      },
+      "sizeLabel": "Tamanho do arquivo",
+      "size": "{size} de no máx. 5 MB",
+      "nameLabel": "Nome (opcional)",
+      "placeholder": "ex.: Minha capa",
+      "errors": {
+        "noImage": "Escolha pelo menos uma imagem – um .json sozinho não basta.",
+        "mixed": "Escolha um GIF ou imagens – não os dois.",
+        "sizeMismatch": "Todos os quadros precisam ter o mesmo tamanho.",
+        "frameTooLarge": "Com vários quadros, cada imagem pode ter no máximo 2048×2048 pixels.",
+        "readFailed": "Não foi possível ler a imagem.",
+        "tooLarge": "A capa é grande demais ({size}, máx. 5 MB) – escolha uma resolução menor ou menos quadros.",
+        "empty": "A capa é totalmente transparente."
+      },
+      "upload": "Enviar",
+      "uploading": "Enviando …"
     }
   },
   "friends": {
@@ -2575,7 +2639,42 @@
       "rejectReason": "Motivo: {reason}",
       "reviewed": "Analisada {date}",
       "approve": "Aprovar",
-      "reject": "Recusar"
+      "reject": "Recusar",
+      "dialog": {
+        "title": "Analisar “{name}”",
+        "open": "Abrir para análise",
+        "uploaded": "Enviada",
+        "fileSize": "Tamanho do arquivo",
+        "resolution": "Resolução",
+        "frames": "Quadros",
+        "frameTime": "{ms} ms por quadro",
+        "zoom": "Zoom",
+        "fit": "Ajustar",
+        "frameOf": "Quadro {n} de {total}",
+        "play": "Reproduzir",
+        "pause": "Pausar",
+        "ownerStats": "{uploads} envios · {approved} aprovadas · {pending} aguardando · {rejected} recusadas",
+        "reasonTitle": "Por que recusar?",
+        "presetLabels": {
+          "inappropriate": "Conteúdo inapropriado",
+          "copyright": "Direitos autorais / logo de terceiros",
+          "quality": "Qualidade ruim ou quebrada",
+          "format": "Não é uma capa / layout errado",
+          "other": "Outro motivo (escreva você)"
+        },
+        "presets": {
+          "inappropriate": "Conteúdo inapropriado.",
+          "copyright": "Direitos autorais ou logo de terceiros – use só desenhos próprios.",
+          "quality": "A textura está quebrada ou tem qualidade ruim.",
+          "format": "Isso não parece uma capa – use o layout de capa."
+        },
+        "keys": "A aprovar · D recusar · ←/→ navegar · Esc fechar",
+        "prev": "Capa anterior",
+        "next": "Próxima capa",
+        "confirmDelete": "Excluir mesmo?",
+        "rejectNow": "Recusar agora",
+        "working": "Um momento …"
+      }
     },
     "codes": {
       "cape": "Capa",

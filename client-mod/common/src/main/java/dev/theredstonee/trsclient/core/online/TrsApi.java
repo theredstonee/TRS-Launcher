@@ -20,6 +20,12 @@ public final class TrsApi {
 	private static final Gson GSON = new Gson();
 	private static final String JSON = "application/json";
 
+	/**
+	 * Größte Umhang-Textur: eigene Uploads bis 5 MB (512×256 je Frame, bis 16 Frames),
+	 * mitgelieferte HD-Streifen ähnlich groß – passend zum {@code CapeDiskCache}.
+	 */
+	public static final int MAX_TEXTURE_BYTES = 8 * 1024 * 1024;
+
 	private final Http http;
 	private final OnlineConfig config;
 
@@ -245,7 +251,7 @@ public final class TrsApi {
 		if (etag != null) request.header("If-None-Match", etag);
 		// Eigene, noch nicht freigegebene Uploads liefert die API nur mit Token aus (sonst egal).
 		if (token != null) request.header("Authorization", "Bearer " + token);
-		request.maxBytes = 1024 * 1024;
+		request.maxBytes = MAX_TEXTURE_BYTES;
 		Http.Response response = http.send(request);
 		if (response.status == 200 || response.status == 304) return response;
 		throw new ApiException(response.status, errorCode(response), retryAfter(response));

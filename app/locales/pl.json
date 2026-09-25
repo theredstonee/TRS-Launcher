@@ -204,7 +204,8 @@
       "not_banned": "Ten gracz nie jest zbanowany.",
       "invalid_request": "Żądanie było nieprawidłowe.",
       "not_found": "Nie znaleziono.",
-      "rejected": "API TRS odrzuciło żądanie."
+      "rejected": "API TRS odrzuciło żądanie.",
+      "frame_time_required": "Animowane peleryny potrzebują tempa."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -499,10 +500,12 @@
       "invalidWebLoginCode": "Kod ma postać ABCD-1234 (litery i cyfry)."
     },
     "trsPng": {
-      "fileTooLarge": "Plik jest za duży (maks. 256 KB).",
+      "fileTooLarge": "Plik jest za duży (maks. 5 MB).",
       "invalidPng": "Plik nie jest prawidłowym obrazem PNG.",
-      "animated": "Animowane pliki PNG nie są dozwolone dla własnych peleryn.",
-      "invalidSize": "Peleryna musi mieć 64×32 piksele (lub 128×64, 192×96, 256×128) albo 22×17 w formacie peleryny (lub 44×34, 66×51, 88×68)."
+      "animated": "Animowane PNG (APNG) nie są obsługiwane – prześlij animację jako pasek.",
+      "invalidSize": "Peleryna musi mieć 64×32 piksele (lub wielokrotność do 512×256) albo 22×17 w formacie peleryny (do 176×136); animowana maks. 16 klatek jedna pod drugą.",
+      "frameTime": "Tempo musi wynosić od 50 do 1000 ms na klatkę.",
+      "emptyCape": "Peleryna jest całkowicie przezroczysta."
     },
     "trsValidate": {
       "invalidName": "Wpisz nazwę gracza Minecraft (1–16 znaków: A–Z, 0–9, _).",
@@ -569,6 +572,16 @@
       "nameTaken": "Klip o tej nazwie już istnieje.",
       "noFrames": "Jeszcze nic nie nagrano.",
       "notRecording": "Dla tej gry nie trwa żadne nagrywanie."
+    },
+    "trsCapeImport": {
+      "unsupported": "„{name}” nie jest obsługiwanym obrazem (PNG, JPEG, WebP, GIF lub JSON z TRS Studio).",
+      "imageTooLarge": "„{name}” jest za duży (maks. 4096×4096 pikseli, jako GIF 2048×2048).",
+      "broken": "Nie udało się odczytać „{name}”.",
+      "tooManyFiles": "Wybierz maksymalnie {max} plików naraz.",
+      "fileTooLarge": "„{name}” jest za duży (maks. 20 MB na plik).",
+      "totalTooLarge": "Pliki są razem za duże (maks. 64 MB).",
+      "studioInvalid": "„{name}” nie jest eksportem peleryny z TRS Studio.",
+      "gifTooLong": "„{name}” ma za dużo klatek (maks. {max})."
     }
   },
   "browse": {
@@ -2419,17 +2432,6 @@
       "checking": "Sprawdzanie …",
       "submit": "Wykorzystaj"
     },
-    "uploadDialog": {
-      "nameLabel": "Nazwa (opcjonalnie)",
-      "placeholder": "np. Moja peleryna",
-      "rules": {
-        "size": "PNG o wymiarach 64×32 piksele (lub 128×64, 192×96, 256×128) albo w formacie peleryny 22×17 – maks. 256 KB.",
-        "review": "Bez animacji. Zespół sprawdza każdą pelerynę; do tego czasu widzisz ją tylko ty.",
-        "rights": "Tylko własne obrazy lub takie, których możesz używać – nic obraźliwego."
-      },
-      "uploading": "Przesyłanie …",
-      "chooseFile": "Wybierz plik"
-    },
     "deleteDialog": {
       "title": "Usunąć pelerynę?",
       "text": "{name} zostanie trwale usunięta."
@@ -2441,6 +2443,68 @@
       "unlocked": "Odblokowano „{name}”!",
       "uploaded": "Przesłano – twoja peleryna czeka na zatwierdzenie.",
       "deleted": "Usunięto pelerynę"
+    },
+    "editor": {
+      "title": "Prześlij własną pelerynę",
+      "pick": {
+        "lead": "Wybierz jeden lub kilka obrazów. Sam wybierasz fragment, który trafi na pelerynę, i od razu widzisz go na graczu.",
+        "image": "Dowolny obraz (PNG, JPEG, WebP) – wybierasz fragment",
+        "gif": "Animowany GIF – jego klatki zostają przejęte",
+        "frames": "Kilka obrazów naraz – stają się klatkami w kolejności nazw",
+        "sheet": "Gotowa tekstura peleryny lub arkusz sprite’ów (klatki jedna pod drugą)",
+        "studio": "Eksporty z TRS Studio – wybierz PNG razem z plikiem .json",
+        "choose": "Wybierz pliki",
+        "loading": "Wczytywanie …"
+      },
+      "rules": {
+        "size": "Do 512×256 pikseli na klatkę, do 16 klatek, maks. 5 MB.",
+        "review": "Zespół sprawdza każdą pelerynę; do tego czasu widzisz ją tylko ty.",
+        "rights": "Tylko własne obrazy lub takie, których możesz używać – nic obraźliwego."
+      },
+      "change": "Inne pliki",
+      "frameCount": "{n} klatka | {n} klatki | {n} klatek",
+      "mode": {
+        "label": "Użyj jako",
+        "texture": "Cała tekstura peleryny",
+        "crop": "Fragment obrazu"
+      },
+      "crop": {
+        "viewport": "Fragment obrazu dla peleryny – przesuwaj strzałkami, powiększaj klawiszami + i −",
+        "zoom": "Powiększenie",
+        "reset": "Resetuj",
+        "hint": "Przeciągnij, aby przesunąć obraz; kółko myszy lub suwak powiększa. Ramka pokazuje tył peleryny."
+      },
+      "sheet": {
+        "label": "Klatki w obrazie",
+        "hint": "Dla arkuszy sprite’ów: klatki jedna pod drugą."
+      },
+      "scale": {
+        "label": "Rozdzielczość",
+        "option": "{w}×{h} (×{k})"
+      },
+      "speed": {
+        "label": "Tempo",
+        "value": "{ms} ms na klatkę · {fps} kl./s"
+      },
+      "sampled": "{total} klatek – używanych jest {max} równomiernie wybranych.",
+      "preview": {
+        "texture": "Tekstura peleryny"
+      },
+      "sizeLabel": "Rozmiar pliku",
+      "size": "{size} z maks. 5 MB",
+      "nameLabel": "Nazwa (opcjonalnie)",
+      "placeholder": "np. Moja peleryna",
+      "errors": {
+        "noImage": "Wybierz co najmniej jeden obraz – sam plik .json nie wystarczy.",
+        "mixed": "Wybierz albo jeden GIF, albo obrazy – nie oba naraz.",
+        "sizeMismatch": "Wszystkie klatki muszą mieć ten sam rozmiar.",
+        "frameTooLarge": "Przy kilku klatkach każdy obraz może mieć maks. 2048×2048 pikseli.",
+        "readFailed": "Nie udało się odczytać obrazu.",
+        "tooLarge": "Peleryna jest za duża ({size}, maks. 5 MB) – wybierz niższą rozdzielczość lub mniej klatek.",
+        "empty": "Peleryna jest całkowicie przezroczysta."
+      },
+      "upload": "Prześlij",
+      "uploading": "Przesyłanie …"
     }
   },
   "friends": {
@@ -2575,7 +2639,42 @@
       "rejectReason": "Powód: {reason}",
       "reviewed": "Sprawdzono {date}",
       "approve": "Zatwierdź",
-      "reject": "Odrzuć"
+      "reject": "Odrzuć",
+      "dialog": {
+        "title": "Sprawdź „{name}”",
+        "open": "Otwórz do sprawdzenia",
+        "uploaded": "Przesłano",
+        "fileSize": "Rozmiar pliku",
+        "resolution": "Rozdzielczość",
+        "frames": "Klatki",
+        "frameTime": "{ms} ms na klatkę",
+        "zoom": "Powiększenie",
+        "fit": "Dopasuj",
+        "frameOf": "Klatka {n} z {total}",
+        "play": "Odtwórz",
+        "pause": "Wstrzymaj",
+        "ownerStats": "Przesłane: {uploads} · zatwierdzone: {approved} · oczekujące: {pending} · odrzucone: {rejected}",
+        "reasonTitle": "Dlaczego odrzucasz?",
+        "presetLabels": {
+          "inappropriate": "Nieodpowiednia treść",
+          "copyright": "Prawa autorskie / cudze logo",
+          "quality": "Słaba jakość lub uszkodzona",
+          "format": "To nie peleryna / zły układ",
+          "other": "Inny powód (wpisz sam)"
+        },
+        "presets": {
+          "inappropriate": "Nieodpowiednia treść.",
+          "copyright": "Prawa autorskie lub cudze logo – używaj tylko własnych wzorów.",
+          "quality": "Tekstura jest uszkodzona lub słabej jakości.",
+          "format": "To nie wygląda na pelerynę – użyj układu peleryny."
+        },
+        "keys": "A zatwierdź · D odrzuć · ←/→ przewijaj · Esc zamknij",
+        "prev": "Poprzednia peleryna",
+        "next": "Następna peleryna",
+        "confirmDelete": "Na pewno usunąć?",
+        "rejectNow": "Odrzuć teraz",
+        "working": "Chwileczkę …"
+      }
     },
     "codes": {
       "cape": "Peleryna",

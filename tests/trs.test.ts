@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setLocale } from '../app/utils/i18n'
 import {
+  trsAdminCapeSchema,
   trsCapeNameSchema,
   trsCapeSchema,
+  trsCapeSourceSchema,
   trsDate,
   trsFrameIndex,
   trsFriendsSchema,
@@ -59,6 +61,40 @@ describe('TRS-Daten aus dem Kern', () => {
     // HD-Umhänge bis Faktor 8 (512×256) – darüber nicht.
     expect(trsCapeSchema.safeParse({ ...cape, width: 512, height: 256, scale: 8 }).success).toBe(true)
     expect(trsCapeSchema.safeParse({ ...cape, width: 576, height: 288, scale: 9 }).success).toBe(false)
+  })
+
+  it('prüft Umhänge in der Prüfliste (Größe, Hochlader)', () => {
+    const admin = {
+      ...cape,
+      kind: 'upload',
+      unlock: 'owner',
+      status: 'pending',
+      owner: { uuid: '75c1a6f3112240abbdb57b9d21c64232', name: 'Theredstonee' },
+      createdAt: '2026-09-25T10:00:00Z',
+      reviewedAt: null,
+      reviewedBy: null,
+      reports: { count: 0, reasons: {} },
+      bytes: 123_456,
+      ownerStats: { uploads: 3, approved: 1, pending: 1, rejected: 1 },
+    }
+    expect(trsAdminCapeSchema.safeParse(admin).success).toBe(true)
+    // Ältere Server kennen Größe und Statistik noch nicht.
+    expect(trsAdminCapeSchema.safeParse({ ...admin, bytes: null, ownerStats: null }).success).toBe(true)
+    expect(trsAdminCapeSchema.safeParse({ ...admin, bytes: -1 }).success).toBe(false)
+  })
+
+  it('prüft gewählte Dateien für den Umhang-Dialog', () => {
+    const png = 'data:image/png;base64,iVBORw0KGgo='
+    expect(trsCapeSourceSchema.safeParse({ kind: 'image', name: 'a', dataUrl: png, width: 64, height: 32 }).success).toBe(true)
+    expect(trsCapeSourceSchema.safeParse({ kind: 'image', name: 'a', dataUrl: 'data:image/jpeg;base64,/9j/', width: 1, height: 1 }).success).toBe(true)
+    // Nur Bild-Data-URLs – kein SVG, keine fremden Adressen.
+    expect(trsCapeSourceSchema.safeParse({ kind: 'image', name: 'a', dataUrl: 'data:image/svg+xml;base64,PHN2Zz4=', width: 1, height: 1 }).success).toBe(false)
+    expect(trsCapeSourceSchema.safeParse({ kind: 'image', name: 'a', dataUrl: 'https://evil.example/x.png', width: 1, height: 1 }).success).toBe(false)
+    const gif = { kind: 'gif', name: 'g', width: 20, height: 32, frames: [png, png], durationMs: 200, sourceFrames: 40 }
+    expect(trsCapeSourceSchema.safeParse(gif).success).toBe(true)
+    expect(trsCapeSourceSchema.safeParse({ ...gif, frames: Array(17).fill(png) }).success).toBe(false)
+    expect(trsCapeSourceSchema.safeParse({ kind: 'studio', name: 'ender', frames: 4, scale: 8 }).success).toBe(true)
+    expect(trsCapeSourceSchema.safeParse({ kind: 'studio', name: 'x', frames: 4, scale: 99 }).success).toBe(false)
   })
 
   it('prüft die Freundesliste', () => {

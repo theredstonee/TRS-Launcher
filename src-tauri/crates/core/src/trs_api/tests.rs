@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use futures::future::BoxFuture;
 use serde_json::json;
 
-use super::png::tests::png_with;
+use super::png::tests::{png_with, real_png};
 use super::testkit::{MockServer, Request, Response};
 use super::types::{ApiMe, NewCodes, ReportReason, ReviewList, SettingsPatch, Visibility};
 use super::*;
@@ -297,7 +297,7 @@ fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&R
                       "url": "", "width": 64, "height": 32, "scale": 1, "frames": 1, "owned": true, "active": false }
                 ] }),
             ),
-            ("POST", "/v1/capes/upload?name=Mein%20Umhang%21") => Response::json(
+            ("POST", "/v1/capes/upload?frames=1&name=Mein%20Umhang%21") => Response::json(
                 201,
                 json!({ "cape": { "id": "u0123456789abcdef0123", "name": "Mein Umhang!", "kind": "upload", "unlock": "owner",
                     "status": "pending", "url": format!("{base}/v1/capes/u0123456789abcdef0123.png?v=p1"),
@@ -397,22 +397,32 @@ async fn catalog_loads_checked_textures_and_caches_only_approved_ones() {
 #[tokio::test]
 async fn upload_validates_before_sending() {
     let (_world, server) = world().await;
-    let (dir, launcher) = launcher(&server, &[ACC]).await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
 
-    let bad = dir.path().join("bad.png");
-    std::fs::write(&bad, png_with(64, 64, &[])).unwrap();
-    assert!(launcher.trs_upload_cape(&bad, None).await.is_err());
-    assert!(launcher.trs_upload_cape(&bad, Some("<b>")).await.is_err());
+    let bad = png_with(64, 64, &[]);
+    assert!(launcher.trs_upload_cape(bad.clone(), 1, None, None).await.is_err());
+    assert!(launcher.trs_upload_cape(real_png(64, 32), 1, None, Some("<b>")).await.is_err());
+    assert!(launcher.trs_upload_cape(real_png(64, 64), 2, None, None).await.is_err(), "Animation ohne Tempo");
+    assert!(launcher.trs_upload_cape(real_png(64, 64), 1, None, None).await.is_err(), "Frames passen nicht");
     assert!(server.hits("POST", "/v1/capes/upload").is_empty(), "ungültige Dateien gehen nie raus");
 
-    let good = dir.path().join("cape.png");
-    let bytes = png_with(64, 32, &[]);
-    std::fs::write(&good, &bytes).unwrap();
-    let cape = launcher.trs_upload_cape(&good, Some("Mein Umhang!")).await.unwrap();
+    let bytes = real_png(64, 32);
+    let cape = launcher.trs_upload_cape(bytes.clone(), 1, Some(300), Some("Mein Umhang!")).await.unwrap();
     assert_eq!(cape.status, types::CapeStatus::Pending);
     let sent = &server.hits("POST", "/v1/capes/upload")[0];
     assert_eq!(sent.header("content-type"), Some("image/png"));
     assert_eq!(sent.body, bytes, "rohes PNG, kein Multipart");
+}
+
+#[tokio::test]
+async fn animated_upload_sends_frames_and_frame_time() {
+    let (_world, server) = world().await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+    // Die Antwort des Mock-Servers passt nicht (404) – hier zählt nur die Anfrage.
+    let _ = launcher.trs_upload_cape(real_png(512, 256 * 4), 4, Some(120), None).await;
+    let sent = server.hits("POST", "/v1/capes/upload");
+    assert_eq!(sent.len(), 1);
+    assert_eq!(sent[0].path, "/v1/capes/upload?frames=4&frameTimeMs=120");
 }
 
 #[tokio::test]

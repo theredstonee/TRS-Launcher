@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use super::validate;
 
-/// Größter Umhang-Faktor, den der Launcher anzeigt (mitgelieferte HD-Umhänge bis 512×256;
-/// eigene Uploads bleiben bei 1–4, siehe `png::upload_scale`).
+/// Größter Umhang-Faktor, den der Launcher anzeigt (HD-Umhänge bis 512×256 je Frame –
+/// mitgelieferte wie eigene Uploads, siehe `png::upload_layout`).
 pub(crate) const MAX_CAPE_SCALE: u32 = 8;
 
 // --- Profil -------------------------------------------------------------------------
@@ -517,6 +517,16 @@ pub struct Reports {
     pub reasons: BTreeMap<String, u64>,
 }
 
+/// Bisherige Uploads des Hochladers (alle Status, inklusive dieses).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct OwnerStats {
+    pub uploads: u64,
+    pub approved: u64,
+    pub pending: u64,
+    pub rejected: u64,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ApiAdminCape {
@@ -534,6 +544,11 @@ pub(crate) struct ApiAdminCape {
     pub reject_reason: Option<String>,
     #[serde(default)]
     pub reports: Reports,
+    /// Größe der gespeicherten Datei (ältere Server: fehlt).
+    #[serde(default)]
+    pub bytes: Option<u64>,
+    #[serde(default)]
+    pub owner_stats: Option<OwnerStats>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -552,6 +567,8 @@ pub struct AdminCape {
     pub reviewed_at: Option<String>,
     pub reviewed_by: Option<String>,
     pub reports: Reports,
+    pub bytes: Option<u64>,
+    pub owner_stats: Option<OwnerStats>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

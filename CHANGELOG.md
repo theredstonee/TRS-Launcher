@@ -30,6 +30,14 @@ How to write an entry:
   the window, paste a link, type a player's name to copy their skin, or bring over the skins you saved in the official
   Minecraft Launcher, Prism Launcher or the Modrinth App – with a checklist and previews. The launcher recognises slim
   (Alex) arms by itself; for a single skin you can still change the name and model before it's added.
+- **Upload capes the way you want them.** The new cape dialog works like cropping a profile picture: pick any image
+  (PNG, JPEG, WebP), drag and zoom to choose the part that goes on the cape and watch it live on the player in 3D.
+  Animated GIFs, several images at once, sprite sheets and TRS Studio exports become animated capes with up to 16
+  frames – you pick the speed. Custom capes can now be up to 512×256 pixels per frame and 5 MB.
+- **TRS capes in HD in the game.** The TRS Client now also loads large HD capes up to 8 MB.
+- **For the team: reviewing capes is faster.** Click a waiting cape to see it on the player in 3D, the texture pixel
+  by pixel with zoom and every frame, and who uploaded it. Approve with A, reject with D (with a reason to pick) and
+  browse with the arrow keys.
 
 ### Deutsch
 
@@ -46,6 +54,15 @@ How to write an entry:
   die Skins aus dem offiziellen Minecraft Launcher, dem Prism Launcher oder der Modrinth App holen – mit Auswahlliste
   und Vorschau. Schlanke (Alex-)Arme erkennt der Launcher selbst; bei einem einzelnen Skin kannst du Name und Modell
   vor dem Hinzufügen noch ändern.
+- **Umhänge hochladen, wie du sie willst.** Der neue Umhang-Dialog funktioniert wie das Zuschneiden eines Profilbilds:
+  beliebiges Bild wählen (PNG, JPEG, WebP), den Ausschnitt verschieben und zoomen und ihn live in 3D am Spieler
+  sehen. Animierte GIFs, mehrere Bilder auf einmal, Sprite-Sheets und TRS-Studio-Exporte werden zu animierten
+  Umhängen mit bis zu 16 Frames – das Tempo bestimmst du. Eigene Umhänge dürfen jetzt bis 512×256 Pixel je Frame und
+  5 MB groß sein.
+- **TRS-Umhänge in HD im Spiel.** Der TRS Client lädt jetzt auch große HD-Umhänge bis 8 MB.
+- **Fürs Team: Umhänge schneller prüfen.** Ein Klick auf einen wartenden Umhang zeigt ihn in 3D am Spieler, die
+  Textur Pixel für Pixel mit Zoom und allen Frames und wer ihn hochgeladen hat. Freigeben mit A, ablehnen mit D (mit
+  auswählbarem Grund), blättern mit den Pfeiltasten.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 
