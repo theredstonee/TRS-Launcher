@@ -25,6 +25,8 @@ public final class MapColors {
 	public static final int MAP_WATER = 0x4040FF;
 	/** Standard-Wasserfarbe (Ebenen), falls die Version keine Tönung liefert. */
 	public static final int DEFAULT_WATER = 0x3F76E4;
+	/** Gedämpftes Grün für Blumen/Feldfrüchte über dem Boden. */
+	public static final int FLOWER_GREEN = 0x5C8A2F;
 	/** Höhlenwand. */
 	public static final int WALL_RGB = 0x24232A;
 

@@ -39,11 +39,31 @@ public final class ColumnScanner {
 					heights[i] = Math.max(min, top);
 					continue;
 				}
+				// Blumen/Feldfrüchte (Pflanzenfarbe ohne Tönung): Boden darunter zeigen, leicht grün – statt grellem Grün.
+				if (rgb == MapColors.MAP_PLANT && r.tint(x, y, z) == -1) {
+					int ground = groundBelow(r, x, y, z, min);
+					if (ground != 0) {
+						pixels[i] = MapColors.KNOWN | MapColors.mix(ground, MapColors.FLOWER_GREEN, 0.3f);
+						heights[i] = y - 1;
+						continue;
+					}
+				}
 				pixels[i] = colorAt(r, x, y, z, rgb, min);
 				heights[i] = y;
 			}
 		}
 		return true;
+	}
+
+	/** Farbe (getönt) des nächsten festen Blocks unter y (höchstens 3 tiefer), 0 = keiner/Wasser. */
+	private static int groundBelow(ChunkReader r, int x, int y, int z, int min) {
+		for (int yy = y - 1; yy >= Math.max(min, y - 3); yy--) {
+			int c = r.block(x, yy, z) & MapColors.RGB;
+			if (c == 0) continue;
+			if (c == MapColors.MAP_WATER) return 0;
+			return MapColors.tint(c, r.tint(x, yy, z));
+		}
+		return 0;
 	}
 
 	/**

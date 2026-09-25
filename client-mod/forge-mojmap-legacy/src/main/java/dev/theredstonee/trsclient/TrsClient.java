@@ -133,6 +133,12 @@ public final class TrsClient {
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(() -> TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(() -> TrsKeys.freelook));
+		modules.worldMapKey.link(TrsKeys.link(() -> TrsKeys.worldMap));
+		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
+		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FMLPaths.CONFIGDIR.get());
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
+		}, "TRS Client map save"));
 		if (status == ConfigStore.Status.RECOVERED) {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
 		}
@@ -335,6 +341,17 @@ public final class TrsClient {
 			}
 		}
 		// Garderobe (Taste standardmäßig unbelegt)
+		while (TrsKeys.worldMap.consumeClick()) {
+			if (mc.player != null && modules.worldMap.isEnabled() && Mc.screen() == null) {
+				dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
+				if (screen != null) Mc.setScreen(screen);
+			}
+		}
+		if (modules.keyDefaults.needsWorldMapKeyCheck() && mc.options != null) {
+			modules.keyDefaults.markWorldMapKeyChecked();
+			if (TrsKeys.resolveWorldMapConflict()) LOGGER.info("Weltkarten-Taste M war doppelt belegt – freigegeben");
+			saveConfig();
+		}
 		while (TrsKeys.wardrobe.consumeClick()) {
 			if (Mc.screen() == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
 				Mc.setScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));

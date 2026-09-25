@@ -159,6 +159,11 @@ public final class HudManager {
 	public void draw(Gfx g, Font font, HudElement e, int sw, int sh, boolean preview) {
 		int[] b = bounds(font, e, sw, sh, preview);
 		float scale = e.module().scale.getFloat();
+		if (!preview) {
+			e.originX = b[0];
+			e.originY = b[1];
+			e.originScale = scale;
+		}
 		g.push();
 		g.translate(b[0], b[1]);
 		g.scale(scale);

@@ -71,7 +71,8 @@ public final class Waypoints {
 		if (worldKey.isEmpty()) worldKey = currentWorldKey();
 
 		boolean dead = player.getHealth() <= 0;
-		if (dead && !wasDead && modules.waypoints.isEnabled() && modules.waypointDeath.get()) {
+		if (dead && !wasDead && modules.waypointDeath.get()
+				&& (modules.waypoints.isEnabled() || modules.minimap.isEnabled() || modules.worldMap.isEnabled())) {
 			store.setDeath(worldKey, floor(player.posX), floor(player.posY), floor(player.posZ),
 					Mc.dimensionId(), 0xE0281E);
 			save();

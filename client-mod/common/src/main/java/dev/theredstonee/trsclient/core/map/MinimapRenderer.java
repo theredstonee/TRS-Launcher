@@ -85,7 +85,8 @@ public final class MinimapRenderer {
 		int opacity = Math.round(m.minimapOpacity.getFloat() * 2.55f);
 		Theme theme = Theme.get();
 
-		float target = m.minimapZoom.get().pixelsPerBlock();
+		// Zoom in Bildschirmpixeln je Block (ganzzahlig → gestochen scharf), umgerechnet in GUI-Pixel.
+		float target = (float) (m.minimapZoom.get().pixelsPerBlock() / Math.max(0.5, scale));
 		zoom = zoom < 0 ? target : Anim.approach(zoom, target, dt, 0.09f);
 		// Drehen an/aus weich überblenden.
 		float spinTarget = m.minimapRotate.get() ? 1f : 0f;
@@ -180,6 +181,13 @@ public final class MinimapRenderer {
 	/** Zeichnet das Welt-Rechteck [wx0,wx1]×[wz0,wz1], aufgeteilt auf die Bereichs-Texturen. */
 	static void drawPieces(Canvas c, MapEngine e, MapLayer layer, double wx0, double wz0, double wx1, double wz1,
 			double originX, double originZ, int tint, long now) {
+		// Kanten auf 1/16 Block runden: benachbarte Stücke (Streifen, Bereiche) teilen dann exakt dieselbe Kante –
+		// keine Haarrisse beim Drehen, keine doppelt gezeichneten Linien.
+		wx0 = Math.round(wx0 * SUB) / (double) SUB;
+		wx1 = Math.round(wx1 * SUB) / (double) SUB;
+		wz0 = Math.round(wz0 * SUB) / (double) SUB;
+		wz1 = Math.round(wz1 * SUB) / (double) SUB;
+		if (wx1 <= wx0 || wz1 <= wz0) return;
 		int rx0 = (int) Math.floor(wx0) >> MapRegion.SHIFT, rx1 = (int) Math.floor(wx1 - 1e-6) >> MapRegion.SHIFT;
 		int rz0 = (int) Math.floor(wz0) >> MapRegion.SHIFT, rz1 = (int) Math.floor(wz1 - 1e-6) >> MapRegion.SHIFT;
 		for (int rz = rz0; rz <= rz1; rz++) {

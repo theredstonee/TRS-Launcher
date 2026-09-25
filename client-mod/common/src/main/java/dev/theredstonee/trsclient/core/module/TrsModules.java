@@ -294,13 +294,13 @@ public final class TrsModules {
 		}
 	}
 
-	/** Zoomstufen der Minimap: GUI-Pixel je Block. */
+	/** Zoomstufen der Minimap: Bildschirmpixel je Block (ganzzahlig = scharf, unabhängig von der GUI-Größe). */
 	public enum MinimapZoom implements ChoiceSetting.Option {
 		VERY_FAR("Very far", 0.5f),
-		FAR("Far", 0.8f),
-		NORMAL("Normal", 1.25f),
-		NEAR("Near", 2f),
-		CLOSE("Very close", 3f);
+		FAR("Far", 1f),
+		NORMAL("Normal", 2f),
+		NEAR("Near", 3f),
+		CLOSE("Very close", 4f);
 
 		private final String label;
 		private final float pixelsPerBlock;
@@ -315,7 +315,7 @@ public final class TrsModules {
 			return label;
 		}
 
-		/** GUI-Pixel je Block. */
+		/** Bildschirmpixel je Block. */
 		public float pixelsPerBlock() {
 			return pixelsPerBlock;
 		}

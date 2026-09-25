@@ -20,6 +20,23 @@ How to write an entry:
 
 ### English
 
+- **A much better minimap.** The TRS Client minimap now glides: movement, turning and zooming are smooth instead of
+  jumping from block to block, and the map is sharp at every zoom level (one pixel per block, drawn crisp). It shows
+  real block colours with biome-tinted grass and leaves, soft relief shading, clear water that gets darker with depth,
+  round or square, in a redstone frame with compass letters. Below it: coordinates, biome and in-game time if you
+  like. Underground and in the Nether it switches to a cave view on its own. Players show their faces (TRS friends get
+  a golden ring), and you can show hostile mobs and animals as dots. Waypoints and your last death point appear on the
+  edge when they are far away.
+- **New: fullscreen world map (M).** Everything you have explored stays on the map – saved per world, server and
+  dimension on your PC (size-limited). Drag to move, scroll to zoom around the mouse, see the coordinates under the
+  cursor and jump back to yourself with one click. Right-click to create, edit, hide or delete waypoints right on the
+  map. If another map mod already uses M, the TRS key starts unbound instead of clashing.
+- **Fair Play with one switch.** One switch turns off everything a map could use to cheat: no cave view, and players
+  and mobs only show up when you could actually see them. Servers that ask map mods for fair play (the common Xaero
+  codes) are respected automatically.
+- **Everything adjustable.** Shape, size, zoom, opacity, rotation, every marker and every line below the map can be set
+  in the TRS menu; position and size in the HUD editor.
+
 - **Wardrobe with a full skin editor in the game.** The TRS Client now has a wardrobe (title screen bar, TRS menu or
   your own key): your skins with favourites and a library, outfits (skin + cape) to flip through, your Minecraft and
   TRS capes, and your emote wheel – all with a big 3D preview. "Add skin" takes a file, a link or a player name. Apply
@@ -131,6 +148,24 @@ How to write an entry:
   badge" in the privacy settings still turns yours off.
 
 ### Deutsch
+
+- **Eine viel bessere Minimap.** Die Minimap des TRS Client gleitet jetzt: Bewegen, Drehen und Zoomen laufen flüssig
+  statt von Block zu Block zu springen, und die Karte ist in jeder Zoomstufe scharf (ein Pixel je Block, klar
+  gezeichnet). Sie zeigt echte Blockfarben mit Gras und Laub in Biomfarbe, sanfte Relief-Schattierung, klares Wasser,
+  das mit der Tiefe dunkler wird, rund oder eckig, im Redstone-Rahmen mit Himmelsrichtungen. Darunter auf Wunsch
+  Koordinaten, Biom und Spielzeit. Unter Tage und im Nether wechselt sie von selbst in die Höhlenansicht. Spieler
+  erscheinen mit Gesicht (TRS-Freunde mit goldenem Ring), feindliche Kreaturen und Tiere auf Wunsch als Punkte.
+  Wegpunkte und dein letzter Todespunkt stehen am Rand, wenn sie weit weg sind.
+- **Neu: Weltkarte im Vollbild (M).** Alles, was du erkundet hast, bleibt auf der Karte – gespeichert je Welt, Server
+  und Dimension auf deinem PC (in der Größe begrenzt). Ziehen zum Verschieben, Mausrad zum Zoomen um den Mauszeiger,
+  Koordinaten unter dem Zeiger und mit einem Klick zurück zu dir. Per Rechtsklick legst du Wegpunkte direkt auf der
+  Karte an, bearbeitest, versteckst oder löschst sie. Nutzt eine andere Karten-Mod schon M, startet die TRS-Taste
+  unbelegt statt doppelt belegt.
+- **Fair Play mit einem Schalter.** Ein Schalter schaltet alles ab, womit eine Karte schummeln könnte: keine
+  Höhlenansicht, Spieler und Kreaturen nur, wenn du sie wirklich sehen könntest. Server, die von Karten-Mods Fair Play
+  verlangen (die verbreiteten Xaero-Codes), werden automatisch beachtet.
+- **Alles einstellbar.** Form, Größe, Zoom, Deckkraft, Drehung, jede Markierung und jede Zeile unter der Karte stellst
+  du im TRS-Menü ein; Lage und Größe im HUD-Editor.
 
 - **Garderobe mit vollem Skin-Editor im Spiel.** Der TRS Client hat jetzt eine Garderobe (Leiste im Titelbildschirm,
   TRS-Menü oder eigene Taste): deine Skins mit Favoriten und Bibliothek, Outfits (Skin + Umhang) zum Durchblättern,

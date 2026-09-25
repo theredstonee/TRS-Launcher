@@ -37,10 +37,15 @@ public final class WorldMapUi extends UiScreen {
 		boolean isMapKey(int rawKey);
 	}
 
-	static final float MIN_SCALE = 0.125f;
-	static final float MAX_SCALE = 8f;
-	/** Ab diesem Zoom (GUI-Pixel je Block) werden die vollen Bereichs-Texturen gezeichnet. */
-	static final float DETAIL_SCALE = 0.5f;
+	static final float MIN_SCALE = 0.03f;
+	static final float MAX_SCALE = 16f;
+	/**
+	 * Zoomstufen in Bildschirmpixeln je Block – ganzzahlige Vielfache bzw. Teiler, damit jeder Block gleich breit ist
+	 * (kein Flimmern beim Ziehen). Die GUI-Skalierung wird herausgerechnet.
+	 */
+	static final float[] LADDER = {0.125f, 0.25f, 0.5f, 1f, 2f, 3f, 4f, 6f, 8f, 12f, 16f};
+	/** Ab diesem Zoom (Bildschirmpixel je Block) werden die vollen Bereichs-Texturen gezeichnet. */
+	static final float DETAIL_SCALE = 1f;
 	static final int BAR_H = 22;
 	static final int[] COLORS = {0xE0281E, 0xFF7A1F, 0xFFB84D, 0xF2E14C, 0x3DDC84, 0x2FA85A, 0x4DD8E0, 0x3D7BFF,
 			0xB07CFF, 0xFF6FB5, 0xFFFFFF, 0xB8B8C8};
@@ -55,6 +60,7 @@ public final class WorldMapUi extends UiScreen {
 	private double anchorWX, anchorWZ;
 	private float anchorSX, anchorSY;
 	private boolean surfaceOnly;
+	private int step;
 
 	private boolean dragging;
 	private double dragX, dragY;
@@ -84,8 +90,8 @@ public final class WorldMapUi extends UiScreen {
 	public WorldMapUi(MapEngine engine, Host host) {
 		this.e = engine;
 		this.host = host;
-		float start = engine.modules().minimapZoom.get().pixelsPerBlock();
-		scale = targetScale = Math.max(1f, start);
+		step = ladderIndex(Math.max(2f, engine.modules().minimapZoom.get().pixelsPerBlock()));
+		scale = targetScale = LADDER[step] / (float) guiScale();
 		centerX = engine.playerX();
 		centerZ = engine.playerZ();
 		engine.setWorldMapOpen(true);
@@ -136,12 +142,16 @@ public final class WorldMapUi extends UiScreen {
 		double s = guiScale();
 		hover.clear();
 		drawMap(c, layer, w, h, now);
-		if (e.modules().worldMapGrid.get() && scale >= 3f) grid(c, w, h);
+		if (e.modules().worldMapGrid.get() && scale * s >= 6f) grid(c, w, h);
 		markers(c, w, h, mx, my, s);
 		chrome(c, w, h, mx, my, t, layer);
+		// Überlagerungen nach vorn heben: Minecraft zeichnet GUI-Text mit eigener Tiefe.
+		c.push();
+		c.raise(300);
 		if (!hover.isEmpty() && !menuOpen && !dialogOpen) tooltip(c, mx, my, t);
 		if (menuOpen) menu(c, mx, my, t);
 		if (dialogOpen) dialog(c, w, h, mx, my, t);
+		c.pop();
 	}
 
 	// --- Karte ---
@@ -155,9 +165,10 @@ public final class WorldMapUi extends UiScreen {
 		c.push();
 		c.translate(w / 2f, h / 2f);
 		c.scale(scale, scale);
-		if (scale >= DETAIL_SCALE) {
+		float screenPx = scale * (float) guiScale();
+		if (screenPx >= DETAIL_SCALE) {
 			// Unter den Bereichen die Übersicht (falls ein Bereich noch lädt) – nur bei mittlerem Zoom sichtbar.
-			if (scale < 1.5f) supers(c, layer, wx0, wz0, wx1, wz1, now);
+			if (screenPx < 3f) supers(c, layer, wx0, wz0, wx1, wz1, now);
 			MinimapRenderer.drawPieces(c, e, layer, wx0, wz0, wx1, wz1, centerX, centerZ, 0xFFFFFFFF, now);
 		} else {
 			supers(c, layer, wx0, wz0, wx1, wz1, now);
@@ -196,7 +207,7 @@ public final class WorldMapUi extends UiScreen {
 	}
 
 	private void grid(Canvas c, int w, int h) {
-		int alphaChunk = scale >= 6f ? 0x28 : 0x18;
+		int alphaChunk = scale * guiScale() >= 12f ? 0x28 : 0x18;
 		double wx0 = centerX - w / 2.0 / scale, wz0 = centerZ - h / 2.0 / scale;
 		int first = (int) Math.floor(wx0 / 16) * 16;
 		for (int x = first; x <= wx0 + w / scale + 16; x += 16) {
@@ -237,6 +248,8 @@ public final class WorldMapUi extends UiScreen {
 		double px = e.playerX(), pz = e.playerZ();
 		// Wegpunkte.
 		if (m.worldMapWaypoints.get()) {
+			Waypoint hovered = null;
+			double hoveredD = 6.5 * 6.5;
 			for (Waypoint wp : e.waypoints()) {
 				if (!wp.visible && !wp.death) continue;
 				toScreen(wp.x + 0.5, wp.z + 0.5);
@@ -245,16 +258,22 @@ public final class WorldMapUi extends UiScreen {
 				if (wp.death) sprites.draw(c, MapSprites.GRAVE, x, y, 11f, 0f, 0xFFFFFFFF, s);
 				else sprites.draw(c, MapSprites.DIAMOND, x, y, 10f, 0f, 0xFF000000 | wp.color, s);
 				String label = wp.name;
-				if (scale >= 0.35f || Math.abs(mx - x) < 8 && Math.abs(my - y) < 8) {
+				if (scale * s >= 0.7f || Math.abs(mx - x) < 8 && Math.abs(my - y) < 8) {
 					int lw = c.textWidth(label);
 					c.fill(Math.round(x - lw / 2f - 2), Math.round(y + 7), Math.round(x + lw / 2f + 2), Math.round(y + 17), 0xA0000000);
 					c.text(label, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | wp.color, false);
 				}
-				if (Math.abs(mx - x) <= 6 && Math.abs(my - y) <= 6) {
-					hover.add(wp.name);
-					hover.add(I18n.tr("map.distance", distance(wp.x + 0.5 - px, wp.z + 0.5 - pz)));
-					hover.add(wp.x + " / " + wp.y + " / " + wp.z);
+				double d = (mx - x) * (mx - x) + (my - y) * (my - y);
+				if (d <= hoveredD) {
+					hoveredD = d;
+					hovered = wp;
 				}
+			}
+			// Nur der nächste Wegpunkt unter dem Zeiger bekommt den Hinweis.
+			if (hovered != null) {
+				hover.add(hovered.name);
+				hover.add(I18n.tr("map.distance", distance(hovered.x + 0.5 - px, hovered.z + 0.5 - pz)));
+				hover.add(hovered.x + " / " + hovered.y + " / " + hovered.z);
 			}
 		}
 		// Kreaturen und Spieler.
@@ -314,8 +333,8 @@ public final class WorldMapUi extends UiScreen {
 			follow = true;
 			anchored = false;
 		});
-		bx = button(c, bx, "plus", I18n.tr("map.zoomIn"), mx, my, t, () -> zoomBy(2f, w / 2f, h / 2f));
-		bx = textButton(c, bx, "-", I18n.tr("map.zoomOut"), mx, my, t, () -> zoomBy(0.5f, w / 2f, h / 2f));
+		bx = button(c, bx, "plus", I18n.tr("map.zoomIn"), mx, my, t, () -> zoomStep(1, w / 2f, h / 2f));
+		bx = textButton(c, bx, "-", I18n.tr("map.zoomOut"), mx, my, t, () -> zoomStep(-1, w / 2f, h / 2f));
 		if (e.caveActive()) {
 			bx = button(c, bx, surfaceOnly ? "layers" : "sun", I18n.tr(surfaceOnly ? "map.showCave" : "map.showSurface"), mx, my, t,
 					() -> surfaceOnly = !surfaceOnly);
@@ -330,8 +349,8 @@ public final class WorldMapUi extends UiScreen {
 			c.text(pos, 8, h - BAR_H + 7, t.text, false);
 		}
 		String hint = I18n.tr("map.hint");
-		String zoom = scale >= 1f ? Math.round(scale * 10) / 10f + " px/" + I18n.tr("map.block")
-				: "1:" + Math.round(1 / scale);
+		float screenPx = LADDER[step];
+		String zoom = screenPx >= 1f ? Math.round(screenPx) + " px/" + I18n.tr("map.block") : "1:" + Math.round(1 / screenPx);
 		String right = zoom;
 		FairPlay fp = e.fairPlay();
 		if (fp.active()) right = I18n.tr(fp.serverFair() ? "map.fairPlayServer" : "map.fairPlay") + "  ·  " + right;
@@ -509,8 +528,9 @@ public final class WorldMapUi extends UiScreen {
 		dialogRect[1] = y;
 		dialogRect[2] = dw;
 		dialogRect[3] = dh;
+		c.flush();
 		c.push();
-		c.raise(200);
+		c.raise(100);
 		Redstone.window(c, x, y, dw, dh);
 		String title = I18n.tr(editing == null ? "map.newWaypoint" : "map.editWaypoint");
 		c.text(title, x + 10, y + 8, t.text, false);
@@ -608,8 +628,24 @@ public final class WorldMapUi extends UiScreen {
 
 	// --- Eingaben ---
 
-	private void zoomBy(float factor, float sx, float sy) {
-		float next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, targetScale * factor));
+	static int ladderIndex(float screenPx) {
+		int best = 0;
+		for (int i = 0; i < LADDER.length; i++) {
+			if (Math.abs(LADDER[i] - screenPx) < Math.abs(LADDER[best] - screenPx)) best = i;
+		}
+		return best;
+	}
+
+	/** Eine Zoomstufe weiter (+1 = näher) um den Punkt (sx, sy). */
+	private void zoomStep(int dir, float sx, float sy) {
+		int next = Math.max(0, Math.min(LADDER.length - 1, step + dir));
+		if (next == step) return;
+		step = next;
+		zoomTo(LADDER[step] / (float) guiScale(), sx, sy);
+	}
+
+	private void zoomTo(float next, float sx, float sy) {
+		next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, next));
 		if (next == targetScale) return;
 		anchorWX = worldX(sx);
 		anchorWZ = worldZ(sy);
@@ -687,7 +723,7 @@ public final class WorldMapUi extends UiScreen {
 	public boolean mouseScrolled(double mx, double my, double amount) {
 		if (dialogOpen || amount == 0) return false;
 		menuOpen = false;
-		zoomBy((float) Math.pow(1.25, amount), (float) mx, (float) my);
+		zoomStep(amount > 0 ? 1 : -1, (float) mx, (float) my);
 		return true;
 	}
 
@@ -752,13 +788,15 @@ public final class WorldMapUi extends UiScreen {
 	// --- Für den Selbsttest ---
 
 	/** Zoomt sofort (ohne Animation) auf {@code s} GUI-Pixel je Block. */
-	public void setScaleNow(float s) {
-		scale = targetScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
+	public void setScaleNow(float screenPxPerBlock) {
+		step = ladderIndex(screenPxPerBlock);
+		scale = targetScale = LADDER[step] / (float) guiScale();
 		anchored = false;
 	}
 
 	/** Öffnet den Dialog für einen neuen Wegpunkt an dieser Position (Selbsttest). */
 	public void testOpenDialog(int bx, int bz) {
+		menuOpen = false;
 		menuBlockX = bx;
 		menuBlockZ = bz;
 		openDialog(null);

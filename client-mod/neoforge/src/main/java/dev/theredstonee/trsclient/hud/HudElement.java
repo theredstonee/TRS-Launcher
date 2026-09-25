@@ -9,6 +9,8 @@ import net.minecraft.client.gui.Font;
 public abstract class HudElement {
 	protected final HudModule module;
 	protected final Minecraft mc = Minecraft.getInstance();
+	/** Lage im Bild beim letzten Zeichnen im Spiel (GUI-Pixel) und Skalierung – für Scissor in alten Versionen. */
+	protected float originX, originY, originScale = 1f;
 
 	protected HudElement(HudModule module) {
 		this.module = module;

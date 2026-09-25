@@ -115,6 +115,9 @@ public final class TrsClient implements ClientModInitializer {
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
+		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
+		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
+		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FabricLoader.getInstance().getConfigDir());
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
@@ -126,6 +129,7 @@ public final class TrsClient implements ClientModInitializer {
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
 			saveConfig();
 			waypoints.save();
+			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
 		});
 		String version = FabricLoader.getInstance().getModContainer(MOD_ID)
 				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("?");
@@ -239,6 +243,17 @@ public final class TrsClient implements ClientModInitializer {
 			}
 		}
 		// Garderobe (Taste standardmäßig unbelegt)
+		while (TrsKeys.worldMap.consumeClick()) {
+			if (mc.player != null && modules.worldMap.isEnabled() && Mc.screen() == null) {
+				dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
+				if (screen != null) Mc.setScreen(screen);
+			}
+		}
+		if (modules.keyDefaults.needsWorldMapKeyCheck() && mc.options != null) {
+			modules.keyDefaults.markWorldMapKeyChecked();
+			if (TrsKeys.resolveWorldMapConflict()) LOGGER.info("Weltkarten-Taste M war doppelt belegt – freigegeben");
+			saveConfig();
+		}
 		while (TrsKeys.wardrobe.consumeClick()) {
 			if (Mc.screen() == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
 				Mc.setScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));

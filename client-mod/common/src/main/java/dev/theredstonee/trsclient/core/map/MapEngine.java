@@ -29,7 +29,7 @@ public final class MapEngine {
 	/** So viele Höhlenebenen bleiben geöffnet. */
 	static final int MAX_CAVE_LAYERS = 4;
 	/** Zeitbudget fürs Abtasten je Tick (ns). */
-	static final long SAMPLE_BUDGET_NS = 900_000L;
+	static final long SAMPLE_BUDGET_NS = 600_000L;
 	static final int MAX_ENTITIES = 256;
 
 	private static MapEngine instance;
@@ -150,6 +150,13 @@ public final class MapEngine {
 		if (dim == null) return false;
 		String d = dim.toLowerCase(Locale.ROOT);
 		return d.contains("nether") || d.equals("dim-1") || d.equals("-1");
+	}
+
+	/** End erkennen (dort kein Himmelslicht). */
+	public static boolean isEnd(String dim) {
+		if (dim == null) return false;
+		String d = dim.toLowerCase(Locale.ROOT);
+		return d.contains("the_end") || d.endsWith(":end") || d.equals("dim1");
 	}
 
 	/** Ebene, die die Minimap gerade zeigt. */
@@ -368,7 +375,10 @@ public final class MapEngine {
 		// Oberfläche oder Höhle?
 		boolean nether = isNether(dim);
 		int sky = p.skyLight();
-		if (underground) {
+		if (isEnd(dim)) {
+			// Das End hat kein Himmelslicht – dort gibt es keine Höhlen im Sinne der Karte.
+			underground = false;
+		} else if (underground) {
 			if (sky >= 8) underground = false;
 		} else if (sky <= 2) {
 			underground = true;
@@ -381,7 +391,7 @@ public final class MapEngine {
 		ChunkReader reader = p.reader();
 		if (reader != null) {
 			long deadline = System.nanoTime() + SAMPLE_BUDGET_NS;
-			int radius = Math.max(2, Math.min(16, p.renderDistance()));
+			int radius = Math.max(2, Math.min(12, p.renderDistance()));
 			try {
 				if (caveActive && cave != null) {
 					sample(reader, cave, caveStamps, true, cave.caveRef, Math.min(radius, 8), deadline, now);

@@ -37,6 +37,16 @@ public final class ChatCompat {
 		return c == null ? "" : c.getUnformattedText();
 	}
 
+	/** Text mit Farbcodes (für die Fair-Play-Codes der Karten-Mods). */
+	public static String formatted(ClientChatReceivedEvent event) {
+		//? if >=1.9 {
+		/*ITextComponent c = event.getMessage();
+		*///?} else {
+		IChatComponent c = event.message;
+		//?}
+		return c == null ? "" : c.getFormattedText();
+	}
+
 	/** Meldung über der Hotbar (nicht im Chat) – die wird nicht angefasst. */
 	public static boolean isActionBar(ClientChatReceivedEvent event) {
 		//? if >=1.12 {

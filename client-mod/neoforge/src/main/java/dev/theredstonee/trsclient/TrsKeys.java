@@ -29,6 +29,8 @@ public final class TrsKeys {
 	public static KeyMapping toggleRecording;
 	/** Öffnet die Garderobe (standardmäßig unbelegt). */
 	public static KeyMapping wardrobe;
+	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
+	public static KeyMapping worldMap;
 
 	private TrsKeys() {
 	}
@@ -55,6 +57,7 @@ public final class TrsKeys {
 		saveClip = register(event, new KeyMapping("key.trsclient.saveClip", KEYBOARD, InputConstants.KEY_F9, CATEGORY));
 		toggleRecording = register(event, new KeyMapping("key.trsclient.toggleRecording", KEYBOARD, InputConstants.KEY_F10, CATEGORY));
 		wardrobe = register(event, new KeyMapping("key.trsclient.wardrobe", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		worldMap = register(event, new KeyMapping("key.trsclient.worldMap", KEYBOARD, InputConstants.KEY_M, CATEGORY));
 	}
 
 	/**
@@ -67,6 +70,26 @@ public final class TrsKeys {
 		if (boundKey(zoom) != dev.theredstonee.trsclient.compat.Keys.code("key.keyboard.c")) return false;
 		zoom.setKey(InputConstants.getKey("key.keyboard.v"));
 		KeyMapping.resetMapping();
+		return true;
+	}
+
+	/**
+	 * Einmalig: liegt die Weltkarten-Taste noch auf M und nutzt eine andere Belegung (z. B. eine andere Karten-Mod)
+	 * ebenfalls M, wird die TRS-Taste freigegeben (im TRS-Menü/in den Steuerungen neu belegbar).
+	 * @return true, wenn freigegeben wurde
+	 */
+	public static boolean resolveWorldMapConflict() {
+		if (worldMap == null) return false;
+		net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+		if (mc == null || mc.options == null) return false;
+		java.util.List<String> others = new java.util.ArrayList<>();
+		for (KeyMapping k : mc.options.keyMappings) {
+			if (k != worldMap) others.add(k.saveString());
+		}
+		if (!dev.theredstonee.trsclient.core.config.KeyDefaults.conflicts(worldMap.saveString(), "key.keyboard.m", others)) return false;
+		worldMap.setKey(InputConstants.UNKNOWN);
+		KeyMapping.resetMapping();
+		mc.options.save();
 		return true;
 	}
 
