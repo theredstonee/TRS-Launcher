@@ -312,7 +312,7 @@ public final class AutoTest {
 					if (clipsTest.step(mc, modules, new CapeTest.Actions() {
 						@Override
 						public void shot(String name) {
-							AutoTest.shot(mc, name);
+							AutoTest.this.shot(mc, name);
 						}
 
 						@Override
