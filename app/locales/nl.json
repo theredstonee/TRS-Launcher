@@ -104,7 +104,15 @@
     "multimc": "MultiMC",
     "curseforge": "CurseForge",
     "modrinth": "Modrinth App",
-    "folder": "Eigen map"
+    "folder": "Eigen map",
+    "lunar": "Lunar Client",
+    "badlion": "Badlion Client",
+    "feather": "Feather Client",
+    "oneclient": "OneClient",
+    "atlauncher": "ATLauncher",
+    "gdlaunchercarbon": "GDLauncher",
+    "tlauncher": "TLauncher",
+    "gdlauncher": "GDLauncher (oud)"
   },
   "syncItem": {
     "options": {
@@ -299,7 +307,8 @@
     "import": {
       "folderMissing": "Deze map bestaat niet.",
       "installationGone": "Deze installatie kan niet meer worden gevonden.",
-      "noInstallation": "Er is geen Minecraft-installatie in deze map gevonden. Kies de map met mods, saves of options.txt."
+      "noInstallation": "Er is geen Minecraft-installatie in deze map gevonden. Kies de map met mods, saves of options.txt.",
+      "tooLarge": "Deze installatie is te groot om te importeren (meer dan {files} bestanden of {gb} GB)."
     },
     "instance": {
       "groupInvalid": "Groepsnamen: maximaal {max} tekens, geen speciale tekens",
@@ -1449,7 +1458,35 @@
       "done": "“{name}” geïmporteerd",
       "packTitle": "Modpack uit bestand",
       "pickFile": "Bestand kiezen …",
-      "packDone": "Modpack geïmporteerd"
+      "packDone": "Modpack geïmporteerd",
+      "downloaded": "{n} bestand van CurseForge gedownload | {n} bestanden van CurseForge gedownload",
+      "manual": "{n} bestand moet je zelf downloaden | {n} bestanden moet je zelf downloaden",
+      "failed": "{n} bestand kon niet worden gedownload | {n} bestanden konden niet worden gedownload"
+    },
+    "launchers": {
+      "title": "Gevonden op deze pc",
+      "count": "{n} installatie | {n} installaties",
+      "unsupported": "niet ondersteund",
+      "unsupportedHint": "{name} slaat geen leesbare profiellijst op. Kies in plaats daarvan de spelmap met ‘Map kiezen’."
+    },
+    "preview": {
+      "show": "Details",
+      "hide": "Details verbergen",
+      "title": "Wat er wordt geïmporteerd",
+      "resourcePacks": "{n} resourcepack | {n} resourcepacks",
+      "shaderPacks": "{n} shaderpack | {n} shaderpacks",
+      "options": "Instellingen en toetsen",
+      "servers": "Serverlijst",
+      "tracked": "{n} bestand blijft bij te werken | {n} bestanden blijven bij te werken",
+      "missing": "{n} ontbrekend bestand wordt van CurseForge gedownload | {n} ontbrekende bestanden worden van CurseForge gedownload",
+      "empty": "Geen werelden, mods of packs gevonden – er wordt alleen een nieuwe instantie gemaakt.",
+      "never": "Nooit gekopieerd: inloggegevens, caches, logs en bestanden van de launcher zelf."
+    },
+    "notes": {
+      "clientModsSkipped": "De ingebouwde mods van de client zijn niet vrij en blijven achter – TRS Client neemt hun plaats in. Je werelden, packs, instellingen en eigen mods gaan mee.",
+      "sharedGameDir": "Dit profiel deelt zijn spelmap met andere profielen – alle werelden, packs en instellingen daarin gaan mee.",
+      "loaderMapped": "Deze modloader bestaat niet in TRS, dus de instantie gebruikt Fabric. Sommige mods hebben misschien een vervanger nodig.",
+      "curseForgeDownloads": "Bestanden die de maker alleen binnen CurseForge aanbiedt, moet je daarna zelf downloaden."
     }
   },
   "envEditor": {
@@ -1869,7 +1906,7 @@
       "fromPlayer": "Via spelersnaam",
       "fromPlayerHint": "De skin die een speler nu draagt",
       "fromLaunchers": "Uit andere launchers",
-      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App, ATLauncher",
       "dropTip": "Tip: je kunt PNG-bestanden ook naar het venster slepen.",
       "loading": "Laden …",
       "drop": {
@@ -1901,7 +1938,7 @@
         "scanning": "Opgeslagen skins zoeken …",
         "empty": "Geen opgeslagen skins gevonden in andere launchers.",
         "noSkins": "Geen opgeslagen skins in: {names}",
-        "onlineOnly": "Lunar Client, Feather en Essential bewaren skins alleen in hun online-account – voeg die toe via spelersnaam of link.",
+        "onlineOnly": "Lunar Client, Badlion, Feather en Essential bewaren skins alleen in hun online-account – voeg die toe via spelersnaam of link.",
         "selectAll": "Alles selecteren",
         "selectNone": "Niets selecteren",
         "import": "{n} skin importeren | {n} skins importeren",
@@ -1911,7 +1948,8 @@
       "sources": {
         "minecraft": "Minecraft Launcher",
         "prism": "Prism Launcher",
-        "modrinth": "Modrinth App"
+        "modrinth": "Modrinth App",
+        "atlauncher": "ATLauncher"
       },
       "toasts": {
         "imported": "{n} skin aan je verzameling toegevoegd | {n} skins aan je verzameling toegevoegd",

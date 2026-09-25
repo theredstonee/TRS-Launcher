@@ -462,7 +462,7 @@ pub fn validate_group(group: Option<&str>) -> Result<Option<String>> {
 }
 
 /// Versions-IDs landen später in Pfaden (`versions/<id>/`) und URLs.
-fn is_safe_version_string(v: &str) -> bool {
+pub(crate) fn is_safe_version_string(v: &str) -> bool {
     !v.is_empty()
         && v.len() <= 64
         && v.trim() == v

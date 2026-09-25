@@ -75,7 +75,9 @@ import type {
   DeviceCode,
   HistoryEntry,
   ImportCandidate,
+  ImportOverview,
   ImportProgress,
+  ImportResult,
   ImageEntry,
   Instance,
   InstanceOverrides,
@@ -452,6 +454,8 @@ export const backend = {
   listWorlds: (id: string) => call<ImageEntry[]>('list_worlds', { id }),
 
   scanImports: () => call<ImportCandidate[]>('scan_imports'),
+  /** Wie scanImports, dazu die erkannten Launcher (auch nicht unterstützte). */
+  importOverview: () => call<ImportOverview>('import_overview'),
   /** Öffnet den Ordnerdialog; `null` = abgebrochen. */
   pickImportFolder: () => call<ImportCandidate[] | null>('pick_import_folder'),
   importInstance: (
@@ -459,7 +463,7 @@ export const backend = {
     gameVersion: string | null,
     loader: Loader | null,
     onProgress: (p: ImportProgress) => void,
-  ) => call<Instance>('import_instance', { id, gameVersion, loader, onProgress: channel(onProgress) }),
+  ) => call<ImportResult>('import_instance', { id, gameVersion, loader, onProgress: channel(onProgress) }),
 
   /** TRS-Dienste (Umhänge, Freunde, Verwaltung). Der Token bleibt im Kern. */
   trs: {

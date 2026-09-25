@@ -104,7 +104,15 @@
     "multimc": "MultiMC",
     "curseforge": "CurseForge",
     "modrinth": "Modrinth App",
-    "folder": "Eigener Ordner"
+    "folder": "Eigener Ordner",
+    "lunar": "Lunar Client",
+    "badlion": "Badlion Client",
+    "feather": "Feather Client",
+    "oneclient": "OneClient",
+    "atlauncher": "ATLauncher",
+    "gdlaunchercarbon": "GDLauncher",
+    "tlauncher": "TLauncher",
+    "gdlauncher": "GDLauncher (alt)"
   },
   "syncItem": {
     "options": {
@@ -299,7 +307,8 @@
     "import": {
       "folderMissing": "Dieser Ordner existiert nicht.",
       "installationGone": "Diese Installation wurde nicht mehr gefunden.",
-      "noInstallation": "In diesem Ordner wurde keine Minecraft-Installation gefunden. Wähle den Ordner, in dem mods, saves oder options.txt liegen."
+      "noInstallation": "In diesem Ordner wurde keine Minecraft-Installation gefunden. Wähle den Ordner, in dem mods, saves oder options.txt liegen.",
+      "tooLarge": "Diese Installation ist zu groß für den Import (mehr als {files} Dateien oder {gb} GB)."
     },
     "instance": {
       "groupInvalid": "Gruppennamen: höchstens {max} Zeichen, keine Sonderzeichen",
@@ -1449,7 +1458,35 @@
       "done": "„{name}“ importiert",
       "packTitle": "Modpack aus Datei",
       "pickFile": "Datei wählen …",
-      "packDone": "Modpack importiert"
+      "packDone": "Modpack importiert",
+      "downloaded": "{n} Datei von CurseForge geladen | {n} Dateien von CurseForge geladen",
+      "manual": "{n} Datei muss von Hand geladen werden | {n} Dateien müssen von Hand geladen werden",
+      "failed": "{n} Datei konnte nicht geladen werden | {n} Dateien konnten nicht geladen werden"
+    },
+    "launchers": {
+      "title": "Auf diesem PC gefunden",
+      "count": "{n} Installation | {n} Installationen",
+      "unsupported": "nicht unterstützt",
+      "unsupportedHint": "{name} speichert keine lesbare Profil-Liste. Wähle stattdessen seinen Spielordner über „Ordner durchsuchen“."
+    },
+    "preview": {
+      "show": "Details",
+      "hide": "Details ausblenden",
+      "title": "Das wird übernommen",
+      "resourcePacks": "{n} Ressourcenpaket | {n} Ressourcenpakete",
+      "shaderPacks": "{n} Shaderpaket | {n} Shaderpakete",
+      "options": "Einstellungen und Tastenbelegung",
+      "servers": "Serverliste",
+      "tracked": "{n} Datei bleibt aktualisierbar | {n} Dateien bleiben aktualisierbar",
+      "missing": "{n} fehlende Datei wird von CurseForge geladen | {n} fehlende Dateien werden von CurseForge geladen",
+      "empty": "Keine Welten, Mods oder Pakete gefunden – es entsteht nur eine neue Instanz.",
+      "never": "Nie kopiert: Anmeldedaten, Caches, Logs und Dateien des Launchers selbst."
+    },
+    "notes": {
+      "clientModsSkipped": "Die fest eingebauten Mods des Clients sind nicht frei und bleiben zurück – der TRS Client übernimmt ihren Platz. Deine Welten, Pakete, Einstellungen und eigenen Mods kommen mit.",
+      "sharedGameDir": "Dieses Profil teilt seinen Spielordner mit anderen Profilen – alle Welten, Pakete und Einstellungen darin kommen mit.",
+      "loaderMapped": "Diesen Modloader gibt es in TRS nicht, die Instanz nutzt Fabric. Manche Mods brauchen eventuell Ersatz.",
+      "curseForgeDownloads": "Dateien, die der Autor nur innerhalb von CurseForge anbietet, musst du danach von Hand laden."
     }
   },
   "envEditor": {
@@ -1869,7 +1906,7 @@
       "fromPlayer": "Per Spielername",
       "fromPlayerHint": "Der Skin, den ein Spieler gerade trägt",
       "fromLaunchers": "Aus anderen Launchern",
-      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App, ATLauncher",
       "dropTip": "Tipp: PNG-Dateien kannst du auch ins Fenster ziehen.",
       "loading": "Lädt …",
       "drop": {
@@ -1901,7 +1938,7 @@
         "scanning": "Suche gespeicherte Skins …",
         "empty": "In anderen Launchern wurden keine gespeicherten Skins gefunden.",
         "noSkins": "Keine gespeicherten Skins in: {names}",
-        "onlineOnly": "Lunar Client, Feather und Essential speichern Skins nur in ihrem Online-Konto – die holst du per Spielername oder Link.",
+        "onlineOnly": "Lunar Client, Badlion, Feather und Essential speichern Skins nur in ihrem Online-Konto – die holst du per Spielername oder Link.",
         "selectAll": "Alle auswählen",
         "selectNone": "Keine auswählen",
         "import": "{n} Skin importieren | {n} Skins importieren",
@@ -1911,7 +1948,8 @@
       "sources": {
         "minecraft": "Minecraft Launcher",
         "prism": "Prism Launcher",
-        "modrinth": "Modrinth App"
+        "modrinth": "Modrinth App",
+        "atlauncher": "ATLauncher"
       },
       "toasts": {
         "imported": "{n} Skin zur Sammlung hinzugefügt | {n} Skins zur Sammlung hinzugefügt",

@@ -153,7 +153,22 @@ export function compareText(a: string, b: string): number {
   return a.localeCompare(b, intlLocale(), { sensitivity: 'base' })
 }
 
-export const importSources: ImportSource[] = ['vanilla', 'prism', 'multimc', 'curseforge', 'modrinth', 'folder']
+export const importSources: ImportSource[] = [
+  'vanilla',
+  'curseforge',
+  'modrinth',
+  'prism',
+  'multimc',
+  'lunar',
+  'badlion',
+  'feather',
+  'oneclient',
+  'atlauncher',
+  'gdlaunchercarbon',
+  'gdlauncher',
+  'tlauncher',
+  'folder',
+]
 
 /** Name der Quelle eines Imports (Launcher-Namen bleiben, „Eigener Ordner“ wird übersetzt). */
 export function importSourceLabel(source: ImportSource): string {

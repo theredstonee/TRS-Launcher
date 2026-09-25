@@ -104,7 +104,15 @@
     "multimc": "MultiMC",
     "curseforge": "CurseForge",
     "modrinth": "Modrinth App",
-    "folder": "Özel klasör"
+    "folder": "Özel klasör",
+    "lunar": "Lunar Client",
+    "badlion": "Badlion Client",
+    "feather": "Feather Client",
+    "oneclient": "OneClient",
+    "atlauncher": "ATLauncher",
+    "gdlaunchercarbon": "GDLauncher",
+    "tlauncher": "TLauncher",
+    "gdlauncher": "GDLauncher (eski)"
   },
   "syncItem": {
     "options": {
@@ -299,7 +307,8 @@
     "import": {
       "folderMissing": "Bu klasör mevcut değil.",
       "installationGone": "Bu kurulum artık bulunamıyor.",
-      "noInstallation": "Bu klasörde Minecraft kurulumu bulunamadı. mods, saves veya options.txt içeren klasörü seç."
+      "noInstallation": "Bu klasörde Minecraft kurulumu bulunamadı. mods, saves veya options.txt içeren klasörü seç.",
+      "tooLarge": "Bu kurulum içe aktarmak için çok büyük ({files} dosyadan veya {gb} GB’tan fazla)."
     },
     "instance": {
       "groupInvalid": "Grup adları: en fazla {max} karakter, özel karakter yok",
@@ -1449,7 +1458,35 @@
       "done": "İçe aktarıldı: “{name}”",
       "packTitle": "Dosyadan modpack",
       "pickFile": "Dosya seç …",
-      "packDone": "Modpack içe aktarıldı"
+      "packDone": "Modpack içe aktarıldı",
+      "downloaded": "CurseForge’dan {n} dosya indirildi | CurseForge’dan {n} dosya indirildi",
+      "manual": "{n} dosyanın elle indirilmesi gerekiyor | {n} dosyanın elle indirilmesi gerekiyor",
+      "failed": "{n} dosya indirilemedi | {n} dosya indirilemedi"
+    },
+    "launchers": {
+      "title": "Bu bilgisayarda bulundu",
+      "count": "{n} kurulum | {n} kurulum",
+      "unsupported": "desteklenmiyor",
+      "unsupportedHint": "{name} okunabilir bir profil listesi kaydetmiyor. Bunun yerine oyun klasörünü “Klasöre göz at” ile seç."
+    },
+    "preview": {
+      "show": "Ayrıntılar",
+      "hide": "Ayrıntıları gizle",
+      "title": "İçe aktarılacaklar",
+      "resourcePacks": "{n} kaynak paketi | {n} kaynak paketi",
+      "shaderPacks": "{n} gölgelendirici paketi | {n} gölgelendirici paketi",
+      "options": "Ayarlar ve tuş atamaları",
+      "servers": "Sunucu listesi",
+      "tracked": "{n} dosya güncellenebilir kalır | {n} dosya güncellenebilir kalır",
+      "missing": "Eksik {n} dosya CurseForge’dan indirilir | Eksik {n} dosya CurseForge’dan indirilir",
+      "empty": "Dünya, mod veya paket bulunamadı – yalnızca yeni bir kurulum oluşturulur.",
+      "never": "Asla kopyalanmaz: giriş bilgileri, önbellekler, günlükler ve başlatıcının kendi dosyaları."
+    },
+    "notes": {
+      "clientModsSkipped": "İstemcinin yerleşik modları özgür değildir ve geride kalır – yerlerini TRS Client alır. Dünyaların, paketlerin, ayarların ve kendi modların kopyalanır.",
+      "sharedGameDir": "Bu profil oyun klasörünü başka profillerle paylaşıyor – içindeki tüm dünyalar, paketler ve ayarlar kopyalanır.",
+      "loaderMapped": "Bu mod yükleyici TRS’de yok, bu yüzden kurulum Fabric kullanır. Bazı modların yerine başka mod gerekebilir.",
+      "curseForgeDownloads": "Yazarın yalnızca CurseForge içinde sunduğu dosyaları sonra elle indirmen gerekir."
     }
   },
   "envEditor": {
@@ -1869,7 +1906,7 @@
       "fromPlayer": "Oyuncu adıyla",
       "fromPlayerHint": "Bir oyuncunun şu an giydiği skin",
       "fromLaunchers": "Diğer başlatıcılardan",
-      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App, ATLauncher",
       "dropTip": "İpucu: PNG dosyalarını pencereye de sürükleyebilirsin.",
       "loading": "Yükleniyor …",
       "drop": {
@@ -1901,7 +1938,7 @@
         "scanning": "Kayıtlı skinler aranıyor …",
         "empty": "Diğer başlatıcılarda kayıtlı skin bulunamadı.",
         "noSkins": "Kayıtlı skin yok: {names}",
-        "onlineOnly": "Lunar Client, Feather ve Essential skinleri yalnızca çevrim içi hesaplarında tutar – onları oyuncu adı veya bağlantıyla ekle.",
+        "onlineOnly": "Lunar Client, Badlion, Feather ve Essential skinleri yalnızca çevrim içi hesaplarında tutar – onları oyuncu adı veya bağlantıyla ekle.",
         "selectAll": "Tümünü seç",
         "selectNone": "Hiçbirini seçme",
         "import": "{n} skini içe aktar | {n} skini içe aktar",
@@ -1911,7 +1948,8 @@
       "sources": {
         "minecraft": "Minecraft Launcher",
         "prism": "Prism Launcher",
-        "modrinth": "Modrinth App"
+        "modrinth": "Modrinth App",
+        "atlauncher": "ATLauncher"
       },
       "toasts": {
         "imported": "{n} skin koleksiyonuna eklendi | {n} skin koleksiyonuna eklendi",

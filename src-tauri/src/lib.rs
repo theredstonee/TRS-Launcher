@@ -235,6 +235,7 @@ pub fn run() {
             commands::extras::list_worlds,
             commands::extras::duplicate_instance,
             commands::import::scan_imports,
+            commands::import::import_overview,
             commands::import::pick_import_folder,
             commands::import::import_instance,
             commands::skins::skin_profile,

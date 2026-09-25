@@ -18,8 +18,13 @@
 //!   `custom_minecraft_skins` (`texture_key`, `variant`) und
 //!   `custom_minecraft_skin_textures` (`texture` = PNG).
 //!
-//! Lunar Client, Feather und Essential legen Skins nur in ihrem Online-Konto ab
-//! (keine lesbare Datei auf der Platte) – dafür gibt es „per Spielername/Link“.
+//! - ATLauncher: `configs/images/skins/<uuid>.png` – die zuletzt geladenen
+//!   Skins der eigenen Konten (`FileSystem.SKINS`, `AbstractAccount.updateSkin`).
+//!
+//! Lunar Client, Badlion, Feather, Essential, OneClient, GDLauncher, TLauncher,
+//! MultiMC und die CurseForge-App legen keine lesbare Skin-Liste auf der Platte
+//! ab (geprüft an echten Dateien bzw. am Quellcode) – sie werden nur als
+//! „gefunden, ohne Skins“ gemeldet; dafür gibt es „per Spielername/Link“.
 
 use std::collections::{HashMap, HashSet};
 use std::io::Read;
@@ -67,6 +72,8 @@ pub enum ImportSource {
     Minecraft,
     Prism,
     Modrinth,
+    #[serde(rename = "atlauncher")]
+    AtLauncher,
 }
 
 /// Ein vorgemerkter Skin, wie ihn das Webview sieht.
@@ -117,6 +124,8 @@ pub struct LauncherScan {
     pub candidates: Vec<ImportCandidate>,
     /// Launcher, deren Daten auf diesem PC liegen (auch ohne Skins).
     pub found: Vec<ImportSource>,
+    /// Launcher, die hier liegen, aber keine lesbare Skin-Liste speichern.
+    pub without_skins: Vec<crate::import::ImportSource>,
 }
 
 /// Übernehmen einer Vormerkung – Name/Modell optional überschrieben.
@@ -629,6 +638,47 @@ pub(crate) fn scan_modrinth(app_dir: &Path) -> Vec<FoundSkin> {
     out
 }
 
+/// ATLauncher: zwischengespeicherte Skins der eigenen Konten (`<uuid>.png`).
+pub(crate) fn scan_atlauncher(root: &Path) -> Vec<FoundSkin> {
+    let Ok(entries) = std::fs::read_dir(root.join("configs").join("images").join("skins")) else { return Vec::new() };
+    let mut files: Vec<PathBuf> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("png")))
+        // `default.png` ist der Standard-Skin, den ATLauncher selbst mitbringt.
+        .filter(|p| !p.file_stem().is_some_and(|s| s.eq_ignore_ascii_case("default")))
+        .take(MAX_SCAN)
+        .collect();
+    files.sort();
+    files
+        .into_iter()
+        .filter_map(|path| {
+            let bytes = read_small_png(&path)?;
+            Some(FoundSkin { source: ImportSource::AtLauncher, name: String::new(), variant: detect_variant(&bytes), bytes })
+        })
+        .collect()
+}
+
+/// Launcher, die auf diesem PC liegen, aber keine Skin-Liste speichern.
+pub(crate) fn launchers_without_skins(homes: &LauncherHomes) -> Vec<crate::import::ImportSource> {
+    use crate::import::ImportSource as S;
+    let any = |dirs: &[PathBuf]| dirs.iter().any(|d| d.is_dir());
+    [
+        (S::Lunar, any(&homes.lunar)),
+        (S::Badlion, any(&homes.badlion)),
+        (S::Feather, any(&homes.feather)),
+        (S::OneClient, any(&homes.oneclient)),
+        (S::GdLauncher, any(&homes.gdlauncher)),
+        (S::GdLauncherCarbon, any(&homes.carbon)),
+        (S::TLauncher, any(&homes.tlauncher)),
+        (S::MultiMc, any(&homes.multimc)),
+        (S::CurseForge, any(&homes.curseforge)),
+    ]
+    .into_iter()
+    .filter_map(|(source, present)| present.then_some(source))
+    .collect()
+}
+
 /// Alle bekannten Launcher durchsuchen. Liefert die Skins (ohne doppelte
 /// Bilder) und welche Launcher überhaupt Daten auf diesem PC haben.
 pub(crate) fn scan_launchers(homes: &LauncherHomes) -> (Vec<FoundSkin>, Vec<ImportSource>) {
@@ -655,16 +705,25 @@ pub(crate) fn scan_launchers(homes: &LauncherHomes) -> (Vec<FoundSkin>, Vec<Impo
     for dir in modrinth {
         skins.extend(scan_modrinth(dir));
     }
+    let atl: Vec<&PathBuf> = homes.atlauncher.iter().filter(|d| d.join("configs").is_dir()).collect();
+    if !atl.is_empty() {
+        found.push(ImportSource::AtLauncher);
+    }
+    for dir in atl {
+        skins.extend(scan_atlauncher(dir));
+    }
 
     // Gleiches Bild mehrfach (z. B. in zwei Launchern) → nur einmal anbieten.
     let mut seen = HashSet::new();
     skins.retain(|s| seen.insert(sha256(&s.bytes)));
     skins.truncate(MAX_SCAN);
-    // Modrinth kennt keine Namen → durchnummerieren.
-    let mut n = 0;
+    // Modrinth und ATLauncher kennen keine Namen → je Quelle durchnummerieren.
+    let mut counts: HashMap<ImportSource, u32> = HashMap::new();
     for skin in skins.iter_mut().filter(|s| s.name.is_empty()) {
-        n += 1;
-        skin.name = format!("Modrinth App {n}");
+        let n = counts.entry(skin.source).or_default();
+        *n += 1;
+        let label = if skin.source == ImportSource::AtLauncher { "ATLauncher" } else { "Modrinth App" };
+        skin.name = format!("{label} {n}");
     }
     (skins, found)
 }
@@ -791,12 +850,15 @@ impl Launcher {
     }
 
     pub(crate) async fn scan_launcher_skins_in(&self, homes: LauncherHomes) -> Result<LauncherScan> {
-        let (skins, found) = tokio::task::spawn_blocking(move || scan_launchers(&homes))
+        let (skins, found, without_skins) = tokio::task::spawn_blocking(move || {
+            let (skins, found) = scan_launchers(&homes);
+            (skins, found, launchers_without_skins(&homes))
+        })
             .await
             .map_err(|e| Error::Internal(e.to_string()))?;
         let known = library_hashes(self.paths()).await;
         let candidates = skins.into_iter().map(|s| self.stage(s.bytes, s.name, s.variant, s.source, &known)).collect();
-        Ok(LauncherScan { candidates, found })
+        Ok(LauncherScan { candidates, found, without_skins })
     }
 
     /// Übernimmt vorgemerkte Skins in die Sammlung (jeder für sich – ein
@@ -1091,6 +1153,30 @@ mod tests {
         // Vanilla: 2, Prism: „Winter“ = gleiches Bild wie Vanilla „Zweiter“, „lose“ = gleiches wie
         // „TJC“ → weg; Modrinth: 64×32 neu, schlanker = doppelt → weg.
         assert_eq!(skins.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["TJC Craftattack 12", "Zweiter", "Modrinth App 1"]);
+    }
+
+    #[test]
+    fn scans_atlauncher_skin_cache_and_reports_launchers_without_skins() {
+        let dir = tempfile::tempdir().unwrap();
+        // Aufbau wie ATLauncher: configs/images/skins/<uuid ohne Striche>.png (+ default.png).
+        let atl = dir.path().join("ATLauncher");
+        let skins_dir = atl.join("configs/images/skins");
+        std::fs::create_dir_all(&skins_dir).unwrap();
+        std::fs::write(skins_dir.join("0123456789abcdef0123456789abcdef.png"), skin_png(64, 64, true)).unwrap();
+        std::fs::write(skins_dir.join("default.png"), skin_png(64, 64, false)).unwrap();
+        std::fs::write(skins_dir.join("kaputt.png"), b"nope").unwrap();
+        std::fs::write(atl.join("configs/accounts.json"), b"geheim").unwrap();
+        let found = scan_atlauncher(&atl);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].variant, SkinVariant::Slim);
+
+        let lunar = dir.path().join(".lunarclient");
+        std::fs::create_dir_all(&lunar).unwrap();
+        let homes = LauncherHomes { atlauncher: vec![atl], lunar: vec![lunar], ..LauncherHomes::default() };
+        let (skins, found) = scan_launchers(&homes);
+        assert_eq!(found, [ImportSource::AtLauncher]);
+        assert_eq!(skins[0].name, "ATLauncher 1");
+        assert_eq!(launchers_without_skins(&homes), [crate::import::ImportSource::Lunar]);
     }
 
     #[tokio::test]

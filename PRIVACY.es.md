@@ -18,7 +18,7 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 | Servicios TRS (`trs-launcher.theredstonee.de`, antes también `api.theredstonee.de`) | Solo si lo has aceptado, ver [más abajo](#servicios-trs) | Tu UUID, tu nombre, la capa que eliges, tus amigos y tu estado en línea |
 | Servidores maven/meta de Fabric, Quilt, Forge y NeoForge | Al instalar un cargador de mods | Solicitudes de descarga |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Al explorar, instalar o actualizar contenido | Búsquedas y los hashes de los mods instalados (para buscar actualizaciones) |
-| CurseForge (`api.curseforge.com`; archivos e imágenes de `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Solo si eliges CurseForge como fuente, instalas un modpack de CurseForge o tienes instalado contenido de CurseForge | Búsquedas y filtros, los ID de proyecto y de archivo del contenido instalado desde CurseForge (para los detalles y la búsqueda de actualizaciones) y solicitudes de descarga. Como en cualquier solicitud web, se incluye tu dirección IP. No necesitas una cuenta de CurseForge: el launcher se identifica con su propia clave de API, no con datos sobre ti. |
+| CurseForge (`api.curseforge.com`; archivos e imágenes de `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Solo si eliges CurseForge como fuente, instalas un modpack de CurseForge, tienes instalado contenido de CurseForge o importas una instancia de CurseForge a la que le faltan archivos | Búsquedas y filtros, los ID de proyecto y de archivo del contenido instalado desde CurseForge (para los detalles y la búsqueda de actualizaciones) y solicitudes de descarga. Como en cualquier solicitud web, se incluye tu dirección IP. No necesitas una cuenta de CurseForge: el launcher se identifica con su propia clave de API, no con datos sobre ti. |
 | Servidores de Minecraft de tu lista | Para mostrar su estado en directo | Un ping estándar de lista de servidores |
 | mclo.gs | Solo cuando pulsas «Log teilen» (compartir registro) y lo confirmas | El registro del juego, sin tokens de acceso ni tu nombre de usuario de Windows |
 | GitHub (`github.com`) | Al buscar actualizaciones del launcher | Una solicitud del manifiesto de actualización |
@@ -26,6 +26,17 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 
 Los tokens de las cuentas se guardan solo en tu ordenador, cifrados con DPAPI de Windows. Al desinstalar el launcher se
 elimina el programa; puedes borrar tus datos de `%APPDATA%\TRS-Launcher` cuando quieras.
+
+## Importar desde otros launchers
+
+Al abrir «Importar desde otro launcher», el launcher busca otros launchers **en tu propio ordenador** (Minecraft
+Launcher oficial, app de CurseForge, Modrinth App, Prism/MultiMC, Lunar Client, Badlion, Feather, OneClient, ATLauncher,
+GDLauncher, TLauncher) y lee sus listas de instancias. Nada de esto sale de tu ordenador, y los archivos de los otros
+launchers solo se leen, nunca se modifican: sus bases de datos se leen desde una copia temporal que se borra justo
+después. Los datos de inicio de sesión de otros launchers (archivos de cuentas y tokens) nunca se leen ni se copian. Al
+importar una instancia se copian sus mundos, mods, paquetes, ajustes y lista de servidores a la nueva instancia de TRS;
+se conservan los ID de proyecto y de archivo que guardó el otro launcher para poder actualizar el contenido. Solo si
+faltan archivos de una instancia de CurseForge, el launcher los descarga de CurseForge (ver la tabla de arriba).
 
 ## Cambiar de cuenta en el juego (TRS Client)
 

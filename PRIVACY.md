@@ -18,7 +18,7 @@ The launcher only connects to other services when that is needed for something y
 | TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status |
 | Fabric, Quilt, Forge, NeoForge maven/meta servers | Installing a mod loader | Download requests |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Browsing, installing or updating content | Search queries, file hashes of installed mods (for update checks) |
-| CurseForge (`api.curseforge.com`; files and images from `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Only when you pick CurseForge as the source, install a CurseForge modpack or have content from CurseForge installed | Search queries and filters, the project and file IDs of content installed from CurseForge (for details and update checks), download requests. Like every web request, this includes your IP address. You don't need a CurseForge account – the launcher identifies itself with its own API key, not with anything about you. |
+| CurseForge (`api.curseforge.com`; files and images from `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Only when you pick CurseForge as the source, install a CurseForge modpack, have content from CurseForge installed or import a CurseForge instance whose files are missing | Search queries and filters, the project and file IDs of content installed from CurseForge (for details and update checks), download requests. Like every web request, this includes your IP address. You don't need a CurseForge account – the launcher identifies itself with its own API key, not with anything about you. |
 | Minecraft servers in your server list | Showing live status | A standard server-list ping |
 | mclo.gs | Only when you click "Log teilen" and confirm | The game log, with access tokens and your Windows user name removed |
 | GitHub (`github.com`) | Checking for launcher updates | A request for the update manifest |
@@ -26,6 +26,17 @@ The launcher only connects to other services when that is needed for something y
 
 Account tokens are stored only on your computer, encrypted with Windows DPAPI. Uninstalling the launcher removes the
 program; your data in `%APPDATA%\TRS-Launcher` can be deleted at any time.
+
+## Importing from other launchers
+
+When you open "Import from another launcher", the launcher looks for other launchers **on your own computer**
+(official Minecraft Launcher, CurseForge app, Modrinth App, Prism/MultiMC, Lunar Client, Badlion, Feather, OneClient,
+ATLauncher, GDLauncher, TLauncher) and reads their instance lists. Nothing of this leaves your computer, and the other
+launchers' files are only read, never changed – their databases are read from a temporary copy that is deleted right
+afterwards. Sign-in data of other launchers (account and token files) is never read or copied. When you import an
+instance, its worlds, mods, packs, settings and server list are copied into the new TRS instance; the project and file
+IDs the other launcher saved are kept so the content can be updated. Only if files of a CurseForge instance are
+missing does the launcher download them from CurseForge (see the table above).
 
 ## Switching accounts in the game (TRS Client)
 

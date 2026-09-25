@@ -1,8 +1,8 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
-use trs_core::import::{ImportCandidate, ImportProgress};
-use trs_core::instance::{Instance, Loader};
+use trs_core::import::{ImportCandidate, ImportOverview, ImportProgress, ImportResult};
+use trs_core::instance::Loader;
 
 use crate::LauncherState;
 use crate::dialog_text::{self, DialogText};
@@ -12,6 +12,12 @@ use crate::error::CommandResult;
 #[tauri::command]
 pub async fn scan_imports(launcher: State<'_, LauncherState>) -> CommandResult<Vec<ImportCandidate>> {
     Ok(launcher.scan_imports().await?)
+}
+
+/// Wie `scan_imports`, dazu die erkannten Launcher (auch nicht unterstützte).
+#[tauri::command]
+pub async fn import_overview(launcher: State<'_, LauncherState>) -> CommandResult<ImportOverview> {
+    Ok(launcher.import_overview().await?)
 }
 
 /// Öffnet den Windows-Ordnerdialog und durchsucht den gewählten Ordner.
@@ -46,7 +52,7 @@ pub async fn import_instance(
     game_version: Option<String>,
     loader: Option<Loader>,
     on_progress: Channel<ImportProgress>,
-) -> CommandResult<Instance> {
+) -> CommandResult<ImportResult> {
     Ok(launcher
         .import_instance(&id, game_version, loader, &move |progress| {
             let _ = on_progress.send(progress);

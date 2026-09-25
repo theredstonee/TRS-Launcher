@@ -4,7 +4,7 @@ import type { SkinImportCandidate, SkinImportRequest, SkinImportSource } from '~
 // Geprüft wird alles im Kern – hier geht es nur um Auswahl und Reihenfolge.
 
 /** Reihenfolge der Launcher im Auswahl-Dialog. */
-export const launcherSources = ['minecraft', 'prism', 'modrinth'] as const satisfies readonly SkinImportSource[]
+export const launcherSources = ['minecraft', 'prism', 'modrinth', 'atlauncher'] as const satisfies readonly SkinImportSource[]
 
 export type LauncherSource = (typeof launcherSources)[number]
 
