@@ -1788,6 +1788,7 @@
     "tryOnLabel": "Dene: {name}",
     "selected": "Seçildi",
     "tryOn": "Dene",
+    "rename": "Yeniden adlandır",
     "empty": {
       "title": "Henüz kendi skinin yok",
       "text": "Koleksiyonuna 64×64 PNG dosyaları ekle – sonra onları deneyip birlikte uygulayabilirsin."
@@ -1805,6 +1806,9 @@
     "deleteDialog": {
       "title": "Skin silinsin mi?",
       "text": "{name} koleksiyonundan kaldırılacak. Giydiğin skin değişmez."
+    },
+    "renameDialog": {
+      "title": "Skini yeniden adlandır"
     },
     "sync": {
       "applying": "Uygulanıyor …",
@@ -2246,6 +2250,7 @@
       "capes": "seçtiğin pelerin, kullandığın kodlar ve yüklediğin pelerin görselleri",
       "friends": "arkadaşlar, istekler ve engellemeler",
       "settings": "gizlilik ayarların ve zaman damgaları (giriş, oluşturma)",
+      "sync": "eşitleme açıksa: kendi skinlerin (görseller ve adlar), kendi hazır ayarların ile temanı, vurgu rengini ve dilini – tüm bilgisayarlarında aynı olsunlar diye",
       "presence": "çevrimiçi durumun (launcher açık / oyunda, sürüm ve istersen sunucu) – yalnızca bellekte tutulur, 3 dakika sonra sona erer"
     },
     "footer": "Hizmetleri istediğin zaman {path} bölümünden kapatabilir ve tüm TRS verilerini orada silebilirsin. Onayın olmadan launcher TRS sunucusuna hiçbir şey göndermez.",
@@ -2263,6 +2268,10 @@
     "services": {
       "title": "TRS hizmetlerini kullan",
       "description": "Kapalı = launcher TRS sunucusuna hiçbir şey göndermez ve oradan çıkış yapmanı sağlar. TRS Client da oyunda hizmetleri kullanmaz."
+    },
+    "sync": {
+      "title": "TRS hesabıyla eşitle",
+      "description": "Kendi skinlerini („Skinlerim“), kendi hazır ayarlarını, temayı, vurgu rengini ve dili bu Minecraft hesabını kullandığın tüm bilgisayarlarda aynı tutar. Java ve bellek ayarları bu bilgisayarda kalır."
     },
     "turnedOff": "TRS hizmetleri kapatıldı – launcher artık TRS sunucusuna hiçbir şey göndermiyor.",
     "noAccount": "Bu ayarları değiştirmek için bir Minecraft hesabıyla giriş yap.",
@@ -2290,13 +2299,19 @@
     },
     "delete": {
       "title": "Tüm TRS verilerini sil",
-      "description": "TRS hesabını pelerinler, yüklemeler, kodlar, arkadaşlar ve çevrimiçi durumla birlikte sunucudan hemen siler. Sonrasında TRS hizmetleri kapatılır.",
+      "description": "TRS hesabını pelerinler, yüklemeler, kodlar, arkadaşlar, çevrimiçi durum ve eşitlenen skinler, hazır ayarlar ve ayarlarla birlikte sunucudan hemen siler. Sonrasında TRS hizmetleri kapatılır. Bu bilgisayardaki skinler ve hazır ayarlar kalır.",
       "button": "Tüm TRS verilerini sil …",
       "confirm": "{name} hesabındaki her şey gerçekten silinsin mi? Açılan pelerinler ve arkadaşlar gidecek – bu geri alınamaz.",
       "deleting": "Siliniyor …",
       "confirmButton": "Evet, kalıcı olarak sil",
       "done": "Bu hesabın tüm TRS verileri silindi. TRS hizmetleri artık kapalı."
     }
+  },
+  "trsSync": {
+    "syncing": "TRS hesabınla eşitleniyor …",
+    "offline": "TRS hesabına şu an ulaşılamıyor – eşitleme daha sonra yapılacak",
+    "synced": "TRS hesabınla eşitlendi · {time}",
+    "pending": "Birazdan TRS hesabınla eşitlenecek"
   },
   "capes": {
     "title": "TRS pelerinleri",

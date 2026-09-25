@@ -363,13 +363,67 @@ pub struct LibrarySkin {
     /// Dateiname im Ordner `skins/`.
     pub file: String,
     pub added_at: DateTime<Utc>,
+    /// Letzte Änderung (Name/Modell) – für den Abgleich mit dem TRS-Konto
+    /// („letzter Schreiber gewinnt“). Fehlt bei älteren Einträgen: dann zählt `added_at`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
 }
+
+impl LibrarySkin {
+    /// Zeitpunkt der letzten Änderung (ältere Einträge: Zeitpunkt des Hinzufügens).
+    pub fn changed_at(&self) -> DateTime<Utc> {
+        self.updated_at.unwrap_or(self.added_at)
+    }
+}
+
+/// Merkt sich, dass ein Skin hier gelöscht wurde – damit die Löschung beim
+/// nächsten Abgleich auch auf dem TRS-Konto (und damit auf anderen PCs) ankommt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkinTombstone {
+    pub id: String,
+    pub deleted_at: DateTime<Utc>,
+}
+
+/// So lange bleiben Grabsteine liegen (wie auf dem Server).
+const TOMBSTONE_DAYS: i64 = 30;
+const MAX_TOMBSTONES: usize = 500;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 struct LibraryFile {
     #[serde(default)]
     skins: Vec<LibrarySkin>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    deleted: Vec<SkinTombstone>,
 }
+
+impl LibraryFile {
+    /// Grabstein setzen (bzw. erneuern) und alte aufräumen.
+    fn bury(&mut self, id: &str, at: DateTime<Utc>) {
+        self.deleted.retain(|t| t.id != id);
+        self.deleted.push(SkinTombstone { id: id.to_owned(), deleted_at: at });
+        self.prune();
+    }
+
+    fn prune(&mut self) {
+        let cutoff = Utc::now() - chrono::Duration::days(TOMBSTONE_DAYS);
+        self.deleted.retain(|t| t.deleted_at > cutoff);
+        if self.deleted.len() > MAX_TOMBSTONES {
+            self.deleted.sort_by_key(|t| std::cmp::Reverse(t.deleted_at));
+            self.deleted.truncate(MAX_TOMBSTONES);
+        }
+    }
+}
+
+/// Stand der Bibliothek für den Abgleich mit dem TRS-Konto.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct LibrarySnapshot {
+    pub skins: Vec<LibrarySkin>,
+    pub deleted: Vec<SkinTombstone>,
+}
+
+/// Alle Änderungen an `library.json` laufen nacheinander (Oberfläche und Abgleich).
+static LIBRARY_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// Bibliothekseintrag samt Textur fürs Webview.
 #[derive(Debug, Clone, Serialize)]
@@ -399,12 +453,84 @@ pub fn clean_name(name: &str) -> Result<String> {
     ))) } else { Ok(cleaned) }
 }
 
-fn is_library_id(id: &str) -> bool {
+pub(crate) fn is_library_id(id: &str) -> bool {
     id.len() == 12 && id.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
 }
 
 async fn read_library(paths: &Paths) -> LibraryFile {
     fsutil::read_json(&library_file(paths)).await.ok().flatten().unwrap_or_default()
+}
+
+fn not_found() -> Error {
+    Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht."))
+}
+
+// --- Abgleich mit dem TRS-Konto (siehe `trs_api::sync`) ------------------------
+// Diese Funktionen melden selbst keine „lokale Änderung“ – sonst würde jeder
+// übernommene Stand sofort wieder einen Abgleich auslösen.
+
+/// Skins und Grabsteine der Bibliothek.
+pub(crate) async fn library_snapshot(paths: &Paths) -> LibrarySnapshot {
+    let library = read_library(paths).await;
+    LibrarySnapshot { skins: library.skins, deleted: library.deleted }
+}
+
+/// Legt einen Skin vom TRS-Konto mit dessen ID an. `false` = schon da oder Bibliothek voll.
+pub(crate) async fn sync_insert(
+    paths: &Paths,
+    id: &str,
+    name: &str,
+    variant: SkinVariant,
+    bytes: &[u8],
+    at: DateTime<Utc>,
+) -> Result<bool> {
+    validate_skin_png(bytes)?;
+    let name = clean_name(name)?;
+    if !is_library_id(id) {
+        return Err(not_found());
+    }
+    let _guard = LIBRARY_LOCK.lock().await;
+    let mut library = read_library(paths).await;
+    if library.skins.iter().any(|s| s.id == id) || library.skins.len() >= MAX_LIBRARY {
+        return Ok(false);
+    }
+    let file = format!("skin-{id}.png");
+    fsutil::write_atomic(&skins_dir(paths).join(&file), bytes).await?;
+    library.deleted.retain(|t| t.id != id);
+    library.skins.push(LibrarySkin { id: id.to_owned(), name, variant, file, added_at: at, updated_at: Some(at) });
+    fsutil::write_json(&library_file(paths), &library).await?;
+    Ok(true)
+}
+
+/// Übernimmt Name/Modell (und Änderungszeit) eines Skins.
+pub(crate) async fn sync_update(
+    paths: &Paths,
+    id: &str,
+    name: &str,
+    variant: SkinVariant,
+    at: DateTime<Utc>,
+) -> Result<()> {
+    let name = clean_name(name)?;
+    let _guard = LIBRARY_LOCK.lock().await;
+    let mut library = read_library(paths).await;
+    let skin = library.skins.iter_mut().find(|s| s.id == id).ok_or_else(not_found)?;
+    skin.name = name;
+    skin.variant = variant;
+    skin.updated_at = Some(at);
+    fsutil::write_json(&library_file(paths), &library).await
+}
+
+/// Entfernt einen Skin, der auf dem TRS-Konto gelöscht wurde (mit Grabstein,
+/// damit andere Accounts auf diesem PC die Löschung auch übernehmen).
+pub(crate) async fn sync_remove(paths: &Paths, id: &str, deleted_at: DateTime<Utc>) -> Result<()> {
+    let _guard = LIBRARY_LOCK.lock().await;
+    let mut library = read_library(paths).await;
+    let Some(index) = library.skins.iter().position(|s| s.id == id) else { return Ok(()) };
+    let removed = library.skins.remove(index);
+    library.bury(id, deleted_at);
+    fsutil::write_json(&library_file(paths), &library).await?;
+    let _ = tokio::fs::remove_file(skins_dir(paths).join(&removed.file)).await;
+    Ok(())
 }
 
 // --- Köpfe anderer Spieler (Freunde, Admin-Suche) ---------------------------------
@@ -569,6 +695,7 @@ impl Launcher {
         validate_skin_png(bytes)?;
         let name = clean_name(name)?;
         let paths = self.paths();
+        let guard = LIBRARY_LOCK.lock().await;
         let mut library = read_library(paths).await;
         if library.skins.len() >= MAX_LIBRARY {
             return Err(Error::validation(crate::msg!(
@@ -579,9 +706,12 @@ impl Launcher {
         let id = uuid::Uuid::new_v4().simple().to_string()[..12].to_owned();
         let file = format!("skin-{id}.png");
         fsutil::write_atomic(&skins_dir(paths).join(&file), bytes).await?;
-        let entry = LibrarySkin { id, name, variant, file, added_at: Utc::now() };
+        let now = Utc::now();
+        let entry = LibrarySkin { id, name, variant, file, added_at: now, updated_at: Some(now) };
         library.skins.push(entry.clone());
         fsutil::write_json(&library_file(paths), &library).await?;
+        drop(guard);
+        self.trs_sync_touch();
         Ok(LibrarySkinView {
             id: entry.id,
             name: entry.name,
@@ -611,30 +741,64 @@ impl Launcher {
 
     pub async fn delete_skin(&self, id: &str) -> Result<()> {
         if !is_library_id(id) {
-            return Err(Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")));
+            return Err(not_found());
         }
         let paths = self.paths();
+        let guard = LIBRARY_LOCK.lock().await;
         let mut library = read_library(paths).await;
         let Some(index) = library.skins.iter().position(|s| s.id == id) else {
-            return Err(Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")));
+            return Err(not_found());
         };
         let removed = library.skins.remove(index);
+        library.bury(id, Utc::now());
         fsutil::write_json(&library_file(paths), &library).await?;
+        drop(guard);
         let _ = tokio::fs::remove_file(skins_dir(paths).join(&removed.file)).await;
+        self.trs_sync_touch();
         Ok(())
+    }
+
+    /// Benennt einen Skin der Sammlung um.
+    pub async fn rename_skin(&self, id: &str, name: &str) -> Result<LibrarySkinView> {
+        if !is_library_id(id) {
+            return Err(not_found());
+        }
+        let name = clean_name(name)?;
+        let paths = self.paths();
+        let guard = LIBRARY_LOCK.lock().await;
+        let mut library = read_library(paths).await;
+        let skin = library.skins.iter_mut().find(|s| s.id == id).ok_or_else(not_found)?;
+        let changed = skin.name != name;
+        skin.name = name;
+        if changed {
+            skin.updated_at = Some(Utc::now());
+        }
+        let skin = skin.clone();
+        if changed {
+            fsutil::write_json(&library_file(paths), &library).await?;
+        }
+        drop(guard);
+        let path = skins_dir(paths).join(&skin.file);
+        let bytes = tokio::fs::read(&path).await.map_err(|e| Error::io(&path, e))?;
+        if changed {
+            self.trs_sync_touch();
+        }
+        Ok(LibrarySkinView {
+            id: skin.id,
+            name: skin.name,
+            variant: skin.variant,
+            added_at: skin.added_at,
+            texture: data_url(&bytes),
+        })
     }
 
     /// Bytes eines Bibliotheks-Skins (geprüft) – Grundlage für einen Upload.
     pub(crate) async fn library_skin_bytes(&self, id: &str) -> Result<Vec<u8>> {
         if !is_library_id(id) {
-            return Err(Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")));
+            return Err(not_found());
         }
         let library = read_library(self.paths()).await;
-        let entry = library
-            .skins
-            .into_iter()
-            .find(|s| s.id == id)
-            .ok_or_else(|| Error::validation(crate::msg!("skins.notFound", "Diesen Skin gibt es nicht.")))?;
+        let entry = library.skins.into_iter().find(|s| s.id == id).ok_or_else(not_found)?;
         let path = skins_dir(self.paths()).join(&entry.file);
         let bytes = tokio::fs::read(&path).await.map_err(|e| Error::io(&path, e))?;
         validate_skin_png(&bytes)?;
@@ -868,10 +1032,33 @@ mod tests {
         assert!(launcher.add_skin_bytes(&png(64, 64), "   ", SkinVariant::Classic).await.is_err());
         assert!(launcher.add_skin_bytes(b"kein png", "X", SkinVariant::Classic).await.is_err());
 
+        let renamed = launcher.rename_skin(&added.id, " Winter\n").await.unwrap();
+        assert_eq!(renamed.name, "Winter");
+        assert!(launcher.rename_skin(&added.id, "  ").await.is_err());
+        assert!(launcher.rename_skin("0123456789ab", "x").await.is_err());
+        let snapshot = library_snapshot(launcher.paths()).await;
+        assert!(snapshot.skins[0].updated_at.is_some_and(|at| at >= snapshot.skins[0].added_at));
+
         assert!(launcher.delete_skin("gibt-es-nicht").await.is_err());
         launcher.delete_skin(&added.id).await.unwrap();
         assert!(launcher.skin_library().await.unwrap().is_empty());
         assert!(!dir.path().join("skins").join(format!("skin-{}.png", added.id)).exists());
+        // Die Löschung bleibt als Grabstein für den Abgleich mit dem TRS-Konto.
+        let snapshot = library_snapshot(launcher.paths()).await;
+        assert_eq!(snapshot.deleted.iter().map(|t| t.id.as_str()).collect::<Vec<_>>(), [added.id.as_str()]);
+
+        // Vom Konto übernommen: gleiche ID, Grabstein weg; doppelt → nichts.
+        let at = Utc::now() - chrono::Duration::hours(1);
+        assert!(sync_insert(launcher.paths(), &added.id, "Zurück", SkinVariant::Classic, &png(64, 64), at).await.unwrap());
+        assert!(!sync_insert(launcher.paths(), &added.id, "Zurück", SkinVariant::Classic, &png(64, 64), at).await.unwrap());
+        let snapshot = library_snapshot(launcher.paths()).await;
+        assert!(snapshot.deleted.is_empty());
+        assert_eq!(snapshot.skins[0].changed_at(), at);
+        sync_update(launcher.paths(), &added.id, "Neu", SkinVariant::Slim, at).await.unwrap();
+        assert_eq!(launcher.skin_library().await.unwrap()[0].variant, SkinVariant::Slim);
+        sync_remove(launcher.paths(), &added.id, at).await.unwrap();
+        assert!(launcher.skin_library().await.unwrap().is_empty());
+        assert_eq!(library_snapshot(launcher.paths()).await.deleted.len(), 1);
     }
 
     #[tokio::test]

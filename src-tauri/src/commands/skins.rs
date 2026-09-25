@@ -64,6 +64,11 @@ pub async fn delete_skin(launcher: State<'_, LauncherState>, id: String) -> Comm
     Ok(launcher.delete_skin(&id).await?)
 }
 
+#[tauri::command]
+pub async fn rename_skin(launcher: State<'_, LauncherState>, id: String, name: String) -> CommandResult<LibrarySkinView> {
+    Ok(launcher.rename_skin(&id, &name).await?)
+}
+
 /// Nimmt den fertigen Entwurf (nur den Unterschied zum Konto) entgegen und
 /// kehrt sofort zurück. Gesendet wird im Kern über eine Warteschlange, die bei
 /// Mojang-429 selbst wartet – den Fortschritt liefert `skin_sync_status`.

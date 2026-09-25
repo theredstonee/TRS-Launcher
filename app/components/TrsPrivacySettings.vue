@@ -3,7 +3,9 @@ import type { TrsPrivacy } from '~/utils/trs'
 
 // Datenschutz der TRS-Dienste (Einstellungen → Datenschutz). Die Schalter
 // liegen auf dem TRS-Server je Minecraft-Account; die Einwilligung selbst
-// liegt nur lokal.
+// liegt nur lokal. „Mit TRS-Konto synchronisieren“ ist eine lokale Einstellung
+// (`trsSync`) und wird vom Einstellungsfenster mitgespeichert.
+const sync = defineModel<boolean>('sync', { default: true })
 const trs = useTrsStore()
 const accounts = useAccountsStore()
 const toasts = useToasts()
@@ -85,6 +87,9 @@ function openPrivacy() {
     </SettingRow>
 
     <template v-if="trs.enabled">
+      <SettingRow :title="t('trsPrivacy.sync.title')" :description="t('trsPrivacy.sync.description')">
+        <ToggleSwitch v-model="sync" :label="t('trsPrivacy.sync.title')" data-testid="trs-sync-toggle" />
+      </SettingRow>
       <p v-if="!accounts.active" class="mt-2 text-xs text-base-400">{{ t('trsPrivacy.noAccount') }}</p>
       <p v-else-if="!settings" class="mt-2 text-xs text-base-400">
         {{ trs.problem === 'offline' ? t('trsPrivacy.offline') : t('trsPrivacy.loading') }}

@@ -52,5 +52,14 @@ export const useSettingsStore = defineStore('settings', () => {
     dialog.value = section
   }
 
-  return { current, dialog, load, save, setLanguage, open }
+  /** Zählt Übernahmen vom TRS-Konto – ein offenes Einstellungsfenster gleicht Theme/Sprache an. */
+  const syncRevision = ref(0)
+
+  /** Theme, Akzentfarbe oder Sprache kamen vom TRS-Konto: neu laden und sofort anwenden. */
+  async function reloadFromSync() {
+    await load()
+    syncRevision.value++
+  }
+
+  return { current, dialog, load, save, setLanguage, open, syncRevision, reloadFromSync }
 })

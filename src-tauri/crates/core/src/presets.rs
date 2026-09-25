@@ -12,10 +12,11 @@
 //! anzufassen –, dann wird geladen. Was nicht passt, wird übersprungen und
 //! im Bericht mit Grund genannt.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::future::Future;
 use std::path::{Path, PathBuf};
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -293,6 +294,54 @@ struct StoredPreset {
     auto: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     items: Vec<PresetItem>,
+    /// Letzte Änderung (nur eigene Presets) – für den Abgleich mit dem TRS-Konto.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    updated_at: Option<DateTime<Utc>>,
+}
+
+impl StoredPreset {
+    fn new(id: impl Into<String>, name: impl Into<String>, auto: bool, items: Vec<PresetItem>) -> Self {
+        Self { id: id.into(), name: name.into(), auto, items, updated_at: None }
+    }
+}
+
+/// Merkt sich gelöschte eigene Presets, damit die Löschung beim Abgleich auch
+/// auf anderen PCs ankommt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetTombstone {
+    pub id: String,
+    pub deleted_at: DateTime<Utc>,
+}
+
+/// So lange bleiben Grabsteine gelöschter Presets liegen.
+const TOMBSTONE_DAYS: i64 = 90;
+const MAX_TOMBSTONES: usize = 200;
+
+/// Alles außer der Liste selbst: Grabsteine und wann Reihenfolge bzw.
+/// „immer automatisch“ der fertigen Presets zuletzt geändert wurden.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct Meta {
+    deleted: Vec<PresetTombstone>,
+    layout_updated_at: Option<DateTime<Utc>>,
+}
+
+impl Meta {
+    fn bury(&mut self, id: &str, at: DateTime<Utc>) {
+        self.deleted.retain(|t| t.id != id);
+        self.deleted.push(PresetTombstone { id: id.to_owned(), deleted_at: at });
+        self.deleted = prune_tombstones(std::mem::take(&mut self.deleted));
+    }
+}
+
+fn prune_tombstones(mut deleted: Vec<PresetTombstone>) -> Vec<PresetTombstone> {
+    let cutoff = Utc::now() - chrono::Duration::days(TOMBSTONE_DAYS);
+    deleted.retain(|t| t.deleted_at > cutoff && is_user_id(&t.id));
+    deleted.sort_by(|a, b| b.deleted_at.cmp(&a.deleted_at).then_with(|| a.id.cmp(&b.id)));
+    deleted.dedup_by(|b, a| a.id == b.id);
+    deleted.truncate(MAX_TOMBSTONES);
+    deleted.sort_by(|a, b| a.id.cmp(&b.id));
+    deleted
 }
 
 #[derive(Debug, Deserialize)]
@@ -300,13 +349,22 @@ struct StoredPreset {
 struct StoredFile {
     #[serde(default)]
     presets: Vec<StoredPreset>,
+    #[serde(default)]
+    deleted: Vec<PresetTombstone>,
+    #[serde(default)]
+    layout_updated_at: Option<DateTime<Utc>>,
 }
 
 /// Wie [`StoredFile`], zum Schreiben (Reihenfolge der Felder bleibt lesbar).
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct StoredFileRef<'a> {
     version: u32,
     presets: &'a [StoredPreset],
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    deleted: &'a [PresetTombstone],
+    #[serde(skip_serializing_if = "Option::is_none")]
+    layout_updated_at: Option<DateTime<Utc>>,
 }
 
 /// Aufbau einer geteilten Preset-Datei.
@@ -410,19 +468,32 @@ fn file(paths: &Paths) -> PathBuf {
 }
 
 async fn read_stored(paths: &Paths) -> Vec<StoredPreset> {
+    read_all(paths).await.0
+}
+
+async fn read_all(paths: &Paths) -> (Vec<StoredPreset>, Meta) {
     match fsutil::read_json::<StoredFile>(&file(paths)).await {
-        Ok(Some(f)) => normalize(f.presets),
-        Ok(None) => normalize(Vec::new()),
+        Ok(Some(f)) => (
+            normalize(f.presets),
+            Meta { deleted: prune_tombstones(f.deleted), layout_updated_at: f.layout_updated_at },
+        ),
+        Ok(None) => (normalize(Vec::new()), Meta::default()),
         Err(e) => {
             // Kaputte Datei: mit den Standard-Presets weiter, nichts abstürzen lassen.
             tracing::warn!("presets.json ist unlesbar – Standard wird benutzt: {e}");
-            normalize(Vec::new())
+            (normalize(Vec::new()), Meta::default())
         }
     }
 }
 
-async fn write_stored(paths: &Paths, presets: &[StoredPreset]) -> Result<()> {
-    fsutil::write_json(&file(paths), &StoredFileRef { version: FILE_VERSION, presets }).await
+async fn write_all(paths: &Paths, presets: &[StoredPreset], meta: &Meta) -> Result<()> {
+    let file_ref = StoredFileRef {
+        version: FILE_VERSION,
+        presets,
+        deleted: &meta.deleted,
+        layout_updated_at: meta.layout_updated_at,
+    };
+    fsutil::write_json(&file(paths), &file_ref).await
 }
 
 /// Bringt die gespeicherte Liste in Form: jedes fertige Preset genau einmal
@@ -437,7 +508,7 @@ fn normalize(stored: Vec<StoredPreset>) -> Vec<StoredPreset> {
             continue;
         }
         if Builtin::from_id(&p.id).is_some() {
-            out.push(StoredPreset { id: p.id, name: String::new(), auto: p.auto, items: Vec::new() });
+            out.push(StoredPreset::new(p.id, "", p.auto, Vec::new()));
             continue;
         }
         if !is_user_id(&p.id) || own >= MAX_PRESETS {
@@ -454,7 +525,7 @@ fn normalize(stored: Vec<StoredPreset>) -> Vec<StoredPreset> {
             .take(MAX_ITEMS)
             .collect();
         own += 1;
-        out.push(StoredPreset { id: p.id, name, auto: p.auto, items });
+        out.push(StoredPreset { id: p.id, name, auto: p.auto, items, updated_at: p.updated_at });
     }
     let is_builtin = |p: &StoredPreset, tier_only: bool| Builtin::from_id(&p.id).is_some_and(|b| !tier_only || b.is_fps_tier());
     for b in Builtin::ALL.into_iter().filter(|b| !ids.contains(b.id())) {
@@ -465,7 +536,7 @@ fn normalize(stored: Vec<StoredPreset>) -> Vec<StoredPreset> {
             .flatten()
             .or_else(|| out.iter().rposition(|p| is_builtin(p, false)));
         let at = after.map_or(0, |i| i + 1);
-        out.insert(at, StoredPreset { id: b.id().to_owned(), name: String::new(), auto: b.default_auto(), items: Vec::new() });
+        out.insert(at, StoredPreset::new(b.id(), "", b.default_auto(), Vec::new()));
     }
     // Von den FPS-Stufen ist höchstens eine automatisch (die erste gewinnt).
     let mut tier_auto = false;
@@ -532,11 +603,11 @@ pub async fn list(paths: &Paths) -> Result<Vec<Preset>> {
 }
 
 /// Liest, ändert und schreibt die Liste unter der Schreibsperre.
-async fn modify<T>(paths: &Paths, change: impl FnOnce(&mut Vec<StoredPreset>) -> Result<T>) -> Result<T> {
+async fn modify<T>(paths: &Paths, change: impl FnOnce(&mut Vec<StoredPreset>, &mut Meta) -> Result<T>) -> Result<T> {
     let _guard = WRITE_LOCK.lock().await;
-    let mut list = read_stored(paths).await;
-    let out = change(&mut list)?;
-    write_stored(paths, &list).await?;
+    let (mut list, mut meta) = read_all(paths).await;
+    let out = change(&mut list, &mut meta)?;
+    write_all(paths, &list, &meta).await?;
     Ok(out)
 }
 
@@ -555,11 +626,17 @@ fn too_many() -> Error {
 pub async fn create(paths: &Paths, input: PresetInput) -> Result<Preset> {
     let name = validate_name(&input.name)?;
     let items = validate_items(input.items)?;
-    let stored = modify(paths, |list| {
+    let stored = modify(paths, |list, _| {
         if own_count(list) >= MAX_PRESETS {
             return Err(too_many());
         }
-        let preset = StoredPreset { id: uuid::Uuid::new_v4().simple().to_string(), name, auto: input.auto, items };
+        let preset = StoredPreset {
+            id: uuid::Uuid::new_v4().simple().to_string(),
+            name,
+            auto: input.auto,
+            items,
+            updated_at: Some(Utc::now()),
+        };
         list.push(preset.clone());
         Ok(preset)
     })
@@ -573,11 +650,12 @@ pub async fn update(paths: &Paths, id: &str, input: PresetInput) -> Result<Prese
     }
     let name = validate_name(&input.name)?;
     let items = validate_items(input.items)?;
-    let stored = modify(paths, |list| {
+    let stored = modify(paths, |list, _| {
         let preset = list.iter_mut().find(|p| p.id == id).ok_or_else(not_found)?;
         preset.name = name;
         preset.auto = input.auto;
         preset.items = items;
+        preset.updated_at = Some(Utc::now());
         Ok(preset.clone())
     })
     .await?;
@@ -587,7 +665,7 @@ pub async fn update(paths: &Paths, id: &str, input: PresetInput) -> Result<Prese
 /// „Immer automatisch“ – auch für die fertigen Presets. Von den FPS-Stufen
 /// ist höchstens eine automatisch: Eine anschalten schaltet die anderen ab.
 pub async fn set_auto(paths: &Paths, id: &str, auto: bool) -> Result<Preset> {
-    let stored = modify(paths, |list| {
+    let stored = modify(paths, |list, meta| {
         if !list.iter().any(|p| p.id == id) {
             return Err(not_found());
         }
@@ -598,6 +676,12 @@ pub async fn set_auto(paths: &Paths, id: &str, auto: bool) -> Result<Preset> {
         }
         let preset = list.iter_mut().find(|p| p.id == id).ok_or_else(not_found)?;
         preset.auto = auto;
+        // Fertige Presets: nur ihre Schalter werden abgeglichen (zusammen mit der Reihenfolge).
+        if Builtin::from_id(id).is_some() {
+            meta.layout_updated_at = Some(Utc::now());
+        } else {
+            preset.updated_at = Some(Utc::now());
+        }
         Ok(preset.clone())
     })
     .await?;
@@ -608,17 +692,21 @@ pub async fn delete(paths: &Paths, id: &str) -> Result<()> {
     if Builtin::from_id(id).is_some() {
         return Err(read_only());
     }
-    modify(paths, |list| {
+    modify(paths, |list, meta| {
         let before = list.len();
         list.retain(|p| p.id != id);
-        if list.len() == before { Err(not_found()) } else { Ok(()) }
+        if list.len() == before {
+            return Err(not_found());
+        }
+        meta.bury(id, Utc::now());
+        Ok(())
     })
     .await
 }
 
 /// Neue Reihenfolge – `ids` muss genau die vorhandenen Presets enthalten.
 pub async fn reorder(paths: &Paths, ids: &[String]) -> Result<Vec<Preset>> {
-    let list = modify(paths, |list| {
+    let list = modify(paths, |list, meta| {
         let current: HashSet<&str> = list.iter().map(|p| p.id.as_str()).collect();
         let wanted: HashSet<&str> = ids.iter().map(String::as_str).collect();
         if ids.len() != list.len() || wanted != current {
@@ -629,6 +717,7 @@ pub async fn reorder(paths: &Paths, ids: &[String]) -> Result<Vec<Preset>> {
         }
         let mut by_id: HashMap<String, StoredPreset> = list.drain(..).map(|p| (p.id.clone(), p)).collect();
         list.extend(ids.iter().filter_map(|id| by_id.remove(id)));
+        meta.layout_updated_at = Some(Utc::now());
         Ok(list.clone())
     })
     .await?;
@@ -718,7 +807,7 @@ fn unique_name(name: &str, taken: &[&str]) -> String {
 /// Legt aus einer geteilten Datei ein neues eigenes Preset an.
 pub async fn import(paths: &Paths, bytes: &[u8]) -> Result<Preset> {
     let (name, items) = parse_export(bytes)?;
-    let stored = modify(paths, |list| {
+    let stored = modify(paths, |list, _| {
         if own_count(list) >= MAX_PRESETS {
             return Err(too_many());
         }
@@ -728,6 +817,7 @@ pub async fn import(paths: &Paths, bytes: &[u8]) -> Result<Preset> {
             name: unique_name(&name, &taken),
             auto: false,
             items,
+            updated_at: Some(Utc::now()),
         };
         list.push(preset.clone());
         Ok(preset)
@@ -744,6 +834,251 @@ pub async fn import_file(paths: &Paths, file: &Path) -> Result<Preset> {
     }
     let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
     import(paths, &bytes).await
+}
+
+// --- Abgleich mit dem TRS-Konto ------------------------------------------------------
+//
+// Abgeglichen werden nur die eigenen Presets (IDs, Namen, Projekt-IDs – keine
+// Dateien oder Pfade) sowie Reihenfolge und „immer automatisch“ der fertigen
+// Presets. Zusammengeführt wird je Preset: die jüngere Änderung gewinnt,
+// Grabsteine löschen ältere Stände. Gleich alt = der Stand vom Konto (damit
+// sich zwei PCs nicht gegenseitig überschreiben).
+
+/// Version des Formats in `data` auf dem TRS-Konto.
+pub const SYNC_VERSION: u32 = 1;
+
+/// Ein eigenes Preset im Abgleich.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncPreset {
+    pub id: String,
+    pub name: String,
+    pub auto: bool,
+    pub items: Vec<PresetItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+/// Reihenfolge aller Presets und „immer automatisch“ der fertigen.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncLayout {
+    pub order: Vec<String>,
+    pub auto: BTreeMap<String, bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+/// Inhalt von `data` beim Abgleich der Presets.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncData {
+    pub version: u32,
+    /// Nach ID sortiert.
+    pub presets: Vec<SyncPreset>,
+    /// Nach ID sortiert.
+    pub deleted: Vec<PresetTombstone>,
+    pub layout: SyncLayout,
+}
+
+fn parse_time(value: Option<&serde_json::Value>) -> Option<DateTime<Utc>> {
+    let text = value?.as_str()?;
+    DateTime::parse_from_rfc3339(text).ok().map(|d| d.with_timezone(&Utc))
+}
+
+impl SyncData {
+    /// Liest `data` vom TRS-Konto nachsichtig: Kaputtes oder Unbekanntes fällt
+    /// einzeln weg, der Rest bleibt.
+    pub fn from_value(value: &serde_json::Value) -> Self {
+        let mut presets: Vec<SyncPreset> = Vec::new();
+        for raw in value.get("presets").and_then(|p| p.as_array()).into_iter().flatten() {
+            let Some(id) = raw.get("id").and_then(|v| v.as_str()).filter(|id| is_user_id(id)) else { continue };
+            let Ok(name) = validate_name(raw.get("name").and_then(|v| v.as_str()).unwrap_or_default()) else { continue };
+            if presets.iter().any(|p| p.id == id) || presets.len() >= MAX_PRESETS {
+                continue;
+            }
+            let mut seen = HashSet::new();
+            let items: Vec<PresetItem> = raw
+                .get("items")
+                .and_then(|v| v.as_array())
+                .into_iter()
+                .flatten()
+                .filter_map(|i| serde_json::from_value::<PresetItem>(i.clone()).ok())
+                .filter_map(|i| validate_item(i).ok())
+                .filter(|i| seen.insert((i.source, i.project_id.clone())))
+                .take(MAX_ITEMS)
+                .collect();
+            presets.push(SyncPreset {
+                id: id.to_owned(),
+                name,
+                auto: raw.get("auto").and_then(serde_json::Value::as_bool).unwrap_or(false),
+                items,
+                updated_at: parse_time(raw.get("updatedAt")),
+            });
+        }
+        presets.sort_by(|a, b| a.id.cmp(&b.id));
+
+        let deleted = value
+            .get("deleted")
+            .and_then(|d| d.as_array())
+            .into_iter()
+            .flatten()
+            .filter_map(|t| {
+                let id = t.get("id")?.as_str()?.to_owned();
+                Some(PresetTombstone { id, deleted_at: parse_time(t.get("deletedAt"))? })
+            })
+            .collect();
+
+        let layout = value.get("layout");
+        let mut order: Vec<String> = Vec::new();
+        for id in layout.and_then(|l| l.get("order")).and_then(|o| o.as_array()).into_iter().flatten().filter_map(|v| v.as_str()) {
+            if (Builtin::from_id(id).is_some() || is_user_id(id)) && !order.iter().any(|o| o == id) && order.len() < 200 {
+                order.push(id.to_owned());
+            }
+        }
+        let auto = layout
+            .and_then(|l| l.get("auto"))
+            .and_then(|a| a.as_object())
+            .into_iter()
+            .flatten()
+            .filter(|(id, _)| Builtin::from_id(id).is_some())
+            .filter_map(|(id, on)| Some((id.clone(), on.as_bool()?)))
+            .collect();
+        Self {
+            version: SYNC_VERSION,
+            presets,
+            deleted: prune_tombstones(deleted),
+            layout: SyncLayout { order, auto, updated_at: parse_time(layout.and_then(|l| l.get("updatedAt"))) },
+        }
+    }
+
+    /// Serialisiert (für `PUT /v1/me/sync/presets`).
+    pub fn to_value(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap_or(serde_json::Value::Null)
+    }
+
+    /// Ohne Symbol-Adressen (falls die Daten sonst zu groß würden).
+    pub fn without_icons(&self) -> Self {
+        let mut out = self.clone();
+        for item in out.presets.iter_mut().flat_map(|p| p.items.iter_mut()) {
+            item.icon_url = None;
+        }
+        out
+    }
+}
+
+/// Lokaler Stand in der Form des Abgleichs.
+fn sync_view(list: &[StoredPreset], meta: &Meta) -> SyncData {
+    let mut presets: Vec<SyncPreset> = list
+        .iter()
+        .filter(|p| Builtin::from_id(&p.id).is_none())
+        .map(|p| SyncPreset {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            auto: p.auto,
+            items: p.items.clone(),
+            updated_at: p.updated_at,
+        })
+        .collect();
+    presets.sort_by(|a, b| a.id.cmp(&b.id));
+    SyncData {
+        version: SYNC_VERSION,
+        presets,
+        deleted: meta.deleted.clone(),
+        layout: SyncLayout {
+            order: list.iter().map(|p| p.id.clone()).collect(),
+            auto: list.iter().filter(|p| Builtin::from_id(&p.id).is_some()).map(|p| (p.id.clone(), p.auto)).collect(),
+            updated_at: meta.layout_updated_at,
+        },
+    }
+}
+
+/// Führt lokalen und entfernten Stand zusammen (rein, getestet).
+pub fn merge(local: &SyncData, remote: &SyncData) -> SyncData {
+    // Grabsteine: Vereinigung, je ID der jüngste.
+    let mut deleted: HashMap<String, DateTime<Utc>> = HashMap::new();
+    for t in local.deleted.iter().chain(&remote.deleted) {
+        let at = deleted.entry(t.id.clone()).or_insert(t.deleted_at);
+        *at = (*at).max(t.deleted_at);
+    }
+    // Presets: Vereinigung, je ID die jüngere Änderung (gleich alt → Konto).
+    let mut presets: BTreeMap<String, SyncPreset> = local.presets.iter().map(|p| (p.id.clone(), p.clone())).collect();
+    for p in &remote.presets {
+        match presets.get(&p.id) {
+            Some(existing) if existing.updated_at > p.updated_at => {}
+            _ => {
+                presets.insert(p.id.clone(), p.clone());
+            }
+        }
+    }
+    // Gelöscht nach der letzten Änderung → weg; danach geändert → Grabstein weg.
+    presets.retain(|id, p| match deleted.get(id) {
+        Some(at) if p.updated_at.is_none_or(|u| u <= *at) => false,
+        Some(_) => {
+            deleted.remove(id);
+            true
+        }
+        None => true,
+    });
+    let (winner, other) =
+        if local.layout.updated_at > remote.layout.updated_at { (&local.layout, &remote.layout) } else { (&remote.layout, &local.layout) };
+    let mut order: Vec<String> = Vec::new();
+    for id in winner.order.iter().chain(&other.order).chain(presets.keys()) {
+        let known = Builtin::from_id(id).is_some() || presets.contains_key(id);
+        if known && !order.contains(id) {
+            order.push(id.clone());
+        }
+    }
+    let mut auto = other.auto.clone();
+    auto.extend(winner.auto.iter().map(|(k, v)| (k.clone(), *v)));
+    SyncData {
+        version: SYNC_VERSION,
+        presets: presets.into_values().collect(),
+        deleted: prune_tombstones(deleted.into_iter().map(|(id, deleted_at)| PresetTombstone { id, deleted_at }).collect()),
+        layout: SyncLayout { order, auto, updated_at: winner.updated_at.max(other.updated_at) },
+    }
+}
+
+/// Baut aus einem zusammengeführten Stand die gespeicherte Liste.
+fn from_sync(data: &SyncData) -> (Vec<StoredPreset>, Meta) {
+    let by_id: HashMap<&str, &SyncPreset> = data.presets.iter().map(|p| (p.id.as_str(), p)).collect();
+    let list = data
+        .layout
+        .order
+        .iter()
+        .filter_map(|id| match Builtin::from_id(id) {
+            Some(b) => Some(StoredPreset::new(id.clone(), "", data.layout.auto.get(id).copied().unwrap_or(b.default_auto()), Vec::new())),
+            None => by_id.get(id.as_str()).map(|p| StoredPreset {
+                id: p.id.clone(),
+                name: p.name.clone(),
+                auto: p.auto,
+                items: p.items.clone(),
+                updated_at: p.updated_at,
+            }),
+        })
+        .collect();
+    (normalize(list), Meta { deleted: data.deleted.clone(), layout_updated_at: data.layout.updated_at })
+}
+
+/// Lokaler Stand für den Abgleich.
+pub(crate) async fn sync_local(paths: &Paths) -> SyncData {
+    let (list, meta) = read_all(paths).await;
+    sync_view(&list, &meta)
+}
+
+/// Übernimmt den Stand vom Konto (zusammengeführt mit dem lokalen). Liefert
+/// den neuen lokalen Stand und ob sich lokal etwas geändert hat.
+pub(crate) async fn sync_merge(paths: &Paths, remote: &SyncData) -> Result<(SyncData, bool)> {
+    let _guard = WRITE_LOCK.lock().await;
+    let (list, meta) = read_all(paths).await;
+    let before = sync_view(&list, &meta);
+    let (list, meta) = from_sync(&merge(&before, remote));
+    let after = sync_view(&list, &meta);
+    let changed = after != before;
+    if changed {
+        write_all(paths, &list, &meta).await?;
+    }
+    Ok((after, changed))
 }
 
 // --- Auflösen ------------------------------------------------------------------------
@@ -1463,7 +1798,7 @@ fn has_renderer(existing: &Existing) -> bool {
 /// für diese Version gar nichts davon gibt.
 pub async fn install_fps_boost(http: &reqwest::Client, paths: &Paths, instance: &Instance) -> Result<Vec<String>> {
     let preset = view(
-        &StoredPreset { id: Builtin::FpsBoost.id().to_owned(), name: String::new(), auto: true, items: Vec::new() },
+        &StoredPreset::new(Builtin::FpsBoost.id(), "", true, Vec::new()),
         false,
     );
     let report = run(http, paths, instance, &wanted_of(&preset), &|_| {}).await?;
@@ -1743,7 +2078,7 @@ mod tests {
     }
 
     fn builtin_view(b: Builtin) -> Preset {
-        view(&StoredPreset { id: b.id().into(), name: String::new(), auto: false, items: Vec::new() }, true)
+        view(&StoredPreset::new(b.id(), "", false, Vec::new()), true)
     }
 
     fn ids_of(wanted: &[Wanted]) -> Vec<&str> {
@@ -1940,7 +2275,7 @@ mod tests {
 
     #[test]
     fn normalize_keeps_builtins_once_and_drops_garbage() {
-        let own = |id: &str, name: &str| StoredPreset { id: id.into(), name: name.into(), auto: false, items: Vec::new() };
+        let own = |id: &str, name: &str| StoredPreset::new(id, name, false, Vec::new());
         let good = "0123456789abcdef0123456789abcdef";
         let list = normalize(vec![
             own(good, "Meine Basics"),
@@ -1968,7 +2303,7 @@ mod tests {
         assert_eq!(ids, ["trs-voice-chat", "trs-fps-boost", "trs-fps-shader-lite", "trs-fps-shader", "trs-nvidium", "trs-replay"]);
 
         // Zwei Stufen automatisch (von Hand bearbeitet): nur die erste bleibt es.
-        let auto = |id: &str| StoredPreset { id: id.into(), name: String::new(), auto: true, items: Vec::new() };
+        let auto = |id: &str| StoredPreset::new(id, "", true, Vec::new());
         let fixed = normalize(vec![auto("trs-fps-shader"), auto("trs-fps-boost")]);
         let on: Vec<&str> = fixed.iter().filter(|p| p.auto).map(|p| p.id.as_str()).collect();
         assert_eq!(on, ["trs-fps-shader"]);
@@ -2017,6 +2352,137 @@ mod tests {
         assert!(parse_export(&vec![b' '; MAX_IMPORT_BYTES as usize + 1]).is_err());
         assert_eq!(export_file_name("Meine/Basics"), "Meine_Basics.trs-preset.json");
         assert_eq!(export_file_name("???"), "preset.trs-preset.json");
+    }
+
+    fn t(minutes: i64) -> Option<DateTime<Utc>> {
+        Some(Utc::now() - chrono::Duration::days(1) + chrono::Duration::minutes(minutes))
+    }
+
+    fn sp(id: &str, name: &str, at: Option<DateTime<Utc>>) -> SyncPreset {
+        SyncPreset { id: id.into(), name: name.into(), auto: false, items: vec![validate_item(item("abc")).unwrap()], updated_at: at }
+    }
+
+    fn data(presets: Vec<SyncPreset>, deleted: Vec<(&str, i64)>, order: &[&str], layout_at: Option<DateTime<Utc>>) -> SyncData {
+        let mut presets = presets;
+        presets.sort_by(|a, b| a.id.cmp(&b.id));
+        SyncData {
+            version: SYNC_VERSION,
+            presets,
+            deleted: deleted.into_iter().map(|(id, m)| PresetTombstone { id: id.into(), deleted_at: t(m).unwrap() }).collect(),
+            layout: SyncLayout { order: order.iter().map(|s| (*s).to_owned()).collect(), auto: BTreeMap::new(), updated_at: layout_at },
+        }
+    }
+
+    const P1: &str = "11111111111111111111111111111111";
+    const P2: &str = "22222222222222222222222222222222";
+    const P3: &str = "33333333333333333333333333333333";
+
+    #[test]
+    fn sync_merge_is_a_union_with_last_writer_wins() {
+        // Erster Abgleich: Vereinigung, nichts geht verloren.
+        let local = data(vec![sp(P1, "Hier", t(1))], vec![], &[P1], None);
+        let remote = data(vec![sp(P2, "Dort", t(1))], vec![], &[P2], None);
+        let merged = merge(&local, &remote);
+        assert_eq!(merged.presets.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(), [P1, P2]);
+        // Gleich alte Reihenfolge → die vom Konto, Lokales hinten dran.
+        assert_eq!(merged.layout.order, [P2, P1]);
+
+        // Gleiche ID: die jüngere Änderung gewinnt – in beide Richtungen.
+        let local = data(vec![sp(P1, "Neu hier", t(5)), sp(P2, "Alt hier", t(1))], vec![], &[P1, P2], t(9));
+        let remote = data(vec![sp(P1, "Alt dort", t(2)), sp(P2, "Neu dort", t(3))], vec![], &[P2, P1], t(4));
+        let merged = merge(&local, &remote);
+        let names: Vec<&str> = merged.presets.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(names, ["Neu hier", "Neu dort"]);
+        assert_eq!(merged.layout.order, [P1, P2], "jüngere Reihenfolge gewinnt");
+    }
+
+    #[test]
+    fn sync_merge_respects_tombstones_on_both_sides() {
+        // Hier gelöscht nach der letzten Änderung dort → bleibt gelöscht, Grabstein bleibt.
+        let local = data(vec![], vec![(P1, 5)], &[], None);
+        let remote = data(vec![sp(P1, "Dort", t(2)), sp(P2, "Dort", t(2))], vec![(P3, 4)], &[P1, P2], None);
+        let merged = merge(&local, &remote);
+        assert_eq!(merged.presets.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(), [P2]);
+        assert_eq!(merged.deleted.iter().map(|d| d.id.as_str()).collect::<Vec<_>>(), [P1, P3]);
+        assert!(!merged.layout.order.contains(&P1.to_owned()));
+
+        // Dort gelöscht → hier weg; hier danach noch geändert → bleibt, Grabstein fällt.
+        let local = data(vec![sp(P3, "Alt", t(1)), sp(P2, "Neuer", t(8))], vec![], &[P3, P2], None);
+        let remote = data(vec![], vec![(P3, 4), (P2, 6)], &[], None);
+        let merged = merge(&local, &remote);
+        assert_eq!(merged.presets.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(), [P2]);
+        assert_eq!(merged.deleted.iter().map(|d| d.id.as_str()).collect::<Vec<_>>(), [P3]);
+
+        // Presets ohne Änderungszeit (aus älteren Versionen) verlieren gegen jeden Grabstein.
+        let local = data(vec![sp(P1, "Alt", None)], vec![], &[P1], None);
+        let remote = data(vec![], vec![(P1, 0)], &[], None);
+        assert!(merge(&local, &remote).presets.is_empty());
+    }
+
+    #[test]
+    fn sync_data_from_the_account_is_checked() {
+        let value = serde_json::json!({
+            "version": 1,
+            "presets": [
+                { "id": P1, "name": " Basics ", "auto": true, "updatedAt": "2026-09-25T10:00:00.000Z",
+                  "items": [ { "source": "modrinth", "projectId": "AANobbMI", "title": "Sodium", "kind": "mod" },
+                             { "source": "curseforge", "projectId": "1", "title": "x", "kind": "mod" },
+                             { "source": "modrinth", "projectId": "../böse", "title": "x", "kind": "mod" } ] },
+                { "id": "../x", "name": "kaputt" },
+                { "id": P2, "name": "" },
+                "nicht mal ein Objekt"
+            ],
+            "deleted": [ { "id": P3, "deletedAt": Utc::now().to_rfc3339() }, { "id": P3 } ],
+            "layout": { "order": ["trs-replay", "../x", P1, "trs-replay"], "auto": { "trs-voice-chat": true, "böse": true },
+                        "updatedAt": "kaputt" }
+        });
+        let parsed = SyncData::from_value(&value);
+        assert_eq!(parsed.presets.len(), 1);
+        assert_eq!(parsed.presets[0].name, "Basics");
+        assert_eq!(parsed.presets[0].items.len(), 1);
+        assert!(parsed.presets[0].updated_at.is_some());
+        assert_eq!(parsed.deleted.len(), 1);
+        assert_eq!(parsed.layout.order, ["trs-replay", P1]);
+        assert_eq!(parsed.layout.auto.keys().collect::<Vec<_>>(), ["trs-voice-chat"]);
+        assert_eq!(parsed.layout.updated_at, None);
+        // Unsinn ergibt einfach nichts.
+        assert!(SyncData::from_value(&serde_json::json!("x")).presets.is_empty());
+        // Ohne Symbole kleiner, sonst gleich.
+        let slim = parsed.without_icons();
+        assert_eq!(slim.presets[0].items[0].project_id, "AANobbMI");
+    }
+
+    #[tokio::test]
+    async fn sync_merge_updates_the_store() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let own = create(&paths, PresetInput { name: "Hier".into(), auto: false, items: vec![item("abc")] }).await.unwrap();
+        let local = sync_local(&paths).await;
+        assert_eq!(local.presets.len(), 1);
+        assert!(local.presets[0].updated_at.is_some());
+
+        // Vom Konto: ein neues Preset, „Voice Chat“ immer automatisch (neuer eingestellt).
+        let mut remote = data(vec![sp(P2, "Dort", t(1))], vec![], &[P2, "trs-voice-chat"], Some(Utc::now()));
+        remote.layout.auto.insert("trs-voice-chat".into(), true);
+        let (after, changed) = sync_merge(&paths, &remote).await.unwrap();
+        assert!(changed);
+        let listed = list(&paths).await.unwrap();
+        assert_eq!(listed[0].id, P2, "Reihenfolge vom Konto");
+        assert!(listed.iter().any(|p| p.id == own.id), "eigenes Preset bleibt");
+        assert!(listed.iter().find(|p| p.id == "trs-voice-chat").unwrap().auto);
+        // Nochmal derselbe Stand → keine Änderung mehr.
+        let (again, changed) = sync_merge(&paths, &after).await.unwrap();
+        assert!(!changed);
+        assert_eq!(again, after);
+
+        // Löschen hinterlässt einen Grabstein, der mit abgeglichen wird.
+        delete(&paths, &own.id).await.unwrap();
+        let local = sync_local(&paths).await;
+        assert_eq!(local.deleted.iter().map(|d| d.id.as_str()).collect::<Vec<_>>(), [own.id.as_str()]);
+        // Reihenfolge ändern zählt als Änderung der Anordnung.
+        let ids: Vec<String> = list(&paths).await.unwrap().into_iter().rev().map(|p| p.id).collect();
+        reorder(&paths, &ids).await.unwrap();
+        assert!(sync_local(&paths).await.layout.updated_at > after.layout.updated_at);
     }
 
     #[test]

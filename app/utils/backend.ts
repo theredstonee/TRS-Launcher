@@ -16,6 +16,7 @@ import {
   trsPlayerCapeSchema,
   trsRedeemSchema,
   trsStatusSchema,
+  trsSyncStatusSchema,
   trsUserRefSchema,
   type TrsPrivacy,
   type TrsReportReason,
@@ -353,6 +354,7 @@ export const backend = {
   addSkinFile: (name: string, variant: SkinVariant) => call<LibrarySkin | null>('add_skin_file', { name, variant }),
   saveActiveSkin: (name: string) => call<LibrarySkin>('save_active_skin', { name }),
   deleteSkin: (id: string) => call<void>('delete_skin', { id }),
+  renameSkin: (id: string, name: string) => call<LibrarySkin>('rename_skin', { id, name }),
   /**
    * Schickt den fertigen Entwurf (nur den Unterschied) an die Warteschlange im
    * Kern und kehrt sofort zurück. `account` = UUID des gezeigten Profils.
@@ -437,6 +439,8 @@ export const backend = {
   /** TRS-Dienste (Umhänge, Freunde, Verwaltung). Der Token bleibt im Kern. */
   trs: {
     status: () => checked(trsStatusSchema, 'trs_status'),
+    /** Stand der Synchronisation mit dem TRS-Konto (Skins, Presets, Theme/Sprache). */
+    syncStatus: () => checked(trsSyncStatusSchema, 'trs_sync_status'),
     setConsent: (accepted: boolean) => checked(trsStatusSchema, 'trs_set_consent', { accepted }),
     me: () => checked(trsMeSchema, 'trs_me'),
     updateMe: (patch: Partial<TrsPrivacy>) => checked(trsMeSchema, 'trs_update_me', { patch }),

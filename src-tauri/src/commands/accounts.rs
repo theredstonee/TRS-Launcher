@@ -18,7 +18,10 @@ pub async fn login_browser(app: AppHandle, launcher: State<'_, LauncherState>) -
             log::error!("Browser konnte nicht geöffnet werden: {e}");
         }
     };
-    Ok(launcher.accounts().login_browser(&open).await?)
+    let account = launcher.accounts().login_browser(&open).await?;
+    // Neuer (aktiver) Account: gleich mit seinem TRS-Konto abgleichen (nur mit Einwilligung).
+    launcher.trs_sync_kick();
+    Ok(account)
 }
 
 /// Device-Code-Login: Der Code geht über den Channel ans Frontend, die
@@ -39,7 +42,9 @@ pub async fn login_device_code(
             log::error!("Browser konnte nicht geöffnet werden: {e}");
         }
     };
-    Ok(launcher.accounts().login_device_code(&show).await?)
+    let account = launcher.accounts().login_device_code(&show).await?;
+    launcher.trs_sync_kick();
+    Ok(account)
 }
 
 #[tauri::command]
@@ -51,8 +56,9 @@ pub async fn cancel_login(launcher: State<'_, LauncherState>) -> CommandResult<(
 #[tauri::command]
 pub async fn set_active_account(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
     launcher.accounts().set_active(&id).await?;
-    // Präsenz sofort auf den neuen Account umstellen.
+    // Präsenz sofort auf den neuen Account umstellen, Sammlung mit dessen TRS-Konto abgleichen.
     launcher.trs().presence_kick();
+    launcher.trs_sync_kick();
     Ok(())
 }
 

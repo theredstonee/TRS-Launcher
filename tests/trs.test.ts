@@ -16,6 +16,9 @@ import {
   trsSortFriends,
   trsStatusLabel,
   trsStatusSchema,
+  trsSyncEventSchema,
+  trsSyncLabel,
+  trsSyncStatusSchema,
   trsTargetSchema,
   trsUnlockLabel,
   trsWebLoginCodeSchema,
@@ -207,5 +210,32 @@ describe('Freunde', () => {
     expect(trsJoinInstance(instances, { ...game, loader: 'forge' })?.id).toBe('gleich-vanilla')
     expect(trsJoinInstance(instances, { ...game, version: '1.12.2' })?.id).toBe('zuletzt')
     expect(trsJoinInstance([], game)).toBeNull()
+  })
+})
+
+describe('TRS-Synchronisation', () => {
+  const status = { active: true, syncing: false, lastSyncAt: null, problem: null }
+
+  it('prüft Status und Event aus dem Kern', () => {
+    expect(trsSyncStatusSchema.safeParse(status).success).toBe(true)
+    expect(trsSyncStatusSchema.safeParse({ ...status, problem: 'kaputt' }).success).toBe(false)
+    const event = {
+      account: '75c1a6f3112240abbdb57b9d21c64232',
+      changes: { skins: true, presets: false, settings: true },
+      status: { ...status, lastSyncAt: '2026-09-25T10:00:00Z' },
+    }
+    expect(trsSyncEventSchema.safeParse(event).success).toBe(true)
+    expect(trsSyncEventSchema.safeParse({ ...event, account: '../x' }).success).toBe(false)
+    expect(trsSyncEventSchema.safeParse({ ...event, changes: { skins: 'ja' } }).success).toBe(false)
+  })
+
+  it('zeigt einen dezenten Hinweis – nur wenn aktiv', () => {
+    expect(trsSyncLabel(null)).toBeNull()
+    expect(trsSyncLabel({ ...status, active: false, lastSyncAt: '2026-09-25T10:00:00Z' })).toBeNull()
+    expect(trsSyncLabel({ ...status, syncing: true })).toBe('Synchronisiere mit deinem TRS-Konto …')
+    expect(trsSyncLabel({ ...status, problem: 'offline' })).toContain('nicht erreichbar')
+    expect(trsSyncLabel(status)).toBe('Wird gleich mit deinem TRS-Konto synchronisiert')
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60_000).toISOString()
+    expect(trsSyncLabel({ ...status, lastSyncAt: twoMinutesAgo })).toBe('Mit TRS-Konto synchronisiert · vor 2 Minuten')
   })
 })

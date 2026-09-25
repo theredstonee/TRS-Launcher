@@ -147,6 +147,7 @@ impl Launcher {
         if accepted {
             self.trs.store.set_consent(Consent::Accepted).await;
             self.trs.presence.kick();
+            self.trs.sync.kick();
         } else {
             if self.trs.enabled().await {
                 for account in self.trs.store.accounts().await {
@@ -181,6 +182,9 @@ impl Launcher {
         let account = self.trs_account().await?;
         self.trs.call_raw(self.accounts(), &account, &Req::delete("/v1/me")).await?;
         let _ = self.trs.store.take_token(&account).await;
+        // Auch die synchronisierten Skins/Presets/Einstellungen sind auf dem Server weg:
+        // ein späterer Abgleich beginnt wie beim ersten Mal (lokal wird nichts gelöscht).
+        self.trs.sync_store.forget(&account).await;
         if self.trs.presence.online_for().as_deref() == Some(account.as_str()) {
             self.trs.presence.set_online_for(None);
         }
@@ -202,6 +206,8 @@ impl Launcher {
             self.trs.presence.set_online_for(None);
         }
         self.trs.presence.kick();
+        self.trs.sync_store.forget(account).await;
+        self.trs.sync.kick();
     }
 
     // --- Umhänge ------------------------------------------------------------------------

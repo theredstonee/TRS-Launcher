@@ -13,7 +13,7 @@ use super::*;
 use crate::Launcher;
 use crate::launch::Session;
 
-const ACC: &str = "75c1a6f3112240abbdb57b9d21c64232";
+pub(super) const ACC: &str = "75c1a6f3112240abbdb57b9d21c64232";
 const OTHER: &str = "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0";
 
 fn token(n: u8) -> String {
@@ -59,7 +59,7 @@ impl SessionSource for FakeSessions {
 }
 
 /// Handler für Challenge/Join/Verify; vergibt der Reihe nach `token(b'A')`, `token(b'B')`, …
-fn auth_routes(req: &Request, issued: &AtomicUsize, accept_mc: &str) -> Option<Response> {
+pub(super) fn auth_routes(req: &Request, issued: &AtomicUsize, accept_mc: &str) -> Option<Response> {
     let server_id = "ab".repeat(20);
     Some(match (req.method.as_str(), req.path.as_str()) {
         ("POST", "/v1/auth/challenge") => {
@@ -245,7 +245,7 @@ struct World {
 }
 
 /// Launcher mit einem angemeldeten Account und TRS-Endpunkten auf dem Mock.
-async fn launcher(server: &MockServer, accounts: &[&str]) -> (tempfile::TempDir, Arc<Launcher>) {
+pub(super) async fn launcher(server: &MockServer, accounts: &[&str]) -> (tempfile::TempDir, Arc<Launcher>) {
     let dir = tempfile::tempdir().unwrap();
     let list: Vec<_> = accounts
         .iter()

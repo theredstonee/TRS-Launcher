@@ -186,6 +186,8 @@ export interface Settings {
   discordPresence: boolean
   java: JavaPaths
   clips: ClipSettings
+  /** Eigene Skins, eigene Presets, Theme, Akzentfarbe und Sprache mit dem TRS-Konto abgleichen – ab Werk an */
+  trsSync: boolean
 }
 
 // --- Clips & Aufnahme ------------------------------------------------------------------
