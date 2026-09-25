@@ -218,9 +218,9 @@ Auth required.
 
 | Setting | Default | Effect |
 |---|---|---|
-| `showBadge` | `true` | Others see the TRS badge in the lookup. |
+| `showBadge` | `true` | Others see the TRS badge in the lookup **while you're playing with TRS** (live badge, §4.1). |
 | `showCapeToOthers` | `true` | Others see the active cape. You always see your own. |
-| `presenceVisibility` | `"friends"` | `"friends"`: friends see your online state. `"nobody"`: you always appear offline. |
+| `presenceVisibility` | `"friends"` | `"friends"`: friends see your online state. `"nobody"`: you always appear offline in the friends list. This does **not** affect the live badge – that is `showBadge`. |
 | `shareServer` | `false` | Friends see the server address while you're `in-game`. |
 | `showCosmeticsToOthers` | `true` | Others see your equipped cosmetics (§11). You always see your own. Emotes are sent regardless. |
 
@@ -334,35 +334,54 @@ Privacy rules, enforced server-side:
 
 - Banned accounts are never returned.
 - Accounts that **blocked the requester** are never returned.
-- `badge` is the player's `showBadge` setting.
+- `badge` is **live**, see below.
 - `cape` is set only when the player has an active cape **and** `showCapeToOthers` is on **and** the cape is `approved`.
 - For your **own** UUID you also get your own `pending` upload, and your cape even with `showCapeToOthers=false`.
 - Cosmetics follow the same rules: others get a slot only if the player has `showCosmeticsToOthers` on **and** the item is `approved`. You always see your own equipped items, including `pending` uploads.
+
+**Live badge.** The badge means "plays with TRS right now". `badge` is `true` only if **all** of these hold:
+
+1. The player has `showBadge=true`.
+2. The player is **in game with TRS** right now: their presence (§4.2) is `in-game`, reported either by the TRS Client (`via: "client"`, while in a world or on a server) or by the TRS Launcher (`via: "launcher"`, while a game it started for this account runs). A launcher that is merely open (`online`) does **not** count, so a TRS user who plays with another client shows no badge.
+3. The **requester is in game themselves** (their own presence is `in-game`). Otherwise others' badges are always `false`. This keeps "is playing right now" between people who play at the same time – typically players on the same server. Your **own** badge only needs rules 1 and 2.
+
+Because of rule 3 the mod must send its own `in-game` heartbeat **before** the first lookup in a world, and look everyone up again once it is in game. `presenceVisibility` is not involved: it only controls what friends see in the friends list.
 
 Suggested client behaviour:
 
 - Batch the UUIDs of visible players.
 - Cache results for about 5 minutes per UUID.
 - Refresh when players join the tab list.
-- For live changes (emotes, skin, cape and cosmetic changes), subscribe to the visible players with `GET /v1/events/players` (§13) instead of polling.
+- For live changes (emotes, skin, cape, cosmetic and badge changes), subscribe to the visible players with `GET /v1/events/players` (§13) instead of polling.
+- Players who join often send their first heartbeat a moment after you see them. Ask again once, about 10 s after a new player appeared without a badge.
 
 ### 4.2 `POST /v1/presence` (heartbeat)
 
-Auth required. Send it **at least every 60 s**. Presence expires **180 s** after the last heartbeat. The limit is 6 per minute.
+Auth required. Send it **at least every 60 s**. A report expires **180 s** after its last heartbeat. The limit is 6 per minute.
 
 ```json
-{ "state": "in-game", "game": { "version": "1.21.1", "loader": "fabric", "server": "play.example.net:25565" } }
+{ "state": "in-game", "via": "client", "game": { "version": "1.21.1", "loader": "fabric", "server": "play.example.net:25565" } }
 ```
 
 | Field | Values |
 |---|---|
-| `state` | `online` (launcher open), `in-game`, `offline` (clears the presence immediately) |
+| `state` | `online` (launcher open), `in-game`, `offline` (clears immediately, see below) |
+| `via` | Optional. `launcher` (TRS Launcher) or `client` (TRS Client mod). |
 | `game.version` | `^[0-9A-Za-z._+ -]{1,32}$` |
 | `game.loader` | `vanilla` \| `fabric` \| `quilt` \| `forge` \| `neoforge` |
 | `game.server` | Optional host or IPv4, with an optional `:port`. No scheme, no path. |
 
 - `game.server` is **stored only if** the user has `shareServer=true` and `state` is `in-game`. Otherwise it is silently dropped.
 - The server address is stored lower-cased.
+
+**Two sources.** The launcher and the mod report separately; each report has its own 180 s expiry and they never overwrite each other. The visible presence is `in-game` if either source says `in-game` (the mod's report wins, because it knows the server), otherwise `online`. `offline` with `via` clears only that source.
+
+| Who | Sends |
+|---|---|
+| TRS Launcher | `online` + `via: "launcher"` every 60 s while it runs and no game of this account runs. While a game **it started** for this account runs: `in-game` + `via: "launcher"` with version and loader (no server) every 60 s. `offline` + `via: "launcher"` on exit or account switch. |
+| TRS Client | `in-game` + `via: "client"` every 60 s **while in a world or on a server**. `offline` + `via: "client"` when leaving the world, turning the online features off and on quit. |
+
+**Old clients (no `via`).** Launchers up to 0.5.x send `online`/`offline` without `via`, and mods up to 0.5.x send `in-game` without `via` all the time the game runs. Without `via`, `in-game` counts as the mod's report, `online` as the launcher's report that **also** clears the mod's report (old launchers send `online` only when no game of this account runs), and `offline` clears **both**. So old clients keep working; old mods show badges while the game runs (also on the title screen), but don't update badges live (they ignore the `badge` event and ask again after their cache runs out).
 
 **200**
 ```json
@@ -752,9 +771,9 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
    - Call `verify`.
    - Store the token encrypted, per Minecraft account.
 2. On any `401`, log in again once. Show `403 banned` in the UI.
-3. Send presence `online` every 60 s while the launcher runs.
-   - Send `in-game` with game info while a game runs.
-   - Send `offline` on exit.
+3. Send presence `online` + `via: "launcher"` every 60 s while the launcher runs.
+   - While a game the launcher started runs, send `in-game` + `via: "launcher"` with version and loader for that account instead.
+   - Send `offline` + `via: "launcher"` on exit.
 4. Friends view: poll `GET /v1/friends` and optionally open the SSE stream.
 5. Cape picker: `GET /v1/capes`, `PUT /v1/me/cape`, upload, redeem.
 6. Cosmetics picker (§11):
@@ -772,9 +791,9 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
 3. Download the texture once per `url`. The `?v=` part changes with the content.
    - Pick the frame with `f = floor(now / frameTimeMs) % frames`.
    - Scale UVs by `scale` (§5.2 for capes, §11.3 for cosmetics).
-4. Never send `game.server` unless the user enabled `shareServer`. The server also drops it.
+4. Presence: `in-game` + `via: "client"` every 60 s while in a world or on a server, first **before** looking anyone up there; `offline` + `via: "client"` when leaving the world and on quit (§4.2). Never send `game.server` unless the user enabled `shareServer`. The server also drops it.
 5. Load `GET /v1/cosmetics/templates` once per session and revalidate it with `If-None-Match`. Render `cosmetics` from the lookup with it (§11).
-6. Open `GET /v1/events/players?uuids=…` for the players you render (§13). Apply `emote`, `skin`, `cape` and `cosmetics` events live.
+6. Open `GET /v1/events/players?uuids=…` for the players you render (§13). Apply `emote`, `skin`, `cape`, `cosmetics` and `badge` events live.
 7. Emote wheel: `GET /v1/me/cosmetics` → `emotes` lists the unlocked ones. Play one with `POST /v1/emotes/play`, then start the animation locally right away (§12).
 
 ---
@@ -1186,6 +1205,7 @@ The response is `Content-Type: text/event-stream`, in the same frame format as �
 | `skin` | `{"type":"skin","uuid":"…","at":"…"}`. The player changed their Mojang skin. Load it again from Mojang or `GET /v1/skins/by-uuid/{uuid}`. |
 | `cape` | `{"type":"cape","uuid":"…","cape":LookupCape\|null}`. The cape as **you** may see it (§4.1 rules). |
 | `cosmetics` | `{"type":"cosmetics","uuid":"…","cosmetics":{"hat":…,"wings":…,"back":…,"aura":…}}`. All four slots as **you** may see them. |
+| `badge` | `{"type":"badge","uuid":"…","badge":true\|false}`. The live badge (§4.1) turned on or off: the player started or stopped playing with TRS, or changed `showBadge`. `true` is sent only to viewers who are in game themselves; `false` goes to every viewer. |
 
 Rules:
 
@@ -1194,7 +1214,8 @@ Rules:
   - cape change
   - approval or rejection of an item the player wears
   - admin revocation
-  - a change of `showCapeToOthers` or `showCosmeticsToOthers`
+  - a change of `showCapeToOthers`, `showCosmeticsToOthers` or `showBadge`
+  - the player starting or stopping to play with TRS (live badge)
   - emote
   - `skin-changed`
 - A player who has **blocked you** never produces events for you. Banned players produce none.

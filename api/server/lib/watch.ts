@@ -6,6 +6,7 @@ export type PlayerEvent =
   | { type: 'skin', uuid: string, at: string }
   | { type: 'cosmetics', uuid: string, cosmetics: LookupCosmetics }
   | { type: 'cape', uuid: string, cape: LookupCape | null }
+  | { type: 'badge', uuid: string, badge: boolean }
 
 export interface Watcher {
   /** Wer zuschaut (Konto des Streams). */
