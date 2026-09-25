@@ -73,6 +73,33 @@ public final class Performance {
 			ModulePanel.Registry.set(module, new PerfPanel.Notice(this, module));
 		}
 		ModulePanel.Registry.set(m.builtinOptimizations, new PerfPanel.Bundled(m.builtinOptimizations));
+		// Einführung + Sync wählen den Grafik-Modus über diese Umsetzung.
+		dev.theredstonee.trsclient.core.intro.FpsModeChooser.install(new ModeChooser(this));
+	}
+
+	/** Grafik-Modus für Einführung und Client-Sync: schreibt die Configs und merkt den Modus fürs TRS-Konto. */
+	static final class ModeChooser implements dev.theredstonee.trsclient.core.intro.FpsModeChooser {
+		private final Performance perf;
+
+		ModeChooser(Performance perf) {
+			this.perf = perf;
+		}
+
+		@Override
+		public String current(TrsModules modules) {
+			return perf.fpsModeChosen() ? perf.fpsMode().key() : null;
+		}
+
+		@Override
+		public void apply(TrsModules modules, String mode) {
+			if (!PRETTY.equals(mode) && !MAX.equals(mode)) return;
+			perf.chooseFpsMode(MAX.equals(mode) ? FpsConfigMode.Mode.MAX : FpsConfigMode.Mode.PRETTY, System.currentTimeMillis());
+		}
+
+		@Override
+		public boolean available() {
+			return FpsConfigMode.shared() != null;
+		}
 	}
 
 	/** Vanilla-Optionen dieser Version (sobald Minecraft sie geladen hat). */
@@ -159,6 +186,8 @@ public final class Performance {
 		FpsConfigMode fps = FpsConfigMode.shared();
 		if (fps == null) return 0;
 		fps.choose(mode);
+		// Auch im client-Sync-Dokument merken (Einführung/andere PCs).
+		m.clientState.setFpsMode(mode.key());
 		int n = game == null ? 0 : fps.applyGame(game, ShaderPacks.active());
 		fps.applyModFiles();
 		findingsAt = 0;
