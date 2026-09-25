@@ -292,4 +292,21 @@ CREATE TABLE sync_docs (
 );
 `,
   },
+  {
+    // TRS-Client-Sync: eigene Dokumente für die Client-Einstellungen (Module, HUD, Tasten, Einführung)
+    // und die Garderobe (Outfits, Favoriten). SQLite kann den CHECK nicht ändern → Tabelle neu anlegen.
+    version: 5,
+    sql: `
+CREATE TABLE sync_docs_v5 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('presets', 'settings', 'client', 'wardrobe')),
+  data TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, kind)
+);
+INSERT INTO sync_docs_v5 (uuid, kind, data, updated_at) SELECT uuid, kind, data, updated_at FROM sync_docs;
+DROP TABLE sync_docs;
+ALTER TABLE sync_docs_v5 RENAME TO sync_docs;
+`,
+  },
 ]

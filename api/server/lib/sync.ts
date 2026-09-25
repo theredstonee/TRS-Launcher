@@ -5,7 +5,7 @@ import { sha256Hex } from './ids'
 import { sanitizeSkinUpload } from './png'
 
 /**
- * TRS-Sync: eigene Skins, eigene Presets und Theme/Akzent/Sprache je Konto.
+ * TRS-Sync: eigene Skins, eigene Presets, Theme/Akzent/Sprache sowie TRS-Client-Einstellungen und Garderobe je Konto.
  * Skins liegen als BLOB in SQLite (klein, neu kodiert) – so sind Bild, Metadaten und Grabstein
  * immer in derselben Transaktion, und Kontolöschung (ON DELETE CASCADE) sowie Sicherungen
  * von `data/` erfassen alles ohne verwaiste Dateien.
@@ -18,6 +18,8 @@ export const TOMBSTONE_TTL_MS = 30 * 24 * 60 * 60 * 1000
 export const MAX_TOMBSTONES = 500
 /** `data` von Presets, serialisiert. */
 export const MAX_PRESETS_BYTES = 64 * 1024
+/** `data` der Client-Dokumente (TRS-Client-Einstellungen, Garderobe), serialisiert. */
+export const MAX_CLIENT_DOC_BYTES = 64 * 1024
 /** Body-Grenzen der Sync-Routen: Base64 von 128 KiB ≈ 171 KiB + Name; Presets 64 KiB + Spielraum für Leerraum. */
 export const SYNC_SKIN_BODY_LIMIT = 192 * 1024
 export const SYNC_PRESETS_BODY_LIMIT = 96 * 1024
@@ -25,7 +27,14 @@ export const SYNC_PRESETS_BODY_LIMIT = 96 * 1024
 export const MAX_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000
 
 export type SkinVariant = 'classic' | 'slim'
-export type SyncDocKind = 'presets' | 'settings'
+export type SyncDocKind = 'presets' | 'settings' | 'client' | 'wardrobe'
+
+/** Größengrenze je Dokument-Art (`settings` ist per Schema auf drei kurze Werte begrenzt). */
+const DOC_LIMITS: Partial<Record<SyncDocKind, { bytes: number, label: string }>> = {
+  presets: { bytes: MAX_PRESETS_BYTES, label: 'Presets' },
+  client: { bytes: MAX_CLIENT_DOC_BYTES, label: 'Client settings' },
+  wardrobe: { bytes: MAX_CLIENT_DOC_BYTES, label: 'Wardrobe' },
+}
 
 interface SkinRow {
   id: string
@@ -53,6 +62,10 @@ export interface SyncOverview {
   deletedSkins: { id: string, deletedAt: string }[]
   presets: SyncDocView | null
   settings: SyncDocView | null
+  /** TRS-Client: Module, HUD, Tasten, Einführung/NEW-Stand (vom Client festgelegt). */
+  client: SyncDocView | null
+  /** TRS-Client-Garderobe: Outfits, Favoriten (vom Client festgelegt). */
+  wardrobe: SyncDocView | null
 }
 
 const iso = (ms: number) => new Date(ms).toISOString()
@@ -89,6 +102,8 @@ export function syncOverview(ctx: AppContext, uuid: string): SyncOverview {
     deletedSkins: tombstones.map((t) => ({ id: t.id, deletedAt: iso(t.deleted_at) })),
     presets: getDoc(ctx, uuid, 'presets'),
     settings: getDoc(ctx, uuid, 'settings'),
+    client: getDoc(ctx, uuid, 'client'),
+    wardrobe: getDoc(ctx, uuid, 'wardrobe'),
   }
 }
 
@@ -191,8 +206,9 @@ export function clientTime(ctx: AppContext, isoTime: string): number {
  */
 export function putDoc(ctx: AppContext, uuid: string, kind: SyncDocKind, data: Record<string, unknown>, updatedAt: number): SyncDocView {
   const json = JSON.stringify(data)
-  if (kind === 'presets' && Buffer.byteLength(json, 'utf8') > MAX_PRESETS_BYTES) {
-    throw new ApiError(413, 'payload_too_large', 'Presets must be at most 64 KB')
+  const limit = DOC_LIMITS[kind]
+  if (limit && Buffer.byteLength(json, 'utf8') > limit.bytes) {
+    throw new ApiError(413, 'payload_too_large', `${limit.label} must be at most 64 KB`)
   }
   return tx(ctx.db, () => {
     const cur = one<{ updated_at: number }>(ctx.db, 'SELECT updated_at FROM sync_docs WHERE uuid = ? AND kind = ?', uuid, kind)

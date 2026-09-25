@@ -1297,7 +1297,7 @@ If GitHub is unreachable, the last good answer is kept. Without one, `release` i
 
 ---
 
-## 17. Sync (own skins, presets, theme and language)
+## 17. Sync (own skins, presets, theme and language, TRS Client)
 
 Keeps the launcher's own skin library ("My skins"), the user's own mod presets and the launcher settings **theme (with accent colour) and language** the same on every device of a Minecraft account. Java and memory options are **never** synced.
 
@@ -1315,7 +1315,9 @@ The launcher only calls these endpoints when the TRS services are on (consent) *
   "skins": [ { "id": "a1b2c3d4e5f6", "name": "Mein Skin", "variant": "slim", "sha256": "…64 hex…", "updatedAt": "2026-09-25T10:00:00.000Z" } ],
   "deletedSkins": [ { "id": "0a1b2c3d4e5f", "deletedAt": "2026-09-24T08:00:00.000Z" } ],
   "presets": { "data": { … }, "updatedAt": "…" },
-  "settings": { "data": { "theme": "dark", "accent": "redstone", "language": "de" }, "updatedAt": "…" }
+  "settings": { "data": { "theme": "dark", "accent": "redstone", "language": "de" }, "updatedAt": "…" },
+  "client": { "data": { … }, "updatedAt": "…" },
+  "wardrobe": { "data": { … }, "updatedAt": "…" }
 }
 ```
 
@@ -1325,7 +1327,7 @@ The launcher only calls these endpoints when the TRS services are on (consent) *
   - `sha256`: hex SHA-256 of the **re-encoded** PNG the server stores and serves. Compare it with the hash of the downloaded file, not of the file you uploaded.
   - `updatedAt`: server time of the last `PUT` or `PATCH`.
 - `deletedSkins`: deletion markers (tombstones) of the last **30 days**, so other devices can delete the skin locally too. At most 500 per account (the oldest are dropped). An id is never in both lists.
-- `presets` / `settings`: `null` until first written. `updatedAt` is the client time sent with the last accepted write.
+- `presets` / `settings` / `client` / `wardrobe`: `null` until first written. `updatedAt` is the client time sent with the last accepted write.
 
 ### 17.2 Skins
 
@@ -1362,6 +1364,8 @@ The launcher only calls these endpoints when the TRS services are on (consent) *
 |---|---|---|
 | `PUT /v1/me/sync/presets` | `{ data: <JSON object>, updatedAt: "<ISO>" }` | **200** `{ presets: { data, updatedAt } }` |
 | `PUT /v1/me/sync/settings` | `{ data: { theme?, accent?, language? }, updatedAt: "<ISO>" }` | **200** `{ settings: { data, updatedAt } }` |
+| `PUT /v1/me/sync/client` | `{ data: <JSON object>, updatedAt: "<ISO>" }` | **200** `{ client: { data, updatedAt } }` |
+| `PUT /v1/me/sync/wardrobe` | `{ data: <JSON object>, updatedAt: "<ISO>" }` | **200** `{ wardrobe: { data, updatedAt } }` |
 
 - `updatedAt` is the time the client changed the data (ISO 8601 with `Z` or offset). The server stores it as sent (millisecond precision) and returns it in UTC.
 - **Last writer wins:** if the stored `updatedAt` is **newer** than the one sent, the write is refused with **`409 stale`** and the stored state:
@@ -1373,6 +1377,8 @@ The launcher only calls these endpoints when the TRS services are on (consent) *
 - `updatedAt` more than **24 hours in the future** (a broken clock that would win every sync) gets `400 invalid_request` with `fields[0].path = "updatedAt"`.
 - A `PUT` replaces the whole document; there is no merge.
 - **Presets:** `data` is any JSON object (no array, no scalar), at most **64 KiB** serialised (`413 payload_too_large` otherwise; request body at most 96 KiB). The launcher decides its structure: only own presets with mod/pack ids and names, **no files, no paths**.
+- **Client** (TRS Client mod): its own settings – modules, HUD layout, TRS key bindings, introduction/"NEW" state. Any JSON object, at most **64 KiB** serialised (like presets). The client decides the structure; **no files, paths, tokens or server addresses**.
+- **Wardrobe** (TRS Client mod): outfits (skin id from §17.2 + cape/cosmetic ids) and favourites. Any JSON object, at most **64 KiB** serialised (like presets).
 - **Settings:** only the keys `theme` (≤ 32), `accent` (≤ 32) and `language` (≤ 16), each `^[A-Za-z0-9_-]+$` (for example `dark`, `redstone`, `pt-BR`). Any other key gets `400 invalid_request`. All three are optional; `{}` is allowed.
 
 ### 17.4 Launcher flow (summary)

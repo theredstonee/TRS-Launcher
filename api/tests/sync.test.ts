@@ -65,7 +65,7 @@ describe('sync skins', () => {
     const o = syncOverview(env.ctx, u.user.uuid)
     expect(o.skins.map((s) => s.id).sort()).toEqual([sid(2), 'a1b2c3d4e5f6'].sort())
     expect(o.skins.find((s) => s.id === sid(2))).toEqual(legacy)
-    expect(o).toMatchObject({ deletedSkins: [], presets: null, settings: null })
+    expect(o).toMatchObject({ deletedSkins: [], presets: null, settings: null, client: null, wardrobe: null })
     expect(JSON.stringify(o)).not.toContain('png')
   })
 
@@ -181,6 +181,23 @@ describe('sync presets and settings', () => {
     expect(err(() => clientTime(env.ctx, new Date(env.clock.t + 25 * 60 * 60_000).toISOString())).code).toBe('invalid_request')
   })
 
+  it('keeps TRS client settings and the wardrobe as their own documents (64 KB each)', async () => {
+    const env = makeEnv()
+    const u = await login(env, 'Steve')
+    const t = env.clock.t - 1000
+    const c = putDoc(env.ctx, u.user.uuid, 'client', { modules: { zoom: { enabled: true } }, intro: { done: true } }, t)
+    const w = putDoc(env.ctx, u.user.uuid, 'wardrobe', { outfits: [{ name: 'PvP', skin: 'a1b2c3d4e5f6' }], favorites: [] }, t)
+    const o = syncOverview(env.ctx, u.user.uuid)
+    expect(o.client).toEqual(c)
+    expect(o.wardrobe).toEqual(w)
+    expect(o.presets).toBeNull()
+    expect(err(() => putDoc(env.ctx, u.user.uuid, 'client', {}, t - 1)).code).toBe('stale')
+    for (const kind of ['client', 'wardrobe'] as const) {
+      const big = err(() => putDoc(env.ctx, u.user.uuid, kind, { x: 'a'.repeat(64 * 1024) }, env.clock.t))
+      expect([big.status, big.code]).toEqual([413, 'payload_too_large'])
+    }
+  })
+
   it('only accepts theme, accent and language in settings', () => {
     const at = '2026-09-25T10:00:00.000Z'
     expect(parseWith(syncSettingsBody, { data: { theme: 'dark', accent: 'redstone', language: 'de' }, updatedAt: at }).data)
@@ -211,7 +228,12 @@ describe('sync privacy', () => {
     putDoc(env.ctx, a.user.uuid, 'presets', { p: 1 }, env.clock.t)
     putDoc(env.ctx, a.user.uuid, 'settings', { theme: 'dark' }, env.clock.t)
 
-    expect(syncOverview(env.ctx, b.user.uuid)).toEqual({ skins: [], deletedSkins: [], presets: null, settings: null })
+    putDoc(env.ctx, a.user.uuid, 'client', { modules: {} }, env.clock.t)
+    putDoc(env.ctx, a.user.uuid, 'wardrobe', { outfits: [] }, env.clock.t)
+
+    expect(syncOverview(env.ctx, b.user.uuid)).toEqual({
+      skins: [], deletedSkins: [], presets: null, settings: null, client: null, wardrobe: null,
+    })
     expect(err(() => readSkinPng(env.ctx, b.user.uuid, sid(1))).code).toBe('skin_not_found')
     expect(err(() => patchSkin(env.ctx, b.user.uuid, sid(1), { name: 'x' })).code).toBe('skin_not_found')
     // Bob „löscht“ Alices ID nur bei sich selbst.
