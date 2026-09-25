@@ -309,4 +309,25 @@ DROP TABLE sync_docs;
 ALTER TABLE sync_docs_v5 RENAME TO sync_docs;
 `,
   },
+  {
+    // Eigene (freigegebene) Umhänge mit Freunden teilen: Angebot → annehmen → Umhang in der Sammlung des Freundes.
+    // granted_by = wer angeboten hat (Ersteller oder ein Freund, der weiterteilt) → Baum je Umhang, Entzug
+    // nimmt den ganzen Ast mit (im Code, rekursiv). Umhang weg / Konto weg → Zeilen per FK weg.
+    version: 6,
+    sql: `
+CREATE TABLE cape_shares (
+  cape_id TEXT NOT NULL REFERENCES capes(id) ON DELETE CASCADE,
+  holder_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  granted_by TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (status IN ('offered', 'accepted')),
+  created_at INTEGER NOT NULL,
+  accepted_at INTEGER,
+  PRIMARY KEY (cape_id, holder_uuid),
+  CHECK (holder_uuid <> granted_by),
+  CHECK ((status = 'accepted') = (accepted_at IS NOT NULL))
+);
+CREATE INDEX cape_shares_holder ON cape_shares(holder_uuid, status);
+CREATE INDEX cape_shares_granted_by ON cape_shares(granted_by, cape_id);
+`,
+  },
 ]

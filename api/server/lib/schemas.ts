@@ -145,6 +145,9 @@ export const createCodesBody = z
 
 export const grantCapeBody = z.strictObject({ capeId: capeIdSchema })
 
+/** Umhang einem Freund anbieten. */
+export const capeOfferBody = z.strictObject({ capeId: capeIdSchema, friend: uuidSchema })
+
 export const adminCapeListQuery = z.strictObject({
   status: z.enum(['pending', 'approved', 'rejected', 'reported']).default('pending'),
 })

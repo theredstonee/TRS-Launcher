@@ -96,6 +96,7 @@ All limits use a token bucket that refills evenly across the window.
 | `DELETE /v1/me`, per account | 3 / h |
 | Every `/v1/me/sync*` request, per account | 120 / min (own bucket, does not use the read/write buckets) |
 | `PUT /v1/me/sync/skins/{id}`, per account | additionally 30 / min |
+| Cape sharing mutations (offer, accept, decline, revoke), per account | 30 / min (on top of the write bucket) |
 | Admin, per admin (or API key) | 240 / min |
 
 ---
@@ -244,6 +245,7 @@ Auth required. Deletes everything immediately:
 - account, sessions, friendships, requests and blocks (both directions)
 - uploaded capes and cosmetics and their files
 - equipped cosmetics, cape and cosmetic grants
+- cape shares (§5.10): capes friends shared with you (and everything you re-shared from them), and every share of your own uploads
 - code redemptions, reports and presence
 - all sync data (§17): skins with their images, deletion markers, presets and settings
 
@@ -278,6 +280,7 @@ Who can wear a cape:
 - **free** capes: everyone.
 - **code** and **admin** capes: holders of a grant or a redeemed code. Admins can wear every built-in cape.
 - **Own uploads:** while `pending` or `approved`, but never once `rejected`.
+- **Capes a friend shared with you** (§5.10): after you accepted the offer, while the cape is `approved` and until the share is revoked.
 
 ---
 
@@ -476,7 +479,18 @@ Auth required. Returns the catalog from the user's point of view: every built-in
 ```
 
 - `owned` means the user can wear the cape right now.
-- `rejectReason` is present only for uploads, and is `null` when there is no reason.
+- `rejectReason` is present only for uploads, and is `null` when there is no reason (always `null` for shared capes).
+- The list also contains capes **friends shared with you** (accepted, §5.10). They come last, have `kind: "upload"`, `unlock: "owner"` and `status: "approved"`, and carry `shared`.
+
+Sharing fields (every entry has them):
+
+| Field | Meaning |
+|---|---|
+| `shareable` | `true` if you may offer this cape to friends (§5.10): your own `approved` upload, or a shared cape you accepted. |
+| `shared` | `null`, or for a cape a friend shared with you: `{ "from": { "uuid", "name" }, "creator": { "uuid", "name" } }`. `from` gave it to you, `creator` uploaded it (they differ after a re-share). |
+| `holders` | How many players you see as holders (§5.10): for your own upload all holders, for a shared cape the ones in your branch. `0` if not shareable. |
+
+Old clients that don't know these fields see a shared cape as an upload they own. Deleting it with `DELETE /v1/capes/{id}` returns `404`; give it back with `DELETE /v1/capes/{id}/holders/{own uuid}` instead.
 
 ### 5.4 `GET /v1/capes/{id}.png`
 
@@ -591,6 +605,90 @@ Auth required. Both paths behave identically and share the rate-limit buckets. A
 | 410 | `code_expired`, `code_used_up` |
 | 429 | Brute-force lock (§1.3) |
 
+### 5.10 Sharing capes with friends
+
+You can give a cape you made to friends. They get an **offer**, and once they accept, the cape is in their collection: they can wear it like an unlocked cape, and others see it on them like on you.
+
+**What can be shared.** Only your **own uploads** that are **`approved`** (not `pending` or `rejected`), never built-in, code or event capes. A friend who accepted a shared cape may **re-share** it to their own friends with the same flow.
+
+**Rules.**
+
+- The target must be your friend (§6), not blocked in either direction, and not banned.
+- Each cape can have at most **20 holders** besides its creator. Accepted holders and open offers both count, re-shares included (`share_limit`).
+- A player can have at most **50 open offers** at a time (`offer_inbox_full`).
+- The shares of a cape form a tree with the creator as the root. **Revoking** a holder also revokes everything that holder re-shared, all the way down. A player who loses a cape they were wearing wears no cape afterwards (watchers get a `cape` event, §13).
+- **Who can revoke:** the creator any holder, a holder anyone in their own branch (players they gave it to, directly or through others), and everyone themselves (give the cape back or throw away an offer).
+- **Unfriending or blocking** cancels open offers between the two players (both directions). Accepted capes **stay** until someone revokes them.
+- **Deleting** the cape (owner or admin), an **admin rejection** and **deleting the creator's account** remove every share of the cape. Deleting a holder's account removes that holder's share and their whole branch.
+- Holders see the creator's and the giver's Minecraft names. The creator sees every holder (also the ones a friend re-shared to). A holder sees only their own branch.
+
+**`POST /v1/cape-offers`**, auth required. Offers one of your capes to a friend.
+
+```json
+{ "capeId": "u3f9a0c1d2e4b5a697887", "friend": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0" }
+```
+
+**201**
+```json
+{ "offer": { "cape": { "…": "CapeView" }, "to": { "uuid": "b0b0…", "name": "Bob" }, "createdAt": "…" } }
+```
+
+The friend gets the SSE event `cape_offer` (§7).
+
+| HTTP | code |
+|---|---|
+| 400 | `cape_not_shareable` (built-in cape), `cannot_target_self`, `invalid_request` |
+| 404 | `cape_not_found` (unknown, or an upload you neither made nor hold), `friend_not_found` (not a friend, blocked, banned, unknown) |
+| 409 | `cape_not_approved` (your own upload is still `pending` or was `rejected`), `already_shared` (the friend already has the cape or an offer for it, or made it), `share_limit`, `offer_inbox_full` |
+
+**`GET /v1/cape-offers`**, auth required. Open offers to you and from you, newest first.
+
+**200**
+```json
+{
+  "incoming": [
+    { "cape": { "…": "CapeView" }, "from": { "uuid": "…", "name": "Bob" }, "creator": { "uuid": "…", "name": "Alex" },
+      "createdAt": "2026-09-25T18:00:00.000Z" }
+  ],
+  "outgoing": [
+    { "cape": { "…": "CapeView" }, "to": { "uuid": "…", "name": "Cleo" }, "createdAt": "…" }
+  ]
+}
+```
+
+The cape texture of an offer is public (the cape is `approved`), so the preview works without extra rights. `GET /v1/friends` also returns the number of incoming offers as `capeOffers` (§6.1), so a client that polls friends knows when to fetch this list.
+
+**`POST /v1/cape-offers/{capeId}/accept`**, auth required. **200** `{ "cape": { "…": "CapeView" } }`. The cape is now in `GET /v1/capes` with `owned: true` and can be worn with `PUT /v1/me/cape`. The giver gets the SSE event `cape_offer_accepted`. `404 offer_not_found` if there is no open offer, or if it became invalid (the giver is no longer your friend or was banned, the cape is no longer approved); an invalid offer is removed.
+
+**`POST /v1/cape-offers/{capeId}/decline`**, auth required. **204**. The giver is not notified; the offer just disappears from their outgoing list. `404 offer_not_found`.
+
+**`GET /v1/capes/{id}/holders`**, auth required, for the creator and for holders of the cape.
+
+**200**
+```json
+{
+  "holders": [
+    { "uuid": "…", "name": "Bob", "status": "accepted", "grantedBy": { "uuid": "…", "name": "Alex" },
+      "createdAt": "…", "acceptedAt": "…" },
+    { "uuid": "…", "name": "Cleo", "status": "offered", "grantedBy": { "uuid": "…", "name": "Bob" },
+      "createdAt": "…", "acceptedAt": null }
+  ],
+  "count": 2,
+  "limit": 20
+}
+```
+
+- `status` is `offered` (open offer) or `accepted`.
+- The creator gets every holder; a holder gets the players in their own branch (without themselves).
+- `count` is the number of **all** holders of the cape (what counts against `limit`), even if you only see your branch.
+- `404 cape_not_found` if you neither made nor hold this cape, or it isn't `approved`.
+
+**`DELETE /v1/capes/{id}/holders/{uuid}`**, auth required. Revokes a share or withdraws an open offer, together with everything that holder re-shared. With **your own** UUID you give a shared cape back (or throw away an offer to you). **204**. Every player who lost the cape gets the SSE event `cape_share_removed` (except yourself).
+
+| HTTP | code |
+|---|---|
+| 404 | `holder_not_found` (you made or hold the cape, but this player has no share in your reach), `cape_not_found` |
+
 ---
 
 ## 6. Friends
@@ -613,13 +711,15 @@ Auth required.
   "requests": {
     "incoming": [ { "uuid": "…", "name": "Alex", "createdAt": "…" } ],
     "outgoing": [ { "uuid": "…", "name": "Steve", "createdAt": "…" } ]
-  }
+  },
+  "capeOffers": 1
 }
 ```
 
 - `presence` is `null` when the friend is offline or has `presenceVisibility=nobody`.
 - `game` can be `null`. `game.server` is present only if the friend shares it.
 - Friends are sorted by name.
+- `capeOffers` is the number of open cape offers to you (§5.10). Fetch `GET /v1/cape-offers` for the details.
 - **Polling is the baseline:** call this every 30–60 s while the friends UI is visible. SSE (§7) is optional.
 
 ### 6.2 `POST /v1/friends/requests`
@@ -654,7 +754,7 @@ This happens when the other player had already sent you a request: you become fr
 | `POST /v1/friends/requests/{uuid}/accept` | **200** `{ "friend": { "uuid", "name", "since", "presence" } }` | `404 request_not_found`, `409 friend_limit` / `target_friend_limit` |
 | `POST /v1/friends/requests/{uuid}/decline` | **204**. The sender is not notified. | `404 request_not_found` |
 | `DELETE /v1/friends/requests/{uuid}` | **204**. Cancels your own outgoing request. | `404 request_not_found` |
-| `DELETE /v1/friends/{uuid}` | **204** | `404 friend_not_found` |
+| `DELETE /v1/friends/{uuid}` | **204**. Open cape offers between you two are cancelled (§5.10); accepted capes stay. | `404 friend_not_found` |
 
 ### 6.4 Blocks
 
@@ -672,7 +772,7 @@ and returns **201**:
 { "blocked": { "uuid": "…", "name": "Bob" } }
 ```
 
-- Blocking removes the friendship and all requests in both directions.
+- Blocking removes the friendship and all requests in both directions, and cancels open cape offers between you two (accepted capes stay, §5.10).
 - The blocked player can no longer find you (`player_not_found`) and no longer gets your badge or cape in the lookup.
 - They only see `friend_removed`, never a block notice.
 
@@ -702,6 +802,9 @@ data: <JSON>
 | `friend_added` | `{"type":"friend_added","friend":{"uuid":"…","name":"…"}}` |
 | `friend_removed` | `{"type":"friend_removed","uuid":"…"}` |
 | `presence` | `{"type":"presence","uuid":"…","presence":{…PresenceView…}\|null}`. `null` means offline or hidden. |
+| `cape_offer` | `{"type":"cape_offer","offer":{…incoming offer, §5.10…}}`: a friend offers you a cape. |
+| `cape_offer_accepted` | `{"type":"cape_offer_accepted","capeId":"…","by":{"uuid":"…","name":"…"}}`: your offer was accepted. |
+| `cape_share_removed` | `{"type":"cape_share_removed","capeId":"…"}`: an offer to you was withdrawn or cancelled, or a shared cape was revoked, deleted or rejected. Reload `GET /v1/capes` and `GET /v1/cape-offers`. |
 
 - A stream stays open for **at most 1 hour**.
 - It closes immediately on logout-all, a ban or account deletion.
@@ -720,8 +823,8 @@ Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in 
 | `GET /v1/admin/stats` | – | `{ users:{total,banned,activeLast24h,online}, sessions, capes:{builtin,approved,pending,rejected,reported,activeUsers}, cosmetics:{builtin,emotes,approved,pending,rejected,reported,equippedUsers}, codes:{active,redemptions}, friendships, pendingFriendRequests, eventStreams, playerStreams }` |
 | `GET /v1/admin/capes?status=pending\|approved\|rejected\|reported` | – | `{ capes: [CapeView + { owner:{uuid,name}\|null, createdAt, reviewedAt, reviewedBy, rejectReason, reports:{count, reasons:{<reason>:n}}, bytes, ownerStats:{uploads,approved,pending,rejected}\|null }] }`. The default status is `pending`. `bytes` is the size of the stored PNG file (0 if it is missing). `ownerStats` counts **all** uploads of the owner (including this one); `null` without owner. |
 | `POST /v1/admin/capes/{id}/approve` | – | `{ cape }`. Also clears open reports. |
-| `POST /v1/admin/capes/{id}/reject` | `{ "reason"?: string≤200 }` or none | `{ cape }`. Also takes the cape off its wearer. |
-| `DELETE /v1/admin/capes/{id}` | – | 204. Uploads only; built-in capes return `409 builtin_cape`. |
+| `POST /v1/admin/capes/{id}/reject` | `{ "reason"?: string≤200 }` or none | `{ cape }`. Also takes the cape off its wearers and removes every share of it (§5.10). |
+| `DELETE /v1/admin/capes/{id}` | – | 204. Uploads only; built-in capes return `409 builtin_cape`. Removes every share of it. |
 | `GET /v1/admin/codes` | – | `{ codes: [CodeView] }` (the newest 1000) |
 | `POST /v1/admin/codes` | `{ capeId` **or** `cosmeticId, maxUses?=1 (1–100000), count?=1 (1–100), expiresAt?: ISO, note?: ≤200 }`. Exactly one of `capeId` and `cosmeticId`; `cosmeticId` can be an emote id. | **201** `{ codes: [CodeView + { code }] }`. **This is the only time the plain code is ever shown.** Free items return `400 cape_is_free` or `400 cosmetic_is_free`; unknown ones `404 cape_not_found` or `404 cosmetic_not_found`. |
 | `DELETE /v1/admin/codes/{id}` | – | 204 (revoke). Already unlocked capes stay unlocked. |
@@ -775,7 +878,7 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
    - While a game the launcher started runs, send `in-game` + `via: "launcher"` with version and loader for that account instead.
    - Send `offline` + `via: "launcher"` on exit.
 4. Friends view: poll `GET /v1/friends` and optionally open the SSE stream.
-5. Cape picker: `GET /v1/capes`, `PUT /v1/me/cape`, upload, redeem.
+5. Cape picker: `GET /v1/capes`, `PUT /v1/me/cape`, upload, redeem. Sharing (§5.10): offer `shareable` capes to friends, show holders with revoke, show incoming offers (`capeOffers` in `GET /v1/friends` tells when) with accept/decline.
 6. Cosmetics picker (§11):
    - `GET /v1/cosmetics` gives the templates and the catalog. `GET /v1/me/cosmetics` gives what is equipped.
    - Preview with three.js/skinview3d, following §11.2–§11.5 exactly.
@@ -795,6 +898,7 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
 5. Load `GET /v1/cosmetics/templates` once per session and revalidate it with `If-None-Match`. Render `cosmetics` from the lookup with it (§11).
 6. Open `GET /v1/events/players?uuids=…` for the players you render (§13). Apply `emote`, `skin`, `cape`, `cosmetics` and `badge` events live.
 7. Emote wheel: `GET /v1/me/cosmetics` → `emotes` lists the unlocked ones. Play one with `POST /v1/emotes/play`, then start the animation locally right away (§12).
+8. Wardrobe: shared capes come from `GET /v1/capes` like your own; sharing works like in the launcher (§5.10).
 
 ---
 

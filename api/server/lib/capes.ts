@@ -4,6 +4,7 @@ import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { badRequest, conflict, forbidden, notFound } from './errors'
 import { newUploadCapeId, sha256Hex } from './ids'
+import { holdsCape, notifyShareRemoved, shareHolders, shareRole, visibleHolderCount } from './capeshares'
 import { emitCape } from './playerevents'
 import { BUILTIN_MAX_SCALE, capeLayout, inspectPng, sanitizeCapeUpload } from './png'
 import { isAdmin } from './users'
@@ -53,6 +54,12 @@ export interface CatalogEntry extends CapeView {
   owned: boolean
   active: boolean
   rejectReason?: string | null
+  /** An Freunde weitergebbar: eigener freigegebener Upload oder angenommener geteilter Umhang. */
+  shareable: boolean
+  /** Nur bei Umhängen, die dir ein Freund geteilt hat: von wem und wer ihn gemacht hat; sonst `null`. */
+  shared: { from: { uuid: string, name: string }, creator: { uuid: string, name: string } } | null
+  /** Inhaber, die du bei diesem Umhang siehst (als Ersteller alle, sonst dein Ast); 0 wenn nicht teilbar. */
+  holders: number
 }
 
 export function capeUrl(ctx: AppContext, c: Pick<CapeRow, 'id' | 'sha256'>): string {
@@ -139,30 +146,54 @@ export function seedBuiltins(ctx: AppContext, capes: BuiltinCape[]): void {
 
 /** Darf `uuid` diesen Umhang tragen? */
 export function canUse(ctx: AppContext, uuid: string, c: CapeRow): boolean {
-  if (c.kind === 'upload') return c.owner_uuid === uuid && c.status !== 'rejected'
+  if (c.kind === 'upload') {
+    if (c.owner_uuid === uuid) return c.status !== 'rejected'
+    // Geteilt: nur angenommen und solange der Umhang freigegeben ist.
+    return c.status === 'approved' && holdsCape(ctx, uuid, c.id)
+  }
   if (c.retired) return false
   if (c.unlock === 'free') return true
   if (isAdmin(ctx, uuid)) return true
   return one(ctx.db, 'SELECT 1 AS x FROM user_capes WHERE uuid = ? AND cape_id = ?', uuid, c.id) !== undefined
 }
 
-/** Katalog aus Sicht eines Nutzers: alle Standard-Designs + eigene Uploads. */
+/**
+ * Katalog aus Sicht eines Nutzers: alle Standard-Designs + eigene Uploads + Umhänge, die ihm
+ * Freunde geteilt haben (angenommen, freigegeben). Reihenfolge: Standard, eigene, geteilte.
+ */
 export function catalog(ctx: AppContext, uuid: string): CatalogEntry[] {
   const active = one<{ active_cape_id: string | null }>(ctx.db, 'SELECT active_cape_id FROM users WHERE uuid = ?', uuid)
     ?.active_cape_id ?? null
-  const rows = all<CapeRow>(
+  const rows = all<CapeRow & { s_from: string | null, from_name: string | null, creator_name: string | null }>(
     ctx.db,
-    `SELECT * FROM capes
-     WHERE (kind = 'builtin' AND (retired = 0 OR id = ?)) OR (kind = 'upload' AND owner_uuid = ?)
-     ORDER BY kind = 'upload', sort, created_at`,
-    active, uuid,
+    `SELECT c.*, s.granted_by AS s_from, f.name AS from_name, o.name AS creator_name FROM capes c
+     LEFT JOIN cape_shares s ON s.cape_id = c.id AND s.holder_uuid = ? AND s.status = 'accepted'
+     LEFT JOIN users f ON f.uuid = s.granted_by
+     LEFT JOIN users o ON o.uuid = c.owner_uuid
+     WHERE (c.kind = 'builtin' AND (c.retired = 0 OR c.id = ?))
+        OR (c.kind = 'upload' AND c.owner_uuid = ?)
+        OR (c.kind = 'upload' AND c.status = 'approved' AND s.holder_uuid IS NOT NULL)
+     ORDER BY CASE WHEN c.kind = 'builtin' THEN 0 WHEN c.owner_uuid = ? THEN 1 ELSE 2 END, c.sort, c.created_at`,
+    uuid, active, uuid, uuid,
   )
-  return rows.map((c) => ({
-    ...capeView(ctx, c),
-    owned: canUse(ctx, uuid, c),
-    active: c.id === active,
-    ...(c.kind === 'upload' ? { rejectReason: c.reject_reason } : {}),
-  }))
+  return rows.map((c) => {
+    const sharedWithMe = c.kind === 'upload' && c.owner_uuid !== uuid && c.s_from !== null
+    const shareable = shareRole(ctx, uuid, c) !== null
+    return {
+      ...capeView(ctx, c),
+      owned: canUse(ctx, uuid, c),
+      active: c.id === active,
+      ...(c.kind === 'upload' ? { rejectReason: sharedWithMe ? null : c.reject_reason } : {}),
+      shareable,
+      shared: sharedWithMe
+        ? {
+            from: { uuid: c.s_from!, name: c.from_name ?? c.s_from! },
+            creator: { uuid: c.owner_uuid!, name: c.creator_name ?? c.owner_uuid! },
+          }
+        : null,
+      holders: shareable ? visibleHolderCount(ctx, uuid, c) : 0,
+    }
+  })
 }
 
 export function setActiveCape(ctx: AppContext, uuid: string, capeId: string | null): CapeView | null {
@@ -173,7 +204,9 @@ export function setActiveCape(ctx: AppContext, uuid: string, capeId: string | nu
     return null
   }
   const c = getCape(ctx, capeId)
-  if (!c || (c.kind === 'upload' && c.owner_uuid !== uuid)) throw notFound('cape_not_found', 'Cape not found')
+  if (!c || (c.kind === 'upload' && c.owner_uuid !== uuid && !holdsCape(ctx, uuid, c.id))) {
+    throw notFound('cape_not_found', 'Cape not found')
+  }
   if (!canUse(ctx, uuid, c)) throw forbidden('cape_locked', 'You have not unlocked this cape')
   const changed = run(
     ctx.db,
@@ -248,12 +281,17 @@ export function deleteOwnUpload(ctx: AppContext, uuid: string, capeId: string): 
   removeCape(ctx, c.id)
 }
 
-/** Entfernt einen hochgeladenen Umhang samt Datei (aktive Auswahl wird per FK zurückgesetzt). */
+/**
+ * Entfernt einen hochgeladenen Umhang samt Datei (aktive Auswahl wird per FK zurückgesetzt,
+ * Teilungen per FK gelöscht; Inhaber bekommen `cape_share_removed`).
+ */
 export function removeCape(ctx: AppContext, capeId: string): void {
   const worn = capeWearers(ctx, capeId)
+  const holders = shareHolders(ctx, capeId)
   run(ctx.db, 'DELETE FROM capes WHERE id = ?', capeId)
   rmSync(join(ctx.capeDir, `${capeId}.png`), { force: true })
   for (const u of worn) emitCape(ctx, u)
+  notifyShareRemoved(ctx, capeId, holders)
 }
 
 export function reportCape(

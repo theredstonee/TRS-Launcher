@@ -126,4 +126,6 @@ export const RULES = {
   /** TRS-Sync (`/v1/me/sync*`): alle Anfragen je Konto, dazu Skin-Uploads extra. */
   syncUser: { limit: 120, windowMs: MIN },
   syncUploadUser: { limit: 30, windowMs: MIN },
+  /** Umhänge teilen: anbieten, annehmen, ablehnen, entziehen (je Konto). */
+  capeShareUser: { limit: 30, windowMs: MIN },
 } satisfies Record<string, Rule>

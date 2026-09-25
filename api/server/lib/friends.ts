@@ -1,3 +1,4 @@
+import { dropOffersBetween, incomingOfferCount } from './capeshares'
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { conflict, notFound, badRequest } from './errors'
@@ -27,6 +28,8 @@ export interface RequestView {
 export interface FriendsList {
   friends: FriendView[]
   requests: { incoming: RequestView[], outgoing: RequestView[] }
+  /** Offene Umhang-Angebote an mich (Details: `GET /v1/cape-offers`). */
+  capeOffers: number
 }
 
 const pair = (x: string, y: string): [string, string] => (x < y ? [x, y] : [y, x])
@@ -92,6 +95,7 @@ export function listFriends(ctx: AppContext, uuid: string): FriendsList {
       incoming: incoming.map((r) => ({ uuid: r.uuid, name: r.name, createdAt: iso(r.created_at) })),
       outgoing: outgoing.map((r) => ({ uuid: r.uuid, name: r.name, createdAt: iso(r.created_at) })),
     },
+    capeOffers: incomingOfferCount(ctx, uuid),
   }
 }
 
@@ -185,9 +189,14 @@ export function cancelRequest(ctx: AppContext, me: string, to: string): void {
 
 export function removeFriend(ctx: AppContext, me: string, other: string): void {
   const [a, b] = pair(me, other)
-  const n = run(ctx.db, 'DELETE FROM friendships WHERE a = ? AND b = ?', a, b)
-  if (n === 0) throw notFound('friend_not_found', 'This player is not your friend')
+  const dropped = tx(ctx.db, () => {
+    const n = run(ctx.db, 'DELETE FROM friendships WHERE a = ? AND b = ?', a, b)
+    if (n === 0) throw notFound('friend_not_found', 'This player is not your friend')
+    // Offene Umhang-Angebote zwischen beiden fallen weg; angenommene Umhänge bleiben.
+    return dropOffersBetween(ctx, me, other)
+  })
   publish(ctx, other, { type: 'friend_removed', uuid: me })
+  for (const d of dropped) publish(ctx, d.holder, { type: 'cape_share_removed', capeId: d.capeId })
 }
 
 export function block(ctx: AppContext, me: string, target: { uuid: string } | { name: string }): { uuid: string, name: string } {
@@ -195,7 +204,7 @@ export function block(ctx: AppContext, me: string, target: { uuid: string } | { 
   if (!u) throw notFound('player_not_found', 'No TRS user with this name or UUID')
   if (u.uuid === me) throw badRequest('cannot_target_self', 'You cannot do this with yourself')
   const [a, b] = pair(me, u.uuid)
-  const wasFriend = tx(ctx.db, () => {
+  const { wasFriend, dropped } = tx(ctx.db, () => {
     run(ctx.db, 'INSERT INTO blocks (blocker, blocked, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING', me, u.uuid, ctx.now())
     const f = run(ctx.db, 'DELETE FROM friendships WHERE a = ? AND b = ?', a, b)
     run(
@@ -203,10 +212,11 @@ export function block(ctx: AppContext, me: string, target: { uuid: string } | { 
       'DELETE FROM friend_requests WHERE (from_uuid = ? AND to_uuid = ?) OR (from_uuid = ? AND to_uuid = ?)',
       me, u.uuid, u.uuid, me,
     )
-    return f > 0
+    return { wasFriend: f > 0, dropped: dropOffersBetween(ctx, me, u.uuid) }
   })
   // Der Blockierte sieht nur, dass die Freundschaft endet – nicht die Blockade.
   if (wasFriend) publish(ctx, u.uuid, { type: 'friend_removed', uuid: me })
+  for (const d of dropped) publish(ctx, d.holder, { type: 'cape_share_removed', capeId: d.capeId })
   return { uuid: u.uuid, name: u.name }
 }
 
