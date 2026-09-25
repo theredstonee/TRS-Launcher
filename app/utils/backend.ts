@@ -55,8 +55,13 @@ import type {
   ClipState,
   ClipUsage,
   FfmpegStatus,
+  LauncherSkinScan,
   LibrarySkin,
   NewsFeed,
+  SkinImportBatch,
+  SkinImportCandidate,
+  SkinImportReport,
+  SkinImportRequest,
   SkinChanges,
   SkinProfile,
   SkinSyncStatus,
@@ -350,8 +355,19 @@ export const backend = {
   /** Skin-Link eines anderen Spielers (nur textures.minecraft.net), `null` = Standard-Skin. */
   playerSkinUrl: (uuid: string) => call<string | null>('player_skin_url', { uuid }),
   skinLibrary: () => call<LibrarySkin[]>('skin_library'),
-  /** Öffnet den Dateidialog für ein 64×64-PNG; `null` = abgebrochen. */
-  addSkinFile: (name: string, variant: SkinVariant) => call<LibrarySkin | null>('add_skin_file', { name, variant }),
+  /** Dateidialog (Mehrfachauswahl) → vorgemerkte Skins; `null` = abgebrochen. */
+  pickSkinFiles: () => call<SkinImportBatch | null>('pick_skin_files'),
+  /** Zuletzt ins Fenster gezogene Dateien vormerken (Marke aus dem `file-drop`-Event). */
+  stageDroppedSkins: (token: number) => call<SkinImportBatch>('stage_dropped_skins', { token }),
+  /** Skin von einem öffentlichen https-Link (geprüft im Kern). */
+  stageSkinUrl: (url: string) => call<SkinImportCandidate>('stage_skin_url', { url }),
+  /** Skin eines Spielers über seinen Namen. */
+  stagePlayerSkin: (name: string) => call<SkinImportCandidate>('stage_player_skin', { name }),
+  /** Skins aus anderen Launchern (offizieller Launcher, Prism, Modrinth App). */
+  scanLauncherSkins: () => call<LauncherSkinScan>('scan_launcher_skins'),
+  /** Vorgemerkte Skins übernehmen – Name/Modell optional überschrieben. */
+  importStagedSkins: (items: SkinImportRequest[]) => call<SkinImportReport>('import_staged_skins', { items }),
+  discardStagedSkins: (tokens: string[]) => call<void>('discard_staged_skins', { tokens }),
   saveActiveSkin: (name: string) => call<LibrarySkin>('save_active_skin', { name }),
   deleteSkin: (id: string) => call<void>('delete_skin', { id }),
   renameSkin: (id: string, name: string) => call<LibrarySkin>('rename_skin', { id, name }),

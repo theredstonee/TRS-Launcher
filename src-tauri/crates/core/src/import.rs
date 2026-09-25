@@ -563,8 +563,65 @@ fn mmc_instance_dir(data_dir: PathBuf, cfg_name: &str) -> PathBuf {
     }
 }
 
-/// Wo andere Launcher ihre Daten ablegen. Je Quelle kann es mehrere Orte
-/// geben (Linux: normale Installation und Flatpak).
+/// Datenordner anderer Launcher (Prism/MultiMC: der Datenordner selbst, noch
+/// nicht der Instanz-Ordner). Je Quelle kann es mehrere Orte geben (Linux:
+/// normale Installation und Flatpak). Genutzt vom Instanz- und vom Skin-Import.
+#[derive(Default)]
+pub(crate) struct LauncherHomes {
+    pub minecraft: Vec<PathBuf>,
+    pub prism: Vec<PathBuf>,
+    pub multimc: Vec<PathBuf>,
+    pub curseforge: Vec<PathBuf>,
+    pub modrinth: Vec<PathBuf>,
+}
+
+impl LauncherHomes {
+    /// Windows: `%APPDATA%` bzw. das Benutzerprofil.
+    #[cfg(windows)]
+    pub fn candidates() -> Self {
+        let appdata = std::env::var_os("APPDATA").map(PathBuf::from);
+        let home = std::env::var_os("USERPROFILE").map(PathBuf::from);
+        let under = |base: &Option<PathBuf>, rel: &[&str]| -> Vec<PathBuf> {
+            base.iter().map(|b| rel.iter().fold(b.clone(), |p, seg| p.join(seg))).collect()
+        };
+        Self {
+            minecraft: under(&appdata, &[".minecraft"]),
+            prism: under(&appdata, &["PrismLauncher"]),
+            multimc: under(&appdata, &["MultiMC"]),
+            curseforge: under(&home, &["curseforge", "minecraft", "Instances"]),
+            modrinth: ["ModrinthApp", "com.modrinth.theseus"].iter().flat_map(|d| under(&appdata, &[d])).collect(),
+        }
+    }
+
+    /// Linux: XDG-Datenordner (`~/.local/share`), Flatpak-Ordner
+    /// (`~/.var/app/<id>/…`) und die üblichen Orte von MultiMC.
+    #[cfg(not(windows))]
+    pub fn candidates() -> Self {
+        let Some(home) = std::env::var_os("HOME").map(PathBuf::from) else { return Self::default() };
+        let data = std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .filter(|p| p.is_absolute())
+            .unwrap_or_else(|| home.join(".local/share"));
+        let flatpak = |id: &str, rel: &str| home.join(".var/app").join(id).join(rel);
+        Self {
+            minecraft: vec![
+                home.join(".minecraft"),
+                flatpak("com.mojang.Minecraft", ".minecraft"),
+                flatpak("com.mojang.Minecraft", "data/minecraft"),
+            ],
+            prism: vec![data.join("PrismLauncher"), flatpak("org.prismlauncher.PrismLauncher", "data/PrismLauncher")],
+            multimc: vec![data.join("multimc"), home.join("MultiMC"), home.join(".local/share/multimc")],
+            curseforge: vec![home.join("curseforge/minecraft/Instances")],
+            modrinth: vec![
+                data.join("ModrinthApp"),
+                data.join("com.modrinth.theseus"),
+                flatpak("com.modrinth.ModrinthApp", "data/ModrinthApp"),
+            ],
+        }
+    }
+}
+
+/// Wo andere Launcher ihre Instanzen ablegen.
 #[derive(Default)]
 struct ImportRoots {
     minecraft: Vec<PathBuf>,
@@ -596,53 +653,14 @@ impl ImportRoots {
         }
     }
 
-    /// Windows: `%APPDATA%` bzw. das Benutzerprofil.
-    #[cfg(windows)]
     fn candidates() -> Self {
-        let appdata = std::env::var_os("APPDATA").map(PathBuf::from);
-        let home = std::env::var_os("USERPROFILE").map(PathBuf::from);
-        let under = |base: &Option<PathBuf>, rel: &[&str]| -> Vec<PathBuf> {
-            base.iter().map(|b| rel.iter().fold(b.clone(), |p, seg| p.join(seg))).collect()
-        };
+        let homes = LauncherHomes::candidates();
         Self {
-            minecraft: under(&appdata, &[".minecraft"]),
-            prism: under(&appdata, &["PrismLauncher"]).into_iter().map(|d| mmc_instance_dir(d, "prismlauncher.cfg")).collect(),
-            multimc: under(&appdata, &["MultiMC"]).into_iter().map(|d| mmc_instance_dir(d, "multimc.cfg")).collect(),
-            curseforge: under(&home, &["curseforge", "minecraft", "Instances"]),
-            modrinth: ["ModrinthApp", "com.modrinth.theseus"].iter().flat_map(|d| under(&appdata, &[d])).collect(),
-        }
-    }
-
-    /// Linux: XDG-Datenordner (`~/.local/share`), Flatpak-Ordner
-    /// (`~/.var/app/<id>/…`) und die üblichen Orte von MultiMC.
-    #[cfg(not(windows))]
-    fn candidates() -> Self {
-        let Some(home) = std::env::var_os("HOME").map(PathBuf::from) else { return Self::default() };
-        let data = std::env::var_os("XDG_DATA_HOME")
-            .map(PathBuf::from)
-            .filter(|p| p.is_absolute())
-            .unwrap_or_else(|| home.join(".local/share"));
-        let flatpak = |id: &str, rel: &str| home.join(".var/app").join(id).join(rel);
-        Self {
-            minecraft: vec![
-                home.join(".minecraft"),
-                flatpak("com.mojang.Minecraft", ".minecraft"),
-                flatpak("com.mojang.Minecraft", "data/minecraft"),
-            ],
-            prism: [data.join("PrismLauncher"), flatpak("org.prismlauncher.PrismLauncher", "data/PrismLauncher")]
-                .into_iter()
-                .map(|d| mmc_instance_dir(d, "prismlauncher.cfg"))
-                .collect(),
-            multimc: [data.join("multimc"), home.join("MultiMC"), home.join(".local/share/multimc")]
-                .into_iter()
-                .map(|d| mmc_instance_dir(d, "multimc.cfg"))
-                .collect(),
-            curseforge: vec![home.join("curseforge/minecraft/Instances")],
-            modrinth: vec![
-                data.join("ModrinthApp"),
-                data.join("com.modrinth.theseus"),
-                flatpak("com.modrinth.ModrinthApp", "data/ModrinthApp"),
-            ],
+            minecraft: homes.minecraft,
+            prism: homes.prism.into_iter().map(|d| mmc_instance_dir(d, "prismlauncher.cfg")).collect(),
+            multimc: homes.multimc.into_iter().map(|d| mmc_instance_dir(d, "multimc.cfg")).collect(),
+            curseforge: homes.curseforge,
+            modrinth: homes.modrinth,
         }
     }
 

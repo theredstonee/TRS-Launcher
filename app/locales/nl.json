@@ -450,7 +450,18 @@
       "signInFirst": "Log eerst in onder “Accounts”.",
       "libraryFull": "De skinbibliotheek is vol – verwijder eerst een skin.",
       "notFound": "Deze skin bestaat niet.",
-      "invalidUuid": "Dit is geen geldige speler-ID."
+      "invalidUuid": "Dit is geen geldige speler-ID.",
+      "tooManyFiles": "Maximaal {max} bestanden tegelijk.",
+      "urlInvalid": "Voer een geldige https-link in.",
+      "urlNotAllowed": "Deze link is niet toegestaan – alleen openbare https-adressen.",
+      "urlUnreachable": "De link is niet bereikbaar.",
+      "urlNotImage": "Op deze link staat geen PNG-afbeelding.",
+      "urlFailed": "De link antwoordde met HTTP {status}.",
+      "urlTooManyRedirects": "De link stuurt te vaak door.",
+      "playerNameInvalid": "Spelersnamen hebben 1–16 tekens: letters, cijfers of _.",
+      "playerNotFound": "Er is geen speler met de naam “{name}”.",
+      "playerDefaultSkin": "{name} draagt een standaardskin – er valt niets te importeren.",
+      "importExpired": "De selectie is verlopen – voeg hem opnieuw toe."
     },
     "skinSync": {
       "accountSwitched": "Het actieve account is gewisseld – de wijzigingen zijn verworpen.",
@@ -1797,9 +1808,7 @@
     "worn": "gedragen",
     "noCapes": "Dit account heeft geen capes. Die komen alleen van Mojang – zoals de Migrator-cape.",
     "addDialog": {
-      "namePlaceholder": "bijv. Winterskin",
-      "fileHint": "Daarna opent het bestandsvenster. PNG-bestanden van 64×64 (of 64×32 voor oude skins) zijn toegestaan.",
-      "chooseFile": "Bestand kiezen"
+      "namePlaceholder": "bijv. Winterskin"
     },
     "addedToast": "“{name}” toegevoegd aan je collectie",
     "savedToast": "Huidige skin opgeslagen als “{name}”",
@@ -1824,7 +1833,65 @@
       "label": "3D-skinpreview",
       "failed": "De 3D-preview kon niet worden gestart. Je grafische stuurprogramma’s ondersteunen waarschijnlijk geen WebGL."
     },
-    "trsCape": "TRS-cape"
+    "trsCape": "TRS-cape",
+    "import": {
+      "fromFiles": "Bestanden kiezen",
+      "fromFilesHint": "Eén of meer PNG-bestanden",
+      "fromUrl": "Via link",
+      "fromUrlHint": "Directe link naar een PNG-afbeelding",
+      "fromPlayer": "Via spelersnaam",
+      "fromPlayerHint": "De skin die een speler nu draagt",
+      "fromLaunchers": "Uit andere launchers",
+      "fromLaunchersHint": "Minecraft Launcher, Prism, Modrinth App",
+      "dropTip": "Tip: je kunt PNG-bestanden ook naar het venster slepen.",
+      "loading": "Laden …",
+      "drop": {
+        "title": "Skins hier neerzetten",
+        "hint": "PNG-bestanden, 64×64 (of 64×32 voor oude skins)"
+      },
+      "confirm": {
+        "title": "Skin toevoegen",
+        "detected": "Het model is automatisch herkend – wissel als de armen er verkeerd uitzien.",
+        "duplicate": "Precies deze skin staat al in je verzameling.",
+        "add": "Toevoegen"
+      },
+      "url": {
+        "title": "Skin via link toevoegen",
+        "label": "Link naar de PNG",
+        "placeholder": "https://example.com/skin.png",
+        "hint": "Alleen openbare https-links. De afbeelding wordt gecontroleerd voordat er iets wordt opgeslagen.",
+        "load": "Laden"
+      },
+      "player": {
+        "title": "Skin via spelersnaam toevoegen",
+        "label": "Spelersnaam",
+        "placeholder": "bijv. Notch",
+        "hint": "Kopieert de skin die de speler nu draagt.",
+        "load": "Laden"
+      },
+      "launchers": {
+        "title": "Importeren uit andere launchers",
+        "scanning": "Opgeslagen skins zoeken …",
+        "empty": "Geen opgeslagen skins gevonden in andere launchers.",
+        "noSkins": "Geen opgeslagen skins in: {names}",
+        "onlineOnly": "Lunar Client, Feather en Essential bewaren skins alleen in hun online-account – voeg die toe via spelersnaam of link.",
+        "selectAll": "Alles selecteren",
+        "selectNone": "Niets selecteren",
+        "import": "{n} skin importeren | {n} skins importeren",
+        "duplicate": "Al in verzameling",
+        "count": "{n} skin | {n} skins"
+      },
+      "sources": {
+        "minecraft": "Minecraft Launcher",
+        "prism": "Prism Launcher",
+        "modrinth": "Modrinth App"
+      },
+      "toasts": {
+        "imported": "{n} skin aan je verzameling toegevoegd | {n} skins aan je verzameling toegevoegd",
+        "allDuplicates": "Deze skins staan al in je verzameling.",
+        "skipped": "{n} skin stond al in je verzameling | {n} skins stonden al in je verzameling"
+      }
+    }
   },
   "validation": {
     "invalidCharacters": "Bevat ongeldige tekens",
@@ -1853,7 +1920,9 @@
     "folderRequired": "Selecteer minstens één map",
     "invalidInput": "Ongeldige invoer",
     "clipBufferRange": "De cliplengte moet tussen {min} en {max} seconden liggen",
-    "clipStorageRange": "De ruimte voor clips moet tussen {min} en {max} GB liggen"
+    "clipStorageRange": "De ruimte voor clips moet tussen {min} en {max} GB liggen",
+    "urlRequired": "Voer een link in",
+    "urlHttps": "Voer een geldige https-link in"
   },
   "titleBar": {
     "forward": "Vooruit",

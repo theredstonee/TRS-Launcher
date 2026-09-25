@@ -11,7 +11,7 @@
 //! nur den fertigen Wunschzustand, der Kern sendet höchstens eine Anfrage je
 //! Art gleichzeitig und wartet bei Mojang-429 selbst ab.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Duration;
 
 use base64::Engine;
@@ -29,7 +29,7 @@ const TEXTURE_PREFIX: &str = "https://textures.minecraft.net/texture/";
 /// Skins sind 64×64-PNGs – alles darüber ist keins.
 pub const MAX_SKIN_BYTES: usize = 128 * 1024;
 /// So viele eigene Skins werden gespeichert.
-const MAX_LIBRARY: usize = 60;
+pub(crate) const MAX_LIBRARY: usize = 60;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -47,7 +47,7 @@ impl SkinVariant {
         }
     }
 
-    fn from_api(value: &str) -> Self {
+    pub(crate) fn from_api(value: &str) -> Self {
         if value.eq_ignore_ascii_case("slim") { Self::Slim } else { Self::Classic }
     }
 }
@@ -55,7 +55,7 @@ impl SkinVariant {
 // --- PNG-Prüfung ---------------------------------------------------------------
 
 /// Maße eines PNGs aus dem IHDR-Block – ohne das Bild zu dekodieren.
-fn png_size(bytes: &[u8]) -> Option<(u32, u32)> {
+pub(crate) fn png_size(bytes: &[u8]) -> Option<(u32, u32)> {
     if !bytes.starts_with(b"\x89PNG\r\n\x1a\n") || bytes.len() < 33 || &bytes[12..16] != b"IHDR" {
         return None;
     }
@@ -97,7 +97,7 @@ pub fn is_texture_url(url: &str) -> bool {
     normalize_texture_url(url).as_deref() == Some(url)
 }
 
-fn data_url(bytes: &[u8]) -> String {
+pub(crate) fn data_url(bytes: &[u8]) -> String {
     format!("data:image/png;base64,{}", STANDARD.encode(bytes))
 }
 
@@ -329,7 +329,7 @@ fn textures_dir(paths: &Paths) -> PathBuf {
 
 /// Lädt eine Mojang-Textur (Skin oder Umhang) und legt sie im Cache ab.
 /// Liefert die Bytes; ungültige Bilder werden abgelehnt.
-async fn texture_bytes(http: &reqwest::Client, paths: &Paths, url: &str) -> Result<Vec<u8>> {
+pub(crate) async fn texture_bytes(http: &reqwest::Client, paths: &Paths, url: &str) -> Result<Vec<u8>> {
     if !is_texture_url(url) {
         return Err(Error::validation(crate::msg!(
             "skins.textureSourceNotAllowed",
@@ -390,9 +390,9 @@ const TOMBSTONE_DAYS: i64 = 30;
 const MAX_TOMBSTONES: usize = 500;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-struct LibraryFile {
+pub(crate) struct LibraryFile {
     #[serde(default)]
-    skins: Vec<LibrarySkin>,
+    pub(crate) skins: Vec<LibrarySkin>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     deleted: Vec<SkinTombstone>,
 }
@@ -436,7 +436,7 @@ pub struct LibrarySkinView {
     pub texture: String,
 }
 
-fn skins_dir(paths: &Paths) -> PathBuf {
+pub(crate) fn skins_dir(paths: &Paths) -> PathBuf {
     paths.root().join("skins")
 }
 
@@ -457,7 +457,7 @@ pub(crate) fn is_library_id(id: &str) -> bool {
     id.len() == 12 && id.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
 }
 
-async fn read_library(paths: &Paths) -> LibraryFile {
+pub(crate) async fn read_library(paths: &Paths) -> LibraryFile {
     fsutil::read_json(&library_file(paths)).await.ok().flatten().unwrap_or_default()
 }
 
@@ -535,7 +535,7 @@ pub(crate) async fn sync_remove(paths: &Paths, id: &str, deleted_at: DateTime<Ut
 
 // --- Köpfe anderer Spieler (Freunde, Admin-Suche) ---------------------------------
 
-const SESSION_PROFILE: &str = "https://sessionserver.mojang.com/session/minecraft/profile/";
+pub(crate) const SESSION_PROFILE: &str = "https://sessionserver.mojang.com/session/minecraft/profile/";
 /// Wie lange ein Skin-Link (oder „kein Skin“) im Speicher bleibt.
 const PLAYER_SKIN_TTL: Duration = Duration::from_secs(30 * 60);
 
@@ -547,18 +547,30 @@ fn player_skin_cache() -> &'static SkinCache {
 }
 
 /// UUID mit oder ohne Bindestriche → 32 Hex-Zeichen klein, sonst `None`.
-fn compact_uuid(uuid: &str) -> Option<String> {
+pub(crate) fn compact_uuid(uuid: &str) -> Option<String> {
     let s: String = uuid.chars().filter(|c| *c != '-').collect::<String>().to_ascii_lowercase();
     (s.len() == 32 && s.bytes().all(|b| b.is_ascii_hexdigit())).then_some(s)
 }
 
 /// Skin-Link aus der Antwort des Session-Servers (Eigenschaft `textures`, Base64-JSON).
 fn skin_url_from_session_profile(body: &serde_json::Value) -> Option<String> {
+    skin_from_session_profile(body).map(|(url, _)| url)
+}
+
+/// Skin-Link samt Modell (`metadata.model = "slim"`, sonst klassisch) aus der
+/// Antwort des Session-Servers.
+pub(crate) fn skin_from_session_profile(body: &serde_json::Value) -> Option<(String, SkinVariant)> {
     let props = body.get("properties")?.as_array()?;
     let textures = props.iter().find(|p| p.get("name").and_then(|n| n.as_str()) == Some("textures"))?;
     let decoded = STANDARD.decode(textures.get("value")?.as_str()?).ok()?;
     let json: serde_json::Value = serde_json::from_slice(&decoded).ok()?;
-    normalize_texture_url(json.pointer("/textures/SKIN/url")?.as_str()?)
+    let skin = json.pointer("/textures/SKIN")?;
+    let url = normalize_texture_url(skin.get("url")?.as_str()?)?;
+    let slim = skin
+        .pointer("/metadata/model")
+        .and_then(|m| m.as_str())
+        .is_some_and(|m| m.eq_ignore_ascii_case("slim"));
+    Some((url, if slim { SkinVariant::Slim } else { SkinVariant::Classic }))
 }
 
 impl Launcher {
@@ -675,19 +687,6 @@ impl Launcher {
         }
         views.sort_by_key(|s| std::cmp::Reverse(s.added_at));
         Ok(views)
-    }
-
-    /// Nimmt eine PNG-Datei in die Bibliothek auf (Pfad aus dem nativen Dialog).
-    pub async fn add_skin_from_file(&self, file: &Path, name: &str, variant: SkinVariant) -> Result<LibrarySkinView> {
-        let meta = tokio::fs::metadata(file).await.map_err(|e| Error::io(file, e))?;
-        if !meta.is_file() || meta.len() as usize > MAX_SKIN_BYTES {
-            return Err(Error::validation(crate::msg!(
-                "skins.fileTooLarge",
-                "Die Skin-Datei ist zu groß (höchstens 128 KB)."
-            )));
-        }
-        let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
-        self.add_skin_bytes(&bytes, name, variant).await
     }
 
     /// Speichert Textur-Bytes als neuen Bibliothekseintrag.

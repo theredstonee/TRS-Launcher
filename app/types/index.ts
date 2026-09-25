@@ -708,6 +708,51 @@ export interface LibrarySkin {
   texture: string
 }
 
+/** Woher ein Skin beim Hinzufügen kommt (`minecraft` = offizieller Launcher). */
+export type SkinImportSource = 'file' | 'url' | 'player' | 'minecraft' | 'prism' | 'modrinth'
+
+/** Vorgemerkter Skin (geprüft im Kern) – übernommen wird er erst per Marke. */
+export interface SkinImportCandidate {
+  token: string
+  /** Namensvorschlag (Datei-, Spieler- oder Launcher-Name). */
+  name: string
+  /** Erkanntes bzw. mitgeliefertes Modell. */
+  variant: SkinVariant
+  /** Textur als Data-URL. */
+  texture: string
+  source: SkinImportSource
+  /** Genau dieses Bild liegt schon in der Sammlung. */
+  duplicate: boolean
+}
+
+export interface SkinImportFailure {
+  name: string
+  error: string
+  errorInfo: CommandError
+}
+
+export interface SkinImportBatch {
+  candidates: SkinImportCandidate[]
+  failed: SkinImportFailure[]
+}
+
+export interface LauncherSkinScan {
+  candidates: SkinImportCandidate[]
+  /** Launcher, deren Daten auf diesem PC liegen (auch ohne Skins). */
+  found: SkinImportSource[]
+}
+
+export interface SkinImportRequest {
+  token: string
+  name?: string | null
+  variant?: SkinVariant | null
+}
+
+export interface SkinImportReport {
+  added: LibrarySkin[]
+  failed: SkinImportFailure[]
+}
+
 /** Gewünschter Skin: aus der Sammlung, getragener mit anderem Modell oder Standard. */
 export type SkinChange =
   | { kind: 'library'; id: string; variant: SkinVariant }
