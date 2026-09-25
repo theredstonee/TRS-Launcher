@@ -131,9 +131,12 @@ public final class ConfigStore {
 		}
 	}
 
-	/** Schreibt einen noch ausstehenden Stand sofort (z. B. beim Beenden). */
+	/** Schreibt einen noch ausstehenden Stand sofort (z. B. beim Beenden) und wartet auf ein laufendes Schreiben. */
 	public void flush() {
 		flushPending();
+		synchronized (writeLock) {
+			// Ein gerade im Hintergrund laufendes Schreiben ist damit abgeschlossen.
+		}
 	}
 
 	private final java.util.concurrent.atomic.AtomicLong sequence = new java.util.concurrent.atomic.AtomicLong();

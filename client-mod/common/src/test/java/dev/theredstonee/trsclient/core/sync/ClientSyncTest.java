@@ -6,13 +6,16 @@ import dev.theredstonee.trsclient.core.config.TrsConfig;
 import dev.theredstonee.trsclient.core.hud.HudAnchor;
 import dev.theredstonee.trsclient.core.intro.ClientState;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,6 +37,14 @@ class ClientSyncTest {
 
 	@TempDir
 	Path tmp;
+
+	/** Alle Geräte des Tests – am Ende ausstehendes Schreiben abschließen, sonst kann Windows das Temp-Verzeichnis nicht löschen. */
+	final List<Device> devices = new ArrayList<>();
+
+	@AfterEach
+	void flushDevices() {
+		for (Device d : devices) d.store.flush();
+	}
 
 	/** Ein PC: eigene Config, eigener Sync-Zustand, gemeinsamer Server. */
 	final class Device {
@@ -73,6 +84,7 @@ class ClientSyncTest {
 			SyncState state = new SyncState(dir.resolve("trsclient").resolve("sync-state.json")).load();
 			sync = new ClientSync(modules, online, new SyncApi(server, "http://127.0.0.1:1"), state, dir, "0.6.0", DIRECT, null);
 			sync.attach(store);
+			devices.add(this);
 		}
 
 		/** Zwei Ticks: Abgleich anstoßen (läuft sofort) und Ergebnis übernehmen. */
