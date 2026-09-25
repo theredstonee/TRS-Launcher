@@ -46,4 +46,33 @@ public interface Canvas {
 	void scale(float factor);
 
 	void pop();
+
+	// --- Texturen und freie Transformation (für Skins, Umhänge, Vorschaubilder) ---
+
+	/**
+	 * Kann diese Fläche Texturen zeichnen ({@link #image}, {@link #rotate}, {@link #scale(float, float)})?
+	 * Versionen ohne diese Möglichkeit zeichnen dort nichts – Aufrufer weichen dann auf Rechtecke aus.
+	 */
+	default boolean images() {
+		return false;
+	}
+
+	/**
+	 * Zeichnet den Texturausschnitt ab Texel ({@code u}, {@code v}) mit {@code w}×{@code h} Texeln in das
+	 * Rechteck (0, 0)–({@code w}, {@code h}) der aktuellen Transformation, eingefärbt mit {@code argb}
+	 * (0xFFFFFFFF = unverändert; Alpha = Deckkraft). Position und Größe kommen über
+	 * {@link #translate}/{@link #scale(float, float)}/{@link #rotate} bzw. {@link Affine}.
+	 * Die Reihenfolge bleibt erhalten (später gezeichnet liegt oben), auch gegenüber {@link #fill}.
+	 */
+	default void image(TextureRef texture, float u, float v, int w, int h, int argb) {
+	}
+
+	/** Dreht die Zeichenebene um {@code radians} (positiv = im Uhrzeigersinn, da y nach unten zeigt). */
+	default void rotate(float radians) {
+	}
+
+	/** Ungleichmäßige Skalierung (zwischen {@link #push()} und {@link #pop()}); beide Faktoren > 0. */
+	default void scale(float sx, float sy) {
+		if (sx == sy) scale(sx);
+	}
 }

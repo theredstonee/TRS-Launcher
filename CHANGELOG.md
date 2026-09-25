@@ -20,6 +20,12 @@ How to write an entry:
 
 ### English
 
+- **New TRS Client title screen: you on a redstone turntable.** Your own skin (and your TRS or Mojang cape) now
+  stands on a slowly turning redstone turntable on the left of the title screen – drag it to spin it, and your head
+  follows the mouse. Below it are your name and an "Account" button. A new bar on the right leads to Wardrobe,
+  Accounts, Friends, Clips & Images and the TRS settings; the parts that aren't ready yet say "Coming soon". In small
+  windows the bar shrinks to icons and the figure steps aside. Works in every supported Minecraft version, from 1.8.9
+  to 26.3.
 - **The skin preview shows your TRS cape.** After a restart the 3D preview now shows the TRS cape you wear – the way
   other TRS players see you in game – instead of your Mojang cape. Click a Mojang cape to look at that one instead.
 - **Your skins, presets and look follow you to every PC.** With the TRS services on, "My skins", your own presets and
@@ -29,6 +35,12 @@ How to write an entry:
 
 ### Deutsch
 
+- **Neuer Titelbildschirm im TRS Client: du auf einer Redstone-Drehscheibe.** Dein eigener Skin (mit deinem TRS-
+  oder Mojang-Umhang) steht jetzt links auf einer langsam drehenden Redstone-Drehscheibe – zieh daran, um sie zu
+  drehen, und dein Kopf folgt der Maus. Darunter stehen dein Name und ein „Konto“-Knopf. Eine neue Leiste rechts führt
+  zu Garderobe, Konten, Freunde, Clips & Bilder und den TRS-Einstellungen; was noch nicht fertig ist, meldet „Kommt
+  bald“. In kleinen Fenstern wird die Leiste zu Symbolen und die Figur macht Platz. Klappt in jeder unterstützten
+  Minecraft-Version von 1.8.9 bis 26.3.
 - **Die Skin-Vorschau zeigt deinen TRS-Umhang.** Nach einem Neustart zeigt die 3D-Vorschau jetzt den TRS-Umhang, den du
   trägst – so, wie andere TRS-Spieler dich im Spiel sehen – statt deines Mojang-Umhangs. Klick einen Mojang-Umhang
   an, um den anzusehen.

@@ -6,6 +6,9 @@ import dev.theredstonee.trsclient.core.cape.CapeTextures;
 import dev.theredstonee.trsclient.core.cape.ClothMesh;
 import dev.theredstonee.trsclient.core.cape.ClothSim;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.skin.LocalSkin;
+import dev.theredstonee.trsclient.core.skin.PlayerLook;
+import dev.theredstonee.trsclient.core.ui.TextureRef;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -30,17 +33,75 @@ public final class OnlineFeatures<T> {
 	/** Wiederverwendet: Umhang-Einstellungen je Tick (keine Allokation). */
 	private final CapeSettings capeSettings = new CapeSettings();
 
+	/** Eigener Skin für Menüs (null in Tests ohne Konfig-Ordner). */
+	private final LocalSkin localSkin;
+	/** Zuletzt gelieferter TRS-Umhang als {@link TextureRef} (keine Allokation je Bild). */
+	private TextureRef lastCapeRef;
+
 	public OnlineFeatures(TrsModules modules, TrsOnline online, CapeTextures.Backend<T> backend) {
+		this(modules, online, backend, null);
+	}
+
+	public OnlineFeatures(TrsModules modules, TrsOnline online, CapeTextures.Backend<T> backend, LocalSkin localSkin) {
 		this.modules = modules;
 		this.online = online;
 		this.textures = new CapeTextures<>(backend, online::loadCape);
 		this.emotes = new dev.theredstonee.trsclient.core.emote.EmoteController(modules, online);
+		this.localSkin = localSkin;
 	}
 
 	/** Standard-Aufbau: Konfiguration aus {@code configDir}, HTTP über HttpURLConnection. */
 	public static <T> OnlineFeatures<T> create(TrsModules modules, Path configDir, OnlinePlatform platform,
 			String modVersion, CapeTextures.Backend<T> backend) {
-		return new OnlineFeatures<>(modules, TrsOnline.create(configDir, platform, modVersion), backend);
+		String userAgent = "TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion() + "; " + platform.loader() + ")";
+		java.util.concurrent.ThreadPoolExecutor skinWorker = new java.util.concurrent.ThreadPoolExecutor(1, 1, 30,
+				java.util.concurrent.TimeUnit.SECONDS, new java.util.concurrent.ArrayBlockingQueue<Runnable>(4), r -> {
+					Thread t = new Thread(r, "TRS-Skin");
+					t.setDaemon(true);
+					t.setPriority(Thread.MIN_PRIORITY + 1);
+					return t;
+				});
+		skinWorker.allowCoreThreadTimeOut(true);
+		LocalSkin skin = new LocalSkin(configDir.resolve("trsclient").resolve("skins"), platform::session,
+				new Http.UrlConnection(userAgent), skinWorker, platform::log);
+		return new OnlineFeatures<>(modules, TrsOnline.create(configDir, platform, modVersion), backend, skin);
+	}
+
+	/**
+	 * Aussehen des eigenen Spielers für Menüs (Startbildschirm, Garderobe): Name, Skin (eigener oder Standard),
+	 * Umhang – der TRS-Umhang (aktuelles Bild) hat Vorrang vor dem Mojang-Umhang. Nur Render-Thread; null ohne Skin-Quelle.
+	 */
+	public PlayerLook look() {
+		if (localSkin == null) return null;
+		long now = System.currentTimeMillis();
+		PlayerLook look;
+		try {
+			look = localSkin.look(now);
+		} catch (RuntimeException e) {
+			online.reportError(e);
+			return null;
+		}
+		UUID self = localSkin.uuid();
+		TextureRef trs = self == null ? null : capeRef(self);
+		if (trs != null) {
+			look.cape = trs;
+			look.trsCape = true;
+		}
+		return look;
+	}
+
+	/** TRS-Umhang eines Spielers (aktuelles Animationsbild) als zeichenbare Textur, sonst null. */
+	public TextureRef capeRef(UUID uuid) {
+		T tex = capeTexture(uuid);
+		if (tex == null) return null;
+		CapeInfo info = online.info(uuid).cape;
+		int w = textures.width(info);
+		int h = textures.height(info);
+		if (w <= 0 || h <= 0) return null;
+		TextureRef last = lastCapeRef;
+		if (last != null && last.id.equals(tex) && last.width == w && last.height == h) return last;
+		lastCapeRef = new TextureRef(tex, w, h);
+		return lastCapeRef;
 	}
 
 	/**

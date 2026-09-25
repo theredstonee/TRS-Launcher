@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.ui;
 
 import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.core.ui.TextureRef;
+import dev.theredstonee.trsclient.core.ui.Textures;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import org.lwjgl.opengl.GL11;
@@ -11,6 +13,11 @@ import org.lwjgl.opengl.GL11;
  */
 public final class BrandCanvas implements Canvas {
 	private static final BrandCanvas INSTANCE = new BrandCanvas();
+
+	static {
+		// Texturen für core.ui (Skins, Umhänge, Vorschaubilder) – ab dem ersten Zeichnen verfügbar.
+		Textures.install(GfxImage.Store.INSTANCE);
+	}
 
 	private FontRenderer font;
 
@@ -90,5 +97,25 @@ public final class BrandCanvas implements Canvas {
 	@Override
 	public void pop() {
 		GL11.glPopMatrix();
+	}
+
+	@Override
+	public boolean images() {
+		return true;
+	}
+
+	@Override
+	public void image(TextureRef texture, float u, float v, int w, int h, int argb) {
+		GfxImage.blit(texture, u, v, w, h, argb);
+	}
+
+	@Override
+	public void rotate(float radians) {
+		GfxImage.rotate(radians);
+	}
+
+	@Override
+	public void scale(float sx, float sy) {
+		GfxImage.scale(sx, sy);
 	}
 }

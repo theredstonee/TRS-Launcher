@@ -155,6 +155,88 @@ class RedstoneUiTest {
 		assertNotEquals(0, host.clicks);
 	}
 
+	@Test
+	void sidebarAndFigureAdaptToTheWindow() {
+		FakeHost host = new FakeHost();
+		TitleUi ui = new TitleUi(host);
+		// 854×480 mit GUI-Größe 1: volle Leiste, Figur
+		ui.render(new CountingCanvas(), 854, 480, -1, -1);
+		assertEquals(TitleUi.SIDE_FULL, ui.sideMode());
+		assertTrue(ui.figureShown());
+		assertTrue(ui.buttonRect("account") != null);
+		// Minecraft-Standard 854×480 mit GUI 2 = 427×240: Symbole, Figur bleibt
+		ui.render(new CountingCanvas(), 427, 240, -1, -1);
+		assertEquals(TitleUi.SIDE_ICONS, ui.sideMode());
+		assertTrue(ui.figureShown());
+		// Sehr schmal (GUI 4): Symbolzeile oben, keine Figur, kein Konto-Knopf
+		ui.render(new CountingCanvas(), 213, 120, -1, -1);
+		assertEquals(TitleUi.SIDE_ROW, ui.sideMode());
+		assertFalse(ui.figureShown());
+		assertTrue(ui.buttonRect("account") == null);
+		// Die Leiste liegt nie auf den Knöpfen der Mitte
+		ui.render(new CountingCanvas(), 427, 240, -1, -1);
+		int[] quit = ui.buttonRect("quit");
+		for (String id : new String[]{"wardrobe", "accounts", "friends", "clips", "trsSettings"}) {
+			int[] r = ui.buttonRect(id);
+			assertTrue(r != null, id);
+			assertTrue(r[0] >= quit[0] + quit[2] + 10, id + " überlappt die Mitte");
+		}
+	}
+
+	@Test
+	void missingAreasSayComingSoonAndSettingsOpenTheMenu() {
+		FakeHost host = new FakeHost();
+		TitleUi ui = new TitleUi(host);
+		CountingCanvas canvas = new CountingCanvas();
+		ui.render(canvas, W, H, -1, -1);
+		int[] r = ui.buttonRect("wardrobe");
+		assertTrue(ui.mouseClicked(r[0] + 2, r[1] + 2, 0));
+		renderUntil(ui, canvas, () -> ui.toast() != null);
+		assertEquals("Coming soon: Wardrobe", ui.toast());
+		r = ui.buttonRect("trsSettings");
+		ui.mouseClicked(r[0] + 2, r[1] + 2, 0);
+		renderUntil(ui, canvas, () -> host.trsMenu > 0);
+		assertEquals(1, host.trsMenu);
+		// Konto-Knopf → Konten (noch nicht da) → Hinweis
+		host.narrated.clear();
+		r = ui.buttonRect("account");
+		ui.mouseClicked(r[0] + 2, r[1] + 2, 0);
+		renderUntil(ui, canvas, () -> !host.narrated.isEmpty());
+		assertEquals("Coming soon: Accounts", host.narrated.get(0));
+	}
+
+	private static void renderUntil(TitleUi ui, CountingCanvas canvas, java.util.function.BooleanSupplier done) {
+		long until = System.nanoTime() + 2_000_000_000L;
+		while (!done.getAsBoolean() && System.nanoTime() < until) {
+			ui.render(canvas, W, H, -1, -1);
+			sleep();
+		}
+		assertTrue(done.getAsBoolean());
+	}
+
+	@Test
+	void turntableSpinsAndCanBeDragged() {
+		Turntable t = new Turntable();
+		float a0 = t.angle();
+		t.tick(1f, true);
+		assertEquals(Turntable.wrap(a0 + Turntable.AUTO_SPEED), t.angle(), 0.5f);
+		t.grab(100);
+		t.drag(110);
+		assertEquals(Turntable.wrap(a0 + Turntable.AUTO_SPEED + 10 * Turntable.DRAG_DEG_PER_PX), t.angle(), 0.01f);
+		float held = t.angle();
+		t.tick(1f, true);
+		assertEquals(held, t.angle(), 0.0001f, "beim Ziehen keine Eigendrehung");
+		t.release();
+		assertFalse(t.dragging());
+		// Standbild ohne Animation
+		Turntable still = new Turntable();
+		still.tick(5f, false);
+		still.tick(5f, false);
+		float s = still.angle();
+		still.tick(1f, false);
+		assertEquals(s, still.angle(), 0.01f);
+	}
+
 	private static void sleep() {
 		try {
 			Thread.sleep(5);
@@ -173,7 +255,9 @@ class RedstoneUiTest {
 		@Override public void singleplayer() { singleplayer++; }
 		@Override public void multiplayer() { }
 		@Override public void options() { }
-		@Override public void trsMenu() { }
+		int trsMenu;
+
+		@Override public void trsMenu() { trsMenu++; }
 		@Override public boolean hasMods() { return mods; }
 		@Override public void mods() { }
 		@Override public void quit() { quit++; }
