@@ -94,12 +94,16 @@ How to write an entry:
 - **A short introduction when you start the TRS Client for the first time.** Four quick steps in the redstone look:
   language and theme, performance (pretty or maximum FPS, frame limit, VSync, Dynamic FPS), your TRS keys – keys that
   clash with Minecraft or other mods are highlighted and can be changed right there – and a module pack with a HUD
-  layout. Skip it any time. It shows up only once per TRS account; you can start it again in the TRS menu.
+  layout. Skip it any time. Everyone sees it once – also if you're updating from an earlier TRS Client – and only once
+  per TRS account: finish or skip it on one PC and it won't come back on the others. You can start it again in the
+  TRS menu.
 - **Module packs.** One click sets up the client for your play style – PvP, Redstone, Comfort or Minimal – with a
   matching HUD layout. You see beforehand what gets turned on, off and moved, and you can undo it. Find them in the
   TRS menu under "Presets".
 - **"NEW" in the TRS menu.** Modules and settings that arrive with a client update carry a "NEW" sign until you've
-  opened them once – on every PC with your account.
+  opened them once – on every PC with your account. Updating from an earlier TRS Client, you'll find it on everything
+  new in this update: the wardrobe (and its key), menu style, friends, clips & images, accounts, module packs, the
+  built-in optimizations, the graphics mode and account sync – in the TRS menu and on the title screen.
 - **Much higher FPS in new instances.** Minecraft starts with VSync on and a frame limit of 120 FPS, so even a
   strong PC got stuck at around 100 FPS. New instances now start with an unlimited frame rate and VSync off – your
   own settings in existing instances stay as they are.
@@ -111,7 +115,9 @@ How to write an entry:
 - **TRS Client: built-in optimizations (Fabric).** The TRS Client now brings free performance mods along – Lithium,
   FerriteCore, ImmediatelyFast, ModernFix and BadOptimizations, wherever they exist for your Minecraft version – so
   it is faster even without extra mods. If you install one of them yourself, the newer version is used. You can
-  switch them off in the TRS menu under Performance (takes effect at the next start through the TRS Launcher).
+  switch them off in the TRS menu under Performance (takes effect at the next start through the TRS Launcher). The
+  FPS Boost preset of the launcher no longer installs these mods a second time – unless you switched the built-in
+  optimizations off or the TRS Client is off for that instance.
 - **TRS Client: graphics mode "Pretty" or "Max FPS".** Pick it in the TRS menu under Performance or in the
   instance settings of the launcher. Pretty keeps the look; Max FPS turns off clouds and smooth lighting, lowers
   particles and uses fast graphics and fast leaves. Settings you changed yourself stay as they are, and switching
@@ -203,13 +209,16 @@ How to write an entry:
 - **Eine kurze Einführung beim ersten Start des TRS Clients.** Vier schnelle Schritte im Redstone-Look: Sprache und
   Thema, Leistung (schön oder maximale FPS, Bildraten-Grenze, VSync, Dynamische FPS), deine TRS-Tasten – Tasten, die
   mit Minecraft oder anderen Mods kollidieren, leuchten und lassen sich direkt ändern – und ein Modul-Paket mit
-  HUD-Vorlage. Jederzeit überspringbar. Sie erscheint nur einmal pro TRS-Konto; im TRS-Menü kannst du sie erneut
-  starten.
+  HUD-Vorlage. Jederzeit überspringbar. Alle sehen sie einmal – auch wenn du von einem älteren TRS Client
+  aktualisierst – und nur einmal pro TRS-Konto: Auf einem PC abgeschlossen oder übersprungen, kommt sie auf den
+  anderen nicht wieder. Im TRS-Menü kannst du sie erneut starten.
 - **Modul-Pakete.** Ein Klick richtet den Client für deinen Spielstil ein – PvP, Redstone, Komfort oder Minimal – mit
   passender HUD-Vorlage. Vorher siehst du, was ein-, aus- und umgestellt wird, und du kannst es rückgängig machen. Zu
   finden im TRS-Menü unter „Pakete“.
 - **„NEU“ im TRS-Menü.** Module und Einstellungen, die mit einem Client-Update kommen, tragen ein „NEU“-Schild, bis du
-  sie einmal geöffnet hast – auf jedem PC mit deinem Konto.
+  sie einmal geöffnet hast – auf jedem PC mit deinem Konto. Aktualisierst du von einem älteren TRS Client, steht es an
+  allem, was dieses Update bringt: Garderobe (samt Taste), Menü-Stil, Freunde, Clips & Bilder, Konten, Modul-Pakete,
+  eingebaute Optimierungen, Grafik-Modus und Konto-Sync – im TRS-Menü und auf dem Startbildschirm.
 - **Deutlich mehr FPS in neuen Instanzen.** Minecraft startet mit VSync und einer Bildraten-Grenze von 120 FPS –
   selbst ein starker PC blieb so bei rund 100 FPS hängen. Neue Instanzen starten jetzt mit unbegrenzter Bildrate
   und ohne VSync; deine eigenen Einstellungen in bestehenden Instanzen bleiben, wie sie sind.
@@ -223,7 +232,8 @@ How to write an entry:
   Lithium, FerriteCore, ImmediatelyFast, ModernFix und BadOptimizations, soweit es sie für deine Minecraft-Version
   gibt – und ist damit auch ohne zusätzliche Mods schneller. Installierst du eine davon selbst, wird die neuere
   Fassung benutzt. Abschalten kannst du sie im TRS-Menü unter Leistung (wirkt beim nächsten Start über den TRS
-  Launcher).
+  Launcher). Das FPS-Boost-Preset des Launchers installiert diese Mods nicht mehr doppelt – außer du hast die
+  eingebauten Optimierungen ausgeschaltet oder der TRS Client ist für die Instanz aus.
 - **TRS Client: Grafik-Modus „Schön“ oder „Max FPS“.** Wählbar im TRS-Menü unter Leistung oder in den
   Instanz-Einstellungen des Launchers. „Schön“ behält die Optik; „Max FPS“ schaltet Wolken und weiche Beleuchtung
   aus, senkt die Partikel und nutzt schnelle Grafik und schnelles Laub. Was du selbst geändert hast, bleibt, und

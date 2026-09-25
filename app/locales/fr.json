@@ -2914,14 +2914,16 @@
       "incompatible": "{title} ne fonctionne pas avec {other}",
       "needsLoader": "{title} nécessite un chargeur de mods",
       "failed": "{title} n’a pas pu être téléchargé",
-      "swapped": "Remplacé par une version qui fonctionne avec {other}"
+      "swapped": "Remplacé par une version qui fonctionne avec {other}",
+      "bundled": "Intégré au TRS Client – pas installé séparément"
     },
     "status": {
       "installed": "Installé",
       "alreadyInstalled": "Déjà là",
       "duplicate": "Inclus",
       "skipped": "Ignoré",
-      "swapped": "Remplacé"
+      "swapped": "Remplacé",
+      "bundled": "Dans TRS Client"
     },
     "task": {
       "title": "Préréglages pour {name}",

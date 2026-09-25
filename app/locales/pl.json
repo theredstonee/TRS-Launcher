@@ -2914,14 +2914,16 @@
       "incompatible": "{title} nie działa razem z {other}",
       "needsLoader": "{title} wymaga loadera modów",
       "failed": "Nie udało się pobrać {title}",
-      "swapped": "Zamieniono na wersję działającą z {other}"
+      "swapped": "Zamieniono na wersję działającą z {other}",
+      "bundled": "Wbudowane w TRS Client – nie jest instalowane osobno"
     },
     "status": {
       "installed": "Zainstalowano",
       "alreadyInstalled": "Już jest",
       "duplicate": "Uwzględniony",
       "skipped": "Pominięty",
-      "swapped": "Zamieniono"
+      "swapped": "Zamieniono",
+      "bundled": "W TRS Client"
     },
     "task": {
       "title": "Presety dla {name}",

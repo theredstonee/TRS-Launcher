@@ -1056,6 +1056,7 @@ export type PresetItemStatus =
   | 'needsLoader'
   | 'failed'
   | 'swapped'
+  | 'bundled'
 
 export interface PresetItemOutcome {
   presetId: string

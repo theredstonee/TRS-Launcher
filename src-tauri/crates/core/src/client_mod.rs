@@ -373,6 +373,12 @@ pub async fn builtin_optimizations_enabled(game_dir: &Path) -> bool {
 /// dort aus ist, es keinen Build gibt oder der Spieler „Eingebaute Optimierungen“
 /// ausgeschaltet hat. Das FPS-Boost-Preset lässt diese Mods weg.
 pub async fn builtin_mod_ids(paths: &Paths, builds: &[Build], instance: &Instance) -> Vec<String> {
+    builtin_mods(paths, builds, instance).await.into_iter().map(|b| b.id).collect()
+}
+
+/// Wie [`builtin_mod_ids`], aber mit Namen und Version (für die Verträglichkeitsprüfung
+/// des Presets: eingebaute Mods zählen dort als vorhanden).
+pub async fn builtin_mods(paths: &Paths, builds: &[Build], instance: &Instance) -> Vec<BundledMod> {
     if instance.overrides.trs_client == Some(false) {
         return Vec::new();
     }
@@ -380,7 +386,7 @@ pub async fn builtin_mod_ids(paths: &Paths, builds: &[Build], instance: &Instanc
     if build.bundled.is_empty() || !builtin_optimizations_enabled(&paths.instance_game_dir(&instance.id)).await {
         return Vec::new();
     }
-    build.bundled.iter().map(|b| b.id.clone()).collect()
+    build.bundled.clone()
 }
 
 /// Mod-IDs (fabric.mod.json) der eingeschalteten Mods im Mods-Ordner – ohne den TRS Client selbst.
@@ -700,6 +706,7 @@ mod tests {
         // Keine Config: Modul an → Preset lässt beide weg, nichts wird abgeschaltet.
         assert!(builtin_optimizations_enabled(&game).await);
         assert_eq!(builtin_mod_ids(&paths, &builds, &inst).await, ["lithium", "ferritecore"]);
+        assert_eq!(builtin_mods(&paths, &builds, &inst).await, build.bundled);
         assert!(bundled_jvm_args(&paths, &build, &inst).await.is_empty());
 
         // Im TRS-Menü ausgeschaltet; der Spieler hat FerriteCore selbst im Mods-Ordner.
@@ -721,6 +728,7 @@ mod tests {
         std::fs::write(mods.join("kaputt.jar"), b"kein zip").unwrap();
         assert!(!builtin_optimizations_enabled(&game).await);
         assert!(builtin_mod_ids(&paths, &builds, &inst).await.is_empty(), "Preset darf sie wieder installieren");
+        assert!(builtin_mods(&paths, &builds, &inst).await.is_empty());
         assert_eq!(bundled_jvm_args(&paths, &build, &inst).await, ["-Dfabric.debug.disableModIds=lithium"]);
         // Forge-Instanz: nie (dort gibt es keine eingebauten Mods).
         assert!(bundled_jvm_args(&paths, &build, &instance("1.21.1", LoaderKind::Forge, None)).await.is_empty());

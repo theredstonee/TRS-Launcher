@@ -45,13 +45,13 @@ pub async fn effective_instance(http: &reqwest::Client, paths: &Paths, builds: &
 
 /// Einmal pro Version bzw. Paket-Revision die Performance-Mods ergänzen.
 /// Fehler (offline, Modrinth down) blockieren den Start nicht.
-pub async fn ensure_performance(http: &reqwest::Client, paths: &Paths, effective: &Instance) -> Result<()> {
+pub async fn ensure_performance(http: &reqwest::Client, paths: &Paths, builds: &[Build], effective: &Instance) -> Result<()> {
     let marker_file = paths.instance_dir(&effective.id).join(MARKER);
     let marker: Marker = fsutil::read_json(&marker_file).await.ok().flatten().unwrap_or_default();
     if marker.pack_revision == PACK_REVISION && marker.game_version == effective.game_version {
         return Ok(());
     }
-    match presets::install_fps_boost(http, paths, effective).await {
+    match presets::install_fps_boost(http, paths, builds, effective).await {
         Ok(files) => {
             tracing::info!("TRS-Optimierung für '{}': {} Dateien", effective.id, files.len());
             fsutil::write_json(

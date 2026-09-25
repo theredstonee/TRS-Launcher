@@ -115,6 +115,8 @@ pub async fn apply_presets(
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };
-    let work = presets::apply(launcher.http(), launcher.paths(), &instance, &preset_ids, &report);
+    // Was der TRS Client in der Instanz schon eingebaut hat, lädt das Preset nicht noch einmal.
+    let builds = launcher.client_mod_builds().await;
+    let work = presets::apply(launcher.http(), launcher.paths(), &instance, &builds, &preset_ids, &report);
     Ok(tracked(&app, task_id, work).await?)
 }

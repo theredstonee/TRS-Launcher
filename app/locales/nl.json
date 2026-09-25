@@ -2914,14 +2914,16 @@
       "incompatible": "{title} werkt niet samen met {other}",
       "needsLoader": "{title} heeft een modloader nodig",
       "failed": "{title} kon niet worden gedownload",
-      "swapped": "Vervangen door een versie die werkt met {other}"
+      "swapped": "Vervangen door een versie die werkt met {other}",
+      "bundled": "Ingebouwd in de TRS Client – wordt niet apart geïnstalleerd"
     },
     "status": {
       "installed": "Geïnstalleerd",
       "alreadyInstalled": "Was er al",
       "duplicate": "Inbegrepen",
       "skipped": "Overgeslagen",
-      "swapped": "Vervangen"
+      "swapped": "Vervangen",
+      "bundled": "In TRS Client"
     },
     "task": {
       "title": "Presets voor {name}",

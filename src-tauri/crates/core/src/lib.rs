@@ -316,6 +316,12 @@ impl Launcher {
         client_mod::set_fps_mode(&self.paths, &instance.id, mode).await
     }
 
+    /// TRS-Client-Builds, die gerade gelten (Update-Kanal oder Launcher-Paket) –
+    /// z. B. damit Presets die im TRS Client eingebauten Mods weglassen.
+    pub async fn client_mod_builds(&self) -> Vec<client_mod::Build> {
+        self.client_mod_catalog().await.1.builds().to_vec()
+    }
+
     async fn client_mod_catalog(&self) -> (Option<PathBuf>, client_mod::Catalog) {
         let dir = self.bundled_client_mod_dir();
         let catalog = client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await;
@@ -653,7 +659,7 @@ impl Launcher {
         let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), instance).await;
         // Performance-Mods gibt es nur für Fabric; Forge-Boost (1.8.9) bekommt nur den TRS Client.
         if effective.loader.kind == LoaderKind::Fabric && instance.loader.kind != LoaderKind::Fabric {
-            boost::ensure_performance(&self.http, &self.paths, &effective).await?;
+            boost::ensure_performance(&self.http, &self.paths, catalog.builds(), &effective).await?;
         }
         let instance = &effective;
 
