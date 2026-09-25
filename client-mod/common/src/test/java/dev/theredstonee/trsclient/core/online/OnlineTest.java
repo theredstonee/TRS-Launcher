@@ -53,6 +53,15 @@ class OnlineTest {
 	}
 
 	@Test
+	void capeTexturesMayBeLargeHdStrips() throws Exception {
+		FakeHttp http = new FakeHttp().on("GET /v1/capes/u0123456789abcdef0123.png", r -> FakeHttp.response(200, "png"));
+		new TrsApi(http, CONFIG).texture(CONFIG.apiBase() + "/v1/capes/u0123456789abcdef0123.png?v=abc", null, null);
+		// Eigene Uploads bis 5 MB (512×4096 bei 16 Frames) dürfen nicht am Limit scheitern.
+		assertTrue(http.requests.get(0).maxBytes >= 5 * 1024 * 1024);
+		assertEquals(TrsApi.MAX_TEXTURE_BYTES, http.requests.get(0).maxBytes);
+	}
+
+	@Test
 	void baseUrlsAreValidated() {
 		String d = OnlineConfig.DEFAULT_API;
 		assertEquals("https://example.org", OnlineConfig.baseUrl("https://example.org/", d));
