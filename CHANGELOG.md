@@ -16,7 +16,8 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
-## Unreleased
+## 0.6.1 – 2026-09-26 – The Polish Update | Das Feinschliff-Update
+<!-- banner: accent=#ff7a3d motif=/news/0.6.1/banner.png -->
 
 ### English
 
