@@ -1160,7 +1160,12 @@
       "tuningDescription": "Réglages Java pour plus de FPS et moins de saccades. Les arguments JVM personnalisés sont prioritaires.",
       "tuningGlobal": "Comme le réglage global ({state})",
       "tuningOn": "Activé",
-      "tuningOff": "Désactivé"
+      "tuningOff": "Désactivé",
+      "fpsModeTitle": "Mode graphique",
+      "fpsModeDescription": "Comment le TRS Client règle les options graphiques et les mods de performance. Joli garde l'apparence et n'utilise que des réglages de performance ; FPS max désactive les nuages, l'éclairage doux et le feuillage détaillé. Appliqué au prochain lancement ; vos propres réglages restent.",
+      "fpsModePretty": "Joli",
+      "fpsModeMax": "FPS max",
+      "fpsModeUnset": "Choisir en jeu"
     },
     "window": {
       "customTitle": "Paramètres de fenêtre personnalisés",

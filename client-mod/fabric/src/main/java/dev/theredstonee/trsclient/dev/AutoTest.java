@@ -58,7 +58,7 @@ import net.minecraft.world.level.GameRules;
  */
 public final class AutoTest {
 	/** Minecraft-Version für Dateinamen: Screenshots/Testwelten mehrerer Versionen kommen sich nicht in die Quere. */
-	private static final String MC_VERSION = FabricLoader.getInstance().getModContainer("minecraft")
+	static final String MC_VERSION = FabricLoader.getInstance().getModContainer("minecraft")
 			.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("mc");
 	/** Eigene Testwelt je Version (kein Öffnen einer neueren Welt in einer älteren Version). */
 	private static final String WORLD = "trs-autotest-" + MC_VERSION;
@@ -83,6 +83,8 @@ public final class AutoTest {
 
 	public static void installIfRequested() {
 		if (!Boolean.getBoolean("trsclient.autotest")) return;
+		// -PtrsAutotestOnly=realbench: nur der realistische Benchmark (eigener Ablauf, ohne Menü-Tests)
+		if (RealBenchRunner.installIfRequested()) return;
 		TrsClient.LOGGER.info("[Autotest] aktiv");
 		if ("accounts".equals(System.getProperty("trsclient.autotest.only"))) {
 			AccountsTest.install();
@@ -466,7 +468,7 @@ public final class AutoTest {
 	}
 
 	/** Führt einen Befehl als Server (Berechtigungsstufe 4) aus. */
-	private static void command(Minecraft mc, String command) {
+	static void command(Minecraft mc, String command) {
 		MinecraftServer server = mc.getSingleplayerServer();
 		if (server == null) return;
 		//? if >=1.19 {
@@ -680,61 +682,70 @@ public final class AutoTest {
 	}
 
 	private static void startWorld(Minecraft mc) {
-		if (mc.getLevelSource().levelExists(WORLD)) {
-			TrsClient.LOGGER.info("[Autotest] öffne Testwelt '{}'", WORLD);
+		startWorld(mc, WORLD, null);
+	}
+
+	/** Welt öffnen oder neu anlegen (Kreativ, friedlich); {@code seed} null = zufällig. */
+	static void startWorld(Minecraft mc, String world, Long seed) {
+		if (mc.getLevelSource().levelExists(world)) {
+			TrsClient.LOGGER.info("[Autotest] öffne Testwelt '{}'", world);
 			//? if >=1.20.5 {
-			mc.createWorldOpenFlows().openWorld(WORLD, () -> Mc.setScreen(new TitleScreen()));
+			mc.createWorldOpenFlows().openWorld(world, () -> Mc.setScreen(new TitleScreen()));
 			//?} elif >=1.20.3 {
-			/*mc.createWorldOpenFlows().checkForBackupAndLoad(WORLD, () -> Mc.setScreen(new TitleScreen()));
+			/*mc.createWorldOpenFlows().checkForBackupAndLoad(world, () -> Mc.setScreen(new TitleScreen()));
 			*///?} elif >=1.19 {
-			/*mc.createWorldOpenFlows().loadLevel(new TitleScreen(), WORLD);
+			/*mc.createWorldOpenFlows().loadLevel(new TitleScreen(), world);
 			*///?} elif >=1.16 {
-			/*mc.loadLevel(WORLD);
+			/*mc.loadLevel(world);
 			*///?} else
-			/*mc.selectLevel(WORLD, WORLD, null);*/
+			/*mc.selectLevel(world, world, null);*/
 		} else {
-			TrsClient.LOGGER.info("[Autotest] erstelle Testwelt '{}'", WORLD);
+			TrsClient.LOGGER.info("[Autotest] erstelle Testwelt '{}'", world);
 			//? if >=26.1 {
-			/*LevelSettings settings = new LevelSettings(WORLD, GameType.CREATIVE,
+			/*LevelSettings settings = new LevelSettings(world, GameType.CREATIVE,
 					new LevelSettings.DifficultySettings(Difficulty.PEACEFUL, false, false), true, WorldDataConfiguration.DEFAULT);
 			*///?} elif >=1.21.2 {
-			/*LevelSettings settings = new LevelSettings(WORLD, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
+			/*LevelSettings settings = new LevelSettings(world, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
 					new GameRules(WorldDataConfiguration.DEFAULT.enabledFeatures()), WorldDataConfiguration.DEFAULT);
 			*///?} elif >=1.19.3 {
-			LevelSettings settings = new LevelSettings(WORLD, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
+			LevelSettings settings = new LevelSettings(world, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
 					new GameRules(), WorldDataConfiguration.DEFAULT);
 			//?} elif >=1.16 {
-			/*LevelSettings settings = new LevelSettings(WORLD, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
+			/*LevelSettings settings = new LevelSettings(world, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
 					new GameRules(), DataPackConfig.DEFAULT);
 			*///?}
 			//? if >=1.19.3 {
-			mc.createWorldOpenFlows().createFreshLevel(WORLD, settings, WorldOptions.defaultWithRandomSeed(),
+			mc.createWorldOpenFlows().createFreshLevel(world, settings, seed == null ? WorldOptions.defaultWithRandomSeed() : new WorldOptions(seed, true, false),
 					//? if >=1.20.3 {
 					WorldPresets::createNormalWorldDimensions, new TitleScreen());
 					//?} else
 					//WorldPresets::createNormalWorldDimensions);
 			//?} elif >=1.19 {
 			/*RegistryAccess registries = RegistryAccess.builtinCopy().freeze();
-			mc.createWorldOpenFlows().createFreshLevel(WORLD, settings, registries, WorldPresets.createNormalWorldFromPreset(registries));
+			mc.createWorldOpenFlows().createFreshLevel(world, settings, registries, WorldPresets.createNormalWorldFromPreset(registries).withSeed(false, seedOf(seed)));
 			*///?} elif >=1.18.2 {
 			/*RegistryAccess registries = RegistryAccess.builtinCopy();
-			mc.createLevel(WORLD, settings, registries, WorldGenSettings.makeDefault(registries));
+			mc.createLevel(world, settings, registries, WorldGenSettings.makeDefault(registries).withSeed(false, seedOf(seed)));
 			*///?} elif >=1.18 {
 			/*RegistryAccess.RegistryHolder registries = RegistryAccess.builtin();
-			mc.createLevel(WORLD, settings, registries, WorldGenSettings.makeDefault(registries));
+			mc.createLevel(world, settings, registries, WorldGenSettings.makeDefault(registries).withSeed(false, seedOf(seed)));
 			*///?} elif >=1.16 {
 			/*RegistryAccess.RegistryHolder registries = RegistryAccess.builtin();
-			mc.createLevel(WORLD, settings, registries, WorldGenSettings.makeDefault(registries.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY),
-					registries.registryOrThrow(Registry.BIOME_REGISTRY), registries.registryOrThrow(Registry.NOISE_GENERATOR_SETTINGS_REGISTRY)));
+			mc.createLevel(world, settings, registries, WorldGenSettings.makeDefault(registries.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY),
+					registries.registryOrThrow(Registry.BIOME_REGISTRY), registries.registryOrThrow(Registry.NOISE_GENERATOR_SETTINGS_REGISTRY)).withSeed(false, seedOf(seed)));
 			*///?} else {
-			/*LevelSettings settings = new LevelSettings(new java.util.Random().nextLong(), GameType.CREATIVE, true, false, LevelType.NORMAL)
+			/*LevelSettings settings = new LevelSettings(seed != null ? seed : new java.util.Random().nextLong(), GameType.CREATIVE, true, false, LevelType.NORMAL)
 					.enableSinglePlayerCommands();
-			mc.selectLevel(WORLD, WORLD, settings);
+			mc.selectLevel(world, world, settings);
 			*///?}
 		}
 	}
 
-	private static void disconnect(Minecraft mc) {
+	private static java.util.OptionalLong seedOf(Long seed) {
+		return seed == null ? java.util.OptionalLong.empty() : java.util.OptionalLong.of(seed);
+	}
+
+	static void disconnect(Minecraft mc) {
 		//? if >=1.21.6 {
 		/*if (mc.level != null) mc.level.disconnect(Mc.text("TRS-Autotest"));
 		mc.disconnectWithSavingScreen();

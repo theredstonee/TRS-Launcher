@@ -63,6 +63,26 @@ loom {
 				vmArg "-Dtrsclient.api.url=${project.trsApi}"
 				vmArg "-Dtrsclient.session.url=${project.trsApi}"
 			}
+			// Benchmark (-PtrsAutotestOnly=bench) realistisch: VSync/FPS-Grenze aus options.txt statt „alles offen“
+			// (-PtrsBenchOptions=vanilla|trs|keep, siehe unten), Bezeichnung des Laufs im Log (-PtrsBenchLabel=…).
+			if (project.hasProperty('trsBenchOptions')) {
+				vmArg '-Dtrsclient.bench.keepOptions=true'
+			}
+			if (project.hasProperty('trsBenchLabel')) {
+				vmArg "-Dtrsclient.bench.label=${project.trsBenchLabel}"
+			}
+			// Realistischer Benchmark (-PtrsAutotestOnly=realbench): Welt mit festem Seed, Dorf-Mitte (x,z oder „locate“),
+			// Vanilla ohne TRS Client, JFR-Aufnahme der Messung; Fenster groß (wird auf Bildschirm 2 maximiert).
+			['trsBenchSeed': 'seed', 'trsBenchCenter': 'center', 'trsBenchJfr': 'jfr', 'trsBenchSeconds': 'seconds', 'trsBenchOff': 'off',
+			 'trsBenchNoMixins': 'noMixins', 'trsBenchNoHud': 'noHud'].each { prop, key ->
+				if (project.hasProperty(prop)) vmArg "-Dtrsclient.bench.${key}=${project.property(prop)}"
+			}
+			if (project.hasProperty('trsBenchVanilla')) {
+				vmArg '-Dtrsclient.bench.vanilla=true'
+			}
+			if (project.findProperty('trsAutotestOnly') == 'realbench') {
+				programArgs '--width', '1920', '--height', '1080'
+			}
 		}
 		server {
 			ideConfigGenerated = false
@@ -88,6 +108,55 @@ if (stonecutter.eval(mc, '>=1.15')) fapiModules << 'fabric-rendering-v1'
 def running = project.hasProperty('trsFullApi') ||
 		gradle.startParameter.taskNames.any { it == "${project.path}:runClient".toString() }
 
+/**
+ * Eingebaute Optimierungs-Mods dieser Version laut fabric/bundled-mods.json: in ~/.gradle/caches/trsclient-bundled
+ * laden (nur beim ersten Mal), SHA-512 prüfen. Liste [{id, name, version, license, source, path}].
+ */
+def bundledMods = { ->
+	if (project.hasProperty('trsNoBundledMods')) return []
+	def pin = rootProject.file('fabric/bundled-mods.json')
+	def all = new groovy.json.JsonSlurper().parse(pin, 'UTF-8')
+	def cache = new File(gradle.gradleUserHomeDir, 'caches/trsclient-bundled')
+	(all[mc.toString()] ?: []).collect { e ->
+		File target = new File(cache, "${e.sha512.substring(0, 16)}/${e.file}")
+		if (!target.isFile()) {
+			target.parentFile.mkdirs()
+			File tmp = new File(target.parentFile, target.name + '.part')
+			new URL(e.url).withInputStream { input -> tmp.withOutputStream { it << input } }
+			tmp.renameTo(target)
+		}
+		def digest = java.security.MessageDigest.getInstance('SHA-512').digest(target.bytes).encodeHex().toString()
+		if (digest != e.sha512) {
+			target.delete()
+			throw new GradleException("Eingebaute Mod ${e.file}: SHA-512 stimmt nicht (bundled-mods.json)")
+		}
+		// Loom bettet nur Maven-Module ein: geprüfte Datei in ein lokales Repo legen (Version = Hash-Anfang).
+		String sha = e.sha512.substring(0, 16)
+		File repoDir = rootProject.file("build/bundled-repo/trsclient/bundled/${e.id}/${sha}")
+		File jar = new File(repoDir, "${e.id}-${sha}.jar")
+		if (!jar.isFile() || jar.length() != target.length()) {
+			repoDir.mkdirs()
+			jar.bytes = target.bytes
+			new File(repoDir, "${e.id}-${sha}.pom").setText("""<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+<groupId>trsclient.bundled</groupId><artifactId>${e.id}</artifactId><version>${sha}</version></project>
+""", 'UTF-8')
+		}
+		[id: e.id, name: e.name, version: e.version, modVersion: e.modVersion ?: '', license: e.license, source: e.source, path: target,
+		 coordinate: "trsclient.bundled:${e.id}:${sha}"]
+	}
+}()
+ext.bundledMods = bundledMods
+if (!bundledMods.isEmpty()) {
+	repositories {
+		maven {
+			name = 'TRS bundled mods (lokal, geprüft)'
+			url = rootProject.file('build/bundled-repo')
+			content { includeGroup 'trsclient.bundled' }
+		}
+	}
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${mc}"
 	if (!unobfuscated) {
@@ -102,8 +171,20 @@ dependencies {
 		add(modRuntime, "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}") {
 			exclude group: 'net.fabricmc', module: 'fabric-loader'
 		}
+		// Benchmark mit fremden Mods (z. B. dem „Max FPS“-Preset des Launchers): -PtrsBenchMods=<Ordner mit Mod-JARs
+		// für genau diese Version> – Loom mappt sie für die Entwicklungsumgebung um.
+		if (project.hasProperty('trsBenchMods')) {
+			add(modRuntime, fileTree(dir: project.trsBenchMods, include: '*.jar'))
+		}
 	}
 	compileOnly "com.google.code.gson:gson:${rootProject.gson_version}"
+	// Eingebaute Optimierungen: freie Leistungs-Mods per Jar-in-Jar (fabric/bundled-mods.json, fest gepinnt).
+	// Fabric nimmt bei gleicher Mod-ID die neueste Fassung – hat der Spieler sie selbst, gibt es keine Dopplung.
+	// In der Entwicklungsumgebung laufen sie mit (wie beim Spieler); -PtrsNoBundledMods lässt sie ganz weg.
+	bundledMods.each { mod ->
+		add('include', mod.coordinate)
+		if (running) add(modRuntime, mod.coordinate)
+	}
 }
 
 // Mixin-Liste je Version: 1.14 braucht eigene HUD-/Tasten-Hooks, die Overlay-Textur gibt es erst ab 1.15.
@@ -160,7 +241,53 @@ tasks.withType(Jar).configureEach {
 	from(rootProject.file('LICENSE')) {
 		rename { "${it}_trsclient" }
 	}
+	// Lizenzen und Quellen der eingebauten Mods (die Mod-JARs selbst bringen ihre Lizenztexte mit).
+	from(rootProject.file('fabric/BUNDLED-MODS.md')) {
+		rename { 'THIRD-PARTY_trsclient.md' }
+	}
 }
+
+// Liste der eingebauten Mods für den Mod selbst (Menü „Eingebaute Optimierungen“): assets/trsclient/bundled-mods.json
+def bundledList = layout.buildDirectory.dir('generated/bundled')
+def writeBundledList = tasks.register('writeBundledList') {
+	def list = bundledMods.collect { [id: it.id, name: it.name, version: it.modVersion ?: it.version, license: it.license, source: it.source] }
+	inputs.property('list', groovy.json.JsonOutput.toJson(list))
+	outputs.dir(bundledList)
+	doLast {
+		File out = bundledList.get().file('assets/trsclient/bundled-mods.json').asFile
+		out.parentFile.mkdirs()
+		out.setText(groovy.json.JsonOutput.toJson(list) + '\n', 'UTF-8')
+	}
+}
+sourceSets.main.resources.srcDir(files(bundledList).builtBy(writeBundledList))
 
 // Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
 apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
+
+// -PtrsBenchOptions: mit welchen Bildraten-Einstellungen der Benchmark misst.
+//   vanilla = frische Vanilla-Optionen (VSync an, Max. Bildrate 120)
+//   trs     = Standard neuer TRS-Instanzen (VSync aus, unbegrenzt)
+//   real    = options.txt neu mit Minecraft-Standards, nur unbegrenzt/ohne VSync, Sichtweite 12 (realistischer Benchmark)
+//   keep    = options.txt unverändert lassen
+if (project.hasProperty('trsBenchOptions')) {
+	def mode = project.trsBenchOptions.toString()
+	// real = frische Minecraft-Standards (options.txt neu), nur Bildraten-Grenze/VSync offen und Sichtweite 12
+	def values = [vanilla: [enableVsync: 'true', maxFps: '120'], trs: [enableVsync: 'false', maxFps: '260'], keep: [:],
+			real: [enableVsync: 'false', maxFps: '260', renderDistance: '12', simulationDistance: '12', onboardAccessibility: 'false',
+					skipMultiplayerWarning: 'true', tutorialStep: 'none', pauseOnLostFocus: 'false', soundCategory_master: '0.0']]
+	if (!values.containsKey(mode)) throw new GradleException("trsBenchOptions: vanilla, trs, real oder keep (nicht '${mode}')")
+	tasks.matching { it.name == 'runClient' }.configureEach { task ->
+		task.doFirst {
+			if (values[mode].isEmpty()) return
+			File dir = project.file(loom.runConfigs.client.runDir)
+			dir.mkdirs()
+			File options = new File(dir, 'options.txt')
+			List<String> lines = (options.exists() && mode != 'real') ? options.readLines('UTF-8').findAll { line ->
+				!values[mode].keySet().any { line.startsWith(it + ':') }
+			} : []
+			values[mode].each { k, v -> lines << "${k}:${v}".toString() }
+			options.write(lines.join('\n') + '\n', 'UTF-8')
+			logger.lifecycle("Benchmark: ${values[mode]} (${options})")
+		}
+	}
+}

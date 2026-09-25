@@ -1160,7 +1160,12 @@
       "tuningDescription": "Abgestimmte Java-Einstellungen für mehr FPS und weniger Ruckler. Eigene JVM-Argumente haben Vorrang.",
       "tuningGlobal": "Wie global ({state})",
       "tuningOn": "An",
-      "tuningOff": "Aus"
+      "tuningOff": "Aus",
+      "fpsModeTitle": "Grafik-Modus",
+      "fpsModeDescription": "Wie der TRS Client Grafikeinstellungen und Leistungs-Mods einstellt. Schön behält die Optik und nutzt nur Leistungs-Schalter; Max FPS schaltet Wolken, weiche Beleuchtung und schönes Laub aus. Gilt ab dem nächsten Start; deine eigenen Änderungen bleiben.",
+      "fpsModePretty": "Schön",
+      "fpsModeMax": "Max FPS",
+      "fpsModeUnset": "Im Spiel wählen"
     },
     "window": {
       "customTitle": "Eigene Fenstereinstellungen",

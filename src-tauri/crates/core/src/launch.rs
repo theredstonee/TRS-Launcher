@@ -56,6 +56,21 @@ pub struct Command {
     pub high_priority: bool,
 }
 
+/// Zusätzliche JVM-Argumente vor die Hauptklasse setzen (nach denen des Nutzers –
+/// eigene Angaben mit derselben Eigenschaft bleiben unangetastet).
+pub fn insert_jvm_args(command: &mut Command, prepared: &Prepared, extra: Vec<String>) {
+    let Ok(main) = main_class(&prepared.version) else { return };
+    let Some(pos) = command.args.iter().position(|a| a == main) else { return };
+    let extra: Vec<String> = extra
+        .into_iter()
+        .filter(|arg| {
+            let key = arg.split('=').next().unwrap_or(arg);
+            !command.args[..pos].iter().any(|a| a.split('=').next() == Some(key))
+        })
+        .collect();
+    command.args.splice(pos..pos, extra);
+}
+
 /// `system_memory_mb`: eingebauter Arbeitsspeicher (`None` = unbekannt) – der
 /// Heap wird so begrenzt, dass dem System noch 2 GB bleiben.
 pub fn build_command(
@@ -903,6 +918,19 @@ mod tests {
     fn substitution_keeps_unknown_placeholders() {
         let vars = HashMap::from([("a", "1".to_owned())]);
         assert_eq!(substitute("x${a}y${b}z${a", &vars), "x1y${b}z${a");
+    }
+
+    #[test]
+    fn extra_jvm_args_go_before_the_main_class_unless_the_user_set_them() {
+        let p = prepared(r#"{"id":"1.21.1","mainClass":"net.minecraft.client.main.Main",
+            "arguments":{"game":["--username","${auth_player_name}"],"jvm":["-cp","${classpath}"]}}"#);
+        let mut cmd = build_command(&p, &instance(), &Settings::default(), &session(), dirs(), None, None).unwrap();
+        insert_jvm_args(&mut cmd, &p, vec!["-Dfabric.debug.disableModIds=lithium".into()]);
+        let main = cmd.args.iter().position(|a| a == "net.minecraft.client.main.Main").unwrap();
+        assert_eq!(cmd.args[main - 1], "-Dfabric.debug.disableModIds=lithium");
+        // Schon vorhanden (z. B. eigene JVM-Argumente): nicht doppelt.
+        insert_jvm_args(&mut cmd, &p, vec!["-Dfabric.debug.disableModIds=other".into()]);
+        assert_eq!(cmd.args.iter().filter(|a| a.starts_with("-Dfabric.debug.disableModIds")).count(), 1);
     }
 
     #[test]

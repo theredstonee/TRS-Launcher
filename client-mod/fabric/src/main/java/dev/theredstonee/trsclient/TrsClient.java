@@ -91,10 +91,18 @@ public final class TrsClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		instance = this;
+		// Benchmark „Vanilla“ (-PtrsBenchVanilla): TRS Client bleibt ganz aus, nur der Messablauf läuft.
+		if (Boolean.getBoolean("trsclient.bench.vanilla")) {
+			LOGGER.info("TRS Client aus (Benchmark Vanilla)");
+			AutoTest.installIfRequested();
+			return;
+		}
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		Theme.loadFrom(FabricLoader.getInstance().getConfigDir());
 		dev.theredstonee.trsclient.core.i18n.I18n.init(FabricLoader.getInstance().getConfigDir());
 		dev.theredstonee.trsclient.core.clips.Clips.init(FabricLoader.getInstance().getConfigDir());
+		// Grafik-Modus „Schön“/„Max FPS“ (config/trsclient/fps-mode.json).
+		dev.theredstonee.trsclient.core.perf.FpsConfigMode.init(FabricLoader.getInstance().getConfigDir());
 		config = new ConfigStore(FabricLoader.getInstance().getConfigDir().resolve("trsclient.json"));
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {
@@ -108,7 +116,8 @@ public final class TrsClient implements ClientModInitializer {
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
-		registerHud();
+		// Kosten-Messung (-Dtrsclient.bench.noHud): HUD gar nicht erst einhängen.
+		if (!Boolean.getBoolean("trsclient.bench.noHud")) registerHud();
 		ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
 		// Vor der Spieler-Bewegung: Toggle-Tasten, Freelook, Treffer-Farbe, PvP-Zähler.
 		ClientTickEvents.START_CLIENT_TICK.register(pvp::tick);
@@ -129,6 +138,9 @@ public final class TrsClient implements ClientModInitializer {
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> FabricLoader.getInstance().isModLoaded(id),
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FABRIC, minecraft, message -> LOGGER.info(message), true);
+		// Eingebaute Optimierungen (Jar-in-Jar): welche Fassung lädt Fabric gerade?
+		dev.theredstonee.trsclient.core.perf.BundledMods.setLoaded(id -> FabricLoader.getInstance().getModContainer(id)
+				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse(null));
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert – {} Module, Config {} ({})",

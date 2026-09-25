@@ -77,6 +77,24 @@ How to write an entry:
   TRS menu under "Presets".
 - **"NEW" in the TRS menu.** Modules and settings that arrive with a client update carry a "NEW" sign until you've
   opened them once – on every PC with your account.
+- **Much higher FPS in new instances.** Minecraft starts with VSync on and a frame limit of 120 FPS, so even a
+  strong PC got stuck at around 100 FPS. New instances now start with an unlimited frame rate and VSync off – your
+  own settings in existing instances stay as they are.
+- **TRS Client: performance check finds the frame limit.** The check in the TRS menu now flags a frame limit below
+  "Unlimited" and lifts it with one click, and every FPS Boost level lifts it too. Undo restores it.
+- **TRS Client: no more FPS cap while playing.** If Minecraft missed that its window got the focus back, the
+  background limiter of the TRS Client could hold the running game at about 100 FPS. It now asks the system
+  directly and never slows down the game you are playing.
+- **TRS Client: built-in optimizations (Fabric).** The TRS Client now brings free performance mods along – Lithium,
+  FerriteCore, ImmediatelyFast, ModernFix and BadOptimizations, wherever they exist for your Minecraft version – so
+  it is faster even without extra mods. If you install one of them yourself, the newer version is used. You can
+  switch them off in the TRS menu under Performance (takes effect at the next start through the TRS Launcher).
+- **TRS Client: graphics mode "Pretty" or "Max FPS".** Pick it in the TRS menu under Performance or in the
+  instance settings of the launcher. Pretty keeps the look; Max FPS turns off clouds and smooth lighting, lowers
+  particles and uses fast graphics and fast leaves. Settings you changed yourself stay as they are, and switching
+  back restores the rest.
+- **TRS Client: lighter HUD on Minecraft 1.21.6 and newer.** HUD texts no longer create lots of short-lived data
+  every frame, which means fewer small stutters.
 
 ### Deutsch
 
@@ -145,6 +163,26 @@ How to write an entry:
   finden im TRS-Menü unter „Pakete“.
 - **„NEU“ im TRS-Menü.** Module und Einstellungen, die mit einem Client-Update kommen, tragen ein „NEU“-Schild, bis du
   sie einmal geöffnet hast – auf jedem PC mit deinem Konto.
+- **Deutlich mehr FPS in neuen Instanzen.** Minecraft startet mit VSync und einer Bildraten-Grenze von 120 FPS –
+  selbst ein starker PC blieb so bei rund 100 FPS hängen. Neue Instanzen starten jetzt mit unbegrenzter Bildrate
+  und ohne VSync; deine eigenen Einstellungen in bestehenden Instanzen bleiben, wie sie sind.
+- **TRS Client: Der Leistungs-Check findet die Bildraten-Grenze.** Der Check im TRS-Menü meldet jetzt eine Grenze
+  unter „Unbegrenzt“ und hebt sie mit einem Klick auf; auch jede FPS-Boost-Stufe hebt sie auf. „Rückgängig“ stellt
+  sie wieder her.
+- **TRS Client: Keine FPS-Bremse mehr beim Spielen.** Hat Minecraft verpasst, dass sein Fenster wieder im
+  Vordergrund ist, konnte die Hintergrund-Bremse des TRS Clients das laufende Spiel bei etwa 100 FPS halten. Sie
+  fragt jetzt direkt beim System nach und bremst nie das Spiel, das du gerade spielst.
+- **TRS Client: Eingebaute Optimierungen (Fabric).** Der TRS Client bringt jetzt freie Leistungs-Mods gleich mit –
+  Lithium, FerriteCore, ImmediatelyFast, ModernFix und BadOptimizations, soweit es sie für deine Minecraft-Version
+  gibt – und ist damit auch ohne zusätzliche Mods schneller. Installierst du eine davon selbst, wird die neuere
+  Fassung benutzt. Abschalten kannst du sie im TRS-Menü unter Leistung (wirkt beim nächsten Start über den TRS
+  Launcher).
+- **TRS Client: Grafik-Modus „Schön“ oder „Max FPS“.** Wählbar im TRS-Menü unter Leistung oder in den
+  Instanz-Einstellungen des Launchers. „Schön“ behält die Optik; „Max FPS“ schaltet Wolken und weiche Beleuchtung
+  aus, senkt die Partikel und nutzt schnelle Grafik und schnelles Laub. Was du selbst geändert hast, bleibt, und
+  beim Zurückschalten kommt der Rest wieder.
+- **TRS Client: Leichteres HUD ab Minecraft 1.21.6.** HUD-Texte erzeugen nicht mehr in jedem Bild viele kurzlebige
+  Daten – das heißt weniger kleine Ruckler.
 
 ## 0.5.1 – 2026-09-24 – The Turbo Update | Das Turbo-Update
 

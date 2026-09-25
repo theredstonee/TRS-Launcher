@@ -64,6 +64,24 @@ pub async fn update_instance(
     Ok(view(&app, &launcher, updated))
 }
 
+/// Grafik-Modus des TRS Clients („pretty“/„max“, `null` = noch nicht gewählt).
+#[tauri::command]
+pub async fn get_fps_mode(
+    launcher: State<'_, LauncherState>,
+    id: String,
+) -> CommandResult<Option<trs_core::client_mod::FpsMode>> {
+    Ok(launcher.fps_mode(&id).await?)
+}
+
+#[tauri::command]
+pub async fn set_fps_mode(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    mode: trs_core::client_mod::FpsMode,
+) -> CommandResult<()> {
+    Ok(launcher.set_fps_mode(&id, mode).await?)
+}
+
 #[tauri::command]
 pub async fn set_instance_group(
     app: AppHandle,

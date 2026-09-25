@@ -304,6 +304,18 @@ impl Launcher {
         client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await.status()
     }
 
+    /// Grafik-Modus des TRS Clients einer Instanz (`None` = noch nicht gewählt).
+    pub async fn fps_mode(&self, id: &str) -> Result<Option<client_mod::FpsMode>> {
+        let instance = self.instances.get(id).await?;
+        Ok(client_mod::fps_mode(&self.paths, &instance.id).await)
+    }
+
+    /// Grafik-Modus setzen – der TRS Client wendet ihn beim nächsten Start an.
+    pub async fn set_fps_mode(&self, id: &str, mode: client_mod::FpsMode) -> Result<()> {
+        let instance = self.instances.get(id).await?;
+        client_mod::set_fps_mode(&self.paths, &instance.id, mode).await
+    }
+
     async fn client_mod_catalog(&self) -> (Option<PathBuf>, client_mod::Catalog) {
         let dir = self.bundled_client_mod_dir();
         let catalog = client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await;
@@ -473,8 +485,17 @@ impl Launcher {
 
     /// Wie [`InstanceStore::create`], prüft aber vorher gegen das Manifest,
     /// dass es die Spielversion wirklich gibt.
+    ///
+    /// Neue Instanzen bekommen gleich die Standard-`options.txt`
+    /// ([`instance::DEFAULT_GAME_OPTIONS`]: unbegrenzte Bildrate, kein VSync).
+    /// Import, Modpacks und Kopien bringen eigene Optionen mit – dort greift das
+    /// erst beim ersten Start, und nur, wenn dann noch keine da ist.
     pub async fn create_instance(&self, new: NewInstance) -> Result<Instance> {
-        self.create_instance_as(new, HistoryEntry::new(HistoryKind::Created)).await
+        let instance = self.create_instance_as(new, HistoryEntry::new(HistoryKind::Created)).await?;
+        if let Err(e) = instance::seed_game_options(&self.paths.instance_game_dir(&instance.id), None).await {
+            tracing::warn!("Standard-Optionen für '{}' nicht geschrieben: {e}", instance.id);
+        }
+        Ok(instance)
     }
 
     /// Wie [`Self::create_instance`] mit eigenem ersten Verlaufseintrag
@@ -679,6 +700,13 @@ impl Launcher {
         if let Err(e) = sync::pull(&exit_plan.sync_dirs, &exit_plan.sync_items).await {
             tracing::warn!("Synchronisierung vor dem Start fehlgeschlagen: {e}");
         }
+        // Noch keine options.txt (erster Start, auch nach Import/Modpack ohne Optionen):
+        // Standard mit unbegrenzter Bildrate und ohne VSync – nach dem Sync, damit
+        // eine gemeinsame options.txt des Spielers Vorrang hat.
+        let data_version = instance::client_data_version(&self.paths.version_jar(&instance.game_version)).await;
+        if let Err(e) = instance::seed_game_options(&game_dir, data_version).await {
+            tracing::warn!("Standard-Optionen konnten nicht geschrieben werden: {e}");
+        }
         // Die Launcher-Server sollen in jeder Instanz in der Serverliste stehen.
         if let Err(e) = self.servers.sync_to_instance(&game_dir).await {
             tracing::warn!("servers.dat konnte nicht aktualisiert werden: {e}");
@@ -696,6 +724,14 @@ impl Launcher {
             join.as_ref(),
             platform::total_memory_mb(),
         )?;
+
+        // Eingebaute Optimierungen des TRS Clients im Menü abgeschaltet: Fabric lässt sie weg.
+        if instance.overrides.trs_client != Some(false)
+            && let Some(build) = client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version)
+        {
+            let extra = client_mod::bundled_jvm_args(&self.paths, build, instance).await;
+            launch::insert_jvm_args(&mut command, &prepared, extra);
+        }
 
         let launcher = Arc::clone(self);
         let id = instance.id.clone();

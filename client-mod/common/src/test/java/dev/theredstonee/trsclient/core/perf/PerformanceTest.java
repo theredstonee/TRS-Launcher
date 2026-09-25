@@ -101,7 +101,7 @@ class PerformanceTest {
 		long waited = pacer.pace(1, null);
 		assertTrue(waited >= 990_000_000L && waited <= 1_000_000_000L, "gewartet: " + waited);
 		assertTrue(clock.sleeps >= 99, "Scheiben: " + clock.sleeps);
-		// Fenster kommt nach 3 Scheiben zurück → sofort weiter.
+		// Fenster kommt nach 2 Scheiben zurück (3. Abfrage, die erste vor dem Schlafen) → sofort weiter.
 		final int[] checks = {0};
 		clock.sleeps = 0;
 		waited = pacer.pace(1, new FramePacer.Wake() {
@@ -110,8 +110,19 @@ class PerformanceTest {
 				return ++checks[0] < 3;
 			}
 		});
-		assertEquals(3, clock.sleeps);
-		assertTrue(waited <= 3 * FramePacer.SLICE_NANOS, "gewartet: " + waited);
+		assertEquals(2, clock.sleeps);
+		assertTrue(waited <= 2 * FramePacer.SLICE_NANOS, "gewartet: " + waited);
+		// Loader meint „Hintergrund“, das System sagt „Vordergrund“: kein einziges Mal schlafen – sonst kostet jedes
+		// Bild eine 10-ms-Scheibe und das Spiel im Vordergrund hängt bei ~100 FPS.
+		clock.sleeps = 0;
+		clock.now += 1_000_000L;
+		assertEquals(0, pacer.pace(15, new FramePacer.Wake() {
+			@Override
+			public boolean stillLimited() {
+				return false;
+			}
+		}));
+		assertEquals(0, clock.sleeps);
 		// Unbegrenzt: nie warten.
 		clock.sleeps = 0;
 		assertEquals(0, pacer.pace(0, null));
@@ -359,6 +370,7 @@ class PerformanceTest {
 			values.put(Opt.ENTITY_DISTANCE, 150);
 			values.put(Opt.SMOOTH_LIGHTING, 2);
 			values.put(Opt.FULLSCREEN, 0);
+			values.put(Opt.MAX_FPS, 120);
 		}
 
 		@Override
@@ -401,11 +413,17 @@ class PerformanceTest {
 		List<PerfCheck.Finding> f = PerfCheck.run(o, 25, null, Arrays.asList("Sodium"));
 		List<String> ids = new ArrayList<String>();
 		for (PerfCheck.Finding x : f) ids.add(x.id);
-		assertTrue(ids.containsAll(Arrays.asList("vsync", "simulation", "view", "fabulous", "clouds", "particles", "mipmap",
+		assertTrue(ids.containsAll(Arrays.asList("vsync", "fpsLimit", "simulation", "view", "fabulous", "clouds", "particles", "mipmap",
 				"entityDistance", "biomeBlend", "smoothLighting", "fullscreen", "mods")), ids.toString());
 		assertFalse(ids.contains("gpu"), "dedizierte Karte läuft schon");
 		PerfCheck.Finding view = f.get(ids.indexOf("view"));
 		assertEquals(Integer.valueOf(10), view.fix.get(GameOptions.Opt.VIEW_DISTANCE));
+		// Vanilla-Standard 120 FPS: deutliche Bremse, ein Klick → „Unbegrenzt“.
+		PerfCheck.Finding limit = f.get(ids.indexOf("fpsLimit"));
+		assertEquals(PerfCheck.Level.HIGH, limit.level);
+		assertEquals(Integer.valueOf(GameOptions.UNLIMITED_FPS), limit.fix.get(GameOptions.Opt.MAX_FPS));
+		assertEquals(Integer.valueOf(0), PerfCheck.allFixes(f).get(GameOptions.Opt.VSYNC));
+		assertEquals(Integer.valueOf(GameOptions.UNLIMITED_FPS), PerfCheck.allFixes(f).get(GameOptions.Opt.MAX_FPS));
 		PerfCheck.Finding sim = f.get(ids.indexOf("simulation"));
 		assertEquals(Integer.valueOf(22), sim.fix.get(GameOptions.Opt.SIMULATION_DISTANCE));
 
@@ -427,6 +445,16 @@ class PerformanceTest {
 		good.values.put(GameOptions.Opt.MIPMAP, 2);
 		good.values.put(GameOptions.Opt.BIOME_BLEND, 2);
 		good.values.put(GameOptions.Opt.ENTITY_DISTANCE, 100);
+		good.values.put(GameOptions.Opt.MAX_FPS, GameOptions.UNLIMITED_FPS);
+		assertTrue(PerfCheck.run(good, 144, null, null).isEmpty());
+		// Bewusst auf den Monitor-Takt gesetzt (144): nur ein Tipp.
+		good.values.put(GameOptions.Opt.MAX_FPS, 144);
+		List<PerfCheck.Finding> tip = PerfCheck.run(good, 144, null, null);
+		assertEquals(1, tip.size());
+		assertEquals("fpsLimit", tip.get(0).id);
+		assertEquals(PerfCheck.Level.TIP, tip.get(0).level);
+		// Versionen ohne die Option (NONE): kein Fund.
+		good.values.remove(GameOptions.Opt.MAX_FPS);
 		assertTrue(PerfCheck.run(good, 144, null, null).isEmpty());
 	}
 
@@ -446,6 +474,7 @@ class PerformanceTest {
 		assertEquals(48, m.cullEntities.getInt());
 		assertTrue(m.worldDetails.isEnabled());
 		assertEquals(0, o.get(GameOptions.Opt.VSYNC));
+		assertEquals(GameOptions.UNLIMITED_FPS, o.get(GameOptions.Opt.MAX_FPS), "Bildraten-Grenze wird aufgehoben");
 		assertEquals(12, o.get(GameOptions.Opt.VIEW_DISTANCE));
 		assertEquals(10, o.get(GameOptions.Opt.SIMULATION_DISTANCE));
 		assertEquals(0, o.get(GameOptions.Opt.GRAPHICS));
@@ -484,6 +513,12 @@ class PerformanceTest {
 		assertEquals(1, BoostPreset.MEDIUM.target(GameOptions.Opt.SMOOTH_LIGHTING, 2, 24, false));
 		assertEquals(GameOptions.NONE, BoostPreset.LOW.target(GameOptions.Opt.PARTICLES, 0, 24, false));
 		assertEquals(GameOptions.NONE, BoostPreset.HIGH.target(GameOptions.Opt.SIMULATION_DISTANCE, GameOptions.NONE, 24, false));
+		// Jede Stufe – auch „Niedrig“ – hebt die Bildraten-Grenze auf; schon unbegrenzt bleibt unverändert.
+		for (BoostPreset p : BoostPreset.values()) {
+			assertEquals(GameOptions.UNLIMITED_FPS, p.target(GameOptions.Opt.MAX_FPS, 120, 24, false), p.name());
+			assertEquals(GameOptions.NONE, p.target(GameOptions.Opt.MAX_FPS, GameOptions.UNLIMITED_FPS, 24, false), p.name());
+			assertEquals(GameOptions.NONE, p.target(GameOptions.Opt.MAX_FPS, GameOptions.NONE, 24, false), p.name());
+		}
 	}
 
 	// --- Grafikkarte ---

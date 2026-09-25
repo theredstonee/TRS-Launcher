@@ -15,6 +15,9 @@
 	"entrypoints": {
 		"client": [
 			"dev.theredstonee.trsclient.TrsClient"
+		],
+		"preLaunch": [
+			"dev.theredstonee.trsclient.TrsPreLaunch"
 		]
 	},
 	"mixins": [

@@ -141,6 +141,8 @@ pub fn run() {
             commands::system::clean_unused_storage,
             commands::system::verify_storage,
             commands::instances::set_instance_group,
+            commands::instances::get_fps_mode,
+            commands::instances::set_fps_mode,
             commands::instances::loader_versions,
             commands::instances::latest_loader_version,
             commands::content::bulk_content,

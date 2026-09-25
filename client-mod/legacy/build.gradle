@@ -49,6 +49,16 @@ loom {
 				vmArg "-Dtrsclient.api.url=${project.trsApi}"
 				vmArg "-Dtrsclient.session.url=${project.trsApi}"
 			}
+			// Realistischer Benchmark (-PtrsAutotestOnly=realbench, siehe fabric/build.gradle)
+			['trsBenchSeed': 'seed', 'trsBenchCenter': 'center', 'trsBenchJfr': 'jfr', 'trsBenchSeconds': 'seconds', 'trsBenchLabel': 'label'].each { prop, key ->
+				if (project.hasProperty(prop)) vmArg "-Dtrsclient.bench.${key}=${project.property(prop)}"
+			}
+			if (project.hasProperty('trsBenchVanilla')) {
+				vmArg '-Dtrsclient.bench.vanilla=true'
+			}
+			if (project.findProperty('trsAutotestOnly') == 'realbench') {
+				programArgs '--width', '1904', '--height', '1001'
+			}
 		}
 		remove(server)
 	}
@@ -139,3 +149,16 @@ ext.trsLauncherVersions = project.launcher_versions.split(',').collect { it.trim
 
 // Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
 apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
+
+// -PtrsBenchOptions=real: options.txt neu mit Minecraft-Standards, nur unbegrenzte Bildrate/ohne VSync, Sichtweite 12
+if (project.findProperty('trsBenchOptions') == 'real') {
+	tasks.matching { it.name == 'runClient' }.configureEach { task ->
+		task.doFirst {
+			File dir = project.file(loom.runConfigs.client.runDir)
+			dir.mkdirs()
+			new File(dir, 'options.txt').write(['enableVsync:false', 'maxFps:260', 'renderDistance:12', 'pauseOnLostFocus:false',
+					'soundCategory_master:0.0'].join('\n') + '\n', 'UTF-8')
+			logger.lifecycle("Benchmark: options.txt neu (${dir})")
+		}
+	}
+}

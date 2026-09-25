@@ -121,6 +121,24 @@ public class Module {
 		return this;
 	}
 
+	/** Gibt es das Modul in diesem Build überhaupt? (sonst blendet das Menü es aus) */
+	private java.util.concurrent.Callable<Boolean> available;
+
+	/** Modul nur zeigen, solange {@code check} true liefert (z. B. nur mit eingebauten Mods). */
+	public Module availableWhen(java.util.concurrent.Callable<Boolean> check) {
+		this.available = check;
+		return this;
+	}
+
+	public boolean available() {
+		if (available == null) return true;
+		try {
+			return Boolean.TRUE.equals(available.call());
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
 	/**
 	 * Treffer für die Menü-Suche (Name, Beschreibung, Einstellungen; ohne Groß-/Kleinschreibung) –
 	 * in der aktiven Sprache und zusätzlich auf Englisch.

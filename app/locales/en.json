@@ -1160,7 +1160,12 @@
       "tuningDescription": "Tuned Java settings for more FPS and fewer stutters. Custom JVM arguments take priority.",
       "tuningGlobal": "Like global ({state})",
       "tuningOn": "On",
-      "tuningOff": "Off"
+      "tuningOff": "Off",
+      "fpsModeTitle": "Graphics mode",
+      "fpsModeDescription": "How the TRS Client sets up the video options and performance mods. Pretty keeps the look and only uses performance switches; Max FPS turns off clouds, smooth lighting and fancy leaves. Applied at the next start; your own changes stay.",
+      "fpsModePretty": "Pretty",
+      "fpsModeMax": "Max FPS",
+      "fpsModeUnset": "Choose in game"
     },
     "window": {
       "customTitle": "Custom window settings",

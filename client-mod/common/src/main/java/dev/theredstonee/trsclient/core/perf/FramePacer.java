@@ -64,6 +64,10 @@ public final class FramePacer {
 		long start = clock.nanoTime();
 		long remaining = waitNanos(start, fps);
 		long waited = 0;
+		// Vor der ersten Scheibe fragen: Meldet der Loader „im Hintergrund“, das System aber schon wieder „im
+		// Vordergrund“ (verpasstes Fokus-Ereignis), würde sonst jedes Bild eine Scheibe schlafen – das deckelt das
+		// Spiel im Vordergrund bei rund 100 FPS.
+		if (remaining > 0 && wake != null && !wake.stillLimited()) remaining = 0;
 		try {
 			while (remaining > 0) {
 				long slice = Math.min(SLICE_NANOS, remaining);
