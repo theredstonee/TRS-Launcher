@@ -330,4 +330,184 @@ CREATE INDEX cape_shares_holder ON cape_shares(holder_uuid, status);
 CREATE INDEX cape_shares_granted_by ON cape_shares(granted_by, cape_id);
 `,
   },
+  {
+    // Sozial/Chat: Unterhaltungen (DM + Gruppen), Nachrichten (Inhalte AES-GCM-verschlüsselt, s. crypto.ts),
+    // Bilder (Dateien in <DATA_DIR>/chat, ebenfalls verschlüsselt), Reaktionen, Lese-/Tipp-Einstellungen,
+    // Meldungen mit Beweis-Schnappschuss, Sanktionen (Verwarnung/Stumm), Wortfilter, Audit-Bezug.
+    version: 7,
+    sql: `
+ALTER TABLE users ADD COLUMN chat_read_receipts INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN chat_typing INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE admin_log ADD COLUMN ref TEXT;
+CREATE INDEX admin_log_ref ON admin_log(ref);
+CREATE INDEX admin_log_at ON admin_log(at);
+
+CREATE TABLE chat_conversations (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('dm', 'group')),
+  -- DM: "<uuid-a>:<uuid-b>" (sortiert) – höchstens eine DM je Paar.
+  dm_key TEXT UNIQUE,
+  -- Gruppenname, verschlüsselt (AAD "grp:<id>").
+  name BLOB,
+  owner_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  -- Letzte Aktivität (Nachricht oder Änderung) – Sortierung der Liste.
+  updated_at INTEGER NOT NULL,
+  last_seq INTEGER NOT NULL DEFAULT 0,
+  CHECK ((kind = 'dm') = (dm_key IS NOT NULL)),
+  CHECK ((kind = 'group') = (name IS NOT NULL))
+);
+
+CREATE TABLE chat_members (
+  conversation_id TEXT NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('owner', 'member')),
+  joined_at INTEGER NOT NULL,
+  -- Neue Gruppenmitglieder sehen erst Nachrichten ab ihrem Beitritt.
+  visible_from_seq INTEGER NOT NULL DEFAULT 1,
+  -- Eigener Lesestand (darf beim „ungelesen markieren“ zurückgehen) …
+  read_seq INTEGER NOT NULL DEFAULT 0,
+  -- … und die Lesebestätigung für andere (steigt nur).
+  receipt_seq INTEGER NOT NULL DEFAULT 0,
+  receipt_at INTEGER,
+  marked_unread INTEGER NOT NULL DEFAULT 0,
+  -- NULL = nicht stummgeschaltet; 253402300799000 = unbefristet.
+  muted_until INTEGER,
+  PRIMARY KEY (conversation_id, uuid)
+);
+CREATE INDEX chat_members_uuid ON chat_members(uuid);
+
+CREATE TABLE chat_messages (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  seq INTEGER NOT NULL,
+  sender_uuid TEXT REFERENCES users(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('text', 'system')),
+  -- JSON {text?, invite?, system?}, verschlüsselt (AAD "msg:<id>"); NULL nach dem Löschen (Grabstein).
+  body BLOB,
+  reply_to TEXT,
+  created_at INTEGER NOT NULL,
+  edited_at INTEGER,
+  deleted_at INTEGER,
+  deleted_by TEXT CHECK (deleted_by IS NULL OR deleted_by IN ('sender', 'owner', 'admin')),
+  -- Idempotenz: gleiche nonce vom gleichen Absender = dieselbe Nachricht.
+  nonce TEXT,
+  UNIQUE (conversation_id, seq)
+);
+CREATE INDEX chat_messages_sender ON chat_messages(sender_uuid, created_at);
+CREATE UNIQUE INDEX chat_messages_nonce ON chat_messages(sender_uuid, nonce) WHERE nonce IS NOT NULL;
+
+CREATE TABLE chat_attachments (
+  id TEXT PRIMARY KEY,
+  uploader_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  -- NULL = hochgeladen, aber noch keiner Nachricht zugeordnet (verfällt nach 1 h).
+  message_id TEXT REFERENCES chat_messages(id) ON DELETE CASCADE,
+  position INTEGER,
+  mime TEXT NOT NULL CHECK (mime IN ('image/png', 'image/jpeg')),
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  thumb_mime TEXT NOT NULL CHECK (thumb_mime IN ('image/png', 'image/jpeg')),
+  thumb_width INTEGER NOT NULL,
+  thumb_height INTEGER NOT NULL,
+  thumb_bytes INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  key_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX chat_attachments_message ON chat_attachments(message_id);
+CREATE INDEX chat_attachments_uploader ON chat_attachments(uploader_uuid, created_at);
+
+CREATE TABLE chat_reactions (
+  message_id TEXT NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  emoji TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (message_id, uuid, emoji)
+);
+
+CREATE TABLE chat_reports (
+  id TEXT PRIMARY KEY,
+  reporter_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  -- Gemeldeter Spieler (bei Gruppen: Besitzer zur Meldezeit). Ohne FK: überlebt die Kontolöschung.
+  target_uuid TEXT CHECK (target_uuid IS NULL OR length(target_uuid) = 32),
+  kind TEXT NOT NULL CHECK (kind IN ('message', 'image', 'player', 'group')),
+  conversation_id TEXT,
+  message_id TEXT,
+  attachment_id TEXT,
+  reason TEXT NOT NULL CHECK (reason IN ('insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other')),
+  note BLOB,
+  -- Schnappschuss zur Meldezeit (JSON, verschlüsselt, AAD "rep:<id>"); NULL nach Ablauf der Aufbewahrung.
+  evidence BLOB,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved')),
+  outcome TEXT CHECK (outcome IS NULL OR outcome IN ('actioned', 'dismissed')),
+  -- Melder mit vielen abgewiesenen Meldungen: zählt nicht für die Auto-Stummschaltung.
+  low_trust INTEGER NOT NULL DEFAULT 0,
+  assigned_to TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  resolved_at INTEGER,
+  resolved_by TEXT,
+  evidence_purged_at INTEGER,
+  CHECK ((status = 'resolved') = (outcome IS NOT NULL))
+);
+CREATE INDEX chat_reports_status ON chat_reports(status, created_at);
+CREATE INDEX chat_reports_target ON chat_reports(target_uuid, created_at);
+CREATE INDEX chat_reports_reporter ON chat_reports(reporter_uuid, status);
+
+CREATE TABLE chat_report_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id TEXT NOT NULL REFERENCES chat_reports(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text BLOB NOT NULL
+);
+CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
+
+-- Kopien der gemeldeten Bilder (Dateien in <DATA_DIR>/chat/evidence), unabhängig vom Löschen der Nachricht.
+CREATE TABLE chat_evidence_files (
+  report_id TEXT NOT NULL REFERENCES chat_reports(id) ON DELETE CASCADE,
+  attachment_id TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  key_id TEXT NOT NULL,
+  PRIMARY KEY (report_id, attachment_id)
+);
+
+-- Verwarnungen und Stummschaltungen. Ohne FK: aktive Stummschaltungen überleben die Kontolöschung (wie Sperren).
+CREATE TABLE chat_sanctions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  uuid TEXT NOT NULL CHECK (length(uuid) = 32),
+  kind TEXT NOT NULL CHECK (kind IN ('warn', 'mute')),
+  reason TEXT,
+  report_id TEXT,
+  auto TEXT CHECK (auto IS NULL OR auto IN ('reports', 'spam')),
+  created_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL,
+  -- NULL bei 'mute' = bis zur Prüfung / unbefristet.
+  expires_at INTEGER,
+  lifted_at INTEGER,
+  lifted_by TEXT
+);
+CREATE INDEX chat_sanctions_uuid ON chat_sanctions(uuid, kind);
+
+CREATE TABLE chat_reporter_stats (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  actioned INTEGER NOT NULL DEFAULT 0,
+  dismissed INTEGER NOT NULL DEFAULT 0
+);
+
+-- Optionaler Wortfilter (Admin): normalisierte Wörter, keine Regex (kein ReDoS).
+CREATE TABLE chat_word_filter (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  word TEXT NOT NULL UNIQUE,
+  mode TEXT NOT NULL CHECK (mode IN ('word', 'contains')),
+  action TEXT NOT NULL CHECK (action IN ('block', 'mask')),
+  created_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL
+);
+`,
+  },
 ]

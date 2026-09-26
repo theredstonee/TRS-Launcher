@@ -1,4 +1,5 @@
 import { dropOffersBetween, incomingOfferCount } from './capeshares'
+import { refreshDm } from './chat'
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { conflict, notFound, badRequest } from './errors'
@@ -113,6 +114,8 @@ function resolveTarget(ctx: AppContext, me: string, target: { uuid: string } | {
 }
 
 const publish = (ctx: AppContext, uuid: string, e: ApiEvent) => ctx.events.publish(uuid, e)
+/** Eigene andere Geräte: Freundesliste neu laden (nur `GET /v1/events/me`). */
+const selfChanged = (ctx: AppContext, uuid: string) => ctx.events.publish(uuid, { type: 'friends_changed' }, { meOnly: true })
 
 export type SendResult = { status: 'sent' | 'accepted', user: { uuid: string, name: string } }
 
@@ -145,8 +148,10 @@ export function sendRequest(ctx: AppContext, me: UserRow, target: { uuid: string
   if (result === 'accepted') {
     publish(ctx, other.uuid, { type: 'friend_added', friend: { uuid: me.uuid, name: me.name } })
     publish(ctx, me.uuid, { type: 'friend_added', friend: { uuid: other.uuid, name: other.name } })
+    refreshDm(ctx, me.uuid, other.uuid)
   } else {
     publish(ctx, other.uuid, { type: 'friend_request', from: { uuid: me.uuid, name: me.name } })
+    selfChanged(ctx, me.uuid)
   }
   return { status: result, user: { uuid: other.uuid, name: other.name } }
 }
@@ -172,6 +177,9 @@ export function acceptRequest(ctx: AppContext, me: UserRow, from: string): Frien
     run(ctx.db, 'INSERT INTO friendships (a, b, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING', a, b, t)
   })
   publish(ctx, from, { type: 'friend_added', friend: { uuid: me.uuid, name: me.name } })
+  // Eigene andere Geräte erfahren es auch (Freundesliste ohne Neuladen).
+  ctx.events.publish(me.uuid, { type: 'friend_added', friend: { uuid: other!.uuid, name: other!.name } }, { meOnly: true })
+  refreshDm(ctx, me.uuid, from)
   return { uuid: other!.uuid, name: other!.name, since: iso(t), presence: visiblePresence(other!, ctx.presence.get(from)) }
 }
 
@@ -179,12 +187,14 @@ export function declineRequest(ctx: AppContext, me: string, from: string): void 
   const n = run(ctx.db, 'DELETE FROM friend_requests WHERE from_uuid = ? AND to_uuid = ?', from, me)
   if (n === 0) throw notFound('request_not_found', 'No pending request from this player')
   // Der Absender erfährt nichts von der Ablehnung (seine Anfrage verschwindet nur).
+  selfChanged(ctx, me)
 }
 
 export function cancelRequest(ctx: AppContext, me: string, to: string): void {
   const n = run(ctx.db, 'DELETE FROM friend_requests WHERE from_uuid = ? AND to_uuid = ?', me, to)
   if (n === 0) throw notFound('request_not_found', 'No pending request to this player')
   publish(ctx, to, { type: 'friend_request_cancelled', uuid: me })
+  selfChanged(ctx, me)
 }
 
 export function removeFriend(ctx: AppContext, me: string, other: string): void {
@@ -196,7 +206,10 @@ export function removeFriend(ctx: AppContext, me: string, other: string): void {
     return dropOffersBetween(ctx, me, other)
   })
   publish(ctx, other, { type: 'friend_removed', uuid: me })
+  ctx.events.publish(me, { type: 'friend_removed', uuid: other }, { meOnly: true })
   for (const d of dropped) publish(ctx, d.holder, { type: 'cape_share_removed', capeId: d.capeId })
+  // Die DM bleibt lesbar, aber ohne Schreibrecht.
+  refreshDm(ctx, me, other)
 }
 
 export function block(ctx: AppContext, me: string, target: { uuid: string } | { name: string }): { uuid: string, name: string } {
@@ -215,14 +228,20 @@ export function block(ctx: AppContext, me: string, target: { uuid: string } | { 
     return { wasFriend: f > 0, dropped: dropOffersBetween(ctx, me, u.uuid) }
   })
   // Der Blockierte sieht nur, dass die Freundschaft endet – nicht die Blockade.
-  if (wasFriend) publish(ctx, u.uuid, { type: 'friend_removed', uuid: me })
+  if (wasFriend) {
+    publish(ctx, u.uuid, { type: 'friend_removed', uuid: me })
+    ctx.events.publish(me, { type: 'friend_removed', uuid: u.uuid }, { meOnly: true })
+    refreshDm(ctx, me, u.uuid)
+  }
   for (const d of dropped) publish(ctx, d.holder, { type: 'cape_share_removed', capeId: d.capeId })
+  selfChanged(ctx, me)
   return { uuid: u.uuid, name: u.name }
 }
 
 export function unblock(ctx: AppContext, me: string, other: string): void {
   const n = run(ctx.db, 'DELETE FROM blocks WHERE blocker = ? AND blocked = ?', me, other)
   if (n === 0) throw notFound('block_not_found', 'This player is not blocked')
+  selfChanged(ctx, me)
 }
 
 export function listBlocks(ctx: AppContext, me: string): { blocked: { uuid: string, name: string, since: string }[] } {
@@ -234,13 +253,29 @@ export function listBlocks(ctx: AppContext, me: string): { blocked: { uuid: stri
   return { blocked: rows.map((r) => ({ uuid: r.uuid, name: r.name, since: iso(r.created_at) })) }
 }
 
+/** Wer gerade für Freunde sichtbar online ist (für `friend_online` beim Übergang offline → online). */
+const visibleOnline = new WeakMap<AppContext, Set<string>>()
+
 /** Präsenzänderung an alle Freunde verteilen, die sie sehen dürfen. */
 export function broadcastPresence(ctx: AppContext, uuid: string): void {
   const u = getUser(ctx, uuid)
-  if (!u) return
+  let online = visibleOnline.get(ctx)
+  if (!online) {
+    online = new Set()
+    visibleOnline.set(ctx, online)
+  }
+  if (!u) {
+    online.delete(uuid)
+    return
+  }
   const view = visiblePresence(u, ctx.presence.get(uuid))
+  const cameOnline = view !== null && !online.has(uuid)
+  if (view) online.add(uuid)
+  else online.delete(uuid)
   // Auch „nobody“-Nutzer schicken `null` (= offline) – einmal ausgeblendet, bleibt es dabei.
   for (const f of friendUuids(ctx, uuid)) {
-    if (ctx.events.isListening(f)) publish(ctx, f, { type: 'presence', uuid, presence: view })
+    if (!ctx.events.wants(f)) continue
+    publish(ctx, f, { type: 'presence', uuid, presence: view })
+    if (cameOnline) publish(ctx, f, { type: 'friend_online', friend: { uuid, name: u.name }, presence: view })
   }
 }

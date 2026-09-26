@@ -1,3 +1,4 @@
+import { hkdfSync } from 'node:crypto'
 import { z } from 'zod'
 import { normalizeUuid } from './ids'
 
@@ -17,6 +18,16 @@ export interface Config {
   mojangSessionUrl: string
   mojangApiUrl: string
   logRequests: boolean
+  /**
+   * Schlüssel für die Verschlüsselung der Chat-Inhalte (AES-256-GCM). Der erste ist aktiv (neue Daten),
+   * die übrigen nur zum Entschlüsseln alter Daten (Schlüsseltausch, s. API.md §18.9). Leer = aus
+   * SECRET_KEY abgeleitet (`derived: true`).
+   */
+  chatKeys: { keys: { id: string, key: Buffer }[], derived: boolean }
+  /** Höchstens so viele Bytes Chat-Bilder insgesamt (Plattenplatz), `CHAT_STORAGE_MAX_MB`. */
+  chatStorageMaxBytes: number
+  /** Server-Einladungen: Status vom Server abfragen (Ping mit SSRF-Schutz). `SERVER_PING=false` schaltet ab. */
+  serverPing: boolean
   limits: Limits
 }
 
@@ -42,6 +53,34 @@ export interface Limits {
   maxCapeHolders: number
   /** Offene Umhang-Angebote, die ein Spieler gleichzeitig bekommen kann. */
   maxIncomingCapeOffers: number
+  // ------------------------------------------------ Chat, Echtzeit, Meldungen
+  /** Offene `GET /v1/events/me`-Streams je Konto (Launcher + Mod + Reserve). */
+  maxUserStreamsPerUser: number
+  /** Wiederaufnahme per Last-Event-ID: so viele Ereignisse je Konto … */
+  replayBufferSize: number
+  /** … höchstens so alt (danach `resync`). */
+  replayWindowMs: number
+  /** Zeichen je Nachricht (nach dem Säubern). */
+  maxMessageLength: number
+  maxAttachmentsPerMessage: number
+  /** Mitglieder je Gruppe inkl. Besitzer. */
+  maxGroupMembers: number
+  maxGroupsOwned: number
+  maxGroupsJoined: number
+  /** Gespeicherte Chat-Bilder je Konto (Bytes, nach dem Neukodieren). */
+  maxAttachmentBytesPerUser: number
+  /** Hochgeladene, noch keiner Nachricht zugeordnete Bilder verfallen nach … */
+  pendingAttachmentTtlMs: number
+  /** Auto-Stumm: so viele verschiedene Melder … */
+  autoMuteReporters: number
+  /** … innerhalb dieses Fensters. */
+  autoMuteWindowMs: number
+  /** Offene Meldungen je Melder. */
+  maxOpenReportsPerUser: number
+  /** Beweise erledigter Meldungen werden nach … gelöscht. */
+  reportEvidenceRetentionMs: number
+  /** Erledigte Meldungen (ohne Inhalte) werden nach … ganz gelöscht. */
+  reportRetentionMs: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -63,6 +102,21 @@ export const DEFAULT_LIMITS: Limits = {
   maxWatchedPerStream: 200,
   maxCapeHolders: 20,
   maxIncomingCapeOffers: 50,
+  maxUserStreamsPerUser: 5,
+  replayBufferSize: 300,
+  replayWindowMs: 10 * 60 * 1000,
+  maxMessageLength: 2000,
+  maxAttachmentsPerMessage: 10,
+  maxGroupMembers: 25,
+  maxGroupsOwned: 20,
+  maxGroupsJoined: 100,
+  maxAttachmentBytesPerUser: 250 * 1024 * 1024,
+  pendingAttachmentTtlMs: 60 * 60 * 1000,
+  autoMuteReporters: 3,
+  autoMuteWindowMs: 24 * 60 * 60 * 1000,
+  maxOpenReportsPerUser: 20,
+  reportEvidenceRetentionMs: 90 * 24 * 60 * 60 * 1000,
+  reportRetentionMs: 365 * 24 * 60 * 60 * 1000,
 }
 
 const bool = z
@@ -128,7 +182,29 @@ const envSchema = z.object({
   // Nur für lokale Tests mit einem Mojang-Mock (http://…). Nie in Produktion setzen.
   ALLOW_INSECURE_MOJANG_URL: bool.default(false),
   LOG_REQUESTS: bool.default(false),
+  // Chat-Verschlüsselung: "id:base64(32 Byte)", kommagetrennt, der erste ist aktiv.
+  CHAT_KEYS: z.string().default(''),
+  CHAT_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
+  SERVER_PING: bool.default(true),
 })
+
+/** `CHAT_KEYS` lesen; leer → ein Schlüssel aus SECRET_KEY (HKDF, Kennung `s1`). */
+function parseChatKeys(raw: string, secret: string): Config['chatKeys'] {
+  const parts = raw.split(',').map((s) => s.trim()).filter(Boolean)
+  if (parts.length === 0) {
+    const key = Buffer.from(hkdfSync('sha256', secret, 'trs-chat', 'chat-at-rest-v1', 32))
+    return { keys: [{ id: 's1', key }], derived: true }
+  }
+  const keys: { id: string, key: Buffer }[] = []
+  for (const part of parts) {
+    const m = /^([A-Za-z0-9_-]{1,16}):([A-Za-z0-9+/=_-]{40,64})$/.exec(part)
+    const key = m ? Buffer.from(m[2]!.replaceAll('-', '+').replaceAll('_', '/'), 'base64') : null
+    if (!m || !key || key.length !== 32) throw new ConfigError('Invalid configuration: CHAT_KEYS (expected id:base64-of-32-bytes, comma-separated)')
+    if (keys.some((k) => k.id === m[1])) throw new ConfigError('Invalid configuration: CHAT_KEYS (duplicate key id)')
+    keys.push({ id: m[1]!, key })
+  }
+  return { keys, derived: false }
+}
 
 export class ConfigError extends Error {}
 
@@ -158,6 +234,9 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     mojangSessionUrl: e.MOJANG_SESSIONSERVER_URL,
     mojangApiUrl: e.MOJANG_API_URL,
     logRequests: e.LOG_REQUESTS,
+    chatKeys: parseChatKeys(e.CHAT_KEYS, e.SECRET_KEY),
+    chatStorageMaxBytes: e.CHAT_STORAGE_MAX_MB * 1024 * 1024,
+    serverPing: e.SERVER_PING,
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
 }

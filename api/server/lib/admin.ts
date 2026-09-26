@@ -16,13 +16,69 @@ import { broadcastPresence } from './friends'
 import { notifyShareRemoved, shareHolders } from './capeshares'
 import { emitCape } from './playerevents'
 import { getUser, isAdmin, settingsOf, type Settings } from './users'
+import { chatStorageUsed } from './attachments'
+import { reportStats } from './moderation'
 
-export function audit(ctx: AppContext, actor: string, action: string, target: string | null, detail?: string): void {
+/** Audit-Log. `ref` = Bezug (z. B. Meldungs-ID), damit sich Einträge je Meldung auflisten lassen. */
+export function audit(ctx: AppContext, actor: string, action: string, target: string | null, detail?: string, ref?: string): void {
   run(
     ctx.db,
-    'INSERT INTO admin_log (at, actor, action, target, detail) VALUES (?, ?, ?, ?, ?)',
-    ctx.now(), actor, action, target, detail ?? null,
+    'INSERT INTO admin_log (at, actor, action, target, detail, ref) VALUES (?, ?, ?, ?, ?, ?)',
+    ctx.now(), actor, action, target, detail ?? null, ref ?? null,
   )
+}
+
+export interface AuditEntry {
+  id: number
+  at: string
+  actor: string
+  actorName: string | null
+  action: string
+  target: string | null
+  targetName: string | null
+  detail: string | null
+  ref: string | null
+}
+
+/** Audit-Log lesen (neueste zuerst), optional nach Bezug oder Ziel gefiltert, Cursor = `before` (id). */
+export function listAudit(ctx: AppContext, opts: { ref?: string, target?: string, before?: number, limit: number }): { entries: AuditEntry[], nextBefore: number | null } {
+  const where: string[] = []
+  const params: (string | number)[] = []
+  if (opts.ref) {
+    where.push('l.ref = ?')
+    params.push(opts.ref)
+  }
+  if (opts.target) {
+    where.push('l.target = ?')
+    params.push(opts.target)
+  }
+  if (opts.before) {
+    where.push('l.id < ?')
+    params.push(opts.before)
+  }
+  // Bedingungen stammen nur aus der festen Liste oben, Werte gehen als Parameter.
+  const rows = all<{ id: number, at: number, actor: string, action: string, target: string | null, detail: string | null, ref: string | null, actor_name: string | null, target_name: string | null }>(
+    ctx.db,
+    `SELECT l.*, ua.name AS actor_name, ut.name AS target_name FROM admin_log l
+     LEFT JOIN users ua ON ua.uuid = l.actor LEFT JOIN users ut ON ut.uuid = l.target
+     ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY l.id DESC LIMIT ?`,
+    ...params, opts.limit + 1,
+  )
+  const page = rows.slice(0, opts.limit)
+  return {
+    entries: page.map((r) => ({
+      id: r.id,
+      at: new Date(r.at).toISOString(),
+      actor: r.actor,
+      actorName: r.actor_name,
+      action: r.action,
+      target: r.target,
+      targetName: r.target_name,
+      detail: r.detail,
+      ref: r.ref,
+    })),
+    nextBefore: rows.length > opts.limit ? page[page.length - 1]!.id : null,
+  }
 }
 
 export interface OwnerStats {
@@ -358,6 +414,16 @@ export function stats(ctx: AppContext) {
     pendingFriendRequests: n('SELECT COUNT(*) AS n FROM friend_requests'),
     eventStreams: ctx.events.size,
     playerStreams: ctx.watch.size,
+    chat: {
+      conversations: n("SELECT COUNT(*) AS n FROM chat_conversations WHERE kind = 'dm'"),
+      groups: n("SELECT COUNT(*) AS n FROM chat_conversations WHERE kind = 'group'"),
+      messages: n('SELECT COUNT(*) AS n FROM chat_messages WHERE deleted_at IS NULL'),
+      messagesLast24h: n('SELECT COUNT(*) AS n FROM chat_messages WHERE created_at > ?', t - 86_400_000),
+      images: n('SELECT COUNT(*) AS n FROM chat_attachments WHERE message_id IS NOT NULL'),
+      storageBytes: chatStorageUsed(ctx),
+      storageLimitBytes: ctx.config.chatStorageMaxBytes,
+    },
+    reports: reportStats(ctx),
   }
 }
 

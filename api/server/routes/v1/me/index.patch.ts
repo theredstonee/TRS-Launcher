@@ -4,7 +4,7 @@ import { broadcastPresence } from '../../../lib/friends'
 import { readJson, requireUser } from '../../../lib/http'
 import { emitBadge, emitCape, emitCosmetics } from '../../../lib/playerevents'
 import { settingsPatch } from '../../../lib/schemas'
-import { meView, updateSettings } from '../../../lib/users'
+import { meView, settingsOf, updateSettings } from '../../../lib/users'
 
 export default defineEventHandler(async (event) => {
   const auth = requireUser(event, 'write')
@@ -19,5 +19,7 @@ export default defineEventHandler(async (event) => {
   if (before.show_badge !== user.show_badge) emitBadge(ctx, auth.uuid)
   if (before.show_cape !== user.show_cape) emitCape(ctx, auth.uuid)
   if (before.show_cosmetics !== user.show_cosmetics) emitCosmetics(ctx, auth.uuid)
+  // Eigene andere Geräte (Launcher ↔ Mod) sofort angleichen.
+  ctx.events.publish(auth.uuid, { type: 'settings', settings: settingsOf(user) }, { meOnly: true })
   return meView(ctx, user)
 })
