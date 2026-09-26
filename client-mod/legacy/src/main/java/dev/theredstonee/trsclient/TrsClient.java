@@ -550,6 +550,8 @@ public final class TrsClient {
 		hud.render(Gfx.of(res.getScaledWidth(), res.getScaledHeight()), Mc.partialTicks(event));
 		// Sozial-Toasts im Spiel (über Bildschirmen zeichnet sie onScreenDrawn).
 		if (Mc.screen() == null && !Mc.hudHidden()) drawToasts(res.getScaledWidth(), res.getScaledHeight());
+		// Welt-Hosting: rotes Abzeichen „Öffentlicher Link aktiv“.
+		if (!Mc.hudHidden()) drawHostingBadge(res.getScaledWidth(), res.getScaledHeight(), -1, -1);
 	}
 
 	/** Sozial-Toasts über jedem Bildschirm (nach allem anderen, auch nach dem Redstone-Menü-Stil). */
@@ -557,7 +559,27 @@ public final class TrsClient {
 	public void onScreenDrawn(GuiScreenEvent.DrawScreenEvent.Post event) {
 		GuiScreen s = Mc.eventGui(event);
 		if (s == null) return;
+		if (s instanceof net.minecraft.client.gui.GuiIngameMenu && dev.theredstonee.trsclient.menus.LegacyMenus.linkBadgeX() >= 0) {
+			drawHostingBadge(s.width, s.height, dev.theredstonee.trsclient.menus.LegacyMenus.linkBadgeX(),
+					dev.theredstonee.trsclient.menus.LegacyMenus.linkBadgeY());
+		}
 		drawToasts(s.width, s.height);
+	}
+
+	/** Abzeichen „Öffentlicher Link aktiv“: oben mittig (x &lt; 0) oder an fester Stelle (Pausemenü). */
+	private static void drawHostingBadge(int width, int height, int x, int y) {
+		try {
+			if (!dev.theredstonee.trsclient.core.hosting.HostingOverlay.linkActive()) return;
+			Gfx g = Gfx.of(width, height);
+			dev.theredstonee.trsclient.ui.GfxCanvas c = dev.theredstonee.trsclient.ui.GfxCanvas.of(g, Mc.font());
+			c.push();
+			c.raise(420f);
+			if (x < 0) dev.theredstonee.trsclient.core.hosting.HostingOverlay.renderHud(c, width, height);
+			else dev.theredstonee.trsclient.core.hosting.HostingOverlay.renderAt(c, x, y);
+			c.pop();
+		} catch (RuntimeException ignored) {
+			// darf nie stören
+		}
 	}
 
 	private static void drawToasts(int width, int height) {

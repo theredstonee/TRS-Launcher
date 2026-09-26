@@ -48,8 +48,22 @@ public final class MenuScreens {
 	/** Bildschirm zur Schnelltaste (Antwort/Beitreten → kleine Einblendung, Anfragen → Sozial-Bildschirm). */
 	public static GuiScreen socialAction(SocialOverlay.QuickAction action, GuiScreen parent) {
 		UiScreen ui = SocialUi.forAction(host(parent), TrsOnline.current(), action);
-		String title = ui instanceof QuickReplyUi ? I18n.tr("social.quickReply.title") : I18n.tr("social.title");
+		String title = ui instanceof QuickReplyUi ? I18n.tr("social.quickReply.title")
+				: ui instanceof dev.theredstonee.trsclient.core.ui.hosting.HostingUi ? I18n.tr("hosting.title")
+				: ui instanceof dev.theredstonee.trsclient.core.ui.hosting.JoinUi ? I18n.tr("hosting.join.title") : I18n.tr("social.title");
 		return new TrsUiScreen(title, ui);
+	}
+
+	// --- Welt-Hosting ---
+
+	/** Einstellungen bzw. Verwaltung der offenen Welt (Pausemenü). */
+	public static GuiScreen hosting(GuiScreen parent) {
+		return new TrsUiScreen(I18n.tr("hosting.title"), new dev.theredstonee.trsclient.core.ui.hosting.HostingUi(host(parent)));
+	}
+
+	/** „Mit Code beitreten“ + Welten der Freunde (Mehrspieler-Menü). */
+	public static GuiScreen join(GuiScreen parent) {
+		return new TrsUiScreen(I18n.tr("hosting.join.title"), new dev.theredstonee.trsclient.core.ui.hosting.JoinUi(host(parent)));
 	}
 
 	static SocialHost host(final GuiScreen parent) {

@@ -339,15 +339,23 @@ public final class HostingTest {
 				shot(mc, "waiting");
 				phase = 20;
 				return;
-			case 10:
-				// Einladung per Toast, dann Schnelltaste (Beitreten).
-				if (!waitFor(SocialOverlay.active(), 2400, "Einladungs-Toast")) return;
+			case 10: {
+				// Einladung per Toast (Welt steht dann als „eingeladen“ in der Liste), dann Schnelltaste (Beitreten).
+				boolean invited = false;
+				for (Rooms.Room r : h.friendsRooms()) if ("invited".equals(r.myState)) invited = true;
+				if (!waitFor(invited && SocialOverlay.active(), 2400, "Einladungs-Toast")) return;
 				wait = 10;
 				phase++;
 				return;
+			}
 			case 11: {
 				shot(mc, "invite-toast");
-				SocialOverlay.QuickAction a = SocialOverlay.takeQuickAction();
+				// Ältere Toasts (z. B. „ist online“) überspringen, bis die Einladung dran ist.
+				SocialOverlay.QuickAction a = null;
+				for (int i = 0; i < 6; i++) {
+					a = SocialOverlay.takeQuickAction();
+					if (a == null || a.kind == SocialOverlay.QuickAction.Kind.WORLD_JOIN) break;
+				}
 				log("Schnelltaste: " + (a == null ? "nichts" : a.kind));
 				if (a != null) Mc.setScreen(MenuScreens.socialAction(a, new TrsTitleScreen()));
 				wait = 10;

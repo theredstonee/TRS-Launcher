@@ -94,6 +94,13 @@ public class TrsChannel extends AbstractChannel {
 		return stream;
 	}
 
+	private volatile String loginName;
+
+	/** Name aus dem Login-Start (Host-Seite, wenn mitgelesen) oder null. */
+	public String loginName() {
+		return loginName;
+	}
+
 	/** Warum geschlossen (für das Log) oder null. */
 	public String closeReason() {
 		return closeReason;
@@ -114,6 +121,7 @@ public class TrsChannel extends AbstractChannel {
 						s.close("login rejected");
 						return;
 					}
+					if (sn.name() != null) loginName = sn.name();
 					if (v == LoginSniffer.Verdict.PASS) sniffer = null;
 				}
 				bytesIn.addAndGet(len);
@@ -283,19 +291,19 @@ public class TrsChannel extends AbstractChannel {
 		public void connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
 			if (!ensureOpen(promise)) return;
 			if (state == 1) {
-				safeSetFailure(promise, new java.nio.channels.AlreadyConnectedException());
+				promise.tryFailure(new java.nio.channels.AlreadyConnectedException());
 				return;
 			}
 			PeerStream s = TrsConnect.take(remoteAddress);
 			if (s == null) {
-				safeSetFailure(promise, new ConnectException("No TRS hosting connection for " + remoteAddress));
+				promise.tryFailure(new ConnectException("No TRS hosting connection for " + remoteAddress));
 				close(voidPromise());
 				return;
 			}
 			stream = s;
 			remote = s.remoteAddress();
 			state = 1;
-			safeSetSuccess(promise);
+			promise.trySuccess();
 			pipeline().fireChannelActive();
 			startReading();
 		}

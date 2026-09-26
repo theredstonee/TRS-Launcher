@@ -96,6 +96,11 @@ public final class AutoTest {
 			SocialTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=hosting: Welt-Hosting mit zwei Spielen (Host/Gast, siehe HostingTest)
+		if ("hosting".equals(System.getProperty("trsclient.autotest.only"))) {
+			HostingTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=socialtoasts: nur Sozial-Toasts neben dem Vanilla-Erfolgsfenster (Ausweichen) und über einem Menü
 		if ("socialtoasts".equals(System.getProperty("trsclient.autotest.only"))) {
 			SocialTest.installToasts();

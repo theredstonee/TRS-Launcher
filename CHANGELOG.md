@@ -36,6 +36,18 @@ How to write an entry:
   host lets you in, declines, removes you or closes the world.
 - **Your own world at a glance.** While you host a world in the game, Social → Worlds shows its join code, how many
   players are in it and who is waiting – manage it in the game (pause menu → Host world).
+- **TRS Client: host your singleplayer world for friends.** In the pause menu, "Host world" opens your world for up to
+  10 players – no port forwarding. Pick a name, game mode, cheats, PvP, the maximum number of players and who can see it;
+  the world is backed up first. You get a join code to copy, can invite friends (online friends first), accept or decline
+  requests (also from a notification) and see every player with their connection ("Direct" or "Via relay"). Give players
+  OP, make them spectators or take away building, remove or ban them (also for all your worlds), and stop hosting with one
+  click. Friends connect directly when possible and through the TRS relay otherwise.
+- **TRS Client: join friends' worlds.** Invites pop up with "Join" (quick-reply key), world cards in chat have a "Join"
+  button, Social → Worlds lists your friends' open worlds with "Join" or "Ask to join", and the multiplayer screen has
+  "Join with code". A different Minecraft version is shown clearly before you try.
+- **TRS Client: public link (optional).** For friends without the TRS Client you can turn on a public link via the e4mc
+  service. It is off by default, needs a confirmed warning every single time and shows a red "Public link active" badge
+  in the game and the pause menu with a one-click "Deactivate".
 
 ### Deutsch
 
@@ -51,6 +63,20 @@ How to write an entry:
   Außerdem bekommst du einen kurzen Hinweis, wenn der Host dich hereinlässt, ablehnt, entfernt oder die Welt schließt.
 - **Deine eigene Welt im Blick.** Während du im Spiel eine Welt hostest, zeigt Sozial → Welten ihren Beitrittscode,
   wie viele Spieler drin sind und wer wartet – verwaltet wird sie im Spiel (Pausemenü → Welt hosten).
+- **TRS Client: Einzelspielerwelt für Freunde hosten.** „Welt hosten“ im Pausemenü öffnet deine Welt für bis zu
+  10 Spieler – ohne Portfreigabe. Name, Spielmodus, Cheats, PvP, maximale Spielerzahl und Sichtbarkeit wählst du selbst,
+  vorher wird die Welt gesichert. Du bekommst einen Beitrittscode zum Kopieren, lädst Freunde ein (Online-Freunde zuerst),
+  nimmst Anfragen an oder lehnst sie ab (auch über eine Benachrichtigung) und siehst jeden Spieler mit seiner Verbindung
+  („Direkt“ oder „Über Relay“). Gib Spielern OP, mach sie zu Zuschauern oder nimm ihnen das Bauen, entferne oder sperre
+  sie (auch für alle deine Welten) und beende das Hosting mit einem Klick. Freunde verbinden sich direkt, wenn es geht,
+  sonst über das TRS-Relay.
+- **TRS Client: Welten von Freunden beitreten.** Einladungen erscheinen mit „Beitreten“ (Schnellantwort-Taste),
+  Weltkarten im Chat haben einen „Beitreten“-Knopf, Sozial → Welten zeigt die offenen Welten deiner Freunde mit
+  „Beitreten“ oder „Anfragen“, und im Mehrspieler-Menü gibt es „Mit Code beitreten“. Eine andere Minecraft-Version wird
+  vorher klar angezeigt.
+- **TRS Client: öffentlicher Link (optional).** Für Freunde ohne TRS Client kannst du über den Dienst e4mc einen
+  öffentlichen Link einschalten. Ab Werk ist er aus, braucht jedes Mal eine bestätigte Warnung und zeigt im Spiel und im
+  Pausemenü ein rotes Abzeichen „Öffentlicher Link aktiv“ mit „Deaktivieren“ per Klick.
 
 ## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
 

@@ -61,21 +61,21 @@ public final class LegacyHosting {
 	}
 
 	//? if >=1.9 {
-	/*static net.minecraft.server.management.PlayerList players(IntegratedServer s) {
+	/*static net.minecraft.server.management.PlayerList pl(IntegratedServer s) {
 		return s.getPlayerList();
 	}
 	*///?} else {
-	static net.minecraft.server.management.ServerConfigurationManager players(IntegratedServer s) {
+	static net.minecraft.server.management.ServerConfigurationManager pl(IntegratedServer s) {
 		return s.getConfigurationManager();
 	}
 	//?}
 
 	@SuppressWarnings("unchecked")
 	static List<EntityPlayerMP> playerList(IntegratedServer s) {
-		//? if >=1.12 {
-		/*return new ArrayList<EntityPlayerMP>(players(s).getPlayers());
+		//? if >=1.10 {
+		/*return new ArrayList<EntityPlayerMP>(pl(s).getPlayers());
 		*///?} else
-		return new ArrayList<EntityPlayerMP>(players(s).getPlayerList());
+		return new ArrayList<EntityPlayerMP>(pl(s).getPlayerList());
 	}
 
 	static GameType gameType(String mode) {
@@ -109,7 +109,7 @@ public final class LegacyHosting {
 	/** Spielergrenze ({@code maxPlayers}, protected int). */
 	static void setMax(IntegratedServer s, int max) {
 		try {
-			Object list = players(s);
+			Object list = pl(s);
 			Field f = ReflectionHelper.findField(list.getClass().getSuperclass() == Object.class ? list.getClass()
 					: net.minecraft.server.management.
 					//? if >=1.9 {
@@ -122,6 +122,21 @@ public final class LegacyHosting {
 		} catch (IllegalAccessException | RuntimeException e) {
 			log("TRS Hosting: Spielergrenze: " + e);
 		}
+	}
+
+	/** {@code saveAllWorlds(false)} – in 1.8.9 protected, daher per Reflection (MCP- bzw. SRG-Name). */
+	static void saveAll(IntegratedServer s) throws ReflectiveOperationException {
+		for (String name : new String[] { "saveAllWorlds", "func_71267_a" }) {
+			try {
+				Method m = net.minecraft.server.MinecraftServer.class.getDeclaredMethod(name, boolean.class);
+				m.setAccessible(true);
+				m.invoke(s, false);
+				return;
+			} catch (NoSuchMethodException ignored) {
+				// nächster Name
+			}
+		}
+		throw new NoSuchMethodException("saveAllWorlds");
 	}
 
 	static Path worldDir(IntegratedServer s) {
@@ -214,14 +229,14 @@ public final class LegacyHosting {
 				@Override
 				public void run() {
 					UUID id = parse(uuid);
-					EntityPlayerMP p = id == null ? null : players(s).getPlayerByUUID(id);
+					EntityPlayerMP p = id == null ? null : pl(s).getPlayerByUUID(id);
 					if (p == null) return;
 					try {
 						if (gameMode != null) p.setGameType(gameType(gameMode));
 						if (op != null) {
-							boolean is = players(s).canSendCommands(p.getGameProfile());
-							if (op && !is) players(s).addOp(p.getGameProfile());
-							else if (!op && is) players(s).removeOp(p.getGameProfile());
+							boolean is = pl(s).canSendCommands(p.getGameProfile());
+							if (op && !is) pl(s).addOp(p.getGameProfile());
+							else if (!op && is) pl(s).removeOp(p.getGameProfile());
 						}
 					} catch (RuntimeException e) {
 						log("TRS Hosting: Rechte: " + e);
@@ -251,10 +266,8 @@ public final class LegacyHosting {
 				@Override
 				public void run() {
 					try {
-						players(s).saveAllPlayerData();
-						Method save = ReflectionHelper.findMethod(net.minecraft.server.MinecraftServer.class, s,
-								new String[] { "saveAllWorlds", "func_71267_a" }, boolean.class);
-						save.invoke(s, false);
+						pl(s).saveAllPlayerData();
+						saveAll(s);
 					} catch (Exception | LinkageError e) {
 						log("TRS Hosting: Speichern vor dem Backup: " + e);
 					}

@@ -64,7 +64,7 @@ public final class DirectConnect {
 			o.addProperty("v", 1);
 			o.addProperty("k", Base64.getEncoder().encodeToString(nonce));
 			JsonArray c = new JsonArray();
-			for (InetSocketAddress a : candidates) c.add(UdpLink.formatCandidate(a));
+			for (InetSocketAddress a : candidates) c.add(new com.google.gson.JsonPrimitive(UdpLink.formatCandidate(a)));
 			o.add("c", c);
 			if (mc != null) o.addProperty("mc", mc);
 			if (loader != null) o.addProperty("l", loader);

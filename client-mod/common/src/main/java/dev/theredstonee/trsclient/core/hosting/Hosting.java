@@ -201,7 +201,7 @@ public final class Hosting {
 
 		int openGuests() {
 			Set<String> ids = new HashSet<String>();
-			for (Attached a : attached) if (a.channel.isOpen()) ids.add(a.uuid == null ? "link:" + a.name : a.uuid);
+			for (Attached a : attached) if (a.channel.isOpen()) ids.add(a.uuid == null ? "link:" + System.identityHashCode(a.channel) : a.uuid);
 			return ids.size();
 		}
 	}
@@ -411,7 +411,8 @@ public final class Hosting {
 	private static PeerStream.Path pathOf(HostSession s, HostingPlatform.Player pl) {
 		for (Attached a : s.attached) {
 			if (!a.channel.isOpen()) continue;
-			if ((a.uuid != null && a.uuid.equals(pl.uuid)) || (a.name != null && a.name.equalsIgnoreCase(pl.name))) return a.path;
+			String n = a.name != null ? a.name : a.channel.loginName();
+			if ((a.uuid != null && a.uuid.equals(pl.uuid)) || (n != null && n.equalsIgnoreCase(pl.name))) return a.path;
 		}
 		return null;
 	}
@@ -1338,9 +1339,23 @@ public final class Hosting {
 		} catch (RuntimeException | LinkageError ignored) {
 			// dann über den Kanal
 		}
+		final List<TrsChannel> hit = new ArrayList<TrsChannel>();
 		for (Attached a : s.attached) {
-			boolean match = (uuid != null && uuid.equals(a.uuid)) || (name != null && a.name != null && name.equalsIgnoreCase(a.name));
-			if (match && (!done || a.channel.isOpen())) a.channel.close();
+			String n = a.name != null ? a.name : a.channel.loginName();
+			boolean match = (uuid != null && uuid.equals(a.uuid)) || (name != null && n != null && name.equalsIgnoreCase(n));
+			if (match) hit.add(a.channel);
+		}
+		if (!done) {
+			for (TrsChannel ch : hit) ch.close();
+		} else if (!hit.isEmpty()) {
+			// Minecraft trennt mit Meldung – falls das nicht ankommt, spätestens nach 2 s den Kanal schließen.
+			submit(new Runnable() {
+				@Override
+				public void run() {
+					sleep(2000L);
+					for (TrsChannel ch : hit) if (ch.isOpen()) ch.close();
+				}
+			});
 		}
 		generation++;
 	}
