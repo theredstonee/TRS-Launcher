@@ -131,6 +131,22 @@ se cierra el juego.
 - **Desactivarla:** «Mostrar insignia de TRS» (*Einstellungen → Datenschutz*) oculta tu insignia a todos. Poner tu
   estado en línea en «nadie» solo te oculta en las listas de amigos; la insignia **no**.
 
+### Compartir capas con amigos
+
+Puedes compartir con un amigo una capa que hayas subido, una vez que el equipo la haya aprobado. Tu amigo recibe una
+oferta en el launcher y en el juego y decide si la acepta. Para ello, el servidor TRS guarda qué capa se ofreció a
+quién, quién la ofreció y cuándo, y si se aceptó. Tras aceptarla, tu amigo puede llevar la capa como si fuera suya y
+otros jugadores TRS la ven en él. Un amigo puede pasar la capa a sus propios amigos (como máximo 20 jugadores por capa).
+
+- **Quién ve qué:** el creador ve a todos los que tienen la capa o una oferta abierta de ella (con su nombre de
+  Minecraft), también a los jugadores a los que un amigo se la pasó. Quien tiene la capa ve quién se la dio, el nombre
+  del creador y los jugadores a los que él mismo se la pasó.
+- **Terminar:** el creador puede retirar la capa a cualquiera en cualquier momento; entonces también la pierden todos a
+  los que ese jugador se la pasó. Cualquiera puede devolver una capa compartida. Si eliminas a un amigo o bloqueas a un
+  jugador, se cancelan las ofertas abiertas entre vosotros; las capas ya aceptadas se quedan hasta que alguien las
+  retire. Si se borra la capa, el equipo la rechaza o se borra una cuenta TRS, las capas compartidas afectadas
+  desaparecen al instante.
+
 ### Qué se guarda
 
 | Datos | Para qué |
@@ -142,6 +158,7 @@ se cierra el juego.
 | La capa que has elegido y las capas desbloqueadas con códigos o concedidas por el equipo | Mostrar tu capa a otros jugadores TRS |
 | Las capas que subes (la imagen, recodificada sin metadatos), su estado de revisión y un nombre opcional | Subida de capas; el equipo revisa cada subida antes de que otros la vean |
 | Las denuncias que haces sobre capas de otros jugadores (motivo, nota opcional) | Moderación |
+| Capas compartidas: qué capas ofreciste a quién (y quién las pasó a otros), las ofertas abiertas para ti y las capas que tus amigos compartieron contigo, cada una con la fecha y si se aceptó | Compartir capas con amigos (ver arriba) |
 | Amigos, solicitudes de amistad y bloqueos | La lista de amigos |
 | Estado en línea: «en línea en el launcher» o «jugando» (del launcher o del TRS Client) con versión y cargador de mods y, solo si has activado «Server teilen» (compartir servidor), la dirección del servidor | Mostrar a tus amigos a qué juegas y permitirles unirse; mostrar la insignia TRS mientras juegas (ver arriba) |
 | Solo con «Sincronizar con la cuenta de TRS» activado: tus skins propias de «Mis skins» (la imagen, recodificada sin metadatos, su nombre y modelo), tus presets de mods propios (nombres e ID de proyectos de Modrinth, sin archivos ni rutas de carpetas) y tu tema, color de acento e idioma, cada uno con la fecha del último cambio; las skins y presets eliminados se anotan durante un tiempo | Mantenerlos iguales en todos los PC donde uses esta cuenta de Minecraft |
@@ -189,6 +206,7 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   puedan borrarlas.
 - **«Alle TRS-Daten löschen»** (borrar todos los datos TRS, en *Einstellungen → Datenschutz*) lo elimina todo al
   instante (art. 17 del RGPD): tu cuenta, sesiones, amistades, solicitudes y bloqueos, las capas subidas y sus archivos,
+  las capas compartidas (tus capas con amigos y las que tus amigos compartieron contigo),
   los códigos canjeados, las denuncias, tu estado en línea y todas las skins, presets y ajustes sincronizados. Después,
   los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
 - Tras la eliminación solo se conserva un registro de bloqueo existente (tu UUID, el motivo y la fecha), para que no se

@@ -213,7 +213,14 @@
       "invalid_request": "The request was invalid.",
       "not_found": "Not found.",
       "rejected": "The TRS API rejected the request.",
-      "frame_time_required": "Animated capes need a speed."
+      "frame_time_required": "Animated capes need a speed.",
+      "cape_not_approved": "You can share a cape once the team has approved it.",
+      "cape_not_shareable": "Only your own uploaded capes can be shared.",
+      "already_shared": "This player already has the cape or an offer for it.",
+      "share_limit": "This cape is already shared with 20 players.",
+      "offer_inbox_full": "This player has too many open cape offers.",
+      "offer_not_found": "This offer no longer exists.",
+      "holder_not_found": "This player doesn't have the cape from you (anymore)."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -2345,7 +2352,8 @@
       "free": "Free",
       "code": "Code",
       "team": "Team",
-      "locked": "Locked"
+      "locked": "Locked",
+      "shared": "Shared"
     },
     "status": {
       "pending": "Awaiting approval",
@@ -2360,7 +2368,8 @@
       "playingLoaderServer": "Playing {version} ({loader}) on {server}"
     },
     "toasts": {
-      "friendRequest": "{name} wants to be your friend."
+      "friendRequest": "{name} wants to be your friend.",
+      "capeOffer": "{name} offers you the cape “{cape}”."
     }
   },
   "trsGate": {
@@ -2564,6 +2573,76 @@
       },
       "upload": "Upload",
       "uploading": "Uploading …"
+    }
+  },
+  "capeShare": {
+    "friendMenu": "Share a cape",
+    "toasts": {
+      "accepted": "“{cape}” is now in your capes.",
+      "withdrawn": "Offer to {name} withdrawn.",
+      "offered": "Offered “{cape}” to {name}.",
+      "revoked": "{name} no longer has the cape.",
+      "givenBack": "You gave “{cape}” back."
+    },
+    "offers": {
+      "incoming": "Cape offers ({count})",
+      "from": "From {name} · {date}",
+      "fromVia": "From {name} · made by {creator} · {date}",
+      "accept": "Accept",
+      "accepting": "Accepting …",
+      "decline": "Decline",
+      "hint": "Accepted capes show up in your capes and can be worn like your own.",
+      "outgoing": "Your open cape offers",
+      "to": "To {name} · {date}",
+      "withdraw": "Withdraw"
+    },
+    "dialog": {
+      "title": "Share “{cape}”",
+      "intro": "Your friend gets an offer and decides whether to accept it. Friends who accept can wear the cape and pass it on to their own friends.",
+      "reshare": "Made by {creator} – you can pass it on to your friends.",
+      "pickFriend": "Share with a friend",
+      "search": "Search friends",
+      "share": "Share",
+      "sharing": "Sharing …",
+      "allHaveIt": "All your friends already have this cape or an offer for it.",
+      "noFriends": "You don't have any TRS friends yet.",
+      "full": "This cape is already shared with the maximum of {limit} players.",
+      "holders": "Shared with",
+      "cascade": "Taking a cape back also removes it from everyone that player passed it on to."
+    },
+    "holders": {
+      "offered": "Offer open",
+      "accepted": "Has the cape",
+      "via": "via {name}",
+      "confirm": "Really?",
+      "withdraw": "Withdraw",
+      "revoke": "Take back",
+      "none": "Nobody has this cape from you yet."
+    },
+    "card": {
+      "holders": "Shared with {n} player | Shared with {n} players"
+    },
+    "selected": {
+      "from": "Shared with you by {name}.",
+      "fromVia": "Shared with you by {name} · made by {creator}.",
+      "afterApproval": "You can share this cape with friends once it's approved."
+    },
+    "actions": {
+      "share": "Share with a friend",
+      "manage": "Shared ({count})",
+      "giveBack": "Give back"
+    },
+    "giveBackDialog": {
+      "title": "Give the cape back?",
+      "text": "{name} disappears from your capes. Everyone you passed it on to loses it too."
+    },
+    "deleteWarning": "{n} player who has it from you loses it too. | {n} players who have it from you lose it too.",
+    "friendDialog": {
+      "title": "Share a cape with {name}",
+      "intro": "Pick a cape – your friend gets an offer and decides whether to accept it.",
+      "offered": "Offered",
+      "none": "You don't have a cape to share yet. Upload your own cape – once the team approves it, you can share it.",
+      "onlyPending": "Your capes are still being reviewed – you can share them once they're approved."
     }
   },
   "friends": {

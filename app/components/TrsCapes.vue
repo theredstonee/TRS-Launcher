@@ -2,8 +2,8 @@
 import type { TrsCape } from '~/utils/trs'
 
 // TRS-Umhänge auf der Skins-Seite: Katalog mit Sperr-Status, Vorschau in der
-// großen 3D-Ansicht der Seite (per `preview`), Anlegen/Ablegen, Code einlösen
-// und eigene Umhänge hochladen (Prüfung durch das Team).
+// großen 3D-Ansicht der Seite (per `preview`), Anlegen/Ablegen, Code einlösen,
+// eigene Umhänge hochladen (Prüfung durch das Team) und mit Freunden teilen.
 const props = defineProps<{ previewId: string | null }>()
 const emit = defineEmits<{ preview: [cape: TrsCape | null]; active: [cape: TrsCape | null] }>()
 
@@ -43,6 +43,8 @@ async function load() {
 
 onMounted(load)
 watch(() => [trs.enabled, accounts.active?.id], load)
+// Angebot angenommen, Umhang zurückgegeben …
+watch(() => trs.capesRevision, load)
 
 function preview(cape: TrsCape) {
   emit('preview', props.previewId === cape.id ? null : cape)
@@ -120,6 +122,29 @@ async function uploaded(cape: TrsCape) {
   emit('preview', capes.value?.find((c) => c.id === cape.id) ?? cape)
 }
 
+// --- Teilen ------------------------------------------------------------------------
+
+const sharing = ref<TrsCape | null>(null)
+const toGiveBack = ref<TrsCape | null>(null)
+
+async function confirmGiveBack() {
+  const cape = toGiveBack.value
+  toGiveBack.value = null
+  if (!cape || !accounts.active) return
+  const me = accounts.active.id
+  await run('giveBack', async () => {
+    await backend.trs.revokeCapeShare(cape.id, me)
+    if (props.previewId === cape.id) emit('preview', null)
+    toasts.ok(t('capeShare.toasts.givenBack', { cape: cape.name }))
+    await load()
+  })
+}
+
+function closeShare() {
+  sharing.value = null
+  void load()
+}
+
 const toDelete = ref<TrsCape | null>(null)
 async function confirmDelete() {
   const cape = toDelete.value
@@ -134,6 +159,7 @@ async function confirmDelete() {
 }
 
 function lockClass(cape: TrsCape) {
+  if (cape.shared) return 'bg-redstone-900/30 text-redstone-200'
   if (cape.kind === 'upload') return 'bg-base-800 text-base-200'
   if (cape.unlock === 'free') return 'bg-ok/10 text-ok'
   if (cape.unlock === 'code') return 'bg-lamp-900/60 text-lamp-300'
@@ -156,6 +182,7 @@ function lockClass(cape: TrsCape) {
     <p class="mb-3 text-xs text-base-400">{{ t('capes.intro') }}</p>
 
     <TrsGate what="capes">
+      <CapeOffersList v-if="!offline" compact class="mb-4" />
       <div v-if="offline" class="card flex items-center gap-3 px-4 py-3 text-sm text-base-400">
         <span class="size-2 rounded-full bg-base-600" />
         <span class="flex-1">{{ t('capes.offline') }}</span>
@@ -204,6 +231,7 @@ function lockClass(cape: TrsCape) {
                 <span v-if="cape.frames > 1" class="badge bg-base-800 px-1.5 py-0 text-[10px] text-base-200">{{ t('capes.animated') }}</span>
               </span>
               <span v-if="cape.active" class="text-[10px] text-ok">{{ t('capes.worn') }}</span>
+              <span v-else-if="cape.holders && !cape.shared" class="text-[10px] text-base-400">{{ t('capeShare.card.holders', cape.holders) }}</span>
               <span
                 v-else-if="trsStatusLabel(cape.status)"
                 class="text-[10px]"
@@ -239,6 +267,16 @@ function lockClass(cape: TrsCape) {
               <template v-else-if="selected.unlock === 'free'">{{ t('capes.selected.free') }}</template>
               <template v-else>{{ t('capes.selected.unlocked') }}</template>
             </p>
+            <p v-if="selected.shared" class="truncate text-xs text-base-400" data-testid="trs-cape-shared">
+              {{
+                selected.shared.creator.uuid === selected.shared.from.uuid
+                  ? t('capeShare.selected.from', { name: selected.shared.from.name })
+                  : t('capeShare.selected.fromVia', { name: selected.shared.from.name, creator: selected.shared.creator.name })
+              }}
+            </p>
+            <p v-else-if="selected.kind === 'upload' && selected.status === 'pending'" class="text-xs text-base-600">
+              {{ t('capeShare.selected.afterApproval') }}
+            </p>
           </div>
           <button
             v-if="selected.owned && !selected.active"
@@ -260,7 +298,24 @@ function lockClass(cape: TrsCape) {
             {{ t('capes.redeem') }}
           </button>
           <button
-            v-if="selected.kind === 'upload'"
+            v-if="selected.shareable"
+            class="btn btn-ghost px-3 py-1.5 text-xs"
+            :disabled="!!busy"
+            data-testid="trs-cape-share"
+            @click="sharing = selected"
+          >
+            {{ selected.holders ? t('capeShare.actions.manage', { count: selected.holders }) : t('capeShare.actions.share') }}
+          </button>
+          <button
+            v-if="selected.shared"
+            class="btn btn-ghost px-3 py-1.5 text-xs hover:text-redstone-300"
+            :disabled="!!busy"
+            @click="toGiveBack = selected"
+          >
+            {{ t('capeShare.actions.giveBack') }}
+          </button>
+          <button
+            v-else-if="selected.kind === 'upload'"
             class="btn btn-ghost px-3 py-1.5 text-xs hover:text-redstone-300"
             :disabled="!!busy"
             @click="toDelete = selected"
@@ -300,10 +355,23 @@ function lockClass(cape: TrsCape) {
 
     <CapeUploadDialog v-if="uploading" @close="uploading = false" @uploaded="uploaded" />
 
+    <CapeShareDialog v-if="sharing" :cape="sharing" @close="closeShare" @changed="trs.loadCapeOffers()" />
+
+    <BaseDialog v-if="toGiveBack" :title="t('capeShare.giveBackDialog.title')" @close="toGiveBack = null">
+      <i18n-t keypath="capeShare.giveBackDialog.text" tag="p" scope="global" class="text-sm text-base-200">
+        <template #name><strong class="text-base-50">{{ toGiveBack.name }}</strong></template>
+      </i18n-t>
+      <template #actions>
+        <button class="btn btn-ghost" @click="toGiveBack = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmGiveBack">{{ t('capeShare.actions.giveBack') }}</button>
+      </template>
+    </BaseDialog>
+
     <BaseDialog v-if="toDelete" :title="t('capes.deleteDialog.title')" @close="toDelete = null">
       <i18n-t keypath="capes.deleteDialog.text" tag="p" scope="global" class="text-sm text-base-200">
         <template #name><strong class="text-base-50">{{ toDelete.name }}</strong></template>
       </i18n-t>
+      <p v-if="toDelete.holders" class="mt-2 text-xs text-lamp-300">{{ t('capeShare.deleteWarning', toDelete.holders) }}</p>
       <template #actions>
         <button class="btn btn-ghost" @click="toDelete = null">{{ t('common.actions.cancel') }}</button>
         <button class="btn btn-danger" @click="confirmDelete">{{ t('common.actions.delete') }}</button>

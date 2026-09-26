@@ -249,6 +249,31 @@ public final class TitleUi extends UiScreen {
 		if (newId != null && m != null && m.clientState.news().markSeen(newId)) IntroGate.save(m);
 	}
 
+	private int seenOfferNotice = -1;
+
+	/**
+	 * Umhang-Angebote von Freunden: im Hintergrund-Takt abfragen, ein neues Angebot kurz melden. Ungesehene Angebote
+	 * markieren Garderobe und Freunde mit einem Punkt ({@link #unseenOffers()}).
+	 */
+	private void offerCheck() {
+		dev.theredstonee.trsclient.core.online.TrsOnline online = dev.theredstonee.trsclient.core.online.TrsOnline.current();
+		if (online == null || !online.online()) return;
+		dev.theredstonee.trsclient.core.online.Friends f = online.friends();
+		f.want(dev.theredstonee.trsclient.core.online.Friends.Interest.BACKGROUND, false);
+		dev.theredstonee.trsclient.core.online.Friends.Snapshot fs = f.snapshot();
+		if (seenOfferNotice == -1) seenOfferNotice = fs.offerNotice;
+		if (fs.offerNotice != seenOfferNotice) {
+			seenOfferNotice = fs.offerNotice;
+			if (fs.offerNoticeArgs.length == 2) notice(I18n.tr("wardrobe.share.offerToast", fs.offerNoticeArgs));
+		}
+	}
+
+	/** Gibt es Umhang-Angebote, die noch niemand angesehen hat? */
+	private static boolean unseenOffers() {
+		dev.theredstonee.trsclient.core.online.TrsOnline online = dev.theredstonee.trsclient.core.online.TrsOnline.current();
+		return online != null && online.online() && online.friends().snapshot().unseenOffers > 0;
+	}
+
 	/** Einführung beim ersten Start (oder kurze Begrüßung, wenn das TRS-Konto sie schon erledigt hat). */
 	private void introCheck() {
 		String pending = dev.theredstonee.trsclient.core.intro.IntroGate.takeNotice();
@@ -359,6 +384,7 @@ public final class TitleUi extends UiScreen {
 	protected void draw(Canvas raw, int width, int height, int mouseX, int mouseY, float dt) {
 		long start = System.nanoTime();
 		introCheck();
+		offerCheck();
 		Theme t = Theme.get();
 		boolean animated = host.animated();
 		float time = animated ? (System.nanoTime() - EPOCH) / 1_000_000_000f : 1.35f;
@@ -570,7 +596,7 @@ public final class TitleUi extends UiScreen {
 				on ? ColorMath.lerp(t.border, t.textDim, 0.5f) : t.border);
 		if (on) Redstone.dustH(c, accX + 3, accX + accW - 3, accY + dy + 13, t.dustOn, 0f);
 		Icons.draw(c, "shirt", accX + 5, accY + dy + 4, 1, on ? t.dustOn : t.textDim);
-		if (isNew(NewSince.MENU_WARDROBE)) NewBadge.dot(c, accX + accW - 7, accY + dy + 2);
+		if (isNew(NewSince.MENU_WARDROBE) || unseenOffers()) NewBadge.dot(c, accX + accW - 7, accY + dy + 2);
 		String lbl = c.clip(accountLabel, accW - 20);
 		labels.add(new Label(lbl, accX + 16 + (accW - 18 - c.textWidth(lbl)) / 2, accY + dy + 4 - (on ? 1 : 0), t.text, false));
 		if (accFlash > 0.02f) c.fill(accX + 1, accY + 1, accX + accW - 1, accY + 15, ColorMath.withAlpha(0xFFFFF6DC, Math.round(120 * accFlash)));
@@ -702,7 +728,8 @@ public final class TitleUi extends UiScreen {
 			int dy = l.flash > 0.45f ? 1 : 0;
 			Redstone.lamp(c, l.x, l.y + dy, l.w, l.h, lit, l.flash);
 			int iconColor = lit > 0.5f ? t.lampTextLit : t.lampText;
-			boolean isNew = isNew(l.newId);
+			boolean isNew = isNew(l.newId)
+					|| ((NewSince.MENU_FRIENDS.equals(l.newId) || NewSince.MENU_WARDROBE.equals(l.newId)) && unseenOffers());
 			if (sideMode == SIDE_FULL) {
 				Icons.draw(c, l.icon, l.x + 7, l.y + dy + (l.h - 8) / 2, 1, iconColor);
 				int room = l.w - 24;

@@ -2,6 +2,7 @@ package dev.theredstonee.trsclient.core.ui.friends;
 
 import dev.theredstonee.trsclient.core.account.FaceCache;
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.online.CapeShare;
 import dev.theredstonee.trsclient.core.online.Friends;
 import dev.theredstonee.trsclient.core.online.FriendsView;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
@@ -14,14 +15,16 @@ import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.TextInput;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
+import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
 import dev.theredstonee.trsclient.core.ui.menus.WindowUi;
 
 import java.util.List;
 
 /**
  * Freunde im Spiel, im Redstone-Stil: Liste mit Minecraft-Gesicht, Online-Status (Lampe) und was gespielt wird,
- * Anfragen (annehmen/ablehnen/zurückziehen), Freund per Name hinzufügen, entfernen und blockieren (mit
- * Rückfrage), Blockierte freigeben. Die Daten kommen aus {@link Friends} (API-Thread, höflicher Takt).
+ * Anfragen (annehmen/ablehnen/zurückziehen) samt Umhang-Angeboten von Freunden (annehmen/ablehnen), Freund per Name
+ * hinzufügen, entfernen und blockieren (mit Rückfrage), Blockierte freigeben. Die Daten kommen aus {@link Friends}
+ * (API-Thread, höflicher Takt).
  */
 public final class FriendsUi extends WindowUi {
 	private static final int ROW_H = 24;
@@ -45,6 +48,8 @@ public final class FriendsUi extends WindowUi {
 	/** Rückfrage läuft für diese UUID (Entfernen/Blockieren). */
 	private String confirmUuid;
 	private Friends.Action confirmAction;
+	/** Seit wann der Reiter „Anfragen“ sichtbar ist (Angebote gelten danach als gesehen). */
+	private long requestsShownSince;
 
 	public FriendsUi(FriendsHost host, TrsOnline online) {
 		this.host = host;
@@ -121,6 +126,14 @@ public final class FriendsUi extends WindowUi {
 		}
 		if (incoming > 0 && tab != Tab.REQUESTS) {
 			Redstone.pip(c, x + tabW + 4 + tabW - 9, y + 4, 6, (float) (0.6 + 0.4 * Math.sin(System.currentTimeMillis() / 180.0)));
+		}
+		// Umhang-Angebote gelten als gesehen, wenn der Reiter „Anfragen“ eine Weile offen war („NEU“ fällt weg).
+		if (tab == Tab.REQUESTS && s != null && s.unseenOffers > 0) {
+			long shownFor = System.currentTimeMillis() - requestsShownSince;
+			if (requestsShownSince == 0) requestsShownSince = System.currentTimeMillis();
+			else if (shownFor > 2500) online.friends().markOffersSeen();
+		} else if (tab != Tab.REQUESTS) {
+			requestsShownSince = 0;
 		}
 		int cy = y + 22;
 
@@ -367,9 +380,47 @@ public final class FriendsUi extends WindowUi {
 	private int requests(Canvas c, FriendsView view, Friends.Snapshot s, int x, int y, int w, int top, int h, int mx, int my) {
 		Theme t = Theme.get();
 		int ry = y;
-		if (view.incoming.isEmpty() && view.outgoing.isEmpty()) {
+		List<CapeShare.Offer> offers = view.offers;
+		if (view.incoming.isEmpty() && view.outgoing.isEmpty() && offers.isEmpty()) {
 			Paint.textCentered(c, c.clip(I18n.tr("friends.requests.empty"), w), x + w / 2, top + 8, t.textDim, false);
 			return 20;
+		}
+		if (!offers.isEmpty()) {
+			Paint.textClipped(c, I18n.tr("friends.capeOffers.title", offers.size()), x + 2, ry + 2, w, t.textDim, false);
+			ry += SECTION_H;
+			for (final CapeShare.Offer o : offers) {
+				if (ry + ROW_H >= top && ry <= top + h) {
+					Redstone.stone(c, x, ry, w, ROW_H - 2, t.surface, ColorMath.lerp(t.border, t.dustOn, 0.5f));
+					face(c, o.fromUuid, o.fromName, x + 4, ry + 3);
+					int right = x + w - 4;
+					int no = right - 14;
+					iconButton(c, no, ry + 4, 14, "close", false, mx, my, new Runnable() {
+						@Override
+						public void run() {
+							if (online != null) online.friends().declineOffer(o);
+						}
+					});
+					int yes = no - 17;
+					iconButton(c, yes, ry + 4, 14, "check", true, mx, my, new Runnable() {
+						@Override
+						public void run() {
+							if (online != null) online.friends().acceptOffer(o);
+						}
+					});
+					int textW = yes - 4 - x - 26;
+					if (online != null && online.friends().unseen(o)) {
+						int bw = NewBadge.width(c);
+						NewBadge.draw(c, yes - 4 - bw, ry + 2);
+						textW -= bw + 4;
+					}
+					Paint.textClipped(c, o.capeName, x + 26, ry + 3, textW, t.text, false);
+					String from = o.reshared() ? I18n.tr("friends.capeOffers.fromVia", o.fromName, o.creatorName)
+							: I18n.tr("friends.capeOffers.from", o.fromName);
+					Paint.textClipped(c, from, x + 26, ry + 13, yes - 4 - x - 26, t.textDim, false);
+				}
+				ry += ROW_H;
+			}
+			if (!view.incoming.isEmpty() || !view.outgoing.isEmpty()) ry += 4;
 		}
 		if (!view.incoming.isEmpty()) {
 			Paint.textClipped(c, I18n.tr("friends.requests.incoming", view.incoming.size()), x + 2, ry + 2, w, t.textDim, false);

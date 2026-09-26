@@ -8,9 +8,9 @@ use serde_json::json;
 use super::texture::TextureSpec;
 use super::types::{
     AdminCape, AdminStats, AdminUser, ApiActiveCape, ApiAdminCapes, ApiAdminUser, ApiBlocks, ApiCapeEnvelope,
-    ApiCatalog, ApiCodes, ApiGrant, ApiLookup, ApiMe, ApiRedeem, BlockedUser, CapeItem, CodeView, Friend,
-    FriendRequestResult, FriendsView, Me, NewCodes, PlayerCape, ReportReason, ReviewList, SettingsPatch, TrsStatus,
-    UserRef,
+    ApiCapeOffers, ApiCatalog, ApiCodes, ApiGrant, ApiLookup, ApiMe, ApiRedeem, BlockedUser, CapeHolders, CapeItem,
+    CapeOffers, CodeView, Friend, FriendRequestResult, FriendsView, IncomingCapeOffer, Me, NewCodes,
+    OutgoingCapeOffer, PlayerCape, ReportReason, ReviewList, SettingsPatch, TrsStatus, UserRef,
 };
 use super::{Consent, PRESENCE_INTERVAL, Req, TrsApi, me_view, no_account, png, validate};
 use crate::{Error, Launcher, Result};
@@ -64,7 +64,17 @@ fn encode_query(value: &str) -> String {
 
 async fn catalog_item(trs: &TrsApi, entry: super::types::ApiCatalogCape, token: Option<&str>) -> CapeItem {
     let texture = trs.texture(&TextureSpec::of(&entry.cape), token).await;
-    CapeItem::from_api(&entry.cape, entry.owned, entry.active, entry.reject_reason.as_deref(), texture)
+    let mut item = CapeItem::from_api(&entry.cape, entry.owned, entry.active, entry.reject_reason.as_deref(), texture);
+    item.shared = entry.shared.and_then(super::types::CapeShareSource::cleaned);
+    item.shareable = entry.shareable;
+    item.holders = entry.holders.min(1000);
+    item
+}
+
+/// Umhang eines Angebots mit Vorschau (freigegeben → öffentlich, ohne Token).
+async fn offer_cape(trs: &TrsApi, cape: &super::types::ApiCape) -> CapeItem {
+    let texture = trs.texture(&TextureSpec::of(cape), None).await;
+    CapeItem::from_api(cape, false, false, None, texture)
 }
 
 async fn admin_item(trs: &TrsApi, entry: super::types::ApiAdminCape, token: Option<&str>) -> AdminCape {
@@ -340,6 +350,67 @@ impl Launcher {
         Ok(futures::future::join_all(jobs).await.into_iter().flatten().collect())
     }
 
+    // --- Umhänge teilen (§5.10) ---------------------------------------------------------
+
+    /// Offene Angebote an mich (mit Vorschau) und von mir.
+    pub async fn trs_cape_offers(&self) -> Result<CapeOffers> {
+        let offers: ApiCapeOffers = self.trs_get(Req::get("/v1/cape-offers")).await?;
+        let incoming = offers.incoming.into_iter().filter(|o| o.cape.is_valid()).take(200).map(|o| async move {
+            let from = super::types::clean_user(o.from)?;
+            let creator = super::types::clean_user(o.creator)?;
+            Some(IncomingCapeOffer {
+                cape: offer_cape(&self.trs, &o.cape).await,
+                from,
+                creator,
+                created_at: o.created_at.map(|t| validate::text(&t, 40)),
+            })
+        });
+        let outgoing = offers.outgoing.into_iter().filter(|o| o.cape.is_valid()).take(200).map(|o| async move {
+            let to = super::types::clean_user(o.to)?;
+            Some(OutgoingCapeOffer {
+                cape: offer_cape(&self.trs, &o.cape).await,
+                to,
+                created_at: o.created_at.map(|t| validate::text(&t, 40)),
+            })
+        });
+        let (incoming, outgoing) =
+            futures::future::join(futures::future::join_all(incoming), futures::future::join_all(outgoing)).await;
+        Ok(CapeOffers {
+            incoming: incoming.into_iter().flatten().collect(),
+            outgoing: outgoing.into_iter().flatten().collect(),
+        })
+    }
+
+    /// Eigenen freigegebenen (oder angenommenen geteilten) Umhang einem Freund anbieten.
+    pub async fn trs_offer_cape(&self, cape_id: &str, friend: &str) -> Result<()> {
+        let cape_id = cape_arg(cape_id)?;
+        let friend = uuid_arg(friend)?;
+        self.trs_do(Req::post("/v1/cape-offers", json!({ "capeId": cape_id, "friend": friend }))).await
+    }
+
+    pub async fn trs_accept_cape_offer(&self, cape_id: &str) -> Result<()> {
+        let cape_id = cape_arg(cape_id)?;
+        self.trs_do(Req::post_empty(format!("/v1/cape-offers/{cape_id}/accept"))).await
+    }
+
+    pub async fn trs_decline_cape_offer(&self, cape_id: &str) -> Result<()> {
+        let cape_id = cape_arg(cape_id)?;
+        self.trs_do(Req::post_empty(format!("/v1/cape-offers/{cape_id}/decline"))).await
+    }
+
+    /// Wer hat diesen Umhang von mir (Ersteller: alle, Inhaber: der eigene Ast)?
+    pub async fn trs_cape_holders(&self, cape_id: &str) -> Result<CapeHolders> {
+        let cape_id = cape_arg(cape_id)?;
+        Ok(self.trs_get::<CapeHolders>(Req::get(format!("/v1/capes/{cape_id}/holders"))).await?.cleaned())
+    }
+
+    /// Teilung entziehen / Angebot zurückziehen (samt Weitergegebenem); eigene UUID = zurückgeben.
+    pub async fn trs_revoke_cape_share(&self, cape_id: &str, holder: &str) -> Result<()> {
+        let cape_id = cape_arg(cape_id)?;
+        let holder = uuid_arg(holder)?;
+        self.trs_do(Req::delete(format!("/v1/capes/{cape_id}/holders/{holder}"))).await
+    }
+
     // --- Freunde ------------------------------------------------------------------------
 
     pub async fn trs_friends(&self) -> Result<FriendsView> {
@@ -366,7 +437,7 @@ impl Launcher {
         }
         let uuid = uuid_arg(uuid)?;
         let result: Accepted = self.trs_get(Req::post_empty(format!("/v1/friends/requests/{uuid}/accept"))).await?;
-        let view = FriendsView { friends: vec![result.friend], requests: Default::default() }.cleaned();
+        let view = FriendsView { friends: vec![result.friend], ..Default::default() }.cleaned();
         view.friends.into_iter().next().ok_or_else(bad_response)
     }
 

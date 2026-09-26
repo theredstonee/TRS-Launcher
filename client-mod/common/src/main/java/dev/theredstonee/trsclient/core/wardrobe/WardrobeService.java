@@ -124,12 +124,44 @@ public final class WardrobeService {
 		public final String name;
 		public final boolean trs;
 		public final boolean animated;
+		/** An Freunde weitergebbar (eigener freigegebener Upload oder angenommener geteilter Umhang). */
+		public final boolean shareable;
+		/** Eigener Upload (nicht geteilt bekommen). */
+		public final boolean own;
+		/** Eigener Upload wartet noch auf Freigabe. */
+		public final boolean pending;
+		/** Von einem Freund geteilt: von wem (Name) bzw. null. */
+		public final String sharedFrom;
+		/** Ersteller eines geteilten Umhangs (Name) bzw. null. */
+		public final String sharedCreator;
+		/** Sichtbare Inhaber (0 = mit niemandem geteilt). */
+		public final int holders;
 
 		Cape(String key, String name, boolean trs, boolean animated) {
+			this(key, name, trs, animated, false, false, false, null, null, 0);
+		}
+
+		Cape(String key, String name, boolean trs, boolean animated, boolean shareable, boolean own, boolean pending,
+				String sharedFrom, String sharedCreator, int holders) {
 			this.key = key;
 			this.name = name;
 			this.trs = trs;
 			this.animated = animated;
+			this.shareable = shareable;
+			this.own = own;
+			this.pending = pending;
+			this.sharedFrom = sharedFrom;
+			this.sharedCreator = sharedCreator;
+			this.holders = holders;
+		}
+
+		/** TRS-ID ohne Präfix (nur bei {@link #trs}). */
+		public String id() {
+			return key.substring(key.indexOf(':') + 1);
+		}
+
+		public boolean shared() {
+			return sharedFrom != null;
 		}
 	}
 
@@ -581,6 +613,42 @@ public final class WardrobeService {
 		});
 	}
 
+	/** TRS-Umhänge neu laden (z. B. nachdem ein geteiltes Angebot angenommen oder zurückgegeben wurde). */
+	public void refreshCapes() {
+		submit(null, () -> {
+			ensureAccount();
+			String token = platform.trsToken();
+			if (token == null) return;
+			loadTrsCapes(api(), token);
+			publish(null, null, false, null);
+		});
+	}
+
+	/**
+	 * Vorschau-Bilder für Umhang-Angebote laden (Schlüssel {@code offer:<id>} in {@link State#capeArt}); schon
+	 * geladene werden übersprungen. Die Texturen sind freigegeben, also öffentlich.
+	 */
+	public void previewOffers(final List<dev.theredstonee.trsclient.core.online.CapeShare.Offer> offers) {
+		if (offers == null || offers.isEmpty()) return;
+		final List<dev.theredstonee.trsclient.core.online.CapeShare.Offer> list =
+				new ArrayList<dev.theredstonee.trsclient.core.online.CapeShare.Offer>(offers);
+		submit(null, () -> {
+			boolean loaded = false;
+			for (dev.theredstonee.trsclient.core.online.CapeShare.Offer o : list) {
+				String key = offerKey(o.capeId);
+				if (capeArt.containsKey(key) || o.url == null) continue;
+				loadCapeArt(key, o.url, o.width, o.height, null);
+				loaded = true;
+			}
+			if (loaded) publish(null, null, false, null);
+		});
+	}
+
+	/** Schlüssel der Vorschau eines Angebots in {@link State#capeArt}. */
+	public static String offerKey(String capeId) {
+		return "offer:" + capeId;
+	}
+
 	/** Meldung ausblenden. */
 	public void dismissMessage() {
 		State s = state.get();
@@ -1008,22 +1076,19 @@ public final class WardrobeService {
 				if (c == null || c.id == null || !c.id.matches("[a-z0-9][a-z0-9_-]{0,39}")) continue;
 				if (!Boolean.TRUE.equals(c.owned)) continue;
 				String key = "trs:" + c.id;
-				out.add(new Cape(key, SkinFiles.cleanName(c.name, c.id), true, c.frames > 1));
-				if (Boolean.TRUE.equals(c.active)) activeTrsCape = key;
-				if (!capeArt.containsKey(key) && c.url != null) {
-					try {
-						Http.Response r = trsTexture(c.url, token);
-						PngDecoder.Image img = PngDecoder.decode(r.body);
-						int fw = c.width > 0 ? c.width : img.width;
-						int fh = c.height > 0 ? c.height : fw / 2;
-						if (fw == img.width && fh <= img.height && CapeImage.width(fw, fh) == fw) {
-							int[] frame = Arrays.copyOf(img.argb, fw * fh);
-							capeArt.put(key, new CapeArt(frame, fw, fh));
-						}
-					} catch (Exception ignored) {
-						// ohne Vorschau
-					}
+				String from = null;
+				String creator = null;
+				if (c.shared != null && c.shared.from != null && c.shared.creator != null) {
+					from = playerName(c.shared.from.name);
+					creator = playerName(c.shared.creator.name);
+					if (from == null || creator == null) from = creator = null;
 				}
+				boolean upload = "upload".equals(c.kind);
+				int holders = c.holders == null ? 0 : Math.max(0, Math.min(1000, c.holders));
+				out.add(new Cape(key, SkinFiles.cleanName(c.name, c.id), true, c.frames > 1, Boolean.TRUE.equals(c.shareable),
+						upload && from == null, upload && from == null && "pending".equals(c.status), from, creator, holders));
+				if (Boolean.TRUE.equals(c.active)) activeTrsCape = key;
+				if (!capeArt.containsKey(key) && c.url != null) loadCapeArt(key, c.url, c.width, c.height, token);
 				if (out.size() >= 64) break;
 			}
 			trsCapes = out;
@@ -1032,6 +1097,26 @@ public final class WardrobeService {
 		} catch (IOException ignored) {
 			// später
 		}
+	}
+
+	/** Erstes Bild einer Umhang-Textur als Vorschau ablegen (Fehler = ohne Vorschau). */
+	private void loadCapeArt(String key, String url, int width, int height, String token) {
+		try {
+			Http.Response r = trsTexture(url, token);
+			PngDecoder.Image img = PngDecoder.decode(r.body);
+			int fw = width > 0 ? width : img.width;
+			int fh = height > 0 ? height : fw / 2;
+			if (fw == img.width && fh <= img.height && CapeImage.width(fw, fh) == fw) {
+				int[] frame = Arrays.copyOf(img.argb, fw * fh);
+				capeArt.put(key, new CapeArt(frame, fw, fh));
+			}
+		} catch (Exception ignored) {
+			// ohne Vorschau
+		}
+	}
+
+	private static String playerName(String raw) {
+		return raw != null && raw.matches("[A-Za-z0-9_]{1,16}") ? raw : null;
 	}
 
 	private Http.Response trsTexture(String url, String token) throws IOException, ApiException {

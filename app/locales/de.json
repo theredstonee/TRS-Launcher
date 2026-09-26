@@ -213,7 +213,14 @@
       "invalid_request": "Die Anfrage war ungültig.",
       "not_found": "Nicht gefunden.",
       "rejected": "Die TRS API hat die Anfrage abgelehnt.",
-      "frame_time_required": "Animierte Umhänge brauchen ein Bildtempo."
+      "frame_time_required": "Animierte Umhänge brauchen ein Bildtempo.",
+      "cape_not_approved": "Teilen geht erst, wenn das Team den Umhang freigegeben hat.",
+      "cape_not_shareable": "Nur eigene hochgeladene Umhänge können geteilt werden.",
+      "already_shared": "Dieser Spieler hat den Umhang schon oder ein Angebot dafür.",
+      "share_limit": "Dieser Umhang ist schon mit 20 Spielern geteilt.",
+      "offer_inbox_full": "Dieser Spieler hat zu viele offene Umhang-Angebote.",
+      "offer_not_found": "Dieses Angebot gibt es nicht mehr.",
+      "holder_not_found": "Dieser Spieler hat den Umhang nicht (mehr) von dir."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -2345,7 +2352,8 @@
       "free": "Frei",
       "code": "Code",
       "team": "Team",
-      "locked": "Gesperrt"
+      "locked": "Gesperrt",
+      "shared": "Geteilt"
     },
     "status": {
       "pending": "Wartet auf Freigabe",
@@ -2360,7 +2368,8 @@
       "playingLoaderServer": "Spielt {version} ({loader}) auf {server}"
     },
     "toasts": {
-      "friendRequest": "{name} möchte mit dir befreundet sein."
+      "friendRequest": "{name} möchte mit dir befreundet sein.",
+      "capeOffer": "{name} bietet dir den Umhang „{cape}“ an."
     }
   },
   "trsGate": {
@@ -2564,6 +2573,76 @@
       },
       "upload": "Hochladen",
       "uploading": "Wird hochgeladen …"
+    }
+  },
+  "capeShare": {
+    "friendMenu": "Umhang teilen",
+    "toasts": {
+      "accepted": "„{cape}“ ist jetzt bei deinen Umhängen.",
+      "withdrawn": "Angebot an {name} zurückgezogen.",
+      "offered": "„{cape}“ an {name} angeboten.",
+      "revoked": "{name} hat den Umhang nicht mehr.",
+      "givenBack": "Du hast „{cape}“ zurückgegeben."
+    },
+    "offers": {
+      "incoming": "Umhang-Angebote ({count})",
+      "from": "Von {name} · {date}",
+      "fromVia": "Von {name} · erstellt von {creator} · {date}",
+      "accept": "Annehmen",
+      "accepting": "Nehme an …",
+      "decline": "Ablehnen",
+      "hint": "Angenommene Umhänge stehen bei deinen Umhängen und lassen sich wie eigene tragen.",
+      "outgoing": "Deine offenen Umhang-Angebote",
+      "to": "An {name} · {date}",
+      "withdraw": "Zurückziehen"
+    },
+    "dialog": {
+      "title": "„{cape}“ teilen",
+      "intro": "Dein Freund bekommt ein Angebot und entscheidet, ob er es annimmt. Wer annimmt, kann den Umhang tragen und an eigene Freunde weitergeben.",
+      "reshare": "Erstellt von {creator} – du kannst ihn an deine Freunde weitergeben.",
+      "pickFriend": "Mit Freund teilen",
+      "search": "Freunde suchen",
+      "share": "Teilen",
+      "sharing": "Teile …",
+      "allHaveIt": "Alle deine Freunde haben den Umhang schon oder ein Angebot dafür.",
+      "noFriends": "Du hast noch keine TRS-Freunde.",
+      "full": "Dieser Umhang ist schon mit der Höchstzahl von {limit} Spielern geteilt.",
+      "holders": "Geteilt mit",
+      "cascade": "Nimmst du einen Umhang zurück, verlieren ihn auch alle, an die dieser Spieler ihn weitergegeben hat."
+    },
+    "holders": {
+      "offered": "Angebot offen",
+      "accepted": "Hat den Umhang",
+      "via": "über {name}",
+      "confirm": "Wirklich?",
+      "withdraw": "Zurückziehen",
+      "revoke": "Zurücknehmen",
+      "none": "Noch niemand hat diesen Umhang von dir."
+    },
+    "card": {
+      "holders": "Geteilt mit {n} Spieler | Geteilt mit {n} Spielern"
+    },
+    "selected": {
+      "from": "Von {name} mit dir geteilt.",
+      "fromVia": "Von {name} mit dir geteilt · erstellt von {creator}.",
+      "afterApproval": "Nach der Freigabe kannst du diesen Umhang mit Freunden teilen."
+    },
+    "actions": {
+      "share": "Mit Freund teilen",
+      "manage": "Geteilt ({count})",
+      "giveBack": "Zurückgeben"
+    },
+    "giveBackDialog": {
+      "title": "Umhang zurückgeben?",
+      "text": "{name} verschwindet aus deinen Umhängen. Alle, an die du ihn weitergegeben hast, verlieren ihn auch."
+    },
+    "deleteWarning": "{n} Spieler, der ihn von dir hat, verliert ihn auch. | {n} Spieler, die ihn von dir haben, verlieren ihn auch.",
+    "friendDialog": {
+      "title": "Umhang mit {name} teilen",
+      "intro": "Such dir einen Umhang aus – dein Freund bekommt ein Angebot und entscheidet, ob er es annimmt.",
+      "offered": "Angeboten",
+      "none": "Du hast noch keinen Umhang zum Teilen. Lade einen eigenen hoch – sobald das Team ihn freigibt, kannst du ihn teilen.",
+      "onlyPending": "Deine Umhänge werden noch geprüft – nach der Freigabe kannst du sie teilen."
     }
   },
   "friends": {

@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { setLocale } from '../app/utils/i18n'
 import {
   trsAdminCapeSchema,
+  trsCapeHoldersSchema,
   trsCapeNameSchema,
+  trsCapeOffersSchema,
   trsCapeSchema,
   trsCapeSourceSchema,
   trsDate,
@@ -47,7 +49,13 @@ const cape = {
   active: false,
   rejectReason: null,
   texture: 'data:image/png;base64,iVBORw0KGgo=',
+  shareable: false,
+  shared: null,
+  holders: 0,
 }
+
+const ALEX = { uuid: '75c1a6f3112240abbdb57b9d21c64232', name: 'Alex' }
+const BOB = { uuid: 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0', name: 'Bob' }
 
 describe('TRS-Daten aus dem Kern', () => {
   it('prüft Status und Umhänge', () => {
@@ -108,11 +116,47 @@ describe('TRS-Daten aus dem Kern', () => {
         },
       ],
       requests: { incoming: [], outgoing: [] },
+      capeOffers: 2,
     }
     expect(trsFriendsSchema.safeParse(view).success).toBe(true)
+    expect(trsFriendsSchema.safeParse({ ...view, capeOffers: -1 }).success).toBe(false)
     const broken = structuredClone(view)
     broken.friends[0]!.presence!.state = 'away'
     expect(trsFriendsSchema.safeParse(broken).success).toBe(false)
+  })
+})
+
+describe('Umhänge teilen', () => {
+  const upload = { ...cape, id: 'u0123456789abcdef0123', kind: 'upload', unlock: 'owner', frames: 1, frameTimeMs: null }
+
+  it('prüft geteilte Umhänge, Angebote und Inhaber', () => {
+    const shared = { ...upload, shareable: true, shared: { from: BOB, creator: ALEX }, holders: 1 }
+    expect(trsCapeSchema.safeParse(shared).success).toBe(true)
+    expect(trsCapeSchema.safeParse({ ...shared, shared: { from: { uuid: 'x', name: 'Bob' }, creator: ALEX } }).success).toBe(false)
+    expect(trsCapeSchema.safeParse({ ...shared, holders: -1 }).success).toBe(false)
+
+    const offers = {
+      incoming: [{ cape: shared, from: BOB, creator: ALEX, createdAt: '2026-09-25T18:00:00.000Z' }],
+      outgoing: [{ cape: upload, to: BOB, createdAt: null }],
+    }
+    expect(trsCapeOffersSchema.safeParse(offers).success).toBe(true)
+    expect(trsCapeOffersSchema.safeParse({ ...offers, incoming: [{ ...offers.incoming[0], from: null }] }).success).toBe(false)
+
+    const holders = {
+      holders: [{ ...BOB, status: 'accepted', grantedBy: ALEX, createdAt: 'x', acceptedAt: 'y' }],
+      count: 1,
+      limit: 20,
+    }
+    expect(trsCapeHoldersSchema.safeParse(holders).success).toBe(true)
+    expect(trsCapeHoldersSchema.safeParse({ ...holders, holders: [{ ...holders.holders[0], status: 'pending' }] }).success).toBe(false)
+  })
+
+  it('beschriftet geteilte Umhänge', async () => {
+    const shared = { kind: 'upload' as const, unlock: 'owner' as const, shared: { from: BOB, creator: ALEX } }
+    expect(trsUnlockLabel(shared)).toBe('Geteilt')
+    expect(trsUnlockLabel({ kind: 'upload', unlock: 'owner', shared: null })).toBe('Eigener')
+    await setLocale('en')
+    expect(trsUnlockLabel(shared)).toBe('Shared')
   })
 })
 

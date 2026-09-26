@@ -131,6 +131,23 @@ ist der unten beschriebene Online-Status und endet, wenn du die Welt verlässt b
 - **Abschalten:** „TRS-Symbol zeigen“ (*Einstellungen → Datenschutz*) blendet dein Symbol für alle aus. Den
   Online-Status auf „niemand“ zu stellen versteckt dich nur in Freundeslisten – das Symbol **nicht**.
 
+### Umhänge mit Freunden teilen
+
+Einen Umhang, den du hochgeladen hast, kannst du mit einem Freund teilen, sobald das Team ihn freigegeben hat. Dein
+Freund bekommt im Launcher und im Spiel ein Angebot und entscheidet, ob er es annimmt. Dafür speichert der TRS-Server,
+welcher Umhang wem von wem wann angeboten wurde und ob das Angebot angenommen ist. Nach dem Annehmen kann dein Freund
+den Umhang wie seinen eigenen tragen, und andere TRS-Spieler sehen ihn an ihm. Ein Freund darf den Umhang an seine
+eigenen Freunde weitergeben (höchstens 20 Spieler je Umhang).
+
+- **Wer was sieht:** Der Ersteller sieht alle, die den Umhang haben oder ein offenes Angebot dafür (mit ihrem
+  Minecraft-Namen), auch Spieler, an die ein Freund ihn weitergegeben hat. Wer den Umhang hat, sieht, von wem er ihn
+  bekommen hat, den Namen des Erstellers und die Spieler, an die er ihn selbst weitergegeben hat.
+- **Beenden:** Der Ersteller kann den Umhang jederzeit jedem wieder wegnehmen; dann verlieren ihn auch alle, an die
+  dieser Spieler ihn weitergegeben hat. Jeder kann einen geteilten Umhang zurückgeben. Wenn du einen Freund entfernst
+  oder einen Spieler blockierst, fallen offene Angebote zwischen euch weg; schon angenommene Umhänge bleiben, bis jemand
+  sie zurücknimmt. Wird der Umhang gelöscht, vom Team abgelehnt oder ein TRS-Account gelöscht, sind die betroffenen
+  Teilungen sofort weg.
+
 ### Was gespeichert wird
 
 | Daten | Wozu |
@@ -142,6 +159,7 @@ ist der unten beschriebene Online-Status und endet, wenn du die Welt verlässt b
 | Dein gewählter Umhang, per Code freigeschaltete oder vom Team vergebene Umhänge | Um anderen TRS-Spielern deinen Umhang zu zeigen |
 | Umhänge, die du hochlädst (das Bild, neu kodiert ohne Metadaten), ihr Prüfstatus und ein optionaler Name | Umhang-Uploads; jeder Upload wird vom Team geprüft, bevor andere ihn sehen |
 | Meldungen, die du zu Umhängen anderer Spieler abgibst (Grund, optionale Notiz) | Moderation |
+| Geteilte Umhänge: welche Umhänge du wem angeboten hast (und wer sie weitergegeben hat), offene Angebote an dich und die Umhänge, die Freunde mit dir geteilt haben, jeweils mit Zeitpunkt und ob angenommen | Umhänge mit Freunden teilen (siehe oben) |
 | Freunde, Freundschaftsanfragen und Blockierungen | Die Freundesliste |
 | Online-Status: „online im Launcher“ oder „im Spiel“ (vom Launcher oder vom TRS Client) mit Version und Modloader und – nur wenn du „Server teilen“ eingeschaltet hast – die Serveradresse | Um Freunden zu zeigen, was du spielst, und sie nachkommen zu lassen; für das TRS-Symbol, während du spielst (siehe oben) |
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
@@ -190,7 +208,8 @@ Profiling und keinen Verkauf von Daten.
   Skin wird auch auf dem Server gelöscht). Vermerke über gelöschte Skins bleiben 30 Tage, damit deine anderen PCs sie
   ebenfalls löschen können.
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
-  Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, eingelöste Codes, Meldungen,
+  Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
+  Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
   deinen Online-Status und alle synchronisierten Skins, Presets und Einstellungen. Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
 - Nach der Löschung bleibt nur ein bestehender Sperr-Eintrag erhalten (deine UUID, der Grund und der Zeitpunkt), damit

@@ -213,7 +213,14 @@
       "invalid_request": "Het verzoek was ongeldig.",
       "not_found": "Niet gevonden.",
       "rejected": "De TRS-API heeft het verzoek geweigerd.",
-      "frame_time_required": "Geanimeerde capes hebben een snelheid nodig."
+      "frame_time_required": "Geanimeerde capes hebben een snelheid nodig.",
+      "cape_not_approved": "Je kunt de cape delen zodra het team hem heeft goedgekeurd.",
+      "cape_not_shareable": "Alleen je eigen geüploade capes kunnen worden gedeeld.",
+      "already_shared": "Deze speler heeft de cape al of een aanbod ervoor.",
+      "share_limit": "Deze cape is al met 20 spelers gedeeld.",
+      "offer_inbox_full": "Deze speler heeft te veel openstaande cape-aanbiedingen.",
+      "offer_not_found": "Dit aanbod bestaat niet meer.",
+      "holder_not_found": "Deze speler heeft de cape (niet meer) van jou."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -2345,7 +2352,8 @@
       "free": "Gratis",
       "code": "Code",
       "team": "Team",
-      "locked": "Vergrendeld"
+      "locked": "Vergrendeld",
+      "shared": "Gedeeld"
     },
     "status": {
       "pending": "Wacht op goedkeuring",
@@ -2360,7 +2368,8 @@
       "playingLoaderServer": "Speelt {version} ({loader}) op {server}"
     },
     "toasts": {
-      "friendRequest": "{name} wil je vriend worden."
+      "friendRequest": "{name} wil je vriend worden.",
+      "capeOffer": "{name} biedt je de cape ‘{cape}’ aan."
     }
   },
   "trsGate": {
@@ -2564,6 +2573,76 @@
       },
       "upload": "Uploaden",
       "uploading": "Uploaden …"
+    }
+  },
+  "capeShare": {
+    "friendMenu": "Cape delen",
+    "toasts": {
+      "accepted": "‘{cape}’ staat nu bij je capes.",
+      "withdrawn": "Aanbod aan {name} ingetrokken.",
+      "offered": "‘{cape}’ aangeboden aan {name}.",
+      "revoked": "{name} heeft de cape niet meer.",
+      "givenBack": "Je hebt ‘{cape}’ teruggegeven."
+    },
+    "offers": {
+      "incoming": "Cape-aanbiedingen ({count})",
+      "from": "Van {name} · {date}",
+      "fromVia": "Van {name} · gemaakt door {creator} · {date}",
+      "accept": "Accepteren",
+      "accepting": "Accepteren…",
+      "decline": "Weigeren",
+      "hint": "Geaccepteerde capes staan bij je capes en kun je dragen als je eigen.",
+      "outgoing": "Je openstaande cape-aanbiedingen",
+      "to": "Aan {name} · {date}",
+      "withdraw": "Intrekken"
+    },
+    "dialog": {
+      "title": "‘{cape}’ delen",
+      "intro": "Je vriend krijgt een aanbod en beslist of hij het accepteert. Wie accepteert, kan de cape dragen en doorgeven aan eigen vrienden.",
+      "reshare": "Gemaakt door {creator} – je kunt hem doorgeven aan je vrienden.",
+      "pickFriend": "Delen met een vriend",
+      "search": "Vrienden zoeken",
+      "share": "Delen",
+      "sharing": "Delen…",
+      "allHaveIt": "Al je vrienden hebben deze cape al of een aanbod ervoor.",
+      "noFriends": "Je hebt nog geen TRS-vrienden.",
+      "full": "Deze cape is al gedeeld met het maximum van {limit} spelers.",
+      "holders": "Gedeeld met",
+      "cascade": "Neem je een cape terug, dan verliest iedereen aan wie deze speler hem doorgaf hem ook."
+    },
+    "holders": {
+      "offered": "Aanbod open",
+      "accepted": "Heeft de cape",
+      "via": "via {name}",
+      "confirm": "Zeker?",
+      "withdraw": "Intrekken",
+      "revoke": "Terugnemen",
+      "none": "Nog niemand heeft deze cape van jou."
+    },
+    "card": {
+      "holders": "Gedeeld met {n} speler | Gedeeld met {n} spelers"
+    },
+    "selected": {
+      "from": "Met je gedeeld door {name}.",
+      "fromVia": "Met je gedeeld door {name} · gemaakt door {creator}.",
+      "afterApproval": "Na goedkeuring kun je deze cape met vrienden delen."
+    },
+    "actions": {
+      "share": "Delen met een vriend",
+      "manage": "Gedeeld ({count})",
+      "giveBack": "Teruggeven"
+    },
+    "giveBackDialog": {
+      "title": "Cape teruggeven?",
+      "text": "{name} verdwijnt uit je capes. Iedereen aan wie je hem doorgaf, verliest hem ook."
+    },
+    "deleteWarning": "{n} speler die hem van jou heeft, verliest hem ook. | {n} spelers die hem van jou hebben, verliezen hem ook.",
+    "friendDialog": {
+      "title": "Een cape delen met {name}",
+      "intro": "Kies een cape – je vriend krijgt een aanbod en beslist of hij het accepteert.",
+      "offered": "Aangeboden",
+      "none": "Je hebt nog geen cape om te delen. Upload je eigen cape – zodra het team hem goedkeurt, kun je hem delen.",
+      "onlyPending": "Je capes worden nog gecontroleerd – na goedkeuring kun je ze delen."
     }
   },
   "friends": {

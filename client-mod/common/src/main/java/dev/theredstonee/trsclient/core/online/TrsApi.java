@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +123,48 @@ public final class TrsApi {
 	static final class FriendsResponse {
 		List<FriendDto> friends;
 		RequestsDto requests;
+		/** Offene Umhang-Angebote an mich (API.md §5.10; fehlt bei alten APIs). */
+		Integer capeOffers;
+	}
+
+	// Umhänge teilen (API.md §5.10)
+
+	static final class OffersResponse {
+		List<OfferDto> incoming;
+	}
+
+	static final class OfferDto {
+		OfferCapeDto cape;
+		UserDto from;
+		UserDto creator;
+		String createdAt;
+	}
+
+	static final class OfferCapeDto {
+		String id;
+		String name;
+		String url;
+		Integer width;
+		Integer height;
+		Integer frames;
+	}
+
+	static final class OfferRequest {
+		String capeId;
+		String friend;
+	}
+
+	static final class HoldersResponse {
+		List<HolderDto> holders;
+		Integer count;
+		Integer limit;
+	}
+
+	static final class HolderDto {
+		String uuid;
+		String name;
+		String status;
+		UserDto grantedBy;
 	}
 
 	static final class FriendDto {
@@ -335,7 +378,86 @@ public final class TrsApi {
 			users(body.requests.incoming, incoming);
 			users(body.requests.outgoing, outgoing);
 		}
-		return new FriendsView(FriendsView.sorted(friends), incoming, outgoing);
+		int offers = body == null || body.capeOffers == null ? 0 : Math.max(0, Math.min(1000, body.capeOffers));
+		return new FriendsView(FriendsView.sorted(friends), incoming, outgoing, offers,
+				Collections.<CapeShare.Offer>emptyList());
+	}
+
+	// --- Umhänge teilen (API.md §5.10) ---
+
+	/** {@code GET /v1/cape-offers}: offene Angebote an mich, bereinigt (höchstens 100). */
+	public List<CapeShare.Offer> capeOffers(String token) throws IOException, ApiException {
+		OffersResponse body = parse(call("GET", "/v1/cape-offers", null, token, 200), OffersResponse.class);
+		List<CapeShare.Offer> out = new ArrayList<>();
+		if (body == null || body.incoming == null) return out;
+		for (OfferDto o : body.incoming) {
+			if (o == null || o.cape == null || o.from == null || o.creator == null || out.size() >= 100) continue;
+			if (!CapeShare.validCapeId(o.cape.id)) continue;
+			String from = Uuids.normalize(o.from.uuid);
+			String fromName = FriendsView.name(o.from.name);
+			String creator = Uuids.normalize(o.creator.uuid);
+			String creatorName = FriendsView.name(o.creator.name);
+			if (from == null || fromName == null || creator == null || creatorName == null) continue;
+			String url = o.cape.url != null && config.isApiUrl(o.cape.url) ? o.cape.url : null;
+			int w = o.cape.width == null ? 0 : o.cape.width;
+			int h = o.cape.height == null ? 0 : o.cape.height;
+			int frames = o.cape.frames == null ? 1 : Math.max(1, Math.min(64, o.cape.frames));
+			out.add(new CapeShare.Offer(o.cape.id, CapeShare.capeName(o.cape.name, o.cape.id), from, fromName, creator,
+					creatorName, url, w, h, frames, FriendsView.time(o.createdAt)));
+		}
+		return out;
+	}
+
+	/** {@code POST /v1/cape-offers}: eigenen (freigegebenen) oder angenommenen geteilten Umhang einem Freund anbieten. */
+	public void offerCape(String token, String capeId, String friend) throws IOException, ApiException {
+		OfferRequest body = new OfferRequest();
+		body.capeId = capePath(capeId);
+		body.friend = path(friend);
+		call("POST", "/v1/cape-offers", GSON.toJson(body), token, 201, 200);
+	}
+
+	/** {@code POST /v1/cape-offers/{capeId}/accept}. */
+	public void acceptCapeOffer(String token, String capeId) throws IOException, ApiException {
+		call("POST", "/v1/cape-offers/" + capePath(capeId) + "/accept", null, token, 200);
+	}
+
+	/** {@code POST /v1/cape-offers/{capeId}/decline}. */
+	public void declineCapeOffer(String token, String capeId) throws IOException, ApiException {
+		call("POST", "/v1/cape-offers/" + capePath(capeId) + "/decline", null, token, 204, 200);
+	}
+
+	/** {@code GET /v1/capes/{id}/holders}: wer den Umhang von mir hat (Ersteller: alle, sonst der eigene Ast). */
+	public CapeShare.Holders capeHolders(String token, String capeId) throws IOException, ApiException {
+		String id = capePath(capeId);
+		HoldersResponse body = parse(call("GET", "/v1/capes/" + id + "/holders", null, token, 200), HoldersResponse.class);
+		List<CapeShare.Holder> out = new ArrayList<>();
+		if (body != null && body.holders != null) {
+			for (HolderDto h : body.holders) {
+				if (h == null || h.grantedBy == null || out.size() >= 100) continue;
+				String uuid = Uuids.normalize(h.uuid);
+				String name = FriendsView.name(h.name);
+				String by = Uuids.normalize(h.grantedBy.uuid);
+				String byName = FriendsView.name(h.grantedBy.name);
+				boolean offered = "offered".equals(h.status);
+				if (uuid == null || name == null || by == null || byName == null) continue;
+				if (!offered && !"accepted".equals(h.status)) continue;
+				out.add(new CapeShare.Holder(uuid, name, offered, by, byName));
+			}
+		}
+		int count = body == null || body.count == null ? out.size() : Math.max(0, Math.min(1000, body.count));
+		int limit = body == null || body.limit == null ? 0 : Math.max(0, Math.min(1000, body.limit));
+		return new CapeShare.Holders(id, out, count, limit);
+	}
+
+	/** {@code DELETE /v1/capes/{id}/holders/{uuid}}: entziehen/zurückziehen (samt Weitergegebenem); eigene UUID = zurückgeben. */
+	public void revokeCapeShare(String token, String capeId, String holder) throws IOException, ApiException {
+		call("DELETE", "/v1/capes/" + capePath(capeId) + "/holders/" + path(holder), null, token, 204, 200);
+	}
+
+	/** Umhang-ID für den Pfad (nur gültige IDs – nie beliebiger Text in der Adresse). */
+	private static String capePath(String capeId) throws ApiException {
+		if (!CapeShare.validCapeId(capeId)) throw new ApiException(0, "invalid_request", 0);
+		return capeId;
 	}
 
 	private static void users(List<UserDto> in, List<FriendsView.User> out) {

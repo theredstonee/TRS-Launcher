@@ -6,6 +6,8 @@ import {
   trsAdminStatsSchema,
   trsAdminUserSchema,
   trsBlockedSchema,
+  trsCapeHoldersSchema,
+  trsCapeOffersSchema,
   trsCapeSchema,
   trsCapeSourceSchema,
   trsCodeSchema,
@@ -487,6 +489,14 @@ export const backend = {
       call<void>('trs_report_cape', { id, reason, note }),
     redeem: (code: string) => checked(trsRedeemSchema, 'trs_redeem', { code }),
     playerCapes: (uuids: string[]) => checked(z.array(trsPlayerCapeSchema), 'trs_player_capes', { uuids }),
+    /** Umhänge teilen: offene Angebote an mich (mit Vorschau) und von mir. */
+    capeOffers: () => checked(trsCapeOffersSchema, 'trs_cape_offers'),
+    offerCape: (capeId: string, friend: string) => call<void>('trs_offer_cape', { capeId, friend }),
+    acceptCapeOffer: (capeId: string) => call<void>('trs_accept_cape_offer', { capeId }),
+    declineCapeOffer: (capeId: string) => call<void>('trs_decline_cape_offer', { capeId }),
+    capeHolders: (capeId: string) => checked(trsCapeHoldersSchema, 'trs_cape_holders', { capeId }),
+    /** Entziehen / Angebot zurückziehen (samt Weitergegebenem); eigene UUID = zurückgeben. */
+    revokeCapeShare: (capeId: string, holder: string) => call<void>('trs_revoke_cape_share', { capeId, holder }),
     friends: () => checked(trsFriendsSchema, 'trs_friends'),
     blocks: () => checked(z.array(trsBlockedSchema), 'trs_blocks'),
     friendRequest: (target: string) => checked(trsFriendRequestResultSchema, 'trs_friend_request', { target }),

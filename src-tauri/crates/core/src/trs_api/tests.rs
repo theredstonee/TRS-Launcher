@@ -279,6 +279,7 @@ fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&R
         match (req.method.as_str(), path) {
             ("GET", "/v1/capes/team.png?v=abc123") => Response::png(png_with(128, 64 * 4, &[])),
             ("GET", "/v1/capes/u0123456789abcdef0123.png?v=p1") if authed => Response::png(png_with(64, 32, &[])),
+            ("GET", "/v1/capes/u1111111111111111111a.png?v=s1") => Response::png(png_with(64, 32, &[])),
             ("GET", "/users/profiles/minecraft/Griefer") => Response::json(200, json!({ "id": OTHER, "name": "Griefer" })),
             _ if !authed => Response::error(401, "unauthorized"),
             ("GET", "/v1/capes") => Response::json(
@@ -289,7 +290,13 @@ fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&R
                       "animated": true, "frames": 4, "frameTimeMs": 150, "owned": true, "active": true },
                     { "id": "u0123456789abcdef0123", "name": "Mein Umhang", "kind": "upload", "unlock": "owner", "status": "pending",
                       "url": format!("{base}/v1/capes/u0123456789abcdef0123.png?v=p1"), "width": 64, "height": 32, "scale": 1,
-                      "animated": false, "frames": 1, "frameTimeMs": null, "owned": true, "active": false, "rejectReason": null },
+                      "animated": false, "frames": 1, "frameTimeMs": null, "owned": true, "active": false, "rejectReason": null,
+                      "shareable": false, "shared": null, "holders": 0 },
+                    { "id": "u1111111111111111111a", "name": "Von Bob", "kind": "upload", "unlock": "owner", "status": "approved",
+                      "url": format!("{base}/v1/capes/u1111111111111111111a.png?v=s1"), "width": 64, "height": 32, "scale": 1,
+                      "frames": 1, "frameTimeMs": null, "owned": true, "active": false, "rejectReason": null,
+                      "shareable": true, "holders": 3,
+                      "shared": { "from": { "uuid": OTHER, "name": "Bob\u{0007}" }, "creator": { "uuid": ACC, "name": "Alex" } } },
                     { "id": "evil", "name": "x", "kind": "builtin", "unlock": "free", "status": "approved",
                       "url": "https://evil.example/x.png", "width": 64, "height": 32, "scale": 1,
                       "animated": false, "frames": 1, "frameTimeMs": null, "owned": true, "active": false },
@@ -326,8 +333,40 @@ fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&R
                     { "uuid": "not-a-uuid", "name": "Broken" },
                     { "uuid": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0", "name": "Eve",
                       "presence": { "state": "in-game", "game": { "version": "1.21.1", "loader": "fabric", "server": "evil.example/path?x" } } }
-                ], "requests": { "incoming": [ { "uuid": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0", "name": "Alex", "createdAt": "x" } ], "outgoing": [] } }),
+                ], "requests": { "incoming": [ { "uuid": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0", "name": "Alex", "createdAt": "x" } ], "outgoing": [] },
+                   "capeOffers": 2 }),
             ),
+            ("GET", "/v1/cape-offers") => Response::json(
+                200,
+                json!({ "incoming": [
+                    { "cape": { "id": "u1111111111111111111a", "name": "Von Bob", "kind": "upload", "unlock": "owner", "status": "approved",
+                        "url": format!("{base}/v1/capes/u1111111111111111111a.png?v=s1"), "width": 64, "height": 32, "scale": 1,
+                        "frames": 1, "frameTimeMs": null },
+                      "from": { "uuid": OTHER, "name": "Bob" }, "creator": { "uuid": ACC, "name": "Alex" }, "createdAt": "2026-09-25T18:00:00.000Z" },
+                    { "cape": { "id": "u1111111111111111111a", "name": "x", "kind": "upload", "unlock": "owner", "status": "approved",
+                        "url": "", "width": 64, "height": 32, "scale": 1, "frames": 1 },
+                      "from": { "uuid": "kaputt", "name": "Bob" }, "creator": { "uuid": ACC, "name": "Alex" } }
+                  ], "outgoing": [
+                    { "cape": { "id": "u0123456789abcdef0123", "name": "Mein Umhang", "kind": "upload", "unlock": "owner", "status": "approved",
+                        "url": format!("{base}/v1/capes/u0123456789abcdef0123.png?v=p1"), "width": 64, "height": 32, "scale": 1, "frames": 1 },
+                      "to": { "uuid": OTHER, "name": "Bob" }, "createdAt": "x" }
+                  ] }),
+            ),
+            ("POST", "/v1/cape-offers") if req.json()["friend"] == OTHER => Response::json(201, json!({ "offer": {} })),
+            ("POST", "/v1/cape-offers") => Response::error(409, "share_limit"),
+            ("POST", "/v1/cape-offers/u1111111111111111111a/accept") => Response::json(200, json!({ "cape": {} })),
+            ("POST", "/v1/cape-offers/u1111111111111111111a/decline") => Response::empty(204),
+            ("GET", "/v1/capes/u0123456789abcdef0123/holders") => Response::json(
+                200,
+                json!({ "holders": [
+                    { "uuid": OTHER, "name": "Bob", "status": "accepted", "grantedBy": { "uuid": ACC, "name": "Alex" },
+                      "createdAt": "x", "acceptedAt": "y" },
+                    { "uuid": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0", "name": "Eve", "status": "weird", "grantedBy": { "uuid": OTHER, "name": "Bob" } },
+                    { "uuid": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0", "name": "Cleo", "status": "offered", "grantedBy": { "uuid": OTHER, "name": "Bob" },
+                      "createdAt": "x", "acceptedAt": null }
+                  ], "count": 3, "limit": 20 }),
+            ),
+            ("DELETE", p) if p == format!("/v1/capes/u0123456789abcdef0123/holders/{OTHER}") => Response::empty(204),
             ("POST", "/v1/web-login/approve") => match req.json()["code"].as_str().unwrap_or_default() {
                 "ABCD-1234" => Response::empty(204),
                 "WITH-BODY" => Response::json(200, json!({ "approved": true, "extra": [1, 2] })),
@@ -375,12 +414,19 @@ async fn catalog_loads_checked_textures_and_caches_only_approved_ones() {
 
     let capes = launcher.trs_capes().await.unwrap();
     let ids: Vec<_> = capes.iter().map(|c| c.id.as_str()).collect();
-    assert_eq!(ids, ["team", "u0123456789abcdef0123", "evil"], "ungültige ID fällt weg");
+    assert_eq!(ids, ["team", "u0123456789abcdef0123", "u1111111111111111111a", "evil"], "ungültige ID fällt weg");
     let team = &capes[0];
     assert!(team.texture.as_deref().is_some_and(|t| t.starts_with("data:image/png;base64,")));
     assert_eq!((team.frames, team.frame_time_ms, team.scale), (4, Some(150), 2));
     assert!(capes[1].texture.is_some(), "eigener Upload mit Token geladen");
-    assert!(capes[2].texture.is_none(), "fremde Hosts werden nie geladen");
+    assert!(capes[3].texture.is_none(), "fremde Hosts werden nie geladen");
+    let shared = &capes[2];
+    assert!(shared.shareable && !capes[1].shareable);
+    assert_eq!(shared.holders, 3);
+    let source = shared.shared.as_ref().expect("geteilt");
+    assert_eq!((source.from.uuid.as_str(), source.creator.name.as_str()), (OTHER, "Alex"));
+    assert_eq!(source.from.name, "Bob", "Steuerzeichen fallen weg");
+    assert!(capes[0].shared.is_none());
 
     let tex = server.hits("GET", "/v1/capes/team.png");
     assert!(tex[0].bearer().is_none(), "freigegebene Texturen ohne Token");
@@ -462,6 +508,45 @@ async fn friends_are_sanitized() {
     assert_eq!(eve.presence.as_ref().unwrap().game.as_ref().unwrap().server, None, "Adresse mit Pfad verworfen");
     assert_eq!(view.requests.incoming[0].name, "Alex");
     assert!(launcher.trs_friend_request("nicht gültig!").await.is_err());
+}
+
+#[tokio::test]
+async fn cape_sharing_calls() {
+    let (_world, server) = world().await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+
+    assert_eq!(launcher.trs_friends().await.unwrap().cape_offers, 2);
+    let offers = launcher.trs_cape_offers().await.unwrap();
+    assert_eq!(offers.incoming.len(), 1, "kaputte Einträge fallen weg");
+    let offer = &offers.incoming[0];
+    assert_eq!((offer.from.name.as_str(), offer.creator.name.as_str()), ("Bob", "Alex"));
+    assert!(offer.cape.texture.is_some(), "Vorschau geladen");
+    assert_eq!(offers.outgoing[0].to.uuid, OTHER);
+    assert!(server.hits("GET", "/v1/capes/u1111111111111111111a.png").iter().all(|r| r.bearer().is_none()));
+
+    launcher.trs_offer_cape("u0123456789abcdef0123", OTHER).await.unwrap();
+    assert_eq!(
+        server.hits("POST", "/v1/cape-offers")[0].json(),
+        json!({ "capeId": "u0123456789abcdef0123", "friend": OTHER })
+    );
+    let err = launcher.trs_offer_cape("u0123456789abcdef0123", "c0c0c0c0-c0c0-c0c0-c0c0-c0c0c0c0c0c0").await.unwrap_err();
+    assert_eq!(err.code(), Some("share_limit"));
+    assert_eq!(err.to_user().code, "trsApi.share_limit");
+    assert!(launcher.trs_offer_cape("../x", OTHER).await.is_err());
+    assert!(launcher.trs_offer_cape("u0123456789abcdef0123", "Bob").await.is_err(), "nur UUIDs");
+
+    launcher.trs_accept_cape_offer("u1111111111111111111a").await.unwrap();
+    launcher.trs_decline_cape_offer("u1111111111111111111a").await.unwrap();
+
+    let holders = launcher.trs_cape_holders("u0123456789abcdef0123").await.unwrap();
+    let names: Vec<_> = holders.holders.iter().map(|h| (h.name.as_str(), h.status.as_str())).collect();
+    assert_eq!(names, [("Bob", "accepted"), ("Cleo", "offered")], "unbekannter Zustand fällt weg");
+    assert_eq!((holders.count, holders.limit), (3, 20));
+    assert_eq!(holders.holders[1].granted_by.name, "Bob");
+
+    launcher.trs_revoke_cape_share("u0123456789abcdef0123", OTHER).await.unwrap();
+    assert_eq!(server.hits("DELETE", &format!("/v1/capes/u0123456789abcdef0123/holders/{OTHER}")).len(), 1);
+    assert!(launcher.trs_revoke_cape_share("u0123456789abcdef0123", "nope").await.is_err());
 }
 
 #[tokio::test]

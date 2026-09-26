@@ -1,7 +1,14 @@
 import { isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
-import { trsSyncEventSchema, type TrsFriends, type TrsMe, type TrsStatus, type TrsSyncStatus } from '~/utils/trs'
+import {
+  trsSyncEventSchema,
+  type TrsCapeOffers,
+  type TrsFriends,
+  type TrsMe,
+  type TrsStatus,
+  type TrsSyncStatus,
+} from '~/utils/trs'
 
 /** Takt für Freunde im Hintergrund (Anfragen-Zähler in der Leiste). Die Seite selbst fragt öfter. */
 const BACKGROUND_POLL_MS = 90_000
@@ -20,6 +27,11 @@ export const useTrsStore = defineStore('trs', () => {
   const webLoginOpen = ref(false)
   let timer: ReturnType<typeof setInterval> | null = null
   let knownIncoming: Set<string> | null = null
+  /** Umhang-Angebote an mich / von mir (geladen, sobald es welche gibt oder die Seite sie braucht). */
+  const capeOffers = ref<TrsCapeOffers | null>(null)
+  let knownOffers: Set<string> | null = null
+  /** Zählt Änderungen an der eigenen Umhang-Sammlung (Angebot angenommen …) – die Umhang-Liste lädt dann neu. */
+  const capesRevision = ref(0)
   /** Stand der Synchronisation mit dem TRS-Konto (Hinweis auf der Skins-Seite). */
   const sync = ref<TrsSyncStatus | null>(null)
   /** Zählt Abgleiche, die die Skin-Sammlung geändert haben – die Skins-Seite lädt dann neu. */
@@ -29,7 +41,9 @@ export const useTrsStore = defineStore('trs', () => {
   const enabled = computed(() => status.value?.consent === 'accepted')
   const undecided = computed(() => status.value !== null && status.value.consent === null)
   const isAdmin = computed(() => enabled.value && me.value?.admin === true)
-  const incomingCount = computed(() => friends.value?.requests.incoming.length ?? 0)
+  const offerCount = computed(() => capeOffers.value?.incoming.length ?? friends.value?.capeOffers ?? 0)
+  /** Anfragen + Umhang-Angebote (Zähler in der Leiste). */
+  const incomingCount = computed(() => (friends.value?.requests.incoming.length ?? 0) + offerCount.value)
 
   function note(e: unknown) {
     const kind = e instanceof BackendError ? e.kind : ''
@@ -78,10 +92,45 @@ export const useTrsStore = defineStore('trs', () => {
       knownIncoming = incoming
       friends.value = view
       problem.value = null
+      // Angebote nur nachladen, wenn sich die Zahl geändert hat (oder noch nichts geladen ist).
+      const loaded = capeOffers.value?.incoming.length ?? null
+      if (view.capeOffers !== loaded && (view.capeOffers > 0 || loaded !== null)) void loadCapeOffers()
     } catch (e) {
       note(e)
     }
     return friends.value
+  }
+
+  const offerKey = (capeId: string, from: string) => `${capeId}:${from}`
+
+  /** Umhang-Angebote laden; neue melden (nicht beim ersten Laden). */
+  async function loadCapeOffers() {
+    if (!enabled.value || !status.value?.account) {
+      capeOffers.value = null
+      return null
+    }
+    try {
+      const offers = await backend.trs.capeOffers()
+      const keys = new Set(offers.incoming.map((o) => offerKey(o.cape.id, o.from.uuid)))
+      if (knownOffers) {
+        for (const o of offers.incoming) {
+          if (!knownOffers.has(offerKey(o.cape.id, o.from.uuid))) {
+            useToasts().info(t('trs.toasts.capeOffer', { name: o.from.name, cape: o.cape.name }))
+          }
+        }
+      }
+      knownOffers = keys
+      capeOffers.value = offers
+    } catch (e) {
+      note(e)
+    }
+    return capeOffers.value
+  }
+
+  /** Nach Annehmen/Ablehnen/Teilen: Angebote + Freunde neu, Umhang-Liste neu laden lassen. */
+  async function capeSharesChanged() {
+    capesRevision.value++
+    await Promise.all([loadCapeOffers(), loadFriends()])
   }
 
   function stopPolling() {
@@ -129,7 +178,9 @@ export const useTrsStore = defineStore('trs', () => {
   /** Beim Start und nach Account-Wechseln: alles neu. */
   async function init() {
     knownIncoming = null
+    knownOffers = null
     friends.value = null
+    capeOffers.value = null
     void listenSync()
     await refreshStatus()
     void refreshSync()
@@ -175,6 +226,11 @@ export const useTrsStore = defineStore('trs', () => {
     undecided,
     isAdmin,
     incomingCount,
+    offerCount,
+    capeOffers,
+    capesRevision,
+    loadCapeOffers,
+    capeSharesChanged,
     init,
     refreshStatus,
     loadMe,

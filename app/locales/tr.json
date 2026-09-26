@@ -213,7 +213,14 @@
       "invalid_request": "İstek geçersizdi.",
       "not_found": "Bulunamadı.",
       "rejected": "TRS API isteği reddetti.",
-      "frame_time_required": "Hareketli pelerinler bir hıza ihtiyaç duyar."
+      "frame_time_required": "Hareketli pelerinler bir hıza ihtiyaç duyar.",
+      "cape_not_approved": "Pelerini ekip onayladıktan sonra paylaşabilirsin.",
+      "cape_not_shareable": "Yalnızca kendi yüklediğin pelerinler paylaşılabilir.",
+      "already_shared": "Bu oyuncuda pelerin ya da onun için bir teklif zaten var.",
+      "share_limit": "Bu pelerin zaten 20 oyuncuyla paylaşıldı.",
+      "offer_inbox_full": "Bu oyuncunun çok fazla açık pelerin teklifi var.",
+      "offer_not_found": "Bu teklif artık yok.",
+      "holder_not_found": "Bu oyuncuda senden gelen pelerin yok (artık)."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -2345,7 +2352,8 @@
       "free": "Ücretsiz",
       "code": "Kod",
       "team": "Ekip",
-      "locked": "Kilitli"
+      "locked": "Kilitli",
+      "shared": "Paylaşılan"
     },
     "status": {
       "pending": "Onay bekliyor",
@@ -2360,7 +2368,8 @@
       "playingLoaderServer": "{server} sunucusunda {version} ({loader}) oynuyor"
     },
     "toasts": {
-      "friendRequest": "{name} seninle arkadaş olmak istiyor."
+      "friendRequest": "{name} seninle arkadaş olmak istiyor.",
+      "capeOffer": "{name} sana “{cape}” pelerinini teklif ediyor."
     }
   },
   "trsGate": {
@@ -2564,6 +2573,76 @@
       },
       "upload": "Yükle",
       "uploading": "Yükleniyor …"
+    }
+  },
+  "capeShare": {
+    "friendMenu": "Pelerin paylaş",
+    "toasts": {
+      "accepted": "“{cape}” artık pelerinlerinde.",
+      "withdrawn": "{name} için teklif geri çekildi.",
+      "offered": "“{cape}” {name} adlı oyuncuya teklif edildi.",
+      "revoked": "{name} artık pelerine sahip değil.",
+      "givenBack": "“{cape}” pelerinini geri verdin."
+    },
+    "offers": {
+      "incoming": "Pelerin teklifleri ({count})",
+      "from": "{name} · {date}",
+      "fromVia": "{name} · yapan: {creator} · {date}",
+      "accept": "Kabul et",
+      "accepting": "Kabul ediliyor…",
+      "decline": "Reddet",
+      "hint": "Kabul ettiğin pelerinler pelerinlerinde görünür ve kendi pelerinin gibi giyilebilir.",
+      "outgoing": "Açık pelerin tekliflerin",
+      "to": "{name} için · {date}",
+      "withdraw": "Geri çek"
+    },
+    "dialog": {
+      "title": "“{cape}” paylaş",
+      "intro": "Arkadaşın bir teklif alır ve kabul edip etmeyeceğine karar verir. Kabul eden pelerini giyebilir ve kendi arkadaşlarına verebilir.",
+      "reshare": "Yapan: {creator} – arkadaşlarına verebilirsin.",
+      "pickFriend": "Bir arkadaşla paylaş",
+      "search": "Arkadaş ara",
+      "share": "Paylaş",
+      "sharing": "Paylaşılıyor…",
+      "allHaveIt": "Tüm arkadaşlarında bu pelerin ya da onun için bir teklif zaten var.",
+      "noFriends": "Henüz TRS arkadaşın yok.",
+      "full": "Bu pelerin zaten en fazla {limit} oyuncuyla paylaşıldı.",
+      "holders": "Paylaşılanlar",
+      "cascade": "Bir pelerini geri alırsan, o oyuncunun verdiği herkes de onu kaybeder."
+    },
+    "holders": {
+      "offered": "Teklif açık",
+      "accepted": "Pelerine sahip",
+      "via": "{name} üzerinden",
+      "confirm": "Emin misin?",
+      "withdraw": "Geri çek",
+      "revoke": "Geri al",
+      "none": "Henüz kimsede senden gelen bu pelerin yok."
+    },
+    "card": {
+      "holders": "{n} oyuncuyla paylaşıldı | {n} oyuncuyla paylaşıldı"
+    },
+    "selected": {
+      "from": "{name} seninle paylaştı.",
+      "fromVia": "{name} seninle paylaştı · yapan: {creator}.",
+      "afterApproval": "Onaylandıktan sonra bu pelerini arkadaşlarınla paylaşabilirsin."
+    },
+    "actions": {
+      "share": "Bir arkadaşla paylaş",
+      "manage": "Paylaşıldı ({count})",
+      "giveBack": "Geri ver"
+    },
+    "giveBackDialog": {
+      "title": "Pelerin geri verilsin mi?",
+      "text": "{name} pelerinlerinden kaybolur. Onu verdiğin herkes de kaybeder."
+    },
+    "deleteWarning": "Senden alan {n} oyuncu da onu kaybeder. | Senden alan {n} oyuncu da onu kaybeder.",
+    "friendDialog": {
+      "title": "{name} ile pelerin paylaş",
+      "intro": "Bir pelerin seç – arkadaşın bir teklif alır ve kabul edip etmeyeceğine karar verir.",
+      "offered": "Teklif edildi",
+      "none": "Henüz paylaşacak bir pelerinin yok. Kendi pelerinini yükle – ekip onaylayınca paylaşabilirsin.",
+      "onlyPending": "Pelerinlerin hâlâ inceleniyor – onaylanınca paylaşabilirsin."
     }
   },
   "friends": {

@@ -172,6 +172,28 @@ pub(crate) struct ApiCatalogCape {
     pub active: bool,
     #[serde(default)]
     pub reject_reason: Option<String>,
+    /// Darf an Freunde weitergegeben werden (§5.10).
+    #[serde(default)]
+    pub shareable: bool,
+    /// Nur bei Umhängen, die ein Freund geteilt hat.
+    #[serde(default)]
+    pub shared: Option<CapeShareSource>,
+    /// Sichtbare Inhaber (als Ersteller alle, sonst der eigene Ast).
+    #[serde(default)]
+    pub holders: u32,
+}
+
+/// Geteilter Umhang: wer ihn dir gegeben hat und wer ihn gemacht hat (§5.10).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapeShareSource {
+    pub from: UserRef,
+    pub creator: UserRef,
+}
+
+impl CapeShareSource {
+    pub(crate) fn cleaned(self) -> Option<Self> {
+        Some(Self { from: clean_user(self.from)?, creator: clean_user(self.creator)? })
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -198,6 +220,12 @@ pub struct CapeItem {
     pub active: bool,
     pub reject_reason: Option<String>,
     pub texture: Option<String>,
+    /// An Freunde weitergebbar (eigener freigegebener Upload oder angenommener geteilter Umhang).
+    pub shareable: bool,
+    /// Von einem Freund geteilt: von wem, wer ihn gemacht hat.
+    pub shared: Option<CapeShareSource>,
+    /// Inhaber, die man bei diesem Umhang sieht.
+    pub holders: u32,
 }
 
 impl CapeItem {
@@ -217,7 +245,113 @@ impl CapeItem {
             active,
             reject_reason: reject.map(|r| validate::text(r, 200)),
             texture,
+            shareable: false,
+            shared: None,
+            holders: 0,
         }
+    }
+}
+
+// --- Umhänge teilen (§5.10) -----------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ApiIncomingOffer {
+    pub cape: ApiCape,
+    pub from: UserRef,
+    pub creator: UserRef,
+    #[serde(default)]
+    pub created_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ApiOutgoingOffer {
+    pub cape: ApiCape,
+    pub to: UserRef,
+    #[serde(default)]
+    pub created_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ApiCapeOffers {
+    #[serde(default)]
+    pub incoming: Vec<ApiIncomingOffer>,
+    #[serde(default)]
+    pub outgoing: Vec<ApiOutgoingOffer>,
+}
+
+/// Offenes Angebot an mich (mit Vorschau).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IncomingCapeOffer {
+    pub cape: CapeItem,
+    pub from: UserRef,
+    pub creator: UserRef,
+    pub created_at: Option<String>,
+}
+
+/// Mein offenes Angebot an einen Freund.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OutgoingCapeOffer {
+    pub cape: CapeItem,
+    pub to: UserRef,
+    pub created_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct CapeOffers {
+    pub incoming: Vec<IncomingCapeOffer>,
+    pub outgoing: Vec<OutgoingCapeOffer>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CapeHolder {
+    pub uuid: String,
+    pub name: String,
+    /// `offered` (offenes Angebot) oder `accepted`.
+    pub status: String,
+    pub granted_by: UserRef,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub accepted_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapeHolders {
+    pub holders: Vec<CapeHolder>,
+    #[serde(default)]
+    pub count: u32,
+    #[serde(default)]
+    pub limit: u32,
+}
+
+impl CapeHolders {
+    /// Kaputte UUIDs und unbekannte Zustände fallen weg, Namen/Zeiten werden gesäubert.
+    pub(crate) fn cleaned(self) -> Self {
+        let holders = self
+            .holders
+            .into_iter()
+            .filter_map(|h| {
+                let status = match h.status.as_str() {
+                    "offered" | "accepted" => h.status,
+                    _ => return None,
+                };
+                Some(CapeHolder {
+                    uuid: validate::uuid(&h.uuid)?,
+                    name: validate::display_name(&h.name),
+                    status,
+                    granted_by: clean_user(h.granted_by)?,
+                    created_at: h.created_at.map(|t| validate::text(&t, 40)),
+                    accepted_at: h.accepted_at.map(|t| validate::text(&t, 40)),
+                })
+            })
+            .collect::<Vec<_>>();
+        let count = self.count.max(holders.len() as u32);
+        Self { holders, count, limit: self.limit }
     }
 }
 
@@ -374,6 +508,9 @@ pub struct FriendsView {
     pub friends: Vec<Friend>,
     #[serde(default)]
     pub requests: FriendRequests,
+    /// Offene Umhang-Angebote an mich (§5.10); alte APIs kennen das Feld nicht → 0.
+    #[serde(default, rename = "capeOffers")]
+    pub cape_offers: u32,
 }
 
 impl FriendsView {
@@ -403,6 +540,7 @@ impl FriendsView {
                 incoming: self.requests.incoming.into_iter().filter_map(request).collect(),
                 outgoing: self.requests.outgoing.into_iter().filter_map(request).collect(),
             },
+            cape_offers: self.cape_offers.min(1000),
         }
     }
 }
