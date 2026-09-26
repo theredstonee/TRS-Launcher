@@ -59,6 +59,11 @@ public final class NewSince {
 	public static final String KEY_SOCIAL = "key.trsclient.social";
 	public static final String KEY_QUICK_REPLY = "key.trsclient.quickReply";
 
+	/** Welt-Hosting (TRS Client 0.9.0): Welt für Freunde öffnen, Beitritt per Einladung/Code, öffentlicher Link. */
+	public static final String HOSTING = "0.9.0";
+	/** Pausemenü-Eintrag „Welt hosten“. */
+	public static final String MENU_HOSTING = "menu:hosting";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -89,6 +94,8 @@ public final class NewSince {
 		add("0.7.2", CLIPS_PREVIEW);
 		// TRS Client 0.8.0: Sozial (Chat, Gruppen, Bilder, Einladungen, Toasts, Schnellantwort, Meldungen).
 		add(SOCIAL, "social", MENU_SOCIAL, KEY_SOCIAL, KEY_QUICK_REPLY);
+		// TRS Client 0.9.0: Welt-Hosting.
+		add(HOSTING, "social.hostingDirect", MENU_HOSTING);
 	}
 
 	private NewSince() {

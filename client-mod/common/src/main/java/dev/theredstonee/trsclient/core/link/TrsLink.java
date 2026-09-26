@@ -101,6 +101,11 @@ public final class TrsLink {
 	}
 
 	/** Merkmal des Launchers: Clips per Anfrage einschalten. */
+	/** Launcher → Spiel: Beitritt zu einer gehosteten Welt (docs/hosting-link.md). */
+	public static final String FEATURE_HOSTING_JOIN = "hosting.join";
+	/** Was DIESES Spiel kann – geht in der {@code auth}-Zeile mit (Launcher schickt sonst keinen Welt-Beitritt). */
+	static final String GAME_FEATURES_JSON = "[\"" + FEATURE_HOSTING_JOIN + "\"]";
+
 	public static final String FEATURE_CLIPS_ENABLE = "clips.enable";
 	/** Merkmal des Launchers: kleine Vorschau-Animation eines Clips ({@code clips.preview}). */
 	public static final String FEATURE_CLIPS_PREVIEW = "clips.preview";
@@ -141,9 +146,26 @@ public final class TrsLink {
 		public SessionDto session;
 		/** Antwort auf {@code clips.preview}. */
 		public PreviewDto preview;
+		/** Push {@code hostingJoin} / Antwort auf {@code hosting.join}: gehostete Welt beitreten (oder null). */
+		public JoinDto join;
 	}
 
 	/** Vorschau-Leiste eines Clips: PNG-Raster, das der Launcher in seinem Cache ablegt. */
+	/** Welt-Beitritt vom Launcher (docs/hosting-link.md §2) – ungeprüft, der Empfänger prüft jedes Feld. */
+	public static final class JoinDto {
+		public String roomId;
+		public String code;
+		public String name;
+		public UserDto host;
+		public String mcVersion;
+		public String loader;
+	}
+
+	public static final class UserDto {
+		public String uuid;
+		public String name;
+	}
+
 	public static final class PreviewDto {
 		public String path;
 		public Integer frames;
@@ -493,7 +515,9 @@ public final class TrsLink {
 					return Result.DENIED;
 				}
 				String proof = LinkCrypto.gameProof(target.key, target.sid, gameNonce, challenge.nonce);
-				if (!write(o, "{\"type\":\"auth\",\"proof\":\"" + proof + "\"}")) return Result.FAILED;
+				if (!write(o, "{\"type\":\"auth\",\"proof\":\"" + proof + "\",\"features\":" + GAME_FEATURES_JSON + "}")) {
+					return Result.FAILED;
+				}
 				sealKey = LinkCrypto.sealKey(target.key, gameNonce, challenge.nonce);
 				accounts = challenge.features != null && challenge.features.contains("accounts");
 				clipsEnable = challenge.features != null && challenge.features.contains(FEATURE_CLIPS_ENABLE);

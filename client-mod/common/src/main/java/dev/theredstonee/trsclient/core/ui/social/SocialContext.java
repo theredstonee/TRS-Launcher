@@ -33,6 +33,9 @@ interface SocialContext {
 	/** Menü einer Unterhaltung (Liste: Rechtsklick; Kopfzeile: ≡). */
 	void conversationMenu(Chat.Conversation c, int x, int y);
 
+	/** Reiter „Welten“ zeigen (Stand eines Welt-Beitritts). */
+	void showWorlds();
+
 	/** Bildschirmgröße (für Menüs/Dialoge). */
 	int screenWidth();
 

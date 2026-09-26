@@ -9,6 +9,11 @@ repositories {
 dependencies {
 	// Gson liefert Minecraft selbst mit – daher nur zum Kompilieren.
 	compileOnly "com.google.code.gson:gson:${gson_version}"
+	// Netty liefert Minecraft selbst mit (1.8.9: 4.0.23 … 26.3: 4.2.16). Gegen die ÄLTESTE kompilieren, damit der
+	// Welt-Hosting-Kanal (core.hosting.netty) nur API nutzt, die es überall gibt; die Bäume kompilieren ihn gegen ihre
+	// eigene Version erneut.
+	compileOnly 'io.netty:netty-all:4.0.23.Final'
+	testImplementation 'io.netty:netty-all:4.0.23.Final'
 
 	testImplementation "com.google.code.gson:gson:${gson_version}"
 	testImplementation platform("org.junit:junit-bom:${junit_version}")

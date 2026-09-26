@@ -191,6 +191,89 @@ public final class VanillaMenus {
 		dev.theredstonee.trsclient.social.SocialHooks.overScreen(g);
 	}
 
+	// --- Welt-Hosting: Pausemenü + Mehrspieler ---
+
+	/** Lage des Abzeichens „Öffentlicher Link aktiv“ im Pausemenü (x, y; -1 = keins). */
+	private static volatile int linkBadgeX = -1;
+	private static volatile int linkBadgeY = -1;
+
+	public static int linkBadgeX() {
+		return linkBadgeX;
+	}
+
+	public static int linkBadgeY() {
+		return linkBadgeY;
+	}
+
+	/**
+	 * Pausemenü: „Welt hosten“ (bzw. „Hosting verwalten“) neben „Im LAN öffnen“ (der Vanilla-Knopf wird halb so breit);
+	 * fehlt er, unten links. Ist der öffentliche Link an, darunter „Deaktivieren“ (+ rotes Abzeichen darüber).
+	 */
+	static void hostingButtons(final Screen s, WidgetHost host) {
+		linkBadgeX = -1;
+		boolean hostVisible = dev.theredstonee.trsclient.core.hosting.HostingOverlay.hostButtonVisible();
+		boolean link = dev.theredstonee.trsclient.core.hosting.HostingOverlay.linkActive();
+		if (!hostVisible && !link) return;
+		int bottomY = s.height - 28;
+		if (hostVisible) {
+			AbstractWidget lan = null;
+			String lanText = net.minecraft.client.resources.language.I18n.get("menu.shareToLan");
+			for (GuiEventListener child : s.children()) {
+				if (child instanceof AbstractWidget && lanText.equals(message((AbstractWidget) child))) lan = (AbstractWidget) child;
+			}
+			Runnable open = new Runnable() {
+				@Override
+				public void run() {
+					Mc.setScreen(MenuScreens.hosting(s));
+				}
+			};
+			String label = dev.theredstonee.trsclient.core.hosting.HostingOverlay.hostButtonLabel();
+			Object b;
+			if (lan != null) {
+				int[] r = rect(lan);
+				int half = (r[2] - 4) / 2;
+				lan.setWidth(half);
+				b = button(r[0] + half + 4, r[1], r[2] - half - 4, r[3], label, open);
+			} else {
+				int w = Math.min(130, Math.max(90, Mc.mc().font.width(label) + 30));
+				b = button(8, bottomY, w, 20, label, open);
+				bottomY -= 24;
+			}
+			ICONS.put(b, "globe");
+			host.trsclient$addWidget(b);
+		}
+		if (link) {
+			String label = I18n.tr("hosting.link.deactivate");
+			int w = Math.min(150, Math.max(100, Mc.mc().font.width(label) + 30));
+			Object d = button(8, bottomY, w, 20, label, new Runnable() {
+				@Override
+				public void run() {
+					dev.theredstonee.trsclient.core.hosting.HostingOverlay.disableLink();
+					Mc.setScreen(s);
+				}
+			});
+			host.trsclient$addWidget(d);
+			linkBadgeX = 8;
+			linkBadgeY = bottomY - 17;
+		}
+	}
+
+	/** Mehrspieler: „Mit Code beitreten“ oben links. */
+	static void joinButton(final Screen s, WidgetHost host) {
+		if (dev.theredstonee.trsclient.core.hosting.Hosting.current() == null) return;
+		if (!dev.theredstonee.trsclient.core.hosting.Hosting.platform().channelConnect()) return;
+		String label = I18n.tr("hosting.mp.button");
+		int w = Math.min(140, Math.max(90, Mc.mc().font.width(label) + 30));
+		Object b = button(6, 6, w, 20, label, new Runnable() {
+			@Override
+			public void run() {
+				Mc.setScreen(MenuScreens.join(s));
+			}
+		});
+		ICONS.put(b, "globe");
+		host.trsclient$addWidget(b);
+	}
+
 	private static void afterRenderLoading(Screen s, Gfx g, int mouseX, int mouseY) {
 		if (s == null || !loading(s) || !MenuStyle.enabled(MenuStyle.Kind.LOADING)) return;
 		try {
@@ -333,6 +416,8 @@ public final class VanillaMenus {
 				}
 			}
 			if (k == MenuStyle.Kind.PAUSE && MenuStyle.pauseButtons() && !s.children().isEmpty()) pauseButtons(s, host);
+			if (k == MenuStyle.Kind.PAUSE && s instanceof PauseScreen && !s.children().isEmpty()) hostingButtons(s, host);
+			if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof JoinMultiplayerScreen) joinButton(s, host);
 			if (k == MenuStyle.Kind.MULTIPLAYER && MenuStyle.enabled(k) && s instanceof JoinMultiplayerScreen) {
 				applyPins((JoinMultiplayerScreen) s);
 				int x = s.width - PIN_W - 6;

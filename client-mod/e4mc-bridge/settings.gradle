@@ -1,0 +1,5 @@
+// Brücke für den „öffentlichen Link“ (e4mc) – eigenständiger Mini-Build, NICHT Teil von client-mod/.
+// Sie wird gegen Netty 4.2 + QUIC kompiliert (läuft später in einem eigenen ClassLoader) und als
+// common/src/main/resources/assets/trsclient/e4mc/e4mc-bridge.jar in jede Mod-JAR gelegt:
+//   ./gradlew -p e4mc-bridge publishBridge
+rootProject.name = 'e4mc-bridge'

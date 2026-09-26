@@ -42,6 +42,15 @@ public final class ChatJson {
 		String name;
 	}
 
+	static final class WorldDto {
+		String roomId;
+		String code;
+		String name;
+		String mcVersion;
+		String loader;
+		UserDto host;
+	}
+
 	static final class ThumbDto {
 		String mime;
 		Integer width;
@@ -64,6 +73,7 @@ public final class ChatJson {
 		String preview;
 		Integer attachments;
 		Boolean invite;
+		Boolean world;
 		Boolean deleted;
 	}
 
@@ -88,6 +98,7 @@ public final class ChatJson {
 		UserDto sender;
 		String text;
 		InviteDto invite;
+		WorldDto world;
 		List<AttachmentDto> attachments;
 		ReplyDto replyTo;
 		SystemDto system;
@@ -207,6 +218,19 @@ public final class ChatJson {
 		return new Chat.Invite(address, name == null || name.isEmpty() ? null : name);
 	}
 
+	/** Weltkarte → Invite mit {@link Chat.World}; ungültig → null. */
+	static Chat.Invite world(WorldDto d) {
+		if (d == null || d.roomId == null || !d.roomId.matches("h[0-9a-f]{20}")) return null;
+		String code = d.code == null ? null : d.code.toUpperCase(java.util.Locale.ROOT).replaceAll("[^A-Z0-9]", "");
+		if (code == null || !code.matches("[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}")) return null;
+		Chat.User host = user(d.host);
+		String name = d.name == null ? null : SafeText.line(d.name, SafeText.MAX_NAME);
+		String version = d.mcVersion != null && d.mcVersion.matches("[0-9A-Za-z][0-9A-Za-z._+ -]{0,31}") ? d.mcVersion : "?";
+		String loader = d.loader != null && d.loader.matches("vanilla|fabric|forge|neoforge|quilt") ? d.loader : "vanilla";
+		return new Chat.Invite("", name == null || name.isEmpty() ? "?" : name, new Chat.World(d.roomId, code, version, loader,
+				host == null ? null : host.uuid, host == null ? "?" : host.name));
+	}
+
 	static Chat.Attachment attachment(AttachmentDto d) {
 		if (d == null || !Chat.validAttachmentId(d.id)) return null;
 		int w = clamp(d.width, 1, 8192);
@@ -265,7 +289,7 @@ public final class ChatJson {
 			ReplyDto r = d.replyTo;
 			boolean gone = Boolean.TRUE.equals(r.deleted) || r.preview == null;
 			reply = new Chat.Reply(r.id, r.seq == null ? 0 : r.seq, user(r.sender),
-					gone ? null : SafeText.line(r.preview, 120), clamp(r.attachments, 0, 10), Boolean.TRUE.equals(r.invite),
+					gone ? null : SafeText.line(r.preview, 120), clamp(r.attachments, 0, 10), Boolean.TRUE.equals(r.invite) || Boolean.TRUE.equals(r.world),
 					gone);
 		}
 		Chat.SystemInfo info = null;
@@ -275,7 +299,7 @@ public final class ChatJson {
 		}
 		String deletedBy = deleted && d.deletedBy != null && d.deletedBy.matches("sender|owner|admin") ? d.deletedBy : null;
 		String nonce = d.nonce != null && d.nonce.matches("[A-Za-z0-9_-]{8,64}") ? d.nonce : null;
-		return new Chat.Message(d.id, conv, d.seq, system, user(d.sender), text, content ? invite(d.invite) : null, atts,
+		return new Chat.Message(d.id, conv, d.seq, system, user(d.sender), text, content ? (d.world != null ? world(d.world) : invite(d.invite)) : null, atts,
 				reply, info, content ? reactions(d.reactions) : null, time(d.createdAt), time(d.editedAt), deleted, deletedBy,
 				hidden, nonce, false, null);
 	}

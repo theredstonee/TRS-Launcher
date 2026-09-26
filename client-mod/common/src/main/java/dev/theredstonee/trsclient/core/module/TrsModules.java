@@ -86,6 +86,8 @@ public final class TrsModules {
 	public final BoolSetting socialToastInvites;
 	public final BoolSetting socialToastRequests;
 	public final BoolSetting socialToastOnline;
+	/** Welt-Hosting: Direktverbindungen (zeigen die IP-Adresse dem Mitspieler); aus = nur über das TRS Relay. */
+	public final BoolSetting socialHostingDirect;
 
 	// --- Leistung (Logik in core.perf, siehe Performance) ---
 	/** FPS-Boost: Hauptschalter aller Leistungs-Funktionen, Voreinstellungen, Leistungs-Check. */
@@ -725,6 +727,7 @@ public final class TrsModules {
 		socialToastInvites = social.add(new BoolSetting("toastInvites", "Server invites", true));
 		socialToastRequests = social.add(new BoolSetting("toastRequests", "Friend requests and cape offers", true));
 		socialToastOnline = social.add(new BoolSetting("toastOnline", "Friends coming online", true));
+		socialHostingDirect = social.add(new BoolSetting("hostingDirect", "Direct connections (world hosting)", true));
 
 		dynamicFpsUnfocused = dynamicFps.add(new NumberSetting("unfocused", "FPS in the background", 15, 1, 60, 1, "", " FPS"));
 		dynamicFpsMinimized = dynamicFps.add(new NumberSetting("minimized", "FPS when minimized", 1, 1, 30, 1, "", " FPS"));
