@@ -116,6 +116,10 @@ Erwartet: `{"status":"ok",…}`
 | `CORS_ORIGINS` | nein | Nur nötig, falls eine Webseite die API im Browser aufruft. Exakte `https://`-Origins, kein `*`. |
 | `TRUST_PROXY` | nein | `cloudflare` (Standard): Die Client-IP kommt aus `CF-Connecting-IP`. Das ist sicher, weil nur cloudflared die API erreicht. |
 | `LOG_REQUESTS` | nein | `true` schreibt ein Zugriffslog ohne IPs und Tokens. |
+| `RELAY_SECRET` | für Welt-Hosting | ≥ 32 Zeichen (`openssl rand -base64 48`), **derselbe Wert** wie in der `.env` des Pterodactyl-Servers „TRS Relay“ (`relay/` im Launcher-Repo). Signiert die Relay-Tokens (API.md §21.6). Schlüsseltausch: `NEU,ALT` – die API signiert mit dem ersten, das Relay akzeptiert beide. Leer = Welt-Hosting aus (`503 hosting_unavailable`). |
+| `RELAY_HOST` | für Welt-Hosting | Öffentlicher Name oder IP des Relays, z. B. `relay.theredstonee.de` (DNS-A-Record auf 135.125.185.232, **ohne** Cloudflare-Proxy). |
+| `RELAY_TCP_PORT` / `RELAY_UDP_PORT` | nein | Standard `25503` / `25504`. |
+| `HOSTING_STUN` | nein | STUN-Server `host:port`, kommagetrennt. Leer = nur das Relay (`RELAY_HOST:RELAY_UDP_PORT`). Fremde STUN-Server (z. B. Google) sehen die IP der Spieler – deshalb ab Werk keine. |
 
 `.env` ist in `.gitignore` und darf **nie** ins Repo.
 
@@ -342,6 +346,7 @@ Empfehlung:
   - die Beobachter-Listen der Spieler-Streams (welche UUIDs ein Client gerade sieht)
   - der Skin-Cache (öffentliche Mojang-Profildaten, höchstens 10 Minuten)
 - Emotes werden nicht gespeichert, nur weitergeleitet.
+- **Welt-Hosting:** Räume (Name, Version, Einstellungen, Code, Mitglieder mit Status) liegen nur so lange in der Datenbank, wie die Welt offen ist (ohne Herzschlag nach 90 s weg); dauerhaft bleibt nur die Sperrliste des Hosts. Signale (ICE-Kandidaten, enthalten IP-Adressen der Spieler) werden nur weitergereicht und liegen höchstens 10 Minuten im RAM-Puffer von `/v1/events/me`. Spieldaten laufen nie über die API; das Relay speichert nichts auf Platte und protokolliert keine Inhalte.
 - **Im Log** steht keine IP.
 - **Löschung:** `DELETE /v1/me` entfernt sofort alle Daten des Kontos (Art. 17). Nur ein bestehender Sperr-Eintrag bleibt; das ist ein berechtigtes Interesse, damit Sperren nicht per Neuanmeldung umgangen werden.
 - **Cloudflare ist Auftragsverarbeiter:** Sämtlicher Verkehr läuft über Cloudflare, einschließlich IP-Adressen und TLS-Terminierung. Deshalb musst du im Cloudflare-Dashboard unter **Manage Account → Configurations → Privacy** (bzw. im Rahmen der Self-Serve Subscription Agreement) das **Data Processing Addendum (DPA / AVV)** von Cloudflare **akzeptieren**. Außerdem gehört Cloudflare in die Datenschutzerklärung (`PRIVACY.md` im Repo-Root): Zweck, Empfänger, Drittlandübermittlung (EU-US Data Privacy Framework / Standardvertragsklauseln).

@@ -510,4 +510,48 @@ CREATE TABLE chat_word_filter (
 );
 `,
   },
+  {
+    // Welt-Hosting: Räume (Host-Welt für Freunde), Mitglieder je Raum (eingeladen/angefragt/angenommen/
+    // gesperrt) und dauerhafte Sperren je Host. Räume leben nur, solange der Host Herzschläge schickt.
+    version: 8,
+    sql: `
+CREATE TABLE hosting_rooms (
+  id TEXT PRIMARY KEY,
+  host_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  mc_version TEXT NOT NULL,
+  loader TEXT NOT NULL,
+  max_players INTEGER NOT NULL CHECK (max_players BETWEEN 2 AND 10),
+  game_mode TEXT NOT NULL CHECK (game_mode IN ('survival', 'creative', 'adventure', 'spectator')),
+  pvp INTEGER NOT NULL,
+  cheats INTEGER NOT NULL,
+  open INTEGER NOT NULL DEFAULT 1,
+  visibility TEXT NOT NULL DEFAULT 'friends' CHECK (visibility IN ('friends', 'invited')),
+  players INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  heartbeat_at INTEGER NOT NULL
+);
+CREATE INDEX hosting_rooms_host ON hosting_rooms(host_uuid);
+CREATE INDEX hosting_rooms_heartbeat ON hosting_rooms(heartbeat_at);
+
+CREATE TABLE hosting_members (
+  room_id TEXT NOT NULL REFERENCES hosting_rooms(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  state TEXT NOT NULL CHECK (state IN ('invited', 'requested', 'accepted', 'banned')),
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (room_id, uuid)
+);
+CREATE INDEX hosting_members_uuid ON hosting_members(uuid, state);
+
+CREATE TABLE hosting_bans (
+  host_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (host_uuid, uuid)
+);
+CREATE INDEX hosting_bans_uuid ON hosting_bans(uuid);
+`,
+  },
 ]

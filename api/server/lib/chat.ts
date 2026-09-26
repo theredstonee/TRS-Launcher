@@ -12,6 +12,7 @@ import { all, one, placeholders, run, tx } from './db'
 import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
 import type { ApiEvent, PlayerRef } from './events'
 import { areFriends, hasBlocked } from './friends'
+import { inviteFromCard, worldCardBody, worldCardView, type WorldCardBody, type WorldCardView } from './hosting'
 import { activeMute, applySpamStrike } from './moderation'
 import { applyWordFilter, assertText, countLinks, sanitizeText } from './safety'
 import { getUser } from './users'
@@ -97,6 +98,8 @@ export interface MessageRow {
 interface Body {
   t?: string
   i?: { a: string, n?: string }
+  /** Weltkarte (Welt-Hosting, §21). */
+  w?: WorldCardBody
   s?: { e: SystemEvent, tg?: string, n?: string }
 }
 
@@ -115,6 +118,8 @@ export interface ReplyView {
   preview: string | null
   attachments: number
   invite: boolean
+  /** Antwort auf eine Weltkarte. */
+  world: boolean
   deleted: boolean
 }
 
@@ -141,6 +146,8 @@ export interface MessageView {
   sender: PlayerRef | null
   text: string | null
   invite: InviteView | null
+  /** Einladung in eine gehostete Welt (§21). */
+  world: WorldCardView | null
   attachments: AttachmentView[]
   replyTo: ReplyView | null
   system: SystemView | null
@@ -347,10 +354,11 @@ export function messageViews(ctx: AppContext, rows: MessageRow[], hideFrom: Set<
           preview: repHidden || !text ? null : [...text].slice(0, 120).join(''),
           attachments: repHidden ? 0 : (replyAtts.get(rep.id)?.length ?? 0),
           invite: !repHidden && !!rb?.i,
+          world: !repHidden && !!rb?.w,
           deleted: rep.deleted_at !== null,
         }
       } else {
-        replyTo = { id: r.reply_to, seq: 0, sender: null, preview: null, attachments: 0, invite: false, deleted: true }
+        replyTo = { id: r.reply_to, seq: 0, sender: null, preview: null, attachments: 0, invite: false, world: false, deleted: true }
       }
     }
     const show = !deleted && !hidden
@@ -362,6 +370,7 @@ export function messageViews(ctx: AppContext, rows: MessageRow[], hideFrom: Set<
       sender: ref(r.sender_uuid),
       text: show ? (body?.t ?? null) : null,
       invite: show && body?.i ? { address: body.i.a, name: body.i.n ?? null } : null,
+      world: show && body?.w && r.sender_uuid ? worldCardView(body.w, ref(r.sender_uuid)!) : null,
       attachments: show ? (atts.get(r.id) ?? []).map(attachmentView) : [],
       replyTo: show ? replyTo : null,
       system: r.kind === 'system' && body?.s
@@ -810,6 +819,8 @@ export interface SendInput {
   replyTo?: string
   attachments?: string[]
   invite?: { address: string, name?: string }
+  /** Weltkarte: nur der Host des Raums (§21). Empfänger, die mit ihm befreundet sind, werden eingeladen. */
+  world?: { roomId: string }
   nonce?: string
 }
 
@@ -851,10 +862,12 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
     }
   }
   assertCanWrite(ctx, conv, me)
-  const text = checkContent(ctx, conv, me, input.text, !!input.invite)
+  if (input.invite && input.world) throw badRequest('invite_conflict', 'A message can carry a server invite or a world, not both')
+  const world = input.world ? worldCardBody(ctx, me, input.world.roomId) : undefined
+  const text = checkContent(ctx, conv, me, input.text, !!input.invite || !!world)
   const attIds = [...new Set(input.attachments ?? [])]
   if (attIds.length > lim.maxAttachmentsPerMessage) throw badRequest('too_many_attachments', `At most ${lim.maxAttachmentsPerMessage} images per message`)
-  if (!text && attIds.length === 0 && !input.invite) throw badRequest('empty_message', 'A message needs text, an image or an invite')
+  if (!text && attIds.length === 0 && !input.invite && !world) throw badRequest('empty_message', 'A message needs text, an image or an invite')
   for (const id of attIds) {
     const a = getAttachment(ctx, id)
     if (!a || a.uploader_uuid !== me || a.message_id !== null) throw notFound('attachment_not_found', 'Unknown or already used image')
@@ -872,6 +885,7 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
   const body: Body = {
     ...(text ? { t: text } : {}),
     ...(input.invite ? { i: { a: input.invite.address.toLowerCase(), ...(inviteName ? { n: inviteName } : {}) } } : {}),
+    ...(world ? { w: world } : {}),
   }
   const t = ctx.now()
   const id = newMessageId()
@@ -897,6 +911,7 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
   publishMessage(ctx, 'chat_message', row)
   // Eigene andere Geräte: Zähler aktualisieren.
   publishState(ctx, me, conv.id)
+  if (world) inviteFromCard(ctx, getUser(ctx, me)!, world.r, memberUuids(ctx, conv.id))
   return { message: messageViews(ctx, [row], new Set(), me)[0]!, created: true }
 }
 
@@ -908,7 +923,7 @@ export function editMessage(ctx: AppContext, me: string, messageId: string, rawT
   const old = decBody(ctx, msg) ?? {}
   const text = checkContent(ctx, conv, me, rawText, false)
   const atts = attachmentsOf(ctx, [msg.id]).get(msg.id)?.length ?? 0
-  if (!text && atts === 0 && !old.i) throw badRequest('empty_message', 'A message needs text, an image or an invite')
+  if (!text && atts === 0 && !old.i && !old.w) throw badRequest('empty_message', 'A message needs text, an image or an invite')
   if (text === (old.t ?? '')) return messageViews(ctx, [msg], blockedBy(ctx, me), me)[0]!
   spamCheck(ctx, me, text)
   const body: Body = { ...old }
@@ -1176,9 +1191,14 @@ export function rotateMessageKeys(ctx: AppContext, max: number): number {
 }
 
 /** Für Meldungen: Klartext einer Nachricht (Text + Einladung), ohne Sichtbarkeitsregeln. */
-export function decryptForEvidence(ctx: AppContext, row: MessageRow): { text: string | null, invite: InviteView | null, system: Body['s'] | null } {
+export function decryptForEvidence(ctx: AppContext, row: MessageRow): { text: string | null, invite: InviteView | null, world: { roomId: string, name: string } | null, system: Body['s'] | null } {
   const b = decBody(ctx, row)
-  return { text: b?.t ?? null, invite: b?.i ? { address: b.i.a, name: b.i.n ?? null } : null, system: b?.s ?? null }
+  return {
+    text: b?.t ?? null,
+    invite: b?.i ? { address: b.i.a, name: b.i.n ?? null } : null,
+    world: b?.w ? { roomId: b.w.r, name: b.w.n } : null,
+    system: b?.s ?? null,
+  }
 }
 
 export function groupNameOf(ctx: AppContext, conv: ConversationRow): string | null {

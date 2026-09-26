@@ -5,6 +5,7 @@ import { all, one, run, tx } from './db'
 import { capeView, capeWearers, type CapeRow, type CapeView } from './capes'
 import { notifyShareRemoved, releaseHoldings, shareHolders } from './capeshares'
 import { finishChatPurge, prepareChatPurge } from './chat'
+import { endHostingFor } from './hosting'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
 import { forbidden } from './errors'
@@ -157,6 +158,8 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   // Wer eigene Uploads geteilt bekommen hat, verliert sie mit dem Konto (Zeilen per FK weg).
   const sharedOut = uploads.map(({ id }) => ({ id, holders: shareHolders(ctx, id), worn: capeWearers(ctx, id) }))
   const chat = prepareChatPurge(ctx, uuid)
+  // Gehostete Welten schließen, aus fremden austragen (Rest per ON DELETE CASCADE).
+  endHostingFor(ctx, uuid)
   tx(ctx.db, () => {
     run(ctx.db, 'DELETE FROM users WHERE uuid = ?', uuid)
     // Einträge zu Meldungen (ref) bleiben mit der Meldung bis zu deren Ablauf.

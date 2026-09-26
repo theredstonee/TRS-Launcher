@@ -28,7 +28,20 @@ export interface Config {
   chatStorageMaxBytes: number
   /** Server-Einladungen: Status vom Server abfragen (Ping mit SSRF-Schutz). `SERVER_PING=false` schaltet ab. */
   serverPing: boolean
+  /** Welt-Hosting (§21): Relay-Adresse + gemeinsames Geheimnis. `null` = Hosting aus (503 hosting_unavailable). */
+  hosting: HostingConfig | null
   limits: Limits
+}
+
+export interface HostingConfig {
+  /** Öffentlicher Name/IP des Relays (TCP + UDP). */
+  relayHost: string
+  relayTcpPort: number
+  relayUdpPort: number
+  /** HMAC-Schlüssel für Relay-Tokens; der erste signiert (weitere nur fürs Relay beim Schlüsseltausch). */
+  relaySecrets: string[]
+  /** STUN-Server `host:port`, die Clients für ihre öffentliche Adresse fragen. */
+  stun: string[]
 }
 
 export interface Limits {
@@ -81,6 +94,19 @@ export interface Limits {
   reportEvidenceRetentionMs: number
   /** Erledigte Meldungen (ohne Inhalte) werden nach … ganz gelöscht. */
   reportRetentionMs: number
+  // ------------------------------------------------ Welt-Hosting
+  /** Raum schließt, wenn der Host so lange keinen Herzschlag schickt. */
+  hostingRoomTtlMs: number
+  /** Relay-Tokens gelten so lange zum Verbinden (≤ 2 min). */
+  relayTokenTtlMs: number
+  /** Offene Einladungen je Raum. */
+  hostingMaxInvites: number
+  /** Offene Beitrittsanfragen je Raum. */
+  hostingMaxRequests: number
+  /** Dauerhafte Sperren je Host. */
+  hostingMaxBans: number
+  /** Größe von `data` in Signal-Nachrichten (Zeichen). */
+  hostingMaxSignalData: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -117,6 +143,12 @@ export const DEFAULT_LIMITS: Limits = {
   maxOpenReportsPerUser: 20,
   reportEvidenceRetentionMs: 90 * 24 * 60 * 60 * 1000,
   reportRetentionMs: 365 * 24 * 60 * 60 * 1000,
+  hostingRoomTtlMs: 90 * 1000,
+  relayTokenTtlMs: 120 * 1000,
+  hostingMaxInvites: 50,
+  hostingMaxRequests: 20,
+  hostingMaxBans: 500,
+  hostingMaxSignalData: 4096,
 }
 
 const bool = z
@@ -186,7 +218,39 @@ const envSchema = z.object({
   CHAT_KEYS: z.string().default(''),
   CHAT_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
   SERVER_PING: bool.default(true),
+  // Welt-Hosting: Relay (eigener Pterodactyl-Server). Ohne RELAY_SECRET + RELAY_HOST ist Hosting aus.
+  RELAY_SECRET: z.string().default(''),
+  RELAY_HOST: z
+    .string()
+    .trim()
+    .default('')
+    .refine((s) => s === '' || /^[A-Za-z0-9.-]{1,253}$/.test(s), 'must be a hostname or IPv4 address'),
+  RELAY_TCP_PORT: z.coerce.number().int().min(1).max(65535).default(25503),
+  RELAY_UDP_PORT: z.coerce.number().int().min(1).max(65535).default(25504),
+  // STUN-Server (host:port, kommagetrennt). Leer = nur das Relay selbst (RELAY_HOST:RELAY_UDP_PORT).
+  HOSTING_STUN: z.string().default(''),
 })
+
+const HOST_PORT = /^[A-Za-z0-9.-]{1,253}:(\d{1,5})$/
+
+/** Relay-/STUN-Einstellungen lesen; ohne Geheimnis oder Host → `null` (Hosting aus). */
+function parseHosting(e: z.output<typeof envSchema>): HostingConfig | null {
+  const secrets = e.RELAY_SECRET.split(',').map((s) => s.trim()).filter(Boolean)
+  if (secrets.length === 0 || e.RELAY_HOST === '') return null
+  if (secrets.some((s) => s.length < 32)) throw new ConfigError('Invalid configuration: RELAY_SECRET (each secret must be at least 32 characters)')
+  const stun = e.HOSTING_STUN.split(',').map((s) => s.trim()).filter(Boolean)
+  for (const s of stun) {
+    const m = HOST_PORT.exec(s)
+    if (!m || Number(m[1]) < 1 || Number(m[1]) > 65535) throw new ConfigError('Invalid configuration: HOSTING_STUN (expected host:port, comma-separated)')
+  }
+  return {
+    relayHost: e.RELAY_HOST,
+    relayTcpPort: e.RELAY_TCP_PORT,
+    relayUdpPort: e.RELAY_UDP_PORT,
+    relaySecrets: secrets,
+    stun: stun.length > 0 ? stun.slice(0, 8) : [`${e.RELAY_HOST}:${e.RELAY_UDP_PORT}`],
+  }
+}
 
 /** `CHAT_KEYS` lesen; leer → ein Schlüssel aus SECRET_KEY (HKDF, Kennung `s1`). */
 function parseChatKeys(raw: string, secret: string): Config['chatKeys'] {
@@ -241,6 +305,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     chatKeys: parseChatKeys(e.CHAT_KEYS, e.SECRET_KEY),
     chatStorageMaxBytes: e.CHAT_STORAGE_MAX_MB * 1024 * 1024,
     serverPing: e.SERVER_PING,
+    hosting: parseHosting(e),
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
 }

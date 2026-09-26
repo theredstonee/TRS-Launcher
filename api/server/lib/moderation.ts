@@ -215,6 +215,8 @@ export interface EvidenceMessage {
   sender: PlayerRef | null
   text: string | null
   invite: InviteView | null
+  /** Weltkarte (§21): Raum-Id und Weltname zur Meldezeit. Fehlt in älteren Beweisen. */
+  world?: { roomId: string, name: string } | null
   system: { event: string, target: string | null, name: string | null } | null
   attachments: { id: string, width: number, height: number, mime: string }[]
   replyTo: string | null
@@ -280,6 +282,7 @@ function snapshotMessages(ctx: AppContext, rows: MessageRow[]): EvidenceMessage[
       sender: r.sender_uuid ? { uuid: r.sender_uuid, name: name(r.sender_uuid) } : null,
       text: c.text,
       invite: c.invite,
+      world: c.world,
       system: c.system ? { event: c.system.e, target: c.system.tg ?? null, name: c.system.n ?? null } : null,
       attachments: (atts.get(r.id) ?? []).map((a) => ({ id: a.id, width: a.width, height: a.height, mime: a.mime })),
       replyTo: r.reply_to,

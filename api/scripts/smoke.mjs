@@ -71,6 +71,8 @@ const api = spawn(process.env.NODE_BIN ?? process.execPath, [join(ROOT, '.output
     ALLOW_INSECURE_MOJANG_URL: 'true',
     PUBLIC_BASE_URL: BASE,
     TRUST_PROXY: 'cloudflare',
+    RELAY_SECRET: 'smoke-relay-secret-0123456789abcdef-0123456789',
+    RELAY_HOST: 'relay.example.test',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
@@ -549,9 +551,57 @@ try {
   const snoopImg = await http('GET', `/v1/chat/attachments/${upPng.json.attachment.id}`, { token: stranger })
   check('stranger cannot read image', snoopImg.status === 404)
 
+  console.log('world hosting')
+  {
+    const sA = await openStream(A)
+    const sB4 = await openStream(B)
+    await sA.waitFor((f) => f.event === 'hello')
+    await sB4.waitFor((f) => f.event === 'hello')
+    const room = await http('POST', '/v1/hosting/rooms', { token: A, body: { name: 'Smoke-Welt', mcVersion: '1.21.4', loader: 'fabric', maxPlayers: 4 } })
+    check('create world 201', room.status === 201 && /^[A-Z2-9]{6}$/.test(room.json.room.code) && room.json.role === 'host' && room.json.relay.token.startsWith('trsr1.') && room.json.stun[0] === 'relay.example.test:25504', JSON.stringify(room.json))
+    const rid = room.json.room.id
+    const inv = await http('POST', `/v1/hosting/rooms/${rid}/invites`, { token: A, body: { uuid: 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0' } })
+    check('invite friend 201 + chat card', inv.status === 201 && inv.json.member.state === 'invited' && /^m/.test(inv.json.chatMessageId ?? ''), JSON.stringify(inv.json))
+    check('hosting_invite pushed', (await sB4.waitFor((f) => f.event === 'hosting_invite'))?.data.room.id === rid)
+    check('world card pushed', (await sB4.waitFor((f) => f.event === 'chat_message' && f.data.message.world))?.data.message.world.code === room.json.room.code)
+    const joined = await http('POST', '/v1/hosting/join', { token: B, body: { roomId: rid } })
+    check('invited join 200 accepted', joined.status === 200 && joined.json.status === 'accepted' && joined.json.role === 'guest' && joined.json.relay.token.startsWith('trsr1.'), JSON.stringify(joined.json))
+    const sigAt = Date.now()
+    const sig = await http('POST', `/v1/hosting/rooms/${rid}/signal`, { token: B, body: { to: ADMIN_UUID, kind: 'offer', sid: 'smoke', data: '{"ufrag":"u"}' } })
+    check('signal 200 delivered', sig.status === 200 && sig.json.delivered === true, JSON.stringify(sig.json))
+    const gotSig = await sA.waitFor((f) => f.event === 'hosting_signal')
+    check('signal pushed ≤3 s', gotSig && gotSig.at - sigAt < 3000 && gotSig.data.kind === 'offer' && gotSig.data.from === 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0')
+    const snoopSig = await http('POST', `/v1/hosting/rooms/${rid}/signal`, { token: stranger, body: { to: ADMIN_UUID, kind: 'offer', data: 'x' } })
+    check('stranger signal 404', snoopSig.status === 404 && snoopSig.json.error.code === 'room_not_found')
+    const byId = await http('POST', '/v1/hosting/join', { token: stranger, body: { roomId: rid } })
+    check('stranger join by id 404', byId.status === 404)
+    const byCode = await http('POST', '/v1/hosting/join', { token: stranger, body: { code: room.json.room.code.toLowerCase() } })
+    check('join by code 202 requested', byCode.status === 202 && byCode.json.status === 'requested' && !('relay' in byCode.json))
+    check('hosting_join_request pushed', (await sA.waitFor((f) => f.event === 'hosting_join_request'))?.data.from.name === 'Stranger')
+    const badCode = await http('POST', '/v1/hosting/join', { token: stranger, body: { code: 'ZZZZZZ' } })
+    check('unknown code 404', badCode.status === 404 && badCode.json.error.code === 'room_not_found')
+    const decl = await http('POST', `/v1/hosting/rooms/${rid}/requests/cccccccccccccccccccccccccccccccc/decline`, { token: A })
+    check('decline 204', decl.status === 204)
+    const hb = await http('POST', `/v1/hosting/rooms/${rid}/heartbeat`, { token: A, body: { players: 2 } })
+    check('heartbeat', hb.status === 200 && typeof hb.json.expiresAt === 'string')
+    const fr = await http('GET', '/v1/hosting/friends-rooms', { token: B })
+    check('friends-rooms', fr.json.rooms?.[0]?.id === rid && fr.json.rooms[0].myState === 'accepted' && fr.json.rooms[0].players === 2, JSON.stringify(fr.json))
+    const conn = await http('POST', `/v1/hosting/rooms/${rid}/connect`, { token: B })
+    check('connect guest', conn.status === 200 && conn.json.role === 'guest')
+    const patch = await http('PATCH', `/v1/hosting/rooms/${rid}`, { token: A, body: { gameMode: 'creative' } })
+    check('patch world', patch.json.room?.gameMode === 'creative')
+    const bad = await http('POST', '/v1/hosting/rooms', { token: A, body: { name: 'x', mcVersion: '1.21', loader: 'bukkit' } })
+    check('invalid loader 400', bad.status === 400 && bad.json.error.code === 'invalid_request')
+    const close = await http('DELETE', `/v1/hosting/rooms/${rid}`, { token: A })
+    check('close world 204', close.status === 204)
+    check('hosting_room_closed pushed', (await sB4.waitFor((f) => f.event === 'hosting_room_closed'))?.data.reason === 'closed')
+    sA.close()
+    sB4.close()
+  }
+
   console.log('admin + deletion')
   const stats = await http('GET', '/v1/admin/stats', { token: A })
-  check('stats', stats.json.users.total === 3 && stats.json.chat.messages === 2 && stats.json.reports.resolved === 1 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 11 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
+  check('stats', stats.json.users.total === 3 && stats.json.chat.messages === 3 && stats.json.reports.resolved === 1 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 11 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
   const ban = await http('POST', '/v1/admin/users/b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0/ban', { headers: { 'x-admin-key': ADMIN_KEY }, body: { reason: 'smoke' } })
   check('ban', ban.json.user.banned?.reason === 'smoke')
   const banned = await http('GET', '/v1/me', { token: B })

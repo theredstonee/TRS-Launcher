@@ -13,6 +13,7 @@ import {
   type CosmeticView,
 } from './cosmetics'
 import { broadcastPresence } from './friends'
+import { endHostingFor } from './hosting'
 import { notifyShareRemoved, shareHolders } from './capeshares'
 import { emitCape } from './playerevents'
 import { getUser, isAdmin, settingsOf, type Settings } from './users'
@@ -310,6 +311,7 @@ export function banUser(ctx: AppContext, actor: string, uuid: string, reason: st
     audit(ctx, actor, 'user.ban', uuid, reason)
   })
   if (ctx.presence.delete(uuid)) broadcastPresence(ctx, uuid)
+  endHostingFor(ctx, uuid)
   ctx.events.kick(uuid)
   ctx.watch.kick(uuid)
 }
