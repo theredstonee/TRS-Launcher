@@ -114,6 +114,11 @@ public final class AutoTest {
 			SocialTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=socialtoasts: nur Sozial-Toasts neben Vanilla-Toasts (Ausweichen) und über einem Menü
+		if ("socialtoasts".equals(System.getProperty("trsclient.autotest.only"))) {
+			SocialTest.installToasts();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}

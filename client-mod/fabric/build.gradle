@@ -208,6 +208,8 @@ mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'Worl
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
 if (stonecutter.eval(mc, '<1.20.3')) mixinClasses << 'SelectionListAccessor'
 if (stonecutter.eval(mc, '<1.19.4')) mixinClasses << 'LoadingScreenMixin'
+// Sozial-Toasts über Vanilla-Menüs: bis 1.19.3 nach dem Bildschirm im GameRenderer (ab 1.19.4 über MenuScreenMixin).
+if (stonecutter.eval(mc, '<1.19.4')) mixinClasses << 'ScreenToastMixin'
 if (stonecutter.eval(mc, '>=26.1')) mixinClasses << 'PauseBackgroundMixin'
 // Leistung: Dynamische FPS/FPS-Messung, Partikel, Entity-Culling, Welt-Details (alle require = 0).
 mixinClasses += ['FramePaceMixin', 'ParticleLimitMixin', 'EntityCullMixin', 'BlockEntityCullMixin', 'NameTagCullMixin',

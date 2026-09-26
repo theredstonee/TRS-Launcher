@@ -2,6 +2,7 @@ package dev.theredstonee.trsclient.dev;
 
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
+import dev.theredstonee.trsclient.core.online.TrsOnline;
 import dev.theredstonee.trsclient.core.social.Chat;
 import dev.theredstonee.trsclient.core.social.SocialOverlay;
 import dev.theredstonee.trsclient.core.social.Toasts;
@@ -31,8 +32,18 @@ public final class SocialTest {
 	private final String mcVersion = Mc.version();
 	private final String world = "trs-autotest-" + Mc.version();
 
+	/** Nur Toasts neben dem Vanilla-Erfolgsfenster/-Toasts und über einem Menü ({@code -PtrsAutotestOnly=socialtoasts}). */
+	private boolean toastsOnly;
+
 	public static void install() {
 		MinecraftForge.EVENT_BUS.register(new SocialTest());
+	}
+
+	/** Kurzer Lauf: Testwelt, Vanilla-Meldung oben rechts + Sozial-Toasts (Ausweichen), dann über dem Pausemenü. */
+	public static void installToasts() {
+		SocialTest test = new SocialTest();
+		test.toastsOnly = true;
+		MinecraftForge.EVENT_BUS.register(test);
 	}
 
 	@SubscribeEvent
@@ -84,7 +95,7 @@ public final class SocialTest {
 				if (!(screen instanceof TrsTitleScreen) && !(screen instanceof GuiMainMenu)) return;
 				mc.gameSettings.pauseOnLostFocus = false;
 				mc.gameSettings.renderDistanceChunks = 2;
-				phase++;
+				phase = toastsOnly ? 20 : 1;
 				wait = 10;
 				return;
 			case 1:
@@ -155,7 +166,8 @@ public final class SocialTest {
 				wait = 40;
 				return;
 			case 10:
-				shot(mc, "social-friends");
+			case 20:
+				if (phase == 10) shot(mc, "social-friends");
 				mc.displayGuiScreen(null);
 				if (mc.getSaveLoader().canLoadWorld(world)) {
 					mc.launchIntegratedServer(world, world, null);
@@ -165,9 +177,50 @@ public final class SocialTest {
 				phase++;
 				return;
 			case 11:
-				if (!waitFor(Mc.world() != null && Mc.player() != null && mc.currentScreen == null, 600)) return;
+			case 21: {
+				boolean socialReady = phase == 11 || (TrsOnline.current() != null && TrsOnline.current().social() != null);
+				if (!waitFor(Mc.world() != null && Mc.player() != null && mc.currentScreen == null && socialReady, 600)) return;
 				phase++;
 				wait = 40;
+				return;
+			}
+			// --- nur Toasts (Ausweichen vor der Vanilla-Meldung oben rechts, über Menüs) ---
+			case 22:
+				//? if >=1.12 {
+				/*net.minecraft.client.gui.toasts.SystemToast.addOrUpdate(mc.getToastGui(), net.minecraft.client.gui.toasts.SystemToast.Type.TUTORIAL_HINT,
+						new net.minecraft.util.text.TextComponentString("Vanilla-Toast"), new net.minecraft.util.text.TextComponentString("Tutorial"));
+				*///?} elif >=1.9 {
+				/*mc.guiAchievement.displayUnformattedAchievement(net.minecraft.stats.AchievementList.OPEN_INVENTORY);
+				*///?} else
+				mc.guiAchievement.displayUnformattedAchievement(net.minecraft.stats.AchievementList.openInventory);
+				TrsClient.LOGGER.info("[Autotest] Sozial: Vanilla-Meldung oben rechts");
+				phase++;
+				// Tutorial-Hinweis bis 1.11.2 erscheint erst nach 2,5 s (+ Hereinfahren); Toasts ab 1.12 sofort.
+				wait = 70;
+				return;
+			case 23: {
+				boolean a = SocialOverlay.testToast(Toasts.Kind.MESSAGE, "Bob", "Kommst du auf den Server?", null, "c00000000000000000001", null);
+				boolean b = SocialOverlay.testToast(Toasts.Kind.ONLINE, "jeb_", "ist online", null, null, null);
+				TrsClient.LOGGER.info("[Autotest] Sozial: Toasts {}/{}", a, b);
+				phase++;
+				wait = 24;
+				return;
+			}
+			case 24:
+				shot(mc, "social-avoid");
+				TrsClient.LOGGER.info("[Autotest] Sozial: Vanilla-Unterkante {} px, Versatz {} px", SocialOverlay.lastVanillaBottom(),
+						SocialOverlay.avoidOffset());
+				mc.displayGuiScreen(new net.minecraft.client.gui.GuiIngameMenu());
+				phase++;
+				wait = 10;
+				return;
+			case 25:
+				shot(mc, "social-avoid-menu");
+				TrsClient.LOGGER.info("[Autotest] Sozial: über Menü zuletzt gezeichnet vor {} ms",
+						System.currentTimeMillis() - SocialOverlay.lastFrame());
+				TrsClient.LOGGER.info("[Autotest] Sozial: fertig");
+				phase = 999;
+				mc.shutdown();
 				return;
 			case 12:
 				SocialOverlay.testToast(Toasts.Kind.ONLINE, "jeb_", "ist online", null, null, null);

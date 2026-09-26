@@ -27,9 +27,18 @@ public final class SocialTest {
 	private int phase;
 	private int wait;
 	private int waited;
+	/** Nur Toasts neben Vanilla-Toasts und über einem Menü ({@code -PtrsAutotestOnly=socialtoasts}). */
+	private boolean toastsOnly;
 
 	public static void install() {
 		SocialTest test = new SocialTest();
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(test::tick);
+	}
+
+	/** Kurzer Lauf: Testwelt, Vanilla-Toasts + Sozial-Toasts (Ausweichen), dann über dem Pausemenü. */
+	public static void installToasts() {
+		SocialTest test = new SocialTest();
+		test.toastsOnly = true;
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}
 
@@ -89,7 +98,7 @@ public final class SocialTest {
 				mc.options.renderDistance().set(2);
 				//?}
 				Mc.setScreen(new TrsTitleScreen());
-				phase++;
+				phase = toastsOnly ? 20 : 1;
 				wait = 20;
 				return;
 			case 1:
@@ -206,8 +215,73 @@ public final class SocialTest {
 				log("fertig");
 				phase = 101;
 				return;
+			// --- nur Toasts (Ausweichen vor Vanilla-Toasts, über Menüs) ---
+			case 20:
+				Mc.setScreen(null);
+				AutoTest.startWorld(mc);
+				phase++;
+				return;
+			case 21: {
+				TrsOnline online = TrsOnline.current();
+				boolean socialReady = online != null && online.social() != null;
+				if (!waitFor(mc.level != null && mc.player != null && Mc.screen() == null && socialReady, 600)) return;
+				wait = 40;
+				phase++;
+				return;
+			}
+			case 22:
+				log("Vanilla-Toasts: " + vanillaToasts(mc));
+				phase++;
+				wait = 12; // Vanilla fährt herein
+				return;
+			case 23: {
+				boolean msg = SocialOverlay.testToast(Toasts.Kind.MESSAGE, "Bob", "Hi! Kommst du auf den Server?", BOB, firstConversation(), null);
+				boolean on = SocialOverlay.testToast(Toasts.Kind.ONLINE, "Emil", "ist jetzt online", null, null, null);
+				log("Toasts " + msg + "/" + on);
+				phase++;
+				wait = 24;
+				return;
+			}
+			case 24:
+				shot(mc, "avoid");
+				log("Vanilla-Unterkante " + SocialOverlay.lastVanillaBottom() + " px, Versatz " + SocialOverlay.avoidOffset()
+						+ " px, zuletzt gezeichnet vor " + (System.currentTimeMillis() - SocialOverlay.lastFrame()) + " ms");
+				Mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true));
+				phase++;
+				wait = 10;
+				return;
+			case 25:
+				shot(mc, "avoid-menu");
+				log("über Menü: zuletzt gezeichnet vor " + (System.currentTimeMillis() - SocialOverlay.lastFrame()) + " ms");
+				Mc.setScreen(null);
+				log("fertig");
+				phase = 101;
+				return;
 			default:
 		}
+	}
+
+	/** Zwei Vanilla-System-Toasts oben rechts (ab 1.20.3; darunter nicht Teil des Tests). */
+	private static String vanillaToasts(Minecraft mc) {
+		//? if >=26.2 {
+		/*net.minecraft.client.gui.components.toasts.ToastManager tm = mc.gui.toastManager();
+		*///?} elif >=1.21.2 {
+		/*net.minecraft.client.gui.components.toasts.ToastManager tm = mc.getToastManager();
+		*///?} elif >=1.20.3 {
+		net.minecraft.client.gui.components.toasts.ToastComponent tm = mc.getToasts();
+		//?} else {
+		/*return "in dieser Version nicht im Test";
+		*///?}
+		//? if >=1.20.3 {
+		net.minecraft.network.chat.Component title = net.minecraft.network.chat.Component.literal("Vanilla-Toast");
+		net.minecraft.client.gui.components.toasts.SystemToast.add(tm,
+				net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId.PERIODIC_NOTIFICATION, title,
+				net.minecraft.network.chat.Component.literal("Rezept/Tutorial/Fortschritt"));
+		net.minecraft.client.gui.components.toasts.SystemToast.add(tm,
+				net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId.WORLD_BACKUP, title,
+				net.minecraft.network.chat.Component.literal("zweiter Platz"));
+		return "2";
+		//?}
 	}
 
 	private static String firstConversation() {

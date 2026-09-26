@@ -220,9 +220,37 @@ public final class TrsClient {
 					if (TrsKeys.quickReply == null || TrsKeys.quickReply.getKeyCode() == org.lwjgl.input.Keyboard.KEY_NONE) return null;
 					return net.minecraft.client.settings.GameSettings.getKeyDisplayString(TrsKeys.quickReply.getKeyCode());
 				}
+
+				@Override
+				public int vanillaToastBottom() {
+					return vanillaNoticeBottom();
+				}
 			}, modules);
 		} catch (RuntimeException e) {
 			LOGGER.warn("Sozial-Benachrichtigungen nicht verfügbar: " + e);
+		}
+	}
+
+	private static final dev.theredstonee.trsclient.core.social.VanillaToastProbe TOAST_PROBE =
+			new dev.theredstonee.trsclient.core.social.VanillaToastProbe();
+	private static final dev.theredstonee.trsclient.core.social.VanillaToastProbe.Achievement ACHIEVEMENT_PROBE =
+			new dev.theredstonee.trsclient.core.social.VanillaToastProbe.Achievement();
+
+	/**
+	 * Unterkante der Vanilla-Meldungen oben rechts (Sozial-Toasts weichen darunter aus): bis 1.11.2 das Erfolgs-Fenster
+	 * (fährt senkrecht herein/hinaus, auch der Tutorial-Hinweis „Inventar öffnen“), ab 1.12 die Toasts.
+	 */
+	static int vanillaNoticeBottom() {
+		try {
+			Minecraft mc = Minecraft.getMinecraft();
+			//? if >=1.12 {
+			/*return TOAST_PROBE.bottom(mc.getToastGui());
+			*///?} else {
+			if (Mc.player() == null) return 0;
+			return ACHIEVEMENT_PROBE.bottom(mc.guiAchievement, Minecraft.getSystemTime());
+			//?}
+		} catch (RuntimeException | LinkageError e) {
+			return 0;
 		}
 	}
 
