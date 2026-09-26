@@ -33,6 +33,9 @@ interface SocialContext {
 	/** Menü einer Unterhaltung (Liste: Rechtsklick; Kopfzeile: ≡). */
 	void conversationMenu(Chat.Conversation c, int x, int y);
 
+	/** „Meine Strafen“ öffnen (Moderation v2). */
+	void showSanctions();
+
 	/** Bildschirmgröße (für Menüs/Dialoge). */
 	int screenWidth();
 

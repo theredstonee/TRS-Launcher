@@ -6,6 +6,7 @@ import dev.theredstonee.trsclient.core.online.Friends;
 import dev.theredstonee.trsclient.core.online.FriendsView;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
 import dev.theredstonee.trsclient.core.social.Chat;
+import dev.theredstonee.trsclient.core.social.SanctionError;
 import dev.theredstonee.trsclient.core.social.Social;
 import dev.theredstonee.trsclient.core.social.SocialOverlay;
 import dev.theredstonee.trsclient.core.ui.Canvas;
@@ -134,6 +135,12 @@ public final class SocialUi extends WindowUi implements SocialContext {
 	}
 
 	@Override
+	public void showSanctions() {
+		Social s = social();
+		if (s != null) dialog(new SanctionDialogs.MySanctions(s, this::dialog));
+	}
+
+	@Override
 	public int screenWidth() {
 		return screenW;
 	}
@@ -201,6 +208,11 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		if (s != null && s.signedIn()) {
 			kit.icon(c, ix, y, 16, "gear", false, mx, my, () -> dialog(new Dialogs.Settings(social())));
 			ix -= 18;
+			if (s.sanctions().supported()) {
+				// Meine Strafen (leuchtet, solange eine aktiv ist).
+				kit.icon(c, ix, y, 16, "shield", s.sanctions().activeCount(now) > 0, mx, my, this::showSanctions);
+				ix -= 18;
+			}
 			if (tab == 0) {
 				kit.icon(c, ix, y, 16, "search", list.searchOpen, mx, my, () -> {
 					list.searchOpen = !list.searchOpen;
@@ -225,7 +237,18 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		}
 		int cy = y + 20;
 		int ch = h - 20;
-		if (tab == 1) {
+		// Strafen (Moderation v2): Banner solange aktiv, Hinweis bei gesperrter Aktion, Fläche bei Kontosperre.
+		boolean bannedView = online != null && online.status() == TrsOnline.Status.BANNED;
+		if (!bannedView && s != null && s.signedIn()) {
+			int banner = SanctionDialogs.banner(c, kit, s, x, cy, w, mx, my, this::dialog);
+			cy += banner;
+			ch -= banner;
+			SanctionError hit = s.takeBlocked();
+			if (hit != null && dialog == null) dialog(new SanctionDialogs.Blocked(s, hit, this::dialog));
+		}
+		if (bannedView) {
+			SanctionDialogs.bannedPanel(c, kit, s, online, x, cy, w, ch, mx, my, this::dialog);
+		} else if (tab == 1) {
 			friendsPanel.draw(c, kit, x, cy, w, ch, mx, my);
 		} else {
 			String status = FriendsPanel.statusText(online);
@@ -492,6 +515,19 @@ public final class SocialUi extends WindowUi implements SocialContext {
 	/** Dialog „Gruppe erstellen“ öffnen. */
 	public void testGroupDialog() {
 		createGroup();
+	}
+
+	/** „Meine Strafen“ öffnen. */
+	public void testSanctions() {
+		showSanctions();
+	}
+
+	/** Einspruch zur ersten möglichen Strafe mit diesem Text öffnen; false = keine. */
+	public boolean testAppeal(String text) {
+		if (!(dialog instanceof SanctionDialogs.MySanctions)) showSanctions();
+		if (!(dialog instanceof SanctionDialogs.MySanctions) || !((SanctionDialogs.MySanctions) dialog).testAppeal()) return false;
+		if (dialog instanceof SanctionDialogs.Appeal) ((SanctionDialogs.Appeal) dialog).testText(text);
+		return true;
 	}
 
 	/** Alle Dialoge/Menüs schließen. */

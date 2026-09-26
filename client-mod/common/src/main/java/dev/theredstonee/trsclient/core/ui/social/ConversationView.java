@@ -7,6 +7,8 @@ import dev.theredstonee.trsclient.core.online.FriendsView;
 import dev.theredstonee.trsclient.core.social.Chat;
 import dev.theredstonee.trsclient.core.social.ChatStore;
 import dev.theredstonee.trsclient.core.social.SafeText;
+import dev.theredstonee.trsclient.core.social.Sanction;
+import dev.theredstonee.trsclient.core.social.SanctionText;
 import dev.theredstonee.trsclient.core.social.Social;
 import dev.theredstonee.trsclient.core.social.Times;
 import dev.theredstonee.trsclient.core.ui.Canvas;
@@ -121,9 +123,17 @@ final class ConversationView {
 		Chat.Moderation mod = s.moderation();
 		long now = System.currentTimeMillis();
 		if (mod.active(now)) {
-			String text = mod.until == 0 ? I18n.tr("social.moderation.mutedOpen") : I18n.tr("social.moderation.mutedUntil",
-					Times.dateTime(mod.until));
-			if (mod.reason != null) text += " – " + mod.reason;
+			Sanction mute = s.chatMute(now);
+			String text;
+			if (mute != null) {
+				// Moderation v2: Ende (relativ + Datum) und Grund; Klick zeigt „Meine Strafen“ (Einspruch).
+				text = I18n.tr("sanction.muteBanner", SanctionText.end(mute, now)) + " – " + SanctionText.reason(mute);
+				ctx.kit().area(x, cy, w, 12, ctx::showSanctions);
+			} else {
+				text = mod.until == 0 ? I18n.tr("social.moderation.mutedOpen") : I18n.tr("social.moderation.mutedUntil",
+						Times.dateTime(mod.until));
+				if (mod.reason != null) text += " – " + mod.reason;
+			}
 			c.fill(x, cy, x + w, cy + 12, ColorMath.withAlpha(t.dustOn, 60));
 			Icons.draw(c, "lock", x + 3, cy + 2, 1, t.dustOn);
 			Paint.textClipped(c, text, x + 14, cy + 2, w - 16, t.text, false);

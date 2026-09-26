@@ -114,6 +114,11 @@ public final class AutoTest {
 			SocialTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=sanctions: „Meine Strafen“ + Einspruch (Moderation v2) gegen eine API-Attrappe
+		if ("sanctions".equals(System.getProperty("trsclient.autotest.only"))) {
+			SanctionsTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=socialtoasts: nur Sozial-Toasts neben Vanilla-Toasts (Ausweichen) und über einem Menü
 		if ("socialtoasts".equals(System.getProperty("trsclient.autotest.only"))) {
 			SocialTest.installToasts();
