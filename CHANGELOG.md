@@ -16,7 +16,8 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
-## Unreleased
+## 0.6.4 – 2026-09-26 – The Workshop Update | Das Werkstatt-Update
+<!-- banner: accent=#d99a5b motif=/news/0.6.4/banner.png -->
 
 ### English
 
