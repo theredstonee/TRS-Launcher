@@ -230,6 +230,11 @@ servidor TRS.
   acceso de corta duración del servidor TRS, ve las direcciones IP de los juegos conectados y reenvía los bytes. **No
   guarda ni registra datos del juego ni direcciones IP** (solo contadores, como el número de conexiones) y no escribe
   nada en disco.
+- **Unirse desde el launcher:** en *Social → Mundos*, en el chat (tarjetas de mundo) y en las notificaciones, el
+  launcher muestra los mundos abiertos y las invitaciones de tus amigos y envía tu «Unirse»/«Solicitar» al servidor TRS
+  con tu inicio de sesión TRS. Cuando te dejan entrar, inicia una instancia compatible y solo pasa al juego el ID y el
+  código de acceso del mundo, por la conexión local de tu PC (`127.0.0.1`), sin claves de acceso. Después el juego se
+  conecta por sí mismo como se describe arriba. El launcher no guarda nada sobre mundos compartidos en el disco.
 - **Enlace público (e4mc):** opcionalmente puedes crear un enlace público con el que cualquiera puede entrar. Para ello
   se usa **e4mc**, un servicio de otros operadores, no el servidor TRS. Si lo activas (solo tras una advertencia que
   debes confirmar), tu juego se conecta al relay de e4mc; e4mc ve tu dirección IP y la de los jugadores y reenvía los

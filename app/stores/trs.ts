@@ -324,6 +324,10 @@ export const useTrsStore = defineStore('trs', () => {
     loadLastSeen()
     void refreshSync()
     const chat = useChatStore()
+    // Welten gehören zum Account: verwerfen und (falls schon geladen) neu holen.
+    const hosting = useHostingStore()
+    const hostingWasLoaded = hosting.loaded
+    hosting.reset()
     if (enabled.value) {
       await loadMe()
       chat.setAccount(me.value?.uuid ?? null)
@@ -331,6 +335,7 @@ export const useTrsStore = defineStore('trs', () => {
       if (me.value) {
         void chat.loadList().catch(() => {})
         void chat.loadModeration()
+        if (hostingWasLoaded) void hosting.load()
       }
     } else {
       me.value = null

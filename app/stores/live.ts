@@ -7,6 +7,8 @@ import { liveEventSchema, liveStatusSchema, messageSummary, type LiveEvent, type
 const FALLBACK_UNREAD_MS = 30_000
 const FALLBACK_FRIENDS_MS = 60_000
 const FALLBACK_OPEN_MS = 10_000
+/** Welten von Freunden bzw. die eigene Welt (API §21.5: alle 30 s). */
+const FALLBACK_HOSTING_MS = 30_000
 /** So lange darf der Kanal „hängen“, bevor der Rückfall anspringt. */
 const FALLBACK_GRACE_MS = 5_000
 
@@ -47,6 +49,10 @@ export const useLiveStore = defineStore('live', () => {
         setInterval(() => {
           if (chat.activeId && visible()) void chat.catchUp(chat.activeId).catch(() => {})
         }, FALLBACK_OPEN_MS),
+        setInterval(() => {
+          const hosting = useHostingStore()
+          if (trs.enabled && hosting.loaded && visible()) void hosting.load()
+        }, FALLBACK_HOSTING_MS),
       ]
     }, FALLBACK_GRACE_MS)
   }
@@ -61,7 +67,13 @@ export const useLiveStore = defineStore('live', () => {
   /** Alles per REST neu laden (nach `resync` oder einer Lücke). */
   async function resyncAll() {
     const trs = useTrsStore()
-    await Promise.allSettled([trs.loadFriends(), trs.loadCapeOffers(), useChatStore().resync()])
+    const hosting = useHostingStore()
+    await Promise.allSettled([
+      trs.loadFriends(),
+      trs.loadCapeOffers(),
+      useChatStore().resync(),
+      hosting.loaded ? hosting.load() : Promise.resolve(),
+    ])
   }
 
   async function dispatch(e: LiveEvent) {
@@ -71,7 +83,7 @@ export const useLiveStore = defineStore('live', () => {
       // Erste Verbindung: kurz abgleichen (seit dem Laden kann etwas passiert sein).
       // Neue Verbindung ohne Wiederaufnahme: alles neu.
       if (!e.resumed && !e.first) await resyncAll()
-      else if (e.first) void Promise.allSettled([chat.refreshUnread(), trs.loadFriends()])
+      else if (e.first) void Promise.allSettled([chat.refreshUnread(), trs.loadFriends(), useHostingStore().load()])
       wasLive = true
       return
     }
@@ -79,7 +91,7 @@ export const useLiveStore = defineStore('live', () => {
       await resyncAll()
       return
     }
-    await Promise.allSettled([chat.onEvent(e), trs.onLiveEvent(e)])
+    await Promise.allSettled([chat.onEvent(e), trs.onLiveEvent(e), useHostingStore().onEvent(e)])
     notifyFor(e)
   }
 

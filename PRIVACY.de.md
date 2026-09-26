@@ -232,6 +232,12 @@ den TRS-Server.
   TRS-Servers herein, sieht die IP-Adressen der verbundenen Spiele und leitet die Bytes weiter. Er **speichert und
   protokolliert keine Spieldaten und keine IP-Adressen** (nur Zähler wie die Zahl der Verbindungen) und schreibt nichts
   auf die Platte.
+- **Beitreten aus dem Launcher:** Unter *Sozial → Welten*, im Chat (Weltkarten) und in Benachrichtigungen zeigt der
+  Launcher offene Welten und Einladungen deiner Freunde und schickt dein „Beitreten“/„Anfragen“ mit deiner
+  TRS-Anmeldung an den TRS-Server. Lässt man dich herein, startet er eine passende Instanz und gibt dem Spiel nur die
+  ID und den Beitrittscode der Welt – über die lokale Verbindung auf deinem PC (`127.0.0.1`), ohne Zugangsschlüssel.
+  Das Spiel verbindet sich dann selbst wie oben beschrieben. Der Launcher speichert zu gehosteten Welten nichts auf
+  der Festplatte.
 - **Öffentlicher Link (e4mc):** Optional kannst du einen öffentlichen Link erstellen, mit dem jeder beitreten kann. Dafür
   wird **e4mc** genutzt, ein Dienst anderer Betreiber, nicht der TRS-Server. Schaltest du ihn ein (nur nach einer
   Warnung, die du bestätigen musst), verbindet sich dein Spiel mit dem Relay von e4mc; e4mc sieht deine IP-Adresse und

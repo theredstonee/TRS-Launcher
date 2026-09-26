@@ -21,6 +21,37 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **Join your friends' worlds from the launcher.** When a friend opens their singleplayer world in the TRS Client, you
+  see it live under Social → Worlds with version, game mode and player count. Invited? Press "Join". Not invited? Press
+  "Ask to join" (or enter a code like K7Q-M2X) – the launcher says "Request sent" and, as soon as the host lets you in,
+  starts the game by itself. It picks the instance with the same Minecraft version and mod loader (you choose if there
+  are several) and, if none fits, creates one with the TRS Client in one click. The game then joins the world on its
+  own – no address to type, no port forwarding. If the game is already running, it joins right away.
+- **World cards and notifications.** A world shared in chat shows up as a card ("Bob's world – 1.21.11 Fabric – Join")
+  with its live state, and invites pop up as a notification with "Join" and "Decline". You also get a short note when a
+  host lets you in, declines, removes you or closes the world.
+- **Your own world at a glance.** While you host a world in the game, Social → Worlds shows its join code, how many
+  players are in it and who is waiting – manage it in the game (pause menu → Host world).
+
+### Deutsch
+
+- **Den Welten deiner Freunde aus dem Launcher beitreten.** Öffnet ein Freund seine Einzelspielerwelt im TRS Client,
+  siehst du sie live unter Sozial → Welten mit Version, Spielmodus und Spielerzahl. Eingeladen? „Beitreten“ drücken.
+  Nicht eingeladen? „Anfragen“ (oder einen Code wie K7Q-M2X eingeben) – der Launcher meldet „Anfrage gesendet“ und
+  startet das Spiel von selbst, sobald der Host dich hereinlässt. Er nimmt die Instanz mit gleicher Minecraft-Version
+  und gleichem Mod-Loader (bei mehreren wählst du) und legt, wenn keine passt, mit einem Klick eine mit TRS Client an.
+  Das Spiel tritt der Welt dann selbst bei – ohne Adresse eintippen, ohne Portfreigabe. Läuft das Spiel schon, tritt es
+  sofort bei.
+- **Weltkarten und Benachrichtigungen.** Eine im Chat geteilte Welt erscheint als Karte („Welt von Bob – 1.21.11
+  Fabric – Beitreten“) mit aktuellem Stand, und Einladungen kommen als Benachrichtigung mit „Beitreten“ und „Ablehnen“.
+  Außerdem bekommst du einen kurzen Hinweis, wenn der Host dich hereinlässt, ablehnt, entfernt oder die Welt schließt.
+- **Deine eigene Welt im Blick.** Während du im Spiel eine Welt hostest, zeigt Sozial → Welten ihren Beitrittscode,
+  wie viele Spieler drin sind und wer wartet – verwaltet wird sie im Spiel (Pausemenü → Welt hosten).
+
 ## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
 
 <!-- banner: accent=#ff9f3d motif=/news/0.7.0/banner.png -->

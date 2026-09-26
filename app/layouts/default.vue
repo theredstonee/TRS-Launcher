@@ -112,6 +112,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <ToastHost />
     <SocialToastHost />
     <JoinServerDialog />
+    <HostingJoinDialog />
   </div>
 </template>
 

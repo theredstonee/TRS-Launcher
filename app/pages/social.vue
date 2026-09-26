@@ -2,8 +2,8 @@
 import type { TrsUserRef } from '~/utils/trs'
 import type { ReportTarget } from '~/utils/chat'
 
-// „Sozial“: Chat (Direktnachrichten und Gruppen) und Freunde (Liste, Anfragen,
-// Blockiert). Alles aktualisiert sich über den Echtzeit-Kanal des Kerns –
+// „Sozial“: Chat (Direktnachrichten und Gruppen), Freunde (Liste, Anfragen,
+// Blockiert) und Welten (gehostete Welten von Freunden). Alles aktualisiert sich über den Echtzeit-Kanal des Kerns –
 // ohne Neuladen. Oben: Freund hinzufügen, Gruppe erstellen, Spieler
 // blockieren, eigene Meldungen und Suche.
 const trs = useTrsStore()
@@ -13,9 +13,13 @@ const accounts = useAccountsStore()
 const route = useRoute()
 const router = useRouter()
 const toasts = useToasts()
+const hosting = useHostingStore()
 
-type Tab = 'chat' | 'friends'
-const tab = ref<Tab>(route.query.tab === 'friends' ? 'friends' : 'chat')
+type Tab = 'chat' | 'friends' | 'worlds'
+function tabFromQuery(value: unknown): Tab | null {
+  return value === 'friends' || value === 'worlds' ? value : null
+}
+const tab = ref<Tab>(tabFromQuery(route.query.tab) ?? 'chat')
 const search = ref('')
 const searchOpen = ref(false)
 const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
@@ -30,7 +34,8 @@ const requestBadge = computed(() => trs.incomingCount)
 async function openFromRoute() {
   const c = typeof route.query.c === 'string' ? route.query.c : null
   const dm = typeof route.query.dm === 'string' ? route.query.dm : null
-  if (route.query.tab === 'friends') tab.value = 'friends'
+  const fromQuery = tabFromQuery(route.query.tab)
+  if (fromQuery) tab.value = fromQuery
   if (c && /^c[0-9a-f]{20}$/.test(c)) {
     tab.value = 'chat'
     chat.activeId = c
@@ -72,7 +77,7 @@ function updateWatching() {
 watch(tab, (value) => {
   updateWatching()
   if (value === 'friends' && !trs.blocked) void trs.loadBlocked()
-  if (route.query.tab !== value && value === 'friends') void router.replace({ query: { tab: 'friends' } })
+  if (route.query.tab !== value && value !== 'chat') void router.replace({ query: { tab: value } })
 })
 
 onMounted(async () => {
@@ -125,6 +130,10 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
         <button class="tab flex items-center gap-1.5" :class="{ 'tab-on': tab === 'friends' }" role="tab" :aria-selected="tab === 'friends'" data-testid="tab-friends" @click="tab = 'friends'">
           {{ t('social.tabs.friends') }}
           <span v-if="requestBadge" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">{{ requestBadge }}</span>
+        </button>
+        <button class="tab flex items-center gap-1.5" :class="{ 'tab-on': tab === 'worlds' }" role="tab" :aria-selected="tab === 'worlds'" data-testid="tab-worlds" @click="tab = 'worlds'">
+          {{ t('social.tabs.worlds') }}
+          <span v-if="hosting.invitedCount" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">{{ hosting.invitedCount }}</span>
         </button>
       </div>
       <span
@@ -203,7 +212,10 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
       </div>
 
       <!-- Freunde -->
-      <SocialFriendsPanel v-else :search="search" @message="openFriend" @report="reportPlayer" />
+      <SocialFriendsPanel v-else-if="tab === 'friends'" :search="search" @message="openFriend" @report="reportPlayer" />
+
+      <!-- Welten (gehostete Welten von Freunden) -->
+      <SocialWorldsPanel v-else :search="search" />
     </TrsGate>
 
     <SocialPlayerDialog v-if="dialog === 'add' || dialog === 'block'" :mode="dialog" @close="dialog = null" />

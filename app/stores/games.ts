@@ -2,6 +2,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
 import type { Diagnosis, GameEvent, LogLine, StageProgress } from '~/types'
+import type { HostedWorld } from '~/utils/hosting'
 
 export type GamePhase = 'idle' | 'preparing' | 'running'
 
@@ -84,11 +85,18 @@ export const useGamesStore = defineStore('games', () => {
   /**
    * `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich nach dem Start direkt.
    * `joinAddress`: freie Adresse (Server eines Freundes); prüft der Kern.
+   * `joinWorld`: gehostete Welt eines Freundes – geht über den TRS-Link ans Spiel.
    * Die Vorbereitung läuft als Aufgabe (Titelleiste: Fortschritt, Pause, Abbrechen).
+   * Liefert, ob das Spiel gestartet wurde.
    */
-  async function launch(id: string, joinServer: string | null = null, joinAddress: string | null = null) {
+  async function launch(
+    id: string,
+    joinServer: string | null = null,
+    joinAddress: string | null = null,
+    joinWorld: HostedWorld | null = null,
+  ): Promise<boolean> {
     const s = state(id)
-    if (s.phase !== 'idle') return
+    if (s.phase !== 'idle') return false
     s.phase = 'preparing'
     s.error = null
     s.lastExit = null
@@ -121,6 +129,7 @@ export const useGamesStore = defineStore('games', () => {
           },
           ctx.taskId,
           joinAddress,
+          joinWorld,
         ),
     )
     s.progress = null
@@ -128,13 +137,14 @@ export const useGamesStore = defineStore('games', () => {
       // Das `started`-Event kann vor oder nach der Antwort ankommen.
       if (s.phase === 'preparing') s.phase = 'running'
       s.startedAt ??= Date.now()
-      return
+      return true
     }
     s.phase = 'idle'
     if (!result.cancelled) {
       s.error = errorMessage(result.error)
       useToasts().error(result.error)
     }
+    return false
   }
 
   /** Vorbereitung abbrechen (solange das Spiel noch nicht startet). */

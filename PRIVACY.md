@@ -221,6 +221,11 @@ the TRS server.
   in Germany, run by the TRS Launcher project). It only lets players in with a short-lived access key from the TRS
   server, sees the IP addresses of the connected games and forwards the bytes. It **does not store or log any game data
   or IP addresses** (only counters such as the number of connections) and keeps nothing on disk.
+- **Joining from the launcher:** under *Social → Worlds*, in chat (world cards) and in notifications the launcher shows
+  your friends' open worlds and invites, and sends your "Join"/"Ask to join" to the TRS server with your TRS sign-in.
+  When you are let in, it starts a matching instance and hands the game only the world's ID and join code, over the
+  local connection on your computer (`127.0.0.1`) – no access keys. The game then connects by itself as described
+  above. The launcher keeps nothing about hosted worlds on disk.
 - **Public link (e4mc):** optionally you can create a public link that anyone can use to join. This uses **e4mc**, a
   service by other operators, not the TRS server. When you turn it on (only after a warning you have to confirm), your
   game connects to e4mc's relay and e4mc sees your IP address and the players' IP addresses and forwards the game data;

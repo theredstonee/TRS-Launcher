@@ -56,6 +56,13 @@ import {
   type ReportActionInput,
   type ReportQuery,
 } from './moderation'
+import {
+  hostingDeliverySchema,
+  hostingJoinResultSchema,
+  hostingRoomSchema,
+  type HostedWorld,
+  type HostingTarget,
+} from './hosting'
 import type {
   FpsMode,
   Account,
@@ -260,6 +267,8 @@ export const backend = {
    * Löst erst auf, wenn das Spiel gestartet ist; Fortschritt kommt über `onProgress`.
    * `joinServer`: ID aus der Server-Liste – das Spiel verbindet sich dann direkt.
    * `joinAddress`: freie Adresse (z. B. der geteilte Server eines Freundes); prüft der Kern.
+   * `joinWorld`: gehostete Welt – der Kern gibt Raum-ID und Code über den TRS-Link ans Spiel
+   * (läuft die Instanz schon, geht die Anweisung direkt an das laufende Spiel).
    */
   launchInstance: (
     id: string,
@@ -267,7 +276,8 @@ export const backend = {
     onProgress: (p: StageProgress) => void,
     taskId: string | null = null,
     joinAddress: string | null = null,
-  ) => call<number>('launch_instance', { id, joinServer, joinAddress, onProgress: channel(onProgress), taskId }),
+    joinWorld: HostedWorld | null = null,
+  ) => call<number>('launch_instance', { id, joinServer, joinAddress, joinWorld, onProgress: channel(onProgress), taskId }),
   stopInstance: (id: string) => call<boolean>('stop_instance', { id }),
   runningGames: () => call<RunningGame[]>('running_games'),
   getGameLogs: (id: string) => call<LogLine[]>('get_game_logs', { id }),
@@ -678,6 +688,18 @@ export const backend = {
     quietHours: () => call<boolean>('social_quiet_hours'),
     notifyNative: (title: string, body: string) => call<void>('social_notify_native', { title, body }),
     focusWindow: () => call<void>('social_focus_window'),
+  },
+
+  /** Welt-Hosting (§21): Beitreten/Anfragen und Listen – Verbindungsdaten bleiben im Kern bzw. im Spiel. */
+  hosting: {
+    friendsRooms: () => checked(z.array(hostingRoomSchema), 'hosting_friends_rooms'),
+    myRooms: () => checked(z.array(hostingRoomSchema), 'hosting_my_rooms'),
+    /** `null` = Welt geschlossen oder nicht (mehr) sichtbar. */
+    room: (id: string) => checked(hostingRoomSchema.nullable(), 'hosting_room', { id }),
+    join: (target: HostingTarget) =>
+      checked(hostingJoinResultSchema, 'hosting_join', { target: { roomId: target.roomId ?? null, code: target.code ?? null } }),
+    leave: (id: string) => call<void>('hosting_leave', { id }),
+    delivery: (instanceId: string) => checked(hostingDeliverySchema, 'hosting_delivery', { instanceId }),
   },
 }
 

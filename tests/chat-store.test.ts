@@ -15,6 +15,7 @@ function message(seq: number, sender = BOB, extra: Partial<ChatMessage> = {}): C
     sender: { uuid: sender, name: sender === ME ? 'Theredstonee' : 'Bob' },
     text: `Text ${seq}`,
     invite: null,
+    world: null,
     attachments: [],
     replyTo: null,
     system: null,

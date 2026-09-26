@@ -262,7 +262,15 @@
       "not_muted": "Este jugador no está silenciado.",
       "invalid_word": "Palabra: de 2 a 48 letras o dígitos.",
       "word_exists": "Esta palabra ya está en el filtro.",
-      "word_not_found": "Esta palabra no está en el filtro (o ya no está)."
+      "word_not_found": "Esta palabra no está en el filtro (o ya no está).",
+      "room_not_found": "Este mundo ya no existe o no puedes verlo.",
+      "banned_from_world": "Estás vetado en este mundo.",
+      "world_closed": "Este mundo no acepta nuevas solicitudes ahora mismo.",
+      "room_full": "Este mundo está lleno.",
+      "cannot_join_own_world": "Este es tu propio mundo.",
+      "not_accepted": "El anfitrión (todavía) no te ha dejado entrar.",
+      "hosting_unavailable": "Compartir mundos no está disponible ahora mismo en el servidor TRS.",
+      "world_too_many_requests": "Hay demasiadas solicitudes esperando en este mundo; inténtalo más tarde."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -685,6 +693,14 @@
       "invalidCursor": "Página no válida.",
       "groupFull": "Un grupo puede tener como máximo {max} miembros.",
       "invalidReaction": "Reacción desconocida."
+    },
+    "hosting": {
+      "invalidRoom": "Mundo no válido.",
+      "invalidCode": "El código de acceso tiene 6 caracteres, p. ej. K7Q-M2X.",
+      "needsClient": "Esta instancia se inicia sin el TRS Client: solo un juego con TRS Client puede unirse a mundos compartidos.",
+      "gameNotLinked": "Este juego no está conectado al launcher: ciérralo e inícialo de nuevo desde el launcher.",
+      "clientTooOld": "El TRS Client de esta instancia es demasiado antiguo para mundos compartidos: iníciala una vez normalmente para que se actualice.",
+      "wrongInstance": "Este mundo funciona con Minecraft {version} ({loader}): elige una instancia compatible."
     },
     "chatImage": {
       "unsupported": "Solo se pueden enviar imágenes PNG, JPEG y WebP.",
@@ -3693,7 +3709,8 @@
     "tabs": {
       "label": "Secciones sociales",
       "chat": "Chat",
-      "friends": "Amigos"
+      "friends": "Amigos",
+      "worlds": "Mundos"
     },
     "actions": {
       "addFriend": "Añadir amigo",
@@ -3860,6 +3877,75 @@
       "noInstance": "Crea primero una instancia para unirte a servidores.",
       "starting": "Iniciando {instance} y uniéndose a {server} …",
       "alreadyRunning": "{instance} ya se está ejecutando."
+    },
+    "hosting": {
+      "aWorld": "el mundo",
+      "closed": {
+        "gone": "{world} se ha cerrado: el anfitrión ya no está.",
+        "left": "Has salido de {world}.",
+        "hidden": "{world} ya no está disponible para ti.",
+        "closed": "El anfitrión ha cerrado {world}."
+      },
+      "cardSummary": "Mundo: {name}",
+      "cardReply": "Invitación a un mundo",
+      "cardTitle": "Mundo de {host}",
+      "yourWorld": "Tu mundo",
+      "code": "Código de acceso",
+      "closedShort": "Mundo cerrado",
+      "requested": "Solicitado …",
+      "full": "Lleno",
+      "join": "Unirse",
+      "ask": "Solicitar",
+      "decline": "Rechazar",
+      "withdraw": "Retirar",
+      "requestSent": "Solicitud enviada: esperando a que {host} te deje entrar.",
+      "instanceCreated": "{instance} creada.",
+      "alreadyStarting": "{instance} ya se está iniciando.",
+      "starting": "Iniciando {instance} y uniéndose a «{world}» …",
+      "handedOver": "El juego se está uniendo a «{world}».",
+      "clientTooOld": "El TRS Client de esta instancia es demasiado antiguo para mundos compartidos. Iníciala una vez normalmente para que se actualice y vuelve a unirte.",
+      "notPickedUp": "El juego no recogió el mundo a tiempo. Vuelve a unirte, por favor.",
+      "inviteTitle": "{name} te invita a su mundo",
+      "accepted": "{host} te ha dejado entrar: iniciando el juego …",
+      "acceptedTitle": "{host} te ha dejado entrar en su mundo",
+      "declined": "{host} ha rechazado tu solicitud.",
+      "kicked": "Te han sacado de {world}.",
+      "banned": "Te han vetado en {world}.",
+      "chooseTitle": "¿Con qué instancia unirte?",
+      "chooseText": "«{world}» funciona con Minecraft {version}. La instancia se inicia y se une al mundo directamente.",
+      "noMatch": "Ninguna de tus instancias usa {version} con el TRS Client. Crea una: es rápido.",
+      "createInstance": "Nueva instancia",
+      "withClient": "con TRS Client",
+      "createAndJoin": "Crear y unirse",
+      "friendsWorlds": "Mundos de amigos",
+      "refresh": "Actualizar",
+      "state": {
+        "accepted": "Dentro",
+        "invited": "Invitado",
+        "requested": "Solicitado"
+      },
+      "hostedBy": "de {host}",
+      "closedForRequests": "no acepta solicitudes",
+      "modes": {
+        "survival": "Supervivencia",
+        "creative": "Creativo",
+        "adventure": "Aventura",
+        "spectator": "Espectador"
+      },
+      "emptyTitle": "No hay mundos abiertos",
+      "emptyText": "Cuando un amigo abra su mundo de un jugador en el TRS Client, aparecerá aquí en directo.",
+      "joinWithCode": "Unirse con un código",
+      "codeHint": "¿Tienes un código como K7Q-M2X? El anfitrión decide si entras.",
+      "players": "Jugadores",
+      "members": {
+        "accepted": "En el mundo",
+        "requested": "Quieren unirse",
+        "invited": "Invitados"
+      },
+      "manageInGame": "Invitar, dejar entrar y expulsar jugadores se hace en el juego: menú de pausa → Compartir mundo.",
+      "howTitle": "Jugar juntos",
+      "howHost": "Para ser anfitrión, abre tu mundo en el TRS Client: menú de pausa → Compartir mundo. Los amigos invitados entran al momento; los demás lo solicitan con tu código.",
+      "privacyNote": "Con una conexión directa, tú y los demás jugadores veis vuestras direcciones IP. Si no funciona, los datos del juego pasan por el relé de TRS."
     },
     "friends": {
       "list": "Lista de amigos",

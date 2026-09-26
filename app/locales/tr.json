@@ -262,7 +262,15 @@
       "not_muted": "Bu oyuncu susturulmamış.",
       "invalid_word": "Kelime: 2 ile 48 arası harf veya rakam.",
       "word_exists": "Bu kelime zaten filtrede.",
-      "word_not_found": "Bu kelime (artık) filtrede değil."
+      "word_not_found": "Bu kelime (artık) filtrede değil.",
+      "room_not_found": "Bu dünya (artık) yok ya da onu göremiyorsun.",
+      "banned_from_world": "Bu dünyadan yasaklısın.",
+      "world_closed": "Bu dünya şu anda yeni istek kabul etmiyor.",
+      "room_full": "Bu dünya dolu.",
+      "cannot_join_own_world": "Bu senin kendi dünyan.",
+      "not_accepted": "Ev sahibi seni (henüz) içeri almadı.",
+      "hosting_unavailable": "Dünya paylaşımı şu anda TRS sunucusunda kullanılamıyor.",
+      "world_too_many_requests": "Bu dünya için bekleyen çok fazla istek var – daha sonra tekrar dene."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -685,6 +693,14 @@
       "invalidCursor": "Geçersiz sayfa.",
       "groupFull": "Bir grupta en fazla {max} üye olabilir.",
       "invalidReaction": "Bilinmeyen tepki."
+    },
+    "hosting": {
+      "invalidRoom": "Geçersiz dünya.",
+      "invalidCode": "Katılma kodu 6 karakterdir, ör. K7Q-M2X.",
+      "needsClient": "Bu kurulum TRS Client olmadan başlıyor – paylaşılan dünyalara yalnızca TRS Client içeren bir oyun katılabilir.",
+      "gameNotLinked": "Bu oyun başlatıcıya bağlı değil – kapat ve başlatıcıdan yeniden başlat.",
+      "clientTooOld": "Bu kurulumun TRS Client sürümü paylaşılan dünyalar için çok eski – güncellenmesi için bir kez normal başlat.",
+      "wrongInstance": "Bu dünya Minecraft {version} ({loader}) ile çalışıyor – uygun bir kurulum seç."
     },
     "chatImage": {
       "unsupported": "Yalnızca PNG, JPEG ve WebP resimleri gönderilebilir.",
@@ -3693,7 +3709,8 @@
     "tabs": {
       "label": "Sosyal bölümler",
       "chat": "Sohbet",
-      "friends": "Arkadaşlar"
+      "friends": "Arkadaşlar",
+      "worlds": "Dünyalar"
     },
     "actions": {
       "addFriend": "Arkadaş ekle",
@@ -3860,6 +3877,75 @@
       "noInstance": "Sunuculara katılmak için önce bir örnek oluştur.",
       "starting": "{instance} başlatılıyor ve {server} sunucusuna bağlanılıyor …",
       "alreadyRunning": "{instance} zaten çalışıyor."
+    },
+    "hosting": {
+      "aWorld": "dünya",
+      "closed": {
+        "gone": "{world} kapandı – ev sahibi ayrıldı.",
+        "left": "{world} dünyasından ayrıldın.",
+        "hidden": "{world} artık senin için kullanılamıyor.",
+        "closed": "Ev sahibi {world} dünyasını kapattı."
+      },
+      "cardSummary": "Dünya: {name}",
+      "cardReply": "Dünya daveti",
+      "cardTitle": "{host} adlı oyuncunun dünyası",
+      "yourWorld": "Senin dünyan",
+      "code": "Katılma kodu",
+      "closedShort": "Dünya kapalı",
+      "requested": "İstek gönderildi …",
+      "full": "Dolu",
+      "join": "Katıl",
+      "ask": "Katılma isteği",
+      "decline": "Reddet",
+      "withdraw": "Geri çek",
+      "requestSent": "İstek gönderildi – {host} seni içeri alana kadar bekle.",
+      "instanceCreated": "{instance} oluşturuldu.",
+      "alreadyStarting": "{instance} zaten başlıyor.",
+      "starting": "{instance} başlatılıyor ve “{world}” dünyasına katılınıyor …",
+      "handedOver": "Oyun “{world}” dünyasına katılıyor.",
+      "clientTooOld": "Bu kurulumun TRS Client sürümü paylaşılan dünyalar için çok eski. Güncellenmesi için bir kez normal başlat, sonra tekrar katıl.",
+      "notPickedUp": "Oyun dünyayı zamanında almadı. Lütfen tekrar katıl.",
+      "inviteTitle": "{name} seni dünyasına davet ediyor",
+      "accepted": "{host} seni içeri aldı – oyun başlıyor …",
+      "acceptedTitle": "{host} seni dünyasına aldı",
+      "declined": "{host} isteğini reddetti.",
+      "kicked": "{world} dünyasından çıkarıldın.",
+      "banned": "{world} dünyasından yasaklandın.",
+      "chooseTitle": "Hangi kurulumla katılınsın?",
+      "chooseText": "“{world}” Minecraft {version} ile çalışıyor. Kurulum başlar ve doğrudan dünyaya katılır.",
+      "noMatch": "Kurulumlarının hiçbiri TRS Client ile {version} çalıştırmıyor. Bir tane oluştur – hemen olur.",
+      "createInstance": "Yeni kurulum",
+      "withClient": "TRS Client ile",
+      "createAndJoin": "Oluştur ve katıl",
+      "friendsWorlds": "Arkadaşların dünyaları",
+      "refresh": "Yenile",
+      "state": {
+        "accepted": "İçeride",
+        "invited": "Davetli",
+        "requested": "İstendi"
+      },
+      "hostedBy": "{host} tarafından",
+      "closedForRequests": "istek kabul etmiyor",
+      "modes": {
+        "survival": "Hayatta Kalma",
+        "creative": "Yaratıcı",
+        "adventure": "Macera",
+        "spectator": "İzleyici"
+      },
+      "emptyTitle": "Açık dünya yok",
+      "emptyText": "Bir arkadaşın tek oyunculu dünyasını TRS Client içinde açtığında burada canlı görünür.",
+      "joinWithCode": "Kodla katıl",
+      "codeHint": "K7Q-M2X gibi bir kodun mu var? İçeri girip girmeyeceğine ev sahibi karar verir.",
+      "players": "Oyuncular",
+      "members": {
+        "accepted": "Dünyada",
+        "requested": "Katılmak istiyor",
+        "invited": "Davetli"
+      },
+      "manageInGame": "Oyuncuları davet etme, içeri alma ve atma oyunda yapılır: duraklatma menüsü → Dünyayı paylaş.",
+      "howTitle": "Birlikte oyna",
+      "howHost": "Ev sahipliği için dünyanı TRS Client içinde aç: duraklatma menüsü → Dünyayı paylaş. Davet ettiğin arkadaşlar hemen girer, diğerleri kodunla istek gönderir.",
+      "privacyNote": "Doğrudan bağlantıda sen ve diğer oyuncular birbirinizin IP adresini görürsünüz. Bu çalışmazsa oyun verileri TRS aktarıcısı üzerinden geçer."
     },
     "friends": {
       "list": "Arkadaş listesi",

@@ -262,7 +262,15 @@
       "not_muted": "Deze speler is niet gedempt.",
       "invalid_word": "Woord: 2 tot 48 letters of cijfers.",
       "word_exists": "Dit woord staat al in het filter.",
-      "word_not_found": "Dit woord staat niet (meer) in het filter."
+      "word_not_found": "Dit woord staat niet (meer) in het filter.",
+      "room_not_found": "Deze wereld bestaat niet (meer) of je kunt hem niet zien.",
+      "banned_from_world": "Je bent verbannen uit deze wereld.",
+      "world_closed": "Deze wereld neemt nu geen nieuwe aanvragen aan.",
+      "room_full": "Deze wereld is vol.",
+      "cannot_join_own_world": "Dit is je eigen wereld.",
+      "not_accepted": "De host heeft je (nog) niet binnengelaten.",
+      "hosting_unavailable": "Werelden hosten is nu niet beschikbaar op de TRS-server.",
+      "world_too_many_requests": "Er wachten te veel aanvragen voor deze wereld – probeer het later opnieuw."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -685,6 +693,14 @@
       "invalidCursor": "Ongeldige pagina.",
       "groupFull": "Een groep kan maximaal {max} leden hebben.",
       "invalidReaction": "Onbekende reactie."
+    },
+    "hosting": {
+      "invalidRoom": "Ongeldige wereld.",
+      "invalidCode": "Een deelnamecode heeft 6 tekens, bijv. K7Q-M2X.",
+      "needsClient": "Deze instantie start zonder TRS Client – alleen een spel met TRS Client kan deelnemen aan gedeelde werelden.",
+      "gameNotLinked": "Dit spel is niet verbonden met de launcher – sluit het en start het opnieuw vanuit de launcher.",
+      "clientTooOld": "De TRS Client van deze instantie is te oud voor gedeelde werelden – start hem één keer normaal zodat hij bijwerkt.",
+      "wrongInstance": "Deze wereld draait op Minecraft {version} ({loader}) – kies een passende instantie."
     },
     "chatImage": {
       "unsupported": "Alleen PNG-, JPEG- en WebP-afbeeldingen kunnen worden verstuurd.",
@@ -3693,7 +3709,8 @@
     "tabs": {
       "label": "Sociale onderdelen",
       "chat": "Chat",
-      "friends": "Vrienden"
+      "friends": "Vrienden",
+      "worlds": "Werelden"
     },
     "actions": {
       "addFriend": "Vriend toevoegen",
@@ -3860,6 +3877,75 @@
       "noInstance": "Maak eerst een instantie aan om op servers mee te doen.",
       "starting": "{instance} wordt gestart en verbindt met {server} …",
       "alreadyRunning": "{instance} draait al."
+    },
+    "hosting": {
+      "aWorld": "de wereld",
+      "closed": {
+        "gone": "{world} is gesloten – de host is weg.",
+        "left": "Je hebt {world} verlaten.",
+        "hidden": "{world} is niet meer beschikbaar voor jou.",
+        "closed": "De host heeft {world} gesloten."
+      },
+      "cardSummary": "Wereld: {name}",
+      "cardReply": "Wereld-uitnodiging",
+      "cardTitle": "Wereld van {host}",
+      "yourWorld": "Jouw wereld",
+      "code": "Deelnamecode",
+      "closedShort": "Wereld gesloten",
+      "requested": "Aangevraagd …",
+      "full": "Vol",
+      "join": "Deelnemen",
+      "ask": "Aanvragen",
+      "decline": "Weigeren",
+      "withdraw": "Intrekken",
+      "requestSent": "Aanvraag verstuurd – wacht tot {host} je binnenlaat.",
+      "instanceCreated": "{instance} aangemaakt.",
+      "alreadyStarting": "{instance} start al.",
+      "starting": "{instance} start en neemt deel aan “{world}” …",
+      "handedOver": "Het spel neemt deel aan “{world}”.",
+      "clientTooOld": "De TRS Client van deze instantie is te oud voor gedeelde werelden. Start hem één keer normaal zodat hij bijwerkt en neem dan opnieuw deel.",
+      "notPickedUp": "Het spel heeft de wereld niet op tijd overgenomen. Neem opnieuw deel.",
+      "inviteTitle": "{name} nodigt je uit in zijn wereld",
+      "accepted": "{host} heeft je binnengelaten – het spel start …",
+      "acceptedTitle": "{host} heeft je in zijn wereld gelaten",
+      "declined": "{host} heeft je aanvraag geweigerd.",
+      "kicked": "Je bent uit {world} verwijderd.",
+      "banned": "Je bent uit {world} verbannen.",
+      "chooseTitle": "Met welke instantie deelnemen?",
+      "chooseText": "“{world}” draait op Minecraft {version}. De instantie start en neemt meteen deel aan de wereld.",
+      "noMatch": "Geen van je instanties draait {version} met de TRS Client. Maak er een – dat gaat snel.",
+      "createInstance": "Nieuwe instantie",
+      "withClient": "met TRS Client",
+      "createAndJoin": "Aanmaken en deelnemen",
+      "friendsWorlds": "Werelden van vrienden",
+      "refresh": "Vernieuwen",
+      "state": {
+        "accepted": "Binnen",
+        "invited": "Uitgenodigd",
+        "requested": "Aangevraagd"
+      },
+      "hostedBy": "van {host}",
+      "closedForRequests": "geen nieuwe aanvragen",
+      "modes": {
+        "survival": "Overleven",
+        "creative": "Creatief",
+        "adventure": "Avontuur",
+        "spectator": "Toeschouwer"
+      },
+      "emptyTitle": "Geen open werelden",
+      "emptyText": "Als een vriend zijn singleplayerwereld opent in de TRS Client, verschijnt die hier – live.",
+      "joinWithCode": "Deelnemen met code",
+      "codeHint": "Heb je een code zoals K7Q-M2X? De host beslist of je binnenkomt.",
+      "players": "Spelers",
+      "members": {
+        "accepted": "In de wereld",
+        "requested": "Willen deelnemen",
+        "invited": "Uitgenodigd"
+      },
+      "manageInGame": "Spelers uitnodigen, binnenlaten en verwijderen doe je in het spel: pauzemenu → Wereld hosten.",
+      "howTitle": "Samen spelen",
+      "howHost": "Om te hosten open je je wereld in de TRS Client: pauzemenu → Wereld hosten. Uitgenodigde vrienden komen meteen binnen, anderen vragen aan met je code.",
+      "privacyNote": "Bij een directe verbinding zien jij en de andere spelers elkaars IP-adres. Werkt dat niet, dan gaan de spelgegevens via de TRS-relay."
     },
     "friends": {
       "list": "Vriendenlijst",

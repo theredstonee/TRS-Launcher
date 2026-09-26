@@ -2,6 +2,7 @@ import { z } from 'zod'
 // Relativ importiert, damit Tests die Datei ohne Nuxt laden können.
 import { intlLocale, t } from './i18n'
 import { trsPresenceSchema, trsUserRefSchema } from './trs'
+import { chatWorldSchema, hostingEventSchemas } from './hosting'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
 // geprüft), und reine Funktionen für Zeitleiste, Vorschauen, Reaktionen,
@@ -62,6 +63,8 @@ export const chatReplySchema = z.object({
   preview: z.string().max(200).nullable(),
   attachments: z.number().int().min(0),
   invite: z.boolean(),
+  /** Antwort auf eine Weltkarte (ältere Kerne schicken das Feld nicht). */
+  world: z.boolean().default(false),
   deleted: z.boolean(),
 })
 
@@ -80,6 +83,8 @@ export const chatMessageSchema = z.object({
   sender: user.nullable(),
   text: z.string().max(MAX_TEXT).nullable(),
   invite: chatInviteSchema.nullable(),
+  /** Weltkarte einer gehosteten Welt (API §21.8). */
+  world: chatWorldSchema.nullable().default(null),
   attachments: z.array(chatAttachmentSchema).max(MAX_IMAGES),
   replyTo: chatReplySchema.nullable(),
   system: chatSystemSchema.nullable(),
@@ -232,6 +237,7 @@ export const liveEventSchema = z.discriminatedUnion('type', [
       chatTypingIndicator: z.boolean(),
     }),
   }),
+  ...hostingEventSchemas,
 ])
 
 export type ChatReaction = z.infer<typeof chatReactionSchema>
@@ -523,7 +529,9 @@ export function systemText(system: ChatSystem | null): string {
 }
 
 /** Kurzfassung einer Nachricht (Liste, Antwort, Benachrichtigung). */
-export function messageSummary(m: Pick<ChatMessage, 'kind' | 'text' | 'attachments' | 'invite' | 'deleted' | 'hidden' | 'system'>): string {
+export function messageSummary(
+  m: Pick<ChatMessage, 'kind' | 'text' | 'attachments' | 'invite' | 'deleted' | 'hidden' | 'system'> & { world?: ChatMessage['world'] },
+): string {
   if (m.deleted) return t('social.chat.deleted')
   if (m.hidden) return t('social.chat.hidden')
   if (m.kind === 'system') return systemText(m.system)
@@ -531,6 +539,7 @@ export function messageSummary(m: Pick<ChatMessage, 'kind' | 'text' | 'attachmen
   if (text) return text
   if (m.attachments.length) return t('social.chat.images', m.attachments.length)
   if (m.invite) return t('social.chat.inviteTo', { address: m.invite.address })
+  if (m.world) return t('social.hosting.cardSummary', { name: m.world.name })
   return ''
 }
 

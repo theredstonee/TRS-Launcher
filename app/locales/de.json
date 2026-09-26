@@ -262,7 +262,15 @@
       "not_muted": "Dieser Spieler ist nicht stummgeschaltet.",
       "invalid_word": "Wort: 2 bis 48 Buchstaben oder Ziffern.",
       "word_exists": "Dieses Wort steht schon im Filter.",
-      "word_not_found": "Dieses Wort steht nicht (mehr) im Filter."
+      "word_not_found": "Dieses Wort steht nicht (mehr) im Filter.",
+      "room_not_found": "Diese Welt gibt es nicht (mehr) oder du kannst sie nicht sehen.",
+      "banned_from_world": "Du bist aus dieser Welt verbannt.",
+      "world_closed": "Diese Welt nimmt gerade keine neuen Anfragen an.",
+      "room_full": "Diese Welt ist voll.",
+      "cannot_join_own_world": "Das ist deine eigene Welt.",
+      "not_accepted": "Der Host hat dich (noch) nicht in die Welt gelassen.",
+      "hosting_unavailable": "Welt-Hosting ist auf dem TRS-Server gerade nicht verfügbar.",
+      "world_too_many_requests": "Bei dieser Welt warten schon zu viele Anfragen – versuch es später noch einmal."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -685,6 +693,14 @@
       "invalidCursor": "Ungültige Seite.",
       "groupFull": "Eine Gruppe hat höchstens {max} Mitglieder.",
       "invalidReaction": "Unbekannte Reaktion."
+    },
+    "hosting": {
+      "invalidRoom": "Ungültige Welt.",
+      "invalidCode": "Der Beitrittscode hat 6 Zeichen, z. B. K7Q-M2X.",
+      "needsClient": "Diese Instanz startet ohne TRS Client – gehosteten Welten kann nur ein Spiel mit TRS Client beitreten.",
+      "gameNotLinked": "Dieses Spiel ist nicht mit dem Launcher verbunden – beende es und starte es aus dem Launcher neu.",
+      "clientTooOld": "Der TRS Client dieser Instanz ist zu alt für gehostete Welten – starte sie einmal normal, damit er sich aktualisiert.",
+      "wrongInstance": "Diese Welt läuft auf Minecraft {version} ({loader}) – wähle eine passende Instanz."
     },
     "chatImage": {
       "unsupported": "Nur PNG-, JPEG- und WebP-Bilder können gesendet werden.",
@@ -3693,7 +3709,8 @@
     "tabs": {
       "label": "Bereiche",
       "chat": "Chat",
-      "friends": "Freunde"
+      "friends": "Freunde",
+      "worlds": "Welten"
     },
     "actions": {
       "addFriend": "Freund hinzufügen",
@@ -3860,6 +3877,75 @@
       "noInstance": "Leg zuerst eine Instanz an, um Servern beizutreten.",
       "starting": "{instance} startet und verbindet sich mit {server} …",
       "alreadyRunning": "{instance} läuft schon."
+    },
+    "hosting": {
+      "aWorld": "die Welt",
+      "closed": {
+        "gone": "{world} ist zu – der Host ist weg.",
+        "left": "Du hast {world} verlassen.",
+        "hidden": "{world} ist für dich nicht mehr verfügbar.",
+        "closed": "Der Host hat {world} geschlossen."
+      },
+      "cardSummary": "Welt: {name}",
+      "cardReply": "Welt-Einladung",
+      "cardTitle": "Welt von {host}",
+      "yourWorld": "Deine Welt",
+      "code": "Beitrittscode",
+      "closedShort": "Welt geschlossen",
+      "requested": "Angefragt …",
+      "full": "Voll",
+      "join": "Beitreten",
+      "ask": "Anfragen",
+      "decline": "Ablehnen",
+      "withdraw": "Zurückziehen",
+      "requestSent": "Anfrage gesendet – warte auf Zustimmung von {host}.",
+      "instanceCreated": "{instance} angelegt.",
+      "alreadyStarting": "{instance} startet schon.",
+      "starting": "{instance} startet und tritt „{world}“ bei …",
+      "handedOver": "Das Spiel tritt „{world}“ bei.",
+      "clientTooOld": "Der TRS Client dieser Instanz ist zu alt für gehostete Welten. Starte sie einmal normal, damit er sich aktualisiert, und tritt dann erneut bei.",
+      "notPickedUp": "Das Spiel hat die Welt nicht rechtzeitig übernommen. Bitte tritt erneut bei.",
+      "inviteTitle": "{name} lädt dich in seine Welt ein",
+      "accepted": "{host} hat dich reingelassen – das Spiel startet …",
+      "acceptedTitle": "{host} hat dich in seine Welt gelassen",
+      "declined": "{host} hat deine Anfrage abgelehnt.",
+      "kicked": "Du wurdest aus {world} entfernt.",
+      "banned": "Du wurdest aus {world} verbannt.",
+      "chooseTitle": "Mit welcher Instanz beitreten?",
+      "chooseText": "„{world}“ läuft auf Minecraft {version}. Die Instanz startet und tritt der Welt direkt bei.",
+      "noMatch": "Keine deiner Instanzen läuft auf {version} mit TRS Client. Leg eine an – das geht schnell.",
+      "createInstance": "Neue Instanz",
+      "withClient": "mit TRS Client",
+      "createAndJoin": "Anlegen und beitreten",
+      "friendsWorlds": "Welten von Freunden",
+      "refresh": "Aktualisieren",
+      "state": {
+        "accepted": "Drin",
+        "invited": "Eingeladen",
+        "requested": "Angefragt"
+      },
+      "hostedBy": "von {host}",
+      "closedForRequests": "keine neuen Anfragen",
+      "modes": {
+        "survival": "Überleben",
+        "creative": "Kreativ",
+        "adventure": "Abenteuer",
+        "spectator": "Zuschauer"
+      },
+      "emptyTitle": "Keine offenen Welten",
+      "emptyText": "Wenn ein Freund seine Einzelspielerwelt im TRS Client öffnet, erscheint sie hier – live.",
+      "joinWithCode": "Mit Code beitreten",
+      "codeHint": "Du hast einen Code wie K7Q-M2X? Der Host entscheidet, ob du reinkommst.",
+      "players": "Spieler",
+      "members": {
+        "accepted": "In der Welt",
+        "requested": "Möchten beitreten",
+        "invited": "Eingeladen"
+      },
+      "manageInGame": "Spieler einladen, reinlassen und entfernen geht im Spiel: Pausemenü → Welt hosten.",
+      "howTitle": "Zusammen spielen",
+      "howHost": "Zum Hosten öffnest du deine Welt im TRS Client: Pausemenü → Welt hosten. Eingeladene Freunde kommen sofort rein, alle anderen fragen mit deinem Code an.",
+      "privacyNote": "Bei einer direkten Verbindung sehen du und die anderen Spieler gegenseitig eure IP-Adressen. Klappt sie nicht, laufen die Spieldaten über das TRS-Relay."
     },
     "friends": {
       "list": "Freundesliste",

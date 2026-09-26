@@ -277,9 +277,19 @@ export const useChatStore = defineStore('chat', () => {
       sender: me.value ? { uuid: me.value, name: conversations.value[id]?.members.find((m) => m.uuid === me.value)?.name ?? '' } : null,
       text: draft.text ?? null,
       invite: draft.invite ? { address: draft.invite.address, name: draft.invite.name } : null,
+      world: null,
       attachments: [],
       replyTo: reply
-        ? { id: reply.id, seq: reply.seq, sender: reply.sender, preview: reply.text?.slice(0, 120) ?? null, attachments: reply.attachments.length, invite: !!reply.invite, deleted: reply.deleted }
+        ? {
+            id: reply.id,
+            seq: reply.seq,
+            sender: reply.sender,
+            preview: reply.text?.slice(0, 120) ?? null,
+            attachments: reply.attachments.length,
+            invite: !!reply.invite,
+            world: !!reply.world,
+            deleted: reply.deleted,
+          }
         : null,
       system: null,
       reactions: [],
