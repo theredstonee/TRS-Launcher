@@ -51,6 +51,8 @@ public final class TrsModules {
 	public final Module menuStyle;
 	public final Module oldAnimations;
 	public final Module lowFire;
+	/** Schild in der 1. Person seitlich/tiefer halten, eigene Block-Haltung, durchsichtig beim Blocken (core.shield). */
+	public final Module shieldPosition;
 	public final Module blockOutline;
 	public final Module hitboxes;
 	public final Module noHurtCam;
@@ -183,6 +185,14 @@ public final class TrsModules {
 	public final BoolSetting oldAnimationsNoDip;
 	public final BoolSetting oldAnimationsBlockHit;
 	public final NumberSetting lowFireHeight;
+	public final ChoiceSetting<dev.theredstonee.trsclient.core.shield.ShieldPreset> shieldPreset;
+	/** Regler der normalen Haltung bzw. der Block-Haltung: X, Y, Z, Drehung X/Y/Z, Größe (%). */
+	public final NumberSetting[] shieldNormal = new NumberSetting[7];
+	public final NumberSetting[] shieldBlocking = new NumberSetting[7];
+	public final BoolSetting shieldTransparent;
+	public final NumberSetting shieldOpacity;
+	/** Rechnet die Schild-Haltung je Bild (Vorlagen, Überblendung, Deckkraft). */
+	public final dev.theredstonee.trsclient.core.shield.ShieldPosition shield;
 	public final ColorSetting blockOutlineColor;
 	public final NumberSetting blockOutlineOpacity;
 	public final NumberSetting blockOutlineWidth;
@@ -438,6 +448,11 @@ public final class TrsModules {
 						+ "swing animation also while using an item (visual only)", false));
 		lowFire = registry.register(new Module("lowFire", "Low Fire",
 				"Pulls the flames at the edge of the screen down while you are burning", false));
+		shieldPosition = registry.register(new Module("shieldPosition", "Shield Position",
+				"Holds your shield further to the side and lower in first person so you see more in PvP, with its own "
+						+ "flatter pose while blocking and a smooth transition. Choose a preset or set position, rotation "
+						+ "and size yourself; optionally the shield turns see-through while you block. Third person stays "
+						+ "unchanged.", false));
 		blockOutline = registry.register(new Module("blockOutline", "Block Outline",
 				"Color and width of the outline around the block you are looking at", false));
 		hitboxes = registry.register(new Module("hitboxes", "Hitboxes",
@@ -514,6 +529,7 @@ public final class TrsModules {
 		worldMap.icon("map").category(Category.WORLD);
 		oldAnimations.icon("sword").category(Category.PVP);
 		lowFire.icon("hit").category(Category.PVP);
+		shieldPosition.icon("shield").category(Category.PVP);
 		blockOutline.icon("layers").category(Category.WORLD);
 		hitboxes.icon("shield").category(Category.PVP);
 		noHurtCam.icon("eye").category(Category.PVP);
@@ -628,6 +644,20 @@ public final class TrsModules {
 		oldAnimationsNoDip = oldAnimations.add(new BoolSetting("noDip", "Hand stays up (no cooldown movement)", true));
 		oldAnimationsBlockHit = oldAnimations.add(new BoolSetting("blockHit", "Show swinging while using items", true));
 		lowFireHeight = lowFire.add(new NumberSetting("height", "Lowering", 0.4, 0.1, 0.8, 0.1, ""));
+		shieldPreset = shieldPosition.add(new ChoiceSetting<>("preset", "Preset", dev.theredstonee.trsclient.core.shield.ShieldPreset.class,
+				dev.theredstonee.trsclient.core.shield.ShieldPreset.SIDE));
+		addShieldPose(shieldNormal, "normal", "Normal",
+				dev.theredstonee.trsclient.core.shield.ShieldPreset.SIDE.normal().toSettings());
+		addShieldPose(shieldBlocking, "block", "Blocking",
+				dev.theredstonee.trsclient.core.shield.ShieldPreset.SIDE.blocking().toSettings());
+		shieldTransparent = shieldPosition.add(new BoolSetting("transparent", "See-through while blocking", false));
+		shieldOpacity = shieldPosition.add(new NumberSetting("opacity", "Opacity while blocking",
+				dev.theredstonee.trsclient.core.shield.ShieldPosition.OPACITY_DEFAULT, dev.theredstonee.trsclient.core.shield.ShieldPosition.OPACITY_MIN,
+				dev.theredstonee.trsclient.core.shield.ShieldPosition.OPACITY_MAX, dev.theredstonee.trsclient.core.shield.ShieldPosition.OPACITY_STEP, "", "%"));
+		shield = new dev.theredstonee.trsclient.core.shield.ShieldPosition(shieldPosition, shieldPreset, shieldNormal, shieldBlocking,
+				shieldTransparent, shieldOpacity);
+		dev.theredstonee.trsclient.core.ui.menu.ModulePanel.Registry.set(shieldPosition,
+				new dev.theredstonee.trsclient.core.shield.ShieldPreview(shield));
 		blockOutlineColor = blockOutline.add(new ColorSetting("color", "Color", 0x000000));
 		blockOutlineOpacity = blockOutline.add(new NumberSetting("opacity", "Opacity (%)", 40, 10, 100, 10, ""));
 		blockOutlineWidth = blockOutline.add(new NumberSetting("width", "Width", 2, 1, 6, 1, ""));
@@ -759,6 +789,23 @@ public final class TrsModules {
 		profiles = new HudProfiles(registry);
 		// Einführung/Begrüßung auf dem Startbildschirm brauchen die Module des laufenden Spiels.
 		dev.theredstonee.trsclient.core.intro.IntroGate.register(this);
+	}
+
+	/** Sieben Regler einer Schild-Haltung (X, Y, Z, Drehung X/Y/Z, Größe) mit Standard = Vorlage „Seitlich“. */
+	private void addShieldPose(NumberSetting[] out, String prefix, String label, double[] defaults) {
+		String[] keys = {"X", "Y", "Z", "RotX", "RotY", "RotZ", "Scale"};
+		String[] names = {"X (sideways)", "Y (height)", "Z (depth)", "rotation X", "rotation Y", "rotation Z", "size"};
+		for (int i = 0; i < 7; i++) {
+			boolean pos = i < 3, rot = i >= 3 && i < 6;
+			double min = pos ? dev.theredstonee.trsclient.core.shield.ShieldPosition.POS_MIN
+					: rot ? dev.theredstonee.trsclient.core.shield.ShieldPosition.ROT_MIN : dev.theredstonee.trsclient.core.shield.ShieldPosition.SCALE_MIN;
+			double max = pos ? dev.theredstonee.trsclient.core.shield.ShieldPosition.POS_MAX
+					: rot ? dev.theredstonee.trsclient.core.shield.ShieldPosition.ROT_MAX : dev.theredstonee.trsclient.core.shield.ShieldPosition.SCALE_MAX;
+			double step = pos ? dev.theredstonee.trsclient.core.shield.ShieldPosition.POS_STEP
+					: rot ? dev.theredstonee.trsclient.core.shield.ShieldPosition.ROT_STEP : dev.theredstonee.trsclient.core.shield.ShieldPosition.SCALE_STEP;
+			out[i] = shieldPosition.add(new NumberSetting(prefix + keys[i], label + ": " + names[i], defaults[i], min, max, step, "",
+					pos ? "" : rot ? "°" : "%"));
+		}
 	}
 
 	/** Aktuelle Umhang-Einstellungen in {@code out} (je Tick, keine Allokation). */

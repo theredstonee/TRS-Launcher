@@ -124,6 +124,10 @@ public final class TrsClient {
 		list.remove(modules.hitColor);
 		// Niedriges Feuer braucht den Feuer-Overlay-Renderer – ohne Coremod nicht machbar.
 		list.remove(modules.lowFire);
+		// Schild-Position: Schilde gibt es erst ab 1.9, das Hand-Ereignis (RenderSpecificHandEvent) erst ab Forge für 1.10.2.
+		//? if <1.10.2 {
+		list.remove(modules.shieldPosition);
+		//?}
 		menuModules = Collections.unmodifiableList(list);
 	}
 
@@ -189,6 +193,8 @@ public final class TrsClient {
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
+		// Schild-Position (ab 1.10.2): Schild-Hand der 1. Person selbst zeichnen.
+		dev.theredstonee.trsclient.render.LegacyShield.install(modules);
 		AutoTest.installIfRequested();
 		// Legacy-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));

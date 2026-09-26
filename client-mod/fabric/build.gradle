@@ -227,6 +227,12 @@ if (stonecutter.eval(mc, '>=1.15')) mixinClasses += ['LowFireMixin', 'BlockOutli
 if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
 // Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.
 if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
+// Schild-Position: Haken am Hand-Renderer (alle Versionen); Deckkraft ab 1.21.9 im Submit-Sammler, in 1.14 per GL;
+// ab 26.3 kommt das Modell der Hand aus FirstPersonHandsAndItems.
+mixinClasses << 'ShieldHandMixin'
+if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'ShieldSubmitMixin'
+if (stonecutter.eval(mc, '>=26.3')) mixinClasses << 'ShieldModelMixin'
+if (stonecutter.eval(mc, '<1.15')) mixinClasses << 'ShieldGlMixin'
 
 processResources {
 	def props = [

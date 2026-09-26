@@ -673,11 +673,21 @@ public final class ModMenu extends UiScreen {
 			}
 		}
 
+		ModulePanel extra = ModulePanel.Registry.of(m);
+		// Angeheftete Zusatzbereiche (Live-Vorschau) bleiben oben stehen, solange genug Platz für die Liste bleibt.
+		if (extra != null && extra.pinned() && bottom - listTop >= 200) {
+			listTop = extra.draw(c, hits, listX + 2, listTop, listW - 10, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					host.playClick();
+				}
+			}) + 2;
+			extra = null;
+		}
 		c.scissor(listX, listTop, listX + listW, bottom);
 		hits.clip(listX, listTop, listW, bottom - listTop);
 		int ry = listTop + 2 - settingsScroll;
 		ry = Paint.paragraph(c, m.description(), listX + 2, ry, Math.min(listW - 8, 360), 10, t.textDim) + 6;
-		ModulePanel extra = ModulePanel.Registry.of(m);
 		if (extra != null) {
 			ry = extra.draw(c, hits, listX + 2, ry, listW - 10, mx, my, new Runnable() {
 				@Override

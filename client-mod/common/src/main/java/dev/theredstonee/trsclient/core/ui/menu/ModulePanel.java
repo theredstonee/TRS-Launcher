@@ -19,6 +19,14 @@ public interface ModulePanel {
 	 */
 	int draw(Canvas c, Hits hits, int x, int y, int w, int mouseX, int mouseY, Runnable click);
 
+	/**
+	 * Oben angeheftet statt mitzuscrollen (z. B. eine Live-Vorschau, die beim Verstellen der Regler sichtbar bleiben
+	 * soll) – nur wenn die Seite hoch genug ist, sonst wie gewohnt in der Liste.
+	 */
+	default boolean pinned() {
+		return false;
+	}
+
 	/** Bereiche je Modul (gesetzt vom Code, der das Modul betreibt). */
 	final class Registry {
 		private static final Map<Module, ModulePanel> PANELS = new IdentityHashMap<Module, ModulePanel>();

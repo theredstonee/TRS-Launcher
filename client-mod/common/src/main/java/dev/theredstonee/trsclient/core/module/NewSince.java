@@ -58,6 +58,8 @@ public final class NewSince {
 	public static final String MENU_SOCIAL = "menu:social";
 	public static final String KEY_SOCIAL = "key.trsclient.social";
 	public static final String KEY_QUICK_REPLY = "key.trsclient.quickReply";
+	/** Schild-Position (nach TRS Client 0.8.0): Schild in der 1. Person seitlich/tiefer, eigene Block-Haltung. */
+	public static final String SHIELD = "0.8.1";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -89,6 +91,8 @@ public final class NewSince {
 		add("0.7.2", CLIPS_PREVIEW);
 		// TRS Client 0.8.0: Sozial (Chat, Gruppen, Bilder, Einladungen, Toasts, Schnellantwort, Meldungen).
 		add(SOCIAL, "social", MENU_SOCIAL, KEY_SOCIAL, KEY_QUICK_REPLY);
+		// Nach 0.8.0: Schild-Position (Vorlagen, eigene Regler, weiches Blocken, durchsichtig beim Blocken).
+		add(SHIELD, "shieldPosition");
 	}
 
 	private NewSince() {

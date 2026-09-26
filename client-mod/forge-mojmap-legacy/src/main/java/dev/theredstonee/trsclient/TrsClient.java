@@ -150,7 +150,7 @@ public final class TrsClient {
 			// Ohne Mixin (Forge 1.14.4) fehlen alle Module, die einen Mixin-Hook brauchen.
 			if (!PvpFeatures.mixinFeatures() && (m == modules.freelook || m == modules.hitColor
 					|| m == modules.reach || m == modules.combo || m == modules.chat || m == modules.autoGg
-					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline
+					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline || m == modules.shieldPosition
 					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors
 					|| m == modules.entityCulling || m == modules.particles || m == modules.worldDetails
 					|| m == modules.menuStyle)) {
