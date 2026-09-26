@@ -21,7 +21,17 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.8.0 – 2026-09-26 – Open House | Tag der offenen Tür
+<!-- banner: accent=#3ecfcf motif=/news/0.8.0/banner.png -->
+<!-- shots:
+/news/0.8.0/worlds.png | Social → Worlds: join your friends' worlds, ask to join or enter a code | Sozial → Welten: Welten von Freunden beitreten, anfragen oder per Code
+/news/0.8.0/host-world.png | Host your singleplayer world for friends – no port forwarding | Einzelspielerwelt für Freunde hosten – ohne Portfreigabe
+/news/0.8.0/host-manage.png | Manage players, rights and join requests while you host | Spieler, Rechte und Beitrittsanfragen beim Hosten verwalten
+/news/0.8.0/join-code.png | Join with a code in the TRS Client | Mit Code beitreten im TRS Client
+/news/0.8.0/minimap-indoors.png | The minimap looks inside buildings, barriers are ignored | Die Minimap schaut in Gebäude, Barrieren werden ignoriert
+/news/0.8.0/shield.png | Shield Position with live preview | Schild-Position mit Live-Vorschau
+/news/0.8.0/sanctions.png | See your sanctions and appeal once | Eigene Strafen sehen und einmal Einspruch einlegen
+-->
 
 ### English
 
