@@ -157,7 +157,8 @@
       "memoryRange": "Arbeitsspeicher muss zwischen {min} und {max} MB liegen",
       "jvmArgsInvalid": "JVM-Argumente sind ungültig oder zu lang",
       "javaPathInvalid": "Java-Pfad ist ungültig",
-      "javaPathNotJava": "Der Java-Pfad muss auf java.exe oder javaw.exe zeigen"
+      "javaPathNotJava": "Der Java-Pfad muss auf java.exe oder javaw.exe zeigen",
+      "socialToasts": "Benachrichtigungen: Dauer 3 bis 10 Sekunden, Ecke oben/unten links/rechts."
     },
     "trs": {
       "offline": "Der TRS-Server ist gerade nicht erreichbar.",
@@ -221,7 +222,47 @@
       "share_limit": "Dieser Umhang ist schon mit 20 Spielern geteilt.",
       "offer_inbox_full": "Dieser Spieler hat zu viele offene Umhang-Angebote.",
       "offer_not_found": "Dieses Angebot gibt es nicht mehr.",
-      "holder_not_found": "Dieser Spieler hat den Umhang nicht (mehr) von dir."
+      "holder_not_found": "Dieser Spieler hat den Umhang nicht (mehr) von dir.",
+      "not_friends": "Ihr seid nicht (mehr) befreundet.",
+      "chat_muted": "Du bist im Chat gerade stummgeschaltet.",
+      "conversation_not_found": "Diese Unterhaltung gibt es nicht (mehr).",
+      "message_not_found": "Diese Nachricht gibt es nicht (mehr).",
+      "attachment_not_found": "Dieses Bild gibt es nicht (mehr).",
+      "message_too_long": "Die Nachricht ist zu lang (höchstens 2000 Zeichen).",
+      "empty_message": "Die Nachricht ist leer.",
+      "too_many_attachments": "Höchstens 10 Bilder je Nachricht.",
+      "links_not_allowed": "In dieser Gruppe dürfen nur der Besitzer und Spieler, die mit allen befreundet sind, Links und Einladungen senden.",
+      "message_blocked": "Die Nachricht enthält ein gesperrtes Wort.",
+      "spam_detected": "Das sieht nach Spam aus – bitte nicht dieselbe Nachricht mehrfach senden.",
+      "not_sender": "Das geht nur bei eigenen Nachrichten.",
+      "message_deleted": "Die Nachricht wurde gelöscht.",
+      "not_owner": "Das darf nur der Besitzer der Gruppe.",
+      "group_full": "Die Gruppe ist voll (höchstens 25 Mitglieder).",
+      "group_limit": "Du bist schon in zu vielen Gruppen.",
+      "target_group_limit": "Ein Spieler ist schon in zu vielen Gruppen.",
+      "invalid_name": "Gruppenname: 1 bis 32 Zeichen.",
+      "member_not_found": "Dieser Spieler ist nicht in der Gruppe.",
+      "nonce_reused": "Die Nachricht konnte nicht gesendet werden – bitte erneut versuchen.",
+      "invalid_until": "Dieser Zeitpunkt liegt in der Vergangenheit.",
+      "invalid_cursor": "Die Liste hat sich geändert – bitte neu laden.",
+      "image_too_large": "Das Bild ist zu groß (höchstens 8192 Pixel je Seite).",
+      "animated_image": "Animierte Bilder können nicht gesendet werden.",
+      "invalid_image": "Das Bild ist beschädigt.",
+      "too_many_pending_attachments": "Zu viele Bilder warten aufs Senden – schick erst die vorigen ab.",
+      "storage_quota": "Dein Speicher für Chat-Bilder ist voll – lösch ein paar alte Bilder.",
+      "storage_full": "Der TRS-Server nimmt gerade keine Bilder an – bitte später erneut versuchen.",
+      "already_reported": "Das hast du schon gemeldet – wir schauen es uns an.",
+      "too_many_open_reports": "Du hast schon viele offene Meldungen – warte auf die Prüfung.",
+      "not_reportable": "Das kann nicht gemeldet werden.",
+      "report_resolved": "Diese Meldung ist schon erledigt.",
+      "report_not_found": "Diese Meldung gibt es nicht (mehr).",
+      "no_message": "Zu dieser Meldung gehört keine Nachricht.",
+      "no_target": "Zu dieser Meldung gehört kein Spieler.",
+      "cannot_moderate_admin": "Admins können nicht stummgeschaltet werden.",
+      "not_muted": "Dieser Spieler ist nicht stummgeschaltet.",
+      "invalid_word": "Wort: 2 bis 48 Buchstaben oder Ziffern.",
+      "word_exists": "Dieses Wort steht schon im Filter.",
+      "word_not_found": "Dieses Wort steht nicht (mehr) im Filter."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -632,6 +673,33 @@
       "sourceGone": "Diese Log-Datei gibt es nicht mehr.",
       "unreadable": "Diese Log-Datei lässt sich nicht lesen.",
       "qrInvalid": "Für diesen Link gibt es keinen QR-Code."
+    },
+    "chat": {
+      "invalidConversation": "Ungültige Unterhaltung.",
+      "invalidMessage": "Ungültige Nachricht.",
+      "invalidAttachment": "Ungültiges Bild.",
+      "textTooLong": "Die Nachricht ist zu lang (höchstens {max} Zeichen).",
+      "groupName": "Gruppenname: 1 bis 32 Zeichen.",
+      "tooManyImages": "Höchstens {max} Bilder je Nachricht.",
+      "emptyMessage": "Die Nachricht ist leer.",
+      "invalidCursor": "Ungültige Seite.",
+      "groupFull": "Eine Gruppe hat höchstens {max} Mitglieder.",
+      "invalidReaction": "Unbekannte Reaktion."
+    },
+    "chatImage": {
+      "unsupported": "Nur PNG-, JPEG- und WebP-Bilder können gesendet werden.",
+      "animated": "Animierte Bilder können nicht gesendet werden.",
+      "broken": "Das Bild ist beschädigt.",
+      "tooLarge": "Das Bild ist zu groß (höchstens {side} Pixel je Seite).",
+      "fileTooLarge": "Die Datei ist zu groß.",
+      "gone": "Das Bild gibt es nicht mehr."
+    },
+    "reports": {
+      "invalidReport": "Ungültige Meldung.",
+      "invalidFilter": "Ungültiger Filter.",
+      "invalidAction": "Unbekannte Entscheidung.",
+      "muteRange": "Stummschaltung: 5 Minuten bis 1 Jahr.",
+      "invalidWord": "Wort: 2 bis 48 Buchstaben oder Ziffern."
     }
   },
   "browse": {
@@ -1780,6 +1848,42 @@
       "keysTitle": "Tasten im Spiel (TRS Client)",
       "keysText": "F9 speichert einen Clip, F10 startet und stoppt eine Aufnahme. Ändern in der Minecraft-Steuerung unter „TRS Client“.",
       "privacy": "Nichts verlässt deinen PC: kein Upload, kein Konto, die Aufnahme läuft nur, solange ein Spiel dieses Launchers offen ist."
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "intro": "Hinweise zu neuen Nachrichten, Einladungen, Freundschaftsanfragen und mehr. Alles hier bleibt auf diesem PC.",
+      "toastsTitle": "Benachrichtigungen zeigen",
+      "toastsDescription": "Kleine Hinweise im Launcher. Aus = nur die Zähler in der Seitenleiste.",
+      "dndTitle": "Nicht stören",
+      "dndDescription": "Keine Hinweise und kein Ton, bis du es wieder ausschaltest. Zähler laufen weiter.",
+      "fullscreenTitle": "Still beim Spielen im Vollbild",
+      "fullscreenDescription": "Bleibt still, solange Windows ein Spiel im Vollbild, eine Präsentation oder den eigenen Fokusmodus meldet.",
+      "cornerTitle": "Position",
+      "corners": {
+        "top-right": "Oben rechts",
+        "top-left": "Oben links",
+        "bottom-right": "Unten rechts",
+        "bottom-left": "Unten links"
+      },
+      "durationTitle": "Anzeigedauer",
+      "durationValue": "{seconds} Sekunden",
+      "soundTitle": "Ton",
+      "soundDescription": "Ein kurzer, leiser Klick bei jeder Benachrichtigung.",
+      "nativeTitle": "Windows-Benachrichtigungen",
+      "nativeDescription": "Ist der Launcher minimiert oder im Hintergrund, zeigt Windows die Benachrichtigung zusätzlich an.",
+      "quickReplyTitle": "Schnellantwort",
+      "quickReplyDescription": "Direkt aus der Benachrichtigung auf eine Nachricht antworten.",
+      "typesTitle": "Worüber benachrichtigen",
+      "types": {
+        "messages": "Neue Nachrichten",
+        "invites": "Server-Einladungen",
+        "friendRequests": "Freundschaftsanfragen",
+        "capeOffers": "Umhang-Angebote",
+        "friendOnline": "Freunde kommen online"
+      },
+      "preview": "Test-Benachrichtigung zeigen",
+      "previewTitle": "TRS Launcher",
+      "previewBody": "So sehen Benachrichtigungen aus."
     }
   },
   "settingsShell": {
@@ -2061,10 +2165,8 @@
     "servers": "Server",
     "screenshots": "Screenshots",
     "skins": "Skins",
-    "friends": "Freunde",
     "admin": "Verwaltung",
     "runningCount": "{n} laufend | {n} laufend",
-    "friendRequests": "{n} offene Freundschaftsanfrage | {n} offene Freundschaftsanfragen",
     "quickLaunch": "Schnellstart",
     "openNamed": "{name} öffnen",
     "newInstance": "Neue Instanz",
@@ -2078,7 +2180,9 @@
     "collapse": "Einklappen",
     "expand": "Ausklappen",
     "presets": "Presets",
-    "clips": "Clips"
+    "clips": "Clips",
+    "social": "Sozial",
+    "socialBadge": "{messages} ungelesen · {requests} Anfragen"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -2125,14 +2229,14 @@
       "accounts": "konto anmelden microsoft",
       "screenshots": "bilder galerie",
       "skins": "umhang cape",
-      "friends": "freunde friends online anfragen trs",
       "settings": "einstellungen optionen",
       "newInstance": "anlegen hinzufügen erstellen",
       "import": "import prism multimc curseforge übernehmen",
       "modpacks": "modpack pack installieren",
       "dataDir": "ordner explorer dateien",
       "webLogin": "website webseite web login anmelden admin code browser",
-      "clips": "clips aufnahme aufnehmen video replay shadowplay"
+      "clips": "clips aufnahme aufnehmen video replay shadowplay",
+      "social": "freunde chat nachrichten gruppen sozial anfragen"
     },
     "actions": {
       "newInstance": {
@@ -2351,7 +2455,8 @@
       "java": "Java-Installationen",
       "storage": "Speicherverwaltung",
       "network": "Netzwerk",
-      "clips": "Clips & Aufnahme"
+      "clips": "Clips & Aufnahme",
+      "notifications": "Benachrichtigungen"
     },
     "instance": {
       "general": "Allgemein",
@@ -2400,10 +2505,6 @@
       "playingLoader": "Spielt {version} ({loader})",
       "playingServer": "Spielt {version} auf {server}",
       "playingLoaderServer": "Spielt {version} ({loader}) auf {server}"
-    },
-    "toasts": {
-      "friendRequest": "{name} möchte mit dir befreundet sein.",
-      "capeOffer": "{name} bietet dir den Umhang „{cape}“ an."
     }
   },
   "trsGate": {
@@ -2489,6 +2590,16 @@
       "deleting": "Lösche …",
       "confirmButton": "Ja, endgültig löschen",
       "done": "Alle TRS-Daten dieses Accounts sind gelöscht. Die TRS-Dienste sind jetzt aus."
+    },
+    "chat": {
+      "heading": "Chat",
+      "receiptsTitle": "Lesebestätigungen",
+      "receiptsDescription": "Freunde sehen, wann du ihre Nachrichten gelesen hast. Aus = du siehst ihre auch nicht.",
+      "typingTitle": "„Schreibt …“ anzeigen",
+      "typingDescription": "Andere sehen „schreibt …“, während du tippst. Aus = du siehst es bei anderen auch nicht.",
+      "reportsTitle": "Meine Meldungen",
+      "reportsDescription": "Status der Nachrichten, Bilder, Spieler und Gruppen, die du gemeldet hast.",
+      "reportsButton": "Meldungen ansehen"
     }
   },
   "trsSync": {
@@ -2680,24 +2791,6 @@
     }
   },
   "friends": {
-    "title": "Freunde",
-    "subtitle": "Wer ist online, wer spielt was – und mit einem Klick hinterher.",
-    "add": "Freund hinzufügen",
-    "offline": "Der TRS-Server ist gerade nicht erreichbar – die Liste kann veraltet sein.",
-    "tabs": {
-      "label": "Ansicht",
-      "friends": "Freunde",
-      "requests": "Anfragen",
-      "blocked": "Blockiert"
-    },
-    "join": {
-      "withLabel": "Beitreten mit",
-      "auto": "Passende Instanz (automatisch)",
-      "button": "Beitreten",
-      "withInstance": "Mit {name} beitreten",
-      "noInstance": "Keine Instanz vorhanden",
-      "starting": "Starte {instance} und verbinde mit {server} …"
-    },
     "list": {
       "usesTrs": "Nutzt TRS",
       "capeOf": "TRS-Umhang von {name}",
@@ -2706,22 +2799,17 @@
       "reportCape": "Umhang melden"
     },
     "empty": {
-      "title": "Noch keine Freunde",
       "text": "Dein Signal erreicht gerade niemanden. Füge Freunde über ihren Minecraft-Namen hinzu – sobald sie annehmen, leuchtet hier ihre Lampe."
     },
     "requests": {
       "empty": "Keine offenen Anfragen",
       "incoming": "An dich",
       "incomingText": "möchte mit dir befreundet sein · {date}",
-      "accept": "Annehmen",
-      "decline": "Ablehnen",
       "outgoing": "Von dir",
       "outgoingText": "wartet auf Antwort · {date}",
       "withdraw": "Zurückziehen"
     },
     "blocked": {
-      "placeholder": "Minecraft-Name blockieren",
-      "inputLabel": "Name zum Blockieren",
       "hint": "Blockierte Spieler können dich nicht finden, dir keine Anfragen schicken und sehen dein TRS-Symbol und deinen Umhang nicht. Sie erfahren nichts davon.",
       "since": "seit {date}",
       "unblock": "Entsperren",
@@ -2736,9 +2824,7 @@
     },
     "confirm": {
       "removeTitle": "Freund entfernen?",
-      "blockTitle": "Spieler blockieren?",
-      "removeText": "{name} wird aus deiner Freundesliste entfernt.",
-      "blockText": "{name} wird blockiert: Eure Freundschaft und offene Anfragen werden entfernt, und er kann dich nicht mehr finden."
+      "blockTitle": "Spieler blockieren?"
     },
     "report": {
       "title": "Umhang melden",
@@ -2771,7 +2857,8 @@
       "overview": "Übersicht",
       "capes": "Umhänge prüfen",
       "codes": "Codes",
-      "players": "Spieler"
+      "players": "Spieler",
+      "reports": "Meldungen"
     },
     "stats": {
       "users": "Nutzer",
@@ -2787,7 +2874,11 @@
       "friendships": "Freundschaften",
       "friendshipsHint": "{count} offene Anfragen",
       "banned": "Gesperrt",
-      "bannedHint": "{count} Sitzungen"
+      "bannedHint": "{count} Sitzungen",
+      "chatReports": "Chat-Meldungen",
+      "chatReportsHint": "{count} Spieler stummgeschaltet",
+      "messages": "Nachrichten (24 h)",
+      "messagesHint": "{count} insgesamt · {storage} Bilder"
     },
     "review": {
       "lists": {
@@ -2933,6 +3024,112 @@
       "grantRevoked": "Umhang entzogen",
       "banned": "Spieler gesperrt",
       "unbanned": "Sperre aufgehoben"
+    },
+    "mod": {
+      "filters": {
+        "active": "Aktiv",
+        "open": "Offen",
+        "in_review": "In Prüfung",
+        "resolved": "Erledigt",
+        "all": "Alle"
+      },
+      "kindFilter": "Art",
+      "kinds": {
+        "all": "Alle Arten"
+      },
+      "status": {
+        "open": "Offen",
+        "in_review": "In Prüfung",
+        "resolved": "Erledigt"
+      },
+      "outcome": {
+        "actioned": "Maßnahme ergriffen",
+        "dismissed": "Abgewiesen"
+      },
+      "none": "Hier gibt es keine Meldungen.",
+      "more": "Mehr laden",
+      "target": "Gemeldet: {name}",
+      "by": "Von: {name}",
+      "unknown": "unbekannt",
+      "images": "{n} Bild | {n} Bilder",
+      "targetOpen": "{n} offene Meldungen zu diesem Spieler",
+      "assigned": "Wird von {name} geprüft",
+      "lowTrust": "wenig Vertrauen",
+      "wordFilter": "Wortfilter",
+      "wordFilterHint": "„Maskieren“ ersetzt das Wort durch *, „Sperren“ lehnt die Nachricht ab. Groß-/Kleinschreibung, Akzente und einfaches Leetspeak zählen nicht.",
+      "word": "Wort",
+      "wordRule": "Wort: 2–48 Buchstaben oder Ziffern, ohne Leerzeichen.",
+      "mode": {
+        "word": "Ganzes Wort",
+        "contains": "Enthält"
+      },
+      "action": {
+        "mask": "Maskieren",
+        "block": "Sperren"
+      },
+      "addWord": "Wort hinzufügen",
+      "noWords": "Noch keine Wörter im Filter.",
+      "auditTitle": "Moderations-Protokoll",
+      "noAudit": "Noch nichts protokolliert.",
+      "dialogTitle": "Meldung",
+      "context": "Kontext",
+      "contextDm": "Direktnachricht",
+      "contextGroup": "Gruppe „{name}“ · {n} Mitglieder",
+      "purged": "Die Beweise wurden nach Ablauf der Aufbewahrungsfrist gelöscht.",
+      "noContext": "Zu dieser Meldung wurden keine Nachrichten gesichert.",
+      "system": "System: {event}",
+      "systemEvents": {
+        "group_created": "Gruppe erstellt",
+        "member_added": "Mitglied hinzugefügt",
+        "member_removed": "Mitglied entfernt",
+        "member_left": "Mitglied ausgetreten",
+        "renamed": "Gruppe umbenannt",
+        "owner_changed": "Besitzer gewechselt"
+      },
+      "invite": "Server-Einladung: {address}",
+      "reportedImages": "Gemeldete Bilder",
+      "note": "Hinweis des Melders",
+      "noNote": "Kein Hinweis.",
+      "notes": "Interne Notizen",
+      "notePlaceholder": "Notiz hinzufügen (sehen nur Admins) …",
+      "addNote": "Hinzufügen",
+      "audit": "Verlauf",
+      "targetLabel": "Gemeldeter Spieler",
+      "targetStats": "{total} Meldungen · {open} offen · {actioned} mit Maßnahme · {dismissed} abgewiesen",
+      "mutedUntil": "Stummgeschaltet bis {date}",
+      "mutedReview": "Stummgeschaltet bis zur Prüfung",
+      "unmute": "Stummschaltung aufheben",
+      "history": "Frühere Maßnahmen",
+      "sanction": {
+        "warn": "Verwarnung",
+        "mute": "Stummschaltung"
+      },
+      "auto": "automatisch",
+      "lifted": "aufgehoben",
+      "reporterLabel": "Gemeldet von",
+      "reporterStats": "{actioned} bestätigt · {dismissed} abgewiesen · {open} offen",
+      "decision": "Entscheidung",
+      "claim": "Prüfung übernehmen",
+      "reopen": "Zurück auf offen",
+      "reason": "Grund (sieht der Spieler bei Verwarnung und Stummschaltung)",
+      "duration": "Dauer der Stummschaltung",
+      "durations": {
+        "d60": "1 Stunde",
+        "d1440": "1 Tag",
+        "d10080": "1 Woche",
+        "d43200": "30 Tage",
+        "forever": "Bis aufgehoben"
+      },
+      "keepOpen": "Meldung offen lassen (mehrere Maßnahmen kombinieren)",
+      "includeRelated": "Auch für andere offene Meldungen zur selben Sache",
+      "deleteMessage": "Nachricht löschen",
+      "warn": "Verwarnen",
+      "mute": "Stummschalten",
+      "ban": "Sperren",
+      "dismiss": "Abweisen",
+      "resolve": "Erledigt",
+      "confirmBan": "{name} wirklich sperren? Das sperrt alle TRS-Funktionen für das Konto.",
+      "related": "Weitere Meldungen zu diesem Spieler"
     }
   },
   "whatsNew": {
@@ -3472,6 +3669,289 @@
       "title": "Dateien heraussuchen",
       "text": "Öffne den Instanzordner, um einzelne Dateien wie Configs oder Schematics zu verschicken.",
       "action": "Zu den Dateien"
+    }
+  },
+  "social": {
+    "title": "Sozial",
+    "tabs": {
+      "label": "Bereiche",
+      "chat": "Chat",
+      "friends": "Freunde"
+    },
+    "actions": {
+      "addFriend": "Freund hinzufügen",
+      "makeGroup": "Gruppe erstellen",
+      "blockPlayer": "Spieler blockieren",
+      "search": "Suche",
+      "searchPlaceholder": "Namen suchen …",
+      "clearSearch": "Suche leeren"
+    },
+    "live": {
+      "off": "Aus",
+      "connecting": "Verbinde …",
+      "live": "Live",
+      "down": "Verbindung unterbrochen – Neues kommt eventuell verzögert.",
+      "retrying": "Verbindung unterbrochen – neuer Versuch in {seconds} s.",
+      "reconnect": "Jetzt verbinden"
+    },
+    "chat": {
+      "listLabel": "Unterhaltungen",
+      "clickToWrite": "Klicke, um zu schreiben",
+      "you": "Du: {text}",
+      "youShort": "du",
+      "images": "Bild | {n} Bilder",
+      "invite": "Server-Einladung",
+      "inviteTo": "Server-Einladung: {address}",
+      "deleted": "Nachricht gelöscht",
+      "deletedByAdmin": "Von der Moderation entfernt",
+      "deletedByOwner": "Vom Gruppenbesitzer entfernt",
+      "hidden": "Nachricht eines blockierten Spielers",
+      "edited": "(bearbeitet)",
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "empty": "Noch keine Unterhaltungen – füge Freunde hinzu und sag Hallo!",
+      "noMatches": "Nichts gefunden.",
+      "startWith": "Freunde",
+      "loadMore": "Mehr laden",
+      "mutedLabel": "Stummgeschaltet",
+      "unreadLabel": "{n} ungelesene Nachricht | {n} ungelesene Nachrichten",
+      "typingOne": "{name} schreibt",
+      "typingTwo": "{a} und {b} schreiben",
+      "typingMany": "{n} Leute schreiben",
+      "read": "Gelesen",
+      "readBy": "Gelesen von {n} | Gelesen von {n}",
+      "sent": "Gesendet",
+      "sending": "Wird gesendet …",
+      "failed": "Nicht gesendet.",
+      "discard": "Verwerfen",
+      "newMessages": "{n} neue Nachricht | {n} neue Nachrichten",
+      "selectTitle": "Wähle eine Unterhaltung",
+      "selectText": "Schreib deinen Freunden, teile Screenshots oder lade sie auf deinen Server ein.",
+      "startDm": "Hier beginnt deine Unterhaltung mit {name}.",
+      "startGroup": "Hier beginnt „{name}“.",
+      "notFriend": "Nicht mehr befreundet",
+      "jumpToReply": "Zur Nachricht springen",
+      "openImage": "Bild öffnen",
+      "imageViewer": "Bild",
+      "previousImage": "Vorheriges Bild",
+      "nextImage": "Nächstes Bild"
+    },
+    "system": {
+      "someone": "Jemand",
+      "groupCreated": "{actor} hat die Gruppe erstellt",
+      "memberAdded": "{actor} hat {target} hinzugefügt",
+      "memberRemoved": "{actor} hat {target} entfernt",
+      "memberLeft": "{name} hat die Gruppe verlassen",
+      "renamed": "{actor} hat die Gruppe in „{name}“ umbenannt",
+      "ownerChanged": "{name} ist jetzt Besitzer der Gruppe"
+    },
+    "menu": {
+      "label": "Menü der Unterhaltung",
+      "mute": "Stummschalten",
+      "unmute": "Stummschaltung aufheben",
+      "muteFor": {
+        "h1": "Für 1 Stunde",
+        "h8": "Für 8 Stunden",
+        "d1": "Für 1 Tag",
+        "forever": "Bis ich es aufhebe"
+      },
+      "removeFriend": "Freund entfernen",
+      "block": "Blockieren",
+      "reportPlayer": "Spieler melden",
+      "manageGroup": "Gruppe verwalten",
+      "groupMembers": "Mitglieder",
+      "leaveGroup": "Gruppe verlassen",
+      "reportGroup": "Gruppe melden"
+    },
+    "message": {
+      "reply": "Antworten",
+      "react": "Reagieren",
+      "more": "Mehr",
+      "markUnread": "Als ungelesen markieren",
+      "report": "Melden",
+      "reportImage": "Bild melden",
+      "copied": "Kopiert.",
+      "deleteTitle": "Nachricht löschen?",
+      "deleteText": "Die Nachricht wird für alle gelöscht.",
+      "deleteOthersText": "Als Gruppenbesitzer löschst du diese Nachricht für alle."
+    },
+    "reactions": {
+      "thumbs_up": "Daumen hoch",
+      "heart": "Herz",
+      "laugh": "Lachen",
+      "wow": "Staunen",
+      "sad": "Traurig",
+      "angry": "Wütend",
+      "party": "Party",
+      "fire": "Feuer",
+      "eyes": "Augen",
+      "check": "Haken"
+    },
+    "composer": {
+      "placeholder": "Nachricht an {name}",
+      "placeholderGroup": "Nachricht an {name}",
+      "send": "Senden",
+      "images": "Bilder",
+      "invite": "Auf einen Server einladen",
+      "hint": "Enter sendet · Umschalt+Enter für eine neue Zeile",
+      "replyingTo": "Antwort an {name}",
+      "editing": "Nachricht bearbeiten",
+      "removeImage": "Bild entfernen",
+      "notFriends": "Ihr seid nicht mehr befreundet – die Unterhaltung ist nur noch lesbar.",
+      "readOnly": "Hier kannst du nicht schreiben."
+    },
+    "picker": {
+      "title": "Bilder auswählen [{n}/{max}]",
+      "filters": {
+        "all": "Alle",
+        "favorites": "Favoriten",
+        "uploads": "Uploads"
+      },
+      "search": "Bilder suchen",
+      "upload": "Hochladen",
+      "size": "Bildgröße",
+      "limit": "Höchstens {max} Bilder je Nachricht.",
+      "rejected": "Eine Datei ist kein unterstütztes Bild. | {n} Dateien sind keine unterstützten Bilder.",
+      "tooBig": "Dieses Bild ist zu groß.",
+      "favorite": "Zu Favoriten",
+      "unfavorite": "Aus Favoriten entfernen",
+      "noScreenshots": "Noch keine Screenshots – drück im Spiel F2.",
+      "noFavorites": "Markiere Screenshots mit dem Stern, um sie hier zu finden.",
+      "noUploads": "Bilder, die du vom PC hochlädst, erscheinen hier.",
+      "dropHint": "Tipp: Bilder ins Fenster ziehen oder mit Strg+V einfügen.",
+      "dropHere": "Bilder loslassen, um sie anzuhängen"
+    },
+    "invite": {
+      "title": "Auf einen Server einladen",
+      "fromServers": "Deine Server",
+      "address": "Server-Adresse",
+      "name": "Beschriftung (optional)",
+      "namePlaceholder": "z. B. Survival",
+      "hint": "Icon und Spielerzahl prüft der TRS-Server selbst – die IP-Adressen deiner Freunde bleiben dem Server verborgen.",
+      "invalidAddress": "Bitte eine gültige Server-Adresse eingeben (Hostname oder IPv4, optional mit :Port).",
+      "failed": "Die Einladung konnte nicht gesendet werden.",
+      "send": "Einladung senden",
+      "join": "Beitreten",
+      "checking": "Wird geprüft …",
+      "players": "{online}/{max} Spieler",
+      "offline": "Offline",
+      "private": "Adresse im lokalen Netzwerk",
+      "unknown": "Status unbekannt",
+      "chooseTitle": "Mit welcher Instanz beitreten?",
+      "chooseText": "Die Instanz startet und verbindet sich direkt mit {server}.",
+      "matches": "Passende Version",
+      "noInstance": "Leg zuerst eine Instanz an, um Servern beizutreten.",
+      "starting": "{instance} startet und verbindet sich mit {server} …",
+      "alreadyRunning": "{instance} läuft schon."
+    },
+    "friends": {
+      "list": "Freundesliste",
+      "requests": "Freundschaftsanfragen",
+      "blocked": "Blockierte Spieler",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "sendMessage": "Nachricht senden",
+      "lastOnline": "Zuletzt online {time}"
+    },
+    "confirm": {
+      "remove": "{name} aus deinen Freunden entfernen? Eure Unterhaltung bleibt lesbar, aber ihr könnt nicht mehr schreiben.",
+      "block": "{name} blockieren? Die Freundschaft endet und du siehst keine Nachrichten mehr. Der Spieler erfährt davon nichts."
+    },
+    "group": {
+      "createTitle": "Gruppe erstellen",
+      "manageTitle": "Gruppe",
+      "name": "Gruppenname",
+      "namePlaceholder": "z. B. Bau-Crew",
+      "nameRule": "Gruppenname: 1–32 Zeichen.",
+      "pickFriends": "Freunde ({n}/{max})",
+      "addFriends": "Freunde hinzufügen",
+      "searchFriends": "Freunde suchen …",
+      "noCandidates": "Keine (weiteren) Freunde zum Hinzufügen.",
+      "addPicked": "{n} Freund hinzufügen | {n} Freunde hinzufügen",
+      "create": "Erstellen",
+      "created": "Gruppe „{name}“ erstellt.",
+      "rename": "Umbenennen",
+      "renamed": "Gruppe umbenannt.",
+      "added": "Zur Gruppe hinzugefügt.",
+      "owner": "Besitzer",
+      "makeOwner": "Zum Besitzer machen",
+      "remove": "Aus der Gruppe entfernen",
+      "delete": "Gruppe löschen",
+      "deleteConfirm": "Die Gruppe mit allen Nachrichten und Bildern für alle löschen? Das lässt sich nicht rückgängig machen.",
+      "deleted": "Gruppe „{name}“ gelöscht.",
+      "full": "Eine Gruppe hat höchstens {max} Mitglieder.",
+      "hint": "Nur deine Freunde können hinzugefügt werden. Neue Mitglieder sehen Nachrichten ab ihrem Beitritt.",
+      "memberCount": "{n} Mitglied | {n} Mitglieder",
+      "unnamed": "Gruppe",
+      "leaveTitle": "Gruppe verlassen?",
+      "leaveText": "Du verlässt „{name}“ und siehst die Nachrichten nicht mehr.",
+      "left": "Du hast „{name}“ verlassen."
+    },
+    "report": {
+      "titles": {
+        "message": "Nachricht melden",
+        "image": "Bild melden",
+        "player": "Spieler melden",
+        "group": "Gruppe melden"
+      },
+      "intro": "Was stimmt nicht? Das TRS-Team prüft jede Meldung ({name}).",
+      "reason": "Grund",
+      "reasons": {
+        "insult_hate": "Beleidigung / Hass",
+        "spam": "Spam",
+        "inappropriate": "Unangemessen",
+        "scam_phishing": "Betrug / Phishing",
+        "harassment": "Belästigung",
+        "other": "Sonstiges"
+      },
+      "note": "Hinweis (optional)",
+      "evidence": "Das Team sieht den gemeldeten Inhalt und ein paar Nachrichten davor und danach. Der gemeldete Spieler erfährt nicht, wer gemeldet hat.",
+      "pickReason": "Bitte wähle einen Grund.",
+      "noteTooLong": "Der Hinweis darf höchstens 500 Zeichen lang sein.",
+      "submit": "Meldung senden",
+      "thanks": "Danke – wir schauen es uns an."
+    },
+    "reports": {
+      "title": "Meine Meldungen",
+      "intro": "Du bekommst eine Benachrichtigung, sobald eine Meldung geprüft wurde.",
+      "empty": "Du hast noch nichts gemeldet.",
+      "status": {
+        "open": "Offen",
+        "inReview": "In Prüfung"
+      },
+      "outcome": {
+        "actioned": "Maßnahme ergriffen",
+        "dismissed": "Geprüft"
+      },
+      "feedback": {
+        "title": "Deine Meldung",
+        "inReview": "Deine Meldung wird gerade geprüft.",
+        "actioned": "Danke – wir haben gehandelt.",
+        "dismissed": "Wir haben deine Meldung geprüft und keinen Verstoß gefunden."
+      }
+    },
+    "moderation": {
+      "title": "Chat-Moderation",
+      "warned": "Du hast im Chat eine Verwarnung erhalten.",
+      "warnedReason": "Du hast im Chat eine Verwarnung erhalten: {reason}",
+      "mutedUntil": "Du bist im Chat stummgeschaltet bis {date}.",
+      "mutedReview": "Du bist im Chat stummgeschaltet, bis die Moderation es prüft.",
+      "unmuted": "Deine Stummschaltung im Chat wurde aufgehoben."
+    },
+    "links": {
+      "title": "Link öffnen?",
+      "text": "Dieser Link führt zu {host}. Öffne nur Links von Leuten, denen du vertraust.",
+      "open": "Im Browser öffnen"
+    },
+    "toasts": {
+      "friendRequest": "möchte mit dir befreundet sein",
+      "capeOffer": "bietet dir den Umhang „{cape}“ an",
+      "online": "ist jetzt online",
+      "inviteTitle": "{name} lädt dich ein",
+      "messageInGroup": "{name} in {group}",
+      "openChat": "Chat öffnen",
+      "reply": "Antworten",
+      "replyPlaceholder": "Schnell antworten …"
     }
   }
 }

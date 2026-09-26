@@ -26,7 +26,7 @@ const items: NavItem[] = [
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, windowsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
-  { to: '/friends', label: 'nav.friends', icon: 'friends' },
+  { to: '/social', label: 'nav.social', icon: 'chat' },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
 ]
 
@@ -38,6 +38,9 @@ const instances = useInstancesStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 const trs = useTrsStore()
+const chat = useChatStore()
+/** Anfragen + Umhang-Angebote + ungelesene Nachrichten. */
+const socialCount = computed(() => trs.incomingCount + chat.unreadTotal)
 
 const uiSettings = computed(() => settings.current?.ui)
 const expanded = computed(() => ui.navExpanded)
@@ -104,12 +107,13 @@ function play(id: string) {
         :title="t('nav.runningCount', games.runningCount)"
       />
       <span
-        v-if="item.to === '/friends' && trs.incomingCount"
+        v-if="item.to === '/social' && socialCount"
         class="grid min-w-4 place-items-center rounded-full bg-redstone-500 px-1 text-[10px] leading-4 font-bold text-white"
         :class="expanded ? 'ml-auto' : 'absolute top-0.5 right-0.5'"
-        :title="t('nav.friendRequests', trs.incomingCount)"
+        :title="t('nav.socialBadge', { messages: chat.unreadTotal, requests: trs.incomingCount })"
+        data-testid="nav-social-badge"
       >
-        {{ trs.incomingCount }}
+        {{ socialCount > 99 ? '99+' : socialCount }}
       </span>
       <span v-if="!expanded" class="tip" role="tooltip">{{ t(item.label) }}</span>
     </NuxtLink>

@@ -149,6 +149,25 @@ export const clipSettingsSchema = z.object({
     .max(2000, msg('validation.clipStorageRange', { min: 1, max: 2000 })),
 })
 
+/** Benachrichtigungen aus „Sozial“ – fehlt das Feld (älterer Kern), gelten die Standardwerte. */
+export const socialSettingsSchema = z
+  .object({
+    toasts: z.boolean().default(true),
+    corner: z.enum(['top-right', 'top-left', 'bottom-right', 'bottom-left']).default('top-right'),
+    durationSecs: z.number().int().min(3).max(10).default(5),
+    sound: z.boolean().default(true),
+    doNotDisturb: z.boolean().default(false),
+    quietInFullscreen: z.boolean().default(true),
+    native: z.boolean().default(true),
+    quickReply: z.boolean().default(true),
+    messages: z.boolean().default(true),
+    invites: z.boolean().default(true),
+    friendRequests: z.boolean().default(true),
+    capeOffers: z.boolean().default(true),
+    friendOnline: z.boolean().default(true),
+  })
+  .prefault({})
+
 export const settingsSchema = z
   .object({
     minMemoryMb: z.number().int().min(128),
@@ -178,6 +197,7 @@ export const settingsSchema = z
     }),
     clips: clipSettingsSchema,
     trsSync: z.boolean().default(true),
+    social: socialSettingsSchema,
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {

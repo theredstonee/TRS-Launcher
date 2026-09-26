@@ -438,6 +438,11 @@ async function allowFirewall() {
       <NuxtLink to="/accounts" class="btn btn-primary mt-4" @click="close">{{ t('settings.profile.manage') }}</NuxtLink>
     </div>
 
+    <!-- Benachrichtigungen ------------------------------------------------------ -->
+    <div v-else-if="active === 'notifications'">
+      <SocialNotificationSettings v-if="form.social" v-model="form.social" />
+    </div>
+
     <!-- Datenschutz -------------------------------------------------------------- -->
     <div v-else-if="active === 'privacy'">
       <h3 class="section-heading">{{ t('settings.privacy.title') }}</h3>

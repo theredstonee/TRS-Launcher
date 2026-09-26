@@ -157,7 +157,8 @@
       "memoryRange": "Het geheugen moet tussen {min} en {max} MB liggen",
       "jvmArgsInvalid": "De JVM-argumenten zijn ongeldig of te lang",
       "javaPathInvalid": "Het Java-pad is ongeldig",
-      "javaPathNotJava": "Het Java-pad moet naar java.exe of javaw.exe verwijzen"
+      "javaPathNotJava": "Het Java-pad moet naar java.exe of javaw.exe verwijzen",
+      "socialToasts": "Meldingen: duur 3 tot 10 seconden, hoek boven/onder links/rechts."
     },
     "trs": {
       "offline": "De TRS-server is op dit moment niet bereikbaar.",
@@ -221,7 +222,47 @@
       "share_limit": "Deze cape is al met 20 spelers gedeeld.",
       "offer_inbox_full": "Deze speler heeft te veel openstaande cape-aanbiedingen.",
       "offer_not_found": "Dit aanbod bestaat niet meer.",
-      "holder_not_found": "Deze speler heeft de cape (niet meer) van jou."
+      "holder_not_found": "Deze speler heeft de cape (niet meer) van jou.",
+      "not_friends": "Jullie zijn geen vrienden (meer).",
+      "chat_muted": "Je bent momenteel gedempt in de chat.",
+      "conversation_not_found": "Dit gesprek bestaat niet (meer).",
+      "message_not_found": "Dit bericht bestaat niet (meer).",
+      "attachment_not_found": "Deze afbeelding bestaat niet (meer).",
+      "message_too_long": "Het bericht is te lang (maximaal 2000 tekens).",
+      "empty_message": "Het bericht is leeg.",
+      "too_many_attachments": "Maximaal 10 afbeeldingen per bericht.",
+      "links_not_allowed": "In deze groep mogen alleen de eigenaar en spelers die met iedereen bevriend zijn links en uitnodigingen sturen.",
+      "message_blocked": "Het bericht bevat een geblokkeerd woord.",
+      "spam_detected": "Dat lijkt op spam – stuur niet steeds hetzelfde bericht.",
+      "not_sender": "Dit werkt alleen voor je eigen berichten.",
+      "message_deleted": "Het bericht is verwijderd.",
+      "not_owner": "Alleen de groepseigenaar kan dat doen.",
+      "group_full": "De groep is vol (maximaal 25 leden).",
+      "group_limit": "Je zit al in te veel groepen.",
+      "target_group_limit": "Een speler zit al in te veel groepen.",
+      "invalid_name": "Groepsnaam: 1 tot 32 tekens.",
+      "member_not_found": "Deze speler zit niet in de groep.",
+      "nonce_reused": "Het bericht kon niet worden verstuurd – probeer het opnieuw.",
+      "invalid_until": "Dat tijdstip ligt in het verleden.",
+      "invalid_cursor": "De lijst is gewijzigd – laad opnieuw.",
+      "image_too_large": "De afbeelding is te groot (maximaal 8192 pixels per zijde).",
+      "animated_image": "Geanimeerde afbeeldingen kunnen niet worden verstuurd.",
+      "invalid_image": "De afbeelding is beschadigd.",
+      "too_many_pending_attachments": "Er wachten te veel afbeeldingen om verstuurd te worden – verstuur eerst de vorige.",
+      "storage_quota": "Je opslag voor chatafbeeldingen is vol – verwijder een paar oude afbeeldingen.",
+      "storage_full": "De TRS-server accepteert nu geen afbeeldingen – probeer het later opnieuw.",
+      "already_reported": "Je hebt dit al gemeld – we kijken ernaar.",
+      "too_many_open_reports": "Je hebt al veel open meldingen – wacht op de beoordeling.",
+      "not_reportable": "Dit kan niet worden gemeld.",
+      "report_resolved": "Deze melding is al afgehandeld.",
+      "report_not_found": "Deze melding bestaat niet (meer).",
+      "no_message": "Deze melding heeft geen bericht.",
+      "no_target": "Deze melding heeft geen speler.",
+      "cannot_moderate_admin": "Admins kunnen niet worden gedempt.",
+      "not_muted": "Deze speler is niet gedempt.",
+      "invalid_word": "Woord: 2 tot 48 letters of cijfers.",
+      "word_exists": "Dit woord staat al in het filter.",
+      "word_not_found": "Dit woord staat niet (meer) in het filter."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -632,6 +673,33 @@
       "sourceGone": "Dit logbestand bestaat niet meer.",
       "unreadable": "Dit logbestand kan niet worden gelezen.",
       "qrInvalid": "Voor deze link is er geen QR-code."
+    },
+    "chat": {
+      "invalidConversation": "Ongeldig gesprek.",
+      "invalidMessage": "Ongeldig bericht.",
+      "invalidAttachment": "Ongeldige afbeelding.",
+      "textTooLong": "Het bericht is te lang (maximaal {max} tekens).",
+      "groupName": "Groepsnaam: 1 tot 32 tekens.",
+      "tooManyImages": "Maximaal {max} afbeeldingen per bericht.",
+      "emptyMessage": "Het bericht is leeg.",
+      "invalidCursor": "Ongeldige pagina.",
+      "groupFull": "Een groep kan maximaal {max} leden hebben.",
+      "invalidReaction": "Onbekende reactie."
+    },
+    "chatImage": {
+      "unsupported": "Alleen PNG-, JPEG- en WebP-afbeeldingen kunnen worden verstuurd.",
+      "animated": "Geanimeerde afbeeldingen kunnen niet worden verstuurd.",
+      "broken": "De afbeelding is beschadigd.",
+      "tooLarge": "De afbeelding is te groot (maximaal {side} pixels per zijde).",
+      "fileTooLarge": "Het bestand is te groot.",
+      "gone": "De afbeelding bestaat niet meer."
+    },
+    "reports": {
+      "invalidReport": "Ongeldige melding.",
+      "invalidFilter": "Ongeldig filter.",
+      "invalidAction": "Onbekende beslissing.",
+      "muteRange": "Demping: 5 minuten tot 1 jaar.",
+      "invalidWord": "Woord: 2 tot 48 letters of cijfers."
     }
   },
   "browse": {
@@ -1780,6 +1848,42 @@
       "keysTitle": "Toetsen in het spel (TRS Client)",
       "keysText": "F9 slaat een clip op, F10 start en stopt een opname. Wijzig ze in de Minecraft-besturing onder \"TRS Client\".",
       "privacy": "Niets verlaat je pc: geen upload, geen account; de recorder draait alleen als er een spel van deze launcher open is."
+    },
+    "notifications": {
+      "title": "Meldingen",
+      "intro": "Pop-ups voor nieuwe berichten, uitnodigingen, vriendschapsverzoeken en meer. Alles hier blijft op deze pc.",
+      "toastsTitle": "Meldingen tonen",
+      "toastsDescription": "Kleine pop-ups in de launcher. Uit = alleen de tellers in de zijbalk.",
+      "dndTitle": "Niet storen",
+      "dndDescription": "Geen pop-ups en geen geluid tot je dit uitzet. Tellers blijven bijwerken.",
+      "fullscreenTitle": "Stil tijdens spelen op volledig scherm",
+      "fullscreenDescription": "Blijft stil zolang Windows een game op volledig scherm, een presentatie of de eigen focusmodus meldt.",
+      "cornerTitle": "Positie",
+      "corners": {
+        "top-right": "Rechtsboven",
+        "top-left": "Linksboven",
+        "bottom-right": "Rechtsonder",
+        "bottom-left": "Linksonder"
+      },
+      "durationTitle": "Duur",
+      "durationValue": "{seconds} seconden",
+      "soundTitle": "Geluid",
+      "soundDescription": "Een korte, zachte klik bij elke melding.",
+      "nativeTitle": "Windows-meldingen",
+      "nativeDescription": "Als de launcher geminimaliseerd is of op de achtergrond draait, toont Windows de melding ook.",
+      "quickReplyTitle": "Snel antwoorden",
+      "quickReplyDescription": "Beantwoord een bericht direct vanuit de melding.",
+      "typesTitle": "Waarover je meldingen krijgt",
+      "types": {
+        "messages": "Nieuwe berichten",
+        "invites": "Serveruitnodigingen",
+        "friendRequests": "Vriendschapsverzoeken",
+        "capeOffers": "Cape-aanbiedingen",
+        "friendOnline": "Vrienden die online komen"
+      },
+      "preview": "Testmelding tonen",
+      "previewTitle": "TRS Launcher",
+      "previewBody": "Zo zien meldingen eruit."
     }
   },
   "settingsShell": {
@@ -2061,10 +2165,8 @@
     "servers": "Servers",
     "screenshots": "Screenshots",
     "skins": "Skins",
-    "friends": "Vrienden",
     "admin": "Admin",
     "runningCount": "{n} actief | {n} actief",
-    "friendRequests": "{n} openstaand vriendschapsverzoek | {n} openstaande vriendschapsverzoeken",
     "quickLaunch": "Snel starten",
     "openNamed": "{name} openen",
     "newInstance": "Nieuwe instantie",
@@ -2078,7 +2180,9 @@
     "collapse": "Inklappen",
     "expand": "Uitklappen",
     "presets": "Presets",
-    "clips": "Clips"
+    "clips": "Clips",
+    "social": "Sociaal",
+    "socialBadge": "{messages} ongelezen · {requests} verzoeken"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -2125,14 +2229,14 @@
       "accounts": "account inloggen aanmelden login microsoft",
       "screenshots": "afbeeldingen foto’s galerij screenshots",
       "skins": "cape skin",
-      "friends": "vrienden online verzoeken trs",
       "settings": "instellingen opties voorkeuren",
       "newInstance": "toevoegen aanmaken nieuw",
       "import": "importeren prism multimc curseforge migreren",
       "modpacks": "modpack pack installeren",
       "dataDir": "map verkenner bestanden",
       "webLogin": "website web login aanmelden admin code browser",
-      "clips": "clips opname opnemen video replay shadowplay"
+      "clips": "clips opname opnemen video replay shadowplay",
+      "social": "vrienden chat berichten groepen sociaal verzoeken"
     },
     "actions": {
       "newInstance": {
@@ -2351,7 +2455,8 @@
       "java": "Java-installaties",
       "storage": "Opslag",
       "network": "Netwerk",
-      "clips": "Clips en opnemen"
+      "clips": "Clips en opnemen",
+      "notifications": "Meldingen"
     },
     "instance": {
       "general": "Algemeen",
@@ -2400,10 +2505,6 @@
       "playingLoader": "Speelt {version} ({loader})",
       "playingServer": "Speelt {version} op {server}",
       "playingLoaderServer": "Speelt {version} ({loader}) op {server}"
-    },
-    "toasts": {
-      "friendRequest": "{name} wil je vriend worden.",
-      "capeOffer": "{name} biedt je de cape ‘{cape}’ aan."
     }
   },
   "trsGate": {
@@ -2489,6 +2590,16 @@
       "deleting": "Verwijderen …",
       "confirmButton": "Ja, definitief verwijderen",
       "done": "Alle TRS-gegevens van dit account zijn verwijderd. TRS-diensten staan nu uit."
+    },
+    "chat": {
+      "heading": "Chat",
+      "receiptsTitle": "Leesbevestigingen",
+      "receiptsDescription": "Vrienden zien wanneer je hun berichten hebt gelezen. Uit = jij ziet die van hen ook niet.",
+      "typingTitle": "Typindicator",
+      "typingDescription": "Anderen zien “is aan het typen …” terwijl jij schrijft. Uit = jij ziet het bij anderen ook niet.",
+      "reportsTitle": "Mijn meldingen",
+      "reportsDescription": "Status van de berichten, afbeeldingen, spelers en groepen die je hebt gemeld.",
+      "reportsButton": "Meldingen bekijken"
     }
   },
   "trsSync": {
@@ -2680,24 +2791,6 @@
     }
   },
   "friends": {
-    "title": "Vrienden",
-    "subtitle": "Wie is online, wie speelt wat – en join ze met één klik.",
-    "add": "Vriend toevoegen",
-    "offline": "De TRS-server is op dit moment niet bereikbaar – de lijst is mogelijk verouderd.",
-    "tabs": {
-      "label": "Weergave",
-      "friends": "Vrienden",
-      "requests": "Verzoeken",
-      "blocked": "Geblokkeerd"
-    },
-    "join": {
-      "withLabel": "Joinen met",
-      "auto": "Passende instantie (automatisch)",
-      "button": "Joinen",
-      "withInstance": "Joinen met {name}",
-      "noInstance": "Geen instantie beschikbaar",
-      "starting": "{instance} starten en verbinden met {server} …"
-    },
     "list": {
       "usesTrs": "Gebruikt TRS",
       "capeOf": "TRS-cape van {name}",
@@ -2706,22 +2799,17 @@
       "reportCape": "Cape melden"
     },
     "empty": {
-      "title": "Nog geen vrienden",
       "text": "Je signaal bereikt nu nog niemand. Voeg vrienden toe via hun Minecraft-naam – zodra ze accepteren, gaat hun lamp hier branden."
     },
     "requests": {
       "empty": "Geen openstaande verzoeken",
       "incoming": "Aan jou",
       "incomingText": "wil je vriend worden · {date}",
-      "accept": "Accepteren",
-      "decline": "Weigeren",
       "outgoing": "Van jou",
       "outgoingText": "wacht op antwoord · {date}",
       "withdraw": "Intrekken"
     },
     "blocked": {
-      "placeholder": "Een Minecraft-naam blokkeren",
-      "inputLabel": "Naam om te blokkeren",
       "hint": "Geblokkeerde spelers kunnen je niet vinden, je geen verzoeken sturen en zien je TRS-badge en cape niet. Ze krijgen hier geen melding van.",
       "since": "sinds {date}",
       "unblock": "Deblokkeren",
@@ -2736,9 +2824,7 @@
     },
     "confirm": {
       "removeTitle": "Vriend verwijderen?",
-      "blockTitle": "Speler blokkeren?",
-      "removeText": "{name} wordt uit je vriendenlijst verwijderd.",
-      "blockText": "{name} wordt geblokkeerd: jullie vriendschap en openstaande verzoeken worden verwijderd en hij of zij kan je niet meer vinden."
+      "blockTitle": "Speler blokkeren?"
     },
     "report": {
       "title": "Cape melden",
@@ -2771,7 +2857,8 @@
       "overview": "Overzicht",
       "capes": "Capes beoordelen",
       "codes": "Codes",
-      "players": "Spelers"
+      "players": "Spelers",
+      "reports": "Meldingen"
     },
     "stats": {
       "users": "Gebruikers",
@@ -2787,7 +2874,11 @@
       "friendships": "Vriendschappen",
       "friendshipsHint": "{count} openstaande verzoeken",
       "banned": "Verbannen",
-      "bannedHint": "{count} sessies"
+      "bannedHint": "{count} sessies",
+      "chatReports": "Chatmeldingen",
+      "chatReportsHint": "{count} spelers gedempt",
+      "messages": "Berichten (24 u)",
+      "messagesHint": "{count} in totaal · {storage} afbeeldingen"
     },
     "review": {
       "lists": {
@@ -2933,6 +3024,112 @@
       "grantRevoked": "Cape ingetrokken",
       "banned": "Speler verbannen",
       "unbanned": "Ban opgeheven"
+    },
+    "mod": {
+      "filters": {
+        "active": "Actief",
+        "open": "Open",
+        "in_review": "In behandeling",
+        "resolved": "Afgehandeld",
+        "all": "Alle"
+      },
+      "kindFilter": "Type",
+      "kinds": {
+        "all": "Alle types"
+      },
+      "status": {
+        "open": "Open",
+        "in_review": "In behandeling",
+        "resolved": "Afgehandeld"
+      },
+      "outcome": {
+        "actioned": "Maatregel genomen",
+        "dismissed": "Afgewezen"
+      },
+      "none": "Geen meldingen hier.",
+      "more": "Meer laden",
+      "target": "Gemeld: {name}",
+      "by": "Door: {name}",
+      "unknown": "onbekend",
+      "images": "{n} afbeelding | {n} afbeeldingen",
+      "targetOpen": "{n} open meldingen over deze speler",
+      "assigned": "Wordt beoordeeld door {name}",
+      "lowTrust": "weinig vertrouwen",
+      "wordFilter": "Woordfilter",
+      "wordFilterHint": "“Maskeren” vervangt het woord door *, “blokkeren” weigert het bericht. Hoofdletters, accenten en simpele leetspeak worden genegeerd.",
+      "word": "Woord",
+      "wordRule": "Woord: 2–48 letters of cijfers, geen spaties.",
+      "mode": {
+        "word": "Heel woord",
+        "contains": "Bevat"
+      },
+      "action": {
+        "mask": "Maskeren",
+        "block": "Blokkeren"
+      },
+      "addWord": "Woord toevoegen",
+      "noWords": "Nog geen woorden in het filter.",
+      "auditTitle": "Moderatielogboek",
+      "noAudit": "Nog niets gelogd.",
+      "dialogTitle": "Melding",
+      "context": "Context",
+      "contextDm": "Privébericht",
+      "contextGroup": "Groep “{name}” · {n} leden",
+      "purged": "Het bewijs is na de bewaartermijn verwijderd.",
+      "noContext": "Er zijn geen berichten vastgelegd bij deze melding.",
+      "system": "Systeem: {event}",
+      "systemEvents": {
+        "group_created": "groep aangemaakt",
+        "member_added": "lid toegevoegd",
+        "member_removed": "lid verwijderd",
+        "member_left": "lid vertrokken",
+        "renamed": "groep hernoemd",
+        "owner_changed": "eigenaar gewijzigd"
+      },
+      "invite": "Serveruitnodiging: {address}",
+      "reportedImages": "Gemelde afbeeldingen",
+      "note": "Opmerking van de melder",
+      "noNote": "Geen opmerking.",
+      "notes": "Interne notities",
+      "notePlaceholder": "Notitie toevoegen (alleen admins zien dit) …",
+      "addNote": "Toevoegen",
+      "audit": "Geschiedenis",
+      "targetLabel": "Gemelde speler",
+      "targetStats": "{total} meldingen · {open} open · {actioned} met maatregel · {dismissed} afgewezen",
+      "mutedUntil": "Gedempt tot {date}",
+      "mutedReview": "Gedempt tot beoordeling",
+      "unmute": "Demping opheffen",
+      "history": "Eerdere maatregelen",
+      "sanction": {
+        "warn": "Waarschuwing",
+        "mute": "Demping"
+      },
+      "auto": "automatisch",
+      "lifted": "opgeheven",
+      "reporterLabel": "Gemeld door",
+      "reporterStats": "{actioned} bevestigd · {dismissed} afgewezen · {open} open",
+      "decision": "Beslissing",
+      "claim": "Beoordeling overnemen",
+      "reopen": "Terug naar open",
+      "reason": "Reden (wordt aan de speler getoond bij waarschuwingen en dempingen)",
+      "duration": "Duur van de demping",
+      "durations": {
+        "d60": "1 uur",
+        "d1440": "1 dag",
+        "d10080": "1 week",
+        "d43200": "30 dagen",
+        "forever": "Tot opgeheven"
+      },
+      "keepOpen": "Melding open laten (om meerdere maatregelen te combineren)",
+      "includeRelated": "Ook toepassen op andere open meldingen over hetzelfde",
+      "deleteMessage": "Bericht verwijderen",
+      "warn": "Waarschuwen",
+      "mute": "Dempen",
+      "ban": "Verbannen",
+      "dismiss": "Afwijzen",
+      "resolve": "Afhandelen",
+      "confirmBan": "{name} echt verbannen? Dit blokkeert alle TRS-functies voor het account.",
+      "related": "Andere meldingen over deze speler"
     }
   },
   "whatsNew": {
@@ -3472,6 +3669,289 @@
       "title": "Bestanden kiezen",
       "text": "Open de instantiemap om losse bestanden zoals configs of schematics te versturen.",
       "action": "Naar bestanden"
+    }
+  },
+  "social": {
+    "title": "Sociaal",
+    "tabs": {
+      "label": "Sociale onderdelen",
+      "chat": "Chat",
+      "friends": "Vrienden"
+    },
+    "actions": {
+      "addFriend": "Vriend toevoegen",
+      "makeGroup": "Groep maken",
+      "blockPlayer": "Speler blokkeren",
+      "search": "Zoeken",
+      "searchPlaceholder": "Namen zoeken …",
+      "clearSearch": "Zoekopdracht wissen"
+    },
+    "live": {
+      "off": "Uit",
+      "connecting": "Verbinden …",
+      "live": "Live",
+      "down": "Verbinding onderbroken – updates kunnen later binnenkomen.",
+      "retrying": "Verbinding onderbroken – nieuwe poging over {seconds} s.",
+      "reconnect": "Nu verbinden"
+    },
+    "chat": {
+      "listLabel": "Gesprekken",
+      "clickToWrite": "Klik om een bericht te sturen",
+      "you": "Jij: {text}",
+      "youShort": "jij",
+      "images": "Afbeelding | {n} afbeeldingen",
+      "invite": "Serveruitnodiging",
+      "inviteTo": "Serveruitnodiging: {address}",
+      "deleted": "Bericht verwijderd",
+      "deletedByAdmin": "Verwijderd door moderatie",
+      "deletedByOwner": "Verwijderd door de groepseigenaar",
+      "hidden": "Bericht van een geblokkeerde speler",
+      "edited": "(bewerkt)",
+      "today": "Vandaag",
+      "yesterday": "Gisteren",
+      "empty": "Nog geen gesprekken – voeg vrienden toe en zeg hoi!",
+      "noMatches": "Niets gevonden.",
+      "startWith": "Vrienden",
+      "loadMore": "Meer laden",
+      "mutedLabel": "Gedempt",
+      "unreadLabel": "{n} ongelezen bericht | {n} ongelezen berichten",
+      "typingOne": "{name} is aan het typen",
+      "typingTwo": "{a} en {b} zijn aan het typen",
+      "typingMany": "{n} mensen zijn aan het typen",
+      "read": "Gelezen",
+      "readBy": "Gelezen door {n} | Gelezen door {n}",
+      "sent": "Verzonden",
+      "sending": "Verzenden …",
+      "failed": "Niet verzonden.",
+      "discard": "Weggooien",
+      "newMessages": "{n} nieuw bericht | {n} nieuwe berichten",
+      "selectTitle": "Kies een gesprek",
+      "selectText": "Schrijf je vrienden, deel screenshots of nodig ze uit op je server.",
+      "startDm": "Dit is het begin van je gesprek met {name}.",
+      "startGroup": "Dit is het begin van “{name}”.",
+      "notFriend": "Niet meer je vriend",
+      "jumpToReply": "Naar het bericht",
+      "openImage": "Afbeelding openen",
+      "imageViewer": "Afbeelding",
+      "previousImage": "Vorige afbeelding",
+      "nextImage": "Volgende afbeelding"
+    },
+    "system": {
+      "someone": "Iemand",
+      "groupCreated": "{actor} heeft de groep aangemaakt",
+      "memberAdded": "{actor} heeft {target} toegevoegd",
+      "memberRemoved": "{actor} heeft {target} verwijderd",
+      "memberLeft": "{name} heeft de groep verlaten",
+      "renamed": "{actor} heeft de groep hernoemd naar “{name}”",
+      "ownerChanged": "{name} is nu eigenaar van de groep"
+    },
+    "menu": {
+      "label": "Gespreksmenu",
+      "mute": "Dempen",
+      "unmute": "Dempen opheffen",
+      "muteFor": {
+        "h1": "1 uur",
+        "h8": "8 uur",
+        "d1": "1 dag",
+        "forever": "Tot ik het ophef"
+      },
+      "removeFriend": "Vriend verwijderen",
+      "block": "Blokkeren",
+      "reportPlayer": "Speler melden",
+      "manageGroup": "Groep beheren",
+      "groupMembers": "Leden",
+      "leaveGroup": "Groep verlaten",
+      "reportGroup": "Groep melden"
+    },
+    "message": {
+      "reply": "Beantwoorden",
+      "react": "Reageren",
+      "more": "Meer",
+      "markUnread": "Markeren als ongelezen",
+      "report": "Melden",
+      "reportImage": "Afbeelding melden",
+      "copied": "Gekopieerd.",
+      "deleteTitle": "Bericht verwijderen?",
+      "deleteText": "Het bericht wordt voor iedereen verwijderd.",
+      "deleteOthersText": "Als groepseigenaar verwijder je dit bericht voor iedereen."
+    },
+    "reactions": {
+      "thumbs_up": "Duim omhoog",
+      "heart": "Hart",
+      "laugh": "Lachen",
+      "wow": "Verrast",
+      "sad": "Verdrietig",
+      "angry": "Boos",
+      "party": "Feest",
+      "fire": "Vuur",
+      "eyes": "Ogen",
+      "check": "Vinkje"
+    },
+    "composer": {
+      "placeholder": "Bericht aan {name}",
+      "placeholderGroup": "Bericht aan {name}",
+      "send": "Versturen",
+      "images": "Afbeeldingen",
+      "invite": "Uitnodigen op een server",
+      "hint": "Enter verstuurt · Shift+Enter voor een nieuwe regel",
+      "replyingTo": "Antwoord aan {name}",
+      "editing": "Bericht bewerken",
+      "removeImage": "Afbeelding verwijderen",
+      "notFriends": "Jullie zijn geen vrienden meer – dit gesprek is alleen-lezen.",
+      "readOnly": "Je kunt hier niet schrijven."
+    },
+    "picker": {
+      "title": "Afbeeldingen kiezen [{n}/{max}]",
+      "filters": {
+        "all": "Alle",
+        "favorites": "Favorieten",
+        "uploads": "Uploads"
+      },
+      "search": "Afbeeldingen zoeken",
+      "upload": "Uploaden",
+      "size": "Afbeeldingsgrootte",
+      "limit": "Maximaal {max} afbeeldingen per bericht.",
+      "rejected": "Eén bestand is geen ondersteunde afbeelding. | {n} bestanden zijn geen ondersteunde afbeeldingen.",
+      "tooBig": "Deze afbeelding is te groot.",
+      "favorite": "Aan favorieten toevoegen",
+      "unfavorite": "Uit favorieten verwijderen",
+      "noScreenshots": "Nog geen screenshots – druk in de game op F2.",
+      "noFavorites": "Geef screenshots een ster om ze hier terug te vinden.",
+      "noUploads": "Afbeeldingen die je vanaf je pc uploadt, verschijnen hier.",
+      "dropHint": "Tip: sleep afbeeldingen naar het venster of plak ze met Ctrl+V.",
+      "dropHere": "Laat afbeeldingen los om ze toe te voegen"
+    },
+    "invite": {
+      "title": "Uitnodigen op een server",
+      "fromServers": "Jouw servers",
+      "address": "Serveradres",
+      "name": "Label (optioneel)",
+      "namePlaceholder": "bijv. Survival",
+      "hint": "De TRS-server controleert zelf het icoon en het aantal spelers van de server – de IP-adressen van je vrienden blijven ervoor verborgen.",
+      "invalidAddress": "Voer een geldig serveradres in (hostnaam of IPv4, eventueel met :poort).",
+      "failed": "De uitnodiging kon niet worden verstuurd.",
+      "send": "Uitnodiging versturen",
+      "join": "Meedoen",
+      "checking": "Controleren …",
+      "players": "{online}/{max} spelers",
+      "offline": "Offline",
+      "private": "Adres in lokaal netwerk",
+      "unknown": "Status onbekend",
+      "chooseTitle": "Met welke instantie meedoen?",
+      "chooseText": "De instantie start en maakt meteen verbinding met {server}.",
+      "matches": "Passende versie",
+      "noInstance": "Maak eerst een instantie aan om op servers mee te doen.",
+      "starting": "{instance} wordt gestart en verbindt met {server} …",
+      "alreadyRunning": "{instance} draait al."
+    },
+    "friends": {
+      "list": "Vriendenlijst",
+      "requests": "Vriendschapsverzoeken",
+      "blocked": "Geblokkeerde spelers",
+      "accept": "Accepteren",
+      "decline": "Weigeren",
+      "sendMessage": "Bericht sturen",
+      "lastOnline": "Laatst online {time}"
+    },
+    "confirm": {
+      "remove": "{name} uit je vrienden verwijderen? Jullie gesprek blijft leesbaar, maar je kunt niet meer schrijven.",
+      "block": "{name} blokkeren? De vriendschap eindigt en je ziet hun berichten niet meer. Ze krijgen daar geen melding van."
+    },
+    "group": {
+      "createTitle": "Groep maken",
+      "manageTitle": "Groep",
+      "name": "Groepsnaam",
+      "namePlaceholder": "bijv. Bouwploeg",
+      "nameRule": "Groepsnaam: 1–32 tekens.",
+      "pickFriends": "Vrienden ({n}/{max})",
+      "addFriends": "Vrienden toevoegen",
+      "searchFriends": "Vrienden zoeken …",
+      "noCandidates": "Geen (andere) vrienden om toe te voegen.",
+      "addPicked": "{n} vriend toevoegen | {n} vrienden toevoegen",
+      "create": "Maken",
+      "created": "Groep “{name}” gemaakt.",
+      "rename": "Hernoemen",
+      "renamed": "Groep hernoemd.",
+      "added": "Toegevoegd aan de groep.",
+      "owner": "Eigenaar",
+      "makeOwner": "Eigenaar maken",
+      "remove": "Uit groep verwijderen",
+      "delete": "Groep verwijderen",
+      "deleteConfirm": "De groep met alle berichten en afbeeldingen voor iedereen verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "deleted": "Groep “{name}” verwijderd.",
+      "full": "Een groep kan maximaal {max} leden hebben.",
+      "hint": "Alleen je vrienden kunnen worden toegevoegd. Nieuwe leden zien berichten vanaf het moment dat ze erbij komen.",
+      "memberCount": "{n} lid | {n} leden",
+      "unnamed": "Groep",
+      "leaveTitle": "Groep verlaten?",
+      "leaveText": "Je verlaat “{name}” en ziet de berichten niet meer.",
+      "left": "Je hebt “{name}” verlaten."
+    },
+    "report": {
+      "titles": {
+        "message": "Bericht melden",
+        "image": "Afbeelding melden",
+        "player": "Speler melden",
+        "group": "Groep melden"
+      },
+      "intro": "Wat is er mis? Het TRS-team bekijkt elke melding ({name}).",
+      "reason": "Reden",
+      "reasons": {
+        "insult_hate": "Belediging / haat",
+        "spam": "Spam",
+        "inappropriate": "Ongepast",
+        "scam_phishing": "Oplichting / phishing",
+        "harassment": "Intimidatie",
+        "other": "Anders"
+      },
+      "note": "Opmerking (optioneel)",
+      "evidence": "Het team ziet de gemelde inhoud en een paar berichten ervoor en erna. De gemelde speler komt niet te weten wie hem heeft gemeld.",
+      "pickReason": "Kies een reden.",
+      "noteTooLong": "De opmerking mag maximaal 500 tekens lang zijn.",
+      "submit": "Melding versturen",
+      "thanks": "Bedankt – we gaan ernaar kijken."
+    },
+    "reports": {
+      "title": "Mijn meldingen",
+      "intro": "Je krijgt bericht zodra een melding is beoordeeld.",
+      "empty": "Je hebt nog niets gemeld.",
+      "status": {
+        "open": "Open",
+        "inReview": "In behandeling"
+      },
+      "outcome": {
+        "actioned": "Maatregel genomen",
+        "dismissed": "Beoordeeld"
+      },
+      "feedback": {
+        "title": "Jouw melding",
+        "inReview": "Je melding wordt beoordeeld.",
+        "actioned": "Bedankt – we hebben maatregelen genomen.",
+        "dismissed": "We hebben je melding beoordeeld en geen overtreding gevonden."
+      }
+    },
+    "moderation": {
+      "title": "Chatmoderatie",
+      "warned": "Je hebt een waarschuwing gekregen in de chat.",
+      "warnedReason": "Je hebt een waarschuwing gekregen in de chat: {reason}",
+      "mutedUntil": "Je bent in de chat gedempt tot {date}.",
+      "mutedReview": "Je bent in de chat gedempt tot een moderator het beoordeelt.",
+      "unmuted": "Je chatdemping is opgeheven."
+    },
+    "links": {
+      "title": "Link openen?",
+      "text": "Deze link leidt naar {host}. Open alleen links van mensen die je vertrouwt.",
+      "open": "Openen in browser"
+    },
+    "toasts": {
+      "friendRequest": "wil je vriend worden",
+      "capeOffer": "biedt je de cape “{cape}” aan",
+      "online": "is nu online",
+      "inviteTitle": "{name} nodigt je uit",
+      "messageInGroup": "{name} in {group}",
+      "openChat": "Chat openen",
+      "reply": "Beantwoorden",
+      "replyPlaceholder": "Snel antwoord …"
     }
   }
 }

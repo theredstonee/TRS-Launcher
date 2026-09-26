@@ -6,9 +6,9 @@ import type { TrsAdminCape, TrsAdminStats, TrsAdminUser, TrsCape, TrsCode, TrsRe
 const trs = useTrsStore()
 const toasts = useToasts()
 
-type Tab = 'overview' | 'capes' | 'codes' | 'players'
+type Tab = 'overview' | 'capes' | 'reports' | 'codes' | 'players'
 const tab = ref<Tab>('overview')
-const tabs: Tab[] = ['overview', 'capes', 'codes', 'players']
+const tabs: Tab[] = ['overview', 'capes', 'reports', 'codes', 'players']
 const busy = ref<string | null>(null)
 
 const stats = ref<TrsAdminStats | null>(null)
@@ -315,12 +315,33 @@ const statTiles = computed(() => {
       hint: t('admin.stats.friendshipsHint', count(s.pendingFriendRequests)),
     },
     { id: 'banned', label: t('admin.stats.banned'), value: s.users.banned, hint: t('admin.stats.bannedHint', count(s.sessions)) },
+    ...(s.reports
+      ? [
+          {
+            id: 'reports',
+            label: t('admin.stats.chatReports'),
+            value: s.reports.open + s.reports.inReview,
+            hint: t('admin.stats.chatReportsHint', { count: formatNumber(s.reports.activeMutes) }),
+            alert: s.reports.open > 0,
+          },
+        ]
+      : []),
+    ...(s.chat
+      ? [
+          {
+            id: 'messages',
+            label: t('admin.stats.messages'),
+            value: s.chat.messagesLast24h,
+            hint: t('admin.stats.messagesHint', { count: formatNumber(s.chat.messages), storage: formatBytes(s.chat.storageBytes) }),
+          },
+        ]
+      : []),
   ]
 })
 </script>
 
 <template>
-  <div class="mx-auto max-w-5xl p-6">
+  <div class="mx-auto p-6" :class="tab === 'reports' ? 'max-w-7xl' : 'max-w-5xl'">
     <PageHeader :title="t('admin.title')" :subtitle="t('admin.subtitle')">
       <button v-if="trs.isAdmin" class="btn btn-ghost px-3 py-1.5 text-xs" data-testid="admin-web-login" @click="trs.openWebLogin()">
         {{ t('webLogin.title') }}
@@ -346,6 +367,9 @@ const statTiles = computed(() => {
           <span v-if="key === 'capes' && stats?.capes.pending" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">
             {{ stats.capes.pending }}
           </span>
+          <span v-if="key === 'reports' && stats?.reports?.open" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">
+            {{ stats.reports.open }}
+          </span>
         </button>
       </div>
 
@@ -363,6 +387,9 @@ const statTiles = computed(() => {
         </div>
         <button class="btn btn-ghost mt-3 px-3 py-1.5 text-xs" @click="loadStats">{{ t('common.actions.refresh') }}</button>
       </section>
+
+      <!-- Chat-Meldungen und Moderation ------------------------------------------- -->
+      <AdminReports v-else-if="tab === 'reports'" @changed="loadStats" />
 
       <!-- Umhänge prüfen ---------------------------------------------------------- -->
       <section v-else-if="tab === 'capes'" :aria-label="t('admin.tabs.capes')">

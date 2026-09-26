@@ -3,15 +3,17 @@ import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
 import {
   trsSyncEventSchema,
+  type TrsBlocked,
   type TrsCapeOffers,
   type TrsFriends,
+  type TrsIncomingOffer,
   type TrsMe,
+  type TrsPresence,
   type TrsStatus,
   type TrsSyncStatus,
+  type TrsUserRef,
 } from '~/utils/trs'
-
-/** Takt für Freunde im Hintergrund (Anfragen-Zähler in der Leiste). Die Seite selbst fragt öfter. */
-const BACKGROUND_POLL_MS = 90_000
+import type { LiveEvent } from '~/utils/chat'
 
 // Zustand der TRS-Dienste: Einwilligung, eigenes Profil (Admin?), Freunde.
 // Offline/abgeschaltet ist kein Fehler – die Seiten zeigen dann einen Zustand
@@ -25,8 +27,38 @@ export const useTrsStore = defineStore('trs', () => {
   const consentOpen = ref(false)
   /** Dialog „Website-Anmeldung bestätigen“ (global, auch aus der Befehlspalette). */
   const webLoginOpen = ref(false)
-  let timer: ReturnType<typeof setInterval> | null = null
   let knownIncoming: Set<string> | null = null
+  /** Blockierte Spieler (Reiter „Freunde“ → „Blockiert“). */
+  const blocked = ref<TrsBlocked[] | null>(null)
+  /**
+   * Wann ein Freund zuletzt online gesehen wurde (nur lokal, die API kennt das
+   * nicht): UUID → ISO-Zeit. Für „Zuletzt online vor …“ in der Freundesliste.
+   */
+  const lastSeen = ref<Record<string, string>>({})
+  const lastSeenKey = () => 'trs.lastSeen.' + (status.value?.account ?? '')
+
+  function loadLastSeen() {
+    try {
+      const raw = localStorage.getItem(lastSeenKey())
+      const parsed = raw ? (JSON.parse(raw) as unknown) : null
+      lastSeen.value = parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {}
+    } catch {
+      lastSeen.value = {}
+    }
+  }
+
+  function markSeen(uuids: string[]) {
+    if (!uuids.length) return
+    const now = new Date().toISOString()
+    const next = { ...lastSeen.value }
+    for (const u of uuids) next[u] = now
+    lastSeen.value = next
+    try {
+      localStorage.setItem(lastSeenKey(), JSON.stringify(next))
+    } catch {
+      // Nur Komfort – ohne Speicher eben ohne „zuletzt online“.
+    }
+  }
   /** Umhang-Angebote an mich / von mir (geladen, sobald es welche gibt oder die Seite sie braucht). */
   const capeOffers = ref<TrsCapeOffers | null>(null)
   let knownOffers: Set<string> | null = null
@@ -44,6 +76,64 @@ export const useTrsStore = defineStore('trs', () => {
   const offerCount = computed(() => capeOffers.value?.incoming.length ?? friends.value?.capeOffers ?? 0)
   /** Anfragen + Umhang-Angebote (Zähler in der Leiste). */
   const incomingCount = computed(() => (friends.value?.requests.incoming.length ?? 0) + offerCount.value)
+
+  /** Freundschaftsanfrage beantworten (auch aus einer Benachrichtigung). */
+  async function answerRequest(from: TrsUserRef, accept: boolean) {
+    try {
+      if (accept) {
+        await backend.trs.acceptFriend(from.uuid)
+        useToasts().ok(t('friends.toasts.nowFriends', { name: from.name }))
+      } else {
+        await backend.trs.declineFriend(from.uuid)
+      }
+    } catch (e) {
+      useToasts().error(e)
+    }
+    await loadFriends()
+  }
+
+  /** Umhang-Angebot annehmen/ablehnen (auch aus einer Benachrichtigung). */
+  async function answerOffer(offer: TrsIncomingOffer, accept: boolean) {
+    try {
+      if (accept) {
+        await backend.trs.acceptCapeOffer(offer.cape.id)
+        useToasts().ok(t('capeShare.toasts.accepted', { cape: offer.cape.name }))
+      } else {
+        await backend.trs.declineCapeOffer(offer.cape.id)
+      }
+    } catch (e) {
+      useToasts().error(e)
+    }
+    await capeSharesChanged()
+  }
+
+  function notifyRequest(from: TrsUserRef) {
+    void useSocialToasts().notify('friendRequest', {
+      key: 'fr:' + from.uuid,
+      title: from.name,
+      body: t('social.toasts.friendRequest'),
+      face: from,
+      open: () => void navigateTo({ path: '/social', query: { tab: 'friends' } }),
+      actions: [
+        { label: t('social.friends.accept'), primary: true, run: () => answerRequest(from, true) },
+        { label: t('social.friends.decline'), run: () => answerRequest(from, false) },
+      ],
+    })
+  }
+
+  function notifyOffer(offer: TrsIncomingOffer) {
+    void useSocialToasts().notify('capeOffer', {
+      key: 'offer:' + offer.cape.id + ':' + offer.from.uuid,
+      title: offer.from.name,
+      body: t('social.toasts.capeOffer', { cape: offer.cape.name }),
+      face: offer.from,
+      open: () => void navigateTo({ path: '/social', query: { tab: 'friends' } }),
+      actions: [
+        { label: t('social.friends.accept'), primary: true, run: () => answerOffer(offer, true) },
+        { label: t('social.friends.decline'), run: () => answerOffer(offer, false) },
+      ],
+    })
+  }
 
   function note(e: unknown) {
     const kind = e instanceof BackendError ? e.kind : ''
@@ -85,12 +175,14 @@ export const useTrsStore = defineStore('trs', () => {
     try {
       const view = await backend.trs.friends()
       const incoming = new Set(view.requests.incoming.map((r) => r.uuid))
-      if (knownIncoming) {
+      // Neue Anfragen melden – über den Echtzeit-Kanal kommt dafür ein eigenes Ereignis.
+      if (knownIncoming && !useLiveStore().connected) {
         const fresh = view.requests.incoming.filter((r) => !knownIncoming!.has(r.uuid))
-        for (const r of fresh) useToasts().info(t('trs.toasts.friendRequest', { name: r.name }))
+        for (const r of fresh) notifyRequest(r)
       }
       knownIncoming = incoming
       friends.value = view
+      markSeen(view.friends.filter((f) => f.presence).map((f) => f.uuid))
       problem.value = null
       // Angebote nur nachladen, wenn sich die Zahl geändert hat (oder noch nichts geladen ist).
       const loaded = capeOffers.value?.incoming.length ?? null
@@ -114,9 +206,7 @@ export const useTrsStore = defineStore('trs', () => {
       const keys = new Set(offers.incoming.map((o) => offerKey(o.cape.id, o.from.uuid)))
       if (knownOffers) {
         for (const o of offers.incoming) {
-          if (!knownOffers.has(offerKey(o.cape.id, o.from.uuid))) {
-            useToasts().info(t('trs.toasts.capeOffer', { name: o.from.name, cape: o.cape.name }))
-          }
+          if (!knownOffers.has(offerKey(o.cape.id, o.from.uuid))) notifyOffer(o)
         }
       }
       knownOffers = keys
@@ -133,17 +223,64 @@ export const useTrsStore = defineStore('trs', () => {
     await Promise.all([loadCapeOffers(), loadFriends()])
   }
 
-  function stopPolling() {
-    if (timer) clearInterval(timer)
-    timer = null
+  async function loadBlocked() {
+    try {
+      blocked.value = await backend.trs.blocks()
+    } catch (e) {
+      note(e)
+    }
+    return blocked.value
   }
 
-  function startPolling() {
-    stopPolling()
-    if (!enabled.value) return
-    timer = setInterval(() => {
-      if (document.visibilityState === 'visible') void loadFriends()
-    }, BACKGROUND_POLL_MS)
+  /** Präsenz eines Freundes ohne Neuladen setzen. */
+  function setPresence(uuid: string, presence: TrsPresence | null) {
+    const view = friends.value
+    if (!view) return
+    const i = view.friends.findIndex((f) => f.uuid === uuid)
+    if (i < 0) return
+    const list = [...view.friends]
+    // Wer gerade offline geht, war bis eben online.
+    if (presence || list[i]!.presence) markSeen([uuid])
+    list[i] = { ...list[i]!, presence }
+    friends.value = { ...view, friends: list }
+  }
+
+  /** Ereignis aus dem Echtzeit-Kanal: Freunde, Präsenz, Umhänge, Einstellungen. */
+  async function onLiveEvent(e: LiveEvent) {
+    switch (e.type) {
+      case 'friend_request':
+        if (knownIncoming) knownIncoming.add(e.from.uuid)
+        await loadFriends()
+        break
+      case 'friend_request_cancelled':
+        if (friends.value) {
+          const incoming = friends.value.requests.incoming.filter((r) => r.uuid !== e.uuid)
+          friends.value = { ...friends.value, requests: { ...friends.value.requests, incoming } }
+        }
+        break
+      case 'friend_added':
+      case 'friend_removed':
+      case 'friends_changed':
+        await loadFriends()
+        if (e.type !== 'friend_added' && blocked.value) await loadBlocked()
+        break
+      case 'presence':
+        setPresence(e.uuid, e.presence)
+        break
+      case 'friend_online':
+        setPresence(e.friend.uuid, e.presence)
+        break
+      case 'cape_offer':
+      case 'cape_offer_accepted':
+      case 'cape_share_removed':
+        await capeSharesChanged()
+        break
+      case 'settings':
+        if (me.value) me.value = { ...me.value, settings: e.settings }
+        break
+      default:
+        break
+    }
   }
 
   async function refreshSync() {
@@ -181,17 +318,26 @@ export const useTrsStore = defineStore('trs', () => {
     knownOffers = null
     friends.value = null
     capeOffers.value = null
+    blocked.value = null
     void listenSync()
     await refreshStatus()
+    loadLastSeen()
     void refreshSync()
+    const chat = useChatStore()
     if (enabled.value) {
       await loadMe()
+      chat.setAccount(me.value?.uuid ?? null)
       await loadFriends()
-      startPolling()
+      if (me.value) {
+        void chat.loadList().catch(() => {})
+        void chat.loadModeration()
+      }
     } else {
       me.value = null
-      stopPolling()
+      chat.setAccount(null)
     }
+    // Echtzeit-Kanal (startet nur einmal; Account-Wechsel erledigt der Kern).
+    void useLiveStore().start()
   }
 
   async function setConsent(accepted: boolean) {
@@ -238,7 +384,12 @@ export const useTrsStore = defineStore('trs', () => {
     setConsent,
     deleteAll,
     askConsent,
-    stopPolling,
+    blocked,
+    loadBlocked,
+    lastSeen,
+    answerRequest,
+    answerOffer,
+    onLiveEvent,
     sync,
     skinsRevision,
     refreshSync,

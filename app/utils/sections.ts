@@ -25,6 +25,7 @@ const allAppSettingsSections: ShellSection[] = [
   section('features', 'settingsSections.app.features', 'toggles', 'settingsSections.groups.interface'),
   section('behavior', 'settingsSections.app.behavior', 'behavior', 'settingsSections.groups.interface'),
   section('language', 'settingsSections.app.language', 'language', 'settingsSections.groups.interface'),
+  section('notifications', 'settingsSections.app.notifications', 'bell', 'settingsSections.groups.interface'),
   section('profile', 'settingsSections.app.profile', 'user', 'settingsSections.groups.account'),
   section('privacy', 'settingsSections.app.privacy', 'shield', 'settingsSections.groups.account'),
   section('defaults', 'settingsSections.app.defaults', 'defaults', 'settingsSections.groups.instances'),
