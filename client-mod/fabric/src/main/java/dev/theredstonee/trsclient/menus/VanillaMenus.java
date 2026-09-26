@@ -206,46 +206,33 @@ public final class VanillaMenus {
 	}
 
 	/**
-	 * Pausemenü: „Welt hosten“ (bzw. „Hosting verwalten“) neben „Im LAN öffnen“ (der Vanilla-Knopf wird halb so breit);
-	 * fehlt er, unten links. Ist der öffentliche Link an, darunter „Deaktivieren“ (+ rotes Abzeichen darüber).
+	 * Pausemenü: „Welt hosten“ (bzw. „Hosting verwalten“) unten links – dort ist in allen Versionen Platz, das
+	 * Vanilla-Raster (samt „Im LAN öffnen“) bleibt unverändert. Ist der öffentliche Link an, darüber „Deaktivieren“ und
+	 * darüber das rote Abzeichen.
 	 */
 	static void hostingButtons(final Screen s, WidgetHost host) {
 		linkBadgeX = -1;
 		boolean hostVisible = dev.theredstonee.trsclient.core.hosting.HostingOverlay.hostButtonVisible();
 		boolean link = dev.theredstonee.trsclient.core.hosting.HostingOverlay.linkActive();
 		if (!hostVisible && !link) return;
-		int bottomY = s.height - 28;
+		int y = s.height - 28;
 		if (hostVisible) {
-			AbstractWidget lan = null;
-			String lanText = net.minecraft.client.resources.language.I18n.get("menu.shareToLan");
-			for (GuiEventListener child : s.children()) {
-				if (child instanceof AbstractWidget && lanText.equals(message((AbstractWidget) child))) lan = (AbstractWidget) child;
-			}
-			Runnable open = new Runnable() {
+			String label = dev.theredstonee.trsclient.core.hosting.HostingOverlay.hostButtonLabel();
+			int w = Math.min(150, Math.max(100, Mc.mc().font.width(label) + 34));
+			Object b = button(8, y, w, 20, label, new Runnable() {
 				@Override
 				public void run() {
 					Mc.setScreen(MenuScreens.hosting(s));
 				}
-			};
-			String label = dev.theredstonee.trsclient.core.hosting.HostingOverlay.hostButtonLabel();
-			Object b;
-			if (lan != null) {
-				int[] r = rect(lan);
-				int half = (r[2] - 4) / 2;
-				lan.setWidth(half);
-				b = button(r[0] + half + 4, r[1], r[2] - half - 4, r[3], label, open);
-			} else {
-				int w = Math.min(130, Math.max(90, Mc.mc().font.width(label) + 30));
-				b = button(8, bottomY, w, 20, label, open);
-				bottomY -= 24;
-			}
+			});
 			ICONS.put(b, "globe");
 			host.trsclient$addWidget(b);
+			y -= 24;
 		}
 		if (link) {
 			String label = I18n.tr("hosting.link.deactivate");
 			int w = Math.min(150, Math.max(100, Mc.mc().font.width(label) + 30));
-			Object d = button(8, bottomY, w, 20, label, new Runnable() {
+			Object d = button(8, y, w, 20, label, new Runnable() {
 				@Override
 				public void run() {
 					dev.theredstonee.trsclient.core.hosting.HostingOverlay.disableLink();
@@ -254,7 +241,7 @@ public final class VanillaMenus {
 			});
 			host.trsclient$addWidget(d);
 			linkBadgeX = 8;
-			linkBadgeY = bottomY - 17;
+			linkBadgeY = y - 17;
 		}
 	}
 

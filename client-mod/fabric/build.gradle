@@ -280,6 +280,23 @@ sourceSets.main.resources.srcDir(files(bundledList).builtBy(writeBundledList))
 // Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
 apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
 
+// Welt-Hosting-Test mit zwei Spielen: -PtrsRunCommandFile=<datei> schreibt die fertige Startzeile (Arbeitsordner,
+// Java, JVM-Argumente, Klassenpfad, Hauptklasse, Programmargumente) als JSON und startet NICHT – das Testskript startet
+// Host und Gast selbst in getrennten Spielordnern (zwei Gradle-Läufe im selben Projekt würden sich sperren).
+if (project.hasProperty('trsRunCommandFile')) {
+	tasks.matching { it.name == 'runClient' }.configureEach { task ->
+		task.doFirst {
+			def java = task.javaLauncher.present ? task.javaLauncher.get().executablePath.asFile.absolutePath : 'java'
+			def json = groovy.json.JsonOutput.toJson([workingDir: task.workingDir.absolutePath, java: java,
+					jvmArgs: task.allJvmArgs, classpath: task.classpath.asPath, mainClass: task.mainClass.get(), args: task.args,
+					environment: task.environment.findAll { k, v -> k == 'ALSOFT_DRIVERS' }])
+			file(project.property('trsRunCommandFile')).write(json, 'UTF-8')
+			logger.lifecycle("Startzeile geschrieben: ${project.property('trsRunCommandFile')}")
+			throw new StopExecutionException()
+		}
+	}
+}
+
 // -PtrsBenchOptions: mit welchen Bildraten-Einstellungen der Benchmark misst.
 //   vanilla = frische Vanilla-Optionen (VSync an, Max. Bildrate 120)
 //   trs     = Standard neuer TRS-Instanzen (VSync aus, unbegrenzt)

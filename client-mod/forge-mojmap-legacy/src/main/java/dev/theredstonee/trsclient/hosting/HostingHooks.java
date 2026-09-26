@@ -116,9 +116,9 @@ public final class HostingHooks {
 
 	static net.minecraft.network.chat.Component text(String s) {
 		//? if >=1.19 {
-		return net.minecraft.network.chat.Component.literal(s);
-		//?} else
-		/*return new net.minecraft.network.chat.TextComponent(s);*/
+		/*return net.minecraft.network.chat.Component.literal(s);
+		*///?} else
+		return new net.minecraft.network.chat.TextComponent(s);
 	}
 
 	static void applyMax(IntegratedServer s, int max) {

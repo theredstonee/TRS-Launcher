@@ -107,6 +107,8 @@ public final class MeEvent {
 	/** Aus Ereignisname, JSON und ID; kaputtes JSON → null. */
 	public static MeEvent parse(String event, String data, String id) {
 		if (event == null || !event.matches("[a-z_]{1,40}")) return null;
+		// Welt-Hosting: eigenes Format (z. B. "from" als UUID-Text) – roh weiterreichen, core.hosting prüft selbst.
+		if (event.startsWith("hosting_")) return new MeEvent(event, id, null, data);
 		ChatJson.EventDto d = null;
 		if (data != null && !data.isEmpty()) {
 			try {

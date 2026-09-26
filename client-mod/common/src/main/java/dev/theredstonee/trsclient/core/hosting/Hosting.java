@@ -266,8 +266,18 @@ public final class Hosting {
 	}
 
 	/** Anbindung des Spiels (je Loader beim Start). */
-	public static void install(HostingPlatform p) {
+	public static void install(final HostingPlatform p) {
 		platform = p;
+		TrsChannel.log = DirectConnect.log = new java.util.function.Consumer<String>() {
+			@Override
+			public void accept(String m) {
+				try {
+					p.log(m);
+				} catch (RuntimeException ignored) {
+					// egal
+				}
+			}
+		};
 	}
 
 	public static HostingPlatform platform() {
@@ -1139,6 +1149,7 @@ public final class Hosting {
 				&& directAllowed();
 		final String t = token;
 		if (!ok) {
+			log("TRS Hosting P2P: Angebot abgelehnt (Gast nicht angenommen/gesperrt, Direkt aus oder keine Welt)");
 			if (s != null && t != null && s.room != null && s.room.id.equals(roomId)) {
 				submit(new Runnable() {
 					@Override

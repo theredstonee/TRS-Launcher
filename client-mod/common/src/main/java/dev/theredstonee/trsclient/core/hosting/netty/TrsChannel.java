@@ -34,7 +34,32 @@ public class TrsChannel extends AbstractChannel {
 	private static final ChannelMetadata METADATA = new ChannelMetadata(false);
 	private static final InetSocketAddress LOCAL = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
-	private final ChannelConfig config = new DefaultChannelConfig(this);
+	/** Wie NIO: autoRead=false hebt ein offenes Lesen auf (Netty ≥ 4.1 ruft autoReadCleared; in 4.0 ungenutzt). */
+	private final ChannelConfig config = new DefaultChannelConfig(this) {
+		@SuppressWarnings("unused")
+		protected void autoReadCleared() {
+			readPending = false;
+		}
+	};
+	/** Höchstens so viele Stücke je Leserunde (wie NIO maxMessagesPerRead). */
+	private static final int MAX_PER_READ = 16;
+	private final Runnable drainTask = new Runnable() {
+		@Override
+		public void run() {
+			drainScheduled = false;
+			// Leere Runde verbraucht das vorgemerkte Lesen NICHT (sonst bliebe der Kanal bei autoRead=true stehen).
+			if (readPending && state == 1 && !inbound.isEmpty()) {
+				readPending = false;
+				drain();
+			}
+		}
+	};
+	/** Nur Event-Loop. */
+	private boolean drainScheduled;
+	/** Protokoll beim Schließen (Zähler, Zustand – nie Inhalte). */
+	public static volatile java.util.function.Consumer<String> log;
+	private final java.util.concurrent.atomic.AtomicLong bytesIn = new java.util.concurrent.atomic.AtomicLong();
+	private volatile long bytesOut;
 	private final ConcurrentLinkedQueue<byte[]> inbound = new ConcurrentLinkedQueue<byte[]>();
 	private volatile PeerStream stream;
 	/** 0 = neu, 1 = aktiv, 2 = zu. */
@@ -91,15 +116,14 @@ public class TrsChannel extends AbstractChannel {
 					}
 					if (v == LoginSniffer.Verdict.PASS) sniffer = null;
 				}
+				bytesIn.addAndGet(len);
 				inbound.add(java.util.Arrays.copyOfRange(b, off, off + len));
 				try {
 					eventLoop().execute(new Runnable() {
 						@Override
 						public void run() {
-							if (readPending) {
-								readPending = false;
-								drain();
-							}
+							// autoRead=false (Minecraft ab 1.20.5 beim Protokollwechsel) hebt ein offenes Lesen auf – wie NIO.
+							if (readPending && config.isAutoRead()) scheduleDrain();
 						}
 					});
 				} catch (RuntimeException ignored) {
@@ -114,8 +138,10 @@ public class TrsChannel extends AbstractChannel {
 					eventLoop().execute(new Runnable() {
 						@Override
 						public void run() {
-							// Erst Gelesenes ausliefern, dann schließen.
-							drain();
+							// Erst Gelesenes ausliefern (soweit Netty lesen will), dann schließen.
+							if (config.isAutoRead()) {
+								while (isOpen() && !inbound.isEmpty() && config.isAutoRead()) drain();
+							}
 							if (isOpen()) unsafe().close(voidPromise());
 						}
 					});
@@ -126,15 +152,31 @@ public class TrsChannel extends AbstractChannel {
 		});
 	}
 
+	/**
+	 * Eine Leserunde (Event-Loop, nie verschachtelt): bis zu {@link #MAX_PER_READ} Stücke, solange autoRead an ist; danach
+	 * channelReadComplete – Netty fordert bei autoRead von selbst die nächste Runde an ({@link #doBeginRead}).
+	 */
 	private void drain() {
 		boolean any = false;
 		byte[] b;
-		while (isOpen() && (b = inbound.poll()) != null) {
+		int n = 0;
+		while (isOpen() && n < MAX_PER_READ && (b = inbound.poll()) != null) {
 			any = true;
+			n++;
 			pipeline().fireChannelRead(Unpooled.wrappedBuffer(b));
 			if (!config.isAutoRead()) break;
 		}
 		if (any) pipeline().fireChannelReadComplete();
+	}
+
+	private void scheduleDrain() {
+		if (drainScheduled) return;
+		drainScheduled = true;
+		try {
+			eventLoop().execute(drainTask);
+		} catch (RuntimeException e) {
+			drainScheduled = false;
+		}
 	}
 
 	@Override
@@ -189,6 +231,16 @@ public class TrsChannel extends AbstractChannel {
 
 	@Override
 	protected void doClose() {
+		java.util.function.Consumer<String> l = log;
+		if (l != null && state != 2) {
+			try {
+				l.accept("TRS Hosting: Kanal zu (" + (closeReason == null ? "lokal" : closeReason) + ", " + path() + "): empfangen "
+						+ bytesIn.get() + " B, gesendet " + bytesOut + " B, wartend " + inbound.size() + ", autoRead "
+						+ config.isAutoRead() + ", Lesen vorgemerkt " + readPending);
+			} catch (RuntimeException ignored) {
+				// egal
+			}
+		}
 		state = 2;
 		PeerStream s = stream;
 		if (s != null) s.close(closeReason == null ? "closed" : closeReason);
@@ -198,12 +250,9 @@ public class TrsChannel extends AbstractChannel {
 	@Override
 	protected void doBeginRead() {
 		if (state != 1) return;
-		if (inbound.isEmpty()) {
-			readPending = true;
-			return;
-		}
-		readPending = false;
-		drain();
+		// Wie NIO nur vormerken – ausgeliefert wird später auf der Event-Loop (nie mitten in einem channelRead).
+		readPending = true;
+		if (!inbound.isEmpty()) scheduleDrain();
 	}
 
 	@Override
@@ -218,6 +267,7 @@ public class TrsChannel extends AbstractChannel {
 				if (n > 0) {
 					byte[] copy = new byte[n];
 					buf.getBytes(buf.readerIndex(), copy);
+					bytesOut += n;
 					if (s == null || !s.write(copy, 0, n)) {
 						in.remove(new java.io.IOException("stream closed"));
 						throw new java.io.IOException("TRS stream closed");

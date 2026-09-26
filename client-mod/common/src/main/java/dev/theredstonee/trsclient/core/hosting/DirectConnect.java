@@ -32,6 +32,14 @@ public final class DirectConnect {
 	private DirectConnect() {
 	}
 
+	/** Protokoll der Schritte (Zeiten, Anzahl Kandidaten – nie Adressen oder Schlüssel). */
+	public static volatile java.util.function.Consumer<String> log;
+
+	static void log(String m) {
+		java.util.function.Consumer<String> l = log;
+		if (l != null) l.accept("TRS Hosting P2P: " + m);
+	}
+
 	/** Signale verschicken (über die API). */
 	public interface Signaller {
 		void send(String to, String kind, String sid, String data) throws Exception;
@@ -134,23 +142,36 @@ public final class DirectConnect {
 		UdpLink link = null;
 		boolean ok = false;
 		try {
+			long t0 = System.currentTimeMillis();
 			link = UdpLink.open();
 			byte[] mine = P2pKeys.nonce();
 			List<InetSocketAddress> cands = gather(link, stun, loopback);
+			log("Gast: " + cands.size() + " Kandidaten nach " + (System.currentTimeMillis() - t0) + " ms");
 			sig.send(hostUuid, "offer", sid, new Ice(mine, cands, mc, loader).json());
 			Ice answer = null;
 			while (answer == null) {
 				long left = end - System.currentTimeMillis();
-				if (left <= 0) return null;
+				if (left <= 0) {
+					log("Gast: keine Antwort nach " + (System.currentTimeMillis() - t0) + " ms");
+					return null;
+				}
 				SignalBox.Signal s = session.poll(left);
-				if (s == null) return null;
-				if ("bye".equals(s.kind)) return null;
+				if (s == null) {
+					log("Gast: keine Antwort nach " + (System.currentTimeMillis() - t0) + " ms");
+					return null;
+				}
+				if ("bye".equals(s.kind)) {
+					log("Gast: Host lehnt Direktverbindung ab");
+					return null;
+				}
 				if ("answer".equals(s.kind)) answer = Ice.parse(s.data);
 			}
+			log("Gast: Antwort mit " + answer.candidates.size() + " Kandidaten nach " + (System.currentTimeMillis() - t0) + " ms");
 			P2pKeys keys = new P2pKeys(mine, answer.nonce, sid);
 			long left = end - System.currentTimeMillis();
 			if (left <= 0) return null;
 			ok = link.punch(keys, UdpLink.Role.CONTROLLING, answer.candidates, left);
+			log("Gast: Lochstanzen " + (ok ? "ok" : "gescheitert") + " nach " + (System.currentTimeMillis() - t0) + " ms");
 			return ok ? link : null;
 		} catch (Exception e) {
 			return null;
@@ -179,10 +200,12 @@ public final class DirectConnect {
 		UdpLink link = null;
 		boolean ok = false;
 		try {
+			long t0 = System.currentTimeMillis();
 			link = UdpLink.open();
 			byte[] mine = P2pKeys.nonce();
 			List<InetSocketAddress> cands = gather(link, stun, loopback);
 			sig.send(offer.from, "answer", offer.sid, new Ice(mine, cands, mc, loader).json());
+			log("Host: Antwort mit " + cands.size() + " Kandidaten nach " + (System.currentTimeMillis() - t0) + " ms");
 			P2pKeys keys = new P2pKeys(o.nonce, mine, offer.sid);
 			// „bye“ des Gasts bricht das Stanzen ab.
 			final UdpLink watched = link;
@@ -207,6 +230,7 @@ public final class DirectConnect {
 			long left = end - System.currentTimeMillis();
 			if (left <= 0) return null;
 			ok = link.punch(keys, UdpLink.Role.CONTROLLED, o.candidates, left) && link.isOpen();
+			log("Host: Lochstanzen " + (ok ? "ok" : "gescheitert") + " nach " + (System.currentTimeMillis() - t0) + " ms");
 			return ok ? link : null;
 		} catch (Exception e) {
 			return null;
