@@ -105,6 +105,7 @@ All limits use a token bucket that refills evenly across the window.
 | `GET /v1/servers/status`, per account | 30 / min |
 | `POST /v1/reports`, per account | 10 / h |
 | `GET /v1/events/me` connects, per account | 20 / min (and at most 5 open streams) |
+| Every `/v1/hosting/*` request, per account | 240 / min (own bucket); details in §21.9 |
 | Admin, per admin (or API key) | 240 / min |
 
 ---
@@ -262,6 +263,7 @@ Auth required. Deletes everything immediately:
 - code redemptions, reports and presence
 - all sync data (§17): skins with their images, deletion markers, presets and settings
 - chat (§18.8): all DMs of the account for **both** sides, own messages, reactions and images in groups, pending uploads; owned groups go to the longest member, empty groups are deleted
+- world hosting (§21.9): hosted worlds are closed, memberships in other worlds and the account's own and foreign ban-list entries are removed
 
 Only an existing **ban record** and an **active chat mute** survive (keyed by UUID) so they can't be escaped by re-registering. Chat reports **against** the account stay with their evidence until their retention ends (§20.3).
 
@@ -1603,6 +1605,7 @@ Chat between TRS users. **Who may write:** friends (direct messages, "DM") and m
   "sender": { "uuid": "b0b0…", "name": "Bob" },
   "text": "Hallo!",
   "invite": { "address": "play.example.net:25566", "name": "Survival" },
+  "world": null,
   "attachments": [ …AttachmentView… ],
   "replyTo": { "id": "m…", "seq": 40, "sender": { "uuid": "…", "name": "…" }, "preview": "first 120 characters", "attachments": 0, "invite": false, "deleted": false },
   "system": null,
@@ -1619,6 +1622,7 @@ Chat between TRS users. **Who may write:** friends (direct messages, "DM") and m
 - `seq` increases by 1 per conversation (system messages included). Deleted accounts leave gaps.
 - `text` is sanitised plain text (no markup; render as text, never as HTML), up to **2000 characters** (Unicode code points). Line breaks `\n` are kept (at most one empty line in a row).
 - `invite`: a server invite card, see §18.6. `null` if none.
+- `world`: a world card (hosted singleplayer world), see §21.8. `null` if none. `replyTo.world` is `true` when the reply target is a world card.
 - `replyTo.preview` is `null` if the target was deleted or its sender is hidden for you; `deleted: true` then.
 - `kind: "system"`: group events. `sender` is the actor (`null` for automatic ones), `text` is `null`, and
   `system = { "event": "group_created"|"member_added"|"member_removed"|"member_left"|"renamed"|"owner_changed", "actor": {uuid,name}|null, "target": {uuid,name}|null, "name": "new name"|null }`. Render them as a centred line, e.g. "Bob added Carl".
@@ -1667,7 +1671,7 @@ Group names: 1–32 characters after sanitising (no control characters, one line
 | `GET /v1/chat/conversations/{id}/messages?limit=50` | – | `{ messages: [MessageView], hasMore }` – the newest `limit` (1–100) messages, **ascending by `seq`**. `hasMore` = older ones exist. |
 | `…/messages?before=<seq>&limit=50` | – | Older page: messages with `seq < before`, ascending. `hasMore` = even older ones exist. |
 | `…/messages?after=<seq>&limit=100` | – | Catch-up: messages with `seq > after`, ascending. `hasMore` = newer ones exist (call again). `before` and `after` together → `400`. |
-| `POST /v1/chat/conversations/{id}/messages` | `{ "text"?, "replyTo"?, "attachments"?, "invite"?, "nonce"? }` | **201** `{ message }`; **200** `{ message }` if the `nonce` was already used (same message, nothing new sent). |
+| `POST /v1/chat/conversations/{id}/messages` | `{ "text"?, "replyTo"?, "attachments"?, "invite"?, "world"?, "nonce"? }` | **201** `{ message }`; **200** `{ message }` if the `nonce` was already used (same message, nothing new sent). |
 | `PATCH /v1/chat/messages/{id}` | `{ "text": "…" }` | `{ message }` with `editedAt`. Own text messages only (`403 not_sender`); deleted → `409 message_deleted`. The text may become empty only if the message has images or an invite. Images and invite can't be edited. |
 | `DELETE /v1/chat/messages/{id}` | – | `{ message }` (the tombstone). Own messages; in groups the owner may also delete others' (`deletedBy: "owner"`). Otherwise `403 not_sender`. Images are deleted with it. Idempotent. |
 | `PUT /v1/chat/messages/{id}/reactions/{emoji}` | – | `{ reactions: [ReactionView] }` (all of the message). Idempotent. Unknown emoji id → `404`. |
@@ -1679,7 +1683,8 @@ Group names: 1–32 characters after sanitising (no control characters, one line
 - `replyTo`: a message id of the same conversation that you can see and that isn't deleted (`404 message_not_found`).
 - `attachments`: up to **10** attachment ids from `POST /v1/chat/attachments`, uploaded by **you** and not used yet (`404 attachment_not_found`, `400 too_many_attachments`). Order is kept.
 - `invite`: `{ "address": "host[:port]", "name"?: "≤32 chars" }` (§18.6).
-- At least one of text / attachments / invite, else `400 empty_message`.
+- `world`: `{ "roomId": "h…" }` – a world card of **your** hosted world (§21.8). Not together with `invite` (`400 invite_conflict`).
+- At least one of text / attachments / invite / world, else `400 empty_message`.
 - `nonce`: optional `^[A-Za-z0-9_-]{8,64}$`, generated by the client per message (e.g. a UUID). Retrying with the same nonce returns the stored message instead of a duplicate. A nonce used in another conversation → `409 nonce_reused`.
 
 **Content errors (send and edit):** `422 message_blocked` (admin word filter, block mode), `422 spam_detected` (§20.4), `422 links_not_allowed` (groups), `403 not_friends`, `403 chat_muted`.
@@ -1798,6 +1803,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `report_update` | `{report:{id, kind, status, outcome, updatedAt}}` – feedback on **your** report (§20.2) |
 | `moderation` | `{action: "warn"\|"mute"\|"unmute", reason: string\|null, until: ISO\|null}` – a moderation decision about you. `mute` with `until: null` = until review / lifted. |
 | `settings` | `{settings}` – your settings were changed (by another device) |
+| `hosting_*` | world hosting: `hosting_invite`, `hosting_invite_revoked`, `hosting_join_request`, `hosting_join_accepted`, `hosting_join_declined`, `hosting_kicked`, `hosting_room`, `hosting_room_updated`, `hosting_room_closed`, `hosting_signal` – see §21.5 |
 
 **Rules**
 
@@ -1911,3 +1917,186 @@ Auth like §8 (admin bearer token, `X-Admin-Key`, or the website session cookie 
 `GET /v1/admin/stats` additionally returns `chat: { conversations, groups, messages, messagesLast24h, images, storageBytes, storageLimitBytes }` and `reports: { open, inReview, resolved, activeMutes }`.
 
 The website admin page has the tab **Reports** (list with filters, review dialog with context and actions, word filter, moderation log); the launcher's admin page uses the same endpoints.
+
+---
+
+## 21. World hosting (play a singleplayer world with friends)
+
+A player opens their singleplayer world (the game's integrated server) for friends – **without port forwarding**. The TRS API only does **access control** (invites, join requests, kick/ban) and **signalling** (exchanging connection candidates over `/v1/events/me`). Game data never goes through the API:
+
+1. **Direct (P2P) first:** host and guest learn their public address from STUN (`stun` list), exchange candidates via `POST …/signal` → `hosting_signal`, punch a UDP hole and run a reliable stream on top (client side).
+2. **Relay as fallback:** the TRS Relay (own server, TCP + UDP) forwards the bytes. It only accepts connections with a short-lived **relay token** issued here (§21.6).
+
+Everything needs auth. The whole feature answers `503 hosting_unavailable` when the server has no relay configured (`RELAY_SECRET`/`RELAY_HOST` unset). "Public link" (anyone with a link can join) is **not** part of this API: the client uses the third-party service e4mc for it (see the privacy note in §21.9).
+
+**Rules at a glance**
+
+- A host has **at most one** world (room) at a time. Opening a new one closes the old one (`hosting_room_closed` with `reason: "replaced"`).
+- A room lives while the host sends a **heartbeat** at least every **90 s** (recommended: every 30 s). Otherwise it closes (`reason: "expired"`).
+- `maxPlayers` counts the host: **2–10** (the relay enforces 10 as well). At most `maxPlayers − 1` guests can be **accepted**.
+- **Invites** go to **friends** only. An invited player joins **immediately** (no further confirmation). Everybody else sends a **join request** that the host accepts or declines.
+- **Who can see a room:** its members (invited / requested / accepted) and – when the room is `open` and has `visibility: "friends"` – all friends of the host. Everybody else gets `404 room_not_found` (you can't probe for rooms). Banned players and blocks (either direction) never see it.
+- **Join code:** 6 characters from `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (no `0/O`, `1/I/L`). Show it as e.g. `ABC-DEF`; input is case-insensitive, spaces and dashes are ignored. A code alone **never grants access**: it only lets any TRS user send a join request (or join directly if already invited).
+- `open: false` = no new join requests (`409 world_closed`); invited and accepted players can still (re)join.
+
+### 21.1 Views
+
+**HostRoomView** (only the host sees this)
+```json
+{
+  "id": "h0123456789abcdef0123",
+  "code": "K7QM2X",
+  "name": "Meine Welt",
+  "host": { "uuid": "75c1…", "name": "Theredstonee" },
+  "mcVersion": "1.21.4",
+  "loader": "fabric",
+  "maxPlayers": 4,
+  "gameMode": "survival",
+  "pvp": true,
+  "cheats": false,
+  "open": true,
+  "visibility": "friends",
+  "players": 2,
+  "createdAt": "…",
+  "expiresAt": "…",
+  "members": [ { "uuid": "b0b0…", "name": "Bob", "state": "accepted", "since": "…" } ]
+}
+```
+
+- `id` matches `^h[0-9a-f]{20}$`. `loader`: `vanilla`, `fabric`, `forge`, `neoforge`, `quilt`. `gameMode`: `survival`, `creative`, `adventure`, `spectator`.
+- `mcVersion`: `^[0-9A-Za-z][0-9A-Za-z._+ -]{0,31}$`. Guests should use the same version and loader.
+- `players` = players currently in the world **including the host**, as reported by the heartbeat (starts at 1).
+- `expiresAt` = when the room closes without a further heartbeat.
+- `members[].state`: `invited`, `requested`, `accepted`, `banned` (banned in this room). `since` = last state change.
+
+**RoomView** (friends, invitees, requesters, guests) = the same without `code`, `visibility`, `expiresAt` and `members`, plus
+`"myState": "invited" | "requested" | "accepted" | null` (your own state; `null` = you only see it as the host's friend).
+
+**ConnectInfo** (in create, join and connect answers)
+```json
+{
+  "role": "guest",
+  "relay": { "host": "relay.theredstonee.de", "tcpPort": 25503, "udpPort": 25504, "token": "trsr1.eyJ2Ijox….Qm9i…", "expiresAt": "…" },
+  "stun": [ "relay.theredstonee.de:25504" ]
+}
+```
+`relay.token` is only valid for **connecting** until `expiresAt` (≤ 2 min). Get a fresh one with `POST …/connect` before every (re)connect.
+
+### 21.2 Host
+
+| Request | Body | Response / errors |
+|---|---|---|
+| `POST /v1/hosting/rooms` | `{ "name", "mcVersion", "loader", "maxPlayers"?: 8, "gameMode"?: "survival", "pvp"?: true, "cheats"?: false, "open"?: true, "visibility"?: "friends" }` | **201** `{ room: HostRoomView, role: "host", relay, stun }`. Name: 1–32 chars after sanitising, one line (`400 invalid_name`); word filter like chat (`422 message_blocked`). An existing room of yours closes (`replaced`). |
+| `GET /v1/hosting/rooms/mine` | – | `{ rooms: [HostRoomView] }` (0 or 1) – e.g. after a restart of the launcher/game. |
+| `PATCH /v1/hosting/rooms/{id}` | any of the create fields, at least one | `{ room: HostRoomView }`. Fewer seats than accepted guests + 1 → `409 room_too_small`. Also counts as heartbeat. Friends who can no longer see the room (closed / `visibility: "invited"`) get `hosting_room_closed` with `reason: "hidden"`. |
+| `POST /v1/hosting/rooms/{id}/heartbeat` | none, or `{ "players": 1–10 }` | `{ expiresAt }`. Every ~30 s. A changed `players` count is pushed as `hosting_room_updated`. |
+| `DELETE /v1/hosting/rooms/{id}` | – | **204**. Everybody who saw it gets `hosting_room_closed` (`reason: "closed"`). |
+| `POST /v1/hosting/rooms/{id}/invites` | `{ "uuid": "<friend>", "chat"?: true }` | **201** `{ member: MemberView, chatMessageId: string\|null }`. Friends only (`403 not_friends`); banned → `409 player_banned`; `409 too_many_invites` (50 open). Inviting a player who already **requested** accepts them. Inviting again re-sends `hosting_invite`. With `chat: true` a world card (§21.8) is posted in your DM as well – `chatMessageId: null` if that wasn't possible (e.g. chat mute); the invite stands anyway. |
+| `DELETE /v1/hosting/rooms/{id}/invites/{uuid}` | – | **204**, invitee gets `hosting_invite_revoked`. `404 invite_not_found`. |
+| `POST /v1/hosting/rooms/{id}/requests/{uuid}/accept` | – | `{ member }` – guest gets `hosting_join_accepted`. `404 request_not_found`, `409 room_full`. |
+| `POST /v1/hosting/rooms/{id}/requests/{uuid}/decline` | – | **204** – requester gets `hosting_join_declined`. |
+| `POST /v1/hosting/rooms/{id}/members/{uuid}/kick` | none, or `{ "ban"?: false, "remember"?: false }` | **204**. Removes the player (any state). `ban: true` = banned in this room (can't request/join again, doesn't see it). `remember: true` = additionally on your **permanent ban list** for all future worlds (≤ 500, `409 ban_limit`). Without ban: `404 member_not_found` if the player isn't there. The player gets `hosting_kicked {banned}`. **The game must disconnect the player itself** (and can tell the relay, §21.7 `KICK`). |
+| `DELETE /v1/hosting/rooms/{id}/bans/{uuid}` | – | **204** – lifts the ban in this room (`404 ban_not_found`). A permanent ban still applies. |
+| `GET /v1/hosting/bans` | – | `{ bans: [{ uuid, name, since }] }` – your permanent ban list. |
+| `DELETE /v1/hosting/bans/{uuid}` | – | **204** / `404 ban_not_found`. |
+
+`MemberView` = `{ uuid, name, state, since }`. Your other devices get the full `hosting_room` event after every change.
+
+### 21.3 Guests
+
+| Request | Body | Response / errors |
+|---|---|---|
+| `GET /v1/hosting/friends-rooms` | – | `{ rooms: [RoomView] }` – open rooms of your friends (`visibility: "friends"`) **plus** every room where you are invited, have requested or are accepted. Newest first. For "Friends' worlds" lists and after `resync`. |
+| `GET /v1/hosting/invites` | – | `{ rooms: [RoomView] }` – only the ones with `myState: "invited"`. |
+| `GET /v1/hosting/rooms/{id}` | – | `{ room }` – `HostRoomView` for the host, `RoomView` for others who may see it, else `404 room_not_found`. Use it to show the live state of a world card. |
+| `POST /v1/hosting/join` | `{ "roomId": "h…" }` **or** `{ "code": "K7Q-M2X" }` | **200** `{ status: "accepted", room, role: "guest", relay, stun }` if you were invited or already accepted; **202** `{ status: "requested", room }` otherwise (host gets `hosting_join_request`; wait for `hosting_join_accepted`/`hosting_join_declined`). Requesting again is idempotent. Errors: `404 room_not_found`, `403 banned_from_world`, `409 world_closed`, `409 room_full`, `409 too_many_requests` (20 waiting), `400 cannot_join_own_world`. |
+| `POST /v1/hosting/rooms/{id}/leave` | – | **204**. Leaves the world, withdraws a request or declines an invite. Your other devices get `hosting_room_closed` with `reason: "left"`. |
+| `POST /v1/hosting/rooms/{id}/connect` | – | `ConnectInfo` with a fresh token. Host (`role: "host"`) or accepted guest; others `403 not_accepted` / `404 room_not_found`. |
+
+By `roomId` you can only join rooms you may see (§21, rules). By `code` anyone with a TRS account can send a request. **Unknown codes count as failed attempts**: 10 / 10 min per account and 30 / 10 min per IP – after that every code attempt gets `429` (also a correct one).
+
+### 21.4 Signalling (ICE)
+
+`POST /v1/hosting/rooms/{id}/signal`
+```json
+{ "to": "<uuid>", "kind": "offer" | "answer" | "candidate" | "bye", "sid": "optional session id", "data": "opaque string" }
+```
+→ **200** `{ delivered: bool }` (`false` = the receiver has no open `events/me` stream right now; the event is still buffered for their resume).
+
+- Only between the **host and an accepted guest** of this room: a guest can only signal the host (`404 peer_not_found` otherwise), the host only accepted guests (`404 peer_not_found`). Not accepted → `403 not_accepted`; strangers → `404 room_not_found`.
+- `data` is opaque to the server (e.g. JSON with ICE ufrag/pwd/candidates, a key fingerprint). At most **4096 characters** (`400 signal_too_large`). Don't put secrets in it that the other side may not see.
+- `sid` (`^[A-Za-z0-9_-]{1,32}$`) lets clients tell connection attempts apart; ignore signals with an old `sid`.
+- The receiver gets `hosting_signal { roomId, from, kind, sid, data }` over `/v1/events/me` within ≤ 3 s (usually immediately).
+- Limits: 120 / min and 30 / 5 s per account.
+
+**Suggested flow:** guest `POST /join` (or `connect`) → gathers candidates (STUN `stun` list, local addresses) → `signal offer` → host answers with `signal answer` → both send `candidate`s as they come → UDP hole punching; after ~5–8 s without a working pair both fall back to the relay (§21.7). `bye` = stop this attempt.
+
+### 21.5 Events (`/v1/events/me`, §19)
+
+| event | to | data |
+|---|---|---|
+| `hosting_invite` | invitee | `{ room: RoomView, from: {uuid,name} }` – show a toast "X invites you to their world" with Join (= `POST /join {roomId}`). |
+| `hosting_invite_revoked` | invitee | `{ roomId }` – invite withdrawn or friendship ended. |
+| `hosting_join_request` | host | `{ roomId, from: {uuid,name} }` – toast with Accept / Decline. |
+| `hosting_join_accepted` | guest | `{ room: RoomView }` – now `POST …/connect` (or use the tokens from `join`). |
+| `hosting_join_declined` | guest | `{ roomId }` |
+| `hosting_kicked` | guest | `{ roomId, banned }` |
+| `hosting_room` | host (all devices) | `{ room: HostRoomView }` – after every change (members, settings, players). |
+| `hosting_room_updated` | everybody who can see it | `{ room: RoomView }` – settings, open/closed, players count, new room of a friend. |
+| `hosting_room_closed` | everybody who saw it, host devices | `{ roomId, reason: "closed"\|"expired"\|"replaced"\|"host_unavailable"\|"hidden"\|"left" }` – drop it locally. `hidden` = you may no longer see it (visibility, banned, unfriended, blocked). |
+| `hosting_signal` | host or guest | `{ roomId, from, kind, sid, data }` (§21.4) |
+
+All hosting events only go to `/v1/events/me` (not the legacy `/v1/events`) and are replayable like other events. Polling fallback: `GET /v1/hosting/friends-rooms` (guests), `GET /v1/hosting/rooms/mine` (host) every 30 s.
+
+### 21.6 Relay token
+
+`trsr1.<payload>.<signature>` (≤ 512 chars)
+
+- `payload` = base64url (no padding) of the UTF-8 JSON
+  `{"v":1,"r":"<roomId>","u":"<uuid>","h":"<host uuid>","role":"host"|"guest","m":<maxPlayers>,"iat":<unix s>,"exp":<unix s>,"n":"<16 hex nonce>"}`
+- `signature` = base64url(HMAC-SHA256(`RELAY_SECRET`, `"trsr1." + payload`)), 43 characters.
+- `exp − iat` ≤ 120 s. The relay checks signature (any of the configured secrets – rotation), expiry (5 s clock skew), role (`host` ⇒ `u == h`, `guest` ⇒ `u != h`) and the room limits. The token only matters for **opening** a connection; an established connection lives on.
+- Clients treat the token as opaque and secret (never log it).
+
+### 21.7 Relay protocol (TRS Relay, TCP 25503 + UDP 25504)
+
+Byte-exact details: `relay/PROTOCOL.md` in the launcher repository. Summary:
+
+**TCP** – every connection starts with the preamble `"TRSR"` + version `0x01`, then frames `type:u8, length:u16 BE, payload` (≤ 1024 bytes) until the connection switches to raw piping.
+
+| Frame | Dir | Payload | Meaning |
+|---|---|---|---|
+| `0x01 HOST_HELLO` | host → relay | token (ASCII) | This is the room's **control** connection (a new one replaces the old: `ERROR replaced`). |
+| `0x02 GUEST_HELLO` | guest → relay | token (ASCII) | Guest data connection. The relay tells the host (`GUEST_OPEN`) and waits ≤ 10 s for the host's `PAIR`. |
+| `0x03 PAIR` | host → relay (new connection) | pairId (16 bytes) | Host data connection for that guest. |
+| `0x81 WELCOME` | relay → client | small JSON | Handshake OK. On guest + host data connections **raw bytes** (the Minecraft stream) follow in both directions. |
+| `0x8F ERROR` | relay → client | ASCII code | Then the relay closes. Codes: `bad_preamble`, `bad_frame`, `bad_token`, `expired`, `host_offline`, `host_timeout`, `unknown_pair`, `room_full`, `too_many_connections`, `rate_limited`, `replaced`, `kicked`, `server_full`, `shutting_down`, `idle_timeout`, `buffer_overflow`. |
+| `0x20 GUEST_OPEN` | relay → host control | pairId (16) + guest UUID (16 raw bytes) | Open a new TCP connection, send `PAIR pairId`, then connect it to the integrated server. |
+| `0x21 GUEST_CLOSED` | relay → host control | pairId (16) | |
+| `0x22 CLOSE_GUEST` | host control → relay | pairId (16) | |
+| `0x23 KICK` | host control → relay | UUID (16) | Closes all of the player's connections and refuses new ones while this control connection lives. |
+| `0x30 PING` / `0x31 PONG` | both | ≤ 8 bytes echoed | Host must send something at least every 45 s (recommended PING every 15 s). |
+
+**UDP** (25504): a standard **STUN Binding** responder (RFC 5389, XOR-MAPPED-ADDRESS) – any STUN library works – plus an optional datagram relay: packets start with `"TRSU"` + type: `0x01 BIND` + token → `0x81 BOUND` + 8-byte key; `0x02 DATA` + key + (host only: target UUID 16 bytes) + payload ≤ 1200 bytes → delivered as `0x82 DATA_FROM` + sender UUID + payload; `0x03 PING` + key → `0x83 PONG`; `0x04 UNBIND`; `0x8F ERROR` (≤ 1 / s per address). A binding is tied to the source address that sent `BIND`; bindings expire after 30 s without packets (PING every ~10 s). A guest can only bind while the host is connected (TCP control or UDP binding), else `host_offline`. At most 30 BINDs / min per IP.
+
+**Limits:** max **10 players** per world (guests ≤ `m − 1`), ≤ 3 connections per guest, **20 Mbit/s** per world (TCP + UDP, both directions), handshake 10 s, idle pipes 5 min, per-IP connection and failure limits. The relay never logs or stores payloads.
+
+### 21.8 World cards in chat
+
+A chat message can carry a **world card** instead of a server invite (§18.4 send body `"world": { "roomId": "h…" }`):
+
+- Only the **host of that room** may send it (else `404 room_not_found`); not together with `invite` (`400 invite_conflict`). In groups the link rule applies (`422 links_not_allowed`, §18).
+- On sending, every recipient who is **friends with the host** (and not banned) is **invited** (`hosting_invite`). The others can still request via the code.
+- `MessageView.world` = `{ roomId, code, name, mcVersion, loader, host: {uuid,name} }` (a snapshot; `null` for normal messages). `ReplyView.world` = `true` when replying to a card.
+- **Join button** on the card: `POST /v1/hosting/join { "code": world.code }` (invited → in immediately, else request). Live state: `GET /v1/hosting/rooms/{roomId}` (`404` = world closed / not visible → show "World closed").
+- Older clients don't know `world` and show an empty message; send a short `text` with the card if that matters.
+
+### 21.9 Privacy, limits, deletion
+
+- **Stored** (plaintext metadata, only while the room exists): room settings and name, join code, host, members with state and times, heartbeat time, reported player count. Rooms and their members are **deleted** when the room closes (closing, 90 s without heartbeat, new room). **Kept:** the host's permanent ban list (until the host removes entries or deletes the account).
+- **Signals** are passed through and kept only in the short replay buffer of `/v1/events/me` (≤ 10 min, RAM), never in the database. The API never sees game data.
+- **IP addresses:** in P2P mode host and guest necessarily learn each other's public IP address (through the exchanged candidates) – clients should say so ("Direct connection shows your IP address to the other player"). Over the relay only the relay sees the IPs; it keeps them only in RAM for rate limits and never logs payloads. The STUN responder sees the address that asks.
+- **Public link (e4mc):** a separate third-party service (e4mc, run by its own operators); when a player enables it, the game connects to e4mc's relay and anyone with the link can join. The TRS API isn't involved. Clients must show their own warning and privacy note (see launcher privacy text).
+- **Account deletion (`DELETE /v1/me`):** closes your worlds (`host_unavailable`), removes you from others' worlds and deletes your ban list and your entries on others' ban lists. **Account ban:** same, except bans others set against you stay.
+- **Blocking** removes the other player from your worlds and you from theirs (`hidden`, no hint about the block). **Unfriending** drops open invites between you; players already in the world stay.
+- **Rate limits:** every `/v1/hosting/*` request 240 / min per account (own bucket), creating rooms 10 / 10 min, managing (invite, answer, kick, settings) 60 / min, join 20 / min, connect 30 / min, signals 120 / min + 30 / 5 s, failed codes see §21.3.

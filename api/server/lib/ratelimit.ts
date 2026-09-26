@@ -147,4 +147,21 @@ export const RULES = {
   chatReportUser: { limit: 10, windowMs: HOUR },
   /** `GET /v1/events/me` Verbindungen. */
   eventsMeUser: { limit: 20, windowMs: MIN },
+  // ------------------------------------------------ Welt-Hosting
+  /** Alle `/v1/hosting/*`-Anfragen je Konto (eigener Topf, Herzschläge + Signale laufen viel). */
+  hostingUser: { limit: 240, windowMs: MIN },
+  /** Räume anlegen. */
+  hostingCreateUser: { limit: 10, windowMs: 10 * MIN },
+  /** Einladen, annehmen, ablehnen, kicken, sperren, Einstellungen. */
+  hostingManageUser: { limit: 60, windowMs: MIN },
+  /** Beitreten (per Raum oder Code). */
+  hostingJoinUser: { limit: 20, windowMs: MIN },
+  /** Unbekannte Codes (gegen Durchprobieren), je Konto und je IP. */
+  hostingCodeFailUser: { limit: 10, windowMs: 10 * MIN },
+  hostingCodeFailIp: { limit: 30, windowMs: 10 * MIN },
+  /** Signale (Angebot/Antwort/Kandidaten): 120 / min und höchstens 30 in 5 s. */
+  hostingSignalUser: { limit: 120, windowMs: MIN },
+  hostingSignalBurstUser: { limit: 30, windowMs: 5000 },
+  /** Relay-Tokens (connect). */
+  hostingConnectUser: { limit: 30, windowMs: MIN },
 } satisfies Record<string, Rule>

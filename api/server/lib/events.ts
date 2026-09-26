@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import type { IncomingOffer } from './capeshares'
 import type { ConversationView, MessageView, ReactionView } from './chat'
+import type { HostRoomView, RoomCloseReason, RoomView, SignalKind } from './hosting'
 import type { Settings } from './users'
 
 export interface PlayerRef {
@@ -65,6 +66,26 @@ export type ApiEvent =
   | { type: 'report_update', report: { id: string, kind: string, status: string, outcome: string | null, updatedAt: string } }
   /** Moderation betrifft dich: Verwarnung, Stummschaltung (mit Ende oder `null` = bis zur Prüfung), aufgehoben. */
   | { type: 'moderation', action: 'warn' | 'mute' | 'unmute', reason: string | null, until: string | null }
+  // ---------------------------------------------------------------- Welt-Hosting (§21, nur /v1/events/me)
+  /** An den Host (alle Geräte): voller Raumzustand nach jeder Änderung (Mitglieder, Einstellungen, Spielerzahl). */
+  | { type: 'hosting_room', room: HostRoomView }
+  /** An den Host: jemand möchte beitreten (für Toast/Popup). */
+  | { type: 'hosting_join_request', roomId: string, from: PlayerRef }
+  /** An dich: ein Freund lädt dich in seine Welt ein. */
+  | { type: 'hosting_invite', room: RoomView, from: PlayerRef }
+  /** An dich: Einladung zurückgezogen (oder Freundschaft beendet). */
+  | { type: 'hosting_invite_revoked', roomId: string }
+  /** An dich: du bist drin – jetzt `POST …/connect` bzw. direkt verbinden. */
+  | { type: 'hosting_join_accepted', room: RoomView }
+  | { type: 'hosting_join_declined', roomId: string }
+  /** An dich: der Host hat dich entfernt (`banned`: auch gesperrt). */
+  | { type: 'hosting_kicked', roomId: string, banned: boolean }
+  /** Raum geändert (Einstellungen, offen/zu, Spielerzahl) – an alle, die ihn sehen dürfen. */
+  | { type: 'hosting_room_updated', room: RoomView }
+  /** Raum weg oder für dich nicht mehr sichtbar. */
+  | { type: 'hosting_room_closed', roomId: string, reason: RoomCloseReason }
+  /** Verbindungsaufbau (ICE): nur zwischen Host und angenommenen Gästen. */
+  | { type: 'hosting_signal', roomId: string, from: string, kind: SignalKind, sid: string | null, data: string }
 
 export type ApiEventType = ApiEvent['type']
 

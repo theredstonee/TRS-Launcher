@@ -225,6 +225,7 @@ onBeforeUnmount(() => {
                   <p v-if="msg.kind === 'system'" class="text-xs text-base-400 italic">{{ fill(t.system, { event: systemLabel(msg.system?.event) }) }}</p>
                   <p v-if="msg.text" class="msg-text">{{ msg.text }}</p>
                   <p v-if="msg.invite" class="text-xs text-lamp-300">{{ fill(t.invite, { address: msg.invite.address }) }}</p>
+                  <p v-if="msg.world" class="text-xs text-lamp-300">{{ fill(t.world, { name: msg.world.name }) }}</p>
                   <p v-if="msg.attachments.length" class="text-xs text-base-400">{{ fill(t.attachments, { n: msg.attachments.length }) }}</p>
                 </li>
               </ol>

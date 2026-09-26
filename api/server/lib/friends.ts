@@ -4,6 +4,7 @@ import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { conflict, notFound, badRequest } from './errors'
 import type { ApiEvent } from './events'
+import { hostingOnBlock, hostingOnUnfriend } from './hosting'
 import type { Presence } from './presence'
 import { getUser, getUserByName, isBanned, type UserRow } from './users'
 
@@ -210,6 +211,7 @@ export function removeFriend(ctx: AppContext, me: string, other: string): void {
   for (const d of dropped) publish(ctx, d.holder, { type: 'cape_share_removed', capeId: d.capeId })
   // Die DM bleibt lesbar, aber ohne Schreibrecht.
   refreshDm(ctx, me, other)
+  hostingOnUnfriend(ctx, me, other)
 }
 
 export function block(ctx: AppContext, me: string, target: { uuid: string } | { name: string }): { uuid: string, name: string } {
@@ -234,6 +236,7 @@ export function block(ctx: AppContext, me: string, target: { uuid: string } | { 
     refreshDm(ctx, me, u.uuid)
   }
   for (const d of dropped) publish(ctx, d.holder, { type: 'cape_share_removed', capeId: d.capeId })
+  hostingOnBlock(ctx, me, u.uuid)
   selfChanged(ctx, me)
   return { uuid: u.uuid, name: u.name }
 }

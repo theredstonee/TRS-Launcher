@@ -9,6 +9,7 @@ import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
 import { rotateMessageKeys, sweepTyping } from '../lib/chat'
 import { openDb } from '../lib/db'
+import { sweepHosting } from '../lib/hosting'
 import { setWebpWasmLoader } from '../lib/images'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
 import { createMojangClient } from '../lib/mojang'
@@ -36,6 +37,7 @@ export default defineNitroPlugin((nitroApp) => {
   const ctx = createContext({ config, db, mojang, capeDir, cosmeticDir })
   mkdirSync(join(ctx.chatDir, 'evidence'), { recursive: true })
   setContext(ctx)
+  if (!config.hosting) console.warn('[trs-api] RELAY_SECRET/RELAY_HOST not set – world hosting is disabled (503 hosting_unavailable)')
   if (config.chatKeys.derived) {
     console.warn('[trs-api] CHAT_KEYS is not set – chat encryption key is derived from SECRET_KEY (see API.md §18.9)')
   }
@@ -108,9 +110,11 @@ export default defineNitroPlugin((nitroApp) => {
     every(60_000, () => ctx.limiter.sweep()),
     every(10 * 60_000, () => sweepExpired(ctx)),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
+    // Welt-Hosting: Räume ohne Herzschlag schließen.
     every(15_000, () => {
       sweepTyping(ctx)
       ctx.events.sweep()
+      sweepHosting(ctx)
     }),
     every(5 * 60_000, () => {
       ctx.spam.sweep()

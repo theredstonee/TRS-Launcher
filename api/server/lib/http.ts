@@ -93,11 +93,12 @@ export function paramWith<S extends z.ZodType>(event: H3Event, name: string, sch
   return r.data
 }
 
-const USER_RULES = { read: RULES.readUser, write: RULES.writeUser, sync: RULES.syncUser } satisfies Record<string, Rule>
+const USER_RULES = { read: RULES.readUser, write: RULES.writeUser, sync: RULES.syncUser, hosting: RULES.hostingUser } satisfies Record<string, Rule>
 
 /**
  * Angemeldeter Nutzer + Grund-Limit je Konto (lesend/schreibend). `sync` = eigener Topf für
- * `/v1/me/sync*`, damit ein großer Abgleich die übrigen Schreibzugriffe nicht aufbraucht.
+ * `/v1/me/sync*`, damit ein großer Abgleich die übrigen Schreibzugriffe nicht aufbraucht; `hosting` = eigener
+ * Topf für `/v1/hosting/*` (Herzschläge und Signale).
  */
 export function requireUser(event: H3Event, kind: keyof typeof USER_RULES = 'read'): AuthedUser {
   const ctx = useCtx()

@@ -282,6 +282,8 @@ export const sendMessageBody = z.strictObject({
   replyTo: messageIdSchema.optional(),
   attachments: z.array(attachmentIdSchema).max(10).optional(),
   invite: inviteSchema.optional(),
+  /** Weltkarte (§21): nur der Host des Raums. */
+  world: z.strictObject({ roomId: z.string().regex(/^h[0-9a-f]{20}$/, 'invalid world id') }).optional(),
   /** Idempotenz: vom Client erzeugt (z. B. UUID), gleiche nonce = gleiche Nachricht. */
   nonce: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/, 'nonce must be 8-64 characters of A-Z, a-z, 0-9, _ or -').optional(),
 })
@@ -389,3 +391,61 @@ export const auditQuery = z.strictObject({
 })
 
 export const eventsMeQuery = z.strictObject({ lastEventId: z.string().max(64).optional() })
+
+// ---------------------------------------------------------------- Welt-Hosting (§21)
+
+export const roomIdSchema = z.string().regex(/^h[0-9a-f]{20}$/, 'invalid world id')
+
+const roomName = z.string().min(1).max(200)
+const mcVersion = z.string().regex(/^[0-9A-Za-z][0-9A-Za-z._+ -]{0,31}$/, 'must be a Minecraft version like 1.21.4')
+const loader = z.enum(['vanilla', 'fabric', 'forge', 'neoforge', 'quilt'])
+const gameMode = z.enum(['survival', 'creative', 'adventure', 'spectator'])
+const maxPlayers = z.number().int().min(2).max(10)
+const visibility = z.enum(['friends', 'invited'])
+
+export const createRoomBody = z.strictObject({
+  name: roomName,
+  mcVersion,
+  loader,
+  maxPlayers: maxPlayers.default(8),
+  gameMode: gameMode.default('survival'),
+  pvp: z.boolean().default(true),
+  cheats: z.boolean().default(false),
+  open: z.boolean().default(true),
+  visibility: visibility.default('friends'),
+})
+
+export const updateRoomBody = z
+  .strictObject({
+    name: roomName.optional(),
+    mcVersion: mcVersion.optional(),
+    loader: loader.optional(),
+    maxPlayers: maxPlayers.optional(),
+    gameMode: gameMode.optional(),
+    pvp: z.boolean().optional(),
+    cheats: z.boolean().optional(),
+    open: z.boolean().optional(),
+    visibility: visibility.optional(),
+  })
+  .refine((b) => Object.keys(b).length > 0, 'at least one field is required')
+
+export const heartbeatBody = z.strictObject({ players: z.number().int().min(1).max(10).optional() }).optional()
+
+export const hostingInviteBody = z.strictObject({ uuid: uuidSchema, chat: z.boolean().default(true) })
+
+export const kickBody = z
+  .strictObject({ ban: z.boolean().default(false), remember: z.boolean().default(false) })
+  .optional()
+
+export const joinBody = z.union([
+  z.strictObject({ roomId: roomIdSchema }),
+  z.strictObject({ code: z.string().min(1).max(16) }),
+])
+
+export const signalBody = z.strictObject({
+  to: uuidSchema,
+  kind: z.enum(['offer', 'answer', 'candidate', 'bye']),
+  sid: z.string().regex(/^[A-Za-z0-9_-]{1,32}$/, 'sid must be 1-32 characters of A-Z, a-z, 0-9, _ or -').optional(),
+  // Opak (z. B. JSON oder SDP) – Länge prüft die Route gegen limits.hostingMaxSignalData.
+  data: z.string().max(8192),
+})

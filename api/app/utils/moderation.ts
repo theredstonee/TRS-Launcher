@@ -41,6 +41,8 @@ export interface EvidenceMessage {
   sender: PlayerRef | null
   text: string | null
   invite: { address: string, name: string | null } | null
+  /** Weltkarte (Welt-Hosting); fehlt in älteren Beweisen. */
+  world?: { roomId: string, name: string } | null
   system: { event: string, target: string | null, name: string | null } | null
   attachments: { id: string, width: number, height: number, mime: string }[]
   replyTo: string | null
