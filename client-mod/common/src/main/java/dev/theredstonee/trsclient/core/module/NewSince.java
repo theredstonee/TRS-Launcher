@@ -64,8 +64,8 @@ public final class NewSince {
 	/** Welt-Hosting (TRS Client 0.9.0): Welt für Freunde öffnen, Beitritt per Einladung/Code, öffentlicher Link. */
 	public static final String HOSTING = "0.9.0";
 
-	/** Ping &amp; Latenz (TRS Client 0.9.0): echte Ping-Anzeige, Netzwerk-Optimierung, niedrige Eingabeverzögerung. */
-	public static final String LATENCY = "0.9.0";
+	/** Ping &amp; Latenz (TRS Client 0.10.0): echte Ping-Anzeige, Netzwerk-Optimierung, niedrige Eingabeverzögerung. */
+	public static final String LATENCY = "0.10.0";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
