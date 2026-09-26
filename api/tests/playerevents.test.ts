@@ -94,8 +94,12 @@ describe('player event fan-out', () => {
     expect(w1.got).toHaveLength(1)
     expect(w2.got).toHaveLength(0)
     banUser(env.ctx, 'api-key', a!, undefined)
+    // Sperre: Beobachter vergessen Abzeichen, Umhang und Kosmetik sofort (§22.3), Blockierte bekommen nichts.
+    expect(w1.got.slice(1).map((e) => e.type)).toEqual(['badge', 'cape', 'cosmetics'])
+    expect(w1.got[1]).toMatchObject({ badge: false })
+    expect(w2.got).toHaveLength(0)
     emitSkin(env.ctx, a!)
-    expect(w1.got).toHaveLength(1)
+    expect(w1.got).toHaveLength(4)
   })
 
   it('cosmetics/cape events carry the view the watcher may see (pending only for self)', async () => {

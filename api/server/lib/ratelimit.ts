@@ -164,4 +164,15 @@ export const RULES = {
   hostingSignalBurstUser: { limit: 30, windowMs: 5000 },
   /** Relay-Tokens (connect). */
   hostingConnectUser: { limit: 30, windowMs: MIN },
+  // ------------------------------------------------ Moderation v2 (§22)
+  /** Globale Suche im Team-Bereich, je Team-Mitglied. */
+  adminSearch: { limit: 60, windowMs: MIN },
+  /** Sammelaktionen (je bis zu 50 Einträge), je Team-Mitglied. */
+  adminBulk: { limit: 10, windowMs: MIN },
+  /** Strafen verhängen/ändern/aufheben und Einsprüche entscheiden, je Team-Mitglied. */
+  adminSanction: { limit: 60, windowMs: MIN },
+  /** Einsprüche (Spieler): höchstens 5 je Stunde (und genau einer je Strafe). */
+  appealUser: { limit: 5, windowMs: HOUR },
+  /** Eigene Strafen lesen (auch mit Einspruch-Token). */
+  mySanctionsUser: { limit: 30, windowMs: MIN },
 } satisfies Record<string, Rule>

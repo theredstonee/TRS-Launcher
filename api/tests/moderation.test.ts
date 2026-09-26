@@ -164,7 +164,7 @@ describe('admin moderation', () => {
 
     const list = adminListReports(env.ctx, { status: 'open', limit: 1 })
     expect(list.reports.map((x) => x.id)).toEqual([r.id])
-    expect(list.counts).toEqual({ open: 2, in_review: 0, resolved: 0 })
+    expect(list.counts).toEqual({ open: 2, in_review: 0, resolved: 0, highPriority: 2 })
     expect(list.reports[0]).toMatchObject({ targetOpenReports: 2, preview: 'kauf gold bei mir' })
     const page2 = adminListReports(env.ctx, { status: 'open', limit: 1, cursor: list.nextCursor! })
     expect(page2.reports.map((x) => x.id)).toEqual([r2.id])

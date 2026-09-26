@@ -74,7 +74,8 @@ export function migrate(db: Db): number {
   for (const m of MIGRATIONS) {
     if (m.version <= current) continue
     tx(db, () => {
-      db.exec(m.sql)
+      if (m.sql) db.exec(m.sql)
+      m.run?.(db)
       run(db, 'INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)', m.version, Date.now())
     })
     applied++

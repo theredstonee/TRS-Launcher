@@ -2,7 +2,7 @@ import type { AppContext } from './context'
 import { all } from './db'
 import type { EmoteDef } from './emotes'
 import { broadcastPresence } from './friends'
-import { liveBadge, seesLiveBadges, visualsOf } from './lookup'
+import { emptyCosmetics, liveBadge, seesLiveBadges, visualsOf } from './lookup'
 import type { GameInfo } from './presence'
 import type { PresenceBody } from './schemas'
 import { getUser, isBanned, type UserRow } from './users'
@@ -62,6 +62,27 @@ export function emitCosmetics(ctx: AppContext, subject: string): number {
     uuid: subject,
     cosmetics: visualsOf(ctx, subject, self).cosmetics,
   }))
+}
+
+/**
+ * Konto gesperrt: allen Beobachtern (außer ihm selbst) sofort „kein Abzeichen, kein Umhang, keine Kosmetik“
+ * schicken – danach liefert der Lookup für gesperrte Konten nichts mehr (§22.3).
+ */
+export function emitCleared(ctx: AppContext, subject: string): number {
+  let sent = 0
+  const blocked = new Set(all<{ blocked: string }>(ctx.db, 'SELECT blocked FROM blocks WHERE blocker = ?', subject).map((r) => r.blocked))
+  for (const w of ctx.watch.watchersOf(subject)) {
+    if (w.viewer === subject || blocked.has(w.viewer)) continue
+    try {
+      w.send({ type: 'badge', uuid: subject, badge: false })
+      w.send({ type: 'cape', uuid: subject, cape: null })
+      w.send({ type: 'cosmetics', uuid: subject, cosmetics: emptyCosmetics() })
+      sent++
+    } catch {
+      // Ein kaputter Stream darf die anderen nicht stören.
+    }
+  }
+  return sent
 }
 
 /**

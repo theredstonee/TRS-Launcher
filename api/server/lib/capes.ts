@@ -7,6 +7,7 @@ import { newUploadCapeId, sha256Hex } from './ids'
 import { holdsCape, notifyShareRemoved, shareHolders, shareRole, visibleHolderCount } from './capeshares'
 import { emitCape } from './playerevents'
 import { BUILTIN_MAX_SCALE, capeLayout, inspectPng, sanitizeCapeUpload } from './png'
+import { assertNotSanctioned } from './sanctions'
 import { isAdmin } from './users'
 
 export type CapeUnlock = 'free' | 'code' | 'admin' | 'owner'
@@ -235,6 +236,7 @@ export function uploadCape(
   name: string | undefined,
   anim: { frames?: number, frameTimeMs?: number } = {},
 ): CapeView {
+  assertNotSanctioned(ctx, uuid, 'upload_ban')
   const counts = one<{ total: number, pending: number }>(
     ctx.db,
     `SELECT COUNT(*) AS total, COALESCE(SUM(status = 'pending'), 0) AS pending

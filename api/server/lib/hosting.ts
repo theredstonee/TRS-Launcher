@@ -8,6 +8,7 @@ import type { ApiEvent, PlayerRef } from './events'
 import { areFriends, friendUuids, hasBlocked } from './friends'
 import { applyWordFilter, sanitizeText, textLength } from './safety'
 import { getUser, isBanned, type UserRow } from './users'
+import { assertNotSanctioned } from './sanctions'
 
 /**
  * Welt-Hosting (API.md §21): Ein Spieler öffnet seine Einzelspielerwelt für Freunde. Die API macht nur
@@ -357,6 +358,7 @@ function connectInfo(ctx: AppContext, r: RoomRow, uuid: string, role: 'host' | '
 /** Neuer Raum. Ein Host hat höchstens einen: ein bestehender wird dabei geschlossen (`replaced`). */
 export function createRoom(ctx: AppContext, host: UserRow, s: RoomSettings): { room: HostRoomView } & ConnectInfo {
   requireHosting(ctx)
+  assertNotSanctioned(ctx, host.uuid, 'hosting_ban')
   const name = cleanRoomName(ctx, s.name)
   for (const old of all<RoomRow>(ctx.db, 'SELECT * FROM hosting_rooms WHERE host_uuid = ?', host.uuid)) closeRoom(ctx, old, 'replaced')
   const t = ctx.now()
@@ -497,6 +499,8 @@ export interface InviteResult {
  */
 export function invite(ctx: AppContext, host: UserRow, id: string, uuid: string, opts: { chat: boolean }): InviteResult {
   const r = ownRoom(ctx, host.uuid, id)
+  assertNotSanctioned(ctx, host.uuid, 'hosting_ban')
+  assertNotSanctioned(ctx, host.uuid, 'social_ban')
   const u = targetUser(ctx, host.uuid, uuid)
   if (!areFriends(ctx, host.uuid, u.uuid) || blockedEither(ctx, host.uuid, u.uuid)) throw forbidden('not_friends', 'You can only invite friends')
   const m = getMember(ctx, r.id, u.uuid)
@@ -627,6 +631,7 @@ export class UnknownCode extends ApiError {
  */
 export function join(ctx: AppContext, me: UserRow, target: JoinTarget): JoinResult {
   requireHosting(ctx)
+  assertNotSanctioned(ctx, me.uuid, 'hosting_ban')
   let r: RoomRow | undefined
   if ('code' in target) {
     const code = normalizeCode(target.code)
@@ -684,6 +689,7 @@ export function roomFor(ctx: AppContext, me: string, id: string): HostRoomView |
 /** Frisches Relay-Token + STUN für Host oder angenommenen Gast. */
 export function connect(ctx: AppContext, me: string, id: string): ConnectInfo {
   requireHosting(ctx)
+  assertNotSanctioned(ctx, me, 'hosting_ban')
   const r = getRoom(ctx, id)
   if (!r || !canSee(ctx, r, me)) throw notFound('room_not_found', 'World not found')
   if (r.host_uuid === me) return connectInfo(ctx, r, me, 'host')
@@ -811,4 +817,68 @@ export function endHostingFor(ctx: AppContext, uuid: string): void {
     const r = one<RoomRow>(ctx.db, 'SELECT * FROM hosting_rooms WHERE id = ?', room_id)
     if (r) publishHost(ctx, r)
   }
+}
+
+// ---------------------------------------------------------------- Team (§22.6: Welten)
+
+export interface AdminRoomView {
+  id: string
+  code: string
+  name: string
+  host: PlayerRef
+  mcVersion: string
+  loader: Loader
+  maxPlayers: number
+  players: number
+  open: boolean
+  visibility: Visibility
+  members: { accepted: number, invited: number, requested: number, banned: number }
+  createdAt: string
+  heartbeatAt: string
+}
+
+/** Offene Welten für das Team (neueste zuerst), optional nur die eines Spielers (Host oder Mitglied). */
+export function adminRooms(ctx: AppContext, opts: { uuid?: string, limit: number } = { limit: 200 }): AdminRoomView[] {
+  const rows = opts.uuid
+    ? all<RoomRow & { host_name: string | null }>(
+      ctx.db,
+      `SELECT r.*, u.name AS host_name FROM hosting_rooms r LEFT JOIN users u ON u.uuid = r.host_uuid
+       WHERE r.host_uuid = ? OR EXISTS (SELECT 1 FROM hosting_members m WHERE m.room_id = r.id AND m.uuid = ? AND m.state = 'accepted')
+       ORDER BY r.created_at DESC LIMIT ?`,
+      opts.uuid, opts.uuid, opts.limit,
+    )
+    : all<RoomRow & { host_name: string | null }>(
+      ctx.db,
+      'SELECT r.*, u.name AS host_name FROM hosting_rooms r LEFT JOIN users u ON u.uuid = r.host_uuid ORDER BY r.created_at DESC LIMIT ?',
+      opts.limit,
+    )
+  return rows.map((r) => {
+    const members = { accepted: 0, invited: 0, requested: 0, banned: 0 }
+    for (const m of all<{ state: MemberState, n: number }>(ctx.db, 'SELECT state, COUNT(*) AS n FROM hosting_members WHERE room_id = ? GROUP BY state', r.id)) {
+      members[m.state] = m.n
+    }
+    return {
+      id: r.id,
+      code: r.code,
+      name: r.name,
+      host: { uuid: r.host_uuid, name: r.host_name ?? '' },
+      mcVersion: r.mc_version,
+      loader: r.loader,
+      maxPlayers: r.max_players,
+      players: r.players,
+      open: r.open === 1,
+      visibility: r.visibility,
+      members,
+      createdAt: iso(r.created_at),
+      heartbeatAt: iso(r.heartbeat_at),
+    }
+  })
+}
+
+/** Team schließt eine Welt (Host und Gäste bekommen `hosting_room_closed` mit `closed`). */
+export function adminCloseRoom(ctx: AppContext, id: string): { host: string } {
+  const r = getRoom(ctx, id)
+  if (!r) throw notFound('room_not_found', 'World not found')
+  closeRoom(ctx, r, 'closed')
+  return { host: r.host_uuid }
 }

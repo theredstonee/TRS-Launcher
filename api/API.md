@@ -51,8 +51,10 @@ Every error has the same shape:
 | 400 | `invalid_request` | Schema validation failed. See `fields`. |
 | 400 | `invalid_json` | The body is not valid JSON. |
 | 401 | `unauthorized` | Token missing, malformed, unknown or expired. Log in again. |
-| 403 | `banned` | The account is banned. Every feature is blocked. |
-| 403 | `forbidden` | Admin endpoint called by a non-admin. |
+| 403 | `banned` | The account is banned. Every feature is blocked. Carries `until` and `sanction` (§22.2). |
+| 403 | `sanctioned` | A sanction blocks this feature (social, upload or hosting ban). Carries `until` and `sanction` (§22.2). |
+| 403 | `forbidden` | Team endpoint called by a non-member. |
+| 403 | `admin_only` | Team endpoint or action that only admins may use (§22.1). |
 | 403 | `cors_forbidden` | Preflight from an origin that isn't allowed. |
 | 404 | `not_found` | Unknown route, or a malformed path parameter. |
 | 405 | `method_not_allowed` | The route exists but not for this method. |
@@ -107,6 +109,10 @@ All limits use a token bucket that refills evenly across the window.
 | `GET /v1/events/me` connects, per account | 20 / min (and at most 5 open streams) |
 | Every `/v1/hosting/*` request, per account | 240 / min (own bucket); details in §21.9 |
 | Admin, per admin (or API key) | 240 / min |
+| Team: create/lift/change sanctions, decide appeals | 60 / min per team member (§22) |
+| Team: `GET /v1/admin/search` / bulk actions | 60 / min / 10 / min per team member |
+| `POST /v1/me/sanctions/{id}/appeal`, per account | 5 / h (one appeal per sanction) |
+| `GET /v1/me/sanctions`, per account | 30 / min |
 
 ---
 
@@ -179,7 +185,7 @@ Errors:
 |---|---|---|
 | 401 | `invalid_challenge` | The challenge is unknown, expired or already used. |
 | 401 | `not_joined` | Mojang didn't confirm the join, or the name doesn't match the account. |
-| 403 | `banned` | The account is banned. |
+| 403 | `banned` | The account is banned. Details and a one-hour `appealToken` for the appeal routes: §22.3. |
 | 429 | `rate_limited` | See §1.3. |
 | 502 | `upstream_unavailable` | Mojang is down. Retry with backoff. |
 
@@ -194,7 +200,7 @@ Returns **204**.
 
 ### 2.5 Admins
 
-An admin is an account whose UUID is in `ADMIN_UUIDS`. `user.admin` is `true` for them.
+An admin is an account whose UUID is in `ADMIN_UUIDS` (fixed) or that an admin gave the role `admin`; admins can also appoint **moderators** (§22.1). `user.admin` is `true` for admins, `user.role` is `"admin"`, `"moderator"` or `null`.
 
 Scripts can use the header `X-Admin-Key: <ADMIN_API_KEY>` instead of a bearer token. The key is compared in constant time.
 If the header is present and wrong, the request fails with `401`. It does not fall back to the bearer token.
@@ -213,6 +219,7 @@ Auth required.
   "uuid": "75c1a6f3112240abbdb57b9d21c64232",
   "name": "Theredstonee",
   "admin": true,
+  "role": "admin",
   "createdAt": "2026-09-23T18:05:02.000Z",
   "settings": {
     "showBadge": true,
@@ -834,7 +841,7 @@ data: <JSON>
 
 ## 8. Admin
 
-Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in the audit log.
+Auth: a team bearer token (admin or moderator), the website session **or** `X-Admin-Key`. Every mutation is recorded in the audit log. Which role may do what: §22.1 (moderators may read everything here, review capes/cosmetics and use the moderation endpoints; deleting uploads, grants, bans, codes and the word filter are admin-only).
 
 | Method and path | Body | Response |
 |---|---|---|
@@ -859,7 +866,7 @@ Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in 
 | `POST /v1/admin/users/{uuid}/cosmetics` | `{ cosmeticId }` (cosmetic or emote) | **201** `{ cosmetic, alreadyOwned }`. `404 user_not_found` or `cosmetic_not_found`, `400 cosmetic_is_free`. |
 | `DELETE /v1/admin/users/{uuid}/cosmetics/{cosmeticId}` | – | 204, or `404 grant_not_found`. Takes the item off if it is equipped. |
 
-Chat moderation (reports, mutes, warnings, word filter, audit log) is in §20.5.
+Chat moderation (reports, mutes, warnings, word filter, audit log) is in §20.5; roles, all sanction kinds, player file, dashboard, search, bulk actions and appeals in §22.
 
 **CodeView:**
 
@@ -1803,6 +1810,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `report_update` | `{report:{id, kind, status, outcome, updatedAt}}` – feedback on **your** report (§20.2) |
 | `moderation` | `{action: "warn"\|"mute"\|"unmute", reason: string\|null, until: ISO\|null}` – a moderation decision about you. `mute` with `until: null` = until review / lifted. |
 | `settings` | `{settings}` – your settings were changed (by another device) |
+| `sanction_added`, `sanction_updated`, `appeal_decided` | moderation v2 – see §22.9 |
 | `hosting_*` | world hosting: `hosting_invite`, `hosting_invite_revoked`, `hosting_join_request`, `hosting_join_accepted`, `hosting_join_declined`, `hosting_kicked`, `hosting_room`, `hosting_room_updated`, `hosting_room_closed`, `hosting_signal` – see §21.5 |
 
 **Rules**
@@ -1912,7 +1920,7 @@ Auth like §8 (admin bearer token, `X-Admin-Key`, or the website session cookie 
 
 **AdminReportDetail** = summary + `note` + `evidence: { capturedAt, reporter, target, conversation: {id, kind, name, owner, members:[{uuid,name}]}|null, focus: messageId|null, messages: [{ id, seq, kind, sender, text, invite, system:{event,target,name}|null, attachments:[{id,width,height,mime}], replyTo, createdAt, editedAt, deleted }], images: [{ id, width, height, mime, path }] } | null` + `notes: [{id, at, actor, actorName, text}]` + `audit: [{at, actor, actorName, action, detail}]` + `targetModeration: { mute, sanctions, reports:{total,open,actioned,dismissed} } | null` + `reporterStats: { actioned, dismissed, low, open } | null` + `related: [AdminReportSummary]` (other reports against the target, newest 20).
 
-**Sanction**: `{ id, kind: "warn"|"mute", reason, reportId, auto: "reports"|"spam"|null, createdAt, createdBy, expiresAt, liftedAt, liftedBy, active }`.
+**Sanction** (chat view, only warnings and chat mutes of the unified sanctions, §22): `{ id, kind: "warn"|"mute", reason, reportId, auto: "reports"|"spam"|null, createdAt, createdBy, expiresAt, liftedAt, liftedBy, active }`. Warnings given through these routes now end after 30 days; moderators need `minutes` ≤ 10080 for mutes.
 
 `GET /v1/admin/stats` additionally returns `chat: { conversations, groups, messages, messagesLast24h, images, storageBytes, storageLimitBytes }` and `reports: { open, inReview, resolved, activeMutes }`.
 
@@ -2100,3 +2108,204 @@ A chat message can carry a **world card** instead of a server invite (§18.4 sen
 - **Account deletion (`DELETE /v1/me`):** closes your worlds (`host_unavailable`), removes you from others' worlds and deletes your ban list and your entries on others' ban lists. **Account ban:** same, except bans others set against you stay.
 - **Blocking** removes the other player from your worlds and you from theirs (`hidden`, no hint about the block). **Unfriending** drops open invites between you; players already in the world stay.
 - **Rate limits:** every `/v1/hosting/*` request 240 / min per account (own bucket), creating rooms 10 / 10 min, managing (invite, answer, kick, settings) 60 / min, join 20 / min, connect 30 / min, signals 120 / min + 30 / 5 s, failed codes see §21.3.
+
+---
+
+## 22. Moderation v2 (roles, sanctions, player file, dashboard, appeals)
+
+This section extends §8 and §20. Everything in it is implemented and covered by `tests/moderation-v2.test.ts` and the smoke test. Older endpoints (§8 ban/unban, §20.5 mute/warn, `GET /v1/me/moderation`) keep working and write into the same data.
+
+### 22.1 Roles and permissions
+
+| Role | Who |
+|---|---|
+| `admin` | Every UUID in `ADMIN_UUIDS` (fixed, cannot be removed or sanctioned) and accounts an admin gave the role. |
+| `moderator` | Accounts an admin gave the role. |
+
+- `GET /v1/me` and the login response now carry `role: "admin" | "moderator" | null`. `admin` stays `true` only for admins.
+- Team access to `/v1/admin/**`: website session cookie (+ `X-CSRF-Token` on mutations), bearer token of an admin **or moderator**, or `X-Admin-Key` (counts as admin). The website sign-in (§15) works for both roles.
+- The role is checked on **every** request. Removing a role ends the website session at once.
+- `GET /v1/web-login/me` → `{ name, uuid, csrf, role, permissions: [string], limits: { kinds, maxMinutes, maxWarnMinutes, permanent } }` (only for the website UI; the server always checks itself).
+
+**Permission matrix** (server-side, `403 admin_only` / `403 forbidden` otherwise):
+
+| Action | Moderator | Admin |
+|---|---|---|
+| Dashboard, search, player list and file, audit log (read) | ✓ | ✓ |
+| Reports: list, detail, status, notes, actions, bulk dismiss/resolve | ✓ | ✓ |
+| Warn (≤ 30 days), chat mute / social / upload / hosting ban (≤ 7 days) | ✓ | ✓ |
+| Permanent sanctions, any duration > 7 days (warnings > 30 days) | – (`403 duration_not_allowed`) | ✓ |
+| Account ban (`account_ban`, any duration; also report action `ban`, §8 ban/unban) | – (`403 admin_only`) | ✓ |
+| Sanction team members | – (`403 cannot_moderate_staff`) | moderators only; admins never (`409 cannot_moderate_admin`) |
+| Lift / shorten / extend sanctions | own and other moderators' (limits above) | ✓ |
+| Change or lift sanctions **given by an admin** | – (`403 admin_only`) | ✓ |
+| Decide appeals | ✓ except on own sanctions (`403 own_sanction`); lift/shorten of admin sanctions `403 admin_only` | ✓ |
+| Capes/cosmetics: list, approve, reject, bulk | ✓ | ✓ |
+| Capes/cosmetics: delete, grant/revoke to players | – | ✓ |
+| Codes, word filter: read | ✓ | ✓ |
+| Codes, word filter: create / change | – | ✓ |
+| Roles | – | ✓ |
+| Close hosted worlds | ✓ | ✓ |
+| Player notes: add / delete own | ✓ | ✓ (also others') |
+
+Nobody can sanction themselves (`400 cannot_target_self`).
+
+**Roles API** (admins only):
+
+| Method and path | Body | Response |
+|---|---|---|
+| `GET /v1/admin/roles` | – | `{ roles: [RoleView] }` |
+| `PUT /v1/admin/roles/{uuid}` | `{ role: "admin"\|"moderator", note?: ≤200 }` | `{ roles }`. `409 role_locked` (ADMIN_UUIDS), `400 cannot_change_self`, `404 user_not_found` (must have signed in once). |
+| `DELETE /v1/admin/roles/{uuid}` | – | `{ roles }`, `404 role_not_found`. |
+
+`RoleView = { uuid, name, role, source: "env"|"db", grantedAt, grantedBy: {uuid,name}|null, note }`. Every change is audited (`role.set`, `role.remove`).
+
+### 22.2 Sanctions
+
+One table for everything. **Kinds:**
+
+| kind | Effect (enforced server-side) | Error to the client |
+|---|---|---|
+| `warn` | Nothing blocked; counts in the history (shown in `/v1/me/moderation` for 90 days as before). | – |
+| `chat_mute` | No chat messages, group renames, new groups (§18). | `403 chat_muted` |
+| `social_ban` | No friend requests (send **and** accept), no new groups, no adding members, no server invites or world cards in chat, no world invites, no cape offers. Existing friendships and plain chat messages stay. | `403 sanctioned` |
+| `upload_ban` | No cape uploads (§5.6), no cosmetic uploads (§11.7). Existing uploads stay. | `403 sanctioned` |
+| `hosting_ban` | No new worlds, no joining, no world invites, no relay tokens (`connect`). On creation all worlds of the player close (`hosting_room_closed`, `host_unavailable`) and they are removed from others' worlds. | `403 sanctioned` |
+| `account_ban` | Every TRS online feature: sessions (also website) end, login is refused, streams close, presence ends, worlds close, lookups and player events no longer deliver the badge, cape or cosmetics (watchers get `badge:false`, `cape:null`, empty `cosmetics` at once). | `403 banned` |
+
+**Duration** presets: `1h`, `6h`, `1d`, `3d`, `7d`, `30d`, `permanent`, `custom` (+ `minutes`, 5 – 5 256 000). The end is `createdAt + duration`; `null` = permanent (for automatic mutes: until review).
+
+**Reason templates** (`reasonCode`, required): `spam`, `insult_hate`, `harassment`, `inappropriate_content`, `inappropriate_name`, `scam_phishing`, `impersonation`, `copyright`, `cheating`, `ban_evasion`, `other`. Set only by the system: `auto_spam`, `auto_reports`, `legacy` (taken over from before v2). Clients translate them.
+Optional **public reason** (`reason`, ≤ 500, shown to the player) and **internal note** (`note`, ≤ 2000, never sent to players).
+
+**Error details** (stable, for launcher and mod): every `sanctioned`, `chat_muted` and `banned` error carries
+
+```json
+{ "error": { "code": "sanctioned", "message": "…", "until": "2026-09-28T15:52:14.904Z",
+  "sanction": { "id": 5, "kind": "upload_ban", "reasonCode": "copyright", "reason": "Cape with a foreign logo",
+    "startsAt": "…", "endsAt": "…", "status": "active", "liftedAt": null, "appeal": null, "appealable": true } } }
+```
+
+`sanction` is a **MySanctionView** (§22.8) – never the note or the moderator. `until` = `sanction.endsAt` (kept for older chat clients).
+
+**Admin API** (team; rate limit 60 / min per team member for create/lift/change/decide):
+
+| Method and path | Body / query | Response |
+|---|---|---|
+| `GET /v1/admin/sanctions` | `?status=active\|expired\|lifted\|all` (default `active`), `kind`, `uuid`, `actor` (uuid, `api-key`, `system`), `from`, `to` (ISO, on `createdAt`), `sort=newest\|oldest`, `cursor`, `limit` (1–100, 50) | `{ sanctions: [AdminSanctionView], nextCursor }` |
+| `POST /v1/admin/sanctions` | `{ uuid, kind, duration, minutes? (only custom), reasonCode, reason?, note?, reportId? }` | **201** `{ sanction }` |
+| `GET /v1/admin/sanctions/{id}` | – | `{ sanction }` / `404 sanction_not_found` |
+| `POST /v1/admin/sanctions/{id}/lift` | `{ reason: ≤500 }` | `{ sanction }` / `409 sanction_not_active` |
+| `POST /v1/admin/sanctions/{id}/duration` | `{ endsAt: ISO \| null, reason: ≤500 }` (`null` = permanent) | `{ sanction }`. `400 invalid_duration` (end not in the future – lift instead), `409 no_change`, `409 sanction_not_active`. Shorter = `shorten`, longer = `extend`. |
+
+`AdminSanctionView = { id, player:{uuid,name}, kind, reasonCode, reason, note, reportId, auto: "reports"|"spam"|null, createdAt, createdBy:{uuid,name}, createdRole: "admin"|"moderator"|"system", endsAt, permanent, status: "active"|"expired"|"lifted", liftedAt, liftedBy, liftReason, changes: [{ at, actor:{uuid,name}, action: "shorten"|"extend"|"lift", oldEndsAt, newEndsAt, reason }], appeal: AdminAppeal|null, migrated }`.
+Lifted and expired sanctions stay in all lists (the website shows lifted ones struck through). `liftReason: "replaced"` = an automatic mute was replaced by a team decision.
+
+**Report actions** (§20.5) additionally accept `action: "sanction"` with `kind`, `duration`, `minutes?`, `reasonCode?` (default: mapped from the report reason), `reason?`, `note?`, `keepOpen?`, `includeRelated?`. `warn` (now 30 days), `mute` and `ban` (= permanent `account_ban`, admins only) still work.
+
+**Audit actions:** `chat.warn`, `chat.mute`, `chat.automute.spam|reports`, `sanction.social_ban|upload_ban|hosting_ban`, `user.ban`, `sanction.shorten|extend|lift`, `chat.unmute`, `chat.unmute.auto`, `user.unban`, `appeal.create`, `appeal.lifted|shortened|upheld`, `role.set|remove`, `player.note|player.note.delete`, `hosting.close`, plus the existing ones. `ref` = report id, `s<id>` (sanction) or `a<id>` (appeal).
+
+### 22.3 Enforcement details
+
+- Temporary bans end by themselves; the next login works again.
+- **Login of a banned account:** `POST /v1/auth/verify` → `403 banned` with the details above **plus** `appealToken` (`trs_…`) and `appealTokenExpiresAt` (1 hour). This token only works for `GET /v1/me/sanctions` and `POST /v1/me/sanctions/{id}/appeal`; everything else answers `403 banned`. After the ban ended it answers `401` (log in again). Older clients just see `403 banned` as before.
+- A new sanction publishes `sanction_added` (§22.9); a chat mute or warning also the old `moderation` event.
+
+### 22.4 Player file
+
+`GET /v1/admin/players/{uuid}` → `{ file: PlayerFile }` (`404 user_not_found` if the UUID has no account, sanction or report).
+
+```
+PlayerFile = {
+  player: { uuid, name, known, role, online, firstLoginAt, lastLoginAt, friends, sessions, banned },
+  names: [{ name, firstSeen, lastSeen }],            // name history since v2 (current name included)
+  sanctions: [AdminSanctionView],                    // active + history, newest first (≤ 200)
+  warnings: { total, active },
+  reports: {
+    against: { counts: {total, open, actioned, dismissed}, recent: [AdminReportSummary] },   // newest 20
+    filed:   { counts: {…}, recent: [AdminReportSummary] },
+    reporterScore: { actioned, dismissed, low, score }  // score = % confirmed, null without decided reports
+  },
+  capes: [CapeView + { createdAt, reports, source: "upload"|"code"|"admin" }],
+  cosmetics: [CosmeticView + { createdAt, reports, source }],
+  worlds: [AdminRoomView],                           // open worlds hosted by or joined by the player
+  notes: [{ id, at, actor:{uuid,name}, text, deletable }],
+  can: { sanction: bool, reason: null|"self"|"admin"|"staff", limits: { kinds, maxMinutes, maxWarnMinutes, permanent } }
+}
+```
+
+Notes: `POST /v1/admin/players/{uuid}/notes` `{ text: 1–2000, line breaks allowed }` → **201** `{ notes }`; `DELETE /v1/admin/players/{uuid}/notes/{id}` → `{ notes }` (own notes; admins all – else `403 admin_only`). The audit log records only that a note was added, not its text.
+
+`GET /v1/admin/players?q=<name prefix, also former names>&status=all|sanctioned|banned|staff|reported&sort=last_login|created&cursor&limit` → `{ players: [{ uuid, name, role, online, createdAt, lastLoginAt, activeSanctions: [kind], openReports }], nextCursor }`.
+
+`AdminReportSummary` gained `priority: "high" | "normal"`: **high** = reason `insult_hate`, `harassment` or `scam_phishing` from a trusted reporter, **or** ≥ 3 open reports against the same player.
+
+### 22.5 Dashboard
+
+`GET /v1/admin/dashboard` (team) – numbers only, no content:
+
+```
+{ reports: { open, inReview, highPriority, oldestOpenAt },
+  appeals: { open, oldestOpenAt },
+  sanctions: { warn, chat_mute, social_ban, upload_ban, hosting_ban, account_ban },   // active, distinct players
+  uploads: { capesPending, capesReported, cosmeticsPending, cosmeticsReported },
+  users: { total, new24h, new7d, active24h, active7d, online },
+  hosting: { openRooms, players },
+  chat: { messages24h },
+  series: { days: ["YYYY-MM-DD" × 30], newUsers: [n × 30], messages, reports, sanctions },  // UTC days, oldest first
+  server: { version, node, uptimeSec, startedAt, dbBytes, disk: { freeBytes, totalBytes } | null },
+  recentAudit: [AuditEntry × 12] }
+```
+
+### 22.6 Worlds (hosting) for the team
+
+- `GET /v1/admin/hosting/rooms` → `{ rooms: [AdminRoomView] }` with `AdminRoomView = { id, code, name, host:{uuid,name}, mcVersion, loader, maxPlayers, players, open, visibility, members: { accepted, invited, requested, banned }, createdAt, heartbeatAt }`.
+- `DELETE /v1/admin/hosting/rooms/{id}` `{ reason?: ≤200 }` or no body → 204. Everyone gets `hosting_room_closed` with `reason: "closed"`. To keep a player out use a `hosting_ban`.
+
+### 22.7 Search, filters, bulk actions
+
+- `GET /v1/admin/search?q=` (1–64 chars; 60 / min per team member) → `{ players: [{ uuid, name, role, matched }], reports: [AdminReportSummary], capes: [{ id, name, kind, status, owner }], cosmetics: [{ id, name, kind, status, slot, owner }], sanctions: [AdminSanctionView] }`. Finds: name prefix (current and former names, `matched` = former name), UUID (with or without dashes), report id `r…`, sanction `#12`/`s12`, cape/cosmetic id or part of the name. At most 8 per group.
+- **Filters with cursor pages** (cursor = opaque string, pass `nextCursor` back):
+  - `GET /v1/admin/reports` additionally: `reason`, `assigned=me|none|<uuid>`, `priority=high`, `from`, `to`, `sort=oldest|newest`. `counts` gained `highPriority` (open + in review).
+  - `GET /v1/admin/capes` and `GET /v1/admin/cosmetics` additionally: `owner=<uuid>`, `q=<part of name>`, `from`, `to`, `sort`, `cursor`, `limit` (1–500, default 200). Response adds `nextCursor`. Queues (`pending`, `reported`) are oldest first.
+  - `GET /v1/admin/audit` additionally: `actor=<uuid>|api-key|system`, `action=<prefix>` (e.g. `sanction.`), `from`, `to`.
+  - `GET /v1/admin/sanctions`, `/appeals`, `/players` see above.
+- **Bulk actions** – at most **50 ids** per request (`400 invalid_request` / `400 bulk_too_large`), **one transaction** (all or nothing), 10 requests / min per team member:
+  - `POST /v1/admin/reports/bulk` `{ ids: [reportId], action: "dismiss"|"resolve" }` → `{ updated: [id], skipped: [id] }` (already resolved or unknown ids are skipped). Reporters get `report_update`; automatic mutes end when nothing is open any more.
+  - `POST /v1/admin/capes/bulk` and `POST /v1/admin/cosmetics/bulk` `{ ids, action: "approve"|"reject", reason?: ≤200 }` → `{ updated, skipped }` (skipped = unknown, built-in or already in that state).
+
+### 22.8 Appeals
+
+**Players** (bearer token or appeal token, §22.3):
+
+- `GET /v1/me/sanctions` (30 / min) → `{ active: [MySanctionView], past: [MySanctionView] }` (newest first; past = expired or lifted, kept as long as the retention in §22.10).
+- `POST /v1/me/sanctions/{id}/appeal` `{ text: 20–1000 chars, line breaks allowed }` → **201** `{ sanction: MySanctionView }`. Exactly **one** appeal per sanction (`409 appeal_exists`), only for active sanctions (`409 sanction_not_active`), only your own (`404 sanction_not_found`). Rate limit 5 / h per account.
+
+```
+MySanctionView = { id, kind, reasonCode, reason, startsAt, endsAt, status: "active"|"expired"|"lifted", liftedAt,
+                   appeal: { id, status: "open"|"lifted"|"shortened"|"upheld", createdAt, decidedAt, response } | null,
+                   appealable }
+```
+No internal note, no moderator name.
+
+**Team:**
+
+- `GET /v1/admin/appeals?status=open|decided|all&cursor&limit` → `{ appeals: [AdminAppeal], nextCursor, open }` (open ones oldest first). `AdminAppeal = { id, status, text, createdAt, decidedAt, decidedBy, response, sanction: AdminSanctionView }`.
+- `POST /v1/admin/appeals/{id}/decide` `{ decision: "lift"|"shorten"|"uphold", response: 1–1000 (sent to the player), endsAt?: ISO (only and required for shorten, earlier than the current end) }` → `{ appeal }`. `409 appeal_decided`, `403 own_sanction`, `403 admin_only` (moderator lifting/shortening an admin sanction).
+
+### 22.9 Events (`/v1/events/me`, §19)
+
+| event | data |
+|---|---|
+| `sanction_added` | `{ sanction: MySanctionView }` – new sanction against you (also warnings). For `account_ban` the stream closes right after. |
+| `sanction_updated` | `{ sanction: MySanctionView }` – lifted, shortened, extended, or your appeal was filed (other devices). |
+| `appeal_decided` | `{ sanctionId, appeal: { id, status, createdAt, decidedAt, response }, sanction: MySanctionView }` |
+
+Clients: on `sanction_added`/`sanction_updated` update banners and disable the affected features (chat input, friend requests, uploads, hosting) until `endsAt`; show the `appeal` button while `appealable`. The old `moderation` event (§20.4) is still sent for warnings and chat mutes.
+
+### 22.10 Data, retention, migration
+
+- **Tables:** `sanctions` (all kinds), `sanction_changes` (who/when/why for shorten/extend/lift), `sanction_appeals` (one per sanction), `staff_roles`, `player_notes`, `name_history`; `sessions.scope` (`full` | `appeal`).
+- **Retention:** sanctions with their changes and appeal are deleted **2 years after they ended** (expired or lifted); active and permanent ones stay. Internal notes: **2 years**. Former names: **2 years** after last use (the current name stays). Audit entries without report reference: **2 years**; entries of a report go with the report (§20.3).
+- **Account deletion:** warnings and ended sanctions (with appeals) are deleted; **active sanctions stay** (a ban can't be escaped by deleting); notes stay only while a sanction is active. Name history and role go with the account.
+- **Migration 9** copies `chat_sanctions` (warn → `warn` ending 90 days after it was given; mute → `chat_mute`, auto reasons → `auto_spam`/`auto_reports`, others `legacy`) and `bans` (→ permanent `account_ban`, `legacy`) into `sanctions` without losing rows (`legacy_source`/`legacy_id`, `migrated: true`), then drops the old tables. It is idempotent (a second run changes nothing). Existing account names seed `name_history`.

@@ -1,11 +1,11 @@
 import { defineEventHandler } from 'h3'
 import { useCtx } from '../../../../../../lib/context'
-import { paramWith, readJson, requireAdmin } from '../../../../../../lib/http'
+import { paramWith, readJson, requireStaff } from '../../../../../../lib/http'
 import { adminUserModeration, warnUser } from '../../../../../../lib/moderation'
 import { adminWarnBody, uuidSchema } from '../../../../../../lib/schemas'
 
 export default defineEventHandler(async (event) => {
-  const actor = requireAdmin(event)
+  const actor = requireStaff(event)
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const body = await readJson(event, adminWarnBody)
   const ctx = useCtx()

@@ -1,9 +1,18 @@
+import type { DatabaseSync } from 'node:sqlite'
+
 /**
  * Schema-Migrationen. Nur anhängen, nie bestehende ändern – jede läuft genau
  * einmal in einer Transaktion (Tabelle `schema_migrations`).
  * Zeitstempel sind Millisekunden seit 1970 (UTC).
+ * `sql` = festes Skript; `run` = Code für Schritte, die vom Bestand abhängen (idempotent schreiben).
  */
-export const MIGRATIONS: { version: number, sql: string }[] = [
+export interface Migration {
+  version: number
+  sql?: string
+  run?: (db: DatabaseSync) => void
+}
+
+export const MIGRATIONS: Migration[] = [
   {
     version: 1,
     sql: `
@@ -554,4 +563,145 @@ CREATE TABLE hosting_bans (
 CREATE INDEX hosting_bans_uuid ON hosting_bans(uuid);
 `,
   },
+  {
+    // Moderation v2: Rollen (Admin/Moderator), EINE Tabelle für alle Strafen (Verwarnung, Chat-Stumm,
+    // Sozial-, Upload-, Hosting-Sperre, Konto-Bann) mit Änderungsverlauf und Einspruch, Notizen zu Spielern,
+    // Namen-Verlauf, eingeschränkte Sitzungen (nur Einspruch) für gesperrte Konten.
+    // Übernimmt chat_sanctions und bans verlustfrei (legacy_source/legacy_id) und entfernt die alten Tabellen.
+    // Idempotent: jeder Schritt prüft den Bestand, ein zweiter Lauf ändert nichts.
+    version: 9,
+    run: migrateModerationV2,
+  },
 ]
+
+function hasTable(db: DatabaseSync, name: string): boolean {
+  return db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !== undefined
+}
+
+function hasColumn(db: DatabaseSync, table: string, column: string): boolean {
+  // Tabellenname stammt nur aus dem Code unten, nie aus Eingaben.
+  return (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column)
+}
+
+/** Migration 9 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateModerationV2(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS staff_roles (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('admin', 'moderator')),
+  granted_at INTEGER NOT NULL,
+  granted_by TEXT NOT NULL,
+  note TEXT
+);
+
+-- Alle Strafen. Ohne FK auf users: aktive Strafen überleben die Kontolöschung (kein Umgehen per Neuanmeldung).
+CREATE TABLE IF NOT EXISTS sanctions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  uuid TEXT NOT NULL CHECK (length(uuid) = 32),
+  kind TEXT NOT NULL CHECK (kind IN ('warn', 'chat_mute', 'social_ban', 'upload_ban', 'hosting_ban', 'account_ban')),
+  -- Grund-Vorlage (fester Code, s. sanctions.ts) – Spieler sehen ihn übersetzt.
+  reason_code TEXT NOT NULL,
+  -- Öffentlicher Freitext (sieht der Spieler), optional.
+  reason TEXT,
+  -- Interne Notiz (nie an Spieler).
+  note TEXT,
+  report_id TEXT,
+  auto TEXT CHECK (auto IS NULL OR auto IN ('reports', 'spam')),
+  created_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL,
+  -- Rolle des Erstellers zum Zeitpunkt der Strafe (Rechte: Moderatoren ändern keine Admin-Strafen).
+  created_role TEXT NOT NULL CHECK (created_role IN ('admin', 'moderator', 'system')),
+  -- NULL = dauerhaft (bzw. bei automatischer Stummschaltung: bis zur Prüfung).
+  expires_at INTEGER,
+  lifted_at INTEGER,
+  lifted_by TEXT,
+  lift_reason TEXT,
+  updated_at INTEGER NOT NULL,
+  legacy_source TEXT CHECK (legacy_source IS NULL OR legacy_source IN ('chat_sanctions', 'bans')),
+  legacy_id INTEGER,
+  UNIQUE (legacy_source, legacy_id)
+);
+CREATE INDEX IF NOT EXISTS sanctions_uuid ON sanctions(uuid, kind);
+CREATE INDEX IF NOT EXISTS sanctions_created ON sanctions(created_at);
+CREATE INDEX IF NOT EXISTS sanctions_active ON sanctions(kind, lifted_at, expires_at);
+
+-- Verlauf je Strafe: Verkürzen, Verlängern, Aufheben (wer, wann, warum).
+CREATE TABLE IF NOT EXISTS sanction_changes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sanction_id INTEGER NOT NULL REFERENCES sanctions(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  action TEXT NOT NULL CHECK (action IN ('shorten', 'extend', 'lift')),
+  old_expires_at INTEGER,
+  new_expires_at INTEGER,
+  reason TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS sanction_changes_sanction ON sanction_changes(sanction_id);
+
+-- Einspruch: genau einer je Strafe.
+CREATE TABLE IF NOT EXISTS sanction_appeals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sanction_id INTEGER NOT NULL UNIQUE REFERENCES sanctions(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL CHECK (length(uuid) = 32),
+  text TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'lifted', 'shortened', 'upheld')),
+  created_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  decided_by TEXT,
+  response TEXT,
+  CHECK ((status = 'open') = (decided_at IS NULL))
+);
+CREATE INDEX IF NOT EXISTS sanction_appeals_status ON sanction_appeals(status, created_at);
+
+-- Interne Moderations-Notizen zu einem Spieler (ohne FK: bleiben bei aktiver Strafe über die Löschung hinaus).
+CREATE TABLE IF NOT EXISTS player_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  uuid TEXT NOT NULL CHECK (length(uuid) = 32),
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS player_notes_uuid ON player_notes(uuid, at);
+
+-- Namen, unter denen sich ein Konto bei TRS angemeldet hat.
+CREATE TABLE IF NOT EXISTS name_history (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  first_seen INTEGER NOT NULL,
+  last_seen INTEGER NOT NULL,
+  PRIMARY KEY (uuid, name)
+);
+CREATE INDEX IF NOT EXISTS name_history_name ON name_history(name COLLATE NOCASE);
+`)
+
+  // Eingeschränkte Sitzungen: `appeal` = gesperrtes Konto, darf nur die eigenen Strafen sehen und Einspruch einlegen.
+  if (!hasColumn(db, 'sessions', 'scope')) {
+    db.exec("ALTER TABLE sessions ADD COLUMN scope TEXT NOT NULL DEFAULT 'full' CHECK (scope IN ('full', 'appeal'))")
+  }
+
+  if (hasTable(db, 'chat_sanctions')) {
+    // Verwarnungen galten 90 Tage (GET /v1/me/moderation) → Ende = Zeitpunkt + 90 Tage.
+    db.exec(`
+INSERT OR IGNORE INTO sanctions (uuid, kind, reason_code, reason, note, report_id, auto, created_at, created_by, created_role,
+  expires_at, lifted_at, lifted_by, lift_reason, updated_at, legacy_source, legacy_id)
+SELECT uuid,
+  CASE kind WHEN 'warn' THEN 'warn' ELSE 'chat_mute' END,
+  CASE auto WHEN 'spam' THEN 'auto_spam' WHEN 'reports' THEN 'auto_reports' ELSE 'legacy' END,
+  reason, NULL, report_id, auto, created_at, created_by, CASE created_by WHEN 'system' THEN 'system' ELSE 'admin' END,
+  CASE kind WHEN 'warn' THEN created_at + 7776000000 ELSE expires_at END,
+  lifted_at, lifted_by, NULL, COALESCE(lifted_at, created_at), 'chat_sanctions', id
+FROM chat_sanctions;
+DROP TABLE chat_sanctions;
+`)
+  }
+  if (hasTable(db, 'bans')) {
+    db.exec(`
+INSERT OR IGNORE INTO sanctions (uuid, kind, reason_code, reason, note, report_id, auto, created_at, created_by, created_role,
+  expires_at, lifted_at, lifted_by, lift_reason, updated_at, legacy_source, legacy_id)
+SELECT uuid, 'account_ban', 'legacy', reason, NULL, NULL, NULL, banned_at, banned_by, 'admin', NULL, NULL, NULL, NULL, banned_at, 'bans', rowid
+FROM bans;
+DROP TABLE bans;
+`)
+  }
+  db.exec('INSERT OR IGNORE INTO name_history (uuid, name, first_seen, last_seen) SELECT uuid, name, created_at, last_login_at FROM users')
+}

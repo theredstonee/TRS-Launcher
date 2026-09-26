@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { attachmentsOf, copyToEvidence, getAttachment, removeEvidenceFiles } from './attachments'
-import { audit, banUser } from './admin'
+import { audit } from './audit'
 import {
   access,
   accessMessage,
@@ -17,7 +17,24 @@ import type { AppContext } from './context'
 import { all, one, placeholders, run, tx } from './db'
 import { badRequest, conflict, notFound } from './errors'
 import type { PlayerRef } from './events'
-import { getUser, isAdmin } from './users'
+import {
+  MOD_MAX_WARN_MINUTES,
+  SYSTEM,
+  activeSanction,
+  createSanction,
+  liftActive,
+  minutesOf,
+  purgeSanctions,
+  staffOf,
+  statusOf,
+  sweepSanctions,
+  type DurationPreset,
+  type ReasonCode,
+  type SanctionKind,
+  type SanctionRow,
+  type Staff,
+} from './sanctions'
+import { getUser, staffRole } from './users'
 
 /**
  * Moderation für den Chat: Sanktionen (Verwarnung, Stummschaltung), Meldungen mit
@@ -35,22 +52,12 @@ export type ReportOutcome = 'actioned' | 'dismissed'
 const iso = (t: number) => new Date(t).toISOString()
 const isoOrNull = (t: number | null) => (t === null ? null : iso(t))
 
-// ---------------------------------------------------------------- Sanktionen
+// ---------------------------------------------------------------- Sanktionen (Chat-Sicht auf §22)
 
-export interface SanctionRow {
-  id: number
-  uuid: string
-  kind: 'warn' | 'mute'
-  reason: string | null
-  report_id: string | null
-  auto: 'reports' | 'spam' | null
-  created_at: number
-  created_by: string
-  expires_at: number | null
-  lifted_at: number | null
-  lifted_by: string | null
-}
-
+/**
+ * Ältere Sicht auf Chat-Strafen (§20.5, `targetModeration`, `/v1/admin/moderation/users/*`): nur Verwarnung
+ * und Chat-Stumm, `kind` wie früher `warn`/`mute`. Gespeichert wird alles in `sanctions` (sanctions.ts).
+ */
 export interface SanctionView {
   id: number
   kind: 'warn' | 'mute'
@@ -66,11 +73,12 @@ export interface SanctionView {
   active: boolean
 }
 
+export type { SanctionRow }
+
 function sanctionView(ctx: AppContext, s: SanctionRow): SanctionView {
-  const t = ctx.now()
   return {
     id: s.id,
-    kind: s.kind,
+    kind: s.kind === 'warn' ? 'warn' : 'mute',
     reason: s.reason,
     reportId: s.report_id,
     auto: s.auto,
@@ -79,88 +87,79 @@ function sanctionView(ctx: AppContext, s: SanctionRow): SanctionView {
     expiresAt: isoOrNull(s.expires_at),
     liftedAt: isoOrNull(s.lifted_at),
     liftedBy: s.lifted_by,
-    active: s.kind === 'mute' && s.lifted_at === null && (s.expires_at === null || s.expires_at > t),
+    active: s.kind === 'chat_mute' && statusOf(s, ctx.now()) === 'active',
   }
+}
+
+function chatSanctions(ctx: AppContext, uuid: string, limit: number): SanctionView[] {
+  return all<SanctionRow>(
+    ctx.db,
+    "SELECT * FROM sanctions WHERE uuid = ? AND kind IN ('warn', 'chat_mute') ORDER BY created_at DESC, id DESC LIMIT ?",
+    uuid, limit,
+  ).map((s) => sanctionView(ctx, s))
 }
 
 /** Aktive Stummschaltung (die am längsten laufende), sonst `undefined`. */
 export function activeMute(ctx: AppContext, uuid: string): SanctionRow | undefined {
-  return one<SanctionRow>(
-    ctx.db,
-    `SELECT * FROM chat_sanctions WHERE uuid = ? AND kind = 'mute' AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at > ?)
-     ORDER BY expires_at IS NULL DESC, expires_at DESC LIMIT 1`,
-    uuid, ctx.now(),
-  )
+  return activeSanction(ctx, uuid, 'chat_mute')
 }
 
-function notifyModeration(ctx: AppContext, uuid: string, action: 'warn' | 'mute' | 'unmute', reason: string | null, until: number | null): void {
-  ctx.events.publish(uuid, { type: 'moderation', action, reason, until: isoOrNull(until) })
-}
+const toStaff = (ctx: AppContext, actor: string | Staff): Staff => (typeof actor === 'string' ? staffOf(ctx, actor) : actor)
 
 /** Stummschalten. `minutes = null` = bis zur Prüfung/unbefristet. */
 export function muteUser(
   ctx: AppContext,
-  actor: string,
+  actor: string | Staff,
   uuid: string,
   minutes: number | null,
   reason: string | null,
-  opts: { reportId?: string, auto?: 'reports' | 'spam' } = {},
+  opts: { reportId?: string, auto?: 'reports' | 'spam', reasonCode?: ReasonCode, note?: string | null } = {},
 ): SanctionView {
-  if (isAdmin(ctx, uuid)) throw conflict('cannot_moderate_admin', 'Admins cannot be muted')
-  const t = ctx.now()
-  const expires = minutes === null ? null : t + minutes * 60_000
-  const id = tx(ctx.db, () => {
-    // Eine explizite Entscheidung ersetzt eine automatische Stummschaltung.
-    if (!opts.auto) {
-      run(ctx.db, "UPDATE chat_sanctions SET lifted_at = ?, lifted_by = ? WHERE uuid = ? AND kind = 'mute' AND lifted_at IS NULL AND auto IS NOT NULL", t, actor, uuid)
-    }
-    const row = one<{ id: number }>(
-      ctx.db,
-      `INSERT INTO chat_sanctions (uuid, kind, reason, report_id, auto, created_at, created_by, expires_at)
-       VALUES (?, 'mute', ?, ?, ?, ?, ?, ?) RETURNING id`,
-      uuid, reason, opts.reportId ?? null, opts.auto ?? null, t, actor, expires,
-    )!
-    audit(ctx, actor, opts.auto ? `chat.automute.${opts.auto}` : 'chat.mute', uuid, minutes === null ? 'until review' : `${minutes} min`, opts.reportId)
-    return row.id
+  const s = createSanction(ctx, opts.auto ? SYSTEM : toStaff(ctx, actor), {
+    uuid,
+    kind: 'chat_mute',
+    minutes,
+    reasonCode: opts.reasonCode ?? (opts.auto ? `auto_${opts.auto}` as const : 'other'),
+    reason,
+    note: opts.note ?? null,
+    reportId: opts.reportId ?? null,
+    auto: opts.auto,
   })
-  notifyModeration(ctx, uuid, 'mute', reason, expires)
-  return sanctionView(ctx, one<SanctionRow>(ctx.db, 'SELECT * FROM chat_sanctions WHERE id = ?', id)!)
+  return sanctionView(ctx, s)
 }
 
 /** Hebt Stummschaltungen auf (`onlyAuto` = nur automatische). Rückgabe: Anzahl. */
-export function unmuteUser(ctx: AppContext, actor: string, uuid: string, opts: { onlyAuto?: 'reports', reportId?: string } = {}): number {
-  const t = ctx.now()
-  const n = run(
-    ctx.db,
-    `UPDATE chat_sanctions SET lifted_at = ?, lifted_by = ? WHERE uuid = ? AND kind = 'mute' AND lifted_at IS NULL
-       AND (expires_at IS NULL OR expires_at > ?) ${opts.onlyAuto ? 'AND auto = ?' : ''}`,
-    ...(opts.onlyAuto ? [t, actor, uuid, t, opts.onlyAuto] : [t, actor, uuid, t]),
-  )
-  if (n > 0) {
-    audit(ctx, actor, opts.onlyAuto ? 'chat.unmute.auto' : 'chat.unmute', uuid, undefined, opts.reportId)
-    if (!activeMute(ctx, uuid)) notifyModeration(ctx, uuid, 'unmute', null, null)
-  }
-  return n
+export function unmuteUser(ctx: AppContext, actor: string | Staff, uuid: string, opts: { onlyAuto?: 'reports', reportId?: string } = {}): number {
+  return liftActive(ctx, toStaff(ctx, actor), uuid, 'chat_mute', opts.onlyAuto ? 'Automatic mute ended: reports reviewed' : 'Lifted', {
+    onlyAuto: opts.onlyAuto,
+    auditAction: opts.onlyAuto ? 'chat.unmute.auto' : 'chat.unmute',
+  })
 }
 
-export function warnUser(ctx: AppContext, actor: string, uuid: string, reason: string | null, reportId?: string): SanctionView {
-  if (isAdmin(ctx, uuid)) throw conflict('cannot_moderate_admin', 'Admins cannot be warned')
-  const id = tx(ctx.db, () => {
-    const row = one<{ id: number }>(
-      ctx.db,
-      "INSERT INTO chat_sanctions (uuid, kind, reason, report_id, auto, created_at, created_by, expires_at) VALUES (?, 'warn', ?, ?, NULL, ?, ?, NULL) RETURNING id",
-      uuid, reason, reportId ?? null, ctx.now(), actor,
-    )!
-    audit(ctx, actor, 'chat.warn', uuid, reason ?? undefined, reportId)
-    return row.id
+/** Verwarnung (gilt 30 Tage, wenn nichts anderes angegeben). */
+export function warnUser(
+  ctx: AppContext,
+  actor: string | Staff,
+  uuid: string,
+  reason: string | null,
+  reportId?: string,
+  opts: { minutes?: number | null, reasonCode?: ReasonCode, note?: string | null } = {},
+): SanctionView {
+  const s = createSanction(ctx, toStaff(ctx, actor), {
+    uuid,
+    kind: 'warn',
+    minutes: opts.minutes === undefined ? MOD_MAX_WARN_MINUTES : opts.minutes,
+    reasonCode: opts.reasonCode ?? 'other',
+    reason,
+    note: opts.note ?? null,
+    reportId: reportId ?? null,
   })
-  notifyModeration(ctx, uuid, 'warn', reason, null)
-  return sanctionView(ctx, one<SanctionRow>(ctx.db, 'SELECT * FROM chat_sanctions WHERE id = ?', id)!)
+  return sanctionView(ctx, s)
 }
 
 /** Spam-Bremse: 3 Treffer in 10 Minuten → 10 Minuten automatisch stumm. */
 export function applySpamStrike(ctx: AppContext, uuid: string): void {
-  if (ctx.spam.strike(uuid) >= 3 && !activeMute(ctx, uuid) && !isAdmin(ctx, uuid)) {
+  if (ctx.spam.strike(uuid) >= 3 && !activeMute(ctx, uuid) && !staffRole(ctx, uuid)) {
     muteUser(ctx, 'system', uuid, 10, 'Automatic: spam', { auto: 'spam' })
   }
 }
@@ -175,7 +174,7 @@ export function myModeration(ctx: AppContext, uuid: string): MyModeration {
   const m = activeMute(ctx, uuid)
   const warnings = all<{ reason: string | null, created_at: number }>(
     ctx.db,
-    "SELECT reason, created_at FROM chat_sanctions WHERE uuid = ? AND kind = 'warn' AND created_at > ? ORDER BY created_at DESC LIMIT 20",
+    "SELECT reason, created_at FROM sanctions WHERE uuid = ? AND kind = 'warn' AND lifted_at IS NULL AND created_at > ? ORDER BY created_at DESC LIMIT 20",
     uuid, ctx.now() - 90 * 86_400_000,
   )
   return {
@@ -445,7 +444,7 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
 /** Auto-Stumm (bis zur Prüfung), wenn genug verschiedene vertrauenswürdige Melder im Fenster melden. */
 function maybeAutoMute(ctx: AppContext, target: string, reportId: string): void {
   const lim = ctx.config.limits
-  if (isAdmin(ctx, target) || activeMute(ctx, target)) return
+  if (staffRole(ctx, target) || activeMute(ctx, target)) return
   const n = one<{ n: number }>(
     ctx.db,
     `SELECT COUNT(DISTINCT reporter_uuid) AS n FROM chat_reports
@@ -482,6 +481,8 @@ export interface AdminReportSummary {
   assignedTo: PlayerRef | null
   /** Offene Meldungen gegen dasselbe Ziel (inkl. dieser). */
   targetOpenReports: number
+  /** `high`: schwerer Grund (Hass, Belästigung, Betrug) von vertrauenswürdigem Melder oder ≥ 3 offene gegen das Ziel. */
+  priority: 'high' | 'normal'
   createdAt: string
   updatedAt: string
   resolvedAt: string | null
@@ -514,7 +515,7 @@ function readEvidence(ctx: AppContext, r: ReportRow): Evidence | null {
   }
 }
 
-function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummary[] {
+export function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummary[] {
   const targets = [...new Set(rows.map((r) => r.target_uuid).filter((u): u is string => !!u))]
   const openCounts = new Map<string, number>()
   if (targets.length) {
@@ -543,6 +544,7 @@ function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummary[] {
       lowTrust: r.low_trust === 1,
       assignedTo: ref(ctx, r.assigned_to),
       targetOpenReports: r.target_uuid ? (openCounts.get(r.target_uuid) ?? 0) : 0,
+      priority: isHighPriority(r, r.target_uuid ? (openCounts.get(r.target_uuid) ?? 0) : 0) ? 'high' : 'normal',
       createdAt: iso(r.created_at),
       updatedAt: iso(r.updated_at),
       resolvedAt: isoOrNull(r.resolved_at),
@@ -552,16 +554,38 @@ function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummary[] {
   })
 }
 
+/** Gründe, die eine Meldung dringlich machen (§22.5). */
+export const HIGH_PRIORITY_REASONS: readonly ReportReason[] = ['insult_hate', 'harassment', 'scam_phishing']
+/** So viele offene Meldungen gegen dasselbe Ziel machen jede davon dringlich. */
+export const HIGH_PRIORITY_TARGET_OPEN = 3
+
+function isHighPriority(r: Pick<ReportRow, 'reason' | 'low_trust'>, targetOpen: number): boolean {
+  return (HIGH_PRIORITY_REASONS.includes(r.reason) && r.low_trust === 0) || targetOpen >= HIGH_PRIORITY_TARGET_OPEN
+}
+
+/** SQL-Bedingung für „dringlich“ (gleiche Regel wie {@link isHighPriority}). */
+const HIGH_PRIORITY_SQL = `((chat_reports.reason IN ('insult_hate', 'harassment', 'scam_phishing') AND chat_reports.low_trust = 0)
+  OR (chat_reports.target_uuid IS NOT NULL AND (SELECT COUNT(*) FROM chat_reports r2
+      WHERE r2.target_uuid = chat_reports.target_uuid AND r2.status <> 'resolved') >= ${HIGH_PRIORITY_TARGET_OPEN}))`
+
 export interface ReportListQuery {
   status: ReportStatus | 'active' | 'all'
   kind?: ReportKind
   target?: string
+  reason?: ReportReason
+  /** Bearbeiter (UUID) oder `none` = niemandem zugewiesen. */
+  assigned?: string
+  priority?: 'high'
+  from?: number
+  to?: number
+  /** Standard: offene Listen älteste zuerst, sonst neueste zuerst. */
+  sort?: 'oldest' | 'newest'
   cursor?: string
   limit: number
 }
 
 /** Liste für die Moderation. `active` = offen + in Prüfung. Offene: älteste zuerst, sonst neueste zuerst. */
-export function adminListReports(ctx: AppContext, q: ReportListQuery): { reports: AdminReportSummary[], nextCursor: string | null, counts: Record<ReportStatus, number> } {
+export function adminListReports(ctx: AppContext, q: ReportListQuery): { reports: AdminReportSummary[], nextCursor: string | null, counts: Record<ReportStatus, number> & { highPriority: number } } {
   const where: string[] = []
   const params: (string | number)[] = []
   if (q.status === 'active') where.push("status <> 'resolved'")
@@ -577,7 +601,25 @@ export function adminListReports(ctx: AppContext, q: ReportListQuery): { reports
     where.push('target_uuid = ?')
     params.push(q.target)
   }
-  const asc = q.status === 'open' || q.status === 'active' || q.status === 'in_review'
+  if (q.reason) {
+    where.push('reason = ?')
+    params.push(q.reason)
+  }
+  if (q.assigned === 'none') where.push('assigned_to IS NULL')
+  else if (q.assigned) {
+    where.push('assigned_to = ?')
+    params.push(q.assigned)
+  }
+  if (q.priority === 'high') where.push(HIGH_PRIORITY_SQL)
+  if (q.from !== undefined) {
+    where.push('created_at >= ?')
+    params.push(q.from)
+  }
+  if (q.to !== undefined) {
+    where.push('created_at < ?')
+    params.push(q.to)
+  }
+  const asc = q.sort ? q.sort === 'oldest' : q.status === 'open' || q.status === 'active' || q.status === 'in_review'
   if (q.cursor) {
     const m = /^(\d{1,15}):(r[0-9a-f]{16})$/.exec(Buffer.from(q.cursor, 'base64url').toString('utf8'))
     if (!m) throw badRequest('invalid_cursor', 'Invalid cursor')
@@ -593,8 +635,9 @@ export function adminListReports(ctx: AppContext, q: ReportListQuery): { reports
   )
   const page = rows.slice(0, q.limit)
   const last = page[page.length - 1]
-  const counts = { open: 0, in_review: 0, resolved: 0 }
+  const counts = { open: 0, in_review: 0, resolved: 0, highPriority: 0 }
   for (const c of all<{ status: ReportStatus, n: number }>(ctx.db, 'SELECT status, COUNT(*) AS n FROM chat_reports GROUP BY status')) counts[c.status] = c.n
+  counts.highPriority = one<{ n: number }>(ctx.db, `SELECT COUNT(*) AS n FROM chat_reports WHERE status <> 'resolved' AND ${HIGH_PRIORITY_SQL}`)!.n
   return {
     reports: summaries(ctx, page),
     nextCursor: rows.length > q.limit && last ? Buffer.from(`${last.created_at}:${last.id}`).toString('base64url') : null,
@@ -645,7 +688,7 @@ export function adminReportDetail(ctx: AppContext, id: string): AdminReportDetai
     )!
     targetModeration = {
       mute: m ? sanctionView(ctx, m) : null,
-      sanctions: all<SanctionRow>(ctx.db, 'SELECT * FROM chat_sanctions WHERE uuid = ? ORDER BY created_at DESC LIMIT 20', r.target_uuid).map((s) => sanctionView(ctx, s)),
+      sanctions: chatSanctions(ctx, r.target_uuid, 20),
       reports: c,
     }
   }
@@ -721,65 +764,108 @@ export function adminAddNote(ctx: AppContext, actor: string, id: string, text: s
   return adminReportDetail(ctx, id)
 }
 
-export type ReportAction = 'delete_message' | 'warn' | 'mute' | 'ban' | 'dismiss' | 'resolve'
+export type ReportAction = 'delete_message' | 'warn' | 'mute' | 'ban' | 'sanction' | 'dismiss' | 'resolve'
 
 export interface ReportActionInput {
   action: ReportAction
   reason?: string
-  /** Nur `mute`: Dauer in Minuten; fehlt = bis zur Aufhebung. */
+  /** Nur `mute`: Dauer in Minuten; fehlt = bis zur Aufhebung. `sanction` mit `duration: custom`: eigene Dauer. */
   minutes?: number
+  /** Nur `sanction` (§22): Art, Dauer-Vorlage, Grund-Vorlage, interne Notiz. */
+  kind?: SanctionKind
+  duration?: DurationPreset
+  reasonCode?: ReasonCode
+  note?: string
   /** Meldung offen lassen (für mehrere Aktionen nacheinander); `dismiss`/`resolve` schließen immer. */
   keepOpen?: boolean
   /** Weitere offene Meldungen zum selben Inhalt (Nachricht/Bild, sonst Ziel+Art) gleich mit erledigen. */
   includeRelated?: boolean
 }
 
-function resolveReports(ctx: AppContext, actor: string, rows: ReportRow[], outcome: ReportOutcome): void {
+/** Meldungs-Grund → Grund-Vorlage der Strafe. */
+const REASON_OF_REPORT: Record<ReportReason, ReasonCode> = {
+  insult_hate: 'insult_hate',
+  spam: 'spam',
+  inappropriate: 'inappropriate_content',
+  scam_phishing: 'scam_phishing',
+  harassment: 'harassment',
+  other: 'other',
+}
+
+/** Erledigt Meldungen OHNE eigene Transaktion (Aufrufer klammert). Liefert die tatsächlich erledigten. */
+function resolveRowsInTx(ctx: AppContext, actor: string, rows: ReportRow[], outcome: ReportOutcome): ReportRow[] {
   const t = ctx.now()
+  const done: ReportRow[] = []
   for (const r of rows) {
     if (r.status === 'resolved') continue
-    tx(ctx.db, () => {
+    run(
+      ctx.db,
+      "UPDATE chat_reports SET status = 'resolved', outcome = ?, resolved_at = ?, resolved_by = ?, updated_at = ? WHERE id = ? AND status <> 'resolved'",
+      outcome, t, actor, t, r.id,
+    )
+    if (r.reporter_uuid) {
       run(
         ctx.db,
-        "UPDATE chat_reports SET status = 'resolved', outcome = ?, resolved_at = ?, resolved_by = ?, updated_at = ? WHERE id = ?",
-        outcome, t, actor, t, r.id,
+        `INSERT INTO chat_reporter_stats (uuid, actioned, dismissed) VALUES (?, ?, ?)
+         ON CONFLICT(uuid) DO UPDATE SET actioned = actioned + excluded.actioned, dismissed = dismissed + excluded.dismissed`,
+        r.reporter_uuid, outcome === 'actioned' ? 1 : 0, outcome === 'dismissed' ? 1 : 0,
       )
-      if (r.reporter_uuid) {
-        run(
-          ctx.db,
-          `INSERT INTO chat_reporter_stats (uuid, actioned, dismissed) VALUES (?, ?, ?)
-           ON CONFLICT(uuid) DO UPDATE SET actioned = actioned + excluded.actioned, dismissed = dismissed + excluded.dismissed`,
-          r.reporter_uuid, outcome === 'actioned' ? 1 : 0, outcome === 'dismissed' ? 1 : 0,
-        )
-      }
-      audit(ctx, actor, `report.${outcome}`, r.target_uuid, undefined, r.id)
-    })
-    notifyReporter(ctx, reportOr404(ctx, r.id))
+    }
+    audit(ctx, actor, `report.${outcome}`, r.target_uuid, undefined, r.id)
+    done.push(r)
+  }
+  return done
+}
+
+function resolveReports(ctx: AppContext, actor: string, rows: ReportRow[], outcome: ReportOutcome): void {
+  for (const r of rows) {
+    const done = tx(ctx.db, () => resolveRowsInTx(ctx, actor, [r], outcome))
+    for (const d of done) notifyReporter(ctx, reportOr404(ctx, d.id))
   }
 }
 
-export function adminReportAction(ctx: AppContext, actor: string, id: string, input: ReportActionInput): AdminReportDetail {
+/** Automatische Stummschaltung „bis zur Prüfung“ endet, wenn gegen das Ziel nichts mehr offen ist. */
+function endAutoMuteIfClear(ctx: AppContext, actor: Staff, target: string, reportId: string): void {
+  const stillOpen = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM chat_reports WHERE target_uuid = ? AND status <> 'resolved'", target)!.n
+  if (stillOpen === 0) unmuteUser(ctx, actor, target, { onlyAuto: 'reports', reportId })
+}
+
+export function adminReportAction(ctx: AppContext, actorIn: string | Staff, id: string, input: ReportActionInput): AdminReportDetail {
+  const actor = toStaff(ctx, actorIn)
   const r = reportOr404(ctx, id)
   const reason = input.reason ?? null
-  const needsTarget = input.action === 'warn' || input.action === 'mute' || input.action === 'ban'
+  const reasonCode = input.reasonCode ?? REASON_OF_REPORT[r.reason]
+  const note = input.note ?? null
+  const needsTarget = input.action === 'warn' || input.action === 'mute' || input.action === 'ban' || input.action === 'sanction'
   if (needsTarget && !r.target_uuid) throw conflict('no_target', 'This report has no player to act on')
   switch (input.action) {
     case 'delete_message': {
       if (!r.message_id) throw conflict('no_message', 'This report is not about a message')
       const m = getMessage(ctx, r.message_id)
       if (m && m.deleted_at === null) deleteMessage(ctx, null, m.id, 'admin')
-      audit(ctx, actor, 'chat.message.delete', r.target_uuid, r.message_id, id)
+      audit(ctx, actor.uuid, 'chat.message.delete', r.target_uuid, r.message_id, id)
       break
     }
     case 'warn':
-      warnUser(ctx, actor, r.target_uuid!, reason, id)
+      warnUser(ctx, actor, r.target_uuid!, reason, id, { reasonCode, note })
       break
     case 'mute':
-      muteUser(ctx, actor, r.target_uuid!, input.minutes ?? null, reason, { reportId: id })
+      muteUser(ctx, actor, r.target_uuid!, input.minutes ?? null, reason, { reportId: id, reasonCode, note })
       break
     case 'ban':
-      banUser(ctx, actor, r.target_uuid!, reason ?? undefined)
-      audit(ctx, actor, 'report.ban', r.target_uuid, reason ?? undefined, id)
+      createSanction(ctx, actor, { uuid: r.target_uuid!, kind: 'account_ban', minutes: null, reasonCode, reason, note, reportId: id })
+      break
+    case 'sanction':
+      if (!input.kind || !input.duration) throw badRequest('invalid_request', 'kind and duration are required for action=sanction')
+      createSanction(ctx, actor, {
+        uuid: r.target_uuid!,
+        kind: input.kind,
+        minutes: minutesOf(input.duration, input.minutes),
+        reasonCode,
+        reason,
+        note,
+        reportId: id,
+      })
       break
     case 'dismiss':
     case 'resolve':
@@ -796,20 +882,39 @@ export function adminReportAction(ctx: AppContext, actor: string, id: string, in
           : []
       rows.push(...more)
     }
-    resolveReports(ctx, actor, rows, input.action === 'dismiss' ? 'dismissed' : 'actioned')
+    resolveReports(ctx, actor.uuid, rows, input.action === 'dismiss' ? 'dismissed' : 'actioned')
     // Geprüft: automatische Stummschaltung „bis zur Prüfung“ endet, wenn nichts mehr offen ist
-    // (außer der Admin hat selbst stummgeschaltet oder gesperrt).
-    if (r.target_uuid && input.action !== 'mute' && input.action !== 'ban') {
-      const stillOpen = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM chat_reports WHERE target_uuid = ? AND status <> 'resolved'", r.target_uuid)!.n
-      if (stillOpen === 0) unmuteUser(ctx, actor, r.target_uuid, { onlyAuto: 'reports', reportId: id })
-    }
+    // (außer das Team hat selbst stummgeschaltet oder gesperrt).
+    const restricting = input.action === 'mute' || input.action === 'ban' || (input.action === 'sanction' && (input.kind === 'chat_mute' || input.kind === 'account_ban'))
+    if (r.target_uuid && !restricting) endAutoMuteIfClear(ctx, actor, r.target_uuid, id)
   } else if (r.status === 'open') {
-    run(ctx.db, "UPDATE chat_reports SET status = 'in_review', assigned_to = ?, updated_at = ? WHERE id = ?", actor, ctx.now(), id)
+    run(ctx.db, "UPDATE chat_reports SET status = 'in_review', assigned_to = ?, updated_at = ? WHERE id = ?", actor.uuid, ctx.now(), id)
     notifyReporter(ctx, reportOr404(ctx, id))
   } else {
     run(ctx.db, 'UPDATE chat_reports SET updated_at = ? WHERE id = ?', ctx.now(), id)
   }
   return adminReportDetail(ctx, id)
+}
+
+/** Höchstzahl je Sammelaktion (§22.7). */
+export const BULK_MAX = 50
+
+/**
+ * Sammelaktion: mehrere Meldungen in EINER Transaktion abweisen bzw. erledigen. Bereits erledigte oder
+ * unbekannte IDs werden übersprungen (`skipped`). Danach Rückmeldung an die Melder.
+ */
+export function adminBulkReports(ctx: AppContext, actorIn: string | Staff, ids: string[], outcome: ReportOutcome): { updated: string[], skipped: string[] } {
+  const actor = toStaff(ctx, actorIn)
+  const unique = [...new Set(ids)]
+  if (unique.length === 0 || unique.length > BULK_MAX) throw badRequest('bulk_too_large', `Between 1 and ${BULK_MAX} items per request`)
+  const rows = all<ReportRow>(ctx.db, `SELECT * FROM chat_reports WHERE id IN (${placeholders(unique.length)})`, ...unique)
+  const done = tx(ctx.db, () => resolveRowsInTx(ctx, actor.uuid, rows, outcome))
+  const doneIds = new Set(done.map((r) => r.id))
+  for (const r of done) notifyReporter(ctx, reportOr404(ctx, r.id))
+  for (const target of new Set(done.map((r) => r.target_uuid).filter((u): u is string => !!u))) {
+    endAutoMuteIfClear(ctx, actor, target, done.find((r) => r.target_uuid === target)!.id)
+  }
+  return { updated: unique.filter((x) => doneIds.has(x)), skipped: unique.filter((x) => !doneIds.has(x)) }
 }
 
 export interface AdminUserModeration {
@@ -834,7 +939,7 @@ export function adminUserModeration(ctx: AppContext, uuid: string): AdminUserMod
     uuid,
     name: getUser(ctx, uuid)?.name ?? null,
     mute: m ? sanctionView(ctx, m) : null,
-    sanctions: all<SanctionRow>(ctx.db, 'SELECT * FROM chat_sanctions WHERE uuid = ? ORDER BY created_at DESC LIMIT 50', uuid).map((s) => sanctionView(ctx, s)),
+    sanctions: chatSanctions(ctx, uuid, 50),
     reportsAgainst: c('target_uuid'),
     reportsFiled: { ...c('reporter_uuid'), lowTrust: reporterTrust(ctx, uuid).low },
   }
@@ -847,7 +952,7 @@ export function reportStats(ctx: AppContext): { open: number, inReview: number, 
     inReview: n("SELECT COUNT(*) AS n FROM chat_reports WHERE status = 'in_review'"),
     resolved: n("SELECT COUNT(*) AS n FROM chat_reports WHERE status = 'resolved'"),
     activeMutes: n(
-      "SELECT COUNT(DISTINCT uuid) AS n FROM chat_sanctions WHERE kind = 'mute' AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at > ?)",
+      "SELECT COUNT(DISTINCT uuid) AS n FROM sanctions WHERE kind = 'chat_mute' AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at > ?)",
       ctx.now(),
     ),
   }
@@ -858,7 +963,7 @@ export function reportStats(ctx: AppContext): { open: number, inReview: number, 
 /**
  * Aufbewahrung: Beweise (Schnappschuss, Notizen, Bildkopien) erledigter Meldungen nach
  * `reportEvidenceRetentionMs` löschen; die Meldung selbst (ohne Inhalte) nach `reportRetentionMs`.
- * Verwarnungen und abgelaufene/aufgehobene Stummschaltungen nach einem Jahr.
+ * Strafen (alle Arten) 2 Jahre nach ihrem Ende (§22.10).
  */
 export function sweepModeration(ctx: AppContext): void {
   const lim = ctx.config.limits
@@ -879,12 +984,8 @@ export function sweepModeration(ctx: AppContext): void {
     run(ctx.db, 'DELETE FROM chat_reports WHERE id = ?', r.id)
     run(ctx.db, 'DELETE FROM admin_log WHERE ref = ?', r.id)
   }
-  const year = t - 365 * 86_400_000
-  run(
-    ctx.db,
-    `DELETE FROM chat_sanctions WHERE created_at < ? AND (kind = 'warn' OR lifted_at IS NOT NULL OR (expires_at IS NOT NULL AND expires_at < ?))`,
-    year, t,
-  )
+  // Strafen, Notizen, Namen-Verlauf, Audit-Log: 2 Jahre (sanctions.ts).
+  sweepSanctions(ctx)
 }
 
 /**
@@ -893,12 +994,7 @@ export function sweepModeration(ctx: AppContext): void {
  * Melder (FK), Meldungen gegen das Konto bleiben mit ihren Beweisen bis zum Ablauf der Aufbewahrung.
  */
 export function purgeModeration(ctx: AppContext, uuid: string): void {
-  const t = ctx.now()
-  run(
-    ctx.db,
-    `DELETE FROM chat_sanctions WHERE uuid = ? AND (kind = 'warn' OR lifted_at IS NOT NULL OR (expires_at IS NOT NULL AND expires_at <= ?))`,
-    uuid, t,
-  )
+  purgeSanctions(ctx, uuid)
 }
 
 export function rotateReportKeys(ctx: AppContext, max: number): number {

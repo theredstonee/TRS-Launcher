@@ -14,6 +14,7 @@ import type { ApiEvent, PlayerRef } from './events'
 import { areFriends, hasBlocked } from './friends'
 import { inviteFromCard, worldCardBody, worldCardView, type WorldCardBody, type WorldCardView } from './hosting'
 import { activeMute, applySpamStrike } from './moderation'
+import { assertNotSanctioned, sanctionError } from './sanctions'
 import { applyWordFilter, assertText, countLinks, sanitizeText } from './safety'
 import { getUser } from './users'
 
@@ -267,10 +268,7 @@ export function writeBlock(ctx: AppContext, conv: ConversationRow, me: string): 
 
 function assertCanWrite(ctx: AppContext, conv: ConversationRow, me: string): void {
   const reason = writeBlock(ctx, conv, me)
-  if (reason === 'chat_muted') {
-    const m = activeMute(ctx, me)!
-    throw new ApiError(403, 'chat_muted', 'You are muted in chat', { until: m.expires_at ? iso(m.expires_at) : null })
-  }
+  if (reason === 'chat_muted') throw sanctionError(ctx, activeMute(ctx, me)!)
   if (reason === 'not_friends') throw forbidden('not_friends', 'You can only message friends')
 }
 
@@ -645,6 +643,7 @@ function cleanGroupName(raw: string): string {
 export function createGroup(ctx: AppContext, me: string, rawName: string, memberList: string[]): ConversationView {
   const lim = ctx.config.limits
   if (activeMute(ctx, me)) assertCanWrite(ctx, { kind: 'group' } as ConversationRow, me)
+  assertNotSanctioned(ctx, me, 'social_ban')
   const name = applyWordFilter(ctx, cleanGroupName(rawName))
   const others = [...new Set(memberList)].filter((u) => u !== me)
   if (others.length + 1 > lim.maxGroupMembers) throw conflict('group_full', `A group can have at most ${lim.maxGroupMembers} members`)
@@ -714,6 +713,7 @@ export function addMembers(ctx: AppContext, me: string, conversationId: string, 
   const lim = ctx.config.limits
   const conv = ownedGroup(ctx, me, conversationId)
   assertCanWrite(ctx, conv, me)
+  assertNotSanctioned(ctx, me, 'social_ban')
   const current = new Set(memberUuids(ctx, conv.id))
   const add = [...new Set(list)].filter((u) => !current.has(u) && u !== me)
   if (add.length === 0) return conversationView(ctx, conv, me)
@@ -863,6 +863,8 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
   }
   assertCanWrite(ctx, conv, me)
   if (input.invite && input.world) throw badRequest('invite_conflict', 'A message can carry a server invite or a world, not both')
+  // Einladungen (Server, Welt) sind Sozial-Funktionen (§22.3).
+  if (input.invite || input.world) assertNotSanctioned(ctx, me, 'social_ban')
   const world = input.world ? worldCardBody(ctx, me, input.world.roomId) : undefined
   const text = checkContent(ctx, conv, me, input.text, !!input.invite || !!world)
   const attIds = [...new Set(input.attachments ?? [])]

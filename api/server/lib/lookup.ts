@@ -3,6 +3,7 @@ import { all, placeholders } from './db'
 import { capeView, type CapeRow } from './capes'
 import { cosmeticView, renderable, type CosmeticRow } from './cosmetics'
 import { WEARABLE_SLOTS, type WearableSlot } from './templates'
+import { ACTIVE_BANS } from './users'
 
 export interface LookupCape {
   id: string
@@ -92,9 +93,9 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
      FROM users u
      LEFT JOIN capes c ON c.id = u.active_cape_id
      WHERE u.uuid IN (${placeholders(unique.length)})
-       AND u.uuid NOT IN (SELECT uuid FROM bans)
+       AND u.uuid NOT IN (${ACTIVE_BANS})
        AND NOT EXISTS (SELECT 1 FROM blocks b WHERE b.blocker = u.uuid AND b.blocked = ?)`,
-    ...unique, viewer,
+    ...unique, ctx.now(), viewer,
   )
   if (rows.length === 0) return []
   const equipped = all<CosmeticRow & { eq_uuid: string, eq_slot: WearableSlot }>(

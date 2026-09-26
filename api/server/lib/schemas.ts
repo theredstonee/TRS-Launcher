@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { CAPE_ID, COSMETIC_ID, SERVER_ID, normalizeRedeemCode, normalizeUuid } from './ids'
+import { MAX_CUSTOM_MINUTES, REASON_CODES, SANCTION_KINDS } from './sanctions'
 import { TEMPLATE_ID, WEARABLE_SLOTS } from './templates'
 
 /** Alle Eingaben laufen durch diese Schemas (Whitelist, `strict` = unbekannte Felder → 400). */
@@ -150,8 +151,21 @@ export const grantCapeBody = z.strictObject({ capeId: capeIdSchema })
 /** Umhang einem Freund anbieten. */
 export const capeOfferBody = z.strictObject({ capeId: capeIdSchema, friend: uuidSchema })
 
+/** Zeitraum-Filter (ISO 8601) → Millisekunden. */
+const isoTime = z.iso.datetime({ offset: true }).transform((s) => Date.parse(s))
+const listLimit = (max: number, def: number) => z.coerce.number().int().min(1).max(max).default(def)
+const cursorParam = z.string().max(120).optional()
+
+/** Prüf-Listen (Umhänge/Kosmetik): Status, Besitzer, Name, Zeitraum, Sortierung, Cursor (§22.7). */
 export const adminCapeListQuery = z.strictObject({
   status: z.enum(['pending', 'approved', 'rejected', 'reported']).default('pending'),
+  owner: uuidSchema.optional(),
+  q: z.string().trim().min(1).max(32).optional(),
+  from: isoTime.optional(),
+  to: isoTime.optional(),
+  sort: z.enum(['oldest', 'newest']).optional(),
+  cursor: cursorParam,
+  limit: listLimit(500, 200),
 })
 
 // ---------------------------------------------------------------- Kosmetik, Emotes, Skins
@@ -350,27 +364,47 @@ export const adminReportListQuery = z.strictObject({
   status: z.enum(['open', 'in_review', 'resolved', 'active', 'all']).default('active'),
   kind: z.enum(['message', 'image', 'player', 'group']).optional(),
   target: uuidSchema.optional(),
+  reason: reportReasonSchema.optional(),
+  /** Bearbeiter: `me`, `none` (niemandem zugewiesen) oder eine UUID. */
+  assigned: z.union([z.enum(['me', 'none']), uuidSchema]).optional(),
+  priority: z.literal('high').optional(),
+  from: isoTime.optional(),
+  to: isoTime.optional(),
+  sort: z.enum(['oldest', 'newest']).optional(),
   cursor: z.string().max(100).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 })
 
 export const adminReportStatusBody = z.strictObject({ status: z.enum(['open', 'in_review']) })
 
+export const sanctionKindSchema = z.enum(SANCTION_KINDS)
+export const reasonCodeSchema = z.enum(REASON_CODES)
+export const durationSchema = z.enum(['1h', '6h', '1d', '3d', '7d', '30d', 'permanent', 'custom'])
+const customMinutes = z.int().min(5).max(MAX_CUSTOM_MINUTES)
+
 export const adminReportActionBody = z
   .strictObject({
-    action: z.enum(['delete_message', 'warn', 'mute', 'ban', 'dismiss', 'resolve']),
-    reason: plainText(200).optional(),
-    minutes: z.int().min(5).max(525_600).optional(),
+    action: z.enum(['delete_message', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve']),
+    reason: plainText(500).optional(),
+    minutes: z.int().min(5).max(MAX_CUSTOM_MINUTES).optional(),
+    kind: sanctionKindSchema.optional(),
+    duration: durationSchema.optional(),
+    reasonCode: reasonCodeSchema.optional(),
+    note: plainText(2000).optional(),
     keepOpen: z.boolean().optional(),
     includeRelated: z.boolean().optional(),
   })
-  .refine((b) => b.minutes === undefined || b.action === 'mute', 'minutes is only allowed for action=mute')
+  .refine((b) => b.minutes === undefined || b.action === 'mute' || (b.action === 'sanction' && b.duration === 'custom'), 'minutes is only allowed for action=mute or duration=custom')
+  .refine((b) => b.action !== 'sanction' || (b.kind !== undefined && b.duration !== undefined), 'kind and duration are required for action=sanction')
+  .refine((b) => b.duration !== 'custom' || b.minutes !== undefined, 'minutes is required for duration=custom')
+  .refine((b) => b.action === 'sanction' || (b.kind === undefined && b.duration === undefined), 'kind and duration are only allowed for action=sanction')
 
 export const adminNoteBody = z.strictObject({ text: plainText(2000) })
 
 export const adminMuteBody = z.strictObject({
   minutes: z.int().min(5).max(525_600).optional(),
   reason: plainText(200).optional(),
+  reasonCode: reasonCodeSchema.optional(),
 })
 
 export const adminWarnBody = z.strictObject({ reason: plainText(200) })
@@ -383,12 +417,117 @@ export const wordFilterBody = z.strictObject({
 
 export const wordIdSchema = z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER)
 
+/** Akteur im Audit-Log/Strafen-Filter: UUID oder `api-key` / `system`. */
+const actorSchema = z.union([z.enum(['api-key', 'system']), uuidSchema])
+
 export const auditQuery = z.strictObject({
   ref: z.string().regex(/^[a-z0-9]{1,40}$/).optional(),
   target: uuidSchema.optional(),
+  actor: actorSchema.optional(),
+  /** Präfix der Aktion, z. B. `sanction.` oder `report.`. */
+  action: z.string().regex(/^[a-z_.]{1,40}$/, 'invalid action prefix').optional(),
+  from: isoTime.optional(),
+  to: isoTime.optional(),
   before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(100),
 })
+
+// ---------------------------------------------------------------- Moderation v2 (§22)
+
+/** Mehrzeiliger Freitext (Einspruch, Antwort, Notiz): Zeilenumbrüche erlaubt, sonst keine Steuerzeichen. */
+const longText = (min: number, max: number) =>
+  z
+    .string()
+    .trim()
+    .min(min)
+    .max(max)
+    .refine((s) => !/[\p{Cf}\p{Co}\p{Cn}]|[^\P{Cc}\n]/u.test(s), 'must not contain control characters')
+
+export const sanctionIdSchema = z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER)
+export const appealIdSchema = sanctionIdSchema
+export const noteIdSchema = sanctionIdSchema
+
+export const adminSanctionBody = z
+  .strictObject({
+    uuid: uuidSchema,
+    kind: sanctionKindSchema,
+    duration: durationSchema,
+    minutes: customMinutes.optional(),
+    reasonCode: reasonCodeSchema,
+    /** Öffentlicher Grund (sieht der Spieler). */
+    reason: plainText(500).optional(),
+    /** Interne Notiz (nur Team). */
+    note: longText(1, 2000).optional(),
+    reportId: reportIdSchema.optional(),
+  })
+  .refine((b) => (b.duration === 'custom') === (b.minutes !== undefined), 'minutes is required for duration=custom and only allowed there')
+
+export const adminSanctionListQuery = z.strictObject({
+  status: z.enum(['active', 'expired', 'lifted', 'all']).default('active'),
+  kind: sanctionKindSchema.optional(),
+  uuid: uuidSchema.optional(),
+  actor: actorSchema.optional(),
+  from: isoTime.optional(),
+  to: isoTime.optional(),
+  sort: z.enum(['newest', 'oldest']).default('newest'),
+  cursor: cursorParam,
+  limit: listLimit(100, 50),
+})
+
+export const liftBody = z.strictObject({ reason: plainText(500) })
+
+export const durationChangeBody = z.strictObject({
+  /** Neues Ende (ISO) oder `null` = dauerhaft (nur Admins). */
+  endsAt: z.iso.datetime({ offset: true }).transform((s) => Date.parse(s)).nullable(),
+  reason: plainText(500),
+})
+
+export const appealBody = z.strictObject({ text: longText(20, 1000) })
+
+export const adminAppealListQuery = z.strictObject({
+  status: z.enum(['open', 'decided', 'all']).default('open'),
+  cursor: cursorParam,
+  limit: listLimit(100, 50),
+})
+
+export const appealDecisionBody = z
+  .strictObject({
+    decision: z.enum(['lift', 'shorten', 'uphold']),
+    response: longText(1, 1000),
+    endsAt: z.iso.datetime({ offset: true }).transform((s) => Date.parse(s)).optional(),
+  })
+  .refine((b) => (b.decision === 'shorten') === (b.endsAt !== undefined), 'endsAt is required for decision=shorten and only allowed there')
+
+export const roleBody = z.strictObject({ role: z.enum(['admin', 'moderator']), note: plainText(200).optional() })
+
+export const playerNoteBody = z.strictObject({ text: longText(1, 2000) })
+
+export const adminPlayersQuery = z.strictObject({
+  q: z.string().regex(/^[A-Za-z0-9_]{1,16}$/, 'must be (the start of) a Minecraft name').optional(),
+  status: z.enum(['all', 'sanctioned', 'banned', 'staff', 'reported']).default('all'),
+  sort: z.enum(['last_login', 'created']).default('last_login'),
+  cursor: cursorParam,
+  limit: listLimit(100, 50),
+})
+
+export const searchQuery = z.strictObject({ q: z.string().trim().min(1).max(64) })
+
+export const BULK_LIMIT = 50
+export const bulkReportsBody = z.strictObject({
+  ids: z.array(reportIdSchema).min(1).max(BULK_LIMIT),
+  action: z.enum(['dismiss', 'resolve']),
+})
+export const bulkCapesBody = z.strictObject({
+  ids: z.array(capeIdSchema).min(1).max(BULK_LIMIT),
+  action: z.enum(['approve', 'reject']),
+  reason: plainText(200).optional(),
+})
+export const bulkCosmeticsBody = z.strictObject({
+  ids: z.array(cosmeticIdSchema).min(1).max(BULK_LIMIT),
+  action: z.enum(['approve', 'reject']),
+  reason: plainText(200).optional(),
+})
+export const closeRoomBody = z.strictObject({ reason: plainText(200).optional() }).optional()
 
 export const eventsMeQuery = z.strictObject({ lastEventId: z.string().max(64).optional() })
 

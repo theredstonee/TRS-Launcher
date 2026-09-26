@@ -4,7 +4,8 @@ import { badRequest, conflict, notFound } from './errors'
 import { capeView, getCape, type CapeRow, type CapeView } from './capes'
 import { areFriends, hasBlocked } from './friends'
 import { emitCape } from './playerevents'
-import { getUser, isBanned, type UserRow } from './users'
+import { ACTIVE_BANS, getUser, isBanned, type UserRow } from './users'
+import { assertNotSanctioned } from './sanctions'
 
 /**
  * Eigene Umhänge mit Freunden teilen.
@@ -123,6 +124,7 @@ function ref(ctx: AppContext, uuid: string): PlayerRef {
 // ---------------------------------------------------------------- Anbieten
 
 export function offerCape(ctx: AppContext, me: UserRow, capeId: string, friend: string): OutgoingOffer {
+  assertNotSanctioned(ctx, me.uuid, 'social_ban')
   const c = getCape(ctx, capeId)
   if (!c) throw notFound('cape_not_found', 'Cape not found')
   const role = shareRole(ctx, me.uuid, c)
@@ -187,9 +189,9 @@ export function listOffers(ctx: AppContext, me: string): { incoming: IncomingOff
      JOIN users f ON f.uuid = s.granted_by
      LEFT JOIN users o ON o.uuid = c.owner_uuid
      WHERE s.holder_uuid = ? AND s.status = 'offered' AND c.status = 'approved'
-       AND s.granted_by NOT IN (SELECT uuid FROM bans)
+       AND s.granted_by NOT IN (${ACTIVE_BANS})
      ORDER BY s.created_at DESC`,
-    me,
+    me, ctx.now(),
   )
   const outgoing = all<CapeRow & { s_to: string, s_created: number, to_name: string }>(
     ctx.db,
@@ -222,8 +224,8 @@ export function incomingOfferCount(ctx: AppContext, me: string): number {
     ctx.db,
     `SELECT COUNT(*) AS n FROM cape_shares s JOIN capes c ON c.id = s.cape_id
      WHERE s.holder_uuid = ? AND s.status = 'offered' AND c.status = 'approved'
-       AND s.granted_by NOT IN (SELECT uuid FROM bans)`,
-    me,
+       AND s.granted_by NOT IN (${ACTIVE_BANS})`,
+    me, ctx.now(),
   )!.n
 }
 

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import type { IncomingOffer } from './capeshares'
 import type { ConversationView, MessageView, ReactionView } from './chat'
 import type { HostRoomView, RoomCloseReason, RoomView, SignalKind } from './hosting'
+import type { MyAppealView, MySanctionView } from './sanctions'
 import type { Settings } from './users'
 
 export interface PlayerRef {
@@ -86,6 +87,13 @@ export type ApiEvent =
   | { type: 'hosting_room_closed', roomId: string, reason: RoomCloseReason }
   /** Verbindungsaufbau (ICE): nur zwischen Host und angenommenen Gästen. */
   | { type: 'hosting_signal', roomId: string, from: string, kind: SignalKind, sid: string | null, data: string }
+  // ---------------------------------------------------------------- Moderation v2 (§22, nur /v1/events/me)
+  /** Neue Strafe gegen dich (auch Verwarnung). Bei `account_ban` endet der Stream direkt danach. */
+  | { type: 'sanction_added', sanction: MySanctionView }
+  /** Strafe geändert: aufgehoben, verkürzt, verlängert oder Einspruch eingelegt. */
+  | { type: 'sanction_updated', sanction: MySanctionView }
+  /** Dein Einspruch wurde entschieden (`appeal.response` = Antwort des Teams). */
+  | { type: 'appeal_decided', sanctionId: number, appeal: MyAppealView, sanction: MySanctionView }
 
 export type ApiEventType = ApiEvent['type']
 

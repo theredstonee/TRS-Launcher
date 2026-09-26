@@ -2,14 +2,14 @@ import { defineEventHandler } from 'h3'
 import { userInfo } from '../../../../../lib/admin'
 import { useCtx } from '../../../../../lib/context'
 import { notFound } from '../../../../../lib/errors'
-import { paramWith, requireAdmin } from '../../../../../lib/http'
+import { paramWith, requireStaff } from '../../../../../lib/http'
 import { normalizeUuid } from '../../../../../lib/ids'
 import { getUserByName } from '../../../../../lib/users'
 import { z } from 'zod'
 
 /** Nutzer per UUID oder (zuletzt gesehenem) Minecraft-Namen. */
 export default defineEventHandler((event) => {
-  requireAdmin(event)
+  requireStaff(event)
   const ctx = useCtx()
   const key = paramWith(event, 'uuid', z.string().max(36))
   let uuid = normalizeUuid(key)

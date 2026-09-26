@@ -38,10 +38,14 @@ export interface Settings {
   chatTypingIndicator: boolean
 }
 
+export type StaffRole = 'admin' | 'moderator'
+
 export interface MeView {
   uuid: string
   name: string
   admin: boolean
+  /** Team-Rolle (§22.1): `admin`, `moderator` oder `null`. */
+  role: StaffRole | null
   createdAt: string
   settings: Settings
   activeCape: CapeView | null
@@ -60,12 +64,28 @@ export function getUserByName(ctx: AppContext, name: string): UserRow | undefine
   )
 }
 
+/**
+ * UUIDs mit aktivem Konto-Bann (§22.3). Als Unterabfrage mit genau EINEM Parameter: die aktuelle Zeit
+ * (`ctx.now()`), z. B. `u.uuid NOT IN (${ACTIVE_BANS})`.
+ */
+export const ACTIVE_BANS = "SELECT uuid FROM sanctions WHERE kind = 'account_ban' AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at > ?)"
+
 export function isBanned(ctx: AppContext, uuid: string): boolean {
-  return one(ctx.db, 'SELECT 1 AS x FROM bans WHERE uuid = ?', uuid) !== undefined
+  return one(
+    ctx.db,
+    "SELECT 1 AS x FROM sanctions WHERE uuid = ? AND kind = 'account_ban' AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at > ?)",
+    uuid, ctx.now(),
+  ) !== undefined
+}
+
+/** Team-Rolle: `ADMIN_UUIDS` sind immer Admin (nicht entziehbar), sonst die Tabelle `staff_roles`. */
+export function staffRole(ctx: AppContext, uuid: string): StaffRole | null {
+  if (ctx.config.adminUuids.has(uuid)) return 'admin'
+  return one<{ role: StaffRole }>(ctx.db, 'SELECT role FROM staff_roles WHERE uuid = ?', uuid)?.role ?? null
 }
 
 export function isAdmin(ctx: AppContext, uuid: string): boolean {
-  return ctx.config.adminUuids.has(uuid)
+  return staffRole(ctx, uuid) === 'admin'
 }
 
 /** Legt den Nutzer beim ersten Login an bzw. aktualisiert Namen + Login-Zeit. */
@@ -76,6 +96,13 @@ export function upsertOnLogin(ctx: AppContext, uuid: string, name: string): User
     `INSERT INTO users (uuid, name, name_lower, created_at, last_login_at) VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(uuid) DO UPDATE SET name = excluded.name, name_lower = excluded.name_lower, last_login_at = excluded.last_login_at`,
     uuid, name, name.toLowerCase(), t, t,
+  )
+  // Namen-Verlauf für die Spieler-Akte (§22.4).
+  run(
+    ctx.db,
+    `INSERT INTO name_history (uuid, name, first_seen, last_seen) VALUES (?, ?, ?, ?)
+     ON CONFLICT(uuid, name) DO UPDATE SET last_seen = excluded.last_seen`,
+    uuid, name, t, t,
   )
   return getUser(ctx, uuid)!
 }
@@ -100,6 +127,7 @@ export function meView(ctx: AppContext, u: UserRow): MeView {
     uuid: u.uuid,
     name: u.name,
     admin: isAdmin(ctx, u.uuid),
+    role: staffRole(ctx, u.uuid),
     createdAt: new Date(u.created_at).toISOString(),
     settings: settingsOf(u),
     activeCape: cape ? capeView(ctx, cape) : null,
@@ -185,3 +213,4 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
 export function assertNotBanned(ctx: AppContext, uuid: string): void {
   if (isBanned(ctx, uuid)) throw forbidden('banned', 'This account is banned')
 }
+

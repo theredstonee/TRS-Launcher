@@ -9,6 +9,7 @@ import { newUploadCosmeticId, sha256Hex } from './ids'
 import { emitCosmetics } from './playerevents'
 import { decodeRgba, encodeRgba, inspectPng } from './png'
 import { usedMask, WEARABLE_SLOTS, type CosmeticSlot, type Template, type WearableSlot } from './templates'
+import { assertNotSanctioned } from './sanctions'
 import { isAdmin } from './users'
 
 export type CosmeticUnlock = 'free' | 'code' | 'admin' | 'owner'
@@ -362,6 +363,7 @@ export function uploadCosmetic(
   body: Buffer,
   opts: { template: string, name?: string, frameTimeMs?: number },
 ): CosmeticView {
+  assertNotSanctioned(ctx, uuid, 'upload_ban')
   const t = ctx.templates.get(opts.template)
   if (!t) throw badRequest('unknown_template', 'Unknown template')
   const counts = one<{ total: number, pending: number }>(

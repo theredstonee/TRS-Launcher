@@ -1,10 +1,12 @@
 import { isIP } from 'node:net'
 import { getCookie, getHeader, getQuery, getRouterParam, setResponseHeaders, setResponseStatus, type H3Event } from 'h3'
 import type { z } from 'zod'
-import { authenticate, authenticateAdmin, type AuthedUser } from './auth'
+import { authenticate, authenticateStaff, type AuthedUser } from './auth'
 import { useCtx } from './context'
-import { ApiError, badRequest, tooLarge, tooMany, unsupportedMedia } from './errors'
+import { ApiError, badRequest, forbidden, tooLarge, tooMany, unsupportedMedia } from './errors'
 import { RULES, type Rule } from './ratelimit'
+import type { Staff } from './sanctions'
+import type { StaffRole } from './users'
 import { WEB_SESSION_COOKIE, webSession } from './weblogin'
 
 export const JSON_LIMIT = 16 * 1024
@@ -100,9 +102,9 @@ const USER_RULES = { read: RULES.readUser, write: RULES.writeUser, sync: RULES.s
  * `/v1/me/sync*`, damit ein großer Abgleich die übrigen Schreibzugriffe nicht aufbraucht; `hosting` = eigener
  * Topf für `/v1/hosting/*` (Herzschläge und Signale).
  */
-export function requireUser(event: H3Event, kind: keyof typeof USER_RULES = 'read'): AuthedUser {
+export function requireUser(event: H3Event, kind: keyof typeof USER_RULES = 'read', opts: { appeal?: boolean } = {}): AuthedUser {
   const ctx = useCtx()
-  const auth = authenticate(ctx, getHeader(event, 'authorization'))
+  const auth = authenticate(ctx, getHeader(event, 'authorization'), opts)
   limit(`${kind}:${auth.uuid}`, USER_RULES[kind])
   event.context.uuid = auth.uuid
   return auth
@@ -140,23 +142,32 @@ export function textureViewer(event: H3Event): { uuid: string, admin: boolean } 
   }
 }
 
-export function requireAdmin(event: H3Event): string {
+/**
+ * Team-Zugriff (§22.1): Website-Sitzung (Cookie + CSRF bei ändernden Anfragen), Bearer-Token eines Admins/
+ * Moderators oder `X-Admin-Key` (= Admin). `need` = nötige Rolle. Jede Anfrage zählt aufs Team-Limit.
+ */
+export function requireStaff(event: H3Event, need: StaffRole = 'moderator'): Staff {
   const ctx = useCtx()
   const authorization = getHeader(event, 'authorization')
   const adminKey = getHeader(event, 'x-admin-key')
-  // Website-Admin: Sitzung aus dem Cookie (nur ohne Bearer/Schlüssel), ändernde Anfragen mit CSRF-Token.
+  let staff: Staff
+  // Website: Sitzung aus dem Cookie (nur ohne Bearer/Schlüssel), ändernde Anfragen mit CSRF-Token.
   if (authorization === undefined && adminKey === undefined && getCookie(event, WEB_SESSION_COOKIE) !== undefined) {
     const mutating = !['GET', 'HEAD'].includes(event.method)
     const session = webSession(ctx, getCookie(event, WEB_SESSION_COOKIE), getHeader(event, 'x-csrf-token'), mutating)
-    limit(`admin:${session.uuid}`, RULES.adminActor)
-    return session.uuid
+    staff = { uuid: session.uuid, role: session.role }
+  } else {
+    staff = authenticateStaff(ctx, { authorization, adminKey }, 'moderator')
   }
-  const actor = authenticateAdmin(ctx, {
-    authorization: getHeader(event, 'authorization'),
-    adminKey: getHeader(event, 'x-admin-key'),
-  })
-  limit(`admin:${actor}`, RULES.adminActor)
-  return actor
+  limit(`admin:${staff.uuid}`, RULES.adminActor)
+  if (need === 'admin' && staff.role !== 'admin') throw forbidden('admin_only', 'Only admins can do this')
+  event.context.uuid = staff.uuid
+  return staff
+}
+
+/** Nur Admins (alte Signatur): liefert den Akteur fürs Log. */
+export function requireAdmin(event: H3Event): string {
+  return requireStaff(event, 'admin').uuid
 }
 
 /**

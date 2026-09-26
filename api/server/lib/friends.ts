@@ -6,7 +6,8 @@ import { conflict, notFound, badRequest } from './errors'
 import type { ApiEvent } from './events'
 import { hostingOnBlock, hostingOnUnfriend } from './hosting'
 import type { Presence } from './presence'
-import { getUser, getUserByName, isBanned, type UserRow } from './users'
+import { assertNotSanctioned } from './sanctions'
+import { ACTIVE_BANS, getUser, getUserByName, isBanned, type UserRow } from './users'
 
 export interface PresenceView {
   state: 'online' | 'in-game'
@@ -70,15 +71,15 @@ export function listFriends(ctx: AppContext, uuid: string): FriendsList {
     ctx.db,
     `SELECT u.*, f.created_at AS since FROM friendships f
      JOIN users u ON u.uuid = CASE WHEN f.a = ? THEN f.b ELSE f.a END
-     WHERE (f.a = ? OR f.b = ?) AND u.uuid NOT IN (SELECT uuid FROM bans)
+     WHERE (f.a = ? OR f.b = ?) AND u.uuid NOT IN (${ACTIVE_BANS})
      ORDER BY u.name_lower`,
-    uuid, uuid, uuid,
+    uuid, uuid, uuid, ctx.now(),
   )
   const incoming = all<{ uuid: string, name: string, created_at: number }>(
     ctx.db,
     `SELECT u.uuid, u.name, r.created_at FROM friend_requests r JOIN users u ON u.uuid = r.from_uuid
-     WHERE r.to_uuid = ? AND u.uuid NOT IN (SELECT uuid FROM bans) ORDER BY r.created_at DESC`,
-    uuid,
+     WHERE r.to_uuid = ? AND u.uuid NOT IN (${ACTIVE_BANS}) ORDER BY r.created_at DESC`,
+    uuid, ctx.now(),
   )
   const outgoing = all<{ uuid: string, name: string, created_at: number }>(
     ctx.db,
@@ -121,6 +122,7 @@ const selfChanged = (ctx: AppContext, uuid: string) => ctx.events.publish(uuid, 
 export type SendResult = { status: 'sent' | 'accepted', user: { uuid: string, name: string } }
 
 export function sendRequest(ctx: AppContext, me: UserRow, target: { uuid: string } | { name: string }): SendResult {
+  assertNotSanctioned(ctx, me.uuid, 'social_ban')
   const other = resolveTarget(ctx, me.uuid, target)
   if (hasBlocked(ctx, me.uuid, other.uuid)) throw conflict('blocked', 'Unblock this player first')
   if (areFriends(ctx, me.uuid, other.uuid)) throw conflict('already_friends', 'You are already friends')
@@ -168,6 +170,7 @@ function assertFriendCapacity(ctx: AppContext, me: string, other: string): void 
 }
 
 export function acceptRequest(ctx: AppContext, me: UserRow, from: string): FriendView {
+  assertNotSanctioned(ctx, me.uuid, 'social_ban')
   const other = getUser(ctx, from)
   const t = ctx.now()
   tx(ctx.db, () => {

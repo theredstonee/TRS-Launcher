@@ -4,7 +4,7 @@ import type { AppContext } from './context'
 import { one, run, tx } from './db'
 import { ApiError, forbidden, unauthorized } from './errors'
 import { safeEqual, sha256Hex } from './ids'
-import { getUser, isAdmin, isBanned } from './users'
+import { getUser, isBanned, staffRole, type StaffRole } from './users'
 
 // Admin-Login der Website ohne Passwort: Die Website fordert einen kurzen Code an und zeigt
 // ihn an; der Admin bestätigt ihn im TRS Launcher (der mit seinem Minecraft-Konto bei der API
@@ -54,9 +54,9 @@ export function startWebLogin(ctx: AppContext): WebLoginStart {
   return { code, pollSecret, expiresAt: new Date(t + WEB_LOGIN_TTL_MS).toISOString() }
 }
 
-/** Im Launcher bestätigt: nur Admins, nur gültige und noch offene Codes. */
+/** Im Launcher bestätigt: nur Team (Admins und Moderatoren), nur gültige und noch offene Codes. */
 export function approveWebLogin(ctx: AppContext, auth: AuthedUser, rawCode: string): void {
-  if (!auth.admin) throw forbidden('not_admin', 'Only admins can sign in to the website')
+  if (!staffRole(ctx, auth.uuid)) throw forbidden('not_admin', 'Only team members can sign in to the website')
   const code = normalizeWebLoginCode(rawCode)
   if (!code) throw new ApiError(400, 'invalid_code', 'This is not a valid code')
   const row = one<{ expires_at: number, approved_uuid: string | null }>(
@@ -83,8 +83,8 @@ export function pollWebLogin(ctx: AppContext, pollSecret: string): WebLoginPoll 
     if (!row.approved_uuid) return { status: 'pending' }
     run(ctx.db, 'DELETE FROM web_logins WHERE code_hash = ?', row.code_hash)
     const uuid = row.approved_uuid
-    // Nochmals prüfen: Admin geblieben, nicht gesperrt?
-    if (!isAdmin(ctx, uuid) || isBanned(ctx, uuid)) return { status: 'expired' }
+    // Nochmals prüfen: noch im Team, nicht gesperrt?
+    if (!staffRole(ctx, uuid) || isBanned(ctx, uuid)) return { status: 'expired' }
     const token = randomBytes(32).toString('base64url')
     const csrf = randomBytes(24).toString('base64url')
     const expires = t + WEB_SESSION_TTL_MS
@@ -102,6 +102,7 @@ export interface WebSession {
   name: string
   csrf: string
   tokenHash: string
+  role: StaffRole
 }
 
 /** Sitzung aus dem Cookie; ändernde Anfragen brauchen zusätzlich das passende CSRF-Token. */
@@ -112,9 +113,11 @@ export function webSession(ctx: AppContext, token: string | undefined, csrf: str
     ctx.db, 'SELECT uuid, csrf FROM web_sessions WHERE token_hash = ? AND expires_at > ?', hash, ctx.now(),
   )
   if (!s) throw unauthorized('Session expired')
-  if (!isAdmin(ctx, s.uuid) || isBanned(ctx, s.uuid)) throw forbidden('forbidden', 'Admin only')
+  // Rolle bei JEDER Anfrage neu prüfen: Entzug wirkt sofort.
+  const role = staffRole(ctx, s.uuid)
+  if (!role || isBanned(ctx, s.uuid)) throw forbidden('forbidden', 'Team only')
   if (mutating && (!csrf || !safeEqual(csrf, s.csrf))) throw forbidden('csrf_failed', 'Missing or invalid CSRF token')
-  return { uuid: s.uuid, name: getUser(ctx, s.uuid)?.name ?? '', csrf: s.csrf, tokenHash: hash }
+  return { uuid: s.uuid, name: getUser(ctx, s.uuid)?.name ?? '', csrf: s.csrf, tokenHash: hash, role }
 }
 
 export function endWebSession(ctx: AppContext, tokenHash: string): void {
