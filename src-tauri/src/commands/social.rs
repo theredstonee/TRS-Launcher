@@ -378,6 +378,13 @@ pub fn social_notify_native(app: AppHandle, title: String, body: String) {
     }
 }
 
+/// Instanzen, deren Spiel gerade mit verbundenem TRS Client läuft (der zeigt
+/// Sozial-Hinweise selbst – der Launcher schweigt dann). Änderungen: `trs-client-linked`.
+#[tauri::command]
+pub async fn social_game_clients(launcher: State<'_, LauncherState>) -> CommandResult<Vec<String>> {
+    Ok(launcher.social_game_clients().await)
+}
+
 /// Fenster nach vorn (Klick auf eine Benachrichtigung).
 #[tauri::command]
 pub fn social_focus_window(app: AppHandle) {

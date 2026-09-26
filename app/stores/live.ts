@@ -210,6 +210,8 @@ export const useLiveStore = defineStore('live', () => {
   async function start() {
     if (started || !isTauri()) return
     started = true
+    // Spiel mit TRS Client läuft → der zeigt die Hinweise, der Launcher schweigt.
+    void useSocialToasts().watchGameClients()
     unlisten.push(
       await listen('trs-live-status', (event) => {
         const parsed = liveStatusSchema.safeParse(event.payload)

@@ -359,6 +359,17 @@ pub async fn installed_is_legacy(paths: &Paths, instance_id: &str) -> bool {
         .is_some_and(|v| !client_mod_update::is_newer(&v, crate::link::LEGACY_MOD_MAX))
 }
 
+/// Erste TRS-Client-Version, die Sozial-Hinweise (Chat, Anfragen, Einladungen …)
+/// selbst im Spiel zeigt.
+pub const SOCIAL_MOD_MIN: &str = "0.8.0";
+
+/// Zeigt der TRS Client dieser Version Sozial-Hinweise selbst im Spiel?
+/// Unbekannte Version (`None`, z. B. von Hand eingelegt) zählt als ja – ein
+/// Spiel, das sich über TRS Link v2 meldet, ist mindestens 0.6.
+pub fn shows_social_in_game(version: Option<&str>) -> bool {
+    version.is_none_or(|v| !client_mod_update::is_newer(SOCIAL_MOD_MIN, v))
+}
+
 /// Modul „Eingebaute Optimierungen“ des TRS Clients (`config/trsclient.json`); fehlt es, ist es an.
 pub async fn builtin_optimizations_enabled(game_dir: &Path) -> bool {
     let file = game_dir.join("config").join("trsclient.json");
@@ -908,6 +919,16 @@ mod tests {
         assert_eq!(json["theme"], "dark");
         assert_eq!(json["accentColor"], "#E0281E");
         assert_eq!(json["language"], "pt-BR");
+    }
+
+    #[test]
+    fn social_hints_in_game_from_0_8_0() {
+        for (version, expected) in
+            [("0.7.1", false), ("0.6.0", false), ("0.8.0-beta.1", false), ("0.8.0", true), ("0.8.3", true), ("1.0.0", true)]
+        {
+            assert_eq!(shows_social_in_game(Some(version)), expected, "{version}");
+        }
+        assert!(shows_social_in_game(None), "unbekannte Version, aber über Link v2 verbunden");
     }
 
     #[test]

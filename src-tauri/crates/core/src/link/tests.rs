@@ -696,3 +696,85 @@ async fn welt_beitritt_nie_fuer_fremde_oder_alte_sitzungen() {
         json!({ "state": "pending", "roomId": "h1" })
     );
 }
+
+/// Wartet, bis die Liste der verbundenen Spiele `expected` ist.
+async fn linked_becomes(link: &TrsLink, expected: &[&str]) {
+    let mut rx = link.subscribe_linked();
+    let wanted = |ids: &Vec<String>| ids.iter().map(String::as_str).eq(expected.iter().copied());
+    tokio::time::timeout(Duration::from_secs(10), rx.wait_for(wanted)).await.expect("verbundene Spiele").unwrap();
+}
+
+#[tokio::test]
+async fn verbundene_spiele_folgen_der_verbindung() {
+    let link = TrsLink::new(None);
+    let handoff = link.open_session("survival", false).await.unwrap();
+    let other = link.open_session("vanilla", false).await.unwrap();
+    // Gestartet, aber (noch) nicht verbunden: zählt nicht.
+    assert!(link.linked().is_empty());
+
+    let c = v2_login(&handoff, false).await.expect("Anmeldung");
+    assert_eq!(link.linked(), vec!["survival".to_owned()], "gilt ab dem ersten Status");
+    // Zweite Verbindung desselben Spiels (Wiederverbinden) – bleibt einmal gelistet.
+    let c2 = v2_login(&handoff, false).await.expect("Anmeldung");
+    drop(c);
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    assert_eq!(link.linked(), vec!["survival".to_owned()]);
+
+    // Link bricht ab → sofort nicht mehr verbunden.
+    drop(c2);
+    linked_becomes(&link, &[]).await;
+
+    // Spielende schließt die Sitzung → sofort weg, auch bei offener Verbindung.
+    let _c = v2_login(&handoff, false).await.expect("Anmeldung");
+    let o = v2_login(&other, false).await.expect("Anmeldung");
+    assert_eq!(link.linked(), vec!["survival".to_owned(), "vanilla".to_owned()]);
+    link.close_session("survival");
+    assert_eq!(link.linked(), vec!["vanilla".to_owned()]);
+    // Neustart derselben Instanz: Die alte Verbindung zählt nicht für die neue Sitzung.
+    link.open_session("vanilla", false).await.unwrap();
+    assert!(link.linked().is_empty());
+    drop(o);
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    assert_eq!(link.shared.hub().get("vanilla").unwrap().live, 0);
+}
+
+#[tokio::test]
+async fn alte_mods_und_abgewiesene_zaehlen_nicht_als_verbunden() {
+    let link = TrsLink::new(None);
+    let handoff = link.open_session("survival", false).await.unwrap();
+    assert!(v2_login(&handoff, true).await.is_err(), "falscher Beweis");
+    link.open_session("legacy", true).await.unwrap();
+    let token = link.clips_config("legacy", true).token.unwrap();
+    let (mut r, mut w) = connect(link.port().unwrap()).await;
+    send(&mut w, json!({ "type": "hello", "v": 1, "token": token })).await;
+    assert_eq!(line(&mut r).await["type"], "state");
+    assert!(link.linked().is_empty(), "v1 (Mod ≤ 0.5.0) kennt keine Sozial-Hinweise");
+}
+
+#[tokio::test]
+async fn launcher_meldet_spiele_mit_sozial_hinweisen_im_spiel() {
+    let dir = tempfile::tempdir().unwrap();
+    let launcher = Arc::new(crate::Launcher::init(dir.path(), Arc::new(|_| {})).await.unwrap());
+    for (id, version) in [("neu", "0.8.0"), ("alt", "0.7.1")] {
+        let marker = launcher.paths().instance_dir(id).join("trsclient-version");
+        std::fs::create_dir_all(marker.parent().unwrap()).unwrap();
+        std::fs::write(marker, version).unwrap();
+    }
+    let seen = Arc::new(Mutex::new(Vec::<Vec<String>>::new()));
+    let sink = seen.clone();
+    tokio::spawn(launcher.clone().run_social_game_clients(Arc::new(move |ids| sink.lock().unwrap().push(ids))));
+
+    let neu = launcher.link.open_session("neu", false).await.unwrap();
+    let alt = launcher.link.open_session("alt", false).await.unwrap();
+    let c = v2_login(&neu, false).await.expect("Anmeldung");
+    let _a = v2_login(&alt, false).await.expect("Anmeldung");
+    // TRS Client 0.7.x zeigt im Spiel keine Sozial-Hinweise – dort meldet weiter der Launcher.
+    assert_eq!(launcher.social_game_clients().await, vec!["neu".to_owned()]);
+    drop(c);
+    linked_becomes(&launcher.link, &["alt"]).await;
+    assert!(launcher.social_game_clients().await.is_empty());
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    let seen = seen.lock().unwrap().clone();
+    assert_eq!(seen.first(), Some(&vec!["neu".to_owned()]));
+    assert_eq!(seen.last(), Some(&Vec::new()), "Link weg → Launcher meldet wieder");
+}

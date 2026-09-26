@@ -11,7 +11,7 @@ import {
 } from '../app/utils/socialToasts'
 import { actionBody, adminReportEnvelopeSchema } from '../app/utils/moderation'
 
-const here: Situation = { focused: true, visible: true, fullscreen: false, looking: false, muted: false }
+const here: Situation = { focused: true, visible: true, fullscreen: false, looking: false, muted: false, clientInGame: false }
 
 describe('Wann erscheint eine Benachrichtigung?', () => {
   it('normal: Hinweis im Launcher, Ton, keine Windows-Benachrichtigung', () => {

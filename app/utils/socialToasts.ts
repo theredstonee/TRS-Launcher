@@ -49,6 +49,12 @@ export interface Situation {
   looking: boolean
   /** Diese Unterhaltung ist stummgeschaltet. */
   muted: boolean
+  /**
+   * Ein Spiel mit verbundenem TRS Client läuft – der zeigt Sozial-Hinweise
+   * selbst im Spiel, der Launcher schweigt dann (kein Hinweis, kein Ton, keine
+   * Windows-Benachrichtigung; nichts wird nachgeholt, ungelesen bleibt ungelesen).
+   */
+  clientInGame: boolean
 }
 
 export interface Delivery {
@@ -88,6 +94,7 @@ export function isQuiet(prefs: SocialPrefs, fullscreen: boolean): boolean {
 
 /** Entscheidet, ob und wie eine Benachrichtigung erscheint. */
 export function decide(kind: SocialToastKind, prefs: SocialPrefs, s: Situation): Delivery {
+  if (s.clientInGame) return NONE
   if (!essential(kind)) {
     if (!prefs.toasts || !typeEnabled(kind, prefs)) return NONE
     if ((kind === 'message' || kind === 'invite') && (s.muted || (s.looking && s.focused && s.visible))) return NONE

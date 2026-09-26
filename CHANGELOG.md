@@ -69,6 +69,10 @@ How to write an entry:
 - **TRS Client: barriers no longer get in the way of the maps.** Barrier blocks, light blocks and structure voids are
   treated like air – a lobby with an invisible barrier ceiling or barrier floors in empty worlds no longer leave dark
   gaps, the map shows what is below.
+- **No double notifications while you play.** While a game with the TRS Client is running, the launcher stays quiet
+  about messages, friend requests, friends coming online, invites and cape offers – no pop-up, no sound, no Windows
+  notification – because the TRS Client already shows them in the game. They still count as unread. As soon as the
+  game closes, the launcher notifies you again. Games without the TRS Client, update notes and errors are unchanged.
 
 ### Deutsch
 
@@ -122,6 +126,11 @@ How to write an entry:
   Luft – eine Lobby mit unsichtbarer Barriere-Decke oder Barriere-Böden in leeren Welten hinterlassen keine dunklen
   Lücken mehr, die Karte zeigt, was darunter liegt.
 
+- **Keine doppelten Benachrichtigungen beim Spielen.** Läuft ein Spiel mit TRS Client, schweigt der Launcher zu
+  Nachrichten, Freundesanfragen, Freunden, die online kommen, Einladungen und Umhang-Angeboten – kein Hinweis, kein
+  Ton, keine Windows-Benachrichtigung –, denn der TRS Client zeigt sie schon im Spiel. Sie zählen weiter als ungelesen.
+  Sobald das Spiel zu ist, meldet sich der Launcher wieder. Spiele ohne TRS Client, Update-Hinweise und Fehler bleiben
+  wie bisher.
 
 ## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
 
