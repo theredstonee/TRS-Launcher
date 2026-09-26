@@ -16,6 +16,7 @@ import net.minecraft.util.BlockPos;
  * <p>Versionsunterschiede: Kartenfarbe bis 1.10.2 über {@code Block#getMapColor(IBlockState)}, in 1.11 über
  * {@code IBlockState#getMapColor()}, ab 1.12 über {@code IBlockState#getMapColor(IBlockAccess, BlockPos)};
  * Tönung bis 1.8.9 am Block ({@code colorMultiplier}), ab 1.9 über {@code BlockColors}; Luft über das Material.
+ * Barriere (und ab 1.10 Strukturleere) gelten als Luft – erkannt am Material.
  */
 public final class MapSampler implements ChunkReader {
 	private World world;
@@ -67,10 +68,17 @@ public final class MapSampler implements ChunkReader {
 		BlockPos pos = new BlockPos(baseX + localX, y, baseZ + localZ);
 		IBlockState state = chunk.getBlockState(pos);
 		if (state == null) return AIR;
-		//? if >=1.9 {
-		/*if (state.getMaterial() == net.minecraft.block.material.Material.AIR) return AIR;
-		*///?} else
-		if (state.getBlock().getMaterial() == net.minecraft.block.material.Material.air) return AIR;
+		//? if >=1.10 {
+		/*net.minecraft.block.material.Material mat = state.getMaterial();
+		if (mat == net.minecraft.block.material.Material.AIR || mat == net.minecraft.block.material.Material.BARRIER
+				|| mat == net.minecraft.block.material.Material.STRUCTURE_VOID) return AIR;
+		*///?} elif >=1.9 {
+		/*net.minecraft.block.material.Material mat = state.getMaterial();
+		if (mat == net.minecraft.block.material.Material.AIR || mat == net.minecraft.block.material.Material.BARRIER) return AIR;
+		*///?} else {
+		net.minecraft.block.material.Material mat = state.getBlock().getMaterial();
+		if (mat == net.minecraft.block.material.Material.air || mat == net.minecraft.block.material.Material.barrier) return AIR;
+		//?}
 		net.minecraft.block.material.MapColor color;
 		//? if >=1.12 {
 		/*color = state.getMapColor(world, pos);
@@ -78,7 +86,20 @@ public final class MapSampler implements ChunkReader {
 		/*color = state.getMapColor();
 		*///?} else
 		color = state.getBlock().getMapColor(state);
-		return color == null ? 0 : color.colorValue & 0xFFFFFF;
+		int rgb = color == null ? 0 : color.colorValue & 0xFFFFFF;
+		//? if >=1.9 {
+		/*boolean opaque = state.isOpaqueCube();
+		*///?} else
+		boolean opaque = state.getBlock().isOpaqueCube();
+		return opaque ? rgb | OPAQUE : rgb;
+	}
+
+	@Override
+	public boolean sectionEmpty(int y) {
+		net.minecraft.world.chunk.storage.ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
+		int i = y >> 4;
+		if (i < 0 || i >= sections.length) return true;
+		return sections[i] == null || sections[i].isEmpty();
 	}
 
 	@Override

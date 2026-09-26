@@ -11,7 +11,8 @@ import net.minecraft.world.gen.Heightmap;
 
 /**
  * Chunk-Zugriff der Karte ({@link ChunkReader}) für Forge 1.13.2: Oberkante (Höhenkarte WORLD_SURFACE),
- * Kartenfarbe und Tönung (BlockColors) der Blöcke eines geladenen Chunks. Nur geladene Chunks.
+ * Kartenfarbe und Tönung (BlockColors) der Blöcke eines geladenen Chunks. Nur geladene Chunks. Barriere und
+ * Strukturleere gelten als Luft (wassergeflutet als Wasser).
  */
 public final class MapSampler implements ChunkReader {
 	private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -54,8 +55,21 @@ public final class MapSampler implements ChunkReader {
 		pos.setPos(baseX + localX, y, baseZ + localZ);
 		IBlockState state = chunk.getBlockState(pos);
 		if (state == null || state.isAir()) return AIR;
+		net.minecraft.block.Block b = state.getBlock();
+		if (b == net.minecraft.init.Blocks.BARRIER || b == net.minecraft.init.Blocks.STRUCTURE_VOID) {
+			return state.getFluidState().isEmpty() ? AIR : dev.theredstonee.trsclient.core.map.MapColors.MAP_WATER;
+		}
 		MaterialColor color = state.getMaterialColor(world, pos);
-		return color == null ? 0 : color.colorValue & 0xFFFFFF;
+		int rgb = color == null ? 0 : color.colorValue & 0xFFFFFF;
+		return state.isOpaqueCube(world, pos) ? rgb | OPAQUE : rgb;
+	}
+
+	@Override
+	public boolean sectionEmpty(int y) {
+		net.minecraft.world.chunk.ChunkSection[] sections = chunk.getSections();
+		int i = y >> 4;
+		if (i < 0 || i >= sections.length) return true;
+		return sections[i] == null || sections[i].isEmpty();
 	}
 
 	@Override

@@ -98,7 +98,8 @@ public final class WorldMapUi extends UiScreen {
 	}
 
 	private MapLayer layer() {
-		if (!surfaceOnly && e.caveActive()) return e.viewLayer();
+		// Die Weltkarte folgt der Ebene der Minimap (Höhle bzw. Innenansicht); per Knopf zurück zur Oberfläche.
+		if (!surfaceOnly && e.layeredView()) return e.viewLayer();
 		return e.surfaceLayer();
 	}
 
@@ -166,6 +167,15 @@ public final class WorldMapUi extends UiScreen {
 		c.translate(w / 2f, h / 2f);
 		c.scale(scale, scale);
 		float screenPx = scale * (float) guiScale();
+		// Innenansicht: erst die Oberfläche, darüber der Dach-Schnitt (der reicht nur so weit, wie abgetastet wurde).
+		MapLayer under = layer.roof() ? e.surfaceLayer() : null;
+		if (under != null) drawLayer(c, under, screenPx, wx0, wz0, wx1, wz1, now);
+		drawLayer(c, layer, screenPx, wx0, wz0, wx1, wz1, now);
+		c.pop();
+	}
+
+	private void drawLayer(Canvas c, MapLayer layer, float screenPx, double wx0, double wz0, double wx1, double wz1,
+			long now) {
 		if (screenPx >= DETAIL_SCALE) {
 			// Unter den Bereichen die Übersicht (falls ein Bereich noch lädt) – nur bei mittlerem Zoom sichtbar.
 			if (screenPx < 3f) supers(c, layer, wx0, wz0, wx1, wz1, now);
@@ -173,7 +183,6 @@ public final class WorldMapUi extends UiScreen {
 		} else {
 			supers(c, layer, wx0, wz0, wx1, wz1, now);
 		}
-		c.pop();
 	}
 
 	private void supers(Canvas c, MapLayer layer, double wx0, double wz0, double wx1, double wz1, long now) {
@@ -325,6 +334,7 @@ public final class WorldMapUi extends UiScreen {
 		int x = 26 + c.textWidth(title);
 		String dim = dimensionName(e.dimension());
 		if (layer != null && layer.cave()) dim += " · " + I18n.tr("map.cave");
+		else if (layer != null && layer.roof()) dim += " · " + I18n.tr("map.roof");
 		c.text(dim, x, 7, t.textDim, false);
 
 		int bx = w - 6;
@@ -335,8 +345,8 @@ public final class WorldMapUi extends UiScreen {
 		});
 		bx = button(c, bx, "plus", I18n.tr("map.zoomIn"), mx, my, t, () -> zoomStep(1, w / 2f, h / 2f));
 		bx = textButton(c, bx, "-", I18n.tr("map.zoomOut"), mx, my, t, () -> zoomStep(-1, w / 2f, h / 2f));
-		if (e.caveActive()) {
-			bx = button(c, bx, surfaceOnly ? "layers" : "sun", I18n.tr(surfaceOnly ? "map.showCave" : "map.showSurface"), mx, my, t,
+		if (e.layeredView()) {
+			bx = button(c, bx, surfaceOnly ? "layers" : "sun", I18n.tr(surfaceOnly ? (e.caveActive() ? "map.showCave" : "map.showRoof") : "map.showSurface"), mx, my, t,
 					() -> surfaceOnly = !surfaceOnly);
 		}
 

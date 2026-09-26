@@ -163,6 +163,9 @@ public final class MinimapRenderer {
 		}
 		e.textures().beginFrame(3);
 		int tint = (opacity << 24) | 0xFFFFFF;
+		// Innenansicht: darunter die Oberfläche – noch nicht abgetastete Stellen bleiben so nicht leer
+		// (nur deckend, sonst schimmerte das ausgeblendete Dach durch).
+		MapLayer under = layer.roof() && opacity >= 255 ? e.surfaceLayer() : null;
 		float inv = 1f / zoom;
 		c.push();
 		c.translate(cx, cy);
@@ -172,6 +175,7 @@ public final class MinimapRenderer {
 			// Streifen in Weltblöcken.
 			double wx0 = px + bands[b * 4 + 2] * inv, wx1 = px + bands[b * 4 + 3] * inv;
 			double wz0 = pz + bands[b * 4] * inv, wz1 = pz + bands[b * 4 + 1] * inv;
+			if (under != null) drawPieces(c, e, under, wx0, wz0, wx1, wz1, px, pz, tint, now);
 			drawPieces(c, e, layer, wx0, wz0, wx1, wz1, px, pz, tint, now);
 		}
 		c.pop();
@@ -376,7 +380,8 @@ public final class MinimapRenderer {
 		}
 		if (m.minimapBiome.get()) {
 			String s = live ? e.biome() : (preview ? "Plains" : "");
-			if (e.caveActive()) s = s.isEmpty() ? I18n.tr("map.cave") : s + " · " + I18n.tr("map.cave");
+			String level = e.caveActive() ? I18n.tr("map.cave") : (e.roofActive() ? I18n.tr("map.roof") : null);
+			if (level != null) s = s.isEmpty() ? level : s + " · " + level;
 			centered(c, s, width, y, color, shadow);
 			y += LINE_H;
 		}

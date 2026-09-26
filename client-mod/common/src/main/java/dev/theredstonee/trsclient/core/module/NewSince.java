@@ -98,6 +98,8 @@ public final class NewSince {
 		add(SHIELD, "shieldPosition");
 		// TRS Client 0.9.0: Welt-Hosting.
 		add(HOSTING, "social.hostingDirect");
+		// TRS Client 0.8.1: Karten blenden Dächer aus (Innenansicht).
+		add("0.8.1", "minimap.hideRoof");
 	}
 
 	private NewSince() {

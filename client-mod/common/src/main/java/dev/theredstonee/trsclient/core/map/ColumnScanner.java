@@ -1,17 +1,25 @@
 package dev.theredstonee.trsclient.core.map;
 
 /**
- * Tastet einen Chunk Spalte für Spalte ab: Oberfläche (oberster Block mit Kartenfarbe, Wasser mit Tiefe und Grund)
- * oder Höhlenschnitt (Boden unterhalb der Spielerebene: Gestein oberhalb wird übersprungen, geschlossene Spalten
- * werden Wand). Ergebnis je Spalte: Pixel ({@link MapColors}-Merker + Farbe) und Höhe; Index {@code z * 16 + x}.
+ * Tastet einen Chunk Spalte für Spalte ab: Oberfläche (oberster Block mit Kartenfarbe, Wasser mit Tiefe und Grund),
+ * Oberfläche unter einem Dach-Schnitt (wie Oberfläche, aber erst ab einer Höhe knapp unter dem Dach über dem
+ * Spieler) oder Höhlenschnitt (Boden unterhalb der Spielerebene: Gestein oberhalb wird übersprungen, geschlossene
+ * Spalten werden Wand). Ergebnis je Spalte: Pixel ({@link MapColors}-Merker + Farbe) und Höhe; Index {@code z * 16 + x}.
+ *
+ * <p>Unsichtbare Blöcke (Barriere, Licht-Block, Strukturleere) meldet der {@link ChunkReader} als Luft – die
+ * Abtastung schaut durch sie hindurch; reine Luft-Abschnitte werden in einem Schritt übersprungen.
  */
 public final class ColumnScanner {
-	/** So tief wird unter der Oberkante nach einem Block mit Farbe gesucht (Glas, Luft-Lücken). */
+	/** So viele Blöcke ohne Kartenfarbe (Glas, Zäune …) werden unter der Oberkante höchstens übersprungen. */
 	static final int SURFACE_STEPS = 48;
+	/** So viele Blöcke liest eine Spalte höchstens (Luft unter hohen Barriere-Decken). */
+	static final int MAX_READS = 400;
 	/** Maximal gezählte Wassertiefe. */
 	static final int MAX_WATER = 24;
 	/** Höhlenansicht: so weit reicht die Suche unter die Startebene. */
 	public static final int CAVE_RANGE = 40;
+	/** Kein Dach-Schnitt (normale Oberfläche) bzw. kein Dach gefunden. */
+	public static final int NO_CUT = Integer.MAX_VALUE;
 
 	private ColumnScanner() {
 	}
@@ -22,21 +30,47 @@ public final class ColumnScanner {
 	 * @return false, wenn der Chunk nicht gelesen werden konnte
 	 */
 	public static boolean surface(ChunkReader r, int chunkX, int chunkZ, int[] pixels, int[] heights) {
+		return surface(r, chunkX, chunkZ, NO_CUT, pixels, heights);
+	}
+
+	/**
+	 * Oberfläche eines Chunks, auf Wunsch unter einem Dach-Schnitt: Blöcke oberhalb von {@code cut} zählen nicht
+	 * (Dächer, Decken von Hallen) – man sieht das Innere. Was genau auf Schnitthöhe steht (Wände, Hügel), zeigt
+	 * seine eigene Farbe.
+	 *
+	 * @param cut höchste berücksichtigte Höhe oder {@link #NO_CUT}
+	 * @return false, wenn der Chunk nicht gelesen werden konnte
+	 */
+	public static boolean surface(ChunkReader r, int chunkX, int chunkZ, int cut, int[] pixels, int[] heights) {
 		if (!r.open(chunkX, chunkZ)) return false;
 		int min = r.minY();
+		// Merker je Abschnitt für diesen Chunk: 0 = unbekannt, 1 = nur Luft, 2 = mit Blöcken.
+		byte[] sections = new byte[64];
 		for (int z = 0; z < 16; z++) {
 			for (int x = 0; x < 16; x++) {
 				int i = z * 16 + x;
 				int top = r.top(x, z);
-				int y = top - 1;
+				int start = cut == NO_CUT ? top : Math.min(top, cut + 1);
+				int y = start - 1;
 				int rgb = 0;
-				for (int steps = 0; steps < SURFACE_STEPS && y >= min; steps++, y--) {
-					rgb = r.block(x, y, z) & MapColors.RGB;
+				int colorless = 0;
+				for (int reads = 0; y >= min && reads < MAX_READS; reads++) {
+					int b = r.block(x, y, z);
+					rgb = b & MapColors.RGB;
 					if (rgb != 0) break;
+					if ((b & ChunkReader.AIR) != 0) {
+						if (sectionEmpty(r, sections, y, min)) {
+							y = (y & ~15) - 1;
+							continue;
+						}
+					} else if (++colorless >= SURFACE_STEPS) {
+						break;
+					}
+					y--;
 				}
 				if (rgb == 0) {
 					pixels[i] = MapColors.KNOWN | MapColors.EMPTY;
-					heights[i] = Math.max(min, top);
+					heights[i] = Math.max(min, start);
 					continue;
 				}
 				// Blumen/Feldfrüchte (Pflanzenfarbe ohne Tönung): Boden darunter zeigen, leicht grün – statt grellem Grün.
@@ -53,6 +87,31 @@ public final class ColumnScanner {
 			}
 		}
 		return true;
+	}
+
+	/** Liegt y in einem reinen Luft-Abschnitt? (je Chunk gemerkt) */
+	private static boolean sectionEmpty(ChunkReader r, byte[] memo, int y, int min) {
+		int idx = (y - min) >> 4;
+		if (idx < 0 || idx >= memo.length) return r.sectionEmpty(y);
+		if (memo[idx] == 0) memo[idx] = (byte) (r.sectionEmpty(y) ? 1 : 2);
+		return memo[idx] == 1;
+	}
+
+	/**
+	 * Dach über dem Kopf: Höhe des ersten vollen, undurchsichtigen Blocks ({@link ChunkReader#OPAQUE}) in der
+	 * Spalte (bx, bz) zwischen {@code headY + 1} und {@code headY + range}. Barrieren, Glas, Laub zählen nicht.
+	 *
+	 * @return die Höhe oder {@link #NO_CUT}, wenn dort kein Dach ist (oder der Chunk nicht geladen ist)
+	 */
+	public static int roofAbove(ChunkReader r, int bx, int headY, int bz, int range) {
+		if (!r.open(bx >> 4, bz >> 4)) return NO_CUT;
+		int lx = bx & 15, lz = bz & 15;
+		int top = r.top(lx, lz);
+		for (int y = headY + 1; y <= headY + range && y < top; y++) {
+			int b = r.block(lx, y, lz);
+			if ((b & ChunkReader.AIR) == 0 && (b & ChunkReader.OPAQUE) != 0) return y;
+		}
+		return NO_CUT;
 	}
 
 	/** Farbe (getönt) des nächsten festen Blocks unter y (höchstens 3 tiefer), 0 = keiner/Wasser. */
