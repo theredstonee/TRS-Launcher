@@ -1,8 +1,26 @@
 <script setup lang="ts">
-const { m } = useLang()
+import { breadcrumbLd } from '#shared/seo'
+
+const { lang, m } = useLang()
+const siteUrl = useSiteUrl()
 const { data, error } = await useBlog()
 const posts = computed(() => data.value?.posts ?? [])
-useHead({ title: () => m.value.blog.title })
+usePageSeo(() => {
+  const shot = posts.value[0] ? postGallery(posts.value[0], lang.value)[0] : undefined
+  return {
+    path: '/blog',
+    title: m.value.seo.blog.title,
+    description: m.value.seo.blog.description,
+    image: shot ? { url: shot.src, alt: shot.caption || m.value.seo.blog.title } : null,
+    jsonLd: [
+      breadcrumbLd(siteUrl, lang.value, [
+        { name: m.value.nav.home, path: '/' },
+        { name: m.value.blog.title, path: '/blog' },
+      ]),
+    ],
+  }
+})
+useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' }] })
 </script>
 
 <template>

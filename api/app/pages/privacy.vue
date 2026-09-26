@@ -11,7 +11,12 @@ const html = computed(() => ({
   site: renderMarkdown(text.value.body, { breaks: true }),
   launcher: renderMarkdown(`${text.value.launcher}\n\n${LAUNCHER[lang.value]}\n\n${AUTHORITY[lang.value]}`),
 }))
-useHead({ title: () => text.value.title })
+const { m } = useLang()
+usePageSeo(() => ({
+  path: '/privacy',
+  title: m.value.seo.privacy.title,
+  description: m.value.seo.privacy.description,
+}))
 </script>
 
 <template>

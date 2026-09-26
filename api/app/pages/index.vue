@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const { m, fill } = useLang()
+import { organizationLd, websiteLd } from '#shared/seo'
+
+const { lang, m, fill } = useLang()
+const lp = useLocalePath()
+const siteUrl = useSiteUrl()
 const os = useVisitorOs()
 const { data: releaseData } = await useRelease()
 const { data: blogData } = await useBlog()
@@ -7,6 +11,20 @@ const { data: capeData } = await useCapes()
 
 const release = computed(() => releaseData.value?.release ?? null)
 const posts = computed(() => (blogData.value?.posts ?? []).slice(0, 3))
+
+usePageSeo(() => ({
+  path: '/',
+  title: m.value.seo.home.title,
+  description: m.value.seo.home.description,
+  image: { url: '/og.png', width: 1260, height: 660, alt: m.value.seo.ogAlt },
+  jsonLd: [
+    organizationLd(siteUrl),
+    websiteLd(siteUrl, m.value.seo.home.description),
+    launcherLd(siteUrl, lang.value, m.value, release.value, blogData.value?.posts?.[0]),
+  ],
+}))
+// Bilder der Update-Karten kommen von GitHub.
+useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' }] })
 const capes = computed(() => capeData.value?.capes ?? [])
 const showcase = computed(() => capes.value.slice(0, 8))
 const preview = ref<SiteCape | null>(null)
@@ -21,8 +39,8 @@ const primary = computed(() => {
     const a = assetFor(r, 'windows')
     if (a) return { href: a.url, label: fill(m.value.home.download, { os: 'Windows' }), icon: 'windows', external: true }
   }
-  if (os.value === 'linux') return { href: '/download#linux', label: fill(m.value.home.download, { os: 'Linux' }), icon: 'linux', external: false }
-  return { href: '/download', label: m.value.home.downloadGeneric, icon: 'download', external: false }
+  if (os.value === 'linux') return { href: lp('/download#linux'), label: fill(m.value.home.download, { os: 'Linux' }), icon: 'linux', external: false }
+  return { href: lp('/download'), label: m.value.home.downloadGeneric, icon: 'download', external: false }
 })
 
 // Die Hauptleitung der Szene endet am Download-Knopf; beim Zeigen darauf leuchtet die Lampe.
@@ -40,12 +58,13 @@ const powered = ref(false)
       </ClientOnly>
 
       <div class="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-8 px-4 pt-16 pb-12 sm:px-6">
-        <div>
-          <p class="text-xs font-semibold tracking-[0.2em] text-lamp-300 uppercase">{{ m.home.kicker }}</p>
-          <h1 class="hero-title display mt-3 max-w-3xl text-5xl leading-[1.02] text-balance text-base-50 sm:text-6xl lg:text-7xl">
+        <!-- Die Zeile darüber gehört zur Überschrift (sichtbar, gleiche Optik wie vorher) – so steht „Minecraft-Launcher“ in der h1. -->
+        <h1>
+          <span class="block text-xs font-semibold tracking-[0.2em] text-lamp-300 uppercase">{{ m.home.kicker }}</span>
+          <span class="hero-title display mt-3 block max-w-3xl text-5xl leading-[1.02] text-balance text-base-50 sm:text-6xl lg:text-7xl">
             {{ m.home.title }}
-          </h1>
-        </div>
+          </span>
+        </h1>
         <div class="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
           <p class="max-w-xl text-base leading-relaxed text-base-200 sm:text-lg">{{ m.home.lead }}</p>
           <div class="flex w-full flex-col gap-2 sm:w-auto">
@@ -74,7 +93,7 @@ const powered = ref(false)
               >
                 <SiteIcon :name="primary.icon" class="size-5" />{{ primary.label }}
               </NuxtLink>
-              <NuxtLink to="/download" class="btn btn-ghost h-14 px-5 text-base">{{ m.home.allDownloads }}</NuxtLink>
+              <NuxtLink :to="lp('/download')" class="btn btn-ghost h-14 px-5 text-base">{{ m.home.allDownloads }}</NuxtLink>
             </div>
             <p class="text-xs text-base-400">
               <span v-if="release">{{ fill(m.home.latest, { version: release.version }) }} · </span>{{ m.home.free }}
@@ -88,7 +107,7 @@ const powered = ref(false)
     <section class="relative z-10 mx-auto -mt-6 max-w-6xl px-4 sm:px-6" aria-label="Highlights">
       <ul class="tiles">
         <li v-for="tile in m.home.tiles" :key="tile.title">
-          <NuxtLink :to="tile.to" class="tile">
+          <NuxtLink :to="lp(tile.to)" class="tile">
             <img :src="`/shots/${tile.img}`" alt="" loading="lazy" class="tile-img" />
             <span class="tile-text">
               <span class="tile-kicker">{{ tile.kicker }}</span>
@@ -109,6 +128,9 @@ const powered = ref(false)
           <p class="mt-1.5 text-sm leading-relaxed text-base-400">{{ f.text }}</p>
         </li>
       </ul>
+      <NuxtLink :to="lp('/features')" class="btn btn-ghost mt-8">
+        {{ m.home.featuresCta }} <SiteIcon name="arrow" class="size-4" />
+      </NuxtLink>
     </section>
 
     <!-- Vergleich -->
@@ -170,7 +192,7 @@ const powered = ref(false)
                 </button>
               </li>
             </ul>
-            <NuxtLink to="/capes" class="btn btn-ghost mt-6">
+            <NuxtLink :to="lp('/capes')" class="btn btn-ghost mt-6">
               {{ m.home.capesCta }} <SiteIcon name="arrow" class="size-4" />
             </NuxtLink>
           </div>
@@ -186,7 +208,7 @@ const powered = ref(false)
     <section v-if="posts.length" class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="blog-title">
       <div class="flex items-end justify-between gap-4">
         <h2 id="blog-title" class="heading text-3xl">{{ m.home.blogTitle }}</h2>
-        <NuxtLink to="/blog" class="text-sm text-base-400 hover:text-base-50">{{ m.home.blogCta }}</NuxtLink>
+        <NuxtLink :to="lp('/blog')" class="text-sm text-base-400 hover:text-base-50">{{ m.home.blogCta }}</NuxtLink>
       </div>
       <div class="mt-8 grid gap-5" :class="{ 'md:grid-cols-2': posts.length === 2, 'md:grid-cols-3': posts.length > 2 }">
         <BlogCard v-for="p in posts" :key="p.version" :post="p" :featured="posts.length === 1" />

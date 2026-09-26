@@ -4,9 +4,19 @@ const open = ref(false)
 const root = shallowRef<HTMLElement | null>(null)
 const current = computed(() => LANGS.find((l) => l.code === lang.value) ?? LANGS[0]!)
 
+const route = useRoute()
+const router = useRouter()
+
 function pick(code: Lang) {
   setLang(code)
   open.value = false
+  // Steht die Sprache in der Adresse (?lang=), dort mitziehen – sonst zeigt ein Neuladen die alte Sprache.
+  if (route.query.lang !== undefined) {
+    const query = { ...route.query }
+    if (code === 'en') delete query.lang
+    else query.lang = code
+    void router.replace({ query, hash: route.hash })
+  }
 }
 
 function onDocClick(e: MouseEvent) {

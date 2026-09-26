@@ -2,7 +2,7 @@
 // Admin-Bereich: Anmeldung per Code, der im TRS Launcher bestätigt wird; danach Übersicht,
 // Umhang-Prüfung, Chat-Meldungen (Moderation), Codes und Spieler – alles über /v1/admin.
 
-useHead({ title: 'Admin', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
+useHead({ title: 'Admin · TRS Launcher', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
 const { m, fill, date, lang } = useLang()
 const { session, load, api, logout } = useAdmin()

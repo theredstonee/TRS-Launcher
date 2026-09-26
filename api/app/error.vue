@@ -4,7 +4,7 @@ import type { NuxtError } from '#app'
 const props = defineProps<{ error: NuxtError }>()
 const { m } = useLang()
 const is404 = computed(() => props.error.statusCode === 404)
-useHead({ title: () => (is404.value ? m.value.notFound.title : 'Error'), meta: [{ name: 'robots', content: 'noindex' }] })
+useHead({ title: () => `${is404.value ? m.value.notFound.title : 'Error'} · TRS Launcher`, meta: [{ name: 'robots', content: 'noindex' }] })
 </script>
 
 <template>

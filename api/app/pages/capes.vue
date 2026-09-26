@@ -1,12 +1,26 @@
 <script setup lang="ts">
-const { m } = useLang()
+import { breadcrumbLd } from '#shared/seo'
+
+const { lang, m } = useLang()
 const { data, error } = await useCapes()
 const capes = computed(() => data.value?.capes ?? [])
 const selected = ref<SiteCape | null>(null)
 watchEffect(() => {
   if (!selected.value && capes.value.length) selected.value = capes.value[0]!
 })
-useHead({ title: () => m.value.capes.title })
+const siteUrl = useSiteUrl()
+usePageSeo(() => ({
+  path: '/capes',
+  title: m.value.seo.capes.title,
+  description: m.value.seo.capes.description,
+  image: { url: '/shots/cape-physics.png', width: 854, height: 480, alt: m.value.seo.capes.title },
+  jsonLd: [
+    breadcrumbLd(siteUrl, lang.value, [
+      { name: m.value.nav.home, path: '/' },
+      { name: m.value.capes.title, path: '/capes' },
+    ]),
+  ],
+}))
 
 const unlockLabel = (c: SiteCape) => (c.unlock === 'free' ? m.value.capes.free : c.unlock === 'code' ? m.value.capes.code : m.value.capes.admin)
 const unlockClass = (c: SiteCape) =>
