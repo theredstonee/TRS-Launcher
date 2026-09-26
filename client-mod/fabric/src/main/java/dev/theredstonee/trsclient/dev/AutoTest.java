@@ -102,6 +102,10 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		if ("reload".equals(System.getProperty("trsclient.autotest.only"))) {
+			ReloadTest.install();
+			return;
+		}
 		if ("maps".equals(System.getProperty("trsclient.autotest.only"))) {
 			MapsTest.install();
 			return;

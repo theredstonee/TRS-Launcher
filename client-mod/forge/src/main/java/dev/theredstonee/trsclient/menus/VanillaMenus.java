@@ -220,10 +220,22 @@ public final class VanillaMenus {
 			final int h = s.height;
 			final boolean world = inWorld() && !(s instanceof LevelLoadingScreen);
 			final Canvas fc = c;
+			// Bereich der Knöpfe (z. B. „Abbrechen“ bei h/4+132): Logo, Titel und Lampen darüber, nie darunter.
+			int top = Integer.MAX_VALUE;
+			int bottom = -1;
+			for (GuiEventListener child : s.children()) {
+				if (child instanceof AbstractWidget && ((AbstractWidget) child).visible) {
+					int[] r = rect((AbstractWidget) child);
+					top = Math.min(top, r[1]);
+					bottom = Math.max(bottom, r[1] + r[3]);
+				}
+			}
+			final int avoidTop = bottom < 0 ? -1 : top;
+			final int avoidBottom = bottom;
 			g.managed(new Runnable() {
 				@Override
 				public void run() {
-					MenuSkin.loading(fc, w, h, ft, fd, -1f, world);
+					MenuSkin.loading(fc, w, h, ft, fd, -1f, world, avoidTop, avoidBottom);
 				}
 			});
 			// Knöpfe (z. B. „Abbrechen“ beim Verbinden) liegen unter der Fläche – im Stil neu zeichnen.
@@ -592,12 +604,32 @@ public final class VanillaMenus {
 
 	// --- Ressourcen laden (Mojang-Logo) ---
 
-	/** Nach LoadingOverlay#render: eigene Überblendung mit gleicher Deckkraft wie Vanilla. */
-	public static void resourceOverlay(Gfx g, int width, int height, float progress, float alpha) {
-		if (!MenuStyle.enabled(MenuStyle.Kind.LOADING)) return;
+	/** Letztes Bild der Überblendung (für Selbsttests): „in“, „load“, „hold“, „out“; null = keins seitdem. */
+	public static volatile String overlayPhase;
+	/** Deckkraft der Überblendung in diesem Bild. */
+	public static volatile float overlayAlpha;
+
+	/** Ressourcen-Überblendung im Redstone-Stil (Menü-Stil → Ladebildschirme an)? */
+	public static boolean resourceOverlayStyled() {
+		return MenuStyle.enabled(MenuStyle.Kind.LOADING);
+	}
+
+	/** Was unter der Überblendung liegt: der offene Bildschirm ({@code screen}) bzw. nur die Untertitel. */
+	public interface OverlayUnder {
+		void draw(boolean screen, int mouseX, int mouseY, float partialTick);
+	}
+
+	/**
+	 * Aus LoadingOverlay#render (statt Vanilla): eigene Überblendung mit der Deckkraft {@code alpha}.
+	 * Rückgabe false = Zeichnen fehlgeschlagen (Aufrufer blendet schlicht ab).
+	 */
+	public static boolean resourceOverlay(Gfx g, int width, int height, float progress, float alpha) {
+		if (!resourceOverlayStyled()) return false;
+		boolean pushed = false;
 		try {
 			g.overlayLayer();
 			g.push();
+			pushed = true;
 			g.raise(400f);
 			final Canvas c = canvas(g);
 			final int w = width;
@@ -610,9 +642,11 @@ public final class VanillaMenus {
 					MenuSkin.resourceOverlay(c, w, h, p, a);
 				}
 			});
-			g.pop();
-		} catch (RuntimeException | LinkageError ignored) {
-			// Vanilla-Logo bleibt
+			return true;
+		} catch (RuntimeException | LinkageError e) {
+			return false;
+		} finally {
+			if (pushed) g.pop();
 		}
 	}
 }

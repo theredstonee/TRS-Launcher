@@ -133,7 +133,18 @@ public final class LegacyMenus {
 			Canvas c = canvas(s);
 			if (k == MenuStyle.Kind.LOADING) {
 				String title = I18n.tr(s instanceof GuiConnecting ? "menus.loading.connecting" : "menus.loading.terrain");
-				MenuSkin.loading(c, s.width, s.height, title, null, -1f, false);
+				// „Abbrechen“ (h/4+132) freihalten: Logo, Titel und Lampen stehen darüber.
+				int top = Integer.MAX_VALUE;
+				int bottom = -1;
+				List<GuiButton> own = buttons.get(s);
+				if (own != null) {
+					for (GuiButton b : own) {
+						if (!b.visible) continue;
+						top = Math.min(top, y(b));
+						bottom = Math.max(bottom, y(b) + height(b));
+					}
+				}
+				MenuSkin.loading(c, s.width, s.height, title, null, -1f, false, bottom < 0 ? -1 : top, bottom);
 			} else if (k == MenuStyle.Kind.MULTIPLAYER || k == MenuStyle.Kind.WORLDS) {
 				// Die Liste (GuiSlot) übermalt alles mit Erde – Kopf- und Fußleiste im Stil neu zeichnen.
 				listFrame(s, c, k);
