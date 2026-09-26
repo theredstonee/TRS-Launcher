@@ -3894,7 +3894,7 @@
         "player": "Spieler melden",
         "group": "Gruppe melden"
       },
-      "intro": "Was stimmt nicht? Das TRS-Team prüft jede Meldung ({name}).",
+      "intro": "Du meldest {name}. Das TRS-Team prüft jede Meldung.",
       "reason": "Grund",
       "reasons": {
         "insult_hate": "Beleidigung / Hass",

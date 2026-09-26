@@ -3894,7 +3894,7 @@
         "player": "Oyuncuyu şikâyet et",
         "group": "Grubu şikâyet et"
       },
-      "intro": "Sorun ne? TRS ekibi her şikâyeti inceler ({name}).",
+      "intro": "Şikâyet edilen: {name}. TRS ekibi her şikâyeti inceler.",
       "reason": "Sebep",
       "reasons": {
         "insult_hate": "Hakaret / nefret",

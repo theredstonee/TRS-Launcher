@@ -1,0 +1,1219 @@
+{
+  "adminModeration": {
+    "moderation": {
+      "mute": {
+        "active": true,
+        "auto": null,
+        "createdAt": "2026-09-26T10:10:06.507Z",
+        "createdBy": "75c1a6f3112240abbdb57b9d21c64232",
+        "expiresAt": "2026-09-26T10:15:06.507Z",
+        "id": 1,
+        "kind": "mute",
+        "liftedAt": null,
+        "liftedBy": null,
+        "reason": "Test",
+        "reportId": null
+      },
+      "name": "Bob",
+      "reportsAgainst": {
+        "actioned": 0,
+        "dismissed": 1,
+        "open": 0,
+        "total": 1
+      },
+      "reportsFiled": {
+        "actioned": 0,
+        "dismissed": 0,
+        "lowTrust": false,
+        "open": 0,
+        "total": 0
+      },
+      "sanctions": [
+        {
+          "active": true,
+          "auto": null,
+          "createdAt": "2026-09-26T10:10:06.507Z",
+          "createdBy": "75c1a6f3112240abbdb57b9d21c64232",
+          "expiresAt": "2026-09-26T10:15:06.507Z",
+          "id": 1,
+          "kind": "mute",
+          "liftedAt": null,
+          "liftedBy": null,
+          "reason": "Test",
+          "reportId": null
+        }
+      ],
+      "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+    }
+  },
+  "adminReport": {
+    "report": {
+      "assignedTo": null,
+      "attachmentId": null,
+      "audit": [],
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "createdAt": "2026-09-26T10:10:06.480Z",
+      "evidence": {
+        "capturedAt": "2026-09-26T10:10:06.480Z",
+        "conversation": {
+          "id": "c59ad18a952d8d8db5b7a",
+          "kind": "dm",
+          "members": [
+            {
+              "name": "Theredstonee",
+              "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+            },
+            {
+              "name": "Bob",
+              "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+            }
+          ],
+          "name": null,
+          "owner": null
+        },
+        "focus": "mf54b2734196b6b640274",
+        "images": [],
+        "messages": [
+          {
+            "attachments": [],
+            "createdAt": "2026-09-26T10:07:52.601Z",
+            "deleted": false,
+            "editedAt": null,
+            "id": "m196c51f3f5b107c51f6f",
+            "invite": null,
+            "kind": "text",
+            "replyTo": null,
+            "sender": {
+              "name": "Bob",
+              "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+            },
+            "seq": 1,
+            "system": null,
+            "text": "Hallo 👋 https://example.com"
+          },
+          {
+            "attachments": [],
+            "createdAt": "2026-09-26T10:07:52.649Z",
+            "deleted": false,
+            "editedAt": "2026-09-26T10:07:52.652Z",
+            "id": "mdb5bf499af454106dad8",
+            "invite": null,
+            "kind": "text",
+            "replyTo": "m196c51f3f5b107c51f6f",
+            "sender": {
+              "name": "Theredstonee",
+              "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+            },
+            "seq": 2,
+            "system": null,
+            "text": "Antwort (neu)"
+          },
+          {
+            "attachments": [
+              {
+                "height": 360,
+                "id": "aa99014147550a2611925bfba",
+                "mime": "image/jpeg",
+                "width": 640
+              }
+            ],
+            "createdAt": "2026-09-26T10:07:52.812Z",
+            "deleted": false,
+            "editedAt": null,
+            "id": "m966e246b2ede7ca261dd",
+            "invite": {
+              "address": "play.example.net",
+              "name": "Survival"
+            },
+            "kind": "text",
+            "replyTo": null,
+            "sender": {
+              "name": "Bob",
+              "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+            },
+            "seq": 3,
+            "system": null,
+            "text": null
+          },
+          {
+            "attachments": [],
+            "createdAt": "2026-09-26T10:10:06.183Z",
+            "deleted": false,
+            "editedAt": null,
+            "id": "mf54b2734196b6b640274",
+            "invite": null,
+            "kind": "text",
+            "replyTo": null,
+            "sender": {
+              "name": "Bob",
+              "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+            },
+            "seq": 4,
+            "system": null,
+            "text": "Hallo 👋 https://example.com"
+          },
+          {
+            "attachments": [],
+            "createdAt": "2026-09-26T10:10:06.202Z",
+            "deleted": false,
+            "editedAt": "2026-09-26T10:10:06.204Z",
+            "id": "m936dc99db9619a06819a",
+            "invite": null,
+            "kind": "text",
+            "replyTo": "mf54b2734196b6b640274",
+            "sender": {
+              "name": "Theredstonee",
+              "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+            },
+            "seq": 5,
+            "system": null,
+            "text": "Antwort (neu)"
+          },
+          {
+            "attachments": [
+              {
+                "height": 360,
+                "id": "afac3631a27a58a423110536e",
+                "mime": "image/jpeg",
+                "width": 640
+              }
+            ],
+            "createdAt": "2026-09-26T10:10:06.303Z",
+            "deleted": false,
+            "editedAt": null,
+            "id": "mb4f7240a7ad7be926bff",
+            "invite": {
+              "address": "play.example.net",
+              "name": "Survival"
+            },
+            "kind": "text",
+            "replyTo": null,
+            "sender": {
+              "name": "Bob",
+              "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+            },
+            "seq": 6,
+            "system": null,
+            "text": null
+          }
+        ],
+        "reporter": {
+          "name": "Theredstonee",
+          "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+        },
+        "target": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "v": 1
+      },
+      "evidencePurged": false,
+      "id": "rab281ca0e2772633",
+      "images": 0,
+      "kind": "message",
+      "lowTrust": false,
+      "messageId": "mf54b2734196b6b640274",
+      "note": "Test",
+      "notes": [],
+      "outcome": null,
+      "preview": "Hallo 👋 https://example.com",
+      "reason": "spam",
+      "related": [],
+      "reporter": {
+        "name": "Theredstonee",
+        "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+      },
+      "reporterStats": {
+        "actioned": 0,
+        "dismissed": 0,
+        "low": false,
+        "open": 1
+      },
+      "resolvedAt": null,
+      "resolvedBy": null,
+      "status": "open",
+      "target": {
+        "name": "Bob",
+        "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+      },
+      "targetModeration": {
+        "mute": null,
+        "reports": {
+          "actioned": 0,
+          "dismissed": 0,
+          "open": 1,
+          "total": 1
+        },
+        "sanctions": []
+      },
+      "targetOpenReports": 1,
+      "updatedAt": "2026-09-26T10:10:06.480Z"
+    }
+  },
+  "adminReports": {
+    "counts": {
+      "in_review": 0,
+      "open": 1,
+      "resolved": 0
+    },
+    "nextCursor": null,
+    "reports": [
+      {
+        "assignedTo": null,
+        "attachmentId": null,
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:10:06.480Z",
+        "evidencePurged": false,
+        "id": "rab281ca0e2772633",
+        "images": 0,
+        "kind": "message",
+        "lowTrust": false,
+        "messageId": "mf54b2734196b6b640274",
+        "outcome": null,
+        "preview": "Hallo 👋 https://example.com",
+        "reason": "spam",
+        "reporter": {
+          "name": "Theredstonee",
+          "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+        },
+        "resolvedAt": null,
+        "resolvedBy": null,
+        "status": "open",
+        "target": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "targetOpenReports": 1,
+        "updatedAt": "2026-09-26T10:10:06.480Z"
+      }
+    ]
+  },
+  "audit": {
+    "entries": [
+      {
+        "action": "chat.filter.remove",
+        "actor": "75c1a6f3112240abbdb57b9d21c64232",
+        "actorName": "Theredstonee",
+        "at": "2026-09-26T10:10:06.524Z",
+        "detail": "doofwort",
+        "id": 6,
+        "ref": null,
+        "target": null,
+        "targetName": null
+      },
+      {
+        "action": "chat.filter.add",
+        "actor": "75c1a6f3112240abbdb57b9d21c64232",
+        "actorName": "Theredstonee",
+        "at": "2026-09-26T10:10:06.520Z",
+        "detail": "doofwort (word, mask)",
+        "id": 5,
+        "ref": null,
+        "target": null,
+        "targetName": null
+      },
+      {
+        "action": "chat.unmute",
+        "actor": "75c1a6f3112240abbdb57b9d21c64232",
+        "actorName": "Theredstonee",
+        "at": "2026-09-26T10:10:06.516Z",
+        "detail": null,
+        "id": 4,
+        "ref": null,
+        "target": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+        "targetName": "Bob"
+      },
+      {
+        "action": "chat.mute",
+        "actor": "75c1a6f3112240abbdb57b9d21c64232",
+        "actorName": "Theredstonee",
+        "at": "2026-09-26T10:10:06.507Z",
+        "detail": "5 min",
+        "id": 3,
+        "ref": null,
+        "target": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+        "targetName": "Bob"
+      },
+      {
+        "action": "report.dismissed",
+        "actor": "75c1a6f3112240abbdb57b9d21c64232",
+        "actorName": "Theredstonee",
+        "at": "2026-09-26T10:10:06.505Z",
+        "detail": null,
+        "id": 2,
+        "ref": "rab281ca0e2772633",
+        "target": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+        "targetName": "Bob"
+      },
+      {
+        "action": "report.note",
+        "actor": "75c1a6f3112240abbdb57b9d21c64232",
+        "actorName": "Theredstonee",
+        "at": "2026-09-26T10:10:06.501Z",
+        "detail": null,
+        "id": 1,
+        "ref": "rab281ca0e2772633",
+        "target": null,
+        "targetName": null
+      }
+    ],
+    "nextBefore": null
+  },
+  "conversationPage": {
+    "conversations": [
+      {
+        "canWrite": true,
+        "createdAt": "2026-09-26T10:07:52.534Z",
+        "id": "c59ad18a952d8d8db5b7a",
+        "kind": "dm",
+        "lastMessage": {
+          "attachments": [],
+          "conversationId": "c59ad18a952d8d8db5b7a",
+          "createdAt": "2026-09-26T10:10:06.183Z",
+          "deleted": false,
+          "deletedBy": null,
+          "editedAt": null,
+          "hidden": false,
+          "id": "mf54b2734196b6b640274",
+          "invite": null,
+          "kind": "text",
+          "nonce": null,
+          "reactions": [],
+          "replyTo": null,
+          "sender": {
+            "name": "Bob",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          "seq": 4,
+          "system": null,
+          "text": "Hallo 👋 https://example.com"
+        },
+        "lastSeq": 4,
+        "markedUnread": true,
+        "members": [
+          {
+            "joinedAt": "2026-09-26T10:07:52.534Z",
+            "name": "Bob",
+            "role": "member",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          {
+            "joinedAt": "2026-09-26T10:07:52.534Z",
+            "name": "Theredstonee",
+            "role": "member",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          }
+        ],
+        "muted": false,
+        "mutedUntil": null,
+        "name": null,
+        "owner": null,
+        "peer": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "readOnlyReason": null,
+        "readSeq": 0,
+        "reads": [
+          {
+            "at": "2026-09-26T10:10:06.183Z",
+            "seq": 4,
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          }
+        ],
+        "unread": 3,
+        "updatedAt": "2026-09-26T10:10:06.183Z"
+      },
+      {
+        "canWrite": true,
+        "createdAt": "2026-09-26T10:07:53.185Z",
+        "id": "ce21f87b53f2aed6dedc5",
+        "kind": "group",
+        "lastMessage": {
+          "attachments": [],
+          "conversationId": "ce21f87b53f2aed6dedc5",
+          "createdAt": "2026-09-26T10:07:53.185Z",
+          "deleted": false,
+          "deletedBy": null,
+          "editedAt": null,
+          "hidden": false,
+          "id": "mdd1422dc40e035565994",
+          "invite": null,
+          "kind": "system",
+          "nonce": null,
+          "reactions": [],
+          "replyTo": null,
+          "sender": {
+            "name": "Theredstonee",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          },
+          "seq": 1,
+          "system": {
+            "actor": {
+              "name": "Theredstonee",
+              "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+            },
+            "event": "group_created",
+            "name": "Bau-Crew",
+            "target": null
+          },
+          "text": null
+        },
+        "lastSeq": 1,
+        "markedUnread": false,
+        "members": [
+          {
+            "joinedAt": "2026-09-26T10:07:53.185Z",
+            "name": "Theredstonee",
+            "role": "owner",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          },
+          {
+            "joinedAt": "2026-09-26T10:07:53.185Z",
+            "name": "Bob",
+            "role": "member",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          }
+        ],
+        "muted": false,
+        "mutedUntil": null,
+        "name": "Bau-Crew",
+        "owner": "75c1a6f3112240abbdb57b9d21c64232",
+        "peer": null,
+        "readOnlyReason": null,
+        "readSeq": 0,
+        "reads": [],
+        "unread": 0,
+        "updatedAt": "2026-09-26T10:07:53.185Z"
+      }
+    ],
+    "nextCursor": null
+  },
+  "events": [
+    {
+      "first": true,
+      "resumed": false,
+      "type": "hello"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "expiresInMs": 8000,
+      "type": "chat_typing",
+      "typing": true,
+      "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "expiresInMs": 8000,
+      "type": "chat_typing",
+      "typing": false,
+      "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "message": {
+        "attachments": [],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:10:06.183Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "mf54b2734196b6b640274",
+        "invite": null,
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": null,
+        "sender": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "seq": 4,
+        "system": null,
+        "text": "Hallo 👋 https://example.com"
+      },
+      "type": "chat_message"
+    },
+    {
+      "at": "2026-09-26T10:10:06.197Z",
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "seq": 4,
+      "type": "chat_read",
+      "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "markedUnread": false,
+      "muted": false,
+      "mutedUntil": null,
+      "readSeq": 4,
+      "type": "chat_state",
+      "unread": 0
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "messageId": "mf54b2734196b6b640274",
+      "reactions": [
+        {
+          "count": 1,
+          "emoji": "fire",
+          "users": [
+            "75c1a6f3112240abbdb57b9d21c64232"
+          ]
+        }
+      ],
+      "type": "chat_reactions"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "message": {
+        "attachments": [],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:10:06.202Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "m936dc99db9619a06819a",
+        "invite": null,
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": {
+          "attachments": 0,
+          "deleted": false,
+          "id": "mf54b2734196b6b640274",
+          "invite": false,
+          "preview": "Hallo 👋 https://example.com",
+          "sender": {
+            "name": "Bob",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          "seq": 4
+        },
+        "sender": {
+          "name": "Theredstonee",
+          "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+        },
+        "seq": 5,
+        "system": null,
+        "text": "Antwort"
+      },
+      "type": "chat_message"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "markedUnread": false,
+      "muted": false,
+      "mutedUntil": null,
+      "readSeq": 5,
+      "type": "chat_state",
+      "unread": 0
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "message": {
+        "attachments": [],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:10:06.202Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": "2026-09-26T10:10:06.204Z",
+        "hidden": false,
+        "id": "m936dc99db9619a06819a",
+        "invite": null,
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": {
+          "attachments": 0,
+          "deleted": false,
+          "id": "mf54b2734196b6b640274",
+          "invite": false,
+          "preview": "Hallo 👋 https://example.com",
+          "sender": {
+            "name": "Bob",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          "seq": 4
+        },
+        "sender": {
+          "name": "Theredstonee",
+          "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+        },
+        "seq": 5,
+        "system": null,
+        "text": "Antwort (neu)"
+      },
+      "type": "chat_message_edited"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "message": {
+        "attachments": [
+          {
+            "bytes": 6914,
+            "height": 360,
+            "id": "afac3631a27a58a423110536e",
+            "mime": "image/jpeg",
+            "thumbHeight": 225,
+            "thumbWidth": 400,
+            "width": 640
+          }
+        ],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:10:06.303Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "mb4f7240a7ad7be926bff",
+        "invite": {
+          "address": "play.example.net",
+          "name": "Survival"
+        },
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": null,
+        "sender": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "seq": 6,
+        "system": null,
+        "text": null
+      },
+      "type": "chat_message"
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "markedUnread": false,
+      "muted": true,
+      "mutedUntil": null,
+      "readSeq": 5,
+      "type": "chat_state",
+      "unread": 1
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "markedUnread": false,
+      "muted": false,
+      "mutedUntil": null,
+      "readSeq": 5,
+      "type": "chat_state",
+      "unread": 1
+    },
+    {
+      "conversationId": "c59ad18a952d8d8db5b7a",
+      "markedUnread": true,
+      "muted": false,
+      "mutedUntil": null,
+      "readSeq": 3,
+      "type": "chat_state",
+      "unread": 2
+    },
+    {
+      "conversationId": "c7bee485224ff051c21fe",
+      "message": {
+        "attachments": [],
+        "conversationId": "c7bee485224ff051c21fe",
+        "createdAt": "2026-09-26T10:10:06.438Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "m74cda0b6e97599ede433",
+        "invite": null,
+        "kind": "system",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": null,
+        "sender": {
+          "name": "Theredstonee",
+          "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+        },
+        "seq": 2,
+        "system": {
+          "actor": {
+            "name": "Theredstonee",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          },
+          "event": "renamed",
+          "name": "Bau-Crew 2",
+          "target": null
+        },
+        "text": null
+      },
+      "type": "chat_message"
+    },
+    {
+      "conversation": {
+        "canWrite": true,
+        "createdAt": "2026-09-26T10:10:06.436Z",
+        "id": "c7bee485224ff051c21fe",
+        "kind": "group",
+        "lastMessage": {
+          "attachments": [],
+          "conversationId": "c7bee485224ff051c21fe",
+          "createdAt": "2026-09-26T10:10:06.438Z",
+          "deleted": false,
+          "deletedBy": null,
+          "editedAt": null,
+          "hidden": false,
+          "id": "m74cda0b6e97599ede433",
+          "invite": null,
+          "kind": "system",
+          "nonce": null,
+          "reactions": [],
+          "replyTo": null,
+          "sender": {
+            "name": "Theredstonee",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          },
+          "seq": 2,
+          "system": {
+            "actor": {
+              "name": "Theredstonee",
+              "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+            },
+            "event": "renamed",
+            "name": "Bau-Crew 2",
+            "target": null
+          },
+          "text": null
+        },
+        "lastSeq": 2,
+        "markedUnread": false,
+        "members": [
+          {
+            "joinedAt": "2026-09-26T10:10:06.436Z",
+            "name": "Theredstonee",
+            "role": "owner",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          },
+          {
+            "joinedAt": "2026-09-26T10:10:06.436Z",
+            "name": "Bob",
+            "role": "member",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          }
+        ],
+        "muted": false,
+        "mutedUntil": null,
+        "name": "Bau-Crew 2",
+        "owner": "75c1a6f3112240abbdb57b9d21c64232",
+        "peer": null,
+        "readOnlyReason": null,
+        "readSeq": 0,
+        "reads": [],
+        "unread": 0,
+        "updatedAt": "2026-09-26T10:10:06.438Z"
+      },
+      "type": "chat_conversation"
+    },
+    {
+      "conversationId": "c7bee485224ff051c21fe",
+      "message": {
+        "attachments": [],
+        "conversationId": "c7bee485224ff051c21fe",
+        "createdAt": "2026-09-26T10:10:06.444Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "mfbc748030172792d5e61",
+        "invite": null,
+        "kind": "system",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": null,
+        "sender": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "seq": 3,
+        "system": {
+          "actor": {
+            "name": "Bob",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          "event": "member_left",
+          "name": null,
+          "target": null
+        },
+        "text": null
+      },
+      "type": "chat_message"
+    },
+    {
+      "conversation": {
+        "canWrite": true,
+        "createdAt": "2026-09-26T10:10:06.436Z",
+        "id": "c7bee485224ff051c21fe",
+        "kind": "group",
+        "lastMessage": {
+          "attachments": [],
+          "conversationId": "c7bee485224ff051c21fe",
+          "createdAt": "2026-09-26T10:10:06.444Z",
+          "deleted": false,
+          "deletedBy": null,
+          "editedAt": null,
+          "hidden": false,
+          "id": "mfbc748030172792d5e61",
+          "invite": null,
+          "kind": "system",
+          "nonce": null,
+          "reactions": [],
+          "replyTo": null,
+          "sender": {
+            "name": "Bob",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          "seq": 3,
+          "system": {
+            "actor": {
+              "name": "Bob",
+              "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+            },
+            "event": "member_left",
+            "name": null,
+            "target": null
+          },
+          "text": null
+        },
+        "lastSeq": 3,
+        "markedUnread": false,
+        "members": [
+          {
+            "joinedAt": "2026-09-26T10:10:06.436Z",
+            "name": "Theredstonee",
+            "role": "owner",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          }
+        ],
+        "muted": false,
+        "mutedUntil": null,
+        "name": "Bau-Crew 2",
+        "owner": "75c1a6f3112240abbdb57b9d21c64232",
+        "peer": null,
+        "readOnlyReason": null,
+        "readSeq": 0,
+        "reads": [],
+        "unread": 0,
+        "updatedAt": "2026-09-26T10:10:06.444Z"
+      },
+      "type": "chat_conversation"
+    },
+    {
+      "conversationId": "c7bee485224ff051c21fe",
+      "reason": "deleted",
+      "type": "chat_conversation_removed"
+    },
+    {
+      "report": {
+        "createdAt": null,
+        "id": "rab281ca0e2772633",
+        "kind": "message",
+        "outcome": "dismissed",
+        "reason": "other",
+        "status": "resolved",
+        "updatedAt": "2026-09-26T10:10:06.505Z"
+      },
+      "type": "report_update"
+    },
+    {
+      "type": "friend_removed",
+      "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+    },
+    {
+      "conversation": {
+        "canWrite": false,
+        "createdAt": "2026-09-26T10:07:52.534Z",
+        "id": "c59ad18a952d8d8db5b7a",
+        "kind": "dm",
+        "lastMessage": {
+          "attachments": [
+            {
+              "bytes": 6914,
+              "height": 360,
+              "id": "afac3631a27a58a423110536e",
+              "mime": "image/jpeg",
+              "thumbHeight": 225,
+              "thumbWidth": 400,
+              "width": 640
+            }
+          ],
+          "conversationId": "c59ad18a952d8d8db5b7a",
+          "createdAt": "2026-09-26T10:10:06.303Z",
+          "deleted": false,
+          "deletedBy": null,
+          "editedAt": null,
+          "hidden": false,
+          "id": "mb4f7240a7ad7be926bff",
+          "invite": {
+            "address": "play.example.net",
+            "name": "Survival"
+          },
+          "kind": "text",
+          "nonce": null,
+          "reactions": [],
+          "replyTo": null,
+          "sender": {
+            "name": "Bob",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          "seq": 6,
+          "system": null,
+          "text": null
+        },
+        "lastSeq": 6,
+        "markedUnread": true,
+        "members": [
+          {
+            "joinedAt": "2026-09-26T10:07:52.534Z",
+            "name": "Bob",
+            "role": "member",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          {
+            "joinedAt": "2026-09-26T10:07:52.534Z",
+            "name": "Theredstonee",
+            "role": "member",
+            "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+          }
+        ],
+        "muted": false,
+        "mutedUntil": null,
+        "name": null,
+        "owner": null,
+        "peer": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "readOnlyReason": "not_friends",
+        "readSeq": 3,
+        "reads": [
+          {
+            "at": "2026-09-26T10:10:06.303Z",
+            "seq": 6,
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          }
+        ],
+        "unread": 2,
+        "updatedAt": "2026-09-26T10:10:06.303Z"
+      },
+      "type": "chat_conversation"
+    }
+  ],
+  "inviteStatus": {
+    "address": "play.example.net",
+    "icon": null,
+    "latencyMs": null,
+    "motd": null,
+    "online": false,
+    "playersMax": null,
+    "playersOnline": null,
+    "reason": "unresolvable",
+    "version": null
+  },
+  "messagePage": {
+    "hasMore": false,
+    "messages": [
+      {
+        "attachments": [],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:07:52.601Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "m196c51f3f5b107c51f6f",
+        "invite": null,
+        "kind": "text",
+        "nonce": null,
+        "reactions": [
+          {
+            "count": 1,
+            "emoji": "fire",
+            "users": [
+              "75c1a6f3112240abbdb57b9d21c64232"
+            ]
+          }
+        ],
+        "replyTo": null,
+        "sender": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "seq": 1,
+        "system": null,
+        "text": "Hallo 👋 https://example.com"
+      },
+      {
+        "attachments": [],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:07:52.649Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": "2026-09-26T10:07:52.652Z",
+        "hidden": false,
+        "id": "mdb5bf499af454106dad8",
+        "invite": null,
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": {
+          "attachments": 0,
+          "deleted": false,
+          "id": "m196c51f3f5b107c51f6f",
+          "invite": false,
+          "preview": "Hallo 👋 https://example.com",
+          "sender": {
+            "name": "Bob",
+            "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+          },
+          "seq": 1
+        },
+        "sender": {
+          "name": "Theredstonee",
+          "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+        },
+        "seq": 2,
+        "system": null,
+        "text": "Antwort (neu)"
+      },
+      {
+        "attachments": [
+          {
+            "bytes": 6914,
+            "height": 360,
+            "id": "aa99014147550a2611925bfba",
+            "mime": "image/jpeg",
+            "thumbHeight": 225,
+            "thumbWidth": 400,
+            "width": 640
+          }
+        ],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:07:52.812Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "m966e246b2ede7ca261dd",
+        "invite": {
+          "address": "play.example.net",
+          "name": "Survival"
+        },
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": null,
+        "sender": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "seq": 3,
+        "system": null,
+        "text": null
+      },
+      {
+        "attachments": [],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:10:06.183Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "mf54b2734196b6b640274",
+        "invite": null,
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": null,
+        "sender": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "seq": 4,
+        "system": null,
+        "text": "Hallo 👋 https://example.com"
+      }
+    ]
+  },
+  "myReports": [
+    {
+      "createdAt": "2026-09-26T10:10:06.480Z",
+      "id": "rab281ca0e2772633",
+      "kind": "message",
+      "outcome": null,
+      "reason": "spam",
+      "status": "open",
+      "updatedAt": "2026-09-26T10:10:06.480Z"
+    }
+  ],
+  "stats": {
+    "capes": {
+      "activeUsers": 0,
+      "approved": 0,
+      "builtin": 18,
+      "pending": 0,
+      "rejected": 0,
+      "reported": 0
+    },
+    "chat": {
+      "conversations": 1,
+      "groups": 1,
+      "images": 2,
+      "messages": 7,
+      "messagesLast24h": 7,
+      "storageBytes": 20132,
+      "storageLimitBytes": 1073741824
+    },
+    "codes": {
+      "active": 0,
+      "redemptions": 0
+    },
+    "eventStreams": 1,
+    "friendships": 1,
+    "pendingFriendRequests": 0,
+    "reports": {
+      "activeMutes": 0,
+      "inReview": 0,
+      "open": 0,
+      "resolved": 1
+    },
+    "sessions": 6,
+    "users": {
+      "activeLast24h": 2,
+      "banned": 0,
+      "online": 0,
+      "total": 2
+    }
+  },
+  "unread": {
+    "conversations": [
+      {
+        "id": "c59ad18a952d8d8db5b7a",
+        "markedUnread": true,
+        "muted": false,
+        "unread": 3
+      }
+    ],
+    "total": 3
+  },
+  "wordFilter": {
+    "words": [
+      {
+        "action": "mask",
+        "createdAt": "2026-09-26T10:10:06.519Z",
+        "createdBy": "75c1a6f3112240abbdb57b9d21c64232",
+        "id": 1,
+        "mode": "word",
+        "word": "doofwort"
+      }
+    ]
+  }
+}

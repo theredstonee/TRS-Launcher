@@ -3894,7 +3894,7 @@
         "player": "Zgłoś gracza",
         "group": "Zgłoś grupę"
       },
-      "intro": "Co jest nie tak? Zespół TRS sprawdza każde zgłoszenie ({name}).",
+      "intro": "Zgłaszasz: {name}. Zespół TRS sprawdza każde zgłoszenie.",
       "reason": "Powód",
       "reasons": {
         "insult_hate": "Obraza / nienawiść",

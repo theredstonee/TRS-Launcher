@@ -40,6 +40,8 @@ const chat = useChatStore()
 const group = computed(() => props.conversation.kind === 'group')
 const m = computed(() => props.message)
 const parts = computed(() => (m.value.text ? splitLinks(m.value.text) : []))
+/** Nur Bilder (ohne Text/Antwort/Einladung): ohne Blasen-Hintergrund. */
+const mediaOnly = computed(() => !m.value.text && !m.value.replyTo && !m.value.invite && !m.value.deleted && !m.value.hidden && images.value.length > 0)
 const big = computed(() => onlyEmoji(m.value.text) && !m.value.attachments.length && !m.value.replyTo && !m.value.invite)
 const pickerOpen = ref(false)
 const canAct = computed(() => !m.value.local && !m.value.deleted && !m.value.hidden && m.value.kind === 'text')
@@ -79,11 +81,12 @@ function nameColor(uuid: string | undefined): string {
 }
 
 const images = computed(() => (m.value.local ? m.value.local.previews : m.value.attachments.map((a) => attachmentUrl(a.id, true))))
-const gridClass = computed(() => {
+/** Feste Spalten (Kacheln 7,5 rem), damit die Blase genau so breit wird wie das Raster. */
+const gridStyle = computed(() => {
   const n = images.value.length
-  if (n <= 1) return 'grid-cols-1'
-  if (n === 2 || n === 4) return 'grid-cols-2'
-  return 'grid-cols-3'
+  if (n <= 1) return {}
+  const cols = n === 2 || n === 4 ? 2 : 3
+  return { gridTemplateColumns: `repeat(${cols}, 7.5rem)` }
 })
 </script>
 
@@ -118,7 +121,7 @@ const gridClass = computed(() => {
         <div
           class="bubble min-w-0"
           :class="[
-            big ? 'bubble-emoji' : mine ? 'bubble-mine' : 'bubble-other',
+            big || mediaOnly ? 'bubble-emoji' : mine ? 'bubble-mine' : 'bubble-other',
             m.deleted || m.hidden ? 'bubble-muted' : '',
             m.local?.state === 'sending' ? 'opacity-70' : '',
             m.local?.state === 'failed' ? 'ring-1 ring-redstone-400' : '',
@@ -138,7 +141,7 @@ const gridClass = computed(() => {
               <span class="block truncate opacity-80" :class="{ italic: m.replyTo.deleted }">{{ replyText() }}</span>
             </button>
 
-            <div v-if="images.length" class="grid gap-1" :class="[gridClass, m.text || m.invite ? 'mb-1.5' : '']">
+            <div v-if="images.length" class="grid w-max max-w-full gap-1" :style="gridStyle" :class="m.text || m.invite ? 'mb-1.5' : ''">
               <button
                 v-for="(src, i) in images"
                 :key="i"

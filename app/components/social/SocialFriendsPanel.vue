@@ -83,7 +83,7 @@ const unblock = (uuid: string, name: string) =>
 
 const menuFor = ref<string | null>(null)
 function closeMenu(e: MouseEvent) {
-  if (!(e.target as HTMLElement | null)?.closest('[data-row-menu]')) menuFor.value = null
+  if (!(e.target as HTMLElement | null)?.closest?.('[data-row-menu]')) menuFor.value = null
 }
 onMounted(() => document.addEventListener('mousedown', closeMenu))
 onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))

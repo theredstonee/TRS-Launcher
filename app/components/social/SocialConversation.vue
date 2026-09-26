@@ -237,11 +237,11 @@ async function doDelete() {
 const headerMenu = ref(false)
 const muteMenu = ref(false)
 function closeHeader(e: MouseEvent) {
-  if (!(e.target as HTMLElement | null)?.closest('[data-header-menu]')) {
+  if (!(e.target as HTMLElement | null)?.closest?.('[data-header-menu]')) {
     headerMenu.value = false
     muteMenu.value = false
   }
-  if (!(e.target as HTMLElement | null)?.closest('[data-message-menu]')) closeMenu()
+  if (!(e.target as HTMLElement | null)?.closest?.('[data-message-menu]')) closeMenu()
 }
 const muteOptions: { key: 'h1' | 'h8' | 'd1' | 'forever'; ms: number | null }[] = [
   { key: 'h1', ms: 3_600_000 },

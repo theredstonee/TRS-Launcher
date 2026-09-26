@@ -3894,7 +3894,7 @@
         "player": "Reportar jugador",
         "group": "Reportar grupo"
       },
-      "intro": "¿Qué pasa? El equipo de TRS revisa cada reporte ({name}).",
+      "intro": "Vas a reportar a {name}. El equipo de TRS revisa cada reporte.",
       "reason": "Motivo",
       "reasons": {
         "insult_hate": "Insulto / odio",

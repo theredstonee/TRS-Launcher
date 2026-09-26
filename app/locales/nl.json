@@ -3894,7 +3894,7 @@
         "player": "Speler melden",
         "group": "Groep melden"
       },
-      "intro": "Wat is er mis? Het TRS-team bekijkt elke melding ({name}).",
+      "intro": "Je meldt {name}. Het TRS-team bekijkt elke melding.",
       "reason": "Reden",
       "reasons": {
         "insult_hate": "Belediging / haat",

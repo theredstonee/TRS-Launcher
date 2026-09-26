@@ -3894,7 +3894,7 @@
         "player": "Report player",
         "group": "Report group"
       },
-      "intro": "What’s wrong? The TRS team reviews every report ({name}).",
+      "intro": "You’re reporting {name}. The TRS team reviews every report.",
       "reason": "Reason",
       "reasons": {
         "insult_hate": "Insult / hate",

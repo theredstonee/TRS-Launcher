@@ -3894,7 +3894,7 @@
         "player": "Signaler le joueur",
         "group": "Signaler le groupe"
       },
-      "intro": "Quel est le problème ? L’équipe TRS examine chaque signalement ({name}).",
+      "intro": "Tu signales {name}. L’équipe TRS examine chaque signalement.",
       "reason": "Raison",
       "reasons": {
         "insult_hate": "Insulte / haine",

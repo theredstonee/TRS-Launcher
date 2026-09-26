@@ -56,6 +56,13 @@ function openConversation(id: string) {
 }
 
 watch(() => route.query, () => void openFromRoute())
+// Account (und damit der Chat-Zustand) kam erst nach dem Öffnen der Seite: Ziel erneut öffnen.
+watch(
+  () => chat.me,
+  (me) => {
+    if (me) void openFromRoute()
+  },
+)
 
 // --- Sichtbarkeit: Neues zählt sofort als gelesen, solange man hinschaut ----------------------
 
@@ -127,7 +134,7 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
         data-testid="live-state"
       >
         <span class="size-2 rounded-full" :class="live.connected ? 'bg-ok' : live.status.state === 'connecting' ? 'bg-lamp-400 animate-pulse' : 'bg-base-600'" />
-        <span class="hidden xl:inline">{{ t(`social.live.${live.status.state}`) }}</span>
+        <span class="hidden xl:inline">{{ live.status.state === 'down' ? t('common.status.offline') : t(`social.live.${live.status.state}`) }}</span>
       </span>
 
       <div class="ml-auto flex items-center gap-1.5">

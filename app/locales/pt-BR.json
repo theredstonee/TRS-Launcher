@@ -3894,7 +3894,7 @@
         "player": "Denunciar jogador",
         "group": "Denunciar grupo"
       },
-      "intro": "Qual é o problema? A equipe da TRS analisa cada denúncia ({name}).",
+      "intro": "Você está denunciando {name}. A equipe da TRS analisa cada denúncia.",
       "reason": "Motivo",
       "reasons": {
         "insult_hate": "Ofensa / ódio",

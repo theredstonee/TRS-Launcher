@@ -390,3 +390,228 @@ async fn stream_stays_off_without_consent() {
     assert!(server.requests().is_empty(), "ohne Einwilligung keine einzige Anfrage");
     assert_eq!(launcher.trs_live_status().state, "off");
 }
+
+// --- Gegen die echte API (lokal gestartet) -------------------------------------------------------
+
+/// Launcher mit einem Account (Name frei) gegen eine echte, lokal laufende API.
+async fn live_launcher(base: &str, mojang: &str, uuid: &str, name: &str) -> (tempfile::TempDir, Arc<crate::Launcher>) {
+    let dir = tempfile::tempdir().unwrap();
+    let account = json!({
+        "id": uuid, "name": name, "skinUrl": null, "xuid": "1",
+        "refreshToken": crate::auth::crypto::protect("refresh").unwrap(),
+        "accessToken": crate::auth::crypto::protect("mc-token").unwrap(),
+        "accessExpiresAt": "2099-01-01T00:00:00Z", "addedAt": "2026-09-01T00:00:00Z"
+    });
+    std::fs::write(dir.path().join("accounts.json"), json!({ "active": uuid, "accounts": [account] }).to_string()).unwrap();
+    let mut launcher = crate::Launcher::init(dir.path(), Arc::new(|_| {})).await.unwrap();
+    launcher.trs = TrsApi::with_endpoints(launcher.paths.clone(), base, mojang, mojang).unwrap();
+    launcher.trs.store.set_consent(Consent::Accepted).await;
+    (dir, Arc::new(launcher))
+}
+
+/// Wartet höchstens 3 s auf ein Ereignis, das `pick` erkennt.
+async fn expect_event<T>(log: &Arc<Mutex<Vec<LiveOut>>>, what: &str, pick: impl Fn(&LiveEvent) -> Option<T>) -> T {
+    let start = std::time::Instant::now();
+    loop {
+        if let Some(found) = events(log).iter().rev().find_map(&pick) {
+            println!("  ✓ {what} nach {} ms", start.elapsed().as_millis());
+            return found;
+        }
+        assert!(start.elapsed() < Duration::from_secs(3), "kein Ereignis „{what}“ innerhalb von 3 s: {:?}", events(log));
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+}
+
+/// Voller Durchlauf gegen die echte API (Vertrag §18–§20) inklusive Echtzeit-Kanal.
+///
+/// `TRS_LIVE_BASE=http://127.0.0.1:28910 TRS_LIVE_MOJANG=http://127.0.0.1:28911 \
+///  cargo test -p trs-core live_local_api -- --ignored --nocapture`
+///
+/// Mit `TRS_LIVE_SAMPLES=<datei>` schreibt der Test die Ansichten (so wie sie
+/// ans Webview gehen) als JSON – damit prüft ein Vitest die zod-Schemas.
+#[tokio::test]
+#[ignore = "braucht eine lokal laufende TRS API"]
+async fn live_local_api() {
+    let (Ok(base), Ok(mojang)) = (std::env::var("TRS_LIVE_BASE"), std::env::var("TRS_LIVE_MOJANG")) else {
+        eprintln!("TRS_LIVE_BASE/TRS_LIVE_MOJANG fehlen – übersprungen");
+        return;
+    };
+    let mut samples = serde_json::Map::new();
+    let (_da, a) = live_launcher(&base, &mojang, ACC, "Theredstonee").await;
+    let (_db, b) = live_launcher(&base, &mojang, BOB, "Bob").await;
+    let me = a.trs_me().await.unwrap();
+    assert!(me.admin, "Theredstonee ist Admin (ADMIN_UUIDS)");
+    assert!(me.settings.chat_read_receipts);
+    b.trs_me().await.unwrap();
+
+    // Freunde werden (falls schon befreundet: egal).
+    let _ = a.trs_friend_request("Bob").await;
+    let _ = b.trs_friend_accept(ACC).await;
+    assert!(a.trs_friends().await.unwrap().friends.iter().any(|f| f.uuid == BOB));
+
+    // Echtzeit-Kanal für A.
+    let log = collect(&a);
+    let la = Arc::clone(&a);
+    let live = tokio::spawn(async move { la.trs.run_live(la.accounts(), la.accounts(), &LiveConfig::default()).await });
+    expect_event(&log, "hello", |e| matches!(e, LiveEvent::Hello { .. }).then_some(())).await;
+
+    // DM, Tippen, Nachricht.
+    let dm = b.chat_open_dm(ACC).await.unwrap();
+    b.chat_typing(&dm.id, true).await.unwrap();
+    expect_event(&log, "chat_typing", |e| matches!(e, LiveEvent::ChatTyping { typing: true, .. }).then_some(())).await;
+    let sent = b
+        .chat_send(&dm.id, &OutgoingMessage { text: Some("Hallo 👋 https://example.com".into()), nonce: Some(format!("live-{}", chrono::Utc::now().timestamp_millis())), ..Default::default() })
+        .await
+        .unwrap();
+    let got = expect_event(&log, "chat_message", |e| match e {
+        LiveEvent::ChatMessage { message, .. } if message.id == sent.id => Some(message.clone()),
+        _ => None,
+    })
+    .await;
+    assert_eq!(got.text.as_deref(), Some("Hallo 👋 https://example.com"));
+
+    let page = a.chat_conversations(None, None).await.unwrap();
+    let conv = page.conversations.iter().find(|c| c.id == dm.id).expect("DM in der Liste");
+    assert!(conv.unread >= 1);
+    samples.insert("conversationPage".into(), serde_json::to_value(&page).unwrap());
+    let msgs = a.chat_messages(&dm.id, PageAt::Latest, None).await.unwrap();
+    samples.insert("messagePage".into(), serde_json::to_value(&msgs).unwrap());
+    samples.insert("unread".into(), serde_json::to_value(a.chat_unread().await.unwrap()).unwrap());
+    a.chat_read(&dm.id, sent.seq).await.unwrap();
+    expect_event(&log, "chat_state (gelesen)", |e| matches!(e, LiveEvent::ChatState { unread: 0, .. }).then_some(())).await;
+
+    // Reaktion, Antwort, Bearbeiten.
+    let reactions = a.chat_react(&sent.id, "fire", true).await.unwrap();
+    assert_eq!(reactions[0].emoji, "fire");
+    expect_event(&log, "chat_reactions", |e| matches!(e, LiveEvent::ChatReactions { .. }).then_some(())).await;
+    let mine = a
+        .chat_send(&dm.id, &OutgoingMessage { text: Some("Antwort".into()), reply_to: Some(sent.id.clone()), ..Default::default() })
+        .await
+        .unwrap();
+    assert_eq!(mine.reply_to.as_ref().map(|r| r.id.as_str()), Some(sent.id.as_str()));
+    a.chat_edit(&mine.id, "Antwort (neu)").await.unwrap();
+    expect_event(&log, "chat_message_edited", |e| matches!(e, LiveEvent::ChatMessageEdited { .. }).then_some(())).await;
+
+    // Bild + Einladung.
+    let local = b.chat_stage_bytes("bild.png", super::media::tests::png(640, 360, 255)).await.unwrap();
+    let att = b.chat_upload(&UploadSource::Local { id: local.id }).await.unwrap();
+    let with_image = b
+        .chat_send(
+            &dm.id,
+            &OutgoingMessage {
+                attachments: vec![att.id.clone()],
+                invite: Some(super::chat::ChatInvite { address: "play.example.net".into(), name: Some("Survival".into()) }),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+    let got = expect_event(&log, "chat_message mit Bild", |e| match e {
+        LiveEvent::ChatMessage { message, .. } if message.id == with_image.id => Some(message.clone()),
+        _ => None,
+    })
+    .await;
+    assert_eq!(got.attachments.len(), 1);
+    assert_eq!(got.invite.as_ref().map(|i| i.address.as_str()), Some("play.example.net"));
+    for kind in ["t", "a"] {
+        let r = a.serve_chat_image(&format!("/{kind}/{}", att.id)).await;
+        assert_eq!(r.status, 200, "Bild {kind}");
+    }
+    let status = a.chat_server_status("play.example.net").await.unwrap();
+    println!("  Server-Status: online={} reason={:?}", status.online, status.reason);
+    samples.insert("inviteStatus".into(), serde_json::to_value(&status).unwrap());
+
+    // Stummschalten, als ungelesen markieren.
+    a.chat_mute(&dm.id, true, None).await.unwrap();
+    expect_event(&log, "chat_state (stumm)", |e| matches!(e, LiveEvent::ChatState { muted: true, .. }).then_some(())).await;
+    a.chat_mute(&dm.id, false, None).await.unwrap();
+    a.chat_mark_unread(&dm.id, Some(sent.seq)).await.unwrap();
+    expect_event(&log, "chat_state (ungelesen)", |e| matches!(e, LiveEvent::ChatState { marked_unread: true, .. }).then_some(())).await;
+
+    // Gruppe.
+    // (Der Ersteller bekommt die neue Gruppe aus der Antwort, nicht als Ereignis.)
+    let group = a.chat_create_group("Bau-Crew", &[BOB.to_owned()]).await.unwrap();
+    assert_eq!(group.name.as_deref(), Some("Bau-Crew"));
+    a.chat_rename_group(&group.id, "Bau-Crew 2").await.unwrap();
+    expect_event(&log, "chat_conversation (umbenannt)", |e| match e {
+        LiveEvent::ChatConversation { conversation } if conversation.id == group.id && conversation.name.as_deref() == Some("Bau-Crew 2") => Some(()),
+        _ => None,
+    })
+    .await;
+    b.chat_leave_group(&group.id).await.unwrap();
+    expect_event(&log, "Systemnachricht member_left", |e| match e {
+        LiveEvent::ChatMessage { message, .. } if message.system.as_ref().is_some_and(|s| s.event == "member_left") => Some(()),
+        _ => None,
+    })
+    .await;
+    a.chat_delete_group(&group.id).await.unwrap();
+
+    // Melden + Moderation.
+    let report = a
+        .chat_report(&NewReport {
+            target: ReportTarget::Message { message_id: sent.id.clone() },
+            reason: ChatReportReason::Spam,
+            note: Some("Test".into()),
+        })
+        .await
+        .unwrap();
+    assert_eq!(report.status, "open");
+    samples.insert("myReports".into(), serde_json::to_value(a.chat_my_reports().await.unwrap()).unwrap());
+    let list = a.admin_reports(&super::moderation::ReportQuery::default()).await.unwrap();
+    assert!(list["reports"].as_array().unwrap().iter().any(|r| r["id"] == report.id.as_str()));
+    samples.insert("adminReports".into(), list);
+    let detail = a.admin_report(&report.id).await.unwrap();
+    assert!(detail["report"]["evidence"]["messages"].as_array().is_some_and(|m| !m.is_empty()));
+    samples.insert("adminReport".into(), detail);
+    a.admin_report_note(&report.id, "Notiz").await.unwrap();
+    let after = a
+        .admin_report_action(
+            &report.id,
+            &super::moderation::ReportAction { action: "dismiss".into(), reason: None, minutes: None, keep_open: false, include_related: false },
+        )
+        .await
+        .unwrap();
+    assert_eq!(after["report"]["status"], "resolved");
+    expect_event(&log, "report_update", |e| matches!(e, LiveEvent::ReportUpdate { .. }).then_some(())).await;
+
+    let modv = a.admin_mute(BOB, Some(5), Some("Test")).await.unwrap();
+    samples.insert("adminModeration".into(), modv);
+    let muted = b.chat_my_moderation().await.unwrap();
+    assert!(muted.mute.is_some());
+    let err = b.chat_send(&dm.id, &OutgoingMessage { text: Some("still?".into()), ..Default::default() }).await.unwrap_err();
+    assert!(matches!(&err, crate::Error::TrsApi { code, .. } if code == "chat_muted"), "{err:?}");
+    a.admin_unmute(BOB).await.unwrap();
+
+    let word = a
+        .admin_add_word(&super::moderation::NewFilterWord { word: "doofwort".into(), mode: None, action: Some("mask".into()) })
+        .await;
+    let words = a.admin_word_filter().await.unwrap();
+    samples.insert("wordFilter".into(), words.clone());
+    if let Ok(w) = word
+        && let Some(id) = w["word"]["id"].as_u64()
+    {
+        a.admin_delete_word(id).await.unwrap();
+    }
+    samples.insert("audit".into(), a.admin_audit(&super::moderation::AuditQuery::default()).await.unwrap());
+    samples.insert("stats".into(), serde_json::to_value(a.trs_admin_stats().await.unwrap()).unwrap());
+
+    // Entfreunden → DM nur noch lesbar (Ereignis an A selbst).
+    a.trs_friend_remove(BOB).await.unwrap();
+    expect_event(&log, "friend_removed", |e| matches!(e, LiveEvent::FriendRemoved { .. }).then_some(())).await;
+    expect_event(&log, "chat_conversation (nur lesbar)", |e| match e {
+        LiveEvent::ChatConversation { conversation } if conversation.id == dm.id && !conversation.can_write => Some(()),
+        _ => None,
+    })
+    .await;
+
+    let kinds: std::collections::BTreeSet<String> = events(&log)
+        .iter()
+        .map(|e| serde_json::to_value(e).unwrap()["type"].as_str().unwrap_or("?").to_owned())
+        .collect();
+    println!("  Ereignisse: {kinds:?}");
+    samples.insert("events".into(), serde_json::to_value(events(&log)).unwrap());
+    if let Ok(path) = std::env::var("TRS_LIVE_SAMPLES") {
+        std::fs::write(path, serde_json::to_string_pretty(&serde_json::Value::Object(samples)).unwrap()).unwrap();
+    }
+    live.abort();
+}
