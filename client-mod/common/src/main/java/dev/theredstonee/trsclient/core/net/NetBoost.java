@@ -177,10 +177,7 @@ public final class NetBoost {
 			PING.activeSupported(pf.activePing());
 			long now = pf.millis();
 			PING.server(pf.serverLatency(), now);
-			if (measure && PING.shouldSend(now, intervalMs, pf.activePing())) {
-				PING.sent(now);
-				pf.sendPing(now);
-			}
+			if (measure && PING.shouldSend(now, intervalMs, pf.activePing()) && pf.sendPing(now)) PING.sent(now);
 		} catch (Throwable t) {
 			error("tick", t);
 		}

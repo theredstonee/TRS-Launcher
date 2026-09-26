@@ -152,13 +152,18 @@ public final class NetHooks implements NetPlatform {
 	}
 
 	@Override
-	public void sendPing(long millis) {
+	public boolean sendPing(long millis) {
 		ClientPacketListener listener = Minecraft.getInstance().getConnection();
-		if (listener == null) return;
+		// Nur im Spiel-Protokoll: während einer Rekonfiguration (Proxy-Serverwechsel) gibt es das Paket dort nicht.
+		if (listener == null || !(listener.getConnection().getPacketListener() instanceof ClientPacketListener)) return false;
 		//? if >=1.20.5 {
 		listener.send(new net.minecraft.network.protocol.ping.ServerboundPingRequestPacket(millis));
+		return true;
 		//?} elif >=1.20.2 {
 		/*listener.send(new net.minecraft.network.protocol.status.ServerboundPingRequestPacket(millis));
+		return true;
+		*///?} else {
+		/*return false;
 		*///?}
 	}
 

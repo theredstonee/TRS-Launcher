@@ -140,8 +140,9 @@ public final class NetHooks implements NetPlatform {
 	}
 
 	@Override
-	public void sendPing(long millis) {
+	public boolean sendPing(long millis) {
 		// Gibt es in dieser Version nicht.
+		return false;
 	}
 
 	@Override

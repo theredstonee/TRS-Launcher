@@ -82,6 +82,31 @@ How to write an entry:
   appeals, a player file with the full sanction history (lift, shorten or extend with a reason), new sanctions with
   kind, duration and reason templates plus a confirmation step, capes and cosmetics, open worlds, codes, word filter,
   roles and the audit log – with global search, multi-select for bulk actions and keyboard shortcuts (/, j/k, a/r, ?).
+- **TRS Client: an honest ping display.** The ping HUD now shows the real round-trip time to the server, the jitter
+  (how much it varies) and a small history graph; optionally the server's TPS (an estimate from the server's time
+  updates), timeouts and a warning on ping spikes (off by default). From Minecraft 1.20.2 the TRS Client measures the ping
+  itself with one ping request every 2 seconds (adjustable, never more than one per second – the same request the F3
+  network graph sends, just much less often). Older versions don't allow that without faking packets, so there the
+  display shows the value the server reports in the player list and marks it "server". Nothing here makes your
+  connection faster – it shows what it really is.
+- **TRS Client: ping test in the server list.** A "Ping test" button in the multiplayer menu measures all your servers
+  (like Minecraft's own server list ping, at most four at a time, once every 10 seconds) and sorts the list by ping;
+  pinned servers stay on top. In 1.8.9–1.12.2 and 1.14.4–26.3 wherever the TRS menu style is on.
+- **TRS Client: Network Optimization (Performance, on by default).** Incoming data is processed faster on your PC: the
+  decryption of online-mode servers runs about 2 to 4.5 times faster (measured per packet, same result bit for bit), and
+  compression no longer creates new arrays for every packet (up to about 87 KB less garbage per chunk packet – the time
+  itself stays about the same). On 1.7.10 it also switches on TCP_NODELAY, which Minecraft 1.7.10 leaves off (from 1.8
+  Minecraft does it itself). Honestly: this cannot lower your ping – the time packets travel through the internet stays
+  the same, and nothing the server receives changes. No packets are held back, bundled or faked.
+- **TRS Client: Low Input Latency (Performance, off by default).** Reads your mouse right before the frame and can
+  limit how many frames wait in the graphics card queue. The biggest effect we measured is on 1.8.9–1.12.2 with an FPS
+  limit: the mouse movement is used about 15 ms fresher at 60 FPS. On modern versions Minecraft already reads the mouse
+  late, and in our tests the graphics card queue was empty – there it brings well under a millisecond, and "Maximum"
+  costs a few percent FPS. The module page shows the measured values live, so you can check on your PC.
+- **Launcher: ping test for servers.** The server page can sort by ping and measures at most four servers at a time;
+  the Worlds tab of an instance has a "Ping test" for every server in its server list.
+- **World hosting: ping per player.** The host's player list shows each player's ping next to "Direct" or "Via relay",
+  and a guest's ping HUD shows whether the connection runs directly or through the relay.
 
 ### Deutsch
 
@@ -151,6 +176,33 @@ How to write an entry:
   Begründung), neue Strafen mit Art, Dauer, Grund-Vorlagen und Bestätigung, Umhänge und Kosmetik, offene Welten, Codes,
   Wortfilter, Rollen und Audit-Log – mit globaler Suche, Mehrfachauswahl für Sammelaktionen und Tastenkürzeln
   (/, j/k, a/r, ?).
+- **TRS Client: ehrliche Ping-Anzeige.** Das Ping-HUD zeigt jetzt die echte Hin- und Rücklaufzeit zum Server, den
+  Jitter (wie stark er schwankt) und einen kleinen Verlauf; auf Wunsch auch die TPS des Servers (geschätzt aus seinen
+  Zeit-Meldungen), Zeitüberschreitungen und eine Warnung bei Ping-Spitzen (standardmäßig aus). Ab Minecraft 1.20.2 misst
+  der TRS Client selbst – mit einer Ping-Anfrage alle 2 Sekunden (einstellbar, nie öfter als einmal pro Sekunde; dieselbe
+  Anfrage, die die F3-Netzwerkgrafik schickt, nur viel seltener). Ältere Versionen erlauben das nicht, ohne Pakete zu
+  fälschen – dort zeigt die Anzeige den Wert, den der Server in der Spielerliste meldet, und kennzeichnet ihn mit
+  „Server“. Schneller wird deine Verbindung dadurch nicht – du siehst, wie sie wirklich ist.
+- **TRS Client: Ping-Test in der Serverliste.** Ein Knopf „Ping-Test“ im Mehrspieler-Menü misst alle deine Server (wie
+  Minecrafts eigener Serverlisten-Ping, höchstens vier gleichzeitig, einmal alle 10 Sekunden) und sortiert die Liste
+  nach Ping; angeheftete Server bleiben oben. In 1.8.9–1.12.2 und 1.14.4–26.3, überall dort, wo der TRS-Menüstil an ist.
+- **TRS Client: Netzwerk-Optimierung (Leistung, standardmäßig an).** Ankommende Daten werden auf deinem PC schneller
+  verarbeitet: Die Entschlüsselung bei Servern im Online-Modus läuft etwa 2- bis 4,5-mal so schnell (je Paket gemessen,
+  Bit für Bit dasselbe Ergebnis), und die Kompression legt nicht mehr für jedes Paket neue Felder an (bis zu etwa 87 KB
+  weniger Speichermüll je Chunk-Paket – die Zeit selbst bleibt etwa gleich). Unter 1.7.10 schaltet sie außerdem
+  TCP_NODELAY ein, das Minecraft 1.7.10 auslässt (ab 1.8 macht Minecraft das selbst). Ehrlich gesagt: Deinen Ping senkt
+  das nicht – die Laufzeit der Pakete durchs Internet bleibt gleich, und am Server kommt genau dasselbe an. Es werden
+  keine Pakete zurückgehalten, gebündelt oder gefälscht.
+- **TRS Client: Niedrige Eingabe-Verzögerung (Leistung, standardmäßig aus).** Liest deine Maus direkt vor dem Bild und
+  kann begrenzen, wie viele Bilder in der Warteschlange der Grafikkarte warten. Den größten Effekt haben wir unter
+  1.8.9–1.12.2 mit FPS-Grenze gemessen: Bei 60 FPS wird die Mausbewegung etwa 15 ms frischer verwendet. In neuen Versionen
+  liest Minecraft die Maus schon spät, und in unseren Tests war die Warteschlange der Grafikkarte leer – dort bringt es
+  deutlich unter einer Millisekunde, und „Maximal“ kostet ein paar Prozent FPS. Die Modulseite zeigt die Messwerte live,
+  so kannst du es auf deinem PC nachprüfen.
+- **Launcher: Ping-Test für Server.** Die Server-Seite kann nach Ping sortieren und misst höchstens vier Server
+  gleichzeitig; im Welten-Reiter einer Instanz gibt es einen „Ping-Test“ für jeden Server ihrer Serverliste.
+- **Welt-Hosting: Ping je Spieler.** Die Spielerliste des Hosts zeigt neben „Direkt“ bzw. „Über Relay“ den Ping jedes
+  Spielers, und das Ping-HUD eines Gastes zeigt, ob die Verbindung direkt oder über das Relay läuft.
 
 ## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
 

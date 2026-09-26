@@ -39,8 +39,13 @@ public interface NetPlatform {
 	/** Erlaubt die Version eigene Ping-Anfragen im Spiel ({@code ServerboundPingRequestPacket}, ab 1.20.2)? */
 	boolean activePing();
 
-	/** Sendet eine Ping-Anfrage mit diesem Zeitstempel (Hauptthread, nur wenn {@link #activePing()}). */
-	void sendPing(long millis);
+	/**
+	 * Sendet eine Ping-Anfrage mit diesem Zeitstempel (Hauptthread, nur wenn {@link #activePing()}) – nur, wenn die
+	 * Verbindung gerade im Spiel-Protokoll ist (nicht während einer Rekonfiguration über einen Proxy).
+	 *
+	 * @return true = gesendet
+	 */
+	boolean sendPing(long millis);
 
 	/** Uhr, mit der Vanilla Ping-Zeitstempel bildet ({@code Util.getMillis()}); von jedem Thread aufrufbar. */
 	long millis();

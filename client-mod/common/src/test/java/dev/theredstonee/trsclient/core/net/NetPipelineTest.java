@@ -107,8 +107,9 @@ class NetPipelineTest {
 		}
 
 		@Override
-		public void sendPing(long millis) {
+		public boolean sendPing(long millis) {
 			sent.add(millis);
+			return true;
 		}
 
 		@Override
