@@ -249,7 +249,16 @@ the TRS server.
 - **Public link (e4mc):** optionally you can create a public link that anyone can use to join. This uses **e4mc**, a
   service by other operators, not the TRS server. When you turn it on (only after a warning you have to confirm), your
   game connects to e4mc's relay and e4mc sees your IP address and the players' IP addresses and forwards the game data;
-  e4mc's own privacy policy applies. It is off by default.
+  e4mc's own privacy policy applies. It is off by default. The first time you turn it on, the game downloads the
+  network library it needs (Netty with QUIC, open source) once from Maven Central (`repo1.maven.org`, checked against
+  fixed checksums) and asks e4mc's broker (`broker.e4mc.link`) for the nearest relay – both see your IP address. The
+  e4mc part of the TRS Client is based on the e4mc mod (MIT licence, © Skye); its licence text ships inside the game.
+- **Only through the relay:** in the TRS Client (Social → "Direct connections") you can turn direct connections off.
+  Then your game always uses the TRS relay and the other player never learns your IP address.
+- **World backup:** before opening, the TRS Client can save a ZIP of your world in the game's `backups` folder on your
+  computer. It never leaves your computer.
+- **Protection in the game:** a guest can only log in with the name the TRS server confirmed for them (nobody can take
+  the host's name), and when you remove or ban a player the game closes their connection at once.
 
 ### What is stored
 

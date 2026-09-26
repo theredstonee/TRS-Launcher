@@ -110,6 +110,11 @@ public final class AutoTest {
 			MapsTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=roof: Karten – Dach ausblenden (Innenansicht) und Barriere-Decken
+		if ("roof".equals(System.getProperty("trsclient.autotest.only"))) {
+			RoofMapTest.install();
+			return;
+		}
 		if ("social".equals(System.getProperty("trsclient.autotest.only"))) {
 			SocialTest.install();
 			return;
@@ -117,6 +122,11 @@ public final class AutoTest {
 		// -PtrsAutotestOnly=sanctions: „Meine Strafen“ + Einspruch (Moderation v2) gegen eine API-Attrappe
 		if ("sanctions".equals(System.getProperty("trsclient.autotest.only"))) {
 			SanctionsTest.install();
+			return;
+		}
+		// -PtrsAutotestOnly=hosting: Welt-Hosting mit zwei Spielen (Host/Gast, siehe HostingTest)
+		if ("hosting".equals(System.getProperty("trsclient.autotest.only"))) {
+			HostingTest.install();
 			return;
 		}
 		// -PtrsAutotestOnly=socialtoasts: nur Sozial-Toasts neben Vanilla-Toasts (Ausweichen) und über einem Menü
@@ -131,7 +141,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if (step >= 3 && step < 25 && Mc.screen() instanceof PauseScreen) {
+		if ((step >= 3 && step < 25 || step == 28) && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -217,6 +227,16 @@ public final class AutoTest {
 				// -PtrsAutotestOnly=capecolor: nur Umhang-Einstellungen/Vorschau und Farben
 				if ("capecolor".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 23;
+					break;
+				}
+				// -PtrsAutotestOnly=shield: nur die Schild-Position (Seitlich, Vanilla, Blocken, durchsichtig, Menü)
+				if ("shield".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 28;
+					break;
+				}
+				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
+				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 29;
 					break;
 				}
 				// -PtrsAutotestOnly=bench: nur der FPS-Benchmark (Durchschnitt und 1 %-Low)
@@ -461,6 +481,38 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 28:
+				// Schild-Position: Screenshots in der 1. Person, Blocken, durchsichtig, Einstellungsseite
+				if (shieldTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
+			case 29:
+				// Quietscheente: 3. Person vorne/hinten, Quaken, Flügel, Trägheit
+				if (duckTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			default:
 				if (step == 25) mc.stop();
 				step = 26;
@@ -475,6 +527,8 @@ public final class AutoTest {
 	private final PerfTest perfTest = new PerfTest();
 	private final ClipsTest clipsTest = new ClipsTest();
 	private final Benchmark benchmark = new Benchmark();
+	private final ShieldTest shieldTest = new ShieldTest();
+	private final DuckTest duckTest = new DuckTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

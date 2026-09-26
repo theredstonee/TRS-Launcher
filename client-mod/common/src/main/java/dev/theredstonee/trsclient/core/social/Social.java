@@ -63,6 +63,17 @@ public final class Social {
 
 		/** Die Freunde des Spiels (Aktualisieren bei Freundes-Ereignissen). */
 		Friends friends();
+
+		/**
+		 * Welt-Hosting-Ereignis ({@code hosting_*}) oder Stream-Neubeginn ({@code hello}/{@code resync}) – Spiel-Thread.
+		 */
+		default void hosting(MeEvent e) {
+		}
+
+		/** Braucht jemand anderes (Welt-Hosting) gerade den Echtzeit-Stream? */
+		default boolean wantsStream() {
+			return false;
+		}
 	}
 
 	/** Ergebnis einer Aktion im Spiel-Thread; {@code error} = i18n-Schlüssel oder null. */
@@ -364,7 +375,7 @@ public final class Social {
 		token = currentToken;
 		banned = null;
 		boolean screen = now <= screenUntil;
-		boolean want = enabled || screen;
+		boolean want = enabled || screen || backend.wantsStream();
 		streamWanted = want;
 		toasts.viewing(screen ? viewing : null);
 		stream.update(now, currentToken, want);
@@ -477,6 +488,14 @@ public final class Social {
 		eventsSeen++;
 		Friends friends = backend.friends();
 		String t = e.type;
+		if (t.startsWith("hosting_") || t.equals("hello") || t.equals("resync")) {
+			try {
+				backend.hosting(e);
+			} catch (RuntimeException ignored) {
+				// Hosting darf den Chat nie stören.
+			}
+			if (t.startsWith("hosting_")) return;
+		}
 		if (t.equals("hello")) {
 			// Neuer Stream ohne Wiederaufnahme, obwohl schon einer lief (Lücke unbekannt): alles neu laden.
 			if (!e.resumed && helloSeen && store.listLoaded()) resyncWanted = true;
@@ -881,6 +900,12 @@ public final class Social {
 		String sender = m.sender == null ? "?" : m.sender.name;
 		String title = c != null && c.group ? I18n.tr("social.toast.inGroup", sender, c.title()) : sender;
 		String text = m.preview();
+		if (m.invite != null && m.invite.world != null) {
+			// Weltkarte: die Einladung selbst kommt als hosting_invite (eigener Toast mit „Beitreten“).
+			toasts.add(Toasts.Kind.MESSAGE, "conv:" + m.conversationId, title, I18n.tr("hosting.toast.card", m.invite.name),
+					m.sender == null ? null : m.sender.uuid, sender, m.conversationId, null, now);
+			return;
+		}
 		if (m.invite != null) {
 			String label = m.invite.name != null ? m.invite.name : m.invite.address;
 			toasts.add(Toasts.Kind.INVITE, "conv:" + m.conversationId, title, I18n.tr("social.toast.invite", label),

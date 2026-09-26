@@ -9,6 +9,12 @@ repositories {
 dependencies {
 	// Gson liefert Minecraft selbst mit – daher nur zum Kompilieren.
 	compileOnly "com.google.code.gson:gson:${gson_version}"
+	// Netty liefert Minecraft selbst mit (1.8.9: 4.0.23 … 26.3: 4.2.16). Gegen die ÄLTESTE kompilieren, damit der
+	// Welt-Hosting-Kanal (core.hosting.netty) nur API nutzt, die es überall gibt; die Bäume kompilieren ihn gegen ihre
+	// eigene Version erneut.
+	compileOnly 'io.netty:netty-all:4.0.23.Final'
+	// Tests auch gegen neuere Netty-Fassungen: -PtestNetty=4.2.16.Final (Minecraft 26.3) bzw. 4.1.97.Final (1.21.1).
+	testImplementation "io.netty:netty-all:${findProperty('testNetty') ?: '4.0.23.Final'}"
 
 	testImplementation "com.google.code.gson:gson:${gson_version}"
 	testImplementation platform("org.junit:junit-bom:${junit_version}")
@@ -27,6 +33,8 @@ tasks.named('compileJava') {
 
 test {
 	useJUnitPlatform()
+	// Opt-in-Tests mit Netz (z. B. -Dtrsclient.test.e4mc=true) an die Test-JVM durchreichen.
+	System.properties.findAll { it.key.toString().startsWith('trsclient.test.') }.each { k, v -> systemProperty k, v }
 	testLogging {
 		events 'passed', 'skipped', 'failed'
 	}

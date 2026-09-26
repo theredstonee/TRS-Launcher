@@ -260,7 +260,18 @@ servidor TRS.
 - **Enlace público (e4mc):** opcionalmente puedes crear un enlace público con el que cualquiera puede entrar. Para ello
   se usa **e4mc**, un servicio de otros operadores, no el servidor TRS. Si lo activas (solo tras una advertencia que
   debes confirmar), tu juego se conecta al relay de e4mc; e4mc ve tu dirección IP y la de los jugadores y reenvía los
-  datos del juego, y se aplica su propia política de privacidad. Está desactivado por defecto.
+  datos del juego, y se aplica su propia política de privacidad. Está desactivado por defecto. La primera vez que lo
+  activas, el juego descarga una sola vez la biblioteca de red necesaria (Netty con QUIC, código abierto) desde Maven
+  Central (`repo1.maven.org`, comprobada con sumas de control fijas) y pregunta al intermediario de e4mc
+  (`broker.e4mc.link`) por el relay más cercano; ambos ven tu dirección IP. La parte de e4mc del TRS Client se basa en el
+  mod e4mc (licencia MIT, © Skye); el texto de la licencia viene incluido en el juego.
+- **Solo por el relay:** en el TRS Client (Social → «Conexiones directas») puedes desactivar las conexiones directas.
+  Entonces tu juego usa siempre el relay de TRS y el otro jugador nunca conoce tu dirección IP.
+- **Copia del mundo:** antes de abrirlo, el TRS Client puede guardar un ZIP de tu mundo en la carpeta `backups` del juego
+  en tu ordenador. Nunca sale de tu ordenador.
+- **Protección en el juego:** un invitado solo puede entrar con el nombre que el servidor TRS confirmó para él (nadie
+  puede usar el nombre del anfitrión), y cuando expulsas o bloqueas a un jugador, el juego cierra su conexión al
+  instante.
 
 ### Qué se guarda
 

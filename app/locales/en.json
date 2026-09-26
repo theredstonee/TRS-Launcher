@@ -575,6 +575,7 @@
     "trsOps": {
       "invalidPlayerId": "Invalid player ID.",
       "invalidCapeId": "Invalid cape ID.",
+      "invalidCosmeticId": "Invalid cosmetic ID.",
       "noChange": "No change specified.",
       "onlyOwnCapesDeletable": "Only your own capes can be deleted.",
       "onlyUploadedReportable": "Only uploaded capes can be reported.",
@@ -2708,7 +2709,9 @@
       "alreadyOwned": "You already had “{name}”.",
       "unlocked": "“{name}” unlocked!",
       "uploaded": "Uploaded – your cape is awaiting approval.",
-      "deleted": "Cape deleted"
+      "deleted": "Cape deleted",
+      "hatOn": "Put on “{name}”",
+      "hatOff": "Head cosmetic taken off"
     },
     "editor": {
       "title": "Upload your own cape",
@@ -2771,6 +2774,19 @@
       },
       "upload": "Upload",
       "uploading": "Uploading …"
+    },
+    "hats": {
+      "title": "Head cosmetics",
+      "intro": "Shown on your head in the TRS Client – everyone with the TRS Client sees it.",
+      "wear": "Put on",
+      "remove": "Take off",
+      "worn": "Wearing"
+    },
+    "hatDialog": {
+      "title": "“{name}” unlocked!",
+      "text": "Put it on now? You will see it on your head in the TRS Client (third person), and so will other TRS players.",
+      "wear": "Put on",
+      "later": "Later"
     }
   },
   "capeShare": {

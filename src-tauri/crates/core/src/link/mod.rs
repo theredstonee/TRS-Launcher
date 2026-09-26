@@ -391,6 +391,8 @@ struct Session {
     hosting_state: HostingDelivery,
     /// Hat das angemeldete Spiel `hosting.join` genannt? (`None` = noch nicht angemeldet)
     hosting_capable: Option<bool>,
+    /// Offene, angemeldete v2-Verbindungen des Spiels (TRS Client verbunden).
+    live: usize,
 }
 
 impl Session {
@@ -411,6 +413,7 @@ impl Session {
             hosting: None,
             hosting_state: HostingDelivery::None,
             hosting_capable: None,
+            live: 0,
         }
     }
 
@@ -434,6 +437,8 @@ struct Shared {
     persist_file: Option<PathBuf>,
     persist_lock: tokio::sync::Mutex<()>,
     first_auth_ttl: Duration,
+    /// Instanzen, deren Spiel gerade über v2 verbunden ist (sortiert).
+    linked: watch::Sender<Vec<String>>,
 }
 
 impl Shared {
@@ -494,6 +499,47 @@ impl Shared {
             let _ = session.push.send(Push::AccountsChanged);
         }
     }
+
+    /// Liste der verbundenen Spiele neu bilden (meldet nur echte Änderungen).
+    fn refresh_linked(&self, hub: &HashMap<String, Session>) {
+        let mut ids: Vec<String> = hub.iter().filter(|(_, s)| s.live > 0).map(|(id, _)| id.clone()).collect();
+        ids.sort();
+        self.linked.send_if_modified(|current| {
+            let changed = *current != ids;
+            *current = ids;
+            changed
+        });
+    }
+
+    /// Eine angemeldete v2-Verbindung zählt (bzw. nicht mehr); nur für die
+    /// Sitzung, mit der sie sich angemeldet hat – nicht für eine neuere.
+    fn count_live(&self, instance_id: &str, sid: &str, open: bool) {
+        let mut hub = self.hub();
+        if let Some(session) = hub.get_mut(instance_id).filter(|s| proto::ct_eq(s.sid.as_bytes(), sid.as_bytes())) {
+            session.live = if open { session.live + 1 } else { session.live.saturating_sub(1) };
+        }
+        self.refresh_linked(&hub);
+    }
+}
+
+/// Hält eine Verbindung in [`Shared::linked`], solange sie offen ist.
+struct LiveGuard {
+    shared: Arc<Shared>,
+    instance_id: String,
+    sid: String,
+}
+
+impl LiveGuard {
+    fn new(shared: Arc<Shared>, conn: &Conn) -> Self {
+        shared.count_live(&conn.instance_id, &conn.marker, true);
+        Self { shared, instance_id: conn.instance_id.clone(), sid: conn.marker.clone() }
+    }
+}
+
+impl Drop for LiveGuard {
+    fn drop(&mut self) {
+        self.shared.count_live(&self.instance_id, &self.sid, false);
+    }
 }
 
 /// Was der Launcher dem Spiel mitgibt. Absichtlich ohne `Debug` (Schlüssel!).
@@ -538,6 +584,7 @@ impl TrsLink {
                 persist_file,
                 persist_lock: tokio::sync::Mutex::new(()),
                 first_auth_ttl,
+                linked: watch::channel(Vec::new()).0,
             }),
             port: tokio::sync::OnceCell::new(),
         }
@@ -588,7 +635,11 @@ impl TrsLink {
         let sid = proto::hex(&proto::random_bytes(proto::SID_HEX_LEN / 2));
         let key = proto::random_bytes(proto::KEY_LEN);
         let secret_hex = proto::hex(&key);
-        self.shared.hub().insert(instance_id.to_owned(), Session::new(sid.clone(), key, legacy, None, false));
+        {
+            let mut hub = self.shared.hub();
+            hub.insert(instance_id.to_owned(), Session::new(sid.clone(), key, legacy, None, false));
+            self.shared.refresh_linked(&hub);
+        }
         self.persist();
         Ok(Handoff { port, env_value: format!("{PROTOCOL_VERSION}:{port}:{sid}:{secret_hex}"), secret_hex })
     }
@@ -607,7 +658,12 @@ impl TrsLink {
 
     /// Spielende: Sitzung ungültig machen; offene Verbindungen schließen sich.
     pub fn close_session(&self, instance_id: &str) {
-        let removed = self.shared.hub().remove(instance_id).is_some();
+        let removed = {
+            let mut hub = self.shared.hub();
+            let removed = hub.remove(instance_id).is_some();
+            self.shared.refresh_linked(&hub);
+            removed
+        };
         if removed {
             self.persist();
         }
@@ -669,6 +725,17 @@ impl TrsLink {
         let Some(session) = hub.get_mut(instance_id) else { return HostingDelivery::None };
         session.expire_hosting();
         session.hosting_state.clone()
+    }
+
+    /// Instanzen, deren Spiel gerade mit dem TRS Client verbunden ist
+    /// (angemeldete v2-Verbindung offen; alte v1-Mods zählen nicht).
+    pub fn linked(&self) -> Vec<String> {
+        self.shared.linked.borrow().clone()
+    }
+
+    /// Änderungen von [`Self::linked`] verfolgen (Verbindung auf/zu, Spielende).
+    pub fn subscribe_linked(&self) -> watch::Receiver<Vec<String>> {
+        self.shared.linked.subscribe()
     }
 
     /// Konten im Launcher geändert: alle angemeldeten Mods laden die Liste neu.
@@ -1114,6 +1181,8 @@ async fn serve(stream: TcpStream, peer: SocketAddr, port: u16, shared: Arc<Share
     let mut buf = Vec::with_capacity(256);
 
     let (conn, mut state_rx, mut push_rx) = handshake(&mut reader, &mut write, &mut buf, peer, port, &shared).await?;
+    // Solange diese (v2-)Verbindung steht, gilt das Spiel als „mit TRS Client verbunden“.
+    let _live = conn.v2.then(|| LiveGuard::new(shared.clone(), &conn));
     let conn = Arc::new(conn);
     let (out_tx, mut out_rx) = mpsc::unbounded_channel::<serde_json::Value>();
 

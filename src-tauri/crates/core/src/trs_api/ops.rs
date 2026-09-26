@@ -31,6 +31,13 @@ fn presence_retry(error: Option<Error>) -> Duration {
     }
 }
 
+/// Kopf-Vorlagen, die der TRS Client zeichnen kann (andere Kopf-Kosmetik der API bleibt im Spiel unsichtbar).
+pub const WEARABLE_HAT_TEMPLATES: &[&str] = &["duck"];
+
+fn wearable_hat(c: &super::types::ApiCosmeticRef) -> bool {
+    c.slot == "hat" && c.template.as_deref().is_some_and(|t| WEARABLE_HAT_TEMPLATES.contains(&t))
+}
+
 fn bad_response() -> Error {
     super::bad_response()
 }
@@ -331,14 +338,51 @@ impl Launcher {
                 "Codes haben 20 Zeichen, z. B. 7K3QF-M2XPA-9RTVB-C4HJN."
             )))?;
         let result: ApiRedeem = self.trs_get(Req::post("/v1/capes/redeem", json!({ "code": code }))).await?;
-        if !validate::cape_id(&result.cape.id) {
-            return Err(bad_response());
+        match (result.cape, result.cosmetic) {
+            (Some(cape), _) if validate::cape_id(&cape.id) => Ok(super::types::RedeemResult {
+                kind: "cape".into(),
+                name: validate::cape_name(&cape.name, &cape.id),
+                cape_id: Some(cape.id),
+                cosmetic_id: None,
+                already_owned: result.already_owned,
+                wearable_hat: false,
+            }),
+            (None, Some(c)) if validate::cape_id(&c.id) => Ok(super::types::RedeemResult {
+                kind: "cosmetic".into(),
+                name: validate::cape_name(&c.name, &c.id),
+                wearable_hat: wearable_hat(&c),
+                cape_id: None,
+                cosmetic_id: Some(c.id),
+                already_owned: result.already_owned,
+            }),
+            _ => Err(bad_response()),
         }
-        Ok(super::types::RedeemResult {
-            name: validate::cape_name(&result.cape.name, &result.cape.id),
-            cape_id: result.cape.id,
-            already_owned: result.already_owned,
-        })
+    }
+
+    /// Eigene Kopf-Kosmetik, die der TRS Client zeichnen kann (freigeschaltet), mit „aufgesetzt“.
+    pub async fn trs_hats(&self) -> Result<Vec<super::types::HatItem>> {
+        let catalog: super::types::ApiCosmeticCatalog = self.trs_get(Req::get("/v1/cosmetics")).await?;
+        Ok(catalog
+            .cosmetics
+            .into_iter()
+            .filter(|c| c.owned && wearable_hat(c) && validate::cape_id(&c.id))
+            .map(|c| super::types::HatItem {
+                name: validate::cape_name(&c.name, &c.id),
+                template: c.template.clone().unwrap_or_default(),
+                equipped: c.equipped,
+                id: c.id,
+            })
+            .collect())
+    }
+
+    /// Kopf-Kosmetik aufsetzen (`Some(id)`) oder absetzen (`None`).
+    pub async fn trs_set_hat(&self, id: Option<String>) -> Result<()> {
+        if let Some(id) = &id
+            && !validate::cape_id(id)
+        {
+            return Err(Error::validation(crate::msg!("trsOps.invalidCosmeticId", "Ungültige Kosmetik-ID.")));
+        }
+        self.trs_do(Req::put("/v1/me/cosmetics", json!({ "hat": id }))).await
     }
 
     /// Abzeichen und Umhänge anderer Spieler (z. B. der Freunde), höchstens 100.

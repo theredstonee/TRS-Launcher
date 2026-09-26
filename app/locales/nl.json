@@ -575,6 +575,7 @@
     "trsOps": {
       "invalidPlayerId": "Ongeldige speler-ID.",
       "invalidCapeId": "Ongeldige cape-ID.",
+      "invalidCosmeticId": "Ongeldige cosmetica-ID.",
       "noChange": "Geen wijziging opgegeven.",
       "onlyOwnCapesDeletable": "Alleen je eigen capes kunnen worden verwijderd.",
       "onlyUploadedReportable": "Alleen geüploade capes kunnen worden gemeld.",
@@ -2708,7 +2709,9 @@
       "alreadyOwned": "Je had “{name}” al.",
       "unlocked": "“{name}” ontgrendeld!",
       "uploaded": "Geüpload – je cape wacht op goedkeuring.",
-      "deleted": "Cape verwijderd"
+      "deleted": "Cape verwijderd",
+      "hatOn": "„{name}” opgezet",
+      "hatOff": "Hoofdcosmetica afgezet"
     },
     "editor": {
       "title": "Eigen cape uploaden",
@@ -2771,6 +2774,19 @@
       },
       "upload": "Uploaden",
       "uploading": "Uploaden …"
+    },
+    "hats": {
+      "title": "Hoofdcosmetica",
+      "intro": "Staat op je hoofd in de TRS Client – iedereen met de TRS Client ziet het.",
+      "wear": "Opzetten",
+      "remove": "Afzetten",
+      "worn": "Op"
+    },
+    "hatDialog": {
+      "title": "„{name}” vrijgespeeld!",
+      "text": "Nu opzetten? Je ziet het op je hoofd in de TRS Client (derde persoon), net als andere TRS-spelers.",
+      "wear": "Opzetten",
+      "later": "Later"
     }
   },
   "capeShare": {

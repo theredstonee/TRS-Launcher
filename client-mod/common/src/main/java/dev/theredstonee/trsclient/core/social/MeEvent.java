@@ -51,10 +51,13 @@ public final class MeEvent {
 	/** appeal_decided: ID der Strafe (0 = fehlt) und der entschiedene Einspruch. */
 	public final long sanctionId;
 	public final Sanction.Appeal appeal;
+	/** Rohes JSON der Welt-Hosting-Ereignisse ({@code hosting_*}, ≤ 16 KiB) – ausgewertet in core.hosting. */
+	public final String hostingData;
 
 	private MeEvent(String type, String id, ChatJson.EventDto d, String data) {
 		this.type = type;
 		this.id = id;
+		this.hostingData = data != null && type.startsWith("hosting_") && data.length() <= 16 * 1024 ? data : null;
 		this.resumed = d != null && Boolean.TRUE.equals(d.resumed);
 		this.reason = d == null || d.reason == null ? null : SafeText.line(d.reason, 200);
 		this.conversationId = d != null && Chat.validConversationId(d.conversationId) ? d.conversationId : null;
@@ -116,6 +119,8 @@ public final class MeEvent {
 	/** Aus Ereignisname, JSON und ID; kaputtes JSON → null. */
 	public static MeEvent parse(String event, String data, String id) {
 		if (event == null || !event.matches("[a-z_]{1,40}")) return null;
+		// Welt-Hosting: eigenes Format (z. B. "from" als UUID-Text) – roh weiterreichen, core.hosting prüft selbst.
+		if (event.startsWith("hosting_")) return new MeEvent(event, id, null, data);
 		ChatJson.EventDto d = null;
 		if (data != null && !data.isEmpty()) {
 			try {
@@ -130,5 +135,10 @@ public final class MeEvent {
 	/** Für Tests: Ereignis ohne Daten. */
 	static MeEvent of(String type) {
 		return new MeEvent(type, null, null, null);
+	}
+
+	/** Für Tests: Hosting-Ereignis mit rohem JSON. */
+	public static MeEvent hosting(String type, String json) {
+		return new MeEvent(type, null, null, json);
 	}
 }

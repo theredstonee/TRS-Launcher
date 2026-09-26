@@ -36,6 +36,7 @@ public final class SocialUi extends WindowUi implements SocialContext {
 	private final ConversationList list;
 	private final ConversationView view;
 	private final FriendsPanel friendsPanel;
+	private final dev.theredstonee.trsclient.core.ui.hosting.WorldsPanel worldsPanel;
 	private int tab;
 	private String open;
 	private Dialog dialog;
@@ -62,6 +63,7 @@ public final class SocialUi extends WindowUi implements SocialContext {
 				SocialUi.this.friendMenu(friend, x, y);
 			}
 		});
+		this.worldsPanel = new dev.theredstonee.trsclient.core.ui.hosting.WorldsPanel(faces);
 		if (online != null) online.friends().want(Friends.Interest.FOREGROUND, false);
 	}
 
@@ -70,6 +72,12 @@ public final class SocialUi extends WindowUi implements SocialContext {
 	 * Reiter Freunde → Anfragen.
 	 */
 	public static UiScreen forAction(SocialHost host, TrsOnline online, SocialOverlay.QuickAction action) {
+		if (action != null && action.kind == SocialOverlay.QuickAction.Kind.WORLD_JOIN) {
+			return dev.theredstonee.trsclient.core.ui.hosting.JoinUi.forRoom(host, action.conversationId);
+		}
+		if (action != null && action.kind == SocialOverlay.QuickAction.Kind.HOSTING) {
+			return dev.theredstonee.trsclient.core.ui.hosting.HostingUi.requests(host);
+		}
 		if (action != null && action.kind != SocialOverlay.QuickAction.Kind.REQUESTS) return new QuickReplyUi(host, online, action);
 		SocialUi ui = new SocialUi(host, online);
 		ui.showTab(1);
@@ -146,6 +154,11 @@ public final class SocialUi extends WindowUi implements SocialContext {
 	}
 
 	@Override
+	public void showWorlds() {
+		tab = 2;
+	}
+
+	@Override
 	public int screenHeight() {
 		return screenH;
 	}
@@ -204,6 +217,9 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		if (unread > 0) Kit.badge(c, x + tabW - 1, y - 2, unread);
 		kit.tab(c, x + tabW + 4, y, tabW, 16, I18n.tr("social.tab.friends"), tab == 1, mx, my, () -> tab = 1);
 		if (incoming > 0) Kit.badge(c, x + tabW * 2 + 3, y - 2, incoming);
+		kit.tab(c, x + (tabW + 4) * 2, y, tabW, 16, I18n.tr("social.tab.worlds"), tab == 2, mx, my, () -> tab = 2);
+		int worldInvites = worldInvites();
+		if (worldInvites > 0) Kit.badge(c, x + tabW * 3 + 7, y - 2, worldInvites);
 		int ix = x + w - 16;
 		if (s != null && s.signedIn()) {
 			kit.icon(c, ix, y, 16, "gear", false, mx, my, () -> dialog(new Dialogs.Settings(social())));
@@ -231,7 +247,7 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		}
 		// Meldung einer Aktion zwischen Reitern und Symbolen.
 		Social.Notice n = s == null ? null : s.notice(now);
-		int noteX = x + tabW * 2 + 12;
+		int noteX = x + tabW * 3 + 16;
 		if (n != null && ix - noteX > 30) {
 			Paint.textClipped(c, I18n.tr(n.key, n.args), noteX, y + 4, ix - noteX - 4, n.error ? t.dustOn : t.text, false);
 		}
@@ -250,6 +266,8 @@ public final class SocialUi extends WindowUi implements SocialContext {
 			SanctionDialogs.bannedPanel(c, kit, s, online, x, cy, w, ch, mx, my, this::dialog);
 		} else if (tab == 1) {
 			friendsPanel.draw(c, kit, x, cy, w, ch, mx, my);
+		} else if (tab == 2) {
+			worldsPanel.draw(c, kit, x, cy, w, ch, mx, my);
 		} else {
 			String status = FriendsPanel.statusText(online);
 			if (status != null || s == null) {
@@ -378,6 +396,7 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		if (dialog != null) return dialog.mouseScrolled(mouseX, mouseY, amount);
 		if (popup != null) return true;
 		if (tab == 1) return friendsPanel.mouseScrolled(mouseX, mouseY, amount);
+		if (tab == 2) return worldsPanel.mouseScrolled(mouseX, mouseY, amount);
 		return view.mouseScrolled(mouseX, mouseY, amount) || list.mouseScrolled(mouseX, mouseY, amount);
 	}
 
@@ -392,6 +411,10 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		if (popup != null) {
 			if (key == UiKey.ESCAPE) popup = null;
 			return true;
+		}
+		if (tab == 2) {
+			if (key == UiKey.ESCAPE) requestClose();
+			return key == UiKey.ESCAPE;
 		}
 		if (tab == 1) {
 			if (key == UiKey.ESCAPE && friendsPanel.escape()) return true;
@@ -437,15 +460,25 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		}
 		if (popup != null) return true;
 		if (tab == 1) return friendsPanel.charTyped(ch);
+		if (tab == 2) return false;
 		if (list.search.focused()) return list.search.type(ch);
 		return view.charTyped(ch);
 	}
 
 	// --- Selbsttest ---
 
-	/** Reiter wählen: 0 = Chat, 1 = Freunde. */
+	/** Reiter wählen: 0 = Chat, 1 = Freunde, 2 = Welten. */
 	public void showTab(int index) {
-		tab = index <= 0 ? 0 : 1;
+		tab = Math.max(0, Math.min(2, index));
+	}
+
+	/** Offene Welt-Einladungen (Abzeichen am Reiter „Welten“). */
+	private static int worldInvites() {
+		dev.theredstonee.trsclient.core.hosting.Hosting h = dev.theredstonee.trsclient.core.hosting.Hosting.current();
+		if (h == null) return 0;
+		int n = 0;
+		for (dev.theredstonee.trsclient.core.hosting.Rooms.Room r : h.friendsRooms()) if ("invited".equals(r.myState)) n++;
+		return n;
 	}
 
 	/** Unterreiter der Freunde: 0 = Liste, 1 = Anfragen, 2 = Blockiert. */

@@ -277,6 +277,7 @@ public final class SocialHooks {
 	 * F1 aus ist und kein anderer Pfad sie schon zeichnet (Bildschirm-Haken bzw. TRS-Bildschirm).
 	 */
 	public static void hud(Gfx g) {
+		dev.theredstonee.trsclient.hosting.HostingHooks.hud(g);
 		if (!SocialOverlay.active() || Mc.hudHidden()) return;
 		Screen s = Mc.screen();
 		if (s != null && (screenHookLive() || s instanceof TrsUiScreen)) return;
@@ -285,6 +286,7 @@ public final class SocialHooks {
 
 	/** Nach dem ganzen Bildschirm (ab 1.19.4, aus MenuScreenMixin): Toasts über jedem Menü. */
 	public static void overScreen(Gfx g) {
+		if (SCREEN_HOOK) pauseBadge(g);
 		if (!SCREEN_HOOK || !SocialOverlay.active()) return;
 		draw(g, true);
 	}
@@ -300,12 +302,20 @@ public final class SocialHooks {
 	public static boolean afterScreenPending() {
 		if (SCREEN_HOOK) return false;
 		legacyScreenHookAt = System.currentTimeMillis();
-		return SocialOverlay.active();
+		return SocialOverlay.active() || dev.theredstonee.trsclient.core.hosting.HostingOverlay.linkActive();
+	}
+
+	/** Pausemenü: Abzeichen „Öffentlicher Link aktiv“ über dem Knopf „Deaktivieren“. */
+	static void pauseBadge(Gfx g) {
+		int x = dev.theredstonee.trsclient.menus.VanillaMenus.linkBadgeX();
+		if (x >= 0) dev.theredstonee.trsclient.hosting.HostingHooks.overPause(g, x, dev.theredstonee.trsclient.menus.VanillaMenus.linkBadgeY());
 	}
 
 	/** Bis 1.19.3: Toasts über dem gerade gezeichneten Bildschirm – auch über Vanilla-Menüs. */
 	public static void afterScreen(Gfx g) {
-		if (SCREEN_HOOK || !SocialOverlay.active()) return;
+		if (SCREEN_HOOK) return;
+		pauseBadge(g);
+		if (!SocialOverlay.active()) return;
 		draw(g, true);
 	}
 

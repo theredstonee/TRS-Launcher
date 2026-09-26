@@ -476,6 +476,33 @@ impl Launcher {
         }
     }
 
+    /// Instanzen, in denen gerade ein Spiel mit verbundenem TRS Client läuft, der
+    /// Sozial-Hinweise selbst zeigt – dann schweigt der Launcher dazu.
+    pub async fn social_game_clients(&self) -> Vec<String> {
+        let mut clients = Vec::new();
+        for id in self.link.linked() {
+            let version = client_mod::installed_version(&self.paths, &id).await;
+            if client_mod::shows_social_in_game(version.as_deref()) {
+                clients.push(id);
+            }
+        }
+        clients
+    }
+
+    /// Meldet jede Änderung von [`Self::social_game_clients`] (Link steht/bricht ab,
+    /// Spielende) – Tauri: `trs-client-linked`. Läuft, solange die App läuft.
+    pub async fn run_social_game_clients(self: Arc<Self>, sink: Arc<dyn Fn(Vec<String>) + Send + Sync>) {
+        let mut rx = self.link.subscribe_linked();
+        let mut last = Vec::new();
+        while rx.changed().await.is_ok() {
+            let clients = self.social_game_clients().await;
+            if clients != last {
+                sink(clients.clone());
+                last = clients;
+            }
+        }
+    }
+
     /// Accounts im Launcher geändert (hinzugefügt, entfernt, aktiver gewechselt):
     /// laufende Spiele mit TRS Client laden ihre Kontenliste neu.
     pub fn link_accounts_changed(&self) {

@@ -11,6 +11,7 @@ import net.minecraft.world.chunk.Chunk;
 /**
  * Chunk-Zugriff der Karte ({@link ChunkReader}) für Forge 1.7.10: Blöcke mit Metadaten statt Zuständen,
  * Kartenfarbe über {@code Block#getMapColor(meta)}, Tönung über {@code Block#colorMultiplier}. Nur geladene Chunks.
+ * Unsichtbare Blöcke wie die Barriere gibt es in 1.7.10 noch nicht.
  */
 public final class MapSampler implements ChunkReader {
 	private World world;
@@ -55,7 +56,16 @@ public final class MapSampler implements ChunkReader {
 		Block b = chunk.getBlock(localX, y, localZ);
 		if (b == null || b.getMaterial() == Material.air) return AIR;
 		MapColor color = b.getMapColor(chunk.getBlockMetadata(localX, y, localZ));
-		return color == null ? 0 : color.colorValue & 0xFFFFFF;
+		int rgb = color == null ? 0 : color.colorValue & 0xFFFFFF;
+		return b.isOpaqueCube() ? rgb | OPAQUE : rgb;
+	}
+
+	@Override
+	public boolean sectionEmpty(int y) {
+		net.minecraft.world.chunk.storage.ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
+		int i = y >> 4;
+		if (i < 0 || i >= sections.length) return true;
+		return sections[i] == null || sections[i].isEmpty();
 	}
 
 	@Override

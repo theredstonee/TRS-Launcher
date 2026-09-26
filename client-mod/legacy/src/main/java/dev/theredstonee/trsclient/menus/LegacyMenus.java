@@ -45,6 +45,13 @@ public final class LegacyMenus {
 	static final int FIRST_ID = 73_101;
 	static final String[] IDS = {"wardrobe", "accounts", "clips", "friends", "serverInfo"};
 	static final String[] ICONS = {"shirt", "profile", "image", "friends", "info"};
+	/** Welt-Hosting: „Welt hosten“ (Pause), „Öffentlichen Link deaktivieren“ (Pause), „Mit Code beitreten“ (Mehrspieler). */
+	static final int HOST_ID = 73_120;
+	static final int LINK_ID = 73_121;
+	static final int JOIN_ID = 73_122;
+	/** Lage des Abzeichens „Öffentlicher Link aktiv“ im Pausemenü (x, y; -1 = keins). */
+	static volatile int linkBadgeX = -1;
+	static volatile int linkBadgeY = -1;
 
 	/** Knopflisten der offenen Bildschirme (aus InitGuiEvent, schwach referenziert). */
 	private final Map<GuiScreen, List<GuiButton>> buttons = new WeakHashMap<GuiScreen, List<GuiButton>>();
@@ -90,12 +97,28 @@ public final class LegacyMenus {
 		} catch (RuntimeException e) {
 			// Menü bleibt dann klassisch.
 		}
+		try {
+			if (k == MenuStyle.Kind.PAUSE) hostingButtons(s, list);
+			if (k == MenuStyle.Kind.MULTIPLAYER) joinButton(s, list);
+		} catch (RuntimeException | LinkageError e) {
+			// ohne Hosting-Knöpfe weiter
+		}
 	}
 
 	@SubscribeEvent
 	public void onAction(GuiScreenEvent.ActionPerformedEvent.Pre event) {
 		GuiButton b = button(event);
 		GuiScreen s = Mc.eventGui(event);
+		if (b != null && s != null && (b.id == HOST_ID || b.id == LINK_ID || b.id == JOIN_ID) && icons.containsKey(b)) {
+			event.setCanceled(true);
+			if (b.id == HOST_ID) Mc.setScreen(MenuScreens.hosting(s));
+			else if (b.id == JOIN_ID) Mc.setScreen(MenuScreens.join(s));
+			else {
+				dev.theredstonee.trsclient.core.hosting.HostingOverlay.disableLink();
+				Mc.setScreen(new GuiIngameMenu());
+			}
+			return;
+		}
 		if (b == null || s == null || !(s instanceof GuiIngameMenu)) return;
 		int index = b.id - FIRST_ID;
 		if (index < 0 || index >= IDS.length || !icons.containsKey(b)) return;
@@ -224,6 +247,46 @@ public final class LegacyMenus {
 			list.add(b);
 			y += h + gap;
 		}
+	}
+
+	/** Pausemenü: „Welt hosten“ unten links; bei öffentlichem Link darüber „Deaktivieren“ + Abzeichen. */
+	void hostingButtons(GuiScreen s, List<GuiButton> list) {
+		linkBadgeX = -1;
+		boolean hostVisible = dev.theredstonee.trsclient.core.hosting.HostingOverlay.hostButtonVisible();
+		boolean link = dev.theredstonee.trsclient.core.hosting.HostingOverlay.linkActive();
+		FontRenderer font = Mc.font();
+		int y = s.height - 28;
+		if (hostVisible) {
+			String label = dev.theredstonee.trsclient.core.hosting.HostingOverlay.hostButtonLabel();
+			GuiButton b = new GuiButton(HOST_ID, 8, y, Math.min(150, Math.max(100, font.getStringWidth(label) + 34)), 20, label);
+			icons.put(b, "globe");
+			list.add(b);
+			y -= 24;
+		}
+		if (link) {
+			String label = I18n.tr("hosting.link.deactivateLong");
+			GuiButton d = new GuiButton(LINK_ID, 8, y, Math.min(170, Math.max(100, font.getStringWidth(label) + 34)), 20, label);
+			icons.put(d, "lock");
+			list.add(d);
+			// Das rote Abzeichen steht oben mittig (HUD-Pfad, auch unter dem Pausemenü).
+		}
+	}
+
+	/** Mehrspieler: „Mit Code beitreten“ oben links (nur mit TRS-Online-Funktionen). */
+	void joinButton(GuiScreen s, List<GuiButton> list) {
+		if (dev.theredstonee.trsclient.core.hosting.Hosting.current() == null) return;
+		String label = I18n.tr("hosting.mp.button");
+		GuiButton b = new GuiButton(JOIN_ID, 6, 6, Math.min(140, Math.max(90, Mc.font().getStringWidth(label) + 30)), 20, label);
+		icons.put(b, "globe");
+		list.add(b);
+	}
+
+	public static int linkBadgeX() {
+		return linkBadgeX;
+	}
+
+	public static int linkBadgeY() {
+		return linkBadgeY;
 	}
 
 	static boolean available(String id, GuiScreen parent) {

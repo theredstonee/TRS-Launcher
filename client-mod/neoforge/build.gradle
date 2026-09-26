@@ -245,7 +245,7 @@ def mixinClasses = ['CameraMixin', 'FovMixin', 'LightmapMixin', 'MouseHandlerMix
 		'TitleScreenMixin', 'AttackMixin', 'ChatComponentAccessor', 'ChatMixin', 'ChatScreenMixin',
 		'HurtCamMixin', 'OldAnimationsMixin', 'LowFireMixin', 'BlockOutlineMixin',
 		// TRS API: TRS-Umhang-Textur, Umhang-Physik, Abzeichen in Tabliste und über dem Namen
-		'CapeTextureMixin', 'CapeLayerMixin', 'TabBadgeMixin', 'NameTagBadgeMixin',
+		'CapeTextureMixin', 'CapeLayerMixin', 'HatLayerMixin', 'TabBadgeMixin', 'NameTagBadgeMixin',
 		// Emotes: Pose auf HumanoidModel#setupAnim; ab 1.21.2 Spieler über den Render-State zuordnen.
 		'EmoteModelMixin',
 		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
@@ -255,6 +255,9 @@ if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
+// Welt-Hosting: Gast über eigenen Netty-Kanal (Marker-Adresse), Host öffnet ohne TCP/LAN, Spielergrenze ≤ 10.
+mixinClasses += ['HostingConnectMixin', 'HostingPublishMixin', 'HostingServerAccessor']
+mixinClasses << (stonecutter.eval(mc, '>=1.21.9') ? 'HostingPlayerListMixin' : 'HostingPlayerListAccessor')
 if (stonecutter.eval(mc, '<1.20.3')) mixinClasses << 'SelectionListAccessor'
 if (stonecutter.eval(mc, '>=26.1')) mixinClasses << 'PauseBackgroundMixin'
 // Leistung: Dynamische FPS/FPS-Messung, Partikel, Entity-Culling, Welt-Details (alle require = 0).
@@ -266,6 +269,10 @@ if (stonecutter.eval(mc, '<1.21.6')) mixinClasses << 'FogMixin'
 if (stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
 // Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.
 if (stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
+// Schild-Position: Haken am Hand-Renderer; Deckkraft ab 1.21.9 im Submit-Sammler; ab 26.3 Modell aus FirstPersonHandsAndItems.
+mixinClasses << 'ShieldHandMixin'
+if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'ShieldSubmitMixin'
+if (stonecutter.eval(mc, '>=26.3')) mixinClasses << 'ShieldModelMixin'
 
 processResources {
 	def props = [

@@ -18,6 +18,7 @@ import {
   trsParse,
   trsPlayerCapeSchema,
   trsRedeemSchema,
+  trsHatSchema,
   trsStatusSchema,
   trsSyncStatusSchema,
   trsUserRefSchema,
@@ -613,6 +614,9 @@ export const backend = {
     reportCape: (id: string, reason: TrsReportReason, note: string | null) =>
       call<void>('trs_report_cape', { id, reason, note }),
     redeem: (code: string) => checked(trsRedeemSchema, 'trs_redeem', { code }),
+    /** Eigene Kopf-Kosmetik (Quietscheente) und Auf-/Absetzen (`null`). */
+    hats: () => checked(z.array(trsHatSchema), 'trs_hats'),
+    setHat: (id: string | null) => call<void>('trs_set_hat', { id }),
     playerCapes: (uuids: string[]) => checked(z.array(trsPlayerCapeSchema), 'trs_player_capes', { uuids }),
     /** Umhänge teilen: offene Angebote an mich (mit Vorschau) und von mir. */
     capeOffers: () => checked(trsCapeOffersSchema, 'trs_cape_offers'),
@@ -710,6 +714,8 @@ export const backend = {
     quietHours: () => call<boolean>('social_quiet_hours'),
     notifyNative: (title: string, body: string) => call<void>('social_notify_native', { title, body }),
     focusWindow: () => call<void>('social_focus_window'),
+    /** Instanzen, deren Spiel gerade mit verbundenem TRS Client läuft (Änderungen: `trs-client-linked`). */
+    gameClients: () => checked(z.array(z.string().max(200)).max(64), 'social_game_clients'),
   },
 
   /** Moderation v2 (§22): eigene Strafen + Einspruch – geht auch mit gesperrtem Konto (Token bleibt im Kern). */

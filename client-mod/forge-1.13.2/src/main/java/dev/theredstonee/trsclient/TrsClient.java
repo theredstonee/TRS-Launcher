@@ -124,6 +124,8 @@ public final class TrsClient {
 				client.modules.colors));
 		// Sozial (Chat, Toasts) braucht die TRS-Online-Funktionen – hier ausgeblendet.
 		UNSUPPORTED.add(client.modules.social);
+		// Schild-Position braucht einen Haken am Hand-Renderer (Mixin) – hier nicht umgesetzt.
+		UNSUPPORTED.add(client.modules.shieldPosition);
 		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.fpsBoost, client.modules.dynamicFps, client.modules.entityCulling, client.modules.particles,
 				client.modules.worldDetails));

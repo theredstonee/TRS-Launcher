@@ -396,18 +396,61 @@ pub(crate) struct ApiCapeEnvelope {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ApiRedeem {
-    pub cape: ApiCape,
+    /// Seit der Kosmetik schaltet ein Code entweder einen Umhang oder ein Kosmetik-Teil/Emote frei.
+    #[serde(default)]
+    pub cape: Option<ApiCape>,
+    #[serde(default)]
+    pub cosmetic: Option<ApiCosmeticRef>,
     #[serde(default)]
     pub already_owned: bool,
+}
+
+/// Kosmetik-Teil aus Antworten der API (nur die Felder, die der Launcher braucht).
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ApiCosmeticRef {
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    pub slot: String,
+    #[serde(default)]
+    pub template: Option<String>,
+    #[serde(default)]
+    pub owned: bool,
+    #[serde(default)]
+    pub equipped: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ApiCosmeticCatalog {
+    #[serde(default)]
+    pub cosmetics: Vec<ApiCosmeticRef>,
+}
+
+/// Kopf-Kosmetik, die der TRS Client zeichnen kann (bisher nur die Quietscheente).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HatItem {
+    pub id: String,
+    pub name: String,
+    pub template: String,
+    pub equipped: bool,
 }
 
 /// Ergebnis von „Code einlösen“.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RedeemResult {
-    pub cape_id: String,
+    /// `cape` oder `cosmetic`.
+    pub kind: String,
+    /// Bei Umhängen die ID, sonst `None`.
+    pub cape_id: Option<String>,
+    /// Bei Kosmetik/Emotes die ID, sonst `None`.
+    pub cosmetic_id: Option<String>,
     pub name: String,
     pub already_owned: bool,
+    /// Kopf-Kosmetik, die der TRS Client zeichnet (z. B. die Quietscheente) – kann gleich aufgesetzt werden.
+    pub wearable_hat: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

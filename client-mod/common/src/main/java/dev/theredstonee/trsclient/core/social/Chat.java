@@ -70,15 +70,41 @@ public final class Chat {
 		}
 	}
 
-	/** Servereinladung (API.md §18.6). */
+	/** Servereinladung (API.md §18.6) oder Weltkarte (§21.8, dann ist {@link #world} gesetzt). */
 	public static final class Invite {
 		public final String address;
 		/** Beschriftung (≤ 32 Zeichen) oder null. */
 		public final String name;
+		/** Weltkarte des Welt-Hostings (dann ist {@link #address} leer) oder null. */
+		public final World world;
 
 		public Invite(String address, String name) {
+			this(address, name, null);
+		}
+
+		public Invite(String address, String name, World world) {
 			this.address = address;
 			this.name = name;
+			this.world = world;
+		}
+	}
+
+	/** Weltkarte: Momentaufnahme einer gehosteten Welt (API.md §21.8). Beitreten = {@code join {code}}. */
+	public static final class World {
+		public final String roomId;
+		public final String code;
+		public final String mcVersion;
+		public final String loader;
+		public final String hostUuid;
+		public final String hostName;
+
+		public World(String roomId, String code, String mcVersion, String loader, String hostUuid, String hostName) {
+			this.roomId = roomId;
+			this.code = code;
+			this.mcVersion = mcVersion;
+			this.loader = loader;
+			this.hostUuid = hostUuid;
+			this.hostName = hostName;
 		}
 	}
 

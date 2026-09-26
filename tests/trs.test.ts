@@ -27,6 +27,8 @@ import {
   trsUnlockLabel,
   trsWebLoginCodeSchema,
   TRS_HOST,
+  trsRedeemSchema,
+  trsHatSchema,
 } from '../app/utils/trs'
 
 // Die meisten Erwartungen sind die deutschen Texte; Englisch wird extra geprüft.
@@ -317,5 +319,19 @@ describe('TRS-Synchronisation', () => {
     expect(trsSyncLabel(status)).toBe('Wird gleich mit deinem TRS-Konto synchronisiert')
     const twoMinutesAgo = new Date(Date.now() - 2 * 60_000).toISOString()
     expect(trsSyncLabel({ ...status, lastSyncAt: twoMinutesAgo })).toBe('Mit TRS-Konto synchronisiert · vor 2 Minuten')
+  })
+})
+
+describe('Kosmetik-Codes und Kopf-Kosmetik', () => {
+  it('liest Umhang- und Kosmetik-Ergebnisse beim Einlösen', () => {
+    expect(trsRedeemSchema.parse({ kind: 'cape', capeId: 'team', cosmeticId: null, name: 'TRS Team', alreadyOwned: false, wearableHat: false }).kind).toBe('cape')
+    const duck = trsRedeemSchema.parse({ kind: 'cosmetic', capeId: null, cosmeticId: 'rubber_duck', name: 'Quietscheente', alreadyOwned: false, wearableHat: true })
+    expect(duck.wearableHat).toBe(true)
+    expect(() => trsRedeemSchema.parse({ kind: 'other', capeId: null, cosmeticId: null, name: 'x', alreadyOwned: false, wearableHat: false })).toThrow()
+  })
+
+  it('prüft Kopf-Kosmetik streng', () => {
+    expect(trsHatSchema.parse({ id: 'rubber_duck', name: 'Quietscheente', template: 'duck', equipped: true }).equipped).toBe(true)
+    expect(() => trsHatSchema.parse({ id: '../x', name: 'x', template: 'duck', equipped: false })).toThrow()
   })
 })

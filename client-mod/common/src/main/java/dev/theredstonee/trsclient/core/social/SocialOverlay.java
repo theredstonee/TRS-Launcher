@@ -68,6 +68,7 @@ public final class SocialOverlay {
 			s.invites = m.socialToastInvites.get();
 			s.requests = m.socialToastRequests.get();
 			s.online = m.socialToastOnline.get();
+			dev.theredstonee.trsclient.core.hosting.Hosting.directEnabled(m.socialHostingDirect.get());
 		}
 		toasts.settings(s);
 		SocialPlatform p = platform;
@@ -161,7 +162,11 @@ public final class SocialOverlay {
 		int edge;
 		switch (t.kind) {
 			case INVITE:
+			case WORLD_INVITE:
 				edge = th.lampOn;
+				break;
+			case JOIN_REQUEST:
+				edge = th.accent;
 				break;
 			case REQUEST:
 			case CAPE_OFFER:
@@ -193,7 +198,8 @@ public final class SocialOverlay {
 		Paint.textClipped(c, title, tx, y + 5, right - tx, th.text, false);
 		Paint.textClipped(c, t.text, tx, y + 15, right - tx, th.textDim, false);
 		if (quickKey != null) {
-			String hint = I18n.tr(t.kind == Toasts.Kind.INVITE ? "social.toast.keyJoin"
+			String hint = I18n.tr(t.kind == Toasts.Kind.INVITE || t.kind == Toasts.Kind.WORLD_INVITE ? "social.toast.keyJoin"
+					: t.kind == Toasts.Kind.JOIN_REQUEST ? "hosting.toast.keyAnswer"
 					: t.kind == Toasts.Kind.MESSAGE ? "social.toast.keyReply" : "social.toast.keyOpen", quickKey);
 			Paint.textClipped(c, hint, tx, y + 25, right - tx, ColorMath.lerp(th.textDim, th.lampOn, 0.6f), false);
 		}
@@ -216,6 +222,10 @@ public final class SocialOverlay {
 				return "lock";
 			case ONLINE:
 				return "friends";
+			case WORLD_INVITE:
+			case JOIN_REQUEST:
+			case WORLD:
+				return "globe";
 			default:
 				return "chat";
 		}
@@ -229,7 +239,11 @@ public final class SocialOverlay {
 			/** Einladung: Beitreten (mit Antwortfeld). */
 			JOIN,
 			/** Sozial-Bildschirm, Reiter Freunde → Anfragen. */
-			REQUESTS
+			REQUESTS,
+			/** Welt-Hosting: der Einladung folgen ({@link #conversationId} = Raum-ID). */
+			WORLD_JOIN,
+			/** Welt-Hosting: Verwaltung öffnen (Beitrittsanfragen beantworten). */
+			HOSTING
 		}
 
 		public final Kind kind;
@@ -264,6 +278,10 @@ public final class SocialOverlay {
 				return new QuickAction(QuickAction.Kind.REPLY, t.conversationId, null, t.title);
 			case INVITE:
 				return new QuickAction(QuickAction.Kind.JOIN, t.conversationId, t.invite, t.title);
+			case WORLD_INVITE:
+				return new QuickAction(QuickAction.Kind.WORLD_JOIN, t.conversationId, null, t.title);
+			case JOIN_REQUEST:
+				return new QuickAction(QuickAction.Kind.HOSTING, t.conversationId, null, t.title);
 			default:
 				return new QuickAction(QuickAction.Kind.REQUESTS, null, null, t.title);
 		}

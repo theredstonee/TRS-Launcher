@@ -25,6 +25,19 @@ How to write an entry:
 
 ### English
 
+- **TRS Client: the rubber duck.** A secret head cosmetic: a yellow rubber duck that sits on your head in the TRS
+  Client – and everyone else with the TRS Client sees it too. It waddles when you walk, bobs when you stand, looks
+  around and blinks, lags a little behind fast head turns, flaps its wings when you jump or fall, squashes on landing and
+  quacks when you start sneaking or play an emote. You only get it with a code; without one it doesn't show up anywhere.
+  Redeem the code in the launcher (Skins → TRS capes → Redeem code) and put the duck on straight away, or later under
+  "Head cosmetics". Works in Minecraft 1.8.9–1.12.2 (Forge) and 1.14.4–26.3 (Fabric, Forge, NeoForge); a new switch
+  under TRS Online hides TRS head cosmetics if you prefer.
+- **TRS Client: Shield Position.** A new module in the PvP category holds your shield further to the side and lower in
+  first person, so you see more of the fight. While blocking it switches to its own flatter pose – smoothly, without
+  the old jump. Pick a preset ("Side", "Low", "Vanilla") or set position, rotation and size yourself for normal and for
+  blocking; a live preview on the settings page shows how much of the screen the shield covers. If you like, the shield
+  turns see-through while you block (opacity adjustable). Off by default; works with shields from other mods too, and
+  third person stays unchanged. Available from Minecraft 1.10.2 (Forge) and 1.14.4 (Fabric) up to 26.3.
 - **Join your friends' worlds from the launcher.** When a friend opens their singleplayer world in the TRS Client, you
   see it live under Social → Worlds with version, game mode and player count. Invited? Press "Join". Not invited? Press
   "Ask to join" (or enter a code like K7Q-M2X) – the launcher says "Request sent" and, as soon as the host lets you in,
@@ -36,6 +49,30 @@ How to write an entry:
   host lets you in, declines, removes you or closes the world.
 - **Your own world at a glance.** While you host a world in the game, Social → Worlds shows its join code, how many
   players are in it and who is waiting – manage it in the game (pause menu → Host world).
+- **TRS Client: host your singleplayer world for friends.** In the pause menu, "Host world" opens your world for up to
+  10 players – no port forwarding. Pick a name, game mode, cheats, PvP, the maximum number of players and who can see it;
+  the world is backed up first. You get a join code to copy, can invite friends (online friends first), accept or decline
+  requests (also from a notification) and see every player with their connection ("Direct" or "Via relay"). Give players
+  OP, make them spectators or take away building, remove or ban them (also for all your worlds), and stop hosting with one
+  click. Friends connect directly when possible and through the TRS relay otherwise.
+- **TRS Client: join friends' worlds.** Invites pop up with "Join" (quick-reply key), world cards in chat have a "Join"
+  button, Social → Worlds lists your friends' open worlds with "Join" or "Ask to join", and the multiplayer screen has
+  "Join with code". A different Minecraft version is shown clearly before you try.
+- **TRS Client: public link (optional).** For friends without the TRS Client you can turn on a public link via the e4mc
+  service. It is off by default, needs a confirmed warning every single time and shows a red "Public link active" badge
+  in the game and the pause menu with a one-click "Deactivate".
+- **TRS Client: the maps look inside buildings.** Under a roof or ceiling the minimap now shows the inside instead of
+  the roof: floors, rooms, halls and lobbies – only blocks up to just below the roof (at most about 10 blocks above
+  your head) count. Outdoors and under trees nothing changes, in caves the cave view stays in charge. The world map
+  follows the minimap's level (the button at the top switches back to the surface). New setting "Hide roofs" in the
+  Minimap module (on by default); like the cave view it is off on servers that ask for Fair Play.
+- **TRS Client: barriers no longer get in the way of the maps.** Barrier blocks, light blocks and structure voids are
+  treated like air – a lobby with an invisible barrier ceiling or barrier floors in empty worlds no longer leave dark
+  gaps, the map shows what is below.
+- **No double notifications while you play.** While a game with the TRS Client is running, the launcher stays quiet
+  about messages, friend requests, friends coming online, invites and cape offers – no pop-up, no sound, no Windows
+  notification – because the TRS Client already shows them in the game. They still count as unread. As soon as the
+  game closes, the launcher notifies you again. Games without the TRS Client, update notes and errors are unchanged.
 - **Moderation:** the team now has moderators, clearer sanctions (chat mute, social, upload and world-hosting bans,
   temporary account bans) and you can see your own sanctions and appeal each one once – even while banned. Settings →
   Privacy → "My sanctions" (and a notice at the top while one is active) shows the kind, what it blocks, when it ends
@@ -48,6 +85,20 @@ How to write an entry:
 
 ### Deutsch
 
+- **TRS Client: die Quietscheente.** Eine geheime Kopf-Kosmetik: eine gelbe Quietscheente, die im TRS Client auf deinem
+  Kopf sitzt – und alle anderen mit TRS Client sehen sie auch. Sie watschelt beim Laufen, wippt im Stand, schaut sich um
+  und blinzelt, hängt bei schnellen Kopfdrehungen etwas hinterher, schlägt beim Springen und Fallen mit den Flügeln,
+  staucht sich bei der Landung und quakt, wenn du zu schleichen beginnst oder ein Emote spielst. Es gibt sie nur per
+  Code; ohne Code taucht sie nirgends auf. Löse den Code im Launcher ein (Skins → TRS-Umhänge → Code einlösen) und setz
+  die Ente gleich auf – oder später unter „Kopf-Kosmetik“. Läuft in Minecraft 1.8.9–1.12.2 (Forge) und 1.14.4–26.3
+  (Fabric, Forge, NeoForge); ein neuer Schalter unter TRS Online blendet TRS-Kopf-Kosmetik aus, wenn du willst.
+- **TRS Client: Schild-Position.** Ein neues Modul in der Kategorie PvP hält dein Schild in der 1. Person weiter
+  seitlich und tiefer, damit du vom Kampf mehr siehst. Beim Blocken wechselt es in eine eigene, flachere Haltung – weich,
+  ohne den alten Sprung. Wähle eine Vorlage („Seitlich“, „Tief“, „Vanilla“) oder stelle Position, Drehung und Größe für
+  normal und fürs Blocken selbst ein; eine Live-Vorschau auf der Einstellungsseite zeigt, wie viel vom Bild das Schild
+  verdeckt. Auf Wunsch wird das Schild beim Blocken durchsichtig (Deckkraft einstellbar). Ab Werk aus; klappt auch mit
+  Schilden anderer Mods, die 3. Person bleibt unverändert. Verfügbar ab Minecraft 1.10.2 (Forge) bzw. 1.14.4 (Fabric)
+  bis 26.3.
 - **Den Welten deiner Freunde aus dem Launcher beitreten.** Öffnet ein Freund seine Einzelspielerwelt im TRS Client,
   siehst du sie live unter Sozial → Welten mit Version, Spielmodus und Spielerzahl. Eingeladen? „Beitreten“ drücken.
   Nicht eingeladen? „Anfragen“ (oder einen Code wie K7Q-M2X eingeben) – der Launcher meldet „Anfrage gesendet“ und
@@ -60,6 +111,35 @@ How to write an entry:
   Außerdem bekommst du einen kurzen Hinweis, wenn der Host dich hereinlässt, ablehnt, entfernt oder die Welt schließt.
 - **Deine eigene Welt im Blick.** Während du im Spiel eine Welt hostest, zeigt Sozial → Welten ihren Beitrittscode,
   wie viele Spieler drin sind und wer wartet – verwaltet wird sie im Spiel (Pausemenü → Welt hosten).
+- **TRS Client: Einzelspielerwelt für Freunde hosten.** „Welt hosten“ im Pausemenü öffnet deine Welt für bis zu
+  10 Spieler – ohne Portfreigabe. Name, Spielmodus, Cheats, PvP, maximale Spielerzahl und Sichtbarkeit wählst du selbst,
+  vorher wird die Welt gesichert. Du bekommst einen Beitrittscode zum Kopieren, lädst Freunde ein (Online-Freunde zuerst),
+  nimmst Anfragen an oder lehnst sie ab (auch über eine Benachrichtigung) und siehst jeden Spieler mit seiner Verbindung
+  („Direkt“ oder „Über Relay“). Gib Spielern OP, mach sie zu Zuschauern oder nimm ihnen das Bauen, entferne oder sperre
+  sie (auch für alle deine Welten) und beende das Hosting mit einem Klick. Freunde verbinden sich direkt, wenn es geht,
+  sonst über das TRS-Relay.
+- **TRS Client: Welten von Freunden beitreten.** Einladungen erscheinen mit „Beitreten“ (Schnellantwort-Taste),
+  Weltkarten im Chat haben einen „Beitreten“-Knopf, Sozial → Welten zeigt die offenen Welten deiner Freunde mit
+  „Beitreten“ oder „Anfragen“, und im Mehrspieler-Menü gibt es „Mit Code beitreten“. Eine andere Minecraft-Version wird
+  vorher klar angezeigt.
+- **TRS Client: öffentlicher Link (optional).** Für Freunde ohne TRS Client kannst du über den Dienst e4mc einen
+  öffentlichen Link einschalten. Ab Werk ist er aus, braucht jedes Mal eine bestätigte Warnung und zeigt im Spiel und im
+  Pausemenü ein rotes Abzeichen „Öffentlicher Link aktiv“ mit „Deaktivieren“ per Klick.
+- **TRS Client: Die Karten schauen in Gebäude hinein.** Unter einem Dach oder einer Decke zeigt die Minimap jetzt das
+  Innere statt des Dachs: Böden, Räume, Hallen und Lobbys – es zählen nur Blöcke bis knapp unter dem Dach (höchstens
+  etwa 10 Blöcke über deinem Kopf). Im Freien und unter Bäumen bleibt alles wie bisher, in Höhlen bleibt die
+  Höhlenansicht zuständig. Die Weltkarte folgt der Ebene der Minimap (der Knopf oben schaltet zurück zur Oberfläche).
+  Neue Einstellung „Dach ausblenden“ im Minimap-Modul (standardmäßig an); wie die Höhlenansicht ist sie auf Servern
+  aus, die Fair Play verlangen.
+- **TRS Client: Barrieren stören die Karten nicht mehr.** Barriere-Blöcke, Licht-Blöcke und Strukturleeren zählen wie
+  Luft – eine Lobby mit unsichtbarer Barriere-Decke oder Barriere-Böden in leeren Welten hinterlassen keine dunklen
+  Lücken mehr, die Karte zeigt, was darunter liegt.
+
+- **Keine doppelten Benachrichtigungen beim Spielen.** Läuft ein Spiel mit TRS Client, schweigt der Launcher zu
+  Nachrichten, Freundesanfragen, Freunden, die online kommen, Einladungen und Umhang-Angeboten – kein Hinweis, kein
+  Ton, keine Windows-Benachrichtigung –, denn der TRS Client zeigt sie schon im Spiel. Sie zählen weiter als ungelesen.
+  Sobald das Spiel zu ist, meldet sich der Launcher wieder. Spiele ohne TRS Client, Update-Hinweise und Fehler bleiben
+  wie bisher.
 - **Moderation:** Das Team hat jetzt Moderatoren und klarere Strafen (Chat-Stumm, Sozial-, Upload- und
   Welt-Hosting-Sperre, befristeter Konto-Bann). Du siehst deine eigenen Strafen und kannst gegen jede einmal Einspruch
   einlegen – auch wenn dein Konto gesperrt ist. Einstellungen → Datenschutz → „Meine Strafen“ (und ein Hinweis oben,

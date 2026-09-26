@@ -575,6 +575,7 @@
     "trsOps": {
       "invalidPlayerId": "Nieprawidłowy identyfikator gracza.",
       "invalidCapeId": "Nieprawidłowy identyfikator peleryny.",
+      "invalidCosmeticId": "Nieprawidłowy identyfikator kosmetyku.",
       "noChange": "Nie podano żadnej zmiany.",
       "onlyOwnCapesDeletable": "Można usuwać tylko własne peleryny.",
       "onlyUploadedReportable": "Można zgłaszać tylko przesłane peleryny.",
@@ -2708,7 +2709,9 @@
       "alreadyOwned": "Już masz „{name}”.",
       "unlocked": "Odblokowano „{name}”!",
       "uploaded": "Przesłano – twoja peleryna czeka na zatwierdzenie.",
-      "deleted": "Usunięto pelerynę"
+      "deleted": "Usunięto pelerynę",
+      "hatOn": "Założono „{name}”",
+      "hatOff": "Zdjęto kosmetyk z głowy"
     },
     "editor": {
       "title": "Prześlij własną pelerynę",
@@ -2771,6 +2774,19 @@
       },
       "upload": "Prześlij",
       "uploading": "Przesyłanie …"
+    },
+    "hats": {
+      "title": "Kosmetyki na głowę",
+      "intro": "Widoczne na twojej głowie w TRS Client – widzą je wszyscy z TRS Client.",
+      "wear": "Załóż",
+      "remove": "Zdejmij",
+      "worn": "Założone"
+    },
+    "hatDialog": {
+      "title": "Odblokowano „{name}”!",
+      "text": "Założyć teraz? Zobaczysz go na głowie w TRS Client (trzecia osoba), podobnie jak inni gracze TRS.",
+      "wear": "Załóż",
+      "later": "Później"
     }
   },
   "capeShare": {

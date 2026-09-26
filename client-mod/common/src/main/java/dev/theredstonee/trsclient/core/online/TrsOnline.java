@@ -112,6 +112,8 @@ public final class TrsOnline {
 	private final Friends friends;
 	/** Chat, Echtzeit-Stream (/v1/events/me), Benachrichtigungen. */
 	private final dev.theredstonee.trsclient.core.social.Social social;
+	/** Welt-Hosting (API.md §21). */
+	private final dev.theredstonee.trsclient.core.hosting.Hosting hosting;
 	/** Die Verbindung des laufenden Spiels (für Bildschirme ohne eigenen Zugang), null in Tests. */
 	private static volatile TrsOnline current;
 
@@ -157,6 +159,45 @@ public final class TrsOnline {
 					public Friends friends() {
 						return friends;
 					}
+
+					@Override
+					public void hosting(dev.theredstonee.trsclient.core.social.MeEvent e) {
+						hosting.event(e);
+					}
+
+					@Override
+					public boolean wantsStream() {
+						return hosting.wantsStream();
+					}
+				});
+		this.hosting = new dev.theredstonee.trsclient.core.hosting.Hosting(
+				new dev.theredstonee.trsclient.core.hosting.HostingApi(http, config.apiBase()),
+				new dev.theredstonee.trsclient.core.hosting.Hosting.Backend() {
+					@Override
+					public dev.theredstonee.trsclient.core.social.Toasts toasts() {
+						return social.toasts();
+					}
+
+					@Override
+					public void unauthorized(String rejectedToken) {
+						tokenRejected(rejectedToken);
+					}
+
+					@Override
+					public java.util.List<dev.theredstonee.trsclient.core.hosting.Hosting.Friend> friends() {
+						FriendsView v = friends.snapshot().view;
+						if (v == null) return null;
+						java.util.List<dev.theredstonee.trsclient.core.hosting.Hosting.Friend> out = new ArrayList<>();
+						for (FriendsView.Friend f : v.friends) {
+							out.add(new dev.theredstonee.trsclient.core.hosting.Hosting.Friend(f.uuid, f.name, f.online(), f.inGame()));
+						}
+						return out;
+					}
+
+					@Override
+					public void wantFriends() {
+						friends.want(Friends.Interest.FOREGROUND, false);
+					}
 				});
 	}
 
@@ -175,9 +216,15 @@ public final class TrsOnline {
 		return social;
 	}
 
+	/** Welt-Hosting. */
+	public dev.theredstonee.trsclient.core.hosting.Hosting hosting() {
+		return hosting;
+	}
+
 	/** Standard: HttpURLConnection, Umhang-Cache unter {@code <configDir>/trsclient/capes}. */
 	public static TrsOnline create(Path configDir, OnlinePlatform platform, String modVersion) {
 		OnlineConfig config = OnlineConfig.load(configDir);
+		dev.theredstonee.trsclient.core.hosting.PublicLink.dir(configDir.resolve("trsclient").resolve("e4mc"));
 		String userAgent = "TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion() + "; "
 				+ platform.loader() + ")";
 		Http http = new Http.UrlConnection(userAgent);
@@ -216,7 +263,7 @@ public final class TrsOnline {
 			// Keine Einwilligung im Launcher: kein einziger Aufruf.
 			status = Status.LAUNCHER_OFF;
 			events.stop();
-			social.tick(now, null, null, null, false);
+			tickSocial(now, null, null, null, false);
 			return;
 		}
 		if (!moduleEnabled) {
@@ -224,13 +271,13 @@ public final class TrsOnline {
 			active = false;
 			leaveWorld();
 			events.stop();
-			social.tick(now, null, null, null, false);
+			tickSocial(now, null, null, null, false);
 			return;
 		}
 		if (banned) {
 			status = Status.BANNED;
 			events.stop();
-			social.tick(now, null, null, null, false);
+			tickSocial(now, null, null, null, false);
 			return;
 		}
 		GameSession session = platform.session();
@@ -242,7 +289,7 @@ public final class TrsOnline {
 		if (session == null || session.uuid == null || !(session.usable() || devMock())) {
 			status = Status.NO_ACCOUNT;
 			events.stop();
-			social.tick(now, null, null, null, false);
+			tickSocial(now, null, null, null, false);
 			return;
 		}
 		if (!session.uuid.equals(sessionUuid)) {
@@ -267,7 +314,7 @@ public final class TrsOnline {
 			if (!loginInFlight && now >= nextLoginAt) login(session);
 			if (status != Status.RETRY) status = Status.CONNECTING;
 			events.stop();
-			social.tick(now, null, null, null, false);
+			tickSocial(now, null, null, null, false);
 			return;
 		}
 		status = Status.ONLINE;
@@ -297,8 +344,18 @@ public final class TrsOnline {
 		}
 		tickEmotes(now, session.uuid);
 		friends.tick(now, token);
-		social.tick(now, token, session.uuid, session.name,
+		tickSocial(now, token, session.uuid, session.name,
 				dev.theredstonee.trsclient.core.social.SocialOverlay.enabled());
+	}
+
+	/** Chat/Toasts und Welt-Hosting takten (auch ohne Anmeldung – dann beenden sie sich sauber). */
+	private void tickSocial(long now, String tok, String uuid, String name, boolean enabled) {
+		social.tick(now, tok, uuid, name, enabled);
+		try {
+			hosting.tick(now, tok, uuid, name);
+		} catch (RuntimeException e) {
+			reportError(e);
+		}
 	}
 
 	// --- Emotes (API.md §12, §13) ---
@@ -616,6 +673,11 @@ public final class TrsOnline {
 
 	/** Beim Beenden des Spiels (Shutdown-Hook): "in-game" noch schnell zurücknehmen, höchstens 2 s warten. */
 	void shutdown() {
+		try {
+			hosting.shutdown();
+		} catch (RuntimeException ignored) {
+			// egal – der Raum läuft nach 90 s ab
+		}
 		if (reportedToken == null) return;
 		final String t = token != null ? token : reportedToken;
 		reportedToken = null;

@@ -10,7 +10,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Eine Kartenebene einer Welt/Dimension: die Oberfläche oder ein Höhlenschnitt auf einer bestimmten Höhe.
+ * Eine Kartenebene einer Welt/Dimension: die Oberfläche, ein Höhlenschnitt auf einer bestimmten Höhe oder die
+ * Oberfläche unter einem Dach-Schnitt (Innenansicht, {@code roof<höhe>}).
  * Hält die Bereiche im Speicher (begrenzt, die ältesten fliegen zuerst – vorher gespeichert), lädt gespeicherte
  * Bereiche im Hintergrund nach und kennt die Übersichten aller Bereiche auf der Platte (für die herausgezoomte
  * Weltkarte). Nur Spiel-Thread.
@@ -26,6 +27,8 @@ public final class MapLayer {
 	public final int index;
 	/** Bezugshöhe der Höhlenansicht oder {@link Integer#MIN_VALUE} (Oberfläche). */
 	public final int caveRef;
+	/** Dach-Schnitt: höchste abgetastete Höhe oder {@link ColumnScanner#NO_CUT} (kein Schnitt). */
+	public final int roofCut;
 	private final MapDisk disk;
 	private final Path dir;
 	private final Map<Long, MapRegion> regions = new HashMap<Long, MapRegion>();
@@ -43,9 +46,18 @@ public final class MapLayer {
 	 * @param dir Ordner auf der Platte oder null (nur im Speicher)
 	 */
 	public MapLayer(String id, int index, int caveRef, MapDisk disk, Path dir) {
+		this(id, index, caveRef, ColumnScanner.NO_CUT, disk, dir);
+	}
+
+	/**
+	 * @param roofCut Dach-Schnitt (Innenansicht) oder {@link ColumnScanner#NO_CUT}
+	 * @param dir Ordner auf der Platte oder null (nur im Speicher)
+	 */
+	public MapLayer(String id, int index, int caveRef, int roofCut, MapDisk disk, Path dir) {
 		this.id = id;
 		this.index = index;
 		this.caveRef = caveRef;
+		this.roofCut = roofCut;
 		this.disk = disk;
 		this.dir = dir;
 		if (disk != null && dir != null) {
@@ -62,6 +74,11 @@ public final class MapLayer {
 
 	public boolean cave() {
 		return caveRef != Integer.MIN_VALUE;
+	}
+
+	/** Innenansicht unter einem Dach-Schnitt? */
+	public boolean roof() {
+		return roofCut != ColumnScanner.NO_CUT;
 	}
 
 	public Path dir() {

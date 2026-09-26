@@ -9,6 +9,7 @@
 		"CameraMixin",
 		"CapeLayerMixin",
 		"CapeTextureMixin",
+		"HatLayerMixin",
 		"ChatComponentAccessor",
 		"ChatMixin",
 		"ChatScreenMixin",
@@ -34,6 +35,7 @@
 		"MouseHandlerMixin",
 		"NameTagBadgeMixin",
 		"OldAnimationsMixin",
+		"ShieldHandMixin",
 		"OverlayTextureAccessor",
 		"TabBadgeMixin",
 		"MenuScreenMixin",
@@ -43,7 +45,11 @@
 		"LoadingOverlayMixin",
 		"LoadingScreenMixin",
 		"JoinMultiplayerAccessor",
-		"SelectionListAccessor"
+		"SelectionListAccessor",
+		"HostingConnectMixin",
+		"HostingPublishMixin",
+		"HostingServerAccessor",
+		"HostingPlayerListAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

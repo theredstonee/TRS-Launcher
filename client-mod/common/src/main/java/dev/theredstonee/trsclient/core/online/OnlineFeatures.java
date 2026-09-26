@@ -28,6 +28,9 @@ public final class OnlineFeatures<T> {
 	private final CapeTextures<T> textures;
 	private final CapePhysics physics = new CapePhysics();
 	private final ClothMesh mesh = new ClothMesh();
+	/** Kopf-Kosmetik (Quietscheente): Rig-Zustände je Träger und Mesh-Baukasten (nur Render-Thread). */
+	private final dev.theredstonee.trsclient.core.cosmetic.DuckRig hatRig = new dev.theredstonee.trsclient.core.cosmetic.DuckRig();
+	private final dev.theredstonee.trsclient.core.cosmetic.CosmeticMesh hatMesh = new dev.theredstonee.trsclient.core.cosmetic.CosmeticMesh();
 	private final dev.theredstonee.trsclient.core.emote.EmoteController emotes;
 	private volatile Thread gameThread;
 	/** Wiederverwendet: Umhang-Einstellungen je Tick (keine Allokation). */
@@ -162,6 +165,43 @@ public final class OnlineFeatures<T> {
 		} catch (RuntimeException e) {
 			online.reportError(e);
 			return null;
+		}
+	}
+
+	/**
+	 * Textur der Kopf-Kosmetik eines Spielers oder null (nichts tragen, Modul/Einstellung aus, noch nicht geladen,
+	 * Vorlage unbekannt). Nur im Spiel-/Render-Thread wirksam.
+	 */
+	public T hatTexture(UUID uuid) {
+		if (Thread.currentThread() != gameThread) return null;
+		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
+		PlayerInfo info = online.info(uuid);
+		if (info.hat == null || dev.theredstonee.trsclient.core.cosmetic.CosmeticModels.get(info.hat.template) == null) return null;
+		try {
+			return textures.texture(info.hat.texture, System.currentTimeMillis());
+		} catch (RuntimeException e) {
+			online.reportError(e);
+			return null;
+		}
+	}
+
+	/**
+	 * Zeichnet die Kopf-Kosmetik (nach {@link #hatTexture}) in den Kopf-Raum des Modells; Tier-Vorlagen bewegen
+	 * sich nach {@code wearer}. Fehler landen im Fehlerbericht, nie im Spiel.
+	 */
+	public void emitHat(UUID uuid, dev.theredstonee.trsclient.core.cosmetic.Wearer wearer, ClothMesh.QuadSink sink) {
+		PlayerInfo info = online.info(uuid);
+		if (info.hat == null) return;
+		dev.theredstonee.trsclient.core.cosmetic.CosmeticModel model =
+				dev.theredstonee.trsclient.core.cosmetic.CosmeticModels.get(info.hat.template);
+		if (model == null) return;
+		try {
+			wearer.emote = emotes.animating(uuid);
+			dev.theredstonee.trsclient.core.cosmetic.DuckRig.Pose pose = model.rig != null
+					? hatRig.update(wearer, System.nanoTime()) : null;
+			hatMesh.emit(model, pose, System.currentTimeMillis(), wearer.helmet, sink);
+		} catch (RuntimeException e) {
+			online.reportError(e);
 		}
 	}
 

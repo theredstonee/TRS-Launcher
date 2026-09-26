@@ -264,6 +264,17 @@ den TRS-Server.
   wird **e4mc** genutzt, ein Dienst anderer Betreiber, nicht der TRS-Server. Schaltest du ihn ein (nur nach einer
   Warnung, die du bestätigen musst), verbindet sich dein Spiel mit dem Relay von e4mc; e4mc sieht deine IP-Adresse und
   die der Mitspieler und leitet die Spieldaten weiter, es gilt die Datenschutzerklärung von e4mc. Ab Werk ist er aus.
+  Beim ersten Einschalten lädt das Spiel die nötige Netzwerk-Bibliothek (Netty mit QUIC, Open Source) einmalig von
+  Maven Central (`repo1.maven.org`, geprüft gegen feste Prüfsummen) und fragt den Vermittler von e4mc
+  (`broker.e4mc.link`) nach dem nächsten Relay – beide sehen dabei deine IP-Adresse. Der e4mc-Teil des TRS Client beruht
+  auf der Mod e4mc (MIT-Lizenz, © Skye); der Lizenztext liegt dem Spiel bei.
+- **Nur über das Relay:** Im TRS Client (Sozial → „Direktverbindungen“) kannst du Direktverbindungen abschalten. Dann
+  nutzt dein Spiel immer das TRS-Relay, und der andere Spieler erfährt deine IP-Adresse nie.
+- **Welt-Backup:** Vor dem Öffnen kann der TRS Client ein ZIP deiner Welt im Ordner `backups` des Spiels auf deinem PC
+  ablegen. Es verlässt deinen PC nie.
+- **Schutz im Spiel:** Ein Gast kann sich nur mit dem Namen anmelden, den der TRS-Server für ihn bestätigt hat (niemand
+  kann den Namen des Hosts übernehmen), und wenn du einen Spieler entfernst oder sperrst, trennt das Spiel seine
+  Verbindung sofort.
 
 ### Was gespeichert wird
 

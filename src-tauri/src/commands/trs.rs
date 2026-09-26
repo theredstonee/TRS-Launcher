@@ -123,6 +123,16 @@ pub async fn trs_redeem(launcher: State<'_, LauncherState>, code: String) -> Com
 }
 
 #[tauri::command]
+pub async fn trs_hats(launcher: State<'_, LauncherState>) -> CommandResult<Vec<trs_core::trs_api::types::HatItem>> {
+    Ok(launcher.trs_hats().await?)
+}
+
+#[tauri::command]
+pub async fn trs_set_hat(launcher: State<'_, LauncherState>, id: Option<String>) -> CommandResult<()> {
+    Ok(launcher.trs_set_hat(id).await?)
+}
+
+#[tauri::command]
 pub async fn trs_player_capes(launcher: State<'_, LauncherState>, uuids: Vec<String>) -> CommandResult<Vec<PlayerCape>> {
     Ok(launcher.trs_player_capes(&uuids).await?)
 }

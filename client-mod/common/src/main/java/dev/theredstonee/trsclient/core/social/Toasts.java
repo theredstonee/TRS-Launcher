@@ -25,11 +25,18 @@ public final class Toasts {
 
 	/** Art einer Benachrichtigung. */
 	public enum Kind {
-		MESSAGE, INVITE, REQUEST, CAPE_OFFER, ONLINE, REPORT, MODERATION;
+		MESSAGE, INVITE, REQUEST, CAPE_OFFER, ONLINE, REPORT, MODERATION,
+		/** Welt-Hosting: „X lädt dich in seine Welt ein“ ({@link Toast#conversationId} = Raum-ID). */
+		WORLD_INVITE,
+		/** Welt-Hosting (Host): Beitrittsanfrage ({@link Toast#conversationId} = Raum-ID, Gesicht = Anfragender). */
+		JOIN_REQUEST,
+		/** Welt-Hosting: Hinweis (angenommen, abgelehnt, entfernt, Welt geschlossen). */
+		WORLD;
 
 		/** Kann die Schnelltaste etwas damit anfangen? */
 		public boolean actionable() {
-			return this == MESSAGE || this == INVITE || this == REQUEST || this == CAPE_OFFER;
+			return this == MESSAGE || this == INVITE || this == REQUEST || this == CAPE_OFFER || this == WORLD_INVITE
+					|| this == JOIN_REQUEST;
 		}
 	}
 
@@ -67,7 +74,9 @@ public final class Toasts {
 				case MESSAGE:
 					return messages;
 				case INVITE:
+				case WORLD_INVITE:
 					return invites;
+				case JOIN_REQUEST:
 				case REQUEST:
 				case CAPE_OFFER:
 					return requests;

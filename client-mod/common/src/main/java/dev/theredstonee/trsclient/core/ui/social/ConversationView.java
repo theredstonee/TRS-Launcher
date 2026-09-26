@@ -456,6 +456,10 @@ final class ConversationView {
 	}
 
 	private void invite(Canvas c, Social s, final Chat.Invite inv, int x, int y, int w, int mx, int my) {
+		if (inv.world != null) {
+			worldCard(c, inv, x, y, w, mx, my);
+			return;
+		}
 		Theme t = Theme.get();
 		Kit kit = ctx.kit();
 		Redstone.stone(c, x, y, w, ChatLayout.INVITE_H, t.deep, ColorMath.lerp(t.border, t.lampOn, 0.4f));
@@ -490,8 +494,46 @@ final class ConversationView {
 				() -> join(inv));
 	}
 
+	/** Weltkarte (Welt-Hosting): Name, Host, Version/Loader, „Beitreten“. */
+	private void worldCard(Canvas c, final Chat.Invite inv, int x, int y, int w, int mx, int my) {
+		Theme t = Theme.get();
+		Kit kit = ctx.kit();
+		Chat.World wd = inv.world;
+		Redstone.stone(c, x, y, w, ChatLayout.INVITE_H, t.deep, ColorMath.lerp(t.border, t.accent, 0.5f));
+		int ix = x + 4;
+		int iy = y + 4;
+		Redstone.block(c, ix, iy, 28, 28, t.bevelDark);
+		Icons.draw(c, "globe", ix + 6, iy + 6, 2, t.accent);
+		int bw = Math.min(58, Math.max(40, c.textWidth(I18n.tr("social.invite.join")) + 12));
+		int bx = x + w - bw - 4;
+		int tx = ix + 33;
+		Paint.textClipped(c, inv.name, tx, y + 5, bx - tx - 3, t.text, false);
+		Paint.textClipped(c, I18n.tr("hosting.card.host", wd.hostName), tx, y + 15, bx - tx - 3, t.textDim, false);
+		Paint.textClipped(c, wd.mcVersion + " " + dev.theredstonee.trsclient.core.hosting.Hosting.loaderName(wd.loader), tx,
+				y + 25, bx - tx - 3, t.textDim, false);
+		kit.button(c, bx, y + (ChatLayout.INVITE_H - 16) / 2, bw, 16, I18n.tr("social.invite.join"), true, true, mx, my,
+				() -> join(inv));
+	}
+
 	/** „Beitreten“: in einer Welt erst nachfragen, dann verbinden. */
 	void join(final Chat.Invite inv) {
+		if (inv.world != null) {
+			final dev.theredstonee.trsclient.core.hosting.Hosting h = dev.theredstonee.trsclient.core.hosting.Hosting.current();
+			if (h == null) return;
+			Runnable go = () -> {
+				h.joinCode(inv.world.code);
+				ctx.showWorlds();
+			};
+			if (ctx.host().inWorld()) {
+				String current = ctx.host().currentServer();
+				ctx.dialog(new Dialogs.Confirm(I18n.tr("social.invite.joinTitle"), I18n.tr(current != null
+						? "social.invite.leaveServer" : "social.invite.leaveWorld", inv.name), null, I18n.tr("social.invite.join"),
+						false, go));
+			} else {
+				go.run();
+			}
+			return;
+		}
 		final SocialHost host = ctx.host();
 		String current = host.currentServer();
 		if (current != null && current.equalsIgnoreCase(inv.address)) {

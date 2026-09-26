@@ -202,6 +202,9 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin'
 		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
 		'ColorGradeMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
+// Welt-Hosting: Gast über eigenen Netty-Kanal (Marker-Adresse), Host öffnet ohne TCP/LAN, Spielergrenze ≤ 10.
+mixinClasses += ['HostingConnectMixin', 'HostingPublishMixin', 'HostingServerAccessor']
+mixinClasses << (stonecutter.eval(mc, '>=1.21.9') ? 'HostingPlayerListMixin' : 'HostingPlayerListAccessor')
 // Menü-Stil (Pause, Serverliste, Laden, Optionen, Welten): Hintergrund, Knöpfe, Karten, Ladebildschirme.
 mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']
@@ -219,6 +222,9 @@ mixinClasses << 'WeatherMixin'
 if (stonecutter.eval(mc, '>=1.17') && stonecutter.eval(mc, '<1.21.6')) mixinClasses << 'FogMixin'
 // Umhang-Physik: ab 1.15 (1.14 zeichnet den Umhang mit festen GL-Aufrufen, dort bleibt er starr).
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'
+// TRS-Kopf-Kosmetik (Quietscheente) am Umhang-Layer – dieselbe Grenze.
+if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'HatLayerMixin'
+if (stonecutter.eval(mc, '<1.15')) mixinClasses << 'HatGlMixin'
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']
 // ScreenEffectRenderer (niedriges Feuer) und die Block-Umrandung mit Farbe gibt es erst ab 1.15.
@@ -227,6 +233,12 @@ if (stonecutter.eval(mc, '>=1.15')) mixinClasses += ['LowFireMixin', 'BlockOutli
 if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.11')) mixinClasses << 'LineWidthMixin'
 // Hitbox-Farbe: bis 1.21.8 zeichnet der EntityRenderDispatcher die Boxen selbst.
 if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
+// Schild-Position: Haken am Hand-Renderer (alle Versionen); Deckkraft ab 1.21.9 im Submit-Sammler, in 1.14 per GL;
+// ab 26.3 kommt das Modell der Hand aus FirstPersonHandsAndItems.
+mixinClasses << 'ShieldHandMixin'
+if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'ShieldSubmitMixin'
+if (stonecutter.eval(mc, '>=26.3')) mixinClasses << 'ShieldModelMixin'
+if (stonecutter.eval(mc, '<1.15')) mixinClasses << 'ShieldGlMixin'
 
 processResources {
 	def props = [
@@ -276,6 +288,23 @@ sourceSets.main.resources.srcDir(files(bundledList).builtBy(writeBundledList))
 
 // Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
 apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
+
+// Welt-Hosting-Test mit zwei Spielen: -PtrsRunCommandFile=<datei> schreibt die fertige Startzeile (Arbeitsordner,
+// Java, JVM-Argumente, Klassenpfad, Hauptklasse, Programmargumente) als JSON und startet NICHT – das Testskript startet
+// Host und Gast selbst in getrennten Spielordnern (zwei Gradle-Läufe im selben Projekt würden sich sperren).
+if (project.hasProperty('trsRunCommandFile')) {
+	tasks.matching { it.name == 'runClient' }.configureEach { task ->
+		task.doFirst {
+			def java = task.javaLauncher.present ? task.javaLauncher.get().executablePath.asFile.absolutePath : 'java'
+			def json = groovy.json.JsonOutput.toJson([workingDir: task.workingDir.absolutePath, java: java,
+					jvmArgs: task.allJvmArgs, classpath: task.classpath.asPath, mainClass: task.mainClass.get(), args: task.args,
+					environment: task.environment.findAll { k, v -> k == 'ALSOFT_DRIVERS' }])
+			file(project.property('trsRunCommandFile')).write(json, 'UTF-8')
+			logger.lifecycle("Startzeile geschrieben: ${project.property('trsRunCommandFile')}")
+			throw new StopExecutionException()
+		}
+	}
+}
 
 // -PtrsBenchOptions: mit welchen Bildraten-Einstellungen der Benchmark misst.
 //   vanilla = frische Vanilla-Optionen (VSync an, Max. Bildrate 120)

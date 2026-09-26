@@ -36,6 +36,9 @@ interface SocialContext {
 	/** „Meine Strafen“ öffnen (Moderation v2). */
 	void showSanctions();
 
+	/** Reiter „Welten“ zeigen (Stand eines Welt-Beitritts). */
+	void showWorlds();
+
 	/** Bildschirmgröße (für Menüs/Dialoge). */
 	int screenWidth();
 

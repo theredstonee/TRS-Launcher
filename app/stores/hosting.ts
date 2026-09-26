@@ -317,7 +317,7 @@ export const useHostingStore = defineStore('hosting', () => {
         const asked = !!waiting.value[e.roomId] || room?.myState === 'requested'
         forget(e.roomId)
         if (room) setRoom({ ...room, myState: null })
-        if (asked) useToasts().info(t('social.hosting.declined', { host: room?.host.name ?? '?' }))
+        if (asked) useSocialToasts().notice(t('social.hosting.declined', { host: room?.host.name ?? '?' }))
         return
       }
       case 'hosting_kicked': {
@@ -325,7 +325,7 @@ export const useHostingStore = defineStore('hosting', () => {
         forget(e.roomId)
         dropRoom(e.roomId)
         const world = room?.name ?? t('social.hosting.aWorld')
-        useToasts().info(e.banned ? t('social.hosting.banned', { world }) : t('social.hosting.kicked', { world }))
+        useSocialToasts().notice(e.banned ? t('social.hosting.banned', { world }) : t('social.hosting.kicked', { world }))
         refreshSoon()
         return
       }
@@ -345,7 +345,7 @@ export const useHostingStore = defineStore('hosting', () => {
         const involved = !!waiting.value[e.roomId] || room?.myState === 'accepted' || room?.myState === 'requested'
         forget(e.roomId)
         dropRoom(e.roomId)
-        if (involved && e.reason !== 'left') useToasts().info(hostingClosedText(e.reason, room?.name ?? null))
+        if (involved && e.reason !== 'left') useSocialToasts().notice(hostingClosedText(e.reason, room?.name ?? null))
         if (handoff.value?.world.roomId === e.roomId && handoff.value.state !== 'delivered') {
           stopWatching()
           handoff.value = null
