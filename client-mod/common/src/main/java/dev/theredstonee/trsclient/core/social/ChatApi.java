@@ -370,9 +370,7 @@ public final class ChatApi {
 				.header("Content-Type", mime).header("Authorization", "Bearer " + token);
 		request.body = image;
 		Http.Response response = http.send(request);
-		if (response.status != 201 && response.status != 200) {
-			throw new ApiException(response.status, TrsApi.errorCode(response), TrsApi.retryAfter(response));
-		}
+		if (response.status != 201 && response.status != 200) throw error(response);
 		AttachmentBody body = parse(response, AttachmentBody.class);
 		Chat.Attachment a = ChatJson.attachment(body == null ? null : body.attachment);
 		if (a == null) throw new ApiException(response.status, "invalid_json", 0);
@@ -453,6 +451,29 @@ public final class ChatApi {
 				body.mute.reason == null ? null : SafeText.line(body.mute.reason, 200));
 	}
 
+	// --- Strafen und Einspruch (§22.8) ---
+
+	/**
+	 * {@code GET /v1/me/sanctions} → {aktiv, vergangen}. {@code token} = TRS-Token oder (gesperrtes Konto) der
+	 * Einspruch-Token. 404 = Server ohne Moderation v2.
+	 */
+	public List<List<Sanction>> sanctions(String token) throws IOException, ApiException {
+		return SanctionJson.lists(call("GET", "/v1/me/sanctions", null, token, 200).text());
+	}
+
+	/** {@code POST /v1/me/sanctions/{id}/appeal} (Text 20–1000 Zeichen) → die Strafe mit Einspruch. */
+	public Sanction appeal(String token, long sanctionId, String text) throws IOException, ApiException {
+		if (sanctionId <= 0) throw new ApiException(0, "invalid_request", 0);
+		String clean = Sanctions.cleanAppeal(text);
+		if (Sanctions.appealProblem(clean) != null) throw new ApiException(400, "invalid_request", 0);
+		Map<String, Object> body = new LinkedHashMap<String, Object>();
+		body.put("text", clean);
+		Http.Response r = call("POST", "/v1/me/sanctions/" + sanctionId + "/appeal", ChatJson.GSON.toJson(body), token, 201, 200);
+		Sanction s = SanctionJson.wrapped(r.text());
+		if (s == null) throw new ApiException(r.status, "invalid_json", 0);
+		return s;
+	}
+
 	/** Chat-Einstellungen aus {@code GET /v1/me}. */
 	public ChatSettings settings(String token) throws IOException, ApiException {
 		MeBody body = parse(call("GET", "/v1/me", null, token, 200), MeBody.class);
@@ -529,10 +550,14 @@ public final class ChatApi {
 		if (token != null) request.header("Authorization", "Bearer " + token);
 		request.maxBytes = 1024 * 1024;
 		Http.Response response = http.send(request);
-		if (response.status != expected && response.status != alsoOk) {
-			throw new ApiException(response.status, TrsApi.errorCode(response), TrsApi.retryAfter(response));
-		}
+		if (response.status != expected && response.status != alsoOk) throw error(response);
 		return response;
+	}
+
+	/** Fehler mit Körper (Strafen-Angaben bei 403, API.md §22.2). */
+	static ApiException error(Http.Response response) {
+		return new ApiException(response.status, TrsApi.errorCode(response), TrsApi.retryAfter(response),
+				response.status == 403 ? response.text() : null);
 	}
 
 	static <T> T parse(Http.Response response, Class<T> type) throws ApiException {

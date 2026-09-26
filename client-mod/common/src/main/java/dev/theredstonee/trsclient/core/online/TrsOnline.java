@@ -469,11 +469,21 @@ public final class TrsOnline {
 					platform.log("TRS API: angemeldet");
 				});
 			} catch (ApiException e) {
+				if (e.banned()) social.loginBanned(e.body());
 				results.add(() -> loginFailed(e.banned(), e.retryAfterMs(), "HTTP " + e.status() + " " + e.code()));
 			} catch (IOException | RuntimeException e) {
 				results.add(() -> loginFailed(false, 0, e.getClass().getSimpleName()));
 			}
 		})) loginInFlight = false;
+	}
+
+	/** Gesperrt: erneut anmelden (Sperre vorbei? sonst neuer Einspruch-Zugang, API.md §22.3). */
+	public void retryBannedLogin() {
+		results.add(() -> {
+			banned = false;
+			loginFailures = 0;
+			nextLoginAt = 0;
+		});
 	}
 
 	private void loginFailed(boolean isBanned, long retryAfterMs, String reason) {

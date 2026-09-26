@@ -562,7 +562,8 @@ public final class TrsApi {
 		if (token != null) request.header("Authorization", "Bearer " + token);
 		Http.Response response = http.send(request);
 		if (response.status != expected && response.status != alsoOk) {
-			throw new ApiException(response.status, errorCode(response), retryAfter(response));
+			throw new ApiException(response.status, errorCode(response), retryAfter(response),
+					response.status == 403 ? response.text() : null);
 		}
 		return response;
 	}

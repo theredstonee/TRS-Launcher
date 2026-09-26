@@ -279,6 +279,17 @@ public final class Toasts {
 		}
 	}
 
+	/** Toast(s) mit diesem Zusammenfassungsschlüssel entfernen (z. B. vor einem aktualisierten Hinweis). */
+	public void dismissKey(String key) {
+		if (key == null) return;
+		for (Iterator<Toast> it = visible.iterator(); it.hasNext(); ) {
+			if (key.equals(it.next().key)) it.remove();
+		}
+		for (Iterator<Toast> it = queue.iterator(); it.hasNext(); ) {
+			if (key.equals(it.next().key)) it.remove();
+		}
+	}
+
 	/** Alle Toasts einer Unterhaltung weg (sie wurde gerade gelesen). */
 	public void dismissConversation(String conversationId) {
 		if (conversationId == null) return;

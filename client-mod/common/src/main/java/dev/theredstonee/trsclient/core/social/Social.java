@@ -54,7 +54,7 @@ public final class Social {
 			"not_sender", "already_reported", "too_many_open_reports", "cannot_target_self", "not_reportable",
 			"too_many_pending_attachments", "storage_quota", "storage_full", "payload_too_large", "image_too_large",
 			"invalid_image", "unsupported_media_type", "player_not_found", "attachment_not_found", "offline",
-			"image_unreadable", "busy"));
+			"image_unreadable", "busy", "sanctioned", "banned"));
 
 	/** Anbindung an TrsOnline. */
 	public interface Backend {
@@ -150,6 +150,20 @@ public final class Social {
 	private boolean moderationLoaded;
 	private boolean settingsLoaded;
 	private Chat.Moderation moderation = Chat.Moderation.NONE;
+	/** Eigene Strafen (Moderation v2, API.md §22). */
+	private final Sanctions sanctions = new Sanctions();
+	private boolean sanctionsLoaded;
+	private boolean sanctionsLoading;
+	/** Fehler beim Laden der Strafen (i18n-Schlüssel) oder null. */
+	private String sanctionsError;
+	/** Zuletzt von einer Strafe gesperrter Vorgang (für einen Hinweis-Dialog, einmal abholen) oder null. */
+	private SanctionError blockedHit;
+	private long blockedAt;
+	/** Anmeldung abgelehnt, Konto gesperrt (mit Einspruch-Token) oder null. */
+	private SanctionError banned;
+	private Chat.Moderation muteCache;
+	private long muteCacheId;
+	private long lastExpireCheck;
 	private ChatApi.ChatSettings chatSettings = new ChatApi.ChatSettings(true, true);
 	private long screenUntil;
 	private String viewing;
@@ -225,8 +239,63 @@ public final class Social {
 		return stream.connected();
 	}
 
+	/**
+	 * Eigene Chat-Stummschaltung: aus den Strafen (Moderation v2), bei älteren Servern aus
+	 * {@code GET /v1/me/moderation} bzw. dem Ereignis {@code moderation}.
+	 */
 	public Chat.Moderation moderation() {
-		return moderation;
+		if (!sanctions.supported()) return moderation;
+		Sanction m = sanctions.activeOf("chat_mute", System.currentTimeMillis());
+		if (m == null) return Chat.Moderation.NONE;
+		Chat.Moderation c = muteCache;
+		if (c == null || muteCacheId != m.id || c.until != m.endsAt) {
+			c = new Chat.Moderation(true, m.endsAt, m.reason);
+			muteCache = c;
+			muteCacheId = m.id;
+		}
+		return c;
+	}
+
+	/** Aktive Chat-Stummschaltung mit allen Angaben (Moderation v2) oder null. */
+	public Sanction chatMute(long now) {
+		return sanctions.activeOf("chat_mute", now);
+	}
+
+	/** Die eigenen Strafen. */
+	public Sanctions sanctions() {
+		return sanctions;
+	}
+
+	public boolean sanctionsLoading() {
+		return sanctionsLoading;
+	}
+
+	/** Fehler beim letzten Laden der Strafen (i18n-Schlüssel) oder null. */
+	public String sanctionsError() {
+		return sanctionsError;
+	}
+
+	/** Anmeldung wegen Kontosperre abgelehnt: Angaben (ggf. mit Einspruch-Token) oder null. */
+	public SanctionError banned() {
+		return banned;
+	}
+
+	/** Können Strafen gelesen / Einsprüche eingelegt werden (angemeldet oder gültiger Einspruch-Token)? */
+	public boolean sanctionAccess(long now) {
+		return sanctionToken(now) != null;
+	}
+
+	/** Gesperrt und der Einspruch-Token ist abgelaufen (oder fehlt)? */
+	public boolean appealTokenExpired(long now) {
+		return token == null && banned != null && sanctionToken(now) == null;
+	}
+
+	/** Gesperrter Vorgang seit dem letzten Aufruf (für einen Hinweis-Dialog) oder null; leert ihn. */
+	public SanctionError takeBlocked() {
+		SanctionError b = blockedHit;
+		blockedHit = null;
+		// Nur frische (z. B. nicht aus der Schnellantwort von vor einer Minute).
+		return b != null && System.currentTimeMillis() - blockedAt < 15_000L ? b : null;
 	}
 
 	public ApiSettings settings() {
@@ -282,6 +351,10 @@ public final class Social {
 		Runnable r;
 		while ((r = results.poll()) != null) r.run();
 		SocialOverlay.applySettings(toasts);
+		if (now - lastExpireCheck >= 1000L || now < lastExpireCheck) {
+			lastExpireCheck = now;
+			expireSanctions(now);
+		}
 		if (currentToken == null || uuid == null) {
 			token = null;
 			stream.stop();
@@ -289,6 +362,7 @@ public final class Social {
 		}
 		if (!uuid.equals(self)) reset(uuid, name);
 		token = currentToken;
+		banned = null;
 		boolean screen = now <= screenUntil;
 		boolean want = enabled || screen;
 		streamWanted = want;
@@ -307,6 +381,7 @@ public final class Social {
 		}
 		if (!want) return;
 		if (!moderationLoaded) loadModeration();
+		if (!sanctionsLoaded) loadSanctions();
 		if (!settingsLoaded) loadSettings();
 		if (resyncWanted && !listInFlight) {
 			resyncWanted = false;
@@ -338,6 +413,13 @@ public final class Social {
 		uploadProgress.clear();
 		moderation = Chat.Moderation.NONE;
 		moderationLoaded = false;
+		sanctions.clear();
+		sanctionsLoaded = false;
+		sanctionsLoading = false;
+		sanctionsError = null;
+		blockedHit = null;
+		banned = null;
+		muteCache = null;
 		settingsLoaded = false;
 		listInFlight = false;
 		listNotBefore = 0;
@@ -519,6 +601,18 @@ public final class Social {
 			}
 			return;
 		}
+		if (t.equals("sanction_added") || t.equals("sanction_updated") || t.equals("appeal_decided")) {
+			sanctionEvent(e, now);
+			return;
+		}
+		if (t.equals("moderation") && sanctions.supported()) {
+			// Moderation v2: Zustand und Hinweis kommen mit sanction_added/_updated (dieses Ereignis ist für ältere Clients).
+			if ("mute".equals(e.action)) moderation = new Chat.Moderation(true, e.until, e.reason);
+			else if ("unmute".equals(e.action)) moderation = Chat.Moderation.NONE;
+			generation++;
+			listNotBefore = 0;
+			return;
+		}
 		if (t.equals("moderation")) {
 			if ("mute".equals(e.action)) {
 				moderation = new Chat.Moderation(true, e.until, e.reason);
@@ -542,6 +636,245 @@ public final class Social {
 			settingsLoaded = false;
 		}
 		// Unbekannte Ereignisse ignorieren (API.md §19).
+	}
+
+	// --- Strafen (Moderation v2, API.md §22) ---
+
+	private void sanctionEvent(MeEvent e, long now) {
+		Sanction s = e.sanction;
+		if (s == null) {
+			// Unvollständig: Liste neu holen.
+			sanctionsLoaded = false;
+			return;
+		}
+		Sanctions.Change change = sanctions.apply(s, now);
+		generation++;
+		if ("chat_mute".equals(s.kind)) listNotBefore = 0;
+		String[] toast = sanctionToast(e.type, change, s, e.appeal, now);
+		if (toast != null) {
+			String key = "sanction:" + s.id;
+			toasts.dismissKey(key);
+			toasts.add(Toasts.Kind.MODERATION, key, toast[0], toast[1], null, null, null, null, now);
+		}
+	}
+
+	/** Titel und Text der Benachrichtigung zu einem Strafen-Ereignis oder null (nichts zu melden). */
+	static String[] sanctionToast(String type, Sanctions.Change change, Sanction s, Sanction.Appeal appeal, long now) {
+		String kind = SanctionText.kind(s.kind);
+		if ("appeal_decided".equals(type)) {
+			Sanction.Appeal a = appeal != null ? appeal : s.appeal;
+			if (a == null || a.open()) return null;
+			return new String[]{I18n.tr("sanction.toast.appeal." + a.status),
+					a.response != null ? SafeText.line(a.response, 200) : kind};
+		}
+		switch (change) {
+			case ADDED:
+				if ("warn".equals(s.kind)) return new String[]{I18n.tr("sanction.toast.warnTitle"), SanctionText.reason(s)};
+				return new String[]{I18n.tr("sanction.toast.added", kind),
+						SanctionText.endShort(s, now) + " · " + SanctionText.reasonTemplate(s.reasonCode)};
+			case LIFTED:
+				return new String[]{I18n.tr("sanction.toast.lifted"), kind};
+			case SHORTENED:
+				return new String[]{I18n.tr("sanction.toast.shortened"),
+						I18n.tr("sanction.blocked", kind, SanctionText.endShort(s, now))};
+			case EXTENDED:
+				return new String[]{I18n.tr("sanction.toast.extended"),
+						I18n.tr("sanction.blocked", kind, SanctionText.endShort(s, now))};
+			case APPEAL_FILED:
+				return new String[]{I18n.tr("sanction.toast.appealFiled"), kind};
+			default:
+				return null;
+		}
+	}
+
+	/** Zeitlich abgelaufene Strafen: nach „vergangen“ und kurz melden (Verwarnungen still). */
+	private void expireSanctions(long now) {
+		List<Sanction> gone = sanctions.expire(now);
+		if (gone.isEmpty()) return;
+		generation++;
+		for (Sanction s : gone) {
+			if ("chat_mute".equals(s.kind)) listNotBefore = 0;
+			if ("warn".equals(s.kind)) continue;
+			String key = "sanction:" + s.id;
+			toasts.dismissKey(key);
+			toasts.add(Toasts.Kind.MODERATION, key, I18n.tr("sanction.toast.expired"), SanctionText.kind(s.kind), null, null,
+					null, null, now);
+		}
+	}
+
+	/**
+	 * Aus TrsOnline (Hintergrund-Thread): Anmeldung mit {@code 403 banned} abgelehnt – Angaben samt Einspruch-Token
+	 * (nur im Speicher, nur für die Strafen-Routen) übernehmen.
+	 */
+	public void loginBanned(String body) {
+		final SanctionError parsed = SanctionError.parse(body);
+		post(new Runnable() {
+			@Override
+			public void run() {
+				long now = System.currentTimeMillis();
+				SanctionError err = parsed != null ? parsed : new SanctionError("banned", 0, null, null, 0);
+				boolean first = banned == null;
+				banned = err;
+				if (err.sanction != null) sanctions.apply(err.sanction, now);
+				sanctionsLoaded = false;
+				sanctionsError = null;
+				generation++;
+				if (first) {
+					toasts.dismissKey("sanction:ban");
+					toasts.add(Toasts.Kind.MODERATION, "sanction:ban", I18n.tr("sanction.toast.bannedTitle"),
+							err.sanction != null ? SanctionText.endShort(err.sanction, now) : SanctionText.kind("account_ban"),
+							null, null, null, null, now);
+				}
+			}
+		});
+	}
+
+	/** TRS-Token oder – gesperrt – der noch gültige Einspruch-Token; sonst null. */
+	private String sanctionToken(long now) {
+		if (token != null) return token;
+		SanctionError b = banned;
+		if (b != null && b.appealToken != null && (b.appealTokenExpiresAt <= 0 || b.appealTokenExpiresAt > now)) {
+			return b.appealToken;
+		}
+		return null;
+	}
+
+	/** {@code GET /v1/me/sanctions} (auch mit Einspruch-Token); 404 = Server ohne Moderation v2. */
+	public void loadSanctions() {
+		final String t = sanctionToken(System.currentTimeMillis());
+		sanctionsLoaded = true;
+		if (t == null || sanctionsLoading) return;
+		sanctionsLoading = true;
+		final int gen = session;
+		if (!submit(rest, new Runnable() {
+			@Override
+			public void run() {
+				try {
+					final List<List<Sanction>> lists = api.sanctions(t);
+					post(new Runnable() {
+						@Override
+						public void run() {
+							sanctionsLoading = false;
+							if (gen != session) return;
+							sanctionsError = null;
+							sanctions.setAll(lists.get(0), lists.get(1), System.currentTimeMillis());
+							generation++;
+						}
+					});
+				} catch (final ApiException e) {
+					post(new Runnable() {
+						@Override
+						public void run() {
+							sanctionsLoading = false;
+							if (gen != session) return;
+							if (e.status() == 404) {
+								sanctions.supported(false);
+								sanctionsError = null;
+							} else if (e.unauthorized()) {
+								if (t.equals(token)) backend.unauthorized(t);
+								sanctionsError = t.equals(token) ? "sanction.error.generic" : "sanction.error.token_expired";
+							} else {
+								sanctionsError = e.rateLimited() ? "sanction.error.rate_limited" : "sanction.error.generic";
+							}
+							generation++;
+						}
+					});
+				} catch (IOException | RuntimeException e) {
+					post(new Runnable() {
+						@Override
+						public void run() {
+							sanctionsLoading = false;
+							if (gen != session) return;
+							sanctionsError = "sanction.error.offline";
+							generation++;
+						}
+					});
+				}
+			}
+		})) sanctionsLoading = false;
+	}
+
+	/**
+	 * Einspruch einlegen (API.md §22.8): einmal je aktiver Strafe, Text 20–1000 Zeichen. {@code done} bekommt die
+	 * aktualisierte Strafe oder einen i18n-Schlüssel.
+	 */
+	public void appeal(final long sanctionId, final String text, final Done<Sanction> done) {
+		long now = System.currentTimeMillis();
+		final String t = sanctionToken(now);
+		if (t == null) {
+			done.done(null, banned != null ? "sanction.error.token_expired" : "sanction.error.offline");
+			return;
+		}
+		String problem = Sanctions.appealProblem(text);
+		if (problem != null) {
+			done.done(null, problem);
+			return;
+		}
+		final int gen = session;
+		if (!submit(rest, new Runnable() {
+			@Override
+			public void run() {
+				try {
+					final Sanction s = api.appeal(t, sanctionId, text);
+					post(new Runnable() {
+						@Override
+						public void run() {
+							if (gen != session) return;
+							sanctions.apply(s, System.currentTimeMillis());
+							generation++;
+							done.done(s, null);
+						}
+					});
+				} catch (final ApiException e) {
+					post(new Runnable() {
+						@Override
+						public void run() {
+							if (gen != session) return;
+							if (e.unauthorized() && t.equals(token)) backend.unauthorized(t);
+							if (e.status() == 409 || e.status() == 404) {
+								sanctionsLoaded = false;
+								loadSanctions();
+							}
+							done.done(null, appealErrorKey(e, !t.equals(token)));
+						}
+					});
+				} catch (IOException | RuntimeException e) {
+					post(new Runnable() {
+						@Override
+						public void run() {
+							done.done(null, "sanction.error.offline");
+						}
+					});
+				}
+			}
+		})) done.done(null, "sanction.error.busy");
+	}
+
+	static String appealErrorKey(ApiException e, boolean appealToken) {
+		if (e.status() == 429) return "sanction.error.rate_limited";
+		if (e.status() == 401) return appealToken ? "sanction.error.token_expired" : "sanction.error.generic";
+		String c = e.code();
+		if (c.equals("appeal_exists") || c.equals("sanction_not_active") || c.equals("sanction_not_found")
+				|| c.equals("invalid_request")) {
+			return "sanction.error." + c;
+		}
+		return "sanction.error.generic";
+	}
+
+	/**
+	 * Hat eine Strafe den Vorgang gesperrt ({@code 403 sanctioned|chat_muted|banned})? Dann Strafe übernehmen, einen
+	 * Hinweis mit Art und Ende setzen und den Dialog vormerken. Rückgabe: true = so behandelt.
+	 */
+	private boolean sanctionHit(ApiException e) {
+		SanctionError se = SanctionError.of(e);
+		if (se == null) return false;
+		long now = System.currentTimeMillis();
+		if (se.sanction != null) sanctions.apply(se.sanction, now);
+		else sanctionsLoaded = false;
+		blockedHit = se;
+		blockedAt = now;
+		note("sanction.blockedNotice", new Object[]{SanctionText.blocked(se, now)}, true);
+		return true;
 	}
 
 	private void messageToast(Chat.Message m, Chat.Conversation c, long now) {
@@ -621,6 +954,7 @@ public final class Social {
 		store.markAllStale();
 		loadList(now);
 		moderationLoaded = false;
+		sanctionsLoaded = false;
 		if (viewing != null) catchUp(viewing);
 		Friends f = backend.friends();
 		if (f != null) f.refresh();
@@ -863,8 +1197,15 @@ public final class Social {
 		List<Path> files = imageFiles == null ? Collections.<Path>emptyList() : new ArrayList<Path>(imageFiles);
 		if (files.size() > MAX_IMAGES) files = files.subList(0, MAX_IMAGES);
 		if (clean.isEmpty() && files.isEmpty() && invite == null) return false;
-		if (moderation.active(System.currentTimeMillis())) {
-			note("social.error.chat_muted", null, true);
+		long sentAt = System.currentTimeMillis();
+		if (moderation().active(sentAt)) {
+			Sanction mute = chatMute(sentAt);
+			if (mute != null) {
+				note("sanction.blockedNotice", new Object[]{I18n.tr("sanction.blocked", SanctionText.kind(mute.kind),
+						SanctionText.endShort(mute, sentAt))}, true);
+			} else {
+				note("social.error.chat_muted", null, true);
+			}
 			return false;
 		}
 		String nonce = UUID.randomUUID().toString().replace("-", "");
@@ -948,7 +1289,7 @@ public final class Social {
 							if ("chat_muted".equals(e.code())) moderationLoaded = false;
 							String key = errorKey(e);
 							store.pendingFailed(job.conversationId, job.nonce, key);
-							note(key, null, true);
+							if (!sanctionHit(e)) note(key, null, true);
 						}
 					});
 				} catch (IOException | RuntimeException e) {
@@ -1437,7 +1778,7 @@ public final class Social {
 		if (e.unauthorized()) backend.unauthorized(t);
 		if ("chat_muted".equals(e.code())) moderationLoaded = false;
 		String key = errorKey(e);
-		note(key, null, true);
+		if (!sanctionHit(e)) note(key, null, true);
 		return key;
 	}
 

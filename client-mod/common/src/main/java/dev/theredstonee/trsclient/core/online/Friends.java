@@ -47,7 +47,9 @@ public final class Friends {
 			"friend_not_found", "block_not_found", "rate_limited", "offline", "invalid_name", "busy",
 			// Umhänge teilen
 			"cape_not_found", "cape_not_approved", "cape_not_shareable", "already_shared", "share_limit",
-			"offer_inbox_full", "offer_not_found", "holder_not_found"));
+			"offer_inbox_full", "offer_not_found", "holder_not_found",
+			// Moderation v2 (API.md §22): Strafe sperrt die Funktion
+			"sanctioned", "banned"));
 
 	/** Unveränderlicher Stand für die Oberfläche. */
 	public static final class Snapshot {

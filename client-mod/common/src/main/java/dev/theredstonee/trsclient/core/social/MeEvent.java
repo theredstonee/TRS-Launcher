@@ -46,8 +46,13 @@ public final class MeEvent {
 	public final long until;
 	/** Umhang-Angebot: Name des Umhangs. */
 	public final String capeName;
+	/** Moderation v2 (sanction_added/_updated, appeal_decided): die Strafe oder null. */
+	public final Sanction sanction;
+	/** appeal_decided: ID der Strafe (0 = fehlt) und der entschiedene Einspruch. */
+	public final long sanctionId;
+	public final Sanction.Appeal appeal;
 
-	private MeEvent(String type, String id, ChatJson.EventDto d) {
+	private MeEvent(String type, String id, ChatJson.EventDto d, String data) {
 		this.type = type;
 		this.id = id;
 		this.resumed = d != null && Boolean.TRUE.equals(d.resumed);
@@ -99,6 +104,13 @@ public final class MeEvent {
 		this.until = d == null ? 0 : ChatJson.time(d.until);
 		this.capeName = d != null && d.offer != null && d.offer.cape != null && d.offer.cape.name != null
 				? SafeText.line(d.offer.cape.name, SafeText.MAX_NAME) : null;
+		// Strafen tolerant lesen (fehlende/falsch getypte Felder → Standardwerte), nur für diese Ereignisse.
+		com.google.gson.JsonObject raw = type.startsWith("sanction_") || type.equals("appeal_decided")
+				? SanctionJson.object(data) : null;
+		this.sanction = raw == null ? null : SanctionJson.sanction(SanctionJson.obj(raw, "sanction"));
+		long sid = raw == null ? 0 : SanctionJson.num(raw, "sanctionId");
+		this.sanctionId = sid > 0 ? sid : sanction != null ? sanction.id : 0;
+		this.appeal = raw == null ? null : SanctionJson.appeal(SanctionJson.obj(raw, "appeal"));
 	}
 
 	/** Aus Ereignisname, JSON und ID; kaputtes JSON → null. */
@@ -112,11 +124,11 @@ public final class MeEvent {
 				return null;
 			}
 		}
-		return new MeEvent(event, id, d);
+		return new MeEvent(event, id, d, data);
 	}
 
 	/** Für Tests: Ereignis ohne Daten. */
 	static MeEvent of(String type) {
-		return new MeEvent(type, null, null);
+		return new MeEvent(type, null, null, null);
 	}
 }
