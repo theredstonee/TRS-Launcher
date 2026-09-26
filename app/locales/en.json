@@ -2937,7 +2937,6 @@
   },
   "whatsNew": {
     "title": "What's new in {version}",
-    "version": "Version {version}",
     "close": "Got it",
     "englishOnly": "These notes are available in English and German."
   },
@@ -3112,7 +3111,16 @@
     "kicker": "Update {version}",
     "version": "Version {version}",
     "read": "Read the post",
-    "hide": "Hide until the next update"
+    "hide": "Hide until the next update",
+    "openWebsite": "View on website",
+    "screenshots": "Screenshots",
+    "previous": "Previous image",
+    "next": "Next image",
+    "enlarge": "Enlarge image",
+    "closeImage": "Close image",
+    "imageOf": "Image {n} of {total}",
+    "versions": "Versions",
+    "more": "{n} more images"
   },
   "webLogin": {
     "title": "Confirm website sign-in",

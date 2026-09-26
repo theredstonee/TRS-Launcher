@@ -117,7 +117,7 @@ onMounted(() => load())
 function open(item: NewsItem) {
   const post = launcherPost(item)
   if (post) {
-    reading.value = { entry: post, title: titleOf(item) }
+    reading.value = post
     return
   }
   if (item.contentPath) {
@@ -134,7 +134,8 @@ function actionLabel(item: NewsItem) {
 
 // --- Beiträge im Launcher ----------------------------------------------------------
 
-const reading = ref<{ entry: ChangelogEntry; title: string } | null>(null)
+/** Launcher-Version: Beitrag im Dialog (Banner, Screenshots, Hinweise, „Auf Website ansehen“). */
+const reading = ref<ChangelogEntry | null>(null)
 const notes = ref<{ title: string; cover: string | null; body: string | null; error: string | null } | null>(null)
 
 async function showPatchNotes(item: NewsItem) {
@@ -238,12 +239,7 @@ async function showPatchNotes(item: NewsItem) {
       </ul>
     </div>
 
-    <UpdatePostDialog
-      v-if="reading"
-      :entry="reading.entry"
-      :title="reading.title"
-      @close="reading = null"
-    />
+    <UpdatePostDialog v-if="reading" :entries="[reading]" @close="reading = null" />
 
     <BaseDialog v-if="notes" :title="notes.title" wide @close="notes = null">
       <img v-if="notes.cover" :src="notes.cover" alt="" class="-mx-5 -mt-4 mb-4 aspect-[21/9] w-[calc(100%+2.5rem)] max-w-none object-cover" />

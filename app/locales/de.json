@@ -2937,7 +2937,6 @@
   },
   "whatsNew": {
     "title": "Neu in Version {version}",
-    "version": "Version {version}",
     "close": "Alles klar",
     "englishOnly": "Diese Hinweise gibt es auf Englisch und Deutsch."
   },
@@ -3112,7 +3111,16 @@
     "kicker": "Update {version}",
     "version": "Version {version}",
     "read": "Beitrag lesen",
-    "hide": "Bis zum nächsten Update ausblenden"
+    "hide": "Bis zum nächsten Update ausblenden",
+    "openWebsite": "Auf Website ansehen",
+    "screenshots": "Screenshots",
+    "previous": "Vorheriges Bild",
+    "next": "Nächstes Bild",
+    "enlarge": "Bild vergrößern",
+    "closeImage": "Bild schließen",
+    "imageOf": "Bild {n} von {total}",
+    "versions": "Versionen",
+    "more": "{n} weitere Bilder"
   },
   "webLogin": {
     "title": "Website-Anmeldung bestätigen",

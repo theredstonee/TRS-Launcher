@@ -2937,7 +2937,6 @@
   },
   "whatsNew": {
     "title": "{version} sürümündeki yenilikler",
-    "version": "Sürüm {version}",
     "close": "Anladım",
     "englishOnly": "Bu notlar yalnızca İngilizce ve Almanca olarak mevcuttur."
   },
@@ -3112,7 +3111,16 @@
     "kicker": "Güncelleme {version}",
     "version": "Sürüm {version}",
     "read": "Yazıyı oku",
-    "hide": "Sonraki güncellemeye kadar gizle"
+    "hide": "Sonraki güncellemeye kadar gizle",
+    "openWebsite": "Web sitesinde görüntüle",
+    "screenshots": "Ekran görüntüleri",
+    "previous": "Önceki görsel",
+    "next": "Sonraki görsel",
+    "enlarge": "Görseli büyüt",
+    "closeImage": "Görseli kapat",
+    "imageOf": "Görsel {n} / {total}",
+    "versions": "Sürümler",
+    "more": "{n} görsel daha"
   },
   "webLogin": {
     "title": "Web sitesi girişini onayla",
