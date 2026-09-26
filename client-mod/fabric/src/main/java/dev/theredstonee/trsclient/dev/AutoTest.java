@@ -110,6 +110,11 @@ public final class AutoTest {
 			MapsTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=roof: Karten – Dach ausblenden (Innenansicht) und Barriere-Decken
+		if ("roof".equals(System.getProperty("trsclient.autotest.only"))) {
+			RoofMapTest.install();
+			return;
+		}
 		if ("social".equals(System.getProperty("trsclient.autotest.only"))) {
 			SocialTest.install();
 			return;

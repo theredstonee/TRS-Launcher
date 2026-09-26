@@ -1,18 +1,23 @@
 package dev.theredstonee.trsclient.compat;
 
 import dev.theredstonee.trsclient.core.map.ChunkReader;
+import dev.theredstonee.trsclient.core.map.MapColors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Chunk-Zugriff der Karte ({@link ChunkReader}): Oberkante, Kartenfarbe und Tönung (Biom-Gras/Laub/Wasser) der
  * Blöcke eines geladenen Chunks. Alles Weitere rechnet {@code core.map}. Nur geladene Chunks – die Karte zeigt nie
  * mehr, als das Spiel ohnehin kennt. Versionen: MaterialColor → MapColor ab 1.20, Weltuntergrenze ab 1.17,
- * Tönung über BlockColors (ab 26.1 BlockTintSource).
+ * Tönung über BlockColors (ab 26.1 BlockTintSource). Unsichtbare technische Blöcke (Barriere, Strukturleere, ab
+ * 1.17 Licht-Block) gelten als Luft, wassergeflutet als Wasser; leere Abschnitte ab 1.18 über hasOnlyAir.
  */
 public final class MapSampler implements ChunkReader {
 	private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -58,11 +63,35 @@ public final class MapSampler implements ChunkReader {
 		pos.set(baseX + localX, y, baseZ + localZ);
 		BlockState state = chunk.getBlockState(pos);
 		if (state.isAir()) return AIR;
+		if (invisible(state.getBlock())) return state.getFluidState().isEmpty() ? AIR : MapColors.MAP_WATER;
 		//? if >=1.20 {
 		net.minecraft.world.level.material.MapColor color = state.getMapColor(level, pos);
 		//?} else
 		/*net.minecraft.world.level.material.MaterialColor color = state.getMapColor(level, pos);*/
-		return color == null ? 0 : color.col & 0xFFFFFF;
+		int rgb = color == null ? 0 : color.col & 0xFFFFFF;
+		return state.canOcclude() ? rgb | OPAQUE : rgb;
+	}
+
+	/** Barriere, Strukturleere und (ab 1.17) Licht-Block: im Spiel unsichtbar, auf der Karte Luft. */
+	private static boolean invisible(Block b) {
+		//? if >=1.17 {
+		if (b == Blocks.LIGHT) return true;
+		//?}
+		return b == Blocks.BARRIER || b == Blocks.STRUCTURE_VOID;
+	}
+
+	@Override
+	public boolean sectionEmpty(int y) {
+		LevelChunkSection[] sections = chunk.getSections();
+		//? if >=1.17 {
+		int i = chunk.getSectionIndex(y);
+		//?} else
+		/*int i = y >> 4;*/
+		if (i < 0 || i >= sections.length) return true;
+		//? if >=1.18 {
+		return sections[i] == null || sections[i].hasOnlyAir();
+		//?} else
+		/*return LevelChunkSection.isEmpty(sections[i]);*/
 	}
 
 	@Override

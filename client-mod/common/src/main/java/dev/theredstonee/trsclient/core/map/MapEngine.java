@@ -20,14 +20,26 @@ import java.util.UUID;
 /**
  * Herz der Karten (Minimap + Weltkarte), für alle Minecraft-Versionen gleich: erkennt Welt/Dimension, tastet
  * geladene Chunks mit Zeitbudget je Tick ab (fehlende zuerst, von innen nach außen, danach Auffrischen in der
- * Nähe), wählt Oberfläche oder Höhlenschnitt, speichert erkundete Bereiche, merkt sich Spieler/Kreaturen je Tick
- * und liefert Position/Drehung flüssig zwischen den Ticks. Die Version liefert nur {@link MapPlatform}.
+ * Nähe), wählt Oberfläche, Innenansicht (Dach-Schnitt) oder Höhlenschnitt, speichert erkundete Bereiche, merkt
+ * sich Spieler/Kreaturen je Tick und liefert Position/Drehung flüssig zwischen den Ticks. Die Version liefert nur {@link MapPlatform}.
  */
 public final class MapEngine {
 	/** Höhlenschnitt in Schichten dieser Höhe. */
 	static final int CAVE_BAND = 8;
 	/** So viele Höhlenebenen bleiben geöffnet. */
 	static final int MAX_CAVE_LAYERS = 4;
+	/** So viele Innenansichten (Dach-Schnitte) bleiben geöffnet. */
+	static final int MAX_ROOF_LAYERS = 3;
+	/** Dach-Suche und Schnitt: höchstens so viele Blöcke über dem Kopf. */
+	static final int ROOF_RANGE = 10;
+	/** Innenansicht an, wenn das Himmelslicht am Kopf höchstens so hoch ist (auch ohne Dach in Reichweite). */
+	static final int ROOF_SKY_ENTER = 11;
+	/** Innenansicht erst wieder aus, wenn kein Dach mehr da ist und das Himmelslicht mindestens so hoch ist … */
+	static final int ROOF_SKY_LEAVE = 14;
+	/** … und zwar so viele Ticks am Stück (kein Flackern am Dachrand). */
+	static final int ROOF_LEAVE_TICKS = 10;
+	/** Dach-Prüfung in Plus-Form: Mitte und vier Nachbarn (ein einzelner Baumstamm über dem Kopf ist kein Dach). */
+	private static final int[] ROOF_PROBE = {0, 0, 1, 0, -1, 0, 0, 1, 0, -1};
 	/** Zeitbudget fürs Abtasten je Tick (ns). */
 	static final long SAMPLE_BUDGET_NS = 600_000L;
 	static final int MAX_ENTITIES = 256;
@@ -47,11 +59,19 @@ public final class MapEngine {
 	private MapLayer surface;
 	private final List<MapLayer> caves = new ArrayList<MapLayer>();
 	private MapLayer cave;
+	private final List<MapLayer> roofs = new ArrayList<MapLayer>();
+	private MapLayer roof;
 	private int layerSerial;
 	private final ChunkStamps surfaceStamps = new ChunkStamps();
 	private final ChunkStamps caveStamps = new ChunkStamps();
+	private final ChunkStamps roofStamps = new ChunkStamps();
 	private boolean caveActive;
 	private boolean underground;
+	// Innenansicht: Dach über dem Kopf erkannt (mit Hysterese), Schnitthöhe.
+	private boolean indoors;
+	private int clearTicks;
+	private boolean roofActive;
+	private int roofCut = ColumnScanner.NO_CUT;
 	private int refreshCursor;
 	private boolean motdChecked;
 
@@ -159,9 +179,11 @@ public final class MapEngine {
 		return d.contains("the_end") || d.endsWith(":end") || d.equals("dim1");
 	}
 
-	/** Ebene, die die Minimap gerade zeigt. */
+	/** Ebene, die die Minimap gerade zeigt: Höhlenschnitt, Innenansicht (Dach-Schnitt) oder Oberfläche. */
 	public MapLayer viewLayer() {
-		return caveActive && cave != null ? cave : surface;
+		if (caveActive && cave != null) return cave;
+		if (roofActive && roof != null) return roof;
+		return surface;
 	}
 
 	public MapLayer surfaceLayer() {
@@ -174,6 +196,25 @@ public final class MapEngine {
 
 	public boolean caveActive() {
 		return caveActive && cave != null;
+	}
+
+	/** Innenansicht (Dach ausgeblendet) aktiv? */
+	public boolean roofActive() {
+		return roofActive && roof != null && !caveActive();
+	}
+
+	public MapLayer roofLayer() {
+		return roofActive() ? roof : null;
+	}
+
+	/** Zeigt die Minimap gerade eine andere Ebene als die Oberfläche (Höhle oder Innenansicht)? */
+	public boolean layeredView() {
+		return caveActive() || roofActive();
+	}
+
+	/** Aktuelle Schnitthöhe der Innenansicht oder {@link ColumnScanner#NO_CUT}. */
+	public int roofCut() {
+		return roofActive() ? roofCut : ColumnScanner.NO_CUT;
 	}
 
 	public boolean underground() {
@@ -387,16 +428,36 @@ public final class MapEngine {
 		caveActive = want && fairPlay.caveAllowed(nether);
 		if (caveActive) selectCave((int) Math.floor(curY));
 
-		// Abtasten mit Zeitbudget: Höhle zuerst (die sieht man gerade), dann Oberfläche.
+		// Innenansicht: Dach über dem Kopf (nicht in Höhlen – dafür gibt es die Höhlenansicht).
 		ChunkReader reader = p.reader();
+		boolean roofAllowed = !caveActive && !nether && !underground && modules.minimapHideRoof.get()
+				&& fairPlay.caveAllowed(false) && reader != null;
+		roofActive = false;
+		if (roofAllowed) {
+			try {
+				updateRoof(reader, sky, !isEnd(dim));
+			} catch (RuntimeException e) {
+				indoors = false;
+			}
+			roofActive = indoors;
+			if (roofActive) selectRoof(roofCut);
+		} else {
+			indoors = false;
+			clearTicks = 0;
+			roofCut = ColumnScanner.NO_CUT;
+		}
+
+		// Abtasten mit Zeitbudget: die gerade gezeigte Ebene zuerst, dann die Oberfläche.
 		if (reader != null) {
 			long deadline = System.nanoTime() + SAMPLE_BUDGET_NS;
 			int radius = Math.max(2, Math.min(12, p.renderDistance()));
 			try {
 				if (caveActive && cave != null) {
-					sample(reader, cave, caveStamps, true, cave.caveRef, Math.min(radius, 8), deadline, now);
+					sample(reader, cave, caveStamps, Math.min(radius, 8), deadline, now);
+				} else if (roofActive && roof != null) {
+					sample(reader, roof, roofStamps, Math.min(radius, 8), deadline, now);
 				}
-				sample(reader, surface, surfaceStamps, false, 0, radius, deadline, now);
+				sample(reader, surface, surfaceStamps, radius, deadline, now);
 			} catch (RuntimeException e) {
 				// Ein Chunk im Umbau darf die Karte nicht anhalten.
 			}
@@ -430,6 +491,7 @@ public final class MapEngine {
 			lastMaintain = now;
 			surface.maintain(now, 20_000, MapCompose.INSTANCE, 2);
 			for (MapLayer l : caves) l.maintain(now, 20_000, MapCompose.INSTANCE, 1);
+			for (MapLayer l : roofs) l.maintain(now, 20_000, MapCompose.INSTANCE, 1);
 			textures.trim(now);
 		}
 		if (disk != null && now - lastLimit >= 300_000) {
@@ -437,6 +499,7 @@ public final class MapEngine {
 			List<Path> keep = new ArrayList<Path>();
 			if (surface.dir() != null) keep.add(surface.dir());
 			for (MapLayer l : caves) if (l.dir() != null) keep.add(l.dir());
+			for (MapLayer l : roofs) if (l.dir() != null) keep.add(l.dir());
 			disk.enforceLimit((long) modules.worldMapCache.get() * 1024L * 1024L, keep);
 		}
 		float us = (System.nanoTime() - t0) / 1000f;
@@ -458,6 +521,10 @@ public final class MapEngine {
 		surface = new MapLayer("surface", ++layerSerial, Integer.MIN_VALUE, disk, dir);
 		surfaceStamps.clear();
 		caveStamps.clear();
+		roofStamps.clear();
+		indoors = false;
+		clearTicks = 0;
+		roofCut = ColumnScanner.NO_CUT;
 		refreshCursor = 0;
 		hasPos = false;
 		lastLimit = System.currentTimeMillis() - 290_000; // Grenze kurz nach dem Betreten prüfen
@@ -493,11 +560,91 @@ public final class MapEngine {
 	}
 
 	/**
+	 * Dach über dem Kopf erkennen (mit Hysterese): an, sobald in Plus-Form über dem Spieler innerhalb von
+	 * {@link #ROOF_RANGE} Blöcken volle, undurchsichtige Blöcke liegen (Barrieren, Glas, Laub zählen nicht) oder –
+	 * in Dimensionen mit Himmel – das Himmelslicht am Kopf höchstens {@link #ROOF_SKY_ENTER} ist; aus erst, wenn
+	 * {@link #ROOF_LEAVE_TICKS} Ticks lang kein Dach da ist und das Himmelslicht mindestens {@link #ROOF_SKY_LEAVE}.
+	 * Dabei wird die Schnitthöhe gewählt (siehe {@link #chooseCut}).
+	 */
+	private void updateRoof(ChunkReader reader, int sky, boolean hasSky) {
+		int fx = (int) Math.floor(curX), fz = (int) Math.floor(curZ);
+		int feet = (int) Math.floor(curY);
+		int head = feet + 1;
+		int roofY = ColumnScanner.NO_CUT;
+		boolean covered = true;
+		for (int k = 0; k < ROOF_PROBE.length; k += 2) {
+			int ry = ColumnScanner.roofAbove(reader, fx + ROOF_PROBE[k], head, fz + ROOF_PROBE[k + 1], ROOF_RANGE);
+			if (ry == ColumnScanner.NO_CUT) {
+				covered = false;
+				break;
+			}
+			roofY = Math.min(roofY, ry);
+		}
+		boolean enter = covered || (hasSky && sky <= ROOF_SKY_ENTER);
+		boolean clear = !covered && (!hasSky || sky >= ROOF_SKY_LEAVE);
+		if (enter) {
+			indoors = true;
+			clearTicks = 0;
+		} else if (indoors) {
+			if (!clear) {
+				clearTicks = 0;
+			} else if (++clearTicks >= ROOF_LEAVE_TICKS) {
+				indoors = false;
+				clearTicks = 0;
+			}
+		}
+		if (!indoors) {
+			roofCut = ColumnScanner.NO_CUT;
+			return;
+		}
+		roofCut = chooseCut(roofCut, feet, covered ? roofY : ColumnScanner.NO_CUT);
+	}
+
+	/**
+	 * Schnitthöhe der Innenansicht: die bisherige Höhe {@code current} bleibt, solange sie zwischen Füßen und knapp
+	 * unter dem Dach liegt (ohne Dach in Reichweite: bis Kopf + {@link #ROOF_RANGE} + 2) – weniger Ebenenwechsel.
+	 * Sonst neu: min(Dach − 1, Kopf + {@link #ROOF_RANGE}), auf eine gerade Höhe abgerundet, nie unter den Füßen.
+	 */
+	static int chooseCut(int current, int feet, int roofY) {
+		int head = feet + 1;
+		boolean hasRoof = roofY != ColumnScanner.NO_CUT;
+		int upper = hasRoof ? roofY - 1 : head + ROOF_RANGE + 2;
+		if (current != ColumnScanner.NO_CUT && current >= feet && current <= upper) return current;
+		int target = hasRoof ? Math.min(roofY - 1, head + ROOF_RANGE) : head + ROOF_RANGE;
+		return Math.max(feet, target & ~1);
+	}
+
+	private void selectRoof(int cut) {
+		String id = "roof" + cut;
+		if (roof != null && roof.id.equals(id)) return;
+		MapLayer found = null;
+		for (MapLayer l : roofs) {
+			if (l.id.equals(id)) found = l;
+		}
+		if (found == null) {
+			Path dir = disk == null ? null : disk.layerDir(worldKey, dimension, id);
+			found = new MapLayer(id, ++layerSerial, Integer.MIN_VALUE, cut, disk, dir);
+			found.setMaxRegions(96);
+			roofs.add(found);
+			while (roofs.size() > MAX_ROOF_LAYERS) {
+				MapLayer old = roofs.remove(0);
+				if (old == roof) continue;
+				textures.releaseLayer(old);
+				old.close(MapCompose.INSTANCE);
+			}
+		} else {
+			roofs.remove(found);
+			roofs.add(found);
+		}
+		roof = found;
+		roofStamps.clear();
+	}
+
+	/**
 	 * Tastet Chunks rund um den Spieler ab: erst fehlende (Ringe von innen nach außen), dann das Auffrischen
 	 * (nahe Chunks alle 2 s, weitere alle 30 s) – bis das Zeitbudget verbraucht ist.
 	 */
-	private void sample(ChunkReader r, MapLayer layer, ChunkStamps stamps, boolean caveMode, int yStart, int radius,
-			long deadline, long now) {
+	private void sample(ChunkReader r, MapLayer layer, ChunkStamps stamps, int radius, long deadline, long now) {
 		int pcx = (int) Math.floor(curX) >> 4;
 		int pcz = (int) Math.floor(curZ) >> 4;
 		for (int ring = 0; ring <= radius; ring++) {
@@ -508,7 +655,7 @@ public final class MapEngine {
 					long key = ChunkStamps.key(cx, cz);
 					if (stamps.get(key) >= 0) continue;
 					if (!r.isLoaded(cx, cz)) continue;
-					scan(r, layer, stamps, caveMode, yStart, cx, cz, key, now);
+					scan(r, layer, stamps, cx, cz, key, now);
 					if (System.nanoTime() > deadline) return;
 				}
 			}
@@ -527,14 +674,13 @@ public final class MapEngine {
 			int dist = Math.max(Math.abs(dx), Math.abs(dz));
 			long maxAge = dist <= 2 ? 2_000 : (dist <= 5 ? 8_000 : 30_000);
 			if (now - last < maxAge || !r.isLoaded(cx, cz)) continue;
-			scan(r, layer, stamps, caveMode, yStart, cx, cz, key, now);
+			scan(r, layer, stamps, cx, cz, key, now);
 		}
 	}
 
-	private void scan(ChunkReader r, MapLayer layer, ChunkStamps stamps, boolean caveMode, int yStart, int cx, int cz,
-			long key, long now) {
-		boolean ok = caveMode ? ColumnScanner.cave(r, cx, cz, yStart, chunkPixels, chunkHeights)
-				: ColumnScanner.surface(r, cx, cz, chunkPixels, chunkHeights);
+	private void scan(ChunkReader r, MapLayer layer, ChunkStamps stamps, int cx, int cz, long key, long now) {
+		boolean ok = layer.cave() ? ColumnScanner.cave(r, cx, cz, layer.caveRef, chunkPixels, chunkHeights)
+				: ColumnScanner.surface(r, cx, cz, layer.roofCut, chunkPixels, chunkHeights);
 		stamps.put(key, now);
 		if (!ok) return;
 		layer.forWrite(cx >> 3, cz >> 3, now).writeChunk(cx, cz, chunkPixels, chunkHeights, now);
@@ -550,10 +696,18 @@ public final class MapEngine {
 			textures.releaseLayer(l);
 			l.close(MapCompose.INSTANCE);
 		}
+		for (MapLayer l : roofs) {
+			textures.releaseLayer(l);
+			l.close(MapCompose.INSTANCE);
+		}
 		caves.clear();
+		roofs.clear();
 		surface = null;
 		cave = null;
+		roof = null;
 		caveActive = false;
+		roofActive = false;
+		indoors = false;
 	}
 
 	/** Welt verlassen: alles speichern, Texturen freigeben. */

@@ -21,6 +21,31 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **TRS Client: the maps look inside buildings.** Under a roof or ceiling the minimap now shows the inside instead of
+  the roof: floors, rooms, halls and lobbies – only blocks up to just below the roof (at most about 10 blocks above
+  your head) count. Outdoors and under trees nothing changes, in caves the cave view stays in charge. The world map
+  follows the minimap's level (the button at the top switches back to the surface). New setting "Hide roofs" in the
+  Minimap module (on by default); like the cave view it is off on servers that ask for Fair Play.
+- **TRS Client: barriers no longer get in the way of the maps.** Barrier blocks, light blocks and structure voids are
+  treated like air – a lobby with an invisible barrier ceiling or barrier floors in empty worlds no longer leave dark
+  gaps, the map shows what is below.
+
+### Deutsch
+
+- **TRS Client: Die Karten schauen in Gebäude hinein.** Unter einem Dach oder einer Decke zeigt die Minimap jetzt das
+  Innere statt des Dachs: Böden, Räume, Hallen und Lobbys – es zählen nur Blöcke bis knapp unter dem Dach (höchstens
+  etwa 10 Blöcke über deinem Kopf). Im Freien und unter Bäumen bleibt alles wie bisher, in Höhlen bleibt die
+  Höhlenansicht zuständig. Die Weltkarte folgt der Ebene der Minimap (der Knopf oben schaltet zurück zur Oberfläche).
+  Neue Einstellung „Dach ausblenden“ im Minimap-Modul (standardmäßig an); wie die Höhlenansicht ist sie auf Servern
+  aus, die Fair Play verlangen.
+- **TRS Client: Barrieren stören die Karten nicht mehr.** Barriere-Blöcke, Licht-Blöcke und Strukturleeren zählen wie
+  Luft – eine Lobby mit unsichtbarer Barriere-Decke oder Barriere-Böden in leeren Welten hinterlassen keine dunklen
+  Lücken mehr, die Karte zeigt, was darunter liegt.
+
 ## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
 
 <!-- banner: accent=#ff9f3d motif=/news/0.7.0/banner.png -->

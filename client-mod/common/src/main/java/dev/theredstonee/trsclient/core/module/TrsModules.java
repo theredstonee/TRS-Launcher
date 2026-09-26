@@ -217,6 +217,8 @@ public final class TrsModules {
 	public final ChoiceSetting<MapShape> minimapShape;
 	public final NumberSetting minimapOpacity;
 	public final ChoiceSetting<CaveMode> minimapCaveMode;
+	/** Minimap/Weltkarte: unter einem Dach nur bis knapp darunter zeigen (Innenansicht). */
+	public final BoolSetting minimapHideRoof;
 	public final BoolSetting minimapDeath;
 	public final BoolSetting minimapFriends;
 	public final BoolSetting minimapHostile;
@@ -664,6 +666,7 @@ public final class TrsModules {
 		minimapRotate = minimap.add(new BoolSetting("rotate", "Rotate with view", true));
 		minimapOpacity = minimap.add(new NumberSetting("opacity", "Map opacity", 100, 20, 100, 5, "", "%"));
 		minimapCaveMode = minimap.add(new ChoiceSetting<>("caveMode", "Cave view", CaveMode.class, CaveMode.AUTO));
+		minimapHideRoof = minimap.add(new BoolSetting("hideRoof", "Hide roofs (show the inside of buildings)", true));
 		minimapWaypoints = minimap.add(new BoolSetting("showWaypoints", "Show waypoints", true));
 		minimapDeath = minimap.add(new BoolSetting("showDeath", "Show last death point", true));
 		minimapPlayers = minimap.add(new BoolSetting("showPlayers", "Show players", true));

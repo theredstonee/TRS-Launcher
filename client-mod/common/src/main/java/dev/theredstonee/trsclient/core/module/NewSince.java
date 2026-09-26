@@ -89,6 +89,8 @@ public final class NewSince {
 		add("0.7.2", CLIPS_PREVIEW);
 		// TRS Client 0.8.0: Sozial (Chat, Gruppen, Bilder, Einladungen, Toasts, Schnellantwort, Meldungen).
 		add(SOCIAL, "social", MENU_SOCIAL, KEY_SOCIAL, KEY_QUICK_REPLY);
+		// TRS Client 0.8.1: Karten blenden Dächer aus (Innenansicht).
+		add("0.8.1", "minimap.hideRoof");
 	}
 
 	private NewSince() {
