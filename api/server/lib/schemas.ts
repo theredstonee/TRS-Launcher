@@ -56,6 +56,8 @@ export const settingsPatch = z
     presenceVisibility: z.enum(['friends', 'nobody']),
     shareServer: z.boolean(),
     showCosmeticsToOthers: z.boolean(),
+    chatReadReceipts: z.boolean(),
+    chatTypingIndicator: z.boolean(),
   })
   .partial()
   .refine((o) => Object.keys(o).length > 0, 'at least one setting is required')
@@ -259,3 +261,131 @@ export const syncSettingsBody = z.strictObject({
   }),
   updatedAt: syncUpdatedAt,
 })
+
+// ---------------------------------------------------------------- Chat, Meldungen, Moderation
+
+export const conversationIdSchema = z.string().regex(/^c[0-9a-f]{20}$/, 'invalid conversation id')
+export const messageIdSchema = z.string().regex(/^m[0-9a-f]{20}$/, 'invalid message id')
+export const attachmentIdSchema = z.string().regex(/^a[0-9a-f]{24}$/, 'invalid attachment id')
+export const reportIdSchema = z.string().regex(/^r[0-9a-f]{16}$/, 'invalid report id')
+
+/** Rohtext; gesäubert und gezählt wird in safety.ts (Codepoints, nach dem Säubern). */
+const messageText = z.string().max(8000)
+
+const inviteSchema = z.strictObject({
+  address: serverAddress,
+  name: z.string().trim().min(1).max(32).optional(),
+})
+
+export const sendMessageBody = z.strictObject({
+  text: messageText.optional(),
+  replyTo: messageIdSchema.optional(),
+  attachments: z.array(attachmentIdSchema).max(10).optional(),
+  invite: inviteSchema.optional(),
+  /** Idempotenz: vom Client erzeugt (z. B. UUID), gleiche nonce = gleiche Nachricht. */
+  nonce: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/, 'nonce must be 8-64 characters of A-Z, a-z, 0-9, _ or -').optional(),
+})
+
+export const editMessageBody = z.strictObject({ text: messageText })
+
+export const openDmBody = z.strictObject({ uuid: uuidSchema })
+
+const groupNameRaw = z.string().min(1).max(200)
+export const createGroupBody = z.strictObject({
+  name: groupNameRaw,
+  members: z.array(uuidSchema).max(24).default([]),
+})
+export const renameGroupBody = z.strictObject({ name: groupNameRaw })
+export const addMembersBody = z.strictObject({ members: z.array(uuidSchema).min(1).max(24) })
+export const transferOwnerBody = z.strictObject({ uuid: uuidSchema })
+
+export const listMessagesQuery = z
+  .strictObject({
+    before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
+    after: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .refine((q) => q.before === undefined || q.after === undefined, 'use either before or after')
+
+export const listConversationsQuery = z.strictObject({
+  cursor: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+})
+
+export const readBody = z.strictObject({ seq: z.int().min(0).max(Number.MAX_SAFE_INTEGER) })
+export const unreadBody = z.strictObject({ seq: z.int().min(1).max(Number.MAX_SAFE_INTEGER).optional() }).optional()
+
+/** Stummschalten: `muted: false` = aus; `until` fehlt = unbefristet. */
+export const muteConversationBody = z.strictObject({
+  muted: z.boolean(),
+  until: z.iso.datetime({ offset: true }).optional(),
+})
+
+export const typingBody = z.strictObject({ typing: z.boolean() })
+
+export const attachmentQuery = z.strictObject({ thumb: z.enum(['0', '1', 'true', 'false']).optional() })
+
+export const serverStatusQuery = z.strictObject({ address: serverAddress })
+
+export const reportReasonSchema = z.enum(['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other'])
+
+export const chatReportBody = z
+  .strictObject({
+    kind: z.enum(['message', 'image', 'player', 'group']),
+    reason: reportReasonSchema,
+    note: plainText(500).optional(),
+    messageId: messageIdSchema.optional(),
+    attachmentId: attachmentIdSchema.optional(),
+    uuid: uuidSchema.optional(),
+    conversationId: conversationIdSchema.optional(),
+  })
+  .refine((b) => b.kind !== 'message' || b.messageId !== undefined, 'messageId is required for kind=message')
+  .refine((b) => b.kind !== 'image' || b.attachmentId !== undefined, 'attachmentId is required for kind=image')
+  .refine((b) => b.kind !== 'player' || b.uuid !== undefined, 'uuid is required for kind=player')
+  .refine((b) => b.kind !== 'group' || b.conversationId !== undefined, 'conversationId is required for kind=group')
+
+export const adminReportListQuery = z.strictObject({
+  status: z.enum(['open', 'in_review', 'resolved', 'active', 'all']).default('active'),
+  kind: z.enum(['message', 'image', 'player', 'group']).optional(),
+  target: uuidSchema.optional(),
+  cursor: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+})
+
+export const adminReportStatusBody = z.strictObject({ status: z.enum(['open', 'in_review']) })
+
+export const adminReportActionBody = z
+  .strictObject({
+    action: z.enum(['delete_message', 'warn', 'mute', 'ban', 'dismiss', 'resolve']),
+    reason: plainText(200).optional(),
+    minutes: z.int().min(5).max(525_600).optional(),
+    keepOpen: z.boolean().optional(),
+    includeRelated: z.boolean().optional(),
+  })
+  .refine((b) => b.minutes === undefined || b.action === 'mute', 'minutes is only allowed for action=mute')
+
+export const adminNoteBody = z.strictObject({ text: plainText(2000) })
+
+export const adminMuteBody = z.strictObject({
+  minutes: z.int().min(5).max(525_600).optional(),
+  reason: plainText(200).optional(),
+})
+
+export const adminWarnBody = z.strictObject({ reason: plainText(200) })
+
+export const wordFilterBody = z.strictObject({
+  word: z.string().trim().min(2).max(64),
+  mode: z.enum(['word', 'contains']).default('word'),
+  action: z.enum(['block', 'mask']).default('mask'),
+})
+
+export const wordIdSchema = z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER)
+
+export const auditQuery = z.strictObject({
+  ref: z.string().regex(/^[a-z0-9]{1,40}$/).optional(),
+  target: uuidSchema.optional(),
+  before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+})
+
+export const eventsMeQuery = z.strictObject({ lastEventId: z.string().max(64).optional() })

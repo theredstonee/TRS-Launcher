@@ -1,9 +1,13 @@
+import { join } from 'node:path'
 import type { Config } from './config'
+import { ChatCipher } from './crypto'
 import type { Db } from './db'
 import { EventHub } from './events'
 import type { MojangClient } from './mojang'
 import { PresenceStore } from './presence'
 import { RateLimiter } from './ratelimit'
+import { SpamGuard } from './safety'
+import { ServerStatusService, type PingDeps } from './serverping'
 import { SkinService } from './skins'
 import { TemplateSet } from './templates'
 import { PlayerWatchHub } from './watch'
@@ -26,6 +30,15 @@ export interface AppContext {
   capeDir: string
   /** Ordner für Kosmetik-PNGs (`<DATA_DIR>/cosmetics`). */
   cosmeticDir: string
+  /** Ordner für Chat-Bilder und Beweis-Kopien (`<DATA_DIR>/chat`, verschlüsselt). */
+  chatDir: string
+  /** Verschlüsselung der Chat-Inhalte (Schlüssel aus `CHAT_KEYS`). */
+  cipher: ChatCipher
+  /** Status für Server-Einladungen (Ping mit Cache + SSRF-Schutz). */
+  servers: ServerStatusService
+  spam: SpamGuard
+  /** Tippt gerade: `<conversationId>:<uuid>` → Ablaufzeit (nur RAM). */
+  typing: Map<string, number>
 }
 
 export function createContext(opts: {
@@ -36,6 +49,8 @@ export function createContext(opts: {
   cosmeticDir: string
   templates?: TemplateSet
   now?: () => number
+  chatDir?: string
+  pingDeps?: PingDeps
 }): AppContext {
   const now = opts.now ?? Date.now
   const limiter = new RateLimiter(now)
@@ -45,7 +60,12 @@ export function createContext(opts: {
     db: opts.db,
     mojang: opts.mojang,
     presence: new PresenceStore(lim.presenceTtlMs, now),
-    events: new EventHub(lim.maxSseStreamsPerUser, lim.maxSseStreamsTotal),
+    events: new EventHub(lim.maxSseStreamsPerUser, lim.maxSseStreamsTotal, {
+      maxPerUserMe: lim.maxUserStreamsPerUser,
+      bufferSize: lim.replayBufferSize,
+      windowMs: lim.replayWindowMs,
+      now,
+    }),
     watch: new PlayerWatchHub(lim.maxPlayerStreamsPerUser, lim.maxPlayerStreamsTotal),
     limiter,
     skins: new SkinService(opts.mojang, limiter, now),
@@ -53,6 +73,11 @@ export function createContext(opts: {
     now,
     capeDir: opts.capeDir,
     cosmeticDir: opts.cosmeticDir,
+    chatDir: opts.chatDir ?? join(opts.config.dataDir, 'chat'),
+    cipher: new ChatCipher(opts.config.chatKeys.keys),
+    servers: new ServerStatusService(opts.config.serverPing, now, opts.pingDeps),
+    spam: new SpamGuard(opts.config.secretKey, now),
+    typing: new Map(),
   }
 }
 

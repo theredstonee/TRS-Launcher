@@ -4,6 +4,8 @@ import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { capeView, capeWearers, type CapeRow, type CapeView } from './capes'
 import { notifyShareRemoved, releaseHoldings, shareHolders } from './capeshares'
+import { finishChatPurge, prepareChatPurge } from './chat'
+import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
 import { forbidden } from './errors'
 
@@ -19,6 +21,8 @@ export interface UserRow {
   share_server: number
   active_cape_id: string | null
   show_cosmetics: number
+  chat_read_receipts: number
+  chat_typing: number
 }
 
 export interface Settings {
@@ -27,6 +31,10 @@ export interface Settings {
   presenceVisibility: 'friends' | 'nobody'
   shareServer: boolean
   showCosmeticsToOthers: boolean
+  /** Lesebestätigungen senden und sehen (gegenseitig: aus = auch keine fremden sehen). */
+  chatReadReceipts: boolean
+  /** „Tippt gerade“ senden und sehen (gegenseitig). */
+  chatTypingIndicator: boolean
 }
 
 export interface MeView {
@@ -78,6 +86,8 @@ export function settingsOf(u: UserRow): Settings {
     presenceVisibility: u.presence_visibility,
     shareServer: u.share_server === 1,
     showCosmeticsToOthers: u.show_cosmetics === 1,
+    chatReadReceipts: u.chat_read_receipts === 1,
+    chatTypingIndicator: u.chat_typing === 1,
   }
 }
 
@@ -118,6 +128,14 @@ export function updateSettings(ctx: AppContext, uuid: string, patch: Partial<Set
     sets.push('show_cosmetics = ?')
     params.push(patch.showCosmeticsToOthers ? 1 : 0)
   }
+  if (patch.chatReadReceipts !== undefined) {
+    sets.push('chat_read_receipts = ?')
+    params.push(patch.chatReadReceipts ? 1 : 0)
+  }
+  if (patch.chatTypingIndicator !== undefined) {
+    sets.push('chat_typing = ?')
+    params.push(patch.chatTypingIndicator ? 1 : 0)
+  }
   // Spaltennamen stammen ausschließlich aus der festen Liste oben, Werte gehen als Parameter.
   if (sets.length > 0) run(ctx.db, `UPDATE users SET ${sets.join(', ')} WHERE uuid = ?`, ...params, uuid)
   if (patch.shareServer === false) ctx.presence.stripServer(uuid)
@@ -127,6 +145,9 @@ export function updateSettings(ctx: AppContext, uuid: string, patch: Partial<Set
 /**
  * DSGVO Art. 17: löscht Konto, Sitzungen, Freundschaften, Anfragen, Blockaden, Uploads, Einlösungen, Meldungen
  * und alle Sync-Daten (Skins samt Bildern, Grabsteine, Presets, Einstellungen – per ON DELETE CASCADE).
+ * Chat: alle DMs (beide Seiten), eigene Nachrichten, Reaktionen und Bilder in Gruppen, leere Gruppen;
+ * eigene Gruppen gehen an das dienstälteste Mitglied. Meldungen gegen das Konto und eine aktive
+ * Stummschaltung bleiben (berechtigtes Interesse, befristet – siehe moderation.ts).
  */
 export function deleteUser(ctx: AppContext, uuid: string): void {
   // Geteilte Umhänge, die dieser Nutzer hielt, samt allem, was er weitergeteilt hat.
@@ -135,10 +156,14 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   const cosmetics = all<{ id: string }>(ctx.db, "SELECT id FROM cosmetics WHERE owner_uuid = ? AND kind = 'upload'", uuid)
   // Wer eigene Uploads geteilt bekommen hat, verliert sie mit dem Konto (Zeilen per FK weg).
   const sharedOut = uploads.map(({ id }) => ({ id, holders: shareHolders(ctx, id), worn: capeWearers(ctx, id) }))
+  const chat = prepareChatPurge(ctx, uuid)
   tx(ctx.db, () => {
     run(ctx.db, 'DELETE FROM users WHERE uuid = ?', uuid)
-    run(ctx.db, 'DELETE FROM admin_log WHERE target = ?', uuid)
+    // Einträge zu Meldungen (ref) bleiben mit der Meldung bis zu deren Ablauf.
+    run(ctx.db, 'DELETE FROM admin_log WHERE target = ? AND ref IS NULL', uuid)
+    purgeModeration(ctx, uuid)
   })
+  finishChatPurge(ctx, chat)
   for (const s of sharedOut) {
     for (const u of s.worn) if (u !== uuid) emitCape(ctx, u)
     notifyShareRemoved(ctx, s.id, s.holders)

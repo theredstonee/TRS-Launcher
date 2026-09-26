@@ -14,8 +14,8 @@ The German deployment guide is in [README.md](README.md).
 
 | Topic | Rule |
 |---|---|
-| Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`. |
-| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Anything larger gets `413`. |
+| Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`, and chat images (§18.7), which send raw `image/png`, `image/jpeg` or `image/webp`. |
+| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**, a chat image at most **5 MiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Anything larger gets `413`. |
 | Unknown fields | They are **rejected** with `400 invalid_request`. All request objects are strict. |
 | UUIDs | Requests accept 32 hex digits with or without dashes, in any case. **Responses always use 32 lowercase hex digits without dashes**, for example `75c1a6f3112240abbdb57b9d21c64232`. |
 | Minecraft names | `^[A-Za-z0-9_]{1,16}$` |
@@ -97,6 +97,14 @@ All limits use a token bucket that refills evenly across the window.
 | Every `/v1/me/sync*` request, per account | 120 / min (own bucket, does not use the read/write buckets) |
 | `PUT /v1/me/sync/skins/{id}`, per account | additionally 30 / min |
 | Cape sharing mutations (offer, accept, decline, revoke), per account | 30 / min (on top of the write bucket) |
+| Chat: send and edit messages, per account | 30 / min **and** 5 / 5 s (§20.4) |
+| Chat: reactions / typing / read-unread-mute, per account | 60 / min / 40 / min / 120 / min |
+| Chat: open DMs and group changes, per account | 20 / min |
+| `POST /v1/chat/attachments`, per account | 40 / 10 min |
+| `GET /v1/chat/attachments/{id}`, per account | 600 / min |
+| `GET /v1/servers/status`, per account | 30 / min |
+| `POST /v1/reports`, per account | 10 / h |
+| `GET /v1/events/me` connects, per account | 20 / min (and at most 5 open streams) |
 | Admin, per admin (or API key) | 240 / min |
 
 ---
@@ -210,7 +218,9 @@ Auth required.
     "showCapeToOthers": true,
     "presenceVisibility": "friends",
     "shareServer": false,
-    "showCosmeticsToOthers": true
+    "showCosmeticsToOthers": true,
+    "chatReadReceipts": true,
+    "chatTypingIndicator": true
   },
   "activeCape": null
 }
@@ -224,6 +234,8 @@ Auth required.
 | `presenceVisibility` | `"friends"` | `"friends"`: friends see your online state. `"nobody"`: you always appear offline in the friends list. This does **not** affect the live badge – that is `showBadge`. |
 | `shareServer` | `false` | Friends see the server address while you're `in-game`. |
 | `showCosmeticsToOthers` | `true` | Others see your equipped cosmetics (§11). You always see your own. Emotes are sent regardless. |
+| `chatReadReceipts` | `true` | Send read receipts in chat (§18.5). **Mutual:** turned off, you also don't see other people's read receipts. |
+| `chatTypingIndicator` | `true` | Send "is typing" (§18.5). **Mutual:** turned off, you also don't see others typing. |
 
 ### 3.2 `PATCH /v1/me`
 
@@ -237,6 +249,7 @@ Auth required. Send any non-empty subset of `settings`:
 
 - Turning `shareServer` off drops the stored server address immediately.
 - When visibility changes, friends get a `presence` event.
+- Your other devices get a `settings` event (§19).
 
 ### 3.3 `DELETE /v1/me` (GDPR Art. 17)
 
@@ -248,8 +261,9 @@ Auth required. Deletes everything immediately:
 - cape shares (§5.10): capes friends shared with you (and everything you re-shared from them), and every share of your own uploads
 - code redemptions, reports and presence
 - all sync data (§17): skins with their images, deletion markers, presets and settings
+- chat (§18.8): all DMs of the account for **both** sides, own messages, reactions and images in groups, pending uploads; owned groups go to the longest member, empty groups are deleted
 
-Only an existing **ban record** survives (keyed by UUID) so a ban can't be escaped by re-registering.
+Only an existing **ban record** and an **active chat mute** survive (keyed by UUID) so they can't be escaped by re-registering. Chat reports **against** the account stay with their evidence until their retention ends (§20.3).
 
 Returns **204**. The token is invalid afterwards.
 
@@ -783,6 +797,8 @@ and returns **201**:
 ## 7. Events (optional SSE)
 
 > This stream is about **your own account** (friends, presence). Live events about **other players you can see in-game** (emotes, skin, cape and cosmetic changes) come from a separate stream, `GET /v1/events/players` (§13).
+>
+> **New clients use `GET /v1/events/me` (§19) instead:** it carries these events plus chat, report feedback and moderation, with event ids and resume. This stream stays unchanged for older clients.
 
 `GET /v1/events` requires auth (`Authorization` header).
 The response is `Content-Type: text/event-stream`. Each event has the form:
@@ -841,6 +857,8 @@ Auth: an admin bearer token **or** `X-Admin-Key`. Every mutation is recorded in 
 | `POST /v1/admin/users/{uuid}/cosmetics` | `{ cosmeticId }` (cosmetic or emote) | **201** `{ cosmetic, alreadyOwned }`. `404 user_not_found` or `cosmetic_not_found`, `400 cosmetic_is_free`. |
 | `DELETE /v1/admin/users/{uuid}/cosmetics/{cosmeticId}` | – | 204, or `404 grant_not_found`. Takes the item off if it is equipped. |
 
+Chat moderation (reports, mutes, warnings, word filter, audit log) is in §20.5.
+
 **CodeView:**
 
 ```json
@@ -886,6 +904,8 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
    - Paint editor: start from `GET /v1/cosmetics/templates/{id}.png?scale=k`, then upload with `POST /v1/cosmetics/upload`.
 7. After changing the Mojang skin, call `POST /v1/me/skin-changed` (§13.4).
 8. Sync own skins, presets and theme/accent/language across devices (§17), only with consent and the sync switch on.
+9. Keep **one** `GET /v1/events/me` stream (§19) open while signed in; resume with `Last-Event-ID`, reload state on `resync`. Drive the social page, toasts (message, invite, friend request, cape offer, "X is online") and badges from it; poll only as fallback.
+10. Chat (§18): conversation list, message pages with `before`/`after`, send with `nonce`, images via `POST /v1/chat/attachments` (then attach up to 10), invites with `GET /v1/servers/status`, reactions, edit/delete, read/unread/mute, typing. Reports via `POST /v1/reports` (§20).
 
 **Mod (Java):**
 
@@ -899,6 +919,7 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
 6. Open `GET /v1/events/players?uuids=…` for the players you render (§13). Apply `emote`, `skin`, `cape`, `cosmetics` and `badge` events live.
 7. Emote wheel: `GET /v1/me/cosmetics` → `emotes` lists the unlocked ones. Play one with `POST /v1/emotes/play`, then start the animation locally right away (§12).
 8. Wardrobe: shared capes come from `GET /v1/capes` like your own; sharing works like in the launcher (§5.10).
+9. Social screen and quick reply: the same chat API (§18) and **one** `GET /v1/events/me` stream (§19) next to `events/players`. Images in chat are JPEG or PNG (decode JPEG with ImageIO, not with `NativeImage`, which only reads PNG). Render text as plain text.
 
 ---
 
@@ -1519,3 +1540,373 @@ After the TRS login at start, after local changes (debounced about 3 s) and ever
    - name or variant differ → the newer `updatedAt` wins (the launcher keeps a local change time).
 3. Presets and settings: the newer `updatedAt` wins; on `409 stale` take over `current`.
 4. Errors or offline: stay silent, try again later, never block the UI.
+
+---
+
+## 18. Chat (direct messages and groups)
+
+Chat between TRS users. **Who may write:** friends (direct messages, "DM") and members of a group. Everything below needs auth.
+
+**Rules at a glance**
+
+- A DM exists at most once per pair. It can only be **opened** while you are friends. After unfriending or blocking it stays **readable but read-only** (`canWrite: false`, `readOnlyReason: "not_friends"`); befriending again re-enables it.
+- A group is created by one player (the **owner**) with **their own friends** as members. Only the owner adds, removes, renames, transfers ownership or deletes. Members can leave; if the owner leaves, the longest member becomes owner; if the last member leaves, the group is deleted. At most **25 members** per group, **20 owned** and **100 joined** groups per player.
+- Members added later only see messages **from their joining** on (the `member_added` system message is their first).
+- In groups, **links and server invites** are only accepted from the owner or from a player who is friends with **every** other member (`422 links_not_allowed`). DMs have no such limit.
+- Messages from players **you blocked** are delivered with `hidden: true` and without content (text, images, invite, reply preview are `null`/empty). They don't count as unread.
+- A player who is **muted by moderation** (§20.4) can read but not send, edit, react, type, rename or create groups: `403 chat_muted` with `until` (ISO or `null` = until review). Conversations show `readOnlyReason: "chat_muted"`.
+- **Every** access checks membership. Unknown ids and conversations you are not in both return `404 conversation_not_found` / `message_not_found` / `attachment_not_found` – you can't probe whether something exists.
+- Storage: messages are kept **until deleted** (no automatic expiry). Text, invites and group names are **encrypted at rest** (AES-256-GCM, §18.9); images are re-encoded and stored encrypted. `DELETE /v1/me` removes the account's chat data (§3.3).
+
+### 18.1 Views
+
+**ConversationView**
+```json
+{
+  "id": "c1f0e2d3c4b5a69788990",
+  "kind": "group",
+  "name": "Bau-Crew",
+  "owner": "75c1a6f3112240abbdb57b9d21c64232",
+  "members": [ { "uuid": "75c1…", "name": "Theredstonee", "role": "owner", "joinedAt": "…" }, { "uuid": "b0b0…", "name": "Bob", "role": "member", "joinedAt": "…" } ],
+  "peer": null,
+  "canWrite": true,
+  "readOnlyReason": null,
+  "lastMessage": { …MessageView… },
+  "lastSeq": 42,
+  "unread": 3,
+  "markedUnread": false,
+  "readSeq": 39,
+  "muted": false,
+  "mutedUntil": null,
+  "reads": [ { "uuid": "b0b0…", "seq": 41, "at": "…" } ],
+  "createdAt": "…",
+  "updatedAt": "…"
+}
+```
+
+- `id` matches `^c[0-9a-f]{20}$`. `kind` is `dm` or `group`. DMs: `name` and `owner` are `null`, `peer` is the other player `{uuid, name}`.
+- `members` is sorted owner first, then by joining. `role` is `owner` or `member` (DMs: both `member`).
+- `readOnlyReason`: `null`, `"not_friends"` (DM without friendship) or `"chat_muted"`.
+- `lastSeq` is the highest message number of the conversation. `readSeq` is **your** read position (can go back with "mark unread"). `unread` counts text messages after `readSeq` that are not yours, not deleted and not from players you blocked.
+- `muted` / `mutedUntil`: **your** notification mute of this conversation (not moderation). `mutedUntil: null` with `muted: true` = until you unmute.
+- `reads`: read positions of the **other** members – only members who share read receipts, and only if **you** share them too (mutual, see `chatReadReceipts` in §3.1). Otherwise `[]`.
+- `updatedAt` = last activity (message or change); the list is sorted by it.
+
+**MessageView**
+```json
+{
+  "id": "m0a1b2c3d4e5f60718293",
+  "conversationId": "c1f0…",
+  "seq": 42,
+  "kind": "text",
+  "sender": { "uuid": "b0b0…", "name": "Bob" },
+  "text": "Hallo!",
+  "invite": { "address": "play.example.net:25566", "name": "Survival" },
+  "attachments": [ …AttachmentView… ],
+  "replyTo": { "id": "m…", "seq": 40, "sender": { "uuid": "…", "name": "…" }, "preview": "first 120 characters", "attachments": 0, "invite": false, "deleted": false },
+  "system": null,
+  "reactions": [ { "emoji": "fire", "count": 2, "users": ["b0b0…", "75c1…"] } ],
+  "createdAt": "…",
+  "editedAt": null,
+  "deleted": false,
+  "deletedBy": null,
+  "hidden": false,
+  "nonce": null
+}
+```
+
+- `seq` increases by 1 per conversation (system messages included). Deleted accounts leave gaps.
+- `text` is sanitised plain text (no markup; render as text, never as HTML), up to **2000 characters** (Unicode code points). Line breaks `\n` are kept (at most one empty line in a row).
+- `invite`: a server invite card, see §18.6. `null` if none.
+- `replyTo.preview` is `null` if the target was deleted or its sender is hidden for you; `deleted: true` then.
+- `kind: "system"`: group events. `sender` is the actor (`null` for automatic ones), `text` is `null`, and
+  `system = { "event": "group_created"|"member_added"|"member_removed"|"member_left"|"renamed"|"owner_changed", "actor": {uuid,name}|null, "target": {uuid,name}|null, "name": "new name"|null }`. Render them as a centred line, e.g. "Bob added Carl".
+- **Deleted for everyone:** `deleted: true`, `deletedBy`: `"sender"`, `"owner"` (group owner) or `"admin"` (moderation); `text`, `invite`, `attachments`, `reactions`, `replyTo` are empty. Show "Message deleted".
+- **Edited:** `editedAt` is set; show "(edited)".
+- `nonce` is only filled for the sender's own messages (your idempotency key, §18.4).
+- `reactions[].emoji` is one of the fixed ids below; `users` lists who reacted (groups are small).
+
+**Reactions (fixed set):** `thumbs_up` 👍, `heart` ❤️, `laugh` 😂, `wow` 😮, `sad` 😢, `angry` 😡, `party` 🎉, `fire` 🔥, `eyes` 👀, `check` ✅. Every player can set each reaction at most once per message.
+
+**AttachmentView**
+```json
+{ "id": "a0123456789abcdef01234567", "mime": "image/jpeg", "width": 1920, "height": 1080, "bytes": 312345,
+  "path": "/v1/chat/attachments/a0123…",
+  "thumb": { "mime": "image/jpeg", "width": 400, "height": 225, "bytes": 21034, "path": "/v1/chat/attachments/a0123…?thumb=1" } }
+```
+`path` is relative to the API base URL and needs the Bearer token.
+
+### 18.2 Conversations
+
+| Request | Body | Response |
+|---|---|---|
+| `GET /v1/chat/conversations?limit=50&cursor=…` | – | `{ conversations: [ConversationView], nextCursor: string\|null }`. Newest activity first. `limit` 1–100 (default 50). Pass `nextCursor` for the next page; `400 invalid_cursor` for garbage. |
+| `GET /v1/chat/conversations/{id}` | – | `{ conversation }` |
+| `POST /v1/chat/dms` | `{ "uuid": "<friend>" }` | **200** `{ conversation }` – opens the DM or returns the existing one. Without friendship: `403 not_friends` (also for unknown UUIDs); an **existing** DM is returned read-only. Yourself: `400 cannot_target_self`. |
+| `GET /v1/chat/unread` | – | `{ total, conversations: [{ id, unread, markedUnread, muted }] }` – only conversations with unread messages or the "unread" mark. `total` sums non-muted conversations (a mark without messages counts 1). Use it as polling fallback for badges. |
+
+### 18.3 Groups
+
+| Request | Body | Response / errors |
+|---|---|---|
+| `POST /v1/chat/groups` | `{ "name": "Bau-Crew", "members": ["<uuid>", …] }` (0–24 friends) | **201** `{ conversation }`. `403 not_friends` (+ `uuids`), `409 group_full`, `409 group_limit` (you own 20 / are in 100), `409 target_group_limit` (+ `uuids`), `400 invalid_name`, `422 message_blocked` (word filter). |
+| `PATCH /v1/chat/groups/{id}` | `{ "name": "…" }` | `{ conversation }`. Owner only (`403 not_owner`). Adds a `renamed` system message. |
+| `POST /v1/chat/groups/{id}/members` | `{ "members": ["<uuid>", …] }` (1–24) | `{ conversation }`. Owner only; only the owner's friends (`403 not_friends` + `uuids`); already present members are ignored; `409 group_full`, `409 target_group_limit`. One `member_added` system message per new member. |
+| `DELETE /v1/chat/groups/{id}/members/{uuid}` | – | **204**. Owner removes a member (`404 member_not_found`). With your **own** UUID it is the same as leaving. |
+| `POST /v1/chat/groups/{id}/leave` | – | **204**. The owner hands the group to the longest member (`owner_changed`); the last member deletes the group. |
+| `POST /v1/chat/groups/{id}/owner` | `{ "uuid": "<member>" }` | `{ conversation }`. Owner only. |
+| `DELETE /v1/chat/groups/{id}` | – | **204**. Owner only. Deletes all messages and images for everyone. |
+
+Group names: 1–32 characters after sanitising (no control characters, one line).
+
+### 18.4 Messages
+
+| Request | Body | Response / errors |
+|---|---|---|
+| `GET /v1/chat/conversations/{id}/messages?limit=50` | – | `{ messages: [MessageView], hasMore }` – the newest `limit` (1–100) messages, **ascending by `seq`**. `hasMore` = older ones exist. |
+| `…/messages?before=<seq>&limit=50` | – | Older page: messages with `seq < before`, ascending. `hasMore` = even older ones exist. |
+| `…/messages?after=<seq>&limit=100` | – | Catch-up: messages with `seq > after`, ascending. `hasMore` = newer ones exist (call again). `before` and `after` together → `400`. |
+| `POST /v1/chat/conversations/{id}/messages` | `{ "text"?, "replyTo"?, "attachments"?, "invite"?, "nonce"? }` | **201** `{ message }`; **200** `{ message }` if the `nonce` was already used (same message, nothing new sent). |
+| `PATCH /v1/chat/messages/{id}` | `{ "text": "…" }` | `{ message }` with `editedAt`. Own text messages only (`403 not_sender`); deleted → `409 message_deleted`. The text may become empty only if the message has images or an invite. Images and invite can't be edited. |
+| `DELETE /v1/chat/messages/{id}` | – | `{ message }` (the tombstone). Own messages; in groups the owner may also delete others' (`deletedBy: "owner"`). Otherwise `403 not_sender`. Images are deleted with it. Idempotent. |
+| `PUT /v1/chat/messages/{id}/reactions/{emoji}` | – | `{ reactions: [ReactionView] }` (all of the message). Idempotent. Unknown emoji id → `404`. |
+| `DELETE /v1/chat/messages/{id}/reactions/{emoji}` | – | `{ reactions }` |
+
+**Send body**
+
+- `text`: up to 8000 raw characters in the request; after sanitising at most **2000** code points (`400 message_too_long`). Control, bidi-override and invisible format characters are removed (emoji joiners stay).
+- `replyTo`: a message id of the same conversation that you can see and that isn't deleted (`404 message_not_found`).
+- `attachments`: up to **10** attachment ids from `POST /v1/chat/attachments`, uploaded by **you** and not used yet (`404 attachment_not_found`, `400 too_many_attachments`). Order is kept.
+- `invite`: `{ "address": "host[:port]", "name"?: "≤32 chars" }` (§18.6).
+- At least one of text / attachments / invite, else `400 empty_message`.
+- `nonce`: optional `^[A-Za-z0-9_-]{8,64}$`, generated by the client per message (e.g. a UUID). Retrying with the same nonce returns the stored message instead of a duplicate. A nonce used in another conversation → `409 nonce_reused`.
+
+**Content errors (send and edit):** `422 message_blocked` (admin word filter, block mode), `422 spam_detected` (§20.4), `422 links_not_allowed` (groups), `403 not_friends`, `403 chat_muted`.
+
+Word filter entries in **mask** mode don't reject: the word is replaced by `*` in the stored text.
+
+### 18.5 Read state, unread mark, mute, typing
+
+| Request | Body | Response |
+|---|---|---|
+| `POST /v1/chat/conversations/{id}/read` | `{ "seq": 42 }` | `{ conversation }`. Read up to `seq` (clamped to `lastSeq`, never goes back). Clears the unread mark. Sends a read receipt if you share them. |
+| `POST /v1/chat/conversations/{id}/unread` | none, or `{ "seq": 40 }` | `{ conversation }`. Sets the unread mark. With `seq`, your read position moves back to `seq - 1` ("unread from this message"). Read receipts others saw are **not** taken back. |
+| `PUT /v1/chat/conversations/{id}/mute` | `{ "muted": true, "until"?: ISO }` / `{ "muted": false }` | `{ conversation }`. Notification mute for **you** (toasts, badge total). Without `until` = until unmuted. `until` in the past → `400 invalid_until`. |
+| `POST /v1/chat/conversations/{id}/typing` | `{ "typing": true\|false }` | **204** always (also when nothing is sent). |
+
+**Typing:** send `true` at most every **3 s** while the user types, `false` when the input is cleared or the conversation closed. Sending a message ends typing automatically. Receivers get `chat_typing` (§19) and **must hide it after `expiresInMs` (8000)** without a refresh. Players with `chatTypingIndicator: false` send nothing and receive nothing (mutual); a player who blocked you never sees your typing.
+
+### 18.6 Server invites
+
+An invite is a card with the server address (`host[:port]`, hostname or IPv4, like the Minecraft "Server address" field; stored lower-case) and an optional label. **Icon, player count and MOTD are not part of the message** – clients fetch them live:
+
+`GET /v1/servers/status?address=play.example.net:25566` → **200**
+```json
+{ "status": {
+  "address": "play.example.net:25566",
+  "online": true,
+  "reason": null,
+  "version": { "name": "Paper 1.21.4", "protocol": 769 },
+  "players": { "online": 12, "max": 100 },
+  "motd": "Welcome to Survival",
+  "icon": "data:image/png;base64,…",
+  "latencyMs": 38,
+  "checkedAt": "…" } }
+```
+
+- **The TRS server pings** (Minecraft Server List Ping), not the receivers: a foreign server never learns the receivers' IP addresses, and the sender can't fake player counts or icons.
+- Cached **60 s** (online) / **30 s** (offline) per address; at most 8 pings at once; 3 s timeout; answer ≤ 256 KiB.
+- Without a port, the SRV record `_minecraft._tcp.<host>` is used (like the game), else 25565.
+- **SSRF protection:** DNS is resolved once and the checked IP is used; only public unicast addresses and ports 1024–65535. Private/LAN addresses are never pinged.
+- `online: false` with `reason`: `private_address` (LAN/local/blocked – show the card without status), `unresolvable`, `timeout`, `refused`, `invalid_response`, `busy` (try again shortly), `disabled` (feature off on the server).
+- `motd` is plain text (colour codes removed, ≤ 256 chars). `icon` is a 64×64 PNG data URL, re-encoded by the server, or `null`.
+- Limit: 30 / min per account. "Join" is up to the client (launcher: start an instance with `joinAddress`; mod: connect to the address).
+
+### 18.7 Images
+
+`POST /v1/chat/attachments` with the raw image as body and `Content-Type: image/png`, `image/jpeg` or `image/webp` → **201** `{ attachment: AttachmentView }`.
+
+- At most **5 MiB** per file (`413 payload_too_large`). The type must match the file's magic bytes (`415 unsupported_media_type`). Animated WebP → `400 animated_image`; broken files → `400 invalid_image`.
+- At most **8192 px** per side and **24 megapixels** (checked in the header before decoding, `400 image_too_large`).
+- The server **decodes and re-encodes** every image: no metadata survives (EXIF/GPS, comments, colour profiles, text chunks). JPEG EXIF orientation is applied. Output: **JPEG** (quality 85) when fully opaque, **PNG** when it has transparency; scaled down to at most **2048 px** per side. A thumbnail (≤ 400 px, JPEG 75 / PNG) is created too.
+- An upload is private to you until you send it in a message (up to 10 per message). Unused uploads are deleted after **1 hour**. At most 30 unsent uploads at once (`409 too_many_pending_attachments`).
+- Quota: **250 MB** of images per account (`409 storage_quota`); the server has a global limit (`507 storage_full`).
+- Limit: 40 uploads / 10 min per account.
+
+`GET /v1/chat/attachments/{id}` (full image) or `?thumb=1` (thumbnail) → the image bytes (`image/jpeg` or `image/png`). Allowed for the uploader and for members who can see the message; else `404 attachment_not_found`. The content of an id never changes: `Cache-Control: private, max-age=31536000, immutable` + `ETag` (`If-None-Match` → 304). Limit: 600 / min.
+
+**Picking images (clients):** the user chooses from "All", "Favourites" or "Uploads" (screenshots/clips folders of the instance, launcher favourites) – that is client-side; the API only sees the uploaded bytes.
+
+### 18.8 Blocking, unfriending, account deletion
+
+| Event | Effect on chat |
+|---|---|
+| Unfriend | The DM stays readable, `canWrite: false` for both (`chat_conversation` event). Groups are not affected. |
+| Block | Ends the friendship (as above). In groups the blocker gets the blocked player's messages as `hidden`. The blocked player doesn't see your typing. |
+| Befriend again | The same DM becomes writable again (`chat_conversation`). |
+| `DELETE /v1/me` | All DMs of the account are deleted **for both sides** (`chat_conversation_removed` with `reason: "deleted"`). In groups all own messages, reactions and images are removed (`chat_reload` to the members); owned groups go to the longest member; groups left empty are deleted. Pending uploads are deleted. |
+| Ban | The account can't log in; its messages stay visible. Admins can delete them via moderation (§20). |
+
+### 18.9 Encryption at rest and key handling
+
+- Message bodies (text, invite, system data), group names, report evidence and notes are stored as **AES-256-GCM** ciphertext (random 96-bit IV per record, the record id as authenticated data). Images (full + thumbnail) and evidence copies are encrypted files in `<DATA_DIR>/chat/`.
+- **Key:** env `CHAT_KEYS` = comma-separated `id:base64(32 bytes)` (`id` = `[A-Za-z0-9_-]{1,16}`), the **first** key encrypts new data, the others only decrypt. Generate one with `openssl rand -base64 32`. Without `CHAT_KEYS` the server derives a key from `SECRET_KEY` (HKDF-SHA256, id `s1`) and logs a warning – set `CHAT_KEYS` in production.
+- **Rotation:** put the new key in front (`CHAT_KEYS=k2:NEW,k1:OLD`; to move away from the derived key use `CHAT_KEYS=k1:NEW,s1:derived` and keep `SECRET_KEY` unchanged) and restart. A background job re-encrypts old messages, group names, reports and images every minute and logs `chat key rotation done` when finished; only then remove the old key. **Losing a key makes the data encrypted with it unreadable.** Keys are never in the database or backups of `DATA_DIR`; back them up separately.
+- Metadata stays in plaintext for queries: who is in which conversation, sender, times, sequence numbers, image sizes, reactions, read positions.
+
+---
+
+## 19. Realtime: `GET /v1/events/me` (one stream per user)
+
+The launcher and the mod each keep **one** stream open while signed in. It carries **every** event about your account within **≤ 3 s** (in practice immediately): chat, friends, presence, cape offers, report feedback, moderation, settings from your other devices. REST endpoints stay the source of truth and the fallback.
+
+`GET /v1/events/me` with `Authorization: Bearer …` (and optionally `Last-Event-ID`). Response: `text/event-stream`, frames like §7 plus an `id:` line:
+
+```
+id: mfz2k1a3b4c.1842
+event: chat_message
+data: {"type":"chat_message","conversationId":"c…","message":{…}}
+
+```
+
+**Resume:** every event (except typing) has an id `<epoch>.<n>`. On reconnect send the last id you received as header `Last-Event-ID` (EventSource does this automatically) or as `?lastEventId=`. The server then first sends `hello` with `resumed: true` and replays everything you missed. It keeps **the last 300 events per account for 10 minutes** after a disconnect. If it can't fill the gap (server restarted, too many or too old events, unknown id) you get `event: resync` with `{"type":"resync","reason":"restart"|"gap"|"invalid"}`: **reload your state via REST** (`GET /v1/friends`, `GET /v1/chat/conversations`, `GET /v1/chat/unread`, `GET /v1/cape-offers`, open message lists with `after=<last seq>`) and continue with the stream.
+
+| event | data |
+|---|---|
+| `hello` | `{"type":"hello","keepaliveSec":20,"resumed":bool,"replayWindowSec":600}`. First frame. On a fresh start it carries an `id` so that resuming works even without events. |
+| `resync` | `{"type":"resync","reason":…}` (see above) |
+| `ping` | `{}` every 20 s. No ping for 60 s → reconnect. |
+| `chat_message` | `{conversationId, message: MessageView}` – new message (also your own, for your other devices; match `message.nonce`). System messages come this way too. |
+| `chat_message_edited` | `{conversationId, message}` |
+| `chat_message_deleted` | `{conversationId, message}` (tombstone) |
+| `chat_reactions` | `{conversationId, messageId, reactions: [ReactionView]}` – full current list |
+| `chat_typing` | `{conversationId, uuid, typing, expiresInMs: 8000}` – **no id, not replayed** |
+| `chat_read` | `{conversationId, uuid, seq, at}` – a member's read receipt (mutual rule) or **your own** from another device (`uuid` = you) |
+| `chat_state` | `{conversationId, unread, markedUnread, readSeq, muted, mutedUntil}` – only to you, after read/unread/mute/sending |
+| `chat_conversation` | `{conversation: ConversationView}` – created, renamed, members/owner changed, write permission changed (friendship) |
+| `chat_conversation_removed` | `{conversationId, reason: "left"\|"removed"\|"deleted"}` – drop it locally |
+| `chat_reload` | `{conversationId}` – messages were removed server-side (account deleted); reload the message list |
+| `friend_request` | `{from:{uuid,name}}` |
+| `friend_request_cancelled` | `{uuid}` |
+| `friend_added` | `{friend:{uuid,name}}` – also to your other devices when **you** accepted |
+| `friend_removed` | `{uuid}` – also to your other devices when **you** removed/blocked |
+| `friends_changed` | `{}` – your own list changed by an action on another device (request sent/declined/cancelled, block, unblock): reload `GET /v1/friends` |
+| `presence` | `{uuid, presence: PresenceView\|null}` – a friend's presence changed (§7) |
+| `friend_online` | `{friend:{uuid,name}, presence}` – a friend just came online (was offline or hidden): use it for the "X is online" toast |
+| `cape_offer`, `cape_offer_accepted`, `cape_share_removed` | as in §7 / §5.10 |
+| `report_update` | `{report:{id, kind, status, outcome, updatedAt}}` – feedback on **your** report (§20.2) |
+| `moderation` | `{action: "warn"\|"mute"\|"unmute", reason: string\|null, until: ISO\|null}` – a moderation decision about you. `mute` with `until: null` = until review / lifted. |
+| `settings` | `{settings}` – your settings were changed (by another device) |
+
+**Rules**
+
+- At most **5** `events/me` streams per account (`503 too_many_streams`), connects limited to 20 / min. A stream lasts at most **1 hour**, then reconnect (with `Last-Event-ID`, so nothing is lost).
+- It closes immediately on logout-all, ban or account deletion (the replay buffer is dropped then).
+- **Back-pressure:** if a client doesn't read and more than 512 KiB pile up, the server closes the stream; reconnect with `Last-Event-ID`.
+- Reconnect with backoff 1 s, 2 s, 5 s, … up to 30 s; reset after a successful `hello`.
+- Clients must ignore unknown event types (new ones will be added).
+- Events are addressed per account: a chat event only reaches members of that conversation; presence only reaches friends who may see it.
+
+**Relation to the other streams**
+
+- `GET /v1/events` (§7) stays for older clients. It only carries the friend/presence/cape events listed in §7 and has no ids. New clients use `events/me` instead – **not both**.
+- `GET /v1/events/players` (§13) stays separate: it is about **other players you render in-game** (emotes, skins, capes, cosmetics, badges). The mod keeps both: `events/me` (account) + `events/players` (world).
+- **Polling fallback** when the stream is down: `GET /v1/chat/unread` every 30–60 s, `GET /v1/friends` every 60 s; open conversations: `…/messages?after=<last seq>` every 10 s.
+
+---
+
+## 20. Reports and moderation (chat)
+
+### 20.1 Reporting (players)
+
+`POST /v1/reports` → **201** `{ report: MyReportView }`
+
+```json
+{ "kind": "message", "reason": "insult_hate", "note": "optional, ≤ 500 chars", "messageId": "m…" }
+```
+
+| `kind` | Needs | Target (reported player) | Evidence snapshot |
+|---|---|---|---|
+| `message` | `messageId` you can see | the sender | 10 messages before + the message + up to 10 after (as far as **you** can see them), images of the message are copied |
+| `image` | `attachmentId` of a message you can see | the sender | as `message`, only this image is copied |
+| `player` | `uuid` (TRS user), optional `conversationId` you share with them | the player | with `conversationId`: its last 20 messages; else none |
+| `group` | `conversationId` of a group you're in | the owner | the last 20 messages, name and members |
+
+`reason`: `insult_hate` (Beleidigung/Hass), `spam`, `inappropriate` (Unangemessen), `scam_phishing` (Betrug/Phishing), `harassment` (Belästigung), `other` (Sonstiges).
+
+Errors: `404 message_not_found` / `attachment_not_found` / `conversation_not_found` / `player_not_found` (also for things you can't see), `400 cannot_target_self`, `400 not_reportable` (system message), `409 message_deleted`, `409 already_reported` (same thing, still open), `409 too_many_open_reports` (≥ 20 open), `429` (10 reports / h).
+
+`GET /v1/reports` → `{ reports: [MyReportView] }` (your last 100):
+```json
+{ "id": "r0123456789abcdef", "kind": "message", "reason": "spam", "status": "open", "outcome": null, "createdAt": "…", "updatedAt": "…" }
+```
+`status`: `open` → `in_review` → `resolved`; `outcome` (when resolved): `actioned` (something was done) or `dismissed`. Reporters never learn which sanction was taken.
+
+### 20.2 Feedback
+
+The reporter gets `report_update` (§19) when the status changes (in review, resolved). Clients show e.g. "Thanks – we took action" / "We reviewed your report".
+
+### 20.3 What the evidence contains and how long it is kept
+
+- The snapshot is taken **at report time** and stored **encrypted**. Later edits or deletions of the messages don't change it; copies of the reported images are kept even if the sender deletes them.
+- Kept while the report is open or in review, and **90 days** after it was resolved (for appeals); then the snapshot, notes and image copies are deleted. The report itself (type, reason, status, outcome – no content) is deleted **1 year** after resolution.
+- If the **reporter** deletes their account, the report stays without reporter. If the **reported** player deletes theirs, reports against them and their evidence stay until the periods above end (legitimate interest: moderation can't be escaped by deleting). An active chat mute survives account deletion (like a ban); warnings and ended mutes are deleted with the account.
+
+### 20.4 Automatic protection
+
+| Mechanism | Rule |
+|---|---|
+| Send rate | 30 messages / min and 5 per 5 s per account (`429 rate_limited`, `Retry-After`) |
+| Spam brake | The same text (normalised) 3× within 2 minutes, or more than 5 links in one message → `422 spam_detected`. Three spam hits within 10 minutes → **automatic 10-minute mute** (`moderation` event, `auto: "spam"`). |
+| Link/invite filter | Groups: see §18 (`422 links_not_allowed`). |
+| Word filter | Optional, maintained by admins (§20.5): `mask` replaces the word with `*`, `block` rejects the message (`422 message_blocked`). Compared case-, accent- and simple-leetspeak-insensitively, per word or "contains"; no regular expressions. |
+| Auto-mute pending review | When **3 different** trusted reporters report the same player within **24 h** (open reports or confirmed ones), the player is muted **until an admin reviews** (`until: null`, `auto: "reports"`). When all reports against the player are resolved without a mute/ban decision, the automatic mute is lifted. |
+| Report abuse | 10 reports / h, max 20 open, one open report per reporter and item. Reporters with ≥ 3 dismissed reports and more than twice as many dismissed as confirmed are **low trust**: their reports are still reviewed (flagged `lowTrust`) but don't count for the auto-mute. |
+
+`GET /v1/me/moderation` → `{ mute: { until, reason, auto } | null, warnings: [{ reason, at }] }` (warnings of the last 90 days). Show a banner "You are muted in chat until …" and disable the input.
+
+### 20.5 Admin API
+
+Auth like §8 (admin bearer token, `X-Admin-Key`, or the website session cookie with `X-CSRF-Token` on mutations). Every mutation is written to the audit log.
+
+| Method and path | Body | Response |
+|---|---|---|
+| `GET /v1/admin/reports?status=active\|open\|in_review\|resolved\|all&kind=&target=<uuid>&limit=50&cursor=` | – | `{ reports: [AdminReportSummary], nextCursor, counts: { open, in_review, resolved } }`. Default `active` (= open + in review). Open lists are oldest first, the others newest first. |
+| `GET /v1/admin/reports/{id}` | – | `{ report: AdminReportDetail }` |
+| `POST /v1/admin/reports/{id}/status` | `{ "status": "open"\|"in_review" }` | `{ report }`. `in_review` assigns you. Resolved reports → `409 report_resolved`. |
+| `POST /v1/admin/reports/{id}/actions` | `{ "action", "reason"?, "minutes"?, "keepOpen"?, "includeRelated"? }` | `{ report }` |
+| `POST /v1/admin/reports/{id}/notes` | `{ "text": "≤ 2000" }` | `{ report }` (notes are internal, encrypted) |
+| `GET /v1/admin/reports/{id}/images/{attachmentId}` | – | The kept image copy (`private, no-store`). |
+| `GET /v1/admin/moderation/users/{uuid}` | – | `{ moderation: { uuid, name, mute, sanctions: [Sanction], reportsAgainst: {total,open,actioned,dismissed}, reportsFiled: {…, lowTrust} } }` |
+| `POST /v1/admin/moderation/users/{uuid}/mute` | `{ "minutes"?: 5–525600, "reason"? }` | `{ moderation }`. Without `minutes` = until lifted. Admins → `409 cannot_moderate_admin`. |
+| `DELETE /v1/admin/moderation/users/{uuid}/mute` | – | `{ moderation }` or `404 not_muted` |
+| `POST /v1/admin/moderation/users/{uuid}/warn` | `{ "reason": "…" }` | `{ moderation }` |
+| `GET /v1/admin/chat/word-filter` | – | `{ words: [{ id, word, mode: "word"\|"contains", action: "mask"\|"block", createdAt, createdBy }] }` |
+| `POST /v1/admin/chat/word-filter` | `{ "word", "mode"?: "word", "action"?: "mask" }` | **201** `{ word }`. Stored normalised (2–48 letters/digits, `400 invalid_word`); `409 word_exists`; at most 2000 entries. |
+| `DELETE /v1/admin/chat/word-filter/{id}` | – | 204 or `404 word_not_found` |
+| `GET /v1/admin/audit?ref=<reportId>&target=<uuid>&before=<id>&limit=100` | – | `{ entries: [{ id, at, actor, actorName, action, target, targetName, detail, ref }], nextBefore }` – newest first. |
+
+**Actions** (`POST …/actions`):
+
+| `action` | Effect |
+|---|---|
+| `delete_message` | Deletes the reported message for everyone (`deletedBy: "admin"`, images removed). Only for message/image reports (`409 no_message`). |
+| `warn` | Warning to the target (`moderation` event with `reason`). |
+| `mute` | Chat mute for `minutes` (5–525600) or until lifted; replaces an automatic mute. |
+| `ban` | Bans the account (§8, all TRS features). |
+| `dismiss` | Resolves as `dismissed` (counts against the reporter's trust). |
+| `resolve` | Resolves as `actioned` without a further action (after earlier actions with `keepOpen`). |
+
+- `delete_message`, `warn`, `mute` and `ban` resolve the report as `actioned` unless `keepOpen: true` (then it moves to `in_review`), so several actions can be combined.
+- `includeRelated: true` resolves the other open reports about the same message (or, for player/group reports, the same target and kind) with the same outcome; each reporter gets feedback.
+- Actions that need a player on a report without target → `409 no_target`.
+
+**AdminReportSummary**: `{ id, kind, reason, status, outcome, reporter:{uuid,name}|null, target:{uuid,name}|null, conversationId, messageId, attachmentId, preview (≤ 140 chars of the reported text)|null, images, lowTrust, assignedTo:{uuid,name}|null, targetOpenReports, createdAt, updatedAt, resolvedAt, resolvedBy, evidencePurged }`
+
+**AdminReportDetail** = summary + `note` + `evidence: { capturedAt, reporter, target, conversation: {id, kind, name, owner, members:[{uuid,name}]}|null, focus: messageId|null, messages: [{ id, seq, kind, sender, text, invite, system:{event,target,name}|null, attachments:[{id,width,height,mime}], replyTo, createdAt, editedAt, deleted }], images: [{ id, width, height, mime, path }] } | null` + `notes: [{id, at, actor, actorName, text}]` + `audit: [{at, actor, actorName, action, detail}]` + `targetModeration: { mute, sanctions, reports:{total,open,actioned,dismissed} } | null` + `reporterStats: { actioned, dismissed, low, open } | null` + `related: [AdminReportSummary]` (other reports against the target, newest 20).
+
+**Sanction**: `{ id, kind: "warn"|"mute", reason, reportId, auto: "reports"|"spam"|null, createdAt, createdBy, expiresAt, liftedAt, liftedBy, active }`.
+
+`GET /v1/admin/stats` additionally returns `chat: { conversations, groups, messages, messagesLast24h, images, storageBytes, storageLimitBytes }` and `reports: { open, inReview, resolved, activeMutes }`.
+
+The website admin page has the tab **Reports** (list with filters, review dialog with context and actions, word filter, moderation log); the launcher's admin page uses the same endpoints.

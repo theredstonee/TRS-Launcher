@@ -441,9 +441,117 @@ try {
   const last = rl.at(-1)
   check('challenge rate limit 429 + Retry-After', last.status === 429 && Number(last.headers.get('retry-after')) > 0)
 
+  console.log('chat + realtime stream')
+  /** Öffnet `GET /v1/events/me` und sammelt die SSE-Blöcke. */
+  async function openStream(token, lastEventId) {
+    const ctrl = new AbortController()
+    const headers = { authorization: `Bearer ${token}`, 'cf-connecting-ip': '203.0.113.9' }
+    if (lastEventId) headers['last-event-id'] = lastEventId
+    const res = await fetch(`${BASE}/v1/events/me`, { headers, signal: ctrl.signal })
+    const frames = []
+    const waiters = []
+    let buf = ''
+    ;(async () => {
+      const dec = new TextDecoder()
+      try {
+        for await (const chunk of res.body) {
+          buf += dec.decode(chunk, { stream: true })
+          let i
+          while ((i = buf.indexOf('\n\n')) >= 0) {
+            const block = buf.slice(0, i)
+            buf = buf.slice(i + 2)
+            const f = { id: /^id: (.+)$/m.exec(block)?.[1] ?? null, event: /^event: (.+)$/m.exec(block)?.[1], data: JSON.parse(/^data: (.+)$/m.exec(block)?.[1] ?? 'null'), at: Date.now() }
+            frames.push(f)
+            for (const w of waiters.splice(0)) w()
+          }
+        }
+      } catch {
+        // abgebrochen
+      }
+    })()
+    const waitFor = async (pred, ms = 3000) => {
+      const end = Date.now() + ms
+      while (Date.now() < end) {
+        const hit = frames.find(pred)
+        if (hit) return hit
+        await new Promise((r) => {
+          waiters.push(r)
+          setTimeout(r, 50)
+        })
+      }
+      return null
+    }
+    return { res, frames, waitFor, close: () => ctrl.abort() }
+  }
+  // A und B sind seit „friends + events“ befreundet.
+  const sB = await openStream(B)
+  check('events/me content type', sB.res.status === 200 && sB.res.headers.get('content-type')?.startsWith('text/event-stream'))
+  const hello = await sB.waitFor((f) => f.event === 'hello')
+  check('events/me hello with id', hello?.id?.includes('.') && hello.data.keepaliveSec === 20, JSON.stringify(hello))
+  const dmR = await http('POST', '/v1/chat/dms', { token: A, body: { uuid: 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0' } })
+  check('open dm', dmR.status === 200 && dmR.json.conversation.kind === 'dm', JSON.stringify(dmR.json))
+  const dmId = dmR.json.conversation.id
+  const sentAt = Date.now()
+  const sent = await http('POST', `/v1/chat/conversations/${dmId}/messages`, { token: A, body: { text: 'Hallo Bob', nonce: 'smoke-nonce-1' } })
+  check('send message 201', sent.status === 201 && sent.json.message.text === 'Hallo Bob')
+  const live = await sB.waitFor((f) => f.event === 'chat_message')
+  check('message pushed ≤3 s', live && live.at - sentAt < 3000 && live.data.message.text === 'Hallo Bob', live ? `${live.at - sentAt} ms` : 'none')
+  const dup = await http('POST', `/v1/chat/conversations/${dmId}/messages`, { token: A, body: { text: 'Hallo Bob', nonce: 'smoke-nonce-1' } })
+  check('nonce idempotent 200', dup.status === 200 && dup.json.message.id === sent.json.message.id)
+  const lastId = sB.frames.filter((f) => f.id).at(-1).id
+  sB.close()
+  // Bilder: PNG und WebP (Wasm-Dekoder aus den Server-Assets), neu kodiert.
+  const upPng = await http('POST', '/v1/chat/attachments', { token: A, raw: png(40, 20), headers: { 'content-type': 'image/png' } })
+  check('upload png', upPng.status === 201 && upPng.json.attachment.mime === 'image/jpeg', JSON.stringify(upPng.json))
+  const webp1x1 = Buffer.from('UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==', 'base64')
+  const upWebp = await http('POST', '/v1/chat/attachments', { token: A, raw: webp1x1, headers: { 'content-type': 'image/webp' } })
+  check('upload webp (wasm in bundle)', upWebp.status === 201 && upWebp.json.attachment.width === 1, JSON.stringify(upWebp.json))
+  const mismatch = await http('POST', '/v1/chat/attachments', { token: A, raw: png(4, 4), headers: { 'content-type': 'image/webp' } })
+  check('upload type mismatch 415', mismatch.status === 415)
+  const withImg = await http('POST', `/v1/chat/conversations/${dmId}/messages`, { token: A, body: { attachments: [upPng.json.attachment.id, upWebp.json.attachment.id] } })
+  check('send with images', withImg.status === 201 && withImg.json.message.attachments.length === 2)
+  const img = await fetch(`${BASE}/v1/chat/attachments/${upPng.json.attachment.id}?thumb=1`, { headers: { authorization: `Bearer ${B}` } })
+  const imgBytes = Buffer.from(await img.arrayBuffer())
+  check('member reads image', img.status === 200 && img.headers.get('content-type') === 'image/jpeg' && imgBytes[0] === 0xff && img.headers.get('cache-control')?.startsWith('private'))
+  // Wiederaufnahme mit Last-Event-ID.
+  const sB2 = await openStream(B, lastId)
+  const replayed = await sB2.waitFor((f) => f.event === 'chat_message' && f.data.message.attachments.length === 2)
+  check('resume via Last-Event-ID', replayed !== null && sB2.frames[0].data.resumed === true)
+  sB2.close()
+  const sB3 = await openStream(B, 'altepoche.1')
+  check('resync on unknown epoch', (await sB3.waitFor((f) => f.event === 'resync'))?.data.reason === 'restart')
+  sB3.close()
+  const convs = await http('GET', '/v1/chat/conversations', { token: B })
+  check('conversation list + unread', convs.json.conversations[0]?.unread === 2, JSON.stringify(convs.json.conversations[0]?.unread))
+  const unread = await http('GET', '/v1/chat/unread', { token: B })
+  check('unread summary', unread.json.total === 2)
+  const read = await http('POST', `/v1/chat/conversations/${dmId}/read`, { token: B, body: { seq: 2 } })
+  check('mark read', read.json.conversation.unread === 0)
+  const react = await http('PUT', `/v1/chat/messages/${sent.json.message.id}/reactions/heart`, { token: B })
+  check('reaction', react.json.reactions[0]?.emoji === 'heart')
+  const badEmoji = await http('PUT', `/v1/chat/messages/${sent.json.message.id}/reactions/poop`, { token: B })
+  check('unknown reaction 404', badEmoji.status === 404)
+  const typing = await http('POST', `/v1/chat/conversations/${dmId}/typing`, { token: B, body: { typing: true } })
+  check('typing 204', typing.status === 204)
+  const priv = await http('GET', '/v1/servers/status?address=127.0.0.1:25565', { token: B })
+  check('server status refuses private address', priv.json.status.online === false && priv.json.status.reason === 'private_address')
+  const rep = await http('POST', '/v1/reports', { token: B, body: { kind: 'message', reason: 'spam', messageId: sent.json.message.id, note: 'smoke' } })
+  check('report message', rep.status === 201 && rep.json.report.status === 'open')
+  const adminList = await http('GET', '/v1/admin/reports?status=open', { headers: { 'x-admin-key': ADMIN_KEY } })
+  check('admin report list', adminList.json.reports[0]?.id === rep.json.report.id && adminList.json.reports[0].preview === 'Hallo Bob')
+  const detail = await http('GET', `/v1/admin/reports/${rep.json.report.id}`, { headers: { 'x-admin-key': ADMIN_KEY } })
+  check('admin report detail with context', detail.json.report.evidence.messages.length >= 2)
+  const dismiss = await http('POST', `/v1/admin/reports/${rep.json.report.id}/actions`, { headers: { 'x-admin-key': ADMIN_KEY }, body: { action: 'dismiss' } })
+  check('admin dismiss', dismiss.json.report.status === 'resolved' && dismiss.json.report.outcome === 'dismissed')
+  const stranger = (await loginAs('Stranger', 'cccccccccccccccccccccccccccccccc')).json.token
+  const snoop = await http('GET', `/v1/chat/conversations/${dmId}/messages`, { token: stranger })
+  check('stranger gets 404', snoop.status === 404 && snoop.json.error.code === 'conversation_not_found')
+  const snoopImg = await http('GET', `/v1/chat/attachments/${upPng.json.attachment.id}`, { token: stranger })
+  check('stranger cannot read image', snoopImg.status === 404)
+
   console.log('admin + deletion')
   const stats = await http('GET', '/v1/admin/stats', { token: A })
-  check('stats', stats.json.users.total === 2 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 11 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
+  check('stats', stats.json.users.total === 3 && stats.json.chat.messages === 2 && stats.json.reports.resolved === 1 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 11 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
   const ban = await http('POST', '/v1/admin/users/b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0/ban', { headers: { 'x-admin-key': ADMIN_KEY }, body: { reason: 'smoke' } })
   check('ban', ban.json.user.banned?.reason === 'smoke')
   const banned = await http('GET', '/v1/me', { token: B })

@@ -1,12 +1,16 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { rotateAttachmentKeys, sweepOrphanFiles, sweepPendingAttachments } from '../lib/attachments'
 import { sweepExpired } from '../lib/auth'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
 import { seedBuiltins } from '../lib/capes'
 import { seedBuiltinCosmetics, seedEmotes } from '../lib/cosmetics'
 import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
+import { rotateMessageKeys, sweepTyping } from '../lib/chat'
 import { openDb } from '../lib/db'
+import { setWebpWasmLoader } from '../lib/images'
+import { rotateReportKeys, sweepModeration } from '../lib/moderation'
 import { createMojangClient } from '../lib/mojang'
 import { afterPresenceChange } from '../lib/playerevents'
 import { parseTemplates } from '../lib/templates'
@@ -30,7 +34,11 @@ export default defineNitroPlugin((nitroApp) => {
   const db = openDb(join(config.dataDir, 'trs.db'))
   const mojang = createMojangClient(config.mojangSessionUrl, fetch, config.mojangApiUrl)
   const ctx = createContext({ config, db, mojang, capeDir, cosmeticDir })
+  mkdirSync(join(ctx.chatDir, 'evidence'), { recursive: true })
   setContext(ctx)
+  if (config.chatKeys.derived) {
+    console.warn('[trs-api] CHAT_KEYS is not set – chat encryption key is derived from SECRET_KEY (see API.md §18.9)')
+  }
 
   const toBuffer = (v: unknown): Buffer | null =>
     v == null ? null : Buffer.isBuffer(v) ? v : v instanceof Uint8Array ? Buffer.from(v) : typeof v === 'string' ? Buffer.from(v) : null
@@ -43,6 +51,13 @@ export default defineNitroPlugin((nitroApp) => {
   }
   const capeAssets = assets('capes')
   const cosmeticAssets = assets('cosmetics')
+  // WebP-Dekoder (libwebp als Wasm) aus den Server-Assets – im Bundle, ohne node_modules-Pfade.
+  const codecAssets = assets('codecs')
+  setWebpWasmLoader(async () => {
+    const wasm = await codecAssets.file('webp_dec.wasm')
+    if (!wasm) throw new Error('webp_dec.wasm missing in server assets')
+    return wasm
+  })
 
   async function start(): Promise<void> {
     const capes = await loadBuiltins(() => capeAssets.json('catalog.json'), capeAssets.file)
@@ -73,6 +88,7 @@ export default defineNitroPlugin((nitroApp) => {
     }),
   )
 
+  let rotating = false
   const every = (ms: number, fn: () => void) => {
     const t = setInterval(() => {
       try {
@@ -91,6 +107,27 @@ export default defineNitroPlugin((nitroApp) => {
     }),
     every(60_000, () => ctx.limiter.sweep()),
     every(10 * 60_000, () => sweepExpired(ctx)),
+    // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
+    every(15_000, () => {
+      sweepTyping(ctx)
+      ctx.events.sweep()
+    }),
+    every(5 * 60_000, () => {
+      ctx.spam.sweep()
+      sweepPendingAttachments(ctx)
+    }),
+    // Aufbewahrung der Meldungen + verwaiste Dateien.
+    every(6 * 60 * 60_000, () => {
+      sweepModeration(ctx)
+      sweepOrphanFiles(ctx)
+    }),
+    // Schlüsseltausch: alte Chat-Daten nach und nach mit dem aktiven Schlüssel neu verschlüsseln.
+    every(60_000, () => {
+      const n = rotateMessageKeys(ctx, 500) + rotateReportKeys(ctx, 200) + rotateAttachmentKeys(ctx, 20)
+      if (n > 0) console.info(`[trs-api] chat key rotation: re-encrypted ${n} items`)
+      else if (rotating) console.info('[trs-api] chat key rotation done')
+      rotating = n > 0
+    }),
   ]
 
   nitroApp.hooks.hook('close', () => {

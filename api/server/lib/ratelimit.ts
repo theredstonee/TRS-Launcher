@@ -128,4 +128,23 @@ export const RULES = {
   syncUploadUser: { limit: 30, windowMs: MIN },
   /** Umhänge teilen: anbieten, annehmen, ablehnen, entziehen (je Konto). */
   capeShareUser: { limit: 30, windowMs: MIN },
+  // ------------------------------------------------ Chat
+  /** Nachrichten senden/bearbeiten: 30 / min, dazu höchstens 5 in 5 s (Spam-Bremse). */
+  chatSendUser: { limit: 30, windowMs: MIN },
+  chatBurstUser: { limit: 5, windowMs: 5000 },
+  chatReactUser: { limit: 60, windowMs: MIN },
+  chatTypingUser: { limit: 40, windowMs: MIN },
+  /** Lesen/ungelesen/stumm, je Konto. */
+  chatStateUser: { limit: 120, windowMs: MIN },
+  /** DMs öffnen, Gruppen anlegen/ändern/Mitglieder. */
+  chatGroupUser: { limit: 20, windowMs: MIN },
+  chatUploadUser: { limit: 40, windowMs: 10 * MIN },
+  /** Bilder abrufen (Vorschauen in Listen). */
+  chatImageUser: { limit: 600, windowMs: MIN },
+  /** Server-Status für Einladungen (Aufrufe; der Ping selbst ist gecacht). */
+  serverStatusUser: { limit: 30, windowMs: MIN },
+  /** Meldungen im Chat (Nachricht, Bild, Spieler, Gruppe). */
+  chatReportUser: { limit: 10, windowMs: HOUR },
+  /** `GET /v1/events/me` Verbindungen. */
+  eventsMeUser: { limit: 20, windowMs: MIN },
 } satisfies Record<string, Rule>
