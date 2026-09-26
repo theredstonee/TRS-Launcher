@@ -10,6 +10,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
+use super::hosting::{ApiWorld, ChatWorld};
 use super::types::{UserRef, clean_user};
 use super::{Req, validate};
 use crate::{Error, Launcher, Result};
@@ -304,6 +305,9 @@ pub struct ChatReply {
     pub attachments: u32,
     #[serde(default)]
     pub invite: bool,
+    /// Antwort auf eine Weltkarte (§21.8).
+    #[serde(default)]
+    pub world: bool,
     #[serde(default)]
     pub deleted: bool,
 }
@@ -362,6 +366,8 @@ pub(crate) struct ApiMessage {
     #[serde(default)]
     invite: Option<ChatInvite>,
     #[serde(default)]
+    world: Option<ApiWorld>,
+    #[serde(default)]
     attachments: Vec<ApiAttachment>,
     #[serde(default)]
     reply_to: Option<ChatReply>,
@@ -395,6 +401,8 @@ pub struct ChatMessage {
     pub sender: Option<UserRef>,
     pub text: Option<String>,
     pub invite: Option<ChatInvite>,
+    /// Weltkarte einer gehosteten Welt (§21.8), sonst `null`.
+    pub world: Option<ChatWorld>,
     pub attachments: Vec<ChatAttachment>,
     pub reply_to: Option<ChatReply>,
     pub system: Option<ChatSystem>,
@@ -450,6 +458,7 @@ impl ApiMessage {
                         preview,
                         attachments: r.attachments.min(MAX_ATTACHMENTS as u32),
                         invite: r.invite && !r.deleted,
+                        world: r.world && !r.deleted,
                         deleted: r.deleted,
                     }
                 })
@@ -464,6 +473,7 @@ impl ApiMessage {
             sender,
             text,
             invite: if empty { None } else { self.invite.and_then(ChatInvite::cleaned) },
+            world: if empty { None } else { self.world.and_then(ApiWorld::cleaned) },
             attachments: if empty {
                 Vec::new()
             } else {
@@ -1092,12 +1102,30 @@ mod tests {
         value["deletedBy"] = json!("admin");
         let m: ChatMessage = serde_json::from_value::<ApiMessage>(value).unwrap().cleaned().unwrap();
         assert!(m.text.is_none() && m.invite.is_none() && m.attachments.is_empty() && m.reactions.is_empty() && m.reply_to.is_none());
+        assert!(m.world.is_none());
         assert_eq!(m.deleted_by.as_deref(), Some("admin"));
 
         let mut value = msg_json();
         value["hidden"] = json!(true);
         let m: ChatMessage = serde_json::from_value::<ApiMessage>(value).unwrap().cleaned().unwrap();
         assert!(m.hidden && m.text.is_none() && m.attachments.is_empty());
+    }
+
+    #[test]
+    fn world_cards_are_cleaned() {
+        let mut value = msg_json();
+        value["invite"] = json!(null);
+        value["world"] = json!({ "roomId": "h0123456789abcdef0123", "code": "k7qm2x", "name": "Insel\u{202E}",
+            "mcVersion": "1.21.11", "loader": "fabric", "host": { "uuid": "75c1a6f3112240abbdb57b9d21c64232", "name": "Theredstonee" } });
+        value["replyTo"]["world"] = json!(true);
+        let m: ChatMessage = serde_json::from_value::<ApiMessage>(value.clone()).unwrap().cleaned().unwrap();
+        let w = m.world.unwrap();
+        assert_eq!((w.code.as_str(), w.name.as_str(), w.loader.as_str()), ("K7QM2X", "Insel", "fabric"));
+        assert!(m.reply_to.unwrap().world);
+
+        value["world"]["roomId"] = json!("h../../x");
+        let m: ChatMessage = serde_json::from_value::<ApiMessage>(value).unwrap().cleaned().unwrap();
+        assert!(m.world.is_none(), "kaputte Karte fällt weg");
     }
 
     #[test]

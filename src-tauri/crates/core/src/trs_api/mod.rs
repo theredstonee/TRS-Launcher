@@ -18,6 +18,7 @@
 
 pub mod cape_import;
 pub mod chat;
+pub mod hosting;
 pub mod moderation;
 pub mod live;
 pub mod media;
@@ -200,6 +201,8 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
             ("trs_auth", crate::msg!("trs.sessionExpired", "Die TRS-Anmeldung ist abgelaufen – bitte erneut versuchen."))
         }
         (403, "forbidden") => ("trs_forbidden", crate::msg!("trs.forbidden", "Dafür fehlen dir die Rechte.")),
+        // Welt-Hosting ohne Relay auf dem Server (503) ist kein „offline“.
+        (_, "hosting_unavailable") => ("trs_api", message_for(code)),
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
         (_, code) => ("trs_api", message_for(code)),
     };
@@ -307,6 +310,16 @@ fn message_for(code: &str) -> Msg {
         "invalid_word" => msg!("trsApi.invalid_word", "Wort: 2 bis 48 Buchstaben oder Ziffern."),
         "word_exists" => msg!("trsApi.word_exists", "Dieses Wort steht schon im Filter."),
         "word_not_found" => msg!("trsApi.word_not_found", "Dieses Wort steht nicht (mehr) im Filter."),
+        // --- Welt-Hosting (§21) ---
+        "room_not_found" => msg!("trsApi.room_not_found", "Diese Welt gibt es nicht (mehr) oder du kannst sie nicht sehen."),
+        "banned_from_world" => msg!("trsApi.banned_from_world", "Du bist aus dieser Welt verbannt."),
+        "world_closed" => msg!("trsApi.world_closed", "Diese Welt nimmt gerade keine neuen Anfragen an."),
+        "room_full" => msg!("trsApi.room_full", "Diese Welt ist voll."),
+        "cannot_join_own_world" => msg!("trsApi.cannot_join_own_world", "Das ist deine eigene Welt."),
+        "not_accepted" => msg!("trsApi.not_accepted", "Der Host hat dich (noch) nicht in die Welt gelassen."),
+        "hosting_unavailable" => {
+            msg!("trsApi.hosting_unavailable", "Welt-Hosting ist auf dem TRS-Server gerade nicht verfügbar.")
+        }
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -673,3 +686,5 @@ mod tests;
 mod sync_tests;
 #[cfg(test)]
 mod chat_tests;
+#[cfg(test)]
+mod hosting_tests;

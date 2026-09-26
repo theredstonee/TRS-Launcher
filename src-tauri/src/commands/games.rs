@@ -3,6 +3,7 @@ use tauri::{AppHandle, Manager, State};
 use trs_core::gamelog::LogLine;
 use trs_core::launch::RunningGame;
 use trs_core::prepare::StageProgress;
+use trs_core::trs_api::hosting::HostedWorld;
 
 use crate::LauncherState;
 use crate::commands::tasks::tracked;
@@ -11,20 +12,25 @@ use crate::error::CommandResult;
 /// Lädt alles Nötige und startet das Spiel. Fortschritt kommt über den
 /// Channel, Logs und Spielende über das Event `game-event`.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn launch_instance(
     app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
     join_server: Option<String>,
     join_address: Option<String>,
+    join_world: Option<HostedWorld>,
     on_progress: Channel<StageProgress>,
     task_id: Option<String>,
 ) -> CommandResult<u32> {
+    // Gehostete Welt: nur Raum-ID, Code und Eckdaten – geprüft, bevor sie ans Spiel gehen.
+    let world = join_world.map(HostedWorld::validated).transpose()?;
     // Eine freie Adresse (Server eines Freundes) prüft der Kern wie jede Server-Adresse.
-    let join = match (join_server.as_deref(), join_address.as_deref()) {
-        (Some(id), _) => Some(trs_core::Join::Server(id)),
-        (None, Some(address)) => Some(trs_core::Join::Address(address)),
-        (None, None) => None,
+    let join = match (join_server.as_deref(), join_address.as_deref(), world.as_ref()) {
+        (_, _, Some(world)) => Some(trs_core::Join::World(world)),
+        (Some(id), _, None) => Some(trs_core::Join::Server(id)),
+        (None, Some(address), None) => Some(trs_core::Join::Address(address)),
+        (None, None, None) => None,
     };
     let report = move |progress| {
         let _ = on_progress.send(progress);

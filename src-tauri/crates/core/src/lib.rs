@@ -649,7 +649,14 @@ impl Launcher {
         on_progress: &ProgressFn,
     ) -> Result<u32> {
         let instance = self.instances.get(instance_id).await?;
+        if let Some(Join::World(world)) = join {
+            check_world_instance(&instance, world)?;
+        }
         if self.games.is_running(&instance.id) {
+            // Welt beitreten, während das Spiel schon läuft: die Anweisung geht direkt ans Spiel.
+            if let Some(Join::World(world)) = join {
+                return self.hand_world_to_running_game(&instance.id, world);
+            }
             return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
         }
         {
@@ -670,7 +677,14 @@ impl Launcher {
         join_request: Option<Join<'_>>,
         on_progress: &ProgressFn,
     ) -> Result<u32> {
+        let world = match join_request {
+            Some(Join::World(world)) => Some(world),
+            _ => None,
+        };
         let (join, join_label) = match join_request {
+            Some(Join::World(world)) => {
+                (None, Some(if world.name.is_empty() { world.room_id.clone() } else { world.name.clone() }))
+            }
             Some(Join::Server(id)) => {
                 let server = self.servers.get(id).await?;
                 (Some(servers::join_target(&server.address).await?), Some(server.name))
@@ -711,6 +725,17 @@ impl Launcher {
             boost::ensure_performance(&self.http, &self.paths, catalog.builds(), &effective, &mods_progress).await?;
         }
         let instance = &effective;
+        // Gehostete Welt: Ohne TRS Client kann das Spiel weder verbinden noch die Anweisung lesen.
+        if world.is_some()
+            && (instance.loader.kind == LoaderKind::Vanilla
+                || instance.overrides.trs_client == Some(false)
+                || client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version).is_none())
+        {
+            return Err(Error::launch(crate::msg!(
+                "hosting.needsClient",
+                "Diese Instanz startet ohne TRS Client – gehosteten Welten kann nur ein Spiel mit TRS Client beitreten."
+            )));
+        }
 
         let updates = Some(&self.client_mod_updates);
         // Der Mod liest daraus, ob er die TRS API benutzen darf (nur feste Werte, kein Token).
@@ -846,13 +871,21 @@ impl Launcher {
         // TRS-Link: Schlüssel nur über die Umgebung des Spielprozesses (nie auf die Platte).
         self.link_attach_accounts();
         let legacy_mod = client_mod::installed_is_legacy(&self.paths, &instance.id).await;
+        if world.is_some() && legacy_mod {
+            return Err(Error::launch(client_too_old()));
+        }
         let mut secrets = vec![session.access_token.clone()];
         match self.link.open_session(&instance.id, legacy_mod).await {
             Ok(handoff) => {
                 command.env.retain(|(k, _)| k != link::ENV_VAR);
                 command.env.push(handoff.env());
                 secrets.push(handoff.secret().to_owned());
+                // Welt-Beitritt vormerken: Das Spiel bekommt ihn gleich nach der Link-Anmeldung.
+                if let Some(world) = world {
+                    self.link.queue_hosting_join(&instance.id, world.clone());
+                }
             }
+            Err(e) if world.is_some() => return Err(e),
             Err(e) => tracing::warn!("TRS-Link startet nicht: {e}"),
         }
         // Clips: Port (bzw. altes Token für Mods ≤ 0.5.0) und Status für die Mod.
@@ -986,11 +1019,69 @@ impl Launcher {
     }
 }
 
-/// Direkt beitreten: Server aus der Launcher-Liste (ID) oder freie Adresse.
+/// Direkt beitreten: Server aus der Launcher-Liste (ID), freie Adresse oder
+/// eine gehostete Welt (die Anweisung geht über den TRS-Link ans Spiel).
 #[derive(Debug, Clone, Copy)]
 pub enum Join<'a> {
     Server(&'a str),
     Address(&'a str),
+    World(&'a trs_api::hosting::HostedWorld),
+}
+
+impl Launcher {
+    /// Das Spiel läuft schon: Welt-Beitritt direkt über den Link übergeben.
+    fn hand_world_to_running_game(&self, instance_id: &str, world: &trs_api::hosting::HostedWorld) -> Result<u32> {
+        let pid = self.games.running().into_iter().find(|g| g.instance_id == instance_id).map(|g| g.pid);
+        match pid {
+            Some(pid) if self.link.queue_hosting_join(instance_id, world.clone()) => Ok(pid),
+            _ => Err(Error::launch(crate::msg!(
+                "hosting.gameNotLinked",
+                "Dieses Spiel ist nicht mit dem Launcher verbunden – beende es und starte es aus dem Launcher neu."
+            ))),
+        }
+    }
+
+    /// Stand des Welt-Beitritts für das Spiel dieser Instanz (vorgemerkt, übergeben, …).
+    pub fn hosting_delivery(&self, instance_id: &str) -> link::HostingDelivery {
+        self.link.hosting_delivery(instance_id)
+    }
+}
+
+fn client_too_old() -> error::Msg {
+    crate::msg!(
+        "hosting.clientTooOld",
+        "Der TRS Client dieser Instanz ist zu alt für gehostete Welten – starte sie einmal normal, damit er sich aktualisiert."
+    )
+}
+
+/// Loader-Name wie in der API (`vanilla`, `fabric`, …).
+pub fn loader_name(kind: LoaderKind) -> &'static str {
+    match kind {
+        LoaderKind::Vanilla => "vanilla",
+        LoaderKind::Fabric => "fabric",
+        LoaderKind::Quilt => "quilt",
+        LoaderKind::Forge => "forge",
+        LoaderKind::NeoForge => "neoforge",
+    }
+}
+
+/// Gleiche Minecraft-Version und passender Loader wie die gehostete Welt?
+fn check_world_instance(instance: &Instance, world: &trs_api::hosting::HostedWorld) -> Result<()> {
+    // Nur geprüfte (bereits gesäuberte) Angaben gehen ans Spiel.
+    if world.clone().checked().as_ref() != Some(world) {
+        return Err(Error::validation(crate::msg!("hosting.invalidRoom", "Ungültige Welt.")));
+    }
+    if instance.game_version == world.mc_version
+        && trs_api::hosting::loaders_compatible(&world.loader, loader_name(instance.loader.kind))
+    {
+        return Ok(());
+    }
+    Err(Error::validation(crate::msg!(
+        "hosting.wrongInstance",
+        "Diese Welt läuft auf Minecraft {version} ({loader}) – wähle eine passende Instanz.",
+        version = world.mc_version.clone(),
+        loader = world.loader.clone()
+    )))
 }
 
 /// Was vor dem Start feststeht und nach dem Spielende passieren soll:

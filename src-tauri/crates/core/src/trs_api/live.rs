@@ -26,6 +26,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 
 use super::chat::{ApiConversation, ApiMessage, ChatConversation, ChatMessage, ChatReaction, clean_reactions, conversation_id, message_id};
+use super::hosting::{self, ApiRoom, HostingRoom as Room};
 use super::moderation::MyReport;
 use super::types::{PresenceView, PrivacySettings, UserRef, clean_user};
 use super::{SessionSource, TrsApi, validate};
@@ -195,6 +196,20 @@ pub enum LiveEvent {
     ReportUpdate { report: Box<MyReport> },
     Moderation { action: String, reason: Option<String>, until: Option<String>, auto: Option<String> },
     Settings { settings: PrivacySettings },
+    /// Einladung in eine gehostete Welt (§21.5). `from` = Host.
+    HostingInvite { room: Box<Room>, from: Option<UserRef> },
+    HostingInviteRevoked { room_id: String },
+    /// Nur an den Host: jemand möchte in die eigene Welt.
+    HostingJoinRequest { room_id: String, from: UserRef },
+    /// Der Host hat die eigene Anfrage angenommen – jetzt kann das Spiel verbinden.
+    HostingJoinAccepted { room: Box<Room> },
+    HostingJoinDeclined { room_id: String },
+    HostingKicked { room_id: String, banned: bool },
+    /// Nur an den Host (alle Geräte): voller Stand der eigenen Welt.
+    HostingRoom { room: Box<Room> },
+    /// Einstellungen/Spielerzahl einer sichtbaren Welt, oder eine neue Welt eines Freundes.
+    HostingRoomUpdated { room: Box<Room> },
+    HostingRoomClosed { room_id: String, reason: String },
 }
 
 #[derive(Deserialize)]
@@ -256,6 +271,12 @@ struct D {
     settings: Option<PrivacySettings>,
     #[serde(default)]
     resumed: Option<bool>,
+    #[serde(default)]
+    room: Option<ApiRoom>,
+    #[serde(default)]
+    room_id: Option<String>,
+    #[serde(default)]
+    banned: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -295,6 +316,10 @@ struct LiveReport {
 
 fn conv(id: Option<String>) -> Option<String> {
     id.filter(|c| conversation_id(c))
+}
+
+fn room(id: Option<String>) -> Option<String> {
+    id.filter(|r| hosting::room_id(r))
 }
 
 fn time(t: Option<String>) -> Option<String> {
@@ -400,6 +425,22 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
             auto: d.auto.filter(|a| matches!(a.as_str(), "reports" | "spam")),
         },
         "settings" => LiveEvent::Settings { settings: d.settings? },
+        // --- Welt-Hosting (§21.5). `hosting_signal` bleibt bewusst draußen: Verbindungs-
+        // kandidaten (IP-Adressen) sind Sache des Spiels, nicht der Oberfläche.
+        "hosting_invite" => LiveEvent::HostingInvite { room: Box::new(d.room?.cleaned()?), from: d.from.and_then(clean_user) },
+        "hosting_invite_revoked" => LiveEvent::HostingInviteRevoked { room_id: room(d.room_id)? },
+        "hosting_join_request" => {
+            LiveEvent::HostingJoinRequest { room_id: room(d.room_id)?, from: clean_user(d.from?)? }
+        }
+        "hosting_join_accepted" => LiveEvent::HostingJoinAccepted { room: Box::new(d.room?.cleaned()?) },
+        "hosting_join_declined" => LiveEvent::HostingJoinDeclined { room_id: room(d.room_id)? },
+        "hosting_kicked" => LiveEvent::HostingKicked { room_id: room(d.room_id)?, banned: d.banned.unwrap_or(false) },
+        "hosting_room" => LiveEvent::HostingRoom { room: Box::new(d.room?.cleaned()?) },
+        "hosting_room_updated" => LiveEvent::HostingRoomUpdated { room: Box::new(d.room?.cleaned()?) },
+        "hosting_room_closed" => LiveEvent::HostingRoomClosed {
+            room_id: room(d.room_id)?,
+            reason: d.reason.filter(|r| hosting::CLOSE_REASONS.contains(&r.as_str())).unwrap_or_else(|| "closed".into()),
+        },
         _ => return None,
     })
 }
@@ -795,5 +836,37 @@ mod tests {
         assert!(settings.chat_read_receipts, "fehlende Chat-Schalter = an");
         let offer = decode("cape_offer", &json!({ "offer": { "cape": { "id": "u0123456789abcdef0123", "name": "Blitz" }, "from": { "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "name": "Bob" } } }).to_string()).unwrap();
         assert_eq!(serde_json::to_value(&offer).unwrap()["cape"], "Blitz");
+    }
+
+    fn room_view() -> serde_json::Value {
+        json!({ "id": "h0123456789abcdef0123", "name": "Insel", "host": { "uuid": "75c1a6f3112240abbdb57b9d21c64232", "name": "Theredstonee" },
+                "mcVersion": "1.21.11", "loader": "fabric", "maxPlayers": 4, "gameMode": "survival", "pvp": true, "cheats": false,
+                "open": true, "players": 2, "createdAt": "2026-09-26T10:00:00Z", "myState": "invited" })
+    }
+
+    #[test]
+    fn hosting_events_are_decoded() {
+        let bob = json!({ "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "name": "Bob" });
+        let invite = decode("hosting_invite", &json!({ "room": room_view(), "from": bob }).to_string()).unwrap();
+        let out = serde_json::to_value(&invite).unwrap();
+        assert_eq!(out["type"], "hosting_invite");
+        assert_eq!(out["room"]["myState"], "invited");
+        assert_eq!(out["room"]["mcVersion"], "1.21.11");
+        assert_eq!(out["from"]["name"], "Bob");
+        assert!(out["room"]["code"].is_null(), "Gäste sehen den Code nicht");
+
+        let accepted = decode("hosting_join_accepted", &json!({ "room": room_view() }).to_string()).unwrap();
+        assert_eq!(serde_json::to_value(&accepted).unwrap()["type"], "hosting_join_accepted");
+        let closed = decode("hosting_room_closed", "{\"roomId\":\"h0123456789abcdef0123\",\"reason\":\"exploded\"}").unwrap();
+        assert_eq!(serde_json::to_value(&closed).unwrap(), json!({ "type": "hosting_room_closed", "roomId": "h0123456789abcdef0123", "reason": "closed" }));
+        let kicked = decode("hosting_kicked", "{\"roomId\":\"h0123456789abcdef0123\",\"banned\":true}").unwrap();
+        assert_eq!(kicked, LiveEvent::HostingKicked { room_id: "h0123456789abcdef0123".into(), banned: true });
+        let request = decode("hosting_join_request", &json!({ "roomId": "h0123456789abcdef0123", "from": bob }).to_string()).unwrap();
+        assert!(matches!(request, LiveEvent::HostingJoinRequest { .. }));
+
+        assert!(decode("hosting_join_declined", "{\"roomId\":\"../x\"}").is_none());
+        assert!(decode("hosting_invite", "{\"room\":{\"id\":\"h0123456789abcdef0123\"}}").is_none(), "Raum ohne Host/Version");
+        let signal = json!({ "roomId": "h0123456789abcdef0123", "from": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "kind": "offer", "data": "{\"ip\":\"203.0.113.9\"}" });
+        assert!(decode("hosting_signal", &signal.to_string()).is_none(), "Signale (IP-Adressen) gehen nie ans Webview");
     }
 }

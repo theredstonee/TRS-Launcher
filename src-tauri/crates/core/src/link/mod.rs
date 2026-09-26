@@ -54,6 +54,7 @@ use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{broadcast, mpsc, watch};
 
+use crate::trs_api::hosting::HostedWorld;
 use crate::{Error, Result, fsutil};
 
 /// Umgebungsvariable des Spielprozesses mit Port, Sitzungs-ID und Schlüssel.
@@ -144,6 +145,29 @@ pub const FEATURE_CLIPS_ENABLE: &str = "clips.enable";
 pub const FEATURE_CLIPS_PREVIEW: &str = "clips.preview";
 /// Merkmal: Clip im Player des Launchers öffnen (`clips.open {clip}`).
 pub const FEATURE_CLIPS_OPEN: &str = "clips.open";
+/// Merkmal: „Tritt dieser gehosteten Welt bei“ (Push `hostingJoin`, Anfrage
+/// `hosting.join`). Die Mod nennt es auch in ihrem `auth` – nur dann schickt der
+/// Launcher den Push (siehe `docs/hosting-link.md`).
+pub const FEATURE_HOSTING_JOIN: &str = "hosting.join";
+/// Ein Welt-Beitritt wartet höchstens so lange auf das Spiel.
+const HOSTING_JOIN_TTL: Duration = Duration::from_secs(10 * 60);
+
+/// Wo ein Welt-Beitritt für ein Spiel steht (für die Oberfläche).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(tag = "state", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum HostingDelivery {
+    /// Nichts vorgemerkt.
+    #[default]
+    None,
+    /// Wartet, bis sich das Spiel meldet.
+    Pending { room_id: String },
+    /// Ans Spiel übergeben – ab hier verbindet die Mod selbst.
+    Delivered { room_id: String },
+    /// Das Spiel hat sich gemeldet, kann aber keine Welten betreten (TRS Client zu alt).
+    Unsupported { room_id: String },
+    /// Das Spiel hat sich nicht rechtzeitig gemeldet.
+    Expired { room_id: String },
+}
 
 /// Vorschau-Leiste eines Clips für die Mod: ein PNG-Raster im Cache des Launchers.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -241,6 +265,8 @@ pub trait AccountsHandler: Send + Sync {
 enum Push {
     Clip(LinkEvent),
     AccountsChanged,
+    /// Ein Welt-Beitritt wurde vorgemerkt (Inhalt liegt in der Sitzung – genau einmal abholen).
+    HostingJoin,
 }
 
 #[derive(Default)]
@@ -257,6 +283,7 @@ struct Limits {
     preview_running: bool,
     last_open: Option<Instant>,
     opens: VecDeque<Instant>,
+    last_hosting: Option<Instant>,
 }
 
 const WINDOW: Duration = Duration::from_secs(10 * 60);
@@ -324,6 +351,15 @@ impl Limits {
         true
     }
 
+    /// `hosting.join`: billig, aber nicht im Dauerfeuer – höchstens alle 250 ms.
+    fn allow_hosting(&mut self, now: Instant) -> bool {
+        if self.last_hosting.is_some_and(|t| now.duration_since(t) < Duration::from_millis(250)) {
+            return false;
+        }
+        self.last_hosting = Some(now);
+        true
+    }
+
     fn begin_add(&mut self, now: Instant) -> HandlerResult<()> {
         prune(&mut self.adds, now);
         if self.add_running {
@@ -350,6 +386,11 @@ struct Session {
     state: watch::Sender<LinkState>,
     push: broadcast::Sender<Push>,
     limits: Arc<Mutex<Limits>>,
+    /// Vorgemerkter Welt-Beitritt (wird genau einmal ans Spiel gegeben).
+    hosting: Option<(HostedWorld, Instant)>,
+    hosting_state: HostingDelivery,
+    /// Hat das angemeldete Spiel `hosting.join` genannt? (`None` = noch nicht angemeldet)
+    hosting_capable: Option<bool>,
 }
 
 impl Session {
@@ -367,6 +408,19 @@ impl Session {
             state,
             push,
             limits: Arc::default(),
+            hosting: None,
+            hosting_state: HostingDelivery::None,
+            hosting_capable: None,
+        }
+    }
+
+    /// Abgelaufenen Welt-Beitritt verwerfen.
+    fn expire_hosting(&mut self) {
+        if let Some((world, queued)) = &self.hosting
+            && queued.elapsed() > HOSTING_JOIN_TTL
+        {
+            self.hosting_state = HostingDelivery::Expired { room_id: world.room_id.clone() };
+            self.hosting = None;
         }
     }
 }
@@ -403,6 +457,35 @@ impl Shared {
         let sink = self.on_command.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
         if let Some(sink) = sink {
             sink(instance_id, command);
+        }
+    }
+
+    /// Vorgemerkten Welt-Beitritt der Sitzung `sid` genau einmal herausgeben.
+    /// `supported = false`: Das Spiel kann keine Welten betreten → verwerfen und
+    /// als `Unsupported` merken.
+    fn take_hosting(&self, instance_id: &str, sid: &str, supported: bool) -> Option<HostedWorld> {
+        let mut hub = self.hub();
+        let session = hub.get_mut(instance_id).filter(|s| proto::ct_eq(s.sid.as_bytes(), sid.as_bytes()))?;
+        session.expire_hosting();
+        let (world, _) = session.hosting.take()?;
+        let room_id = world.room_id.clone();
+        if supported {
+            session.hosting_state = HostingDelivery::Delivered { room_id };
+            Some(world)
+        } else {
+            tracing::info!("TRS-Link: Spiel ('{instance_id}') kann keine gehosteten Welten betreten (TRS Client zu alt)");
+            session.hosting_state = HostingDelivery::Unsupported { room_id };
+            None
+        }
+    }
+
+    /// Senden fehlgeschlagen: wieder vormerken (die nächste Verbindung bekommt ihn).
+    fn requeue_hosting(&self, instance_id: &str, sid: &str, world: HostedWorld) {
+        if let Some(session) = self.hub().get_mut(instance_id).filter(|s| proto::ct_eq(s.sid.as_bytes(), sid.as_bytes()))
+            && session.hosting.is_none()
+        {
+            session.hosting_state = HostingDelivery::Pending { room_id: world.room_id.clone() };
+            session.hosting = Some((world, Instant::now()));
         }
     }
 
@@ -561,6 +644,33 @@ impl TrsLink {
         }
     }
 
+    /// Welt-Beitritt für das Spiel dieser Instanz vormerken. Ist es schon verbunden
+    /// (und kann Welten betreten), bekommt es ihn sofort als `hostingJoin`, sonst
+    /// direkt nach der Anmeldung. Ein älterer Beitritt wird ersetzt.
+    /// `false` = keine (v2-)Sitzung für diese Instanz.
+    pub fn queue_hosting_join(&self, instance_id: &str, world: HostedWorld) -> bool {
+        let mut hub = self.shared.hub();
+        let Some(session) = hub.get_mut(instance_id).filter(|s| !s.legacy) else { return false };
+        if session.hosting_capable == Some(false) {
+            // Das laufende Spiel hat sich ohne `hosting.join` angemeldet: TRS Client zu alt.
+            session.hosting = None;
+            session.hosting_state = HostingDelivery::Unsupported { room_id: world.room_id };
+            return true;
+        }
+        session.hosting_state = HostingDelivery::Pending { room_id: world.room_id.clone() };
+        session.hosting = Some((world, Instant::now()));
+        let _ = session.push.send(Push::HostingJoin);
+        true
+    }
+
+    /// Stand des Welt-Beitritts für diese Instanz.
+    pub fn hosting_delivery(&self, instance_id: &str) -> HostingDelivery {
+        let mut hub = self.shared.hub();
+        let Some(session) = hub.get_mut(instance_id) else { return HostingDelivery::None };
+        session.expire_hosting();
+        session.hosting_state.clone()
+    }
+
     /// Konten im Launcher geändert: alle angemeldeten Mods laden die Liste neu.
     pub fn notify_accounts_changed(&self) {
         self.shared.broadcast_accounts_changed();
@@ -685,6 +795,9 @@ struct Incoming {
     /// Dateiname eines Clips (`clips.preview`, `clips.open`).
     #[serde(default)]
     clip: Option<String>,
+    /// Was die Mod kann (im `auth`, z. B. `hosting.join`); ältere Mods schicken nichts.
+    #[serde(default)]
+    features: Option<Vec<String>>,
 }
 
 /// Eine angemeldete Verbindung.
@@ -697,6 +810,8 @@ struct Conn {
     peer: Option<bool>,
     seal_key: Option<[u8; 32]>,
     limits: Arc<Mutex<Limits>>,
+    /// Die Mod kann gehostete Welten betreten (`hosting.join` im `auth`).
+    hosting: bool,
 }
 
 type Subscribed = (Conn, watch::Receiver<LinkState>, broadcast::Receiver<Push>);
@@ -746,7 +861,8 @@ async fn handshake(
         };
         tracing::debug!("TRS-Link: v1-Anmeldung {}", if found.is_some() { "ok" } else { "abgewiesen" });
         let Some((instance_id, state_rx, push_rx, limits)) = found else { return deny(write).await };
-        return Some((Conn { instance_id, marker: token, v2: false, peer: None, seal_key: None, limits }, state_rx, push_rx));
+        let conn = Conn { instance_id, marker: token, v2: false, peer: None, seal_key: None, limits, hosting: false };
+        return Some((conn, state_rx, push_rx));
     }
 
     let (Some(sid), Some(nc)) = (hello.sid, hello.nonce) else { return deny(write).await };
@@ -775,12 +891,13 @@ async fn handshake(
         "type": "challenge",
         "nonce": nl,
         "proof": proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)),
-        "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE, FEATURE_CLIPS_PREVIEW, FEATURE_CLIPS_OPEN],
+        "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE, FEATURE_CLIPS_PREVIEW, FEATURE_CLIPS_OPEN, FEATURE_HOSTING_JOIN],
     });
     write_json(write, &challenge).await?;
     tokio::time::timeout_at(deadline, read_line(reader, buf)).await.ok()??;
     let auth: Incoming = serde_json::from_slice(buf).unwrap_or_default();
     let expected = proto::game_proof(&key, &sid, &nc, &nl);
+    let hosting = auth.features.as_deref().is_some_and(|f| f.iter().take(32).any(|f| f == FEATURE_HOSTING_JOIN));
     let proof_ok = auth.kind == "auth"
         && auth.proof.as_deref().and_then(proto::unhex).is_some_and(|p| proto::ct_eq(&p, &expected));
     if !proof_ok {
@@ -791,6 +908,7 @@ async fn handshake(
         let mut hub = shared.hub();
         hub.get_mut(&instance_id).filter(|s| proto::ct_eq(s.sid.as_bytes(), sid.as_bytes())).map(|s| {
             s.authed = true;
+            s.hosting_capable = Some(hosting);
             (s.state.subscribe(), s.push.subscribe(), s.limits.clone())
         })
     };
@@ -803,6 +921,7 @@ async fn handshake(
         peer: peer_ok,
         seal_key: Some(proto::seal_key(&key, &nc, &nl)),
         limits,
+        hosting,
     };
     Some((conn, state_rx, push_rx))
 }
@@ -831,6 +950,14 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
     }
     if op == FEATURE_CLIPS_PREVIEW || op == FEATURE_CLIPS_OPEN {
         return clips_request(conn, shared, &op, msg.clip, id, now, out);
+    }
+    if op == FEATURE_HOSTING_JOIN {
+        // Abholen statt Push: liefert den vorgemerkten Beitritt (genau einmal) oder `null`.
+        if !limits().allow_hosting(now) {
+            return reply(error_response(id, "rate_limited"));
+        }
+        let join = shared.take_hosting(&conn.instance_id, &conn.marker, true);
+        return reply(json!({ "type": "res", "id": id, "ok": true, "join": join }));
     }
     let Some(handler) = shared.handler() else { return reply(error_response(id, "error")) };
     let out = out.clone();
@@ -967,6 +1094,19 @@ fn clips_request(
     });
 }
 
+/// Vorgemerkten Welt-Beitritt als `{"type":"hostingJoin","join":{…}}` senden –
+/// nur an Mods, die es können; sonst wird er als `Unsupported` verworfen.
+async fn deliver_hosting(write: &mut tokio::net::tcp::OwnedWriteHalf, conn: &Conn, shared: &Shared) -> Option<()> {
+    let Some(world) = shared.take_hosting(&conn.instance_id, &conn.marker, conn.hosting) else { return Some(()) };
+    let line = json!({ "type": "hostingJoin", "join": &world });
+    if write_json(write, &line).await.is_none() {
+        shared.requeue_hosting(&conn.instance_id, &conn.marker, world);
+        return None;
+    }
+    tracing::info!("TRS-Link: Welt-Beitritt an das Spiel übergeben ('{}')", conn.instance_id);
+    Some(())
+}
+
 async fn serve(stream: TcpStream, peer: SocketAddr, port: u16, shared: Arc<Shared>) -> Option<()> {
     stream.set_nodelay(true).ok();
     let (read, mut write) = stream.into_split();
@@ -1012,6 +1152,10 @@ async fn serve(stream: TcpStream, peer: SocketAddr, port: u16, shared: Arc<Share
         let mut sent_at = Instant::now();
         let initial = state_rx.borrow_and_update().clone();
         write_json(&mut write, &StateLine { kind: "state", state: &initial }).await?;
+        // Schon vorgemerkter Welt-Beitritt: direkt nach dem ersten Status.
+        if conn.v2 {
+            deliver_hosting(&mut write, &conn, &shared).await?;
+        }
         let mut heartbeat = tokio::time::interval(Duration::from_secs(5));
         heartbeat.tick().await;
         loop {
@@ -1029,7 +1173,8 @@ async fn serve(stream: TcpStream, peer: SocketAddr, port: u16, shared: Arc<Share
                         Ok(Push::AccountsChanged) if conn.v2 => {
                             write_json(&mut write, &json!({ "type": "accountsChanged" })).await?;
                         }
-                        Ok(Push::AccountsChanged) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                        Ok(Push::HostingJoin) if conn.v2 && conn.hosting => deliver_hosting(&mut write, &conn, &shared).await?,
+                        Ok(Push::AccountsChanged | Push::HostingJoin) | Err(broadcast::error::RecvError::Lagged(_)) => {}
                         Err(broadcast::error::RecvError::Closed) => return None,
                     }
                 }

@@ -10,6 +10,7 @@ pub mod export;
 pub mod extras;
 pub mod files;
 pub mod games;
+pub mod hosting;
 pub mod import;
 pub mod instances;
 pub mod logs;

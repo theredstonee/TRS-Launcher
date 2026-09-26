@@ -42,6 +42,15 @@ struct Client {
 
 /// Handschlag wie die Mod; `tamper` verfälscht den Beweis des Spiels.
 async fn v2_login(handoff: &Handoff, tamper: bool) -> std::result::Result<Client, serde_json::Value> {
+    v2_login_with(handoff, tamper, None).await
+}
+
+/// Wie [`v2_login`], die Mod nennt im `auth` ihre Merkmale (z. B. `hosting.join`).
+async fn v2_login_with(
+    handoff: &Handoff,
+    tamper: bool,
+    features: Option<&[&str]>,
+) -> std::result::Result<Client, serde_json::Value> {
     let (port, sid, key) = parse_env(handoff);
     let (mut r, mut w) = connect(port).await;
     let nc = proto::hex(&proto::random_bytes(16));
@@ -52,12 +61,19 @@ async fn v2_login(handoff: &Handoff, tamper: bool) -> std::result::Result<Client
     }
     let nl = challenge["nonce"].as_str().unwrap().to_owned();
     assert_eq!(challenge["proof"].as_str().unwrap(), proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)), "echter Launcher");
-    assert_eq!(challenge["features"], json!(["clips", "accounts", "clips.enable", "clips.preview", "clips.open"]));
+    assert_eq!(
+        challenge["features"],
+        json!(["clips", "accounts", "clips.enable", "clips.preview", "clips.open", "hosting.join"])
+    );
     let mut proof = proto::game_proof(&key, &sid, &nc, &nl);
     if tamper {
         proof[0] ^= 1;
     }
-    send(&mut w, json!({ "type": "auth", "proof": proto::hex(&proof) })).await;
+    let mut auth = json!({ "type": "auth", "proof": proto::hex(&proof) });
+    if let Some(features) = features {
+        auth["features"] = json!(features);
+    }
+    send(&mut w, auth).await;
     let first = line(&mut r).await;
     if first["type"] != "state" {
         return Err(first);
@@ -553,4 +569,130 @@ fn clip_vorschau_grenzen() {
     assert!(limits.allow_open(t0));
     assert!(!limits.allow_open(t0 + Duration::from_millis(500)));
     assert!(limits.allow_open(t0 + Duration::from_secs(2)));
+}
+
+// --- Welt-Beitritt (hosting.join) ----------------------------------------------------------
+
+fn world() -> HostedWorld {
+    HostedWorld {
+        room_id: "h0123456789abcdef0123".into(),
+        code: Some("K7QM2X".into()),
+        name: "Insel".into(),
+        host: Some(crate::trs_api::types::UserRef { uuid: "75c1a6f3112240abbdb57b9d21c64232".into(), name: "Theredstonee".into() }),
+        mc_version: "1.21.11".into(),
+        loader: "fabric".into(),
+    }
+}
+
+/// Liest bis zur ersten Zeile dieses Typs (Statuszeilen überspringen).
+async fn line_of(r: &mut R, kind: &str) -> serde_json::Value {
+    loop {
+        let v = line(r).await;
+        if v["type"] == kind {
+            return v;
+        }
+    }
+}
+
+#[tokio::test]
+async fn welt_beitritt_kommt_nach_der_anmeldung_genau_einmal() {
+    let link = TrsLink::new(None);
+    let handoff = link.open_session("survival", false).await.unwrap();
+    assert!(link.queue_hosting_join("survival", world()));
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::Pending { room_id: world().room_id });
+
+    let mut c = v2_login_with(&handoff, false, Some(&["hosting.join"])).await.expect("Anmeldung");
+    let push = line_of(&mut c.r, "hostingJoin").await;
+    assert_eq!(
+        push["join"],
+        json!({ "roomId": "h0123456789abcdef0123", "code": "K7QM2X", "name": "Insel",
+                "host": { "uuid": "75c1a6f3112240abbdb57b9d21c64232", "name": "Theredstonee" },
+                "mcVersion": "1.21.11", "loader": "fabric" })
+    );
+    let text = push.to_string();
+    assert!(!text.contains("token") && !text.contains("relay"), "keine Zugangsdaten ans Spiel");
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::Delivered { room_id: world().room_id });
+
+    // Abholen danach: nichts mehr da (genau einmal).
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "hosting.join" })).await;
+    let res = response(&mut c.r, 1).await;
+    assert_eq!(res["ok"], true);
+    assert!(res["join"].is_null());
+    // Dauerfeuer wird gebremst.
+    send(&mut c.w, json!({ "type": "req", "id": 2, "op": "hosting.join" })).await;
+    assert_eq!(response(&mut c.r, 2).await["error"], "rate_limited");
+
+    // Läuft das Spiel schon, kommt ein neuer Beitritt sofort als Push.
+    let mut other = world();
+    other.room_id = "h00000000000000000009".into();
+    assert!(link.queue_hosting_join("survival", other));
+    let push = line_of(&mut c.r, "hostingJoin").await;
+    assert_eq!(push["join"]["roomId"], "h00000000000000000009");
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::Delivered { room_id: "h00000000000000000009".into() });
+}
+
+#[tokio::test]
+async fn welt_beitritt_abholen_statt_push() {
+    let link = TrsLink::new(None);
+    let handoff = link.open_session("survival", false).await.unwrap();
+    let mut c = v2_login_with(&handoff, false, Some(&["hosting.join"])).await.expect("Anmeldung");
+    // Direkt vormerken, ohne Push (z. B. zwischen zwei Verbindungen).
+    {
+        let mut hub = link.shared.hub();
+        let session = hub.get_mut("survival").unwrap();
+        session.hosting = Some((world(), Instant::now()));
+        session.hosting_state = HostingDelivery::Pending { room_id: world().room_id };
+    }
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "hosting.join" })).await;
+    let res = response(&mut c.r, 1).await;
+    assert_eq!(res["join"]["code"], "K7QM2X");
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::Delivered { room_id: world().room_id });
+}
+
+#[tokio::test]
+async fn alte_mod_ohne_merkmal_bekommt_keinen_welt_beitritt() {
+    let link = TrsLink::new(None);
+    let handoff = link.open_session("survival", false).await.unwrap();
+    link.queue_hosting_join("survival", world());
+    let mut c = v2_login(&handoff, false).await.expect("Anmeldung");
+    // Kein Push – stattdessen weiß die Oberfläche: TRS Client zu alt.
+    let mut rest = Vec::new();
+    for _ in 0..2 {
+        rest.push(line(&mut c.r).await);
+    }
+    assert!(rest.iter().all(|v| v["type"] != "hostingJoin"), "{rest:?}");
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::Unsupported { room_id: world().room_id });
+
+    // Spiel läuft schon ohne das Merkmal: gleich „zu alt“, nichts bleibt liegen.
+    assert!(link.queue_hosting_join("survival", world()));
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::Unsupported { room_id: world().room_id });
+    assert!(link.shared.hub().get("survival").unwrap().hosting.is_none());
+}
+
+#[tokio::test]
+async fn welt_beitritt_nie_fuer_fremde_oder_alte_sitzungen() {
+    let link = TrsLink::new(None);
+    assert!(!link.queue_hosting_join("gibt-es-nicht", world()));
+    link.open_session("legacy", true).await.unwrap();
+    assert!(!link.queue_hosting_join("legacy", world()), "Mods ≤ 0.5.0 (v1) können es nicht");
+    assert_eq!(link.hosting_delivery("legacy"), HostingDelivery::None);
+
+    // Neue Sitzung derselben Instanz (Neustart des Spiels) verwirft den alten Beitritt.
+    link.open_session("survival", false).await.unwrap();
+    link.queue_hosting_join("survival", world());
+    link.open_session("survival", false).await.unwrap();
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::None);
+
+    // Abgelaufen: nach 10 Minuten ohne Spiel.
+    link.queue_hosting_join("survival", world());
+    link.shared.hub().get_mut("survival").unwrap().hosting.as_mut().unwrap().1 =
+        Instant::now().checked_sub(Duration::from_secs(11 * 60)).unwrap();
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::Expired { room_id: world().room_id });
+    // Spielende: Sitzung weg.
+    link.close_session("survival");
+    assert_eq!(link.hosting_delivery("survival"), HostingDelivery::None);
+    assert_eq!(
+        serde_json::to_value(HostingDelivery::Pending { room_id: "h1".into() }).unwrap(),
+        json!({ "state": "pending", "roomId": "h1" })
+    );
 }

@@ -472,6 +472,12 @@ pub fn run() {
             commands::social::social_quiet_hours,
             commands::social::social_notify_native,
             commands::social::social_focus_window,
+            commands::hosting::hosting_friends_rooms,
+            commands::hosting::hosting_my_rooms,
+            commands::hosting::hosting_room,
+            commands::hosting::hosting_join,
+            commands::hosting::hosting_leave,
+            commands::hosting::hosting_delivery,
         ])
         .build(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden")
