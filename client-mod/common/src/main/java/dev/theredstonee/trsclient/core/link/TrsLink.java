@@ -74,21 +74,38 @@ public final class TrsLink {
 		public final boolean accounts;
 		/** Der Launcher kann Clips auf Wunsch des Spiels einschalten ({@code clips.enable}, ab Launcher 0.6.1). */
 		public final boolean clipsEnable;
+		/** Alle Merkmale aus dem {@code challenge} des Launchers (leer bei Protokoll 1). */
+		private final java.util.Set<String> features;
 
 		Status(boolean connected, int protocol, boolean accounts) {
-			this(connected, protocol, accounts, false);
+			this(connected, protocol, accounts, false, null);
 		}
 
 		Status(boolean connected, int protocol, boolean accounts, boolean clipsEnable) {
+			this(connected, protocol, accounts, clipsEnable, null);
+		}
+
+		Status(boolean connected, int protocol, boolean accounts, boolean clipsEnable, java.util.Collection<String> features) {
 			this.connected = connected;
 			this.protocol = protocol;
 			this.accounts = accounts;
 			this.clipsEnable = clipsEnable;
+			this.features = features == null ? Collections.<String>emptySet()
+					: Collections.unmodifiableSet(new java.util.HashSet<String>(features));
+		}
+
+		/** Kann der verbundene Launcher das ({@link #FEATURE_CLIPS_PREVIEW} …)? */
+		public boolean has(String feature) {
+			return connected && protocol >= 2 && features.contains(feature);
 		}
 	}
 
 	/** Merkmal des Launchers: Clips per Anfrage einschalten. */
 	public static final String FEATURE_CLIPS_ENABLE = "clips.enable";
+	/** Merkmal des Launchers: kleine Vorschau-Animation eines Clips ({@code clips.preview}). */
+	public static final String FEATURE_CLIPS_PREVIEW = "clips.preview";
+	/** Merkmal des Launchers: Clip im Player des Launchers öffnen ({@code clips.open}). */
+	public static final String FEATURE_CLIPS_OPEN = "clips.open";
 
 	static final Status OFFLINE = new Status(false, 0, false);
 
@@ -122,6 +139,20 @@ public final class TrsLink {
 		public List<AccountDto> accounts;
 		public AccountDto account;
 		public SessionDto session;
+		/** Antwort auf {@code clips.preview}. */
+		public PreviewDto preview;
+	}
+
+	/** Vorschau-Leiste eines Clips: PNG-Raster, das der Launcher in seinem Cache ablegt. */
+	public static final class PreviewDto {
+		public String path;
+		public Integer frames;
+		public Integer cols;
+		public Integer rows;
+		public Integer frameWidth;
+		public Integer frameHeight;
+		public Integer intervalMs;
+		public Long durationMs;
 	}
 
 	public static final class AccountDto {
@@ -444,6 +475,7 @@ public final class TrsLink {
 			Gson gson = new Gson();
 			boolean accounts = false;
 			boolean clipsEnable = false;
+			List<String> features = null;
 			String gameNonce = null;
 			if (target.kind == LinkTarget.Kind.V2) {
 				gameNonce = LinkCrypto.randomHex(16);
@@ -465,6 +497,7 @@ public final class TrsLink {
 				sealKey = LinkCrypto.sealKey(target.key, gameNonce, challenge.nonce);
 				accounts = challenge.features != null && challenge.features.contains("accounts");
 				clipsEnable = challenge.features != null && challenge.features.contains(FEATURE_CLIPS_ENABLE);
+				features = challenge.features;
 			} else {
 				if (!write(o, "{\"type\":\"hello\",\"v\":1,\"token\":\"" + target.token + "\"}")) return Result.FAILED;
 			}
@@ -493,7 +526,7 @@ public final class TrsLink {
 					if (!"state".equals(line.type)) continue;
 					greeted = true;
 					out = o;
-					setStatus(new Status(true, target.kind == LinkTarget.Kind.V2 ? 2 : 1, accounts, clipsEnable));
+					setStatus(new Status(true, target.kind == LinkTarget.Kind.V2 ? 2 : 1, accounts, clipsEnable, features));
 				}
 				if ("res".equals(line.type)) {
 					Pending p = line.id == null ? null : pending.remove(line.id);
@@ -553,7 +586,7 @@ public final class TrsLink {
 
 	private static final List<String> ERRORS = Collections.unmodifiableList(java.util.Arrays.asList(
 			"rate_limited", "unknown_account", "not_allowed", "busy", "cancelled", "auth_failed", "offline",
-			"unknown_op", "timeout", "unsupported", "error"));
+			"unknown_op", "timeout", "unsupported", "unknown_clip", "no_ffmpeg", "error"));
 
 	/** Nur bekannte Fehlercodes durchlassen. */
 	public static String safeError(String code) {

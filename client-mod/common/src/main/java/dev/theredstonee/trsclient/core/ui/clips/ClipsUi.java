@@ -1,11 +1,16 @@
 package dev.theredstonee.trsclient.core.ui.clips;
 
+import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.clips.ClipLibrary;
 import dev.theredstonee.trsclient.core.clips.ClipNotice;
+import dev.theredstonee.trsclient.core.clips.ClipPreview;
+import dev.theredstonee.trsclient.core.clips.PreviewAnimation;
 import dev.theredstonee.trsclient.core.clips.ClipStatus;
 import dev.theredstonee.trsclient.core.clips.Clips;
 import dev.theredstonee.trsclient.core.clips.Thumbnails;
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.intro.IntroGate;
+import dev.theredstonee.trsclient.core.module.NewSince;
 import dev.theredstonee.trsclient.core.ui.Affine;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
@@ -15,6 +20,7 @@ import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.TextureRef;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
+import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
 import dev.theredstonee.trsclient.core.ui.menus.WindowUi;
 import dev.theredstonee.trsclient.core.util.OpenPath;
 
@@ -60,6 +66,11 @@ public final class ClipsUi extends WindowUi {
 	private boolean noticeError;
 	private long noticeAt;
 	private volatile Boolean deleteResult;
+	/** Clip in der Vorschau (Index in der gefilterten Liste) oder −1. */
+	private int clipView = -1;
+	private final ClipPreview clipPreview;
+	/** Ergebnis von „Im Launcher öffnen“ (Netz-Thread → Render-Thread); "" = geklappt. */
+	private volatile String openResult;
 
 	public ClipsUi(ClipsHost host) {
 		this.host = host;
@@ -73,6 +84,7 @@ public final class ClipsUi extends WindowUi {
 		this.library = new ClipLibrary(host.configDir(), host.gameDir(), worker);
 		this.thumbs = new Thumbnails(worker, 224, 126, 48);
 		this.large = new Thumbnails(worker, 1280, 720, 3);
+		this.clipPreview = new ClipPreview(ClipPreview.shared(), worker);
 		I18n.refresh();
 		library.refresh();
 		lastScan = System.currentTimeMillis();
@@ -98,6 +110,22 @@ public final class ClipsUi extends WindowUi {
 		}
 	}
 
+	/** Für den Selbsttest: ersten Clip in der Vorschau öffnen. */
+	public void openFirstClip() {
+		List<ClipLibrary.Entry> list = filtered();
+		for (int i = 0; i < list.size(); i++) {
+			if (list.get(i).type == ClipLibrary.Type.CLIP) {
+				openClip(i, list.get(i));
+				return;
+			}
+		}
+	}
+
+	/** Für den Selbsttest: Zustand der Clip-Vorschau. */
+	public ClipPreview clipPreview() {
+		return clipPreview;
+	}
+
 	/** Für den Selbsttest: Löschen-Rückfrage für den ersten Eintrag zeigen. */
 	public void confirmFirst() {
 		List<ClipLibrary.Entry> list = filtered();
@@ -116,6 +144,7 @@ public final class ClipsUi extends WindowUi {
 
 	@Override
 	protected void onClosed() {
+		clipPreview.release();
 		thumbs.releaseAll();
 		large.releaseAll();
 		worker.shutdown();
@@ -151,6 +180,12 @@ public final class ClipsUi extends WindowUi {
 		long now = System.currentTimeMillis();
 		thumbs.frame();
 		large.frame();
+		clipPreview.frame(now);
+		String opened = openResult;
+		if (opened != null) {
+			openResult = null;
+			setNotice(opened.isEmpty() ? I18n.tr("clips.preview.opened") : previewError(opened, true), !opened.isEmpty());
+		}
 		if (now - lastScan > RESCAN_MS && !library.scanning()) {
 			lastScan = now;
 			library.refresh();
@@ -163,6 +198,7 @@ public final class ClipsUi extends WindowUi {
 		ClipLibrary.Listing listing = library.listing();
 		List<ClipLibrary.Entry> list = filtered();
 		if (preview >= list.size()) preview = -1;
+		if (clipView >= list.size() || (clipView >= 0 && list.get(clipView).type != ClipLibrary.Type.CLIP)) closeClip();
 
 		// Werkzeugleiste: Filter links, Aufnahme/Clip/Ordner rechts
 		String[] labels = {
@@ -180,8 +216,11 @@ public final class ClipsUi extends WindowUi {
 					filter = f;
 					scroll = 0;
 					preview = -1;
+					closeClip();
 				}
 			});
+			// Neu: Clip-Vorschau im Spiel – Schild am Reiter „Clips“, bis die erste Vorschau offen war.
+			if (f == Filter.CLIPS && isNew(NewSince.CLIPS_PREVIEW)) NewBadge.draw(c, tx + tw - NewBadge.width(c) + 3, y - 6);
 			tx += tw + 3;
 			tabsRight = tx;
 		}
@@ -302,6 +341,7 @@ public final class ClipsUi extends WindowUi {
 		}
 
 		if (preview >= 0) previewOverlay(c, list, mx, my);
+	if (clipView >= 0) clipOverlay(c, list, mx, my, now);
 		if (confirmDelete != null) confirmOverlay(c, mx, my);
 	}
 
@@ -344,7 +384,7 @@ public final class ClipsUi extends WindowUi {
 		scroll = Math.max(0, Math.min(scroll, maxScroll));
 		c.scissor(x - 1, y - 1, x + w + 1, y + h + 1);
 		hits.clip(x, y, w, h);
-		boolean overlay = preview >= 0 || confirmDelete != null;
+		boolean overlay = preview >= 0 || clipView >= 0 || confirmDelete != null;
 		for (int i = 0; i < list.size(); i++) {
 			int tx = x + (i % cols) * (tileW + GAP);
 			int ty = y + (i / cols) * (tileH + GAP) - scroll;
@@ -395,8 +435,8 @@ public final class ClipsUi extends WindowUi {
 						host.playClick();
 						if (e.type == ClipLibrary.Type.SCREENSHOT) {
 							preview = index;
-						} else if (!OpenPath.open(e.path)) {
-							setNotice(I18n.tr("clips.openFailed"), true);
+						} else {
+							openClip(index, e);
 						}
 					}
 				});
@@ -498,6 +538,217 @@ public final class ClipsUi extends WindowUi {
 		}
 	}
 
+	// --- Clip-Vorschau ------------------------------------------------------------------------------
+
+	private void openClip(int index, ClipLibrary.Entry e) {
+		clipView = index;
+		clipPreview.load(e.name);
+		seen(NewSince.CLIPS_PREVIEW);
+	}
+
+	private void closeClip() {
+		clipView = -1;
+		clipPreview.release();
+	}
+
+	private void stepClip(List<ClipLibrary.Entry> list, int dir) {
+		if (list.isEmpty() || clipView < 0) return;
+		int n = list.size();
+		int i = clipView;
+		for (int k = 0; k < n; k++) {
+			i = ((i + dir) % n + n) % n;
+			if (list.get(i).type == ClipLibrary.Type.CLIP) {
+				openClip(i, list.get(i));
+				return;
+			}
+		}
+	}
+
+	/** Vorschau eines Clips: Zeitraffer aus der Vorschau-Leiste des Launchers, „Im Launcher öffnen“. */
+	private void clipOverlay(Canvas c, final List<ClipLibrary.Entry> list, int mx, int my, long now) {
+		Theme t = Theme.get();
+		int px = window[0] + 4;
+		int py = window[1] + HEADER_H;
+		int pw = window[2] - 8;
+		int ph = window[3] - HEADER_H - 4;
+		c.fill(px, py, px + pw, py + ph, 0xFF0A0808);
+		final ClipLibrary.Entry e = list.get(clipView);
+		int barH = 22;
+		int timeH = 14;
+		int ix = px + 6;
+		int iy = py + 6;
+		int iw = pw - 12;
+		int ih = ph - barH - timeH - 14;
+		final ClipPreview.Sheet sheet = clipPreview.sheet();
+		final PreviewAnimation anim = clipPreview.animation();
+		TextureRef ref = clipPreview.texture();
+		if (sheet != null && ref != null && c.images()) {
+			int frame = anim.index();
+			float s = Math.min(iw / (float) sheet.frameWidth, ih / (float) sheet.frameHeight);
+			float dw = sheet.frameWidth * s;
+			float dh = sheet.frameHeight * s;
+			Affine.image(c, ref, ix + (iw - dw) / 2f, iy + (ih - dh) / 2f, dw, dh, sheet.u(frame), sheet.v(frame), sheet.frameWidth,
+					sheet.frameHeight, 0xFFFFFFFF);
+			if (!anim.playing()) {
+				// Pausiert: großes Symbol in der Mitte.
+				Icons.draw(c, "play", ix + iw / 2 - 12, iy + ih / 2 - 12, 3, 0xC0FFFFFF);
+			}
+			hits.add(ix, iy, iw, ih, new Runnable() {
+				@Override
+				public void run() {
+					anim.toggle();
+				}
+			});
+		} else {
+			ClipPreview.State state = clipPreview.state();
+			boolean waiting = state == ClipPreview.State.LOADING || state == ClipPreview.State.IDLE;
+			String text = waiting ? I18n.tr("clips.preview.loading") : previewError(clipPreview.code(), false);
+			Icons.draw(c, "film", ix + iw / 2 - 8, iy + ih / 2 - 30, 2, waiting ? ColorMath.lerp(t.textDim, t.dustOn,
+					(float) (0.5 + 0.5 * Math.sin(now / 250.0))) : t.textDim);
+			List<String> lines = Paint.wrap(c, text, Math.min(iw - 20, 300));
+			int ty = iy + ih / 2 - 6;
+			for (String l : lines) {
+				Paint.textCentered(c, l, ix + iw / 2, ty, waiting ? t.textDim : t.text, false);
+				ty += 11;
+			}
+			if (state == ClipPreview.State.FAILED && retryable(clipPreview.code())) {
+				String retry = I18n.tr("clips.preview.retry");
+				int rw = c.textWidth(retry) + 16;
+				button(c, ix + (iw - rw) / 2, ty + 4, rw, 16, retry, false, true, mx, my, new Runnable() {
+					@Override
+					public void run() {
+						clipPreview.retry();
+					}
+				});
+			}
+		}
+
+		// Zeitleiste (Stelle im Clip) – Klick springt dorthin.
+		int ty = iy + ih + 4;
+		long total = sheet != null ? sheet.durationMs : e.durationMs;
+		String time = (sheet != null ? clock(anim.positionMs()) : "0:00") + " / " + (total >= 0 ? clock(total) : "–");
+		int timeW = c.textWidth(time);
+		final int trackX = ix;
+		final int trackW = Math.max(10, iw - timeW - 8);
+		c.fill(trackX, ty + 4, trackX + trackW, ty + 7, 0xFF2A2224);
+		if (sheet != null) {
+			int filled = Math.round(trackW * anim.progress());
+			c.fill(trackX, ty + 4, trackX + filled, ty + 7, t.dustOn);
+			c.fill(trackX + filled - 1, ty + 2, trackX + filled + 2, ty + 9, t.dustOn);
+			final int clickX = mx;
+			hits.add(trackX, ty, trackW, timeH - 2, new Runnable() {
+				@Override
+				public void run() {
+					anim.seek((clickX - trackX) / (float) Math.max(1, trackW - 1));
+				}
+			});
+		}
+		c.text(time, ix + iw - timeW, ty + 2, t.textDim, false);
+
+		// Leiste unten: blättern, abspielen, Name – rechts „Im Launcher öffnen“, System-Player, Löschen, Schließen.
+		int by = py + ph - barH;
+		c.fill(px, by, px + pw, py + ph, 0xFF151112);
+		Redstone.dustH(c, px, px + pw, by, t.dustOff, 0f);
+		int bx = px + 6;
+		iconButton(c, bx, by + 4, 14, "back", false, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				stepClip(list, -1);
+			}
+		});
+		bx += 17;
+		iconButton(c, bx, by + 4, 14, "next", false, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				stepClip(list, 1);
+			}
+		});
+		bx += 17;
+		if (sheet != null) {
+			iconButton(c, bx, by + 4, 14, anim.playing() ? "pause" : "play", false, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					anim.toggle();
+				}
+			});
+			bx += 17;
+		}
+		bx += 3;
+		int right = px + pw - 6;
+		int close = right - 14;
+		iconButton(c, close, by + 4, 14, "close", false, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				closeClip();
+			}
+		});
+		int del = close - 17;
+		iconButton(c, del, by + 4, 14, "trash", false, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				confirmDelete = e;
+			}
+		});
+		int external = del - 17;
+		iconButton(c, external, by + 4, 14, "film", false, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				if (!OpenPath.open(e.path)) setNotice(I18n.tr("clips.openFailed"), true);
+			}
+		});
+		String openLabel = I18n.tr("clips.preview.openLauncher");
+		int ow = Math.min(150, c.textWidth(openLabel) + 16);
+		int ox = external - 6 - ow;
+		boolean canOpen = clipPreview.unavailableReason() == null;
+		if (ox > bx + 40) {
+			button(c, ox, by + 3, ow, 16, openLabel, true, canOpen, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					clipPreview.openInLauncher(e.name, new ClipPreview.OpenResult() {
+						@Override
+						public void done(String code) {
+							openResult = code == null ? "" : code;
+						}
+					});
+				}
+			});
+			if (isNew(NewSince.CLIPS_PREVIEW)) NewBadge.draw(c, ox + ow - NewBadge.width(c) + 2, by - 6);
+		} else {
+			ox = external;
+		}
+		// Meldung (z. B. „Im Launcher geöffnet“) statt Name, solange sie frisch ist.
+		boolean fresh = notice != null && now - noticeAt < 4_000L;
+		Paint.textClipped(c, fresh ? notice : stem(e.name) + "  ·  " + meta(e), bx, by + 7, ox - 6 - bx,
+				fresh ? (noticeError ? t.dustOn : t.text) : t.text, false);
+	}
+
+	/** Verständlicher Text zu einem Code der Vorschau bzw. von „Im Launcher öffnen“. */
+	public static String previewError(String code, boolean opening) {
+		if ("no_launcher".equals(code)) return I18n.tr("clips.preview.noLauncher");
+		if ("old_launcher".equals(code)) return I18n.tr("clips.preview.oldLauncher");
+		if ("offline".equals(code) || "timeout".equals(code)) return I18n.tr("clips.preview.offline");
+		if ("no_ffmpeg".equals(code)) return I18n.tr("clips.preview.noFfmpeg");
+		if ("unknown_clip".equals(code)) return I18n.tr("clips.preview.gone");
+		if ("busy".equals(code) || "rate_limited".equals(code)) return I18n.tr("clips.preview.busy");
+		return I18n.tr(opening ? "clips.preview.openFailed" : "clips.preview.failed");
+	}
+
+	private static boolean retryable(String code) {
+		return "busy".equals(code) || "rate_limited".equals(code) || "timeout".equals(code) || "offline".equals(code)
+				|| "error".equals(code);
+	}
+
+	/** Bereich neu seit dem letzten Update und noch nie benutzt? */
+	private static boolean isNew(String newId) {
+		TrsModules m = IntroGate.modules();
+		return m != null && m.clientState.news().isNew(newId);
+	}
+
+	private static void seen(String newId) {
+		TrsModules m = IntroGate.modules();
+		if (m != null && m.clientState.news().markSeen(newId)) IntroGate.save(m);
+	}
+
 	private void confirmOverlay(Canvas c, int mx, int my) {
 		Theme t = Theme.get();
 		final ClipLibrary.Entry e = confirmDelete;
@@ -522,6 +773,7 @@ public final class ClipsUi extends WindowUi {
 			public void run() {
 				confirmDelete = null;
 				preview = -1;
+				closeClip();
 				library.delete(e, new ClipLibrary.DeleteCallback() {
 					@Override
 					public void done(boolean ok) {
@@ -592,7 +844,7 @@ public final class ClipsUi extends WindowUi {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-		if (preview >= 0 || confirmDelete != null) return true;
+		if (preview >= 0 || clipView >= 0 || confirmDelete != null) return true;
 		if (!inside(mouseX, mouseY, gridRect[0], gridRect[1], gridRect[2], gridRect[3])) return false;
 		scroll = Math.max(0, Math.min(maxScroll, scroll - (int) Math.round(amount * 30)));
 		return true;
@@ -602,8 +854,17 @@ public final class ClipsUi extends WindowUi {
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
 		if (key == UiKey.ESCAPE) {
 			if (confirmDelete != null) confirmDelete = null;
+			else if (clipView >= 0) closeClip();
 			else if (preview >= 0) preview = -1;
 			else requestClose();
+			return true;
+		}
+		if (clipView >= 0 && confirmDelete == null && (key == UiKey.LEFT || key == UiKey.RIGHT)) {
+			stepClip(filtered(), key == UiKey.LEFT ? -1 : 1);
+			return true;
+		}
+		if (clipView >= 0 && confirmDelete == null && key == UiKey.ENTER) {
+			clipPreview.animation().toggle();
 			return true;
 		}
 		if (preview >= 0 && (key == UiKey.LEFT || key == UiKey.RIGHT)) {

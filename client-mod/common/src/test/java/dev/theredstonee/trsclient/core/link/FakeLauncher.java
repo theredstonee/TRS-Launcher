@@ -43,6 +43,14 @@ public final class FakeLauncher implements AutoCloseable {
 	/** Antwort auf {@code clips.enable}: null = ok (dann FFmpeg-Fortschritt und laufender Puffer), sonst Fehlercode. */
 	public volatile String enableError;
 	public final java.util.concurrent.atomic.AtomicInteger enables = new java.util.concurrent.atomic.AtomicInteger();
+	/** Antwort auf {@code clips.preview} (JSON-Objekt für {@code "preview"}) bzw. Fehlercode. */
+	public volatile String previewJson;
+	public volatile String previewError = "unknown_clip";
+	/** Verzögerung der Vorschau-Antwort (FFmpeg rechnet). */
+	public volatile long previewDelayMs;
+	public final java.util.concurrent.atomic.AtomicInteger previews = new java.util.concurrent.atomic.AtomicInteger();
+	/** Clips, die per {@code clips.open} geöffnet wurden. */
+	public final BlockingQueue<String> opened = new LinkedBlockingQueue<String>();
 	private final Thread thread;
 	private volatile OutputStream out;
 
@@ -136,6 +144,29 @@ public final class FakeLauncher implements AutoCloseable {
 								+ "\"recording\":false,\"recordingMs\":0,\"clipSeconds\":30}");
 						write(o, "{\"type\":\"state\",\"available\":true,\"buffer\":true,\"recording\":false,"
 								+ "\"recordingMs\":0,\"clipSeconds\":30}");
+					} else if ("clips.preview".equals(op)) {
+						previews.incrementAndGet();
+						if (previewDelayMs > 0) {
+							try {
+								Thread.sleep(previewDelayMs);
+							} catch (InterruptedException ignored) {
+								Thread.currentThread().interrupt();
+							}
+						}
+						String json = previewJson;
+						if (json == null) {
+							write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":false,\"error\":\"" + previewError + "\"}");
+						} else {
+							write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":true,\"preview\":" + json + "}");
+						}
+					} else if ("clips.open".equals(op)) {
+						String clip = req.has("clip") ? req.get("clip").getAsString() : "";
+						if (clip.endsWith(".mp4")) {
+							opened.add(clip);
+							write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":true}");
+						} else {
+							write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":false,\"error\":\"unknown_clip\"}");
+						}
 					} else if ("accounts.add".equals(op)) {
 						write(o, "{\"type\":\"res\",\"id\":" + id + ",\"ok\":false,\"error\":\"busy\"}");
 					} else {

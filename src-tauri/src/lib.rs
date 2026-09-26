@@ -89,6 +89,18 @@ pub fn run() {
                     log::warn!("trs-sync konnte nicht gesendet werden: {e}");
                 }
             }));
+            // „Im Launcher öffnen“ aus dem Spiel: Fenster nach vorn, Player mit dem Clip.
+            let handle = app.handle().clone();
+            launcher.set_clip_open_sink(Arc::new(move |request| {
+                if let Some(window) = handle.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
+                }
+                if let Err(e) = handle.emit("clip-open", &request) {
+                    log::warn!("clip-open konnte nicht gesendet werden: {e}");
+                }
+            }));
             let launcher = Arc::new(launcher);
             // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
             tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
@@ -107,6 +119,31 @@ pub fn run() {
             app.manage(commands::system::DropState::default());
             app.manage(commands::tasks::TaskRegistry::default());
             Ok(())
+        })
+        // Clips abspielen: `trsclip://localhost/<art>/<instanz>/<datei>` – nur Dateien im
+        // Clip-Ordner, Videos in Stücken (Range), Vorschaubilder/-leisten bei Bedarf erzeugt.
+        .register_asynchronous_uri_scheme_protocol(trs_core::clips::serve::SCHEME, |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            let path = request.uri().path().to_owned();
+            let range = request.headers().get("range").and_then(|v| v.to_str().ok()).map(str::to_owned);
+            let head = request.method() == tauri::http::Method::HEAD;
+            let readonly = head || request.method() == tauri::http::Method::GET;
+            tauri::async_runtime::spawn(async move {
+                let response = match app.try_state::<LauncherState>() {
+                    Some(launcher) if readonly => launcher.serve_clip(&path, range).await,
+                    Some(_) => trs_core::clips::serve::Response::status(405),
+                    None => trs_core::clips::serve::Response::status(503),
+                };
+                let mut builder = tauri::http::Response::builder().status(response.status);
+                for (name, value) in &response.headers {
+                    builder = builder.header(*name, value);
+                }
+                let body = if head { Vec::new() } else { response.body };
+                match builder.body(body) {
+                    Ok(r) => responder.respond(r),
+                    Err(e) => log::warn!("trsclip-Antwort fehlerhaft: {e}"),
+                }
+            });
         })
         // Dateien, die ins Fenster gezogen werden: Pfade bleiben in Rust,
         // das Webview bekommt nur Namen und eine Marke.
@@ -286,8 +323,6 @@ pub fn run() {
             commands::screenshots::trash_screenshot,
             commands::clips::list_clips,
             commands::clips::clip_usage,
-            commands::clips::clip_video,
-            commands::clips::clip_thumbnail,
             commands::clips::rename_clip,
             commands::clips::trash_clip,
             commands::clips::reveal_clip,
@@ -297,6 +332,13 @@ pub fn run() {
             commands::clips::ffmpeg_status,
             commands::clips::install_ffmpeg,
             commands::clips::pick_clips_folder,
+            commands::clips::clip_details,
+            commands::clips::clip_strip,
+            commands::clips::plan_clip_trim,
+            commands::clips::trim_clip,
+            commands::clips::export_clip,
+            commands::clips::copy_clip_file,
+            commands::clips::open_clip_external,
             commands::export::export_candidates,
             commands::export::export_modpack,
             commands::export::import_modpack_file,

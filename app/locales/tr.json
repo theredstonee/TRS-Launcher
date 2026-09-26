@@ -597,7 +597,13 @@
       "invalidName": "Bu ad dosya adı olarak kullanılamaz.",
       "nameTaken": "Bu adla bir klip zaten var.",
       "noFrames": "Henüz hiçbir şey kaydedilmedi.",
-      "notRecording": "Bu oyun için çalışan bir kayıt yok."
+      "notRecording": "Bu oyun için çalışan bir kayıt yok.",
+      "trimRange": "Bitiş başlangıçtan sonra olmalı.",
+      "trimTooShort": "Yeni klip en az yarım saniye olmalı.",
+      "noFfmpeg": "Kırpmak için FFmpeg gerekli – klip ayarlarından indir.",
+      "trimFailed": "Klip kırpılamadı.",
+      "unreadable": "Klip okunamıyor.",
+      "clipboardFailed": "Klip panoya kopyalanamadı."
     },
     "trsCapeImport": {
       "unsupported": "“{name}” desteklenen bir görsel değil (PNG, JPEG, WebP, GIF veya TRS Studio JSON).",
@@ -1111,7 +1117,8 @@
       "worlds": "Dünyalar",
       "logs": "Günlükler",
       "files": "Dosyalar",
-      "share": "Paylaş"
+      "share": "Paylaş",
+      "clips": "Klipler"
     },
     "gallery": {
       "bannerSet": "Banner ayarlandı",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Klibi oynat",
       "close": "Oynatıcıyı kapat",
-      "hint": "Esc kapatır · Alt+←/→ önceki/sonraki klip"
+      "hint": "Boşluk oynat/duraklat · ←/→ 5 sn · J/L 10 sn · ,/. tek kare · F tam ekran · M ses · Alt+←/→ başka klip · Esc kapatır",
+      "play": "Oynat (Boşluk)",
+      "pause": "Duraklat (Boşluk)",
+      "previous": "Önceki klip (Alt+←)",
+      "next": "Sonraki klip (Alt+→)",
+      "back5": "5 saniye geri (←)",
+      "forward5": "5 saniye ileri (→)",
+      "mute": "Sesi kapat (M)",
+      "unmute": "Sesi aç (M)",
+      "volume": "Ses düzeyi",
+      "speed": "Oynatma hızı",
+      "fullscreen": "Tam ekran (F)",
+      "exitFullscreen": "Tam ekrandan çık (F)",
+      "timeline": "Klipteki konum",
+      "unsupportedTitle": "Bu klip burada oynatılamıyor",
+      "unsupportedText": "Yerleşik oynatıcı bu videoyu çözemiyor. Bunun yerine sisteminin video oynatıcısında aç.",
+      "unsupportedLinux": "Yerleşik oynatıcının H.264/AAC için GStreamer eklentilerine ihtiyacı var (örneğin gst-libav veya gstreamer1.0-plugins-bad). Bunları kur ya da klibi sisteminin video oynatıcısında aç."
     },
     "renameDialog": {
       "title": "Klibi yeniden adlandır",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Yazılım (x264)"
+    },
+    "gallery": {
+      "search": "Kliplerde ara",
+      "sortLabel": "Klipleri sırala",
+      "sort": {
+        "newest": "Önce en yeni",
+        "oldest": "Önce en eski",
+        "longest": "Önce en uzun",
+        "largest": "Önce en büyük",
+        "name": "Ad (A–Z)"
+      },
+      "noMatches": "Aramayla eşleşen klip yok."
+    },
+    "share": {
+      "saveAs": "Farklı kaydet …",
+      "copy": "Dosyayı kopyala (Discord, Gezgin … içine yapıştır)",
+      "openExternal": "Sistem oynatıcısında aç",
+      "exported": "Klip kaydedildi",
+      "copied": "Klip kopyalandı – paylaşmak istediğin yere yapıştır"
+    },
+    "trim": {
+      "button": "Kırp",
+      "title": "Klibi kırp",
+      "start": "Başlangıç",
+      "end": "Bitiş",
+      "setStart": "Geçerli konum",
+      "setEnd": "Geçerli konum",
+      "setHint": "Geçerli konumu kullan ({key} tuşu)",
+      "length": "Uzunluk {time}",
+      "modeLabel": "Kesim türü",
+      "mode": {
+        "auto": "Otomatik",
+        "fast": "Hızlı",
+        "exact": "Kesin"
+      },
+      "modeHint": {
+        "auto": "Başlangıç bir ana karedeyse yeniden kodlamadan kopyalar, değilse kare hassasiyetinde keser",
+        "fast": "Her zaman yeniden kodlamadan – başlangıç önceki ana kareye kayar",
+        "exact": "Her zaman yeniden kodla – kare hassasiyetinde, daha uzun sürer"
+      },
+      "tooShort": "Yeni klip en az yarım saniye olmalı.",
+      "explainCopy": "Anında: seçim yeniden kodlanmadan kopyalanır – aynı kalite.",
+      "explainShift": "Yeniden kodlamadan anında – klip {seconds} sn önce, önceki ana karede başlar.",
+      "explainExact": "Seçim kare hassasiyetinde yeniden kodlanır – bu biraz sürer.",
+      "explainReencode": "Başlangıç bir ana kareden {seconds} sn sonra (her 2 sn'de bir tane var). Tam burada başlaması için klip yeniden kodlanır – bu biraz sürer.",
+      "useFast": "Yine de hızlı kes",
+      "nameLabel": "Yeni klibin adı",
+      "preview": "Önizleme",
+      "save": "Yeni klip olarak kaydet",
+      "saving": "Kaydediliyor …",
+      "saved": "Yeni klip kaydedildi: {name}",
+      "openNew": "Aç",
+      "suffix": "kırpılmış",
+      "hint": "I/O başlangıç/bitişi ayarlar · Boşluk seçimi oynatır · Esc kırpmayı bitirir · orijinal değişmez"
     }
   },
   "logViewer": {

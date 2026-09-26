@@ -597,7 +597,13 @@
       "invalidName": "Ce nom n'est pas autorisé comme nom de fichier.",
       "nameTaken": "Un clip porte déjà ce nom.",
       "noFrames": "Rien n'a encore été enregistré.",
-      "notRecording": "Aucun enregistrement en cours pour ce jeu."
+      "notRecording": "Aucun enregistrement en cours pour ce jeu.",
+      "trimRange": "La fin doit se situer après le début.",
+      "trimTooShort": "Le nouveau clip doit durer au moins une demi-seconde.",
+      "noFfmpeg": "La découpe nécessite FFmpeg – télécharge-le dans les réglages des clips.",
+      "trimFailed": "Le clip n'a pas pu être découpé.",
+      "unreadable": "Le clip est illisible.",
+      "clipboardFailed": "Le clip n'a pas pu être copié dans le presse-papiers."
     },
     "trsCapeImport": {
       "unsupported": "« {name} » n’est pas une image prise en charge (PNG, JPEG, WebP, GIF ou JSON de TRS Studio).",
@@ -1111,7 +1117,8 @@
       "worlds": "Mondes",
       "logs": "Journaux",
       "files": "Fichiers",
-      "share": "Partager"
+      "share": "Partager",
+      "clips": "Clips"
     },
     "gallery": {
       "bannerSet": "Bannière définie",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Lire le clip",
       "close": "Fermer le lecteur",
-      "hint": "Échap ferme · Alt+←/→ clip précédent/suivant"
+      "hint": "Espace lecture/pause · ←/→ 5 s · J/L 10 s · ,/. image par image · F plein écran · M son · Alt+←/→ autre clip · Échap ferme",
+      "play": "Lire (Espace)",
+      "pause": "Pause (Espace)",
+      "previous": "Clip précédent (Alt+←)",
+      "next": "Clip suivant (Alt+→)",
+      "back5": "Reculer de 5 secondes (←)",
+      "forward5": "Avancer de 5 secondes (→)",
+      "mute": "Couper le son (M)",
+      "unmute": "Rétablir le son (M)",
+      "volume": "Volume",
+      "speed": "Vitesse de lecture",
+      "fullscreen": "Plein écran (F)",
+      "exitFullscreen": "Quitter le plein écran (F)",
+      "timeline": "Position dans le clip",
+      "unsupportedTitle": "Ce clip ne peut pas être lu ici",
+      "unsupportedText": "Le lecteur intégré ne sait pas décoder cette vidéo. Ouvre-la plutôt dans le lecteur vidéo de ton système.",
+      "unsupportedLinux": "Le lecteur intégré a besoin des plugins GStreamer pour H.264/AAC (par exemple gst-libav ou gstreamer1.0-plugins-bad). Installe-les ou ouvre le clip dans le lecteur vidéo de ton système."
     },
     "renameDialog": {
       "title": "Renommer le clip",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Logiciel (x264)"
+    },
+    "gallery": {
+      "search": "Rechercher des clips",
+      "sortLabel": "Trier les clips",
+      "sort": {
+        "newest": "Plus récents d'abord",
+        "oldest": "Plus anciens d'abord",
+        "longest": "Plus longs d'abord",
+        "largest": "Plus lourds d'abord",
+        "name": "Nom (A–Z)"
+      },
+      "noMatches": "Aucun clip ne correspond à la recherche."
+    },
+    "share": {
+      "saveAs": "Enregistrer sous …",
+      "copy": "Copier le fichier (à coller dans Discord, l'Explorateur …)",
+      "openExternal": "Ouvrir dans le lecteur du système",
+      "exported": "Clip enregistré",
+      "copied": "Clip copié – colle-le là où tu veux le partager"
+    },
+    "trim": {
+      "button": "Découper",
+      "title": "Découper le clip",
+      "start": "Début",
+      "end": "Fin",
+      "setStart": "Position actuelle",
+      "setEnd": "Position actuelle",
+      "setHint": "Utiliser la position actuelle (touche {key})",
+      "length": "Durée {time}",
+      "modeLabel": "Type de coupe",
+      "mode": {
+        "auto": "Automatique",
+        "fast": "Rapide",
+        "exact": "Précis"
+      },
+      "modeHint": {
+        "auto": "Copie sans réencodage si le début est sur une image clé, sinon coupe à l'image près",
+        "fast": "Toujours sans réencodage – le début recule jusqu'à l'image clé précédente",
+        "exact": "Toujours réencoder – à l'image près, plus long"
+      },
+      "tooShort": "Le nouveau clip doit durer au moins une demi-seconde.",
+      "explainCopy": "Instantané : l'extrait est copié sans réencodage – même qualité.",
+      "explainShift": "Instantané sans réencodage – le clip commence {seconds} s plus tôt, à l'image clé précédente.",
+      "explainExact": "L'extrait est réencodé à l'image près – cela prend un moment.",
+      "explainReencode": "Le début se trouve {seconds} s après une image clé (il y en a une toutes les 2 s). Pour commencer exactement ici, le clip est réencodé – cela prend un moment.",
+      "useFast": "Plutôt couper vite",
+      "nameLabel": "Nom du nouveau clip",
+      "preview": "Aperçu",
+      "save": "Enregistrer comme nouveau clip",
+      "saving": "Enregistrement …",
+      "saved": "Nouveau clip enregistré : {name}",
+      "openNew": "Ouvrir",
+      "suffix": "découpé",
+      "hint": "I/O fixent début/fin · Espace lit l'extrait · Échap arrête la découpe · l'original reste inchangé"
     }
   },
   "logViewer": {

@@ -1,13 +1,16 @@
-//! Clips & Aufnahme: Bibliothek, Abspielen (Asset-Protokoll, nur einzelne
-//! Dateien), FFmpeg laden, Speicherort wählen, Aufnahme-Knöpfe.
+//! Clips & Aufnahme: Bibliothek, Zuschneiden, Teilen, FFmpeg laden,
+//! Speicherort wählen, Aufnahme-Knöpfe. Abgespielt wird über das eigene
+//! Protokoll `trsclip:` (siehe `lib.rs`) – das Webview bekommt keine Pfade.
 
-use std::path::PathBuf;
+use std::sync::Arc;
 
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 use trs_core::clips::api::ClipView;
+use trs_core::clips::edit::{ClipStrip, TrimMode, TrimPlan, TrimRequest};
+use trs_core::clips::media::MediaInfo;
 use trs_core::clips::ffmpeg::FfmpegStatus;
 use trs_core::clips::library::ClipUsage;
 use trs_core::clips::ClipState;
@@ -25,36 +28,6 @@ pub async fn list_clips(launcher: State<'_, LauncherState>) -> CommandResult<Vec
 #[tauri::command]
 pub async fn clip_usage(launcher: State<'_, LauncherState>) -> CommandResult<ClipUsage> {
     Ok(launcher.clip_usage().await?)
-}
-
-/// Gibt genau dieses Video fürs Abspielen frei.
-#[tauri::command]
-pub async fn clip_video(
-    app: AppHandle,
-    launcher: State<'_, LauncherState>,
-    id: String,
-    file_name: String,
-) -> CommandResult<Option<PathBuf>> {
-    let path = launcher.clip_path(&id, &file_name).await?;
-    Ok(super::extras::allow(&app, &path).then_some(path))
-}
-
-/// Vorschaubild (wird beim ersten Mal mit FFmpeg erzeugt). `None` = keins.
-#[tauri::command]
-pub async fn clip_thumbnail(
-    app: AppHandle,
-    launcher: State<'_, LauncherState>,
-    id: String,
-    file_name: String,
-) -> CommandResult<Option<PathBuf>> {
-    match launcher.clip_thumbnail(&id, &file_name).await {
-        Ok(Some(path)) => Ok(super::extras::allow(&app, &path).then_some(path)),
-        Ok(None) => Ok(None),
-        Err(e) => {
-            log::debug!("Clip-Vorschau übersprungen: {e}");
-            Ok(None)
-        }
-    }
 }
 
 #[tauri::command]
@@ -144,4 +117,94 @@ pub async fn pick_clips_folder(app: AppHandle, launcher: State<'_, LauncherState
     .flatten()
     .and_then(|p| p.into_path().ok());
     Ok(picked.map(|p| p.display().to_string()))
+}
+
+/// Dauer, Größe und Keyframes eines Clips (für Zeitleiste und Zuschneiden).
+#[tauri::command]
+pub async fn clip_details(launcher: State<'_, LauncherState>, id: String, file_name: String) -> CommandResult<MediaInfo> {
+    Ok(launcher.clip_details(&id, &file_name).await?)
+}
+
+/// Aufbau der Vorschau-Leiste (das Bild selbst kommt über `trsclip:`). `None` = keine (ohne FFmpeg).
+#[tauri::command]
+pub async fn clip_strip(launcher: State<'_, LauncherState>, id: String, file_name: String) -> CommandResult<Option<ClipStrip>> {
+    match launcher.clip_strip(&id, &file_name).await {
+        Ok(strip) => Ok(strip.map(|(_, s)| s)),
+        Err(e) => {
+            log::debug!("Vorschau-Leiste übersprungen: {e}");
+            Ok(None)
+        }
+    }
+}
+
+/// Was beim Zuschneiden passieren würde (kopieren oder neu kodieren).
+#[tauri::command]
+pub async fn plan_clip_trim(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    file_name: String,
+    start_ms: u64,
+    end_ms: u64,
+    mode: TrimMode,
+) -> CommandResult<TrimPlan> {
+    Ok(launcher.plan_clip_trim(&id, &file_name, start_ms, end_ms, mode).await?)
+}
+
+/// Bereich als neuen Clip speichern (das Original bleibt). Fortschritt 0–100 nur beim Neukodieren.
+#[tauri::command]
+pub async fn trim_clip(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    file_name: String,
+    request: TrimRequest,
+    on_progress: Channel<f64>,
+) -> CommandResult<ClipView> {
+    let last = Arc::new(std::sync::atomic::AtomicI32::new(-1));
+    let progress: Arc<dyn Fn(f64) + Send + Sync> = Arc::new(move |p: f64| {
+        let percent = p.floor() as i32;
+        if last.swap(percent, std::sync::atomic::Ordering::Relaxed) != percent {
+            let _ = on_progress.send(f64::from(percent));
+        }
+    });
+    Ok(launcher.trim_clip(&id, &file_name, &request, Some(progress)).await?)
+}
+
+/// „Speichern unter …“: Zielpfad aus dem nativen Dialog (bleibt in Rust). `false` = abgebrochen.
+#[tauri::command]
+pub async fn export_clip(app: AppHandle, launcher: State<'_, LauncherState>, id: String, file_name: String) -> CommandResult<bool> {
+    launcher.clip_path(&id, &file_name).await?;
+    let lang = dialog_text::language(&launcher).await;
+    let suggestion = file_name.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog()
+            .file()
+            .set_title(DialogText::SaveClip.text(lang))
+            .set_file_name(suggestion)
+            .add_filter(DialogText::Mp4Video.text(lang), &["mp4"])
+            .blocking_save_file()
+    })
+    .await
+    .ok()
+    .flatten()
+    .and_then(|p| p.into_path().ok());
+    let Some(mut dest) = picked else { return Ok(false) };
+    if !dest.extension().is_some_and(|e| e.eq_ignore_ascii_case("mp4")) {
+        dest.set_extension("mp4");
+    }
+    launcher.export_clip(&id, &file_name, &dest).await?;
+    Ok(true)
+}
+
+/// Clip als Datei in die Zwischenablage (Einfügen in Explorer, Discord …).
+#[tauri::command]
+pub async fn copy_clip_file(launcher: State<'_, LauncherState>, id: String, file_name: String) -> CommandResult<()> {
+    Ok(launcher.copy_clip_file(&id, &file_name).await?)
+}
+
+/// Mit dem Standard-Player des Systems öffnen (Rückfall, wenn das Webview das Video nicht abspielt).
+#[tauri::command]
+pub async fn open_clip_external(app: AppHandle, launcher: State<'_, LauncherState>, id: String, file_name: String) -> CommandResult<()> {
+    let path = launcher.clip_path(&id, &file_name).await?;
+    crate::open::path(&app, path.display().to_string())?;
+    Ok(())
 }

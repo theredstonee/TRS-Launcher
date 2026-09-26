@@ -597,7 +597,13 @@
       "invalidName": "Este nome não é permitido como nome de arquivo.",
       "nameTaken": "Já existe um clipe com este nome.",
       "noFrames": "Nada foi gravado ainda.",
-      "notRecording": "Nenhuma gravação está em andamento para este jogo."
+      "notRecording": "Nenhuma gravação está em andamento para este jogo.",
+      "trimRange": "O fim precisa vir depois do início.",
+      "trimTooShort": "O novo clipe precisa ter pelo menos meio segundo.",
+      "noFfmpeg": "Para cortar é preciso o FFmpeg – baixe-o nas configurações de clipes.",
+      "trimFailed": "Não foi possível cortar o clipe.",
+      "unreadable": "Não foi possível ler o clipe.",
+      "clipboardFailed": "Não foi possível copiar o clipe para a área de transferência."
     },
     "trsCapeImport": {
       "unsupported": "“{name}” não é uma imagem suportada (PNG, JPEG, WebP, GIF ou JSON do TRS Studio).",
@@ -1111,7 +1117,8 @@
       "worlds": "Mundos",
       "logs": "Logs",
       "files": "Arquivos",
-      "share": "Compartilhar"
+      "share": "Compartilhar",
+      "clips": "Clipes"
     },
     "gallery": {
       "bannerSet": "Banner definido",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Reproduzir clipe",
       "close": "Fechar player",
-      "hint": "Esc fecha · Alt+←/→ clipe anterior/próximo"
+      "hint": "Espaço reproduzir/pausar · ←/→ 5 s · J/L 10 s · ,/. quadro a quadro · F tela cheia · M silenciar · Alt+←/→ outro clipe · Esc fecha",
+      "play": "Reproduzir (Espaço)",
+      "pause": "Pausar (Espaço)",
+      "previous": "Clipe anterior (Alt+←)",
+      "next": "Próximo clipe (Alt+→)",
+      "back5": "Voltar 5 segundos (←)",
+      "forward5": "Avançar 5 segundos (→)",
+      "mute": "Silenciar (M)",
+      "unmute": "Ativar som (M)",
+      "volume": "Volume",
+      "speed": "Velocidade de reprodução",
+      "fullscreen": "Tela cheia (F)",
+      "exitFullscreen": "Sair da tela cheia (F)",
+      "timeline": "Posição no clipe",
+      "unsupportedTitle": "Este clipe não pode ser reproduzido aqui",
+      "unsupportedText": "O player integrado não consegue decodificar este vídeo. Abra-o no player de vídeo do seu sistema.",
+      "unsupportedLinux": "O player integrado precisa dos plugins do GStreamer para H.264/AAC (por exemplo gst-libav ou gstreamer1.0-plugins-bad). Instale-os ou abra o clipe no player de vídeo do seu sistema."
     },
     "renameDialog": {
       "title": "Renomear clipe",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    },
+    "gallery": {
+      "search": "Pesquisar clipes",
+      "sortLabel": "Ordenar clipes",
+      "sort": {
+        "newest": "Mais recentes primeiro",
+        "oldest": "Mais antigos primeiro",
+        "longest": "Mais longos primeiro",
+        "largest": "Maiores primeiro",
+        "name": "Nome (A–Z)"
+      },
+      "noMatches": "Nenhum clipe corresponde à pesquisa."
+    },
+    "share": {
+      "saveAs": "Salvar como …",
+      "copy": "Copiar arquivo (cole no Discord, Explorer …)",
+      "openExternal": "Abrir no player do sistema",
+      "exported": "Clipe salvo",
+      "copied": "Clipe copiado – cole onde quiser compartilhar"
+    },
+    "trim": {
+      "button": "Cortar",
+      "title": "Cortar clipe",
+      "start": "Início",
+      "end": "Fim",
+      "setStart": "Usar posição atual",
+      "setEnd": "Usar posição atual",
+      "setHint": "Usar a posição atual (tecla {key})",
+      "length": "Duração {time}",
+      "modeLabel": "Tipo de corte",
+      "mode": {
+        "auto": "Automático",
+        "fast": "Rápido",
+        "exact": "Exato"
+      },
+      "modeHint": {
+        "auto": "Copia sem recodificar quando o início está em um quadro-chave; senão corta com precisão de quadro",
+        "fast": "Sempre sem recodificar – o início vai para o quadro-chave anterior",
+        "exact": "Sempre recodificar – preciso ao quadro, demora mais"
+      },
+      "tooShort": "O novo clipe precisa ter pelo menos meio segundo.",
+      "explainCopy": "Na hora: o trecho é copiado sem recodificar – mesma qualidade.",
+      "explainShift": "Na hora sem recodificar – o clipe começa {seconds} s antes, no quadro-chave anterior.",
+      "explainExact": "O trecho é recodificado com precisão de quadro – isso leva um momento.",
+      "explainReencode": "O início está {seconds} s depois de um quadro-chave (há um a cada 2 s). Para começar exatamente aqui, o clipe é recodificado – isso leva um momento.",
+      "useFast": "Cortar rápido mesmo assim",
+      "nameLabel": "Nome do novo clipe",
+      "preview": "Prévia",
+      "save": "Salvar como novo clipe",
+      "saving": "Salvando …",
+      "saved": "Novo clipe salvo: {name}",
+      "openNew": "Abrir",
+      "suffix": "cortado",
+      "hint": "I/O definem início/fim · Espaço reproduz o trecho · Esc encerra o corte · o original não muda"
     }
   },
   "logViewer": {

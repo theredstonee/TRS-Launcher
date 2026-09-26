@@ -39,6 +39,10 @@ pub enum DialogText {
     PickJavaUnix,
     /// Dateien in den Spielordner der Instanz kopieren (Tab „Dateien“).
     UploadFiles,
+    /// Clip „Speichern unter …“.
+    SaveClip,
+    /// Filtername für `.mp4`.
+    Mp4Video,
 }
 
 impl DialogText {
@@ -50,7 +54,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 21] = [
+const TEXTS: [[&str; 8]; 23] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -243,6 +247,17 @@ const TEXTS: [[&str; 8]; 21] = [
         "Örneğe dosya yükle",
         "Bestanden naar de instantie uploaden",
     ],
+    [
+        "Save clip as",
+        "Clip speichern unter",
+        "Guardar clip como",
+        "Enregistrer le clip sous",
+        "Zapisz klip jako",
+        "Salvar clipe como",
+        "Klibi farklı kaydet",
+        "Clip opslaan als",
+    ],
+    ["MP4 video", "MP4-Video", "Vídeo MP4", "Vidéo MP4", "Wideo MP4", "Vídeo MP4", "MP4 videosu", "MP4-video"],
 ];
 
 impl DialogText {
@@ -263,7 +278,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 21] = [
+    const ALL: [DialogText; 23] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -285,6 +300,8 @@ mod tests {
         DialogText::PickClipsFolder,
         DialogText::PickJavaUnix,
         DialogText::UploadFiles,
+        DialogText::SaveClip,
+        DialogText::Mp4Video,
     ];
 
     #[test]
