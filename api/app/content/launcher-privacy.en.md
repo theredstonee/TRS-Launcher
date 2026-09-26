@@ -1,6 +1,6 @@
 TRS Launcher runs on your computer. It has **no telemetry, analytics, crash reporting or advertising**. It only sends
 information to a server run by the TRS Launcher project if you turn on the optional [TRS services](#trs-services)
-(capes, friends, online status). Without your consent, the launcher sends nothing there.
+(capes, friends, online status, chat). Without your consent, the launcher sends nothing there.
 
 The launcher only connects to other services when that is needed for something you asked it to do:
 
@@ -11,12 +11,12 @@ The launcher only connects to other services when that is needed for something y
 | Mojang session server (`sessionserver.mojang.com`) | Signing in to the TRS services (only after you agreed) | The same "join" request a Minecraft server login uses: your access token, UUID and a one-time challenge |
 | Mojang profile services (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Importing a skin by player name, showing player faces (friends, admin search) | The player name or UUID being looked up; a download of that skin image |
 | The website of a link you enter | Only when you import a skin "by link" | A normal download request for that image (only HTTPS, no cookies or accounts) |
-| TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends and online status |
+| TRS services (`trs-launcher.theredstonee.de`, formerly `api.theredstonee.de`) | Only after you agreed, see [below](#trs-services) | Your UUID, name, cape choice, friends, online status, chat messages and pictures you send, reports |
 | Fabric, Quilt, Forge, NeoForge maven/meta servers | Installing a mod loader | Download requests |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Browsing, installing or updating content | Search queries, file hashes of installed mods (for update checks) |
 | CurseForge (`api.curseforge.com`; files and images from `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Only when you pick CurseForge as the source, install a CurseForge modpack, have content from CurseForge installed or import a CurseForge instance whose files are missing | Search queries and filters, the project and file IDs of content installed from CurseForge (for details and update checks), download requests. Like every web request, this includes your IP address. You don't need a CurseForge account – the launcher identifies itself with its own API key, not with anything about you. |
 | Minecraft servers in your server list | Showing live status | A standard server-list ping |
-| mclo.gs | Only when you click "Log teilen" and confirm | The game log, with access tokens and your Windows user name removed |
+| mclo.gs | Only when you click "Share log" and confirm | The log you picked (latest log, an older log or a crash report), with access tokens and your Windows/Linux user name removed |
 | GitHub (`github.com`) | Checking for launcher updates | A request for the update manifest |
 | Discord app on your computer (local only, no internet) | While the launcher is open and "Show Discord status" is on (default), see [below](#discord) | Your Discord status: "In the TRS Launcher", or the Minecraft version, mod loader and play time of the running game |
 
@@ -162,6 +162,20 @@ With the TRS services on, you can write with your friends and in groups in the l
   updates (friend requests, online status, cape offers) right away. Missed updates are kept in the server's memory for
   up to 10 minutes so they arrive after a short disconnect.
 
+### Chat data on this PC
+
+- **Notification settings** (corner, duration, sound, Do not disturb, which kinds) are stored only in the launcher's
+  settings on your PC. Windows notifications are only shown while the launcher is in the background, and only if that
+  switch is on.
+- **Pictures from your PC** stay where they are. So they appear under "Uploads", the launcher remembers the paths of the
+  last 40 picture files you picked in `chat-uploads.json` in its data folder; screenshots you star are remembered in
+  `screenshot-favorites.json`. Nothing of this leaves your PC unless you send a picture. Pictures pasted from the
+  clipboard are only kept in memory until the launcher closes.
+- **Pictures you receive** are loaded by the launcher itself and only kept in memory while it runs – nothing is written
+  to disk, and your TRS token never reaches the launcher window.
+- **"Last online"** in the friend list is what the launcher itself saw (stored locally per account), not information
+  from the server.
+
 ### Reports and moderation
 
 You can report messages, pictures, players and groups (with a reason and an optional note). The report stores an
@@ -223,10 +237,24 @@ the TRS server.
   in Germany, run by the TRS Launcher project). It only lets players in with a short-lived access key from the TRS
   server, sees the IP addresses of the connected games and forwards the bytes. It **does not store or log any game data
   or IP addresses** (only counters such as the number of connections) and keeps nothing on disk.
+- **Joining from the launcher:** under *Social → Worlds*, in chat (world cards) and in notifications the launcher shows
+  your friends' open worlds and invites, and sends your "Join"/"Ask to join" to the TRS server with your TRS sign-in.
+  When you are let in, it starts a matching instance and hands the game only the world's ID and join code, over the
+  local connection on your computer (`127.0.0.1`) – no access keys. The game then connects by itself as described
+  above. The launcher keeps nothing about hosted worlds on disk.
 - **Public link (e4mc):** optionally you can create a public link that anyone can use to join. This uses **e4mc**, a
   service by other operators, not the TRS server. When you turn it on (only after a warning you have to confirm), your
   game connects to e4mc's relay and e4mc sees your IP address and the players' IP addresses and forwards the game data;
-  e4mc's own privacy policy applies. It is off by default.
+  e4mc's own privacy policy applies. It is off by default. The first time you turn it on, the game downloads the
+  network library it needs (Netty with QUIC, open source) once from Maven Central (`repo1.maven.org`, checked against
+  fixed checksums) and asks e4mc's broker (`broker.e4mc.link`) for the nearest relay – both see your IP address. The
+  e4mc part of the TRS Client is based on the e4mc mod (MIT licence, © Skye); its licence text ships inside the game.
+- **Only through the relay:** in the TRS Client (Social → "Direct connections") you can turn direct connections off.
+  Then your game always uses the TRS relay and the other player never learns your IP address.
+- **World backup:** before opening, the TRS Client can save a ZIP of your world in the game's `backups` folder on your
+  computer. It never leaves your computer.
+- **Protection in the game:** a guest can only log in with the name the TRS server confirmed for them (nobody can take
+  the host's name), and when you remove or ban a player the game closes their connection at once.
 
 ### What is stored
 

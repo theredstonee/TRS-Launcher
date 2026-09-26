@@ -1,6 +1,6 @@
 TRS Launcher se ejecuta en tu ordenador. **No tiene telemetría, analíticas, informes de errores ni publicidad**. Solo
 envía información a un servidor del proyecto TRS Launcher si activas los [servicios TRS](#servicios-trs) opcionales
-(capas, amigos, estado en línea). Sin tu consentimiento, el launcher no envía nada allí.
+(capas, amigos, estado en línea, chat). Sin tu consentimiento, el launcher no envía nada allí.
 
 El launcher solo se conecta a otros servicios cuando hace falta para algo que tú le has pedido:
 
@@ -11,12 +11,12 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 | Servidor de sesiones de Mojang (`sessionserver.mojang.com`) | Al iniciar sesión en los servicios TRS (solo si lo has aceptado) | La misma solicitud «join» que usa el inicio de sesión en un servidor de Minecraft: tu token de acceso, tu UUID y un desafío de un solo uso |
 | Servicios de perfil de Mojang (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Al importar un skin por nombre de jugador y al mostrar caras de jugadores (amigos, búsqueda de administración) | El nombre de jugador o UUID buscado; la descarga de esa imagen de skin |
 | El sitio web de un enlace que introduces | Solo al importar un skin «por enlace» | Una solicitud de descarga normal de esa imagen (solo HTTPS, sin cookies ni cuentas) |
-| Servicios TRS (`trs-launcher.theredstonee.de`, antes también `api.theredstonee.de`) | Solo si lo has aceptado, ver [más abajo](#servicios-trs) | Tu UUID, tu nombre, la capa que eliges, tus amigos y tu estado en línea |
+| Servicios TRS (`trs-launcher.theredstonee.de`, antes también `api.theredstonee.de`) | Solo si lo has aceptado, ver [más abajo](#servicios-trs) | Tu UUID, tu nombre, la capa que eliges, tus amigos, tu estado en línea, los mensajes e imágenes que envías en el chat y las denuncias |
 | Servidores maven/meta de Fabric, Quilt, Forge y NeoForge | Al instalar un cargador de mods | Solicitudes de descarga |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Al explorar, instalar o actualizar contenido | Búsquedas y los hashes de los mods instalados (para buscar actualizaciones) |
 | CurseForge (`api.curseforge.com`; archivos e imágenes de `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Solo si eliges CurseForge como fuente, instalas un modpack de CurseForge, tienes instalado contenido de CurseForge o importas una instancia de CurseForge a la que le faltan archivos | Búsquedas y filtros, los ID de proyecto y de archivo del contenido instalado desde CurseForge (para los detalles y la búsqueda de actualizaciones) y solicitudes de descarga. Como en cualquier solicitud web, se incluye tu dirección IP. No necesitas una cuenta de CurseForge: el launcher se identifica con su propia clave de API, no con datos sobre ti. |
 | Servidores de Minecraft de tu lista | Para mostrar su estado en directo | Un ping estándar de lista de servidores |
-| mclo.gs | Solo cuando pulsas «Log teilen» (compartir registro) y lo confirmas | El registro del juego, sin tokens de acceso ni tu nombre de usuario de Windows |
+| mclo.gs | Solo cuando pulsas «Compartir registro» y lo confirmas | El registro que elijas (el más reciente, uno anterior o un informe de fallos), sin tokens de acceso ni tu nombre de usuario de Windows/Linux |
 | GitHub (`github.com`) | Al buscar actualizaciones del launcher | Una solicitud del manifiesto de actualización |
 | App de Discord en tu ordenador (solo local, sin internet) | Mientras el launcher está abierto y «Mostrar estado en Discord» está activado (por defecto), ver [más abajo](#discord) | Tu estado de Discord: «In the TRS Launcher» (en inglés), o la versión de Minecraft, el cargador de mods y el tiempo de juego de la partida en curso |
 
@@ -170,6 +170,20 @@ Con los servicios TRS activados puedes escribir con tus amigos y en grupos en el
   los mensajes nuevos y otras novedades (solicitudes de amistad, estado en línea, ofertas de capas). Las novedades
   perdidas se guardan hasta 10 minutos en la memoria del servidor para entregarlas tras una desconexión breve.
 
+### Datos del chat en este PC
+
+- **Los ajustes de notificaciones** (esquina, duración, sonido, No molestar, qué tipos) solo se guardan en los ajustes
+  del launcher en tu PC. Las notificaciones de Windows solo aparecen mientras el launcher está en segundo plano y solo
+  si ese interruptor está activado.
+- **Las imágenes de tu PC** se quedan donde están. Para que aparezcan en «Subidas», el launcher recuerda las rutas de
+  los últimos 40 archivos de imagen que elegiste en `chat-uploads.json`, en su carpeta de datos; las capturas marcadas
+  con estrella se guardan en `screenshot-favorites.json`. Nada de esto sale de tu PC mientras no envíes una imagen. Las
+  imágenes pegadas desde el portapapeles solo se guardan en memoria hasta que cierras el launcher.
+- **Las imágenes que recibes** las descarga el propio launcher y solo las guarda en memoria mientras está abierto; no
+  se escribe nada en el disco y tu token de TRS nunca llega a la ventana del launcher.
+- **«Última vez en línea»** en la lista de amigos es lo que vio el propio launcher (guardado localmente por cuenta), no un
+  dato del servidor.
+
 ### Denuncias y moderación
 
 Puedes denunciar mensajes, imágenes, jugadores y grupos (con un motivo y una nota opcional). La denuncia guarda una
@@ -234,10 +248,26 @@ servidor TRS.
   acceso de corta duración del servidor TRS, ve las direcciones IP de los juegos conectados y reenvía los bytes. **No
   guarda ni registra datos del juego ni direcciones IP** (solo contadores, como el número de conexiones) y no escribe
   nada en disco.
+- **Unirse desde el launcher:** en *Social → Mundos*, en el chat (tarjetas de mundo) y en las notificaciones, el
+  launcher muestra los mundos abiertos y las invitaciones de tus amigos y envía tu «Unirse»/«Solicitar» al servidor TRS
+  con tu inicio de sesión TRS. Cuando te dejan entrar, inicia una instancia compatible y solo pasa al juego el ID y el
+  código de acceso del mundo, por la conexión local de tu PC (`127.0.0.1`), sin claves de acceso. Después el juego se
+  conecta por sí mismo como se describe arriba. El launcher no guarda nada sobre mundos compartidos en el disco.
 - **Enlace público (e4mc):** opcionalmente puedes crear un enlace público con el que cualquiera puede entrar. Para ello
   se usa **e4mc**, un servicio de otros operadores, no el servidor TRS. Si lo activas (solo tras una advertencia que
   debes confirmar), tu juego se conecta al relay de e4mc; e4mc ve tu dirección IP y la de los jugadores y reenvía los
-  datos del juego, y se aplica su propia política de privacidad. Está desactivado por defecto.
+  datos del juego, y se aplica su propia política de privacidad. Está desactivado por defecto. La primera vez que lo
+  activas, el juego descarga una sola vez la biblioteca de red necesaria (Netty con QUIC, código abierto) desde Maven
+  Central (`repo1.maven.org`, comprobada con sumas de control fijas) y pregunta al intermediario de e4mc
+  (`broker.e4mc.link`) por el relay más cercano; ambos ven tu dirección IP. La parte de e4mc del TRS Client se basa en el
+  mod e4mc (licencia MIT, © Skye); el texto de la licencia viene incluido en el juego.
+- **Solo por el relay:** en el TRS Client (Social → «Conexiones directas») puedes desactivar las conexiones directas.
+  Entonces tu juego usa siempre el relay de TRS y el otro jugador nunca conoce tu dirección IP.
+- **Copia del mundo:** antes de abrirlo, el TRS Client puede guardar un ZIP de tu mundo en la carpeta `backups` del juego
+  en tu ordenador. Nunca sale de tu ordenador.
+- **Protección en el juego:** un invitado solo puede entrar con el nombre que el servidor TRS confirmó para él (nadie
+  puede usar el nombre del anfitrión), y cuando expulsas o bloqueas a un jugador, el juego cierra su conexión al
+  instante.
 
 ### Qué se guarda
 

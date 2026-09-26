@@ -1,6 +1,6 @@
 Der TRS Launcher läuft auf deinem Computer. Er hat **keine Telemetrie, keine Analyse, keine Absturzberichte und keine
 Werbung**. Informationen an einen Server des TRS-Launcher-Projekts schickt er nur, wenn du die optionalen
-[TRS-Dienste](#trs-dienste) (Umhänge, Freunde, Online-Status) einschaltest. Ohne deine Einwilligung sendet der Launcher
+[TRS-Dienste](#trs-dienste) (Umhänge, Freunde, Online-Status, Chat) einschaltest. Ohne deine Einwilligung sendet der Launcher
 dorthin nichts.
 
 Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig ist, worum du ihn gebeten hast:
@@ -12,12 +12,12 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Mojang-Sitzungsserver (`sessionserver.mojang.com`) | Anmeldung bei den TRS-Diensten (nur nach deiner Zustimmung) | Dieselbe „join“-Anfrage wie bei der Anmeldung auf einem Minecraft-Server: dein Zugriffstoken, deine UUID und eine einmalige Challenge |
 | Mojang-Profildienste (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Skin per Spielername importieren, Spielergesichter anzeigen (Freunde, Admin-Suche) | Der gesuchte Spielername bzw. die UUID; der Download des Skin-Bildes |
 | Die Website eines Links, den du eingibst | Nur wenn du einen Skin „per Link“ importierst | Eine normale Download-Anfrage für dieses Bild (nur HTTPS, ohne Cookies oder Konten) |
-| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde und Online-Status |
+| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde, Online-Status, Chat-Nachrichten und gesendete Bilder, Meldungen |
 | Maven-/Meta-Server von Fabric, Quilt, Forge, NeoForge | Einen Modloader installieren | Download-Anfragen |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Inhalte durchsuchen, installieren oder aktualisieren | Suchanfragen, Datei-Hashes installierter Mods (für die Update-Prüfung) |
 | CurseForge (`api.curseforge.com`; Dateien und Bilder von `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Nur wenn du CurseForge als Quelle wählst, ein CurseForge-Modpack installierst, Inhalte von CurseForge installiert hast oder eine CurseForge-Instanz mit fehlenden Dateien importierst | Suchanfragen und Filter, die Projekt- und Datei-IDs von CurseForge-Inhalten (für Details und die Update-Prüfung), Download-Anfragen. Wie bei jeder Anfrage im Internet gehört deine IP-Adresse dazu. Ein CurseForge-Konto brauchst du nicht – der Launcher weist sich mit seinem eigenen API-Schlüssel aus, nicht mit Daten über dich. |
 | Minecraft-Server in deiner Serverliste | Live-Status anzeigen | Ein üblicher Serverlisten-Ping |
-| mclo.gs | Nur wenn du auf „Log teilen“ klickst und bestätigst | Der Spiel-Log, ohne Zugriffstokens und ohne deinen Windows-Benutzernamen |
+| mclo.gs | Nur wenn du auf „Log teilen“ klickst und bestätigst | Der gewählte Log (neuester Log, ein älterer Log oder ein Absturzbericht), ohne Zugriffstokens und ohne deinen Windows-/Linux-Benutzernamen |
 | GitHub (`github.com`) | Nach Launcher-Updates suchen | Eine Anfrage nach dem Update-Manifest |
 | Discord-App auf deinem Computer (nur lokal, kein Internet) | Solange der Launcher offen ist und „Discord-Status zeigen“ an ist (Standard), siehe [unten](#discord) | Dein Discord-Status: „Im TRS Launcher“ bzw. Minecraft-Version, Modloader und Spielzeit des laufenden Spiels |
 
@@ -172,6 +172,20 @@ Mit eingeschalteten TRS-Diensten kannst du im Launcher und im Spiel mit Freunden
   andere Neuigkeiten (Freundschaftsanfragen, Online-Status, Umhang-Angebote) sofort. Verpasste Neuigkeiten hält der
   Server bis zu 10 Minuten im Arbeitsspeicher, damit sie nach einer kurzen Unterbrechung ankommen.
 
+### Chat-Daten auf diesem PC
+
+- **Benachrichtigungs-Einstellungen** (Ecke, Dauer, Ton, Nicht stören, welche Arten) liegen nur in den Einstellungen des
+  Launchers auf deinem PC. Windows-Benachrichtigungen erscheinen nur, solange der Launcher im Hintergrund ist, und nur
+  mit eingeschaltetem Schalter.
+- **Bilder von deinem PC** bleiben, wo sie sind. Damit sie unter „Uploads“ erscheinen, merkt sich der Launcher die Pfade
+  der zuletzt 40 gewählten Bilddateien in `chat-uploads.json` in seinem Datenordner; mit Stern markierte Screenshots
+  stehen in `screenshot-favorites.json`. Davon verlässt nichts deinen PC, solange du kein Bild sendest. Aus der
+  Zwischenablage eingefügte Bilder liegen nur im Arbeitsspeicher, bis der Launcher schließt.
+- **Empfangene Bilder** lädt der Launcher selbst und hält sie nur im Arbeitsspeicher, solange er läuft – nichts davon
+  wird auf die Platte geschrieben, und dein TRS-Token erreicht nie das Launcher-Fenster.
+- **„Zuletzt online“** in der Freundesliste ist das, was der Launcher selbst gesehen hat (lokal je Konto gespeichert),
+  keine Angabe des Servers.
+
 ### Meldungen und Moderation
 
 Du kannst Nachrichten, Bilder, Spieler und Gruppen melden (mit Grund und optionalem Hinweis). Die Meldung speichert eine
@@ -236,10 +250,27 @@ den TRS-Server.
   TRS-Servers herein, sieht die IP-Adressen der verbundenen Spiele und leitet die Bytes weiter. Er **speichert und
   protokolliert keine Spieldaten und keine IP-Adressen** (nur Zähler wie die Zahl der Verbindungen) und schreibt nichts
   auf die Platte.
+- **Beitreten aus dem Launcher:** Unter *Sozial → Welten*, im Chat (Weltkarten) und in Benachrichtigungen zeigt der
+  Launcher offene Welten und Einladungen deiner Freunde und schickt dein „Beitreten“/„Anfragen“ mit deiner
+  TRS-Anmeldung an den TRS-Server. Lässt man dich herein, startet er eine passende Instanz und gibt dem Spiel nur die
+  ID und den Beitrittscode der Welt – über die lokale Verbindung auf deinem PC (`127.0.0.1`), ohne Zugangsschlüssel.
+  Das Spiel verbindet sich dann selbst wie oben beschrieben. Der Launcher speichert zu gehosteten Welten nichts auf
+  der Festplatte.
 - **Öffentlicher Link (e4mc):** Optional kannst du einen öffentlichen Link erstellen, mit dem jeder beitreten kann. Dafür
   wird **e4mc** genutzt, ein Dienst anderer Betreiber, nicht der TRS-Server. Schaltest du ihn ein (nur nach einer
   Warnung, die du bestätigen musst), verbindet sich dein Spiel mit dem Relay von e4mc; e4mc sieht deine IP-Adresse und
   die der Mitspieler und leitet die Spieldaten weiter, es gilt die Datenschutzerklärung von e4mc. Ab Werk ist er aus.
+  Beim ersten Einschalten lädt das Spiel die nötige Netzwerk-Bibliothek (Netty mit QUIC, Open Source) einmalig von
+  Maven Central (`repo1.maven.org`, geprüft gegen feste Prüfsummen) und fragt den Vermittler von e4mc
+  (`broker.e4mc.link`) nach dem nächsten Relay – beide sehen dabei deine IP-Adresse. Der e4mc-Teil des TRS Client beruht
+  auf der Mod e4mc (MIT-Lizenz, © Skye); der Lizenztext liegt dem Spiel bei.
+- **Nur über das Relay:** Im TRS Client (Sozial → „Direktverbindungen“) kannst du Direktverbindungen abschalten. Dann
+  nutzt dein Spiel immer das TRS-Relay, und der andere Spieler erfährt deine IP-Adresse nie.
+- **Welt-Backup:** Vor dem Öffnen kann der TRS Client ein ZIP deiner Welt im Ordner `backups` des Spiels auf deinem PC
+  ablegen. Es verlässt deinen PC nie.
+- **Schutz im Spiel:** Ein Gast kann sich nur mit dem Namen anmelden, den der TRS-Server für ihn bestätigt hat (niemand
+  kann den Namen des Hosts übernehmen), und wenn du einen Spieler entfernst oder sperrst, trennt das Spiel seine
+  Verbindung sofort.
 
 ### Was gespeichert wird
 
