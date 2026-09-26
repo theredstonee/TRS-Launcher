@@ -128,6 +128,13 @@ pub fn run() {
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_sync());
             // Echtzeit-Kanal `/v1/events/me` (nur mit Einwilligung und Account).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_live());
+            // Spiele mit verbundenem TRS Client: Der Launcher schweigt dann zu Sozial-Hinweisen.
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(Arc::clone(&launcher).run_social_game_clients(Arc::new(move |clients| {
+                if let Err(e) = handle.emit("trs-client-linked", &clients) {
+                    log::warn!("trs-client-linked konnte nicht gesendet werden: {e}");
+                }
+            })));
             // Discord-Status (nur lokal mit der Discord-App; läuft Discord nicht, passiert nichts).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
             app.manage::<LauncherState>(launcher);
@@ -472,6 +479,7 @@ pub fn run() {
             commands::social::social_quiet_hours,
             commands::social::social_notify_native,
             commands::social::social_focus_window,
+            commands::social::social_game_clients,
             commands::hosting::hosting_friends_rooms,
             commands::hosting::hosting_my_rooms,
             commands::hosting::hosting_room,

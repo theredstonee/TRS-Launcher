@@ -42,6 +42,10 @@ How to write an entry:
   host lets you in, declines, removes you or closes the world.
 - **Your own world at a glance.** While you host a world in the game, Social → Worlds shows its join code, how many
   players are in it and who is waiting – manage it in the game (pause menu → Host world).
+- **No double notifications while you play.** While a game with the TRS Client is running, the launcher stays quiet
+  about messages, friend requests, friends coming online, invites and cape offers – no pop-up, no sound, no Windows
+  notification – because the TRS Client already shows them in the game. They still count as unread. As soon as the
+  game closes, the launcher notifies you again. Games without the TRS Client, update notes and errors are unchanged.
 
 ### Deutsch
 
@@ -64,6 +68,11 @@ How to write an entry:
   Außerdem bekommst du einen kurzen Hinweis, wenn der Host dich hereinlässt, ablehnt, entfernt oder die Welt schließt.
 - **Deine eigene Welt im Blick.** Während du im Spiel eine Welt hostest, zeigt Sozial → Welten ihren Beitrittscode,
   wie viele Spieler drin sind und wer wartet – verwaltet wird sie im Spiel (Pausemenü → Welt hosten).
+- **Keine doppelten Benachrichtigungen beim Spielen.** Läuft ein Spiel mit TRS Client, schweigt der Launcher zu
+  Nachrichten, Freundesanfragen, Freunden, die online kommen, Einladungen und Umhang-Angeboten – kein Hinweis, kein
+  Ton, keine Windows-Benachrichtigung –, denn der TRS Client zeigt sie schon im Spiel. Sie zählen weiter als ungelesen.
+  Sobald das Spiel zu ist, meldet sich der Launcher wieder. Spiele ohne TRS Client, Update-Hinweise und Fehler bleiben
+  wie bisher.
 
 ## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
 

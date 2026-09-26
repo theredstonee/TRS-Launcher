@@ -9,13 +9,17 @@ const corners: SocialSettings['corner'][] = ['top-right', 'top-left', 'bottom-ri
 const types = ['messages', 'invites', 'friendRequests', 'capeOffers', 'friendOnline'] as const
 
 function preview() {
-  void useSocialToasts().notify('report', {
-    key: 'preview',
-    title: t('settings.notifications.previewTitle'),
-    body: t('settings.notifications.previewBody'),
-    face: null,
-    actions: [],
-  })
+  void useSocialToasts().notify(
+    'report',
+    {
+      key: 'preview',
+      title: t('settings.notifications.previewTitle'),
+      body: t('settings.notifications.previewBody'),
+      face: null,
+      actions: [],
+    },
+    { preview: true },
+  )
 }
 
 function set<K extends keyof SocialSettings>(key: K, value: SocialSettings[K]) {

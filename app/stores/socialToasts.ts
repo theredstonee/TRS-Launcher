@@ -1,5 +1,8 @@
+import { isTauri } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { z } from 'zod'
 // Relativ importiert, damit Tests den Store ohne Nuxt laden können.
 import { backend } from '../utils/backend'
 import { playNotificationSound } from '../utils/sound'
@@ -18,16 +21,41 @@ let nextId = 1
 // Benachrichtigungen aus „Sozial“ (neue Nachricht, Einladung, Anfrage,
 // Umhang-Angebot, „ist online“): eigene Liste neben den normalen Toasts, mit
 // Gesicht, Aktionen und Schnellantwort. Ob etwas erscheint, entscheidet
-// `decide` (Einstellungen, Nicht stören, Vollbild, stummgeschaltet …).
+// `decide` (Einstellungen, Nicht stören, Vollbild, stummgeschaltet, Spiel mit
+// TRS Client läuft …) – hier laufen alle Sozial-Hinweise des Launchers durch.
 export const useSocialToasts = defineStore('socialToasts', () => {
   const items = ref<SocialToast[]>([])
   const prefs = ref<SocialPrefs>({ ...defaultSocialPrefs })
+  /** Instanzen, deren Spiel gerade mit verbundenem TRS Client läuft (Kern: `trs-client-linked`). */
+  const gameClients = ref<string[]>([])
+  /** Der TRS Client zeigt die Hinweise im Spiel – der Launcher schweigt dazu. */
+  const clientInGame = computed(() => gameClients.value.length > 0)
+  let watching = false
   const timers = new Map<number, ReturnType<typeof setTimeout>>()
   /** Pausiert (Maus darüber / Schnellantwort offen). */
   const held = new Set<number>()
 
   function setPrefs(next: Partial<SocialPrefs> | null | undefined) {
     prefs.value = { ...defaultSocialPrefs, ...(next ?? {}) }
+  }
+
+  function setGameClients(ids: readonly string[]) {
+    gameClients.value = [...ids]
+  }
+
+  /** Einmal: verbundene Spiele vom Kern verfolgen (Link steht/bricht ab, Spielende). */
+  async function watchGameClients() {
+    if (watching || !isTauri()) return
+    watching = true
+    await listen('trs-client-linked', (event) => {
+      const parsed = z.array(z.string()).safeParse(event.payload)
+      if (parsed.success) setGameClients(parsed.data)
+    })
+    try {
+      setGameClients(await backend.social.gameClients())
+    } catch {
+      // Älterer Kern: Launcher meldet wie bisher.
+    }
   }
 
   function clearTimer(id: number) {
@@ -81,20 +109,24 @@ export const useSocialToasts = defineStore('socialToasts', () => {
 
   /**
    * Benachrichtigung anbieten. `looking` = der Nutzer sieht die Unterhaltung
-   * gerade, `muted` = Unterhaltung stummgeschaltet.
+   * gerade, `muted` = Unterhaltung stummgeschaltet, `preview` = Vorschau aus den
+   * Einstellungen (kommt auch, während ein Spiel mit TRS Client läuft).
    */
   async function notify(
     kind: SocialToastKind,
     toast: Omit<SocialToast, 'id' | 'count' | 'kind'>,
-    context: { looking?: boolean; muted?: boolean } = {},
+    context: { looking?: boolean; muted?: boolean; preview?: boolean } = {},
   ): Promise<boolean> {
     const doc = typeof document === 'undefined' ? null : document
+    const clientInGameNow = clientInGame.value && !context.preview
     const delivery = decide(kind, prefs.value, {
       focused: doc ? doc.hasFocus() : true,
       visible: doc ? doc.visibilityState === 'visible' : true,
-      fullscreen: await fullscreen(),
+      // Im Spiel entscheidet der TRS Client – Vollbild muss dann nicht erst gefragt werden.
+      fullscreen: clientInGameNow ? false : await fullscreen(),
       looking: context.looking ?? false,
       muted: context.muted ?? false,
+      clientInGame: clientInGameNow,
     })
     if (!delivery.toast) return false
     const id = nextId++
@@ -112,5 +144,15 @@ export const useSocialToasts = defineStore('socialToasts', () => {
     return true
   }
 
-  return { items, prefs, setPrefs, notify, dismiss, clear, hold }
+  /**
+   * Schlichter Sozial-Hinweis ohne Gesicht/Aktionen (z. B. „aus der Welt entfernt“)
+   * als normaler Toast – ebenfalls still, solange ein Spiel mit TRS Client läuft.
+   */
+  function notice(text: string): boolean {
+    if (clientInGame.value) return false
+    useToasts().info(text)
+    return true
+  }
+
+  return { items, prefs, gameClients, clientInGame, setPrefs, setGameClients, watchGameClients, notify, notice, dismiss, clear, hold }
 })
