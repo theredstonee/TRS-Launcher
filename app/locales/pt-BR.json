@@ -2937,7 +2937,6 @@
   },
   "whatsNew": {
     "title": "Novidades da versão {version}",
-    "version": "Versão {version}",
     "close": "Entendi",
     "englishOnly": "Estas notas estão disponíveis apenas em inglês e alemão."
   },
@@ -3112,7 +3111,16 @@
     "kicker": "Atualização {version}",
     "version": "Versão {version}",
     "read": "Ler a publicação",
-    "hide": "Ocultar até a próxima atualização"
+    "hide": "Ocultar até a próxima atualização",
+    "openWebsite": "Ver no site",
+    "screenshots": "Capturas de tela",
+    "previous": "Imagem anterior",
+    "next": "Próxima imagem",
+    "enlarge": "Ampliar imagem",
+    "closeImage": "Fechar imagem",
+    "imageOf": "Imagem {n} de {total}",
+    "versions": "Versões",
+    "more": "Mais {n} imagens"
   },
   "webLogin": {
     "title": "Confirmar login no site",

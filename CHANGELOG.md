@@ -14,6 +14,11 @@ How to write an entry:
   and an update banner right below it: an HTML comment with "banner: accent=#rrggbb motif=/news/0.5.0/banner.png".
   The banner keeps a fixed look (deepslate, redstone wires, pixel font); only the accent colour and the motif change.
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
+- Right below the banner comes a second HTML comment starting with "shots:" – one screenshot of the new features per
+  line: "/news/<version>/<file>.png | English caption | Deutsche Bildunterschrift" (captions optional; without the
+  German one the English caption is used for both). PNG or WebP in public/news/<version>/, at most 8, each at most
+  2 MB and 640×360 to 3840×2400 px. From 0.6.5 on every release needs at least one screenshot; the release check
+  (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
 ## Unreleased
@@ -42,6 +47,10 @@ How to write an entry:
 - **TRS Client: clip preview in game.** In "Clips & Images" a clip now opens a small animated preview with play/pause
   and a timeline, plus "Open in launcher": the launcher comes to the front and plays the clip. Works when the game was
   started from the TRS Launcher.
+- **Update news with screenshots.** Clicking an update – on the start page, in the news or in "What's new" after an
+  update – opens the post right in the launcher: the update banner, a gallery of screenshots of the new features
+  (click to enlarge, browse with the arrows or the arrow keys), the release notes and "View on website" for the blog
+  post. Older updates got their screenshots too.
 
 ### Deutsch
 
@@ -68,6 +77,10 @@ How to write an entry:
 - **TRS Client: Clip-Vorschau im Spiel.** In „Clips & Bilder“ öffnet ein Clip jetzt eine kleine animierte Vorschau mit
   Abspielen/Pause und Zeitleiste, dazu „Im Launcher öffnen“: Der Launcher kommt nach vorn und spielt den Clip ab.
   Klappt, wenn das Spiel über den TRS Launcher gestartet wurde.
+- **Update-News mit Screenshots.** Ein Klick auf ein Update – auf der Startseite, in den Neuigkeiten oder in „Was ist
+  neu“ nach einem Update – öffnet den Beitrag direkt im Launcher: das Update-Banner, eine Galerie mit Screenshots der
+  Neuerungen (zum Vergrößern anklicken, mit den Pfeilen oder Pfeiltasten blättern), die Versionshinweise und „Auf
+  Website ansehen“ für den Blog-Beitrag. Ältere Updates haben ihre Screenshots ebenfalls bekommen.
 
 ## 0.6.4 – 2026-09-26 – The Workshop Update | Das Werkstatt-Update
 <!-- banner: accent=#d99a5b motif=/news/0.6.4/banner.png -->
@@ -569,10 +582,16 @@ How to write an entry:
   Tabliste und über ihren Köpfen.
 - Die Clip-Tasten (F9/F10) lassen das Spiel nie auf die Verbindung zum Launcher warten.
 
-
 ## 0.5.0 – 2026-09-24 – The Showtime Update | Das Showtime-Update
 
 <!-- banner: accent=#ffc24b motif=/news/0.5.0/banner.png -->
+<!-- shots:
+/news/0.5.0/emote-wheel.png | The emote wheel in the TRS Client | Das Emote-Rad im TRS Client
+/news/0.5.0/redstone-overlay.png | Redstone tools: signal strength over every dust | Redstone-Werkzeuge: Signalstärke über jedem Staub
+/news/0.5.0/cape-physics.png | Cape physics with a live preview | Umhang-Physik mit Live-Vorschau
+/news/0.5.0/zoom.png | Smooth zoom | Weicher Zoom
+/news/0.5.0/colors.png | Toggle sprint and sneak, key strokes and colourful HUD modules | Sprinten und Schleichen umschalten, Tastenanzeige und farbige HUD-Module
+-->
 
 ### English
 
@@ -580,14 +599,6 @@ How to write an entry:
   see it. New comfort keys: smooth **zoom** (V), **freelook** (Left Alt) and toggle sprint/sneak.
 - **Redstone tools.** See the signal strength over every piece of dust, a redstone overlay (F6) and a clock
   meter for your circuits – right in the game.
-
-![The emote wheel in the TRS Client](/news/0.5.0/emote-wheel.png)
-
-![Redstone tools: signal strength over every dust](/news/0.5.0/redstone-overlay.png)
-
-![Cape physics with a live preview](/news/0.5.0/cape-physics.png)
-
-![Smooth zoom](/news/0.5.0/zoom.png)
 
 - **Mod presets.** Create your own presets (e.g. “My basics”) with mods, resource packs and shaders from
   Modrinth, tick them when creating an instance or apply them later – mark a preset as “always automatic” and it’s
@@ -659,14 +670,6 @@ How to write an entry:
   Umschalten.
 - **Redstone-Werkzeuge.** Sieh die Signalstärke über jedem Staub, ein Redstone-Overlay (F6) und einen Takt-Messer
   für deine Schaltungen – direkt im Spiel.
-
-![Das Emote-Rad im TRS Client](/news/0.5.0/emote-wheel.png)
-
-![Redstone-Werkzeuge: Signalstärke über jedem Staub](/news/0.5.0/redstone-overlay.png)
-
-![Umhang-Physik mit Live-Vorschau](/news/0.5.0/cape-physics.png)
-
-![Weicher Zoom](/news/0.5.0/zoom.png)
 
 - **Mod-Presets.** Eigene Presets anlegen (z. B. „Meine Basics“) mit Mods, Ressourcenpaketen und Shadern von
   Modrinth, beim Anlegen einer Instanz ankreuzen oder später anwenden – als „immer automatisch“ markiert, sind sie
@@ -741,6 +744,9 @@ How to write an entry:
 ## 0.4.3 – 2026-09-24 – The Friends Update | Das Freunde-Update
 
 <!-- banner: accent=#ff7ab8 motif=/news/0.4.3/banner.png -->
+<!-- shots:
+/news/0.4.3/tasks.png | The tasks panel in the title bar while a modpack installs | Die Aufgabenleiste in der Titelleiste, während ein Modpack installiert wird
+-->
 
 ### English
 
@@ -754,8 +760,6 @@ How to write an entry:
   move like cloth.
 - **Background installs.** Installs keep running when you leave the page; the tasks panel in the title bar shows
   everything that is installing or running, with pause and cancel.
-
-![The tasks panel in the title bar while a modpack installs](/news/0.4.3/tasks.png)
 
 - **Calmer redstone.** The animated redstone background is slower and more varied, with long cables and the classic
   circuits.
@@ -774,8 +778,6 @@ How to write an entry:
   Umhang wie Stoff schwingen.
 - **Installationen im Hintergrund.** Installationen laufen weiter, wenn du die Seite verlässt; die Aufgabenleiste in
   der Titelleiste zeigt alles, was installiert wird oder läuft, mit Pause und Abbrechen.
-
-![Die Aufgabenleiste in der Titelleiste, während ein Modpack installiert wird](/news/0.4.3/tasks.png)
 
 - **Ruhigerer Redstone.** Der animierte Redstone-Hintergrund ist langsamer und abwechslungsreicher, mit langen Kabeln
   und den klassischen Schaltungen.
@@ -808,6 +810,9 @@ How to write an entry:
 ## 0.4.1 – 2026-09-23 – Redstone Title | Redstone-Titelbild
 
 <!-- banner: accent=#ff8a3d motif=/news/0.4.1/banner.png -->
+<!-- shots:
+/news/0.4.1/title-screen.png | The TRS Client title screen | Der Titelbildschirm des TRS Clients
+-->
 
 ### English
 
@@ -816,8 +821,6 @@ How to write an entry:
 - **The TRS menu in the same style.** Buttons, panels and switches of the TRS menu match the launcher.
 - **Smoother menus on 1.20 to 1.21.1.** TRS screens are drawn in one go and stay fluid.
 
-![The TRS Client title screen](/news/0.4.1/title-screen.png)
-
 ### Deutsch
 
 - **Ein Titelbildschirm aus Redstone.** Der TRS Client begrüßt dich mit einem Titelbildschirm im Redstone-Look des
@@ -825,11 +828,13 @@ How to write an entry:
 - **Das TRS-Menü im selben Stil.** Knöpfe, Flächen und Schalter des TRS-Menüs passen zum Launcher.
 - **Flüssigere Menüs auf 1.20 bis 1.21.1.** TRS-Fenster werden in einem Rutsch gezeichnet und bleiben flüssig.
 
-![Der Titelbildschirm des TRS Clients](/news/0.4.1/title-screen.png)
-
 ## 0.4.0 – 2026-09-23 – The Redstone Update | Das Redstone-Update
 
 <!-- banner: accent=#ff5a4d motif=/news/0.4.0/banner.png -->
+<!-- shots:
+/news/0.4.0/start.png | The new start page with the redstone circuit | Die neue Startseite mit der Redstone-Schaltung
+/news/0.4.0/running.png | While the game runs, the lamp glows | Während das Spiel läuft, leuchtet die Lampe
+-->
 
 ### English
 
@@ -842,10 +847,6 @@ How to write an entry:
   quick changes into one.
 - **Calmer notifications.** Identical messages are merged and only a few are shown at once.
 
-![The new start page with the redstone circuit](/news/0.4.0/start.png)
-
-![While the game runs, the lamp glows](/news/0.4.0/running.png)
-
 ### Deutsch
 
 - **Eine Startseite, die lebt.** Oben läuft eine echte Redstone-Schaltung: Takte, Kolben, Lampen und flackernde
@@ -856,10 +857,6 @@ How to write an entry:
 - **Skins ohne Warten.** Bearbeite Skins lokal; der Launcher schickt sie im Hintergrund an Mojang und fasst schnelle
   Änderungen zusammen.
 - **Ruhigere Meldungen.** Gleiche Meldungen werden zusammengefasst, und es sind nur wenige gleichzeitig zu sehen.
-
-![Die neue Startseite mit der Redstone-Schaltung](/news/0.4.0/start.png)
-
-![Während das Spiel läuft, leuchtet die Lampe](/news/0.4.0/running.png)
 
 ## 0.3.1 – 2026-09-23 – Fabric Fix | Fabric-Fix
 
@@ -878,6 +875,12 @@ How to write an entry:
 ## 0.3.0 – 2026-09-22 – The HUD Update | Das HUD-Update
 
 <!-- banner: accent=#4fd1e0 motif=/news/0.3.0/banner.png -->
+<!-- shots:
+/news/0.3.0/trs-menu.png | The TRS menu in game | Das TRS-Menü im Spiel
+/news/0.3.0/hud-editor.png | Moving the HUD with the HUD editor | Das HUD mit dem HUD-Editor verschieben
+/news/0.3.0/skins.png | Skins & capes with the 3D preview | Skins & Umhänge mit der 3D-Vorschau
+/news/0.3.0/gallery.png | The screenshot gallery | Die Screenshot-Galerie
+-->
 
 ### English
 
@@ -892,14 +895,6 @@ How to write an entry:
 - **Ctrl+K.** A command palette that finds instances, pages and actions.
 - **Fresh look.** A slim icon sidebar, banners for your instances and a start page with a quick start.
 
-![The TRS menu in game](/news/0.3.0/trs-menu.png)
-
-![Moving the HUD with the HUD editor](/news/0.3.0/hud-editor.png)
-
-![Skins & capes with the 3D preview](/news/0.3.0/skins.png)
-
-![The screenshot gallery](/news/0.3.0/gallery.png)
-
 ### Deutsch
 
 - **Ein neues TRS-Menü.** Die rechte Umschalttaste öffnet das TRS-Menü: Module in Kategorien (HUD, PvP, Chat, Welt),
@@ -912,14 +907,6 @@ How to write an entry:
 - **Instanzen teilen.** Exportiere eine Instanz als .mrpack und importiere Pack-Dateien.
 - **Strg+K.** Eine Befehlspalette, die Instanzen, Seiten und Aktionen findet.
 - **Frischer Look.** Eine schmale Symbolleiste, Banner für deine Instanzen und eine Startseite mit Schnellstart.
-
-![Das TRS-Menü im Spiel](/news/0.3.0/trs-menu.png)
-
-![Das HUD mit dem HUD-Editor verschieben](/news/0.3.0/hud-editor.png)
-
-![Skins & Umhänge mit der 3D-Vorschau](/news/0.3.0/skins.png)
-
-![Die Screenshot-Galerie](/news/0.3.0/gallery.png)
 
 ## 0.2.2 – 2026-09-22 – Quiet Firewall | Leise Firewall
 
@@ -938,6 +925,9 @@ How to write an entry:
 ## 0.2.1 – 2026-09-22 – The Library Update | Das Bibliotheks-Update
 
 <!-- banner: accent=#c9853f motif=/news/0.2.1/banner.png -->
+<!-- shots:
+/news/0.2.1/library.png | The library with your own groups | Die Bibliothek mit eigenen Gruppen
+-->
 
 ### English
 
@@ -951,8 +941,6 @@ How to write an entry:
   to 26.3 – with a new title screen, more HUD modules and PvP features.
 - **Clearer update errors.** If a launcher update fails, you see why and can try again.
 
-![The library with your own groups](/news/0.2.1/library.png)
-
 ### Deutsch
 
 - **Eine neue Bibliothek.** Quadratische Karten, Sortieren, Filter und eigene Gruppen.
@@ -965,11 +953,12 @@ How to write an entry:
   mit neuem Titelbildschirm, mehr HUD-Modulen und PvP-Funktionen.
 - **Klarere Update-Fehler.** Schlägt ein Launcher-Update fehl, siehst du warum und kannst es erneut versuchen.
 
-![Die Bibliothek mit eigenen Gruppen](/news/0.2.1/library.png)
-
 ## 0.2.0 – 2026-09-22 – The Project Update | Das Projekt-Update
 
 <!-- banner: accent=#f0c24b motif=/news/0.2.0/banner.png -->
+<!-- shots:
+/news/0.2.0/content.png | Managing the content of an instance | Die Inhalte einer Instanz verwalten
+-->
 
 ### English
 
@@ -980,8 +969,6 @@ How to write an entry:
   downgrades at a glance.
 - **More TRS Client.** Now also for NeoForge 1.21.1 and Forge 1.20.1.
 
-![Managing the content of an instance](/news/0.2.0/content.png)
-
 ### Deutsch
 
 - **Eine Seite für jedes Projekt.** Jede Mod und jedes Modpack hat eine eigene Seite mit Beschreibung, Galerie,
@@ -991,11 +978,12 @@ How to write an entry:
   Version und erkenne Downgrades auf einen Blick.
 - **Mehr TRS Client.** Jetzt auch für NeoForge 1.21.1 und Forge 1.20.1.
 
-![Die Inhalte einer Instanz verwalten](/news/0.2.0/content.png)
-
 ## 0.1.0 – 2026-09-22 – The First Block | Der erste Block
 
 <!-- banner: accent=#6fcf4a motif=/news/0.1.0/banner.png -->
+<!-- shots:
+/news/0.1.0/start.png | The very first start page | Die allererste Startseite
+-->
 
 ### English
 
@@ -1010,8 +998,6 @@ How to write an entry:
   wrong.
 - **The TRS Client.** Our own client mod ships with the launcher and is added automatically.
 
-![The very first start page](/news/0.1.0/start.png)
-
 ### Deutsch
 
 - **Der erste TRS Launcher.** Installiere und starte jede Minecraft-Version – Vanilla, Fabric, Quilt, Forge und
@@ -1024,5 +1010,3 @@ How to write an entry:
 - **Hilfe bei Abstürzen.** Spiele laufen eigenständig mit Log-Dateien; nach einem Absturz erklärt der Launcher, was
   schiefging.
 - **Der TRS Client.** Unsere eigene Client-Mod kommt mit dem Launcher und wird automatisch hinzugefügt.
-
-![Die allererste Startseite](/news/0.1.0/start.png)

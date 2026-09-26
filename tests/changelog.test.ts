@@ -1,7 +1,21 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { changelogFor, changesSince, compareVersions, parseBanner, parseChangelog, releaseNotes, splitPost, versionSeed } from '../app/utils/changelog'
+import {
+  SHOTS_MAX,
+  changelogFor,
+  changesSince,
+  compareVersions,
+  parseBanner,
+  parseChangelog,
+  parseShot,
+  postContent,
+  releaseNotes,
+  splitPost,
+  versionSeed,
+} from '../app/utils/changelog'
+import { checkShots, imageInfo } from '../scripts/news-shots.mjs'
 
 const root = path.resolve(__dirname, '..')
 
@@ -138,8 +152,151 @@ describe('Changelog', () => {
       expect(e.title, `${e.version}: Update-Name`).not.toBeNull()
       expect(e.banner?.motif, `${e.version}: Banner-Motiv`).toBeTruthy()
       expect(existsSync(path.join(root, 'public', e.banner!.motif!)), `${e.version}: ${e.banner?.motif} fehlt`).toBe(true)
+      // Screenshots: gültig, vorhanden, echte PNG/WebP in vernünftiger Größe; ab 0.6.5 mindestens einer.
+      expect(checkShots(e, path.join(root, 'public')), `${e.version}: Screenshots`).toEqual([])
     }
+    // Die nachgetragenen Screenshots älterer Updates sind da.
+    expect(changelogFor(entries, '0.5.0')!.shots.length).toBeGreaterThanOrEqual(4)
+    expect(changelogFor(entries, '0.3.0')!.shots.map((s) => s.src)).toContain('/news/0.3.0/hud-editor.png')
     const { version } = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')) as { version: string }
     expect(changelogFor(entries, version), `CHANGELOG.md braucht einen Abschnitt „## ${version} – <Datum>“`).not.toBeNull()
+  })
+
+  it('liest Screenshots aus dem Kommentar „shots:“ – mehrzeilig und einzeilig', () => {
+    const [a, b, c] = parseChangelog(
+      [
+        '## 0.6.5 – 2026-10-01 – The Clip Update | Das Clip-Update',
+        '<!-- banner: accent=#ff7ab8 motif=/news/0.6.5/banner.png -->',
+        '<!-- shots:',
+        '/news/0.6.5/clips.png | The clip gallery | Die Clip-Galerie',
+        '/news/0.6.5/trim.webp | Only English',
+        '  /news/0.6.5/plain.png  ',
+        '/news/0.6.5/clips.png | doppelt | doppelt',
+        'https://evil.example/x.png | fremd',
+        '/news/../secret.png',
+        '/news/0.6.5/x.gif',
+        '/news/0.6.5/y.png | <b>html</b>',
+        '/news/0.6.5/z.png | a | b | c',
+        '-->',
+        '### English',
+        '- A',
+        '### Deutsch',
+        '- A',
+        '## 0.6.4 – 2026-09-26',
+        '<!-- shots: /news/0.6.4/a.png | A | A-de ; /news/0.6.4/b.png -->',
+        '### English',
+        '- B',
+        '### Deutsch',
+        '- B',
+        '## 0.6.3 – 2026-09-26',
+        'Text <!-- shots: /news/0.6.3/inline.png --> mitten in der Zeile zählt nicht',
+        '### English',
+        '- C',
+      ].join('\n'),
+    )
+    expect(a!.shots).toEqual([
+      { src: '/news/0.6.5/clips.png', caption: { en: 'The clip gallery', de: 'Die Clip-Galerie' } },
+      { src: '/news/0.6.5/trim.webp', caption: { en: 'Only English', de: 'Only English' } },
+      { src: '/news/0.6.5/plain.png', caption: null },
+    ])
+    expect(a!.shotIssues).toHaveLength(6)
+    expect(a!.banner?.accent).toBe('#ff7ab8')
+    expect(a!.en).toBe('- A')
+    expect(b!.shots).toEqual([
+      { src: '/news/0.6.4/a.png', caption: { en: 'A', de: 'A-de' } },
+      { src: '/news/0.6.4/b.png', caption: null },
+    ])
+    expect(c!.shots).toEqual([])
+    // Nur Deutsch angegeben → gilt für beide Sprachen; zu lange Unterschrift → ungültig.
+    expect(parseShot('/news/1.0.0/a.png |  | Nur Deutsch')).toEqual({ src: '/news/1.0.0/a.png', caption: { en: 'Nur Deutsch', de: 'Nur Deutsch' } })
+    expect(parseShot(`/news/1.0.0/a.png | ${'x'.repeat(200)}`)).toBeNull()
+  })
+
+  it('Galerie + Text eines Beitrags und Screenshots in den Release-Hinweisen', () => {
+    const [entry] = parseChangelog(
+      [
+        '## 0.6.5 – 2026-10-01 – The Clip Update | Das Clip-Update',
+        '<!-- shots:',
+        '/news/0.6.5/a.png | Gallery | Galerie',
+        '/news/0.6.5/b.png',
+        '-->',
+        '### English',
+        '- **Clips.** Save them.',
+        '',
+        '![Old style](/news/0.6.5/old.png)',
+        '![Same file](/news/0.6.5/a.png)',
+        '### Deutsch',
+        '- **Clips.** Speichern.',
+      ].join('\n'),
+    )
+    const en = postContent(entry!, 'en')
+    expect(en.markdown).toBe('- **Clips.** Save them.')
+    expect(en.shots).toEqual([
+      { src: '/news/0.6.5/a.png', caption: 'Gallery' },
+      { src: '/news/0.6.5/b.png', caption: '' },
+      { src: '/news/0.6.5/old.png', caption: 'Old style' },
+    ])
+    expect(postContent(entry!, 'de').shots.map((s) => s.caption)).toEqual(['Galerie', ''])
+    const many = { en: '', de: '', shots: Array.from({ length: 12 }, (_, i) => ({ src: `/news/1.0.0/${i}.png`, caption: null })) }
+    expect(postContent(many, 'en').shots).toHaveLength(SHOTS_MAX)
+    const notes = releaseNotes(entry!)
+    const raw = 'https://raw.githubusercontent.com/theredstonee/TRS-Launcher/v0.6.5/public/news/0.6.5'
+    expect(notes).toContain(`![Gallery](${raw}/a.png)`)
+    expect(notes).toContain(`![Galerie](${raw}/a.png)`)
+    expect(notes).toContain(`![](${raw}/b.png)`)
+  })
+
+  it('Release-Check der Screenshots: Pflicht ab 0.6.5, Dateien, Format, Größe, Anzahl', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'trs-shots-'))
+    try {
+      mkdirSync(path.join(dir, 'news', '0.6.5'), { recursive: true })
+      const png = (w: number, h: number) => {
+        const b = Buffer.alloc(64)
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(b)
+        b.write('IHDR', 12, 'ascii')
+        b.writeUInt32BE(w, 16)
+        b.writeUInt32BE(h, 20)
+        return b
+      }
+      const webp = (w: number, h: number) => {
+        const b = Buffer.alloc(64)
+        b.write('RIFF', 0, 'ascii')
+        b.write('WEBPVP8X', 8, 'ascii')
+        b.writeUIntLE(w - 1, 24, 3)
+        b.writeUIntLE(h - 1, 27, 3)
+        return b
+      }
+      writeFileSync(path.join(dir, 'news/0.6.5/ok.png'), png(1280, 720))
+      writeFileSync(path.join(dir, 'news/0.6.5/ok.webp'), webp(1920, 1080))
+      writeFileSync(path.join(dir, 'news/0.6.5/tiny.png'), png(200, 100))
+      writeFileSync(path.join(dir, 'news/0.6.5/fake.png'), webp(1280, 720))
+      writeFileSync(path.join(dir, 'news/0.6.5/text.png'), 'kein Bild')
+      expect(imageInfo(png(854, 480))).toEqual({ format: 'png', width: 854, height: 480 })
+      expect(imageInfo(webp(1920, 1080))).toEqual({ format: 'webp', width: 1920, height: 1080 })
+      expect(imageInfo(Buffer.from('hallo'))).toBeNull()
+
+      const entry = (version: string, lines: string[]) =>
+        parseChangelog([`## ${version} – 2026-10-01 – X | X`, '<!-- shots:', ...lines, '-->', '### English', '- a', '### Deutsch', '- a'].join('\n'))[0]!
+      expect(checkShots(entry('0.6.5', ['/news/0.6.5/ok.png | A | A', '/news/0.6.5/ok.webp']), dir)).toEqual([])
+      // Ab 0.6.5 Pflicht, davor freiwillig.
+      expect(checkShots(entry('0.6.5', []), dir).join()).toContain('Kein Screenshot')
+      expect(checkShots(entry('0.7.0', []), dir)).toHaveLength(1)
+      expect(checkShots(entry('0.6.4', []), dir)).toEqual([])
+      const bad = checkShots(
+        entry('0.6.5', ['/news/0.6.5/missing.png', '/news/0.6.5/tiny.png', '/news/0.6.5/fake.png', '/news/0.6.5/text.png', '/news/0.6.4/other.png', 'kaputt']),
+        dir,
+      ).join('\n')
+      expect(bad).toContain('missing.png: Datei fehlt')
+      expect(bad).toContain('tiny.png: 200×100 px')
+      expect(bad).toContain('fake.png: Inhalt ist WEBP')
+      expect(bad).toContain('text.png: kein gültiges PNG/WebP')
+      expect(bad).toContain('gehört nach /news/0.6.5/')
+      expect(bad).toContain('„kaputt“ ist ungültig')
+      const nine = Array.from({ length: 9 }, (_, i) => `/news/0.6.5/s${i}.png`)
+      for (const src of nine) writeFileSync(path.join(dir, src), png(1280, 720))
+      expect(checkShots(entry('0.6.5', nine), dir)).toEqual([`9 Screenshots – höchstens ${SHOTS_MAX} je Update.`])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

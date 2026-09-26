@@ -2937,7 +2937,6 @@
   },
   "whatsNew": {
     "title": "Nieuw in versie {version}",
-    "version": "Versie {version}",
     "close": "Begrepen",
     "englishOnly": "Deze notities zijn alleen in het Engels en Duits beschikbaar."
   },
@@ -3112,7 +3111,16 @@
     "kicker": "Update {version}",
     "version": "Versie {version}",
     "read": "Lees het bericht",
-    "hide": "Verbergen tot de volgende update"
+    "hide": "Verbergen tot de volgende update",
+    "openWebsite": "Bekijken op de website",
+    "screenshots": "Screenshots",
+    "previous": "Vorige afbeelding",
+    "next": "Volgende afbeelding",
+    "enlarge": "Afbeelding vergroten",
+    "closeImage": "Afbeelding sluiten",
+    "imageOf": "Afbeelding {n} van {total}",
+    "versions": "Versies",
+    "more": "Nog {n} afbeeldingen"
   },
   "webLogin": {
     "title": "Aanmelding op de website bevestigen",

@@ -1,6 +1,7 @@
 // Changelog für den Release-Build: gibt die Hinweise einer Version aus (Englisch + Deutsch)
 // und bricht ab, wenn der Abschnitt fehlt, eine Sprache leer ist oder das Update-Banner fehlt
-// (Zeile „<!-- banner: accent=#rrggbb motif=/news/<version>/banner.png -->“ + Bild in public/).
+// (Zeile „<!-- banner: accent=#rrggbb motif=/news/<version>/banner.png -->“ + Bild in public/) oder die
+// Screenshots nicht passen (Kommentar „<!-- shots: … -->“, ab 0.6.5 Pflicht, siehe scripts/news-shots.mjs).
 //
 //   node --experimental-strip-types scripts/changelog.mjs notes 0.4.4   → Markdown für Release/Update
 //   node --experimental-strip-types scripts/changelog.mjs check 0.4.4   → nur prüfen
@@ -11,6 +12,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { changelogFor, parseChangelog, releaseNotes } from '../app/utils/changelog.ts'
+import { checkShots } from './news-shots.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const [command, rawVersion] = process.argv.slice(2)
@@ -38,6 +40,20 @@ if (!banner?.motif || !existsSync(join(root, 'public', banner.motif))) {
       `CHANGELOG.md, Version ${version}: Update-Banner fehlt. Unter der Überschrift eintragen:`,
       `  <!-- banner: accent=#rrggbb motif=/news/${version}/banner.png -->`,
       `und das Motiv (TRS Studio, Vorlage „Update-Banner“) als public/news/${version}/banner.png ablegen.`,
+    ].join('\n'),
+  )
+  process.exit(1)
+}
+const shotProblems = checkShots(entry, join(root, 'public'))
+if (shotProblems.length) {
+  console.error(
+    [
+      `CHANGELOG.md, Version ${version}: Screenshots passen nicht.`,
+      ...shotProblems.map((p) => `  - ${p}`),
+      'Unter der Banner-Zeile eintragen (Dateien in public/news/<version>/, PNG oder WebP):',
+      '  <!-- shots:',
+      `  /news/${version}/<datei>.png | English caption | Deutsche Bildunterschrift`,
+      '  -->',
     ].join('\n'),
   )
   process.exit(1)
