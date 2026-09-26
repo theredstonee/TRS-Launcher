@@ -448,7 +448,8 @@
       "nameLength": "El nombre del servidor debe tener entre 1 y 64 caracteres",
       "tooMany": "No se admiten más de 100 servidores.",
       "duplicate": "Este servidor ya está en la lista.",
-      "notFound": "Este servidor ya no existe."
+      "notFound": "Este servidor ya no existe.",
+      "instanceChanged": "La lista de servidores de la instancia ha cambiado; vuelve a cargarla."
     },
     "skins": {
       "fileTooLarge": "El archivo de skin es demasiado grande (máx. 128 KB).",
@@ -599,6 +600,24 @@
       "totalTooLarge": "En conjunto, los archivos son demasiado grandes (máx. 64 MB).",
       "studioInvalid": "«{name}» no es una exportación de capa de TRS Studio.",
       "gifTooLong": "«{name}» tiene demasiados fotogramas (máx. {max})."
+    },
+    "files": {
+      "denied": "El explorador de archivos no tiene acceso a esta ruta.",
+      "invalidName": "Nombre de archivo o carpeta no válido",
+      "notFound": "El archivo o la carpeta ya no existe.",
+      "exists": "Aquí ya hay un archivo o una carpeta con este nombre.",
+      "tooMany": "Como máximo {max} entradas a la vez",
+      "importTooLarge": "Demasiado a la vez: como máximo {gb} GB o {max} archivos por subida.",
+      "fileTooLarge": "Cada archivo puede ocupar como máximo {gb} GB."
+    },
+    "worlds": {
+      "levelDatBroken": "El level.dat del mundo está dañado.",
+      "notFound": "Este mundo ya no existe."
+    },
+    "logs": {
+      "sourceGone": "Este archivo de registro ya no existe.",
+      "unreadable": "Este archivo de registro no se puede leer.",
+      "qrInvalid": "No hay código QR para este enlace."
     }
   },
   "browse": {
@@ -1082,7 +1101,9 @@
       "history": "Historial",
       "screenshots": "Capturas",
       "worlds": "Mundos",
-      "logs": "Registros"
+      "logs": "Registros",
+      "files": "Archivos",
+      "share": "Compartir"
     },
     "gallery": {
       "bannerSet": "Banner establecido",
@@ -1090,18 +1111,16 @@
         "title": "Aún no hay capturas",
         "text": "Pulsa F2 en el juego: cada imagen enciende aquí una lámpara más."
       },
-      "noWorlds": {
-        "title": "Aún no hay mundos",
-        "text": "Aún no has construido nada: aquí aparecen los mundos de un jugador de esta instancia."
-      },
       "openScreenshot": "Abrir {name}",
       "useAsBannerLabel": "Usar {name} como banner",
       "useAsBannerTitle": "Usar como banner de la instancia",
       "deleteScreenshot": "Eliminar captura",
-      "lastPlayed": "Última partida: {date}",
       "deleteTitle": "¿Eliminar captura?",
       "deleteText": "La captura se eliminará del disco."
-    }
+    },
+    "playTime": "Tiempo de juego",
+    "lastPlayed": "Última partida",
+    "running": "En ejecución"
   },
   "instanceSettings": {
     "title": "Ajustes · {name}",
@@ -1378,13 +1397,8 @@
     }
   },
   "logConsole": {
-    "warnings": "Avisos",
-    "errors": "Errores",
-    "search": "Buscar …",
     "lineCount": "{n} línea | {n} líneas",
-    "copied": "Copiado",
-    "empty": "Aún no hay salida: inicia la instancia para ver los registros en directo.",
-    "jumpToEnd": "↓ Ir al final"
+    "copied": "Copiado"
   },
   "crash": {
     "crashed": "El juego se ha cerrado inesperadamente",
@@ -3179,6 +3193,195 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    }
+  },
+  "logViewer": {
+    "title": "Registro del juego",
+    "source": "Fuente del registro",
+    "live": "Registro en vivo",
+    "liveRunning": "Registro en vivo (en ejecución)",
+    "latest": "Registro más reciente",
+    "groups": {
+      "game": "Registros anteriores",
+      "crash": "Informes de fallos",
+      "launcher": "Salida del launcher"
+    },
+    "search": "Buscar en el registro …",
+    "clearSearch": "Borrar búsqueda",
+    "clear": "Vaciar vista",
+    "copy": "Copiar líneas visibles",
+    "copyFailed": "El portapapeles no está disponible.",
+    "share": "Compartir registro",
+    "expand": "Pantalla completa",
+    "collapse": "Salir de pantalla completa",
+    "levelFilter": "Filtrar por nivel",
+    "levels": {
+      "all": "Todo",
+      "error": "Errores",
+      "warn": "Avisos",
+      "info": "Info"
+    },
+    "expandAll": "Desplegar todas las trazas",
+    "collapseAll": "Plegar todas las trazas",
+    "truncated": "Solo se muestra el final",
+    "truncatedHint": "El archivo es muy grande: el launcher muestra su última parte.",
+    "empty": {
+      "title": "La lámpara sigue apagada",
+      "text": "Inicia la instancia para ver el registro en vivo. Los registros anteriores y los informes de fallos están en la lista de arriba a la izquierda.",
+      "openLatest": "Abrir {name}"
+    },
+    "lines": "Líneas del registro",
+    "noMatches": "Ninguna línea coincide con el filtro.",
+    "waiting": "Esperando las primeras líneas …",
+    "emptyFile": "Este archivo está vacío.",
+    "hideTrace": "Ocultar traza",
+    "showTrace": "Mostrar traza ({n} líneas)",
+    "newLines": "{n} línea nueva | {n} líneas nuevas",
+    "toBottom": "Ir al final",
+    "following": "Siguiendo en vivo",
+    "loading": "Cargando …",
+    "shortcut": "Ctrl+F para buscar"
+  },
+  "logShare": {
+    "qrLabel": "Código QR del enlace",
+    "qrFailed": "No hay código QR",
+    "doneTitle": "Registro compartido",
+    "doneText": "El enlace está copiado. Envíalo a quien te ayude o escanea el código con el móvil.",
+    "redactTokens": "Se eliminan los tokens de inicio de sesión",
+    "redactUser": "Tu nombre de usuario se elimina de las rutas",
+    "publicHint": "Cualquiera con el enlace puede leer el registro",
+    "disabled": "Compartir registros está desactivado en Ajustes → Privacidad.",
+    "qrHint": "El enlace se queda en mclo.gs; no se puede borrar desde el launcher.",
+    "openBrowser": "Abrir en el navegador"
+  },
+  "files": {
+    "title": "Archivos",
+    "breadcrumbs": "Ruta de carpeta",
+    "root": "Carpeta de la instancia",
+    "filter": "Filtrar …",
+    "newFolder": "Nueva carpeta",
+    "newFile": "Nuevo archivo",
+    "upload": "Subir",
+    "reveal": "Mostrar en la carpeta",
+    "rename": "Renombrar",
+    "trash": "Mover a la papelera",
+    "clearSelection": "Quitar selección",
+    "selected": "{n} seleccionado | {n} seleccionados",
+    "selectAll": "Seleccionar todo",
+    "selectOne": "Seleccionar {name}",
+    "size": "Tamaño",
+    "created": "Creado",
+    "modified": "Modificado",
+    "noMatches": "Sin resultados",
+    "noMatchesText": "Ningún archivo de esta carpeta coincide con el filtro.",
+    "emptyFolder": "Esta carpeta está vacía",
+    "emptyFolderText": "Arrastra archivos aquí o usa «Subir».",
+    "truncated": "Esta carpeta tiene demasiadas entradas: no se muestran todas.",
+    "count": "{n} entrada | {n} entradas",
+    "dropHint": "Arrastra archivos o carpetas aquí para copiarlos",
+    "dropTitle": "Suelta para copiar aquí",
+    "openFolder": "Abrir carpeta",
+    "copyPath": "Copiar ruta",
+    "pathCopied": "Ruta copiada",
+    "inFolder": "En {path}",
+    "trashTitle": "¿Mover {n} entrada a la papelera? | ¿Mover {n} entradas a la papelera?",
+    "trashText": "Las entradas van a la Papelera de reciclaje de Windows; desde ahí puedes restaurarlas.",
+    "trashTextLinux": "Las entradas van a la papelera; desde ahí puedes restaurarlas.",
+    "trashed": "{n} entrada movida a la papelera | {n} entradas movidas a la papelera",
+    "uploaded": "{n} archivo copiado ({size}) | {n} archivos copiados ({size})",
+    "skipped": {
+      "symlink": "«{name}» omitido: los enlaces no se copian.",
+      "invalidName": "«{name}» omitido: el nombre no está permitido.",
+      "unsupported": "«{name}» omitido: no es un archivo normal.",
+      "inside": "«{name}» omitido: una carpeta no se puede copiar dentro de sí misma."
+    },
+    "errors": {
+      "empty": "Escribe un nombre.",
+      "invalid": "Este nombre no está permitido (p. ej. / \\ : * ? \" < > {'|'})."
+    },
+    "known": {
+      "mods": "Mods",
+      "config": "Ajustes de mods",
+      "saves": "Mundos",
+      "resourcepacks": "Paquetes de recursos",
+      "shaderpacks": "Shaders",
+      "screenshots": "Capturas",
+      "logs": "Registros",
+      "crash": "Informes de fallos",
+      "datapacks": "Paquetes de datos",
+      "backups": "Copias de mundos"
+    }
+  },
+  "worlds": {
+    "title": "Mundos",
+    "empty": {
+      "title": "Aún no hay mundos",
+      "text": "Aquí todavía no se ha construido nada: los mundos de un jugador de esta instancia aparecen aquí."
+    },
+    "modes": {
+      "survival": "Supervivencia",
+      "creative": "Creativo",
+      "adventure": "Aventura",
+      "spectator": "Espectador"
+    },
+    "hardcore": "Extremo",
+    "cheats": "Trucos",
+    "backingUp": "Guardando copia del mundo …",
+    "backupDone": "Se guardó una copia de «{name}»",
+    "backup": "Copia de seguridad (ZIP)",
+    "backupOf": "Copia de seguridad de {name}",
+    "openFolderOf": "Abrir la carpeta de {name}",
+    "deleteOf": "Eliminar {name}",
+    "stopFirst": "Cierra primero el juego",
+    "deleted": "«{name}» está en la papelera",
+    "backupHint": "Las copias se guardan como ZIP en la carpeta «backups» de la instancia (ver pestaña Archivos).",
+    "deleteTitle": "¿Eliminar mundo?",
+    "deleteText": "«{name}» va a la Papelera de reciclaje de Windows.",
+    "deleteTextLinux": "«{name}» va a la papelera.",
+    "deleteBackupHint": "Consejo: haz antes una copia si quizá lo quieras de nuevo.",
+    "servers": {
+      "title": "Servidores",
+      "empty": {
+        "title": "Aún no hay servidores",
+        "text": "Añade un servidor: aparece en la lista multijugador del juego y aquí puedes entrar con un clic."
+      },
+      "everywhere": "Añadir a todas las instancias",
+      "everywhereHint": "Guarda el servidor en la lista del launcher: cada instancia lo recibe en su próximo inicio.",
+      "managedHint": "Este servidor está en la lista del launcher. Los cambios valen para todas las instancias.",
+      "removeManaged": "¿Quitar «{name}» de la lista del launcher? Desaparece ahora de esta instancia y ya no se añade a otras.",
+      "removeText": "¿Quitar «{name}» de la lista de servidores de esta instancia?",
+      "managed": "Todas las instancias",
+      "managedTitle": "De la lista de servidores del launcher",
+      "pending": "Próximo inicio",
+      "pendingTitle": "Se añade a la lista del juego en el próximo inicio",
+      "editOf": "Editar {name}",
+      "running": "La instancia ya está en marcha",
+      "joinHint": "Inicia la instancia y se conecta a «{name}»",
+      "notJoinable": "A esta dirección no se puede entrar directamente: inicia el juego y entra desde la lista.",
+      "joinNote": "Entrar inicia el juego y conecta al momento. Las versiones muy antiguas solo abren el menú principal."
+    }
+  },
+  "share": {
+    "intro": "Pasa esta instancia a otros o pide ayuda: como archivo de modpack, como enlace de registro o como copia de un mundo.",
+    "modpack": {
+      "title": "Exportar como modpack",
+      "text": "Crea un archivo .mrpack con mods, ajustes y archivos elegidos. Otros lo importan en el launcher con un clic.",
+      "action": "Exportar …"
+    },
+    "log": {
+      "title": "Compartir registro",
+      "text": "Sube el último registro a mclo.gs; se eliminan los tokens y tu nombre de usuario. Recibes un enlace y un código QR.",
+      "action": "Compartir …"
+    },
+    "world": {
+      "title": "Copia de un mundo",
+      "text": "Empaqueta un mundo como ZIP, para guardarlo o enviarlo a tus amigos.",
+      "action": "Ir a mundos"
+    },
+    "files": {
+      "title": "Buscar archivos",
+      "text": "Abre la carpeta de la instancia para enviar archivos sueltos como configs o schematics.",
+      "action": "Ir a archivos"
     }
   }
 }

@@ -37,6 +37,8 @@ pub enum DialogText {
     PickClipsFolder,
     /// Java-Auswahl unter Linux (`…/bin/java`).
     PickJavaUnix,
+    /// Dateien in den Spielordner der Instanz kopieren (Tab „Dateien“).
+    UploadFiles,
 }
 
 impl DialogText {
@@ -48,7 +50,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 20] = [
+const TEXTS: [[&str; 8]; 21] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -231,6 +233,16 @@ const TEXTS: [[&str; 8]; 20] = [
         "java programını seç (…/bin/java)",
         "Het java-programma kiezen (…/bin/java)",
     ],
+    [
+        "Upload files to the instance",
+        "Dateien in die Instanz hochladen",
+        "Subir archivos a la instancia",
+        "Téléverser des fichiers dans l'instance",
+        "Prześlij pliki do instancji",
+        "Enviar arquivos para a instância",
+        "Örneğe dosya yükle",
+        "Bestanden naar de instantie uploaden",
+    ],
 ];
 
 impl DialogText {
@@ -251,7 +263,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 20] = [
+    const ALL: [DialogText; 21] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -272,6 +284,7 @@ mod tests {
         DialogText::PresetFile,
         DialogText::PickClipsFolder,
         DialogText::PickJavaUnix,
+        DialogText::UploadFiles,
     ];
 
     #[test]

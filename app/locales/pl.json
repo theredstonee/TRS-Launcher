@@ -448,7 +448,8 @@
       "nameLength": "Nazwa serwera musi mieć od 1 do 64 znaków",
       "tooMany": "Ponad 100 serwerów nie jest obsługiwanych.",
       "duplicate": "Ten serwer jest już na liście.",
-      "notFound": "Ten serwer już nie istnieje."
+      "notFound": "Ten serwer już nie istnieje.",
+      "instanceChanged": "Lista serwerów instancji się zmieniła – wczytaj ją ponownie."
     },
     "skins": {
       "fileTooLarge": "Plik skina jest za duży (maks. 128 KB).",
@@ -599,6 +600,24 @@
       "totalTooLarge": "Pliki są razem za duże (maks. 64 MB).",
       "studioInvalid": "„{name}” nie jest eksportem peleryny z TRS Studio.",
       "gifTooLong": "„{name}” ma za dużo klatek (maks. {max})."
+    },
+    "files": {
+      "denied": "Przeglądarka plików nie ma dostępu do tej ścieżki.",
+      "invalidName": "Nieprawidłowa nazwa pliku lub folderu",
+      "notFound": "Plik lub folder już nie istnieje.",
+      "exists": "Istnieje tu już plik lub folder o tej nazwie.",
+      "tooMany": "Najwyżej {max} elementów naraz",
+      "importTooLarge": "Za dużo naraz: najwyżej {gb} GB lub {max} plików na przesyłanie.",
+      "fileTooLarge": "Pojedynczy plik może mieć najwyżej {gb} GB."
+    },
+    "worlds": {
+      "levelDatBroken": "Plik level.dat świata jest uszkodzony.",
+      "notFound": "Ten świat już nie istnieje."
+    },
+    "logs": {
+      "sourceGone": "Ten plik dziennika już nie istnieje.",
+      "unreadable": "Nie można odczytać tego pliku dziennika.",
+      "qrInvalid": "Dla tego linku nie ma kodu QR."
     }
   },
   "browse": {
@@ -1082,7 +1101,9 @@
       "history": "Historia",
       "screenshots": "Zrzuty ekranu",
       "worlds": "Światy",
-      "logs": "Logi"
+      "logs": "Logi",
+      "files": "Pliki",
+      "share": "Udostępnij"
     },
     "gallery": {
       "bannerSet": "Ustawiono baner",
@@ -1090,18 +1111,16 @@
         "title": "Brak zrzutów ekranu",
         "text": "Naciśnij F2 w grze – każde zdjęcie zapala tu kolejną lampę."
       },
-      "noWorlds": {
-        "title": "Brak światów",
-        "text": "Nic jeszcze nie zbudowano: tutaj pojawią się światy jednoosobowe tej instancji."
-      },
       "openScreenshot": "Otwórz {name}",
       "useAsBannerLabel": "Użyj {name} jako baneru",
       "useAsBannerTitle": "Użyj jako baneru instancji",
       "deleteScreenshot": "Usuń zrzut ekranu",
-      "lastPlayed": "Ostatnio grano {date}",
       "deleteTitle": "Usunąć zrzut ekranu?",
       "deleteText": "Zrzut ekranu zostanie usunięty z dysku."
-    }
+    },
+    "playTime": "Czas gry",
+    "lastPlayed": "Ostatnio grane",
+    "running": "Uruchomiona"
   },
   "instanceSettings": {
     "title": "Ustawienia · {name}",
@@ -1378,13 +1397,8 @@
     }
   },
   "logConsole": {
-    "warnings": "Ostrzeżenia",
-    "errors": "Błędy",
-    "search": "Szukaj …",
     "lineCount": "{n} linia | {n} linie | {n} linii",
-    "copied": "Skopiowano",
-    "empty": "Brak danych wyjściowych – uruchom instancję, aby zobaczyć logi na żywo.",
-    "jumpToEnd": "↓ Przejdź na koniec"
+    "copied": "Skopiowano"
   },
   "crash": {
     "crashed": "Gra uległa awarii",
@@ -3179,6 +3193,195 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Programowy (x264)"
+    }
+  },
+  "logViewer": {
+    "title": "Dziennik gry",
+    "source": "Źródło dziennika",
+    "live": "Dziennik na żywo",
+    "liveRunning": "Dziennik na żywo (działa)",
+    "latest": "Najnowszy dziennik",
+    "groups": {
+      "game": "Starsze dzienniki",
+      "crash": "Raporty awarii",
+      "launcher": "Wyjście launchera"
+    },
+    "search": "Szukaj w dzienniku …",
+    "clearSearch": "Wyczyść wyszukiwanie",
+    "clear": "Wyczyść widok",
+    "copy": "Kopiuj widoczne linie",
+    "copyFailed": "Schowek jest niedostępny.",
+    "share": "Udostępnij dziennik",
+    "expand": "Pełny ekran",
+    "collapse": "Zamknij pełny ekran",
+    "levelFilter": "Filtruj według poziomu",
+    "levels": {
+      "all": "Wszystko",
+      "error": "Błędy",
+      "warn": "Ostrzeżenia",
+      "info": "Info"
+    },
+    "expandAll": "Rozwiń wszystkie stosy wywołań",
+    "collapseAll": "Zwiń wszystkie stosy wywołań",
+    "truncated": "Pokazano tylko koniec",
+    "truncatedHint": "Plik jest bardzo duży – launcher pokazuje jego ostatnią część.",
+    "empty": {
+      "title": "Lampa jest jeszcze wyłączona",
+      "text": "Uruchom instancję, aby zobaczyć dziennik na żywo. Starsze dzienniki i raporty awarii są na liście w lewym górnym rogu.",
+      "openLatest": "Otwórz {name}"
+    },
+    "lines": "Linie dziennika",
+    "noMatches": "Żadna linia nie pasuje do filtra.",
+    "waiting": "Czekam na pierwsze linie …",
+    "emptyFile": "Ten plik jest pusty.",
+    "hideTrace": "Ukryj stos wywołań",
+    "showTrace": "Pokaż stos wywołań ({n} linii)",
+    "newLines": "{n} nowa linia | {n} nowe linie | {n} nowych linii",
+    "toBottom": "Na dół",
+    "following": "Śledzenie na żywo",
+    "loading": "Wczytywanie …",
+    "shortcut": "Ctrl+F, aby szukać"
+  },
+  "logShare": {
+    "qrLabel": "Kod QR linku",
+    "qrFailed": "Brak kodu QR",
+    "doneTitle": "Dziennik udostępniony",
+    "doneText": "Link został skopiowany. Wyślij go osobie, która ci pomaga – albo zeskanuj kod telefonem.",
+    "redactTokens": "Tokeny logowania zostają usunięte",
+    "redactUser": "Twoja nazwa użytkownika zostaje usunięta ze ścieżek",
+    "publicHint": "Każdy z linkiem może przeczytać dziennik",
+    "disabled": "Udostępnianie dzienników jest wyłączone w Ustawienia → Prywatność.",
+    "qrHint": "Link pozostaje na mclo.gs; nie da się go usunąć z launchera.",
+    "openBrowser": "Otwórz w przeglądarce"
+  },
+  "files": {
+    "title": "Pliki",
+    "breadcrumbs": "Ścieżka folderu",
+    "root": "Folder instancji",
+    "filter": "Filtruj …",
+    "newFolder": "Nowy folder",
+    "newFile": "Nowy plik",
+    "upload": "Prześlij",
+    "reveal": "Pokaż w folderze",
+    "rename": "Zmień nazwę",
+    "trash": "Przenieś do kosza",
+    "clearSelection": "Wyczyść zaznaczenie",
+    "selected": "{n} zaznaczony | {n} zaznaczone | {n} zaznaczonych",
+    "selectAll": "Zaznacz wszystko",
+    "selectOne": "Zaznacz {name}",
+    "size": "Rozmiar",
+    "created": "Utworzono",
+    "modified": "Zmieniono",
+    "noMatches": "Nic nie znaleziono",
+    "noMatchesText": "Żaden plik w tym folderze nie pasuje do filtra.",
+    "emptyFolder": "Ten folder jest pusty",
+    "emptyFolderText": "Przeciągnij tu pliki albo użyj „Prześlij”.",
+    "truncated": "Ten folder ma za dużo elementów – nie wszystkie są pokazane.",
+    "count": "{n} element | {n} elementy | {n} elementów",
+    "dropHint": "Przeciągnij tu pliki lub foldery, aby je skopiować",
+    "dropTitle": "Upuść, aby skopiować tutaj",
+    "openFolder": "Otwórz folder",
+    "copyPath": "Kopiuj ścieżkę",
+    "pathCopied": "Skopiowano ścieżkę",
+    "inFolder": "W {path}",
+    "trashTitle": "Przenieść {n} element do kosza? | Przenieść {n} elementy do kosza? | Przenieść {n} elementów do kosza?",
+    "trashText": "Elementy trafią do Kosza systemu Windows – możesz je stamtąd przywrócić.",
+    "trashTextLinux": "Elementy trafią do kosza – możesz je stamtąd przywrócić.",
+    "trashed": "{n} element przeniesiono do kosza | {n} elementy przeniesiono do kosza | {n} elementów przeniesiono do kosza",
+    "uploaded": "Skopiowano {n} plik ({size}) | Skopiowano {n} pliki ({size}) | Skopiowano {n} plików ({size})",
+    "skipped": {
+      "symlink": "Pominięto „{name}”: dowiązania nie są kopiowane.",
+      "invalidName": "Pominięto „{name}”: ta nazwa jest niedozwolona.",
+      "unsupported": "Pominięto „{name}”: to nie jest zwykły plik.",
+      "inside": "Pominięto „{name}”: folderu nie można skopiować do niego samego."
+    },
+    "errors": {
+      "empty": "Podaj nazwę.",
+      "invalid": "Ta nazwa jest niedozwolona (np. / \\ : * ? \" < > {'|'})."
+    },
+    "known": {
+      "mods": "Mody",
+      "config": "Ustawienia modów",
+      "saves": "Światy",
+      "resourcepacks": "Paczki zasobów",
+      "shaderpacks": "Shadery",
+      "screenshots": "Zrzuty ekranu",
+      "logs": "Dzienniki",
+      "crash": "Raporty awarii",
+      "datapacks": "Paczki danych",
+      "backups": "Kopie światów"
+    }
+  },
+  "worlds": {
+    "title": "Światy",
+    "empty": {
+      "title": "Brak światów",
+      "text": "Nic tu jeszcze nie zbudowano: światy jednoosobowe tej instancji pojawią się tutaj."
+    },
+    "modes": {
+      "survival": "Przetrwanie",
+      "creative": "Kreatywny",
+      "adventure": "Przygoda",
+      "spectator": "Obserwator"
+    },
+    "hardcore": "Hardkor",
+    "cheats": "Kody",
+    "backingUp": "Tworzenie kopii świata …",
+    "backupDone": "Utworzono kopię „{name}”",
+    "backup": "Kopia zapasowa (ZIP)",
+    "backupOf": "Utwórz kopię {name}",
+    "openFolderOf": "Otwórz folder {name}",
+    "deleteOf": "Usuń {name}",
+    "stopFirst": "Najpierw zamknij grę",
+    "deleted": "„{name}” jest w koszu",
+    "backupHint": "Kopie zapisują się jako ZIP w folderze „backups” instancji (zobacz kartę Pliki).",
+    "deleteTitle": "Usunąć świat?",
+    "deleteText": "„{name}” trafi do Kosza systemu Windows.",
+    "deleteTextLinux": "„{name}” trafi do kosza.",
+    "deleteBackupHint": "Wskazówka: najpierw zrób kopię, jeśli świat może się jeszcze przydać.",
+    "servers": {
+      "title": "Serwery",
+      "empty": {
+        "title": "Brak serwerów",
+        "text": "Dodaj serwer – pojawi się na liście gry wieloosobowej, a tutaj dołączysz do niego jednym kliknięciem."
+      },
+      "everywhere": "Dodaj do wszystkich instancji",
+      "everywhereHint": "Zapisuje serwer na liście launchera – każda instancja dostanie go przy następnym uruchomieniu.",
+      "managedHint": "Ten serwer jest na liście launchera. Zmiany dotyczą wszystkich instancji.",
+      "removeManaged": "Usunąć „{name}” z listy serwerów launchera? Zniknie teraz z tej instancji i nie będzie dodawany do innych.",
+      "removeText": "Usunąć „{name}” z listy serwerów tej instancji?",
+      "managed": "Wszystkie instancje",
+      "managedTitle": "Z listy serwerów launchera",
+      "pending": "Następne uruchomienie",
+      "pendingTitle": "Zostanie dodany do listy gry przy następnym uruchomieniu",
+      "editOf": "Edytuj {name}",
+      "running": "Instancja już działa",
+      "joinHint": "Uruchamia instancję i łączy z „{name}”",
+      "notJoinable": "Do tego adresu nie da się dołączyć bezpośrednio – uruchom grę i dołącz z listy serwerów.",
+      "joinNote": "Dołącz uruchamia grę i od razu łączy. Bardzo stare wersje otwierają tylko menu główne."
+    }
+  },
+  "share": {
+    "intro": "Przekaż tę instancję dalej albo poproś o pomoc: jako plik modpacka, link do dziennika lub kopię świata.",
+    "modpack": {
+      "title": "Eksportuj jako modpack",
+      "text": "Tworzy plik .mrpack z modami, ustawieniami i wybranymi plikami. Inni importują go w launcherze jednym kliknięciem.",
+      "action": "Eksportuj …"
+    },
+    "log": {
+      "title": "Udostępnij dziennik",
+      "text": "Przesyła najnowszy dziennik na mclo.gs – tokeny i nazwa użytkownika są usuwane. Dostajesz link i kod QR.",
+      "action": "Udostępnij …"
+    },
+    "world": {
+      "title": "Kopia świata",
+      "text": "Pakuje świat do pliku ZIP – na przechowanie albo dla znajomych.",
+      "action": "Do światów"
+    },
+    "files": {
+      "title": "Wybierz pliki",
+      "text": "Otwórz folder instancji, aby wysłać pojedyncze pliki, np. konfiguracje lub schematy.",
+      "action": "Do plików"
     }
   }
 }

@@ -2,8 +2,8 @@
 import { convertFileSrc } from '@tauri-apps/api/core'
 import type { ImageEntry, Instance } from '~/types'
 
-// Screenshots und Welten einer Instanz.
-const props = defineProps<{ instance: Instance; mode: 'screenshots' | 'worlds' }>()
+// Screenshots einer Instanz (Welten: WorldsPanel).
+const props = defineProps<{ instance: Instance }>()
 const emit = defineEmits<{ updated: [instance: Instance] }>()
 
 const toasts = useToasts()
@@ -15,22 +15,19 @@ const toDelete = ref<ImageEntry | null>(null)
 async function load() {
   loading.value = true
   try {
-    entries.value =
-      props.mode === 'screenshots'
-        ? await backend.listScreenshots(props.instance.id)
-        : await backend.listWorlds(props.instance.id)
+    entries.value = await backend.listScreenshots(props.instance.id)
   } catch (e) {
     toasts.error(e)
   } finally {
     loading.value = false
   }
 }
-watch(() => props.mode, load, { immediate: true })
+onMounted(load)
 
 const src = (entry: ImageEntry) => (entry.path ? convertFileSrc(entry.path) : null)
 
 function open(entry: ImageEntry) {
-  if (props.mode === 'screenshots') backend.openScreenshot(props.instance.id, entry.name).catch((e) => toasts.error(e))
+  backend.openScreenshot(props.instance.id, entry.name).catch((e) => toasts.error(e))
 }
 
 /** Screenshot als Banner der Instanz übernehmen (der Kern prüft den Dateinamen). */
@@ -65,12 +62,12 @@ async function confirmDelete() {
 
     <RedstoneEmpty
       v-else-if="!entries.length"
-      :seed="mode === 'screenshots' ? 0x44 : 0x66"
-      :title="mode === 'screenshots' ? t('instance.gallery.noScreenshots.title') : t('instance.gallery.noWorlds.title')"
-      :text="mode === 'screenshots' ? t('instance.gallery.noScreenshots.text') : t('instance.gallery.noWorlds.text')"
+      :seed="0x44"
+      :title="t('instance.gallery.noScreenshots.title')"
+      :text="t('instance.gallery.noScreenshots.text')"
     />
 
-    <ul v-else-if="mode === 'screenshots'" class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
+    <ul v-else class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
       <li v-for="e in entries" :key="e.name" class="group relative overflow-hidden rounded-lg border border-base-800 bg-base-900">
         <button class="block w-full" :title="t('instance.gallery.openScreenshot', { name: e.name })" @click="open(e)">
           <img v-if="src(e)" :src="src(e)!" alt="" loading="lazy" class="aspect-video w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
@@ -88,18 +85,6 @@ async function confirmDelete() {
       </li>
     </ul>
 
-    <ul v-else class="space-y-1.5">
-      <li v-for="e in entries" :key="e.name" class="card flex items-center gap-3 px-3 py-2.5">
-        <img v-if="src(e)" :src="src(e)!" alt="" class="size-12 shrink-0 rounded [image-rendering:pixelated]" />
-        <div v-else class="display flex size-12 shrink-0 items-center justify-center rounded bg-base-800 text-base-600">
-          {{ e.name.charAt(0).toUpperCase() }}
-        </div>
-        <div class="min-w-0">
-          <p class="truncate text-sm font-medium">{{ e.name }}</p>
-          <p class="text-xs text-base-400">{{ t('instance.gallery.lastPlayed', { date: formatDate(e.date) }) }}</p>
-        </div>
-      </li>
-    </ul>
 
     <BaseDialog v-if="toDelete" :title="t('instance.gallery.deleteTitle')" @close="toDelete = null">
       <p class="text-sm text-base-200">{{ t('instance.gallery.deleteText') }}</p>

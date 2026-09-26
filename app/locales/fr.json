@@ -448,7 +448,8 @@
       "nameLength": "Le nom du serveur doit contenir entre 1 et 64 caractères",
       "tooMany": "Plus de 100 serveurs ne sont pas pris en charge.",
       "duplicate": "Ce serveur est déjà dans la liste.",
-      "notFound": "Ce serveur n'existe plus."
+      "notFound": "Ce serveur n'existe plus.",
+      "instanceChanged": "La liste de serveurs de l’instance a changé – recharge-la."
     },
     "skins": {
       "fileTooLarge": "Le fichier de skin est trop volumineux (128 Ko max.).",
@@ -599,6 +600,24 @@
       "totalTooLarge": "Ensemble, les fichiers sont trop volumineux (64 Mo max.).",
       "studioInvalid": "« {name} » n’est pas un export de cape de TRS Studio.",
       "gifTooLong": "« {name} » a trop d’images ({max} max.)."
+    },
+    "files": {
+      "denied": "L’explorateur de fichiers n’a pas accès à ce chemin.",
+      "invalidName": "Nom de fichier ou de dossier invalide",
+      "notFound": "Le fichier ou le dossier n’existe plus.",
+      "exists": "Il existe déjà un fichier ou un dossier portant ce nom ici.",
+      "tooMany": "{max} éléments au maximum à la fois",
+      "importTooLarge": "Trop à la fois : {gb} Go ou {max} fichiers au maximum par envoi.",
+      "fileTooLarge": "Chaque fichier peut faire au maximum {gb} Go."
+    },
+    "worlds": {
+      "levelDatBroken": "Le level.dat du monde est endommagé.",
+      "notFound": "Ce monde n’existe plus."
+    },
+    "logs": {
+      "sourceGone": "Ce fichier journal n’existe plus.",
+      "unreadable": "Ce fichier journal est illisible.",
+      "qrInvalid": "Pas de QR code pour ce lien."
     }
   },
   "browse": {
@@ -1082,7 +1101,9 @@
       "history": "Historique",
       "screenshots": "Captures",
       "worlds": "Mondes",
-      "logs": "Journaux"
+      "logs": "Journaux",
+      "files": "Fichiers",
+      "share": "Partager"
     },
     "gallery": {
       "bannerSet": "Bannière définie",
@@ -1090,18 +1111,16 @@
         "title": "Aucune capture d'écran pour l'instant",
         "text": "Appuie sur F2 en jeu – chaque image allume une lampe de plus ici."
       },
-      "noWorlds": {
-        "title": "Aucun monde pour l'instant",
-        "text": "Rien de construit pour l'instant : les mondes solo de cette instance apparaissent ici."
-      },
       "openScreenshot": "Ouvrir {name}",
       "useAsBannerLabel": "Utiliser {name} comme bannière",
       "useAsBannerTitle": "Utiliser comme bannière de l'instance",
       "deleteScreenshot": "Supprimer la capture d'écran",
-      "lastPlayed": "Dernière partie le {date}",
       "deleteTitle": "Supprimer la capture d'écran ?",
       "deleteText": "La capture d'écran sera supprimée de ton disque."
-    }
+    },
+    "playTime": "Temps de jeu",
+    "lastPlayed": "Dernière partie",
+    "running": "En cours"
   },
   "instanceSettings": {
     "title": "Paramètres · {name}",
@@ -1378,13 +1397,8 @@
     }
   },
   "logConsole": {
-    "warnings": "Avertissements",
-    "errors": "Erreurs",
-    "search": "Rechercher…",
     "lineCount": "{n} ligne | {n} lignes",
-    "copied": "Copié",
-    "empty": "Aucune sortie pour l'instant – lance l'instance pour voir les journaux en direct.",
-    "jumpToEnd": "↓ Aller à la fin"
+    "copied": "Copié"
   },
   "crash": {
     "crashed": "Le jeu a planté",
@@ -3179,6 +3193,195 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Logiciel (x264)"
+    }
+  },
+  "logViewer": {
+    "title": "Journal du jeu",
+    "source": "Source du journal",
+    "live": "Journal en direct",
+    "liveRunning": "Journal en direct (en cours)",
+    "latest": "Dernier journal",
+    "groups": {
+      "game": "Anciens journaux",
+      "crash": "Rapports de plantage",
+      "launcher": "Sortie du launcher"
+    },
+    "search": "Rechercher dans le journal …",
+    "clearSearch": "Effacer la recherche",
+    "clear": "Vider l’affichage",
+    "copy": "Copier les lignes visibles",
+    "copyFailed": "Le presse-papiers n’est pas disponible.",
+    "share": "Partager le journal",
+    "expand": "Plein écran",
+    "collapse": "Quitter le plein écran",
+    "levelFilter": "Filtrer par niveau",
+    "levels": {
+      "all": "Tout",
+      "error": "Erreurs",
+      "warn": "Avertissements",
+      "info": "Info"
+    },
+    "expandAll": "Déplier toutes les traces",
+    "collapseAll": "Replier toutes les traces",
+    "truncated": "Seule la fin est affichée",
+    "truncatedHint": "Le fichier est très volumineux – le launcher affiche sa dernière partie.",
+    "empty": {
+      "title": "La lampe est encore éteinte",
+      "text": "Lance l’instance pour voir le journal en direct. Les anciens journaux et rapports de plantage sont dans la liste en haut à gauche.",
+      "openLatest": "Ouvrir {name}"
+    },
+    "lines": "Lignes du journal",
+    "noMatches": "Aucune ligne ne correspond au filtre.",
+    "waiting": "En attente des premières lignes …",
+    "emptyFile": "Ce fichier est vide.",
+    "hideTrace": "Masquer la trace",
+    "showTrace": "Afficher la trace ({n} lignes)",
+    "newLines": "{n} nouvelle ligne | {n} nouvelles lignes",
+    "toBottom": "Aller en bas",
+    "following": "Suivi en direct",
+    "loading": "Chargement …",
+    "shortcut": "Ctrl+F pour chercher"
+  },
+  "logShare": {
+    "qrLabel": "QR code du lien",
+    "qrFailed": "Pas de QR code disponible",
+    "doneTitle": "Journal partagé",
+    "doneText": "Le lien est copié. Envoie-le à la personne qui t’aide – ou scanne le code avec ton téléphone.",
+    "redactTokens": "Les jetons de connexion sont retirés",
+    "redactUser": "Ton nom d’utilisateur est retiré des chemins",
+    "publicHint": "Toute personne ayant le lien peut lire le journal",
+    "disabled": "Le partage des journaux est désactivé dans Paramètres → Confidentialité.",
+    "qrHint": "Le lien reste sur mclo.gs ; il ne peut pas être supprimé depuis le launcher.",
+    "openBrowser": "Ouvrir dans le navigateur"
+  },
+  "files": {
+    "title": "Fichiers",
+    "breadcrumbs": "Chemin du dossier",
+    "root": "Dossier de l’instance",
+    "filter": "Filtrer …",
+    "newFolder": "Nouveau dossier",
+    "newFile": "Nouveau fichier",
+    "upload": "Téléverser",
+    "reveal": "Afficher dans le dossier",
+    "rename": "Renommer",
+    "trash": "Mettre à la corbeille",
+    "clearSelection": "Annuler la sélection",
+    "selected": "{n} sélectionné | {n} sélectionnés",
+    "selectAll": "Tout sélectionner",
+    "selectOne": "Sélectionner {name}",
+    "size": "Taille",
+    "created": "Créé",
+    "modified": "Modifié",
+    "noMatches": "Aucun résultat",
+    "noMatchesText": "Aucun fichier de ce dossier ne correspond au filtre.",
+    "emptyFolder": "Ce dossier est vide",
+    "emptyFolderText": "Glisse des fichiers ici ou utilise « Téléverser ».",
+    "truncated": "Ce dossier contient trop d’éléments – tous ne sont pas affichés.",
+    "count": "{n} élément | {n} éléments",
+    "dropHint": "Glisse des fichiers ou dossiers ici pour les copier",
+    "dropTitle": "Relâche pour copier ici",
+    "openFolder": "Ouvrir le dossier",
+    "copyPath": "Copier le chemin",
+    "pathCopied": "Chemin copié",
+    "inFolder": "Dans {path}",
+    "trashTitle": "Mettre {n} élément à la corbeille ? | Mettre {n} éléments à la corbeille ?",
+    "trashText": "Les éléments vont dans la Corbeille de Windows – tu peux les y restaurer.",
+    "trashTextLinux": "Les éléments vont dans la corbeille – tu peux les y restaurer.",
+    "trashed": "{n} élément mis à la corbeille | {n} éléments mis à la corbeille",
+    "uploaded": "{n} fichier copié ({size}) | {n} fichiers copiés ({size})",
+    "skipped": {
+      "symlink": "« {name} » ignoré : les liens ne sont pas copiés.",
+      "invalidName": "« {name} » ignoré : ce nom n’est pas autorisé.",
+      "unsupported": "« {name} » ignoré : ce n’est pas un fichier normal.",
+      "inside": "« {name} » ignoré : un dossier ne peut pas être copié dans lui-même."
+    },
+    "errors": {
+      "empty": "Saisis un nom.",
+      "invalid": "Ce nom n’est pas autorisé (p. ex. / \\ : * ? \" < > {'|'})."
+    },
+    "known": {
+      "mods": "Mods",
+      "config": "Réglages des mods",
+      "saves": "Mondes",
+      "resourcepacks": "Packs de ressources",
+      "shaderpacks": "Shaders",
+      "screenshots": "Captures",
+      "logs": "Journaux",
+      "crash": "Rapports de plantage",
+      "datapacks": "Packs de données",
+      "backups": "Sauvegardes de mondes"
+    }
+  },
+  "worlds": {
+    "title": "Mondes",
+    "empty": {
+      "title": "Pas encore de mondes",
+      "text": "Rien n’a encore été construit : les mondes solo de cette instance apparaissent ici."
+    },
+    "modes": {
+      "survival": "Survie",
+      "creative": "Créatif",
+      "adventure": "Aventure",
+      "spectator": "Spectateur"
+    },
+    "hardcore": "Hardcore",
+    "cheats": "Commandes",
+    "backingUp": "Sauvegarde du monde …",
+    "backupDone": "« {name} » a été sauvegardé",
+    "backup": "Sauvegarder (ZIP)",
+    "backupOf": "Sauvegarder {name}",
+    "openFolderOf": "Ouvrir le dossier de {name}",
+    "deleteOf": "Supprimer {name}",
+    "stopFirst": "Ferme d’abord le jeu",
+    "deleted": "« {name} » est dans la corbeille",
+    "backupHint": "Les sauvegardes sont enregistrées en ZIP dans le dossier « backups » de l’instance (voir l’onglet Fichiers).",
+    "deleteTitle": "Supprimer le monde ?",
+    "deleteText": "« {name} » va dans la Corbeille de Windows.",
+    "deleteTextLinux": "« {name} » va dans la corbeille.",
+    "deleteBackupHint": "Astuce : sauvegarde le monde avant si tu pourrais en avoir encore besoin.",
+    "servers": {
+      "title": "Serveurs",
+      "empty": {
+        "title": "Pas encore de serveurs",
+        "text": "Ajoute un serveur – il apparaît dans la liste multijoueur du jeu et tu peux le rejoindre ici en un clic."
+      },
+      "everywhere": "Ajouter à toutes les instances",
+      "everywhereHint": "Enregistre le serveur dans la liste du launcher – chaque instance le reçoit au prochain lancement.",
+      "managedHint": "Ce serveur figure dans la liste du launcher. Les modifications s’appliquent à toutes les instances.",
+      "removeManaged": "Retirer « {name} » de la liste du launcher ? Il disparaît de cette instance et n’est plus ajouté aux autres.",
+      "removeText": "Retirer « {name} » de la liste de serveurs de cette instance ?",
+      "managed": "Toutes les instances",
+      "managedTitle": "De la liste de serveurs du launcher",
+      "pending": "Prochain lancement",
+      "pendingTitle": "Sera ajouté à la liste du jeu au prochain lancement",
+      "editOf": "Modifier {name}",
+      "running": "L’instance est déjà lancée",
+      "joinHint": "Lance l’instance et se connecte à « {name} »",
+      "notJoinable": "Impossible de rejoindre cette adresse directement – lance le jeu et rejoins via la liste.",
+      "joinNote": "Rejoindre lance le jeu et se connecte directement. Les très anciennes versions n’ouvrent que le menu principal."
+    }
+  },
+  "share": {
+    "intro": "Transmets cette instance ou demande de l’aide : en fichier modpack, en lien de journal ou en sauvegarde de monde.",
+    "modpack": {
+      "title": "Exporter en modpack",
+      "text": "Crée un fichier .mrpack avec les mods, les réglages et les fichiers choisis. D’autres l’importent dans le launcher en un clic.",
+      "action": "Exporter …"
+    },
+    "log": {
+      "title": "Partager le journal",
+      "text": "Envoie le dernier journal sur mclo.gs – les jetons et ton nom d’utilisateur sont retirés. Tu obtiens un lien et un QR code.",
+      "action": "Partager …"
+    },
+    "world": {
+      "title": "Sauvegarder un monde",
+      "text": "Emballe un monde en ZIP – pour le garder ou l’envoyer à des amis.",
+      "action": "Aller aux mondes"
+    },
+    "files": {
+      "title": "Choisir des fichiers",
+      "text": "Ouvre le dossier de l’instance pour envoyer des fichiers isolés comme des configs ou des schematics.",
+      "action": "Aller aux fichiers"
     }
   }
 }

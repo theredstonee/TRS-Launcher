@@ -33,6 +33,7 @@ strip = true
 arboard = { version = "3.6.1", default-features = false, features = ["image-data"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 log = "0.4.34"
+qrcode = { version = "0.14.1", default-features = false }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 tauri = { version = "2.11.5", features = ["protocol-asset"] }

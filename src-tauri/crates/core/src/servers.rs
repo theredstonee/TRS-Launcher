@@ -2,6 +2,7 @@
 //! verfügbar (wird beim Start in `servers.dat` eingetragen), mit Live-Status
 //! über Minecrafts Server-List-Ping.
 
+use std::path::Path;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -208,22 +209,185 @@ impl ServerStore {
             return Ok(());
         }
         let file = game_dir.join("servers.dat");
-
-        let mut root = match tokio::fs::metadata(&file).await {
-            Ok(meta) if meta.len() <= MAX_SERVERS_DAT_BYTES => {
-                let bytes = tokio::fs::read(&file).await.map_err(|e| Error::io(&file, e))?;
-                // Eine kaputte servers.dat wird neu angelegt statt den Start zu blockieren.
-                nbt::read_root(&bytes).unwrap_or_default()
-            }
-            _ => Vec::new(),
-        };
-
-        let existing = match nbt::get(&root, "servers") {
-            Some(Tag::List(_, items)) => items.clone(),
-            _ => Vec::new(),
-        };
+        let mut root = read_servers_dat(&file).await?;
+        let existing = dat_entries(&root);
         nbt::set(&mut root, "servers", Tag::List(10, merge_entries(&servers, existing)));
         fsutil::write_atomic(&file, &nbt::write_root(&root)).await
+    }
+
+    /// Server einer Instanz: alles aus ihrer `servers.dat` plus Launcher-Server,
+    /// die beim nächsten Start dazukommen (noch ohne `index`).
+    pub async fn list_instance(&self, game_dir: &Path) -> Result<Vec<InstanceServer>> {
+        let launcher = self.list().await?;
+        let root = read_servers_dat(&game_dir.join("servers.dat")).await?;
+        let mut out = Vec::new();
+        for (index, entry) in dat_entries(&root).iter().enumerate().take(MAX_INSTANCE_SERVERS) {
+            let Tag::Compound(fields) = entry else { continue };
+            let raw_ip = nbt::get(fields, "ip").and_then(Tag::as_str_lossy).unwrap_or_default();
+            let address = clean_text(&raw_ip, 260);
+            let normalized_address = normalized(&address).ok();
+            let managed = normalized_address.as_ref().and_then(|a| launcher.iter().find(|s| &s.address == a));
+            let name = nbt::get(fields, "name").and_then(Tag::as_str_lossy).map(|n| clean_text(&n, 64)).unwrap_or_default();
+            let icon = nbt::get(fields, "icon")
+                .and_then(Tag::as_str_lossy)
+                .map(|data| format!("data:image/png;base64,{}", data.trim()))
+                // PNG-Signatur in Base64 – sonst ist es kein Bild, das wir zeigen.
+                .filter(|f| is_safe_favicon(f) && f.starts_with("data:image/png;base64,iVBORw0KGgo"));
+            let accept = match nbt::get(fields, "acceptTextures") {
+                Some(Tag::Byte(v)) => Some(*v != 0),
+                _ => None,
+            };
+            out.push(InstanceServer {
+                index: Some(index),
+                name: if name.is_empty() { address.clone() } else { name },
+                joinable: normalized_address.is_some(),
+                address,
+                icon,
+                accept_textures: accept,
+                launcher_id: managed.map(|s| s.id.clone()),
+            });
+        }
+        // Launcher-Server, die noch nicht in der servers.dat stehen.
+        for server in &launcher {
+            if !out.iter().any(|s| s.launcher_id.as_deref() == Some(server.id.as_str())) {
+                out.push(InstanceServer {
+                    index: None,
+                    name: server.name.clone(),
+                    address: server.address.clone(),
+                    icon: None,
+                    accept_textures: server.auto_resource_pack.then_some(true),
+                    launcher_id: Some(server.id.clone()),
+                    joinable: true,
+                });
+            }
+        }
+        Ok(out)
+    }
+
+    /// Neuer Server nur für diese Instanz (am Ende ihrer `servers.dat`).
+    pub async fn add_to_instance(&self, game_dir: &Path, input: ServerInput) -> Result<()> {
+        let _guard = self.lock.lock().await;
+        let file = game_dir.join("servers.dat");
+        let mut root = read_servers_dat(&file).await?;
+        let mut entries = dat_entries(&root);
+        if entries.len() >= MAX_INSTANCE_SERVERS {
+            return Err(Error::validation(crate::msg!(
+                "servers.tooMany",
+                "Mehr als 100 Server werden nicht unterstützt."
+            )));
+        }
+        let address = normalized(&input.address)?;
+        if entries.iter().any(|e| entry_address(e).as_deref() == Some(address.as_str())) {
+            return Err(Error::validation(crate::msg!("servers.duplicate", "Dieser Server steht schon in der Liste.")));
+        }
+        let mut fields = Vec::new();
+        apply_input(&mut fields, &validate_name(&input.name)?, &address, input.auto_resource_pack);
+        entries.push(Tag::Compound(fields));
+        nbt::set(&mut root, "servers", Tag::List(10, entries));
+        fsutil::write_atomic(&file, &nbt::write_root(&root)).await
+    }
+
+    /// Eintrag `index` ändern. `expected` = bisherige Adresse – schützt davor,
+    /// dass das Spiel die Liste inzwischen umsortiert hat.
+    pub async fn update_in_instance(&self, game_dir: &Path, index: usize, expected: &str, input: ServerInput) -> Result<()> {
+        let _guard = self.lock.lock().await;
+        let file = game_dir.join("servers.dat");
+        let mut root = read_servers_dat(&file).await?;
+        let mut entries = dat_entries(&root);
+        check_entry(&entries, index, expected)?;
+        let address = normalized(&input.address)?;
+        if entries.iter().enumerate().any(|(i, e)| i != index && entry_address(e).as_deref() == Some(address.as_str())) {
+            return Err(Error::validation(crate::msg!("servers.duplicate", "Dieser Server steht schon in der Liste.")));
+        }
+        let name = validate_name(&input.name)?;
+        if let Some(Tag::Compound(fields)) = entries.get_mut(index) {
+            apply_input(fields, &name, &address, input.auto_resource_pack);
+        }
+        nbt::set(&mut root, "servers", Tag::List(10, entries));
+        fsutil::write_atomic(&file, &nbt::write_root(&root)).await
+    }
+
+    pub async fn remove_from_instance(&self, game_dir: &Path, index: usize, expected: &str) -> Result<()> {
+        let _guard = self.lock.lock().await;
+        let file = game_dir.join("servers.dat");
+        let mut root = read_servers_dat(&file).await?;
+        let mut entries = dat_entries(&root);
+        check_entry(&entries, index, expected)?;
+        entries.remove(index);
+        nbt::set(&mut root, "servers", Tag::List(10, entries));
+        fsutil::write_atomic(&file, &nbt::write_root(&root)).await
+    }
+}
+
+/// Höchstens so viele Einträge einer `servers.dat` werden angezeigt/bearbeitet.
+const MAX_INSTANCE_SERVERS: usize = 500;
+
+/// Eintrag aus der `servers.dat` einer Instanz.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstanceServer {
+    /// Position in der `servers.dat`; `None` = Launcher-Server, der erst beim
+    /// nächsten Start eingetragen wird.
+    pub index: Option<usize>,
+    pub name: String,
+    /// Wie gespeichert (ohne Steuerzeichen).
+    pub address: String,
+    /// Gecachtes Server-Icon als geprüfte `data:image/png;base64,…`-URL.
+    pub icon: Option<String>,
+    /// `true` = Server-Ressourcenpakete annehmen, `false` = ablehnen, `None` = nachfragen.
+    pub accept_textures: Option<bool>,
+    /// Gehört zur Launcher-Serverliste (gilt für alle Instanzen).
+    pub launcher_id: Option<String>,
+    /// Adresse ist gültig – „Beitreten“ kann direkt verbinden.
+    pub joinable: bool,
+}
+
+async fn read_servers_dat(file: &Path) -> Result<Vec<(Vec<u8>, Tag)>> {
+    Ok(match tokio::fs::metadata(file).await {
+        Ok(meta) if meta.len() <= MAX_SERVERS_DAT_BYTES => {
+            let bytes = tokio::fs::read(file).await.map_err(|e| Error::io(file, e))?;
+            // Eine kaputte servers.dat wird neu angelegt statt den Start zu blockieren.
+            nbt::read_root(&bytes).unwrap_or_default()
+        }
+        _ => Vec::new(),
+    })
+}
+
+fn dat_entries(root: &[(Vec<u8>, Tag)]) -> Vec<Tag> {
+    match nbt::get(root, "servers") {
+        Some(Tag::List(_, items)) => items.clone(),
+        _ => Vec::new(),
+    }
+}
+
+fn check_entry(entries: &[Tag], index: usize, expected: &str) -> Result<()> {
+    let actual = match entries.get(index) {
+        Some(Tag::Compound(fields)) => nbt::get(fields, "ip").and_then(Tag::as_str_lossy).map(|ip| clean_text(&ip, 260)),
+        _ => None,
+    };
+    if actual.as_deref() == Some(expected) {
+        Ok(())
+    } else {
+        Err(Error::validation(crate::msg!(
+            "servers.instanceChanged",
+            "Die Serverliste der Instanz hat sich geändert – bitte neu laden."
+        )))
+    }
+}
+
+/// Name, Adresse und Ressourcenpaket-Wahl setzen; unbekannte Felder (Icon …) bleiben.
+fn apply_input(fields: &mut Vec<(Vec<u8>, Tag)>, name: &str, address: &str, accept: bool) {
+    let address_changed = nbt::get(fields, "ip").and_then(Tag::as_str_lossy).is_some_and(|old| normalized(&old).ok().as_deref() != Some(address));
+    nbt::set(fields, "name", Tag::string(name));
+    nbt::set(fields, "ip", Tag::string(address));
+    if accept {
+        nbt::set(fields, "acceptTextures", Tag::Byte(1));
+    } else {
+        fields.retain(|(k, _)| k.as_slice() != b"acceptTextures");
+    }
+    // Das gecachte Icon gehört zum alten Server.
+    if address_changed {
+        fields.retain(|(k, _)| k.as_slice() != b"icon");
     }
 }
 
@@ -554,6 +718,75 @@ mod tests {
 
         store.remove(&a.id).await.unwrap();
         assert!(store.list().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn instance_servers_edit_servers_dat() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        paths.ensure().await.unwrap();
+        let store = ServerStore::new(paths);
+        let input = |name: &str, address: &str, auto: bool| ServerInput { name: name.into(), address: address.into(), auto_resource_pack: auto };
+        let global = store.add(input("CoolTiers", "play.cooltiers.de", true)).await.unwrap();
+
+        let game_dir = dir.path().join("game");
+        tokio::fs::create_dir_all(&game_dir).await.unwrap();
+        // Fremde Wurzel-Felder und ein Eintrag mit Icon aus dem Spiel.
+        let root = vec![
+            (
+                b"servers".to_vec(),
+                Tag::List(
+                    10,
+                    vec![Tag::Compound(vec![
+                        (b"name".to_vec(), Tag::string("Hypixel")),
+                        (b"ip".to_vec(), Tag::string("mc.hypixel.net")),
+                        (b"icon".to_vec(), Tag::string("iVBORw0KGgoAAAANSUhEUg==")),
+                    ])],
+                ),
+            ),
+            (b"fremd".to_vec(), Tag::Int(7)),
+        ];
+        tokio::fs::write(game_dir.join("servers.dat"), nbt::write_root(&root)).await.unwrap();
+
+        // Launcher-Server ohne Eintrag erscheint „virtuell“ am Ende.
+        let list = store.list_instance(&game_dir).await.unwrap();
+        assert_eq!(list.len(), 2);
+        assert_eq!((list[0].index, list[0].name.as_str(), list[0].launcher_id.as_deref()), (Some(0), "Hypixel", None));
+        assert_eq!(list[0].icon.as_deref(), Some("data:image/png;base64,iVBORw0KGgoAAAANSUhEUg=="));
+        assert_eq!((list[1].index, list[1].launcher_id.as_deref()), (None, Some(global.id.as_str())));
+
+        store.add_to_instance(&game_dir, input("Test", "Test.Example.org:25565", false)).await.unwrap();
+        assert!(store.add_to_instance(&game_dir, input("Doppelt", "test.example.org", true)).await.is_err());
+        assert!(store.add_to_instance(&game_dir, input("Böse", "x.de --demo", true)).await.is_err());
+
+        let list = store.list_instance(&game_dir).await.unwrap();
+        assert_eq!(list[1].address, "test.example.org");
+        assert_eq!(list[1].accept_textures, None);
+
+        // Falsche erwartete Adresse → abgelehnt (Liste hat sich geändert).
+        assert!(store.update_in_instance(&game_dir, 1, "mc.hypixel.net", input("X", "x.de", true)).await.is_err());
+        store.update_in_instance(&game_dir, 0, "mc.hypixel.net", input("Hypixel Network", "mc.hypixel.net", true)).await.unwrap();
+        let list = store.list_instance(&game_dir).await.unwrap();
+        assert_eq!(list[0].name, "Hypixel Network");
+        assert_eq!(list[0].accept_textures, Some(true));
+        assert!(list[0].icon.is_some(), "Icon bleibt, solange die Adresse gleich ist");
+
+        // Adresse geändert → altes Icon fällt weg.
+        store.update_in_instance(&game_dir, 0, "mc.hypixel.net", input("Anders", "anders.example.org", true)).await.unwrap();
+        assert!(store.list_instance(&game_dir).await.unwrap()[0].icon.is_none());
+
+        store.remove_from_instance(&game_dir, 1, "test.example.org").await.unwrap();
+        assert!(store.remove_from_instance(&game_dir, 5, "egal").await.is_err());
+        let root = nbt::read_root(&tokio::fs::read(game_dir.join("servers.dat")).await.unwrap()).unwrap();
+        assert_eq!(nbt::get(&root, "fremd"), Some(&Tag::Int(7)));
+        let Some(Tag::List(10, entries)) = nbt::get(&root, "servers") else { panic!() };
+        assert_eq!(entries.len(), 1);
+
+        // Beim Start eingetragen: jetzt mit Index und weiterhin als Launcher-Server erkannt.
+        store.sync_to_instance(&game_dir).await.unwrap();
+        let list = store.list_instance(&game_dir).await.unwrap();
+        assert_eq!(list.len(), 2);
+        assert_eq!((list[0].index, list[0].launcher_id.as_deref()), (Some(0), Some(global.id.as_str())));
     }
 
     #[tokio::test]

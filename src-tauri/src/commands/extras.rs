@@ -65,25 +65,6 @@ pub async fn delete_screenshot(
 }
 
 #[tauri::command]
-pub async fn list_worlds(
-    app: AppHandle,
-    launcher: State<'_, LauncherState>,
-    id: String,
-) -> CommandResult<Vec<ImageEntry>> {
-    let instance = launcher.instances().get(&id).await?;
-    let worlds = extras::list_worlds(launcher.paths(), &instance.id).await?;
-    Ok(worlds
-        .into_iter()
-        .map(|w| ImageEntry {
-            path: w.icon_path.filter(|p| allow(&app, p)),
-            name: w.folder,
-            size: 0,
-            date: w.last_played,
-        })
-        .collect())
-}
-
-#[tauri::command]
 pub async fn duplicate_instance(
     launcher: State<'_, LauncherState>,
     id: String,

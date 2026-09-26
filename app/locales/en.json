@@ -448,7 +448,8 @@
       "nameLength": "The server name must be between 1 and 64 characters",
       "tooMany": "More than 100 servers aren't supported.",
       "duplicate": "This server is already in the list.",
-      "notFound": "This server no longer exists."
+      "notFound": "This server no longer exists.",
+      "instanceChanged": "The instance’s server list has changed – please reload."
     },
     "skins": {
       "fileTooLarge": "The skin file is too large (max. 128 KB).",
@@ -599,6 +600,24 @@
       "totalTooLarge": "Together, the files are too large (at most 64 MB).",
       "studioInvalid": "“{name}” isn't a cape export from TRS Studio.",
       "gifTooLong": "“{name}” has too many frames (at most {max})."
+    },
+    "files": {
+      "denied": "The file browser can’t access this path.",
+      "invalidName": "Invalid file or folder name",
+      "notFound": "The file or folder no longer exists.",
+      "exists": "There is already a file or folder with this name here.",
+      "tooMany": "At most {max} entries at once",
+      "importTooLarge": "Too much at once: at most {gb} GB or {max} files per upload.",
+      "fileTooLarge": "Single files can be at most {gb} GB."
+    },
+    "worlds": {
+      "levelDatBroken": "The world’s level.dat is damaged.",
+      "notFound": "This world no longer exists."
+    },
+    "logs": {
+      "sourceGone": "This log file no longer exists.",
+      "unreadable": "This log file can’t be read.",
+      "qrInvalid": "There is no QR code for this link."
     }
   },
   "browse": {
@@ -1082,7 +1101,9 @@
       "history": "History",
       "screenshots": "Screenshots",
       "worlds": "Worlds",
-      "logs": "Logs"
+      "logs": "Logs",
+      "files": "Files",
+      "share": "Share"
     },
     "gallery": {
       "bannerSet": "Banner set",
@@ -1090,18 +1111,16 @@
         "title": "No screenshots yet",
         "text": "Press F2 in game – every picture lights up one more lamp here."
       },
-      "noWorlds": {
-        "title": "No worlds yet",
-        "text": "Nothing built yet: this instance's singleplayer worlds show up here."
-      },
       "openScreenshot": "Open {name}",
       "useAsBannerLabel": "Use {name} as banner",
       "useAsBannerTitle": "Use as instance banner",
       "deleteScreenshot": "Delete screenshot",
-      "lastPlayed": "Last played {date}",
       "deleteTitle": "Delete screenshot?",
       "deleteText": "The screenshot will be deleted from your disk."
-    }
+    },
+    "playTime": "Play time",
+    "lastPlayed": "Last played",
+    "running": "Running"
   },
   "instanceSettings": {
     "title": "Settings · {name}",
@@ -1378,13 +1397,8 @@
     }
   },
   "logConsole": {
-    "warnings": "Warnings",
-    "errors": "Errors",
-    "search": "Search …",
     "lineCount": "{n} line | {n} lines",
-    "copied": "Copied",
-    "empty": "No output yet – launch the instance to see the logs live.",
-    "jumpToEnd": "↓ Jump to end"
+    "copied": "Copied"
   },
   "crash": {
     "crashed": "The game crashed",
@@ -3179,6 +3193,195 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    }
+  },
+  "logViewer": {
+    "title": "Game log",
+    "source": "Log source",
+    "live": "Live log",
+    "liveRunning": "Live log (running)",
+    "latest": "Latest log",
+    "groups": {
+      "game": "Older logs",
+      "crash": "Crash reports",
+      "launcher": "Launcher output"
+    },
+    "search": "Search the log …",
+    "clearSearch": "Clear search",
+    "clear": "Clear view",
+    "copy": "Copy visible lines",
+    "copyFailed": "The clipboard is not available.",
+    "share": "Share log",
+    "expand": "Full screen",
+    "collapse": "Exit full screen",
+    "levelFilter": "Filter by level",
+    "levels": {
+      "all": "All",
+      "error": "Errors",
+      "warn": "Warnings",
+      "info": "Info"
+    },
+    "expandAll": "Expand all stack traces",
+    "collapseAll": "Collapse all stack traces",
+    "truncated": "Only the end is shown",
+    "truncatedHint": "The file is very large – the launcher shows its last part.",
+    "empty": {
+      "title": "The lamp is still off",
+      "text": "Start the instance to see the live log. Older logs and crash reports are in the list at the top left.",
+      "openLatest": "Open {name}"
+    },
+    "lines": "Log lines",
+    "noMatches": "No lines match the filter.",
+    "waiting": "Waiting for the first lines …",
+    "emptyFile": "This file is empty.",
+    "hideTrace": "Hide stack trace",
+    "showTrace": "Show stack trace ({n} lines)",
+    "newLines": "{n} new line | {n} new lines",
+    "toBottom": "Jump to bottom",
+    "following": "Following live",
+    "loading": "Loading …",
+    "shortcut": "Ctrl+F to search"
+  },
+  "logShare": {
+    "qrLabel": "QR code of the link",
+    "qrFailed": "No QR code available",
+    "doneTitle": "Log shared",
+    "doneText": "The link is copied. Send it to whoever helps you – or scan the code with your phone.",
+    "redactTokens": "Login tokens are removed",
+    "redactUser": "Your user name is removed from file paths",
+    "publicHint": "Anyone with the link can read the log",
+    "disabled": "Log sharing is turned off in Settings → Privacy.",
+    "qrHint": "The link stays on mclo.gs; you can’t delete it from the launcher.",
+    "openBrowser": "Open in browser"
+  },
+  "files": {
+    "title": "Files",
+    "breadcrumbs": "Folder path",
+    "root": "Instance folder",
+    "filter": "Filter …",
+    "newFolder": "New folder",
+    "newFile": "New file",
+    "upload": "Upload",
+    "reveal": "Show in folder",
+    "rename": "Rename",
+    "trash": "Move to trash",
+    "clearSelection": "Clear selection",
+    "selected": "{n} selected | {n} selected",
+    "selectAll": "Select all",
+    "selectOne": "Select {name}",
+    "size": "Size",
+    "created": "Created",
+    "modified": "Modified",
+    "noMatches": "Nothing found",
+    "noMatchesText": "No file in this folder matches the filter.",
+    "emptyFolder": "This folder is empty",
+    "emptyFolderText": "Drag files here or use “Upload”.",
+    "truncated": "This folder has too many entries – not all are shown.",
+    "count": "{n} entry | {n} entries",
+    "dropHint": "Drag files or folders here to copy them",
+    "dropTitle": "Drop to copy here",
+    "openFolder": "Open folder",
+    "copyPath": "Copy path",
+    "pathCopied": "Path copied",
+    "inFolder": "In {path}",
+    "trashTitle": "Move {n} entry to the trash? | Move {n} entries to the trash?",
+    "trashText": "The entries are moved to the Windows Recycle Bin – you can restore them from there.",
+    "trashTextLinux": "The entries are moved to the trash – you can restore them from there.",
+    "trashed": "{n} entry moved to the trash | {n} entries moved to the trash",
+    "uploaded": "{n} file copied ({size}) | {n} files copied ({size})",
+    "skipped": {
+      "symlink": "“{name}” was skipped: links are not copied.",
+      "invalidName": "“{name}” was skipped: the name is not allowed.",
+      "unsupported": "“{name}” was skipped: it is not a normal file.",
+      "inside": "“{name}” was skipped: a folder can’t be copied into itself."
+    },
+    "errors": {
+      "empty": "Please enter a name.",
+      "invalid": "This name is not allowed (e.g. / \\ : * ? \" < > {'|'})."
+    },
+    "known": {
+      "mods": "Mods",
+      "config": "Mod settings",
+      "saves": "Worlds",
+      "resourcepacks": "Resource packs",
+      "shaderpacks": "Shaders",
+      "screenshots": "Screenshots",
+      "logs": "Logs",
+      "crash": "Crash reports",
+      "datapacks": "Data packs",
+      "backups": "World backups"
+    }
+  },
+  "worlds": {
+    "title": "Worlds",
+    "empty": {
+      "title": "No worlds yet",
+      "text": "Nothing built yet: this instance’s singleplayer worlds show up here."
+    },
+    "modes": {
+      "survival": "Survival",
+      "creative": "Creative",
+      "adventure": "Adventure",
+      "spectator": "Spectator"
+    },
+    "hardcore": "Hardcore",
+    "cheats": "Cheats",
+    "backingUp": "Backing up world …",
+    "backupDone": "“{name}” was backed up",
+    "backup": "Back up (ZIP)",
+    "backupOf": "Back up {name}",
+    "openFolderOf": "Open the folder of {name}",
+    "deleteOf": "Delete {name}",
+    "stopFirst": "Stop the game first",
+    "deleted": "“{name}” moved to the trash",
+    "backupHint": "Backups are saved as ZIP files in the “backups” folder of the instance (see the Files tab).",
+    "deleteTitle": "Delete world?",
+    "deleteText": "“{name}” is moved to the Windows Recycle Bin.",
+    "deleteTextLinux": "“{name}” is moved to the trash.",
+    "deleteBackupHint": "Tip: back the world up first if you might want it again.",
+    "servers": {
+      "title": "Servers",
+      "empty": {
+        "title": "No servers yet",
+        "text": "Add a server – it appears in the game’s multiplayer list and you can join it here with one click."
+      },
+      "everywhere": "Add to all instances",
+      "everywhereHint": "Saves the server in the launcher’s server list – every instance gets it at its next start.",
+      "managedHint": "This server is in the launcher’s server list. Changes apply to all instances.",
+      "removeManaged": "Remove “{name}” from the launcher’s server list? It disappears from this instance now and is no longer added to other instances.",
+      "removeText": "Remove “{name}” from this instance’s server list?",
+      "managed": "All instances",
+      "managedTitle": "From the launcher’s server list",
+      "pending": "Next start",
+      "pendingTitle": "Is added to the game’s server list at the next start",
+      "editOf": "Edit {name}",
+      "running": "The instance is already running",
+      "joinHint": "Starts the instance and connects to “{name}”",
+      "notJoinable": "This address can’t be joined directly – start the game and join from the server list.",
+      "joinNote": "Join starts the game and connects straight away. Very old versions only open the main menu."
+    }
+  },
+  "share": {
+    "intro": "Pass this instance on or get help: as a modpack file, as a log link or as a world backup.",
+    "modpack": {
+      "title": "Export as modpack",
+      "text": "Creates a .mrpack file with mods, settings and chosen files. Others import it in the launcher with one click.",
+      "action": "Export …"
+    },
+    "log": {
+      "title": "Share log",
+      "text": "Uploads the latest log to mclo.gs – tokens and your user name are removed. You get a link and a QR code.",
+      "action": "Share log …"
+    },
+    "world": {
+      "title": "Back up a world",
+      "text": "Packs a world as a ZIP file – to keep it safe or to send it to friends.",
+      "action": "Go to worlds"
+    },
+    "files": {
+      "title": "Pick files",
+      "text": "Open the instance folder to send single files like configs or schematics.",
+      "action": "Go to files"
     }
   }
 }

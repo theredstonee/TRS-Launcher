@@ -81,8 +81,15 @@ import type {
   ImportProgress,
   ImportResult,
   ImageEntry,
+  DirListing,
+  ImportReport,
   Instance,
   InstanceOverrides,
+  InstanceServer,
+  LogSource,
+  LogText,
+  QrMatrix,
+  WorldInfo,
   Loader,
   LogLine,
   MigrationItem,
@@ -453,7 +460,41 @@ export const backend = {
   listScreenshots: (id: string) => call<ImageEntry[]>('list_screenshots', { id }),
   openScreenshot: (id: string, fileName: string) => call<void>('open_screenshot', { id, fileName }),
   deleteScreenshot: (id: string, fileName: string) => call<void>('delete_screenshot', { id, fileName }),
-  listWorlds: (id: string) => call<ImageEntry[]>('list_worlds', { id }),
+
+  // --- Tab „Welten“ -----------------------------------------------------------
+  instanceWorlds: (id: string) => call<WorldInfo[]>('instance_worlds', { id }),
+  openWorldFolder: (id: string, folder: string) => call<void>('open_world_folder', { id, folder }),
+  /** ZIP-Sicherung nach `backups/`; liefert den Dateinamen. */
+  backupWorld: (id: string, folder: string, onProgress: (percent: number) => void, taskId?: string) =>
+    call<string>('backup_world', { id, folder, onProgress: channel(onProgress), taskId }),
+  trashWorld: (id: string, folder: string) => call<void>('trash_world', { id, folder }),
+  instanceServers: (id: string) => call<InstanceServer[]>('instance_servers', { id }),
+  addInstanceServer: (id: string, server: ServerInput) => call<void>('add_instance_server', { id, server }),
+  /** `address` = bisherige Adresse (Schutz, falls das Spiel die Liste umsortiert hat). */
+  updateInstanceServer: (id: string, index: number, address: string, server: ServerInput) =>
+    call<void>('update_instance_server', { id, index, address, server }),
+  removeInstanceServer: (id: string, index: number, address: string) =>
+    call<void>('remove_instance_server', { id, index, address }),
+
+  // --- Tab „Dateien“ (Pfade relativ zum Spielordner, geprüft im Kern) -----------
+  listInstanceFiles: (id: string, path: string) => call<DirListing>('list_instance_files', { id, path }),
+  createInstanceFolder: (id: string, parent: string, name: string) => call<string>('create_instance_folder', { id, parent, name }),
+  createInstanceFile: (id: string, parent: string, name: string) => call<string>('create_instance_file', { id, parent, name }),
+  renameInstanceFile: (id: string, path: string, newName: string) => call<string>('rename_instance_file', { id, path, newName }),
+  trashInstanceFiles: (id: string, paths: string[]) => call<number>('trash_instance_files', { id, paths }),
+  openInstanceFile: (id: string, path: string) => call<void>('open_instance_file', { id, path }),
+  revealInstanceFile: (id: string, path: string) => call<void>('reveal_instance_file', { id, path }),
+  /** Dateidialog; `null` = abgebrochen. */
+  pickInstanceUpload: (id: string, parent: string) => call<ImportReport | null>('pick_instance_upload', { id, parent }),
+  importDroppedInstanceFiles: (id: string, parent: string, token: number) =>
+    call<ImportReport>('import_dropped_instance_files', { id, parent, token }),
+
+  // --- Tab „Logs“ --------------------------------------------------------------
+  listLogSources: (id: string) => call<LogSource[]>('list_log_sources', { id }),
+  readLogSource: (id: string, source: string) => call<LogText>('read_log_source', { id, source }),
+  /** Lädt die Datei geschwärzt auf mclo.gs hoch; liefert den Link. */
+  shareLogSource: (id: string, source: string) => call<string>('share_log_source', { id, source }),
+  qrCode: (text: string) => call<QrMatrix>('qr_code', { text }),
 
   scanImports: () => call<ImportCandidate[]>('scan_imports'),
   /** Wie scanImports, dazu die erkannten Launcher (auch nicht unterstützte). */
