@@ -45,6 +45,8 @@ public final class NewSince {
 	public static final String KEY_WARDROBE = "key.trsclient.wardrobe";
 	/** Garderobe → Umhänge: „Mit Freund teilen“ (Umhänge mit Freunden teilen). */
 	public static final String WARDROBE_CAPE_SHARE = "wardrobe:capeShare";
+	/** Clips &amp; Bilder: Vorschau eines Clips im Spiel + „Im Launcher öffnen“. */
+	public static final String CLIPS_PREVIEW = "clips:preview";
 	/** Grafik-Modus „Schön / Max FPS“ auf der Seite „FPS-Boost“. */
 	public static final String FPS_MODE = "fpsBoost.graphicsMode";
 	/** Karten-Paket: flüssige Minimap, Weltkarte, Höhlenansicht, Fair Play. */
@@ -77,6 +79,8 @@ public final class NewSince {
 				"minimap.time", KEY_WORLD_MAP);
 		// TRS Client 0.7.1: Umhänge mit Freunden teilen.
 		add("0.7.1", WARDROBE_CAPE_SHARE);
+		// TRS Client 0.7.2: Clip-Vorschau im Spiel und „Im Launcher öffnen“.
+		add("0.7.2", CLIPS_PREVIEW);
 	}
 
 	private NewSince() {

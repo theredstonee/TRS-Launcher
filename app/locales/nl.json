@@ -597,7 +597,13 @@
       "invalidName": "Deze naam is niet toegestaan als bestandsnaam.",
       "nameTaken": "Er is al een clip met deze naam.",
       "noFrames": "Er is nog niets opgenomen.",
-      "notRecording": "Voor dit spel loopt geen opname."
+      "notRecording": "Voor dit spel loopt geen opname.",
+      "trimRange": "Het einde moet na het begin liggen.",
+      "trimTooShort": "De nieuwe clip moet minstens een halve seconde lang zijn.",
+      "noFfmpeg": "Voor inkorten is FFmpeg nodig – download het in de clipinstellingen.",
+      "trimFailed": "De clip kon niet worden ingekort.",
+      "unreadable": "De clip kan niet worden gelezen.",
+      "clipboardFailed": "De clip kon niet naar het klembord worden gekopieerd."
     },
     "trsCapeImport": {
       "unsupported": "“{name}” is geen ondersteunde afbeelding (PNG, JPEG, WebP, GIF of TRS Studio-JSON).",
@@ -1111,7 +1117,8 @@
       "worlds": "Werelden",
       "logs": "Logs",
       "files": "Bestanden",
-      "share": "Delen"
+      "share": "Delen",
+      "clips": "Clips"
     },
     "gallery": {
       "bannerSet": "Banner ingesteld",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Clip afspelen",
       "close": "Speler sluiten",
-      "hint": "Esc sluit · Alt+←/→ vorige/volgende clip"
+      "hint": "Spatie afspelen/pauze · ←/→ 5 s · J/L 10 s · ,/. los beeld · F volledig scherm · M dempen · Alt+←/→ andere clip · Esc sluit",
+      "play": "Afspelen (spatie)",
+      "pause": "Pauze (spatie)",
+      "previous": "Vorige clip (Alt+←)",
+      "next": "Volgende clip (Alt+→)",
+      "back5": "5 seconden terug (←)",
+      "forward5": "5 seconden vooruit (→)",
+      "mute": "Dempen (M)",
+      "unmute": "Geluid aan (M)",
+      "volume": "Volume",
+      "speed": "Afspeelsnelheid",
+      "fullscreen": "Volledig scherm (F)",
+      "exitFullscreen": "Volledig scherm sluiten (F)",
+      "timeline": "Positie in de clip",
+      "unsupportedTitle": "Deze clip kan hier niet worden afgespeeld",
+      "unsupportedText": "De ingebouwde speler kan deze video niet decoderen. Open hem in de videospeler van je systeem.",
+      "unsupportedLinux": "De ingebouwde speler heeft de GStreamer-plug-ins voor H.264/AAC nodig (bijvoorbeeld gst-libav of gstreamer1.0-plugins-bad). Installeer ze of open de clip in de videospeler van je systeem."
     },
     "renameDialog": {
       "title": "Clip hernoemen",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    },
+    "gallery": {
+      "search": "Clips doorzoeken",
+      "sortLabel": "Clips sorteren",
+      "sort": {
+        "newest": "Nieuwste eerst",
+        "oldest": "Oudste eerst",
+        "longest": "Langste eerst",
+        "largest": "Grootste eerst",
+        "name": "Naam (A–Z)"
+      },
+      "noMatches": "Geen clips passen bij je zoekopdracht."
+    },
+    "share": {
+      "saveAs": "Opslaan als …",
+      "copy": "Bestand kopiëren (plak het in Discord, Verkenner …)",
+      "openExternal": "Openen in systeemspeler",
+      "exported": "Clip opgeslagen",
+      "copied": "Clip gekopieerd – plak hem waar je hem wilt delen"
+    },
+    "trim": {
+      "button": "Inkorten",
+      "title": "Clip inkorten",
+      "start": "Begin",
+      "end": "Einde",
+      "setStart": "Huidige positie",
+      "setEnd": "Huidige positie",
+      "setHint": "Huidige positie gebruiken (toets {key})",
+      "length": "Lengte {time}",
+      "modeLabel": "Soort knip",
+      "mode": {
+        "auto": "Automatisch",
+        "fast": "Snel",
+        "exact": "Exact"
+      },
+      "modeHint": {
+        "auto": "Kopieert zonder hercoderen als het begin op een keyframe ligt, anders beeldnauwkeurig",
+        "fast": "Altijd zonder hercoderen – het begin schuift naar de vorige keyframe",
+        "exact": "Altijd hercoderen – beeldnauwkeurig, duurt langer"
+      },
+      "tooShort": "De nieuwe clip moet minstens een halve seconde lang zijn.",
+      "explainCopy": "Direct: het fragment wordt zonder hercoderen gekopieerd – zelfde kwaliteit.",
+      "explainShift": "Direct zonder hercoderen – de clip begint {seconds} s eerder, bij de vorige keyframe.",
+      "explainExact": "Het fragment wordt beeldnauwkeurig gehercodeerd – dat duurt even.",
+      "explainReencode": "Het begin ligt {seconds} s na een keyframe (er is er één per 2 s). Om precies hier te beginnen wordt de clip gehercodeerd – dat duurt even.",
+      "useFast": "Toch snel knippen",
+      "nameLabel": "Naam van de nieuwe clip",
+      "preview": "Voorbeeld",
+      "save": "Opslaan als nieuwe clip",
+      "saving": "Opslaan …",
+      "saved": "Nieuwe clip opgeslagen: {name}",
+      "openNew": "Openen",
+      "suffix": "ingekort",
+      "hint": "I/O zetten begin/einde · spatie speelt het fragment · Esc stopt het inkorten · het origineel blijft ongewijzigd"
     }
   },
   "logViewer": {

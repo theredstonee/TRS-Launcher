@@ -15,12 +15,14 @@ const instance = ref<Instance | null>(null)
 const loadError = ref<string | null>(null)
 
 // --- Tabs -----------------------------------------------------------------------
-type Tab = 'content' | 'files' | 'worlds' | 'screenshots' | 'history' | 'logs' | 'share'
+type Tab = 'content' | 'files' | 'worlds' | 'screenshots' | 'clips' | 'history' | 'logs' | 'share'
 // Nur die Schlüssel – die Beschriftung kommt beim Rendern aus `instance.tabs.*`.
 const tabs = computed<Tab[]>(() => {
   const list: Tab[] = ['content', 'files']
   if (ui.value?.worldsTab !== false) list.push('worlds')
   if (ui.value?.screenshotsTab !== false) list.push('screenshots')
+  // Clips gibt es nur unter Windows (Aufnahme per Windows Graphics Capture).
+  if (!isLinux) list.push('clips')
   if (ui.value?.historyTab !== false) list.push('history')
   list.push('logs', 'share')
   return list
@@ -30,6 +32,7 @@ const TAB_ICONS: Record<Tab, string> = {
   files: 'M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z',
   worlds: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9z',
   screenshots: icons.screenshots,
+  clips: icons.clips,
   history: 'M12 8v4l3 2M3.5 12a8.5 8.5 0 1 0 2.5-6M3 4v4h4',
   logs: 'M4 5h16M4 10h10M4 15h16M4 20h8',
   share: 'M12 15V3m0 0L8 7m4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7',
@@ -250,6 +253,7 @@ function openFolder() {
           <FileBrowser v-else-if="tab === 'files'" :instance="instance" />
           <WorldsPanel v-else-if="tab === 'worlds'" :instance="instance" />
           <InstanceGallery v-else-if="tab === 'screenshots'" :instance="instance" @updated="onUpdated" />
+          <ClipGallery v-else-if="tab === 'clips'" :instance-id="instance.id" class="pt-3" />
           <HistoryList v-else-if="tab === 'history'" :instance="instance" :refresh-key="historyKey" />
           <LogViewer v-else-if="tab === 'logs'" :instance-id="instance.id" :running="game.phase === 'running'" :lines="game.logs" :log-total="game.logTotal" />
           <SharePanel v-else-if="tab === 'share'" :instance="instance" @navigate="selectTab" />

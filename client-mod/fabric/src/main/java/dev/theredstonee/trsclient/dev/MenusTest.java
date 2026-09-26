@@ -5,6 +5,7 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.menus.ServerPins;
 import dev.theredstonee.trsclient.core.online.Friends;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
+import dev.theredstonee.trsclient.core.clips.ClipPreview;
 import dev.theredstonee.trsclient.core.ui.clips.ClipsUi;
 import dev.theredstonee.trsclient.core.ui.friends.FriendsUi;
 import dev.theredstonee.trsclient.core.ui.menus.MenuSkin;
@@ -46,6 +47,8 @@ public final class MenusTest {
 	private int waited;
 	private Path clipDir;
 	private Path clipsJson;
+	/** Unterschritte in Phase 12 (Bild groß, Clip-Vorschau). */
+	private int clipStep;
 
 	public static void install() {
 		MenusTest test = new MenusTest();
@@ -169,7 +172,30 @@ public final class MenusTest {
 				wait = 25;
 				return;
 			case 12:
-				shot(mc, "clips-preview");
+				// Bild groß → Clip-Vorschau (über den TRS-Link, falls das Spiel mit Launcher-Attrappe läuft) → weiter.
+				if (clipStep == 0) {
+					shot(mc, "clips-preview");
+					Mc.setScreen(MenuScreens.clips(new TrsTitleScreen()));
+					clipStep = 1;
+					wait = 20;
+					return;
+				}
+				if (clipStep == 1) {
+					if (clipsUi(screen) != null) clipsUi(screen).openFirstClip();
+					clipStep = 2;
+					wait = 5;
+					return;
+				}
+				if (clipStep == 2) {
+					ClipsUi ui = clipsUi(screen);
+					ClipPreview.State st = ui == null ? null : ui.clipPreview().state();
+					if (!waitFor(st == null || (st != ClipPreview.State.LOADING && st != ClipPreview.State.IDLE), 200)) return;
+					log("Clip-Vorschau: " + st + (ui == null ? "" : " " + ui.clipPreview().code()));
+					clipStep = 3;
+					wait = 25; // Zeitraffer ein paar Bilder laufen lassen
+					return;
+				}
+				shot(mc, "clips-clip");
 				Mc.setScreen(MenuScreens.clips(new TrsTitleScreen()));
 				phase++;
 				wait = 20;

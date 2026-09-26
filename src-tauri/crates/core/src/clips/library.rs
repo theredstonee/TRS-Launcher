@@ -3,7 +3,6 @@
 //! Die Dauer steht im `mvhd`-Kasten der MP4-Datei (dank `+faststart` am
 //! Dateianfang) – dafür braucht es kein FFmpeg.
 
-use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Local, Utc};
@@ -78,7 +77,8 @@ pub fn clip_path(root: &Path, instance_id: &str, file_name: &str) -> Result<Path
         return Err(Error::validation(crate::msg!("content.invalidFileName", "Ungültiger Dateiname")));
     }
     let path = instance_dir(root, instance_id)?.join(file_name);
-    if path.is_file() {
+    // Keine Verknüpfungen: nur echte Dateien im Clip-Ordner der Instanz.
+    if std::fs::symlink_metadata(&path).is_ok_and(|m| m.is_file()) {
         Ok(path)
     } else {
         Err(Error::validation(crate::msg!("clips.gone", "Der Clip existiert nicht mehr.")))
@@ -228,69 +228,7 @@ pub fn free_space(_path: &Path) -> Option<u64> {
 
 /// Dauer aus `moov/mvhd`. Große `mdat`-Kästen werden übersprungen, nicht gelesen.
 pub fn mp4_duration_ms(path: &Path) -> Option<u64> {
-    let mut file = std::fs::File::open(path).ok()?;
-    let len = file.metadata().ok()?.len();
-    let mut pos = 0u64;
-    while pos + 8 <= len {
-        file.seek(SeekFrom::Start(pos)).ok()?;
-        let (size, kind, header) = read_box_header(&mut file, len - pos)?;
-        if &kind == b"moov" {
-            let body = size.checked_sub(header)?;
-            if body > 64 * 1024 * 1024 {
-                return None;
-            }
-            let mut buf = vec![0u8; usize::try_from(body).ok()?];
-            file.read_exact(&mut buf).ok()?;
-            return mvhd_duration(&buf);
-        }
-        pos = pos.checked_add(size)?;
-    }
-    None
-}
-
-fn read_box_header(file: &mut std::fs::File, remaining: u64) -> Option<(u64, [u8; 4], u64)> {
-    let mut head = [0u8; 8];
-    file.read_exact(&mut head).ok()?;
-    let size32 = u32::from_be_bytes([head[0], head[1], head[2], head[3]]);
-    let kind = [head[4], head[5], head[6], head[7]];
-    let (size, header) = match size32 {
-        0 => (remaining, 8),
-        1 => {
-            let mut large = [0u8; 8];
-            file.read_exact(&mut large).ok()?;
-            (u64::from_be_bytes(large), 16)
-        }
-        n => (u64::from(n), 8),
-    };
-    (size >= header && size <= remaining).then_some((size, kind, header))
-}
-
-fn mvhd_duration(moov: &[u8]) -> Option<u64> {
-    let mut pos = 0usize;
-    while pos + 8 <= moov.len() {
-        let size = u32::from_be_bytes(moov[pos..pos + 4].try_into().ok()?) as usize;
-        if size < 8 || pos + size > moov.len() {
-            return None;
-        }
-        if &moov[pos + 4..pos + 8] == b"mvhd" {
-            let b = &moov[pos + 8..pos + size];
-            let version = *b.first()?;
-            let (timescale, duration) = if version == 1 {
-                (u32::from_be_bytes(b.get(20..24)?.try_into().ok()?), u64::from_be_bytes(b.get(24..32)?.try_into().ok()?))
-            } else {
-                (
-                    u32::from_be_bytes(b.get(12..16)?.try_into().ok()?),
-                    u64::from(u32::from_be_bytes(b.get(16..20)?.try_into().ok()?)),
-                )
-            };
-            if timescale == 0 {
-                return None;
-            }
-            return Some(duration.saturating_mul(1000) / u64::from(timescale));
-        }
-        pos += size;
-    }
-    None
+    super::media::mvhd_duration_ms(&super::media::read_moov(path)?)
 }
 
 #[cfg(test)]

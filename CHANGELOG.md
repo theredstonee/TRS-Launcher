@@ -26,6 +26,22 @@ How to write an entry:
   second lamp. From the card you can save the skin to your synced library (named after your account, without creating
   a duplicate) or open it in the editor as a template. It updates right after you apply another skin or switch
   accounts in the game, and the highlighted card now only means "shown in the preview", not "worn".
+- **Clip gallery.** All your clips as tiles with a preview picture, length and date – search by name, filter by
+  instance and sort by date, length, size or name. Hover over a tile for a moving preview. Every instance also has
+  its own "Clips" tab.
+- **New clip player.** Play/pause, a timeline that shows a small preview picture while you hover over it, volume and
+  mute, playback speed and full screen – with keyboard shortcuts (Space or K, ←/→ 5 seconds, J/L 10 seconds, F, M,
+  ,/. single frames, Alt+←/→ for the previous/next clip). If a clip can't be played in the launcher, it offers to open
+  it in your system's video player.
+- **Trim clips.** Set start and end on the timeline (or with I and O), preview the selection and save it as a new
+  clip – the original always stays. When the start is on a keyframe, the clip is copied without re-encoding in an
+  instant; otherwise the launcher explains why it has to re-encode (exact, takes a moment) and lets you cut fast at
+  the keyframe instead.
+- **Share clips.** "Save as …", copy the clip as a file to paste it into Discord or a folder, show it in the folder,
+  rename and delete (to the recycle bin).
+- **TRS Client: clip preview in game.** In "Clips & Images" a clip now opens a small animated preview with play/pause
+  and a timeline, plus "Open in launcher": the launcher comes to the front and plays the clip. Works when the game was
+  started from the TRS Launcher.
 
 ### Deutsch
 
@@ -36,6 +52,22 @@ How to write an entry:
   Bibliothek (mit deinem Kontonamen, ohne Doppelung) oder öffnest ihn als Vorlage im Editor. Sie aktualisiert sich
   sofort, wenn du einen anderen Skin anwendest oder im Spiel das Konto wechselst, und die hervorgehobene Karte heißt
   jetzt nur noch „in der Vorschau“, nicht „getragen“.
+- **Clip-Galerie.** Alle Clips als Kacheln mit Vorschaubild, Länge und Datum – nach Namen suchen, nach Instanz filtern
+  und nach Datum, Länge, Größe oder Name sortieren. Beim Überfahren einer Kachel läuft eine kleine Vorschau. Jede
+  Instanz hat außerdem einen eigenen Reiter „Clips“.
+- **Neuer Clip-Player.** Abspielen/Pause, eine Zeitleiste, die beim Überfahren ein kleines Vorschaubild zeigt,
+  Lautstärke und Stummschalten, Wiedergabetempo und Vollbild – mit Tastenkürzeln (Leertaste oder K, ←/→ 5 Sekunden, J/L
+  10 Sekunden, F, M, ,/. Einzelbilder, Alt+←/→ für den vorherigen/nächsten Clip). Lässt sich ein Clip im Launcher nicht
+  abspielen, bietet er an, ihn im Videoplayer des Systems zu öffnen.
+- **Clips zuschneiden.** Start und Ende auf der Zeitleiste setzen (oder mit I und O), den Ausschnitt ansehen und als
+  neuen Clip speichern – das Original bleibt immer erhalten. Liegt der Start auf einem Keyframe, wird der Clip ohne
+  Neukodierung sofort kopiert; sonst erklärt der Launcher, warum er neu kodieren muss (genau, dauert einen Moment), und
+  bietet an, stattdessen schnell am Keyframe zu schneiden.
+- **Clips teilen.** „Speichern unter …“, den Clip als Datei kopieren und in Discord oder einen Ordner einfügen, im Ordner
+  zeigen, umbenennen und löschen (in den Papierkorb).
+- **TRS Client: Clip-Vorschau im Spiel.** In „Clips & Bilder“ öffnet ein Clip jetzt eine kleine animierte Vorschau mit
+  Abspielen/Pause und Zeitleiste, dazu „Im Launcher öffnen“: Der Launcher kommt nach vorn und spielt den Clip ab.
+  Klappt, wenn das Spiel über den TRS Launcher gestartet wurde.
 
 ## 0.6.4 – 2026-09-26 – The Workshop Update | Das Werkstatt-Update
 <!-- banner: accent=#d99a5b motif=/news/0.6.4/banner.png -->

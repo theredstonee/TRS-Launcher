@@ -140,6 +140,32 @@ pub type ClipsEnabler = Arc<dyn Fn(String) -> BoxFuture<'static, HandlerResult<u
 
 /// Merkmal im `challenge`: der Launcher kann Clips per `clips.enable` einschalten.
 pub const FEATURE_CLIPS_ENABLE: &str = "clips.enable";
+/// Merkmal: kleine Vorschau-Animation eines Clips (`clips.preview {clip}`).
+pub const FEATURE_CLIPS_PREVIEW: &str = "clips.preview";
+/// Merkmal: Clip im Player des Launchers öffnen (`clips.open {clip}`).
+pub const FEATURE_CLIPS_OPEN: &str = "clips.open";
+
+/// Vorschau-Leiste eines Clips für die Mod: ein PNG-Raster im Cache des Launchers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkPreview {
+    /// Absoluter Pfad des PNG (vom Launcher erzeugt; die Mod liest nur diese Datei).
+    pub path: String,
+    pub frames: u32,
+    pub cols: u32,
+    pub rows: u32,
+    pub frame_width: u32,
+    pub frame_height: u32,
+    pub interval_ms: u32,
+    pub duration_ms: u64,
+}
+
+/// Clips des Launchers für den TRS-Link. `clip` ist immer ein bloßer
+/// Dateiname aus dem Clip-Ordner *dieser* Instanz – nie ein Pfad.
+pub trait ClipsHandler: Send + Sync {
+    fn preview(&self, instance_id: String, clip: String) -> BoxFuture<'static, HandlerResult<LinkPreview>>;
+    fn open(&self, instance_id: String, clip: String) -> BoxFuture<'static, HandlerResult<()>>;
+}
 
 /// Inhalt von `config/trsclient/clips.json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -226,6 +252,11 @@ struct Limits {
     adds: VecDeque<Instant>,
     last_enable: Option<Instant>,
     enables: VecDeque<Instant>,
+    last_preview: Option<Instant>,
+    previews: VecDeque<Instant>,
+    preview_running: bool,
+    last_open: Option<Instant>,
+    opens: VecDeque<Instant>,
 }
 
 const WINDOW: Duration = Duration::from_secs(10 * 60);
@@ -263,6 +294,33 @@ impl Limits {
         }
         self.last_enable = Some(now);
         self.enables.push_back(now);
+        true
+    }
+
+    /// `clips.preview`: eine gleichzeitig, höchstens alle 250 ms und 120-mal je 10 Minuten
+    /// (fertige Vorschauen kommen aus dem Cache, neue kosten einen FFmpeg-Lauf).
+    fn begin_preview(&mut self, now: Instant) -> HandlerResult<()> {
+        prune(&mut self.previews, now);
+        if self.preview_running {
+            return Err("busy");
+        }
+        if self.last_preview.is_some_and(|t| now.duration_since(t) < Duration::from_millis(250)) || self.previews.len() >= 120 {
+            return Err("rate_limited");
+        }
+        self.preview_running = true;
+        self.last_preview = Some(now);
+        self.previews.push_back(now);
+        Ok(())
+    }
+
+    /// `clips.open`: holt das Launcher-Fenster nach vorn – höchstens jede Sekunde, 30-mal je 10 Minuten.
+    fn allow_open(&mut self, now: Instant) -> bool {
+        prune(&mut self.opens, now);
+        if self.last_open.is_some_and(|t| now.duration_since(t) < Duration::from_secs(1)) || self.opens.len() >= 30 {
+            return false;
+        }
+        self.last_open = Some(now);
+        self.opens.push_back(now);
         true
     }
 
@@ -318,6 +376,7 @@ struct Shared {
     handler: RwLock<Option<Arc<dyn AccountsHandler>>>,
     on_command: RwLock<Option<CommandSink>>,
     enable_clips: RwLock<Option<ClipsEnabler>>,
+    clips: RwLock<Option<Arc<dyn ClipsHandler>>>,
     persist_file: Option<PathBuf>,
     persist_lock: tokio::sync::Mutex<()>,
     first_auth_ttl: Duration,
@@ -330,6 +389,10 @@ impl Shared {
 
     fn handler(&self) -> Option<Arc<dyn AccountsHandler>> {
         self.handler.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    }
+
+    fn clips_handler(&self) -> Option<Arc<dyn ClipsHandler>> {
+        self.clips.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
     }
 
     fn clips_enabler(&self) -> Option<ClipsEnabler> {
@@ -388,6 +451,7 @@ impl TrsLink {
                 handler: RwLock::default(),
                 on_command: RwLock::default(),
                 enable_clips: RwLock::default(),
+                clips: RwLock::default(),
                 persist_file,
                 persist_lock: tokio::sync::Mutex::new(()),
                 first_auth_ttl,
@@ -407,6 +471,11 @@ impl TrsLink {
     /// „Clips einschalten“ aus dem Spiel (`clips.enable`) an den Launcher anbinden.
     pub fn set_clips_enabler(&self, enabler: ClipsEnabler) {
         *self.shared.enable_clips.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(enabler);
+    }
+
+    /// Clip-Vorschau und „Im Launcher öffnen“ aus dem Spiel anbinden.
+    pub fn set_clips_handler(&self, handler: Arc<dyn ClipsHandler>) {
+        *self.shared.clips.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(handler);
     }
 
     /// Port, falls der Server schon läuft.
@@ -613,6 +682,9 @@ struct Incoming {
     op: Option<String>,
     #[serde(default)]
     account: Option<String>,
+    /// Dateiname eines Clips (`clips.preview`, `clips.open`).
+    #[serde(default)]
+    clip: Option<String>,
 }
 
 /// Eine angemeldete Verbindung.
@@ -703,7 +775,7 @@ async fn handshake(
         "type": "challenge",
         "nonce": nl,
         "proof": proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)),
-        "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE],
+        "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE, FEATURE_CLIPS_PREVIEW, FEATURE_CLIPS_OPEN],
     });
     write_json(write, &challenge).await?;
     tokio::time::timeout_at(deadline, read_line(reader, buf)).await.ok()??;
@@ -756,6 +828,9 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
     let limits = || conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     if op == "clips.enable" {
         return enable_clips(conn, shared, id, now, out);
+    }
+    if op == FEATURE_CLIPS_PREVIEW || op == FEATURE_CLIPS_OPEN {
+        return clips_request(conn, shared, &op, msg.clip, id, now, out);
     }
     let Some(handler) = shared.handler() else { return reply(error_response(id, "error")) };
     let out = out.clone();
@@ -839,6 +914,53 @@ fn enable_clips(conn: &Conn, shared: &Arc<Shared>, id: u64, now: Instant, out: &
     tokio::spawn(async move {
         let value = match enabler(instance_id).await {
             Ok(clip_seconds) => json!({ "type": "res", "id": id, "ok": true, "clipSeconds": clip_seconds }),
+            Err(code) => error_response(id, code),
+        };
+        let _ = out.send(value);
+    });
+}
+
+/// `clips.preview` / `clips.open`: nur ein bloßer Clip-Dateiname (kein Pfad);
+/// ob es ihn im Clip-Ordner *dieser* Instanz gibt, prüft der Launcher.
+fn clips_request(
+    conn: &Conn,
+    shared: &Arc<Shared>,
+    op: &str,
+    clip: Option<String>,
+    id: u64,
+    now: Instant,
+    out: &mpsc::UnboundedSender<serde_json::Value>,
+) {
+    let reply = |value: serde_json::Value| {
+        let _ = out.send(value);
+    };
+    let Some(clip) = clip.filter(|c| crate::clips::library::is_clip_file_name(c)) else {
+        return reply(error_response(id, "unknown_clip"));
+    };
+    let Some(handler) = shared.clips_handler() else { return reply(error_response(id, "error")) };
+    let (instance_id, out) = (conn.instance_id.clone(), out.clone());
+    if op == FEATURE_CLIPS_OPEN {
+        if !conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).allow_open(now) {
+            return reply(error_response(id, "rate_limited"));
+        }
+        tokio::spawn(async move {
+            let value = match handler.open(instance_id, clip).await {
+                Ok(()) => json!({ "type": "res", "id": id, "ok": true }),
+                Err(code) => error_response(id, code),
+            };
+            let _ = out.send(value);
+        });
+        return;
+    }
+    if let Err(code) = conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).begin_preview(now) {
+        return reply(error_response(id, code));
+    }
+    let limits = conn.limits.clone();
+    tokio::spawn(async move {
+        let result = handler.preview(instance_id, clip).await;
+        limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).preview_running = false;
+        let value = match result {
+            Ok(preview) => json!({ "type": "res", "id": id, "ok": true, "preview": preview }),
             Err(code) => error_response(id, code),
         };
         let _ = out.send(value);

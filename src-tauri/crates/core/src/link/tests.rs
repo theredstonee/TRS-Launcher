@@ -52,7 +52,7 @@ async fn v2_login(handoff: &Handoff, tamper: bool) -> std::result::Result<Client
     }
     let nl = challenge["nonce"].as_str().unwrap().to_owned();
     assert_eq!(challenge["proof"].as_str().unwrap(), proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)), "echter Launcher");
-    assert_eq!(challenge["features"], json!(["clips", "accounts", "clips.enable"]));
+    assert_eq!(challenge["features"], json!(["clips", "accounts", "clips.enable", "clips.preview", "clips.open"]));
     let mut proof = proto::game_proof(&key, &sid, &nc, &nl);
     if tamper {
         proof[0] ^= 1;
@@ -438,4 +438,119 @@ fn clips_einschalten_hoechstens_fuenfmal_in_zehn_minuten() {
     }
     assert!(!limits.allow_enable(start + Duration::from_secs(30)), "sechster Versuch gebremst");
     assert!(limits.allow_enable(start + Duration::from_secs(11 * 60)), "nach zehn Minuten wieder frei");
+}
+
+/// Attrappe für Clip-Vorschau/-Öffnen: kennt nur „a.mp4“.
+#[derive(Default)]
+struct FakeClips {
+    previews: AtomicUsize,
+    opened: Mutex<Vec<(String, String)>>,
+}
+
+impl ClipsHandler for FakeClips {
+    fn preview(&self, instance_id: String, clip: String) -> BoxFuture<'static, HandlerResult<LinkPreview>> {
+        self.previews.fetch_add(1, Ordering::SeqCst);
+        Box::pin(async move {
+            tokio::time::sleep(Duration::from_millis(150)).await;
+            if clip != "a.mp4" {
+                return Err("unknown_clip");
+            }
+            Ok(LinkPreview {
+                path: format!("/cache/{instance_id}.png"),
+                frames: 30,
+                cols: 10,
+                rows: 3,
+                frame_width: 160,
+                frame_height: 90,
+                interval_ms: 1000,
+                duration_ms: 30_000,
+            })
+        })
+    }
+
+    fn open(&self, instance_id: String, clip: String) -> BoxFuture<'static, HandlerResult<()>> {
+        let known = clip == "a.mp4";
+        if known {
+            self.opened.lock().unwrap().push((instance_id, clip));
+        }
+        Box::pin(async move { if known { Ok(()) } else { Err("unknown_clip") } })
+    }
+}
+
+#[tokio::test]
+async fn clip_vorschau_und_oeffnen_aus_dem_spiel() {
+    let link = TrsLink::new(None);
+    let clips = Arc::new(FakeClips::default());
+    link.set_clips_handler(clips.clone());
+    let handoff = link.open_session("survival", false).await.unwrap();
+    link.set_pid("survival", std::process::id());
+    let mut c = v2_login(&handoff, false).await.expect("Anmeldung");
+
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "clips.preview", "clip": "a.mp4" })).await;
+    // Solange die erste läuft: „busy“ (kein zweiter FFmpeg-Lauf gleichzeitig).
+    send(&mut c.w, json!({ "type": "req", "id": 2, "op": "clips.preview", "clip": "a.mp4" })).await;
+    assert_eq!(response(&mut c.r, 2).await["error"], "busy");
+    let res = response(&mut c.r, 1).await;
+    assert_eq!(res["ok"], true, "{res}");
+    assert_eq!(res["preview"]["path"], "/cache/survival.png", "Vorschau der eigenen Instanz");
+    assert_eq!(res["preview"]["frameWidth"], 160);
+    assert_eq!(res["preview"]["intervalMs"], 1000);
+    assert_eq!(clips.previews.load(Ordering::SeqCst), 1);
+
+    // Pfade statt Namen werden gar nicht erst weitergereicht.
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    for (id, bad) in [(3, "../other/a.mp4"), (4, "C:\\x\\a.mp4"), (5, "a.txt"), (6, "")] {
+        send(&mut c.w, json!({ "type": "req", "id": id, "op": "clips.preview", "clip": bad })).await;
+        assert_eq!(response(&mut c.r, id).await["error"], "unknown_clip", "{bad}");
+    }
+    send(&mut c.w, json!({ "type": "req", "id": 7, "op": "clips.preview" })).await;
+    assert_eq!(response(&mut c.r, 7).await["error"], "unknown_clip");
+    assert_eq!(clips.previews.load(Ordering::SeqCst), 1, "ungültige Namen erreichen den Launcher nie");
+    // Unbekannter Clip (gültiger Name): der Launcher lehnt ab.
+    send(&mut c.w, json!({ "type": "req", "id": 8, "op": "clips.preview", "clip": "fremd.mp4" })).await;
+    assert_eq!(response(&mut c.r, 8).await["error"], "unknown_clip");
+
+    send(&mut c.w, json!({ "type": "req", "id": 9, "op": "clips.open", "clip": "a.mp4" })).await;
+    assert_eq!(response(&mut c.r, 9).await["ok"], true);
+    assert_eq!(*clips.opened.lock().unwrap(), vec![("survival".to_owned(), "a.mp4".to_owned())]);
+    // Sofort noch einmal: gebremst (holt sonst dauernd das Fenster nach vorn).
+    send(&mut c.w, json!({ "type": "req", "id": 10, "op": "clips.open", "clip": "a.mp4" })).await;
+    assert_eq!(response(&mut c.r, 10).await["error"], "rate_limited");
+    assert_eq!(clips.opened.lock().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn clip_anfragen_nie_mit_altem_token() {
+    let link = TrsLink::new(None);
+    let clips = Arc::new(FakeClips::default());
+    link.set_clips_handler(clips.clone());
+    link.open_session("survival", true).await.unwrap();
+    let token = link.clips_config("survival", true).token.unwrap();
+    let (mut r, mut w) = connect(link.port().unwrap()).await;
+    send(&mut w, json!({ "type": "hello", "v": 1, "token": token })).await;
+    assert_eq!(line(&mut r).await["type"], "state");
+    send(&mut w, json!({ "type": "req", "id": 1, "op": "clips.open", "clip": "a.mp4" })).await;
+    assert_eq!(response(&mut r, 1).await["error"], "not_allowed");
+    assert!(clips.opened.lock().unwrap().is_empty());
+}
+
+#[test]
+fn clip_vorschau_grenzen() {
+    let mut limits = Limits::default();
+    let t0 = Instant::now();
+    assert_eq!(limits.begin_preview(t0), Ok(()));
+    assert_eq!(limits.begin_preview(t0 + Duration::from_secs(1)), Err("busy"));
+    limits.preview_running = false;
+    assert_eq!(limits.begin_preview(t0 + Duration::from_millis(100)), Err("rate_limited"));
+    let mut t = t0;
+    for _ in 1..120 {
+        t += Duration::from_millis(300);
+        assert_eq!(limits.begin_preview(t), Ok(()));
+        limits.preview_running = false;
+    }
+    assert_eq!(limits.begin_preview(t + Duration::from_secs(1)), Err("rate_limited"), "120 je 10 Minuten");
+    assert_eq!(limits.begin_preview(t0 + Duration::from_secs(11 * 60)), Ok(()));
+    assert!(limits.allow_open(t0));
+    assert!(!limits.allow_open(t0 + Duration::from_millis(500)));
+    assert!(limits.allow_open(t0 + Duration::from_secs(2)));
 }

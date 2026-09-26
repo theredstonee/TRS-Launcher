@@ -4,7 +4,7 @@ use std::sync::Weak;
 
 use futures::future::BoxFuture;
 
-use super::{AccountsHandler, HandlerResult, LinkAccount, LinkSession};
+use super::{AccountsHandler, ClipsHandler, HandlerResult, LinkAccount, LinkPreview, LinkSession};
 use crate::{Error, Launcher};
 
 pub(crate) struct AccountsBridge {
@@ -31,6 +31,23 @@ pub(crate) fn clips_enabler(launcher: Weak<Launcher>) -> super::ClipsEnabler {
             launcher.enable_clips_from_game(&instance_id).await
         })
     })
+}
+
+/// `clips.preview` / `clips.open` → Clip-Bibliothek des Launchers.
+pub(crate) struct ClipsBridge {
+    pub(crate) launcher: Weak<Launcher>,
+}
+
+impl ClipsHandler for ClipsBridge {
+    fn preview(&self, instance_id: String, clip: String) -> BoxFuture<'static, HandlerResult<LinkPreview>> {
+        let launcher = self.launcher.clone();
+        Box::pin(async move { launcher.upgrade().ok_or("error")?.clip_preview_for_game(&instance_id, &clip).await })
+    }
+
+    fn open(&self, instance_id: String, clip: String) -> BoxFuture<'static, HandlerResult<()>> {
+        let launcher = self.launcher.clone();
+        Box::pin(async move { launcher.upgrade().ok_or("error")?.open_clip_from_game(&instance_id, &clip).await })
+    }
 }
 
 impl AccountsHandler for AccountsBridge {

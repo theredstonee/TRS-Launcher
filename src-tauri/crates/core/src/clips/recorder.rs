@@ -63,7 +63,7 @@ pub async fn run(exe: &Path, args: Vec<String>, timeout: Duration) -> Result<()>
     .map_err(|e| Error::Internal(e.to_string()))?
 }
 
-fn spawn_tail(stderr: impl std::io::Read + Send + 'static, tail: Arc<Mutex<VecDeque<String>>>) -> std::thread::JoinHandle<()> {
+pub(crate) fn spawn_tail(stderr: impl std::io::Read + Send + 'static, tail: Arc<Mutex<VecDeque<String>>>) -> std::thread::JoinHandle<()> {
     std::thread::spawn(move || {
         let reader = std::io::BufReader::new(stderr);
         for line in reader.split(b'\n').map_while(std::result::Result::ok) {

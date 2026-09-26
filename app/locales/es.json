@@ -597,7 +597,13 @@
       "invalidName": "Este nombre no está permitido como nombre de archivo.",
       "nameTaken": "Ya existe un clip con este nombre.",
       "noFrames": "Todavía no se ha grabado nada.",
-      "notRecording": "No hay ninguna grabación en curso para este juego."
+      "notRecording": "No hay ninguna grabación en curso para este juego.",
+      "trimRange": "El final debe estar después del inicio.",
+      "trimTooShort": "El nuevo clip debe durar al menos medio segundo.",
+      "noFfmpeg": "Para recortar se necesita FFmpeg: descárgalo en los ajustes de clips.",
+      "trimFailed": "No se pudo recortar el clip.",
+      "unreadable": "No se puede leer el clip.",
+      "clipboardFailed": "No se pudo copiar el clip al portapapeles."
     },
     "trsCapeImport": {
       "unsupported": "«{name}» no es una imagen compatible (PNG, JPEG, WebP, GIF o JSON de TRS Studio).",
@@ -1111,7 +1117,8 @@
       "worlds": "Mundos",
       "logs": "Registros",
       "files": "Archivos",
-      "share": "Compartir"
+      "share": "Compartir",
+      "clips": "Clips"
     },
     "gallery": {
       "bannerSet": "Banner establecido",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Reproducir clip",
       "close": "Cerrar reproductor",
-      "hint": "Esc cierra · Alt+←/→ clip anterior/siguiente"
+      "hint": "Espacio reproducir/pausa · ←/→ 5 s · J/L 10 s · ,/. fotograma · F pantalla completa · M silenciar · Alt+←/→ otro clip · Esc cierra",
+      "play": "Reproducir (Espacio)",
+      "pause": "Pausa (Espacio)",
+      "previous": "Clip anterior (Alt+←)",
+      "next": "Clip siguiente (Alt+→)",
+      "back5": "Retroceder 5 segundos (←)",
+      "forward5": "Avanzar 5 segundos (→)",
+      "mute": "Silenciar (M)",
+      "unmute": "Activar sonido (M)",
+      "volume": "Volumen",
+      "speed": "Velocidad de reproducción",
+      "fullscreen": "Pantalla completa (F)",
+      "exitFullscreen": "Salir de pantalla completa (F)",
+      "timeline": "Posición en el clip",
+      "unsupportedTitle": "Este clip no se puede reproducir aquí",
+      "unsupportedText": "El reproductor integrado no puede decodificar este vídeo. Ábrelo en el reproductor de vídeo de tu sistema.",
+      "unsupportedLinux": "El reproductor integrado necesita los plugins de GStreamer para H.264/AAC (por ejemplo gst-libav o gstreamer1.0-plugins-bad). Instálalos o abre el clip en el reproductor de vídeo de tu sistema."
     },
     "renameDialog": {
       "title": "Renombrar clip",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    },
+    "gallery": {
+      "search": "Buscar clips",
+      "sortLabel": "Ordenar clips",
+      "sort": {
+        "newest": "Más recientes primero",
+        "oldest": "Más antiguos primero",
+        "longest": "Más largos primero",
+        "largest": "Más grandes primero",
+        "name": "Nombre (A–Z)"
+      },
+      "noMatches": "Ningún clip coincide con la búsqueda."
+    },
+    "share": {
+      "saveAs": "Guardar como …",
+      "copy": "Copiar archivo (pégalo en Discord, el Explorador …)",
+      "openExternal": "Abrir en el reproductor del sistema",
+      "exported": "Clip guardado",
+      "copied": "Clip copiado: pégalo donde quieras compartirlo"
+    },
+    "trim": {
+      "button": "Recortar",
+      "title": "Recortar clip",
+      "start": "Inicio",
+      "end": "Fin",
+      "setStart": "Usar posición actual",
+      "setEnd": "Usar posición actual",
+      "setHint": "Usar la posición actual (tecla {key})",
+      "length": "Duración {time}",
+      "modeLabel": "Tipo de corte",
+      "mode": {
+        "auto": "Automático",
+        "fast": "Rápido",
+        "exact": "Exacto"
+      },
+      "modeHint": {
+        "auto": "Copia sin recodificar si el inicio está en un fotograma clave; si no, corta con precisión",
+        "fast": "Siempre sin recodificar: el inicio se mueve al fotograma clave anterior",
+        "exact": "Siempre recodificar: preciso al fotograma, tarda más"
+      },
+      "tooShort": "El nuevo clip debe durar al menos medio segundo.",
+      "explainCopy": "Al instante: el fragmento se copia sin recodificar, con la misma calidad.",
+      "explainShift": "Al instante sin recodificar: el clip empieza {seconds} s antes, en el fotograma clave anterior.",
+      "explainExact": "El fragmento se recodifica con precisión de fotograma; tarda un momento.",
+      "explainReencode": "El inicio está {seconds} s después de un fotograma clave (hay uno cada 2 s). Para empezar justo aquí, el clip se recodifica; tarda un momento.",
+      "useFast": "Mejor cortar rápido",
+      "nameLabel": "Nombre del nuevo clip",
+      "preview": "Vista previa",
+      "save": "Guardar como clip nuevo",
+      "saving": "Guardando …",
+      "saved": "Nuevo clip guardado: {name}",
+      "openNew": "Abrir",
+      "suffix": "recortado",
+      "hint": "I/O fijan inicio/fin · Espacio reproduce el fragmento · Esc termina el recorte · el original no cambia"
     }
   },
   "logViewer": {

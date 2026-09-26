@@ -172,6 +172,33 @@ class TextFitTest {
 		assertTrue(hard.isEmpty(), "Clip-Meldungen zu breit: " + hard);
 	}
 
+	/**
+	 * Clip-Vorschau: „Im Launcher öffnen“ sitzt als Knopf (höchstens 150 px, 16 px Rand) in der Leiste; die
+	 * Hinweise in der Bildfläche werden auf 300 px umbrochen und dürfen dort höchstens vier Zeilen brauchen.
+	 */
+	@Test
+	void clipPreviewTextsFit() {
+		Canvas c = new McFontCanvas();
+		List<String> hard = new ArrayList<String>();
+		String[] hints = {"clips.preview.loading", "clips.preview.noLauncher", "clips.preview.oldLauncher", "clips.preview.offline",
+				"clips.preview.noFfmpeg", "clips.preview.gone", "clips.preview.busy", "clips.preview.failed"};
+		for (String lang : I18n.LANGUAGES) {
+			I18n.use(lang);
+			List<String> problems = new ArrayList<String>();
+			String open = I18n.tr("clips.preview.openLauncher");
+			if (c.textWidth(open) > 134) problems.add(lang + " Knopf: " + open + " (" + c.textWidth(open) + " px)");
+			for (String key : hints) {
+				int lines = Paint.wrap(c, I18n.tr(key), 300).size();
+				if (lines > 4) problems.add(lang + " " + key + ": " + lines + " Zeilen");
+			}
+			for (String p : problems) {
+				System.out.println("Passt nicht ganz: " + p);
+				if (!I18n.BETA.contains(lang)) hard.add(p);
+			}
+		}
+		assertTrue(hard.isEmpty(), "Texte der Clip-Vorschau zu breit: " + hard);
+	}
+
 	@Test
 	void longHyphenatedWordsBreakAtTheHyphen() {
 		Canvas c = new McFontCanvas();

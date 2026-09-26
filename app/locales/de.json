@@ -597,7 +597,13 @@
       "invalidName": "Dieser Name ist als Dateiname nicht erlaubt.",
       "nameTaken": "Es gibt schon einen Clip mit diesem Namen.",
       "noFrames": "Noch nichts aufgenommen.",
-      "notRecording": "Für dieses Spiel läuft keine Aufnahme."
+      "notRecording": "Für dieses Spiel läuft keine Aufnahme.",
+      "trimRange": "Das Ende muss nach dem Start liegen.",
+      "trimTooShort": "Der neue Clip muss mindestens eine halbe Sekunde lang sein.",
+      "noFfmpeg": "Zum Zuschneiden wird FFmpeg gebraucht – lade es in den Clip-Einstellungen.",
+      "trimFailed": "Der Clip konnte nicht zugeschnitten werden.",
+      "unreadable": "Der Clip lässt sich nicht lesen.",
+      "clipboardFailed": "Der Clip konnte nicht in die Zwischenablage kopiert werden."
     },
     "trsCapeImport": {
       "unsupported": "„{name}“ ist kein unterstütztes Bild (PNG, JPEG, WebP, GIF oder TRS-Studio-JSON).",
@@ -1111,7 +1117,8 @@
       "worlds": "Welten",
       "logs": "Logs",
       "files": "Dateien",
-      "share": "Teilen"
+      "share": "Teilen",
+      "clips": "Clips"
     },
     "gallery": {
       "bannerSet": "Banner gesetzt",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Clip abspielen",
       "close": "Wiedergabe schließen",
-      "hint": "Esc schließt · Alt+←/→ vorheriger/nächster Clip"
+      "hint": "Leertaste Abspielen/Pause · ←/→ 5 s · J/L 10 s · ,/. Einzelbild · F Vollbild · M Ton aus · Alt+←/→ anderer Clip · Esc schließt",
+      "play": "Abspielen (Leertaste)",
+      "pause": "Pause (Leertaste)",
+      "previous": "Vorheriger Clip (Alt+←)",
+      "next": "Nächster Clip (Alt+→)",
+      "back5": "5 Sekunden zurück (←)",
+      "forward5": "5 Sekunden vor (→)",
+      "mute": "Ton aus (M)",
+      "unmute": "Ton an (M)",
+      "volume": "Lautstärke",
+      "speed": "Wiedergabetempo",
+      "fullscreen": "Vollbild (F)",
+      "exitFullscreen": "Vollbild beenden (F)",
+      "timeline": "Position im Clip",
+      "unsupportedTitle": "Dieser Clip lässt sich hier nicht abspielen",
+      "unsupportedText": "Der eingebaute Player kann dieses Video nicht dekodieren. Öffne es stattdessen im Videoplayer deines Systems.",
+      "unsupportedLinux": "Der eingebaute Player braucht die GStreamer-Plugins für H.264/AAC (z. B. gst-libav oder gstreamer1.0-plugins-bad). Installiere sie oder öffne den Clip im Videoplayer deines Systems."
     },
     "renameDialog": {
       "title": "Clip umbenennen",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    },
+    "gallery": {
+      "search": "Clips durchsuchen",
+      "sortLabel": "Clips sortieren",
+      "sort": {
+        "newest": "Neueste zuerst",
+        "oldest": "Älteste zuerst",
+        "longest": "Längste zuerst",
+        "largest": "Größte zuerst",
+        "name": "Name (A–Z)"
+      },
+      "noMatches": "Keine Clips passen zur Suche."
+    },
+    "share": {
+      "saveAs": "Speichern unter …",
+      "copy": "Datei kopieren (in Discord, Explorer … einfügen)",
+      "openExternal": "Im System-Player öffnen",
+      "exported": "Clip gespeichert",
+      "copied": "Clip kopiert – füge ihn dort ein, wo du ihn teilen willst"
+    },
+    "trim": {
+      "button": "Zuschneiden",
+      "title": "Clip zuschneiden",
+      "start": "Start",
+      "end": "Ende",
+      "setStart": "Auf aktuelle Stelle",
+      "setEnd": "Auf aktuelle Stelle",
+      "setHint": "Aktuelle Position übernehmen (Taste {key})",
+      "length": "Länge {time}",
+      "modeLabel": "Schnittart",
+      "mode": {
+        "auto": "Automatisch",
+        "fast": "Schnell",
+        "exact": "Genau"
+      },
+      "modeHint": {
+        "auto": "Kopiert ohne Neukodierung, wenn der Start auf einem Keyframe liegt, sonst bildgenau",
+        "fast": "Immer ohne Neukodierung – der Start rutscht auf den Keyframe davor",
+        "exact": "Immer neu kodieren – bildgenau, dauert länger"
+      },
+      "tooShort": "Der neue Clip muss mindestens eine halbe Sekunde lang sein.",
+      "explainCopy": "Sofort: Der Ausschnitt wird ohne Neukodierung kopiert – gleiche Qualität.",
+      "explainShift": "Sofort ohne Neukodierung – der Clip beginnt {seconds} s früher, am Keyframe davor.",
+      "explainExact": "Der Ausschnitt wird bildgenau neu kodiert – das dauert einen Moment.",
+      "explainReencode": "Der Start liegt {seconds} s nach einem Keyframe (alle 2 s gibt es einen). Damit der Clip genau hier beginnt, wird er neu kodiert – das dauert einen Moment.",
+      "useFast": "Lieber schnell schneiden",
+      "nameLabel": "Name des neuen Clips",
+      "preview": "Vorschau",
+      "save": "Als neuen Clip speichern",
+      "saving": "Wird gespeichert …",
+      "saved": "Neuer Clip gespeichert: {name}",
+      "openNew": "Öffnen",
+      "suffix": "gekürzt",
+      "hint": "I/O setzen Start/Ende · Leertaste spielt den Ausschnitt · Esc beendet das Zuschneiden · das Original bleibt unverändert"
     }
   },
   "logViewer": {

@@ -223,6 +223,54 @@ export interface Clip {
   durationMs: number | null
 }
 
+/** Aus der MP4-Datei gelesen (`clips::media::MediaInfo`). */
+export interface ClipMediaInfo {
+  durationMs: number
+  width: number
+  height: number
+  hasVideo: boolean
+  hasAudio: boolean
+  /** Keyframe-Zeiten (ms, aufsteigend). */
+  keyframesMs: number[]
+}
+
+/** Vorschau-Leiste: PNG-Raster aus kleinen Bildern (`clips::edit::ClipStrip`). */
+export interface ClipStrip {
+  frames: number
+  cols: number
+  rows: number
+  frameWidth: number
+  frameHeight: number
+  /** Clip-Zeit zwischen zwei Bildern (ms). */
+  intervalMs: number
+  durationMs: number
+}
+
+/** `auto` = kopieren, wenn möglich; `fast` = immer kopieren (Start am Keyframe); `exact` = neu kodieren. */
+export type TrimMode = 'auto' | 'fast' | 'exact'
+export type TrimMethod = 'copy' | 'reencode'
+
+/** Auftrag „Als neuen Clip speichern“. */
+export interface TrimRequest {
+  startMs: number
+  endMs: number
+  mode: TrimMode
+  /** Name des neuen Clips (ohne `.mp4`). */
+  name: string
+}
+
+export interface TrimPlan {
+  startMs: number
+  endMs: number
+  method: TrimMethod
+}
+
+/** „Im Launcher öffnen“ aus dem Spiel (Ereignis `clip-open`). */
+export interface ClipOpenRequest {
+  instanceId: string
+  fileName: string
+}
+
 export interface ClipUsage {
   usedBytes: number
   limitBytes: number

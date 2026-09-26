@@ -597,7 +597,13 @@
       "invalidName": "This name is not allowed as a file name.",
       "nameTaken": "There already is a clip with this name.",
       "noFrames": "Nothing has been recorded yet.",
-      "notRecording": "No recording is running for this game."
+      "notRecording": "No recording is running for this game.",
+      "trimRange": "The end must be after the start.",
+      "trimTooShort": "The new clip must be at least half a second long.",
+      "noFfmpeg": "Trimming needs FFmpeg – download it in the clip settings.",
+      "trimFailed": "The clip could not be trimmed.",
+      "unreadable": "The clip can't be read.",
+      "clipboardFailed": "The clip could not be copied to the clipboard."
     },
     "trsCapeImport": {
       "unsupported": "“{name}” isn't a supported image (PNG, JPEG, WebP, GIF or TRS Studio JSON).",
@@ -1111,7 +1117,8 @@
       "worlds": "Worlds",
       "logs": "Logs",
       "files": "Files",
-      "share": "Share"
+      "share": "Share",
+      "clips": "Clips"
     },
     "gallery": {
       "bannerSet": "Banner set",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Play clip",
       "close": "Close player",
-      "hint": "Esc closes · Alt+←/→ previous/next clip"
+      "hint": "Space play/pause · ←/→ 5 s · J/L 10 s · ,/. single frame · F fullscreen · M mute · Alt+←/→ other clip · Esc closes",
+      "play": "Play (Space)",
+      "pause": "Pause (Space)",
+      "previous": "Previous clip (Alt+←)",
+      "next": "Next clip (Alt+→)",
+      "back5": "Back 5 seconds (←)",
+      "forward5": "Forward 5 seconds (→)",
+      "mute": "Mute (M)",
+      "unmute": "Unmute (M)",
+      "volume": "Volume",
+      "speed": "Playback speed",
+      "fullscreen": "Fullscreen (F)",
+      "exitFullscreen": "Exit fullscreen (F)",
+      "timeline": "Position in the clip",
+      "unsupportedTitle": "This clip can't be played here",
+      "unsupportedText": "The built-in player can't decode this video. Open it in your system's video player instead.",
+      "unsupportedLinux": "The built-in player needs the GStreamer plugins for H.264/AAC (for example gst-libav or gstreamer1.0-plugins-bad). Install them or open the clip in your system's video player."
     },
     "renameDialog": {
       "title": "Rename clip",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    },
+    "gallery": {
+      "search": "Search clips",
+      "sortLabel": "Sort clips",
+      "sort": {
+        "newest": "Newest first",
+        "oldest": "Oldest first",
+        "longest": "Longest first",
+        "largest": "Largest first",
+        "name": "Name (A–Z)"
+      },
+      "noMatches": "No clips match your search."
+    },
+    "share": {
+      "saveAs": "Save as …",
+      "copy": "Copy file (paste it into Discord, Explorer …)",
+      "openExternal": "Open in system player",
+      "exported": "Clip saved",
+      "copied": "Clip copied – paste it where you want to share it"
+    },
+    "trim": {
+      "button": "Trim",
+      "title": "Trim clip",
+      "start": "Start",
+      "end": "End",
+      "setStart": "Set to current",
+      "setEnd": "Set to current",
+      "setHint": "Use the current position (key {key})",
+      "length": "Length {time}",
+      "modeLabel": "How to cut",
+      "mode": {
+        "auto": "Automatic",
+        "fast": "Fast",
+        "exact": "Exact"
+      },
+      "modeHint": {
+        "auto": "Copies without re-encoding when the start is on a keyframe, otherwise cuts frame-accurately",
+        "fast": "Always without re-encoding – the start moves to the previous keyframe",
+        "exact": "Always re-encode – frame-accurate, takes longer"
+      },
+      "tooShort": "The new clip must be at least half a second long.",
+      "explainCopy": "Instant: the selection is copied without re-encoding – same quality.",
+      "explainShift": "Instant without re-encoding – the clip starts {seconds} s earlier, at the previous keyframe.",
+      "explainExact": "The selection is re-encoded frame-accurately – this takes a moment.",
+      "explainReencode": "The start is {seconds} s after a keyframe (there is one every 2 s). To start exactly here, the clip is re-encoded – that takes a moment.",
+      "useFast": "Cut fast instead",
+      "nameLabel": "Name of the new clip",
+      "preview": "Preview",
+      "save": "Save as new clip",
+      "saving": "Saving …",
+      "saved": "New clip saved: {name}",
+      "openNew": "Open",
+      "suffix": "trimmed",
+      "hint": "I/O set start/end · Space plays the selection · Esc stops trimming · the original stays unchanged"
     }
   },
   "logViewer": {

@@ -14,12 +14,16 @@
 
 pub mod api;
 pub mod audio;
+pub mod edit;
 pub mod encoder;
 pub mod ffmpeg;
 pub mod library;
+pub mod media;
 pub mod recorder;
+pub mod serve;
 pub mod session;
 pub mod settings;
+pub mod share;
 pub mod window;
 
 use std::collections::HashMap;
@@ -92,6 +96,8 @@ pub struct Shared {
     ffmpeg_progress: AtomicU8,
     /// Letzter fehlgeschlagener Download (dann erst nach [`FFMPEG_RETRY`] erneut).
     ffmpeg_failed_at: Mutex<Option<Instant>>,
+    /// Vorschaubilder/-leisten: höchstens zwei FFmpeg-Läufe gleichzeitig (die Galerie fragt viele auf einmal an).
+    previews: tokio::sync::Semaphore,
 }
 
 const NO_PROGRESS: u8 = u8::MAX;
@@ -262,6 +268,7 @@ impl ClipService {
             installing: AtomicBool::new(false),
             ffmpeg_progress: AtomicU8::new(NO_PROGRESS),
             ffmpeg_failed_at: Mutex::default(),
+            previews: tokio::sync::Semaphore::new(2),
         });
         let weak = Arc::downgrade(&shared);
         link.set_command_sink(Arc::new(move |instance_id: &str, command: LinkCommand| {
@@ -425,26 +432,56 @@ impl ClipService {
     /// Vorschaubild eines Clips (JPEG im Cache), `None` ohne FFmpeg.
     pub async fn thumbnail(&self, video: &Path) -> Result<Option<PathBuf>> {
         let Some(exe) = self.shared.ffmpeg.ready().await else { return Ok(None) };
-        let meta = tokio::fs::metadata(video).await.map_err(|e| Error::io(video, e))?;
-        let stamp = meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_secs());
-        let key = {
-            use sha1::Digest;
-            let mut h = sha1::Sha1::new();
-            h.update(video.display().to_string().as_bytes());
-            h.update(format!("|{}|{stamp}", meta.len()).as_bytes());
-            h.finalize().iter().take(8).map(|b| format!("{b:02x}")).collect::<String>()
-        };
+        let key = Self::cache_key(video).await?;
         let dir = self.shared.paths.root().join("cache").join("clip-thumbs");
         let thumb = dir.join(format!("{key}.jpg"));
         if tokio::fs::metadata(&thumb).await.is_ok_and(|m| m.len() > 0) {
             return Ok(Some(thumb));
         }
+        let _permit = self.shared.previews.acquire().await.map_err(|e| Error::Internal(e.to_string()))?;
+        // Während des Wartens evtl. schon von einer anderen Anfrage erzeugt.
+        if tokio::fs::metadata(&thumb).await.is_ok_and(|m| m.len() > 0) {
+            return Ok(Some(thumb));
+        }
         crate::fsutil::ensure_dir(&dir).await?;
         let seek = if library::mp4_duration_ms(video).unwrap_or(0) > 2500 { 1.0 } else { 0.0 };
-        let tmp = dir.join(format!("{key}.part"));
-        recorder::run(&exe, encoder::thumbnail_args(video, &tmp, seek), Duration::from_secs(20)).await?;
+        let tmp = dir.join(format!("{key}.{}.part", uuid::Uuid::new_v4().simple()));
+        let result = recorder::run(&exe, encoder::thumbnail_args(video, &tmp, seek), Duration::from_secs(20)).await;
+        if let Err(e) = result {
+            let _ = tokio::fs::remove_file(&tmp).await;
+            return Err(e);
+        }
         tokio::fs::rename(&tmp, &thumb).await.map_err(|e| Error::io(&thumb, e))?;
         Ok(Some(thumb))
+    }
+
+    /// Vorschau-Leiste eines Clips (PNG-Raster im Cache), `None` ohne FFmpeg.
+    pub async fn strip(&self, video: &Path) -> Result<Option<(PathBuf, edit::ClipStrip)>> {
+        let Some(exe) = self.shared.ffmpeg.ready().await else { return Ok(None) };
+        let key = Self::cache_key(video).await?;
+        let dir = self.shared.paths.root().join("cache").join("clip-strips");
+        if let Some(cached) = edit::cached_strip(&dir, &key).await {
+            return Ok(Some(cached));
+        }
+        let _permit = self.shared.previews.acquire().await.map_err(|e| Error::Internal(e.to_string()))?;
+        let runner = edit::ProcessRunner { exe };
+        Ok(Some(edit::strip(&runner, video, &dir, &key).await?))
+    }
+
+    /// FFmpeg (falls bereit) – zum Zuschneiden.
+    pub async fn ffmpeg_exe(&self) -> Option<PathBuf> {
+        self.shared.ffmpeg.ready().await
+    }
+
+    /// Encoder zum Neukodieren beim Zuschneiden (wie bei der Aufnahme ausprobiert).
+    pub async fn trim_codecs(&self, exe: &Path, settings: &ClipSettings) -> Vec<Codec> {
+        self.shared.usable_codecs(exe, &Codec::candidates(settings.encoder)).await
+    }
+
+    async fn cache_key(video: &Path) -> Result<String> {
+        let meta = tokio::fs::metadata(video).await.map_err(|e| Error::io(video, e))?;
+        let stamp = meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_secs());
+        Ok(edit::cache_key(video, meta.len(), stamp))
     }
 }
 

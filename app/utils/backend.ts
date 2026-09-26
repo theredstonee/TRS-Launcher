@@ -58,6 +58,11 @@ import type {
   ExportSummary,
   GalleryShot,
   Clip,
+  ClipMediaInfo,
+  ClipStrip,
+  TrimMode,
+  TrimPlan,
+  TrimRequest,
   ClipState,
   ClipUsage,
   FfmpegStatus,
@@ -435,9 +440,21 @@ export const backend = {
   /** Alle Clips aller Instanzen, neueste zuerst. */
   listClips: () => call<Clip[]>('list_clips'),
   clipUsage: () => call<ClipUsage>('clip_usage'),
-  /** Gibt genau dieses Video fürs Abspielen frei (Pfad fürs Asset-Protokoll). */
-  clipVideo: (id: string, fileName: string) => call<string | null>('clip_video', { id, fileName }),
-  clipThumbnail: (id: string, fileName: string) => call<string | null>('clip_thumbnail', { id, fileName }),
+  /** Dauer, Größe und Keyframes (Zeitleiste, Zuschneiden). */
+  clipDetails: (id: string, fileName: string) => call<ClipMediaInfo>('clip_details', { id, fileName }),
+  /** Aufbau der Vorschau-Leiste (erzeugt sie beim ersten Mal); `null` ohne FFmpeg. */
+  clipStrip: (id: string, fileName: string) => call<ClipStrip | null>('clip_strip', { id, fileName }),
+  planClipTrim: (id: string, fileName: string, startMs: number, endMs: number, mode: TrimMode) =>
+    call<TrimPlan>('plan_clip_trim', { id, fileName, startMs, endMs, mode }),
+  /** Bereich als neuen Clip speichern; Fortschritt 0–100 nur beim Neukodieren. */
+  trimClip: (id: string, fileName: string, request: TrimRequest, onProgress: (percent: number) => void) =>
+    call<Clip>('trim_clip', { id, fileName, request, onProgress: channel(onProgress) }),
+  /** „Speichern unter …“ (Dialog in Rust); `false` = abgebrochen. */
+  exportClip: (id: string, fileName: string) => call<boolean>('export_clip', { id, fileName }),
+  /** Clip als Datei in die Zwischenablage. */
+  copyClipFile: (id: string, fileName: string) => call<void>('copy_clip_file', { id, fileName }),
+  /** Im Standard-Player des Systems öffnen. */
+  openClipExternal: (id: string, fileName: string) => call<void>('open_clip_external', { id, fileName }),
   renameClip: (id: string, fileName: string, newName: string) => call<string>('rename_clip', { id, fileName, newName }),
   trashClip: (id: string, fileName: string) => call<void>('trash_clip', { id, fileName }),
   revealClip: (id: string, fileName: string) => call<void>('reveal_clip', { id, fileName }),

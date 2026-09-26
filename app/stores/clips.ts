@@ -1,7 +1,7 @@
 import { isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
-import type { ClipEvent, ClipState } from '~/types'
+import type { ClipEvent, ClipOpenRequest, ClipState } from '~/types'
 
 /** Aufnahmestand je laufendem Spiel, mit Empfangszeit (die Aufnahmezeit zählt die Oberfläche selbst weiter). */
 export interface LiveClipState extends ClipState {
@@ -26,6 +26,11 @@ export const useClipsStore = defineStore('clips', () => {
     states.value = { ...states.value, [state.instanceId]: { ...state, receivedAt: Date.now() } }
   }
 
+  /** Player mit diesem Clip öffnen (Clip-Seite, Deep-Link). */
+  function openClip(instanceId: string, fileName: string) {
+    void navigateTo({ path: '/clips', query: { instance: instanceId, file: fileName, n: String(Date.now()) } })
+  }
+
   function instanceName(id: string): string {
     return useInstancesStore().items.find((i) => i.id === id)?.name ?? id
   }
@@ -48,7 +53,7 @@ export const useClipsStore = defineStore('clips', () => {
           duration: formatClipDuration(event.seconds * 1000),
           instance: instanceName(event.instanceId),
         })
-        toasts.ok(text, { label: t('clips.toasts.show'), run: () => void navigateTo('/clips') })
+        toasts.ok(text, { label: t('clips.toasts.show'), run: () => openClip(event.instanceId, event.fileName) })
         if (event.removed > 0) toasts.info(t('clips.toasts.limitCleanup', event.removed))
         break
       }
@@ -71,6 +76,8 @@ export const useClipsStore = defineStore('clips', () => {
     if (initialized || !isTauri()) return
     initialized = true
     await listen<ClipEvent>('clip-event', (e) => onEvent(e.payload))
+    // „Im Launcher öffnen“ aus dem Spiel: der Kern hat das Fenster schon nach vorn geholt.
+    await listen<ClipOpenRequest>('clip-open', (e) => openClip(e.payload.instanceId, e.payload.fileName))
     try {
       for (const s of await backend.clipStates()) setState(s)
     } catch {
@@ -86,5 +93,5 @@ export const useClipsStore = defineStore('clips', () => {
     }
   }
 
-  return { states, active, recording, version, ffmpegDownloading, init, action, onEvent }
+  return { states, active, recording, version, ffmpegDownloading, init, action, onEvent, openClip }
 })

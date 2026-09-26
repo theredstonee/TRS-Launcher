@@ -117,6 +117,8 @@ pub struct Launcher {
     url_opener: std::sync::RwLock<Option<UrlOpener>>,
     /// Meldet der Oberfläche geänderte Accounts (Tauri: `accounts-changed`).
     accounts_sink: std::sync::RwLock<Option<AccountsSink>>,
+    /// „Im Launcher öffnen“ aus dem Spiel: Fenster nach vorn + Player (Tauri: `clip-open`).
+    clip_open_sink: std::sync::RwLock<Option<clips::api::ClipOpenSink>>,
 }
 
 /// Öffnet eine URL im Standardbrowser.
@@ -178,6 +180,7 @@ impl Launcher {
             link: link.clone(),
             url_opener: std::sync::RwLock::default(),
             accounts_sink: std::sync::RwLock::default(),
+            clip_open_sink: std::sync::RwLock::default(),
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
@@ -484,6 +487,7 @@ impl Launcher {
     fn link_attach_accounts(self: &Arc<Self>) {
         self.link.set_handler(Arc::new(link::bridge::AccountsBridge { launcher: Arc::downgrade(self) }));
         self.link.set_clips_enabler(link::bridge::clips_enabler(Arc::downgrade(self)));
+        self.link.set_clips_handler(Arc::new(link::bridge::ClipsBridge { launcher: Arc::downgrade(self) }));
     }
 
     /// Clips auf Wunsch des Spiels einschalten (`clips.enable` über den TRS-Link):

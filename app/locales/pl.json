@@ -597,7 +597,13 @@
       "invalidName": "Ta nazwa nie jest dozwolona jako nazwa pliku.",
       "nameTaken": "Klip o tej nazwie już istnieje.",
       "noFrames": "Jeszcze nic nie nagrano.",
-      "notRecording": "Dla tej gry nie trwa żadne nagrywanie."
+      "notRecording": "Dla tej gry nie trwa żadne nagrywanie.",
+      "trimRange": "Koniec musi być po początku.",
+      "trimTooShort": "Nowy klip musi trwać co najmniej pół sekundy.",
+      "noFfmpeg": "Do przycinania potrzebny jest FFmpeg – pobierz go w ustawieniach klipów.",
+      "trimFailed": "Nie udało się przyciąć klipu.",
+      "unreadable": "Nie można odczytać klipu.",
+      "clipboardFailed": "Nie udało się skopiować klipu do schowka."
     },
     "trsCapeImport": {
       "unsupported": "„{name}” nie jest obsługiwanym obrazem (PNG, JPEG, WebP, GIF lub JSON z TRS Studio).",
@@ -1111,7 +1117,8 @@
       "worlds": "Światy",
       "logs": "Logi",
       "files": "Pliki",
-      "share": "Udostępnij"
+      "share": "Udostępnij",
+      "clips": "Klipy"
     },
     "gallery": {
       "bannerSet": "Ustawiono baner",
@@ -3156,7 +3163,23 @@
     "player": {
       "label": "Odtwórz klip",
       "close": "Zamknij odtwarzacz",
-      "hint": "Esc zamyka · Alt+←/→ poprzedni/następny klip"
+      "hint": "Spacja odtwórz/pauza · ←/→ 5 s · J/L 10 s · ,/. klatka · F pełny ekran · M wycisz · Alt+←/→ inny klip · Esc zamyka",
+      "play": "Odtwórz (Spacja)",
+      "pause": "Pauza (Spacja)",
+      "previous": "Poprzedni klip (Alt+←)",
+      "next": "Następny klip (Alt+→)",
+      "back5": "5 sekund wstecz (←)",
+      "forward5": "5 sekund do przodu (→)",
+      "mute": "Wycisz (M)",
+      "unmute": "Włącz dźwięk (M)",
+      "volume": "Głośność",
+      "speed": "Prędkość odtwarzania",
+      "fullscreen": "Pełny ekran (F)",
+      "exitFullscreen": "Zamknij pełny ekran (F)",
+      "timeline": "Pozycja w klipie",
+      "unsupportedTitle": "Tego klipu nie można tu odtworzyć",
+      "unsupportedText": "Wbudowany odtwarzacz nie potrafi zdekodować tego wideo. Otwórz je w odtwarzaczu wideo systemu.",
+      "unsupportedLinux": "Wbudowany odtwarzacz potrzebuje wtyczek GStreamer dla H.264/AAC (np. gst-libav lub gstreamer1.0-plugins-bad). Zainstaluj je albo otwórz klip w odtwarzaczu wideo systemu."
     },
     "renameDialog": {
       "title": "Zmień nazwę klipu",
@@ -3206,6 +3229,60 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Programowy (x264)"
+    },
+    "gallery": {
+      "search": "Szukaj klipów",
+      "sortLabel": "Sortuj klipy",
+      "sort": {
+        "newest": "Najnowsze najpierw",
+        "oldest": "Najstarsze najpierw",
+        "longest": "Najdłuższe najpierw",
+        "largest": "Największe najpierw",
+        "name": "Nazwa (A–Z)"
+      },
+      "noMatches": "Żaden klip nie pasuje do wyszukiwania."
+    },
+    "share": {
+      "saveAs": "Zapisz jako …",
+      "copy": "Kopiuj plik (wklej w Discordzie, Eksploratorze …)",
+      "openExternal": "Otwórz w odtwarzaczu systemu",
+      "exported": "Klip zapisany",
+      "copied": "Klip skopiowany – wklej go tam, gdzie chcesz go udostępnić"
+    },
+    "trim": {
+      "button": "Przytnij",
+      "title": "Przytnij klip",
+      "start": "Początek",
+      "end": "Koniec",
+      "setStart": "Ustaw bieżącą",
+      "setEnd": "Ustaw bieżącą",
+      "setHint": "Użyj bieżącej pozycji (klawisz {key})",
+      "length": "Długość {time}",
+      "modeLabel": "Sposób cięcia",
+      "mode": {
+        "auto": "Automatycznie",
+        "fast": "Szybko",
+        "exact": "Dokładnie"
+      },
+      "modeHint": {
+        "auto": "Kopiuje bez ponownego kodowania, gdy początek jest na klatce kluczowej, w przeciwnym razie tnie co do klatki",
+        "fast": "Zawsze bez ponownego kodowania – początek przesuwa się na poprzednią klatkę kluczową",
+        "exact": "Zawsze koduj ponownie – co do klatki, trwa dłużej"
+      },
+      "tooShort": "Nowy klip musi trwać co najmniej pół sekundy.",
+      "explainCopy": "Natychmiast: fragment jest kopiowany bez ponownego kodowania – ta sama jakość.",
+      "explainShift": "Natychmiast bez ponownego kodowania – klip zaczyna się {seconds} s wcześniej, na poprzedniej klatce kluczowej.",
+      "explainExact": "Fragment jest ponownie kodowany co do klatki – to chwilę potrwa.",
+      "explainReencode": "Początek jest {seconds} s po klatce kluczowej (jest jedna co 2 s). Aby zacząć dokładnie tutaj, klip zostanie ponownie zakodowany – to chwilę potrwa.",
+      "useFast": "Lepiej przytnij szybko",
+      "nameLabel": "Nazwa nowego klipu",
+      "preview": "Podgląd",
+      "save": "Zapisz jako nowy klip",
+      "saving": "Zapisywanie …",
+      "saved": "Zapisano nowy klip: {name}",
+      "openNew": "Otwórz",
+      "suffix": "przycięty",
+      "hint": "I/O ustawiają początek/koniec · Spacja odtwarza fragment · Esc kończy przycinanie · oryginał pozostaje bez zmian"
     }
   },
   "logViewer": {
