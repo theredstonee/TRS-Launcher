@@ -10,6 +10,7 @@ import dev.theredstonee.trsclient.core.hosting.net.PeerStream;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
+import dev.theredstonee.trsclient.core.ui.Icons;
 import dev.theredstonee.trsclient.core.ui.Faces;
 import dev.theredstonee.trsclient.core.ui.Paint;
 import dev.theredstonee.trsclient.core.ui.Redstone;
@@ -380,6 +381,18 @@ public final class HostingUi extends WindowUi {
 	}
 
 	/** Rotes Abzeichen „Öffentlicher Link aktiv“. */
+	/** Dezenter Hinweis im TRS-Stil (Pausemenü): dunkle Fläche, feiner Rand, Link-Symbol in Lampenfarbe, heller Text. */
+	public static void linkHint(Canvas c, int x, int y, int w, int h, String label) {
+		Theme t = Theme.get();
+		c.fill(x, y, x + w, y + h, ColorMath.withAlpha(t.deep, 210));
+		c.fill(x, y, x + w, y + 1, t.border);
+		c.fill(x, y + h - 1, x + w, y + h, t.border);
+		c.fill(x, y, x + 1, y + h, t.border);
+		c.fill(x + w - 1, y, x + w, y + h, t.border);
+		Icons.draw(c, "link", x + 4, y + (h - 8) / 2, 1, t.lampOn);
+		Paint.textClipped(c, label, x + 16, y + (h - 8) / 2, w - 18, t.text, false);
+	}
+
 	public static void badge(Canvas c, int x, int y, int w, int h, String label) {
 		int red = 0xFFD02020;
 		Redstone.glow(c, x, y, w, h, red, 0.35f);

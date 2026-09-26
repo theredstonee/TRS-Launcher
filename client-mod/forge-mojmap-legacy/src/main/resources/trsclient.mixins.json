@@ -48,6 +48,7 @@
 		"SelectionListAccessor",
 		"HostingConnectMixin",
 		"HostingPublishMixin",
+		"HostingPingerMixin",
 		"HostingServerAccessor",
 		"HostingPlayerListAccessor"
 	],

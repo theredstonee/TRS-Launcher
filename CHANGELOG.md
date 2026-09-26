@@ -21,6 +21,26 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **TRS Client 0.9.1: crash fix.** With some mod combinations (for example together with Essential) Minecraft crashed
+  right at startup with TRS Client 0.9.0. The TRS Client now hooks into world hosting in a way that no longer clashes with other
+  mods; hosting works exactly as before. The client updates itself on the next game start.
+- **TRS Client: quieter public-link hint.** The red "Public link active" badge no longer sits on top of the game. While
+  the public link is on, a small, subtle hint in the pause menu (and in the hosting window) reminds you of it.
+
+### Deutsch
+
+- **TRS Client 0.9.1: Absturz behoben.** Mit manchen Mod-Kombinationen (zum Beispiel zusammen mit Essential) stürzte
+  Minecraft mit 0.9.0 direkt beim Start ab. Der TRS Client hängt sich jetzt so ins Welt-Hosting ein, dass es nicht mehr
+  mit anderen Mods kollidiert; Hosting funktioniert genau wie vorher. Der Client aktualisiert sich beim nächsten
+  Spielstart von selbst.
+- **TRS Client: dezenterer Hinweis zum öffentlichen Link.** Das rote Abzeichen „Öffentlicher Link aktiv“ liegt nicht
+  mehr über dem Spiel. Solange der öffentliche Link an ist, erinnert ein kleiner, unauffälliger Hinweis im Pausemenü
+  (und im Hosting-Fenster) daran.
+
 ## 0.8.0 – 2026-09-26 – Open House | Tag der offenen Tür
 <!-- banner: accent=#3ecfcf motif=/news/0.8.0/banner.png -->
 <!-- shots:
