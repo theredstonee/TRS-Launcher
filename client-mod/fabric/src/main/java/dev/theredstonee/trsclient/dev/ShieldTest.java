@@ -31,12 +31,16 @@ public final class ShieldTest {
 			samples--;
 			raise.append(String.format(java.util.Locale.ROOT, " %.2f", modules.shield.blend(ShieldPosition.OFF_HAND)));
 		}
+		// Blick fest nach Süden auf die Wand (Mausbewegungen am Testrechner sollen die Bilder nicht verstellen).
+		if (phase > 0) face(mc);
 		if (wait > 0) {
 			wait--;
 			return true;
 		}
 		switch (phase++) {
 			case 0:
+				// Keine Befehls-Meldungen im Chat (sonst verdecken sie die Screenshots).
+				actions.command("gamerule logAdminCommands false");
 				actions.command("gamerule sendCommandFeedback false");
 				actions.command("time set day");
 				actions.command("weather clear");
@@ -60,6 +64,9 @@ public final class ShieldTest {
 					if (m instanceof HudModule) m.setEnabled(false);
 				}
 				modules.crosshair.setEnabled(false);
+				// Gleichmäßige Bildrate auch im Hintergrund (für den Verlauf der Überblendung).
+				modules.dynamicFps.setEnabled(false);
+				mc.mouseHandler.releaseMouse();
 				modules.shieldPosition.reset();
 				modules.shieldPosition.setEnabled(true);
 				modules.shieldPreset.set(ShieldPreset.SIDE);
@@ -68,18 +75,26 @@ public final class ShieldTest {
 				wait = 40;
 				return true;
 			case 1:
+				dev.theredstonee.trsclient.compat.ChatLines.chat().clearMessages(false);
+				wait = 3;
+				return true;
+			case 2:
 				actions.shot("trsclient-shield-side");
 				modules.shieldPosition.setEnabled(false);
 				wait = 5;
 				return true;
-			case 2:
+			case 3:
 				actions.shot("trsclient-shield-vanilla");
 				modules.shieldPosition.setEnabled(true);
+				wait = 3;
+				return true;
+			case 4:
+				// Blocken beginnen; die Überblendung wird je Tick mitgeschrieben.
 				startBlocking(mc);
 				samples = 8;
 				wait = 12;
 				return true;
-			case 3:
+			case 5:
 				hold(mc.options.keyUse, true);
 				TrsClient.LOGGER.info("[Autotest] Schild hochnehmen (Überblendung je Tick):{} – blockt={}", raise, mc.player.isUsingItem());
 				raise.setLength(0);
@@ -87,7 +102,7 @@ public final class ShieldTest {
 				modules.shieldPosition.setEnabled(false);
 				wait = 5;
 				return true;
-			case 4:
+			case 6:
 				hold(mc.options.keyUse, true);
 				actions.shot("trsclient-shield-block-vanilla");
 				modules.shieldPosition.setEnabled(true);
@@ -95,7 +110,7 @@ public final class ShieldTest {
 				modules.shieldOpacity.set(40);
 				wait = 5;
 				return true;
-			case 5:
+			case 7:
 				hold(mc.options.keyUse, true);
 				actions.shot("trsclient-shield-block-transparent");
 				modules.shieldTransparent.set(false);
@@ -103,19 +118,19 @@ public final class ShieldTest {
 				samples = 8;
 				wait = 12;
 				return true;
-			case 6:
+			case 8:
 				TrsClient.LOGGER.info("[Autotest] Schild absenken (Überblendung je Tick):{} – blockt={}", raise, mc.player.isUsingItem());
 				raise.setLength(0);
 				modules.shieldPreset.set(ShieldPreset.LOW);
 				wait = 5;
 				return true;
-			case 7:
+			case 9:
 				actions.shot("trsclient-shield-low");
 				modules.shieldPreset.set(ShieldPreset.SIDE);
 				Mc.setScreen(new TrsMenuScreen(null).select(modules.shieldPosition));
 				wait = 20;
 				return true;
-			case 8:
+			case 10:
 				actions.shot("trsclient-shield-menu");
 				Mc.setScreen(null);
 				modules.shieldPosition.reset();
@@ -123,6 +138,17 @@ public final class ShieldTest {
 			default:
 				return false;
 		}
+	}
+
+	private static void face(Minecraft mc) {
+		//? if >=1.17 {
+		mc.player.setYRot(0);
+		mc.player.setXRot(0);
+		//?} else {
+		/*mc.player.yRot = 0;
+		mc.player.xRot = 0;
+		*///?}
+		mc.player.yHeadRot = 0;
 	}
 
 	private static void startBlocking(Minecraft mc) {

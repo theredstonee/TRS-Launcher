@@ -9,11 +9,11 @@ import dev.theredstonee.trsclient.core.module.ChoiceSetting;
 public enum ShieldPreset implements ChoiceSetting.Option {
 	/** Seitlich und etwas tiefer, beim Blocken flach am Rand – der Standard beim Einschalten. */
 	SIDE("Side",
-			new ShieldPose(0.12, -0.12, 0.0, 0, -12, 0, 0.85),
-			new ShieldPose(0.26, -0.20, 0.04, 8, -18, -4, 0.85)),
+			new ShieldPose(0.12, -0.08, 0.0, 0, -12, 0, 0.85),
+			new ShieldPose(0.22, -0.16, 0.04, 8, -18, -4, 0.85)),
 	/** Weit unten, beim Blocken nur knapp über dem Bildrand. */
 	LOW("Low",
-			new ShieldPose(0.04, -0.26, 0.0, 0, 0, 0, 0.90),
+			new ShieldPose(0.04, -0.20, 0.0, 0, 0, 0, 0.90),
 			new ShieldPose(0.10, -0.30, 0.0, 12, -6, 0, 0.90)),
 	/** Alles neutral – wie ohne Modul, aber mit weichem Übergang ins Blocken. */
 	VANILLA("Vanilla", ShieldPose.NEUTRAL, ShieldPose.NEUTRAL),

@@ -25,6 +25,12 @@ How to write an entry:
 
 ### English
 
+- **TRS Client: Shield Position.** A new module in the PvP category holds your shield further to the side and lower in
+  first person, so you see more of the fight. While blocking it switches to its own flatter pose – smoothly, without
+  the old jump. Pick a preset ("Side", "Low", "Vanilla") or set position, rotation and size yourself for normal and for
+  blocking; a live preview on the settings page shows how much of the screen the shield covers. If you like, the shield
+  turns see-through while you block (opacity adjustable). Off by default; works with shields from other mods too, and
+  third person stays unchanged. Available from Minecraft 1.10.2 (Forge) and 1.14.4 (Fabric) up to 26.3.
 - **Join your friends' worlds from the launcher.** When a friend opens their singleplayer world in the TRS Client, you
   see it live under Social → Worlds with version, game mode and player count. Invited? Press "Join". Not invited? Press
   "Ask to join" (or enter a code like K7Q-M2X) – the launcher says "Request sent" and, as soon as the host lets you in,
@@ -39,6 +45,13 @@ How to write an entry:
 
 ### Deutsch
 
+- **TRS Client: Schild-Position.** Ein neues Modul in der Kategorie PvP hält dein Schild in der 1. Person weiter
+  seitlich und tiefer, damit du vom Kampf mehr siehst. Beim Blocken wechselt es in eine eigene, flachere Haltung – weich,
+  ohne den alten Sprung. Wähle eine Vorlage („Seitlich“, „Tief“, „Vanilla“) oder stelle Position, Drehung und Größe für
+  normal und fürs Blocken selbst ein; eine Live-Vorschau auf der Einstellungsseite zeigt, wie viel vom Bild das Schild
+  verdeckt. Auf Wunsch wird das Schild beim Blocken durchsichtig (Deckkraft einstellbar). Ab Werk aus; klappt auch mit
+  Schilden anderer Mods, die 3. Person bleibt unverändert. Verfügbar ab Minecraft 1.10.2 (Forge) bzw. 1.14.4 (Fabric)
+  bis 26.3.
 - **Den Welten deiner Freunde aus dem Launcher beitreten.** Öffnet ein Freund seine Einzelspielerwelt im TRS Client,
   siehst du sie live unter Sozial → Welten mit Version, Spielmodus und Spielerzahl. Eingeladen? „Beitreten“ drücken.
   Nicht eingeladen? „Anfragen“ (oder einen Code wie K7Q-M2X eingeben) – der Launcher meldet „Anfrage gesendet“ und
