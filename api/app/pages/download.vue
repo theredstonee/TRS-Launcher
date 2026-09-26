@@ -1,8 +1,24 @@
 <script setup lang="ts">
-const { m, fill, date } = useLang()
+import { breadcrumbLd } from '#shared/seo'
+
+const { lang, m, fill, date } = useLang()
+const siteUrl = useSiteUrl()
 const { data } = await useRelease()
+const { data: blogData } = await useBlog()
 const release = computed(() => data.value?.release ?? null)
-useHead({ title: () => m.value.nav.download })
+usePageSeo(() => ({
+  path: '/download',
+  title: m.value.seo.download.title,
+  description: m.value.seo.download.description,
+  image: { url: '/og.png', width: 1260, height: 660, alt: m.value.seo.ogAlt },
+  jsonLd: [
+    launcherLd(siteUrl, lang.value, m.value, release.value, blogData.value?.posts?.[0]),
+    breadcrumbLd(siteUrl, lang.value, [
+      { name: m.value.nav.home, path: '/' },
+      { name: m.value.nav.download, path: '/download' },
+    ]),
+  ],
+}))
 
 const windows = computed(() => assetFor(release.value, 'windows'))
 const linux = computed(() =>

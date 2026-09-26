@@ -20,7 +20,10 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'theme-color', content: '#111116' },
       ],
-      link: [{ rel: 'icon', type: 'image/png', href: '/icon.png' }],
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/icon.png' },
+        { rel: 'apple-touch-icon', href: '/icon.png' },
+      ],
     },
   },
   devServer: { host: '127.0.0.1', port: 3000 },
@@ -62,11 +65,20 @@ export default defineNuxtConfig({
       },
     },
   },
+  // Zeitpunkt des Builds = lastmod der Seiten in der Sitemap (server/routes/sitemap.xml.get.ts).
+  runtimeConfig: {
+    buildTime: new Date().toISOString(),
+  },
   routeRules: {
     // API: eigene Header aus server/middleware/00.security.ts, keine Seiten-CSP.
     '/v1/**': { security: { headers: false } },
-    // Admin nur im Browser rendern (Sitzung steckt im httpOnly-Cookie, nichts vorab ausliefern).
-    '/admin': { ssr: false },
+    // Admin nur im Browser rendern (Sitzung steckt im httpOnly-Cookie, nichts vorab ausliefern), nie indexieren.
+    '/admin': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // Bilder aus public/ haben keinen Hash im Namen – einen Tag zwischenspeichern, danach neu prüfen (ETag).
+    '/shots/**': { headers: { 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800' } },
+    '/flags/**': { headers: { 'Cache-Control': 'public, max-age=604800' } },
+    '/og.png': { headers: { 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800' } },
+    '/icon.png': { headers: { 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800' } },
   },
   nitro: {
     preset: 'node-server',

@@ -73,7 +73,7 @@ const label = (i: number) => fill(m.value.blog.imageOf, { n: i + 1, total: props
     <figure>
       <div class="stage group">
         <button type="button" class="stage-btn" :title="m.blog.enlarge" :aria-label="m.blog.enlarge" @click="open">
-          <img :key="current.src" :src="current.src" :alt="current.caption" class="stage-img" decoding="async" />
+          <img :key="current.src" :src="current.src" :alt="current.caption || label(index)" class="stage-img" decoding="async" />
         </button>
         <template v-if="shots.length > 1">
           <button type="button" class="nav-btn left-3" :title="m.blog.previous" :aria-label="m.blog.previous" @click="step(-1)">
@@ -108,7 +108,7 @@ const label = (i: number) => fill(m.value.blog.imageOf, { n: i + 1, total: props
     <Teleport to="body">
       <Transition name="shot-fade">
         <div v-if="zoomed" class="lightbox" role="dialog" aria-modal="true" :aria-label="current.caption || m.blog.screenshots" @mousedown.self="close">
-          <img :key="current.src" :src="current.src" :alt="current.caption" class="lightbox-img" />
+          <img :key="current.src" :src="current.src" :alt="current.caption || label(index)" class="lightbox-img" />
           <div class="lightbox-text">
             <p v-if="current.caption" class="font-medium">{{ current.caption }}</p>
             <p v-if="shots.length > 1" class="mt-1 text-xs opacity-60">{{ index + 1 }} / {{ shots.length }}</p>

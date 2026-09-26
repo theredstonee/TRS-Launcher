@@ -1,13 +1,15 @@
 <script setup lang="ts">
 const { m } = useLang()
+const lp = useLocalePath()
 const route = useRoute()
 const menuOpen = ref(false)
 
 const links = computed(() => [
-  { to: '/download', label: m.value.nav.download },
-  { to: '/blog', label: m.value.nav.blog },
-  { to: '/capes', label: m.value.nav.capes },
-  { to: '/faq', label: m.value.nav.faq },
+  { to: lp('/features'), label: m.value.nav.features },
+  { to: lp('/download'), label: m.value.nav.download },
+  { to: lp('/blog'), label: m.value.nav.blog },
+  { to: lp('/capes'), label: m.value.nav.capes },
+  { to: lp('/faq'), label: m.value.nav.faq },
 ])
 
 watch(() => route.path, () => (menuOpen.value = false))
@@ -20,7 +22,7 @@ const year = new Date().getFullYear()
 
     <header class="site-header sticky top-0 z-30">
       <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-        <NuxtLink to="/" class="flex items-center gap-2.5 text-base-50" aria-label="TRS Launcher">
+        <NuxtLink :to="lp('/')" class="flex items-center gap-2.5 text-base-50" aria-label="TRS Launcher">
           <img src="/icon.png" alt="" width="32" height="32" class="size-8 [image-rendering:pixelated]" />
           <span class="display text-xl leading-none">TRS Launcher</span>
         </NuxtLink>
@@ -34,7 +36,7 @@ const year = new Date().getFullYear()
           <a :href="REPO_URL" class="btn-icon hidden sm:inline-flex" aria-label="GitHub" rel="noopener" target="_blank">
             <SiteIcon name="github" class="size-4.5" />
           </a>
-          <NuxtLink to="/download" class="btn btn-primary hidden sm:inline-flex">
+          <NuxtLink :to="lp('/download')" class="btn btn-primary hidden sm:inline-flex">
             <SiteIcon name="download" class="size-4" />
             {{ m.nav.download }}
           </NuxtLink>
@@ -53,7 +55,7 @@ const year = new Date().getFullYear()
         <NuxtLink v-for="l in links" :key="l.to" :to="l.to" class="block rounded-md px-3 py-2.5 text-base text-base-200 hover:bg-base-800">
           {{ l.label }}
         </NuxtLink>
-        <NuxtLink to="/download" class="btn btn-primary mt-2 w-full">{{ m.nav.download }}</NuxtLink>
+        <NuxtLink :to="lp('/download')" class="btn btn-primary mt-2 w-full">{{ m.nav.download }}</NuxtLink>
       </nav>
     </header>
 
@@ -73,23 +75,24 @@ const year = new Date().getFullYear()
           <p class="mt-3 max-w-sm text-xs text-base-600">{{ m.footer.notAffiliated }}</p>
         </div>
         <nav class="flex flex-col gap-2 text-sm" aria-label="Site">
-          <NuxtLink to="/download" class="footer-link">{{ m.nav.download }}</NuxtLink>
-          <NuxtLink to="/blog" class="footer-link">{{ m.nav.blog }}</NuxtLink>
-          <NuxtLink to="/capes" class="footer-link">{{ m.nav.capes }}</NuxtLink>
-          <NuxtLink to="/faq" class="footer-link">{{ m.nav.faq }}</NuxtLink>
+          <NuxtLink :to="lp('/features')" class="footer-link">{{ m.nav.features }}</NuxtLink>
+          <NuxtLink :to="lp('/download')" class="footer-link">{{ m.nav.download }}</NuxtLink>
+          <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>
+          <NuxtLink :to="lp('/capes')" class="footer-link">{{ m.nav.capes }}</NuxtLink>
+          <NuxtLink :to="lp('/faq')" class="footer-link">{{ m.nav.faq }}</NuxtLink>
         </nav>
         <nav class="flex flex-col gap-2 text-sm" aria-label="Links">
           <a :href="REPO_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.github }}</a>
           <a :href="DISCORD_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.discord }}</a>
           <a :href="WIKI_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.wiki }}</a>
           <a :href="IMPRINT_URL" class="footer-link" rel="noopener">{{ m.footer.imprint }}</a>
-          <NuxtLink to="/privacy" class="footer-link">{{ m.footer.privacy }}</NuxtLink>
+          <NuxtLink :to="lp('/privacy')" class="footer-link">{{ m.footer.privacy }}</NuxtLink>
         </nav>
       </div>
       <div class="border-t border-base-800">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-base-600 sm:px-6">
           <span>© {{ year }} Theredstonee · GPL-3.0</span>
-          <NuxtLink to="/admin" class="hover:text-base-400">{{ m.nav.admin }}</NuxtLink>
+          <NuxtLink to="/admin" rel="nofollow" class="hover:text-base-400">{{ m.nav.admin }}</NuxtLink>
         </div>
       </div>
     </footer>

@@ -3,6 +3,7 @@
 // und kleine Vorschaubilder der Screenshots (die ganze Karte führt zum Beitrag mit der Galerie).
 const props = defineProps<{ post: BlogPostSummary, featured?: boolean }>()
 const { lang, m, fill, date } = useLang()
+const lp = useLocalePath()
 const title = computed(() => postTitle(props.post, lang.value, fill(m.value.common.version, { version: props.post.version })))
 const headlines = computed(() => postHeadlines(props.post, lang.value).slice(0, props.featured ? 5 : 3))
 const kicker = computed(() => (props.post.date ? `v${props.post.version} · ${date(props.post.date)}` : `v${props.post.version}`))
@@ -13,7 +14,7 @@ const more = computed(() => Math.max(0, shots.value.length - thumbCount.value))
 </script>
 
 <template>
-  <NuxtLink :to="`/blog/${post.version}`" class="card card-hover group flex flex-col overflow-hidden">
+  <NuxtLink :to="lp(`/blog/${post.version}`)" class="card card-hover group flex flex-col overflow-hidden">
     <div class="banner-box" :class="featured ? 'h-60 sm:h-72' : 'h-44'">
       <UpdateBanner
         :kicker="kicker"

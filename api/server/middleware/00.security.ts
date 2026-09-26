@@ -7,7 +7,9 @@ import { clientIp, limit, noContent } from '../lib/http'
 import { RULES } from '../lib/ratelimit'
 
 /** Gebaute Dateien der Website (Skripte, Stile, Schriften) – nicht aufs IP-Limit anrechnen. */
-const STATIC = /^\/(?:_nuxt|_fonts|news|img)\/|^\/(?:icon\.png|favicon\.ico)$/
+const STATIC = /^\/(?:_nuxt|_fonts|news|img|shots|flags)\/|^\/(?:icon\.png|og\.png|favicon\.ico)$/
+/** Maschinenlesbare Dateien der Website – gleich in jeder Sprache. */
+const FEEDS = /^\/(?:sitemap\.xml|robots\.txt|feed\.xml)$/
 
 /**
  * Läuft vor jeder Route. API (/v1/…): Sicherheits-Header, strenges CORS (nur Origins aus
@@ -29,7 +31,13 @@ export default defineEventHandler(async (event) => {
     if (ctx.config.apiOnlyHosts.has(host)) {
       return sendRedirect(event, `${ctx.config.siteUrl}${event.path}`, 301)
     }
-    if (!STATIC.test(event.path)) limit(`ip:${clientIp(event)}`, RULES.globalIp)
+    if (!STATIC.test(event.path)) {
+      limit(`ip:${clientIp(event)}`, RULES.globalIp)
+      // Seiten: Adresse der Website für kanonische Links/hreflang (composables/useSeo.ts). Ohne `?lang=`
+      // hängt die Sprache von Cookie und Accept-Language ab – das sagen wir Caches und Crawlern.
+      event.context.siteUrl = ctx.config.siteUrl
+      if (!FEEDS.test(event.path.split('?')[0]!)) setResponseHeader(event, 'Vary', 'Accept-Language, Cookie')
+    }
     return
   }
 

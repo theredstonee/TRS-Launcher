@@ -877,8 +877,9 @@ Exactly one of `capeId` and `cosmeticId` is set. **`capeId` can be `null`** for 
 | Request | Response |
 |---|---|
 | `GET /v1/health` | `{ "status": "ok", "version": 1, "time": "…" }`, or `503 database_unavailable` |
-| `GET /` | A tiny HTML status page |
-| `GET /robots.txt` | `Disallow: /` |
+| `GET /` | The website (server-rendered pages, see §16) |
+| `GET /robots.txt` | Crawling rules: `/v1/` and `/admin` disallowed except `/v1/site/` and `/v1/capes/*.png`; links the sitemap |
+| `GET /sitemap.xml` | All pages and blog posts in every language with hreflang alternates (details: `docs/seo.md`) |
 
 ---
 

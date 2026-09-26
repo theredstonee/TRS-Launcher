@@ -1,22 +1,22 @@
 <script setup lang="ts">
-const { m } = useLang()
-useHead({ title: () => m.value.faq.title })
+import { breadcrumbLd, faqPageLd } from '#shared/seo'
 
-// Strukturierte Daten für Suchmaschinen (FAQPage).
-useHead({
-  script: [
-    {
-      type: 'application/ld+json',
-      innerHTML: computed(() =>
-        JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: m.value.faq.items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })),
-        }).replace(/</g, '\\u003c'),
-      ),
-    },
+const { lang, m } = useLang()
+const siteUrl = useSiteUrl()
+
+// Strukturierte Daten für Suchmaschinen: FAQPage mit genau den sichtbaren Fragen und Antworten.
+usePageSeo(() => ({
+  path: '/faq',
+  title: m.value.seo.faq.title,
+  description: m.value.seo.faq.description,
+  jsonLd: [
+    faqPageLd(siteUrl, lang.value, m.value.faq.items),
+    breadcrumbLd(siteUrl, lang.value, [
+      { name: m.value.nav.home, path: '/' },
+      { name: m.value.faq.title, path: '/faq' },
+    ]),
   ],
-})
+}))
 </script>
 
 <template>
