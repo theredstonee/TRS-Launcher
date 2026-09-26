@@ -16,7 +16,8 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
-## Unreleased
+## 0.6.3 – 2026-09-26 – The Safety Net Update | Das Sicherheitsnetz-Update
+<!-- banner: accent=#e8d44d motif=/news/0.6.3/banner.png -->
 
 ### English
 
