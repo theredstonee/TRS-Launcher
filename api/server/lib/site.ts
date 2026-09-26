@@ -1,6 +1,6 @@
 import type { AppContext } from './context'
 import { all } from './db'
-import { changelogFor, parseChangelog, splitPost, type ChangelogEntry, type PostBlock, type UpdateBanner } from './changelog'
+import { changelogFor, parseChangelog, postContent, type ChangelogEntry, type PostShot, type UpdateBanner } from './changelog'
 
 // Daten für die Website: neueste Launcher-Version (GitHub Releases), Blog (CHANGELOG.md aus dem
 // Repo) und die öffentlichen TRS-Umhänge. Externe Quellen werden zwischengespeichert; schlägt ein
@@ -117,15 +117,21 @@ export interface BlogPostSummary {
   headlines: { en: string[], de: string[] }
   /** Akzentfarbe + Motiv (absolute Bildadresse) des Update-Banners. */
   banner: UpdateBanner | null
+  /**
+   * Screenshots der Neuerungen je Sprache (Kommentar „shots:“ im Changelog, dazu ältere Bildzeilen im Text),
+   * absolute Bildadressen, höchstens SHOTS_MAX.
+   */
+  gallery: { en: PostShot[], de: PostShot[] }
 }
 
 export interface BlogPost extends BlogPostSummary {
-  blocks: { en: PostBlock[], de: PostBlock[] }
+  /** Text des Beitrags ohne Bildzeilen (die stehen in `gallery`). */
+  markdown: { en: string, de: string }
 }
 
 /** Bilder aus public/news/ liegen im Repo – ausgeliefert werden sie von GitHub. */
-function absoluteImages(blocks: PostBlock[]): PostBlock[] {
-  return blocks.map((b) => (b.kind === 'image' ? { ...b, src: `${RAW}/public${b.src}` } : b))
+function absoluteShots(shots: PostShot[]): PostShot[] {
+  return shots.map((s) => ({ ...s, src: `${RAW}/public${s.src}` }))
 }
 
 function headlines(text: string): string[] {
@@ -134,7 +140,8 @@ function headlines(text: string): string[] {
 
 function summary(e: ChangelogEntry & { version: string }): BlogPostSummary {
   const banner = e.banner ? { accent: e.banner.accent, motif: e.banner.motif ? `${RAW}/public${e.banner.motif}` : null } : null
-  return { version: e.version, date: e.date, title: e.title, headlines: { en: headlines(e.en), de: headlines(e.de) }, banner }
+  const gallery = { en: absoluteShots(postContent(e, 'en').shots), de: absoluteShots(postContent(e, 'de').shots) }
+  return { version: e.version, date: e.date, title: e.title, headlines: { en: headlines(e.en), de: headlines(e.de) }, banner, gallery }
 }
 
 function changelog(): Promise<ChangelogEntry[]> {
@@ -151,7 +158,7 @@ export async function blogPost(version: string): Promise<BlogPost | null> {
   if (!e || !e.version) return null
   return {
     ...summary(e as ChangelogEntry & { version: string }),
-    blocks: { en: absoluteImages(splitPost(e.en)), de: absoluteImages(splitPost(e.de)) },
+    markdown: { en: postContent(e, 'en').markdown, de: postContent(e, 'de').markdown },
   }
 }
 

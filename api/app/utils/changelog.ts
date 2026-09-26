@@ -1,15 +1,27 @@
 // Liest CHANGELOG.md: je Version ein Abschnitt „## <version> – <datum>“ mit „### English“ und
-// „### Deutsch“. Dieselbe Funktion nutzt der Release-Build (scripts/changelog.mjs) und der
-// Launcher („Was ist neu“, Update-Karte) – daher ohne Nuxt-Abhängigkeiten.
+// „### Deutsch“. Dieselbe Funktion nutzt der Release-Build (scripts/changelog.mjs), der Launcher
+// („Was ist neu“, Update-Karte) und die Website (Blog) – daher ohne Nuxt-Abhängigkeiten.
+// Die Website hat zwei Kopien dieser Datei (api/app/utils/changelog.ts, api/server/lib/changelog.ts):
+// bei Änderungen alle drei gleich halten.
 //
 // Optional trägt die Überschrift einen Update-Namen (Englisch | Deutsch):
 //   ## 0.5.0 – 2026-09-25 – The Clip Update | Das Clip-Update
-// Screenshots stehen als eigene Zeile „![Bildunterschrift](/news/<version>/<datei>.png)“ im Text;
-// die Dateien liegen in public/news/.
 //
 // Das Banner jedes Updates hat einen festen Stil (Deepslate, Redstone-Rahmen, Pixel-Schrift); je Version
 // ändern sich nur Akzentfarbe und Motiv (freigestellte HD-Pixel-Art aus TRS Studio, Vorlage „Update-Banner“):
 //   <!-- banner: accent=#ff7ab8 motif=/news/0.4.3/banner.png -->
+//
+// Screenshots der Neuerungen stehen als zweiter Kommentar direkt darunter – je Zeile eine Datei aus
+// public/news/<version>/ (PNG oder WebP, höchstens SHOTS_MAX), optional mit Bildunterschrift auf
+// Englisch und Deutsch (fehlt eine Sprache, gilt die andere):
+//   <!-- shots:
+//   /news/0.6.5/clips.png | The clip gallery | Die Clip-Galerie
+//   /news/0.6.5/trim.webp | Trimming a clip | Einen Clip zuschneiden
+//   /news/0.6.5/menu.png
+//   -->
+// Einzeilig geht auch, Einträge dann mit „;“ trennen: <!-- shots: /news/0.6.5/a.png | A | A ; /news/0.6.5/b.png -->
+// Ältere Beiträge haben Bilder noch als eigene Zeile „![Bildunterschrift](/news/<version>/<datei>.png)“ im
+// Text – postContent() sammelt beides in einer Galerie.
 
 export interface ChangelogEntry {
   /** z. B. „0.4.4“; der Abschnitt „Unreleased“ hat `null`. */
@@ -21,6 +33,10 @@ export interface ChangelogEntry {
   title: { en: string; de: string } | null
   /** Banner: Akzentfarbe und Motiv des Updates, sonst `null`. */
   banner: UpdateBanner | null
+  /** Screenshots der Neuerungen (Kommentar „shots:“) in Dateireihenfolge. */
+  shots: UpdateShot[]
+  /** Einträge im Kommentar „shots:“, die nicht gelesen werden konnten (meldet scripts/changelog.mjs check). */
+  shotIssues: string[]
 }
 
 export interface UpdateBanner {
@@ -30,9 +46,28 @@ export interface UpdateBanner {
   motif: string | null
 }
 
+export interface UpdateShot {
+  /** `/news/<version>/<datei>.png|webp` */
+  src: string
+  /** Bildunterschrift je Sprache, sonst `null`. */
+  caption: { en: string; de: string } | null
+}
+
+/** Höchstens so viele Screenshots je Update. */
+export const SHOTS_MAX = 8
+/** Ab dieser Version braucht jedes Release mindestens einen Screenshot. */
+export const SHOTS_REQUIRED_FROM = '0.6.5'
+
 const BANNER_COMMENT = /^<!-- *banner: *(.*?) *-->$/
 /** Platzhalter für gesicherte Banner-Zeilen, bevor die übrigen Kommentare entfernt werden. */
 const BANNER_MARK = '\u0001banner '
+/** Kommentar „shots:“ – nur, wenn er am Zeilenanfang beginnt und am Zeilenende schließt. */
+const SHOTS_COMMENT = /^[ \t]*<!--\s*shots:([\s\S]*?)-->[ \t]*$/gm
+const SHOT_MARK = '\u0001shot '
+const SHOT_PATH = /^\/news\/[\w.-]+\/[\w.-]+\.(?:png|webp)$/
+/** Bildunterschrift: kurz, eine Zeile, ohne Zeichen, die in Markdown oder HTML etwas bedeuten. */
+// eslint-disable-next-line no-control-regex -- Steuerzeichen sind genau das, was ausgeschlossen wird
+const SHOT_CAPTION = /^[^[\]<>\u0000-\u001f]{1,160}$/
 
 /** „accent=#ff7ab8 motif=/news/0.4.3/banner.png“ → Banner; ungültige Werte werden ignoriert. */
 export function parseBanner(raw: string): UpdateBanner | null {
@@ -40,6 +75,19 @@ export function parseBanner(raw: string): UpdateBanner | null {
   if (!accent) return null
   const motif = /(?:^|\s)motif=(\/news\/[\w.-]+\/[\w.-]+\.(?:png|webp))(?:\s|$)/.exec(raw)?.[1] ?? null
   return { accent: accent.toLowerCase(), motif: motif && !motif.includes('..') ? motif : null }
+}
+
+/**
+ * „/news/0.6.5/a.png | English | Deutsch“ → Screenshot. Ungültiger Pfad, zu viele Teile oder eine
+ * Bildunterschrift mit verbotenen Zeichen → `null`.
+ */
+export function parseShot(raw: string): UpdateShot | null {
+  const parts = raw.split('|').map((part) => part.trim())
+  if (parts.length > 3) return null
+  const [src = '', en = '', de = ''] = parts
+  if (!SHOT_PATH.test(src) || src.includes('..')) return null
+  if ([en, de].some((text) => text && !SHOT_CAPTION.test(text))) return null
+  return { src, caption: en || de ? { en: en || de, de: de || en } : null }
 }
 
 const VERSION_HEADING =
@@ -56,6 +104,14 @@ function parseTitle(raw: string | undefined): ChangelogEntry['title'] {
 /** Alle Abschnitte in Dateireihenfolge (neueste zuerst, wie im Changelog). */
 export function parseChangelog(text: string): ChangelogEntry[] {
   const withoutComments = text
+    .replace(SHOTS_COMMENT, (_, body: string) =>
+      body
+        .split(/\r?\n|;/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((item) => SHOT_MARK + item)
+        .join('\n'),
+    )
     .split(/\r?\n/)
     .map((line) => {
       const m = BANNER_COMMENT.exec(line.trim())
@@ -76,7 +132,16 @@ export function parseChangelog(text: string): ChangelogEntry[] {
     const heading = VERSION_HEADING.exec(line)
     if (heading) {
       push()
-      current = { version: heading[1] ?? null, date: heading[3] ?? null, en: '', de: '', title: parseTitle(heading[4]), banner: null }
+      current = {
+        version: heading[1] ?? null,
+        date: heading[3] ?? null,
+        en: '',
+        de: '',
+        title: parseTitle(heading[4]),
+        banner: null,
+        shots: [],
+        shotIssues: [],
+      }
       lang = null
       continue
     }
@@ -90,6 +155,14 @@ export function parseChangelog(text: string): ChangelogEntry[] {
     if (!current) continue
     if (line.startsWith(BANNER_MARK)) {
       current.banner ??= parseBanner(line.slice(BANNER_MARK.length))
+      continue
+    }
+    if (line.startsWith(SHOT_MARK)) {
+      const raw = line.slice(SHOT_MARK.length)
+      const shot = parseShot(raw)
+      if (!shot) current.shotIssues.push(raw)
+      else if (current.shots.some((s) => s.src === shot.src)) current.shotIssues.push(`${raw} (doppelt)`)
+      else current.shots.push(shot)
       continue
     }
     const sub = /^### +(.+?) *$/.exec(line)
@@ -165,6 +238,30 @@ export function splitPost(markdown: string): PostBlock[] {
   return blocks
 }
 
+/** Ein Bild der Galerie eines Beitrags, Bildunterschrift schon in der Sprache des Lesers (oder leer). */
+export interface PostShot {
+  src: string
+  caption: string
+}
+
+/**
+ * Ein Beitrag in einer Sprache: der Text ohne eigene Bildzeilen und die Galerie – erst die Screenshots
+ * aus dem Kommentar „shots:“, dann ältere Bildzeilen „![…](/news/…)“ aus dem Text (jede Datei nur
+ * einmal), höchstens SHOTS_MAX Bilder.
+ */
+export function postContent(
+  entry: Pick<ChangelogEntry, 'en' | 'de' | 'shots'>,
+  lang: 'en' | 'de',
+): { markdown: string; shots: PostShot[] } {
+  const shots: PostShot[] = entry.shots.map((s) => ({ src: s.src, caption: s.caption?.[lang] ?? '' }))
+  const text: string[] = []
+  for (const block of splitPost(lang === 'de' ? entry.de : entry.en)) {
+    if (block.kind === 'text') text.push(block.markdown)
+    else if (!shots.some((s) => s.src === block.src)) shots.push({ src: block.src, caption: block.caption })
+  }
+  return { markdown: text.join('\n\n'), shots: shots.slice(0, SHOTS_MAX) }
+}
+
 /** Für GitHub: „/news/…“-Bilder auf die Datei im Repo zum Tag der Version zeigen lassen. */
 function githubImages(markdown: string, version: string): string {
   return markdown.replace(
@@ -173,11 +270,17 @@ function githubImages(markdown: string, version: string): string {
   )
 }
 
-/** Text für GitHub-Release und Auto-Update: Update-Name, dann Englisch, dann Deutsch. */
+/** Screenshots aus dem Kommentar „shots:“ als Bildzeilen unter den Text einer Sprache. */
+function withShots(markdown: string, entry: Pick<ChangelogEntry, 'shots'>, lang: 'en' | 'de'): string {
+  const images = entry.shots.slice(0, SHOTS_MAX).map((s) => `![${s.caption?.[lang] ?? ''}](${s.src})`)
+  return images.length ? `${markdown}\n\n${images.join('\n\n')}` : markdown
+}
+
+/** Text für GitHub-Release und Auto-Update: Update-Name, dann Englisch, dann Deutsch – jeweils mit Screenshots. */
 export function releaseNotes(entry: ChangelogEntry): string {
   const version = entry.version ?? ''
-  const en = githubImages(entry.en, version)
-  const de = githubImages(entry.de, version)
+  const en = githubImages(withShots(entry.en, entry, 'en'), version)
+  const de = githubImages(withShots(entry.de, entry, 'de'), version)
   if (entry.title) return `# ${entry.title.en}\n\n${en}\n\n# ${entry.title.de}\n\n${de}\n`
   return `## What's new\n\n${en}\n\n## Neu in dieser Version\n\n${de}\n`
 }

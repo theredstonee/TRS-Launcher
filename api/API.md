@@ -1435,8 +1435,8 @@ Public, cached for 5 minutes (`Cache-Control: public, max-age=300`). Used by the
 | Request | Response |
 |---|---|
 | `GET /v1/site/releases` | `{ release: { version, tag, publishedAt, pageUrl, assets: [{ platform: "windows"|"appimage"|"deb"|"rpm", name, url, size }] } | null }`. The newest `v*` GitHub release (not drafts, not the `updater`/`client-mod` channels). Only GitHub download URLs of this repository. |
-| `GET /v1/site/blog` | `{ posts: [{ version, date, title: { en, de } | null, headlines: { en: [], de: [] } }] }` from `CHANGELOG.md` on `main`, newest first, released versions only. |
-| `GET /v1/site/blog/{version}` | `{ post: … + blocks: { en: PostBlock[], de: PostBlock[] } }`, or `404 not_found`. A PostBlock is `{ kind: "text", markdown }` or `{ kind: "image", src, caption }`; image `src` points to `raw.githubusercontent.com`. |
+| `GET /v1/site/blog` | `{ posts: [{ version, date, title: { en, de } | null, headlines: { en: [], de: [] }, banner: { accent, motif } | null, gallery: { en: PostShot[], de: PostShot[] } }] }` from `CHANGELOG.md` on `main`, newest first, released versions only. A PostShot is `{ src, caption }` (caption in that language or `""`); `src` points to `raw.githubusercontent.com`. The gallery comes from the `shots:` comment below the banner line, plus older `![…](/news/…)` lines in the text; at most 8. |
+| `GET /v1/site/blog/{version}` | `{ post: … + markdown: { en, de } }` (the text without image lines), or `404 not_found`. |
 | `GET /v1/site/capes` | `{ capes: [{ id, name, unlock, url, scale, frames, frameTimeMs }] }`. Approved built-in capes only; `url` is relative (`/v1/capes/<id>.png?v=…`). |
 
 If GitHub is unreachable, the last good answer is kept. Without one, `release` is `null` and `posts` is empty.

@@ -14,15 +14,14 @@ const post = computed(() => data.value!.post)
 const title = computed(() => postTitle(post.value, lang.value, fill(m.value.common.version, { version: post.value.version })))
 const kicker = computed(() => (post.value.date ? `v${post.value.version} · ${date(post.value.date)}` : `v${post.value.version}`))
 /** Spanisch hat keinen eigenen Changelog-Text – dann Englisch. */
-const blocks = computed(() => (lang.value === 'de' ? post.value.blocks.de : post.value.blocks.en))
-const rendered = computed(() =>
-  blocks.value.map((b) => (b.kind === 'text' ? { kind: 'text' as const, html: renderMarkdown(b.markdown) } : b)),
-)
+const html = computed(() => renderMarkdown(lang.value === 'de' ? post.value.markdown.de : post.value.markdown.en))
+const shots = computed(() => postGallery(post.value, lang.value))
 
 useHead({ title })
 useSeoMeta({
   description: () => postHeadlines(post.value, lang.value).join(' · ') || m.value.blog.lead,
   ogType: 'article',
+  ogImage: () => shots.value[0]?.src,
 })
 </script>
 
@@ -37,14 +36,9 @@ useSeoMeta({
     </header>
 
     <div class="mx-auto max-w-3xl px-4 pt-10 sm:px-6">
-      <template v-for="(b, i) in rendered" :key="i">
-        <!-- eslint-disable-next-line vue/no-v-html -- eigener Changelog, ohne rohes HTML gerendert (utils/markdown.ts) -->
-        <div v-if="b.kind === 'text'" class="prose-md post-text" v-html="b.html" />
-        <figure v-else class="my-8">
-          <img :src="b.src" :alt="b.caption" loading="lazy" class="w-full rounded-xl border border-base-800" />
-          <figcaption v-if="b.caption" class="mt-2 text-center text-sm text-base-400">{{ b.caption }}</figcaption>
-        </figure>
-      </template>
+      <ShotGallery v-if="shots.length" :shots="shots" :accent="post.banner?.accent" class="mb-10" />
+      <!-- eslint-disable-next-line vue/no-v-html -- eigener Changelog, ohne rohes HTML gerendert (utils/markdown.ts) -->
+      <div class="prose-md post-text" v-html="html" />
 
       <div class="mt-14 flex flex-wrap items-center gap-3 border-t border-base-800 pt-8">
         <NuxtLink to="/download" class="btn btn-primary"><SiteIcon name="download" class="size-4" />{{ m.nav.download }}</NuxtLink>
