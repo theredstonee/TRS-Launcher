@@ -146,9 +146,16 @@ pub fn safe_file_name(f: &str) -> Option<String> {
     while out.contains("..") {
         out = out.replace("..", "_");
     }
-    let out = out.trim_start_matches(|c: char| !c.is_ascii_alphanumeric()).to_owned();
+    let mut out = out.trim_start_matches(|c: char| !c.is_ascii_alphanumeric()).to_owned();
     if out.is_empty() {
         return None;
+    }
+    // Windows-Gerätenamen (auch mit Endung) nie als Dateiname.
+    let stem = out.split('.').next().unwrap_or_default().to_ascii_uppercase();
+    let reserved = matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$")
+        || ((stem.starts_with("COM") || stem.starts_with("LPT")) && stem.len() == 4 && stem.as_bytes()[3].is_ascii_digit());
+    if reserved {
+        out = format!("mod-{out}");
     }
     let name = format!("{out}.jar");
     (Path::new(&name).components().count() == 1).then_some(name)

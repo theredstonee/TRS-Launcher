@@ -95,6 +95,9 @@ fn file_names_never_leave_the_mods_folder() {
     assert_eq!(safe_file_name("fabric-api-0.119.2+1.21.11.jar").as_deref(), Some("fabric-api-0.119.2+1.21.11.jar"));
     assert_eq!(safe_file_name("my mod (1).jar").as_deref(), Some("my_mod__1_.jar"));
     assert!(safe_file_name("???.jar").is_none());
+    assert_eq!(safe_file_name("nul.jar").as_deref(), Some("mod-nul.jar"));
+    assert_eq!(safe_file_name("COM1.tweaks.jar").as_deref(), Some("mod-COM1.tweaks.jar"));
+    assert_eq!(safe_file_name("console.jar").as_deref(), Some("console.jar"));
     assert!(!valid_jar_name("../x.jar") && !valid_jar_name("x.zip") && valid_jar_name("x (1).jar"));
 }
 
