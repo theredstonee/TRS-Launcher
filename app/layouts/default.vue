@@ -85,14 +85,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <div class="flex min-h-0 flex-1">
         <SideNav />
         <!-- Redstone-Schaltung hinter allen Seiten (die Startseite hat ihre eigene im Kopfbereich). -->
-        <div class="relative min-w-0 flex-1">
+        <div class="relative flex min-w-0 flex-1 flex-col">
           <div v-if="appBackground" class="app-bg" aria-hidden="true">
             <RedstoneScene fill />
           </div>
         <!-- Seitenwechsel: ein kurzer Redstone-Impuls läuft oben entlang. -->
         <div :key="route.path" class="route-signal" aria-hidden="true" />
-        <main ref="main" class="deepslate relative min-w-0 h-full overflow-y-auto" :class="{ 'deepslate-over-scene': appBackground }">
+        <!-- Hinweis auf eigene Strafen: über dem Inhalt, ohne Seiten mit voller Höhe (Sozial) zu verdrängen. -->
+        <div v-if="sanctions.banner.length" class="deepslate relative shrink-0" :class="{ 'deepslate-over-scene': appBackground }">
           <SanctionBanner />
+        </div>
+        <main ref="main" class="deepslate relative min-h-0 min-w-0 flex-1 overflow-y-auto" :class="{ 'deepslate-over-scene': appBackground }">
           <slot />
         </main>
         </div>

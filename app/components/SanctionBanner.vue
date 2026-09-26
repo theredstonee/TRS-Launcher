@@ -11,7 +11,7 @@ const severe = computed(() => top.value?.kind === 'account_ban')
 </script>
 
 <template>
-  <div v-if="top" class="sticky top-0 z-20 px-6 pt-3" data-testid="sanction-banner">
+  <div v-if="top" class="px-6 pt-3 pb-1" data-testid="sanction-banner">
     <div
       class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border px-4 py-3 shadow-lg shadow-black/30 backdrop-blur-sm"
       :class="severe ? 'border-redstone-600/70 bg-redstone-900/85' : top.kind === 'warn' ? 'border-lamp-400/40 bg-lamp-900/85' : 'border-base-700 bg-base-850/95'"
