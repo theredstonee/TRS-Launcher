@@ -3130,7 +3130,15 @@
       "dismiss": "Reddet",
       "resolve": "Tamamla",
       "confirmBan": "{name} gerçekten yasaklansın mı? Bu, hesap için tüm TRS özelliklerini kilitler.",
-      "related": "Bu oyuncu hakkındaki diğer şikâyetler"
+      "related": "Bu oyuncu hakkındaki diğer şikâyetler",
+      "chatModeration": "Sohbet moderasyonu",
+      "filedStats": "Gönderdiği şikâyet: {total} · onaylanan: {actioned} · reddedilen: {dismissed}",
+      "warnNeedsReason": "Uyarı için bir sebep gerekir.",
+      "toasts": {
+        "muted": "Oyuncu sohbette susturuldu.",
+        "unmuted": "Susturma kaldırıldı.",
+        "warned": "Uyarı gönderildi."
+      }
     }
   },
   "whatsNew": {

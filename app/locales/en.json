@@ -3130,7 +3130,15 @@
       "dismiss": "Dismiss",
       "resolve": "Done",
       "confirmBan": "Really ban {name}? This locks all TRS features for the account.",
-      "related": "Other reports about this player"
+      "related": "Other reports about this player",
+      "chatModeration": "Chat moderation",
+      "filedStats": "Filed {total} reports · {actioned} confirmed · {dismissed} dismissed",
+      "warnNeedsReason": "A warning needs a reason.",
+      "toasts": {
+        "muted": "Player muted in chat.",
+        "unmuted": "Mute lifted.",
+        "warned": "Warning sent."
+      }
     }
   },
   "whatsNew": {

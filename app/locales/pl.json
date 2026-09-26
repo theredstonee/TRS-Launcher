@@ -3130,7 +3130,15 @@
       "dismiss": "Odrzuć",
       "resolve": "Załatwione",
       "confirmBan": "Na pewno zbanować {name}? To zablokuje wszystkie funkcje TRS dla tego konta.",
-      "related": "Inne zgłoszenia dotyczące tego gracza"
+      "related": "Inne zgłoszenia dotyczące tego gracza",
+      "chatModeration": "Moderacja czatu",
+      "filedStats": "Wysłane zgłoszenia: {total} · potwierdzone: {actioned} · odrzucone: {dismissed}",
+      "warnNeedsReason": "Ostrzeżenie wymaga powodu.",
+      "toasts": {
+        "muted": "Gracz wyciszony na czacie.",
+        "unmuted": "Wyciszenie zniesione.",
+        "warned": "Ostrzeżenie wysłane."
+      }
     }
   },
   "whatsNew": {

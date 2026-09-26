@@ -3130,7 +3130,15 @@
       "dismiss": "Afwijzen",
       "resolve": "Afhandelen",
       "confirmBan": "{name} echt verbannen? Dit blokkeert alle TRS-functies voor het account.",
-      "related": "Andere meldingen over deze speler"
+      "related": "Andere meldingen over deze speler",
+      "chatModeration": "Chatmoderatie",
+      "filedStats": "Heeft {total} meldingen gedaan · {actioned} bevestigd · {dismissed} afgewezen",
+      "warnNeedsReason": "Een waarschuwing heeft een reden nodig.",
+      "toasts": {
+        "muted": "Speler gedempt in de chat.",
+        "unmuted": "Demping opgeheven.",
+        "warned": "Waarschuwing verstuurd."
+      }
     }
   },
   "whatsNew": {

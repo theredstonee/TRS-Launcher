@@ -3130,7 +3130,15 @@
       "dismiss": "Desestimar",
       "resolve": "Resuelto",
       "confirmBan": "¿Seguro que quieres banear a {name}? Esto bloquea todas las funciones de TRS para la cuenta.",
-      "related": "Otros reportes sobre este jugador"
+      "related": "Otros reportes sobre este jugador",
+      "chatModeration": "Moderación del chat",
+      "filedStats": "Ha enviado {total} reportes · {actioned} confirmados · {dismissed} rechazados",
+      "warnNeedsReason": "Una advertencia necesita un motivo.",
+      "toasts": {
+        "muted": "Jugador silenciado en el chat.",
+        "unmuted": "Silencio levantado.",
+        "warned": "Advertencia enviada."
+      }
     }
   },
   "whatsNew": {

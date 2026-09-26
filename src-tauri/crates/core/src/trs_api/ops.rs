@@ -189,6 +189,8 @@ impl Launcher {
             self.trs.store.set_consent(Consent::Declined).await;
             self.trs.presence.set_online_for(None);
         }
+        // Echtzeit-Kanal sofort auf- bzw. abbauen.
+        self.trs.live.kick();
         self.trs_status().await
     }
 
@@ -236,6 +238,7 @@ impl Launcher {
         self.trs.presence.kick();
         self.trs.sync_store.forget(account).await;
         self.trs.sync.kick();
+        self.trs.live.kick();
     }
 
     // --- Umhänge ------------------------------------------------------------------------

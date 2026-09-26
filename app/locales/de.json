@@ -3130,7 +3130,15 @@
       "dismiss": "Abweisen",
       "resolve": "Erledigt",
       "confirmBan": "{name} wirklich sperren? Das sperrt alle TRS-Funktionen für das Konto.",
-      "related": "Weitere Meldungen zu diesem Spieler"
+      "related": "Weitere Meldungen zu diesem Spieler",
+      "chatModeration": "Chat-Moderation",
+      "filedStats": "Hat {total} Meldungen abgegeben · {actioned} bestätigt · {dismissed} abgewiesen",
+      "warnNeedsReason": "Eine Verwarnung braucht einen Grund.",
+      "toasts": {
+        "muted": "Spieler im Chat stummgeschaltet.",
+        "unmuted": "Stummschaltung aufgehoben.",
+        "warned": "Verwarnung gesendet."
+      }
     }
   },
   "whatsNew": {

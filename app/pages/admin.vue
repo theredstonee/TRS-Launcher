@@ -612,6 +612,8 @@ const statTiles = computed(() => {
             </div>
             <p v-else class="text-xs text-base-600">{{ t('admin.players.adminsNotBannable') }}</p>
           </div>
+
+          <AdminPlayerModeration v-if="player.known && !player.admin" :key="player.uuid" :uuid="player.uuid" />
         </div>
       </section>
     </template>
