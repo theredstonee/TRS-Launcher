@@ -260,6 +260,27 @@ the TRS server.
 - **Protection in the game:** a guest can only log in with the name the TRS server confirmed for them (nobody can take
   the host's name), and when you remove or ban a player the game closes their connection at once.
 
+#### Mods and resource pack when hosting a world
+
+- **Off by default.** Only if you turn on "Share mods" or "Share resource pack" for a world does the TRS Client share
+  anything; the choice is remembered in the game folder (`config/trsclient/hosting-share.json`).
+- **What the TRS server stores (only while the world is open, deleted with it):** the list of shared mods – name,
+  version, file name, size, required/optional, source (Modrinth, CurseForge, directly from the host or "get it
+  yourself") with project and file IDs and the files' checksums (SHA-1, SHA-512/SHA-256) – and for a resource pack its
+  name, size and checksums. Everybody who may see your world sees this list. **No files** are ever stored on or sent
+  through the TRS server.
+- **Recognizing your mods:** to find out which mods are on Modrinth or CurseForge, the TRS Launcher reads the mod files
+  of your instance and sends their checksums (and CurseForge fingerprints) to Modrinth (`api.modrinth.com`) and
+  CurseForge (`api.curseforge.com`); without the launcher the TRS Client asks Modrinth itself. They see your IP address.
+- **Files directly between the players:** mods that are in no store (only if you turn on "Send mods directly from the
+  host") and the resource pack go **directly from the host's game to the guest** – through the same direct connection or
+  the TRS relay as the game, which only forwards the bytes and stores nothing. Only players you let into the world get
+  them, and only exactly the files you chose. Guests download store mods themselves from Modrinth or CurseForge.
+- **Guests:** the launcher shows the list on every join and checks every file (checksum and size) before using it. Mods
+  directly from the host are only installed after you confirm "I trust this host". The resource pack is only used if you
+  answer Minecraft's question with yes; your game serves it to Minecraft through a local address on your computer
+  (`127.0.0.1`) that only works for this connection.
+
 ### What is stored
 
 | Data | Why |
@@ -280,7 +301,7 @@ the TRS server.
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
-| World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count; your list of players banned from all your worlds | Hosting a world for friends (see above) |
+| World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
 your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your

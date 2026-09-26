@@ -273,6 +273,28 @@ servidor TRS.
   puede usar el nombre del anfitrión), y cuando expulsas o bloqueas a un jugador, el juego cierra su conexión al
   instante.
 
+#### Mods y paquete de recursos al alojar un mundo
+
+- **Desactivado por defecto.** Solo si activas «Compartir mods» o «Compartir paquete de recursos» para un mundo, el TRS
+  Client comparte algo; la elección se guarda en la carpeta del juego (`config/trsclient/hosting-share.json`).
+- **Qué guarda el servidor TRS (solo mientras el mundo está abierto, luego se borra):** la lista de mods compartidos –
+  nombre, versión, nombre de archivo, tamaño, obligatorio/opcional, origen (Modrinth, CurseForge, directamente del
+  anfitrión o «consíguelo tú») con los ID de proyecto y archivo y las sumas de comprobación de los archivos (SHA-1,
+  SHA-512/SHA-256) – y del paquete de recursos su nombre, tamaño y sumas de comprobación. Todos los que pueden ver tu mundo
+  ven esta lista. **Nunca** se guardan ni se envían **archivos** a través del servidor TRS.
+- **Reconocer tus mods:** para saber qué mods están en Modrinth o CurseForge, el TRS Launcher lee los archivos de mods de
+  tu instancia y envía sus sumas de comprobación (y huellas de CurseForge) a Modrinth (`api.modrinth.com`) y CurseForge
+  (`api.curseforge.com`); sin el launcher, el TRS Client pregunta él mismo a Modrinth. Ellos ven tu dirección IP.
+- **Archivos directamente entre los jugadores:** los mods que no están en ninguna tienda (solo si activas «Enviar mods
+  directamente desde el anfitrión») y el paquete de recursos van **directamente del juego del anfitrión al invitado**, por
+  la misma conexión directa o el relé TRS que el juego, que solo reenvía los bytes y no guarda nada. Solo los jugadores
+  que dejaste entrar los reciben, y solo exactamente los archivos que elegiste. Los mods de tiendas los descargan los
+  invitados ellos mismos de Modrinth o CurseForge.
+- **Invitados:** el launcher muestra la lista en cada entrada y comprueba cada archivo (suma de comprobación y tamaño)
+  antes de usarlo. Los mods directamente del anfitrión solo se instalan tras confirmar «Confío en este anfitrión». El
+  paquete de recursos solo se usa si respondes que sí a la pregunta de Minecraft; tu juego se lo pasa a Minecraft por una
+  dirección local en tu ordenador (`127.0.0.1`) que solo vale para esta conexión.
+
 ### Qué se guarda
 
 | Datos | Para qué |
@@ -293,7 +315,7 @@ servidor TRS.
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
-| Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores; tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
+| Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
 
 **Sincronización:** «Sincronizar con la cuenta de TRS» (*Einstellungen → Datenschutz*, activado de fábrica mientras
 los servicios TRS estén activados) mantiene iguales en todos tus PC tus skins propias, tus presets propios y el aspecto

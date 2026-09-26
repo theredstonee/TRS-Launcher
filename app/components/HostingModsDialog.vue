@@ -63,8 +63,8 @@ watch(
     selection.value = defaultModSelection(c)
     const best = candidates.value[0]
     baseId.value = best?.id ?? null
-    // Hat die beste Instanz schon alles Nötige, bietet sich „Ohne Mods“ nicht an – ergänzen bzw. neu ist sicherer.
-    mode.value = best && missingRequired(c, new Set(choice.value?.present[best.id] ?? [])).length === 0 ? 'copy' : 'new'
+    // Hat die beste Instanz schon alle Pflicht-Mods, geht es direkt mit ihr („Ohne Mods“); sonst eine neue Instanz.
+    mode.value = best && missingRequired(c, new Set(choice.value?.present[best.id] ?? [])).length === 0 ? 'none' : 'new'
   },
   { immediate: true },
 )
@@ -171,7 +171,7 @@ const confirmLabel = computed(() =>
             <input
               type="checkbox"
               class="accent-redstone-500"
-              :checked="r.mod.required || (r.mod.source !== 'manual' && selection.has(r.mod.sha1))"
+              :checked="mode !== 'none' && (r.mod.required || (r.mod.source !== 'manual' && selection.has(r.mod.sha1)))"
               :disabled="r.mod.required || r.mod.source === 'manual' || mode === 'none'"
               :aria-label="r.mod.name"
               @change="toggle(r.mod)"

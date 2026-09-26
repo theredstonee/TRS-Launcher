@@ -55,6 +55,20 @@ How to write an entry:
   the Worlds tab of an instance has a "Ping test" for every server in its server list.
 - **World hosting: ping per player.** The host's player list shows each player's ping next to "Direct" or "Via relay",
   and a guest's ping HUD shows whether the connection runs directly or through the relay.
+- **World hosting with mods and a resource pack.** When you host a world in the TRS Client you can now share your mods
+  and a resource pack with your guests – both are off by default and remembered per world. Pick which mods go along and
+  whether each is required or optional; mods that add blocks or items are preselected as required, pure client mods are
+  not selected. The TRS Launcher recognizes your mods on Modrinth and CurseForge (without the launcher, Modrinth only).
+  Mods that are in no store can be sent directly from you if you turn that on – otherwise your guests only see "get it
+  yourself". The resource pack goes straight to your guests (never through TRS) and they get Minecraft's usual question
+  whether to use it (Minecraft 1.20.3 and newer).
+- **Launcher: joining a world with mods.** Every time you join such a world, the launcher shows its mods – required or
+  optional, from Modrinth, CurseForge or directly from the host, size, present or missing – and lets you create a new
+  instance, add the mods to a copy of an existing one (your original stays untouched) or join without mods if nothing
+  required is missing. Store mods are downloaded from their official source and checked. Mods directly from the host
+  come with a clear warning on every join and are only installed after you tick "I trust this host". In the game,
+  "Open in launcher" takes you straight to this dialog. Worlds with mods are marked in Social → Worlds and on world
+  cards.
 
 ### Deutsch
 
@@ -92,6 +106,20 @@ How to write an entry:
   gleichzeitig; im Welten-Reiter einer Instanz gibt es einen „Ping-Test“ für jeden Server ihrer Serverliste.
 - **Welt-Hosting: Ping je Spieler.** Die Spielerliste des Hosts zeigt neben „Direkt“ bzw. „Über Relay“ den Ping jedes
   Spielers, und das Ping-HUD eines Gastes zeigt, ob die Verbindung direkt oder über das Relay läuft.
+- **Welt-Hosting mit Mods und Resource Pack.** Wenn du im TRS Client eine Welt hostest, kannst du jetzt deine Mods und
+  ein Resource Pack mit deinen Gästen teilen – beides ist ab Werk aus und wird je Welt gemerkt. Du wählst, welche Mods
+  mitgehen und ob sie Pflicht oder optional sind; Mods mit neuen Blöcken oder Items sind als Pflicht vorausgewählt, reine
+  Client-Mods nicht. Der TRS Launcher erkennt deine Mods bei Modrinth und CurseForge (ohne Launcher nur Modrinth). Mods,
+  die es in keinem Store gibt, kannst du auf Wunsch direkt übertragen – sonst sehen deine Gäste nur „selbst besorgen“.
+  Das Resource Pack geht direkt an deine Gäste (nie über TRS), und sie bekommen die normale Minecraft-Frage, ob sie es
+  verwenden wollen (ab Minecraft 1.20.3).
+- **Launcher: Welten mit Mods beitreten.** Bei jedem Beitritt zu so einer Welt zeigt der Launcher ihre Mods – Pflicht
+  oder optional, von Modrinth, CurseForge oder direkt vom Host, Größe, vorhanden oder fehlend – und du legst eine neue
+  Instanz an, ergänzt eine Kopie einer vorhandenen (das Original bleibt unverändert) oder trittst ohne Mods bei, wenn
+  nichts Pflicht fehlt. Store-Mods lädt er aus der offiziellen Quelle und prüft sie. Mods direkt vom Host kommen bei
+  jedem Beitritt mit einer deutlichen Warnung und werden erst übernommen, wenn du „Ich vertraue diesem Host“ ankreuzt.
+  Im Spiel führt „Im Launcher öffnen“ direkt zu diesem Dialog. Welten mit Mods sind unter Sozial → Welten und auf
+  Weltkarten markiert.
 
 ## 0.8.0 – 2026-09-26 – Open House | Tag der offenen Tür
 <!-- banner: accent=#3ecfcf motif=/news/0.8.0/banner.png -->
