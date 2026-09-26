@@ -225,6 +225,7 @@ public final class TrsOnline {
 	public static TrsOnline create(Path configDir, OnlinePlatform platform, String modVersion) {
 		OnlineConfig config = OnlineConfig.load(configDir);
 		dev.theredstonee.trsclient.core.hosting.PublicLink.dir(configDir.resolve("trsclient").resolve("e4mc"));
+		dev.theredstonee.trsclient.core.hosting.Hosting.dirs(configDir);
 		String userAgent = "TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion() + "; "
 				+ platform.loader() + ")";
 		Http http = new Http.UrlConnection(userAgent);

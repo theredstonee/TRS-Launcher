@@ -7,6 +7,7 @@ import dev.theredstonee.trsclient.core.hosting.PlayerRights;
 import dev.theredstonee.trsclient.core.hosting.PublicLink;
 import dev.theredstonee.trsclient.core.hosting.Rooms;
 import dev.theredstonee.trsclient.core.hosting.net.PeerStream;
+import dev.theredstonee.trsclient.core.hosting.share.ShareModel;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
@@ -53,6 +54,8 @@ public final class HostingUi extends WindowUi {
 	private int[] listArea = new int[4];
 	private Dialog dialog;
 	private int formFor = -1;
+	/** Mods/Resource Pack teilen (je Welt gemerkt, ab Werk aus). */
+	private ShareModel share;
 
 	public HostingUi(SocialHost host) {
 		this.host = host;
@@ -157,8 +160,9 @@ public final class HostingUi extends WindowUi {
 		} else if (bottom < by) {
 			Paint.textClipped(c, I18n.tr("hosting.directNote"), x, by + 5, w - 110, t.textDim, false);
 		}
-		kit.button(c, x + w - 100, by, 100, 18, I18n.tr("hosting.host"), true, !busy && hosting.canHost(), mx, my,
-				new Runnable() {
+		boolean scanning = share != null && share.active() && share.state() != ShareModel.State.READY;
+		kit.button(c, x + w - 100, by, 100, 18, I18n.tr(scanning ? "hosting.share.wait" : "hosting.host"), true,
+				!busy && !scanning && hosting.canHost(), mx, my, new Runnable() {
 					@Override
 					public void run() {
 						Hosting.Request req = new Hosting.Request();
@@ -166,6 +170,7 @@ public final class HostingUi extends WindowUi {
 						req.options = options();
 						req.visibility = friendsVisible ? "friends" : "invited";
 						req.backup = backup;
+						req.share = share;
 						name.setFocused(false);
 						hosting.host(req);
 					}
@@ -261,7 +266,92 @@ public final class HostingUi extends WindowUi {
 			});
 			ry += 16;
 		}
-		return Math.max(ly, ry);
+		return shareSection(c, x, Math.max(ly, ry) + 4, w, colW, two, mx, my);
+	}
+
+	/**
+	 * „Mods teilen“ / „Mods direkt vom Host übertragen“ / „Resource Pack teilen“ – ab Werk aus; erst ein Schalter an
+	 * zeigt die jeweilige Auswahl. Rückgabe: unterste benutzte y-Koordinate.
+	 */
+	private int shareSection(Canvas c, int x, int y, int w, int colW, boolean two, int mx, int my) {
+		Theme t = Theme.get();
+		final Hosting hosting = Hosting.current();
+		if (hosting == null) return y;
+		final ShareModel m = share();
+		if (m == null) return y;
+		m.poll();
+		Redstone.dustH(c, x, x + w, y, t.dustOff, 0f);
+		y += 4;
+		int bx = two ? x + colW + 12 : x + w / 2 + 6;
+		int bw = two ? colW : w - (bx - x);
+		int tw = two ? colW : w / 2;
+		kit.toggle(c, x, y, tw, I18n.tr("hosting.share.mods"), m.shareMods(), mx, my, new Runnable() {
+			@Override
+			public void run() {
+				m.setShareMods(!m.shareMods());
+				if (m.shareMods()) hosting.scanShare(m);
+			}
+		});
+		if (m.shareMods()) {
+			String label = m.state() == ShareModel.State.READY ? I18n.tr("hosting.share.choose", m.selectedCount(), m.requiredCount())
+					: I18n.tr("hosting.share.scanning");
+			kit.button(c, bx, y - 1, bw, 16, label, false, true, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					hosting.scanShare(m);
+					dialog = new ShareModsDialog(m);
+				}
+			});
+			y += 17;
+			kit.check(c, x + 8, y, tw - 8, I18n.tr("hosting.share.direct"), m.direct(), true, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					m.setDirect(!m.direct());
+				}
+			});
+			if (m.direct()) Paint.textClipped(c, I18n.tr("hosting.share.directShort"), bx, y + 3, bw, t.dustOn, false);
+			y += 15;
+		} else {
+			y += 17;
+		}
+		if (!Hosting.packSupported()) {
+			Paint.textClipped(c, I18n.tr("hosting.share.packUnsupported"), x, y + 3, w, t.textDim, false);
+			return y + 15;
+		}
+		kit.toggle(c, x, y, tw, I18n.tr("hosting.share.pack"), m.sharePack(), mx, my, new Runnable() {
+			@Override
+			public void run() {
+				m.setSharePack(!m.sharePack());
+				if (m.sharePack()) {
+					hosting.scanShare(m);
+					if (m.packFile() == null) dialog = new SharePackDialog(m);
+				}
+			}
+		});
+		if (m.sharePack()) {
+			ShareModel.PackFile pf = m.selectedPack();
+			String label = m.state() != ShareModel.State.READY ? I18n.tr("hosting.share.scanning")
+					: pf == null ? I18n.tr("hosting.share.choosePack") : I18n.tr("hosting.share.packChosen", pf.name());
+			kit.button(c, bx, y - 1, bw, 16, label, pf == null, true, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					hosting.scanShare(m);
+					dialog = new SharePackDialog(m);
+				}
+			});
+		}
+		return y + 17;
+	}
+
+	/** Auswahl der laufenden Welt (angelegt beim ersten Zeichnen; bei offener Welt die der Sitzung). */
+	private ShareModel share() {
+		Hosting h = Hosting.current();
+		if (h == null) return null;
+		if (share == null) {
+			share = h.shareModel();
+			if (share.active()) h.scanShare(share);
+		}
+		return share;
 	}
 
 	// --- Verwaltung ---
@@ -613,13 +703,28 @@ public final class HostingUi extends WindowUi {
 
 	private void settingsTab(Canvas c, final Hosting hosting, int x, int y, int w, int h, int mx, int my) {
 		form(c, x, y, w, h - 20, mx, my, false);
-		kit.button(c, x + w - 100, y + h - 18, 100, 18, I18n.tr("hosting.apply"), true, true, mx, my, new Runnable() {
-			@Override
-			public void run() {
-				name.setFocused(false);
-				hosting.update(name.text(), options(), friendsVisible ? "friends" : "invited");
-			}
-		});
+		boolean scanning = share != null && share.active() && share.state() != ShareModel.State.READY;
+		kit.button(c, x + w - 100, y + h - 18, 100, 18, I18n.tr(scanning ? "hosting.share.wait" : "hosting.apply"), true,
+				!scanning && !hosting.shareBusy(), mx, my, new Runnable() {
+					@Override
+					public void run() {
+						name.setFocused(false);
+						hosting.update(name.text(), options(), friendsVisible ? "friends" : "invited");
+						if (share != null) hosting.updateShare(share);
+					}
+				});
+		String shared = sharedLine(hosting);
+		if (shared != null) Paint.textClipped(c, shared, x, y + h - 13, w - 106, Theme.get().textDim, false);
+	}
+
+	/** „Geteilt: 12 Mods (5 Pflicht) + Resource Pack“ bzw. null. */
+	static String sharedLine(Hosting hosting) {
+		dev.theredstonee.trsclient.core.hosting.share.SharedContent sc = hosting.sharedContent();
+		if (hosting.shareBusy()) return I18n.tr("hosting.share.announcing");
+		if (sc.isEmpty()) return null;
+		String line = sc.mods.isEmpty() ? I18n.tr("hosting.worlds.pack")
+				: I18n.tr("hosting.share.announcedLine", sc.mods.size(), sc.required());
+		return sc.pack != null && !sc.mods.isEmpty() ? line + " + " + I18n.tr("hosting.worlds.packShort") : line;
 	}
 
 	/** Sperren: nur diese Welt oder dauerhaft merken. */
@@ -742,6 +847,17 @@ public final class HostingUi extends WindowUi {
 		dialog = null;
 	}
 
+	/** Teilen-Auswahl dieses Fensters (Selbsttest). */
+	public ShareModel testShare() {
+		return share();
+	}
+
+	/** Mod-Auswahl bzw. Pack-Auswahl öffnen (Selbsttest). */
+	public void testShareDialog(boolean pack) {
+		ShareModel m = share();
+		if (m != null) dialog = pack ? new SharePackDialog(m) : new ShareModsDialog(m);
+	}
+
 	/** Mit den Formularwerten hosten (ohne Backup im Autotest, wenn gewünscht). */
 	public void testHost(boolean withBackup) {
 		Hosting h = Hosting.current();
@@ -751,6 +867,7 @@ public final class HostingUi extends WindowUi {
 		req.options = options();
 		req.visibility = friendsVisible ? "friends" : "invited";
 		req.backup = withBackup;
+		req.share = share();
 		h.host(req);
 	}
 }

@@ -24,6 +24,7 @@ export function room(id: string = ROOM_ID, extra: Partial<HostingRoom> = {}): Ho
     expiresAt: null,
     members: [],
     myState: null,
+    content: null,
     ...extra,
   }
 }

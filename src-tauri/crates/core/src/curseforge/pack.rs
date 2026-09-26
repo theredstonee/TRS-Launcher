@@ -100,6 +100,7 @@ impl BlockedFile {
             file_date: None,
             file_length: self.size,
             download_url: None,
+            file_fingerprint: 0,
             game_versions: Vec::new(),
             dependencies: Vec::new(),
             is_server_pack: None,

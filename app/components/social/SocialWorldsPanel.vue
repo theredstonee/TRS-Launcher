@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatJoinCode, parseJoinCode, roomFull, worldVersionLabel, type HostingRoom } from '~/utils/hosting'
+import { formatJoinCode, modsTag, parseJoinCode, roomFull, worldVersionLabel, type HostingRoom } from '~/utils/hosting'
 
 // „Welten“: offene Einzelspielerwelten von Freunden (und alle, zu denen man
 // eingeladen ist oder angefragt hat) mit „Beitreten“/„Anfragen“, Beitreten per
@@ -90,6 +90,14 @@ function modeLabel(r: HostingRoom): string {
               <span class="size-1.5 rounded-full bg-ok" />
               {{ t('social.invite.players', { online: r.players, max: r.maxPlayers }) }}
               <template v-if="!r.open && !canEnter(r)"> · {{ t('social.hosting.closedForRequests') }}</template>
+              <span
+                v-if="modsTag(r.content)"
+                class="badge ml-1 bg-lamp-900/60 px-1.5 py-0 text-[10px] text-lamp-200"
+                :title="r.content?.fromHost ? t('social.hosting.mods.fromHostCount', { count: r.content.fromHost }) : undefined"
+                data-testid="world-mods"
+              >
+                {{ modsTag(r.content) }}
+              </span>
             </p>
           </div>
           <template v-if="requested(r)">

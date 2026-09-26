@@ -1,3 +1,5 @@
+import { isTauri } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 // Relativ importiert, damit Tests den Store ohne Nuxt laden können (Instanzen, Spiele,
@@ -9,9 +11,12 @@ import {
   type HostedWorld,
   type HostingDelivery,
   type HostingRoom,
+  type PrepareProgress,
+  type RoomContent,
   hostedWorldFrom,
   hostingClosedText,
   matchingInstances,
+  rankByMods,
   quickInstanceName,
   sortRooms,
   upsertRoom,
@@ -29,6 +34,22 @@ const DELIVERY_GIVE_UP_MS = 11 * 60_000
 export interface HostingChoice {
   world: HostedWorld
   instanceIds: string[]
+}
+
+/**
+ * Welt mit Mods: Dialog mit der Mod-Liste (Pflicht/optional, Quelle, Größe, vorhanden)
+ * und der Wahl „Neue Instanz“ / „Vorhandene als Kopie ergänzen“ / „Ohne Mods“.
+ */
+export interface HostingModsChoice {
+  world: HostedWorld
+  room: HostingRoom | null
+  content: RoomContent | null
+  loading: boolean
+  error: string | null
+  /** Passende Instanzen, die mit den wenigsten fehlenden Mods zuerst. */
+  instanceIds: string[]
+  /** SHA-1 der Mods je Instanz. */
+  present: Record<string, string[]>
 }
 
 /** Übergabe ans Spiel, solange sie läuft (für Hinweise in der Oberfläche). */
@@ -54,7 +75,11 @@ export const useHostingStore = defineStore('hosting', () => {
   /** Gerade beim Beitreten (Knopf gesperrt). */
   const busy = ref<Record<string, boolean>>({})
   const choice = ref<HostingChoice | null>(null)
+  const modsChoice = ref<HostingModsChoice | null>(null)
+  /** Fortschritt beim Vorbereiten einer Instanz mit Mods. */
+  const preparing = ref<PrepareProgress | null>(null)
   const handoff = ref<HostingHandoff | null>(null)
+  let listening = false
   let pollTimer: ReturnType<typeof setTimeout> | null = null
   let refreshTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -112,7 +137,7 @@ export const useHostingStore = defineStore('hosting', () => {
       const world = hostedWorldFrom(result.room, knownCode)
       if (result.status === 'accepted') {
         forget(result.room.id)
-        await start(world)
+        await start(world, result.room)
         return
       }
       waiting.value = { ...waiting.value, [result.room.id]: world }
@@ -139,8 +164,16 @@ export const useHostingStore = defineStore('hosting', () => {
     }
   }
 
-  /** Drin: passende Instanz wählen (laufende zuerst) oder nachfragen. */
-  async function start(world: HostedWorld) {
+  /**
+   * Drin: passende Instanz wählen (laufende zuerst) oder nachfragen. Teilt die Welt Mods,
+   * kommt immer der Mod-Dialog (bei jedem Beitritt).
+   */
+  async function start(world: HostedWorld, room: HostingRoom | null = null) {
+    const known = room ?? rooms.value.find((r) => r.id === world.roomId) ?? null
+    if (known?.content && known.content.mods > 0) {
+      await openMods(world, known)
+      return
+    }
     const instances = useInstancesStore()
     const games = useGamesStore()
     if (!instances.loaded) await instances.load()
@@ -159,6 +192,101 @@ export const useHostingStore = defineStore('hosting', () => {
 
   function cancelChoice() {
     choice.value = null
+  }
+
+  // --- Welten mit Mods ------------------------------------------------------------------
+
+  /** Mod-Liste holen und mit den passenden Instanzen abgleichen (je Instanz die SHA-1 ihrer Mods). */
+  async function openMods(world: HostedWorld, room: HostingRoom | null) {
+    modsChoice.value = { world, room, content: null, loading: true, error: null, instanceIds: [], present: {} }
+    try {
+      const content = await backend.hosting.content(world.roomId)
+      const instances = useInstancesStore()
+      if (!instances.loaded) await instances.load()
+      const candidates = matchingInstances(instances.items, world).slice(0, 20)
+      const present: Record<string, string[]> = {}
+      await Promise.all(
+        candidates.map(async (i) => {
+          present[i.id] = await backend.hosting.instanceMods(i.id).catch(() => [])
+        }),
+      )
+      if (modsChoice.value?.world.roomId !== world.roomId) return
+      if (!content.mods.length) {
+        // Nichts (mehr) zu wählen – normal beitreten.
+        modsChoice.value = null
+        await start(world, room ? { ...room, content: null } : null)
+        return
+      }
+      const ranked = rankByMods(candidates, content, present)
+      modsChoice.value = { ...modsChoice.value, content, loading: false, instanceIds: ranked.map((i) => i.id), present }
+    } catch (e) {
+      if (modsChoice.value?.world.roomId === world.roomId) modsChoice.value = { ...modsChoice.value, loading: false, error: errorMessage(e) }
+    }
+  }
+
+  function cancelMods() {
+    if (!preparing.value) modsChoice.value = null
+  }
+
+  /**
+   * Dialog bestätigt: „Ohne Mods“ startet die gewählte Instanz; sonst legt der Kern eine neue
+   * Instanz an bzw. kopiert die gewählte, lädt und prüft die Mods – dann Start mit Beitritt.
+   */
+  async function confirmMods(choiceMade: { mode: 'new' | 'copy' | 'none'; baseInstanceId: string | null; selection: string[]; trust: boolean }) {
+    const c = modsChoice.value
+    if (!c?.content || preparing.value) return
+    if (choiceMade.mode === 'none') {
+      if (!choiceMade.baseInstanceId) return
+      modsChoice.value = null
+      await launchInto(choiceMade.baseInstanceId, c.world)
+      return
+    }
+    preparing.value = { step: 'instance', done: 0, total: 1, name: null, bytes: 0, totalBytes: 0 }
+    try {
+      const result = await backend.hosting.prepare(
+        {
+          roomId: c.world.roomId,
+          mode: choiceMade.mode,
+          baseInstanceId: choiceMade.mode === 'copy' ? choiceMade.baseInstanceId : null,
+          name: null,
+          mods: choiceMade.selection,
+          trustHost: choiceMade.trust,
+        },
+        (p) => {
+          preparing.value = p
+        },
+      )
+      modsChoice.value = null
+      await useInstancesStore().load()
+      useToasts().ok(t('social.hosting.mods.prepared', { count: result.installed }))
+      await launchInto(result.instanceId, c.world)
+    } catch (e) {
+      useToasts().error(e)
+    } finally {
+      preparing.value = null
+    }
+  }
+
+  /** „Im Launcher öffnen“ aus dem Spiel (Ereignis `hosting-open`): Mod-Dialog dieser Welt. */
+  async function openFromGame(roomId: string) {
+    try {
+      const room = await backend.hosting.room(roomId)
+      if (!room) {
+        useToasts().error(hostingClosedText('closed', null))
+        return
+      }
+      setRoom(room)
+      await start(hostedWorldFrom(room), room)
+    } catch (e) {
+      useToasts().error(e)
+    }
+  }
+
+  /** Einmal beim Start: auf `hosting-open` aus dem Spiel hören. */
+  async function init() {
+    if (listening || !isTauri()) return
+    listening = true
+    await listen<{ roomId: string }>('hosting-open', (e) => void openFromGame(e.payload.roomId))
   }
 
   /** Auswahl bestätigt: vorhandene Instanz oder (`null`) eine neue anlegen. */
@@ -297,7 +425,7 @@ export const useHostingStore = defineStore('hosting', () => {
         if (world) {
           forget(e.room.id)
           useToasts().ok(t('social.hosting.accepted', { host: e.room.host.name }))
-          await start(hostedWorldFrom(e.room, world.code))
+          await start(hostedWorldFrom(e.room, world.code), e.room)
           return
         }
         // Anfrage kam aus dem Spiel (oder einem anderen Gerät): nur Bescheid sagen.
@@ -308,7 +436,7 @@ export const useHostingStore = defineStore('hosting', () => {
           body: `${room.name} · ${worldVersionLabel(room)}`,
           face: room.host,
           open: () => openWorlds(),
-          actions: [{ label: t('social.hosting.join'), primary: true, run: () => void start(hostedWorldFrom(room)) }],
+          actions: [{ label: t('social.hosting.join'), primary: true, run: () => void start(hostedWorldFrom(room), room) }],
         })
         return
       }
@@ -371,6 +499,8 @@ export const useHostingStore = defineStore('hosting', () => {
     waiting.value = {}
     busy.value = {}
     choice.value = null
+    modsChoice.value = null
+    preparing.value = null
     handoff.value = null
   }
 
@@ -383,6 +513,8 @@ export const useHostingStore = defineStore('hosting', () => {
     waiting,
     busy,
     choice,
+    modsChoice,
+    preparing,
     handoff,
     invitedCount,
     load,
@@ -391,6 +523,11 @@ export const useHostingStore = defineStore('hosting', () => {
     start,
     choose,
     cancelChoice,
+    openMods,
+    cancelMods,
+    confirmMods,
+    openFromGame,
+    init,
     launchInto,
     onEvent,
     reset,

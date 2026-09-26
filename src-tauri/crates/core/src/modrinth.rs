@@ -245,6 +245,9 @@ pub(crate) struct VersionFile {
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Hashes {
     pub sha1: String,
+    /// Für den Abgleich der Welt-Mods (Host-Instanz) zusätzlich zum SHA-1.
+    #[serde(default)]
+    pub sha512: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -523,6 +526,23 @@ pub(crate) async fn versions_by_hashes(
             .json()
             .await?;
         found.extend(response);
+    }
+    Ok(found)
+}
+
+/// Wie [`versions_by_hashes`], aber per SHA-512 (Welt-Mods: beide Hashes müssen passen).
+pub(crate) async fn versions_by_sha512(http: &reqwest::Client, hashes: &[String]) -> Result<HashMap<String, Version>> {
+    let mut found = HashMap::new();
+    for chunk in hashes.chunks(IDS_PER_REQUEST) {
+        let response: HashMap<String, Version> = http
+            .post(format!("{API}/version_files"))
+            .json(&serde_json::json!({ "hashes": chunk, "algorithm": "sha512" }))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        found.extend(response.into_iter().map(|(k, v)| (k.to_ascii_lowercase(), v)));
     }
     Ok(found)
 }

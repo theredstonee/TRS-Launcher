@@ -146,6 +146,7 @@ fn index_label(ix: &RawFileIndex) -> String {
         file_date: None,
         file_length: 0,
         download_url: None,
+        file_fingerprint: 0,
         game_versions: Vec::new(),
         dependencies: Vec::new(),
         is_server_pack: None,

@@ -59,10 +59,20 @@ public final class Rooms {
 		public final List<Member> members;
 		/** Eigener Stand als Gast: invited | requested | accepted | null. */
 		public final String myState;
+		/** Geteilte Mods/Resource Pack (Kurzform, API.md §21.10) oder null = nichts geteilt. */
+		public final dev.theredstonee.trsclient.core.hosting.share.SharedContent.Summary content;
 
 		public Room(String id, String code, String name, String hostUuid, String hostName, String mcVersion,
 				String loader, int maxPlayers, String gameMode, boolean pvp, boolean cheats, boolean open,
 				String visibility, int players, long expiresAt, List<Member> members, String myState) {
+			this(id, code, name, hostUuid, hostName, mcVersion, loader, maxPlayers, gameMode, pvp, cheats, open, visibility, players,
+					expiresAt, members, myState, null);
+		}
+
+		public Room(String id, String code, String name, String hostUuid, String hostName, String mcVersion,
+				String loader, int maxPlayers, String gameMode, boolean pvp, boolean cheats, boolean open,
+				String visibility, int players, long expiresAt, List<Member> members, String myState,
+				dev.theredstonee.trsclient.core.hosting.share.SharedContent.Summary content) {
 			this.id = id;
 			this.code = code;
 			this.name = name;
@@ -80,6 +90,12 @@ public final class Rooms {
 			this.expiresAt = expiresAt;
 			this.members = members == null ? Collections.<Member>emptyList() : Collections.unmodifiableList(members);
 			this.myState = myState;
+			this.content = content;
+		}
+
+		/** Anzahl geteilter Mods (0 = keine). */
+		public int modCount() {
+			return content == null ? 0 : content.mods;
 		}
 
 		public Member member(String uuid) {

@@ -45,6 +45,7 @@ onMounted(async () => {
   window.addEventListener('keydown', onKey)
   games.init()
   void useClipsStore().init()
+  void useHostingStore().init()
   // Darstellung (Theme, Akzent) und Oberflächen-Schalter früh laden.
   settings.load().catch(() => {})
   // Erst wenn beides geladen ist, entscheiden, ob der Einrichtungs-Assistent kommt.
@@ -119,6 +120,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <SocialToastHost />
     <JoinServerDialog />
     <HostingJoinDialog />
+    <HostingModsDialog />
   </div>
 </template>
 

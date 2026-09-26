@@ -4,7 +4,7 @@ use std::sync::Weak;
 
 use futures::future::BoxFuture;
 
-use super::{AccountsHandler, ClipsHandler, HandlerResult, LinkAccount, LinkPreview, LinkSession};
+use super::{AccountsHandler, ClipsHandler, HandlerResult, HostingHandler, LinkAccount, LinkModSource, LinkPreview, LinkSession};
 use crate::{Error, Launcher};
 
 pub(crate) struct AccountsBridge {
@@ -47,6 +47,29 @@ impl ClipsHandler for ClipsBridge {
     fn open(&self, instance_id: String, clip: String) -> BoxFuture<'static, HandlerResult<()>> {
         let launcher = self.launcher.clone();
         Box::pin(async move { launcher.upgrade().ok_or("error")?.open_clip_from_game(&instance_id, &clip).await })
+    }
+}
+
+/// `hosting.mods` / `hosting.open` → Welt-Hosting mit Mods.
+pub(crate) struct HostingBridge {
+    pub(crate) launcher: Weak<Launcher>,
+}
+
+impl HostingHandler for HostingBridge {
+    fn identify_mods(&self, instance_id: String) -> BoxFuture<'static, HandlerResult<Vec<LinkModSource>>> {
+        let launcher = self.launcher.clone();
+        Box::pin(async move {
+            let launcher = launcher.upgrade().ok_or("error")?;
+            if !launcher.games().is_running(&instance_id) {
+                return Err("not_allowed");
+            }
+            launcher.identify_instance_mods(&instance_id).await.map_err(|e| code(&e))
+        })
+    }
+
+    fn open_world(&self, instance_id: String, room_id: String) -> BoxFuture<'static, HandlerResult<()>> {
+        let launcher = self.launcher.clone();
+        Box::pin(async move { launcher.upgrade().ok_or("error")?.open_world_from_game(&instance_id, &room_id) })
     }
 }
 

@@ -23,6 +23,7 @@ pub mod gamelog;
 pub mod gpu;
 pub mod history;
 pub mod hooks;
+pub mod hosting_mods;
 pub mod icon;
 pub mod import;
 pub mod instance;
@@ -119,7 +120,12 @@ pub struct Launcher {
     accounts_sink: std::sync::RwLock<Option<AccountsSink>>,
     /// „Im Launcher öffnen“ aus dem Spiel: Fenster nach vorn + Player (Tauri: `clip-open`).
     clip_open_sink: std::sync::RwLock<Option<clips::api::ClipOpenSink>>,
+    /// Welt mit Mods aus dem Spiel im Launcher öffnen (Tauri: `hosting-open`).
+    hosting_open_sink: std::sync::RwLock<Option<HostingOpenSink>>,
 }
+
+/// „Im Launcher öffnen“ einer gehosteten Welt mit Mods (Raum-ID) – die App holt das Fenster nach vorn.
+pub type HostingOpenSink = Arc<dyn Fn(String) + Send + Sync>;
 
 /// Öffnet eine URL im Standardbrowser.
 pub type UrlOpener = Arc<dyn Fn(&str) + Send + Sync>;
@@ -181,6 +187,7 @@ impl Launcher {
             url_opener: std::sync::RwLock::default(),
             accounts_sink: std::sync::RwLock::default(),
             clip_open_sink: std::sync::RwLock::default(),
+            hosting_open_sink: std::sync::RwLock::default(),
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
@@ -515,6 +522,24 @@ impl Launcher {
         self.link.set_handler(Arc::new(link::bridge::AccountsBridge { launcher: Arc::downgrade(self) }));
         self.link.set_clips_enabler(link::bridge::clips_enabler(Arc::downgrade(self)));
         self.link.set_clips_handler(Arc::new(link::bridge::ClipsBridge { launcher: Arc::downgrade(self) }));
+        self.link.set_hosting_handler(Arc::new(link::bridge::HostingBridge { launcher: Arc::downgrade(self) }));
+    }
+
+    /// Die App holt das Fenster nach vorn und öffnet den Mod-Dialog der Welt.
+    pub fn set_hosting_open_sink(&self, sink: HostingOpenSink) {
+        *self.hosting_open_sink.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(sink);
+    }
+
+    /// `hosting.open` aus dem Spiel: nur ein laufendes Spiel darf fragen.
+    pub(crate) fn open_world_from_game(&self, instance_id: &str, room_id: &str) -> std::result::Result<(), &'static str> {
+        if !self.games.is_running(instance_id) {
+            return Err("not_allowed");
+        }
+        let sink = self.hosting_open_sink.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let sink = sink.ok_or("unsupported")?;
+        tracing::info!("Welt mit Mods aus dem Spiel im Launcher öffnen ('{instance_id}')");
+        sink(room_id.to_owned());
+        Ok(())
     }
 
     /// Clips auf Wunsch des Spiels einschalten (`clips.enable` über den TRS-Link):

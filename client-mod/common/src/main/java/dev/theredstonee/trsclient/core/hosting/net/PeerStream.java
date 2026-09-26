@@ -46,4 +46,9 @@ public interface PeerStream {
 
 	/** Adresse der Gegenseite für Minecraft (P2P: echte Adresse; Relay/Link: Platzhalter), nie null. */
 	InetSocketAddress remoteAddress();
+
+	/** Noch nicht verschickte Bytes (für Gegendruck beim Datei-Kanal); 0 = unbekannt/leer. */
+	default long pendingBytes() {
+		return 0;
+	}
 }

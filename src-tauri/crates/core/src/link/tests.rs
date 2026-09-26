@@ -63,7 +63,7 @@ async fn v2_login_with(
     assert_eq!(challenge["proof"].as_str().unwrap(), proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)), "echter Launcher");
     assert_eq!(
         challenge["features"],
-        json!(["clips", "accounts", "clips.enable", "clips.preview", "clips.open", "hosting.join"])
+        json!(["clips", "accounts", "clips.enable", "clips.preview", "clips.open", "hosting.join", "hosting.mods", "hosting.open"])
     );
     let mut proof = proto::game_proof(&key, &sid, &nc, &nl);
     if tamper {
@@ -533,6 +533,80 @@ async fn clip_vorschau_und_oeffnen_aus_dem_spiel() {
     send(&mut c.w, json!({ "type": "req", "id": 10, "op": "clips.open", "clip": "a.mp4" })).await;
     assert_eq!(response(&mut c.r, 10).await["error"], "rate_limited");
     assert_eq!(clips.opened.lock().unwrap().len(), 1);
+}
+
+/// Attrappe für Welt-Mods: erkennt immer eine Modrinth-Mod, öffnet Welten.
+#[derive(Default)]
+struct FakeHosting {
+    identified: AtomicUsize,
+    opened: Mutex<Vec<(String, String)>>,
+}
+
+impl HostingHandler for FakeHosting {
+    fn identify_mods(&self, instance_id: String) -> BoxFuture<'static, HandlerResult<Vec<LinkModSource>>> {
+        self.identified.fetch_add(1, Ordering::SeqCst);
+        Box::pin(async move {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            Ok(vec![LinkModSource {
+                sha1: format!("{:0>40}", instance_id.len()),
+                source: "modrinth",
+                project_id: "AANobbMI".into(),
+                file_id: "Yp8wLY1P".into(),
+                fingerprint: None,
+            }])
+        })
+    }
+
+    fn open_world(&self, instance_id: String, room_id: String) -> BoxFuture<'static, HandlerResult<()>> {
+        self.opened.lock().unwrap().push((instance_id, room_id));
+        Box::pin(async { Ok(()) })
+    }
+}
+
+#[tokio::test]
+async fn welt_mods_erkennen_und_im_launcher_oeffnen() {
+    let link = TrsLink::new(None);
+    let hosting = Arc::new(FakeHosting::default());
+    link.set_hosting_handler(hosting.clone());
+    let handoff = link.open_session("modded", false).await.unwrap();
+    link.set_pid("modded", std::process::id());
+    let mut c = v2_login(&handoff, false).await.expect("Anmeldung");
+
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "hosting.mods" })).await;
+    // Solange die Erkennung läuft: „busy“ (liest alle Mod-Dateien).
+    send(&mut c.w, json!({ "type": "req", "id": 2, "op": "hosting.mods" })).await;
+    assert_eq!(response(&mut c.r, 2).await["error"], "busy");
+    let res = response(&mut c.r, 1).await;
+    assert_eq!(res["ok"], true, "{res}");
+    assert_eq!(res["mods"][0]["source"], "modrinth");
+    assert_eq!(res["mods"][0]["projectId"], "AANobbMI");
+    assert_eq!(res["mods"][0]["fileId"], "Yp8wLY1P");
+    assert!(res["mods"][0].get("fingerprint").is_none());
+    // Gleich noch einmal: gebremst.
+    send(&mut c.w, json!({ "type": "req", "id": 3, "op": "hosting.mods" })).await;
+    assert_eq!(response(&mut c.r, 3).await["error"], "rate_limited");
+    assert_eq!(hosting.identified.load(Ordering::SeqCst), 1);
+
+    // hosting.open: nur gültige Raum-IDs erreichen den Launcher.
+    for (id, bad) in [(4, json!("../x")), (5, json!("h0123")), (6, json!(null))] {
+        send(&mut c.w, json!({ "type": "req", "id": id, "op": "hosting.open", "roomId": bad })).await;
+        assert_eq!(response(&mut c.r, id).await["error"], "error");
+    }
+    send(&mut c.w, json!({ "type": "req", "id": 7, "op": "hosting.open", "roomId": "h0123456789abcdef0123" })).await;
+    assert_eq!(response(&mut c.r, 7).await["ok"], true);
+    assert_eq!(*hosting.opened.lock().unwrap(), vec![("modded".to_owned(), "h0123456789abcdef0123".to_owned())]);
+    send(&mut c.w, json!({ "type": "req", "id": 8, "op": "hosting.open", "roomId": "h0123456789abcdef0123" })).await;
+    assert_eq!(response(&mut c.r, 8).await["error"], "rate_limited");
+}
+
+#[tokio::test]
+async fn welt_mods_ohne_anbindung_unsupported() {
+    let link = TrsLink::new(None);
+    let handoff = link.open_session("x", false).await.unwrap();
+    link.set_pid("x", std::process::id());
+    let mut c = v2_login(&handoff, false).await.expect("Anmeldung");
+    send(&mut c.w, json!({ "type": "req", "id": 1, "op": "hosting.mods" })).await;
+    assert_eq!(response(&mut c.r, 1).await["error"], "unsupported");
 }
 
 #[tokio::test]

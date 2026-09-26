@@ -34,6 +34,9 @@ public final class HostingTest {
 	private final String role = System.getProperty("trsclient.hosting.test.role", "host");
 	private final String flow = System.getProperty("trsclient.hosting.test.flow", "code");
 	private final boolean linkTest = Boolean.getBoolean("trsclient.hosting.test.link");
+	/** Mods + Resource Pack teilen ({@code -Dtrsclient.hosting.test.mods=true}): Host teilt, Gast bekommt Liste + Pack-Frage. */
+	private final boolean modsTest = Boolean.getBoolean("trsclient.hosting.test.mods");
+	private boolean packAsked;
 	private final Path dir = Paths.get(System.getProperty("trsclient.hosting.test.dir", "hosting-test"));
 	private int phase;
 	private int wait;
@@ -178,8 +181,59 @@ public final class HostingTest {
 			case 5: {
 				shot(mc, "setup");
 				HostingUi ui = hostingUi(Mc.screen());
+				if (modsTest && ui != null) {
+					dev.theredstonee.trsclient.core.hosting.share.ShareModel m = ui.testShare();
+					m.setShareMods(true);
+					m.setDirect(true);
+					m.setSharePack(true);
+					m.choosePack("TRS-Testpack.zip");
+					h.scanShare(m);
+					phase = 50;
+					return;
+				}
 				if (ui != null) ui.testHost(true);
 				phase++;
+				return;
+			}
+			case 50: {
+				HostingUi ui = hostingUi(Mc.screen());
+				dev.theredstonee.trsclient.core.hosting.share.ShareModel m = ui == null ? null : ui.testShare();
+				if (!waitFor(m != null && m.state() == dev.theredstonee.trsclient.core.hosting.share.ShareModel.State.READY, 400,
+						"Mod-Liste")) return;
+				for (dev.theredstonee.trsclient.core.hosting.share.ShareModel.Row r : m.rows()) {
+					log("Mod " + r.mod.file + " kind=" + r.kind + " on=" + r.on + " required=" + r.required + " source="
+							+ r.source(m.direct()) + (r.match == null ? "" : " store=" + r.match.projectId + "/" + r.match.fileId));
+				}
+				log("Packs: " + m.packs().size() + ", gewählt: " + (m.selectedPack() == null ? "-" : m.selectedPack().file)
+						+ ", Pack möglich: " + Hosting.packSupported());
+				wait = 10;
+				phase++;
+				return;
+			}
+			case 51: {
+				shot(mc, "share-setup");
+				HostingUi ui = hostingUi(Mc.screen());
+				if (ui != null) ui.testShareDialog(false);
+				wait = 10;
+				phase++;
+				return;
+			}
+			case 52: {
+				shot(mc, "share-mods");
+				HostingUi ui = hostingUi(Mc.screen());
+				if (ui != null) ui.testShareDialog(true);
+				wait = 10;
+				phase++;
+				return;
+			}
+			case 53: {
+				shot(mc, "share-pack");
+				HostingUi ui = hostingUi(Mc.screen());
+				if (ui != null) {
+					ui.testCloseDialog();
+					ui.testHost(true);
+				}
+				phase = 6;
 				return;
 			}
 			case 6:
@@ -191,6 +245,14 @@ public final class HostingTest {
 				shot(mc, "open");
 				Rooms.Room r = h.room();
 				log("Raum " + (r == null ? "?" : r.prettyCode()) + ", Relay-Problem: " + h.relayProblem());
+				if (modsTest) {
+					dev.theredstonee.trsclient.core.hosting.share.SharedContent sc = h.sharedContent();
+					log("Geteilt: " + sc.mods.size() + " Mods, Pack " + (sc.pack == null ? "-" : sc.pack.name + " " + sc.pack.sha1)
+							+ ", Freigabe läuft: " + h.shareBusy());
+					for (dev.theredstonee.trsclient.core.hosting.share.SharedContent.Mod x : sc.mods) {
+						log("  " + x.file + " " + x.source.id + (x.required ? " Pflicht" : " optional") + " sha256=" + x.sha256);
+					}
+				}
 				if (r != null) write("code.txt", r.code);
 				if ("invite".equals(flow)) {
 					List<Hosting.Friend> f = h.friendsForInvite();
@@ -237,12 +299,16 @@ public final class HostingTest {
 			}
 			case 10:
 				shot(mc, "players");
+				if (modsTest) {
+					HostingUi ui = hostingUi(Mc.screen());
+					if (ui != null) ui.testTab(3);
+				}
 				if (guestUuid != null) h.setRights(guestUuid, PlayerRights.DEFAULT.withSpectator(true));
 				wait = 30;
 				phase++;
 				return;
 			case 11:
-				shot(mc, "rights");
+				shot(mc, modsTest ? "share-settings" : "rights");
 				if (guestUuid != null) h.setRights(guestUuid, PlayerRights.DEFAULT.withBuild(false).withOp(true));
 				wait = 10;
 				phase = linkTest ? 12 : 20;
@@ -352,8 +418,39 @@ public final class HostingTest {
 			}
 			case 4:
 				shot(mc, "waiting");
+				phase = modsTest ? 30 : 20;
+				return;
+			case 30: {
+				if (!waitFor(h.guestState() == Hosting.GuestState.NEEDS_MODS || mc.level != null, 1200, "Mod-Abgleich")) return;
+				dev.theredstonee.trsclient.core.hosting.share.GuestCheck gc = h.modCheck();
+				if (gc == null) {
+					log("kein Mod-Dialog (Zustand " + h.guestState() + ")");
+					phase = 20;
+					return;
+				}
+				log("Mod-Abgleich: fehlt Pflicht " + gc.missingRequired.size() + ", optional " + gc.missingOptional.size()
+						+ ", ohne Mods möglich: " + gc.canJoinWithout());
+				for (dev.theredstonee.trsclient.core.hosting.share.SharedContent.Mod x : gc.content.mods) {
+					log("  " + x.name + " " + x.version + " · " + x.source.id + " · " + (x.required ? "Pflicht" : "optional") + " · " + x.size);
+				}
+				write("guest-room.txt", gc.roomId);
+				wait = 20;
+				phase++;
+				return;
+			}
+			case 31:
+				shot(mc, "mods-dialog");
+				phase++;
+				return;
+			case 32: {
+				// Der Launcher-Teil (Rust: Store-Download + Host-Datei über das Relay, Hash-Prüfung) läuft außerhalb.
+				String res = read("launcher-result.txt");
+				if (!waitFor(res != null, 240, "Launcher-Ergebnis")) return;
+				log("Launcher: " + res);
+				h.testJoinDespiteMods();
 				phase = 20;
 				return;
+			}
 			case 10: {
 				// Einladung per Toast (Welt steht dann als „eingeladen“ in der Liste), dann Schnelltaste (Beitreten).
 				boolean invited = false;
@@ -378,6 +475,14 @@ public final class HostingTest {
 				return;
 			}
 			case 20:
+				if (modsTest && !packAsked && Mc.screen() instanceof net.minecraft.client.gui.screens.ConfirmScreen) {
+					// Vanilla-Frage „Server-Resource-Pack verwenden?“ (Pack des Hosts über den lokalen Endpunkt).
+					packAsked = true;
+					shot(mc, "pack-question");
+					wait = 10;
+					phase = 40;
+					return;
+				}
 				if (!waitFor(mc.level != null && mc.player != null, 2400, "in der Welt des Hosts")) return;
 				wait = 80;
 				phase++;
@@ -389,6 +494,21 @@ public final class HostingTest {
 				wait = linkTest ? 900 : 300;
 				phase++;
 				return;
+			case 40: {
+				net.minecraft.client.gui.screens.Screen s = Mc.screen();
+				if (s instanceof net.minecraft.client.gui.screens.ConfirmScreen) {
+					try {
+						java.lang.reflect.Field f = net.minecraft.client.gui.screens.ConfirmScreen.class.getDeclaredField("callback");
+						f.setAccessible(true);
+						((it.unimi.dsi.fastutil.booleans.BooleanConsumer) f.get(s)).accept(true);
+						log("Pack-Frage: Ja");
+					} catch (ReflectiveOperationException | RuntimeException e) {
+						log("Pack-Frage nicht beantwortbar: " + e);
+					}
+				}
+				phase = 20;
+				return;
+			}
 			case 22:
 				shot(mc, "later");
 				log("Spielmodus jetzt: " + (mc.gameMode == null ? "?" : mc.gameMode.getPlayerMode()));

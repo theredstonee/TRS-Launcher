@@ -10,6 +10,7 @@ import dev.theredstonee.trsclient.core.ui.Faces;
 import dev.theredstonee.trsclient.core.ui.Paint;
 import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.Theme;
+import dev.theredstonee.trsclient.core.ui.social.Dialog;
 import dev.theredstonee.trsclient.core.ui.social.Kit;
 
 import java.util.List;
@@ -26,9 +27,19 @@ public final class WorldsPanel {
 	private int scroll;
 	private int[] area = new int[4];
 	private int contentH;
+	private dev.theredstonee.trsclient.core.hosting.share.GuestCheck shownCheck;
 
 	public WorldsPanel(FaceCache faces) {
 		this.faces = faces;
+	}
+
+	/** Fehlen der gewählten Welt Mods? Dann einmal den Dialog dazu (sonst null). Jedes Bild abfragen. */
+	public Dialog modsDialog() {
+		Hosting h = Hosting.current();
+		dev.theredstonee.trsclient.core.hosting.share.GuestCheck c = h == null ? null : h.modCheck();
+		if (c == null || c == shownCheck) return null;
+		shownCheck = c;
+		return new GuestModsDialog(h, c, h.guestRoom());
 	}
 
 	public void draw(Canvas c, Kit kit, int x, int y, int w, int h, int mx, int my) {
@@ -75,7 +86,8 @@ public final class WorldsPanel {
 		Rooms.Room r = hosting.guestRoom();
 		String host = r == null ? "?" : r.hostName;
 		String text = st == Hosting.GuestState.WAITING ? I18n.tr("hosting.join.waiting", host)
-				: st == Hosting.GuestState.CONNECTING ? I18n.tr("hosting.join.connecting", host) : I18n.tr("hosting.join.joining");
+				: st == Hosting.GuestState.CONNECTING ? I18n.tr("hosting.join.connecting", host)
+				: st == Hosting.GuestState.NEEDS_MODS ? I18n.tr("hosting.join.needsMods", host) : I18n.tr("hosting.join.joining");
 		Redstone.stone(c, x, y, w, 22, ColorMath.withAlpha(t.accent, 40), t.accent);
 		float pulse = (float) (0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 180.0));
 		Redstone.pip(c, x + 6, y + 7, 8, pulse);
@@ -99,10 +111,15 @@ public final class WorldsPanel {
 		int tx = x + 26;
 		int bw = 76;
 		int right = x + w - bw - 8;
-		Paint.textClipped(c, r.name, tx, y + 5, right - tx, t.text, false);
+		Paint.textClipped(c, r.name, tx, y + 5, right - tx - modsWidth(c, r), t.text, false);
 		String state = r.myState == null ? "" : " · " + I18n.tr("hosting.state." + r.myState);
 		String info = I18n.tr("hosting.worlds.info", r.hostName, r.mcVersion, Hosting.loaderName(r.loader), r.players,
 				r.maxPlayers) + state;
+		String mods = modsTag(r);
+		if (mods != null) {
+			// „Mit Mods (12, 5 Pflicht)“ rechts neben dem Namen – in Lampenfarbe, damit man es vor dem Beitreten sieht.
+			Paint.textRight(c, mods, right, y + 5, t.lampOn, false);
+		}
 		Paint.textClipped(c, info, tx, y + 17, right - tx, t.textDim, false);
 		String compat = hosting.compatibility(r);
 		boolean versionOk = !"hosting.error.version".equals(compat);
@@ -130,6 +147,20 @@ public final class WorldsPanel {
 						hosting.joinRoom(r.id);
 					}
 				});
+	}
+
+	/** „Mit Mods (N, davon P Pflicht)“ / „+ Resource Pack“ oder null. */
+	static String modsTag(Rooms.Room r) {
+		dev.theredstonee.trsclient.core.hosting.share.SharedContent.Summary s = r.content;
+		if (s == null) return null;
+		String out = s.mods > 0 ? I18n.tr("hosting.worlds.mods", s.mods, s.required) : null;
+		if (s.hasPack()) out = out == null ? I18n.tr("hosting.worlds.pack") : out + " + " + I18n.tr("hosting.worlds.packShort");
+		return out;
+	}
+
+	private static int modsWidth(Canvas c, Rooms.Room r) {
+		String m = modsTag(r);
+		return m == null ? 0 : c.textWidth(m) + 8;
 	}
 
 	public boolean mouseScrolled(double mx, double my, double amount) {
