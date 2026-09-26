@@ -20,6 +20,11 @@ public final class PlayerLook {
 	public boolean loading;
 	/** Ist das der echte Skin des Kontos (nicht der Standard-Skin)? */
 	public boolean ownSkin;
+	/**
+	 * Pixel (64×64 ARGB, wie Minecraft sie aufbereitet) des gezeigten Skins – eigener oder Standard-Skin – oder null,
+	 * solange sie unbekannt sind (z. B. Standard-Skin nicht aus den Ressourcen lesbar). Nicht verändern.
+	 */
+	public int[] pixels;
 
 	/** Überträgt alles auf ein {@link SkinModelSpec} (Pose bleibt). */
 	public SkinModelSpec applyTo(SkinModelSpec spec) {

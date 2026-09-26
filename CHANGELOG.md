@@ -16,6 +16,27 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **TRS Client wardrobe: your own skin is back.** Under Skins, the library now starts with a "Current" card showing the
+  skin your account is wearing right now (slim or classic arms; the default skin for offline accounts). Only this card
+  has the "worn" lamp; if the same skin is also in your library, that entry shows a small "= current" tag instead of a
+  second lamp. From the card you can save the skin to your synced library (named after your account, without creating
+  a duplicate) or open it in the editor as a template. It updates right after you apply another skin or switch
+  accounts in the game, and the highlighted card now only means "shown in the preview", not "worn".
+
+### Deutsch
+
+- **TRS-Client-Garderobe: dein eigener Skin ist wieder da.** Unter „Skins“ beginnt die Bibliothek jetzt mit der Karte
+  „Aktuell“ – dem Skin, den dein Konto gerade trägt (Slim- oder Classic-Arme; bei Offline-Konten der Standard-Skin).
+  Nur diese Karte hat die Lampe „getragen“; liegt derselbe Skin auch in deiner Bibliothek, zeigt dieser Eintrag statt
+  einer zweiten Lampe das kleine Schild „= aktuell“. Über die Karte speicherst du den Skin in deiner synchronisierten
+  Bibliothek (mit deinem Kontonamen, ohne Doppelung) oder öffnest ihn als Vorlage im Editor. Sie aktualisiert sich
+  sofort, wenn du einen anderen Skin anwendest oder im Spiel das Konto wechselst, und die hervorgehobene Karte heißt
+  jetzt nur noch „in der Vorschau“, nicht „getragen“.
+
 ## 0.6.4 – 2026-09-26 – The Workshop Update | Das Werkstatt-Update
 <!-- banner: accent=#d99a5b motif=/news/0.6.4/banner.png -->
 

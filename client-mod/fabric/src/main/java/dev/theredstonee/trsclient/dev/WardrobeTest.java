@@ -14,8 +14,8 @@ import net.minecraft.client.Minecraft;
 /**
  * Selbsttest Garderobe ({@code -PtrsAutotestOnly=wardrobe}): öffnet die Garderobe vom Titelbildschirm, legt (lokal)
  * zwei Skins und ein Outfit an und fotografiert jede Kategorie, das Menü „Skin hinzufügen“, den Skin-Editor und den
- * neuen Eintrag im TRS-Menü. Beendet das Spiel danach. Screenshots: wardrobe, -outfits, -capes, -emotes, -add,
- * -editor, menu-wardrobe.
+ * neuen Eintrag im TRS-Menü. Beendet das Spiel danach. Screenshots: wardrobe, -current (Karte „Aktueller Skin“),
+ * -twin (nach „In Bibliothek speichern“: Schild „= aktuell“), -outfits, -capes, -emotes, -add, -editor, menu-wardrobe.
  */
 public final class WardrobeTest {
 	private int phase;
@@ -92,6 +92,41 @@ public final class WardrobeTest {
 			case 4:
 				log("Skins");
 				AutoTest.shot(mc, "trsclient-wardrobe");
+				// Karte „Aktueller Skin“ (getragen) auswählen
+				ui.selectCurrent();
+				phase++;
+				wait = 20;
+				return;
+			case 5: {
+				dev.theredstonee.trsclient.core.wardrobe.CurrentSkin cur = ui.current();
+				TrsClient.LOGGER.info("[Autotest] Garderobe aktueller Skin: quelle={} pixel={} slim={} zwilling={}",
+						cur == null ? null : cur.source, cur != null && cur.pixels != null, cur != null && cur.slim,
+						cur == null ? null : cur.twin);
+				AutoTest.shot(mc, "trsclient-wardrobe-current");
+				// In die Bibliothek sichern → der Bibliotheks-Eintrag bekommt „= aktuell“, keine zweite Lampe
+				boolean saved = ui.saveCurrentSkin();
+				TrsClient.LOGGER.info("[Autotest] Garderobe aktueller Skin gesichert={}", saved);
+				phase++;
+				wait = 30;
+				return;
+			}
+			case 6: {
+				WardrobeService.State s = ui.service().state();
+				if (s.busy() && waited++ < 40) {
+					wait = 5;
+					return;
+				}
+				waited = 0;
+				ui.selectCurrent();
+				phase++;
+				wait = 10;
+				return;
+			}
+			case 7: {
+				dev.theredstonee.trsclient.core.wardrobe.CurrentSkin cur = ui.current();
+				TrsClient.LOGGER.info("[Autotest] Garderobe nach Sichern: zwilling={} skins={} meldung={}",
+						cur == null ? null : cur.twin, ui.service().state().skins.size(), ui.service().state().message);
+				AutoTest.shot(mc, "trsclient-wardrobe-twin");
 				ui.category("outfits");
 				if (ui.service().state().doc.outfits.isEmpty() && !ui.service().state().skins.isEmpty()) {
 					ui.service().saveOutfit("Rotes Outfit", ui.service().state().skins.get(0).id, "none");
@@ -99,27 +134,28 @@ public final class WardrobeTest {
 				phase++;
 				wait = 30;
 				return;
-			case 5:
+			}
+			case 8:
 				AutoTest.shot(mc, "trsclient-wardrobe-outfits");
 				ui.category("capes");
 				phase++;
 				wait = 30;
 				return;
-			case 6:
+			case 9:
 				AutoTest.shot(mc, "trsclient-wardrobe-capes");
 				ui.category("emotes");
 				ui.selectEmote("winken");
 				phase++;
 				wait = 25;
 				return;
-			case 7:
+			case 10:
 				AutoTest.shot(mc, "trsclient-wardrobe-emotes");
 				ui.category("skins");
 				ui.showAddMenu();
 				phase++;
 				wait = 15;
 				return;
-			case 8: {
+			case 11: {
 				AutoTest.shot(mc, "trsclient-wardrobe-add");
 				ui.closeOverlays();
 				ui.openEditorBlank();
@@ -140,20 +176,20 @@ public final class WardrobeTest {
 				wait = 20;
 				return;
 			}
-			case 9:
+			case 12:
 				AutoTest.shot(mc, "trsclient-wardrobe-editor");
 				ui.closeOverlays();
 				Mc.setScreen(new TrsMenuScreen(new TrsTitleScreen()));
 				phase++;
 				wait = 30;
 				return;
-			case 10:
+			case 13:
 				AutoTest.shot(mc, "trsclient-menu-wardrobe");
 				TrsClient.LOGGER.info("[Autotest] Garderobe fertig");
 				phase++;
 				wait = 20;
 				return;
-			case 11:
+			case 14:
 				phase++;
 				mc.stop();
 				return;

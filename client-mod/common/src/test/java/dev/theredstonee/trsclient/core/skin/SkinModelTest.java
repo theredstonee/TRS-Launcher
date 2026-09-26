@@ -226,6 +226,19 @@ class SkinModelTest {
 	// --- Eigener Skin ---
 
 	@Test
+	void defaultSkinPixelsComeOnlyFromGameResourcePaths() {
+		assertEquals("/assets/minecraft/textures/entity/player/wide/steve.png",
+				LocalSkin.resourcePath("minecraft:textures/entity/player/wide/steve.png"));
+		assertEquals("/assets/minecraft/textures/entity/steve.png", LocalSkin.resourcePath("textures/entity/steve.png"));
+		assertNull(LocalSkin.resourcePath("default"), "keine PNG");
+		assertNull(LocalSkin.resourcePath("minecraft:../../secret.png"));
+		assertNull(LocalSkin.resourcePath("minecraft:/abs.png"));
+		assertNull(LocalSkin.resourcePath("Evil NS:x.png"));
+		assertNull(LocalSkin.resourcePath(null));
+		assertNull(LocalSkin.resourcePixels(SkinModelTest.class, "/assets/minecraft/textures/entity/does-not-exist.png"));
+	}
+
+	@Test
 	void localSkinUsesDefaultThenCacheThenNetwork(@TempDir Path dir) throws Exception {
 		FakeStore store = new FakeStore();
 		Textures.replaceForTests(store);
@@ -255,6 +268,8 @@ class SkinModelTest {
 		assertTrue(look.ownSkin);
 		assertEquals(LocalSkin.SKIN_TEXTURE, look.skin.id);
 		assertEquals(0xFF336699, store.pixels.get(LocalSkin.SKIN_TEXTURE)[8 * 64 + 8]);
+		assertNotNull(look.pixels, "Pixel für die Garderobe (Aktueller Skin)");
+		assertEquals(0xFF336699, look.pixels[8 * 64 + 8]);
 		assertTrue(Files.isRegularFile(dir.resolve(uuid + ".png")), "Cache geschrieben");
 		assertEquals(2, requests.size());
 

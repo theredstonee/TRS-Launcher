@@ -91,8 +91,8 @@ public final class WardrobeService {
 		public final boolean launcherOnly;
 		/** Wartet auf Upload. */
 		public final boolean pending;
-		/** Vergleichswert der Pixel (wie Minecraft sie zeigt). */
-		public final int look;
+		/** Vergleichswert der Pixel (wie Minecraft sie zeigt) + Armform, siehe {@link CurrentSkin#lookKey}. */
+		public final String look;
 
 		Skin(String id, String name, boolean slim, int[] pixels, boolean launcherOnly, boolean pending) {
 			this.id = id;
@@ -101,7 +101,7 @@ public final class WardrobeService {
 			this.pixels = pixels;
 			this.launcherOnly = launcherOnly;
 			this.pending = pending;
-			this.look = lookHash(pixels);
+			this.look = CurrentSkin.lookKey(pixels, slim);
 		}
 	}
 
@@ -165,6 +165,22 @@ public final class WardrobeService {
 		}
 	}
 
+	/** Aktiver Minecraft-Skin (Mojang-Profil) und Konto – unveränderlich. */
+	static final class Active {
+		static final Active NONE = new Active(null, false, null, null);
+		final int[] pixels;
+		final boolean slim;
+		final String look;
+		final String account;
+
+		Active(int[] pixels, boolean slim, String look, String account) {
+			this.pixels = pixels;
+			this.slim = slim;
+			this.look = look;
+			this.account = account;
+		}
+	}
+
 	/** Unveränderlicher Stand für die Oberfläche. */
 	public static final class State {
 		public final List<Skin> skins;
@@ -177,8 +193,13 @@ public final class WardrobeService {
 		public final String activeMojangCape;
 		public final String activeTrsCape;
 		public final Map<String, CapeArt> capeArt;
-		/** Pixel-Vergleichswert des aktiven Minecraft-Skins (0 = unbekannt). */
-		public final int activeLook;
+		/** Vergleichswert ({@link CurrentSkin#lookKey}) des aktiven Minecraft-Skins laut Mojang-Profil oder null. */
+		public final String activeLook;
+		/** Pixel (64×64) des aktiven Minecraft-Skins laut Mojang-Profil oder null (unbekannt, Standard-Skin). */
+		public final int[] activePixels;
+		public final boolean activeSlim;
+		/** Konto, zu dem dieser Stand gehört (UUID der Sitzung bzw. {@code offline}), null vor dem ersten Laden. */
+		public final String account;
 		public final Task task;
 		public final String message;
 		public final Object[] args;
@@ -192,7 +213,7 @@ public final class WardrobeService {
 		public final int version;
 
 		State(List<Skin> skins, WardrobeDoc doc, List<Cape> mojangCapes, List<Cape> trsCapes, String activeMojangCape,
-				String activeTrsCape, Map<String, CapeArt> capeArt, int activeLook, Task task, String message, Object[] args,
+				String activeTrsCape, Map<String, CapeArt> capeArt, Active active, Task task, String message, Object[] args,
 				boolean error, boolean trs, boolean session, String added, int version) {
 			this.skins = skins;
 			this.doc = doc;
@@ -201,7 +222,10 @@ public final class WardrobeService {
 			this.activeMojangCape = activeMojangCape;
 			this.activeTrsCape = activeTrsCape;
 			this.capeArt = capeArt;
-			this.activeLook = activeLook;
+			this.activeLook = active.look;
+			this.activePixels = active.pixels;
+			this.activeSlim = active.slim;
+			this.account = active.account;
 			this.task = task;
 			this.message = message;
 			this.args = args;
@@ -214,6 +238,10 @@ public final class WardrobeService {
 
 		public boolean busy() {
 			return task != Task.NONE;
+		}
+
+		Active active() {
+			return new Active(activePixels, activeSlim, activeLook, account);
 		}
 
 		public Skin skin(String id) {
@@ -252,19 +280,20 @@ public final class WardrobeService {
 	private String activeMojangCape;
 	private String activeTrsCape;
 	private final Map<String, CapeArt> capeArt = new LinkedHashMap<String, CapeArt>();
-	private int activeLook;
+	/** Aktiver Minecraft-Skin laut Mojang-Profil (Pixel/Armform/Vergleichswert) – null = unbekannt/Standard-Skin. */
+	private int[] activePixels;
+	private boolean activeSlim;
+	private String activeLook;
 	private boolean lastTrs;
 	private boolean lastSession;
 	private int version;
-
-	/** Pixel (64×64) und Armform des aktiven Minecraft-Skins – für die Editor-Vorlage „Aktueller Skin“. */
-	private volatile int[] activePixels;
-	private volatile boolean activeSlim;
 
 	// --- Render-Thread ---
 	private long nextSync;
 	private volatile long pushAt;
 	private volatile boolean syncQueued;
+	private volatile boolean accountQueued;
+	private long nextAccountCheck;
 
 	WardrobeService(Platform platform, Http http, MojangServices mojang, SafeFetch fetch, ExecutorService worker) {
 		this.platform = platform;
@@ -273,7 +302,7 @@ public final class WardrobeService {
 		this.fetch = fetch;
 		this.worker = worker;
 		state.set(new State(Collections.<Skin>emptyList(), WardrobeDoc.EMPTY, null, null, null, null,
-				Collections.<String, CapeArt>emptyMap(), 0, Task.LOADING, null, new Object[0], false, false, false, null, 0));
+				Collections.<String, CapeArt>emptyMap(), Active.NONE, Task.LOADING, null, new Object[0], false, false, false, null, 0));
 	}
 
 	/** Gemeinsame Instanz (beim ersten Öffnen der Garderobe angelegt). */
@@ -300,13 +329,18 @@ public final class WardrobeService {
 		return state.get();
 	}
 
-	/** Pixel des aktiven Minecraft-Skins (64×64) oder null, solange unbekannt. */
-	public int[] activePixels() {
-		return activePixels;
+	/** Schlüssel des gerade angemeldeten Kontos (wie {@link State#account}). */
+	public String accountKey() {
+		return keyOf(platform.session());
 	}
 
-	public boolean activeSlim() {
-		return activeSlim;
+	private static String keyOf(SessionData s) {
+		return s != null && s.uuid != null ? s.uuid : "offline";
+	}
+
+	/** Gehört der Stand zum gerade angemeldeten Konto (nach einem Kontowechsel erst, wenn neu geladen)? */
+	public boolean fresh(State s) {
+		return s.account != null && s.account.equals(accountKey());
 	}
 
 	// ====================================================================================================
@@ -324,6 +358,22 @@ public final class WardrobeService {
 
 	/** Jedes Bild, solange die Garderobe offen ist: fällige Abgleiche anstoßen. */
 	public void tick(long now) {
+		if (now >= nextAccountCheck) {
+			// Kontowechsel im Spiel (ohne Neustart): Bibliothek, Profil und „Aktueller Skin“ des neuen Kontos laden.
+			nextAccountCheck = now + 1000L;
+			State s = state.get();
+			if (s.account != null && !accountQueued && !s.account.equals(accountKey())) {
+				accountQueued = true;
+				submit(Task.LOADING, () -> {
+					try {
+						ensureAccount();
+						refreshRemote(true);
+					} finally {
+						accountQueued = false;
+					}
+				});
+			}
+		}
 		if (pushAt != 0 && now >= pushAt) {
 			pushAt = 0;
 			submit(null, () -> {
@@ -463,6 +513,31 @@ public final class WardrobeService {
 			if (id == null) id = SkinFiles.newId();
 			storeSkin(id, SkinFiles.cleanName(name, "Skin"), slim, png, px);
 			publish(Task.NONE, "wardrobe.msg.saved", false, id);
+			pushSkins();
+		});
+	}
+
+	/**
+	 * Den getragenen Skin („Aktueller Skin“) in die Bibliothek übernehmen – nicht doppelt: liegt er schon darin, wird
+	 * nur dieser Eintrag ausgewählt.
+	 */
+	public void saveCurrent(final int[] pixels, final boolean slim, final String name) {
+		if (pixels == null) return;
+		final int[] px = Arrays.copyOf(pixels, 64 * 64);
+		submit(Task.SAVING, () -> {
+			ensureAccount();
+			String twin = CurrentSkin.twin(state.get().skins, CurrentSkin.lookKey(px, slim));
+			if (twin != null) {
+				publish(Task.NONE, "wardrobe.msg.alreadySaved", false, twin);
+				return;
+			}
+			if (library.size() >= SkinLibrary.MAX_SKINS) {
+				fail("wardrobe.error.skin_limit");
+				return;
+			}
+			String id = SkinFiles.newId();
+			storeSkin(id, SkinFiles.cleanName(name, "Skin"), slim, PngWriter.write(64, 64, px), px);
+			publish(Task.NONE, "wardrobe.msg.savedCurrent", false, id);
 			pushSkins();
 		});
 	}
@@ -654,7 +729,7 @@ public final class WardrobeService {
 		State s = state.get();
 		if (s.message == null) return;
 		state.compareAndSet(s, new State(s.skins, s.doc, s.mojangCapes, s.trsCapes, s.activeMojangCape, s.activeTrsCape,
-				s.capeArt, s.activeLook, s.task, null, new Object[0], false, s.trs, s.session, s.added, s.version + 1));
+				s.capeArt, s.active(), s.task, null, new Object[0], false, s.trs, s.session, s.added, s.version + 1));
 	}
 
 	// ====================================================================================================
@@ -671,7 +746,7 @@ public final class WardrobeService {
 			do {
 				s = state.get();
 			} while (!state.compareAndSet(s, new State(s.skins, s.doc, s.mojangCapes, s.trsCapes, s.activeMojangCape,
-					s.activeTrsCape, s.capeArt, s.activeLook, task, null, new Object[0], false, s.trs, s.session, s.added,
+					s.activeTrsCape, s.capeArt, s.active(), task, null, new Object[0], false, s.trs, s.session, s.added,
 					s.version + 1)));
 		}
 		try {
@@ -700,8 +775,7 @@ public final class WardrobeService {
 
 	/** Konto gewechselt? Dann Bibliothek/Dokument des neuen Kontos laden. */
 	private void ensureAccount() {
-		SessionData s = platform.session();
-		String key = s != null && s.uuid != null ? s.uuid : "offline";
+		String key = keyOf(platform.session());
 		if (key.equals(accountKey) && library != null) return;
 		accountKey = key;
 		Path dir = platform.configDir().resolve("trsclient").resolve("wardrobe").resolve(key);
@@ -712,7 +786,9 @@ public final class WardrobeService {
 		trsCapes = null;
 		activeMojangCape = null;
 		activeTrsCape = null;
-		activeLook = 0;
+		activePixels = null;
+		activeSlim = false;
+		activeLook = null;
 		capeArt.clear();
 		mojangCapeUrls.clear();
 		loadDoc(dir);
@@ -765,18 +841,26 @@ public final class WardrobeService {
 		mojangCapes = capes;
 		if (p.skinUrl != null) {
 			try {
-				PngDecoder.Image img = PngDecoder.decode(mojang.texture(p.skinUrl));
+				byte[] png = mojang.texture(p.skinUrl);
+				PngDecoder.Image img = PngDecoder.decode(png);
 				if (SkinImage.validSize(img.width, img.height)) {
-					int[] px = img.height == 32 ? SkinImage.normalize(img.width, img.height, img.argb) : Arrays.copyOf(img.argb, 64 * 64);
-					activeLook = lookHash(px);
+					int[] px = SkinImage.normalize(img.width, img.height, img.argb);
+					String key = CurrentSkin.lookKey(px, p.slim);
+					boolean changed = !key.equals(activeLook);
+					activeLook = key;
 					activePixels = px;
 					activeSlim = p.slim;
+					// Anderswo gewechselt (Launcher, minecraft.net)? Dann auch die Menü-Figur nachziehen.
+					if (changed) platform.lookChanged(png, p.slim, null, false);
 				}
 			} catch (Exception ignored) {
-				activeLook = 0;
+				// Skin unbekannt – die Garderobe zeigt dann den Menü-Skin
 			}
 		} else {
-			activeLook = 0;
+			// Kein eigener Skin: das Konto trägt den Standard-Skin (kommt aus dem Menü-Skin).
+			activePixels = null;
+			activeSlim = false;
+			activeLook = null;
 		}
 	}
 
@@ -810,9 +894,9 @@ public final class WardrobeService {
 		}
 		SkinFiles.Decoded d = SkinFiles.decode(png);
 		MojangServices.Profile p = mojang.uploadSkin(session.accessToken, png, slim);
-		activeLook = lookHash(d.pixels);
-		activePixels = d.pixels;
+		activePixels = SkinImage.normalize(64, 64, d.pixels);
 		activeSlim = slim;
+		activeLook = CurrentSkin.lookKey(activePixels, slim);
 		if (p != null) {
 			// Umhänge bleiben, aber die Antwort kennt den neuen Stand.
 			List<Cape> keep = mojangCapes;
@@ -1232,7 +1316,7 @@ public final class WardrobeService {
 		do {
 			s = state.get();
 		} while (!state.compareAndSet(s, new State(s.skins, s.doc, s.mojangCapes, s.trsCapes, s.activeMojangCape,
-				s.activeTrsCape, s.capeArt, s.activeLook, s.task, key, new Object[0], error, s.trs, s.session, s.added,
+				s.activeTrsCape, s.capeArt, s.active(), s.task, key, new Object[0], error, s.trs, s.session, s.added,
 				s.version + 1)));
 	}
 
@@ -1274,7 +1358,8 @@ public final class WardrobeService {
 		state.set(new State(Collections.unmodifiableList(skins), doc,
 				mojangCapes == null ? null : Collections.unmodifiableList(new ArrayList<Cape>(mojangCapes)),
 				trsCapes == null ? null : Collections.unmodifiableList(new ArrayList<Cape>(trsCapes)), activeMojangCape,
-				activeTrsCape, Collections.unmodifiableMap(new LinkedHashMap<String, CapeArt>(capeArt)), activeLook, t, msg,
+				activeTrsCape, Collections.unmodifiableMap(new LinkedHashMap<String, CapeArt>(capeArt)),
+				new Active(activePixels, activeSlim, activeLook, accountKey), t, msg,
 				new Object[0], err, lastTrs || platform.trsToken() != null, lastSession, added != null ? added : prev.added,
 				prev.version + 1));
 	}
@@ -1308,14 +1393,6 @@ public final class WardrobeService {
 	private LauncherLibrary.Item launcherItem(String id) {
 		for (LauncherLibrary.Item i : launcherItems) if (i.id.equals(id)) return i;
 		return null;
-	}
-
-	/** Vergleichswert: Pixel so, wie Minecraft sie zeigt (Grundebene deckend). */
-	static int lookHash(int[] px) {
-		if (px == null) return 0;
-		int[] n = SkinImage.normalize(64, 64, px);
-		int h = Arrays.hashCode(n);
-		return h == 0 ? 1 : h;
 	}
 
 	private static String pathOf(String url) {
