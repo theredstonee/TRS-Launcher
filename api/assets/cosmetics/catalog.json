@@ -125,5 +125,17 @@
     "animated": false,
     "frames": 1,
     "emissive": false
+  },
+  {
+    "id": "rubber_duck",
+    "name": "Quietscheente",
+    "template": "duck",
+    "file": "rubber_duck.png",
+    "unlock": "code",
+    "scale": 2,
+    "animated": false,
+    "frames": 1,
+    "emissive": false,
+    "hidden": true
   }
 ]

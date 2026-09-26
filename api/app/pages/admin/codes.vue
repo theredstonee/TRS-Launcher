@@ -19,7 +19,10 @@ interface CodeView {
 const codes = ref<CodeView[]>([])
 const catalog = ref<SiteCape[]>([])
 const lockedCapes = computed(() => catalog.value.filter((c) => c.unlock !== 'free'))
-const form = reactive({ capeId: '', count: 1, maxUses: 1, note: '' })
+interface LockableCosmetic { id: string, name: string, slot: string, unlock: string, hidden: boolean }
+const cosmetics = ref<LockableCosmetic[]>([])
+// Ziel als „cape:<id>“ bzw. „cos:<id>“ (Umhänge und Kosmetik teilen sich keinen ID-Raum).
+const form = reactive({ target: '', count: 1, maxUses: 1, note: '' })
 const created = ref<string[]>([])
 const busy = ref('')
 const error = ref('')
@@ -30,10 +33,15 @@ const loading = ref(true)
 async function load() {
   error.value = ''
   try {
-    const [r, capes] = await Promise.all([api<{ codes: CodeView[] }>('/v1/admin/codes'), api<{ capes: SiteCape[] }>('/v1/site/capes')])
+    const [r, capes, cos] = await Promise.all([
+      api<{ codes: CodeView[] }>('/v1/admin/codes'),
+      api<{ capes: SiteCape[] }>('/v1/site/capes'),
+      api<{ cosmetics: LockableCosmetic[] }>('/v1/admin/cosmetics/builtin'),
+    ])
     codes.value = r.codes
     catalog.value = capes.capes
-    if (!form.capeId && lockedCapes.value.length) form.capeId = lockedCapes.value[0]!.id
+    cosmetics.value = cos.cosmetics
+    if (!form.target && lockedCapes.value.length) form.target = `cape:${lockedCapes.value[0]!.id}`
   } catch (e) {
     error.value = fill(a.value.common.failed, { error: apiMessage(e) })
   } finally {
@@ -49,7 +57,7 @@ async function createCodes() {
     const r = await api<{ codes: (CodeView & { code: string })[] }>('/v1/admin/codes', {
       method: 'POST',
       body: {
-        capeId: form.capeId,
+        ...(form.target.startsWith('cos:') ? { cosmeticId: form.target.slice(4) } : { capeId: form.target.slice(5) }),
         count: Math.min(100, Math.max(1, Math.round(form.count))),
         maxUses: Math.min(100000, Math.max(1, Math.round(form.maxUses))),
         ...(form.note.trim() ? { note: form.note.trim().slice(0, 200) } : {}),
@@ -89,6 +97,7 @@ async function copyCodes() {
   }
 }
 const capeName = (id: string | null) => catalog.value.find((c) => c.id === id)?.name ?? id
+const cosmeticName = (id: string | null) => cosmetics.value.find((c) => c.id === id)?.name ?? id
 </script>
 
 <template>
@@ -101,9 +110,14 @@ const capeName = (id: string | null) => catalog.value.find((c) => c.id === id)?.
     <div class="mt-6 grid gap-6" :class="can('codes') ? 'lg:grid-cols-[22rem_1fr]' : ''">
       <form v-if="can('codes')" class="card h-fit p-5" @submit.prevent="createCodes">
         <h2 class="section-title">{{ m.admin.codes.create }}</h2>
-        <label class="label mt-4" for="code-cape">{{ m.admin.codes.cape }}</label>
-        <select id="code-cape" v-model="form.capeId" class="field" required>
-          <option v-for="c in lockedCapes" :key="c.id" :value="c.id">{{ c.name }}</option>
+        <label class="label mt-4" for="code-cape">{{ m.admin.codes.item }}</label>
+        <select id="code-cape" v-model="form.target" class="field" required>
+          <optgroup :label="m.admin.codes.groupCapes">
+            <option v-for="c in lockedCapes" :key="c.id" :value="`cape:${c.id}`">{{ c.name }}</option>
+          </optgroup>
+          <optgroup v-if="cosmetics.length" :label="m.admin.codes.groupCosmetics">
+            <option v-for="c in cosmetics" :key="c.id" :value="`cos:${c.id}`">{{ c.name }}{{ c.hidden ? ` (${m.admin.codes.hiddenTag})` : '' }}</option>
+          </optgroup>
         </select>
         <div class="mt-3 grid grid-cols-2 gap-3">
           <div>
@@ -117,7 +131,7 @@ const capeName = (id: string | null) => catalog.value.find((c) => c.id === id)?.
         </div>
         <label class="label mt-3" for="code-note">{{ m.admin.codes.note }}</label>
         <input id="code-note" v-model="form.note" class="field" maxlength="200" />
-        <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'codes' || !form.capeId">{{ m.admin.codes.create }}</button>
+        <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'codes' || !form.target">{{ m.admin.codes.create }}</button>
         <div v-if="created.length" class="mt-5 border-t border-base-800 pt-4">
           <p class="text-xs text-lamp-300">{{ m.admin.codes.created }}</p>
           <pre class="codes-out mt-2 select-all">{{ created.join('\n') }}</pre>
@@ -133,12 +147,12 @@ const capeName = (id: string | null) => catalog.value.find((c) => c.id === id)?.
         <div v-else class="card overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="border-b border-base-800 text-xs text-base-400">
-              <tr><th class="px-4 py-2.5">…</th><th class="px-4 py-2.5">{{ m.admin.codes.cape }}</th><th class="px-4 py-2.5" /><th class="px-4 py-2.5">{{ m.admin.codes.note }}</th><th /></tr>
+              <tr><th class="px-4 py-2.5">…</th><th class="px-4 py-2.5">{{ m.admin.codes.item }}</th><th class="px-4 py-2.5" /><th class="px-4 py-2.5">{{ m.admin.codes.note }}</th><th /></tr>
             </thead>
             <tbody class="divide-y divide-base-800">
               <tr v-for="c in codes" :key="c.id" :class="{ 'opacity-45': c.revokedAt || c.uses >= c.maxUses }">
                 <td class="px-4 py-2.5 font-mono text-base-50">…{{ c.hint }}</td>
-                <td class="px-4 py-2.5">{{ c.capeId ? capeName(c.capeId) : c.cosmeticId }}</td>
+                <td class="px-4 py-2.5">{{ c.capeId ? capeName(c.capeId) : cosmeticName(c.cosmeticId) }}</td>
                 <td class="px-4 py-2.5 text-base-400 tabular-nums">{{ fill(m.admin.codes.uses2, { uses: c.uses, max: c.maxUses }) }}</td>
                 <td class="max-w-56 truncate px-4 py-2.5 text-base-400">{{ c.note }}</td>
                 <td class="px-4 py-2.5 text-right">

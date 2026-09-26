@@ -40,7 +40,10 @@ const cosmeticEntry = z
     frames: z.int().min(1).max(64).default(1),
     frameTimeMs: z.int().min(20).max(10_000).nullish(),
     emissive: z.boolean().default(false),
+    /** Versteckt: erscheint nur bei denen, die es besitzen (per Code). Nur zusammen mit unlock "code". */
+    hidden: z.boolean().default(false),
   })
+  .refine((c) => !c.hidden || c.unlock === 'code', 'hidden cosmetics must be unlocked by code')
   .refine((c) => c.frames === 1 || (c.frameTimeMs !== null && c.frameTimeMs !== undefined), 'animated cosmetics need frameTimeMs')
   .refine((c) => c.animated === undefined || c.animated === c.frames > 1, 'animated must match frames > 1')
 
@@ -72,6 +75,7 @@ export async function loadBuiltinCosmetics(
       frames: c.frames,
       frameTimeMs: c.frames > 1 ? (c.frameTimeMs ?? null) : null,
       emissive: c.emissive,
+      hidden: c.hidden,
       png,
     })
   }

@@ -997,8 +997,9 @@ Unlocking works exactly like capes:
 | `cubes[].from`, `cubes[].to` | Opposite corners `[x, y, z]` in model units (§11.2). Multiples of 0.5. `to − from` is a whole number from 1 to 32 on every axis. |
 | `cubes[].uv` | `[u, v]`: top-left corner of the cube's UV net in the texture, at scale 1 (§11.3). |
 | `cubes[].attach` | `head`, `body` or `back`: the frame the cube lives in (§11.2). |
-| `cubes[].pivot` | `[x, y, z]` in the same frame. Required for `flap` and `spin`. |
-| `cubes[].anim` | Optional: `flap`, `bob` or `spin` (§11.4). |
+| `cubes[].pivot` | `[x, y, z]` in the same frame. Required for `flap`, `spin`, `quack` and `wing`. |
+| `cubes[].anim` | Optional: `flap`, `bob` or `spin` (§11.4); with a `rig` also `look`, `quack`, `blink`, `wing` (§11.4.1). |
+| `rig` | Optional animal rig: `{ "type": "duck", "neck": [x, y, z] }`. The whole model reacts to the wearer (§11.4.1). |
 | `particles` | Particle definition (§11.5). |
 
 Templates **never change** after release. A new shape gets a new id, so uploaded textures always stay valid. The server checks at startup that every net lies inside the texture and that no two nets overlap.
@@ -1131,6 +1132,20 @@ The rotation is right-handed around +y, applied relative to the pivot:
 - `z' = −x·sin θ + z·cos θ`
 
 A positive θ turns +x towards −z. In `ModelPart` space (y and z negated), the same rotation is `yRot = −θ`, with the pivot at `(pivot.x, −pivot.y, −pivot.z)` (for `back`: `2 − pivot.z`).
+
+#### 11.4.1 Animal rigs (`rig`)
+
+A template with a `rig` is animated by the client from the **wearer's movement**, not only the wall clock. Clients without rig support draw the model still. The only rig so far is `duck` (template `duck`, the rubber duck):
+
+| Part | Behaviour |
+|---|---|
+| whole model | Waddles (rolls ±7°, bobs) while the wearer walks, bobs gently while idle, lags a little behind fast head turns and springs back, squashes briefly on landing, leans forward while sprinting. |
+| `look` | Turns around `rig.neck`: follows the wearer's view with a slight delay and glances around now and then (±35° yaw, ±15° pitch). |
+| `quack` | Rotates around `pivot` (x axis) up to 28°: when the wearer starts sneaking, while an emote plays, and randomly every 10–20 s. Follows `look`. |
+| `blink` | Scales the cube's height to 10 % around its centre for 150 ms every 2.5–6 s. Follows `look`. |
+| `wing` | Rotates around `pivot` (z axis, outwards) while the wearer is in the air (fast flaps), tucked while sprinting. |
+
+Timing is per client and not synchronised – only the look is.
 
 ### 11.5 Particle templates (`kind: "particles"`)
 
@@ -1265,8 +1280,11 @@ Animated particle textures use the same frame formula as models. All particles o
 | `halo` | Heiligenschein | `halo` (aura) | code | 8 × 125 ms, emissive |
 | `redstone_aura` | Redstone-Partikel-Aura | `orbit` (aura) | free | 4 × 150 ms, emissive |
 | `footprints` | Fußspuren | `trail` (aura) | free | – |
+| `rubber_duck` | Quietscheente | `duck` (rig) | code, **hidden** | – (animated by the rig) |
 
 Templates without a built-in item (`ring`) are available for uploads.
+
+**Hidden items** (`hidden: true` in `catalog.json`, only together with `unlock: "code"`) never appear in `GET /v1/cosmetics` for anyone who has not unlocked them – not even as locked, and not for admins. Once redeemed, they are listed and wearable like any other item, and others see them on the wearer through the lookup. Admins find them for code creation under `GET /v1/admin/cosmetics/builtin` (staff): every built-in item and emote that is not `free`, with `hidden`.
 
 ---
 

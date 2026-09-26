@@ -38,6 +38,8 @@ export interface CosmeticRow {
   frames: number
   frame_time_ms: number | null
   emissive: number
+  /** 1 = nur für Besitzer sichtbar (Migration 10). */
+  hidden: number
   sort: number
   retired: number
   created_at: number
@@ -133,6 +135,8 @@ export interface BuiltinCosmetic {
   frames: number
   frameTimeMs: number | null
   emissive: boolean
+  /** Nur für Besitzer sichtbar (fehlt = sichtbar). */
+  hidden?: boolean
   png: Buffer
 }
 
@@ -165,15 +169,15 @@ export function seedBuiltinCosmetics(ctx: AppContext, list: BuiltinCosmetic[]): 
     run(
       ctx.db,
       `INSERT INTO cosmetics (id, kind, slot, template, name, owner_uuid, status, unlock, sha256, width, height, scale,
-         frames, frame_time_ms, emissive, sort, retired, created_at)
-       VALUES (?, 'builtin', ?, ?, ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+         frames, frame_time_ms, emissive, hidden, sort, retired, created_at)
+       VALUES (?, 'builtin', ?, ?, ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
        ON CONFLICT(id) DO UPDATE SET slot = excluded.slot, template = excluded.template, name = excluded.name,
          unlock = excluded.unlock, sha256 = excluded.sha256, width = excluded.width, height = excluded.height,
          scale = excluded.scale, frames = excluded.frames, frame_time_ms = excluded.frame_time_ms,
-         emissive = excluded.emissive, sort = excluded.sort, retired = 0
+         emissive = excluded.emissive, hidden = excluded.hidden, sort = excluded.sort, retired = 0
        WHERE cosmetics.kind = 'builtin'`,
       c.id, tpl.slot, tpl.id, c.name, c.unlock, sha, w, h, c.scale, c.frames, c.frames > 1 ? c.frameTimeMs : null,
-      c.emissive ? 1 : 0, c.sort, t,
+      c.emissive ? 1 : 0, c.hidden ? 1 : 0, c.sort, t,
     )
     ids.add(c.id)
   }
@@ -213,6 +217,11 @@ export function canUseCosmetic(ctx: AppContext, uuid: string, c: CosmeticRow): b
   return one(ctx.db, 'SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', uuid, c.id) !== undefined
 }
 
+/** Tatsächlich freigeschaltet (Eintrag in user_cosmetics) – ohne Admin-Sonderrecht. */
+function ownsCosmetic(ctx: AppContext, uuid: string, id: string): boolean {
+  return one(ctx.db, 'SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', uuid, id) !== undefined
+}
+
 function equippedMap(ctx: AppContext, uuid: string): Map<WearableSlot, CosmeticRow> {
   const rows = all<CosmeticRow & { eq_slot: WearableSlot }>(
     ctx.db,
@@ -247,6 +256,8 @@ export function cosmeticCatalog(ctx: AppContext, uuid: string): CosmeticCatalogE
   )
   return rows
     .filter((c) => renderable(ctx, c))
+    // Versteckte Teile (per Code) sieht nur, wer sie besitzt – nicht einmal als „gesperrt“.
+    .filter((c) => !c.hidden || ownsCosmetic(ctx, uuid, c.id) || equipped.has(c.id))
     .map((c) => ({
       ...cosmeticView(ctx, c),
       owned: canUseCosmetic(ctx, uuid, c),

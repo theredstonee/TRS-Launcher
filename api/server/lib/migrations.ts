@@ -572,6 +572,12 @@ CREATE INDEX hosting_bans_uuid ON hosting_bans(uuid);
     version: 9,
     run: migrateModerationV2,
   },
+  {
+    // Versteckte Kosmetik (z. B. die Quietscheente): taucht in keinem Katalog auf, bis sie jemand per Code
+    // freigeschaltet hat. Wert kommt beim Start aus assets/cosmetics/catalog.json.
+    version: 10,
+    sql: `ALTER TABLE cosmetics ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;`,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {

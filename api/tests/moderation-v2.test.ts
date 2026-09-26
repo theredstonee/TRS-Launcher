@@ -406,7 +406,7 @@ describe('migration 9', () => {
     ins.run(gone, 'mute', 'bleibt', null, null, 8500, ADMIN, null, null, null)
     db.prepare('INSERT INTO bans (uuid, reason, banned_at, banned_by) VALUES (?, ?, ?, ?)').run(gone, 'Betrug', 4000, 'api-key')
 
-    expect(migrate(db)).toBe(1)
+    expect(migrate(db)).toBe(MIGRATIONS.filter((x) => x.version > 8).length)
     const rows = all<Record<string, unknown>>(db, 'SELECT uuid, kind, reason_code, reason, report_id, auto, created_at, created_by, created_role, expires_at, lifted_at, lifted_by, legacy_source FROM sanctions ORDER BY created_at')
     expect(rows).toEqual([
       { uuid: gone, kind: 'account_ban', reason_code: 'legacy', reason: 'Betrug', report_id: null, auto: null, created_at: 4000, created_by: 'api-key', created_role: 'admin', expires_at: null, lifted_at: null, lifted_by: null, legacy_source: 'bans' },

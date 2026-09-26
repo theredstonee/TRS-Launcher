@@ -527,6 +527,97 @@ function footprints() {
   })
 }
 
+/**
+ * Gelbe Quietscheente (Vorlage „duck“): runder Eindruck durch dunklere Kanten, Glanzpunkt auf dem Kopf,
+ * orangefarbener Schnabel mit dunklem Mundinneren (sichtbar beim Quaken), Knopfaugen mit Lichtpunkt.
+ * Würfel: 0 Körper, 1 Kopf, 2 Oberschnabel, 3 Unterschnabel, 4/5 Augen, 6/7 Flügel, 8 Schwanz.
+ */
+function rubberDuck() {
+  const tpl = TEMPLATES.duck
+  const Y = hex('#ffd431')
+  const Y_HI = hex('#fff08a')
+  const Y_LO = hex('#e9a90c')
+  const WING = hex('#f6c21b')
+  const BEAK = hex('#ff8a1c')
+  const BEAK_HI = hex('#ffb04a')
+  const BEAK_LO = hex('#d8650e')
+  const MOUTH = hex('#9c2f1f')
+  const EYE = hex('#15151b')
+  const SHINE = hex('#fffbe6')
+  return paintModel(tpl, (p) => {
+    const c = tpl.cubes[p.cube]
+    const [x0, y0, z0] = c.from
+    const [x1, y1, z1] = c.to
+    const n = noise(p.i, p.j, 71 + p.cube * 7 + p.face.length)
+    // 0 unten … 1 oben, und wie nah am Rand der Fläche (für „runde“ Kanten)
+    const up = (p.y - y0) / (y1 - y0)
+    const edgeI = Math.min(p.i, p.fw - 1 - p.i)
+    const edgeJ = Math.min(p.j, p.fh - 1 - p.j)
+    const rim = Math.min(edgeI, edgeJ) === 0
+    const faceLight = { top: 1.1, bottom: 0.74, front: 1.0, back: 0.9, left: 0.95, right: 0.95 }[p.face]
+    const soft = (col, extra = 1) => shade(mix(col, Y_LO, rim ? 0.35 : 0), faceLight * extra * (0.97 + n * 0.06))
+
+    switch (p.cube) {
+      case 0: { // Körper: oben hell, unten satt, Brust leicht gewölbt
+        if (p.face === 'top') {
+          const cx = Math.abs(p.x) / 3
+          const cz = Math.abs(p.z + 0.5) / 3.5
+          return soft(mix(Y_HI, Y, Math.max(cx, cz) * 0.9))
+        }
+        if (p.face === 'bottom') return soft(Y_LO)
+        return soft(mix(Y_LO, Y, 0.35 + up * 0.8))
+      }
+      case 1: { // Kopf
+        if (p.face === 'top') {
+          if (p.x > 0.2 && p.x < 1.3 && p.z > 2.2 && p.z < 3.3) return SHINE
+          return soft(mix(Y_HI, Y, 0.35))
+        }
+        if (p.face === 'bottom') return soft(Y_LO)
+        // Wangen: zarter oranger Hauch unter den Augen
+        if ((p.face === 'left' || p.face === 'right') && p.y > 12.6 && p.y < 13.6 && p.z > 2.4 && p.z < 3.6) {
+          return shade(mix(Y, BEAK_HI, 0.45), faceLight)
+        }
+        if (p.face === 'front' && p.y > 15 && p.x > 0.4 && p.x < 1.2) return mix(Y_HI, SHINE, 0.5)
+        return soft(mix(Y, Y_HI, up * 0.5))
+      }
+      case 2: { // Oberschnabel
+        if (p.face === 'bottom') return MOUTH
+        if (p.face === 'top') {
+          // Nasenlöcher
+          if (p.z > 4.9 && p.z < 5.4 && Math.abs(Math.abs(p.x) - 0.75) < 0.26) return BEAK_LO
+          return shade(mix(BEAK_HI, BEAK, p.z - 4 > 1.2 ? 0.2 : 0.6), 1.05)
+        }
+        return shade(mix(BEAK, BEAK_HI, up * 0.4), faceLight * (0.97 + n * 0.05))
+      }
+      case 3: { // Unterschnabel (klappt beim Quaken auf)
+        if (p.face === 'top') return mix(MOUTH, hex('#c2412a'), p.z - 4)
+        if (p.face === 'bottom') return BEAK_LO
+        return shade(mix(BEAK_LO, BEAK, up), faceLight)
+      }
+      case 4:
+      case 5: { // Knopfauge mit Lichtpunkt nach vorne oben
+        const outer = (p.cube === 4 && p.face === 'left') || (p.cube === 5 && p.face === 'right')
+        if (outer && p.y > 14.5 && p.z > 2.5) return SHINE
+        return shade(EYE, p.face === 'top' ? 1.4 : 1)
+      }
+      case 6:
+      case 7: { // Flügel: Federn nach hinten dunkler, Federspitzen als Streifen
+        const back = (z1 - p.z) / (z1 - z0) // 0 vorne … 1 hinten
+        let col = mix(mix(WING, Y_HI, 0.25), Y_LO, back * 0.55)
+        const outer = (p.cube === 6 && p.face === 'left') || (p.cube === 7 && p.face === 'right')
+        if (outer && back > 0.45 && Math.floor(p.z * 2) % 2 === 0 && up < 0.6) col = mix(col, Y_LO, 0.5)
+        if (p.face === 'top') col = mix(col, Y_HI, 0.35)
+        return shade(col, faceLight * (0.97 + n * 0.05))
+      }
+      case 8: { // Schwanz, Spitze nach oben
+        if (p.face === 'top') return soft(Y_HI)
+        return soft(mix(Y_LO, Y, 0.4 + up * 0.7))
+      }
+    }
+    return null
+  })
+}
+
 // ================================================================== Vorschau
 
 const PX = 16 // Bildschirm-Pixel je Modell-Einheit (HD-Texel = 8×8)
@@ -709,6 +800,8 @@ const cosmetics = [
   { id: 'redstone_aura', name: 'Redstone-Partikel-Aura', template: 'orbit', unlock: 'free', emissive: true,
     frames: range(4).map(redstoneAura), frameTimeMs: 150, view: 'front', win: [-17, 17, -2, 36] },
   { id: 'footprints', name: 'Fußspuren', template: 'trail', unlock: 'free', frames: [footprints()], view: 'top' },
+  // Versteckt: erscheint nur bei denen, die den Code eingelöst haben.
+  { id: 'rubber_duck', name: 'Quietscheente', template: 'duck', unlock: 'code', hidden: true, frames: [rubberDuck()], view: 'front', win: HEAD_WIN },
 ]
 
 mkdirSync(OUT, { recursive: true })
@@ -736,6 +829,7 @@ const catalog = cosmetics.map((c) => {
     frames: c.frames.length,
     ...(c.frames.length > 1 ? { frameTimeMs: c.frameTimeMs } : {}),
     emissive: c.emissive === true,
+    ...(c.hidden ? { hidden: true } : {}),
   }
 })
 writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(catalog, null, 2)}\n`)

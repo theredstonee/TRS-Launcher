@@ -456,7 +456,7 @@ const en = {
       keyNav: 'previous / next',
       keyClose: 'close',
     },
-    codes: { create: 'Create codes', cape: 'Cape', count: 'Number of codes', uses: 'Uses per code', note: 'Note', created: 'New codes – copy them now, they are only shown once:', revoke: 'Revoke', uses2: '{uses}/{max} used', none: 'No codes yet.' },
+    codes: { create: 'Create codes', cape: 'Cape', item: 'Unlocks', groupCapes: 'Capes', groupCosmetics: 'Cosmetics & emotes', hiddenTag: 'hidden', count: 'Number of codes', uses: 'Uses per code', note: 'Note', created: 'New codes – copy them now, they are only shown once:', revoke: 'Revoke', uses2: '{uses}/{max} used', none: 'No codes yet.' },
     players: { search: 'Player UUID', find: 'Look up', ban: 'Ban', unban: 'Unban', grant: 'Give cape', notFound: 'No such player.' },
     mod: {
       filters: { active: 'Open & in review', open: 'Open', in_review: 'In review', resolved: 'Resolved', all: 'All' },
@@ -990,7 +990,7 @@ const de: Messages = {
       keyNav: 'vorheriger / nächster',
       keyClose: 'schließen',
     },
-    codes: { create: 'Codes erstellen', cape: 'Umhang', count: 'Anzahl Codes', uses: 'Einlösungen je Code', note: 'Notiz', created: 'Neue Codes – jetzt kopieren, sie werden nur einmal angezeigt:', revoke: 'Widerrufen', uses2: '{uses}/{max} eingelöst', none: 'Noch keine Codes.' },
+    codes: { create: 'Codes erstellen', cape: 'Umhang', item: 'Schaltet frei', groupCapes: 'Umhänge', groupCosmetics: 'Kosmetik & Emotes', hiddenTag: 'versteckt', count: 'Anzahl Codes', uses: 'Einlösungen je Code', note: 'Notiz', created: 'Neue Codes – jetzt kopieren, sie werden nur einmal angezeigt:', revoke: 'Widerrufen', uses2: '{uses}/{max} eingelöst', none: 'Noch keine Codes.' },
     players: { search: 'Spieler-UUID', find: 'Suchen', ban: 'Sperren', unban: 'Entsperren', grant: 'Umhang geben', notFound: 'Diesen Spieler gibt es nicht.' },
     mod: {
       filters: { active: 'Offen & in Prüfung', open: 'Offen', in_review: 'In Prüfung', resolved: 'Erledigt', all: 'Alle' },
@@ -1477,7 +1477,7 @@ const es: Messages = {
       keyNav: 'anterior / siguiente',
       keyClose: 'cerrar',
     },
-    codes: { create: 'Crear códigos', cape: 'Capa', count: 'Número de códigos', uses: 'Usos por código', note: 'Nota', created: 'Códigos nuevos – cópialos ahora, solo se muestran una vez:', revoke: 'Revocar', uses2: '{uses}/{max} usados', none: 'Aún no hay códigos.' },
+    codes: { create: 'Crear códigos', cape: 'Capa', item: 'Desbloquea', groupCapes: 'Capas', groupCosmetics: 'Cosméticos y emotes', hiddenTag: 'oculto', count: 'Número de códigos', uses: 'Usos por código', note: 'Nota', created: 'Códigos nuevos – cópialos ahora, solo se muestran una vez:', revoke: 'Revocar', uses2: '{uses}/{max} usados', none: 'Aún no hay códigos.' },
     players: { search: 'UUID del jugador', find: 'Buscar', ban: 'Bloquear', unban: 'Desbloquear', grant: 'Dar capa', notFound: 'Ese jugador no existe.' },
     mod: {
       filters: { active: 'Abiertas y en revisión', open: 'Abiertas', in_review: 'En revisión', resolved: 'Resueltas', all: 'Todas' },

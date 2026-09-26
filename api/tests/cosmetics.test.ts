@@ -393,6 +393,53 @@ describe('codes for cosmetics and emotes', () => {
   })
 })
 
+describe('hidden cosmetics (rubber duck)', () => {
+  it('bundled duck: rig template, hidden and code-only', async () => {
+    const env = makeEnv()
+    const duck = bundledTemplates().get('duck')!
+    expect(duck).toMatchObject({ kind: 'model', slot: 'hat', rig: { type: 'duck', neck: [0, 12, 2] } })
+    const list = await loadBuiltinCosmetics(
+      async () => JSON.parse(readFileSync(join(ASSETS, 'catalog.json'), 'utf8')),
+      async (name) => readFileSync(join(ASSETS, name)),
+    )
+    expect(list.find((c) => c.id === 'rubber_duck')).toMatchObject({ template: 'duck', unlock: 'code', hidden: true, scale: 2 })
+    seedBuiltinCosmetics(env.ctx, list)
+    expect(getCosmetic(env.ctx, 'rubber_duck')!.hidden).toBe(1)
+  })
+
+  it('stays out of every catalog until redeemed, then shows up and can be worn', async () => {
+    const env = makeEnv()
+    seedBuiltinCosmetics(env.ctx, [
+      ...fixtureCosmetics(env),
+      { id: 'secret_duck', name: 'Ente', template: 'duck', unlock: 'code', hidden: true, sort: 9, scale: 2, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'duck', 2) },
+    ])
+    const u = (await login(env, 'Steve')).user.uuid
+    const admin = (await login(env, 'Theredstonee', ADMIN)).user.uuid
+    expect(cosmeticCatalog(env.ctx, u).some((c) => c.id === 'secret_duck')).toBe(false)
+    // Auch Admins sehen es im Spieler-Katalog nicht, solange sie es nicht besitzen.
+    expect(cosmeticCatalog(env.ctx, admin).some((c) => c.id === 'secret_duck')).toBe(false)
+    expect(code(() => equipCosmetics(env.ctx, u, { hat: 'secret_duck' }))).toBe('cosmetic_locked')
+    const c = normalizeRedeemCode(createCodes(env.ctx, ADMIN, { cosmeticId: 'secret_duck', maxUses: 25, count: 1 }).codes[0]!.code)!
+    expect(redeemCode(env.ctx, u, c)).toMatchObject({ kind: 'cosmetic', cosmetic: { id: 'secret_duck', slot: 'hat' } })
+    expect(cosmeticCatalog(env.ctx, u).find((x) => x.id === 'secret_duck')).toMatchObject({ owned: true, template: 'duck' })
+    expect(equipCosmetics(env.ctx, u, { hat: 'secret_duck' }).hat?.template).toBe('duck')
+    // Andere sehen die getragene Ente (Lookup), aber nicht im eigenen Katalog.
+    const other = (await login(env, 'Alex')).user.uuid
+    updateSettings(env.ctx, u, { showCosmeticsToOthers: true })
+    expect(lookupPlayers(env.ctx, other, [u]).players[0]?.cosmetics.hat).toMatchObject({ id: 'secret_duck', template: 'duck' })
+    expect(cosmeticCatalog(env.ctx, other).some((x) => x.id === 'secret_duck')).toBe(false)
+  })
+
+  it('rejects a hidden entry that is not code-unlocked and rig anims without a rig', async () => {
+    await expect(loadBuiltinCosmetics(async () => [{ id: 'x', name: 'X', template: 'duck', unlock: 'free', hidden: true, file: 'x.png' }], async () => Buffer.alloc(0)))
+      .rejects.toThrow(/hidden/)
+    const f = rawTemplates()
+    const crown = f.templates.find((t: { id: string }) => t.id === 'crown')
+    crown.cubes[0].anim = 'look'
+    expect(() => parseTemplates(f)).toThrow(/rig/)
+  })
+})
+
 describe('account deletion and stats', () => {
   it('removes cosmetic uploads, files, grants and equipment', async () => {
     const env: TestEnv = makeEnv()

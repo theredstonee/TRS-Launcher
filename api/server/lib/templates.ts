@@ -31,7 +31,12 @@ const cubeSchema = z
     uv,
     attach: z.enum(['head', 'body', 'back']),
     pivot: vec3.optional(),
-    anim: z.enum(['flap', 'bob', 'spin']).optional(),
+    /**
+     * flap/bob/spin laufen nach der Wanduhr. Nur mit `rig` (Tier-Kosmetik, reagiert auf den Träger):
+     * look = folgt dem Kopf des Tiers (Drehpunkt `rig.neck`), quack = Unterschnabel klappt um `pivot` auf,
+     * blink = Auge schließt sich (um die Würfelmitte), wing = Flügel schlägt im Sprung um `pivot`.
+     */
+    anim: z.enum(['flap', 'bob', 'spin', 'look', 'quack', 'blink', 'wing']).optional(),
   })
   .superRefine((c, ctx) => {
     for (let a = 0; a < 3; a++) {
@@ -40,10 +45,10 @@ const cubeSchema = z
         ctx.addIssue({ code: 'custom', message: 'cube size must be a whole number 1..32 on every axis', path: ['to', a] })
       }
     }
-    if ((c.anim === 'flap' || c.anim === 'spin') && !c.pivot) {
+    if ((c.anim === 'flap' || c.anim === 'spin' || c.anim === 'quack' || c.anim === 'wing') && !c.pivot) {
       ctx.addIssue({ code: 'custom', message: `anim "${c.anim}" needs a pivot`, path: ['pivot'] })
     }
-    if (c.anim === 'flap' && c.pivot && (c.from[0] + c.to[0]) / 2 === c.pivot[0]) {
+    if ((c.anim === 'flap' || c.anim === 'wing') && c.pivot && (c.from[0] + c.to[0]) / 2 === c.pivot[0]) {
       ctx.addIssue({ code: 'custom', message: 'flap needs the cube centre left or right of the pivot', path: ['pivot'] })
     }
   })
@@ -104,6 +109,11 @@ const templateSchema = z.discriminatedUnion('kind', [
     kind: z.literal('model'),
     slot: z.enum(WEARABLE_SLOTS),
     cubes: z.array(cubeSchema).min(1).max(32),
+    /**
+     * Tier-Kosmetik mit eigenem Verhalten (watscheln, umschauen, blinzeln, Flügel, quaken) – die Mod bewegt
+     * das ganze Modell nach dem Träger. `neck` = Drehpunkt des Tierkopfs für `look`/`quack`/`blink`.
+     */
+    rig: z.strictObject({ type: z.literal('duck'), neck: vec3 }).optional(),
   }),
   z.strictObject({
     ...base,
@@ -190,6 +200,9 @@ export const templatesFileSchema = z
     const ids = new Set<string>()
     for (const t of f.templates) {
       if (ids.has(t.id)) ctx.addIssue({ code: 'custom', message: `duplicate template id ${t.id}` })
+      if (t.kind === 'model' && !t.rig && t.cubes.some((c) => c.anim === 'look' || c.anim === 'quack' || c.anim === 'blink' || c.anim === 'wing')) {
+        ctx.addIssue({ code: 'custom', message: `${t.id}: look/quack/blink/wing need a rig` })
+      }
       ids.add(t.id)
       checkLayout(t, (message) => ctx.addIssue({ code: 'custom', message }))
     }
