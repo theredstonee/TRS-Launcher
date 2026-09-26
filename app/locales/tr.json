@@ -2534,6 +2534,7 @@
       "identity": "Minecraft UUID'n ve oyuncu adın",
       "capes": "seçtiğin pelerin, kullandığın kodlar ve yüklediğin pelerin görselleri",
       "friends": "arkadaşlar, istekler ve engellemeler",
+      "chat": "sohbet mesajları, gönderdiğin resimler ve şikâyetler – silinene kadar sunucuda şifreli saklanır; şikâyet edilen içerik moderasyon için tutulur",
       "settings": "gizlilik ayarların ve zaman damgaları (giriş, oluşturma)",
       "sync": "eşitleme açıksa: kendi skinlerin (görseller ve adlar), kendi hazır ayarların ile temanı, vurgu rengini ve dilini – tüm bilgisayarlarında aynı olsunlar diye; TRS Client da modüllerini, HUD düzenlerini ve tuşlarını aynı şekilde eşitler (TRS menüsündeki anahtar)",
       "presence": "çevrimiçi durumun (launcher açık / oyunda, sürüm ve istersen sunucu) – yalnızca bellekte tutulur, 3 dakika sonra sona erer"

@@ -42,6 +42,27 @@ How to write an entry:
 - **TRS Client: clip preview in game.** In "Clips & Images" a clip now opens a small animated preview with play/pause
   and a timeline, plus "Open in launcher": the launcher comes to the front and plays the clip. Works when the game was
   started from the TRS Launcher.
+- **New: Social – chat with your friends.** "Friends" is now "Social" with two tabs. **Chat:** direct messages and
+  groups (create a group from your friends, rename it, add or remove members, hand over ownership, leave). Messages
+  show up instantly with day separators, replies, "(edited)", reactions (👍 ❤️ 😂 😮 😢 😡 🎉 🔥 👀 ✅), "is typing …"
+  and read receipts. Send up to 10 pictures per message – screenshots of all your instances, favourites or files from
+  your PC (also by drag & drop or Ctrl+V) – and invite friends to a server: the invite card shows the icon and player
+  count, and "Join" starts a matching instance and connects right away. Right-click a message to reply, copy, edit or
+  delete your own, mark it as unread or report it. Mute conversations for an hour, a day or until you unmute.
+  **Friends:** friend list with online status and "last online", requests (including cape offers) and blocked players
+  side by side.
+- **Everything updates live.** Friends, requests, online status, cape offers, messages and report feedback now arrive
+  within a moment – no more reloading or waiting. If the connection drops, the launcher reconnects on its own and
+  catches up on everything it missed.
+- **Notifications.** Small pop-ups for new messages (with quick reply), server invites (Join), friend requests and cape
+  offers (Accept/Decline) and friends coming online. Choose the corner, how long they stay (3–10 s), sound on/off, Do
+  not disturb (also automatically while a game runs in fullscreen) and which kinds you want. When the launcher is in
+  the background, Windows shows them too.
+- **Report and stay safe.** Report messages, pictures, players or groups with a reason; "My reports" shows what
+  happened. New privacy switches for read receipts and the typing indicator. Links in messages only open after you
+  confirm them.
+- **For admins:** a new "Reports" tab with the context of each report, reported pictures, notes, history, word filter
+  and actions (delete message, warn, mute, ban, dismiss).
 
 ### Deutsch
 
@@ -68,6 +89,27 @@ How to write an entry:
 - **TRS Client: Clip-Vorschau im Spiel.** In „Clips & Bilder“ öffnet ein Clip jetzt eine kleine animierte Vorschau mit
   Abspielen/Pause und Zeitleiste, dazu „Im Launcher öffnen“: Der Launcher kommt nach vorn und spielt den Clip ab.
   Klappt, wenn das Spiel über den TRS Launcher gestartet wurde.
+- **Neu: Sozial – chatte mit deinen Freunden.** Aus „Freunde“ wird „Sozial“ mit zwei Reitern. **Chat:**
+  Direktnachrichten und Gruppen (Gruppe aus deinen Freunden erstellen, umbenennen, Mitglieder hinzufügen oder entfernen,
+  Besitz übergeben, verlassen). Nachrichten erscheinen sofort – mit Tagestrennern, Antworten, „(bearbeitet)“,
+  Reaktionen (👍 ❤️ 😂 😮 😢 😡 🎉 🔥 👀 ✅), „schreibt …“ und Lesebestätigungen. Bis zu 10 Bilder pro Nachricht –
+  Screenshots aller Instanzen, Favoriten oder Dateien vom PC (auch per Drag & Drop oder Strg+V) – und Einladungen auf
+  einen Server: Die Karte zeigt Icon und Spielerzahl, „Beitreten“ startet eine passende Instanz und verbindet direkt.
+  Rechtsklick auf eine Nachricht: antworten, kopieren, eigene bearbeiten oder löschen, als ungelesen markieren, melden.
+  Unterhaltungen lassen sich für eine Stunde, einen Tag oder bis auf Weiteres stummschalten. **Freunde:** Freundesliste
+  mit Online-Status und „zuletzt online“, Anfragen (auch Umhang-Angebote) und blockierte Spieler nebeneinander.
+- **Alles aktualisiert sich live.** Freunde, Anfragen, Online-Status, Umhang-Angebote, Nachrichten und Rückmeldungen zu
+  Meldungen kommen jetzt sofort an – kein Neuladen, kein Warten mehr. Bricht die Verbindung ab, verbindet sich der
+  Launcher selbst neu und holt alles Verpasste nach.
+- **Benachrichtigungen.** Kleine Hinweise bei neuen Nachrichten (mit Schnellantwort), Server-Einladungen (Beitreten),
+  Freundschaftsanfragen und Umhang-Angeboten (Annehmen/Ablehnen) und wenn Freunde online kommen. Einstellbar: Ecke,
+  Anzeigedauer (3–10 s), Ton an/aus, Nicht stören (auch automatisch, solange ein Spiel im Vollbild läuft) und welche
+  Arten du willst. Ist der Launcher im Hintergrund, zeigt Windows sie zusätzlich an.
+- **Melden und sicher bleiben.** Nachrichten, Bilder, Spieler oder Gruppen mit Grund melden; „Meine Meldungen“ zeigt,
+  was daraus wurde. Neue Datenschutz-Schalter für Lesebestätigungen und „schreibt …“. Links in Nachrichten öffnen sich
+  erst nach einer Bestätigung.
+- **Für Admins:** neuer Reiter „Meldungen“ mit Kontext jeder Meldung, gemeldeten Bildern, Notizen, Verlauf, Wortfilter
+  und Entscheidungen (Nachricht löschen, verwarnen, stummschalten, sperren, abweisen).
 
 ## 0.6.4 – 2026-09-26 – The Workshop Update | Das Werkstatt-Update
 <!-- banner: accent=#d99a5b motif=/news/0.6.4/banner.png -->

@@ -2534,6 +2534,7 @@
       "identity": "deine Minecraft-UUID und dein Spielername",
       "capes": "gewählter Umhang, eingelöste Codes und hochgeladene Umhang-Bilder",
       "friends": "Freunde, Anfragen und Blockierungen",
+      "chat": "Chat-Nachrichten, gesendete Bilder und Meldungen – verschlüsselt auf dem Server, bis sie gelöscht werden; gemeldete Inhalte werden für die Moderation aufbewahrt",
       "settings": "deine Datenschutz-Einstellungen und Zeitpunkte (Anmeldung, Erstellung)",
       "sync": "bei eingeschalteter Synchronisation: deine eigenen Skins (Bilder und Namen), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache – damit sie auf all deinen PCs gleich sind; der TRS Client synchronisiert seine Module, HUD-Layouts und Tasten ebenso (Schalter im TRS-Menü)",
       "presence": "der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher, er verfällt nach 3 Minuten"
@@ -2548,7 +2549,7 @@
   },
   "trsPrivacy": {
     "heading": "TRS-Dienste",
-    "intro": "Umhänge, Freunde und Online-Status über den TRS-Server.",
+    "intro": "Umhänge, Freunde, Chat und Online-Status über den TRS-Server.",
     "whatStored": "Was wird gespeichert?",
     "services": {
       "title": "TRS-Dienste nutzen",
@@ -2584,7 +2585,7 @@
     },
     "delete": {
       "title": "Alle TRS-Daten löschen",
-      "description": "Löscht dein TRS-Konto mit Umhängen, Uploads, Codes, Freunden, Online-Status und synchronisierten Skins, Presets und Einstellungen sofort vom Server. Danach sind die TRS-Dienste aus. Die Skins und Presets auf diesem PC bleiben erhalten.",
+      "description": "Löscht dein TRS-Konto mit Umhängen, Uploads, Codes, Freunden, Chats (Direktnachrichten für beide Seiten), Online-Status und synchronisierten Skins, Presets und Einstellungen sofort vom Server. Danach sind die TRS-Dienste aus. Die Skins und Presets auf diesem PC bleiben erhalten.",
       "button": "Alle TRS-Daten löschen …",
       "confirm": "Wirklich alles von {name} löschen? Freigeschaltete Umhänge und Freunde sind danach weg – das lässt sich nicht rückgängig machen.",
       "deleting": "Lösche …",

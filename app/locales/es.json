@@ -2534,6 +2534,7 @@
       "identity": "tu UUID de Minecraft y tu nombre de jugador",
       "capes": "la capa elegida, los códigos canjeados y las imágenes de capas subidas",
       "friends": "amigos, solicitudes y bloqueos",
+      "chat": "mensajes del chat, imágenes que envías y denuncias: se guardan cifrados en el servidor hasta que se eliminan; el contenido denunciado se conserva para la moderación",
       "settings": "tus ajustes de privacidad y marcas de tiempo (inicio de sesión, creación)",
       "sync": "con la sincronización activada: tus skins propias (imágenes y nombres), tus presets propios y tu tema, color de acento e idioma – para que sean iguales en todos tus PC; el TRS Client sincroniza igual sus módulos, diseños de HUD y teclas (interruptor en el menú TRS)",
       "presence": "el estado en línea (launcher abierto / en el juego, versión y, si quieres, el servidor): solo en memoria, caduca a los 3 minutos"
@@ -2548,7 +2549,7 @@
   },
   "trsPrivacy": {
     "heading": "Servicios de TRS",
-    "intro": "Capas, amigos y estado en línea a través del servidor de TRS.",
+    "intro": "Capas, amigos, chat y estado en línea a través del servidor de TRS.",
     "whatStored": "¿Qué se guarda?",
     "services": {
       "title": "Usar los servicios de TRS",
@@ -2584,7 +2585,7 @@
     },
     "delete": {
       "title": "Eliminar todos los datos de TRS",
-      "description": "Elimina al instante del servidor tu cuenta de TRS con capas, subidas, códigos, amigos, estado en línea y las skins, presets y ajustes sincronizados. Después, los servicios de TRS quedan desactivados. Las skins y presets de este PC se conservan.",
+      "description": "Elimina al instante del servidor tu cuenta de TRS con capas, subidas, códigos, amigos, chats (los mensajes directos para ambas partes), estado en línea y las skins, presets y ajustes sincronizados. Después, los servicios de TRS quedan desactivados. Las skins y presets de este PC se conservan.",
       "button": "Eliminar todos los datos de TRS …",
       "confirm": "¿Seguro que quieres eliminar todo lo de {name}? Las capas desbloqueadas y los amigos desaparecerán, y no se puede deshacer.",
       "deleting": "Eliminando …",

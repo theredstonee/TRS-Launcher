@@ -2534,6 +2534,7 @@
       "identity": "je Minecraft-UUID en spelersnaam",
       "capes": "je gekozen cape, ingewisselde codes en geüploade cape-afbeeldingen",
       "friends": "vrienden, verzoeken en blokkeringen",
+      "chat": "chatberichten, afbeeldingen die je verstuurt en meldingen – versleuteld op de server bewaard tot ze worden verwijderd; gemelde inhoud wordt bewaard voor moderatie",
       "settings": "je privacy-instellingen en tijdstempels (inloggen, aanmaken)",
       "sync": "als synchroniseren aan staat: je eigen skins (afbeeldingen en namen), je eigen presets en je thema, accentkleur en taal – zodat ze op al je pc’s gelijk zijn; de TRS Client synchroniseert zijn modules, HUD-indelingen en toetsen op dezelfde manier (schakelaar in het TRS-menu)",
       "presence": "je onlinestatus (launcher open / in het spel, versie en, als je dat wilt, de server) – alleen in het geheugen bewaard, verloopt na 3 minuten"

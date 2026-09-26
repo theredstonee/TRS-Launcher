@@ -2534,6 +2534,7 @@
       "identity": "your Minecraft UUID and player name",
       "capes": "your selected cape, redeemed codes and uploaded cape images",
       "friends": "friends, requests and blocks",
+      "chat": "chat messages, pictures you send and reports – stored encrypted on the server until they are deleted; reported content is kept for moderation",
       "settings": "your privacy settings and timestamps (sign-in, creation)",
       "sync": "with sync on: your own skins (images and names), your own presets and your theme, accent colour and language – so they are the same on all your PCs; the TRS Client syncs its modules, HUD layouts and keys the same way (switch in the TRS menu)",
       "presence": "your online status (launcher open / in game, version, and the server if you choose) – kept in memory only, it expires after 3 minutes"
@@ -2548,7 +2549,7 @@
   },
   "trsPrivacy": {
     "heading": "TRS services",
-    "intro": "Capes, friends and online status via the TRS server.",
+    "intro": "Capes, friends, chat and online status via the TRS server.",
     "whatStored": "What's stored?",
     "services": {
       "title": "Use TRS services",
@@ -2584,7 +2585,7 @@
     },
     "delete": {
       "title": "Delete all TRS data",
-      "description": "Immediately deletes your TRS account with capes, uploads, codes, friends, online status and synced skins, presets and settings from the server. TRS services are turned off afterwards. The skins and presets on this PC stay.",
+      "description": "Immediately deletes your TRS account with capes, uploads, codes, friends, chats (direct chats for both sides), online status and synced skins, presets and settings from the server. TRS services are turned off afterwards. The skins and presets on this PC stay.",
       "button": "Delete all TRS data …",
       "confirm": "Really delete everything from {name}? Unlocked capes and friends will be gone – this can't be undone.",
       "deleting": "Deleting …",

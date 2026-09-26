@@ -2534,6 +2534,7 @@
       "identity": "twój UUID Minecraft i nazwa gracza",
       "capes": "wybrana peleryna, wykorzystane kody i przesłane obrazy peleryn",
       "friends": "znajomi, zaproszenia i blokady",
+      "chat": "wiadomości czatu, wysyłane zdjęcia i zgłoszenia – przechowywane na serwerze w postaci zaszyfrowanej, dopóki nie zostaną usunięte; zgłoszone treści są zachowywane na potrzeby moderacji",
       "settings": "twoje ustawienia prywatności i znaczniki czasu (logowanie, utworzenie)",
       "sync": "przy włączonej synchronizacji: twoje własne skiny (obrazy i nazwy), własne presety oraz motyw, kolor akcentu i język – aby były takie same na wszystkich twoich komputerach; TRS Client synchronizuje tak samo swoje moduły, układy HUD i klawisze (przełącznik w menu TRS)",
       "presence": "twój status online (launcher otwarty / w grze, wersja oraz serwer, jeśli tak wybierzesz) – tylko w pamięci, wygasa po 3 minutach"
