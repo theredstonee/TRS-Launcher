@@ -118,6 +118,22 @@ sourceSets.main.java.srcDir(generateBuildInfo)
 sourceSets.main.java.srcDir(rootProject.file('../common/src/main/java'))
 sourceSets.main.resources.srcDir(rootProject.file('../common/src/main/resources'))
 
+// Welt-Hosting-Test mit zwei Spielen: -PtrsRunCommandFile=<datei> schreibt die fertige Startzeile als JSON und startet
+// NICHT (das Testskript startet Host und Gast selbst in getrennten Spielordnern).
+if (project.hasProperty('trsRunCommandFile')) {
+	tasks.matching { it.name == 'runClient' }.configureEach { task ->
+		task.doFirst {
+			def java = task.javaLauncher.present ? task.javaLauncher.get().executablePath.asFile.absolutePath : 'java'
+			def json = groovy.json.JsonOutput.toJson([workingDir: task.workingDir.absolutePath, java: java,
+					jvmArgs: task.allJvmArgs, classpath: task.classpath.asPath, mainClass: task.mainClass.get(), args: task.args,
+					environment: task.environment.findAll { k, v -> k == 'ALSOFT_DRIVERS' }])
+			file(project.property('trsRunCommandFile')).write(json, 'UTF-8')
+			logger.lifecycle("Startzeile geschrieben: ${project.property('trsRunCommandFile')}")
+			throw new StopExecutionException()
+		}
+	}
+}
+
 // Forge sucht mcmod.info neben den Klassen – im Dev-Start (runClient) liegen Ressourcen sonst in einem
 // eigenen Ordner und Forge meldet "missing the required element 'version'".
 sourceSets.main.output.resourcesDir = sourceSets.main.java.classesDirectory

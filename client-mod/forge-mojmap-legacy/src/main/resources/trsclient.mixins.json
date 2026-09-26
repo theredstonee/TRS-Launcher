@@ -45,7 +45,11 @@
 		"LoadingOverlayMixin",
 		"LoadingScreenMixin",
 		"JoinMultiplayerAccessor",
-		"SelectionListAccessor"
+		"SelectionListAccessor",
+		"HostingConnectMixin",
+		"HostingPublishMixin",
+		"HostingServerAccessor",
+		"HostingPlayerListAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

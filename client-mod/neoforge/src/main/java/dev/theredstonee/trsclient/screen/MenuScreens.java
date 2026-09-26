@@ -51,11 +51,26 @@ public final class MenuScreens {
 		return new TrsUiScreen(I18n.tr("social.title"), new SocialUi(host, TrsOnline.current()));
 	}
 
+	/** Welt-Hosting: Einstellungen bzw. Verwaltung der offenen Welt (Pausemenü). */
+	public static Screen hosting(final Screen parent) {
+		SocialHost host = SocialHooks.host(parent);
+		return new TrsUiScreen(I18n.tr("hosting.title"), new dev.theredstonee.trsclient.core.ui.hosting.HostingUi(host));
+	}
+
+	/** Welt-Hosting: „Mit Code beitreten“ + Welten der Freunde (Mehrspieler-Menü). */
+	public static Screen join(final Screen parent) {
+		SocialHost host = SocialHooks.host(parent);
+		return new TrsUiScreen(I18n.tr("hosting.join.title"), new dev.theredstonee.trsclient.core.ui.hosting.JoinUi(host));
+	}
+
 	/** Bildschirm zur Schnelltaste (Schnellantwort/Beitreten bzw. Anfragen). */
 	public static Screen socialAction(SocialOverlay.QuickAction action, final Screen parent) {
 		SocialHost host = SocialHooks.host(parent);
 		UiScreen ui = SocialUi.forAction(host, TrsOnline.current(), action);
-		return new TrsUiScreen(I18n.tr(ui instanceof SocialUi ? "social.title" : "social.quickReply.title"), ui);
+		String title = ui instanceof SocialUi ? "social.title"
+				: ui instanceof dev.theredstonee.trsclient.core.ui.hosting.HostingUi ? "hosting.title"
+				: ui instanceof dev.theredstonee.trsclient.core.ui.hosting.JoinUi ? "hosting.join.title" : "social.quickReply.title";
+		return new TrsUiScreen(I18n.tr(title), ui);
 	}
 
 	// --- Clips & Bilder ---

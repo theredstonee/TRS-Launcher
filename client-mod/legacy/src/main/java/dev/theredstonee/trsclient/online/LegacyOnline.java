@@ -72,6 +72,8 @@ public final class LegacyOnline {
 
 	public static void init(Path configDir, TrsModules modules, String modVersion, String minecraftVersion,
 			Consumer<String> log) {
+		// Welt-Hosting (Pausemenü „Welt hosten“, Beitreten per Einladung/Code) – vor den Online-Funktionen anmelden.
+		dev.theredstonee.trsclient.hosting.LegacyHosting.install(minecraftVersion, log);
 		features = OnlineFeatures.create(modules, configDir, new Platform(minecraftVersion, log), modVersion,
 				new Textures());
 	}

@@ -61,6 +61,9 @@ public final class NewSince {
 	/** Schild-Position (nach TRS Client 0.8.0): Schild in der 1. Person seitlich/tiefer, eigene Block-Haltung. */
 	public static final String SHIELD = "0.8.1";
 
+	/** Welt-Hosting (TRS Client 0.9.0): Welt für Freunde öffnen, Beitritt per Einladung/Code, öffentlicher Link. */
+	public static final String HOSTING = "0.9.0";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -93,6 +96,8 @@ public final class NewSince {
 		add(SOCIAL, "social", MENU_SOCIAL, KEY_SOCIAL, KEY_QUICK_REPLY);
 		// Nach 0.8.0: Schild-Position (Vorlagen, eigene Regler, weiches Blocken, durchsichtig beim Blocken).
 		add(SHIELD, "shieldPosition");
+		// TRS Client 0.9.0: Welt-Hosting.
+		add(HOSTING, "social.hostingDirect");
 	}
 
 	private NewSince() {
