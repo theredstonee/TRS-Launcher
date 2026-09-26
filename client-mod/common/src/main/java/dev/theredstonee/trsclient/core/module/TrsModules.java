@@ -90,6 +90,8 @@ public final class TrsModules {
 	public final BoolSetting socialToastOnline;
 	/** Welt-Hosting: Direktverbindungen (zeigen die IP-Adresse dem Mitspieler); aus = nur über das TRS Relay. */
 	public final BoolSetting socialHostingDirect;
+	/** Komfort- und PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …). */
+	public final QolModules qol;
 
 	// --- Leistung (Logik in core.perf, siehe Performance) ---
 	/** FPS-Boost: Hauptschalter aller Leistungs-Funktionen, Voreinstellungen, Leistungs-Check. */
@@ -468,8 +470,8 @@ public final class TrsModules {
 		chat = registry.register(new Module("chat", "Chat Improvements",
 				"Timestamps, stacking of identical messages and copying with Ctrl+click", true));
 		autoGg = registry.register(new Module("autoGg", "Auto-GG",
-				"Automatically sends a message when a game ends. Off by default; at most once per minute. "
-						+ "Some servers do not like it – only use it where it is allowed.", false));
+				"Sends your message (\"gg\") exactly once when a round ends – 0.5 to 2 seconds later, at most every "
+						+ "10 seconds. Off by default. Allowed on Hypixel; only use it where it is allowed.", false));
 		textHotkeys = registry.register(new Module("textHotkeys", "Text Hotkeys",
 				"Four freely bindable keys each send a fixed text or command. "
 						+ "Off by default, at most one message per second.", false));
@@ -674,7 +676,7 @@ public final class TrsModules {
 		chatStack = chat.add(new BoolSetting("stack", "Stack identical messages (x2, x3)", true));
 		chatCopy = chat.add(new BoolSetting("copy", "Ctrl+click copies a line", true));
 		autoGgText = autoGg.add(new TextSetting("text", "Message", "gg", 100, "gg"));
-		autoGgDelay = autoGg.add(new NumberSetting("delay", "Delay (s)", 1.0, 0.5, 5.0, 0.5, ""));
+		autoGgDelay = autoGg.add(new NumberSetting("delay", "Delay (s)", 1.0, 0.5, 2.0, 0.25, ""));
 		autoGgTriggers = autoGg.add(new TextSetting("triggers", "Custom triggers (separated by ;)", "", 200,
 				"e.g. game over;round ended"));
 		for (int i = 0; i < hotkeyTexts.length; i++) {
@@ -790,6 +792,8 @@ public final class TrsModules {
 		detailNoFog = worldDetails.add(new BoolSetting("fog", "No distance fog", false));
 		detailNoWeather = worldDetails.add(new BoolSetting("weather", "No rain and snow", false));
 		detailNoAnimations = worldDetails.add(new BoolSetting("animations", "No texture animations (water, lava, fire)", false));
+
+		qol = new QolModules(registry, this);
 
 		registry.addPart(keyDefaults);
 		registry.addPart(perfUndo);

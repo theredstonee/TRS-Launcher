@@ -64,6 +64,12 @@ public final class NewSince {
 	/** Welt-Hosting (TRS Client 0.9.0): Welt für Freunde öffnen, Beitritt per Einladung/Code, öffentlicher Link. */
 	public static final String HOSTING = "0.9.0";
 
+	/**
+	 * Komfort- und PvP-Paket (nächste Version nach TRS Client 0.9.1): Erwähnungen, Chat-Filter, Auto-Reconnect,
+	 * Warteschlange &amp; Hinweise, Scoreboard/Tab/Bossleiste/Titel, Warnungen, Zähler, Treffer-Feedback, Streamer-Modus.
+	 */
+	public static final String QOL = "0.10.0";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -100,6 +106,10 @@ public final class NewSince {
 		add(HOSTING, "social.hostingDirect");
 		// TRS Client 0.8.1: Karten blenden Dächer aus (Innenansicht).
 		add("0.8.1", "minimap.hideRoof");
+		// Komfort- und PvP-Paket.
+		add(QOL, "chatMentions", "chatFilter", "autoReconnect", "queueAlerts", "scoreboard", "tabPing", "bossBar", "titles",
+				"warnings", "itemCounter", "hitFeedback", "streamerMode");
+		add(QOL, "chat.timestampTwelveHour", "chat.history", "chat.copyMode", "autoGg.presets");
 	}
 
 	private NewSince() {
