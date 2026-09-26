@@ -191,6 +191,25 @@ export interface Settings {
   clips: ClipSettings
   /** Eigene Skins, eigene Presets, Theme, Akzentfarbe und Sprache mit dem TRS-Konto abgleichen – ab Werk an */
   trsSync: boolean
+  /** Benachrichtigungen aus „Sozial“ (nur lokal) */
+  social: SocialSettings
+}
+
+/** Benachrichtigungen aus „Sozial“ (Rust: `SocialSettings`). */
+export interface SocialSettings {
+  toasts: boolean
+  corner: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left'
+  durationSecs: number
+  sound: boolean
+  doNotDisturb: boolean
+  quietInFullscreen: boolean
+  native: boolean
+  quickReply: boolean
+  messages: boolean
+  invites: boolean
+  friendRequests: boolean
+  capeOffers: boolean
+  friendOnline: boolean
 }
 
 // --- Clips & Aufnahme ------------------------------------------------------------------

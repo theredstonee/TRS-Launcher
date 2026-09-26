@@ -4,7 +4,7 @@
 
 Der TRS Launcher läuft auf deinem Computer. Er hat **keine Telemetrie, keine Analyse, keine Absturzberichte und keine
 Werbung**. Informationen an einen Server des TRS-Launcher-Projekts schickt er nur, wenn du die optionalen
-[TRS-Dienste](#trs-dienste) (Umhänge, Freunde, Online-Status) einschaltest. Ohne deine Einwilligung sendet der Launcher
+[TRS-Dienste](#trs-dienste) (Umhänge, Freunde, Online-Status, Chat) einschaltest. Ohne deine Einwilligung sendet der Launcher
 dorthin nichts.
 
 Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig ist, worum du ihn gebeten hast:
@@ -16,7 +16,7 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Mojang-Sitzungsserver (`sessionserver.mojang.com`) | Anmeldung bei den TRS-Diensten (nur nach deiner Zustimmung) | Dieselbe „join“-Anfrage wie bei der Anmeldung auf einem Minecraft-Server: dein Zugriffstoken, deine UUID und eine einmalige Challenge |
 | Mojang-Profildienste (`api.mojang.com`, `sessionserver.mojang.com`, `textures.minecraft.net`) | Skin per Spielername importieren, Spielergesichter anzeigen (Freunde, Admin-Suche) | Der gesuchte Spielername bzw. die UUID; der Download des Skin-Bildes |
 | Die Website eines Links, den du eingibst | Nur wenn du einen Skin „per Link“ importierst | Eine normale Download-Anfrage für dieses Bild (nur HTTPS, ohne Cookies oder Konten) |
-| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde und Online-Status |
+| TRS-Dienste (`trs-launcher.theredstonee.de`, bisher auch `api.theredstonee.de`) | Nur nach deiner Zustimmung, siehe [unten](#trs-dienste) | Deine UUID, dein Name, deine Umhang-Wahl, Freunde, Online-Status, Chat-Nachrichten und gesendete Bilder, Meldungen |
 | Maven-/Meta-Server von Fabric, Quilt, Forge, NeoForge | Einen Modloader installieren | Download-Anfragen |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Inhalte durchsuchen, installieren oder aktualisieren | Suchanfragen, Datei-Hashes installierter Mods (für die Update-Prüfung) |
 | CurseForge (`api.curseforge.com`; Dateien und Bilder von `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Nur wenn du CurseForge als Quelle wählst, ein CurseForge-Modpack installierst, Inhalte von CurseForge installiert hast oder eine CurseForge-Instanz mit fehlenden Dateien importierst | Suchanfragen und Filter, die Projekt- und Datei-IDs von CurseForge-Inhalten (für Details und die Update-Prüfung), Download-Anfragen. Wie bei jeder Anfrage im Internet gehört deine IP-Adresse dazu. Ein CurseForge-Konto brauchst du nicht – der Launcher weist sich mit seinem eigenen API-Schlüssel aus, nicht mit Daten über dich. |
@@ -148,6 +148,67 @@ eigenen Freunde weitergeben (höchstens 20 Spieler je Umhang).
   sie zurücknimmt. Wird der Umhang gelöscht, vom Team abgelehnt oder ein TRS-Account gelöscht, sind die betroffenen
   Teilungen sofort weg.
 
+### Chat und Soziales (TRS-Dienste)
+
+Mit eingeschalteten TRS-Diensten kannst du im Launcher und im Spiel mit Freunden und in Gruppen schreiben.
+
+- **Was gespeichert wird:** deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), Bilder, die du
+  sendest, Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften. Nachrichten bleiben
+  wie in einem normalen Chat **gespeichert, bis sie gelöscht werden** – von dir (für alle), vom Gruppenbesitzer, vom
+  Team oder zusammen mit deinem Account.
+- **Verschlüsselung:** Nachrichtentexte, Einladungen und Gruppennamen liegen **verschlüsselt** auf dem Server
+  (AES-256-GCM). Bilder werden vom Server **neu kodiert** – dabei gehen Standortdaten und alle anderen Metadaten
+  verloren, große Bilder werden verkleinert – und ebenfalls verschlüsselt gespeichert. Der Schlüssel wird getrennt von
+  den Daten aufbewahrt. Das Team liest nur gemeldete Nachrichten (siehe unten); eine allgemeine Admin-Ansicht von Chats
+  gibt es nicht.
+- **Wer was sieht:** eine Direktnachricht nur du und dein Freund; eine Gruppennachricht die aktuellen Mitglieder (wer
+  später hinzukommt, sieht erst Nachrichten ab seinem Beitritt). Blockierst du jemanden, werden seine Nachrichten in
+  gemeinsamen Gruppen für dich ausgeblendet. Seid ihr keine Freunde mehr, bleibt ein Direktchat lesbar, aber niemand
+  kann mehr hineinschreiben.
+- **Lesebestätigungen und „schreibt gerade“** sind ab Werk an und lassen sich in den Datenschutz-Einstellungen
+  abschalten; dann siehst du sie auch von anderen nicht. „Schreibt gerade“ liegt nur wenige Sekunden im Arbeitsspeicher
+  des Servers.
+- **Server-Einladungen:** Zeigt ein Chat eine Serveradresse, fragt der TRS-Server diesen Minecraft-Server nach Symbol,
+  Spielerzahl und Beschreibung (der übliche Server-List-Ping) und merkt sich die Antwort etwa eine Minute im
+  Arbeitsspeicher. Deine IP-Adresse wird nicht weitergegeben – der Minecraft-Server sieht nur den TRS-Server. Adressen
+  in lokalen Netzen werden nie angefragt.
+- **Echtzeit:** Solange Launcher oder Spiel offen sind, liefert eine Verbindung zum TRS-Server neue Nachrichten und
+  andere Neuigkeiten (Freundschaftsanfragen, Online-Status, Umhang-Angebote) sofort. Verpasste Neuigkeiten hält der
+  Server bis zu 10 Minuten im Arbeitsspeicher, damit sie nach einer kurzen Unterbrechung ankommen.
+
+### Chat-Daten auf diesem PC
+
+- **Benachrichtigungs-Einstellungen** (Ecke, Dauer, Ton, Nicht stören, welche Arten) liegen nur in den Einstellungen des
+  Launchers auf deinem PC. Windows-Benachrichtigungen erscheinen nur, solange der Launcher im Hintergrund ist, und nur
+  mit eingeschaltetem Schalter.
+- **Bilder von deinem PC** bleiben, wo sie sind. Damit sie unter „Uploads“ erscheinen, merkt sich der Launcher die Pfade
+  der zuletzt 40 gewählten Bilddateien in `chat-uploads.json` in seinem Datenordner; mit Stern markierte Screenshots
+  stehen in `screenshot-favorites.json`. Davon verlässt nichts deinen PC, solange du kein Bild sendest. Aus der
+  Zwischenablage eingefügte Bilder liegen nur im Arbeitsspeicher, bis der Launcher schließt.
+- **Empfangene Bilder** lädt der Launcher selbst und hält sie nur im Arbeitsspeicher, solange er läuft – nichts davon
+  wird auf die Platte geschrieben, und dein TRS-Token erreicht nie das Launcher-Fenster.
+- **„Zuletzt online“** in der Freundesliste ist das, was der Launcher selbst gesehen hat (lokal je Konto gespeichert),
+  keine Angabe des Servers.
+
+### Meldungen und Moderation
+
+Du kannst Nachrichten, Bilder, Spieler und Gruppen melden (mit Grund und optionalem Hinweis). Die Meldung speichert eine
+verschlüsselte Kopie des gemeldeten Inhalts und von bis zu 10 Nachrichten davor und danach, genau so, wie du sie sehen
+konntest; gemeldete Bilder werden kopiert. Team-Admins prüfen Meldungen auf der Website oder im Launcher und können
+Nachrichten löschen, verwarnen, im Chat für eine Zeit stummschalten oder sperren; jede Aktion wird protokolliert. Wer
+meldet, erfährt nur, ob etwas unternommen wurde, nicht was. Der gemeldete Spieler erfährt nicht, wer ihn gemeldet hat.
+
+Automatischer Schutz: Zu schnell oder vielfach wiederholt gesendete Nachrichten werden abgelehnt und können zu einer
+kurzen automatischen Stummschaltung führen; Links und Server-Einladungen in Gruppen werden nur vom Besitzer oder von
+Spielern angenommen, die mit allen in der Gruppe befreundet sind; das Team kann eine Liste gesperrter Wörter pflegen.
+Melden drei verschiedene Spieler denselben Spieler innerhalb eines Tages, ist dieser im Chat stumm, bis das Team es sich
+angesehen hat. Spieler, deren Meldungen oft unbegründet sind, zählen dafür nicht.
+
+Meldungen bleiben gespeichert, solange sie offen sind, und **90 Tage** nach der Entscheidung (für Einwände); danach
+werden Kopien, Notizen und Bilder gelöscht, die Meldung selbst (ohne Inhalte) nach **einem Jahr**. Löschst du deinen
+Account, bleiben deine Meldungen ohne deinen Namen erhalten; Meldungen gegen dich und eine laufende Stummschaltung
+bleiben bis zum Ende dieser Fristen, damit sich Moderation nicht durch Löschen des Accounts umgehen lässt.
+
 ### Was gespeichert wird
 
 | Daten | Wozu |
@@ -165,6 +226,9 @@ eigenen Freunde weitergeben (höchstens 20 Spieler je Umhang).
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
 | Nur mit eingeschalteten TRS-Diensten und eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client (im Spiel): deine TRS-Client-Einstellungen – welche Module an sind und ihre Einstellungen, HUD-Layouts und -Profile, die TRS-Tasten der Module, der Config-Modus für Leistungs-Mods, ob du die Einführung abgeschlossen hast (und das gewählte Modul-Paket) und welche „NEU“-Einträge du geöffnet hast – je Teil mit dem Zeitpunkt der letzten Änderung; keine Wegpunkte, keine Server-Adressen, keine Dateien, Pfade oder Tokens | Damit der TRS Client auf allen PCs und Spielordnern mit diesem Minecraft-Account gleich ist und die Einführung nur einmal erscheint |
 | Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
+| Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
+| Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
+| Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Verwarnungen und Stummschaltungen im Chat | Moderation (siehe oben) |
 
 **Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
 TRS-Dienste an sind) hält deine eigenen Skins, deine eigenen Presets und das Aussehen des Launchers (Theme, Akzentfarbe,
@@ -186,15 +250,15 @@ Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen könn
 niemand, wenn du „niemand“ einstellst. Nur ob du gerade im Spiel bist, kann zusätzlich als TRS-Symbol erscheinen (siehe
 oben).
 
-Admin-Aktionen (etwa das Freigeben eines Umhangs oder eine Sperre) werden zusammen mit der betroffenen UUID in einem
-Audit-Log festgehalten.
+Admin-Aktionen (etwa das Freigeben eines Umhangs, eine Sperre oder die Entscheidung über eine Chat-Meldung) werden
+zusammen mit der betroffenen UUID in einem Audit-Log festgehalten.
 
 ### Zweck und Rechtsgrundlage
 
 Die Daten werden nur verarbeitet, um die TRS-Dienste bereitzustellen, die du angefordert hast: Umhänge, die Freundesliste,
-den Online-Status und die Synchronisation deiner Skins, Presets und des Launcher-Aussehens zwischen deinen PCs.
+den Online-Status, den Chat und die Synchronisation deiner Skins, Presets und des Launcher-Aussehens zwischen deinen PCs.
 Rechtsgrundlage ist die Erbringung des von dir gewünschten Dienstes (Art. 6 Abs. 1 lit. b DSGVO).
-Die Dienste frei von Missbrauch zu halten (Prüfung von Uploads, Meldungen, Sperren und Ratenbegrenzungen), beruht auf
+Die Dienste frei von Missbrauch zu halten (Prüfung von Uploads, Meldungen samt Beweisen, Spam-Schutz, Stummschaltungen, Sperren und Ratenbegrenzungen), beruht auf
 unserem berechtigten Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO). Es gibt keine Werbung, kein
 Profiling und keinen Verkauf von Daten.
 
@@ -207,13 +271,17 @@ Profiling und keinen Verkauf von Daten.
 - Synchronisierte Skins, Presets und Einstellungen bleiben, bis du sie im Launcher löschst (ein auf einem PC gelöschter
   Skin wird auch auf dem Server gelöscht). Vermerke über gelöschte Skins bleiben 30 Tage, damit deine anderen PCs sie
   ebenfalls löschen können.
+- Chat-Nachrichten und Bilder bleiben, bis sie gelöscht werden (von dir für alle, vom Gruppenbesitzer oder vom Team)
+  oder die Gruppe gelöscht wird. Hochgeladene, aber nie gesendete Bilder werden nach 1 Stunde gelöscht.
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
   Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
-  deinen Online-Status und alle synchronisierten Skins, Presets und Einstellungen. Danach sind die TRS-Dienste im
+  deinen Online-Status, alle synchronisierten Skins, Presets und Einstellungen, alle deine Direktchats (für beide
+  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied). Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
-- Nach der Löschung bleibt nur ein bestehender Sperr-Eintrag erhalten (deine UUID, der Grund und der Zeitpunkt), damit
-  eine Sperre nicht durch erneutes Anmelden umgangen werden kann.
+- Nach der Löschung bleiben nur ein bestehender Sperr-Eintrag (deine UUID, der Grund und der Zeitpunkt), eine laufende
+  Chat-Stummschaltung und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht
+  durch erneutes Anmelden umgehen lassen.
 - Server-Logs enthalten nur technische Daten (Methode, Pfad ohne Query, Status, Dauer, Request-ID) – **keine
   IP-Adressen und keine Tokens**. Ratenbegrenzungen zählen Anfragen pro IP-Adresse und pro Account **nur im
   Arbeitsspeicher**; diese Zähler werden nie auf die Festplatte geschrieben.
@@ -228,6 +296,8 @@ Profiling und keinen Verkauf von Daten.
   Übermittlungen in die USA sind durch das EU-US Data Privacy Framework und Standardvertragsklauseln abgedeckt.
 - **Mojang/Microsoft** bestätigt die Anmeldung (siehe oben): Dein Computer schickt die join-Anfrage direkt an Mojang,
   und der TRS-Server fragt bei Mojang mit deinem Spielernamen und der einmaligen Challenge nach (`hasJoined`).
+- **Minecraft-Server aus Chat-Einladungen** werden vom TRS-Server angefragt (Server-List-Ping), um Symbol und
+  Spielerzahl zu zeigen; sie sehen dabei nur die Adresse des TRS-Servers.
 
 ### Deine Rechte
 

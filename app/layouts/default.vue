@@ -110,6 +110,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
     <ToastHost />
+    <SocialToastHost />
+    <JoinServerDialog />
   </div>
 </template>
 

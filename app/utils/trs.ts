@@ -25,6 +25,10 @@ export const trsPrivacySchema = z.object({
   showCapeToOthers: z.boolean(),
   presenceVisibility: z.enum(['friends', 'nobody']),
   shareServer: z.boolean(),
+  /** Lesebestätigungen im Chat (gegenseitig). */
+  chatReadReceipts: z.boolean().default(true),
+  /** „Schreibt …“ im Chat (gegenseitig). */
+  chatTypingIndicator: z.boolean().default(true),
 })
 
 export const trsMeSchema = z.object({
@@ -140,6 +144,21 @@ export const trsAdminStatsSchema = z.object({
   friendships: count,
   pendingFriendRequests: count,
   eventStreams: count,
+  /** Chat (ältere Server: `null`). */
+  chat: z
+    .object({
+      conversations: count,
+      groups: count,
+      messages: count,
+      messagesLast24h: count,
+      images: count,
+      storageBytes: count,
+      storageLimitBytes: count,
+    })
+    .nullable()
+    .default(null),
+  /** Chat-Meldungen (ältere Server: `null`). */
+  reports: z.object({ open: count, inReview: count, resolved: count, activeMutes: count }).nullable().default(null),
 })
 
 export const trsAdminCapeSchema = trsCapeSchema.extend({

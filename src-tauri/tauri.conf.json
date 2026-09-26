@@ -28,7 +28,7 @@
         "default-src": "'self'",
         "script-src": "'self'",
         "style-src": "'self' 'unsafe-inline'",
-        "img-src": "'self' data: https: asset: http://asset.localhost trsclip: http://trsclip.localhost",
+        "img-src": "'self' data: https: asset: http://asset.localhost trsclip: http://trsclip.localhost trschat: http://trschat.localhost",
         "media-src": "'self' asset: http://asset.localhost trsclip: http://trsclip.localhost",
         "font-src": "'self' data:",
         "connect-src": "'self' ipc: http://ipc.localhost",
@@ -41,7 +41,7 @@
         "default-src": "'self' http://localhost:3000",
         "script-src": "'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3000",
         "style-src": "'self' 'unsafe-inline' http://localhost:3000",
-        "img-src": "'self' data: https: asset: http://asset.localhost trsclip: http://trsclip.localhost http://localhost:3000",
+        "img-src": "'self' data: https: asset: http://asset.localhost trsclip: http://trsclip.localhost trschat: http://trschat.localhost http://localhost:3000",
         "media-src": "'self' asset: http://asset.localhost trsclip: http://trsclip.localhost http://localhost:3000",
         "font-src": "'self' data: http://localhost:3000",
         "connect-src": "'self' ipc: http://ipc.localhost http://localhost:3000 ws://localhost:3000"

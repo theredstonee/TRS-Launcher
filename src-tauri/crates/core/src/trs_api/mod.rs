@@ -17,6 +17,10 @@
 //!   seinen Token nie an das Spiel weiter, der Mod meldet sich selbst an.
 
 pub mod cape_import;
+pub mod chat;
+pub mod moderation;
+pub mod live;
+pub mod media;
 mod ops;
 pub mod png;
 mod presence;
@@ -40,6 +44,7 @@ use crate::error::Msg;
 use crate::{Error, Result, USER_AGENT};
 pub use presence::{PRESENCE_INTERVAL, PresenceGame};
 use presence::PresenceState;
+pub(crate) use ops::encode_query;
 pub use store::Consent;
 use store::Store;
 use types::{ApiChallenge, ApiMe, ApiVerify};
@@ -76,6 +81,8 @@ pub(crate) enum Body {
     Empty,
     Json(serde_json::Value),
     Png(Vec<u8>),
+    /// Rohes Bild (Chat-Upload) mit seinem Typ.
+    Image(&'static str, Vec<u8>),
 }
 
 /// Eine Anfrage an die API (Pfad ab `/v1/...`, Query schon kodiert angehängt).
@@ -84,26 +91,32 @@ pub(crate) struct Req {
     pub method: Method,
     pub path: String,
     pub body: Body,
+    /// Größte angenommene Antwort (JSON: [`MAX_JSON_BYTES`], Bilder mehr).
+    pub limit: usize,
 }
 
 impl Req {
     pub fn get(path: impl Into<String>) -> Self {
-        Self { method: Method::GET, path: path.into(), body: Body::Empty }
+        Self { method: Method::GET, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
     }
     pub fn post(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Json(body) }
+        Self { method: Method::POST, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
     }
     pub fn post_empty(path: impl Into<String>) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Empty }
+        Self { method: Method::POST, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
     }
     pub fn put(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PUT, path: path.into(), body: Body::Json(body) }
+        Self { method: Method::PUT, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
     }
     pub fn patch(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body) }
+        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
     }
     pub fn delete(path: impl Into<String>) -> Self {
-        Self { method: Method::DELETE, path: path.into(), body: Body::Empty }
+        Self { method: Method::DELETE, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
+    }
+    /// Beliebiger Body mit eigener Grenze für die Antwort.
+    pub fn with(method: Method, path: impl Into<String>, body: Body, limit: usize) -> Self {
+        Self { method, path: path.into(), body, limit }
     }
 }
 
@@ -247,6 +260,53 @@ fn message_for(code: &str) -> Msg {
         "offer_inbox_full" => msg!("trsApi.offer_inbox_full", "Dieser Spieler hat zu viele offene Umhang-Angebote."),
         "offer_not_found" => msg!("trsApi.offer_not_found", "Dieses Angebot gibt es nicht mehr."),
         "holder_not_found" => msg!("trsApi.holder_not_found", "Dieser Spieler hat den Umhang nicht (mehr) von dir."),
+        // --- Chat (§18) ---
+        "not_friends" => msg!("trsApi.not_friends", "Ihr seid nicht (mehr) befreundet."),
+        "chat_muted" => msg!("trsApi.chat_muted", "Du bist im Chat gerade stummgeschaltet."),
+        "conversation_not_found" => msg!("trsApi.conversation_not_found", "Diese Unterhaltung gibt es nicht (mehr)."),
+        "message_not_found" => msg!("trsApi.message_not_found", "Diese Nachricht gibt es nicht (mehr)."),
+        "attachment_not_found" => msg!("trsApi.attachment_not_found", "Dieses Bild gibt es nicht (mehr)."),
+        "message_too_long" => msg!("trsApi.message_too_long", "Die Nachricht ist zu lang (höchstens 2000 Zeichen)."),
+        "empty_message" => msg!("trsApi.empty_message", "Die Nachricht ist leer."),
+        "too_many_attachments" => msg!("trsApi.too_many_attachments", "Höchstens 10 Bilder je Nachricht."),
+        "links_not_allowed" => msg!(
+            "trsApi.links_not_allowed",
+            "In dieser Gruppe dürfen nur der Besitzer und Spieler, die mit allen befreundet sind, Links und Einladungen senden."
+        ),
+        "message_blocked" => msg!("trsApi.message_blocked", "Die Nachricht enthält ein gesperrtes Wort."),
+        "spam_detected" => msg!("trsApi.spam_detected", "Das sieht nach Spam aus – bitte nicht dieselbe Nachricht mehrfach senden."),
+        "not_sender" => msg!("trsApi.not_sender", "Das geht nur bei eigenen Nachrichten."),
+        "message_deleted" => msg!("trsApi.message_deleted", "Die Nachricht wurde gelöscht."),
+        "not_owner" => msg!("trsApi.not_owner", "Das darf nur der Besitzer der Gruppe."),
+        "group_full" => msg!("trsApi.group_full", "Die Gruppe ist voll (höchstens 25 Mitglieder)."),
+        "group_limit" => msg!("trsApi.group_limit", "Du bist schon in zu vielen Gruppen."),
+        "target_group_limit" => msg!("trsApi.target_group_limit", "Ein Spieler ist schon in zu vielen Gruppen."),
+        "invalid_name" => msg!("trsApi.invalid_name", "Gruppenname: 1 bis 32 Zeichen."),
+        "member_not_found" => msg!("trsApi.member_not_found", "Dieser Spieler ist nicht in der Gruppe."),
+        "nonce_reused" => msg!("trsApi.nonce_reused", "Die Nachricht konnte nicht gesendet werden – bitte erneut versuchen."),
+        "invalid_until" => msg!("trsApi.invalid_until", "Dieser Zeitpunkt liegt in der Vergangenheit."),
+        "invalid_cursor" => msg!("trsApi.invalid_cursor", "Die Liste hat sich geändert – bitte neu laden."),
+        "image_too_large" => msg!("trsApi.image_too_large", "Das Bild ist zu groß (höchstens 8192 Pixel je Seite)."),
+        "animated_image" => msg!("trsApi.animated_image", "Animierte Bilder können nicht gesendet werden."),
+        "invalid_image" => msg!("trsApi.invalid_image", "Das Bild ist beschädigt."),
+        "too_many_pending_attachments" => {
+            msg!("trsApi.too_many_pending_attachments", "Zu viele Bilder warten aufs Senden – schick erst die vorigen ab.")
+        }
+        "storage_quota" => msg!("trsApi.storage_quota", "Dein Speicher für Chat-Bilder ist voll – lösch ein paar alte Bilder."),
+        "storage_full" => msg!("trsApi.storage_full", "Der TRS-Server nimmt gerade keine Bilder an – bitte später erneut versuchen."),
+        // --- Meldungen und Moderation (§20) ---
+        "already_reported" => msg!("trsApi.already_reported", "Das hast du schon gemeldet – wir schauen es uns an."),
+        "too_many_open_reports" => msg!("trsApi.too_many_open_reports", "Du hast schon viele offene Meldungen – warte auf die Prüfung."),
+        "not_reportable" => msg!("trsApi.not_reportable", "Das kann nicht gemeldet werden."),
+        "report_resolved" => msg!("trsApi.report_resolved", "Diese Meldung ist schon erledigt."),
+        "report_not_found" => msg!("trsApi.report_not_found", "Diese Meldung gibt es nicht (mehr)."),
+        "no_message" => msg!("trsApi.no_message", "Zu dieser Meldung gehört keine Nachricht."),
+        "no_target" => msg!("trsApi.no_target", "Zu dieser Meldung gehört kein Spieler."),
+        "cannot_moderate_admin" => msg!("trsApi.cannot_moderate_admin", "Admins können nicht stummgeschaltet werden."),
+        "not_muted" => msg!("trsApi.not_muted", "Dieser Spieler ist nicht stummgeschaltet."),
+        "invalid_word" => msg!("trsApi.invalid_word", "Wort: 2 bis 48 Buchstaben oder Ziffern."),
+        "word_exists" => msg!("trsApi.word_exists", "Dieses Wort steht schon im Filter."),
+        "word_not_found" => msg!("trsApi.word_not_found", "Dieses Wort steht nicht (mehr) im Filter."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -267,6 +327,12 @@ pub struct TrsApi {
     /// Takt und Status der TRS-Synchronisation (siehe [`sync`]).
     pub(crate) sync: Arc<sync::SyncState>,
     pub(crate) sync_store: sync::SyncStore,
+    /// Chat-Bilder: Zwischenspeicher, eigene Dateien, Favoriten.
+    pub(crate) media: media::MediaState,
+    /// Echtzeit-Kanal `GET /v1/events/me` (siehe [`live`]).
+    pub(crate) live: Arc<live::LiveState>,
+    /// HTTP-Client ohne Gesamt-Timeout für den Echtzeit-Kanal.
+    stream_http: reqwest::Client,
 }
 
 impl TrsApi {
@@ -286,8 +352,15 @@ impl TrsApi {
             .connect_timeout(Duration::from_secs(8))
             .timeout(Duration::from_secs(20))
             .build()?;
+        let stream_http = reqwest::Client::builder()
+            .user_agent(USER_AGENT)
+            .connect_timeout(Duration::from_secs(8))
+            .build()?;
         Ok(Self {
             http,
+            stream_http,
+            media: media::MediaState::new(paths.root().to_path_buf()),
+            live: Arc::default(),
             base: base.trim_end_matches('/').to_owned(),
             session_base: session_base.trim_end_matches('/').to_owned(),
             mojang_api: mojang_api.trim_end_matches('/').to_owned(),
@@ -323,6 +396,7 @@ impl TrsApi {
     /// Präsenz außerplanmäßig senden (z. B. nach einem Account-Wechsel).
     pub fn presence_kick(&self) {
         self.presence.kick();
+        self.live.kick();
     }
 
     pub async fn has_token(&self, account: &str) -> bool {
@@ -342,6 +416,7 @@ impl TrsApi {
             Body::Empty => builder,
             Body::Json(value) => builder.json(value),
             Body::Png(bytes) => builder.header("Content-Type", "image/png").body(bytes.clone()),
+            Body::Image(mime, bytes) => builder.header("Content-Type", *mime).body(bytes.clone()),
         };
         let response = builder.send().await.map_err(|e| {
             tracing::debug!("TRS API nicht erreichbar ({} {}): {e}", req.method, req.path);
@@ -353,11 +428,11 @@ impl TrsApi {
             .get(reqwest::header::RETRY_AFTER)
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.trim().parse::<u64>().ok());
-        if response.content_length().is_some_and(|l| l > MAX_JSON_BYTES as u64) {
+        if response.content_length().is_some_and(|l| l > req.limit as u64) {
             return Err(Failure::Network);
         }
         let bytes = response.bytes().await.map_err(|_| Failure::Network)?;
-        if bytes.len() > MAX_JSON_BYTES {
+        if bytes.len() > req.limit {
             return Err(Failure::Network);
         }
         if status.is_success() {
@@ -596,3 +671,5 @@ pub(crate) mod testkit;
 mod tests;
 #[cfg(test)]
 mod sync_tests;
+#[cfg(test)]
+mod chat_tests;

@@ -75,6 +75,69 @@ pub struct Settings {
     /// dem TRS-Konto abgleichen – nur mit eingeschalteten TRS-Diensten. Ab
     /// Werk an; ältere Dateien ohne Feld ebenfalls an.
     pub trs_sync: bool,
+    /// Benachrichtigungen aus „Sozial“ (Nachrichten, Einladungen, Anfragen …).
+    pub social: SocialSettings,
+}
+
+/// Ecken für Benachrichtigungen.
+pub const TOAST_CORNERS: [&str; 4] = ["top-right", "top-left", "bottom-right", "bottom-left"];
+
+/// Benachrichtigungen aus „Sozial“ – alles lokal, nichts geht an den Server.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SocialSettings {
+    /// Benachrichtigungen im Launcher überhaupt zeigen.
+    pub toasts: bool,
+    /// Ecke: `top-right`, `top-left`, `bottom-right`, `bottom-left`.
+    pub corner: String,
+    /// Anzeigedauer in Sekunden (3–10).
+    pub duration_secs: u8,
+    /// Kurzer Ton bei einer Benachrichtigung.
+    pub sound: bool,
+    /// Nicht stören (von Hand): keine Benachrichtigungen, nur Zähler.
+    pub do_not_disturb: bool,
+    /// Automatisch still, solange eine Vollbild-Anwendung (z. B. das Spiel) läuft.
+    pub quiet_in_fullscreen: bool,
+    /// Ist das Launcher-Fenster nicht im Vordergrund: Windows-Benachrichtigung.
+    pub native: bool,
+    /// Direkt aus der Benachrichtigung antworten.
+    pub quick_reply: bool,
+    pub messages: bool,
+    pub invites: bool,
+    pub friend_requests: bool,
+    pub cape_offers: bool,
+    pub friend_online: bool,
+}
+
+impl Default for SocialSettings {
+    fn default() -> Self {
+        Self {
+            toasts: true,
+            corner: "top-right".into(),
+            duration_secs: 5,
+            sound: true,
+            do_not_disturb: false,
+            quiet_in_fullscreen: true,
+            native: true,
+            quick_reply: true,
+            messages: true,
+            invites: true,
+            friend_requests: true,
+            cape_offers: true,
+            friend_online: true,
+        }
+    }
+}
+
+impl SocialSettings {
+    /// Unbekannte Ecke → oben rechts, Dauer auf 3–10 s begrenzt.
+    pub fn normalized(mut self) -> Self {
+        if !TOAST_CORNERS.contains(&self.corner.as_str()) {
+            self.corner = "top-right".into();
+        }
+        self.duration_secs = self.duration_secs.clamp(3, 10);
+        self
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -275,6 +338,7 @@ impl Default for Settings {
             java: JavaPaths::default(),
             clips: ClipSettings::default(),
             trs_sync: true,
+            social: SocialSettings::default(),
         }
     }
 }
@@ -315,7 +379,7 @@ impl Settings {
     }
 
     fn from_value(value: serde_json::Value) -> Self {
-        match serde_json::from_value::<Self>(value) {
+        match serde_json::from_value::<Self>(value).map(|s| Self { social: s.social.clone().normalized(), ..s }) {
             Ok(s) if s.validate().is_ok() => s,
             // Nur ein einzelner Wert ungültig (z. B. ein Java-Pfad aus einer
             // älteren Version, die noch nicht so streng prüfte)? Dann nur den
@@ -344,6 +408,7 @@ impl Settings {
         self.hooks = self.hooks.normalized();
         self.env = hooks::normalize_env(self.env);
         self.clips = self.clips.normalized();
+        self.social = self.social.normalized();
         self
     }
 
@@ -382,6 +447,12 @@ impl Settings {
             return Err(Error::validation(crate::msg!(
                 "settings.downloadsRange",
                 "Parallele Downloads müssen zwischen 1 und 64 liegen"
+            )));
+        }
+        if !(3..=10).contains(&self.social.duration_secs) || !TOAST_CORNERS.contains(&self.social.corner.as_str()) {
+            return Err(Error::validation(crate::msg!(
+                "settings.socialToasts",
+                "Benachrichtigungen: Dauer 3 bis 10 Sekunden, Ecke oben/unten links/rechts."
             )));
         }
         validate_jvm_args(&self.jvm_args)?;

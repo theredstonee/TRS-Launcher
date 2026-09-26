@@ -43,6 +43,8 @@ pub enum DialogText {
     SaveClip,
     /// Filtername für `.mp4`.
     Mp4Video,
+    /// Bilder für eine Chat-Nachricht wählen.
+    PickChatImages,
 }
 
 impl DialogText {
@@ -54,7 +56,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 23] = [
+const TEXTS: [[&str; 8]; 24] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -258,6 +260,16 @@ const TEXTS: [[&str; 8]; 23] = [
         "Clip opslaan als",
     ],
     ["MP4 video", "MP4-Video", "Vídeo MP4", "Vidéo MP4", "Wideo MP4", "Vídeo MP4", "MP4 videosu", "MP4-video"],
+    [
+        "Choose pictures to send",
+        "Bilder zum Senden wählen",
+        "Elige imágenes para enviar",
+        "Choisir des images à envoyer",
+        "Wybierz obrazy do wysłania",
+        "Escolher imagens para enviar",
+        "Gönderilecek resimleri seç",
+        "Afbeeldingen kiezen om te versturen",
+    ],
 ];
 
 impl DialogText {
@@ -278,7 +290,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 23] = [
+    const ALL: [DialogText; 24] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -302,6 +314,7 @@ mod tests {
         DialogText::UploadFiles,
         DialogText::SaveClip,
         DialogText::Mp4Video,
+        DialogText::PickChatImages,
     ];
 
     #[test]

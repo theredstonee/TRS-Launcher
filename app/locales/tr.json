@@ -157,7 +157,8 @@
       "memoryRange": "Bellek {min} ile {max} MB arasında olmalı",
       "jvmArgsInvalid": "JVM argümanları geçersiz veya çok uzun",
       "javaPathInvalid": "Java yolu geçersiz",
-      "javaPathNotJava": "Java yolu java.exe veya javaw.exe dosyasını göstermeli"
+      "javaPathNotJava": "Java yolu java.exe veya javaw.exe dosyasını göstermeli",
+      "socialToasts": "Bildirimler: süre 3 ile 10 saniye arası, köşe üst/alt sol/sağ."
     },
     "trs": {
       "offline": "TRS sunucusuna şu anda ulaşılamıyor.",
@@ -221,7 +222,47 @@
       "share_limit": "Bu pelerin zaten 20 oyuncuyla paylaşıldı.",
       "offer_inbox_full": "Bu oyuncunun çok fazla açık pelerin teklifi var.",
       "offer_not_found": "Bu teklif artık yok.",
-      "holder_not_found": "Bu oyuncuda senden gelen pelerin yok (artık)."
+      "holder_not_found": "Bu oyuncuda senden gelen pelerin yok (artık).",
+      "not_friends": "Arkadaş değilsiniz (ya da artık değilsiniz).",
+      "chat_muted": "Şu anda sohbette susturuldun.",
+      "conversation_not_found": "Bu sohbet (artık) mevcut değil.",
+      "message_not_found": "Bu mesaj (artık) mevcut değil.",
+      "attachment_not_found": "Bu resim (artık) mevcut değil.",
+      "message_too_long": "Mesaj çok uzun (en fazla 2000 karakter).",
+      "empty_message": "Mesaj boş.",
+      "too_many_attachments": "Mesaj başına en fazla 10 resim.",
+      "links_not_allowed": "Bu grupta yalnızca grup sahibi ve herkesle arkadaş olan oyuncular bağlantı ve davet gönderebilir.",
+      "message_blocked": "Mesaj engellenmiş bir kelime içeriyor.",
+      "spam_detected": "Bu spam gibi görünüyor – lütfen aynı mesajı tekrar tekrar gönderme.",
+      "not_sender": "Bu yalnızca kendi mesajların için çalışır.",
+      "message_deleted": "Mesaj silindi.",
+      "not_owner": "Bunu yalnızca grup sahibi yapabilir.",
+      "group_full": "Grup dolu (en fazla 25 üye).",
+      "group_limit": "Zaten çok fazla grupta bulunuyorsun.",
+      "target_group_limit": "Bir oyuncu zaten çok fazla grupta bulunuyor.",
+      "invalid_name": "Grup adı: 1 ile 32 karakter arası.",
+      "member_not_found": "Bu oyuncu grupta değil.",
+      "nonce_reused": "Mesaj gönderilemedi – lütfen tekrar dene.",
+      "invalid_until": "Bu zaman geçmişte kaldı.",
+      "invalid_cursor": "Liste değişti – lütfen yeniden yükle.",
+      "image_too_large": "Resim çok büyük (kenar başına en fazla 8192 piksel).",
+      "animated_image": "Hareketli resimler gönderilemez.",
+      "invalid_image": "Resim bozuk.",
+      "too_many_pending_attachments": "Gönderilmeyi bekleyen çok fazla resim var – önce öncekileri gönder.",
+      "storage_quota": "Sohbet resimleri için depolama alanın dolu – birkaç eski resmi sil.",
+      "storage_full": "TRS sunucusu şu anda resim kabul etmiyor – lütfen daha sonra tekrar dene.",
+      "already_reported": "Bunu zaten şikâyet ettin – inceliyoruz.",
+      "too_many_open_reports": "Zaten çok sayıda açık şikâyetin var – lütfen incelemeyi bekle.",
+      "not_reportable": "Bu şikâyet edilemez.",
+      "report_resolved": "Bu şikâyet zaten tamamlandı.",
+      "report_not_found": "Bu şikâyet (artık) mevcut değil.",
+      "no_message": "Bu şikâyette mesaj yok.",
+      "no_target": "Bu şikâyette oyuncu yok.",
+      "cannot_moderate_admin": "Adminler susturulamaz.",
+      "not_muted": "Bu oyuncu susturulmamış.",
+      "invalid_word": "Kelime: 2 ile 48 arası harf veya rakam.",
+      "word_exists": "Bu kelime zaten filtrede.",
+      "word_not_found": "Bu kelime (artık) filtrede değil."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -632,6 +673,33 @@
       "sourceGone": "Bu günlük dosyası artık yok.",
       "unreadable": "Bu günlük dosyası okunamıyor.",
       "qrInvalid": "Bu bağlantı için QR kodu yok."
+    },
+    "chat": {
+      "invalidConversation": "Geçersiz sohbet.",
+      "invalidMessage": "Geçersiz mesaj.",
+      "invalidAttachment": "Geçersiz resim.",
+      "textTooLong": "Mesaj çok uzun (en fazla {max} karakter).",
+      "groupName": "Grup adı: 1 ile 32 karakter arası.",
+      "tooManyImages": "Mesaj başına en fazla {max} resim.",
+      "emptyMessage": "Mesaj boş.",
+      "invalidCursor": "Geçersiz sayfa.",
+      "groupFull": "Bir grupta en fazla {max} üye olabilir.",
+      "invalidReaction": "Bilinmeyen tepki."
+    },
+    "chatImage": {
+      "unsupported": "Yalnızca PNG, JPEG ve WebP resimleri gönderilebilir.",
+      "animated": "Hareketli resimler gönderilemez.",
+      "broken": "Resim bozuk.",
+      "tooLarge": "Resim çok büyük (kenar başına en fazla {side} piksel).",
+      "fileTooLarge": "Dosya çok büyük.",
+      "gone": "Resim artık mevcut değil."
+    },
+    "reports": {
+      "invalidReport": "Geçersiz şikâyet.",
+      "invalidFilter": "Geçersiz filtre.",
+      "invalidAction": "Bilinmeyen karar.",
+      "muteRange": "Susturma: 5 dakika ile 1 yıl arası.",
+      "invalidWord": "Kelime: 2 ile 48 arası harf veya rakam."
     }
   },
   "browse": {
@@ -1780,6 +1848,42 @@
       "keysTitle": "Oyundaki tuşlar (TRS Client)",
       "keysText": "F9 klip kaydeder, F10 kaydı başlatıp durdurur. Minecraft kontrollerinde “TRS Client” altından değiştir.",
       "privacy": "Hiçbir şey bilgisayarından çıkmaz: yükleme yok, hesap yok; kaydedici yalnızca bu launcher’dan bir oyun açıkken çalışır."
+    },
+    "notifications": {
+      "title": "Bildirimler",
+      "intro": "Yeni mesajlar, davetler, arkadaşlık istekleri ve daha fazlası için açılır bildirimler. Buradaki her şey bu bilgisayarda kalır.",
+      "toastsTitle": "Bildirimleri göster",
+      "toastsDescription": "Launcher’da küçük açılır pencereler. Kapalı = yalnızca kenar çubuğundaki sayaçlar.",
+      "dndTitle": "Rahatsız etme",
+      "dndDescription": "Bunu kapatana kadar açılır pencere ve ses yok. Sayaçlar güncellenmeye devam eder.",
+      "fullscreenTitle": "Tam ekran oynarken sessiz",
+      "fullscreenDescription": "Windows tam ekran bir oyun, bir sunum veya kendi odak modunu bildirdiği sürece sessiz kalır.",
+      "cornerTitle": "Konum",
+      "corners": {
+        "top-right": "Sağ üst",
+        "top-left": "Sol üst",
+        "bottom-right": "Sağ alt",
+        "bottom-left": "Sol alt"
+      },
+      "durationTitle": "Süre",
+      "durationValue": "{seconds} saniye",
+      "soundTitle": "Ses",
+      "soundDescription": "Her bildirimde kısa ve hafif bir tık sesi.",
+      "nativeTitle": "Windows bildirimleri",
+      "nativeDescription": "Launcher simge durumundayken veya arka plandayken bildirimi Windows da gösterir.",
+      "quickReplyTitle": "Hızlı yanıt",
+      "quickReplyDescription": "Bir mesajı doğrudan bildirimden yanıtla.",
+      "typesTitle": "Neler için bildirim gelsin",
+      "types": {
+        "messages": "Yeni mesajlar",
+        "invites": "Sunucu davetleri",
+        "friendRequests": "Arkadaşlık istekleri",
+        "capeOffers": "Pelerin teklifleri",
+        "friendOnline": "Çevrimiçi olan arkadaşlar"
+      },
+      "preview": "Test bildirimi göster",
+      "previewTitle": "TRS Launcher",
+      "previewBody": "Bildirimler böyle görünür."
     }
   },
   "settingsShell": {
@@ -2061,10 +2165,8 @@
     "servers": "Sunucular",
     "screenshots": "Ekran görüntüleri",
     "skins": "Skinler",
-    "friends": "Arkadaşlar",
     "admin": "Yönetim",
     "runningCount": "{n} çalışıyor | {n} çalışıyor",
-    "friendRequests": "{n} bekleyen arkadaşlık isteği | {n} bekleyen arkadaşlık isteği",
     "quickLaunch": "Hızlı başlat",
     "openNamed": "Aç: {name}",
     "newInstance": "Yeni kurulum",
@@ -2078,7 +2180,9 @@
     "collapse": "Daralt",
     "expand": "Genişlet",
     "presets": "Ön ayarlar",
-    "clips": "Klipler"
+    "clips": "Klipler",
+    "social": "Sosyal",
+    "socialBadge": "{messages} okunmamış · {requests} istek"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -2125,14 +2229,14 @@
       "accounts": "hesap giriş oturum microsoft account sign in login",
       "screenshots": "görseller resimler galeri ekran görüntüsü images gallery",
       "skins": "pelerin skin cape",
-      "friends": "arkadaşlar çevrimiçi istekler trs friends online requests",
       "settings": "ayarlar seçenekler tercihler settings options",
       "newInstance": "ekle oluştur yeni add create new",
       "import": "içe aktar taşı prism multimc curseforge import migrate",
       "modpacks": "modpack paket yükle pack install",
       "dataDir": "klasör gezgin dosyalar folder explorer files",
       "webLogin": "web site giriş oturum admin kod tarayıcı",
-      "clips": "klipler kayıt kaydet video tekrar shadowplay"
+      "clips": "klipler kayıt kaydet video tekrar shadowplay",
+      "social": "arkadaşlar sohbet mesajlar gruplar sosyal istekler"
     },
     "actions": {
       "newInstance": {
@@ -2351,7 +2455,8 @@
       "java": "Java kurulumları",
       "storage": "Depolama",
       "network": "Ağ",
-      "clips": "Klipler ve kayıt"
+      "clips": "Klipler ve kayıt",
+      "notifications": "Bildirimler"
     },
     "instance": {
       "general": "Genel",
@@ -2400,10 +2505,6 @@
       "playingLoader": "Oynuyor: {version} ({loader})",
       "playingServer": "{server} sunucusunda {version} oynuyor",
       "playingLoaderServer": "{server} sunucusunda {version} ({loader}) oynuyor"
-    },
-    "toasts": {
-      "friendRequest": "{name} seninle arkadaş olmak istiyor.",
-      "capeOffer": "{name} sana “{cape}” pelerinini teklif ediyor."
     }
   },
   "trsGate": {
@@ -2433,6 +2534,7 @@
       "identity": "Minecraft UUID'n ve oyuncu adın",
       "capes": "seçtiğin pelerin, kullandığın kodlar ve yüklediğin pelerin görselleri",
       "friends": "arkadaşlar, istekler ve engellemeler",
+      "chat": "sohbet mesajları, gönderdiğin resimler ve şikâyetler – silinene kadar sunucuda şifreli saklanır; şikâyet edilen içerik moderasyon için tutulur",
       "settings": "gizlilik ayarların ve zaman damgaları (giriş, oluşturma)",
       "sync": "eşitleme açıksa: kendi skinlerin (görseller ve adlar), kendi hazır ayarların ile temanı, vurgu rengini ve dilini – tüm bilgisayarlarında aynı olsunlar diye; TRS Client da modüllerini, HUD düzenlerini ve tuşlarını aynı şekilde eşitler (TRS menüsündeki anahtar)",
       "presence": "çevrimiçi durumun (launcher açık / oyunda, sürüm ve istersen sunucu) – yalnızca bellekte tutulur, 3 dakika sonra sona erer"
@@ -2489,6 +2591,16 @@
       "deleting": "Siliniyor …",
       "confirmButton": "Evet, kalıcı olarak sil",
       "done": "Bu hesabın tüm TRS verileri silindi. TRS hizmetleri artık kapalı."
+    },
+    "chat": {
+      "heading": "Sohbet",
+      "receiptsTitle": "Okundu bilgisi",
+      "receiptsDescription": "Arkadaşların, mesajlarını ne zaman okuduğunu görür. Kapalı = sen de onlarınkini görmezsin.",
+      "typingTitle": "Yazıyor göstergesi",
+      "typingDescription": "Sen yazarken diğerleri “yazıyor …” görür. Kapalı = sen de diğerlerininkini görmezsin.",
+      "reportsTitle": "Şikâyetlerim",
+      "reportsDescription": "Şikâyet ettiğin mesajların, resimlerin, oyuncuların ve grupların durumu.",
+      "reportsButton": "Şikâyetleri göster"
     }
   },
   "trsSync": {
@@ -2680,24 +2792,6 @@
     }
   },
   "friends": {
-    "title": "Arkadaşlar",
-    "subtitle": "Kim çevrimiçi, kim ne oynuyor – ve tek tıkla onlara katıl.",
-    "add": "Arkadaş ekle",
-    "offline": "TRS sunucusuna şu anda ulaşılamıyor – liste güncel olmayabilir.",
-    "tabs": {
-      "label": "Görünüm",
-      "friends": "Arkadaşlar",
-      "requests": "İstekler",
-      "blocked": "Engellenenler"
-    },
-    "join": {
-      "withLabel": "Şununla katıl",
-      "auto": "Uygun kurulum (otomatik)",
-      "button": "Katıl",
-      "withInstance": "Şununla katıl: {name}",
-      "noInstance": "Kullanılabilir kurulum yok",
-      "starting": "{instance} başlatılıyor ve {server} sunucusuna bağlanılıyor …"
-    },
     "list": {
       "usesTrs": "TRS kullanıyor",
       "capeOf": "TRS pelerini: {name}",
@@ -2706,22 +2800,17 @@
       "reportCape": "Pelerini bildir"
     },
     "empty": {
-      "title": "Henüz arkadaş yok",
       "text": "Sinyalin şu anda kimseye ulaşmıyor. Arkadaşlarını Minecraft adlarıyla ekle – kabul ettiklerinde lambaları burada yanar."
     },
     "requests": {
       "empty": "Bekleyen istek yok",
       "incoming": "Sana gelen",
       "incomingText": "seninle arkadaş olmak istiyor · {date}",
-      "accept": "Kabul et",
-      "decline": "Reddet",
       "outgoing": "Senden giden",
       "outgoingText": "yanıt bekleniyor · {date}",
       "withdraw": "Geri çek"
     },
     "blocked": {
-      "placeholder": "Bir Minecraft adını engelle",
-      "inputLabel": "Engellenecek ad",
       "hint": "Engellenen oyuncular seni bulamaz, sana istek gönderemez ve TRS rozetini veya pelerinini göremez. Bundan haberdar edilmezler.",
       "since": "Tarih: {date}",
       "unblock": "Engeli kaldır",
@@ -2736,9 +2825,7 @@
     },
     "confirm": {
       "removeTitle": "Arkadaş kaldırılsın mı?",
-      "blockTitle": "Oyuncu engellensin mi?",
-      "removeText": "{name} arkadaş listenden kaldırılacak.",
-      "blockText": "{name} engellenecek: arkadaşlığınız ve bekleyen tüm istekler kaldırılır ve seni artık bulamaz."
+      "blockTitle": "Oyuncu engellensin mi?"
     },
     "report": {
       "title": "Pelerini bildir",
@@ -2771,7 +2858,8 @@
       "overview": "Genel bakış",
       "capes": "Pelerinleri incele",
       "codes": "Kodlar",
-      "players": "Oyuncular"
+      "players": "Oyuncular",
+      "reports": "Şikâyetler"
     },
     "stats": {
       "users": "Kullanıcılar",
@@ -2787,7 +2875,11 @@
       "friendships": "Arkadaşlıklar",
       "friendshipsHint": "{count} bekleyen istek",
       "banned": "Yasaklı",
-      "bannedHint": "{count} oturum"
+      "bannedHint": "{count} oturum",
+      "chatReports": "Sohbet şikâyetleri",
+      "chatReportsHint": "{count} oyuncu susturuldu",
+      "messages": "Mesajlar (24 sa)",
+      "messagesHint": "Toplam {count} · {storage} resim"
     },
     "review": {
       "lists": {
@@ -2933,6 +3025,120 @@
       "grantRevoked": "Pelerin geri alındı",
       "banned": "Oyuncu yasaklandı",
       "unbanned": "Yasak kaldırıldı"
+    },
+    "mod": {
+      "filters": {
+        "active": "Etkin",
+        "open": "Açık",
+        "in_review": "İncelemede",
+        "resolved": "Tamamlandı",
+        "all": "Tümü"
+      },
+      "kindFilter": "Tür",
+      "kinds": {
+        "all": "Tüm türler"
+      },
+      "status": {
+        "open": "Açık",
+        "in_review": "İncelemede",
+        "resolved": "Tamamlandı"
+      },
+      "outcome": {
+        "actioned": "İşlem yapıldı",
+        "dismissed": "Reddedildi"
+      },
+      "none": "Burada şikâyet yok.",
+      "more": "Daha fazla yükle",
+      "target": "Şikâyet edilen: {name}",
+      "by": "Şikâyet eden: {name}",
+      "unknown": "bilinmiyor",
+      "images": "{n} resim | {n} resim",
+      "targetOpen": "Bu oyuncu hakkında {n} açık şikâyet",
+      "assigned": "İnceleyen: {name}",
+      "lowTrust": "düşük güven",
+      "wordFilter": "Kelime filtresi",
+      "wordFilterHint": "“Maskele” kelimeyi * ile değiştirir, “engelle” mesajı reddeder. Büyük/küçük harf, aksanlar ve basit leetspeak yok sayılır.",
+      "word": "Kelime",
+      "wordRule": "Kelime: 2–48 harf veya rakam, boşluksuz.",
+      "mode": {
+        "word": "Tam kelime",
+        "contains": "İçerir"
+      },
+      "action": {
+        "mask": "Maskele",
+        "block": "Engelle"
+      },
+      "addWord": "Kelime ekle",
+      "noWords": "Filtrede henüz kelime yok.",
+      "auditTitle": "Moderasyon kaydı",
+      "noAudit": "Henüz kayıt yok.",
+      "dialogTitle": "Şikâyet",
+      "context": "Bağlam",
+      "contextDm": "Özel mesaj",
+      "contextGroup": "Grup “{name}” · {n} üye",
+      "purged": "Kanıtlar saklama süresinden sonra silindi.",
+      "noContext": "Bu şikâyetle birlikte hiç mesaj kaydedilmedi.",
+      "system": "Sistem: {event}",
+      "systemEvents": {
+        "group_created": "grup oluşturuldu",
+        "member_added": "üye eklendi",
+        "member_removed": "üye çıkarıldı",
+        "member_left": "üye ayrıldı",
+        "renamed": "grubun adı değiştirildi",
+        "owner_changed": "grup sahibi değişti"
+      },
+      "invite": "Sunucu daveti: {address}",
+      "reportedImages": "Şikâyet edilen resimler",
+      "note": "Şikâyet edenin notu",
+      "noNote": "Not yok.",
+      "notes": "Dahili notlar",
+      "notePlaceholder": "Not ekle (yalnızca adminler görür) …",
+      "addNote": "Ekle",
+      "audit": "Geçmiş",
+      "targetLabel": "Şikâyet edilen oyuncu",
+      "targetStats": "{total} şikâyet · {open} açık · {actioned} işlem yapıldı · {dismissed} reddedildi",
+      "mutedUntil": "{date} tarihine kadar susturuldu",
+      "mutedReview": "İnceleme yapılana kadar susturuldu",
+      "unmute": "Susturmayı kaldır",
+      "history": "Önceki yaptırımlar",
+      "sanction": {
+        "warn": "Uyarı",
+        "mute": "Susturma"
+      },
+      "auto": "otomatik",
+      "lifted": "kaldırıldı",
+      "reporterLabel": "Şikâyet eden",
+      "reporterStats": "{actioned} onaylandı · {dismissed} reddedildi · {open} açık",
+      "decision": "Karar",
+      "claim": "İncelemeyi üstlen",
+      "reopen": "Yeniden aç",
+      "reason": "Sebep (uyarı ve susturmalarda oyuncuya gösterilir)",
+      "duration": "Susturma süresi",
+      "durations": {
+        "d60": "1 saat",
+        "d1440": "1 gün",
+        "d10080": "1 hafta",
+        "d43200": "30 gün",
+        "forever": "Kaldırılana kadar"
+      },
+      "keepOpen": "Şikâyeti açık tut (birden fazla işlemi birleştirmek için)",
+      "includeRelated": "Aynı konudaki diğer açık şikâyetlere de uygula",
+      "deleteMessage": "Mesajı sil",
+      "warn": "Uyar",
+      "mute": "Sustur",
+      "ban": "Yasakla",
+      "dismiss": "Reddet",
+      "resolve": "Tamamla",
+      "confirmBan": "{name} gerçekten yasaklansın mı? Bu, hesap için tüm TRS özelliklerini kilitler.",
+      "related": "Bu oyuncu hakkındaki diğer şikâyetler",
+      "chatModeration": "Sohbet moderasyonu",
+      "filedStats": "Gönderdiği şikâyet: {total} · onaylanan: {actioned} · reddedilen: {dismissed}",
+      "warnNeedsReason": "Uyarı için bir sebep gerekir.",
+      "toasts": {
+        "muted": "Oyuncu sohbette susturuldu.",
+        "unmuted": "Susturma kaldırıldı.",
+        "warned": "Uyarı gönderildi."
+      }
     }
   },
   "whatsNew": {
@@ -3480,6 +3686,289 @@
       "title": "Dosya seç",
       "text": "Yapılandırma veya şematik gibi tek dosyaları göndermek için örnek klasörünü aç.",
       "action": "Dosyalara git"
+    }
+  },
+  "social": {
+    "title": "Sosyal",
+    "tabs": {
+      "label": "Sosyal bölümler",
+      "chat": "Sohbet",
+      "friends": "Arkadaşlar"
+    },
+    "actions": {
+      "addFriend": "Arkadaş ekle",
+      "makeGroup": "Grup oluştur",
+      "blockPlayer": "Oyuncu engelle",
+      "search": "Ara",
+      "searchPlaceholder": "İsim ara …",
+      "clearSearch": "Aramayı temizle"
+    },
+    "live": {
+      "off": "Kapalı",
+      "connecting": "Bağlanıyor …",
+      "live": "Canlı",
+      "down": "Bağlantı kesildi – güncellemeler gecikebilir.",
+      "retrying": "Bağlantı kesildi – {seconds} sn içinde tekrar deneniyor.",
+      "reconnect": "Şimdi bağlan"
+    },
+    "chat": {
+      "listLabel": "Sohbetler",
+      "clickToWrite": "Mesaj göndermek için tıkla",
+      "you": "Sen: {text}",
+      "youShort": "sen",
+      "images": "Resim | {n} resim",
+      "invite": "Sunucu daveti",
+      "inviteTo": "Sunucu daveti: {address}",
+      "deleted": "Mesaj silindi",
+      "deletedByAdmin": "Moderasyon tarafından kaldırıldı",
+      "deletedByOwner": "Grup sahibi tarafından kaldırıldı",
+      "hidden": "Engellenen bir oyuncudan mesaj",
+      "edited": "(düzenlendi)",
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "empty": "Henüz sohbet yok – arkadaş ekle ve merhaba de!",
+      "noMatches": "Hiçbir şey bulunamadı.",
+      "startWith": "Arkadaşlar",
+      "loadMore": "Daha fazla yükle",
+      "mutedLabel": "Sessizde",
+      "unreadLabel": "{n} okunmamış mesaj | {n} okunmamış mesaj",
+      "typingOne": "{name} yazıyor",
+      "typingTwo": "{a} ve {b} yazıyor",
+      "typingMany": "{n} kişi yazıyor",
+      "read": "Okundu",
+      "readBy": "{n} kişi okudu | {n} kişi okudu",
+      "sent": "Gönderildi",
+      "sending": "Gönderiliyor …",
+      "failed": "Gönderilemedi.",
+      "discard": "Vazgeç",
+      "newMessages": "{n} yeni mesaj | {n} yeni mesaj",
+      "selectTitle": "Bir sohbet seç",
+      "selectText": "Arkadaşlarına yaz, ekran görüntüleri paylaş veya onları sunucuna davet et.",
+      "startDm": "{name} ile sohbetinin başlangıcı bu.",
+      "startGroup": "“{name}” grubunun başlangıcı bu.",
+      "notFriend": "Artık arkadaşın değil",
+      "jumpToReply": "Mesaja git",
+      "openImage": "Resmi aç",
+      "imageViewer": "Resim",
+      "previousImage": "Önceki resim",
+      "nextImage": "Sonraki resim"
+    },
+    "system": {
+      "someone": "Biri",
+      "groupCreated": "{actor} grubu oluşturdu",
+      "memberAdded": "{actor}, {target} adlı oyuncuyu ekledi",
+      "memberRemoved": "{actor}, {target} adlı oyuncuyu çıkardı",
+      "memberLeft": "{name} gruptan ayrıldı",
+      "renamed": "{actor} grubun adını “{name}” olarak değiştirdi",
+      "ownerChanged": "Grubun yeni sahibi: {name}"
+    },
+    "menu": {
+      "label": "Sohbet menüsü",
+      "mute": "Sessize al",
+      "unmute": "Sesi aç",
+      "muteFor": {
+        "h1": "1 saatliğine",
+        "h8": "8 saatliğine",
+        "d1": "1 günlüğüne",
+        "forever": "Ben açana kadar"
+      },
+      "removeFriend": "Arkadaşı kaldır",
+      "block": "Engelle",
+      "reportPlayer": "Oyuncuyu şikâyet et",
+      "manageGroup": "Grubu yönet",
+      "groupMembers": "Üyeler",
+      "leaveGroup": "Gruptan ayrıl",
+      "reportGroup": "Grubu şikâyet et"
+    },
+    "message": {
+      "reply": "Yanıtla",
+      "react": "Tepki ver",
+      "more": "Daha fazla",
+      "markUnread": "Okunmadı olarak işaretle",
+      "report": "Şikâyet et",
+      "reportImage": "Resmi şikâyet et",
+      "copied": "Kopyalandı.",
+      "deleteTitle": "Mesaj silinsin mi?",
+      "deleteText": "Mesaj herkes için silinecek.",
+      "deleteOthersText": "Grup sahibi olarak bu mesajı herkes için silersin."
+    },
+    "reactions": {
+      "thumbs_up": "Beğen",
+      "heart": "Kalp",
+      "laugh": "Gülme",
+      "wow": "Şaşkın",
+      "sad": "Üzgün",
+      "angry": "Kızgın",
+      "party": "Parti",
+      "fire": "Ateş",
+      "eyes": "Gözler",
+      "check": "Onay"
+    },
+    "composer": {
+      "placeholder": "{name} için mesaj",
+      "placeholderGroup": "{name} grubuna mesaj",
+      "send": "Gönder",
+      "images": "Resimler",
+      "invite": "Sunucuya davet et",
+      "hint": "Enter gönderir · Shift+Enter yeni satır",
+      "replyingTo": "Yanıtlanan: {name}",
+      "editing": "Mesaj düzenleniyor",
+      "removeImage": "Resmi kaldır",
+      "notFriends": "Artık arkadaş değilsiniz – bu sohbet salt okunur.",
+      "readOnly": "Buraya yazamazsın."
+    },
+    "picker": {
+      "title": "Resim seç [{n}/{max}]",
+      "filters": {
+        "all": "Tümü",
+        "favorites": "Favoriler",
+        "uploads": "Yüklenenler"
+      },
+      "search": "Resim ara",
+      "upload": "Yükle",
+      "size": "Resim boyutu",
+      "limit": "Mesaj başına en fazla {max} resim.",
+      "rejected": "Bir dosya desteklenen bir resim değil. | {n} dosya desteklenen bir resim değil.",
+      "tooBig": "Bu resim çok büyük.",
+      "favorite": "Favorilere ekle",
+      "unfavorite": "Favorilerden kaldır",
+      "noScreenshots": "Henüz ekran görüntüsü yok – oyunda F2 tuşuna bas.",
+      "noFavorites": "Burada bulmak için ekran görüntülerini yıldızla.",
+      "noUploads": "Bilgisayarından yüklediğin resimler burada görünür.",
+      "dropHint": "İpucu: Resimleri pencereye sürükle veya Ctrl+V ile yapıştır.",
+      "dropHere": "Eklemek için resimleri bırak"
+    },
+    "invite": {
+      "title": "Sunucuya davet et",
+      "fromServers": "Sunucuların",
+      "address": "Sunucu adresi",
+      "name": "Etiket (isteğe bağlı)",
+      "namePlaceholder": "ör. Survival",
+      "hint": "TRS sunucusu, sunucunun simgesini ve oyuncu sayısını kendisi kontrol eder – arkadaşlarının IP adresleri ondan gizli kalır.",
+      "invalidAddress": "Lütfen geçerli bir sunucu adresi gir (ana bilgisayar adı veya IPv4, isteğe bağlı olarak :port ile).",
+      "failed": "Davet gönderilemedi.",
+      "send": "Davet gönder",
+      "join": "Katıl",
+      "checking": "Kontrol ediliyor …",
+      "players": "{online}/{max} oyuncu",
+      "offline": "Çevrimdışı",
+      "private": "Yerel ağ adresi",
+      "unknown": "Durum bilinmiyor",
+      "chooseTitle": "Hangi örnekle katılacaksın?",
+      "chooseText": "Örnek başlar ve hemen {server} sunucusuna bağlanır.",
+      "matches": "Uyumlu sürüm",
+      "noInstance": "Sunuculara katılmak için önce bir örnek oluştur.",
+      "starting": "{instance} başlatılıyor ve {server} sunucusuna bağlanılıyor …",
+      "alreadyRunning": "{instance} zaten çalışıyor."
+    },
+    "friends": {
+      "list": "Arkadaş listesi",
+      "requests": "Arkadaşlık istekleri",
+      "blocked": "Engellenen oyuncular",
+      "accept": "Kabul et",
+      "decline": "Reddet",
+      "sendMessage": "Mesaj gönder",
+      "lastOnline": "Son çevrimiçi: {time}"
+    },
+    "confirm": {
+      "remove": "{name} arkadaşlarından kaldırılsın mı? Sohbetiniz okunabilir kalır ama artık yazamazsın.",
+      "block": "{name} engellensin mi? Arkadaşlık biter ve artık mesajlarını görmezsin. Kendisine bildirilmez."
+    },
+    "group": {
+      "createTitle": "Grup oluştur",
+      "manageTitle": "Grup",
+      "name": "Grup adı",
+      "namePlaceholder": "ör. İnşaat ekibi",
+      "nameRule": "Grup adı: 1–32 karakter.",
+      "pickFriends": "Arkadaşlar ({n}/{max})",
+      "addFriends": "Arkadaş ekle",
+      "searchFriends": "Arkadaş ara …",
+      "noCandidates": "Eklenecek (başka) arkadaş yok.",
+      "addPicked": "{n} arkadaş ekle | {n} arkadaş ekle",
+      "create": "Oluştur",
+      "created": "“{name}” grubu oluşturuldu.",
+      "rename": "Yeniden adlandır",
+      "renamed": "Grubun adı değiştirildi.",
+      "added": "Gruba eklendi.",
+      "owner": "Sahip",
+      "makeOwner": "Sahip yap",
+      "remove": "Gruptan çıkar",
+      "delete": "Grubu sil",
+      "deleteConfirm": "Grup, tüm mesajları ve resimleriyle birlikte herkes için silinsin mi? Bu işlem geri alınamaz.",
+      "deleted": "“{name}” grubu silindi.",
+      "full": "Bir grupta en fazla {max} üye olabilir.",
+      "hint": "Yalnızca arkadaşların eklenebilir. Yeni üyeler mesajları katıldıkları andan itibaren görür.",
+      "memberCount": "{n} üye | {n} üye",
+      "unnamed": "Grup",
+      "leaveTitle": "Gruptan ayrılmak istiyor musun?",
+      "leaveText": "“{name}” grubundan ayrılacaksın ve artık mesajlarını görmeyeceksin.",
+      "left": "“{name}” grubundan ayrıldın."
+    },
+    "report": {
+      "titles": {
+        "message": "Mesajı şikâyet et",
+        "image": "Resmi şikâyet et",
+        "player": "Oyuncuyu şikâyet et",
+        "group": "Grubu şikâyet et"
+      },
+      "intro": "Şikâyet edilen: {name}. TRS ekibi her şikâyeti inceler.",
+      "reason": "Sebep",
+      "reasons": {
+        "insult_hate": "Hakaret / nefret",
+        "spam": "Spam",
+        "inappropriate": "Uygunsuz",
+        "scam_phishing": "Dolandırıcılık / oltalama",
+        "harassment": "Taciz",
+        "other": "Diğer"
+      },
+      "note": "Not (isteğe bağlı)",
+      "evidence": "Ekip, şikâyet edilen içeriği ve öncesindeki ve sonrasındaki birkaç mesajı görür. Şikâyet edilen oyuncu, kimin şikâyet ettiğini öğrenmez.",
+      "pickReason": "Lütfen bir sebep seç.",
+      "noteTooLong": "Not en fazla 500 karakter olabilir.",
+      "submit": "Şikâyeti gönder",
+      "thanks": "Teşekkürler – göz atacağız."
+    },
+    "reports": {
+      "title": "Şikâyetlerim",
+      "intro": "Bir şikâyet incelendiğinde bildirim alacaksın.",
+      "empty": "Henüz hiçbir şeyi şikâyet etmedin.",
+      "status": {
+        "open": "Açık",
+        "inReview": "İncelemede"
+      },
+      "outcome": {
+        "actioned": "İşlem yapıldı",
+        "dismissed": "İncelendi"
+      },
+      "feedback": {
+        "title": "Şikâyetin",
+        "inReview": "Şikâyetin inceleniyor.",
+        "actioned": "Teşekkürler – gerekli işlemi yaptık.",
+        "dismissed": "Şikâyetini inceledik ve bir ihlal bulamadık."
+      }
+    },
+    "moderation": {
+      "title": "Sohbet moderasyonu",
+      "warned": "Sohbette bir uyarı aldın.",
+      "warnedReason": "Sohbette bir uyarı aldın: {reason}",
+      "mutedUntil": "Sohbette {date} tarihine kadar susturuldun.",
+      "mutedReview": "Bir moderatör inceleyene kadar sohbette susturuldun.",
+      "unmuted": "Sohbetteki susturman kaldırıldı."
+    },
+    "links": {
+      "title": "Bağlantı açılsın mı?",
+      "text": "Bu bağlantı {host} adresine gidiyor. Yalnızca güvendiğin kişilerden gelen bağlantıları aç.",
+      "open": "Tarayıcıda aç"
+    },
+    "toasts": {
+      "friendRequest": "arkadaşın olmak istiyor",
+      "capeOffer": "sana “{cape}” pelerinini teklif ediyor",
+      "online": "artık çevrimiçi",
+      "inviteTitle": "{name} seni davet ediyor",
+      "messageInGroup": "{group} grubunda {name}",
+      "openChat": "Sohbeti aç",
+      "reply": "Yanıtla",
+      "replyPlaceholder": "Hızlı yanıt …"
     }
   }
 }

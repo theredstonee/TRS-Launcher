@@ -38,6 +38,7 @@ function openPrivacy() {
           <li>{{ t('trsConsent.stored.identity') }}</li>
           <li>{{ t('trsConsent.stored.capes') }}</li>
           <li>{{ t('trsConsent.stored.friends') }}</li>
+          <li>{{ t('trsConsent.stored.chat') }}</li>
           <li>{{ t('trsConsent.stored.settings') }}</li>
           <li>{{ t('trsConsent.stored.sync') }}</li>
           <li>{{ t('trsConsent.stored.presence') }}</li>

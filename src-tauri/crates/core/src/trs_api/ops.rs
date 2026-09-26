@@ -50,7 +50,7 @@ fn cape_arg(input: &str) -> Result<&str> {
 }
 
 /// Prozent-Kodierung für Query-Werte (alles außer `A–Z a–z 0–9 - _ . ~`).
-fn encode_query(value: &str) -> String {
+pub(crate) fn encode_query(value: &str) -> String {
     let mut out = String::with_capacity(value.len() * 3);
     for byte in value.bytes() {
         if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'~') {
@@ -138,17 +138,23 @@ impl Launcher {
     }
 
     /// Aktiver Account – nur, wenn die TRS-Dienste eingeschaltet sind.
-    async fn trs_account(&self) -> Result<String> {
+    pub(super) async fn trs_account(&self) -> Result<String> {
         self.trs.ensure_enabled().await?;
         self.accounts().active_id().await?.ok_or_else(no_account)
     }
 
-    async fn trs_get<T: serde::de::DeserializeOwned>(&self, req: Req) -> Result<T> {
+    pub(super) async fn trs_get<T: serde::de::DeserializeOwned>(&self, req: Req) -> Result<T> {
         let account = self.trs_account().await?;
         self.trs.call(self.accounts(), &account, &req).await
     }
 
-    async fn trs_do(&self, req: Req) -> Result<()> {
+    /// Rohe Antwort (z. B. Bilder) mit dem Token des aktiven Accounts.
+    pub(super) async fn trs_raw(&self, req: Req) -> Result<Vec<u8>> {
+        let account = self.trs_account().await?;
+        self.trs.call_raw(self.accounts(), &account, &req).await
+    }
+
+    pub(super) async fn trs_do(&self, req: Req) -> Result<()> {
         let account = self.trs_account().await?;
         self.trs.call_raw(self.accounts(), &account, &req).await.map(|_| ())
     }
@@ -183,6 +189,8 @@ impl Launcher {
             self.trs.store.set_consent(Consent::Declined).await;
             self.trs.presence.set_online_for(None);
         }
+        // Echtzeit-Kanal sofort auf- bzw. abbauen.
+        self.trs.live.kick();
         self.trs_status().await
     }
 
@@ -230,6 +238,7 @@ impl Launcher {
         self.trs.presence.kick();
         self.trs.sync_store.forget(account).await;
         self.trs.sync.kick();
+        self.trs.live.kick();
     }
 
     // --- Umhänge ------------------------------------------------------------------------
@@ -278,7 +287,7 @@ impl Launcher {
             path.push_str(&format!("&name={}", encode_query(n)));
         }
         let account = self.trs_account().await?;
-        let req = Req { method: reqwest::Method::POST, path, body: super::Body::Png(bytes) };
+        let req = Req::with(reqwest::Method::POST, path, super::Body::Png(bytes), super::MAX_JSON_BYTES);
         let result: ApiCapeEnvelope = self.trs.call(self.accounts(), &account, &req).await?;
         if !result.cape.is_valid() {
             return Err(bad_response());

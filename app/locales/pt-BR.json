@@ -157,7 +157,8 @@
       "memoryRange": "A memória deve estar entre {min} e {max} MB",
       "jvmArgsInvalid": "Os argumentos da JVM são inválidos ou longos demais",
       "javaPathInvalid": "O caminho do Java é inválido",
-      "javaPathNotJava": "O caminho do Java deve apontar para java.exe ou javaw.exe"
+      "javaPathNotJava": "O caminho do Java deve apontar para java.exe ou javaw.exe",
+      "socialToasts": "Notificações: duração de 3 a 10 segundos, canto superior/inferior esquerdo/direito."
     },
     "trs": {
       "offline": "O servidor TRS não está acessível no momento.",
@@ -221,7 +222,47 @@
       "share_limit": "Esta capa já está compartilhada com 20 jogadores.",
       "offer_inbox_full": "Este jogador tem ofertas de capa demais em aberto.",
       "offer_not_found": "Esta oferta não existe mais.",
-      "holder_not_found": "Este jogador não tem (mais) a capa vinda de você."
+      "holder_not_found": "Este jogador não tem (mais) a capa vinda de você.",
+      "not_friends": "Vocês não são (ou não são mais) amigos.",
+      "chat_muted": "Você está silenciado no chat no momento.",
+      "conversation_not_found": "Esta conversa não existe (mais).",
+      "message_not_found": "Esta mensagem não existe (mais).",
+      "attachment_not_found": "Esta imagem não existe (mais).",
+      "message_too_long": "A mensagem é longa demais (no máximo 2000 caracteres).",
+      "empty_message": "A mensagem está vazia.",
+      "too_many_attachments": "No máximo 10 imagens por mensagem.",
+      "links_not_allowed": "Neste grupo, só o dono e jogadores que são amigos de todos podem enviar links e convites.",
+      "message_blocked": "A mensagem contém uma palavra bloqueada.",
+      "spam_detected": "Isso parece spam – não envie a mesma mensagem várias vezes.",
+      "not_sender": "Isso só funciona com as suas próprias mensagens.",
+      "message_deleted": "A mensagem foi apagada.",
+      "not_owner": "Só o dono do grupo pode fazer isso.",
+      "group_full": "O grupo está cheio (no máximo 25 membros).",
+      "group_limit": "Você já está em grupos demais.",
+      "target_group_limit": "Um jogador já está em grupos demais.",
+      "invalid_name": "Nome do grupo: 1 a 32 caracteres.",
+      "member_not_found": "Este jogador não está no grupo.",
+      "nonce_reused": "Não foi possível enviar a mensagem – tente de novo.",
+      "invalid_until": "Esse horário já passou.",
+      "invalid_cursor": "A lista mudou – recarregue.",
+      "image_too_large": "A imagem é grande demais (no máximo 8192 pixels por lado).",
+      "animated_image": "Imagens animadas não podem ser enviadas.",
+      "invalid_image": "A imagem está danificada.",
+      "too_many_pending_attachments": "Há imagens demais esperando envio – envie as anteriores primeiro.",
+      "storage_quota": "Seu espaço para imagens do chat está cheio – apague algumas imagens antigas.",
+      "storage_full": "O servidor da TRS não está aceitando imagens agora – tente de novo mais tarde.",
+      "already_reported": "Você já denunciou isso – estamos verificando.",
+      "too_many_open_reports": "Você já tem muitas denúncias abertas – aguarde a análise.",
+      "not_reportable": "Isso não pode ser denunciado.",
+      "report_resolved": "Esta denúncia já foi concluída.",
+      "report_not_found": "Esta denúncia não existe (mais).",
+      "no_message": "Esta denúncia não tem mensagem.",
+      "no_target": "Esta denúncia não tem jogador.",
+      "cannot_moderate_admin": "Admins não podem ser silenciados.",
+      "not_muted": "Este jogador não está silenciado.",
+      "invalid_word": "Palavra: 2 a 48 letras ou dígitos.",
+      "word_exists": "Esta palavra já está no filtro.",
+      "word_not_found": "Esta palavra não está (mais) no filtro."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -632,6 +673,33 @@
       "sourceGone": "Este arquivo de log não existe mais.",
       "unreadable": "Este arquivo de log não pode ser lido.",
       "qrInvalid": "Não há QR code para este link."
+    },
+    "chat": {
+      "invalidConversation": "Conversa inválida.",
+      "invalidMessage": "Mensagem inválida.",
+      "invalidAttachment": "Imagem inválida.",
+      "textTooLong": "A mensagem é longa demais (no máximo {max} caracteres).",
+      "groupName": "Nome do grupo: 1 a 32 caracteres.",
+      "tooManyImages": "No máximo {max} imagens por mensagem.",
+      "emptyMessage": "A mensagem está vazia.",
+      "invalidCursor": "Página inválida.",
+      "groupFull": "Um grupo pode ter no máximo {max} membros.",
+      "invalidReaction": "Reação desconhecida."
+    },
+    "chatImage": {
+      "unsupported": "Só é possível enviar imagens PNG, JPEG e WebP.",
+      "animated": "Imagens animadas não podem ser enviadas.",
+      "broken": "A imagem está danificada.",
+      "tooLarge": "A imagem é grande demais (no máximo {side} pixels por lado).",
+      "fileTooLarge": "O arquivo é grande demais.",
+      "gone": "A imagem não existe mais."
+    },
+    "reports": {
+      "invalidReport": "Denúncia inválida.",
+      "invalidFilter": "Filtro inválido.",
+      "invalidAction": "Decisão desconhecida.",
+      "muteRange": "Silêncio: de 5 minutos a 1 ano.",
+      "invalidWord": "Palavra: 2 a 48 letras ou dígitos."
     }
   },
   "browse": {
@@ -1780,6 +1848,42 @@
       "keysTitle": "Teclas no jogo (TRS Client)",
       "keysText": "F9 salva um clipe, F10 inicia e para uma gravação. Altere nos controles do Minecraft, em “TRS Client”.",
       "privacy": "Nada sai do seu PC: sem upload, sem conta; o gravador só funciona enquanto um jogo deste launcher estiver aberto."
+    },
+    "notifications": {
+      "title": "Notificações",
+      "intro": "Avisos de novas mensagens, convites, pedidos de amizade e mais. Tudo aqui fica neste PC.",
+      "toastsTitle": "Mostrar notificações",
+      "toastsDescription": "Pequenos avisos no launcher. Desligado = só os contadores na barra lateral.",
+      "dndTitle": "Não perturbe",
+      "dndDescription": "Sem avisos e sem som até você desligar isso. Os contadores continuam atualizando.",
+      "fullscreenTitle": "Silencioso ao jogar em tela cheia",
+      "fullscreenDescription": "Fica em silêncio enquanto o Windows indicar um jogo em tela cheia, uma apresentação ou o próprio modo de foco.",
+      "cornerTitle": "Posição",
+      "corners": {
+        "top-right": "Canto superior direito",
+        "top-left": "Canto superior esquerdo",
+        "bottom-right": "Canto inferior direito",
+        "bottom-left": "Canto inferior esquerdo"
+      },
+      "durationTitle": "Duração",
+      "durationValue": "{seconds} segundos",
+      "soundTitle": "Som",
+      "soundDescription": "Um clique curto e baixinho a cada notificação.",
+      "nativeTitle": "Notificações do Windows",
+      "nativeDescription": "Quando o launcher está minimizado ou em segundo plano, o Windows também mostra a notificação.",
+      "quickReplyTitle": "Resposta rápida",
+      "quickReplyDescription": "Responda a uma mensagem direto da notificação.",
+      "typesTitle": "Notificar sobre",
+      "types": {
+        "messages": "Novas mensagens",
+        "invites": "Convites para servidores",
+        "friendRequests": "Pedidos de amizade",
+        "capeOffers": "Ofertas de capas",
+        "friendOnline": "Amigos ficando online"
+      },
+      "preview": "Mostrar notificação de teste",
+      "previewTitle": "TRS Launcher",
+      "previewBody": "É assim que as notificações aparecem."
     }
   },
   "settingsShell": {
@@ -2061,10 +2165,8 @@
     "servers": "Servidores",
     "screenshots": "Capturas",
     "skins": "Skins",
-    "friends": "Amigos",
     "admin": "Admin",
     "runningCount": "{n} em execução | {n} em execução",
-    "friendRequests": "{n} solicitação de amizade pendente | {n} solicitações de amizade pendentes",
     "quickLaunch": "Início rápido",
     "openNamed": "Abrir {name}",
     "newInstance": "Nova instância",
@@ -2078,7 +2180,9 @@
     "collapse": "Recolher",
     "expand": "Expandir",
     "presets": "Predefinições",
-    "clips": "Clipes"
+    "clips": "Clipes",
+    "social": "Social",
+    "socialBadge": "{messages} não lidas · {requests} pedidos"
   },
   "accountMenu": {
     "menuLabel": "Contas",
@@ -2125,14 +2229,14 @@
       "accounts": "conta entrar login microsoft",
       "screenshots": "imagens fotos capturas galeria",
       "skins": "capa",
-      "friends": "amigos online solicitações trs",
       "settings": "configurações opções preferências",
       "newInstance": "adicionar criar nova",
       "import": "importar prism multimc curseforge migrar",
       "modpacks": "modpack pack instalar",
       "dataDir": "pasta explorador arquivos",
       "webLogin": "site web login entrar admin código navegador",
-      "clips": "clipes gravação gravar vídeo replay shadowplay"
+      "clips": "clipes gravação gravar vídeo replay shadowplay",
+      "social": "amigos chat mensagens grupos social pedidos"
     },
     "actions": {
       "newInstance": {
@@ -2351,7 +2455,8 @@
       "java": "Instalações do Java",
       "storage": "Armazenamento",
       "network": "Rede",
-      "clips": "Clipes e gravação"
+      "clips": "Clipes e gravação",
+      "notifications": "Notificações"
     },
     "instance": {
       "general": "Geral",
@@ -2400,10 +2505,6 @@
       "playingLoader": "Jogando {version} ({loader})",
       "playingServer": "Jogando {version} em {server}",
       "playingLoaderServer": "Jogando {version} ({loader}) em {server}"
-    },
-    "toasts": {
-      "friendRequest": "{name} quer ser seu amigo.",
-      "capeOffer": "{name} está te oferecendo a capa “{cape}”."
     }
   },
   "trsGate": {
@@ -2433,6 +2534,7 @@
       "identity": "seu UUID e nome de jogador do Minecraft",
       "capes": "sua capa selecionada, códigos resgatados e imagens de capa enviadas",
       "friends": "amigos, solicitações e bloqueios",
+      "chat": "mensagens do chat, imagens que você envia e denúncias – guardadas criptografadas no servidor até serem apagadas; o conteúdo denunciado é mantido para a moderação",
       "settings": "suas configurações de privacidade e datas (login, criação)",
       "sync": "com a sincronização ativada: suas próprias skins (imagens e nomes), seus próprios presets e seu tema, cor de destaque e idioma – para que fiquem iguais em todos os seus PCs; o TRS Client sincroniza do mesmo jeito seus módulos, layouts de HUD e teclas (chave no menu TRS)",
       "presence": "seu status online (launcher aberto / no jogo, versão e, se você quiser, o servidor) – mantido só na memória, expira após 3 minutos"
@@ -2489,6 +2591,16 @@
       "deleting": "Excluindo …",
       "confirmButton": "Sim, excluir permanentemente",
       "done": "Todos os dados TRS desta conta foram excluídos. Os serviços TRS agora estão desativados."
+    },
+    "chat": {
+      "heading": "Chat",
+      "receiptsTitle": "Confirmações de leitura",
+      "receiptsDescription": "Seus amigos veem quando você leu as mensagens deles. Desligado = você também não vê as deles.",
+      "typingTitle": "Indicador de digitação",
+      "typingDescription": "Os outros veem “está digitando …” enquanto você escreve. Desligado = você também não vê o dos outros.",
+      "reportsTitle": "Minhas denúncias",
+      "reportsDescription": "Status das mensagens, imagens, jogadores e grupos que você denunciou.",
+      "reportsButton": "Ver denúncias"
     }
   },
   "trsSync": {
@@ -2680,24 +2792,6 @@
     }
   },
   "friends": {
-    "title": "Amigos",
-    "subtitle": "Quem está online, quem está jogando o quê – e entre com eles em um clique.",
-    "add": "Adicionar amigo",
-    "offline": "O servidor TRS não está acessível no momento – a lista pode estar desatualizada.",
-    "tabs": {
-      "label": "Visualização",
-      "friends": "Amigos",
-      "requests": "Solicitações",
-      "blocked": "Bloqueados"
-    },
-    "join": {
-      "withLabel": "Entrar com",
-      "auto": "Instância compatível (automático)",
-      "button": "Entrar",
-      "withInstance": "Entrar com {name}",
-      "noInstance": "Nenhuma instância disponível",
-      "starting": "Iniciando {instance} e conectando a {server} …"
-    },
     "list": {
       "usesTrs": "Usa TRS",
       "capeOf": "Capa TRS de {name}",
@@ -2706,22 +2800,17 @@
       "reportCape": "Denunciar capa"
     },
     "empty": {
-      "title": "Nenhum amigo ainda",
       "text": "Seu sinal não está chegando a ninguém agora. Adicione amigos pelo nome do Minecraft – quando aceitarem, a lâmpada deles acende aqui."
     },
     "requests": {
       "empty": "Nenhuma solicitação pendente",
       "incoming": "Para você",
       "incomingText": "quer ser seu amigo · {date}",
-      "accept": "Aceitar",
-      "decline": "Recusar",
       "outgoing": "Enviadas por você",
       "outgoingText": "aguardando resposta · {date}",
       "withdraw": "Retirar"
     },
     "blocked": {
-      "placeholder": "Bloquear um nome do Minecraft",
-      "inputLabel": "Nome a bloquear",
       "hint": "Jogadores bloqueados não conseguem encontrar você, não podem enviar solicitações e não veem seu selo TRS nem sua capa. Eles não são notificados.",
       "since": "desde {date}",
       "unblock": "Desbloquear",
@@ -2736,9 +2825,7 @@
     },
     "confirm": {
       "removeTitle": "Remover amigo?",
-      "blockTitle": "Bloquear jogador?",
-      "removeText": "{name} será removido da sua lista de amigos.",
-      "blockText": "{name} será bloqueado: a amizade e as solicitações pendentes são removidas, e ele não conseguirá mais encontrar você."
+      "blockTitle": "Bloquear jogador?"
     },
     "report": {
       "title": "Denunciar capa",
@@ -2771,7 +2858,8 @@
       "overview": "Visão geral",
       "capes": "Analisar capas",
       "codes": "Códigos",
-      "players": "Jogadores"
+      "players": "Jogadores",
+      "reports": "Denúncias"
     },
     "stats": {
       "users": "Usuários",
@@ -2787,7 +2875,11 @@
       "friendships": "Amizades",
       "friendshipsHint": "{count} solicitações pendentes",
       "banned": "Banidos",
-      "bannedHint": "{count} sessões"
+      "bannedHint": "{count} sessões",
+      "chatReports": "Denúncias do chat",
+      "chatReportsHint": "{count} jogadores silenciados",
+      "messages": "Mensagens (24 h)",
+      "messagesHint": "{count} no total · {storage} de imagens"
     },
     "review": {
       "lists": {
@@ -2933,6 +3025,120 @@
       "grantRevoked": "Capa revogada",
       "banned": "Jogador banido",
       "unbanned": "Banimento removido"
+    },
+    "mod": {
+      "filters": {
+        "active": "Ativas",
+        "open": "Abertas",
+        "in_review": "Em análise",
+        "resolved": "Concluídas",
+        "all": "Todas"
+      },
+      "kindFilter": "Tipo",
+      "kinds": {
+        "all": "Todos os tipos"
+      },
+      "status": {
+        "open": "Aberta",
+        "in_review": "Em análise",
+        "resolved": "Concluída"
+      },
+      "outcome": {
+        "actioned": "Medida tomada",
+        "dismissed": "Rejeitada"
+      },
+      "none": "Nenhuma denúncia aqui.",
+      "more": "Carregar mais",
+      "target": "Denunciado: {name}",
+      "by": "Por: {name}",
+      "unknown": "desconhecido",
+      "images": "{n} imagem | {n} imagens",
+      "targetOpen": "{n} denúncias abertas sobre este jogador",
+      "assigned": "Em análise por {name}",
+      "lowTrust": "baixa confiança",
+      "wordFilter": "Filtro de palavras",
+      "wordFilterHint": "“Mascarar” substitui a palavra por *, “bloquear” rejeita a mensagem. Maiúsculas, acentos e leetspeak simples são ignorados.",
+      "word": "Palavra",
+      "wordRule": "Palavra: 2–48 letras ou dígitos, sem espaços.",
+      "mode": {
+        "word": "Palavra inteira",
+        "contains": "Contém"
+      },
+      "action": {
+        "mask": "Mascarar",
+        "block": "Bloquear"
+      },
+      "addWord": "Adicionar palavra",
+      "noWords": "Ainda não há palavras no filtro.",
+      "auditTitle": "Registro de moderação",
+      "noAudit": "Nada registrado ainda.",
+      "dialogTitle": "Denúncia",
+      "context": "Contexto",
+      "contextDm": "Mensagem direta",
+      "contextGroup": "Grupo “{name}” · {n} membros",
+      "purged": "As evidências foram apagadas após o período de retenção.",
+      "noContext": "Nenhuma mensagem foi capturada com esta denúncia.",
+      "system": "Sistema: {event}",
+      "systemEvents": {
+        "group_created": "grupo criado",
+        "member_added": "membro adicionado",
+        "member_removed": "membro removido",
+        "member_left": "membro saiu",
+        "renamed": "grupo renomeado",
+        "owner_changed": "dono alterado"
+      },
+      "invite": "Convite para servidor: {address}",
+      "reportedImages": "Imagens denunciadas",
+      "note": "Observação de quem denunciou",
+      "noNote": "Sem observação.",
+      "notes": "Notas internas",
+      "notePlaceholder": "Adicionar uma nota (só admins veem) …",
+      "addNote": "Adicionar",
+      "audit": "Histórico",
+      "targetLabel": "Jogador denunciado",
+      "targetStats": "{total} denúncias · {open} abertas · {actioned} com medida · {dismissed} rejeitadas",
+      "mutedUntil": "Silenciado até {date}",
+      "mutedReview": "Silenciado até a análise",
+      "unmute": "Remover silêncio",
+      "history": "Medidas anteriores",
+      "sanction": {
+        "warn": "Aviso",
+        "mute": "Silêncio"
+      },
+      "auto": "automático",
+      "lifted": "removido",
+      "reporterLabel": "Denunciado por",
+      "reporterStats": "{actioned} confirmadas · {dismissed} rejeitadas · {open} abertas",
+      "decision": "Decisão",
+      "claim": "Assumir análise",
+      "reopen": "Voltar para aberta",
+      "reason": "Motivo (mostrado ao jogador em avisos e silenciamentos)",
+      "duration": "Duração do silêncio",
+      "durations": {
+        "d60": "1 hora",
+        "d1440": "1 dia",
+        "d10080": "1 semana",
+        "d43200": "30 dias",
+        "forever": "Até ser removido"
+      },
+      "keepOpen": "Manter a denúncia aberta (para combinar várias medidas)",
+      "includeRelated": "Aplicar a outras denúncias abertas sobre o mesmo assunto",
+      "deleteMessage": "Apagar mensagem",
+      "warn": "Avisar",
+      "mute": "Silenciar",
+      "ban": "Banir",
+      "dismiss": "Rejeitar",
+      "resolve": "Concluir",
+      "confirmBan": "Banir {name} mesmo? Isso bloqueia todos os recursos da TRS para a conta.",
+      "related": "Outras denúncias sobre este jogador",
+      "chatModeration": "Moderação do chat",
+      "filedStats": "Enviou {total} denúncias · {actioned} confirmadas · {dismissed} rejeitadas",
+      "warnNeedsReason": "Uma advertência precisa de um motivo.",
+      "toasts": {
+        "muted": "Jogador silenciado no chat.",
+        "unmuted": "Silenciamento removido.",
+        "warned": "Advertência enviada."
+      }
     }
   },
   "whatsNew": {
@@ -3480,6 +3686,289 @@
       "title": "Escolher arquivos",
       "text": "Abra a pasta da instância para enviar arquivos avulsos como configs ou schematics.",
       "action": "Ir para arquivos"
+    }
+  },
+  "social": {
+    "title": "Social",
+    "tabs": {
+      "label": "Seções sociais",
+      "chat": "Chat",
+      "friends": "Amigos"
+    },
+    "actions": {
+      "addFriend": "Adicionar amigo",
+      "makeGroup": "Criar grupo",
+      "blockPlayer": "Bloquear jogador",
+      "search": "Pesquisar",
+      "searchPlaceholder": "Pesquisar nomes …",
+      "clearSearch": "Limpar pesquisa"
+    },
+    "live": {
+      "off": "Desligado",
+      "connecting": "Conectando …",
+      "live": "Ao vivo",
+      "down": "Conexão interrompida – atualizações podem chegar com atraso.",
+      "retrying": "Conexão interrompida – tentando de novo em {seconds} s.",
+      "reconnect": "Conectar agora"
+    },
+    "chat": {
+      "listLabel": "Conversas",
+      "clickToWrite": "Clique para enviar uma mensagem",
+      "you": "Você: {text}",
+      "youShort": "você",
+      "images": "Imagem | {n} imagens",
+      "invite": "Convite para servidor",
+      "inviteTo": "Convite para servidor: {address}",
+      "deleted": "Mensagem apagada",
+      "deletedByAdmin": "Removida pela moderação",
+      "deletedByOwner": "Removida pelo dono do grupo",
+      "hidden": "Mensagem de um jogador bloqueado",
+      "edited": "(editada)",
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "empty": "Nenhuma conversa ainda – adicione amigos e diga oi!",
+      "noMatches": "Nada encontrado.",
+      "startWith": "Amigos",
+      "loadMore": "Carregar mais",
+      "mutedLabel": "Silenciada",
+      "unreadLabel": "{n} mensagem não lida | {n} mensagens não lidas",
+      "typingOne": "{name} está digitando",
+      "typingTwo": "{a} e {b} estão digitando",
+      "typingMany": "{n} pessoas estão digitando",
+      "read": "Lida",
+      "readBy": "Lida por {n} | Lida por {n}",
+      "sent": "Enviada",
+      "sending": "Enviando …",
+      "failed": "Não enviada.",
+      "discard": "Descartar",
+      "newMessages": "{n} nova mensagem | {n} novas mensagens",
+      "selectTitle": "Escolha uma conversa",
+      "selectText": "Escreva para seus amigos, compartilhe capturas de tela ou convide-os para o seu servidor.",
+      "startDm": "Este é o começo da sua conversa com {name}.",
+      "startGroup": "Este é o começo de “{name}”.",
+      "notFriend": "Não é mais seu amigo",
+      "jumpToReply": "Ir para a mensagem",
+      "openImage": "Abrir imagem",
+      "imageViewer": "Imagem",
+      "previousImage": "Imagem anterior",
+      "nextImage": "Próxima imagem"
+    },
+    "system": {
+      "someone": "Alguém",
+      "groupCreated": "{actor} criou o grupo",
+      "memberAdded": "{actor} adicionou {target}",
+      "memberRemoved": "{actor} removeu {target}",
+      "memberLeft": "{name} saiu do grupo",
+      "renamed": "{actor} renomeou o grupo para “{name}”",
+      "ownerChanged": "{name} agora é dono do grupo"
+    },
+    "menu": {
+      "label": "Menu da conversa",
+      "mute": "Silenciar",
+      "unmute": "Reativar som",
+      "muteFor": {
+        "h1": "Por 1 hora",
+        "h8": "Por 8 horas",
+        "d1": "Por 1 dia",
+        "forever": "Até eu reativar"
+      },
+      "removeFriend": "Remover amigo",
+      "block": "Bloquear",
+      "reportPlayer": "Denunciar jogador",
+      "manageGroup": "Gerenciar grupo",
+      "groupMembers": "Membros",
+      "leaveGroup": "Sair do grupo",
+      "reportGroup": "Denunciar grupo"
+    },
+    "message": {
+      "reply": "Responder",
+      "react": "Reagir",
+      "more": "Mais",
+      "markUnread": "Marcar como não lida",
+      "report": "Denunciar",
+      "reportImage": "Denunciar imagem",
+      "copied": "Copiado.",
+      "deleteTitle": "Apagar mensagem?",
+      "deleteText": "A mensagem será apagada para todos.",
+      "deleteOthersText": "Como dono do grupo, você apaga esta mensagem para todos."
+    },
+    "reactions": {
+      "thumbs_up": "Joinha",
+      "heart": "Coração",
+      "laugh": "Rindo",
+      "wow": "Surpreso",
+      "sad": "Triste",
+      "angry": "Bravo",
+      "party": "Festa",
+      "fire": "Fogo",
+      "eyes": "Olhos",
+      "check": "Certo"
+    },
+    "composer": {
+      "placeholder": "Mensagem para {name}",
+      "placeholderGroup": "Mensagem para {name}",
+      "send": "Enviar",
+      "images": "Imagens",
+      "invite": "Convidar para um servidor",
+      "hint": "Enter envia · Shift+Enter para nova linha",
+      "replyingTo": "Respondendo a {name}",
+      "editing": "Editando mensagem",
+      "removeImage": "Remover imagem",
+      "notFriends": "Vocês não são mais amigos – esta conversa é somente leitura.",
+      "readOnly": "Você não pode escrever aqui."
+    },
+    "picker": {
+      "title": "Selecionar imagens [{n}/{max}]",
+      "filters": {
+        "all": "Todas",
+        "favorites": "Favoritas",
+        "uploads": "Enviadas"
+      },
+      "search": "Pesquisar imagens",
+      "upload": "Enviar",
+      "size": "Tamanho da imagem",
+      "limit": "No máximo {max} imagens por mensagem.",
+      "rejected": "Um arquivo não é uma imagem compatível. | {n} arquivos não são imagens compatíveis.",
+      "tooBig": "Esta imagem é grande demais.",
+      "favorite": "Adicionar às favoritas",
+      "unfavorite": "Remover das favoritas",
+      "noScreenshots": "Nenhuma captura de tela ainda – aperte F2 no jogo.",
+      "noFavorites": "Marque capturas de tela com estrela para encontrá-las aqui.",
+      "noUploads": "As imagens que você enviar do seu PC aparecem aqui.",
+      "dropHint": "Dica: arraste imagens para a janela ou cole com Ctrl+V.",
+      "dropHere": "Solte as imagens para anexá-las"
+    },
+    "invite": {
+      "title": "Convidar para um servidor",
+      "fromServers": "Seus servidores",
+      "address": "Endereço do servidor",
+      "name": "Nome (opcional)",
+      "namePlaceholder": "ex.: Sobrevivência",
+      "hint": "O servidor da TRS verifica o ícone e o número de jogadores do servidor por conta própria – os endereços IP dos seus amigos ficam ocultos para ele.",
+      "invalidAddress": "Digite um endereço de servidor válido (nome do host ou IPv4, opcionalmente com :porta).",
+      "failed": "Não foi possível enviar o convite.",
+      "send": "Enviar convite",
+      "join": "Entrar",
+      "checking": "Verificando …",
+      "players": "{online}/{max} jogadores",
+      "offline": "Offline",
+      "private": "Endereço de rede local",
+      "unknown": "Status desconhecido",
+      "chooseTitle": "Entrar com qual instância?",
+      "chooseText": "A instância inicia e conecta a {server} na hora.",
+      "matches": "Versão compatível",
+      "noInstance": "Crie uma instância primeiro para entrar em servidores.",
+      "starting": "Iniciando {instance} e entrando em {server} …",
+      "alreadyRunning": "{instance} já está em execução."
+    },
+    "friends": {
+      "list": "Lista de amigos",
+      "requests": "Pedidos de amizade",
+      "blocked": "Jogadores bloqueados",
+      "accept": "Aceitar",
+      "decline": "Recusar",
+      "sendMessage": "Enviar mensagem",
+      "lastOnline": "Online pela última vez {time}"
+    },
+    "confirm": {
+      "remove": "Remover {name} dos seus amigos? A conversa continua legível, mas você não poderá mais escrever.",
+      "block": "Bloquear {name}? A amizade termina e você não verá mais as mensagens dessa pessoa. Ela não será avisada."
+    },
+    "group": {
+      "createTitle": "Criar grupo",
+      "manageTitle": "Grupo",
+      "name": "Nome do grupo",
+      "namePlaceholder": "ex.: Equipe de construção",
+      "nameRule": "Nome do grupo: 1–32 caracteres.",
+      "pickFriends": "Amigos ({n}/{max})",
+      "addFriends": "Adicionar amigos",
+      "searchFriends": "Pesquisar amigos …",
+      "noCandidates": "Nenhum amigo (a mais) para adicionar.",
+      "addPicked": "Adicionar {n} amigo | Adicionar {n} amigos",
+      "create": "Criar",
+      "created": "Grupo “{name}” criado.",
+      "rename": "Renomear",
+      "renamed": "Grupo renomeado.",
+      "added": "Adicionado ao grupo.",
+      "owner": "Dono",
+      "makeOwner": "Tornar dono",
+      "remove": "Remover do grupo",
+      "delete": "Apagar grupo",
+      "deleteConfirm": "Apagar o grupo com todas as mensagens e imagens para todos? Isso não pode ser desfeito.",
+      "deleted": "Grupo “{name}” apagado.",
+      "full": "Um grupo pode ter no máximo {max} membros.",
+      "hint": "Só seus amigos podem ser adicionados. Novos membros veem as mensagens a partir do momento em que entram.",
+      "memberCount": "{n} membro | {n} membros",
+      "unnamed": "Grupo",
+      "leaveTitle": "Sair do grupo?",
+      "leaveText": "Você vai sair de “{name}” e não verá mais as mensagens dele.",
+      "left": "Você saiu de “{name}”."
+    },
+    "report": {
+      "titles": {
+        "message": "Denunciar mensagem",
+        "image": "Denunciar imagem",
+        "player": "Denunciar jogador",
+        "group": "Denunciar grupo"
+      },
+      "intro": "Você está denunciando {name}. A equipe da TRS analisa cada denúncia.",
+      "reason": "Motivo",
+      "reasons": {
+        "insult_hate": "Ofensa / ódio",
+        "spam": "Spam",
+        "inappropriate": "Inapropriado",
+        "scam_phishing": "Golpe / phishing",
+        "harassment": "Assédio",
+        "other": "Outro"
+      },
+      "note": "Observação (opcional)",
+      "evidence": "A equipe vê o conteúdo denunciado e algumas mensagens antes e depois dele. O jogador denunciado não fica sabendo quem o denunciou.",
+      "pickReason": "Escolha um motivo.",
+      "noteTooLong": "A observação pode ter no máximo 500 caracteres.",
+      "submit": "Enviar denúncia",
+      "thanks": "Valeu – vamos dar uma olhada."
+    },
+    "reports": {
+      "title": "Minhas denúncias",
+      "intro": "Você receberá uma notificação quando uma denúncia for analisada.",
+      "empty": "Você ainda não denunciou nada.",
+      "status": {
+        "open": "Aberta",
+        "inReview": "Em análise"
+      },
+      "outcome": {
+        "actioned": "Medida tomada",
+        "dismissed": "Analisada"
+      },
+      "feedback": {
+        "title": "Sua denúncia",
+        "inReview": "Sua denúncia está sendo analisada.",
+        "actioned": "Valeu – tomamos uma medida.",
+        "dismissed": "Analisamos sua denúncia e não encontramos nenhuma violação."
+      }
+    },
+    "moderation": {
+      "title": "Moderação do chat",
+      "warned": "Você recebeu um aviso no chat.",
+      "warnedReason": "Você recebeu um aviso no chat: {reason}",
+      "mutedUntil": "Você está silenciado no chat até {date}.",
+      "mutedReview": "Você está silenciado no chat até um moderador analisar.",
+      "unmuted": "Seu silenciamento no chat foi removido."
+    },
+    "links": {
+      "title": "Abrir link?",
+      "text": "Este link leva para {host}. Só abra links de pessoas em quem você confia.",
+      "open": "Abrir no navegador"
+    },
+    "toasts": {
+      "friendRequest": "quer ser seu amigo",
+      "capeOffer": "oferece a capa “{cape}” para você",
+      "online": "está online agora",
+      "inviteTitle": "{name} convidou você",
+      "messageInGroup": "{name} em {group}",
+      "openChat": "Abrir chat",
+      "reply": "Responder",
+      "replyPlaceholder": "Resposta rápida …"
     }
   }
 }

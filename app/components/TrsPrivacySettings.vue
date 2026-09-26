@@ -14,6 +14,7 @@ const saving = ref<keyof TrsPrivacy | null>(null)
 const confirmDelete = ref(false)
 const deleting = ref(false)
 const switching = ref(false)
+const myReports = ref(false)
 
 const settings = computed(() => trs.me?.settings ?? null)
 
@@ -132,6 +133,30 @@ function openPrivacy() {
             @update:model-value="update('shareServer', $event)"
           />
         </SettingRow>
+
+        <h4 class="mt-5 mb-1 text-xs font-semibold tracking-wide text-base-400 uppercase">{{ t('trsPrivacy.chat.heading') }}</h4>
+        <SettingRow :title="t('trsPrivacy.chat.receiptsTitle')" :description="t('trsPrivacy.chat.receiptsDescription')">
+          <ToggleSwitch
+            :model-value="settings.chatReadReceipts"
+            :label="t('trsPrivacy.chat.receiptsTitle')"
+            :disabled="saving !== null"
+            data-testid="privacy-read-receipts"
+            @update:model-value="update('chatReadReceipts', $event)"
+          />
+        </SettingRow>
+        <SettingRow :title="t('trsPrivacy.chat.typingTitle')" :description="t('trsPrivacy.chat.typingDescription')">
+          <ToggleSwitch
+            :model-value="settings.chatTypingIndicator"
+            :label="t('trsPrivacy.chat.typingTitle')"
+            :disabled="saving !== null"
+            data-testid="privacy-typing"
+            @update:model-value="update('chatTypingIndicator', $event)"
+          />
+        </SettingRow>
+        <SettingRow :title="t('trsPrivacy.chat.reportsTitle')" :description="t('trsPrivacy.chat.reportsDescription')">
+          <button class="btn btn-ghost" @click="myReports = true">{{ t('trsPrivacy.chat.reportsButton') }}</button>
+        </SettingRow>
+        <SocialMyReportsDialog v-if="myReports" @close="myReports = false" />
 
         <SettingRow v-if="trs.isAdmin" :title="t('webLogin.title')" :description="t('webLogin.settingsDescription', { host: TRS_HOST })">
           <button class="btn btn-ghost" data-testid="settings-web-login" @click="trs.openWebLogin()">{{ t('webLogin.open') }}</button>

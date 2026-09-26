@@ -72,7 +72,7 @@ const pages = computed<Command[]>(() => {
     { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', keywords: 'palette.keywords.screenshots' },
     { to: '/clips', label: 'nav.clips', icon: 'clips', keywords: 'palette.keywords.clips' },
     { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
-    { to: '/friends', label: 'nav.friends', icon: 'friends', keywords: 'palette.keywords.friends' },
+    { to: '/social', label: 'nav.social', icon: 'chat', keywords: 'palette.keywords.social' },
   ]
   return list
     // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
