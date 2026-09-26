@@ -112,6 +112,8 @@ public final class TrsClient implements ClientModInitializer {
 		// Menü-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten).
 		dev.theredstonee.trsclient.core.menus.MenuStyle.install(modules);
 		TrsKeys.register();
+		// Sozial-Benachrichtigungen (Toasts): Ton, Vollbild, Schnelltaste.
+		dev.theredstonee.trsclient.social.SocialHooks.install(modules);
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
@@ -269,6 +271,9 @@ public final class TrsClient implements ClientModInitializer {
 				Mc.setScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));
 			}
 		}
+		// Sozial (Taste standardmäßig unbelegt) und Schnellantwort zum neuesten Toast (Y).
+		while (TrsKeys.social.consumeClick()) dev.theredstonee.trsclient.social.SocialHooks.onSocialKey();
+		while (TrsKeys.quickReply.consumeClick()) dev.theredstonee.trsclient.social.SocialHooks.onQuickReplyKey();
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
 		if (Mc.screen() == null) {
 			if (moduleKeys.pressed(modules.waypointAddKey) && mc.player != null && modules.waypoints.isEnabled()) {

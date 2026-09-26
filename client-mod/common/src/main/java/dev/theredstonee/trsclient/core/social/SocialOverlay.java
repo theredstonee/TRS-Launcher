@@ -77,10 +77,13 @@ public final class SocialOverlay {
 		}
 	}
 
-	/** Modul „Sozial“ an (Stream + Toasts auch ohne offenen Bildschirm)? Ohne Modul-Anbindung (Tests): an. */
+	/**
+	 * Modul „Sozial“ an (Stream + Toasts auch ohne offenen Bildschirm)? Ohne Anbindung ({@link #install} fehlt – Tests,
+	 * Versionen ohne Sozial-Funktionen): aus; der Bildschirm startet den Stream dann nur, solange er offen ist.
+	 */
 	public static boolean enabled() {
 		TrsModules m = modules;
-		return m == null || m.social.isEnabled();
+		return m != null && m.social.isEnabled();
 	}
 
 	/** Gibt es gerade Toasts? Billig – vor {@link #render} fragen. */

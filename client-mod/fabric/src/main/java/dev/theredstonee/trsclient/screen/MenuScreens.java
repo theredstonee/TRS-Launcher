@@ -5,8 +5,11 @@ import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
 import dev.theredstonee.trsclient.core.ui.clips.ClipsHost;
 import dev.theredstonee.trsclient.core.ui.clips.ClipsUi;
-import dev.theredstonee.trsclient.core.ui.friends.FriendsHost;
-import dev.theredstonee.trsclient.core.ui.friends.FriendsUi;
+import dev.theredstonee.trsclient.core.social.SocialOverlay;
+import dev.theredstonee.trsclient.core.ui.UiScreen;
+import dev.theredstonee.trsclient.core.ui.social.SocialHost;
+import dev.theredstonee.trsclient.core.ui.social.SocialUi;
+import dev.theredstonee.trsclient.social.SocialHooks;
 import dev.theredstonee.trsclient.core.ui.menus.ServerInfoHost;
 import dev.theredstonee.trsclient.core.ui.menus.ServerInfoUi;
 import net.minecraft.client.Minecraft;
@@ -18,7 +21,7 @@ import java.nio.file.Path;
 import java.util.Locale;
 
 /**
- * Einstiege in die TRS-Bildschirme Freunde, Clips &amp; Bilder und Server-Info (Titelbildschirm, TRS-Menü,
+ * Einstiege in die TRS-Bildschirme Sozial (Chat + Freunde), Clips &amp; Bilder und Server-Info (Titelbildschirm, TRS-Menü,
  * Pausenmenü). Inhalt und Bedienung stehen versionsunabhängig in {@code core.ui}; hier nur die Anbindung an
  * Minecraft. Dieselbe Datei in allen Mojmap-Bäumen (Fabric, NeoForge, Forge, Forge-Mojmap-Legacy).
  */
@@ -37,24 +40,22 @@ public final class MenuScreens {
 		return TrsOnline.current() != null;
 	}
 
+	/** Freunde = Sozial-Bildschirm (Reiter Chat / Freunde). */
 	public static Screen friends(final Screen parent) {
-		FriendsHost host = new FriendsHost() {
-			@Override
-			public void playClick() {
-				click(parent);
-			}
+		return social(parent);
+	}
 
-			@Override
-			public void closeScreen() {
-				Mc.setScreen(parent);
-			}
+	/** Sozial-Bildschirm: Chat mit Freunden und Gruppen, Freunde, Anfragen, Blockierte. */
+	public static Screen social(final Screen parent) {
+		SocialHost host = SocialHooks.host(parent);
+		return new TrsUiScreen(I18n.tr("social.title"), new SocialUi(host, TrsOnline.current()));
+	}
 
-			@Override
-			public String userAgent() {
-				return "TRS-Client";
-			}
-		};
-		return new TrsUiScreen(I18n.tr("friends.title"), new FriendsUi(host, TrsOnline.current()));
+	/** Bildschirm zur Schnelltaste (Schnellantwort/Beitreten bzw. Anfragen). */
+	public static Screen socialAction(SocialOverlay.QuickAction action, final Screen parent) {
+		SocialHost host = SocialHooks.host(parent);
+		UiScreen ui = SocialUi.forAction(host, TrsOnline.current(), action);
+		return new TrsUiScreen(I18n.tr(ui instanceof SocialUi ? "social.title" : "social.quickReply.title"), ui);
 	}
 
 	// --- Clips & Bilder ---

@@ -1,7 +1,9 @@
 package dev.theredstonee.trsclient.screen;
 
 import dev.theredstonee.trsclient.compat.Keys;
+import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
+import dev.theredstonee.trsclient.social.SocialHooks;
 import dev.theredstonee.trsclient.ui.Gfx;
 import dev.theredstonee.trsclient.ui.GfxCanvas;
 
@@ -25,6 +27,14 @@ public class TrsUiScreen extends TrsScreen {
 	@Override
 	protected void draw(Gfx g, int mouseX, int mouseY, float partialTick) {
 		ui.render(GfxCanvas.of(g, font), width, height, mouseX, mouseY);
+		// Versionen ohne Haken nach jedem Bildschirm: Sozial-Toasts wenigstens über TRS-Bildschirmen.
+		SocialHooks.afterUi(g);
+	}
+
+	/** Einblendungen (Schnellantwort): kein abgedunkelter Hintergrund – das Spiel bleibt sichtbar. */
+	@Override
+	protected boolean customBackground() {
+		return ui.overlay();
 	}
 
 	@Override
@@ -49,6 +59,11 @@ public class TrsUiScreen extends TrsScreen {
 
 	@Override
 	protected boolean onKey(int key, int modifiers) {
+		// Strg+V / Strg+A (Cmd auf macOS) für Textfelder der Oberfläche.
+		if (SocialHooks.control() && !shiftDown()) {
+			if (key == Keys.code("key.keyboard.v") && ui.keyPressed(key, UiKey.PASTE, false)) return true;
+			if (key == Keys.code("key.keyboard.a") && ui.keyPressed(key, UiKey.SELECT_ALL, false)) return true;
+		}
 		return ui.keyPressed(key, Keys.ui(key), shiftDown());
 	}
 

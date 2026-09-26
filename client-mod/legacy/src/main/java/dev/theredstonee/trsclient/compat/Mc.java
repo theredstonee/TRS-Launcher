@@ -138,6 +138,38 @@ public final class Mc {
 		mc().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
 	}
 
+	/** Leiser, etwas hellerer Klick für Sozial-Benachrichtigungen (Master-Lautstärke wie der Knopfklick). */
+	public static void toastSound() {
+		//? if >=1.9 {
+		/*mc().getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.4F));
+		*///?} else
+		mc().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.4F));
+	}
+
+	/** Läuft das Spiel im Vollbild? */
+	public static boolean fullscreen() {
+		return mc().isFullScreen();
+	}
+
+	/**
+	 * Aktuelle Welt verlassen (Server trennen bzw. Einzelspieler speichern und beenden) – wie „Trennen“ im
+	 * Pausenmenü, ohne einen Bildschirm zu öffnen.
+	 */
+	public static void leaveWorld() {
+		WorldClient w = world();
+		if (w == null) return;
+		w.sendQuittingDisconnectingPacket();
+		mc().loadWorld((WorldClient) null);
+	}
+
+	/** Mit einem Server verbinden (Einladung „Beitreten“); zurück führt in die Serverliste. */
+	public static void connect(String address, String label) {
+		net.minecraft.client.multiplayer.ServerData data = new net.minecraft.client.multiplayer.ServerData(
+				label == null || label.isEmpty() ? address : label, address, false);
+		GuiScreen back = new net.minecraft.client.gui.GuiMultiplayer(new net.minecraft.client.gui.GuiMainMenu());
+		mc().displayGuiScreen(new net.minecraft.client.multiplayer.GuiConnecting(back, mc(), data));
+	}
+
 	public static ScaledResolution scaledResolution() {
 		return new ScaledResolution(mc());
 	}
@@ -351,6 +383,10 @@ public final class Mc {
 
 	public static void setClipboard(String text) {
 		GuiScreen.setClipboardString(text);
+	}
+
+	public static String clipboard() {
+		return GuiScreen.getClipboardString();
 	}
 
 	/** Adresse des Servers (null = Einzelspieler). */

@@ -156,7 +156,9 @@ public final class LegacyMenus {
 						TrsOnline online = TrsOnline.current();
 						if (online != null) {
 							online.friends().want(Friends.Interest.BACKGROUND, false);
-							MenuSkin.badge(c, x + w, y, online.friends().snapshot().incoming());
+							// Anfragen/Angebote + ungelesene Chat-Nachrichten („Sozial“).
+							MenuSkin.badge(c, x + w, y, online.friends().snapshot().incoming()
+									+ online.social().store().unreadTotal());
 						}
 					}
 				}

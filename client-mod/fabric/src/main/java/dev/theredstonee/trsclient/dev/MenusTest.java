@@ -7,7 +7,7 @@ import dev.theredstonee.trsclient.core.online.Friends;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
 import dev.theredstonee.trsclient.core.clips.ClipPreview;
 import dev.theredstonee.trsclient.core.ui.clips.ClipsUi;
-import dev.theredstonee.trsclient.core.ui.friends.FriendsUi;
+import dev.theredstonee.trsclient.core.ui.social.SocialUi;
 import dev.theredstonee.trsclient.core.ui.menus.MenuSkin;
 import dev.theredstonee.trsclient.screen.MenuScreens;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
@@ -138,19 +138,21 @@ public final class MenusTest {
 				TrsOnline online = TrsOnline.current();
 				Friends.Snapshot s = online == null ? null : online.friends().snapshot();
 				if (!waitFor(s != null && s.view != null, 120)) return;
+				// Freunde sind jetzt ein Reiter des Sozial-Bildschirms.
+				if (socialUi(Mc.screen()) != null) socialUi(Mc.screen()).showTab(1);
 				wait = 40; // Gesichter
 				phase++;
 				return;
 			}
 			case 7:
 				shot(mc, "friends");
-				friendsUi(screen).showTab(1);
+				if (socialUi(screen) != null) socialUi(screen).showFriendsTab(1);
 				phase++;
 				wait = 10;
 				return;
 			case 8:
 				shot(mc, "friends-requests");
-				friendsUi(screen).showTab(2);
+				if (socialUi(screen) != null) socialUi(screen).showFriendsTab(2);
 				phase++;
 				wait = 30;
 				return;
@@ -278,8 +280,8 @@ public final class MenusTest {
 		return new OptionsScreen(parent, mc.options);
 	}
 
-	private static FriendsUi friendsUi(Screen s) {
-		return s instanceof TrsUiScreen && ((TrsUiScreen) s).ui() instanceof FriendsUi ? (FriendsUi) ((TrsUiScreen) s).ui() : null;
+	private static SocialUi socialUi(Screen s) {
+		return s instanceof TrsUiScreen && ((TrsUiScreen) s).ui() instanceof SocialUi ? (SocialUi) ((TrsUiScreen) s).ui() : null;
 	}
 
 	private static ClipsUi clipsUi(Screen s) {

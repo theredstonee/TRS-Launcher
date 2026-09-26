@@ -5,7 +5,7 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.online.Friends;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
 import dev.theredstonee.trsclient.core.ui.clips.ClipsUi;
-import dev.theredstonee.trsclient.core.ui.friends.FriendsUi;
+import dev.theredstonee.trsclient.core.ui.social.SocialUi;
 import dev.theredstonee.trsclient.core.ui.menus.MenuSkin;
 import dev.theredstonee.trsclient.screen.MenuScreens;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
@@ -113,14 +113,18 @@ public final class MenusTest {
 				TrsOnline online = TrsOnline.current();
 				Friends.Snapshot s = online == null ? null : online.friends().snapshot();
 				if (!waitFor(s != null && s.view != null, 120)) return;
+				// Sozial-Bildschirm: Reiter „Freunde“ (Liste).
+				if (screen instanceof TrsUiScreen && ((TrsUiScreen) screen).ui() instanceof SocialUi) {
+					((SocialUi) ((TrsUiScreen) screen).ui()).showTab(1);
+				}
 				phase++;
 				wait = 40;
 				return;
 			}
 			case 7:
 				shot(mc, "friends");
-				if (screen instanceof TrsUiScreen && ((TrsUiScreen) screen).ui() instanceof FriendsUi) {
-					((FriendsUi) ((TrsUiScreen) screen).ui()).showTab(1);
+				if (screen instanceof TrsUiScreen && ((TrsUiScreen) screen).ui() instanceof SocialUi) {
+					((SocialUi) ((TrsUiScreen) screen).ui()).showFriendsTab(1);
 				}
 				phase++;
 				wait = 10;

@@ -5,8 +5,11 @@ import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
 import dev.theredstonee.trsclient.core.ui.clips.ClipsHost;
 import dev.theredstonee.trsclient.core.ui.clips.ClipsUi;
-import dev.theredstonee.trsclient.core.ui.friends.FriendsHost;
-import dev.theredstonee.trsclient.core.ui.friends.FriendsUi;
+import dev.theredstonee.trsclient.core.social.SocialOverlay;
+import dev.theredstonee.trsclient.core.ui.UiScreen;
+import dev.theredstonee.trsclient.core.ui.social.QuickReplyUi;
+import dev.theredstonee.trsclient.core.ui.social.SocialHost;
+import dev.theredstonee.trsclient.core.ui.social.SocialUi;
 import dev.theredstonee.trsclient.core.ui.menus.ServerInfoHost;
 import dev.theredstonee.trsclient.core.ui.menus.ServerInfoUi;
 import net.minecraft.client.Minecraft;
@@ -20,22 +23,38 @@ import java.nio.file.Path;
 import java.util.Locale;
 
 /**
- * Einstiege in die TRS-Bildschirme Freunde, Clips &amp; Bilder und Server-Info unter Minecraft 1.8.9–1.12.2.
+ * Einstiege in die TRS-Bildschirme Sozial (Chat + Freunde), Clips &amp; Bilder und Server-Info unter Minecraft 1.8.9–1.12.2.
  * Inhalt und Bedienung stehen versionsunabhängig in {@code core.ui}.
  */
 public final class MenuScreens {
 	private MenuScreens() {
 	}
 
-	// --- Freunde ---
+	// --- Sozial (Chat + Freunde) ---
 
 	public static boolean friendsAvailable() {
 		return TrsOnline.current() != null;
 	}
 
+	/** Sozial-Bildschirm (Reiter Chat / Freunde) – ersetzt den früheren Freunde-Bildschirm. */
 	public static GuiScreen friends(final GuiScreen parent) {
+		return social(parent);
+	}
+
+	public static GuiScreen social(final GuiScreen parent) {
+		return new TrsUiScreen(I18n.tr("social.title"), new SocialUi(host(parent), TrsOnline.current()));
+	}
+
+	/** Bildschirm zur Schnelltaste (Antwort/Beitreten → kleine Einblendung, Anfragen → Sozial-Bildschirm). */
+	public static GuiScreen socialAction(SocialOverlay.QuickAction action, GuiScreen parent) {
+		UiScreen ui = SocialUi.forAction(host(parent), TrsOnline.current(), action);
+		String title = ui instanceof QuickReplyUi ? I18n.tr("social.quickReply.title") : I18n.tr("social.title");
+		return new TrsUiScreen(title, ui);
+	}
+
+	static SocialHost host(final GuiScreen parent) {
 		final TrsMenuHost back = new TrsMenuHost(parent);
-		FriendsHost host = new FriendsHost() {
+		return new SocialHost() {
 			@Override
 			public void playClick() {
 				back.playClick();
@@ -50,8 +69,38 @@ public final class MenuScreens {
 			public String userAgent() {
 				return "TRS-Client";
 			}
+
+			@Override
+			public Path gameDir() {
+				return Mc.gameDir().toPath().toAbsolutePath();
+			}
+
+			@Override
+			public String currentServer() {
+				return Mc.mc().getIntegratedServer() != null ? null : Mc.serverAddress();
+			}
+
+			@Override
+			public boolean inWorld() {
+				return Mc.world() != null;
+			}
+
+			@Override
+			public void joinServer(String address, String label) {
+				Mc.leaveWorld();
+				Mc.connect(address, label);
+			}
+
+			@Override
+			public void copy(String text) {
+				Mc.setClipboard(text);
+			}
+
+			@Override
+			public String paste() {
+				return Mc.clipboard();
+			}
 		};
-		return new TrsUiScreen(I18n.tr("friends.title"), new FriendsUi(host, TrsOnline.current()));
 	}
 
 	// --- Clips & Bilder ---

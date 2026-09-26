@@ -11,5 +11,7 @@
 	"key.trsclient.saveClip": "Zapisz klip",
 	"key.trsclient.toggleRecording": "Rozpocznij/zatrzymaj nagrywanie",
 	"key.trsclient.wardrobe": "Otwórz garderobę",
-	"key.trsclient.worldMap": "Mapa świata"
+	"key.trsclient.worldMap": "Mapa świata",
+	"key.trsclient.social": "Otwórz społeczność",
+	"key.trsclient.quickReply": "Szybka odpowiedź / dołącz"
 }

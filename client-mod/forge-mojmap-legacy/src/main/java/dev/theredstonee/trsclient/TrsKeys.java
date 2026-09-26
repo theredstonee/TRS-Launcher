@@ -52,8 +52,14 @@ public final class TrsKeys {
 	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
 	public static final KeyMapping worldMap =
 			new KeyMapping("key.trsclient.worldMap", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_M, CATEGORY);
+	/** Öffnet den Sozial-Bildschirm (standardmäßig unbelegt). */
+	public static final KeyMapping social =
+			new KeyMapping("key.trsclient.social", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	/** Schnellantwort/Beitreten zum neuesten Sozial-Toast (Y – in keiner Vanilla-Version belegt). */
+	public static final KeyMapping quickReply =
+			new KeyMapping("key.trsclient.quickReply", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, CATEGORY);
 	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
-			saveClip, toggleRecording, wardrobe, worldMap};
+			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply};
 
 	private TrsKeys() {
 	}

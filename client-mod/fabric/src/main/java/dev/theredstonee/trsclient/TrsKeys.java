@@ -33,6 +33,10 @@ public final class TrsKeys {
 	public static KeyMapping toggleRecording;
 	/** Öffnet die Garderobe (standardmäßig unbelegt). */
 	public static KeyMapping wardrobe;
+	/** Öffnet den Sozial-Bildschirm (standardmäßig unbelegt). */
+	public static KeyMapping social;
+	/** Schnellantwort/Beitreten zum neuesten Sozial-Toast (Y – in keiner Vanilla-Version belegt). */
+	public static KeyMapping quickReply;
 	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
 	public static KeyMapping worldMap;
 
@@ -60,6 +64,8 @@ public final class TrsKeys {
 		toggleRecording = register(new KeyMapping("key.trsclient.toggleRecording", KEYBOARD, Keys.code("key.keyboard.f10"), CATEGORY));
 		wardrobe = register(new KeyMapping("key.trsclient.wardrobe", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		worldMap = register(new KeyMapping("key.trsclient.worldMap", KEYBOARD, Keys.code("key.keyboard.m"), CATEGORY));
+		social = register(new KeyMapping("key.trsclient.social", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		quickReply = register(new KeyMapping("key.trsclient.quickReply", KEYBOARD, Keys.code("key.keyboard.y"), CATEGORY));
 	}
 
 	/**

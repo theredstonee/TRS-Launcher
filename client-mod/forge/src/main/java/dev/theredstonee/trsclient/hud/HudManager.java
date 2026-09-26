@@ -119,7 +119,22 @@ public final class HudManager {
 
 	/** HUD-Callback (jeden Frame). */
 	public void render(Gfx g) {
-		if (Mc.hudHidden() || Mc.screen() instanceof TrsUiScreen) return;
+		try {
+			renderElements(g);
+		} finally {
+			// Sozial-Benachrichtigungen (Toasts) über dem HUD – auch wenn die TRS-Anzeigen gerade ruhen.
+			dev.theredstonee.trsclient.social.SocialHooks.hud(g);
+		}
+	}
+
+	/** Ruhen die Anzeigen wegen eines TRS-Bildschirms? (Einblendungen wie die Schnellantwort lassen das HUD stehen.) */
+	private static boolean hiddenByScreen() {
+		net.minecraft.client.gui.screens.Screen s = Mc.screen();
+		return s instanceof TrsUiScreen && !((TrsUiScreen) s).ui().overlay();
+	}
+
+	private void renderElements(Gfx g) {
+		if (Mc.hudHidden() || hiddenByScreen()) return;
 		// Das Vanilla-Fadenkreuz blendet CrosshairMixin aus, das eigene wird hier gezeichnet (alle Versionen).
 		if (crosshair.replacesVanilla()) crosshair.drawInGame(g);
 		// Alle Anzeigen gesammelt zeichnen: 1.20–1.21.1 schicken sonst jedes Rechteck und jeden Text einzeln

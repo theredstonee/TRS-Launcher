@@ -122,7 +122,22 @@ public final class HudManager {
 
 	/** HUD-Callback (jeden Frame). */
 	public void render(Gfx g) {
-		if (Mc.hudHidden() || Mc.screen() instanceof TrsUiScreen) return;
+		try {
+			renderElements(g);
+		} finally {
+			// Sozial-Benachrichtigungen (Toasts) über dem HUD – auch wenn die TRS-Anzeigen gerade ruhen.
+			dev.theredstonee.trsclient.social.SocialHooks.hud(g);
+		}
+	}
+
+	/** Ruhen die Anzeigen wegen eines TRS-Bildschirms? (Einblendungen wie die Schnellantwort lassen das HUD stehen.) */
+	private static boolean hiddenByScreen() {
+		net.minecraft.client.gui.screens.Screen s = Mc.screen();
+		return s instanceof TrsUiScreen && !((TrsUiScreen) s).ui().overlay();
+	}
+
+	private void renderElements(Gfx g) {
+		if (Mc.hudHidden() || hiddenByScreen()) return;
 		// Bis 1.21.5 wird das Vanilla-Fadenkreuz per Mixin ausgeblendet und das eigene hier gezeichnet;
 		// ab 1.21.6 ersetzt TRS die Fabric-HUD-Ebene des Fadenkreuzes direkt (siehe TrsClient).
 		//? if <1.21.6

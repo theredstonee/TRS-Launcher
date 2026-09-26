@@ -139,6 +139,8 @@ public final class Social {
 	private String self;
 	private String selfName;
 	private int generation;
+	/** Zählt Kontowechsel: Ergebnisse einer alten Sitzung werden verworfen. */
+	private int session;
 	private boolean listInFlight;
 	private long listNotBefore;
 	private boolean resyncWanted;
@@ -159,6 +161,8 @@ public final class Social {
 	private Notice notice;
 	private boolean streamWanted;
 	private int eventsSeen;
+	/** Schon ein hello in dieser Sitzung (das erste braucht keinen Resync). */
+	private boolean helloSeen;
 
 	public Social(ChatApi api, MeStream stream, Backend backend) {
 		this(api, stream, backend, worker("TRS-Chat", 1, 128), worker("TRS-Chat-Upload", 1, 32),
@@ -340,7 +344,9 @@ public final class Social {
 		resyncWanted = false;
 		viewing = null;
 		typingIn = null;
+		helloSeen = false;
 		generation++;
+		session++;
 	}
 
 	/** Der Sozial-Bildschirm ist offen (jedes Bild melden) – mit {@code conversationId} als offener Unterhaltung. */
@@ -390,8 +396,9 @@ public final class Social {
 		Friends friends = backend.friends();
 		String t = e.type;
 		if (t.equals("hello")) {
-			// Neustart ohne Wiederaufnahme, obwohl wir schon Daten hatten: alles neu laden.
-			if (!e.resumed && store.listLoaded()) resyncWanted = true;
+			// Neuer Stream ohne Wiederaufnahme, obwohl schon einer lief (Lücke unbekannt): alles neu laden.
+			if (!e.resumed && helloSeen && store.listLoaded()) resyncWanted = true;
+			helloSeen = true;
 			return;
 		}
 		if (t.equals("resync")) {
@@ -560,7 +567,7 @@ public final class Social {
 	private void loadList(long now) {
 		final String t = token;
 		listInFlight = true;
-		final int gen = generation;
+		final int gen = session;
 		if (!submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -579,7 +586,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							listInFlight = false;
 							store.setConversations(all, full);
 							lastUnreadPoll = System.currentTimeMillis();
@@ -589,7 +596,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							listInFlight = false;
 							failed(e, t);
 							listNotBefore = System.currentTimeMillis() + (e.rateLimited() ? Math.max(5000L, e.retryAfterMs()) : 15_000L);
@@ -599,7 +606,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							listInFlight = false;
 							listNotBefore = System.currentTimeMillis() + 15_000L;
 						}
@@ -623,7 +630,7 @@ public final class Social {
 		final String t = token;
 		unreadInFlight = true;
 		lastUnreadPoll = now;
-		final int gen = generation;
+		final int gen = session;
 		if (!submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -633,7 +640,7 @@ public final class Social {
 						@Override
 						public void run() {
 							unreadInFlight = false;
-							if (gen == generation) store.applyUnread(states);
+							if (gen == session) store.applyUnread(states);
 						}
 					});
 				} catch (final ApiException e) {
@@ -641,7 +648,7 @@ public final class Social {
 						@Override
 						public void run() {
 							unreadInFlight = false;
-							if (gen == generation && e.unauthorized()) backend.unauthorized(t);
+							if (gen == session && e.unauthorized()) backend.unauthorized(t);
 						}
 					});
 				} catch (IOException | RuntimeException e) {
@@ -658,7 +665,7 @@ public final class Social {
 
 	private void fetchConversation(final String id) {
 		final String t = token;
-		final int gen = generation;
+		final int gen = session;
 		submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -667,7 +674,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen == generation) store.upsert(c);
+							if (gen == session) store.upsert(c);
 						}
 					});
 				} catch (ApiException | IOException | RuntimeException ignored) {
@@ -684,7 +691,7 @@ public final class Social {
 		final ChatStore.Thread th = store.thread(id);
 		if (th.loading) return;
 		th.loading = true;
-		final int gen = generation;
+		final int gen = session;
 		if (!submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -693,7 +700,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen == generation) store.loadedLatest(id, p);
+							if (gen == session) store.loadedLatest(id, p);
 						}
 					});
 				} catch (final ApiException e) {
@@ -701,7 +708,7 @@ public final class Social {
 						@Override
 						public void run() {
 							th.loading = false;
-							if (gen != generation) return;
+							if (gen != session) return;
 							if (e.status() == 404) store.remove(id);
 							else failed(e, t);
 						}
@@ -711,7 +718,7 @@ public final class Social {
 						@Override
 						public void run() {
 							th.loading = false;
-							if (gen == generation) note("social.error.offline", null, true);
+							if (gen == session) note("social.error.offline", null, true);
 						}
 					});
 				}
@@ -730,7 +737,7 @@ public final class Social {
 			return;
 		}
 		th.loadingOlder = true;
-		final int gen = generation;
+		final int gen = session;
 		if (!submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -739,7 +746,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen == generation) store.loadedOlder(id, p);
+							if (gen == session) store.loadedOlder(id, p);
 						}
 					});
 				} catch (ApiException | IOException | RuntimeException e) {
@@ -761,7 +768,7 @@ public final class Social {
 		if (t == null || th == null || !th.loaded || th.loading) return;
 		final long after = th.newestSeq();
 		th.loading = true;
-		final int gen = generation;
+		final int gen = session;
 		if (!submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -772,7 +779,7 @@ public final class Social {
 						post(new Runnable() {
 							@Override
 							public void run() {
-								if (gen == generation) store.loadedAfter(id, p);
+								if (gen == session) store.loadedAfter(id, p);
 							}
 						});
 						if (!p.hasMore || p.messages.isEmpty()) break;
@@ -793,7 +800,7 @@ public final class Social {
 	private void loadModeration() {
 		final String t = token;
 		moderationLoaded = true;
-		final int gen = generation;
+		final int gen = session;
 		submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -802,7 +809,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen == generation) {
+							if (gen == session) {
 								moderation = m;
 								generation++;
 							}
@@ -818,7 +825,7 @@ public final class Social {
 	private void loadSettings() {
 		final String t = token;
 		settingsLoaded = true;
-		final int gen = generation;
+		final int gen = session;
 		submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -827,7 +834,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen == generation) chatSettings = s;
+							if (gen == session) chatSettings = s;
 						}
 					});
 				} catch (ApiException | IOException | RuntimeException ignored) {
@@ -902,7 +909,7 @@ public final class Social {
 
 	private void run(final SendJob job) {
 		final String t = token;
-		final int gen = generation;
+		final int gen = session;
 		if (!job.images.isEmpty()) uploadProgress.put(job.nonce, new Upload(0, job.images.size()));
 		if (!submit(uploads, new Runnable() {
 			@Override
@@ -925,7 +932,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							sendJobs.remove(job.nonce);
 							uploadProgress.remove(job.nonce);
 							store.message(m, 0);
@@ -935,7 +942,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							uploadProgress.remove(job.nonce);
 							if (e.unauthorized()) backend.unauthorized(t);
 							if ("chat_muted".equals(e.code())) moderationLoaded = false;
@@ -948,7 +955,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							uploadProgress.remove(job.nonce);
 							store.pendingFailed(job.conversationId, job.nonce, "social.error.offline");
 						}
@@ -1045,7 +1052,7 @@ public final class Social {
 
 	private void markRead(final String id, final long seq) {
 		final String t = token;
-		final int gen = generation;
+		final int gen = session;
 		submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -1054,7 +1061,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen == generation) store.upsert(c);
+							if (gen == session) store.upsert(c);
 						}
 					});
 				} catch (ApiException | IOException | RuntimeException ignored) {
@@ -1376,7 +1383,7 @@ public final class Social {
 			if (done != null) done.done(null, "social.error.offline");
 			return;
 		}
-		final int gen = generation;
+		final int gen = session;
 		if (!submit(rest, new Runnable() {
 			@Override
 			public void run() {
@@ -1385,7 +1392,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							if (successKey != null) note(successKey, null, false);
 							if (done != null) done.done(value, null);
 						}
@@ -1394,7 +1401,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							String key = failed(e, t);
 							if (done != null) done.done(null, key);
 						}
@@ -1403,7 +1410,7 @@ public final class Social {
 					post(new Runnable() {
 						@Override
 						public void run() {
-							if (gen != generation) return;
+							if (gen != session) return;
 							note("social.error.offline", null, true);
 							if (done != null) done.done(null, "social.error.offline");
 						}
