@@ -1,4 +1,4 @@
-import type { PostBlock } from '~/utils/changelog'
+import type { PostShot } from '~/utils/changelog'
 
 // Daten der Website aus der eigenen API (/v1/site/…); serverseitig gerendert und im Browser weiterverwendet.
 
@@ -25,10 +25,13 @@ export interface BlogPostSummary {
   title: { en: string, de: string } | null
   headlines: { en: string[], de: string[] }
   banner: { accent: string, motif: string | null } | null
+  /** Screenshots der Neuerungen je Sprache (absolute Adressen, Bildunterschrift schon übersetzt oder leer). */
+  gallery: { en: PostShot[], de: PostShot[] }
 }
 
 export interface BlogPost extends BlogPostSummary {
-  blocks: { en: PostBlock[], de: PostBlock[] }
+  /** Text ohne Bildzeilen – die Bilder stehen in `gallery`. */
+  markdown: { en: string, de: string }
 }
 
 export const REPO_URL = 'https://github.com/theredstonee/TRS-Launcher'
@@ -61,6 +64,11 @@ export function postTitle(post: BlogPostSummary, lang: Lang, fallback: string): 
 
 export function postHeadlines(post: BlogPostSummary, lang: Lang): string[] {
   return lang === 'de' ? post.headlines.de : post.headlines.en
+}
+
+/** Screenshots eines Beitrags in der Seitensprache (Spanisch nutzt Englisch). */
+export function postGallery(post: BlogPostSummary, lang: Lang): PostShot[] {
+  return (lang === 'de' ? post.gallery?.de : post.gallery?.en) ?? []
 }
 
 /** Betriebssystem des Besuchers (für den großen Download-Knopf). */
