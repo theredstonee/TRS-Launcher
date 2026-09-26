@@ -377,6 +377,8 @@ public final class LegacyOnline {
 						replaced++;
 					}
 				}
+				// TRS-Kopf-Kosmetik (Quietscheente): eigene Ebene dazu.
+				layers.add(new HatLayer(renderer));
 			}
 			log("Umhang-Physik: " + replaced + " Umhang-Ebenen ersetzt");
 		} catch (IllegalAccessException | RuntimeException e) {

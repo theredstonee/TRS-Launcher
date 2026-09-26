@@ -82,6 +82,20 @@ public final class TrsApi {
 		String uuid;
 		Boolean badge;
 		LookupCape cape;
+		LookupCosmetics cosmetics;
+	}
+
+	static final class LookupCosmetics {
+		LookupCosmetic hat;
+	}
+
+	static final class LookupCosmetic {
+		String id;
+		String template;
+		String url;
+		Integer scale;
+		Integer frames;
+		Integer frameTimeMs;
 	}
 
 	static final class LookupCape {
@@ -287,7 +301,12 @@ public final class TrsApi {
 			if (p.cape != null) {
 				cape = CapeInfo.of(p.cape.id, p.cape.url, p.cape.scale, p.cape.frames, p.cape.frameTimeMs, config);
 			}
-			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape));
+			HatInfo hat = null;
+			if (p.cosmetics != null && p.cosmetics.hat != null) {
+				LookupCosmetic h = p.cosmetics.hat;
+				hat = HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, config);
+			}
+			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat));
 		}
 		return out;
 	}

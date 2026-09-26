@@ -18,6 +18,7 @@ import {
   trsParse,
   trsPlayerCapeSchema,
   trsRedeemSchema,
+  trsHatSchema,
   trsStatusSchema,
   trsSyncStatusSchema,
   trsUserRefSchema,
@@ -591,6 +592,9 @@ export const backend = {
     reportCape: (id: string, reason: TrsReportReason, note: string | null) =>
       call<void>('trs_report_cape', { id, reason, note }),
     redeem: (code: string) => checked(trsRedeemSchema, 'trs_redeem', { code }),
+    /** Eigene Kopf-Kosmetik (Quietscheente) und Auf-/Absetzen (`null`). */
+    hats: () => checked(z.array(trsHatSchema), 'trs_hats'),
+    setHat: (id: string | null) => call<void>('trs_set_hat', { id }),
     playerCapes: (uuids: string[]) => checked(z.array(trsPlayerCapeSchema), 'trs_player_capes', { uuids }),
     /** Umhänge teilen: offene Angebote an mich (mit Vorschau) und von mir. */
     capeOffers: () => checked(trsCapeOffersSchema, 'trs_cape_offers'),

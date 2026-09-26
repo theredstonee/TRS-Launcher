@@ -324,6 +324,7 @@
   "setting.trsOnline.badgeTab": "Badge dans la liste des joueurs",
   "setting.trsOnline.badgeNametag": "Badge au-dessus des noms",
   "setting.trsOnline.capes": "Afficher les capes TRS",
+  "setting.trsOnline.cosmetics": "Afficher les cosmétiques TRS (chapeaux)",
   "setting.capePhysics.style": "Style",
   "setting.capePhysics.style.smooth": "Lisse",
   "setting.capePhysics.style.blocky": "En blocs",

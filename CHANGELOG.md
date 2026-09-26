@@ -25,6 +25,13 @@ How to write an entry:
 
 ### English
 
+- **TRS Client: the rubber duck.** A secret head cosmetic: a yellow rubber duck that sits on your head in the TRS
+  Client – and everyone else with the TRS Client sees it too. It waddles when you walk, bobs when you stand, looks
+  around and blinks, lags a little behind fast head turns, flaps its wings when you jump or fall, squashes on landing and
+  quacks when you start sneaking or play an emote. You only get it with a code; without one it doesn't show up anywhere.
+  Redeem the code in the launcher (Skins → TRS capes → Redeem code) and put the duck on straight away, or later under
+  "Head cosmetics". Works in Minecraft 1.8.9–1.12.2 (Forge) and 1.14.4–26.3 (Fabric, Forge, NeoForge); a new switch
+  under TRS Online hides TRS head cosmetics if you prefer.
 - **TRS Client: Shield Position.** A new module in the PvP category holds your shield further to the side and lower in
   first person, so you see more of the fight. While blocking it switches to its own flatter pose – smoothly, without
   the old jump. Pick a preset ("Side", "Low", "Vanilla") or set position, rotation and size yourself for normal and for
@@ -45,6 +52,13 @@ How to write an entry:
 
 ### Deutsch
 
+- **TRS Client: die Quietscheente.** Eine geheime Kopf-Kosmetik: eine gelbe Quietscheente, die im TRS Client auf deinem
+  Kopf sitzt – und alle anderen mit TRS Client sehen sie auch. Sie watschelt beim Laufen, wippt im Stand, schaut sich um
+  und blinzelt, hängt bei schnellen Kopfdrehungen etwas hinterher, schlägt beim Springen und Fallen mit den Flügeln,
+  staucht sich bei der Landung und quakt, wenn du zu schleichen beginnst oder ein Emote spielst. Es gibt sie nur per
+  Code; ohne Code taucht sie nirgends auf. Löse den Code im Launcher ein (Skins → TRS-Umhänge → Code einlösen) und setz
+  die Ente gleich auf – oder später unter „Kopf-Kosmetik“. Läuft in Minecraft 1.8.9–1.12.2 (Forge) und 1.14.4–26.3
+  (Fabric, Forge, NeoForge); ein neuer Schalter unter TRS Online blendet TRS-Kopf-Kosmetik aus, wenn du willst.
 - **TRS Client: Schild-Position.** Ein neues Modul in der Kategorie PvP hält dein Schild in der 1. Person weiter
   seitlich und tiefer, damit du vom Kampf mehr siehst. Beim Blocken wechselt es in eine eigene, flachere Haltung – weich,
   ohne den alten Sprung. Wähle eine Vorlage („Seitlich“, „Tief“, „Vanilla“) oder stelle Position, Drehung und Größe für

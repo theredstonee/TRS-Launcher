@@ -558,6 +558,7 @@
     "trsOps": {
       "invalidPlayerId": "Geçersiz oyuncu kimliği.",
       "invalidCapeId": "Geçersiz pelerin kimliği.",
+      "invalidCosmeticId": "Geçersiz kozmetik kimliği.",
       "noChange": "Değişiklik belirtilmedi.",
       "onlyOwnCapesDeletable": "Yalnızca kendi pelerinlerin silinebilir.",
       "onlyUploadedReportable": "Yalnızca yüklenen pelerinler bildirilebilir.",
@@ -2672,7 +2673,9 @@
       "alreadyOwned": "“{name}” zaten sendeydi.",
       "unlocked": "“{name}” açıldı!",
       "uploaded": "Yüklendi – pelerinin onay bekliyor.",
-      "deleted": "Pelerin silindi"
+      "deleted": "Pelerin silindi",
+      "hatOn": "“{name}” takıldı",
+      "hatOff": "Kafa kozmetiği çıkarıldı"
     },
     "editor": {
       "title": "Kendi pelerinini yükle",
@@ -2735,6 +2738,19 @@
       },
       "upload": "Yükle",
       "uploading": "Yükleniyor …"
+    },
+    "hats": {
+      "title": "Kafa kozmetikleri",
+      "intro": "TRS Client’ta başında görünür – TRS Client kullanan herkes görür.",
+      "wear": "Tak",
+      "remove": "Çıkar",
+      "worn": "Takılı"
+    },
+    "hatDialog": {
+      "title": "“{name}” açıldı!",
+      "text": "Şimdi takmak ister misin? TRS Client’ta başında görürsün (üçüncü şahıs), diğer TRS oyuncuları da görür.",
+      "wear": "Tak",
+      "later": "Sonra"
     }
   },
   "capeShare": {

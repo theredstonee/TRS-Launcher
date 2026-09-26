@@ -248,6 +248,8 @@ public final class TrsModules {
 	public final BoolSetting badgeTab;
 	public final BoolSetting badgeNametag;
 	public final BoolSetting trsCapes;
+	/** TRS-Kosmetik auf dem Kopf (z. B. die Quietscheente) bei allen Spielern zeigen. */
+	public final BoolSetting trsCosmetics;
 	/** TRS-Client-Einstellungen mit dem TRS-Konto synchronisieren (bleibt selbst lokal, siehe core.sync). */
 	public final BoolSetting syncClient;
 	public final ChoiceSetting<CapeSettings.Style> capeStyle;
@@ -714,6 +716,7 @@ public final class TrsModules {
 		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Badge in the tab list", true));
 		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Badge above names", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));
+		trsCosmetics = trsOnline.add(new BoolSetting("cosmetics", "Show TRS cosmetics (hats)", true));
 		syncClient = trsOnline.add(new BoolSetting("sync", "Sync with TRS account", true));
 		capeStyle = capePhysics.add(new ChoiceSetting<>("style", "Style", CapeSettings.Style.class, CapeSettings.Style.SMOOTH));
 		capeWindMode = capePhysics.add(new ChoiceSetting<>("windMode", "Wind", CapeSettings.Wind.class, CapeSettings.Wind.WAVES));

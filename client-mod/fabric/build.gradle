@@ -219,6 +219,9 @@ mixinClasses << 'WeatherMixin'
 if (stonecutter.eval(mc, '>=1.17') && stonecutter.eval(mc, '<1.21.6')) mixinClasses << 'FogMixin'
 // Umhang-Physik: ab 1.15 (1.14 zeichnet den Umhang mit festen GL-Aufrufen, dort bleibt er starr).
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'
+// TRS-Kopf-Kosmetik (Quietscheente) am Umhang-Layer – dieselbe Grenze.
+if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'HatLayerMixin'
+if (stonecutter.eval(mc, '<1.15')) mixinClasses << 'HatGlMixin'
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']
 // ScreenEffectRenderer (niedriges Feuer) und die Block-Umrandung mit Farbe gibt es erst ab 1.15.

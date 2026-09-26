@@ -312,6 +312,20 @@ fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&R
             ),
             ("GET", "/v1/me") => Response::json(200, me_json(ACC, true)),
             ("PUT", "/v1/me/cape") => Response::json(200, json!({ "activeCape": null })),
+            ("POST", "/v1/capes/redeem") if req.json()["code"] == "DKCKQM2XPA9RTVBC4HJN" => Response::json(
+                200,
+                json!({ "kind": "cosmetic", "cape": null, "alreadyOwned": false, "cosmetic": { "id": "rubber_duck",
+                    "name": "Quietscheente", "slot": "hat", "template": "duck", "kind": "builtin", "unlock": "code" } }),
+            ),
+            ("GET", "/v1/cosmetics") => Response::json(
+                200,
+                json!({ "templates": [], "cosmetics": [
+                    { "id": "rubber_duck", "name": "Quietscheente", "slot": "hat", "template": "duck", "owned": true, "equipped": false },
+                    { "id": "trs_cap", "name": "TRS-Cap", "slot": "hat", "template": "cap", "owned": true, "equipped": false },
+                    { "id": "halo", "name": "Heiligenschein", "slot": "aura", "template": "halo", "owned": false, "equipped": false }
+                ] }),
+            ),
+            ("PUT", "/v1/me/cosmetics") => Response::json(200, json!({ "equipped": {}, "emotes": [] })),
             ("POST", "/v1/capes/redeem") => Response::json(
                 200,
                 json!({ "cape": { "id": "team", "name": "TRS Team", "kind": "builtin", "unlock": "admin", "status": "approved",
@@ -477,7 +491,23 @@ async fn cape_code_and_settings_calls() {
     let (_dir, launcher) = launcher(&server, &[ACC]).await;
 
     let redeemed = launcher.trs_redeem("7k3qf m2xpa 9rtvb c4hjn").await.unwrap();
-    assert_eq!(redeemed.cape_id, "team");
+    assert_eq!(redeemed.cape_id.as_deref(), Some("team"));
+    assert_eq!(redeemed.kind, "cape");
+    assert!(!redeemed.wearable_hat);
+
+    // Kosmetik-Code (Quietscheente): kein Umhang, aber gleich aufsetzbar.
+    let duck = launcher.trs_redeem("DKCKQ-M2XPA-9RTVB-C4HJN").await.unwrap();
+    assert_eq!((duck.kind.as_str(), duck.cosmetic_id.as_deref(), duck.cape_id), ("cosmetic", Some("rubber_duck"), None));
+    assert!(duck.wearable_hat);
+    // Nur Kopf-Kosmetik, die der TRS Client zeichnet (die Kappe noch nicht).
+    let hats = launcher.trs_hats().await.unwrap();
+    assert_eq!(hats.iter().map(|h| h.id.as_str()).collect::<Vec<_>>(), vec!["rubber_duck"]);
+    launcher.trs_set_hat(Some("rubber_duck".into())).await.unwrap();
+    launcher.trs_set_hat(None).await.unwrap();
+    let puts = server.hits("PUT", "/v1/me/cosmetics");
+    assert_eq!(puts[0].json(), json!({ "hat": "rubber_duck" }));
+    assert_eq!(puts[1].json(), json!({ "hat": null }));
+    assert!(launcher.trs_set_hat(Some("../x".into())).await.is_err());
     assert_eq!(server.hits("POST", "/v1/capes/redeem")[0].json(), json!({ "code": "7K3QFM2XPA9RTVBC4HJN" }));
     assert!(launcher.trs_redeem("kurz").await.is_err());
 

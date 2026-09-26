@@ -184,7 +184,7 @@ public final class PlayerDirectory {
 		if (e == null || e.info.badge == badge) return;
 		// Bleibt auch ohne Abzeichen ein Eintrag (nicht NONE): So bleibt der Spieler im Ereignis-Stream und
 		// taucht sein Abzeichen wieder auf, kommt das sofort an.
-		e.info = new PlayerInfo(badge, e.info.cape);
+		e.info = new PlayerInfo(badge, e.info.cape, e.info.hat);
 	}
 
 	/** Alles vergessen (Konto gewechselt, API abgeschaltet). */

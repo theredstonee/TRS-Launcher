@@ -324,6 +324,7 @@
   "setting.trsOnline.badgeTab": "Insignia en la lista de jugadores",
   "setting.trsOnline.badgeNametag": "Insignia sobre los nombres",
   "setting.trsOnline.capes": "Mostrar capas TRS",
+  "setting.trsOnline.cosmetics": "Mostrar cosméticos TRS (sombreros)",
   "setting.capePhysics.style": "Estilo",
   "setting.capePhysics.style.smooth": "Suave",
   "setting.capePhysics.style.blocky": "En bloques",

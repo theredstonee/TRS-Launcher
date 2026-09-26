@@ -219,6 +219,11 @@ public final class AutoTest {
 					step = 28;
 					break;
 				}
+				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
+				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 29;
+					break;
+				}
 				// -PtrsAutotestOnly=bench: nur der FPS-Benchmark (Durchschnitt und 1 %-Low)
 				if ("bench".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 27;
@@ -477,6 +482,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 29:
+				// Quietscheente: 3. Person vorne/hinten, Quaken, Flügel, Trägheit
+				if (duckTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			default:
 				if (step == 25) mc.stop();
 				step = 26;
@@ -492,6 +513,7 @@ public final class AutoTest {
 	private final ClipsTest clipsTest = new ClipsTest();
 	private final Benchmark benchmark = new Benchmark();
 	private final ShieldTest shieldTest = new ShieldTest();
+	private final DuckTest duckTest = new DuckTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

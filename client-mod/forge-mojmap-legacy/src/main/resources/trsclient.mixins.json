@@ -9,6 +9,7 @@
 		"CameraMixin",
 		"CapeLayerMixin",
 		"CapeTextureMixin",
+		"HatLayerMixin",
 		"ChatComponentAccessor",
 		"ChatMixin",
 		"ChatScreenMixin",

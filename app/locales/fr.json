@@ -558,6 +558,7 @@
     "trsOps": {
       "invalidPlayerId": "ID de joueur invalide.",
       "invalidCapeId": "ID de cape invalide.",
+      "invalidCosmeticId": "ID de cosmétique invalide.",
       "noChange": "Aucune modification indiquée.",
       "onlyOwnCapesDeletable": "Seules tes propres capes peuvent être supprimées.",
       "onlyUploadedReportable": "Seules les capes envoyées peuvent être signalées.",
@@ -2672,7 +2673,9 @@
       "alreadyOwned": "Tu avais déjà « {name} ».",
       "unlocked": "« {name} » débloquée !",
       "uploaded": "Envoyée – ta cape est en attente d'approbation.",
-      "deleted": "Cape supprimée"
+      "deleted": "Cape supprimée",
+      "hatOn": "« {name} » mis",
+      "hatOff": "Cosmétique de tête retiré"
     },
     "editor": {
       "title": "Envoyer ta propre cape",
@@ -2735,6 +2738,19 @@
       },
       "upload": "Envoyer",
       "uploading": "Envoi …"
+    },
+    "hats": {
+      "title": "Cosmétiques de tête",
+      "intro": "Affiché sur ta tête dans le TRS Client – tous les joueurs avec le TRS Client le voient.",
+      "wear": "Mettre",
+      "remove": "Retirer",
+      "worn": "Porté"
+    },
+    "hatDialog": {
+      "title": "« {name} » débloqué !",
+      "text": "Le mettre maintenant ? Tu le verras sur ta tête dans le TRS Client (3e personne), comme les autres joueurs TRS.",
+      "wear": "Mettre",
+      "later": "Plus tard"
     }
   },
   "capeShare": {

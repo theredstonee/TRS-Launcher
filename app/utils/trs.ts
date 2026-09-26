@@ -90,7 +90,19 @@ export const trsCapeHoldersSchema = z.object({
   limit: z.number().int().min(0),
 })
 
-export const trsRedeemSchema = z.object({ capeId, name: text(48), alreadyOwned: z.boolean() })
+export const trsRedeemSchema = z.object({
+  kind: z.enum(['cape', 'cosmetic']),
+  capeId: capeId.nullable(),
+  cosmeticId: capeId.nullable(),
+  name: text(48),
+  alreadyOwned: z.boolean(),
+  /** Kopf-Kosmetik, die der TRS Client zeichnet (Quietscheente) – kann gleich aufgesetzt werden. */
+  wearableHat: z.boolean(),
+})
+
+/** Eigene Kopf-Kosmetik (nur Teile, die der TRS Client zeichnen kann). */
+export const trsHatSchema = z.object({ id: capeId, name: text(48), template: text(32), equipped: z.boolean() })
+export type TrsHat = z.infer<typeof trsHatSchema>
 
 export const trsPlayerCapeSchema = z.object({
   uuid,

@@ -558,6 +558,7 @@
     "trsOps": {
       "invalidPlayerId": "Ungültige Spieler-ID.",
       "invalidCapeId": "Ungültige Umhang-ID.",
+      "invalidCosmeticId": "Ungültige Kosmetik-ID.",
       "noChange": "Keine Änderung angegeben.",
       "onlyOwnCapesDeletable": "Nur eigene Umhänge können gelöscht werden.",
       "onlyUploadedReportable": "Nur hochgeladene Umhänge können gemeldet werden.",
@@ -2672,7 +2673,9 @@
       "alreadyOwned": "„{name}“ hattest du schon.",
       "unlocked": "„{name}“ freigeschaltet!",
       "uploaded": "Hochgeladen – dein Umhang wartet auf Freigabe.",
-      "deleted": "Umhang gelöscht"
+      "deleted": "Umhang gelöscht",
+      "hatOn": "„{name}“ aufgesetzt",
+      "hatOff": "Kopf-Kosmetik abgesetzt"
     },
     "editor": {
       "title": "Eigenen Umhang hochladen",
@@ -2735,6 +2738,19 @@
       },
       "upload": "Hochladen",
       "uploading": "Wird hochgeladen …"
+    },
+    "hats": {
+      "title": "Kopf-Kosmetik",
+      "intro": "Sitzt im TRS Client auf deinem Kopf – alle mit TRS Client sehen sie.",
+      "wear": "Aufsetzen",
+      "remove": "Absetzen",
+      "worn": "Aufgesetzt"
+    },
+    "hatDialog": {
+      "title": "„{name}“ freigeschaltet!",
+      "text": "Jetzt aufsetzen? Du siehst sie im TRS Client auf deinem Kopf (3. Person), andere TRS-Spieler auch.",
+      "wear": "Aufsetzen",
+      "later": "Später"
     }
   },
   "capeShare": {
