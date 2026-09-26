@@ -35,7 +35,7 @@ public final class HudManager {
 		this.minimap = new MinimapHud(modules.minimap, modules);
 		dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone = dev.theredstonee.trsclient.TrsClient.get().redstone();
 		this.redstoneOverlay = new RedstoneHuds.Overlay(modules, redstone);
-		this.elements = Collections.unmodifiableList(Arrays.<HudElement>asList(
+		this.elements = Collections.unmodifiableList(dev.theredstonee.trsclient.qol.LegacyQol.join(Arrays.<HudElement>asList(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
 				new KeystrokesHud(modules.keystrokes, modules),
@@ -55,7 +55,7 @@ public final class HudManager {
 				minimap,
 				new RedstoneHuds.Signal(modules, redstone),
 				new RedstoneHuds.Clock(modules, redstone),
-				new ClipHud(modules)));
+				new ClipHud(modules)), modules));
 	}
 
 	public CrosshairRenderer crosshair() {
@@ -132,6 +132,8 @@ public final class HudManager {
 			HudElement e = elements.get(i);
 			if (e.module().isEnabled() && e.visible()) draw(g, font, e, sw, sh, false);
 		}
+		// Hitmarker und Hinweise (Warteschlange, Hintergrund) über den Anzeigen.
+		dev.theredstonee.trsclient.qol.LegacyQol.overlay(g, font);
 	}
 
 	/** Zeichnet ein Element an seiner Position (auch vom Editor genutzt). */

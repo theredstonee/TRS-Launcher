@@ -16,16 +16,18 @@ public abstract class ChatScreenMixin {
 	//? if >=1.21.9 {
 	/*@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true, require = 1)
 	private void trsclient$copyLine(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
-		if (event.button() != dev.theredstonee.trsclient.compat.Keys.MOUSE_LEFT) return;
+		int b = event.button() == dev.theredstonee.trsclient.compat.Keys.MOUSE_LEFT ? 0
+				: event.button() == dev.theredstonee.trsclient.compat.Keys.MOUSE_RIGHT ? 1 : -1;
+		if (!dev.theredstonee.trsclient.qol.QolHooks.copyAllowed(b, trsclient$control())) return;
 		TrsClient client = TrsClient.get();
-		if (client != null && client.chat().onChatClick(event.x(), event.y(), trsclient$control())) cir.setReturnValue(true);
+		if (client != null && client.chat().onChatClick(event.x(), event.y(), true)) cir.setReturnValue(true);
 	}
 	*///?} else {
 	@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true, require = 1)
 	private void trsclient$copyLine(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
-		if (button != 0) return;
+		if (!dev.theredstonee.trsclient.qol.QolHooks.copyAllowed(button, trsclient$control())) return;
 		TrsClient client = TrsClient.get();
-		if (client != null && client.chat().onChatClick(mouseX, mouseY, trsclient$control())) cir.setReturnValue(true);
+		if (client != null && client.chat().onChatClick(mouseX, mouseY, true)) cir.setReturnValue(true);
 	}
 	//?}
 

@@ -116,7 +116,7 @@ public final class InfoHuds {
 		protected void build(boolean preview) {
 			ServerData data = mc.isSingleplayer() ? null : mc.getCurrentServerData();
 			if (data != null) {
-				line(mc.gameSettings.hideServerAddress ? data.serverName : data.serverIP);
+				line(dev.theredstonee.trsclient.qol.LegacyQol.maskAddress(mc.gameSettings.hideServerAddress ? data.serverName : data.serverIP));
 			} else if (preview) {
 				line("play.example.net");
 			}

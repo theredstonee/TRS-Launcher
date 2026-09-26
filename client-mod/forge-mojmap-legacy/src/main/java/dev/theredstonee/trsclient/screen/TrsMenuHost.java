@@ -140,6 +140,7 @@ public final class TrsMenuHost implements MenuHost {
 	@Override
 	public boolean supports(Module module) {
 		if (module == modules().colors && !dev.theredstonee.trsclient.render.ColorPass.supported()) return false;
+		if (!dev.theredstonee.trsclient.qol.QolHooks.supported(module)) return false;
 		return TrsClient.get().visibleModules().contains(module);
 	}
 

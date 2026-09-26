@@ -65,9 +65,36 @@ class ChatLogicTest {
 		assertFalse(gg.due(1500));
 		assertTrue(gg.due(2000));
 		assertFalse(gg.due(2001), "nur einmal fällig");
-		// innerhalb einer Minute kein zweites Mal
-		assertFalse(gg.onMessage("Winner: BLUE", extra, 30_000, 1000));
-		assertTrue(gg.onMessage("Winner: BLUE", extra, 70_000, 1000));
+		// innerhalb von 10 s kein zweites Mal (eine Runde = ein gg)
+		assertFalse(gg.onMessage("Winner: BLUE", extra, 9_000, 1000));
+		assertTrue(gg.onMessage("Winner: BLUE", extra, 11_000, 1000));
+	}
+
+	@Test
+	void autoGgDelayStaysBetweenHalfAndTwoSeconds() {
+		assertEquals(500, AutoGg.clampDelay(0));
+		assertEquals(2000, AutoGg.clampDelay(5000));
+		assertEquals(1250, AutoGg.clampDelay(1250));
+		AutoGg gg = new AutoGg();
+		assertTrue(gg.onMessage("Winner: RED", Collections.<String>emptyList(), 0, 60_000));
+		assertFalse(gg.due(1999));
+		assertTrue(gg.due(2000), "höchstens 2 s nach dem Rundenende");
+	}
+
+	@Test
+	void autoGgKnowsServerPatternsAndTitles() {
+		List<String> none = Collections.emptyList();
+		assertTrue(AutoGg.matches("  Match Results (click to view)", none, true), "Minemen/Übungsserver");
+		assertTrue(AutoGg.matches("Steve has won the duel!", none, true), "PvP.Land-artige Duelle");
+		assertTrue(AutoGg.matches("§6§l1st Killer §7- Steve - 7", none, true), "Farbcodes stören nicht");
+		assertFalse(AutoGg.matches("Winner: RED", none, false), "eingebaute Muster abschaltbar");
+		assertTrue(AutoGg.matches("Runde vorbei", AutoGg.extraTriggers("runde vorbei"), false));
+		assertTrue(AutoGg.matchesTitle("§6§lVICTORY!", none, true));
+		assertTrue(AutoGg.matchesTitle("  YOU WIN", none, true));
+		assertFalse(AutoGg.matchesTitle("YOU DIED", none, true), "Tod mitten in der Runde ist kein Ende");
+		AutoGg gg = new AutoGg();
+		assertTrue(gg.onTitle("VICTORY!", none, true, 0, 700));
+		assertTrue(gg.due(700));
 	}
 
 	@Test

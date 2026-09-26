@@ -237,6 +237,10 @@ if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.11')) mixinCla
 if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
 // Schild-Position: Haken am Hand-Renderer (alle Versionen); Deckkraft ab 1.21.9 im Submit-Sammler, in 1.14 per GL;
 // ab 26.3 kommt das Modell der Hand aus FirstPersonHandsAndItems.
+// Komfort/PvP: Chat-Filter + Verlauf, Scoreboard/Titel/Bossleiste, Tab-Ping, Totems/Partikel, Namensschutz,
+// Auto-Reconnect-Knopf, Serverliste im Streamer-Modus.
+mixinClasses += ['QolChatMixin', 'QolGuiMixin', 'BossBarMixin', 'TabPingMixin', 'QolEntityMixin', 'QolParticleMixin',
+		'NameMaskMixin', 'DisconnectScreenMixin', 'StreamerServerEntryMixin']
 mixinClasses << 'ShieldHandMixin'
 if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'ShieldSubmitMixin'
 if (stonecutter.eval(mc, '>=26.3')) mixinClasses << 'ShieldModelMixin'

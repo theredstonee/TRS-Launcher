@@ -95,6 +95,15 @@ public final class ItemCounter {
 		}
 	}
 
+	/** Fehlt für eine der Arten noch ein Symbol? (Dann lohnt sich eine Kopie des Stapels mit Anzahl 1.) */
+	public boolean needsIcon(int mask) {
+		Kind[] kinds = Kind.values();
+		for (int i = 0; i < kinds.length; i++) {
+			if ((mask & (1 << i)) != 0 && icons[i] == null) return true;
+		}
+		return false;
+	}
+
 	public int count(Kind kind) {
 		return counts[kind.ordinal()];
 	}

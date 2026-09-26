@@ -485,7 +485,8 @@ public final class TrsModules {
 		noHurtCam = registry.register(new Module("noHurtCam", "No Hurt Cam",
 				"The camera no longer tilts when you take damage", false));
 		chat = registry.register(new Module("chat", "Chat Improvements",
-				"Timestamps, stacking of identical messages and copying with Ctrl+click", true));
+				"Timestamps (24 or 12 hours), stacking of identical messages, a longer history (up to 1000 lines) and copying "
+						+ "a line by click", true));
 		autoGg = registry.register(new Module("autoGg", "Auto-GG",
 				"Sends your message (\"gg\") exactly once when a round ends – 0.5 to 2 seconds later, at most every "
 						+ "10 seconds. Off by default. Allowed on Hypixel; only use it where it is allowed.", false));

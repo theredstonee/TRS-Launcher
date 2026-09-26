@@ -70,7 +70,7 @@ public final class ChatFeatures {
 			if (modules.chatTimestamps.get()) {
 				LocalTime time = LocalTime.now();
 				prefix = "§8" + ChatTimestamp.format(time.getHour(), time.getMinute(), time.getSecond(),
-						modules.chatTimestampSeconds.get(), false) + "§r";
+						modules.chatTimestampSeconds.get(), modules.qol.chatTwelveHour.get()) + "§r";
 				rewrite = true;
 			}
 		}
@@ -86,7 +86,7 @@ public final class ChatFeatures {
 		}
 
 		if (modules.autoGg.isEnabled()) {
-			autoGg.onMessage(plain, AutoGg.extraTriggers(modules.autoGgTriggers.get()), now,
+			autoGg.onMessage(plain, AutoGg.extraTriggers(modules.autoGgTriggers.get()), modules.qol.autoGgPresets.get(), now,
 					(long) (modules.autoGgDelay.get() * 1000));
 		}
 	}

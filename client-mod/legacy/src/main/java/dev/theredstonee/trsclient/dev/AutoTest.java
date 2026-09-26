@@ -80,6 +80,11 @@ public final class AutoTest {
 			WardrobeTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=qol: Komfort & PvP (Chat, Zaehler, Warnungen, Hitmarker, Scoreboard, Streamer, Reconnect)
+		if ("qol".equals(System.getProperty("trsclient.autotest.only"))) {
+			QolTest.install();
+			return;
+		}
 		if ("connect".equals(System.getProperty("trsclient.autotest.only"))) {
 			ConnectTest.install();
 			return;

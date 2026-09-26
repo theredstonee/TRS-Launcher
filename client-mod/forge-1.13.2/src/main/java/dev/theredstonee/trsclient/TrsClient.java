@@ -131,7 +131,13 @@ public final class TrsClient {
 		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.fpsBoost, client.modules.dynamicFps, client.modules.entityCulling, client.modules.particles,
 				client.modules.worldDetails));
-		client.version = ModList.get().getModContainerById(MOD_ID)
+		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warteschlange, Scoreboard/Tab/Bossleiste/Titel,
+		// Warnungen, Zähler, Treffer-Feedback, Streamer-Modus) ist für diese Version nicht umgesetzt.
+		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.qol.mentions, client.modules.qol.chatFilter,
+				client.modules.qol.autoReconnect, client.modules.qol.queueAlerts, client.modules.qol.scoreboard,
+				client.modules.qol.tabPing, client.modules.qol.bossBar, client.modules.qol.titles, client.modules.qol.warnings,
+				client.modules.qol.itemCounter, client.modules.qol.hitFeedback, client.modules.qol.streamer));
+		client.version =ModList.get().getModContainerById(MOD_ID)
 				.map(c -> c.getModInfo().getVersion().toString()).orElse("?");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(FMLPaths.CONFIGDIR.get());

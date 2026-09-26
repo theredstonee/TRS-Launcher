@@ -239,6 +239,11 @@ public final class AutoTest {
 					step = 28;
 					break;
 				}
+				// -PtrsAutotestOnly=qol: Komfort & PvP (Chat, Zähler, Warnungen, Hitmarker, Titel, Scoreboard, Streamer, Reconnect)
+				if ("qol".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 30;
+					break;
+				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
 				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 29;
@@ -518,6 +523,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 30:
+				// Komfort & PvP: Screenshots trsclient-<mc>-qol-*.png
+				if (qolTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			default:
 				if (step == 25) mc.stop();
 				step = 26;
@@ -534,6 +555,7 @@ public final class AutoTest {
 	private final Benchmark benchmark = new Benchmark();
 	private final ShieldTest shieldTest = new ShieldTest();
 	private final DuckTest duckTest = new DuckTest();
+	private final QolTest qolTest = new QolTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

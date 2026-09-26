@@ -8,8 +8,6 @@ public final class DeathCompass {
 	public static final long SHOW_MS = 10 * 60_000L;
 	/** Näher als das gilt als angekommen. */
 	public static final double ARRIVED = 4.0;
-	/** Acht Pfeile im Uhrzeigersinn ab „geradeaus“. */
-	private static final String[] ARROWS = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
 
 	private boolean active;
 	private double x, y, z;
@@ -48,13 +46,6 @@ public final class DeathCompass {
 	public double distance(double px, double pz) {
 		double dx = x - px, dz = z - pz;
 		return Math.sqrt(dx * dx + dz * dz);
-	}
-
-	/**
-	 * Pfeil relativ zur Blickrichtung (Minecraft-Gierwinkel: 0 = Süden/+Z, 90 = Westen/−X).
-	 */
-	public String arrow(double px, double pz, float yaw) {
-		return ARROWS[sector(x - px, z - pz, yaw)];
 	}
 
 	/** Achtel-Sektor 0–7 (0 = geradeaus, 2 = rechts, 4 = hinten, 6 = links). */

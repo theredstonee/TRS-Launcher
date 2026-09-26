@@ -76,6 +76,7 @@ public final class PvpFeatures {
 		long now = System.currentTimeMillis();
 		reach.record(Mc.hitDistance(player, target), now);
 		combo.onAttack(target.getEntityId(), now);
+		dev.theredstonee.trsclient.qol.LegacyQol.onAttack(player, target);
 		attacked = target;
 		attackedHurtTime = target instanceof EntityLivingBase ? ((EntityLivingBase) target).hurtTime : 0;
 	}
@@ -93,7 +94,10 @@ public final class PvpFeatures {
 			boolean gone = !attacked.isEntityAlive();
 			if (attacked instanceof EntityLivingBase) {
 				int hurt = ((EntityLivingBase) attacked).hurtTime;
-				if (hurt > attackedHurtTime) combo.onTargetHurt(attacked.getEntityId(), now);
+				if (hurt > attackedHurtTime) {
+					combo.onTargetHurt(attacked.getEntityId(), now);
+					dev.theredstonee.trsclient.qol.LegacyQol.onHitConfirmed(attacked);
+				}
 				attackedHurtTime = hurt;
 			} else {
 				// Nicht lebende Ziele (z. B. Boote) melden keinen Schaden – Schlag sofort zählen.

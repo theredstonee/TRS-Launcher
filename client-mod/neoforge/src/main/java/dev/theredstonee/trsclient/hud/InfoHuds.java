@@ -112,7 +112,7 @@ public final class InfoHuds {
 		protected void build(boolean preview) {
 			ServerData data = mc.getSingleplayerServer() == null ? mc.getCurrentServer() : null;
 			if (data != null) {
-				line(mc.options.hideServerAddress ? data.name : data.ip);
+				line(dev.theredstonee.trsclient.qol.QolHooks.maskAddress(mc.options.hideServerAddress ? data.name : data.ip));
 			} else if (preview) {
 				line("play.example.net");
 			}

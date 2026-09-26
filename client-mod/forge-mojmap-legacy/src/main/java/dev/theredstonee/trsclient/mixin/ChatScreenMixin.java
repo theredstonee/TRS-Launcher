@@ -16,10 +16,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ChatScreenMixin {
 	@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true, require = 1)
 	private void trsclient$copyLine(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
-		if (button != 0) return;
+		if (!dev.theredstonee.trsclient.qol.QolHooks.copyAllowed(button, Screen.hasControlDown())) return;
 		TrsClient client = TrsClient.get();
 		if (client == null) return;
 		// Screen.hasControlDown() berücksichtigt auf macOS die Cmd-Taste.
-		if (client.chat().onChatClick(mouseX, mouseY, Screen.hasControlDown())) cir.setReturnValue(true);
+		if (client.chat().onChatClick(mouseX, mouseY, true)) cir.setReturnValue(true);
 	}
 }

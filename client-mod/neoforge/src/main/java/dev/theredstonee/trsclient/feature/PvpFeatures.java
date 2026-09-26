@@ -113,7 +113,10 @@ public final class PvpFeatures {
 			boolean gone = !attacked.isAlive();
 			if (attacked instanceof LivingEntity) {
 				int hurt = ((LivingEntity) attacked).hurtTime;
-				if (hurt > attackedHurtTime) combo.onTargetHurt(attacked.getId(), now);
+				if (hurt > attackedHurtTime) {
+					combo.onTargetHurt(attacked.getId(), now);
+					dev.theredstonee.trsclient.qol.QolHooks.onHitConfirmed(attacked);
+				}
 				attackedHurtTime = hurt;
 			} else {
 				// Nicht lebende Ziele (z. B. Boote) melden keinen Schaden – Schlag sofort zählen.

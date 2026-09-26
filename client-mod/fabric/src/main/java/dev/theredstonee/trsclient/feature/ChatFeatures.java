@@ -43,6 +43,9 @@ public final class ChatFeatures {
 	 */
 	public Component onMessage(Component message) {
 		if (message == null || reentrant) return message;
+		// Chat-Filter verwirft die Nachricht (QolChatMixin); Erwähnungen/Streamer-Modus bauen sie neu.
+		if (dev.theredstonee.trsclient.qol.QolHooks.hideChat(message)) return message;
+		message = dev.theredstonee.trsclient.qol.QolHooks.chatIn(message);
 		String plain = message.getString();
 		// Fair-Play-Codes der Karten-Mods (Server erzwingt Fair Play).
 		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
@@ -75,13 +78,13 @@ public final class ChatFeatures {
 			if (modules.chatTimestamps.get()) {
 				LocalTime time = LocalTime.now();
 				String stamp = ChatTimestamp.format(time.getHour(), time.getMinute(), time.getSecond(),
-						modules.chatTimestampSeconds.get(), false);
+						modules.chatTimestampSeconds.get(), modules.qol.chatTwelveHour.get());
 				result = Mc.text(stamp).withStyle(ChatFormatting.DARK_GRAY).append(result);
 			}
 		}
 		if (modules.autoGg.isEnabled()) {
 			List<String> extra = AutoGg.extraTriggers(modules.autoGgTriggers.get());
-			autoGg.onMessage(plain, extra, System.currentTimeMillis(),
+			autoGg.onMessage(plain, extra, modules.qol.autoGgPresets.get(), System.currentTimeMillis(),
 					(long) (modules.autoGgDelay.get() * 1000));
 		}
 		lastAdded = result;

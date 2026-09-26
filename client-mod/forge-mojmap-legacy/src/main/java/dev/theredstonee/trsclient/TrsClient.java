@@ -137,6 +137,8 @@ public final class TrsClient {
 		modules.freelookKey.link(TrsKeys.link(() -> TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(() -> TrsKeys.worldMap));
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
+		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
+		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FMLPaths.CONFIGDIR.get());
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
@@ -418,6 +420,7 @@ public final class TrsClient {
 		}
 		waypoints.tick(mc);
 		chat.tick(mc);
+		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
 		hud.tick();
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);

@@ -37,7 +37,7 @@ public final class QolPanels {
 		DeathCompass d = q.death;
 		if (!d.visible(w.x, w.z, w.dimension, now)) return null;
 		int dist = (int) Math.round(d.distance(w.x, w.z));
-		return I18n.tr("warn.death", dist, d.arrow(w.x, w.z, w.yaw));
+		return I18n.tr("warn.death", dist);
 	}
 
 	public static boolean warningsVisible(Qol q, Where w, long now) {
@@ -48,8 +48,8 @@ public final class QolPanels {
 		if (q == null) return 60;
 		String previewText = I18n.tr("warn.armor", I18n.tr("warn.slot.0"), 8);
 		int width = q.notices.width(tw, preview, previewText);
-		String compass = preview ? I18n.tr("warn.death", 128, "↗") : compassText(q, w, now);
-		if (compass != null) width = Math.max(width, tw.width(compass) + 12);
+		String compass = preview ? I18n.tr("warn.death", 128) : compassText(q, w, now);
+		if (compass != null) width = Math.max(width, tw.width(compass) + 26);
 		return Math.max(width, 20);
 	}
 
@@ -66,14 +66,37 @@ public final class QolPanels {
 		int bgAlpha = (bgArgb >>> 24) & 0xFF;
 		String previewText = I18n.tr("warn.armor", I18n.tr("warn.slot.0"), 8);
 		q.notices.draw(c, tw, now, preview, previewText, bgAlpha == 0 ? 90 : bgAlpha, shadow);
-		String compass = preview ? I18n.tr("warn.death", 128, "↗") : compassText(q, w, now);
+		String compass = preview ? I18n.tr("warn.death", 128) : compassText(q, w, now);
 		if (compass != null) {
 			int y = q.notices.height(preview);
 			if (y > 0) y += 2;
-			int width = tw.width(compass) + 12;
+			int width = tw.width(compass) + 26;
 			Paint.roundRect(c, 0, y, width, COMPASS_H, 3, ((Math.max(40, bgAlpha)) << 24) | 0x101014);
 			Icons.draw(c, "pin", 3, y + 3, 1, 0xFFFF5A5A);
 			c.text(compass, 13, y + 3, 0xFFFFFFFF, shadow);
+			int sector = preview ? 1 : DeathCompass.sector(q.death.blockX() + 0.5 - w.x, q.death.blockZ() + 0.5 - w.z, w.yaw);
+			arrow(c, width - 8, y + COMPASS_H / 2, sector, 0xFFFFD84A);
+		}
+	}
+
+	/** Pfeil in eine von acht Richtungen (0 = oben/geradeaus, im Uhrzeigersinn) um den Mittelpunkt, aus Punkten. */
+	public static void arrow(Canvas c, int cx, int cy, int sector, int argb) {
+		double a = Math.toRadians(sector * 45.0);
+		double dx = Math.sin(a), dy = -Math.cos(a);
+		double px = -dy, py = dx;
+		double tipX = cx + dx * 3.5, tipY = cy + dy * 3.5;
+		line(c, cx - dx * 3.5, cy - dy * 3.5, tipX, tipY, argb);
+		line(c, tipX, tipY, tipX - dx * 2.5 + px * 2.5, tipY - dy * 2.5 + py * 2.5, argb);
+		line(c, tipX, tipY, tipX - dx * 2.5 - px * 2.5, tipY - dy * 2.5 - py * 2.5, argb);
+	}
+
+	private static void line(Canvas c, double x0, double y0, double x1, double y1, int argb) {
+		int n = (int) Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)));
+		for (int i = 0; i <= n; i++) {
+			double t = n == 0 ? 0 : i / (double) n;
+			int x = (int) Math.round(x0 + (x1 - x0) * t);
+			int y = (int) Math.round(y0 + (y1 - y0) * t);
+			c.fill(x, y, x + 1, y + 1, argb);
 		}
 	}
 

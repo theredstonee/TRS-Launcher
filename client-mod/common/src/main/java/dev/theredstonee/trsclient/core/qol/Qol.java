@@ -176,7 +176,15 @@ public final class Qol {
 	/** Aktuelle Wortliste der Erwähnungen (leer = aus). */
 	public List<String> mentionWords() {
 		if (!m.mentions.isEnabled()) return new ArrayList<String>();
-		return mentions.words(ownName, m.mentionsOwnName.get(), m.mentionsWords.get());
+		List<String> words = mentions.words(ownName, m.mentionsOwnName.get(), m.mentionsWords.get());
+		if (!streamer.active() || !m.mentionsOwnName.get()) return words;
+		// Im Streamer-Modus steht statt des eigenen Namens der Ersatzname in der Zeile – den hervorheben.
+		String shown = streamer.name(ownName);
+		if (shown == null || shown.length() < ChatText.MIN_WORD) return words;
+		List<String> withShown = new ArrayList<String>(words);
+		String lower = shown.toLowerCase(java.util.Locale.ROOT);
+		if (!withShown.contains(lower)) withShown.add(lower);
+		return withShown;
 	}
 
 	/**
@@ -187,7 +195,9 @@ public final class Qol {
 	public boolean onChat(String raw, long now) {
 		if (raw == null) return false;
 		onServerText(raw, now);
-		List<String> words = mentionWords();
+		// Erkennen mit den echten Wörtern (der Ersatzname des Streamer-Modus zählt hier nicht).
+		List<String> words = m.mentions.isEnabled() ? mentions.words(ownName, m.mentionsOwnName.get(), m.mentionsWords.get())
+				: new ArrayList<String>();
 		if (words.isEmpty()) return false;
 		if (ChatMentions.mentions(raw, words, ownName).isEmpty()) return false;
 		if (m.mentionsSound.get() && mentions.soundAllowed(now)) {

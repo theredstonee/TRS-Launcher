@@ -55,6 +55,33 @@ How to write an entry:
   the Worlds tab of an instance has a "Ping test" for every server in its server list.
 - **World hosting: ping per player.** The host's player list shows each player's ping next to "Direct" or "Via relay",
   and a guest's ping HUD shows whether the connection runs directly or through the relay.
+- **TRS Client: better chat.** Timestamps now also in 12-hour format, identical messages stack ("(x3)"), the chat
+  keeps up to 1000 lines instead of 100 (adjustable), and you copy a line with Ctrl+click, right-click or both.
+  **Mentions** highlight lines with your name or your own keywords, optionally with a sound (your own messages don't
+  count), and the **Chat Filter** hides messages with words you choose – only on your screen.
+- **TRS Client: Auto Reconnect.** When the connection drops or the server restarts, the disconnect screen reconnects
+  after a countdown (adjustable, with a cancel button and a limited number of attempts). Never after a ban, a whitelist
+  kick, a login from another place or a wrong game version.
+- **TRS Client: Queue & Alerts.** Tells you when you are (almost) through a server queue – known queue plugins work out
+  of the box, you can add your own patterns. While the game is in the background it also tells you when someone mentions
+  you, when you die or get disconnected: a notice, an optional sound and a flashing taskbar (from Minecraft 1.13).
+- **TRS Client: scoreboard, tab list, boss bar and titles.** Move and resize the scoreboard in the HUD editor, change its
+  background and hide the red numbers; the tab list can show the ping in milliseconds (coloured if you like); the boss
+  bar and the big title texts can be moved and resized too (titles on Minecraft before 1.20.5 only resized).
+- **TRS Client: Warnings.** Short, subtle notices when armour or a tool is almost broken, when you are hungry or low on
+  health and when your inventory is full – with an optional sound and a cooldown. After dying, an arrow and the distance
+  show you the way back to your death point.
+- **TRS Client: Item Counter.** Arrows, totems, healing and splash potions, golden apples, ender pearls and blocks in
+  your inventory at a glance, with icons. It also counts how many totems each opponent popped (from Minecraft 1.11).
+- **TRS Client: Hit Feedback.** A hit marker at the crosshair when your hit lands, more critical and sharpness
+  particles and an optional hit sound. Display only – your attacks stay exactly the same.
+- **TRS Client: Auto-GG reworked.** Still off by default. It now sends exactly one message per round end, 0.5 to
+  2 seconds later and at most every 10 seconds, and it knows the end-of-round messages of Hypixel, Minemen and PvP.Land
+  (your own patterns still work).
+- **TRS Client: Streamer Mode.** Replaces your name – and if you like the names of other players – in chat, tab list,
+  name tags and scoreboard with a name you choose, and hides server addresses (server list and server HUD). Toggle it
+  with a key of your choice. Everything new is only display or comfort and allowed on servers like Hypixel; the only
+  thing the client sends by itself is Auto-GG, which stays off until you switch it on.
 
 ### Deutsch
 
@@ -92,6 +119,36 @@ How to write an entry:
   gleichzeitig; im Welten-Reiter einer Instanz gibt es einen „Ping-Test“ für jeden Server ihrer Serverliste.
 - **Welt-Hosting: Ping je Spieler.** Die Spielerliste des Hosts zeigt neben „Direkt“ bzw. „Über Relay“ den Ping jedes
   Spielers, und das Ping-HUD eines Gastes zeigt, ob die Verbindung direkt oder über das Relay läuft.
+- **TRS Client: besserer Chat.** Zeitstempel jetzt auch im 12-Stunden-Format, gleiche Nachrichten werden gestapelt
+  („(x3)“), der Chat behält bis zu 1000 statt 100 Zeilen (einstellbar), und eine Zeile kopierst du mit Strg+Klick,
+  Rechtsklick oder beidem. **Erwähnungen** heben Zeilen mit deinem Namen oder eigenen Stichwörtern hervor, auf Wunsch
+  mit Ton (deine eigenen Nachrichten zählen nicht), und der **Chat-Filter** blendet Nachrichten mit Wörtern deiner Wahl
+  aus – nur auf deinem Bildschirm.
+- **TRS Client: Auto-Reconnect.** Bricht die Verbindung ab oder startet der Server neu, verbindet der „Verbindung
+  getrennt“-Bildschirm nach einem Countdown neu (einstellbar, mit „Abbrechen“ und begrenzten Versuchen). Nie nach einem
+  Bann, einem Whitelist-Kick, einer Anmeldung von woanders oder einer falschen Spielversion.
+- **TRS Client: Warteschlange & Hinweise.** Sagt dir, wenn du in einer Server-Warteschlange (fast) dran bist – bekannte
+  Warteschlangen-Plugins klappen sofort, eigene Muster kannst du ergänzen. Ist das Spiel im Hintergrund, meldet es auch,
+  wenn dich jemand erwähnt, du stirbst oder die Verbindung getrennt wird: Hinweis, auf Wunsch Ton und blinkende
+  Taskleiste (ab Minecraft 1.13).
+- **TRS Client: Scoreboard, Tabliste, Bossleiste und Titel.** Scoreboard im HUD-Editor verschieben und skalieren,
+  Hintergrund einstellen und die roten Zahlen ausblenden; die Tabliste zeigt den Ping auf Wunsch in Millisekunden (auch
+  farbig); Bossleiste und die großen Titeltexte lassen sich ebenfalls verschieben und skalieren (Titel vor Minecraft
+  1.20.5 nur in der Größe).
+- **TRS Client: Warnungen.** Kurze, dezente Hinweise, wenn Rüstung oder Werkzeug fast kaputt sind, du Hunger oder wenig
+  Leben hast und das Inventar voll ist – auf Wunsch mit Ton und Abklingzeit. Nach dem Tod zeigen ein Pfeil und die
+  Entfernung den Weg zurück zum Todespunkt.
+- **TRS Client: Zähler.** Pfeile, Totems, Heil- und Wurftränke, Goldäpfel, Enderperlen und Blöcke im Inventar auf einen
+  Blick, mit Symbolen. Dazu zählt es, wie viele Totems jeder Gegner verbraucht hat (ab Minecraft 1.11).
+- **TRS Client: Treffer-Feedback.** Ein Hitmarker am Fadenkreuz, wenn dein Schlag trifft, mehr Kritisch- und
+  Schärfe-Partikel und auf Wunsch ein Treffer-Ton. Nur Anzeige – deine Angriffe bleiben genau gleich.
+- **TRS Client: Auto-GG überarbeitet.** Weiterhin ab Werk aus. Es sendet jetzt genau eine Nachricht je Rundenende,
+  0,5 bis 2 Sekunden danach und höchstens alle 10 Sekunden, und kennt die Rundenende-Meldungen von Hypixel, Minemen und
+  PvP.Land (eigene Muster gehen weiterhin).
+- **TRS Client: Streamer-Modus.** Ersetzt deinen Namen – und auf Wunsch die Namen anderer Spieler – in Chat, Tabliste,
+  Namensschildern und Scoreboard durch einen Namen deiner Wahl und verbirgt Server-Adressen (Serverliste und
+  Server-HUD). Umschalten per Taste deiner Wahl. Alles Neue ist nur Anzeige oder Komfort und auf Servern wie Hypixel
+  erlaubt; das Einzige, was der Client selbst sendet, ist Auto-GG – und das bleibt aus, bis du es einschaltest.
 
 ## 0.8.0 – 2026-09-26 – Open House | Tag der offenen Tür
 <!-- banner: accent=#3ecfcf motif=/news/0.8.0/banner.png -->

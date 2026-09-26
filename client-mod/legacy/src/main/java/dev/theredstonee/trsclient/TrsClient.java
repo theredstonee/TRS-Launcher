@@ -124,6 +124,8 @@ public final class TrsClient {
 		list.remove(modules.hitColor);
 		// Niedriges Feuer braucht den Feuer-Overlay-Renderer – ohne Coremod nicht machbar.
 		list.remove(modules.lowFire);
+		// Titel verschieben/skalieren: Forge zeichnet Titel hier ohne Ereignis (siehe LegacyQol).
+		list.remove(modules.qol.titles);
 		// Schild-Position: Schilde gibt es erst ab 1.9, das Hand-Ereignis (RenderSpecificHandEvent) erst ab Forge für 1.10.2.
 		//? if <1.10.2 {
 		list.remove(modules.shieldPosition);
@@ -190,8 +192,11 @@ public final class TrsClient {
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
 		installSocialOverlay();
+		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
+		dev.theredstonee.trsclient.qol.LegacyQol.init(modules);
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.qol.LegacyQol.get());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
@@ -428,8 +433,9 @@ public final class TrsClient {
 	@SubscribeEvent
 	public void onGuiMouseInput(GuiScreenEvent.MouseInputEvent.Pre event) {
 		if (!(Mc.eventGui(event) instanceof GuiChat)) return;
-		if (!Mouse.getEventButtonState() || Mouse.getEventButton() != 0) return;
-		if (!GuiScreen.isCtrlKeyDown()) return;
+		if (!Mouse.getEventButtonState()) return;
+		// Strg+Linksklick und/oder Rechtsklick (Einstellung „Zeile kopieren mit“).
+		if (!dev.theredstonee.trsclient.qol.LegacyQol.copyAllowed(Mouse.getEventButton(), GuiScreen.isCtrlKeyDown())) return;
 		if (chat.onChatClick(Mouse.getX(), Mouse.getY())) event.setCanceled(true);
 	}
 
