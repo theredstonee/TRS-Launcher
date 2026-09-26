@@ -116,6 +116,8 @@ public final class TrsClient {
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, dev.theredstonee.trsclient.compat.Platform::isModLoaded,
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FORGE, Platform.modVersion("minecraft"), message -> LOGGER.info(message), true);
+		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
+		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
 		autoTest = AutoTest.createIfRequested();
 		// Beim Beenden speichern (Forge-unabhängig; Änderungen im Menü werden ohnehin sofort gespeichert).
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -255,6 +257,7 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
 		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
+		dev.theredstonee.trsclient.net.NetHooks.tick(mc);
 		if (autoTest != null) autoTest.tick(mc);
 	}
 

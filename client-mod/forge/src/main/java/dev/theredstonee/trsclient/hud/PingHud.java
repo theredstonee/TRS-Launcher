@@ -1,35 +1,48 @@
 package dev.theredstonee.trsclient.hud;
 
-import dev.theredstonee.trsclient.core.module.HudModule;
-import net.minecraft.client.multiplayer.PlayerInfo;
+import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.net.PingPanel;
+import dev.theredstonee.trsclient.core.ui.TextWidth;
+import dev.theredstonee.trsclient.ui.Gfx;
+import dev.theredstonee.trsclient.ui.GfxCanvas;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 
-/** Latenz zum Server laut Spielerliste; im Einzelspieler ausgeblendet. */
-public final class PingHud extends TextHudElement {
-	private static final int PREVIEW_PING = 42;
+/**
+ * Ping mit Jitter und Verlauf (Messung und Zeichnen in {@code core.net}: {@link PingPanel}); im Einzelspieler
+ * ausgeblendet.
+ */
+public final class PingHud extends HudElement {
+	private static final TextWidth MEASURE = new TextWidth() {
+		@Override
+		public int width(String text) {
+			return Minecraft.getInstance().font.width(text);
+		}
+	};
+	private final PingPanel panel;
 
-	public PingHud(HudModule module) {
-		super(module);
+	public PingHud(TrsModules modules) {
+		super(modules.ping);
+		this.panel = new PingPanel(modules);
 	}
 
 	@Override
 	public boolean visible() {
-		return mc.getSingleplayerServer() == null && entry() != null;
+		return panel.visible();
 	}
 
 	@Override
-	protected long valueKey(boolean preview) {
-		PlayerInfo info = entry();
-		if (info == null || mc.getSingleplayerServer() != null) return PREVIEW_PING;
-		return info.getLatency();
+	public int width(Font font, boolean preview) {
+		return panel.width(MEASURE, preview);
 	}
 
 	@Override
-	protected String format(long key) {
-		return key + " ms";
+	public int height(Font font, boolean preview) {
+		return panel.height(preview);
 	}
 
-	private PlayerInfo entry() {
-		if (mc.player == null || mc.getConnection() == null) return null;
-		return mc.getConnection().getPlayerInfo(mc.player.getUUID());
+	@Override
+	public void draw(Gfx g, Font font, boolean preview) {
+		panel.draw(GfxCanvas.of(g, font), MEASURE, preview);
 	}
 }

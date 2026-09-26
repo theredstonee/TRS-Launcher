@@ -126,6 +126,8 @@ public final class TrsClient {
 		UNSUPPORTED.add(client.modules.social);
 		// Schild-Position braucht einen Haken am Hand-Renderer (Mixin) – hier nicht umgesetzt.
 		UNSUPPORTED.add(client.modules.shieldPosition);
+		// Niedrige Eingabeverzögerung braucht die Leistungs-Hooks – hier nicht umgesetzt.
+		UNSUPPORTED.add(client.modules.lowLatency);
 		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.fpsBoost, client.modules.dynamicFps, client.modules.entityCulling, client.modules.particles,
 				client.modules.worldDetails));
@@ -160,6 +162,9 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FMLPaths.CONFIGDIR.get());
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
+		// Netzwerk-Optimierung (schnellere Entschlüsselung, Kompression ohne Kopien) + Ping-Messung, siehe core.net.
+		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.net.NetHooks.get());
 		AutoTest.installIfRequested();
 		// Beim Beenden speichern (Forge 1.13.2 hat kein zuverlässiges "Client stoppt"-Ereignis).
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));

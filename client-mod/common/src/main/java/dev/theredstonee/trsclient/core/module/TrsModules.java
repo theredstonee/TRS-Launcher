@@ -102,6 +102,20 @@ public final class TrsModules {
 	public final Module worldDetails;
 	/** Eingebaute Optimierungen (freie Leistungs-Mods per Jar-in-Jar, nur Fabric) – wirkt beim nächsten Start. */
 	public final Module builtinOptimizations;
+	/** Netzwerk-Optimierung: schnellere Entschlüsselung/Kompression im Client, TCP_NODELAY (Logik in core.net). */
+	public final Module netOptimize;
+	/** Niedrige Eingabeverzögerung: GPU-Warteschlange begrenzen, Eingaben direkt vor dem Bild lesen (core.perf.LowLatency). */
+	public final Module lowLatency;
+	public final ChoiceSetting<dev.theredstonee.trsclient.core.perf.LowLatency.Mode> lowLatencyMode;
+	public final BoolSetting lowLatencyLatePoll;
+
+	// --- Ping-HUD (Messung in core.net.PingMeter) ---
+	public final BoolSetting pingJitter;
+	public final BoolSetting pingGraph;
+	public final BoolSetting pingDetails;
+	public final NumberSetting pingInterval;
+	public final BoolSetting pingSpikeWarning;
+	public final NumberSetting pingSpikeThreshold;
 
 	public final NumberSetting dynamicFpsUnfocused;
 	public final NumberSetting dynamicFpsMinimized;
@@ -392,7 +406,10 @@ public final class TrsModules {
 				new HudPosition(HudAnchor.TOP_LEFT, 0.005, 0.075)));
 		keystrokes = registry.register(new HudModule("keystrokes", "Keystrokes", "WASD, mouse buttons and space bar", true,
 				new HudPosition(HudAnchor.BOTTOM_RIGHT, -0.005, -0.08)));
-		ping = registry.register(new HudModule("ping", "Ping", "Latency to the server (not in singleplayer)", true,
+		ping = registry.register(new HudModule("ping", "Ping", "Round-trip time to the server with jitter and a small history "
+				+ "graph (not in singleplayer). From Minecraft 1.20.2 the TRS Client measures it itself with a ping request "
+				+ "every few seconds (the same request as the F3 network graph); before that it shows the value the server "
+				+ "reports in the player list.", true,
 				new HudPosition(HudAnchor.TOP_LEFT, 0.005, 0.14)));
 		armor = registry.register(new HudModule("armor", "Armor", "Worn armor with durability", false,
 				new HudPosition(HudAnchor.CENTER_LEFT, 0.005, 0.0)));
@@ -579,13 +596,27 @@ public final class TrsModules {
 		entityCulling.icon("cull").category(Category.PERFORMANCE);
 		particles.icon("sparkle").category(Category.PERFORMANCE);
 		worldDetails.icon("cloud").category(Category.PERFORMANCE);
+		netOptimize = registry.register(new Module("netOptimize", "Network Optimization",
+				"Processes incoming packets faster on your PC: a faster decryption of the connection (online-mode servers) "
+						+ "and compression without extra copies, plus TCP_NODELAY where Minecraft leaves it off (1.7.10). "
+						+ "It cannot lower your ping – the time packets travel through the internet stays the same. What the "
+						+ "server receives stays exactly the same.", true));
+		lowLatency = registry.register(new Module("lowLatency", "Low Input Latency",
+				"Shortens the time from moving the mouse to seeing it on screen: limits how many frames wait in the "
+						+ "graphics card queue and reads your input right before each frame. Helps most when the graphics "
+						+ "card runs at full load. Costs some FPS (usually a few percent, more with \"Maximum\"). Does not "
+						+ "change your ping.", false));
+		netOptimize.icon("signal").category(Category.PERFORMANCE);
+		lowLatency.icon("mouse").category(Category.PERFORMANCE);
 		builtinOptimizations.icon("chip").category(Category.PERFORMANCE).availableWhen(new java.util.concurrent.Callable<Boolean>() {
 			@Override
 			public Boolean call() {
 				return dev.theredstonee.trsclient.core.perf.BundledMods.get().available();
 			}
 		});
-		for (Module m : new Module[]{fpsBoost, dynamicFps, entityCulling, particles, worldDetails}) m.profiled();
+		for (Module m : new Module[]{fpsBoost, dynamicFps, entityCulling, particles, worldDetails, netOptimize, lowLatency}) {
+			m.profiled();
+		}
 		clips.icon("record").category(Category.MISC);
 		social = registry.register(new Module("social", "Social",
 				"Chat with your TRS friends and groups right in the game: messages, pictures and server invites update "
@@ -766,6 +797,16 @@ public final class TrsModules {
 		socialToastRequests = social.add(new BoolSetting("toastRequests", "Friend requests and cape offers", true));
 		socialToastOnline = social.add(new BoolSetting("toastOnline", "Friends coming online", true));
 		socialHostingDirect = social.add(new BoolSetting("hostingDirect", "Direct connections (world hosting)", true));
+
+		pingJitter = ping.add(new BoolSetting("jitter", "Show jitter (±)", true));
+		pingGraph = ping.add(new BoolSetting("graph", "History graph", true));
+		pingDetails = ping.add(new BoolSetting("details", "Server TPS (estimate) and timeouts", false));
+		pingInterval = ping.add(new NumberSetting("interval", "Measure every", 2, 1, 5, 1, "", " s"));
+		pingSpikeWarning = ping.add(new BoolSetting("spikeWarning", "Warn about ping spikes", false));
+		pingSpikeThreshold = ping.add(new NumberSetting("spikeThreshold", "Spike = more than usual by", 100, 30, 500, 10, "", " ms"));
+		lowLatencyMode = lowLatency.add(new ChoiceSetting<dev.theredstonee.trsclient.core.perf.LowLatency.Mode>("mode", "Mode",
+				dev.theredstonee.trsclient.core.perf.LowLatency.Mode.class, dev.theredstonee.trsclient.core.perf.LowLatency.Mode.BALANCED));
+		lowLatencyLatePoll = lowLatency.add(new BoolSetting("latePoll", "Read input right before the frame", true));
 
 		dynamicFpsUnfocused = dynamicFps.add(new NumberSetting("unfocused", "FPS in the background", 15, 1, 60, 1, "", " FPS"));
 		dynamicFpsMinimized = dynamicFps.add(new NumberSetting("minimized", "FPS when minimized", 1, 1, 30, 1, "", " FPS"));

@@ -37,7 +37,7 @@ public final class HudManager {
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
 				new KeystrokesHud(modules.keystrokes, modules),
-				new PingHud(modules.ping),
+				new PingHud(modules),
 				new ArmorHud(modules.armor, modules),
 				new InfoHuds.Effects(modules.effects),
 				new InfoHuds.Coords(modules.coords, modules),

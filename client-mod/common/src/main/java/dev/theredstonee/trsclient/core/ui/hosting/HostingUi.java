@@ -422,6 +422,8 @@ public final class HostingUi extends WindowUi {
 				int tx = x + 26;
 				Paint.textClipped(c, g.name, tx, ry + 3, narrow ? 80 : 110, t.text, false);
 				String path = g.host ? I18n.tr("hosting.path.host") : pathLabel(g.path);
+				// Verbindungsweg mit Ping (vom Spiel-Server gemessen), z. B. „Direkt · 23 ms“.
+				if (!g.host && g.latency > 0) path = I18n.tr("hosting.path.ping", path, g.latency);
 				int pathColor = g.path == PeerStream.Path.PUBLIC ? 0xFFE04040 : g.path == PeerStream.Path.DIRECT ? t.lampOn
 						: t.textDim;
 				Paint.textClipped(c, path, tx, ry + 13, narrow ? 80 : 110, g.host ? t.textDim : pathColor, false);

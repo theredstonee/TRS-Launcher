@@ -64,6 +64,9 @@ public final class NewSince {
 	/** Welt-Hosting (TRS Client 0.9.0): Welt für Freunde öffnen, Beitritt per Einladung/Code, öffentlicher Link. */
 	public static final String HOSTING = "0.9.0";
 
+	/** Ping &amp; Latenz (TRS Client 0.10.0): echte Ping-Anzeige, Netzwerk-Optimierung, niedrige Eingabeverzögerung. */
+	public static final String LATENCY = "0.10.0";
+
 	/**
 	 * Komfort- und PvP-Paket (nächste Version nach TRS Client 0.9.1): Erwähnungen, Chat-Filter, Auto-Reconnect,
 	 * Warteschlange &amp; Hinweise, Scoreboard/Tab/Bossleiste/Titel, Warnungen, Zähler, Treffer-Feedback, Streamer-Modus.
@@ -106,6 +109,8 @@ public final class NewSince {
 		add(HOSTING, "social.hostingDirect");
 		// TRS Client 0.8.1: Karten blenden Dächer aus (Innenansicht).
 		add("0.8.1", "minimap.hideRoof");
+		add(LATENCY, "netOptimize", "lowLatency", "ping.jitter", "ping.graph", "ping.details", "ping.interval",
+				"ping.spikeWarning", "ping.spikeThreshold");
 		// Komfort- und PvP-Paket.
 		add(QOL, "chatMentions", "chatFilter", "autoReconnect", "queueAlerts", "scoreboard", "tabPing", "bossBar", "titles",
 				"warnings", "itemCounter", "hitFeedback", "streamerMode");

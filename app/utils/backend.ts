@@ -152,6 +152,7 @@ import type {
   ImportReport,
   Instance,
   InstanceOverrides,
+  InstancePing,
   InstanceServer,
   LogSource,
   LogText,
@@ -554,6 +555,8 @@ export const backend = {
     call<string>('backup_world', { id, folder, onProgress: channel(onProgress), taskId }),
   trashWorld: (id: string, folder: string) => call<void>('trash_world', { id, folder }),
   instanceServers: (id: string) => call<InstanceServer[]>('instance_servers', { id }),
+  /** Ping-Test über alle Einträge der servers.dat (Adressen liest der Kern selbst, höchstens 4 gleichzeitig). */
+  pingInstanceServers: (instanceId: string) => call<InstancePing[]>('ping_instance_servers', { instanceId }),
   addInstanceServer: (id: string, server: ServerInput) => call<void>('add_instance_server', { id, server }),
   /** `address` = bisherige Adresse (Schutz, falls das Spiel die Liste umsortiert hat). */
   updateInstanceServer: (id: string, index: number, address: string, server: ServerInput) =>
