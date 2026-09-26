@@ -191,6 +191,24 @@ public final class TrsClient {
 		*///?} elif <1.18 {
 		bus.addListener((GuiOpenEvent e) -> e.setGui(replaceScreen(e.getGui())));
 		//?}
+		// Sozial-Toasts über jedem Bildschirm, auch Vanilla-Menüs (bis 1.19.3; ab 1.19.4 zeichnet sie MenuScreenMixin).
+		//? if >=1.19 {
+		/*bus.addListener((ScreenEvent.Render.Post e) -> {
+			if (dev.theredstonee.trsclient.social.SocialHooks.afterScreenPending()) dev.theredstonee.trsclient.social.SocialHooks.afterScreen(Gfx.of(e.getPoseStack()));
+		});
+		*///?} elif >=1.18 {
+		/*bus.addListener((net.minecraftforge.client.event.ScreenEvent.DrawScreenEvent.Post e) -> {
+			if (dev.theredstonee.trsclient.social.SocialHooks.afterScreenPending()) dev.theredstonee.trsclient.social.SocialHooks.afterScreen(Gfx.of(e.getPoseStack()));
+		});
+		*///?} elif >=1.16 {
+		bus.addListener((net.minecraftforge.client.event.GuiScreenEvent.DrawScreenEvent.Post e) -> {
+			if (dev.theredstonee.trsclient.social.SocialHooks.afterScreenPending()) dev.theredstonee.trsclient.social.SocialHooks.afterScreen(Gfx.of(e.getMatrixStack()));
+		});
+		//?} else {
+		/*bus.addListener((net.minecraftforge.client.event.GuiScreenEvent.DrawScreenEvent.Post e) -> {
+			if (dev.theredstonee.trsclient.social.SocialHooks.afterScreenPending()) dev.theredstonee.trsclient.social.SocialHooks.afterScreen(Gfx.of());
+		});
+		*///?}
 
 		bus.addListener((TickEvent.ClientTickEvent e) -> {
 			// Vor der Spieler-Bewegung: Toggle-Tasten, Freelook, Treffer-Farbe; danach Menü-Tasten.

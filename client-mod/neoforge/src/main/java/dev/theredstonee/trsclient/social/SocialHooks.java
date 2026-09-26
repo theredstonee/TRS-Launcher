@@ -5,6 +5,7 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.social.SocialOverlay;
 import dev.theredstonee.trsclient.core.social.SocialPlatform;
+import dev.theredstonee.trsclient.core.social.VanillaToastProbe;
 import dev.theredstonee.trsclient.core.ui.social.SocialHost;
 import dev.theredstonee.trsclient.screen.MenuScreens;
 import dev.theredstonee.trsclient.screen.TrsMenuHost;
@@ -78,7 +79,29 @@ public final class SocialHooks {
 		public String quickReplyKey() {
 			return keyName(TrsKeys.quickReply);
 		}
+
+		@Override
+		public int vanillaToastBottom() {
+			try {
+				return TOAST_PROBE.bottom(toastManager());
+			} catch (RuntimeException | LinkageError e) {
+				return 0;
+			}
+		}
 	};
+
+	/** Liest die belegten Plätze der Vanilla-Toasts (Feldsuche per Typ, siehe VanillaToastProbe). Render-Thread. */
+	static final VanillaToastProbe TOAST_PROBE = new VanillaToastProbe();
+
+	/** Toast-Komponente des Spiels (ToastComponent bis 1.21.1, danach ToastManager; ab 26.2 im Gui). */
+	static Object toastManager() {
+		//? if >=26.2 {
+		/*return Mc.mc().gui.toastManager();
+		*///?} elif >=1.21.2 {
+		/*return Mc.mc().getToastManager();
+		*///?} else
+		return Mc.mc().getToasts();
+	}
 
 	/** Anzeigename einer Belegung oder null (unbelegt). */
 	static String keyName(KeyMapping k) {
@@ -256,7 +279,7 @@ public final class SocialHooks {
 	public static void hud(Gfx g) {
 		if (!SocialOverlay.active() || Mc.hudHidden()) return;
 		Screen s = Mc.screen();
-		if (s != null && (SCREEN_HOOK || s instanceof TrsUiScreen)) return;
+		if (s != null && (screenHookLive() || s instanceof TrsUiScreen)) return;
 		draw(g, false);
 	}
 
@@ -266,9 +289,36 @@ public final class SocialHooks {
 		draw(g, true);
 	}
 
-	/** Nach einem TRS-Bildschirm (Versionen ohne allgemeinen Haken): Toasts darüber. */
-	public static void afterUi(Gfx g) {
+	/** Zuletzt gefeuerter Haken nach dem Bildschirm bis 1.19.3 (Fabric: ScreenToastMixin, Forge: Render-Post-Ereignis). */
+	private static volatile long legacyScreenHookAt;
+
+	/**
+	 * Bis 1.19.3, direkt nach dem Zeichnen des offenen Bildschirms (Fabric: ScreenToastMixin, Forge: Ereignis nach dem
+	 * Bildschirm): merkt, dass der Haken lebt, und sagt, ob {@link #afterScreen} zeichnen soll (erst dann lohnt ein
+	 * Gfx). Ab 1.19.4 immer false – dort zeichnet {@link #overScreen}.
+	 */
+	public static boolean afterScreenPending() {
+		if (SCREEN_HOOK) return false;
+		legacyScreenHookAt = System.currentTimeMillis();
+		return SocialOverlay.active();
+	}
+
+	/** Bis 1.19.3: Toasts über dem gerade gezeichneten Bildschirm – auch über Vanilla-Menüs. */
+	public static void afterScreen(Gfx g) {
 		if (SCREEN_HOOK || !SocialOverlay.active()) return;
+		draw(g, true);
+	}
+
+	/** Zeichnet ein Haken nach jedem Bildschirm (ab 1.19.4 immer, darunter sobald der Haken zuletzt gefeuert hat)? */
+	static boolean screenHookLive() {
+		if (SCREEN_HOOK) return true;
+		long at = legacyScreenHookAt;
+		return at != 0 && System.currentTimeMillis() - at < 1000;
+	}
+
+	/** Nach einem TRS-Bildschirm (nur solange kein Haken nach jedem Bildschirm zeichnet): Toasts darüber. */
+	public static void afterUi(Gfx g) {
+		if (screenHookLive() || !SocialOverlay.active()) return;
 		draw(g, true);
 	}
 

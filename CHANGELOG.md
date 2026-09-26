@@ -33,7 +33,8 @@ How to write an entry:
   one click (you're asked before leaving your current world). Create and manage groups, and the Friends tab shows your
   friends, requests (including cape offers) and blocked players side by side.
 - **TRS Client: notifications in the game.** New messages, server invites, friend requests, cape offers and friends
-  coming online appear as small notifications in the top right for 5 seconds. Press the quick-reply key (Y) to answer
+  coming online appear as small notifications in the top right for 5 seconds – above every menu, and they slide down
+  out of the way of Minecraft's own pop-ups (recipes, tips, advancements). Press the quick-reply key (Y) to answer
   right away or join an invite without leaving the game. In the TRS menu under Social you choose the corner, duration
   (3–10 s), sound, "Do not disturb" (also automatically in fullscreen) and which kinds you want.
 - **TRS Client: report and stay safe.** Report messages, pictures, players and groups with a reason and an optional
@@ -98,7 +99,8 @@ How to write an entry:
   Welt bist). Erstelle und verwalte Gruppen; der Reiter Freunde zeigt Freunde, Anfragen (auch Umhang-Angebote) und
   Blockierte nebeneinander.
 - **TRS Client: Benachrichtigungen im Spiel.** Neue Nachrichten, Server-Einladungen, Freundschaftsanfragen,
-  Umhang-Angebote und Freunde, die online kommen, erscheinen 5 Sekunden lang oben rechts. Mit der Schnellantwort-Taste
+  Umhang-Angebote und Freunde, die online kommen, erscheinen 5 Sekunden lang oben rechts – über jedem Menü, und sie
+  rutschen unter Minecrafts eigene Hinweise (Rezepte, Tipps, Fortschritte), statt sie zu verdecken. Mit der Schnellantwort-Taste
   (Y) antwortest du sofort oder trittst einer Einladung bei, ohne das Spiel zu verlassen. Im TRS-Menü unter Sozial
   stellst du Ecke, Dauer (3–10 s), Ton, „Nicht stören“ (auch automatisch im Vollbild) und die Arten ein.
 - **TRS Client: Melden und Sicherheit.** Melde Nachrichten, Bilder, Spieler und Gruppen mit Grund und optionalem Text;

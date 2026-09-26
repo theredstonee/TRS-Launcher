@@ -30,6 +30,9 @@ public final class SocialOverlay {
 	private static volatile TrsModules modules;
 	private static final Toasts.Settings SETTINGS = new Toasts.Settings();
 	private static long lastFrame;
+	/** Ausweichen vor Vanilla-Toasts (nur Render-Thread). */
+	private static final ToastAvoid AVOID = new ToastAvoid();
+	private static volatile int lastVanillaBottom;
 
 	private SocialOverlay() {
 	}
@@ -110,8 +113,8 @@ public final class SocialOverlay {
 			boolean right = corner == Toasts.Corner.TOP_RIGHT || corner == Toasts.Corner.BOTTOM_RIGHT;
 			boolean top = corner == Toasts.Corner.TOP_RIGHT || corner == Toasts.Corner.TOP_LEFT;
 			int w = Math.min(TOAST_W, width - MARGIN * 2);
-			int y = top ? MARGIN : height - MARGIN - TOAST_H;
 			SocialPlatform p = platform;
+			int y = top ? MARGIN + avoidOffset(p, corner, now) : height - MARGIN - TOAST_H;
 			String key = p == null ? null : p.quickReplyKey();
 			Toasts.Toast quick = toasts.quickTarget(now);
 			for (Toasts.Toast t : list) {
@@ -124,6 +127,33 @@ public final class SocialOverlay {
 		} catch (RuntimeException ignored) {
 			// Benachrichtigungen dürfen das Spiel nie stören.
 		}
+	}
+
+	/**
+	 * Oben rechts den Vanilla-Toasts ausweichen: Versatz nach unten, weich animiert. Andere Ecken: 0 (Minecraft
+	 * zeichnet seine Toasts nur oben rechts).
+	 */
+	private static int avoidOffset(SocialPlatform p, Toasts.Corner corner, long now) {
+		int bottom = 0;
+		if (corner == Toasts.Corner.TOP_RIGHT && p != null) {
+			try {
+				bottom = p.vanillaToastBottom();
+			} catch (RuntimeException | LinkageError e) {
+				bottom = 0;
+			}
+		}
+		lastVanillaBottom = bottom;
+		return Math.round(AVOID.step(ToastAvoid.targetOffset(bottom, MARGIN, GAP), now));
+	}
+
+	/** Zuletzt gemeldete Unterkante der Vanilla-Toasts (Selbsttest). */
+	public static int lastVanillaBottom() {
+		return lastVanillaBottom;
+	}
+
+	/** Aktueller Ausweich-Versatz des Stapels in GUI-Pixeln (Selbsttest). */
+	public static float avoidOffset() {
+		return AVOID.offset();
 	}
 
 	private static void draw(Canvas c, Toasts.Toast t, int x, int y, int w, long now, String quickKey) {

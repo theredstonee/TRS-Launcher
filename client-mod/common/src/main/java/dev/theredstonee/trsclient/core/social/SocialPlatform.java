@@ -16,4 +16,13 @@ public interface SocialPlatform {
 
 	/** Anzeigename der Taste „Schnellantwort“ (z. B. "Y") oder null = unbelegt. */
 	String quickReplyKey();
+
+	/**
+	 * Unterkante (GUI-Pixel, ab oben) der gerade sichtbaren Vanilla-Toasts oben rechts – einschließlich solcher, die
+	 * noch herein- oder hinausfahren –, 0 = keine. Je Bild gefragt, solange TRS-Toasts oben rechts stehen: billig
+	 * halten (siehe {@link VanillaToastProbe}).
+	 */
+	default int vanillaToastBottom() {
+		return 0;
+	}
 }
