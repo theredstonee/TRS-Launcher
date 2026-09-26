@@ -28,6 +28,7 @@ use tokio::sync::Notify;
 use super::chat::{ApiConversation, ApiMessage, ChatConversation, ChatMessage, ChatReaction, clean_reactions, conversation_id, message_id};
 use super::hosting::{self, ApiRoom, HostingRoom as Room};
 use super::moderation::MyReport;
+use super::sanctions::{MyAppeal, MySanction};
 use super::types::{PresenceView, PrivacySettings, UserRef, clean_user};
 use super::{SessionSource, TrsApi, validate};
 use crate::Error;
@@ -195,6 +196,12 @@ pub enum LiveEvent {
     CapeShareRemoved { cape_id: String },
     ReportUpdate { report: Box<MyReport> },
     Moderation { action: String, reason: Option<String>, until: Option<String>, auto: Option<String> },
+    /// Neue Strafe gegen dich (auch Verwarnungen, §22.9). Bei `account_ban` schließt der Server danach den Kanal.
+    SanctionAdded { sanction: Box<MySanction> },
+    /// Strafe aufgehoben, verkürzt, verlängert – oder dein Einspruch wurde (auf einem anderen Gerät) eingelegt.
+    SanctionUpdated { sanction: Box<MySanction> },
+    /// Das Team hat über deinen Einspruch entschieden.
+    AppealDecided { sanction_id: u64, appeal: MyAppeal, sanction: Box<MySanction> },
     Settings { settings: PrivacySettings },
     /// Einladung in eine gehostete Welt (§21.5). `from` = Host.
     HostingInvite { room: Box<Room>, from: Option<UserRef> },
@@ -277,6 +284,12 @@ struct D {
     room_id: Option<String>,
     #[serde(default)]
     banned: Option<bool>,
+    #[serde(default)]
+    sanction: Option<serde_json::Value>,
+    #[serde(default)]
+    sanction_id: Option<u64>,
+    #[serde(default)]
+    appeal: Option<MyAppeal>,
 }
 
 #[derive(Deserialize)]
@@ -424,6 +437,13 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
             until: time(d.until),
             auto: d.auto.filter(|a| matches!(a.as_str(), "reports" | "spam")),
         },
+        "sanction_added" => LiveEvent::SanctionAdded { sanction: Box::new(MySanction::from_value(&d.sanction?)?) },
+        "sanction_updated" => LiveEvent::SanctionUpdated { sanction: Box::new(MySanction::from_value(&d.sanction?)?) },
+        "appeal_decided" => {
+            let sanction = MySanction::from_value(&d.sanction?)?;
+            let appeal = d.appeal?.cleaned()?;
+            LiveEvent::AppealDecided { sanction_id: d.sanction_id.filter(|id| *id == sanction.id)?, appeal, sanction: Box::new(sanction) }
+        }
         "settings" => LiveEvent::Settings { settings: d.settings? },
         // --- Welt-Hosting (§21.5). `hosting_signal` bleibt bewusst draußen: Verbindungs-
         // kandidaten (IP-Adressen) sind Sache des Spiels, nicht der Oberfläche.
@@ -800,6 +820,29 @@ mod tests {
         json!({ "id": "m0a1b2c3d4e5f60718293", "conversationId": conv, "seq": 7, "kind": "text",
             "sender": { "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "name": "Bob" }, "text": "Hi\u{202E}",
             "attachments": [], "reactions": [], "createdAt": "2026-09-26T10:00:00.000Z", "deleted": false, "hidden": false })
+    }
+
+    #[test]
+    fn sanction_events_are_decoded() {
+        let sanction = json!({ "id": 7, "kind": "chat_mute", "reasonCode": "spam", "reason": "Links\u{202E}",
+            "startsAt": "2026-09-26T10:00:00.000Z", "endsAt": "2026-09-27T10:00:00.000Z", "status": "active",
+            "liftedAt": null, "appeal": null, "appealable": true });
+        let added = decode("sanction_added", &json!({ "type": "sanction_added", "sanction": sanction }).to_string()).unwrap();
+        let out = serde_json::to_value(&added).unwrap();
+        assert_eq!(out["type"], "sanction_added");
+        assert_eq!(out["sanction"]["kind"], "chat_mute");
+        assert_eq!(out["sanction"]["reason"], "Links");
+        assert!(decode("sanction_updated", &json!({ "sanction": { "id": 7, "kind": "nuke", "status": "active", "reasonCode": "x" } }).to_string()).is_none());
+        let mut decided = sanction.clone();
+        decided["status"] = json!("lifted");
+        decided["appeal"] = json!({ "id": 3, "status": "lifted", "createdAt": "x", "decidedAt": "y", "response": "Ok, aufgehoben." });
+        let ev = decode("appeal_decided", &json!({ "sanctionId": 7, "appeal": decided["appeal"], "sanction": decided }).to_string()).unwrap();
+        let out = serde_json::to_value(&ev).unwrap();
+        assert_eq!(out["type"], "appeal_decided");
+        assert_eq!(out["sanctionId"], 7);
+        assert_eq!(out["appeal"]["response"], "Ok, aufgehoben.");
+        // Falsche Zuordnung → verworfen.
+        assert!(decode("appeal_decided", &json!({ "sanctionId": 8, "appeal": decided["appeal"], "sanction": decided }).to_string()).is_none());
     }
 
     #[test]

@@ -113,6 +113,7 @@ async fn player_item(trs: &TrsApi, player: super::types::ApiLookupPlayer) -> Opt
     };
     let frames = cape.frames.max(1);
     let spec = TextureSpec {
+        segment: "capes",
         id: &cape.id,
         url: &cape.url,
         width: 64 * cape.scale,
@@ -512,8 +513,14 @@ impl Launcher {
     }
 
     pub async fn trs_admin_capes(&self, list: ReviewList) -> Result<Vec<AdminCape>> {
+        let query = super::team::UploadQuery { status: Some(list.as_str().to_owned()), ..Default::default() };
+        self.trs_admin_capes_filtered(&query).await
+    }
+
+    /// Umhänge zum Prüfen mit Filtern (Besitzer, Name, Sortierung; §22.7).
+    pub async fn trs_admin_capes_filtered(&self, query: &super::team::UploadQuery) -> Result<Vec<AdminCape>> {
         let account = self.trs_account().await?;
-        let req = Req::get(format!("/v1/admin/capes?status={}", list.as_str()));
+        let req = Req::get(query.path("capes")?);
         let result: ApiAdminCapes = self.trs.call(self.accounts(), &account, &req).await?;
         let token = self.trs.store.token(&account).await;
         let mut jobs = Vec::new();

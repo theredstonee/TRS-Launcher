@@ -194,7 +194,7 @@ impl MyModeration {
 
 // --- Admin ----------------------------------------------------------------------------
 
-/// Filter der Meldungsliste.
+/// Filter der Meldungsliste (§20.5 + §22.7).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ReportQuery {
@@ -205,9 +205,62 @@ pub struct ReportQuery {
     #[serde(default)]
     pub target: Option<String>,
     #[serde(default)]
+    pub reason: Option<String>,
+    /// `me`, `none` oder eine UUID.
+    #[serde(default)]
+    pub assigned: Option<String>,
+    /// Nur hohe Priorität.
+    #[serde(default)]
+    pub high_priority: bool,
+    #[serde(default)]
+    pub from: Option<String>,
+    #[serde(default)]
+    pub to: Option<String>,
+    /// `oldest` | `newest`.
+    #[serde(default)]
+    pub sort: Option<String>,
+    #[serde(default)]
     pub cursor: Option<String>,
     #[serde(default)]
     pub limit: Option<u32>,
+}
+
+/// ISO-Zeitpunkt für Filter (`from`/`to`).
+pub(crate) fn date_arg(input: &str) -> Result<String> {
+    chrono::DateTime::parse_from_rfc3339(input.trim())
+        .map(|d| d.with_timezone(&chrono::Utc).to_rfc3339_opts(chrono::SecondsFormat::Millis, true))
+        .map_err(|_| invalid(crate::msg!("team.invalidDate", "Ungültiges Datum.")))
+}
+
+pub(crate) fn cursor_arg(cursor: &str) -> Result<String> {
+    if super::chat::cursor(cursor) {
+        Ok(super::encode_query(cursor))
+    } else {
+        Err(invalid(crate::msg!("chat.invalidCursor", "Ungültige Seite.")))
+    }
+}
+
+/// Hängt `from`, `to`, `sort`, `cursor` an (gemeinsam für alle Team-Listen).
+pub(crate) fn push_common(path: &mut String, from: Option<&str>, to: Option<&str>, sort: Option<&str>, cursor: Option<&str>) -> Result<()> {
+    fn set(v: Option<&str>) -> Option<&str> {
+        v.map(str::trim).filter(|v| !v.is_empty())
+    }
+    if let Some(f) = set(from) {
+        path.push_str(&format!("&from={}", super::encode_query(&date_arg(f)?)));
+    }
+    if let Some(t) = set(to) {
+        path.push_str(&format!("&to={}", super::encode_query(&date_arg(t)?)));
+    }
+    if let Some(s) = set(sort) {
+        if !matches!(s, "oldest" | "newest") {
+            return Err(invalid(crate::msg!("reports.invalidFilter", "Ungültiger Filter.")));
+        }
+        path.push_str(&format!("&sort={s}"));
+    }
+    if let Some(c) = set(cursor) {
+        path.push_str(&format!("&cursor={}", cursor_arg(c)?));
+    }
+    Ok(())
 }
 
 impl ReportQuery {
@@ -226,18 +279,29 @@ impl ReportQuery {
         if let Some(target) = self.target.as_deref().filter(|t| !t.is_empty()) {
             path.push_str(&format!("&target={}", uuid_arg(target)?));
         }
-        if let Some(cursor) = self.cursor.as_deref() {
-            if !super::chat::cursor(cursor) {
-                return Err(invalid(crate::msg!("chat.invalidCursor", "Ungültige Seite.")));
+        if let Some(reason) = self.reason.as_deref().filter(|r| !r.is_empty() && *r != "all") {
+            if !REASONS.contains(&reason) {
+                return Err(invalid(crate::msg!("reports.invalidFilter", "Ungültiger Filter.")));
             }
-            path.push_str(&format!("&cursor={}", super::encode_query(cursor)));
+            path.push_str(&format!("&reason={reason}"));
         }
+        if let Some(assigned) = self.assigned.as_deref().filter(|a| !a.is_empty() && *a != "all") {
+            let value = match assigned {
+                "me" | "none" => assigned.to_owned(),
+                other => uuid_arg(other)?,
+            };
+            path.push_str(&format!("&assigned={value}"));
+        }
+        if self.high_priority {
+            path.push_str("&priority=high");
+        }
+        push_common(&mut path, self.from.as_deref(), self.to.as_deref(), self.sort.as_deref(), self.cursor.as_deref())?;
         Ok(path)
     }
 }
 
-/// Entscheidung zu einer Meldung (§20.5 `POST …/actions`).
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+/// Entscheidung zu einer Meldung (§20.5 `POST …/actions`, mit `sanction` aus §22.2).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ReportAction {
     pub action: String,
@@ -245,6 +309,16 @@ pub struct ReportAction {
     pub reason: Option<String>,
     #[serde(default)]
     pub minutes: Option<u32>,
+    /// Nur bei `sanction`: Art und Dauer der Strafe.
+    #[serde(default)]
+    pub kind: Option<String>,
+    #[serde(default)]
+    pub duration: Option<String>,
+    #[serde(default)]
+    pub reason_code: Option<String>,
+    /// Interne Notiz (eine Zeile).
+    #[serde(default)]
+    pub note: Option<String>,
     #[serde(default)]
     pub keep_open: bool,
     #[serde(default)]
@@ -254,19 +328,38 @@ pub struct ReportAction {
 impl ReportAction {
     fn body(&self) -> Result<Value> {
         let action = self.action.as_str();
-        if !matches!(action, "delete_message" | "warn" | "mute" | "ban" | "dismiss" | "resolve") {
+        if !matches!(action, "delete_message" | "warn" | "mute" | "ban" | "sanction" | "dismiss" | "resolve") {
             return Err(invalid(crate::msg!("reports.invalidAction", "Unbekannte Entscheidung.")));
         }
         let mut body = json!({ "action": action });
+        let punishes = matches!(action, "warn" | "mute" | "ban" | "sanction");
         if let Some(reason) = self.reason.as_deref().map(str::trim).filter(|r| !r.is_empty())
-            && matches!(action, "warn" | "mute" | "ban")
+            && punishes
         {
-            body["reason"] = json!(validate::plain_text(reason, 200, validate::TextField::Reason)?);
+            body["reason"] = json!(validate::plain_text(reason, 500, validate::TextField::Reason)?);
         }
         if action == "mute"
             && let Some(minutes) = self.minutes
         {
             body["minutes"] = json!(mute_minutes(minutes)?);
+        }
+        if action == "sanction" {
+            let kind = self.kind.as_deref().unwrap_or_default();
+            let duration = self.duration.as_deref().unwrap_or_default();
+            super::team::check_kind_duration(kind, duration)?;
+            body["kind"] = json!(kind);
+            body["duration"] = json!(duration);
+            if duration == "custom" {
+                body["minutes"] = json!(super::team::custom_minutes(self.minutes)?);
+            }
+            if let Some(code) = self.reason_code.as_deref().filter(|c| !c.is_empty()) {
+                body["reasonCode"] = json!(super::team::reason_code_arg(code)?);
+            }
+            if let Some(note) = self.note.as_deref().map(str::trim).filter(|n| !n.is_empty()) {
+                // Die API nimmt hier nur eine Zeile an.
+                let flat = super::chat::one_line(note, 4000);
+                body["note"] = json!(validate::plain_text(&flat, 2000, validate::TextField::Note)?);
+            }
         }
         if self.keep_open && !matches!(action, "dismiss" | "resolve") {
             body["keepOpen"] = json!(true);
@@ -312,7 +405,7 @@ impl NewFilterWord {
     }
 }
 
-/// Filter für das Audit-Log.
+/// Filter für das Audit-Log (§20.5 + §22.7).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditQuery {
@@ -320,6 +413,16 @@ pub struct AuditQuery {
     pub reference: Option<String>,
     #[serde(default)]
     pub target: Option<String>,
+    /// UUID, `api-key` oder `system`.
+    #[serde(default)]
+    pub actor: Option<String>,
+    /// Präfix der Aktion, z. B. `sanction.`.
+    #[serde(default)]
+    pub action: Option<String>,
+    #[serde(default)]
+    pub from: Option<String>,
+    #[serde(default)]
+    pub to: Option<String>,
     #[serde(default)]
     pub before: Option<u64>,
     #[serde(default)]
@@ -330,11 +433,30 @@ impl AuditQuery {
     fn path(&self) -> Result<String> {
         let mut path = format!("/v1/admin/audit?limit={}", self.limit.unwrap_or(100).clamp(1, 200));
         if let Some(r) = self.reference.as_deref().filter(|r| !r.is_empty()) {
-            path.push_str(&format!("&ref={}", report_arg(r)?));
+            let ok = (1..=40).contains(&r.len()) && r.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
+            if !ok {
+                return Err(invalid(crate::msg!("reports.invalidFilter", "Ungültiger Filter.")));
+            }
+            path.push_str(&format!("&ref={r}"));
         }
         if let Some(t) = self.target.as_deref().filter(|t| !t.is_empty()) {
             path.push_str(&format!("&target={}", uuid_arg(t)?));
         }
+        if let Some(a) = self.actor.as_deref().filter(|a| !a.is_empty()) {
+            let actor = match a {
+                "api-key" | "system" => a.to_owned(),
+                other => uuid_arg(other)?,
+            };
+            path.push_str(&format!("&actor={actor}"));
+        }
+        if let Some(a) = self.action.as_deref().filter(|a| !a.is_empty()) {
+            let ok = a.len() <= 40 && a.bytes().all(|b| b.is_ascii_lowercase() || b == b'_' || b == b'.');
+            if !ok {
+                return Err(invalid(crate::msg!("reports.invalidFilter", "Ungültiger Filter.")));
+            }
+            path.push_str(&format!("&action={a}"));
+        }
+        push_common(&mut path, self.from.as_deref(), self.to.as_deref(), None, None)?;
         if let Some(b) = self.before {
             path.push_str(&format!("&before={b}"));
         }
@@ -390,7 +512,7 @@ impl Launcher {
 
     // --- Admin --------------------------------------------------------------------------
 
-    async fn admin_json(&self, req: Req) -> Result<Value> {
+    pub(super) async fn admin_json(&self, req: Req) -> Result<Value> {
         Ok(sanitize(self.trs_get::<Value>(req).await?))
     }
 
@@ -509,12 +631,46 @@ mod tests {
         let q = ReportQuery { status: Some("open".into()), kind: Some("image".into()), cursor: Some("abc".into()), ..Default::default() };
         assert_eq!(q.path().unwrap(), "/v1/admin/reports?status=open&limit=30&kind=image&cursor=abc");
         assert!(ReportQuery { status: Some("x'".into()), ..Default::default() }.path().is_err());
-        let a = ReportAction { action: "mute".into(), reason: Some("Spam".into()), minutes: Some(60), keep_open: true, include_related: false };
+        let a = ReportAction { action: "mute".into(), reason: Some("Spam".into()), minutes: Some(60), keep_open: true, ..Default::default() };
         assert_eq!(a.body().unwrap(), json!({ "action": "mute", "reason": "Spam", "minutes": 60, "keepOpen": true }));
-        let d = ReportAction { action: "dismiss".into(), reason: Some("egal".into()), minutes: None, keep_open: true, include_related: true };
+        let d = ReportAction { action: "dismiss".into(), reason: Some("egal".into()), keep_open: true, include_related: true, ..Default::default() };
         assert_eq!(d.body().unwrap(), json!({ "action": "dismiss", "includeRelated": true }));
-        assert!(ReportAction { action: "nuke".into(), reason: None, minutes: None, keep_open: false, include_related: false }.body().is_err());
-        assert!(ReportAction { action: "mute".into(), reason: None, minutes: Some(1), keep_open: false, include_related: false }.body().is_err());
+        assert!(ReportAction { action: "nuke".into(), ..Default::default() }.body().is_err());
+        assert!(ReportAction { action: "mute".into(), minutes: Some(1), ..Default::default() }.body().is_err());
+        let s = ReportAction {
+            action: "sanction".into(),
+            kind: Some("social_ban".into()),
+            duration: Some("custom".into()),
+            minutes: Some(90),
+            reason_code: Some("harassment".into()),
+            note: Some("Zeile 1\nZeile 2".into()),
+            reason: Some("Belästigung".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            s.body().unwrap(),
+            json!({ "action": "sanction", "kind": "social_ban", "duration": "custom", "minutes": 90, "reasonCode": "harassment",
+                "note": "Zeile 1 Zeile 2", "reason": "Belästigung" })
+        );
+        assert!(ReportAction { action: "sanction".into(), kind: Some("nuke".into()), duration: Some("1d".into()), ..Default::default() }.body().is_err());
+        assert!(ReportAction { action: "sanction".into(), kind: Some("warn".into()), duration: Some("custom".into()), ..Default::default() }.body().is_err());
+        let q = ReportQuery {
+            reason: Some("spam".into()),
+            assigned: Some("me".into()),
+            high_priority: true,
+            sort: Some("newest".into()),
+            from: Some("2026-09-01T00:00:00+02:00".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            q.path().unwrap(),
+            "/v1/admin/reports?status=active&limit=30&reason=spam&assigned=me&priority=high&from=2026-08-31T22%3A00%3A00.000Z&sort=newest"
+        );
+        assert!(ReportQuery { sort: Some("random".into()), ..Default::default() }.path().is_err());
+        let aq = AuditQuery { actor: Some("system".into()), action: Some("sanction.".into()), ..Default::default() };
+        assert_eq!(aq.path().unwrap(), "/v1/admin/audit?limit=100&actor=system&action=sanction.");
+        assert!(AuditQuery { action: Some("x&y".into()), ..Default::default() }.path().is_err());
+        assert_eq!(AuditQuery { reference: Some("s12".into()), ..Default::default() }.path().unwrap(), "/v1/admin/audit?limit=100&ref=s12");
         assert!(NewFilterWord { word: "a".into(), mode: None, action: None }.body().is_err());
         assert_eq!(
             NewFilterWord { word: " idiot ".into(), mode: Some("contains".into()), action: Some("block".into()) }.body().unwrap(),

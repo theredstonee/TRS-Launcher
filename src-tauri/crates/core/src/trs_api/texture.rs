@@ -17,8 +17,14 @@ const MAX_TEXTURE_BYTES: usize = 8 * 1024 * 1024;
 
 /// Was an einer Textur-URL erlaubt ist: `<base>/v1/capes/<id>.png[?v=<token>]`
 /// mit einer der vertrauenswürdigen Adressen (neue und alte API-Adresse).
+#[cfg(test)]
 pub(crate) fn parse_texture_url<'a>(bases: &[&str], url: &'a str, id: &str) -> Option<Option<&'a str>> {
-    let rest = bases.iter().find_map(|base| url.strip_prefix(base)?.strip_prefix("/v1/capes/"))?;
+    parse_asset_url(bases, url, "capes", id)
+}
+
+/// Wie [`parse_texture_url`] für `<base>/v1/<segment>/<id>.png[?v=…]` (`capes` oder `cosmetics`).
+pub(crate) fn parse_asset_url<'a>(bases: &[&str], url: &'a str, segment: &str, id: &str) -> Option<Option<&'a str>> {
+    let rest = bases.iter().find_map(|base| url.strip_prefix(base)?.strip_prefix("/v1/")?.strip_prefix(segment)?.strip_prefix('/'))?;
     let (file, query) = match rest.split_once('?') {
         Some((f, q)) => (f, Some(q)),
         None => (rest, None),
@@ -36,6 +42,8 @@ pub(crate) fn parse_texture_url<'a>(bases: &[&str], url: &'a str, id: &str) -> O
 }
 
 pub(crate) struct TextureSpec<'a> {
+    /// Pfadteil der API: `capes` oder `cosmetics`.
+    pub segment: &'static str,
     pub id: &'a str,
     pub url: &'a str,
     pub width: u32,
@@ -47,6 +55,7 @@ pub(crate) struct TextureSpec<'a> {
 impl<'a> TextureSpec<'a> {
     pub fn of(cape: &'a ApiCape) -> Self {
         Self {
+            segment: "capes",
             id: &cape.id,
             url: &cape.url,
             width: cape.width,
@@ -64,12 +73,13 @@ impl TrsApi {
     /// Lädt eine Umhang-Textur (mit Token für eigene/zu prüfende Uploads).
     /// `None`, wenn sie fehlt oder nicht zu den Metadaten passt.
     pub(crate) async fn texture(&self, spec: &TextureSpec<'_>, token: Option<&str>) -> Option<String> {
-        let version = parse_texture_url(&self.trusted_bases(), spec.url, spec.id)?;
+        let version = parse_asset_url(&self.trusted_bases(), spec.url, spec.segment, spec.id)?;
         let valid = |bytes: &[u8]| png::size(bytes) == Some((spec.width, spec.total_height));
         let cache = match version {
             Some(v) if spec.cacheable => Some(self.texture_dir().join(format!("{}-{v}.png", spec.id))),
             _ => None,
-        };
+        }
+        .filter(|_| spec.segment == "capes");
         if let Some(file) = &cache
             && let Ok(bytes) = tokio::fs::read(file).await
             && valid(&bytes)
@@ -140,5 +150,13 @@ mod tests {
         assert_eq!(parse_texture_url(&BASES, "https://theredstonee.de/v1/capes/team.png", "team"), None);
         assert_eq!(parse_texture_url(&BASES, "http://trs-launcher.theredstonee.de/v1/capes/team.png", "team"), None, "nur HTTPS");
         assert_eq!(parse_texture_url(&[], "https://trs-launcher.theredstonee.de/v1/capes/team.png", "team"), None);
+    }
+
+    #[test]
+    fn cosmetic_previews_use_their_own_path() {
+        let url = "https://trs-launcher.theredstonee.de/v1/cosmetics/krone.png?v=abc123";
+        assert_eq!(parse_asset_url(&BASES, url, "cosmetics", "krone"), Some(Some("abc123")));
+        assert_eq!(parse_asset_url(&BASES, url, "capes", "krone"), None, "Pfad muss zur Art passen");
+        assert_eq!(parse_asset_url(&BASES, "https://trs-launcher.theredstonee.de/v1/cosmeticsx/krone.png", "cosmetics", "krone"), None);
     }
 }

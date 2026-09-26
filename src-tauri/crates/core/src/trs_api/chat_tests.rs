@@ -567,7 +567,7 @@ async fn live_local_api() {
     let after = a
         .admin_report_action(
             &report.id,
-            &super::moderation::ReportAction { action: "dismiss".into(), reason: None, minutes: None, keep_open: false, include_related: false },
+            &super::moderation::ReportAction { action: "dismiss".into(), ..Default::default() },
         )
         .await
         .unwrap();

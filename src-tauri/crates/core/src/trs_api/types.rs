@@ -80,6 +80,9 @@ pub(crate) struct ApiMe {
     pub name: String,
     #[serde(default)]
     pub admin: bool,
+    /// Team-Rolle (§22.1): `admin`, `moderator` oder keine.
+    #[serde(default)]
+    pub role: Option<String>,
     #[serde(default)]
     pub created_at: Option<String>,
     pub settings: PrivacySettings,
@@ -94,6 +97,8 @@ pub struct Me {
     pub uuid: String,
     pub name: String,
     pub admin: bool,
+    /// `admin` | `moderator` | `None` – Moderatoren sehen den Team-Bereich mit weniger Rechten.
+    pub role: Option<String>,
     pub created_at: Option<String>,
     pub settings: PrivacySettings,
     pub active_cape_id: Option<String>,
@@ -104,6 +109,12 @@ impl ApiMe {
         Some(Me {
             uuid: validate::uuid(&self.uuid)?,
             name: validate::display_name(&self.name),
+            // Ältere Server kennen nur `admin`.
+            role: match self.role.as_deref() {
+                Some(r @ ("admin" | "moderator")) => Some(r.to_owned()),
+                _ if self.admin => Some("admin".to_owned()),
+                _ => None,
+            },
             admin: self.admin,
             created_at: self.created_at.map(|t| validate::text(&t, 40)),
             settings: self.settings,
@@ -756,7 +767,11 @@ pub struct CodeView {
     pub id: u64,
     #[serde(default)]
     pub hint: String,
-    pub cape_id: String,
+    /// Genau eines von `cape_id` und `cosmetic_id` ist gesetzt (Kosmetik-/Emote-Codes, §8).
+    #[serde(default)]
+    pub cape_id: Option<String>,
+    #[serde(default)]
+    pub cosmetic_id: Option<String>,
     pub max_uses: u64,
     #[serde(default)]
     pub uses: u64,

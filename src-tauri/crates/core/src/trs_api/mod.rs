@@ -25,8 +25,10 @@ pub mod media;
 mod ops;
 pub mod png;
 mod presence;
+pub mod sanctions;
 pub mod store;
 pub mod sync;
+pub mod team;
 mod texture;
 pub mod types;
 pub mod validate;
@@ -125,14 +127,29 @@ impl Req {
 #[derive(Debug)]
 pub(crate) enum Failure {
     Network,
-    Api { status: u16, code: String, retry_after: Option<u64>, current: Option<serde_json::Value> },
+    Api {
+        status: u16,
+        code: String,
+        retry_after: Option<u64>,
+        current: Option<serde_json::Value>,
+        /// Strafe (und ggf. Einspruch-Token) bei `sanctioned`/`chat_muted`/`banned` (§22).
+        detail: Option<Box<sanctions::SanctionDetail>>,
+    },
 }
 
 impl Failure {
     fn into_error(self) -> Error {
         match self {
             Self::Network => offline(),
-            Self::Api { status, code, retry_after, .. } => api_error(status, &code, retry_after),
+            Self::Api { status, code, retry_after, detail, .. } => {
+                let error = api_error(status, &code, retry_after);
+                match (error, detail.and_then(|d| d.sanction)) {
+                    (Error::TrsApi { kind, code, msg }, Some(sanction)) => {
+                        Error::TrsApi { kind, code, msg: sanctions::with_sanction(msg, &sanction) }
+                    }
+                    (error, _) => error,
+                }
+            }
         }
     }
 }
@@ -266,6 +283,7 @@ fn message_for(code: &str) -> Msg {
         // --- Chat (§18) ---
         "not_friends" => msg!("trsApi.not_friends", "Ihr seid nicht (mehr) befreundet."),
         "chat_muted" => msg!("trsApi.chat_muted", "Du bist im Chat gerade stummgeschaltet."),
+        "sanctioned" => msg!("trsApi.sanctioned", "Das ist für dein Konto wegen einer Strafe gerade gesperrt."),
         "conversation_not_found" => msg!("trsApi.conversation_not_found", "Diese Unterhaltung gibt es nicht (mehr)."),
         "message_not_found" => msg!("trsApi.message_not_found", "Diese Nachricht gibt es nicht (mehr)."),
         "attachment_not_found" => msg!("trsApi.attachment_not_found", "Dieses Bild gibt es nicht (mehr)."),
@@ -320,6 +338,23 @@ fn message_for(code: &str) -> Msg {
         "hosting_unavailable" => {
             msg!("trsApi.hosting_unavailable", "Welt-Hosting ist auf dem TRS-Server gerade nicht verfügbar.")
         }
+        // --- Moderation v2 (§22) ---
+        "sanction_not_found" => msg!("trsApi.sanction_not_found", "Diese Strafe gibt es nicht (mehr)."),
+        "sanction_not_active" => msg!("trsApi.sanction_not_active", "Diese Strafe ist nicht mehr aktiv."),
+        "appeal_exists" => msg!("trsApi.appeal_exists", "Gegen diese Strafe hast du schon Einspruch eingelegt."),
+        "appeal_not_found" => msg!("trsApi.appeal_not_found", "Diesen Einspruch gibt es nicht (mehr)."),
+        "appeal_decided" => msg!("trsApi.appeal_decided", "Über diesen Einspruch wurde schon entschieden."),
+        "own_sanction" => msg!("trsApi.own_sanction", "Über Einsprüche gegen eigene Strafen entscheidet jemand anderes."),
+        "admin_only" => msg!("trsApi.admin_only", "Das dürfen nur Admins."),
+        "duration_not_allowed" => msg!("trsApi.duration_not_allowed", "Diese Dauer darfst du nicht vergeben."),
+        "cannot_moderate_staff" => msg!("trsApi.cannot_moderate_staff", "Team-Mitglieder kannst du nicht bestrafen."),
+        "invalid_duration" => msg!("trsApi.invalid_duration", "Das Ende muss in der Zukunft liegen – zum Beenden „Aufheben“ nutzen."),
+        "no_change" => msg!("trsApi.no_change", "Das ist schon das aktuelle Ende."),
+        "role_locked" => msg!("trsApi.role_locked", "Diese Rolle ist fest eingestellt und lässt sich hier nicht ändern."),
+        "cannot_change_self" => msg!("trsApi.cannot_change_self", "Deine eigene Rolle kannst du nicht ändern."),
+        "role_not_found" => msg!("trsApi.role_not_found", "Dieser Spieler hat keine Team-Rolle."),
+        "note_not_found" => msg!("trsApi.note_not_found", "Diese Notiz gibt es nicht (mehr)."),
+        "bulk_too_large" => msg!("trsApi.bulk_too_large", "Höchstens 50 Einträge auf einmal."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -346,6 +381,8 @@ pub struct TrsApi {
     pub(crate) live: Arc<live::LiveState>,
     /// HTTP-Client ohne Gesamt-Timeout für den Echtzeit-Kanal.
     stream_http: reqwest::Client,
+    /// Einspruch-Tokens gesperrter Konten (§22.3, nur im Speicher).
+    pub(crate) appeal_tokens: sanctions::AppealTokens,
 }
 
 impl TrsApi {
@@ -383,6 +420,7 @@ impl TrsApi {
             paths,
             login_lock: tokio::sync::Mutex::new(()),
             presence: Arc::new(PresenceState::default()),
+            appeal_tokens: sanctions::AppealTokens::default(),
         })
     }
 
@@ -468,7 +506,8 @@ impl TrsApi {
         let current = (status.as_u16() == 409 && code == "stale")
             .then(|| error.and_then(|e| e.get("current")).cloned())
             .flatten();
-        Err(Failure::Api { status: status.as_u16(), code, retry_after, current })
+        let detail = sanctions::SanctionDetail::parse(&code, error).map(Box::new);
+        Err(Failure::Api { status: status.as_u16(), code, retry_after, current, detail })
     }
 
     /// Wie [`Self::send_once`], wartet aber kurze `429` einmal selbst ab.
@@ -518,9 +557,6 @@ impl TrsApi {
                     let _ = self.store.take_token(account).await;
                     return Err(auth_failed(crate::msg!("trs.loginRejected", "Die TRS-Anmeldung wurde abgelehnt – bitte später erneut versuchen.")));
                 }
-                Err(Failure::Api { status: 403, code, .. }) if code == "banned" => {
-                    return Err(api_error(403, &code, None));
-                }
                 Err(e) => return Err(e.into_error()),
             }
         }
@@ -565,13 +601,20 @@ impl TrsApi {
             Err(e) => return Err(e.into_error()),
         };
 
-        let verify: ApiVerify = parse(
-            &self
-                .send(&Req::post("/v1/auth/verify", serde_json::json!({ "username": name, "serverId": challenge.server_id })), None)
-                .await
-                .map_err(Failure::into_error)?,
-            "verify",
-        )?;
+        let verify_req = Req::post("/v1/auth/verify", serde_json::json!({ "username": name, "serverId": challenge.server_id }));
+        let verify: ApiVerify = match self.send(&verify_req, None).await {
+            Ok(bytes) => parse(&bytes, "verify")?,
+            Err(mut failure) => {
+                // Gesperrt: Einspruch-Token merken (nur im Speicher, nie ans Webview).
+                if let Failure::Api { code, detail: Some(detail), .. } = &mut failure
+                    && code == "banned"
+                    && let Some((token, expires)) = detail.appeal_token.take()
+                {
+                    self.appeal_tokens.put(account, token, expires);
+                }
+                return Err(failure.into_error());
+            }
+        };
         if !validate::session_token(&verify.token) {
             return Err(auth_failed(crate::msg!("trs.badToken", "Die TRS API hat einen ungültigen Token geschickt.")));
         }
@@ -582,6 +625,7 @@ impl TrsApi {
             .map(|d| d.with_timezone(&chrono::Utc))
             .unwrap_or_else(|_| chrono::Utc::now() + chrono::Duration::days(1));
         self.store.put_token(account, &verify.token, expires_at).await?;
+        self.appeal_tokens.forget(account);
         tracing::info!("Bei der TRS API angemeldet: {}", verify.user.name);
         Ok(verify.token)
     }
@@ -688,3 +732,5 @@ mod sync_tests;
 mod chat_tests;
 #[cfg(test)]
 mod hosting_tests;
+#[cfg(test)]
+mod sanctions_tests;

@@ -15,6 +15,7 @@ pub mod import;
 pub mod instances;
 pub mod logs;
 pub mod meta;
+pub mod moderation;
 pub mod news;
 pub mod presets;
 pub mod screenshots;
