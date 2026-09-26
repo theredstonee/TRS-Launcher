@@ -336,7 +336,7 @@ export interface DeviceCode {
   expiresIn: number
 }
 
-export type LaunchStage = 'version' | 'java' | 'loader' | 'libraries' | 'assets' | 'starting'
+export type LaunchStage = 'mods' | 'version' | 'java' | 'loader' | 'libraries' | 'assets' | 'starting'
 
 export interface StageProgress {
   stage: LaunchStage
@@ -394,9 +394,27 @@ export interface Diagnosis {
   message: string
   /** Übersetzungs-Code der Meldung (`errors.<code>`), z. B. `process.crashOutOfMemory`. */
   code?: string
+  /** Werte für die Übersetzung (`{name}` …). */
+  params?: Record<string, string>
   canRepair: boolean
   /** Bei `incompatible_mod`: welche Mods sich laut Loader nicht vertragen. */
   conflict?: ModConflictInfo
+  /** Bei `missing_dependency`: welche Mods fehlen – der Launcher kann sie installieren. */
+  missing?: MissingModInfo
+}
+
+/** Aus der Loader-Meldung: `modId` braucht die Mods `dependencies` (Mod-IDs), die fehlen. */
+export interface MissingModInfo {
+  modId: string | null
+  modName: string | null
+  dependencies: string[]
+}
+
+/** Ergebnis von „fehlende Mods installieren“ (auch vor dem Start). */
+export interface DependencyFix {
+  added: string[]
+  neededBy: string[]
+  unresolved: string[]
 }
 
 /** Aus der Loader-Meldung: `modId` sollte getauscht werden, `otherId` ist der Grund. */

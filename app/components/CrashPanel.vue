@@ -20,6 +20,12 @@ const diagnosisText = computed(() => {
     const other = c.otherVersion ? `${c.otherName} ${c.otherVersion}` : c.otherName
     return t('crash.diagnosis.incompatible_mod', { name: `${c.modName} ${c.modVersion}`, other })
   }
+  const m = d.missing
+  if (d.kind === 'missing_dependency' && m?.dependencies.length) {
+    const deps = m.dependencies.join(', ')
+    const name = m.modName ?? m.modId
+    return name ? t('crash.diagnosis.missing_dependency_named', { name, deps }) : t('crash.diagnosis.missing_dependency_only', { deps })
+  }
   const key = `crash.diagnosis.${d.kind}`
   return hasKey(key) ? tKey(key) : d.message
 })
@@ -31,6 +37,17 @@ const fixing = computed(() => fixTask.value?.status === 'running')
 function fixConflict() {
   const instance = useInstancesStore().items.find((i) => i.id === props.instanceId)
   fixModConflictsTask({ id: props.instanceId, name: instance?.name ?? props.instanceId }, props.diagnosis?.conflict?.modId ?? null)
+}
+
+// Fehlende Mods (laut Loader): installieren.
+const missingTask = computed(() => tasks.get(missingModsTaskKey(props.instanceId)))
+const installingMissing = computed(() => missingTask.value?.status === 'running')
+
+function installMissing() {
+  const m = props.diagnosis?.missing
+  if (!m?.dependencies.length) return
+  const instance = useInstancesStore().items.find((i) => i.id === props.instanceId)
+  installMissingModsTask({ id: props.instanceId, name: instance?.name ?? props.instanceId }, m.modId, m.dependencies)
 }
 
 function repair() {
@@ -71,7 +88,20 @@ async function share() {
       <button v-if="diagnosis?.conflict" class="btn btn-primary px-3 py-1.5 text-xs" :disabled="fixing" @click="fixConflict">
         {{ fixing ? t('crash.fixing') : t('crash.fixConflict', { name: diagnosis.conflict.modName }) }}
       </button>
-      <button v-if="repairing === null" class="btn btn-primary px-3 py-1.5 text-xs" :class="{ 'btn-ghost': !diagnosis?.canRepair || diagnosis?.conflict }" @click="repair">
+      <button
+        v-if="diagnosis?.missing?.dependencies.length"
+        class="btn btn-primary px-3 py-1.5 text-xs"
+        :disabled="installingMissing"
+        @click="installMissing"
+      >
+        {{ installingMissing ? t('crash.installingMissing') : t('crash.installMissing', { name: diagnosis.missing.dependencies.join(', ') }) }}
+      </button>
+      <button
+        v-if="repairing === null"
+        class="btn btn-primary px-3 py-1.5 text-xs"
+        :class="{ 'btn-ghost': !diagnosis?.canRepair || diagnosis?.conflict || diagnosis?.missing }"
+        @click="repair"
+      >
         {{ t('crash.checkFiles') }}
       </button>
       <div v-else class="flex w-56 items-center gap-2">

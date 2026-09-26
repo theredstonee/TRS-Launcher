@@ -84,6 +84,7 @@
     "justNowInline": "agora mesmo"
   },
   "launchStage": {
+    "mods": "Mods",
     "version": "Dados da versão",
     "java": "Java",
     "loader": "Mod loader",
@@ -349,7 +350,8 @@
       "noLogToShare": "Ainda não há log para compartilhar.",
       "signInFirst": "Primeiro entre com sua conta Microsoft em “Contas”.",
       "stopAllGamesFirst": "Feche primeiro todos os jogos em execução.",
-      "syncAfterExitFailed": "Não foi possível sincronizar as configurações com as outras instâncias."
+      "syncAfterExitFailed": "Não foi possível sincronizar as configurações com as outras instâncias.",
+      "dependenciesAdded": "Dependências que faltavam adicionadas: {list} (necessárias para {mods})."
     },
     "loaders": {
       "invalidGameVersion": "Versão do Minecraft inválida",
@@ -376,6 +378,8 @@
       "crashCorruptFiles": "Um arquivo do jogo está corrompido (ex.: após um download interrompido). “Verificar arquivos” baixa-o novamente.",
       "crashGraphicsDriver": "O driver de vídeo travou ou não é compatível com OpenGL. Atualize o driver da sua placa de vídeo.",
       "crashMissingDependency": "Um mod precisa de outro mod que está faltando. O log mostra qual logo acima do erro.",
+      "crashMissingDependencyNamed": "{name} precisa de {deps}, que está faltando nesta instância. O launcher pode instalá-lo.",
+      "crashMissingDependencyOnly": "Está faltando {deps} – outro mod precisa dele. O launcher pode instalá-lo.",
       "crashModConflict": "Dois mods não se dão bem. Desative os mods adicionados mais recentemente e inicie novamente.",
       "crashOutOfMemory": "O jogo ficou sem memória. Aumente a memória da instância nas configurações dela.",
       "crashWrongJava": "Um mod precisa de uma versão mais nova do Java. Remova o caminho do Java personalizado nas configurações e o launcher escolherá o certo automaticamente.",
@@ -560,6 +564,10 @@
       "notAModpack": "Isto não é um modpack do CurseForge.",
       "packFileMissing": "Um arquivo do modpack não existe mais no CurseForge (projeto {project}).",
       "packBlocked": "O autor de “{name}” não permite downloads por outros apps – baixe o modpack no CurseForge e importe-o aqui."
+    },
+    "depcheck": {
+      "notFound": "{list} não foi encontrado no Modrinth – instale manualmente.",
+      "nothingToInstall": "Nenhum mod faltando foi informado."
     },
     "presets": {
       "nameLength": "O nome deve ter entre 1 e {max} caracteres.",
@@ -1411,6 +1419,8 @@
       "out_of_memory": "O jogo ficou sem memória. Aumente a memória da instância nas configurações dela.",
       "wrong_java": "Um mod precisa de uma versão mais nova do Java. Remova o caminho do Java personalizado nas configurações e o launcher escolherá o certo automaticamente.",
       "missing_dependency": "Um mod precisa de outro mod que está faltando. O log mostra qual logo acima do erro.",
+      "missing_dependency_named": "{name} precisa de {deps}, que está faltando nesta instância. O launcher pode instalá-lo.",
+      "missing_dependency_only": "Está faltando {deps} – outro mod precisa dele. O launcher pode instalá-lo.",
       "mod_conflict": "Dois mods não se dão bem. Desative os mods adicionados mais recentemente e inicie novamente.",
       "graphics_driver": "O driver de vídeo travou ou não é compatível com OpenGL. Atualize o driver da sua placa de vídeo.",
       "incompatible_mod": "{name} não funciona com {other}. O launcher pode trocar {name} por uma versão que combine."
@@ -1419,7 +1429,10 @@
     "fixConflict": "Trocar {name} por uma versão compatível",
     "fixing": "Procurando versões de mods compatíveis …",
     "fixDone": "Trocado por versões compatíveis: {list}",
-    "fixNothing": "Nenhuma versão compatível foi encontrada automaticamente. Desative um dos dois mods e inicie de novo."
+    "fixNothing": "Nenhuma versão compatível foi encontrada automaticamente. Desative um dos dois mods e inicie de novo.",
+    "installMissing": "Instalar {name}",
+    "installingMissing": "Instalando mods que faltam …",
+    "installMissingDone": "Instalado: {list}"
   },
   "exportPack": {
     "title": "Exportar como modpack",

@@ -588,7 +588,8 @@ async fn same_file(a: &Path, b: &Path) -> bool {
 /// Fabric API nachinstallieren, falls sie fehlt. Offline oder bei Fehlern
 /// nur warnen – das Spiel meldet eine fehlende Abhängigkeit dann selbst.
 async fn ensure_fabric_api(http: &reqwest::Client, paths: &Paths, instance: &Instance) {
-    let installed = content::installed_project_ids(paths, &instance.id).await.unwrap_or_default();
+    // Eine deaktivierte Fabric API zählt nicht – das Spiel lädt sie nicht.
+    let installed = content::enabled_project_ids(paths, &instance.id).await.unwrap_or_default();
     if installed.iter().any(|id| id == FABRIC_API_PROJECT) || has_fabric_api_file(paths, instance).await {
         return;
     }

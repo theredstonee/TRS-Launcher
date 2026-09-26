@@ -11,6 +11,7 @@ pub mod clips;
 pub mod client_mod_update;
 pub mod content;
 pub mod curseforge;
+pub mod depcheck;
 pub mod discord;
 pub mod download;
 pub mod error;
@@ -693,9 +694,14 @@ impl Launcher {
         // Vanilla mit TRS-Optimierung läuft unter der Haube als Fabric.
         let (client_mod_dir, catalog) = self.client_mod_catalog().await;
         let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), instance).await;
+        // Mods laden/prüfen als eigene Stufe – sonst sähe der erste Start wie hängengeblieben aus.
+        let mods_progress = |p: presets::ApplyProgress| on_progress(mods_stage(&p));
         // Performance-Mods gibt es nur für Fabric; Forge-Boost (1.8.9) bekommt nur den TRS Client.
         if effective.loader.kind == LoaderKind::Fabric && instance.loader.kind != LoaderKind::Fabric {
-            boost::ensure_performance(&self.http, &self.paths, catalog.builds(), &effective).await?;
+            if boost::needs_performance(&self.paths, &effective).await {
+                on_progress(StageProgress::begin(Stage::Mods));
+            }
+            boost::ensure_performance(&self.http, &self.paths, catalog.builds(), &effective, &mods_progress).await?;
         }
         let instance = &effective;
 
@@ -707,6 +713,25 @@ impl Launcher {
                 .await
         {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
+        }
+        // Fehlt einer Mod eine Pflicht-Abhängigkeit (z. B. Cloth Config für More Culling),
+        // wird sie ergänzt – sonst bricht Fabric den Start mit „Incompatible mods“ ab.
+        match depcheck::ensure_before_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await {
+            Ok(fix) if !fix.is_empty() => {
+                let sink = self.games.sink();
+                sink(GameEvent::notice(
+                    instance.id.clone(),
+                    &crate::msg!(
+                        "launcher.dependenciesAdded",
+                        "Fehlende Abhängigkeiten ergänzt: {list} (gebraucht von {mods}).",
+                        list = fix.added.join(", "),
+                        mods = fix.needed_by.join(", ")
+                    ),
+                ));
+            }
+            Ok(_) => {}
+            Err(Error::Cancelled) => return Err(Error::Cancelled),
+            Err(e) => tracing::warn!("Abhängigkeiten konnten nicht geprüft werden: {e}"),
         }
 
         let prepared =
@@ -1023,6 +1048,17 @@ fn link_game_exited(link: &Arc<link::TrsLink>, paths: &Paths, instance_id: &str)
             }
         });
     }
+}
+
+/// Fortschritt beim Laden/Ergänzen von Mods als Start-Stufe „Mods“
+/// (Auflösen 0–20 %, Downloads 20–100 %).
+fn mods_stage(p: &presets::ApplyProgress) -> StageProgress {
+    let fraction = if p.total == 0 { 1.0 } else { f64::from(p.done) / f64::from(p.total) };
+    let (percent, done, total) = match p.phase {
+        presets::ApplyPhase::Resolve => (fraction * 20.0, 0, 0),
+        presets::ApplyPhase::Install => (20.0 + fraction * 80.0, u64::from(p.done), u64::from(p.total)),
+    };
+    StageProgress { stage: Stage::Mods, percent: percent.clamp(0.0, 100.0), done_files: done, total_files: total }
 }
 
 /// Kurzbeschreibung für den Verlauf, z. B. `1.21.1 Fabric 0.16.10`.

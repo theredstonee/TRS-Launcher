@@ -40,7 +40,7 @@ pub enum GameEvent {
         exit_code: Option<i32>,
         crashed: bool,
         play_seconds: u64,
-        diagnosis: Option<Diagnosis>,
+        diagnosis: Option<Box<Diagnosis>>,
     },
     /// Ein Start-Hook oder die Synchronisierung nach dem Beenden ist
     /// fehlgeschlagen – das Frontend zeigt die Meldung als Hinweis.
@@ -111,6 +111,18 @@ pub struct ModConflictInfo {
     pub other_version: Option<String>,
 }
 
+/// Welche Mods fehlen (Fabric: „… of cloth-config, which is missing!“ /
+/// „Install cloth-config, version 16.0.0 or later.“; Forge: „Mod ID: 'x' … [MISSING]“).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MissingModInfo {
+    /// Die Mod, die sie verlangt (Mod-ID aus dem Jar), falls genannt.
+    pub mod_id: Option<String>,
+    pub mod_name: Option<String>,
+    /// Fehlende Mod-IDs (z. B. `cloth-config`) – das Frontend bietet „installieren“ an.
+    pub dependencies: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Diagnosis {
@@ -120,11 +132,17 @@ pub struct Diagnosis {
     pub message: String,
     /// Übersetzungs-Code der Meldung (`errors.<code>`).
     pub code: &'static str,
+    /// Werte für die Übersetzung (`{name}` …).
+    #[serde(skip_serializing_if = "serde_json::Map::is_empty")]
+    pub params: serde_json::Map<String, serde_json::Value>,
     /// „Dateien prüfen & reparieren“ anbieten.
     pub can_repair: bool,
     /// Bei `incompatible_mod`: welche Mods – das Frontend bietet den Tausch an.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub conflict: Option<ModConflictInfo>,
+    /// Bei `missing_dependency`: was fehlt – das Frontend bietet „installieren“ an.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub missing: Option<MissingModInfo>,
 }
 
 fn clip_part(text: &str) -> String {
@@ -188,6 +206,66 @@ pub fn parse_mod_conflict(text: &str) -> Option<ModConflictInfo> {
     None
 }
 
+/// So viele fehlende Mods werden höchstens übernommen.
+const MAX_MISSING: usize = 8;
+
+/// `cloth-config` bzw. `mod 'Cloth Config' (cloth-config)` → Mod-ID.
+fn missing_id(text: &str) -> Option<String> {
+    let text = text.trim().trim_start_matches("mod ").trim();
+    if let Some((_, id, _)) = mod_ref(text) {
+        return Some(id.to_owned());
+    }
+    let id = text.trim_matches(['\'', '"']);
+    is_mod_id(id).then(|| id.to_owned())
+}
+
+/// Liest, welche Mod welche andere vermisst:
+/// * `Mod 'More Culling' (moreculling) 1.6.2 requires version 16.0.0 or later of cloth-config, which is missing!`
+/// * `Mod 'Sodium Extra' (sodium-extra) requires any version of sodium, which is missing!`
+/// * `Install cloth-config, version 16.0.0 or later.`
+/// * (Neo)Forge: `Mod ID: 'cloth_config', Requested by: 'moreculling', Expected range: '[15,)', Actual version: '[MISSING]'`
+pub fn parse_missing_dependency(text: &str) -> Option<MissingModInfo> {
+    let mut info = MissingModInfo { mod_id: None, mod_name: None, dependencies: Vec::new() };
+    let add = |info: &mut MissingModInfo, id: String| {
+        if !info.dependencies.contains(&id) && info.dependencies.len() < MAX_MISSING {
+            info.dependencies.push(id);
+        }
+    };
+    for line in text.lines().map(|l| l.trim().trim_start_matches(['-', '\t', ' ']).trim()) {
+        if let Some(rest) = line.strip_prefix("Mod ")
+            && let Some((name, id, rest)) = mod_ref(rest)
+            && let Some(before) = rest.strip_suffix("which is missing!").or_else(|| rest.strip_suffix("which is missing"))
+            && let Some((_, dep)) = before.trim_end().trim_end_matches(',').rsplit_once(" of ")
+            && let Some(dep) = missing_id(dep)
+        {
+            if info.mod_id.is_none() {
+                info.mod_id = Some(id.to_owned());
+                info.mod_name = Some(clip_part(name));
+            }
+            add(&mut info, dep);
+        } else if let Some(rest) = line.strip_prefix("Install ")
+            && let Some((dep, _)) = rest.split_once(',').or_else(|| rest.split_once('.'))
+            && let Some(dep) = missing_id(dep)
+        {
+            add(&mut info, dep);
+        } else if line.contains("[MISSING]")
+            && let Some(rest) = line.strip_prefix("Mod ID: '")
+            && let Some((dep, rest)) = rest.split_once('\'')
+            && is_mod_id(dep)
+        {
+            if info.mod_id.is_none()
+                && let Some((_, by)) = rest.split_once("Requested by: '")
+                && let Some((by, _)) = by.split_once('\'')
+                && is_mod_id(by)
+            {
+                info.mod_id = Some(by.to_owned());
+            }
+            add(&mut info, dep.to_owned());
+        }
+    }
+    (!info.dependencies.is_empty()).then_some(info)
+}
+
 /// Sucht in den letzten Log-Zeilen nach bekannten Absturzursachen.
 pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     let text: String = lines.iter().map(|l| l.message.as_str()).collect::<Vec<_>>().join("\n");
@@ -205,10 +283,40 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
         );
         return Some(Diagnosis {
             kind: DiagnosisKind::IncompatibleMod,
+            params: message.params_json(),
             message: message.text,
             code: message.code,
             can_repair: false,
             conflict: Some(conflict),
+            missing: None,
+        });
+    }
+    let missing_dependency = has("requires") && (has("which is missing") || has("but it is missing"))
+        || has("Missing or unsupported mandatory dependencies")
+        || has("Could not find required mod");
+    if missing_dependency && let Some(missing) = parse_missing_dependency(&text) {
+        let deps = missing.dependencies.join(", ");
+        let message = match &missing.mod_name.clone().or_else(|| missing.mod_id.clone()) {
+            Some(name) => crate::msg!(
+                "process.crashMissingDependencyNamed",
+                "{name} braucht {deps} – die Mod fehlt in der Instanz. Der Launcher kann sie installieren.",
+                name = name,
+                deps = &deps
+            ),
+            None => crate::msg!(
+                "process.crashMissingDependencyOnly",
+                "Es fehlt {deps} – eine andere Mod braucht sie. Der Launcher kann sie installieren.",
+                deps = &deps
+            ),
+        };
+        return Some(Diagnosis {
+            kind: DiagnosisKind::MissingDependency,
+            params: message.params_json(),
+            message: message.text,
+            code: message.code,
+            can_repair: false,
+            conflict: None,
+            missing: Some(missing),
         });
     }
     let (kind, message, can_repair) = if has("java.util.zip.ZipException")
@@ -246,10 +354,7 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
             ),
             false,
         )
-    } else if has("requires") && (has("which is missing") || has("but it is missing"))
-        || has("Missing or unsupported mandatory dependencies")
-        || has("Could not find required mod")
-    {
+    } else if missing_dependency {
         (
             DiagnosisKind::MissingDependency,
             crate::msg!(
@@ -284,7 +389,15 @@ pub fn diagnose(lines: &[LogLine]) -> Option<Diagnosis> {
     } else {
         return None;
     };
-    Some(Diagnosis { kind, message: message.text, code: message.code, can_repair, conflict: None })
+    Some(Diagnosis {
+        kind,
+        params: message.params_json(),
+        message: message.text,
+        code: message.code,
+        can_repair,
+        conflict: None,
+        missing: None,
+    })
 }
 
 /// Für dieses Programm die leistungsstarke Grafikkarte wählen (Windows:
@@ -479,7 +592,7 @@ impl GameManager {
                         let skip = h.len().saturating_sub(DIAGNOSIS_LINES);
                         h.iter().skip(skip).cloned().collect::<Vec<_>>()
                     });
-                    history.as_deref().and_then(diagnose)
+                    history.as_deref().and_then(diagnose).map(Box::new)
                 } else {
                     None
                 }
@@ -808,6 +921,57 @@ More details:
         );
         assert_eq!(diagnose(&[line("Incompatible mods found!")]).unwrap().kind, DiagnosisKind::ModConflict);
         assert!(parse_mod_conflict("Mod '../x' (bad id!) 1 is incompatible with version 1 of mod 'Y' (y), yet: 1!").is_none());
+    }
+
+    /// Genau der Log aus dem Fehlerbericht (mclo.gs SFN97JF, Fabric Loader 0.19.5, MC 1.21.11).
+    const MORE_CULLING_CLOTH: &str = "Loading Minecraft 1.21.11 with Fabric Loader 0.19.5
+Mod resolution failed
+Immediate reason: [HARD_DEP_NO_CANDIDATE moreculling 1.6.2 {depends cloth-config @ [>=16.0.0]}, ROOT_FORCELOAD_SINGLE moreculling 1.6.2]
+Reason: [HARD_DEP moreculling 1.6.2 {depends cloth-config @ [>=16.0.0]}]
+Fix: add [add:cloth-config 16.0.0 ([[16.0.0,∞)])], remove [], replace []
+Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+\t - Install cloth-config, version 16.0.0 or later.
+More details:
+\t - Mod 'More Culling' (moreculling) 1.6.2 requires version 16.0.0 or later of cloth-config, which is missing!
+\tat net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51)";
+
+    #[test]
+    fn diagnoses_missing_dependencies_with_a_fix() {
+        let lines: Vec<LogLine> = MORE_CULLING_CLOTH.lines().map(line).collect();
+        let d = diagnose(&lines).unwrap();
+        assert_eq!(d.kind, DiagnosisKind::MissingDependency);
+        let m = d.missing.as_ref().unwrap();
+        assert_eq!(m.mod_id.as_deref(), Some("moreculling"));
+        assert_eq!(m.mod_name.as_deref(), Some("More Culling"));
+        assert_eq!(m.dependencies, ["cloth-config"]);
+        assert_eq!(d.code, "process.crashMissingDependencyNamed");
+        assert!(d.message.contains("More Culling") && d.message.contains("cloth-config"));
+        let json = serde_json::to_value(&d).unwrap();
+        assert_eq!(json["kind"], "missing_dependency");
+        assert_eq!(json["missing"]["dependencies"][0], "cloth-config");
+        assert_eq!(json["params"]["deps"], "cloth-config");
+
+        // Ältere Wortwahl, mehrere fehlende Mods, nur der Lösungsvorschlag, (Neo)Forge.
+        let m = parse_missing_dependency(
+            "Mod 'Sodium Extra' (sodium-extra) requires any version of sodium, which is missing!\n\
+             Mod 'X' (xmod) 1.0 requires any version of mod fabric-api, which is missing!",
+        )
+        .unwrap();
+        assert_eq!((m.mod_id.as_deref(), m.dependencies.as_slice()), (Some("sodium-extra"), &["sodium".to_owned(), "fabric-api".to_owned()][..]));
+        let m = parse_missing_dependency("\t - Install fabric-api, any version.").unwrap();
+        assert_eq!((m.mod_id, m.dependencies), (None, vec!["fabric-api".to_owned()]));
+        let m = parse_missing_dependency(
+            "Missing or unsupported mandatory dependencies:\n\tMod ID: 'cloth_config', Requested by: 'moreculling', Expected range: '[15,)', Actual version: '[MISSING]'",
+        )
+        .unwrap();
+        assert_eq!((m.mod_id.as_deref(), m.dependencies.as_slice()), (Some("moreculling"), &["cloth_config".to_owned()][..]));
+        let only = diagnose(&[line("Mod 'A' (a) requires any version of b, which is missing!")]).unwrap();
+        assert_eq!(only.params["name"], "A");
+        // Unsinn wird nicht übernommen.
+        assert!(parse_missing_dependency("Mod 'A' (a) requires any version of ../../evil path, which is missing!").is_none());
+        assert!(parse_missing_dependency("Install the latest drivers.").is_none());
     }
 
     #[test]

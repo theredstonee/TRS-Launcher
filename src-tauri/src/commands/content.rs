@@ -1,6 +1,7 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use trs_core::content::{self, ContentItem, ContentKind, Platform};
+use trs_core::depcheck::{self, DependencyFix};
 use trs_core::modcompat::{self, CompatReport};
 use trs_core::modpack::PackProgress;
 use trs_core::modrinth::{
@@ -149,6 +150,33 @@ pub async fn fix_mod_conflicts(
 ) -> CommandResult<CompatReport> {
     let instance = launcher.instances().get(&id).await?;
     let work = modcompat::fix_instance(launcher.http(), launcher.paths(), &instance, prefer.as_deref());
+    Ok(tracked(&app, task_id, work).await?)
+}
+
+/// Installiert Mods, die laut Absturz fehlen (Knopf in der Absturz-Diagnose,
+/// z. B. `cloth-config` für More Culling). `declarer` = Mod-ID der Mod, die sie verlangt.
+#[tauri::command]
+pub async fn install_missing_dependencies(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    declarer: Option<String>,
+    dependencies: Vec<String>,
+    task_id: Option<String>,
+) -> CommandResult<DependencyFix> {
+    let instance = launcher.instances().get(&id).await?;
+    let builds = launcher.client_mod_builds().await;
+    // Vanilla mit TRS-Optimierung startet als Fabric – die Abhängigkeit muss dazu passen.
+    let effective = trs_core::boost::effective_instance(launcher.http(), launcher.paths(), &builds, &instance).await;
+    let work = depcheck::install_missing(
+        launcher.http(),
+        launcher.paths(),
+        &builds,
+        &effective,
+        declarer.as_deref(),
+        &dependencies,
+        &|_| {},
+    );
     Ok(tracked(&app, task_id, work).await?)
 }
 

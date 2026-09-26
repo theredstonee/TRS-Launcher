@@ -18,7 +18,7 @@ use crate::instance::validate_id;
 use crate::paths::Paths;
 use crate::{Error, Result, fsutil};
 
-const DISABLED_SUFFIX: &str = ".disabled";
+pub(crate) const DISABLED_SUFFIX: &str = ".disabled";
 const MAX_FILE_NAME_LEN: usize = 200;
 /// Mod-Metadaten sind winzig; alles darüber ist kaputt oder böswillig.
 const MAX_METADATA_BYTES: u64 = 512 * 1024;
@@ -497,6 +497,21 @@ pub async fn installed_project_ids(paths: &Paths, instance_id: &str) -> Result<V
     Ok(ids)
 }
 
+/// Wie [`installed_project_ids`], aber nur eingeschaltete Dateien – eine
+/// deaktivierte Abhängigkeit lädt das Spiel nicht.
+pub(crate) async fn enabled_project_ids(paths: &Paths, instance_id: &str) -> Result<Vec<String>> {
+    validate_id(instance_id)?;
+    let index = read_index(paths, instance_id).await;
+    let mut ids = Vec::new();
+    for (key, source) in &index.files {
+        let Some((dir, file)) = key.split_once('/') else { continue };
+        if existing_path(&paths.instance_game_dir(instance_id).join(dir), file).is_some_and(|(_, enabled)| enabled) {
+            ids.push(source.project_key());
+        }
+    }
+    Ok(ids)
+}
+
 /// Fingerabdruck einer Datei, um unveränderte „unbekannte“ Dateien nicht
 /// ständig neu zu hashen.
 pub(crate) fn fingerprint(meta: &std::fs::Metadata) -> String {
@@ -784,7 +799,10 @@ mod tests {
         assert!(mods.join("sodium.jar.disabled").is_file() && !mods.join("sodium.jar").exists());
         // Deaktiviert zählt weiter als installiert.
         assert_eq!(installed_project_ids(&paths, "test").await.unwrap(), ["AANobbMI"]);
+        // … aber nicht als geladen (für Abhängigkeiten).
+        assert!(enabled_project_ids(&paths, "test").await.unwrap().is_empty());
         set_enabled(&paths, "test", ContentKind::Mod, "sodium.jar", true).await.unwrap();
+        assert_eq!(enabled_project_ids(&paths, "test").await.unwrap(), ["AANobbMI"]);
         assert!(mods.join("sodium.jar").is_file());
 
         delete(&paths, "test", ContentKind::Mod, "sodium.jar").await.unwrap();

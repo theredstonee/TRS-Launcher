@@ -84,6 +84,7 @@
     "justNowInline": "gerade eben"
   },
   "launchStage": {
+    "mods": "Mods",
     "version": "Versionsdaten",
     "java": "Java",
     "loader": "Modloader",
@@ -349,7 +350,8 @@
       "noLogToShare": "Es gibt noch keinen Log zum Teilen.",
       "signInFirst": "Bitte melde dich zuerst unter „Accounts“ mit deinem Microsoft-Konto an.",
       "stopAllGamesFirst": "Bitte erst alle laufenden Spiele beenden.",
-      "syncAfterExitFailed": "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden."
+      "syncAfterExitFailed": "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden.",
+      "dependenciesAdded": "Fehlende Abhängigkeiten ergänzt: {list} (gebraucht von {mods})."
     },
     "loaders": {
       "invalidGameVersion": "Ungültige Minecraft-Version",
@@ -376,6 +378,8 @@
       "crashCorruptFiles": "Eine Spieldatei ist beschädigt (z. B. nach einem abgebrochenen Download). „Dateien prüfen“ lädt sie neu herunter.",
       "crashGraphicsDriver": "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den Treiber deiner Grafikkarte.",
       "crashMissingDependency": "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler.",
+      "crashMissingDependencyNamed": "{name} braucht {deps} – die Mod fehlt in der Instanz. Der Launcher kann sie installieren.",
+      "crashMissingDependencyOnly": "Es fehlt {deps} – eine andere Mod braucht sie. Der Launcher kann sie installieren.",
       "crashModConflict": "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut.",
       "crashOutOfMemory": "Dem Spiel ist der Arbeitsspeicher ausgegangen. Erhöhe den Arbeitsspeicher der Instanz in den Einstellungen.",
       "crashWrongJava": "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den Einstellungen, dann wählt der Launcher automatisch die passende.",
@@ -560,6 +564,10 @@
       "notAModpack": "Das ist kein CurseForge-Modpack.",
       "packFileMissing": "Eine Datei des Modpacks gibt es auf CurseForge nicht mehr (Projekt {project}).",
       "packBlocked": "Der Autor von „{name}“ erlaubt keine Downloads über andere Apps – bitte das Modpack auf CurseForge herunterladen und hier importieren."
+    },
+    "depcheck": {
+      "notFound": "{list} wurde auf Modrinth nicht gefunden – bitte von Hand installieren.",
+      "nothingToInstall": "Keine fehlende Mod angegeben."
     },
     "presets": {
       "nameLength": "Der Name muss zwischen 1 und {max} Zeichen lang sein.",
@@ -1411,6 +1419,8 @@
       "out_of_memory": "Dem Spiel ist der Arbeitsspeicher ausgegangen. Erhöhe den Arbeitsspeicher der Instanz in den Einstellungen.",
       "wrong_java": "Eine Mod braucht eine neuere Java-Version. Entferne den eigenen Java-Pfad in den Einstellungen, dann wählt der Launcher automatisch die passende.",
       "missing_dependency": "Einer Mod fehlt eine benötigte andere Mod. Welche, steht im Log direkt über dem Fehler.",
+      "missing_dependency_named": "{name} braucht {deps} – die Mod fehlt in der Instanz. Der Launcher kann sie installieren.",
+      "missing_dependency_only": "Es fehlt {deps} – eine andere Mod braucht sie. Der Launcher kann sie installieren.",
       "mod_conflict": "Zwei Mods vertragen sich nicht. Deaktiviere zuletzt hinzugefügte Mods und starte erneut.",
       "graphics_driver": "Der Grafiktreiber ist abgestürzt oder unterstützt OpenGL nicht. Aktualisiere den Treiber deiner Grafikkarte.",
       "incompatible_mod": "{name} verträgt sich nicht mit {other}. Der Launcher kann {name} gegen eine passende Version tauschen."
@@ -1419,7 +1429,10 @@
     "fixConflict": "{name} gegen passende Version tauschen",
     "fixing": "Suche passende Mod-Versionen …",
     "fixDone": "Gegen passende Versionen getauscht: {list}",
-    "fixNothing": "Es wurde keine passende Version gefunden. Deaktiviere eine der beiden Mods und starte erneut."
+    "fixNothing": "Es wurde keine passende Version gefunden. Deaktiviere eine der beiden Mods und starte erneut.",
+    "installMissing": "{name} installieren",
+    "installingMissing": "Installiere fehlende Mods …",
+    "installMissingDone": "Installiert: {list}"
   },
   "exportPack": {
     "title": "Als Modpack exportieren",

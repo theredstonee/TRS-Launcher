@@ -78,11 +78,12 @@ export function stageLabel(stage: LaunchStage): string {
 
 // Grobe Gewichtung der Stufen für EINE durchgehende Prozentanzeige.
 const stageWeights: [LaunchStage, number][] = [
+  ['mods', 6],
   ['version', 2],
   ['java', 24],
   ['loader', 14],
   ['libraries', 16],
-  ['assets', 42],
+  ['assets', 36],
   ['starting', 2],
 ]
 

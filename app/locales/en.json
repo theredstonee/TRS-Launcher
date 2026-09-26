@@ -84,6 +84,7 @@
     "justNowInline": "just now"
   },
   "launchStage": {
+    "mods": "Mods",
     "version": "Version data",
     "java": "Java",
     "loader": "Mod loader",
@@ -349,7 +350,8 @@
       "noLogToShare": "There's no log to share yet.",
       "signInFirst": "Please sign in with your Microsoft account under “Accounts” first.",
       "stopAllGamesFirst": "Please close all running games first.",
-      "syncAfterExitFailed": "The settings couldn't be synced with the other instances."
+      "syncAfterExitFailed": "The settings couldn't be synced with the other instances.",
+      "dependenciesAdded": "Added missing dependencies: {list} (needed by {mods})."
     },
     "loaders": {
       "invalidGameVersion": "Invalid Minecraft version",
@@ -376,6 +378,8 @@
       "crashCorruptFiles": "A game file is corrupted (e.g. after an interrupted download). “Check files” downloads it again.",
       "crashGraphicsDriver": "The graphics driver crashed or doesn't support OpenGL. Update your graphics card driver.",
       "crashMissingDependency": "A mod is missing another mod it requires. The log shows which one right above the error.",
+      "crashMissingDependencyNamed": "{name} needs {deps}, which is missing from this instance. The launcher can install it.",
+      "crashMissingDependencyOnly": "{deps} is missing – another mod needs it. The launcher can install it.",
       "crashModConflict": "Two mods don't get along. Disable the mods you added most recently and launch again.",
       "crashOutOfMemory": "The game ran out of memory. Increase the instance's memory in its settings.",
       "crashWrongJava": "A mod needs a newer Java version. Remove the custom Java path in the settings and the launcher will pick the right one automatically.",
@@ -560,6 +564,10 @@
       "notAModpack": "This isn't a CurseForge modpack.",
       "packFileMissing": "A file of the modpack no longer exists on CurseForge (project {project}).",
       "packBlocked": "The author of “{name}” doesn't allow downloads through other apps – please download the modpack on CurseForge and import it here."
+    },
+    "depcheck": {
+      "notFound": "{list} was not found on Modrinth – please install it manually.",
+      "nothingToInstall": "No missing mod given."
     },
     "presets": {
       "nameLength": "The name must be between 1 and {max} characters long.",
@@ -1411,6 +1419,8 @@
       "out_of_memory": "The game ran out of memory. Increase the instance's memory in its settings.",
       "wrong_java": "A mod needs a newer Java version. Remove the custom Java path in the settings and the launcher will pick the right one automatically.",
       "missing_dependency": "A mod is missing another mod it requires. The log shows which one right above the error.",
+      "missing_dependency_named": "{name} needs {deps}, which is missing from this instance. The launcher can install it.",
+      "missing_dependency_only": "{deps} is missing – another mod needs it. The launcher can install it.",
       "mod_conflict": "Two mods don't get along. Disable the mods you added most recently and launch again.",
       "graphics_driver": "The graphics driver crashed or doesn't support OpenGL. Update your graphics card driver.",
       "incompatible_mod": "{name} doesn't work with {other}. The launcher can switch {name} to a version that fits."
@@ -1419,7 +1429,10 @@
     "fixConflict": "Switch {name} to a compatible version",
     "fixing": "Looking for compatible mod versions …",
     "fixDone": "Switched to compatible versions: {list}",
-    "fixNothing": "No compatible version was found automatically. Disable one of the two mods and launch again."
+    "fixNothing": "No compatible version was found automatically. Disable one of the two mods and launch again.",
+    "installMissing": "Install {name}",
+    "installingMissing": "Installing missing mods …",
+    "installMissingDone": "Installed: {list}"
   },
   "exportPack": {
     "title": "Export as modpack",

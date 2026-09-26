@@ -84,6 +84,7 @@
     "justNowInline": "zojuist"
   },
   "launchStage": {
+    "mods": "Mods",
     "version": "Versiegegevens",
     "java": "Java",
     "loader": "Modloader",
@@ -349,7 +350,8 @@
       "noLogToShare": "Er is nog geen log om te delen.",
       "signInFirst": "Log eerst in met je Microsoft-account onder “Accounts”.",
       "stopAllGamesFirst": "Sluit eerst alle actieve games.",
-      "syncAfterExitFailed": "De instellingen konden niet worden gesynchroniseerd met de andere instanties."
+      "syncAfterExitFailed": "De instellingen konden niet worden gesynchroniseerd met de andere instanties.",
+      "dependenciesAdded": "Ontbrekende afhankelijkheden toegevoegd: {list} (nodig voor {mods})."
     },
     "loaders": {
       "invalidGameVersion": "Ongeldige Minecraft-versie",
@@ -376,6 +378,8 @@
       "crashCorruptFiles": "Een spelbestand is beschadigd (bijv. na een onderbroken download). “Bestanden controleren” downloadt het opnieuw.",
       "crashGraphicsDriver": "Het grafische stuurprogramma is gecrasht of ondersteunt geen OpenGL. Werk het stuurprogramma van je videokaart bij.",
       "crashMissingDependency": "Een mod mist een andere mod die hij nodig heeft. Het log toont vlak boven de fout welke.",
+      "crashMissingDependencyNamed": "{name} heeft {deps} nodig, maar die ontbreekt in deze instantie. De launcher kan hem installeren.",
+      "crashMissingDependencyOnly": "{deps} ontbreekt – een andere mod heeft hem nodig. De launcher kan hem installeren.",
       "crashModConflict": "Twee mods kunnen niet met elkaar overweg. Schakel de laatst toegevoegde mods uit en start opnieuw.",
       "crashOutOfMemory": "Het spel had te weinig geheugen. Verhoog het geheugen van de instantie in de instellingen.",
       "crashWrongJava": "Een mod heeft een nieuwere Java-versie nodig. Verwijder het eigen Java-pad in de instellingen; de launcher kiest dan automatisch de juiste.",
@@ -560,6 +564,10 @@
       "notAModpack": "Dit is geen CurseForge-modpack.",
       "packFileMissing": "Een bestand van het modpack bestaat niet meer op CurseForge (project {project}).",
       "packBlocked": "De maker van “{name}” staat geen downloads via andere apps toe – download het modpack op CurseForge en importeer het hier."
+    },
+    "depcheck": {
+      "notFound": "{list} is niet gevonden op Modrinth – installeer het handmatig.",
+      "nothingToInstall": "Geen ontbrekende mod opgegeven."
     },
     "presets": {
       "nameLength": "De naam moet tussen 1 en {max} tekens lang zijn.",
@@ -1411,6 +1419,8 @@
       "out_of_memory": "Het spel had te weinig geheugen. Verhoog het geheugen van de instantie in de instellingen.",
       "wrong_java": "Een mod heeft een nieuwere Java-versie nodig. Verwijder het eigen Java-pad in de instellingen; de launcher kiest dan automatisch de juiste.",
       "missing_dependency": "Een mod mist een andere mod die hij nodig heeft. Het log toont vlak boven de fout welke.",
+      "missing_dependency_named": "{name} heeft {deps} nodig, maar die ontbreekt in deze instantie. De launcher kan hem installeren.",
+      "missing_dependency_only": "{deps} ontbreekt – een andere mod heeft hem nodig. De launcher kan hem installeren.",
       "mod_conflict": "Twee mods kunnen niet met elkaar overweg. Schakel de laatst toegevoegde mods uit en start opnieuw.",
       "graphics_driver": "Het grafische stuurprogramma is gecrasht of ondersteunt geen OpenGL. Werk het stuurprogramma van je videokaart bij.",
       "incompatible_mod": "{name} werkt niet samen met {other}. De launcher kan {name} vervangen door een versie die past."
@@ -1419,7 +1429,10 @@
     "fixConflict": "{name} vervangen door een passende versie",
     "fixing": "Passende modversies zoeken …",
     "fixDone": "Vervangen door passende versies: {list}",
-    "fixNothing": "Er is automatisch geen passende versie gevonden. Schakel een van de twee mods uit en start opnieuw."
+    "fixNothing": "Er is automatisch geen passende versie gevonden. Schakel een van de twee mods uit en start opnieuw.",
+    "installMissing": "{name} installeren",
+    "installingMissing": "Ontbrekende mods installeren …",
+    "installMissingDone": "Geïnstalleerd: {list}"
   },
   "exportPack": {
     "title": "Exporteren als modpack",

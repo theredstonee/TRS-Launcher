@@ -84,6 +84,7 @@
     "justNowInline": "à l'instant"
   },
   "launchStage": {
+    "mods": "Mods",
     "version": "Données de version",
     "java": "Java",
     "loader": "Chargeur de mods",
@@ -349,7 +350,8 @@
       "noLogToShare": "Il n'y a pas encore de journal à partager.",
       "signInFirst": "Connecte-toi d'abord avec ton compte Microsoft dans « Comptes ».",
       "stopAllGamesFirst": "Ferme d'abord tous les jeux en cours.",
-      "syncAfterExitFailed": "Impossible de synchroniser les paramètres avec les autres instances."
+      "syncAfterExitFailed": "Impossible de synchroniser les paramètres avec les autres instances.",
+      "dependenciesAdded": "Dépendances manquantes ajoutées : {list} (requises par {mods})."
     },
     "loaders": {
       "invalidGameVersion": "Version de Minecraft invalide",
@@ -376,6 +378,8 @@
       "crashCorruptFiles": "Un fichier du jeu est corrompu (par ex. après un téléchargement interrompu). « Vérifier les fichiers » le télécharge à nouveau.",
       "crashGraphicsDriver": "Le pilote graphique a planté ou ne prend pas en charge OpenGL. Mets à jour le pilote de ta carte graphique.",
       "crashMissingDependency": "Il manque à un mod un autre mod dont il a besoin. Le journal indique lequel juste au-dessus de l'erreur.",
+      "crashMissingDependencyNamed": "{name} a besoin de {deps}, absent de cette instance. Le launcher peut l’installer.",
+      "crashMissingDependencyOnly": "{deps} est manquant – un autre mod en a besoin. Le launcher peut l’installer.",
       "crashModConflict": "Deux mods ne s'entendent pas. Désactive les derniers mods ajoutés et relance.",
       "crashOutOfMemory": "Le jeu a manqué de mémoire. Augmente la mémoire de l'instance dans ses paramètres.",
       "crashWrongJava": "Un mod nécessite une version de Java plus récente. Retire le chemin Java personnalisé dans les paramètres et le launcher choisira automatiquement la bonne.",
@@ -560,6 +564,10 @@
       "notAModpack": "Ce n'est pas un modpack CurseForge.",
       "packFileMissing": "Un fichier du modpack n'existe plus sur CurseForge (projet {project}).",
       "packBlocked": "L'auteur de « {name} » n'autorise pas les téléchargements via d'autres applications – télécharge le modpack sur CurseForge et importe-le ici."
+    },
+    "depcheck": {
+      "notFound": "{list} est introuvable sur Modrinth – installe-le manuellement.",
+      "nothingToInstall": "Aucun mod manquant indiqué."
     },
     "presets": {
       "nameLength": "Le nom doit contenir entre 1 et {max} caractères.",
@@ -1411,6 +1419,8 @@
       "out_of_memory": "Le jeu a manqué de mémoire. Augmente la mémoire de l'instance dans ses paramètres.",
       "wrong_java": "Un mod nécessite une version de Java plus récente. Retire le chemin Java personnalisé dans les paramètres et le launcher choisira automatiquement la bonne.",
       "missing_dependency": "Il manque à un mod un autre mod dont il a besoin. Le journal indique lequel juste au-dessus de l'erreur.",
+      "missing_dependency_named": "{name} a besoin de {deps}, absent de cette instance. Le launcher peut l’installer.",
+      "missing_dependency_only": "{deps} est manquant – un autre mod en a besoin. Le launcher peut l’installer.",
       "mod_conflict": "Deux mods ne s'entendent pas. Désactive les derniers mods ajoutés et relance.",
       "graphics_driver": "Le pilote graphique a planté ou ne prend pas en charge OpenGL. Mets à jour le pilote de ta carte graphique.",
       "incompatible_mod": "{name} ne fonctionne pas avec {other}. Le launcher peut remplacer {name} par une version qui convient."
@@ -1419,7 +1429,10 @@
     "fixConflict": "Remplacer {name} par une version compatible",
     "fixing": "Recherche de versions de mods compatibles …",
     "fixDone": "Remplacé par des versions compatibles : {list}",
-    "fixNothing": "Aucune version compatible n'a été trouvée automatiquement. Désactive l'un des deux mods et relance."
+    "fixNothing": "Aucune version compatible n'a été trouvée automatiquement. Désactive l'un des deux mods et relance.",
+    "installMissing": "Installer {name}",
+    "installingMissing": "Installation des mods manquants …",
+    "installMissingDone": "Installé : {list}"
   },
   "exportPack": {
     "title": "Exporter en modpack",
