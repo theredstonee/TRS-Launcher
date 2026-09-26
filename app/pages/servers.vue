@@ -9,6 +9,12 @@ const editing = ref<Server | null>(null)
 const adding = ref(false)
 const instanceId = ref('')
 const refreshing = ref(false)
+// Nur die Anzeige – die gespeicherte Reihenfolge (und servers.dat) bleibt.
+const sortByPingOn = usePingSort('servers')
+
+const shown = computed(() =>
+  sortByPingOn.value ? sortByPing(servers.items, (s) => latencyOf(servers.statuses[s.id])) : servers.items,
+)
 
 const target = computed(() => instances.items.find((i) => i.id === instanceId.value) ?? instances.items[0] ?? null)
 const busy = computed(() => (target.value ? games.state(target.value.id).phase !== 'idle' : false))
@@ -31,8 +37,9 @@ function join(server: Server) {
 <template>
   <div class="mx-auto max-w-3xl p-6">
     <PageHeader :title="t('servers.title')" :subtitle="t('servers.subtitle')">
-      <button class="btn btn-ghost" :disabled="refreshing || !servers.items.length" @click="refresh">
-        {{ refreshing ? t('servers.refreshing') : t('common.actions.refresh') }}
+      <button class="btn btn-ghost" :disabled="refreshing || !servers.items.length" :title="t('servers.ping.hint')" @click="refresh">
+        <svg viewBox="0 0 24 24" class="size-4" :class="{ 'animate-spin': refreshing }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.sync" /></svg>
+        {{ refreshing ? t('servers.ping.running') : t('servers.ping.test') }}
       </button>
       <button class="btn btn-primary" @click="adding = true">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
@@ -40,13 +47,19 @@ function join(server: Server) {
       </button>
     </PageHeader>
 
-    <label v-if="instances.items.length > 1 && servers.items.length" class="mb-4 flex items-center gap-2 text-xs text-base-400">
-      {{ t('servers.joinWith') }}
-      <select v-model="instanceId" class="field w-64 py-1.5">
-        <option value="">{{ t('servers.lastPlayed', { name: instances.items[0]?.name ?? '' }) }}</option>
-        <option v-for="i in instances.items.slice(1)" :key="i.id" :value="i.id">{{ i.name }} ({{ i.gameVersion }})</option>
-      </select>
-    </label>
+    <div v-if="servers.items.length && (instances.items.length > 1 || servers.items.length > 1)" class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-base-400">
+      <label v-if="instances.items.length > 1" class="flex items-center gap-2">
+        {{ t('servers.joinWith') }}
+        <select v-model="instanceId" class="field w-64 py-1.5">
+          <option value="">{{ t('servers.lastPlayed', { name: instances.items[0]?.name ?? '' }) }}</option>
+          <option v-for="i in instances.items.slice(1)" :key="i.id" :value="i.id">{{ i.name }} ({{ i.gameVersion }})</option>
+        </select>
+      </label>
+      <label v-if="servers.items.length > 1" class="ml-auto flex cursor-pointer items-center gap-2" :title="t('servers.ping.sortHint')">
+        <input v-model="sortByPingOn" type="checkbox" class="size-4 accent-redstone-500" />
+        {{ t('servers.ping.sort') }}
+      </label>
+    </div>
 
     <div v-if="!servers.loaded" class="space-y-2">
       <div v-for="i in 3" :key="i" class="skeleton h-[74px]" />
@@ -54,7 +67,7 @@ function join(server: Server) {
 
     <div v-else-if="servers.items.length" class="space-y-2">
       <ServerCard
-        v-for="s in servers.items"
+        v-for="s in shown"
         :key="s.id"
         :server="s"
         :join-disabled="!target || busy"
@@ -62,6 +75,7 @@ function join(server: Server) {
         @join="join"
         @edit="editing = $event"
       />
+      <p class="pt-1 text-[11px] text-base-600">{{ t('servers.ping.hint') }}</p>
     </div>
 
     <RedstoneEmpty

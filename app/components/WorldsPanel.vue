@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { convertFileSrc } from '@tauri-apps/api/core'
-import type { GameMode, Instance, InstanceServer, WorldInfo } from '~/types'
+import type { GameMode, Instance, InstanceServer, ServerStatus, WorldInfo } from '~/types'
 
 // Tab „Welten“: Einzelspieler-Welten (Name, Modus, Version, Größe; Ordner,
 // Sicherung, Löschen) und die Server dieser Instanz (servers.dat).
@@ -105,9 +105,54 @@ async function confirmDelete() {
 }
 
 // --- Server ---------------------------------------------------------------------
-function statusOf(s: InstanceServer) {
-  return s.launcherId ? servers.statuses[s.launcherId] : undefined
+// Ping-Test: misst die Latenz zu jedem Eintrag der servers.dat (Adressen liest
+// der Kern selbst). Danach 10 s Pause, damit niemand die Server zuspammt.
+const PING_COOLDOWN_MS = 10_000
+const pingTesting = ref(false)
+const pingCoolingDown = ref(false)
+const pingResults = ref<Record<string, ServerStatus>>({})
+const sortServersByPing = usePingSort('instanceServers')
+let cooldownTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(cooldownTimer))
+
+const serverKey = (s: { index: number | null; address: string }) => `${s.index ?? 'l'}-${s.address}`
+
+async function pingTest() {
+  if (pingTesting.value || pingCoolingDown.value) return
+  pingTesting.value = true
+  try {
+    const results = await backend.pingInstanceServers(props.instance.id)
+    pingResults.value = Object.fromEntries(results.map((r) => [serverKey(r), r.status]))
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    pingTesting.value = false
+    pingCoolingDown.value = true
+    cooldownTimer = setTimeout(() => (pingCoolingDown.value = false), PING_COOLDOWN_MS)
+  }
 }
+
+function statusOf(s: InstanceServer): ServerStatus | undefined {
+  return pingResults.value[serverKey(s)] ?? (s.launcherId ? servers.statuses[s.launcherId] : undefined)
+}
+/** `null` = kein Status bekannt (keine Lampe). */
+function lampOf(s: InstanceServer): 'checking' | 'online' | 'offline' | null {
+  const status = statusOf(s)
+  if (pingTesting.value && !pingResults.value[serverKey(s)]) return 'checking'
+  if (status) return status.online ? 'online' : 'offline'
+  return s.launcherId ? 'checking' : null
+}
+const LAMP_CLASS = {
+  checking: 'animate-lamp bg-base-600',
+  online: 'bg-ok shadow-[0_0_8px_var(--color-ok)]',
+  offline: 'bg-redstone-500',
+} as const
+const pingClass = (ms: number) => (ms < 80 ? 'text-ok' : ms < 180 ? 'text-lamp-400' : 'text-redstone-300')
+
+// Nur die Anzeige – die Reihenfolge in der servers.dat (im Spiel) bleibt.
+const shownServers = computed(() =>
+  sortServersByPing.value ? sortByPing(serverList.value, (s) => latencyOf(statusOf(s))) : serverList.value,
+)
 function join(s: InstanceServer) {
   if (running.value) return
   games.launch(props.instance.id, s.launcherId, s.launcherId ? null : s.address)
@@ -179,7 +224,22 @@ const joinTitle = (s: InstanceServer) =>
       <header class="mb-3 flex items-center gap-2">
         <h2 class="heading text-base">{{ t('worlds.servers.title') }}</h2>
         <span v-if="serverList.length" class="chip">{{ formatNumber(serverList.length) }}</span>
-        <button class="btn btn-primary ml-auto h-8 px-3 py-0 text-xs" @click="editing = 'new'">
+        <label v-if="serverList.length > 1" class="ml-auto flex cursor-pointer items-center gap-2 text-xs text-base-400" :title="t('servers.ping.sortHint')">
+          <input v-model="sortServersByPing" type="checkbox" class="size-4 accent-redstone-500" />
+          {{ t('servers.ping.sort') }}
+        </label>
+        <button
+          v-if="serverList.length"
+          class="btn btn-ghost h-8 px-3 py-0 text-xs"
+          :class="{ 'ml-auto': serverList.length < 2 }"
+          :disabled="pingTesting || pingCoolingDown"
+          :title="pingCoolingDown ? t('worlds.servers.pingCooldown') : t('servers.ping.hint')"
+          @click="pingTest"
+        >
+          <svg viewBox="0 0 24 24" class="size-3.5" :class="{ 'animate-spin': pingTesting }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.sync" /></svg>
+          {{ pingTesting ? t('servers.ping.running') : t('servers.ping.test') }}
+        </button>
+        <button class="btn btn-primary h-8 px-3 py-0 text-xs" :class="{ 'ml-auto': !serverList.length }" @click="editing = 'new'">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path :d="icons.plus" /></svg>
           {{ t('servers.add') }}
         </button>
@@ -192,14 +252,15 @@ const joinTitle = (s: InstanceServer) =>
         <button class="btn btn-primary" @click="editing = 'new'">{{ t('servers.add') }}</button>
       </RedstoneEmpty>
       <ul v-else class="space-y-2">
-        <li v-for="s in serverList" :key="`${s.index ?? 'l'}-${s.address}`" class="card flex items-center gap-3 p-3 transition-colors hover:border-base-700">
+        <li v-for="s in shownServers" :key="serverKey(s)" class="card flex items-center gap-3 p-3 transition-colors hover:border-base-700">
           <div class="relative shrink-0">
             <img v-if="s.icon ?? statusOf(s)?.favicon" :src="(s.icon ?? statusOf(s)?.favicon)!" alt="" class="size-11 rounded ring-2 ring-base-800 [image-rendering:pixelated]" />
             <div v-else class="display flex size-11 items-center justify-center rounded bg-base-800 text-lg text-base-600 ring-2 ring-base-700">{{ s.name.charAt(0).toUpperCase() }}</div>
             <span
-              v-if="s.launcherId"
+              v-if="lampOf(s)"
               class="absolute -right-1 -bottom-1 size-3 border-2 border-base-900"
-              :class="statusOf(s) === undefined ? 'animate-lamp bg-base-600' : statusOf(s)!.online ? 'bg-ok shadow-[0_0_8px_var(--color-ok)]' : 'bg-redstone-500'"
+              :class="LAMP_CLASS[lampOf(s)!]"
+              :title="lampOf(s) === 'checking' ? t('servers.card.checking') : lampOf(s) === 'online' ? t('common.status.online') : t('servers.card.unreachable')"
             />
           </div>
           <div class="min-w-0 flex-1">
@@ -210,7 +271,11 @@ const joinTitle = (s: InstanceServer) =>
             </div>
             <p class="truncate font-mono text-[11px] text-base-400">
               {{ s.address }}
-              <template v-if="statusOf(s)?.online"> · {{ statusOf(s)!.playersOnline }}/{{ statusOf(s)!.playersMax }} · {{ statusOf(s)!.latencyMs }} ms</template>
+              <template v-if="statusOf(s)?.online">
+                · {{ statusOf(s)!.playersOnline }}/{{ statusOf(s)!.playersMax }} ·
+                <span class="tabular-nums" :class="pingClass(statusOf(s)!.latencyMs)">{{ statusOf(s)!.latencyMs }} ms</span>
+              </template>
+              <template v-else-if="lampOf(s) === 'offline'"> · <span class="text-redstone-300">{{ t('servers.card.unreachable') }}</span></template>
             </p>
           </div>
           <button class="btn-icon size-8" :title="t('common.actions.edit')" :aria-label="t('worlds.servers.editOf', { name: s.name })" @click="editing = s">
@@ -222,7 +287,10 @@ const joinTitle = (s: InstanceServer) =>
           </button>
         </li>
       </ul>
-      <p v-if="serverList.length" class="mt-2 text-[11px] text-base-600">{{ t('worlds.servers.joinNote') }}</p>
+      <p v-if="serverList.length" class="mt-2 text-[11px] text-base-600">
+        {{ t('worlds.servers.joinNote') }}
+        <template v-if="sortServersByPing && serverList.length > 1"> {{ t('worlds.servers.sortNote') }}</template>
+      </p>
     </section>
 
     <BaseDialog v-if="toDelete" :title="t('worlds.deleteTitle')" @close="toDelete = null">

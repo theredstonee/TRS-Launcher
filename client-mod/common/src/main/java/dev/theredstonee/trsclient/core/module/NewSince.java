@@ -64,6 +64,9 @@ public final class NewSince {
 	/** Welt-Hosting (TRS Client 0.9.0): Welt für Freunde öffnen, Beitritt per Einladung/Code, öffentlicher Link. */
 	public static final String HOSTING = "0.9.0";
 
+	/** Ping &amp; Latenz (TRS Client 0.9.0): echte Ping-Anzeige, Netzwerk-Optimierung, niedrige Eingabeverzögerung. */
+	public static final String LATENCY = "0.9.0";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -100,6 +103,8 @@ public final class NewSince {
 		add(HOSTING, "social.hostingDirect");
 		// TRS Client 0.8.1: Karten blenden Dächer aus (Innenansicht).
 		add("0.8.1", "minimap.hideRoof");
+		add(LATENCY, "netOptimize", "lowLatency", "ping.jitter", "ping.graph", "ping.details", "ping.interval",
+				"ping.spikeWarning", "ping.spikeThreshold");
 	}
 
 	private NewSince() {

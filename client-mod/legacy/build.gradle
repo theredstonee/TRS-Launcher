@@ -44,6 +44,10 @@ loom {
 			if (project.hasProperty('trsAutotestOnly')) {
 				vmArg "-Dtrsclient.autotest.only=${project.trsAutotestOnly}"
 			}
+			// -PtrsAutotestServer=127.0.0.1:25612 → Beitritt zu einem lokalen Test-Server (Ping-Test)
+			if (project.hasProperty('trsAutotestServer')) {
+				vmArg "-Dtrsclient.autotest.server=${project.trsAutotestServer}"
+			}
 			// -PtrsApi=http://127.0.0.1:8787 → TRS API + Mojang-Join gegen eine lokale Attrappe (Umhang-/Abzeichen-Tests)
 			if (project.hasProperty('trsApi')) {
 				vmArg "-Dtrsclient.api.url=${project.trsApi}"

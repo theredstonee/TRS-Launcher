@@ -81,6 +81,20 @@ public final class FrameStats {
 		return max / 1e6;
 	}
 
+	/** Standardabweichung der Bildzeiten in Millisekunden (Gleichmäßigkeit, Frame-Pacing). */
+	public double stdDevMillis() {
+		if (count < 2) return 0;
+		double mean = 0;
+		for (int i = 0; i < count; i++) mean += times[i];
+		mean /= count;
+		double var = 0;
+		for (int i = 0; i < count; i++) {
+			double d = times[i] - mean;
+			var += d * d;
+		}
+		return Math.sqrt(var / (count - 1)) / 1e6;
+	}
+
 	/** Bilder, die länger als {@code millis} dauerten (spürbare Ruckler). */
 	public int slowerThan(double millis) {
 		long limit = (long) (millis * 1e6);

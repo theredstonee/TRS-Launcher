@@ -173,6 +173,8 @@ public final class TrsClient {
 				version, Mc.version(), message -> LOGGER.info(message));
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.LegacyPerf.init(modules, Mc.version(), message -> LOGGER.info(message));
+		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
+		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
 	}
 
 	@Mod.EventHandler
@@ -193,6 +195,7 @@ public final class TrsClient {
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.net.NetHooks.get());
 		// Schild-Position (ab 1.10.2): Schild-Hand der 1. Person selbst zeichnen.
 		dev.theredstonee.trsclient.render.LegacyShield.install(modules);
 		AutoTest.installIfRequested();

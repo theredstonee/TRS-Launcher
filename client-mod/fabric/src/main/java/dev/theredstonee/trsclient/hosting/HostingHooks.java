@@ -166,6 +166,14 @@ public final class HostingHooks {
 		/*return mc().getLevelSource().getBaseDir().resolve(s.getLevelIdName()).toAbsolutePath().normalize();*/
 	}
 
+	/** Ping des Spielers laut Server (Keepalive). */
+	private static int latency(ServerPlayer p) {
+		//? if >=1.20.2 {
+		return p.connection == null ? -1 : p.connection.latency();
+		//?} else
+		/*return p.latency;*/
+	}
+
 	static final HostingPlatform PLATFORM = new HostingPlatform() {
 		@Override
 		public boolean canHost() {
@@ -264,7 +272,7 @@ public final class HostingHooks {
 			try {
 				List<ServerPlayer> list = new ArrayList<ServerPlayer>(s.getPlayerList().getPlayers());
 				List<Player> out = new ArrayList<Player>(list.size());
-				for (ServerPlayer p : list) out.add(new Player(hex(p.getUUID()), p.getName().getString()));
+				for (ServerPlayer p : list) out.add(new Player(hex(p.getUUID()), p.getName().getString(), latency(p)));
 				lastPlayers = out;
 				return out;
 			} catch (RuntimeException e) {
@@ -272,6 +280,7 @@ public final class HostingHooks {
 				return lastPlayers;
 			}
 		}
+
 
 		@Override
 		public void applyRights(final String uuid, final String gameMode, final Boolean op) {

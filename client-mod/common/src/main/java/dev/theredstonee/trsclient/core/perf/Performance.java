@@ -73,6 +73,8 @@ public final class Performance {
 			ModulePanel.Registry.set(module, new PerfPanel.Notice(this, module));
 		}
 		ModulePanel.Registry.set(m.builtinOptimizations, new PerfPanel.Bundled(m.builtinOptimizations));
+		ModulePanel.Registry.set(m.netOptimize, new LatencyPanels.Net(this, m.netOptimize));
+		ModulePanel.Registry.set(m.lowLatency, new LatencyPanels.Input(this, m.lowLatency));
 		// Einführung + Sync wählen den Grafik-Modus über diese Umsetzung.
 		dev.theredstonee.trsclient.core.intro.FpsModeChooser.install(new ModeChooser(this));
 	}
@@ -256,6 +258,10 @@ public final class Performance {
 				return m.worldDetails.isEnabled() && m.detailNoWeather.get();
 			case TEXTURE_ANIMATIONS:
 				return m.worldDetails.isEnabled() && m.detailNoAnimations.get();
+			case NET_CODECS:
+				return m.netOptimize.isEnabled();
+			case LOW_LATENCY:
+				return m.lowLatency.isEnabled();
 			default:
 				return false;
 		}
@@ -284,6 +290,10 @@ public final class Performance {
 			case WEATHER:
 			case TEXTURE_ANIMATIONS:
 				return m.worldDetails;
+			case NET_CODECS:
+				return m.netOptimize;
+			case LOW_LATENCY:
+				return m.lowLatency;
 			default:
 				return m.entityCulling;
 		}

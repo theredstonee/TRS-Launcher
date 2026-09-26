@@ -1,40 +1,48 @@
 package dev.theredstonee.trsclient.hud;
 
 import dev.theredstonee.trsclient.compat.Mc;
-import dev.theredstonee.trsclient.core.module.HudModule;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.network.NetHandlerPlayClient;
-import net.minecraft.client.network.NetworkPlayerInfo;
+import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.net.PingPanel;
+import dev.theredstonee.trsclient.core.ui.TextWidth;
+import dev.theredstonee.trsclient.ui.Gfx;
+import dev.theredstonee.trsclient.ui.GfxCanvas;
+import net.minecraft.client.gui.FontRenderer;
 
-/** Latenz zum Server laut Spielerliste; im Einzelspieler ausgeblendet. */
-public final class PingHud extends TextHudElement {
-	private static final int PREVIEW_PING = 42;
+/**
+ * Ping mit Jitter und Verlauf (Messung und Zeichnen in {@code core.net}: {@link PingPanel}). In 1.8.9–1.12.2 kommt der
+ * Wert vom Server (Spielerliste) – eigene Ping-Anfragen gibt es im Protokoll dieser Versionen nicht.
+ */
+public final class PingHud extends HudElement {
+	private static final TextWidth MEASURE = new TextWidth() {
+		@Override
+		public int width(String text) {
+			return Mc.font().getStringWidth(text);
+		}
+	};
+	private final PingPanel panel;
 
-	public PingHud(HudModule module) {
-		super(module);
+	public PingHud(TrsModules modules) {
+		super(modules.ping);
+		this.panel = new PingPanel(modules);
 	}
 
 	@Override
 	public boolean visible() {
-		return !mc.isSingleplayer() && entry() != null;
+		return panel.visible();
 	}
 
 	@Override
-	protected long valueKey(boolean preview) {
-		NetworkPlayerInfo info = entry();
-		if (info == null || mc.isSingleplayer()) return PREVIEW_PING;
-		return info.getResponseTime();
+	public int width(FontRenderer font, boolean preview) {
+		return panel.width(MEASURE, preview);
 	}
 
 	@Override
-	protected String format(long key) {
-		return key + " ms";
+	public int height(FontRenderer font, boolean preview) {
+		return panel.height(preview);
 	}
 
-	private NetworkPlayerInfo entry() {
-		EntityPlayerSP player = Mc.player();
-		NetHandlerPlayClient connection = Mc.connection();
-		if (player == null || connection == null) return null;
-		return connection.getPlayerInfo(player.getUniqueID());
+	@Override
+	public void draw(Gfx g, FontRenderer font, boolean preview) {
+		panel.draw(GfxCanvas.of(g, font), MEASURE, preview);
 	}
 }

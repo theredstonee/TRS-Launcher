@@ -19,6 +19,8 @@
 		"BlockEntityCullMixin",
 		"FogMixin",
 		"FramePaceMixin",
+		"LatencyMixin",
+		"NetConnectionMixin",
 		"LivingNameTagCullMixin",
 		"NameTagCullMixin",
 		"ParticleLimitMixin",

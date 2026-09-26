@@ -13,10 +13,17 @@ public interface HostingPlatform {
 	final class Player {
 		public final String uuid;
 		public final String name;
+		/** Ping laut Server (Keepalive-Messung des Spiels) in ms, -1 = unbekannt. */
+		public final int latency;
 
 		public Player(String uuid, String name) {
+			this(uuid, name, -1);
+		}
+
+		public Player(String uuid, String name, int latency) {
 			this.uuid = uuid;
 			this.name = name;
+			this.latency = latency;
 		}
 	}
 

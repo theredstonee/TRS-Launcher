@@ -1150,7 +1150,6 @@
   "servers": {
     "title": "Server",
     "subtitle": "Einmal eintragen – in jeder Instanz verfügbar, mit Live-Status und Beitritt per Klick.",
-    "refreshing": "Aktualisiere …",
     "add": "Server hinzufügen",
     "joinWith": "Beitreten mit",
     "lastPlayed": "{name} (zuletzt gespielt)",
@@ -1164,6 +1163,13 @@
       "checking": "Wird abgefragt",
       "unreachable": "Nicht erreichbar",
       "join": "Beitreten"
+    },
+    "ping": {
+      "test": "Ping-Test",
+      "running": "Ping wird gemessen …",
+      "sort": "Nach Ping sortieren",
+      "sortHint": "Ändert nur die Anzeige – erreichbare Server mit dem niedrigsten Ping zuerst.",
+      "hint": "Misst die Latenz zu jedem Server. Schneller macht er einen Server nicht."
     }
   },
   "serverDialog": {
@@ -3647,7 +3653,9 @@
       "running": "Die Instanz läuft bereits",
       "joinHint": "Startet die Instanz und verbindet mit „{name}“",
       "notJoinable": "Diese Adresse lässt sich nicht direkt beitreten – starte das Spiel und tritt über die Serverliste bei.",
-      "joinNote": "Beitreten startet das Spiel und verbindet sofort. Sehr alte Versionen öffnen nur das Hauptmenü."
+      "joinNote": "Beitreten startet das Spiel und verbindet sofort. Sehr alte Versionen öffnen nur das Hauptmenü.",
+      "pingCooldown": "Bitte ein paar Sekunden bis zum nächsten Ping-Test warten.",
+      "sortNote": "Nur die Anzeige ist nach Ping sortiert – die Serverliste im Spiel behält ihre Reihenfolge."
     }
   },
   "share": {

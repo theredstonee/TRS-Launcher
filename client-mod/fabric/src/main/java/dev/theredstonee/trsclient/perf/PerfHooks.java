@@ -92,6 +92,8 @@ public final class PerfHooks {
 		Set<PerfFeature> supported = mixins ? supported() : EnumSet.of(PerfFeature.DYNAMIC_FPS, PerfFeature.BACKGROUND_VOLUME);
 		PerfCompat compat = new PerfCompat(mods, optifinePresent(), loader, minecraft, supported);
 		perf = new Performance(modules, compat);
+		// Niedrige Eingabeverzögerung (GPU-Zäune, spätes Lesen der Eingaben) – braucht die Mixins.
+		if (mixins) LatencyHooks.init(modules);
 		// Eingebaute Grafikkarten im Hintergrund lesen (für den Hinweis „Onboard-Grafik“).
 		GpuInfo.adapters();
 		if (!compat.detected().isEmpty()) {
@@ -164,6 +166,7 @@ public final class PerfHooks {
 				p.occlusion().setBlocks(mc.level == null ? null : new WorldBlocks(mc.level));
 			}
 			p.tick(System.currentTimeMillis(), Mc.screen() != null);
+			LatencyHooks.tick(mc);
 			if (p.particleLimitActive() && mc.particleEngine != null) particleCount = parseCount(mc.particleEngine.countParticles());
 		} catch (RuntimeException | LinkageError e) {
 			error(e);
@@ -215,6 +218,8 @@ public final class PerfHooks {
 		} catch (RuntimeException | LinkageError e) {
 			error(e);
 		}
+		// Nach der FPS-Grenze: GPU-Warteschlange begrenzen (Modul „Niedrige Eingabeverzögerung“).
+		LatencyHooks.frameStart();
 	}
 
 	private static boolean anyKeyDown(Minecraft mc) {

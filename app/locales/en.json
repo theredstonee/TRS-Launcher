@@ -1150,7 +1150,6 @@
   "servers": {
     "title": "Servers",
     "subtitle": "Add once – available in every instance, with live status and one-click join.",
-    "refreshing": "Refreshing …",
     "add": "Add server",
     "joinWith": "Join with",
     "lastPlayed": "{name} (last played)",
@@ -1164,6 +1163,13 @@
       "checking": "Checking …",
       "unreachable": "Unreachable",
       "join": "Join"
+    },
+    "ping": {
+      "test": "Ping test",
+      "running": "Testing ping …",
+      "sort": "Sort by ping",
+      "sortHint": "Only changes the display order – reachable servers with the lowest ping first.",
+      "hint": "Measures the latency to each server. It cannot make a server faster."
     }
   },
   "serverDialog": {
@@ -3647,7 +3653,9 @@
       "running": "The instance is already running",
       "joinHint": "Starts the instance and connects to “{name}”",
       "notJoinable": "This address can’t be joined directly – start the game and join from the server list.",
-      "joinNote": "Join starts the game and connects straight away. Very old versions only open the main menu."
+      "joinNote": "Join starts the game and connects straight away. Very old versions only open the main menu.",
+      "pingCooldown": "Please wait a few seconds before the next ping test.",
+      "sortNote": "Sorted by ping for display only – the in-game server list keeps its order."
     }
   },
   "share": {

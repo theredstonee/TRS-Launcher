@@ -21,9 +21,12 @@ export const useServersStore = defineStore('servers', () => {
     }
   }
 
-  /** Fragt alle Server parallel ab; alte Werte bleiben sichtbar, bis neue da sind. */
+  /**
+   * Fragt alle Server ab, höchstens {@link PING_PARALLEL} gleichzeitig; alte
+   * Werte bleiben sichtbar, bis neue da sind.
+   */
   function refresh() {
-    return Promise.all(items.value.map((s) => ping(s.id)))
+    return runLimited(items.value.map((s) => s.id), PING_PARALLEL, ping)
   }
 
   async function add(input: ServerInput) {
