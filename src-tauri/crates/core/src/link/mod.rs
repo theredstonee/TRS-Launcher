@@ -149,6 +149,11 @@ pub const FEATURE_CLIPS_OPEN: &str = "clips.open";
 /// `hosting.join`). Die Mod nennt es auch in ihrem `auth` – nur dann schickt der
 /// Launcher den Push (siehe `docs/hosting-link.md`).
 pub const FEATURE_HOSTING_JOIN: &str = "hosting.join";
+/// Merkmal: Mods der Instanz in Modrinth/CurseForge erkennen (`hosting.mods`,
+/// Welt-Hosting mit Mods – `docs/hosting-link.md` §6).
+pub const FEATURE_HOSTING_MODS: &str = "hosting.mods";
+/// Merkmal: Mod-Dialog einer gehosteten Welt im Launcher öffnen (`hosting.open {roomId}`).
+pub const FEATURE_HOSTING_OPEN: &str = "hosting.open";
 /// Ein Welt-Beitritt wartet höchstens so lange auf das Spiel.
 const HOSTING_JOIN_TTL: Duration = Duration::from_secs(10 * 60);
 
@@ -227,6 +232,29 @@ pub fn new_token() -> String {
     proto::hex(&proto::random_bytes(32))
 }
 
+// --- Welt-Hosting mit Mods -------------------------------------------------------
+
+/// Store-Treffer einer Mod der Instanz (Antwort auf `hosting.mods`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkModSource {
+    pub sha1: String,
+    /// `modrinth` oder `curseforge`.
+    pub source: &'static str,
+    pub project_id: String,
+    pub file_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fingerprint: Option<u32>,
+}
+
+/// Welt-Hosting des Launchers für den TRS-Link.
+pub trait HostingHandler: Send + Sync {
+    /// Mods der Instanz dieses Spiels erkennen (der Launcher liest die Dateien selbst).
+    fn identify_mods(&self, instance_id: String) -> BoxFuture<'static, HandlerResult<Vec<LinkModSource>>>;
+    /// „Im Launcher öffnen“: Fenster nach vorn + Mod-Dialog dieser Welt.
+    fn open_world(&self, instance_id: String, room_id: String) -> BoxFuture<'static, HandlerResult<()>>;
+}
+
 // --- Konten -----------------------------------------------------------------
 
 /// Ein Launcher-Konto, wie die Mod es sieht – ohne Tokens.
@@ -284,6 +312,9 @@ struct Limits {
     last_open: Option<Instant>,
     opens: VecDeque<Instant>,
     last_hosting: Option<Instant>,
+    mods_running: bool,
+    last_mods: Option<Instant>,
+    mods: VecDeque<Instant>,
 }
 
 const WINDOW: Duration = Duration::from_secs(10 * 60);
@@ -360,6 +391,21 @@ impl Limits {
         true
     }
 
+    /// `hosting.mods`: eine gleichzeitig, höchstens alle 5 s und 20-mal je 10 Minuten (liest alle Mod-Dateien).
+    fn begin_mods(&mut self, now: Instant) -> HandlerResult<()> {
+        prune(&mut self.mods, now);
+        if self.mods_running {
+            return Err("busy");
+        }
+        if self.last_mods.is_some_and(|t| now.duration_since(t) < Duration::from_secs(5)) || self.mods.len() >= 20 {
+            return Err("rate_limited");
+        }
+        self.mods_running = true;
+        self.last_mods = Some(now);
+        self.mods.push_back(now);
+        Ok(())
+    }
+
     fn begin_add(&mut self, now: Instant) -> HandlerResult<()> {
         prune(&mut self.adds, now);
         if self.add_running {
@@ -434,6 +480,7 @@ struct Shared {
     on_command: RwLock<Option<CommandSink>>,
     enable_clips: RwLock<Option<ClipsEnabler>>,
     clips: RwLock<Option<Arc<dyn ClipsHandler>>>,
+    hosting: RwLock<Option<Arc<dyn HostingHandler>>>,
     persist_file: Option<PathBuf>,
     persist_lock: tokio::sync::Mutex<()>,
     first_auth_ttl: Duration,
@@ -452,6 +499,10 @@ impl Shared {
 
     fn clips_handler(&self) -> Option<Arc<dyn ClipsHandler>> {
         self.clips.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    }
+
+    fn hosting_handler(&self) -> Option<Arc<dyn HostingHandler>> {
+        self.hosting.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
     }
 
     fn clips_enabler(&self) -> Option<ClipsEnabler> {
@@ -581,6 +632,7 @@ impl TrsLink {
                 on_command: RwLock::default(),
                 enable_clips: RwLock::default(),
                 clips: RwLock::default(),
+                hosting: RwLock::default(),
                 persist_file,
                 persist_lock: tokio::sync::Mutex::new(()),
                 first_auth_ttl,
@@ -606,6 +658,11 @@ impl TrsLink {
     /// Clip-Vorschau und „Im Launcher öffnen“ aus dem Spiel anbinden.
     pub fn set_clips_handler(&self, handler: Arc<dyn ClipsHandler>) {
         *self.shared.clips.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(handler);
+    }
+
+    /// Welt-Hosting mit Mods (`hosting.mods`, `hosting.open`) anbinden.
+    pub fn set_hosting_handler(&self, handler: Arc<dyn HostingHandler>) {
+        *self.shared.hosting.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(handler);
     }
 
     /// Port, falls der Server schon läuft.
@@ -865,6 +922,9 @@ struct Incoming {
     /// Was die Mod kann (im `auth`, z. B. `hosting.join`); ältere Mods schicken nichts.
     #[serde(default)]
     features: Option<Vec<String>>,
+    /// Welt für `hosting.open`.
+    #[serde(default, rename = "roomId")]
+    room_id: Option<String>,
 }
 
 /// Eine angemeldete Verbindung.
@@ -958,7 +1018,8 @@ async fn handshake(
         "type": "challenge",
         "nonce": nl,
         "proof": proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)),
-        "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE, FEATURE_CLIPS_PREVIEW, FEATURE_CLIPS_OPEN, FEATURE_HOSTING_JOIN],
+        "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE, FEATURE_CLIPS_PREVIEW, FEATURE_CLIPS_OPEN, FEATURE_HOSTING_JOIN,
+            FEATURE_HOSTING_MODS, FEATURE_HOSTING_OPEN],
     });
     write_json(write, &challenge).await?;
     tokio::time::timeout_at(deadline, read_line(reader, buf)).await.ok()??;
@@ -1025,6 +1086,9 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
         }
         let join = shared.take_hosting(&conn.instance_id, &conn.marker, true);
         return reply(json!({ "type": "res", "id": id, "ok": true, "join": join }));
+    }
+    if op == FEATURE_HOSTING_MODS || op == FEATURE_HOSTING_OPEN {
+        return hosting_request(conn, shared, &op, msg.room_id, id, now, out);
     }
     let Some(handler) = shared.handler() else { return reply(error_response(id, "error")) };
     let out = out.clone();
@@ -1155,6 +1219,57 @@ fn clips_request(
         limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).preview_running = false;
         let value = match result {
             Ok(preview) => json!({ "type": "res", "id": id, "ok": true, "preview": preview }),
+            Err(code) => error_response(id, code),
+        };
+        let _ = out.send(value);
+    });
+}
+
+/// `hosting.mods` (Store-Treffer der Mods dieser Instanz) und `hosting.open`
+/// (Mod-Dialog einer Welt im Launcher). Nur v2 mit geprüfter Gegenstelle; der
+/// Launcher liest nur die eigene Instanz des Spiels, nie einen Pfad vom Spiel.
+fn hosting_request(
+    conn: &Conn,
+    shared: &Arc<Shared>,
+    op: &str,
+    room_id: Option<String>,
+    id: u64,
+    now: Instant,
+    out: &mpsc::UnboundedSender<serde_json::Value>,
+) {
+    let reply = |value: serde_json::Value| {
+        let _ = out.send(value);
+    };
+    if conn.peer == Some(false) {
+        return reply(error_response(id, "not_allowed"));
+    }
+    let Some(handler) = shared.hosting_handler() else { return reply(error_response(id, "unsupported")) };
+    let (instance_id, out) = (conn.instance_id.clone(), out.clone());
+    if op == FEATURE_HOSTING_OPEN {
+        let Some(room_id) = room_id.filter(|r| crate::trs_api::hosting::room_id(r)) else {
+            return reply(error_response(id, "error"));
+        };
+        if !conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).allow_open(now) {
+            return reply(error_response(id, "rate_limited"));
+        }
+        tokio::spawn(async move {
+            let value = match handler.open_world(instance_id, room_id).await {
+                Ok(()) => json!({ "type": "res", "id": id, "ok": true }),
+                Err(code) => error_response(id, code),
+            };
+            let _ = out.send(value);
+        });
+        return;
+    }
+    if let Err(code) = conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).begin_mods(now) {
+        return reply(error_response(id, code));
+    }
+    let limits = conn.limits.clone();
+    tokio::spawn(async move {
+        let result = handler.identify_mods(instance_id).await;
+        limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).mods_running = false;
+        let value = match result {
+            Ok(mods) => json!({ "type": "res", "id": id, "ok": true, "mods": mods }),
             Err(code) => error_response(id, code),
         };
         let _ = out.send(value);

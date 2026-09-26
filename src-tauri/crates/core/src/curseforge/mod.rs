@@ -270,6 +270,21 @@ pub(crate) struct RawHash {
     pub algo: u8,
 }
 
+/// Ein exakter Fingerprint-Treffer: Projekt (`id`) und Datei.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct FingerprintMatch {
+    pub id: u64,
+    pub file: RawFile,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FingerprintMatches {
+    #[serde(default)]
+    exact_matches: Vec<FingerprintMatch>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RawDependency {
@@ -299,6 +314,9 @@ pub(crate) struct RawFile {
     /// `null`, wenn der Autor Downloads über andere Apps nicht erlaubt.
     #[serde(default)]
     pub download_url: Option<String>,
+    /// Murmur2-Fingerprint der Datei (für den Abgleich per `/fingerprints`).
+    #[serde(default, deserialize_with = "lenient_u64")]
+    pub file_fingerprint: u64,
     /// Spielversionen UND Loader-/Umgebungsnamen („1.20.1“, „Forge“, „Client“).
     #[serde(default)]
     pub game_versions: Vec<String>,
@@ -872,6 +890,17 @@ impl CurseForge {
             )));
         }
         Ok(f.data)
+    }
+
+    /// Exakte Treffer zu Datei-Fingerprints (Welt-Mods der Host-Instanz), in Blöcken.
+    pub(crate) async fn fingerprint_matches(&self, fingerprints: &[u32]) -> Result<Vec<FingerprintMatch>> {
+        let mut out = Vec::new();
+        for chunk in fingerprints.chunks(500) {
+            let page: Envelope<FingerprintMatches> =
+                self.post(&format!("/fingerprints/{GAME_ID}"), &serde_json::json!({ "fingerprints": chunk })).await?;
+            out.extend(page.data.exact_matches);
+        }
+        Ok(out)
     }
 
     /// Dateien nach ID (für Modpacks und Updates), in Blöcken.

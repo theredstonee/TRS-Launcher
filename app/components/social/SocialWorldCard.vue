@@ -16,7 +16,7 @@ function roomFor(id: string): Promise<HostingRoom | null | undefined> {
 </script>
 
 <script setup lang="ts">
-import { formatJoinCode, roomFull, worldVersionLabel, type ChatWorld } from '~/utils/hosting'
+import { formatJoinCode, modsTag, roomFull, worldVersionLabel, type ChatWorld } from '~/utils/hosting'
 
 // Weltkarte im Chat („Welt von Bob – 1.21.11 Fabric – Beitreten“): Der Host hat
 // seine Einzelspielerwelt im Spiel geöffnet. „Beitreten“ tritt über den Code bei
@@ -81,6 +81,7 @@ function join() {
         <span class="size-1.5 shrink-0 rounded-full" :class="closed || !room ? 'bg-base-600' : 'bg-ok'" />
         <span class="truncate">{{ worldVersionLabel(world) }} · {{ status }}</span>
       </span>
+      <span v-if="room && modsTag(room.content)" class="block truncate text-[11px] text-lamp-300" data-testid="world-card-mods">{{ modsTag(room.content) }}</span>
     </span>
     <span v-if="own" class="shrink-0 rounded-md bg-base-950 px-2 py-1 font-mono text-xs text-base-200" :title="t('social.hosting.code')">{{ formatJoinCode(world.code) }}</span>
     <button v-else-if="closed" class="btn btn-ghost shrink-0 px-3 py-1.5 text-xs" disabled>{{ t('social.hosting.closedShort') }}</button>

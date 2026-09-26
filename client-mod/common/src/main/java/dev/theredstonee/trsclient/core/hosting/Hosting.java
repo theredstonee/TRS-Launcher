@@ -12,6 +12,13 @@ import dev.theredstonee.trsclient.core.hosting.netty.LoopbackBridge;
 import dev.theredstonee.trsclient.core.hosting.netty.ServerAttach;
 import dev.theredstonee.trsclient.core.hosting.netty.TrsChannel;
 import dev.theredstonee.trsclient.core.hosting.netty.TrsConnect;
+import dev.theredstonee.trsclient.core.hosting.share.FileChannel;
+import dev.theredstonee.trsclient.core.hosting.share.FileServer;
+import dev.theredstonee.trsclient.core.hosting.share.GuestCheck;
+import dev.theredstonee.trsclient.core.hosting.share.PackServer;
+import dev.theredstonee.trsclient.core.hosting.share.ShareModel;
+import dev.theredstonee.trsclient.core.hosting.share.ShareSettings;
+import dev.theredstonee.trsclient.core.hosting.share.SharedContent;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.online.ApiException;
 import dev.theredstonee.trsclient.core.online.Uuids;
@@ -60,7 +67,9 @@ public final class Hosting {
 
 	/** Zustand als Gast. */
 	public enum GuestState {
-		IDLE, JOINING, WAITING, CONNECTING, CONNECTED
+		IDLE, JOINING, WAITING,
+		/** Der Welt fehlen hier Mods – die Oberfläche zeigt {@link #modCheck()} (Launcher / ohne Mods / Abbrechen). */
+		NEEDS_MODS, CONNECTING, CONNECTED
 	}
 
 	/** Anbindung an TrsOnline/Social. */
@@ -140,6 +149,8 @@ public final class Hosting {
 		/** friends | invited */
 		public String visibility = "friends";
 		public boolean backup = true;
+		/** Mods/Resource Pack teilen (null oder nichts an = nichts teilen). */
+		public ShareModel share;
 	}
 
 	/** Eine angehängte Gast-Verbindung. */
@@ -185,10 +196,19 @@ public final class Hosting {
 		boolean recreated;
 		/** sid des Angebots, für das der Raum schon neu geholt wurde (nur einmal je Versuch). */
 		String refreshedFor;
+		/** Was geteilt wird (Auswahl) und was angekündigt ist. */
+		volatile ShareModel share;
+		volatile SharedContent content = SharedContent.EMPTY;
+		boolean shareBusy;
 
 		HostSession(String worldKey, HostingPlatform.Options options) {
 			this.worldKey = worldKey;
 			this.options = options;
+		}
+
+		/** Angenommen und nicht gesperrt (für den Datei-Kanal – ohne Platzprüfung). */
+		boolean memberOk(String uuid) {
+			return uuid != null && !closed && !blocked.contains(uuid) && acceptedMember(uuid);
 		}
 
 		boolean acceptedMember(String uuid) {
@@ -213,6 +233,8 @@ public final class Hosting {
 
 	private static volatile HostingPlatform platform;
 	private static volatile Hosting current;
+	private static volatile java.nio.file.Path gameDir;
+	private static volatile ShareSettings shareSettings;
 
 	private final HostingApi api;
 	private final Backend backend;
@@ -220,13 +242,15 @@ public final class Hosting {
 	private final ConcurrentLinkedQueue<Runnable> results = new ConcurrentLinkedQueue<Runnable>();
 	private final SignalBox signals = new SignalBox();
 	private final PublicLink publicLink;
+	/** Datei-Kanal des Hosts (Mods „direkt vom Host“, Resource Pack). */
+	private final FileServer files;
 
 	// Nur Spiel-Thread:
 	private String token;
 	private String self;
 	private String selfName;
 	private HostState hostState = HostState.IDLE;
-	private HostSession session;
+	private volatile HostSession session;
 	private Notice notice;
 	private int generation;
 
@@ -244,6 +268,14 @@ public final class Hosting {
 	/** Welt-Beitritt vom Launcher (TRS Link), wartet auf Anmeldung/Menü. */
 	private volatile Rooms.Room launcherJoin;
 	private boolean linkHooked;
+	/** Gast: Ergebnis des Mod-Abgleichs (NEEDS_MODS) samt Verbindungsdaten. */
+	private GuestCheck modCheck;
+	private Rooms.Room modCheckRoom;
+	private Rooms.ConnectInfo modCheckConnect;
+	/** Welten, bei denen der Spieler „ohne diese Mods“ gewählt hat bzw. alles passt (für diesen Start). */
+	private final Set<String> modsAccepted = new HashSet<String>();
+	/** Gast: lokaler Endpunkt für das Resource Pack des Hosts (nur solange verbunden). */
+	private volatile PackServer packServer;
 
 	public Hosting(HostingApi api, Backend backend) {
 		this.api = api;
@@ -261,6 +293,19 @@ public final class Hosting {
 				});
 		this.worker.allowCoreThreadTimeOut(true);
 		this.publicLink = new PublicLink(this);
+		this.files = new FileServer(new FileServer.Access() {
+			@Override
+			public boolean allowed(String guestUuid) {
+				HostSession s = session;
+				return s != null && s.memberOk(guestUuid);
+			}
+		});
+		this.files.log = new java.util.function.Consumer<String>() {
+			@Override
+			public void accept(String m) {
+				log("TRS Hosting " + m);
+			}
+		};
 		this.signals.offers(new SignalBox.OfferHandler() {
 			@Override
 			public void offer(String roomId, SignalBox.Signal s) {
@@ -287,6 +332,43 @@ public final class Hosting {
 
 	public static HostingPlatform platform() {
 		return platform;
+	}
+
+	/** Ordner festlegen (beim Start): Spielordner = Elternordner von {@code config}, Freigabe-Einstellungen darin. */
+	public static void dirs(java.nio.file.Path configDir) {
+		if (configDir == null) return;
+		java.nio.file.Path abs = configDir.toAbsolutePath().normalize();
+		gameDir = abs.getParent();
+		shareSettings = new ShareSettings(abs.resolve("trsclient").resolve("hosting-share.json"));
+	}
+
+	/** Spielordner der Instanz ({@code mods}, {@code resourcepacks}) oder null. */
+	public static java.nio.file.Path gameDir() {
+		return gameDir;
+	}
+
+	/** Auswahl zum Teilen für die laufende Welt (gemerkte Einstellungen, ab Werk alles aus). */
+	public ShareModel shareModel() {
+		HostSession s = session;
+		if (s != null && s.share != null) return s.share;
+		HostingPlatform p = platform;
+		String key = null;
+		try {
+			key = p == null ? null : p.worldKey();
+		} catch (RuntimeException ignored) {
+			// keine Welt
+		}
+		return new ShareModel(gameDir, key, shareSettings);
+	}
+
+	/** Lässt diese Version ein Resource Pack für Gäste zu (Server-Pack über den integrierten Server)? */
+	public static boolean packSupported() {
+		HostingPlatform p = platform;
+		try {
+			return p != null && p.serverPackSupported();
+		} catch (RuntimeException | LinkageError e) {
+			return false;
+		}
 	}
 
 	/** Dienst der laufenden Online-Verbindung oder null. */
@@ -323,6 +405,23 @@ public final class Hosting {
 
 	public GuestState guestState() {
 		return guestState;
+	}
+
+	/** Was die offene Welt teilt (angekündigt) – leer = nichts. */
+	public SharedContent sharedContent() {
+		HostSession s = session;
+		return s == null ? SharedContent.EMPTY : s.content;
+	}
+
+	/** Wird die Freigabe gerade gebaut/angekündigt? */
+	public boolean shareBusy() {
+		HostSession s = session;
+		return s != null && s.shareBusy;
+	}
+
+	/** Gast: Ergebnis des Mod-Abgleichs (nur im Zustand {@link GuestState#NEEDS_MODS}). */
+	public GuestCheck modCheck() {
+		return guestState == GuestState.NEEDS_MODS ? modCheck : null;
 	}
 
 	public Rooms.Room guestRoom() {
@@ -663,6 +762,7 @@ public final class Hosting {
 		final HostSession s = new HostSession(p.worldKey(), req.options.copy());
 		s.visibility = req.visibility;
 		s.name = req.name;
+		s.share = req.share;
 		s.listener = p.connectionListener();
 		session = s;
 		generation++;
@@ -724,6 +824,7 @@ public final class Hosting {
 							generation++;
 							notice("hosting.notice.open", false, o.room.prettyCode());
 							connectControl(s, false);
+							if (s.share != null && s.share.active()) applyShare(s, s.share);
 						}
 					});
 				} catch (final ApiException e) {
@@ -810,6 +911,93 @@ public final class Hosting {
 		});
 	}
 
+	// --- Host: Mods + Resource Pack teilen (API.md §21.10) ---
+
+	/** Mods/Packs der Instanz einlesen und in den Stores erkennen (einmal; Ergebnis über {@code ShareModel#poll}). */
+	public void scanShare(ShareModel m) {
+		if (m == null) return;
+		ShareModel.State st = m.state();
+		if (st == ShareModel.State.IDLE || st == ShareModel.State.FAILED) m.scan(worker, api.http());
+	}
+
+	/** Geänderte Freigabe übernehmen (Reiter „Einstellungen“): ankündigen bzw. zurückziehen. */
+	public void updateShare(ShareModel m) {
+		HostSession s = session;
+		if (s == null || hostState != HostState.OPEN || s.room == null || m == null) return;
+		s.share = m;
+		applyShare(s, m);
+	}
+
+	/**
+	 * Freigabe bauen (Pack-Hash im Hintergrund), zuerst die Freigabeliste des Datei-Kanals setzen, dann bei der API
+	 * ankündigen. Ist nichts an, wird nichts angekündigt und kein Datei-Kanal bedient.
+	 */
+	private void applyShare(final HostSession s, final ShareModel m) {
+		if (s.room == null) return;
+		final String roomId = s.room.id;
+		final String t = token;
+		final ShareModel.Snapshot snap = m.snapshot();
+		s.shareBusy = true;
+		generation++;
+		submit(new Runnable() {
+			@Override
+			public void run() {
+				ShareModel.Built b = null;
+				String err = null;
+				try {
+					b = snap.build();
+					String problem = b.content.problem();
+					if (problem != null) {
+						log("TRS Hosting: Freigabe ungültig (" + problem + ")");
+						b = new ShareModel.Built(SharedContent.EMPTY, new HashMap<String, FileServer.Entry>());
+					}
+					files.share(b.files);
+					if (t != null) api.putContent(t, roomId, b.content);
+				} catch (ApiException e) {
+					if (e.unauthorized()) backend.unauthorized(t);
+					err = errorKey(e.code());
+				} catch (IOException | RuntimeException e) {
+					err = "hosting.error.network";
+				}
+				final ShareModel.Built done = b;
+				final String error = err;
+				post(new Runnable() {
+					@Override
+					public void run() {
+						s.shareBusy = false;
+						generation++;
+						if (session != s || s.closed) return;
+						if (error != null || done == null) {
+							files.share(new HashMap<String, FileServer.Entry>());
+							s.content = SharedContent.EMPTY;
+							notice(error == null ? "hosting.error.generic" : error, true);
+							return;
+						}
+						s.content = done.content;
+						if (!done.content.isEmpty()) {
+							notice("hosting.share.announced", false, done.content.mods.size());
+						}
+					}
+				});
+			}
+		});
+	}
+
+	/** Server-Thread (Pack-Mixin): SHA-1 des Packs für diesen TRS-Gast oder null. */
+	public String packOfferFor(String playerName) {
+		HostSession s = session;
+		if (s == null || s.closed || playerName == null) return null;
+		SharedContent c = s.content;
+		if (c == null || c.pack == null || !files.sharing()) return null;
+		if (selfName != null && playerName.equalsIgnoreCase(selfName)) return null;
+		for (Attached a : s.attached) {
+			if (a.uuid == null || a.path == PeerStream.Path.PUBLIC || !a.channel.isOpen()) continue;
+			String n = a.name != null ? a.name : a.channel.loginName();
+			if (n != null && n.equalsIgnoreCase(playerName)) return c.pack.sha1;
+		}
+		return null;
+	}
+
 	/** Hosting beenden: Raum schließen, Gäste trennen, Welt wieder „privat“. */
 	public void stopHosting(String reason) {
 		final HostSession s = session;
@@ -820,6 +1008,7 @@ public final class Hosting {
 		generation++;
 		signals.clear();
 		publicLink.stop();
+		files.stop();
 		final RelayControl c = s.control;
 		s.control = null;
 		for (Attached a : s.attached) a.channel.close();
@@ -966,6 +1155,7 @@ public final class Hosting {
 				s.controlRetryAt = 0;
 				generation++;
 				notice("hosting.notice.recreated", false, value.room.prettyCode());
+				if (s.share != null && s.share.active()) applyShare(s, s.share);
 			}
 		});
 	}
@@ -1042,14 +1232,16 @@ public final class Hosting {
 				@Override
 				public void run() {
 					// Gerade angenommen/eingeladen beigetreten, das hosting_room-Ereignis ist aber noch unterwegs?
-					if (!allowGuest(s, uuid) && !refreshRoom(s, uuid)) {
+					// (Nur „angenommen“ prüfen – den Platz prüft attach() für Minecraft, der Datei-Kanal braucht keinen.)
+					if (!s.memberOk(uuid)) refreshRoom(s, uuid);
+					if (!s.memberOk(uuid)) {
 						log("TRS Hosting: Relay-Gast abgewiesen (nicht angenommen oder gesperrt)");
 						c.closeGuest(pairId);
 						return;
 					}
 					try {
 						RelayStream st = Relay.pair(ci.relayHost, ci.tcpPort, pairId);
-						attach(s, st, uuid);
+						route(s, st, uuid);
 					} catch (IOException | RuntimeException e) {
 						log("TRS Hosting: Relay-Gast nicht verbunden (" + e.getMessage() + ")");
 					}
@@ -1085,6 +1277,21 @@ public final class Hosting {
 		boolean already = false;
 		for (Attached a : s.attached) if (uuid.equals(a.uuid) && a.channel.isOpen()) already = true;
 		return already || s.openGuests() < max - 1;
+	}
+
+	/** Neuer Gast-Strom: am ersten Byte erkennen, ob Minecraft oder Datei-Kanal. Beliebiger Thread. */
+	void route(final HostSession s, PeerStream stream, final String uuid) {
+		FileChannel.route(stream, new FileChannel.Route() {
+			@Override
+			public void minecraft(PeerStream st) {
+				attach(s, st, uuid);
+			}
+
+			@Override
+			public void files(PeerStream st) {
+				files.serve(st, uuid);
+			}
+		});
 	}
 
 	/** Gast-Strom an den integrierten Server hängen. Beliebiger Thread. */
@@ -1131,6 +1338,22 @@ public final class Hosting {
 		}
 		final String host = selfName;
 		final Set<String> blockedNames = s.blocked;
+		FileChannel.route(stream, new FileChannel.Route() {
+			@Override
+			public void minecraft(PeerStream st) {
+				attachPublicNow(s, st, host, blockedNames);
+			}
+
+			@Override
+			public void files(PeerStream st) {
+				// Kein Datei-Kanal über den öffentlichen Link (keine TRS-Anmeldung).
+				st.close("files not allowed");
+			}
+		});
+		return true;
+	}
+
+	private void attachPublicNow(HostSession s, PeerStream stream, final String host, final Set<String> blockedNames) {
 		try {
 			final Attached[] holder = new Attached[1];
 			TrsChannel ch = ServerAttach.attach(s.listener, stream, new LoginSniffer.Policy() {
@@ -1141,10 +1364,8 @@ public final class Hosting {
 			});
 			holder[0] = new Attached(null, null, ch, PeerStream.Path.PUBLIC);
 			s.attached.add(holder[0]);
-			return true;
 		} catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
 			stream.close("attach failed");
-			return false;
 		}
 	}
 
@@ -1222,7 +1443,7 @@ public final class Hosting {
 						p.minecraftVersion(), p.loader());
 				if (link == null) return;
 				link.begin("TRS-P2P-Host");
-				attach(s, link, offer.from);
+				route(s, link, offer.from);
 			}
 		});
 	}
@@ -1553,6 +1774,10 @@ public final class Hosting {
 			notice(compat, true, room.mcVersion, loaderName(room.loader), p.minecraftVersion(), loaderName(p.loader()));
 			return;
 		}
+		if (room.modCount() > 0 && !modsAccepted.contains(room.id)) {
+			checkMods(room, first);
+			return;
+		}
 		if (compat != null) notice(compat, false, loaderName(room.loader), loaderName(p.loader()));
 		guestRoom = room;
 		guestState = GuestState.CONNECTING;
@@ -1634,6 +1859,173 @@ public final class Hosting {
 		});
 	}
 
+	// --- Gast: Mods der Welt + Resource Pack (API.md §21.10) ---
+
+	/** Mods der Welt mit dem eigenen mods-Ordner vergleichen; passt alles → verbinden, sonst NEEDS_MODS. */
+	private void checkMods(final Rooms.Room room, final Rooms.ConnectInfo first) {
+		guestRoom = room;
+		guestState = GuestState.JOINING;
+		final int attempt = guestAttempt;
+		generation++;
+		final java.nio.file.Path mods = gameDir == null ? null : gameDir.resolve("mods");
+		call(new ApiCall<GuestCheck>() {
+			@Override
+			public GuestCheck run(String t) throws IOException, ApiException {
+				SharedContent c = api.content(t, room.id);
+				return GuestCheck.of(room.id, c, GuestCheck.local(mods));
+			}
+
+			@Override
+			public void done(GuestCheck value, String error) {
+				if (attempt != guestAttempt || guestState != GuestState.JOINING) return;
+				if (value == null || value.complete()) {
+					// Liste nicht lesbar: trotzdem verbinden (Minecraft meldet fehlende Mods dann selbst).
+					if (value == null) log("TRS Hosting: Mod-Liste nicht lesbar (" + error + ") – verbinde ohne Abgleich");
+					modsAccepted.add(room.id);
+					connectTo(room, first);
+					return;
+				}
+				modCheck = value;
+				modCheckRoom = room;
+				modCheckConnect = first;
+				guestState = GuestState.NEEDS_MODS;
+				generation++;
+			}
+		});
+	}
+
+	/** „Ohne diese Mods beitreten“ – nur, wenn keine Pflicht-Mod fehlt. */
+	public boolean joinWithoutMods() {
+		GuestCheck c = modCheck();
+		if (c == null || !c.canJoinWithout() || modCheckRoom == null) return false;
+		Rooms.Room r = modCheckRoom;
+		modsAccepted.add(r.id);
+		guestState = GuestState.JOINING;
+		modCheck = null;
+		connectTo(r, modCheckConnect);
+		return true;
+	}
+
+	/**
+	 * Nur Autotest: trotz fehlender Pflicht-Mods verbinden (der Launcher-Teil läuft im Test außerhalb des Spiels; die
+	 * Test-Mod hat keine Registry-Inhalte, Vanilla kann also beitreten).
+	 */
+	public void testJoinDespiteMods() {
+		if (modCheckRoom == null || guestState != GuestState.NEEDS_MODS) return;
+		Rooms.Room r = modCheckRoom;
+		modsAccepted.add(r.id);
+		guestState = GuestState.JOINING;
+		modCheck = null;
+		connectTo(r, modCheckConnect);
+	}
+
+	/** Kann der Launcher den Mod-Dialog öffnen (TRS Link mit {@code hosting.open})? */
+	public static boolean launcherCanOpen() {
+		dev.theredstonee.trsclient.core.link.TrsLink l = dev.theredstonee.trsclient.core.link.TrsLink.shared();
+		return l != null && l.status().has(dev.theredstonee.trsclient.core.link.TrsLink.FEATURE_HOSTING_OPEN);
+	}
+
+	/** „Im Launcher öffnen“: Launcher zeigt die Mod-Liste mit Neue Instanz / Kopie ergänzen / ohne Mods. */
+	public boolean openInLauncher() {
+		GuestCheck c = modCheck();
+		final String roomId = c != null ? c.roomId : guestRoom != null ? guestRoom.id : null;
+		dev.theredstonee.trsclient.core.link.TrsLink l = dev.theredstonee.trsclient.core.link.TrsLink.shared();
+		if (roomId == null || l == null || !launcherCanOpen()) return false;
+		Map<String, String> args = new HashMap<String, String>();
+		args.put("roomId", roomId);
+		l.request("hosting.open", args, 10_000L, new dev.theredstonee.trsclient.core.link.TrsLink.Callback() {
+			@Override
+			public void done(dev.theredstonee.trsclient.core.link.TrsLink.Line response) {
+				post(new Runnable() {
+					@Override
+					public void run() {
+						notice("hosting.mods.opened", false);
+					}
+				});
+			}
+
+			@Override
+			public void failed(final String code) {
+				post(new Runnable() {
+					@Override
+					public void run() {
+						notice("hosting.mods.openFailed", true);
+					}
+				});
+			}
+		});
+		guestAttempt++;
+		resetGuest();
+		return true;
+	}
+
+	/**
+	 * Neuer Strom zum Host für den Datei-Kanal (Resource Pack): zuerst direkt, sonst Relay. Blockierend (Hintergrund).
+	 */
+	PeerStream openFileStream(Rooms.Room room) throws IOException {
+		HostingPlatform p = platform;
+		String t = token;
+		if (t == null || p == null) throw new IOException("offline");
+		Rooms.ConnectInfo ci;
+		try {
+			ci = api.connect(t, room.id);
+		} catch (ApiException e) {
+			throw new IOException("connect " + e.code());
+		}
+		if (directAllowed()) {
+			List<InetSocketAddress> stun = DirectConnect.resolve(ci.stun);
+			UdpLink link = DirectConnect.guest(signals, signaller(room.id), room.hostUuid, stun, loopback(), DirectConnect.BUDGET_MS,
+					p.minecraftVersion(), p.loader());
+			if (link != null) {
+				link.begin("TRS-P2P-Dateien");
+				return link;
+			}
+		}
+		return Relay.guest(ci.relayHost, ci.tcpPort, ci.token);
+	}
+
+	/**
+	 * Spiel-Thread (Pack-Mixin beim Gast): lokale Adresse für das Pack mit diesem SHA-1 – nur, solange man als Gast in
+	 * einer TRS-Welt ist; sonst null (dann schlägt der Download fehl, wie bei jeder ungültigen Adresse).
+	 */
+	public String packUrlFor(String sha1) {
+		final Rooms.Room room = guestRoom;
+		if (guestState != GuestState.CONNECTED || room == null) return null;
+		PackServer ps = packServer;
+		if (ps != null && !ps.closed() && ps.sha1().equals(sha1)) return ps.url();
+		if (ps != null) ps.stop();
+		final String t = token;
+		try {
+			ps = PackServer.start(sha1, new PackServer.Resolver() {
+				@Override
+				public SharedContent.Pack pack() throws IOException {
+					try {
+						return t == null ? null : api.content(t, room.id).pack;
+					} catch (ApiException e) {
+						return null;
+					}
+				}
+			}, new PackServer.Opener() {
+				@Override
+				public PeerStream open() throws IOException {
+					return openFileStream(room);
+				}
+			});
+		} catch (IOException e) {
+			log("TRS Hosting: Pack-Endpunkt: " + e.getMessage());
+			return null;
+		}
+		ps.log = new java.util.function.Consumer<String>() {
+			@Override
+			public void accept(String m) {
+				log("TRS Hosting: " + m);
+			}
+		};
+		packServer = ps;
+		log("TRS Hosting: Resource Pack des Hosts über lokalen Endpunkt");
+		return ps.url();
+	}
+
 	/** Beitritt abbrechen (Warten auf Annahme, Verbinden). Beim Warten wird die Anfrage zurückgezogen. */
 	public void cancelJoin() {
 		final Rooms.Room r = guestRoom;
@@ -1658,6 +2050,12 @@ public final class Hosting {
 
 	private void resetGuest() {
 		if (guestAddress != null && guestState != GuestState.CONNECTED) TrsConnect.cancel(guestAddress);
+		PackServer ps = packServer;
+		packServer = null;
+		if (ps != null) ps.stop();
+		modCheck = null;
+		modCheckRoom = null;
+		modCheckConnect = null;
 		guestState = GuestState.IDLE;
 		guestStream = null;
 		guestPath = null;

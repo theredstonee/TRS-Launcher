@@ -139,6 +139,54 @@ pub struct HostingRoom {
     pub members: Vec<HostingMember>,
     /// Eigener Stand: `invited`, `requested`, `accepted` oder `null` (nur als Freund sichtbar).
     pub my_state: Option<String>,
+    /// Geteilte Mods/Resource Pack in Kurzform (§21.10), `None` = nichts geteilt.
+    pub content: Option<ContentSummary>,
+}
+
+/// Kurzform der geteilten Inhalte einer Welt (volle Liste: [`Launcher::hosting_room_content`]).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContentSummary {
+    #[serde(default)]
+    pub mods: u16,
+    #[serde(default)]
+    pub required: u16,
+    /// davon direkt vom Host (nicht geprüft)
+    #[serde(default)]
+    pub from_host: u16,
+    /// davon nur als Hinweis „selbst besorgen“
+    #[serde(default)]
+    pub manual: u16,
+    #[serde(default)]
+    pub pack: Option<PackSummary>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackSummary {
+    pub name: String,
+    pub size: u64,
+    pub sha1: String,
+}
+
+impl ContentSummary {
+    /// Zahlen begrenzen, Pack prüfen; nichts Geteiltes → `None`.
+    fn cleaned(self) -> Option<Self> {
+        let max = crate::hosting_mods::MAX_MODS as u16;
+        let mods = self.mods.min(max);
+        let pack = self.pack.and_then(|p| {
+            let name = crate::hosting_mods::shown(&p.name, 64);
+            (!name.is_empty() && (1..=crate::hosting_mods::MAX_PACK).contains(&p.size) && crate::hosting_mods::is_hex(&p.sha1, 40))
+                .then_some(PackSummary { name, ..p })
+        });
+        (mods > 0 || pack.is_some()).then_some(Self {
+            mods,
+            required: self.required.min(mods),
+            from_host: self.from_host.min(mods),
+            manual: self.manual.min(mods),
+            pack,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -177,6 +225,8 @@ pub(crate) struct ApiRoom {
     members: Vec<ApiMember>,
     #[serde(default)]
     my_state: Option<String>,
+    #[serde(default)]
+    content: Option<ContentSummary>,
 }
 
 impl ApiRoom {
@@ -218,6 +268,7 @@ impl ApiRoom {
             expires_at: time(self.expires_at),
             members,
             my_state: self.my_state.filter(|s| MY_STATES.contains(&s.as_str())),
+            content: self.content.and_then(ContentSummary::cleaned),
             id: self.id,
         })
     }
@@ -294,6 +345,26 @@ struct ApiRooms {
 #[derive(Debug, Deserialize)]
 struct ApiRoomEnvelope {
     room: ApiRoom,
+}
+
+/// `POST …/connect` – nur das Relay wird gebraucht (STUN/Signale bleiben beim Spiel).
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ApiConnect {
+    #[serde(default)]
+    relay: Option<ApiRelay>,
+}
+
+/// Absichtlich ohne `Debug` (Token).
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ApiRelay {
+    #[serde(default)]
+    host: String,
+    #[serde(default)]
+    tcp_port: Option<u16>,
+    #[serde(default)]
+    token: String,
 }
 
 /// Wohin „Beitreten“ geht: Raum-ID (Einladung, Freundesliste) oder Code (Karte, Eingabe).
@@ -426,6 +497,26 @@ impl Launcher {
             return Err(super::bad_response());
         }
         Ok(HostingJoinResult { status, room })
+    }
+
+    /// Geteilte Mods + Resource Pack einer Welt (§21.10), gesäubert: ungültige
+    /// Einträge fallen weg. Leere Liste = nichts geteilt.
+    pub async fn hosting_room_content(&self, id: &str) -> Result<crate::hosting_mods::RoomContent> {
+        let id = room_arg(id)?;
+        let raw: crate::hosting_mods::ApiContent =
+            self.trs_get(Req::get(format!("/v1/hosting/rooms/{id}/content"))).await.map_err(hosting_error)?;
+        raw.cleaned(id).ok_or_else(super::bad_response)
+    }
+
+    /// Relay-Zugang für den Datei-Kanal (nur im Kern – Token nie ans Webview/Log).
+    pub(crate) async fn hosting_relay_grant(&self, id: &str) -> Result<crate::hosting_mods::relay::RelayGrant> {
+        let id = room_arg(id)?;
+        let info: ApiConnect = self.trs_get(Req::post_empty(format!("/v1/hosting/rooms/{id}/connect"))).await.map_err(hosting_error)?;
+        let relay = info.relay.ok_or_else(super::bad_response)?;
+        if !crate::hosting_mods::relay::valid_relay_host(&relay.host) || relay.token.len() > 512 || !relay.token.starts_with("trsr1.") {
+            return Err(super::bad_response());
+        }
+        Ok(crate::hosting_mods::relay::RelayGrant { host: relay.host, port: relay.tcp_port.unwrap_or(25503), token: relay.token })
     }
 
     /// Welt verlassen, Anfrage zurückziehen oder Einladung ablehnen.

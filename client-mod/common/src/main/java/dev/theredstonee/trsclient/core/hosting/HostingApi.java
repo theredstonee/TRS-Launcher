@@ -29,6 +29,11 @@ public final class HostingApi {
 		this.base = apiBase;
 	}
 
+	/** HTTP-Zugang (auch für Modrinth beim Erkennen der Mods). */
+	public Http http() {
+		return http;
+	}
+
 	// --- DTOs ---
 
 	static final class UserDto {
@@ -60,6 +65,8 @@ public final class HostingApi {
 		String expiresAt;
 		List<MemberDto> members;
 		String myState;
+		/** Kurzform der geteilten Inhalte (§21.10) – geprüft in {@code SharedContent.Summary.parse}. */
+		com.google.gson.JsonElement content;
 	}
 
 	static final class RelayDto {
@@ -272,6 +279,35 @@ public final class HostingApi {
 		return c;
 	}
 
+	// --- Geteilte Inhalte (§21.10) ---
+
+	/** Mod-Liste + Pack setzen (Host). Leer → nichts mehr teilen. */
+	public Rooms.Room putContent(String token, String roomId,
+			dev.theredstonee.trsclient.core.hosting.share.SharedContent content) throws IOException, ApiException {
+		if (content == null || content.isEmpty()) {
+			call("DELETE", "/v1/hosting/rooms/" + id(roomId) + "/content", null, token, 204, 404);
+			return null;
+		}
+		ConnectBody b = parse(call("PUT", "/v1/hosting/rooms/" + id(roomId) + "/content", content.json(), token, 200),
+				ConnectBody.class);
+		return b == null ? null : room(b.room);
+	}
+
+	/** Volle Mod-Liste + Pack einer Welt (jeder, der sie sehen darf); geprüft. */
+	@SuppressWarnings("deprecation")
+	public dev.theredstonee.trsclient.core.hosting.share.SharedContent content(String token, String roomId)
+			throws IOException, ApiException {
+		Http.Response r = call("GET", "/v1/hosting/rooms/" + id(roomId) + "/content", null, token, 200);
+		try {
+			dev.theredstonee.trsclient.core.hosting.share.SharedContent c =
+					dev.theredstonee.trsclient.core.hosting.share.SharedContent.parse(new com.google.gson.JsonParser().parse(r.text()));
+			if (c == null) throw new ApiException(r.status, "invalid_json", 0);
+			return c;
+		} catch (RuntimeException e) {
+			throw new ApiException(r.status, "invalid_json", 0);
+		}
+	}
+
 	// --- Signalisierung (§21.4) ---
 
 	public boolean signal(String token, String roomId, String to, String kind, String sid, String data)
@@ -328,7 +364,8 @@ public final class HostingApi {
 				Rooms.loader(d.loader), Rooms.clamp(d.maxPlayers, Rooms.MIN_PLAYERS, Rooms.MAX_PLAYERS, 8),
 				Rooms.gameMode(d.gameMode), !Boolean.FALSE.equals(d.pvp), Boolean.TRUE.equals(d.cheats),
 				!Boolean.FALSE.equals(d.open), vis, Rooms.clamp(d.players, 1, Rooms.MAX_PLAYERS, 1),
-				ChatJson.time(d.expiresAt), members, my);
+				ChatJson.time(d.expiresAt), members, my,
+				dev.theredstonee.trsclient.core.hosting.share.SharedContent.Summary.parse(d.content));
 	}
 
 	static Rooms.ConnectInfo connectInfo(ConnectBody b) {

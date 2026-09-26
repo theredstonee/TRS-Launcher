@@ -102,3 +102,47 @@ For robustness (e.g. the mod reconnects to the launcher) the mod may ask for a p
 
 Test vector for a fake peer (Rust helper `v2_login_with(&handoff, false, Some(&["hosting.join"]))`): after the
 handshake the game reads `{"type":"state",…}` and then the `hostingJoin` line above.
+
+## 6. Request `hosting.mods` (game → launcher): store detection for the host
+
+Worlds with mods (`docs/hosting-files.md`). The hosting game asks its launcher which mods of **this instance** are
+in a store. The launcher reads the instance's `mods/*.jar` itself – the game sends no paths, names or hashes.
+
+```json
+{"type":"req","id":9,"op":"hosting.mods"}
+```
+```json
+{"type":"res","id":9,"ok":true,"mods":[
+  {"sha1":"<40 hex>","source":"modrinth","projectId":"AANobbMI","fileId":"Yp8wLY1P"},
+  {"sha1":"<40 hex>","source":"curseforge","projectId":"238222","fileId":"5846800","fingerprint":123456789}
+]}
+```
+
+- Launcher feature `hosting.mods` in `challenge.features`. Only v2 connections whose peer is not known to be a foreign
+  process, and only while the instance runs (`not_allowed` otherwise; `unsupported` without the launcher part).
+- Modrinth: `POST /v2/version_files` with SHA-512; a hit counts only if the version has a file with **the same SHA-1 and
+  SHA-512**. CurseForge (only builds with an API key): `POST /v1/fingerprints/432` with the Murmur2 fingerprint
+  (whitespace bytes 9/10/13/32 removed, seed 1); the file's SHA-1 must match too when CurseForge lists one.
+- Only hits are listed (unknown files are missing). The game matches them by SHA-1 with its own scan and validates
+  every field again (IDs: Modrinth 8 alphanumerics, CurseForge digits).
+- Limits: one at a time (`busy`), at most every 5 s and 20 per 10 minutes (`rate_limited`). It can take a while (hashes
+  of every jar + two web requests) – the game waits up to 90 s and then asks Modrinth itself.
+- Without launcher (or with an older one): the game asks Modrinth directly with SHA-512 (no CurseForge).
+
+## 7. Request `hosting.open` (game → launcher): "Open in launcher"
+
+A guest joins a world in the game, but mods are missing. "Open in launcher" shows the launcher's mod dialog for that
+world (new instance / add to a copy / without mods, `docs/hosting-files.md` §3).
+
+```json
+{"type":"req","id":10,"op":"hosting.open","roomId":"h0123456789abcdef0123"}
+```
+```json
+{"type":"res","id":10,"ok":true}
+```
+
+- Launcher feature `hosting.open`. `roomId` must match `^h[0-9a-f]{20}$` (`error` otherwise); only while the instance
+  runs. The launcher brings its window to the front and emits `hosting-open {roomId}` to the web view, which loads the
+  room and its content with the user's own TRS sign-in. The player is already `accepted` (the game joined), so the
+  launcher can fetch host files over the relay.
+- Limit: at most once per second and 30 per 10 minutes (shared with `clips.open`).

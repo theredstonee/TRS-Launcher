@@ -68,7 +68,7 @@ public final class UdpLink implements PeerStream {
 	private Mac mac;
 	private Role role;
 	private InetSocketAddress peer;
-	private Rudp rudp;
+	private volatile Rudp rudp;
 	private volatile Sink sink;
 	private final List<byte[]> early = new ArrayList<byte[]>();
 	/** Datagramme, die schon während {@link #punch} kamen (erstes SEG beim Host). */
@@ -464,6 +464,13 @@ public final class UdpLink implements PeerStream {
 	@Override
 	public boolean isOpen() {
 		return open && !closing;
+	}
+
+	@Override
+	public long pendingBytes() {
+		Rudp r = rudp;
+		// queuedBytes gehört dem Netz-Thread – ein veralteter Wert reicht für den Gegendruck.
+		return Math.max(0, pending.get()) + (r == null ? 0 : Math.max(0, r.queuedBytes()));
 	}
 
 	@Override

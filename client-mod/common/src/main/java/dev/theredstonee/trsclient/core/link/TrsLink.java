@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class TrsLink {
 	/** Größte Zeile vom Launcher (Kontenliste, versiegeltes Token). */
-	static final int MAX_LINE = 64 * 1024;
+	static final int MAX_LINE = 256 * 1024;
 	private static final int CONNECT_TIMEOUT_MS = 2000;
 	/** Warten auf Zeilen in kleinen Schritten, damit Anfragen pünktlich ablaufen. */
 	private static final int POLL_MS = 1000;
@@ -111,6 +111,10 @@ public final class TrsLink {
 	public static final String FEATURE_CLIPS_PREVIEW = "clips.preview";
 	/** Merkmal des Launchers: Clip im Player des Launchers öffnen ({@code clips.open}). */
 	public static final String FEATURE_CLIPS_OPEN = "clips.open";
+	/** Merkmal des Launchers: Mods dieser Instanz gegen Modrinth/CurseForge erkennen ({@code hosting.mods}). */
+	public static final String FEATURE_HOSTING_MODS = "hosting.mods";
+	/** Merkmal des Launchers: Mod-Dialog einer gehosteten Welt im Launcher öffnen ({@code hosting.open {roomId}}). */
+	public static final String FEATURE_HOSTING_OPEN = "hosting.open";
 
 	static final Status OFFLINE = new Status(false, 0, false);
 
@@ -148,6 +152,17 @@ public final class TrsLink {
 		public PreviewDto preview;
 		/** Push {@code hostingJoin} / Antwort auf {@code hosting.join}: gehostete Welt beitreten (oder null). */
 		public JoinDto join;
+		/** Antwort auf {@code hosting.mods}: Store-Treffer der Mods dieser Instanz (ungeprüft). */
+		public List<ModSourceDto> mods;
+	}
+
+	/** Ein Store-Treffer vom Launcher (docs/hosting-link.md §6) – der Empfänger prüft jedes Feld. */
+	public static final class ModSourceDto {
+		public String sha1;
+		public String source;
+		public String projectId;
+		public String fileId;
+		public Long fingerprint;
 	}
 
 	/** Vorschau-Leiste eines Clips: PNG-Raster, das der Launcher in seinem Cache ablegt. */

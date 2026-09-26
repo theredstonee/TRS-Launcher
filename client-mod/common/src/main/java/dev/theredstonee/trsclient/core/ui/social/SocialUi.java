@@ -268,6 +268,8 @@ public final class SocialUi extends WindowUi implements SocialContext {
 			friendsPanel.draw(c, kit, x, cy, w, ch, mx, my);
 		} else if (tab == 2) {
 			worldsPanel.draw(c, kit, x, cy, w, ch, mx, my);
+			Dialog md = worldsPanel.modsDialog();
+			if (md != null) dialog(md);
 		} else {
 			String status = FriendsPanel.statusText(online);
 			if (status != null || s == null) {

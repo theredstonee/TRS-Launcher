@@ -10,6 +10,7 @@ import dev.theredstonee.trsclient.core.ui.TextInput;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.menus.WindowUi;
+import dev.theredstonee.trsclient.core.ui.social.Dialog;
 import dev.theredstonee.trsclient.core.ui.social.Kit;
 import dev.theredstonee.trsclient.core.ui.social.SocialHost;
 
@@ -23,6 +24,7 @@ public final class JoinUi extends WindowUi {
 	private final TextInput code = new TextInput(9);
 	private final WorldsPanel worlds;
 	private String codeError;
+	private Dialog dialog;
 
 	public JoinUi(SocialHost host) {
 		this.host = host;
@@ -94,6 +96,17 @@ public final class JoinUi extends WindowUi {
 		int ly = ny + 14;
 		Paint.textClipped(c, I18n.tr("hosting.worlds.title"), x, ly, w, t.text, false);
 		worlds.draw(c, kit, x, ly + 12, w, y + h - ly - 12, mx, my);
+		Dialog md = worlds.modsDialog();
+		if (md != null) dialog = md;
+		if (dialog != null) {
+			if (dialog.closed()) dialog = null;
+			else dialog.draw(c, kit, window[0] * 2 + window[2], window[1] * 2 + window[3], mx, my);
+		}
+	}
+
+	/** Offener Dialog (Selbsttest). */
+	public Dialog dialog() {
+		return dialog;
 	}
 
 	private void submit() {
@@ -106,6 +119,11 @@ public final class JoinUi extends WindowUi {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (dialog != null) {
+			dialog.mouseClicked(mouseX, mouseY);
+			super.mouseClicked(mouseX, mouseY, button);
+			return true;
+		}
 		boolean hit = super.mouseClicked(mouseX, mouseY, button);
 		if (!hit) code.setFocused(false);
 		return hit;
@@ -113,11 +131,17 @@ public final class JoinUi extends WindowUi {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+		if (dialog != null) return dialog.mouseScrolled(mouseX, mouseY, amount);
 		return worlds.mouseScrolled(mouseX, mouseY, amount);
 	}
 
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
+		if (dialog != null) {
+			dialog.keyPressed(key, null);
+			if (dialog.closed()) dialog = null;
+			return true;
+		}
 		if (code.focused()) {
 			if (key == UiKey.ESCAPE) {
 				code.setFocused(false);

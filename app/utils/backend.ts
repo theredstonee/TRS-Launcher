@@ -83,8 +83,11 @@ import {
   hostingDeliverySchema,
   hostingJoinResultSchema,
   hostingRoomSchema,
+  prepareResultSchema,
+  roomContentSchema,
   type HostedWorld,
   type HostingTarget,
+  type PrepareProgress,
 } from './hosting'
 import type {
   FpsMode,
@@ -767,6 +770,15 @@ export const backend = {
       checked(hostingJoinResultSchema, 'hosting_join', { target: { roomId: target.roomId ?? null, code: target.code ?? null } }),
     leave: (id: string) => call<void>('hosting_leave', { id }),
     delivery: (instanceId: string) => checked(hostingDeliverySchema, 'hosting_delivery', { instanceId }),
+    /** Geteilte Mods + Resource Pack einer Welt (§21.10). */
+    content: (id: string) => checked(roomContentSchema, 'hosting_room_content', { id }),
+    /** SHA-1 der Mods einer Instanz (für „vorhanden“). */
+    instanceMods: (instanceId: string) => checked(z.array(z.string()), 'hosting_instance_mods', { instanceId }),
+    /** Neue Instanz bzw. Kopie mit den Mods der Welt vorbereiten (Store + Host-Dateien, Hashes geprüft). */
+    prepare: (
+      plan: { roomId: string; mode: 'new' | 'copy'; baseInstanceId: string | null; name: string | null; mods: string[]; trustHost: boolean },
+      onProgress: (p: PrepareProgress) => void,
+    ) => checked(prepareResultSchema, 'hosting_prepare', { plan, onProgress: channel(onProgress) }),
   },
 }
 

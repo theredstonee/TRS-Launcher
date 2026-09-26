@@ -16,6 +16,17 @@ const loader = z.enum(['vanilla', 'fabric', 'forge', 'neoforge', 'quilt'])
 const mcVersion = z.string().regex(/^[0-9A-Za-z][0-9A-Za-z._+ -]{0,31}$/)
 const time = z.string().max(40).nullable()
 
+const sha1 = z.string().regex(/^[0-9a-f]{40}$/)
+
+/** Kurzform der geteilten Inhalte (§21.10) in jeder Raum-Ansicht. */
+export const contentSummarySchema = z.object({
+  mods: z.number().int().min(0).max(300),
+  required: z.number().int().min(0).max(300),
+  fromHost: z.number().int().min(0).max(300),
+  manual: z.number().int().min(0).max(300),
+  pack: z.object({ name: z.string().min(1).max(64), size: z.number().int().positive(), sha1 }).nullable(),
+})
+
 export const hostingMemberSchema = z.object({
   uuid,
   name: z.string().max(16),
@@ -42,6 +53,8 @@ export const hostingRoomSchema = z.object({
   expiresAt: time,
   members: z.array(hostingMemberSchema),
   myState: z.enum(['invited', 'requested', 'accepted']).nullable(),
+  /** Geteilte Mods/Resource Pack (Kurzform) – ältere Kerne kennen das Feld nicht. */
+  content: contentSummarySchema.nullable().optional().default(null),
 })
 
 /** Weltkarte einer Chat-Nachricht (`MessageView.world`). */
@@ -83,6 +96,44 @@ export const hostingEventSchemas = [
   z.object({ type: z.literal('hosting_room_closed'), roomId, reason: z.enum(hostingCloseReasons) }),
 ] as const
 
+/** Eine geteilte Mod (vom Kern gesäubert). */
+export const sharedModSchema = z.object({
+  name: z.string().min(1).max(64),
+  version: z.string().max(64),
+  file: z.string().min(5).max(128),
+  size: z.number().int().positive(),
+  required: z.boolean(),
+  source: z.enum(['modrinth', 'curseforge', 'host', 'manual']),
+  projectId: z.string().max(32).optional(),
+  fileId: z.string().max(32).optional(),
+  sha1,
+  sha512: z.string().optional(),
+  sha256: z.string().optional(),
+  fingerprint: z.number().optional(),
+})
+
+export const roomContentSchema = z.object({
+  roomId,
+  mods: z.array(sharedModSchema).max(300),
+  pack: z.object({ name: z.string(), size: z.number(), sha1, sha256: z.string() }).nullable(),
+})
+
+export const prepareProgressSchema = z.object({
+  step: z.enum(['instance', 'store', 'host', 'done']),
+  done: z.number(),
+  total: z.number(),
+  name: z.string().nullable(),
+  bytes: z.number(),
+  totalBytes: z.number(),
+})
+
+export const prepareResultSchema = z.object({ instanceId: z.string(), installed: z.number(), already: z.number() })
+
+export type ContentSummary = z.infer<typeof contentSummarySchema>
+export type SharedMod = z.infer<typeof sharedModSchema>
+export type RoomContent = z.infer<typeof roomContentSchema>
+export type PrepareProgress = z.infer<typeof prepareProgressSchema>
+export type PrepareResult = z.infer<typeof prepareResultSchema>
 export type HostingRoom = z.infer<typeof hostingRoomSchema>
 export type HostingMember = z.infer<typeof hostingMemberSchema>
 export type ChatWorld = z.infer<typeof chatWorldSchema>
@@ -221,3 +272,96 @@ export function upsertRoom(rooms: readonly HostingRoom[], room: HostingRoom): Ho
 export function roomFull(room: Pick<HostingRoom, 'players' | 'maxPlayers'>): boolean {
   return room.players >= room.maxPlayers
 }
+
+// --- Welten mit Mods (§21.10) ------------------------------------------------------------
+
+/** „Mit Mods (12, 5 Pflicht)“ / „Mit Resource Pack“ – `null` = nichts geteilt. */
+export function modsTag(summary: ContentSummary | null | undefined): string | null {
+  if (!summary) return null
+  const mods = summary.mods > 0 ? t('social.hosting.mods.tag', { count: summary.mods, required: summary.required }) : null
+  if (!summary.pack) return mods
+  return mods ? `${mods} + ${t('social.hosting.mods.packShort')}` : t('social.hosting.mods.withPack')
+}
+
+/** Wie der Gast beitritt: neue Instanz, vorhandene als Kopie ergänzen, ohne Mods (vorhandene Instanz). */
+export type ModsMode = 'new' | 'copy' | 'none'
+
+/** Zeile im Dialog: Mod + ob sie in der gewählten Instanz schon vorhanden ist. */
+export interface ModRow {
+  mod: SharedMod
+  present: boolean
+}
+
+/** Pflicht zuerst, dann Name; „vorhanden“ gegen die SHA-1 der gewählten Instanz (leer bei neuer Instanz). */
+export function modRows(content: RoomContent, present: ReadonlySet<string>): ModRow[] {
+  return content.mods
+    .map((mod) => ({ mod, present: present.has(mod.sha1) }))
+    .sort((a, b) => Number(b.mod.required) - Number(a.mod.required) || a.mod.name.localeCompare(b.mod.name))
+}
+
+/** Vorauswahl: alles, was sich laden lässt (optionale kann man einzeln abwählen). */
+export function defaultModSelection(content: RoomContent): Set<string> {
+  return new Set(content.mods.filter((m) => m.source !== 'manual').map((m) => m.sha1))
+}
+
+/** Fehlende Pflicht-Mods einer Instanz (für „Ohne Mods beitreten“ und die Sortierung). */
+export function missingRequired(content: RoomContent, present: ReadonlySet<string>): SharedMod[] {
+  return content.mods.filter((m) => m.required && !present.has(m.sha1))
+}
+
+/** „Ohne Mods beitreten“ geht nur, wenn keine Pflicht-Mod fehlt (sonst Erklärung). */
+export function canJoinWithout(content: RoomContent, present: ReadonlySet<string>): boolean {
+  return missingRequired(content, present).length === 0
+}
+
+/** Mods, die tatsächlich geladen würden (Pflicht immer, optionale nach Wahl, nicht schon vorhanden, nie „selbst besorgen“). */
+export function modsToInstall(content: RoomContent, selection: ReadonlySet<string>, present: ReadonlySet<string>): SharedMod[] {
+  return content.mods.filter((m) => m.source !== 'manual' && !present.has(m.sha1) && (m.required || selection.has(m.sha1)))
+}
+
+/** Kommen dabei Dateien direkt vom Host? Dann Warnung + „Ich vertraue diesem Host“ (bei jedem Beitritt). */
+export function needsTrust(content: RoomContent, mode: ModsMode, selection: ReadonlySet<string>, present: ReadonlySet<string>): boolean {
+  return mode !== 'none' && modsToInstall(content, selection, present).some((m) => m.source === 'host')
+}
+
+/** Zu ladende Bytes (Anzeige). */
+export function downloadSize(content: RoomContent, selection: ReadonlySet<string>, present: ReadonlySet<string>): number {
+  return modsToInstall(content, selection, present).reduce((sum, m) => sum + m.size, 0)
+}
+
+/** Darf „Beitreten“ gedrückt werden? */
+export function canConfirmMods(state: {
+  content: RoomContent
+  mode: ModsMode
+  baseInstanceId: string | null
+  selection: ReadonlySet<string>
+  present: ReadonlySet<string>
+  trust: boolean
+}): boolean {
+  const { content, mode, baseInstanceId, selection, present, trust } = state
+  if (mode === 'none') return !!baseInstanceId && canJoinWithout(content, present)
+  if (mode === 'copy' && !baseInstanceId) return false
+  return !needsTrust(content, mode, selection, present) || trust
+}
+
+/**
+ * Passende Instanzen für eine Welt mit Mods: erst die, denen am wenigsten Pflicht-Mods
+ * fehlen, dann die wenigsten fehlenden optionalen, sonst wie {@link matchingInstances}.
+ */
+export function rankByMods<T extends HostingInstanceLike>(
+  candidates: readonly T[],
+  content: RoomContent,
+  presentById: Readonly<Record<string, readonly string[]>>,
+): T[] {
+  const miss = (i: T) => {
+    const have = new Set(presentById[i.id] ?? [])
+    const req = content.mods.filter((m) => m.required && !have.has(m.sha1)).length
+    const opt = content.mods.filter((m) => !m.required && !have.has(m.sha1)).length
+    return req * 1000 + opt
+  }
+  return candidates
+    .map((i, index) => ({ i, index, score: miss(i) }))
+    .sort((a, b) => a.score - b.score || a.index - b.index)
+    .map((x) => x.i)
+}
+

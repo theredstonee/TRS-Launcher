@@ -102,6 +102,18 @@ pub fn run() {
                     log::warn!("clip-open konnte nicht gesendet werden: {e}");
                 }
             }));
+            // „Im Launcher öffnen“ einer Welt mit Mods aus dem Spiel: Fenster nach vorn + Mod-Dialog.
+            let handle = app.handle().clone();
+            launcher.set_hosting_open_sink(Arc::new(move |room_id| {
+                if let Some(window) = handle.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
+                }
+                if let Err(e) = handle.emit("hosting-open", serde_json::json!({ "roomId": room_id })) {
+                    log::warn!("hosting-open konnte nicht gesendet werden: {e}");
+                }
+            }));
             // Echtzeit-Kanal der TRS API: Ereignisse (Chat, Freunde, Präsenz …) und der
             // Zustand der Verbindung gehen sofort ans Frontend.
             let handle = app.handle().clone();
@@ -513,6 +525,9 @@ pub fn run() {
             commands::hosting::hosting_join,
             commands::hosting::hosting_leave,
             commands::hosting::hosting_delivery,
+            commands::hosting::hosting_room_content,
+            commands::hosting::hosting_instance_mods,
+            commands::hosting::hosting_prepare,
         ])
         .build(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden")

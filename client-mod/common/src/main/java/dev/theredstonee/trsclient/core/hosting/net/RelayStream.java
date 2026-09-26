@@ -184,6 +184,11 @@ public class RelayStream implements PeerStream {
 	}
 
 	@Override
+	public long pendingBytes() {
+		return Math.max(0, pending.get());
+	}
+
+	@Override
 	public InetSocketAddress remoteAddress() {
 		return PLACEHOLDER;
 	}

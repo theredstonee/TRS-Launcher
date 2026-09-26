@@ -110,6 +110,14 @@ public interface HostingPlatform {
 		return true;
 	}
 
+	/**
+	 * Kann der integrierte Server Gästen ein Resource Pack anbieten (Pack-Mixins, ab 1.20.3)? Sonst blendet die
+	 * Oberfläche „Resource Pack teilen“ aus.
+	 */
+	default boolean serverPackSupported() {
+		return dev.theredstonee.trsclient.core.hosting.share.HostingPack.supported();
+	}
+
 	/** In die Zwischenablage. */
 	void copy(String text);
 
