@@ -24,6 +24,7 @@ import {
   transferOwner,
   unreadSummary,
 } from '../server/lib/chat'
+import { loadConfig } from '../server/lib/config'
 import { ChatCipher } from '../server/lib/crypto'
 import { one } from '../server/lib/db'
 import { block, removeFriend } from '../server/lib/friends'
@@ -426,6 +427,27 @@ describe('storage', () => {
     env.ctx.cipher = new ChatCipher([{ id: 'k2', key: Buffer.alloc(32, 7) }])
     expect(listMessages(env.ctx, b!.uuid, g.id, { limit: 5 }).messages.at(-1)!.text).toBe('streng geheim 4711')
     expect(conversationView(env.ctx, access(env.ctx, b!.uuid, g.id).conv, b!.uuid).name).toBe('Geheimclub')
+  })
+
+  it('CHAT_KEYS: id:base64 list, first active, s1:derived, invalid values rejected', () => {
+    const base = { SECRET_KEY: 'test-secret-key-0123456789abcdef-0123456789' }
+    const k = Buffer.alloc(32, 3).toString('base64')
+    const derived = loadConfig(base).chatKeys
+    expect(derived).toMatchObject({ derived: true, keys: [{ id: 's1' }] })
+    const cfg = loadConfig({ ...base, CHAT_KEYS: `k2:${k}, s1:derived` }).chatKeys
+    expect(cfg.derived).toBe(false)
+    expect(cfg.keys.map((x) => x.id)).toEqual(['k2', 's1'])
+    expect(cfg.keys[1]!.key.equals(derived.keys[0]!.key)).toBe(true)
+    expect(() => loadConfig({ ...base, CHAT_KEYS: 'k1:kurz' })).toThrow(/CHAT_KEYS/)
+    expect(() => loadConfig({ ...base, CHAT_KEYS: `k1:${k},k1:${k}` })).toThrow(/duplicate/)
+    // Manipulierte Daten oder falsche AAD werden erkannt.
+    const c = new ChatCipher(cfg.keys)
+    const blob = c.encrypt('hallo', 'msg:m1')
+    expect(c.decryptText(blob, 'msg:m1')).toBe('hallo')
+    expect(() => c.decrypt(blob, 'msg:m2')).toThrow()
+    const bad = Buffer.from(blob)
+    bad[bad.length - 1]! ^= 1
+    expect(() => c.decrypt(bad, 'msg:m1')).toThrow()
   })
 
   it('account deletion removes DMs for both sides, own messages and hands over groups', async () => {

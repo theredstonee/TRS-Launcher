@@ -138,6 +138,49 @@ and other TRS players see it on them. A friend may pass the cape on to their own
   offers between you two; capes already accepted stay until someone takes them back. Deleting the cape, a rejection by
   the team or deleting a TRS account removes the affected shares immediately.
 
+### Chat and social (TRS services)
+
+With the TRS services on, you can write with your friends and in groups in the launcher and in the game.
+
+- **What is stored:** your messages (text, replies, edits, server invites), pictures you send, reactions, read
+  positions, conversation mutes and group memberships. Messages are kept like in a normal chat **until they are
+  deleted** – by you (for everyone), by a group owner, by the team or together with your account.
+- **Encryption:** message texts, invites and group names are stored **encrypted** on the server (AES-256-GCM).
+  Pictures are **re-encoded** by the server – this removes location data and all other metadata, and large pictures
+  are made smaller – and stored encrypted as well. The key is kept separately from the data. The team only reads
+  messages that were reported (see below); there is no general admin view of chats.
+- **Who sees what:** a direct message only you and your friend; a group message the current members (players added
+  later only see messages from the moment they joined). If you block someone, their messages in shared groups are
+  hidden for you. After you stop being friends, a direct chat stays readable, but nobody can write in it any more.
+- **Read receipts and "is typing"** are on by default and can be turned off in the privacy settings; then you don't see
+  them from others either. "Is typing" is only kept in the server's memory for a few seconds.
+- **Server invites:** when a chat shows a server address, the TRS server asks that Minecraft server for its icon,
+  player count and description (the usual server list ping) and keeps the answer in memory for about a minute. Your IP
+  address is not passed on – the Minecraft server only sees the TRS server. Addresses in local networks are never
+  contacted.
+- **Realtime:** while the launcher or the game is open, a connection to the TRS server delivers new messages and other
+  updates (friend requests, online status, cape offers) right away. Missed updates are kept in the server's memory for
+  up to 10 minutes so they arrive after a short disconnect.
+
+### Reports and moderation
+
+You can report messages, pictures, players and groups (with a reason and an optional note). The report stores an
+encrypted copy of the reported content and of up to 10 messages before and after it, exactly as you could see them;
+reported pictures are copied. Team admins review reports on the website or in the launcher and can delete messages,
+warn a player, mute them in chat for a while or ban them; every action is logged. The reporter only learns whether
+something was done, not what. The reported player doesn't learn who reported them.
+
+Automatic protection: messages sent too fast or repeated many times are blocked and can lead to a short automatic mute;
+links and server invites in groups are only accepted from the owner or from players who are friends with everyone in
+the group; the team can keep a list of blocked words. If three different players report the same player within a day,
+that player is muted in chat until the team has looked at it. Players whose reports are often unfounded don't count for
+this.
+
+Reports are kept while they are open and for **90 days** after the decision (for objections); then the copies, notes
+and pictures are deleted, and the report itself (without content) is deleted after **one year**. If you delete your
+account, reports you filed stay without your name; reports against you and an active chat mute stay until these
+periods end, so moderation can't be escaped by deleting the account.
+
 ### What is stored
 
 | Data | Why |
@@ -155,6 +198,9 @@ and other TRS players see it on them. A friend may pass the cape on to their own
 | Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
 | Only with the TRS services on and "Sync with TRS account" on in the TRS Client (in game): your TRS Client settings – which modules are on and their settings, HUD layouts and profiles, the TRS keys of the modules, the config mode for performance mods, whether you finished the introduction (and the module pack you picked) and which "NEW" entries you have opened – each part with the time of its last change; no waypoints, no server addresses, no files, paths or tokens | Keeping the TRS Client the same on every PC and game folder where you use this Minecraft account, and showing the introduction only once |
 | Only with the TRS services on: the wardrobe entry of the TRS Client – your favourite skins, outfits (name, skin, cape) and emote wheel slots, with the time of the last change | The same wardrobe on every PC |
+| Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
+| Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
+| Reports you file and reports about you, each with an encrypted copy of the reported content and its context; warnings and chat mutes | Moderation (see above) |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
 your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your
@@ -173,14 +219,15 @@ The online status is kept **only in the server's memory**, is never written to d
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
 Only whether you are in game right now can also show up as your TRS badge (see above).
 
-Admin actions (such as approving a cape or a ban) are recorded in an audit log together with the affected UUID.
+Admin actions (such as approving a cape, a ban or a decision on a chat report) are recorded in an audit log together
+with the affected UUID.
 
 ### Purpose and legal basis
 
-The data is processed only to provide the TRS services you asked for: capes, the friends list, the online status and
-syncing your skins, presets and launcher look between your PCs.
+The data is processed only to provide the TRS services you asked for: capes, the friends list, the online status, the
+chat and syncing your skins, presets and launcher look between your PCs.
 The legal basis is the performance of the service you requested (Art. 6(1)(b) GDPR). Keeping the services free of abuse
-(reviewing uploads, reports, bans and rate limits) is based on our legitimate interest in a safe service
+(reviewing uploads, reports and their evidence, spam protection, mutes, bans and rate limits) is based on our legitimate interest in a safe service
 (Art. 6(1)(f) GDPR). There is no advertising, no profiling and no sale of data.
 
 ### Retention and deletion
@@ -191,13 +238,16 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   the world.
 - Synced skins, presets and settings stay until you delete them in the launcher (a skin deleted on one PC is deleted on
   the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
+- Chat messages and pictures stay until they are deleted (by you for everyone, by the group owner or by the team) or
+  the group is deleted. Pictures that were uploaded but never sent are deleted after 1 hour.
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
   account, sessions, friendships, requests and blocks, uploaded capes and their files, cape shares (your capes with
   friends and the capes friends shared with you), code redemptions, reports,
-  your online status and all synced skins, presets and settings. Afterwards the TRS services are turned off in the
+  your online status, all synced skins, presets and settings, all your direct chats (for both sides) and your messages,
+  reactions and pictures in groups (groups you own go to the longest member). Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
-- Only an existing ban record (your UUID, the reason and the time) is kept after deletion, so a ban can't be escaped by
-  signing in again.
+- Only an existing ban record (your UUID, the reason and the time), an active chat mute and reports about you (until
+  their retention ends, see above) are kept after deletion, so they can't be escaped by signing in again.
 - Server logs contain only technical data (method, path without query, status, duration, request id) – **no IP
   addresses and no tokens**. Rate limits count requests per IP address and per account **in memory only**; those
   counters are never written to disk.
@@ -211,6 +261,8 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   covered by the EU-US Data Privacy Framework and standard contractual clauses.
 - **Mojang/Microsoft** confirms the sign-in (see above): your computer sends the join request to Mojang directly, and
   the TRS server asks Mojang with your player name and the one-time challenge (`hasJoined`).
+- **Minecraft servers in chat invites** are contacted by the TRS server (server list ping) to show their icon and
+  player count; they only see the TRS server's address.
 
 ### Your rights
 

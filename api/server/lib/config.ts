@@ -191,12 +191,16 @@ const envSchema = z.object({
 /** `CHAT_KEYS` lesen; leer → ein Schlüssel aus SECRET_KEY (HKDF, Kennung `s1`). */
 function parseChatKeys(raw: string, secret: string): Config['chatKeys'] {
   const parts = raw.split(',').map((s) => s.trim()).filter(Boolean)
-  if (parts.length === 0) {
-    const key = Buffer.from(hkdfSync('sha256', secret, 'trs-chat', 'chat-at-rest-v1', 32))
-    return { keys: [{ id: 's1', key }], derived: true }
-  }
+  const derived = () => Buffer.from(hkdfSync('sha256', secret, 'trs-chat', 'chat-at-rest-v1', 32))
+  if (parts.length === 0) return { keys: [{ id: 's1', key: derived() }], derived: true }
   const keys: { id: string, key: Buffer }[] = []
   for (const part of parts) {
+    // `s1:derived` = der aus SECRET_KEY abgeleitete Schlüssel (zum Umstieg auf eigene Schlüssel).
+    if (part === 's1:derived') {
+      if (keys.some((k) => k.id === 's1')) throw new ConfigError('Invalid configuration: CHAT_KEYS (duplicate key id)')
+      keys.push({ id: 's1', key: derived() })
+      continue
+    }
     const m = /^([A-Za-z0-9_-]{1,16}):([A-Za-z0-9+/=_-]{40,64})$/.exec(part)
     const key = m ? Buffer.from(m[2]!.replaceAll('-', '+').replaceAll('_', '/'), 'base64') : null
     if (!m || !key || key.length !== 32) throw new ConfigError('Invalid configuration: CHAT_KEYS (expected id:base64-of-32-bytes, comma-separated)')

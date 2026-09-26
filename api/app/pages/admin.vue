@@ -1,13 +1,14 @@
 <script setup lang="ts">
 // Admin-Bereich: Anmeldung per Code, der im TRS Launcher bestätigt wird; danach Übersicht,
-// Umhang-Prüfung, Codes und Spieler – alles über die bestehenden /v1/admin-Endpunkte.
+// Umhang-Prüfung, Chat-Meldungen (Moderation), Codes und Spieler – alles über /v1/admin.
 
 useHead({ title: 'Admin', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
 const { m, fill, date, lang } = useLang()
 const { session, load, api, logout } = useAdmin()
 
-type Tab = 'overview' | 'capes' | 'codes' | 'players'
+type Tab = 'overview' | 'capes' | 'reports' | 'codes' | 'players'
+const TABS: Tab[] = ['overview', 'capes', 'reports', 'codes', 'players']
 const tab = ref<Tab>('overview')
 const ready = ref(false)
 const failure = ref('')
@@ -91,6 +92,8 @@ interface Stats {
   capes: { builtin: number, approved: number, pending: number, rejected: number, reported: number, activeUsers: number }
   codes: { active: number, redemptions: number }
   friendships: number
+  chat?: { messagesLast24h: number }
+  reports?: { open: number, inReview: number, resolved: number, activeMutes: number }
 }
 const stats = ref<Stats | null>(null)
 const statTiles = computed(() => {
@@ -104,8 +107,87 @@ const statTiles = computed(() => {
     { label: m.value.admin.stats.pending, value: s.capes.pending, warn: s.capes.pending > 0 },
     { label: m.value.admin.stats.reports, value: s.capes.reported, warn: s.capes.reported > 0 },
     { label: m.value.admin.stats.codes, value: s.codes.active },
+    ...(s.reports
+      ? [
+          { label: m.value.admin.stats.chatReports, value: s.reports.open + s.reports.inReview, warn: s.reports.open > 0 },
+          { label: m.value.admin.stats.muted, value: s.reports.activeMutes },
+        ]
+      : []),
+    ...(s.chat ? [{ label: m.value.admin.stats.chatMessages, value: s.chat.messagesLast24h }] : []),
   ]
 })
+
+// --- Chat-Meldungen (Moderation) ------------------------------------------------------------
+const REPORT_FILTERS: ReportFilter[] = ['active', 'open', 'in_review', 'resolved', 'all']
+const REPORT_KINDS: ('all' | ReportKind)[] = ['all', 'message', 'image', 'player', 'group']
+const reportFilter = ref<ReportFilter>('active')
+const reportKind = ref<'all' | ReportKind>('all')
+const reports = ref<ReportSummary[]>([])
+const reportCursor = ref<string | null>(null)
+const reportCounts = ref<Record<ReportStatus, number>>({ open: 0, in_review: 0, resolved: 0 })
+const openReport = ref<string | null>(null)
+const filterWords = ref<FilterWord[]>([])
+const wordForm = reactive({ word: '', mode: 'word' as FilterWord['mode'], action: 'mask' as FilterWord['action'] })
+const modLog = ref<{ id: number, at: string, actor: string, actorName: string | null, action: string, targetName: string | null, detail: string | null }[]>([])
+const mod = computed(() => m.value.admin.mod)
+
+async function loadReports(more = false) {
+  const q = new URLSearchParams({ status: reportFilter.value, limit: '30' })
+  if (reportKind.value !== 'all') q.set('kind', reportKind.value)
+  if (more && reportCursor.value) q.set('cursor', reportCursor.value)
+  const r = await api<ModReportList>(`/v1/admin/reports?${q}`)
+  reports.value = more ? [...reports.value, ...r.reports] : r.reports
+  reportCursor.value = r.nextCursor
+  reportCounts.value = r.counts
+}
+
+async function loadModeration() {
+  const [, words, log] = await Promise.all([
+    loadReports(),
+    api<{ words: FilterWord[] }>('/v1/admin/chat/word-filter'),
+    api<{ entries: typeof modLog.value }>('/v1/admin/audit?limit=100'),
+  ])
+  filterWords.value = words.words
+  modLog.value = log.entries.filter((e) => /^(chat|report)\./.test(e.action)).slice(0, 30)
+}
+
+async function addWord() {
+  const word = wordForm.word.trim()
+  if (!word) return
+  busy.value = 'word'
+  failure.value = ''
+  try {
+    await api('/v1/admin/chat/word-filter', { method: 'POST', body: { word: word.slice(0, 64), mode: wordForm.mode, action: wordForm.action } })
+    wordForm.word = ''
+    filterWords.value = (await api<{ words: FilterWord[] }>('/v1/admin/chat/word-filter')).words
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function removeWord(w: FilterWord) {
+  busy.value = `word-${w.id}`
+  try {
+    await api(`/v1/admin/chat/word-filter/${w.id}`, { method: 'DELETE' })
+    filterWords.value = filterWords.value.filter((x) => x.id !== w.id)
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = ''
+  }
+}
+
+function reportStatusClass(r: ReportSummary): string {
+  if (r.status === 'open') return 'bg-lamp-900 text-lamp-300'
+  if (r.status === 'in_review') return 'bg-base-700 text-base-100'
+  return r.outcome === 'actioned' ? 'bg-ok/15 text-ok' : 'bg-base-800 text-base-400'
+}
+
+async function reportChanged() {
+  await Promise.all([loadReports(), loadStats()]).catch(fail)
+}
 
 // --- Umhänge --------------------------------------------------------------------------------
 type ReviewStatus = 'pending' | 'reported' | 'approved' | 'rejected'
@@ -299,6 +381,7 @@ async function refreshAll() {
   try {
     await loadStats()
     if (tab.value === 'capes') await loadCapes()
+    if (tab.value === 'reports') await loadModeration()
     if (tab.value === 'codes') await loadCodes()
   } catch (e) {
     fail(e)
@@ -311,6 +394,7 @@ watch(reviewStatus, () => {
   void loadCapes().catch(fail)
 })
 watch(tab, () => (reviewIndex.value = null))
+watch([reportFilter, reportKind], () => void loadReports().catch(fail))
 </script>
 
 <template>
@@ -357,7 +441,7 @@ watch(tab, () => (reviewIndex.value = null))
 
       <nav class="mt-8 flex gap-1 overflow-x-auto border-b border-base-800" aria-label="Admin">
         <button
-          v-for="t in (['overview', 'capes', 'codes', 'players'] as const)"
+          v-for="t in TABS"
           :key="t"
           type="button"
           class="admin-tab"
@@ -367,6 +451,9 @@ watch(tab, () => (reviewIndex.value = null))
           {{ m.admin.tabs[t] }}
           <span v-if="t === 'capes' && stats && stats.capes.pending + stats.capes.reported > 0" class="badge ml-1 bg-lamp-400 text-base-950">
             {{ stats.capes.pending + stats.capes.reported }}
+          </span>
+          <span v-if="t === 'reports' && stats?.reports && stats.reports.open > 0" class="badge ml-1 bg-lamp-400 text-base-950">
+            {{ stats.reports.open }}
           </span>
         </button>
       </nav>
@@ -441,6 +528,102 @@ watch(tab, () => (reviewIndex.value = null))
           @approve="capeAction('approve')"
           @reject="(reason) => capeAction('reject', reason)"
           @delete="capeAction('delete')"
+        />
+      </div>
+
+      <!-- Chat-Meldungen -->
+      <div v-else-if="tab === 'reports'" class="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="seg-row flex-wrap">
+              <button
+                v-for="f in REPORT_FILTERS"
+                :key="f"
+                type="button"
+                class="seg-btn"
+                :class="{ 'seg-btn-on': reportFilter === f }"
+                :aria-pressed="reportFilter === f"
+                @click="reportFilter = f"
+              >
+                {{ mod.filters[f] }}
+                <span v-if="f === 'open' && reportCounts.open" class="ml-1 tabular-nums text-lamp-300">{{ reportCounts.open }}</span>
+                <span v-if="f === 'in_review' && reportCounts.in_review" class="ml-1 tabular-nums">{{ reportCounts.in_review }}</span>
+              </button>
+            </div>
+            <select v-model="reportKind" class="field w-auto" :aria-label="mod.kinds.all">
+              <option v-for="k in REPORT_KINDS" :key="k" :value="k">{{ mod.kinds[k] }}</option>
+            </select>
+          </div>
+          <p v-if="!reports.length" class="mt-8 text-base-400">{{ mod.none }}</p>
+          <ul class="mt-6 space-y-3">
+            <li v-for="r in reports" :key="r.id">
+              <button type="button" class="card card-hover flex w-full flex-col gap-2 p-4 text-left" @click="openReport = r.id">
+                <span class="flex flex-wrap items-center gap-2">
+                  <span class="badge" :class="reportStatusClass(r)">{{ r.status === 'resolved' && r.outcome ? mod.outcome[r.outcome] : mod.status[r.status] }}</span>
+                  <span class="chip">{{ mod.kinds[r.kind] }}</span>
+                  <span class="font-semibold text-base-50">{{ mod.reasons[r.reason] }}</span>
+                  <span v-if="r.lowTrust" class="badge bg-lamp-900 text-lamp-300">{{ mod.lowTrust }}</span>
+                  <span class="ml-auto text-xs text-base-400">{{ dateTime(r.createdAt, lang) }}</span>
+                </span>
+                <span v-if="r.preview" class="line-clamp-2 text-sm text-base-100">„{{ r.preview }}“</span>
+                <span class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-base-400">
+                  <span>{{ fill(mod.against, { name: r.target?.name || mod.unknown }) }}</span>
+                  <span>{{ fill(mod.by, { name: r.reporter?.name || mod.unknown }) }}</span>
+                  <span v-if="r.images">{{ fill(mod.images, { n: r.images }) }}</span>
+                  <span v-if="r.targetOpenReports > 1" class="text-lamp-300">{{ fill(mod.targetOpen, { n: r.targetOpenReports }) }}</span>
+                </span>
+              </button>
+            </li>
+          </ul>
+          <button v-if="reportCursor" type="button" class="btn btn-ghost mt-4" @click="loadReports(true).catch(fail)">{{ mod.more }}</button>
+        </div>
+
+        <aside class="space-y-6">
+          <form class="card p-5" @submit.prevent="addWord">
+            <h2 class="font-semibold text-base-50">{{ mod.filterTitle }}</h2>
+            <p class="mt-1 text-xs text-base-400">{{ mod.filterLead }}</p>
+            <label class="label mt-4" for="word-new">{{ mod.word }}</label>
+            <input id="word-new" v-model="wordForm.word" class="field" maxlength="64" required />
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <select v-model="wordForm.mode" class="field" :aria-label="mod.mode.word">
+                <option value="word">{{ mod.mode.word }}</option>
+                <option value="contains">{{ mod.mode.contains }}</option>
+              </select>
+              <select v-model="wordForm.action" class="field" :aria-label="mod.action.mask">
+                <option value="mask">{{ mod.action.mask }}</option>
+                <option value="block">{{ mod.action.block }}</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3 w-full" :disabled="busy === 'word' || !wordForm.word.trim()">{{ mod.add }}</button>
+            <p v-if="!filterWords.length" class="mt-4 text-xs text-base-400">{{ mod.noWords }}</p>
+            <ul v-else class="mt-4 max-h-64 divide-y divide-base-800 overflow-y-auto text-sm">
+              <li v-for="w in filterWords" :key="w.id" class="flex items-center gap-2 py-1.5">
+                <span class="min-w-0 flex-1 truncate font-mono text-base-100">{{ w.word }}</span>
+                <span class="text-[11px] text-base-400">{{ mod.mode[w.mode] }} · {{ mod.action[w.action] }}</span>
+                <button type="button" class="btn-icon size-7" :aria-label="mod.remove" :disabled="busy === `word-${w.id}`" @click="removeWord(w)">
+                  <SiteIcon name="close" class="size-3.5" />
+                </button>
+              </li>
+            </ul>
+          </form>
+
+          <div class="card p-5">
+            <h2 class="font-semibold text-base-50">{{ mod.auditTitle }}</h2>
+            <ul class="mt-3 space-y-1.5 text-xs text-base-400">
+              <li v-for="e in modLog" :key="e.id">
+                {{ dateTime(e.at, lang) }} · <span class="text-base-200">{{ e.actorName || e.actor }}</span> ·
+                <span class="font-mono">{{ e.action }}</span><span v-if="e.targetName"> · {{ e.targetName }}</span>
+              </li>
+            </ul>
+          </div>
+        </aside>
+
+        <ReportReviewDialog
+          v-if="openReport"
+          :report-id="openReport"
+          @close="openReport = null"
+          @changed="reportChanged"
+          @open="(id) => (openReport = id)"
         />
       </div>
 
