@@ -215,6 +215,31 @@ public final class Friends {
 		refreshSoon = true;
 	}
 
+	/**
+	 * Präsenz eines Freundes aus dem Echtzeit-Stream übernehmen (API.md §19 {@code presence}/{@code friend_online}),
+	 * ohne die Liste neu zu laden. {@code state} null = offline/unsichtbar. Spiel-Thread.
+	 */
+	public void applyPresence(String uuid, String state, String version, String loader, String server) {
+		Snapshot s = snapshot;
+		String id = Uuids.normalize(uuid);
+		if (s.view == null || id == null) return;
+		List<FriendsView.Friend> list = new java.util.ArrayList<FriendsView.Friend>(s.view.friends.size());
+		boolean found = false;
+		for (FriendsView.Friend f : s.view.friends) {
+			if (f.uuid.equals(id)) {
+				String st = FriendsView.state(state);
+				list.add(new FriendsView.Friend(f.uuid, f.name, st, st == null ? null : FriendsView.version(version),
+						st == null ? null : FriendsView.loader(loader), st == null ? null : FriendsView.server(server)));
+				found = true;
+			} else {
+				list.add(f);
+			}
+		}
+		if (!found) return;
+		FriendsView v = new FriendsView(list, s.view.incoming, s.view.outgoing, s.view.offerCount, s.view.offers);
+		snapshot = s.with(v, s.blocked, s.loading, s.error);
+	}
+
 	/** Konto gewechselt/abgemeldet: alles vergessen. */
 	void reset() {
 		generation++;

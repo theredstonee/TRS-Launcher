@@ -110,6 +110,8 @@ public final class TrsOnline {
 	private volatile String reportedToken;
 	/** Freunde im Spiel (nur abgefragt, solange ein Bildschirm sie braucht). */
 	private final Friends friends;
+	/** Chat, Echtzeit-Stream (/v1/events/me), Benachrichtigungen. */
+	private final dev.theredstonee.trsclient.core.social.Social social;
 	/** Die Verbindung des laufenden Spiels (für Bildschirme ohne eigenen Zugang), null in Tests. */
 	private static volatile TrsOnline current;
 
@@ -142,6 +144,20 @@ public final class TrsOnline {
 				relogin(rejectedToken);
 			}
 		});
+		this.social = new dev.theredstonee.trsclient.core.social.Social(
+				new dev.theredstonee.trsclient.core.social.ChatApi(http, config.apiBase()),
+				new dev.theredstonee.trsclient.core.social.MeStream(eventOpener, config.apiBase()),
+				new dev.theredstonee.trsclient.core.social.Social.Backend() {
+					@Override
+					public void unauthorized(String rejectedToken) {
+						relogin(rejectedToken);
+					}
+
+					@Override
+					public Friends friends() {
+						return friends;
+					}
+				});
 	}
 
 	/** Verbindung des laufenden Spiels (null, solange die Online-Funktionen nicht gestartet sind). */
@@ -152,6 +168,11 @@ public final class TrsOnline {
 	/** Freunde im Spiel. */
 	public Friends friends() {
 		return friends;
+	}
+
+	/** Chat und Sozial-Benachrichtigungen. */
+	public dev.theredstonee.trsclient.core.social.Social social() {
+		return social;
 	}
 
 	/** Standard: HttpURLConnection, Umhang-Cache unter {@code <configDir>/trsclient/capes}. */
@@ -195,6 +216,7 @@ public final class TrsOnline {
 			// Keine Einwilligung im Launcher: kein einziger Aufruf.
 			status = Status.LAUNCHER_OFF;
 			events.stop();
+			social.tick(now, null, null, null, false);
 			return;
 		}
 		if (!moduleEnabled) {
@@ -202,11 +224,13 @@ public final class TrsOnline {
 			active = false;
 			leaveWorld();
 			events.stop();
+			social.tick(now, null, null, null, false);
 			return;
 		}
 		if (banned) {
 			status = Status.BANNED;
 			events.stop();
+			social.tick(now, null, null, null, false);
 			return;
 		}
 		GameSession session = platform.session();
@@ -218,6 +242,7 @@ public final class TrsOnline {
 		if (session == null || session.uuid == null || !(session.usable() || devMock())) {
 			status = Status.NO_ACCOUNT;
 			events.stop();
+			social.tick(now, null, null, null, false);
 			return;
 		}
 		if (!session.uuid.equals(sessionUuid)) {
@@ -242,6 +267,7 @@ public final class TrsOnline {
 			if (!loginInFlight && now >= nextLoginAt) login(session);
 			if (status != Status.RETRY) status = Status.CONNECTING;
 			events.stop();
+			social.tick(now, null, null, null, false);
 			return;
 		}
 		status = Status.ONLINE;
@@ -271,6 +297,8 @@ public final class TrsOnline {
 		}
 		tickEmotes(now, session.uuid);
 		friends.tick(now, token);
+		social.tick(now, token, session.uuid, session.name,
+				dev.theredstonee.trsclient.core.social.SocialOverlay.enabled());
 	}
 
 	// --- Emotes (API.md §12, §13) ---

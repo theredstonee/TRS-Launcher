@@ -74,6 +74,18 @@ public final class TrsModules {
 	public final HudModule redstoneClock;
 	/** Clips & Aufnahme: Status der Aufnahme im Launcher (Tasten: Steuerung → TRS Client). */
 	public final HudModule clips;
+	/** Sozial: Chat live im Spiel + Benachrichtigungen (Toasts), Logik in core.social. */
+	public final Module social;
+	public final BoolSetting socialToasts;
+	public final ChoiceSetting<dev.theredstonee.trsclient.core.social.Toasts.Corner> socialCorner;
+	public final NumberSetting socialDuration;
+	public final BoolSetting socialSound;
+	public final BoolSetting socialDnd;
+	public final BoolSetting socialDndFullscreen;
+	public final BoolSetting socialToastMessages;
+	public final BoolSetting socialToastInvites;
+	public final BoolSetting socialToastRequests;
+	public final BoolSetting socialToastOnline;
 
 	// --- Leistung (Logik in core.perf, siehe Performance) ---
 	/** FPS-Boost: Hauptschalter aller Leistungs-Funktionen, Voreinstellungen, Leistungs-Check. */
@@ -551,6 +563,11 @@ public final class TrsModules {
 		});
 		for (Module m : new Module[]{fpsBoost, dynamicFps, entityCulling, particles, worldDetails}) m.profiled();
 		clips.icon("record").category(Category.MISC);
+		social = registry.register(new Module("social", "Social",
+				"Chat with your TRS friends and groups right in the game: messages, pictures and server invites update "
+						+ "live. Notifications for new messages, invites, friend requests and friends coming online, "
+						+ "with a quick-reply key. Uses the TRS Online Features.", true));
+		social.icon("chat").category(Category.CHAT);
 
 		keystrokesShowCps = keystrokes.add(new BoolSetting("showCps", "CPS below mouse buttons", true));
 		keystrokesShowSpace = keystrokes.add(new BoolSetting("showSpace", "Show space bar", true));
@@ -696,6 +713,18 @@ public final class TrsModules {
 		redstoneClockScope = redstoneClock.add(new BoolSetting("scope", "Oscilloscope", true));
 		redstoneClockKeep = redstoneClock.add(new BoolSetting("keep", "Keep measuring after looking away", true));
 		clipsBufferIcon = clips.add(new BoolSetting("bufferIcon", "Show buffer indicator", true));
+		socialToasts = social.add(new BoolSetting("toasts", "Notifications", true));
+		socialCorner = social.add(new ChoiceSetting<dev.theredstonee.trsclient.core.social.Toasts.Corner>("corner", "Position",
+				dev.theredstonee.trsclient.core.social.Toasts.Corner.class,
+				dev.theredstonee.trsclient.core.social.Toasts.Corner.TOP_RIGHT));
+		socialDuration = social.add(new NumberSetting("duration", "Duration", 5, 3, 10, 1, "", " s"));
+		socialSound = social.add(new BoolSetting("sound", "Sound", true));
+		socialDnd = social.add(new BoolSetting("dnd", "Do not disturb", false));
+		socialDndFullscreen = social.add(new BoolSetting("dndFullscreen", "Quiet in fullscreen", false));
+		socialToastMessages = social.add(new BoolSetting("toastMessages", "New messages", true));
+		socialToastInvites = social.add(new BoolSetting("toastInvites", "Server invites", true));
+		socialToastRequests = social.add(new BoolSetting("toastRequests", "Friend requests and cape offers", true));
+		socialToastOnline = social.add(new BoolSetting("toastOnline", "Friends coming online", true));
 
 		dynamicFpsUnfocused = dynamicFps.add(new NumberSetting("unfocused", "FPS in the background", 15, 1, 60, 1, "", " FPS"));
 		dynamicFpsMinimized = dynamicFps.add(new NumberSetting("minimized", "FPS when minimized", 1, 1, 30, 1, "", " FPS"));

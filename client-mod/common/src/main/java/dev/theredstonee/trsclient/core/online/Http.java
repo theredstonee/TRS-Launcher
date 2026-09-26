@@ -72,6 +72,8 @@ public interface Http {
 
 		@Override
 		public Response send(Request request) throws IOException {
+			// HttpURLConnection kennt kein PATCH (Chat: Nachricht bearbeiten, Gruppe umbenennen).
+			if (request.method.equals("PATCH")) return new RawHttp(userAgent).send(request);
 			HttpURLConnection c = (HttpURLConnection) URI.create(request.url).toURL().openConnection();
 			try {
 				c.setConnectTimeout(CONNECT_TIMEOUT_MS);

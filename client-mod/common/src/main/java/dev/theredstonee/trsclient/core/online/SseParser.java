@@ -13,14 +13,22 @@ public final class SseParser {
 	public static final class Raw {
 		public final String event;
 		public final String data;
+		/** {@code id:} des Ereignisses (API.md §19) oder null. */
+		public final String id;
 
 		Raw(String event, String data) {
+			this(event, data, null);
+		}
+
+		Raw(String event, String data, String id) {
 			this.event = event;
 			this.data = data;
+			this.id = id;
 		}
 	}
 
 	private String event;
+	private String id;
 	private StringBuilder data;
 	private boolean overflow;
 
@@ -29,8 +37,9 @@ public final class SseParser {
 		if (line == null) return null;
 		if (line.isEmpty()) {
 			Raw out = null;
-			if (!overflow && (event != null || data != null)) out = new Raw(event, data == null ? "" : data.toString());
+			if (!overflow && (event != null || data != null)) out = new Raw(event, data == null ? "" : data.toString(), id);
 			event = null;
+			id = null;
 			data = null;
 			overflow = false;
 			return out;
@@ -42,6 +51,9 @@ public final class SseParser {
 		if (value.startsWith(" ")) value = value.substring(1);
 		if (field.equals("event")) {
 			event = value;
+		} else if (field.equals("id")) {
+			// Nur harmlose IDs übernehmen (sie gehen beim Wiederverbinden in die Adresse).
+			id = value.length() <= 64 && value.matches("[A-Za-z0-9._-]*") ? value : null;
 		} else if (field.equals("data")) {
 			if (data == null) data = new StringBuilder();
 			else data.append('\n');
