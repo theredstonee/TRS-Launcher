@@ -199,6 +199,33 @@ and pictures are deleted, and the report itself (without content) is deleted aft
 account, reports you filed stay without your name; reports against you and an active chat mute stay until these
 periods end, so moderation can't be escaped by deleting the account.
 
+### Hosting a world for friends (TRS Client)
+
+In the TRS Client you can open your singleplayer world for friends ("Host world") without port forwarding. The TRS
+server only manages **who may join** and helps the two games **find each other**; the game itself never runs through
+the TRS server.
+
+- **Stored on the TRS server while the world is open:** the world name, Minecraft version, mod loader and settings you
+  chose (game mode, PvP, cheats, max. players, open/closed, visible to friends), the join code, who you invited, who asked
+  to join and who you let in or banned (with times), and the player count your game reports. When you close the world,
+  or 90 seconds after your game stops reporting, all of this is **deleted**. Friends see your open world only if you
+  leave it visible to friends.
+- **Kept longer:** only your own list of players you banned from all your worlds ("remember ban"), until you remove them
+  or delete your TRS account.
+- **Connecting:** the two games first try to connect **directly**. For this each game asks a STUN server (by default
+  only the TRS relay server) for its public address and sends its connection candidates to the other player through the
+  TRS server. **With a direct connection, you and the other player see each other's IP address** – like on any
+  Minecraft server. These candidates are only passed through and kept at most 10 minutes in the server's memory for
+  delivery.
+- **TRS relay:** if a direct connection doesn't work, the game data runs through the TRS relay server (a separate server
+  in Germany, run by the TRS Launcher project). It only lets players in with a short-lived access key from the TRS
+  server, sees the IP addresses of the connected games and forwards the bytes. It **does not store or log any game data
+  or IP addresses** (only counters such as the number of connections) and keeps nothing on disk.
+- **Public link (e4mc):** optionally you can create a public link that anyone can use to join. This uses **e4mc**, a
+  service by other operators, not the TRS server. When you turn it on (only after a warning you have to confirm), your
+  game connects to e4mc's relay and e4mc sees your IP address and the players' IP addresses and forwards the game data;
+  e4mc's own privacy policy applies. It is off by default.
+
 ### What is stored
 
 | Data | Why |
@@ -219,6 +246,7 @@ periods end, so moderation can't be escaped by deleting the account.
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; warnings and chat mutes | Moderation (see above) |
+| World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count; your list of players banned from all your worlds | Hosting a world for friends (see above) |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
 your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your
@@ -281,6 +309,7 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   the TRS server asks Mojang with your player name and the one-time challenge (`hasJoined`).
 - **Minecraft servers in chat invites** are contacted by the TRS server (server list ping) to show their icon and
   player count; they only see the TRS server's address.
+- **TRS relay server** (world hosting, see above): a separate server in **Germany** run by the TRS Launcher project; it only forwards game data and keeps nothing on disk.
 
 ### Your rights
 

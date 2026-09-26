@@ -209,6 +209,34 @@ werden Kopien, Notizen und Bilder gelöscht, die Meldung selbst (ohne Inhalte) n
 Account, bleiben deine Meldungen ohne deinen Namen erhalten; Meldungen gegen dich und eine laufende Stummschaltung
 bleiben bis zum Ende dieser Fristen, damit sich Moderation nicht durch Löschen des Accounts umgehen lässt.
 
+### Welt für Freunde hosten (TRS Client)
+
+Im TRS Client kannst du deine Einzelspielerwelt ohne Portfreigabe für Freunde öffnen („Welt hosten“). Der TRS-Server
+regelt nur, **wer beitreten darf**, und hilft den beiden Spielen, **sich zu finden**; das Spiel selbst läuft nie über
+den TRS-Server.
+
+- **Auf dem TRS-Server gespeichert, solange die Welt offen ist:** Weltname, Minecraft-Version, Mod-Loader und deine
+  Einstellungen (Spielmodus, PvP, Cheats, max. Spieler, offen/geschlossen, für Freunde sichtbar), der Beitrittscode, wen
+  du eingeladen hast, wer beitreten wollte und wen du hereingelassen oder gesperrt hast (mit Zeitpunkt), und die
+  Spielerzahl, die dein Spiel meldet. Schließt du die Welt oder meldet sich dein Spiel 90 Sekunden nicht, wird das alles
+  **gelöscht**. Freunde sehen deine offene Welt nur, wenn du sie für Freunde sichtbar lässt.
+- **Länger gespeichert:** nur deine eigene Liste der Spieler, die du für alle deine Welten gesperrt hast („Sperre
+  merken“), bis du sie entfernst oder dein TRS-Konto löschst.
+- **Verbinden:** Die beiden Spiele versuchen zuerst, sich **direkt** zu verbinden. Dafür fragt jedes Spiel einen
+  STUN-Server (ab Werk nur den TRS-Relay-Server) nach seiner öffentlichen Adresse und schickt seine Verbindungsdaten über
+  den TRS-Server an den anderen Spieler. **Bei einer direkten Verbindung sehen du und der andere Spieler gegenseitig
+  eure IP-Adresse** – wie auf jedem Minecraft-Server. Diese Daten werden nur weitergereicht und höchstens 10 Minuten im
+  Arbeitsspeicher des Servers für die Zustellung gehalten.
+- **TRS-Relay:** Klappt keine direkte Verbindung, laufen die Spieldaten über den TRS-Relay-Server (ein eigener Server in
+  Deutschland, betrieben vom TRS-Launcher-Projekt). Er lässt nur Spieler mit einem kurzlebigen Zugangsschlüssel des
+  TRS-Servers herein, sieht die IP-Adressen der verbundenen Spiele und leitet die Bytes weiter. Er **speichert und
+  protokolliert keine Spieldaten und keine IP-Adressen** (nur Zähler wie die Zahl der Verbindungen) und schreibt nichts
+  auf die Platte.
+- **Öffentlicher Link (e4mc):** Optional kannst du einen öffentlichen Link erstellen, mit dem jeder beitreten kann. Dafür
+  wird **e4mc** genutzt, ein Dienst anderer Betreiber, nicht der TRS-Server. Schaltest du ihn ein (nur nach einer
+  Warnung, die du bestätigen musst), verbindet sich dein Spiel mit dem Relay von e4mc; e4mc sieht deine IP-Adresse und
+  die der Mitspieler und leitet die Spieldaten weiter, es gilt die Datenschutzerklärung von e4mc. Ab Werk ist er aus.
+
 ### Was gespeichert wird
 
 | Daten | Wozu |
@@ -229,6 +257,7 @@ bleiben bis zum Ende dieser Fristen, damit sich Moderation nicht durch Löschen 
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Verwarnungen und Stummschaltungen im Chat | Moderation (siehe oben) |
+| Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl; deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
 
 **Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
 TRS-Dienste an sind) hält deine eigenen Skins, deine eigenen Presets und das Aussehen des Launchers (Theme, Akzentfarbe,
@@ -298,6 +327,7 @@ Profiling und keinen Verkauf von Daten.
   und der TRS-Server fragt bei Mojang mit deinem Spielernamen und der einmaligen Challenge nach (`hasJoined`).
 - **Minecraft-Server aus Chat-Einladungen** werden vom TRS-Server angefragt (Server-List-Ping), um Symbol und
   Spielerzahl zu zeigen; sie sehen dabei nur die Adresse des TRS-Servers.
+- **TRS-Relay-Server** (Welt hosten, siehe oben): ein eigener Server in **Deutschland**, betrieben vom TRS-Launcher-Projekt; er leitet nur Spieldaten weiter und speichert nichts auf der Platte.
 
 ### Deine Rechte
 

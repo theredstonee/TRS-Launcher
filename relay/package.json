@@ -1,0 +1,21 @@
+{
+  "name": "trs-relay",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "description": "TRS Relay – TCP/UDP relay and STUN responder for TRS World Hosting",
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "test": "node --test --test-concurrency=1 \"test/*-test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "probe": "node scripts/probe.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "typescript": "5.9.3"
+  }
+}
