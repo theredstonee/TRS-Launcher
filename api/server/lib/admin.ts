@@ -13,6 +13,7 @@ import {
   type CosmeticView,
 } from './cosmetics'
 import { broadcastPresence } from './friends'
+import { notifyShareRemoved, shareHolders } from './capeshares'
 import { emitCape } from './playerevents'
 import { getUser, isAdmin, settingsOf, type Settings } from './users'
 
@@ -146,6 +147,7 @@ export function approveCape(ctx: AppContext, actor: string, id: string): CapeVie
 export function rejectCape(ctx: AppContext, actor: string, id: string, reason: string | undefined): CapeView {
   const c = uploadOr404(ctx, id)
   const worn = capeWearers(ctx, c.id)
+  const holders = shareHolders(ctx, c.id)
   tx(ctx.db, () => {
     run(
       ctx.db,
@@ -153,9 +155,12 @@ export function rejectCape(ctx: AppContext, actor: string, id: string, reason: s
       ctx.now(), actor, reason ?? null, c.id,
     )
     run(ctx.db, 'UPDATE users SET active_cape_id = NULL WHERE active_cape_id = ?', c.id)
+    // Abgelehnt → alle Teilungen (angenommen und offen) sind weg.
+    run(ctx.db, 'DELETE FROM cape_shares WHERE cape_id = ?', c.id)
     audit(ctx, actor, 'cape.reject', c.owner_uuid, c.id)
   })
   for (const u of worn) emitCape(ctx, u)
+  notifyShareRemoved(ctx, c.id, holders)
   return capeView(ctx, getCape(ctx, c.id)!)
 }
 

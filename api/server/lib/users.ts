@@ -2,7 +2,9 @@ import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
-import { capeView, type CapeRow, type CapeView } from './capes'
+import { capeView, capeWearers, type CapeRow, type CapeView } from './capes'
+import { notifyShareRemoved, releaseHoldings, shareHolders } from './capeshares'
+import { emitCape } from './playerevents'
 import { forbidden } from './errors'
 
 export interface UserRow {
@@ -127,12 +129,20 @@ export function updateSettings(ctx: AppContext, uuid: string, patch: Partial<Set
  * und alle Sync-Daten (Skins samt Bildern, Grabsteine, Presets, Einstellungen – per ON DELETE CASCADE).
  */
 export function deleteUser(ctx: AppContext, uuid: string): void {
+  // Geteilte Umhänge, die dieser Nutzer hielt, samt allem, was er weitergeteilt hat.
+  releaseHoldings(ctx, uuid)
   const uploads = all<{ id: string }>(ctx.db, "SELECT id FROM capes WHERE owner_uuid = ? AND kind = 'upload'", uuid)
   const cosmetics = all<{ id: string }>(ctx.db, "SELECT id FROM cosmetics WHERE owner_uuid = ? AND kind = 'upload'", uuid)
+  // Wer eigene Uploads geteilt bekommen hat, verliert sie mit dem Konto (Zeilen per FK weg).
+  const sharedOut = uploads.map(({ id }) => ({ id, holders: shareHolders(ctx, id), worn: capeWearers(ctx, id) }))
   tx(ctx.db, () => {
     run(ctx.db, 'DELETE FROM users WHERE uuid = ?', uuid)
     run(ctx.db, 'DELETE FROM admin_log WHERE target = ?', uuid)
   })
+  for (const s of sharedOut) {
+    for (const u of s.worn) if (u !== uuid) emitCape(ctx, u)
+    notifyShareRemoved(ctx, s.id, s.holders)
+  }
   for (const { id } of uploads) {
     rmSync(join(ctx.capeDir, `${id}.png`), { force: true })
   }

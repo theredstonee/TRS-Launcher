@@ -38,6 +38,10 @@ export interface Limits {
   maxPlayerStreamsTotal: number
   /** Höchstzahl beobachteter Spieler je `GET /v1/events/players`-Stream. */
   maxWatchedPerStream: number
+  /** Geteilte Umhänge: höchstens so viele Inhaber je Umhang außer dem Ersteller (angenommen + offene Angebote). */
+  maxCapeHolders: number
+  /** Offene Umhang-Angebote, die ein Spieler gleichzeitig bekommen kann. */
+  maxIncomingCapeOffers: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -57,6 +61,8 @@ export const DEFAULT_LIMITS: Limits = {
   maxPlayerStreamsPerUser: 3,
   maxPlayerStreamsTotal: 2000,
   maxWatchedPerStream: 200,
+  maxCapeHolders: 20,
+  maxIncomingCapeOffers: 50,
 }
 
 const bool = z

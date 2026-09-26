@@ -1,5 +1,13 @@
+import type { IncomingOffer } from './capeshares'
+
 /** Ereignisse, die per SSE (`GET /v1/events`) an einen Nutzer gehen. */
 export type ApiEvent =
+  /** Ein Freund bietet dir einen Umhang an. */
+  | { type: 'cape_offer', offer: IncomingOffer }
+  /** Dein Angebot wurde angenommen (Ablehnen bleibt still). */
+  | { type: 'cape_offer_accepted', capeId: string, by: { uuid: string, name: string } }
+  /** Ein Angebot an dich wurde zurückgezogen oder ein geteilter Umhang entzogen/gelöscht. */
+  | { type: 'cape_share_removed', capeId: string }
   | { type: 'friend_request', from: { uuid: string, name: string } }
   | { type: 'friend_request_cancelled', uuid: string }
   | { type: 'friend_added', friend: { uuid: string, name: string } }
