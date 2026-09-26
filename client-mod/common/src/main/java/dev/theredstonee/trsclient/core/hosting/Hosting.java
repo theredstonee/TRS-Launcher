@@ -180,6 +180,8 @@ public final class Hosting {
 		int lastPlayers = -1;
 		volatile boolean closed;
 		boolean recreated;
+		/** sid des Angebots, für das der Raum schon neu geholt wurde (nur einmal je Versuch). */
+		String refreshedFor;
 
 		HostSession(String worldKey, HostingPlatform.Options options) {
 			this.worldKey = worldKey;
@@ -1032,14 +1034,16 @@ public final class Hosting {
 		public void guestOpen(final byte[] pairId, final String uuid) {
 			final RelayControl c = s.control;
 			if (s.closed || c == null) return;
-			if (!allowGuest(s, uuid)) {
-				c.closeGuest(pairId);
-				return;
-			}
 			final Rooms.ConnectInfo ci = s.connect;
 			submit(new Runnable() {
 				@Override
 				public void run() {
+					// Gerade angenommen/eingeladen beigetreten, das hosting_room-Ereignis ist aber noch unterwegs?
+					if (!allowGuest(s, uuid) && !refreshRoom(s, uuid)) {
+						log("TRS Hosting: Relay-Gast abgewiesen (nicht angenommen oder gesperrt)");
+						c.closeGuest(pairId);
+						return;
+					}
 					try {
 						RelayStream st = Relay.pair(ci.relayHost, ci.tcpPort, pairId);
 						attach(s, st, uuid);
@@ -1143,9 +1147,50 @@ public final class Hosting {
 
 	// --- Direkt (Host) ---
 
+	/**
+	 * Raum frisch von der API holen (Hintergrund-Thread), wenn ein Gast verbinden will, der lokal noch nicht als
+	 * angenommen gilt (Einladung + Beitritt überholen das hosting_room-Ereignis). true = jetzt erlaubt.
+	 */
+	boolean refreshRoom(final HostSession s, String uuid) {
+		String t = token;
+		Rooms.Room r = s.room;
+		if (t == null || r == null || s.closed || uuid == null || s.blocked.contains(uuid)) return false;
+		try {
+			Rooms.Room fresh = api.room(t, r.id);
+			if (fresh != null && fresh.id.equals(r.id)) s.room = fresh;
+		} catch (IOException | ApiException | RuntimeException e) {
+			return false;
+		}
+		post(new Runnable() {
+			@Override
+			public void run() {
+				generation++;
+			}
+		});
+		return allowGuest(s, uuid);
+	}
+
 	private void onOffer(final String roomId, final SignalBox.Signal offer) {
 		final HostSession s = session;
 		final HostingPlatform p = platform;
+		if (s != null && !s.closed && s.room != null && s.room.id.equals(roomId) && directAllowed() && !allowGuest(s, offer.from)
+				&& !s.blocked.contains(offer.from) && offer.sid != null && !offer.sid.equals(s.refreshedFor)) {
+			// Erst den Raum auffrischen (Beitritt kann dem hosting_room-Ereignis voraus sein), dann neu entscheiden.
+			s.refreshedFor = offer.sid;
+			submit(new Runnable() {
+				@Override
+				public void run() {
+					refreshRoom(s, offer.from);
+					post(new Runnable() {
+						@Override
+						public void run() {
+							onOffer(roomId, offer);
+						}
+					});
+				}
+			});
+			return;
+		}
 		boolean ok = s != null && !s.closed && s.room != null && s.room.id.equals(roomId) && allowGuest(s, offer.from)
 				&& directAllowed();
 		final String t = token;

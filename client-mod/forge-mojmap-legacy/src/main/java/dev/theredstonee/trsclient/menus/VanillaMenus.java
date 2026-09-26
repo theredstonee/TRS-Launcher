@@ -230,8 +230,8 @@ public final class VanillaMenus {
 			y -= 24;
 		}
 		if (link) {
-			String label = I18n.tr("hosting.link.deactivate");
-			int w = Math.min(150, Math.max(100, Mc.mc().font.width(label) + 30));
+			String label = I18n.tr("hosting.link.deactivateLong");
+			int w = Math.min(170, Math.max(100, Mc.mc().font.width(label) + 34));
 			Object d = button(8, y, w, 20, label, new Runnable() {
 				@Override
 				public void run() {
@@ -239,9 +239,9 @@ public final class VanillaMenus {
 					Mc.setScreen(s);
 				}
 			});
+			ICONS.put(d, "lock");
 			host.trsclient$addWidget(d);
-			linkBadgeX = 8;
-			linkBadgeY = y - 17;
+			// Das rote Abzeichen „Öffentlicher Link aktiv“ steht oben mittig (HUD, auch unter dem Pausemenü sichtbar).
 		}
 	}
 

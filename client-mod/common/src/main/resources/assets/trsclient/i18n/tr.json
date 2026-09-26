@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Çok fazla bağlantı – biraz bekle.",
   "hosting.error.server_full": "Aktarıcı dolu – daha sonra tekrar dene.",
   "hosting.error.shutting_down": "Aktarıcı yeniden başlıyor – birazdan tekrar dene.",
-  "hosting.error.timeout": "Bağlantı zaman aşımına uğradı."
+  "hosting.error.timeout": "Bağlantı zaman aşımına uğradı.",
+  "hosting.link.deactivateLong": "Genel bağlantıyı kapat",
+  "hosting.link.ready": "Genel bağlantı: {0}"
 }

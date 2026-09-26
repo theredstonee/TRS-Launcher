@@ -431,7 +431,8 @@ public final class HostingUi extends WindowUi {
 						}
 					});
 					final PlayerRights r = g.rights;
-					int cwid = narrow ? 44 : 64;
+					int cwid = narrow ? 44 : Math.max(c.textWidth(I18n.tr("hosting.right.spectator")),
+							c.textWidth(I18n.tr("hosting.right.build"))) + 20;
 					bx -= cwid + 4;
 					kit.check(c, bx, ry + 4, cwid, I18n.tr("hosting.right.build"), r.build && !r.spectator, !r.spectator && vis, mx, my,
 							new Runnable() {
@@ -447,8 +448,9 @@ public final class HostingUi extends WindowUi {
 							hosting.setRights(g.uuid, r.withSpectator(!r.spectator));
 						}
 					});
-					bx -= 36;
-					kit.check(c, bx, ry + 4, 34, I18n.tr("hosting.right.op"), r.op, vis, mx, my, new Runnable() {
+					int opW = c.textWidth(I18n.tr("hosting.right.op")) + 20;
+					bx -= opW + 2;
+					kit.check(c, bx, ry + 4, opW, I18n.tr("hosting.right.op"), r.op, vis, mx, my, new Runnable() {
 						@Override
 						public void run() {
 							hosting.setRights(g.uuid, r.withOp(!r.op));
@@ -633,8 +635,8 @@ public final class HostingUi extends WindowUi {
 		@Override
 		protected void body(Canvas c, Kit kit, int x, int y, int w, int h, int mx, int my) {
 			Theme t = Theme.get();
-			int used = Paint.paragraph(c, I18n.tr("hosting.ban.text"), x, y, w, 10, t.text);
-			kit.check(c, x, y + used + 4, w, I18n.tr("hosting.ban.remember"), remember, true, mx, my, new Runnable() {
+			int below = Paint.paragraph(c, I18n.tr("hosting.ban.text", name), x, y, w, 10, t.text);
+			kit.check(c, x, below + 4, w, I18n.tr("hosting.ban.remember"), remember, true, mx, my, new Runnable() {
 				@Override
 				public void run() {
 					remember = !remember;

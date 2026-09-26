@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Trop de connexions – attends un peu.",
   "hosting.error.server_full": "Le relais est plein – réessaie plus tard.",
   "hosting.error.shutting_down": "Le relais redémarre – réessaie dans un instant.",
-  "hosting.error.timeout": "Délai de connexion dépassé."
+  "hosting.error.timeout": "Délai de connexion dépassé.",
+  "hosting.link.deactivateLong": "Couper le lien public",
+  "hosting.link.ready": "Lien public : {0}"
 }

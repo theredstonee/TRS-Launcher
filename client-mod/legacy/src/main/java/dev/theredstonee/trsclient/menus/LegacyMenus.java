@@ -264,12 +264,11 @@ public final class LegacyMenus {
 			y -= 24;
 		}
 		if (link) {
-			String label = I18n.tr("hosting.link.deactivate");
-			GuiButton d = new GuiButton(LINK_ID, 8, y, Math.min(150, Math.max(100, font.getStringWidth(label) + 30)), 20, label);
+			String label = I18n.tr("hosting.link.deactivateLong");
+			GuiButton d = new GuiButton(LINK_ID, 8, y, Math.min(170, Math.max(100, font.getStringWidth(label) + 34)), 20, label);
 			icons.put(d, "lock");
 			list.add(d);
-			linkBadgeX = 8;
-			linkBadgeY = y - 17;
+			// Das rote Abzeichen steht oben mittig (HUD-Pfad, auch unter dem Pausemenü).
 		}
 	}
 

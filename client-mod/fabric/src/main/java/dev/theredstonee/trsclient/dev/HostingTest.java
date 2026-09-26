@@ -38,6 +38,9 @@ public final class HostingTest {
 	private int phase;
 	private int wait;
 	private int waited;
+	private Hosting.Notice lastNotice;
+	/** Harte Zeitgrenze je Spiel (Standard 170 s): danach beendet sich das Spiel selbst – auch wenn die Gegenseite fehlt. */
+	private final long deadline = System.currentTimeMillis() + Long.getLong("trsclient.hosting.test.limitMs", 170_000L);
 	private String guestUuid;
 	private PublicLinkDialog dialog;
 
@@ -92,6 +95,18 @@ public final class HostingTest {
 	}
 
 	private void tick(Minecraft mc) {
+		if (phase >= 0 && System.currentTimeMillis() > deadline) {
+			log("ZEITGRENZE erreicht – Spiel wird beendet");
+			phase = -1000;
+			mc.stop();
+			return;
+		}
+		Hosting hn = Hosting.current();
+		Hosting.Notice n = hn == null ? null : hn.notice(System.currentTimeMillis());
+		if (n != null && n != lastNotice) {
+			lastNotice = n;
+			log("Hinweis" + (n.error ? " (Fehler)" : "") + ": " + n.text());
+		}
 		if (wait > 0) {
 			wait--;
 			return;

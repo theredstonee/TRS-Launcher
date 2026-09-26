@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Demasiadas conexiones: espera un momento.",
   "hosting.error.server_full": "El relé está lleno: inténtalo más tarde.",
   "hosting.error.shutting_down": "El relé se está reiniciando: inténtalo en un momento.",
-  "hosting.error.timeout": "Se agotó el tiempo de conexión."
+  "hosting.error.timeout": "Se agotó el tiempo de conexión.",
+  "hosting.link.deactivateLong": "Desactivar enlace público",
+  "hosting.link.ready": "Enlace público: {0}"
 }

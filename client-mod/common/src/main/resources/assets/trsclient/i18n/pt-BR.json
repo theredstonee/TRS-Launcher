@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Conexões demais – espere um pouco.",
   "hosting.error.server_full": "O relay está cheio – tente mais tarde.",
   "hosting.error.shutting_down": "O relay está reiniciando – tente daqui a pouco.",
-  "hosting.error.timeout": "A conexão expirou."
+  "hosting.error.timeout": "A conexão expirou.",
+  "hosting.link.deactivateLong": "Desligar link público",
+  "hosting.link.ready": "Link público: {0}"
 }

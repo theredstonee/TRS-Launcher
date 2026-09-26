@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Zu viele Verbindungen – bitte kurz warten.",
   "hosting.error.server_full": "Das Relay ist voll – bitte später noch mal.",
   "hosting.error.shutting_down": "Das Relay startet neu – bitte gleich noch mal.",
-  "hosting.error.timeout": "Zeitüberschreitung der Verbindung."
+  "hosting.error.timeout": "Zeitüberschreitung der Verbindung.",
+  "hosting.link.deactivateLong": "Öffentlichen Link aus",
+  "hosting.link.ready": "Öffentlicher Link: {0}"
 }

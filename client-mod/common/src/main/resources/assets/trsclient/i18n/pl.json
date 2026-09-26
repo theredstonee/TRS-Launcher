@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Za dużo połączeń – poczekaj chwilę.",
   "hosting.error.server_full": "Przekaźnik jest pełny – spróbuj później.",
   "hosting.error.shutting_down": "Przekaźnik się restartuje – spróbuj za chwilę.",
-  "hosting.error.timeout": "Przekroczono czas połączenia."
+  "hosting.error.timeout": "Przekroczono czas połączenia.",
+  "hosting.link.deactivateLong": "Wyłącz link publiczny",
+  "hosting.link.ready": "Link publiczny: {0}"
 }

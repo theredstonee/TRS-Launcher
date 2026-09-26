@@ -195,6 +195,13 @@ public final class PublicLink {
 			domain = d;
 			state = State.ON;
 			hosting.log("TRS Hosting: öffentlicher Link aktiv");
+			final String shown = d;
+			hosting.post(new Runnable() {
+				@Override
+				public void run() {
+					hosting.notice("hosting.link.ready", false, shown);
+				}
+			});
 		}
 
 		@Override

@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Te veel verbindingen – wacht even.",
   "hosting.error.server_full": "De relay is vol – probeer het later.",
   "hosting.error.shutting_down": "De relay herstart – probeer het zo opnieuw.",
-  "hosting.error.timeout": "De verbinding is verlopen."
+  "hosting.error.timeout": "De verbinding is verlopen.",
+  "hosting.link.deactivateLong": "Openbare link uit",
+  "hosting.link.ready": "Openbare link: {0}"
 }

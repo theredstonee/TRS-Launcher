@@ -1433,5 +1433,7 @@
   "hosting.error.too_many_connections": "Too many connections – please wait a moment.",
   "hosting.error.server_full": "The relay is full – please try again later.",
   "hosting.error.shutting_down": "The relay is restarting – please try again in a moment.",
-  "hosting.error.timeout": "The connection timed out."
+  "hosting.error.timeout": "The connection timed out.",
+  "hosting.link.deactivateLong": "Turn off public link",
+  "hosting.link.ready": "Public link: {0}"
 }
