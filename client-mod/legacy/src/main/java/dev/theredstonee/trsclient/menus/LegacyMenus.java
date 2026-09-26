@@ -19,6 +19,11 @@ import net.minecraft.client.gui.GuiDownloadTerrain;
 import net.minecraft.client.gui.GuiIngameMenu;
 import net.minecraft.client.gui.GuiLanguage;
 import net.minecraft.client.gui.GuiMultiplayer;
+import net.minecraft.client.gui.ServerSelectionList;
+import net.minecraft.client.multiplayer.ServerList;
+import dev.theredstonee.trsclient.core.net.PingPanel;
+import dev.theredstonee.trsclient.core.net.ServerPingTest;
+import dev.theredstonee.trsclient.core.net.StatusPing;
 import net.minecraft.client.gui.GuiOptions;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiScreenOptionsSounds;
@@ -49,6 +54,13 @@ public final class LegacyMenus {
 	static final int HOST_ID = 73_120;
 	static final int LINK_ID = 73_121;
 	static final int JOIN_ID = 73_122;
+	/** Mehrspieler: „Ping-Test“ (alle Server messen und nach Ping sortieren). */
+	static final int PING_ID = 73_123;
+	private final Map<GuiButton, Boolean> compactPing = new WeakHashMap<GuiButton, Boolean>();
+	/** Nach dem laufenden Test einmal sortieren. */
+	private boolean pingSortPending;
+	private Field serverListField;
+	private boolean serverListSearched;
 	/** Lage des Abzeichens „Öffentlicher Link aktiv“ im Pausemenü (x, y; -1 = keins). */
 	static volatile int linkBadgeX = -1;
 	static volatile int linkBadgeY = -1;
@@ -57,6 +69,16 @@ public final class LegacyMenus {
 	private final Map<GuiScreen, List<GuiButton>> buttons = new WeakHashMap<GuiScreen, List<GuiButton>>();
 	private final Map<GuiButton, String> icons = new WeakHashMap<GuiButton, String>();
 	private Class<?> worldsClass;
+	private static volatile LegacyMenus current;
+
+	public LegacyMenus() {
+		current = this;
+	}
+
+	/** Die registrierte Instanz (für Selbsttests). */
+	public static LegacyMenus current() {
+		return current;
+	}
 	private Field heightField;
 	private boolean heightFailed;
 
@@ -100,6 +122,7 @@ public final class LegacyMenus {
 		try {
 			if (k == MenuStyle.Kind.PAUSE) hostingButtons(s, list);
 			if (k == MenuStyle.Kind.MULTIPLAYER) joinButton(s, list);
+			if (k == MenuStyle.Kind.MULTIPLAYER && MenuStyle.enabled(k)) pingButton(s, list);
 		} catch (RuntimeException | LinkageError e) {
 			// ohne Hosting-Knöpfe weiter
 		}
@@ -109,6 +132,11 @@ public final class LegacyMenus {
 	public void onAction(GuiScreenEvent.ActionPerformedEvent.Pre event) {
 		GuiButton b = button(event);
 		GuiScreen s = Mc.eventGui(event);
+		if (b != null && s instanceof GuiMultiplayer && b.id == PING_ID && icons.containsKey(b)) {
+			event.setCanceled(true);
+			startPingTest((GuiMultiplayer) s);
+			return;
+		}
 		if (b != null && s != null && (b.id == HOST_ID || b.id == LINK_ID || b.id == JOIN_ID) && icons.containsKey(b)) {
 			event.setCanceled(true);
 			if (b.id == HOST_ID) Mc.setScreen(MenuScreens.hosting(s));
@@ -170,7 +198,9 @@ public final class LegacyMenus {
 				MenuSkin.loading(c, s.width, s.height, title, null, -1f, false, bottom < 0 ? -1 : top, bottom);
 			} else if (k == MenuStyle.Kind.MULTIPLAYER || k == MenuStyle.Kind.WORLDS) {
 				// Die Liste (GuiSlot) übermalt alles mit Erde – Kopf- und Fußleiste im Stil neu zeichnen.
+				if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof GuiMultiplayer) pingLabels((GuiMultiplayer) s, c);
 				listFrame(s, c, k);
+				if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof GuiMultiplayer) updatePingTest((GuiMultiplayer) s);
 			}
 			List<GuiButton> list = buttons.get(s);
 			if (list == null) return;
@@ -279,6 +309,130 @@ public final class LegacyMenus {
 		GuiButton b = new GuiButton(JOIN_ID, 6, 6, Math.min(140, Math.max(90, Mc.font().getStringWidth(label) + 30)), 20, label);
 		icons.put(b, "globe");
 		list.add(b);
+	}
+
+	/** Mehrspieler: „Ping-Test“ oben rechts. */
+	void pingButton(GuiScreen s, List<GuiButton> list) {
+		FontRenderer font = Mc.font();
+		int w = Math.max(font.getStringWidth(I18n.tr("menus.pingTest")),
+				Math.max(font.getStringWidth(I18n.tr("menus.pingTest.running", 88, 88)), font.getStringWidth(I18n.tr("menus.pingTest.cooldown", 8)))) + 26;
+		// Titel „Mehrspieler“ steht mittig (Vanilla): nicht verdecken – sonst nur das Symbol.
+		int titleRight = s.width / 2 + font.getStringWidth(net.minecraft.client.resources.I18n.format("multiplayer.title")) / 2 + 4;
+		boolean compact = s.width - w - 6 < titleRight;
+		if (compact) w = 20;
+		GuiButton b = new GuiButton(PING_ID, s.width - w - 6, 6, w, 20, compact ? "" : I18n.tr("menus.pingTest"));
+		icons.put(b, "signal");
+		if (compact) compactPing.put(b, Boolean.TRUE);
+		list.add(b);
+	}
+
+	public void startPingTest(GuiMultiplayer s) {
+		ServerList servers = s.getServerList();
+		if (servers == null) return;
+		List<String> addresses = new java.util.ArrayList<String>();
+		for (int i = 0; i < servers.countServers(); i++) addresses.add(servers.getServerData(i).serverIP);
+		if (ServerPingTest.shared().start(addresses, System.currentTimeMillis())) pingSortPending = true;
+	}
+
+	/** Je Bild: Beschriftung (Fortschritt/Wartezeit) und nach dem Test einmal nach Ping sortieren. */
+	void updatePingTest(GuiMultiplayer s) {
+		ServerPingTest test = ServerPingTest.shared();
+		if (pingSortPending && !test.running()) {
+			pingSortPending = false;
+			sortByPing(s);
+		}
+		List<GuiButton> list = buttons.get(s);
+		if (list == null) return;
+		long left = test.cooldownLeft(System.currentTimeMillis());
+		for (GuiButton b : list) {
+			if (b.id != PING_ID || !icons.containsKey(b)) continue;
+			boolean compact = compactPing.containsKey(b);
+			if (compact) {
+				b.enabled = !test.running() && !(left > 0 && test.hasResults());
+				continue;
+			}
+			if (test.running()) {
+				b.displayString = I18n.tr("menus.pingTest.running", test.finished(), test.total());
+				b.enabled = false;
+			} else if (left > 0 && test.hasResults()) {
+				b.displayString = I18n.tr("menus.pingTest.cooldown", (left + 999) / 1000);
+				b.enabled = false;
+			} else {
+				b.displayString = I18n.tr("menus.pingTest");
+				b.enabled = true;
+			}
+		}
+	}
+
+	/** Liste nach Ping ordnen (Vanilla-Tausch + speichern), dann die Anzeige neu füllen. */
+	void sortByPing(GuiMultiplayer s) {
+		ServerList servers = s.getServerList();
+		if (servers == null) return;
+		List<String> addresses = new java.util.ArrayList<String>();
+		for (int i = 0; i < servers.countServers(); i++) addresses.add(servers.getServerData(i).serverIP);
+		int[] order = ServerPingTest.shared().order(addresses, null);
+		List<int[]> swaps = ServerPingTest.swaps(order);
+		if (swaps.isEmpty()) return;
+		for (int[] sw : swaps) servers.swapServers(sw[0], sw[1]);
+		servers.saveServerList();
+		Object selector = serverList(s);
+		if (selector == null) return;
+		// updateOnlineServers(ServerList) – per Signatur gesucht (in 1.8.9 ohne MCP-Namen).
+		for (java.lang.reflect.Method m : selector.getClass().getMethods()) {
+			Class<?>[] params = m.getParameterTypes();
+			if (params.length == 1 && params[0] == ServerList.class && m.getReturnType() == void.class) {
+				try {
+					m.invoke(selector, servers);
+				} catch (ReflectiveOperationException | RuntimeException ignored) {
+					// Liste zeigt die neue Reihenfolge dann beim nächsten Öffnen
+				}
+				return;
+			}
+		}
+	}
+
+	/** Server-Liste des Mehrspieler-Bildschirms (privates Feld, per Typ gesucht). */
+	ServerSelectionList serverList(GuiMultiplayer s) {
+		try {
+			if (!serverListSearched) {
+				serverListSearched = true;
+				for (Field f : GuiMultiplayer.class.getDeclaredFields()) {
+					if (f.getType() == ServerSelectionList.class) {
+						f.setAccessible(true);
+						serverListField = f;
+						break;
+					}
+				}
+			}
+			return serverListField == null ? null : (ServerSelectionList) serverListField.get(s);
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			return null;
+		}
+	}
+
+	/** Ergebnis des Ping-Tests rechts in jeder sichtbaren Zeile (unter Vanillas Balken). */
+	void pingLabels(GuiMultiplayer s, Canvas c) {
+		ServerPingTest test = ServerPingTest.shared();
+		if (!test.hasResults()) return;
+		ServerSelectionList list = serverList(s);
+		ServerList servers = s.getServerList();
+		if (list == null || servers == null) return;
+		int rowX = list.left + list.width / 2 - list.getListWidth() / 2 + 2;
+		int rowW = list.getListWidth();
+		int y0 = list.top + 4 - list.getAmountScrolled() + list.headerPadding;
+		for (int i = 0; i < servers.countServers(); i++) {
+			int y = y0 + i * list.slotHeight;
+			if (y + 20 < list.top || y + 10 > list.bottom) continue;
+			ServerPingTest.Entry e = test.entry(servers.getServerData(i).serverIP);
+			String label = ServerPingTest.label(e);
+			if (label == null) continue;
+			StatusPing.Result r = e.result;
+			int color = r == null ? 0xFFB0B0B0 : !r.ok || r.latencyMs < 0 ? 0xFFF05050 : PingPanel.quality(r.latencyMs);
+			int lw = c.textWidth(label);
+			int lx = rowX + rowW - 2 - lw;
+			c.fill(lx - 2, y + 10, rowX + rowW, y + 19, 0xC0101014);
+			c.text(label, lx, y + 10, color, true);
+		}
 	}
 
 	public static int linkBadgeX() {

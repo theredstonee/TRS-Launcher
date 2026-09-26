@@ -107,7 +107,8 @@ public final class LegacyPerf implements GameOptions {
 		EnumSet<PerfFeature> supported = EnumSet.of(PerfFeature.DYNAMIC_FPS, PerfFeature.BACKGROUND_VOLUME,
 				PerfFeature.ENTITY_DISTANCE, PerfFeature.ENTITY_OCCLUSION, PerfFeature.NAMETAG_DISTANCE,
 				PerfFeature.PARTICLE_LIMIT, PerfFeature.PARTICLE_EXPLOSIONS, PerfFeature.PARTICLE_RAIN, PerfFeature.PARTICLE_SMOKE,
-				PerfFeature.SKY, PerfFeature.FOG, PerfFeature.WEATHER, PerfFeature.TEXTURE_ANIMATIONS);
+				PerfFeature.SKY, PerfFeature.FOG, PerfFeature.WEATHER, PerfFeature.TEXTURE_ANIMATIONS, PerfFeature.NET_CODECS,
+				PerfFeature.LOW_LATENCY);
 		PerfCompat compat = new PerfCompat(new PerfCompat.ModCheck() {
 			@Override
 			public boolean loaded(String id) {
@@ -115,6 +116,7 @@ public final class LegacyPerf implements GameOptions {
 			}
 		}, optifinePresent(), PerfCompat.FORGE, minecraft, supported);
 		p.perf = new Performance(modules, compat);
+		LegacyLatency.init(modules);
 		GpuInfo.adapters();
 		if (!compat.detected().isEmpty()) p.log.accept("Leistungs-Mods erkannt: " + compat.detected() + " – deren Funktionen bleiben im TRS Client aus");
 	}
@@ -163,6 +165,7 @@ public final class LegacyPerf implements GameOptions {
 
 	@SubscribeEvent
 	public void onRenderTick(TickEvent.RenderTickEvent event) {
+		if (event.phase == TickEvent.Phase.END) LegacyLatency.frameEnd();
 		if (event.phase != TickEvent.Phase.START || perf == null) return;
 		frames++;
 		try {
@@ -192,6 +195,8 @@ public final class LegacyPerf implements GameOptions {
 		} catch (RuntimeException | LinkageError e) {
 			error(e);
 		}
+		// Nach der FPS-Grenze, direkt bevor die Maus gelesen wird: GPU-Warteschlange + Eingaben neu lesen.
+		LegacyLatency.frameStart();
 	}
 
 	@SubscribeEvent

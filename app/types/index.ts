@@ -704,6 +704,13 @@ export interface InstanceServer {
   joinable: boolean
 }
 
+/** Ergebnis des Ping-Tests für einen Eintrag von `instanceServers`. */
+export interface InstancePing {
+  index: number | null
+  address: string
+  status: ServerStatus
+}
+
 export type GameMode = 'survival' | 'creative' | 'adventure' | 'spectator'
 
 export interface WorldInfo {

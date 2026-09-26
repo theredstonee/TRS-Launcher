@@ -213,7 +213,7 @@ public final class LegacyHosting {
 			if (s == null) return Collections.emptyList();
 			try {
 				List<Player> out = new ArrayList<Player>();
-				for (EntityPlayerMP p : playerList(s)) out.add(new Player(hex(p.getUniqueID()), p.getName()));
+				for (EntityPlayerMP p : playerList(s)) out.add(new Player(hex(p.getUniqueID()), p.getName(), p.ping));
 				lastPlayers = out;
 				return out;
 			} catch (RuntimeException e) {

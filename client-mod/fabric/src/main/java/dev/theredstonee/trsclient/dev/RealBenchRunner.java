@@ -81,6 +81,15 @@ public final class RealBenchRunner {
 						}
 						TrsClient.LOGGER.info("[RealBench] Module an: {}", on.length() == 0 ? "keine" : on);
 					}
+					// -Dtrsclient.bench.latency=off|balanced|maximum: Niedrige Eingabeverzögerung in dieser Szene messen.
+					String latency = System.getProperty("trsclient.bench.latency", "");
+					if (!latency.isEmpty()) {
+						System.setProperty("trsclient.latency.measure", "true");
+						modules.lowLatency.setEnabled(!"off".equals(latency));
+						modules.lowLatencyMode.set("maximum".equals(latency) ? dev.theredstonee.trsclient.core.perf.LowLatency.Mode.MAXIMUM
+								: dev.theredstonee.trsclient.core.perf.LowLatency.Mode.BALANCED);
+						TrsClient.LOGGER.info("[RealBench] Niedrige Eingabeverzögerung: {}", latency);
+					}
 					if (PerfHooks.get() != null) PerfHooks.get().refresh();
 				}
 				Mc.setScreen(null);
@@ -101,7 +110,9 @@ public final class RealBenchRunner {
 					wait = 100;
 					return;
 				}
+				boolean recordingBefore = PerfHooks.FRAME_STATS.recording();
 				if (!bench.tick(game(mc), System.nanoTime())) step++;
+				latencyStats(recordingBefore, PerfHooks.FRAME_STATS.recording());
 				break;
 			case 10:
 				TrsClient.LOGGER.info("[RealBench] Dorf-Suche fertig (Koordinaten siehe [CHAT]-Zeilen)");
@@ -111,6 +122,21 @@ public final class RealBenchRunner {
 				break;
 			default:
 				break;
+		}
+	}
+
+	/** Messfenster des Benchmarks: GPU-Warteschlange und Eingabe-Alter genau über dieselbe Zeit. */
+	private static void latencyStats(boolean before, boolean now) {
+		dev.theredstonee.trsclient.core.perf.LowLatency ll = dev.theredstonee.trsclient.perf.LatencyHooks.get();
+		if (ll == null || System.getProperty("trsclient.bench.latency", "").isEmpty()) return;
+		if (!before && now) {
+			ll.resetStats();
+		} else if (before && !now) {
+			dev.theredstonee.trsclient.core.perf.LowLatency.Stats st = ll.stats();
+			TrsClient.LOGGER.info(String.format(Locale.ROOT,
+					"[RealBench] Latenz %s: GPU-Warteschlange Ø %.2f Bilder, gewartet Ø %.2f ms je Bild, Eingabe-Alter Ø %.2f ms, Bildzeit-Streuung %.2f ms (%d Bilder)",
+					System.getProperty("trsclient.bench.latency"), st.avgQueued, st.avgWaitMillis, st.avgInputAgeMillis,
+					PerfHooks.FRAME_STATS.stdDevMillis(), st.frames));
 		}
 	}
 

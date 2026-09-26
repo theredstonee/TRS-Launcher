@@ -78,7 +78,7 @@ loom {
 			// Realistischer Benchmark (-PtrsAutotestOnly=realbench): Welt mit festem Seed, Dorf-Mitte (x,z oder „locate“),
 			// Vanilla ohne TRS Client, JFR-Aufnahme der Messung; Fenster groß (wird auf Bildschirm 2 maximiert).
 			['trsBenchSeed': 'seed', 'trsBenchCenter': 'center', 'trsBenchJfr': 'jfr', 'trsBenchSeconds': 'seconds', 'trsBenchOff': 'off',
-			 'trsBenchNoMixins': 'noMixins', 'trsBenchNoHud': 'noHud'].each { prop, key ->
+			 'trsBenchNoMixins': 'noMixins', 'trsBenchNoHud': 'noHud', 'trsBenchLatency': 'latency'].each { prop, key ->
 				if (project.hasProperty(prop)) vmArg "-Dtrsclient.bench.${key}=${project.property(prop)}"
 			}
 			if (project.hasProperty('trsBenchVanilla')) {
@@ -217,6 +217,8 @@ if (stonecutter.eval(mc, '>=26.1')) mixinClasses << 'PauseBackgroundMixin'
 // Leistung: Dynamische FPS/FPS-Messung, Partikel, Entity-Culling, Welt-Details (alle require = 0).
 mixinClasses += ['FramePaceMixin', 'ParticleLimitMixin', 'EntityCullMixin', 'BlockEntityCullMixin', 'NameTagCullMixin',
 		'LivingNameTagCullMixin', 'TextureAnimationMixin', 'SkyMixin', 'StarsMixin']
+// Netzwerk-Optimierung + Ping (Handler an der Client-Verbindung), niedrige Eingabeverzögerung (spätes Lesen der Maus).
+mixinClasses += ['NetConnectionMixin', 'LatencyMixin']
 // Regen/Schnee (1.14 im GameRenderer, sonst LevelRenderer); Nebel-Werte liegen ab 1.21.6 in einem GPU-Puffer.
 mixinClasses << 'WeatherMixin'
 if (stonecutter.eval(mc, '>=1.17') && stonecutter.eval(mc, '<1.21.6')) mixinClasses << 'FogMixin'

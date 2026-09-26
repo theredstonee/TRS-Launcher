@@ -1150,7 +1150,6 @@
   "servers": {
     "title": "Servidores",
     "subtitle": "Añádelo una vez: disponible en todas las instancias, con estado en directo y unión con un clic.",
-    "refreshing": "Actualizando …",
     "add": "Añadir servidor",
     "joinWith": "Unirse con",
     "lastPlayed": "{name} (última jugada)",
@@ -1164,6 +1163,13 @@
       "checking": "Consultando …",
       "unreachable": "No disponible",
       "join": "Unirse"
+    },
+    "ping": {
+      "test": "Prueba de ping",
+      "running": "Midiendo ping …",
+      "sort": "Ordenar por ping",
+      "sortHint": "Solo cambia el orden de la vista: primero los servidores accesibles con menor ping.",
+      "hint": "Mide la latencia hacia cada servidor. No puede hacer que un servidor sea más rápido."
     }
   },
   "serverDialog": {
@@ -3647,7 +3653,9 @@
       "running": "La instancia ya está en marcha",
       "joinHint": "Inicia la instancia y se conecta a «{name}»",
       "notJoinable": "A esta dirección no se puede entrar directamente: inicia el juego y entra desde la lista.",
-      "joinNote": "Entrar inicia el juego y conecta al momento. Las versiones muy antiguas solo abren el menú principal."
+      "joinNote": "Entrar inicia el juego y conecta al momento. Las versiones muy antiguas solo abren el menú principal.",
+      "pingCooldown": "Espera unos segundos antes de la próxima prueba de ping.",
+      "sortNote": "Ordenado por ping solo en la vista: la lista de servidores del juego mantiene su orden."
     }
   },
   "share": {

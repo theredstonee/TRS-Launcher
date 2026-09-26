@@ -4,6 +4,9 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.menus.MenuStyle;
 import dev.theredstonee.trsclient.core.menus.ServerPins;
+import dev.theredstonee.trsclient.core.net.PingPanel;
+import dev.theredstonee.trsclient.core.net.ServerPingTest;
+import dev.theredstonee.trsclient.core.net.StatusPing;
 import dev.theredstonee.trsclient.core.online.Friends;
 import dev.theredstonee.trsclient.core.online.FriendsView;
 import dev.theredstonee.trsclient.core.online.TrsOnline;
@@ -63,7 +66,11 @@ public final class VanillaMenus {
 	/** Symbole der TRS-Knöpfe (schwach referenziert – die Knöpfe gehören dem Bildschirm). */
 	private static final Map<Object, String> ICONS = new WeakHashMap<>();
 	private static final Map<Object, Boolean> PIN_BUTTONS = new WeakHashMap<>();
-	private static final int PIN_W = 86;
+	/** „Ping-Test“-Knopf der Serverliste (Beschriftung zeigt Fortschritt bzw. Wartezeit). */
+	/** Wert = nur Symbol (zu wenig Platz neben dem Titel). */
+	private static final Map<Object, Boolean> PING_BUTTONS = new WeakHashMap<>();
+	/** Nach dem laufenden Test die Liste nach Ping sortieren. */
+	private static boolean pingSortPending;
 
 	private VanillaMenus() {
 	}
@@ -140,7 +147,10 @@ public final class VanillaMenus {
 					*///?}
 				}
 			});
-			if (k == MenuStyle.Kind.MULTIPLAYER) updatePinButton(s);
+			if (k == MenuStyle.Kind.MULTIPLAYER) {
+				updatePinButton(s);
+				updatePingTest(s);
+			}
 			return true;
 		} catch (RuntimeException | LinkageError e) {
 			return false;
@@ -407,8 +417,10 @@ public final class VanillaMenus {
 			if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof JoinMultiplayerScreen) joinButton(s, host);
 			if (k == MenuStyle.Kind.MULTIPLAYER && MenuStyle.enabled(k) && s instanceof JoinMultiplayerScreen) {
 				applyPins((JoinMultiplayerScreen) s);
-				int x = s.width - PIN_W - 6;
-				Object pin = button(x, 6, PIN_W, 20, I18n.tr("menus.pin"), new Runnable() {
+				net.minecraft.client.gui.Font font = Mc.mc().font;
+				int pinW = Math.max(56, Math.max(font.width(I18n.tr("menus.pin")), font.width(I18n.tr("menus.unpin"))) + 26);
+				int x = s.width - pinW - 6;
+				Object pin = button(x, 6, pinW, 20, I18n.tr("menus.pin"), new Runnable() {
 					@Override
 					public void run() {
 						togglePin();
@@ -417,6 +429,23 @@ public final class VanillaMenus {
 				ICONS.put(pin, "pin");
 				PIN_BUTTONS.put(pin, Boolean.TRUE);
 				host.trsclient$addWidget(pin);
+				// Ping-Test links daneben: alle Server messen (Status-Ping, max. 4 gleichzeitig) und nach Ping sortieren.
+				// Reicht der Platz bis zum Titel nicht, bleibt nur das Symbol (Fortschritt dann in der Ansage).
+				int pingW = Math.max(font.width(I18n.tr("menus.pingTest")),
+						Math.max(font.width(I18n.tr("menus.pingTest.running", 88, 88)), font.width(I18n.tr("menus.pingTest.cooldown", 8)))) + 26;
+				String title = s.getTitle() == null ? "" : s.getTitle().getString();
+				int titleRight = s.width / 2 + font.width(title) / 2 + 4;
+				boolean compact = x - pingW - 4 < titleRight;
+				if (compact) pingW = 20;
+				Object ping = button(x - pingW - 4, 6, pingW, 20, compact ? "" : I18n.tr("menus.pingTest"), new Runnable() {
+					@Override
+					public void run() {
+						startPingTest();
+					}
+				});
+				ICONS.put(ping, "signal");
+				PING_BUTTONS.put(ping, compact);
+				host.trsclient$addWidget(ping);
 			}
 		} catch (RuntimeException | LinkageError e) {
 			// Menü bleibt dann eben klassisch.
@@ -593,6 +622,83 @@ public final class VanillaMenus {
 		}
 	}
 
+	// --- Serverliste: Ping-Test ---
+
+	/** Knopf „Ping-Test“: alle Server der Liste messen (läuft im Hintergrund, max. {@link ServerPingTest#PARALLEL}). */
+	public static void startPingTest() {
+		Screen s = Mc.screen();
+		if (!(s instanceof JoinMultiplayerScreen)) return;
+		ServerList servers = ((JoinMultiplayerScreen) s).getServers();
+		if (servers == null) return;
+		List<String> addresses = new ArrayList<>();
+		for (int i = 0; i < servers.size(); i++) addresses.add(servers.get(i).ip);
+		if (ServerPingTest.shared().start(addresses, System.currentTimeMillis())) pingSortPending = true;
+	}
+
+	/** Je Bild: Knopf-Beschriftung (Fortschritt/Wartezeit) und, sobald fertig, einmal nach Ping sortieren. */
+	static void updatePingTest(Screen s) {
+		if (!(s instanceof JoinMultiplayerScreen)) return;
+		ServerPingTest test = ServerPingTest.shared();
+		if (pingSortPending && !test.running()) {
+			pingSortPending = false;
+			sortByPing((JoinMultiplayerScreen) s);
+		}
+		String want;
+		boolean active;
+		long left = test.cooldownLeft(System.currentTimeMillis());
+		if (test.running()) {
+			want = I18n.tr("menus.pingTest.running", test.finished(), test.total());
+			active = false;
+		} else if (left > 0 && test.hasResults()) {
+			want = I18n.tr("menus.pingTest.cooldown", (left + 999) / 1000);
+			active = false;
+		} else {
+			want = I18n.tr("menus.pingTest");
+			active = true;
+		}
+		for (GuiEventListener child : s.children()) {
+			if (child instanceof AbstractWidget && PING_BUTTONS.containsKey(child)) {
+				AbstractWidget b = (AbstractWidget) child;
+				b.active = active;
+				String label = Boolean.TRUE.equals(PING_BUTTONS.get(child)) ? "" : want;
+				if (!label.equals(message(b))) setMessage(b, label);
+			}
+		}
+	}
+
+	/** Liste nach gemessenem Ping ordnen (angeheftete bleiben oben) – mit Vanillas Verschieben, dann speichern. */
+	static void sortByPing(JoinMultiplayerScreen s) {
+		ServerList servers = s.getServers();
+		if (servers == null) return;
+		List<String> addresses = new ArrayList<>();
+		boolean[] pinned = new boolean[servers.size()];
+		for (int i = 0; i < servers.size(); i++) {
+			addresses.add(servers.get(i).ip);
+			pinned[i] = pins().isPinned(servers.get(i).ip);
+		}
+		ServerPingTest test = ServerPingTest.shared();
+		int[] order = test.order(addresses, pinned);
+		List<int[]> swaps = ServerPingTest.swaps(order);
+		// Schnellster erreichbarer Server (für die Ansage).
+		String fastest = null;
+		long best = Long.MAX_VALUE;
+		for (int i = 0; i < servers.size(); i++) {
+			ServerPingTest.Entry e = test.entry(servers.get(i).ip);
+			StatusPing.Result r = e == null ? null : e.result;
+			if (r != null && r.ok && r.latencyMs >= 0 && r.latencyMs < best) {
+				best = r.latencyMs;
+				fastest = servers.get(i).name;
+			}
+		}
+		if (!swaps.isEmpty()) {
+			for (int[] sw : swaps) servers.swap(sw[0], sw[1]);
+			servers.save();
+			ServerSelectionList list = serverList(s);
+			if (list != null) list.updateOnlineServers(servers);
+		}
+		Mc.narrate(fastest == null ? I18n.tr("menus.pingTest.none") : I18n.tr("menus.pingTest.sorted", fastest, best));
+	}
+
 	// --- Serverliste: Karten ---
 
 	/** Vor dem Vanilla-Eintrag: Karte (Fläche) zeichnen. */
@@ -622,6 +728,17 @@ public final class VanillaMenus {
 			if (pins().isPinned(data.ip)) {
 				MenuSkin.pin(c, right - 9, y + h - 14);
 				right -= 12;
+			}
+			// Ergebnis des Ping-Tests unter den Balken (deckt darunterliegenden MOTD-Text ab).
+			ServerPingTest.Entry measured = ServerPingTest.shared().entry(data.ip);
+			String label = ServerPingTest.label(measured);
+			if (label != null) {
+				StatusPing.Result r = measured.result;
+				int color = r == null ? 0xFFB0B0B0 : !r.ok || r.latencyMs < 0 ? 0xFFF05050 : PingPanel.quality(r.latencyMs);
+				int lw = c.textWidth(label);
+				int lx = x + w - 2 - lw;
+				c.fill(lx - 2, y + 10, x + w, y + 19, MenuSkin.cardFill(selected, hovered));
+				c.text(label, lx, y + 10, color, true);
 			}
 			TrsOnline online = TrsOnline.current();
 			if (online != null && online.online()) {

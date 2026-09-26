@@ -1150,7 +1150,6 @@
   "servers": {
     "title": "Serwery",
     "subtitle": "Dodaj raz – dostępne w każdej instancji, ze statusem na żywo i dołączaniem jednym kliknięciem.",
-    "refreshing": "Odświeżanie …",
     "add": "Dodaj serwer",
     "joinWith": "Dołącz przez",
     "lastPlayed": "{name} (ostatnio grana)",
@@ -1164,6 +1163,13 @@
       "checking": "Sprawdzanie …",
       "unreachable": "Nieosiągalny",
       "join": "Dołącz"
+    },
+    "ping": {
+      "test": "Test pingu",
+      "running": "Mierzenie pingu …",
+      "sort": "Sortuj według pingu",
+      "sortHint": "Zmienia tylko kolejność wyświetlania – najpierw osiągalne serwery z najniższym pingiem.",
+      "hint": "Mierzy opóźnienie do każdego serwera. Nie sprawi, że serwer będzie szybszy."
     }
   },
   "serverDialog": {
@@ -3647,7 +3653,9 @@
       "running": "Instancja już działa",
       "joinHint": "Uruchamia instancję i łączy z „{name}”",
       "notJoinable": "Do tego adresu nie da się dołączyć bezpośrednio – uruchom grę i dołącz z listy serwerów.",
-      "joinNote": "Dołącz uruchamia grę i od razu łączy. Bardzo stare wersje otwierają tylko menu główne."
+      "joinNote": "Dołącz uruchamia grę i od razu łączy. Bardzo stare wersje otwierają tylko menu główne.",
+      "pingCooldown": "Odczekaj kilka sekund przed kolejnym testem pingu.",
+      "sortNote": "Posortowano według pingu tylko w widoku – lista serwerów w grze zachowuje swoją kolejność."
     }
   },
   "share": {

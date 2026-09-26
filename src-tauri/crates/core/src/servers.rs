@@ -264,6 +264,18 @@ impl ServerStore {
         Ok(out)
     }
 
+    /// Ping-Test über alle Server der Instanz (Adressen aus ihrer `servers.dat`
+    /// bzw. der Launcher-Liste – nie vom Webview vorgegeben).
+    pub async fn ping_instance(&self, game_dir: &Path) -> Result<Vec<InstancePing>> {
+        let list = self.list_instance(game_dir).await?;
+        let statuses = ping_many(list.iter().map(|s| s.address.clone()).collect(), PING_PARALLEL).await;
+        Ok(list
+            .into_iter()
+            .zip(statuses)
+            .map(|(server, status)| InstancePing { index: server.index, address: server.address, status })
+            .collect())
+    }
+
     /// Neuer Server nur für diese Instanz (am Ende ihrer `servers.dat`).
     pub async fn add_to_instance(&self, game_dir: &Path, input: ServerInput) -> Result<()> {
         let _guard = self.lock.lock().await;
@@ -340,6 +352,16 @@ pub struct InstanceServer {
     pub launcher_id: Option<String>,
     /// Adresse ist gültig – „Beitreten“ kann direkt verbinden.
     pub joinable: bool,
+}
+
+/// Ergebnis des Ping-Tests für einen Eintrag von [`ServerStore::list_instance`].
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstancePing {
+    /// Wie [`InstanceServer::index`].
+    pub index: Option<usize>,
+    pub address: String,
+    pub status: ServerStatus,
 }
 
 async fn read_servers_dat(file: &Path) -> Result<Vec<(Vec<u8>, Tag)>> {
@@ -506,6 +528,33 @@ pub async fn ping(address: &str) -> Result<ServerStatus> {
         }
         Err(_) => Ok(ServerStatus::offline()),
     }
+}
+
+/// So viele Server fragt ein Ping-Test höchstens gleichzeitig ab – schont
+/// die eigene Leitung und die Server.
+pub const PING_PARALLEL: usize = 4;
+/// Gesamtzeit je Server im Ping-Test (statt der vollen 9 s beim Einzel-Ping).
+const BATCH_PING_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Ping-Test für mehrere Adressen, höchstens `parallel` gleichzeitig. Die
+/// Reihenfolge der Ergebnisse entspricht der der Adressen; ungültig, nicht
+/// erreichbar oder zu langsam ergibt `online: false` – nie einen Fehler.
+pub async fn ping_many(addresses: Vec<String>, parallel: usize) -> Vec<ServerStatus> {
+    ping_many_within(addresses, parallel, BATCH_PING_TIMEOUT).await
+}
+
+async fn ping_many_within(addresses: Vec<String>, parallel: usize, per_server: Duration) -> Vec<ServerStatus> {
+    use futures::StreamExt;
+    futures::stream::iter(addresses)
+        .map(|address| async move {
+            match tokio::time::timeout(per_server, ping(&address)).await {
+                Ok(Ok(status)) => status,
+                _ => ServerStatus::offline(),
+            }
+        })
+        .buffered(parallel.max(1))
+        .collect()
+        .await
 }
 
 async fn ping_inner(handshake_host: &str, host: &str, port: u16) -> std::io::Result<ServerStatus> {
@@ -787,6 +836,114 @@ mod tests {
         let list = store.list_instance(&game_dir).await.unwrap();
         assert_eq!(list.len(), 2);
         assert_eq!((list[0].index, list[0].launcher_id.as_deref()), (Some(0), Some(global.id.as_str())));
+    }
+
+    /// Gleichzeitig offene Verbindungen der Test-Server (jetzt / höchstens).
+    #[derive(Default)]
+    struct Load {
+        active: std::sync::atomic::AtomicUsize,
+        max: std::sync::atomic::AtomicUsize,
+    }
+
+    async fn read_packet(stream: &mut TcpStream) -> std::io::Result<Vec<u8>> {
+        let len = read_varint(stream).await? as usize;
+        let mut buf = vec![0u8; len];
+        stream.read_exact(&mut buf).await?;
+        Ok(buf)
+    }
+
+    /// Minimaler Server-List-Ping-Server: Handshake + Status + Ping/Pong
+    /// (Pong kommt 40 ms verzögert – das soll als Latenz ankommen).
+    async fn fake_server(motd: String, load: std::sync::Arc<Load>) -> u16 {
+        use std::sync::atomic::Ordering::SeqCst;
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let (load, motd) = (load.clone(), motd.clone());
+                tokio::spawn(async move {
+                    let now = load.active.fetch_add(1, SeqCst) + 1;
+                    load.max.fetch_max(now, SeqCst);
+                    let mut counted = true;
+                    let _ = async {
+                        read_packet(&mut stream).await?; // Handshake
+                        read_packet(&mut stream).await?; // Status-Anfrage
+                        tokio::time::sleep(Duration::from_millis(60)).await;
+                        let json = serde_json::json!({
+                            "description": { "text": motd },
+                            "players": { "online": 3, "max": 20 },
+                            "version": { "name": "1.21.11" },
+                        })
+                        .to_string();
+                        let mut body = Vec::new();
+                        write_varint(&mut body, json.len() as u32);
+                        body.extend_from_slice(json.as_bytes());
+                        stream.write_all(&packet(0, &body)).await?;
+                        let ping = read_packet(&mut stream).await?;
+                        tokio::time::sleep(Duration::from_millis(40)).await;
+                        // Vor dem Pong abmelden: danach darf der Client die nächste Verbindung öffnen.
+                        load.active.fetch_sub(1, SeqCst);
+                        counted = false;
+                        stream.write_all(&packet(1, &ping[1..])).await
+                    }
+                    .await;
+                    if counted {
+                        load.active.fetch_sub(1, SeqCst);
+                    }
+                });
+            }
+        });
+        port
+    }
+
+    #[tokio::test]
+    async fn ping_many_keeps_order_limits_parallelism_and_measures_latency() {
+        use std::sync::atomic::Ordering::SeqCst;
+        let load = std::sync::Arc::new(Load::default());
+        let mut addresses = Vec::new();
+        for i in 0..7 {
+            addresses.push(format!("127.0.0.1:{}", fake_server(format!("srv{i}"), load.clone()).await));
+        }
+        // Nimmt an, antwortet aber nie.
+        let silent = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let silent_port = silent.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let mut held = Vec::new();
+            while let Ok((stream, _)) = silent.accept().await {
+                held.push(stream);
+            }
+        });
+        // Port ohne Server.
+        let closed = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let closed_port = closed.local_addr().unwrap().port();
+        drop(closed);
+
+        addresses.insert(2, format!("127.0.0.1:{silent_port}"));
+        addresses.insert(4, format!("127.0.0.1:{closed_port}"));
+        addresses.insert(6, "x.de --demo".into());
+
+        let started = Instant::now();
+        let results = ping_many_within(addresses.clone(), PING_PARALLEL, Duration::from_secs(1)).await;
+        assert!(started.elapsed() < Duration::from_secs(8), "Zeitlimit je Server greift");
+        assert_eq!(results.len(), addresses.len());
+
+        let mut expected = 0;
+        for (i, status) in results.iter().enumerate() {
+            if matches!(i, 2 | 4 | 6) {
+                assert!(!status.online, "Eintrag {i} ({}) muss offline sein", addresses[i]);
+                continue;
+            }
+            assert!(status.online, "Eintrag {i} ({}) muss online sein", addresses[i]);
+            assert_eq!(status.motd, format!("srv{expected}"), "Reihenfolge bleibt erhalten");
+            assert_eq!((status.players_online, status.players_max), (3, 20));
+            assert!(status.latency_ms >= 30, "Pong-Verzögerung gemessen: {} ms", status.latency_ms);
+            expected += 1;
+        }
+        assert_eq!(expected, 7);
+
+        let max = load.max.load(SeqCst);
+        assert!(max <= PING_PARALLEL, "höchstens {PING_PARALLEL} gleichzeitig, waren {max}");
+        assert!(max >= 2, "läuft tatsächlich parallel (max {max})");
     }
 
     #[tokio::test]
