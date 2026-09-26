@@ -107,6 +107,18 @@ class TextFitTest {
 					I18n.tr("wardrobe.share.manage", 20)}) {
 				if (c.textWidth(s) > 118) problems.add(lang + " Garderobe: " + s + " (" + c.textWidth(s) + " px)");
 			}
+			// Garderobe → Skins: Knöpfe der Karte „Aktueller Skin“ (Text ≤ 118); Kartenbeschriftung (Karte ≥ 56 px,
+			// Text ≤ 50) und das Schild „= aktuell“ über einer Karte (≤ 50).
+			for (String key : new String[]{"wardrobe.saveCurrent", "wardrobe.inLibrary", "wardrobe.edit"}) {
+				String s = I18n.tr(key);
+				if (c.textWidth(s) > 118) problems.add(lang + " Garderobe: " + s + " (" + c.textWidth(s) + " px)");
+			}
+			if (c.textWidth(I18n.tr("wardrobe.currentCard")) > 50) {
+				problems.add(lang + " Garderobe-Karte: " + I18n.tr("wardrobe.currentCard"));
+			}
+			if (c.textWidth(I18n.tr("wardrobe.sameAsCurrent")) > 50) {
+				problems.add(lang + " Garderobe-Schild: " + I18n.tr("wardrobe.sameAsCurrent") + " (" + c.textWidth(I18n.tr("wardrobe.sameAsCurrent")) + " px)");
+			}
 			for (String key : new String[]{"wardrobe.share.accept", "wardrobe.share.decline"}) {
 				String s = I18n.tr(key);
 				if (c.textWidth(s) > 54) problems.add(lang + " Garderobe: " + s + " (" + c.textWidth(s) + " px)");

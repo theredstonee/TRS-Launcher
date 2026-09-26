@@ -48,10 +48,15 @@ public final class LocalSkin {
 	private int generation;
 	private TextureRef ownSkin;
 	private boolean ownSlim;
+	/** Pixel des eigenen Skins (zu {@link #ownSkin}) oder null. */
+	private int[] ownPixels;
 	private TextureRef mojangCape;
 	private boolean loading;
 	/** Standard-Skin der Version für diese UUID (einmal je Sitzung bestimmt). */
 	private Textures.DefaultSkin defaultSkin;
+	/** Pixel des Standard-Skins (aus den Spiel-Ressourcen, im Hintergrund gelesen) oder null. */
+	private int[] defaultPixels;
+	private boolean defaultPixelsRequested;
 
 	public LocalSkin(Path dir, Supplier<GameSession> session, Http http, Executor worker, Consumer<String> log) {
 		this.dir = dir;
@@ -78,6 +83,7 @@ public final class LocalSkin {
 		if (ownSkin != null) {
 			look.skin = ownSkin;
 			look.slim = ownSlim;
+			look.pixels = ownPixels;
 		} else {
 			if (defaultSkin == null && uuid != null) {
 				Textures.Store store = Textures.store();
@@ -85,6 +91,8 @@ public final class LocalSkin {
 			}
 			look.skin = defaultSkin == null ? null : defaultSkin.texture;
 			look.slim = defaultSkin != null && defaultSkin.slim;
+			if (defaultSkin != null && !defaultPixelsRequested) requestDefaultPixels(defaultSkin.texture);
+			look.pixels = defaultSkin == null ? null : defaultPixels;
 		}
 		return look;
 	}
@@ -156,6 +164,8 @@ public final class LocalSkin {
 		uuid = id != null ? parseUuid(id) : UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(StandardCharsets.UTF_8));
 		generation++;
 		defaultSkin = null;
+		defaultPixels = null;
+		defaultPixelsRequested = false;
 		dropOwn();
 		if (id == null || uuid == null) {
 			loading = false;
@@ -184,7 +194,89 @@ public final class LocalSkin {
 			if (mojangCape != null) store.release(mojangCape);
 		}
 		ownSkin = null;
+		ownPixels = null;
 		mojangCape = null;
+	}
+
+	/**
+	 * Liest die Pixel des Standard-Skins (Steve, Alex …) im Hintergrund aus den Spiel-Ressourcen – für die Garderobe
+	 * (Karte „Aktueller Skin“ bearbeiten/speichern). Geht es nicht (andere Ressourcen-Anordnung), bleibt es bei der
+	 * Textur. Render-Thread.
+	 */
+	private void requestDefaultPixels(TextureRef texture) {
+		defaultPixelsRequested = true;
+		final String resource = resourcePath(texture.id);
+		if (resource == null) return;
+		final Class<?> anchor = texture.id.getClass();
+		final int gen = generation;
+		try {
+			worker.execute(new Runnable() {
+				@Override
+				public void run() {
+					final int[] px = resourcePixels(anchor, resource);
+					if (px == null) return;
+					results.add(new Runnable() {
+						@Override
+						public void run() {
+							if (gen == generation) defaultPixels = px;
+						}
+					});
+				}
+			});
+		} catch (RuntimeException e) {
+			// ohne Pixel – nur die Textur
+		}
+	}
+
+	/**
+	 * Pfad in den Spiel-Ressourcen zu einer Textur-Kennung wie {@code minecraft:textures/entity/player/wide/steve.png}
+	 * ({@code /assets/minecraft/textures/…}) oder null, wenn sie nicht danach aussieht.
+	 */
+	static String resourcePath(Object id) {
+		if (id == null) return null;
+		String s = id.toString();
+		int colon = s.indexOf(':');
+		String ns = colon < 0 ? "minecraft" : s.substring(0, colon);
+		String path = colon < 0 ? s : s.substring(colon + 1);
+		if (!ns.matches("[a-z0-9_.-]{1,64}") || !path.matches("[a-z0-9_./-]{1,200}\\.png") || path.contains("..")
+				|| path.startsWith("/")) {
+			return null;
+		}
+		return "/assets/" + ns + "/" + path;
+	}
+
+	/** Skin-Pixel aus einer Ressource (neben der Klasse {@code anchor}, sonst Kontext-Lader) oder null. */
+	static int[] resourcePixels(Class<?> anchor, String resource) {
+		byte[] png = null;
+		java.io.InputStream in = null;
+		try {
+			in = anchor == null ? null : anchor.getResourceAsStream(resource);
+			if (in == null) {
+				ClassLoader cl = Thread.currentThread().getContextClassLoader();
+				if (cl != null) in = cl.getResourceAsStream(resource.substring(1));
+			}
+			if (in == null) return null;
+			java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(4096);
+			byte[] buf = new byte[4096];
+			int n;
+			while ((n = in.read(buf)) > 0) {
+				out.write(buf, 0, n);
+				if (out.size() > MAX_PNG) return null;
+			}
+			png = out.toByteArray();
+			PngDecoder.Image img = PngDecoder.decode(png);
+			return SkinImage.validSize(img.width, img.height) ? SkinImage.normalize(img.width, img.height, img.argb) : null;
+		} catch (IOException | RuntimeException e) {
+			return null;
+		} finally {
+			if (in != null) {
+				try {
+					in.close();
+				} catch (IOException ignored) {
+					// egal
+				}
+			}
+		}
 	}
 
 	// --- Hintergrund ---
@@ -295,9 +387,11 @@ public final class LocalSkin {
 				if (skinPx != null) {
 					ownSkin = store.upload(SKIN_TEXTURE, 64, 64, skinPx);
 					ownSlim = slim;
+					ownPixels = ownSkin == null ? null : skinPx;
 				} else if (ownSkin != null) {
 					store.release(ownSkin);
 					ownSkin = null;
+					ownPixels = null;
 				}
 				if (capePx != null) {
 					mojangCape = store.upload(CAPE_TEXTURE, cw, ch, capePx);

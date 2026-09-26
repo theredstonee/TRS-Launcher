@@ -71,6 +71,9 @@ class WardrobeServiceTest {
 		String staleCurrent;
 		String lastMultipart;
 		int wardrobePuts;
+		/** Aktiver Skin im Mojang-Profil (null = Standard-Skin). */
+		byte[] profileSkin;
+		boolean profileSlim;
 
 		static Response json(int status, String body) {
 			Map<String, String> h = new HashMap<String, String>();
@@ -83,6 +86,12 @@ class WardrobeServiceTest {
 			String path = r.url.replaceFirst("^https?://[^/]+", "");
 			String body = r.body == null ? "" : new String(r.body, StandardCharsets.UTF_8);
 			calls.add(r.method + " " + path);
+			if (path.equals("/minecraft/profile") && r.method.equals("GET") && profileSkin != null) {
+				return json(200, "{\"id\":\"5ce0000000000000000000000000abcd\",\"name\":\"Tester\",\"skins\":[{\"id\":\"s1\","
+						+ "\"state\":\"ACTIVE\",\"url\":\"http://textures.minecraft.net/texture/abc123\",\"variant\":\""
+						+ (profileSlim ? "SLIM" : "CLASSIC") + "\"}],\"capes\":[]}");
+			}
+			if (path.equals("/texture/abc123") && profileSkin != null) return new Response(200, new HashMap<String, String>(), profileSkin);
 			if (path.equals("/minecraft/profile") && r.method.equals("GET")) {
 				return json(200, "{\"id\":\"5ce0000000000000000000000000abcd\",\"name\":\"Tester\",\"skins\":[],\"capes\":["
 						+ "{\"id\":\"2340c0e0-3dd2-4d4c-9b6f-7c9c4f3a2b1c\",\"state\":\"INACTIVE\",\"alias\":\"Migrator\"}]}");
@@ -144,12 +153,13 @@ class WardrobeServiceTest {
 
 	final class Plat implements WardrobeService.Platform {
 		String token = "tok";
+		String uuid = "5ce0000000000000000000000000abcd";
 		int lookChanges;
 		boolean trsCapeChanged;
 
 		@Override
 		public SessionData session() {
-			return new SessionData("5ce0000000000000000000000000abcd", "Tester", "mc-access-token-123", null);
+			return new SessionData(uuid, "Tester", "mc-access-token-123", null);
 		}
 
 		@Override
@@ -247,6 +257,72 @@ class WardrobeServiceTest {
 		s.delete(st.added);
 		assertNull(s.state().skin(st.added));
 		assertFalse(http.skins.containsKey(st.added));
+	}
+
+	@Test
+	void currentSkinFromProfileIsSavedOnceAndFollowsApplyAndAccountSwitch() throws Exception {
+		Fake http = new Fake();
+		int[] worn = SkinEditor.blankTemplate(true);
+		http.profileSkin = PngWriter.write(64, 64, worn);
+		http.profileSlim = true;
+		Plat plat = new Plat();
+		WardrobeService s = service(http, plat);
+		s.open();
+		WardrobeService.State st = s.state();
+		assertNotNull(st.activePixels, "aktueller Skin aus dem Mojang-Profil");
+		assertTrue(st.activeSlim);
+		assertEquals(CurrentSkin.lookKey(worn, true), st.activeLook);
+		assertEquals("5ce0000000000000000000000000abcd", st.account);
+		assertTrue(s.fresh(st));
+		assertEquals(1, plat.lookChanges, "Menü-Figur einmal nachgezogen");
+		s.open();
+		assertEquals(1, plat.lookChanges, "unverändert → kein erneutes Nachziehen");
+
+		CurrentSkin cur = CurrentSkin.resolve(st, true, null, null, false, false);
+		assertEquals(CurrentSkin.Source.PROFILE, cur.source);
+		assertNull(cur.twin);
+		assertTrue(cur.saveable());
+
+		// In die Bibliothek: genau einmal, mit Namen und hochgeladen
+		s.saveCurrent(cur.pixels, cur.slim, "Tester");
+		st = s.state();
+		assertEquals("wardrobe.msg.savedCurrent", st.message);
+		String id = st.added;
+		assertEquals(1, st.skins.size());
+		assertEquals("Tester", st.skin(id).name);
+		assertTrue(st.skin(id).slim);
+		assertEquals("Tester", http.names.get(id));
+		cur = CurrentSkin.resolve(st, true, null, null, false, false);
+		assertEquals(id, cur.twin, "gleicher Bibliotheks-Skin erkannt");
+		assertTrue(cur.sameAs(st.skin(id)));
+		assertFalse(cur.saveable());
+		s.saveCurrent(cur.pixels, cur.slim, "Nochmal");
+		assertEquals(1, s.state().skins.size(), "keine Dopplung");
+		assertEquals("wardrobe.msg.alreadySaved", s.state().message);
+
+		// Anderen Skin anwenden → „Aktueller Skin“ zeigt ihn sofort
+		s.saveEdited(SkinEditor.blankTemplate(false), false, "Anderer", null);
+		String other = s.state().added;
+		s.apply(other);
+		st = s.state();
+		assertEquals(st.skin(other).look, st.activeLook);
+		cur = CurrentSkin.resolve(st, true, null, null, false, false);
+		assertEquals(other, cur.twin);
+		assertFalse(cur.sameAs(st.skin(id)), "der vorige ist nicht mehr getragen");
+
+		// Kontowechsel im Spiel: Stand gilt nicht mehr, tick lädt das neue Konto
+		plat.uuid = "5ce0000000000000000000000000ffff";
+		assertFalse(s.fresh(st));
+		cur = CurrentSkin.resolve(st, s.fresh(st), SkinEditor.blankTemplate(false), null, false, false);
+		assertEquals(CurrentSkin.Source.DEFAULT, cur.source, "bis dahin der Menü-Skin");
+		http.profileSkin = null;
+		plat.token = null; // die Server-Attrappe kennt nur eine Bibliothek – das neue Konto bleibt lokal
+		s.tick(System.currentTimeMillis());
+		st = s.state();
+		assertEquals("5ce0000000000000000000000000ffff", st.account);
+		assertTrue(s.fresh(st));
+		assertNull(st.activePixels, "neues Konto trägt den Standard-Skin");
+		assertTrue(st.skins.isEmpty(), "Bibliothek des neuen Kontos");
 	}
 
 	@Test

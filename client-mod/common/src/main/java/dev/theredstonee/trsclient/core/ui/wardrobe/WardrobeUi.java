@@ -31,6 +31,7 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
 import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
+import dev.theredstonee.trsclient.core.wardrobe.CurrentSkin;
 import dev.theredstonee.trsclient.core.wardrobe.SkinEditor;
 import dev.theredstonee.trsclient.core.wardrobe.WardrobeContext;
 import dev.theredstonee.trsclient.core.wardrobe.WardrobeDoc;
@@ -50,6 +51,10 @@ import java.util.Set;
  * <p>Umhänge mit Freunden teilen (API.md §5.10): Angebote von Freunden stehen oben bei „Umhänge“ (annehmen/ablehnen),
  * eigene freigegebene und geteilt bekommene Umhänge lassen sich über „Mit Freund teilen“ anbieten; das Fenster dort
  * zeigt auch, wer ihn hat (entziehen). Die Daten dafür kommen aus {@link Friends} (TRS-Thread).
+ *
+ * <p>Skins: ganz vorn in der Bibliothek steht immer die Karte „Aktueller Skin“ (was das Konto gerade trägt, wie im
+ * Launcher) – nur sie hat die Lampe „getragen“; ein gleicher Bibliotheks-Skin zeigt „= aktuell“ (siehe
+ * {@link CurrentSkin}). Der Leuchtrahmen ist nur die Auswahl für die Vorschau.
  *
  * <p>Versionsunabhängig; Minecraft kommt nur über {@link WardrobeHost}, alle Daten über {@link WardrobeService}
  * (Hintergrund-Thread) – hier gibt es kein Netz und keine Datei-Zugriffe.
@@ -135,6 +140,12 @@ public final class WardrobeUi extends UiScreen {
 	private String lastAdded;
 	private boolean awaitingSave;
 
+	/** Getragener Skin (je Bild neu bestimmt) und der zwischengespeicherte Vergleichswert des Menü-Skins. */
+	private CurrentSkin current;
+	private int[] lookKeyPixels;
+	private boolean lookKeySlim;
+	private String lookKey;
+
 	public WardrobeUi(WardrobeHost host) {
 		this.host = host;
 		this.service = WardrobeContext.service(host.configDir(), host.userAgent(), host.features());
@@ -157,12 +168,12 @@ public final class WardrobeUi extends UiScreen {
 
 			@Override
 			public int[] currentSkin() {
-				return service.activePixels();
+				return current == null ? null : current.pixels;
 			}
 
 			@Override
 			public boolean currentSlim() {
-				return service.activeSlim();
+				return current != null && current.slim;
 			}
 
 			@Override
@@ -196,6 +207,23 @@ public final class WardrobeUi extends UiScreen {
 	/** Selbsttest: Skin auswählen. */
 	public void selectSkin(String id) {
 		selectedSkin = id;
+	}
+
+	/** Selbsttest: Karte „Aktueller Skin“ auswählen. */
+	public void selectCurrent() {
+		selectedSkin = CurrentSkin.ID;
+	}
+
+	/** Selbsttest: getragenen Skin in die Bibliothek sichern; false, solange seine Pixel unbekannt sind. */
+	public boolean saveCurrentSkin() {
+		if (current == null || current.pixels == null) return false;
+		service.saveCurrent(current.pixels, current.slim, currentName(host.look()));
+		return true;
+	}
+
+	/** Selbsttest: der zuletzt bestimmte getragene Skin (null vor dem ersten Bild). */
+	public CurrentSkin current() {
+		return current;
 	}
 
 	/** Selbsttest: Emote auswählen (Vorschau spielt es ab). */
@@ -251,6 +279,38 @@ public final class WardrobeUi extends UiScreen {
 		return mx >= x && my >= y && mx < x + w && my < y + h;
 	}
 
+	/** Getragener Skin: Mojang-Profil der Garderobe (wenn für dieses Konto geladen), sonst der Menü-Skin. */
+	private CurrentSkin resolveCurrent(WardrobeService.State s, PlayerLook look) {
+		int[] px = look == null ? null : look.pixels;
+		boolean slim = look != null && look.slim;
+		if (px != lookKeyPixels || slim != lookKeySlim) {
+			lookKeyPixels = px;
+			lookKeySlim = slim;
+			lookKey = px == null ? null : CurrentSkin.lookKey(px, slim);
+		}
+		return CurrentSkin.resolve(s, service.fresh(s), px, lookKey, slim, look != null && look.ownSkin);
+	}
+
+	/** Karte „Aktueller Skin“ ausgewählt (auch, wenn nichts oder ein verschwundener Skin gewählt ist)? */
+	private boolean currentSelected(WardrobeService.State s) {
+		return selectedSkin == null || CurrentSkin.ID.equals(selectedSkin) || s.skin(selectedSkin) == null;
+	}
+
+	/** Textur des getragenen Skins: aus seinen Pixeln, sonst die Textur des Menü-Skins (Standard-Skin). */
+	private TextureRef currentTexture(PlayerLook look) {
+		if (current != null && current.pixels != null) {
+			TextureRef tex = textures.get("wardrobe/current", current.pixels, 64, 64, 0);
+			if (tex != null) return tex;
+		}
+		return look == null ? null : look.skin;
+	}
+
+	/** Name für „In Bibliothek speichern“: der Kontoname, sonst „Mein Skin“. */
+	private static String currentName(PlayerLook look) {
+		String n = look == null ? null : look.name;
+		return n != null && n.matches("[A-Za-z0-9_]{1,16}") && !"Player".equals(n) ? n : I18n.tr("wardrobe.mySkin");
+	}
+
 	// ============================================================================================
 	// Zeichnen
 	// ============================================================================================
@@ -261,6 +321,7 @@ public final class WardrobeUi extends UiScreen {
 		service.tick(now);
 		textures.frame();
 		WardrobeService.State s = service.state();
+		current = resolveCurrent(s, host.look());
 		react(s);
 		reactShares(s, now);
 		Theme t = Theme.get();
@@ -722,12 +783,14 @@ public final class WardrobeUi extends UiScreen {
 			y += ((favs.size() + cols - 1) / cols) * (ch + GAP) + 2;
 		}
 		y = section(c, I18n.tr("wardrobe.library") + "  " + s.skins.size() + "/60", x, y, w);
-		addCard(c, x, y, cw, ch, mx, my);
+		// Zuerst der getragene Skin (wie im Launcher), dann „+“, dann die Bibliothek.
+		currentCard(c, s, x, y, cw, ch, mx, my);
+		addCard(c, x + (1 % cols) * (cw + GAP), y + (1 / cols) * (ch + GAP), cw, ch, mx, my);
 		for (int i = 0; i < s.skins.size(); i++) {
-			int k = i + 1;
+			int k = i + 2;
 			skinCard(c, s, s.skins.get(i), x + (k % cols) * (cw + GAP), y + (k / cols) * (ch + GAP), cw, ch, mx, my);
 		}
-		y += ((s.skins.size() + 1 + cols - 1) / cols) * (ch + GAP);
+		y += ((s.skins.size() + 2 + cols - 1) / cols) * (ch + GAP);
 		if (s.skins.isEmpty()) {
 			List<String> lines = Paint.wrap(c, I18n.tr("wardrobe.emptyLibrary"), w - 4);
 			for (String l : lines) {
@@ -736,6 +799,31 @@ public final class WardrobeUi extends UiScreen {
 			}
 		}
 		return y - start;
+	}
+
+	/** Karte „Aktueller Skin“: was das Konto trägt – mit der Lampe „getragen“, ohne Herz/Löschen. */
+	private void currentCard(Canvas c, WardrobeService.State s, int x, int y, int w, int h, int mx, int my) {
+		Theme t = Theme.get();
+		boolean sel = currentSelected(s);
+		boolean hov = inside(mx, my, x, y, w, h);
+		if (sel) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
+		Redstone.stone(c, x, y, w, h, hov ? t.surfaceHover : t.surface, sel ? ColorMath.lerp(t.border, t.accent, 0.8f) : t.border);
+		PlayerLook look = host.look();
+		TextureRef tex = currentTexture(look);
+		if (tex != null || (current != null && current.pixels != null)) {
+			SkinDraw.doll(c, tex, current == null ? null : current.pixels, current != null ? current.slim : look != null && look.slim,
+					x + 3, y + 4, w - 6, h - 17);
+		} else {
+			Paint.textCentered(c, c.clip(I18n.tr("wardrobe.loading"), w - 6), x + w / 2, y + (h - 17) / 2, t.textDim, false);
+		}
+		// Getragen: die Lampe gibt es nur hier (siehe CurrentSkin).
+		Redstone.pip(c, x + 3, y + 3, 6, 1f);
+		Paint.textClipped(c, I18n.tr("wardrobe.currentCard"), x + 3, y + h - 11, w - 6, sel ? t.text : ColorMath.lerp(t.text, t.textDim, 0.3f), false);
+		hits.add(x, y, w, h, () -> {
+			host.playClick();
+			selectedSkin = CurrentSkin.ID;
+			lastInteraction = System.currentTimeMillis();
+		});
 	}
 
 	private void addCard(Canvas c, int x, int y, int w, int h, int mx, int my) {
@@ -772,8 +860,15 @@ public final class WardrobeUi extends UiScreen {
 			selectedSkin = sk.id;
 			lastInteraction = System.currentTimeMillis();
 		});
-		// Aktiver Skin
-		if (s.activeLook != 0 && sk.look == s.activeLook) Redstone.pip(c, x + 3, y + 3, 6, 1f);
+		// Gleich dem getragenen Skin: Hinweis statt zweiter Lampe (die hat nur „Aktueller Skin“).
+		// Als kleines Schild über den Beinen der Figur (der Kopf bleibt frei).
+		if (current != null && current.sameAs(sk)) {
+			String hint = I18n.tr("wardrobe.sameAsCurrent");
+			int hw = Math.min(c.textWidth(hint) + 4, w - 2);
+			int hy = y + h - 23;
+			c.fill(x + 1, hy, x + 1 + hw, hy + 10, ColorMath.withAlpha(t.surfaceHigh, 0xE0));
+			Paint.textClipped(c, hint, x + 3, hy + 1, hw - 2, t.dustOn, false);
+		}
 		// Herz
 		boolean fav = s.doc.favorite(sk.id);
 		int hx = x + w - 12;
@@ -1094,8 +1189,15 @@ public final class WardrobeUi extends UiScreen {
 					subtitle = I18n.tr(sk.slim ? "wardrobe.slim" : "wardrobe.classic")
 							+ (sk.launcherOnly ? " · " + I18n.tr("wardrobe.fromLauncher") : "");
 				} else {
+					// Aktueller Skin (Standard-Auswahl)
+					TextureRef cur = currentTexture(look);
+					if (cur != null) skin = cur;
+					if (current != null && current.pixels != null) slim = current.slim;
 					title = I18n.tr("wardrobe.current");
-					subtitle = look == null ? null : look.name;
+					String model = I18n.tr(slim ? "wardrobe.slim" : "wardrobe.classic");
+					subtitle = current != null && current.source == CurrentSkin.Source.DEFAULT
+							? I18n.tr("wardrobe.defaultSkin") : model;
+					if (look != null && look.name != null) subtitle = look.name + " · " + subtitle;
 				}
 				break;
 			}
@@ -1194,11 +1296,21 @@ public final class WardrobeUi extends UiScreen {
 			case SKINS: {
 				final WardrobeService.Skin sk = s.skin(selectedSkin);
 				if (sk == null) {
-					final int[] cur = service.activePixels();
-					boolean ok = cur != null;
-					button(c, x, y, w, bh, I18n.tr("wardrobe.editCurrent"), false, ok, mx, my, () -> openEditor(cur,
-							service.activeSlim(), I18n.tr("wardrobe.editor.newName"), null));
-					return bh;
+					// Aktueller Skin: bearbeiten (als Vorlage für einen neuen Bibliotheks-Skin) und in die Bibliothek sichern.
+					final CurrentSkin cur = current;
+					final boolean known = cur != null && cur.pixels != null;
+					final String name = currentName(host.look());
+					button(c, x, y, w, bh, I18n.tr("wardrobe.edit"), false, known, mx, my,
+							() -> openEditor(cur.pixels, cur.slim, name, null));
+					int ay = y - bh - 3;
+					if (known && cur.twin != null) {
+						button(c, x, ay, w, bh, I18n.tr("wardrobe.inLibrary"), false, true, mx, my, () -> selectedSkin = cur.twin);
+					} else {
+						button(c, x, ay, w, bh, I18n.tr("wardrobe.saveCurrent"), true, known && !busy, mx, my,
+								() -> service.saveCurrent(cur.pixels, cur.slim, name));
+					}
+					int hint = known ? 0 : hintAbove(c, I18n.tr("wardrobe.currentUnknown"), x, ay, w);
+					return bh * 2 + 3 + hint;
 				}
 				// Symbolzeile: Herz, Umbenennen, Löschen
 				int iy = y;
@@ -1240,7 +1352,7 @@ public final class WardrobeUi extends UiScreen {
 				button(c, x, iy, ew, bh, I18n.tr("wardrobe.edit"), false, true, mx, my,
 						() -> openEditor(sk.pixels, sk.slim, sk.name, sk.launcherOnly ? null : sk.id));
 				int ay = iy - bh - 3;
-				boolean worn = s.activeLook != 0 && sk.look == s.activeLook;
+				boolean worn = current != null && current.sameAs(sk);
 				button(c, x, ay, w, bh, I18n.tr(worn ? "wardrobe.worn" : "wardrobe.apply"), !worn, s.session && !busy && !worn, mx, my,
 						() -> service.apply(sk.id));
 				int hint = s.session ? 0 : hintAbove(c, I18n.tr("wardrobe.needSession"), x, ay, w);
@@ -1403,8 +1515,7 @@ public final class WardrobeUi extends UiScreen {
 	/** Aktuelles Aussehen als Outfit: getragener Skin (falls in der Bibliothek, sonst der gewählte) + Umhang. */
 	private void saveCurrentOutfit(String name) {
 		WardrobeService.State s = service.state();
-		String skinId = null;
-		for (WardrobeService.Skin sk : s.skins) if (s.activeLook != 0 && sk.look == s.activeLook) skinId = sk.id;
+		String skinId = current == null ? null : current.twin;
 		if (skinId == null && s.skin(selectedSkin) != null) skinId = selectedSkin;
 		String cape = s.activeTrsCape != null ? s.activeTrsCape : (s.activeMojangCape != null ? s.activeMojangCape : "none");
 		service.saveOutfit(name, skinId, cape);
