@@ -452,7 +452,8 @@
       "nameLength": "Sunucu adı 1 ile 64 karakter arasında olmalı",
       "tooMany": "100'den fazla sunucu desteklenmiyor.",
       "duplicate": "Bu sunucu zaten listede.",
-      "notFound": "Bu sunucu artık mevcut değil."
+      "notFound": "Bu sunucu artık mevcut değil.",
+      "instanceChanged": "Örneğin sunucu listesi değişti – lütfen yeniden yükle."
     },
     "skins": {
       "fileTooLarge": "Skin dosyası çok büyük (en fazla 128 KB).",
@@ -607,6 +608,24 @@
       "totalTooLarge": "Dosyalar toplamda çok büyük (en fazla 64 MB).",
       "studioInvalid": "“{name}” TRS Studio’dan bir pelerin dışa aktarımı değil.",
       "gifTooLong": "“{name}” çok fazla kareye sahip (en fazla {max})."
+    },
+    "files": {
+      "denied": "Dosya tarayıcısının bu yola erişimi yok.",
+      "invalidName": "Geçersiz dosya veya klasör adı",
+      "notFound": "Dosya veya klasör artık yok.",
+      "exists": "Burada bu adda bir dosya veya klasör zaten var.",
+      "tooMany": "Aynı anda en fazla {max} öğe",
+      "importTooLarge": "Aynı anda çok fazla: yükleme başına en fazla {gb} GB veya {max} dosya.",
+      "fileTooLarge": "Tek bir dosya en fazla {gb} GB olabilir."
+    },
+    "worlds": {
+      "levelDatBroken": "Dünyanın level.dat dosyası bozuk.",
+      "notFound": "Bu dünya artık yok."
+    },
+    "logs": {
+      "sourceGone": "Bu günlük dosyası artık yok.",
+      "unreadable": "Bu günlük dosyası okunamıyor.",
+      "qrInvalid": "Bu bağlantı için QR kodu yok."
     }
   },
   "browse": {
@@ -1090,7 +1109,9 @@
       "history": "Geçmiş",
       "screenshots": "Ekran görüntüleri",
       "worlds": "Dünyalar",
-      "logs": "Günlükler"
+      "logs": "Günlükler",
+      "files": "Dosyalar",
+      "share": "Paylaş"
     },
     "gallery": {
       "bannerSet": "Banner ayarlandı",
@@ -1098,18 +1119,16 @@
         "title": "Henüz ekran görüntüsü yok",
         "text": "Oyunda F2'ye bas – her görsel burada bir lamba daha yakar."
       },
-      "noWorlds": {
-        "title": "Henüz dünya yok",
-        "text": "Henüz hiçbir şey inşa edilmedi: bu kurulumun tek oyunculu dünyaları burada görünür."
-      },
       "openScreenshot": "Aç: {name}",
       "useAsBannerLabel": "Banner olarak kullan: {name}",
       "useAsBannerTitle": "Kurulum banner'ı olarak kullan",
       "deleteScreenshot": "Ekran görüntüsünü sil",
-      "lastPlayed": "Son oynanma: {date}",
       "deleteTitle": "Ekran görüntüsü silinsin mi?",
       "deleteText": "Ekran görüntüsü diskinden silinecek."
-    }
+    },
+    "playTime": "Oynama süresi",
+    "lastPlayed": "Son oynanma",
+    "running": "Çalışıyor"
   },
   "instanceSettings": {
     "title": "Ayarlar · {name}",
@@ -1386,13 +1405,8 @@
     }
   },
   "logConsole": {
-    "warnings": "Uyarılar",
-    "errors": "Hatalar",
-    "search": "Ara …",
     "lineCount": "{n} satır | {n} satır",
-    "copied": "Kopyalandı",
-    "empty": "Henüz çıktı yok – günlükleri canlı görmek için kurulumu başlat.",
-    "jumpToEnd": "↓ Sona git"
+    "copied": "Kopyalandı"
   },
   "crash": {
     "crashed": "Oyun çöktü",
@@ -3192,6 +3206,195 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Yazılım (x264)"
+    }
+  },
+  "logViewer": {
+    "title": "Oyun günlüğü",
+    "source": "Günlük kaynağı",
+    "live": "Canlı günlük",
+    "liveRunning": "Canlı günlük (çalışıyor)",
+    "latest": "En yeni günlük",
+    "groups": {
+      "game": "Eski günlükler",
+      "crash": "Çökme raporları",
+      "launcher": "Başlatıcı çıktısı"
+    },
+    "search": "Günlükte ara …",
+    "clearSearch": "Aramayı temizle",
+    "clear": "Görünümü temizle",
+    "copy": "Görünen satırları kopyala",
+    "copyFailed": "Pano kullanılamıyor.",
+    "share": "Günlüğü paylaş",
+    "expand": "Tam ekran",
+    "collapse": "Tam ekrandan çık",
+    "levelFilter": "Seviyeye göre filtrele",
+    "levels": {
+      "all": "Tümü",
+      "error": "Hatalar",
+      "warn": "Uyarılar",
+      "info": "Bilgi"
+    },
+    "expandAll": "Tüm yığın izlerini aç",
+    "collapseAll": "Tüm yığın izlerini kapat",
+    "truncated": "Yalnızca son kısım gösteriliyor",
+    "truncatedHint": "Dosya çok büyük – başlatıcı son kısmını gösteriyor.",
+    "empty": {
+      "title": "Lamba henüz sönük",
+      "text": "Canlı günlüğü görmek için örneği başlat. Eski günlükler ve çökme raporları sol üstteki listede.",
+      "openLatest": "{name} aç"
+    },
+    "lines": "Günlük satırları",
+    "noMatches": "Filtreye uyan satır yok.",
+    "waiting": "İlk satırlar bekleniyor …",
+    "emptyFile": "Bu dosya boş.",
+    "hideTrace": "Yığın izini gizle",
+    "showTrace": "Yığın izini göster ({n} satır)",
+    "newLines": "{n} yeni satır | {n} yeni satır",
+    "toBottom": "En alta git",
+    "following": "Canlı takip",
+    "loading": "Yükleniyor …",
+    "shortcut": "Aramak için Ctrl+F"
+  },
+  "logShare": {
+    "qrLabel": "Bağlantının QR kodu",
+    "qrFailed": "QR kodu yok",
+    "doneTitle": "Günlük paylaşıldı",
+    "doneText": "Bağlantı kopyalandı. Sana yardım eden kişiye gönder – ya da kodu telefonunla tara.",
+    "redactTokens": "Giriş belirteçleri kaldırılır",
+    "redactUser": "Kullanıcı adın dosya yollarından kaldırılır",
+    "publicHint": "Bağlantıya sahip herkes günlüğü okuyabilir",
+    "disabled": "Günlük paylaşımı Ayarlar → Gizlilik bölümünde kapalı.",
+    "qrHint": "Bağlantı mclo.gs üzerinde kalır; başlatıcıdan silinemez.",
+    "openBrowser": "Tarayıcıda aç"
+  },
+  "files": {
+    "title": "Dosyalar",
+    "breadcrumbs": "Klasör yolu",
+    "root": "Örnek klasörü",
+    "filter": "Filtrele …",
+    "newFolder": "Yeni klasör",
+    "newFile": "Yeni dosya",
+    "upload": "Yükle",
+    "reveal": "Klasörde göster",
+    "rename": "Yeniden adlandır",
+    "trash": "Çöp kutusuna taşı",
+    "clearSelection": "Seçimi kaldır",
+    "selected": "{n} seçili | {n} seçili",
+    "selectAll": "Tümünü seç",
+    "selectOne": "{name} seç",
+    "size": "Boyut",
+    "created": "Oluşturulma",
+    "modified": "Değiştirilme",
+    "noMatches": "Hiçbir şey bulunamadı",
+    "noMatchesText": "Bu klasörde filtreye uyan dosya yok.",
+    "emptyFolder": "Bu klasör boş",
+    "emptyFolderText": "Dosyaları buraya sürükle ya da “Yükle”yi kullan.",
+    "truncated": "Bu klasörde çok fazla öğe var – hepsi gösterilmiyor.",
+    "count": "{n} öğe | {n} öğe",
+    "dropHint": "Kopyalamak için dosya veya klasörleri buraya sürükle",
+    "dropTitle": "Buraya kopyalamak için bırak",
+    "openFolder": "Klasörü aç",
+    "copyPath": "Yolu kopyala",
+    "pathCopied": "Yol kopyalandı",
+    "inFolder": "{path} içinde",
+    "trashTitle": "{n} öğe çöp kutusuna taşınsın mı? | {n} öğe çöp kutusuna taşınsın mı?",
+    "trashText": "Öğeler Windows Geri Dönüşüm Kutusu’na gider – oradan geri yükleyebilirsin.",
+    "trashTextLinux": "Öğeler çöp kutusuna gider – oradan geri yükleyebilirsin.",
+    "trashed": "{n} öğe çöp kutusuna taşındı | {n} öğe çöp kutusuna taşındı",
+    "uploaded": "{n} dosya kopyalandı ({size}) | {n} dosya kopyalandı ({size})",
+    "skipped": {
+      "symlink": "“{name}” atlandı: bağlantılar kopyalanmaz.",
+      "invalidName": "“{name}” atlandı: bu ada izin verilmiyor.",
+      "unsupported": "“{name}” atlandı: normal bir dosya değil.",
+      "inside": "“{name}” atlandı: bir klasör kendi içine kopyalanamaz."
+    },
+    "errors": {
+      "empty": "Lütfen bir ad gir.",
+      "invalid": "Bu ada izin verilmiyor (ör. / \\ : * ? \" < > {'|'})."
+    },
+    "known": {
+      "mods": "Modlar",
+      "config": "Mod ayarları",
+      "saves": "Dünyalar",
+      "resourcepacks": "Kaynak paketleri",
+      "shaderpacks": "Gölgelendiriciler",
+      "screenshots": "Ekran görüntüleri",
+      "logs": "Günlükler",
+      "crash": "Çökme raporları",
+      "datapacks": "Veri paketleri",
+      "backups": "Dünya yedekleri"
+    }
+  },
+  "worlds": {
+    "title": "Dünyalar",
+    "empty": {
+      "title": "Henüz dünya yok",
+      "text": "Burada henüz bir şey inşa edilmedi: bu örneğin tek oyunculu dünyaları burada görünür."
+    },
+    "modes": {
+      "survival": "Hayatta kalma",
+      "creative": "Yaratıcı",
+      "adventure": "Macera",
+      "spectator": "İzleyici"
+    },
+    "hardcore": "Zorlu",
+    "cheats": "Hileler",
+    "backingUp": "Dünya yedekleniyor …",
+    "backupDone": "“{name}” yedeklendi",
+    "backup": "Yedekle (ZIP)",
+    "backupOf": "{name} yedekle",
+    "openFolderOf": "{name} klasörünü aç",
+    "deleteOf": "{name} sil",
+    "stopFirst": "Önce oyunu kapat",
+    "deleted": "“{name}” çöp kutusunda",
+    "backupHint": "Yedekler örneğin “backups” klasörüne ZIP olarak kaydedilir (Dosyalar sekmesine bak).",
+    "deleteTitle": "Dünya silinsin mi?",
+    "deleteText": "“{name}” Windows Geri Dönüşüm Kutusu’na taşınır.",
+    "deleteTextLinux": "“{name}” çöp kutusuna taşınır.",
+    "deleteBackupHint": "İpucu: dünyaya tekrar ihtiyacın olabilirse önce yedekle.",
+    "servers": {
+      "title": "Sunucular",
+      "empty": {
+        "title": "Henüz sunucu yok",
+        "text": "Bir sunucu ekle – oyunun çok oyunculu listesinde görünür ve buradan tek tıkla katılabilirsin."
+      },
+      "everywhere": "Tüm örneklere ekle",
+      "everywhereHint": "Sunucuyu başlatıcının listesine kaydeder – her örnek bir sonraki başlatmada alır.",
+      "managedHint": "Bu sunucu başlatıcının listesinde. Değişiklikler tüm örnekler için geçerli.",
+      "removeManaged": "“{name}” başlatıcının sunucu listesinden kaldırılsın mı? Bu örnekten hemen kalkar ve diğer örneklere artık eklenmez.",
+      "removeText": "“{name}” bu örneğin sunucu listesinden kaldırılsın mı?",
+      "managed": "Tüm örnekler",
+      "managedTitle": "Başlatıcının sunucu listesinden",
+      "pending": "Sonraki başlatma",
+      "pendingTitle": "Sonraki başlatmada oyunun listesine eklenir",
+      "editOf": "{name} düzenle",
+      "running": "Örnek zaten çalışıyor",
+      "joinHint": "Örneği başlatır ve “{name}” sunucusuna bağlanır",
+      "notJoinable": "Bu adrese doğrudan katılınamıyor – oyunu başlat ve listeden katıl.",
+      "joinNote": "Katıl oyunu başlatır ve hemen bağlanır. Çok eski sürümler yalnızca ana menüyü açar."
+    }
+  },
+  "share": {
+    "intro": "Bu örneği başkalarına ver ya da yardım al: mod paketi dosyası, günlük bağlantısı veya dünya yedeği olarak.",
+    "modpack": {
+      "title": "Mod paketi olarak dışa aktar",
+      "text": "Modlar, ayarlar ve seçilen dosyalarla bir .mrpack dosyası oluşturur. Başkaları onu başlatıcıya tek tıkla aktarır.",
+      "action": "Dışa aktar …"
+    },
+    "log": {
+      "title": "Günlüğü paylaş",
+      "text": "En yeni günlüğü mclo.gs’e yükler – belirteçler ve kullanıcı adın kaldırılır. Bir bağlantı ve QR kodu alırsın.",
+      "action": "Paylaş …"
+    },
+    "world": {
+      "title": "Dünya yedekle",
+      "text": "Bir dünyayı ZIP olarak paketler – saklamak ya da arkadaşlara göndermek için.",
+      "action": "Dünyalara git"
+    },
+    "files": {
+      "title": "Dosya seç",
+      "text": "Yapılandırma veya şematik gibi tek dosyaları göndermek için örnek klasörünü aç.",
+      "action": "Dosyalara git"
     }
   }
 }

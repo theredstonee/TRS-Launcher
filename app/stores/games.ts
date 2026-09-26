@@ -10,16 +10,23 @@ export interface GameState {
   progress: StageProgress | null
   error: string | null
   logs: LogLine[]
+  /**
+   * Wie viele Zeilen seit dem Start angekommen sind (auch bereits vorne
+   * abgeschnittene). Die Log-Ansicht erkennt daran neue Zeilen und einen Neustart.
+   */
+  logTotal: number
   lastExit: { exitCode: number | null; crashed: boolean; diagnosis: Diagnosis | null } | null
   /** Startzeit (ms) des laufenden Spiels – für die Laufzeit in der Titelleiste. */
   startedAt: number | null
 }
 
-// Das Backend hält dieselbe Menge vor; mehr bremst nur das Rendering.
-const MAX_LOG_LINES = 5000
+// Die Log-Ansicht ist virtualisiert – viele Zeilen kosten nur Speicher.
+// Gekürzt wird in Schritten, nicht bei jeder Zeile.
+const MAX_LOG_LINES = 100_000
+const TRIM_STEP = 5_000
 
 function emptyState(): GameState {
-  return { phase: 'idle', progress: null, error: null, logs: [], lastExit: null, startedAt: null }
+  return { phase: 'idle', progress: null, error: null, logs: [], logTotal: 0, lastExit: null, startedAt: null }
 }
 
 export const useGamesStore = defineStore('games', () => {
@@ -42,8 +49,10 @@ export const useGamesStore = defineStore('games', () => {
       s.progress = null
       s.startedAt = Date.now()
     } else if (event.type === 'logs') {
-      s.logs.push(...event.lines)
-      if (s.logs.length > MAX_LOG_LINES) s.logs.splice(0, s.logs.length - MAX_LOG_LINES)
+      // markRaw: 100 000 Zeilen ohne Proxy je Objekt.
+      for (const line of event.lines) s.logs.push(markRaw(line))
+      s.logTotal += event.lines.length
+      if (s.logs.length > MAX_LOG_LINES + TRIM_STEP) s.logs.splice(0, s.logs.length - MAX_LOG_LINES)
     } else {
       s.phase = 'idle'
       s.startedAt = null
@@ -64,7 +73,8 @@ export const useGamesStore = defineStore('games', () => {
         const s = state(game.instanceId)
         s.phase = 'running'
         s.startedAt = Date.parse(game.startedAt) || Date.now()
-        s.logs = await backend.getGameLogs(game.instanceId)
+        s.logs = (await backend.getGameLogs(game.instanceId)).map((l) => markRaw(l))
+        s.logTotal = s.logs.length
       }
     } catch {
       // Ohne laufende Spiele gibt es nichts zu übernehmen.
@@ -83,6 +93,7 @@ export const useGamesStore = defineStore('games', () => {
     s.error = null
     s.lastExit = null
     s.logs = []
+    s.logTotal = 0
     s.progress = { stage: 'version', percent: 0, doneFiles: 0, totalFiles: 0 }
     const instance = useInstancesStore().items.find((i) => i.id === id)
     const result = await useTasksStore().run(

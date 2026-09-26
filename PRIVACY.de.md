@@ -21,7 +21,7 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Inhalte durchsuchen, installieren oder aktualisieren | Suchanfragen, Datei-Hashes installierter Mods (für die Update-Prüfung) |
 | CurseForge (`api.curseforge.com`; Dateien und Bilder von `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Nur wenn du CurseForge als Quelle wählst, ein CurseForge-Modpack installierst, Inhalte von CurseForge installiert hast oder eine CurseForge-Instanz mit fehlenden Dateien importierst | Suchanfragen und Filter, die Projekt- und Datei-IDs von CurseForge-Inhalten (für Details und die Update-Prüfung), Download-Anfragen. Wie bei jeder Anfrage im Internet gehört deine IP-Adresse dazu. Ein CurseForge-Konto brauchst du nicht – der Launcher weist sich mit seinem eigenen API-Schlüssel aus, nicht mit Daten über dich. |
 | Minecraft-Server in deiner Serverliste | Live-Status anzeigen | Ein üblicher Serverlisten-Ping |
-| mclo.gs | Nur wenn du auf „Log teilen“ klickst und bestätigst | Der Spiel-Log, ohne Zugriffstokens und ohne deinen Windows-Benutzernamen |
+| mclo.gs | Nur wenn du auf „Log teilen“ klickst und bestätigst | Der gewählte Log (neuester Log, ein älterer Log oder ein Absturzbericht), ohne Zugriffstokens und ohne deinen Windows-/Linux-Benutzernamen |
 | GitHub (`github.com`) | Nach Launcher-Updates suchen | Eine Anfrage nach dem Update-Manifest |
 | Discord-App auf deinem Computer (nur lokal, kein Internet) | Solange der Launcher offen ist und „Discord-Status zeigen“ an ist (Standard), siehe [unten](#discord) | Dein Discord-Status: „Im TRS Launcher“ bzw. Minecraft-Version, Modloader und Spielzeit des laufenden Spiels |
 

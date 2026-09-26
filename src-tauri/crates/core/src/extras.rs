@@ -1,4 +1,4 @@
-//! Komfort rund um eine Instanz: Screenshots, Welten, Duplizieren.
+//! Komfort rund um eine Instanz: Screenshots, Duplizieren (Welten: `worlds.rs`).
 
 use std::path::{Path, PathBuf};
 
@@ -19,14 +19,6 @@ pub struct Screenshot {
     pub path: PathBuf,
     pub size: u64,
     pub taken_at: Option<DateTime<Utc>>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct World {
-    pub folder: String,
-    pub icon_path: Option<PathBuf>,
-    pub last_played: Option<DateTime<Utc>>,
 }
 
 fn modified(meta: &std::fs::Metadata) -> Option<DateTime<Utc>> {
@@ -80,33 +72,6 @@ pub fn screenshot_path(paths: &Paths, instance_id: &str, file_name: &str) -> Res
 pub async fn delete_screenshot(paths: &Paths, instance_id: &str, file_name: &str) -> Result<()> {
     let path = screenshot_path(paths, instance_id, file_name)?;
     tokio::fs::remove_file(&path).await.map_err(|e| Error::io(&path, e))
-}
-
-pub async fn list_worlds(paths: &Paths, instance_id: &str) -> Result<Vec<World>> {
-    validate_id(instance_id)?;
-    let dir = paths.instance_game_dir(instance_id).join("saves");
-    let mut entries = match tokio::fs::read_dir(&dir).await {
-        Ok(entries) => entries,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(Error::io(&dir, e)),
-    };
-
-    let mut worlds = Vec::new();
-    while let Some(entry) = entries.next_entry().await.map_err(|e| Error::io(&dir, e))? {
-        let Some(folder) = entry.file_name().to_str().map(str::to_owned) else { continue };
-        let level = entry.path().join("level.dat");
-        // Nur echte Welten – in `saves` liegt gelegentlich auch anderes.
-        let Ok(meta) = tokio::fs::metadata(&level).await else { continue };
-        let icon = entry.path().join("icon.png");
-        worlds.push(World {
-            folder: folder.chars().filter(|c| !c.is_control()).take(100).collect(),
-            icon_path: icon.is_file().then_some(icon),
-            last_played: modified(&meta),
-        });
-    }
-    worlds.sort_by_key(|w| std::cmp::Reverse(w.last_played));
-    worlds.truncate(MAX_LISTED);
-    Ok(worlds)
 }
 
 fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
@@ -205,23 +170,16 @@ mod tests {
     use crate::instance::{InstanceOverrides, Loader, NewInstance, UpdateInstance};
 
     #[tokio::test]
-    async fn screenshots_and_worlds() {
+    async fn screenshots() {
         let dir = tempfile::tempdir().unwrap();
         let paths = Paths::new(dir.path());
         let game = paths.instance_game_dir("test");
         tokio::fs::create_dir_all(game.join("screenshots")).await.unwrap();
-        tokio::fs::create_dir_all(game.join("saves/Meine Welt")).await.unwrap();
-        tokio::fs::create_dir_all(game.join("saves/kein-level")).await.unwrap();
         tokio::fs::write(game.join("screenshots/2026-09-19_12.00.00.png"), b"png").await.unwrap();
         tokio::fs::write(game.join("screenshots/notiz.txt"), b"x").await.unwrap();
-        tokio::fs::write(game.join("saves/Meine Welt/level.dat"), b"x").await.unwrap();
-        tokio::fs::write(game.join("saves/Meine Welt/icon.png"), b"x").await.unwrap();
 
         let shots = list_screenshots(&paths, "test").await.unwrap();
         assert_eq!(shots.len(), 1);
-        let worlds = list_worlds(&paths, "test").await.unwrap();
-        assert_eq!(worlds.len(), 1);
-        assert!(worlds[0].icon_path.is_some());
 
         assert!(screenshot_path(&paths, "test", "..\\..\\instance.json").is_err());
         assert!(screenshot_path(&paths, "test", "fehlt.png").is_err());

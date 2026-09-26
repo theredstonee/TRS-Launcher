@@ -452,7 +452,8 @@
       "nameLength": "Der Servername muss zwischen 1 und 64 Zeichen lang sein",
       "tooMany": "Mehr als 100 Server werden nicht unterstützt.",
       "duplicate": "Dieser Server steht schon in der Liste.",
-      "notFound": "Dieser Server existiert nicht mehr."
+      "notFound": "Dieser Server existiert nicht mehr.",
+      "instanceChanged": "Die Serverliste der Instanz hat sich geändert – bitte neu laden."
     },
     "skins": {
       "fileTooLarge": "Die Skin-Datei ist zu groß (höchstens 128 KB).",
@@ -607,6 +608,24 @@
       "totalTooLarge": "Zusammen sind die Dateien zu groß (höchstens 64 MB).",
       "studioInvalid": "„{name}“ ist kein Umhang-Export aus TRS Studio.",
       "gifTooLong": "„{name}“ hat zu viele Frames (höchstens {max})."
+    },
+    "files": {
+      "denied": "Auf diesen Pfad hat der Dateibrowser keinen Zugriff.",
+      "invalidName": "Ungültiger Datei- oder Ordnername",
+      "notFound": "Die Datei oder der Ordner existiert nicht mehr.",
+      "exists": "Hier gibt es schon eine Datei oder einen Ordner mit diesem Namen.",
+      "tooMany": "Höchstens {max} Einträge auf einmal",
+      "importTooLarge": "Zu viel auf einmal: höchstens {gb} GB bzw. {max} Dateien je Vorgang.",
+      "fileTooLarge": "Einzelne Dateien dürfen höchstens {gb} GB groß sein."
+    },
+    "worlds": {
+      "levelDatBroken": "Die level.dat der Welt ist beschädigt.",
+      "notFound": "Diese Welt gibt es nicht mehr."
+    },
+    "logs": {
+      "sourceGone": "Diese Log-Datei gibt es nicht mehr.",
+      "unreadable": "Diese Log-Datei lässt sich nicht lesen.",
+      "qrInvalid": "Für diesen Link gibt es keinen QR-Code."
     }
   },
   "browse": {
@@ -1090,7 +1109,9 @@
       "history": "Verlauf",
       "screenshots": "Screenshots",
       "worlds": "Welten",
-      "logs": "Logs"
+      "logs": "Logs",
+      "files": "Dateien",
+      "share": "Teilen"
     },
     "gallery": {
       "bannerSet": "Banner gesetzt",
@@ -1098,18 +1119,16 @@
         "title": "Noch keine Screenshots",
         "text": "Drück im Spiel F2 – jedes Bild lässt hier eine Lampe mehr leuchten."
       },
-      "noWorlds": {
-        "title": "Noch keine Welten",
-        "text": "Noch nichts gebaut: Einzelspieler-Welten dieser Instanz erscheinen hier."
-      },
       "openScreenshot": "{name} öffnen",
       "useAsBannerLabel": "{name} als Banner verwenden",
       "useAsBannerTitle": "Als Banner der Instanz verwenden",
       "deleteScreenshot": "Screenshot löschen",
-      "lastPlayed": "Zuletzt gespielt {date}",
       "deleteTitle": "Screenshot löschen?",
       "deleteText": "Der Screenshot wird von der Festplatte gelöscht."
-    }
+    },
+    "playTime": "Spielzeit",
+    "lastPlayed": "Zuletzt gespielt",
+    "running": "Läuft"
   },
   "instanceSettings": {
     "title": "Einstellungen · {name}",
@@ -1386,13 +1405,8 @@
     }
   },
   "logConsole": {
-    "warnings": "Warnungen",
-    "errors": "Fehler",
-    "search": "Suchen …",
     "lineCount": "{n} Zeile | {n} Zeilen",
-    "copied": "Kopiert",
-    "empty": "Noch keine Ausgabe – starte die Instanz, um die Logs live zu sehen.",
-    "jumpToEnd": "↓ Zum Ende springen"
+    "copied": "Kopiert"
   },
   "crash": {
     "crashed": "Das Spiel ist abgestürzt",
@@ -3192,6 +3206,195 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    }
+  },
+  "logViewer": {
+    "title": "Spiel-Log",
+    "source": "Log-Quelle",
+    "live": "Live-Log",
+    "liveRunning": "Live-Log (läuft)",
+    "latest": "Neuester Log",
+    "groups": {
+      "game": "Ältere Logs",
+      "crash": "Absturzberichte",
+      "launcher": "Launcher-Ausgabe"
+    },
+    "search": "Log durchsuchen …",
+    "clearSearch": "Suche leeren",
+    "clear": "Ansicht leeren",
+    "copy": "Sichtbare Zeilen kopieren",
+    "copyFailed": "Die Zwischenablage ist nicht verfügbar.",
+    "share": "Log teilen",
+    "expand": "Vollbild",
+    "collapse": "Vollbild beenden",
+    "levelFilter": "Nach Stufe filtern",
+    "levels": {
+      "all": "Alle",
+      "error": "Fehler",
+      "warn": "Warnungen",
+      "info": "Info"
+    },
+    "expandAll": "Alle Stacktraces aufklappen",
+    "collapseAll": "Alle Stacktraces zuklappen",
+    "truncated": "Nur das Ende wird gezeigt",
+    "truncatedHint": "Die Datei ist sehr groß – der Launcher zeigt ihren letzten Teil.",
+    "empty": {
+      "title": "Die Lampe ist noch aus",
+      "text": "Starte die Instanz, um den Live-Log zu sehen. Ältere Logs und Absturzberichte findest du oben links in der Liste.",
+      "openLatest": "{name} öffnen"
+    },
+    "lines": "Log-Zeilen",
+    "noMatches": "Keine Zeile passt zum Filter.",
+    "waiting": "Warte auf die ersten Zeilen …",
+    "emptyFile": "Diese Datei ist leer.",
+    "hideTrace": "Stacktrace ausblenden",
+    "showTrace": "Stacktrace zeigen ({n} Zeilen)",
+    "newLines": "{n} neue Zeile | {n} neue Zeilen",
+    "toBottom": "Nach unten",
+    "following": "Läuft live mit",
+    "loading": "Lädt …",
+    "shortcut": "Strg+F zum Suchen"
+  },
+  "logShare": {
+    "qrLabel": "QR-Code des Links",
+    "qrFailed": "Kein QR-Code verfügbar",
+    "doneTitle": "Log geteilt",
+    "doneText": "Der Link ist kopiert. Schick ihn an die Person, die dir hilft – oder scanne den Code mit dem Handy.",
+    "redactTokens": "Anmelde-Tokens werden entfernt",
+    "redactUser": "Dein Benutzername wird aus Dateipfaden entfernt",
+    "publicHint": "Jeder mit dem Link kann den Log lesen",
+    "disabled": "Log-Teilen ist unter Einstellungen → Datenschutz ausgeschaltet.",
+    "qrHint": "Der Link bleibt auf mclo.gs bestehen; löschen lässt er sich im Launcher nicht.",
+    "openBrowser": "Im Browser öffnen"
+  },
+  "files": {
+    "title": "Dateien",
+    "breadcrumbs": "Ordnerpfad",
+    "root": "Instanzordner",
+    "filter": "Filtern …",
+    "newFolder": "Neuer Ordner",
+    "newFile": "Neue Datei",
+    "upload": "Hochladen",
+    "reveal": "Im Ordner zeigen",
+    "rename": "Umbenennen",
+    "trash": "In den Papierkorb",
+    "clearSelection": "Auswahl aufheben",
+    "selected": "{n} ausgewählt | {n} ausgewählt",
+    "selectAll": "Alle auswählen",
+    "selectOne": "{name} auswählen",
+    "size": "Größe",
+    "created": "Erstellt",
+    "modified": "Geändert",
+    "noMatches": "Nichts gefunden",
+    "noMatchesText": "Keine Datei in diesem Ordner passt zum Filter.",
+    "emptyFolder": "Dieser Ordner ist leer",
+    "emptyFolderText": "Zieh Dateien hierher oder nutze „Hochladen“.",
+    "truncated": "Dieser Ordner hat zu viele Einträge – nicht alle werden gezeigt.",
+    "count": "{n} Eintrag | {n} Einträge",
+    "dropHint": "Dateien oder Ordner hierher ziehen, um sie zu kopieren",
+    "dropTitle": "Loslassen, um hierher zu kopieren",
+    "openFolder": "Ordner öffnen",
+    "copyPath": "Pfad kopieren",
+    "pathCopied": "Pfad kopiert",
+    "inFolder": "In {path}",
+    "trashTitle": "{n} Eintrag in den Papierkorb legen? | {n} Einträge in den Papierkorb legen?",
+    "trashText": "Die Einträge wandern in den Windows-Papierkorb – dort kannst du sie wiederherstellen.",
+    "trashTextLinux": "Die Einträge wandern in den Papierkorb – dort kannst du sie wiederherstellen.",
+    "trashed": "{n} Eintrag in den Papierkorb gelegt | {n} Einträge in den Papierkorb gelegt",
+    "uploaded": "{n} Datei kopiert ({size}) | {n} Dateien kopiert ({size})",
+    "skipped": {
+      "symlink": "„{name}“ übersprungen: Verknüpfungen werden nicht kopiert.",
+      "invalidName": "„{name}“ übersprungen: Der Name ist nicht erlaubt.",
+      "unsupported": "„{name}“ übersprungen: keine normale Datei.",
+      "inside": "„{name}“ übersprungen: Ein Ordner kann nicht in sich selbst kopiert werden."
+    },
+    "errors": {
+      "empty": "Bitte einen Namen eingeben.",
+      "invalid": "Dieser Name ist nicht erlaubt (z. B. / \\ : * ? \" < > {'|'})."
+    },
+    "known": {
+      "mods": "Mods",
+      "config": "Mod-Einstellungen",
+      "saves": "Welten",
+      "resourcepacks": "Ressourcenpakete",
+      "shaderpacks": "Shader",
+      "screenshots": "Screenshots",
+      "logs": "Logs",
+      "crash": "Absturzberichte",
+      "datapacks": "Datenpakete",
+      "backups": "Welt-Sicherungen"
+    }
+  },
+  "worlds": {
+    "title": "Welten",
+    "empty": {
+      "title": "Noch keine Welten",
+      "text": "Hier wurde noch nichts gebaut: Die Einzelspieler-Welten dieser Instanz erscheinen hier."
+    },
+    "modes": {
+      "survival": "Überleben",
+      "creative": "Kreativ",
+      "adventure": "Abenteuer",
+      "spectator": "Zuschauer"
+    },
+    "hardcore": "Hardcore",
+    "cheats": "Cheats",
+    "backingUp": "Welt wird gesichert …",
+    "backupDone": "„{name}“ wurde gesichert",
+    "backup": "Sichern (ZIP)",
+    "backupOf": "{name} sichern",
+    "openFolderOf": "Ordner von {name} öffnen",
+    "deleteOf": "{name} löschen",
+    "stopFirst": "Erst das Spiel beenden",
+    "deleted": "„{name}“ liegt im Papierkorb",
+    "backupHint": "Sicherungen landen als ZIP im Ordner „backups“ der Instanz (siehe Tab „Dateien“).",
+    "deleteTitle": "Welt löschen?",
+    "deleteText": "„{name}“ wandert in den Windows-Papierkorb.",
+    "deleteTextLinux": "„{name}“ wandert in den Papierkorb.",
+    "deleteBackupHint": "Tipp: Sichere die Welt vorher, falls du sie noch einmal brauchst.",
+    "servers": {
+      "title": "Server",
+      "empty": {
+        "title": "Noch keine Server",
+        "text": "Füge einen Server hinzu – er erscheint in der Mehrspieler-Liste des Spiels und du kannst ihm hier mit einem Klick beitreten."
+      },
+      "everywhere": "In allen Instanzen hinzufügen",
+      "everywhereHint": "Speichert den Server in der Serverliste des Launchers – jede Instanz bekommt ihn beim nächsten Start.",
+      "managedHint": "Dieser Server steht in der Serverliste des Launchers. Änderungen gelten für alle Instanzen.",
+      "removeManaged": "„{name}“ aus der Serverliste des Launchers entfernen? Er verschwindet jetzt aus dieser Instanz und wird anderen Instanzen nicht mehr hinzugefügt.",
+      "removeText": "„{name}“ aus der Serverliste dieser Instanz entfernen?",
+      "managed": "Alle Instanzen",
+      "managedTitle": "Aus der Serverliste des Launchers",
+      "pending": "Nächster Start",
+      "pendingTitle": "Wird beim nächsten Start in die Serverliste des Spiels eingetragen",
+      "editOf": "{name} bearbeiten",
+      "running": "Die Instanz läuft bereits",
+      "joinHint": "Startet die Instanz und verbindet mit „{name}“",
+      "notJoinable": "Diese Adresse lässt sich nicht direkt beitreten – starte das Spiel und tritt über die Serverliste bei.",
+      "joinNote": "Beitreten startet das Spiel und verbindet sofort. Sehr alte Versionen öffnen nur das Hauptmenü."
+    }
+  },
+  "share": {
+    "intro": "Gib diese Instanz weiter oder hol dir Hilfe: als Modpack-Datei, als Log-Link oder als Welt-Sicherung.",
+    "modpack": {
+      "title": "Als Modpack exportieren",
+      "text": "Erstellt eine .mrpack-Datei mit Mods, Einstellungen und ausgewählten Dateien. Andere importieren sie im Launcher mit einem Klick.",
+      "action": "Exportieren …"
+    },
+    "log": {
+      "title": "Log teilen",
+      "text": "Lädt den neuesten Log auf mclo.gs hoch – Tokens und dein Benutzername werden entfernt. Du bekommst einen Link und einen QR-Code.",
+      "action": "Log teilen …"
+    },
+    "world": {
+      "title": "Welt sichern",
+      "text": "Packt eine Welt als ZIP-Datei – zum Aufbewahren oder um sie Freunden zu schicken.",
+      "action": "Zu den Welten"
+    },
+    "files": {
+      "title": "Dateien heraussuchen",
+      "text": "Öffne den Instanzordner, um einzelne Dateien wie Configs oder Schematics zu verschicken.",
+      "action": "Zu den Dateien"
     }
   }
 }

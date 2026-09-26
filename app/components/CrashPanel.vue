@@ -3,13 +3,11 @@ import type { Diagnosis } from '~/types'
 
 const props = defineProps<{ instanceId: string; exitCode: number | null; diagnosis: Diagnosis | null }>()
 
-const toasts = useToasts()
 const tasks = useTasksStore()
 const repairTask = computed(() => tasks.get(repairTaskKey(props.instanceId)))
 const repairing = computed(() => (repairTask.value?.status === 'running' ? (repairTask.value.percent ?? 0) : null))
+// Teilen läuft über denselben Dialog wie im Log-Tab (Bestätigung, Link, QR-Code).
 const sharing = ref(false)
-const confirmShare = ref(false)
-const sharedUrl = ref<string | null>(null)
 
 /** Diagnose nach Art übersetzen; unbekannte Arten zeigen den Text des Kerns. */
 const diagnosisText = computed(() => {
@@ -55,24 +53,6 @@ function repair() {
   repairInstanceTask({ id: props.instanceId, name: instance?.name ?? props.instanceId }, 'repair')
 }
 
-async function share() {
-  confirmShare.value = false
-  sharing.value = true
-  try {
-    sharedUrl.value = await backend.shareLog(props.instanceId)
-    try {
-      await navigator.clipboard.writeText(sharedUrl.value)
-      toasts.ok(t('crash.linkCopied'))
-    } catch {
-      // Ohne Zwischenablage bleibt der Link unten sichtbar.
-    }
-  } catch (e) {
-    toasts.error(e)
-  } finally {
-    sharing.value = false
-  }
-}
-
 </script>
 
 <template>
@@ -108,20 +88,11 @@ async function share() {
         <RedstoneWire :percent="repairing" :segments="16" class="flex-1" />
         <span class="display text-xs tabular-nums text-redstone-300">{{ repairing }} %</span>
       </div>
-      <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="sharing" @click="confirmShare = true">
-        {{ sharing ? t('crash.uploading') : t('crash.shareLog') }}
+      <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="sharing = true">
+        {{ t('crash.shareLog') }}
       </button>
-      <span v-if="sharedUrl" class="font-mono text-xs text-lamp-300 select-text">{{ sharedUrl }}</span>
     </div>
 
-    <BaseDialog v-if="confirmShare" :title="t('crash.shareTitle')" @close="confirmShare = false">
-      <i18n-t :keypath="isLinux ? 'crash.shareTextLinux' : 'crash.shareText'" tag="p" scope="global" class="text-sm text-base-200">
-        <template #site><strong>mclo.gs</strong></template>
-      </i18n-t>
-      <template #actions>
-        <button class="btn btn-ghost" @click="confirmShare = false">{{ t('common.actions.cancel') }}</button>
-        <button class="btn btn-primary" @click="share">{{ t('crash.upload') }}</button>
-      </template>
-    </BaseDialog>
+    <LogShareDialog v-if="sharing" :instance-id="instanceId" source="live" :label="t('logViewer.latest')" @close="sharing = false" />
   </section>
 </template>

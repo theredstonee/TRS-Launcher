@@ -16,6 +16,52 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **New instance page with tabs.** Content, Files, Worlds, Screenshots, History, Logs and Share now sit in one tab bar
+  below the instance header (icon, name, version, play time, last played, Play/Stop, settings). The page remembers the
+  last tab for every instance, and the tabs work with the arrow keys.
+- **Much better logs.** Search with highlighted matches, filters for errors, warnings and info with counts, coloured
+  lines and collapsible stack traces. Besides the live log you can open older logs (also packed `.log.gz` files), crash
+  reports and the launcher's own output. The view follows new lines while you are at the bottom and offers "Jump to
+  bottom" when you scroll up; it stays smooth even with more than 100,000 lines. Clear the view, copy the visible
+  lines, switch to full screen, or share: after a confirmation the log is uploaded to mclo.gs without login tokens and
+  user names, and you get the link with a QR code, a copy button and "Open in browser".
+- **Files tab.** Browse the instance folder with breadcrumbs, icons for mods, configs, worlds, resource packs,
+  shaders, screenshots and logs, size and dates, sorting and a filter. Create folders and files, rename, move to the
+  trash, show in the file manager, select several entries, and upload with the file picker or by dragging files and
+  folders into the window. Everything stays inside the instance folder.
+- **Worlds tab.** Every world shows its real name, game mode, hardcore/cheats, the version it was last played in, size
+  and last played date. Open the folder, back a world up as a ZIP (into the "backups" folder) or move it to the trash.
+  Below you find the instance's servers: add, edit and remove them, and "Join" starts the game and connects straight
+  away. Servers from the launcher's server list are marked.
+- **Share tab.** Export the instance as a modpack, share the log, back up a world or pick single files – all in one
+  place.
+
+### Deutsch
+
+- **Neue Instanzseite mit Tabs.** Inhalte, Dateien, Welten, Screenshots, Verlauf, Logs und Teilen stehen jetzt in einer
+  Tab-Leiste unter dem Instanz-Kopf (Icon, Name, Version, Spielzeit, zuletzt gespielt, Spielen/Stoppen, Einstellungen).
+  Die Seite merkt sich den zuletzt offenen Tab je Instanz, und die Tabs lassen sich mit den Pfeiltasten bedienen.
+- **Viel bessere Logs.** Suche mit hervorgehobenen Treffern, Filter für Fehler, Warnungen und Info mit Anzahl, farbige
+  Zeilen und aufklappbare Stacktraces. Neben dem Live-Log lassen sich ältere Logs (auch gepackte `.log.gz`),
+  Absturzberichte und die Ausgabe des Launchers öffnen. Die Ansicht läuft mit, solange du unten bist, und bietet „Nach
+  unten“, wenn du hochscrollst; auch mit mehr als 100 000 Zeilen bleibt sie flüssig. Ansicht leeren, sichtbare Zeilen
+  kopieren, Vollbild oder teilen: Nach einer Bestätigung landet der Log ohne Anmelde-Tokens und Benutzernamen auf
+  mclo.gs, und du bekommst den Link mit QR-Code, Kopieren-Knopf und „Im Browser öffnen“.
+- **Tab „Dateien“.** Durchsuche den Instanzordner mit Brotkrumen-Pfad, Symbolen für Mods, Configs, Welten,
+  Ressourcenpakete, Shader, Screenshots und Logs, Größe und Datum, Sortierung und Filter. Ordner und Dateien anlegen,
+  umbenennen, in den Papierkorb legen, im Dateimanager zeigen, mehrere Einträge auswählen und per Dateiauswahl oder
+  Drag & Drop von Dateien und Ordnern hochladen. Alles bleibt im Instanzordner.
+- **Tab „Welten“.** Jede Welt zeigt ihren echten Namen, Spielmodus, Hardcore/Cheats, die zuletzt gespielte Version,
+  Größe und das Datum. Ordner öffnen, Welt als ZIP sichern (in den Ordner „backups“) oder in den Papierkorb legen.
+  Darunter stehen die Server der Instanz: hinzufügen, bearbeiten, entfernen – „Beitreten“ startet das Spiel und
+  verbindet sofort. Server aus der Serverliste des Launchers sind markiert.
+- **Tab „Teilen“.** Instanz als Modpack exportieren, Log teilen, Welt sichern oder einzelne Dateien heraussuchen – alles
+  an einem Ort.
+
 ## 0.6.3 – 2026-09-26 – The Safety Net Update | Das Sicherheitsnetz-Update
 <!-- banner: accent=#e8d44d motif=/news/0.6.3/banner.png -->
 

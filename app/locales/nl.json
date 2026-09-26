@@ -452,7 +452,8 @@
       "nameLength": "De servernaam moet tussen 1 en 64 tekens lang zijn",
       "tooMany": "Meer dan 100 servers wordt niet ondersteund.",
       "duplicate": "Deze server staat al in de lijst.",
-      "notFound": "Deze server bestaat niet meer."
+      "notFound": "Deze server bestaat niet meer.",
+      "instanceChanged": "De serverlijst van de instantie is gewijzigd – laad opnieuw."
     },
     "skins": {
       "fileTooLarge": "Het skinbestand is te groot (max. 128 KB).",
@@ -607,6 +608,24 @@
       "totalTooLarge": "Samen zijn de bestanden te groot (max. 64 MB).",
       "studioInvalid": "“{name}” is geen cape-export uit TRS Studio.",
       "gifTooLong": "“{name}” heeft te veel frames (max. {max})."
+    },
+    "files": {
+      "denied": "De bestandsbrowser heeft geen toegang tot dit pad.",
+      "invalidName": "Ongeldige bestands- of mapnaam",
+      "notFound": "Het bestand of de map bestaat niet meer.",
+      "exists": "Hier staat al een bestand of map met deze naam.",
+      "tooMany": "Maximaal {max} items tegelijk",
+      "importTooLarge": "Te veel tegelijk: maximaal {gb} GB of {max} bestanden per upload.",
+      "fileTooLarge": "Een los bestand mag maximaal {gb} GB zijn."
+    },
+    "worlds": {
+      "levelDatBroken": "Het level.dat-bestand van de wereld is beschadigd.",
+      "notFound": "Deze wereld bestaat niet meer."
+    },
+    "logs": {
+      "sourceGone": "Dit logbestand bestaat niet meer.",
+      "unreadable": "Dit logbestand kan niet worden gelezen.",
+      "qrInvalid": "Voor deze link is er geen QR-code."
     }
   },
   "browse": {
@@ -1090,7 +1109,9 @@
       "history": "Geschiedenis",
       "screenshots": "Screenshots",
       "worlds": "Werelden",
-      "logs": "Logs"
+      "logs": "Logs",
+      "files": "Bestanden",
+      "share": "Delen"
     },
     "gallery": {
       "bannerSet": "Banner ingesteld",
@@ -1098,18 +1119,16 @@
         "title": "Nog geen screenshots",
         "text": "Druk in het spel op F2 – elke foto laat hier een extra lamp oplichten."
       },
-      "noWorlds": {
-        "title": "Nog geen werelden",
-        "text": "Nog niets gebouwd: de singleplayerwerelden van deze instantie verschijnen hier."
-      },
       "openScreenshot": "{name} openen",
       "useAsBannerLabel": "{name} als banner gebruiken",
       "useAsBannerTitle": "Als instantiebanner gebruiken",
       "deleteScreenshot": "Screenshot verwijderen",
-      "lastPlayed": "Laatst gespeeld {date}",
       "deleteTitle": "Screenshot verwijderen?",
       "deleteText": "De screenshot wordt van je schijf verwijderd."
-    }
+    },
+    "playTime": "Speeltijd",
+    "lastPlayed": "Laatst gespeeld",
+    "running": "Actief"
   },
   "instanceSettings": {
     "title": "Instellingen · {name}",
@@ -1386,13 +1405,8 @@
     }
   },
   "logConsole": {
-    "warnings": "Waarschuwingen",
-    "errors": "Fouten",
-    "search": "Zoeken …",
     "lineCount": "{n} regel | {n} regels",
-    "copied": "Gekopieerd",
-    "empty": "Nog geen uitvoer – start de instantie om de logs live te zien.",
-    "jumpToEnd": "↓ Naar het einde"
+    "copied": "Gekopieerd"
   },
   "crash": {
     "crashed": "Het spel is gecrasht",
@@ -3192,6 +3206,195 @@
       "qsv": "Intel (Quick Sync)",
       "mf": "Windows (Media Foundation)",
       "x264": "Software (x264)"
+    }
+  },
+  "logViewer": {
+    "title": "Spellogboek",
+    "source": "Logbron",
+    "live": "Live-log",
+    "liveRunning": "Live-log (actief)",
+    "latest": "Nieuwste log",
+    "groups": {
+      "game": "Oudere logs",
+      "crash": "Crashrapporten",
+      "launcher": "Launcheruitvoer"
+    },
+    "search": "Log doorzoeken …",
+    "clearSearch": "Zoekopdracht wissen",
+    "clear": "Weergave leegmaken",
+    "copy": "Zichtbare regels kopiëren",
+    "copyFailed": "Het klembord is niet beschikbaar.",
+    "share": "Log delen",
+    "expand": "Volledig scherm",
+    "collapse": "Volledig scherm verlaten",
+    "levelFilter": "Filteren op niveau",
+    "levels": {
+      "all": "Alles",
+      "error": "Fouten",
+      "warn": "Waarschuwingen",
+      "info": "Info"
+    },
+    "expandAll": "Alle stacktraces uitklappen",
+    "collapseAll": "Alle stacktraces inklappen",
+    "truncated": "Alleen het einde wordt getoond",
+    "truncatedHint": "Het bestand is erg groot – de launcher toont het laatste deel.",
+    "empty": {
+      "title": "De lamp is nog uit",
+      "text": "Start de instantie om de live-log te zien. Oudere logs en crashrapporten staan in de lijst linksboven.",
+      "openLatest": "{name} openen"
+    },
+    "lines": "Logregels",
+    "noMatches": "Geen regel past bij het filter.",
+    "waiting": "Wachten op de eerste regels …",
+    "emptyFile": "Dit bestand is leeg.",
+    "hideTrace": "Stacktrace verbergen",
+    "showTrace": "Stacktrace tonen ({n} regels)",
+    "newLines": "{n} nieuwe regel | {n} nieuwe regels",
+    "toBottom": "Naar beneden",
+    "following": "Live meevolgen",
+    "loading": "Laden …",
+    "shortcut": "Ctrl+F om te zoeken"
+  },
+  "logShare": {
+    "qrLabel": "QR-code van de link",
+    "qrFailed": "Geen QR-code beschikbaar",
+    "doneTitle": "Log gedeeld",
+    "doneText": "De link is gekopieerd. Stuur hem naar wie je helpt – of scan de code met je telefoon.",
+    "redactTokens": "Inlogtokens worden verwijderd",
+    "redactUser": "Je gebruikersnaam wordt uit bestandspaden verwijderd",
+    "publicHint": "Iedereen met de link kan de log lezen",
+    "disabled": "Logs delen staat uit onder Instellingen → Privacy.",
+    "qrHint": "De link blijft op mclo.gs staan; je kunt hem niet vanuit de launcher verwijderen.",
+    "openBrowser": "In browser openen"
+  },
+  "files": {
+    "title": "Bestanden",
+    "breadcrumbs": "Mappad",
+    "root": "Instantiemap",
+    "filter": "Filteren …",
+    "newFolder": "Nieuwe map",
+    "newFile": "Nieuw bestand",
+    "upload": "Uploaden",
+    "reveal": "Tonen in map",
+    "rename": "Hernoemen",
+    "trash": "Naar prullenbak",
+    "clearSelection": "Selectie opheffen",
+    "selected": "{n} geselecteerd | {n} geselecteerd",
+    "selectAll": "Alles selecteren",
+    "selectOne": "{name} selecteren",
+    "size": "Grootte",
+    "created": "Aangemaakt",
+    "modified": "Gewijzigd",
+    "noMatches": "Niets gevonden",
+    "noMatchesText": "Geen bestand in deze map past bij het filter.",
+    "emptyFolder": "Deze map is leeg",
+    "emptyFolderText": "Sleep bestanden hierheen of gebruik “Uploaden”.",
+    "truncated": "Deze map heeft te veel items – niet alles wordt getoond.",
+    "count": "{n} item | {n} items",
+    "dropHint": "Sleep bestanden of mappen hierheen om ze te kopiëren",
+    "dropTitle": "Loslaten om hierheen te kopiëren",
+    "openFolder": "Map openen",
+    "copyPath": "Pad kopiëren",
+    "pathCopied": "Pad gekopieerd",
+    "inFolder": "In {path}",
+    "trashTitle": "{n} item naar de prullenbak verplaatsen? | {n} items naar de prullenbak verplaatsen?",
+    "trashText": "De items gaan naar de Windows-prullenbak – daar kun je ze terugzetten.",
+    "trashTextLinux": "De items gaan naar de prullenbak – daar kun je ze terugzetten.",
+    "trashed": "{n} item naar de prullenbak verplaatst | {n} items naar de prullenbak verplaatst",
+    "uploaded": "{n} bestand gekopieerd ({size}) | {n} bestanden gekopieerd ({size})",
+    "skipped": {
+      "symlink": "“{name}” overgeslagen: koppelingen worden niet gekopieerd.",
+      "invalidName": "“{name}” overgeslagen: deze naam is niet toegestaan.",
+      "unsupported": "“{name}” overgeslagen: geen normaal bestand.",
+      "inside": "“{name}” overgeslagen: een map kan niet in zichzelf worden gekopieerd."
+    },
+    "errors": {
+      "empty": "Voer een naam in.",
+      "invalid": "Deze naam is niet toegestaan (bijv. / \\ : * ? \" < > {'|'})."
+    },
+    "known": {
+      "mods": "Mods",
+      "config": "Mod-instellingen",
+      "saves": "Werelden",
+      "resourcepacks": "Resourcepacks",
+      "shaderpacks": "Shaders",
+      "screenshots": "Screenshots",
+      "logs": "Logs",
+      "crash": "Crashrapporten",
+      "datapacks": "Datapacks",
+      "backups": "Wereldback-ups"
+    }
+  },
+  "worlds": {
+    "title": "Werelden",
+    "empty": {
+      "title": "Nog geen werelden",
+      "text": "Hier is nog niets gebouwd: de singleplayer-werelden van deze instantie verschijnen hier."
+    },
+    "modes": {
+      "survival": "Overleven",
+      "creative": "Creatief",
+      "adventure": "Avontuur",
+      "spectator": "Toeschouwer"
+    },
+    "hardcore": "Hardcore",
+    "cheats": "Cheats",
+    "backingUp": "Wereld wordt geback-upt …",
+    "backupDone": "“{name}” is geback-upt",
+    "backup": "Back-up (ZIP)",
+    "backupOf": "{name} back-uppen",
+    "openFolderOf": "Map van {name} openen",
+    "deleteOf": "{name} verwijderen",
+    "stopFirst": "Sluit eerst het spel",
+    "deleted": "“{name}” staat in de prullenbak",
+    "backupHint": "Back-ups worden als ZIP opgeslagen in de map “backups” van de instantie (zie het tabblad Bestanden).",
+    "deleteTitle": "Wereld verwijderen?",
+    "deleteText": "“{name}” gaat naar de Windows-prullenbak.",
+    "deleteTextLinux": "“{name}” gaat naar de prullenbak.",
+    "deleteBackupHint": "Tip: maak eerst een back-up als je de wereld misschien nog nodig hebt.",
+    "servers": {
+      "title": "Servers",
+      "empty": {
+        "title": "Nog geen servers",
+        "text": "Voeg een server toe – hij verschijnt in de multiplayerlijst van het spel en hier kun je met één klik joinen."
+      },
+      "everywhere": "Aan alle instanties toevoegen",
+      "everywhereHint": "Slaat de server op in de serverlijst van de launcher – elke instantie krijgt hem bij de volgende start.",
+      "managedHint": "Deze server staat in de serverlijst van de launcher. Wijzigingen gelden voor alle instanties.",
+      "removeManaged": "“{name}” uit de serverlijst van de launcher verwijderen? Hij verdwijnt nu uit deze instantie en wordt niet meer aan andere toegevoegd.",
+      "removeText": "“{name}” uit de serverlijst van deze instantie verwijderen?",
+      "managed": "Alle instanties",
+      "managedTitle": "Uit de serverlijst van de launcher",
+      "pending": "Volgende start",
+      "pendingTitle": "Wordt bij de volgende start aan de serverlijst van het spel toegevoegd",
+      "editOf": "{name} bewerken",
+      "running": "De instantie draait al",
+      "joinHint": "Start de instantie en verbindt met “{name}”",
+      "notJoinable": "Dit adres kan niet direct worden gejoind – start het spel en join via de serverlijst.",
+      "joinNote": "Joinen start het spel en verbindt meteen. Heel oude versies openen alleen het hoofdmenu."
+    }
+  },
+  "share": {
+    "intro": "Geef deze instantie door of vraag om hulp: als modpackbestand, als loglink of als wereldback-up.",
+    "modpack": {
+      "title": "Als modpack exporteren",
+      "text": "Maakt een .mrpack-bestand met mods, instellingen en gekozen bestanden. Anderen importeren het met één klik in de launcher.",
+      "action": "Exporteren …"
+    },
+    "log": {
+      "title": "Log delen",
+      "text": "Uploadt de nieuwste log naar mclo.gs – tokens en je gebruikersnaam worden verwijderd. Je krijgt een link en een QR-code.",
+      "action": "Delen …"
+    },
+    "world": {
+      "title": "Wereld back-uppen",
+      "text": "Pakt een wereld in als ZIP – om te bewaren of naar vrienden te sturen.",
+      "action": "Naar werelden"
+    },
+    "files": {
+      "title": "Bestanden kiezen",
+      "text": "Open de instantiemap om losse bestanden zoals configs of schematics te versturen.",
+      "action": "Naar bestanden"
     }
   }
 }

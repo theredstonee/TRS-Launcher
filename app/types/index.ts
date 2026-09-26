@@ -615,12 +615,84 @@ export interface ServerStatus {
   latencyMs: number
 }
 
-/** Screenshot oder Welt; `path` ist fürs Webview freigegeben (convertFileSrc). */
+/** Screenshot; `path` ist fürs Webview freigegeben (convertFileSrc). */
 export interface ImageEntry {
   name: string
   path: string | null
   size: number
   date: string | null
+}
+
+/** Server aus der `servers.dat` einer Instanz (Tab „Welten“). */
+export interface InstanceServer {
+  /** Position in der servers.dat; `null` = Launcher-Server, der beim nächsten Start dazukommt. */
+  index: number | null
+  name: string
+  address: string
+  /** Geprüfte `data:image/png;base64,…`-URL. */
+  icon: string | null
+  acceptTextures: boolean | null
+  /** Gehört zur Launcher-Serverliste (alle Instanzen). */
+  launcherId: string | null
+  joinable: boolean
+}
+
+export type GameMode = 'survival' | 'creative' | 'adventure' | 'spectator'
+
+export interface WorldInfo {
+  folder: string
+  name: string
+  /** Fürs Webview freigegeben (convertFileSrc). */
+  iconPath: string | null
+  lastPlayed: string | null
+  gameMode: GameMode | null
+  hardcore: boolean
+  cheats: boolean
+  version: string | null
+  size: number | null
+}
+
+/** Eintrag im Dateibrowser (Tab „Dateien“). */
+export interface FileEntry {
+  name: string
+  dir: boolean
+  size: number
+  created: string | null
+  modified: string | null
+}
+
+export interface DirListing {
+  /** Relativer Pfad mit `/`, Spielordner = "". */
+  path: string
+  entries: FileEntry[]
+  truncated: boolean
+}
+
+export interface ImportReport {
+  files: number
+  bytes: number
+  skipped: { name: string; reason: 'symlink' | 'invalidName' | 'unsupported' | 'inside' }[]
+}
+
+export type LogSourceKind = 'game' | 'crash' | 'launcher'
+
+/** Ältere Log-Datei bzw. Absturzbericht einer Instanz. */
+export interface LogSource {
+  id: string
+  kind: LogSourceKind
+  name: string
+  size: number
+  modified: string | null
+}
+
+export interface LogText {
+  text: string
+  truncated: boolean
+}
+
+export interface QrMatrix {
+  size: number
+  modules: number[]
 }
 
 export type ImportSource =
