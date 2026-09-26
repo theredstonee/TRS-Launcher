@@ -181,6 +181,26 @@ and pictures are deleted, and the report itself (without content) is deleted aft
 account, reports you filed stay without your name; reports against you and an active chat mute stay until these
 periods end, so moderation can't be escaped by deleting the account.
 
+### Sanctions and appeals
+
+The team (admins and moderators) can give sanctions for violations: a warning, a chat mute, a social ban (no friend
+requests, groups or invites), an upload ban (no own capes or cosmetics), a world hosting ban or a ban of the whole TRS
+account – for a limited time or permanently. We store your UUID, the kind, the reason (from a fixed list, plus an
+optional text you can see), start and end, who gave the sanction, an internal team note and every later change
+(shortened, extended, lifted – each with time, team member and reason). The team can also keep internal notes about
+players and sees the names an account used to sign in to TRS.
+
+In the launcher and in the game you see your active and past sanctions with kind, reason, start and end – not the
+internal note and not who gave it. You can **appeal each active sanction once** (20 to 1000 characters); even with a
+banned account this works through a short access valid only for that (1 hour). A team member who did not give the
+sanction decides and writes you an answer.
+
+**Retention:** sanctions with their changes and appeal are deleted **2 years after they ended** (expired or lifted);
+permanent sanctions stay while they apply. Internal notes are deleted after **2 years**, former names **2 years** after
+their last use, entries in the team's audit log after **2 years**. If you delete your account, warnings and ended
+sanctions are deleted at once; **active** sanctions (and notes about them) stay until they end, so they can't be
+escaped by deleting. The legal basis is our legitimate interest in a safe service (Art. 6(1)(f) GDPR).
+
 ### Hosting a world for friends (TRS Client)
 
 In the TRS Client you can open your singleplayer world for friends ("Host world") without port forwarding. The TRS
@@ -227,7 +247,7 @@ the TRS server.
 | Only with the TRS services on: the wardrobe entry of the TRS Client – your favourite skins, outfits (name, skin, cape) and emote wheel slots, with the time of the last change | The same wardrobe on every PC |
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
-| Reports you file and reports about you, each with an encrypted copy of the reported content and its context; warnings and chat mutes | Moderation (see above) |
+| Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count; your list of players banned from all your worlds | Hosting a world for friends (see above) |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
@@ -274,7 +294,7 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   your online status, all synced skins, presets and settings, all your direct chats (for both sides) and your messages,
   reactions and pictures in groups (groups you own go to the longest member). Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
-- Only an existing ban record (your UUID, the reason and the time), an active chat mute and reports about you (until
+- Only active sanctions (such as a ban or a running chat mute, with reason and period) and reports about you (until
   their retention ends, see above) are kept after deletion, so they can't be escaped by signing in again.
 - Server logs contain only technical data (method, path without query, status, duration, request id) – **no IP
   addresses and no tokens**. Rate limits count requests per IP address and per account **in memory only**; those

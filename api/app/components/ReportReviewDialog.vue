@@ -16,26 +16,32 @@ async function load() {
   error.value = ''
   try {
     report.value = (await api<{ report: ReportDetail }>(`/v1/admin/reports/${props.reportId}`)).report
+    if (!draft.value.reasonCode) draft.value.reasonCode = REPORT_TO_REASON[report.value.reason] ?? 'other'
   } catch (e) {
     error.value = fill(m.value.admin.failed, { error: apiMessage(e) })
   }
 }
 
 // --- Entscheidung ----------------------------------------------------------------------------
-const reason = ref('')
-const minutes = ref<'60' | '1440' | '10080' | '43200' | 'forever'>('1440')
+const { a: at } = useAdminText()
+const { session } = useAdmin()
+const REPORT_TO_REASON: Record<string, string> = {
+  insult_hate: 'insult_hate', spam: 'spam', inappropriate: 'inappropriate_content', scam_phishing: 'scam_phishing', harassment: 'harassment', other: 'other',
+}
+const draft = ref(newSanctionDraft('chat_mute'))
+const sanctionForm = shallowRef<{ valid: boolean } | null>(null)
 const keepOpen = ref(false)
 const includeRelated = ref(false)
 const note = ref('')
-const confirmBan = ref(false)
+const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_message'>(null)
+const limits = computed(() => session.value?.limits ?? { kinds: [], maxMinutes: 0, maxWarnMinutes: 0, permanent: false })
 
 function resetForm() {
-  reason.value = ''
-  minutes.value = '1440'
+  draft.value = newSanctionDraft('chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
   keepOpen.value = false
   includeRelated.value = false
   note.value = ''
-  confirmBan.value = false
+  confirming.value = null
 }
 
 // Nach den Formular-Refs (sonst Zugriff vor der Initialisierung beim sofortigen Aufruf).
@@ -59,22 +65,27 @@ async function run(fn: () => Promise<{ report: ReportDetail }>) {
   }
 }
 
-function act(action: ReportAction) {
-  if (action === 'ban' && !confirmBan.value) {
-    confirmBan.value = true
-    return
-  }
-  confirmBan.value = false
+function act(action: 'sanction' | 'dismiss' | 'resolve' | 'delete_message') {
+  confirming.value = null
   const body: Record<string, unknown> = { action }
-  const r = reason.value.trim().slice(0, 200)
-  if (r && (action === 'warn' || action === 'mute' || action === 'ban')) body.reason = r
-  if (action === 'mute' && minutes.value !== 'forever') body.minutes = Number(minutes.value)
+  if (action === 'sanction') Object.assign(body, draftBody(draft.value))
   if (keepOpen.value && action !== 'dismiss' && action !== 'resolve') body.keepOpen = true
   if (includeRelated.value) body.includeRelated = true
   void run(() => api(`/v1/admin/reports/${props.reportId}/actions`, { method: 'POST', body })).then(() => {
     if (!error.value) resetForm()
   })
 }
+
+const sanctionSummary = computed(() => {
+  const d = draft.value
+  const dur = d.duration === 'custom' ? `${d.customValue} ${at.value.customUnit[d.customUnit]}` : at.value.durations[d.duration]
+  return fill(at.value.decision.confirmText, {
+    kind: at.value.kinds[d.kind] ?? d.kind,
+    name: name(report.value?.target),
+    duration: dur ?? '',
+    reason: at.value.reasons[d.reasonCode] ?? d.reasonCode,
+  })
+})
 
 function setStatus(status: 'open' | 'in_review') {
   void run(() => api(`/v1/admin/reports/${props.reportId}/status`, { method: 'POST', body: { status } }))
@@ -130,8 +141,8 @@ let returnFocus: HTMLElement | null = null
 function onKey(e: KeyboardEvent) {
   if (e.key !== 'Escape' || e.defaultPrevented) return
   e.preventDefault()
-  if (confirmBan.value) confirmBan.value = false
-  else emit('close')
+  if (document.querySelectorAll('[aria-modal="true"]').length > 1) return
+  emit('close')
 }
 function trapTab(e: KeyboardEvent) {
   if (e.key !== 'Tab' || !panel.value) return
@@ -274,7 +285,10 @@ onBeforeUnmount(() => {
           <aside class="space-y-5">
             <div class="rounded-lg border border-base-800 p-4">
               <p class="text-xs text-base-400">{{ t.target }}</p>
-              <p class="mt-1 font-semibold text-base-50">{{ name(report.target) }}</p>
+              <p class="mt-1 font-semibold text-base-50">
+                <NuxtLink v-if="report.target" :to="`/admin/players/${report.target.uuid}`" class="hover:underline">{{ name(report.target) }}</NuxtLink>
+                <template v-else>{{ name(report.target) }}</template>
+              </p>
               <p v-if="report.target" class="font-mono text-[11px] text-base-400">{{ report.target.uuid }}</p>
               <template v-if="report.targetModeration">
                 <p class="mt-2 text-xs text-base-300">{{ fill(t.targetStats, report.targetModeration.reports) }}</p>
@@ -297,7 +311,8 @@ onBeforeUnmount(() => {
             <div class="rounded-lg border border-base-800 p-4">
               <p class="text-xs text-base-400">{{ t.reporter }}</p>
               <p class="mt-1 flex flex-wrap items-center gap-2 font-semibold text-base-50">
-                {{ name(report.reporter) }}
+                <NuxtLink v-if="report.reporter" :to="`/admin/players/${report.reporter.uuid}`" class="hover:underline">{{ name(report.reporter) }}</NuxtLink>
+                <template v-else>{{ name(report.reporter) }}</template>
                 <span v-if="report.lowTrust" class="badge bg-lamp-900 text-lamp-300">{{ t.lowTrust }}</span>
               </p>
               <p v-if="report.reporterStats" class="mt-1 text-xs text-base-300">{{ fill(t.reporterStats, { actioned: report.reporterStats.actioned, dismissed: report.reporterStats.dismissed, open: report.reporterStats.open }) }}</p>
@@ -310,39 +325,42 @@ onBeforeUnmount(() => {
                 <button v-if="report.status === 'open'" type="button" class="btn btn-ghost text-xs" :disabled="busy" @click="setStatus('in_review')">{{ t.claim }}</button>
                 <button v-else type="button" class="btn btn-ghost text-xs" :disabled="busy" @click="setStatus('open')">{{ t.reopen }}</button>
               </div>
-              <label class="label mt-3" for="mod-reason">{{ t.reason }}</label>
-              <input id="mod-reason" v-model="reason" class="field" maxlength="200" />
-              <label class="label mt-3" for="mod-duration">{{ t.duration }}</label>
-              <select id="mod-duration" v-model="minutes" class="field">
-                <option value="60">{{ t.durations.d60 }}</option>
-                <option value="1440">{{ t.durations.d1440 }}</option>
-                <option value="10080">{{ t.durations.d10080 }}</option>
-                <option value="43200">{{ t.durations.d43200 }}</option>
-                <option value="forever">{{ t.durations.forever }}</option>
-              </select>
-              <label class="mt-3 flex items-start gap-2 text-xs text-base-300">
-                <input v-model="keepOpen" type="checkbox" class="mt-0.5" />{{ t.keepOpen }}
-              </label>
-              <label class="mt-2 flex items-start gap-2 text-xs text-base-300">
-                <input v-model="includeRelated" type="checkbox" class="mt-0.5" />{{ t.includeRelated }}
-              </label>
-              <div class="mt-4 grid grid-cols-2 gap-2">
-                <button v-if="report.messageId" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="act('delete_message')">
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <button v-if="report.messageId" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'delete_message'">
                   <SiteIcon name="trash" class="size-4" />{{ t.deleteMessage }}
                 </button>
-                <button type="button" class="btn btn-ghost text-sm" :disabled="busy || !report.target" @click="act('warn')">{{ t.warn }}</button>
-                <button type="button" class="btn btn-ghost text-sm" :disabled="busy || !report.target" @click="act('mute')">{{ t.mute }}</button>
-                <button type="button" class="btn btn-danger text-sm" :disabled="busy || !report.target" @click="act('ban')">{{ t.ban }}</button>
-                <button type="button" class="btn btn-ghost text-sm" :disabled="busy || resolved" @click="act('dismiss')">{{ t.dismiss }}</button>
-                <button type="button" class="btn btn-primary col-span-2 text-sm" :disabled="busy || resolved" @click="act('resolve')">
+                <button type="button" class="btn btn-ghost text-sm" :disabled="busy || resolved" @click="confirming = 'dismiss'">{{ t.dismiss }}</button>
+                <button type="button" class="btn btn-primary text-sm" :disabled="busy || resolved" @click="confirming = 'resolve'">
                   <SiteIcon name="check" class="size-4" />{{ t.resolve }}
                 </button>
               </div>
-              <p v-if="confirmBan" role="alert" class="mt-3 rounded-md bg-redstone-900 p-3 text-xs text-redstone-300">
-                {{ fill(t.confirmBan, { name: name(report.target) }) }}
-                <button type="button" class="btn btn-danger mt-2 w-full text-xs" :disabled="busy" @click="act('ban')">{{ t.ban }}</button>
-              </p>
+              <label class="mt-3 flex items-start gap-2 text-xs text-base-300">
+                <input v-model="includeRelated" type="checkbox" class="mt-0.5" />{{ t.includeRelated }}
+              </label>
             </div>
+
+            <div v-if="report.target" class="rounded-lg border border-base-800 p-4">
+              <h3 class="section-title flex items-center gap-2"><SiteIcon name="gavel" class="size-4 text-base-400" />{{ at.decision.sanction }}</h3>
+              <div class="mt-3">
+                <SanctionForm ref="sanctionForm" v-model="draft" :limits="limits" />
+              </div>
+              <label class="mt-3 flex items-start gap-2 text-xs text-base-300">
+                <input v-model="keepOpen" type="checkbox" class="mt-0.5" />{{ at.decision.keepOpen }}
+              </label>
+              <button type="button" class="btn btn-danger mt-3 w-full" :disabled="busy || !sanctionForm?.valid" @click="confirming = 'sanction'">
+                <SiteIcon name="gavel" class="size-4" />{{ at.decision.apply }}
+              </button>
+            </div>
+            <AdminConfirm
+              v-if="confirming"
+              :title="confirming === 'sanction' ? at.decision.confirmTitle : confirming === 'dismiss' ? t.dismiss : confirming === 'resolve' ? t.resolve : t.deleteMessage"
+              :text="confirming === 'sanction' ? sanctionSummary : ''"
+              :confirm-label="confirming === 'sanction' ? at.decision.apply : at.common.confirm"
+              :danger="confirming === 'sanction' || confirming === 'delete_message'"
+              :busy="busy"
+              @cancel="confirming = null"
+              @confirm="act(confirming!)"
+            />
 
             <div v-if="report.related.length" class="rounded-lg border border-base-800 p-4">
               <h3 class="section-title">{{ t.related }}</h3>

@@ -36,13 +36,13 @@ All details are in the [imprint](https://theredstonee.de/imprint/).
 | Cookie | Purpose | Duration |
 |---|---|---|
 | \`trs_lang\` | Remembers the language you picked | 1 year |
-| \`trs_admin\` | Keeps team admins signed in to the admin area (httpOnly, only after sign-in) | 8 hours |
+| \`trs_admin\` | Keeps team members (admins, moderators) signed in to the admin area (httpOnly, only after sign-in) | 8 hours |
 
 **Fonts and scripts** are served from this server – no external CDNs, no Google Fonts.
 
 **GitHub.** Downloads link to GitHub Releases, and pictures in update posts are loaded from \`raw.githubusercontent.com\`. When you download a file or open a post with pictures, your browser connects to GitHub, Inc. (USA), which receives your IP address; see GitHub's privacy statement. Our server asks the GitHub API for the newest version and reads the changelog – without any data about you.
 
-**Admin sign-in.** Team admins sign in by confirming a short code in the TRS Launcher. We store only a hash of the code, the admin's Minecraft UUID and a hash of the session token, each with an expiry time (code: 5 minutes, session: 8 hours); expired entries are deleted automatically. In the admin area, team admins also review **chat reports** – they only see the content that was reported and its context (see “Reports and moderation” below); reported pictures are loaded from this server only.
+**Admin sign-in.** Team admins sign in by confirming a short code in the TRS Launcher. We store only a hash of the code, the admin's Minecraft UUID and a hash of the session token, each with an expiry time (code: 5 minutes, session: 8 hours); expired entries are deleted automatically. In the admin area, team admins and moderators also review **chat reports** – they only see the content that was reported and its context (see “Reports and moderation” below); reported pictures are loaded from this server only. They also manage sanctions, appeals and internal notes (see “Sanctions and appeals” below); every action is written to an audit log (kept 2 years).
 
 **Links** to Discord, GitHub and other sites are plain links; nothing is loaded from them until you click.`,
     launcher: '## The TRS Launcher',
@@ -71,13 +71,13 @@ Alle Angaben stehen im [Impressum](https://theredstonee.de/imprint/).
 | Cookie | Zweck | Dauer |
 |---|---|---|
 | \`trs_lang\` | Merkt sich die gewählte Sprache | 1 Jahr |
-| \`trs_admin\` | Hält Team-Admins im Admin-Bereich angemeldet (httpOnly, nur nach Anmeldung) | 8 Stunden |
+| \`trs_admin\` | Hält Team-Mitglieder (Admins, Moderatoren) im Admin-Bereich angemeldet (httpOnly, nur nach Anmeldung) | 8 Stunden |
 
 **Schriften und Skripte** kommen von diesem Server – keine externen CDNs, keine Google Fonts.
 
 **GitHub.** Downloads verweisen auf GitHub Releases, und Bilder in Update-Beiträgen werden von \`raw.githubusercontent.com\` geladen. Lädst du eine Datei herunter oder öffnest einen Beitrag mit Bildern, verbindet sich dein Browser mit GitHub, Inc. (USA), das dabei deine IP-Adresse erhält; siehe die Datenschutzerklärung von GitHub. Unser Server fragt die GitHub-API nach der neuesten Version und liest den Changelog – ohne Daten über dich.
 
-**Admin-Anmeldung.** Team-Admins melden sich an, indem sie einen kurzen Code im TRS Launcher bestätigen. Gespeichert werden nur ein Hash des Codes, die Minecraft-UUID des Admins und ein Hash des Sitzungs-Tokens, jeweils mit Ablaufzeit (Code: 5 Minuten, Sitzung: 8 Stunden); abgelaufene Einträge werden automatisch gelöscht. Im Admin-Bereich prüfen Team-Admins außerdem **Chat-Meldungen** – sie sehen nur den gemeldeten Inhalt samt Kontext (siehe „Meldungen und Moderation“ unten); gemeldete Bilder werden nur von diesem Server geladen.
+**Admin-Anmeldung.** Team-Admins melden sich an, indem sie einen kurzen Code im TRS Launcher bestätigen. Gespeichert werden nur ein Hash des Codes, die Minecraft-UUID des Admins und ein Hash des Sitzungs-Tokens, jeweils mit Ablaufzeit (Code: 5 Minuten, Sitzung: 8 Stunden); abgelaufene Einträge werden automatisch gelöscht. Im Admin-Bereich prüfen Team-Admins und Moderatoren außerdem **Chat-Meldungen** – sie sehen nur den gemeldeten Inhalt samt Kontext (siehe „Meldungen und Moderation“ unten); gemeldete Bilder werden nur von diesem Server geladen. Außerdem verwalten sie Strafen, Einsprüche und interne Notizen (siehe „Strafen und Einsprüche“ unten); jede Aktion steht in einem Audit-Log (2 Jahre).
 
 **Links** zu Discord, GitHub und anderen Seiten sind einfache Links; von dort wird erst etwas geladen, wenn du klickst.`,
     launcher: '## Der TRS Launcher',
@@ -106,13 +106,13 @@ Todos los datos están en el [aviso legal](https://theredstonee.de/imprint/).
 | Cookie | Finalidad | Duración |
 |---|---|---|
 | \`trs_lang\` | Recuerda el idioma elegido | 1 año |
-| \`trs_admin\` | Mantiene la sesión de los administradores del equipo (httpOnly, solo tras iniciar sesión) | 8 horas |
+| \`trs_admin\` | Mantiene la sesión de los administradores y moderadores del equipo (httpOnly, solo tras iniciar sesión) | 8 horas |
 
 **Fuentes y scripts** se sirven desde este servidor – sin CDN externos ni Google Fonts.
 
 **GitHub.** Las descargas enlazan a GitHub Releases y las imágenes de las entradas se cargan desde \`raw.githubusercontent.com\`; tu navegador se conecta entonces a GitHub, Inc. (EE. UU.), que recibe tu dirección IP.
 
-**Inicio de sesión de administración.** Solo se guardan un hash del código, la UUID de Minecraft del administrador y un hash del token de sesión, con caducidad (código: 5 minutos, sesión: 8 horas). En el área de administración, los administradores del equipo también revisan las **denuncias del chat**: solo ven el contenido denunciado y su contexto (ver «Denuncias y moderación» más abajo); las imágenes denunciadas se cargan solo desde este servidor.`,
+**Inicio de sesión de administración.** Solo se guardan un hash del código, la UUID de Minecraft del administrador y un hash del token de sesión, con caducidad (código: 5 minutos, sesión: 8 horas). En el área de administración, los administradores y moderadores del equipo también revisan las **denuncias del chat**: solo ven el contenido denunciado y su contexto (ver «Denuncias y moderación» más abajo); las imágenes denunciadas se cargan solo desde este servidor. También gestionan sanciones, apelaciones y notas internas (ver «Sanciones y apelaciones» más abajo); cada acción queda en un registro de auditoría (2 años).`,
     launcher: '## El TRS Launcher',
   },
 }

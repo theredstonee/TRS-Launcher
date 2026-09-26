@@ -32,6 +32,24 @@ const PATHS: Record<string, string> = {
   fit: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
   trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13',
   flag: 'M5 21V4M5 4h11l-2 4 2 4H5',
+  // Team-Bereich
+  home: 'M4 11l8-7 8 7v9h-5v-6H9v6H4z',
+  appeal: 'M6 4h9l4 4v12H6zM15 4v4h4M9 12h6M9 16h4',
+  users: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c.7-3.5 3.2-5 6-5s5.3 1.5 6 5M16 5.5a3 3 0 0 1 0 5.5M18 15c1.6.7 2.6 2.4 3 5',
+  ban: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM5.6 5.6l12.8 12.8',
+  ticket: 'M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4zM14 7v10',
+  filter: 'M4 5h16l-6 8v5l-4 2v-7z',
+  key: 'M8 15a4 4 0 1 1 3.4-6H21v3h-2v2h-3v-2h-4.6A4 4 0 0 1 8 15z',
+  list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
+  keyboard: 'M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M7 14h10',
+  clock: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 7v5l3 2',
+  note: 'M5 4h14v16H5zM9 9h6M9 13h6M9 17h3',
+  server: 'M4 5h16v6H4zM4 13h16v6H4zM8 8h.01M8 16h.01',
+  refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6',
+  warn: 'M12 4l9 16H3zM12 10v4M12 17h.01',
+  chat: 'M4 5h16v11H9l-5 4z',
+  world: 'M4 6l8-3 8 3v12l-8 3-8-3zM4 6l8 3 8-3M12 9v12',
+  gavel: 'M13 4l7 7M11 6l7 7M9.5 7.5l7 7M14 9l-9 9 2 2 9-9',
 }
 
 // Marken als ausgefüllte Formen.

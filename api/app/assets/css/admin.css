@@ -1,0 +1,443 @@
+/*
+ * Team-Bereich (/admin): Bausteine auf den Tokens der Website (main.css). Statusfarben als Töne
+ * (Hintergrund = Farbe mit wenig Deckkraft), damit sie auf dunklem und hellem Grund lesbar bleiben.
+ */
+
+.adm-shell {
+  --adm-sidebar: 15.5rem;
+  min-height: 100dvh;
+  background: var(--color-base-950);
+  color: var(--color-base-200);
+}
+
+/* ---------------------------------------------------------------- Seitenleiste */
+.adm-side {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: var(--adm-sidebar);
+  border-right: 1px solid var(--color-base-800);
+  background: var(--color-base-900);
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+}
+.adm-side[data-open="true"] {
+  transform: none;
+  box-shadow: 0 0 40px rgb(0 0 0 / 0.5);
+}
+@media (min-width: 1024px) {
+  .adm-side {
+    transform: none;
+    box-shadow: none;
+  }
+  .adm-main {
+    padding-left: var(--adm-sidebar);
+  }
+}
+.adm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgb(0 0 0 / 0.55);
+}
+.adm-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-base-400);
+  transition: background-color 0.15s, color 0.15s;
+}
+.adm-nav-link:hover {
+  color: var(--color-base-50);
+  background: var(--color-base-850);
+}
+.adm-nav-link.router-link-active {
+  color: var(--color-base-50);
+  background: var(--color-base-800);
+  box-shadow: inset 3px 0 0 var(--color-redstone-500);
+}
+.adm-nav-link.adm-exact:not(.router-link-exact-active) {
+  color: var(--color-base-400);
+  background: transparent;
+  box-shadow: none;
+}
+.adm-nav-count {
+  margin-left: auto;
+  min-width: 1.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.25rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-base-950);
+  background: var(--color-lamp-400);
+}
+.adm-nav-count.hot {
+  color: #fff;
+  background: var(--color-redstone-500);
+}
+
+/* ---------------------------------------------------------------- Kopfzeile */
+.adm-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 3.75rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--color-base-800);
+  background: color-mix(in srgb, var(--color-base-950) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.adm-kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.3rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--color-base-700);
+  border-bottom-width: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-base-200);
+  background: var(--color-base-850);
+}
+
+/* ---------------------------------------------------------------- Inhalt */
+.adm-page {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+@media (min-width: 640px) {
+  .adm-page {
+    padding: 2rem 1.75rem 5rem;
+  }
+}
+.adm-title {
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  line-height: 1.1;
+  color: var(--color-base-50);
+}
+.adm-lead {
+  margin-top: 0.375rem;
+  max-width: 48rem;
+  font-size: 0.875rem;
+  color: var(--color-base-400);
+}
+.adm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.adm-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-900);
+}
+.adm-seg > button {
+  padding: 0.3rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--color-base-400);
+  white-space: nowrap;
+}
+.adm-seg > button:hover {
+  color: var(--color-base-50);
+}
+.adm-seg > button[aria-pressed="true"] {
+  color: var(--color-base-50);
+  background: var(--color-base-700);
+}
+.adm-select {
+  width: auto;
+  min-width: 8rem;
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+.adm-row {
+  position: relative;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-900);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.adm-row:hover {
+  border-color: var(--color-base-700);
+  background: var(--color-base-850);
+}
+.adm-row[data-active="true"] {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 70%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-redstone-500) 40%, transparent);
+}
+.adm-row[data-selected="true"] {
+  background: color-mix(in srgb, var(--color-redstone-900) 45%, var(--color-base-900));
+}
+.adm-check {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.2rem;
+  accent-color: var(--color-redstone-500);
+  flex-shrink: 0;
+}
+.adm-bulkbar {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-base-700);
+  background: var(--color-base-850);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+}
+.adm-stat {
+  padding: 1rem 1.125rem;
+}
+.adm-stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-base-50);
+}
+.adm-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-base-400);
+}
+.adm-stat.warn {
+  border-color: color-mix(in srgb, var(--color-lamp-400) 55%, transparent);
+}
+.adm-stat.hot {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 60%, transparent);
+}
+.adm-dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  font-size: 0.8125rem;
+}
+.adm-dl dt {
+  color: var(--color-base-400);
+}
+.adm-dl dd {
+  color: var(--color-base-100, var(--color-base-200));
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.adm-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed var(--color-base-700);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-base-400);
+}
+.adm-mono {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.adm-note {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- Töne (Badges) */
+.tone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tone-danger,
+.kind-account_ban {
+  color: #ff8f85;
+  background: color-mix(in srgb, #e0281e 22%, transparent);
+}
+.tone-warn,
+.kind-warn {
+  color: #ffd48a;
+  background: color-mix(in srgb, #ffb84d 18%, transparent);
+}
+.tone-info,
+.kind-chat_mute {
+  color: #9dbaff;
+  background: color-mix(in srgb, #3563e9 24%, transparent);
+}
+.kind-social_ban {
+  color: #dcbcff;
+  background: color-mix(in srgb, #9b4ddf 24%, transparent);
+}
+.kind-upload_ban {
+  color: #7ee0d0;
+  background: color-mix(in srgb, #14a38b 22%, transparent);
+}
+.kind-hosting_ban {
+  color: #f5b0e0;
+  background: color-mix(in srgb, #c0398f 22%, transparent);
+}
+.tone-ok {
+  color: #5ee08a;
+  background: color-mix(in srgb, #5ee08a 16%, transparent);
+}
+.tone-muted {
+  color: var(--color-base-400);
+  background: var(--color-base-800);
+}
+.tone-lifted {
+  color: var(--color-base-400);
+  background: var(--color-base-800);
+  text-decoration: line-through;
+}
+:root[data-theme="light"] .tone-danger,
+:root[data-theme="light"] .kind-account_ban {
+  color: #b31a12;
+}
+:root[data-theme="light"] .tone-warn,
+:root[data-theme="light"] .kind-warn {
+  color: #8a5200;
+}
+:root[data-theme="light"] .tone-info,
+:root[data-theme="light"] .kind-chat_mute {
+  color: #2447b8;
+}
+:root[data-theme="light"] .kind-social_ban {
+  color: #7a2fc0;
+}
+:root[data-theme="light"] .kind-upload_ban {
+  color: #0d7463;
+}
+:root[data-theme="light"] .kind-hosting_ban {
+  color: #962a6e;
+}
+:root[data-theme="light"] .tone-ok {
+  color: #177a3b;
+}
+
+/* Aufgehobene Strafen im Verlauf: sichtbar, aber durchgestrichen. */
+.adm-lifted .adm-strike {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--color-base-400) 70%, transparent);
+}
+.adm-lifted {
+  opacity: 0.78;
+}
+
+/* ---------------------------------------------------------------- Dialoge */
+.adm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: rgb(0 0 0 / 0.7);
+  backdrop-filter: blur(3px);
+}
+@media (min-width: 640px) {
+  .adm-backdrop {
+    padding: 3rem 1.5rem;
+  }
+}
+.adm-dialog:focus,
+.adm-dialog:focus-visible {
+  outline: none;
+}
+.adm-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--color-base-200);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.adm-option:hover:not(:disabled) {
+  border-color: var(--color-base-700);
+}
+.adm-option[aria-pressed="true"] {
+  border-color: var(--color-redstone-500);
+  background: color-mix(in srgb, var(--color-redstone-900) 55%, var(--color-base-950));
+  color: var(--color-base-50);
+}
+.adm-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.adm-chip-btn {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-base-700);
+  font-size: 0.8125rem;
+  color: var(--color-base-200);
+  background: var(--color-base-900);
+}
+.adm-chip-btn[aria-pressed="true"] {
+  border-color: var(--color-redstone-500);
+  color: var(--color-base-50);
+  background: color-mix(in srgb, var(--color-redstone-900) 60%, var(--color-base-900));
+}
+.adm-chip-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Kleine Grafik (inline SVG). */
+.adm-chart rect.bar {
+  fill: color-mix(in srgb, var(--color-redstone-500) 80%, transparent);
+}
+.adm-chart rect.bar:hover {
+  fill: var(--color-redstone-400);
+}
+.adm-chart line.grid {
+  stroke: var(--color-base-800);
+}
+.adm-chart text {
+  fill: var(--color-base-400);
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-side {
+    transition: none;
+  }
+}
