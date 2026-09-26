@@ -21,7 +21,18 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
+
+<!-- banner: accent=#ff9f3d motif=/news/0.7.0/banner.png -->
+<!-- shots:
+/news/0.7.0/chat.png | Social: chat with friends, groups, pictures and server invites | Sozial: Chat mit Freunden, Gruppen, Bildern und Server-Einladungen
+/news/0.7.0/friends.png | Friends, requests and blocked players side by side | Freunde, Anfragen und Blockierte nebeneinander
+/news/0.7.0/notifications.png | Notifications for messages, requests and friends coming online | Benachrichtigungen für Nachrichten, Anfragen und Freunde, die online kommen
+/news/0.7.0/ingame-chat.png | Chat right inside the game with the TRS Client | Chat direkt im Spiel mit dem TRS Client
+/news/0.7.0/ingame-quick-reply.png | Quick reply without leaving the game | Schnellantwort, ohne das Spiel zu verlassen
+/news/0.7.0/clip-trim.png | New clip player: play, trim and share clips | Neuer Clip-Player: Clips abspielen, zuschneiden und teilen
+/news/0.7.0/news-dialog.png | Update news with banner and screenshots | Update-News mit Banner und Screenshots
+-->
 
 ### English
 
