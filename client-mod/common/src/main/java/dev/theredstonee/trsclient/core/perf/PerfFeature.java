@@ -25,7 +25,11 @@ public enum PerfFeature {
 	STARS("stars", "Stars"),
 	FOG("fog", "Fog"),
 	WEATHER("weather", "Rain and snow"),
-	TEXTURE_ANIMATIONS("textureAnimations", "Texture animations");
+	TEXTURE_ANIMATIONS("textureAnimations", "Texture animations"),
+	/** Netzwerk-Optimierung: schnellere Entschlüsselung + Kompression ohne Kopien (core.net.NetBoost). */
+	NET_CODECS("netCodecs", "Faster decryption and compression"),
+	/** Niedrige Eingabeverzögerung: GPU-Warteschlange begrenzen (LowLatency). */
+	LOW_LATENCY("lowLatency", "Frame queue limit");
 
 	private final String id;
 	private final String fallback;

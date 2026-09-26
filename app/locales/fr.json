@@ -1157,7 +1157,6 @@
   "servers": {
     "title": "Serveurs",
     "subtitle": "Ajoute-les une fois – disponibles dans chaque instance, avec statut en direct et connexion en un clic.",
-    "refreshing": "Actualisation…",
     "add": "Ajouter un serveur",
     "joinWith": "Rejoindre avec",
     "lastPlayed": "{name} (dernière partie)",
@@ -1171,6 +1170,13 @@
       "checking": "Vérification…",
       "unreachable": "Injoignable",
       "join": "Rejoindre"
+    },
+    "ping": {
+      "test": "Test de ping",
+      "running": "Mesure du ping…",
+      "sort": "Trier par ping",
+      "sortHint": "Change seulement l’ordre d’affichage : les serveurs joignables avec le ping le plus bas en premier.",
+      "hint": "Mesure la latence vers chaque serveur. Cela ne peut pas rendre un serveur plus rapide."
     }
   },
   "serverDialog": {
@@ -3654,7 +3660,9 @@
       "running": "L’instance est déjà lancée",
       "joinHint": "Lance l’instance et se connecte à « {name} »",
       "notJoinable": "Impossible de rejoindre cette adresse directement – lance le jeu et rejoins via la liste.",
-      "joinNote": "Rejoindre lance le jeu et se connecte directement. Les très anciennes versions n’ouvrent que le menu principal."
+      "joinNote": "Rejoindre lance le jeu et se connecte directement. Les très anciennes versions n’ouvrent que le menu principal.",
+      "pingCooldown": "Attends quelques secondes avant le prochain test de ping.",
+      "sortNote": "Trié par ping uniquement à l’affichage : la liste des serveurs du jeu garde son ordre."
     }
   },
   "share": {

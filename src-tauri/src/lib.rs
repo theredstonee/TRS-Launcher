@@ -341,6 +341,7 @@ pub fn run() {
             commands::worlds::backup_world,
             commands::worlds::trash_world,
             commands::worlds::instance_servers,
+            commands::worlds::ping_instance_servers,
             commands::worlds::add_instance_server,
             commands::worlds::update_instance_server,
             commands::worlds::remove_instance_server,

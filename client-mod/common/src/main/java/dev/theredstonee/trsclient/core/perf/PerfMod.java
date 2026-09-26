@@ -36,7 +36,9 @@ public enum PerfMod {
 	LITHIUM("Lithium", new String[]{"lithium"}, EnumSet.noneOf(PerfFeature.class)),
 	VINTAGEFIX("VintageFix", new String[]{"vintagefix"}, EnumSet.noneOf(PerfFeature.class)),
 	VANILLAFIX("VanillaFix", new String[]{"vanillafix"}, EnumSet.noneOf(PerfFeature.class)),
-	FOAMFIX("FoamFix", new String[]{"foamfix"}, EnumSet.noneOf(PerfFeature.class));
+	FOAMFIX("FoamFix", new String[]{"foamfix"}, EnumSet.noneOf(PerfFeature.class)),
+	/** Ersetzt Kompression und Verschlüsselung der Verbindung selbst (native Bibliotheken) – dann bleibt TRS dort aus. */
+	KRYPTON("Krypton", new String[]{"krypton"}, EnumSet.of(PerfFeature.NET_CODECS));
 
 	private final String displayName;
 	private final String[] ids;

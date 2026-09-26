@@ -101,6 +101,11 @@ public final class AutoTest {
 			HostingTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=ping: Ping-Test der Serverliste, Ping-HUD, Entpacken vorher/nachher, Eingabeverzögerung
+		if ("ping".equals(System.getProperty("trsclient.autotest.only"))) {
+			PingTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=socialtoasts: nur Sozial-Toasts neben dem Vanilla-Erfolgsfenster (Ausweichen) und über einem Menü
 		if ("socialtoasts".equals(System.getProperty("trsclient.autotest.only"))) {
 			SocialTest.installToasts();

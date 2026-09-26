@@ -153,7 +153,7 @@ public final class TrsClient {
 					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline || m == modules.shieldPosition
 					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors
 					|| m == modules.entityCulling || m == modules.particles || m == modules.worldDetails
-					|| m == modules.menuStyle)) {
+					|| m == modules.menuStyle || m == modules.netOptimize || m == modules.lowLatency)) {
 				continue;
 			}
 			visibleModules.add(m);
@@ -252,6 +252,8 @@ public final class TrsClient {
 				true);
 				//?} else
 				/*false);*/
+		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
+		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (Forge {}) – {} Module, Config {} ({})",
@@ -421,6 +423,7 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
 		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
+		dev.theredstonee.trsclient.net.NetHooks.tick(mc);
 	}
 
 	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
-use trs_core::servers::{InstanceServer, ServerInput};
+use trs_core::servers::{InstancePing, InstanceServer, ServerInput};
 use trs_core::worlds;
 
 use super::tasks::tracked;
@@ -69,6 +69,15 @@ pub async fn trash_world(launcher: State<'_, LauncherState>, id: String, folder:
 pub async fn instance_servers(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<InstanceServer>> {
     let instance = launcher.instances().get(&id).await?;
     Ok(launcher.servers().list_instance(&launcher.paths().instance_game_dir(&instance.id)).await?)
+}
+
+/// Ping-Test über alle Server der Instanz (höchstens 4 gleichzeitig). Die
+/// Adressen kommen aus ihrer `servers.dat` – wie bei `ping_server` gibt das
+/// Webview keine Hosts vor.
+#[tauri::command]
+pub async fn ping_instance_servers(launcher: State<'_, LauncherState>, instance_id: String) -> CommandResult<Vec<InstancePing>> {
+    let instance = launcher.instances().get(&instance_id).await?;
+    Ok(launcher.servers().ping_instance(&launcher.paths().instance_game_dir(&instance.id)).await?)
 }
 
 #[tauri::command]

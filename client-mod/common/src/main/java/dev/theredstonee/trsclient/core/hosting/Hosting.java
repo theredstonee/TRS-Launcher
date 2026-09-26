@@ -129,13 +129,16 @@ public final class Hosting {
 		public final PeerStream.Path path;
 		public final PlayerRights rights;
 		public final boolean host;
+		/** Ping laut Server in ms, -1 = unbekannt. */
+		public final int latency;
 
-		Guest(String uuid, String name, PeerStream.Path path, PlayerRights rights, boolean host) {
+		Guest(String uuid, String name, PeerStream.Path path, PlayerRights rights, boolean host, int latency) {
 			this.uuid = uuid;
 			this.name = name;
 			this.path = path;
 			this.rights = rights;
 			this.host = host;
+			this.latency = latency;
 		}
 	}
 
@@ -502,7 +505,7 @@ public final class Hosting {
 			boolean host = pl.uuid != null && pl.uuid.equals(self);
 			PeerStream.Path path = host ? null : pathOf(s, pl);
 			PlayerRights r = s.rights.get(pl.uuid);
-			Guest g = new Guest(pl.uuid, pl.name, path, r == null ? PlayerRights.DEFAULT : r, host);
+			Guest g = new Guest(pl.uuid, pl.name, path, r == null ? PlayerRights.DEFAULT : r, host, pl.latency);
 			if (host) out.add(0, g);
 			else out.add(g);
 		}

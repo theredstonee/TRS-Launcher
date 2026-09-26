@@ -1,46 +1,47 @@
 package dev.theredstonee.trsclient.hud;
 
-import dev.theredstonee.trsclient.core.module.HudModule;
-import net.minecraft.client.gui.GuiPlayerInfo;
-import net.minecraft.client.network.NetHandlerPlayClient;
+import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.net.PingPanel;
+import dev.theredstonee.trsclient.core.ui.TextWidth;
+import dev.theredstonee.trsclient.ui.BrandCanvas;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 
-import java.util.List;
+/**
+ * Ping mit Jitter und Verlauf (Messung und Zeichnen in {@code core.net}: {@link PingPanel}). In Minecraft 1.7.10 kommt der
+ * Wert vom Server (Spielerliste) – eigene Ping-Anfragen gibt es im Protokoll dieser Version nicht.
+ */
+public final class PingHud extends HudElement {
+	private static final TextWidth MEASURE = new TextWidth() {
+		@Override
+		public int width(String text) {
+			return Minecraft.getMinecraft().fontRenderer.getStringWidth(text);
+		}
+	};
+	private final PingPanel panel;
 
-/** Latenz zum Server laut Spielerliste (1.7.10: Einträge nach Spielernamen); im Einzelspieler ausgeblendet. */
-public final class PingHud extends TextHudElement {
-	private static final int PREVIEW_PING = 42;
-
-	public PingHud(HudModule module) {
-		super(module);
+	public PingHud(TrsModules modules) {
+		super(modules.ping);
+		this.panel = new PingPanel(modules);
 	}
 
 	@Override
 	public boolean visible() {
-		return !mc.isSingleplayer() && entry() != null;
+		return panel.visible();
 	}
 
 	@Override
-	protected long valueKey(boolean preview) {
-		GuiPlayerInfo info = entry();
-		if (info == null || mc.isSingleplayer()) return PREVIEW_PING;
-		return info.responseTime;
+	public int width(FontRenderer font, boolean preview) {
+		return panel.width(MEASURE, preview);
 	}
 
 	@Override
-	protected String format(long key) {
-		return key + " ms";
+	public int height(FontRenderer font, boolean preview) {
+		return panel.height(preview);
 	}
 
-	private GuiPlayerInfo entry() {
-		NetHandlerPlayClient net = mc.getNetHandler();
-		if (mc.thePlayer == null || net == null) return null;
-		String name = mc.thePlayer.getCommandSenderName();
-		@SuppressWarnings("unchecked")
-		List<GuiPlayerInfo> list = net.playerInfoList;
-		for (int i = 0, n = list.size(); i < n; i++) {
-			GuiPlayerInfo info = list.get(i);
-			if (info != null && name.equals(info.name)) return info;
-		}
-		return null;
+	@Override
+	public void draw(FontRenderer font, boolean preview) {
+		panel.draw(BrandCanvas.of(font), MEASURE, preview);
 	}
 }

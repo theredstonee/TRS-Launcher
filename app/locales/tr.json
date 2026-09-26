@@ -1157,7 +1157,6 @@
   "servers": {
     "title": "Sunucular",
     "subtitle": "Bir kez ekle – canlı durum ve tek tıkla katılma ile her kurulumda kullanılabilir.",
-    "refreshing": "Yenileniyor …",
     "add": "Sunucu ekle",
     "joinWith": "Şununla katıl",
     "lastPlayed": "{name} (son oynanan)",
@@ -1171,6 +1170,13 @@
       "checking": "Kontrol ediliyor …",
       "unreachable": "Ulaşılamıyor",
       "join": "Katıl"
+    },
+    "ping": {
+      "test": "Ping testi",
+      "running": "Ping ölçülüyor …",
+      "sort": "Pinge göre sırala",
+      "sortHint": "Yalnızca görüntüleme sırasını değiştirir – en düşük pingli erişilebilir sunucular önce.",
+      "hint": "Her sunucuya olan gecikmeyi ölçer. Bir sunucuyu daha hızlı yapamaz."
     }
   },
   "serverDialog": {
@@ -3654,7 +3660,9 @@
       "running": "Örnek zaten çalışıyor",
       "joinHint": "Örneği başlatır ve “{name}” sunucusuna bağlanır",
       "notJoinable": "Bu adrese doğrudan katılınamıyor – oyunu başlat ve listeden katıl.",
-      "joinNote": "Katıl oyunu başlatır ve hemen bağlanır. Çok eski sürümler yalnızca ana menüyü açar."
+      "joinNote": "Katıl oyunu başlatır ve hemen bağlanır. Çok eski sürümler yalnızca ana menüyü açar.",
+      "pingCooldown": "Bir sonraki ping testinden önce birkaç saniye bekleyin.",
+      "sortNote": "Yalnızca görünüm pinge göre sıralandı – oyundaki sunucu listesi sırasını korur."
     }
   },
   "share": {

@@ -1157,7 +1157,6 @@
   "servers": {
     "title": "Servers",
     "subtitle": "Eén keer toevoegen – beschikbaar in elke instantie, met live status en joinen met één klik.",
-    "refreshing": "Vernieuwen …",
     "add": "Server toevoegen",
     "joinWith": "Joinen met",
     "lastPlayed": "{name} (laatst gespeeld)",
@@ -1171,6 +1170,13 @@
       "checking": "Controleren …",
       "unreachable": "Onbereikbaar",
       "join": "Joinen"
+    },
+    "ping": {
+      "test": "Pingtest",
+      "running": "Ping meten …",
+      "sort": "Sorteren op ping",
+      "sortHint": "Verandert alleen de weergavevolgorde – bereikbare servers met de laagste ping eerst.",
+      "hint": "Meet de latentie naar elke server. Een server wordt er niet sneller van."
     }
   },
   "serverDialog": {
@@ -3654,7 +3660,9 @@
       "running": "De instantie draait al",
       "joinHint": "Start de instantie en verbindt met “{name}”",
       "notJoinable": "Dit adres kan niet direct worden gejoind – start het spel en join via de serverlijst.",
-      "joinNote": "Joinen start het spel en verbindt meteen. Heel oude versies openen alleen het hoofdmenu."
+      "joinNote": "Joinen start het spel en verbindt meteen. Heel oude versies openen alleen het hoofdmenu.",
+      "pingCooldown": "Wacht een paar seconden tot de volgende pingtest.",
+      "sortNote": "Alleen de weergave is op ping gesorteerd – de serverlijst in het spel behoudt haar volgorde."
     }
   },
   "share": {

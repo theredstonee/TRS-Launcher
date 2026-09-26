@@ -1157,7 +1157,6 @@
   "servers": {
     "title": "Servidores",
     "subtitle": "Adicione uma vez – disponível em todas as instâncias, com status ao vivo e entrada com um clique.",
-    "refreshing": "Atualizando …",
     "add": "Adicionar servidor",
     "joinWith": "Entrar com",
     "lastPlayed": "{name} (último jogado)",
@@ -1171,6 +1170,13 @@
       "checking": "Verificando …",
       "unreachable": "Inacessível",
       "join": "Entrar"
+    },
+    "ping": {
+      "test": "Teste de ping",
+      "running": "Medindo ping …",
+      "sort": "Ordenar por ping",
+      "sortHint": "Muda só a ordem de exibição – servidores acessíveis com menor ping primeiro.",
+      "hint": "Mede a latência até cada servidor. Não deixa nenhum servidor mais rápido."
     }
   },
   "serverDialog": {
@@ -3654,7 +3660,9 @@
       "running": "A instância já está em execução",
       "joinHint": "Inicia a instância e conecta a “{name}”",
       "notJoinable": "Não é possível entrar neste endereço diretamente – inicie o jogo e entre pela lista.",
-      "joinNote": "Entrar inicia o jogo e conecta na hora. Versões muito antigas só abrem o menu principal."
+      "joinNote": "Entrar inicia o jogo e conecta na hora. Versões muito antigas só abrem o menu principal.",
+      "pingCooldown": "Aguarde alguns segundos antes do próximo teste de ping.",
+      "sortNote": "Ordenado por ping só na exibição – a lista de servidores do jogo mantém a ordem."
     }
   },
   "share": {
