@@ -180,8 +180,13 @@ public final class PerfHooks {
 
 	// --- je Bild (Dynamische FPS) ---
 
+	/** Nur Selbsttests: läuft vor jedem Bild (der Bildpuffer enthält dann noch das vorige Bild). */
+	public static volatile Runnable frameProbe;
+
 	/** Vor jedem Bild (Minecraft#runTick). Begrenzt ggf. die Bildrate und passt die Lautstärke an. */
 	public static void beforeFrame() {
+		Runnable probe = frameProbe;
+		if (probe != null) probe.run();
 		FRAME_STATS.frame(System.nanoTime());
 		Performance p = perf;
 		if (p == null) return;

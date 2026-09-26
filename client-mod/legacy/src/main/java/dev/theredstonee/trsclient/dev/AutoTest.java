@@ -80,6 +80,10 @@ public final class AutoTest {
 			WardrobeTest.install();
 			return;
 		}
+		if ("connect".equals(System.getProperty("trsclient.autotest.only"))) {
+			ConnectTest.install();
+			return;
+		}
 		if ("menus".equals(System.getProperty("trsclient.autotest.only"))) {
 			MenusTest.install();
 			return;

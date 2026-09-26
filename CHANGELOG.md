@@ -16,6 +16,24 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **TRS Client: the resource loading screen stays in the TRS style from start to finish.** Fading in, loading and
+  fading out over the next screen no longer let the red Mojang screen, its logo or the white loading bar shine
+  through – at game start, after F3+T or changing resource packs, and when a server sends its resource pack while you
+  join. On the "Connecting to the server" screen the TRS logo, the status and the lamp row now always sit above the
+  "Cancel" button instead of being covered by it, at every window size and GUI scale.
+
+### Deutsch
+
+- **TRS Client: Der Ladebildschirm für Ressourcen bleibt von Anfang bis Ende im TRS-Stil.** Beim Einblenden, Laden und
+  Ausblenden über dem nächsten Bildschirm scheinen der rote Mojang-Bildschirm, sein Logo und der weiße Ladebalken nicht
+  mehr durch – beim Spielstart, nach F3+T oder dem Wechsel von Ressourcenpaketen und wenn ein Server beim Beitreten
+  sein Ressourcenpaket schickt. Auf dem Bildschirm „Verbinde mit dem Server“ stehen TRS-Logo, Status und Lampenreihe
+  jetzt immer über dem Knopf „Abbrechen“, statt von ihm verdeckt zu werden – bei jeder Fenstergröße und GUI-Skalierung.
+
 ## 0.6.4 – 2026-09-26 – The Workshop Update | Das Werkstatt-Update
 <!-- banner: accent=#d99a5b motif=/news/0.6.4/banner.png -->
 

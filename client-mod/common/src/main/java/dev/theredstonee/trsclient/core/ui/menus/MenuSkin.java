@@ -274,6 +274,45 @@ public final class MenuSkin {
 	 * durch) und eine Zeile darunter.
 	 */
 	public static void loading(Canvas c, int width, int height, String title, String detail, float progress, boolean inWorld) {
+		loading(c, width, height, title, detail, progress, inWorld, -1, -1);
+	}
+
+	/** Abstand zwischen Inhalt (Panel) und den Knöpfen des Bildschirms. */
+	private static final int LOADING_GAP = 6;
+
+	/** Höhe des Inhalts (Logo, Titel, Lampen, Zeile) bei Logo-Maßstab {@code scale}. */
+	static int loadingBlockHeight(int scale) {
+		return PixelFont.HEIGHT * scale + 14 + 12 + 22 + 12;
+	}
+
+	/**
+	 * Lage des Ladebildschirm-Inhalts: {top, scale}. Mittig, aber nie über den Knöpfen des Bildschirms
+	 * ({@code avoidTop}..{@code avoidBottom}, −1 = keine; Vanilla setzt „Abbrechen“ auf h/4+132, bei großen
+	 * Fenstern also oberhalb der Mitte): der Inhalt rückt nach oben, wird notfalls kleiner und steht nur,
+	 * wenn darüber gar kein Platz ist, unter den Knöpfen. Das Panel reicht 10 Pixel über den Inhalt hinaus.
+	 */
+	static int[] loadingLayout(int height, int avoidTop, int avoidBottom) {
+		int first = height >= 300 ? 4 : 3;
+		for (int scale = first; scale >= 2; scale--) {
+			int blockH = loadingBlockHeight(scale);
+			int centered = Math.max(8, (height - blockH) / 2 - 10);
+			if (avoidTop < 0) return new int[]{centered, scale};
+			int maxTop = avoidTop - LOADING_GAP - 10 - blockH;
+			if (maxTop >= 12) return new int[]{Math.min(centered, maxTop), scale};
+		}
+		int blockH = loadingBlockHeight(2);
+		int below = avoidBottom + LOADING_GAP + 10;
+		if (below + blockH + 10 <= height) return new int[]{below, 2};
+		return new int[]{Math.max(8, (height - loadingBlockHeight(first)) / 2 - 10), first};
+	}
+
+	/**
+	 * Wie {@link #loading(Canvas, int, int, String, String, float, boolean)}; {@code avoidTop}/{@code avoidBottom}
+	 * = senkrechter Bereich der Knöpfe des Bildschirms (−1 = keine). Reihenfolge von oben: Logo, Titel,
+	 * Lampen, Zeile, darunter die Knöpfe.
+	 */
+	public static void loading(Canvas c, int width, int height, String title, String detail, float progress, boolean inWorld,
+			int avoidTop, int avoidBottom) {
 		long start = System.nanoTime();
 		Theme t = Theme.get();
 		float time = seconds();
@@ -284,10 +323,11 @@ public final class MenuSkin {
 			c.fill(0, 0, width, height, 0x60000000);
 		}
 		int cx = width / 2;
-		int scale = height >= 300 ? 4 : 3;
+		int[] layout = loadingLayout(height, avoidTop, avoidBottom);
+		int top = layout[0];
+		int scale = layout[1];
 		int logoW = PixelFont.width("TRS") * scale;
-		int blockH = PixelFont.HEIGHT * scale + 14 + 12 + 22 + 12;
-		int top = Math.max(8, (height - blockH) / 2 - 10);
+		int blockH = loadingBlockHeight(scale);
 		// Panel hinter dem Inhalt, damit Text auf der Schaltung lesbar bleibt.
 		int pw = Math.min(width - 16, Math.max(220, Math.max(c.textWidth(title), c.textWidth(detail == null ? "" : detail)) + 40));
 		int ph = blockH + 20;
