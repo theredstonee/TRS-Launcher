@@ -207,6 +207,34 @@ borran las copias, notas e imágenes, y la denuncia en sí (sin contenido) al ca
 denuncias se conservan sin tu nombre; las denuncias contra ti y un silencio activo se conservan hasta que terminen esos
 plazos, para que la moderación no se pueda eludir borrando la cuenta.
 
+### Alojar un mundo para amigos (TRS Client)
+
+En el TRS Client puedes abrir tu mundo de un jugador a tus amigos («Alojar mundo») sin abrir puertos. El servidor TRS
+solo gestiona **quién puede entrar** y ayuda a que los dos juegos **se encuentren**; el juego en sí nunca pasa por el
+servidor TRS.
+
+- **Guardado en el servidor TRS mientras el mundo está abierto:** el nombre del mundo, la versión de Minecraft, el
+  cargador de mods y los ajustes que elegiste (modo de juego, PvP, trucos, máx. jugadores, abierto/cerrado, visible para
+  amigos), el código de acceso, a quién invitaste, quién pidió entrar y a quién dejaste entrar o bloqueaste (con fecha),
+  y el número de jugadores que informa tu juego. Al cerrar el mundo, o 90 segundos después de que tu juego deje de
+  informar, todo esto se **elimina**. Tus amigos solo ven tu mundo abierto si lo dejas visible para amigos.
+- **Guardado más tiempo:** solo tu propia lista de jugadores bloqueados en todos tus mundos («recordar bloqueo»), hasta
+  que los quites o elimines tu cuenta TRS.
+- **Conexión:** los dos juegos intentan primero conectarse **directamente**. Para ello cada juego pregunta a un servidor
+  STUN (por defecto solo el servidor relay de TRS) por su dirección pública y envía sus datos de conexión al otro jugador
+  a través del servidor TRS. **Con una conexión directa, tú y el otro jugador veis la dirección IP del otro**, como en
+  cualquier servidor de Minecraft. Estos datos solo se reenvían y se guardan como máximo 10 minutos en la memoria del
+  servidor para entregarlos.
+- **Relay de TRS:** si la conexión directa no funciona, los datos del juego pasan por el servidor relay de TRS (un
+  servidor propio en Alemania, gestionado por el proyecto TRS Launcher). Solo deja entrar a jugadores con una clave de
+  acceso de corta duración del servidor TRS, ve las direcciones IP de los juegos conectados y reenvía los bytes. **No
+  guarda ni registra datos del juego ni direcciones IP** (solo contadores, como el número de conexiones) y no escribe
+  nada en disco.
+- **Enlace público (e4mc):** opcionalmente puedes crear un enlace público con el que cualquiera puede entrar. Para ello
+  se usa **e4mc**, un servicio de otros operadores, no el servidor TRS. Si lo activas (solo tras una advertencia que
+  debes confirmar), tu juego se conecta al relay de e4mc; e4mc ve tu dirección IP y la de los jugadores y reenvía los
+  datos del juego, y se aplica su propia política de privacidad. Está desactivado por defecto.
+
 ### Qué se guarda
 
 | Datos | Para qué |
@@ -227,6 +255,7 @@ plazos, para que la moderación no se pueda eludir borrando la cuenta.
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; advertencias y silencios en el chat | Moderación (ver arriba) |
+| Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores; tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
 
 **Sincronización:** «Sincronizar con la cuenta de TRS» (*Einstellungen → Datenschutz*, activado de fábrica mientras
 los servicios TRS estén activados) mantiene iguales en todos tus PC tus skins propias, tus presets propios y el aspecto
@@ -296,6 +325,7 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   Mojang, y el servidor TRS consulta a Mojang con tu nombre de jugador y el desafío de un solo uso (`hasJoined`).
 - **Los servidores de Minecraft de las invitaciones del chat** reciben una consulta del servidor TRS (ping de la lista
   de servidores) para mostrar su icono y número de jugadores; solo ven la dirección del servidor TRS.
+- **Servidor relay de TRS** (alojar un mundo, ver arriba): un servidor propio en **Alemania** gestionado por el proyecto TRS Launcher; solo reenvía datos del juego y no guarda nada en disco.
 
 ### Tus derechos
 

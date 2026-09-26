@@ -65,7 +65,15 @@ Server: **TRS Relay**, Node **GER-Hessen-2**, öffentliche IP **135.125.185.232*
    Der TCP-Port kommt aus `SERVER_PORT` (primäre Allocation 25503).
 4. **Neustart** im Panel. Im Log steht `listening tcp=0.0.0.0:25503 udp=0.0.0.0:25504 secrets=1`.
 5. **DNS:** A-Record `relay.theredstonee.de` → `135.125.185.232`, **ohne** Cloudflare-Proxy (graue Wolke), weil rohes TCP/UDP nicht über den Proxy geht.
-6. **API-Konfiguration:** In der API-`.env` den Relay-Host und die Ports eintragen (Variablennamen siehe `api/.env.example` bzw. API-README). Danach die API neu starten.
+6. **API-Konfiguration:** In der API-`.env` (Server „TRS API“) eintragen und die API neu starten:
+   ```
+   RELAY_SECRET=<gleicher Wert wie im Relay>
+   RELAY_HOST=relay.theredstonee.de
+   RELAY_TCP_PORT=25503
+   RELAY_UDP_PORT=25504
+   HOSTING_STUN=            # leer = nur das Relay als STUN-Server
+   ```
+   Ohne `RELAY_SECRET`/`RELAY_HOST` antwortet die API auf alle `/v1/hosting/*`-Aufrufe mit `503 hosting_unavailable`.
 7. **Prüfen** von einem anderen Rechner:
    ```bash
    node scripts/probe.ts relay.theredstonee.de 25503 25504
