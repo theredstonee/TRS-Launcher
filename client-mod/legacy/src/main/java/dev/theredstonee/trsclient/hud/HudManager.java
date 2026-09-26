@@ -117,7 +117,9 @@ public final class HudManager {
 
 	/** Aus RenderGameOverlayEvent.Post (ALL), jeden Frame. */
 	public void render(Gfx g, float partialTicks) {
-		if (Mc.hudHidden() || Mc.screen() instanceof TrsUiScreen) return;
+		if (Mc.hudHidden()) return;
+		// Das HUD ruht unter TRS-Bildschirmen – außer unter kleinen Einblendungen (Schnellantwort).
+		if (Mc.screen() instanceof TrsUiScreen && !((TrsUiScreen) Mc.screen()).ui().overlay()) return;
 		// Das Vanilla-Fadenkreuz wird über RenderGameOverlayEvent.Pre (CROSSHAIRS) abgebrochen, das eigene hier gezeichnet.
 		if (crosshair.replacesVanilla()) crosshair.drawInGame(g);
 		FontRenderer font = Mc.font();

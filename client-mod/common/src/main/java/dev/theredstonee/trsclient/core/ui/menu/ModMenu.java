@@ -368,7 +368,7 @@ public final class ModMenu extends UiScreen {
 			cy += rowH + gap;
 		}
 		if (host.hasFriends()) {
-			railItem(c, x, cy, w, rowH, "friends", I18n.tr("menu.friends"), false, mx, my, NewSince.MENU_FRIENDS, new Runnable() {
+			railItem(c, x, cy, w, rowH, "friends", I18n.tr("menu.friends"), false, mx, my, NewSince.MENU_SOCIAL, new Runnable() {
 				@Override
 				public void run() {
 					host.save();

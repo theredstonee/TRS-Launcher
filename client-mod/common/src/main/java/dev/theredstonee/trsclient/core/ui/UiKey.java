@@ -16,5 +16,9 @@ public enum UiKey {
 	UP,
 	DOWN,
 	HOME,
-	END
+	END,
+	/** Strg+V (Cmd+V): Einfügen aus der Zwischenablage. */
+	PASTE,
+	/** Strg+A: alles markieren (Textfelder: Cursor ans Ende). */
+	SELECT_ALL
 }

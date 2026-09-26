@@ -87,4 +87,12 @@ public abstract class UiScreen {
 	public boolean pausesGame() {
 		return false;
 	}
+
+	/**
+	 * Kleine Einblendung über dem laufenden Spiel (Schnellantwort): kein abgedunkelter Hintergrund, das HUD bleibt
+	 * sichtbar, das Spiel pausiert nicht.
+	 */
+	public boolean overlay() {
+		return false;
+	}
 }

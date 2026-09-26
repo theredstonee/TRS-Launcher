@@ -106,6 +106,10 @@ public final class AutoTest {
 			MapsTest.install();
 			return;
 		}
+		if ("social".equals(System.getProperty("trsclient.autotest.only"))) {
+			SocialTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}

@@ -114,6 +114,8 @@ public final class TrsClient {
 		UNSUPPORTED.add(modules.waypoints);
 		// TRS-Online-Funktionen (Abzeichen, TRS-Umhänge, Umhang-Physik, Emotes) sind für 1.7.10 nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.trsOnline, modules.capePhysics, modules.emotes, modules.colors));
+		// Sozial (Chat, Toasts) braucht die TRS-Online-Funktionen – hier ausgeblendet.
+		UNSUPPORTED.add(modules.social);
 		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.fpsBoost, modules.dynamicFps, modules.entityCulling, modules.particles,
 				modules.worldDetails));

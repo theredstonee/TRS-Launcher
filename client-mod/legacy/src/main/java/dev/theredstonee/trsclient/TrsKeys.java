@@ -26,6 +26,10 @@ public final class TrsKeys {
 	public static KeyBinding wardrobe;
 	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
 	public static KeyBinding worldMap;
+	/** Öffnet den Sozial-Bildschirm (standardmäßig unbelegt). */
+	public static KeyBinding social;
+	/** Schnellantwort/-aktion zum neuesten Sozial-Toast (Y; wirkt nur, solange ein Toast sichtbar ist). */
+	public static KeyBinding quickReply;
 
 	private TrsKeys() {
 	}
@@ -48,6 +52,8 @@ public final class TrsKeys {
 		toggleRecording = register(new KeyBinding("key.trsclient.toggleRecording", Keyboard.KEY_F10, CATEGORY));
 		wardrobe = register(new KeyBinding("key.trsclient.wardrobe", Keyboard.KEY_NONE, CATEGORY));
 		worldMap = register(new KeyBinding("key.trsclient.worldMap", Keyboard.KEY_M, CATEGORY));
+		social = register(new KeyBinding("key.trsclient.social", Keyboard.KEY_NONE, CATEGORY));
+		quickReply = register(new KeyBinding("key.trsclient.quickReply", Keyboard.KEY_Y, CATEGORY));
 	}
 
 	/**

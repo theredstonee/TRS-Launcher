@@ -34,6 +34,12 @@ public class TrsUiScreen extends TrsScreen {
 		ui.render(GfxCanvas.of(g, font), width, height, mouseX, mouseY);
 	}
 
+	/** Einblendung über dem Spiel (Schnellantwort): kein abgedunkelter Hintergrund. */
+	@Override
+	protected boolean customBackground() {
+		return ui.overlay();
+	}
+
 	@Override
 	protected boolean onClick(double mouseX, double mouseY, int button) {
 		return ui.mouseClicked(mouseX, mouseY, button);
@@ -57,6 +63,9 @@ public class TrsUiScreen extends TrsScreen {
 	@Override
 	protected boolean onKey(int key, char typed) {
 		UiKey logical = Keys.ui(key);
+		// Strg+V / Strg+A (Cmd unter macOS) für Textfelder.
+		if (isCtrlKeyDown() && key == org.lwjgl.input.Keyboard.KEY_V) logical = UiKey.PASTE;
+		else if (isCtrlKeyDown() && key == org.lwjgl.input.Keyboard.KEY_A) logical = UiKey.SELECT_ALL;
 		boolean used = ui.keyPressed(key, logical, shiftDown());
 		if (!used && logical == UiKey.NONE && TextInput.allowed(typed)) used = ui.charTyped(typed);
 		return used;
@@ -74,6 +83,6 @@ public class TrsUiScreen extends TrsScreen {
 
 	@Override
 	public boolean isPauseScreen() {
-		return ui.pausesGame();
+		return ui.pausesGame() && !ui.overlay();
 	}
 }

@@ -53,7 +53,8 @@ public final class IntroUi extends UiScreen {
 	private static final String[] ACCENTS = {"redstone", "lamp", "emerald", "lapis", "amethyst"};
 	/** TRS-Tasten des Schritts „Tastenbelegung“ (Reihenfolge der Anzeige). */
 	static final String[] TRS_KEYS = {"key.trsclient.menu", "key.trsclient.zoom", "key.trsclient.freelook",
-			"key.trsclient.emoteWheel", NewSince.KEY_WARDROBE, "key.trsclient.saveClip", "key.trsclient.toggleRecording"};
+			"key.trsclient.emoteWheel", NewSince.KEY_WARDROBE, NewSince.KEY_SOCIAL, NewSince.KEY_QUICK_REPLY,
+			"key.trsclient.saveClip", "key.trsclient.toggleRecording"};
 	private static final int HEADER_H = 30;
 	private static final int FOOTER_H = 28;
 	private static final int PAD = 12;

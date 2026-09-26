@@ -575,7 +575,7 @@ public final class TrsApi {
 		}
 	}
 
-	static String errorCode(Http.Response response) {
+	public static String errorCode(Http.Response response) {
 		try {
 			ErrorBody body = GSON.fromJson(response.text(), ErrorBody.class);
 			if (body != null && body.error != null && body.error.code != null) return body.error.code;
@@ -586,7 +586,7 @@ public final class TrsApi {
 	}
 
 	/** {@code Retry-After} in Sekunden → ms, auf 1 s bis 15 min begrenzt; fehlt → 0. */
-	static long retryAfter(Http.Response response) {
+	public static long retryAfter(Http.Response response) {
 		String raw = response.header("Retry-After");
 		if (raw == null) return 0;
 		try {

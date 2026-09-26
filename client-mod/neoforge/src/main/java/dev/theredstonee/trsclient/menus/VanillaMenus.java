@@ -182,8 +182,16 @@ public final class VanillaMenus {
 
 	// --- Nach dem Zeichnen: Ladebildschirme ---
 
-	/** Nach dem ganzen Bildschirm (inkl. Tooltips): Ladebildschirme komplett im Redstone-Stil. */
+	/**
+	 * Nach dem ganzen Bildschirm (inkl. Tooltips): Ladebildschirme komplett im Redstone-Stil, darüber die
+	 * Sozial-Benachrichtigungen (Toasts) auf jedem Bildschirm.
+	 */
 	public static void afterRender(Screen s, Gfx g, int mouseX, int mouseY) {
+		afterRenderLoading(s, g, mouseX, mouseY);
+		dev.theredstonee.trsclient.social.SocialHooks.overScreen(g);
+	}
+
+	private static void afterRenderLoading(Screen s, Gfx g, int mouseX, int mouseY) {
 		if (s == null || !loading(s) || !MenuStyle.enabled(MenuStyle.Kind.LOADING)) return;
 		try {
 			String title;
@@ -253,7 +261,9 @@ public final class VanillaMenus {
 					TrsOnline online = TrsOnline.current();
 					if (online != null) {
 						online.friends().want(Friends.Interest.BACKGROUND, false);
-						MenuSkin.badge(c, x + w, y, online.friends().snapshot().incoming());
+						// Anfragen + Umhang-Angebote + ungelesene Chat-Nachrichten.
+						MenuSkin.badge(c, x + w, y, online.friends().snapshot().incoming()
+								+ online.social().store().unreadTotal());
 					}
 				}
 			}

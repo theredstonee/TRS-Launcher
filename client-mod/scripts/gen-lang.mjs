@@ -41,6 +41,8 @@ const KEYS = [
   ['key.trsclient.toggleRecording', 'key.trsclient.toggleRecording'],
   ['key.trsclient.wardrobe', 'key.trsclient.wardrobe'],
   ['key.trsclient.worldMap', 'key.trsclient.worldMap'],
+  ['key.trsclient.social', 'key.trsclient.social'],
+  ['key.trsclient.quickReply', 'key.trsclient.quickReply'],
 ];
 
 const load = (code) => JSON.parse(readFileSync(join(i18nDir, `${code}.json`), 'utf8'));

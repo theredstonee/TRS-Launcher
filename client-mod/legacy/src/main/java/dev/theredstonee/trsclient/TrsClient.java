@@ -183,6 +183,7 @@ public final class TrsClient {
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
+		installSocialOverlay();
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
@@ -194,6 +195,35 @@ public final class TrsClient {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
 		}, "TRS Client map save"));
+	}
+
+	/** Sozial-Benachrichtigungen (Toasts): Ton, Vollbild, Name der Schnelltaste. */
+	private void installSocialOverlay() {
+		try {
+			dev.theredstonee.trsclient.core.social.SocialOverlay.install(new dev.theredstonee.trsclient.core.social.SocialPlatform() {
+				@Override
+				public void playToastSound() {
+					try {
+						Mc.toastSound();
+					} catch (RuntimeException ignored) {
+						// ohne Ton weiter
+					}
+				}
+
+				@Override
+				public boolean fullscreen() {
+					return Mc.fullscreen();
+				}
+
+				@Override
+				public String quickReplyKey() {
+					if (TrsKeys.quickReply == null || TrsKeys.quickReply.getKeyCode() == org.lwjgl.input.Keyboard.KEY_NONE) return null;
+					return net.minecraft.client.settings.GameSettings.getKeyDisplayString(TrsKeys.quickReply.getKeyCode());
+				}
+			}, modules);
+		} catch (RuntimeException e) {
+			LOGGER.warn("Sozial-Benachrichtigungen nicht verfügbar: " + e);
+		}
 	}
 
 	/** Wegpunkt-Datei neben der Config (erst hier, weil das Verzeichnis aus preInit kommt). */
@@ -278,6 +308,22 @@ public final class TrsClient {
 		while (TrsKeys.wardrobe.isPressed()) {
 			if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
 				mc.displayGuiScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));
+			}
+		}
+		// Sozial-Bildschirm (Taste standardmäßig unbelegt) und Schnelltaste zum neuesten Toast (Y).
+		while (TrsKeys.social.isPressed()) {
+			if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.MenuScreens.friendsAvailable()) {
+				mc.displayGuiScreen(dev.theredstonee.trsclient.screen.MenuScreens.social(null));
+			}
+		}
+		while (TrsKeys.quickReply.isPressed()) {
+			if (mc.currentScreen != null) continue;
+			try {
+				dev.theredstonee.trsclient.core.social.SocialOverlay.QuickAction action =
+						dev.theredstonee.trsclient.core.social.SocialOverlay.takeQuickAction();
+				if (action != null) mc.displayGuiScreen(dev.theredstonee.trsclient.screen.MenuScreens.socialAction(action, null));
+			} catch (RuntimeException e) {
+				LOGGER.warn("Schnellantwort: " + e);
 			}
 		}
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
@@ -474,6 +520,30 @@ public final class TrsClient {
 		HookStats.hud++;
 		ScaledResolution res = Mc.resolution(event);
 		hud.render(Gfx.of(res.getScaledWidth(), res.getScaledHeight()), Mc.partialTicks(event));
+		// Sozial-Toasts im Spiel (über Bildschirmen zeichnet sie onScreenDrawn).
+		if (Mc.screen() == null && !Mc.hudHidden()) drawToasts(res.getScaledWidth(), res.getScaledHeight());
+	}
+
+	/** Sozial-Toasts über jedem Bildschirm (nach allem anderen, auch nach dem Redstone-Menü-Stil). */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onScreenDrawn(GuiScreenEvent.DrawScreenEvent.Post event) {
+		GuiScreen s = Mc.eventGui(event);
+		if (s == null) return;
+		drawToasts(s.width, s.height);
+	}
+
+	private static void drawToasts(int width, int height) {
+		try {
+			if (!dev.theredstonee.trsclient.core.social.SocialOverlay.active()) return;
+			Gfx g = Gfx.of(width, height);
+			dev.theredstonee.trsclient.ui.GfxCanvas c = dev.theredstonee.trsclient.ui.GfxCanvas.of(g, Mc.font());
+			c.push();
+			c.raise(400f);
+			dev.theredstonee.trsclient.core.social.SocialOverlay.render(c, width, height);
+			c.pop();
+		} catch (RuntimeException ignored) {
+			// Benachrichtigungen dürfen das Spiel nie stören.
+		}
 	}
 
 	/** Ersetzt den Vanilla-Titelbildschirm durch den TRS-Startbildschirm (Modul "Startbildschirm"). */

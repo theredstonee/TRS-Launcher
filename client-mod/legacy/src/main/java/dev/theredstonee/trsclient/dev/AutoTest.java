@@ -88,6 +88,10 @@ public final class AutoTest {
 			MapsTest.install();
 			return;
 		}
+		if ("social".equals(System.getProperty("trsclient.autotest.only"))) {
+			SocialTest.install();
+			return;
+		}
 		MinecraftForge.EVENT_BUS.register(new AutoTest());
 	}
 

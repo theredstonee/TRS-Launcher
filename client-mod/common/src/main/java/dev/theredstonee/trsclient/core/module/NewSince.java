@@ -52,6 +52,12 @@ public final class NewSince {
 	/** Karten-Paket: flüssige Minimap, Weltkarte, Höhlenansicht, Fair Play. */
 	public static final String MAPS = "0.7.0";
 	public static final String KEY_WORLD_MAP = "key.trsclient.worldMap";
+	/** Sozial-Paket (TRS Client 0.8.0): Chat im Spiel, Echtzeit, Benachrichtigungen, Schnellantwort, Meldungen. */
+	public static final String SOCIAL = "0.8.0";
+	/** Leisten-/Pausen-Eintrag „Sozial“ (ersetzt „Freunde“). */
+	public static final String MENU_SOCIAL = "menu:social";
+	public static final String KEY_SOCIAL = "key.trsclient.social";
+	public static final String KEY_QUICK_REPLY = "key.trsclient.quickReply";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -81,6 +87,8 @@ public final class NewSince {
 		add("0.7.1", WARDROBE_CAPE_SHARE);
 		// TRS Client 0.7.2: Clip-Vorschau im Spiel und „Im Launcher öffnen“.
 		add("0.7.2", CLIPS_PREVIEW);
+		// TRS Client 0.8.0: Sozial (Chat, Gruppen, Bilder, Einladungen, Toasts, Schnellantwort, Meldungen).
+		add(SOCIAL, "social", MENU_SOCIAL, KEY_SOCIAL, KEY_QUICK_REPLY);
 	}
 
 	private NewSince() {

@@ -158,7 +158,7 @@ public final class TitleUi extends UiScreen {
 				return h.openAccounts();
 			}
 		});
-		sideLamp("friends", "friends", NewSince.MENU_FRIENDS, new Area() {
+		sideLamp("friends", "friends", NewSince.MENU_SOCIAL, new Area() {
 			@Override
 			public boolean open() {
 				return h.openFriends();
@@ -729,7 +729,7 @@ public final class TitleUi extends UiScreen {
 			Redstone.lamp(c, l.x, l.y + dy, l.w, l.h, lit, l.flash);
 			int iconColor = lit > 0.5f ? t.lampTextLit : t.lampText;
 			boolean isNew = isNew(l.newId)
-					|| ((NewSince.MENU_FRIENDS.equals(l.newId) || NewSince.MENU_WARDROBE.equals(l.newId)) && unseenOffers());
+					|| ((NewSince.MENU_SOCIAL.equals(l.newId) || NewSince.MENU_WARDROBE.equals(l.newId)) && unseenOffers());
 			if (sideMode == SIDE_FULL) {
 				Icons.draw(c, l.icon, l.x + 7, l.y + dy + (l.h - 8) / 2, 1, iconColor);
 				int room = l.w - 24;
