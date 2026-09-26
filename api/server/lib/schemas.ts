@@ -588,3 +588,100 @@ export const signalBody = z.strictObject({
   // Opak (z. B. JSON oder SDP) – Länge prüft die Route gegen limits.hostingMaxSignalData.
   data: z.string().max(8192),
 })
+
+// ---------------------------------------------------------------- Welt-Hosting: Mods + Resource Pack (§21.10)
+
+/** Obergrenzen der geteilten Inhalte einer Welt (gleich in Launcher und Mod). */
+export const HOSTING_CONTENT = {
+  maxMods: 300,
+  /** Eine Mod direkt vom Host. */
+  maxHostFile: 64 * 1024 * 1024,
+  /** Alle Mods direkt vom Host zusammen. */
+  maxHostTotal: 512 * 1024 * 1024,
+  /** Eine Store-Mod (Modrinth/CurseForge) – geladen wird sie aus der offiziellen Quelle. */
+  maxStoreFile: 512 * 1024 * 1024,
+  maxPack: 250 * 1024 * 1024,
+  /** Größe des Körpers von `PUT …/content`. */
+  bodyLimit: 256 * 1024,
+} as const
+
+const hex = (n: number) => z.string().regex(new RegExp(`^[0-9a-f]{${n}}$`), `must be ${n} lower-case hex digits`)
+
+/** Anzeigetext (Name/Version) ohne Steuerzeichen. */
+const shownText = (min: number, max: number) =>
+  z
+    .string()
+    .trim()
+    .min(min)
+    .max(max)
+    .refine((s) => !/[\p{Cc}\p{Cf}\p{Co}\p{Cn}]/u.test(s), 'must not contain control characters')
+
+/** Dateiname einer Mod: nur ein Name (keine Pfade, kein „..“), endet auf `.jar`. */
+const jarFileName = z
+  .string()
+  .min(5)
+  .max(128)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9 ._+()[\]{}'!,&~@#$%=-]*\.jar$/, 'must be a plain .jar file name')
+  .refine((s) => !s.includes('..'), 'must be a plain .jar file name')
+
+export const hostingModEntry = z
+  .strictObject({
+    name: shownText(1, 64),
+    version: shownText(0, 64).default(''),
+    file: jarFileName,
+    size: z.number().int().min(1).max(HOSTING_CONTENT.maxStoreFile),
+    required: z.boolean(),
+    /** `host` = direkt vom Host (nicht geprüft), `manual` = nur Hinweis „musst du selbst besorgen“. */
+    source: z.enum(['modrinth', 'curseforge', 'host', 'manual']),
+    projectId: z.string().regex(/^[A-Za-z0-9]{1,32}$/).optional(),
+    fileId: z.string().regex(/^[A-Za-z0-9]{1,32}$/).optional(),
+    sha1: hex(40),
+    sha512: hex(128).optional(),
+    sha256: hex(64).optional(),
+    /** CurseForge-Fingerprint (Murmur2). */
+    fingerprint: z.number().int().min(0).max(0xffffffff).optional(),
+  })
+  .superRefine((m, ctx) => {
+    const need = (ok: boolean, message: string) => {
+      if (!ok) ctx.addIssue({ code: 'custom', message })
+    }
+    if (m.source === 'modrinth') {
+      need(!!m.projectId && /^[A-Za-z0-9]{8}$/.test(m.projectId), 'modrinth mods need a projectId')
+      need(!!m.fileId && /^[A-Za-z0-9]{8}$/.test(m.fileId), 'modrinth mods need a fileId (version id)')
+      need(!!m.sha512, 'modrinth mods need sha512')
+    } else if (m.source === 'curseforge') {
+      need(!!m.projectId && /^[0-9]{1,10}$/.test(m.projectId), 'curseforge mods need a numeric projectId')
+      need(!!m.fileId && /^[0-9]{1,10}$/.test(m.fileId), 'curseforge mods need a numeric fileId')
+    } else {
+      need(m.projectId === undefined && m.fileId === undefined, 'only store mods have projectId/fileId')
+    }
+    if (m.source === 'host') {
+      need(!!m.sha256, 'host files need sha256')
+      need(m.size <= HOSTING_CONTENT.maxHostFile, 'host files can be at most 64 MB')
+    }
+  })
+
+export const hostingPackEntry = z.strictObject({
+  name: shownText(1, 64),
+  size: z.number().int().min(1).max(HOSTING_CONTENT.maxPack),
+  sha1: hex(40),
+  sha256: hex(64),
+})
+
+export const hostingContentBody = z
+  .strictObject({
+    mods: z.array(hostingModEntry).max(HOSTING_CONTENT.maxMods).default([]),
+    pack: hostingPackEntry.nullable().default(null),
+  })
+  .superRefine((c, ctx) => {
+    const seen = new Set<string>()
+    let hostTotal = 0
+    for (const m of c.mods) {
+      if (seen.has(m.sha1)) ctx.addIssue({ code: 'custom', message: 'every mod may appear only once (sha1)' })
+      seen.add(m.sha1)
+      if (m.source === 'host') hostTotal += m.size
+    }
+    if (hostTotal > HOSTING_CONTENT.maxHostTotal) ctx.addIssue({ code: 'custom', message: 'host files can be at most 512 MB together' })
+  })
+
+export type HostingContentInput = z.output<typeof hostingContentBody>

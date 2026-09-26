@@ -578,6 +578,12 @@ CREATE INDEX hosting_bans_uuid ON hosting_bans(uuid);
     version: 10,
     sql: `ALTER TABLE cosmetics ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;`,
   },
+  {
+    // Welt-Hosting mit Mods + Resource Pack: Liste der geteilten Mods (Name, Version, Quelle, IDs, Hashes,
+    // Größe, Pflicht/optional) und Pack-Info als JSON. Nur Metadaten – Dateien gehen direkt vom Host an die Gäste.
+    version: 11,
+    sql: `ALTER TABLE hosting_rooms ADD COLUMN content TEXT;`,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {

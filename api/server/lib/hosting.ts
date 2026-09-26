@@ -9,6 +9,7 @@ import { areFriends, friendUuids, hasBlocked } from './friends'
 import { applyWordFilter, sanitizeText, textLength } from './safety'
 import { getUser, isBanned, type UserRow } from './users'
 import { assertNotSanctioned } from './sanctions'
+import type { HostingContentInput } from './schemas'
 
 /**
  * Welt-Hosting (API.md §21): Ein Spieler öffnet seine Einzelspielerwelt für Freunde. Die API macht nur
@@ -53,6 +54,8 @@ interface RoomRow {
   players: number
   created_at: number
   heartbeat_at: number
+  /** Geteilte Inhalte (JSON {@link HostingContent}) oder null = nichts geteilt. */
+  content: string | null
 }
 
 interface MemberRow {
@@ -96,6 +99,48 @@ interface RoomBase {
   /** Spieler gerade in der Welt (Host eingeschlossen), vom Host per Herzschlag gemeldet. */
   players: number
   createdAt: string
+  /** Geteilte Mods/Resource Pack in Kurzform (volle Liste: `GET …/content`), null = nichts geteilt. */
+  content: ContentSummary | null
+}
+
+/** Eine geteilte Mod (§21.10). `host` = direkt vom Host (nicht geprüft), `manual` = selbst besorgen. */
+export interface HostingMod {
+  name: string
+  version: string
+  file: string
+  size: number
+  required: boolean
+  source: 'modrinth' | 'curseforge' | 'host' | 'manual'
+  projectId?: string
+  fileId?: string
+  sha1: string
+  sha512?: string
+  sha256?: string
+  fingerprint?: number
+}
+
+/** Geteiltes Resource Pack (kommt direkt vom Host, nie über TRS). */
+export interface HostingPack {
+  name: string
+  size: number
+  sha1: string
+  sha256: string
+}
+
+export interface HostingContent {
+  mods: HostingMod[]
+  pack: HostingPack | null
+}
+
+/** Kurzform in jeder Raum-Ansicht. */
+export interface ContentSummary {
+  mods: number
+  required: number
+  /** davon direkt vom Host */
+  fromHost: number
+  /** davon nur als Hinweis (nicht im Store, nicht übertragen) */
+  manual: number
+  pack: { name: string, size: number, sha1: string } | null
 }
 
 /** Was der Host sieht (inkl. Code und Mitgliederliste). */
@@ -234,6 +279,29 @@ function base(ctx: AppContext, r: RoomRow): RoomBase {
     open: r.open === 1,
     players: r.players,
     createdAt: iso(r.created_at),
+    content: summarize(parseContent(r.content)),
+  }
+}
+
+/** Gespeicherte Inhalte lesen (kaputt → wie „nichts geteilt“). */
+function parseContent(raw: string | null): HostingContent | null {
+  if (!raw) return null
+  try {
+    const c = JSON.parse(raw) as HostingContent
+    return Array.isArray(c.mods) ? { mods: c.mods, pack: c.pack ?? null } : null
+  } catch {
+    return null
+  }
+}
+
+function summarize(c: HostingContent | null): ContentSummary | null {
+  if (!c || (c.mods.length === 0 && !c.pack)) return null
+  return {
+    mods: c.mods.length,
+    required: c.mods.filter((m) => m.required).length,
+    fromHost: c.mods.filter((m) => m.source === 'host').length,
+    manual: c.mods.filter((m) => m.source === 'manual').length,
+    pack: c.pack ? { name: c.pack.name, size: c.pack.size, sha1: c.pack.sha1 } : null,
   }
 }
 
@@ -434,6 +502,66 @@ export function heartbeat(ctx: AppContext, host: string, id: string, players?: n
   run(ctx.db, 'UPDATE hosting_rooms SET heartbeat_at = ?, players = ? WHERE id = ?', t, p, r.id)
   if (p !== r.players) publishUpdate(ctx, reload(ctx, r.id))
   return { expiresAt: iso(t + ctx.config.limits.hostingRoomTtlMs) }
+}
+
+// ---------------------------------------------------------------- Host: geteilte Inhalte (§21.10)
+
+/** Anzeigename einer Mod/eines Packs: gesäubert; Sperrwort → Dateiname bzw. „Mod“ (die Liste soll nicht scheitern). */
+function shownName(ctx: AppContext, raw: string, fallback: string): string {
+  const s = sanitizeText(raw).replace(/\s+/g, ' ').trim().slice(0, 64)
+  if (!s) return fallback
+  try {
+    return applyWordFilter(ctx, s)
+  } catch (err) {
+    if (err instanceof ApiError) return fallback
+    throw err
+  }
+}
+
+/**
+ * Mod-Liste + Resource Pack einer Welt setzen (`null` = nichts mehr teilen). Nur Metadaten – Dateien liegen nie
+ * auf dem Server, sie gehen direkt vom Host an die Gäste. Schema/Grenzen prüft `hostingContentBody`.
+ */
+export function setRoomContent(ctx: AppContext, host: string, id: string, input: HostingContentInput | null): HostRoomView {
+  const r = ownRoom(ctx, host, id)
+  let json: string | null = null
+  if (input && (input.mods.length > 0 || input.pack)) {
+    const mods: HostingMod[] = input.mods.map((m) => {
+      const out: HostingMod = {
+        name: shownName(ctx, m.name, m.file.replace(/\.jar$/, '').slice(0, 64) || 'Mod'),
+        version: sanitizeText(m.version ?? '').replace(/\s+/g, ' ').trim().slice(0, 64),
+        file: m.file,
+        size: m.size,
+        required: m.required,
+        source: m.source,
+        sha1: m.sha1,
+      }
+      if (m.projectId !== undefined) out.projectId = m.projectId
+      if (m.fileId !== undefined) out.fileId = m.fileId
+      if (m.sha512 !== undefined) out.sha512 = m.sha512
+      if (m.sha256 !== undefined) out.sha256 = m.sha256
+      if (m.fingerprint !== undefined) out.fingerprint = m.fingerprint
+      return out
+    })
+    const pack: HostingPack | null = input.pack
+      ? { name: shownName(ctx, input.pack.name, 'Resource Pack'), size: input.pack.size, sha1: input.pack.sha1, sha256: input.pack.sha256 }
+      : null
+    json = JSON.stringify({ mods, pack } satisfies HostingContent)
+  }
+  if (json === r.content) return hostView(ctx, r)
+  run(ctx.db, 'UPDATE hosting_rooms SET content = ?, heartbeat_at = ? WHERE id = ?', json, ctx.now(), r.id)
+  const next = reload(ctx, r.id)
+  publishUpdate(ctx, next)
+  return hostView(ctx, next)
+}
+
+/** Volle Mod-Liste + Pack für jeden, der den Raum sieht (Host, Mitglieder, Freunde bei offener Welt). */
+export function roomContent(ctx: AppContext, me: string, id: string): { roomId: string } & HostingContent {
+  requireHosting(ctx)
+  const r = getRoom(ctx, id)
+  if (!r || !canSee(ctx, r, me)) throw notFound('room_not_found', 'World not found')
+  const c = parseContent(r.content)
+  return { roomId: r.id, mods: c?.mods ?? [], pack: c?.pack ?? null }
 }
 
 /** Schließt einen Raum: alle, die ihn sahen, bekommen `hosting_room_closed`. */
@@ -833,6 +961,8 @@ export interface AdminRoomView {
   open: boolean
   visibility: Visibility
   members: { accepted: number, invited: number, requested: number, banned: number }
+  /** Geteilte Mods/Pack (Kurzform) – z. B. Mods „direkt vom Host“. */
+  content: ContentSummary | null
   createdAt: string
   heartbeatAt: string
 }
@@ -869,6 +999,7 @@ export function adminRooms(ctx: AppContext, opts: { uuid?: string, limit: number
       open: r.open === 1,
       visibility: r.visibility,
       members,
+      content: summarize(parseContent(r.content)),
       createdAt: iso(r.created_at),
       heartbeatAt: iso(r.heartbeat_at),
     }

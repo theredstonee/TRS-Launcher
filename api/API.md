@@ -1985,7 +1985,8 @@ Everything needs auth. The whole feature answers `503 hosting_unavailable` when 
   "players": 2,
   "createdAt": "…",
   "expiresAt": "…",
-  "members": [ { "uuid": "b0b0…", "name": "Bob", "state": "accepted", "since": "…" } ]
+  "members": [ { "uuid": "b0b0…", "name": "Bob", "state": "accepted", "since": "…" } ],
+  "content": { "mods": 12, "required": 5, "fromHost": 2, "manual": 1, "pack": { "name": "Faithful", "size": 3145728, "sha1": "…" } }
 }
 ```
 
@@ -1994,6 +1995,9 @@ Everything needs auth. The whole feature answers `503 hosting_unavailable` when 
 - `players` = players currently in the world **including the host**, as reported by the heartbeat (starts at 1).
 - `expiresAt` = when the room closes without a further heartbeat.
 - `members[].state`: `invited`, `requested`, `accepted`, `banned` (banned in this room). `since` = last state change.
+- `content` = what the world shares (§21.10) in short form, `null` = nothing: number of mods, how many are required,
+  come directly from the host or are only a hint ("get it yourself"), and the resource pack (name, size, SHA-1) or `null`.
+  In every view (host, friends, events, admin). The full list: `GET …/content`.
 
 **RoomView** (friends, invitees, requesters, guests) = the same without `code`, `visibility`, `expiresAt` and `members`, plus
 `"myState": "invited" | "requested" | "accepted" | null` (your own state; `null` = you only see it as the host's friend).
@@ -2025,6 +2029,8 @@ Everything needs auth. The whole feature answers `503 hosting_unavailable` when 
 | `DELETE /v1/hosting/rooms/{id}/bans/{uuid}` | – | **204** – lifts the ban in this room (`404 ban_not_found`). A permanent ban still applies. |
 | `GET /v1/hosting/bans` | – | `{ bans: [{ uuid, name, since }] }` – your permanent ban list. |
 | `DELETE /v1/hosting/bans/{uuid}` | – | **204** / `404 ban_not_found`. |
+| `PUT /v1/hosting/rooms/{id}/content` | `{ "mods": [SharedMod], "pack": SharedPack \| null }` (≤ 256 KB) | `{ room: HostRoomView }` – share mods and a resource pack (§21.10). Replaces the whole list; empty list + `null` pack = nothing shared. Everybody who can see the room gets `hosting_room_updated`. |
+| `DELETE /v1/hosting/rooms/{id}/content` | – | **204** – stop sharing. |
 
 `MemberView` = `{ uuid, name, state, since }`. Your other devices get the full `hosting_room` event after every change.
 
@@ -2038,6 +2044,7 @@ Everything needs auth. The whole feature answers `503 hosting_unavailable` when 
 | `POST /v1/hosting/join` | `{ "roomId": "h…" }` **or** `{ "code": "K7Q-M2X" }` | **200** `{ status: "accepted", room, role: "guest", relay, stun }` if you were invited or already accepted; **202** `{ status: "requested", room }` otherwise (host gets `hosting_join_request`; wait for `hosting_join_accepted`/`hosting_join_declined`). Requesting again is idempotent. Errors: `404 room_not_found`, `403 banned_from_world`, `409 world_closed`, `409 room_full`, `409 too_many_requests` (20 waiting), `400 cannot_join_own_world`. |
 | `POST /v1/hosting/rooms/{id}/leave` | – | **204**. Leaves the world, withdraws a request or declines an invite. Your other devices get `hosting_room_closed` with `reason: "left"`. |
 | `POST /v1/hosting/rooms/{id}/connect` | – | `ConnectInfo` with a fresh token. Host (`role: "host"`) or accepted guest; others `403 not_accepted` / `404 room_not_found`. |
+| `GET /v1/hosting/rooms/{id}/content` | – | `{ roomId, mods: [SharedMod], pack: SharedPack \| null }` – the full list of shared mods and the resource pack (§21.10), for everybody who can see the room (host, members, friends of an open world); else `404 room_not_found`. |
 
 By `roomId` you can only join rooms you may see (§21, rules). By `code` anyone with a TRS account can send a request. **Unknown codes count as failed attempts**: 10 / 10 min per account and 30 / 10 min per IP – after that every code attempt gets `429` (also a correct one).
 
@@ -2119,13 +2126,53 @@ A chat message can carry a **world card** instead of a server invite (§18.4 sen
 
 ### 21.9 Privacy, limits, deletion
 
-- **Stored** (plaintext metadata, only while the room exists): room settings and name, join code, host, members with state and times, heartbeat time, reported player count. Rooms and their members are **deleted** when the room closes (closing, 90 s without heartbeat, new room). **Kept:** the host's permanent ban list (until the host removes entries or deletes the account).
+- **Stored** (plaintext metadata, only while the room exists): room settings and name, join code, host, members with state and times, heartbeat time, reported player count, the shared mod list and resource pack info (§21.10 – metadata only, never files). Rooms and their members are **deleted** when the room closes (closing, 90 s without heartbeat, new room). **Kept:** the host's permanent ban list (until the host removes entries or deletes the account).
 - **Signals** are passed through and kept only in the short replay buffer of `/v1/events/me` (≤ 10 min, RAM), never in the database. The API never sees game data.
 - **IP addresses:** in P2P mode host and guest necessarily learn each other's public IP address (through the exchanged candidates) – clients should say so ("Direct connection shows your IP address to the other player"). Over the relay only the relay sees the IPs; it keeps them only in RAM for rate limits and never logs payloads. The STUN responder sees the address that asks.
 - **Public link (e4mc):** a separate third-party service (e4mc, run by its own operators); when a player enables it, the game connects to e4mc's relay and anyone with the link can join. The TRS API isn't involved. Clients must show their own warning and privacy note (see launcher privacy text).
 - **Account deletion (`DELETE /v1/me`):** closes your worlds (`host_unavailable`), removes you from others' worlds and deletes your ban list and your entries on others' ban lists. **Account ban:** same, except bans others set against you stay.
 - **Blocking** removes the other player from your worlds and you from theirs (`hidden`, no hint about the block). **Unfriending** drops open invites between you; players already in the world stay.
-- **Rate limits:** every `/v1/hosting/*` request 240 / min per account (own bucket), creating rooms 10 / 10 min, managing (invite, answer, kick, settings) 60 / min, join 20 / min, connect 30 / min, signals 120 / min + 30 / 5 s, failed codes see §21.3.
+- **Rate limits:** every `/v1/hosting/*` request 240 / min per account (own bucket), creating rooms 10 / 10 min, managing (invite, answer, kick, settings, content) 60 / min, join 20 / min, connect 30 / min, signals 120 / min + 30 / 5 s, failed codes see §21.3.
+
+### 21.10 Mods and resource pack
+
+The host can share **mods** and a **resource pack** with the guests of a world. The API stores only the **list**
+(metadata); **files never go through TRS servers**: store mods come from Modrinth/CurseForge, everything else goes
+directly from the host's game to the guest over the hosting connection (P2P or relay, a separate file channel –
+`docs/hosting-files.md` in the launcher repository). Both are off by default in the client.
+
+**SharedMod**
+```json
+{
+  "name": "Sodium", "version": "0.6.0", "file": "sodium-fabric-0.6.0.jar", "size": 1200000, "required": false,
+  "source": "modrinth", "projectId": "AANobbMI", "fileId": "Yp8wLY1P",
+  "sha1": "<40 hex>", "sha512": "<128 hex>", "sha256": "<64 hex>", "fingerprint": 123456789
+}
+```
+
+| Field | Rules |
+|---|---|
+| `name` | 1–64 characters, no control/format characters (sanitised; a blocked word turns it into the file name) |
+| `version` | 0–64 characters, same rules (default `""`) |
+| `file` | plain `.jar` file name, 5–128 characters, `^[A-Za-z0-9][A-Za-z0-9 ._+()[\]{}'!,&~@#$%=-]*\.jar$`, no `..` – never a path |
+| `size` | bytes, 1 … 512 MB; `host` ≤ **64 MB** |
+| `required` | required for joining (the guest can't deselect it) or optional |
+| `source` | `modrinth` · `curseforge` · `host` (directly from the host, **not verified**) · `manual` (in no store and not sent – "get it yourself") |
+| `projectId` / `fileId` | only store mods: Modrinth project + version id (`^[A-Za-z0-9]{8}$`), CurseForge mod + file id (digits, 1–10) |
+| `sha1` | 40 lower-case hex – required, unique within the list (used for "present/missing") |
+| `sha512` | 128 hex – required for `modrinth` |
+| `sha256` | 64 hex – required for `host` (the file channel asks by it; guests check it) |
+| `fingerprint` | CurseForge Murmur2 fingerprint (optional) |
+
+**SharedPack** = `{ "name": 1–64, "size": 1 … 250 MB, "sha1": 40 hex, "sha256": 64 hex }` (SHA-1 as Minecraft's
+server-resource-pack check wants it).
+
+**Limits:** at most **300 mods**; `host` files together ≤ **512 MB**; request body ≤ 256 KB; unknown fields → `400`
+(strict). Guests validate the list again (same rules).
+
+**Who sees it:** the short form (`content`, §21.1) is part of every room view; the full list (`GET …/content`) is visible
+to everybody who can see the room. Relay tokens (`…/connect`) still go to accepted guests only – the host's game serves
+host files only to accepted members of the room.
 
 ---
 
