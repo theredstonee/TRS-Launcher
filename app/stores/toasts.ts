@@ -32,12 +32,19 @@ export const useToasts = defineStore('toasts', () => {
     items.value = items.value.filter((t) => t.id !== id)
   }
 
+  /** Fehler wegen einer Strafe (§22): Klick öffnet „Meine Strafen“. */
+  function sanctionAction(e: unknown): ToastAction | undefined {
+    if (typeof e === 'string' || !(e instanceof BackendError) || !e.params?.sanctionKind) return undefined
+    const id = Number(e.params.sanctionId) || null
+    return { label: t('sanctions.banner.details'), run: () => useSanctionsStore().open(id) }
+  }
+
   return {
     items,
     dismiss,
     /** `action`: Klick auf den Toast (z. B. Instanz öffnen). */
     ok: (text: string, action?: ToastAction) => push('ok', text, action),
     info: (text: string, action?: ToastAction) => push('info', text, action),
-    error: (e: unknown, action?: ToastAction) => push('error', typeof e === 'string' ? e : errorMessage(e), action),
+    error: (e: unknown, action?: ToastAction) => push('error', typeof e === 'string' ? e : errorMessage(e), action ?? sanctionAction(e)),
   }
 })

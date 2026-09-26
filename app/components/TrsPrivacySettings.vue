@@ -7,6 +7,7 @@ import type { TrsPrivacy } from '~/utils/trs'
 // (`trsSync`) und wird vom Einstellungsfenster mitgespeichert.
 const sync = defineModel<boolean>('sync', { default: true })
 const trs = useTrsStore()
+const sanctions = useSanctionsStore()
 const accounts = useAccountsStore()
 const toasts = useToasts()
 
@@ -91,6 +92,12 @@ function openPrivacy() {
       <SettingRow :title="t('trsPrivacy.sync.title')" :description="t('trsPrivacy.sync.description')">
         <ToggleSwitch v-model="sync" :label="t('trsPrivacy.sync.title')" data-testid="trs-sync-toggle" />
       </SettingRow>
+      <SettingRow v-if="accounts.active" :title="t('sanctions.settings.title')" :description="t('sanctions.settings.description')">
+        <button class="btn btn-ghost" data-testid="settings-my-sanctions" @click="sanctions.open()">
+          {{ t('sanctions.settings.button') }}
+          <span v-if="sanctions.current.length" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">{{ sanctions.current.length }}</span>
+        </button>
+      </SettingRow>
       <p v-if="!accounts.active" class="mt-2 text-xs text-base-400">{{ t('trsPrivacy.noAccount') }}</p>
       <p v-else-if="!settings" class="mt-2 text-xs text-base-400">
         {{ trs.problem === 'offline' ? t('trsPrivacy.offline') : t('trsPrivacy.loading') }}
@@ -158,7 +165,7 @@ function openPrivacy() {
         </SettingRow>
         <SocialMyReportsDialog v-if="myReports" @close="myReports = false" />
 
-        <SettingRow v-if="trs.isAdmin" :title="t('webLogin.title')" :description="t('webLogin.settingsDescription', { host: TRS_HOST })">
+        <SettingRow v-if="trs.isStaff" :title="t('webLogin.title')" :description="t('webLogin.settingsDescription', { host: TRS_HOST })">
           <button class="btn btn-ghost" data-testid="settings-web-login" @click="trs.openWebLogin()">{{ t('webLogin.open') }}</button>
         </SettingRow>
 

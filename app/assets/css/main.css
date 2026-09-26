@@ -365,6 +365,16 @@ textarea {
   .tab {
     @apply relative rounded-full px-3.5 py-1.5 text-sm font-medium text-base-400 transition-colors hover:bg-base-850 hover:text-base-50;
   }
+  /* Team-Bereich: Listenzeile mit aktivem Eintrag (j/k) und Auswahl. */
+  .adm-row {
+    @apply transition-[border-color,background-color] duration-150 hover:border-base-700 hover:bg-base-850;
+  }
+  .adm-row-active {
+    box-shadow: inset 3px 0 0 var(--color-redstone-500);
+  }
+  .adm-row-selected {
+    background: color-mix(in srgb, var(--color-redstone-900) 45%, var(--color-base-900));
+  }
   .tab-on {
     @apply bg-base-800 text-base-50 hover:bg-base-800;
   }

@@ -1,24 +1,27 @@
 <script setup lang="ts">
 import { evidenceUrl, reportReasonIds, type ReportReason } from '~/utils/chat'
-import { actionBody, muteDurations, type AdminReportDetail, type ReportActionId } from '~/utils/moderation'
+import { actionBody, type AdminReportDetail, type ReportActionId } from '~/utils/moderation'
+import { draftMinutes, draftProblem, emptyDraft, type SanctionDraft } from '~/utils/team'
 
 // Prüf-Dialog einer Chat-Meldung: Kontext (Nachrichten davor/danach, die
 // gemeldete hervorgehoben), Beweisbilder, Moderationsstand von Ziel und Melder,
-// Notizen, Audit-Log und die Entscheidung (löschen, verwarnen, stummschalten,
-// sperren, abweisen, erledigt). Wie auf der Website.
+// Notizen, Audit-Log und die Entscheidung (Nachricht löschen, Strafe mit Art,
+// Dauer und Vorlage, abweisen, erledigt). Wie auf der Website.
 const props = defineProps<{ reportId: string }>()
 const emit = defineEmits<{ close: []; changed: []; open: [id: string] }>()
 
 const report = ref<AdminReportDetail | null>(null)
 const error = ref<string | null>(null)
 const busy = ref(false)
-const reason = ref('')
-const minutes = ref<number | null>(1440)
 const keepOpen = ref(false)
 const includeRelated = ref(false)
 const note = ref('')
-const confirmBan = ref(false)
 const image = ref<string | null>(null)
+const team = useTeam()
+/** Strafe aus der Meldung: Formular → Bestätigung → `action: sanction`. */
+const sanctioning = ref<'form' | 'confirm' | null>(null)
+const draft = ref<SanctionDraft>(emptyDraft('warn'))
+const draftError = computed(() => draftProblem(draft.value, team.limits.value))
 
 const resolved = computed(() => report.value?.status === 'resolved')
 const focusId = computed(() => report.value?.evidence?.focus ?? null)
@@ -49,19 +52,36 @@ async function run(action: () => Promise<{ report: AdminReportDetail }>) {
 }
 
 function act(action: ReportActionId) {
-  if (action === 'ban' && !confirmBan.value) {
-    confirmBan.value = true
-    return
+  const body = actionBody(action, { reason: '', minutes: null, keepOpen: keepOpen.value, includeRelated: includeRelated.value })
+  if (action === 'sanction') {
+    const d = draft.value
+    Object.assign(body, {
+      kind: d.kind,
+      duration: d.duration,
+      reasonCode: d.reasonCode || undefined,
+      ...(d.duration === 'custom' ? { minutes: draftMinutes(d) ?? undefined } : {}),
+      ...(d.reason.trim() ? { reason: d.reason.trim() } : {}),
+      // Die API nimmt an Meldungen nur eine Zeile als Notiz.
+      ...(d.note.trim() ? { note: d.note.trim().replace(/\s*\n+\s*/g, ' ') } : {}),
+    })
   }
-  confirmBan.value = false
-  const body = actionBody(action, { reason: reason.value, minutes: minutes.value, keepOpen: keepOpen.value, includeRelated: includeRelated.value })
   void run(() => backend.social.adminReportAction(props.reportId, body)).then(() => {
     if (!error.value) {
-      reason.value = ''
       keepOpen.value = false
       includeRelated.value = false
+      sanctioning.value = null
+      draft.value = emptyDraft('warn')
     }
   })
+}
+
+function reviewSanction() {
+  if (draftError.value) {
+    error.value = t(`team.form.errors.${draftError.value}`)
+    return
+  }
+  error.value = null
+  sanctioning.value = 'confirm'
 }
 
 function setStatus(status: 'open' | 'in_review') {
@@ -99,21 +119,6 @@ const statusClass = computed(() => {
   return r.outcome === 'actioned' ? 'bg-ok/15 text-ok' : 'bg-base-800 text-base-400'
 })
 
-function durationLabel(minutes: number | null): string {
-  switch (minutes) {
-    case 60:
-      return t('admin.mod.durations.d60')
-    case 1440:
-      return t('admin.mod.durations.d1440')
-    case 10_080:
-      return t('admin.mod.durations.d10080')
-    case 43_200:
-      return t('admin.mod.durations.d43200')
-    default:
-      return t('admin.mod.durations.forever')
-  }
-}
-
 function systemLabel(event: string | undefined): string {
   const known = ['group_created', 'member_added', 'member_removed', 'member_left', 'renamed', 'owner_changed'] as const
   return event && (known as readonly string[]).includes(event) ? t(`admin.mod.systemEvents.${event as (typeof known)[number]}`) : (event ?? '')
@@ -132,7 +137,7 @@ watch(report, () =>
 function onKey(e: KeyboardEvent) {
   if (e.key !== 'Escape') return
   if (image.value) image.value = null
-  else if (confirmBan.value) confirmBan.value = false
+  else if (sanctioning.value) sanctioning.value = null
   else emit('close')
 }
 onMounted(() => {
@@ -151,6 +156,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             <p class="text-xs tracking-[0.18em] text-base-400 uppercase">{{ t('admin.mod.dialogTitle') }} · {{ report ? t(`social.report.titles.${report.kind}`) : '' }}</p>
             <h2 id="admin-report-title" class="display mt-1 truncate text-2xl text-base-50">{{ report ? reasonLabel(report.reason) : '…' }}</h2>
           </div>
+          <span v-if="report?.priority === 'high' && report.status !== 'resolved'" class="badge bg-redstone-600/30 text-redstone-300">{{ t('team.reports.high') }}</span>
           <span v-if="report" class="badge" :class="statusClass">
             {{ report.status === 'resolved' && report.outcome ? t(`admin.mod.outcome.${report.outcome}`) : t(`admin.mod.status.${report.status}`) }}
           </span>
@@ -242,6 +248,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                 {{ name(report.target) }}
               </p>
               <p v-if="report.target" class="font-mono text-[11px] text-base-400">{{ report.target.uuid }}</p>
+              <NuxtLink v-if="report.target" :to="`/admin/players/${report.target.uuid}`" class="mt-1 inline-block text-xs text-redstone-300 hover:underline" @click="emit('close')">
+                {{ t('team.reports.openFile') }}
+              </NuxtLink>
               <template v-if="report.targetModeration">
                 <p class="mt-2 text-xs text-base-200">{{ t('admin.mod.targetStats', report.targetModeration.reports) }}</p>
                 <p v-if="report.targetModeration.mute" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-lamp-300">
@@ -278,12 +287,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                 <button v-if="report.status === 'open'" class="btn btn-ghost text-xs" :disabled="busy" @click="setStatus('in_review')">{{ t('admin.mod.claim') }}</button>
                 <button v-else class="btn btn-ghost text-xs" :disabled="busy" @click="setStatus('open')">{{ t('admin.mod.reopen') }}</button>
               </div>
-              <label class="label mt-3" for="mod-reason">{{ t('admin.mod.reason') }}</label>
-              <input id="mod-reason" v-model="reason" class="field" maxlength="200" />
-              <label class="label mt-3" for="mod-duration">{{ t('admin.mod.duration') }}</label>
-              <select id="mod-duration" v-model="minutes" class="field">
-                <option v-for="d in muteDurations" :key="String(d)" :value="d">{{ durationLabel(d) }}</option>
-              </select>
               <label class="mt-3 flex items-start gap-2 text-xs text-base-200">
                 <input v-model="keepOpen" type="checkbox" class="mt-0.5 accent-redstone-500" />{{ t('admin.mod.keepOpen') }}
               </label>
@@ -294,18 +297,39 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                 <button v-if="report.messageId" class="btn btn-danger col-span-2 text-sm" :disabled="busy" data-testid="mod-delete" @click="act('delete_message')">
                   <SocialIcon name="trash" class="size-4" />{{ t('admin.mod.deleteMessage') }}
                 </button>
-                <button class="btn btn-ghost text-sm" :disabled="busy || !report.target" @click="act('warn')">{{ t('admin.mod.warn') }}</button>
-                <button class="btn btn-ghost text-sm" :disabled="busy || !report.target" data-testid="mod-mute" @click="act('mute')">{{ t('admin.mod.mute') }}</button>
-                <button class="btn btn-danger text-sm" :disabled="busy || !report.target" @click="act('ban')">{{ t('admin.mod.ban') }}</button>
+                <button
+                  class="btn btn-ghost col-span-2 text-sm"
+                  :class="{ 'ring-1 ring-redstone-500': sanctioning }"
+                  :disabled="busy || !report.target"
+                  data-testid="mod-sanction"
+                  @click="sanctioning = sanctioning ? null : 'form'"
+                >
+                  <SocialIcon name="gavel" class="size-4" />{{ t('team.reports.sanction') }}
+                </button>
                 <button class="btn btn-ghost text-sm" :disabled="busy || resolved" data-testid="mod-dismiss" @click="act('dismiss')">{{ t('admin.mod.dismiss') }}</button>
-                <button class="btn btn-primary col-span-2 text-sm" :disabled="busy || resolved" @click="act('resolve')">
+                <button class="btn btn-primary text-sm" :disabled="busy || resolved" @click="act('resolve')">
                   <SocialIcon name="check" class="size-4" />{{ t('admin.mod.resolve') }}
                 </button>
               </div>
-              <p v-if="confirmBan" role="alert" class="mt-3 rounded-md bg-redstone-900 p-3 text-xs text-redstone-300">
-                {{ t('admin.mod.confirmBan', { name: name(report.target) }) }}
-                <button class="btn btn-danger mt-2 w-full text-xs" :disabled="busy" @click="act('ban')">{{ t('admin.mod.ban') }}</button>
-              </p>
+            </div>
+
+            <div v-if="sanctioning && report.target" class="rounded-lg border border-redstone-600/50 p-4" data-testid="mod-sanction-form">
+              <h3 class="section-title mb-3">{{ t('team.reports.sanctionFor', { name: name(report.target) }) }}</h3>
+              <AdminSanctionForm v-if="sanctioning === 'form'" v-model="draft" :limits="team.limits.value" compact />
+              <div v-else class="space-y-2 text-xs">
+                <p class="flex flex-wrap items-center gap-2"><SanctionKindBadge :kind="draft.kind" /><span class="text-base-200">{{ t(`team.durations.${draft.duration}`) }}</span></p>
+                <p class="text-base-200">{{ t('team.sanction.confirmLead', { name: name(report.target) }) }}</p>
+                <p v-if="draft.kind === 'account_ban'" class="rounded-md bg-redstone-900 px-3 py-2 text-redstone-300">{{ t('team.sanction.banWarning') }}</p>
+              </div>
+              <div class="mt-3 flex justify-end gap-2">
+                <button class="btn btn-ghost text-xs" :disabled="busy" @click="sanctioning === 'confirm' ? (sanctioning = 'form') : (sanctioning = null)">
+                  {{ sanctioning === 'confirm' ? t('team.common.back') : t('common.actions.cancel') }}
+                </button>
+                <button v-if="sanctioning === 'form'" class="btn btn-primary text-xs" data-testid="mod-sanction-next" @click="reviewSanction">{{ t('team.sanction.review') }}</button>
+                <button v-else :class="draft.kind === 'account_ban' ? 'btn btn-danger text-xs' : 'btn btn-primary text-xs'" :disabled="busy" data-testid="mod-sanction-submit" @click="act('sanction')">
+                  {{ t('team.sanction.submit') }}
+                </button>
+              </div>
             </div>
 
             <div v-if="report.related.length" class="rounded-lg border border-base-800 p-4">

@@ -56,6 +56,28 @@ import {
   type ReportActionInput,
   type ReportQuery,
 } from './moderation'
+import { mySanctionSchema, mySanctionsSchema, sanctionErrorText } from './sanctions'
+import {
+  appealEnvelopeSchema,
+  appealPageSchema,
+  bulkResultSchema,
+  cosmeticPageSchema,
+  dashboardSchema,
+  notesEnvelopeSchema,
+  playerFileEnvelopeSchema,
+  playerPageSchema,
+  roomListSchema,
+  rolesSchema,
+  sanctionEnvelopeSchema,
+  sanctionPageSchema,
+  searchResultSchema,
+  type AppealDecisionInput,
+  type BulkTarget,
+  type NewSanctionInput,
+  type PlayerQuery,
+  type SanctionQuery,
+  type UploadQuery,
+} from './team'
 import {
   hostingDeliverySchema,
   hostingJoinResultSchema,
@@ -690,6 +712,42 @@ export const backend = {
     focusWindow: () => call<void>('social_focus_window'),
   },
 
+  /** Moderation v2 (§22): eigene Strafen + Einspruch – geht auch mit gesperrtem Konto (Token bleibt im Kern). */
+  sanctions: {
+    mine: () => checked(mySanctionsSchema, 'trs_my_sanctions'),
+    appeal: (id: number, text: string) => checked(mySanctionSchema, 'trs_appeal', { id, text }),
+  },
+
+  /** Team-Bereich (§22): Admins und Moderatoren; Rechte prüft der Server bei jeder Anfrage. */
+  team: {
+    dashboard: () => checked(dashboardSchema, 'admin_dashboard'),
+    search: (q: string) => checked(searchResultSchema, 'admin_search', { q }),
+    players: (query: PlayerQuery) => checked(playerPageSchema, 'admin_players', { query }),
+    player: (uuid: string) => checked(playerFileEnvelopeSchema, 'admin_player', { uuid }),
+    addNote: (uuid: string, text: string) => checked(notesEnvelopeSchema, 'admin_player_note', { uuid, text }),
+    deleteNote: (uuid: string, id: number) => checked(notesEnvelopeSchema, 'admin_player_note_delete', { uuid, id }),
+    sanctions: (query: SanctionQuery) => checked(sanctionPageSchema, 'admin_sanctions', { query }),
+    sanction: (id: number) => checked(sanctionEnvelopeSchema, 'admin_sanction', { id }),
+    createSanction: (sanction: NewSanctionInput) => checked(sanctionEnvelopeSchema, 'admin_sanction_create', { sanction }),
+    liftSanction: (id: number, reason: string) => checked(sanctionEnvelopeSchema, 'admin_sanction_lift', { id, reason }),
+    /** Neues Ende (`null` = dauerhaft); früher = verkürzen, später = verlängern. */
+    changeSanction: (id: number, endsAt: string | null, reason: string) =>
+      checked(sanctionEnvelopeSchema, 'admin_sanction_duration', { id, endsAt, reason }),
+    appeals: (query: { status?: 'open' | 'decided' | 'all'; cursor?: string; limit?: number }) =>
+      checked(appealPageSchema, 'admin_appeals', { query }),
+    decideAppeal: (id: number, decision: AppealDecisionInput) => checked(appealEnvelopeSchema, 'admin_appeal_decide', { id, decision }),
+    roles: () => checked(rolesSchema, 'admin_roles'),
+    setRole: (uuid: string, role: 'admin' | 'moderator', note: string | null) => checked(rolesSchema, 'admin_role_set', { uuid, role, note }),
+    removeRole: (uuid: string) => checked(rolesSchema, 'admin_role_remove', { uuid }),
+    rooms: () => checked(roomListSchema, 'admin_rooms'),
+    closeRoom: (id: string, reason: string | null) => call<void>('admin_room_close', { id, reason }),
+    bulk: (target: BulkTarget, bulk: { ids: string[]; action: string; reason?: string }) =>
+      checked(bulkResultSchema, 'admin_bulk', { target, bulk }),
+    capes: (query: UploadQuery) => checked(z.array(trsAdminCapeSchema), 'admin_capes', { query }),
+    cosmetics: (query: UploadQuery) => checked(cosmeticPageSchema, 'admin_cosmetics', { query }),
+    deleteCosmetic: (id: string) => call<void>('admin_delete_cosmetic', { id }),
+  },
+
   /** Welt-Hosting (§21): Beitreten/Anfragen und Listen – Verbindungsdaten bleiben im Kern bzw. im Spiel. */
   hosting: {
     friendsRooms: () => checked(z.array(hostingRoomSchema), 'hosting_friends_rooms'),
@@ -712,7 +770,7 @@ export function isCancelled(e: unknown): boolean {
  * sonst die mitgelieferte Meldung.
  */
 export function errorMessage(e: unknown): string {
-  if (e instanceof BackendError) return userErrorText(e)
+  if (e instanceof BackendError) return sanctionErrorText(e.apiCode, e.params) ?? userErrorText(e)
   return t('errors.unexpected')
 }
 

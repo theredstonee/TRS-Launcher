@@ -73,6 +73,7 @@ export const useLiveStore = defineStore('live', () => {
       trs.loadCapeOffers(),
       useChatStore().resync(),
       hosting.loaded ? hosting.load() : Promise.resolve(),
+      useSanctionsStore().load(),
     ])
   }
 
@@ -187,6 +188,11 @@ export const useLiveStore = defineStore('live', () => {
         void toasts.notify('report', { key: `rep:${r.id}`, title: t('social.reports.feedback.title'), body, face: null, actions: [] })
         return
       }
+      case 'sanction_added':
+      case 'sanction_updated':
+      case 'appeal_decided':
+        useSanctionsStore().onLiveEvent(e)
+        return
       case 'moderation': {
         const until = e.until ? dateTime(e.until) : null
         const body =

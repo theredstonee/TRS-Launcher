@@ -11,7 +11,7 @@ interface NavItem {
   icon: IconName
   /** Seiten, die ein anderer Bereich baut – fehlen sie noch, bleibt der Punkt ruhig stehen. */
   optional?: boolean
-  /** Nur für Admins der TRS-Dienste. */
+  /** Nur für das TRS-Team (Admins und Moderatoren). */
   admin?: boolean
   /** Nur unter Windows (z. B. Clips). */
   windowsOnly?: boolean
@@ -56,7 +56,7 @@ const visibleItems = computed(() =>
   items.filter(
     (item) =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
-      (!item.admin || trs.isAdmin) &&
+      (!item.admin || trs.isStaff) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
       (!item.windowsOnly || !isLinux),
   ),

@@ -36,6 +36,15 @@ How to write an entry:
   host lets you in, declines, removes you or closes the world.
 - **Your own world at a glance.** While you host a world in the game, Social → Worlds shows its join code, how many
   players are in it and who is waiting – manage it in the game (pause menu → Host world).
+- **Moderation:** the team now has moderators, clearer sanctions (chat mute, social, upload and world-hosting bans,
+  temporary account bans) and you can see your own sanctions and appeal each one once – even while banned. Settings →
+  Privacy → "My sanctions" (and a notice at the top while one is active) shows the kind, what it blocks, when it ends
+  and why; blocked actions now explain themselves instead of showing an error, and new sanctions or answers to your
+  appeal arrive as a notification right away. The same works in the TRS Client under Social.
+- **New team area for admins and moderators:** an overview of what needs attention, reports with filters and priority,
+  appeals, a player file with the full sanction history (lift, shorten or extend with a reason), new sanctions with
+  kind, duration and reason templates plus a confirmation step, capes and cosmetics, open worlds, codes, word filter,
+  roles and the audit log – with global search, multi-select for bulk actions and keyboard shortcuts (/, j/k, a/r, ?).
 
 ### Deutsch
 
@@ -51,6 +60,17 @@ How to write an entry:
   Außerdem bekommst du einen kurzen Hinweis, wenn der Host dich hereinlässt, ablehnt, entfernt oder die Welt schließt.
 - **Deine eigene Welt im Blick.** Während du im Spiel eine Welt hostest, zeigt Sozial → Welten ihren Beitrittscode,
   wie viele Spieler drin sind und wer wartet – verwaltet wird sie im Spiel (Pausemenü → Welt hosten).
+- **Moderation:** Das Team hat jetzt Moderatoren und klarere Strafen (Chat-Stumm, Sozial-, Upload- und
+  Welt-Hosting-Sperre, befristeter Konto-Bann). Du siehst deine eigenen Strafen und kannst gegen jede einmal Einspruch
+  einlegen – auch wenn dein Konto gesperrt ist. Einstellungen → Datenschutz → „Meine Strafen“ (und ein Hinweis oben,
+  solange eine aktiv ist) zeigt Art, was gesperrt ist, wann sie endet und warum; gesperrte Aktionen erklären sich jetzt
+  selbst statt einen Fehler zu zeigen, und neue Strafen oder Antworten auf deinen Einspruch kommen sofort als
+  Benachrichtigung. Im TRS Client geht das genauso unter Sozial.
+- **Neuer Team-Bereich für Admins und Moderatoren:** Übersicht über alles, was Aufmerksamkeit braucht, Meldungen mit
+  Filtern und Priorität, Einsprüche, Spieler-Akte mit dem ganzen Strafverlauf (aufheben, verkürzen oder verlängern mit
+  Begründung), neue Strafen mit Art, Dauer, Grund-Vorlagen und Bestätigung, Umhänge und Kosmetik, offene Welten, Codes,
+  Wortfilter, Rollen und Audit-Log – mit globaler Suche, Mehrfachauswahl für Sammelaktionen und Tastenkürzeln
+  (/, j/k, a/r, ?).
 
 ## 0.7.0 – 2026-09-26 – The Together Update | Das Zusammen-Update
 

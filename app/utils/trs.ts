@@ -35,6 +35,8 @@ export const trsMeSchema = z.object({
   uuid,
   name: text(16),
   admin: z.boolean(),
+  /** Team-Rolle (API §22.1); ältere Kerne kennen nur `admin`. */
+  role: z.enum(['admin', 'moderator']).nullable().default(null),
   createdAt: text(40).nullable(),
   settings: trsPrivacySchema,
   activeCapeId: capeId.nullable(),
@@ -194,7 +196,9 @@ export const trsCapeSourceSchema = z.discriminatedUnion('kind', [
 export const trsCodeSchema = z.object({
   id: z.number().int().positive(),
   hint: text(8),
-  capeId,
+  /** Kosmetik- und Emote-Codes haben keinen Umhang (§8). */
+  capeId: capeId.nullable().default(null),
+  cosmeticId: text(40).nullable().default(null),
   maxUses: count,
   uses: count,
   expiresAt: text(40).nullable(),

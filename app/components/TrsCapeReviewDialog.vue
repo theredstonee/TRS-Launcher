@@ -13,6 +13,8 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const toasts = useToasts()
+/** Löschen dürfen nur Admins (Moderatoren prüfen nur). */
+const team = useTeam()
 
 const currentId = ref(props.startId)
 /** Letzter bekannter Stand – bleibt sichtbar, während die Liste neu lädt. */
@@ -354,7 +356,7 @@ function reportSummary(reasons: Record<string, number>): string {
       <button class="btn btn-ghost px-3" :disabled="capes.length < 2" :aria-label="t('admin.review.dialog.prev')" @click="go(-1)">←</button>
       <span class="self-center text-xs text-base-400 tabular-nums">{{ index + 1 }} / {{ capes.length }}</span>
       <button class="btn btn-ghost px-3" :disabled="capes.length < 2" :aria-label="t('admin.review.dialog.next')" @click="go(1)">→</button>
-      <button class="btn btn-ghost hover:text-redstone-300" :disabled="!!busy" @click="remove">
+      <button v-if="team.isAdmin.value" class="btn btn-ghost hover:text-redstone-300" :disabled="!!busy" @click="remove">
         {{ confirmDelete ? t('admin.review.dialog.confirmDelete') : t('common.actions.delete') }}
       </button>
       <template v-if="canReject">

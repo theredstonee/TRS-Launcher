@@ -270,7 +270,24 @@
       "cannot_join_own_world": "Dit is je eigen wereld.",
       "not_accepted": "De host heeft je (nog) niet binnengelaten.",
       "hosting_unavailable": "Werelden hosten is nu niet beschikbaar op de TRS-server.",
-      "world_too_many_requests": "Er wachten te veel aanvragen voor deze wereld – probeer het later opnieuw."
+      "world_too_many_requests": "Er wachten te veel aanvragen voor deze wereld – probeer het later opnieuw.",
+      "sanctioned": "Dit is voor je account geblokkeerd vanwege een straf.",
+      "sanction_not_found": "Deze straf bestaat niet (meer).",
+      "sanction_not_active": "Deze straf is niet meer actief.",
+      "appeal_exists": "Je hebt al bezwaar gemaakt tegen deze straf.",
+      "appeal_not_found": "Dit bezwaar bestaat niet (meer).",
+      "appeal_decided": "Over dit bezwaar is al beslist.",
+      "own_sanction": "Iemand anders beslist over bezwaren tegen je eigen straffen.",
+      "admin_only": "Alleen admins kunnen dat.",
+      "duration_not_allowed": "Deze duur mag je niet geven.",
+      "cannot_moderate_staff": "Je kunt teamleden niet straffen.",
+      "invalid_duration": "Het einde moet in de toekomst liggen – gebruik “Opheffen” om te beëindigen.",
+      "no_change": "Dat is al het huidige einde.",
+      "role_locked": "Deze rol ligt vast en kan hier niet worden gewijzigd.",
+      "cannot_change_self": "Je kunt je eigen rol niet wijzigen.",
+      "role_not_found": "Deze speler heeft geen teamrol.",
+      "note_not_found": "Deze notitie bestaat niet (meer).",
+      "bulk_too_large": "Hoogstens 50 items tegelijk."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -716,6 +733,24 @@
       "invalidAction": "Onbekende beslissing.",
       "muteRange": "Demping: 5 minuten tot 1 jaar.",
       "invalidWord": "Woord: 2 tot 48 letters of cijfers."
+    },
+    "sanctions": {
+      "appealLength": "Bezwaar: {min} tot {max} tekens.",
+      "appealInvalidChars": "Het bezwaar bevat ongeldige tekens.",
+      "invalidId": "Ongeldige straf."
+    },
+    "team": {
+      "invalidDate": "Ongeldige datum.",
+      "invalidKind": "Onbekend soort straf.",
+      "invalidDuration": "Onbekende duur.",
+      "customMinutes": "Eigen duur: 5 minuten tot 10 jaar.",
+      "invalidReasonCode": "Kies een redensjabloon.",
+      "invalidDecision": "Onbekende beslissing.",
+      "shortenNeedsEnd": "Kies een nieuw einde om in te korten.",
+      "invalidNameQuery": "Namen hebben 1–16 letters, cijfers of _.",
+      "invalidRole": "Onbekende rol.",
+      "invalidRoom": "Ongeldige wereld.",
+      "emptySearch": "Voer een zoekterm in."
     }
   },
   "browse": {
@@ -2252,7 +2287,8 @@
       "dataDir": "map verkenner bestanden",
       "webLogin": "website web login aanmelden admin code browser",
       "clips": "clips opname opnemen video replay shadowplay",
-      "social": "vrienden chat berichten groepen sociaal verzoeken"
+      "social": "vrienden chat berichten groepen sociaal verzoeken",
+      "admin": "team moderatie meldingen straffen bezwaren spelers admin"
     },
     "actions": {
       "newInstance": {
@@ -2866,36 +2902,8 @@
     }
   },
   "admin": {
-    "title": "Admin",
-    "subtitle": "TRS-diensten: capes beoordelen, codes, spelers en statistieken.",
-    "notAdmin": "Deze pagina is alleen voor admins van de TRS-diensten.",
     "tabs": {
-      "label": "Onderdeel",
-      "overview": "Overzicht",
-      "capes": "Capes beoordelen",
-      "codes": "Codes",
-      "players": "Spelers",
-      "reports": "Meldingen"
-    },
-    "stats": {
-      "users": "Gebruikers",
-      "usersHint": "{count} actief (24 u)",
-      "online": "Online",
-      "onlineHint": "{count} live verbindingen",
-      "pending": "Openstaande capes",
-      "pendingHint": "{count} gemeld",
-      "worn": "Gedragen capes",
-      "wornHint": "{count} uploads goedgekeurd",
-      "codes": "Actieve codes",
-      "codesHint": "{count} ingewisseld",
-      "friendships": "Vriendschappen",
-      "friendshipsHint": "{count} openstaande verzoeken",
-      "banned": "Verbannen",
-      "bannedHint": "{count} sessies",
-      "chatReports": "Chatmeldingen",
-      "chatReportsHint": "{count} spelers gedempt",
-      "messages": "Berichten (24 u)",
-      "messagesHint": "{count} in totaal · {storage} afbeeldingen"
+      "capes": "Capes beoordelen"
     },
     "review": {
       "lists": {
@@ -2907,7 +2915,6 @@
       "emptyPending": "Alles goedgekeurd – geen capes in de wachtrij.",
       "empty": "Niets hier.",
       "fullTexture": "Volledige texture",
-      "byOwner": "door {owner} · {date} · {size}",
       "deletedAccount": "een verwijderd account",
       "reported": "{count}× gemeld: {reasons}",
       "reasons": {
@@ -2917,12 +2924,10 @@
         "other": "anders"
       },
       "rejectReason": "Reden: {reason}",
-      "reviewed": "Beoordeeld {date}",
       "approve": "Goedkeuren",
       "reject": "Afwijzen",
       "dialog": {
         "title": "“{name}” beoordelen",
-        "open": "Openen om te beoordelen",
         "uploaded": "Geüpload",
         "fileSize": "Bestandsgrootte",
         "resolution": "Resolutie",
@@ -2983,45 +2988,18 @@
       "revoke": "Intrekken"
     },
     "players": {
-      "placeholder": "Minecraft-naam of UUID",
-      "searchLabel": "Speler zoeken",
-      "searching": "Zoeken …",
-      "admin": "Admin",
-      "banned": "Verbannen",
       "copyUuid": "UUID kopiëren",
-      "since": "Lid sinds",
-      "lastLogin": "Laatste login",
-      "friends": "Vrienden",
-      "uploadsSessions": "Uploads / sessies",
-      "neverUsed": "Heeft nooit TRS-diensten gebruikt – alleen een ban is mogelijk.",
-      "bannedOn": "Verbannen op {date}",
-      "bannedOnReason": "Verbannen op {date} – {reason}",
-      "capes": "Capes",
       "revokeCape": "{cape} intrekken",
       "noCapes": "Geen toegekende capes.",
       "grantLabel": "Cape toekennen",
       "grantPlaceholder": "Cape toekennen …",
-      "grant": "Toekennen",
-      "ban": "Ban",
-      "unban": "Ban opheffen",
-      "reasonPlaceholder": "Reden (optioneel)",
-      "reasonLabel": "Reden voor de ban",
-      "banButton": "Verbannen …",
-      "adminsNotBannable": "Admins kunnen niet worden verbannen."
+      "grant": "Toekennen"
     },
     "dialogs": {
-      "rejectTitle": "Cape afwijzen?",
-      "rejectText": "{name} wordt afgewezen en niemand draagt hem nog.",
       "rejectReasonLabel": "Reden (zichtbaar voor de uploader)",
       "rejectPlaceholder": "bijv. auteursrecht",
-      "deleteTitle": "Cape verwijderen?",
-      "deleteText": "{name} van {owner} wordt definitief verwijderd, inclusief het bestand.",
-      "unknownOwner": "onbekend",
       "revokeTitle": "Code intrekken?",
-      "revokeText": "De code {code} voor {cape} kan daarna niet meer worden ingewisseld. Al ontgrendelde capes blijven behouden.",
-      "banTitle": "Speler verbannen?",
-      "banText": "{name} verliest direct de toegang tot alle TRS-diensten: sessies worden beëindigd en de onlinestatus verdwijnt.",
-      "banConfirm": "Verbannen"
+      "revokeText": "De code {code} voor {cape} kan daarna niet meer worden ingewisseld. Al ontgrendelde capes blijven behouden."
     },
     "toasts": {
       "approved": "“{name}” goedgekeurd",
@@ -3037,10 +3015,7 @@
       "codeRevoked": "Code ingetrokken",
       "alreadyHad": "Had de cape al.",
       "granted": "{cape} toegekend aan {player}",
-      "playerFallback": "speler",
-      "grantRevoked": "Cape ingetrokken",
-      "banned": "Speler verbannen",
-      "unbanned": "Ban opgeheven"
+      "grantRevoked": "Cape ingetrokken"
     },
     "mod": {
       "filters": {
@@ -3086,7 +3061,6 @@
       },
       "addWord": "Woord toevoegen",
       "noWords": "Nog geen woorden in het filter.",
-      "auditTitle": "Moderatielogboek",
       "noAudit": "Nog niets gelogd.",
       "dialogTitle": "Melding",
       "context": "Context",
@@ -3128,33 +3102,12 @@
       "decision": "Beslissing",
       "claim": "Beoordeling overnemen",
       "reopen": "Terug naar open",
-      "reason": "Reden (wordt aan de speler getoond bij waarschuwingen en dempingen)",
-      "duration": "Duur van de demping",
-      "durations": {
-        "d60": "1 uur",
-        "d1440": "1 dag",
-        "d10080": "1 week",
-        "d43200": "30 dagen",
-        "forever": "Tot opgeheven"
-      },
       "keepOpen": "Melding open laten (om meerdere maatregelen te combineren)",
       "includeRelated": "Ook toepassen op andere open meldingen over hetzelfde",
       "deleteMessage": "Bericht verwijderen",
-      "warn": "Waarschuwen",
-      "mute": "Dempen",
-      "ban": "Verbannen",
       "dismiss": "Afwijzen",
       "resolve": "Afhandelen",
-      "confirmBan": "{name} echt verbannen? Dit blokkeert alle TRS-functies voor het account.",
-      "related": "Andere meldingen over deze speler",
-      "chatModeration": "Chatmoderatie",
-      "filedStats": "Heeft {total} meldingen gedaan · {actioned} bevestigd · {dismissed} afgewezen",
-      "warnNeedsReason": "Een waarschuwing heeft een reden nodig.",
-      "toasts": {
-        "muted": "Speler gedempt in de chat.",
-        "unmuted": "Demping opgeheven.",
-        "warned": "Waarschuwing verstuurd."
-      }
+      "related": "Andere meldingen over deze speler"
     }
   },
   "whatsNew": {
@@ -4055,6 +4008,502 @@
       "openChat": "Chat openen",
       "reply": "Beantwoorden",
       "replyPlaceholder": "Snel antwoord …"
+    }
+  },
+  "sanctions": {
+    "kinds": {
+      "warn": "Waarschuwing",
+      "chat_mute": "Chatdemping",
+      "social_ban": "Sociale blokkade",
+      "upload_ban": "Uploadblokkade",
+      "hosting_ban": "Hostingblokkade",
+      "account_ban": "Accountverbanning"
+    },
+    "effects": {
+      "warn": "Een formele waarschuwing – er wordt niets geblokkeerd, maar ze blijft in je geschiedenis.",
+      "chat_mute": "Je kunt geen chatberichten sturen en geen groepen hernoemen of aanmaken.",
+      "social_ban": "Geen vriendschapsverzoeken, nieuwe groepen, uitnodigingen, wereldkaarten of cape-aanbiedingen. Bestaande vrienden en chats blijven.",
+      "upload_ban": "Je kunt geen capes of cosmetica uploaden. Bestaande uploads blijven.",
+      "hosting_ban": "Je kunt geen werelden met vrienden openen of betreden.",
+      "account_ban": "Alle onlinefuncties van TRS zijn geblokkeerd: chat, vrienden, capes, badge en werelden."
+    },
+    "reasons": {
+      "spam": "Spam",
+      "insult_hate": "Belediging / haat",
+      "harassment": "Intimidatie",
+      "inappropriate_content": "Ongepaste inhoud",
+      "inappropriate_name": "Ongepaste naam",
+      "scam_phishing": "Oplichting / phishing",
+      "impersonation": "Zich voordoen als iemand anders",
+      "copyright": "Auteursrecht",
+      "cheating": "Valsspelen / exploits",
+      "ban_evasion": "Omzeilen van een verbanning",
+      "other": "Overig",
+      "auto_spam": "Automatisch: spam",
+      "auto_reports": "Automatisch: meerdere meldingen",
+      "legacy": "Eerdere straf"
+    },
+    "reasonWithText": "{label} – “{text}”",
+    "end": {
+      "lifted": "opgeheven op {date}",
+      "review": "tot een moderator het heeft bekeken",
+      "permanent": "permanent",
+      "ended": "beëindigd op {date}",
+      "until": "eindigt {relative} ({date})"
+    },
+    "blocked": {
+      "warn": "Je hebt een waarschuwing gekregen",
+      "chat_mute": "Je bent gedempt in de chat",
+      "social_ban": "Sociale functies zijn voor jou geblokkeerd",
+      "upload_ban": "Uploads zijn voor jou geblokkeerd",
+      "hosting_ban": "Werelden hosten is voor jou geblokkeerd",
+      "account_ban": "Je account is verbannen van de TRS-diensten",
+      "reason": "Reden: {reason}"
+    },
+    "banner": {
+      "more": "+{n} meer",
+      "reason": "Reden: {reason}",
+      "details": "Details",
+      "hide": "Melding verbergen"
+    },
+    "dialog": {
+      "title": "Mijn straffen",
+      "subtitle": "TRS-account {name}",
+      "active": "Actief",
+      "past": "Verlopen",
+      "noneActive": "Je hebt geen actieve straffen.",
+      "nonePast": "Geen eerdere straffen.",
+      "noneHint": "Alles in orde – bedankt dat je de TRS-community vriendelijk houdt.",
+      "reason": "Reden",
+      "since": "Sinds",
+      "footer": "Afgelopen straffen worden twee jaar na hun einde verwijderd. Tegen elke actieve straf kun je één keer bezwaar maken – het team antwoordt hier."
+    },
+    "appeal": {
+      "button": "Bezwaar maken",
+      "label": "Waarom zou de straf moeten worden opgeheven of ingekort?",
+      "placeholder": "Beschrijf rustig wat er vanuit jouw kant gebeurde.",
+      "once": "Tegen elke straf kun je maar één keer bezwaar maken.",
+      "tooShort": "Minstens {min} tekens (nu {n}).",
+      "tooLong": "Hoogstens {max} tekens.",
+      "send": "Bezwaar versturen",
+      "sending": "Versturen …",
+      "sent": "Bezwaar verstuurd – het team antwoordt hier.",
+      "sentAt": "verstuurd {date}",
+      "waiting": "Het team bekijkt het en antwoordt hier.",
+      "teamAnswer": "Antwoord van het team ({date}):",
+      "status": {
+        "open": "Bezwaar in behandeling",
+        "lifted": "Bezwaar aanvaard – opgeheven",
+        "shortened": "Bezwaar aanvaard – ingekort",
+        "upheld": "Bezwaar afgewezen – blijft staan"
+      }
+    },
+    "toasts": {
+      "added": "Nieuwe straf: {kind}",
+      "updated": "Straf gewijzigd: {kind}",
+      "liftedBody": "De straf is opgeheven.",
+      "decided": "Er is beslist over je bezwaar ({kind})",
+      "decidedBody": "{status} – “{response}”"
+    },
+    "settings": {
+      "title": "Mijn straffen",
+      "description": "Actieve en eerdere straffen van dit account, met reden, einde en bezwaar.",
+      "button": "Tonen"
+    }
+  },
+  "team": {
+    "title": "Moderatie",
+    "subtitle": "Teamgedeelte van de TRS-diensten",
+    "notStaff": "Dit gedeelte is alleen voor het TRS-team (admins en moderators).",
+    "roles": {
+      "admin": "Admin",
+      "moderator": "Moderator",
+      "system": "Systeem"
+    },
+    "nav": {
+      "label": "Moderatiegedeelten",
+      "overview": "Overzicht",
+      "reports": "Meldingen",
+      "appeals": "Bezwaren",
+      "players": "Spelers",
+      "sanctions": "Straffen",
+      "uploads": "Capes en cosmetica",
+      "worlds": "Werelden",
+      "codes": "Codes",
+      "wordFilter": "Woordfilter",
+      "roles": "Rollen",
+      "audit": "Auditlog",
+      "keysHint": "Druk op ? voor sneltoetsen."
+    },
+    "search": {
+      "placeholder": "Zoek spelers, UUID’s, meldings-ID’s, #straffen, capes …",
+      "label": "Zoeken in het teamgedeelte",
+      "none": "Niets gevonden.",
+      "formerName": "voorheen {name}"
+    },
+    "keys": {
+      "title": "Sneltoetsen",
+      "search": "Zoeken",
+      "next": "Volgend item",
+      "prev": "Vorig item",
+      "open": "Item openen",
+      "accept": "Goedkeuren / afhandelen / opheffen",
+      "reject": "Afkeuren / afwijzen / handhaven",
+      "select": "Item selecteren",
+      "help": "Deze hulp",
+      "close": "Venster sluiten",
+      "hint": "Sneltoetsen werken niet tijdens het typen in een veld of als er een venster open is."
+    },
+    "common": {
+      "working": "Bezig …",
+      "loading": "Laden …",
+      "empty": "Hier is nu niets.",
+      "selected": "{n} geselecteerd",
+      "selectLimit": "Hoogstens {n} tegelijk",
+      "clearSelection": "Selectie wissen",
+      "selectAll": "Alles op deze pagina selecteren",
+      "back": "Terug",
+      "system": "Systeem",
+      "apiKey": "API-sleutel",
+      "sort": "Sortering",
+      "sortDefault": "Standaardvolgorde",
+      "oldest": "Oudste eerst",
+      "newest": "Nieuwste eerst",
+      "readOnly": "Je kunt dit bekijken – wijzigen doen admins.",
+      "adminOnly": "Alleen admins zien dit."
+    },
+    "bulk": {
+      "done": "{updated} gewijzigd, {skipped} overgeslagen."
+    },
+    "durations": {
+      "1h": "1 uur",
+      "6h": "6 uur",
+      "1d": "1 dag",
+      "3d": "3 dagen",
+      "7d": "7 dagen",
+      "30d": "30 dagen",
+      "permanent": "Permanent",
+      "custom": "Eigen"
+    },
+    "status": {
+      "active": "Actief",
+      "expired": "Verlopen",
+      "lifted": "Opgeheven",
+      "all": "Alle"
+    },
+    "changes": {
+      "shorten": "Ingekort",
+      "extend": "Verlengd",
+      "lift": "Opgeheven"
+    },
+    "form": {
+      "kind": "Soort",
+      "duration": "Duur",
+      "notAllowed": "Niet toegestaan voor jouw rol",
+      "limitHint": "Als moderator kun je straffen tot {days} dagen geven (waarschuwingen tot {warnDays} dagen). Permanente straffen en accountverbanningen zijn voor admins.",
+      "minutes": "= {n} minuten",
+      "units": {
+        "minutes": "minuten",
+        "hours": "uur",
+        "days": "dagen"
+      },
+      "reasonCode": "Redensjabloon",
+      "chooseReason": "Kies een reden …",
+      "publicReason": "Openbare reden (de speler ziet die)",
+      "publicReasonHint": "optioneel, één regel, hoogstens 500 tekens",
+      "note": "Interne notitie",
+      "noteHint": "alleen voor het team – de speler ziet die nooit",
+      "errors": {
+        "kind": "Jouw rol kan dit soort straf niet geven.",
+        "duration": "Jouw rol kan deze duur niet geven.",
+        "custom": "Eigen duur: minstens 5 minuten en binnen je limiet.",
+        "reasonCode": "Kies een redensjabloon.",
+        "reason": "Openbare reden: één regel, hoogstens 500 tekens.",
+        "note": "Interne notitie: hoogstens 2000 tekens."
+      }
+    },
+    "sanction": {
+      "newTitle": "Nieuwe straf voor {name}",
+      "until": "tot {date}",
+      "confirmLead": "Controleer alles voordat {name} wordt gestraft:",
+      "playerSees": "De speler krijgt een melding “{kind}” met het einde en de openbare reden – nooit de interne notitie of je naam – en kan één keer bezwaar maken.",
+      "banWarning": "Een accountverbanning beëindigt meteen alle sessies en blokkeert alle onlinefuncties van TRS.",
+      "review": "Controleren",
+      "submit": "Straf geven",
+      "created": "Straf gegeven.",
+      "auto": "automatisch",
+      "migrated": "overgenomen",
+      "by": "Gegeven door",
+      "report": "Melding",
+      "lifted": "Opgeheven",
+      "replaced": "vervangen door een teambeslissing",
+      "answer": "Antwoord ({name}):",
+      "decideAppeal": "Over bezwaar beslissen",
+      "adminLocked": "Gegeven door een admin – alleen admins kunnen die wijzigen.",
+      "changeEnd": "Einde wijzigen"
+    },
+    "change": {
+      "liftTitle": "Opheffen: {kind}?",
+      "changeTitle": "Einde wijzigen: {kind}",
+      "current": "{name} – huidig einde: {end}",
+      "inHours": "over {n} u",
+      "newEnd": "Nieuw einde",
+      "shorten": "Hiermee wordt de straf ingekort.",
+      "extend": "Hiermee wordt de straf verlengd.",
+      "same": "Dat is het huidige einde.",
+      "tooLong": "Dat gaat boven je limiet – de server weigert het.",
+      "reason": "Motivering",
+      "reasonHint": "bijv. misverstand, eerste keer",
+      "reasonRequired": "Voer een motivering in.",
+      "lift": "Opheffen",
+      "save": "Einde opslaan",
+      "done": "Straf bijgewerkt."
+    },
+    "appeals": {
+      "decideTitle": "Bezwaar van {name}",
+      "text": "Bezwaar van {date}",
+      "decision": "Beslissing",
+      "decisions": {
+        "lift": "Opheffen",
+        "shorten": "Inkorten",
+        "uphold": "Handhaven"
+      },
+      "decisionHelp": {
+        "lift": "{kind}: eindigt nu.",
+        "shorten": "{kind}: eindigt eerder.",
+        "uphold": "{kind}: blijft zoals hij is."
+      },
+      "response": "Antwoord aan de speler",
+      "responseHint": "De speler ziet dit antwoord.",
+      "responseRequired": "Schrijf een antwoord (1–1000 tekens).",
+      "send": "Beslissen",
+      "decided": "Over het bezwaar is beslist.",
+      "filters": {
+        "open": "Open",
+        "decided": "Beslist",
+        "all": "Alle"
+      },
+      "lead": "Tegen elke straf kan één keer bezwaar worden gemaakt. Moderators beslissen niet over bezwaren tegen hun eigen straffen.",
+      "noneOpen": "Geen open bezwaren.",
+      "sanctionLine": "Straf #{id} · tot {end}",
+      "own": "Je eigen straf – iemand anders beslist."
+    },
+    "dashboard": {
+      "total": "Totaal {n}",
+      "peak": "Piek {n}",
+      "oldest": "oudste {date}",
+      "uptimeDays": "{d} d {h} u",
+      "uptimeHours": "{h} u {m} min",
+      "openReports": "Open meldingen",
+      "highPriority": "{n} met hoge prioriteit",
+      "inReview": "{n} in behandeling",
+      "openAppeals": "Open bezwaren",
+      "nothingOpen": "Niets wachtend",
+      "uploads": "Uploads te controleren",
+      "capes": "{n} capes",
+      "cosmetics": "{n} cosmetica",
+      "reported": "{n} gemeld",
+      "activeSanctions": "Actieve straffen (spelers)",
+      "allSanctions": "Alle straffen",
+      "activity": "Activiteit",
+      "series": {
+        "label": "Reeks",
+        "reports": "Meldingen",
+        "sanctions": "Straffen",
+        "newUsers": "Nieuwe spelers",
+        "messages": "Chatberichten"
+      },
+      "range": "Periode",
+      "days": "{n} dagen",
+      "players": "Spelers",
+      "newPlayers": "+{d} vandaag · +{w} deze week",
+      "online": "Nu online",
+      "activePlayers": "{d} actief vandaag · {w} deze week",
+      "worlds": "Open werelden",
+      "worldPlayers": "{n} spelers binnen",
+      "messages": "Berichten (24 u)",
+      "server": "Server",
+      "version": "Versie",
+      "uptime": "Draait al",
+      "db": "Database",
+      "disk": "Vrije schijfruimte",
+      "diskOf": "{free} van {total}",
+      "recent": "Recente acties",
+      "allAudit": "Auditlog"
+    },
+    "reports": {
+      "highPriority": "Hoge prioriteit",
+      "reason": "Reden",
+      "allReasons": "Alle redenen",
+      "assigned": "Toegewezen",
+      "assignedAll": "Iedereen",
+      "assignedMe": "Aan mij toegewezen",
+      "assignedNone": "Niet toegewezen",
+      "high": "Hoge prioriteit",
+      "dismissSelected": "Selectie afwijzen",
+      "resolveSelected": "Selectie als afgehandeld markeren",
+      "confirm": {
+        "dismiss": "{n} meldingen afwijzen? De melders krijgen een terugkoppeling, en afgewezen meldingen verlagen hun vertrouwen.",
+        "resolve": "{n} meldingen als afgehandeld (actie ondernomen) markeren? De melders krijgen een terugkoppeling."
+      },
+      "openFile": "Spelersdossier openen",
+      "sanction": "Straf …",
+      "sanctionFor": "Straf voor {name}"
+    },
+    "players": {
+      "nameRule": "Voer een Minecraft-naam (1–16 letters, cijfers of _) of een UUID in.",
+      "placeholder": "Naam (ook eerdere) of UUID",
+      "filters": {
+        "all": "Alle",
+        "sanctioned": "Gestraft",
+        "banned": "Verbannen",
+        "reported": "Gemeld",
+        "staff": "Team"
+      },
+      "sortLogin": "Laatste aanmelding",
+      "sortCreated": "Nieuwste accounts",
+      "none": "Geen spelers gevonden.",
+      "player": "Speler",
+      "sanctions": "Actieve straffen",
+      "reports": "Open meldingen",
+      "lastLogin": "Laatste aanmelding",
+      "since": "Sinds"
+    },
+    "file": {
+      "title": "Spelersdossier",
+      "back": "Alle spelers",
+      "unknown": "Onbekende speler",
+      "unknownHint": "Deze speler heeft de TRS-diensten nooit gebruikt. Je kunt toch alvast een straf geven.",
+      "newSanction": "Nieuwe straf",
+      "banned": "Verbannen",
+      "firstLogin": "Eerste aanmelding",
+      "lastLogin": "Laatste aanmelding",
+      "friends": "Vrienden",
+      "sessions": "Sessies",
+      "cannot": {
+        "self": "Je kunt jezelf niet straffen.",
+        "admin": "Admins kunnen niet worden gestraft.",
+        "staff": "Alleen admins straffen teamleden."
+      },
+      "activeSanctions": "Actieve straffen",
+      "warnings": "Waarschuwingen (actief / totaal)",
+      "reportsAgainst": "Meldingen tegen (open / totaal)",
+      "reporterScore": "Bevestigde eigen meldingen ({n} gemeld)",
+      "tabs": {
+        "sanctions": "Geschiedenis",
+        "reports": "Meldingen",
+        "uploads": "Uploads",
+        "worlds": "Werelden",
+        "names": "Namen",
+        "notes": "Notities"
+      },
+      "onlyActive": "Alleen actieve straffen",
+      "noSanctions": "Nog geen straffen.",
+      "reports": {
+        "against": "Meldingen tegen deze speler",
+        "filed": "Meldingen van deze speler",
+        "counts": "{total} in totaal · {open} open · {actioned} bevestigd · {dismissed} afgewezen"
+      },
+      "capes": "Capes",
+      "cosmetics": "Cosmetica",
+      "source": {
+        "upload": "upload",
+        "code": "code",
+        "admin": "toegekend"
+      },
+      "name": "Naam",
+      "firstSeen": "Eerst gezien",
+      "lastSeen": "Laatst gezien",
+      "noteLabel": "Nieuwe notitie",
+      "noteHint": "Wat het team over deze speler moet weten …",
+      "noteInternal": "Intern – de speler ziet notities nooit.",
+      "noNotes": "Nog geen notities."
+    },
+    "worlds": {
+      "closed": "Wereld “{name}” gesloten.",
+      "none": "Geen open werelden.",
+      "line": "Host {host} · {version} {loader} · {players}/{max} spelers",
+      "close": "Sluiten",
+      "closeTitle": "“{name}” sluiten?",
+      "closeText": "De wereld sluit meteen voor iedereen. Geef een hostingblokkade om iemand blijvend buiten te houden.",
+      "reason": "Reden (optioneel)",
+      "lead": "Werelden die spelers nu hosten.",
+      "world": "Wereld",
+      "host": "Host",
+      "game": "Spel",
+      "players": "Spelers",
+      "members": "Leden",
+      "since": "Open sinds",
+      "visibility": {
+        "friends": "vrienden",
+        "invited": "alleen uitgenodigden"
+      },
+      "locked": "geen nieuwe spelers",
+      "memberLine": "{accepted} binnen · {invited} uitgenodigd · {requested} vragen · {banned} verbannen"
+    },
+    "sanctions": {
+      "allKinds": "Alle soorten",
+      "anyActor": "Door iedereen gegeven",
+      "byMe": "Door mij gegeven",
+      "none": "Geen passende straffen."
+    },
+    "uploads": {
+      "capes": "Capes",
+      "cosmetics": "Cosmetica",
+      "search": "Zoeken op naam",
+      "emptyCosmetics": "Geen cosmetica wachtend.",
+      "rejectSelected": "Selectie afkeuren",
+      "approveSelected": "Selectie goedkeuren",
+      "confirm": {
+        "approve": "{n} uploads goedkeuren? Open meldingen erover worden afgesloten.",
+        "reject": "{n} uploads afkeuren? Niemand draagt ze daarna nog."
+      },
+      "deleted": "“{name}” verwijderd.",
+      "deleteTitle": "Cosmetica verwijderen?",
+      "deleteText": "“{name}” wordt definitief verwijderd, inclusief het bestand."
+    },
+    "codes": {
+      "cosmetic": "Cosmetica {id}",
+      "active": "Actief",
+      "all": "Alle"
+    },
+    "wordFilter": {
+      "search": "Zoeken in het filter"
+    },
+    "rolesPage": {
+      "added": "{name} is nu {role}.",
+      "removed": "{name} zit niet meer in het team.",
+      "fixed": "Vast in de serverconfiguratie",
+      "granted": "sinds {date} · door {name}",
+      "role": "Rol",
+      "add": "Aan team toevoegen",
+      "search": "Speler zoeken op naam",
+      "picked": "Gekozen: {name}",
+      "note": "Notitie (optioneel)",
+      "help": {
+        "moderator": "Moderators behandelen meldingen en bezwaren, waarschuwen, geven straffen tot 7 dagen en controleren uploads.",
+        "admin": "Admins mogen alles: permanente straffen, accountverbanningen, rollen, codes en het woordfilter."
+      },
+      "removeTitle": "{name} uit het team verwijderen?",
+      "removeText": "De rol eindigt meteen, ook een websitesessie."
+    },
+    "audit": {
+      "area": "Gedeelte",
+      "from": "Vanaf",
+      "groups": {
+        "all": "Alle acties",
+        "sanction": "Straffen",
+        "chat": "Chat (waarschuwen/dempen)",
+        "user": "Accountverbanningen",
+        "report": "Meldingen",
+        "appeal": "Bezwaren",
+        "role": "Rollen",
+        "cape": "Capes",
+        "cosmetic": "Cosmetica",
+        "codes": "Codes",
+        "player": "Notities",
+        "hosting": "Werelden"
+      }
     }
   }
 }

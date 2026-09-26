@@ -270,7 +270,24 @@
       "cannot_join_own_world": "Bu senin kendi dünyan.",
       "not_accepted": "Ev sahibi seni (henüz) içeri almadı.",
       "hosting_unavailable": "Dünya paylaşımı şu anda TRS sunucusunda kullanılamıyor.",
-      "world_too_many_requests": "Bu dünya için bekleyen çok fazla istek var – daha sonra tekrar dene."
+      "world_too_many_requests": "Bu dünya için bekleyen çok fazla istek var – daha sonra tekrar dene.",
+      "sanctioned": "Bu, bir ceza nedeniyle hesabın için engellendi.",
+      "sanction_not_found": "Bu ceza (artık) yok.",
+      "sanction_not_active": "Bu ceza artık etkin değil.",
+      "appeal_exists": "Bu cezaya zaten itiraz ettin.",
+      "appeal_not_found": "Bu itiraz (artık) yok.",
+      "appeal_decided": "Bu itiraz hakkında zaten karar verildi.",
+      "own_sanction": "Kendi cezalarına yapılan itirazlara başkası karar verir.",
+      "admin_only": "Bunu yalnızca adminler yapabilir.",
+      "duration_not_allowed": "Bu süreyi veremezsin.",
+      "cannot_moderate_staff": "Ekip üyelerini cezalandıramazsın.",
+      "invalid_duration": "Bitiş gelecekte olmalı – bitirmek için “Kaldır”ı kullan.",
+      "no_change": "Bu zaten mevcut bitiş.",
+      "role_locked": "Bu rol sabit ve burada değiştirilemez.",
+      "cannot_change_self": "Kendi rolünü değiştiremezsin.",
+      "role_not_found": "Bu oyuncunun ekip rolü yok.",
+      "note_not_found": "Bu not (artık) yok.",
+      "bulk_too_large": "Tek seferde en fazla 50 kayıt."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -716,6 +733,24 @@
       "invalidAction": "Bilinmeyen karar.",
       "muteRange": "Susturma: 5 dakika ile 1 yıl arası.",
       "invalidWord": "Kelime: 2 ile 48 arası harf veya rakam."
+    },
+    "sanctions": {
+      "appealLength": "İtiraz: {min} ile {max} karakter arası.",
+      "appealInvalidChars": "İtiraz geçersiz karakterler içeriyor.",
+      "invalidId": "Geçersiz ceza."
+    },
+    "team": {
+      "invalidDate": "Geçersiz tarih.",
+      "invalidKind": "Bilinmeyen ceza türü.",
+      "invalidDuration": "Bilinmeyen süre.",
+      "customMinutes": "Özel süre: 5 dakika ile 10 yıl arası.",
+      "invalidReasonCode": "Lütfen bir gerekçe şablonu seç.",
+      "invalidDecision": "Bilinmeyen karar.",
+      "shortenNeedsEnd": "Kısaltmak için yeni bir bitiş seç.",
+      "invalidNameQuery": "İsimler 1–16 harf, rakam veya _ içerir.",
+      "invalidRole": "Bilinmeyen rol.",
+      "invalidRoom": "Geçersiz dünya.",
+      "emptySearch": "Lütfen bir arama terimi gir."
     }
   },
   "browse": {
@@ -2252,7 +2287,8 @@
       "dataDir": "klasör gezgin dosyalar folder explorer files",
       "webLogin": "web site giriş oturum admin kod tarayıcı",
       "clips": "klipler kayıt kaydet video tekrar shadowplay",
-      "social": "arkadaşlar sohbet mesajlar gruplar sosyal istekler"
+      "social": "arkadaşlar sohbet mesajlar gruplar sosyal istekler",
+      "admin": "ekip moderasyon şikayetler cezalar itirazlar oyuncular admin"
     },
     "actions": {
       "newInstance": {
@@ -2866,36 +2902,8 @@
     }
   },
   "admin": {
-    "title": "Yönetim",
-    "subtitle": "TRS hizmetleri: pelerinleri, kodları, oyuncuları ve istatistikleri incele.",
-    "notAdmin": "Bu sayfa yalnızca TRS hizmetleri yöneticileri içindir.",
     "tabs": {
-      "label": "Bölüm",
-      "overview": "Genel bakış",
-      "capes": "Pelerinleri incele",
-      "codes": "Kodlar",
-      "players": "Oyuncular",
-      "reports": "Şikâyetler"
-    },
-    "stats": {
-      "users": "Kullanıcılar",
-      "usersHint": "{count} etkin (24 sa)",
-      "online": "Çevrimiçi",
-      "onlineHint": "{count} canlı bağlantı",
-      "pending": "Bekleyen pelerinler",
-      "pendingHint": "{count} bildirildi",
-      "worn": "Giyilen pelerinler",
-      "wornHint": "{count} yükleme onaylandı",
-      "codes": "Etkin kodlar",
-      "codesHint": "{count} kullanıldı",
-      "friendships": "Arkadaşlıklar",
-      "friendshipsHint": "{count} bekleyen istek",
-      "banned": "Yasaklı",
-      "bannedHint": "{count} oturum",
-      "chatReports": "Sohbet şikâyetleri",
-      "chatReportsHint": "{count} oyuncu susturuldu",
-      "messages": "Mesajlar (24 sa)",
-      "messagesHint": "Toplam {count} · {storage} resim"
+      "capes": "Pelerinleri incele"
     },
     "review": {
       "lists": {
@@ -2907,7 +2915,6 @@
       "emptyPending": "Hepsi onaylandı – bekleyen pelerin yok.",
       "empty": "Burada bir şey yok.",
       "fullTexture": "Tam doku",
-      "byOwner": "{owner} tarafından · {date} · {size}",
       "deletedAccount": "silinmiş bir hesap",
       "reported": "{count}× bildirildi: {reasons}",
       "reasons": {
@@ -2917,12 +2924,10 @@
         "other": "diğer"
       },
       "rejectReason": "Sebep: {reason}",
-      "reviewed": "İncelendi: {date}",
       "approve": "Onayla",
       "reject": "Reddet",
       "dialog": {
         "title": "“{name}” incele",
-        "open": "İncelemek için aç",
         "uploaded": "Yüklenme",
         "fileSize": "Dosya boyutu",
         "resolution": "Çözünürlük",
@@ -2983,45 +2988,18 @@
       "revoke": "İptal et"
     },
     "players": {
-      "placeholder": "Minecraft adı veya UUID",
-      "searchLabel": "Oyuncu ara",
-      "searching": "Aranıyor …",
-      "admin": "Yönetici",
-      "banned": "Yasaklı",
       "copyUuid": "UUID'yi kopyala",
-      "since": "Üyelik tarihi",
-      "lastLogin": "Son giriş",
-      "friends": "Arkadaşlar",
-      "uploadsSessions": "Yüklemeler / oturumlar",
-      "neverUsed": "TRS hizmetlerini hiç kullanmadı – yalnızca yasaklama mümkün.",
-      "bannedOn": "Yasaklanma tarihi: {date}",
-      "bannedOnReason": "Yasaklanma tarihi: {date} – {reason}",
-      "capes": "Pelerinler",
       "revokeCape": "Geri al: {cape}",
       "noCapes": "Verilmiş pelerin yok.",
       "grantLabel": "Pelerin ver",
       "grantPlaceholder": "Pelerin ver …",
-      "grant": "Ver",
-      "ban": "Yasakla",
-      "unban": "Yasağı kaldır",
-      "reasonPlaceholder": "Sebep (isteğe bağlı)",
-      "reasonLabel": "Yasaklama sebebi",
-      "banButton": "Yasakla …",
-      "adminsNotBannable": "Yöneticiler yasaklanamaz."
+      "grant": "Ver"
     },
     "dialogs": {
-      "rejectTitle": "Pelerin reddedilsin mi?",
-      "rejectText": "{name} reddedilecek ve artık kimse onu giymeyecek.",
       "rejectReasonLabel": "Sebep (yükleyene gösterilir)",
       "rejectPlaceholder": "ör. telif hakkı",
-      "deleteTitle": "Pelerin silinsin mi?",
-      "deleteText": "{owner} tarafından yüklenen {name}, dosyası dahil kalıcı olarak silinecek.",
-      "unknownOwner": "bilinmiyor",
       "revokeTitle": "Kod iptal edilsin mi?",
-      "revokeText": "{cape} için {code} kodu artık kullanılamayacak. Zaten açılmış pelerinler kalır.",
-      "banTitle": "Oyuncu yasaklansın mı?",
-      "banText": "{name} tüm TRS hizmetlerine erişimini hemen kaybeder: oturumlar sona erer ve çevrimiçi durumu kaybolur.",
-      "banConfirm": "Yasakla"
+      "revokeText": "{cape} için {code} kodu artık kullanılamayacak. Zaten açılmış pelerinler kalır."
     },
     "toasts": {
       "approved": "Onaylandı: “{name}”",
@@ -3037,10 +3015,7 @@
       "codeRevoked": "Kod iptal edildi",
       "alreadyHad": "Pelerin zaten vardı.",
       "granted": "{player} oyuncusuna verildi: {cape}",
-      "playerFallback": "oyuncu",
-      "grantRevoked": "Pelerin geri alındı",
-      "banned": "Oyuncu yasaklandı",
-      "unbanned": "Yasak kaldırıldı"
+      "grantRevoked": "Pelerin geri alındı"
     },
     "mod": {
       "filters": {
@@ -3086,7 +3061,6 @@
       },
       "addWord": "Kelime ekle",
       "noWords": "Filtrede henüz kelime yok.",
-      "auditTitle": "Moderasyon kaydı",
       "noAudit": "Henüz kayıt yok.",
       "dialogTitle": "Şikâyet",
       "context": "Bağlam",
@@ -3128,33 +3102,12 @@
       "decision": "Karar",
       "claim": "İncelemeyi üstlen",
       "reopen": "Yeniden aç",
-      "reason": "Sebep (uyarı ve susturmalarda oyuncuya gösterilir)",
-      "duration": "Susturma süresi",
-      "durations": {
-        "d60": "1 saat",
-        "d1440": "1 gün",
-        "d10080": "1 hafta",
-        "d43200": "30 gün",
-        "forever": "Kaldırılana kadar"
-      },
       "keepOpen": "Şikâyeti açık tut (birden fazla işlemi birleştirmek için)",
       "includeRelated": "Aynı konudaki diğer açık şikâyetlere de uygula",
       "deleteMessage": "Mesajı sil",
-      "warn": "Uyar",
-      "mute": "Sustur",
-      "ban": "Yasakla",
       "dismiss": "Reddet",
       "resolve": "Tamamla",
-      "confirmBan": "{name} gerçekten yasaklansın mı? Bu, hesap için tüm TRS özelliklerini kilitler.",
-      "related": "Bu oyuncu hakkındaki diğer şikâyetler",
-      "chatModeration": "Sohbet moderasyonu",
-      "filedStats": "Gönderdiği şikâyet: {total} · onaylanan: {actioned} · reddedilen: {dismissed}",
-      "warnNeedsReason": "Uyarı için bir sebep gerekir.",
-      "toasts": {
-        "muted": "Oyuncu sohbette susturuldu.",
-        "unmuted": "Susturma kaldırıldı.",
-        "warned": "Uyarı gönderildi."
-      }
+      "related": "Bu oyuncu hakkındaki diğer şikâyetler"
     }
   },
   "whatsNew": {
@@ -4055,6 +4008,502 @@
       "openChat": "Sohbeti aç",
       "reply": "Yanıtla",
       "replyPlaceholder": "Hızlı yanıt …"
+    }
+  },
+  "sanctions": {
+    "kinds": {
+      "warn": "Uyarı",
+      "chat_mute": "Sohbet susturması",
+      "social_ban": "Sosyal engel",
+      "upload_ban": "Yükleme engeli",
+      "hosting_ban": "Barındırma engeli",
+      "account_ban": "Hesap yasağı"
+    },
+    "effects": {
+      "warn": "Resmî bir uyarı – hiçbir şey engellenmez ama geçmişinde kalır.",
+      "chat_mute": "Sohbet mesajı gönderemez, grupları yeniden adlandıramaz veya yeni grup kuramazsın.",
+      "social_ban": "Arkadaşlık isteği, yeni grup, davet, dünya kartı veya pelerin teklifi yok. Mevcut arkadaşların ve sohbetlerin kalır.",
+      "upload_ban": "Pelerin veya kozmetik yükleyemezsin. Mevcut yüklemeler kalır.",
+      "hosting_ban": "Arkadaşlarla dünya açamaz veya dünyalara katılamazsın.",
+      "account_ban": "TRS’nin tüm çevrim içi özellikleri engellendi: sohbet, arkadaşlar, pelerinler, rozet ve dünyalar."
+    },
+    "reasons": {
+      "spam": "Spam",
+      "insult_hate": "Hakaret / nefret",
+      "harassment": "Taciz",
+      "inappropriate_content": "Uygunsuz içerik",
+      "inappropriate_name": "Uygunsuz isim",
+      "scam_phishing": "Dolandırıcılık / oltalama",
+      "impersonation": "Kimliğe bürünme",
+      "copyright": "Telif hakkı",
+      "cheating": "Hile / açık kullanımı",
+      "ban_evasion": "Yasaktan kaçma",
+      "other": "Diğer",
+      "auto_spam": "Otomatik: spam",
+      "auto_reports": "Otomatik: birden çok şikayet",
+      "legacy": "Önceki ceza"
+    },
+    "reasonWithText": "{label} – “{text}”",
+    "end": {
+      "lifted": "{date} tarihinde kaldırıldı",
+      "review": "bir moderatör inceleyene kadar",
+      "permanent": "kalıcı",
+      "ended": "{date} tarihinde bitti",
+      "until": "{relative} bitiyor ({date})"
+    },
+    "blocked": {
+      "warn": "Bir uyarı aldın",
+      "chat_mute": "Sohbette susturuldun",
+      "social_ban": "Sosyal özellikler senin için engellendi",
+      "upload_ban": "Yüklemeler senin için engellendi",
+      "hosting_ban": "Dünya barındırma senin için engellendi",
+      "account_ban": "Hesabın TRS hizmetlerinden yasaklandı",
+      "reason": "Gerekçe: {reason}"
+    },
+    "banner": {
+      "more": "+{n} tane daha",
+      "reason": "Gerekçe: {reason}",
+      "details": "Ayrıntılar",
+      "hide": "Bildirimi gizle"
+    },
+    "dialog": {
+      "title": "Cezalarım",
+      "subtitle": "TRS hesabı {name}",
+      "active": "Etkin",
+      "past": "Geçmiş",
+      "noneActive": "Etkin cezan yok.",
+      "nonePast": "Geçmiş ceza yok.",
+      "noneHint": "Her şey yolunda – TRS topluluğunu dostça tuttuğun için teşekkürler.",
+      "reason": "Gerekçe",
+      "since": "Başlangıç",
+      "footer": "Biten cezalar bitişlerinden iki yıl sonra silinir. Her etkin cezaya bir kez itiraz edebilirsin – ekip burada yanıtlar."
+    },
+    "appeal": {
+      "button": "İtiraz et",
+      "label": "Ceza neden kaldırılmalı veya kısaltılmalı?",
+      "placeholder": "Kendi bakış açından ne olduğunu sakince anlat.",
+      "once": "Her cezaya yalnızca bir kez itiraz edebilirsin.",
+      "tooShort": "En az {min} karakter (şu an {n}).",
+      "tooLong": "En fazla {max} karakter.",
+      "send": "İtirazı gönder",
+      "sending": "Gönderiliyor …",
+      "sent": "İtiraz gönderildi – ekip burada yanıtlayacak.",
+      "sentAt": "{date} gönderildi",
+      "waiting": "Ekip inceleyip burada yanıtlayacak.",
+      "teamAnswer": "Ekibin yanıtı ({date}):",
+      "status": {
+        "open": "İtiraz bekliyor",
+        "lifted": "İtiraz kabul edildi – kaldırıldı",
+        "shortened": "İtiraz kabul edildi – kısaltıldı",
+        "upheld": "İtiraz reddedildi – geçerli"
+      }
+    },
+    "toasts": {
+      "added": "Yeni ceza: {kind}",
+      "updated": "Ceza değişti: {kind}",
+      "liftedBody": "Ceza kaldırıldı.",
+      "decided": "İtirazın hakkında karar verildi ({kind})",
+      "decidedBody": "{status} – “{response}”"
+    },
+    "settings": {
+      "title": "Cezalarım",
+      "description": "Bu hesabın etkin ve geçmiş cezaları; gerekçe, bitiş ve itirazla.",
+      "button": "Göster"
+    }
+  },
+  "team": {
+    "title": "Moderasyon",
+    "subtitle": "TRS hizmetlerinin ekip alanı",
+    "notStaff": "Bu alan yalnızca TRS ekibi (adminler ve moderatörler) içindir.",
+    "roles": {
+      "admin": "Admin",
+      "moderator": "Moderatör",
+      "system": "Sistem"
+    },
+    "nav": {
+      "label": "Moderasyon alanları",
+      "overview": "Genel bakış",
+      "reports": "Şikayetler",
+      "appeals": "İtirazlar",
+      "players": "Oyuncular",
+      "sanctions": "Cezalar",
+      "uploads": "Pelerinler ve kozmetikler",
+      "worlds": "Dünyalar",
+      "codes": "Kodlar",
+      "wordFilter": "Kelime filtresi",
+      "roles": "Roller",
+      "audit": "Denetim kaydı",
+      "keysHint": "Klavye kısayolları için ? tuşuna bas."
+    },
+    "search": {
+      "placeholder": "Oyuncu, UUID, şikayet kimliği, #ceza, pelerin ara …",
+      "label": "Ekip alanında ara",
+      "none": "Hiçbir şey bulunamadı.",
+      "formerName": "eski adı {name}"
+    },
+    "keys": {
+      "title": "Klavye kısayolları",
+      "search": "Ara",
+      "next": "Sonraki kayıt",
+      "prev": "Önceki kayıt",
+      "open": "Kaydı aç",
+      "accept": "Onayla / çöz / kaldır",
+      "reject": "Reddet / geri çevir / koru",
+      "select": "Kaydı seç",
+      "help": "Bu yardım",
+      "close": "Pencereyi kapat",
+      "hint": "Kısayollar bir alana yazarken veya bir pencere açıkken çalışmaz."
+    },
+    "common": {
+      "working": "İşleniyor …",
+      "loading": "Yükleniyor …",
+      "empty": "Şu an burada bir şey yok.",
+      "selected": "{n} seçildi",
+      "selectLimit": "Tek seferde en fazla {n}",
+      "clearSelection": "Seçimi temizle",
+      "selectAll": "Bu sayfadakilerin hepsini seç",
+      "back": "Geri",
+      "system": "Sistem",
+      "apiKey": "API anahtarı",
+      "sort": "Sıralama",
+      "sortDefault": "Varsayılan sıra",
+      "oldest": "Önce en eski",
+      "newest": "Önce en yeni",
+      "readOnly": "Bunu görebilirsin – değiştirmek adminlere ait.",
+      "adminOnly": "Bunu yalnızca adminler görür."
+    },
+    "bulk": {
+      "done": "{updated} değişti, {skipped} atlandı."
+    },
+    "durations": {
+      "1h": "1 saat",
+      "6h": "6 saat",
+      "1d": "1 gün",
+      "3d": "3 gün",
+      "7d": "7 gün",
+      "30d": "30 gün",
+      "permanent": "Kalıcı",
+      "custom": "Özel"
+    },
+    "status": {
+      "active": "Etkin",
+      "expired": "Süresi doldu",
+      "lifted": "Kaldırıldı",
+      "all": "Tümü"
+    },
+    "changes": {
+      "shorten": "Kısaltıldı",
+      "extend": "Uzatıldı",
+      "lift": "Kaldırıldı"
+    },
+    "form": {
+      "kind": "Tür",
+      "duration": "Süre",
+      "notAllowed": "Rolün için izin verilmiyor",
+      "limitHint": "Moderatör olarak {days} güne kadar ceza verebilirsin (uyarılar {warnDays} güne kadar). Kalıcı cezalar ve hesap yasakları adminlere aittir.",
+      "minutes": "= {n} dakika",
+      "units": {
+        "minutes": "dakika",
+        "hours": "saat",
+        "days": "gün"
+      },
+      "reasonCode": "Gerekçe şablonu",
+      "chooseReason": "Gerekçe seç …",
+      "publicReason": "Açık gerekçe (oyuncu görür)",
+      "publicReasonHint": "isteğe bağlı, tek satır, en fazla 500 karakter",
+      "note": "İç not",
+      "noteHint": "yalnızca ekip için – oyuncu asla görmez",
+      "errors": {
+        "kind": "Rolün bu ceza türünü veremez.",
+        "duration": "Rolün bu süreyi veremez.",
+        "custom": "Özel süre: en az 5 dakika ve sınırın içinde.",
+        "reasonCode": "Lütfen bir gerekçe şablonu seç.",
+        "reason": "Açık gerekçe: tek satır, en fazla 500 karakter.",
+        "note": "İç not: en fazla 2000 karakter."
+      }
+    },
+    "sanction": {
+      "newTitle": "{name} için yeni ceza",
+      "until": "{date} tarihine kadar",
+      "confirmLead": "{name} cezalandırılmadan önce her şeyi kontrol et:",
+      "playerSees": "Oyuncu bitiş ve açık gerekçeyle “{kind}” bildirimi alır – iç notu ve adını asla görmez – ve bir kez itiraz edebilir.",
+      "banWarning": "Hesap yasağı tüm oturumları hemen bitirir ve TRS’nin tüm çevrim içi özelliklerini engeller.",
+      "review": "Kontrol et",
+      "submit": "Ceza ver",
+      "created": "Ceza verildi.",
+      "auto": "otomatik",
+      "migrated": "devralındı",
+      "by": "Veren",
+      "report": "Şikayet",
+      "lifted": "Kaldırıldı",
+      "replaced": "ekip kararıyla değiştirildi",
+      "answer": "Yanıt ({name}):",
+      "decideAppeal": "İtiraza karar ver",
+      "adminLocked": "Bir admin verdi – yalnızca adminler değiştirebilir.",
+      "changeEnd": "Bitişi değiştir"
+    },
+    "change": {
+      "liftTitle": "Kaldırılsın mı: {kind}?",
+      "changeTitle": "Bitişi değiştir: {kind}",
+      "current": "{name} – mevcut bitiş: {end}",
+      "inHours": "{n} sa sonra",
+      "newEnd": "Yeni bitiş",
+      "shorten": "Bu, cezayı kısaltır.",
+      "extend": "Bu, cezayı uzatır.",
+      "same": "Bu mevcut bitiş.",
+      "tooLong": "Bu sınırını aşıyor – sunucu reddedecek.",
+      "reason": "Gerekçe",
+      "reasonHint": "ör. yanlış anlama, ilk olay",
+      "reasonRequired": "Lütfen bir gerekçe gir.",
+      "lift": "Kaldır",
+      "save": "Bitişi kaydet",
+      "done": "Ceza güncellendi."
+    },
+    "appeals": {
+      "decideTitle": "{name} itirazı",
+      "text": "{date} tarihli itiraz",
+      "decision": "Karar",
+      "decisions": {
+        "lift": "Kaldır",
+        "shorten": "Kısalt",
+        "uphold": "Koru"
+      },
+      "decisionHelp": {
+        "lift": "{kind}: şimdi biter.",
+        "shorten": "{kind}: daha erken biter.",
+        "uphold": "{kind}: olduğu gibi kalır."
+      },
+      "response": "Oyuncuya yanıt",
+      "responseHint": "Oyuncu bu yanıtı görür.",
+      "responseRequired": "Lütfen bir yanıt yaz (1–1000 karakter).",
+      "send": "Karar ver",
+      "decided": "İtiraza karar verildi.",
+      "filters": {
+        "open": "Açık",
+        "decided": "Karara bağlanan",
+        "all": "Tümü"
+      },
+      "lead": "Her cezaya bir kez itiraz edilebilir. Moderatörler kendi cezalarına yapılan itirazlara karar vermez.",
+      "noneOpen": "Açık itiraz yok.",
+      "sanctionLine": "Ceza #{id} · {end} tarihine kadar",
+      "own": "Kendi cezan – başkası karar verir."
+    },
+    "dashboard": {
+      "total": "Toplam {n}",
+      "peak": "Zirve {n}",
+      "oldest": "en eskisi {date}",
+      "uptimeDays": "{d} g {h} sa",
+      "uptimeHours": "{h} sa {m} dk",
+      "openReports": "Açık şikayetler",
+      "highPriority": "{n} yüksek öncelikli",
+      "inReview": "{n} inceleniyor",
+      "openAppeals": "Açık itirazlar",
+      "nothingOpen": "Bekleyen yok",
+      "uploads": "İncelenecek yüklemeler",
+      "capes": "{n} pelerin",
+      "cosmetics": "{n} kozmetik",
+      "reported": "{n} şikayet edildi",
+      "activeSanctions": "Etkin cezalar (oyuncular)",
+      "allSanctions": "Tüm cezalar",
+      "activity": "Etkinlik",
+      "series": {
+        "label": "Seri",
+        "reports": "Şikayetler",
+        "sanctions": "Cezalar",
+        "newUsers": "Yeni oyuncular",
+        "messages": "Sohbet mesajları"
+      },
+      "range": "Dönem",
+      "days": "{n} gün",
+      "players": "Oyuncular",
+      "newPlayers": "bugün +{d} · bu hafta +{w}",
+      "online": "Şu an çevrim içi",
+      "activePlayers": "bugün {d} etkin · bu hafta {w}",
+      "worlds": "Açık dünyalar",
+      "worldPlayers": "içeride {n} oyuncu",
+      "messages": "Mesajlar (24 sa)",
+      "server": "Sunucu",
+      "version": "Sürüm",
+      "uptime": "Çalışma süresi",
+      "db": "Veritabanı",
+      "disk": "Boş disk alanı",
+      "diskOf": "{total} içinden {free}",
+      "recent": "Son işlemler",
+      "allAudit": "Denetim kaydı"
+    },
+    "reports": {
+      "highPriority": "Yüksek öncelik",
+      "reason": "Gerekçe",
+      "allReasons": "Tüm gerekçeler",
+      "assigned": "Atanan",
+      "assignedAll": "Herkes",
+      "assignedMe": "Bana atanan",
+      "assignedNone": "Atanmamış",
+      "high": "Yüksek öncelik",
+      "dismissSelected": "Seçilenleri geri çevir",
+      "resolveSelected": "Seçilenleri çözüldü işaretle",
+      "confirm": {
+        "dismiss": "{n} şikayet geri çevrilsin mi? Şikayet edenler geri bildirim alır ve geri çevrilen şikayetler güvenlerini düşürür.",
+        "resolve": "{n} şikayet çözüldü (işlem yapıldı) olarak işaretlensin mi? Şikayet edenler geri bildirim alır."
+      },
+      "openFile": "Oyuncu dosyasını aç",
+      "sanction": "Ceza …",
+      "sanctionFor": "{name} için ceza"
+    },
+    "players": {
+      "nameRule": "Bir Minecraft adı (1–16 harf, rakam veya _) ya da UUID gir.",
+      "placeholder": "Ad (eski adlar da) veya UUID",
+      "filters": {
+        "all": "Tümü",
+        "sanctioned": "Cezalı",
+        "banned": "Yasaklı",
+        "reported": "Şikayet edilen",
+        "staff": "Ekip"
+      },
+      "sortLogin": "Son giriş",
+      "sortCreated": "En yeni hesaplar",
+      "none": "Oyuncu bulunamadı.",
+      "player": "Oyuncu",
+      "sanctions": "Etkin cezalar",
+      "reports": "Açık şikayetler",
+      "lastLogin": "Son giriş",
+      "since": "Başlangıç"
+    },
+    "file": {
+      "title": "Oyuncu dosyası",
+      "back": "Tüm oyuncular",
+      "unknown": "Bilinmeyen oyuncu",
+      "unknownHint": "Bu oyuncu TRS hizmetlerini hiç kullanmadı. Yine de önceden ceza verebilirsin.",
+      "newSanction": "Yeni ceza",
+      "banned": "Yasaklı",
+      "firstLogin": "İlk giriş",
+      "lastLogin": "Son giriş",
+      "friends": "Arkadaşlar",
+      "sessions": "Oturumlar",
+      "cannot": {
+        "self": "Kendini cezalandıramazsın.",
+        "admin": "Adminler cezalandırılamaz.",
+        "staff": "Ekip üyelerini yalnızca adminler cezalandırır."
+      },
+      "activeSanctions": "Etkin cezalar",
+      "warnings": "Uyarılar (etkin / toplam)",
+      "reportsAgainst": "Hakkındaki şikayetler (açık / toplam)",
+      "reporterScore": "Onaylanan kendi şikayetleri ({n} gönderildi)",
+      "tabs": {
+        "sanctions": "Geçmiş",
+        "reports": "Şikayetler",
+        "uploads": "Yüklemeler",
+        "worlds": "Dünyalar",
+        "names": "Adlar",
+        "notes": "Notlar"
+      },
+      "onlyActive": "Yalnızca etkin cezalar",
+      "noSanctions": "Henüz ceza yok.",
+      "reports": {
+        "against": "Bu oyuncu hakkındaki şikayetler",
+        "filed": "Bu oyuncunun şikayetleri",
+        "counts": "toplam {total} · {open} açık · {actioned} onaylandı · {dismissed} geri çevrildi"
+      },
+      "capes": "Pelerinler",
+      "cosmetics": "Kozmetikler",
+      "source": {
+        "upload": "yükleme",
+        "code": "kod",
+        "admin": "verildi"
+      },
+      "name": "Ad",
+      "firstSeen": "İlk görülme",
+      "lastSeen": "Son görülme",
+      "noteLabel": "Yeni not",
+      "noteHint": "Ekibin bu oyuncu hakkında bilmesi gerekenler …",
+      "noteInternal": "İç kullanım – oyuncu notları asla görmez.",
+      "noNotes": "Henüz not yok."
+    },
+    "worlds": {
+      "closed": "“{name}” dünyası kapatıldı.",
+      "none": "Açık dünya yok.",
+      "line": "Sunucu sahibi {host} · {version} {loader} · {players}/{max} oyuncu",
+      "close": "Kapat",
+      "closeTitle": "“{name}” kapatılsın mı?",
+      "closeText": "Dünya herkes için hemen kapanır. Bir oyuncuyu kalıcı olarak dışarıda tutmak için barındırma engeli ver.",
+      "reason": "Gerekçe (isteğe bağlı)",
+      "lead": "Oyuncuların şu an barındırdığı dünyalar.",
+      "world": "Dünya",
+      "host": "Sunucu sahibi",
+      "game": "Oyun",
+      "players": "Oyuncular",
+      "members": "Üyeler",
+      "since": "Açılış",
+      "visibility": {
+        "friends": "arkadaşlar",
+        "invited": "yalnızca davetliler"
+      },
+      "locked": "yeni oyuncu yok",
+      "memberLine": "{accepted} içeride · {invited} davetli · {requested} istekte · {banned} yasaklı"
+    },
+    "sanctions": {
+      "allKinds": "Tüm türler",
+      "anyActor": "Herkesin verdiği",
+      "byMe": "Benim verdiğim",
+      "none": "Eşleşen ceza yok."
+    },
+    "uploads": {
+      "capes": "Pelerinler",
+      "cosmetics": "Kozmetikler",
+      "search": "Ada göre ara",
+      "emptyCosmetics": "Bekleyen kozmetik yok.",
+      "rejectSelected": "Seçilenleri reddet",
+      "approveSelected": "Seçilenleri onayla",
+      "confirm": {
+        "approve": "{n} yükleme onaylansın mı? Açık şikayetleri kapatılır.",
+        "reject": "{n} yükleme reddedilsin mi? Sonra kimse onları giymez."
+      },
+      "deleted": "“{name}” silindi.",
+      "deleteTitle": "Kozmetik silinsin mi?",
+      "deleteText": "“{name}” dosyasıyla birlikte kalıcı olarak silinecek."
+    },
+    "codes": {
+      "cosmetic": "Kozmetik {id}",
+      "active": "Etkin",
+      "all": "Tümü"
+    },
+    "wordFilter": {
+      "search": "Filtrede ara"
+    },
+    "rolesPage": {
+      "added": "{name} artık {role}.",
+      "removed": "{name} artık ekipte değil.",
+      "fixed": "Sunucu yapılandırmasında sabit",
+      "granted": "{date} tarihinden beri · veren {name}",
+      "role": "Rol",
+      "add": "Ekibe ekle",
+      "search": "Oyuncuyu ada göre ara",
+      "picked": "Seçilen: {name}",
+      "note": "Not (isteğe bağlı)",
+      "help": {
+        "moderator": "Moderatörler şikayet ve itirazlarla ilgilenir, uyarır, 7 güne kadar ceza verir ve yüklemeleri inceler.",
+        "admin": "Adminler her şeyi yapabilir: kalıcı cezalar, hesap yasakları, roller, kodlar ve kelime filtresi."
+      },
+      "removeTitle": "{name} ekipten çıkarılsın mı?",
+      "removeText": "Rol hemen biter, web sitesi oturumu da dahil."
+    },
+    "audit": {
+      "area": "Alan",
+      "from": "Başlangıç",
+      "groups": {
+        "all": "Tüm işlemler",
+        "sanction": "Cezalar",
+        "chat": "Sohbet (uyarı/susturma)",
+        "user": "Hesap yasakları",
+        "report": "Şikayetler",
+        "appeal": "İtirazlar",
+        "role": "Roller",
+        "cape": "Pelerinler",
+        "cosmetic": "Kozmetikler",
+        "codes": "Kodlar",
+        "player": "Notlar",
+        "hosting": "Dünyalar"
+      }
     }
   }
 }

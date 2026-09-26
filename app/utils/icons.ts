@@ -58,6 +58,14 @@ export const icons = {
   external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
   /** Gehostete Welt: ein Block. */
   world: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5 12 12l8-4.5M12 12v9',
+  /** Team-Bereich: Strafe (Richterhammer). */
+  gavel: 'M13 4l7 7M11 6l7 7M9.5 7.5l5 5M12 10l-8 8M3 21h9',
+  /** Einspruch: Waage. */
+  appeal: 'M12 4v16M8 20h8M5 7h14M7 7l-3 6a3 3 0 0 0 6 0zM17 7l-3 6a3 3 0 0 0 6 0z',
+  ticket: 'M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4zM14 7v10',
+  filter: 'M4 5h16l-6 7v6l-4 2v-8z',
+  key: 'M8 14a4 4 0 1 1 3.5-6l8.5.1V11h-2v2h-2v-2h-4.5A4 4 0 0 1 8 14zM7 10h.01',
+  list: 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01',
 } as const
 
 export type IconName = keyof typeof icons

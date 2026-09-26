@@ -15,7 +15,7 @@ const optPlayer = player.nullable().default(null)
 
 export const reportFilters = ['active', 'open', 'in_review', 'resolved', 'all'] as const
 export type ReportFilter = (typeof reportFilters)[number]
-export const reportActions = ['delete_message', 'warn', 'mute', 'ban', 'dismiss', 'resolve'] as const
+export const reportActions = ['delete_message', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve'] as const
 export type ReportActionId = (typeof reportActions)[number]
 
 export const adminReportSummarySchema = z.object({
@@ -34,6 +34,8 @@ export const adminReportSummarySchema = z.object({
   lowTrust: z.boolean().default(false),
   assignedTo: optPlayer,
   targetOpenReports: num,
+  /** Hohe Priorität: schwerer Grund von vertrauenswürdigem Melder oder ≥ 3 offene Meldungen (§22.4). */
+  priority: z.enum(['high', 'normal']).catch('normal').default('normal'),
   createdAt: str(40),
   updatedAt: opt(40),
   resolvedAt: opt(40),
@@ -102,7 +104,7 @@ export const adminReportDetailSchema = adminReportSummarySchema.extend({
 export const adminReportListSchema = z.object({
   reports: z.array(adminReportSummarySchema),
   nextCursor: opt(256),
-  counts: z.object({ open: num, in_review: num, resolved: num }).default({ open: 0, in_review: 0, resolved: 0 }),
+  counts: z.object({ open: num, in_review: num, resolved: num, highPriority: num }).default({ open: 0, in_review: 0, resolved: 0, highPriority: 0 }),
 })
 export const adminReportEnvelopeSchema = z.object({ report: adminReportDetailSchema })
 
@@ -153,6 +155,12 @@ export interface ReportQuery {
   status?: ReportFilter
   kind?: string
   target?: string
+  reason?: string
+  assigned?: 'me' | 'none' | string
+  highPriority?: boolean
+  from?: string
+  to?: string
+  sort?: 'oldest' | 'newest'
   cursor?: string
   limit?: number
 }
@@ -161,6 +169,11 @@ export interface ReportActionInput {
   action: ReportActionId
   reason?: string
   minutes?: number
+  /** Nur bei `sanction` (§22.2). */
+  kind?: string
+  duration?: string
+  reasonCode?: string
+  note?: string
   keepOpen?: boolean
   includeRelated?: boolean
 }
@@ -174,6 +187,11 @@ export interface NewFilterWord {
 export interface AuditQuery {
   ref?: string
   target?: string
+  actor?: string
+  /** Präfix, z. B. `sanction.` */
+  action?: string
+  from?: string
+  to?: string
   before?: number
   limit?: number
 }

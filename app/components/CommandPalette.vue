@@ -73,6 +73,8 @@ const pages = computed<Command[]>(() => {
     { to: '/clips', label: 'nav.clips', icon: 'clips', keywords: 'palette.keywords.clips' },
     { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
     { to: '/social', label: 'nav.social', icon: 'chat', keywords: 'palette.keywords.social' },
+    // Team-Bereich: nur für Admins und Moderatoren.
+    ...(trs.isStaff ? [{ to: '/admin', label: 'nav.admin' as MessageKey, icon: 'admin' as IconName, keywords: 'palette.keywords.admin' as MessageKey }] : []),
   ]
   return list
     // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
@@ -185,8 +187,8 @@ const commands = computed<Command[]>(() => [
     icon: 'compass',
     run: () => go('/browse?kind=modpack'),
   },
-  // Nur für TRS-Admins – die Website-Anmeldung ist deren Verwaltungszugang.
-  ...(trs.isAdmin
+  // Nur für das TRS-Team – die Website-Anmeldung ist dessen Verwaltungszugang.
+  ...(trs.isStaff
     ? [
         {
           id: 'action:web-login',

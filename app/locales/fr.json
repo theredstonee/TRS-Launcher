@@ -270,7 +270,24 @@
       "cannot_join_own_world": "C’est ton propre monde.",
       "not_accepted": "L’hôte ne t’a pas (encore) laissé entrer.",
       "hosting_unavailable": "L’hébergement de mondes n’est pas disponible sur le serveur TRS pour le moment.",
-      "world_too_many_requests": "Trop de demandes attendent pour ce monde – réessaie plus tard."
+      "world_too_many_requests": "Trop de demandes attendent pour ce monde – réessaie plus tard.",
+      "sanctioned": "C’est bloqué pour ton compte à cause d’une sanction.",
+      "sanction_not_found": "Cette sanction n’existe pas (ou plus).",
+      "sanction_not_active": "Cette sanction n’est plus active.",
+      "appeal_exists": "Tu as déjà fait appel de cette sanction.",
+      "appeal_not_found": "Cet appel n’existe pas (ou plus).",
+      "appeal_decided": "Cet appel a déjà été tranché.",
+      "own_sanction": "Quelqu’un d’autre décide des appels contre tes propres sanctions.",
+      "admin_only": "Seuls les admins peuvent faire ça.",
+      "duration_not_allowed": "Tu ne peux pas donner cette durée.",
+      "cannot_moderate_staff": "Tu ne peux pas sanctionner des membres de l’équipe.",
+      "invalid_duration": "La fin doit être dans le futur – utilise « Lever » pour y mettre fin.",
+      "no_change": "C’est déjà la fin actuelle.",
+      "role_locked": "Ce rôle est fixe et ne peut pas être modifié ici.",
+      "cannot_change_self": "Tu ne peux pas changer ton propre rôle.",
+      "role_not_found": "Ce joueur n’a pas de rôle dans l’équipe.",
+      "note_not_found": "Cette note n’existe pas (ou plus).",
+      "bulk_too_large": "50 entrées au maximum à la fois."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -716,6 +733,24 @@
       "invalidAction": "Décision inconnue.",
       "muteRange": "Mode muet : de 5 minutes à 1 an.",
       "invalidWord": "Mot : 2 à 48 lettres ou chiffres."
+    },
+    "sanctions": {
+      "appealLength": "Appel : de {min} à {max} caractères.",
+      "appealInvalidChars": "L’appel contient des caractères non valides.",
+      "invalidId": "Sanction non valide."
+    },
+    "team": {
+      "invalidDate": "Date non valide.",
+      "invalidKind": "Type de sanction inconnu.",
+      "invalidDuration": "Durée inconnue.",
+      "customMinutes": "Durée personnalisée : de 5 minutes à 10 ans.",
+      "invalidReasonCode": "Choisis un modèle de motif.",
+      "invalidDecision": "Décision inconnue.",
+      "shortenNeedsEnd": "Pour raccourcir, choisis une nouvelle fin.",
+      "invalidNameQuery": "Les noms comptent 1 à 16 lettres, chiffres ou _.",
+      "invalidRole": "Rôle inconnu.",
+      "invalidRoom": "Monde non valide.",
+      "emptySearch": "Saisis un terme de recherche."
     }
   },
   "browse": {
@@ -2252,7 +2287,8 @@
       "dataDir": "dossier explorateur fichiers",
       "webLogin": "site web connexion login admin code navigateur",
       "clips": "clips enregistrement enregistrer vidéo replay shadowplay",
-      "social": "amis chat messages groupes social demandes"
+      "social": "amis chat messages groupes social demandes",
+      "admin": "équipe modération signalements sanctions appels joueurs admin"
     },
     "actions": {
       "newInstance": {
@@ -2866,36 +2902,8 @@
     }
   },
   "admin": {
-    "title": "Admin",
-    "subtitle": "Services TRS : vérifier les capes, codes, joueurs et statistiques.",
-    "notAdmin": "Cette page est réservée aux admins des services TRS.",
     "tabs": {
-      "label": "Section",
-      "overview": "Aperçu",
-      "capes": "Vérifier les capes",
-      "codes": "Codes",
-      "players": "Joueurs",
-      "reports": "Signalements"
-    },
-    "stats": {
-      "users": "Utilisateurs",
-      "usersHint": "{count} actifs (24 h)",
-      "online": "En ligne",
-      "onlineHint": "{count} connexions en direct",
-      "pending": "Capes en attente",
-      "pendingHint": "{count} signalées",
-      "worn": "Capes portées",
-      "wornHint": "{count} envois approuvés",
-      "codes": "Codes actifs",
-      "codesHint": "{count} utilisés",
-      "friendships": "Amitiés",
-      "friendshipsHint": "{count} demandes en attente",
-      "banned": "Bannis",
-      "bannedHint": "{count} sessions",
-      "chatReports": "Signalements du chat",
-      "chatReportsHint": "{count} joueurs rendus muets",
-      "messages": "Messages (24 h)",
-      "messagesHint": "{count} au total · Images : {storage}"
+      "capes": "Vérifier les capes"
     },
     "review": {
       "lists": {
@@ -2907,7 +2915,6 @@
       "emptyPending": "Tout est approuvé – aucune cape en attente.",
       "empty": "Rien ici.",
       "fullTexture": "Texture complète",
-      "byOwner": "par {owner} · {date} · {size}",
       "deletedAccount": "un compte supprimé",
       "reported": "Signalée {count}× : {reasons}",
       "reasons": {
@@ -2917,12 +2924,10 @@
         "other": "autre"
       },
       "rejectReason": "Motif : {reason}",
-      "reviewed": "Vérifiée le {date}",
       "approve": "Approuver",
       "reject": "Refuser",
       "dialog": {
         "title": "Vérifier « {name} »",
-        "open": "Ouvrir pour vérifier",
         "uploaded": "Envoyée",
         "fileSize": "Taille du fichier",
         "resolution": "Résolution",
@@ -2983,45 +2988,18 @@
       "revoke": "Révoquer"
     },
     "players": {
-      "placeholder": "Nom Minecraft ou UUID",
-      "searchLabel": "Rechercher un joueur",
-      "searching": "Recherche…",
-      "admin": "Admin",
-      "banned": "Banni",
       "copyUuid": "Copier l'UUID",
-      "since": "Membre depuis",
-      "lastLogin": "Dernière connexion",
-      "friends": "Amis",
-      "uploadsSessions": "Envois / sessions",
-      "neverUsed": "N'a jamais utilisé les services TRS – seul un bannissement est possible.",
-      "bannedOn": "Banni le {date}",
-      "bannedOnReason": "Banni le {date} – {reason}",
-      "capes": "Capes",
       "revokeCape": "Révoquer {cape}",
       "noCapes": "Aucune cape attribuée.",
       "grantLabel": "Attribuer une cape",
       "grantPlaceholder": "Attribuer une cape…",
-      "grant": "Attribuer",
-      "ban": "Bannir",
-      "unban": "Lever le bannissement",
-      "reasonPlaceholder": "Motif (facultatif)",
-      "reasonLabel": "Motif du bannissement",
-      "banButton": "Bannir…",
-      "adminsNotBannable": "Les admins ne peuvent pas être bannis."
+      "grant": "Attribuer"
     },
     "dialogs": {
-      "rejectTitle": "Refuser la cape ?",
-      "rejectText": "{name} sera refusée et plus personne ne la portera.",
       "rejectReasonLabel": "Motif (visible par l'auteur de l'envoi)",
       "rejectPlaceholder": "par ex. droits d'auteur",
-      "deleteTitle": "Supprimer la cape ?",
-      "deleteText": "{name} de {owner} sera supprimée définitivement, fichier compris.",
-      "unknownOwner": "inconnu",
       "revokeTitle": "Révoquer le code ?",
-      "revokeText": "Le code {code} pour {cape} ne pourra plus être utilisé. Les capes déjà débloquées restent.",
-      "banTitle": "Bannir le joueur ?",
-      "banText": "{name} perd immédiatement l'accès à tous les services TRS : ses sessions prennent fin et son statut en ligne disparaît.",
-      "banConfirm": "Bannir"
+      "revokeText": "Le code {code} pour {cape} ne pourra plus être utilisé. Les capes déjà débloquées restent."
     },
     "toasts": {
       "approved": "« {name} » approuvée",
@@ -3037,10 +3015,7 @@
       "codeRevoked": "Code révoqué",
       "alreadyHad": "Avait déjà la cape.",
       "granted": "{cape} attribuée à {player}",
-      "playerFallback": "joueur",
-      "grantRevoked": "Cape révoquée",
-      "banned": "Joueur banni",
-      "unbanned": "Bannissement levé"
+      "grantRevoked": "Cape révoquée"
     },
     "mod": {
       "filters": {
@@ -3086,7 +3061,6 @@
       },
       "addWord": "Ajouter un mot",
       "noWords": "Aucun mot dans le filtre pour l’instant.",
-      "auditTitle": "Journal de modération",
       "noAudit": "Rien d’enregistré pour l’instant.",
       "dialogTitle": "Signalement",
       "context": "Contexte",
@@ -3128,33 +3102,12 @@
       "decision": "Décision",
       "claim": "Prendre en charge l’examen",
       "reopen": "Remettre en ouvert",
-      "reason": "Raison (visible par le joueur pour les avertissements et le mode muet)",
-      "duration": "Durée du mode muet",
-      "durations": {
-        "d60": "1 heure",
-        "d1440": "1 jour",
-        "d10080": "1 semaine",
-        "d43200": "30 jours",
-        "forever": "Jusqu’à levée"
-      },
       "keepOpen": "Garder le signalement ouvert (pour combiner plusieurs mesures)",
       "includeRelated": "Appliquer aussi aux autres signalements ouverts sur le même sujet",
       "deleteMessage": "Supprimer le message",
-      "warn": "Avertir",
-      "mute": "Rendre muet",
-      "ban": "Bannir",
       "dismiss": "Rejeter",
       "resolve": "Traité",
-      "confirmBan": "Vraiment bannir {name} ? Cela bloque toutes les fonctionnalités TRS pour ce compte.",
-      "related": "Autres signalements sur ce joueur",
-      "chatModeration": "Modération du chat",
-      "filedStats": "A envoyé {total} signalements · {actioned} confirmés · {dismissed} rejetés",
-      "warnNeedsReason": "Un avertissement nécessite un motif.",
-      "toasts": {
-        "muted": "Joueur rendu muet dans le chat.",
-        "unmuted": "Mise en sourdine levée.",
-        "warned": "Avertissement envoyé."
-      }
+      "related": "Autres signalements sur ce joueur"
     }
   },
   "whatsNew": {
@@ -4055,6 +4008,502 @@
       "openChat": "Ouvrir le chat",
       "reply": "Répondre",
       "replyPlaceholder": "Réponse rapide …"
+    }
+  },
+  "sanctions": {
+    "kinds": {
+      "warn": "Avertissement",
+      "chat_mute": "Mise en sourdine du chat",
+      "social_ban": "Blocage social",
+      "upload_ban": "Blocage des envois",
+      "hosting_ban": "Blocage de l’hébergement",
+      "account_ban": "Bannissement du compte"
+    },
+    "effects": {
+      "warn": "Un avertissement officiel – rien n’est bloqué, mais il reste dans ton historique.",
+      "chat_mute": "Tu ne peux pas envoyer de messages, renommer ni créer de groupes.",
+      "social_ban": "Pas de demandes d’ami, de nouveaux groupes, d’invitations, de cartes de monde ni d’offres de capes. Tes amis et discussions restent.",
+      "upload_ban": "Tu ne peux pas envoyer de capes ni de cosmétiques. Les envois existants restent.",
+      "hosting_ban": "Tu ne peux pas ouvrir ni rejoindre de mondes avec des amis.",
+      "account_ban": "Toutes les fonctions en ligne de TRS sont bloquées : chat, amis, capes, badge et mondes."
+    },
+    "reasons": {
+      "spam": "Spam",
+      "insult_hate": "Insultes / haine",
+      "harassment": "Harcèlement",
+      "inappropriate_content": "Contenu inapproprié",
+      "inappropriate_name": "Nom inapproprié",
+      "scam_phishing": "Arnaque / hameçonnage",
+      "impersonation": "Usurpation d’identité",
+      "copyright": "Droit d’auteur",
+      "cheating": "Triche / exploits",
+      "ban_evasion": "Contournement de sanction",
+      "other": "Autre",
+      "auto_spam": "Automatique : spam",
+      "auto_reports": "Automatique : plusieurs signalements",
+      "legacy": "Sanction antérieure"
+    },
+    "reasonWithText": "{label} – « {text} »",
+    "end": {
+      "lifted": "levée le {date}",
+      "review": "jusqu’à la vérification par un modérateur",
+      "permanent": "permanente",
+      "ended": "terminée le {date}",
+      "until": "se termine {relative} ({date})"
+    },
+    "blocked": {
+      "warn": "Tu as reçu un avertissement",
+      "chat_mute": "Tu es en sourdine dans le chat",
+      "social_ban": "Les fonctions sociales sont bloquées pour toi",
+      "upload_ban": "Les envois sont bloqués pour toi",
+      "hosting_ban": "L’hébergement de mondes est bloqué pour toi",
+      "account_ban": "Ton compte est banni des services TRS",
+      "reason": "Motif : {reason}"
+    },
+    "banner": {
+      "more": "+{n} de plus",
+      "reason": "Motif : {reason}",
+      "details": "Détails",
+      "hide": "Masquer l’avis"
+    },
+    "dialog": {
+      "title": "Mes sanctions",
+      "subtitle": "Compte TRS {name}",
+      "active": "Actives",
+      "past": "Passées",
+      "noneActive": "Tu n’as aucune sanction active.",
+      "nonePast": "Aucune sanction passée.",
+      "noneHint": "Tout va bien – merci de garder la communauté TRS sympa.",
+      "reason": "Motif",
+      "since": "Depuis",
+      "footer": "Les sanctions terminées sont supprimées deux ans après leur fin. Tu peux faire appel une fois de chaque sanction active – l’équipe répond ici."
+    },
+    "appeal": {
+      "button": "Faire appel",
+      "label": "Pourquoi la sanction devrait-elle être levée ou raccourcie ?",
+      "placeholder": "Décris calmement ce qui s’est passé de ton point de vue.",
+      "once": "Un seul appel par sanction.",
+      "tooShort": "Au moins {min} caractères ({n} pour l’instant).",
+      "tooLong": "{max} caractères au maximum.",
+      "send": "Envoyer l’appel",
+      "sending": "Envoi …",
+      "sent": "Appel envoyé – l’équipe répondra ici.",
+      "sentAt": "envoyé {date}",
+      "waiting": "L’équipe va l’examiner et répondre ici.",
+      "teamAnswer": "Réponse de l’équipe ({date}) :",
+      "status": {
+        "open": "Appel en attente",
+        "lifted": "Appel accepté – levée",
+        "shortened": "Appel accepté – raccourcie",
+        "upheld": "Appel rejeté – maintenue"
+      }
+    },
+    "toasts": {
+      "added": "Nouvelle sanction : {kind}",
+      "updated": "Sanction modifiée : {kind}",
+      "liftedBody": "La sanction a été levée.",
+      "decided": "Ton appel a été tranché ({kind})",
+      "decidedBody": "{status} – « {response} »"
+    },
+    "settings": {
+      "title": "Mes sanctions",
+      "description": "Sanctions actives et passées de ce compte, avec motif, fin et appel.",
+      "button": "Afficher"
+    }
+  },
+  "team": {
+    "title": "Modération",
+    "subtitle": "Espace d’équipe des services TRS",
+    "notStaff": "Cet espace est réservé à l’équipe TRS (admins et modérateurs).",
+    "roles": {
+      "admin": "Admin",
+      "moderator": "Modérateur",
+      "system": "Système"
+    },
+    "nav": {
+      "label": "Espaces de modération",
+      "overview": "Aperçu",
+      "reports": "Signalements",
+      "appeals": "Appels",
+      "players": "Joueurs",
+      "sanctions": "Sanctions",
+      "uploads": "Capes et cosmétiques",
+      "worlds": "Mondes",
+      "codes": "Codes",
+      "wordFilter": "Filtre de mots",
+      "roles": "Rôles",
+      "audit": "Journal d’audit",
+      "keysHint": "Appuie sur ? pour les raccourcis clavier."
+    },
+    "search": {
+      "placeholder": "Chercher joueurs, UUID, ID de signalement, #sanctions, capes …",
+      "label": "Rechercher dans l’espace d’équipe",
+      "none": "Rien trouvé.",
+      "formerName": "anciennement {name}"
+    },
+    "keys": {
+      "title": "Raccourcis clavier",
+      "search": "Rechercher",
+      "next": "Entrée suivante",
+      "prev": "Entrée précédente",
+      "open": "Ouvrir l’entrée",
+      "accept": "Approuver / résoudre / lever",
+      "reject": "Refuser / rejeter / maintenir",
+      "select": "Sélectionner l’entrée",
+      "help": "Cette aide",
+      "close": "Fermer la fenêtre",
+      "hint": "Les raccourcis ne fonctionnent pas pendant la saisie ni quand une fenêtre est ouverte."
+    },
+    "common": {
+      "working": "En cours …",
+      "loading": "Chargement …",
+      "empty": "Rien ici pour le moment.",
+      "selected": "{n} sélectionnés",
+      "selectLimit": "{n} au maximum à la fois",
+      "clearSelection": "Vider la sélection",
+      "selectAll": "Tout sélectionner sur cette page",
+      "back": "Retour",
+      "system": "Système",
+      "apiKey": "Clé API",
+      "sort": "Tri",
+      "sortDefault": "Ordre par défaut",
+      "oldest": "Plus anciens d’abord",
+      "newest": "Plus récents d’abord",
+      "readOnly": "Tu peux consulter – seuls les admins peuvent modifier.",
+      "adminOnly": "Seuls les admins voient ceci."
+    },
+    "bulk": {
+      "done": "{updated} modifiés, {skipped} ignorés."
+    },
+    "durations": {
+      "1h": "1 heure",
+      "6h": "6 heures",
+      "1d": "1 jour",
+      "3d": "3 jours",
+      "7d": "7 jours",
+      "30d": "30 jours",
+      "permanent": "Permanente",
+      "custom": "Personnalisée"
+    },
+    "status": {
+      "active": "Active",
+      "expired": "Expirée",
+      "lifted": "Levée",
+      "all": "Toutes"
+    },
+    "changes": {
+      "shorten": "Raccourcie",
+      "extend": "Prolongée",
+      "lift": "Levée"
+    },
+    "form": {
+      "kind": "Type",
+      "duration": "Durée",
+      "notAllowed": "Non autorisé pour ton rôle",
+      "limitHint": "En tant que modérateur, tu peux donner des sanctions jusqu’à {days} jours (avertissements jusqu’à {warnDays} jours). Les sanctions permanentes et bannissements de compte sont réservés aux admins.",
+      "minutes": "= {n} minutes",
+      "units": {
+        "minutes": "minutes",
+        "hours": "heures",
+        "days": "jours"
+      },
+      "reasonCode": "Modèle de motif",
+      "chooseReason": "Choisir un motif …",
+      "publicReason": "Motif public (visible par le joueur)",
+      "publicReasonHint": "facultatif, une ligne, 500 caractères max.",
+      "note": "Note interne",
+      "noteHint": "réservée à l’équipe – jamais montrée au joueur",
+      "errors": {
+        "kind": "Ton rôle ne peut pas donner ce type de sanction.",
+        "duration": "Ton rôle ne peut pas donner cette durée.",
+        "custom": "Durée personnalisée : au moins 5 minutes et dans ta limite.",
+        "reasonCode": "Choisis un modèle de motif.",
+        "reason": "Motif public : une ligne, 500 caractères max.",
+        "note": "Note interne : 2000 caractères max."
+      }
+    },
+    "sanction": {
+      "newTitle": "Nouvelle sanction pour {name}",
+      "until": "jusqu’au {date}",
+      "confirmLead": "Vérifie tout avant de sanctionner {name} :",
+      "playerSees": "Le joueur reçoit un avis « {kind} » avec la fin et le motif public – jamais la note interne ni ton nom – et peut faire appel une fois.",
+      "banWarning": "Un bannissement de compte ferme immédiatement toutes les sessions et bloque toutes les fonctions en ligne de TRS.",
+      "review": "Vérifier",
+      "submit": "Appliquer la sanction",
+      "created": "Sanction appliquée.",
+      "auto": "automatique",
+      "migrated": "reprise",
+      "by": "Donnée par",
+      "report": "Signalement",
+      "lifted": "Levée",
+      "replaced": "remplacée par une décision de l’équipe",
+      "answer": "Réponse ({name}) :",
+      "decideAppeal": "Trancher l’appel",
+      "adminLocked": "Donnée par un admin – seuls les admins peuvent la modifier.",
+      "changeEnd": "Modifier la fin"
+    },
+    "change": {
+      "liftTitle": "Lever : {kind} ?",
+      "changeTitle": "Modifier la fin : {kind}",
+      "current": "{name} – fin actuelle : {end}",
+      "inHours": "dans {n} h",
+      "newEnd": "Nouvelle fin",
+      "shorten": "Cela raccourcit la sanction.",
+      "extend": "Cela prolonge la sanction.",
+      "same": "C’est la fin actuelle.",
+      "tooLong": "Au-delà de ta limite – le serveur le refusera.",
+      "reason": "Justification",
+      "reasonHint": "p. ex. malentendu, premier incident",
+      "reasonRequired": "Saisis une justification.",
+      "lift": "Lever",
+      "save": "Enregistrer la fin",
+      "done": "Sanction mise à jour."
+    },
+    "appeals": {
+      "decideTitle": "Appel de {name}",
+      "text": "Appel du {date}",
+      "decision": "Décision",
+      "decisions": {
+        "lift": "Lever",
+        "shorten": "Raccourcir",
+        "uphold": "Maintenir"
+      },
+      "decisionHelp": {
+        "lift": "{kind} : prend fin maintenant.",
+        "shorten": "{kind} : prend fin plus tôt.",
+        "uphold": "{kind} : reste inchangée."
+      },
+      "response": "Réponse au joueur",
+      "responseHint": "Le joueur voit cette réponse.",
+      "responseRequired": "Écris une réponse (1 à 1000 caractères).",
+      "send": "Trancher",
+      "decided": "Appel tranché.",
+      "filters": {
+        "open": "Ouverts",
+        "decided": "Tranchés",
+        "all": "Tous"
+      },
+      "lead": "Chaque sanction peut faire l’objet d’un appel. Les modérateurs ne tranchent pas les appels contre leurs propres sanctions.",
+      "noneOpen": "Aucun appel ouvert.",
+      "sanctionLine": "Sanction n° {id} · jusqu’au {end}",
+      "own": "Ta propre sanction – quelqu’un d’autre décide."
+    },
+    "dashboard": {
+      "total": "Total {n}",
+      "peak": "Pic {n}",
+      "oldest": "le plus ancien {date}",
+      "uptimeDays": "{d} j {h} h",
+      "uptimeHours": "{h} h {m} min",
+      "openReports": "Signalements ouverts",
+      "highPriority": "{n} haute priorité",
+      "inReview": "{n} en examen",
+      "openAppeals": "Appels ouverts",
+      "nothingOpen": "Rien en attente",
+      "uploads": "Envois à vérifier",
+      "capes": "{n} capes",
+      "cosmetics": "{n} cosmétiques",
+      "reported": "{n} signalés",
+      "activeSanctions": "Sanctions actives (joueurs)",
+      "allSanctions": "Toutes les sanctions",
+      "activity": "Activité",
+      "series": {
+        "label": "Série",
+        "reports": "Signalements",
+        "sanctions": "Sanctions",
+        "newUsers": "Nouveaux joueurs",
+        "messages": "Messages du chat"
+      },
+      "range": "Période",
+      "days": "{n} jours",
+      "players": "Joueurs",
+      "newPlayers": "+{d} aujourd’hui · +{w} cette semaine",
+      "online": "En ligne",
+      "activePlayers": "{d} actifs aujourd’hui · {w} cette semaine",
+      "worlds": "Mondes ouverts",
+      "worldPlayers": "{n} joueurs dedans",
+      "messages": "Messages (24 h)",
+      "server": "Serveur",
+      "version": "Version",
+      "uptime": "En marche depuis",
+      "db": "Base de données",
+      "disk": "Espace disque libre",
+      "diskOf": "{free} sur {total}",
+      "recent": "Actions récentes",
+      "allAudit": "Journal d’audit"
+    },
+    "reports": {
+      "highPriority": "Haute priorité",
+      "reason": "Motif",
+      "allReasons": "Tous les motifs",
+      "assigned": "Assigné",
+      "assignedAll": "Tout le monde",
+      "assignedMe": "Assignés à moi",
+      "assignedNone": "Non assignés",
+      "high": "Haute priorité",
+      "dismissSelected": "Rejeter la sélection",
+      "resolveSelected": "Marquer la sélection comme traitée",
+      "confirm": {
+        "dismiss": "Rejeter {n} signalements ? Les auteurs reçoivent un retour, et les signalements rejetés réduisent leur confiance.",
+        "resolve": "Marquer {n} signalements comme traités (mesure prise) ? Les auteurs reçoivent un retour."
+      },
+      "openFile": "Ouvrir la fiche du joueur",
+      "sanction": "Sanction …",
+      "sanctionFor": "Sanction pour {name}"
+    },
+    "players": {
+      "nameRule": "Saisis un nom Minecraft (1 à 16 lettres, chiffres ou _) ou un UUID.",
+      "placeholder": "Nom (aussi les anciens) ou UUID",
+      "filters": {
+        "all": "Tous",
+        "sanctioned": "Sanctionnés",
+        "banned": "Bannis",
+        "reported": "Signalés",
+        "staff": "Équipe"
+      },
+      "sortLogin": "Dernière connexion",
+      "sortCreated": "Comptes les plus récents",
+      "none": "Aucun joueur trouvé.",
+      "player": "Joueur",
+      "sanctions": "Sanctions actives",
+      "reports": "Signalements ouverts",
+      "lastLogin": "Dernière connexion",
+      "since": "Depuis"
+    },
+    "file": {
+      "title": "Fiche du joueur",
+      "back": "Tous les joueurs",
+      "unknown": "Joueur inconnu",
+      "unknownHint": "Ce joueur n’a jamais utilisé les services TRS. Tu peux quand même donner une sanction par avance.",
+      "newSanction": "Nouvelle sanction",
+      "banned": "Banni",
+      "firstLogin": "Première connexion",
+      "lastLogin": "Dernière connexion",
+      "friends": "Amis",
+      "sessions": "Sessions",
+      "cannot": {
+        "self": "Tu ne peux pas te sanctionner toi-même.",
+        "admin": "Les admins ne peuvent pas être sanctionnés.",
+        "staff": "Seuls les admins sanctionnent les membres de l’équipe."
+      },
+      "activeSanctions": "Sanctions actives",
+      "warnings": "Avertissements (actifs / total)",
+      "reportsAgainst": "Signalements contre (ouverts / total)",
+      "reporterScore": "Signalements confirmés ({n} envoyés)",
+      "tabs": {
+        "sanctions": "Historique",
+        "reports": "Signalements",
+        "uploads": "Envois",
+        "worlds": "Mondes",
+        "names": "Noms",
+        "notes": "Notes"
+      },
+      "onlyActive": "Seulement les sanctions actives",
+      "noSanctions": "Aucune sanction pour l’instant.",
+      "reports": {
+        "against": "Signalements contre ce joueur",
+        "filed": "Signalements de ce joueur",
+        "counts": "{total} au total · {open} ouverts · {actioned} confirmés · {dismissed} rejetés"
+      },
+      "capes": "Capes",
+      "cosmetics": "Cosmétiques",
+      "source": {
+        "upload": "envoi",
+        "code": "code",
+        "admin": "attribuée"
+      },
+      "name": "Nom",
+      "firstSeen": "Vu la première fois",
+      "lastSeen": "Vu la dernière fois",
+      "noteLabel": "Nouvelle note",
+      "noteHint": "Ce que l’équipe devrait savoir sur ce joueur …",
+      "noteInternal": "Interne – le joueur ne voit jamais les notes.",
+      "noNotes": "Aucune note pour l’instant."
+    },
+    "worlds": {
+      "closed": "Monde « {name} » fermé.",
+      "none": "Aucun monde ouvert.",
+      "line": "Hôte {host} · {version} {loader} · {players}/{max} joueurs",
+      "close": "Fermer",
+      "closeTitle": "Fermer « {name} » ?",
+      "closeText": "Le monde se ferme immédiatement pour tout le monde. Pour tenir un joueur à l’écart durablement, donne un blocage de l’hébergement.",
+      "reason": "Motif (facultatif)",
+      "lead": "Mondes que les joueurs hébergent en ce moment.",
+      "world": "Monde",
+      "host": "Hôte",
+      "game": "Jeu",
+      "players": "Joueurs",
+      "members": "Membres",
+      "since": "Ouvert depuis",
+      "visibility": {
+        "friends": "amis",
+        "invited": "sur invitation"
+      },
+      "locked": "pas de nouveaux joueurs",
+      "memberLine": "{accepted} dedans · {invited} invités · {requested} demandes · {banned} bannis"
+    },
+    "sanctions": {
+      "allKinds": "Tous les types",
+      "anyActor": "Données par n’importe qui",
+      "byMe": "Données par moi",
+      "none": "Aucune sanction correspondante."
+    },
+    "uploads": {
+      "capes": "Capes",
+      "cosmetics": "Cosmétiques",
+      "search": "Chercher par nom",
+      "emptyCosmetics": "Aucun cosmétique en attente.",
+      "rejectSelected": "Refuser la sélection",
+      "approveSelected": "Approuver la sélection",
+      "confirm": {
+        "approve": "Approuver {n} envois ? Leurs signalements ouverts sont clos.",
+        "reject": "Refuser {n} envois ? Personne ne les portera plus."
+      },
+      "deleted": "« {name} » supprimé.",
+      "deleteTitle": "Supprimer le cosmétique ?",
+      "deleteText": "« {name} » sera supprimé définitivement, fichier compris."
+    },
+    "codes": {
+      "cosmetic": "Cosmétique {id}",
+      "active": "Actifs",
+      "all": "Tous"
+    },
+    "wordFilter": {
+      "search": "Chercher dans le filtre"
+    },
+    "rolesPage": {
+      "added": "{name} est maintenant {role}.",
+      "removed": "{name} ne fait plus partie de l’équipe.",
+      "fixed": "Fixé dans la configuration du serveur",
+      "granted": "depuis le {date} · par {name}",
+      "role": "Rôle",
+      "add": "Ajouter à l’équipe",
+      "search": "Chercher un joueur par nom",
+      "picked": "Sélectionné : {name}",
+      "note": "Note (facultative)",
+      "help": {
+        "moderator": "Les modérateurs traitent signalements et appels, avertissent, donnent des sanctions jusqu’à 7 jours et vérifient les envois.",
+        "admin": "Les admins peuvent tout faire : sanctions permanentes, bannissements de compte, rôles, codes et filtre de mots."
+      },
+      "removeTitle": "Retirer {name} de l’équipe ?",
+      "removeText": "Le rôle prend fin immédiatement, session web comprise."
+    },
+    "audit": {
+      "area": "Domaine",
+      "from": "À partir du",
+      "groups": {
+        "all": "Toutes les actions",
+        "sanction": "Sanctions",
+        "chat": "Chat (avertir/sourdine)",
+        "user": "Bannissements de compte",
+        "report": "Signalements",
+        "appeal": "Appels",
+        "role": "Rôles",
+        "cape": "Capes",
+        "cosmetic": "Cosmétiques",
+        "codes": "Codes",
+        "player": "Notes",
+        "hosting": "Mondes"
+      }
     }
   }
 }

@@ -24,12 +24,13 @@ const emit = defineEmits<{
 
 const chat = useChatStore()
 const toasts = useToasts()
+const sanctions = useSanctionsStore()
 const input = useTemplateRef<HTMLTextAreaElement>('input')
 const text = ref(chat.drafts[props.conversation.id] ?? '')
 const sending = ref(false)
 
 const blocked = computed(() => {
-  if (chat.chatMuted) return 'muted'
+  if (chat.chatMuted || sanctions.chatMuted) return 'muted'
   if (!props.conversation.canWrite) return props.conversation.readOnlyReason ?? 'readOnly'
   return null
 })
@@ -43,7 +44,8 @@ const placeholder = computed(() =>
     ? t('social.composer.placeholder', { name: conversationTitle(props.conversation, chat.me) })
     : t('social.composer.placeholderGroup', { name: conversationTitle(props.conversation, chat.me) }),
 )
-const muteUntil = computed(() => chat.moderation?.mute?.until ?? null)
+const muteSanction = computed(() => sanctions.sanctionOf('chat_mute'))
+const muteUntil = computed(() => muteSanction.value?.endsAt ?? chat.moderation?.mute?.until ?? null)
 
 watch(
   () => props.conversation.id,
@@ -188,6 +190,9 @@ onBeforeUnmount(() => {
       </span>
       <span v-else-if="blocked === 'not_friends'">{{ t('social.composer.notFriends') }}</span>
       <span v-else>{{ t('social.composer.readOnly') }}</span>
+      <button v-if="blocked === 'muted'" class="ml-auto shrink-0 text-xs text-redstone-300 hover:underline" data-testid="composer-sanction" @click="sanctions.open(muteSanction?.id ?? null)">
+        {{ muteSanction?.appealable ? t('sanctions.appeal.button') : t('sanctions.banner.details') }}
+      </button>
     </p>
 
     <template v-else>

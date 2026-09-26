@@ -72,7 +72,13 @@ export const useTrsStore = defineStore('trs', () => {
 
   const enabled = computed(() => status.value?.consent === 'accepted')
   const undecided = computed(() => status.value !== null && status.value.consent === null)
-  const isAdmin = computed(() => enabled.value && me.value?.admin === true)
+  /** Team-Rolle (§22.1): Admins und Moderatoren sehen den Team-Bereich, Moderatoren mit weniger Rechten. */
+  const role = computed<'admin' | 'moderator' | null>(() => {
+    if (!enabled.value || !me.value) return null
+    return me.value.role ?? (me.value.admin ? 'admin' : null)
+  })
+  const isAdmin = computed(() => role.value === 'admin')
+  const isStaff = computed(() => role.value !== null)
   const offerCount = computed(() => capeOffers.value?.incoming.length ?? friends.value?.capeOffers ?? 0)
   /** Anfragen + Umhang-Angebote (Zähler in der Leiste). */
   const incomingCount = computed(() => (friends.value?.requests.incoming.length ?? 0) + offerCount.value)
@@ -140,6 +146,7 @@ export const useTrsStore = defineStore('trs', () => {
     if (kind === 'trs_offline') problem.value = 'offline'
     else if (kind === 'trs_banned') problem.value = 'banned'
     else if (kind === 'trs_auth') problem.value = 'auth'
+    useSanctionsStore().noteError(e)
   }
 
   async function refreshStatus() {
@@ -324,6 +331,8 @@ export const useTrsStore = defineStore('trs', () => {
     loadLastSeen()
     void refreshSync()
     const chat = useChatStore()
+    const sanctions = useSanctionsStore()
+    sanctions.reset()
     // Welten gehören zum Account: verwerfen und (falls schon geladen) neu holen.
     const hosting = useHostingStore()
     const hostingWasLoaded = hosting.loaded
@@ -331,6 +340,8 @@ export const useTrsStore = defineStore('trs', () => {
     if (enabled.value) {
       await loadMe()
       chat.setAccount(me.value?.uuid ?? null)
+      // Eigene Strafen – auch (gerade) wenn das Konto gesperrt ist.
+      void sanctions.load()
       await loadFriends()
       if (me.value) {
         void chat.loadList().catch(() => {})
@@ -376,6 +387,8 @@ export const useTrsStore = defineStore('trs', () => {
     enabled,
     undecided,
     isAdmin,
+    isStaff,
+    role,
     incomingCount,
     offerCount,
     capeOffers,

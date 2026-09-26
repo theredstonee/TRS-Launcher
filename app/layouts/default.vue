@@ -7,6 +7,7 @@ const onboarding = useOnboardingStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 const trs = useTrsStore()
+const sanctions = useSanctionsStore()
 const whatsNew = useWhatsNewStore()
 const curseforge = useCurseForgeStore()
 const router = useRouter()
@@ -91,6 +92,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <!-- Seitenwechsel: ein kurzer Redstone-Impuls läuft oben entlang. -->
         <div :key="route.path" class="route-signal" aria-hidden="true" />
         <main ref="main" class="deepslate relative min-w-0 h-full overflow-y-auto" :class="{ 'deepslate-over-scene': appBackground }">
+          <SanctionBanner />
           <slot />
         </main>
         </div>
@@ -107,6 +109,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <TrsConsentDialog v-if="trs.consentOpen" />
     <TrsWebLoginDialog v-if="trs.webLoginOpen && !trs.consentOpen" />
+    <MySanctionsDialog v-if="sanctions.dialogOpen && !trs.consentOpen" />
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
     <ToastHost />

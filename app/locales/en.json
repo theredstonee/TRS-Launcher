@@ -270,7 +270,24 @@
       "cannot_join_own_world": "This is your own world.",
       "not_accepted": "The host has not let you in (yet).",
       "hosting_unavailable": "World hosting is not available on the TRS server right now.",
-      "world_too_many_requests": "Too many requests are waiting for this world – please try again later."
+      "world_too_many_requests": "Too many requests are waiting for this world – please try again later.",
+      "sanctioned": "This is blocked for your account because of a sanction.",
+      "sanction_not_found": "This sanction doesn't exist (anymore).",
+      "sanction_not_active": "This sanction is no longer active.",
+      "appeal_exists": "You have already appealed this sanction.",
+      "appeal_not_found": "This appeal doesn't exist (anymore).",
+      "appeal_decided": "This appeal has already been decided.",
+      "own_sanction": "Someone else decides on appeals against your own sanctions.",
+      "admin_only": "Only admins can do that.",
+      "duration_not_allowed": "You can't give this duration.",
+      "cannot_moderate_staff": "You can't sanction team members.",
+      "invalid_duration": "The end must be in the future – use “Lift” to end it.",
+      "no_change": "That is already the current end.",
+      "role_locked": "This role is fixed and can't be changed here.",
+      "cannot_change_self": "You can't change your own role.",
+      "role_not_found": "This player has no team role.",
+      "note_not_found": "This note doesn't exist (anymore).",
+      "bulk_too_large": "At most 50 entries at once."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -716,6 +733,24 @@
       "invalidAction": "Unknown decision.",
       "muteRange": "Mute: 5 minutes to 1 year.",
       "invalidWord": "Word: 2 to 48 letters or digits."
+    },
+    "sanctions": {
+      "appealLength": "Appeal: {min} to {max} characters.",
+      "appealInvalidChars": "The appeal contains invalid characters.",
+      "invalidId": "Invalid sanction."
+    },
+    "team": {
+      "invalidDate": "Invalid date.",
+      "invalidKind": "Unknown kind of sanction.",
+      "invalidDuration": "Unknown duration.",
+      "customMinutes": "Custom duration: 5 minutes to 10 years.",
+      "invalidReasonCode": "Please choose a reason template.",
+      "invalidDecision": "Unknown decision.",
+      "shortenNeedsEnd": "To shorten, please choose a new end.",
+      "invalidNameQuery": "Names have 1–16 letters, digits or _.",
+      "invalidRole": "Unknown role.",
+      "invalidRoom": "Invalid world.",
+      "emptySearch": "Please enter a search term."
     }
   },
   "browse": {
@@ -2252,7 +2287,8 @@
       "dataDir": "folder explorer files",
       "webLogin": "website web login sign in admin code browser",
       "clips": "clips recording record video replay shadowplay",
-      "social": "friends chat messages groups social requests"
+      "social": "friends chat messages groups social requests",
+      "admin": "team moderation reports sanctions appeals players admin"
     },
     "actions": {
       "newInstance": {
@@ -2866,36 +2902,8 @@
     }
   },
   "admin": {
-    "title": "Admin",
-    "subtitle": "TRS services: review capes, codes, players and stats.",
-    "notAdmin": "This page is only for TRS services admins.",
     "tabs": {
-      "label": "Section",
-      "overview": "Overview",
-      "capes": "Review capes",
-      "codes": "Codes",
-      "players": "Players",
-      "reports": "Reports"
-    },
-    "stats": {
-      "users": "Users",
-      "usersHint": "{count} active (24 h)",
-      "online": "Online",
-      "onlineHint": "{count} live connections",
-      "pending": "Pending capes",
-      "pendingHint": "{count} reported",
-      "worn": "Capes worn",
-      "wornHint": "{count} uploads approved",
-      "codes": "Active codes",
-      "codesHint": "{count} redeemed",
-      "friendships": "Friendships",
-      "friendshipsHint": "{count} pending requests",
-      "banned": "Banned",
-      "bannedHint": "{count} sessions",
-      "chatReports": "Chat reports",
-      "chatReportsHint": "{count} players muted",
-      "messages": "Messages (24 h)",
-      "messagesHint": "{count} in total · {storage} pictures"
+      "capes": "Review capes"
     },
     "review": {
       "lists": {
@@ -2907,7 +2915,6 @@
       "emptyPending": "All approved – no capes waiting.",
       "empty": "Nothing here.",
       "fullTexture": "Full texture",
-      "byOwner": "by {owner} · {date} · {size}",
       "deletedAccount": "a deleted account",
       "reported": "Reported {count}×: {reasons}",
       "reasons": {
@@ -2917,12 +2924,10 @@
         "other": "other"
       },
       "rejectReason": "Reason: {reason}",
-      "reviewed": "Reviewed {date}",
       "approve": "Approve",
       "reject": "Reject",
       "dialog": {
         "title": "Review “{name}”",
-        "open": "Open for review",
         "uploaded": "Uploaded",
         "fileSize": "File size",
         "resolution": "Resolution",
@@ -2983,45 +2988,18 @@
       "revoke": "Revoke"
     },
     "players": {
-      "placeholder": "Minecraft name or UUID",
-      "searchLabel": "Search player",
-      "searching": "Searching …",
-      "admin": "Admin",
-      "banned": "Banned",
       "copyUuid": "Copy UUID",
-      "since": "Member since",
-      "lastLogin": "Last sign-in",
-      "friends": "Friends",
-      "uploadsSessions": "Uploads / sessions",
-      "neverUsed": "Has never used TRS services – only a ban is possible.",
-      "bannedOn": "Banned on {date}",
-      "bannedOnReason": "Banned on {date} – {reason}",
-      "capes": "Capes",
       "revokeCape": "Revoke {cape}",
       "noCapes": "No granted capes.",
       "grantLabel": "Grant cape",
       "grantPlaceholder": "Grant cape …",
-      "grant": "Grant",
-      "ban": "Ban",
-      "unban": "Lift ban",
-      "reasonPlaceholder": "Reason (optional)",
-      "reasonLabel": "Reason for the ban",
-      "banButton": "Ban …",
-      "adminsNotBannable": "Admins can't be banned."
+      "grant": "Grant"
     },
     "dialogs": {
-      "rejectTitle": "Reject cape?",
-      "rejectText": "{name} will be rejected and no one will wear it anymore.",
       "rejectReasonLabel": "Reason (shown to the uploader)",
       "rejectPlaceholder": "e.g. copyright",
-      "deleteTitle": "Delete cape?",
-      "deleteText": "{name} by {owner} will be deleted permanently, including the file.",
-      "unknownOwner": "unknown",
       "revokeTitle": "Revoke code?",
-      "revokeText": "The code {code} for {cape} can no longer be redeemed afterwards. Capes that are already unlocked stay.",
-      "banTitle": "Ban player?",
-      "banText": "{name} immediately loses access to all TRS services: sessions end and their online status disappears.",
-      "banConfirm": "Ban"
+      "revokeText": "The code {code} for {cape} can no longer be redeemed afterwards. Capes that are already unlocked stay."
     },
     "toasts": {
       "approved": "“{name}” approved",
@@ -3037,10 +3015,7 @@
       "codeRevoked": "Code revoked",
       "alreadyHad": "Already had the cape.",
       "granted": "{cape} granted to {player}",
-      "playerFallback": "player",
-      "grantRevoked": "Cape revoked",
-      "banned": "Player banned",
-      "unbanned": "Ban lifted"
+      "grantRevoked": "Cape revoked"
     },
     "mod": {
       "filters": {
@@ -3086,7 +3061,6 @@
       },
       "addWord": "Add word",
       "noWords": "No words in the filter yet.",
-      "auditTitle": "Moderation log",
       "noAudit": "Nothing logged yet.",
       "dialogTitle": "Report",
       "context": "Context",
@@ -3128,33 +3102,12 @@
       "decision": "Decision",
       "claim": "Take over review",
       "reopen": "Back to open",
-      "reason": "Reason (shown to the player for warnings and mutes)",
-      "duration": "Mute duration",
-      "durations": {
-        "d60": "1 hour",
-        "d1440": "1 day",
-        "d10080": "1 week",
-        "d43200": "30 days",
-        "forever": "Until lifted"
-      },
       "keepOpen": "Keep the report open (to combine several actions)",
       "includeRelated": "Apply to other open reports about the same thing",
       "deleteMessage": "Delete message",
-      "warn": "Warn",
-      "mute": "Mute",
-      "ban": "Ban",
       "dismiss": "Dismiss",
       "resolve": "Done",
-      "confirmBan": "Really ban {name}? This locks all TRS features for the account.",
-      "related": "Other reports about this player",
-      "chatModeration": "Chat moderation",
-      "filedStats": "Filed {total} reports · {actioned} confirmed · {dismissed} dismissed",
-      "warnNeedsReason": "A warning needs a reason.",
-      "toasts": {
-        "muted": "Player muted in chat.",
-        "unmuted": "Mute lifted.",
-        "warned": "Warning sent."
-      }
+      "related": "Other reports about this player"
     }
   },
   "whatsNew": {
@@ -4055,6 +4008,502 @@
       "openChat": "Open chat",
       "reply": "Reply",
       "replyPlaceholder": "Quick reply …"
+    }
+  },
+  "sanctions": {
+    "kinds": {
+      "warn": "Warning",
+      "chat_mute": "Chat mute",
+      "social_ban": "Social ban",
+      "upload_ban": "Upload ban",
+      "hosting_ban": "Hosting ban",
+      "account_ban": "Account ban"
+    },
+    "effects": {
+      "warn": "A formal warning – nothing is blocked, but it stays in your history.",
+      "chat_mute": "You can't send chat messages, rename groups or create new ones.",
+      "social_ban": "No friend requests, new groups, invites, world cards or cape offers. Existing friends and chats stay.",
+      "upload_ban": "You can't upload capes or cosmetics. Existing uploads stay.",
+      "hosting_ban": "You can't open or join worlds with friends.",
+      "account_ban": "All TRS online features are blocked: chat, friends, capes, badge and worlds."
+    },
+    "reasons": {
+      "spam": "Spam",
+      "insult_hate": "Insults / hate",
+      "harassment": "Harassment",
+      "inappropriate_content": "Inappropriate content",
+      "inappropriate_name": "Inappropriate name",
+      "scam_phishing": "Scam / phishing",
+      "impersonation": "Impersonation",
+      "copyright": "Copyright",
+      "cheating": "Cheating / exploits",
+      "ban_evasion": "Ban evasion",
+      "other": "Other",
+      "auto_spam": "Automatic: spam",
+      "auto_reports": "Automatic: several reports",
+      "legacy": "Earlier sanction"
+    },
+    "reasonWithText": "{label} – “{text}”",
+    "end": {
+      "lifted": "lifted on {date}",
+      "review": "until a moderator has reviewed it",
+      "permanent": "permanent",
+      "ended": "ended on {date}",
+      "until": "ends {relative} ({date})"
+    },
+    "blocked": {
+      "warn": "You have received a warning",
+      "chat_mute": "You are muted in chat",
+      "social_ban": "Social features are blocked for you",
+      "upload_ban": "Uploads are blocked for you",
+      "hosting_ban": "World hosting is blocked for you",
+      "account_ban": "Your account is banned from TRS services",
+      "reason": "Reason: {reason}"
+    },
+    "banner": {
+      "more": "+{n} more",
+      "reason": "Reason: {reason}",
+      "details": "Details",
+      "hide": "Hide notice"
+    },
+    "dialog": {
+      "title": "My sanctions",
+      "subtitle": "TRS account {name}",
+      "active": "Active",
+      "past": "Past",
+      "noneActive": "You have no active sanctions.",
+      "nonePast": "No past sanctions.",
+      "noneHint": "Everything is fine – thanks for keeping the TRS community friendly.",
+      "reason": "Reason",
+      "since": "Since",
+      "footer": "Ended sanctions are deleted two years after they end. You can appeal each active sanction once – the team answers here."
+    },
+    "appeal": {
+      "button": "Appeal",
+      "label": "Why should the sanction be lifted or shortened?",
+      "placeholder": "Describe calmly what happened from your point of view.",
+      "once": "You can appeal each sanction only once.",
+      "tooShort": "At least {min} characters ({n} so far).",
+      "tooLong": "At most {max} characters.",
+      "send": "Send appeal",
+      "sending": "Sending …",
+      "sent": "Appeal sent – the team will answer here.",
+      "sentAt": "sent {date}",
+      "waiting": "The team will review it and answer here.",
+      "teamAnswer": "Answer from the team ({date}):",
+      "status": {
+        "open": "Appeal pending",
+        "lifted": "Appeal accepted – lifted",
+        "shortened": "Appeal accepted – shortened",
+        "upheld": "Appeal rejected – upheld"
+      }
+    },
+    "toasts": {
+      "added": "New sanction: {kind}",
+      "updated": "Sanction changed: {kind}",
+      "liftedBody": "The sanction was lifted.",
+      "decided": "Your appeal was decided ({kind})",
+      "decidedBody": "{status} – “{response}”"
+    },
+    "settings": {
+      "title": "My sanctions",
+      "description": "Active and past sanctions of this account, with reason, end and appeal.",
+      "button": "Show"
+    }
+  },
+  "team": {
+    "title": "Moderation",
+    "subtitle": "Team area of the TRS services",
+    "notStaff": "This area is only for the TRS team (admins and moderators).",
+    "roles": {
+      "admin": "Admin",
+      "moderator": "Moderator",
+      "system": "System"
+    },
+    "nav": {
+      "label": "Moderation areas",
+      "overview": "Overview",
+      "reports": "Reports",
+      "appeals": "Appeals",
+      "players": "Players",
+      "sanctions": "Sanctions",
+      "uploads": "Capes & cosmetics",
+      "worlds": "Worlds",
+      "codes": "Codes",
+      "wordFilter": "Word filter",
+      "roles": "Roles",
+      "audit": "Audit log",
+      "keysHint": "Press ? for keyboard shortcuts."
+    },
+    "search": {
+      "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
+      "label": "Search the team area",
+      "none": "Nothing found.",
+      "formerName": "formerly {name}"
+    },
+    "keys": {
+      "title": "Keyboard shortcuts",
+      "search": "Search",
+      "next": "Next entry",
+      "prev": "Previous entry",
+      "open": "Open entry",
+      "accept": "Approve / resolve / lift",
+      "reject": "Reject / dismiss / uphold",
+      "select": "Select entry",
+      "help": "This help",
+      "close": "Close dialog",
+      "hint": "Shortcuts don't work while typing in a field or while a dialog is open."
+    },
+    "common": {
+      "working": "Working …",
+      "loading": "Loading …",
+      "empty": "Nothing here right now.",
+      "selected": "{n} selected",
+      "selectLimit": "At most {n} at once",
+      "clearSelection": "Clear selection",
+      "selectAll": "Select all on this page",
+      "back": "Back",
+      "system": "System",
+      "apiKey": "API key",
+      "sort": "Sort",
+      "sortDefault": "Default order",
+      "oldest": "Oldest first",
+      "newest": "Newest first",
+      "readOnly": "You can view this – changing it is up to admins.",
+      "adminOnly": "Only admins can see this."
+    },
+    "bulk": {
+      "done": "{updated} changed, {skipped} skipped."
+    },
+    "durations": {
+      "1h": "1 hour",
+      "6h": "6 hours",
+      "1d": "1 day",
+      "3d": "3 days",
+      "7d": "7 days",
+      "30d": "30 days",
+      "permanent": "Permanent",
+      "custom": "Custom"
+    },
+    "status": {
+      "active": "Active",
+      "expired": "Expired",
+      "lifted": "Lifted",
+      "all": "All"
+    },
+    "changes": {
+      "shorten": "Shortened",
+      "extend": "Extended",
+      "lift": "Lifted"
+    },
+    "form": {
+      "kind": "Kind",
+      "duration": "Duration",
+      "notAllowed": "Not allowed for your role",
+      "limitHint": "As a moderator you can give sanctions up to {days} days (warnings up to {warnDays} days). Permanent sanctions and account bans are for admins.",
+      "minutes": "= {n} minutes",
+      "units": {
+        "minutes": "minutes",
+        "hours": "hours",
+        "days": "days"
+      },
+      "reasonCode": "Reason template",
+      "chooseReason": "Choose a reason …",
+      "publicReason": "Public reason (the player sees it)",
+      "publicReasonHint": "optional, one line, at most 500 characters",
+      "note": "Internal note",
+      "noteHint": "only for the team – never shown to the player",
+      "errors": {
+        "kind": "Your role can't give this kind of sanction.",
+        "duration": "Your role can't give this duration.",
+        "custom": "Custom duration: at least 5 minutes and within your limit.",
+        "reasonCode": "Please choose a reason template.",
+        "reason": "Public reason: one line, at most 500 characters.",
+        "note": "Internal note: at most 2000 characters."
+      }
+    },
+    "sanction": {
+      "newTitle": "New sanction for {name}",
+      "until": "until {date}",
+      "confirmLead": "Please check everything before {name} is sanctioned:",
+      "playerSees": "The player gets a notice “{kind}” with the end and the public reason – never the internal note or your name – and can appeal once.",
+      "banWarning": "An account ban ends every session at once and blocks all TRS online features.",
+      "review": "Review",
+      "submit": "Give sanction",
+      "created": "Sanction given.",
+      "auto": "automatic",
+      "migrated": "taken over",
+      "by": "Given by",
+      "report": "Report",
+      "lifted": "Lifted",
+      "replaced": "replaced by a team decision",
+      "answer": "Answer ({name}):",
+      "decideAppeal": "Decide on appeal",
+      "adminLocked": "Given by an admin – only admins can change it.",
+      "changeEnd": "Change end"
+    },
+    "change": {
+      "liftTitle": "Lift {kind}?",
+      "changeTitle": "Change end: {kind}",
+      "current": "{name} – current end: {end}",
+      "inHours": "in {n} h",
+      "newEnd": "New end",
+      "shorten": "This shortens the sanction.",
+      "extend": "This extends the sanction.",
+      "same": "That's the current end.",
+      "tooLong": "That's beyond your limit – the server will refuse it.",
+      "reason": "Reason",
+      "reasonHint": "e.g. misunderstanding, first offence",
+      "reasonRequired": "Please enter a reason.",
+      "lift": "Lift",
+      "save": "Save end",
+      "done": "Sanction updated."
+    },
+    "appeals": {
+      "decideTitle": "Appeal by {name}",
+      "text": "Appeal from {date}",
+      "decision": "Decision",
+      "decisions": {
+        "lift": "Lift",
+        "shorten": "Shorten",
+        "uphold": "Uphold"
+      },
+      "decisionHelp": {
+        "lift": "The {kind} ends now.",
+        "shorten": "The {kind} ends earlier.",
+        "uphold": "The {kind} stays as it is."
+      },
+      "response": "Answer to the player",
+      "responseHint": "The player sees this answer.",
+      "responseRequired": "Please write an answer (1–1000 characters).",
+      "send": "Decide",
+      "decided": "Appeal decided.",
+      "filters": {
+        "open": "Open",
+        "decided": "Decided",
+        "all": "All"
+      },
+      "lead": "Each sanction can be appealed once. Moderators don't decide on appeals against their own sanctions.",
+      "noneOpen": "No open appeals.",
+      "sanctionLine": "Sanction #{id} · until {end}",
+      "own": "Your own sanction – someone else decides."
+    },
+    "dashboard": {
+      "total": "Total {n}",
+      "peak": "Peak {n}",
+      "oldest": "oldest {date}",
+      "uptimeDays": "{d} d {h} h",
+      "uptimeHours": "{h} h {m} min",
+      "openReports": "Open reports",
+      "highPriority": "{n} high priority",
+      "inReview": "{n} in review",
+      "openAppeals": "Open appeals",
+      "nothingOpen": "Nothing waiting",
+      "uploads": "Uploads waiting",
+      "capes": "{n} capes",
+      "cosmetics": "{n} cosmetics",
+      "reported": "{n} reported",
+      "activeSanctions": "Active sanctions (players)",
+      "allSanctions": "All sanctions",
+      "activity": "Activity",
+      "series": {
+        "label": "Series",
+        "reports": "Reports",
+        "sanctions": "Sanctions",
+        "newUsers": "New players",
+        "messages": "Chat messages"
+      },
+      "range": "Period",
+      "days": "{n} days",
+      "players": "Players",
+      "newPlayers": "+{d} today · +{w} this week",
+      "online": "Online now",
+      "activePlayers": "{d} active today · {w} this week",
+      "worlds": "Open worlds",
+      "worldPlayers": "{n} players inside",
+      "messages": "Messages (24 h)",
+      "server": "Server",
+      "version": "Version",
+      "uptime": "Running for",
+      "db": "Database",
+      "disk": "Free disk space",
+      "diskOf": "{free} of {total}",
+      "recent": "Recent actions",
+      "allAudit": "Audit log"
+    },
+    "reports": {
+      "highPriority": "High priority",
+      "reason": "Reason",
+      "allReasons": "All reasons",
+      "assigned": "Assigned",
+      "assignedAll": "Everyone",
+      "assignedMe": "Assigned to me",
+      "assignedNone": "Unassigned",
+      "high": "High priority",
+      "dismissSelected": "Dismiss selected",
+      "resolveSelected": "Mark selected as done",
+      "confirm": {
+        "dismiss": "Dismiss {n} reports? The reporters get feedback, and dismissed reports count against their trust.",
+        "resolve": "Mark {n} reports as done (action taken)? The reporters get feedback."
+      },
+      "openFile": "Open player file",
+      "sanction": "Sanction …",
+      "sanctionFor": "Sanction for {name}"
+    },
+    "players": {
+      "nameRule": "Enter a Minecraft name (1–16 letters, digits or _) or a UUID.",
+      "placeholder": "Name (also former names) or UUID",
+      "filters": {
+        "all": "All",
+        "sanctioned": "Sanctioned",
+        "banned": "Banned",
+        "reported": "Reported",
+        "staff": "Team"
+      },
+      "sortLogin": "Last sign-in",
+      "sortCreated": "Newest accounts",
+      "none": "No players found.",
+      "player": "Player",
+      "sanctions": "Active sanctions",
+      "reports": "Open reports",
+      "lastLogin": "Last sign-in",
+      "since": "Since"
+    },
+    "file": {
+      "title": "Player file",
+      "back": "All players",
+      "unknown": "Unknown player",
+      "unknownHint": "This player has never used the TRS services. You can still give a sanction in advance.",
+      "newSanction": "New sanction",
+      "banned": "Banned",
+      "firstLogin": "First sign-in",
+      "lastLogin": "Last sign-in",
+      "friends": "Friends",
+      "sessions": "Sessions",
+      "cannot": {
+        "self": "You can't sanction yourself.",
+        "admin": "Admins can't be sanctioned.",
+        "staff": "Only admins can sanction team members."
+      },
+      "activeSanctions": "Active sanctions",
+      "warnings": "Warnings (active / total)",
+      "reportsAgainst": "Reports against (open / total)",
+      "reporterScore": "Confirmed own reports ({n} filed)",
+      "tabs": {
+        "sanctions": "History",
+        "reports": "Reports",
+        "uploads": "Uploads",
+        "worlds": "Worlds",
+        "names": "Names",
+        "notes": "Notes"
+      },
+      "onlyActive": "Only active sanctions",
+      "noSanctions": "No sanctions yet.",
+      "reports": {
+        "against": "Reports against this player",
+        "filed": "Reports by this player",
+        "counts": "{total} in total · {open} open · {actioned} confirmed · {dismissed} dismissed"
+      },
+      "capes": "Capes",
+      "cosmetics": "Cosmetics",
+      "source": {
+        "upload": "upload",
+        "code": "code",
+        "admin": "granted"
+      },
+      "name": "Name",
+      "firstSeen": "First seen",
+      "lastSeen": "Last seen",
+      "noteLabel": "New note",
+      "noteHint": "What the team should know about this player …",
+      "noteInternal": "Internal – the player never sees notes.",
+      "noNotes": "No notes yet."
+    },
+    "worlds": {
+      "closed": "World “{name}” closed.",
+      "none": "No open worlds.",
+      "line": "Host {host} · {version} {loader} · {players}/{max} players",
+      "close": "Close",
+      "closeTitle": "Close “{name}”?",
+      "closeText": "The world closes for everyone right away. To keep a player out for good, give a hosting ban.",
+      "reason": "Reason (optional)",
+      "lead": "Worlds that players are hosting right now.",
+      "world": "World",
+      "host": "Host",
+      "game": "Game",
+      "players": "Players",
+      "members": "Members",
+      "since": "Open since",
+      "visibility": {
+        "friends": "friends",
+        "invited": "invite only"
+      },
+      "locked": "no new players",
+      "memberLine": "{accepted} in · {invited} invited · {requested} asking · {banned} banned"
+    },
+    "sanctions": {
+      "allKinds": "All kinds",
+      "anyActor": "Given by anyone",
+      "byMe": "Given by me",
+      "none": "No sanctions match."
+    },
+    "uploads": {
+      "capes": "Capes",
+      "cosmetics": "Cosmetics",
+      "search": "Search by name",
+      "emptyCosmetics": "No cosmetics waiting.",
+      "rejectSelected": "Reject selected",
+      "approveSelected": "Approve selected",
+      "confirm": {
+        "approve": "Approve {n} uploads? Open reports on them are cleared.",
+        "reject": "Reject {n} uploads? Nobody will wear them anymore."
+      },
+      "deleted": "“{name}” deleted.",
+      "deleteTitle": "Delete cosmetic?",
+      "deleteText": "“{name}” will be deleted permanently, including the file."
+    },
+    "codes": {
+      "cosmetic": "Cosmetic {id}",
+      "active": "Active",
+      "all": "All"
+    },
+    "wordFilter": {
+      "search": "Search the filter"
+    },
+    "rolesPage": {
+      "added": "{name} is now {role}.",
+      "removed": "{name} is no longer in the team.",
+      "fixed": "Fixed in the server configuration",
+      "granted": "since {date} · by {name}",
+      "role": "Role",
+      "add": "Add to team",
+      "search": "Search player by name",
+      "picked": "Selected: {name}",
+      "note": "Note (optional)",
+      "help": {
+        "moderator": "Moderators handle reports and appeals, give warnings and sanctions up to 7 days and review uploads.",
+        "admin": "Admins can do everything: permanent sanctions, account bans, roles, codes and the word filter."
+      },
+      "removeTitle": "Remove {name} from the team?",
+      "removeText": "The role ends at once, including any website session."
+    },
+    "audit": {
+      "area": "Area",
+      "from": "From",
+      "groups": {
+        "all": "All actions",
+        "sanction": "Sanctions",
+        "chat": "Chat (warn/mute)",
+        "user": "Account bans",
+        "report": "Reports",
+        "appeal": "Appeals",
+        "role": "Roles",
+        "cape": "Capes",
+        "cosmetic": "Cosmetics",
+        "codes": "Codes",
+        "player": "Notes",
+        "hosting": "Worlds"
+      }
     }
   }
 }

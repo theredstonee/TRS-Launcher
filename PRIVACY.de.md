@@ -209,6 +209,28 @@ werden Kopien, Notizen und Bilder gelöscht, die Meldung selbst (ohne Inhalte) n
 Account, bleiben deine Meldungen ohne deinen Namen erhalten; Meldungen gegen dich und eine laufende Stummschaltung
 bleiben bis zum Ende dieser Fristen, damit sich Moderation nicht durch Löschen des Accounts umgehen lässt.
 
+### Strafen und Einsprüche
+
+Das Team (Admins und Moderatoren) kann bei Verstößen Strafen verhängen: eine Verwarnung, eine Chat-Stummschaltung, eine
+Sozial-Sperre (keine Freundesanfragen, Gruppen oder Einladungen), eine Upload-Sperre (keine eigenen Umhänge oder
+Kosmetik), eine Welt-Hosting-Sperre oder eine Sperre des ganzen TRS-Accounts – befristet oder dauerhaft. Gespeichert
+werden deine UUID, Art, Grund (aus einer festen Liste, dazu ein optionaler Text, den du siehst), Beginn und Ende, wer
+die Strafe verhängt hat, eine interne Notiz des Teams sowie jede spätere Änderung (verkürzt, verlängert, aufgehoben –
+jeweils mit Zeitpunkt, Bearbeiter und Begründung). Das Team kann zu Spielern außerdem interne Notizen anlegen und
+sieht, unter welchen Namen sich ein Account bei TRS angemeldet hat.
+
+Im Launcher und im Spiel siehst du deine aktiven und vergangenen Strafen mit Art, Grund, Beginn und Ende – nicht die
+interne Notiz und nicht, wer sie verhängt hat. Gegen jede aktive Strafe kannst du **einmal Einspruch** einlegen (20 bis
+1000 Zeichen); auch mit gesperrtem Account geht das über einen kurzen, nur dafür gültigen Zugang (1 Stunde). Jemand
+aus dem Team, der die Strafe nicht selbst verhängt hat, entscheidet und schreibt dir eine Antwort.
+
+**Speicherdauer:** Strafen samt Änderungen und Einspruch werden **2 Jahre nach ihrem Ende** (abgelaufen oder
+aufgehoben) gelöscht; dauerhafte Strafen bleiben, solange sie gelten. Interne Notizen werden nach **2 Jahren** gelöscht,
+frühere Namen **2 Jahre** nach ihrer letzten Nutzung, Einträge im Audit-Log des Teams nach **2 Jahren**. Löschst du
+deinen Account, werden Verwarnungen und beendete Strafen sofort gelöscht; **aktive** Strafen (und Notizen dazu) bleiben
+bis zu ihrem Ende, damit sie sich nicht durch Löschen umgehen lassen. Rechtsgrundlage ist unser berechtigtes Interesse
+an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO).
+
 ### Welt für Freunde hosten (TRS Client)
 
 Im TRS Client kannst du deine Einzelspielerwelt ohne Portfreigabe für Freunde öffnen („Welt hosten“). Der TRS-Server
@@ -262,7 +284,7 @@ den TRS-Server.
 | Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
-| Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Verwarnungen und Stummschaltungen im Chat | Moderation (siehe oben) |
+| Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl; deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
 
 **Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
@@ -314,8 +336,8 @@ Profiling und keinen Verkauf von Daten.
   deinen Online-Status, alle synchronisierten Skins, Presets und Einstellungen, alle deine Direktchats (für beide
   Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied). Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
-- Nach der Löschung bleiben nur ein bestehender Sperr-Eintrag (deine UUID, der Grund und der Zeitpunkt), eine laufende
-  Chat-Stummschaltung und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht
+- Nach der Löschung bleiben nur aktive Strafen (etwa eine Sperre oder eine laufende Chat-Stummschaltung, mit Grund
+  und Zeitraum) und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht
   durch erneutes Anmelden umgehen lassen.
 - Server-Logs enthalten nur technische Daten (Methode, Pfad ohne Query, Status, Dauer, Request-ID) – **keine
   IP-Adressen und keine Tokens**. Ratenbegrenzungen zählen Anfragen pro IP-Adresse und pro Account **nur im

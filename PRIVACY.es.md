@@ -207,6 +207,28 @@ borran las copias, notas e imágenes, y la denuncia en sí (sin contenido) al ca
 denuncias se conservan sin tu nombre; las denuncias contra ti y un silencio activo se conservan hasta que terminen esos
 plazos, para que la moderación no se pueda eludir borrando la cuenta.
 
+### Sanciones y apelaciones
+
+El equipo (administradores y moderadores) puede imponer sanciones por infracciones: una advertencia, un silencio en el
+chat, un bloqueo social (sin solicitudes de amistad, grupos ni invitaciones), un bloqueo de subidas (sin capas ni
+cosméticos propios), un bloqueo para alojar mundos o el bloqueo de toda la cuenta TRS – por un tiempo o de forma
+permanente. Guardamos tu UUID, el tipo, el motivo (de una lista fija, más un texto opcional que puedes ver), el inicio
+y el fin, quién impuso la sanción, una nota interna del equipo y cada cambio posterior (acortada, prolongada, anulada –
+con fecha, miembro del equipo y motivo). El equipo también puede guardar notas internas sobre jugadores y ve los nombres
+con los que una cuenta inició sesión en TRS.
+
+En el launcher y en el juego ves tus sanciones activas y pasadas con tipo, motivo, inicio y fin – no la nota interna ni
+quién la impuso. Puedes **apelar cada sanción activa una vez** (de 20 a 1000 caracteres); incluso con la cuenta
+bloqueada, mediante un acceso breve válido solo para eso (1 hora). Decide un miembro del equipo que no impuso la
+sanción y te escribe una respuesta.
+
+**Conservación:** las sanciones con sus cambios y la apelación se borran **2 años después de terminar** (vencidas o
+anuladas); las permanentes se conservan mientras estén vigentes. Las notas internas se borran a los **2 años**, los
+nombres anteriores **2 años** después de su último uso y las entradas del registro de auditoría del equipo a los
+**2 años**. Si borras tu cuenta, las advertencias y las sanciones terminadas se borran enseguida; las sanciones
+**activas** (y sus notas) se conservan hasta que terminen, para que no se puedan eludir borrando la cuenta. La base
+jurídica es nuestro interés legítimo en un servicio seguro (art. 6.1.f RGPD).
+
 ### Alojar un mundo para amigos (TRS Client)
 
 En el TRS Client puedes abrir tu mundo de un jugador a tus amigos («Alojar mundo») sin abrir puertos. El servidor TRS
@@ -259,7 +281,7 @@ servidor TRS.
 | Solo con los servicios TRS activados: la entrada del vestuario del TRS Client – tus skins favoritas, atuendos (nombre, skin, capa) y las casillas de la rueda de emotes, con la hora del último cambio | El mismo vestuario en cada PC |
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
-| Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; advertencias y silencios en el chat | Moderación (ver arriba) |
+| Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores; tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
 
 **Sincronización:** «Sincronizar con la cuenta de TRS» (*Einstellungen → Datenschutz*, activado de fábrica mientras
@@ -310,8 +332,8 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   chats directos (para ambas partes) y tus mensajes, reacciones e imágenes en grupos (tus grupos pasan al miembro más
   antiguo). Después,
   los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
-- Tras la eliminación solo se conservan un registro de bloqueo existente (tu UUID, el motivo y la fecha), un silencio
-  activo en el chat y las denuncias sobre ti (hasta que termine su plazo, ver arriba), para que no se puedan eludir
+- Tras la eliminación solo se conservan las sanciones activas (por ejemplo un bloqueo o un silencio en el chat, con
+  motivo y periodo) y las denuncias sobre ti (hasta que termine su plazo, ver arriba), para que no se puedan eludir
   volviendo a iniciar sesión.
 - Los registros del servidor contienen solo datos técnicos (método, ruta sin parámetros de consulta, estado, duración,
   id de la solicitud): **ni direcciones IP ni tokens**. Los límites de uso cuentan las solicitudes por dirección IP y
