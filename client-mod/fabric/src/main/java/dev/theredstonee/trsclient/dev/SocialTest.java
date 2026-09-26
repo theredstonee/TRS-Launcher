@@ -99,13 +99,13 @@ public final class SocialTest {
 				return;
 			case 2:
 				// Liste geladen (Anmeldung an der Attrappe + GET /v1/chat/conversations), höchstens ~10 s.
-				if (!waitFor(ui != null && ui.ready(), 40)) return;
+				if (!waitFor(ui != null && ui.ready(), 200)) return;
 				wait = 30; // Gesichter
 				phase++;
 				return;
 			case 3:
 				shot(mc, "list");
-				if (ui != null && !ui.openConversation(0)) log("keine Unterhaltung in der Liste");
+				if (ui != null && !ui.openConversationNamed("Bob")) log("keine Unterhaltung in der Liste");
 				phase++;
 				wait = 60;
 				return;

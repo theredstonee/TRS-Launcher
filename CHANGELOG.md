@@ -20,6 +20,20 @@ How to write an entry:
 
 ### English
 
+- **TRS Client: chat with your friends in the game.** The Friends screen is now "Social" with the tabs Chat and
+  Friends (title screen, pause menu, TRS menu, or its own key). Write to friends and groups, reply to a message, copy,
+  edit or delete your own, mark as unread, react, and see when someone is typing or has read your message – all live,
+  without reloading. Send up to 10 screenshots of this instance at once ("Select pictures"), open pictures large, and
+  invite friends to the server you're on: they see an invite card with the server icon and player count and join with
+  one click (you're asked before leaving your current world). Create and manage groups, and the Friends tab shows your
+  friends, requests (including cape offers) and blocked players side by side.
+- **TRS Client: notifications in the game.** New messages, server invites, friend requests, cape offers and friends
+  coming online appear as small notifications in the top right for 5 seconds. Press the quick-reply key (Y) to answer
+  right away or join an invite without leaving the game. In the TRS menu under Social you choose the corner, duration
+  (3–10 s), sound, "Do not disturb" (also automatically in fullscreen) and which kinds you want.
+- **TRS Client: report and stay safe.** Report messages, pictures, players and groups with a reason and an optional
+  note; you get feedback when the team has looked at it. Text from others is always shown without colour or format
+  codes, links only open after you confirm them, and a chat mute from the team is shown clearly.
 - **TRS Client wardrobe: your own skin is back.** Under Skins, the library now starts with a "Current" card showing the
   skin your account is wearing right now (slim or classic arms; the default skin for offline accounts). Only this card
   has the "worn" lamp; if the same skin is also in your library, that entry shows a small "= current" tag instead of a
@@ -45,6 +59,22 @@ How to write an entry:
 
 ### Deutsch
 
+- **TRS Client: Chatten mit Freunden im Spiel.** Aus dem Freunde-Bildschirm wird „Sozial“ mit den Reitern Chat und
+  Freunde (Titelbildschirm, Pausenmenü, TRS-Menü oder eigene Taste). Schreib Freunden und Gruppen, antworte auf eine
+  Nachricht, kopiere, bearbeite oder lösche eigene, markiere als ungelesen, reagiere und sieh, wer gerade tippt oder
+  deine Nachricht gelesen hat – alles live, ohne neu zu laden. Schick bis zu 10 Bildschirmfotos dieser Instanz auf
+  einmal („Bilder auswählen“), öffne Bilder groß und lade Freunde auf deinen Server ein: Sie sehen eine Einladungskarte
+  mit Server-Symbol und Spielerzahl und treten mit einem Klick bei (vorher kommt eine Rückfrage, wenn du gerade in einer
+  Welt bist). Erstelle und verwalte Gruppen; der Reiter Freunde zeigt Freunde, Anfragen (auch Umhang-Angebote) und
+  Blockierte nebeneinander.
+- **TRS Client: Benachrichtigungen im Spiel.** Neue Nachrichten, Server-Einladungen, Freundschaftsanfragen,
+  Umhang-Angebote und Freunde, die online kommen, erscheinen 5 Sekunden lang oben rechts. Mit der Schnellantwort-Taste
+  (Y) antwortest du sofort oder trittst einer Einladung bei, ohne das Spiel zu verlassen. Im TRS-Menü unter Sozial
+  stellst du Ecke, Dauer (3–10 s), Ton, „Nicht stören“ (auch automatisch im Vollbild) und die Arten ein.
+- **TRS Client: Melden und Sicherheit.** Melde Nachrichten, Bilder, Spieler und Gruppen mit Grund und optionalem Text;
+  du bekommst eine Rückmeldung, wenn das Team es geprüft hat. Text von anderen wird immer ohne Farb- und
+  Formatierungscodes gezeigt, Links öffnen sich erst nach deiner Bestätigung, und eine Chat-Stummschaltung durch das
+  Team wird deutlich angezeigt.
 - **TRS-Client-Garderobe: dein eigener Skin ist wieder da.** Unter „Skins“ beginnt die Bibliothek jetzt mit der Karte
   „Aktuell“ – dem Skin, den dein Konto gerade trägt (Slim- oder Classic-Arme; bei Offline-Konten der Standard-Skin).
   Nur diese Karte hat die Lampe „getragen“; liegt derselbe Skin auch in deiner Bibliothek, zeigt dieser Eintrag statt

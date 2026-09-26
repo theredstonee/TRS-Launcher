@@ -438,6 +438,21 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		return true;
 	}
 
+	/**
+	 * Die Unterhaltung mit diesem Titel öffnen (sonst die erste);
+	 * false = keine da.
+	 */
+	public boolean openConversationNamed(String title) {
+		List<Chat.Conversation> v = list.visible();
+		for (Chat.Conversation c : v) {
+			if (c.title().equalsIgnoreCase(title)) {
+				open(c.id);
+				return true;
+			}
+		}
+		return openConversation(0);
+	}
+
 	/** Liste geladen (oder ein Hinweis statt Liste)? */
 	public boolean ready() {
 		Social s = social();

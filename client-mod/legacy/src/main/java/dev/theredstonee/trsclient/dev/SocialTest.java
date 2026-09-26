@@ -99,7 +99,7 @@ public final class SocialTest {
 				return;
 			case 3:
 				shot(mc, "social-list");
-				if (s != null) s.openConversation(0);
+				if (s != null) s.openConversationNamed("Bob");
 				phase++;
 				wait = 60;
 				return;
