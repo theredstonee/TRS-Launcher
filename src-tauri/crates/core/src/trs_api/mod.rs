@@ -17,6 +17,10 @@
 //!   seinen Token nie an das Spiel weiter, der Mod meldet sich selbst an.
 
 pub mod cape_import;
+pub mod chat;
+pub mod moderation;
+pub mod live;
+pub mod media;
 mod ops;
 pub mod png;
 mod presence;
@@ -40,6 +44,7 @@ use crate::error::Msg;
 use crate::{Error, Result, USER_AGENT};
 pub use presence::{PRESENCE_INTERVAL, PresenceGame};
 use presence::PresenceState;
+pub(crate) use ops::encode_query;
 pub use store::Consent;
 use store::Store;
 use types::{ApiChallenge, ApiMe, ApiVerify};
@@ -76,6 +81,8 @@ pub(crate) enum Body {
     Empty,
     Json(serde_json::Value),
     Png(Vec<u8>),
+    /// Rohes Bild (Chat-Upload) mit seinem Typ.
+    Image(&'static str, Vec<u8>),
 }
 
 /// Eine Anfrage an die API (Pfad ab `/v1/...`, Query schon kodiert angehängt).
@@ -84,26 +91,32 @@ pub(crate) struct Req {
     pub method: Method,
     pub path: String,
     pub body: Body,
+    /// Größte angenommene Antwort (JSON: [`MAX_JSON_BYTES`], Bilder mehr).
+    pub limit: usize,
 }
 
 impl Req {
     pub fn get(path: impl Into<String>) -> Self {
-        Self { method: Method::GET, path: path.into(), body: Body::Empty }
+        Self { method: Method::GET, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
     }
     pub fn post(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Json(body) }
+        Self { method: Method::POST, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
     }
     pub fn post_empty(path: impl Into<String>) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Empty }
+        Self { method: Method::POST, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
     }
     pub fn put(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PUT, path: path.into(), body: Body::Json(body) }
+        Self { method: Method::PUT, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
     }
     pub fn patch(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body) }
+        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
     }
     pub fn delete(path: impl Into<String>) -> Self {
-        Self { method: Method::DELETE, path: path.into(), body: Body::Empty }
+        Self { method: Method::DELETE, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
+    }
+    /// Beliebiger Body mit eigener Grenze für die Antwort.
+    pub fn with(method: Method, path: impl Into<String>, body: Body, limit: usize) -> Self {
+        Self { method, path: path.into(), body, limit }
     }
 }
 
@@ -267,6 +280,12 @@ pub struct TrsApi {
     /// Takt und Status der TRS-Synchronisation (siehe [`sync`]).
     pub(crate) sync: Arc<sync::SyncState>,
     pub(crate) sync_store: sync::SyncStore,
+    /// Chat-Bilder: Zwischenspeicher, eigene Dateien, Favoriten.
+    pub(crate) media: media::MediaState,
+    /// Echtzeit-Kanal `GET /v1/events/me` (siehe [`live`]).
+    pub(crate) live: Arc<live::LiveState>,
+    /// HTTP-Client ohne Gesamt-Timeout für den Echtzeit-Kanal.
+    stream_http: reqwest::Client,
 }
 
 impl TrsApi {
@@ -286,8 +305,15 @@ impl TrsApi {
             .connect_timeout(Duration::from_secs(8))
             .timeout(Duration::from_secs(20))
             .build()?;
+        let stream_http = reqwest::Client::builder()
+            .user_agent(USER_AGENT)
+            .connect_timeout(Duration::from_secs(8))
+            .build()?;
         Ok(Self {
             http,
+            stream_http,
+            media: media::MediaState::new(paths.root().to_path_buf()),
+            live: Arc::default(),
             base: base.trim_end_matches('/').to_owned(),
             session_base: session_base.trim_end_matches('/').to_owned(),
             mojang_api: mojang_api.trim_end_matches('/').to_owned(),
@@ -323,6 +349,7 @@ impl TrsApi {
     /// Präsenz außerplanmäßig senden (z. B. nach einem Account-Wechsel).
     pub fn presence_kick(&self) {
         self.presence.kick();
+        self.live.kick();
     }
 
     pub async fn has_token(&self, account: &str) -> bool {
@@ -342,6 +369,7 @@ impl TrsApi {
             Body::Empty => builder,
             Body::Json(value) => builder.json(value),
             Body::Png(bytes) => builder.header("Content-Type", "image/png").body(bytes.clone()),
+            Body::Image(mime, bytes) => builder.header("Content-Type", *mime).body(bytes.clone()),
         };
         let response = builder.send().await.map_err(|e| {
             tracing::debug!("TRS API nicht erreichbar ({} {}): {e}", req.method, req.path);
@@ -353,11 +381,11 @@ impl TrsApi {
             .get(reqwest::header::RETRY_AFTER)
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.trim().parse::<u64>().ok());
-        if response.content_length().is_some_and(|l| l > MAX_JSON_BYTES as u64) {
+        if response.content_length().is_some_and(|l| l > req.limit as u64) {
             return Err(Failure::Network);
         }
         let bytes = response.bytes().await.map_err(|_| Failure::Network)?;
-        if bytes.len() > MAX_JSON_BYTES {
+        if bytes.len() > req.limit {
             return Err(Failure::Network);
         }
         if status.is_success() {
@@ -596,3 +624,5 @@ pub(crate) mod testkit;
 mod tests;
 #[cfg(test)]
 mod sync_tests;
+#[cfg(test)]
+mod chat_tests;

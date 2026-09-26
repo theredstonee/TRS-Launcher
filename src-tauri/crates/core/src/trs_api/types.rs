@@ -32,6 +32,16 @@ pub struct PrivacySettings {
     pub show_cape_to_others: bool,
     pub presence_visibility: Visibility,
     pub share_server: bool,
+    /// Lesebestätigungen im Chat senden (gegenseitig, §18.5). Ältere Server: fehlt → an.
+    #[serde(default = "yes")]
+    pub chat_read_receipts: bool,
+    /// „Schreibt …“ im Chat senden (gegenseitig). Ältere Server: fehlt → an.
+    #[serde(default = "yes")]
+    pub chat_typing_indicator: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 /// Teiländerung für `PATCH /v1/me` – nur gesetzte Felder werden gesendet.
@@ -46,6 +56,10 @@ pub struct SettingsPatch {
     pub presence_visibility: Option<Visibility>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub share_server: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chat_read_receipts: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chat_typing_indicator: Option<bool>,
 }
 
 impl SettingsPatch {
@@ -54,6 +68,8 @@ impl SettingsPatch {
             && self.show_cape_to_others.is_none()
             && self.presence_visibility.is_none()
             && self.share_server.is_none()
+            && self.chat_read_receipts.is_none()
+            && self.chat_typing_indicator.is_none()
     }
 }
 
@@ -457,7 +473,7 @@ pub struct PresenceView {
 }
 
 impl PresenceView {
-    fn cleaned(self) -> Option<Self> {
+    pub(crate) fn cleaned(self) -> Option<Self> {
         let state = match self.state.as_str() {
             "online" | "in-game" => self.state,
             _ => return None,
@@ -626,6 +642,31 @@ pub struct AdminStats {
     pub friendships: u64,
     pub pending_friend_requests: u64,
     pub event_streams: u64,
+    /// Chat (ältere Server: fehlt).
+    pub chat: Option<ChatStats>,
+    /// Chat-Meldungen (ältere Server: fehlt).
+    pub reports: Option<ReportStats>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ChatStats {
+    pub conversations: u64,
+    pub groups: u64,
+    pub messages: u64,
+    pub messages_last24h: u64,
+    pub images: u64,
+    pub storage_bytes: u64,
+    pub storage_limit_bytes: u64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ReportStats {
+    pub open: u64,
+    pub in_review: u64,
+    pub resolved: u64,
+    pub active_mutes: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

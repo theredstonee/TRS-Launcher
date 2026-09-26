@@ -599,3 +599,8 @@ mod tests {
         assert!(!reopened.is_alive());
     }
 }
+
+/// Vollbild-/Nicht-stören-Erkennung gibt es unter Linux nicht einheitlich.
+pub fn quiet_hours() -> bool {
+    false
+}

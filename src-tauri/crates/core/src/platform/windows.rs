@@ -336,3 +336,17 @@ pub mod secret {
         }
     }
 }
+
+/// Läuft gerade eine Vollbild-Anwendung (Spiel im Vollbild, Präsentation)
+/// oder hat der Nutzer „Nicht stören“/Fokus-Assistent an? Dann bleiben
+/// Benachrichtigungen des Launchers still (wie bei Windows selbst).
+pub fn quiet_hours() -> bool {
+    use windows::Win32::UI::Shell::{
+        QUNS_BUSY, QUNS_PRESENTATION_MODE, QUNS_QUIET_TIME, QUNS_RUNNING_D3D_FULL_SCREEN, SHQueryUserNotificationState,
+    };
+    // SAFETY: reine Abfrage ohne Zeiger-Argumente außer dem Ergebnis.
+    match unsafe { SHQueryUserNotificationState() } {
+        Ok(state) => matches!(state, QUNS_BUSY | QUNS_RUNNING_D3D_FULL_SCREEN | QUNS_PRESENTATION_MODE | QUNS_QUIET_TIME),
+        Err(_) => false,
+    }
+}

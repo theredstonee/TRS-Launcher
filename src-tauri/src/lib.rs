@@ -46,6 +46,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let root = data_root(app)?;
             log::info!("Datenverzeichnis: {}", root.display());
@@ -101,6 +102,18 @@ pub fn run() {
                     log::warn!("clip-open konnte nicht gesendet werden: {e}");
                 }
             }));
+            // Echtzeit-Kanal der TRS API: Ereignisse (Chat, Freunde, Präsenz …) und der
+            // Zustand der Verbindung gehen sofort ans Frontend.
+            let handle = app.handle().clone();
+            launcher.set_trs_live_sink(Arc::new(move |out| {
+                let result = match out {
+                    trs_core::trs_api::live::LiveOut::Event(event) => handle.emit("trs-live", &event),
+                    trs_core::trs_api::live::LiveOut::Status(status) => handle.emit("trs-live-status", &status),
+                };
+                if let Err(e) = result {
+                    log::warn!("trs-live konnte nicht gesendet werden: {e}");
+                }
+            }));
             let launcher = Arc::new(launcher);
             // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
             tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
@@ -113,6 +126,8 @@ pub fn run() {
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
             // Skins/Presets/Theme/Sprache mit dem TRS-Konto abgleichen (nur mit Einwilligung + Schalter).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_sync());
+            // Echtzeit-Kanal `/v1/events/me` (nur mit Einwilligung und Account).
+            tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_live());
             // Discord-Status (nur lokal mit der Discord-App; läuft Discord nicht, passiert nichts).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
             app.manage::<LauncherState>(launcher);
@@ -142,6 +157,28 @@ pub fn run() {
                 match builder.body(body) {
                     Ok(r) => responder.respond(r),
                     Err(e) => log::warn!("trsclip-Antwort fehlerhaft: {e}"),
+                }
+            });
+        })
+        // Chat-Bilder: `trschat://localhost/<a|t|l|e>/…` – der Kern holt sie mit dem Token
+        // (der nie ins Webview gelangt) und liefert nur geprüfte PNG/JPEG/WebP aus.
+        .register_asynchronous_uri_scheme_protocol(trs_core::trs_api::media::SCHEME, |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            let path = request.uri().path().to_owned();
+            let readonly = request.method() == tauri::http::Method::GET;
+            tauri::async_runtime::spawn(async move {
+                let response = match app.try_state::<LauncherState>() {
+                    Some(launcher) if readonly => launcher.serve_chat_image(&path).await,
+                    Some(_) => trs_core::clips::serve::Response::status(405),
+                    None => trs_core::clips::serve::Response::status(503),
+                };
+                let mut builder = tauri::http::Response::builder().status(response.status);
+                for (name, value) in &response.headers {
+                    builder = builder.header(*name, value);
+                }
+                match builder.body(response.body) {
+                    Ok(r) => responder.respond(r),
+                    Err(e) => log::warn!("trschat-Antwort fehlerhaft: {e}"),
                 }
             });
         })
@@ -385,6 +422,56 @@ pub fn run() {
             commands::trs::trs_admin_revoke_grant,
             commands::trs::trs_admin_ban,
             commands::trs::trs_admin_unban,
+            commands::social::trs_live_status,
+            commands::social::trs_live_reconnect,
+            commands::social::chat_conversations,
+            commands::social::chat_conversation,
+            commands::social::chat_open_dm,
+            commands::social::chat_unread,
+            commands::social::chat_create_group,
+            commands::social::chat_rename_group,
+            commands::social::chat_add_members,
+            commands::social::chat_remove_member,
+            commands::social::chat_leave_group,
+            commands::social::chat_transfer_group,
+            commands::social::chat_delete_group,
+            commands::social::chat_messages,
+            commands::social::chat_send,
+            commands::social::chat_edit,
+            commands::social::chat_delete,
+            commands::social::chat_react,
+            commands::social::chat_read,
+            commands::social::chat_mark_unread,
+            commands::social::chat_mute,
+            commands::social::chat_typing,
+            commands::social::chat_server_status,
+            commands::social::chat_pick_images,
+            commands::social::chat_stage_dropped,
+            commands::social::chat_stage_pasted,
+            commands::social::chat_local_images,
+            commands::social::chat_forget_local,
+            commands::social::chat_upload,
+            commands::social::screenshot_favorites,
+            commands::social::set_screenshot_favorite,
+            commands::social::chat_report,
+            commands::social::chat_my_reports,
+            commands::social::chat_my_moderation,
+            commands::social::admin_reports,
+            commands::social::admin_report,
+            commands::social::admin_report_status,
+            commands::social::admin_report_action,
+            commands::social::admin_report_note,
+            commands::social::admin_moderation_user,
+            commands::social::admin_mute,
+            commands::social::admin_unmute,
+            commands::social::admin_warn,
+            commands::social::admin_word_filter,
+            commands::social::admin_add_word,
+            commands::social::admin_delete_word,
+            commands::social::admin_audit,
+            commands::social::social_quiet_hours,
+            commands::social::social_notify_native,
+            commands::social::social_focus_window,
         ])
         .build(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden")

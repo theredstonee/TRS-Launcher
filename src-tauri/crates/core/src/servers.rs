@@ -597,7 +597,7 @@ fn clean_text(text: &str, max_chars: usize) -> String {
     trimmed.join("\n").chars().take(max_chars).collect()
 }
 
-fn is_safe_favicon(favicon: &str) -> bool {
+pub(crate) fn is_safe_favicon(favicon: &str) -> bool {
     favicon.len() <= MAX_FAVICON_LEN
         && favicon.strip_prefix("data:image/png;base64,").is_some_and(|data| {
             !data.is_empty() && data.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'+' | b'/' | b'='))
