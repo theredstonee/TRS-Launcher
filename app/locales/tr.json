@@ -84,6 +84,7 @@
     "justNowInline": "az önce"
   },
   "launchStage": {
+    "mods": "Modlar",
     "version": "Sürüm verileri",
     "java": "Java",
     "loader": "Mod yükleyici",
@@ -349,7 +350,8 @@
       "noLogToShare": "Henüz paylaşılacak bir günlük yok.",
       "signInFirst": "Lütfen önce “Hesaplar” bölümünden Microsoft hesabınla giriş yap.",
       "stopAllGamesFirst": "Lütfen önce çalışan tüm oyunları kapat.",
-      "syncAfterExitFailed": "Ayarlar diğer kurulumlarla eşitlenemedi."
+      "syncAfterExitFailed": "Ayarlar diğer kurulumlarla eşitlenemedi.",
+      "dependenciesAdded": "Eksik bağımlılıklar eklendi: {list} ({mods} için gerekli)."
     },
     "loaders": {
       "invalidGameVersion": "Geçersiz Minecraft sürümü",
@@ -376,6 +378,8 @@
       "crashCorruptFiles": "Bir oyun dosyası bozuk (ör. yarıda kalan bir indirme sonrası). “Dosyaları kontrol et” onu yeniden indirir.",
       "crashGraphicsDriver": "Ekran kartı sürücüsü çöktü veya OpenGL'i desteklemiyor. Ekran kartı sürücünü güncelle.",
       "crashMissingDependency": "Bir mod, ihtiyaç duyduğu başka bir modu bulamıyor. Hangisi olduğu günlükte hatanın hemen üstünde yazıyor.",
+      "crashMissingDependencyNamed": "{name}, bu profilde eksik olan {deps} modunu gerektiriyor. Başlatıcı onu yükleyebilir.",
+      "crashMissingDependencyOnly": "{deps} eksik – başka bir mod buna ihtiyaç duyuyor. Başlatıcı onu yükleyebilir.",
       "crashModConflict": "İki mod birbiriyle uyuşmuyor. En son eklediğin modları devre dışı bırak ve tekrar başlat.",
       "crashOutOfMemory": "Oyunun belleği yetmedi. Kurulum ayarlarından belleği artır.",
       "crashWrongJava": "Bir mod daha yeni bir Java sürümüne ihtiyaç duyuyor. Ayarlardaki özel Java yolunu kaldır, launcher doğru sürümü otomatik seçer.",
@@ -560,6 +564,10 @@
       "notAModpack": "Bu bir CurseForge mod paketi değil.",
       "packFileMissing": "Mod paketinin bir dosyası artık CurseForge'da yok (proje {project}).",
       "packBlocked": "“{name}” yazarı başka uygulamalar üzerinden indirmeye izin vermiyor – lütfen mod paketini CurseForge'dan indirip buraya aktar."
+    },
+    "depcheck": {
+      "notFound": "{list} Modrinth’te bulunamadı – lütfen elle yükle.",
+      "nothingToInstall": "Eksik mod belirtilmedi."
     },
     "presets": {
       "nameLength": "Ad 1 ile {max} karakter arasında olmalıdır.",
@@ -1411,6 +1419,8 @@
       "out_of_memory": "Oyunun belleği yetmedi. Kurulum ayarlarından belleği artır.",
       "wrong_java": "Bir mod daha yeni bir Java sürümüne ihtiyaç duyuyor. Ayarlardaki özel Java yolunu kaldır, launcher doğru sürümü otomatik seçer.",
       "missing_dependency": "Bir mod, ihtiyaç duyduğu başka bir modu bulamıyor. Hangisi olduğu günlükte hatanın hemen üstünde yazıyor.",
+      "missing_dependency_named": "{name}, bu profilde eksik olan {deps} modunu gerektiriyor. Başlatıcı onu yükleyebilir.",
+      "missing_dependency_only": "{deps} eksik – başka bir mod buna ihtiyaç duyuyor. Başlatıcı onu yükleyebilir.",
       "mod_conflict": "İki mod birbiriyle uyuşmuyor. En son eklediğin modları devre dışı bırak ve tekrar başlat.",
       "graphics_driver": "Ekran kartı sürücüsü çöktü veya OpenGL'i desteklemiyor. Ekran kartı sürücünü güncelle.",
       "incompatible_mod": "{name}, {other} ile çalışmıyor. Başlatıcı {name} modunu uygun bir sürümle değiştirebilir."
@@ -1419,7 +1429,10 @@
     "fixConflict": "{name} modunu uyumlu sürümle değiştir",
     "fixing": "Uyumlu mod sürümleri aranıyor …",
     "fixDone": "Uyumlu sürümlerle değiştirildi: {list}",
-    "fixNothing": "Otomatik olarak uyumlu bir sürüm bulunamadı. İki moddan birini devre dışı bırakıp yeniden başlat."
+    "fixNothing": "Otomatik olarak uyumlu bir sürüm bulunamadı. İki moddan birini devre dışı bırakıp yeniden başlat.",
+    "installMissing": "{name} yükle",
+    "installingMissing": "Eksik modlar yükleniyor …",
+    "installMissingDone": "Yüklendi: {list}"
   },
   "exportPack": {
     "title": "Modpack olarak dışa aktar",

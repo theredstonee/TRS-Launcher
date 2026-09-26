@@ -113,6 +113,32 @@ export function fixModConflictsTask(instance: Pick<Instance, 'id' | 'name'>, pre
   )
 }
 
+export function missingModsTaskKey(instanceId: string): string {
+  return taskKey('missingmods', instanceId)
+}
+
+/**
+ * Mods installieren, die laut Absturz-Meldung fehlen (z. B. Cloth Config für
+ * More Culling). `declarer` = Mod-ID der Mod, die sie braucht.
+ */
+export function installMissingModsTask(instance: Pick<Instance, 'id' | 'name'>, declarer: string | null, dependencies: string[]) {
+  return useTasksStore().run(
+    {
+      key: missingModsTaskKey(instance.id),
+      kind: 'content-update',
+      title: instance.name,
+      stage: t('crash.installingMissing'),
+      instanceId: instance.id,
+      cancellable: true,
+    },
+    async (ctx) => {
+      const fix = await backend.installMissingDependencies(instance.id, declarer, dependencies, ctx.taskId)
+      ctx.update({ doneText: t('crash.installMissingDone', { list: fix.added.join(', ') }) })
+      return fix
+    },
+  )
+}
+
 /**
  * Spieldateien prüfen und reparieren bzw. komplett neu laden. Beides teilt
  * sich eine Aufgabe je Instanz – nie zwei gleichzeitig.

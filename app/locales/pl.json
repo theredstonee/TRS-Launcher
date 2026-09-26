@@ -84,6 +84,7 @@
     "justNowInline": "przed chwilą"
   },
   "launchStage": {
+    "mods": "Mody",
     "version": "Dane wersji",
     "java": "Java",
     "loader": "Mod loader",
@@ -349,7 +350,8 @@
       "noLogToShare": "Nie ma jeszcze logu do udostępnienia.",
       "signInFirst": "Najpierw zaloguj się kontem Microsoft w sekcji „Konta”.",
       "stopAllGamesFirst": "Najpierw zamknij wszystkie uruchomione gry.",
-      "syncAfterExitFailed": "Nie udało się zsynchronizować ustawień z innymi instancjami."
+      "syncAfterExitFailed": "Nie udało się zsynchronizować ustawień z innymi instancjami.",
+      "dependenciesAdded": "Dodano brakujące zależności: {list} (potrzebne dla {mods})."
     },
     "loaders": {
       "invalidGameVersion": "Nieprawidłowa wersja Minecrafta",
@@ -376,6 +378,8 @@
       "crashCorruptFiles": "Plik gry jest uszkodzony (np. po przerwanym pobieraniu). „Sprawdź pliki” pobierze go ponownie.",
       "crashGraphicsDriver": "Sterownik graficzny uległ awarii lub nie obsługuje OpenGL. Zaktualizuj sterownik karty graficznej.",
       "crashMissingDependency": "Modowi brakuje innego wymaganego moda. Log pokazuje, którego, tuż nad błędem.",
+      "crashMissingDependencyNamed": "{name} potrzebuje {deps}, którego brakuje w tej instancji. Launcher może go zainstalować.",
+      "crashMissingDependencyOnly": "Brakuje {deps} – potrzebuje go inny mod. Launcher może go zainstalować.",
       "crashModConflict": "Dwa mody ze sobą kolidują. Wyłącz ostatnio dodane mody i uruchom ponownie.",
       "crashOutOfMemory": "Grze zabrakło pamięci. Zwiększ pamięć instancji w jej ustawieniach.",
       "crashWrongJava": "Mod wymaga nowszej wersji Javy. Usuń własną ścieżkę Javy w ustawieniach, a launcher automatycznie wybierze właściwą.",
@@ -560,6 +564,10 @@
       "notAModpack": "To nie jest modpack z CurseForge.",
       "packFileMissing": "Jednego z plików modpacka nie ma już na CurseForge (projekt {project}).",
       "packBlocked": "Autor „{name}” nie pozwala na pobieranie przez inne aplikacje – pobierz modpack na CurseForge i zaimportuj go tutaj."
+    },
+    "depcheck": {
+      "notFound": "Nie znaleziono {list} na Modrinth – zainstaluj ręcznie.",
+      "nothingToInstall": "Nie podano brakującego moda."
     },
     "presets": {
       "nameLength": "Nazwa musi mieć od 1 do {max} znaków.",
@@ -1411,6 +1419,8 @@
       "out_of_memory": "Grze zabrakło pamięci. Zwiększ pamięć instancji w jej ustawieniach.",
       "wrong_java": "Mod wymaga nowszej wersji Javy. Usuń własną ścieżkę Javy w ustawieniach, a launcher automatycznie wybierze właściwą.",
       "missing_dependency": "Modowi brakuje innego wymaganego moda. Log pokazuje, którego, tuż nad błędem.",
+      "missing_dependency_named": "{name} potrzebuje {deps}, którego brakuje w tej instancji. Launcher może go zainstalować.",
+      "missing_dependency_only": "Brakuje {deps} – potrzebuje go inny mod. Launcher może go zainstalować.",
       "mod_conflict": "Dwa mody ze sobą kolidują. Wyłącz ostatnio dodane mody i uruchom ponownie.",
       "graphics_driver": "Sterownik graficzny uległ awarii lub nie obsługuje OpenGL. Zaktualizuj sterownik karty graficznej.",
       "incompatible_mod": "{name} nie działa z {other}. Launcher może zamienić {name} na pasującą wersję."
@@ -1419,7 +1429,10 @@
     "fixConflict": "Zamień {name} na zgodną wersję",
     "fixing": "Szukanie zgodnych wersji modów …",
     "fixDone": "Zamieniono na zgodne wersje: {list}",
-    "fixNothing": "Nie znaleziono automatycznie zgodnej wersji. Wyłącz jeden z dwóch modów i uruchom ponownie."
+    "fixNothing": "Nie znaleziono automatycznie zgodnej wersji. Wyłącz jeden z dwóch modów i uruchom ponownie.",
+    "installMissing": "Zainstaluj {name}",
+    "installingMissing": "Instalowanie brakujących modów …",
+    "installMissingDone": "Zainstalowano: {list}"
   },
   "exportPack": {
     "title": "Eksportuj jako modpack",

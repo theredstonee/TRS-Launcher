@@ -219,18 +219,28 @@ impl CurseForge {
 
         let mut outcome = InstallOutcome::default();
         let mut installed = Vec::new();
-        for p in plan {
+        let mut result = Ok(());
+        // Abhängigkeiten zuerst (tiefste zuerst), die Mod zuletzt: Scheitert ein
+        // Download, liegt keine Mod ohne ihre Abhängigkeit im Ordner.
+        for p in plan.into_iter().rev() {
             if p.m.download_url(&p.file).is_none() {
                 outcome.blocked.push(BlockedFile::new(&p.m, &p.file, p.kind, None));
                 continue;
             }
-            let item = self.install_file(paths, instance, p.kind, &p.m, &p.file, None, p.dependency).await?;
-            outcome.files.push(item.file_name.clone());
-            installed.push(item);
+            match self.install_file(paths, instance, p.kind, &p.m, &p.file, None, p.dependency).await {
+                Ok(item) => {
+                    outcome.files.push(item.file_name.clone());
+                    installed.push(item);
+                }
+                Err(e) => {
+                    result = Err(e);
+                    break;
+                }
+            }
         }
         pack::remember_blocked(paths, &instance.id, &outcome.blocked).await?;
         record_installed(paths, &instance.id, &installed).await;
-        Ok(outcome)
+        result.map(|()| outcome)
     }
 
     async fn plan_with_dependencies(
@@ -241,7 +251,8 @@ impl CurseForge {
         file: RawFile,
         kind: ContentKind,
     ) -> Result<Vec<Planned>> {
-        let installed: HashSet<String> = content::installed_project_ids(paths, &instance.id).await?.into_iter().collect();
+        // Eine deaktivierte Abhängigkeit zählt nicht – das Spiel lädt sie nicht.
+        let installed: HashSet<String> = content::enabled_project_ids(paths, &instance.id).await?.into_iter().collect();
         // Schon von Modrinth installiert? Gleicher Slug oder Titel reicht als Hinweis –
         // sonst läge z. B. die Fabric API doppelt im Mods-Ordner.
         let index = content::read_index(paths, &instance.id).await;

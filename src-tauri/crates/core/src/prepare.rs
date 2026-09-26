@@ -21,6 +21,8 @@ const LOADER_CLIENT_JAR_PERCENT: f64 = 10.0;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Stage {
+    /// Mods laden bzw. fehlende Abhängigkeiten ergänzen (vor allem beim ersten Start).
+    Mods,
     Version,
     Java,
     /// Nur Forge/NeoForge: Installer laden, Libraries holen, Processors ausführen.

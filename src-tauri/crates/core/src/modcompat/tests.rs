@@ -256,3 +256,33 @@ fn maven_breaks_between_forge_mods() {
     let entries = [Entry { mods: vec![embeddium], ..Default::default() }, Entry { mods: vec![newer], ..Default::default() }];
     assert!(find_conflicts(&entries, &[]).is_empty());
 }
+
+#[test]
+fn missing_dependencies_are_found_once_and_nested_jars_count() {
+    // Absturzbericht: More Culling 1.6.2 verlangt cloth-config ≥ 16 – nicht da.
+    let more_culling = info(
+        "moreculling",
+        "More Culling",
+        "1.6.2",
+        &[("minecraft", ">=1.21"), ("java", ">=21"), ("fabricloader", ">=0.15.0"), ("cloth-config", ">=16.0.0")],
+        &[],
+    );
+    let other = info("othermod", "Other", "1.0.0", &[("cloth-config", "*"), ("fabric-lifecycle-events-v1", "*"), ("lithium", "*")], &[]);
+    let fabric_api = Entry {
+        mods: vec![info("fabric-api", "Fabric API", "0.141.6+1.21.11", &[], &[])],
+        nested: vec!["fabric-lifecycle-events-v1".into()],
+        ..Default::default()
+    };
+    let entries = vec![Entry { mods: vec![more_culling], ..Default::default() }, Entry { mods: vec![other], ..Default::default() }, fabric_api];
+    let bundled = [info("lithium", "Lithium", "0.21.4", &[], &[])];
+    let missing = missing_dependencies(&entries, &bundled);
+    assert_eq!(missing, [MissingDep { declarer: 0, id: "cloth-config".into(), declarer_label: "More Culling 1.6.2".into() }]);
+
+    // Mit Cloth Config (auch über `provides`, etwa das alte `cloth-config2`) fehlt nichts mehr.
+    let mut cloth = info("cloth-config", "Cloth Config", "21.11.153", &[], &[]);
+    cloth.provides = vec!["cloth-config2".into()];
+    let mut with_cloth = entries;
+    with_cloth.push(Entry { mods: vec![cloth], ..Default::default() });
+    with_cloth.push(Entry { mods: vec![info("old", "Old", "1", &[("cloth-config2", "*")], &[])], ..Default::default() });
+    assert!(missing_dependencies(&with_cloth, &bundled).is_empty());
+}

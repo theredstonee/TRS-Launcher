@@ -1084,9 +1084,6 @@ pub async fn install(
     }
     ensure_mods_allowed(kind, instance)?;
 
-    let mut installed = Vec::new();
-    let mut visited: HashSet<String> = content::installed_project_ids(paths, &instance.id).await?.into_iter().collect();
-
     // Das angefragte Projekt selbst: gewählte oder neueste Version (auch als Update).
     let root = match version_id {
         Some(id) => {
@@ -1108,10 +1105,24 @@ pub async fn install(
             ))
         })?,
     };
-    visited.insert(root.project_id.clone());
-    let mut queue = dependencies_of(&root, kind, 0);
-    installed.push(install_version(http, paths, instance, kind, &root, None, false).await?);
+    let installed = install_with_dependencies(http, paths, instance, kind, &root, None).await?;
+    Ok(installed.into_iter().map(|i| i.file_name).collect())
+}
 
+/// Pflicht-Abhängigkeiten von `root` (rekursiv), die in der Instanz fehlen –
+/// tiefste zuerst, damit keine Mod vor ihrer Abhängigkeit im Ordner liegt.
+/// Deaktivierte Abhängigkeiten zählen als fehlend (das Spiel lädt sie nicht).
+pub(crate) async fn dependencies_to_install(
+    http: &reqwest::Client,
+    paths: &Paths,
+    instance: &Instance,
+    root: &Version,
+    kind: ContentKind,
+) -> Result<Vec<Version>> {
+    let mut visited: HashSet<String> = content::enabled_project_ids(paths, &instance.id).await?.into_iter().collect();
+    visited.insert(root.project_id.clone());
+    let mut queue = dependencies_of(root, kind, 0);
+    let mut out = Vec::new();
     while let Some((id, depth)) = queue.pop() {
         if !visited.insert(id.clone()) {
             continue;
@@ -1121,12 +1132,41 @@ pub async fn install(
             tracing::warn!("Abhängigkeit {id} hat keine passende Version – übersprungen");
             continue;
         };
+        visited.insert(version.project_id.clone());
         queue.extend(dependencies_of(&version, ContentKind::Mod, depth));
-        installed.push(install_version(http, paths, instance, ContentKind::Mod, &version, None, true).await?);
+        out.push(version);
     }
+    out.reverse();
+    Ok(out)
+}
 
+/// Installiert erst die fehlenden Pflicht-Abhängigkeiten, dann `root` (ggf. als
+/// Ersatz für `replace`). Scheitert eine Abhängigkeit, bleibt `root` draußen –
+/// sonst läge eine Mod ohne ihre Abhängigkeit im Ordner und das Spiel stürzte ab.
+pub(crate) async fn install_with_dependencies(
+    http: &reqwest::Client,
+    paths: &Paths,
+    instance: &Instance,
+    kind: ContentKind,
+    root: &Version,
+    replace: Option<&str>,
+) -> Result<Vec<Installed>> {
+    let deps = dependencies_to_install(http, paths, instance, root, kind).await?;
+    let mut installed = Vec::new();
+    let mut result = Ok(());
+    let steps = deps.iter().map(|v| (ContentKind::Mod, v, None, true)).chain(std::iter::once((kind, root, replace, false)));
+    for (step_kind, version, step_replace, dependency) in steps {
+        match install_version(http, paths, instance, step_kind, version, step_replace, dependency).await {
+            Ok(done) => installed.push(done),
+            Err(e) => {
+                result = Err(e);
+                break;
+            }
+        }
+    }
+    // Was schon da ist, bleibt – samt Verlauf.
     after_install(http, paths, &instance.id, &installed).await;
-    Ok(installed.into_iter().map(|i| i.file_name).collect())
+    result.map(|()| installed)
 }
 
 fn dependencies_of(version: &Version, kind: ContentKind, depth: u8) -> Vec<(String, u8)> {
@@ -1189,6 +1229,12 @@ pub(crate) async fn install_version(
         if old_file != file.filename {
             content::remove_file(paths, &instance.id, old_kind, &old_file).await?;
         }
+    }
+    // Dieselbe Datei lag deaktiviert daneben (z. B. eine abgeschaltete Abhängigkeit,
+    // die jetzt gebraucht wird): nicht doppelt liegen lassen.
+    let disabled_twin = dir.join(format!("{}{}", file.filename, content::DISABLED_SUFFIX));
+    if disabled_twin.is_file() {
+        tokio::fs::remove_file(&disabled_twin).await.map_err(|e| Error::io(&disabled_twin, e))?;
     }
 
     let version_number = clip(version.version_number.clone(), 60);
@@ -1529,10 +1575,13 @@ pub async fn apply_update(
 ) -> Result<String> {
     content::validate_file_name(kind, file_name)?;
     let version = version_by_id(http, version_id).await?;
-    let installed = install_version(http, paths, instance, kind, &version, Some(file_name), false).await?;
-    let file = installed.file_name.clone();
-    after_install(http, paths, &instance.id, &[installed]).await;
-    Ok(file)
+    // Eine neuere Version kann neue Pflicht-Abhängigkeiten mitbringen.
+    let installed = install_with_dependencies(http, paths, instance, kind, &version, Some(file_name)).await?;
+    installed
+        .into_iter()
+        .find(|i| !i.dependency)
+        .map(|i| i.file_name)
+        .ok_or_else(|| Error::Internal("Update ohne Datei".into()))
 }
 
 // --- Versionswechsel der Instanz --------------------------------------------------

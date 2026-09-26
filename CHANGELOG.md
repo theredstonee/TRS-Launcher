@@ -16,6 +16,34 @@ How to write an entry:
   Make the motif in TRS Studio with the "Update-Banner" template (sketch → export as HD pixel art, motif target).
 -->
 
+## Unreleased
+
+### English
+
+- **No more "Incompatible mods found!" because of a missing mod.** Some mods need another mod to run (More Culling
+  from the Max FPS package needs Cloth Config, for example). If a download was cancelled or failed on the first start,
+  the mod could end up without its partner and the game crashed on every start. The launcher now always downloads the
+  needed mods first, retries the performance package on the next start if something was missing, and checks before
+  every start whether a mod lacks a mod it needs – if so, it installs or switches it back on and tells you. Updating
+  or switching a mod version and installing from Discover also bring new required mods along now.
+- **One click to install what's missing.** If the game still stops because a mod is missing, the crash message names
+  it and offers "Install …".
+- The first start of a new instance shows a "Mods" step while the performance mods are downloaded, instead of looking
+  stuck.
+
+### Deutsch
+
+- **Kein „Incompatible mods found!“ mehr wegen einer fehlenden Mod.** Manche Mods brauchen eine andere Mod (More
+  Culling aus dem Max-FPS-Paket etwa Cloth Config). Wurde beim ersten Start ein Download abgebrochen oder schlug fehl,
+  konnte die Mod ohne ihren Partner dastehen – und das Spiel stürzte bei jedem Start ab. Der Launcher lädt die
+  benötigten Mods jetzt immer zuerst, ergänzt das Leistungspaket beim nächsten Start, wenn etwas fehlte, und prüft vor
+  jedem Start, ob einer Mod eine benötigte Mod fehlt – dann installiert er sie oder schaltet sie wieder ein und sagt es
+  dir. Auch Mod-Updates, Versionswechsel und Installationen aus „Entdecken“ bringen neue Pflicht-Mods jetzt mit.
+- **Fehlendes mit einem Klick installieren.** Bricht das Spiel trotzdem wegen einer fehlenden Mod ab, nennt die
+  Absturzmeldung sie und bietet „… installieren“ an.
+- Der erste Start einer neuen Instanz zeigt den Schritt „Mods“, während die Leistungs-Mods geladen werden – statt
+  hängenzubleiben.
+
 ## 0.6.2 – 2026-09-26 – The Sharing Update | Das Teilen-Update
 <!-- banner: accent=#ff5fa2 motif=/news/0.6.2/banner.png -->
 

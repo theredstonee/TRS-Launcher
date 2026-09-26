@@ -74,6 +74,30 @@ fn clean(text: &str, max: usize) -> String {
 /// Liest alle Mod-Infos aus einem Jar. Leer = keine (lesbaren) Angaben.
 pub(crate) fn read_jar<R: Read + Seek>(reader: R) -> Vec<ModInfo> {
     let Ok(mut archive) = zip::ZipArchive::new(reader) else { return Vec::new() };
+    read_archive(&mut archive)
+}
+
+/// Ordner, in denen Loader eingebettete Jars (Jar-in-Jar) erwarten.
+const NESTED_DIRS: [&str; 2] = ["META-INF/jars/", "META-INF/jarjar/"];
+/// Größer lesen wir eingebettete Jars nicht aus.
+const MAX_NESTED_BYTES: u64 = 16 * 1024 * 1024;
+const MAX_NESTED_JARS: usize = 300;
+const MAX_NESTED_DEPTH: u8 = 2;
+
+/// Wie [`read_jar`] – dazu die Mod-IDs (samt `provides`) der eingebetteten Jars
+/// (Jar-in-Jar, z. B. die Module der Fabric API oder Cloth Configs `basic-math`).
+/// Die zählen für Abhängigkeiten als vorhanden, ihre Bedingungen prüfen wir nicht.
+pub(crate) fn read_jar_with_nested<R: Read + Seek>(reader: R) -> (Vec<ModInfo>, Vec<String>) {
+    let Ok(mut archive) = zip::ZipArchive::new(reader) else { return (Vec::new(), Vec::new()) };
+    let mods = read_archive(&mut archive);
+    let mut nested = Vec::new();
+    collect_nested(&mut archive, 1, &mut nested);
+    nested.sort();
+    nested.dedup();
+    (mods, nested)
+}
+
+fn read_archive<R: Read + Seek>(archive: &mut zip::ZipArchive<R>) -> Vec<ModInfo> {
     from_entries(|name| {
         let entry = archive.by_name(name).ok()?;
         if entry.size() > MAX_ENTRY_BYTES {
@@ -83,6 +107,33 @@ pub(crate) fn read_jar<R: Read + Seek>(reader: R) -> Vec<ModInfo> {
         entry.take(MAX_ENTRY_BYTES).read_to_end(&mut bytes).ok()?;
         Some(String::from_utf8_lossy(&bytes).into_owned())
     })
+}
+
+fn collect_nested<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, depth: u8, out: &mut Vec<String>) {
+    let names: Vec<String> = archive
+        .file_names()
+        .filter(|n| NESTED_DIRS.iter().any(|d| n.starts_with(d)) && n.to_ascii_lowercase().ends_with(".jar"))
+        .take(MAX_NESTED_JARS)
+        .map(str::to_owned)
+        .collect();
+    for name in names {
+        let Ok(entry) = archive.by_name(&name) else { continue };
+        if entry.size() > MAX_NESTED_BYTES {
+            continue;
+        }
+        let mut bytes = Vec::new();
+        if entry.take(MAX_NESTED_BYTES).read_to_end(&mut bytes).is_err() {
+            continue;
+        }
+        let Ok(mut inner) = zip::ZipArchive::new(std::io::Cursor::new(bytes)) else { continue };
+        for m in read_archive(&mut inner) {
+            out.extend(m.provides);
+            out.push(m.id);
+        }
+        if depth < MAX_NESTED_DEPTH && out.len() < MAX_NESTED_JARS * 4 {
+            collect_nested(&mut inner, depth + 1, out);
+        }
+    }
 }
 
 /// Wie [`read_jar`], aber mit einer eigenen Lese-Funktion (auch für Teil-Downloads).
@@ -325,6 +376,38 @@ pub(crate) mod tests {
         assert_eq!(iris.display_name(), "iris");
         assert!(parse_fabric(r#"{"version":"1"}"#).is_none());
         assert!(read_jar(std::io::Cursor::new(b"kein zip".to_vec())).is_empty());
+    }
+
+    #[test]
+    fn reads_ids_of_nested_jars() {
+        // Fabric API: Module stecken als Jar-in-Jar drin, eines davon wieder mit einem eigenen.
+        let deepest = jar(&[(FABRIC, r#"{"id":"deep-lib","version":"1.0.0"}"#)]);
+        let module = {
+            let mut out = std::io::Cursor::new(Vec::new());
+            let mut zip = zip::ZipWriter::new(&mut out);
+            zip.start_file(FABRIC, zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(br#"{"id":"fabric-lifecycle-events-v1","version":"2.6.0","provides":["alias-v0"]}"#).unwrap();
+            zip.start_file("META-INF/jars/deep.jar", zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(&deepest).unwrap();
+            zip.finish().unwrap();
+            out.into_inner()
+        };
+        let outer = {
+            let mut out = std::io::Cursor::new(Vec::new());
+            let mut zip = zip::ZipWriter::new(&mut out);
+            zip.start_file(FABRIC, zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(br#"{"id":"fabric-api","version":"0.141.6+1.21.11"}"#).unwrap();
+            zip.start_file("META-INF/jars/fabric-lifecycle-events-v1.jar", zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(&module).unwrap();
+            zip.start_file("META-INF/jars/kaputt.jar", zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(b"kein zip").unwrap();
+            zip.finish().unwrap();
+            out.into_inner()
+        };
+        let (mods, nested) = read_jar_with_nested(std::io::Cursor::new(outer));
+        assert_eq!(mods.len(), 1);
+        assert_eq!(mods[0].id, "fabric-api");
+        assert_eq!(nested, ["alias-v0", "deep-lib", "fabric-lifecycle-events-v1"]);
     }
 
     #[test]

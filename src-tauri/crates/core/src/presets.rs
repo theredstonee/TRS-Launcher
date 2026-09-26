@@ -1197,6 +1197,9 @@ pub(crate) struct Target {
     /// Modrinth-Projekte, die der TRS Client in dieser Instanz schon eingebaut mitbringt:
     /// werden nicht extra geladen, zählen aber als vorhanden.
     pub bundled: HashSet<String>,
+    /// Installierte Mods nie gegen andere Versionen tauschen (nur ergänzen) –
+    /// beim Nachladen fehlender Abhängigkeiten vor dem Start.
+    pub keep_existing: bool,
 }
 
 impl Target {
@@ -1213,6 +1216,7 @@ impl Target {
             channel: instance.overrides.channel(),
             builtins: modcompat::loader_builtins(instance),
             bundled: HashSet::new(),
+            keep_existing: false,
         }
     }
 
@@ -1260,6 +1264,16 @@ pub(crate) struct Existing {
     pub mod_files: Vec<String>,
     /// Aktivierte Mods mit ihren Angaben aus dem Jar (für die Verträglichkeitsprüfung).
     pub mods: Vec<modcompat::Entry>,
+    /// Projekte, die nur deaktiviert daliegen: Als Abhängigkeit zählen sie nicht
+    /// (das Spiel lädt sie nicht) – dann wird die passende Version neu geladen.
+    pub disabled: HashSet<String>,
+}
+
+impl Existing {
+    /// Ist das Projekt da und eingeschaltet?
+    fn loaded(&self, project_id: &str) -> bool {
+        self.projects.contains_key(project_id) && !self.disabled.contains(project_id)
+    }
 }
 
 async fn existing(paths: &Paths, instance_id: &str) -> Result<Existing> {
@@ -1268,9 +1282,11 @@ async fn existing(paths: &Paths, instance_id: &str) -> Result<Existing> {
         let version = content::source_of_project(paths, instance_id, &project_id).await.map(|s| s.version_id);
         projects.insert(project_id, version.filter(|v| !v.is_empty()));
     }
+    let enabled: HashSet<String> = content::enabled_project_ids(paths, instance_id).await?.into_iter().collect();
+    let disabled = projects.keys().filter(|p| !enabled.contains(*p)).cloned().collect();
     let mod_files =
         content::list(paths, instance_id, ContentKind::Mod).await?.into_iter().map(|i| i.file_name.to_lowercase()).collect();
-    Ok(Existing { projects, mod_files, mods: Vec::new() })
+    Ok(Existing { projects, mod_files, mods: Vec::new(), disabled })
 }
 
 /// Woher die Versionsdaten kommen – in Tests eine Attrappe.
@@ -1431,6 +1447,9 @@ pub(crate) struct Step {
     pub pinned: bool,
     /// Eintrag im Bericht, zu dem der Download gehört.
     pub item: usize,
+    /// Weitere Einträge, die diesen Download brauchen (gemeinsame Abhängigkeit
+    /// oder dasselbe Projekt noch einmal) – fällt `item` weg, bleibt er für sie.
+    pub also: Vec<usize>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1441,7 +1460,8 @@ pub(crate) struct Plan {
 
 /// Was beim Einsammeln einer Mod samt Abhängigkeiten herauskam.
 enum Collected {
-    Ok { steps: Vec<Step>, replace: Vec<(usize, Version)> },
+    /// `shared`: schon geplante Downloads (Indizes), die dieser Eintrag mitbenutzt.
+    Ok { steps: Vec<Step>, replace: Vec<(usize, Version)>, shared: Vec<usize> },
     Missing(String),
     Incompatible(String),
 }
@@ -1484,8 +1504,9 @@ async fn collect<L: VersionLookup>(
     let item = plan.items.len();
     let mut local_ids: HashSet<String> = HashSet::from([root.project_id.clone()]);
     let mut queue = required_deps(&root, kind, 0);
-    let mut steps = vec![Step { kind, version: root, dependency: false, pinned: false, item }];
+    let mut steps = vec![Step { kind, version: root, dependency: false, pinned: false, item, also: Vec::new() }];
     let mut replace = Vec::new();
+    let mut shared = Vec::new();
 
     while let Some(((id, pin), depth)) = queue.pop() {
         if local_ids.contains(&id) {
@@ -1495,7 +1516,8 @@ async fn collect<L: VersionLookup>(
         if target.is_bundled(&id) && !existing.projects.contains_key(&id) {
             continue;
         }
-        if let Some(have) = existing.projects.get(&id) {
+        // Nur deaktiviert da: zählt nicht – wird unten wie eine fehlende Mod geplant.
+        if let Some(have) = existing.projects.get(&id).filter(|_| existing.loaded(&id)) {
             // Schon installiert – außer die Mod verlangt ausdrücklich eine andere Version.
             if let (Some(pin), Some(have)) = (&pin, have)
                 && pin != have
@@ -1516,6 +1538,7 @@ async fn collect<L: VersionLookup>(
                     None => return Ok(Collected::Missing(id)),
                 }
             }
+            shared.push(index);
             continue;
         }
         let version = match &pin {
@@ -1526,7 +1549,7 @@ async fn collect<L: VersionLookup>(
         local_ids.insert(id);
         local_ids.insert(version.project_id.clone());
         queue.extend(required_deps(&version, ContentKind::Mod, depth));
-        steps.push(Step { kind: ContentKind::Mod, version, dependency: true, pinned: pin.is_some(), item });
+        steps.push(Step { kind: ContentKind::Mod, version, dependency: true, pinned: pin.is_some(), item, also: Vec::new() });
     }
 
     // Unverträglichkeiten in beide Richtungen: mit der Instanz, dem Plan und untereinander.
@@ -1547,7 +1570,74 @@ async fn collect<L: VersionLookup>(
             return Ok(Collected::Incompatible(step.version.project_id.clone()));
         }
     }
-    Ok(Collected::Ok { steps, replace })
+    Ok(Collected::Ok { steps, replace, shared })
+}
+
+/// Übernimmt eingesammelte Downloads in den Plan (für Eintrag `item`).
+fn commit(
+    plan: &mut Plan,
+    planned: &mut HashMap<String, usize>,
+    item: usize,
+    steps: Vec<Step>,
+    replace: Vec<(usize, Version)>,
+    shared: Vec<usize>,
+) {
+    for (index, version) in replace {
+        plan.steps[index].version = version;
+        plan.steps[index].pinned = true;
+    }
+    for index in shared {
+        let step = &mut plan.steps[index];
+        if step.item != item && !step.also.contains(&item) {
+            step.also.push(item);
+        }
+    }
+    for step in steps {
+        planned.insert(step.version.project_id.clone(), plan.steps.len());
+        plan.steps.push(step);
+    }
+}
+
+/// Eine schon installierte Mod des Presets: Fehlen ihr Pflicht-Abhängigkeiten
+/// (etwa nach einem abgebrochenen Download), werden sie mitgeplant – sonst
+/// bliebe die Instanz kaputt, obwohl das Preset „schon installiert“ meldet.
+async fn complete_installed<L: VersionLookup>(
+    lookup: &L,
+    target: &Target,
+    existing: &Existing,
+    plan: &mut Plan,
+    planned: &mut HashMap<String, usize>,
+    project_id: &str,
+) -> Result<()> {
+    if existing.disabled.contains(project_id) {
+        return Ok(());
+    }
+    let Some(Some(version_id)) = existing.projects.get(project_id) else { return Ok(()) };
+    let root = match lookup.version(version_id).await {
+        Ok(Some(root)) => root,
+        Ok(None) => return Ok(()),
+        Err(Error::Cancelled) => return Err(Error::Cancelled),
+        Err(e) => {
+            tracing::debug!("Installierte Version {version_id} nicht nachschlagbar: {e}");
+            return Ok(());
+        }
+    };
+    let needs = |((id, _), _): &(Dep, u8)| !existing.loaded(id) && !planned.contains_key(id) && !target.is_bundled(id);
+    if !required_deps(&root, ContentKind::Mod, 0).iter().any(needs) {
+        return Ok(());
+    }
+    let item = plan.items.len();
+    match collect(lookup, target, existing, plan, planned, ContentKind::Mod, root).await? {
+        Collected::Ok { mut steps, replace, shared } => {
+            steps.remove(0);
+            tracing::info!("Fehlende Abhängigkeiten von {project_id} werden nachgeladen: {}", steps.len());
+            commit(plan, planned, item, steps, replace, shared);
+        }
+        Collected::Missing(id) | Collected::Incompatible(id) => {
+            tracing::warn!("Abhängigkeit {id} der installierten Mod {project_id} lässt sich nicht ergänzen");
+        }
+    }
+    Ok(())
 }
 
 async fn resolve_one<L: VersionLookup>(
@@ -1586,6 +1676,9 @@ async fn resolve_one<L: VersionLookup>(
         return Ok(outcome(ItemStatus::NotAvailable, None));
     }
     if let Some(c) = wanted.candidates.iter().find(|c| existing.projects.contains_key(&c.project_id)) {
+        if wanted.kind == ContentKind::Mod {
+            complete_installed(lookup, target, existing, plan, planned, &c.project_id).await?;
+        }
         return Ok(outcome(ItemStatus::AlreadyInstalled, Some(c)));
     }
     // Eingebaut im TRS Client (eine eigene Kopie des Spielers geht oben vor).
@@ -1595,6 +1688,9 @@ async fn resolve_one<L: VersionLookup>(
         return Ok(ItemOutcome { detail: Some(BUNDLED_DETAIL.to_owned()), ..outcome(ItemStatus::Bundled, Some(c)) });
     }
     if let Some(c) = wanted.candidates.iter().find(|c| planned.contains_key(&c.project_id)) {
+        // Kommt schon mit einem anderen Eintrag – fällt der weg, bleibt der Download für diesen.
+        let index = planned[&c.project_id];
+        commit(plan, planned, plan.items.len(), Vec::new(), Vec::new(), vec![index]);
         return Ok(outcome(ItemStatus::Duplicate, Some(c)));
     }
     if let Some(file) = existing.mod_files.iter().find(|f| wanted.file_conflicts.iter().any(|c| f.contains(c.as_str()))) {
@@ -1611,17 +1707,10 @@ async fn resolve_one<L: VersionLookup>(
         let Some(root) = modrinth::newest_in_channel(versions, target.channel) else { continue };
         let version_number = Some(root.version_number.clone()).filter(|v| !v.is_empty());
         match collect(lookup, target, existing, plan, planned, wanted.kind, root).await? {
-            Collected::Ok { steps, replace } => {
-                for (index, version) in replace {
-                    plan.steps[index].version = version;
-                    plan.steps[index].pinned = true;
-                }
+            Collected::Ok { steps, replace, shared } => {
                 // Die Wurzel kommt zuerst; auch unter der Preset-ID (evtl. ein Slug) merken.
                 planned.insert(candidate.project_id.clone(), plan.steps.len());
-                for step in steps {
-                    planned.insert(step.version.project_id.clone(), plan.steps.len());
-                    plan.steps.push(step);
-                }
+                commit(plan, planned, plan.items.len(), steps, replace, shared);
                 return Ok(ItemOutcome { version_number, ..outcome(ItemStatus::Installed, Some(candidate)) });
             }
             Collected::Missing(id) => {
@@ -1731,7 +1820,28 @@ fn droppable(conflicts: &[modcompat::Conflict], origins: &[Origin], plan: &Plan)
 /// Nimmt einen Eintrag samt Downloads aus dem Plan – und Shaderpakete, denen
 /// damit Iris fehlt.
 fn drop_item(plan: &mut Plan, existing: &Existing, wanted: &[Wanted], item: usize, status: ItemStatus, detail: Option<String>) {
-    plan.steps.retain(|s| s.item != item);
+    let mut kept = Vec::with_capacity(plan.steps.len());
+    for mut step in std::mem::take(&mut plan.steps) {
+        step.also.retain(|&i| i != item);
+        if step.item == item {
+            // Braucht ein anderer Eintrag den Download noch (gemeinsame Abhängigkeit
+            // wie Fabric API), bleibt er – sonst fehlte sie dort.
+            if step.also.is_empty() {
+                continue;
+            }
+            step.item = step.also.remove(0);
+            let heir = &mut plan.items[step.item];
+            if heir.status == ItemStatus::Duplicate {
+                heir.status = ItemStatus::Installed;
+                heir.version_number = Some(step.version.version_number.clone()).filter(|v| !v.is_empty());
+                step.dependency = false;
+            } else {
+                step.dependency = true;
+            }
+        }
+        kept.push(step);
+    }
+    plan.steps = kept;
     let outcome = &mut plan.items[item];
     outcome.status = status;
     outcome.detail = detail;
@@ -1753,10 +1863,11 @@ fn drop_item(plan: &mut Plan, existing: &Existing, wanted: &[Wanted], item: usiz
 
 /// Schreibt die getauschten Versionen in den Plan (geplante Downloads bzw.
 /// Tausch installierter Mods).
-fn apply_swaps(plan: &mut Plan, entries: Vec<modcompat::Entry>, origins: Vec<Origin>) {
+fn apply_swaps(plan: &mut Plan, entries: Vec<modcompat::Entry>, origins: Vec<Origin>, keep_existing: bool) {
     for (entry, origin) in entries.into_iter().zip(origins) {
         let (Some(because), Some(version)) = (entry.because, entry.version) else { continue };
         match origin {
+            Origin::Existing if keep_existing => {}
             Origin::Step(si) => {
                 let step = &mut plan.steps[si];
                 step.version = version;
@@ -1791,7 +1902,7 @@ fn apply_swaps(plan: &mut Plan, entries: Vec<modcompat::Entry>, origins: Vec<Ori
                 let outcome = &mut plan.items[item];
                 outcome.status = ItemStatus::Swapped;
                 outcome.compat_with = Some(because);
-                plan.steps.push(Step { kind: ContentKind::Mod, version, dependency: false, pinned: true, item });
+                plan.steps.push(Step { kind: ContentKind::Mod, version, dependency: false, pinned: true, item, also: Vec::new() });
             }
         }
     }
@@ -1825,7 +1936,7 @@ async fn harmonize<L: VersionLookup>(
         for c in &unresolved {
             tracing::warn!("Mod-Konflikt in der Instanz ohne Lösung: {} ↔ {}", c.declarer_label, c.target_label);
         }
-        apply_swaps(plan, entries, origins);
+        apply_swaps(plan, entries, origins, target.keep_existing);
         return Ok(());
     }
     Ok(())
@@ -1843,6 +1954,7 @@ async fn execute(
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<ApplyReport> {
     let Plan { steps, mut items } = plan;
+    let steps = install_order(steps);
     let total = u32::try_from(steps.len()).unwrap_or(u32::MAX);
     let mut installed = Vec::new();
     let mut failed: HashSet<usize> = HashSet::new();
@@ -1856,7 +1968,8 @@ async fn execute(
             total,
             title: Some(title),
         });
-        if failed.contains(&step.item) {
+        // Nur überspringen, wenn ihn niemand mehr braucht.
+        if std::iter::once(&step.item).chain(&step.also).all(|i| failed.contains(i)) {
             continue;
         }
         let result = match task::checkpoint().await {
@@ -1877,9 +1990,15 @@ async fn execute(
             }
             Err(e) => {
                 tracing::warn!("Preset-Download fehlgeschlagen ({}): {e}", step.version.project_id);
-                items[step.item].status = ItemStatus::Failed;
-                items[step.item].error = Some(e.to_user());
-                failed.insert(step.item);
+                // Alle Einträge, die den Download brauchen, bleiben draußen (ihre Mod
+                // kommt erst nach den Abhängigkeiten – liegt also noch nicht im Ordner).
+                let user = e.to_user();
+                for &i in std::iter::once(&step.item).chain(&step.also) {
+                    if failed.insert(i) {
+                        items[i].status = ItemStatus::Failed;
+                        items[i].error = Some(user.clone());
+                    }
+                }
             }
         }
     }
@@ -1895,6 +2014,15 @@ async fn execute(
     })
 }
 
+/// Reihenfolge der Downloads: je Eintrag erst die Abhängigkeiten (tiefste zuerst),
+/// dann die Mod selbst. Bricht der Download ab oder scheitert eine Abhängigkeit,
+/// liegt so nie eine Mod ohne ihre Abhängigkeit im Ordner.
+fn install_order(steps: Vec<Step>) -> Vec<Step> {
+    let mut indexed: Vec<(usize, Step)> = steps.into_iter().enumerate().collect();
+    indexed.sort_by_key(|(i, s)| (s.item, !s.dependency, if s.dependency { usize::MAX - i } else { *i }));
+    indexed.into_iter().map(|(_, s)| s).collect()
+}
+
 async fn run(
     http: &reqwest::Client,
     paths: &Paths,
@@ -1903,15 +2031,57 @@ async fn run(
     wanted: &[Wanted],
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<ApplyReport> {
+    run_with(http, paths, instance, builds, wanted, progress, false).await
+}
+
+async fn run_with(
+    http: &reqwest::Client,
+    paths: &Paths,
+    instance: &Instance,
+    builds: &[client_mod::Build],
+    wanted: &[Wanted],
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+    keep_existing: bool,
+) -> Result<ApplyReport> {
     let mut existing = existing(paths, &instance.id).await?;
     existing.mods = modcompat::installed_entries(paths, &instance.id).await?;
     // Was der TRS Client hier schon eingebaut mitbringt, lädt das Preset nicht noch einmal.
     let bundled = client_mod::builtin_mods(paths, builds, instance).await;
-    let target = Target::of(instance).with_bundled(&bundled);
+    let target = Target { keep_existing, ..Target::of(instance).with_bundled(&bundled) };
     let lookup = ModrinthLookup::new(http, paths, instance);
     let resolve_progress = |done, total| progress(ApplyProgress { phase: ApplyPhase::Resolve, done, total, title: None });
     let plan = resolve(&lookup, &target, &existing, wanted, &resolve_progress).await?;
     execute(http, paths, instance, plan, progress).await
+}
+
+/// Preset-ID der Einträge, die [`install_projects`] ergänzt.
+pub const DEPENDENCIES_PRESET: &str = "dependencies";
+
+/// Lädt Modrinth-Projekte (ID, Titel) samt Pflicht-Abhängigkeiten in die
+/// Instanz, ohne andere Mods zu tauschen – für fehlende Abhängigkeiten vor dem
+/// Start bzw. nach einem Absturz.
+pub(crate) async fn install_projects(
+    http: &reqwest::Client,
+    paths: &Paths,
+    instance: &Instance,
+    builds: &[client_mod::Build],
+    projects: &[(String, String)],
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+) -> Result<ApplyReport> {
+    let wanted: Vec<Wanted> = projects
+        .iter()
+        .map(|(project_id, title)| Wanted {
+            preset_id: DEPENDENCIES_PRESET.to_owned(),
+            kind: ContentKind::Mod,
+            candidates: vec![Candidate { project_id: project_id.clone(), title: title.clone(), icon_url: None, from_1_20: false }],
+            file_conflicts: Vec::new(),
+            project_conflicts: Vec::new(),
+            requires: Vec::new(),
+            blocked_by: None,
+            optional: false,
+        })
+        .collect();
+    run_with(http, paths, instance, builds, &wanted, progress, true).await
 }
 
 /// Installiert die gewählten Presets in die Instanz – jede Mod nur, wenn es
@@ -2095,11 +2265,23 @@ pub async fn install_fps_boost(
     builds: &[client_mod::Build],
     instance: &Instance,
 ) -> Result<Vec<String>> {
+    Ok(install_fps_boost_report(http, paths, builds, instance, &|_| {}).await?.files)
+}
+
+/// Wie [`install_fps_boost`], mit Fortschritt und dem ganzen Bericht (für die
+/// TRS-Optimierung: Ist etwas fehlgeschlagen, wird beim nächsten Start erneut ergänzt).
+pub async fn install_fps_boost_report(
+    http: &reqwest::Client,
+    paths: &Paths,
+    builds: &[client_mod::Build],
+    instance: &Instance,
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+) -> Result<ApplyReport> {
     let preset = view(
         &StoredPreset::new(Builtin::FpsBoost.id(), "", true, Vec::new()),
         false,
     );
-    let report = run(http, paths, instance, builds, &wanted_of(&preset), &|_| {}).await?;
+    let report = run(http, paths, instance, builds, &wanted_of(&preset), progress).await?;
     let usable = report.items.iter().any(|i| {
         matches!(
             i.status,
@@ -2122,7 +2304,7 @@ pub async fn install_fps_boost(
             "Für diese Version gibt es keine der Optimierungs-Mods."
         )));
     }
-    Ok(report.files)
+    Ok(report)
 }
 
 #[cfg(test)]
@@ -2221,6 +2403,7 @@ mod tests {
             projects: HashMap::from([("sodium".into(), Some("s14".into())), (IRIS_ID.into(), Some("i7".into()))]),
             mod_files: vec!["s14.jar".into(), "i7.jar".into()],
             mods: vec![entry("sodium", "s14", SODIUM_14), entry(IRIS_ID, "i7", IRIS_7)],
+            ..Default::default()
         };
         let wanted = [want("tier", &["sodium"]), want("tier", &[IRIS_ID])];
         let plan = plan_for(&mock, &target("1.21.11"), &existing, &wanted).await;
@@ -2234,6 +2417,7 @@ mod tests {
             projects: HashMap::from([("sodium".into(), Some("s12".into())), (IRIS_ID.into(), Some("i7".into()))]),
             mod_files: Vec::new(),
             mods: vec![entry("sodium", "s12", SODIUM_12), entry(IRIS_ID, "i7", IRIS_7)],
+            ..Default::default()
         };
         let plan = plan_for(&mock, &target("1.21.11"), &existing, &wanted).await;
         assert_eq!(statuses(&plan), [ItemStatus::AlreadyInstalled, ItemStatus::AlreadyInstalled]);
@@ -2302,6 +2486,61 @@ mod tests {
         assert!(broken[1].because.is_none());
     }
 
+    /// Gegen das echte Modrinth (nur lesend): „Max FPS“ für Fabric 1.21.11 bringt
+    /// Cloth Config für More Culling mit (Absturzbericht „requires … cloth-config, which is missing!“).
+    /// `cargo test -p trs-core real_modrinth_max_fps -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore = "braucht Internet (Modrinth)"]
+    async fn real_modrinth_max_fps_1_21_11() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let instance = Instance {
+            id: "real".into(),
+            name: "Real".into(),
+            game_version: "1.21.11".into(),
+            loader: crate::instance::Loader { kind: LoaderKind::Fabric, version: Some("0.19.5".into()) },
+            created_at: chrono::Utc::now(),
+            last_played: None,
+            total_play_seconds: 0,
+            icon: None,
+            group: None,
+            overrides: Default::default(),
+        };
+        let http = reqwest::Client::builder().user_agent("theredstonee/trs-launcher (compat test)").build().unwrap();
+        let lookup = ModrinthLookup::new(&http, &paths, &instance);
+        let wanted = wanted_for(&[&builtin_view(Builtin::FpsBoost)]);
+        let bundled = [
+            BundledMod { id: "lithium".into(), name: "Lithium".into(), version: "0.21.0".into() },
+            BundledMod { id: "ferritecore".into(), name: "FerriteCore".into(), version: "8.0.0".into() },
+            BundledMod { id: "immediatelyfast".into(), name: "ImmediatelyFast".into(), version: "1.14.0".into() },
+            BundledMod { id: "modernfix".into(), name: "ModernFix".into(), version: "5.25.0".into() },
+            BundledMod { id: "badoptimizations".into(), name: "BadOptimizations".into(), version: "2.3.0".into() },
+        ];
+        for target in [Target::of(&instance), Target::of(&instance).with_bundled(&bundled)] {
+            let plan = resolve(&lookup, &target, &Existing::default(), &wanted, &|_, _| {}).await.unwrap();
+            for step in &plan.steps {
+                println!("{} {} dep={} item={}", step.version.project_id, step.version.version_number, step.dependency, step.item);
+            }
+            for item in &plan.items {
+                println!("{:?} {} {:?} {:?}", item.status, item.title, item.version_number, item.detail);
+            }
+            let has = |project: &str| plan.steps.iter().any(|s| s.version.project_id == project);
+            assert!(has("51shyZVL"), "More Culling im Plan");
+            assert!(has("9s6osm5g"), "Cloth Config im Plan");
+            let mut entries = Vec::new();
+            for step in plan.steps.iter().filter(|s| s.kind == ContentKind::Mod) {
+                entries.push(modcompat::Entry { mods: lookup.mod_info(&step.version).await, ..Default::default() });
+            }
+            // Fabric-API-Module stecken als Jar-in-Jar in der Fabric API (hier nicht gelesen).
+            let missing = modcompat::missing_dependencies(&entries, &target.builtins);
+            assert!(!missing.iter().any(|m| m.id == "cloth-config"), "{missing:?}");
+            // Cloth Config kommt vor More Culling in den Ordner.
+            let order: Vec<String> = install_order(plan.steps.clone()).into_iter().map(|s| s.version.project_id).collect();
+            let pos = |p: &str| order.iter().position(|o| o == p).unwrap();
+            assert!(pos("9s6osm5g") < pos("51shyZVL"), "{order:?}");
+        }
+    }
+
     #[tokio::test]
     async fn without_a_consistent_set_the_later_item_is_left_out() {
         // Nur Sodium 0.8.14 – keine Version verträgt sich mit Iris 1.10.7.
@@ -2340,6 +2579,7 @@ mod tests {
             channel: UpdateChannel::Release,
             builtins: Vec::new(),
             bundled: HashSet::new(),
+            keep_existing: false,
         }
     }
 
@@ -2431,6 +2671,94 @@ mod tests {
         assert_eq!(step_ids(&plan), ["l1"]);
         // Sodium wurde gar nicht erst nachgeschlagen.
         assert!(!mock.calls.lock().unwrap().contains(&"sodium".to_owned()));
+    }
+
+    const MORE_CULLING: &str = "51shyZVL";
+    const CLOTH: &str = "9s6osm5g";
+
+    /// More Culling 1.6.2 braucht Cloth Config (wie auf Modrinth für 1.21.11).
+    fn more_culling_mock() -> Mock {
+        Mock::default()
+            .with(version("mc162", MORE_CULLING, &[("required", CLOTH, None)]))
+            .with(version("cc153", CLOTH, &[]))
+            .with(version("s1", "sodium", &[]))
+    }
+
+    #[tokio::test]
+    async fn dependencies_are_installed_before_their_mod() {
+        let mock = more_culling_mock().with(version("dyn1", "dynfps", &[("required", "fapi", None)])).with(version("fapi1", "fapi", &[]));
+        let wanted = [want("fps", &["sodium"]), want("fps", &[MORE_CULLING]), want("fps", &["dynfps"])];
+        let plan = plan_for(&mock, &target("1.21.1"), &Existing::default(), &wanted).await;
+        assert_eq!(step_ids(&plan), ["s1", "mc162", "cc153", "dyn1", "fapi1"]);
+        // Bricht der Download nach der ersten Datei eines Eintrags ab, liegt keine Mod ohne Abhängigkeit da.
+        let order: Vec<String> = install_order(plan.steps).into_iter().map(|s| s.version.id).collect();
+        assert_eq!(order, ["s1", "cc153", "mc162", "fapi1", "dyn1"]);
+
+        // Tiefe Ketten: die tiefste Abhängigkeit zuerst.
+        let mock = Mock::default()
+            .with(version("a1", "a", &[("required", "b", None)]))
+            .with(version("b1", "b", &[("required", "c", None)]))
+            .with(version("c1", "c", &[]));
+        let plan = plan_for(&mock, &target("1.21.1"), &Existing::default(), &[want("p", &["a"])]).await;
+        let order: Vec<String> = install_order(plan.steps).into_iter().map(|s| s.version.id).collect();
+        assert_eq!(order, ["c1", "b1", "a1"]);
+    }
+
+    #[tokio::test]
+    async fn an_installed_mod_without_its_dependency_gets_it() {
+        // Abgebrochener erster Start: More Culling liegt da, Cloth Config fehlt.
+        let mock = more_culling_mock();
+        let existing = Existing { projects: HashMap::from([(MORE_CULLING.into(), Some("mc162".into()))]), ..Default::default() };
+        let wanted = [want("fps", &["sodium"]), want("fps", &[MORE_CULLING])];
+        let plan = plan_for(&mock, &target("1.21.1"), &existing, &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::AlreadyInstalled]);
+        assert_eq!(step_ids(&plan), ["s1", "cc153"]);
+        assert!(plan.steps[1].dependency);
+        assert_eq!(plan.steps[1].item, 1);
+
+        // Ist sie da, wird nichts geladen – auch nicht nachgeschlagen, ob etwas fehlt.
+        let existing = Existing {
+            projects: HashMap::from([(MORE_CULLING.into(), Some("mc162".into())), (CLOTH.into(), Some("cc153".into()))]),
+            ..Default::default()
+        };
+        let plan = plan_for(&mock, &target("1.21.1"), &existing, &wanted[1..]).await;
+        assert!(plan.steps.is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_disabled_dependency_does_not_count() {
+        let mock = more_culling_mock();
+        let existing = Existing {
+            projects: HashMap::from([(CLOTH.into(), Some("cc153".into()))]),
+            disabled: HashSet::from([CLOTH.to_owned()]),
+            ..Default::default()
+        };
+        let plan = plan_for(&mock, &target("1.21.1"), &existing, &[want("fps", &[MORE_CULLING])]).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed]);
+        assert_eq!(step_ids(&plan), ["mc162", "cc153"]);
+    }
+
+    #[tokio::test]
+    async fn a_shared_dependency_stays_when_its_first_user_is_dropped() {
+        let mock = Mock::default()
+            .with(version("a1", "amod", &[("required", "fapi", None)]))
+            .with(version("b1", "bmod", &[("required", "fapi", None)]))
+            .with(version("fapi1", "fapi", &[]));
+        let wanted = [want("p", &["amod"]), want("p", &["bmod"]), want("p", &["fapi"])];
+        let mut plan = plan_for(&mock, &target("1.21.1"), &Existing::default(), &wanted).await;
+        assert_eq!(step_ids(&plan), ["a1", "fapi1", "b1"]);
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Installed, ItemStatus::Duplicate]);
+        assert_eq!(plan.steps[1].also, [1, 2]);
+
+        // A verträgt sich nicht: Fabric API bleibt für B.
+        drop_item(&mut plan, &Existing::default(), &wanted, 0, ItemStatus::Incompatible, Some("X".into()));
+        assert_eq!(step_ids(&plan), ["fapi1", "b1"]);
+        assert_eq!((plan.steps[0].item, plan.steps[0].dependency), (1, true));
+        // Und fällt auch B weg, gehört sie dem Eintrag „Fabric API“ selbst.
+        drop_item(&mut plan, &Existing::default(), &wanted, 1, ItemStatus::Incompatible, Some("X".into()));
+        assert_eq!(step_ids(&plan), ["fapi1"]);
+        assert_eq!((plan.steps[0].item, plan.steps[0].dependency), (2, false));
+        assert_eq!(statuses(&plan), [ItemStatus::Incompatible, ItemStatus::Incompatible, ItemStatus::Installed]);
     }
 
     const LITHIUM: &str = "gvQqBUqZ";

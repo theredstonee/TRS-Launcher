@@ -31,6 +31,7 @@ import type {
   AdoptResult,
   BlockedFile,
   CompatReport,
+  DependencyFix,
   CurseForgeInstallOutcome,
   CurseForgePackResult,
   Platform,
@@ -256,6 +257,9 @@ export const backend = {
   /** Tauscht unverträgliche Mods gegen passende Versionen (`prefer` = Mod-ID aus der Absturz-Meldung). */
   fixModConflicts: (id: string, prefer: string | null, taskId: string | null = null) =>
     call<CompatReport>('fix_mod_conflicts', { id, prefer, taskId }),
+  /** Installiert Mods, die laut Absturz fehlen (`dependencies` = Mod-IDs, `declarer` = wer sie braucht). */
+  installMissingDependencies: (id: string, declarer: string | null, dependencies: string[], taskId: string | null = null) =>
+    call<DependencyFix>('install_missing_dependencies', { id, declarer, dependencies, taskId }),
   applyContentUpdate: (id: string, update: ContentUpdate, taskId: string | null = null) =>
     call<string>('apply_content_update', {
       id,

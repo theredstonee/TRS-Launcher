@@ -251,11 +251,40 @@ pub(crate) async fn mod_info(http: &reqwest::Client, cache_dir: &Path, file: &Ve
     }
 }
 
-/// Mod-Infos einer Datei in der Instanz.
-pub(crate) async fn local_mod_info(path: PathBuf) -> Vec<ModInfo> {
-    tokio::task::spawn_blocking(move || std::fs::File::open(&path).map(meta::read_jar).unwrap_or_default())
-        .await
-        .unwrap_or_default()
+/// Eine gelesene Datei: Größe + Änderungszeit, Mod-Infos, IDs eingebetteter Jars.
+type LocalEntry = (u64, Option<std::time::SystemTime>, Vec<ModInfo>, Vec<String>);
+
+/// Schon gelesene Jars der Instanzen – gültig, solange Größe und Änderungszeit
+/// gleich bleiben (spart das Auspacken bei jedem Start).
+static LOCAL_CACHE: std::sync::LazyLock<std::sync::Mutex<HashMap<PathBuf, LocalEntry>>> =
+    std::sync::LazyLock::new(Default::default);
+const MAX_LOCAL_CACHE: usize = 5000;
+
+/// Mod-Infos einer Datei in der Instanz – dazu die Mod-IDs ihrer eingebetteten Jars.
+pub(crate) async fn local_mod_details(path: PathBuf) -> (Vec<ModInfo>, Vec<String>) {
+    tokio::task::spawn_blocking(move || {
+        let Ok(file) = std::fs::File::open(&path) else { return (Vec::new(), Vec::new()) };
+        let stamp = file.metadata().ok().map(|m| (m.len(), m.modified().ok()));
+        let cache = || LOCAL_CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some((len, modified)) = stamp
+            && let Some((l, m, mods, nested)) = cache().get(&path)
+            && *l == len
+            && *m == modified
+        {
+            return (mods.clone(), nested.clone());
+        }
+        let (mods, nested) = meta::read_jar_with_nested(std::io::BufReader::new(file));
+        if let Some((len, modified)) = stamp {
+            let mut cache = cache();
+            if cache.len() >= MAX_LOCAL_CACHE {
+                cache.clear();
+            }
+            cache.insert(path, (len, modified, mods.clone(), nested.clone()));
+        }
+        (mods, nested)
+    })
+    .await
+    .unwrap_or_default()
 }
 
 #[cfg(test)]

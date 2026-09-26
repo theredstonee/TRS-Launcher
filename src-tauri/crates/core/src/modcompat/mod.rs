@@ -57,6 +57,9 @@ pub(crate) struct Entry {
     pub file_name: Option<String>,
     /// Vom Auflösen gesetzt: getauscht, damit es mit dieser Mod läuft („Iris 1.10.7“).
     pub because: Option<String>,
+    /// Mod-IDs eingebetteter Jars (Jar-in-Jar, nur installierte) – zählen für
+    /// fehlende Abhängigkeiten als vorhanden.
+    pub nested: Vec<String>,
 }
 
 impl Entry {
@@ -177,6 +180,60 @@ pub(crate) fn find_conflicts(entries: &[Entry], builtins: &[ModInfo]) -> Vec<Con
                         target_label: other.label(),
                     });
                 }
+            }
+        }
+    }
+    out
+}
+
+/// Mod-IDs, die Spiel und Modloader selbst mitbringen – nie eine eigene Datei.
+const PLATFORM_IDS: &[&str] = &[
+    "minecraft",
+    "java",
+    "fabricloader",
+    "fabric-loader",
+    "mixinextras",
+    "quilt_loader",
+    "quilt_base",
+    "forge",
+    "neoforge",
+    "fml",
+    "javafml",
+    "lowcodefml",
+    "mcp",
+];
+
+/// Eine Pflicht-Abhängigkeit aus dem Jar, die in der Menge ganz fehlt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct MissingDep {
+    /// Eintrag, dessen Mod die Abhängigkeit verlangt.
+    pub declarer: usize,
+    /// Fehlende Mod-ID (z. B. `cloth-config`).
+    pub id: String,
+    /// „More Culling 1.6.2“
+    pub declarer_label: String,
+}
+
+/// Pflicht-Abhängigkeiten (`depends`), die keine Mod der Menge (auch nicht per
+/// `provides` oder als eingebettetes Jar), kein eingebauter Mod und nicht der
+/// Loader selbst erfüllt – je Mod-ID höchstens einmal. Bei geplanten Mods
+/// (ohne gelesene Jar-in-Jar-IDs) kann das zu viel melden – wer daraus handelt,
+/// ordnet die ID erst einem Projekt zu (siehe [`crate::depcheck`]).
+pub(crate) fn missing_dependencies(entries: &[Entry], builtins: &[ModInfo]) -> Vec<MissingDep> {
+    let mut present: HashSet<&str> = PLATFORM_IDS.iter().copied().collect();
+    for m in entries.iter().flat_map(|e| &e.mods).chain(builtins) {
+        present.insert(m.id.as_str());
+        present.extend(m.provides.iter().map(String::as_str));
+    }
+    present.extend(entries.iter().flat_map(|e| &e.nested).map(String::as_str));
+    let mut out: Vec<MissingDep> = Vec::new();
+    for (i, e) in entries.iter().enumerate() {
+        for m in &e.mods {
+            for c in &m.depends {
+                if present.contains(c.id.as_str()) || out.iter().any(|o| o.id == c.id) {
+                    continue;
+                }
+                out.push(MissingDep { declarer: i, id: c.id.clone(), declarer_label: m.label() });
             }
         }
     }
@@ -343,11 +400,23 @@ pub(crate) async fn settle<L: VersionLookup>(
 
 /// Die aktivierten Mods einer Instanz als Prüf-Einträge.
 pub(crate) async fn installed_entries(paths: &Paths, instance_id: &str) -> Result<Vec<Entry>> {
+    use futures::StreamExt;
+
     let items = content::list(paths, instance_id, ContentKind::Mod).await?;
+    let files: Vec<(content::ContentItem, PathBuf)> = items
+        .into_iter()
+        .filter(|i| i.enabled)
+        .filter_map(|i| content::existing_file(paths, instance_id, ContentKind::Mod, &i.file_name).map(|p| (i, p)))
+        .collect();
+    // Mehrere Jars gleichzeitig lesen (beim ersten Mal je Sitzung; danach aus dem Cache).
+    let read: Vec<_> = futures::stream::iter(files.into_iter().map(|(item, path)| async move {
+        (item, remote::local_mod_details(path).await)
+    }))
+    .buffered(8)
+    .collect()
+    .await;
     let mut out = Vec::new();
-    for item in items.into_iter().filter(|i| i.enabled) {
-        let Some(path) = content::existing_file(paths, instance_id, ContentKind::Mod, &item.file_name) else { continue };
-        let mods = remote::local_mod_info(path).await;
+    for (item, (mods, nested)) in read {
         let source = item
             .source
             .filter(|s| s.platform == Platform::Modrinth && modrinth::is_safe_project_id(&s.project_id))
@@ -362,6 +431,7 @@ pub(crate) async fn installed_entries(paths: &Paths, instance_id: &str) -> Resul
             mods,
             file_name: Some(item.file_name),
             because: None,
+            nested,
         });
     }
     Ok(out)
@@ -408,16 +478,15 @@ pub async fn fix_instance(
         unresolved: unresolved.iter().map(|c| format!("{} ↔ {}", c.declarer_label, c.target_label)).collect(),
         ..Default::default()
     };
-    let mut installed = Vec::new();
     for entry in entries {
         let (Some(because), Some(version), Some(file)) = (entry.because, entry.version, entry.file_name) else { continue };
         let title = entry.mods.first().map(|m| m.display_name().to_owned()).unwrap_or_else(|| version.name.clone());
         let from = entry.installed.and_then(|(_, mods)| mods.first().map(|m| m.version.clone()));
         let to = entry.mods.first().map(|m| m.version.clone()).unwrap_or_else(|| version.version_number.clone());
-        installed.push(modrinth::install_version(http, paths, instance, ContentKind::Mod, &version, Some(&file), false).await?);
+        // Die getauschte Version kann andere Pflicht-Abhängigkeiten haben.
+        modrinth::install_with_dependencies(http, paths, instance, ContentKind::Mod, &version, Some(&file)).await?;
         report.changes.push(CompatChange { title, from, to, because });
     }
-    modrinth::after_install(http, paths, &instance.id, &installed).await;
     Ok(report)
 }
 
