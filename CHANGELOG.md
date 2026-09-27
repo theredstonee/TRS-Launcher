@@ -21,7 +21,16 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.12.0 – 2026-09-27 – Pass It On | Weitergeben
+<!-- banner: accent=#27d3e6 motif=/news/0.12.0/banner.png -->
+<!-- shots:
+/news/0.12.0/share-result.png | Share a modpack: code, link or straight to friends | Modpack teilen: Code, Link oder direkt an Freunde
+/news/0.12.0/share-dialog.png | Mod list and settings – you pick the folders and how long the code works | Mod-Liste und Einstellungen – du wählst die Ordner und wie lange der Code gilt
+/news/0.12.0/sent-to-you.png | Packs your friends sent you, right in the library | Packs von Freunden direkt in der Bibliothek
+/news/0.12.0/install-by-code.png | Install by code – with a warning for mod files that aren’t on Modrinth | Per Code installieren – mit Hinweis auf Mod-Dateien, die nicht von Modrinth stammen
+/news/0.12.0/pack-update.png | New version? Update with one click, your own changes stay | Neue Version? Ein Klick, eigene Änderungen bleiben
+/news/0.12.0/my-modpacks.png | My modpacks: code, duration, send, delete | Meine Modpacks: Code, Laufzeit, schicken, löschen
+-->
 
 ### English
 - Installing a modpack no longer waits for the pack check – click Install right away. If you haven't picked with or
