@@ -21,6 +21,16 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- Installing a modpack no longer waits for the pack check – click Install right away. If you haven't picked with or
+  without TRS Client yet, the launcher chooses as usual (including the check for mods that clash).
+
+### Deutsch
+- Modpacks lassen sich sofort installieren, ohne auf die Prüfung des Packs zu warten. Hast du „mit“ oder „ohne TRS
+  Client“ noch nicht gewählt, entscheidet der Launcher wie gewohnt (samt Prüfung auf Mods, die sich beißen).
+
 ## 0.11.0 – 2026-09-27 – Back Online | Wieder verbunden
 <!-- banner: accent=#3ddc84 motif=/news/0.11.0/banner.png -->
 <!-- shots:

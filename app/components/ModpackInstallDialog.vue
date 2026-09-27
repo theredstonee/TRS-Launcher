@@ -21,8 +21,11 @@ const offer = computed(() => preview.value?.trsClient ?? null)
 /** Vanilla-Packs (ohne Modloader) fragen nicht – wie bisher. */
 const showChoice = computed(() => loading.value || failed.value || trsShowsChoice(offer.value))
 
+// Vorschau setzt `choice` nur im Ladezustand (`loading` noch true) – alles
+// andere ist eine Wahl des Nutzers, auch während noch geprüft wird.
+let presetting = false
 watch(choice, () => {
-  if (!loading.value) touched.value = true
+  if (!presetting) touched.value = true
 })
 
 onMounted(async () => {
@@ -30,7 +33,10 @@ onMounted(async () => {
   try {
     preview.value =
       platform === 'curseforge' ? await backend.curseforge.previewModpack(pack.projectId) : await backend.previewModpack(pack.projectId)
+    presetting = true
     choice.value = trsAfterPreview(preview.value.trsClient, touched.value, choice.value)
+    await nextTick()
+    presetting = false
   } catch (e) {
     // Gesperrtes CurseForge-Pack o. Ä.: Die Installation meldet den Fehler samt Link.
     failed.value = true
@@ -40,11 +46,17 @@ onMounted(async () => {
   }
 })
 
+/**
+ * Sofort installierbar, auch während die Vorschau noch prüft: Hat der Nutzer
+ * dann noch nicht gewählt, entscheidet der Kern selbst (Einstellung bzw.
+ * Vorauswahl samt Konfliktprüfung) – dieselbe Logik wie nach der Vorschau.
+ */
 function install() {
   const { pack, platform } = props.request
+  const early = loading.value && !touched.value
   installModpackTask(pack, platform, {
     versionId: preview.value?.versionId ?? null,
-    trsClient: trsRequest(offer.value, choice.value),
+    trsClient: early ? null : trsRequest(offer.value, choice.value),
   })
   emit('close')
 }
@@ -70,7 +82,7 @@ function install() {
 
     <template #actions>
       <button class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.cancel') }}</button>
-      <button class="btn btn-primary" :disabled="loading" @click="install">{{ t('common.actions.install') }}</button>
+      <button class="btn btn-primary" @click="install">{{ t('common.actions.install') }}</button>
     </template>
   </BaseDialog>
 </template>
