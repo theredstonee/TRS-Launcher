@@ -422,21 +422,70 @@ public final class Panorama {
 		INSTANCE.share = handler;
 	}
 
-	public boolean canShare() {
-		return share != null && lastImage != null && state == State.IDLE;
+	/** Zwischenablage der Version (für den eingebauten „Als Link teilen“); null = Link nur anzeigen. */
+	private static volatile java.util.function.Consumer<String> clipboard;
+	/** Ergebnis des letzten Teilens (Text für die Modulseite) und bis wann es sichtbar ist. */
+	private volatile String shareMessage;
+	private volatile long shareMessageUntil;
+	private volatile boolean sharing;
+
+	public static void setClipboard(java.util.function.Consumer<String> copy) {
+		clipboard = copy;
 	}
 
-	/** Teilen über den eingehängten Handler (falls vorhanden). */
+	public boolean canShare() {
+		if (lastImage == null || state != State.IDLE || sharing) return false;
+		return share != null || dev.theredstonee.trsclient.core.clips.ScreenshotShare.social() != null;
+	}
+
+	/** Meldung zum letzten Teilen (Link kopiert / Fehler) oder null. */
+	public String shareMessage(long now) {
+		return now < shareMessageUntil ? shareMessage : null;
+	}
+
+	/**
+	 * Teilen: über den eingehängten Handler, sonst eingebaut über {@code ScreenshotShare} (Link wird kopiert, die
+	 * Modulseite zeigt das Ergebnis). false = nicht möglich (nichts aufgenommen oder nicht angemeldet).
+	 */
 	public boolean share() {
 		ShareHandler h = share;
 		Path image = lastImage, folder = lastFolder;
-		if (h == null || image == null || folder == null) return false;
-		try {
-			h.share(image, folder);
-			return true;
-		} catch (RuntimeException e) {
-			return false;
+		if (image == null || folder == null) return false;
+		if (h != null) {
+			try {
+				h.share(image, folder);
+				return true;
+			} catch (RuntimeException e) {
+				return false;
+			}
 		}
+		sharing = true;
+		shareNote(I18n.tr("clips.share.uploading"));
+		boolean started = dev.theredstonee.trsclient.core.clips.ScreenshotShare.share(image, (value, error) -> {
+			sharing = false;
+			if (value == null) {
+				shareNote(I18n.tr(error == null ? "social.error.generic" : error));
+				return;
+			}
+			boolean copied = false;
+			java.util.function.Consumer<String> c = clipboard;
+			if (c != null) {
+				try {
+					c.accept(value.url);
+					copied = true;
+				} catch (RuntimeException ignored) {
+					// dann nur anzeigen
+				}
+			}
+			shareNote(dev.theredstonee.trsclient.core.clips.ScreenshotShare.copiedText(value, copied));
+		});
+		if (!started) sharing = false;
+		return started;
+	}
+
+	private void shareNote(String text) {
+		shareMessage = text;
+		shareMessageUntil = System.currentTimeMillis() + 12_000L;
 	}
 
 	// --- Toast ---

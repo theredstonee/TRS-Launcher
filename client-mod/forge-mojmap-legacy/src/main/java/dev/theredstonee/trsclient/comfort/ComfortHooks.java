@@ -69,6 +69,8 @@ public final class ComfortHooks {
 	public static void init(TrsModules m) {
 		modules = m;
 		Comfort.install(m, Mc.mc().gameDirectory.toPath(), panoramaSupported());
+		// „Als Link teilen“ für Panoramen: Link landet in der Zwischenablage der Version.
+		dev.theredstonee.trsclient.core.panorama.Panorama.setClipboard(Mc::setClipboard);
 	}
 
 	/**

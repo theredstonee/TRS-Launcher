@@ -76,6 +76,7 @@ public final class LegacyComfort {
 	public static LegacyComfort init(TrsModules modules) {
 		INSTANCE.modules = modules;
 		Comfort.install(modules, Mc.gameDir().toPath(), true);
+		dev.theredstonee.trsclient.core.panorama.Panorama.setClipboard(Mc::setClipboard);
 		return INSTANCE;
 	}
 

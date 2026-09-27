@@ -82,6 +82,7 @@ public final class PanoramaPanel implements ModulePanel {
 		String line;
 		if (!supported.supported()) line = I18n.tr("panorama.unsupported");
 		else if (message != null && System.currentTimeMillis() < messageUntil) line = message;
+		else if (p.shareMessage(System.currentTimeMillis()) != null) line = p.shareMessage(System.currentTimeMillis());
 		else if (p.state() != Panorama.State.IDLE) line = I18n.tr("panorama.saving");
 		else if (p.lastFolder() != null) line = I18n.tr("panorama.last", p.lastFolder().getFileName().toString());
 		else line = I18n.tr("panorama.hint");

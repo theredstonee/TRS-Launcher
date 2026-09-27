@@ -70,7 +70,8 @@ How to write an entry:
   Profiles → Server profiles saves what you just changed on the server. Profiles stay on this PC.
 - **Panorama screenshots.** One key (unbound by default, set it in Controls) or "Take panorama now" in the TRS menu
   records a 360° panorama: six cube images like the title screen panorama (ready for a resource pack) and one 360°
-  picture you can view in any panorama viewer. Saved in screenshots/panorama; a message offers to open the folder.
+  picture you can view in any panorama viewer. Saved in screenshots/panorama; a message offers to open the folder, and "Share as link" on the
+  module page uploads the 360° picture and copies the link.
   The HUD is hidden while recording. From Minecraft 1.8.9 (not on 1.7.10 and 1.13.2).
 
 ### Deutsch
@@ -125,7 +126,8 @@ How to write an entry:
 - **Panorama-Screenshots.** Eine Taste (ab Werk unbelegt, in der Steuerung festlegen) oder „Jetzt aufnehmen“ im
   TRS-Menü nimmt ein 360°-Panorama auf: sechs Würfelbilder wie das Panorama des Titelbildschirms (fertig für ein
   Ressourcenpaket) und ein 360°-Bild für jeden Panorama-Betrachter. Gespeichert in screenshots/panorama; eine Meldung
-  bietet an, den Ordner zu öffnen. Das HUD ist währenddessen ausgeblendet. Ab Minecraft 1.8.9 (nicht auf 1.7.10 und
+  bietet an, den Ordner zu öffnen, und „Als Link teilen“ auf der Modulseite lädt das 360°-Bild hoch und kopiert den
+  Link. Das HUD ist währenddessen ausgeblendet. Ab Minecraft 1.8.9 (nicht auf 1.7.10 und
   1.13.2).
 
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
