@@ -625,6 +625,15 @@ public final class Social {
 			sanctionEvent(e, now);
 			return;
 		}
+		if (t.equals("application_updated")) {
+			String[] toast = applicationToast(e.application, I18n.code());
+			if (toast != null) {
+				String key = "application:" + e.application.id;
+				toasts.dismissKey(key);
+				toasts.add(Toasts.Kind.REPORT, key, toast[0], toast[1], null, null, null, null, now);
+			}
+			return;
+		}
 		if (t.equals("moderation") && sanctions.supported()) {
 			// Moderation v2: Zustand und Hinweis kommen mit sanction_added/_updated (dieses Ereignis ist für ältere Clients).
 			if ("mute".equals(e.action)) moderation = new Chat.Moderation(true, e.until, e.reason);
@@ -676,6 +685,15 @@ public final class Social {
 			toasts.dismissKey(key);
 			toasts.add(Toasts.Kind.MODERATION, key, toast[0], toast[1], null, null, null, null, now);
 		}
+	}
+
+	/** Titel und Text zu {@code application_updated} (Bewerbung fürs Team) oder null. */
+	static String[] applicationToast(MeEvent.Application a, String language) {
+		if (a == null) return null;
+		String status = I18n.tr("social.toast.application." + a.status);
+		String text = a.response != null && !"withdrawn".equals(a.status)
+				? I18n.tr("social.toast.applicationResponse", status, a.response) : status;
+		return new String[]{I18n.tr("social.toast.applicationTitle", a.title(language)), text};
 	}
 
 	/** Titel und Text der Benachrichtigung zu einem Strafen-Ereignis oder null (nichts zu melden). */

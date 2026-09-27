@@ -51,6 +51,8 @@ public final class MeEvent {
 	/** appeal_decided: ID der Strafe (0 = fehlt) und der entschiedene Einspruch. */
 	public final long sanctionId;
 	public final Sanction.Appeal appeal;
+	/** Team-Bewerbung (application_updated, API.md §24.3) oder null. */
+	public final Application application;
 	/** Rohes JSON der Welt-Hosting-Ereignisse ({@code hosting_*}, ≤ 16 KiB) – ausgewertet in core.hosting. */
 	public final String hostingData;
 
@@ -114,6 +116,56 @@ public final class MeEvent {
 		long sid = raw == null ? 0 : SanctionJson.num(raw, "sanctionId");
 		this.sanctionId = sid > 0 ? sid : sanction != null ? sanction.id : 0;
 		this.appeal = raw == null ? null : SanctionJson.appeal(SanctionJson.obj(raw, "appeal"));
+		this.application = type.equals("application_updated")
+				? Application.of(SanctionJson.obj(SanctionJson.object(data), "application")) : null;
+	}
+
+	/** Eigene Team-Bewerbung (MyApplicationView): nur Status, Stellentitel und Antwort des Teams. */
+	public static final class Application {
+		public final String id;
+		public final String status;
+		/** Stellentitel je Sprache (en/de/es), mindestens die ID der Stelle. */
+		private final java.util.Map<String, String> titles;
+		private final String jobId;
+		public final String response;
+
+		private Application(String id, String status, String jobId, java.util.Map<String, String> titles, String response) {
+			this.id = id;
+			this.status = status;
+			this.jobId = jobId;
+			this.titles = titles;
+			this.response = response;
+		}
+
+		static Application of(com.google.gson.JsonObject o) {
+			if (o == null) return null;
+			String id = SanctionJson.str(o, "id");
+			String status = SanctionJson.str(o, "status");
+			com.google.gson.JsonObject job = SanctionJson.obj(o, "job");
+			String jobId = SanctionJson.str(job, "id");
+			if (id == null || !id.matches("[a-z0-9_-]{2,40}") || jobId == null || !jobId.matches("[a-z0-9_-]{2,40}")
+					|| status == null || !status.matches("new|review|interview|accepted|rejected|withdrawn")) {
+				return null;
+			}
+			java.util.Map<String, String> titles = new java.util.HashMap<>();
+			com.google.gson.JsonObject t = SanctionJson.obj(job, "title");
+			for (String lang : new String[]{"en", "de", "es"}) {
+				String v = SanctionJson.str(t, lang);
+				if (v != null && !v.trim().isEmpty()) titles.put(lang, SafeText.line(v.trim(), 80));
+			}
+			String response = SanctionJson.str(o, "response");
+			response = response == null || response.trim().isEmpty() ? null : SafeText.line(response, 200);
+			return new Application(id, status, jobId, titles, response);
+		}
+
+		/** Titel in der Sprache (z. B. "de" oder "pt-BR"), sonst Englisch, sonst die ID. */
+		public String title(String language) {
+			String base = language == null ? "en" : language.split("-")[0];
+			String t = titles.get(base);
+			if (t == null) t = titles.get("en");
+			if (t == null && !titles.isEmpty()) t = titles.values().iterator().next();
+			return t != null ? t : jobId;
+		}
 	}
 
 	/** Aus Ereignisname, JSON und ID; kaputtes JSON → null. */

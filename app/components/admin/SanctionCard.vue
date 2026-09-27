@@ -73,7 +73,7 @@ const actorName = (a: { uuid: string; name: string | null } | null) =>
       <p class="flex items-center gap-2">
         <span class="badge" :class="s.appeal.status === 'open' ? 'bg-lamp-900 text-lamp-300' : 'bg-base-800 text-base-200'">{{ t(`sanctions.appeal.status.${s.appeal.status}`) }}</span>
         <span class="text-base-400">{{ formatDate(s.appeal.createdAt) }}</span>
-        <NuxtLink v-if="s.appeal.status === 'open'" to="/admin/appeals" class="ml-auto text-redstone-300 hover:underline">{{ t('team.sanction.decideAppeal') }}</NuxtLink>
+        <NuxtLink v-if="s.appeal.status === 'open' && team.can('appeals.handle')" to="/admin/appeals" class="ml-auto text-redstone-300 hover:underline">{{ t('team.sanction.decideAppeal') }}</NuxtLink>
       </p>
       <p class="mt-2 whitespace-pre-wrap text-base-100">„{{ s.appeal.text }}“</p>
       <p v-if="s.appeal.response" class="mt-2 whitespace-pre-wrap text-base-200">

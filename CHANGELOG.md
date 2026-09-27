@@ -73,6 +73,15 @@ How to write an entry:
   picture you can view in any panorama viewer. Saved in screenshots/panorama; a message offers to open the folder, and "Share as link" on the
   module page uploads the 360° picture and copies the link.
   The HUD is hidden while recording. From Minecraft 1.8.9 (not on 1.7.10 and 1.13.2).
+- **Website sign-in with Microsoft.** The website now only signs in with the Microsoft account that owns Minecraft.
+  Confirming a website sign-in with a code from the launcher is gone; the launcher opens the website instead
+  (Settings → Privacy, Ctrl+K, the team area).
+- **Team roles with permissions.** The team area in the launcher now follows the fine-grained permissions of your
+  team role: every team role sees it, but only the areas and buttons it may use – for example supporters see
+  reports without their content ("Content only visible with permission") and can only give warnings. Sanctions given
+  by someone with a higher rank can't be changed. Roles, applications and positions open on the website.
+- **My applications.** Settings → Privacy and Ctrl+K show your team applications with status and the team's answer;
+  open ones can be withdrawn. When the status changes you get a notification – in the game from the TRS Client, too.
 
 ### Deutsch
 
@@ -129,6 +138,16 @@ How to write an entry:
   bietet an, den Ordner zu öffnen, und „Als Link teilen“ auf der Modulseite lädt das 360°-Bild hoch und kopiert den
   Link. Das HUD ist währenddessen ausgeblendet. Ab Minecraft 1.8.9 (nicht auf 1.7.10 und
   1.13.2).
+- **Anmeldung auf der Website mit Microsoft.** Die Website meldet nur noch mit dem Microsoft-Konto an, dem Minecraft
+  gehört. Die Bestätigung per Code aus dem Launcher entfällt; der Launcher öffnet stattdessen die Website
+  (Einstellungen → Datenschutz, Strg+K, Team-Bereich).
+- **Team-Rollen mit Rechten.** Der Team-Bereich im Launcher richtet sich jetzt nach den feinen Rechten deiner
+  Team-Rolle: Jede Team-Rolle sieht ihn, aber nur die Bereiche und Knöpfe, die sie nutzen darf – Supporter sehen
+  zum Beispiel Meldungen ohne Inhalt („Inhalt nur mit Recht sichtbar“) und dürfen nur verwarnen. Strafen von
+  jemandem mit höherem Rang lassen sich nicht ändern. Rollen, Bewerbungen und Stellen öffnen sich auf der Website.
+- **Meine Bewerbungen.** Einstellungen → Datenschutz und Strg+K zeigen deine Bewerbungen fürs Team mit Status und
+  Antwort des Teams; offene kannst du zurückziehen. Ändert sich der Status, bekommst du einen Hinweis – im Spiel auch
+  vom TRS Client.
 
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
 <!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->
