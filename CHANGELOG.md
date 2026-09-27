@@ -21,7 +21,15 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.11.0 – 2026-09-27 – Back Online | Wieder verbunden
+<!-- banner: accent=#3ddc84 motif=/news/0.11.0/banner.png -->
+<!-- shots:
+/news/0.11.0/sign-in-again.png | Invalid session? Sign in again right on the error screen – no restart | Ungültige Sitzung? Direkt im Fehlerbildschirm neu anmelden – ohne Neustart
+/news/0.11.0/key-search.png | Search Minecraft's key binds, e.g. key:2 for everything on 2 | Suche in der Tastenbelegung, z. B. key:2 für alles auf der 2
+/news/0.11.0/key-conflicts.png | conflict shows every key that is used twice | konflikt zeigt alle doppelt belegten Tasten
+/news/0.11.0/log-filters.png | Combine log filters: levels, TRS and chat | Log-Filter kombinieren: Stufen, TRS und Chat
+/news/0.11.0/log-errors.png | Only errors, with the stack trace one click away | Nur Fehler, der Stacktrace einen Klick entfernt
+-->
 
 ### English
 
