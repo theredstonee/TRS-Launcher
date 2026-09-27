@@ -21,7 +21,18 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.10.0 – 2026-09-27 – Toolbox | Werkzeugkasten
+<!-- banner: accent=#ff9f1c motif=/news/0.10.0/banner.png -->
+<!-- shots:
+/news/0.10.0/circuits.png | Circuit library in the TRS Client: ready-made redstone circuits with explanation and materials | Schaltungs-Bibliothek im TRS Client: fertige Redstone-Schaltungen mit Erklärung und Material
+/news/0.10.0/circuit-ghost.png | Show a circuit as a template in your world and build it block by block | Schaltung als Vorlage in der Welt einblenden und Block für Block nachbauen
+/news/0.10.0/circuits-web.png | All circuits also on the website – download for the structure block | Alle Schaltungen auch auf der Website – Download für den Konstruktionsblock
+/news/0.10.0/crash-helper.png | Crash helper: the cause in plain words and a button to fix it | Absturz-Helfer: die Ursache in klaren Worten und ein Knopf zum Beheben
+/news/0.10.0/modpack-choice.png | Modpacks: install with or without TRS Client | Modpacks: mit oder ohne TRS Client installieren
+/news/0.10.0/tooltips.png | Better tooltips: shulker contents, maps, durability and food | Bessere Tooltips: Shulker-Inhalt, Karten, Haltbarkeit und Essen
+/news/0.10.0/waypoint.png | Send waypoints to friends in the chat | Wegpunkte im Chat an Freunde schicken
+/news/0.10.0/screenshot-link.png | Share a screenshot as a link, valid for 30 days | Screenshot als Link teilen, 30 Tage gültig
+-->
 
 ### English
 
