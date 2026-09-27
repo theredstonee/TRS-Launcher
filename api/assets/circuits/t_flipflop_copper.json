@@ -1,0 +1,65 @@
+{
+ "format": 1,
+ "id": "t_flipflop_copper",
+ "category": "memory",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "T flip-flop (copper bulb)",
+   "desc": "A copper bulb toggles its light with every new signal. A comparator reads the bulb and outputs 15 while it is lit. The easiest toggle from Minecraft 1.21 on – wax the bulb so it does not oxidize."
+  },
+  "de": {
+   "name": "T-Flipflop (Kupferleuchte)",
+   "desc": "Eine Kupferleuchte schaltet ihr Licht bei jedem neuen Signal um. Ein Komparator liest die Leuchte aus und gibt 15 aus, solange sie leuchtet. Der einfachste Umschalter ab Minecraft 1.21 – die Leuchte wachsen, damit sie nicht oxidiert."
+  },
+  "es": {
+   "name": "Biestable T (bombilla de cobre)",
+   "desc": "Una bombilla de cobre cambia su luz con cada señal nueva. Un comparador lee la bombilla y da 15 mientras está encendida. El conmutador más sencillo desde Minecraft 1.21; encérala para que no se oxide."
+  }
+ },
+ "palette": {
+  "B": "stone_button[face=floor]@T",
+  "C": "copper_bulb",
+  "c": "comparator[facing=west,mode=compare]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "BCcL"
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "expect": {
+      "Q": 0
+     }
+    },
+    {
+     "press": "T"
+    },
+    {
+     "run": 40
+    },
+    {
+     "expect": {
+      "Q": 1
+     }
+    },
+    {
+     "press": "T"
+    },
+    {
+     "run": 40
+    },
+    {
+     "expect": {
+      "Q": 0
+     }
+    }
+   ]
+  }
+ ]
+}

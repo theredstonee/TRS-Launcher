@@ -10,6 +10,7 @@ import { createContext, setContext, setReady } from '../lib/context'
 import { rotateMessageKeys, sweepTyping } from '../lib/chat'
 import { openDb } from '../lib/db'
 import { sweepApplications } from '../lib/applications'
+import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
 import { setWebpWasmLoader } from '../lib/images'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
@@ -56,6 +57,7 @@ export default defineNitroPlugin((nitroApp) => {
   }
   const capeAssets = assets('capes')
   const cosmeticAssets = assets('cosmetics')
+  const circuitAssets = assets('circuits')
   // WebP-Dekoder (libwebp als Wasm) aus den Server-Assets – im Bundle, ohne node_modules-Pfade.
   const codecAssets = assets('codecs')
   setWebpWasmLoader(async () => {
@@ -82,8 +84,21 @@ export default defineNitroPlugin((nitroApp) => {
       else seedBuiltinCosmetics(ctx, list)
       cosmetics = list.length
     }
+    // Schaltungs-Bibliothek (§25): mitgelieferte Schaltungen einspielen (nur fehlende bzw. unveränderte Seed-Einträge).
+    const circuitOrder = await circuitAssets.json('index.json').catch(() => null)
+    let circuits = 0
+    if (!circuitOrder || typeof circuitOrder !== 'object' || !Array.isArray((circuitOrder as { circuits?: unknown }).circuits)) {
+      console.warn('[trs-api] assets/circuits/index.json not found – circuit library unchanged')
+    } else {
+      const order = ((circuitOrder as { circuits: unknown[] }).circuits).filter((x): x is string => typeof x === 'string' && /^[a-z0-9_]{1,48}$/.test(x))
+      const files = new Map<string, unknown>()
+      for (const id of order) files.set(id, await circuitAssets.json(`${id}.json`).catch(() => undefined))
+      const r = seedCircuits(ctx, { order, files })
+      if (r.invalid.length) console.warn(`[trs-api] invalid built-in circuits skipped: ${r.invalid.join(', ')}`)
+      circuits = r.inserted + r.updated + r.skipped
+    }
     console.info(
-      `[trs-api] ready – ${capes.length} built-in capes, ${ctx.templates.list.length} templates, ${cosmetics} built-in cosmetics, data in ${config.dataDir}`,
+      `[trs-api] ready – ${circuits} built-in circuits, ${capes.length} built-in capes, ${ctx.templates.list.length} templates, ${cosmetics} built-in cosmetics, data in ${config.dataDir}`,
     )
   }
   setReady(
@@ -133,6 +148,8 @@ export default defineNitroPlugin((nitroApp) => {
       // Bewerbungen: Löschfristen (§24.3).
       sweepApplications(ctx)
       sweepOrphanShareFiles(ctx)
+      // Schaltungs-Einreichungen: Löschfrist nach der Entscheidung (§25.5).
+      sweepCircuitSubmissions(ctx)
     }),
     // Schlüsseltausch: alte Chat-Daten nach und nach mit dem aktiven Schlüssel neu verschlüsseln.
     every(60_000, () => {

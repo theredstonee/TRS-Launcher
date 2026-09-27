@@ -1,0 +1,75 @@
+{
+ "format": 1,
+ "id": "hidden_stairs",
+ "category": "doors",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Hidden staircase (simple)",
+   "desc": "Three sticky pistons with redstone dust on top form a staircase of dust. Flip the lever and every piston pushes its step one block out of the wall; flip it back and the steps disappear into the wall. Build the wall flush with the step blocks."
+  },
+  "de": {
+   "name": "Versteckte Treppe (einfach)",
+   "desc": "Drei klebrige Kolben mit Redstone-Staub obendrauf bilden eine Staubtreppe. Hebel umlegen – jeder Kolben schiebt seine Stufe einen Block aus der Wand; zurücklegen – die Stufen verschwinden wieder in der Wand. Die Wand bündig mit den Stufenblöcken bauen."
+  },
+  "es": {
+   "name": "Escalera oculta (sencilla)",
+   "desc": "Tres pistones pegajosos con polvo de redstone encima forman una escalera de polvo. Al accionar la palanca, cada pistón saca su escalón un bloque fuera de la pared; al volver a accionarla, los escalones desaparecen en la pared. Construye la pared a ras de los bloques de los escalones."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "A": "lever[face=floor]@A",
+  "-": "redstone_wire",
+  "D": "solid~",
+  "P": "sticky_piston[facing=west]@P1",
+  "Q": "sticky_piston[facing=west]@P2",
+  "R": "sticky_piston[facing=west]@P3"
+ },
+ "layers": [
+  [
+   ".#",
+   "DP",
+   "..",
+   ".."
+  ],
+  [
+   ".A",
+   ".-",
+   "DQ",
+   ".."
+  ],
+  [
+   "..",
+   "..",
+   ".-",
+   "DR"
+  ],
+  [
+   "..",
+   "..",
+   "..",
+   ".-"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A"
+    ],
+    "out": [
+     "P1",
+     "P2",
+     "P3"
+    ],
+    "rows": [
+     "0:000",
+     "1:111",
+     "0:000"
+    ]
+   }
+  }
+ ]
+}

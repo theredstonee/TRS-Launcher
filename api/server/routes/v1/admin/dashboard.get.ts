@@ -3,6 +3,7 @@ import { useCtx } from '../../../lib/context'
 import { dashboard } from '../../../lib/dashboard'
 import { requireStaff } from '../../../lib/http'
 import { applicationCounts } from '../../../lib/applications'
+import { circuitCounts } from '../../../lib/circuits'
 import { can } from '../../../lib/team'
 
 /**
@@ -27,5 +28,6 @@ export default defineEventHandler((event) => {
     server: stats ? d.server : null,
     recentAudit: can(staff, 'audit.view') ? d.recentAudit : [],
     applications: can(staff, 'applications.view') ? applicationCounts(useCtx(), staff.uuid) : null,
+    circuits: can(staff, 'circuits.manage') ? circuitCounts(useCtx()) : null,
   }
 })

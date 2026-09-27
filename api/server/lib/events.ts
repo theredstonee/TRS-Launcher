@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import type { MyApplicationView } from './applications'
+import type { MySubmissionView } from './circuits'
 import type { IncomingOffer } from './capeshares'
 import type { ConversationView, MessageView, ReactionView } from './chat'
 import type { HostRoomView, RoomCloseReason, RoomView, SignalKind } from './hosting'
@@ -98,6 +99,9 @@ export type ApiEvent =
   // ---------------------------------------------------------------- Team-Bewerbungen (§24.3, nur /v1/events/me)
   /** Eigene Bewerbung geändert: abgeschickt, Status, Antwort des Teams oder zurückgezogen. */
   | { type: 'application_updated', application: MyApplicationView }
+  // ---------------------------------------------------------------- Schaltungs-Bibliothek (§25, nur /v1/events/me)
+  /** Eigene Einreichung: eingegangen (anderes Gerät), angenommen (mit `circuitId`) oder abgelehnt (mit `reason`). */
+  | { type: 'circuit_submission_updated', submission: MySubmissionView }
 
 export type ApiEventType = ApiEvent['type']
 

@@ -369,7 +369,7 @@ export const shareReportBody = z.strictObject({ reason: reportReasonSchema })
 
 export const chatReportBody = z
   .strictObject({
-    kind: z.enum(['message', 'image', 'player', 'group', 'share']),
+    kind: z.enum(['message', 'image', 'player', 'group', 'share', 'circuit']),
     reason: reportReasonSchema,
     note: plainText(500).optional(),
     messageId: messageIdSchema.optional(),
@@ -377,7 +377,9 @@ export const chatReportBody = z
     uuid: uuidSchema.optional(),
     conversationId: conversationIdSchema.optional(),
     shareId: shareIdSchema.optional(),
+    circuitId: z.string().regex(/^[a-z0-9_]{1,48}$/).optional(),
   })
+  .refine((b) => b.kind !== 'circuit' || b.circuitId !== undefined, 'circuitId is required for kind=circuit')
   .refine((b) => b.kind !== 'message' || b.messageId !== undefined, 'messageId is required for kind=message')
   .refine((b) => b.kind !== 'share' || b.shareId !== undefined, 'shareId is required for kind=share')
   .refine((b) => b.kind !== 'image' || b.attachmentId !== undefined, 'attachmentId is required for kind=image')
@@ -386,7 +388,7 @@ export const chatReportBody = z
 
 export const adminReportListQuery = z.strictObject({
   status: z.enum(['open', 'in_review', 'resolved', 'active', 'all']).default('active'),
-  kind: z.enum(['message', 'image', 'player', 'group', 'share']).optional(),
+  kind: z.enum(['message', 'image', 'player', 'group', 'share', 'circuit']).optional(),
   target: uuidSchema.optional(),
   reason: reportReasonSchema.optional(),
   /** Bearbeiter: `me`, `none` (niemandem zugewiesen) oder eine UUID. */
@@ -408,7 +410,7 @@ const customMinutes = z.int().min(5).max(MAX_CUSTOM_MINUTES)
 
 export const adminReportActionBody = z
   .strictObject({
-    action: z.enum(['delete_message', 'delete_share', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve']),
+    action: z.enum(['delete_message', 'delete_share', 'hide_circuit', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve']),
     reason: plainText(500).optional(),
     minutes: z.int().min(5).max(MAX_CUSTOM_MINUTES).optional(),
     kind: sanctionKindSchema.optional(),

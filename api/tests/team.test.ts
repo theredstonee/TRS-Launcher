@@ -64,7 +64,9 @@ describe('permissions and default roles', () => {
     expect(can(t.senior, 'sanctions.ban')).toBe(true)
     expect(can(t.senior, 'sanctions.permanent')).toBe(false)
     expect(matrix(t.supporter)).toEqual(['dashboard.view', 'reports.view', 'sanctions.warn', 'players.view', 'worlds.view'])
-    expect(matrix(t.content)).toEqual(['dashboard.view', 'uploads.review', 'codes'])
+    expect(matrix(t.content)).toEqual(['dashboard.view', 'uploads.review', 'codes', 'circuits.manage'])
+    expect(can(t.senior, 'circuits.manage')).toBe(true)
+    expect(can(t.mod, 'circuits.manage')).toBe(false)
     expect(matrix(t.recruiter)).toEqual(['dashboard.view', 'applications.view', 'applications.review'])
     // Grenzen je Rolle (für die Oberfläche).
     expect(limitsOf(t.mod)).toEqual({ kinds: ['warn', 'chat_mute', 'social_ban', 'upload_ban', 'hosting_ban'], maxMinutes: 7 * DAY, maxWarnMinutes: 30 * DAY, permanent: false })

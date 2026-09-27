@@ -1,0 +1,119 @@
+{
+ "format": 1,
+ "id": "d_latch",
+ "category": "memory",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "D latch",
+   "desc": "While E (enable) is on, the output follows D. When E is off, a torch locks the data repeater from the side and the output keeps its last value. Stores a value at exactly the moment you choose."
+  },
+  "de": {
+   "name": "D-Latch",
+   "desc": "Solange E (Freigabe) an ist, folgt der Ausgang D. Ist E aus, sperrt eine Fackel den Daten-Verstärker von der Seite und der Ausgang behält seinen letzten Wert. Speichert einen Wert genau im gewünschten Moment."
+  },
+  "es": {
+   "name": "Biestable D",
+   "desc": "Mientras E (habilitar) está activada, la salida sigue a D. Con E apagada, una antorcha bloquea el repetidor de datos por el lateral y la salida conserva su último valor. Guarda un valor justo en el momento que elijas."
+  }
+ },
+ "palette": {
+  "D": "lever[face=floor]@D",
+  "r": "repeater[facing=west,delay=1]",
+  "L": "redstone_lamp@Q",
+  "l": "repeater[facing=south,delay=1]",
+  "t": "redstone_wall_torch[facing=north]",
+  "#": "solid",
+  "E": "lever[face=floor]@E"
+ },
+ "layers": [
+  [
+   "DrL",
+   ".l.",
+   ".t.",
+   ".#."
+  ],
+  [
+   "...",
+   "...",
+   "...",
+   ".E."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "set": {
+      "E": 1,
+      "D": 1
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "Q": 1
+     }
+    },
+    {
+     "set": {
+      "E": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "set": {
+      "D": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "Q": 1
+     }
+    },
+    {
+     "set": {
+      "E": 1
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "Q": 0
+     }
+    },
+    {
+     "set": {
+      "E": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "set": {
+      "D": 1
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "Q": 0
+     }
+    }
+   ]
+  }
+ ]
+}

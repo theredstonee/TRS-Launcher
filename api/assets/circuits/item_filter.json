@@ -1,0 +1,84 @@
+{
+ "format": 1,
+ "id": "item_filter",
+ "category": "farms",
+ "difficulty": 3,
+ "server": "note",
+ "texts": {
+  "en": {
+   "name": "Item filter (sorter cell)",
+   "desc": "The filter hopper holds 18 of the item to sort in its first slot and one renamed placeholder item in each other slot. That gives comparator strength 1 – not enough to reach the repeater. A 19th matching item makes it 2: the torch goes out, the lower hopper unlocks, pulls one item into the chest and locks again. Other items travel on along the hopper line on top.",
+   "note": "Some servers (Paper/Spigot) change hopper timing; the filter usually still works, but test it in your world first."
+  },
+  "de": {
+   "name": "Item-Filter (Sortierzelle)",
+   "desc": "Der Filter-Trichter hat im ersten Platz 18 Stück des zu sortierenden Items und in jedem anderen Platz ein umbenanntes Platzhalter-Item. Das ergibt Komparator-Stärke 1 – zu wenig, um den Verstärker zu erreichen. Ein 19. passendes Item macht daraus 2: Die Fackel geht aus, der untere Trichter wird frei, zieht ein Item in die Truhe und sperrt wieder. Andere Items laufen oben über die Trichterleitung weiter.",
+   "note": "Manche Server (Paper/Spigot) ändern das Trichter-Timing; der Filter läuft meist trotzdem, aber erst in deiner Welt testen."
+  },
+  "es": {
+   "name": "Filtro de objetos (celda clasificadora)",
+   "desc": "La tolva filtro tiene 18 unidades del objeto a clasificar en la primera ranura y un objeto de relleno renombrado en cada una de las demás. Eso da una fuerza de comparador de 1, que no llega al repetidor. Un 19.º objeto igual la sube a 2: la antorcha se apaga, la tolva de abajo se desbloquea, pasa un objeto al cofre y se vuelve a bloquear. Los demás objetos siguen por la línea de tolvas de arriba.",
+   "note": "Algunos servidores (Paper/Spigot) cambian el ritmo de las tolvas; el filtro suele funcionar igual, pero pruébalo antes en tu mundo."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "h": "hopper[facing=east]",
+  "F": "hopper[facing=south]@F",
+  "H": "hopper[facing=down]@Q",
+  "C": "chest",
+  "t": "redstone_wall_torch[facing=south]",
+  "k": "comparator[facing=north,mode=compare]",
+  "-": "redstone_wire",
+  "r": "repeater[facing=west,delay=1]"
+ },
+ "layers": [
+  [
+   ".....",
+   ".....",
+   ".C...",
+   ".....",
+   "....."
+  ],
+  [
+   ".####",
+   ".t..#",
+   ".H..#",
+   ".#..#",
+   ".####"
+  ],
+  [
+   ".----",
+   "....-",
+   ".F..-",
+   ".k..-",
+   ".--r-"
+  ],
+  [
+   ".....",
+   ".....",
+   "hhh..",
+   ".....",
+   "....."
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "F"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "1:1",
+     "2:0",
+     "1:1",
+     "3:0",
+     "0:1"
+    ]
+   }
+  }
+ ]
+}

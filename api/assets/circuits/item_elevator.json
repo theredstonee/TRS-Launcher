@@ -1,0 +1,83 @@
+{
+ "format": 1,
+ "id": "item_elevator",
+ "category": "farms",
+ "difficulty": 2,
+ "server": "ok",
+ "since": "1.13",
+ "texts": {
+  "en": {
+   "name": "Item elevator (bubble column)",
+   "desc": "Soul sand under water sources makes a bubble column that pushes items upwards. Throw items through the sign at the bottom – signs keep the water in but let items pass. At the top, flowing water carries them over a hopper into the chest. Bubble columns need Minecraft 1.13 or newer."
+  },
+  "de": {
+   "name": "Item-Aufzug (Blasensäule)",
+   "desc": "Seelensand unter Wasserquellen erzeugt eine Blasensäule, die Items nach oben drückt. Items unten durch das Schild werfen – Schilder halten das Wasser, lassen Items aber durch. Oben trägt fließendes Wasser sie über einen Trichter in die Truhe. Blasensäulen gibt es ab Minecraft 1.13."
+  },
+  "es": {
+   "name": "Ascensor de objetos (columna de burbujas)",
+   "desc": "La arena de almas bajo fuentes de agua crea una columna de burbujas que empuja los objetos hacia arriba. Lanza los objetos a través del cartel de abajo: los carteles retienen el agua pero dejan pasar objetos. Arriba, el agua que fluye los lleva sobre una tolva hasta el cofre. Las columnas de burbujas existen desde Minecraft 1.13."
+  }
+ },
+ "palette": {
+  "g": "glass",
+  "#": "solid",
+  "S": "soul_sand",
+  "w": "water",
+  "f": "water?",
+  "i": "oak_sign",
+  "C": "chest",
+  "H": "hopper[facing=down]"
+ },
+ "layers": [
+  [
+   "...",
+   ".#.",
+   ".S.",
+   "...",
+   "..."
+  ],
+  [
+   "...",
+   ".i.",
+   "gwg",
+   ".g.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".g.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".g.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".C.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".H.",
+   "..."
+  ],
+  [
+   ".g.",
+   "gwg",
+   "gfg",
+   "gfg",
+   ".g."
+  ]
+ ]
+}

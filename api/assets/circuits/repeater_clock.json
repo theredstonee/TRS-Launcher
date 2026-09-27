@@ -1,0 +1,67 @@
+{
+ "format": 1,
+ "id": "repeater_clock",
+ "category": "clocks",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Repeater clock",
+   "desc": "Four repeaters in a loop: a short pulse from the button runs around the ring forever. Its speed is the sum of all repeater delays (here 4 × 4 ticks ≈ 1.6 s per round). To stop it, break a piece of dust for a moment."
+  },
+  "de": {
+   "name": "Verstärker-Takt",
+   "desc": "Vier Verstärker im Kreis: Ein kurzer Impuls vom Knopf läuft endlos im Ring. Das Tempo ist die Summe aller Verzögerungen (hier 4 × 4 Ticks ≈ 1,6 s je Runde). Zum Anhalten kurz ein Stück Staub abbauen."
+  },
+  "es": {
+   "name": "Reloj de repetidores",
+   "desc": "Cuatro repetidores en círculo: un pulso corto del botón da vueltas sin fin. La velocidad es la suma de todos los retardos (aquí 4 × 4 ticks ≈ 1,6 s por vuelta). Para pararlo, rompe un momento un trozo de polvo."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "L": "redstone_lamp@Q",
+  "B": "stone_button[face=floor]@B",
+  "-": "redstone_wire",
+  "e": "repeater[facing=west,delay=4]",
+  "s": "repeater[facing=north,delay=4]",
+  "w": "repeater[facing=east,delay=4]",
+  "n": "repeater[facing=south,delay=4]"
+ },
+ "layers": [
+  [
+   "####",
+   ".###",
+   ".##L"
+  ],
+  [
+   "B-e-",
+   ".n.s",
+   ".-w-"
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "expect": {
+      "Q": 0
+     }
+    },
+    {
+     "press": "B"
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 200,
+      "toggles": [
+       8,
+       30
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

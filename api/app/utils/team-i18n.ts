@@ -171,6 +171,7 @@ const en = {
       'applications.review': 'Review applications (vote, notes, interview)',
       'applications.manage': 'Edit positions and forms',
       'applications.decide': 'Accept or reject applications',
+      'circuits.manage': 'Manage the circuit library (editor, import, submissions)',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -481,6 +482,7 @@ const de: TeamTexts = {
       'applications.review': 'Bewerbungen prüfen (abstimmen, Notizen, Gespräch)',
       'applications.manage': 'Stellen und Formulare bearbeiten',
       'applications.decide': 'Bewerbungen annehmen oder ablehnen',
+      'circuits.manage': 'Schaltungs-Bibliothek verwalten (Editor, Import, Einreichungen)',
     },
     roles: {
       title: 'Rollen & Team',
@@ -789,6 +791,7 @@ const es: TeamTexts = {
       'applications.review': 'Revisar solicitudes (votar, notas, entrevista)',
       'applications.manage': 'Editar puestos y formularios',
       'applications.decide': 'Aceptar o rechazar solicitudes',
+      'circuits.manage': 'Gestionar la biblioteca de circuitos (editor, importación, envíos)',
     },
     roles: {
       title: 'Roles y equipo',

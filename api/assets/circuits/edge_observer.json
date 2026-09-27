@@ -1,0 +1,68 @@
+{
+ "format": 1,
+ "id": "edge_observer",
+ "category": "pulse",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Edge detector (observer)",
+   "desc": "An observer watches the redstone line: it notices every change and gives a short pulse – when the lever is switched on and again when it is switched off. Needs Minecraft 1.11 or newer."
+  },
+  "de": {
+   "name": "Flankenerkennung (Beobachter)",
+   "desc": "Ein Beobachter sieht auf die Redstone-Leitung: Er bemerkt jede Änderung und gibt einen kurzen Impuls – beim Einschalten des Hebels und noch einmal beim Ausschalten. Braucht Minecraft 1.11 oder neuer."
+  },
+  "es": {
+   "name": "Detector de flancos (observador)",
+   "desc": "Un observador vigila la línea de redstone: nota cada cambio y da un pulso corto, al activar la palanca y otra vez al desactivarla. Necesita Minecraft 1.11 o posterior."
+  }
+ },
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "-": "redstone_wire",
+  "o": "observer[facing=west]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "A-oL"
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "set": {
+      "A": 1
+     }
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 30,
+      "on": [
+       1,
+       6
+      ]
+     }
+    },
+    {
+     "set": {
+      "A": 0
+     }
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 30,
+      "on": [
+       1,
+       6
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

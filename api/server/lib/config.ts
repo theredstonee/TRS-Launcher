@@ -119,6 +119,9 @@ export interface Limits {
   maxActiveShares: number
   /** Uploads je Konto in 24 Stunden (auch wenn sie inzwischen gelöscht sind). */
   maxSharesPerDay: number
+  // ------------------------------------------------ Schaltungs-Bibliothek (§25)
+  /** Einreichungen je Konto in 24 Stunden (auch entschiedene zählen). */
+  maxCircuitSubmissionsPerDay: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -164,6 +167,7 @@ export const DEFAULT_LIMITS: Limits = {
   shareTtlMs: 30 * 24 * 60 * 60 * 1000,
   maxActiveShares: 50,
   maxSharesPerDay: 20,
+  maxCircuitSubmissionsPerDay: 5,
 }
 
 const bool = z

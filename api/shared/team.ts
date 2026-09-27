@@ -32,6 +32,7 @@ export const PERMISSIONS = [
   'applications.review',
   'applications.manage',
   'applications.decide',
+  'circuits.manage',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -43,7 +44,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'reports', permissions: ['reports.view', 'reports.content', 'reports.handle'] },
   { id: 'sanctions', permissions: ['sanctions.warn', 'sanctions.mute', 'sanctions.social', 'sanctions.upload', 'sanctions.hosting', 'sanctions.ban', 'sanctions.permanent', 'sanctions.lift', 'appeals.handle'] },
   { id: 'players', permissions: ['players.view', 'players.notes'] },
-  { id: 'content', permissions: ['uploads.review', 'uploads.delete', 'items.grant', 'codes', 'wordfilter'] },
+  { id: 'content', permissions: ['uploads.review', 'uploads.delete', 'items.grant', 'codes', 'wordfilter', 'circuits.manage'] },
   { id: 'worlds', permissions: ['worlds.view', 'worlds.close'] },
   { id: 'applications', permissions: ['applications.view', 'applications.review', 'applications.manage', 'applications.decide'] },
   { id: 'team', permissions: ['roles.manage'] },
@@ -89,7 +90,7 @@ export const BUILTIN_ROLES: readonly BuiltinRole[] = [
     id: 'senior_moderator',
     rank: 700,
     color: '#f59e0b',
-    permissions: [...MOD_BASE, 'stats.view', 'sanctions.ban', 'applications.view', 'applications.review'],
+    permissions: [...MOD_BASE, 'stats.view', 'sanctions.ban', 'applications.view', 'applications.review', 'circuits.manage'],
     maxSanctionMinutes: 30 * 1440,
   },
   { id: 'moderator', rank: MODERATOR_RANK, color: '#3b82f6', permissions: MOD_BASE, maxSanctionMinutes: 7 * 1440 },
@@ -100,6 +101,6 @@ export const BUILTIN_ROLES: readonly BuiltinRole[] = [
     permissions: ['dashboard.view', 'reports.view', 'players.view', 'sanctions.warn', 'worlds.view'],
     maxSanctionMinutes: 1440,
   },
-  { id: 'content', rank: 200, color: '#a855f7', permissions: ['dashboard.view', 'uploads.review', 'codes'], maxSanctionMinutes: null },
+  { id: 'content', rank: 200, color: '#a855f7', permissions: ['dashboard.view', 'uploads.review', 'codes', 'circuits.manage'], maxSanctionMinutes: null },
   { id: 'recruiter', rank: 150, color: '#14b8a6', permissions: ['dashboard.view', 'applications.view', 'applications.review'], maxSanctionMinutes: null },
 ]

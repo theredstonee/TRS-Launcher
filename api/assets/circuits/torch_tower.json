@@ -1,0 +1,83 @@
+{
+ "format": 1,
+ "id": "torch_tower",
+ "category": "basics",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Signal upwards (torch tower)",
+   "desc": "Blocks and redstone torches stacked alternately: each torch powers the block above it and inverts the signal. With an even number of torches the top gets the same signal as the bottom. A compact way to send a signal straight up."
+  },
+  "de": {
+   "name": "Signal nach oben (Fackelturm)",
+   "desc": "Blöcke und Redstone-Fackeln abwechselnd gestapelt: Jede Fackel bestromt den Block darüber und dreht das Signal um. Bei einer geraden Zahl Fackeln kommt oben dasselbe Signal an wie unten. Kompakter Weg, ein Signal senkrecht nach oben zu leiten."
+  },
+  "es": {
+   "name": "Señal hacia arriba (torre de antorchas)",
+   "desc": "Bloques y antorchas de redstone apilados alternadamente: cada antorcha activa el bloque de encima e invierte la señal. Con un número par de antorchas, arriba llega la misma señal que abajo. Una forma compacta de llevar una señal en vertical."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "A": "lever[face=wall,facing=south]@A",
+  "t": "redstone_torch",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "#",
+   "A"
+  ],
+  [
+   "t",
+   "."
+  ],
+  [
+   "#",
+   "."
+  ],
+  [
+   "t",
+   "."
+  ],
+  [
+   "#",
+   "."
+  ],
+  [
+   "t",
+   "."
+  ],
+  [
+   "#",
+   "."
+  ],
+  [
+   "t",
+   "."
+  ],
+  [
+   "L",
+   "."
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "0:0",
+     "1:1",
+     "0:0"
+    ],
+    "ticks": 40
+   }
+  }
+ ]
+}

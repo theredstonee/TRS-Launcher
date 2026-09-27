@@ -1,0 +1,83 @@
+{
+ "format": 1,
+ "id": "sugarcane_observer",
+ "category": "farms",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Sugar cane farm cell",
+   "desc": "An observer watches the spot where the second sugar cane block grows. As soon as it appears, the observer pulses and a piston breaks it; the bottom block keeps growing. Put hoppers or a water stream below to collect the drops and line up many cells side by side."
+  },
+  "de": {
+   "name": "Zuckerrohr-Farmzelle",
+   "desc": "Ein Beobachter sieht auf die Stelle, an der der zweite Zuckerrohrblock wächst. Sobald er da ist, pulst der Beobachter und ein Kolben bricht ihn ab; der untere Block wächst weiter. Trichter oder einen Wasserlauf darunter zum Einsammeln setzen und viele Zellen nebeneinander bauen."
+  },
+  "es": {
+   "name": "Celda de granja de caña",
+   "desc": "Un observador vigila el sitio donde crece el segundo bloque de caña de azúcar. En cuanto aparece, el observador da un pulso y un pistón lo rompe; el bloque de abajo sigue creciendo. Pon tolvas o una corriente de agua debajo para recoger los objetos y coloca muchas celdas una al lado de otra."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "w": "water",
+  "s": "sand",
+  "c": "sugar_cane",
+  "g": "sugar_cane?@G",
+  "o": "observer[facing=north]",
+  "-": "redstone_wire",
+  "Q": "piston[facing=west]@Q"
+ },
+ "layers": [
+  [
+   ".#.",
+   "#w#",
+   ".s.",
+   "...",
+   "..."
+  ],
+  [
+   "...",
+   "...",
+   ".c.",
+   "..#",
+   ".##"
+  ],
+  [
+   "...",
+   "...",
+   ".gQ",
+   ".o-",
+   ".--"
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "expect": {
+      "Q": 0
+     }
+    },
+    {
+     "bump": "G"
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 20,
+      "on": [
+       1,
+       6
+      ]
+     }
+    },
+    {
+     "expect": {
+      "Q": 0
+     }
+    }
+   ]
+  }
+ ]
+}

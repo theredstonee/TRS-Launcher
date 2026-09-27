@@ -689,6 +689,15 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 13,
     run: migrateTeamV3,
   },
+  {
+    // Schaltungs-Bibliothek (§25): Schaltungen (rev je Änderung, Status, Texte im JSON), Grabsteine gelöschter IDs,
+    // Einreichungen von Spielern. Neues Recht `circuits.manage` für die Standardrollen Owner, Admin, Senior-Moderator
+    // und Content (angepasste Rechte bleiben, es wird nur ergänzt). Meldungen bekommen die Art `circuit`
+    // (+ Spalte circuit_id) – wie in Migration 12 die drei Meldungs-Tabellen neu anlegen (Kinder zuerst).
+    // Idempotent. HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 14,
+    run: migrateCircuits,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {
@@ -952,4 +961,159 @@ DROP TABLE staff_roles;
   // Website-Login nur noch über Microsoft: Codes weg, alte (Team-)Sitzungen enden.
   db.exec('DROP TABLE IF EXISTS web_logins')
   db.exec('DELETE FROM web_sessions')
+}
+
+/** Migration 14 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateCircuits(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS circuits (
+  id TEXT PRIMARY KEY CHECK (length(id) BETWEEN 1 AND 48),
+  rev INTEGER NOT NULL CHECK (rev >= 1),
+  status TEXT NOT NULL CHECK (status IN ('draft', 'published', 'hidden')),
+  category TEXT NOT NULL,
+  difficulty INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 3),
+  -- Wirksame Versionen (höchste aus since und Blöcken) bzw. until.
+  min_version TEXT,
+  max_version TEXT,
+  sort INTEGER NOT NULL DEFAULT 0,
+  -- Schaltung im Client-Format (JSON, geprüft, ohne rev/author).
+  data TEXT NOT NULL,
+  -- SHA-256 des kanonischen Inhalts (Duplikat-Erkennung).
+  content_hash TEXT NOT NULL,
+  -- Ersteller bei angenommenen Einreichungen; NULL = Team.
+  author_uuid TEXT,
+  author_name TEXT,
+  source TEXT NOT NULL CHECK (source IN ('seed', 'team', 'submission')),
+  -- Prüfsumme der Seed-Datei (nur source = seed); edited = 1 nach Änderung im Team-Bereich → Seed lässt sie in Ruhe.
+  seed_hash TEXT,
+  edited INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  published_at INTEGER,
+  created_by TEXT NOT NULL,
+  updated_by TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS circuits_status ON circuits(status, sort, id);
+CREATE INDEX IF NOT EXISTS circuits_hash ON circuits(content_hash);
+CREATE INDEX IF NOT EXISTS circuits_author ON circuits(author_uuid);
+
+CREATE TABLE IF NOT EXISTS circuit_tombstones (
+  id TEXT PRIMARY KEY,
+  deleted_at INTEGER NOT NULL,
+  deleted_by TEXT NOT NULL
+);
+
+-- Einreichungen. Konto gelöscht → Einreichungen weg (CASCADE); Löschfrist nach der Entscheidung s. circuits.ts.
+CREATE TABLE IF NOT EXISTS circuit_submissions (
+  id TEXT PRIMARY KEY,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  -- Spielername bei der Einreichung.
+  name TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL,
+  lang TEXT NOT NULL CHECK (lang IN ('en', 'de', 'es')),
+  data TEXT NOT NULL,
+  content_hash TEXT NOT NULL,
+  source_format TEXT NOT NULL CHECK (source_format IN ('json', 'litematic', 'schem', 'nbt')),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
+  reason TEXT,
+  circuit_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  decided_by TEXT
+);
+CREATE INDEX IF NOT EXISTS circuit_submissions_uuid ON circuit_submissions(uuid, created_at);
+CREATE INDEX IF NOT EXISTS circuit_submissions_status ON circuit_submissions(status, created_at);
+CREATE INDEX IF NOT EXISTS circuit_submissions_hash ON circuit_submissions(content_hash);
+`)
+
+  // Recht circuits.manage für die Standardrollen ergänzen (Anpassungen der Admins bleiben erhalten).
+  if (hasTable(db, 'team_roles')) {
+    for (const id of ['owner', 'admin', 'senior_moderator', 'content']) {
+      const row = db.prepare('SELECT permissions FROM team_roles WHERE id = ? AND builtin = 1').get(id) as { permissions: string } | undefined
+      if (!row) continue
+      let perms: string[] = []
+      try {
+        const parsed = JSON.parse(row.permissions) as unknown
+        if (Array.isArray(parsed)) perms = parsed.filter((p): p is string => typeof p === 'string')
+      } catch {
+        perms = []
+      }
+      if (perms.includes('circuits.manage')) continue
+      perms.push('circuits.manage')
+      db.prepare('UPDATE team_roles SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(perms), Date.now(), id)
+    }
+  }
+
+  // Meldungen: Art `circuit` + Spalte circuit_id.
+  if (hasTable(db, 'chat_reports') && !hasColumn(db, 'chat_reports', 'circuit_id')) {
+    db.exec(`
+CREATE TABLE chat_reports_v14 (
+  id TEXT PRIMARY KEY,
+  reporter_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  target_uuid TEXT CHECK (target_uuid IS NULL OR length(target_uuid) = 32),
+  kind TEXT NOT NULL CHECK (kind IN ('message', 'image', 'player', 'group', 'share', 'circuit')),
+  conversation_id TEXT,
+  message_id TEXT,
+  attachment_id TEXT,
+  share_id TEXT,
+  circuit_id TEXT,
+  reason TEXT NOT NULL CHECK (reason IN ('insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other')),
+  note BLOB,
+  evidence BLOB,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved')),
+  outcome TEXT CHECK (outcome IS NULL OR outcome IN ('actioned', 'dismissed')),
+  low_trust INTEGER NOT NULL DEFAULT 0,
+  assigned_to TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  resolved_at INTEGER,
+  resolved_by TEXT,
+  evidence_purged_at INTEGER,
+  CHECK ((status = 'resolved') = (outcome IS NOT NULL))
+);
+INSERT INTO chat_reports_v14 (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, circuit_id, reason,
+  note, evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by, evidence_purged_at)
+SELECT id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, NULL, reason,
+  note, evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by, evidence_purged_at
+FROM chat_reports;
+
+CREATE TABLE chat_report_notes_v14 (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id TEXT NOT NULL REFERENCES chat_reports_v14(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text BLOB NOT NULL
+);
+INSERT INTO chat_report_notes_v14 (id, report_id, at, actor, text) SELECT id, report_id, at, actor, text FROM chat_report_notes;
+
+CREATE TABLE chat_evidence_files_v14 (
+  report_id TEXT NOT NULL REFERENCES chat_reports_v14(id) ON DELETE CASCADE,
+  attachment_id TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  key_id TEXT NOT NULL,
+  PRIMARY KEY (report_id, attachment_id)
+);
+INSERT INTO chat_evidence_files_v14 (report_id, attachment_id, mime, width, height, bytes, key_id)
+SELECT report_id, attachment_id, mime, width, height, bytes, key_id FROM chat_evidence_files;
+
+DROP TABLE chat_evidence_files;
+DROP TABLE chat_report_notes;
+DROP TABLE chat_reports;
+ALTER TABLE chat_reports_v14 RENAME TO chat_reports;
+ALTER TABLE chat_report_notes_v14 RENAME TO chat_report_notes;
+ALTER TABLE chat_evidence_files_v14 RENAME TO chat_evidence_files;
+CREATE INDEX chat_reports_status ON chat_reports(status, created_at);
+CREATE INDEX chat_reports_target ON chat_reports(target_uuid, created_at);
+CREATE INDEX chat_reports_reporter ON chat_reports(reporter_uuid, status);
+CREATE INDEX chat_reports_share ON chat_reports(share_id);
+CREATE INDEX chat_reports_circuit ON chat_reports(circuit_id);
+CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
+`)
+  }
 }

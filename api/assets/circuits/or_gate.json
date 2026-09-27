@@ -1,0 +1,54 @@
+{
+ "format": 1,
+ "id": "or_gate",
+ "category": "basics",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "OR gate",
+   "desc": "Both inputs simply join the same redstone line: if either lever is on, the lamp lights up. Use it to control one door or lamp from several places."
+  },
+  "de": {
+   "name": "ODER-Gatter",
+   "desc": "Beide Eingänge führen einfach in dieselbe Redstone-Leitung: Ist einer der Hebel an, leuchtet die Lampe. Damit steuerst du eine Tür oder Lampe von mehreren Stellen aus."
+  },
+  "es": {
+   "name": "Puerta OR",
+   "desc": "Las dos entradas se unen en la misma línea de redstone: si cualquiera de las palancas está activada, la lámpara se enciende. Sirve para controlar una puerta o lámpara desde varios sitios."
+  }
+ },
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "B": "lever[face=floor]@B",
+  "-": "redstone_wire",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "A..",
+   "--L",
+   "B.."
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A",
+     "B"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "00:0",
+     "01:1",
+     "10:1",
+     "11:1",
+     "00:0"
+    ]
+   }
+  }
+ ]
+}

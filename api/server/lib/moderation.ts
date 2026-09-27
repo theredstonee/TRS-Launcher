@@ -16,7 +16,7 @@ import {
 } from './chat'
 import type { AppContext } from './context'
 import { all, one, placeholders, run, tx } from './db'
-import { badRequest, conflict, notFound } from './errors'
+import { badRequest, conflict, forbidden, notFound } from './errors'
 import type { PlayerRef } from './events'
 import {
   MOD_MAX_WARN_MINUTES,
@@ -35,7 +35,9 @@ import {
   type SanctionRow,
   type Staff,
 } from './sanctions'
+import { getCircuit, publishedCircuit, setCircuitStatus, type CircuitRow } from './circuits'
 import { adminDeleteShare, getShare, readShareImage, type ShareRow } from './shares'
+import { can } from './team'
 import { getUser, staffRole } from './users'
 
 /**
@@ -47,7 +49,7 @@ import { getUser, staffRole } from './users'
 export const REPORT_ID = /^r[0-9a-f]{16}$/
 export const REPORT_REASONS = ['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other'] as const
 export type ReportReason = (typeof REPORT_REASONS)[number]
-export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share'
+export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share' | 'circuit'
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 export type ReportOutcome = 'actioned' | 'dismissed'
 
@@ -197,6 +199,8 @@ export interface ReportRow {
   attachment_id: string | null
   /** Geteilter Screenshot (§23) bei `kind = 'share'`. */
   share_id: string | null
+  /** Schaltung der Bibliothek (§25) bei `kind = 'circuit'`. */
+  circuit_id: string | null
   reason: ReportReason
   note: Uint8Array | null
   evidence: Uint8Array | null
@@ -244,6 +248,8 @@ export interface Evidence {
   images: string[]
   /** Geteilter Screenshot zur Meldezeit (§23); die Bildkopie steht in `images` unter derselben ID. */
   share?: { id: string, width: number, height: number, mime: string, createdAt: string, expiresAt: string } | null
+  /** Gemeldete Schaltung zur Meldezeit (§25): ID, rev, englischer bzw. erster Name, Ersteller (`null` = Team). */
+  circuit?: { id: string, rev: number, name: string, author: PlayerRef | null } | null
   /** Meldung über die öffentliche Seite ohne Konto. */
   anonymous?: boolean
 }
@@ -272,6 +278,7 @@ export interface ReportInput {
   uuid?: string
   conversationId?: string
   shareId?: string
+  circuitId?: string
 }
 
 const ref = (ctx: AppContext, uuid: string | null): PlayerRef | null => (uuid ? { uuid, name: getUser(ctx, uuid)?.name ?? '' } : null)
@@ -359,6 +366,7 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
   let messageId: string | null = null
   let attachmentId: string | null = null
   let share: ShareRow | null = null
+  let circuit: CircuitRow | null = null
 
   if (input.kind === 'message' || input.kind === 'image') {
     let msgId = input.messageId
@@ -404,6 +412,14 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     if (s.owner_uuid === reporter) throw badRequest('cannot_target_self', 'You cannot report yourself')
     target = s.owner_uuid
     share = s
+  } else if (input.kind === 'circuit') {
+    if (!input.circuitId) throw badRequest('invalid_request', 'circuitId is required')
+    const c = publishedCircuit(ctx, input.circuitId)
+    if (!c) throw notFound('circuit_not_found', 'Circuit not found')
+    if (c.author_uuid === reporter) throw badRequest('cannot_target_self', 'You cannot report yourself')
+    // Team-Schaltungen haben kein Ziel (niemand wird bestraft, nur die Schaltung geprüft).
+    target = c.author_uuid
+    circuit = c
   } else {
     if (!input.conversationId) throw badRequest('invalid_request', 'conversationId is required')
     const a = access(ctx, reporter, input.conversationId)
@@ -418,8 +434,8 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     ctx.db,
     `SELECT 1 AS x FROM chat_reports WHERE reporter_uuid = ? AND kind = ? AND status <> 'resolved'
        AND COALESCE(message_id, '') = ? AND COALESCE(attachment_id, '') = ? AND COALESCE(target_uuid, '') = ? AND COALESCE(conversation_id, '') = ?
-       AND COALESCE(share_id, '') = ?`,
-    reporter, input.kind, messageId ?? '', attachmentId ?? '', target ?? '', conv?.id ?? '', share?.id ?? '',
+       AND COALESCE(share_id, '') = ? AND COALESCE(circuit_id, '') = ?`,
+    reporter, input.kind, messageId ?? '', attachmentId ?? '', target ?? '', conv?.id ?? '', share?.id ?? '', circuit?.id ?? '',
   )
   if (dup) throw conflict('already_reported', 'You already reported this')
 
@@ -435,15 +451,16 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     messages: snapshotMessages(ctx, messages),
     images: share ? [share.id] : copy,
     ...(share ? { share: shareEvidence(share) } : {}),
+    ...(circuit ? { circuit: circuitEvidence(circuit) } : {}),
   }
   const lowTrust = reporterTrust(ctx, reporter).low
   tx(ctx.db, () => {
     run(
       ctx.db,
-      `INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, reason, note, evidence,
-         status, outcome, low_trust, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?, ?, ?)`,
-      id, reporter, target, input.kind, conv?.id ?? null, messageId, attachmentId, share?.id ?? null, input.reason,
+      `INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, circuit_id, reason, note,
+         evidence, status, outcome, low_trust, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?, ?, ?)`,
+      id, reporter, target, input.kind, conv?.id ?? null, messageId, attachmentId, share?.id ?? null, circuit?.id ?? null, input.reason,
       input.note ? ctx.cipher.encrypt(input.note, `rnote:${id}`) : null,
       ctx.cipher.encrypt(JSON.stringify(evidence), `rep:${id}`),
       lowTrust ? 1 : 0, t, t,
@@ -462,6 +479,17 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
   }
   if (target && !lowTrust) maybeAutoMute(ctx, target, id)
   return myReportView(one<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE id = ?', id)!)
+}
+
+function circuitEvidence(c: CircuitRow): NonNullable<Evidence['circuit']> {
+  let name = c.id
+  try {
+    const texts = (JSON.parse(c.data) as { texts?: Record<string, { name?: string }> }).texts ?? {}
+    name = texts.en?.name ?? Object.values(texts).find((t) => t.name)?.name ?? c.id
+  } catch {
+    // Name bleibt die ID
+  }
+  return { id: c.id, rev: c.rev, name, author: c.author_uuid ? { uuid: c.author_uuid, name: c.author_name ?? '' } : null }
 }
 
 function shareEvidence(s: ShareRow): NonNullable<Evidence['share']> {
@@ -558,6 +586,8 @@ export interface AdminReportSummary {
   attachmentId: string | null
   /** Geteilter Screenshot (§23) bei `kind = 'share'`, sonst `null`. */
   shareId: string | null
+  /** Schaltung (§25) bei `kind = 'circuit'`, sonst `null`. */
+  circuitId: string | null
   /** Über die öffentliche Seite ohne Konto gemeldet (`reporter` ist dann `null`). */
   anonymous: boolean
   /** Anfang des gemeldeten Texts (≤ 140 Zeichen) oder `null`. */
@@ -626,6 +656,7 @@ export function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummar
       messageId: r.message_id,
       attachmentId: r.attachment_id,
       shareId: r.share_id,
+      circuitId: r.circuit_id,
       anonymous: r.kind === 'share' && r.reporter_uuid === null && ev?.anonymous === true,
       preview: focus?.text ? [...focus.text].slice(0, 140).join('') : null,
       images: ev?.images.length ?? 0,
@@ -879,7 +910,7 @@ export function adminAddNote(ctx: AppContext, actor: string, id: string, text: s
   return adminReportDetail(ctx, id)
 }
 
-export type ReportAction = 'delete_message' | 'delete_share' | 'warn' | 'mute' | 'ban' | 'sanction' | 'dismiss' | 'resolve'
+export type ReportAction = 'delete_message' | 'delete_share' | 'hide_circuit' | 'warn' | 'mute' | 'ban' | 'sanction' | 'dismiss' | 'resolve'
 
 export interface ReportActionInput {
   action: ReportAction
@@ -967,6 +998,14 @@ export function adminReportAction(ctx: AppContext, actorIn: string | Staff, id: 
       audit(ctx, actor.uuid, 'share.delete', r.target_uuid, r.share_id, id)
       break
     }
+    case 'hide_circuit': {
+      if (!r.circuit_id) throw conflict('no_circuit', 'This report is not about a circuit')
+      // Verstecken ist Pflege der Bibliothek → zusätzlich zum Meldungs-Recht `circuits.manage`.
+      if (!can(actor, 'circuits.manage')) throw forbidden('missing_permission', 'You need the permission circuits.manage')
+      if (getCircuit(ctx, r.circuit_id)) setCircuitStatus(ctx, actor, r.circuit_id, 'hidden')
+      audit(ctx, actor.uuid, 'circuit.hide', r.target_uuid, r.circuit_id, id)
+      break
+    }
     case 'warn':
       warnUser(ctx, actor, r.target_uuid!, reason, id, { reasonCode, note })
       break
@@ -1000,6 +1039,8 @@ export function adminReportAction(ctx: AppContext, actorIn: string | Staff, id: 
         ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE message_id = ? AND id <> ? AND status <> 'resolved'", r.message_id, r.id)
         : r.share_id
           ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE share_id = ? AND id <> ? AND status <> 'resolved'", r.share_id, r.id)
+          : r.circuit_id
+          ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE circuit_id = ? AND id <> ? AND status <> 'resolved'", r.circuit_id, r.id)
           : r.target_uuid
           ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE target_uuid = ? AND kind = ? AND id <> ? AND status <> 'resolved'", r.target_uuid, r.kind, r.id)
           : []

@@ -189,4 +189,12 @@ export const RULES = {
   sharePublicIp: { limit: 240, windowMs: MIN },
   /** Anonyme Meldungen von der öffentlichen Seite je IP. */
   shareReportIp: { limit: 5, windowMs: HOUR },
+  // ------------------------------------------------ Schaltungs-Bibliothek (§25)
+  /** Öffentliche Abrufe (Index, Schaltung, Download) je IP – zusätzlich zur globalen IP-Grenze. */
+  circuitPublicIp: { limit: 240, windowMs: MIN },
+  /** Einreichen und Umwandeln (Datei → Schaltung) je Konto – die Tagesgrenze steht zusätzlich in der Datenbank. */
+  circuitSubmitUser: { limit: 20, windowMs: HOUR },
+  circuitConvertUser: { limit: 30, windowMs: HOUR },
+  /** Team: Import/Export und Speichern im Editor. */
+  adminCircuit: { limit: 120, windowMs: MIN },
 } satisfies Record<string, Rule>

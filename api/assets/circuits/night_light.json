@@ -1,0 +1,55 @@
+{
+ "format": 1,
+ "id": "night_light",
+ "category": "displays",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Night light",
+   "desc": "An inverted daylight detector gives a signal at night. The redstone line on top of the lamps switches them on automatically in the dark and off again in the morning. Right-click the detector to invert it."
+  },
+  "de": {
+   "name": "Nachtlicht",
+   "desc": "Ein invertierter Tageslichtsensor gibt nachts ein Signal. Die Redstone-Leitung auf den Lampen schaltet sie im Dunkeln automatisch an und morgens wieder aus. Den Sensor per Rechtsklick invertieren."
+  },
+  "es": {
+   "name": "Luz nocturna",
+   "desc": "Un sensor de luz solar invertido da señal por la noche. La línea de redstone sobre las lámparas las enciende sola al oscurecer y las apaga por la mañana. Haz clic derecho en el sensor para invertirlo."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "L": "redstone_lamp",
+  "a": "redstone_lamp@L1",
+  "c": "redstone_lamp@L3",
+  "D": "daylight_detector[inverted=true]@D",
+  "-": "redstone_wire"
+ },
+ "layers": [
+  [
+   "#aLc"
+  ],
+  [
+   "D---"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "D"
+    ],
+    "out": [
+     "L1",
+     "L3"
+    ],
+    "rows": [
+     "0:00",
+     "f:11",
+     "0:00"
+    ]
+   }
+  }
+ ]
+}

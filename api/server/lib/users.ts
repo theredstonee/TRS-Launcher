@@ -5,6 +5,7 @@ import { all, one, run, tx } from './db'
 import { capeView, capeWearers, type CapeRow, type CapeView } from './capes'
 import { notifyShareRemoved, releaseHoldings, shareHolders } from './capeshares'
 import { finishChatPurge, prepareChatPurge } from './chat'
+import { forgetCircuitAuthor } from './circuits'
 import { endHostingFor } from './hosting'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
@@ -208,6 +209,8 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
     // Einträge zu Meldungen (ref) bleiben mit der Meldung bis zu deren Ablauf.
     run(ctx.db, 'DELETE FROM admin_log WHERE target = ? AND ref IS NULL', uuid)
     purgeModeration(ctx, uuid)
+    // Schaltungen (§25): Ersteller-Name weg, Einreichungen per FK weg.
+    forgetCircuitAuthor(ctx, uuid)
   })
   finishChatPurge(ctx, chat)
   removeShareFiles(ctx, sharedImages)

@@ -93,6 +93,8 @@ export default defineNuxtConfig({
       { baseName: 'capes', dir: '../assets/capes' },
       // templates.json + catalog.json + PNGs der mitgelieferten Kosmetik
       { baseName: 'cosmetics', dir: '../assets/cosmetics' },
+      // Mitgelieferte Schaltungen (index.json + <id>.json), beim Start eingespielt (§25)
+      { baseName: 'circuits', dir: '../assets/circuits', pattern: '*.json' },
       // WebP-Dekoder für Chat-Bilder (libwebp als Wasm, Apache-2.0)
       { baseName: 'codecs', dir: '../node_modules/@jsquash/webp/codec/dec', pattern: '*.wasm' },
     ],
