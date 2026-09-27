@@ -2268,7 +2268,7 @@ One table for everything. **Kinds:**
 | `warn` | Nothing blocked; counts in the history (shown in `/v1/me/moderation` for 90 days as before). | – |
 | `chat_mute` | No chat messages, group renames, new groups (§18). | `403 chat_muted` |
 | `social_ban` | No friend requests (send **and** accept), no new groups, no adding members, no server invites or world cards in chat, no world invites, no cape offers. Existing friendships and plain chat messages stay. | `403 sanctioned` |
-| `upload_ban` | No cape uploads (§5.6), no cosmetic uploads (§11.7). Existing uploads stay. | `403 sanctioned` |
+| `upload_ban` | No cape uploads (§5.6), no cosmetic uploads (§11.7), no shared screenshots (§23). Existing uploads and links stay. | `403 sanctioned` |
 | `hosting_ban` | No new worlds, no joining, no world invites, no relay tokens (`connect`). On creation all worlds of the player close (`hosting_room_closed`, `host_unavailable`) and they are removed from others' worlds. | `403 sanctioned` |
 | `account_ban` | Every TRS online feature: sessions (also website) end, login is refused, streams close, presence ends, worlds close, lookups and player events no longer deliver the badge, cape or cosmetics (watchers get `badge:false`, `cape:null`, empty `cosmetics` at once). | `403 banned` |
 
@@ -2302,7 +2302,7 @@ Lifted and expired sanctions stay in all lists (the website shows lifted ones st
 
 **Report actions** (§20.5) additionally accept `action: "sanction"` with `kind`, `duration`, `minutes?`, `reasonCode?` (default: mapped from the report reason), `reason?`, `note?`, `keepOpen?`, `includeRelated?`. `warn` (now 30 days), `mute` and `ban` (= permanent `account_ban`, admins only) still work.
 
-**Audit actions:** `chat.warn`, `chat.mute`, `chat.automute.spam|reports`, `sanction.social_ban|upload_ban|hosting_ban`, `user.ban`, `sanction.shorten|extend|lift`, `chat.unmute`, `chat.unmute.auto`, `user.unban`, `appeal.create`, `appeal.lifted|shortened|upheld`, `role.set|remove`, `player.note|player.note.delete`, `hosting.close`, plus the existing ones. `ref` = report id, `s<id>` (sanction) or `a<id>` (appeal).
+**Audit actions:** `chat.warn`, `chat.mute`, `chat.automute.spam|reports`, `sanction.social_ban|upload_ban|hosting_ban`, `user.ban`, `share.delete` (§23), `sanction.shorten|extend|lift`, `chat.unmute`, `chat.unmute.auto`, `user.unban`, `appeal.create`, `appeal.lifted|shortened|upheld`, `role.set|remove`, `player.note|player.note.delete`, `hosting.close`, plus the existing ones. `ref` = report id, `s<id>` (sanction) or `a<id>` (appeal).
 
 ### 22.3 Enforcement details
 
