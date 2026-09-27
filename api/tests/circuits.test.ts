@@ -506,11 +506,11 @@ describe('submissions', () => {
     expect(r.circuit).toMatchObject({ id: 'my_lamp', status: 'published', source: 'submission', author: { uuid: alex.uuid, name: 'Alex' } })
     expect(r.circuit.circuit.texts.en).toEqual({ name: 'My lamp', desc: 'Flip the lever.\nThe lamp turns on.' })
     const ev = events.of('circuit_submission_updated')
-    expect(ev.at(-1)!.submission).toMatchObject({ status: 'accepted', circuitId: 'my_lamp' })
+    expect(ev.at(-1)!.submission).toMatchObject({ status: 'approved', circuitId: 'my_lamp' })
     expect(circuitIndex(env.ctx).index.circuits.at(-1)).toMatchObject({ id: 'my_lamp', rev: 1 })
     expect(circuitJson(getCircuit(env.ctx, 'my_lamp')!).author).toEqual({ uuid: alex.uuid, name: 'Alex' })
     expect(code(() => acceptSubmission(env.ctx, OWNER, s.id, { status: 'published' }))).toBe('submission_decided')
-    expect(mySubmissions(env.ctx, alex.uuid)[0]).toMatchObject({ status: 'accepted', circuitId: 'my_lamp' })
+    expect(mySubmissions(env.ctx, alex.uuid)[0]).toMatchObject({ status: 'approved', circuitId: 'my_lamp' })
 
     // Konto gelöscht → Name weg, rev + 1, Einreichungen weg
     deleteUser(env.ctx, alex.uuid)
@@ -575,7 +575,11 @@ describe('submissions', () => {
     })
     const ok = await post(body(small('r1'), 'Route lamp'))
     expect(ok.status).toBe(201)
-    expect((ok.body as { submission: { status: string } }).submission.status).toBe('pending')
+    // Vertrag mit dem TRS Client: id + status oben (docs/circuit-format.md)
+    expect(ok.body).toMatchObject({ id: expect.stringMatching(/^cs[0-9a-f]{16}$/), status: 'pending', submission: { status: 'pending' } })
+    // Client schickt since/until als null und eine reservierte ID → Server vergibt eine eigene
+    const fromClient = await post(body({ ...small('index', '--'), since: null, until: null, server: 'ok' }, 'Index lamp'))
+    expect(fromClient.status).toBe(201)
     expect((await post({ ...body(small('r2')), name: '' })).error?.code).toBe('invalid_request')
     expect((await post({ ...body(small('r2')), name: '§cRed' })).error?.code).toBe('invalid_request')
     expect((await post({ ...body(small('r2')), lang: 'fr' })).error?.code).toBe('invalid_request')

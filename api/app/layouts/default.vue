@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { m } = useLang()
 const { t } = useTeamText()
+const { c } = useCircuitText()
 const lp = useLocalePath()
 const route = useRoute()
 const menuOpen = ref(false)
@@ -10,6 +11,7 @@ const links = computed(() => [
   { to: lp('/download'), label: m.value.nav.download },
   { to: lp('/blog'), label: m.value.nav.blog },
   { to: lp('/capes'), label: m.value.nav.capes },
+  { to: lp('/circuits'), label: c.value.nav },
   { to: lp('/faq'), label: m.value.nav.faq },
   { to: lp('/team'), label: m.value.nav.team },
 ])
@@ -83,6 +85,7 @@ const year = new Date().getFullYear()
           <NuxtLink :to="lp('/download')" class="footer-link">{{ m.nav.download }}</NuxtLink>
           <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>
           <NuxtLink :to="lp('/capes')" class="footer-link">{{ m.nav.capes }}</NuxtLink>
+          <NuxtLink :to="lp('/circuits')" class="footer-link">{{ c.nav }}</NuxtLink>
           <NuxtLink :to="lp('/faq')" class="footer-link">{{ m.nav.faq }}</NuxtLink>
           <NuxtLink :to="lp('/team')" class="footer-link">{{ m.nav.team }}</NuxtLink>
         </nav>

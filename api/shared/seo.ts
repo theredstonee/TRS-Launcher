@@ -24,6 +24,7 @@ export const SITE_PAGES: readonly { path: string, priority: number }[] = [
   { path: '/download', priority: 0.9 },
   { path: '/blog', priority: 0.7 },
   { path: '/capes', priority: 0.7 },
+  { path: '/circuits', priority: 0.7 },
   { path: '/faq', priority: 0.6 },
   { path: '/team', priority: 0.5 },
   { path: '/privacy', priority: 0.3 },
@@ -365,13 +366,18 @@ export interface SitemapJob {
   updatedAt: string
 }
 
-export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: string | null, jobs: SitemapJob[] = []): string {
+export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: string | null, jobs: SitemapJob[] = [], circuits: SitemapJob[] = []): string {
   const newestPost = latest(posts.map((p) => p.date))
   const newestJob = latest(jobs.map((j) => j.updatedAt))
+  const newestCircuit = latest(circuits.map((c) => c.updatedAt))
+  const lastmodOf = (path: string) =>
+    path === '/blog' ? latest([buildTime, newestPost]) : path === '/team' ? latest([buildTime, newestJob]) : path === '/circuits' ? latest([buildTime, newestCircuit]) : buildTime
   const urls = [
-    ...SITE_PAGES.flatMap((pg) => sitemapEntries(siteUrl, pg.path, pg.path === '/blog' ? latest([buildTime, newestPost]) : pg.path === '/team' ? latest([buildTime, newestJob]) : buildTime, pg.priority)),
+    ...SITE_PAGES.flatMap((pg) => sitemapEntries(siteUrl, pg.path, lastmodOf(pg.path), pg.priority)),
     ...posts.flatMap((p) => sitemapEntries(siteUrl, `/blog/${p.version}`, p.date, 0.5)),
     ...jobs.flatMap((j) => sitemapEntries(siteUrl, `/team/${j.id}`, j.updatedAt, 0.4)),
+    // Schaltungs-Bibliothek (§25): jede veröffentlichte Schaltung hat eine eigene Seite.
+    ...circuits.flatMap((c) => sitemapEntries(siteUrl, `/circuits/${c.id}`, c.updatedAt, 0.4)),
   ]
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`
 }
@@ -390,6 +396,8 @@ export function buildRobots(siteUrl: string): string {
     'Disallow: /auth/',
     'Disallow: /login',
     'Disallow: /applications',
+    'Disallow: /circuits/submit',
+    'Disallow: /circuits/mine',
     '',
     `Sitemap: ${trimBase(siteUrl)}/sitemap.xml`,
     '',

@@ -1,6 +1,6 @@
 // Typen der Chat-Moderation (`/v1/admin/reports*`, `/v1/admin/moderation/*`, `/v1/admin/chat/word-filter`).
 
-export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share'
+export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share' | 'circuit'
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 export type ReportOutcome = 'actioned' | 'dismissed'
 export type ReportReason = 'insult_hate' | 'spam' | 'inappropriate' | 'scam_phishing' | 'harassment' | 'other'
@@ -24,6 +24,8 @@ export interface ReportSummary {
   attachmentId: string | null
   /** Geteilter Screenshot (§23), sonst `null`. Fehlt bei älteren Servern. */
   shareId?: string | null
+  /** Schaltung der Bibliothek (§25), sonst `null`. */
+  circuitId?: string | null
   /** Über die öffentliche Seite ohne Konto gemeldet. */
   anonymous?: boolean
   preview: string | null
@@ -95,6 +97,8 @@ export interface ReportDetail extends ReportSummary {
     images: { id: string, width: number, height: number, mime: string, path: string }[]
     /** Geteilter Screenshot zur Meldezeit (§23). */
     share?: { id: string, width: number, height: number, mime: string, createdAt: string, expiresAt: string } | null
+    /** Gemeldete Schaltung zur Meldezeit (§25). */
+    circuit?: { id: string, rev: number, name: string, author: PlayerRef | null } | null
     anonymous?: boolean
   } | null
   notes: { id: number, at: string, actor: string, actorName: string | null, text: string }[]
@@ -262,6 +266,8 @@ export interface DashboardData {
   server: { version: string, node: string, uptimeSec: number, startedAt: string, dbBytes: number, disk: { freeBytes: number, totalBytes: number } | null } | null
   recentAudit: AuditRow[]
   applications: { open: number, new: number } | null
+  /** Schaltungs-Bibliothek (§25), nur mit circuits.manage. */
+  circuits?: { pendingSubmissions: number, published: number, total: number } | null
 }
 
 export interface SearchResult {

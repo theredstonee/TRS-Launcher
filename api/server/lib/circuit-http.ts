@@ -17,7 +17,7 @@ export async function readCircuitUpload(event: H3Event): Promise<ImportResult> {
   const type = (getHeader(event, 'content-type') ?? '').split(';')[0]!.trim().toLowerCase()
   if (!UPLOAD_TYPES.has(type)) throw unsupportedMedia('Content-Type must be application/octet-stream (or application/json)')
   const body = await readLimited(event, MAX_IMPORT_BYTES)
-  const q = fileQuery.safeParse({ ...getQuery(event) })
+  const q = fileQuery.safeParse({ ...getQuery<Record<string, unknown>>(event) })
   return importCircuitFile(body, { filename: q.success ? q.data.name : undefined })
 }
 

@@ -350,9 +350,10 @@ export function checkCircuit(raw: unknown): CircuitCheck {
   if (difficulty !== 1 && difficulty !== 2 && difficulty !== 3) errors.push('difficulty must be 1, 2 or 3')
   const server = raw.server ?? 'ok'
   if (server !== 'ok' && server !== 'note') errors.push('server must be "ok" or "note"')
+  // `null` = keine Angabe (so steht es auch in docs/circuit-format.md).
   for (const k of ['since', 'until'] as const) {
     const v = raw[k]
-    if (v !== undefined && (typeof v !== 'string' || !CIRCUIT_VERSION.test(v))) errors.push(`${k} must be a version like 1.21.4`)
+    if (v !== undefined && v !== null && (typeof v !== 'string' || !CIRCUIT_VERSION.test(v))) errors.push(`${k} must be a version like 1.21.4`)
   }
 
   // Texte

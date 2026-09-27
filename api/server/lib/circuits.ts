@@ -5,6 +5,7 @@ import {
   CIRCUIT_ID,
   CIRCUIT_LANGS,
   MAX_DESC,
+  RESERVED_CIRCUIT_IDS,
   MAX_NAME,
   canonicalContent,
   checkCircuit,
@@ -41,7 +42,7 @@ export const MAX_REJECT_REASON = 500
 
 export type CircuitStatus = 'draft' | 'published' | 'hidden'
 export type CircuitSource = 'seed' | 'team' | 'submission'
-export type SubmissionStatus = 'pending' | 'accepted' | 'rejected'
+export type SubmissionStatus = 'pending' | 'approved' | 'rejected'
 export type SubmissionFormat = 'json' | 'litematic' | 'schem' | 'nbt'
 
 export interface CircuitRow {
@@ -273,14 +274,15 @@ export const circuitListQuery = z.strictObject({
   q: z.string().max(64).optional(),
 })
 
-export function listAdminCircuits(ctx: AppContext, q: z.output<typeof circuitListQuery>): AdminCircuitSummary[] {
+/** Liste für den Team-Bereich – mit Schaltung (für die Vorschaubilder; höchstens einige hundert kleine Einträge). */
+export function listAdminCircuits(ctx: AppContext, q: z.output<typeof circuitListQuery>): AdminCircuitDetail[] {
   const rows = q.status === 'all'
     ? all<CircuitRow>(ctx.db, 'SELECT * FROM circuits ORDER BY sort, id')
     : all<CircuitRow>(ctx.db, 'SELECT * FROM circuits WHERE status = ? ORDER BY sort, id', q.status)
   const needle = q.q?.trim().toLowerCase() ?? ''
   return rows
     .filter((r) => !q.category || r.category === q.category)
-    .map(adminSummary)
+    .map(adminDetail)
     .filter((s) => !needle || s.id.includes(needle) || Object.values(s.names).some((n) => n?.toLowerCase().includes(needle)) || (s.author?.name.toLowerCase().includes(needle) ?? false))
 }
 
@@ -506,7 +508,7 @@ export function mySubmissionView(r: SubmissionRow): MySubmissionView {
     lang: r.lang,
     status: r.status,
     reason: r.reason,
-    circuitId: r.status === 'accepted' ? r.circuit_id : null,
+    circuitId: r.status === 'approved' ? r.circuit_id : null,
     createdAt: iso(r.created_at),
     updatedAt: iso(r.updated_at),
     decidedAt: isoOrNull(r.decided_at),
@@ -522,7 +524,7 @@ export function submissionLimits(ctx: AppContext, uuid: string): { today: number
 function findDuplicate(ctx: AppContext, hash: string): { kind: 'circuit' | 'submission', id: string } | null {
   const c = one<{ id: string, status: CircuitStatus }>(ctx.db, 'SELECT id, status FROM circuits WHERE content_hash = ? LIMIT 1', hash)
   if (c) return { kind: 'circuit', id: c.id }
-  const s = one<{ id: string }>(ctx.db, "SELECT id FROM circuit_submissions WHERE content_hash = ? AND status IN ('pending', 'accepted') LIMIT 1", hash)
+  const s = one<{ id: string }>(ctx.db, "SELECT id FROM circuit_submissions WHERE content_hash = ? AND status IN ('pending', 'approved') LIMIT 1", hash)
   return s ? { kind: 'submission', id: s.id } : null
 }
 
@@ -546,7 +548,7 @@ export function submitCircuit(ctx: AppContext, submitter: { uuid: string, name: 
   const raw = typeof body.circuit === 'object' && body.circuit !== null && !Array.isArray(body.circuit) ? body.circuit as Record<string, unknown> : {}
   const { circuit, hash } = validateCircuit({
     ...raw,
-    id: typeof raw.id === 'string' && CIRCUIT_ID.test(raw.id) ? raw.id : slugCircuitId(name),
+    id: typeof raw.id === 'string' && CIRCUIT_ID.test(raw.id) && !RESERVED_CIRCUIT_IDS.has(raw.id) ? raw.id : slugCircuitId(name),
     category: body.category,
     texts: { [body.lang]: { name, desc: description } },
   })
@@ -586,7 +588,7 @@ export interface AdminSubmissionView extends MySubmissionView {
   blockCount: number
   decidedBy: string | null
   /** Offene bzw. angenommene Einreichungen desselben Kontos (Überblick). */
-  submitterStats: { pending: number, accepted: number, rejected: number }
+  submitterStats: { pending: number, approved: number, rejected: number }
 }
 
 export function adminSubmissionView(ctx: AppContext, r: SubmissionRow): AdminSubmissionView {
@@ -604,12 +606,12 @@ export function adminSubmissionView(ctx: AppContext, r: SubmissionRow): AdminSub
     size: check.ok ? check.info.size : { x: 0, y: 0, z: 0 },
     blockCount: check.ok ? check.info.blockCount : 0,
     decidedBy: r.decided_by,
-    submitterStats: { pending: count('pending'), accepted: count('accepted'), rejected: count('rejected') },
+    submitterStats: { pending: count('pending'), approved: count('approved'), rejected: count('rejected') },
   }
 }
 
 export const submissionListQuery = z.strictObject({
-  status: z.enum(['pending', 'accepted', 'rejected', 'all']).default('pending'),
+  status: z.enum(['pending', 'approved', 'rejected', 'all']).default('pending'),
 })
 
 export function listAdminSubmissions(ctx: AppContext, status: SubmissionStatus | 'all'): AdminSubmissionView[] {
@@ -668,7 +670,7 @@ export function acceptSubmission(ctx: AppContext, actor: Staff, id: string, body
     )
     run(
       ctx.db,
-      "UPDATE circuit_submissions SET status = 'accepted', circuit_id = ?, reason = NULL, updated_at = ?, decided_at = ?, decided_by = ? WHERE id = ?",
+      "UPDATE circuit_submissions SET status = 'approved', circuit_id = ?, reason = NULL, updated_at = ?, decided_at = ?, decided_by = ? WHERE id = ?",
       circuit.id, t, t, actor.uuid, id,
     )
     audit(ctx, actor.uuid, 'circuit_submission.accept', s.uuid, `${id} → ${circuit.id} (${body.status})`, auditRef(circuit.id))

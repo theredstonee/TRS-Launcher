@@ -1016,7 +1016,7 @@ CREATE TABLE IF NOT EXISTS circuit_submissions (
   data TEXT NOT NULL,
   content_hash TEXT NOT NULL,
   source_format TEXT NOT NULL CHECK (source_format IN ('json', 'litematic', 'schem', 'nbt')),
-  status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
   reason TEXT,
   circuit_id TEXT,
   created_at INTEGER NOT NULL,
