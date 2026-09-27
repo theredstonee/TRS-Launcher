@@ -1,0 +1,11 @@
+[09:12:44] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.19.5
+[09:12:44] [main/ERROR]: Uncaught exception in thread "main"
+net.fabricmc.loader.impl.FormattedException: java.lang.RuntimeException: Error analyzing [C:\Users\Max Mustermann\AppData\Roaming\TRS-Launcher\instances\survival\minecraft\mods\journeymap-fabric-1.21.1-6.0.0.jar]: java.util.zip.ZipException: invalid CEN header (bad entry name)
+	at net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:195)
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:146)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+Caused by: java.lang.RuntimeException: Error analyzing [C:\Users\Max Mustermann\AppData\Roaming\TRS-Launcher\instances\survival\minecraft\mods\journeymap-fabric-1.21.1-6.0.0.jar]: java.util.zip.ZipException: invalid CEN header (bad entry name)
+	at net.fabricmc.loader.impl.discovery.ModDiscoverer$ModScanTask.compute(ModDiscoverer.java:360)
+Caused by: java.util.zip.ZipException: invalid CEN header (bad entry name)
+	at java.base/java.util.zip.ZipFile$Source.zerror(ZipFile.java:1780)
+	at java.base/java.util.zip.ZipFile$Source.checkAndAddEntry(ZipFile.java:1258)

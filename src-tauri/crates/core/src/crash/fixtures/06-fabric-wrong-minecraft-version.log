@@ -1,0 +1,10 @@
+[08:31:40] [main/INFO]: Loading Minecraft 1.21.11 with Fabric Loader 0.19.5
+[08:31:40] [main/ERROR]: Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+	 - Replace mod 'Xaero's Minimap' (xaerominimap) 24.2.0 with any version that is compatible with: minecraft 1.21.11.
+More details:
+	 - Mod 'Xaero's Minimap' (xaerominimap) 24.2.0 requires version 1.21 of 'Minecraft' (minecraft), but only the wrong version is present: 1.21.11!
+	at net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51)
+	at net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:198)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)

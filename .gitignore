@@ -34,3 +34,6 @@ release/
 
 # Sperre für Minecraft-Autotests (nie parallel)
 .autotest-lock/
+
+# Beispiel-Logs für die Absturz-Tests gehören ins Repo
+!src-tauri/crates/core/src/crash/fixtures/*.log

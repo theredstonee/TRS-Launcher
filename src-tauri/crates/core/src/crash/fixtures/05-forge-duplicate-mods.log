@@ -1,0 +1,7 @@
+[26Sep2026 10:01:02.118] [main/INFO] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Scanning for mods and other resources to load. We know 3 ways to find mods
+[26Sep2026 10:01:03.442] [main/ERROR] [net.minecraftforge.fml.loading.ModSorter/LOADING]: Found duplicate mods:
+	Mod ID: 'jei' from mod files: jei-1.20.1-forge-15.2.0.27.jar, jei-1.20.1-forge-15.3.0.4.jar
+[26Sep2026 10:01:03.445] [main/ERROR] [net.minecraftforge.fml.loading.ModSorter/LOADING]: Found 1 duplicate mods, this is not supported
+net.minecraftforge.fml.loading.DuplicateModsFoundException: Duplicate mods found
+	at net.minecraftforge.fml.loading.ModSorter.detectSystemMods(ModSorter.java:212)
+	at net.minecraftforge.fml.loading.ModSorter.sort(ModSorter.java:74)
