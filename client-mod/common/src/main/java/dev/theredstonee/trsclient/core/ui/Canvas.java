@@ -75,4 +75,11 @@ public interface Canvas {
 	default void scale(float sx, float sy) {
 		if (sx == sy) scale(sx);
 	}
+
+	/**
+	 * Zeichnet einen Gegenstand (16×16, mit Anzahl/Haltbarkeitsbalken wie im Inventar) an (x, y). {@code stack} ist der
+	 * ItemStack der jeweiligen Version – für {@code core} undurchsichtig. Flächen ohne Gegenstands-Zeichnen tun nichts.
+	 */
+	default void item(Object stack, int x, int y) {
+	}
 }

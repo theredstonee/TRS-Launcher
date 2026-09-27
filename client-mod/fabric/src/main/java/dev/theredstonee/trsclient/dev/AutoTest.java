@@ -244,6 +244,11 @@ public final class AutoTest {
 					step = 30;
 					break;
 				}
+				// -PtrsAutotestOnly=comfort: Tooltips, Server-Profil, Panorama (Komfort-Paket 2)
+				if ("comfort".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 31;
+					break;
+				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
 				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 29;
@@ -539,6 +544,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 31:
+				// Komfort-Paket 2: Screenshots trsclient-<mc>-comfort-*.png
+				if (comfortTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			default:
 				if (step == 25) mc.stop();
 				step = 26;
@@ -556,6 +577,7 @@ public final class AutoTest {
 	private final ShieldTest shieldTest = new ShieldTest();
 	private final DuckTest duckTest = new DuckTest();
 	private final QolTest qolTest = new QolTest();
+	private final ComfortTest comfortTest = new ComfortTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

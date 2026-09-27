@@ -92,6 +92,10 @@ public final class TrsModules {
 	public final BoolSetting socialHostingDirect;
 	/** Komfort- und PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …). */
 	public final QolModules qol;
+	/** Komfort-Paket 2: Tooltips, Server-Profile, Panorama. */
+	public final ComfortModules comfort;
+	/** Server-Profile (automatischer Wechsel je Server; nach den HUD-Profilen gelesen/geschrieben). */
+	public final dev.theredstonee.trsclient.core.profile.ServerProfiles serverProfiles;
 
 	// --- Leistung (Logik in core.perf, siehe Performance) ---
 	/** FPS-Boost: Hauptschalter aller Leistungs-Funktionen, Voreinstellungen, Leistungs-Check. */
@@ -836,12 +840,14 @@ public final class TrsModules {
 		detailNoAnimations = worldDetails.add(new BoolSetting("animations", "No texture animations (water, lava, fire)", false));
 
 		qol = new QolModules(registry, this);
+		comfort = new ComfortModules(registry);
 
 		registry.addPart(keyDefaults);
 		registry.addPart(perfUndo);
 		registry.addPart(clientState);
 		// Profile zuletzt: sie sichern den Zustand aller HUD-Module.
 		profiles = new HudProfiles(registry);
+		serverProfiles = new dev.theredstonee.trsclient.core.profile.ServerProfiles(registry, profiles, comfort.serverProfiles);
 		// Einführung/Begrüßung auf dem Startbildschirm brauchen die Module des laufenden Spiels.
 		dev.theredstonee.trsclient.core.intro.IntroGate.register(this);
 	}

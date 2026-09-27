@@ -73,6 +73,13 @@ public final class NewSince {
 	 */
 	public static final String QOL = "0.10.0";
 
+	/** Komfort-Paket 2 (TRS Client 0.11.0): bessere Tooltips, Server-Profile, Panorama-Screenshots. */
+	public static final String COMFORT = "0.11.0";
+	/** Menü-Leiste „Server“ (Server-Profile verwalten). */
+	public static final String MENU_SERVER_PROFILES = "menu:serverProfiles";
+	/** Taste „Panorama aufnehmen“ (standardmäßig unbelegt). */
+	public static final String KEY_PANORAMA = "key.trsclient.panorama";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -115,6 +122,8 @@ public final class NewSince {
 		add(QOL, "chatMentions", "chatFilter", "autoReconnect", "queueAlerts", "scoreboard", "tabPing", "bossBar", "titles",
 				"warnings", "itemCounter", "hitFeedback", "streamerMode");
 		add(QOL, "chat.timestampTwelveHour", "chat.history", "chat.copyMode", "autoGg.presets");
+		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama.
+		add(COMFORT, "tooltips", "serverProfiles", "panorama", MENU_SERVER_PROFILES, KEY_PANORAMA);
 	}
 
 	private NewSince() {

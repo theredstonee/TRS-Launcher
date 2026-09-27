@@ -38,6 +38,12 @@ public final class TrsMenuScreen extends TrsUiScreen {
 		return this;
 	}
 
+	/** Öffnet das Menü direkt bei den Server-Profilen. */
+	public TrsMenuScreen showServerProfiles() {
+		menu.showServerProfiles();
+		return this;
+	}
+
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
 	public TrsMenuScreen showProfiles() {
 		menu.showProfiles();

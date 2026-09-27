@@ -35,6 +35,8 @@ public final class TrsKeys {
 	public static KeyMapping social;
 	/** Schnellantwort/Beitreten zum neuesten Sozial-Toast (Y – in keiner Vanilla-Version belegt). */
 	public static KeyMapping quickReply;
+	/** Nimmt ein 360°-Panorama auf (standardmäßig unbelegt; auch im Menü auslösbar). */
+	public static KeyMapping panorama;
 
 	private TrsKeys() {
 	}
@@ -64,6 +66,7 @@ public final class TrsKeys {
 		worldMap = register(event, new KeyMapping("key.trsclient.worldMap", KEYBOARD, InputConstants.KEY_M, CATEGORY));
 		social = register(event, new KeyMapping("key.trsclient.social", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		quickReply = register(event, new KeyMapping("key.trsclient.quickReply", KEYBOARD, InputConstants.KEY_Y, CATEGORY));
+		panorama = register(event, new KeyMapping("key.trsclient.panorama", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 	}
 
 	/**

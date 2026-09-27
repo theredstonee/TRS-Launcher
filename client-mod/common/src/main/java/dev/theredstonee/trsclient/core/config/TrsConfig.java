@@ -30,6 +30,21 @@ public final class TrsConfig {
 	public PerfUndo perfUndo;
 	/** Einführung, „NEU“-Markierungen und im Client gewähltes Aussehen; optional (fehlt bis 0.5.x). */
 	public ClientStateData clientState;
+	/** Server-Profile (automatischer Wechsel je Server); optional, bleibt lokal (siehe {@code core.profile.ServerProfiles}). */
+	public ServerProfilesData serverProfiles;
+
+	/** Server-Profile: Muster, optionales HUD-Profil und die vom Standard abweichenden Module. */
+	public static final class ServerProfilesData {
+		public List<ServerProfileData> profiles = new ArrayList<>();
+	}
+
+	public static final class ServerProfileData {
+		public String name;
+		public List<String> patterns = new ArrayList<>();
+		/** Name eines HUD-Profils (null = HUD-Module wie die anderen Module über {@link #modules}). */
+		public String hudProfile;
+		public Map<String, ModuleConfig> modules = new LinkedHashMap<>();
+	}
 
 	/** Zustand von Einführung, „NEU“-Markierungen und Aussehen (siehe {@code core.intro.ClientState}). */
 	public static final class ClientStateData {

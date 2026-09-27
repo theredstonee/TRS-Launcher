@@ -30,6 +30,8 @@ public final class TrsKeys {
 	public static KeyBinding social;
 	/** Schnellantwort/-aktion zum neuesten Sozial-Toast (Y; wirkt nur, solange ein Toast sichtbar ist). */
 	public static KeyBinding quickReply;
+	/** Nimmt ein 360°-Panorama auf (standardmäßig unbelegt; auch im Menü auslösbar). */
+	public static KeyBinding panorama;
 
 	private TrsKeys() {
 	}
@@ -54,6 +56,7 @@ public final class TrsKeys {
 		worldMap = register(new KeyBinding("key.trsclient.worldMap", Keyboard.KEY_M, CATEGORY));
 		social = register(new KeyBinding("key.trsclient.social", Keyboard.KEY_NONE, CATEGORY));
 		quickReply = register(new KeyBinding("key.trsclient.quickReply", Keyboard.KEY_Y, CATEGORY));
+		panorama = register(new KeyBinding("key.trsclient.panorama", Keyboard.KEY_NONE, CATEGORY));
 	}
 
 	/**
