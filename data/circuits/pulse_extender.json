@@ -1,0 +1,53 @@
+{
+ "format": 1,
+ "id": "pulse_extender",
+ "category": "pulse",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Pulse extender",
+   "desc": "The button signal goes straight to the output and, in parallel, through two slow repeaters. The output stays on until the delayed copy is over too – a 1 s press becomes about 1.8 s. Add repeaters for longer pulses. The repeater in the direct path stops the signal from running backwards."
+  },
+  "de": {
+   "name": "Pulsverlängerer",
+   "desc": "Das Knopfsignal läuft direkt zum Ausgang und parallel durch zwei langsame Verstärker. Der Ausgang bleibt an, bis auch die verzögerte Kopie vorbei ist – aus 1 s Drücken werden etwa 1,8 s. Für längere Pulse mehr Verstärker einbauen. Der Verstärker im direkten Weg verhindert, dass das Signal zurückläuft."
+  },
+  "es": {
+   "name": "Alargador de pulsos",
+   "desc": "La señal del botón va directa a la salida y, en paralelo, por dos repetidores lentos. La salida sigue activa hasta que termina también la copia retrasada: 1 s de pulsación se convierte en unos 1,8 s. Añade repetidores para pulsos más largos. El repetidor del camino directo impide que la señal vuelva hacia atrás."
+  }
+ },
+ "palette": {
+  "B": "stone_button[face=floor]@B",
+  "-": "redstone_wire",
+  "r": "repeater[facing=west,delay=4]",
+  "q": "repeater[facing=west,delay=1]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "B-rr--L",
+   ".-q--.."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "press": "B"
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 80,
+      "on": [
+       30,
+       45
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

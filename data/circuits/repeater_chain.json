@@ -1,0 +1,49 @@
+{
+ "format": 1,
+ "id": "repeater_chain",
+ "category": "basics",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Repeater chain",
+   "desc": "Redstone dust loses one signal level per block, so after 15 blocks the signal is gone. A repeater refreshes it back to 15. For long lines, put a repeater at least every 15 blocks – each one adds a small delay."
+  },
+  "de": {
+   "name": "Verstärker-Kette",
+   "desc": "Redstone-Staub verliert je Block eine Signalstufe, nach 15 Blöcken ist das Signal weg. Ein Verstärker frischt es wieder auf 15 auf. Bei langen Leitungen spätestens alle 15 Blöcke einen Verstärker setzen – jeder bringt eine kleine Verzögerung."
+  },
+  "es": {
+   "name": "Cadena de repetidores",
+   "desc": "El polvo de redstone pierde un nivel de señal por bloque, así que tras 15 bloques la señal desaparece. Un repetidor la vuelve a subir a 15. En líneas largas, pon un repetidor como mucho cada 15 bloques; cada uno añade un pequeño retardo."
+  }
+ },
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "-": "redstone_wire",
+  "r": "repeater[facing=west,delay=1]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "A-------------rL"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "0:0",
+     "1:1",
+     "0:0"
+    ]
+   }
+  }
+ ]
+}

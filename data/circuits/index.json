@@ -1,0 +1,29 @@
+{
+ "circuits": [
+  "not_gate",
+  "or_gate",
+  "and_gate",
+  "xor_gate",
+  "repeater_chain",
+  "torch_tower",
+  "observer_clock",
+  "repeater_clock",
+  "comparator_clock",
+  "rs_latch",
+  "t_flipflop",
+  "t_flipflop_copper",
+  "d_latch",
+  "monoflop",
+  "edge_observer",
+  "falling_edge",
+  "pulse_extender",
+  "piston_door_2x2",
+  "hidden_stairs",
+  "sugarcane_observer",
+  "item_filter",
+  "auto_smelter",
+  "item_elevator",
+  "comparator_fill",
+  "night_light"
+ ]
+}

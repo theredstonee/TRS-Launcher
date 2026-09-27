@@ -254,6 +254,11 @@ public final class AutoTest {
 					step = 31;
 					break;
 				}
+				// -PtrsAutotestOnly=circuits: Schaltungs-Bibliothek (Liste, Vorschau, Geisterblöcke, Platzieren)
+				if ("circuits".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 32;
+					break;
+				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
 				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 29;
@@ -565,6 +570,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 32:
+				// Schaltungs-Bibliothek: Screenshots trsclient-<mc>-circuits-*.png
+				if (circuitTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			default:
 				if (step == 25) mc.stop();
 				step = 26;
@@ -583,6 +604,7 @@ public final class AutoTest {
 	private final DuckTest duckTest = new DuckTest();
 	private final QolTest qolTest = new QolTest();
 	private final ComfortTest comfortTest = new ComfortTest();
+	private final CircuitTest circuitTest = new CircuitTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

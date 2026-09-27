@@ -82,6 +82,23 @@ How to write an entry:
   by someone with a higher rank can't be changed. Roles, applications and positions open on the website.
 - **My applications.** Settings → Privacy and Ctrl+K show your team applications with status and the team's answer;
   open ones can be withdrawn. When the status changes you get a notification – in the game from the TRS Client, too.
+- **Circuit library in the TRS Client.** A new page in the redstone category with ready-made redstone circuits:
+  logic gates, repeater chain, torch tower, three clocks, memory (RS latch, T flip-flops, D latch), pulse circuits,
+  a 2×2 piston door and a hidden staircase, farm basics (sugar cane, item filter, automatic furnace, item elevator)
+  and displays. Each comes with an explanation, difficulty, size, material list (with what you already have in your
+  inventory), the Minecraft version it needs and whether it runs reliably on servers – plus a rotatable 3D preview
+  you can view layer by layer. Search, categories and "my version" help you find the right one.
+- **Show a circuit as a template in the world.** The template follows your view until you confirm (R rotates,
+  Enter confirms); ghost blocks then show what goes where – green when a block is right, red when it is wrong (with
+  the reason) and grey while it is missing – with a "32/40 blocks" progress bar, layer by layer with ↑/↓ and H to
+  hide it. The template stays in the world or on the server when you reconnect. Display only, like a Litematica
+  preview: nothing is built for you and nothing is sent to the server. From Minecraft 1.8.9 (not on 1.7.10 and 1.13.2).
+- **The circuits come from the TRS server** – new circuits appear without a mod update. The library checks for
+  changes once per start and keeps a local copy for offline play; before the first download it tells you it will
+  load with internet.
+- **Submit your own circuits.** Mark a circuit in your world (two corners, up to 16×16×16), give it a name,
+  category and short description and submit it while signed in with TRS. "My submissions" shows whether it is
+  waiting, approved or rejected (with the reason).
 
 ### Deutsch
 
@@ -148,6 +165,25 @@ How to write an entry:
 - **Meine Bewerbungen.** Einstellungen → Datenschutz und Strg+K zeigen deine Bewerbungen fürs Team mit Status und
   Antwort des Teams; offene kannst du zurückziehen. Ändert sich der Status, bekommst du einen Hinweis – im Spiel auch
   vom TRS Client.
+- **Schaltungs-Bibliothek im TRS Client.** Eine neue Seite in der Redstone-Kategorie mit fertigen
+  Redstone-Schaltungen: Logik-Gatter, Verstärker-Kette, Fackelturm, drei Takte, Speicher (RS-Latch, T-Flipflops,
+  D-Latch), Impuls-Schaltungen, eine 2×2-Kolbentür und eine versteckte Treppe, Farm-Grundlagen (Zuckerrohr,
+  Item-Filter, automatischer Ofen, Item-Aufzug) und Anzeigen. Zu jeder gibt es eine Erklärung, Schwierigkeit, Größe,
+  Materialliste (mit dem, was du schon im Inventar hast), die nötige Minecraft-Version und ob sie auf Servern
+  verlässlich läuft – dazu eine drehbare 3D-Vorschau, auch Schicht für Schicht. Suche, Kategorien und „Meine
+  Version“ helfen beim Finden.
+- **Schaltung als Vorlage in der Welt einblenden.** Die Vorlage folgt deinem Blick, bis du bestätigst (R dreht,
+  Enter bestätigt); danach zeigen Geisterblöcke, was wohin gehört – grün, wenn ein Block stimmt, rot, wenn er falsch
+  ist (mit Grund), und grau, solange er fehlt – mit Fortschritt „32/40 Blöcke“, Schicht für Schicht mit ↑/↓ und H zum
+  Ausblenden. Die Vorlage bleibt in der Welt bzw. auf dem Server, auch nach dem Neuverbinden. Nur Anzeige wie eine
+  Litematica-Vorschau: Nichts wird für dich gebaut und nichts an den Server geschickt. Ab Minecraft 1.8.9 (nicht auf
+  1.7.10 und 1.13.2).
+- **Die Schaltungen kommen vom TRS-Server** – neue Schaltungen gibt es ohne Mod-Update. Die Bibliothek prüft bei jedem
+  Start kurz auf Änderungen und behält eine lokale Kopie für unterwegs ohne Internet; vor dem ersten Download sagt sie,
+  dass sie beim nächsten Start mit Internet geladen wird.
+- **Eigene Schaltungen einreichen.** Markiere eine Schaltung in deiner Welt (zwei Ecken, höchstens 16×16×16), gib
+  Name, Kategorie und eine kurze Beschreibung an und reiche sie mit TRS-Anmeldung ein. „Meine Einreichungen“ zeigt,
+  ob sie noch geprüft wird, angenommen oder abgelehnt wurde (mit Grund).
 
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
 <!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->

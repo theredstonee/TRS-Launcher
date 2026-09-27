@@ -100,9 +100,14 @@ public final class RedstoneHuds {
 		}
 
 		public void render(Gfx g, Font font) {
-			if (!modules.redstoneOverlay.isEnabled() || tools.cache().size() == 0) return;
 			Minecraft mc = Minecraft.getInstance();
 			if (mc.player == null || mc.level == null) return;
+			// Schaltungs-Vorlage (Geisterblöcke + Fortschritt), gleiche Projektion wie das Signal-Overlay
+			if (dev.theredstonee.trsclient.core.circuit.Circuits.get().wantsDraw()) {
+				dev.theredstonee.trsclient.core.circuit.Circuits.get().draw(GfxCanvas.of(g, font), Mc.cameraX(), Mc.cameraY(),
+						Mc.cameraZ(), Mc.cameraYaw(), Mc.cameraPitch(), TrsClient.get().worldFov(), g.width(), g.height());
+			}
+			if (!modules.redstoneOverlay.isEnabled() || tools.cache().size() == 0) return;
 			painter.draw(GfxCanvas.of(g, font), tools.cache().entries(), Mc.cameraX(), Mc.cameraY(), Mc.cameraZ(),
 					Mc.cameraYaw(), Mc.cameraPitch(), TrsClient.get().worldFov(), g.width(), g.height(),
 					modules.redstoneOverlayZero.get());

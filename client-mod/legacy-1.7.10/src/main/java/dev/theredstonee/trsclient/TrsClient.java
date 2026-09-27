@@ -127,7 +127,8 @@ public final class TrsClient {
 				modules.qol.queueAlerts, modules.qol.scoreboard, modules.qol.tabPing, modules.qol.bossBar, modules.qol.titles,
 				modules.qol.warnings, modules.qol.itemCounter, modules.qol.hitFeedback, modules.qol.streamer));
 		// Komfort-Paket 2: Tooltips und Panorama sind für diese Version nicht umgesetzt (Server-Profile laufen).
-		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.comfort.tooltips, modules.comfort.panorama));
+		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.comfort.tooltips, modules.comfort.panorama,
+				modules.circuits.circuitLibrary));
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());

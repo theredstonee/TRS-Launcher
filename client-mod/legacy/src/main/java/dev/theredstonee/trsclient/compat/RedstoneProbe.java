@@ -64,6 +64,12 @@ public final class RedstoneProbe implements RedstoneWorld {
 
 	/** Einmal je Client-Tick: angeschauten Block, Auge und (bei offenem Behälter) dessen Inhalt weitergeben. */
 	public static void tick(RedstoneTools tools) {
+		// Schaltungs-Bibliothek (Vorlagen in der Welt) – eigener Fehlerschutz, stört die Redstone-Werkzeuge nie.
+		try {
+			CircuitProbe.tick();
+		} catch (RuntimeException | LinkageError e) {
+			// nächster Tick
+		}
 		World world = Mc.world();
 		EntityPlayer player = Mc.player();
 		if (world == null || player == null) {

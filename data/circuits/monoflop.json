@@ -1,0 +1,76 @@
+{
+ "format": 1,
+ "id": "monoflop",
+ "category": "pulse",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Monoflop (short pulse on switch-on)",
+   "desc": "The input reaches the comparator at once from behind and a little later from the side through a repeater. In subtract mode the output is only on in between – one short pulse, however long the lever stays on. Set the length with the repeater delay."
+  },
+  "de": {
+   "name": "Monoflop (kurzer Impuls beim Einschalten)",
+   "desc": "Der Eingang erreicht den Komparator sofort von hinten und etwas später über einen Verstärker von der Seite. Im Subtrahier-Modus ist der Ausgang nur dazwischen an – ein kurzer Impuls, egal wie lange der Hebel an bleibt. Die Länge stellst du am Verstärker ein."
+  },
+  "es": {
+   "name": "Monoestable (pulso corto al encender)",
+   "desc": "La entrada llega al comparador enseguida por detrás y algo más tarde por el lateral a través de un repetidor. En modo resta, la salida solo está activa entre medias: un pulso corto, por mucho que la palanca siga activada. La duración se ajusta con el repetidor."
+  }
+ },
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "-": "redstone_wire",
+  "c": "comparator[facing=west,mode=subtract]",
+  "r": "repeater[facing=south,delay=2]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "A-cL",
+   ".-r.",
+   ".--."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "set": {
+      "A": 1
+     }
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 60,
+      "on": [
+       2,
+       10
+      ]
+     }
+    },
+    {
+     "expect": {
+      "Q": 0
+     }
+    },
+    {
+     "set": {
+      "A": 0
+     }
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 40,
+      "on": [
+       0,
+       0
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

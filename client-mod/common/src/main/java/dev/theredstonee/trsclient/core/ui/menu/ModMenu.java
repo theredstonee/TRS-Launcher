@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public final class ModMenu extends UiScreen {
 	private enum Page {
-		GRID, SETTINGS, PROFILES, PACKS, SERVERS
+		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS
 	}
 
 	private static final int HEADER_H = 30;
@@ -75,6 +75,8 @@ public final class ModMenu extends UiScreen {
 	private final PacksPage packsPage;
 	/** Server-Profile (automatischer Wechsel je Server). */
 	private final ServerProfilesPage serversPage;
+	/** Schaltungs-Bibliothek (Unterseite, geöffnet von der Modulseite). */
+	private final dev.theredstonee.trsclient.core.circuit.CircuitLibraryPage circuitsPage;
 	/** Modul, dessen Seite gerade offen ist (für die „NEU“-Markierungen). */
 	private Module newsOpenFor;
 
@@ -110,6 +112,17 @@ public final class ModMenu extends UiScreen {
 			@Override
 			public void run() {
 				ModMenu.this.host.save();
+			}
+		});
+		circuitsPage = new dev.theredstonee.trsclient.core.circuit.CircuitLibraryPage(new Runnable() {
+			@Override
+			public void run() {
+				ModMenu.this.host.playClick();
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				requestClose();
 			}
 		});
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
@@ -158,6 +171,14 @@ public final class ModMenu extends UiScreen {
 	public ModMenu showServerProfiles() {
 		page = Page.SERVERS;
 		serversPage.reset();
+		return this;
+	}
+
+	/** Öffnet das Menü direkt bei der Schaltungs-Bibliothek (optional gleich eine Schaltung). */
+	public ModMenu showCircuits(dev.theredstonee.trsclient.core.circuit.Circuit circuit) {
+		page = Page.CIRCUITS;
+		circuitsPage.reset();
+		if (circuit != null) circuitsPage.show(circuit);
 		return this;
 	}
 
@@ -213,6 +234,10 @@ public final class ModMenu extends UiScreen {
 			page = Page.SERVERS;
 			serversPage.reset();
 		}
+		if (dev.theredstonee.trsclient.core.circuit.CircuitLibraryPage.takeOpenRequest()) {
+			page = Page.CIRCUITS;
+			circuitsPage.reset();
+		}
 		if (newsOpenFor != null && (page != Page.SETTINGS || selected != newsOpenFor)) {
 			host.modules().clientState.news().closed();
 			newsOpenFor = null;
@@ -231,6 +256,9 @@ public final class ModMenu extends UiScreen {
 			case SERVERS:
 				profileTabs(c, cx, cy, cw, mouseX, mouseY);
 				serversPage.draw(c, hits, cx + 2, cy + 20, cw - 4, ch - 20, mouseX, mouseY);
+				break;
+			case CIRCUITS:
+				circuitsPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY);
 				break;
 			default:
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
@@ -1029,12 +1057,14 @@ public final class ModMenu extends UiScreen {
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		previewDragX = Double.NaN;
+		circuitsPage.mouseReleased();
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
 		if (!inside(mouseX, mouseY, contentRect[0], contentRect[1], contentRect[2], contentRect[3])) return false;
+		if (page == Page.CIRCUITS) return circuitsPage.mouseScrolled(mouseX, mouseY, amount);
 		int step = (int) Math.signum(amount) * (page == Page.SETTINGS ? 16 : TILE_H + TILE_GAP);
 		if (page == Page.SETTINGS) settingsScroll = Math.max(0, settingsScroll - step);
 		else if (page == Page.GRID) gridScroll = Math.max(0, gridScroll - step);
@@ -1046,6 +1076,10 @@ public final class ModMenu extends UiScreen {
 		if (panel.captureKey(rawKey, key, host)) return true;
 		if (panel.typeKey(key)) return true;
 		if (page == Page.SERVERS && serversPage.keyPressed(key)) return true;
+		if (page == Page.CIRCUITS) {
+			if (key == UiKey.ESCAPE && circuitsPage.back()) return true;
+			if (circuitsPage.keyPressed(key)) return true;
+		}
 		if (nameInput.focused() && editingProfile != -1) {
 			if (key == UiKey.ENTER) {
 				confirmProfile();
@@ -1087,6 +1121,7 @@ public final class ModMenu extends UiScreen {
 	public boolean charTyped(char c) {
 		if (panel.typeChar(c)) return true;
 		if (page == Page.SERVERS && serversPage.charTyped(c)) return true;
+		if (page == Page.CIRCUITS) return circuitsPage.charTyped(c);
 		if (nameInput.focused() && editingProfile != -1) return nameInput.type(c);
 		if (search.focused()) {
 			boolean typed = search.type(c);

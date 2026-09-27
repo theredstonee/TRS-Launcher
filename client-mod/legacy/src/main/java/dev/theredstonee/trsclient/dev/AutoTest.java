@@ -90,6 +90,11 @@ public final class AutoTest {
 			ComfortTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=circuits: Schaltungs-Bibliothek (Liste, Vorschau, Geisterblöcke, Platzieren)
+		if ("circuits".equals(System.getProperty("trsclient.autotest.only"))) {
+			CircuitTest.install();
+			return;
+		}
 		if ("connect".equals(System.getProperty("trsclient.autotest.only"))) {
 			ConnectTest.install();
 			return;

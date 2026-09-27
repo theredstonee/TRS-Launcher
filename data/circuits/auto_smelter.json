@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "id": "auto_smelter",
+ "category": "farms",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "Automatic furnace",
+   "desc": "Items from the top chest drop into the furnace from above, fuel comes in from the side, and the smelted results fall out below into a chest. No redstone needed – the classic basis for bigger furnace arrays."
+  },
+  "de": {
+   "name": "Automatischer Ofen",
+   "desc": "Items aus der oberen Truhe fallen von oben in den Ofen, Brennstoff kommt von der Seite, und das Ergebnis fällt unten in eine Truhe. Ganz ohne Redstone – die klassische Grundlage für größere Ofen-Anlagen."
+  },
+  "es": {
+   "name": "Horno automático",
+   "desc": "Los objetos del cofre de arriba caen al horno por encima, el combustible entra por el lateral y el resultado sale por abajo a un cofre. Sin redstone: la base clásica de baterías de hornos más grandes."
+  }
+ },
+ "palette": {
+  "C": "chest",
+  "d": "hopper[facing=down]",
+  "f": "hopper[facing=west]",
+  "F": "furnace",
+  "o": "hopper[facing=south]"
+ },
+ "layers": [
+  [
+   "o.",
+   "C."
+  ],
+  [
+   "Ff",
+   ".."
+  ],
+  [
+   "dC",
+   ".."
+  ],
+  [
+   "C.",
+   ".."
+  ]
+ ]
+}

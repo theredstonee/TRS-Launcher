@@ -1,0 +1,63 @@
+{
+ "format": 1,
+ "id": "xor_gate",
+ "category": "basics",
+ "difficulty": 3,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "XOR gate",
+   "desc": "Two comparators in subtract mode: each gets its own input from behind and the other input from the side. With exactly one input on, one comparator outputs; with both on, both subtract to 0. The classic for a light you switch from two places."
+  },
+  "de": {
+   "name": "XOR-Gatter",
+   "desc": "Zwei Komparatoren im Subtrahier-Modus: Jeder bekommt seinen Eingang von hinten und den anderen von der Seite. Ist genau ein Eingang an, gibt einer ein Signal aus; sind beide an, ziehen sich beide auf 0 ab. Der Klassiker für ein Licht, das du von zwei Stellen schaltest."
+  },
+  "es": {
+   "name": "Puerta XOR",
+   "desc": "Dos comparadores en modo resta: cada uno recibe su entrada por detrás y la otra por el lateral. Con exactamente una entrada activada, uno de ellos da señal; con las dos, ambos restan hasta 0. El clásico para una luz que se enciende desde dos sitios."
+  }
+ },
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "B": "lever[face=floor]@B",
+  "-": "redstone_wire",
+  "c": "comparator[facing=west,mode=subtract]",
+  "d": "comparator[facing=east,mode=subtract]",
+  "n": "repeater[facing=north,delay=1]",
+  "s": "repeater[facing=south,delay=1]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "----.",
+   "-..n.",
+   "Ac-dB",
+   ".sn.-",
+   ".sL.-",
+   ".-..-",
+   ".----"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A",
+     "B"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "00:0",
+     "01:1",
+     "10:1",
+     "11:0",
+     "10:1",
+     "00:0"
+    ]
+   }
+  }
+ ]
+}

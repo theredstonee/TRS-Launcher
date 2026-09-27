@@ -1,0 +1,96 @@
+{
+ "format": 1,
+ "id": "t_flipflop",
+ "category": "memory",
+ "difficulty": 3,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "T flip-flop (repeater locks)",
+   "desc": "Every button press toggles the lamp. Two repeaters work as a memory pair: while the button is held, the first takes the inverted output; when it is released, the second copies it. Works in every version from 1.8 – no pistons, no quasi-connectivity."
+  },
+  "de": {
+   "name": "T-Flipflop (Verstärker-Sperre)",
+   "desc": "Jeder Knopfdruck schaltet die Lampe um. Zwei Verstärker bilden ein Speicherpaar: Solange der Knopf gedrückt ist, übernimmt der erste den umgekehrten Ausgang; beim Loslassen kopiert ihn der zweite. Läuft in jeder Version ab 1.8 – ohne Kolben und ohne Quasi-Konnektivität."
+  },
+  "es": {
+   "name": "Biestable T (bloqueo de repetidores)",
+   "desc": "Cada pulsación del botón cambia la lámpara. Dos repetidores forman una pareja de memoria: mientras el botón está pulsado, el primero toma la salida invertida; al soltarlo, el segundo la copia. Funciona en todas las versiones desde la 1.8, sin pistones ni cuasi-conectividad."
+  }
+ },
+ "palette": {
+  "B": "stone_button[face=floor]@T",
+  "-": "redstone_wire",
+  "#": "solid",
+  "y": "solid",
+  "w": "redstone_wall_torch[facing=south]",
+  "u": "repeater[facing=north,delay=1]",
+  "m": "repeater[facing=west,delay=1]",
+  "s": "repeater[facing=west,delay=1]",
+  "X": "solid",
+  "L": "redstone_lamp@Q",
+  "k": "redstone_wall_torch[facing=south]"
+ },
+ "layers": [
+  [
+   "..---B.",
+   "..-.-..",
+   "..y.-..",
+   "..w.-..",
+   "..u.u..",
+   ".-m-sXL",
+   ".-...k.",
+   ".-----."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "mark": "Q"
+    },
+    {
+     "press": "T"
+    },
+    {
+     "run": 40
+    },
+    {
+     "changed": {
+      "Q": 1
+     }
+    },
+    {
+     "press": "T"
+    },
+    {
+     "run": 40
+    },
+    {
+     "changed": {
+      "Q": 1
+     }
+    },
+    {
+     "press": "T"
+    },
+    {
+     "run": 40
+    },
+    {
+     "changed": {
+      "Q": 1
+     }
+    },
+    {
+     "run": 60
+    },
+    {
+     "changed": {
+      "Q": 0
+     }
+    }
+   ]
+  }
+ ]
+}

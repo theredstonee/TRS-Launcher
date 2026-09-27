@@ -1,0 +1,62 @@
+{
+ "format": 1,
+ "id": "and_gate",
+ "category": "basics",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "AND gate",
+   "desc": "Each input switches off the torch on top of its block. Only when both torches are off does the line between them go dark, and the output torch on the middle block lights up. Needs both inputs – for example two buttons for a vault."
+  },
+  "de": {
+   "name": "UND-Gatter",
+   "desc": "Jeder Eingang schaltet die Fackel auf seinem Block aus. Erst wenn beide Fackeln aus sind, wird die Leitung dazwischen dunkel und die Ausgangsfackel am mittleren Block geht an. Braucht beide Eingänge – z. B. zwei Knöpfe für einen Tresor."
+  },
+  "es": {
+   "name": "Puerta AND",
+   "desc": "Cada entrada apaga la antorcha que hay sobre su bloque. Solo cuando ambas antorchas están apagadas se apaga la línea entre ellas y se enciende la antorcha de salida del bloque central. Necesita las dos entradas, por ejemplo dos botones para una cámara acorazada."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "A": "lever[face=wall,facing=south]@A",
+  "B": "lever[face=wall,facing=south]@B",
+  "T": "redstone_wall_torch[facing=south]",
+  "t": "redstone_torch",
+  "-": "redstone_wire",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "###",
+   "ATB",
+   ".L."
+  ],
+  [
+   "t-t",
+   "...",
+   "..."
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A",
+     "B"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "00:0",
+     "01:0",
+     "10:0",
+     "11:1",
+     "01:0"
+    ]
+   }
+  }
+ ]
+}
