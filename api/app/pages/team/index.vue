@@ -56,7 +56,7 @@ const roleName = (r: TeamRole) => r.name ?? t.value.adm.roleNames[r.id] ?? r.id
         <section v-for="r in roles" :key="r.id" class="card role-group p-5" :style="{ '--role': r.color }">
           <h3 class="flex items-center gap-2 text-sm font-semibold tracking-wide uppercase" :style="{ color: r.color }">
             <span class="size-2 rounded-full" :style="{ background: r.color, boxShadow: `0 0 10px ${r.color}` }" />{{ roleName(r) }}
-            <span class="ml-auto text-xs text-base-500">{{ r.members.length }}</span>
+            <span class="ml-auto text-xs text-base-400">{{ r.members.length }}</span>
           </h3>
           <ul class="mt-4 space-y-2.5">
             <li v-for="p in r.members" :key="p.uuid" class="flex items-center gap-3">

@@ -132,7 +132,7 @@ const stepIndex = (s: ApplicationStatus) => steps.indexOf(s)
 .steps li {
   border-top: 3px solid var(--color-base-800);
   padding-top: 0.35rem;
-  color: var(--color-base-500);
+  color: var(--color-base-400);
 }
 .steps li[data-done='true'] {
   border-color: var(--color-redstone-500);

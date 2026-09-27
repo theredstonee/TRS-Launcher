@@ -326,7 +326,7 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
           <div v-if="f.type === 'single' || f.type === 'multi'" class="mt-2 space-y-1.5">
             <p class="text-xs text-base-400">{{ t.adm.jobs.options }}</p>
             <div v-for="(o, oi) in f.options" :key="o.key" class="flex items-center gap-2">
-              <span class="w-8 font-mono text-[10px] text-base-500">{{ o.id }}</span>
+              <span class="w-8 font-mono text-[10px] text-base-400">{{ o.id }}</span>
               <input v-model="o.label[editLang]" class="field py-1" maxlength="120" :aria-label="t.adm.jobs.options" />
               <button type="button" class="btn-icon size-8" :aria-label="t.adm.jobs.remove" :disabled="f.options.length <= 2" @click="f.options.splice(oi, 1)"><SiteIcon name="close" class="size-3.5" /></button>
             </div>

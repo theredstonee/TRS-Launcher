@@ -79,7 +79,7 @@ async function sendReport() {
       </figure>
 
       <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-base-300">
-        <span class="inline-flex items-center gap-1.5"><SiteIcon name="clock" class="size-4 text-base-500" />{{ fill(m.share.shared, { date: date(share.createdAt) }) }}</span>
+        <span class="inline-flex items-center gap-1.5"><SiteIcon name="clock" class="size-4 text-base-400" />{{ fill(m.share.shared, { date: date(share.createdAt) }) }}</span>
         <span>{{ fill(m.share.expires, { date: date(share.expiresAt) }) }}</span>
         <span class="flex-1" />
         <a :href="share.imageUrl" target="_blank" rel="noopener noreferrer" class="btn btn-ghost text-sm">
@@ -108,7 +108,7 @@ async function sendReport() {
     </template>
 
     <section v-else class="mx-auto max-w-xl py-20 text-center">
-      <SiteIcon name="clock" class="mx-auto size-10 text-base-500" />
+      <SiteIcon name="clock" class="mx-auto size-10 text-base-400" />
       <h1 class="display mt-4 text-3xl text-base-50">{{ m.share.goneTitle }}</h1>
       <p class="mt-3 text-base-300">{{ m.share.goneText }}</p>
     </section>

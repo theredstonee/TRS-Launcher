@@ -117,6 +117,8 @@ Erwartet: `{"status":"ok",…}`
 | `TRUST_PROXY` | nein | `cloudflare` (Standard): Die Client-IP kommt aus `CF-Connecting-IP`. Das ist sicher, weil nur cloudflared die API erreicht. |
 | `LOG_REQUESTS` | nein | `true` schreibt ein Zugriffslog ohne IPs und Tokens. |
 | `RELAY_SECRET` | für Welt-Hosting | ≥ 32 Zeichen (`openssl rand -base64 48`), **derselbe Wert** wie in der `.env` des Pterodactyl-Servers „TRS Relay“ (`relay/` im Launcher-Repo). Signiert die Relay-Tokens (API.md §21.6). Schlüsseltausch: `NEU,ALT` – die API signiert mit dem ersten, das Relay akzeptiert beide. Leer = Welt-Hosting aus (`503 hosting_unavailable`). |
+| `MS_CLIENT_ID`, `MS_CLIENT_SECRET` | für die Website-Anmeldung | Azure-App „TRS Launcher“ (Client-ID) + ein Client-Secret der Plattform „Web“. Ohne beide ist die Anmeldung mit Microsoft aus (Hinweis auf /login). API.md §24.1. |
+| `MS_REDIRECT_URI` | nein | Standard `https://trs-launcher.theredstonee.de/auth/microsoft/callback` – muss genau so im Azure-Portal stehen. |
 | `RELAY_HOST` | für Welt-Hosting | Öffentlicher Name oder IP des Relays, z. B. `relay.theredstonee.de` (DNS-A-Record auf 135.125.185.232, **ohne** Cloudflare-Proxy). |
 | `RELAY_TCP_PORT` / `RELAY_UDP_PORT` | nein | Standard `25503` / `25504`. |
 | `HOSTING_STUN` | nein | STUN-Server `host:port`, kommagetrennt. Leer = nur das Relay (`RELAY_HOST:RELAY_UDP_PORT`). Fremde STUN-Server (z. B. Google) sehen die IP der Spieler – deshalb ab Werk keine. |

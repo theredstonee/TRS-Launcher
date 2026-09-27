@@ -1439,23 +1439,9 @@ Caching:
 
 ---
 
-## 15. Website sign-in (admins, confirmed in the launcher)
+## 15. Website sign-in (removed)
 
-Admins sign in to the website without a password: the website shows a short code, and the admin confirms it in the TRS Launcher, which is already signed in with their Minecraft account.
-
-| Request | Body | Response |
-|---|---|---|
-| `POST /v1/web-login/start` | – | `{ code: "7K3P-QX9M", pollSecret, expiresAt }`. The code is valid for **5 minutes**. Limit: 10 per 10 minutes per IP. |
-| `POST /v1/web-login/approve` | `{ code: string≤20 }` | **204**. Bearer auth (launcher token). `403 not_admin` for non-admins, `400 invalid_code` for a malformed code, `404 invalid_code` for an unknown or used code, `410 expired`. Limit: 10 per 10 minutes per account. |
-| `POST /v1/web-login/poll` | `{ pollSecret }` | `{ status: "pending" }`, `{ status: "expired" }` or `{ status: "approved", name, csrf, expiresAt }`. On approval the session is set as cookie `trs_admin` (httpOnly, Secure, SameSite=Strict, 8 hours). Each code yields one session only. Limit: 90 per minute per IP. |
-| `GET /v1/web-login/me` | – | `{ name, uuid, csrf }` for a valid cookie session, else `401 unauthorized`. |
-| `POST /v1/web-login/logout` | – | **204**. Needs the `X-CSRF-Token` header. |
-
-- Codes use Crockford Base32 (no I, L, O, U). Input is normalised: case and dashes don't matter, `O` reads as `0`, `I`/`L` as `1`.
-- Only hashes of the code, the poll secret and the session token are stored.
-- With the cookie, every `/v1/admin/*` endpoint works as for an admin bearer token. **Mutating requests need `X-CSRF-Token`** (`403 csrf_failed` otherwise). A request with an `Authorization` or `X-Admin-Key` header ignores the cookie.
-- The cookie also lets the admin see `pending` and `rejected` cape textures (`GET /v1/capes/{id}.png`), read-only.
-- Losing admin rights or getting banned ends the session on the next request.
+**Removed.** The website signs in with Microsoft only (§24.1). Every `/v1/web-login/*` route answers **`410 web_login_removed`** – launchers that still call `POST /v1/web-login/approve` (`trs_web_login_approve`) should hide that feature and point to the website sign-in. The session cookie is now `trs_session` (was `trs_admin`).
 
 ## 16. Website data
 
@@ -1861,6 +1847,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `moderation` | `{action: "warn"\|"mute"\|"unmute", reason: string\|null, until: ISO\|null}` – a moderation decision about you. `mute` with `until: null` = until review / lifted. |
 | `settings` | `{settings}` – your settings were changed (by another device) |
 | `sanction_added`, `sanction_updated`, `appeal_decided` | moderation v2 – see §22.9 |
+| `application_updated` | `{application: MyApplicationView}` – your team application changed (§24.3) |
 | `hosting_*` | world hosting: `hosting_invite`, `hosting_invite_revoked`, `hosting_join_request`, `hosting_join_accepted`, `hosting_join_declined`, `hosting_kicked`, `hosting_room`, `hosting_room_updated`, `hosting_room_closed`, `hosting_signal` – see §21.5 |
 
 **Rules**
@@ -2216,6 +2203,8 @@ This section extends §8 and §20. Everything in it is implemented and covered b
 
 ### 22.1 Roles and permissions
 
+> **Superseded by §24.2:** fine-grained permissions, default + custom roles and the rank rule replace the admin/moderator grid below. The table stays as the history of the old model; `role` in `GET /v1/me` is still sent (admin from rank 900, else moderator).
+
 | Role | Who |
 |---|---|
 | `admin` | Every UUID in `ADMIN_UUIDS` (fixed, cannot be removed or sanctioned) and accounts an admin gave the role. |
@@ -2224,7 +2213,7 @@ This section extends §8 and §20. Everything in it is implemented and covered b
 - `GET /v1/me` and the login response now carry `role: "admin" | "moderator" | null`. `admin` stays `true` only for admins.
 - Team access to `/v1/admin/**`: website session cookie (+ `X-CSRF-Token` on mutations), bearer token of an admin **or moderator**, or `X-Admin-Key` (counts as admin). The website sign-in (§15) works for both roles.
 - The role is checked on **every** request. Removing a role ends the website session at once.
-- `GET /v1/web-login/me` → `{ name, uuid, csrf, role, permissions: [string], limits: { kinds, maxMinutes, maxWarnMinutes, permanent } }` (only for the website UI; the server always checks itself).
+- ~~`GET /v1/web-login/me`~~ → now `GET /v1/web/me` with `team: MyTeamView` (§24.1).
 
 **Permission matrix** (server-side, `403 admin_only` / `403 forbidden` otherwise):
 
@@ -2468,3 +2457,150 @@ The page shows the image, the upload date, the expiry date, a link to the full i
 - A background job deletes expired links and their files every 10 minutes. `DELETE /v1/me` deletes all links of the account and their files immediately (§3.3).
 - Copies kept as report evidence follow the report retention (§20.3: 90 days after the report was resolved).
 - **Migration 12** creates the two tables and rebuilds `chat_reports` (new kind `share`, column `share_id`) together with `chat_report_notes` and `chat_evidence_files` – all rows are kept.
+
+---
+
+## 24. Website sign-in with Microsoft, team roles and permissions, team applications
+
+This section replaces the launcher-code sign-in (§15) and the admin/moderator grid of §22.1. Tests: `tests/microsoft.test.ts` (OAuth flow against test doubles), `tests/team.test.ts` (permission matrix, rank rule, migration 13), `tests/applications.test.ts`, smoke test section "Microsoft sign-in, roles, applications".
+
+### 24.1 Website sign-in with Microsoft
+
+The website signs in **only** with the Microsoft account that owns Minecraft: Java Edition. Server-side Authorization Code flow with PKCE (S256) as a **confidential client** (client secret only on the server) against tenant `consumers`, scope `XboxLive.signin`.
+
+| Request | Response |
+|---|---|
+| `GET /auth/microsoft/login?return=/path` | **302** to `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?…` (client_id, redirect_uri, `response_mode=query`, `scope=XboxLive.signin`, `state`, `code_challenge`, `code_challenge_method=S256`, `prompt=select_account`). Sets cookie `trs_oauth` (random handle, httpOnly, Secure, **SameSite=Lax**, `Path=/auth/microsoft`, 10 minutes). `return` must be a relative path of this site (else `/applications`). Limit 20 / 10 min per IP. Disabled → **302** `/login?error=ms_disabled`. |
+| `GET /auth/microsoft/callback?code&state` | Checks `state` against the cookie handle (one use, constant-time, 10 min), then Microsoft token → Xbox Live `user.auth.xboxlive.com` (`RpsTicket: d=<token>`) → XSTS `xsts.auth.xboxlive.com` (`RelyingParty: rp://api.minecraftservices.com/`) → `POST api.minecraftservices.com/authentication/login_with_xbox` → `GET /minecraft/profile`. Success: creates/updates the TRS account (UUID, name), new website session (rotation: a session presented in the cookie is deleted), cookie `trs_session` (httpOnly, Secure, **SameSite=Strict**, `Path=/`, 8 hours), deletes the old `trs_admin` cookie, answers **200** with a tiny HTML page that forwards by meta refresh to `return` (a same-site navigation, so the Strict cookie is sent). Errors → **302** `/login?error=<code>`. Limit 30 / 10 min per IP, plus the per-account login limit (§2). |
+| `GET /v1/web/login` | `{ microsoft: boolean }` – is the sign-in configured? |
+| `GET /v1/web/me` | `{ uuid, name, skin, csrf, expiresAt, team: MyTeamView \| null }` for the cookie session, else `401`. `skin` = texture URL (textures.minecraft.net) or `null`. |
+| `POST /v1/web/logout` | **204**, session deleted on the server. Needs `X-CSRF-Token`. |
+
+**Error codes** (`/login?error=`): `ms_disabled`, `ms_cancelled` (user cancelled at Microsoft), `ms_state` (state/cookie missing, expired, replayed or tampered), `ms_failed` (Microsoft/Xbox/Minecraft not reachable or rejected, wrong secret – details only in the server log), `no_xbox` (XSTS 2148916233 or no Xbox profile), `child_account` (XSTS 2148916238), `xbox_region` (2148916235), `xbox_verification` (2148916236/7), `xbox_banned` (2148916227), `no_minecraft` (profile 404 = no Java Edition or no profile name), `banned` (active TRS `account_ban`), `rate_limited`.
+
+**Stored:** only the session (SHA-256 of the token, CSRF token, expiry; at most 5 per account) and the TRS account. Microsoft, Xbox and Minecraft tokens live in memory for the few seconds of the chain and are discarded; `state` and the PKCE verifier are kept in memory only (max. 5000 pending, 10 minutes). Sign-ins of team members are audited (`web.login`).
+
+**Session rules:** every mutating `/v1` request with the cookie needs `X-CSRF-Token` (`403 csrf_failed`); a request with `Authorization` or `X-Admin-Key` ignores the cookie; a ban ends all website sessions (`403 banned`). Team rights are **not** part of the session – they are read on every request.
+
+**Configuration (.env):** `MS_CLIENT_ID` (GUID of the Azure app), `MS_CLIENT_SECRET`, `MS_REDIRECT_URI` (default `https://trs-launcher.theredstonee.de/auth/microsoft/callback`, path must be `/auth/microsoft/callback`). Without ID or secret the sign-in is off. For tests only: `MS_AUTHORITY_URL`, `XBOX_USER_AUTH_URL`, `XBOX_XSTS_URL`, `MINECRAFT_SERVICES_URL` + `ALLOW_INSECURE_MS_URLS=true` (test double: `scripts/ms-mock.mjs`).
+
+**Removed:** `POST /v1/web-login/start|poll|approve|logout`, `GET /v1/web-login/me` → every `/v1/web-login/*` answers **`410 web_login_removed`**. Table `web_logins` is dropped, old `trs_admin` sessions end with migration 13.
+
+### 24.2 Roles and permissions
+
+**Permissions** (server-side on every request; `403 missing_permission` with `permission`):
+
+| Permission | Allows |
+|---|---|
+| `dashboard.view` | Overview (`GET /v1/admin/dashboard`, parts per permission, see below) |
+| `stats.view` | Statistics: accounts, messages, 30-day series, server (`/v1/admin/stats`, dashboard `users`/`series`/`server`/`chat`) |
+| `audit.view` | Audit log |
+| `reports.view` | Report list and detail (metadata) |
+| `reports.content` | Reported chat texts, invites, world and waypoint cards, images (`/v1/admin/reports/{id}/images/*`). Without it the server sends `contentHidden: true`, `preview: null`, messages with `text/invite/world/waypoint: null, attachments: [], hidden: true`, `images: []`. |
+| `reports.handle` | Report status, notes, actions incl. `delete_message` and `delete_share` (§23.4), bulk |
+| `sanctions.warn` / `.mute` / `.social` / `.upload` / `.hosting` / `.ban` | Give the matching kind (`warn`, `chat_mute`, `social_ban`, `upload_ban`, `hosting_ban`, `account_ban`); `extend` of that kind |
+| `sanctions.permanent` | Permanent sanctions |
+| `sanctions.lift` | Lift (also old unmute/unban routes); `shorten` needs `lift` **or** the kind's permission |
+| `appeals.handle` | Appeals (list, decide) |
+| `players.view` | Player list/file, sanction lists, search for players; sanction history in applications |
+| `players.notes` | Write/delete player notes |
+| `uploads.review` | Capes/cosmetics review + bulk; see pending textures |
+| `uploads.delete` | Delete capes/cosmetics |
+| `items.grant` | Give/take capes and cosmetics |
+| `worlds.view` / `worlds.close` | Hosted worlds list / close |
+| `codes` | Codes (list, create, revoke) |
+| `wordfilter` | Word filter (list, add, remove) |
+| `roles.manage` | Roles and members (§24.2 API), old `/v1/admin/roles` |
+| `applications.view` / `.review` / `.manage` / `.decide` | See applications and positions / vote, notes, status new–review–interview / edit positions and forms / accept, reject, reopen, give the linked role |
+
+The dashboard returns `null` for every block the viewer may not see (`reports` needs `reports.view`, `appeals` `appeals.handle`, `sanctions` `players.view` or `appeals.handle`, `uploads` `uploads.review`, `hosting` `stats.view` or `worlds.view`, `users/series/server/chat` `stats.view`, `applications` `applications.view`, `recentAudit` = `[]` without `audit.view`). Search returns only allowed groups.
+
+**Default roles** (`builtin`, not deletable; permissions, colour, rank, name and visibility editable – except Owner):
+
+| id | Rank | Default permissions | Longest temporary sanction |
+|---|---|---|---|
+| `owner` | 1000 | all (fixed) – every UUID in `ADMIN_UUIDS`, cannot be assigned, removed or sanctioned | – |
+| `admin` | 900 | all | unlimited |
+| `senior_moderator` | 700 | moderator + `stats.view`, `sanctions.ban`, `applications.view`, `applications.review` | 30 days |
+| `moderator` | 500 | `dashboard.view`, `audit.view`, `reports.*`, `sanctions.warn/mute/social/upload/hosting/lift`, `appeals.handle`, `players.view`, `players.notes`, `uploads.review`, `worlds.view`, `worlds.close` | 7 days |
+| `supporter` | 300 | `dashboard.view`, `reports.view`, `players.view`, `sanctions.warn`, `worlds.view` | 1 day |
+| `content` | 200 | `dashboard.view`, `uploads.review`, `codes` | – |
+| `recruiter` | 150 | `dashboard.view`, `applications.view`, `applications.review` | – |
+
+**Custom roles:** name (2–32), colour `#rrggbb`, rank 1–999 (unique), permissions, `maxSanctionMinutes` (null = unlimited; warnings may always last 30 days), `public` (show on the team page). At most 50.
+
+**Several roles per member:** the highest-ranked role is the **main role** (rank, colour, team page); further roles only **add** permissions (union). The longest temporary sanction is the maximum of the roles that can sanction.
+
+**Rank rule:** nobody changes roles or members at or above their own rank, gives roles at or above it, or grants permissions they don't have themselves (`403 rank_too_low`, `403 missing_permission`, `403 duration_not_allowed` for a longer maximum than their own). Sanctions: team members can only be sanctioned by someone with a higher rank (`403 cannot_moderate_staff`; owners `409 cannot_moderate_admin`). Changing a sanction given by a **higher** rank → `403 rank_too_low` (same rank is allowed; own sanctions always). Sanctions store `created_rank` (`createdRank` in `AdminSanctionView`). Nobody changes their own roles (`400 cannot_change_self`); owners are fixed (`409 role_locked`).
+
+`MyTeamView = { owner, rank, roles: [{ id, name|null, color, builtin }], permissions: [string], limits: { kinds, maxMinutes, maxWarnMinutes, permanent } }` – in `GET /v1/me` (`team`, next to the old `admin` and `role`) and `GET /v1/web/me`. `role` stays for older clients: `admin` from rank 900, `moderator` for every other team member, else `null`. Names of default roles are `null` → clients translate the `id`.
+
+**API** (`roles.manage`; changes 60 / min):
+
+| Method and path | Body | Response |
+|---|---|---|
+| `GET /v1/admin/team` | – | `{ roles: [RoleView], members: [MemberView], permissionGroups: [{ id, permissions }], me: MyTeamView }` |
+| `POST /v1/admin/team/roles` | `{ name, color, rank, permissions?, maxSanctionMinutes?, public? }` | **201** `{ role }`. `409 rank_taken`, `409 name_taken`, `409 role_limit`, `400 invalid_permission/invalid_color/invalid_name/invalid_rank` |
+| `PATCH /v1/admin/team/roles/{id}` | any of the fields (`name: null` = default name of a default role) | `{ role }`. Owner: only name, colour, `public` (`409 role_locked`) |
+| `DELETE /v1/admin/team/roles/{id}` | – | **204**. Default roles `409 role_builtin`. Members lose the role, positions lose the link. |
+| `PUT /v1/admin/team/members/{uuid}` | `{ roles: [id] (≤10), note?: ≤200 }` | `{ member, members }` – the complete list; `[]` removes from the team. `404 user_not_found` (must have signed in once). |
+| `DELETE /v1/admin/team/members/{uuid}` | – | `{ members }` |
+
+`RoleView = { id, name, color, rank, permissions, maxSanctionMinutes, builtin, locked, public, members, editable }`, `MemberView = { uuid, name, source: "env"|"db", rank, roles: [RoleRef], primary: RoleRef|null, grantedAt, grantedBy, note, editable }`.
+
+The old `GET/PUT/DELETE /v1/admin/roles` (§22.1) still work with `roles.manage`: `admin`/`moderator` map to the default roles of the same id, other roles of the member stay. Audit: `role.create`, `role.update`, `role.delete`, `role.set`, `role.remove`, `role.grant.application`, `web.login`.
+
+**Public:** `GET /v1/site/team` → `{ team: { roles: [{ id, name, color, builtin, members: [{ uuid, name, skin }] }] }, jobs: [JobView] }` (60 s cache). Only roles with `public`; each member only under their highest public role; banned accounts hidden.
+
+### 24.3 Team applications
+
+**Positions** (`JobView = { id, status: "draft"|"open"|"closed", texts: { en?, de?, es?: { title, summary, description, tasks: [], requirements: [] } }, form: [FormField], cooldownDays, role: RoleRef|null, createdAt, updatedAt }`), texts are plain text (no HTML/Markdown).
+
+`FormField = { id: [a-z][a-z0-9_]{0,31}, type: "short"|"long"|"single"|"multi"|"yesno"|"number", required, label: {en?,de?,es?}, help?, min?, max?, options?: [{ id, label }] }` – `min/max` = characters (short ≤ 200, long ≤ 4000; defaults 100/1000), value (number) or selections (multi). Choices need 2–20 options. At most 30 fields. Reserved ids: `discord`, `agegroup`, `age_group`, `website`, `name`, `uuid`. **Always asked:** Discord name and age group (`under14`, `14-15`, `16-17`, `18+` – never a birth date). Minecraft name and UUID come from the sign-in.
+
+| Method and path | Auth | Body / response |
+|---|---|---|
+| `GET /v1/site/jobs/{id}` | public | `{ job }` (open or closed; drafts `404 job_not_found`) |
+| `GET /v1/team/jobs/{id}/eligibility` | web session or bearer | `{ eligibility: { canApply, reason: null|"closed"|"open_application"|"cooldown"|"member"|"too_many_open", retryAt, applicationId } }` |
+| `POST /v1/team/jobs/{id}/applications` | web session (+CSRF) or bearer | `{ discord, ageGroup, answers: { fieldId: value }, lang: "en"|"de"|"es", website?: honeypot }` → **201** `{ application: MyApplicationView }`. `400 invalid_answers` with `fields: [{ id, error: required|too_short|too_long|invalid|too_few|too_many|too_small|too_large }]`, `409 application_open`, `409 cooldown` (+`retryAt`), `409 job_closed`, `409 already_member`, `409 too_many_open`, `403 sanctioned` (social ban). 5 / h per account, 20 / h per IP. |
+| `GET /v1/me/applications` | web session or bearer | `{ applications: [MyApplicationView] }` |
+| `POST /v1/me/applications/{id}/withdraw` | web session (+CSRF) or bearer | `{ application }`, `409 application_closed` |
+
+`MyApplicationView = { id, job: { id, title: {en?,de?,es?}, open }, status: "new"|"review"|"interview"|"accepted"|"rejected"|"withdrawn", response: string|null, createdAt, updatedAt, decidedAt, canWithdraw }` – never votes, notes or who decided.
+
+**Rules:** one open application (new/review/interview) per position and account; at most 3 open overall; after a rejection the position's waiting time (default 30 days, 0–365); after withdrawing 24 hours; answers are cleaned (control characters, short text without line breaks) and unknown fields are rejected; the form is stored with the application (later edits of the position don't change it).
+
+**Team:**
+
+| Method and path | Permission | Body / response |
+|---|---|---|
+| `GET /v1/admin/jobs` | `applications.view` or `.manage` | `{ jobs: [JobView + applications: { open, total }], roles: [{ id, name, color, builtin, rank }] }` |
+| `POST /v1/admin/jobs` | `applications.manage` | `{ id?, status, roleId, sort, cooldownDays, texts, form }` → **201** `{ job }` (id from the title if empty; `409 job_exists`, `409 job_limit` at 50, `400 invalid_role` for owner) |
+| `PUT /v1/admin/jobs/{id}` | `applications.manage` | same without `id` → `{ job }` |
+| `DELETE /v1/admin/jobs/{id}` | `applications.manage` | **204**; `409 job_has_applications` → close it instead |
+| `GET /v1/admin/applications?status=open|new|review|interview|accepted|rejected|withdrawn|all&job&q=<name prefix>&cursor&limit` | `applications.view` | `{ applications: [{ id, job, applicant: {uuid,name}, ageGroup, status, votes: {up,down,mine}, notes, createdAt, updatedAt }], nextCursor, counts }` |
+| `GET /v1/admin/applications/{id}` | `applications.view` | `{ application }` + `discord, lang, form, answers, response, decidedAt, decidedBy, roleGranted, jobRole, voteList, noteList, history, player: { rank, sanctions, active }|null (players.view), can: { review, decide, grantRole, vote } }` |
+| `POST /v1/admin/applications/{id}/status` | `.review` (new/review/interview) or `.decide` (accepted/rejected, reopening) | `{ status, response?: ≤2000, grantRole?: true }` → `{ application }`. `grantRole` needs `accepted`, a linked role and the rank rule (`403 rank_too_low`, `409 job_without_role`). Withdrawn: `409 application_closed`. |
+| `PUT /v1/admin/applications/{id}/vote` | `applications.review` | `{ vote: 1|-1, comment?: ≤500 }` – one vote per member, changeable while open |
+| `DELETE /v1/admin/applications/{id}/vote` | `applications.review` | removes the own vote |
+| `POST /v1/admin/applications/{id}/notes` | `applications.review` | `{ text: 1–2000 }` → **201** |
+
+Team members never see or vote on their **own** application (`403 own_application`; the list hides it). Status/vote/note changes 60 / min per team member. History (`history`) records submitted, votes, status, answer and role; audit: `job.create|update|delete`, `application.<status>`, `application.response`.
+
+**Event** (`/v1/events/me`, §19): `application_updated` `{ application: MyApplicationView }` – after submitting, every status or answer change and withdrawing (also to other devices).
+
+**Retention:** rejected/withdrawn → deleted **6 months after the decision**; accepted → kept while the account has a team role, deleted **6 months after leaving** (`retain_until`, set by the 6-hourly job); account deletion deletes all applications with votes, notes and history (CASCADE).
+
+### 24.4 Data and migration 13
+
+Tables `team_roles`, `team_members` (uuid + role_id), `team_jobs`, `team_applications` (unique open application per job and account), `team_application_votes`, `team_application_notes`, `team_application_history`; column `sanctions.created_rank`. **Migration 13** creates the default roles (existing adjustments stay), copies every `staff_roles` row to `team_members` (`admin` → `admin`, `moderator` → `moderator`, with time, granter and note) and drops `staff_roles`, backfills `created_rank` (admin 900, moderator 500, system 0), drops `web_logins` and deletes all website sessions. Idempotent (`migrateTeamV3`).
+
+### 24.5 What clients have to change
+
+**TRS Launcher:**
+- Remove the website sign-in (`trs_web_login_approve`, `TrsWebLoginDialog`, the entries in /admin, settings and Ctrl+K). Old launchers get `410 web_login_removed` – show "Sign in on the website with Microsoft".
+- Team area: show pages and buttons by `me.team.permissions` (and `limits`) instead of `role === 'admin'`; hide the area when `me.team` is `null`. Sanction change buttons: rank rule via `createdRank` ≤ own `team.rank` (or own sanction). New error codes `missing_permission` (+`permission`), `rank_too_low`. Report detail may come with `contentHidden: true`.
+- Optional: roles/members via `/v1/admin/team*` (the old `/v1/admin/roles` keeps working).
+- Applications: handle `application_updated` (toast "Your application for X: <status>" + answer) and optionally a "My applications" view (`GET /v1/me/applications`, withdraw) – bearer tokens work for all player routes of §24.3.
+
+**TRS Client:** only `application_updated` (optional toast); nothing else changes.

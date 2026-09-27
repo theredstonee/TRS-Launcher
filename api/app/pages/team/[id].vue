@@ -211,8 +211,8 @@ async function submit() {
             <fieldset v-if="job.form.length" class="space-y-4">
               <legend class="text-xs font-semibold tracking-wide text-base-400 uppercase">{{ t.job.questions }}</legend>
               <div v-for="f in job.form" :key="f.id">
-                <p v-if="f.type === 'single' || f.type === 'multi' || f.type === 'yesno'" class="label">{{ label(f) }} <span v-if="f.required" class="text-redstone-300">*</span><span v-else class="text-base-500"> ({{ t.job.optional }})</span></p>
-                <label v-else class="label" :for="`f-${f.id}`">{{ label(f) }} <span v-if="f.required" class="text-redstone-300">*</span><span v-else class="text-base-500"> ({{ t.job.optional }})</span></label>
+                <p v-if="f.type === 'single' || f.type === 'multi' || f.type === 'yesno'" class="label">{{ label(f) }} <span v-if="f.required" class="text-redstone-300">*</span><span v-else class="text-base-400"> ({{ t.job.optional }})</span></p>
+                <label v-else class="label" :for="`f-${f.id}`">{{ label(f) }} <span v-if="f.required" class="text-redstone-300">*</span><span v-else class="text-base-400"> ({{ t.job.optional }})</span></label>
 
                 <input v-if="f.type === 'short'" :id="`f-${f.id}`" v-model="form.answers[f.id] as string" class="field" :maxlength="(maxOf(f) ?? 200) + 20" :aria-invalid="!!errors[f.id]" />
                 <textarea v-else-if="f.type === 'long'" :id="`f-${f.id}`" v-model="form.answers[f.id] as string" class="field min-h-28" :maxlength="(maxOf(f) ?? 4000) + 50" :aria-invalid="!!errors[f.id]" />
@@ -279,7 +279,7 @@ async function submit() {
   width: 0.85rem;
   height: 0.85rem;
   flex-shrink: 0;
-  border: 1.5px solid var(--color-base-500);
+  border: 1.5px solid var(--color-base-400);
   border-radius: 0.2rem;
 }
 .choice-list[data-on='true']::before {

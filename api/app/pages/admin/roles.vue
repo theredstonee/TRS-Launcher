@@ -349,7 +349,7 @@ const durationText = (r: RoleView) => (r.maxSanctionMinutes === null ? t.value.a
             <input type="checkbox" class="adm-check mt-0" :checked="draft.locked || draft.permissions.has(p)" :disabled="permDisabled(p)" @change="togglePerm(p)" />
             <span class="min-w-0 flex-1">
               <span class="block text-sm text-base-100">{{ t.adm.perms[p] }}</span>
-              <span class="block font-mono text-[10px] text-base-500">{{ p }}</span>
+              <span class="block font-mono text-[10px] text-base-400">{{ p }}</span>
             </span>
           </label>
         </fieldset>
