@@ -1,0 +1,82 @@
+---- Minecraft Crash Report ----
+// Why did you do that?
+
+Time: 2026-09-26 21:58:44
+Description: Unexpected error
+
+java.lang.RuntimeException: Mixin transformation of net.minecraft.class_1132 failed
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:427)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:323)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:218)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:119)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at net.minecraft.class_310.method_29607(class_310.java:2224)
+	at net.minecraft.class_525.handler$bdk000$essential$onCreateLevel(class_525.java:1450)
+	at net.minecraft.class_525.method_45683(class_525.java:397)
+	at net.minecraft.class_4185.method_25306(class_4185.java:94)
+	at net.minecraft.class_310.method_1523(class_310.java:1349)
+	at net.minecraft.class_310.method_1514(class_310.java:931)
+	at net.minecraft.client.main.Main.main(Main.java:265)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:514)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: An unexpected critical error was encountered
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:392)
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:250)
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:202)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:422)
+	... 14 more
+Caused by: java.lang.ClassCastException: class java.util.ArrayList cannot be cast to class org.objectweb.asm.tree.AnnotationNode (java.util.ArrayList is in module java.base of loader 'bootstrap'; org.objectweb.asm.tree.AnnotationNode is in unnamed module of loader 'app')
+	at com.llamalad7.mixinextras.wrapper.factory.FactoryRedirectWrapperMixinTransformer.handleMixin(FactoryRedirectWrapperMixinTransformer.java:31)
+	at com.llamalad7.mixinextras.transformer.MixinTransformerExtension.preApply(MixinTransformerExtension.java:52)
+	at org.spongepowered.asm.mixin.transformer.ext.Extensions.preApply(Extensions.java:138)
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:314)
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:422)
+	at org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:403)
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:363)
+	... 17 more
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Stacktrace:
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:427)
+
+-- System Details --
+Details:
+	Minecraft Version: 1.21.11
+	Minecraft Version ID: 1.21.11
+	Operating System: Windows 11 (amd64) version 10.0
+	Java Version: 21.0.7, Microsoft
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode), Microsoft
+	Memory: 812345678 bytes (774 MiB) / 2147483648 bytes (2048 MiB) up to 4294967296 bytes (4096 MiB)
+	CPUs: 16
+	Processor Vendor: AuthenticAMD
+	Graphics card #0 name: NVIDIA GeForce RTX 3070
+	JVM Flags: 4 total; -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xss1M -Xmx4096M -Xms4096M
+	Fabric Mods:
+		essential: Essential 1.3.10.4
+			mixinextras: MixinExtras 0.5.0
+		essential-container: Essential Container 1.0.0
+		fabric-api: Fabric API 0.139.4+1.21.11
+			fabric-api-base: Fabric API Base 1.0.4+ec94c6f53e
+			fabric-networking-api-v1: Fabric Networking API (v1) 5.1.2+a3a7b4ce3e
+		fabricloader: Fabric Loader 0.19.5
+		java: OpenJDK 64-Bit Server VM 21
+		minecraft: Minecraft 1.21.11
+		modmenu: Mod Menu 17.0.0
+		sodium: Sodium 0.8.14+mc1.21.11
+		trsclient: TRS Client 0.9.0
+			badoptimizations: BadOptimizations 2.4.1
+			ferritecore: FerriteCore 8.2.0
+			immediatelyfast: ImmediatelyFast 1.14.3+1.21.11
+			lithium: Lithium 0.21.4+mc1.21.11
+	Loaded Shaderpack: (off)
+	Launched Version: fabric-loader-0.19.5-1.21.11
+	Launcher name: TRS Launcher
+	Backend library: LWJGL version 3.3.3-snapshot
+	Is Modded: Definitely; Client brand changed to 'fabric'
+	Type: Client (map_client.txt)

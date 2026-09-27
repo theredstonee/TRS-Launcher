@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import type { Diagnosis } from '~/types'
+import { findingText, findingTitle } from '~/utils/crash'
 
-const props = defineProps<{ instanceId: string; exitCode: number | null; diagnosis: Diagnosis | null }>()
+const props = defineProps<{ instanceId: string; exitCode: number | null; diagnosis: Diagnosis | null; crashId?: string | null }>()
+
+// Absturz-Helfer: Sobald die Analyse da ist, zeigt das Panel ihre Hauptursache
+// und öffnet auf Wunsch den Dialog mit allen Knöpfen.
+const helper = useCrashHelperStore()
+const analysis = computed(() => {
+  const a = helper.latest[props.instanceId]
+  return a && props.crashId && a.id === props.crashId ? a : null
+})
 
 const tasks = useTasksStore()
 const repairTask = computed(() => tasks.get(repairTaskKey(props.instanceId)))
@@ -56,7 +65,16 @@ function repair() {
 </script>
 
 <template>
-  <section class="card border-warn/40 px-4 py-3" role="alert">
+  <section v-if="analysis" class="card border-warn/40 px-4 py-3" role="alert">
+    <p class="text-sm font-medium text-warn">{{ t('crash.crashed') }} · {{ findingTitle(analysis.findings[0]!) }}</p>
+    <p class="mt-0.5 line-clamp-2 text-sm text-base-200">{{ findingText(analysis.findings[0]!) }}</p>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <button class="btn btn-primary px-3 py-1.5 text-xs" @click="helper.show(analysis)">{{ t('crashHelper.open') }}</button>
+      <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="sharing = true">{{ t('crash.shareLog') }}</button>
+    </div>
+    <LogShareDialog v-if="sharing" :instance-id="instanceId" source="live" :label="t('logViewer.latest')" @close="sharing = false" />
+  </section>
+  <section v-else class="card border-warn/40 px-4 py-3" role="alert">
     <p class="text-sm font-medium text-warn">
       {{ diagnosis ? t('crash.crashed') : t('crash.exitedUnexpectedly', { code: exitCode ?? '?' }) }}
     </p>

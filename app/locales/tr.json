@@ -760,6 +760,9 @@
       "invalidRole": "Bilinmeyen rol.",
       "invalidRoom": "Geçersiz dünya.",
       "emptySearch": "Lütfen bir arama terimi gir."
+    },
+    "crash": {
+      "notFound": "Bu çökme artık yok."
     }
   },
   "browse": {
@@ -1533,7 +1536,10 @@
       "hooksCustom": "Özel başlatma kancaları ayarlandı",
       "movedToGroup": "“{group}” grubuna taşındı",
       "removedFromGroup": "Gruptan çıkarıldı",
-      "renamed": "Yeniden adlandırıldı"
+      "renamed": "Yeniden adlandırıldı",
+      "memoryChanged": "Bellek değiştirildi",
+      "javaChanged": "Java değiştirildi",
+      "settingsChanged": "Ayarlar değiştirildi"
     },
     "details": {
       "played": "Oynandı: {time}",
@@ -1542,7 +1548,10 @@
       "asDependencyVersion": "{version} · bağımlılık olarak",
       "asDependency": "Bağımlılık olarak",
       "renamed": "“{from}” → “{to}”",
-      "previousGroup": "önceki: {group}"
+      "previousGroup": "önceki: {group}",
+      "changed": "{from} → {to}",
+      "javaAuto": "otomatik",
+      "javaCustom": "özel yol"
     }
   },
   "logConsole": {
@@ -1567,7 +1576,13 @@
       "missing_dependency": "Eksik bağımlılık",
       "mod_conflict": "Mod çakışması",
       "graphics_driver": "Ekran kartı sürücüsü",
-      "incompatible_mod": "Uyumsuz mod sürümü"
+      "incompatible_mod": "Uyumsuz mod sürümü",
+      "known_issue": "Bilinen sorun",
+      "duplicate_mod": "Yinelenen mod",
+      "wrong_game_version": "Yanlış Minecraft sürümü",
+      "wrong_loader_version": "Yanlış yükleyici sürümü",
+      "mixin_conflict": "Mod çakışması",
+      "unknown": "Bilinmeyen hata"
     },
     "diagnosis": {
       "corrupt_files": "Bir oyun dosyası bozuk (ör. yarıda kalan bir indirme sonrası). “Dosyaları kontrol et” onu yeniden indirir.",
@@ -1588,6 +1603,238 @@
     "installMissing": "{name} yükle",
     "installingMissing": "Eksik modlar yükleniyor …",
     "installMissingDone": "Yüklendi: {list}"
+  },
+  "crashHelper": {
+    "title": "Oyun çöktü",
+    "open": "Çökme yardımcısını aç",
+    "openDetails": "Ayrıntıları göster",
+    "analyze": "Analiz et",
+    "whenStarting": "{at} · başlarken",
+    "whenPlaying": "{at} · {time} oynadıktan sonra",
+    "involved": "İlgili modlar",
+    "bundledIn": "{name} içinde",
+    "modDisabled": "devre dışı",
+    "working": "Çalışıyor …",
+    "openJavaSettings": "Java ayarları",
+    "confirmTitle": "Bu değişiklik yapılsın mı?",
+    "confirmHistory": "Kurulumun geçmişine kaydedilir.",
+    "confirmDo": "Evet, yap",
+    "moreHints": "Diğer olası nedenler",
+    "details": "Günlükten ayrıntılar",
+    "cause": "Neden",
+    "firstFrame": "Bir moddan ilk satır",
+    "excerpt": "Önemli satırlar",
+    "masked": "Kullanıcı adını içeren yollar ve oyuncu adın gizlenir.",
+    "openContent": "İçerik sekmesini aç",
+    "privacy": "Yalnızca bilgisayarında analiz edildi. “Günlüğü paylaş”a basmadıkça hiçbir şey gönderilmez.",
+    "relaunch": "Yeniden başlat",
+    "undo": "Geri al",
+    "shadersHint": "Gölgelendiriciler ({name}) sürücüyü ek olarak yorar – onlarsız bir başlatma dene.",
+    "aMod": "bir mod",
+    "someMods": "birkaç mod",
+    "actions": {
+      "disable": "{name} devre dışı bırak",
+      "install": "{name} kur",
+      "removeDuplicates": "Kopyaları kaldır",
+      "raiseMemory": "RAM’i {to} yap",
+      "lowerMemory": "RAM’i {to} olarak ayarla",
+      "useJava": "Java {major} kullan",
+      "autoJava": "Java’yı otomatik seç",
+      "updateTrsClient": "TRS Client’ı güncelle"
+    },
+    "confirm": {
+      "disable": "{name} devre dışı bırakılır (dosya .disabled uzantısı alır). Bunu istediğin zaman burada veya İçerik sekmesinde geri alabilirsin.",
+      "install": "{name}, Modrinth’ten bu kuruluma yüklenir.",
+      "removeDuplicates": "Eski kopyalar ({files}) devre dışı bırakılır, {keep} etkin kalır.",
+      "memory": "Bu kurulumun belleği {from} değerinden {to} değerine değişir.",
+      "java": "Java {major} gerekirse indirilir ve bu kurulum için ayarlanır.",
+      "autoJava": "Bu kurulumun özel Java yolu kaldırılır – başlatıcı doğru Java sürümünü kendisi seçer.",
+      "updateTrsClient": "Başlatıcı güncelleme kanalından en yeni TRS Client’ı alır ve bu kuruluma koyar.",
+      "fixConflict": "Başlatıcı {name} için uyumlu bir sürüm arar ve değiştirir.",
+      "repair": "Başlatıcı tüm oyun dosyalarını kontrol eder ve bozuk olanları yeniden indirir."
+    },
+    "done": {
+      "disabled": "Devre dışı bırakıldı: {name}",
+      "enabledAgain": "Yeniden etkinleştirildi: {name}",
+      "memory": "Bellek {to} olarak ayarlandı",
+      "java": "Java {major} artık bu kurulum için ayarlı",
+      "autoJava": "Java artık otomatik seçiliyor",
+      "trsClient": "TRS Client {version} kuruldu – yeniden başlat.",
+      "trsClientNone": "Henüz daha yeni bir TRS Client yok. Şimdilik Essential’ı devre dışı bırak."
+    },
+    "progress": {
+      "java": "Java {major} ayarlanıyor …"
+    },
+    "findings": {
+      "known_issue": {
+        "default": {
+          "title": "Bilinen sorun",
+          "text": "Bu mod birleşiminin çöktüğü biliniyor."
+        },
+        "trsclient_essential": {
+          "title": "TRS Client {version}, Essential ile çakışıyor",
+          "text": "TRS Client {version} ve Essential (MixinExtras 0.5 ile) oyunun aynı kısmını – tek oyunculu sunucuyu – değiştirir ve bir dünya açılırken oyun çöker. TRS Client {fixed} bunu düzeltir: güncelle ya da şimdilik Essential’ı devre dışı bırak."
+        },
+        "sodium_optifine": {
+          "title": "{name} ve OptiFine birlikte çalışmaz",
+          "text": "OptiFine (ve OptiFabric), {name} ile birlikte çalışamaz. {name} kalsın – daha hızlıdır ve Iris ile yine gölgelendirici kullanırsın – OptiFine’ı devre dışı bırak."
+        },
+        "iris_without_sodium": {
+          "title": "Iris için Sodium gerekir",
+          "text": "Iris yalnızca Sodium ile çalışır ve bu kurulumda Sodium yok. Başlatıcı doğru sürümü kurabilir."
+        },
+        "two_minimaps": {
+          "title": "Aynı anda iki mini harita",
+          "text": "{names} birlikte kurulu. Mini haritalar çoğu zaman birbirini engeller – birini tut, diğerini devre dışı bırak."
+        }
+      },
+      "duplicate_mod": {
+        "default": {
+          "title": "{name} iki kez kurulu",
+          "text": "Mod klasöründe {name} için birden fazla kopya var ({files}). Oyun yalnızca birini yükleyebilir. Başlatıcı en yenisini tutar, diğerlerini devre dışı bırakır."
+        }
+      },
+      "wrong_game_version": {
+        "default": {
+          "title": "{name} başka bir Minecraft sürümü için",
+          "text": "{name} için Minecraft {required} gerekir, ama bu kurulum {present} kullanıyor. Devre dışı bırak ya da İçerik sekmesinden uygun bir sürüm kur."
+        }
+      },
+      "wrong_loader_version": {
+        "default": {
+          "title": "{name} için başka bir {loader} gerekir",
+          "text": "{name} için {loader} {required} gerekir, ama kurulu olan {present}. Kurulumun yükleyici sürümünü değiştir ya da modu devre dışı bırak."
+        }
+      },
+      "incompatible_mod": {
+        "default": {
+          "title": "{name}, {other} ile çalışmıyor",
+          "text": "{name}, {other} ile çalışmıyor. Başlatıcı onu uyumlu bir sürümle değiştirebilir ya da sen devre dışı bırakabilirsin."
+        }
+      },
+      "missing_dependency": {
+        "default": {
+          "title": "{name} için {deps} gerekir",
+          "text": "{name} için {deps} gerekir ve bu kurulumda yok. Başlatıcı onu Modrinth’ten kurabilir."
+        },
+        "unnamed": {
+          "title": "Gerekli bir mod eksik",
+          "text": "{deps} eksik – başka bir mod buna ihtiyaç duyuyor. Başlatıcı onu Modrinth’ten kurabilir."
+        }
+      },
+      "wrong_java": {
+        "default": {
+          "title": "Yanlış Java sürümü",
+          "text": "Java sürümü oyuna ya da modlarından birine uymuyor."
+        },
+        "too_old": {
+          "title": "Java {present} çok eski",
+          "text": "{name} için Java {required} gerekir, ama oyun Java {present} ile çalışıyor. Başlatıcı Java {required} kurup bu kurulumda kullanabilir."
+        },
+        "too_new": {
+          "title": "Java {present} bu sürüm için çok yeni",
+          "text": "Eski Minecraft ve Forge sürümleri yalnızca eski Java ile çalışır (genellikle Java 8). Java’yı başlatıcı seçsin ya da Java 8 kullan."
+        },
+        "mod_requires": {
+          "title": "{name} için Java {required} gerekir",
+          "text": "{name} için Java {required} veya daha yenisi gerekir, ama Java {present} kullanılıyor. Başlatıcı bu kurulum için Java {required} kurabilir."
+        }
+      },
+      "out_of_memory": {
+        "default": {
+          "title": "Oyunun belleği yetmedi",
+          "text": "Oyun, kullanmasına izin verilenden fazla belleğe ihtiyaç duydu. Kuruluma daha fazla RAM ver."
+        },
+        "heap": {
+          "title": "Oyunun belleği yetmedi",
+          "text": "Oyunun kullanabildiği {current} MB yetmedi – çok sayıda mod, gölgelendiriciler veya yüksek görüş mesafesi daha fazlasını ister. Kuruluma daha fazla RAM ver."
+        },
+        "heap_max": {
+          "title": "Oyunun belleği yetmedi",
+          "text": "Oyun bu bilgisayarda mantıklı olan en fazla RAM’i zaten alıyor ({current} MB). Ağır modları kaldır ya da görüş mesafesini düşür."
+        },
+        "reserve": {
+          "title": "Java belleği alamadı",
+          "text": "Java {current} MB ayıramadı – bu bilgisayarda boş olandan fazlası. RAM’i biraz daha düşük ayarla."
+        }
+      },
+      "corrupt_files": {
+        "default": {
+          "title": "Bir dosya bozuk",
+          "text": "Bir dosya okunamıyor. “Dosyaları kontrol et” bozuk oyun dosyalarını yeniden indirir."
+        },
+        "mod_file": {
+          "title": "{file} bozuk",
+          "text": "{file} mod dosyası okunamıyor (örneğin yarıda kalan bir indirmeden sonra). Devre dışı bırak ve İçerik sekmesinden yeniden indir."
+        },
+        "game_files": {
+          "title": "Bir oyun dosyası bozuk",
+          "text": "Oyunun bir dosyası bozuk (örneğin yarıda kalan bir indirmeden sonra). “Dosyaları kontrol et” onu yeniden indirir."
+        },
+        "assets": {
+          "title": "Oyun kaynakları eksik",
+          "text": "Bazı oyun kaynakları (dokular, sesler, dil dosyaları) eksik. “Dosyaları kontrol et” onları yeniden indirir."
+        }
+      },
+      "graphics_driver": {
+        "default": {
+          "title": "Ekran kartı sürücüsü çöktü",
+          "text": "Çökme ekran kartı sürücüsünde oldu. Ekran kartının sürücüsünü güncelle."
+        },
+        "amd": {
+          "title": "AMD ekran kartı sürücüsü çöktü",
+          "text": "Çökme AMD sürücüsünün içinde oldu. Sürücüyü güncelle (AMD Software: Adrenalin Edition) ve tekrar dene."
+        },
+        "intel": {
+          "title": "Intel ekran kartı sürücüsü çöktü",
+          "text": "Çökme Intel sürücüsünün içinde oldu. Sürücüyü Intel’den ya da bilgisayar üreticinin sitesinden güncelle."
+        },
+        "nvidia": {
+          "title": "NVIDIA ekran kartı sürücüsü çöktü",
+          "text": "Çökme NVIDIA sürücüsünün içinde oldu. Sürücüyü güncelle (NVIDIA App) ve tekrar dene."
+        },
+        "no_opengl": {
+          "title": "Ekran kartı sürücüsü OpenGL desteklemiyor",
+          "text": "Minecraft OpenGL’i başlatamıyor. Genellikle sürücü eksik ya da çok eski, veya oyun yanlış ekran kartında çalışıyor. En yeni sürücüyü kur."
+        },
+        "opengl_too_old": {
+          "title": "Bu bilgisayardaki OpenGL çok eski",
+          "text": "Bu Minecraft sürümü, ekran kartının ya da sürücünün sunduğundan daha yeni bir OpenGL ister. Sürücüyü güncelle – çok eski kartlar yalnızca eski sürümleri çalıştırır."
+        }
+      },
+      "mixin_conflict": {
+        "default": {
+          "title": "Modlar birbirini engelliyor",
+          "text": "İki veya daha fazla mod oyunun aynı kısmını değiştiriyor ve çakışıyor. En son eklediğin modları devre dışı bırak ve yeniden başlat."
+        },
+        "transform": {
+          "title": "Modlar {target} değiştirilirken çakışıyor",
+          "text": "Birkaç mod oyunun aynı kısmını ({target}) değiştiriyor ve birbirini engelliyor. İlgili: {names}. Birini devre dışı bırak ve yeniden başlat."
+        },
+        "transform_nomods": {
+          "title": "Modlar {target} değiştirilirken çakışıyor",
+          "text": "Birkaç mod oyunun aynı kısmını ({target}) değiştiriyor ve birbirini engelliyor. En son eklediğin modları devre dışı bırak ve yeniden başlat."
+        },
+        "redirect_conflict": {
+          "title": "İki mod aynı yeri değiştiriyor",
+          "text": "{names} oyunda aynı noktayı yönlendiriyor – bunu yalnızca biri yapabilir. Birini devre dışı bırak."
+        },
+        "apply": {
+          "title": "Bir mod oyuna bağlanamadı",
+          "text": "{names}, değişikliklerini bu Minecraft sürümüne uygulayamadı – genellikle eski bir mod ya da başka bir modla çakışma. Güncelle ya da devre dışı bırak."
+        }
+      },
+      "unknown": {
+        "default": {
+          "title": "Bilinmeyen hata",
+          "text": "Başlatıcı kesin nedeni bulamadı. En önemli satırlar “Ayrıntılar” altında. Günlüğü paylaşırsan başkaları sana yardım edebilir."
+        },
+        "suspect": {
+          "title": "Bilinmeyen hata – muhtemelen {name}",
+          "text": "Çökme {name} içinde başlıyor. Bir deneme için devre dışı bırak; oyun çalışırsa modu güncelle ya da çökmeyi yapımcısına bildir."
+        }
+      }
+    }
   },
   "exportPack": {
     "title": "Modpack olarak dışa aktar",

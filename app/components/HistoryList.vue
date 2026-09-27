@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Diagnosis, HistoryEntry, HistoryKind, ImportSource, Instance } from '~/types'
+import type { HistoryEntry, HistoryKind, ImportSource, Instance } from '~/types'
+import { crashCauseLabel } from '~/utils/crash'
 
 // Verlauf einer Instanz: gestartet, abgestürzt, Mods installiert, Version gewechselt …
 const props = defineProps<{ instance: Instance; refreshKey?: number }>()
@@ -28,7 +29,11 @@ const groupsOf: Record<HistoryKind, 'play' | 'content' | 'instance'> = {
   hooks_changed: 'instance',
   group_changed: 'instance',
   renamed: 'instance',
+  settings_changed: 'instance',
 }
+
+// Absturz-Helfer: gespeicherte Analyse wieder öffnen.
+const helper = useCrashHelperStore()
 
 const bulkActions = ['enable', 'disable', 'delete'] as const
 
@@ -44,20 +49,16 @@ async function load() {
 }
 watch(() => [props.instance.id, props.refreshKey], load, { immediate: true })
 
-const diagnosisKinds: Diagnosis['kind'][] = [
-  'corrupt_files',
-  'out_of_memory',
-  'wrong_java',
-  'missing_dependency',
-  'mod_conflict',
-  'graphics_driver',
-  'incompatible_mod',
-]
-
 /** Kurzname der Absturzursache; Unbekanntes bleibt, wie der Kern es geschrieben hat. */
 function crashCause(detail: string): string {
-  const kind = diagnosisKinds.find((k) => k === detail)
-  return kind ? t(`crash.cause.${kind}`) : detail
+  return crashCauseLabel(detail)
+}
+
+/** Java-Werte aus dem Verlauf („auto“, „custom“, „Java 21“). */
+function javaLabel(value: string | undefined): string {
+  if (value === 'auto') return t('history.details.javaAuto')
+  if (value === 'custom') return t('history.details.javaCustom')
+  return value ?? '?'
 }
 
 function title(e: HistoryEntry): string {
@@ -108,6 +109,10 @@ function title(e: HistoryEntry): string {
       return e.to ? t('history.titles.movedToGroup', { group: e.to }) : t('history.titles.removedFromGroup')
     case 'renamed':
       return t('history.titles.renamed')
+    case 'settings_changed':
+      if (e.detail === 'memory') return t('history.titles.memoryChanged')
+      if (e.detail === 'java') return t('history.titles.javaChanged')
+      return t('history.titles.settingsChanged')
   }
 }
 
@@ -127,6 +132,8 @@ function detail(e: HistoryEntry): string | null {
   if ((e.kind === 'created' || e.kind === 'imported') && e.to) return e.to
   if (e.kind === 'renamed' && e.from && e.to) return t('history.details.renamed', { from: e.from, to: e.to })
   if (e.kind === 'group_changed' && e.from) return t('history.details.previousGroup', { group: e.from })
+  if (e.kind === 'settings_changed' && e.detail === 'java') return t('history.details.changed', { from: javaLabel(e.from), to: javaLabel(e.to) })
+  if (e.kind === 'settings_changed' && (e.from || e.to)) return t('history.details.changed', { from: e.from ?? '?', to: e.to ?? '?' })
   return null
 }
 
@@ -149,6 +156,7 @@ const tone: Record<HistoryKind, string> = {
   hooks_changed: 'bg-base-800 text-base-200',
   group_changed: 'bg-base-800 text-base-200',
   renamed: 'bg-base-800 text-base-200',
+  settings_changed: 'bg-base-800 text-base-200',
 }
 
 const icons: Record<HistoryKind, string> = {
@@ -170,6 +178,7 @@ const icons: Record<HistoryKind, string> = {
   hooks_changed: 'M9 4v6a3 3 0 0 0 6 0V4M12 13v7M8 20h8',
   group_changed: 'M3 7h7l2 2h9v10H3z',
   renamed: 'M4 20h4L18 10l-4-4L4 16zM14 6l4 4',
+  settings_changed: 'M4 7h10m4 0h2M4 17h4m4 0h8M14 5v4M8 15v4',
 }
 
 const visible = computed(() => entries.value.filter((e) => filter.value === 'all' || groupsOf[e.kind] === filter.value))
@@ -242,6 +251,9 @@ const grouped = computed(() => {
               <span v-else-if="e.kind === 'mod_installed' && e.to && e.detail !== 'dependency'" class="ml-2 font-mono text-xs text-base-400">{{ e.to }}</span>
             </p>
             <p v-if="detail(e)" class="text-xs text-base-400">{{ detail(e) }}</p>
+            <button v-if="e.kind === 'crashed' && e.crash" type="button" class="mt-1 text-xs font-medium text-redstone-300 hover:underline" :disabled="helper.loading" @click="helper.openSaved(instance.id, e.crash)">
+              {{ t('crashHelper.openDetails') }}
+            </button>
           </div>
           <time class="shrink-0 pt-1.5 text-xs text-base-600 tabular-nums" :datetime="e.at" :title="formatDate(e.at)">{{ g.today ? formatRelative(e.at) : formatTime(e.at) }}</time>
         </li>

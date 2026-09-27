@@ -760,6 +760,9 @@
       "invalidRole": "Rôle inconnu.",
       "invalidRoom": "Monde non valide.",
       "emptySearch": "Saisis un terme de recherche."
+    },
+    "crash": {
+      "notFound": "Ce plantage n’existe plus."
     }
   },
   "browse": {
@@ -1533,7 +1536,10 @@
       "hooksCustom": "Hooks de lancement personnalisés définis",
       "movedToGroup": "Déplacée dans le groupe « {group} »",
       "removedFromGroup": "Retirée du groupe",
-      "renamed": "Renommée"
+      "renamed": "Renommée",
+      "memoryChanged": "Mémoire modifiée",
+      "javaChanged": "Java modifié",
+      "settingsChanged": "Paramètres modifiés"
     },
     "details": {
       "played": "Joué : {time}",
@@ -1542,7 +1548,10 @@
       "asDependencyVersion": "{version} · comme dépendance",
       "asDependency": "Comme dépendance",
       "renamed": "« {from} » → « {to} »",
-      "previousGroup": "auparavant : {group}"
+      "previousGroup": "auparavant : {group}",
+      "changed": "{from} → {to}",
+      "javaAuto": "automatique",
+      "javaCustom": "chemin personnalisé"
     }
   },
   "logConsole": {
@@ -1567,7 +1576,13 @@
       "missing_dependency": "Dépendance manquante",
       "mod_conflict": "Conflit de mods",
       "graphics_driver": "Pilote graphique",
-      "incompatible_mod": "Version de mod incompatible"
+      "incompatible_mod": "Version de mod incompatible",
+      "known_issue": "Problème connu",
+      "duplicate_mod": "Mod en double",
+      "wrong_game_version": "Mauvaise version de Minecraft",
+      "wrong_loader_version": "Mauvaise version du loader",
+      "mixin_conflict": "Mods en conflit",
+      "unknown": "Erreur inconnue"
     },
     "diagnosis": {
       "corrupt_files": "Un fichier du jeu est corrompu (par ex. après un téléchargement interrompu). « Vérifier les fichiers » le télécharge à nouveau.",
@@ -1588,6 +1603,238 @@
     "installMissing": "Installer {name}",
     "installingMissing": "Installation des mods manquants …",
     "installMissingDone": "Installé : {list}"
+  },
+  "crashHelper": {
+    "title": "Le jeu a planté",
+    "open": "Ouvrir l’assistant de plantage",
+    "openDetails": "Voir les détails",
+    "analyze": "Analyser",
+    "whenStarting": "{at} · au démarrage",
+    "whenPlaying": "{at} · après {time} de jeu",
+    "involved": "Mods concernés",
+    "bundledIn": "dans {name}",
+    "modDisabled": "désactivé",
+    "working": "En cours …",
+    "openJavaSettings": "Paramètres Java",
+    "confirmTitle": "Faire ce changement ?",
+    "confirmHistory": "Il sera noté dans l’historique de l’instance.",
+    "confirmDo": "Oui, le faire",
+    "moreHints": "Autres causes possibles",
+    "details": "Détails du journal",
+    "cause": "Cause",
+    "firstFrame": "Première ligne d’un mod",
+    "excerpt": "Lignes importantes",
+    "masked": "Les chemins contenant ton nom d’utilisateur et ton pseudo sont masqués.",
+    "openContent": "Ouvrir l’onglet Contenu",
+    "privacy": "Analysé uniquement sur ton PC. Rien n’est envoyé, sauf si tu cliques sur « Partager le journal ».",
+    "relaunch": "Relancer",
+    "undo": "Annuler",
+    "shadersHint": "Les shaders ({name}) sollicitent davantage le pilote : essaie un lancement sans eux.",
+    "aMod": "un mod",
+    "someMods": "plusieurs mods",
+    "actions": {
+      "disable": "Désactiver {name}",
+      "install": "Installer {name}",
+      "removeDuplicates": "Retirer les doublons",
+      "raiseMemory": "Passer la RAM à {to}",
+      "lowerMemory": "Régler la RAM sur {to}",
+      "useJava": "Utiliser Java {major}",
+      "autoJava": "Choisir Java automatiquement",
+      "updateTrsClient": "Mettre à jour TRS Client"
+    },
+    "confirm": {
+      "disable": "{name} sera désactivé (le fichier reçoit l’extension .disabled). Tu peux l’annuler à tout moment ici ou dans l’onglet Contenu.",
+      "install": "{name} sera installé depuis Modrinth dans cette instance.",
+      "removeDuplicates": "Les anciennes copies ({files}) seront désactivées, {keep} reste actif.",
+      "memory": "La mémoire de cette instance passe de {from} à {to}.",
+      "java": "Java {major} sera téléchargé si besoin et utilisé pour cette instance.",
+      "autoJava": "Le chemin Java personnalisé de cette instance sera retiré : le launcher choisira lui-même la bonne version de Java.",
+      "updateTrsClient": "Le launcher récupère le TRS Client le plus récent sur le canal de mise à jour et le place dans cette instance.",
+      "fixConflict": "Le launcher cherche une version compatible de {name} et la remplace.",
+      "repair": "Le launcher vérifie tous les fichiers du jeu et retélécharge ceux qui sont abîmés."
+    },
+    "done": {
+      "disabled": "Désactivé : {name}",
+      "enabledAgain": "Réactivé : {name}",
+      "memory": "Mémoire réglée sur {to}",
+      "java": "Java {major} est maintenant utilisé pour cette instance",
+      "autoJava": "Java est maintenant choisi automatiquement",
+      "trsClient": "TRS Client {version} est installé : relance le jeu.",
+      "trsClientNone": "Aucun TRS Client plus récent n’est encore disponible. Désactive Essential pour le moment."
+    },
+    "progress": {
+      "java": "Configuration de Java {major} …"
+    },
+    "findings": {
+      "known_issue": {
+        "default": {
+          "title": "Problème connu",
+          "text": "Cette combinaison de mods est connue pour planter."
+        },
+        "trsclient_essential": {
+          "title": "TRS Client {version} entre en conflit avec Essential",
+          "text": "TRS Client {version} et Essential (avec MixinExtras 0.5) modifient la même partie du jeu (le serveur solo) et le jeu plante à l’ouverture d’un monde. TRS Client {fixed} corrige cela : mets-le à jour ou désactive Essential pour le moment."
+        },
+        "sodium_optifine": {
+          "title": "{name} et OptiFine ne fonctionnent pas ensemble",
+          "text": "OptiFine (et OptiFabric) ne peuvent pas tourner avec {name}. Garde {name} (plus rapide, et Iris offre toujours les shaders) et désactive OptiFine."
+        },
+        "iris_without_sodium": {
+          "title": "Iris a besoin de Sodium",
+          "text": "Iris ne fonctionne qu’avec Sodium, qui manque dans cette instance. Le launcher peut installer la bonne version."
+        },
+        "two_minimaps": {
+          "title": "Deux minicartes en même temps",
+          "text": "{names} sont installés tous les deux. Les minicartes se gênent souvent : garde-en une et désactive l’autre."
+        }
+      },
+      "duplicate_mod": {
+        "default": {
+          "title": "{name} est installé en double",
+          "text": "Le dossier des mods contient plusieurs copies de {name} ({files}). Le jeu ne peut en charger qu’une. Le launcher garde la plus récente et désactive les autres."
+        }
+      },
+      "wrong_game_version": {
+        "default": {
+          "title": "{name} est prévu pour une autre version de Minecraft",
+          "text": "{name} a besoin de Minecraft {required}, mais cette instance utilise {present}. Désactive-le ou installe une version adaptée dans l’onglet Contenu."
+        }
+      },
+      "wrong_loader_version": {
+        "default": {
+          "title": "{name} a besoin d’un autre {loader}",
+          "text": "{name} a besoin de {loader} {required}, mais {present} est installé. Change la version du loader de l’instance ou désactive le mod."
+        }
+      },
+      "incompatible_mod": {
+        "default": {
+          "title": "{name} ne fonctionne pas avec {other}",
+          "text": "{name} ne fonctionne pas avec {other}. Le launcher peut le remplacer par une version compatible, ou tu peux le désactiver."
+        }
+      },
+      "missing_dependency": {
+        "default": {
+          "title": "{name} a besoin de {deps}",
+          "text": "{name} a besoin de {deps}, qui manque dans cette instance. Le launcher peut l’installer depuis Modrinth."
+        },
+        "unnamed": {
+          "title": "Un mod requis manque",
+          "text": "{deps} manque : un autre mod en a besoin. Le launcher peut l’installer depuis Modrinth."
+        }
+      },
+      "wrong_java": {
+        "default": {
+          "title": "Mauvaise version de Java",
+          "text": "La version de Java ne convient pas au jeu ou à l’un de ses mods."
+        },
+        "too_old": {
+          "title": "Java {present} est trop ancien",
+          "text": "{name} a besoin de Java {required}, mais le jeu tourne avec Java {present}. Le launcher peut installer Java {required} et l’utiliser pour cette instance."
+        },
+        "too_new": {
+          "title": "Java {present} est trop récent pour cette version",
+          "text": "Les anciennes versions de Minecraft et de Forge ne tournent qu’avec un Java ancien (souvent Java 8). Laisse le launcher choisir Java ou utilise Java 8."
+        },
+        "mod_requires": {
+          "title": "{name} a besoin de Java {required}",
+          "text": "{name} a besoin de Java {required} ou plus récent, mais Java {present} est utilisé. Le launcher peut installer Java {required} pour cette instance."
+        }
+      },
+      "out_of_memory": {
+        "default": {
+          "title": "Le jeu a manqué de mémoire",
+          "text": "Le jeu avait besoin de plus de mémoire qu’il n’en avait le droit. Donne plus de RAM à l’instance."
+        },
+        "heap": {
+          "title": "Le jeu a manqué de mémoire",
+          "text": "Les {current} Mo autorisés n’ont pas suffi : beaucoup de mods, des shaders ou une grande distance d’affichage en demandent plus. Donne plus de RAM à l’instance."
+        },
+        "heap_max": {
+          "title": "Le jeu a manqué de mémoire",
+          "text": "Le jeu reçoit déjà autant de RAM que ce PC le permet raisonnablement ({current} Mo). Retire des mods lourds ou baisse la distance d’affichage."
+        },
+        "reserve": {
+          "title": "Java n’a pas obtenu la mémoire",
+          "text": "Java n’a pas pu réserver {current} Mo, plus que ce que ce PC a de libre. Règle la RAM un peu plus bas."
+        }
+      },
+      "corrupt_files": {
+        "default": {
+          "title": "Un fichier est abîmé",
+          "text": "Un fichier ne peut pas être lu. « Vérifier les fichiers » retélécharge les fichiers du jeu abîmés."
+        },
+        "mod_file": {
+          "title": "{file} est abîmé",
+          "text": "Le fichier de mod {file} ne peut pas être lu (par exemple après un téléchargement interrompu). Désactive-le et retélécharge-le dans l’onglet Contenu."
+        },
+        "game_files": {
+          "title": "Un fichier du jeu est abîmé",
+          "text": "Un fichier du jeu est cassé (par exemple après un téléchargement interrompu). « Vérifier les fichiers » le retélécharge."
+        },
+        "assets": {
+          "title": "Des ressources du jeu manquent",
+          "text": "Des ressources du jeu (textures, sons, langues) manquent. « Vérifier les fichiers » les retélécharge."
+        }
+      },
+      "graphics_driver": {
+        "default": {
+          "title": "Le pilote graphique a planté",
+          "text": "Le plantage s’est produit dans le pilote graphique. Mets à jour le pilote de ta carte graphique."
+        },
+        "amd": {
+          "title": "Le pilote graphique AMD a planté",
+          "text": "Le plantage s’est produit dans le pilote AMD. Mets-le à jour (AMD Software: Adrenalin Edition) et réessaie."
+        },
+        "intel": {
+          "title": "Le pilote graphique Intel a planté",
+          "text": "Le plantage s’est produit dans le pilote Intel. Mets-le à jour depuis Intel ou le site du fabricant de ton PC."
+        },
+        "nvidia": {
+          "title": "Le pilote graphique NVIDIA a planté",
+          "text": "Le plantage s’est produit dans le pilote NVIDIA. Mets-le à jour (NVIDIA App) et réessaie."
+        },
+        "no_opengl": {
+          "title": "Le pilote graphique ne prend pas en charge OpenGL",
+          "text": "Minecraft ne peut pas démarrer OpenGL. En général, le pilote manque, est trop ancien, ou le jeu utilise la mauvaise carte graphique. Installe le pilote le plus récent."
+        },
+        "opengl_too_old": {
+          "title": "OpenGL est trop ancien sur ce PC",
+          "text": "Cette version de Minecraft demande un OpenGL plus récent que celui de ta carte ou de ton pilote. Mets le pilote à jour ; les très vieilles cartes ne font tourner que d’anciennes versions."
+        }
+      },
+      "mixin_conflict": {
+        "default": {
+          "title": "Des mods se gênent",
+          "text": "Plusieurs mods modifient la même partie du jeu et se gênent. Désactive les mods ajoutés en dernier et relance."
+        },
+        "transform": {
+          "title": "Des mods se gênent en modifiant {target}",
+          "text": "Plusieurs mods modifient la même partie du jeu ({target}) et se gênent. Concernés : {names}. Désactive l’un d’eux et relance."
+        },
+        "transform_nomods": {
+          "title": "Des mods se gênent en modifiant {target}",
+          "text": "Plusieurs mods modifient la même partie du jeu ({target}) et se gênent. Désactive les mods ajoutés en dernier et relance."
+        },
+        "redirect_conflict": {
+          "title": "Deux mods modifient le même endroit",
+          "text": "{names} redirigent tous deux le même endroit du jeu, un seul le peut. Désactive l’un d’eux."
+        },
+        "apply": {
+          "title": "Un mod n’a pas pu s’intégrer au jeu",
+          "text": "{names} n’a pas pu appliquer ses modifications à cette version de Minecraft, souvent un mod obsolète ou un conflit avec un autre. Mets-le à jour ou désactive-le."
+        }
+      },
+      "unknown": {
+        "default": {
+          "title": "Erreur inconnue",
+          "text": "Le launcher n’a pas pu déterminer la cause exacte. Les lignes les plus importantes sont dans « Détails ». Partager le journal permet à d’autres de t’aider."
+        },
+        "suspect": {
+          "title": "Erreur inconnue, sans doute {name}",
+          "text": "Le plantage commence dans {name}. Désactive-le pour un essai ; si le jeu fonctionne, mets le mod à jour ou signale le plantage à son auteur."
+        }
+      }
+    }
   },
   "exportPack": {
     "title": "Exporter en modpack",

@@ -44,6 +44,8 @@ pub enum HistoryKind {
     HooksChanged,
     GroupChanged,
     Renamed,
+    /// Einstellung geändert (z. B. vom Absturz-Helfer): `detail` = `memory`/`java`.
+    SettingsChanged,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -63,11 +65,19 @@ pub struct HistoryEntry {
     pub detail: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub seconds: Option<u64>,
+    /// Absturz-Analyse zu diesem Eintrag (`instances/<id>/crashes/<crash>.json`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub crash: Option<String>,
 }
 
 impl HistoryEntry {
     pub fn new(kind: HistoryKind) -> Self {
-        Self { at: Utc::now(), kind, subject: None, from: None, to: None, detail: None, seconds: None }
+        Self { at: Utc::now(), kind, subject: None, from: None, to: None, detail: None, seconds: None, crash: None }
+    }
+
+    pub fn crash(mut self, id: &str) -> Self {
+        self.crash = crate::crash::validate_crash_id(id).is_ok().then(|| id.to_owned());
+        self
     }
 
     pub fn subject(mut self, text: impl AsRef<str>) -> Self {

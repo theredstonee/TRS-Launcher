@@ -760,6 +760,9 @@
       "invalidRole": "Rol desconocido.",
       "invalidRoom": "Mundo no válido.",
       "emptySearch": "Escribe un término de búsqueda."
+    },
+    "crash": {
+      "notFound": "Este fallo ya no existe."
     }
   },
   "browse": {
@@ -1533,7 +1536,10 @@
       "hooksCustom": "Hooks de inicio propios configurados",
       "movedToGroup": "Movida al grupo «{group}»",
       "removedFromGroup": "Quitada del grupo",
-      "renamed": "Renombrada"
+      "renamed": "Renombrada",
+      "memoryChanged": "Memoria cambiada",
+      "javaChanged": "Java cambiado",
+      "settingsChanged": "Ajustes cambiados"
     },
     "details": {
       "played": "Jugado: {time}",
@@ -1542,7 +1548,10 @@
       "asDependencyVersion": "{version} · como dependencia",
       "asDependency": "Como dependencia",
       "renamed": "«{from}» → «{to}»",
-      "previousGroup": "antes: {group}"
+      "previousGroup": "antes: {group}",
+      "changed": "{from} → {to}",
+      "javaAuto": "automático",
+      "javaCustom": "ruta propia"
     }
   },
   "logConsole": {
@@ -1567,7 +1576,13 @@
       "missing_dependency": "Falta una dependencia",
       "mod_conflict": "Conflicto de mods",
       "graphics_driver": "Controlador gráfico",
-      "incompatible_mod": "Versión de mod incompatible"
+      "incompatible_mod": "Versión de mod incompatible",
+      "known_issue": "Problema conocido",
+      "duplicate_mod": "Mod duplicado",
+      "wrong_game_version": "Versión de Minecraft incorrecta",
+      "wrong_loader_version": "Versión de loader incorrecta",
+      "mixin_conflict": "Mods en conflicto",
+      "unknown": "Error desconocido"
     },
     "diagnosis": {
       "corrupt_files": "Un archivo del juego está dañado (p. ej., tras una descarga interrumpida). «Comprobar archivos» lo vuelve a descargar.",
@@ -1588,6 +1603,238 @@
     "installMissing": "Instalar {name}",
     "installingMissing": "Instalando los mods que faltan …",
     "installMissingDone": "Instalado: {list}"
+  },
+  "crashHelper": {
+    "title": "El juego se ha cerrado por un error",
+    "open": "Abrir el asistente de errores",
+    "openDetails": "Ver detalles",
+    "analyze": "Analizar",
+    "whenStarting": "{at} · al iniciar",
+    "whenPlaying": "{at} · tras {time} de juego",
+    "involved": "Mods implicados",
+    "bundledIn": "dentro de {name}",
+    "modDisabled": "desactivado",
+    "working": "Trabajando …",
+    "openJavaSettings": "Ajustes de Java",
+    "confirmTitle": "¿Hacer este cambio?",
+    "confirmHistory": "Quedará anotado en el historial de la instancia.",
+    "confirmDo": "Sí, hacerlo",
+    "moreHints": "Otras causas posibles",
+    "details": "Detalles del registro",
+    "cause": "Causa",
+    "firstFrame": "Primera línea de un mod",
+    "excerpt": "Líneas clave",
+    "masked": "Las rutas con tu nombre de usuario y tu nombre de jugador están ocultas.",
+    "openContent": "Abrir la pestaña Contenido",
+    "privacy": "Analizado solo en tu PC. No se envía nada salvo que pulses «Compartir registro».",
+    "relaunch": "Iniciar de nuevo",
+    "undo": "Deshacer",
+    "shadersHint": "Los shaders ({name}) cargan más el controlador: prueba a iniciar sin ellos.",
+    "aMod": "un mod",
+    "someMods": "varios mods",
+    "actions": {
+      "disable": "Desactivar {name}",
+      "install": "Instalar {name}",
+      "removeDuplicates": "Quitar duplicados",
+      "raiseMemory": "Subir la RAM a {to}",
+      "lowerMemory": "Poner la RAM en {to}",
+      "useJava": "Usar Java {major}",
+      "autoJava": "Elegir Java automáticamente",
+      "updateTrsClient": "Actualizar TRS Client"
+    },
+    "confirm": {
+      "disable": "{name} se desactivará (el archivo recibe la terminación .disabled). Puedes deshacerlo cuando quieras aquí o en la pestaña Contenido.",
+      "install": "{name} se instalará desde Modrinth en esta instancia.",
+      "removeDuplicates": "Las copias antiguas ({files}) se desactivarán; {keep} seguirá activo.",
+      "memory": "La memoria de esta instancia pasa de {from} a {to}.",
+      "java": "Java {major} se descargará si hace falta y se usará en esta instancia.",
+      "autoJava": "Se quitará la ruta de Java propia de esta instancia: el launcher elegirá la versión de Java adecuada.",
+      "updateTrsClient": "El launcher descarga el TRS Client más reciente del canal de actualizaciones y lo coloca en esta instancia.",
+      "fixConflict": "El launcher busca una versión de {name} que encaje y la cambia.",
+      "repair": "El launcher revisa todos los archivos del juego y vuelve a descargar los dañados."
+    },
+    "done": {
+      "disabled": "Desactivado: {name}",
+      "enabledAgain": "Activado de nuevo: {name}",
+      "memory": "Memoria ajustada a {to}",
+      "java": "Java {major} ya está configurado para esta instancia",
+      "autoJava": "Java se elige ahora automáticamente",
+      "trsClient": "TRS Client {version} está instalado: vuelve a iniciar.",
+      "trsClientNone": "Todavía no hay un TRS Client más nuevo. Desactiva Essential por ahora."
+    },
+    "progress": {
+      "java": "Configurando Java {major} …"
+    },
+    "findings": {
+      "known_issue": {
+        "default": {
+          "title": "Problema conocido",
+          "text": "Se sabe que esta combinación de mods falla."
+        },
+        "trsclient_essential": {
+          "title": "TRS Client {version} choca con Essential",
+          "text": "TRS Client {version} y Essential (con MixinExtras 0.5) cambian la misma parte del juego (el servidor de un jugador) y el juego falla al abrir un mundo. TRS Client {fixed} lo soluciona: actualízalo o desactiva Essential por ahora."
+        },
+        "sodium_optifine": {
+          "title": "{name} y OptiFine no funcionan juntos",
+          "text": "OptiFine (y OptiFabric) no pueden funcionar junto a {name}. Quédate con {name} (es más rápido y con Iris sigues teniendo shaders) y desactiva OptiFine."
+        },
+        "iris_without_sodium": {
+          "title": "Iris necesita Sodium",
+          "text": "Iris solo funciona junto con Sodium, que falta en esta instancia. El launcher puede instalar la versión adecuada."
+        },
+        "two_minimaps": {
+          "title": "Dos minimapas a la vez",
+          "text": "{names} están instalados a la vez. Los minimapas suelen estorbarse: quédate con uno y desactiva el otro."
+        }
+      },
+      "duplicate_mod": {
+        "default": {
+          "title": "{name} está instalado dos veces",
+          "text": "La carpeta de mods tiene más de una copia de {name} ({files}). El juego solo puede cargar una. El launcher conserva la más reciente y desactiva las demás."
+        }
+      },
+      "wrong_game_version": {
+        "default": {
+          "title": "{name} es para otra versión de Minecraft",
+          "text": "{name} necesita Minecraft {required}, pero esta instancia usa {present}. Desactívalo o instala una versión adecuada en la pestaña Contenido."
+        }
+      },
+      "wrong_loader_version": {
+        "default": {
+          "title": "{name} necesita otro {loader}",
+          "text": "{name} necesita {loader} {required}, pero está instalado {present}. Cambia la versión del loader de la instancia o desactiva el mod."
+        }
+      },
+      "incompatible_mod": {
+        "default": {
+          "title": "{name} no funciona con {other}",
+          "text": "{name} no funciona con {other}. El launcher puede cambiarlo por una versión que encaje, o puedes desactivarlo."
+        }
+      },
+      "missing_dependency": {
+        "default": {
+          "title": "{name} necesita {deps}",
+          "text": "{name} necesita {deps}, que falta en esta instancia. El launcher puede instalarlo desde Modrinth."
+        },
+        "unnamed": {
+          "title": "Falta un mod necesario",
+          "text": "Falta {deps}: otro mod lo necesita. El launcher puede instalarlo desde Modrinth."
+        }
+      },
+      "wrong_java": {
+        "default": {
+          "title": "Versión de Java incorrecta",
+          "text": "La versión de Java no encaja con el juego o con alguno de sus mods."
+        },
+        "too_old": {
+          "title": "Java {present} es demasiado antiguo",
+          "text": "{name} necesita Java {required}, pero el juego usa Java {present}. El launcher puede instalar Java {required} y usarlo en esta instancia."
+        },
+        "too_new": {
+          "title": "Java {present} es demasiado nuevo para esta versión",
+          "text": "Las versiones antiguas de Minecraft y Forge solo funcionan con Java antiguo (normalmente Java 8). Deja que el launcher elija Java o usa Java 8."
+        },
+        "mod_requires": {
+          "title": "{name} necesita Java {required}",
+          "text": "{name} necesita Java {required} o más reciente, pero se usa Java {present}. El launcher puede instalar Java {required} para esta instancia."
+        }
+      },
+      "out_of_memory": {
+        "default": {
+          "title": "El juego se quedó sin memoria",
+          "text": "El juego necesitó más memoria de la que podía usar. Dale más RAM a la instancia."
+        },
+        "heap": {
+          "title": "El juego se quedó sin memoria",
+          "text": "Los {current} MB que puede usar el juego no bastaron: muchos mods, shaders o una distancia de renderizado alta necesitan más. Dale más RAM a la instancia."
+        },
+        "heap_max": {
+          "title": "El juego se quedó sin memoria",
+          "text": "El juego ya recibe toda la RAM razonable en este PC ({current} MB). Quita mods pesados o baja la distancia de renderizado."
+        },
+        "reserve": {
+          "title": "Java no pudo obtener la memoria",
+          "text": "Java no pudo reservar {current} MB, más de lo que este PC tiene libre. Pon la RAM un poco más baja."
+        }
+      },
+      "corrupt_files": {
+        "default": {
+          "title": "Un archivo está dañado",
+          "text": "No se puede leer un archivo. «Comprobar archivos» vuelve a descargar los archivos dañados del juego."
+        },
+        "mod_file": {
+          "title": "{file} está dañado",
+          "text": "No se puede leer el archivo del mod {file} (por ejemplo tras una descarga interrumpida). Desactívalo y descárgalo de nuevo en la pestaña Contenido."
+        },
+        "game_files": {
+          "title": "Un archivo del juego está dañado",
+          "text": "Un archivo del juego está roto (por ejemplo tras una descarga interrumpida). «Comprobar archivos» lo descarga de nuevo."
+        },
+        "assets": {
+          "title": "Faltan recursos del juego",
+          "text": "Faltan recursos del juego (texturas, sonidos, idiomas). «Comprobar archivos» los descarga de nuevo."
+        }
+      },
+      "graphics_driver": {
+        "default": {
+          "title": "El controlador gráfico falló",
+          "text": "El fallo ocurrió en el controlador gráfico. Actualiza el controlador de tu tarjeta gráfica."
+        },
+        "amd": {
+          "title": "El controlador gráfico de AMD falló",
+          "text": "El fallo ocurrió dentro del controlador de AMD. Actualízalo (AMD Software: Adrenalin Edition) y vuelve a intentarlo."
+        },
+        "intel": {
+          "title": "El controlador gráfico de Intel falló",
+          "text": "El fallo ocurrió dentro del controlador de Intel. Actualízalo desde Intel o desde la web del fabricante de tu PC."
+        },
+        "nvidia": {
+          "title": "El controlador gráfico de NVIDIA falló",
+          "text": "El fallo ocurrió dentro del controlador de NVIDIA. Actualízalo (NVIDIA App) y vuelve a intentarlo."
+        },
+        "no_opengl": {
+          "title": "El controlador gráfico no admite OpenGL",
+          "text": "Minecraft no puede iniciar OpenGL. Normalmente falta el controlador, es demasiado antiguo o el juego usa la tarjeta gráfica equivocada. Instala el controlador más reciente."
+        },
+        "opengl_too_old": {
+          "title": "OpenGL es demasiado antiguo en este PC",
+          "text": "Esta versión de Minecraft necesita un OpenGL más nuevo del que ofrecen tu tarjeta o tu controlador. Actualiza el controlador; las tarjetas muy antiguas solo pueden con versiones antiguas."
+        }
+      },
+      "mixin_conflict": {
+        "default": {
+          "title": "Unos mods chocan entre sí",
+          "text": "Dos o más mods cambian la misma parte del juego y se estorban. Desactiva los mods añadidos más recientemente e inicia de nuevo."
+        },
+        "transform": {
+          "title": "Unos mods chocan al cambiar {target}",
+          "text": "Varios mods cambian la misma parte del juego ({target}) y se estorban. Implicados: {names}. Desactiva uno de ellos e inicia de nuevo."
+        },
+        "transform_nomods": {
+          "title": "Unos mods chocan al cambiar {target}",
+          "text": "Varios mods cambian la misma parte del juego ({target}) y se estorban. Desactiva los mods añadidos más recientemente e inicia de nuevo."
+        },
+        "redirect_conflict": {
+          "title": "Dos mods cambian el mismo sitio",
+          "text": "{names} redirigen el mismo punto del juego y solo uno puede hacerlo. Desactiva uno de ellos."
+        },
+        "apply": {
+          "title": "Un mod no pudo engancharse al juego",
+          "text": "{names} no pudo aplicar sus cambios a esta versión de Minecraft; suele ser un mod antiguo o un choque con otro. Actualízalo o desactívalo."
+        }
+      },
+      "unknown": {
+        "default": {
+          "title": "Error desconocido",
+          "text": "El launcher no pudo averiguar la causa exacta. Las líneas más importantes están en «Detalles». Si compartes el registro, otros podrán ayudarte."
+        },
+        "suspect": {
+          "title": "Error desconocido: probablemente {name}",
+          "text": "El fallo empieza en {name}. Desactívalo para una prueba; si el juego funciona, actualiza el mod o informa del fallo a su autor."
+        }
+      }
+    }
   },
   "exportPack": {
     "title": "Exportar como modpack",

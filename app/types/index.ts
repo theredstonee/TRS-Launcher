@@ -440,7 +440,10 @@ export type GameEvent =
       crashed: boolean
       playSeconds: number
       diagnosis: Diagnosis | null
+      /** Nach einem Absturz: ID der Analyse, die gleich als `crashAnalyzed` folgt. */
+      crashId?: string
     }
+  | { type: 'crashAnalyzed'; instanceId: string; crash: CrashAnalysis }
   | {
       type: 'notice'
       instanceId: string
@@ -470,6 +473,82 @@ export interface Diagnosis {
   conflict?: ModConflictInfo
   /** Bei `missing_dependency`: welche Mods fehlen – der Launcher kann sie installieren. */
   missing?: MissingModInfo
+}
+
+// --- Absturz-Helfer (Kern: `crates/core/src/crash`) ------------------------------
+
+export type CrashKind =
+  | 'known_issue'
+  | 'duplicate_mod'
+  | 'wrong_game_version'
+  | 'wrong_loader_version'
+  | 'incompatible_mod'
+  | 'missing_dependency'
+  | 'wrong_java'
+  | 'out_of_memory'
+  | 'corrupt_files'
+  | 'graphics_driver'
+  | 'mixin_conflict'
+  | 'unknown'
+
+/** Was der Launcher auf Knopfdruck tun kann (jede Änderung wird vorher bestätigt). */
+export type CrashAction =
+  | { type: 'disableMods'; files: string[] }
+  | { type: 'installDependencies'; declarer: string | null; dependencies: string[] }
+  | { type: 'removeDuplicates'; files: string[]; keep: string[] }
+  | { type: 'setMemory'; fromMb: number; toMb: number }
+  | { type: 'switchJava'; major: number | null }
+  | { type: 'updateTrsClient' }
+  | { type: 'fixConflict'; modId: string }
+  | { type: 'repair' }
+
+export interface CrashFinding {
+  kind: CrashKind
+  /** Genauere Art für den Text, z. B. `trsclient_essential`, `amd`, `reserve`. */
+  variant?: string
+  score: number
+  params?: Record<string, string>
+  /** Beteiligte Mods (IDs aus `CrashAnalysis.mods`). */
+  mods: string[]
+  /** Log-Zeilen, an denen es erkannt wurde (maskiert). */
+  evidence: string[]
+  actions: CrashAction[]
+}
+
+export interface CrashModRef {
+  id: string
+  name: string
+  version?: string
+  /** Datei im Mods-Ordner (ohne `.disabled`). */
+  file?: string
+  enabled: boolean
+  iconUrl?: string
+  /** Steckt in einer anderen Mod (Jar-in-Jar). */
+  bundledIn?: string
+}
+
+export interface CrashAnalysis {
+  id: string
+  instanceId: string
+  at: string
+  exitCode: number | null
+  playSeconds: number | null
+  /** Log-Quellen (`crash-reports/…`, `live`, `logs/latest.log`). */
+  sources: string[]
+  /** Nach Wichtigkeit, der erste ist die Hauptursache; nie leer. */
+  findings: CrashFinding[]
+  mods: CrashModRef[]
+  cause?: string
+  firstFrame?: string
+  excerpt: string[]
+}
+
+export interface CrashSummary {
+  id: string
+  at: string
+  kind: CrashKind
+  variant?: string
+  mods: string[]
 }
 
 /** Aus der Loader-Meldung: `modId` braucht die Mods `dependencies` (Mod-IDs), die fehlen. */
@@ -902,6 +981,7 @@ export type HistoryKind =
   | 'hooks_changed'
   | 'group_changed'
   | 'renamed'
+  | 'settings_changed'
 
 export interface HistoryEntry {
   at: string
@@ -911,6 +991,8 @@ export interface HistoryEntry {
   to?: string
   detail?: string
   seconds?: number
+  /** Absturz-Analyse zu diesem Eintrag (Absturz-Helfer). */
+  crash?: string
 }
 
 export interface DependencyInfo {

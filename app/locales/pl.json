@@ -760,6 +760,9 @@
       "invalidRole": "Nieznana rola.",
       "invalidRoom": "Nieprawidłowy świat.",
       "emptySearch": "Wpisz szukaną frazę."
+    },
+    "crash": {
+      "notFound": "Ta awaria już nie istnieje."
     }
   },
   "browse": {
@@ -1533,7 +1536,10 @@
       "hooksCustom": "Ustawiono własne hooki uruchamiania",
       "movedToGroup": "Przeniesiono do grupy „{group}”",
       "removedFromGroup": "Usunięto z grupy",
-      "renamed": "Zmieniono nazwę"
+      "renamed": "Zmieniono nazwę",
+      "memoryChanged": "Zmieniono pamięć",
+      "javaChanged": "Zmieniono Javę",
+      "settingsChanged": "Zmieniono ustawienia"
     },
     "details": {
       "played": "Czas gry: {time}",
@@ -1542,7 +1548,10 @@
       "asDependencyVersion": "{version} · jako zależność",
       "asDependency": "Jako zależność",
       "renamed": "„{from}” → „{to}”",
-      "previousGroup": "wcześniej: {group}"
+      "previousGroup": "wcześniej: {group}",
+      "changed": "{from} → {to}",
+      "javaAuto": "automatycznie",
+      "javaCustom": "własna ścieżka"
     }
   },
   "logConsole": {
@@ -1567,7 +1576,13 @@
       "missing_dependency": "Brakująca zależność",
       "mod_conflict": "Konflikt modów",
       "graphics_driver": "Sterownik graficzny",
-      "incompatible_mod": "Niezgodna wersja moda"
+      "incompatible_mod": "Niezgodna wersja moda",
+      "known_issue": "Znany problem",
+      "duplicate_mod": "Zduplikowany mod",
+      "wrong_game_version": "Zła wersja Minecrafta",
+      "wrong_loader_version": "Zła wersja loadera",
+      "mixin_conflict": "Kolizja modów",
+      "unknown": "Nieznany błąd"
     },
     "diagnosis": {
       "corrupt_files": "Plik gry jest uszkodzony (np. po przerwanym pobieraniu). „Sprawdź pliki” pobierze go ponownie.",
@@ -1588,6 +1603,238 @@
     "installMissing": "Zainstaluj {name}",
     "installingMissing": "Instalowanie brakujących modów …",
     "installMissingDone": "Zainstalowano: {list}"
+  },
+  "crashHelper": {
+    "title": "Gra uległa awarii",
+    "open": "Otwórz pomocnika awarii",
+    "openDetails": "Pokaż szczegóły",
+    "analyze": "Analizuj",
+    "whenStarting": "{at} · podczas uruchamiania",
+    "whenPlaying": "{at} · po {time} gry",
+    "involved": "Powiązane mody",
+    "bundledIn": "w {name}",
+    "modDisabled": "wyłączony",
+    "working": "Trwa …",
+    "openJavaSettings": "Ustawienia Javy",
+    "confirmTitle": "Wprowadzić tę zmianę?",
+    "confirmHistory": "Zostanie zapisana w historii instancji.",
+    "confirmDo": "Tak, wykonaj",
+    "moreHints": "Inne możliwe przyczyny",
+    "details": "Szczegóły z logu",
+    "cause": "Przyczyna",
+    "firstFrame": "Pierwsza linia z moda",
+    "excerpt": "Ważne linie",
+    "masked": "Ścieżki z nazwą użytkownika i twoja nazwa gracza są ukryte.",
+    "openContent": "Otwórz kartę Zawartość",
+    "privacy": "Analiza odbyła się tylko na twoim PC. Nic nie jest wysyłane, chyba że klikniesz „Udostępnij log”.",
+    "relaunch": "Uruchom ponownie",
+    "undo": "Cofnij",
+    "shadersHint": "Shadery ({name}) dodatkowo obciążają sterownik – spróbuj uruchomić bez nich.",
+    "aMod": "pewien mod",
+    "someMods": "kilka modów",
+    "actions": {
+      "disable": "Wyłącz {name}",
+      "install": "Zainstaluj {name}",
+      "removeDuplicates": "Usuń duplikaty",
+      "raiseMemory": "Zwiększ RAM do {to}",
+      "lowerMemory": "Ustaw RAM na {to}",
+      "useJava": "Użyj Javy {major}",
+      "autoJava": "Wybieraj Javę automatycznie",
+      "updateTrsClient": "Zaktualizuj TRS Client"
+    },
+    "confirm": {
+      "disable": "{name} zostanie wyłączony (plik dostanie końcówkę .disabled). Możesz to w każdej chwili cofnąć tutaj lub w karcie Zawartość.",
+      "install": "{name} zostanie zainstalowany z Modrinth w tej instancji.",
+      "removeDuplicates": "Starsze kopie ({files}) zostaną wyłączone, {keep} pozostanie aktywny.",
+      "memory": "Pamięć tej instancji zmieni się z {from} na {to}.",
+      "java": "Java {major} zostanie w razie potrzeby pobrana i ustawiona dla tej instancji.",
+      "autoJava": "Własna ścieżka Javy tej instancji zostanie usunięta – launcher sam wybierze właściwą wersję Javy.",
+      "updateTrsClient": "Launcher pobierze najnowszy TRS Client z kanału aktualizacji i umieści go w tej instancji.",
+      "fixConflict": "Launcher poszuka pasującej wersji {name} i ją podmieni.",
+      "repair": "Launcher sprawdzi wszystkie pliki gry i ponownie pobierze uszkodzone."
+    },
+    "done": {
+      "disabled": "Wyłączono: {name}",
+      "enabledAgain": "Ponownie włączono: {name}",
+      "memory": "Ustawiono pamięć na {to}",
+      "java": "Java {major} jest teraz ustawiona dla tej instancji",
+      "autoJava": "Java jest teraz wybierana automatycznie",
+      "trsClient": "TRS Client {version} jest zainstalowany – uruchom ponownie.",
+      "trsClientNone": "Nie ma jeszcze nowszego TRS Client. Na razie wyłącz Essential."
+    },
+    "progress": {
+      "java": "Konfiguruję Javę {major} …"
+    },
+    "findings": {
+      "known_issue": {
+        "default": {
+          "title": "Znany problem",
+          "text": "Ta kombinacja modów znana jest z awarii."
+        },
+        "trsclient_essential": {
+          "title": "TRS Client {version} koliduje z Essential",
+          "text": "TRS Client {version} i Essential (z MixinExtras 0.5) zmieniają tę samą część gry – serwer jednoosobowy – i gra ulega awarii przy otwieraniu świata. TRS Client {fixed} to naprawia: zaktualizuj go albo na razie wyłącz Essential."
+        },
+        "sodium_optifine": {
+          "title": "{name} i OptiFine nie działają razem",
+          "text": "OptiFine (i OptiFabric) nie mogą działać razem z {name}. Zostaw {name} – jest szybszy, a z Iris nadal masz shadery – i wyłącz OptiFine."
+        },
+        "iris_without_sodium": {
+          "title": "Iris potrzebuje Sodium",
+          "text": "Iris działa tylko razem z Sodium, którego brakuje w tej instancji. Launcher może zainstalować właściwą wersję."
+        },
+        "two_minimaps": {
+          "title": "Dwie minimapy naraz",
+          "text": "{names} są zainstalowane jednocześnie. Minimapy często sobie przeszkadzają – zostaw jedną i wyłącz drugą."
+        }
+      },
+      "duplicate_mod": {
+        "default": {
+          "title": "{name} jest zainstalowany dwa razy",
+          "text": "W folderze modów jest więcej niż jedna kopia {name} ({files}). Gra może wczytać tylko jedną. Launcher zostawi najnowszą i wyłączy pozostałe."
+        }
+      },
+      "wrong_game_version": {
+        "default": {
+          "title": "{name} jest dla innej wersji Minecrafta",
+          "text": "{name} wymaga Minecrafta {required}, a ta instancja używa {present}. Wyłącz go lub zainstaluj pasującą wersję w karcie Zawartość."
+        }
+      },
+      "wrong_loader_version": {
+        "default": {
+          "title": "{name} wymaga innego {loader}",
+          "text": "{name} wymaga {loader} {required}, a zainstalowana jest wersja {present}. Zmień wersję loadera instancji albo wyłącz moda."
+        }
+      },
+      "incompatible_mod": {
+        "default": {
+          "title": "{name} nie działa z {other}",
+          "text": "{name} nie działa z {other}. Launcher może zamienić go na pasującą wersję albo możesz go wyłączyć."
+        }
+      },
+      "missing_dependency": {
+        "default": {
+          "title": "{name} wymaga {deps}",
+          "text": "{name} wymaga {deps}, którego brakuje w tej instancji. Launcher może go zainstalować z Modrinth."
+        },
+        "unnamed": {
+          "title": "Brakuje wymaganego moda",
+          "text": "Brakuje {deps} – potrzebuje go inny mod. Launcher może go zainstalować z Modrinth."
+        }
+      },
+      "wrong_java": {
+        "default": {
+          "title": "Zła wersja Javy",
+          "text": "Wersja Javy nie pasuje do gry lub do któregoś z jej modów."
+        },
+        "too_old": {
+          "title": "Java {present} jest za stara",
+          "text": "{name} wymaga Javy {required}, a gra działa na Javie {present}. Launcher może zainstalować Javę {required} i używać jej w tej instancji."
+        },
+        "too_new": {
+          "title": "Java {present} jest za nowa dla tej wersji",
+          "text": "Starsze wersje Minecrafta i Forge działają tylko ze starszą Javą (zwykle Java 8). Pozwól launcherowi wybrać Javę automatycznie albo użyj Javy 8."
+        },
+        "mod_requires": {
+          "title": "{name} wymaga Javy {required}",
+          "text": "{name} wymaga Javy {required} lub nowszej, a używana jest Java {present}. Launcher może zainstalować Javę {required} dla tej instancji."
+        }
+      },
+      "out_of_memory": {
+        "default": {
+          "title": "Grze zabrakło pamięci",
+          "text": "Gra potrzebowała więcej pamięci, niż mogła użyć. Daj instancji więcej RAM."
+        },
+        "heap": {
+          "title": "Grze zabrakło pamięci",
+          "text": "{current} MB, których gra może używać, nie wystarczyło – dużo modów, shadery lub duży zasięg renderowania potrzebują więcej. Daj instancji więcej RAM."
+        },
+        "heap_max": {
+          "title": "Grze zabrakło pamięci",
+          "text": "Gra dostaje już tyle RAM, ile ma sens na tym PC ({current} MB). Usuń ciężkie mody albo zmniejsz zasięg renderowania."
+        },
+        "reserve": {
+          "title": "Java nie dostała pamięci",
+          "text": "Java nie mogła zarezerwować {current} MB – więcej, niż ten PC ma wolne. Ustaw RAM nieco niżej."
+        }
+      },
+      "corrupt_files": {
+        "default": {
+          "title": "Plik jest uszkodzony",
+          "text": "Nie da się odczytać pliku. „Sprawdź pliki” ponownie pobierze uszkodzone pliki gry."
+        },
+        "mod_file": {
+          "title": "{file} jest uszkodzony",
+          "text": "Nie da się odczytać pliku moda {file} (np. po przerwanym pobieraniu). Wyłącz go i pobierz ponownie w karcie Zawartość."
+        },
+        "game_files": {
+          "title": "Plik gry jest uszkodzony",
+          "text": "Plik gry jest zepsuty (np. po przerwanym pobieraniu). „Sprawdź pliki” pobierze go ponownie."
+        },
+        "assets": {
+          "title": "Brakuje zasobów gry",
+          "text": "Brakuje części zasobów gry (tekstury, dźwięki, pliki językowe). „Sprawdź pliki” pobierze je ponownie."
+        }
+      },
+      "graphics_driver": {
+        "default": {
+          "title": "Sterownik grafiki uległ awarii",
+          "text": "Awaria nastąpiła w sterowniku grafiki. Zaktualizuj sterownik karty graficznej."
+        },
+        "amd": {
+          "title": "Sterownik grafiki AMD uległ awarii",
+          "text": "Awaria nastąpiła w sterowniku AMD. Zaktualizuj go (AMD Software: Adrenalin Edition) i spróbuj ponownie."
+        },
+        "intel": {
+          "title": "Sterownik grafiki Intel uległ awarii",
+          "text": "Awaria nastąpiła w sterowniku Intel. Zaktualizuj go ze strony Intela lub producenta komputera."
+        },
+        "nvidia": {
+          "title": "Sterownik grafiki NVIDIA uległ awarii",
+          "text": "Awaria nastąpiła w sterowniku NVIDIA. Zaktualizuj go (NVIDIA App) i spróbuj ponownie."
+        },
+        "no_opengl": {
+          "title": "Sterownik grafiki nie obsługuje OpenGL",
+          "text": "Minecraft nie może uruchomić OpenGL. Zwykle brakuje sterownika, jest za stary albo gra działa na złej karcie graficznej. Zainstaluj najnowszy sterownik."
+        },
+        "opengl_too_old": {
+          "title": "OpenGL na tym PC jest za stary",
+          "text": "Ta wersja Minecrafta wymaga nowszego OpenGL, niż oferuje karta lub sterownik. Zaktualizuj sterownik – bardzo stare karty obsługują tylko starsze wersje Minecrafta."
+        }
+      },
+      "mixin_conflict": {
+        "default": {
+          "title": "Mody sobie przeszkadzają",
+          "text": "Dwa lub więcej modów zmienia tę samą część gry i sobie przeszkadza. Wyłącz ostatnio dodane mody i uruchom ponownie."
+        },
+        "transform": {
+          "title": "Mody kolidują przy zmianie {target}",
+          "text": "Kilka modów zmienia tę samą część gry ({target}) i sobie przeszkadza. Powiązane: {names}. Wyłącz jeden z nich i uruchom ponownie."
+        },
+        "transform_nomods": {
+          "title": "Mody kolidują przy zmianie {target}",
+          "text": "Kilka modów zmienia tę samą część gry ({target}) i sobie przeszkadza. Wyłącz ostatnio dodane mody i uruchom ponownie."
+        },
+        "redirect_conflict": {
+          "title": "Dwa mody zmieniają to samo miejsce",
+          "text": "{names} przekierowują to samo miejsce w grze – może to zrobić tylko jeden. Wyłącz jeden z nich."
+        },
+        "apply": {
+          "title": "Mod nie mógł wpiąć się w grę",
+          "text": "{names} nie mógł nanieść swoich zmian na tę wersję Minecrafta – często to przestarzały mod lub konflikt z innym. Zaktualizuj go albo wyłącz."
+        }
+      },
+      "unknown": {
+        "default": {
+          "title": "Nieznany błąd",
+          "text": "Launcher nie ustalił dokładnej przyczyny. Najważniejsze linie są w „Szczegółach”. Udostępnienie logu pomoże innym ci pomóc."
+        },
+        "suspect": {
+          "title": "Nieznany błąd – prawdopodobnie {name}",
+          "text": "Awaria zaczyna się w {name}. Wyłącz go na próbne uruchomienie; jeśli gra wtedy działa, zaktualizuj moda albo zgłoś awarię autorowi."
+        }
+      }
+    }
   },
   "exportPack": {
     "title": "Eksportuj jako modpack",

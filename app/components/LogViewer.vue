@@ -27,6 +27,7 @@ const expandedView = ref(false)
 const allOpen = ref(false)
 const copied = ref(false)
 const sharing = ref(false)
+const crashHelper = useCrashHelperStore()
 const newSinceScroll = ref(0)
 
 const isLive = computed(() => source.value === 'live')
@@ -356,6 +357,14 @@ const shareLabel = computed(() => (isLive.value ? t('logViewer.latest') : (curre
         <button class="btn-icon size-8" :title="copied ? t('logConsole.copied') : t('logViewer.copy')" :aria-label="t('logViewer.copy')" :disabled="!matchCount" @click="copyAll">
           <svg v-if="!copied" viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 9h11v11H9zM5 15H4V4h11v1" /></svg>
           <svg v-else viewBox="0 0 24 24" class="size-4 text-ok" fill="none" stroke="currentColor" stroke-width="2.5"><path :d="icons.check" /></svg>
+        </button>
+        <!-- Absturz-Helfer: ältere Logs/Crash-Reports lokal analysieren bzw. letzte Analyse öffnen. -->
+        <button v-if="!isLive" class="btn btn-ghost h-8 gap-1.5 px-2.5 text-xs" :disabled="crashHelper.loading" @click="crashHelper.analyzeSource(instanceId, source)">
+          <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4M8 11h6M11 8v6" /></svg>
+          {{ t('crashHelper.analyze') }}
+        </button>
+        <button v-else-if="crashHelper.latest[instanceId]" class="btn btn-ghost h-8 px-2.5 text-xs" @click="crashHelper.show(crashHelper.latest[instanceId]!)">
+          {{ t('crashHelper.open') }}
         </button>
         <button class="btn-icon size-8" :title="t('logViewer.share')" :aria-label="t('logViewer.share')" @click="sharing = true">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" /></svg>

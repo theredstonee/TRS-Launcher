@@ -55,6 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let _ = exit_tx.send(());
                 }
                 GameEvent::Notice { message, .. } => println!("== Hinweis: {message}"),
+                GameEvent::CrashAnalyzed { crash, .. } => println!("== Absturz-Helfer: {:?}", crash.analysis.primary().kind),
             }),
         )
         .await?,

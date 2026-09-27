@@ -29,6 +29,8 @@ const LOG_BATCH_INTERVAL: Duration = Duration::from_millis(60);
 const TAIL_INTERVAL: Duration = Duration::from_millis(150);
 /// Für die Diagnose reicht das Ende des Logs.
 const DIAGNOSIS_LINES: usize = 400;
+/// Der Absturz-Helfer liest mehr (Mod-Liste steht am Anfang des Logs).
+const CRASH_HELPER_LINES: usize = LOG_HISTORY;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
@@ -41,7 +43,15 @@ pub enum GameEvent {
         crashed: bool,
         play_seconds: u64,
         diagnosis: Option<Box<Diagnosis>>,
+        /// Nach einem Absturz: ID der Analyse, die gleich als `crashAnalyzed` folgt.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        crash_id: Option<String>,
+        /// Log-Ende für den Absturz-Helfer (bleibt im Kern).
+        #[serde(skip)]
+        crash: Option<Arc<crate::crash::CrashContext>>,
     },
+    /// Der Absturz-Helfer ist fertig (siehe [`crate::crash`]).
+    CrashAnalyzed { instance_id: String, crash: Box<crate::crash::CrashAnalysis> },
     /// Ein Start-Hook oder die Synchronisierung nach dem Beenden ist
     /// fehlgeschlagen – das Frontend zeigt die Meldung als Hinweis.
     /// `message` ist die deutsche Rückfall-Meldung, `code`/`params` die
@@ -584,22 +594,30 @@ impl GameManager {
             let was_killed = killed.load(Ordering::Relaxed);
             // Wiedergefundene Spiele unter Linux: Exit-Code unbekannt – dann kein Absturz melden.
             let crashed = !was_killed && exit_code.map_or(process.exit_code_known(), |code| code != 0);
-            let diagnosis = {
+            let (diagnosis, crash) = {
                 let mut state = state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
                 state.running.remove(&id);
                 if crashed {
-                    let history = state.logs.get(&id).map(|h| {
-                        let skip = h.len().saturating_sub(DIAGNOSIS_LINES);
-                        h.iter().skip(skip).cloned().collect::<Vec<_>>()
-                    });
-                    history.as_deref().and_then(diagnose).map(Box::new)
+                    let tail = |n: usize| {
+                        state.logs.get(&id).map(|h| h.iter().skip(h.len().saturating_sub(n)).cloned().collect::<Vec<_>>())
+                    };
+                    let diagnosis = tail(DIAGNOSIS_LINES).as_deref().and_then(diagnose).map(Box::new);
+                    let context = crate::crash::CrashContext {
+                        crash_id: crate::crash::CrashContext::new_id(Utc::now()),
+                        lines: tail(CRASH_HELPER_LINES).unwrap_or_default(),
+                        started_at: record.started_at,
+                        exit_code,
+                        play_seconds,
+                    };
+                    (diagnosis, Some(Arc::new(context)))
                 } else {
-                    None
+                    (None, None)
                 }
             };
             sessions.remove(&id);
             on_exit(play_seconds);
-            sink(GameEvent::Exited { instance_id: id, exit_code, crashed, play_seconds, diagnosis });
+            let crash_id = crash.as_ref().map(|c| c.crash_id.clone());
+            sink(GameEvent::Exited { instance_id: id, exit_code, crashed, play_seconds, diagnosis, crash_id, crash });
         });
     }
 
