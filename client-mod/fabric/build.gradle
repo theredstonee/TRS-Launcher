@@ -213,6 +213,8 @@ mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'Worl
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
 // Suche in der Tastenbelegung: Einträge der Liste ersetzen (alle Versionen).
 mixinClasses << 'KeySearchListInvoker'
+// Fehlerbildschirm: Ziel der letzten Verbindung merken (Erneut verbinden, Neu anmelden).
+mixinClasses << 'ConnectTargetMixin'
 if (stonecutter.eval(mc, '<1.20.3')) mixinClasses << 'SelectionListAccessor'
 if (stonecutter.eval(mc, '<1.19.4')) mixinClasses << 'LoadingScreenMixin'
 // Sozial-Toasts über Vanilla-Menüs: bis 1.19.3 nach dem Bildschirm im GameRenderer (ab 1.19.4 über MenuScreenMixin).

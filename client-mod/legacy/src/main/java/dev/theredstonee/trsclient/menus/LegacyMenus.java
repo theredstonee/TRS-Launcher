@@ -96,6 +96,7 @@ public final class LegacyMenus {
 		if (worldsClass == null) worldsClass = Mc.worldSelectScreen(null).getClass();
 		if (s.getClass() == worldsClass) return MenuStyle.Kind.WORLDS;
 		if (s instanceof GuiDownloadTerrain || s instanceof GuiConnecting) return MenuStyle.Kind.LOADING;
+		if (s instanceof net.minecraft.client.gui.GuiDisconnected) return MenuStyle.Kind.ERROR;
 		return null;
 	}
 
@@ -165,7 +166,7 @@ public final class LegacyMenus {
 		if (k == MenuStyle.Kind.MULTIPLAYER || k == MenuStyle.Kind.WORLDS) return;
 		try {
 			Canvas c = canvas(s);
-			int header = k == MenuStyle.Kind.PAUSE ? 0 : MenuSkin.HEADER;
+			int header = k == MenuStyle.Kind.PAUSE || k == MenuStyle.Kind.ERROR ? 0 : MenuSkin.HEADER;
 			MenuSkin.background(c, s.width, s.height, Mc.world() != null, header, s.height);
 		} catch (RuntimeException e) {
 			// klassisch weiter

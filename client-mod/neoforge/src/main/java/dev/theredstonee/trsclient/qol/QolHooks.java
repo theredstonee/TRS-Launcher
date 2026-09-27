@@ -351,7 +351,8 @@ public final class QolHooks {
 		return qol != null && qol.reconnect.phase() == AutoReconnect.Phase.COUNTDOWN;
 	}
 
-	private static void connect(Minecraft mc, ServerData data) {
+	/** Mit einem Server verbinden (Auto-Reconnect, Fehlerbildschirm). */
+	public static void connect(Minecraft mc, ServerData data) {
 		Screen parent = new JoinMultiplayerScreen(new TitleScreen());
 		//? if >=1.20.5 {
 		ConnectScreen.startConnecting(parent, mc, ServerAddress.parseString(data.ip), data, false, null);
@@ -361,6 +362,11 @@ public final class QolHooks {
 		/*ConnectScreen.startConnecting(parent, mc, ServerAddress.parseString(data.ip), data);
 		*///?} else
 		/*Mc.setScreen(new ConnectScreen(parent, mc, data));*/
+	}
+
+	/** Grund im Getrennt-Bildschirm als Text (für „Fehler kopieren“). */
+	public static String reason(Screen s) {
+		return reasonOf(s);
 	}
 
 	/** Grund im Getrennt-Bildschirm (Feld per Typ gesucht – keine Namen, die sich je Loader unterscheiden). */

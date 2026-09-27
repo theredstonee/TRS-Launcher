@@ -197,6 +197,7 @@ public final class TrsModules {
 	public final BoolSetting menuLoading;
 	public final BoolSetting menuOptions;
 	public final BoolSetting menuWorlds;
+	public final BoolSetting menuErrors;
 
 	// --- PvP-Anzeigen ---
 	public final NumberSetting reachDecimals;
@@ -682,6 +683,7 @@ public final class TrsModules {
 		menuLoading = menuStyle.add(new BoolSetting("loading", "Loading screens", true));
 		menuOptions = menuStyle.add(new BoolSetting("options", "Options", true));
 		menuWorlds = menuStyle.add(new BoolSetting("worlds", "World list", true));
+		menuErrors = menuStyle.add(new BoolSetting("errors", "Error screens (connection lost, kicked)", true));
 
 		reachDecimals = reach.add(new NumberSetting("decimals", "Decimal places", 2, 0, 3, 1, ""));
 		reachHold = reach.add(new NumberSetting("hold", "Display time (s, 0 = always)", 4, 0, 10, 1, ""));

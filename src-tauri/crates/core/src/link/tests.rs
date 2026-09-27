@@ -95,6 +95,7 @@ async fn response(r: &mut R, id: u64) -> serde_json::Value {
 struct FakeAccounts {
     adds: AtomicUsize,
     sessions: AtomicUsize,
+    refreshes: AtomicUsize,
 }
 
 impl AccountsHandler for FakeAccounts {
@@ -112,11 +113,15 @@ impl AccountsHandler for FakeAccounts {
         })
     }
 
-    fn session(&self, _instance_id: String, account: String) -> BoxFuture<'static, HandlerResult<LinkSession>> {
+    fn session(&self, _instance_id: String, account: String, refresh: bool) -> BoxFuture<'static, HandlerResult<LinkSession>> {
         self.sessions.fetch_add(1, Ordering::SeqCst);
+        if refresh {
+            self.refreshes.fetch_add(1, Ordering::SeqCst);
+        }
         Box::pin(async move {
             if account == "b".repeat(32) {
-                Ok(LinkSession { id: account, name: "Steve".into(), xuid: "123".into(), token: "mc-token-steve".into() })
+                let token = if refresh { "mc-token-steve-neu" } else { "mc-token-steve" };
+                Ok(LinkSession { id: account, name: "Steve".into(), xuid: "123".into(), token: token.into() })
             } else {
                 Err("unknown_account")
             }
@@ -199,6 +204,13 @@ async fn v2_handschlag_und_konten() {
         }
     }
     assert_eq!(fake.adds.load(Ordering::SeqCst), 1);
+
+    // „Ungültige Sitzung“ im Spiel: Token beim Launcher erneuern lassen (nach der 2-s-Bremse).
+    tokio::time::sleep(Duration::from_millis(2100)).await;
+    send(&mut c.w, json!({ "type": "req", "id": 10, "op": "accounts.session", "account": "b".repeat(32), "refresh": "1" })).await;
+    let res = response(&mut c.r, 10).await;
+    assert_eq!(proto::unseal(&c.seal_key, res["session"]["token"].as_str().unwrap()).unwrap(), b"mc-token-steve-neu");
+    assert_eq!(fake.refreshes.load(Ordering::SeqCst), 1);
 
     send(&mut c.w, json!({ "type": "req", "id": 8, "op": "gibt.es.nicht" })).await;
     assert_eq!(response(&mut c.r, 8).await["error"], "unknown_op");

@@ -87,6 +87,7 @@ public final class VanillaMenus {
 			return MenuStyle.Kind.WORLDS;
 		}
 		if (loading(s)) return MenuStyle.Kind.LOADING;
+		if (s instanceof net.minecraft.client.gui.screens.DisconnectedScreen) return MenuStyle.Kind.ERROR;
 		return null;
 	}
 
@@ -134,7 +135,7 @@ public final class VanillaMenus {
 			final int w = s.width;
 			final int h = s.height;
 			final int[] list = k == MenuStyle.Kind.PAUSE ? null : listBounds(s);
-			final int header = k == MenuStyle.Kind.PAUSE ? 0 : (list != null ? Math.max(0, list[1]) : MenuSkin.HEADER);
+			final int header = k == MenuStyle.Kind.PAUSE || k == MenuStyle.Kind.ERROR ? 0 : (list != null ? Math.max(0, list[1]) : MenuSkin.HEADER);
 			final int footer = list != null ? Math.min(h, list[3]) : h;
 			final boolean world = inWorld();
 			final Canvas c = canvas(g);
@@ -406,6 +407,7 @@ public final class VanillaMenus {
 	/** Nach Screen#init bzw. #rebuildWidgets. */
 	public static void afterInit(Screen s, WidgetHost host) {
 		KeySearchUi.afterInit(s, host);
+		DisconnectUi.afterInit(s, host);
 		MenuStyle.Kind k = kind(s);
 		if (k == null) return;
 		try {

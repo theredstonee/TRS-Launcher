@@ -270,6 +270,41 @@ public final class AccountManager {
 		return null;
 	}
 
+	/**
+	 * Neu anmelden ohne Neustart (Fehlerbildschirm „Ungültige Sitzung“): der Launcher erneuert das Token des aktuellen
+	 * Kontos, das Spiel setzt es ein. Ergebnis an {@code done} (Konto-Thread): {@code null} = geklappt, sonst ein Code
+	 * ({@code noLauncher}, {@code inWorld}, Link-Fehler …).
+	 */
+	public void reauth(final java.util.function.Consumer<String> done) {
+		if (launcher == null || !launcher.available()) {
+			done.accept("noLauncher");
+			return;
+		}
+		if (platform.inWorld()) {
+			done.accept("inWorld");
+			return;
+		}
+		submit(() -> {
+			captureStartup();
+			SessionData cur = platform.current();
+			if (cur == null || cur.uuid == null) {
+				done.accept("unknown_account");
+				return;
+			}
+			try {
+				SessionData fresh = launcher.session(cur.uuid, true);
+				apply(fresh);
+				platform.log("Neu angemeldet: " + fresh.name);
+				publishList();
+				done.accept(null);
+			} catch (LauncherAccounts.LinkException e) {
+				done.accept(e.code);
+			} catch (SwitchException e) {
+				done.accept(e.code);
+			}
+		});
+	}
+
 	/** Zu einem Konto wechseln (nur ohne Welt). */
 	public void switchTo(final String uuid) {
 		if (state().busy()) return;

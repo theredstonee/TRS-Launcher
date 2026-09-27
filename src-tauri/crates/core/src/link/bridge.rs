@@ -86,11 +86,11 @@ impl AccountsHandler for AccountsBridge {
         })
     }
 
-    fn session(&self, instance_id: String, account: String) -> BoxFuture<'static, HandlerResult<LinkSession>> {
+    fn session(&self, instance_id: String, account: String, refresh: bool) -> BoxFuture<'static, HandlerResult<LinkSession>> {
         let launcher = self.launcher.clone();
         Box::pin(async move {
             let launcher = launcher.upgrade().ok_or("error")?;
-            let session = match launcher.accounts.session_for(&account, false).await {
+            let session = match launcher.accounts.session_for(&account, refresh).await {
                 Ok(Some(session)) => session,
                 Ok(None) => return Err("unknown_account"),
                 Err(e) => {
@@ -98,7 +98,11 @@ impl AccountsHandler for AccountsBridge {
                     return Err(code(&e));
                 }
             };
-            tracing::info!("Kontowechsel im Spiel ('{instance_id}') → {}", session.player_name);
+            if refresh {
+                tracing::info!("Neue Sitzung im Spiel ('{instance_id}') für {}", session.player_name);
+            } else {
+                tracing::info!("Kontowechsel im Spiel ('{instance_id}') → {}", session.player_name);
+            }
             // In diesem Spiel spielt jetzt dieses Konto (Präsenz des Launchers).
             launcher.trs.presence.game_account_changed(&instance_id, &session.uuid);
             Ok(LinkSession { id: session.uuid, name: session.player_name, xuid: session.xuid, token: session.access_token })

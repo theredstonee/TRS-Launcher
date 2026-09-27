@@ -53,6 +53,7 @@
 		"TabBadgeMixin",
 		"MenuScreenMixin",
 		"KeySearchListInvoker",
+		"ConnectTargetMixin",
 		"MenuButtonMixin",
 		"ServerEntryMixin",
 		"WorldEntryMixin",

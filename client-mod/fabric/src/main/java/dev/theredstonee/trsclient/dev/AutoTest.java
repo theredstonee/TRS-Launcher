@@ -264,6 +264,11 @@ public final class AutoTest {
 					step = 33;
 					break;
 				}
+				// -PtrsAutotestOnly=disconnect: Fehlerbildschirm (Neu anmelden, kopieren, Server-Status)
+				if ("disconnect".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 34;
+					break;
+				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
 				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 29;
@@ -591,6 +596,21 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 34:
+				if (disconnectTest.step(mc, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -624,6 +644,7 @@ public final class AutoTest {
 	private final ShieldTest shieldTest = new ShieldTest();
 	private final DuckTest duckTest = new DuckTest();
 	private final KeySearchTest keySearchTest = new KeySearchTest();
+	private final DisconnectTest disconnectTest = new DisconnectTest();
 	private final QolTest qolTest = new QolTest();
 	private final ComfortTest comfortTest = new ComfortTest();
 	private final CircuitTest circuitTest = new CircuitTest();

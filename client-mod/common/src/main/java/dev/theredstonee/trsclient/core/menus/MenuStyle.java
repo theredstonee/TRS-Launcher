@@ -11,7 +11,9 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
 public final class MenuStyle {
 	/** Arten von Vanilla-Menüs mit eigenem Schalter. */
 	public enum Kind {
-		PAUSE, MULTIPLAYER, LOADING, OPTIONS, WORLDS
+		PAUSE, MULTIPLAYER, LOADING, OPTIONS, WORLDS,
+		/** Verbindung getrennt, gekickt, Anmeldung fehlgeschlagen. */
+		ERROR
 	}
 
 	private static volatile TrsModules modules;
@@ -39,6 +41,8 @@ public final class MenuStyle {
 				return m.menuOptions.get();
 			case WORLDS:
 				return m.menuWorlds.get();
+			case ERROR:
+				return m.menuErrors.get();
 			default:
 				return false;
 		}

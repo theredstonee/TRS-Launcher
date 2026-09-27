@@ -95,6 +95,11 @@ public final class AutoTest {
 			CircuitTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=disconnect: Fehlerbildschirm (Neu anmelden, kopieren, Server-Status)
+		if ("disconnect".equals(System.getProperty("trsclient.autotest.only"))) {
+			DisconnectTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=keysearch: Suche in der Tastenbelegung (Steuerung)
 		if ("keysearch".equals(System.getProperty("trsclient.autotest.only"))) {
 			KeySearchTest.install();

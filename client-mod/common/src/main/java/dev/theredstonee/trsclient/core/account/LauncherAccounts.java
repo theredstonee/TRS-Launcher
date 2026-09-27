@@ -93,7 +93,17 @@ public final class LauncherAccounts {
 
 	/** Frische Sitzung für ein Launcher-Konto. */
 	public SessionData session(String uuid) throws LinkException {
-		Map<String, String> args = Collections.singletonMap("account", uuid);
+		return session(uuid, false);
+	}
+
+	/**
+	 * Sitzung für ein Launcher-Konto; {@code refresh} = der Launcher erneuert das Minecraft-Token sofort (nach „Ungültige
+	 * Sitzung“). Ältere Launcher ignorieren das Feld und liefern das gespeicherte Token.
+	 */
+	public SessionData session(String uuid, boolean refresh) throws LinkException {
+		Map<String, String> args = new java.util.HashMap<String, String>();
+		args.put("account", uuid);
+		if (refresh) args.put("refresh", "1");
 		TrsLink.Line res = call("accounts.session", args, SESSION_TIMEOUT_MS);
 		TrsLink.SessionDto s = res.session;
 		if (s == null) throw new LinkException("error");

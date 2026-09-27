@@ -34,6 +34,11 @@ How to write an entry:
   `conflict` for keys used twice or `unbound` for free actions – combine them with spaces. The "Key…" button next to
   it shows everything on the next key or mouse button you press. Works from 1.8.9 to 26.3 and also finds the keys of
   other mods.
+- **Sign in again without restarting (TRS Client).** When a server says "Invalid session" or you get disconnected,
+  the error screen now has "Sign in again": the TRS Launcher gets a fresh session, the game uses it right away and
+  connects to the server again – no need to restart the instance. The screen also offers "Connect again", "Switch
+  account", "Copy error" and "Server status", and error screens now use the TRS menu style (can be turned off under
+  Menu Style → Error screens). Signing in again needs the TRS Launcher to be open.
 
 ### Deutsch
 
@@ -46,6 +51,11 @@ How to write an entry:
   für einen Mod, `konflikt` für doppelt belegte Tasten oder `unbelegt` für freie Aktionen – mit Leerzeichen
   kombinierbar. Der Knopf „Taste…“ daneben zeigt alles, was auf der nächsten gedrückten Taste oder Maustaste liegt.
   Funktioniert von 1.8.9 bis 26.3 und findet auch die Tasten anderer Mods.
+- **Neu anmelden ohne Neustart (TRS Client).** Meldet ein Server „Ungültige Sitzung“ oder wirst du getrennt, hat der
+  Fehlerbildschirm jetzt „Neu anmelden“: Der TRS Launcher holt eine frische Sitzung, das Spiel übernimmt sie sofort und
+  verbindet wieder mit dem Server – die Instanz muss nicht neu gestartet werden. Dazu gibt es „Erneut verbinden“,
+  „Konto wechseln“, „Fehler kopieren“ und „Server-Status“, und Fehlerbildschirme erscheinen im TRS-Menü-Stil
+  (abschaltbar unter Menü-Stil → Fehlerbildschirme). Zum Neu-Anmelden muss der TRS Launcher geöffnet sein.
 
 ## 0.10.0 – 2026-09-27 – Toolbox | Werkzeugkasten
 <!-- banner: accent=#ff9f1c motif=/news/0.10.0/banner.png -->

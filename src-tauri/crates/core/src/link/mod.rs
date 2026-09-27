@@ -283,7 +283,8 @@ pub type HandlerResult<T> = std::result::Result<T, &'static str>;
 /// Kontenzugriff des Launchers (umgesetzt in `lib.rs` über das `AccountStore`).
 pub trait AccountsHandler: Send + Sync {
     fn list(&self) -> BoxFuture<'static, HandlerResult<Vec<LinkAccount>>>;
-    fn session(&self, instance_id: String, account: String) -> BoxFuture<'static, HandlerResult<LinkSession>>;
+    /// `refresh`: Token beim Launcher sofort erneuern (Mod meldet „Ungültige Sitzung“), sonst das gültige wiederverwenden.
+    fn session(&self, instance_id: String, account: String, refresh: bool) -> BoxFuture<'static, HandlerResult<LinkSession>>;
     fn add(&self, instance_id: String) -> BoxFuture<'static, HandlerResult<LinkAccount>>;
 }
 
@@ -916,6 +917,9 @@ struct Incoming {
     op: Option<String>,
     #[serde(default)]
     account: Option<String>,
+    /// `accounts.session`: Token erneuern (true, "1" oder "true"); fehlt bei älteren Mods.
+    #[serde(default)]
+    refresh: Option<serde_json::Value>,
     /// Dateiname eines Clips (`clips.preview`, `clips.open`).
     #[serde(default)]
     clip: Option<String>,
@@ -1117,8 +1121,10 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
             }
             let Some(seal_key) = conn.seal_key else { return reply(error_response(id, "not_allowed")) };
             let instance_id = conn.instance_id.clone();
+            let refresh = matches!(&msg.refresh, Some(serde_json::Value::Bool(true)))
+                || matches!(&msg.refresh, Some(serde_json::Value::String(s)) if s == "1" || s == "true");
             tokio::spawn(async move {
-                let value = match handler.session(instance_id, account).await {
+                let value = match handler.session(instance_id, account, refresh).await {
                     Ok(s) => json!({
                         "type": "res", "id": id, "ok": true,
                         "session": { "id": s.id, "name": s.name, "xuid": s.xuid, "token": proto::seal(&seal_key, s.token.as_bytes()) },
