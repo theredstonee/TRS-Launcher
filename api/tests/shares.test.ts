@@ -129,7 +129,7 @@ describe('shared screenshots (§23)', () => {
       limits: { active: 2, maxActive: 2, uploadsToday: 2, maxPerDay: 3 },
     })
     expect(listShares(env.ctx, b!.uuid).shares).toEqual([])
-    expect(await codeAsync(() => upload(env, a!.uuid))).toBe('share_limit')
+    expect(await codeAsync(() => upload(env, a!.uuid))).toBe('shared_image_limit')
     expect(code(() => deleteShare(env.ctx, b!.uuid, s1.id))).toBe('share_not_found')
     deleteShare(env.ctx, a!.uuid, s1.id)
     expect(getShare(env.ctx, s1.id)).toBeUndefined()

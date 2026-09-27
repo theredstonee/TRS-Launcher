@@ -131,7 +131,7 @@ export function shareLimits(ctx: AppContext, uuid: string): ShareLimitsView {
 function assertCanShare(ctx: AppContext, uuid: string): void {
   const l = shareLimits(ctx, uuid)
   if (l.active >= l.maxActive) {
-    throw new ApiError(409, 'share_limit', `You can have at most ${l.maxActive} shared images – delete old links first`, { max: l.maxActive })
+    throw new ApiError(409, 'shared_image_limit', `You can have at most ${l.maxActive} shared images – delete old links first`, { max: l.maxActive })
   }
   if (l.uploadsToday >= l.maxPerDay) {
     const oldest = one<{ at: number }>(

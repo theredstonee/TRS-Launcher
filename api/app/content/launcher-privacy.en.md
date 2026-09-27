@@ -142,8 +142,8 @@ and other TRS players see it on them. A friend may pass the cape on to their own
 
 With the TRS services on, you can write with your friends and in groups in the launcher and in the game.
 
-- **What is stored:** your messages (text, replies, edits, server invites), pictures you send, reactions, read
-  positions, conversation mutes and group memberships. Messages are kept like in a normal chat **until they are
+- **What is stored:** your messages (text, replies, edits, server invites, waypoint cards), pictures you send,
+  reactions, read positions, conversation mutes and group memberships. Messages are kept like in a normal chat **until they are
   deleted** – by you (for everyone), by a group owner, by the team or together with your account.
 - **Encryption:** message texts, invites and group names are stored **encrypted** on the server (AES-256-GCM).
   Pictures are **re-encoded** by the server – this removes location data and all other metadata, and large pictures
@@ -158,6 +158,10 @@ With the TRS services on, you can write with your friends and in groups in the l
   player count and description (the usual server list ping) and keeps the answer in memory for about a minute. Your IP
   address is not passed on – the Minecraft server only sees the TRS server. Addresses in local networks are never
   contacted.
+- **Waypoints:** in the TRS Client you can send a waypoint (or your position) to a friend or a group. The card
+  contains only the name you gave it, the coordinates, the dimension and the server address – for a singleplayer world
+  only a short code calculated from the world folder, never the world name. Coordinates that appear in the normal
+  Minecraft chat are recognised **only locally** in the TRS Client; saving them as a waypoint sends nothing anywhere.
 - **Realtime:** while the launcher or the game is open, a connection to the TRS server delivers new messages and other
   updates (friend requests, online status, cape offers) right away. Missed updates are kept in the server's memory for
   up to 10 minutes so they arrive after a short disconnect.
@@ -175,6 +179,28 @@ With the TRS services on, you can write with your friends and in groups in the l
   to disk, and your TRS token never reaches the launcher window.
 - **"Last online"** in the friend list is what the launcher itself saw (stored locally per account), not information
   from the server.
+
+### Shared screenshots
+
+In the launcher's screenshot gallery and in the TRS Client ("Clips & pictures") you can share a screenshot as a link
+(`https://trs-launcher.theredstonee.de/s/…`). Only the one picture you chose is sent, and only when you click
+"Share as link"; your other screenshots stay on your PC.
+
+- **What is stored:** the picture, **re-encoded** by the server (this removes location data and all other metadata;
+  pictures larger than 4096 pixels are made smaller), its size and format, when it was shared and when it expires, and
+  which TRS account shared it. The account is only used internally – for your list "My shared pictures", the limits and
+  moderation. The public page and the picture show **no player name and no UUID**.
+- **Who sees it:** **anyone who has the link** – there is no password. The link contains a long random code that can't
+  be guessed, and the page tells search engines not to index it (`noindex`). If you post the link in Discord or a
+  similar app, that app's servers load the picture to show a preview.
+- **How long:** **30 days**, then the picture is deleted automatically. You can delete it earlier under "My shared
+  pictures" in the launcher or the TRS Client – the link stops working right away (previews that other apps already
+  made are outside our control). "Alle TRS-Daten löschen" deletes all your shared pictures.
+- **Limits:** at most 10 MB per picture, 50 active links and 20 new links per day per account. An upload ban from
+  moderation also blocks sharing.
+- **Reports:** a shared picture can be reported, also directly on its page. A report from the page only sends the
+  reason; the page stores no IP address (rate limits count in memory only). A report keeps a copy of the picture as
+  evidence, like other reports (see below), and the team can delete shared pictures.
 
 ### Reports and moderation
 
@@ -296,6 +322,7 @@ the TRS server.
 | Only with the TRS services on: the wardrobe entry of the TRS Client – your favourite skins, outfits (name, skin, cape) and emote wheel slots, with the time of the last change | The same wardrobe on every PC |
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
+| Shared screenshots (only the pictures you share): the re-encoded picture, size, format, share and expiry time, the sharing account (not shown publicly) | Sharing a screenshot as a link (see above) |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
 
@@ -337,11 +364,12 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
 - Chat messages and pictures stay until they are deleted (by you for everyone, by the group owner or by the team) or
   the group is deleted. Pictures that were uploaded but never sent are deleted after 1 hour.
+- Shared screenshots are deleted automatically **30 days** after sharing, or earlier when you (or the team) delete them.
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
   account, sessions, friendships, requests and blocks, uploaded capes and their files, cape shares (your capes with
   friends and the capes friends shared with you), code redemptions, reports,
   your online status, all synced skins, presets and settings, all your direct chats (for both sides) and your messages,
-  reactions and pictures in groups (groups you own go to the longest member). Afterwards the TRS services are turned off in the
+  reactions and pictures in groups (groups you own go to the longest member), and all pictures you shared as a link. Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
 - Only active sanctions (such as a ban or a running chat mute, with reason and period) and reports about you (until
   their retention ends, see above) are kept after deletion, so they can't be escaped by signing in again.

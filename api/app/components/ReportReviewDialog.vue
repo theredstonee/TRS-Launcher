@@ -17,6 +17,8 @@ async function load() {
   try {
     report.value = (await api<{ report: ReportDetail }>(`/v1/admin/reports/${props.reportId}`)).report
     if (!draft.value.reasonCode) draft.value.reasonCode = REPORT_TO_REASON[report.value.reason] ?? 'other'
+    // Geteilte Screenshots: naheliegende Strafe ist die Upload-Sperre.
+    if (report.value.kind === 'share' && draft.value.kind === 'chat_mute') draft.value.kind = 'upload_ban'
   } catch (e) {
     error.value = fill(m.value.admin.failed, { error: apiMessage(e) })
   }
@@ -37,7 +39,7 @@ const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_messa
 const limits = computed(() => session.value?.limits ?? { kinds: [], maxMinutes: 0, maxWarnMinutes: 0, permanent: false })
 
 function resetForm() {
-  draft.value = newSanctionDraft('chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
+  draft.value = newSanctionDraft(report.value?.kind === 'share' ? 'upload_ban' : 'chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
   keepOpen.value = false
   includeRelated.value = false
   note.value = ''
@@ -220,7 +222,7 @@ onBeforeUnmount(() => {
         <div v-if="report" class="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
           <!-- Kontext -->
           <section class="min-w-0 space-y-5">
-            <div>
+            <div v-if="report.kind !== 'share'">
               <h3 class="section-title">{{ t.context }}</h3>
               <p v-if="report.evidence?.conversation" class="mt-1 text-xs text-base-400">
                 {{ report.evidence.conversation.kind === 'group'

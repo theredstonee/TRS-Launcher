@@ -205,7 +205,7 @@ function reportTone(r: ReportSummaryV2): string {
               <span v-if="r.preview" class="line-clamp-2 text-sm text-base-100">„{{ r.preview }}“</span>
               <span class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-base-400">
                 <span>{{ fill(mod.against, { name: r.target?.name || mod.unknown }) }}</span>
-                <span>{{ fill(mod.by, { name: r.reporter?.name || mod.unknown }) }}</span>
+                <span>{{ fill(mod.by, { name: r.anonymous ? mod.anonymous : (r.reporter?.name || mod.unknown) }) }}</span>
                 <span v-if="r.images">{{ fill(mod.images, { n: r.images }) }}</span>
                 <span v-if="r.targetOpenReports > 1" class="text-lamp-300">{{ fill(mod.targetOpen, { n: r.targetOpenReports }) }}</span>
                 <span v-if="r.assignedTo">→ {{ r.assignedTo.name }}</span>

@@ -2445,7 +2445,7 @@ A player uploads a screenshot and gets a link `https://trs-launcher.theredstonee
 
 - At most **10 MiB** (`413 payload_too_large`). The type must match the magic bytes (`415 unsupported_media_type`), animated WebP → `400 animated_image`, broken → `400 invalid_image`, more than 8192 px per side or 24 megapixels → `400 image_too_large`.
 - The server **decodes and re-encodes** the image like chat images (§18.7): no metadata survives, JPEG orientation is applied. Output: **JPEG quality 90** when opaque, **PNG** with transparency, at most **4096 px** per side; preview ≤ 480 px.
-- Limits per account: **50 active links** (`409 share_limit` with `max`), **20 uploads per 24 hours** – deleting a link does not give the upload back (`429 share_daily_limit` with `retryAfter` and `Retry-After` = seconds until the oldest upload of the window is 24 h old), and 10 requests per minute (`429 rate_limited`).
+- Limits per account: **50 active links** (`409 shared_image_limit` with `max`), **20 uploads per 24 hours** – deleting a link does not give the upload back (`429 share_daily_limit` with `retryAfter` and `Retry-After` = seconds until the oldest upload of the window is 24 h old), and 10 requests per minute (`429 rate_limited`).
 - An active **upload ban** (§22) → `403 sanctioned` with `until` and `sanction`. Banned accounts can't sign in at all.
 - The server has a global storage limit (`SHARE_STORAGE_MAX_MB`, default 1024) → `507 storage_full`. While two large images are being encoded, further uploads get `503 busy` with `Retry-After: 3`.
 - Panoramas: an equirectangular PNG is just an image; the six cube faces are shared one by one. Clients shrink files above 10 MiB or 4096 px locally before uploading.
