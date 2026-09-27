@@ -163,6 +163,14 @@ public final class MapBridge implements MapPlatform {
 	}
 
 	@Override
+	public boolean openWorldMap() {
+		dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
+		if (screen == null) return false;
+		mc().displayGuiScreen(screen);
+		return true;
+	}
+
+	@Override
 	public String serverMotd() {
 		ServerData data = mc().getCurrentServerData();
 		return data == null ? null : data.serverMOTD;

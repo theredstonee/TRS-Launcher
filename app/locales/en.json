@@ -711,7 +711,8 @@
       "emptyMessage": "The message is empty.",
       "invalidCursor": "Invalid page.",
       "groupFull": "A group can have at most {max} members.",
-      "invalidReaction": "Unknown reaction."
+      "invalidReaction": "Unknown reaction.",
+      "invalidWaypoint": "Invalid waypoint."
     },
     "hosting": {
       "invalidRoom": "Invalid world.",
@@ -763,6 +764,13 @@
     },
     "crash": {
       "notFound": "This crash no longer exists."
+    },
+    "shareLink": {
+      "limit": "You already have 50 shared pictures – delete an old one under “My shared pictures” first.",
+      "dailyLimit": "You have already shared 20 pictures today – try again tomorrow.",
+      "storageFull": "The TRS server has no space right now – please try again later.",
+      "notFound": "This shared picture doesn’t exist (anymore).",
+      "invalidId": "Invalid link."
     }
   },
   "browse": {
@@ -2826,7 +2834,8 @@
       "title": "TRS services are turned off",
       "friends": "To show your friends list, the launcher signs in to the TRS server. That only happens once you agree.",
       "capes": "To show TRS capes, the launcher signs in to the TRS server. That only happens once you agree.",
-      "button": "Learn more & turn on"
+      "button": "Learn more & turn on",
+      "shares": "To share screenshots as links, the launcher signs in to the TRS server. That only happens once you agree."
     },
     "account": {
       "title": "No account signed in",
@@ -2851,7 +2860,8 @@
       "chat": "chat messages, pictures you send and reports – stored encrypted on the server until they are deleted; reported content is kept for moderation",
       "settings": "your privacy settings and timestamps (sign-in, creation)",
       "sync": "with sync on: your own skins (images and names), your own presets and your theme, accent colour and language – so they are the same on all your PCs; the TRS Client syncs its modules, HUD layouts and keys the same way (switch in the TRS menu)",
-      "presence": "your online status (launcher open / in game, version, and the server if you choose) – kept in memory only, it expires after 3 minutes"
+      "presence": "your online status (launcher open / in game, version, and the server if you choose) – kept in memory only, it expires after 3 minutes",
+      "shares": "screenshots you share as a link – public for anyone with the link, deleted automatically after 30 days"
     },
     "footer": "You can turn the services off at any time under {path} and delete all your TRS data there. Without your consent, the launcher sends nothing to the TRS server.",
     "settingsPath": "Settings → Privacy",
@@ -3384,7 +3394,9 @@
       "deleteMessage": "Delete message",
       "dismiss": "Dismiss",
       "resolve": "Done",
-      "related": "Other reports about this player"
+      "related": "Other reports about this player",
+      "waypoint": "Waypoint “{name}”: {coords} ({dimension})",
+      "deleteShare": "Delete shared picture"
     }
   },
   "whatsNew": {
@@ -4267,7 +4279,8 @@
         "message": "Report message",
         "image": "Report picture",
         "player": "Report player",
-        "group": "Report group"
+        "group": "Report group",
+        "share": "Report shared picture"
       },
       "intro": "You’re reporting {name}. The TRS team reviews every report.",
       "reason": "Reason",
@@ -4327,6 +4340,19 @@
       "openChat": "Open chat",
       "reply": "Reply",
       "replyPlaceholder": "Quick reply …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Waypoint",
+      "copy": "Copy coordinates",
+      "copyTitle": "Copies “x y z” to the clipboard",
+      "copied": "Coordinates {coords} copied",
+      "singleplayer": "Singleplayer world",
+      "dimensions": {
+        "overworld": "Overworld",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4857,6 +4883,37 @@
       "ask": "Always ask",
       "always": "Always with TRS Client",
       "never": "Always without TRS Client"
+    }
+  },
+  "shareLink": {
+    "share": "Share as link",
+    "shareTitle": "Uploads this screenshot and copies a public link (valid for 30 days)",
+    "sharing": "Sharing …",
+    "myShares": "My shared pictures",
+    "needConsent": "Sharing links needs the TRS services – they are turned off.",
+    "turnOn": "Turn on",
+    "needAccount": "Sign in with your Minecraft account first to share links.",
+    "open": "Open",
+    "copyLink": "Copy link",
+    "openInBrowser": "Open in browser",
+    "toasts": {
+      "copied": "Link copied – valid for {days} days",
+      "ready": "Link created, but it couldn’t be copied – you’ll find it under “My shared pictures”.",
+      "copiedAgain": "Link copied",
+      "deleted": "Link deleted – the picture is gone"
+    },
+    "dialog": {
+      "title": "My shared pictures",
+      "intro": "Anyone with a link can see the picture – without your name. Links delete themselves after 30 days; you can delete them earlier here.",
+      "active": "{n} of {max} links active",
+      "today": "{n} of {max} shared today",
+      "empty": "You haven’t shared any pictures yet. Use “Share as link” on a screenshot.",
+      "expiresIn": "Expires in {days} day | Expires in {days} days",
+      "expiresToday": "Expires today"
+    },
+    "deleteDialog": {
+      "title": "Delete link?",
+      "text": "The picture is removed from the TRS server and the link stops working. Your screenshot on this PC stays."
     }
   }
 }

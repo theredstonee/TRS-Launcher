@@ -22,6 +22,7 @@ function message(seq: number): ChatMessage {
     text: `Text ${seq}`,
     invite: null,
     world: null,
+    waypoint: null,
     attachments: [],
     replyTo: null,
     system: null,

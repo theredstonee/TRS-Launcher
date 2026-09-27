@@ -73,6 +73,13 @@ public final class NewSince {
 	 */
 	public static final String QOL = "0.10.0";
 
+	/** Teilen-Paket (TRS Client 0.11.0): Wegpunkte teilen, Koordinaten im Chat anklicken, Bildschirmfotos als Link. */
+	public static final String SHARE = "0.11.0";
+	/** Sozial → Eingabe: „Wegpunkt teilen“. */
+	public static final String SOCIAL_WAYPOINT = "social:waypoint";
+	/** Clips &amp; Bilder: „Als Link teilen“ + „Meine geteilten Bilder“. */
+	public static final String CLIPS_SHARE = "clips:share";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -115,6 +122,8 @@ public final class NewSince {
 		add(QOL, "chatMentions", "chatFilter", "autoReconnect", "queueAlerts", "scoreboard", "tabPing", "bossBar", "titles",
 				"warnings", "itemCounter", "hitFeedback", "streamerMode");
 		add(QOL, "chat.timestampTwelveHour", "chat.history", "chat.copyMode", "autoGg.presets");
+		// Teilen-Paket.
+		add(SHARE, SOCIAL_WAYPOINT, CLIPS_SHARE, "chat.coordLinks");
 	}
 
 	private NewSince() {

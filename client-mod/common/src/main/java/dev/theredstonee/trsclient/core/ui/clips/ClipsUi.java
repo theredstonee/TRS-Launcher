@@ -45,8 +45,15 @@ public final class ClipsUi extends WindowUi {
 	private static final long RESCAN_MS = 4_000L;
 
 	enum Filter {
-		ALL, CLIPS, SCREENSHOTS
+		ALL, CLIPS, SCREENSHOTS, SHARED
 	}
+
+	// „Als Link teilen“ / „Meine geteilten Bilder“ (API.md §23).
+	private boolean sharing;
+	private dev.theredstonee.trsclient.core.social.SharedImage.Listing shares;
+	private boolean sharesLoading;
+	private String sharesError;
+	private dev.theredstonee.trsclient.core.social.SharedImage confirmShare;
 
 	private final ClipsHost host;
 	private final ThreadPoolExecutor worker;
@@ -161,6 +168,7 @@ public final class ClipsUi extends WindowUi {
 	private List<ClipLibrary.Entry> filtered() {
 		List<ClipLibrary.Entry> all = library.listing().entries;
 		if (filter == Filter.ALL) return all;
+		if (filter == Filter.SHARED) return new ArrayList<>();
 		List<ClipLibrary.Entry> out = new ArrayList<>();
 		for (ClipLibrary.Entry e : all) {
 			if ((filter == Filter.CLIPS) == (e.type == ClipLibrary.Type.CLIP)) out.add(e);
@@ -221,6 +229,25 @@ public final class ClipsUi extends WindowUi {
 			});
 			// Neu: Clip-Vorschau im Spiel – Schild am Reiter „Clips“, bis die erste Vorschau offen war.
 			if (f == Filter.CLIPS && isNew(NewSince.CLIPS_PREVIEW)) NewBadge.draw(c, tx + tw - NewBadge.width(c) + 3, y - 6);
+			tx += tw + 3;
+			tabsRight = tx;
+		}
+		// Meine geteilten Bilder (Links)
+		{
+			String label = I18n.tr("clips.filter.shared");
+			int tw = c.textWidth(label) + 12;
+			tab(c, tx, y, tw, 16, label, filter == Filter.SHARED, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					filter = Filter.SHARED;
+					scroll = 0;
+					preview = -1;
+					closeClip();
+					seen(NewSince.CLIPS_SHARE);
+					loadShares();
+				}
+			});
+			if (isNew(NewSince.CLIPS_SHARE)) NewBadge.draw(c, tx + tw - NewBadge.width(c) + 3, y - 6);
 			tx += tw + 3;
 			tabsRight = tx;
 		}
@@ -326,7 +353,9 @@ public final class ClipsUi extends WindowUi {
 		int gw = w - 12;
 		int ghh = gh - 8;
 		visibleCache.clear();
-		if (list.isEmpty()) {
+		if (filter == Filter.SHARED) {
+			sharedView(c, gx, gy, gw, ghh, mx, my);
+		} else if (list.isEmpty()) {
 			String empty = !listing.scanned ? I18n.tr("clips.loading")
 					: filter == Filter.CLIPS ? (listing.clipsDir == null ? I18n.tr("clips.empty.noFolder") : I18n.tr("clips.empty.clips"))
 					: filter == Filter.SCREENSHOTS ? I18n.tr("clips.empty.screenshots") : I18n.tr("clips.empty.all");
@@ -343,6 +372,7 @@ public final class ClipsUi extends WindowUi {
 		if (preview >= 0) previewOverlay(c, list, mx, my);
 	if (clipView >= 0) clipOverlay(c, list, mx, my, now);
 		if (confirmDelete != null) confirmOverlay(c, mx, my);
+		if (confirmShare != null) confirmShareOverlay(c, mx, my);
 	}
 
 	private void recordButton(Canvas c, int x, int y, int w, int h, String label, boolean recording, boolean enabled, int mx, int my, long now) {
@@ -427,6 +457,14 @@ public final class ClipsUi extends WindowUi {
 						confirmDelete = e;
 					}
 				});
+				if (e.type == ClipLibrary.Type.SCREENSHOT) {
+					iconButton(c, bx - 17, ty + 5, 14, "link", false, mx, my, new Runnable() {
+						@Override
+						public void run() {
+							share(e);
+						}
+					});
+				}
 			}
 			if (!overlay) {
 				hits.add(tx, ty, tileW, tileH, new Runnable() {
@@ -515,6 +553,26 @@ public final class ClipsUi extends WindowUi {
 				if (!OpenPath.open(e.path)) setNotice(I18n.tr("clips.openFailed"), true);
 			}
 		});
+		// Als Link teilen (mit Beschriftung, damit man es findet)
+		String shareLabel = I18n.tr(sharing ? "clips.share.uploading" : "clips.share.button");
+		int sw = Math.min(130, c.textWidth(shareLabel) + 22);
+		int sx = open - 4 - sw;
+		button(c, sx, by + 3, sw, 16, "", false, !sharing, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				share(e);
+			}
+		});
+		Icons.draw(c, "link", sx + 4, by + 7, 1, sharing ? t.textDim : t.accent);
+		Paint.textClipped(c, shareLabel, sx + 15, by + 7, sw - 17, sharing ? t.textDim : t.text, false);
+		if (isNew(NewSince.CLIPS_SHARE)) NewBadge.draw(c, sx + sw - NewBadge.width(c) + 2, by - 6);
+		open = sx;
+		// Meldung (z. B. „Link kopiert“) auch über der großen Ansicht zeigen
+		if (notice != null && System.currentTimeMillis() - noticeAt < 5_000L) {
+			int nw = Math.min(pw - 20, c.textWidth(notice) + 12);
+			c.fill(px + (pw - nw) / 2, by - 16, px + (pw + nw) / 2, by - 3, 0xD0000000);
+			Paint.textClipped(c, notice, px + (pw - nw) / 2 + 6, by - 13, nw - 12, noticeError ? t.dustOn : t.text, false);
+		}
 		Paint.textClipped(c, e.name + "  ·  " + meta(e), bx, by + 7, open - 6 - bx, t.text, false);
 		// Klick daneben bleibt im Overlay (keine Kacheln darunter auslösen).
 		hits.add(px, py, pw, ph - barH, new Runnable() {
@@ -738,6 +796,183 @@ public final class ClipsUi extends WindowUi {
 				|| "error".equals(code);
 	}
 
+	// --- Als Link teilen ---------------------------------------------------------------------------
+
+	/** Bildschirmfoto hochladen → Link in die Zwischenablage + Hinweis. */
+	private void share(ClipLibrary.Entry e) {
+		if (sharing || e == null || e.type != ClipLibrary.Type.SCREENSHOT) return;
+		seen(NewSince.CLIPS_SHARE);
+		final dev.theredstonee.trsclient.core.social.Social s = dev.theredstonee.trsclient.core.clips.ScreenshotShare.social();
+		if (s == null) {
+			setNotice(I18n.tr("clips.share.offline"), true);
+			return;
+		}
+		sharing = true;
+		setNotice(I18n.tr("clips.share.uploading"), false);
+		dev.theredstonee.trsclient.core.clips.ScreenshotShare.share(e.path, (value, error) -> {
+			sharing = false;
+			if (value == null) {
+				setNotice(shareError(s, error), true);
+				return;
+			}
+			boolean copied = host.copy(value.url);
+			setNotice(dev.theredstonee.trsclient.core.clips.ScreenshotShare.copiedText(value, copied), false);
+			shares = null;
+		});
+	}
+
+	/** Fehlertext (Strafe mit Ende, sonst übersetzter Code). */
+	private static String shareError(dev.theredstonee.trsclient.core.social.Social s, String key) {
+		if (key == null) return I18n.tr("social.error.generic");
+		dev.theredstonee.trsclient.core.social.Social.Notice n = s.notice(System.currentTimeMillis());
+		if (n != null && "sanction.blockedNotice".equals(n.key)) return I18n.tr(n.key, n.args);
+		return I18n.tr(key);
+	}
+
+	private void loadShares() {
+		final dev.theredstonee.trsclient.core.social.Social s = dev.theredstonee.trsclient.core.clips.ScreenshotShare.social();
+		if (s == null) {
+			sharesError = I18n.tr("clips.share.offline");
+			return;
+		}
+		if (sharesLoading) return;
+		sharesLoading = true;
+		sharesError = null;
+		s.loadShares((value, error) -> {
+			sharesLoading = false;
+			if (value != null) shares = value;
+			else sharesError = I18n.tr(error == null ? "social.error.generic" : error);
+		});
+	}
+
+	/** Reiter „Geteilt“: eigene Links mit Vorschau, Ablaufdatum, Kopieren, Löschen. */
+	private void sharedView(Canvas c, int x, int y, int w, int h, int mx, int my) {
+		Theme t = Theme.get();
+		dev.theredstonee.trsclient.core.social.Social s = dev.theredstonee.trsclient.core.clips.ScreenshotShare.social();
+		if (s != null) s.images().frame();
+		if (shares == null && !sharesLoading && sharesError == null) loadShares();
+		String info;
+		if (sharesError != null) info = sharesError;
+		else if (shares == null) info = I18n.tr("clips.loading");
+		else info = I18n.tr("clips.shared.limits", shares.active, shares.maxActive, shares.uploadsToday, shares.maxPerDay);
+		Paint.textClipped(c, info, x + 2, y + 1, w - 4, sharesError != null ? t.dustOn : t.textDim, false);
+		int top = y + 13;
+		int lh = h - 13;
+		long now = System.currentTimeMillis();
+		java.util.List<dev.theredstonee.trsclient.core.social.SharedImage> list = new ArrayList<>();
+		if (shares != null) {
+			for (dev.theredstonee.trsclient.core.social.SharedImage si : shares.shares) if (!si.expired(now)) list.add(si);
+		}
+		if (shares != null && list.isEmpty()) {
+			List<String> lines = Paint.wrap(c, I18n.tr("clips.shared.empty"), w - 20);
+			int ty = top + Math.max(10, lh / 2 - lines.size() * 6);
+			for (String l : lines) {
+				Paint.textCentered(c, l, x + w / 2, ty, t.textDim, false);
+				ty += 11;
+			}
+			return;
+		}
+		int cols = Math.max(1, (w + GAP) / (MIN_TILE_W + GAP));
+		int tileW = (w - GAP * (cols - 1)) / cols;
+		int thumbH = tileW * 9 / 16;
+		int tileH = thumbH + 26;
+		int rows = (list.size() + cols - 1) / cols;
+		int content = rows * (tileH + GAP) - GAP;
+		maxScroll = Math.max(0, content - lh);
+		scroll = Math.max(0, Math.min(scroll, maxScroll));
+		c.scissor(x - 1, top - 1, x + w + 1, top + lh + 1);
+		hits.clip(x, top, w, lh);
+		boolean overlay = confirmShare != null;
+		for (int i = 0; i < list.size(); i++) {
+			int tx = x + (i % cols) * (tileW + GAP);
+			int ty = top + (i / cols) * (tileH + GAP) - scroll;
+			if (ty + tileH < top || ty > top + lh) continue;
+			final dev.theredstonee.trsclient.core.social.SharedImage si = list.get(i);
+			boolean hover = !overlay && inside(mx, my, tx, ty, tileW, tileH) && inside(mx, my, x, top, w, lh);
+			Redstone.stone(c, tx, ty, tileW, tileH, hover ? t.surfaceHover : t.surface, hover ? ColorMath.lerp(t.border, t.accent, 0.5f) : t.border);
+			int ix = tx + 3, iy = ty + 3, iw = tileW - 6, ih = thumbH - 2;
+			c.fill(ix, iy, ix + iw, iy + ih, 0xFF0B0909);
+			TextureRef ref = s == null ? null : s.shareThumb(si);
+			if (ref != null && c.images()) fit(c, ref, ix, iy, iw, ih);
+			else Icons.draw(c, "link", ix + iw / 2 - 8, iy + ih / 2 - 8, 2, t.textDim);
+			Paint.textClipped(c, "/s/" + si.id, tx + 4, ty + thumbH + 3, tileW - 8, t.text, false);
+			Paint.textClipped(c, I18n.tr("clips.shared.until", dev.theredstonee.trsclient.core.clips.ScreenshotShare.date(si.expiresAt)),
+					tx + 4, ty + thumbH + 13, tileW - 8, t.textDim, false);
+			if (!overlay) {
+				int bx = tx + tileW - 18;
+				iconButton(c, bx, ty + 5, 14, "trash", false, mx, my, () -> confirmShare = si);
+				iconButton(c, bx - 17, ty + 5, 14, "copy", false, mx, my, () -> {
+					boolean copied = host.copy(si.url);
+					setNotice(dev.theredstonee.trsclient.core.clips.ScreenshotShare.copiedText(si, copied), false);
+				});
+			}
+		}
+		hits.noClip();
+		c.noScissor();
+		scrollbar(c, x + w + 3, top, lh, scroll, maxScroll, content);
+	}
+
+	private void confirmShareOverlay(Canvas c, int mx, int my) {
+		Theme t = Theme.get();
+		final dev.theredstonee.trsclient.core.social.SharedImage si = confirmShare;
+		int w = Math.min(window[2] - 40, 280);
+		int h = 84;
+		int x = window[0] + (window[2] - w) / 2;
+		int y = window[1] + (window[3] - h) / 2;
+		c.fill(window[0] + 1, window[1] + HEADER_H, window[0] + window[2] - 1, window[1] + window[3] - 1, 0x90000000);
+		Redstone.window(c, x, y, w, h);
+		Paint.textClipped(c, I18n.tr("clips.shared.deleteTitle"), x + 10, y + 9, w - 20, t.text, false);
+		Paint.textClipped(c, si.url, x + 10, y + 22, w - 20, t.dustOn, false);
+		Paint.textClipped(c, I18n.tr("clips.shared.deleteHint"), x + 10, y + 35, w - 20, t.textDim, false);
+		int bw = (w - 30) / 2;
+		button(c, x + 10, y + h - 26, bw, 18, I18n.tr("common.cancel"), false, true, mx, my, () -> confirmShare = null);
+		button(c, x + 20 + bw, y + h - 26, bw, 18, I18n.tr("clips.delete.confirm"), true, true, mx, my, () -> {
+			confirmShare = null;
+			dev.theredstonee.trsclient.core.social.Social s = dev.theredstonee.trsclient.core.clips.ScreenshotShare.social();
+			if (s == null) {
+				setNotice(I18n.tr("clips.share.offline"), true);
+				return;
+			}
+			s.deleteShare(si.id, (value, error) -> {
+				if (value != null) {
+					setNotice(I18n.tr("clips.shared.deleted"), false);
+					shares = null;
+				} else {
+					setNotice(I18n.tr(error == null ? "social.error.generic" : error), true);
+				}
+			});
+		});
+	}
+
+	/** Für den Selbsttest: erstes Bild als Link teilen. */
+	public boolean testShareFirst() {
+		for (ClipLibrary.Entry e : library.listing().entries) {
+			if (e.type == ClipLibrary.Type.SCREENSHOT) {
+				share(e);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Für den Selbsttest: Reiter „Geteilt“ zeigen. */
+	public void testShowShared() {
+		filter = Filter.SHARED;
+		scroll = 0;
+		preview = -1;
+		shares = null;
+		loadShares();
+	}
+
+	/** Für den Selbsttest: läuft ein Upload? Letzte Meldung? */
+	public boolean testSharing() {
+		return sharing;
+	}
+
+	public String testNotice() {
+		return notice;
+	}
+
 	/** Bereich neu seit dem letzten Update und noch nie benutzt? */
 	private static boolean isNew(String newId) {
 		TrsModules m = IntroGate.modules();
@@ -844,7 +1079,7 @@ public final class ClipsUi extends WindowUi {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-		if (preview >= 0 || clipView >= 0 || confirmDelete != null) return true;
+		if (preview >= 0 || clipView >= 0 || confirmDelete != null || confirmShare != null) return true;
 		if (!inside(mouseX, mouseY, gridRect[0], gridRect[1], gridRect[2], gridRect[3])) return false;
 		scroll = Math.max(0, Math.min(maxScroll, scroll - (int) Math.round(amount * 30)));
 		return true;
@@ -853,7 +1088,8 @@ public final class ClipsUi extends WindowUi {
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
 		if (key == UiKey.ESCAPE) {
-			if (confirmDelete != null) confirmDelete = null;
+			if (confirmShare != null) confirmShare = null;
+			else if (confirmDelete != null) confirmDelete = null;
 			else if (clipView >= 0) closeClip();
 			else if (preview >= 0) preview = -1;
 			else requestClose();

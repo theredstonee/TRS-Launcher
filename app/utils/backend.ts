@@ -58,6 +58,7 @@ import {
   type ReportQuery,
 } from './moderation'
 import { mySanctionSchema, mySanctionsSchema, sanctionErrorText } from './sanctions'
+import { sharedImageSchema, sharesPageSchema } from './share'
 import {
   appealEnvelopeSchema,
   appealPageSchema,
@@ -745,6 +746,10 @@ export const backend = {
     localImages: () => checked(z.array(localImageSchema), 'chat_local_images'),
     forgetLocal: (id: string) => call<void>('chat_forget_local', { id }),
     upload: (source: UploadSource) => checked(chatAttachmentSchema, 'chat_upload', { source }),
+    /** Screenshot als öffentlichen Link teilen (API §23; Upload + Neukodieren im Kern). */
+    shareScreenshot: (instanceId: string, fileName: string) => checked(sharedImageSchema, 'share_screenshot', { instanceId, fileName }),
+    shares: () => checked(sharesPageSchema, 'shares_list'),
+    deleteShare: (id: string) => call<void>('share_delete', { id }),
     screenshotFavorites: () => checked(z.array(z.string().max(300)), 'screenshot_favorites'),
     setScreenshotFavorite: (instanceId: string, fileName: string, favorite: boolean) =>
       checked(z.array(z.string().max(300)), 'set_screenshot_favorite', { instanceId, fileName, favorite }),

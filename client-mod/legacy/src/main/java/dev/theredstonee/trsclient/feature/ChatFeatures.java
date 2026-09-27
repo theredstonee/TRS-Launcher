@@ -6,6 +6,7 @@ import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.ChatCompat;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.chat.AutoGg;
+import dev.theredstonee.trsclient.core.chat.ChatCoords;
 import dev.theredstonee.trsclient.core.chat.ChatOut;
 import dev.theredstonee.trsclient.core.chat.ChatStacker;
 import dev.theredstonee.trsclient.core.chat.ChatTimestamp;
@@ -48,6 +49,14 @@ public final class ChatFeatures {
 		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
 		if (maps != null) maps.onServerText(ChatCompat.formatted(event));
 		long now = System.currentTimeMillis();
+		// Koordinaten anklickbar machen („Als Wegpunkt speichern“, nur lokal).
+		if (modules.chat.isEnabled() && modules.chatCoordLinks.get() && !ChatCoords.find(plain).isEmpty()) {
+			try {
+				ChatCompat.markCoords(event, I18n.tr("chat.coords.hover"));
+			} catch (RuntimeException e) {
+				TrsClient.LOGGER.error("Koordinaten im Chat konnten nicht markiert werden", e);
+			}
+		}
 
 		String prefix = "";
 		String suffix = "";
@@ -143,6 +152,51 @@ public final class ChatFeatures {
 			TrsClient.LOGGER.error("Chat-Zeile konnte nicht kopiert werden", e);
 			return false;
 		}
+	}
+
+	/**
+	 * Klick auf markierte Koordinaten (Einfüge-Text „x y z“ ohne eigene Klick-Aktion): Fenster „Als Wegpunkt
+	 * speichern“. true = Klick verbraucht.
+	 */
+	public boolean onLinkClick(int rawMouseX, int rawMouseY) {
+		if (!modules.chat.isEnabled() || !modules.chatCoordLinks.get()) return false;
+		try {
+			int[] c = ChatCoords.parseInsertion(ChatCompat.insertionAt(rawMouseX, rawMouseY));
+			if (c == null) return false;
+			openSave(c[0], c[1], c[2]);
+			return true;
+		} catch (RuntimeException e) {
+			TrsClient.LOGGER.error("Koordinaten-Klick fehlgeschlagen", e);
+			return false;
+		}
+	}
+
+	/** Fenster „Als Wegpunkt speichern“ (ersetzt den Chat). */
+	public static void openSave(int x, int y, int z) {
+		final dev.theredstonee.trsclient.screen.TrsMenuHost back = new dev.theredstonee.trsclient.screen.TrsMenuHost(null);
+		dev.theredstonee.trsclient.core.ui.WaypointSaveUi.Host host = new dev.theredstonee.trsclient.core.ui.WaypointSaveUi.Host() {
+			@Override
+			public void closeScreen() {
+				Mc.setScreen(null);
+			}
+
+			@Override
+			public void playClick() {
+				back.playClick();
+			}
+
+			@Override
+			public void notice(String text) {
+				Mc.actionBar(text);
+			}
+
+			@Override
+			public String paste() {
+				return Mc.clipboard();
+			}
+		};
+		Mc.setScreen(new dev.theredstonee.trsclient.screen.TrsUiScreen(I18n.tr("waypoint.save.title"),
+				new dev.theredstonee.trsclient.core.ui.WaypointSaveUi(host, x, y, z, I18n.tr("waypoint.save.defaultName"))));
 	}
 
 	public AutoGg autoGg() {

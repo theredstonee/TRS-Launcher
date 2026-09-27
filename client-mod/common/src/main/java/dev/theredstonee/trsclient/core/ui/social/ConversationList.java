@@ -189,6 +189,7 @@ final class ConversationList {
 		if (m.system) body = ChatLayout.systemText(m);
 		else if (m.deleted) body = I18n.tr("social.msg.deletedText");
 		else if (m.hidden) body = I18n.tr("social.msg.hiddenText");
+		else if (m.invite != null && m.invite.waypoint != null) body = I18n.tr("social.preview.waypoint", m.invite.name);
 		else if (m.invite != null) body = I18n.tr("social.preview.inviteTo", m.invite.name != null ? m.invite.name : m.invite.address);
 		else if (m.preview() != null) body = m.preview();
 		else if (!m.attachments.isEmpty()) {

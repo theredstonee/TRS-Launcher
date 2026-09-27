@@ -75,15 +75,26 @@ public final class WaypointListScreen extends TrsScreen {
 			g.fill(listX, ry, listX + listW, ry + ROW_H - 2, hover ? Brand.SURFACE_HOVER : Brand.SURFACE);
 			g.fill(listX + 4, ry + 5, listX + 10, ry + 11, 0xFF000000 | waypoint.color);
 			String label = waypoint.name + (waypoint.death ? " (" + I18n.tr("waypoints.death") + ")" : "");
-			g.text(font, Gfx.clip(font, label, listW - 190), listX + 16, ry + 5, Brand.TEXT, false);
+			g.text(font, Gfx.clip(font, label, listW - 210), listX + 16, ry + 5, Brand.TEXT, false);
 			String info = waypoint.x + " / " + waypoint.y + " / " + waypoint.z;
 			if (minecraft != null && minecraft.player != null) {
 				info += "   " + Projection.distanceLabel(waypoint.distanceTo(minecraft.player.getX(),
 						minecraft.player.getY(), minecraft.player.getZ()));
 			}
-			g.text(font, info, listX + listW - 176, ry + 5, Brand.TEXT_DIM, false);
+			g.text(font, info, listX + listW - 196, ry + 5, Brand.TEXT_DIM, false);
 
 			int bx = listX + listW - 66;
+			// Teilen: an Freunde/Gruppen im Sozial-Chat (Wegpunkt-Karte).
+			int sx = bx - 20;
+			Brand.button(g, font, sx, ry + 3, 16, 13, "↗", false, inside(mouseX, mouseY, sx, ry + 3, 16, 13));
+			hot.add(sx, ry + 3, 16, 13, () -> {
+				dev.theredstonee.trsclient.core.waypoint.WaypointShare.Result r =
+						dev.theredstonee.trsclient.core.waypoint.WaypointShare.shareLocal(waypoint);
+				if (r != dev.theredstonee.trsclient.core.waypoint.WaypointShare.Result.OK) {
+					note = I18n.tr(r.key());
+					noteAt = System.currentTimeMillis();
+				}
+			});
 			Brand.pill(g, font, bx, ry + 4, waypoint.visible, inside(mouseX, mouseY, bx, ry + 4, 26, 11));
 			hot.add(bx, ry + 4, 26, 11, () -> {
 				waypoint.visible = !waypoint.visible;
@@ -107,7 +118,14 @@ public final class WaypointListScreen extends TrsScreen {
 		int cx = px + pw - 10 - cw;
 		Brand.button(g, font, cx, by, cw, 16, I18n.tr("common.close"), false, inside(mouseX, mouseY, cx, by, cw, 16));
 		hot.add(cx, by, cw, 16, this::onClose);
+		if (note != null && System.currentTimeMillis() - noteAt < 4000) {
+			g.text(font, Gfx.clip(font, note, cx - px - aw - 30), px + 20 + aw, by + 4, 0xFFFFB02E, false);
+		}
 	}
+
+	/** Kurzer Hinweis unten (z. B. „Melde dich bei TRS an …“). */
+	private String note;
+	private long noteAt;
 
 	@Override
 	protected boolean onClick(double mouseX, double mouseY, int button) {

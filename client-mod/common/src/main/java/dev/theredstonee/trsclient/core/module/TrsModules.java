@@ -221,6 +221,8 @@ public final class TrsModules {
 	public final BoolSetting chatTimestampSeconds;
 	public final BoolSetting chatStack;
 	public final BoolSetting chatCopy;
+	/** Koordinaten im Chat anklickbar („Als Wegpunkt speichern“, nur lokal). */
+	public final BoolSetting chatCoordLinks;
 	public final TextSetting autoGgText;
 	public final NumberSetting autoGgDelay;
 	public final TextSetting autoGgTriggers;
@@ -707,6 +709,7 @@ public final class TrsModules {
 		chatTimestampSeconds = chat.add(new BoolSetting("timestampSeconds", "Timestamps with seconds", false));
 		chatStack = chat.add(new BoolSetting("stack", "Stack identical messages (x2, x3)", true));
 		chatCopy = chat.add(new BoolSetting("copy", "Ctrl+click copies a line", true));
+		chatCoordLinks = chat.add(new BoolSetting("coordLinks", "Clickable coordinates (save as waypoint)", true));
 		autoGgText = autoGg.add(new TextSetting("text", "Message", "gg", 100, "gg"));
 		autoGgDelay = autoGg.add(new NumberSetting("delay", "Delay (s)", 1.0, 0.5, 2.0, 0.25, ""));
 		autoGgTriggers = autoGg.add(new TextSetting("triggers", "Custom triggers (separated by ;)", "", 200,

@@ -25,4 +25,12 @@ public interface SocialPlatform {
 	default int vanillaToastBottom() {
 		return 0;
 	}
+
+	/**
+	 * Sozial-Bildschirm öffnen (ersetzt den offenen Bildschirm) – z. B. um eine vorgemerkte Wegpunkt-Karte an eine
+	 * Unterhaltung zu schicken. false = geht in dieser Version nicht.
+	 */
+	default boolean openSocial() {
+		return false;
+	}
 }

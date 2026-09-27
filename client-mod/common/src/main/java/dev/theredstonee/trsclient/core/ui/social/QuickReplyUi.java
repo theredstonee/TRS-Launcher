@@ -71,7 +71,8 @@ public final class QuickReplyUi extends UiScreen {
 		int w = Math.min(W, width - 16);
 		List<Chat.Message> recent = recent(s);
 		int lines = Math.max(1, recent.size());
-		int inviteH = action.invite != null ? ChatLayout.INVITE_H + 6 : 0;
+		final Chat.Waypoint waypoint = action.invite == null ? newestWaypoint(recent, s) : null;
+		int inviteH = action.invite != null || waypoint != null ? ChatLayout.INVITE_H + 6 : 0;
 		int h = 20 + lines * 11 + 4 + inviteH + 22 + 12;
 		int x = (width - w) / 2;
 		int y = height - h - 40 + Math.round((1 - alpha()) * 12);
@@ -99,6 +100,7 @@ public final class QuickReplyUi extends UiScreen {
 			for (Chat.Message m : recent) {
 				String who = m.sender == null ? "?" : m.from(s.self()) ? I18n.tr("social.quickReply.you") : m.sender.name;
 				String body = m.deleted ? I18n.tr("social.msg.deletedText") : m.hidden ? I18n.tr("social.msg.hiddenText")
+						: m.invite != null && m.invite.waypoint != null ? I18n.tr("social.preview.waypoint", m.invite.name)
 						: m.invite != null ? I18n.tr("social.preview.inviteTo", m.invite.name != null ? m.invite.name : m.invite.address)
 						: m.preview() != null ? m.preview() : I18n.tr("social.preview.image");
 				int nw = Math.min(w / 3, c.textWidth(who + ":"));
@@ -111,6 +113,12 @@ public final class QuickReplyUi extends UiScreen {
 		// Einladung
 		if (action.invite != null) {
 			inviteCard(c, s, x + 6, cy, w - 12, mx, my);
+			cy += inviteH;
+		} else if (waypoint != null) {
+			WaypointCard.draw(c, kit, waypoint, x + 6, cy, w - 12, mx, my, true, (key, args, error) -> {
+				flash = I18n.tr(key, args == null ? new Object[0] : args);
+				flashUntil = System.currentTimeMillis() + 4000;
+			});
 			cy += inviteH;
 		}
 		// Eingabe
@@ -137,8 +145,24 @@ public final class QuickReplyUi extends UiScreen {
 		if (canWrite && !input.isEmpty()) kit.icon(c, x + w - 22, cy + 1, 16, "send", true, mx, my, this::send);
 		else kit.iconDisabled(c, x + w - 22, cy + 1, 16, "send");
 		cy += 21;
-		Paint.textClipped(c, I18n.tr("social.quickReply.hint"), x + 6, cy, w - 12, ColorMath.withAlpha(t.textDim, 200), false);
+		boolean flashing = flash != null && now < flashUntil;
+		Paint.textClipped(c, flashing ? flash : I18n.tr("social.quickReply.hint"), x + 6, cy, w - 12,
+				flashing ? t.accent : ColorMath.withAlpha(t.textDim, 200), false);
 		c.pop();
+	}
+
+	/** Kurzer Hinweis unten (Wegpunkt übernommen …). */
+	private String flash;
+	private long flashUntil;
+
+	/** Neueste Wegpunkt-Karte eines anderen unter den letzten Nachrichten oder null. */
+	private static Chat.Waypoint newestWaypoint(List<Chat.Message> recent, Social s) {
+		for (int i = recent.size() - 1; i >= 0; i--) {
+			Chat.Message m = recent.get(i);
+			if (s != null && m.from(s.self())) continue;
+			if (m.hasContent() && m.waypoint() != null) return m.waypoint();
+		}
+		return null;
 	}
 
 	private List<Chat.Message> recent(Social s) {

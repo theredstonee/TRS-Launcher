@@ -124,7 +124,38 @@ public final class ChatApi {
 		String replyTo;
 		List<String> attachments;
 		ChatJson.InviteDto invite;
+		WaypointOut waypoint;
 		String nonce;
+	}
+
+	/** Wegpunkt-Karte zum Senden (API.md §18.10) – ganze Zahlen, genau die erlaubten Felder. */
+	static final class WaypointOut {
+		String name;
+		Integer x;
+		Integer y;
+		Integer z;
+		String dimension;
+		Map<String, String> world;
+		Integer color;
+
+		static WaypointOut of(Chat.Waypoint w) {
+			WaypointOut o = new WaypointOut();
+			o.name = w.name;
+			o.x = w.x;
+			o.y = w.y;
+			o.z = w.z;
+			o.dimension = w.dimension;
+			o.world = new LinkedHashMap<String, String>();
+			if (w.server()) {
+				o.world.put("type", "server");
+				o.world.put("address", w.address);
+			} else {
+				o.world.put("type", "world");
+				o.world.put("id", w.worldId);
+			}
+			if (w.color >= 0) o.color = w.color;
+			return o;
+		}
 	}
 
 	// --- Ergebnisse ---
@@ -298,7 +329,9 @@ public final class ChatApi {
 			}
 			body.attachments = ids;
 		}
-		if (invite != null) {
+		if (invite != null && invite.waypoint != null) {
+			body.waypoint = WaypointOut.of(invite.waypoint);
+		} else if (invite != null && invite.world == null) {
 			body.invite = new ChatJson.InviteDto();
 			body.invite.address = invite.address;
 			body.invite.name = invite.name;
@@ -386,6 +419,56 @@ public final class ChatApi {
 		Http.Response response = http.send(request);
 		if (response.status != 200) throw new ApiException(response.status, TrsApi.errorCode(response), TrsApi.retryAfter(response));
 		return response.body;
+	}
+
+	// --- Geteilte Bilder (§23) ---
+
+	/** Größtes Bild für „Als Link teilen“ (API: 10 MiB). */
+	public static final int MAX_SHARE_BYTES = 10 * 1024 * 1024;
+
+	/** {@code POST /v1/shares}: Bild als Link teilen (PNG/JPEG ≤ 10 MiB) → der neue Link. */
+	public SharedImage share(String token, byte[] image, String mime) throws IOException, ApiException {
+		if (image == null || image.length == 0 || image.length > MAX_SHARE_BYTES) throw new ApiException(413, "payload_too_large", 0);
+		if (!"image/png".equals(mime) && !"image/jpeg".equals(mime)) throw new ApiException(415, "unsupported_media_type", 0);
+		Http.Request request = new Http.Request("POST", base + "/v1/shares").header("Accept", JSON)
+				.header("Content-Type", mime).header("Authorization", "Bearer " + token);
+		request.body = image;
+		request.maxBytes = 64 * 1024;
+		Http.Response response = http.send(request);
+		if (response.status != 201 && response.status != 200) throw error(response);
+		SharedImage.Envelope body = parse(response, SharedImage.Envelope.class);
+		SharedImage s = SharedImage.of(base, body == null ? null : body.share);
+		if (s == null) throw new ApiException(response.status, "invalid_json", 0);
+		return s;
+	}
+
+	/** {@code GET /v1/shares}: eigene geteilte Bilder (neueste zuerst) und Grenzen. */
+	public SharedImage.Listing shares(String token) throws IOException, ApiException {
+		return SharedImage.Listing.of(base, parse(call("GET", "/v1/shares", null, token, 200), SharedImage.ListBody.class));
+	}
+
+	/** {@code DELETE /v1/shares/{id}}: Link vorzeitig löschen (404 = schon weg → auch gut). */
+	public void deleteShare(String token, String id) throws IOException, ApiException {
+		if (!SharedImage.validId(id)) throw new ApiException(0, "invalid_request", 0);
+		try {
+			call("DELETE", "/v1/shares/" + id, null, token, 204, 200);
+		} catch (ApiException e) {
+			if (e.status() != 404) throw e;
+		}
+	}
+
+	/** Vorschaubild eines geteilten Bildes (öffentlich, ohne Token; nur der eigene API-Host). */
+	public byte[] shareThumb(SharedImage s) throws IOException, ApiException {
+		Http.Request request = new Http.Request("GET", s.thumbUrl).header("Accept", "image/png, image/jpeg");
+		request.maxBytes = MAX_IMAGE_BYTES;
+		Http.Response response = http.send(request);
+		if (response.status != 200) throw new ApiException(response.status, TrsApi.errorCode(response), TrsApi.retryAfter(response));
+		return response.body;
+	}
+
+	/** API-Basis (für Links). */
+	public String base() {
+		return base;
 	}
 
 	// --- Servereinladungen (§18.6) ---

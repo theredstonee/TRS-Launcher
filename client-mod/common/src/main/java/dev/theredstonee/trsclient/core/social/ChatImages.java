@@ -299,6 +299,108 @@ public final class ChatImages {
 		if (!png && !isJpeg(file)) throw new IOException("unbekanntes Bildformat");
 		if (file.length <= ChatApi.MAX_UPLOAD_BYTES) return new Upload(file, png ? "image/png" : "image/jpeg");
 		Image img = decode(file, 2048);
+		byte[] jpeg = encodeJpeg(img, 0.9f);
+		if (jpeg.length > ChatApi.MAX_UPLOAD_BYTES) throw new IOException("Bild zu groß");
+		return new Upload(jpeg, "image/jpeg");
+	}
+
+	/** Größte Kante für „Als Link teilen“ (API: Ausgabe ≤ 4096 px). */
+	public static final int SHARE_MAX_SIDE = 4096;
+	/** Eingabegrenzen beim Teilen (Panoramen dürfen größer sein – sie werden beim Lesen unterabgetastet). */
+	static final int SHARE_MAX_INPUT_SIDE = 16384;
+	static final long SHARE_MAX_INPUT_PIXELS = 128L * 1000 * 1000;
+
+	/**
+	 * Bild für „Als Link teilen“: PNG/JPEG bis 10 MiB und 4096 px unverändert (der Server kodiert neu und entfernt
+	 * Metadaten); sonst auf höchstens 4096 px verkleinert und als JPEG (Qualität 90 → 80 → 70) neu kodiert.
+	 */
+	public static Upload prepareShare(byte[] file) throws IOException {
+		if (file == null || file.length == 0) throw new IOException("leer");
+		boolean png = isPng(file);
+		if (!png && !isJpeg(file)) throw new IOException("unbekanntes Bildformat");
+		int[] size = png ? pngSize(file) : null;
+		boolean small = size != null ? size[0] <= SHARE_MAX_SIDE && size[1] <= SHARE_MAX_SIDE : !png && jpegFits(file, SHARE_MAX_SIDE);
+		if (file.length <= ChatApi.MAX_SHARE_BYTES && small) return new Upload(file, png ? "image/png" : "image/jpeg");
+		Image img = readScaled(file, SHARE_MAX_SIDE);
+		for (float q : new float[]{0.9f, 0.8f, 0.7f}) {
+			byte[] jpeg = encodeJpeg(img, q);
+			if (jpeg.length <= ChatApi.MAX_SHARE_BYTES) return new Upload(jpeg, "image/jpeg");
+		}
+		throw new IOException("Bild zu groß");
+	}
+
+	/** Breite/Höhe aus dem PNG-Kopf (IHDR) oder null. */
+	static int[] pngSize(byte[] b) {
+		if (b.length < 24 || b[12] != 'I' || b[13] != 'H' || b[14] != 'D' || b[15] != 'R') return null;
+		int w = ((b[16] & 0xFF) << 24) | ((b[17] & 0xFF) << 16) | ((b[18] & 0xFF) << 8) | (b[19] & 0xFF);
+		int h = ((b[20] & 0xFF) << 24) | ((b[21] & 0xFF) << 16) | ((b[22] & 0xFF) << 8) | (b[23] & 0xFF);
+		return w <= 0 || h <= 0 ? null : new int[]{w, h};
+	}
+
+	private static boolean jpegFits(byte[] bytes, int maxSide) {
+		try {
+			ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+			if (in == null) return false;
+			try {
+				Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+				if (!readers.hasNext()) return false;
+				ImageReader reader = readers.next();
+				try {
+					reader.setInput(in, true, true);
+					return reader.getWidth(0) <= maxSide && reader.getHeight(0) <= maxSide;
+				} finally {
+					reader.dispose();
+				}
+			} finally {
+				in.close();
+			}
+		} catch (IOException | RuntimeException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * PNG oder JPEG über ImageIO lesen – große Bilder schon beim Lesen unterabgetastet (spart Speicher, auch für
+	 * Panoramen über den Grenzen des eigenen PNG-Dekoders) – und auf höchstens {@code maxSide} verkleinern.
+	 */
+	static Image readScaled(byte[] bytes, int maxSide) throws IOException {
+		ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+		if (in == null) throw new IOException("kein Eingabestrom");
+		Image img;
+		try {
+			Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+			if (!readers.hasNext()) throw new IOException("kein Bildleser");
+			ImageReader reader = readers.next();
+			try {
+				reader.setInput(in, true, true);
+				int w = reader.getWidth(0);
+				int h = reader.getHeight(0);
+				if (w <= 0 || h <= 0 || w > SHARE_MAX_INPUT_SIDE || h > SHARE_MAX_INPUT_SIDE
+						|| (long) w * h > SHARE_MAX_INPUT_PIXELS) {
+					throw new IOException("Bild zu groß");
+				}
+				ImageReadParam param = reader.getDefaultReadParam();
+				int sub = Math.max(1, Math.max(w, h) / Math.max(1, maxSide * 2));
+				if (sub > 1) param.setSourceSubsampling(sub, sub, 0, 0);
+				BufferedImage bi = reader.read(0, param);
+				int bw = bi.getWidth();
+				int bh = bi.getHeight();
+				img = new Image(bw, bh, bi.getRGB(0, 0, bw, bh, null, 0, bw));
+			} finally {
+				reader.dispose();
+			}
+		} finally {
+			in.close();
+		}
+		float scale = Math.min(1f, maxSide / (float) Math.max(img.width, img.height));
+		if (scale >= 1f) return img;
+		int w = Math.max(1, Math.round(img.width * scale));
+		int h = Math.max(1, Math.round(img.height * scale));
+		return new Image(w, h, downscale(img.argb, img.width, img.height, w, h));
+	}
+
+	/** Deckend als JPEG kodieren (Transparenz wird schwarz – Bildschirmfotos haben keine). */
+	static byte[] encodeJpeg(Image img, float quality) throws IOException {
 		BufferedImage bi = new BufferedImage(img.width, img.height, BufferedImage.TYPE_INT_RGB);
 		bi.setRGB(0, 0, img.width, img.height, img.argb, 0, img.width);
 		java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
@@ -308,7 +410,7 @@ public final class ChatImages {
 		try {
 			javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
 			param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
-			param.setCompressionQuality(0.9f);
+			param.setCompressionQuality(quality);
 			javax.imageio.stream.ImageOutputStream ios = ImageIO.createImageOutputStream(out);
 			try {
 				writer.setOutput(ios);
@@ -319,8 +421,6 @@ public final class ChatImages {
 		} finally {
 			writer.dispose();
 		}
-		byte[] jpeg = out.toByteArray();
-		if (jpeg.length > ChatApi.MAX_UPLOAD_BYTES) throw new IOException("Bild zu groß");
-		return new Upload(jpeg, "image/jpeg");
+		return out.toByteArray();
 	}
 }

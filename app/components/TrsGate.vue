@@ -2,7 +2,7 @@
 // Zeigt statt des Inhalts einen ruhigen Hinweis, solange die TRS-Dienste nicht
 // nutzbar sind: nicht zugestimmt, kein Account, gesperrt oder offline.
 /** Wofür die Dienste gebraucht werden – bestimmt den Hinweistext. */
-defineProps<{ what: 'friends' | 'capes' }>()
+defineProps<{ what: 'friends' | 'capes' | 'shares' }>()
 const trs = useTrsStore()
 const accounts = useAccountsStore()
 

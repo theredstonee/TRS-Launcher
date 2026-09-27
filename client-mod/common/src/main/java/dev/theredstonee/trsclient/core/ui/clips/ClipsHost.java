@@ -14,4 +14,9 @@ public interface ClipsHost {
 
 	/** Konfigurationsordner ({@code trsclient/clips.json}). */
 	Path configDir();
+
+	/** Text in die Zwischenablage (Link eines geteilten Bildes); false = geht hier nicht. */
+	default boolean copy(String text) {
+		return false;
+	}
 }

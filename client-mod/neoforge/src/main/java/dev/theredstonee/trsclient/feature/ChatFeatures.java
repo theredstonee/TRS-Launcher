@@ -46,6 +46,8 @@ public final class ChatFeatures {
 		// Chat-Filter verwirft die Nachricht (QolChatMixin); Erwähnungen/Streamer-Modus bauen sie neu.
 		if (dev.theredstonee.trsclient.qol.QolHooks.hideChat(message)) return message;
 		message = dev.theredstonee.trsclient.qol.QolHooks.chatIn(message);
+		// Koordinaten anklickbar, „[Als Link teilen]“ an der Bildschirmfoto-Zeile (nur lokal).
+		message = dev.theredstonee.trsclient.qol.ChatLinks.decorate(message);
 		String plain = message.getString();
 		// Fair-Play-Codes der Karten-Mods (Server erzwingt Fair Play).
 		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();

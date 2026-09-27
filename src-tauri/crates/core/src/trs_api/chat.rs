@@ -229,6 +229,83 @@ impl ChatInvite {
     }
 }
 
+// --- Wegpunkt-Karte (§18.10) --------------------------------------------------------
+
+/// Größte |x|/|z| eines Wegpunkts (Weltgrenze).
+pub const WAYPOINT_MAX_XZ: i64 = 30_000_000;
+/// Erlaubte Höhe eines Wegpunkts.
+pub const WAYPOINT_Y: std::ops::RangeInclusive<i64> = -2048..=4096;
+
+/// Dimension als Namensraum-ID: `^[a-z0-9_.-]{1,32}:[a-z0-9_./-]{1,64}$`.
+pub fn waypoint_dimension(input: &str) -> bool {
+    let Some((ns, path)) = input.split_once(':') else { return false };
+    (1..=32).contains(&ns.len())
+        && (1..=64).contains(&path.len())
+        && ns.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'_' | b'.' | b'-'))
+        && path.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'_' | b'.' | b'-' | b'/'))
+}
+
+/// Einzelspielerwelt als Kennung: 16 Hex-Zeichen (Anfang von SHA-256 des Weltschlüssels).
+fn world_hash(input: &str) -> bool {
+    input.len() == 16 && input.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
+/// Wo ein Wegpunkt gilt: ein Server (Adresse) oder eine Einzelspielerwelt (nur als Kennung).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase", deny_unknown_fields)]
+pub enum WaypointWorld {
+    Server { address: String },
+    World { id: String },
+}
+
+/// Wegpunkt-Karte einer Nachricht: Name, Koordinaten, Dimension, Server bzw. Welt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatWaypoint {
+    pub name: String,
+    pub x: i64,
+    pub y: i64,
+    pub z: i64,
+    pub dimension: String,
+    pub world: WaypointWorld,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<u32>,
+}
+
+impl ChatWaypoint {
+    /// Streng prüfen und säubern; `None` = Karte fällt weg.
+    pub(crate) fn cleaned(self) -> Option<Self> {
+        let name = one_line(&self.name, 32);
+        if name.is_empty()
+            || self.x.abs() > WAYPOINT_MAX_XZ
+            || self.z.abs() > WAYPOINT_MAX_XZ
+            || !WAYPOINT_Y.contains(&self.y)
+            || !waypoint_dimension(&self.dimension)
+        {
+            return None;
+        }
+        let world = match self.world {
+            WaypointWorld::Server { address } => {
+                let address = address.trim().to_ascii_lowercase();
+                crate::servers::parse_address(&address).ok()?;
+                WaypointWorld::Server { address }
+            }
+            WaypointWorld::World { id } => {
+                if !world_hash(&id) {
+                    return None;
+                }
+                WaypointWorld::World { id }
+            }
+        };
+        Some(Self { name, world, color: self.color.filter(|c| *c <= 0xFF_FFFF), ..self })
+    }
+
+    /// Aus einem beliebigen JSON-Wert (Antwort der API) – unbekannte Formen fallen weg.
+    fn from_api(value: serde_json::Value) -> Option<Self> {
+        serde_json::from_value::<Self>(value).ok()?.cleaned()
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ApiThumb {
@@ -308,6 +385,9 @@ pub struct ChatReply {
     /// Antwort auf eine Weltkarte (§21.8).
     #[serde(default)]
     pub world: bool,
+    /// Antwort auf eine Wegpunkt-Karte (§18.10).
+    #[serde(default)]
+    pub waypoint: bool,
     #[serde(default)]
     pub deleted: bool,
 }
@@ -367,6 +447,9 @@ pub(crate) struct ApiMessage {
     invite: Option<ChatInvite>,
     #[serde(default)]
     world: Option<ApiWorld>,
+    /// Roh, damit eine unbekannte Form nicht die ganze Nachricht verwirft.
+    #[serde(default)]
+    waypoint: Option<serde_json::Value>,
     #[serde(default)]
     attachments: Vec<ApiAttachment>,
     #[serde(default)]
@@ -403,6 +486,8 @@ pub struct ChatMessage {
     pub invite: Option<ChatInvite>,
     /// Weltkarte einer gehosteten Welt (§21.8), sonst `null`.
     pub world: Option<ChatWorld>,
+    /// Wegpunkt-Karte (§18.10), sonst `null`.
+    pub waypoint: Option<ChatWaypoint>,
     pub attachments: Vec<ChatAttachment>,
     pub reply_to: Option<ChatReply>,
     pub system: Option<ChatSystem>,
@@ -459,6 +544,7 @@ impl ApiMessage {
                         attachments: r.attachments.min(MAX_ATTACHMENTS as u32),
                         invite: r.invite && !r.deleted,
                         world: r.world && !r.deleted,
+                        waypoint: r.waypoint && !r.deleted,
                         deleted: r.deleted,
                     }
                 })
@@ -474,6 +560,7 @@ impl ApiMessage {
             text,
             invite: if empty { None } else { self.invite.and_then(ChatInvite::cleaned) },
             world: if empty { None } else { self.world.and_then(ApiWorld::cleaned) },
+            waypoint: if empty { None } else { self.waypoint.and_then(ChatWaypoint::from_api) },
             attachments: if empty {
                 Vec::new()
             } else {
@@ -710,6 +797,9 @@ pub struct OutgoingMessage {
     pub attachments: Vec<String>,
     #[serde(default)]
     pub invite: Option<ChatInvite>,
+    /// Wegpunkt-Karte (der Launcher sendet selbst keine; der Typ ist trotzdem vollständig).
+    #[serde(default)]
+    pub waypoint: Option<ChatWaypoint>,
     #[serde(default)]
     pub nonce: Option<String>,
 }
@@ -755,7 +845,19 @@ impl OutgoingMessage {
             }
             body.insert("invite".into(), value);
         }
-        if body.is_empty() || (text.is_empty() && attachments.is_empty() && self.invite.is_none()) {
+        if let Some(waypoint) = &self.waypoint {
+            if self.invite.is_some() {
+                return Err(invalid(crate::msg!("chat.invalidMessage", "Ungültige Nachricht.")));
+            }
+            let cleaned = waypoint
+                .clone()
+                .cleaned()
+                .ok_or_else(|| invalid(crate::msg!("chat.invalidWaypoint", "Ungültiger Wegpunkt.")))?;
+            body.insert("waypoint".into(), serde_json::to_value(cleaned).map_err(|_| bad_response())?);
+        }
+        if body.is_empty()
+            || (text.is_empty() && attachments.is_empty() && self.invite.is_none() && self.waypoint.is_none())
+        {
             return Err(invalid(crate::msg!("chat.emptyMessage", "Die Nachricht ist leer.")));
         }
         if let Some(n) = &self.nonce {
@@ -1126,6 +1228,82 @@ mod tests {
         value["world"]["roomId"] = json!("h../../x");
         let m: ChatMessage = serde_json::from_value::<ApiMessage>(value).unwrap().cleaned().unwrap();
         assert!(m.world.is_none(), "kaputte Karte fällt weg");
+    }
+
+    #[test]
+    fn waypoint_cards_are_cleaned_strictly() {
+        let mut value = msg_json();
+        value["invite"] = json!(null);
+        value["waypoint"] = json!({ "name": "Base\u{202E}\nNord", "x": 100, "y": 64, "z": -20, "dimension": "minecraft:overworld",
+            "world": { "type": "server", "address": "Play.Example.net:25566" }, "color": 14_690_334 });
+        value["replyTo"]["waypoint"] = json!(true);
+        let m: ChatMessage = serde_json::from_value::<ApiMessage>(value.clone()).unwrap().cleaned().unwrap();
+        let w = m.waypoint.clone().unwrap();
+        assert_eq!(w.name, "Base Nord");
+        assert_eq!((w.x, w.y, w.z), (100, 64, -20));
+        assert_eq!(w.world, WaypointWorld::Server { address: "play.example.net:25566".into() });
+        assert_eq!(w.color, Some(14_690_334));
+        assert!(m.reply_to.as_ref().unwrap().waypoint);
+        let json = serde_json::to_value(&m).unwrap();
+        assert_eq!(json["waypoint"]["world"], json!({ "type": "server", "address": "play.example.net:25566" }));
+
+        // Einzelspielerwelt nur als Kennung.
+        value["waypoint"]["world"] = json!({ "type": "world", "id": "0123456789abcdef" });
+        let m: ChatMessage = serde_json::from_value::<ApiMessage>(value.clone()).unwrap().cleaned().unwrap();
+        assert_eq!(m.waypoint.unwrap().world, WaypointWorld::World { id: "0123456789abcdef".into() });
+
+        // Alles Kaputte fällt weg, die Nachricht bleibt.
+        for (field, bad) in [
+            ("x", json!(30_000_001)),
+            ("y", json!(5000)),
+            ("z", json!(1.5)),
+            ("name", json!(" \u{200B} ")),
+            ("dimension", json!("Minecraft:Overworld")),
+            ("dimension", json!("../x")),
+            ("world", json!({ "type": "world", "id": "Mein Weltname" })),
+            ("world", json!({ "type": "server", "address": "evil host" })),
+            ("world", json!({ "type": "moon" })),
+            ("world", json!({ "type": "server", "address": "a.b", "extra": 1 })),
+        ] {
+            let mut v = value.clone();
+            v["waypoint"][field] = bad;
+            let m: ChatMessage = serde_json::from_value::<ApiMessage>(v).unwrap().cleaned().unwrap();
+            assert!(m.waypoint.is_none(), "{field}");
+        }
+        let mut v = value.clone();
+        v["waypoint"] = json!("kaputt");
+        assert!(serde_json::from_value::<ApiMessage>(v).unwrap().cleaned().unwrap().waypoint.is_none());
+
+        // Gelöscht → keine Karte.
+        value["deleted"] = json!(true);
+        assert!(serde_json::from_value::<ApiMessage>(value).unwrap().cleaned().unwrap().waypoint.is_none());
+    }
+
+    #[test]
+    fn outgoing_waypoints_are_checked() {
+        let wp = ChatWaypoint {
+            name: " Spawn ".into(),
+            x: 1,
+            y: 2,
+            z: 3,
+            dimension: "minecraft:the_nether".into(),
+            world: WaypointWorld::World { id: "0123456789abcdef".into() },
+            color: None,
+        };
+        let body = OutgoingMessage { waypoint: Some(wp.clone()), ..Default::default() }.body().unwrap();
+        assert_eq!(
+            body,
+            json!({ "waypoint": { "name": "Spawn", "x": 1, "y": 2, "z": 3, "dimension": "minecraft:the_nether",
+                "world": { "type": "world", "id": "0123456789abcdef" } } })
+        );
+        let bad = ChatWaypoint { y: 9999, ..wp.clone() };
+        assert!(OutgoingMessage { waypoint: Some(bad), ..Default::default() }.body().is_err());
+        let both = OutgoingMessage {
+            waypoint: Some(wp),
+            invite: Some(ChatInvite { address: "a.b".into(), name: None }),
+            ..Default::default()
+        };
+        assert!(both.body().is_err(), "nicht zusammen mit einer Einladung");
     }
 
     #[test]

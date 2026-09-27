@@ -91,6 +91,83 @@ public final class ChatCompat {
 		if (gui != null) gui.deleteChatLine(id);
 	}
 
+	/**
+	 * Koordinaten in der Nachricht unterstreichen, als Einfüge-Text „x y z“ markieren und mit Hinweis versehen (nur
+	 * Textstücke ohne eigene Klick-/Einfüge-Aktion). Rückgabe: geändert?
+	 */
+	public static boolean markCoords(ClientChatReceivedEvent event, String hoverText) {
+		//? if >=1.9 {
+		/*ITextComponent original = event.getMessage();
+		if (original == null) return false;
+		TextComponentString out = new TextComponentString("");
+		boolean changed = false;
+		for (ITextComponent part : original) {
+			String text = part.getUnformattedComponentText();
+			net.minecraft.util.text.Style style = part.getStyle().createDeepCopy();
+			java.util.List<dev.theredstonee.trsclient.core.chat.ChatCoords.Hit> hits = style.getClickEvent() == null
+					&& style.getInsertion() == null ? dev.theredstonee.trsclient.core.chat.ChatCoords.find(text)
+					: java.util.Collections.<dev.theredstonee.trsclient.core.chat.ChatCoords.Hit>emptyList();
+			int pos = 0;
+			for (dev.theredstonee.trsclient.core.chat.ChatCoords.Hit h : hits) {
+				if (h.start > pos) out.appendSibling(new TextComponentString(text.substring(pos, h.start)).setStyle(style.createShallowCopy()));
+				net.minecraft.util.text.Style mark = style.createShallowCopy();
+				mark.setUnderlined(true);
+				mark.setInsertion(h.insertion());
+				mark.setHoverEvent(new net.minecraft.util.text.event.HoverEvent(net.minecraft.util.text.event.HoverEvent.Action.SHOW_TEXT,
+						new TextComponentString(hoverText)));
+				out.appendSibling(new TextComponentString(text.substring(h.start, h.end)).setStyle(mark));
+				pos = h.end;
+				changed = true;
+			}
+			if (pos < text.length()) out.appendSibling(new TextComponentString(text.substring(pos)).setStyle(style.createShallowCopy()));
+		}
+		if (changed) event.setMessage(out);
+		return changed;
+		*///?} else {
+		IChatComponent original = event.message;
+		if (original == null) return false;
+		ChatComponentText out = new ChatComponentText("");
+		boolean changed = false;
+		for (IChatComponent part : original) {
+			String text = part.getUnformattedTextForChat();
+			net.minecraft.util.ChatStyle style = part.getChatStyle().createDeepCopy();
+			java.util.List<dev.theredstonee.trsclient.core.chat.ChatCoords.Hit> hits = style.getChatClickEvent() == null
+					&& style.getInsertion() == null ? dev.theredstonee.trsclient.core.chat.ChatCoords.find(text)
+					: java.util.Collections.<dev.theredstonee.trsclient.core.chat.ChatCoords.Hit>emptyList();
+			int pos = 0;
+			for (dev.theredstonee.trsclient.core.chat.ChatCoords.Hit h : hits) {
+				if (h.start > pos) out.appendSibling(new ChatComponentText(text.substring(pos, h.start)).setChatStyle(style.createShallowCopy()));
+				net.minecraft.util.ChatStyle mark = style.createShallowCopy();
+				mark.setUnderlined(true);
+				mark.setInsertion(h.insertion());
+				mark.setChatHoverEvent(new net.minecraft.event.HoverEvent(net.minecraft.event.HoverEvent.Action.SHOW_TEXT,
+						new ChatComponentText(hoverText)));
+				out.appendSibling(new ChatComponentText(text.substring(h.start, h.end)).setChatStyle(mark));
+				pos = h.end;
+				changed = true;
+			}
+			if (pos < text.length()) out.appendSibling(new ChatComponentText(text.substring(pos)).setChatStyle(style.createShallowCopy()));
+		}
+		if (changed) event.message = out;
+		return changed;
+		//?}
+	}
+
+	/** Einfüge-Text der Chat-Komponente unter der Maus – nur ohne eigene Klick-Aktion –, sonst null. */
+	public static String insertionAt(int rawMouseX, int rawMouseY) {
+		GuiNewChat gui = chat();
+		if (gui == null) return null;
+		//? if >=1.9 {
+		/*ITextComponent c = gui.getChatComponent(rawMouseX, rawMouseY);
+		if (c == null || c.getStyle().getClickEvent() != null) return null;
+		return c.getStyle().getInsertion();
+		*///?} else {
+		IChatComponent c = gui.getChatComponent(rawMouseX, rawMouseY);
+		if (c == null || c.getChatStyle().getChatClickEvent() != null) return null;
+		return c.getChatStyle().getInsertion();
+		//?}
+	}
+
 	/** Text der Chat-Komponente unter der Maus (rohe LWJGL-Mauskoordinaten), null = keine. */
 	public static String componentAt(int rawMouseX, int rawMouseY) {
 		GuiNewChat gui = chat();

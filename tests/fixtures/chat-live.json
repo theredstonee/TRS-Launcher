@@ -285,6 +285,35 @@
         },
         "targetOpenReports": 1,
         "updatedAt": "2026-09-26T10:10:06.480Z"
+      },
+      {
+        "assignedTo": null,
+        "attachmentId": null,
+        "conversationId": null,
+        "createdAt": "2026-09-26T10:10:06.480Z",
+        "evidencePurged": false,
+        "id": "reeeeeeeeeeeeeee1",
+        "images": 1,
+        "kind": "share",
+        "lowTrust": false,
+        "messageId": null,
+        "outcome": null,
+        "preview": null,
+        "reason": "spam",
+        "reporter": {
+          "name": "Theredstonee",
+          "uuid": "75c1a6f3112240abbdb57b9d21c64232"
+        },
+        "resolvedAt": null,
+        "resolvedBy": null,
+        "status": "open",
+        "target": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "targetOpenReports": 1,
+        "updatedAt": "2026-09-26T10:10:06.480Z",
+        "shareId": "Qm9vLWJhei1xdXV4LTEyMw"
       }
     ]
   },
@@ -1140,6 +1169,41 @@
         "seq": 4,
         "system": null,
         "text": "Hallo 👋 https://example.com"
+      },
+      {
+        "attachments": [],
+        "conversationId": "c59ad18a952d8d8db5b7a",
+        "createdAt": "2026-09-26T10:07:52.601Z",
+        "deleted": false,
+        "deletedBy": null,
+        "editedAt": null,
+        "hidden": false,
+        "id": "mfffffffffffffffffff1",
+        "invite": null,
+        "kind": "text",
+        "nonce": null,
+        "reactions": [],
+        "replyTo": null,
+        "sender": {
+          "name": "Bob",
+          "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        },
+        "seq": 5,
+        "system": null,
+        "text": null,
+        "world": null,
+        "waypoint": {
+          "name": "Basis",
+          "x": 100,
+          "y": 64,
+          "z": -20,
+          "dimension": "minecraft:overworld",
+          "world": {
+            "type": "server",
+            "address": "play.example.net:25566"
+          },
+          "color": 14690334
+        }
       }
     ]
   },

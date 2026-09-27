@@ -711,7 +711,8 @@
       "emptyMessage": "Wiadomość jest pusta.",
       "invalidCursor": "Nieprawidłowa strona.",
       "groupFull": "Grupa może mieć maksymalnie {max} członków.",
-      "invalidReaction": "Nieznana reakcja."
+      "invalidReaction": "Nieznana reakcja.",
+      "invalidWaypoint": "Nieprawidłowy punkt nawigacyjny."
     },
     "hosting": {
       "invalidRoom": "Nieprawidłowy świat.",
@@ -763,6 +764,13 @@
     },
     "crash": {
       "notFound": "Ta awaria już nie istnieje."
+    },
+    "shareLink": {
+      "limit": "Masz już 50 udostępnionych obrazów – najpierw usuń stary w „Moje udostępnione obrazy”.",
+      "dailyLimit": "Dziś udostępniono już 20 obrazów – spróbuj jutro.",
+      "storageFull": "Serwer TRS nie ma teraz miejsca – spróbuj później.",
+      "notFound": "Ten udostępniony obraz nie istnieje (już).",
+      "invalidId": "Nieprawidłowy link."
     }
   },
   "browse": {
@@ -2826,7 +2834,8 @@
       "title": "Usługi TRS są wyłączone",
       "friends": "Aby wyświetlić listę znajomych, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie.",
       "capes": "Aby wyświetlić peleryny TRS, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie.",
-      "button": "Dowiedz się więcej i włącz"
+      "button": "Dowiedz się więcej i włącz",
+      "shares": "Aby udostępniać zrzuty ekranu jako link, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie."
     },
     "account": {
       "title": "Brak zalogowanego konta",
@@ -2851,7 +2860,8 @@
       "chat": "wiadomości czatu, wysyłane zdjęcia i zgłoszenia – przechowywane na serwerze w postaci zaszyfrowanej, dopóki nie zostaną usunięte; zgłoszone treści są zachowywane na potrzeby moderacji",
       "settings": "twoje ustawienia prywatności i znaczniki czasu (logowanie, utworzenie)",
       "sync": "przy włączonej synchronizacji: twoje własne skiny (obrazy i nazwy), własne presety oraz motyw, kolor akcentu i język – aby były takie same na wszystkich twoich komputerach; TRS Client synchronizuje tak samo swoje moduły, układy HUD i klawisze (przełącznik w menu TRS)",
-      "presence": "twój status online (launcher otwarty / w grze, wersja oraz serwer, jeśli tak wybierzesz) – tylko w pamięci, wygasa po 3 minutach"
+      "presence": "twój status online (launcher otwarty / w grze, wersja oraz serwer, jeśli tak wybierzesz) – tylko w pamięci, wygasa po 3 minutach",
+      "shares": "zrzuty ekranu udostępnione jako link – publiczne dla każdego z linkiem, usuwane automatycznie po 30 dniach"
     },
     "footer": "Możesz w każdej chwili wyłączyć usługi w {path} i tam usunąć wszystkie swoje dane TRS. Bez twojej zgody launcher nie wysyła niczego do serwera TRS.",
     "settingsPath": "Ustawienia → Prywatność",
@@ -3384,7 +3394,9 @@
       "deleteMessage": "Usuń wiadomość",
       "dismiss": "Odrzuć",
       "resolve": "Załatwione",
-      "related": "Inne zgłoszenia dotyczące tego gracza"
+      "related": "Inne zgłoszenia dotyczące tego gracza",
+      "waypoint": "Punkt „{name}”: {coords} ({dimension})",
+      "deleteShare": "Usuń udostępniony obraz"
     }
   },
   "whatsNew": {
@@ -4267,7 +4279,8 @@
         "message": "Zgłoś wiadomość",
         "image": "Zgłoś zdjęcie",
         "player": "Zgłoś gracza",
-        "group": "Zgłoś grupę"
+        "group": "Zgłoś grupę",
+        "share": "Zgłoś udostępniony obraz"
       },
       "intro": "Zgłaszasz: {name}. Zespół TRS sprawdza każde zgłoszenie.",
       "reason": "Powód",
@@ -4327,6 +4340,19 @@
       "openChat": "Otwórz czat",
       "reply": "Odpowiedz",
       "replyPlaceholder": "Szybka odpowiedź …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Punkt nawigacyjny",
+      "copy": "Kopiuj współrzędne",
+      "copyTitle": "Kopiuje „x y z” do schowka",
+      "copied": "Skopiowano współrzędne {coords}",
+      "singleplayer": "Świat jednoosobowy",
+      "dimensions": {
+        "overworld": "Overworld",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4857,6 +4883,37 @@
       "ask": "Zawsze pytaj",
       "always": "Zawsze z TRS Client",
       "never": "Zawsze bez TRS Client"
+    }
+  },
+  "shareLink": {
+    "share": "Udostępnij jako link",
+    "shareTitle": "Wysyła ten zrzut ekranu i kopiuje publiczny link (ważny 30 dni)",
+    "sharing": "Udostępnianie …",
+    "myShares": "Moje udostępnione obrazy",
+    "needConsent": "Udostępnianie linków wymaga usług TRS – są wyłączone.",
+    "turnOn": "Włącz",
+    "needAccount": "Najpierw zaloguj się kontem Minecraft, aby udostępniać linki.",
+    "open": "Otwórz",
+    "copyLink": "Kopiuj link",
+    "openInBrowser": "Otwórz w przeglądarce",
+    "toasts": {
+      "copied": "Skopiowano link – ważny {days} dni",
+      "ready": "Link utworzony, ale nie udało się go skopiować – znajdziesz go w „Moje udostępnione obrazy”.",
+      "copiedAgain": "Skopiowano link",
+      "deleted": "Link usunięty – obrazu już nie ma"
+    },
+    "dialog": {
+      "title": "Moje udostępnione obrazy",
+      "intro": "Każdy z linkiem widzi obraz – bez Twojej nazwy. Linki usuwają się same po 30 dniach; tutaj możesz usunąć je wcześniej.",
+      "active": "Aktywne linki: {n} z {max}",
+      "today": "Dziś udostępniono: {n} z {max}",
+      "empty": "Nie udostępniono jeszcze żadnych obrazów. Użyj „Udostępnij jako link” przy zrzucie ekranu.",
+      "expiresIn": "Wygasa za {days} dzień | Wygasa za {days} dni | Wygasa za {days} dni",
+      "expiresToday": "Wygasa dziś"
+    },
+    "deleteDialog": {
+      "title": "Usunąć link?",
+      "text": "Obraz zostanie usunięty z serwera TRS, a link przestanie działać. Twój zrzut ekranu na tym PC zostaje."
     }
   }
 }

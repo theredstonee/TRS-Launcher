@@ -65,6 +65,20 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		});
 		this.worldsPanel = new dev.theredstonee.trsclient.core.ui.hosting.WorldsPanel(faces);
 		if (online != null) online.friends().want(Friends.Interest.FOREGROUND, false);
+		// Vorgemerkte Wegpunkt-Karte (Weltkarte/Wegpunkt-Liste → „Teilen“): Ziel auswählen.
+		Chat.Waypoint share = dev.theredstonee.trsclient.core.waypoint.WaypointShare.takePending();
+		if (share != null && social() != null) dialog = new ShareTargetDialog(this, social(), share);
+	}
+
+	/** Für Selbsttests: Zielauswahl für eine Karte öffnen. */
+	public void testShareTarget(Chat.Waypoint card) {
+		if (social() != null) dialog(new ShareTargetDialog(this, social(), card));
+	}
+
+	/** Für Selbsttests: Karte in die Eingabe der offenen Unterhaltung legen und senden. */
+	public void testSendWaypoint(Chat.Waypoint card) {
+		view.testWaypoint(card);
+		view.send();
 	}
 
 	/**
