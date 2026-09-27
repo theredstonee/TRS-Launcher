@@ -123,6 +123,8 @@ if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
+// Suche in der Tastenbelegung: Einträge der Liste ersetzen (alle Versionen).
+mixinClasses << 'KeySearchListInvoker'
 // Welt-Hosting: Gast über eigenen Netty-Kanal (Marker-Adresse), Host öffnet ohne TCP/LAN, Spielergrenze ≤ 10.
 mixinClasses += ['HostingConnectMixin', 'HostingPublishMixin', 'HostingPingerMixin', 'HostingServerAccessor']
 mixinClasses << (stonecutter.eval(mc, '>=1.21.9') ? 'HostingPlayerListMixin' : 'HostingPlayerListAccessor')

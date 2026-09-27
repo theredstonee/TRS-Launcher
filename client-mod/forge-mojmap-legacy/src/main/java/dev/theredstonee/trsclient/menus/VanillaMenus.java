@@ -197,6 +197,7 @@ public final class VanillaMenus {
 	 * Sozial-Benachrichtigungen (Toasts) auf jedem Bildschirm.
 	 */
 	public static void afterRender(Screen s, Gfx g, int mouseX, int mouseY) {
+		KeySearchUi.poll();
 		afterRenderLoading(s, g, mouseX, mouseY);
 		dev.theredstonee.trsclient.social.SocialHooks.overScreen(g);
 	}
@@ -404,6 +405,7 @@ public final class VanillaMenus {
 
 	/** Nach Screen#init bzw. #rebuildWidgets. */
 	public static void afterInit(Screen s, WidgetHost host) {
+		KeySearchUi.afterInit(s, host);
 		MenuStyle.Kind k = kind(s);
 		if (k == null) return;
 		try {

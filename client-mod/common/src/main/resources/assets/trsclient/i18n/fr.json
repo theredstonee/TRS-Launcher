@@ -2031,5 +2031,14 @@
   "circuits.select.second": "Regarde le coin opposé et appuie sur {0}",
   "circuits.select.size": "{0}×{1}×{2}",
   "circuits.select.cancel": "{0} annuler",
-  "circuits.select.tooBig": "Trop grand – 16×16×16 maximum"
+  "circuits.select.tooBig": "Trop grand – 16×16×16 maximum",
+  "module.keySearch": "Recherche dans les touches",
+  "module.keySearch.desc": "Ajoute une recherche dans Commandes → Touches de Minecraft : par nom, par touche (key:R, key:2), boutons de souris (mouse, key:mouse4), mod (mod:sodium), touches en double (conflict) ou actions libres (unbound). Le bouton clavier à côté montre tout ce qui est sur la prochaine touche pressée.",
+  "keysearch.hint": "Rechercher… key:R  mouse  mod:  conflict",
+  "keysearch.help": "Nom ou : key:R, key:2, key:mouse4, mouse, mod:sodium, conflict, unbound – à combiner avec des espaces",
+  "keysearch.capture": "Rechercher en pressant une touche",
+  "keysearch.capturing": "Appuie sur une touche ou un bouton de souris … (Échap annule)",
+  "keysearch.count": "{0} sur {1}",
+  "keysearch.none": "Aucune touche ne correspond.",
+  "keysearch.captureShort": "Touche…"
 }

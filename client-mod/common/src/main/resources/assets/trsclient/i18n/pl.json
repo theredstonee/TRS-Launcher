@@ -2031,5 +2031,14 @@
   "circuits.select.second": "Spójrz na przeciwny róg i naciśnij {0}",
   "circuits.select.size": "{0}×{1}×{2}",
   "circuits.select.cancel": "{0} anuluj",
-  "circuits.select.tooBig": "Za duże – maks. 16×16×16"
+  "circuits.select.tooBig": "Za duże – maks. 16×16×16",
+  "module.keySearch": "Szukaj w klawiszach",
+  "module.keySearch.desc": "Dodaje wyszukiwarkę do Sterowanie → Klawisze w Minecraft: po nazwie, po klawiszu (key:R, key:2), przyciskach myszy (mouse, key:mouse4), modzie (mod:sodium), podwójnie przypisanych klawiszach (conflict) lub wolnych akcjach (unbound). Przycisk klawiatury obok pokazuje wszystko na następnym wciśniętym klawiszu.",
+  "keysearch.hint": "Szukaj… key:R  mouse  mod:  conflict",
+  "keysearch.help": "Nazwa lub: key:R, key:2, key:mouse4, mouse, mod:sodium, conflict, unbound – łącz spacjami",
+  "keysearch.capture": "Szukaj naciskając klawisz",
+  "keysearch.capturing": "Naciśnij klawisz lub przycisk myszy … (Esc anuluje)",
+  "keysearch.count": "{0} z {1}",
+  "keysearch.none": "Żaden klawisz nie pasuje.",
+  "keysearch.captureShort": "Klawisz…"
 }

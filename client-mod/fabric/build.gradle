@@ -211,6 +211,8 @@ if (stonecutter.eval(mc, '>=1.20.3')) mixinClasses += ['HostingPackServerMixin',
 mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
+// Suche in der Tastenbelegung: Einträge der Liste ersetzen (alle Versionen).
+mixinClasses << 'KeySearchListInvoker'
 if (stonecutter.eval(mc, '<1.20.3')) mixinClasses << 'SelectionListAccessor'
 if (stonecutter.eval(mc, '<1.19.4')) mixinClasses << 'LoadingScreenMixin'
 // Sozial-Toasts über Vanilla-Menüs: bis 1.19.3 nach dem Bildschirm im GameRenderer (ab 1.19.4 über MenuScreenMixin).

@@ -25,6 +25,9 @@ public final class ComfortModules {
 
 	// --- Panorama ---
 	public final Module panorama;
+
+	// --- Suche in der Tastenbelegung ---
+	public final Module keySearch;
 	public final ChoiceSetting<PanoramaFormat> panoramaFormat;
 
 	/** Größe der Karten-Vorschau. */
@@ -116,7 +119,14 @@ public final class ComfortModules {
 		panoramaFormat = panorama.add(new ChoiceSetting<PanoramaFormat>("format", "Save as", PanoramaFormat.class,
 				PanoramaFormat.BOTH));
 
+		keySearch = registry.register(new Module("keySearch", "Key Binding Search",
+				"Adds a search box to Minecraft's Controls → Key Binds: search by name, by key (key:R, key:2), mouse buttons "
+						+ "(mouse, key:mouse4), mod (mod:sodium), double-bound keys (conflict) or free actions (unbound). The "
+						+ "keyboard button next to it shows everything on the next key you press.", true));
+
 		tooltips.icon("info").category(Category.MISC);
+		keySearch.icon("keyboard").category(Category.MISC);
+		dev.theredstonee.trsclient.core.keys.KeySearch.bind(keySearch);
 		serverProfiles.icon("globe").category(Category.MISC);
 		panorama.icon("image").category(Category.WORLD);
 	}

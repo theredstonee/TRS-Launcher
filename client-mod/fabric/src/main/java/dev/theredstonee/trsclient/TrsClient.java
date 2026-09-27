@@ -232,6 +232,7 @@ public final class TrsClient implements ClientModInitializer {
 
 	private void onTick(Minecraft mc) {
 		migrateKeys(mc);
+		dev.theredstonee.trsclient.menus.KeySearchUi.poll();
 		while (TrsKeys.hudProfile.consumeClick()) {
 			String name = modules.profiles.cycle();
 			Mc.actionBar(Mc.text(I18n.tr("toast.hudProfile", name)));

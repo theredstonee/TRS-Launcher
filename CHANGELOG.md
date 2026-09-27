@@ -29,6 +29,11 @@ How to write an entry:
   on as many as you like (for example only errors and warnings). New buttons "TRS" and "Chat" show only lines of the
   TRS Client or chat messages, and work together with the levels and the search. "All" shows everything again. Works
   for the live log and for older log files.
+- **Search in Minecraft's key binds (TRS Client).** Controls → Key Binds now has a search box: type a name, or
+  `key:R` / `key:2` for everything on a key, `mouse` or `key:mouse4` for mouse buttons, `mod:sodium` for one mod,
+  `conflict` for keys used twice or `unbound` for free actions – combine them with spaces. The "Key…" button next to
+  it shows everything on the next key or mouse button you press. Works from 1.8.9 to 26.3 and also finds the keys of
+  other mods.
 
 ### Deutsch
 
@@ -36,6 +41,11 @@ How to write an entry:
   jetzt Schalter: Schalte beliebig viele an (zum Beispiel nur Fehler und Warnungen). Neue Knöpfe „TRS“ und „Chat“
   zeigen nur Zeilen des TRS Client bzw. Chat-Nachrichten und wirken zusammen mit den Stufen und der Suche. „Alle“
   zeigt wieder alles. Gilt für den Live-Log und für ältere Log-Dateien.
+- **Suche in der Minecraft-Tastenbelegung (TRS Client).** Steuerung → Tastenbelegung hat jetzt ein Suchfeld: Tippe
+  einen Namen, oder `key:R` / `key:2` für alles auf einer Taste, `maus` oder `key:maus4` für Maustasten, `mod:sodium`
+  für einen Mod, `konflikt` für doppelt belegte Tasten oder `unbelegt` für freie Aktionen – mit Leerzeichen
+  kombinierbar. Der Knopf „Taste…“ daneben zeigt alles, was auf der nächsten gedrückten Taste oder Maustaste liegt.
+  Funktioniert von 1.8.9 bis 26.3 und findet auch die Tasten anderer Mods.
 
 ## 0.10.0 – 2026-09-27 – Toolbox | Werkzeugkasten
 <!-- banner: accent=#ff9f1c motif=/news/0.10.0/banner.png -->

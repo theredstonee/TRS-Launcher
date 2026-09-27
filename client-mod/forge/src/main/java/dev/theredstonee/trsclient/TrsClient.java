@@ -188,6 +188,7 @@ public final class TrsClient {
 	public void onEndTick(Minecraft mc) {
 		if (TrsKeys.menu == null) return;
 		migrateKeys(mc);
+		dev.theredstonee.trsclient.menus.KeySearchUi.poll();
 		while (TrsKeys.hudProfile.consumeClick()) {
 			String name = modules.profiles.cycle();
 			Mc.actionBar(Component.literal(I18n.tr("toast.hudProfile", name)));

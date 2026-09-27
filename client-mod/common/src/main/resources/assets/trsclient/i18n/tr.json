@@ -2031,5 +2031,14 @@
   "circuits.select.second": "Karşı köşeye bak ve {0} tuşuna bas",
   "circuits.select.size": "{0}×{1}×{2}",
   "circuits.select.cancel": "{0} iptal",
-  "circuits.select.tooBig": "Çok büyük – en fazla 16×16×16"
+  "circuits.select.tooBig": "Çok büyük – en fazla 16×16×16",
+  "module.keySearch": "Tuş atamalarında ara",
+  "module.keySearch.desc": "Minecraft'ın Kontroller → Tuş atamaları ekranına arama ekler: ada, tuşa (key:R, key:2), fare tuşlarına (mouse, key:mouse4), moda (mod:sodium), çift atanmış tuşlara (conflict) veya boş eylemlere (unbound) göre. Yanındaki klavye düğmesi basacağın bir sonraki tuştaki her şeyi gösterir.",
+  "keysearch.hint": "Ara… key:R  mouse  mod:  conflict",
+  "keysearch.help": "Ad veya: key:R, key:2, key:mouse4, mouse, mod:sodium, conflict, unbound – boşlukla birleştir",
+  "keysearch.capture": "Tuşa basarak ara",
+  "keysearch.capturing": "Bir tuşa veya fare tuşuna bas … (Esc iptal eder)",
+  "keysearch.count": "{0} / {1}",
+  "keysearch.none": "Aramaya uyan tuş ataması yok.",
+  "keysearch.captureShort": "Tuş…"
 }

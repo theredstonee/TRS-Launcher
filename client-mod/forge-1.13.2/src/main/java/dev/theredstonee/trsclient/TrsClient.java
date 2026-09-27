@@ -139,7 +139,7 @@ public final class TrsClient {
 				client.modules.qol.itemCounter, client.modules.qol.hitFeedback, client.modules.qol.streamer));
 		// Komfort-Paket 2: Tooltips und Panorama sind für diese Version nicht umgesetzt (Server-Profile laufen).
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.comfort.tooltips, client.modules.comfort.panorama,
-				client.modules.circuits.circuitLibrary));
+				client.modules.circuits.circuitLibrary, client.modules.comfort.keySearch));
 		client.version =ModList.get().getModContainerById(MOD_ID)
 				.map(c -> c.getModInfo().getVersion().toString()).orElse("?");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.

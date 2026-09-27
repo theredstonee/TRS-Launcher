@@ -2031,5 +2031,14 @@
   "circuits.select.second": "Mira la esquina opuesta y pulsa {0}",
   "circuits.select.size": "{0}×{1}×{2}",
   "circuits.select.cancel": "{0} cancelar",
-  "circuits.select.tooBig": "Demasiado grande: máximo 16×16×16"
+  "circuits.select.tooBig": "Demasiado grande: máximo 16×16×16",
+  "module.keySearch": "Buscar en los controles",
+  "module.keySearch.desc": "Añade un buscador a Controles → Asignación de teclas de Minecraft: por nombre, por tecla (key:R, key:2), botones del ratón (raton, key:mouse4), mod (mod:sodium), teclas repetidas (conflicto) o acciones libres (libre). El botón del teclado de al lado muestra todo lo que hay en la siguiente tecla que pulses.",
+  "keysearch.hint": "Buscar… key:R  raton  mod:  conflicto",
+  "keysearch.help": "Nombre o: key:R, key:2, key:mouse4, raton, mod:sodium, conflicto, libre – combina con espacios",
+  "keysearch.capture": "Buscar pulsando una tecla",
+  "keysearch.capturing": "Pulsa una tecla o un botón del ratón … (Esc cancela)",
+  "keysearch.count": "{0} de {1}",
+  "keysearch.none": "Ninguna asignación coincide con la búsqueda.",
+  "keysearch.captureShort": "Tecla…"
 }

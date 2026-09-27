@@ -87,6 +87,8 @@ public final class NewSince {
 	public static final String KEY_PANORAMA = "key.trsclient.panorama";
 	/** Schaltungs-Bibliothek (TRS Client 0.11.0): fertige Redstone-Schaltungen, als Vorlage in der Welt einblendbar. */
 	public static final String CIRCUITS = "0.11.0";
+	/** Suche in der Minecraft-Tastenbelegung (TRS Client 0.12.0). */
+	public static final String KEY_SEARCH = "0.12.0";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -136,6 +138,8 @@ public final class NewSince {
 		add(COMFORT, "tooltips", "serverProfiles", "panorama", MENU_SERVER_PROFILES, KEY_PANORAMA);
 		// Schaltungs-Bibliothek.
 		add(CIRCUITS, "circuitLibrary");
+		// Suche in der Tastenbelegung.
+		add(KEY_SEARCH, "keySearch");
 	}
 
 	private NewSince() {

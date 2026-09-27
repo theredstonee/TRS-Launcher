@@ -2031,5 +2031,14 @@
   "circuits.select.second": "Gegenüberliegende Ecke anschauen und {0} drücken",
   "circuits.select.size": "{0}×{1}×{2}",
   "circuits.select.cancel": "{0} abbrechen",
-  "circuits.select.tooBig": "Zu groß – höchstens 16×16×16"
+  "circuits.select.tooBig": "Zu groß – höchstens 16×16×16",
+  "module.keySearch": "Suche in der Tastenbelegung",
+  "module.keySearch.desc": "Fügt der Minecraft-Tastenbelegung (Steuerung → Tastenbelegung) ein Suchfeld hinzu: nach Namen, nach Taste (key:R, key:2), Maustasten (mouse, key:maus4), Mod (mod:sodium), doppelt belegten Tasten (konflikt) oder freien Aktionen (unbelegt). Der Tastatur-Knopf daneben zeigt alles, was auf der nächsten gedrückten Taste liegt.",
+  "keysearch.hint": "Suchen… key:R  maus  mod:  konflikt",
+  "keysearch.help": "Name oder: key:R, key:2, key:maus4, maus, mod:sodium, konflikt, unbelegt – mit Leerzeichen kombinieren",
+  "keysearch.capture": "Suchen per Tastendruck",
+  "keysearch.capturing": "Taste oder Maustaste drücken … (Esc bricht ab)",
+  "keysearch.count": "{0} von {1}",
+  "keysearch.none": "Keine Tastenbelegung passt zur Suche.",
+  "keysearch.captureShort": "Taste…"
 }

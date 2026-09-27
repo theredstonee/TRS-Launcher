@@ -95,6 +95,11 @@ public final class AutoTest {
 			CircuitTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=keysearch: Suche in der Tastenbelegung (Steuerung)
+		if ("keysearch".equals(System.getProperty("trsclient.autotest.only"))) {
+			KeySearchTest.install();
+			return;
+		}
 		if ("connect".equals(System.getProperty("trsclient.autotest.only"))) {
 			ConnectTest.install();
 			return;

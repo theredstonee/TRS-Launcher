@@ -70,6 +70,8 @@ import java.util.List;
 @Mod(modid = TrsClient.MOD_ID, name = "TRS Client", version = BuildInfo.VERSION, useMetadata = true, clientSideOnly = true,
 		acceptedMinecraftVersions = BuildInfo.ACCEPTED_MINECRAFT)
 public final class TrsClient {
+	/** Suche in der Tastenbelegung (Steuerung); öffentlich für den Autotest. */
+	public static final dev.theredstonee.trsclient.menus.LegacyKeySearch keySearch = new dev.theredstonee.trsclient.menus.LegacyKeySearch();
 	/** Kontowechsel (Spiel-Thread über den Client-Tick). */
 	static dev.theredstonee.trsclient.core.account.LegacySessionSwap accountSwap;
 	public static final String MOD_ID = "trsclient";
@@ -201,6 +203,7 @@ public final class TrsClient {
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.qol.LegacyQol.get());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.comfort.LegacyComfort.get());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
+		MinecraftForge.EVENT_BUS.register(keySearch);
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.net.NetHooks.get());

@@ -2031,5 +2031,14 @@
   "circuits.select.second": "Kijk naar de tegenoverliggende hoek en druk op {0}",
   "circuits.select.size": "{0}×{1}×{2}",
   "circuits.select.cancel": "{0} annuleren",
-  "circuits.select.tooBig": "Te groot – maximaal 16×16×16"
+  "circuits.select.tooBig": "Te groot – maximaal 16×16×16",
+  "module.keySearch": "Zoeken in toetsen",
+  "module.keySearch.desc": "Voegt een zoekveld toe aan Besturing → Toetsen van Minecraft: op naam, op toets (key:R, key:2), muisknoppen (mouse, key:mouse4), mod (mod:sodium), dubbel toegewezen toetsen (conflict) of vrije acties (unbound). De toetsenbordknop ernaast toont alles op de volgende toets die je indrukt.",
+  "keysearch.hint": "Zoeken… key:R  mouse  mod:  conflict",
+  "keysearch.help": "Naam of: key:R, key:2, key:mouse4, mouse, mod:sodium, conflict, unbound – combineer met spaties",
+  "keysearch.capture": "Zoeken door een toets in te drukken",
+  "keysearch.capturing": "Druk op een toets of muisknop … (Esc annuleert)",
+  "keysearch.count": "{0} van {1}",
+  "keysearch.none": "Geen toets past bij je zoekopdracht.",
+  "keysearch.captureShort": "Toets…"
 }
