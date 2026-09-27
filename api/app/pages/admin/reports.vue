@@ -10,7 +10,7 @@ const mod = computed(() => m.value.admin.mod)
 const rev = useState('admin-reports-rev', () => 0)
 
 const STATUSES: ReportFilter[] = ['active', 'open', 'in_review', 'resolved', 'all']
-const KINDS: ReportKind[] = ['message', 'image', 'player', 'group']
+const KINDS: ReportKind[] = ['message', 'image', 'player', 'group', 'share']
 const REASONS: ReportReason[] = ['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other']
 
 const f = reactive({

@@ -33,7 +33,7 @@ const sanctionForm = shallowRef<{ valid: boolean } | null>(null)
 const keepOpen = ref(false)
 const includeRelated = ref(false)
 const note = ref('')
-const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_message'>(null)
+const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share'>(null)
 const limits = computed(() => session.value?.limits ?? { kinds: [], maxMinutes: 0, maxWarnMinutes: 0, permanent: false })
 
 function resetForm() {
@@ -65,7 +65,7 @@ async function run(fn: () => Promise<{ report: ReportDetail }>) {
   }
 }
 
-function act(action: 'sanction' | 'dismiss' | 'resolve' | 'delete_message') {
+function act(action: 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share') {
   confirming.value = null
   const body: Record<string, unknown> = { action }
   if (action === 'sanction') Object.assign(body, draftBody(draft.value))
@@ -115,6 +115,18 @@ async function unmute() {
 }
 
 const resolved = computed(() => report.value?.status === 'resolved')
+
+/** Wegpunkt-Karte als eine Zeile (nur Text, kein HTML). */
+function waypointLine(w: NonNullable<EvidenceMessage['waypoint']>): string {
+  return fill(t.value.waypoint, {
+    name: w.name,
+    x: w.x,
+    y: w.y,
+    z: w.z,
+    dimension: w.dimension.replace(/^minecraft:/, ''),
+    where: w.world.type === 'server' ? w.world.address : t.value.singleplayer,
+  })
+}
 const systemLabel = (e: string | undefined) => (e && e in t.value.systemEvents ? t.value.systemEvents[e as keyof typeof t.value.systemEvents] : (e ?? ''))
 
 // Gemeldete Nachricht im Verlauf sichtbar machen (nur die Liste scrollen, nicht die Seite).
@@ -237,13 +249,17 @@ onBeforeUnmount(() => {
                   <p v-if="msg.text" class="msg-text">{{ msg.text }}</p>
                   <p v-if="msg.invite" class="text-xs text-lamp-300">{{ fill(t.invite, { address: msg.invite.address }) }}</p>
                   <p v-if="msg.world" class="text-xs text-lamp-300">{{ fill(t.world, { name: msg.world.name }) }}</p>
+                  <p v-if="msg.waypoint" class="text-xs text-lamp-300">{{ waypointLine(msg.waypoint) }}</p>
                   <p v-if="msg.attachments.length" class="text-xs text-base-400">{{ fill(t.attachments, { n: msg.attachments.length }) }}</p>
                 </li>
               </ol>
             </div>
 
-            <div v-if="report.evidence?.images.length">
+            <div v-if="report.evidence?.share || report.evidence?.images.length">
               <h3 class="section-title">{{ t.reportedImages }}</h3>
+              <p v-if="report.evidence?.share" class="mt-1 text-xs text-base-400">
+                {{ fill(t.shareInfo, { created: when(report.evidence.share.createdAt), expires: when(report.evidence.share.expiresAt) }) }}
+              </p>
               <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <a v-for="img in report.evidence.images" :key="img.id" :href="img.path" target="_blank" rel="noopener" class="evidence-img">
                   <img :src="img.path" :width="img.width" :height="img.height" alt="" loading="lazy" />
@@ -312,7 +328,7 @@ onBeforeUnmount(() => {
               <p class="text-xs text-base-400">{{ t.reporter }}</p>
               <p class="mt-1 flex flex-wrap items-center gap-2 font-semibold text-base-50">
                 <NuxtLink v-if="report.reporter" :to="`/admin/players/${report.reporter.uuid}`" class="hover:underline">{{ name(report.reporter) }}</NuxtLink>
-                <template v-else>{{ name(report.reporter) }}</template>
+                <template v-else>{{ report.anonymous ? t.anonymous : name(report.reporter) }}</template>
                 <span v-if="report.lowTrust" class="badge bg-lamp-900 text-lamp-300">{{ t.lowTrust }}</span>
               </p>
               <p v-if="report.reporterStats" class="mt-1 text-xs text-base-300">{{ fill(t.reporterStats, { actioned: report.reporterStats.actioned, dismissed: report.reporterStats.dismissed, open: report.reporterStats.open }) }}</p>
@@ -328,6 +344,9 @@ onBeforeUnmount(() => {
               <div class="mt-3 grid grid-cols-2 gap-2">
                 <button v-if="report.messageId" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'delete_message'">
                   <SiteIcon name="trash" class="size-4" />{{ t.deleteMessage }}
+                </button>
+                <button v-if="report.shareId" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'delete_share'">
+                  <SiteIcon name="trash" class="size-4" />{{ t.deleteShare }}
                 </button>
                 <button type="button" class="btn btn-ghost text-sm" :disabled="busy || resolved" @click="confirming = 'dismiss'">{{ t.dismiss }}</button>
                 <button type="button" class="btn btn-primary text-sm" :disabled="busy || resolved" @click="confirming = 'resolve'">
@@ -353,10 +372,10 @@ onBeforeUnmount(() => {
             </div>
             <AdminConfirm
               v-if="confirming"
-              :title="confirming === 'sanction' ? at.decision.confirmTitle : confirming === 'dismiss' ? t.dismiss : confirming === 'resolve' ? t.resolve : t.deleteMessage"
+              :title="confirming === 'sanction' ? at.decision.confirmTitle : confirming === 'dismiss' ? t.dismiss : confirming === 'resolve' ? t.resolve : confirming === 'delete_share' ? t.deleteShare : t.deleteMessage"
               :text="confirming === 'sanction' ? sanctionSummary : ''"
               :confirm-label="confirming === 'sanction' ? at.decision.apply : at.common.confirm"
-              :danger="confirming === 'sanction' || confirming === 'delete_message'"
+              :danger="confirming === 'sanction' || confirming === 'delete_message' || confirming === 'delete_share'"
               :busy="busy"
               @cancel="confirming = null"
               @confirm="act(confirming!)"

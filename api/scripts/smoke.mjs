@@ -551,6 +551,43 @@ try {
   const snoopImg = await http('GET', `/v1/chat/attachments/${upPng.json.attachment.id}`, { token: stranger })
   check('stranger cannot read image', snoopImg.status === 404)
 
+  console.log('waypoints + shared screenshots')
+  {
+    const wp = { name: 'Basis', x: 100, y: 64, z: -20, dimension: 'minecraft:overworld', world: { type: 'server', address: 'Play.Example.net' }, color: 0xe0281e }
+    const sentWp = await http('POST', `/v1/chat/conversations/${dmId}/messages`, { token: A, body: { waypoint: wp } })
+    check('send waypoint card', sentWp.status === 201 && sentWp.json.message.waypoint?.world.address === 'play.example.net' && sentWp.json.message.text === null, JSON.stringify(sentWp.json))
+    const badWp = await http('POST', `/v1/chat/conversations/${dmId}/messages`, { token: A, body: { waypoint: { ...wp, world: { type: 'world', id: 'Meine Welt' } } } })
+    check('waypoint without free text', badWp.status === 400)
+    const up = await http('POST', '/v1/shares', { token: A, raw: png(64, 36), headers: { 'content-type': 'image/png' } })
+    check('share upload 201', up.status === 201 && /^[A-Za-z0-9_-]{22}$/.test(up.json.share.id) && up.json.share.mime === 'image/jpeg', JSON.stringify(up.json))
+    const sid = up.json.share.id
+    const mine = await http('GET', '/v1/shares', { token: A })
+    check('share list + limits', mine.json.shares[0]?.id === sid && mine.json.limits.maxActive === 50 && mine.json.limits.uploadsToday === 1)
+    const pub = await http('GET', `/v1/shares/${sid}`)
+    check('public share without owner', pub.status === 200 && !pub.text.includes('Theredstonee') && !pub.text.includes(ADMIN_UUID) && pub.headers.get('cache-control') === 'public, max-age=60')
+    const imgRes = await fetch(`${BASE}/v1/shares/${sid}/image`)
+    const imgBuf = Buffer.from(await imgRes.arrayBuffer())
+    check('public share image', imgRes.status === 200 && imgBuf[0] === 0xff && imgRes.headers.get('cross-origin-resource-policy') === 'cross-origin' && imgRes.headers.get('cache-control') === 'public, max-age=600')
+    const page = await fetch(`${BASE}/s/${sid}`, { headers: { 'cf-connecting-ip': '203.0.113.9', 'accept-language': 'de' } })
+    const html = await page.text()
+    check('share page with preview + noindex', page.status === 200 && html.includes(`/v1/shares/${sid}/image`) && html.includes('og:image') && /noindex/.test(page.headers.get('x-robots-tag') ?? '') && !html.includes(ADMIN_UUID), `${page.status} img=${html.includes(`/v1/shares/${sid}/image`)} og=${html.includes('og:image')} robots=${page.headers.get('x-robots-tag')} uuid=${html.includes(ADMIN_UUID)}`)
+    const gone = await fetch(`${BASE}/s/AAAAAAAAAAAAAAAAAAAAAA`, { headers: { 'cf-connecting-ip': '203.0.113.9' } })
+    check('unknown share page 404', gone.status === 404)
+    const anon = await http('POST', `/v1/shares/${sid}/report`, { body: { reason: 'inappropriate' }, ip: '203.0.113.50' })
+    check('anonymous share report 202', anon.status === 202)
+    const repShare = await http('POST', '/v1/reports', { token: B, body: { kind: 'share', shareId: sid, reason: 'spam' } })
+    check('player share report', repShare.status === 201)
+    const del = await http('POST', `/v1/admin/reports/${repShare.json.report.id}/actions`, { headers: { 'x-admin-key': ADMIN_KEY }, body: { action: 'delete_share', includeRelated: true } })
+    check('admin delete_share', del.json.report.status === 'resolved' && del.json.report.evidence.share.id === sid)
+    const kept = await fetch(`${BASE}${del.json.report.evidence.images[0].path}`, { headers: { 'x-admin-key': ADMIN_KEY } })
+    check('evidence copy kept', kept.status === 200)
+    const after = await http('GET', `/v1/shares/${sid}`)
+    check('deleted share 404', after.status === 404 && after.json.error.code === 'share_not_found')
+    const own = await http('POST', '/v1/shares', { token: A, raw: png(8, 8), headers: { 'content-type': 'image/png' } })
+    const rm = await http('DELETE', `/v1/shares/${own.json.share.id}`, { token: A })
+    check('owner deletes share', rm.status === 204)
+  }
+
   console.log('world hosting')
   {
     const sA = await openStream(A)
@@ -655,7 +692,7 @@ try {
 
   console.log('admin + deletion')
   const stats = await http('GET', '/v1/admin/stats', { token: A })
-  check('stats', stats.json.users.total === 3 && stats.json.chat.messages === 3 && stats.json.reports.resolved === 1 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 11 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
+  check('stats', stats.json.users.total === 3 && stats.json.chat.messages === 4 && stats.json.reports.resolved === 3 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 12 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
   const ban = await http('POST', '/v1/admin/users/b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0/ban', { headers: { 'x-admin-key': ADMIN_KEY }, body: { reason: 'smoke' } })
   check('ban', ban.json.user.banned?.reason === 'smoke')
   const banned = await http('GET', '/v1/me', { token: B })

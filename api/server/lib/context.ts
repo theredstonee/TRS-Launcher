@@ -32,6 +32,8 @@ export interface AppContext {
   cosmeticDir: string
   /** Ordner für Chat-Bilder und Beweis-Kopien (`<DATA_DIR>/chat`, verschlüsselt). */
   chatDir: string
+  /** Ordner für geteilte Screenshots (`<DATA_DIR>/shares`, öffentlich per Link, §23). */
+  shareDir: string
   /** Verschlüsselung der Chat-Inhalte (Schlüssel aus `CHAT_KEYS`). */
   cipher: ChatCipher
   /** Status für Server-Einladungen (Ping mit Cache + SSRF-Schutz). */
@@ -74,6 +76,7 @@ export function createContext(opts: {
     capeDir: opts.capeDir,
     cosmeticDir: opts.cosmeticDir,
     chatDir: opts.chatDir ?? join(opts.config.dataDir, 'chat'),
+    shareDir: join(opts.config.dataDir, 'shares'),
     cipher: new ChatCipher(opts.config.chatKeys.keys),
     servers: new ServerStatusService(opts.config.serverPing, now, opts.pingDeps),
     spam: new SpamGuard(opts.config.secretKey, now),

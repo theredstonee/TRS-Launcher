@@ -12,6 +12,7 @@ import { openDb } from '../lib/db'
 import { sweepHosting } from '../lib/hosting'
 import { setWebpWasmLoader } from '../lib/images'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
+import { sweepExpiredShares, sweepOrphanShareFiles } from '../lib/shares'
 import { createMojangClient } from '../lib/mojang'
 import { afterPresenceChange } from '../lib/playerevents'
 import { parseTemplates } from '../lib/templates'
@@ -108,7 +109,10 @@ export default defineNitroPlugin((nitroApp) => {
       for (const { uuid, wasInGame } of ctx.presence.sweepChanges()) afterPresenceChange(ctx, uuid, true, wasInGame)
     }),
     every(60_000, () => ctx.limiter.sweep()),
-    every(10 * 60_000, () => sweepExpired(ctx)),
+    every(10 * 60_000, () => {
+      sweepExpired(ctx)
+      sweepExpiredShares(ctx)
+    }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.
     every(15_000, () => {
@@ -124,6 +128,7 @@ export default defineNitroPlugin((nitroApp) => {
     every(6 * 60 * 60_000, () => {
       sweepModeration(ctx)
       sweepOrphanFiles(ctx)
+      sweepOrphanShareFiles(ctx)
     }),
     // Schlüsseltausch: alte Chat-Daten nach und nach mit dem aktiven Schlüssel neu verschlüsseln.
     every(60_000, () => {

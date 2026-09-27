@@ -138,6 +138,6 @@ describe('room content', () => {
   it('comes with migration 11 (content column)', () => {
     const m = MIGRATIONS.find((x) => x.version === 11)
     expect(m?.sql).toContain('hosting_rooms ADD COLUMN content')
-    expect(MIGRATIONS.at(-1)!.version).toBe(11)
+    expect(MIGRATIONS.at(-1)!.version).toBeGreaterThanOrEqual(11)
   })
 })

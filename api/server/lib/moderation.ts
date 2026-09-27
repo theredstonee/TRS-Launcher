@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { attachmentsOf, copyToEvidence, getAttachment, removeEvidenceFiles } from './attachments'
+import { attachmentsOf, copyBytesToEvidence, copyToEvidence, getAttachment, removeEvidenceFiles } from './attachments'
 import { audit } from './audit'
 import {
   access,
@@ -12,6 +12,7 @@ import {
   type ConversationRow,
   type InviteView,
   type MessageRow,
+  type WaypointView,
 } from './chat'
 import type { AppContext } from './context'
 import { all, one, placeholders, run, tx } from './db'
@@ -34,6 +35,7 @@ import {
   type SanctionRow,
   type Staff,
 } from './sanctions'
+import { adminDeleteShare, getShare, readShareImage, type ShareRow } from './shares'
 import { getUser, staffRole } from './users'
 
 /**
@@ -45,7 +47,7 @@ import { getUser, staffRole } from './users'
 export const REPORT_ID = /^r[0-9a-f]{16}$/
 export const REPORT_REASONS = ['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other'] as const
 export type ReportReason = (typeof REPORT_REASONS)[number]
-export type ReportKind = 'message' | 'image' | 'player' | 'group'
+export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share'
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 export type ReportOutcome = 'actioned' | 'dismissed'
 
@@ -193,6 +195,8 @@ export interface ReportRow {
   conversation_id: string | null
   message_id: string | null
   attachment_id: string | null
+  /** Geteilter Screenshot (§23) bei `kind = 'share'`. */
+  share_id: string | null
   reason: ReportReason
   note: Uint8Array | null
   evidence: Uint8Array | null
@@ -216,6 +220,8 @@ export interface EvidenceMessage {
   invite: InviteView | null
   /** Weltkarte (§21): Raum-Id und Weltname zur Meldezeit. Fehlt in älteren Beweisen. */
   world?: { roomId: string, name: string } | null
+  /** Wegpunkt-Karte (§18.10). Fehlt in älteren Beweisen. */
+  waypoint?: WaypointView | null
   system: { event: string, target: string | null, name: string | null } | null
   attachments: { id: string, width: number, height: number, mime: string }[]
   replyTo: string | null
@@ -236,6 +242,10 @@ export interface Evidence {
   messages: EvidenceMessage[]
   /** Bilder, von denen eine Kopie aufbewahrt wird (Admin: `GET /v1/admin/reports/{id}/images/{attachmentId}`). */
   images: string[]
+  /** Geteilter Screenshot zur Meldezeit (§23); die Bildkopie steht in `images` unter derselben ID. */
+  share?: { id: string, width: number, height: number, mime: string, createdAt: string, expiresAt: string } | null
+  /** Meldung über die öffentliche Seite ohne Konto. */
+  anonymous?: boolean
 }
 
 /** Was der Melder über seine Meldung sieht. */
@@ -261,6 +271,7 @@ export interface ReportInput {
   attachmentId?: string
   uuid?: string
   conversationId?: string
+  shareId?: string
 }
 
 const ref = (ctx: AppContext, uuid: string | null): PlayerRef | null => (uuid ? { uuid, name: getUser(ctx, uuid)?.name ?? '' } : null)
@@ -282,6 +293,7 @@ function snapshotMessages(ctx: AppContext, rows: MessageRow[]): EvidenceMessage[
       text: c.text,
       invite: c.invite,
       world: c.world,
+      waypoint: c.waypoint,
       system: c.system ? { event: c.system.e, target: c.system.tg ?? null, name: c.system.n ?? null } : null,
       attachments: (atts.get(r.id) ?? []).map((a) => ({ id: a.id, width: a.width, height: a.height, mime: a.mime })),
       replyTo: r.reply_to,
@@ -346,6 +358,7 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
   const copy: string[] = []
   let messageId: string | null = null
   let attachmentId: string | null = null
+  let share: ShareRow | null = null
 
   if (input.kind === 'message' || input.kind === 'image') {
     let msgId = input.messageId
@@ -384,6 +397,13 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
       conv = a.conv
       messages = latest(ctx, conv.id, a.member.visible_from_seq)
     }
+  } else if (input.kind === 'share') {
+    if (!input.shareId) throw badRequest('invalid_request', 'shareId is required')
+    const s = getShare(ctx, input.shareId)
+    if (!s) throw notFound('share_not_found', 'Shared image not found')
+    if (s.owner_uuid === reporter) throw badRequest('cannot_target_self', 'You cannot report yourself')
+    target = s.owner_uuid
+    share = s
   } else {
     if (!input.conversationId) throw badRequest('invalid_request', 'conversationId is required')
     const a = access(ctx, reporter, input.conversationId)
@@ -397,8 +417,9 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
   const dup = one(
     ctx.db,
     `SELECT 1 AS x FROM chat_reports WHERE reporter_uuid = ? AND kind = ? AND status <> 'resolved'
-       AND COALESCE(message_id, '') = ? AND COALESCE(attachment_id, '') = ? AND COALESCE(target_uuid, '') = ? AND COALESCE(conversation_id, '') = ?`,
-    reporter, input.kind, messageId ?? '', attachmentId ?? '', target ?? '', conv?.id ?? '',
+       AND COALESCE(message_id, '') = ? AND COALESCE(attachment_id, '') = ? AND COALESCE(target_uuid, '') = ? AND COALESCE(conversation_id, '') = ?
+       AND COALESCE(share_id, '') = ?`,
+    reporter, input.kind, messageId ?? '', attachmentId ?? '', target ?? '', conv?.id ?? '', share?.id ?? '',
   )
   if (dup) throw conflict('already_reported', 'You already reported this')
 
@@ -412,21 +433,23 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     conversation: conv ? convSnapshot(ctx, conv) : null,
     focus: focus?.id ?? null,
     messages: snapshotMessages(ctx, messages),
-    images: copy,
+    images: share ? [share.id] : copy,
+    ...(share ? { share: shareEvidence(share) } : {}),
   }
   const lowTrust = reporterTrust(ctx, reporter).low
   tx(ctx.db, () => {
     run(
       ctx.db,
-      `INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, reason, note, evidence,
+      `INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, reason, note, evidence,
          status, outcome, low_trust, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?, ?, ?)`,
-      id, reporter, target, input.kind, conv?.id ?? null, messageId, attachmentId, input.reason,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?, ?, ?)`,
+      id, reporter, target, input.kind, conv?.id ?? null, messageId, attachmentId, share?.id ?? null, input.reason,
       input.note ? ctx.cipher.encrypt(input.note, `rnote:${id}`) : null,
       ctx.cipher.encrypt(JSON.stringify(evidence), `rep:${id}`),
       lowTrust ? 1 : 0, t, t,
     )
   })
+  if (share) keepShareEvidence(ctx, id, share)
   for (const attId of copy) {
     const a = getAttachment(ctx, attId)
     if (a) {
@@ -439,6 +462,65 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
   }
   if (target && !lowTrust) maybeAutoMute(ctx, target, id)
   return myReportView(one<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE id = ?', id)!)
+}
+
+function shareEvidence(s: ShareRow): NonNullable<Evidence['share']> {
+  return { id: s.id, width: s.width, height: s.height, mime: s.mime, createdAt: iso(s.created_at), expiresAt: iso(s.expires_at) }
+}
+
+/** Kopie des gemeldeten Screenshots in die Beweise (verschlüsselt, überlebt Löschen/Ablauf des Links). */
+function keepShareEvidence(ctx: AppContext, reportId: string, s: ShareRow): void {
+  try {
+    copyBytesToEvidence(ctx, reportId, s.id, readShareImage(ctx, s, false), { mime: s.mime, width: s.width, height: s.height })
+  } catch (err) {
+    console.error(`[trs-api] could not copy shared image ${s.id} to evidence`, (err as Error).message)
+  }
+}
+
+/** Höchstens so viele offene anonyme Meldungen insgesamt (Schutz vor Überflutung der Moderation). */
+export const MAX_OPEN_ANONYMOUS_REPORTS = 200
+
+/**
+ * Meldung eines geteilten Screenshots über die öffentliche Seite (ohne Konto). Je Link höchstens eine
+ * offene anonyme Meldung; weitere werden still zusammengefasst. Zählt nie für die Auto-Stummschaltung.
+ * Rückgabe: `true`, wenn eine neue Meldung angelegt wurde. Die IP wird nicht gespeichert (nur das
+ * Rate-Limit im RAM).
+ */
+export function createAnonymousShareReport(ctx: AppContext, shareId: string, reason: ReportReason): boolean {
+  const s = getShare(ctx, shareId)
+  if (!s) throw notFound('share_not_found', 'Shared image not found')
+  const open = one(
+    ctx.db, "SELECT 1 AS x FROM chat_reports WHERE kind = 'share' AND share_id = ? AND reporter_uuid IS NULL AND status <> 'resolved'", s.id,
+  )
+  if (open) return false
+  const total = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM chat_reports WHERE reporter_uuid IS NULL AND kind = 'share' AND status <> 'resolved'")!.n
+  if (total >= MAX_OPEN_ANONYMOUS_REPORTS) {
+    console.warn('[trs-api] too many open anonymous share reports – ignoring new ones')
+    return false
+  }
+  const id = `r${randomBytes(8).toString('hex')}`
+  const t = ctx.now()
+  const evidence: Evidence = {
+    v: 1,
+    capturedAt: iso(t),
+    reporter: null,
+    target: ref(ctx, s.owner_uuid),
+    conversation: null,
+    focus: null,
+    messages: [],
+    images: [s.id],
+    share: shareEvidence(s),
+    anonymous: true,
+  }
+  run(
+    ctx.db,
+    `INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, reason, note, evidence,
+       status, outcome, low_trust, created_at, updated_at)
+     VALUES (?, NULL, ?, 'share', NULL, NULL, NULL, ?, ?, NULL, ?, 'open', NULL, 0, ?, ?)`,
+    id, s.owner_uuid, s.id, reason, ctx.cipher.encrypt(JSON.stringify(evidence), `rep:${id}`), t, t,
+  )
+  keepShareEvidence(ctx, id, s)
+  return true
 }
 
 /** Auto-Stumm (bis zur Prüfung), wenn genug verschiedene vertrauenswürdige Melder im Fenster melden. */
@@ -474,6 +556,10 @@ export interface AdminReportSummary {
   conversationId: string | null
   messageId: string | null
   attachmentId: string | null
+  /** Geteilter Screenshot (§23) bei `kind = 'share'`, sonst `null`. */
+  shareId: string | null
+  /** Über die öffentliche Seite ohne Konto gemeldet (`reporter` ist dann `null`). */
+  anonymous: boolean
   /** Anfang des gemeldeten Texts (≤ 140 Zeichen) oder `null`. */
   preview: string | null
   images: number
@@ -539,6 +625,8 @@ export function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummar
       conversationId: r.conversation_id,
       messageId: r.message_id,
       attachmentId: r.attachment_id,
+      shareId: r.share_id,
+      anonymous: r.kind === 'share' && r.reporter_uuid === null && ev?.anonymous === true,
       preview: focus?.text ? [...focus.text].slice(0, 140).join('') : null,
       images: ev?.images.length ?? 0,
       lowTrust: r.low_trust === 1,
@@ -764,7 +852,7 @@ export function adminAddNote(ctx: AppContext, actor: string, id: string, text: s
   return adminReportDetail(ctx, id)
 }
 
-export type ReportAction = 'delete_message' | 'warn' | 'mute' | 'ban' | 'sanction' | 'dismiss' | 'resolve'
+export type ReportAction = 'delete_message' | 'delete_share' | 'warn' | 'mute' | 'ban' | 'sanction' | 'dismiss' | 'resolve'
 
 export interface ReportActionInput {
   action: ReportAction
@@ -846,6 +934,12 @@ export function adminReportAction(ctx: AppContext, actorIn: string | Staff, id: 
       audit(ctx, actor.uuid, 'chat.message.delete', r.target_uuid, r.message_id, id)
       break
     }
+    case 'delete_share': {
+      if (!r.share_id) throw conflict('no_share', 'This report is not about a shared image')
+      adminDeleteShare(ctx, r.share_id)
+      audit(ctx, actor.uuid, 'share.delete', r.target_uuid, r.share_id, id)
+      break
+    }
     case 'warn':
       warnUser(ctx, actor, r.target_uuid!, reason, id, { reasonCode, note })
       break
@@ -877,7 +971,9 @@ export function adminReportAction(ctx: AppContext, actorIn: string | Staff, id: 
     if (input.includeRelated) {
       const more = r.message_id
         ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE message_id = ? AND id <> ? AND status <> 'resolved'", r.message_id, r.id)
-        : r.target_uuid
+        : r.share_id
+          ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE share_id = ? AND id <> ? AND status <> 'resolved'", r.share_id, r.id)
+          : r.target_uuid
           ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE target_uuid = ? AND kind = ? AND id <> ? AND status <> 'resolved'", r.target_uuid, r.kind, r.id)
           : []
       rows.push(...more)

@@ -8,6 +8,7 @@ import { finishChatPurge, prepareChatPurge } from './chat'
 import { endHostingFor } from './hosting'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
+import { removeShareFiles, sharesOf } from './shares'
 import { forbidden } from './errors'
 
 export interface UserRow {
@@ -186,6 +187,8 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   // Wer eigene Uploads geteilt bekommen hat, verliert sie mit dem Konto (Zeilen per FK weg).
   const sharedOut = uploads.map(({ id }) => ({ id, holders: shareHolders(ctx, id), worn: capeWearers(ctx, id) }))
   const chat = prepareChatPurge(ctx, uuid)
+  // Geteilte Screenshots (§23): Zeilen per FK weg, Dateien danach.
+  const sharedImages = sharesOf(ctx, uuid)
   // Gehostete Welten schließen, aus fremden austragen (Rest per ON DELETE CASCADE).
   endHostingFor(ctx, uuid)
   tx(ctx.db, () => {
@@ -195,6 +198,7 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
     purgeModeration(ctx, uuid)
   })
   finishChatPurge(ctx, chat)
+  removeShareFiles(ctx, sharedImages)
   for (const s of sharedOut) {
     for (const u of s.worn) if (u !== uuid) emitCape(ctx, u)
     notifyShareRemoved(ctx, s.id, s.holders)

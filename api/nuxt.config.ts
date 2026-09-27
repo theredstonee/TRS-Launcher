@@ -75,6 +75,8 @@ export default defineNuxtConfig({
     // Admin nur im Browser rendern (Sitzung steckt im httpOnly-Cookie, nichts vorab ausliefern), nie indexieren.
     '/admin': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/admin/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // Geteilte Screenshots (§23): öffentlich per Link, aber nie indexieren; Adresse nicht weiterreichen.
+    '/s/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
     // Bilder aus public/ haben keinen Hash im Namen – einen Tag zwischenspeichern, danach neu prüfen (ETag).
     '/shots/**': { headers: { 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800' } },
     '/flags/**': { headers: { 'Cache-Control': 'public, max-age=604800' } },

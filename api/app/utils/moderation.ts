@@ -1,6 +1,6 @@
 // Typen der Chat-Moderation (`/v1/admin/reports*`, `/v1/admin/moderation/*`, `/v1/admin/chat/word-filter`).
 
-export type ReportKind = 'message' | 'image' | 'player' | 'group'
+export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share'
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 export type ReportOutcome = 'actioned' | 'dismissed'
 export type ReportReason = 'insult_hate' | 'spam' | 'inappropriate' | 'scam_phishing' | 'harassment' | 'other'
@@ -22,6 +22,10 @@ export interface ReportSummary {
   conversationId: string | null
   messageId: string | null
   attachmentId: string | null
+  /** Geteilter Screenshot (§23), sonst `null`. Fehlt bei älteren Servern. */
+  shareId?: string | null
+  /** Über die öffentliche Seite ohne Konto gemeldet. */
+  anonymous?: boolean
   preview: string | null
   images: number
   lowTrust: boolean
@@ -43,6 +47,16 @@ export interface EvidenceMessage {
   invite: { address: string, name: string | null } | null
   /** Weltkarte (Welt-Hosting); fehlt in älteren Beweisen. */
   world?: { roomId: string, name: string } | null
+  /** Wegpunkt-Karte (§18.10); fehlt in älteren Beweisen. */
+  waypoint?: {
+    name: string
+    x: number
+    y: number
+    z: number
+    dimension: string
+    world: { type: 'server', address: string } | { type: 'world', id: string }
+    color: number | null
+  } | null
   system: { event: string, target: string | null, name: string | null } | null
   attachments: { id: string, width: number, height: number, mime: string }[]
   replyTo: string | null
@@ -75,6 +89,9 @@ export interface ReportDetail extends ReportSummary {
     focus: string | null
     messages: EvidenceMessage[]
     images: { id: string, width: number, height: number, mime: string, path: string }[]
+    /** Geteilter Screenshot zur Meldezeit (§23). */
+    share?: { id: string, width: number, height: number, mime: string, createdAt: string, expiresAt: string } | null
+    anonymous?: boolean
   } | null
   notes: { id: number, at: string, actor: string, actorName: string | null, text: string }[]
   audit: { at: string, actor: string, actorName: string | null, action: string, detail: string | null }[]
