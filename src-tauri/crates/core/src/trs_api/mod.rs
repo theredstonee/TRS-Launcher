@@ -16,6 +16,8 @@
 //!   dem Spielende übernimmt der Launcher sofort wieder. Der Launcher gibt
 //!   seinen Token nie an das Spiel weiter, der Mod meldet sich selbst an.
 
+pub mod access;
+pub mod applications;
 pub mod cape_import;
 pub mod chat;
 pub mod hosting;
@@ -58,6 +60,8 @@ pub const DEFAULT_BASE: &str = "https://trs-launcher.theredstonee.de";
 /// Bisherige Adresse – bleibt parallel erreichbar. Umhang-URLs mit diesem Host
 /// (z. B. aus älteren Antworten oder Caches) gelten weiter als vertrauenswürdig.
 pub const LEGACY_BASE: &str = "https://api.theredstonee.de";
+/// Anmeldung auf der Website (nur noch mit Microsoft, §24.1).
+pub const WEBSITE_LOGIN_URL: &str = "https://trs-launcher.theredstonee.de/login";
 /// Alle Adressen, unter denen die echte TRS API läuft.
 pub const KNOWN_BASES: [&str; 2] = [DEFAULT_BASE, LEGACY_BASE];
 pub const MOJANG_SESSION: &str = "https://sessionserver.mojang.com";
@@ -135,6 +139,8 @@ pub(crate) enum Failure {
         current: Option<serde_json::Value>,
         /// Strafe (und ggf. Einspruch-Token) bei `sanctioned`/`chat_muted`/`banned` (§22).
         detail: Option<Box<sanctions::SanctionDetail>>,
+        /// Fehlendes Recht bei `missing_permission` (§24.2).
+        permission: Option<String>,
     },
 }
 
@@ -142,8 +148,14 @@ impl Failure {
     fn into_error(self) -> Error {
         match self {
             Self::Network => offline(),
-            Self::Api { status, code, retry_after, detail, .. } => {
-                let error = api_error(status, &code, retry_after);
+            Self::Api { status, code, retry_after, detail, permission, .. } => {
+                let error = match (api_error(status, &code, retry_after), permission) {
+                    (Error::TrsApi { kind, code, mut msg }, Some(permission)) => {
+                        msg.params.push(("permission", permission));
+                        Error::TrsApi { kind, code, msg }
+                    }
+                    (error, _) => error,
+                };
                 match (error, detail.and_then(|d| d.sanction)) {
                     (Error::TrsApi { kind, code, msg }, Some(sanction)) => {
                         Error::TrsApi { kind, code, msg: sanctions::with_sanction(msg, &sanction) }
@@ -219,6 +231,15 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
             ("trs_auth", crate::msg!("trs.sessionExpired", "Die TRS-Anmeldung ist abgelaufen – bitte erneut versuchen."))
         }
         (403, "forbidden") => ("trs_forbidden", crate::msg!("trs.forbidden", "Dafür fehlen dir die Rechte.")),
+        // Anmeldung per Launcher-Code gibt es nicht mehr (§24.1) – Hinweis auf die Website.
+        (_, "web_login_removed") => (
+            "trs_api",
+            crate::msg!(
+                "trsApi.web_login_removed",
+                "Die Anmeldung per Launcher-Code gibt es nicht mehr – melde dich auf der Website mit Microsoft an: {url}",
+                url = WEBSITE_LOGIN_URL
+            ),
+        ),
         // Welt-Hosting ohne Relay auf dem Server (503) ist kein „offline“.
         (_, "hosting_unavailable") => ("trs_api", message_for(code)),
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
@@ -356,6 +377,11 @@ fn message_for(code: &str) -> Msg {
         "role_not_found" => msg!("trsApi.role_not_found", "Dieser Spieler hat keine Team-Rolle."),
         "note_not_found" => msg!("trsApi.note_not_found", "Diese Notiz gibt es nicht (mehr)."),
         "bulk_too_large" => msg!("trsApi.bulk_too_large", "Höchstens 50 Einträge auf einmal."),
+        // --- Rollen, Rechte, Bewerbungen (§24) ---
+        "missing_permission" => msg!("trsApi.missing_permission", "Deiner Rolle fehlt dafür ein Recht."),
+        "rank_too_low" => msg!("trsApi.rank_too_low", "Dafür ist dein Rang im Team zu niedrig."),
+        "application_closed" => msg!("trsApi.application_closed", "Diese Bewerbung ist schon abgeschlossen."),
+        "application_not_found" => msg!("trsApi.application_not_found", "Diese Bewerbung gibt es nicht (mehr)."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -513,7 +539,8 @@ impl TrsApi {
             .then(|| error.and_then(|e| e.get("current")).cloned())
             .flatten();
         let detail = sanctions::SanctionDetail::parse(&code, error).map(Box::new);
-        Err(Failure::Api { status: status.as_u16(), code, retry_after, current, detail })
+        let permission = access::error_permission(&code, error);
+        Err(Failure::Api { status: status.as_u16(), code, retry_after, current, detail, permission })
     }
 
     /// Wie [`Self::send_once`], wartet aber kurze `429` einmal selbst ab.
@@ -742,3 +769,5 @@ mod hosting_tests;
 mod sanctions_tests;
 #[cfg(test)]
 mod share_tests;
+#[cfg(test)]
+mod team_tests;

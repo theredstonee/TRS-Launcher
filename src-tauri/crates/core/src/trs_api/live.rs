@@ -25,6 +25,7 @@ use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 
+use super::applications::MyApplication;
 use super::chat::{ApiConversation, ApiMessage, ChatConversation, ChatMessage, ChatReaction, clean_reactions, conversation_id, message_id};
 use super::hosting::{self, ApiRoom, HostingRoom as Room};
 use super::moderation::MyReport;
@@ -202,6 +203,8 @@ pub enum LiveEvent {
     SanctionUpdated { sanction: Box<MySanction> },
     /// Das Team hat über deinen Einspruch entschieden.
     AppealDecided { sanction_id: u64, appeal: MyAppeal, sanction: Box<MySanction> },
+    /// Eigene Team-Bewerbung eingereicht, Status/Antwort geändert oder zurückgezogen (§24.3).
+    ApplicationUpdated { application: Box<MyApplication> },
     Settings { settings: PrivacySettings },
     /// Einladung in eine gehostete Welt (§21.5). `from` = Host.
     HostingInvite { room: Box<Room>, from: Option<UserRef> },
@@ -290,6 +293,8 @@ struct D {
     sanction_id: Option<u64>,
     #[serde(default)]
     appeal: Option<MyAppeal>,
+    #[serde(default)]
+    application: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
@@ -443,6 +448,9 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
             let sanction = MySanction::from_value(&d.sanction?)?;
             let appeal = d.appeal?.cleaned()?;
             LiveEvent::AppealDecided { sanction_id: d.sanction_id.filter(|id| *id == sanction.id)?, appeal, sanction: Box::new(sanction) }
+        }
+        "application_updated" => {
+            LiveEvent::ApplicationUpdated { application: Box::new(MyApplication::from_value(&d.application?)?) }
         }
         "settings" => LiveEvent::Settings { settings: d.settings? },
         // --- Welt-Hosting (§21.5). `hosting_signal` bleibt bewusst draußen: Verbindungs-
@@ -843,6 +851,24 @@ mod tests {
         assert_eq!(out["appeal"]["response"], "Ok, aufgehoben.");
         // Falsche Zuordnung → verworfen.
         assert!(decode("appeal_decided", &json!({ "sanctionId": 8, "appeal": decided["appeal"], "sanction": decided }).to_string()).is_none());
+    }
+
+    #[test]
+    fn application_events_are_decoded() {
+        let application = json!({ "id": "a0123456789abcdef", "job": { "id": "moderator", "title": { "en": "Moderator" }, "open": true },
+            "status": "accepted", "response": "Willkommen\u{202E} im Team!", "createdAt": "2026-09-27T08:00:00.000Z",
+            "updatedAt": "2026-09-27T09:00:00.000Z", "decidedAt": "2026-09-27T09:00:00.000Z", "canWithdraw": true });
+        let ev = decode("application_updated", &json!({ "type": "application_updated", "application": application }).to_string()).unwrap();
+        let out = serde_json::to_value(&ev).unwrap();
+        assert_eq!(out["type"], "application_updated");
+        assert_eq!(out["application"]["status"], "accepted");
+        assert_eq!(out["application"]["job"]["title"]["en"], "Moderator");
+        assert_eq!(out["application"]["canWithdraw"], false, "entschieden");
+        assert_eq!(out["application"]["response"], "Willkommen im Team!");
+        let mut bad = application.clone();
+        bad["status"] = json!("hired");
+        assert!(decode("application_updated", &json!({ "application": bad }).to_string()).is_none());
+        assert!(decode("application_updated", "{}").is_none());
     }
 
     #[test]

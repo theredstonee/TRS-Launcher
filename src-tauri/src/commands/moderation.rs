@@ -4,6 +4,7 @@
 
 use serde_json::Value;
 use tauri::State;
+use trs_core::trs_api::applications::MyApplication;
 use trs_core::trs_api::sanctions::{MySanction, MySanctions};
 use trs_core::trs_api::team::{
     AppealDecision, AppealQuery, BulkAction, BulkTarget, NewSanction, PlayerQuery, SanctionQuery, UploadQuery,
@@ -23,6 +24,17 @@ pub async fn trs_my_sanctions(launcher: State<'_, LauncherState>) -> CommandResu
 #[tauri::command]
 pub async fn trs_appeal(launcher: State<'_, LauncherState>, id: u64, text: String) -> CommandResult<MySanction> {
     Ok(launcher.trs_appeal(id, &text).await?)
+}
+
+/// Eigene Team-Bewerbungen (§24.3) – Status und Antwort des Teams.
+#[tauri::command]
+pub async fn trs_my_applications(launcher: State<'_, LauncherState>) -> CommandResult<Vec<MyApplication>> {
+    Ok(launcher.trs_my_applications().await?)
+}
+
+#[tauri::command]
+pub async fn trs_withdraw_application(launcher: State<'_, LauncherState>, id: String) -> CommandResult<MyApplication> {
+    Ok(launcher.trs_withdraw_application(&id).await?)
 }
 
 // --- Team ---------------------------------------------------------------------------------

@@ -210,7 +210,7 @@ In the launcher's screenshot gallery and in the TRS Client ("Clips & pictures") 
 
 You can report messages, pictures, players and groups (with a reason and an optional note). The report stores an
 encrypted copy of the reported content and of up to 10 messages before and after it, exactly as you could see them;
-reported pictures are copied. Team admins review reports on the website or in the launcher and can delete messages,
+reported pictures are copied. Team members whose role allows it review reports on the website or in the launcher and can delete messages,
 warn a player, mute them in chat for a while or ban them; every action is logged. The reporter only learns whether
 something was done, not what. The reported player doesn't learn who reported them.
 
@@ -227,7 +227,7 @@ periods end, so moderation can't be escaped by deleting the account.
 
 ### Sanctions and appeals
 
-The team (admins and moderators) can give sanctions for violations: a warning, a chat mute, a social ban (no friend
+The team (members whose role allows it) can give sanctions for violations: a warning, a chat mute, a social ban (no friend
 requests, groups or invites), an upload ban (no own capes or cosmetics), a world hosting ban or a ban of the whole TRS
 account – for a limited time or permanently. We store your UUID, the kind, the reason (from a fixed list, plus an
 optional text you can see), start and end, who gave the sanction, an internal team note and every later change
@@ -244,6 +244,17 @@ permanent sanctions stay while they apply. Internal notes are deleted after **2 
 their last use, entries in the team's audit log after **2 years**. If you delete your account, warnings and ended
 sanctions are deleted at once; **active** sanctions (and notes about them) stay until they end, so they can't be
 escaped by deleting. The legal basis is our legitimate interest in a safe service (Art. 6(1)(f) GDPR).
+
+### Website sign-in and team applications
+
+**Website sign-in with Microsoft.** On trs-launcher.theredstonee.de you can sign in with the Microsoft account that owns
+Minecraft: Java Edition. We only receive your Minecraft UUID and name; the Microsoft, Xbox and Minecraft tokens exist in
+memory for a few seconds and are discarded – we store no tokens, e-mail or password, only a website session (8 hours).
+
+**Team applications:** position, Minecraft name and UUID, Discord name, age group (never a birth date), your answers,
+status and our answer. Only team members whose role may review applications see them. Rejected or withdrawn
+applications are deleted 6 months after the decision, accepted ones 6 months after you leave the team; deleting your
+TRS account deletes them at once.
 
 ### Hosting a world for friends (TRS Client)
 

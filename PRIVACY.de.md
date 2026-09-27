@@ -223,7 +223,7 @@ In der Screenshot-Galerie des Launchers und im TRS Client („Clips & Bilder“)
 
 Du kannst Nachrichten, Bilder, Spieler und Gruppen melden (mit Grund und optionalem Hinweis). Die Meldung speichert eine
 verschlüsselte Kopie des gemeldeten Inhalts und von bis zu 10 Nachrichten davor und danach, genau so, wie du sie sehen
-konntest; gemeldete Bilder werden kopiert. Team-Admins prüfen Meldungen auf der Website oder im Launcher und können
+konntest; gemeldete Bilder werden kopiert. Team-Mitglieder, deren Rolle es erlaubt, prüfen Meldungen auf der Website oder im Launcher und können
 Nachrichten löschen, verwarnen, im Chat für eine Zeit stummschalten oder sperren; jede Aktion wird protokolliert. Wer
 meldet, erfährt nur, ob etwas unternommen wurde, nicht was. Der gemeldete Spieler erfährt nicht, wer ihn gemeldet hat.
 
@@ -240,7 +240,7 @@ bleiben bis zum Ende dieser Fristen, damit sich Moderation nicht durch Löschen 
 
 ### Strafen und Einsprüche
 
-Das Team (Admins und Moderatoren) kann bei Verstößen Strafen verhängen: eine Verwarnung, eine Chat-Stummschaltung, eine
+Das Team (Mitglieder, deren Rolle es erlaubt) kann bei Verstößen Strafen verhängen: eine Verwarnung, eine Chat-Stummschaltung, eine
 Sozial-Sperre (keine Freundesanfragen, Gruppen oder Einladungen), eine Upload-Sperre (keine eigenen Umhänge oder
 Kosmetik), eine Welt-Hosting-Sperre oder eine Sperre des ganzen TRS-Accounts – befristet oder dauerhaft. Gespeichert
 werden deine UUID, Art, Grund (aus einer festen Liste, dazu ein optionaler Text, den du siehst), Beginn und Ende, wer
@@ -259,6 +259,18 @@ frühere Namen **2 Jahre** nach ihrer letzten Nutzung, Einträge im Audit-Log de
 deinen Account, werden Verwarnungen und beendete Strafen sofort gelöscht; **aktive** Strafen (und Notizen dazu) bleiben
 bis zu ihrem Ende, damit sie sich nicht durch Löschen umgehen lassen. Rechtsgrundlage ist unser berechtigtes Interesse
 an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO).
+
+### Anmeldung auf der Website und Bewerbungen
+
+**Anmeldung mit Microsoft auf der Website.** Auf trs-launcher.theredstonee.de kannst du dich mit dem Microsoft-Konto
+anmelden, dem Minecraft: Java Edition gehört. Wir erhalten nur deine Minecraft-UUID und deinen Namen; die Tokens von
+Microsoft, Xbox und Minecraft liegen nur Sekunden im Arbeitsspeicher und werden verworfen – gespeichert werden keine
+Tokens, keine E-Mail, kein Passwort, nur eine Website-Sitzung (8 Stunden).
+
+**Bewerbungen für das Team:** Stelle, Minecraft-Name und UUID, Discord-Name, Altersgruppe (nie das Geburtsdatum), deine
+Antworten, Status und unsere Antwort. Sehen können sie nur Team-Mitglieder, deren Rolle Bewerbungen prüfen darf.
+Abgelehnte oder zurückgezogene Bewerbungen werden 6 Monate nach der Entscheidung gelöscht, angenommene 6 Monate nach
+deinem Austritt aus dem Team; mit dem TRS-Konto werden sie sofort gelöscht.
 
 ### Welt für Freunde hosten (TRS Client)
 

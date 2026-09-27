@@ -222,7 +222,7 @@ enlace»; tus demás capturas se quedan en tu PC.
 
 Puedes denunciar mensajes, imágenes, jugadores y grupos (con un motivo y una nota opcional). La denuncia guarda una
 copia cifrada del contenido denunciado y de hasta 10 mensajes anteriores y posteriores, tal como los veías; las imágenes
-denunciadas se copian. Los administradores del equipo revisan las denuncias en el sitio web o en el launcher y pueden
+denunciadas se copian. Los miembros del equipo cuyo rol lo permite revisan las denuncias en el sitio web o en el launcher y pueden
 borrar mensajes, advertir, silenciar en el chat durante un tiempo o bloquear; cada acción queda registrada. Quien
 denuncia solo sabe si se hizo algo, no qué. El jugador denunciado no sabe quién lo denunció.
 
@@ -239,7 +239,7 @@ plazos, para que la moderación no se pueda eludir borrando la cuenta.
 
 ### Sanciones y apelaciones
 
-El equipo (administradores y moderadores) puede imponer sanciones por infracciones: una advertencia, un silencio en el
+El equipo (los miembros cuyo rol lo permite) puede imponer sanciones por infracciones: una advertencia, un silencio en el
 chat, un bloqueo social (sin solicitudes de amistad, grupos ni invitaciones), un bloqueo de subidas (sin capas ni
 cosméticos propios), un bloqueo para alojar mundos o el bloqueo de toda la cuenta TRS – por un tiempo o de forma
 permanente. Guardamos tu UUID, el tipo, el motivo (de una lista fija, más un texto opcional que puedes ver), el inicio
@@ -258,6 +258,18 @@ nombres anteriores **2 años** después de su último uso y las entradas del reg
 **2 años**. Si borras tu cuenta, las advertencias y las sanciones terminadas se borran enseguida; las sanciones
 **activas** (y sus notas) se conservan hasta que terminen, para que no se puedan eludir borrando la cuenta. La base
 jurídica es nuestro interés legítimo en un servicio seguro (art. 6.1.f RGPD).
+
+### Inicio de sesión en la web y solicitudes para el equipo
+
+**Inicio de sesión con Microsoft en la web.** En trs-launcher.theredstonee.de puedes iniciar sesión con la cuenta de
+Microsoft a la que pertenece Minecraft: Java Edition. Solo recibimos tu UUID y nombre de Minecraft; los tokens de
+Microsoft, Xbox y Minecraft están unos segundos en memoria y se descartan – no guardamos tokens, correo ni contraseña,
+solo una sesión web (8 horas).
+
+**Solicitudes para el equipo:** puesto, nombre y UUID de Minecraft, nombre de Discord, grupo de edad (nunca la fecha de
+nacimiento), tus respuestas, estado y nuestra respuesta. Solo las ven los miembros del equipo que pueden revisar
+solicitudes. Las rechazadas o retiradas se borran 6 meses después de la decisión, las aceptadas 6 meses después de
+salir del equipo; al borrar tu cuenta TRS se borran al instante.
 
 ### Alojar un mundo para amigos (TRS Client)
 

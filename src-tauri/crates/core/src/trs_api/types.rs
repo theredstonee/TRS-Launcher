@@ -83,11 +83,20 @@ pub(crate) struct ApiMe {
     /// Team-Rolle (§22.1): `admin`, `moderator` oder keine.
     #[serde(default)]
     pub role: Option<String>,
+    /// Team-Zugehörigkeit mit Rechten (§24.2): fehlt bei älteren Servern (`None`),
+    /// `Some(Null)` = neuer Server, kein Team-Mitglied.
+    #[serde(default, deserialize_with = "present")]
+    pub team: Option<serde_json::Value>,
     #[serde(default)]
     pub created_at: Option<String>,
     pub settings: PrivacySettings,
     #[serde(default)]
     pub active_cape: Option<ApiCape>,
+}
+
+/// Unterscheidet ein fehlendes Feld (`None` über `default`) von `null` (`Some(Null)`).
+fn present<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Option<serde_json::Value>, D::Error> {
+    serde_json::Value::deserialize(d).map(Some)
 }
 
 /// Eigenes TRS-Profil fürs Webview.
@@ -97,8 +106,10 @@ pub struct Me {
     pub uuid: String,
     pub name: String,
     pub admin: bool,
-    /// `admin` | `moderator` | `None` – Moderatoren sehen den Team-Bereich mit weniger Rechten.
+    /// `admin` | `moderator` | `None` – nur noch für ältere Stellen; maßgeblich ist `team`.
     pub role: Option<String>,
+    /// Rollen, Rechte, Rang und Straf-Grenzen (§24.2); `None` = kein Team-Mitglied.
+    pub team: Option<super::access::MyTeam>,
     pub created_at: Option<String>,
     pub settings: PrivacySettings,
     pub active_cape_id: Option<String>,
@@ -106,15 +117,23 @@ pub struct Me {
 
 impl ApiMe {
     pub(crate) fn into_view(self) -> Option<Me> {
+        // Ältere Server kennen nur `admin`.
+        let legacy = match self.role.as_deref() {
+            Some(r @ ("admin" | "moderator")) => Some(r),
+            _ if self.admin => Some("admin"),
+            _ => None,
+        };
+        // Neue Server schicken `team` (auch `null` für Nicht-Mitglieder); ältere nur die Rolle.
+        let team = match &self.team {
+            Some(serde_json::Value::Null) => None,
+            Some(value) => super::access::MyTeam::from_value(value),
+            None => legacy.and_then(super::access::MyTeam::legacy),
+        };
         Some(Me {
             uuid: validate::uuid(&self.uuid)?,
             name: validate::display_name(&self.name),
-            // Ältere Server kennen nur `admin`.
-            role: match self.role.as_deref() {
-                Some(r @ ("admin" | "moderator")) => Some(r.to_owned()),
-                _ if self.admin => Some("admin".to_owned()),
-                _ => None,
-            },
+            role: team.as_ref().map(|t| t.legacy_role().to_owned()),
+            team,
             admin: self.admin,
             created_at: self.created_at.map(|t| validate::text(&t, 40)),
             settings: self.settings,

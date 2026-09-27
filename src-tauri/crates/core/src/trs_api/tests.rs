@@ -381,15 +381,7 @@ fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&R
                   ], "count": 3, "limit": 20 }),
             ),
             ("DELETE", p) if p == format!("/v1/capes/u0123456789abcdef0123/holders/{OTHER}") => Response::empty(204),
-            ("POST", "/v1/web-login/approve") => match req.json()["code"].as_str().unwrap_or_default() {
-                "ABCD-1234" => Response::empty(204),
-                "WITH-BODY" => Response::json(200, json!({ "approved": true, "extra": [1, 2] })),
-                "EXPI-RED0" => Response::error(410, "expired"),
-                "NOPE-0000" => Response::error(404, "invalid_code"),
-                "USER-0000" => Response::error(403, "not_admin"),
-                "SLOW-0000" => Response::error(429, "rate_limited").with_header("retry-after", "42"),
-                _ => Response::error(400, "invalid_request"),
-            },
+            ("POST", "/v1/web-login/approve") => Response::error(410, "web_login_removed"),
             ("GET", "/v1/admin/users/Griefer") => Response::error(404, "user_not_found"),
             ("GET", "/v1/admin/users/Friend") => Response::json(200, json!({ "user": { "uuid": OTHER, "name": "Friend", "known": true } })),
             ("POST", p) if p == format!("/v1/admin/users/{OTHER}/ban") => {
@@ -611,46 +603,20 @@ async fn admin_actions() {
 }
 
 #[tokio::test]
-async fn website_login_is_approved_with_the_token_of_the_active_account() {
+async fn removed_website_login_answers_with_a_hint_to_sign_in_with_microsoft() {
     let (_world, server) = world().await;
     let (_dir, launcher) = launcher(&server, &[ACC]).await;
 
-    // Ungültige Formate gehen gar nicht erst raus.
-    for bad in ["", "ABCD", "ABC-12345", "ABCD-1234-5678", "ÄBCD-1234"] {
-        let err = launcher.trs_web_login_approve(bad).await.unwrap_err();
-        assert_eq!(err.message_code(), "trsOps.invalidWebLoginCode", "{bad}");
-    }
-    assert!(server.hits("POST", "/v1/web-login/approve").is_empty());
-
-    // Kleinbuchstaben/ohne Bindestrich werden normalisiert; 204 = bestätigt.
-    launcher.trs_web_login_approve(" abcd1234 ").await.unwrap();
-    let sent = &server.hits("POST", "/v1/web-login/approve")[0];
-    assert_eq!(sent.json(), json!({ "code": "ABCD-1234" }));
-    assert!(sent.bearer().is_some_and(|t| t.starts_with("trs_")), "mit dem TRS-Token des aktiven Accounts");
-    // Tolerant: auch 200 mit beliebigem Body gilt als bestätigt.
-    launcher.trs_web_login_approve("with-body").await.unwrap();
-
-    for (code, expected) in [
-        ("EXPI-RED0", "trsWebLogin.expired"),
-        ("NOPE-0000", "trsWebLogin.invalidCode"),
-        ("USER-0000", "trsWebLogin.notAdmin"),
-    ] {
-        let err = launcher.trs_web_login_approve(code).await.unwrap_err();
-        assert_eq!((err.kind(), err.message_code()), ("trs_api", expected), "{code}");
-        assert_eq!(err.to_user().code, expected, "übersetzbar im Frontend");
-    }
-    let limited = launcher.trs_web_login_approve("SLOW-0000").await.unwrap_err();
-    assert_eq!((limited.kind(), limited.message_code()), ("trs_rate_limited", "trs.rateLimited"));
-    assert_eq!(limited.message_params()["seconds"], "42");
-    // Unbekannte Fehler behalten die allgemeine Meldung.
-    let other = launcher.trs_web_login_approve("ZZZZ-9999").await.unwrap_err();
-    assert_eq!(other.message_code(), "trsApi.invalid_request");
-
-    // Ohne Einwilligung keine Anfrage.
-    launcher.trs.store.set_consent(Consent::Declined).await;
-    let before = server.hits("POST", "/v1/web-login/approve").len();
-    assert_eq!(launcher.trs_web_login_approve("ABCD-1234").await.unwrap_err().kind(), "trs_disabled");
-    assert_eq!(server.hits("POST", "/v1/web-login/approve").len(), before);
+    // Der Launcher bestätigt keine Website-Anmeldung mehr; ruft trotzdem etwas die
+    // alte Route, kommt `410 web_login_removed` als verständlicher Hinweis zurück.
+    let err = launcher
+        .trs_do(Req::post("/v1/web-login/approve", json!({ "code": "ABCD-1234" })))
+        .await
+        .unwrap_err();
+    assert_eq!((err.kind(), err.message_code()), ("trs_api", "trsApi.web_login_removed"));
+    assert_eq!(err.to_user().code, "trsApi.web_login_removed", "übersetzbar im Frontend");
+    assert_eq!(err.message_params()["url"], "https://trs-launcher.theredstonee.de/login");
+    assert_eq!(server.hits("POST", "/v1/web-login/approve").len(), 1, "genau ein Versuch, kein Wiederholen");
 }
 
 #[test]

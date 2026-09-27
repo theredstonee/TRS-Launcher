@@ -211,7 +211,7 @@ async fn images_are_checked_uploaded_and_served_without_tokens() {
 
 // --- Echtzeit-Kanal ---------------------------------------------------------------------------
 
-fn test_config() -> LiveConfig {
+pub(super) fn test_config() -> LiveConfig {
     LiveConfig {
         ping_timeout: Duration::from_millis(400),
         backoff: vec![Duration::from_millis(20), Duration::from_millis(40)],
@@ -220,7 +220,7 @@ fn test_config() -> LiveConfig {
     }
 }
 
-fn sse(frames: &str) -> Response {
+pub(super) fn sse(frames: &str) -> Response {
     Response {
         status: 200,
         headers: vec![("content-type".into(), "text/event-stream".into())],
@@ -228,7 +228,7 @@ fn sse(frames: &str) -> Response {
     }
 }
 
-fn collect(launcher: &crate::Launcher) -> Arc<Mutex<Vec<LiveOut>>> {
+pub(super) fn collect(launcher: &crate::Launcher) -> Arc<Mutex<Vec<LiveOut>>> {
     let log = Arc::new(Mutex::new(Vec::new()));
     let sink = Arc::clone(&log);
     launcher.set_trs_live_sink(Arc::new(move |out| sink.lock().unwrap().push(out)));
@@ -236,7 +236,7 @@ fn collect(launcher: &crate::Launcher) -> Arc<Mutex<Vec<LiveOut>>> {
 }
 
 /// Lässt die Schleife laufen, bis `done` zutrifft (höchstens 5 s).
-async fn run_until(launcher: &crate::Launcher, cfg: &LiveConfig, done: impl Fn() -> bool) {
+pub(super) async fn run_until(launcher: &crate::Launcher, cfg: &LiveConfig, done: impl Fn() -> bool) {
     let run = launcher.trs.run_live(launcher.accounts(), launcher.accounts(), cfg);
     let wait = async {
         for _ in 0..500 {
@@ -253,7 +253,7 @@ async fn run_until(launcher: &crate::Launcher, cfg: &LiveConfig, done: impl Fn()
     }
 }
 
-fn events(log: &Arc<Mutex<Vec<LiveOut>>>) -> Vec<LiveEvent> {
+pub(super) fn events(log: &Arc<Mutex<Vec<LiveOut>>>) -> Vec<LiveEvent> {
     log.lock().unwrap().iter().filter_map(|o| if let LiveOut::Event(e) = o { Some(e.clone()) } else { None }).collect()
 }
 
