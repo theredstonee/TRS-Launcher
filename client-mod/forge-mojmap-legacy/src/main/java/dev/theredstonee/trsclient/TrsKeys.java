@@ -33,7 +33,7 @@ public final class TrsKeys {
 
 	/** Emote-Rad (halten, Standard G – in keiner Vanilla-Version belegt). */
 	public static final KeyMapping emoteWheel =
-			new KeyMapping("key.trsclient.emoteWheel", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
+			new KeyMapping("key.trsclient.emoteWheel", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, CATEGORY);
 
 	/** Schaltet das Redstone-Signal-Overlay (F6 – in keiner Vanilla-Version ab 1.9 belegt). */
 	public static final KeyMapping redstoneOverlay =

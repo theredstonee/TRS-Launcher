@@ -45,7 +45,7 @@ public final class TrsKeys {
 		freelook = register(new KeyBinding("key.trsclient.freelook", Keyboard.KEY_LMENU, CATEGORY));
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", Keyboard.KEY_NONE, CATEGORY));
-		emoteWheel = register(new KeyBinding("key.trsclient.emoteWheel", Keyboard.KEY_G, CATEGORY));
+		emoteWheel = register(new KeyBinding("key.trsclient.emoteWheel", Keyboard.KEY_R, CATEGORY));
 		//? if >=1.9 {
 		/*redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", Keyboard.KEY_F6, CATEGORY));
 		*///?} else

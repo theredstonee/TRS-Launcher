@@ -59,7 +59,7 @@ public final class TrsKeys {
 		freelook = new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY);
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = new KeyMapping("key.trsclient.hudProfile", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
-		emoteWheel = new KeyMapping("key.trsclient.emoteWheel", KEYBOARD, dev.theredstonee.trsclient.compat.Keys.code("key.keyboard.g"), CATEGORY);
+		emoteWheel = new KeyMapping("key.trsclient.emoteWheel", KEYBOARD, dev.theredstonee.trsclient.compat.Keys.code("key.keyboard.r"), CATEGORY);
 		redstoneOverlay = new KeyMapping("key.trsclient.redstoneOverlay", KEYBOARD, InputConstants.KEY_F6, CATEGORY);
 		saveClip = new KeyMapping("key.trsclient.saveClip", KEYBOARD, InputConstants.KEY_F9, CATEGORY);
 		toggleRecording = new KeyMapping("key.trsclient.toggleRecording", KEYBOARD, InputConstants.KEY_F10, CATEGORY);

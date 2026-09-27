@@ -359,7 +359,7 @@
   "key.trsclient.freelook": "Vue libre",
   "key.trsclient.hudProfile": "Changer de profil de HUD",
   "module.emotes": "Emotes",
-  "module.emotes.desc": "Maintiens la touche d’emote (G) pour la roue, vise un emote avec la souris et relâche la touche pour le jouer. Les autres joueurs TRS le voient aussi. Nécessite les fonctions en ligne TRS ; seuls les emotes débloqués sont jouables.",
+  "module.emotes.desc": "Maintiens la touche d’emote (R) pour la roue, vise un emote avec la souris et relâche la touche pour le jouer. Les autres joueurs TRS le voient aussi. Nécessite les fonctions en ligne TRS ; seuls les emotes débloqués sont jouables.",
   "setting.emotes.camera": "Caméra pendant ton emote",
   "setting.emotes.camera.off": "Inchangée",
   "setting.emotes.camera.back": "Troisième personne (derrière)",

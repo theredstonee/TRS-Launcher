@@ -359,7 +359,7 @@
   "key.trsclient.freelook": "Freelook",
   "key.trsclient.hudProfile": "HUD-Profil wechseln",
   "module.emotes": "Emotes",
-  "module.emotes.desc": "Emote-Taste (G) gedrückt halten für das Emote-Rad, mit der Maus auf ein Emote zeigen und loslassen, um es abzuspielen. Andere TRS-Spieler sehen es auch. Braucht die TRS-Online-Funktionen; nur freigeschaltete Emotes sind spielbar.",
+  "module.emotes.desc": "Emote-Taste (R) gedrückt halten für das Emote-Rad, mit der Maus auf ein Emote zeigen und loslassen, um es abzuspielen. Andere TRS-Spieler sehen es auch. Braucht die TRS-Online-Funktionen; nur freigeschaltete Emotes sind spielbar.",
   "setting.emotes.camera": "Kamera beim eigenen Emote",
   "setting.emotes.camera.off": "Unverändert",
   "setting.emotes.camera.back": "3. Person (von hinten)",

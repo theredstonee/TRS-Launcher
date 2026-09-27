@@ -359,7 +359,7 @@
   "key.trsclient.freelook": "Freelook",
   "key.trsclient.hudProfile": "Switch HUD profile",
   "module.emotes": "Emotes",
-  "module.emotes.desc": "Hold the emote key (G) for the emote wheel, point at an emote with the mouse and release the key to play it. Other TRS players see it too. Needs the TRS Online Features; only unlocked emotes can be played.",
+  "module.emotes.desc": "Hold the emote key (R) for the emote wheel, point at an emote with the mouse and release the key to play it. Other TRS players see it too. Needs the TRS Online Features; only unlocked emotes can be played.",
   "setting.emotes.camera": "Camera during your emote",
   "setting.emotes.camera.off": "Unchanged",
   "setting.emotes.camera.back": "Third person (behind)",

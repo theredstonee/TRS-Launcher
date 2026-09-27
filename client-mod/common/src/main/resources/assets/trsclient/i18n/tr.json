@@ -359,7 +359,7 @@
   "key.trsclient.freelook": "Serbest bakış",
   "key.trsclient.hudProfile": "HUD profilini değiştir",
   "module.emotes": "İfadeler",
-  "module.emotes.desc": "İfade çarkı için ifade tuşunu (G) basılı tut, fareyle bir ifadeye işaret et ve oynatmak için tuşu bırak. Diğer TRS oyuncuları da görür. TRS çevrimiçi özelliklerini gerektirir; yalnızca kilidi açılmış ifadeler oynatılabilir.",
+  "module.emotes.desc": "İfade çarkı için ifade tuşunu (R) basılı tut, fareyle bir ifadeye işaret et ve oynatmak için tuşu bırak. Diğer TRS oyuncuları da görür. TRS çevrimiçi özelliklerini gerektirir; yalnızca kilidi açılmış ifadeler oynatılabilir.",
   "setting.emotes.camera": "İfaden sırasında kamera",
   "setting.emotes.camera.off": "Değişmez",
   "setting.emotes.camera.back": "Üçüncü şahıs (arkadan)",

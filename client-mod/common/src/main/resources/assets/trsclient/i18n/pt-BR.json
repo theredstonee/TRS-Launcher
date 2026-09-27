@@ -359,7 +359,7 @@
   "key.trsclient.freelook": "Visão livre",
   "key.trsclient.hudProfile": "Trocar perfil de HUD",
   "module.emotes": "Emotes",
-  "module.emotes.desc": "Segure a tecla de emotes (G) para abrir a roda, aponte para um emote com o mouse e solte a tecla para reproduzi-lo. Outros jogadores TRS também veem. Precisa dos recursos online TRS; só emotes desbloqueados podem ser usados.",
+  "module.emotes.desc": "Segure a tecla de emotes (R) para abrir a roda, aponte para um emote com o mouse e solte a tecla para reproduzi-lo. Outros jogadores TRS também veem. Precisa dos recursos online TRS; só emotes desbloqueados podem ser usados.",
   "setting.emotes.camera": "Câmera durante seu emote",
   "setting.emotes.camera.off": "Sem mudança",
   "setting.emotes.camera.back": "Terceira pessoa (atrás)",

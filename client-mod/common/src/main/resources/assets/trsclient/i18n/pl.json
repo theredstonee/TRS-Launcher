@@ -359,7 +359,7 @@
   "key.trsclient.freelook": "Wolna kamera",
   "key.trsclient.hudProfile": "Zmień profil HUD",
   "module.emotes": "Emotki",
-  "module.emotes.desc": "Przytrzymaj klawisz emotek (G), aby otworzyć koło, wskaż emotkę myszą i puść klawisz, aby ją odtworzyć. Inni gracze TRS też ją widzą. Wymaga funkcji online TRS; można używać tylko odblokowanych emotek.",
+  "module.emotes.desc": "Przytrzymaj klawisz emotek (R), aby otworzyć koło, wskaż emotkę myszą i puść klawisz, aby ją odtworzyć. Inni gracze TRS też ją widzą. Wymaga funkcji online TRS; można używać tylko odblokowanych emotek.",
   "setting.emotes.camera": "Kamera podczas twojej emotki",
   "setting.emotes.camera.off": "Bez zmian",
   "setting.emotes.camera.back": "Trzecia osoba (z tyłu)",

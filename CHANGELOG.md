@@ -39,6 +39,8 @@ How to write an entry:
   connects to the server again – no need to restart the instance. The screen also offers "Connect again", "Switch
   account", "Copy error" and "Server status", and error screens now use the TRS menu style (can be turned off under
   Menu Style → Error screens). Signing in again needs the TRS Launcher to be open.
+- **Emote wheel now on R by default.** From Minecraft 1.21.11 on, G opens the new "Quick Actions", so new players get
+  the emote wheel on R. If you already use G, nothing changes – you can pick any key in the controls.
 
 ### Deutsch
 
@@ -56,6 +58,8 @@ How to write an entry:
   verbindet wieder mit dem Server – die Instanz muss nicht neu gestartet werden. Dazu gibt es „Erneut verbinden“,
   „Konto wechseln“, „Fehler kopieren“ und „Server-Status“, und Fehlerbildschirme erscheinen im TRS-Menü-Stil
   (abschaltbar unter Menü-Stil → Fehlerbildschirme). Zum Neu-Anmelden muss der TRS Launcher geöffnet sein.
+- **Emote-Rad jetzt ab Werk auf R.** Ab Minecraft 1.21.11 öffnet G die neuen „Schnellaktionen“, deshalb bekommen neue
+  Spieler das Emote-Rad auf R. Wer schon G nutzt, behält G – die Taste lässt sich in der Steuerung frei wählen.
 
 ## 0.10.0 – 2026-09-27 – Toolbox | Werkzeugkasten
 <!-- banner: accent=#ff9f1c motif=/news/0.10.0/banner.png -->
