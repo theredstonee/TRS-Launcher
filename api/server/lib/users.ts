@@ -9,6 +9,7 @@ import { endHostingFor } from './hosting'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
 import { forbidden } from './errors'
+import { legacyRole, myTeamView, rankOf, teamOf, type MyTeamView } from './team'
 
 export interface UserRow {
   uuid: string
@@ -44,8 +45,10 @@ export interface MeView {
   uuid: string
   name: string
   admin: boolean
-  /** Team-Rolle (§22.1): `admin`, `moderator` oder `null`. */
+  /** Altes Raster (§22.1): `admin` ab Admin-Rang, `moderator` für alle anderen Team-Mitglieder, sonst `null`. */
   role: StaffRole | null
+  /** Team-Rollen und Rechte (§23.2), `null` = kein Team-Mitglied. */
+  team: MyTeamView | null
   createdAt: string
   settings: Settings
   activeCape: CapeView | null
@@ -78,10 +81,13 @@ export function isBanned(ctx: AppContext, uuid: string): boolean {
   ) !== undefined
 }
 
-/** Team-Rolle: `ADMIN_UUIDS` sind immer Admin (nicht entziehbar), sonst die Tabelle `staff_roles`. */
+/**
+ * Altes Rollen-Raster für Clients und Anzeigen: `admin` (Owner aus `ADMIN_UUIDS` oder Rang ≥ Admin), `moderator`
+ * (jedes andere Team-Mitglied) oder `null`. Rechte selbst: `teamOf` in team.ts.
+ */
 export function staffRole(ctx: AppContext, uuid: string): StaffRole | null {
-  if (ctx.config.adminUuids.has(uuid)) return 'admin'
-  return one<{ role: StaffRole }>(ctx.db, 'SELECT role FROM staff_roles WHERE uuid = ?', uuid)?.role ?? null
+  const rank = rankOf(ctx, uuid)
+  return rank > 0 ? legacyRole(rank) : null
 }
 
 export function isAdmin(ctx: AppContext, uuid: string): boolean {
@@ -128,10 +134,16 @@ export function meView(ctx: AppContext, u: UserRow): MeView {
     name: u.name,
     admin: isAdmin(ctx, u.uuid),
     role: staffRole(ctx, u.uuid),
+    team: teamView(ctx, u.uuid),
     createdAt: new Date(u.created_at).toISOString(),
     settings: settingsOf(u),
     activeCape: cape ? capeView(ctx, cape) : null,
   }
+}
+
+function teamView(ctx: AppContext, uuid: string): MyTeamView | null {
+  const staff = teamOf(ctx, uuid)
+  return staff ? myTeamView(ctx, staff) : null
 }
 
 export function updateSettings(ctx: AppContext, uuid: string, patch: Partial<Settings>): UserRow {

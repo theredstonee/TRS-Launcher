@@ -6,6 +6,6 @@ import { adminSanctionListQuery } from '../../../../lib/schemas'
 
 /** Strafen filtern (Status, Art, Spieler, Bearbeiter, Zeitraum), Cursor-Seiten. */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, ['players.view', 'appeals.handle', 'sanctions.lift'])
   return listSanctions(useCtx(), queryWith(event, adminSanctionListQuery))
 })

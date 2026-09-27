@@ -1,18 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { authenticate } from '../server/lib/auth'
+import { createSanction } from '../server/lib/sanctions'
 import { all } from '../server/lib/db'
 import { platformOf, pickLatest } from '../server/lib/site'
-import {
-  WEB_LOGIN_TTL_MS,
-  WEB_SESSION_TTL_MS,
-  approveWebLogin,
-  endWebSession,
-  normalizeWebLoginCode,
-  pollWebLogin,
-  startWebLogin,
-  sweepWebLogins,
-  webSession,
-} from '../server/lib/weblogin'
+import { ownerStaff } from '../server/lib/team'
+import { MAX_WEB_SESSIONS, WEB_SESSION_TTL_MS, createWebSession, endWebSession, sweepWebLogins, webSession } from '../server/lib/weblogin'
 import { ADMIN, login, makeEnv } from './helpers'
 
 function code(fn: () => unknown): string {
@@ -24,75 +15,42 @@ function code(fn: () => unknown): string {
   return 'ok'
 }
 
-async function authed(env: ReturnType<typeof makeEnv>, name: string, uuid?: string) {
-  const r = await login(env, name, uuid)
-  return authenticate(env.ctx, `Bearer ${r.token}`)
-}
-
-describe('website sign-in', () => {
-  it('normalises codes the way people type them', () => {
-    expect(normalizeWebLoginCode('7k3p qx9m')).toBe('7K3P-QX9M')
-    expect(normalizeWebLoginCode('OIL0-ABCD')).toBe('0110-ABCD')
-    expect(normalizeWebLoginCode('7K3P-QX9')).toBeNull()
-    expect(normalizeWebLoginCode('7K3P-QX9U')).toBeNull()
+describe('website sessions (Microsoft sign-in)', () => {
+  it('stores only hashes, needs CSRF for changes, rotates and ends', async () => {
+    const env = makeEnv()
+    const u = (await login(env, 'Steve')).user.uuid
+    const s = createWebSession(env.ctx, u)
+    expect(JSON.stringify(all(env.ctx.db, 'SELECT * FROM web_sessions'))).not.toContain(s.token)
+    expect(webSession(env.ctx, s.token, undefined, false)).toMatchObject({ uuid: u, name: 'Steve', csrf: s.csrf })
+    expect(code(() => webSession(env.ctx, s.token, undefined, true))).toBe('csrf_failed')
+    expect(code(() => webSession(env.ctx, s.token, 'wrong', true))).toBe('csrf_failed')
+    expect(webSession(env.ctx, s.token, s.csrf, true).uuid).toBe(u)
+    // Rotation: die alte Sitzung (Cookie vor der Anmeldung) ist danach ungültig.
+    const next = createWebSession(env.ctx, u, s.token)
+    expect(code(() => webSession(env.ctx, s.token, undefined, false))).toBe('unauthorized')
+    endWebSession(env.ctx, webSession(env.ctx, next.token, undefined, false).tokenHash)
+    expect(code(() => webSession(env.ctx, next.token, undefined, false))).toBe('unauthorized')
+    expect(code(() => webSession(env.ctx, 'short', undefined, false))).toBe('unauthorized')
   })
 
-  it('an admin approves a code, the website gets one session and the code is used up', async () => {
+  it('expires after 8 hours, keeps at most 5 per account, ends on a ban', async () => {
     const env = makeEnv()
-    const admin = await authed(env, 'Theredstonee', ADMIN)
-    const start = startWebLogin(env.ctx)
-    expect(start.code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}$/)
-    // Nur Hashes in der Datenbank.
-    expect(JSON.stringify(all(env.ctx.db, 'SELECT * FROM web_logins'))).not.toContain(start.code)
-    expect(JSON.stringify(all(env.ctx.db, 'SELECT * FROM web_logins'))).not.toContain(start.pollSecret)
-
-    expect(pollWebLogin(env.ctx, start.pollSecret)).toEqual({ status: 'pending' })
-    approveWebLogin(env.ctx, admin, start.code.toLowerCase().replace('-', ' '))
-    const done = pollWebLogin(env.ctx, start.pollSecret)
-    expect(done.status).toBe('approved')
-    if (done.status !== 'approved') return
-    expect(done.name).toBe('Theredstonee')
-    expect(JSON.stringify(all(env.ctx.db, 'SELECT * FROM web_sessions'))).not.toContain(done.token)
-
-    // Einmalig: zweite Abfrage und zweite Bestätigung gehen nicht.
-    expect(pollWebLogin(env.ctx, start.pollSecret)).toEqual({ status: 'expired' })
-    expect(code(() => approveWebLogin(env.ctx, admin, start.code))).toBe('invalid_code')
-
-    const s = webSession(env.ctx, done.token, undefined, false)
-    expect(s.uuid).toBe(ADMIN)
-    expect(code(() => webSession(env.ctx, done.token, undefined, true))).toBe('csrf_failed')
-    expect(code(() => webSession(env.ctx, done.token, 'wrong', true))).toBe('csrf_failed')
-    expect(webSession(env.ctx, done.token, done.csrf, true).uuid).toBe(ADMIN)
-
-    endWebSession(env.ctx, s.tokenHash)
-    expect(code(() => webSession(env.ctx, done.token, undefined, false))).toBe('unauthorized')
-  })
-
-  it('only admins can approve, and codes expire', async () => {
-    const env = makeEnv()
-    const player = await authed(env, 'Steve')
-    const admin = await authed(env, 'Theredstonee', ADMIN)
-    const start = startWebLogin(env.ctx)
-    expect(code(() => approveWebLogin(env.ctx, player, start.code))).toBe('not_admin')
-    expect(code(() => approveWebLogin(env.ctx, admin, 'nonsense'))).toBe('invalid_code')
-    expect(code(() => approveWebLogin(env.ctx, admin, '0000-0000'))).toBe('invalid_code')
-    env.clock.advance(WEB_LOGIN_TTL_MS + 1)
-    expect(code(() => approveWebLogin(env.ctx, admin, start.code))).toBe('expired')
-    expect(pollWebLogin(env.ctx, start.pollSecret)).toEqual({ status: 'expired' })
-    sweepWebLogins(env.ctx)
-    expect(all(env.ctx.db, 'SELECT * FROM web_logins')).toHaveLength(0)
-  })
-
-  it('sessions end after 8 hours', async () => {
-    const env = makeEnv()
-    const admin = await authed(env, 'Theredstonee', ADMIN)
-    const start = startWebLogin(env.ctx)
-    approveWebLogin(env.ctx, admin, start.code)
-    const done = pollWebLogin(env.ctx, start.pollSecret)
-    if (done.status !== 'approved') throw new Error('not approved')
+    const u = (await login(env, 'Steve')).user.uuid
+    const first = createWebSession(env.ctx, u)
+    for (let i = 0; i < MAX_WEB_SESSIONS; i++) {
+      env.clock.advance(1000)
+      createWebSession(env.ctx, u)
+    }
+    expect(all(env.ctx.db, 'SELECT * FROM web_sessions WHERE uuid = ?', u)).toHaveLength(MAX_WEB_SESSIONS)
+    expect(code(() => webSession(env.ctx, first.token, undefined, false))).toBe('unauthorized')
+    const s = createWebSession(env.ctx, u)
     env.clock.advance(WEB_SESSION_TTL_MS + 1)
-    expect(code(() => webSession(env.ctx, done.token, undefined, false))).toBe('unauthorized')
-    expect(code(() => pollWebLogin(env.ctx, 'short'))).toBe('invalid_request')
+    expect(code(() => webSession(env.ctx, s.token, undefined, false))).toBe('unauthorized')
+    sweepWebLogins(env.ctx)
+    expect(all(env.ctx.db, 'SELECT * FROM web_sessions')).toHaveLength(0)
+    const t = createWebSession(env.ctx, u)
+    createSanction(env.ctx, ownerStaff(ADMIN), { uuid: u, kind: 'account_ban', minutes: 60, reasonCode: 'cheating' })
+    expect(code(() => webSession(env.ctx, t.token, undefined, false))).toBe('unauthorized')
   })
 })
 

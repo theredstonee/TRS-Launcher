@@ -4,6 +4,6 @@ import { useCtx } from '../../../lib/context'
 import { requireStaff } from '../../../lib/http'
 
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'stats.view')
   return stats(useCtx())
 })

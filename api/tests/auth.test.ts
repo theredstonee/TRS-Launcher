@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { banUser } from '../server/lib/admin'
-import { authenticate, authenticateAdmin, createChallenge, logout, sweepExpired, verifyLogin } from '../server/lib/auth'
+import { authenticate, authenticateStaff, createChallenge, logout, sweepExpired, verifyLogin } from '../server/lib/auth'
 import { all, one } from '../server/lib/db'
 import { createMojangClient } from '../server/lib/mojang'
 import { ADMIN, login, makeEnv } from './helpers'
@@ -137,17 +137,17 @@ describe('admin access', () => {
     const admin = await login(env, 'Theredstonee', ADMIN)
     const user = await login(env, 'Steve', UUID)
     expect(admin.user.admin).toBe(true)
-    expect(authenticateAdmin(env.ctx, { authorization: `Bearer ${admin.token}` })).toBe(ADMIN)
-    expect(() => authenticateAdmin(env.ctx, { authorization: `Bearer ${user.token}` })).toThrow('Admin only')
-    expect(authenticateAdmin(env.ctx, { adminKey: 'admin-key-0123456789abcdef-0123456789abcdef' })).toBe('api-key')
-    expect(() => authenticateAdmin(env.ctx, { adminKey: 'admin-key-0123456789abcdef-0123456789abcdeX' })).toThrow('Invalid admin key')
+    expect(authenticateStaff(env.ctx, { authorization: `Bearer ${admin.token}` }).uuid).toBe(ADMIN)
+    expect(() => authenticateStaff(env.ctx, { authorization: `Bearer ${user.token}` })).toThrow('Team only')
+    expect(authenticateStaff(env.ctx, { adminKey: 'admin-key-0123456789abcdef-0123456789abcdef' }).uuid).toBe('api-key')
+    expect(() => authenticateStaff(env.ctx, { adminKey: 'admin-key-0123456789abcdef-0123456789abcdeX' })).toThrow('Invalid admin key')
     // Ein falscher Schlüssel fällt nicht auf die Sitzung zurück.
-    expect(() => authenticateAdmin(env.ctx, { adminKey: 'x', authorization: `Bearer ${admin.token}` })).toThrow('Invalid admin key')
+    expect(() => authenticateStaff(env.ctx, { adminKey: 'x', authorization: `Bearer ${admin.token}` })).toThrow('Invalid admin key')
   })
 
   it('without ADMIN_API_KEY the header never works', () => {
     const env = makeEnv({ env: { ADMIN_API_KEY: '' } })
-    expect(() => authenticateAdmin(env.ctx, { adminKey: '' })).toThrow('Invalid admin key')
+    expect(() => authenticateStaff(env.ctx, { adminKey: '' })).toThrow('Invalid admin key')
   })
 })
 

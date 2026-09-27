@@ -3,11 +3,10 @@ import { getCookie, getHeader, getQuery, getRouterParam, setResponseHeaders, set
 import type { z } from 'zod'
 import { authenticate, authenticateStaff, type AuthedUser } from './auth'
 import { useCtx } from './context'
-import { ApiError, badRequest, forbidden, tooLarge, tooMany, unsupportedMedia } from './errors'
+import { ApiError, badRequest, forbidden, tooLarge, tooMany, unauthorized, unsupportedMedia } from './errors'
 import { RULES, type Rule } from './ratelimit'
-import type { Staff } from './sanctions'
-import type { StaffRole } from './users'
-import { WEB_SESSION_COOKIE, webSession } from './weblogin'
+import { assertCan, can, teamOf, type Permission, type Staff } from './team'
+import { WEB_SESSION_COOKIE, webSession, type WebSession } from './weblogin'
 
 export const JSON_LIMIT = 16 * 1024
 
@@ -125,49 +124,80 @@ export function optionalUser(event: H3Event): AuthedUser | null {
   }
 }
 
+/** Website-Sitzung aus dem Cookie (nur ohne Bearer/Schlüssel), ändernde Anfragen mit CSRF-Token. `null` = kein Cookie. */
+function cookieSession(event: H3Event): WebSession | null {
+  if (getHeader(event, 'authorization') !== undefined || getHeader(event, 'x-admin-key') !== undefined) return null
+  const cookie = getCookie(event, WEB_SESSION_COOKIE)
+  if (cookie === undefined) return null
+  const mutating = !['GET', 'HEAD'].includes(event.method)
+  return webSession(useCtx(), cookie, getHeader(event, 'x-csrf-token'), mutating)
+}
+
+/** Angemeldet auf der Website (Microsoft, §23.1): Sitzung oder 401. Grund-Limit je Konto wie bei `requireUser`. */
+export function requireWeb(event: H3Event, kind: 'read' | 'write' = 'read'): WebSession {
+  const session = cookieSession(event)
+  if (!session) throw unauthorized()
+  limit(`${kind}:${session.uuid}`, USER_RULES[kind])
+  event.context.uuid = session.uuid
+  return session
+}
+
+/** Spieler-Routen, die Website UND Launcher/Client bedienen (Bewerbungen): Cookie-Sitzung oder Bearer-Token. */
+export function requireWebOrUser(event: H3Event, kind: 'read' | 'write' = 'read'): { uuid: string, name: string } {
+  const session = cookieSession(event)
+  if (session) {
+    limit(`${kind}:${session.uuid}`, USER_RULES[kind])
+    event.context.uuid = session.uuid
+    return { uuid: session.uuid, name: session.name }
+  }
+  const auth = requireUser(event, kind)
+  return { uuid: auth.uuid, name: auth.user.name }
+}
+
 /**
- * Wer schaut eine Textur an? Bearer-Nutzer wie bei `optionalUser`, sonst ein Website-Admin mit
- * Sitzungs-Cookie (nur lesend, damit die Admin-Seite wartende Uploads zeigen kann).
+ * Wer schaut eine Textur an? Bearer-Nutzer wie bei `optionalUser`, sonst ein Team-Mitglied mit Website-Sitzung und
+ * `uploads.review` (nur lesend, damit die Admin-Seite wartende Uploads zeigen kann).
  */
 export function textureViewer(event: H3Event): { uuid: string, admin: boolean } | null {
   const user = optionalUser(event)
-  if (user) return { uuid: user.uuid, admin: user.admin }
+  if (user) {
+    const staff = teamOf(useCtx(), user.uuid)
+    return { uuid: user.uuid, admin: !!staff && can(staff, 'uploads.review') }
+  }
   const cookie = getCookie(event, WEB_SESSION_COOKIE)
   if (!cookie || getHeader(event, 'authorization') !== undefined) return null
   try {
     const session = webSession(useCtx(), cookie, undefined, false)
-    return { uuid: session.uuid, admin: true }
+    const staff = teamOf(useCtx(), session.uuid)
+    return { uuid: session.uuid, admin: !!staff && can(staff, 'uploads.review') }
   } catch {
     return null
   }
 }
 
 /**
- * Team-Zugriff (§22.1): Website-Sitzung (Cookie + CSRF bei ändernden Anfragen), Bearer-Token eines Admins/
- * Moderators oder `X-Admin-Key` (= Admin). `need` = nötige Rolle. Jede Anfrage zählt aufs Team-Limit.
+ * Team-Zugriff (§23.2): Website-Sitzung (Cookie + CSRF bei ändernden Anfragen), Bearer-Token eines Team-Mitglieds
+ * oder `X-Admin-Key` (= Owner). `need` = nötiges Recht (bei einer Liste reicht EINES davon). Rechte werden bei
+ * jeder Anfrage neu gelesen. Jede Anfrage zählt aufs Team-Limit.
  */
-export function requireStaff(event: H3Event, need: StaffRole = 'moderator'): Staff {
+export function requireStaff(event: H3Event, need?: Permission | Permission[]): Staff {
   const ctx = useCtx()
-  const authorization = getHeader(event, 'authorization')
-  const adminKey = getHeader(event, 'x-admin-key')
   let staff: Staff
-  // Website: Sitzung aus dem Cookie (nur ohne Bearer/Schlüssel), ändernde Anfragen mit CSRF-Token.
-  if (authorization === undefined && adminKey === undefined && getCookie(event, WEB_SESSION_COOKIE) !== undefined) {
-    const mutating = !['GET', 'HEAD'].includes(event.method)
-    const session = webSession(ctx, getCookie(event, WEB_SESSION_COOKIE), getHeader(event, 'x-csrf-token'), mutating)
-    staff = { uuid: session.uuid, role: session.role }
+  const session = cookieSession(event)
+  if (session) {
+    const team = teamOf(ctx, session.uuid)
+    if (!team) throw forbidden('forbidden', 'Team only')
+    staff = team
   } else {
-    staff = authenticateStaff(ctx, { authorization, adminKey }, 'moderator')
+    staff = authenticateStaff(ctx, { authorization: getHeader(event, 'authorization'), adminKey: getHeader(event, 'x-admin-key') })
   }
   limit(`admin:${staff.uuid}`, RULES.adminActor)
-  if (need === 'admin' && staff.role !== 'admin') throw forbidden('admin_only', 'Only admins can do this')
+  if (need !== undefined) {
+    const list = Array.isArray(need) ? need : [need]
+    if (!list.some((p) => can(staff, p))) assertCan(staff, list[0]!)
+  }
   event.context.uuid = staff.uuid
   return staff
-}
-
-/** Nur Admins (alte Signatur): liefert den Akteur fürs Log. */
-export function requireAdmin(event: H3Event): string {
-  return requireStaff(event, 'admin').uuid
 }
 
 /**

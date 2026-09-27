@@ -6,7 +6,7 @@ import { adminCosmeticListQuery } from '../../../../lib/schemas'
 
 /** Kosmetik-Uploads nach Status (`?status=pending|approved|rejected|reported`, Standard: pending). */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'uploads.review')
   const q = queryWith(event, adminCosmeticListQuery)
   return listCosmeticsPage(useCtx(), q)
 })

@@ -7,7 +7,7 @@ import { attachmentIdSchema, reportIdSchema } from '../../../../../../lib/schema
 
 /** Aufbewahrte Kopie eines gemeldeten Bilds (nur Admins, auch nach dem Löschen der Nachricht). */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'reports.content')
   const id = paramWith(event, 'id', reportIdSchema)
   const attachmentId = paramWith(event, 'attachmentId', attachmentIdSchema)
   const f = readEvidenceFile(useCtx(), id, attachmentId)

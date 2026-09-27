@@ -2,12 +2,12 @@ import { defineEventHandler } from 'h3'
 import { audit } from '../../../../lib/admin'
 import { createCodes } from '../../../../lib/codes'
 import { useCtx } from '../../../../lib/context'
-import { created, readJson, requireAdmin } from '../../../../lib/http'
+import { created, readJson, requireStaff } from '../../../../lib/http'
 import { createCodesBody } from '../../../../lib/schemas'
 
 /** Erzeugt 1–100 Codes für einen Umhang (`capeId`) oder ein Kosmetik-Teil/Emote (`cosmeticId`). Klartext NUR in dieser Antwort. */
 export default defineEventHandler(async (event) => {
-  const actor = requireAdmin(event)
+  const actor = requireStaff(event, 'codes').uuid
   const body = await readJson(event, createCodesBody)
   const ctx = useCtx()
   const common = { maxUses: body.maxUses, count: body.count, expiresAt: body.expiresAt, note: body.note }

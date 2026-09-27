@@ -7,7 +7,7 @@ import { adminSanctionBody } from '../../../../lib/schemas'
 
 /** Strafe verhängen (Rechte je Rolle, §22.2). */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, ['sanctions.warn', 'sanctions.mute', 'sanctions.social', 'sanctions.upload', 'sanctions.hosting', 'sanctions.ban', 'sanctions.lift'])
   limit(`admin-sanction:${staff.uuid}`, RULES.adminSanction)
   const body = await readJson(event, adminSanctionBody)
   const ctx = useCtx()

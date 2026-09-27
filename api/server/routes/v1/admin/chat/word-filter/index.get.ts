@@ -4,6 +4,6 @@ import { requireStaff } from '../../../../../lib/http'
 import { listFilter } from '../../../../../lib/safety'
 
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'wordfilter')
   return { words: listFilter(useCtx()) }
 })

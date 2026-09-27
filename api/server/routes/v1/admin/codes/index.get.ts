@@ -5,6 +5,6 @@ import { requireStaff } from '../../../../lib/http'
 
 /** Codes ohne Klartext (nur die letzten 4 Zeichen als `hint`). */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'codes')
   return { codes: listCodes(useCtx()) }
 })

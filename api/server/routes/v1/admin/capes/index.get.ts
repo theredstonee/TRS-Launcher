@@ -6,7 +6,7 @@ import { adminCapeListQuery } from '../../../../lib/schemas'
 
 /** Hochgeladene Umhänge nach Status (Standard: pending), Besitzer, Name, Zeitraum; Cursor-Seiten (§22.7). */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'uploads.review')
   const q = queryWith(event, adminCapeListQuery)
   return listCapesPage(useCtx(), q)
 })

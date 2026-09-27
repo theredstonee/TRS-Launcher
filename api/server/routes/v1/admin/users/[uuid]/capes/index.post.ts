@@ -3,12 +3,12 @@ import { assertKnownUser, audit } from '../../../../../../lib/admin'
 import { capeView, getCape, grantCape } from '../../../../../../lib/capes'
 import { useCtx } from '../../../../../../lib/context'
 import { badRequest, notFound } from '../../../../../../lib/errors'
-import { created, paramWith, readJson, requireAdmin } from '../../../../../../lib/http'
+import { created, paramWith, readJson, requireStaff } from '../../../../../../lib/http'
 import { grantCapeBody, uuidSchema } from '../../../../../../lib/schemas'
 
 /** Standard-Umhang (code/admin) direkt zuteilen. */
 export default defineEventHandler(async (event) => {
-  const actor = requireAdmin(event)
+  const actor = requireStaff(event, 'items.grant').uuid
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const body = await readJson(event, grantCapeBody)
   const ctx = useCtx()

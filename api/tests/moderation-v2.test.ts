@@ -33,7 +33,8 @@ import {
 import { appealBody, adminSanctionBody } from '../server/lib/schemas'
 import { removeRole, setRole, listRoles } from '../server/lib/staff'
 import { getUser, isBanned, staffRole, type UserRow } from '../server/lib/users'
-import { approveWebLogin, pollWebLogin, startWebLogin, webSession } from '../server/lib/weblogin'
+import { ownerStaff, teamOf } from '../server/lib/team'
+import { createWebSession, webSession } from '../server/lib/weblogin'
 import { befriend, code, listen, players } from './chathelpers'
 import { ADMIN, login, makeEnv, seedCosmeticFixtures, solidPng, templatePng, type TestEnv } from './helpers'
 
@@ -44,7 +45,7 @@ const SETTINGS: RoomSettings = {
   name: 'Welt', mcVersion: '1.21.4', loader: 'fabric', maxPlayers: 4, gameMode: 'survival',
   pvp: true, cheats: false, open: true, visibility: 'friends',
 }
-const ADMIN_STAFF: Staff = { uuid: ADMIN, role: 'admin' }
+const ADMIN_STAFF: Staff = ownerStaff(ADMIN)
 
 /** Team + Spieler: Admin (ADMIN_UUIDS), Moderator, zweiter Moderator, Spieler. */
 async function team(env: TestEnv, ...names: string[]) {
@@ -52,8 +53,8 @@ async function team(env: TestEnv, ...names: string[]) {
   const [mod, mod2, ...rest] = await players(env, 'Mod', 'Mod2', ...names)
   setRole(env.ctx, ADMIN_STAFF, mod!.uuid, 'moderator')
   setRole(env.ctx, ADMIN_STAFF, mod2!.uuid, 'moderator')
-  const modStaff: Staff = { uuid: mod!.uuid, role: 'moderator' }
-  const mod2Staff: Staff = { uuid: mod2!.uuid, role: 'moderator' }
+  const modStaff: Staff = teamOf(env.ctx, mod!.uuid)!
+  const mod2Staff: Staff = teamOf(env.ctx, mod2!.uuid)!
   return { mod: mod!, mod2: mod2!, modStaff, mod2Staff, players: rest }
 }
 
@@ -70,7 +71,7 @@ describe('roles', () => {
     expect(staffRole(env.ctx, mod.uuid)).toBe('moderator')
     expect(code(() => setRole(env.ctx, ADMIN_STAFF, ADMIN, 'moderator'))).toBe('role_locked')
     expect(code(() => removeRole(env.ctx, ADMIN_STAFF, ADMIN))).toBe('role_locked')
-    expect(code(() => setRole(env.ctx, modStaff, mod.uuid, 'admin'))).toBe('cannot_change_self')
+    expect(code(() => setRole(env.ctx, modStaff, mod.uuid, 'admin'))).toBe('missing_permission')
     expect(code(() => setRole(env.ctx, ADMIN_STAFF, 'f'.repeat(32), 'moderator'))).toBe('user_not_found')
     setRole(env.ctx, ADMIN_STAFF, p!.uuid, 'admin', 'Co-Admin')
     expect(listRoles(env.ctx).map((r) => [r.role, r.source])).toEqual([['admin', 'env'], ['admin', 'db'], ['moderator', 'db'], ['moderator', 'db']])
@@ -82,25 +83,24 @@ describe('roles', () => {
     expect((await login(env, 'Mod', mod.uuid)).user).toMatchObject({ admin: false, role: 'moderator' })
   })
 
-  it('moderators sign in to the website; losing the role ends the session at once', async () => {
+  it('team rights are read on every request: website session stays, team access ends when the role goes', async () => {
     const env = makeEnv()
     const { mod, players: [p] } = await team(env, 'Player')
-    const modAuth = authenticate(env.ctx, `Bearer ${(await login(env, 'Mod', mod.uuid)).token}`)
-    const playerAuth = authenticate(env.ctx, `Bearer ${(await login(env, 'Player', p!.uuid)).token}`)
-    const s = startWebLogin(env.ctx)
-    expect(code(() => approveWebLogin(env.ctx, playerAuth, s.code))).toBe('not_admin')
-    approveWebLogin(env.ctx, modAuth, s.code)
-    const r = pollWebLogin(env.ctx, s.pollSecret)
-    expect(r.status).toBe('approved')
-    const token = (r as { token: string }).token
-    expect(webSession(env.ctx, token, undefined, false)).toMatchObject({ uuid: mod.uuid, role: 'moderator' })
-    // Bearer-Zugriff: Moderator ja, Admin-Bereich nein.
+    const web = createWebSession(env.ctx, mod.uuid)
+    expect(webSession(env.ctx, web.token, undefined, false)).toMatchObject({ uuid: mod.uuid })
+    expect(teamOf(env.ctx, mod.uuid)).toMatchObject({ role: 'moderator', rank: 500, roles: ['moderator'] })
+    // Bearer-Zugriff: Team ja, Spieler nein; X-Admin-Key = Owner.
     const bearer = `Bearer ${(await login(env, 'Mod', mod.uuid)).token}`
-    expect(authenticateStaff(env.ctx, { authorization: bearer }, 'moderator')).toEqual({ uuid: mod.uuid, role: 'moderator' })
-    expect(code(() => authenticateStaff(env.ctx, { authorization: bearer }, 'admin'))).toBe('forbidden')
-    expect(authenticateStaff(env.ctx, { adminKey: env.ctx.config.adminApiKey! }, 'admin')).toEqual({ uuid: 'api-key', role: 'admin' })
+    expect(authenticateStaff(env.ctx, { authorization: bearer })).toMatchObject({ uuid: mod.uuid, role: 'moderator', owner: false })
+    const playerBearer = `Bearer ${(await login(env, 'Player', p!.uuid)).token}`
+    expect(code(() => authenticateStaff(env.ctx, { authorization: playerBearer }))).toBe('forbidden')
+    expect(authenticateStaff(env.ctx, { adminKey: env.ctx.config.adminApiKey! })).toMatchObject({ uuid: 'api-key', role: 'admin', owner: true })
     removeRole(env.ctx, ADMIN_STAFF, mod.uuid)
-    expect(code(() => webSession(env.ctx, token, undefined, false))).toBe('unauthorized')
+    expect(teamOf(env.ctx, mod.uuid)).toBeNull()
+    expect(code(() => authenticateStaff(env.ctx, { authorization: bearer }))).toBe('forbidden')
+    // Die Website-Sitzung selbst bleibt (normaler Spieler), nur der Team-Bereich ist zu.
+    expect(webSession(env.ctx, web.token, undefined, false).uuid).toBe(mod.uuid)
+    void authenticate
   })
 })
 
@@ -115,7 +115,7 @@ describe('rights matrix', () => {
     expect(code(() => createSanction(env.ctx, modStaff, input(p!.uuid, 'chat_mute', 7 * DAY + 1)))).toBe('duration_not_allowed')
     expect(code(() => createSanction(env.ctx, modStaff, input(p!.uuid, 'warn', 30 * DAY + 1)))).toBe('duration_not_allowed')
     expect(code(() => createSanction(env.ctx, modStaff, input(p!.uuid, 'chat_mute', null)))).toBe('duration_not_allowed')
-    expect(code(() => createSanction(env.ctx, modStaff, input(p!.uuid, 'account_ban', HOUR)))).toBe('admin_only')
+    expect(code(() => createSanction(env.ctx, modStaff, input(p!.uuid, 'account_ban', HOUR)))).toBe('missing_permission')
     expect(code(() => createSanction(env.ctx, modStaff, input(mod2.uuid, 'chat_mute', HOUR)))).toBe('cannot_moderate_staff')
     expect(code(() => createSanction(env.ctx, modStaff, input(ADMIN, 'chat_mute', HOUR)))).toBe('cannot_moderate_admin')
     expect(code(() => createSanction(env.ctx, modStaff, input(mod.uuid, 'warn', HOUR)))).toBe('cannot_target_self')
@@ -134,7 +134,7 @@ describe('rights matrix', () => {
     createSanction(env.ctx, ADMIN_STAFF, input(mod.uuid, 'chat_mute', HOUR))
     expect(activeSanction(env.ctx, mod.uuid, 'chat_mute')).toBeDefined()
     expect(code(() => createSanction(env.ctx, ADMIN_STAFF, input(ADMIN, 'warn', HOUR)))).toBe('cannot_moderate_admin')
-    expect(code(() => createSanction(env.ctx, { uuid: 'api-key', role: 'admin' }, input(ADMIN, 'warn', HOUR)))).toBe('cannot_moderate_admin')
+    expect(code(() => createSanction(env.ctx, ownerStaff('api-key'), input(ADMIN, 'warn', HOUR)))).toBe('cannot_moderate_admin')
   })
 
   it('moderators cannot change or lift sanctions given by admins; admins can change everything', async () => {
@@ -142,8 +142,8 @@ describe('rights matrix', () => {
     const { modStaff, mod2Staff, players: [p] } = await team(env, 'Player')
     const byAdmin = createSanction(env.ctx, ADMIN_STAFF, input(p!.uuid, 'social_ban', DAY))
     const byMod = createSanction(env.ctx, modStaff, input(p!.uuid, 'upload_ban', DAY))
-    expect(code(() => liftSanction(env.ctx, modStaff, byAdmin.id, 'nope'))).toBe('admin_only')
-    expect(code(() => changeDuration(env.ctx, modStaff, byAdmin.id, env.clock.t + HOUR * 60_000, 'nope'))).toBe('admin_only')
+    expect(code(() => liftSanction(env.ctx, modStaff, byAdmin.id, 'nope'))).toBe('rank_too_low')
+    expect(code(() => changeDuration(env.ctx, modStaff, byAdmin.id, env.clock.t + HOUR * 60_000, 'nope'))).toBe('rank_too_low')
     // Anderer Moderator darf die Strafe eines Moderators ändern – aber nur bis 7 Tage.
     expect(code(() => changeDuration(env.ctx, mod2Staff, byMod.id, env.clock.t + 8 * DAY * 60_000, 'länger'))).toBe('duration_not_allowed')
     expect(code(() => changeDuration(env.ctx, mod2Staff, byMod.id, null, 'dauerhaft'))).toBe('duration_not_allowed')
@@ -520,7 +520,7 @@ describe('report actions with the new sanctions', () => {
     const env = makeEnv()
     const { modStaff, players: [a, b] } = await team(env, 'Alex', 'Bob')
     const r = createReport(env.ctx, b!.uuid, { kind: 'player', reason: 'scam_phishing', uuid: a!.uuid })
-    expect(code(() => adminReportAction(env.ctx, modStaff, r.id, { action: 'ban' }))).toBe('admin_only')
+    expect(code(() => adminReportAction(env.ctx, modStaff, r.id, { action: 'ban' }))).toBe('missing_permission')
     const d = adminReportAction(env.ctx, modStaff, r.id, { action: 'sanction', kind: 'social_ban', duration: '3d', note: 'intern' })
     expect(d).toMatchObject({ status: 'resolved', outcome: 'actioned' })
     const s = activeSanction(env.ctx, a!.uuid, 'social_ban')!

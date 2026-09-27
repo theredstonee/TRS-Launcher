@@ -7,7 +7,7 @@ import { closeRoomBody, roomIdSchema } from '../../../../../lib/schemas'
 
 /** Welt schließen (Team). Für dauerhaftes Fernhalten: Strafe `hosting_ban`. */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, 'worlds.close')
   const id = paramWith(event, 'id', roomIdSchema)
   const body = await readJson(event, closeRoomBody)
   const ctx = useCtx()

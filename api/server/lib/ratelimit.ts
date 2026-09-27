@@ -119,10 +119,15 @@ export const RULES = {
   /** Ausgehende Mojang-Profilabfragen insgesamt (nur Cache-Fehlschläge). */
   mojangGlobal: { limit: 100, windowMs: MIN },
   playerEventsUser: { limit: 20, windowMs: MIN },
-  /** Website-Login: Codes anfordern (je IP), bestätigen (je Konto), abfragen (je IP). */
-  webLoginStartIp: { limit: 10, windowMs: 10 * MIN },
-  webLoginApproveUser: { limit: 10, windowMs: 10 * MIN },
-  webLoginPollIp: { limit: 90, windowMs: MIN },
+  /** Website-Login mit Microsoft (§23.1): Weiterleitung starten bzw. Rücksprung, je IP. */
+  msLoginIp: { limit: 20, windowMs: 10 * MIN },
+  msCallbackIp: { limit: 30, windowMs: 10 * MIN },
+  /** Bewerbungen (§23.3): abschicken je Konto und je IP, zurückziehen je Konto. */
+  applyUser: { limit: 5, windowMs: HOUR },
+  applyIp: { limit: 20, windowMs: HOUR },
+  withdrawUser: { limit: 10, windowMs: HOUR },
+  /** Team: Stimmen, Notizen, Statuswechsel an Bewerbungen, je Team-Mitglied. */
+  adminApplication: { limit: 60, windowMs: MIN },
   /** TRS-Sync (`/v1/me/sync*`): alle Anfragen je Konto, dazu Skin-Uploads extra. */
   syncUser: { limit: 120, windowMs: MIN },
   syncUploadUser: { limit: 30, windowMs: MIN },

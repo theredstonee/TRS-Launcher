@@ -5,6 +5,6 @@ import { listRoles } from '../../../../lib/staff'
 
 /** Team: Admins (ADMIN_UUIDS + vergebene) und Moderatoren. Nur Admins. */
 export default defineEventHandler((event) => {
-  requireStaff(event, 'admin')
+  requireStaff(event, 'roles.manage')
   return { roles: listRoles(useCtx()) }
 })

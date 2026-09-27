@@ -6,7 +6,7 @@ import { adminSanctionView, getSanction } from '../../../../../lib/sanctions'
 import { sanctionIdSchema } from '../../../../../lib/schemas'
 
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, ['players.view', 'appeals.handle', 'sanctions.lift'])
   const ctx = useCtx()
   const s = getSanction(ctx, paramWith(event, 'id', sanctionIdSchema))
   if (!s) throw notFound('sanction_not_found', 'Sanction not found')

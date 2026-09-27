@@ -6,7 +6,7 @@ import { setRole } from '../../../../lib/staff'
 
 /** Rolle vergeben/ändern (nur Admins; ADMIN_UUIDS und die eigene Rolle sind fest). */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event, 'admin')
+  const staff = requireStaff(event, 'roles.manage')
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const body = await readJson(event, roleBody)
   return { roles: setRole(useCtx(), staff, uuid, body.role, body.note) }

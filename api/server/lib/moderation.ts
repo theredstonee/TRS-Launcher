@@ -554,6 +554,33 @@ export function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummar
   })
 }
 
+/**
+ * Ohne Recht `reports.content` (§23.2): keine Chat-Texte, Bilder, Einladungen oder Weltkarten – nur Metadaten
+ * (wer, wann, Grund, Status). `contentHidden: true` sagt der Oberfläche, warum die Felder leer sind.
+ */
+export function redactSummary<T extends AdminReportSummary>(s: T): T & { contentHidden: true } {
+  return { ...s, preview: null, contentHidden: true }
+}
+
+export function redactDetail(d: AdminReportDetail): AdminReportDetail & { contentHidden: true } {
+  return {
+    ...redactSummary(d),
+    evidence: d.evidence
+      ? {
+          ...d.evidence,
+          messages: d.evidence.messages.map((m) => ({ ...m, text: null, invite: null, world: null, attachments: [], hidden: true })),
+          images: [],
+        }
+      : null,
+    related: d.related.map(redactSummary),
+  }
+}
+
+/** Detail je nach Recht des Betrachters. */
+export function reportDetailFor(d: AdminReportDetail, showContent: boolean): AdminReportDetail {
+  return showContent ? d : redactDetail(d)
+}
+
 /** Gründe, die eine Meldung dringlich machen (§22.5). */
 export const HIGH_PRIORITY_REASONS: readonly ReportReason[] = ['insult_hate', 'harassment', 'scam_phishing']
 /** So viele offene Meldungen gegen dasselbe Ziel machen jede davon dringlich. */

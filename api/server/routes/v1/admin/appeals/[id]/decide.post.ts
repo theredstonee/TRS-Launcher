@@ -7,7 +7,7 @@ import { appealDecisionBody, appealIdSchema } from '../../../../../lib/schemas'
 
 /** Einspruch entscheiden: aufheben, verkürzen oder bestehen lassen – mit Antwort an den Spieler. */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, 'appeals.handle')
   limit(`admin-sanction:${staff.uuid}`, RULES.adminSanction)
   const id = paramWith(event, 'id', appealIdSchema)
   const body = await readJson(event, appealDecisionBody)

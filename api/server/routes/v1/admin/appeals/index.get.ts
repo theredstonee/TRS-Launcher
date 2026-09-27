@@ -6,6 +6,6 @@ import { adminAppealListQuery } from '../../../../lib/schemas'
 
 /** Einsprüche (offen: älteste zuerst). */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'appeals.handle')
   return listAppeals(useCtx(), queryWith(event, adminAppealListQuery))
 })

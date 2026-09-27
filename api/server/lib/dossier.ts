@@ -5,7 +5,7 @@ import { cosmeticView, type CosmeticRow, type CosmeticView } from './cosmetics'
 import { all, one, placeholders, run } from './db'
 import { badRequest, forbidden, notFound } from './errors'
 import { adminRooms, type AdminRoomView } from './hosting'
-import { reporterTrust, summaries, type AdminReportSummary, type ReportRow } from './moderation'
+import { redactSummary, reporterTrust, summaries, type AdminReportSummary, type ReportRow } from './moderation'
 import {
   activeSanction,
   adminSanctionViews,
@@ -17,7 +17,7 @@ import {
   type SanctionKind,
   type Staff,
 } from './sanctions'
-import { limitsOf, type StaffLimits } from './staff'
+import { can, limitsOf, rankOf, type StaffLimits } from './team'
 import { ACTIVE_BANS, getUser, staffRole, type StaffRole } from './users'
 
 /**
@@ -134,9 +134,14 @@ export function playerFile(ctx: AppContext, viewer: Staff, uuid: string): Player
   )
 
   let reason: string | null = null
+  const targetRank = rankOf(ctx, uuid)
   if (viewer.uuid === uuid) reason = 'self'
-  else if (role === 'admin') reason = 'admin'
-  else if (role === 'moderator' && viewer.role !== 'admin') reason = 'staff'
+  else if (ctx.config.adminUuids.has(uuid)) reason = 'admin'
+  else if (targetRank > 0 && !viewer.owner && targetRank >= viewer.rank) reason = 'staff'
+  const limits = limitsOf(viewer)
+  if (reason === null && limits.kinds.length === 0) reason = 'permission'
+  const content = can(viewer, 'reports.content')
+  const recent = (list: ReturnType<typeof summaries>) => (content ? list : list.map(redactSummary))
 
   return {
     player: {
@@ -160,19 +165,19 @@ export function playerFile(ctx: AppContext, viewer: Staff, uuid: string): Player
     reports: {
       against: {
         counts: reportCounts(ctx, 'target_uuid', uuid),
-        recent: summaries(ctx, all<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE target_uuid = ? ORDER BY created_at DESC LIMIT 20', uuid)),
+        recent: recent(summaries(ctx, all<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE target_uuid = ? ORDER BY created_at DESC LIMIT 20', uuid))),
       },
       filed: {
         counts: reportCounts(ctx, 'reporter_uuid', uuid),
-        recent: summaries(ctx, all<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE reporter_uuid = ? ORDER BY created_at DESC LIMIT 20', uuid)),
+        recent: recent(summaries(ctx, all<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE reporter_uuid = ? ORDER BY created_at DESC LIMIT 20', uuid))),
       },
       reporterScore: { ...trust, score: decided === 0 ? null : Math.round((trust.actioned / decided) * 100) },
     },
     capes: capes.map((c) => ({ ...capeView(ctx, c), createdAt: iso(c.since), reports: c.reports, source: c.src })),
     cosmetics: cosmetics.map((c) => ({ ...cosmeticView(ctx, c), createdAt: iso(c.since), reports: c.reports, source: c.src })),
     worlds: adminRooms(ctx, { uuid, limit: 20 }),
-    notes: playerNotes(ctx, viewer, uuid),
-    can: { sanction: reason === null, reason, limits: limitsOf(viewer.role) },
+    notes: can(viewer, 'players.notes') ? playerNotes(ctx, viewer, uuid) : [],
+    can: { sanction: reason === null, reason, limits },
   }
 }
 
@@ -237,7 +242,7 @@ export function listPlayers(ctx: AppContext, q: PlayerListQuery): { players: Pla
     params.push(t)
   } else if (q.status === 'staff') {
     const env = [...ctx.config.adminUuids]
-    where.push(`(u.uuid IN (SELECT uuid FROM staff_roles)${env.length ? ` OR u.uuid IN (${placeholders(env.length)})` : ''})`)
+    where.push(`(u.uuid IN (SELECT uuid FROM team_members)${env.length ? ` OR u.uuid IN (${placeholders(env.length)})` : ''})`)
     params.push(...env)
   } else if (q.status === 'reported') {
     where.push("u.uuid IN (SELECT target_uuid FROM chat_reports WHERE status <> 'resolved')")

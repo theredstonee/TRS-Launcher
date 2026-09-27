@@ -6,7 +6,7 @@ import { adminUserModeration, unmuteUser } from '../../../../../../lib/moderatio
 import { uuidSchema } from '../../../../../../lib/schemas'
 
 export default defineEventHandler((event) => {
-  const actor = requireStaff(event)
+  const actor = requireStaff(event, 'sanctions.lift')
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const ctx = useCtx()
   if (unmuteUser(ctx, actor, uuid) === 0) throw notFound('not_muted', 'This player is not muted')

@@ -7,7 +7,7 @@ import { bulkCosmeticsBody } from '../../../../lib/schemas'
 
 /** Sammelaktion: bis zu 50 Kosmetik-Uploads freigeben oder ablehnen (eine Transaktion). */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, 'uploads.review')
   limit(`admin-bulk:${staff.uuid}`, RULES.adminBulk)
   const body = await readJson(event, bulkCosmeticsBody)
   return bulkReviewCosmetics(useCtx(), staff.uuid, body.ids, body.action, body.reason)

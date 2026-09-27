@@ -28,7 +28,7 @@ export const capeIdSchema = z.string().regex(CAPE_ID, 'invalid cape id')
 export const cosmeticIdSchema = z.string().regex(COSMETIC_ID, 'invalid cosmetic id')
 
 /** Freitext ohne Steuerzeichen, getrimmt. */
-const plainText = (max: number) =>
+export const plainText = (max: number) =>
   z
     .string()
     .trim()

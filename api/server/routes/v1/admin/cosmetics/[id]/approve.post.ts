@@ -5,6 +5,6 @@ import { paramWith, requireStaff } from '../../../../../lib/http'
 import { cosmeticIdSchema } from '../../../../../lib/schemas'
 
 export default defineEventHandler((event) => {
-  const actor = requireStaff(event).uuid
+  const actor = requireStaff(event, 'uploads.review').uuid
   return { cosmetic: approveCosmetic(useCtx(), actor, paramWith(event, 'id', cosmeticIdSchema)) }
 })

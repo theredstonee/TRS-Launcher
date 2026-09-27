@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite'
+import { BUILTIN_ROLES } from '../../shared/team'
 
 /**
  * Schema-Migrationen. Nur anhängen, nie bestehende ändern – jede läuft genau
@@ -584,6 +585,14 @@ CREATE INDEX hosting_bans_uuid ON hosting_bans(uuid);
     version: 11,
     sql: `ALTER TABLE hosting_rooms ADD COLUMN content TEXT;`,
   },
+  {
+    // Team v3 (§23): feste + eigene Rollen mit feingranularen Rechten (statt staff_roles admin/moderator),
+    // Rang der Strafen-Ersteller, Stellenausschreibungen + Bewerbungen, Website-Login nur noch über Microsoft
+    // (web_logins entfällt, alte Code-Sitzungen enden). Idempotent wie Migration 9.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 12,
+    run: migrateTeamV3,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {
@@ -716,4 +725,135 @@ DROP TABLE bans;
 `)
   }
   db.exec('INSERT OR IGNORE INTO name_history (uuid, name, first_seen, last_seen) SELECT uuid, name, created_at, last_login_at FROM users')
+}
+
+/** Migration 12 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateTeamV3(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS team_roles (
+  id TEXT PRIMARY KEY,
+  -- NULL bei festen Rollen = übersetzter Standardname.
+  name TEXT,
+  color TEXT NOT NULL,
+  rank INTEGER NOT NULL UNIQUE CHECK (rank BETWEEN 1 AND 1000),
+  -- JSON-Liste der Rechte (shared/team.ts).
+  permissions TEXT NOT NULL,
+  -- Höchstdauer befristeter Strafen in Minuten, NULL = unbegrenzt.
+  max_sanction_minutes INTEGER,
+  builtin INTEGER NOT NULL DEFAULT 0,
+  public INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- Mehrere Rollen je Mitglied; die ranghöchste ist die Hauptrolle.
+CREATE TABLE IF NOT EXISTS team_members (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  role_id TEXT NOT NULL REFERENCES team_roles(id) ON DELETE CASCADE,
+  granted_at INTEGER NOT NULL,
+  granted_by TEXT NOT NULL,
+  note TEXT,
+  PRIMARY KEY (uuid, role_id)
+);
+CREATE INDEX IF NOT EXISTS team_members_role ON team_members(role_id);
+
+-- Stellenausschreibungen: Texte + Formular als JSON (je Sprache), verknüpfte Rolle optional.
+CREATE TABLE IF NOT EXISTS team_jobs (
+  id TEXT PRIMARY KEY CHECK (length(id) BETWEEN 3 AND 48),
+  status TEXT NOT NULL CHECK (status IN ('draft', 'open', 'closed')),
+  role_id TEXT REFERENCES team_roles(id) ON DELETE SET NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  cooldown_days INTEGER NOT NULL DEFAULT 30 CHECK (cooldown_days BETWEEN 0 AND 365),
+  texts TEXT NOT NULL,
+  form TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- Bewerbungen. Löschen des Kontos löscht sie (CASCADE). retain_until = Löschfrist (s. applications.ts).
+CREATE TABLE IF NOT EXISTS team_applications (
+  id TEXT PRIMARY KEY,
+  job_id TEXT NOT NULL REFERENCES team_jobs(id) ON DELETE RESTRICT,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  discord TEXT NOT NULL,
+  age_group TEXT NOT NULL CHECK (age_group IN ('under14', '14-15', '16-17', '18+')),
+  -- JSON: Antworten + Formular zum Zeitpunkt der Bewerbung (spätere Änderungen an der Stelle ändern nichts).
+  answers TEXT NOT NULL,
+  form TEXT NOT NULL,
+  lang TEXT NOT NULL CHECK (lang IN ('en', 'de', 'es')),
+  status TEXT NOT NULL CHECK (status IN ('new', 'review', 'interview', 'accepted', 'rejected', 'withdrawn')),
+  response TEXT,
+  role_granted TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  decided_by TEXT,
+  retain_until INTEGER
+);
+CREATE INDEX IF NOT EXISTS team_applications_uuid ON team_applications(uuid, job_id);
+CREATE INDEX IF NOT EXISTS team_applications_status ON team_applications(status, created_at);
+-- Höchstens EINE offene Bewerbung je Stelle und Konto.
+CREATE UNIQUE INDEX IF NOT EXISTS team_applications_open ON team_applications(job_id, uuid) WHERE status IN ('new', 'review', 'interview');
+
+-- Abstimmung im Team: je Mitglied eine Stimme (+1/-1) mit Kommentar.
+CREATE TABLE IF NOT EXISTS team_application_votes (
+  application_id TEXT NOT NULL REFERENCES team_applications(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL,
+  vote INTEGER NOT NULL CHECK (vote IN (-1, 1)),
+  comment TEXT,
+  at INTEGER NOT NULL,
+  PRIMARY KEY (application_id, uuid)
+);
+
+-- Interne Notizen + Verlauf (Statuswechsel, Stimmen, Rolle) je Bewerbung.
+CREATE TABLE IF NOT EXISTS team_application_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  application_id TEXT NOT NULL REFERENCES team_applications(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS team_application_notes_app ON team_application_notes(application_id, at);
+
+CREATE TABLE IF NOT EXISTS team_application_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  application_id TEXT NOT NULL REFERENCES team_applications(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  action TEXT NOT NULL,
+  detail TEXT
+);
+CREATE INDEX IF NOT EXISTS team_application_history_app ON team_application_history(application_id, at);
+`)
+
+  // Feste Rollen (fehlende anlegen, Anpassungen bleiben).
+  const now = Date.now()
+  for (const r of BUILTIN_ROLES) {
+    if (db.prepare('SELECT 1 AS x FROM team_roles WHERE id = ?').get(r.id)) continue
+    let rank = r.rank
+    while (rank > 1 && db.prepare('SELECT 1 AS x FROM team_roles WHERE rank = ?').get(rank)) rank--
+    db.prepare(
+      `INSERT INTO team_roles (id, name, color, rank, permissions, max_sanction_minutes, builtin, public, created_at, updated_at)
+       VALUES (?, NULL, ?, ?, ?, ?, 1, 1, ?, ?)`,
+    ).run(r.id, r.color, rank, JSON.stringify(r.permissions), r.maxSanctionMinutes, now, now)
+  }
+
+  // staff_roles (admin/moderator) → Rollen „admin“ bzw. „moderator“, verlustfrei (Zeitpunkt, Vergeber, Notiz).
+  if (hasTable(db, 'staff_roles')) {
+    db.exec(`
+INSERT OR IGNORE INTO team_members (uuid, role_id, granted_at, granted_by, note)
+SELECT uuid, CASE role WHEN 'admin' THEN 'admin' ELSE 'moderator' END, granted_at, granted_by, note FROM staff_roles;
+DROP TABLE staff_roles;
+`)
+  }
+
+  // Rang des Erstellers je Strafe (Rang-Regel beim Ändern). Altdaten: admin 900, moderator 500, system 0.
+  if (!hasColumn(db, 'sanctions', 'created_rank')) db.exec('ALTER TABLE sanctions ADD COLUMN created_rank INTEGER')
+  db.exec("UPDATE sanctions SET created_rank = CASE created_role WHEN 'admin' THEN 900 WHEN 'moderator' THEN 500 ELSE 0 END WHERE created_rank IS NULL")
+
+  // Website-Login nur noch über Microsoft: Codes weg, alte (Team-)Sitzungen enden.
+  db.exec('DROP TABLE IF EXISTS web_logins')
+  db.exec('DELETE FROM web_sessions')
 }

@@ -5,7 +5,7 @@ import { adminUserModeration } from '../../../../../../lib/moderation'
 import { uuidSchema } from '../../../../../../lib/schemas'
 
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, ['players.view', 'reports.view'])
   const uuid = paramWith(event, 'uuid', uuidSchema)
   return { moderation: adminUserModeration(useCtx(), uuid) }
 })

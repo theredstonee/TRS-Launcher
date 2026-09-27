@@ -7,7 +7,7 @@ import { bulkCapesBody } from '../../../../lib/schemas'
 
 /** Sammelaktion: bis zu 50 Umhänge freigeben oder ablehnen (eine Transaktion). */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, 'uploads.review')
   limit(`admin-bulk:${staff.uuid}`, RULES.adminBulk)
   const body = await readJson(event, bulkCapesBody)
   return bulkReviewCapes(useCtx(), staff.uuid, body.ids, body.action, body.reason)

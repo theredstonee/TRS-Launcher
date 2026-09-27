@@ -3,12 +3,12 @@ import { audit } from '../../../../../../lib/admin'
 import { useCtx } from '../../../../../../lib/context'
 import { revokeCosmetic } from '../../../../../../lib/cosmetics'
 import { notFound } from '../../../../../../lib/errors'
-import { noContent, paramWith, requireAdmin } from '../../../../../../lib/http'
+import { noContent, paramWith, requireStaff } from '../../../../../../lib/http'
 import { cosmeticIdSchema, uuidSchema } from '../../../../../../lib/schemas'
 
 /** Zuteilung entziehen (egal ob per Code oder Admin); ist das Teil ausgerüstet, wird es abgelegt. */
 export default defineEventHandler((event) => {
-  const actor = requireAdmin(event)
+  const actor = requireStaff(event, 'items.grant').uuid
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const id = paramWith(event, 'cosmeticId', cosmeticIdSchema)
   const ctx = useCtx()

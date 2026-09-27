@@ -5,7 +5,10 @@ import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
 import { broadcastPresence } from './friends'
 import { endHostingFor } from './hosting'
 import { emitCleared } from './playerevents'
-import { getUser, staffRole, type StaffRole } from './users'
+import { MIN_WARN_MINUTES, OWNER_RANK, SANCTION_PERMISSION, SYSTEM, assertCan, can, ownerStaff, rankOf, teamOf, type Staff } from './team'
+import { getUser, type StaffRole } from './users'
+
+export { SYSTEM, type Staff } from './team'
 
 /**
  * Moderation v2 (API.md §22): eine Tabelle für alle Strafen, Rechte je Rolle, Änderungen mit Begründung,
@@ -26,27 +29,20 @@ export type ReasonCode = (typeof REASON_CODES)[number] | 'auto_spam' | 'auto_rep
 /** Dauer-Vorlagen in Minuten (`permanent` = ohne Ende, `custom` = `minutes`). */
 export const DURATIONS = { '1h': 60, '6h': 360, '1d': 1440, '3d': 4320, '7d': 10_080, '30d': 43_200 } as const
 export type DurationPreset = keyof typeof DURATIONS | 'permanent' | 'custom'
-/** Moderatoren: höchstens 7 Tage (Verwarnungen: 30 Tage), nie dauerhaft, nie Konto-Bann. */
+/** Standard-Moderatoren: höchstens 7 Tage (Verwarnungen: 30 Tage) – nur noch Werkseinstellung der Rolle (team.ts). */
 export const MOD_MAX_MINUTES = 7 * 1440
-export const MOD_MAX_WARN_MINUTES = 30 * 1440
+export const MOD_MAX_WARN_MINUTES = MIN_WARN_MINUTES
 /** Längste eigene Dauer: 10 Jahre (darüber: dauerhaft). */
 export const MAX_CUSTOM_MINUTES = 3650 * 1440
 
 export type SanctionStatus = 'active' | 'expired' | 'lifted'
 export type AppealStatus = 'open' | 'lifted' | 'shortened' | 'upheld'
 
-/** Wer handelt: Team-Mitglied (`uuid` oder `api-key`) oder `system` (Automatik). */
-export interface Staff {
-  uuid: string
-  role: StaffRole
-}
-export const SYSTEM: Staff = { uuid: 'system', role: 'admin' }
-
-/** Akteur-String (alte Aufrufer, Tests) → Staff. `api-key`/`system`/ADMIN_UUIDS = Admin. */
+/** Akteur-String (alte Aufrufer, Tests) → Staff. `api-key`/`system`/ADMIN_UUIDS = Owner, Nicht-Mitglieder ohne Rechte. */
 export function staffOf(ctx: AppContext, actor: string): Staff {
   if (actor === 'system') return SYSTEM
-  if (actor === 'api-key') return { uuid: actor, role: 'admin' }
-  return { uuid: actor, role: staffRole(ctx, actor) ?? 'moderator' }
+  if (actor === 'api-key') return ownerStaff(actor)
+  return teamOf(ctx, actor) ?? { uuid: actor, role: 'moderator', rank: 0, owner: false, perms: new Set(), maxMinutes: 0, roles: [] }
 }
 
 export interface SanctionRow {
@@ -61,6 +57,8 @@ export interface SanctionRow {
   created_at: number
   created_by: string
   created_role: StaffRole | 'system'
+  /** Rang des Erstellers (Migration 12); Altdaten: admin 900, moderator 500, system 0. */
+  created_rank: number | null
   expires_at: number | null
   lifted_at: number | null
   lifted_by: string | null
@@ -215,6 +213,8 @@ export interface AdminSanctionView {
   createdAt: string
   createdBy: ActorRef
   createdRole: StaffRole | 'system'
+  /** Rang des Erstellers (§23.2, Rang-Regel beim Ändern). */
+  createdRank: number
   endsAt: string | null
   permanent: boolean
   status: SanctionStatus
@@ -276,6 +276,7 @@ export function adminSanctionViews(ctx: AppContext, rows: SanctionRow[]): AdminS
       createdAt: iso(s.created_at),
       createdBy: ref(s.created_by),
       createdRole: s.created_role,
+      createdRank: creatorRank(s),
       endsAt: isoOrNull(s.expires_at),
       permanent: s.expires_at === null,
       status: statusOf(s, t),
@@ -328,33 +329,50 @@ const AUDIT_ADD: Record<SanctionKind, string> = {
   account_ban: 'user.ban',
 }
 
-function maxMinutesFor(kind: SanctionKind): number {
-  return kind === 'warn' ? MOD_MAX_WARN_MINUTES : MOD_MAX_MINUTES
-}
-
-/** Darf `actor` gegen `target` überhaupt eine Strafe verhängen? */
+/** Darf `actor` gegen `target` überhaupt eine Strafe verhängen? Rang-Regel: nur Mitglieder mit niedrigerem Rang. */
 export function assertCanTarget(ctx: AppContext, actor: Staff, target: string): void {
-  const role = staffRole(ctx, target)
-  if (role === 'admin') throw conflict('cannot_moderate_admin', 'Admins cannot be sanctioned; remove the role first')
+  if (ctx.config.adminUuids.has(target)) throw conflict('cannot_moderate_admin', 'Owners cannot be sanctioned')
   if (actor.uuid === target) throw badRequest('cannot_target_self', 'You cannot sanction yourself')
-  if (role === 'moderator' && actor.role !== 'admin') throw forbidden('cannot_moderate_staff', 'Moderators cannot sanction team members')
-}
-
-/** Dauer und Art gegen die Rolle prüfen (`minutes = null` = dauerhaft). */
-export function assertDurationAllowed(actor: Staff, kind: SanctionKind, minutes: number | null): void {
-  if (actor.role === 'admin') return
-  if (kind === 'account_ban') throw forbidden('admin_only', 'Only admins can ban accounts')
-  if (minutes === null) throw forbidden('duration_not_allowed', 'Only admins can give permanent sanctions')
-  if (minutes > maxMinutesFor(kind)) {
-    throw forbidden('duration_not_allowed', `Moderators can give at most ${maxMinutesFor(kind) / 1440} days`)
+  const rank = rankOf(ctx, target)
+  if (rank > 0 && !actor.owner && rank >= actor.rank) {
+    throw forbidden('cannot_moderate_staff', 'You can only sanction team members below your own rank')
   }
 }
 
-/** Darf `actor` diese bestehende Strafe ändern/aufheben? (Moderatoren: keine Strafen von Admins, keine Konto-Banns.) */
-export function assertCanModify(actor: Staff, s: SanctionRow): void {
-  if (actor.role === 'admin') return
-  if (s.created_role === 'admin' || s.kind === 'account_ban') {
-    throw forbidden('admin_only', 'Only admins can change sanctions given by admins')
+/** Art und Dauer gegen die Rechte prüfen (`minutes = null` = dauerhaft). */
+export function assertDurationAllowed(actor: Staff, kind: SanctionKind, minutes: number | null): void {
+  assertCan(actor, SANCTION_PERMISSION[kind])
+  if (actor.owner) return
+  if (minutes === null) {
+    if (!can(actor, 'sanctions.permanent')) throw forbidden('duration_not_allowed', 'Your role cannot give permanent sanctions')
+    return
+  }
+  const max = actor.maxMinutes === null ? null : kind === 'warn' ? Math.max(actor.maxMinutes, MIN_WARN_MINUTES) : actor.maxMinutes
+  if (max !== null && minutes > max) {
+    throw forbidden('duration_not_allowed', `Your role can give at most ${Math.round((max / 1440) * 10) / 10} days`)
+  }
+}
+
+/** Rang des Erstellers einer Strafe. */
+export function creatorRank(s: Pick<SanctionRow, 'created_rank' | 'created_role'>): number {
+  if (s.created_rank !== null && s.created_rank !== undefined) return s.created_rank
+  return s.created_role === 'admin' ? 900 : s.created_role === 'moderator' ? 500 : 0
+}
+
+/**
+ * Darf `actor` diese bestehende Strafe ändern? `lift` braucht `sanctions.lift`, `extend` das Recht der Strafart,
+ * `shorten` eines von beiden; Konto-Banns immer zusätzlich `sanctions.ban`. Rang-Regel: Strafen von Mitgliedern mit
+ * HÖHEREM Rang bleiben tabu (gleicher Rang darf, wie bisher unter Moderatoren).
+ */
+export function assertCanModify(actor: Staff, s: SanctionRow, action: 'lift' | 'shorten' | 'extend' = 'lift'): void {
+  if (actor.owner) return
+  const kindPerm = SANCTION_PERMISSION[s.kind]
+  if (action === 'lift') assertCan(actor, 'sanctions.lift')
+  else if (action === 'extend') assertCan(actor, kindPerm)
+  else if (!can(actor, 'sanctions.lift')) assertCan(actor, kindPerm)
+  if (s.kind === 'account_ban') assertCan(actor, 'sanctions.ban')
+  if (s.created_by !== actor.uuid && creatorRank(s) > actor.rank) {
+    throw forbidden('rank_too_low', 'This sanction was given by someone with a higher rank')
   }
 }
 
@@ -407,7 +425,7 @@ export function createSanction(ctx: AppContext, actor: Staff, input: SanctionInp
   if (!input.auto) {
     assertCanTarget(ctx, actor, input.uuid)
     assertDurationAllowed(actor, input.kind, input.minutes)
-  } else if (staffRole(ctx, input.uuid)) {
+  } else if (rankOf(ctx, input.uuid) > 0) {
     throw conflict('cannot_moderate_admin', 'Team members are not sanctioned automatically')
   }
   if (input.minutes !== null && (!Number.isInteger(input.minutes) || input.minutes < 1 || input.minutes > MAX_CUSTOM_MINUTES)) {
@@ -415,7 +433,9 @@ export function createSanction(ctx: AppContext, actor: Staff, input: SanctionInp
   }
   const t = ctx.now()
   const expires = input.minutes === null ? null : t + input.minutes * 60_000
-  const role: SanctionRow['created_role'] = actor === SYSTEM || actor.uuid === 'system' ? 'system' : actor.role
+  const system = actor === SYSTEM || actor.uuid === 'system'
+  const role: SanctionRow['created_role'] = system ? 'system' : actor.role
+  const createdRank = system ? 0 : actor.owner ? OWNER_RANK : actor.rank
   const id = tx(ctx.db, () => {
     // Eine Entscheidung des Teams ersetzt eine automatische Stummschaltung.
     if (input.kind === 'chat_mute' && !input.auto) {
@@ -428,10 +448,10 @@ export function createSanction(ctx: AppContext, actor: Staff, input: SanctionInp
     }
     const row = one<{ id: number }>(
       ctx.db,
-      `INSERT INTO sanctions (uuid, kind, reason_code, reason, note, report_id, auto, created_at, created_by, created_role, expires_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+      `INSERT INTO sanctions (uuid, kind, reason_code, reason, note, report_id, auto, created_at, created_by, created_role, created_rank, expires_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
       input.uuid, input.kind, input.reasonCode, input.reason ?? null, input.note ?? null, input.reportId ?? null,
-      input.auto ?? null, t, actor.uuid, role, expires, t,
+      input.auto ?? null, t, actor.uuid, role, createdRank, expires, t,
     )!
     if (input.kind === 'account_ban') {
       run(ctx.db, 'DELETE FROM sessions WHERE uuid = ?', input.uuid)
@@ -474,7 +494,7 @@ function liftInTx(ctx: AppContext, actor: Staff, s: SanctionRow, reason: string,
 export function liftSanction(ctx: AppContext, actor: Staff, id: number, reason: string): SanctionRow {
   const s = sanctionOr404(ctx, id)
   if (statusOf(s, ctx.now()) !== 'active') throw conflict('sanction_not_active', 'This sanction is no longer active')
-  assertCanModify(actor, s)
+  assertCanModify(actor, s, 'lift')
   tx(ctx.db, () => liftInTx(ctx, actor, s, reason))
   const next = getSanction(ctx, id)!
   publishUpdated(ctx, next)
@@ -486,10 +506,12 @@ export function changeDuration(ctx: AppContext, actor: Staff, id: number, endsAt
   const s = sanctionOr404(ctx, id)
   const t = ctx.now()
   if (statusOf(s, t) !== 'active') throw conflict('sanction_not_active', 'This sanction is no longer active')
-  assertCanModify(actor, s)
+  const longer = s.expires_at !== null && (endsAt === null || endsAt > s.expires_at)
+  assertCanModify(actor, s, longer ? 'extend' : 'shorten')
   if (endsAt !== null && endsAt <= t) throw badRequest('invalid_duration', 'The new end must be in the future – lift the sanction instead')
   if (endsAt !== null && endsAt > s.created_at + MAX_CUSTOM_MINUTES * 60_000) throw badRequest('invalid_duration', 'Invalid duration')
-  assertDurationAllowed(actor, s.kind, endsAt === null ? null : Math.ceil((endsAt - s.created_at) / 60_000))
+  // Verlängern: neue Gesamtdauer muss erlaubt sein. Verkürzen geht immer (auch unter die eigene Höchstdauer).
+  if (longer) assertDurationAllowed(actor, s.kind, endsAt === null ? null : Math.ceil((endsAt - s.created_at) / 60_000))
   if (endsAt === s.expires_at) throw conflict('no_change', 'The sanction already ends then')
   const action: 'shorten' | 'extend' = s.expires_at === null ? 'shorten' : endsAt === null || endsAt > s.expires_at ? 'extend' : 'shorten'
   tx(ctx.db, () => {
@@ -526,7 +548,7 @@ export function liftActive(
     ...(opts.onlyAuto ? [uuid, kind, t, opts.onlyAuto] : [uuid, kind, t]),
   )
   if (rows.length === 0) return 0
-  for (const s of rows) assertCanModify(actor, s)
+  for (const s of rows) assertCanModify(actor, s, 'lift')
   tx(ctx.db, () => {
     for (const s of rows) liftInTx(ctx, actor, s, reason, opts.auditAction)
   })
@@ -713,7 +735,8 @@ export function decideAppeal(ctx: AppContext, actor: Staff, appealId: number, d:
   if (!a) throw notFound('appeal_not_found', 'Appeal not found')
   if (a.status !== 'open') throw conflict('appeal_decided', 'This appeal was already decided')
   const s = getSanction(ctx, a.sanction_id)!
-  if (actor.role !== 'admin' && s.created_by === actor.uuid) {
+  assertCan(actor, 'appeals.handle')
+  if (!actor.owner && s.created_by === actor.uuid) {
     throw forbidden('own_sanction', 'Appeals against your own sanctions are decided by someone else')
   }
   const t = ctx.now()

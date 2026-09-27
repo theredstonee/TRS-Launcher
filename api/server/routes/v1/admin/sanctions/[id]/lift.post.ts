@@ -7,7 +7,7 @@ import { liftBody, sanctionIdSchema } from '../../../../../lib/schemas'
 
 /** Aktive Strafe aufheben (mit Begründung). */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, 'sanctions.lift')
   limit(`admin-sanction:${staff.uuid}`, RULES.adminSanction)
   const id = paramWith(event, 'id', sanctionIdSchema)
   const body = await readJson(event, liftBody)

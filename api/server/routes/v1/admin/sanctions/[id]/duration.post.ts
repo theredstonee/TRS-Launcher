@@ -7,7 +7,7 @@ import { durationChangeBody, sanctionIdSchema } from '../../../../../lib/schemas
 
 /** Ende verkürzen oder verlängern (`endsAt: null` = dauerhaft, nur Admins). */
 export default defineEventHandler(async (event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, ['sanctions.warn', 'sanctions.mute', 'sanctions.social', 'sanctions.upload', 'sanctions.hosting', 'sanctions.ban', 'sanctions.lift'])
   limit(`admin-sanction:${staff.uuid}`, RULES.adminSanction)
   const id = paramWith(event, 'id', sanctionIdSchema)
   const body = await readJson(event, durationChangeBody)

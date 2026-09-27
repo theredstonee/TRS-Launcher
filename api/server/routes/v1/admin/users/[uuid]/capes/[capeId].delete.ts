@@ -3,12 +3,12 @@ import { audit } from '../../../../../../lib/admin'
 import { revokeCape } from '../../../../../../lib/capes'
 import { useCtx } from '../../../../../../lib/context'
 import { notFound } from '../../../../../../lib/errors'
-import { noContent, paramWith, requireAdmin } from '../../../../../../lib/http'
+import { noContent, paramWith, requireStaff } from '../../../../../../lib/http'
 import { capeIdSchema, uuidSchema } from '../../../../../../lib/schemas'
 
 /** Zuteilung entziehen (egal ob per Code oder Admin); ist er aktiv, wird er abgelegt. */
 export default defineEventHandler((event) => {
-  const actor = requireAdmin(event)
+  const actor = requireStaff(event, 'items.grant').uuid
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const capeId = paramWith(event, 'capeId', capeIdSchema)
   const ctx = useCtx()

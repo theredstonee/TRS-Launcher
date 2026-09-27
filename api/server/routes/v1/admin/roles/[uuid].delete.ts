@@ -5,6 +5,6 @@ import { uuidSchema } from '../../../../lib/schemas'
 import { removeRole } from '../../../../lib/staff'
 
 export default defineEventHandler((event) => {
-  const staff = requireStaff(event, 'admin')
+  const staff = requireStaff(event, 'roles.manage')
   return { roles: removeRole(useCtx(), staff, paramWith(event, 'uuid', uuidSchema)) }
 })

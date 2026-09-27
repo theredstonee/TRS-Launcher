@@ -8,7 +8,7 @@ import { requireStaff } from '../../../../lib/http'
  * für die Code-Erstellung im Admin. Enthält auch versteckte Teile (`hidden`), die sonst niemand sieht.
  */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, ['codes', 'items.grant'])
   const rows = all<{ id: string, name: string, slot: string, unlock: string, hidden: number }>(
     useCtx().db,
     `SELECT id, name, slot, unlock, hidden FROM cosmetics

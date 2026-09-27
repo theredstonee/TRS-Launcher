@@ -1,8 +1,7 @@
 import type { AppContext } from './context'
 import { one, run, tx } from './db'
 import { ApiError, forbidden, tooMany, unauthorized, upstreamFailed } from './errors'
-import type { Staff } from './sanctions'
-import { staffRole, type StaffRole } from './users'
+import { ownerStaff, teamOf, type Staff } from './team'
 import { SESSION_TOKEN, newServerId, newSessionToken, safeEqual, sha256Hex } from './ids'
 import { RULES } from './ratelimit'
 import { MojangUnavailable } from './mojang'
@@ -158,31 +157,19 @@ export function logout(ctx: AppContext, auth: AuthedUser, everywhere: boolean): 
 }
 
 /**
- * Team-Zugriff: Sitzung eines Admins/Moderators ODER `X-Admin-Key` (zeitkonstant verglichen, gilt als Admin).
- * `need` = nötige Rolle; zu wenig → 403 `forbidden`.
+ * Team-Zugriff: Sitzung eines Team-Mitglieds ODER `X-Admin-Key` (zeitkonstant verglichen, gilt als Owner).
+ * Kein Team-Mitglied → 403 `forbidden`. Einzelne Rechte prüft `requireStaff`.
  */
-export function authenticateStaff(
-  ctx: AppContext,
-  headers: { authorization?: string, adminKey?: string },
-  need: StaffRole,
-): Staff {
+export function authenticateStaff(ctx: AppContext, headers: { authorization?: string, adminKey?: string }): Staff {
   if (headers.adminKey !== undefined) {
     const key = ctx.config.adminApiKey
-    if (key && safeEqual(headers.adminKey, key)) return { uuid: 'api-key', role: 'admin' }
+    if (key && safeEqual(headers.adminKey, key)) return ownerStaff('api-key')
     throw unauthorized('Invalid admin key')
   }
   const auth = authenticate(ctx, headers.authorization)
-  const role = staffRole(ctx, auth.uuid)
-  if (!role || (need === 'admin' && role !== 'admin')) throw forbidden('forbidden', need === 'admin' ? 'Admin only' : 'Team only')
-  return { uuid: auth.uuid, role }
-}
-
-/** Admin-Zugriff (alte Signatur): liefert den Akteur fürs Log. */
-export function authenticateAdmin(
-  ctx: AppContext,
-  headers: { authorization?: string, adminKey?: string },
-): string {
-  return authenticateStaff(ctx, headers, 'admin').uuid
+  const staff = teamOf(ctx, auth.uuid)
+  if (!staff) throw forbidden('forbidden', 'Team only')
+  return staff
 }
 
 export function sweepExpired(ctx: AppContext): void {

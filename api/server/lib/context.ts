@@ -3,6 +3,7 @@ import type { Config } from './config'
 import { ChatCipher } from './crypto'
 import type { Db } from './db'
 import { EventHub } from './events'
+import { OAuthStateStore } from './microsoft'
 import type { MojangClient } from './mojang'
 import { PresenceStore } from './presence'
 import { RateLimiter } from './ratelimit'
@@ -39,6 +40,10 @@ export interface AppContext {
   spam: SpamGuard
   /** Tippt gerade: `<conversationId>:<uuid>` → Ablaufzeit (nur RAM). */
   typing: Map<string, number>
+  /** Offene Microsoft-Anmeldungen (state + PKCE-Verifier, nur RAM, 10 min). */
+  oauth: OAuthStateStore
+  /** Für Tests: eigenes fetch für die Microsoft-/Xbox-/Minecraft-Kette. */
+  msFetch?: typeof fetch
 }
 
 export function createContext(opts: {
@@ -78,6 +83,7 @@ export function createContext(opts: {
     servers: new ServerStatusService(opts.config.serverPing, now, opts.pingDeps),
     spam: new SpamGuard(opts.config.secretKey, now),
     typing: new Map(),
+    oauth: new OAuthStateStore(now),
   }
 }
 

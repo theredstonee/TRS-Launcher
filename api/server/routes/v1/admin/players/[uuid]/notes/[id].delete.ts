@@ -6,7 +6,7 @@ import { noteIdSchema, uuidSchema } from '../../../../../../lib/schemas'
 
 /** Notiz löschen: eigene oder (Admins) alle. */
 export default defineEventHandler((event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, 'players.notes')
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const id = paramWith(event, 'id', noteIdSchema)
   return { notes: deletePlayerNote(useCtx(), staff, uuid, id) }

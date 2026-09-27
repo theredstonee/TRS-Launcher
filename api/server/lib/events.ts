@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import type { MyApplicationView } from './applications'
 import type { IncomingOffer } from './capeshares'
 import type { ConversationView, MessageView, ReactionView } from './chat'
 import type { HostRoomView, RoomCloseReason, RoomView, SignalKind } from './hosting'
@@ -94,6 +95,9 @@ export type ApiEvent =
   | { type: 'sanction_updated', sanction: MySanctionView }
   /** Dein Einspruch wurde entschieden (`appeal.response` = Antwort des Teams). */
   | { type: 'appeal_decided', sanctionId: number, appeal: MyAppealView, sanction: MySanctionView }
+  // ---------------------------------------------------------------- Team-Bewerbungen (§23.3, nur /v1/events/me)
+  /** Eigene Bewerbung geändert: abgeschickt, Status, Antwort des Teams oder zurückgezogen. */
+  | { type: 'application_updated', application: MyApplicationView }
 
 export type ApiEventType = ApiEvent['type']
 

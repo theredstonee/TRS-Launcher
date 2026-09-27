@@ -6,6 +6,6 @@ import { adminPlayersQuery } from '../../../../lib/schemas'
 
 /** Spieler-Liste mit Filter (Name, Status) und Cursor. */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'players.view')
   return listPlayers(useCtx(), queryWith(event, adminPlayersQuery))
 })

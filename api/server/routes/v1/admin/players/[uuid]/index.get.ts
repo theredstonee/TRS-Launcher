@@ -6,6 +6,6 @@ import { uuidSchema } from '../../../../../lib/schemas'
 
 /** Spieler-Akte (§22.4). */
 export default defineEventHandler((event) => {
-  const staff = requireStaff(event)
+  const staff = requireStaff(event, 'players.view')
   return { file: playerFile(useCtx(), staff, paramWith(event, 'uuid', uuidSchema)) }
 })

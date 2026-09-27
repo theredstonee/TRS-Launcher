@@ -5,6 +5,6 @@ import { requireStaff } from '../../../../../lib/http'
 
 /** Offene Welten (Host, Spieler, Mitglieder) – ohne Inhalte. */
 export default defineEventHandler((event) => {
-  requireStaff(event)
+  requireStaff(event, 'worlds.view')
   return { rooms: adminRooms(useCtx(), { limit: 200 }) }
 })

@@ -6,7 +6,7 @@ import { adminMuteBody, uuidSchema } from '../../../../../../lib/schemas'
 
 /** Im Chat stummschalten (`minutes` fehlt = bis zur Aufhebung, nur Admins). */
 export default defineEventHandler(async (event) => {
-  const actor = requireStaff(event)
+  const actor = requireStaff(event, 'sanctions.mute')
   const uuid = paramWith(event, 'uuid', uuidSchema)
   const body = await readJson(event, adminMuteBody)
   const ctx = useCtx()
