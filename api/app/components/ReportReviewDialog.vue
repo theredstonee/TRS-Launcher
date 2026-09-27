@@ -24,7 +24,8 @@ async function load() {
 
 // --- Entscheidung ----------------------------------------------------------------------------
 const { a: at } = useAdminText()
-const { session } = useAdmin()
+const { session, can } = useAdmin()
+const { t: tt } = useTeamText()
 const REPORT_TO_REASON: Record<string, string> = {
   insult_hate: 'insult_hate', spam: 'spam', inappropriate: 'inappropriate_content', scam_phishing: 'scam_phishing', harassment: 'harassment', other: 'other',
 }
@@ -216,6 +217,7 @@ onBeforeUnmount(() => {
                   : t.contextDm }}
                 · {{ when(report.evidence.capturedAt) }}
               </p>
+              <p v-if="report.contentHidden" class="mt-3 flex items-center gap-2 rounded-md border border-base-800 bg-base-950 px-3 py-2 text-sm text-base-300"><SiteIcon name="key" class="size-4 text-base-400" />{{ tt.adm.redacted }}</p>
               <p v-if="report.evidencePurged" class="mt-3 text-sm text-base-400">{{ t.purged }}</p>
               <p v-else-if="!report.evidence?.messages.length" class="mt-3 text-sm text-base-400">{{ t.noContext }}</p>
               <ol v-else ref="log" class="chat-log mt-3">
@@ -235,6 +237,7 @@ onBeforeUnmount(() => {
                   </div>
                   <p v-if="msg.kind === 'system'" class="text-xs text-base-400 italic">{{ fill(t.system, { event: systemLabel(msg.system?.event) }) }}</p>
                   <p v-if="msg.text" class="msg-text">{{ msg.text }}</p>
+                  <p v-else-if="msg.hidden" class="mt-1 flex gap-1.5" aria-hidden="true"><span class="redacted w-16" /><span class="redacted w-10" /><span class="redacted w-24" /></p>
                   <p v-if="msg.invite" class="text-xs text-lamp-300">{{ fill(t.invite, { address: msg.invite.address }) }}</p>
                   <p v-if="msg.world" class="text-xs text-lamp-300">{{ fill(t.world, { name: msg.world.name }) }}</p>
                   <p v-if="msg.attachments.length" class="text-xs text-base-400">{{ fill(t.attachments, { n: msg.attachments.length }) }}</p>
@@ -264,7 +267,7 @@ onBeforeUnmount(() => {
                   <p class="mt-1 whitespace-pre-wrap text-base-100">{{ n.text }}</p>
                 </li>
               </ul>
-              <form class="mt-3 flex gap-2" @submit.prevent="addNote">
+              <form v-if="can('reports.handle')" class="mt-3 flex gap-2" @submit.prevent="addNote">
                 <input v-model="note" class="field flex-1" maxlength="2000" :placeholder="t.notePlaceholder" />
                 <button type="submit" class="btn btn-ghost" :disabled="busy || !note.trim()">{{ t.addNote }}</button>
               </form>
@@ -294,7 +297,7 @@ onBeforeUnmount(() => {
                 <p class="mt-2 text-xs text-base-300">{{ fill(t.targetStats, report.targetModeration.reports) }}</p>
                 <p v-if="report.targetModeration.mute" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-lamp-300">
                   {{ report.targetModeration.mute.expiresAt ? fill(t.mutedUntil, { date: when(report.targetModeration.mute.expiresAt) }) : t.mutedReview }}
-                  <button type="button" class="btn btn-ghost px-2 py-0.5 text-xs" :disabled="busy" @click="unmute">{{ t.unmute }}</button>
+                  <button v-if="can('sanctions.lift')" type="button" class="btn btn-ghost px-2 py-0.5 text-xs" :disabled="busy" @click="unmute">{{ t.unmute }}</button>
                 </p>
                 <details v-if="report.targetModeration.sanctions.length" class="mt-2 text-xs">
                   <summary class="cursor-pointer text-base-300">{{ t.history }}</summary>
@@ -319,7 +322,7 @@ onBeforeUnmount(() => {
               <p class="mt-1 text-xs text-base-400">{{ when(report.createdAt) }}</p>
             </div>
 
-            <div class="rounded-lg border border-base-800 p-4">
+            <div v-if="can('reports.handle')" class="rounded-lg border border-base-800 p-4">
               <h3 class="section-title">{{ t.decision }}</h3>
               <div v-if="!resolved" class="mt-3 flex flex-wrap gap-2">
                 <button v-if="report.status === 'open'" type="button" class="btn btn-ghost text-xs" :disabled="busy" @click="setStatus('in_review')">{{ t.claim }}</button>
@@ -339,7 +342,7 @@ onBeforeUnmount(() => {
               </label>
             </div>
 
-            <div v-if="report.target" class="rounded-lg border border-base-800 p-4">
+            <div v-if="report.target && can('reports.handle') && limits.kinds.length" class="rounded-lg border border-base-800 p-4">
               <h3 class="section-title flex items-center gap-2"><SiteIcon name="gavel" class="size-4 text-base-400" />{{ at.decision.sanction }}</h3>
               <div class="mt-3">
                 <SanctionForm ref="sanctionForm" v-model="draft" :limits="limits" />
@@ -427,6 +430,12 @@ onBeforeUnmount(() => {
   color: var(--color-base-50);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.redacted {
+  display: inline-block;
+  height: 0.7rem;
+  border-radius: 0.2rem;
+  background: var(--color-base-700);
 }
 .evidence-img {
   display: grid;

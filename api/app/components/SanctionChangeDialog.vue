@@ -3,7 +3,7 @@
 const props = defineProps<{ sanction: AdminSanction, mode: 'lift' | 'duration' }>()
 const emit = defineEmits<{ close: [], done: [sanction: AdminSanction] }>()
 const { a, fill, when } = useAdminText()
-const { api, session, isAdmin } = useAdmin()
+const { api, session } = useAdmin()
 
 const reason = ref('')
 const permanent = ref(false)
@@ -64,7 +64,7 @@ async function submit() {
         >
           {{ a.durations[q.p] }}
         </button>
-        <button v-if="isAdmin" type="button" class="adm-chip-btn" :aria-pressed="permanent" @click="permanent = !permanent">{{ a.sanctions.makePermanent }}</button>
+        <button v-if="session?.limits.permanent" type="button" class="adm-chip-btn" :aria-pressed="permanent" @click="permanent = !permanent">{{ a.sanctions.makePermanent }}</button>
       </div>
       <input v-if="!permanent" v-model="end" type="datetime-local" class="field mt-2" :aria-label="a.sanctions.newEnd" />
     </div>

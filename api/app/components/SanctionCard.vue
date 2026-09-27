@@ -8,12 +8,12 @@ const props = withDefaults(defineProps<{ sanction: AdminSanction, showPlayer?: b
 })
 const emit = defineEmits<{ changed: [sanction: AdminSanction] }>()
 const { a, fill, when, rel, actor } = useAdminText()
-const { isAdmin } = useAdmin()
+const { canModifySanction } = useAdmin()
 
 const dialog = ref<'lift' | 'duration' | null>(null)
 const open = ref(false)
 const s = computed(() => props.sanction)
-const canModify = computed(() => s.value.status === 'active' && (isAdmin.value || (s.value.createdRole !== 'admin' && s.value.kind !== 'account_ban')))
+const canModify = computed(() => s.value.status === 'active' && (canModifySanction(s.value, 'lift') || canModifySanction(s.value, 'shorten')))
 const endText = computed(() => {
   const x = s.value
   if (x.status === 'lifted') return fill(a.value.common.ended, { date: when(x.liftedAt) })

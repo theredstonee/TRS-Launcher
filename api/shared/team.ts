@@ -83,7 +83,7 @@ const MOD_BASE: Permission[] = [
 
 /** Standardrollen (Rechte = Werkseinstellung; Admins passen sie an). */
 export const BUILTIN_ROLES: readonly BuiltinRole[] = [
-  { id: 'owner', rank: OWNER_RANK, color: '#ff4d3d', permissions: PERMISSIONS, maxSanctionMinutes: null },
+  { id: 'owner', rank: OWNER_RANK, color: '#facc15', permissions: PERMISSIONS, maxSanctionMinutes: null },
   { id: 'admin', rank: ADMIN_RANK, color: '#e5484d', permissions: PERMISSIONS, maxSanctionMinutes: null },
   {
     id: 'senior_moderator',

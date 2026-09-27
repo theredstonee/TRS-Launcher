@@ -3,7 +3,7 @@
 // ihm mit Melder-Score, Umhänge/Kosmetik, offene Welten, interne Notizen und Schnellaktionen.
 const route = useRoute()
 const { a, m, fill, when, rel, day, actor } = useAdminText()
-const { api } = useAdmin()
+const { api, can } = useAdmin()
 
 const uuid = computed(() => String(route.params.uuid ?? '').replace(/-/g, '').toLowerCase())
 const file = ref<PlayerFile | null>(null)
@@ -186,8 +186,8 @@ const QUICK: SanctionKind[] = ['warn', 'chat_mute', 'social_ban', 'upload_ban', 
           <section class="card p-5">
             <h2 class="section-title flex items-center gap-2"><SiteIcon name="note" class="size-4 text-base-400" />{{ a.file.notes }}</h2>
             <form class="mt-3" @submit.prevent="addNote">
-              <textarea v-model="note" class="field min-h-20" maxlength="2000" :placeholder="a.file.notePlaceholder" :aria-label="a.file.notes" />
-              <button type="submit" class="btn btn-ghost mt-2 w-full" :disabled="noteBusy || !note.trim()">{{ a.file.addNote }}</button>
+              <textarea v-model="note" class="field min-h-20" maxlength="2000" :placeholder="a.file.notePlaceholder" :aria-label="a.file.notes" :disabled="!can('players.notes')" />
+              <button type="submit" class="btn btn-ghost mt-2 w-full" :disabled="noteBusy || !note.trim() || !can('players.notes')">{{ a.file.addNote }}</button>
             </form>
             <p v-if="!file.notes.length" class="mt-3 text-xs text-base-400">{{ a.file.noNotes }}</p>
             <ul v-else class="mt-3 space-y-2">

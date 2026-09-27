@@ -25,6 +25,7 @@ export const SITE_PAGES: readonly { path: string, priority: number }[] = [
   { path: '/blog', priority: 0.7 },
   { path: '/capes', priority: 0.7 },
   { path: '/faq', priority: 0.6 },
+  { path: '/team', priority: 0.5 },
   { path: '/privacy', priority: 0.3 },
 ]
 
@@ -358,11 +359,19 @@ function latest(dates: (string | null | undefined)[]): string | null {
  * hreflang-Alternativen. lastmod: Seiten = Zeitpunkt des Builds, Blog-Übersicht = neuester von Build
  * und letztem Beitrag, Beiträge = Erscheinungsdatum.
  */
-export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: string | null): string {
+/** Offene Stelle für die Sitemap (§23.3): `/team/{id}`, zuletzt geändert. */
+export interface SitemapJob {
+  id: string
+  updatedAt: string
+}
+
+export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: string | null, jobs: SitemapJob[] = []): string {
   const newestPost = latest(posts.map((p) => p.date))
+  const newestJob = latest(jobs.map((j) => j.updatedAt))
   const urls = [
-    ...SITE_PAGES.flatMap((pg) => sitemapEntries(siteUrl, pg.path, pg.path === '/blog' ? latest([buildTime, newestPost]) : buildTime, pg.priority)),
+    ...SITE_PAGES.flatMap((pg) => sitemapEntries(siteUrl, pg.path, pg.path === '/blog' ? latest([buildTime, newestPost]) : pg.path === '/team' ? latest([buildTime, newestJob]) : buildTime, pg.priority)),
     ...posts.flatMap((p) => sitemapEntries(siteUrl, `/blog/${p.version}`, p.date, 0.5)),
+    ...jobs.flatMap((j) => sitemapEntries(siteUrl, `/team/${j.id}`, j.updatedAt, 0.4)),
   ]
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`
 }
@@ -378,6 +387,9 @@ export function buildRobots(siteUrl: string): string {
     'Allow: /v1/capes/*.png',
     'Disallow: /v1/',
     'Disallow: /admin',
+    'Disallow: /auth/',
+    'Disallow: /login',
+    'Disallow: /applications',
     '',
     `Sitemap: ${trimBase(siteUrl)}/sitemap.xml`,
     '',

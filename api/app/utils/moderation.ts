@@ -32,6 +32,8 @@ export interface ReportSummary {
   resolvedAt: string | null
   resolvedBy: string | null
   evidencePurged: boolean
+  /** Ohne Recht reports.content: Inhalte geschwärzt (§23.2). */
+  contentHidden?: boolean
 }
 
 export interface EvidenceMessage {
@@ -48,6 +50,8 @@ export interface EvidenceMessage {
   replyTo: string | null
   createdAt: string
   editedAt: string | null
+  /** Text/Bilder ausgeblendet (fehlendes Recht reports.content). */
+  hidden?: boolean
   deleted: boolean
 }
 
@@ -144,6 +148,8 @@ export interface AdminSanction {
   createdAt: string
   createdBy: ActorRef
   createdRole: 'admin' | 'moderator' | 'system'
+  /** Rang des Erstellers (§23.2). */
+  createdRank: number
   endsAt: string | null
   permanent: boolean
   status: SanctionStatus
@@ -226,17 +232,19 @@ export interface AuditRow {
   ref: string | null
 }
 
+/** Übersicht (§22.5) – je Recht gekürzt (§23.2): fehlende Bereiche sind `null`. */
 export interface DashboardData {
-  reports: { open: number, inReview: number, highPriority: number, oldestOpenAt: string | null }
-  appeals: { open: number, oldestOpenAt: string | null }
-  sanctions: Record<SanctionKind, number>
-  uploads: { capesPending: number, capesReported: number, cosmeticsPending: number, cosmeticsReported: number }
-  users: { total: number, new24h: number, new7d: number, active24h: number, active7d: number, online: number }
-  hosting: { openRooms: number, players: number }
-  chat: { messages24h: number }
-  series: { days: string[], newUsers: number[], messages: number[], reports: number[], sanctions: number[] }
-  server: { version: string, node: string, uptimeSec: number, startedAt: string, dbBytes: number, disk: { freeBytes: number, totalBytes: number } | null }
+  reports: { open: number, inReview: number, highPriority: number, oldestOpenAt: string | null } | null
+  appeals: { open: number, oldestOpenAt: string | null } | null
+  sanctions: Record<SanctionKind, number> | null
+  uploads: { capesPending: number, capesReported: number, cosmeticsPending: number, cosmeticsReported: number } | null
+  users: { total: number, new24h: number, new7d: number, active24h: number, active7d: number, online: number } | null
+  hosting: { openRooms: number, players: number } | null
+  chat: { messages24h: number } | null
+  series: { days: string[], newUsers: number[], messages: number[], reports: number[], sanctions: number[] } | null
+  server: { version: string, node: string, uptimeSec: number, startedAt: string, dbBytes: number, disk: { freeBytes: number, totalBytes: number } | null } | null
   recentAudit: AuditRow[]
+  applications: { open: number, new: number } | null
 }
 
 export interface SearchResult {

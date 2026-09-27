@@ -50,6 +50,13 @@ const PATHS: Record<string, string> = {
   chat: 'M4 5h16v11H9l-5 4z',
   world: 'M4 6l8-3 8 3v12l-8 3-8-3zM4 6l8 3 8-3M12 9v12',
   gavel: 'M13 4l7 7M11 6l7 7M9.5 7.5l7 7M14 9l-9 9 2 2 9-9',
+  // Team + Bewerbungen
+  briefcase: 'M4 8h16v11H4zM9 8V5h6v3M4 13h16',
+  inbox: 'M4 13l3-8h10l3 8v6H4zM4 13h5l1 2h4l1-2h5',
+  thumbUp: 'M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2 3l-1 3h6a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7',
+  thumbDown: 'M7 13V4H4v9zM7 13l4 7c1.5 0 2.5-1 2-3l-1-3h6a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7',
+  microsoft: 'M4 4h7.5v7.5H4zM12.5 4H20v7.5h-7.5zM4 12.5h7.5V20H4zM12.5 12.5H20V20h-7.5z',
+  crown: 'M4 18h16M5 16l-1-9 5 4 3-6 3 6 5-4-1 9z',
 }
 
 // Marken als ausgefüllte Formen.

@@ -2,7 +2,7 @@
 // Einsprüche: Liste (offen: älteste zuerst), Entscheidung aufheben / verkürzen / bestehen lassen mit
 // Antwort an den Spieler. Eigene Strafen entscheidet jemand anderes; Admin-Strafen heben nur Admins auf.
 const { a, fill, when, rel, actor } = useAdminText()
-const { api, session, isAdmin } = useAdmin()
+const { api, session, canModifySanction } = useAdmin()
 
 const status = ref<'open' | 'decided' | 'all'>('open')
 const items = ref<AdminAppeal[]>([])
@@ -40,10 +40,11 @@ const decideError = ref('')
 const confirming = ref(false)
 
 function own(x: AdminAppeal): boolean {
-  return !isAdmin.value && x.sanction.createdBy.uuid === session.value?.uuid
+  return !session.value?.owner && x.sanction.createdBy.uuid === session.value?.uuid
 }
+/** Aufheben/Verkürzen nicht erlaubt (Recht oder Rang des Erstellers). */
 function adminOnly(x: AdminAppeal): boolean {
-  return !isAdmin.value && (x.sanction.createdRole === 'admin' || x.sanction.kind === 'account_ban')
+  return !canModifySanction(x.sanction, 'lift') && !canModifySanction(x.sanction, 'shorten')
 }
 function start(x: AdminAppeal, d: 'lift' | 'shorten' | 'uphold') {
   deciding.value = x

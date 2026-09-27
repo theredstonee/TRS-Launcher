@@ -1,76 +1,34 @@
 <script setup lang="ts">
 import '~/assets/css/admin.css'
 
-// Team-Bereich: Anmeldung per Code (im TRS Launcher bestätigt), danach Seitenleiste + Suche und die
-// Unterseiten unter /admin/*. Alles über /v1/admin; Rechte prüft der Server, die Oberfläche blendet
-// nur aus, was die Rolle nicht darf.
+// Team-Bereich: Anmeldung mit Microsoft (dieselbe Website-Sitzung wie überall), danach Seitenleiste + Suche und
+// die Unterseiten unter /admin/*. Alles über /v1/admin; Rechte prüft der Server, die Oberfläche zeigt nur, was die
+// Rechte der eigenen Rollen erlauben (§23.2).
 definePageMeta({ layout: false })
-useHead({ title: 'Moderation · TRS Launcher', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
+useHead({ title: 'Team · TRS Launcher', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
 const { m, fill } = useLang()
 const { a } = useAdminText()
-const { session, counts, load, api, logout, isAdmin } = useAdmin()
+const { t } = useTeamText()
+const { session, account, counts, load, api, logout, can } = useAdmin()
+const { loginUrl } = useAccount()
 const route = useRoute()
 const router = useRouter()
 
 const ready = ref(false)
-const failure = ref('')
-
-// --- Anmeldung ----------------------------------------------------------------------------
-const code = ref<{ code: string, pollSecret: string, expiresAt: string } | null>(null)
-const expired = ref(false)
-const starting = ref(false)
-let pollTimer: ReturnType<typeof setInterval> | null = null
-
-function stopPolling() {
-  if (pollTimer) clearInterval(pollTimer)
-  pollTimer = null
-}
-
-async function startLogin() {
-  starting.value = true
-  failure.value = ''
-  expired.value = false
-  try {
-    code.value = await api('/v1/web-login/start', { method: 'POST' })
-    stopPolling()
-    pollTimer = setInterval(poll, 2000)
-  } catch (e) {
-    failure.value = fill(m.value.admin.failed, { error: apiMessage(e) })
-  } finally {
-    starting.value = false
-  }
-}
-
-async function poll() {
-  if (!code.value) return
-  try {
-    const r = await api<{ status: 'pending' | 'expired' | 'approved' }>('/v1/web-login/poll', { method: 'POST', body: { pollSecret: code.value.pollSecret } })
-    if (r.status === 'approved') {
-      stopPolling()
-      code.value = null
-      await load()
-      void refreshCounts()
-    } else if (r.status === 'expired') {
-      stopPolling()
-      expired.value = true
-    }
-  } catch (e) {
-    stopPolling()
-    failure.value = fill(m.value.admin.failed, { error: apiMessage(e) })
-  }
-}
+const msEnabled = ref(true)
 
 // --- Zähler für die Seitenleiste ---------------------------------------------------------------
 async function refreshCounts() {
-  if (!session.value) return
+  if (!session.value || !can('dashboard.view')) return
   try {
     const d = await api<DashboardData>('/v1/admin/dashboard')
     counts.value = {
-      reports: d.reports.open + d.reports.inReview,
-      highPriority: d.reports.highPriority,
-      appeals: d.appeals.open,
-      uploads: d.uploads.capesPending + d.uploads.cosmeticsPending + d.uploads.capesReported + d.uploads.cosmeticsReported,
+      reports: d.reports ? d.reports.open + d.reports.inReview : 0,
+      highPriority: d.reports?.highPriority ?? 0,
+      appeals: d.appeals?.open ?? 0,
+      uploads: d.uploads ? d.uploads.capesPending + d.uploads.cosmeticsPending + d.uploads.capesReported + d.uploads.cosmeticsReported : 0,
+      applications: d.applications?.new ?? 0,
     }
   } catch {
     // Zähler sind nur Beiwerk.
@@ -79,12 +37,18 @@ async function refreshCounts() {
 let countTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
-  if (await load()) void refreshCounts()
+  const [team] = await Promise.all([
+    load(),
+    $fetch<{ microsoft: boolean }>('/v1/web/login').then((r) => (msEnabled.value = r.microsoft)).catch(() => {}),
+  ])
+  if (team) {
+    void refreshCounts()
+    goToAllowed()
+  }
   ready.value = true
   countTimer = setInterval(() => void refreshCounts(), 60_000)
 })
 onBeforeUnmount(() => {
-  stopPolling()
   if (countTimer) clearInterval(countTimer)
 })
 watch(() => route.fullPath, () => {
@@ -94,25 +58,42 @@ watch(() => route.fullPath, () => {
 
 async function signOut() {
   await logout().catch(() => {})
-  code.value = null
-  void router.push('/admin')
+  void router.push('/')
 }
 
 // --- Navigation --------------------------------------------------------------------------------
 const sideOpen = ref(false)
-const nav = computed(() => [
-  { to: '/admin', icon: 'home', label: a.value.nav.overview, exact: true },
-  { to: '/admin/reports', icon: 'flag', label: a.value.nav.reports, count: counts.value?.reports, hot: (counts.value?.highPriority ?? 0) > 0 },
-  { to: '/admin/appeals', icon: 'appeal', label: a.value.nav.appeals, count: counts.value?.appeals },
-  { to: '/admin/players', icon: 'users', label: a.value.nav.players },
-  { to: '/admin/sanctions', icon: 'gavel', label: a.value.nav.sanctions },
-  { to: '/admin/uploads', icon: 'cape', label: a.value.nav.uploads, count: counts.value?.uploads },
-  { to: '/admin/worlds', icon: 'world', label: a.value.nav.worlds },
-  { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes },
-  { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter },
-  ...(isAdmin.value ? [{ to: '/admin/roles', icon: 'key', label: a.value.nav.roles }] : []),
-  { to: '/admin/audit', icon: 'list', label: a.value.nav.audit },
+interface NavItem { to: string, icon: string, label: string, perm: string[], exact?: boolean, count?: number, hot?: boolean }
+/** Alle Bereiche mit dem nötigen Recht (eines davon reicht) – wie die Server-Routen. */
+const allNav = computed<NavItem[]>(() => [
+  { to: '/admin', icon: 'home', label: a.value.nav.overview, exact: true, perm: ['dashboard.view'] },
+  { to: '/admin/reports', icon: 'flag', label: a.value.nav.reports, count: counts.value?.reports, hot: (counts.value?.highPriority ?? 0) > 0, perm: ['reports.view'] },
+  { to: '/admin/appeals', icon: 'appeal', label: a.value.nav.appeals, count: counts.value?.appeals, perm: ['appeals.handle'] },
+  { to: '/admin/players', icon: 'users', label: a.value.nav.players, perm: ['players.view'] },
+  { to: '/admin/sanctions', icon: 'gavel', label: a.value.nav.sanctions, perm: ['players.view', 'appeals.handle', 'sanctions.lift'] },
+  { to: '/admin/uploads', icon: 'cape', label: a.value.nav.uploads, count: counts.value?.uploads, perm: ['uploads.review'] },
+  { to: '/admin/worlds', icon: 'world', label: a.value.nav.worlds, perm: ['worlds.view'] },
+  { to: '/admin/applications', icon: 'inbox', label: t.value.adm.nav.applications, count: counts.value?.applications, perm: ['applications.view'] },
+  { to: '/admin/jobs', icon: 'briefcase', label: t.value.adm.nav.jobs, perm: ['applications.view', 'applications.manage'] },
+  { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },
+  { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter, perm: ['wordfilter'] },
+  { to: '/admin/roles', icon: 'key', label: t.value.adm.nav.roles, perm: ['roles.manage'] },
+  { to: '/admin/audit', icon: 'list', label: a.value.nav.audit, perm: ['audit.view'] },
 ])
+const allowed = (n: NavItem) => n.perm.some((p) => can(p))
+const nav = computed(() => allNav.value.filter(allowed))
+/** Bereich der aktuellen Seite (längster passender Pfad). */
+const current = computed(() => {
+  const p = route.path.replace(/\/+$/, '') || '/admin'
+  return [...allNav.value].sort((x, y) => y.to.length - x.to.length).find((n) => (n.exact ? p === n.to : p === n.to || p.startsWith(`${n.to}/`)))
+})
+const blocked = computed(() => !!current.value && !allowed(current.value))
+/** Ohne Übersicht-Recht direkt in den ersten erlaubten Bereich. */
+function goToAllowed() {
+  if ((route.path === '/admin' || route.path === '/admin/') && !can('dashboard.view') && nav.value[0]) void router.replace(nav.value[0].to)
+}
+const mainRole = computed(() => session.value?.roles[0] ?? null)
+const canSearch = computed(() => can('players.view') || can('reports.view') || can('uploads.review'))
 
 // --- Globale Suche ---------------------------------------------------------------------------------
 const q = ref('')
@@ -197,7 +178,7 @@ useAdminKeys({
       <div class="skeleton h-24 w-72 rounded-xl" />
     </div>
 
-    <!-- Anmeldung -->
+    <!-- Anmeldung (Microsoft) bzw. kein Team-Mitglied -->
     <main v-else-if="!session" class="deepslate grid min-h-dvh place-items-center px-4 py-10">
       <section class="w-full max-w-lg">
         <NuxtLink to="/" class="mb-8 flex items-center gap-2.5 text-base-50">
@@ -207,24 +188,21 @@ useAdminKeys({
         <h1 class="display text-5xl text-base-50">{{ a.brand }}</h1>
         <p class="mt-3 text-base-400">{{ m.admin.lead }}</p>
         <div class="card mt-8 p-6">
-          <template v-if="code && !expired">
-            <p class="text-xs tracking-[0.18em] text-base-400 uppercase">{{ m.admin.code }}</p>
-            <p class="login-code display mt-2 select-all">{{ code.code }}</p>
-            <ol class="mt-6 space-y-2 text-sm text-base-200">
-              <li v-for="(s, i) in m.admin.steps" :key="i" class="flex gap-3">
-                <span class="step">{{ i + 1 }}</span><span>{{ s }}</span>
-              </li>
-            </ol>
-            <p class="mt-6 flex items-center gap-2 text-sm text-lamp-300"><span class="size-2 animate-lamp bg-lamp-400" />{{ m.admin.waiting }}</p>
+          <template v-if="!account">
+            <a v-if="msEnabled" :href="loginUrl('/admin')" class="btn btn-primary h-12 w-full text-base"><MsLogo class="size-5" />{{ m.admin.start }}</a>
+            <p v-else class="text-sm text-lamp-300">{{ t.login.disabled }}</p>
           </template>
           <template v-else>
-            <p v-if="expired" class="mb-4 text-sm text-lamp-300">{{ m.admin.expired }}</p>
-            <button type="button" class="btn btn-primary h-12 w-full text-base" :disabled="starting" @click="startLogin">
-              <SiteIcon name="user" class="size-5" />{{ expired ? m.admin.newCode : m.admin.start }}
-            </button>
+            <div class="flex items-center gap-3">
+              <PlayerHead :uuid="account.uuid" :name="account.name" :skin="account.skin" :size="40" />
+              <p class="text-sm text-base-200">{{ fill(m.admin.noAccess, { name: account.name }) }}</p>
+            </div>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <NuxtLink to="/team" class="btn btn-primary"><SiteIcon name="briefcase" class="size-4" />{{ m.admin.toTeam }}</NuxtLink>
+              <button type="button" class="btn btn-ghost" @click="signOut"><SiteIcon name="logout" class="size-4" />{{ t.account.signOut }}</button>
+            </div>
           </template>
         </div>
-        <p v-if="failure" role="alert" class="mt-4 text-sm text-redstone-300">{{ failure }}</p>
       </section>
     </main>
 
@@ -249,10 +227,10 @@ useAdminKeys({
         </nav>
         <div class="border-t border-base-800 p-3">
           <div class="flex items-center gap-2.5 px-1">
-            <PlayerHead v-if="session.uuid" :uuid="session.uuid" :name="session.name" :size="30" />
+            <PlayerHead :uuid="session.uuid" :name="session.name" :skin="session.skin" :size="30" />
             <div class="min-w-0 flex-1 leading-tight">
               <p class="truncate text-sm font-semibold text-base-50">{{ session.name }}</p>
-              <p class="text-xs text-base-400">{{ a.role[session.role] }}</p>
+              <RoleBadge v-if="mainRole" :role="mainRole" small class="mt-0.5" />
             </div>
             <button type="button" class="btn-icon size-8" :aria-label="a.common.logout" :title="a.common.logout" @click="signOut"><SiteIcon name="logout" class="size-4" /></button>
           </div>
@@ -266,7 +244,7 @@ useAdminKeys({
       <div class="adm-main">
         <header class="adm-top">
           <button type="button" class="btn-icon lg:hidden" :aria-label="a.nav.menu" @click="sideOpen = true"><SiteIcon name="menu" class="size-5" /></button>
-          <div class="relative w-full max-w-xl">
+          <div v-if="canSearch" class="relative w-full max-w-xl">
             <SiteIcon name="search" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-400" />
             <input
               ref="searchInput"
@@ -303,9 +281,10 @@ useAdminKeys({
               </button>
             </div>
           </div>
-          <span class="ml-auto hidden text-xs text-base-400 md:block">{{ fill(a.common.signedInAs, { name: session.name, role: a.role[session.role] ?? '' }) }}</span>
+          <span class="ml-auto hidden text-xs text-base-400 md:block">{{ fill(a.common.signedInAs, { name: session.name, role: mainRole ? (mainRole.name ?? t.adm.roleNames[mainRole.id] ?? '') : '' }) }}</span>
         </header>
-        <NuxtPage />
+        <div v-if="blocked" class="adm-page"><div class="adm-empty mt-6"><SiteIcon name="key" class="size-6" />{{ t.adm.missing }}</div></div>
+        <NuxtPage v-else />
       </div>
 
       <AdminDialog v-if="help" :title="a.keys.title" size="sm" @close="help = false">
@@ -326,23 +305,6 @@ useAdminKeys({
 </template>
 
 <style scoped>
-.login-code {
-  font-size: 3rem;
-  letter-spacing: 0.12em;
-  color: var(--color-lamp-300);
-  text-shadow: 0 0 24px color-mix(in srgb, var(--color-lamp-400) 45%, transparent);
-}
-.step {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-base-50);
-  background: var(--color-redstone-600);
-}
 .h-15 {
   height: 3.75rem;
 }

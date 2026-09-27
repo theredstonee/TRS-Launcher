@@ -2,7 +2,8 @@
 // Übersicht: offene Arbeit (Meldungen, Einsprüche, Uploads), aktive Strafen nach Art, Nutzerzahlen,
 // Aktivität (7/30 Tage, inline SVG), Server-Zustand und die letzten Audit-Einträge. Nur Zahlen.
 const { a, fill, rel, num, lang, when } = useAdminText()
-const { api } = useAdmin()
+const { api, can } = useAdmin()
+const { t } = useTeamText()
 
 const data = ref<DashboardData | null>(null)
 const error = ref('')
@@ -21,15 +22,18 @@ onMounted(load)
 
 const chart = computed(() => {
   const d = data.value
-  if (!d) return { values: [], days: [] }
+  if (!d?.series) return { values: [], days: [] }
   return { values: d.series[series.value].slice(-range.value), days: d.series.days.slice(-range.value) }
 })
 const nothingOpen = computed(() => {
   const d = data.value
-  return !!d && d.reports.open + d.reports.inReview === 0 && d.appeals.open === 0 && d.uploads.capesPending + d.uploads.cosmeticsPending === 0
+  if (!d) return false
+  return (d.reports?.open ?? 0) + (d.reports?.inReview ?? 0) === 0 && (d.appeals?.open ?? 0) === 0
+    && (d.uploads?.capesPending ?? 0) + (d.uploads?.cosmeticsPending ?? 0) === 0 && (d.applications?.new ?? 0) === 0
 })
+const sanctionTotal = computed(() => Object.values(data.value?.sanctions ?? {}).reduce((sum: number, n) => sum + Number(n), 0))
 const diskLow = computed(() => {
-  const disk = data.value?.server.disk
+  const disk = data.value?.server?.disk
   return !!disk && disk.totalBytes > 0 && disk.freeBytes / disk.totalBytes < 0.1
 })
 </script>
@@ -55,7 +59,7 @@ const diskLow = computed(() => {
         <SiteIcon name="check" class="size-4" />{{ a.dashboard.nothing }}
       </p>
       <section class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <NuxtLink to="/admin/reports" class="card card-hover adm-stat" :class="{ hot: data.reports.highPriority > 0, warn: data.reports.open > 0 && data.reports.highPriority === 0 }">
+        <NuxtLink v-if="data.reports" to="/admin/reports" class="card card-hover adm-stat" :class="{ hot: data.reports.highPriority > 0, warn: data.reports.open > 0 && data.reports.highPriority === 0 }">
           <p class="adm-stat-label flex items-center gap-1.5"><SiteIcon name="flag" class="size-3.5" />{{ a.dashboard.openReports }}</p>
           <p class="adm-stat-value mt-1">{{ num(data.reports.open + data.reports.inReview) }}</p>
           <p class="mt-1 flex flex-wrap gap-1.5 text-xs">
@@ -64,12 +68,12 @@ const diskLow = computed(() => {
             <span v-if="data.reports.oldestOpenAt" class="text-base-400">{{ fill(a.dashboard.oldest, { date: rel(data.reports.oldestOpenAt) }) }}</span>
           </p>
         </NuxtLink>
-        <NuxtLink to="/admin/appeals" class="card card-hover adm-stat" :class="{ warn: data.appeals.open > 0 }">
+        <NuxtLink v-if="data.appeals" to="/admin/appeals" class="card card-hover adm-stat" :class="{ warn: data.appeals.open > 0 }">
           <p class="adm-stat-label flex items-center gap-1.5"><SiteIcon name="appeal" class="size-3.5" />{{ a.dashboard.openAppeals }}</p>
           <p class="adm-stat-value mt-1">{{ num(data.appeals.open) }}</p>
           <p v-if="data.appeals.oldestOpenAt" class="mt-1 text-xs text-base-400">{{ fill(a.dashboard.oldest, { date: rel(data.appeals.oldestOpenAt) }) }}</p>
         </NuxtLink>
-        <NuxtLink to="/admin/uploads" class="card card-hover adm-stat" :class="{ warn: data.uploads.capesPending + data.uploads.cosmeticsPending > 0 }">
+        <NuxtLink v-if="data.uploads" to="/admin/uploads" class="card card-hover adm-stat" :class="{ warn: data.uploads.capesPending + data.uploads.cosmeticsPending > 0 }">
           <p class="adm-stat-label flex items-center gap-1.5"><SiteIcon name="cape" class="size-3.5" />{{ a.dashboard.toReview }}</p>
           <p class="adm-stat-value mt-1">{{ num(data.uploads.capesPending + data.uploads.cosmeticsPending) }}</p>
           <p class="mt-1 flex flex-wrap gap-x-2 text-xs text-base-400">
@@ -78,9 +82,14 @@ const diskLow = computed(() => {
             <span v-if="data.uploads.capesReported + data.uploads.cosmeticsReported" class="text-lamp-300">{{ fill(a.dashboard.reported, { n: data.uploads.capesReported + data.uploads.cosmeticsReported }) }}</span>
           </p>
         </NuxtLink>
-        <NuxtLink to="/admin/sanctions" class="card card-hover adm-stat">
+        <NuxtLink v-if="data.applications" to="/admin/applications" class="card card-hover adm-stat" :class="{ warn: data.applications.new > 0 }">
+          <p class="adm-stat-label flex items-center gap-1.5"><SiteIcon name="appeal" class="size-3.5" />{{ t.adm.dashboard.applications }}</p>
+          <p class="adm-stat-value mt-1">{{ num(data.applications.open) }}</p>
+          <p v-if="data.applications.new" class="mt-1 text-xs"><span class="tone tone-warn">{{ fill(t.adm.dashboard.newApps, { n: data.applications.new }) }}</span></p>
+        </NuxtLink>
+        <NuxtLink v-if="data.sanctions" :to="can('players.view') ? '/admin/sanctions' : '/admin/appeals'" class="card card-hover adm-stat">
           <p class="adm-stat-label flex items-center gap-1.5"><SiteIcon name="gavel" class="size-3.5" />{{ a.dashboard.activeSanctions }}</p>
-          <p class="adm-stat-value mt-1">{{ num(Object.values(data.sanctions).reduce((s, n) => s + n, 0)) }}</p>
+          <p class="adm-stat-value mt-1">{{ num(sanctionTotal) }}</p>
           <p class="mt-1.5 flex flex-wrap gap-1">
             <template v-for="k in SANCTION_KINDS" :key="k">
               <span v-if="data.sanctions[k]" class="tone" :class="kindTone(k)">{{ a.kinds[k] }} {{ data.sanctions[k] }}</span>
@@ -90,7 +99,7 @@ const diskLow = computed(() => {
       </section>
 
       <!-- Spieler + Aktivität -->
-      <section class="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <section v-if="data.series && data.users" class="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div class="card p-5">
           <div class="flex flex-wrap items-center gap-2">
             <h2 class="section-title flex-1">{{ a.dashboard.chart }}</h2>
@@ -114,8 +123,8 @@ const diskLow = computed(() => {
             <div><dt class="adm-stat-label">{{ a.dashboard.active }} · {{ a.dashboard.h24 }}</dt><dd class="display text-2xl text-base-50 tabular-nums">{{ num(data.users.active24h) }}</dd></div>
             <div><dt class="adm-stat-label">{{ a.dashboard.active }} · {{ a.dashboard.d7 }}</dt><dd class="display text-2xl text-base-50 tabular-nums">{{ num(data.users.active7d) }}</dd></div>
             <div><dt class="adm-stat-label">{{ a.dashboard.online }}</dt><dd class="display flex items-center gap-2 text-2xl text-base-50 tabular-nums"><span class="size-2 animate-lamp bg-ok" />{{ num(data.users.online) }}</dd></div>
-            <div><dt class="adm-stat-label">{{ a.dashboard.messages }}</dt><dd class="display text-2xl text-base-50 tabular-nums">{{ num(data.chat.messages24h) }}</dd></div>
-            <div class="col-span-2">
+            <div><dt class="adm-stat-label">{{ a.dashboard.messages }}</dt><dd class="display text-2xl text-base-50 tabular-nums">{{ num(data.chat?.messages24h ?? 0) }}</dd></div>
+            <div v-if="data.hosting" class="col-span-2">
               <dt class="adm-stat-label">{{ a.dashboard.worlds }}</dt>
               <dd class="text-sm text-base-200"><NuxtLink to="/admin/worlds" class="hover:underline"><span class="display text-2xl text-base-50 tabular-nums">{{ num(data.hosting.openRooms) }}</span> · {{ fill(a.dashboard.playersInWorlds, { n: data.hosting.players }) }}</NuxtLink></dd>
             </div>
@@ -125,8 +134,8 @@ const diskLow = computed(() => {
       </section>
 
       <!-- Server + Audit -->
-      <section class="mt-3 grid gap-3 lg:grid-cols-[20rem_minmax(0,1fr)]">
-        <div class="card p-5">
+      <section v-if="data.server || can('audit.view')" class="mt-3 grid gap-3" :class="data.server ? 'lg:grid-cols-[20rem_minmax(0,1fr)]' : ''">
+        <div v-if="data.server" class="card p-5">
           <h2 class="section-title flex items-center gap-2"><SiteIcon name="server" class="size-4 text-base-400" />{{ a.dashboard.server }}</h2>
           <dl class="adm-dl mt-3">
             <dt>{{ a.dashboard.version }}</dt><dd class="adm-mono">{{ data.server.version }}</dd>
@@ -140,7 +149,7 @@ const diskLow = computed(() => {
             </dd>
           </dl>
         </div>
-        <div class="card p-5">
+        <div v-if="can('audit.view')" class="card p-5">
           <div class="flex items-center gap-2">
             <h2 class="section-title flex-1">{{ a.dashboard.recent }}</h2>
             <NuxtLink to="/admin/audit" class="text-xs text-redstone-300 hover:underline">{{ a.dashboard.allAudit }}</NuxtLink>

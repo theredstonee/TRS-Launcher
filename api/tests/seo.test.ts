@@ -358,3 +358,23 @@ describe('Texte für Suchmaschinen', () => {
     expect(text).not.toMatch(/Lunar|Badlion|Feather|Prism|MultiMC|Modrinth App|official launcher|offizielle[rn]? Launcher|launcher oficial/i)
   })
 })
+
+describe('Team-Seite und Stellen (§23.3)', () => {
+  it('Team-Texte: Titel ≤ 65, Beschreibung 51–160 in jeder Sprache', async () => {
+    const { teamTexts } = await import('../app/utils/team-i18n')
+    for (const lang of ['en', 'de', 'es'] as const) {
+      const seo = teamTexts[lang].seo.team
+      expect(seo.title.length, `${lang} team title`).toBeLessThanOrEqual(65)
+      expect(seo.description.length, `${lang} team description`).toBeGreaterThan(50)
+      expect(seo.description.length, `${lang} team description`).toBeLessThanOrEqual(160)
+    }
+  })
+
+  it('offene Stellen stehen mit allen Sprachen in der Sitemap, persönliche Seiten sind gesperrt', () => {
+    const xml = buildSitemap(SITE, [], '2026-09-20T08:00:00.000Z', [{ id: 'moderator', updatedAt: '2026-09-27T10:00:00.000Z' }])
+    expect(xml).toContain(`<loc>${SITE}/team/moderator?lang=de</loc>`)
+    expect(xml).toMatch(new RegExp(`<loc>${SITE}/team</loc><lastmod>2026-09-27T10:00:00.000Z</lastmod>`))
+    const lines = buildRobots(SITE).split('\n')
+    for (const p of ['/auth/', '/login', '/applications']) expect(lines).toContain(`Disallow: ${p}`)
+  })
+})

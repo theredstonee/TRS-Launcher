@@ -14,7 +14,7 @@ const c = CONTROLLER
 export const WEBSITE_PRIVACY: Record<'en' | 'de' | 'es', { title: string, updated: string, intro: string, body: string, launcher: string }> = {
   en: {
     title: 'Privacy policy',
-    updated: 'Last updated: 26 September 2026',
+    updated: 'Last updated: 27 September 2026',
     intro:
       'This policy covers the website trs-launcher.theredstonee.de, the TRS Launcher, the TRS Client mod and the TRS services. In short: no tracking, no analytics, no advertising – only what is needed for what you use.',
     body: `## Controller
@@ -31,25 +31,48 @@ All details are in the [imprint](https://theredstonee.de/imprint/).
 
 **Server logs.** Our logs contain only technical data (method, path without query, status, duration, request id) – **no IP addresses**. Rate limits count requests per IP address **in memory only**; the counters are never written to disk and disappear after a few minutes.
 
-**Cookies.** The website sets no tracking or advertising cookies and uses no analytics. There are only two technically necessary cookies (§ 25(2) TDDDG):
+**Cookies.** The website sets no tracking or advertising cookies and uses no analytics. There are only three technically necessary cookies (§ 25(2) TDDDG):
 
 | Cookie | Purpose | Duration |
 |---|---|---|
 | \`trs_lang\` | Remembers the language you picked | 1 year |
-| \`trs_admin\` | Keeps team members (admins, moderators) signed in to the admin area (httpOnly, only after sign-in) | 8 hours |
+| \`trs_oauth\` | Protects the sign-in with Microsoft against forgery (random value, only on /auth/microsoft, httpOnly) | max. 10 minutes |
+| \`trs_session\` | Keeps you signed in after the sign-in with Microsoft (httpOnly, Secure, SameSite=Strict) | 8 hours |
 
 **Fonts and scripts** are served from this server – no external CDNs, no Google Fonts.
 
 **GitHub.** Downloads link to GitHub Releases, and pictures in update posts are loaded from \`raw.githubusercontent.com\`. When you download a file or open a post with pictures, your browser connects to GitHub, Inc. (USA), which receives your IP address; see GitHub's privacy statement. Our server asks the GitHub API for the newest version and reads the changelog – without any data about you.
 
-**Admin sign-in.** Team admins sign in by confirming a short code in the TRS Launcher. We store only a hash of the code, the admin's Minecraft UUID and a hash of the session token, each with an expiry time (code: 5 minutes, session: 8 hours); expired entries are deleted automatically. In the admin area, team admins and moderators also review **chat reports** – they only see the content that was reported and its context (see “Reports and moderation” below); reported pictures are loaded from this server only. They also manage sanctions, appeals and internal notes (see “Sanctions and appeals” below); every action is written to an audit log (kept 2 years).
+**Team area.** Team members sign in with Microsoft like everyone else (see “Website sign-in with Microsoft” below). What they see in the team area depends on the permissions of their role – for example, only roles with the right permission see the content of reports or player files. Team members review **chat reports** – they only see the content that was reported and its context (see “Reports and moderation” below); reported pictures are loaded from this server only. They also manage sanctions, appeals and internal notes (see “Sanctions and appeals” below); every action is written to an audit log (kept 2 years).
 
-**Links** to Discord, GitHub and other sites are plain links; nothing is loaded from them until you click.`,
+**Links** to Discord, GitHub and other sites are plain links; nothing is loaded from them until you click.
+
+## Website sign-in with Microsoft
+
+You can sign in to this website with the Microsoft account that owns Minecraft: Java Edition – for example to apply for the team or, as a team member, to open the team area. The sign-in uses Microsoft's standard OAuth procedure: you enter your password only at Microsoft; we never see it.
+
+**What we receive.** Microsoft, Xbox Live and Minecraft confirm your Minecraft **UUID** and **name**. For this our server exchanges short-lived tokens with Microsoft (login.microsoftonline.com), Xbox Live (user.auth.xboxlive.com, xsts.auth.xboxlive.com) and Minecraft (api.minecraftservices.com). The tokens exist **only in memory for the few seconds of the sign-in and are discarded right after** – we store no Microsoft, Xbox or Minecraft tokens, no e-mail address and no password.
+
+**What we store.** Your TRS account (UUID, name, first and last sign-in – created now if you have not used TRS before) and a website session: a hash of the session token, a CSRF token and the expiry (8 hours, at most 5 sessions per account). Signing out deletes the session at once. Sign-ins of team members are recorded in the audit log (2 years).
+
+**Legal basis.** Art. 6(1)(b) GDPR (you want to use the sign-in); for security measures such as rate limits and the audit log Art. 6(1)(f). Microsoft processes the sign-in under its own privacy statement (Microsoft Corporation, USA; EU-US Data Privacy Framework).
+
+## Team applications
+
+If you apply for a position in the TRS team, we store your **application**: the position, your Minecraft name and UUID (from the sign-in), your **Discord name**, your **age group** (never your date of birth), your answers to the questions of the position, the language of the form, the status and our answer to you.
+
+**Who sees it.** Only team members whose role may see applications (for example the recruiting team and admins). They can add internal notes and votes that you don't see. Team members who may open player files also see your TRS sanction history. We use your Discord name only to contact you about the application.
+
+**Your view.** Under “My applications” (and later in the launcher) you see the status and our answer; you can withdraw an open application at any time.
+
+**Storage period.** Rejected or withdrawn applications are **deleted 6 months after the decision**. Accepted applications are kept while you are in the team and **deleted 6 months after you leave**. Deleting your TRS account deletes all your applications at once.
+
+**Legal basis.** Art. 6(1)(b) GDPR (steps you asked for before a voluntary team membership) and Art. 6(1)(f) (a fair decision and protection against abuse). If you are under 16, please talk to your parents before you apply.`,
     launcher: '## The TRS Launcher',
   },
   de: {
     title: 'Datenschutzerklärung',
-    updated: 'Stand: 26. September 2026',
+    updated: 'Stand: 27. September 2026',
     intro:
       'Diese Erklärung gilt für die Website trs-launcher.theredstonee.de, den TRS Launcher, die TRS-Client-Mod und die TRS-Dienste. Kurz gesagt: kein Tracking, keine Analyse, keine Werbung – nur, was für das nötig ist, was du nutzt.',
     body: `## Verantwortlicher
@@ -66,25 +89,48 @@ Alle Angaben stehen im [Impressum](https://theredstonee.de/imprint/).
 
 **Server-Logs.** Unsere Logs enthalten nur technische Daten (Methode, Pfad ohne Query, Status, Dauer, Request-ID) – **keine IP-Adressen**. Ratenbegrenzungen zählen Anfragen pro IP-Adresse **nur im Arbeitsspeicher**; die Zähler werden nie auf die Festplatte geschrieben und verfallen nach wenigen Minuten.
 
-**Cookies.** Die Website setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analyse-Dienste. Es gibt nur zwei technisch notwendige Cookies (§ 25 Abs. 2 TDDDG):
+**Cookies.** Die Website setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analyse-Dienste. Es gibt nur drei technisch notwendige Cookies (§ 25 Abs. 2 TDDDG):
 
 | Cookie | Zweck | Dauer |
 |---|---|---|
 | \`trs_lang\` | Merkt sich die gewählte Sprache | 1 Jahr |
-| \`trs_admin\` | Hält Team-Mitglieder (Admins, Moderatoren) im Admin-Bereich angemeldet (httpOnly, nur nach Anmeldung) | 8 Stunden |
+| \`trs_oauth\` | Schützt die Anmeldung mit Microsoft vor Fälschung (Zufallswert, nur auf /auth/microsoft, httpOnly) | höchstens 10 Minuten |
+| \`trs_session\` | Hält dich nach der Anmeldung mit Microsoft angemeldet (httpOnly, Secure, SameSite=Strict) | 8 Stunden |
 
 **Schriften und Skripte** kommen von diesem Server – keine externen CDNs, keine Google Fonts.
 
 **GitHub.** Downloads verweisen auf GitHub Releases, und Bilder in Update-Beiträgen werden von \`raw.githubusercontent.com\` geladen. Lädst du eine Datei herunter oder öffnest einen Beitrag mit Bildern, verbindet sich dein Browser mit GitHub, Inc. (USA), das dabei deine IP-Adresse erhält; siehe die Datenschutzerklärung von GitHub. Unser Server fragt die GitHub-API nach der neuesten Version und liest den Changelog – ohne Daten über dich.
 
-**Admin-Anmeldung.** Team-Admins melden sich an, indem sie einen kurzen Code im TRS Launcher bestätigen. Gespeichert werden nur ein Hash des Codes, die Minecraft-UUID des Admins und ein Hash des Sitzungs-Tokens, jeweils mit Ablaufzeit (Code: 5 Minuten, Sitzung: 8 Stunden); abgelaufene Einträge werden automatisch gelöscht. Im Admin-Bereich prüfen Team-Admins und Moderatoren außerdem **Chat-Meldungen** – sie sehen nur den gemeldeten Inhalt samt Kontext (siehe „Meldungen und Moderation“ unten); gemeldete Bilder werden nur von diesem Server geladen. Außerdem verwalten sie Strafen, Einsprüche und interne Notizen (siehe „Strafen und Einsprüche“ unten); jede Aktion steht in einem Audit-Log (2 Jahre).
+**Team-Bereich.** Team-Mitglieder melden sich wie alle anderen mit Microsoft an (siehe „Anmeldung mit Microsoft“ unten). Was sie im Team-Bereich sehen, hängt von den Rechten ihrer Rolle ab – zum Beispiel sehen nur Rollen mit dem passenden Recht die Inhalte von Meldungen oder Spieler-Akten. Team-Mitglieder prüfen **Chat-Meldungen** – sie sehen nur den gemeldeten Inhalt samt Kontext (siehe „Meldungen und Moderation“ unten); gemeldete Bilder werden nur von diesem Server geladen. Außerdem verwalten sie Strafen, Einsprüche und interne Notizen (siehe „Strafen und Einsprüche“ unten); jede Aktion steht in einem Audit-Log (2 Jahre).
 
-**Links** zu Discord, GitHub und anderen Seiten sind einfache Links; von dort wird erst etwas geladen, wenn du klickst.`,
+**Links** zu Discord, GitHub und anderen Seiten sind einfache Links; von dort wird erst etwas geladen, wenn du klickst.
+
+## Anmeldung mit Microsoft
+
+Du kannst dich auf dieser Website mit dem Microsoft-Konto anmelden, dem Minecraft: Java Edition gehört – zum Beispiel, um dich für das Team zu bewerben oder als Team-Mitglied den Team-Bereich zu öffnen. Die Anmeldung nutzt das übliche OAuth-Verfahren von Microsoft: Dein Passwort gibst du nur bei Microsoft ein; wir sehen es nie.
+
+**Was wir erhalten.** Microsoft, Xbox Live und Minecraft bestätigen deine Minecraft-**UUID** und deinen **Namen**. Dafür tauscht unser Server kurzlebige Tokens mit Microsoft (login.microsoftonline.com), Xbox Live (user.auth.xboxlive.com, xsts.auth.xboxlive.com) und Minecraft (api.minecraftservices.com). Die Tokens liegen **nur für die wenigen Sekunden der Anmeldung im Arbeitsspeicher und werden danach verworfen** – wir speichern keine Microsoft-, Xbox- oder Minecraft-Tokens, keine E-Mail-Adresse und kein Passwort.
+
+**Was wir speichern.** Dein TRS-Konto (UUID, Name, erste und letzte Anmeldung – wird jetzt angelegt, falls du TRS noch nicht genutzt hast) und eine Website-Sitzung: einen Hash des Sitzungs-Tokens, ein CSRF-Token und die Ablaufzeit (8 Stunden, höchstens 5 Sitzungen je Konto). Beim Abmelden wird die Sitzung sofort gelöscht. Anmeldungen von Team-Mitgliedern stehen im Audit-Log (2 Jahre).
+
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (du möchtest die Anmeldung nutzen); für Sicherheitsmaßnahmen wie Ratenbegrenzung und Audit-Log Art. 6 Abs. 1 lit. f. Microsoft verarbeitet die Anmeldung nach seiner eigenen Datenschutzerklärung (Microsoft Corporation, USA; EU-US Data Privacy Framework).
+
+## Bewerbungen für das Team
+
+Wenn du dich auf eine Stelle im TRS-Team bewirbst, speichern wir deine **Bewerbung**: die Stelle, deinen Minecraft-Namen und deine UUID (aus der Anmeldung), deinen **Discord-Namen**, deine **Altersgruppe** (nie dein Geburtsdatum), deine Antworten auf die Fragen der Stelle, die Sprache des Formulars, den Status und unsere Antwort an dich.
+
+**Wer sie sieht.** Nur Team-Mitglieder, deren Rolle Bewerbungen sehen darf (zum Beispiel das Bewerbungs-Team und Admins). Sie können interne Notizen und Stimmen ergänzen, die du nicht siehst. Team-Mitglieder, die Spieler-Akten öffnen dürfen, sehen auch deinen TRS-Strafverlauf. Deinen Discord-Namen nutzen wir nur, um dich wegen der Bewerbung zu kontaktieren.
+
+**Deine Ansicht.** Unter „Meine Bewerbungen“ (und später im Launcher) siehst du Status und unsere Antwort; eine offene Bewerbung kannst du jederzeit zurückziehen.
+
+**Speicherdauer.** Abgelehnte oder zurückgezogene Bewerbungen werden **6 Monate nach der Entscheidung gelöscht**. Angenommene Bewerbungen bleiben, solange du im Team bist, und werden **6 Monate nach deinem Austritt gelöscht**. Löschst du dein TRS-Konto, werden alle deine Bewerbungen sofort gelöscht.
+
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (von dir gewünschte Schritte vor einer freiwilligen Team-Mitgliedschaft) und Art. 6 Abs. 1 lit. f (faire Entscheidung und Schutz vor Missbrauch). Bist du unter 16, sprich bitte vor der Bewerbung mit deinen Eltern.`,
     launcher: '## Der TRS Launcher',
   },
   es: {
     title: 'Política de privacidad',
-    updated: 'Última actualización: 26 de septiembre de 2026',
+    updated: 'Última actualización: 27 de septiembre de 2026',
     intro:
       'Esta política cubre el sitio web trs-launcher.theredstonee.de, el TRS Launcher, el mod TRS Client y los servicios TRS. En resumen: sin rastreo, sin analíticas, sin publicidad – solo lo necesario para lo que usas. La versión alemana es la vinculante.',
     body: `## Responsable
@@ -101,18 +147,41 @@ Todos los datos están en el [aviso legal](https://theredstonee.de/imprint/).
 
 **Registros del servidor.** Solo datos técnicos (método, ruta sin query, estado, duración, id de solicitud) – **sin direcciones IP**. Los límites de frecuencia cuentan solicitudes por IP **solo en memoria**.
 
-**Cookies.** Sin cookies de rastreo ni publicidad y sin analíticas. Solo dos cookies técnicamente necesarias:
+**Cookies.** Sin cookies de rastreo ni publicidad y sin analíticas. Solo tres cookies técnicamente necesarias:
 
 | Cookie | Finalidad | Duración |
 |---|---|---|
 | \`trs_lang\` | Recuerda el idioma elegido | 1 año |
-| \`trs_admin\` | Mantiene la sesión de los administradores y moderadores del equipo (httpOnly, solo tras iniciar sesión) | 8 horas |
+| \`trs_oauth\` | Protege el inicio de sesión con Microsoft contra falsificaciones (valor aleatorio, solo en /auth/microsoft, httpOnly) | máx. 10 minutos |
+| \`trs_session\` | Mantiene tu sesión tras iniciar sesión con Microsoft (httpOnly, Secure, SameSite=Strict) | 8 horas |
 
 **Fuentes y scripts** se sirven desde este servidor – sin CDN externos ni Google Fonts.
 
 **GitHub.** Las descargas enlazan a GitHub Releases y las imágenes de las entradas se cargan desde \`raw.githubusercontent.com\`; tu navegador se conecta entonces a GitHub, Inc. (EE. UU.), que recibe tu dirección IP.
 
-**Inicio de sesión de administración.** Solo se guardan un hash del código, la UUID de Minecraft del administrador y un hash del token de sesión, con caducidad (código: 5 minutos, sesión: 8 horas). En el área de administración, los administradores y moderadores del equipo también revisan las **denuncias del chat**: solo ven el contenido denunciado y su contexto (ver «Denuncias y moderación» más abajo); las imágenes denunciadas se cargan solo desde este servidor. También gestionan sanciones, apelaciones y notas internas (ver «Sanciones y apelaciones» más abajo); cada acción queda en un registro de auditoría (2 años).`,
+**Área del equipo.** Los miembros del equipo inician sesión con Microsoft como todos (ver «Inicio de sesión con Microsoft» más abajo). Lo que ven en el área del equipo depende de los permisos de su rol; por ejemplo, solo los roles con el permiso adecuado ven el contenido de las denuncias o las fichas de jugador. Los miembros del equipo revisan las **denuncias del chat**: solo ven el contenido denunciado y su contexto (ver «Denuncias y moderación» más abajo); las imágenes denunciadas se cargan solo desde este servidor. También gestionan sanciones, apelaciones y notas internas (ver «Sanciones y apelaciones» más abajo); cada acción queda en un registro de auditoría (2 años).
+
+## Inicio de sesión con Microsoft
+
+Puedes iniciar sesión en este sitio con la cuenta de Microsoft que tiene Minecraft: Java Edition, por ejemplo para postularte al equipo o, como miembro del equipo, para abrir el área del equipo. Se usa el procedimiento OAuth habitual de Microsoft: introduces tu contraseña solo en Microsoft; nosotros nunca la vemos.
+
+**Qué recibimos.** Microsoft, Xbox Live y Minecraft confirman tu **UUID** y tu **nombre** de Minecraft. Para ello nuestro servidor intercambia tokens de corta duración con Microsoft (login.microsoftonline.com), Xbox Live (user.auth.xboxlive.com, xsts.auth.xboxlive.com) y Minecraft (api.minecraftservices.com). Los tokens existen **solo en memoria durante los segundos del inicio de sesión y se descartan justo después**: no guardamos tokens de Microsoft, Xbox ni Minecraft, ni correo electrónico ni contraseña.
+
+**Qué guardamos.** Tu cuenta TRS (UUID, nombre, primer y último inicio de sesión; se crea ahora si aún no usabas TRS) y una sesión web: un hash del token de sesión, un token CSRF y la caducidad (8 horas, como máximo 5 sesiones por cuenta). Al cerrar sesión se borra al instante. Los inicios de sesión de miembros del equipo quedan en el registro de auditoría (2 años).
+
+**Base jurídica.** Art. 6.1.b RGPD (quieres usar el inicio de sesión); para medidas de seguridad como límites de frecuencia y el registro de auditoría, art. 6.1.f. Microsoft trata el inicio de sesión según su propia política de privacidad (Microsoft Corporation, EE. UU.; EU-US Data Privacy Framework).
+
+## Solicitudes para el equipo
+
+Si te postulas a un puesto en el equipo TRS, guardamos tu **solicitud**: el puesto, tu nombre y UUID de Minecraft (del inicio de sesión), tu **nombre de Discord**, tu **grupo de edad** (nunca tu fecha de nacimiento), tus respuestas a las preguntas del puesto, el idioma del formulario, el estado y nuestra respuesta.
+
+**Quién la ve.** Solo los miembros del equipo cuyo rol puede ver solicitudes (por ejemplo, el equipo de selección y los administradores). Pueden añadir notas internas y votos que tú no ves. Quienes pueden abrir fichas de jugador ven también tu historial de sanciones de TRS. Usamos tu nombre de Discord solo para contactarte sobre la solicitud.
+
+**Tu vista.** En «Mis solicitudes» (y más adelante en el launcher) ves el estado y nuestra respuesta; puedes retirar una solicitud abierta en cualquier momento.
+
+**Plazo de conservación.** Las solicitudes rechazadas o retiradas se **borran 6 meses después de la decisión**. Las aceptadas se conservan mientras estés en el equipo y se **borran 6 meses después de que salgas**. Si borras tu cuenta TRS, se borran al instante todas tus solicitudes.
+
+**Base jurídica.** Art. 6.1.b RGPD (pasos que pides antes de una pertenencia voluntaria al equipo) y art. 6.1.f (una decisión justa y protección contra abusos). Si tienes menos de 16 años, habla con tus padres antes de postularte.`,
     launcher: '## El TRS Launcher',
   },
 }

@@ -3,7 +3,8 @@
 // Mehrfachauswahl mit Sammelaktion (abweisen/erledigen), j/k/Enter/x/a/r. Die Prüfung öffnet sich als
 // Unterseite /admin/reports/<id> (Deep-Link) über der Liste.
 const { a, m, fill, when, rel } = useAdminText()
-const { api } = useAdmin()
+const { api, can } = useAdmin()
+const { t } = useTeamText()
 const router = useRouter()
 const route = useRoute()
 const mod = computed(() => m.value.admin.mod)
@@ -72,7 +73,7 @@ function toggle(id: string) {
   else next.add(id)
   selected.value = next
 }
-const selectable = computed(() => items.value.filter((r) => r.status !== 'resolved'))
+const selectable = computed(() => !can('reports.handle') ? [] : items.value.filter((r) => r.status !== 'resolved'))
 const allSelected = computed(() => selectable.value.length > 0 && selectable.value.every((r) => selected.value.has(r.id)))
 function toggleAll() {
   selected.value = allSelected.value ? new Set() : new Set(selectable.value.slice(0, 50).map((r) => r.id))
@@ -109,9 +110,9 @@ function open(r: ReportSummaryV2) {
 }
 const { active } = useListKeys(items, {
   open,
-  toggle: (r) => r.status !== 'resolved' && toggle(r.id),
-  onA: (r) => r.status !== 'resolved' && askBulk('resolve', [r.id]),
-  onR: (r) => r.status !== 'resolved' && askBulk('dismiss', [r.id]),
+  toggle: (r) => can('reports.handle') && r.status !== 'resolved' && toggle(r.id),
+  onA: (r) => can('reports.handle') && r.status !== 'resolved' && askBulk('resolve', [r.id]),
+  onR: (r) => can('reports.handle') && r.status !== 'resolved' && askBulk('dismiss', [r.id]),
 })
 const openId = computed(() => (typeof route.params.id === 'string' ? route.params.id : null))
 
@@ -186,6 +187,7 @@ function reportTone(r: ReportSummaryV2): string {
         <li v-for="(r, i) in items" :key="r.id">
           <div class="adm-row" :data-row="i" :data-active="active === i || openId === r.id" :data-selected="selected.has(r.id)">
             <input
+              v-if="can('reports.handle')"
               type="checkbox"
               class="adm-check"
               :checked="selected.has(r.id)"
@@ -203,6 +205,7 @@ function reportTone(r: ReportSummaryV2): string {
                 <span class="ml-auto text-xs text-base-400" :title="when(r.createdAt)">{{ rel(r.createdAt) }}</span>
               </span>
               <span v-if="r.preview" class="line-clamp-2 text-sm text-base-100">„{{ r.preview }}“</span>
+              <span v-else-if="r.contentHidden" class="text-xs text-base-400 italic">{{ t.adm.redacted }}</span>
               <span class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-base-400">
                 <span>{{ fill(mod.against, { name: r.target?.name || mod.unknown }) }}</span>
                 <span>{{ fill(mod.by, { name: r.reporter?.name || mod.unknown }) }}</span>

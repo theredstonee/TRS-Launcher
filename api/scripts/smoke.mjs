@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { deflateSync, crc32 } from 'node:zlib'
+import { startMsMock } from './ms-mock.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const PORT = 3000 + Math.floor(Math.random() * 1000) + 3000
@@ -54,6 +55,15 @@ const mojang = createServer((req, res) => {
 await new Promise((r) => mojang.listen(0, '127.0.0.1', r))
 const MOJANG = `http://127.0.0.1:${mojang.address().port}`
 
+// ------------------------------------------------------------ Microsoft-/Xbox-/Minecraft-Attrappe (§23.1)
+const MS_CLIENT_ID = 'ac3d320e-d0a2-4910-8e3c-b425883984a9'
+const APPLICANT = 'dddddddddddddddddddddddddddddddd'
+const ms = await startMsMock({
+  clientId: MS_CLIENT_ID,
+  clientSecret: 'smoke-client-secret',
+  accounts: [{ name: 'Applicant', uuid: APPLICANT }, { name: 'Kiddo', uuid: 'e'.repeat(32), xerr: 2148916238 }],
+})
+
 // ------------------------------------------------------------ API starten
 const data = mkdtempSync(join(tmpdir(), 'trs-api-smoke-'))
 const api = spawn(process.env.NODE_BIN ?? process.execPath, [join(ROOT, '.output/server/index.mjs')], {
@@ -73,6 +83,14 @@ const api = spawn(process.env.NODE_BIN ?? process.execPath, [join(ROOT, '.output
     TRUST_PROXY: 'cloudflare',
     RELAY_SECRET: 'smoke-relay-secret-0123456789abcdef-0123456789',
     RELAY_HOST: 'relay.example.test',
+    MS_CLIENT_ID,
+    MS_CLIENT_SECRET: 'smoke-client-secret',
+    MS_REDIRECT_URI: `${BASE}/auth/microsoft/callback`,
+    MS_AUTHORITY_URL: ms.authority,
+    XBOX_USER_AUTH_URL: ms.xbl,
+    XBOX_XSTS_URL: ms.xsts,
+    MINECRAFT_SERVICES_URL: ms.minecraft,
+    ALLOW_INSECURE_MS_URLS: 'true',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
@@ -606,9 +624,11 @@ try {
     const role = await http('PUT', '/v1/admin/roles/b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0', { token: A, body: { role: 'moderator' } })
     check('grant moderator', role.status === 200 && role.json.roles.some((r) => r.uuid === 'b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0' && r.role === 'moderator'))
     const modRoles = await http('GET', '/v1/admin/roles', { token: B })
-    check('moderator cannot manage roles', modRoles.status === 403 && modRoles.json.error.code === 'admin_only')
+    check('moderator cannot manage roles', modRoles.status === 403 && modRoles.json.error.code === 'missing_permission')
     const modDash = await http('GET', '/v1/admin/dashboard', { token: B })
-    check('moderator dashboard', modDash.status === 200 && modDash.json.series.days.length === 30 && typeof modDash.json.server.dbBytes === 'number')
+    check('moderator dashboard (work queues, no statistics)', modDash.status === 200 && modDash.json.reports !== null && modDash.json.series === null && modDash.json.server === null)
+    const ownerDash = await http('GET', '/v1/admin/dashboard', { headers: K })
+    check('owner dashboard', ownerDash.json.series.days.length === 30 && typeof ownerDash.json.server.dbBytes === 'number')
     const perm = await http('POST', '/v1/admin/sanctions', { token: B, body: { uuid: STR, kind: 'chat_mute', duration: 'permanent', reasonCode: 'spam' } })
     check('moderator: permanent refused', perm.status === 403 && perm.json.error.code === 'duration_not_allowed')
     const noReason = await http('POST', '/v1/admin/sanctions', { token: B, body: { uuid: STR, kind: 'social_ban', duration: '1d' } })
@@ -655,7 +675,7 @@ try {
 
   console.log('admin + deletion')
   const stats = await http('GET', '/v1/admin/stats', { token: A })
-  check('stats', stats.json.users.total === 3 && stats.json.chat.messages === 3 && stats.json.reports.resolved === 1 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 11 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
+  check('stats', stats.json.users.total === 3 && stats.json.chat.messages === 3 && stats.json.reports.resolved === 1 && stats.json.capes.approved === 1 && stats.json.cosmetics.builtin === 12 && stats.json.cosmetics.approved === 1 && stats.json.cosmetics.pending === 1, JSON.stringify(stats.json))
   const ban = await http('POST', '/v1/admin/users/b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0/ban', { headers: { 'x-admin-key': ADMIN_KEY }, body: { reason: 'smoke' } })
   check('ban', ban.json.user.banned?.reason === 'smoke')
   const banned = await http('GET', '/v1/me', { token: B })
@@ -668,12 +688,81 @@ try {
   const again = (await loginAs('Theredstonee', ADMIN_UUID)).json.token
   const syncAfter = await http('GET', '/v1/me/sync', { token: again })
   check('sync data gone after deletion', syncAfter.json?.skins?.length === 0 && syncAfter.json.deletedSkins.length === 0 && syncAfter.json.presets === null && syncAfter.json.settings === null, JSON.stringify(syncAfter.json))
+
+  console.log('Microsoft sign-in, roles, applications (§23)')
+  {
+    const K = { 'x-admin-key': ADMIN_KEY }
+    const cookiesOf = (res) => Object.fromEntries(res.headers.getSetCookie().map((l) => l.split(';')[0].split('=')).map(([k, ...v]) => [k, v.join('=')]))
+    // Anmelden: Weiterleitung zu Microsoft (Attrappe) und zurück.
+    const start = await fetch(`${BASE}/auth/microsoft/login?return=/team`, { redirect: 'manual', headers: { 'cf-connecting-ip': '203.0.113.50' } })
+    check('ms login redirects to Microsoft with PKCE', start.status === 302 && start.headers.get('location').startsWith(ms.authority) && start.headers.get('location').includes('code_challenge_method=S256'))
+    const oauth = cookiesOf(start).trs_oauth
+    ms.next = 'Applicant'
+    const back = (await fetch(start.headers.get('location'), { redirect: 'manual' })).headers.get('location')
+    const cb = await fetch(back, { redirect: 'manual', headers: { cookie: `trs_oauth=${oauth}`, 'cf-connecting-ip': '203.0.113.50' } })
+    const session = cookiesOf(cb).trs_session
+    check('ms callback sets session and returns', cb.status === 200 && !!session && (await cb.text()).includes('url=/team'))
+    const W = { cookie: `trs_session=${session}` }
+    const me = await http('GET', '/v1/web/me', { headers: W })
+    check('web/me after Microsoft sign-in', me.json?.uuid === APPLICANT && me.json.name === 'Applicant' && me.json.team === null && typeof me.json.csrf === 'string')
+    const replay = await fetch(back, { redirect: 'manual', headers: { cookie: `trs_oauth=${oauth}` } })
+    check('ms callback replay refused', replay.headers.get('location') === '/login?error=ms_state')
+    const start2 = await fetch(`${BASE}/auth/microsoft/login`, { redirect: 'manual' })
+    ms.next = 'Kiddo'
+    const back2 = (await fetch(start2.headers.get('location'), { redirect: 'manual' })).headers.get('location')
+    const kid = await fetch(back2, { redirect: 'manual', headers: { cookie: `trs_oauth=${cookiesOf(start2).trs_oauth}` } })
+    check('child account explained', kid.headers.get('location') === '/login?error=child_account')
+    const removed = await http('POST', '/v1/web-login/approve', { token: again, body: { code: 'ABCD-1234' } })
+    check('launcher code sign-in removed (410)', removed.status === 410 && removed.json.error.code === 'web_login_removed')
+    const notTeam = await http('GET', '/v1/admin/dashboard', { headers: W })
+    check('player session is not team', notTeam.status === 403)
+
+    // Stelle anlegen (Owner per Schlüssel), öffentlich sehen, bewerben.
+    const job = await http('POST', '/v1/admin/jobs', { headers: K, body: {
+      id: 'moderator', status: 'open', roleId: 'moderator',
+      texts: { en: { title: 'Moderator', summary: 'Keep the chat friendly' }, de: { title: 'Moderator', summary: 'Chat freundlich halten' } },
+      form: [{ id: 'why', type: 'long', required: true, label: { en: 'Why?' }, min: 10, max: 500 }],
+    } })
+    check('create job', job.status === 201 && job.json.job.id === 'moderator')
+    const site = await http('GET', '/v1/site/team')
+    check('team page data', site.json.jobs.some((j) => j.id === 'moderator') && site.json.team.roles.some((r) => r.id === 'owner'))
+    const page = await http('GET', '/team/moderator?lang=de')
+    check('job page SSR', page.status === 200 && page.text.includes('Chat freundlich halten'))
+    const sitemap = await http('GET', '/sitemap.xml')
+    check('job in sitemap', sitemap.text.includes('/team/moderator?lang=es'))
+    const body = { discord: 'applicant.mc', ageGroup: '16-17', answers: { why: 'Ich helfe gern und bin oft online.' }, lang: 'de' }
+    const noCsrf = await http('POST', '/v1/team/jobs/moderator/applications', { headers: W, body })
+    check('apply needs CSRF', noCsrf.status === 403 && noCsrf.json.error.code === 'csrf_failed')
+    const WC = { ...W, 'x-csrf-token': me.json.csrf }
+    const bad = await http('POST', '/v1/team/jobs/moderator/applications', { headers: WC, body: { ...body, answers: {} } })
+    check('apply validates answers', bad.status === 400 && bad.json.error.code === 'invalid_answers')
+    const applied = await http('POST', '/v1/team/jobs/moderator/applications', { headers: WC, body })
+    check('apply 201', applied.status === 201 && applied.json.application.status === 'new')
+    const twiceApply = await http('POST', '/v1/team/jobs/moderator/applications', { headers: WC, body })
+    check('one open application per job', twiceApply.status === 409 && twiceApply.json.error.code === 'application_open')
+    const mineApps = await http('GET', '/v1/me/applications', { headers: W })
+    check('my applications', mineApps.json.applications?.length === 1)
+    const list = await http('GET', '/v1/admin/applications', { headers: K })
+    const appId = list.json.applications?.[0]?.id
+    check('team sees application', !!appId && list.json.applications[0].applicant.name === 'Applicant')
+    const accept = await http('POST', `/v1/admin/applications/${appId}/status`, { headers: K, body: { status: 'accepted', grantRole: true, response: 'Willkommen!' } })
+    check('accept + grant role', accept.status === 200 && accept.json.application.roleGranted === 'moderator')
+    const me2 = await http('GET', '/v1/web/me', { headers: W })
+    check('rights on the next request', me2.json.team?.roles?.[0]?.id === 'moderator' && me2.json.team.permissions.includes('reports.view') && !me2.json.team.permissions.includes('roles.manage'))
+    const teamList = await http('GET', '/v1/admin/team', { headers: K })
+    check('team roles + members', teamList.json.roles.length === 7 && teamList.json.members.some((m) => m.uuid === APPLICANT))
+    const modRoles = await http('GET', '/v1/admin/team', { headers: W })
+    check('moderator cannot open roles', modRoles.status === 403 && modRoles.json.error.code === 'missing_permission')
+    const out = await http('POST', '/v1/web/logout', { headers: WC })
+    check('web logout', out.status === 204 && (await http('GET', '/v1/web/me', { headers: W })).status === 401)
+  }
 } catch (err) {
   failures++
   console.error(err)
 } finally {
   api.kill()
   mojang.close()
+  await ms.close()
   await new Promise((r) => setTimeout(r, 300))
   rmSync(data, { recursive: true, force: true })
 }

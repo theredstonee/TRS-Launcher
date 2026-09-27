@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { m } = useLang()
+const { t } = useTeamText()
 const lp = useLocalePath()
 const route = useRoute()
 const menuOpen = ref(false)
@@ -10,6 +11,7 @@ const links = computed(() => [
   { to: lp('/blog'), label: m.value.nav.blog },
   { to: lp('/capes'), label: m.value.nav.capes },
   { to: lp('/faq'), label: m.value.nav.faq },
+  { to: lp('/team'), label: m.value.nav.team },
 ])
 
 watch(() => route.path, () => (menuOpen.value = false))
@@ -33,6 +35,7 @@ const year = new Date().getFullYear()
 
         <div class="ml-auto flex items-center gap-2">
           <LangSwitch />
+          <AccountMenu />
           <a :href="REPO_URL" class="btn-icon hidden sm:inline-flex" aria-label="GitHub" rel="noopener" target="_blank">
             <SiteIcon name="github" class="size-4.5" />
           </a>
@@ -55,6 +58,7 @@ const year = new Date().getFullYear()
         <NuxtLink v-for="l in links" :key="l.to" :to="l.to" class="block rounded-md px-3 py-2.5 text-base text-base-200 hover:bg-base-800">
           {{ l.label }}
         </NuxtLink>
+        <NuxtLink :to="lp('/applications')" class="block rounded-md px-3 py-2.5 text-base text-base-200 hover:bg-base-800">{{ t.account.myApplications }}</NuxtLink>
         <NuxtLink :to="lp('/download')" class="btn btn-primary mt-2 w-full">{{ m.nav.download }}</NuxtLink>
       </nav>
     </header>
@@ -80,6 +84,7 @@ const year = new Date().getFullYear()
           <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>
           <NuxtLink :to="lp('/capes')" class="footer-link">{{ m.nav.capes }}</NuxtLink>
           <NuxtLink :to="lp('/faq')" class="footer-link">{{ m.nav.faq }}</NuxtLink>
+          <NuxtLink :to="lp('/team')" class="footer-link">{{ m.nav.team }}</NuxtLink>
         </nav>
         <nav class="flex flex-col gap-2 text-sm" aria-label="Links">
           <a :href="REPO_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.github }}</a>

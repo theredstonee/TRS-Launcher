@@ -2,7 +2,7 @@
 // Kopf eines Spielers: 8×8-Gesicht + Hut-Ebene aus dem Skin (textures.minecraft.net, per CSS
 // zugeschnitten). Skins holt `/v1/admin/users/{uuid}/skin` (gecacht, 30/min) – in langen Listen
 // `fetch = false`, dann nur der farbige Anfangsbuchstabe.
-const props = withDefaults(defineProps<{ uuid: string, name?: string | null, size?: number, fetch?: boolean }>(), { name: null, size: 40, fetch: true })
+const props = withDefaults(defineProps<{ uuid: string, name?: string | null, size?: number, fetch?: boolean, skin?: string | null }>(), { name: null, size: 40, fetch: true, skin: undefined })
 const { api } = useAdmin()
 
 const SKIN_URL = /^https:\/\/textures\.minecraft\.net\/texture\/[0-9a-f]{1,128}$/
@@ -14,6 +14,11 @@ async function load() {
   url.value = null
   failed.value = false
   const u = props.uuid
+  // Öffentliche Seiten geben die Skin-Adresse direkt mit (kein Team-Aufruf).
+  if (props.skin !== undefined) {
+    url.value = typeof props.skin === 'string' && SKIN_URL.test(props.skin) ? props.skin : null
+    return
+  }
   if (!props.fetch || !/^[0-9a-f]{32}$/.test(u)) return
   if (u in cache.value) {
     url.value = cache.value[u] ?? null
@@ -28,7 +33,7 @@ async function load() {
     if ((e as { statusCode?: number }).statusCode === 404) cache.value[u] = null
   }
 }
-watch(() => props.uuid, load, { immediate: true })
+watch(() => [props.uuid, props.skin], load, { immediate: true })
 
 const initial = computed(() => (props.name || '?').slice(0, 1).toUpperCase())
 const color = computed(() => {

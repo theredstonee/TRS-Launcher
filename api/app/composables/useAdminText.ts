@@ -1,17 +1,17 @@
 import { adminTexts, type AdminTexts } from '~/utils/admin-i18n'
 
 /**
- * Texte + Formatierung für den Team-Bereich. Deutsch und Englisch; die übrigen Sprachen der
- * Website zeigen hier Englisch. Meldungs-Texte (Gründe, Status) kommen aus `m.admin.mod`.
+ * Texte + Formatierung für den Team-Bereich in allen Website-Sprachen (Englisch, Deutsch,
+ * Spanisch). Meldungs-Texte (Gründe, Status) kommen aus `m.admin.mod`.
  */
 export function useAdminText() {
   const { lang, fill, m } = useLang()
-  const a = computed<AdminTexts>(() => adminTexts[lang.value === 'de' ? 'de' : 'en'])
-  const locale = computed(() => (lang.value === 'de' ? 'de' : 'en-GB'))
+  const a = computed<AdminTexts>(() => adminTexts[lang.value])
+  const locale = computed(() => (lang.value === 'de' ? 'de' : lang.value === 'es' ? 'es' : 'en-GB'))
 
   /** Datum + Uhrzeit, kurz. */
   function when(iso: string | null | undefined): string {
-    return dateTime(iso, lang.value === 'de' ? 'de' : 'en')
+    return dateTime(iso, lang.value)
   }
 
   /** Nur Datum. */

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Offene Welten (Welt-Hosting): Host, Version, Spieler, Mitglieder; schließen mit Bestätigung.
 const { a, fill, rel, when } = useAdminText()
-const { api } = useAdmin()
+const { api, can } = useAdmin()
 
 const rooms = ref<AdminRoom[]>([])
 const loading = ref(false)
@@ -69,7 +69,7 @@ const { active } = useListKeys(rooms)
           </p>
           <p class="text-xs text-base-400">{{ fill(a.worlds.members, r.members) }} · <span :title="when(r.heartbeatAt)">{{ fill(a.worlds.heartbeat, { date: rel(r.heartbeatAt) }) }}</span></p>
           <p class="adm-mono text-base-400">{{ a.worlds.code }} {{ r.code }}</p>
-          <button type="button" class="btn btn-danger mt-1 self-start px-2.5 py-1 text-xs" @click="closing = r"><SiteIcon name="close" class="size-3.5" />{{ a.worlds.close }}</button>
+          <button v-if="can('worlds.close')" type="button" class="btn btn-danger mt-1 self-start px-2.5 py-1 text-xs" @click="closing = r"><SiteIcon name="close" class="size-3.5" />{{ a.worlds.close }}</button>
         </article>
       </li>
     </ul>
