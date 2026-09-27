@@ -1,0 +1,53 @@
+{
+ "id": "comparator_clock",
+ "category": "clocks",
+ "difficulty": 2,
+ "server": "note",
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "c": "comparator[facing=west,mode=subtract]",
+  "-": "redstone_wire",
+  "S": "redstone_wire@S",
+  "L": "redstone_lamp"
+ },
+ "layers": [
+  [
+   "Ac--L",
+   ".S-.."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "set": {
+      "A": 1
+     }
+    },
+    {
+     "count": {
+      "out": "S",
+      "ticks": 100,
+      "toggles": [
+       10,
+       100
+      ]
+     }
+    },
+    {
+     "set": {
+      "A": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "S": 0
+     }
+    }
+   ]
+  }
+ ]
+}

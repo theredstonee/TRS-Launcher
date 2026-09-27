@@ -1,0 +1,39 @@
+{
+ "id": "or_gate",
+ "category": "basics",
+ "difficulty": 1,
+ "server": "ok",
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "B": "lever[face=floor]@B",
+  "-": "redstone_wire",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "A..",
+   "--L",
+   "B.."
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A",
+     "B"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "00:0",
+     "01:1",
+     "10:1",
+     "11:1",
+     "00:0"
+    ]
+   }
+  }
+ ]
+}

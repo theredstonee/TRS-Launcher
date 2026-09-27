@@ -1,0 +1,40 @@
+{
+ "id": "night_light",
+ "category": "displays",
+ "difficulty": 1,
+ "server": "ok",
+ "palette": {
+  "#": "solid",
+  "L": "redstone_lamp",
+  "a": "redstone_lamp@L1",
+  "c": "redstone_lamp@L3",
+  "D": "daylight_detector[inverted=true]@D",
+  "-": "redstone_wire"
+ },
+ "layers": [
+  [
+   "#aLc"
+  ],
+  [
+   "D---"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "D"
+    ],
+    "out": [
+     "L1",
+     "L3"
+    ],
+    "rows": [
+     "0:00",
+     "f:11",
+     "0:00"
+    ]
+   }
+  }
+ ]
+}

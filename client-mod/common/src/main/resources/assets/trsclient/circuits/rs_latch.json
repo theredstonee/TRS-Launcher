@@ -1,0 +1,96 @@
+{
+ "id": "rs_latch",
+ "category": "memory",
+ "difficulty": 2,
+ "server": "ok",
+ "palette": {
+  "#": "solid",
+  "t": "redstone_wall_torch[facing=east]",
+  "T": "redstone_wall_torch[facing=south]",
+  "-": "redstone_wire",
+  "L": "redstone_lamp@Q",
+  "S": "lever[face=floor]@S",
+  "R": "lever[face=floor]@R"
+ },
+ "layers": [
+  [
+   "#t-#.",
+   "-..TL",
+   "----."
+  ],
+  [
+   "S..R.",
+   ".....",
+   "....."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "set": {
+      "S": 1
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "set": {
+      "S": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "Q": 1
+     }
+    },
+    {
+     "set": {
+      "R": 1
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "set": {
+      "R": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "Q": 0
+     }
+    },
+    {
+     "set": {
+      "S": 1
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "set": {
+      "S": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "Q": 1
+     }
+    }
+   ]
+  }
+ ]
+}

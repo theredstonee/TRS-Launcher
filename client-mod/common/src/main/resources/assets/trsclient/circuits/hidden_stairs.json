@@ -1,0 +1,60 @@
+{
+ "id": "hidden_stairs",
+ "category": "doors",
+ "difficulty": 2,
+ "server": "ok",
+ "palette": {
+  "#": "solid",
+  "A": "lever[face=floor]@A",
+  "-": "redstone_wire",
+  "D": "solid~",
+  "P": "sticky_piston[facing=west]@P1",
+  "Q": "sticky_piston[facing=west]@P2",
+  "R": "sticky_piston[facing=west]@P3"
+ },
+ "layers": [
+  [
+   ".#",
+   "DP",
+   "..",
+   ".."
+  ],
+  [
+   ".A",
+   ".-",
+   "DQ",
+   ".."
+  ],
+  [
+   "..",
+   "..",
+   ".-",
+   "DR"
+  ],
+  [
+   "..",
+   "..",
+   "..",
+   ".-"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A"
+    ],
+    "out": [
+     "P1",
+     "P2",
+     "P3"
+    ],
+    "rows": [
+     "0:000",
+     "1:111",
+     "0:000"
+    ]
+   }
+  }
+ ]
+}

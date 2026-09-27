@@ -1,0 +1,57 @@
+{
+ "id": "falling_edge",
+ "category": "pulse",
+ "difficulty": 2,
+ "server": "ok",
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "-": "redstone_wire",
+  "s": "repeater[facing=north,delay=1]",
+  "r": "repeater[facing=west,delay=3]",
+  "c": "comparator[facing=west,mode=subtract]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   ".---.",
+   ".-.s.",
+   "A-rcL"
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "set": {
+      "A": 1
+     }
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 40,
+      "on": [
+       0,
+       0
+      ]
+     }
+    },
+    {
+     "set": {
+      "A": 0
+     }
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 40,
+      "on": [
+       1,
+       8
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

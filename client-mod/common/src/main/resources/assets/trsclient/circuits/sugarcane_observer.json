@@ -1,0 +1,68 @@
+{
+ "id": "sugarcane_observer",
+ "category": "farms",
+ "difficulty": 1,
+ "server": "ok",
+ "palette": {
+  "#": "solid",
+  "w": "water",
+  "s": "sand",
+  "c": "sugar_cane",
+  "g": "sugar_cane?@G",
+  "o": "observer[facing=north]",
+  "-": "redstone_wire",
+  "Q": "piston[facing=west]@Q"
+ },
+ "layers": [
+  [
+   ".#.",
+   "#w#",
+   ".s.",
+   "...",
+   "..."
+  ],
+  [
+   "...",
+   "...",
+   ".c.",
+   "..#",
+   ".##"
+  ],
+  [
+   "...",
+   "...",
+   ".gQ",
+   ".o-",
+   ".--"
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "expect": {
+      "Q": 0
+     }
+    },
+    {
+     "bump": "G"
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 20,
+      "on": [
+       1,
+       6
+      ]
+     }
+    },
+    {
+     "expect": {
+      "Q": 0
+     }
+    }
+   ]
+  }
+ ]
+}

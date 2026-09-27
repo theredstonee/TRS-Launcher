@@ -1,0 +1,68 @@
+{
+ "id": "item_elevator",
+ "category": "farms",
+ "difficulty": 2,
+ "server": "ok",
+ "since": "1.13",
+ "palette": {
+  "g": "glass",
+  "#": "solid",
+  "S": "soul_sand",
+  "w": "water",
+  "f": "water?",
+  "i": "oak_sign",
+  "C": "chest",
+  "H": "hopper[facing=down]"
+ },
+ "layers": [
+  [
+   "...",
+   ".#.",
+   ".S.",
+   "...",
+   "..."
+  ],
+  [
+   "...",
+   ".i.",
+   "gwg",
+   ".g.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".g.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".g.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".C.",
+   "..."
+  ],
+  [
+   "...",
+   ".g.",
+   "gwg",
+   ".H.",
+   "..."
+  ],
+  [
+   ".g.",
+   "gwg",
+   "gfg",
+   "gfg",
+   ".g."
+  ]
+ ]
+}

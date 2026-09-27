@@ -1,0 +1,38 @@
+{
+ "id": "pulse_extender",
+ "category": "pulse",
+ "difficulty": 2,
+ "server": "ok",
+ "palette": {
+  "B": "stone_button[face=floor]@B",
+  "-": "redstone_wire",
+  "r": "repeater[facing=west,delay=4]",
+  "q": "repeater[facing=west,delay=1]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "B-rr--L",
+   ".-q--.."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "press": "B"
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 80,
+      "on": [
+       30,
+       45
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

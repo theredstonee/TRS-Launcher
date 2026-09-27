@@ -1,0 +1,248 @@
+{
+  "_comment": "Blocks used by the circuit library. Key = modern block id without 'minecraft:' ('solid' = any full conductive block). item/legacyItem = what the material list counts; legacy = 1.8.9-1.12.2 ids (value = properties the legacy block implies); aliases = other modern ids that count as this block; check = state properties compared against the world; rule = special legacy conversion; sim = kind in the redstone simulation.",
+  "blocks": {
+    "solid": {
+      "item": "stone",
+      "legacyItem": "stone",
+      "sim": "solid",
+      "match": "solid"
+    },
+    "glass": {
+      "item": "glass",
+      "sim": "other",
+      "aliases": [
+        "white_stained_glass",
+        "tinted_glass"
+      ],
+      "legacy": {
+        "glass": {},
+        "stained_glass": {}
+      }
+    },
+    "sand": {
+      "item": "sand",
+      "sim": "solid",
+      "aliases": [
+        "red_sand"
+      ]
+    },
+    "soul_sand": {
+      "item": "soul_sand",
+      "sim": "solid"
+    },
+    "sugar_cane": {
+      "item": "sugar_cane",
+      "legacyItem": "reeds",
+      "sim": "other",
+      "legacy": {
+        "reeds": {}
+      }
+    },
+    "water": {
+      "item": "water_bucket",
+      "sim": "other",
+      "aliases": [
+        "bubble_column"
+      ],
+      "legacy": {
+        "water": {},
+        "flowing_water": {}
+      }
+    },
+    "redstone_wire": {
+      "item": "redstone",
+      "sim": "dust"
+    },
+    "repeater": {
+      "item": "repeater",
+      "sim": "repeater",
+      "check": [
+        "facing",
+        "delay"
+      ],
+      "legacy": {
+        "unpowered_repeater": {},
+        "powered_repeater": {}
+      }
+    },
+    "comparator": {
+      "item": "comparator",
+      "sim": "comparator",
+      "check": [
+        "facing",
+        "mode"
+      ],
+      "legacy": {
+        "unpowered_comparator": {},
+        "powered_comparator": {}
+      }
+    },
+    "redstone_torch": {
+      "item": "redstone_torch",
+      "sim": "torch",
+      "rule": "torch",
+      "legacy": {
+        "redstone_torch": {},
+        "unlit_redstone_torch": {}
+      }
+    },
+    "redstone_wall_torch": {
+      "item": "redstone_torch",
+      "sim": "wall_torch",
+      "check": [
+        "facing"
+      ],
+      "rule": "torch"
+    },
+    "lever": {
+      "item": "lever",
+      "sim": "lever",
+      "check": [
+        "face"
+      ],
+      "rule": "attach"
+    },
+    "stone_button": {
+      "item": "stone_button",
+      "sim": "button",
+      "check": [
+        "face"
+      ],
+      "rule": "attach"
+    },
+    "stone_pressure_plate": {
+      "item": "stone_pressure_plate",
+      "sim": "plate",
+      "aliases": [
+        "oak_pressure_plate",
+        "polished_blackstone_pressure_plate"
+      ],
+      "legacy": {
+        "stone_pressure_plate": {},
+        "wooden_pressure_plate": {}
+      }
+    },
+    "redstone_lamp": {
+      "item": "redstone_lamp",
+      "sim": "lamp",
+      "legacy": {
+        "redstone_lamp": {},
+        "lit_redstone_lamp": {}
+      }
+    },
+    "redstone_block": {
+      "item": "redstone_block",
+      "sim": "redstone_block"
+    },
+    "piston": {
+      "item": "piston",
+      "sim": "piston",
+      "check": [
+        "facing"
+      ]
+    },
+    "sticky_piston": {
+      "item": "sticky_piston",
+      "sim": "piston",
+      "check": [
+        "facing"
+      ]
+    },
+    "observer": {
+      "item": "observer",
+      "sim": "observer",
+      "check": [
+        "facing"
+      ],
+      "since": "1.11"
+    },
+    "hopper": {
+      "item": "hopper",
+      "sim": "hopper",
+      "check": [
+        "facing"
+      ]
+    },
+    "chest": {
+      "item": "chest",
+      "sim": "container",
+      "aliases": [
+        "trapped_chest",
+        "barrel"
+      ],
+      "legacy": {
+        "chest": {},
+        "trapped_chest": {}
+      }
+    },
+    "furnace": {
+      "item": "furnace",
+      "sim": "container",
+      "legacy": {
+        "furnace": {},
+        "lit_furnace": {}
+      }
+    },
+    "dropper": {
+      "item": "dropper",
+      "sim": "dropper",
+      "check": [
+        "facing"
+      ]
+    },
+    "copper_bulb": {
+      "item": "copper_bulb",
+      "sim": "bulb",
+      "since": "1.21",
+      "aliases": [
+        "exposed_copper_bulb",
+        "weathered_copper_bulb",
+        "oxidized_copper_bulb",
+        "waxed_copper_bulb",
+        "waxed_exposed_copper_bulb",
+        "waxed_weathered_copper_bulb",
+        "waxed_oxidized_copper_bulb"
+      ]
+    },
+    "daylight_detector": {
+      "item": "daylight_detector",
+      "sim": "daylight",
+      "check": [
+        "inverted"
+      ],
+      "legacy": {
+        "daylight_detector": {
+          "inverted": "false"
+        },
+        "daylight_detector_inverted": {
+          "inverted": "true"
+        }
+      }
+    },
+    "oak_sign": {
+      "item": "oak_sign",
+      "legacyItem": "sign",
+      "sim": "other",
+      "aliases": [
+        "spruce_sign",
+        "birch_sign",
+        "jungle_sign",
+        "acacia_sign",
+        "dark_oak_sign",
+        "mangrove_sign",
+        "cherry_sign",
+        "bamboo_sign",
+        "crimson_sign",
+        "warped_sign",
+        "pale_oak_sign"
+      ],
+      "legacy": {
+        "standing_sign": {}
+      }
+    },
+    "glowstone": {
+      "item": "glowstone",
+      "sim": "other"
+    }
+  }
+}
