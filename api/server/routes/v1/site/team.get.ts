@@ -23,7 +23,7 @@ async function skinOf(uuid: string): Promise<string | null> {
   return url
 }
 
-/** Website: Team-Seite (§23.3) – öffentliche Rollen mit Mitgliedern (Name, Kopf) und offene Stellen. 60 s cachebar. */
+/** Website: Team-Seite (§24.3) – öffentliche Rollen mit Mitgliedern (Name, Kopf) und offene Stellen. 60 s cachebar. */
 export default defineEventHandler(async (event) => {
   const ctx = useCtx()
   const team = publicTeam(ctx)

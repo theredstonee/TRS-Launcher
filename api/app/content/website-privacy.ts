@@ -45,6 +45,8 @@ All details are in the [imprint](https://theredstonee.de/imprint/).
 
 **Team area.** Team members sign in with Microsoft like everyone else (see “Website sign-in with Microsoft” below). What they see in the team area depends on the permissions of their role – for example, only roles with the right permission see the content of reports or player files. Team members review **chat reports** – they only see the content that was reported and its context (see “Reports and moderation” below); reported pictures are loaded from this server only. They also manage sanctions, appeals and internal notes (see “Sanctions and appeals” below); every action is written to an audit log (kept 2 years).
 
+**Shared screenshots (\`/s/…\` pages).** When a player shares a screenshot as a link, anyone with the link can open this page for 30 days. It shows only the picture, the upload date and the expiry date – **no name, no Minecraft UUID** – and is never indexed by search engines. Chat apps such as Discord load the picture when someone posts the link, to show a preview. With **“Report”** you can tell our team about a picture without an account: we store only the reason you picked, never your IP address (it is counted for rate limiting in memory only). Legal basis: Art. 6(1)(f) GDPR (a safe service). Details: “Shared screenshots” below.
+
 **Links** to Discord, GitHub and other sites are plain links; nothing is loaded from them until you click.
 
 ## Website sign-in with Microsoft
@@ -103,6 +105,8 @@ Alle Angaben stehen im [Impressum](https://theredstonee.de/imprint/).
 
 **Team-Bereich.** Team-Mitglieder melden sich wie alle anderen mit Microsoft an (siehe „Anmeldung mit Microsoft“ unten). Was sie im Team-Bereich sehen, hängt von den Rechten ihrer Rolle ab – zum Beispiel sehen nur Rollen mit dem passenden Recht die Inhalte von Meldungen oder Spieler-Akten. Team-Mitglieder prüfen **Chat-Meldungen** – sie sehen nur den gemeldeten Inhalt samt Kontext (siehe „Meldungen und Moderation“ unten); gemeldete Bilder werden nur von diesem Server geladen. Außerdem verwalten sie Strafen, Einsprüche und interne Notizen (siehe „Strafen und Einsprüche“ unten); jede Aktion steht in einem Audit-Log (2 Jahre).
 
+**Geteilte Screenshots (Seiten \`/s/…\`).** Teilt ein Spieler einen Screenshot als Link, kann jeder mit dem Link diese Seite 30 Tage lang öffnen. Sie zeigt nur das Bild, das Datum des Hochladens und das Ablaufdatum – **keinen Namen, keine Minecraft-UUID** – und wird von Suchmaschinen nie indexiert. Chat-Apps wie Discord laden das Bild, wenn jemand den Link postet, um eine Vorschau zu zeigen. Mit **„Melden“** kannst du unserem Team ohne Konto ein Bild melden: Wir speichern nur den gewählten Grund, nie deine IP-Adresse (sie wird nur im Arbeitsspeicher für die Ratenbegrenzung gezählt). Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (ein sicherer Dienst). Einzelheiten: „Geteilte Screenshots“ unten.
+
 **Links** zu Discord, GitHub und anderen Seiten sind einfache Links; von dort wird erst etwas geladen, wenn du klickst.
 
 ## Anmeldung mit Microsoft
@@ -160,6 +164,8 @@ Todos los datos están en el [aviso legal](https://theredstonee.de/imprint/).
 **GitHub.** Las descargas enlazan a GitHub Releases y las imágenes de las entradas se cargan desde \`raw.githubusercontent.com\`; tu navegador se conecta entonces a GitHub, Inc. (EE. UU.), que recibe tu dirección IP.
 
 **Área del equipo.** Los miembros del equipo inician sesión con Microsoft como todos (ver «Inicio de sesión con Microsoft» más abajo). Lo que ven en el área del equipo depende de los permisos de su rol; por ejemplo, solo los roles con el permiso adecuado ven el contenido de las denuncias o las fichas de jugador. Los miembros del equipo revisan las **denuncias del chat**: solo ven el contenido denunciado y su contexto (ver «Denuncias y moderación» más abajo); las imágenes denunciadas se cargan solo desde este servidor. También gestionan sanciones, apelaciones y notas internas (ver «Sanciones y apelaciones» más abajo); cada acción queda en un registro de auditoría (2 años).
+
+**Capturas compartidas (páginas \`/s/…\`).** Cuando un jugador comparte una captura como enlace, cualquiera con el enlace puede abrir esta página durante 30 días. Solo muestra la imagen, la fecha de subida y la fecha de caducidad – **sin nombre ni UUID de Minecraft** – y los buscadores nunca la indexan. Apps de chat como Discord cargan la imagen cuando alguien publica el enlace, para mostrar una vista previa. Con **«Denunciar»** puedes avisar a nuestro equipo sin cuenta: solo guardamos el motivo elegido, nunca tu dirección IP (solo se cuenta en memoria para limitar solicitudes). Base jurídica: art. 6.1.f RGPD (un servicio seguro). Detalles: «Capturas compartidas» más abajo.
 
 ## Inicio de sesión con Microsoft
 

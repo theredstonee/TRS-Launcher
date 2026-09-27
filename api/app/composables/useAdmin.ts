@@ -1,4 +1,4 @@
-// Team-Bereich (§23.2): dieselbe Website-Sitzung wie überall (Microsoft-Anmeldung, useAccount). Rechte, Rang und
+// Team-Bereich (§24.2): dieselbe Website-Sitzung wie überall (Microsoft-Anmeldung, useAccount). Rechte, Rang und
 // Grenzen kommen aus /v1/web/me → `team`; die Oberfläche blendet danach ein/aus, geprüft wird immer serverseitig.
 
 export type StaffRole = 'admin' | 'moderator'

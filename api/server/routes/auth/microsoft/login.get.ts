@@ -5,7 +5,7 @@ import { MS_STATE_COOKIE, MS_STATE_TTL_MS, authorizeUrl, safeReturnTo } from '..
 import { RULES } from '../../../lib/ratelimit'
 
 /**
- * Website: „Mit Microsoft anmelden“ (§23.1). Legt state + PKCE an (nur im Server-Speicher), setzt das kurzlebige
+ * Website: „Mit Microsoft anmelden“ (§24.1). Legt state + PKCE an (nur im Server-Speicher), setzt das kurzlebige
  * Cookie `trs_oauth` und leitet zu Microsoft weiter. `?return=/pfad` = Rücksprung nach der Anmeldung (nur eigene Pfade).
  */
 export default defineEventHandler((event) => {

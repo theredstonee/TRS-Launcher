@@ -1,5 +1,5 @@
 /**
- * Team-Rechte und feste Rollen (API.md §23.2) – gemeinsam für Server und Website (reine Daten, keine Importe).
+ * Team-Rechte und feste Rollen (API.md §24.2) – gemeinsam für Server und Website (reine Daten, keine Importe).
  */
 
 export const PERMISSIONS = [

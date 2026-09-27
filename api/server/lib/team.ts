@@ -6,7 +6,7 @@ import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
 import { sanitizeText } from './safety'
 
 /**
- * Team: feste und eigene Rollen mit feingranularen Rechten (API.md §23.2).
+ * Team: feste und eigene Rollen mit feingranularen Rechten (API.md §24.2).
  *
  * - **Rechte** sind feste Schlüssel (`PERMISSIONS`). Die Oberfläche blendet danach ein/aus, der Server prüft
  *   JEDE Anfrage selbst (`requireStaff(event, 'reports.view')`).

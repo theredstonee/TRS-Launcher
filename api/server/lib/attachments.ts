@@ -173,6 +173,26 @@ export function copyToEvidence(ctx: AppContext, reportId: string, row: Attachmen
   )
 }
 
+/**
+ * Wie {@link copyToEvidence}, aber aus Klartext-Bytes (z. B. ein geteilter Screenshot, §23). `evidenceId`
+ * ist die ID, unter der das Bild in der Meldung steht (Share-ID).
+ */
+export function copyBytesToEvidence(
+  ctx: AppContext,
+  reportId: string,
+  evidenceId: string,
+  plain: Buffer,
+  meta: { mime: string, width: number, height: number },
+): void {
+  writeFileAtomic(evidenceFile(ctx, reportId, evidenceId), ctx.cipher.encrypt(plain, `ev:${reportId}:${evidenceId}`))
+  run(
+    ctx.db,
+    `INSERT OR IGNORE INTO chat_evidence_files (report_id, attachment_id, mime, width, height, bytes, key_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    reportId, evidenceId, meta.mime, meta.width, meta.height, plain.length, ctx.cipher.activeId,
+  )
+}
+
 export function readEvidenceFile(ctx: AppContext, reportId: string, attachmentId: string): { mime: string, data: Buffer } | null {
   const r = one<{ mime: string }>(
     ctx.db, 'SELECT mime FROM chat_evidence_files WHERE report_id = ? AND attachment_id = ?', reportId, attachmentId,
@@ -247,7 +267,8 @@ export function sweepOrphanFiles(ctx: AppContext): number {
       const full = join(dir, f)
       let known: boolean
       if (d === 'evidence') {
-        const m = /^(r[0-9a-f]{16})-(a[0-9a-f]{24})\.bin$/.exec(f)
+        // Chat-Bild (a…) oder geteilter Screenshot (22 Zeichen base64url, §23).
+        const m = /^(r[0-9a-f]{16})-(a[0-9a-f]{24}|[A-Za-z0-9_-]{22})\.bin$/.exec(f)
         known = !!m && one(ctx.db, 'SELECT 1 AS x FROM chat_evidence_files WHERE report_id = ? AND attachment_id = ?', m[1]!, m[2]!) !== undefined
       } else {
         const m = /^(a[0-9a-f]{24})(?:\.t)?\.bin$/.exec(f)

@@ -147,7 +147,8 @@ otros jugadores TRS la ven en él. Un amigo puede pasar la capa a sus propios am
 
 Con los servicios TRS activados puedes escribir con tus amigos y en grupos en el launcher y en el juego.
 
-- **Qué se guarda:** tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes que envías,
+- **Qué se guarda:** tus mensajes (texto, respuestas, ediciones, invitaciones a servidores, tarjetas de puntos de ruta),
+  las imágenes que envías,
   las reacciones, las posiciones de lectura, las conversaciones silenciadas y la pertenencia a grupos. Como en un chat
   normal, los mensajes se conservan **hasta que se borran**: por ti (para todos), por el dueño del grupo, por el equipo o
   junto con tu cuenta.
@@ -166,6 +167,11 @@ Con los servicios TRS activados puedes escribir con tus amigos y en grupos en el
   servidor de Minecraft su icono, el número de jugadores y la descripción (el ping habitual de la lista de servidores)
   y guarda la respuesta aproximadamente un minuto en memoria. Tu dirección IP no se transmite: el servidor de Minecraft
   solo ve el servidor TRS. Nunca se contactan direcciones de redes locales.
+- **Puntos de ruta:** en el TRS Client puedes enviar un punto de ruta (o tu posición) a un amigo o a un grupo. La
+  tarjeta solo contiene el nombre que le diste, las coordenadas, la dimensión y la dirección del servidor; en un mundo de
+  un jugador, solo un código corto calculado a partir de la carpeta del mundo, nunca el nombre del mundo. Las
+  coordenadas que aparecen en el chat normal de Minecraft las reconoce el TRS Client **solo en local**; guardarlas como
+  punto de ruta no envía nada.
 - **Tiempo real:** mientras el launcher o el juego están abiertos, una conexión con el servidor TRS entrega al momento
   los mensajes nuevos y otras novedades (solicitudes de amistad, estado en línea, ofertas de capas). Las novedades
   perdidas se guardan hasta 10 minutos en la memoria del servidor para entregarlas tras una desconexión breve.
@@ -183,6 +189,30 @@ Con los servicios TRS activados puedes escribir con tus amigos y en grupos en el
   se escribe nada en el disco y tu token de TRS nunca llega a la ventana del launcher.
 - **«Última vez en línea»** en la lista de amigos es lo que vio el propio launcher (guardado localmente por cuenta), no un
   dato del servidor.
+
+### Capturas compartidas
+
+En la galería de capturas del launcher y en el TRS Client («Clips e imágenes») puedes compartir una captura como enlace
+(`https://trs-launcher.theredstonee.de/s/…`). Solo se envía la imagen que eliges y solo cuando pulsas «Compartir como
+enlace»; tus demás capturas se quedan en tu PC.
+
+- **Qué se guarda:** la imagen, **recodificada** por el servidor (así se eliminan los datos de ubicación y todos los
+  demás metadatos; las imágenes de más de 4096 píxeles se reducen), su tamaño y formato, cuándo se compartió y cuándo
+  caduca, y qué cuenta TRS la compartió. La cuenta solo se usa internamente: para tu lista «Mis imágenes compartidas»,
+  los límites y la moderación. La página pública y la imagen **no muestran nombre de jugador ni UUID**.
+- **Quién la ve:** **cualquiera que tenga el enlace**; no hay contraseña. El enlace contiene un código aleatorio largo
+  que no se puede adivinar, y la página pide a los buscadores que no la indexen (`noindex`). Si publicas el enlace en
+  Discord o una aplicación parecida, sus servidores cargan la imagen para mostrar una vista previa.
+- **Cuánto tiempo:** **30 días**; después la imagen se borra automáticamente. Puedes borrarla antes en «Mis imágenes
+  compartidas», en el launcher o en el TRS Client, y el enlace deja de funcionar al instante (las vistas previas que otras
+  aplicaciones ya hayan creado quedan fuera de nuestro control). «Alle TRS-Daten löschen» borra todas tus imágenes
+  compartidas.
+- **Límites:** como máximo 10 MB por imagen, 50 enlaces activos y 20 enlaces nuevos al día por cuenta. Un bloqueo de
+  subidas impuesto por la moderación también impide compartir.
+- **Denuncias:** una imagen compartida se puede denunciar, también directamente en su página. Una denuncia desde la
+  página solo envía el motivo; la página no guarda ninguna dirección IP (los límites de uso solo cuentan en memoria).
+  Como las demás denuncias, conserva una copia de la imagen como prueba (ver abajo), y el equipo puede borrar imágenes
+  compartidas.
 
 ### Denuncias y moderación
 
@@ -310,6 +340,7 @@ servidor TRS.
 | Solo con los servicios TRS activados: la entrada del vestuario del TRS Client – tus skins favoritas, atuendos (nombre, skin, capa) y las casillas de la rueda de emotes, con la hora del último cambio | El mismo vestuario en cada PC |
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
+| Capturas compartidas (solo las imágenes que compartes): la imagen recodificada, tamaño, formato, fecha de publicación y de caducidad, la cuenta que la compartió (no visible públicamente) | Compartir una captura como enlace (ver arriba) |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
 
@@ -354,12 +385,14 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   puedan borrarlas.
 - Los mensajes e imágenes del chat se conservan hasta que se borran (por ti para todos, por el dueño del grupo o por el
   equipo) o se borra el grupo. Las imágenes subidas pero nunca enviadas se borran al cabo de 1 hora.
+- Las capturas compartidas se borran automáticamente **30 días** después de compartirlas, o antes si tú (o el equipo)
+  las borráis.
 - **«Alle TRS-Daten löschen»** (borrar todos los datos TRS, en *Einstellungen → Datenschutz*) lo elimina todo al
   instante (art. 17 del RGPD): tu cuenta, sesiones, amistades, solicitudes y bloqueos, las capas subidas y sus archivos,
   las capas compartidas (tus capas con amigos y las que tus amigos compartieron contigo),
   los códigos canjeados, las denuncias, tu estado en línea, todas las skins, presets y ajustes sincronizados, todos tus
   chats directos (para ambas partes) y tus mensajes, reacciones e imágenes en grupos (tus grupos pasan al miembro más
-  antiguo). Después,
+  antiguo), y todas las imágenes que compartiste como enlace. Después,
   los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
 - Tras la eliminación solo se conservan las sanciones activas (por ejemplo un bloqueo o un silencio en el chat, con
   motivo y periodo) y las denuncias sobre ti (hasta que termine su plazo, ver arriba), para que no se puedan eludir

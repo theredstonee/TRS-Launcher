@@ -359,7 +359,7 @@ describe('Texte für Suchmaschinen', () => {
   })
 })
 
-describe('Team-Seite und Stellen (§23.3)', () => {
+describe('Team-Seite und Stellen (§24.3)', () => {
   it('Team-Texte: Titel ≤ 65, Beschreibung 51–160 in jeder Sprache', async () => {
     const { teamTexts } = await import('../app/utils/team-i18n')
     for (const lang of ['en', 'de', 'es'] as const) {

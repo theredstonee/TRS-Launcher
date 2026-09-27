@@ -282,6 +282,10 @@ export const conversationIdSchema = z.string().regex(/^c[0-9a-f]{20}$/, 'invalid
 export const messageIdSchema = z.string().regex(/^m[0-9a-f]{20}$/, 'invalid message id')
 export const attachmentIdSchema = z.string().regex(/^a[0-9a-f]{24}$/, 'invalid attachment id')
 export const reportIdSchema = z.string().regex(/^r[0-9a-f]{16}$/, 'invalid report id')
+/** Geteilter Screenshot (§23): 128 Bit Zufall als base64url. */
+export const shareIdSchema = z.string().regex(/^[A-Za-z0-9_-]{22}$/, 'invalid share id')
+/** Bild in den Beweisen einer Meldung: Chat-Bild oder geteilter Screenshot. */
+export const evidenceImageIdSchema = z.union([attachmentIdSchema, shareIdSchema])
 
 /** Rohtext; gesäubert und gezählt wird in safety.ts (Codepoints, nach dem Säubern). */
 const messageText = z.string().max(8000)
@@ -291,6 +295,20 @@ const inviteSchema = z.strictObject({
   name: z.string().trim().min(1).max(32).optional(),
 })
 
+/** Wegpunkt-Karte (§18.10): keine Freitexte außer dem Namen. */
+export const waypointSchema = z.strictObject({
+  name: z.string().max(200),
+  x: z.int().min(-30_000_000).max(30_000_000),
+  y: z.int().min(-2048).max(4096),
+  z: z.int().min(-30_000_000).max(30_000_000),
+  dimension: z.string().regex(/^[a-z0-9_.-]{1,32}:[a-z0-9_./-]{1,64}$/, 'invalid dimension'),
+  world: z.discriminatedUnion('type', [
+    z.strictObject({ type: z.literal('server'), address: serverAddress }),
+    z.strictObject({ type: z.literal('world'), id: z.string().regex(/^[0-9a-f]{16}$/, 'invalid world id') }),
+  ]),
+  color: z.int().min(0).max(0xffffff).optional(),
+})
+
 export const sendMessageBody = z.strictObject({
   text: messageText.optional(),
   replyTo: messageIdSchema.optional(),
@@ -298,6 +316,7 @@ export const sendMessageBody = z.strictObject({
   invite: inviteSchema.optional(),
   /** Weltkarte (§21): nur der Host des Raums. */
   world: z.strictObject({ roomId: z.string().regex(/^h[0-9a-f]{20}$/, 'invalid world id') }).optional(),
+  waypoint: waypointSchema.optional(),
   /** Idempotenz: vom Client erzeugt (z. B. UUID), gleiche nonce = gleiche Nachricht. */
   nonce: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/, 'nonce must be 8-64 characters of A-Z, a-z, 0-9, _ or -').optional(),
 })
@@ -345,24 +364,29 @@ export const serverStatusQuery = z.strictObject({ address: serverAddress })
 
 export const reportReasonSchema = z.enum(['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other'])
 
+/** Anonyme Meldung eines geteilten Screenshots (öffentliche Seite). */
+export const shareReportBody = z.strictObject({ reason: reportReasonSchema })
+
 export const chatReportBody = z
   .strictObject({
-    kind: z.enum(['message', 'image', 'player', 'group']),
+    kind: z.enum(['message', 'image', 'player', 'group', 'share']),
     reason: reportReasonSchema,
     note: plainText(500).optional(),
     messageId: messageIdSchema.optional(),
     attachmentId: attachmentIdSchema.optional(),
     uuid: uuidSchema.optional(),
     conversationId: conversationIdSchema.optional(),
+    shareId: shareIdSchema.optional(),
   })
   .refine((b) => b.kind !== 'message' || b.messageId !== undefined, 'messageId is required for kind=message')
+  .refine((b) => b.kind !== 'share' || b.shareId !== undefined, 'shareId is required for kind=share')
   .refine((b) => b.kind !== 'image' || b.attachmentId !== undefined, 'attachmentId is required for kind=image')
   .refine((b) => b.kind !== 'player' || b.uuid !== undefined, 'uuid is required for kind=player')
   .refine((b) => b.kind !== 'group' || b.conversationId !== undefined, 'conversationId is required for kind=group')
 
 export const adminReportListQuery = z.strictObject({
   status: z.enum(['open', 'in_review', 'resolved', 'active', 'all']).default('active'),
-  kind: z.enum(['message', 'image', 'player', 'group']).optional(),
+  kind: z.enum(['message', 'image', 'player', 'group', 'share']).optional(),
   target: uuidSchema.optional(),
   reason: reportReasonSchema.optional(),
   /** Bearbeiter: `me`, `none` (niemandem zugewiesen) oder eine UUID. */
@@ -384,7 +408,7 @@ const customMinutes = z.int().min(5).max(MAX_CUSTOM_MINUTES)
 
 export const adminReportActionBody = z
   .strictObject({
-    action: z.enum(['delete_message', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve']),
+    action: z.enum(['delete_message', 'delete_share', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve']),
     reason: plainText(500).optional(),
     minutes: z.int().min(5).max(MAX_CUSTOM_MINUTES).optional(),
     kind: sanctionKindSchema.optional(),

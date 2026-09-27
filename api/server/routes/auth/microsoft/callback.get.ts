@@ -12,7 +12,7 @@ import { LEGACY_WEB_SESSION_COOKIE, WEB_SESSION_COOKIE, WEB_SESSION_TTL_MS, crea
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
 /**
- * Rücksprung von Microsoft (§23.1): state prüfen (Cookie + Parameter, einmalig), Code gegen Tokens tauschen, Kette bis
+ * Rücksprung von Microsoft (§24.1): state prüfen (Cookie + Parameter, einmalig), Code gegen Tokens tauschen, Kette bis
  * zum Minecraft-Profil, Sitzung anlegen (Rotation). Fehler → `/login?error=<code>`. Tokens werden nie gespeichert.
  * Weiter geht es per kleiner HTML-Seite (Meta-Refresh), damit das SameSite=Strict-Cookie beim nächsten Aufruf mitkommt.
  */

@@ -4,7 +4,7 @@ import { requireWeb } from '../../../lib/http'
 import { myTeamView, teamOf } from '../../../lib/team'
 
 /**
- * Website: aktuelle Sitzung (nach dem Neuladen) – Name, UUID, Skin (Kopf), CSRF-Token, Ablauf und Team-Rechte (§23.1).
+ * Website: aktuelle Sitzung (nach dem Neuladen) – Name, UUID, Skin (Kopf), CSRF-Token, Ablauf und Team-Rechte (§24.1).
  * `team` = `null` für normale Spieler. 401 ohne Sitzung.
  */
 export default defineEventHandler(async (event) => {

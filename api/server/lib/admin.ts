@@ -346,7 +346,7 @@ export function deleteCosmeticAdmin(ctx: AppContext, actor: string, id: string):
 
 /**
  * Konto dauerhaft sperren (alte Route §8, Admins): eine Strafe `account_ban` (§22). Ist schon ein Bann aktiv,
- * passiert nichts weiter. Owner → `409 cannot_ban_admin`, sonst Rang-Regel (§23.2).
+ * passiert nichts weiter. Owner → `409 cannot_ban_admin`, sonst Rang-Regel (§24.2).
  */
 export function banUser(ctx: AppContext, actor: string | Staff, uuid: string, reason: string | undefined): void {
   const staff = typeof actor === 'string' ? staffOf(ctx, actor) : actor

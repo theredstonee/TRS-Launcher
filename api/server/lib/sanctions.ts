@@ -213,7 +213,7 @@ export interface AdminSanctionView {
   createdAt: string
   createdBy: ActorRef
   createdRole: StaffRole | 'system'
-  /** Rang des Erstellers (§23.2, Rang-Regel beim Ändern). */
+  /** Rang des Erstellers (§24.2, Rang-Regel beim Ändern). */
   createdRank: number
   endsAt: string | null
   permanent: boolean

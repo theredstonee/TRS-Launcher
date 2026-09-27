@@ -5,7 +5,7 @@ import { safeEqual } from './ids'
 import { normalizeUuid } from './ids'
 
 /**
- * Website-Anmeldung mit Microsoft (§23.1): Authorization Code + PKCE als vertraulicher Client (Client-Secret nur
+ * Website-Anmeldung mit Microsoft (§24.1): Authorization Code + PKCE als vertraulicher Client (Client-Secret nur
  * auf dem Server), danach Xbox Live → XSTS (Minecraft) → `login_with_xbox` → `minecraft/profile`.
  * Heraus kommen nur UUID und Name. Alle Tokens leben nur während dieser Kette im Speicher und werden danach
  * verworfen – gespeichert wird allein die Website-Sitzung.

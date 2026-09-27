@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Anmeldung mit Microsoft (§23.1): Knopf führt zu /auth/microsoft/login (Weiterleitung, kein Skript von Microsoft).
+// Anmeldung mit Microsoft (§24.1): Knopf führt zu /auth/microsoft/login (Weiterleitung, kein Skript von Microsoft).
 // Fehler kommen als ?error=<code> zurück; ?return=/pfad = Rücksprung nach der Anmeldung (prüft der Server).
 const { t, fill } = useTeamText()
 const lp = useLocalePath()

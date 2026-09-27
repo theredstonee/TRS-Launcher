@@ -6,7 +6,7 @@ import { clientIp, created, limit, paramWith, readJson, requireWebOrUser } from 
 import { RULES } from '../../../../../lib/ratelimit'
 import { assertNotSanctioned } from '../../../../../lib/sanctions'
 
-/** Bewerbung abschicken (§23.3). Website (Cookie + CSRF) oder Launcher (Bearer). 201 `{ application }`. */
+/** Bewerbung abschicken (§24.3). Website (Cookie + CSRF) oder Launcher (Bearer). 201 `{ application }`. */
 export default defineEventHandler(async (event) => {
   const me = requireWebOrUser(event, 'write')
   const id = paramWith(event, 'id', z.string().regex(JOB_ID))

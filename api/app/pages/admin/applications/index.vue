@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Bewerbungen (§23.3): Liste mit Status-, Stellen- und Namensfilter, Stimmen-Übersicht; Klick → Detail.
+// Bewerbungen (§24.3): Liste mit Status-, Stellen- und Namensfilter, Stimmen-Übersicht; Klick → Detail.
 const { a, fill, rel, when } = useAdminText()
 const { t, lang } = useTeamText()
 const { api } = useAdmin()

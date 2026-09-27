@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Stellen (§23.3): Liste + Editor mit Texten je Sprache (EN/DE/ES) und Formular-Baukasten (Kurztext, Langtext,
+// Stellen (§24.3): Liste + Editor mit Texten je Sprache (EN/DE/ES) und Formular-Baukasten (Kurztext, Langtext,
 // Einfach-/Mehrfachauswahl, Ja/Nein, Zahl; Pflicht, Grenzen, Hilfetext, Reihenfolge). Speichern prüft der Server.
 import type { Lang } from '~/utils/messages'
 

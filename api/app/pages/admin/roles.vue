@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Rollen & Team (§23.2): feste und eigene Rollen mit Farbe, Rang und Rechte-Raster; Mitglieder mit mehreren Rollen.
+// Rollen & Team (§24.2): feste und eigene Rollen mit Farbe, Rang und Rechte-Raster; Mitglieder mit mehreren Rollen.
 // Rang-Regel und „nur eigene Rechte vergeben“ prüft der Server – die Oberfläche sperrt nur vorab, was nicht geht.
 import { PERMISSION_GROUPS } from '#shared/team'
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// „Meine Bewerbungen“ (§23.3): Status und Antwort des Teams, offene Bewerbungen zurückziehen. Nur im Browser.
+// „Meine Bewerbungen“ (§24.3): Status und Antwort des Teams, offene Bewerbungen zurückziehen. Nur im Browser.
 const { t, lang, fill, date } = useTeamText()
 const { m } = useLang()
 const lp = useLocalePath()

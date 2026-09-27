@@ -11,7 +11,7 @@ const mod = computed(() => m.value.admin.mod)
 const rev = useState('admin-reports-rev', () => 0)
 
 const STATUSES: ReportFilter[] = ['active', 'open', 'in_review', 'resolved', 'all']
-const KINDS: ReportKind[] = ['message', 'image', 'player', 'group']
+const KINDS: ReportKind[] = ['message', 'image', 'player', 'group', 'share']
 const REASONS: ReportReason[] = ['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other']
 
 const f = reactive({
@@ -208,7 +208,7 @@ function reportTone(r: ReportSummaryV2): string {
               <span v-else-if="r.contentHidden" class="text-xs text-base-400 italic">{{ t.adm.redacted }}</span>
               <span class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-base-400">
                 <span>{{ fill(mod.against, { name: r.target?.name || mod.unknown }) }}</span>
-                <span>{{ fill(mod.by, { name: r.reporter?.name || mod.unknown }) }}</span>
+                <span>{{ fill(mod.by, { name: r.anonymous ? mod.anonymous : (r.reporter?.name || mod.unknown) }) }}</span>
                 <span v-if="r.images">{{ fill(mod.images, { n: r.images }) }}</span>
                 <span v-if="r.targetOpenReports > 1" class="text-lamp-300">{{ fill(mod.targetOpen, { n: r.targetOpenReports }) }}</span>
                 <span v-if="r.assignedTo">→ {{ r.assignedTo.name }}</span>

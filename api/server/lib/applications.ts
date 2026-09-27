@@ -8,7 +8,7 @@ import { sanitizeText, textLength } from './safety'
 import { addMemberRole, assertCan, can, getRole, rankOf, type Staff } from './team'
 
 /**
- * Team-Bewerbungen (API.md §23.3): öffentliche Stellen mit Formular-Baukasten, Bewerben nur angemeldet (Website mit
+ * Team-Bewerbungen (API.md §24.3): öffentliche Stellen mit Formular-Baukasten, Bewerben nur angemeldet (Website mit
  * Microsoft oder Launcher-Token), eine offene Bewerbung je Stelle, Wartezeit nach Absage, Prüfen im Team mit Notizen,
  * Stimmen und Verlauf, Rückmeldung an Bewerber (Website + Ereignis `application_updated`), optional Rolle bei Annahme.
  */
@@ -807,7 +807,7 @@ export function addApplicationNote(ctx: AppContext, actor: Staff, id: string, ra
 // ---------------------------------------------------------------- Aufbewahrung
 
 /**
- * Löschfristen (§23.3): abgelehnt/zurückgezogen → 6 Monate nach der Entscheidung. Angenommen → solange im Team, danach
+ * Löschfristen (§24.3): abgelehnt/zurückgezogen → 6 Monate nach der Entscheidung. Angenommen → solange im Team, danach
  * 6 Monate (Frist beginnt, sobald der Lauf bemerkt, dass keine Rolle mehr da ist). Offene bleiben bis zur Entscheidung.
  */
 export function sweepApplications(ctx: AppContext): number {

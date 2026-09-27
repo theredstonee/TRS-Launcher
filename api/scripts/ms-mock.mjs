@@ -1,5 +1,5 @@
 /**
- * Attrappe der Microsoft-, Xbox- und Minecraft-Endpunkte für Tests und die lokale Vorschau (§23.1).
+ * Attrappe der Microsoft-, Xbox- und Minecraft-Endpunkte für Tests und die lokale Vorschau (§24.1).
  * NIE in Produktion verwenden – sie prüft nur, was die echte Kette auch prüft (Client-Secret, Redirect-URI,
  * PKCE S256, einmalige Codes) und liefert erfundene Tokens.
  *

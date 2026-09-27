@@ -342,13 +342,39 @@ function encode(img: Rgba, alpha: boolean, quality: number): EncodedImage {
   return { mime: 'image/jpeg', data: j.data, width: img.width, height: img.height }
 }
 
+/** Grenzen und Ausgabe-Qualität für {@link processImage}. */
+export interface ImageLimits {
+  /** Größte Eingabedatei in Bytes (sonst 413). */
+  maxBytes: number
+  /** Längste Kante der Ausgabe. */
+  maxOutputEdge: number
+  /** JPEG-Qualität der Ausgabe. */
+  quality: number
+  /** Längste Kante der Vorschau. */
+  thumbEdge: number
+  thumbQuality: number
+}
+
+export const CHAT_IMAGE_LIMITS: ImageLimits = {
+  maxBytes: MAX_CHAT_IMAGE_BYTES,
+  maxOutputEdge: MAX_OUTPUT_EDGE,
+  quality: JPEG_QUALITY,
+  thumbEdge: THUMB_EDGE,
+  thumbQuality: THUMB_QUALITY,
+}
+
 /**
  * Prüft (Content-Type ↔ Magic Bytes, Größe, Pixel) und kodiert neu. `contentType` ist der
  * Medientyp der Anfrage (`image/png`, `image/jpeg`, `image/webp`).
  */
 export async function processChatImage(buf: Buffer, contentType: string): Promise<ProcessedImage> {
+  return processImage(buf, contentType, CHAT_IMAGE_LIMITS)
+}
+
+/** Wie {@link processChatImage}, aber mit eigenen Grenzen (z. B. geteilte Screenshots). */
+export async function processImage(buf: Buffer, contentType: string, lim: ImageLimits): Promise<ProcessedImage> {
   if (buf.length === 0) throw bad('invalid_image', 'Request body is empty')
-  if (buf.length > MAX_CHAT_IMAGE_BYTES) throw new ApiError(413, 'payload_too_large', 'Image is larger than 5 MiB')
+  if (buf.length > lim.maxBytes) throw new ApiError(413, 'payload_too_large', `Image is larger than ${Math.round(lim.maxBytes / 1024 / 1024)} MiB`)
   const kind = sniffImage(buf)
   if (!kind) throw unsupportedMedia('Only PNG, JPEG and WebP images are allowed')
   if (MIME_OF[kind] !== contentType) throw unsupportedMedia('Content-Type does not match the image data')
@@ -361,15 +387,14 @@ export async function processChatImage(buf: Buffer, contentType: string): Promis
   if (img.width !== width || img.height !== height || img.data.length < width * height * 4) {
     throw bad('invalid_image', 'Image header does not match its data')
   }
-  img = downscale(img, MAX_OUTPUT_EDGE)
+  img = downscale(img, lim.maxOutputEdge)
   if (kind === 'jpeg') img = orient(img, jpegOrientation(buf))
   const alpha = hasAlpha(img)
-  const full = encode(img, alpha, JPEG_QUALITY)
-  const thumb = encode(downscale(img, THUMB_EDGE), alpha, THUMB_QUALITY)
+  const full = encode(img, alpha, lim.quality)
+  const thumb = encode(downscale(img, lim.thumbEdge), alpha, lim.thumbQuality)
   return { full, thumb }
 }
 
-/** 64×64-Server-Icon (Data-URL aus dem Status-Ping) prüfen und neu kodieren; `null` wenn ungültig. */
 export function sanitizeServerIcon(dataUrl: unknown): string | null {
   if (typeof dataUrl !== 'string' || dataUrl.length > 200_000) return null
   const m = /^data:image\/png;base64,([A-Za-z0-9+/=\s]+)$/.exec(dataUrl)

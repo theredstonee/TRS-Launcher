@@ -1,6 +1,6 @@
 // Typen der Chat-Moderation (`/v1/admin/reports*`, `/v1/admin/moderation/*`, `/v1/admin/chat/word-filter`).
 
-export type ReportKind = 'message' | 'image' | 'player' | 'group'
+export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share'
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 export type ReportOutcome = 'actioned' | 'dismissed'
 export type ReportReason = 'insult_hate' | 'spam' | 'inappropriate' | 'scam_phishing' | 'harassment' | 'other'
@@ -22,6 +22,10 @@ export interface ReportSummary {
   conversationId: string | null
   messageId: string | null
   attachmentId: string | null
+  /** Geteilter Screenshot (§23), sonst `null`. Fehlt bei älteren Servern. */
+  shareId?: string | null
+  /** Über die öffentliche Seite ohne Konto gemeldet. */
+  anonymous?: boolean
   preview: string | null
   images: number
   lowTrust: boolean
@@ -32,7 +36,7 @@ export interface ReportSummary {
   resolvedAt: string | null
   resolvedBy: string | null
   evidencePurged: boolean
-  /** Ohne Recht reports.content: Inhalte geschwärzt (§23.2). */
+  /** Ohne Recht reports.content: Inhalte geschwärzt (§24.2). */
   contentHidden?: boolean
 }
 
@@ -45,6 +49,16 @@ export interface EvidenceMessage {
   invite: { address: string, name: string | null } | null
   /** Weltkarte (Welt-Hosting); fehlt in älteren Beweisen. */
   world?: { roomId: string, name: string } | null
+  /** Wegpunkt-Karte (§18.10); fehlt in älteren Beweisen. */
+  waypoint?: {
+    name: string
+    x: number
+    y: number
+    z: number
+    dimension: string
+    world: { type: 'server', address: string } | { type: 'world', id: string }
+    color: number | null
+  } | null
   system: { event: string, target: string | null, name: string | null } | null
   attachments: { id: string, width: number, height: number, mime: string }[]
   replyTo: string | null
@@ -79,6 +93,9 @@ export interface ReportDetail extends ReportSummary {
     focus: string | null
     messages: EvidenceMessage[]
     images: { id: string, width: number, height: number, mime: string, path: string }[]
+    /** Geteilter Screenshot zur Meldezeit (§23). */
+    share?: { id: string, width: number, height: number, mime: string, createdAt: string, expiresAt: string } | null
+    anonymous?: boolean
   } | null
   notes: { id: number, at: string, actor: string, actorName: string | null, text: string }[]
   audit: { at: string, actor: string, actorName: string | null, action: string, detail: string | null }[]
@@ -148,7 +165,7 @@ export interface AdminSanction {
   createdAt: string
   createdBy: ActorRef
   createdRole: 'admin' | 'moderator' | 'system'
-  /** Rang des Erstellers (§23.2). */
+  /** Rang des Erstellers (§24.2). */
   createdRank: number
   endsAt: string | null
   permanent: boolean
@@ -232,7 +249,7 @@ export interface AuditRow {
   ref: string | null
 }
 
-/** Übersicht (§22.5) – je Recht gekürzt (§23.2): fehlende Bereiche sind `null`. */
+/** Übersicht (§22.5) – je Recht gekürzt (§24.2): fehlende Bereiche sind `null`. */
 export interface DashboardData {
   reports: { open: number, inReview: number, highPriority: number, oldestOpenAt: string | null } | null
   appeals: { open: number, oldestOpenAt: string | null } | null

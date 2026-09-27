@@ -586,11 +586,107 @@ CREATE INDEX hosting_bans_uuid ON hosting_bans(uuid);
     sql: `ALTER TABLE hosting_rooms ADD COLUMN content TEXT;`,
   },
   {
-    // Team v3 (§23): feste + eigene Rollen mit feingranularen Rechten (statt staff_roles admin/moderator),
+    // Geteilte Screenshots (§23): öffentlich per Link, 30 Tage gültig. Dazu das Upload-Protokoll für die
+    // Tagesgrenze (bleibt beim Löschen eines Links, sonst ließe sich die Grenze umgehen; nach 24 h weg).
+    // Meldungen bekommen die Art `share` (+ Spalte share_id). SQLite kann den CHECK nicht ändern → die drei
+    // Meldungs-Tabellen neu anlegen. Erst die Kinder kopieren und löschen, dann die Eltern: ein DROP der
+    // Eltern-Tabelle würde sonst per ON DELETE CASCADE die Notizen und Beweis-Dateien mitnehmen.
+    version: 12,
+    sql: `
+CREATE TABLE shared_images (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  owner_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  mime TEXT NOT NULL CHECK (mime IN ('image/png', 'image/jpeg')),
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  thumb_mime TEXT NOT NULL CHECK (thumb_mime IN ('image/png', 'image/jpeg')),
+  thumb_width INTEGER NOT NULL,
+  thumb_height INTEGER NOT NULL,
+  thumb_bytes INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX shared_images_owner ON shared_images(owner_uuid, created_at);
+CREATE INDEX shared_images_expires ON shared_images(expires_at);
+
+CREATE TABLE shared_image_uploads (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  at INTEGER NOT NULL
+);
+CREATE INDEX shared_image_uploads_uuid ON shared_image_uploads(uuid, at);
+
+CREATE TABLE chat_reports_v12 (
+  id TEXT PRIMARY KEY,
+  reporter_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  target_uuid TEXT CHECK (target_uuid IS NULL OR length(target_uuid) = 32),
+  kind TEXT NOT NULL CHECK (kind IN ('message', 'image', 'player', 'group', 'share')),
+  conversation_id TEXT,
+  message_id TEXT,
+  attachment_id TEXT,
+  share_id TEXT,
+  reason TEXT NOT NULL CHECK (reason IN ('insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other')),
+  note BLOB,
+  evidence BLOB,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved')),
+  outcome TEXT CHECK (outcome IS NULL OR outcome IN ('actioned', 'dismissed')),
+  low_trust INTEGER NOT NULL DEFAULT 0,
+  assigned_to TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  resolved_at INTEGER,
+  resolved_by TEXT,
+  evidence_purged_at INTEGER,
+  CHECK ((status = 'resolved') = (outcome IS NOT NULL))
+);
+INSERT INTO chat_reports_v12 (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, reason, note,
+  evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by, evidence_purged_at)
+SELECT id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, NULL, reason, note,
+  evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by, evidence_purged_at
+FROM chat_reports;
+
+CREATE TABLE chat_report_notes_v12 (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id TEXT NOT NULL REFERENCES chat_reports_v12(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text BLOB NOT NULL
+);
+INSERT INTO chat_report_notes_v12 (id, report_id, at, actor, text) SELECT id, report_id, at, actor, text FROM chat_report_notes;
+
+CREATE TABLE chat_evidence_files_v12 (
+  report_id TEXT NOT NULL REFERENCES chat_reports_v12(id) ON DELETE CASCADE,
+  attachment_id TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  key_id TEXT NOT NULL,
+  PRIMARY KEY (report_id, attachment_id)
+);
+INSERT INTO chat_evidence_files_v12 (report_id, attachment_id, mime, width, height, bytes, key_id)
+SELECT report_id, attachment_id, mime, width, height, bytes, key_id FROM chat_evidence_files;
+
+DROP TABLE chat_evidence_files;
+DROP TABLE chat_report_notes;
+DROP TABLE chat_reports;
+ALTER TABLE chat_reports_v12 RENAME TO chat_reports;
+ALTER TABLE chat_report_notes_v12 RENAME TO chat_report_notes;
+ALTER TABLE chat_evidence_files_v12 RENAME TO chat_evidence_files;
+CREATE INDEX chat_reports_status ON chat_reports(status, created_at);
+CREATE INDEX chat_reports_target ON chat_reports(target_uuid, created_at);
+CREATE INDEX chat_reports_reporter ON chat_reports(reporter_uuid, status);
+CREATE INDEX chat_reports_share ON chat_reports(share_id);
+CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
+`,
+  },
+  {
+    // Team v3 (§24): feste + eigene Rollen mit feingranularen Rechten (statt staff_roles admin/moderator),
     // Rang der Strafen-Ersteller, Stellenausschreibungen + Bewerbungen, Website-Login nur noch über Microsoft
     // (web_logins entfällt, alte Code-Sitzungen enden). Idempotent wie Migration 9.
     // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
-    version: 12,
+    version: 13,
     run: migrateTeamV3,
   },
 ]

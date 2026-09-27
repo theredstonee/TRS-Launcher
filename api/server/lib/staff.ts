@@ -6,7 +6,7 @@ import type { StaffRole } from './users'
 
 /**
  * Alte Rollen-API (§22.1: `GET/PUT/DELETE /v1/admin/roles`) für ältere Launcher – eine dünne Schicht über den
- * Team-Rollen (team.ts, §23.2). `admin`/`moderator` entsprechen den festen Rollen gleichen Namens; andere Rollen
+ * Team-Rollen (team.ts, §24.2). `admin`/`moderator` entsprechen den festen Rollen gleichen Namens; andere Rollen
  * eines Mitglieds bleiben beim Ändern erhalten. Rechte + Rang-Regel wie bei `setMemberRoles`.
  */
 

@@ -359,7 +359,7 @@ function latest(dates: (string | null | undefined)[]): string | null {
  * hreflang-Alternativen. lastmod: Seiten = Zeitpunkt des Builds, Blog-Übersicht = neuester von Build
  * und letztem Beitrag, Beiträge = Erscheinungsdatum.
  */
-/** Offene Stelle für die Sitemap (§23.3): `/team/{id}`, zuletzt geändert. */
+/** Offene Stelle für die Sitemap (§24.3): `/team/{id}`, zuletzt geändert. */
 export interface SitemapJob {
   id: string
   updatedAt: string

@@ -27,11 +27,13 @@ export interface Config {
   chatKeys: { keys: { id: string, key: Buffer }[], derived: boolean }
   /** Höchstens so viele Bytes Chat-Bilder insgesamt (Plattenplatz), `CHAT_STORAGE_MAX_MB`. */
   chatStorageMaxBytes: number
+  /** Höchstens so viele Bytes geteilte Screenshots insgesamt (§23), `SHARE_STORAGE_MAX_MB`. */
+  shareStorageMaxBytes: number
   /** Server-Einladungen: Status vom Server abfragen (Ping mit SSRF-Schutz). `SERVER_PING=false` schaltet ab. */
   serverPing: boolean
   /** Welt-Hosting (§21): Relay-Adresse + gemeinsames Geheimnis. `null` = Hosting aus (503 hosting_unavailable). */
   hosting: HostingConfig | null
-  /** Website-Anmeldung mit Microsoft (§23.1). `null` = aus (MS_CLIENT_ID/MS_CLIENT_SECRET fehlen). */
+  /** Website-Anmeldung mit Microsoft (§24.1). `null` = aus (MS_CLIENT_ID/MS_CLIENT_SECRET fehlen). */
   microsoft: MicrosoftConfig | null
   limits: Limits
 }
@@ -110,6 +112,13 @@ export interface Limits {
   hostingMaxBans: number
   /** Größe von `data` in Signal-Nachrichten (Zeichen). */
   hostingMaxSignalData: number
+  // ------------------------------------------------ Geteilte Screenshots (§23)
+  /** Ein geteilter Link gilt so lange, danach wird das Bild gelöscht. */
+  shareTtlMs: number
+  /** Gleichzeitig aktive Links je Konto. */
+  maxActiveShares: number
+  /** Uploads je Konto in 24 Stunden (auch wenn sie inzwischen gelöscht sind). */
+  maxSharesPerDay: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -152,6 +161,9 @@ export const DEFAULT_LIMITS: Limits = {
   hostingMaxRequests: 20,
   hostingMaxBans: 500,
   hostingMaxSignalData: 4096,
+  shareTtlMs: 30 * 24 * 60 * 60 * 1000,
+  maxActiveShares: 50,
+  maxSharesPerDay: 20,
 }
 
 const bool = z
@@ -220,6 +232,7 @@ const envSchema = z.object({
   // Chat-Verschlüsselung: "id:base64(32 Byte)", kommagetrennt, der erste ist aktiv.
   CHAT_KEYS: z.string().default(''),
   CHAT_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
+  SHARE_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
   SERVER_PING: bool.default(true),
   // Welt-Hosting: Relay (eigener Pterodactyl-Server). Ohne RELAY_SECRET + RELAY_HOST ist Hosting aus.
   RELAY_SECRET: z.string().default(''),
@@ -347,6 +360,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     logRequests: e.LOG_REQUESTS,
     chatKeys: parseChatKeys(e.CHAT_KEYS, e.SECRET_KEY),
     chatStorageMaxBytes: e.CHAT_STORAGE_MAX_MB * 1024 * 1024,
+    shareStorageMaxBytes: e.SHARE_STORAGE_MAX_MB * 1024 * 1024,
     serverPing: e.SERVER_PING,
     hosting: parseHosting(e),
     microsoft: parseMicrosoft(e),

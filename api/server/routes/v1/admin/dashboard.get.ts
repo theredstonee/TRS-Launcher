@@ -7,7 +7,7 @@ import { can } from '../../../lib/team'
 
 /**
  * Übersicht (§22.5): offene Arbeit, aktive Strafen, Nutzerzahlen, 30-Tage-Reihen, Server-Zustand, letzte Audit-Einträge.
- * Je Recht gekürzt (§23.2): Nutzer-/Server-Zahlen und Reihen nur mit `stats.view`, Audit nur mit `audit.view`,
+ * Je Recht gekürzt (§24.2): Nutzer-/Server-Zahlen und Reihen nur mit `stats.view`, Audit nur mit `audit.view`,
  * Warteschlangen nur mit dem passenden Recht (sonst `null`).
  */
 export default defineEventHandler((event) => {

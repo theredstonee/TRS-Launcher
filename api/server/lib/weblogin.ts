@@ -5,7 +5,7 @@ import { forbidden, unauthorized } from './errors'
 import { safeEqual, sha256Hex } from './ids'
 import { getUser, isBanned } from './users'
 
-// Website-Sitzungen (§23.1): nach der Anmeldung mit Microsoft bekommt der Browser ein httpOnly-Cookie
+// Website-Sitzungen (§24.1): nach der Anmeldung mit Microsoft bekommt der Browser ein httpOnly-Cookie
 // (SameSite=Strict) mit einem zufälligen Token; gespeichert wird nur dessen SHA-256. Ändernde Anfragen
 // schicken zusätzlich das CSRF-Token im Header `X-CSRF-Token` (Double-Submit gegen die Sitzung).
 // Team-Rechte hängen NICHT an der Sitzung – jede Anfrage liest sie neu (Entzug wirkt sofort).

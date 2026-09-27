@@ -133,7 +133,7 @@ function cookieSession(event: H3Event): WebSession | null {
   return webSession(useCtx(), cookie, getHeader(event, 'x-csrf-token'), mutating)
 }
 
-/** Angemeldet auf der Website (Microsoft, §23.1): Sitzung oder 401. Grund-Limit je Konto wie bei `requireUser`. */
+/** Angemeldet auf der Website (Microsoft, §24.1): Sitzung oder 401. Grund-Limit je Konto wie bei `requireUser`. */
 export function requireWeb(event: H3Event, kind: 'read' | 'write' = 'read'): WebSession {
   const session = cookieSession(event)
   if (!session) throw unauthorized()
@@ -176,7 +176,7 @@ export function textureViewer(event: H3Event): { uuid: string, admin: boolean } 
 }
 
 /**
- * Team-Zugriff (§23.2): Website-Sitzung (Cookie + CSRF bei ändernden Anfragen), Bearer-Token eines Team-Mitglieds
+ * Team-Zugriff (§24.2): Website-Sitzung (Cookie + CSRF bei ändernden Anfragen), Bearer-Token eines Team-Mitglieds
  * oder `X-Admin-Key` (= Owner). `need` = nötiges Recht (bei einer Liste reicht EINES davon). Rechte werden bei
  * jeder Anfrage neu gelesen. Jede Anfrage zählt aufs Team-Limit.
  */

@@ -119,10 +119,10 @@ export const RULES = {
   /** Ausgehende Mojang-Profilabfragen insgesamt (nur Cache-Fehlschläge). */
   mojangGlobal: { limit: 100, windowMs: MIN },
   playerEventsUser: { limit: 20, windowMs: MIN },
-  /** Website-Login mit Microsoft (§23.1): Weiterleitung starten bzw. Rücksprung, je IP. */
+  /** Website-Login mit Microsoft (§24.1): Weiterleitung starten bzw. Rücksprung, je IP. */
   msLoginIp: { limit: 20, windowMs: 10 * MIN },
   msCallbackIp: { limit: 30, windowMs: 10 * MIN },
-  /** Bewerbungen (§23.3): abschicken je Konto und je IP, zurückziehen je Konto. */
+  /** Bewerbungen (§24.3): abschicken je Konto und je IP, zurückziehen je Konto. */
   applyUser: { limit: 5, windowMs: HOUR },
   applyIp: { limit: 20, windowMs: HOUR },
   withdrawUser: { limit: 10, windowMs: HOUR },
@@ -180,4 +180,13 @@ export const RULES = {
   appealUser: { limit: 5, windowMs: HOUR },
   /** Eigene Strafen lesen (auch mit Einspruch-Token). */
   mySanctionsUser: { limit: 30, windowMs: MIN },
+  // ------------------------------------------------ Geteilte Screenshots (§23)
+  /** Hochladen (dazu die Tagesgrenze in der Datenbank). */
+  shareUploadUser: { limit: 10, windowMs: MIN },
+  /** Eigene Liste, Löschen. */
+  shareManageUser: { limit: 60, windowMs: MIN },
+  /** Öffentliche Abrufe (Seite, Bild) je IP – zusätzlich zur globalen IP-Grenze. */
+  sharePublicIp: { limit: 240, windowMs: MIN },
+  /** Anonyme Meldungen von der öffentlichen Seite je IP. */
+  shareReportIp: { limit: 5, windowMs: HOUR },
 } satisfies Record<string, Rule>

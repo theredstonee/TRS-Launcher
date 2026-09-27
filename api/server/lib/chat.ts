@@ -101,7 +101,59 @@ interface Body {
   i?: { a: string, n?: string }
   /** Weltkarte (Welt-Hosting, §21). */
   w?: WorldCardBody
+  /** Wegpunkt-Karte (§18.10): Name, Koordinaten, Dimension, Server-Adresse ODER Welt-Hash, Farbe. */
+  p?: WaypointBody
   s?: { e: SystemEvent, tg?: string, n?: string }
+}
+
+interface WaypointBody {
+  n: string
+  x: number
+  y: number
+  z: number
+  d: string
+  /** Server-Adresse (klein) … */
+  a?: string
+  /** … oder Hash der Einzelspielerwelt (16 hex). */
+  h?: string
+  c?: number
+}
+
+/** Wo der Wegpunkt gilt: Server (Adresse wie in der Serverliste) oder Einzelspielerwelt (nur Hash, kein Name). */
+export type WaypointWorld = { type: 'server', address: string } | { type: 'world', id: string }
+
+export interface WaypointView {
+  name: string
+  x: number
+  y: number
+  z: number
+  /** Namespaced-ID, z. B. `minecraft:overworld`. */
+  dimension: string
+  world: WaypointWorld
+  /** 0xRRGGBB oder `null`. */
+  color: number | null
+}
+
+export interface WaypointInput {
+  name: string
+  x: number
+  y: number
+  z: number
+  dimension: string
+  world: WaypointWorld
+  color?: number
+}
+
+function waypointView(b: WaypointBody): WaypointView {
+  return {
+    name: b.n,
+    x: b.x,
+    y: b.y,
+    z: b.z,
+    dimension: b.d,
+    world: b.a !== undefined ? { type: 'server', address: b.a } : { type: 'world', id: b.h ?? '' },
+    color: b.c ?? null,
+  }
 }
 
 export interface InviteView {
@@ -121,6 +173,8 @@ export interface ReplyView {
   invite: boolean
   /** Antwort auf eine Weltkarte. */
   world: boolean
+  /** Antwort auf eine Wegpunkt-Karte. */
+  waypoint: boolean
   deleted: boolean
 }
 
@@ -149,6 +203,8 @@ export interface MessageView {
   invite: InviteView | null
   /** Einladung in eine gehostete Welt (§21). */
   world: WorldCardView | null
+  /** Geteilter Wegpunkt (§18.10). */
+  waypoint: WaypointView | null
   attachments: AttachmentView[]
   replyTo: ReplyView | null
   system: SystemView | null
@@ -353,10 +409,11 @@ export function messageViews(ctx: AppContext, rows: MessageRow[], hideFrom: Set<
           attachments: repHidden ? 0 : (replyAtts.get(rep.id)?.length ?? 0),
           invite: !repHidden && !!rb?.i,
           world: !repHidden && !!rb?.w,
+          waypoint: !repHidden && !!rb?.p,
           deleted: rep.deleted_at !== null,
         }
       } else {
-        replyTo = { id: r.reply_to, seq: 0, sender: null, preview: null, attachments: 0, invite: false, world: false, deleted: true }
+        replyTo = { id: r.reply_to, seq: 0, sender: null, preview: null, attachments: 0, invite: false, world: false, waypoint: false, deleted: true }
       }
     }
     const show = !deleted && !hidden
@@ -369,6 +426,7 @@ export function messageViews(ctx: AppContext, rows: MessageRow[], hideFrom: Set<
       text: show ? (body?.t ?? null) : null,
       invite: show && body?.i ? { address: body.i.a, name: body.i.n ?? null } : null,
       world: show && body?.w && r.sender_uuid ? worldCardView(body.w, ref(r.sender_uuid)!) : null,
+      waypoint: show && body?.p ? waypointView(body.p) : null,
       attachments: show ? (atts.get(r.id) ?? []).map(attachmentView) : [],
       replyTo: show ? replyTo : null,
       system: r.kind === 'system' && body?.s
@@ -821,7 +879,25 @@ export interface SendInput {
   invite?: { address: string, name?: string }
   /** Weltkarte: nur der Host des Raums (§21). Empfänger, die mit ihm befreundet sind, werden eingeladen. */
   world?: { roomId: string }
+  /** Wegpunkt-Karte (§18.10). Nicht zusammen mit Einladung/Weltkarte. */
+  waypoint?: WaypointInput
   nonce?: string
+}
+
+/** Wegpunkt prüfen (Schema hat Typen/Bereiche geprüft) und für die Ablage vorbereiten. */
+function waypointBody(ctx: AppContext, w: WaypointInput): WaypointBody {
+  const name = sanitizeText(w.name).replace(/\s+/g, ' ').trim()
+  if (!name || [...name].length > 32) throw badRequest('invalid_waypoint', 'The waypoint name must be 1–32 characters')
+  const filtered = applyWordFilter(ctx, name)
+  return {
+    n: filtered,
+    x: w.x,
+    y: w.y,
+    z: w.z,
+    d: w.dimension,
+    ...(w.world.type === 'server' ? { a: w.world.address.toLowerCase() } : { h: w.world.id }),
+    ...(w.color !== undefined ? { c: w.color } : {}),
+  }
 }
 
 /** Gruppen: Links/Einladungen nur vom Besitzer oder von jemandem, der mit allen anderen befreundet ist. */
@@ -862,14 +938,18 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
     }
   }
   assertCanWrite(ctx, conv, me)
-  if (input.invite && input.world) throw badRequest('invite_conflict', 'A message can carry a server invite or a world, not both')
+  if ([input.invite, input.world, input.waypoint].filter(Boolean).length > 1) {
+    throw badRequest('invite_conflict', 'A message can carry one card: a server invite, a world or a waypoint')
+  }
   // Einladungen (Server, Welt) sind Sozial-Funktionen (§22.3).
   if (input.invite || input.world) assertNotSanctioned(ctx, me, 'social_ban')
   const world = input.world ? worldCardBody(ctx, me, input.world.roomId) : undefined
-  const text = checkContent(ctx, conv, me, input.text, !!input.invite || !!world)
+  // Ein Wegpunkt mit Server-Adresse zählt in Gruppen wie eine Einladung (Schutz vor Werbung).
+  const waypoint = input.waypoint ? waypointBody(ctx, input.waypoint) : undefined
+  const text = checkContent(ctx, conv, me, input.text, !!input.invite || !!world || waypoint?.a !== undefined)
   const attIds = [...new Set(input.attachments ?? [])]
   if (attIds.length > lim.maxAttachmentsPerMessage) throw badRequest('too_many_attachments', `At most ${lim.maxAttachmentsPerMessage} images per message`)
-  if (!text && attIds.length === 0 && !input.invite && !world) throw badRequest('empty_message', 'A message needs text, an image or an invite')
+  if (!text && attIds.length === 0 && !input.invite && !world && !waypoint) throw badRequest('empty_message', 'A message needs text, an image or an invite')
   for (const id of attIds) {
     const a = getAttachment(ctx, id)
     if (!a || a.uploader_uuid !== me || a.message_id !== null) throw notFound('attachment_not_found', 'Unknown or already used image')
@@ -888,6 +968,7 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
     ...(text ? { t: text } : {}),
     ...(input.invite ? { i: { a: input.invite.address.toLowerCase(), ...(inviteName ? { n: inviteName } : {}) } } : {}),
     ...(world ? { w: world } : {}),
+    ...(waypoint ? { p: waypoint } : {}),
   }
   const t = ctx.now()
   const id = newMessageId()
@@ -925,7 +1006,7 @@ export function editMessage(ctx: AppContext, me: string, messageId: string, rawT
   const old = decBody(ctx, msg) ?? {}
   const text = checkContent(ctx, conv, me, rawText, false)
   const atts = attachmentsOf(ctx, [msg.id]).get(msg.id)?.length ?? 0
-  if (!text && atts === 0 && !old.i && !old.w) throw badRequest('empty_message', 'A message needs text, an image or an invite')
+  if (!text && atts === 0 && !old.i && !old.w && !old.p) throw badRequest('empty_message', 'A message needs text, an image or an invite')
   if (text === (old.t ?? '')) return messageViews(ctx, [msg], blockedBy(ctx, me), me)[0]!
   spamCheck(ctx, me, text)
   const body: Body = { ...old }
@@ -1193,12 +1274,19 @@ export function rotateMessageKeys(ctx: AppContext, max: number): number {
 }
 
 /** Für Meldungen: Klartext einer Nachricht (Text + Einladung), ohne Sichtbarkeitsregeln. */
-export function decryptForEvidence(ctx: AppContext, row: MessageRow): { text: string | null, invite: InviteView | null, world: { roomId: string, name: string } | null, system: Body['s'] | null } {
+export function decryptForEvidence(ctx: AppContext, row: MessageRow): {
+  text: string | null
+  invite: InviteView | null
+  world: { roomId: string, name: string } | null
+  waypoint: WaypointView | null
+  system: Body['s'] | null
+} {
   const b = decBody(ctx, row)
   return {
     text: b?.t ?? null,
     invite: b?.i ? { address: b.i.a, name: b.i.n ?? null } : null,
     world: b?.w ? { roomId: b.w.r, name: b.w.n } : null,
+    waypoint: b?.p ? waypointView(b.p) : null,
     system: b?.s ?? null,
   }
 }

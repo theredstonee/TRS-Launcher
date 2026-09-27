@@ -3,7 +3,7 @@ import '~/assets/css/admin.css'
 
 // Team-Bereich: Anmeldung mit Microsoft (dieselbe Website-Sitzung wie überall), danach Seitenleiste + Suche und
 // die Unterseiten unter /admin/*. Alles über /v1/admin; Rechte prüft der Server, die Oberfläche zeigt nur, was die
-// Rechte der eigenen Rollen erlauben (§23.2).
+// Rechte der eigenen Rollen erlauben (§24.2).
 definePageMeta({ layout: false })
 useHead({ title: 'Team · TRS Launcher', meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 

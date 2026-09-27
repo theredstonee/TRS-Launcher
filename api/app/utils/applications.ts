@@ -1,4 +1,4 @@
-// Typen + kleine Helfer für Team-Seite, Stellen und Bewerbungen (API.md §23.3).
+// Typen + kleine Helfer für Team-Seite, Stellen und Bewerbungen (API.md §24.3).
 import type { Lang } from './messages'
 import type { AdminSanction } from './moderation'
 

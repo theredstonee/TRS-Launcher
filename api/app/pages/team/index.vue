@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Öffentliche Team-Seite (§23.3): offene Stellen + Team-Mitglieder je öffentlicher Rolle (Farbe, Kopf).
+// Öffentliche Team-Seite (§24.3): offene Stellen + Team-Mitglieder je öffentlicher Rolle (Farbe, Kopf).
 import { breadcrumbLd } from '#shared/seo'
 
 const { t, lang } = useTeamText()

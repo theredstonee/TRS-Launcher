@@ -1,4 +1,4 @@
-// Website-Anmeldung (Microsoft, §23.1): Sitzung im httpOnly-Cookie `trs_session`, ändernde Anfragen schicken das
+// Website-Anmeldung (Microsoft, §24.1): Sitzung im httpOnly-Cookie `trs_session`, ändernde Anfragen schicken das
 // CSRF-Token im Header X-CSRF-Token. Wird nur im Browser geladen (keine persönlichen Daten im SSR-HTML).
 
 export interface TeamRoleRef {

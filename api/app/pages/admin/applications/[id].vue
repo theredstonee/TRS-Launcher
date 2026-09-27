@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Bewerbung im Detail (§23.3): Antworten, Abstimmung (Daumen + Kommentar), interne Notizen, Verlauf,
+// Bewerbung im Detail (§24.3): Antworten, Abstimmung (Daumen + Kommentar), interne Notizen, Verlauf,
 // Strafverlauf (nur mit players.view), Status + Antwort an den Bewerber, optional Rolle bei Annahme.
 const { a, fill, when, rel, actor } = useAdminText()
 const { t, lang } = useTeamText()

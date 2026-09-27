@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Stelle im Detail + Bewerbungsformular (§23.3). Texte kommen als Klartext (kein HTML/Markdown aus der Datenbank).
+// Stelle im Detail + Bewerbungsformular (§24.3). Texte kommen als Klartext (kein HTML/Markdown aus der Datenbank).
 // Bewerben nur angemeldet (Microsoft); Discord-Name + Altersgruppe immer, dazu die Fragen der Stelle.
 import { breadcrumbLd } from '#shared/seo'
 
