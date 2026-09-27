@@ -45,6 +45,12 @@ public final class RedstoneProbe implements RedstoneWorld {
 	/** Einmal je Client-Tick: angeschauten Block, Kamera und (bei offenem Behälter) dessen Inhalt weitergeben. */
 	public static void tick(RedstoneTools tools) {
 		Minecraft mc = Minecraft.getInstance();
+		// Schaltungs-Bibliothek (Vorlagen in der Welt) – eigener Fehlerschutz, stört die Redstone-Werkzeuge nie.
+		try {
+			CircuitProbe.tick();
+		} catch (RuntimeException | LinkageError e) {
+			// nächster Tick
+		}
 		Level level = mc.level;
 		if (level == null || mc.player == null) {
 			INSTANCE.level = null;

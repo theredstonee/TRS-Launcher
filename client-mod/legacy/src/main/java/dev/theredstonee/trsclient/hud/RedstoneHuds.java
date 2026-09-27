@@ -100,7 +100,8 @@ public final class RedstoneHuds {
 		}
 
 		public void render(Gfx g, FontRenderer font, float partialTicks) {
-			if (!modules.redstoneOverlay.isEnabled() || tools.cache().size() == 0) return;
+			boolean circuit = dev.theredstonee.trsclient.core.circuit.Circuits.get().active() != null;
+			if (!circuit && (!modules.redstoneOverlay.isEnabled() || tools.cache().size() == 0)) return;
 			if (Mc.player() == null || Mc.world() == null) return;
 			Entity view = Mc.viewEntity();
 			if (view == null) return;
@@ -116,6 +117,12 @@ public final class RedstoneHuds {
 				yaw = (float) Mc.lerp(view.prevRotationYaw, view.rotationYaw, partialTicks);
 				pitch = (float) Mc.lerp(view.prevRotationPitch, view.rotationPitch, partialTicks);
 			}
+			// Schaltungs-Vorlage (Geisterblöcke + Fortschritt), gleiche Projektion wie das Signal-Overlay
+			if (circuit) {
+				dev.theredstonee.trsclient.core.circuit.Circuits.get().draw(GfxCanvas.of(g, font), camX, camY, camZ, yaw, pitch,
+						TrsClient.get().worldFov(), g.width(), g.height());
+			}
+			if (!modules.redstoneOverlay.isEnabled() || tools.cache().size() == 0) return;
 			painter.draw(GfxCanvas.of(g, font), tools.cache().entries(), camX, camY, camZ, yaw, pitch,
 					TrsClient.get().worldFov(), g.width(), g.height(), modules.redstoneOverlayZero.get());
 		}
