@@ -14,8 +14,8 @@ The German deployment guide is in [README.md](README.md).
 
 | Topic | Rule |
 |---|---|
-| Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`, chat images (§18.7) and shared screenshots (§23), which send raw `image/png`, `image/jpeg` or `image/webp`. |
-| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**, a chat image at most **5 MiB**, a shared screenshot at most **10 MiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Anything larger gets `413`. |
+| Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`, chat images (§18.7) and shared screenshots (§23), which send raw `image/png`, `image/jpeg` or `image/webp`, and circuit files (§25.6), which send the raw file as `application/octet-stream`. |
+| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**, a chat image at most **5 MiB**, a shared screenshot at most **10 MiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Circuit bodies (§25) at most **300 KiB**, circuit files at most **2 MiB**. Anything larger gets `413`. |
 | Unknown fields | They are **rejected** with `400 invalid_request`. All request objects are strict. |
 | UUIDs | Requests accept 32 hex digits with or without dashes, in any case. **Responses always use 32 lowercase hex digits without dashes**, for example `75c1a6f3112240abbdb57b9d21c64232`. |
 | Minecraft names | `^[A-Za-z0-9_]{1,16}$` |
@@ -2604,3 +2604,120 @@ Tables `team_roles`, `team_members` (uuid + role_id), `team_jobs`, `team_applica
 - Applications: handle `application_updated` (toast "Your application for X: <status>" + answer) and optionally a "My applications" view (`GET /v1/me/applications`, withdraw) – bearer tokens work for all player routes of §24.3.
 
 **TRS Client:** only `application_updated` (optional toast); nothing else changes.
+
+## 25. Circuit library
+
+The redstone circuit library of the TRS Client lives on the server: the mod ships no circuits, checks the index once per game start and downloads only new or changed circuits – new circuits need no mod update. The circuit JSON, the block catalogue, all limits and the client behaviour are specified in [`docs/circuit-format.md`](../docs/circuit-format.md) (main branch); this section adds the server side. The server validates with the same rules as the client (`shared/circuits.ts` ↔ `Circuit.parse`) and is stricter in one point: properties are only allowed on the blocks that have them (e.g. `delay` only on `repeater`).
+
+### 25.1 Index (public)
+
+`GET /v1/circuits/index` – no auth, rate limit 240 / min per IP (plus the global limit).
+
+```json
+{ "version": "3b1f…(32 hex)", "circuits": [
+  { "id": "not_gate", "rev": 1, "updatedAt": "2026-09-27T12:00:00.000Z", "minVersion": "1.8" },
+  { "id": "t_flipflop_copper", "rev": 3, "updatedAt": "…", "minVersion": "1.21", "maxVersion": "1.21.4" } ] }
+```
+
+- Only **published** circuits, in library order (`sort`, then id).
+- `rev` is an integer that grows with **every** change of the circuit (content, texts, status, creator removed). Clients treat it as an opaque token (the mod stores it as a string).
+- `minVersion` = the effective minimum (highest of `since` and the blocks, e.g. observer → 1.11), `maxVersion` = `until` (missing = no limit).
+- Strong `ETag: "<version>"` (`version` = first 32 hex of SHA-256 over the entries). `If-None-Match` with the same tag (also in a list or as `W/`) → **304** with an empty body. `Cache-Control: public, max-age=60, stale-while-revalidate=600`. The server caches the index in memory until the next change.
+
+### 25.2 One circuit (public)
+
+`GET /v1/circuits/{id}?rev={rev}` – no auth, same rate limit.
+
+- Body = exactly the client format (§2 of circuit-format.md) plus `rev`, `updatedAt` and `author` (`{ uuid, name }` of the creator of an accepted submission, `null` = TRS team):
+  ```json
+  { "format": 1, "id": "and_gate", "rev": 2, "category": "basics", "difficulty": 2, "server": "ok",
+    "texts": { "en": { "name": "AND gate", "desc": "…" }, "de": { … }, "es": { … } },
+    "palette": { … }, "layers": [ … ], "tests": [ … ], "updatedAt": "…", "author": null }
+  ```
+- `rev` = the current one → **200**, `Cache-Control: public, max-age=31536000, immutable`, `ETag: "c-<id>-<rev>"` (304 on `If-None-Match`).
+- `rev` = any other number → **404 `rev_mismatch`** with `details.rev` = current rev and `Cache-Control: no-store`. There is deliberately **no redirect**: an immutable URL must never return different content. Clients reload the index.
+- Without `rev` → 200, `Cache-Control: public, max-age=60` (website, tools).
+- Not published / unknown → `404 circuit_not_found`. A malformed `rev` → `400 invalid_request`.
+
+`GET /v1/circuits/{id}/export?format=nbt|json` (public, published only): download as a vanilla **structure file** (`.nbt`, gzip, loadable with a structure block – copy to `<world>/generated/minecraft/structures/`) or as the JSON above. `DataVersion` = oldest version the circuit runs in (1.13.2 = 1631 for classic circuits, 1.21 = 3953 for copper bulbs); empty cells are saved as air, `solid` as stone, markers and flags are dropped.
+
+### 25.3 Website data
+
+`GET /v1/site/circuits` → `{ circuits: [SiteCircuit] }`, `GET /v1/site/circuits/{id}` → `SiteCircuit` (public, `max-age=60`): `{ circuit: <body of 25.2>, size: {x,y,z}, blockCount, materials: [{ key, item, count }], minVersion, maxVersion, publishedAt }`. Pages: `/circuits` (list, filter, search), `/circuits/{id}` (3D preview, materials, download, report), `/circuits/submit`, `/circuits/mine` (both noindex, browser only). The sitemap lists `/circuits` and every published circuit with hreflang alternates.
+
+### 25.4 Team: editor (`circuits.manage`)
+
+New permission **`circuits.manage`** (group "content"). Default roles: owner, admin, senior moderator and content (migration 14 adds it to the existing default roles; other adjustments stay). Every route checks the permission on the server; all changes go to the audit log with `ref = circuit:<id>`.
+
+| Route | Body / query | Answer |
+|---|---|---|
+| `GET /v1/admin/circuits?status=all\|draft\|published\|hidden&category&q` | – | `{ circuits: [AdminCircuitDetail], counts: { pendingSubmissions, published, total } }` |
+| `GET /v1/admin/circuits/{id}` | – | `{ circuit: AdminCircuitDetail, history: [audit entries] }` (history only with `audit.view`) |
+| `POST /v1/admin/circuits` | `{ circuit, status?: draft (default)\|published\|hidden, sort? }` | **201** `{ circuit }`; `409 circuit_exists`, `400 invalid_circuit` (`errors: [..]`) |
+| `PUT /v1/admin/circuits/{id}` | `{ circuit, status?, sort?, baseRev? }` | `{ circuit }` (rev + 1); the id cannot change; `409 stale` (+ `rev`) if `baseRev` is outdated |
+| `POST /v1/admin/circuits/{id}/status` | `{ status, baseRev? }` | `{ circuit }` (rev + 1 when the status changes) |
+| `DELETE /v1/admin/circuits/{id}` | – | **204**; the id is kept as a tombstone so the seed never re-adds it (it can be created again on purpose) |
+| `POST /v1/admin/circuits/import?name=<file name>` | raw file bytes (`application/octet-stream`, ≤ 2 MB) | `{ format, circuit, warnings, size, blockCount }` – nothing is stored |
+| `POST /v1/admin/circuits/export?format=nbt\|json` | `{ circuit }` (unsaved editor state) | file |
+| `GET /v1/admin/circuits/{id}/export?format=nbt\|json` | – | file (any status) |
+
+`AdminCircuitDetail` = `{ id, rev, status, category, difficulty, names: {lang: name}, author, source: seed|team|submission, edited, size, blockCount, minVersion, maxVersion, sort, createdAt, updatedAt, publishedAt, circuit }`. Rate limit 120 / min per team member for changes, imports and exports.
+
+**Built-in circuits (seed).** At start the server reads `assets/circuits/index.json` + `<id>.json` (copies of `data/circuits` in main) and inserts missing ones as published (rev 1). A built-in circuit that was never changed in the team area is updated when its file changes (rev + 1); edited (`edited = 1`), foreign (same id, other source) and deleted ones stay untouched. Invalid files are skipped with a warning.
+
+### 25.5 Submissions
+
+**Player routes** (bearer token of the launcher/mod **or** the website session with CSRF):
+
+- `POST /v1/circuits/submissions` `{ circuit, name: 1–64, category, description: 1–1200, lang: en|de|es, format?: json|litematic|schem|nbt }` → **201** `{ id, status: "pending", submission: MySubmission }`. The server takes palette, layers and tests from `circuit` and sets the id (a valid, non-reserved `circuit.id` or a slug of the name), the category and `texts[lang] = { name, desc }`; name and description go through the word filter (`422 message_blocked`). Checks in this order:
+  1. `403 sanctioned` – active **upload ban** (moderation v2), with `until` + `sanction`;
+  2. `429 rate_limited` – at most **5 per 24 h** per account (decided ones count too; `Retry-After`, `max`), plus 20 / h per account in memory;
+  3. `400 invalid_circuit` – `errors: ["…"]` (same rules as the client); `400 invalid_request` for the body;
+  4. `409 circuit_duplicate` – the same build (canonical content hash: occupied cells relative to the smallest corner, without markers and flags – palette characters and air don't matter) exists as a circuit (any status; `circuitId`) or as a pending/approved submission.
+- `GET /v1/me/circuit-submissions` → `{ submissions: [MySubmission], limits: { today, maxPerDay } }`.
+- `POST /v1/circuits/convert?name=<file name>` (signed in, 30 / h): raw file → `{ format, circuit, warnings, size, blockCount }` for the preview before submitting (the website uses it; nothing is stored).
+
+`MySubmission` = `{ id: "cs<16 hex>", name, category, lang, status: pending|approved|rejected, reason (rejection reason, visible to the creator), circuitId (after approval), createdAt, updatedAt, decidedAt }`.
+
+**Team** (`circuits.manage`):
+
+| Route | Body | Answer |
+|---|---|---|
+| `GET /v1/admin/circuit-submissions?status=pending\|approved\|rejected\|all` | – | `{ submissions: [AdminSubmission], pending }` (pending = oldest first) |
+| `GET /v1/admin/circuit-submissions/{id}` | – | `{ submission, suggestedId }` |
+| `POST /v1/admin/circuit-submissions/{id}/accept` | `{ circuit?: edited circuit, status?: published (default)\|draft, sort? }` | `{ submission, circuit }` – creates the circuit with `author = { uuid, name }` of the submitter; `409 submission_decided`, `409 circuit_exists` |
+| `POST /v1/admin/circuit-submissions/{id}/reject` | `{ reason: 3–500 }` | `{ submission }` |
+
+`AdminSubmission` = `MySubmission` + `{ submitter: {uuid, name}, description, format, circuit, size, blockCount, decidedBy, submitterStats: { pending, approved, rejected } }`.
+
+**Event** (`/v1/events/me`, §19): `circuit_submission_updated` `{ submission: MySubmission }` – after submitting (other devices), approval (with `circuitId`) and rejection (with `reason`).
+
+**Retention:** decided submissions are deleted **90 days after the decision** (6-hourly job); pending ones stay until decided. The uploaded file is never stored (only the converted circuit). Account deletion deletes all submissions (CASCADE) and removes `author` from the account's circuits (rev + 1, the circuit stays).
+
+### 25.6 File import
+
+Formats are detected by content, not by extension; at most **2 MB** upload.
+
+| Format | Read |
+|---|---|
+| Litematica `.litematic` (gzip NBT) | all regions (negative sizes; overlapping regions: later ones win), `BlockStatePalette` + packed `BlockStates` (values may span two longs); `TileEntities`/`Entities` are ignored |
+| Sponge schematic `.schem` v1/v2/v3 | `Palette` + `BlockData` (v1/v2) or `Blocks.Palette` + `Blocks.Data` (v3), varint indices; `BlockEntities` are ignored. Old MCEdit `.schematic` (numeric ids) → `400 invalid_circuit` |
+| Structure block `.nbt` | `size`, `palette` (or `palettes[0]`), `blocks[{pos,state}]`; `blocks[].nbt` and `entities` are ignored |
+| TRS JSON | the circuit format itself (a UTF-8 BOM is allowed), ≤ 256 KB |
+
+Conversion keeps only block states. Catalogue blocks and their aliases are taken as they are (only the allowed properties survive – `powered`, `power`, `lit`, wire connections … are dropped). Similar blocks are converted with a warning (`*_button` → `stone_button`, `*_pressure_plate` → `stone_pressure_plate`, `*_stained_glass` → `glass`, `*_sign` → `oak_sign`, blast furnace/smoker → `furnace`, …), full blocks (stone, planks, wool, concrete, ores, …) become `solid`, everything else is left out with a warning. Air around the build is trimmed; the rest must fit **16 × 16 × 16**. `warnings: [{ block, count, action: solid|converted|skipped, as? }]`.
+
+**NBT safety:** the gzip/zlib stream is inflated with a hard limit of **8 MiB** (zip bombs → `400 invalid_circuit`), nesting ≤ 24, ≤ 400 000 nodes, every list/array length is checked against the remaining bytes before memory is allocated (negative lengths and truncated data → 400), compounds are prototype-free objects, raw volume ≤ 1 048 576 cells, palettes ≤ 65 536 entries.
+
+### 25.7 Reports
+
+Report kind **`circuit`** in `POST /v1/reports` (§20): `{ kind: "circuit", circuitId, reason, note? }` – only published circuits (`404 circuit_not_found`), not your own (`400 cannot_target_self`). `POST /v1/reports` now also accepts the website session (cookie + CSRF). The target is the creator (`null` for team circuits). Evidence: `circuit: { id, rev, name, author }`; report summaries have `circuitId`. New admin action **`hide_circuit`** (needs `reports.handle` **and** `circuits.manage`, otherwise `403 missing_permission`) hides the circuit (rev + 1); `includeRelated` closes the other open reports about the same circuit. Migration 14 rebuilds the report tables for the new kind (like migration 12, children first).
+
+### 25.8 Data and migration 14
+
+Tables `circuits` (id, rev, status, category, difficulty, min/max version, sort, data = circuit JSON, content_hash, author uuid/name, source, seed_hash, edited, timestamps, created_by/updated_by), `circuit_tombstones`, `circuit_submissions`; `chat_reports.circuit_id` + kind `circuit`; permission `circuits.manage` for the default roles. Idempotent (`migrateCircuits`). When merging: renumber if a parallel branch also added a migration 14.
+
+### 25.9 What clients have to do
+
+- **TRS Client** (done in main): index with `If-None-Match`, circuits per `rev`, submissions with the bearer token, `GET /v1/me/circuit-submissions`, the error codes above. Optional: a toast on `circuit_submission_updated`, "Report" with `kind: circuit`.
+- **TRS Launcher:** nothing required. Optional: a toast on `circuit_submission_updated`; a team-area link to `/admin/circuits` for `circuits.manage`.

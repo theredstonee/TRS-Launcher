@@ -69,7 +69,21 @@ If you apply for a position in the TRS team, we store your **application**: the 
 
 **Storage period.** Rejected or withdrawn applications are **deleted 6 months after the decision**. Accepted applications are kept while you are in the team and **deleted 6 months after you leave**. Deleting your TRS account deletes all your applications at once.
 
-**Legal basis.** Art. 6(1)(b) GDPR (steps you asked for before a voluntary team membership) and Art. 6(1)(f) (a fair decision and protection against abuse). If you are under 16, please talk to your parents before you apply.`,
+**Legal basis.** Art. 6(1)(b) GDPR (steps you asked for before a voluntary team membership) and Art. 6(1)(f) (a fair decision and protection against abuse). If you are under 16, please talk to your parents before you apply.
+
+## Circuit library
+
+**Public library.** The circuit pages (/circuits) and the TRS Client load circuits from our server without an account. The server only counts requests per IP address in memory (rate limit). The TRS Client checks for new circuits once per game start – only if you allowed the TRS online features.
+
+**Submitting a circuit.** When you submit a circuit (signed in, on this website or in the TRS Client), we store the circuit (only blocks and their states – no chest contents or other block data), the name, description, category and language you entered, the file type, your Minecraft UUID and name, the time, the status and our answer. The uploaded file itself is not stored: it is converted and discarded right away. Only team members whose role may manage the library see submissions.
+
+**Your name is shown.** If we accept your circuit, it is published in the library on this website and in the TRS Client **with your Minecraft name (and your UUID for the head picture) as the creator**. You confirm this with the checkbox when you submit.
+
+**Storage period.** Decided submissions (accepted or rejected) are **deleted 90 days after the decision**; open ones stay until they are decided. A published circuit stays in the library until the team removes it. Deleting your TRS account deletes all your submissions and removes your name from the circuits you made (they stay in the library without a creator). You can ask us at any time to remove a circuit of yours (e-mail above).
+
+**Reports.** Signed-in users can report a circuit; the report is handled like other reports (see “Reports and moderation”).
+
+**Legal basis.** Art. 6(1)(b) GDPR (you want to publish your circuit) and Art. 6(1)(f) (reviewing content and preventing abuse, e.g. at most 5 submissions a day and upload bans).`,
     launcher: '## The TRS Launcher',
   },
   de: {
@@ -129,7 +143,21 @@ Wenn du dich auf eine Stelle im TRS-Team bewirbst, speichern wir deine **Bewerbu
 
 **Speicherdauer.** Abgelehnte oder zurückgezogene Bewerbungen werden **6 Monate nach der Entscheidung gelöscht**. Angenommene Bewerbungen bleiben, solange du im Team bist, und werden **6 Monate nach deinem Austritt gelöscht**. Löschst du dein TRS-Konto, werden alle deine Bewerbungen sofort gelöscht.
 
-**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (von dir gewünschte Schritte vor einer freiwilligen Team-Mitgliedschaft) und Art. 6 Abs. 1 lit. f (faire Entscheidung und Schutz vor Missbrauch). Bist du unter 16, sprich bitte vor der Bewerbung mit deinen Eltern.`,
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (von dir gewünschte Schritte vor einer freiwilligen Team-Mitgliedschaft) und Art. 6 Abs. 1 lit. f (faire Entscheidung und Schutz vor Missbrauch). Bist du unter 16, sprich bitte vor der Bewerbung mit deinen Eltern.
+
+## Schaltungs-Bibliothek
+
+**Öffentliche Bibliothek.** Die Schaltungs-Seiten (/circuits) und der TRS Client laden Schaltungen ohne Konto von unserem Server. Der Server zählt Anfragen je IP-Adresse nur im Arbeitsspeicher (Rate-Limit). Der TRS Client prüft einmal je Spielstart auf neue Schaltungen – nur, wenn du die TRS-Online-Funktionen erlaubt hast.
+
+**Schaltung einreichen.** Reichst du eine Schaltung ein (angemeldet, auf dieser Website oder im TRS Client), speichern wir die Schaltung (nur Blöcke und ihre Zustände – keine Kisteninhalte oder anderen Blockdaten), den eingegebenen Namen, die Beschreibung, Kategorie und Sprache, den Dateityp, deine Minecraft-UUID und deinen Namen, den Zeitpunkt, den Status und unsere Antwort. Die hochgeladene Datei selbst speichern wir nicht: sie wird umgewandelt und sofort verworfen. Einreichungen sehen nur Team-Mitglieder, deren Rolle die Bibliothek verwalten darf.
+
+**Dein Name wird angezeigt.** Nehmen wir deine Schaltung an, erscheint sie in der Bibliothek auf dieser Website und im TRS Client **mit deinem Minecraft-Namen (und deiner UUID für das Kopfbild) als Ersteller**. Das bestätigst du beim Einreichen mit dem Häkchen.
+
+**Speicherdauer.** Entschiedene Einreichungen (angenommen oder abgelehnt) werden **90 Tage nach der Entscheidung gelöscht**; offene bleiben bis zur Entscheidung. Eine veröffentlichte Schaltung bleibt in der Bibliothek, bis das Team sie entfernt. Löschst du dein TRS-Konto, werden alle deine Einreichungen gelöscht und dein Name wird aus deinen Schaltungen entfernt (sie bleiben ohne Ersteller in der Bibliothek). Du kannst jederzeit verlangen, dass wir eine Schaltung von dir entfernen (E-Mail oben).
+
+**Meldungen.** Angemeldete Nutzer können eine Schaltung melden; die Meldung wird wie andere Meldungen bearbeitet (siehe „Meldungen und Moderation“).
+
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (du möchtest deine Schaltung veröffentlichen) und Art. 6 Abs. 1 lit. f (Prüfung der Inhalte und Schutz vor Missbrauch, z. B. höchstens 5 Einreichungen am Tag und Upload-Sperren).`,
     launcher: '## Der TRS Launcher',
   },
   es: {
@@ -187,7 +215,21 @@ Si te postulas a un puesto en el equipo TRS, guardamos tu **solicitud**: el pues
 
 **Plazo de conservación.** Las solicitudes rechazadas o retiradas se **borran 6 meses después de la decisión**. Las aceptadas se conservan mientras estés en el equipo y se **borran 6 meses después de que salgas**. Si borras tu cuenta TRS, se borran al instante todas tus solicitudes.
 
-**Base jurídica.** Art. 6.1.b RGPD (pasos que pides antes de una pertenencia voluntaria al equipo) y art. 6.1.f (una decisión justa y protección contra abusos). Si tienes menos de 16 años, habla con tus padres antes de postularte.`,
+**Base jurídica.** Art. 6.1.b RGPD (pasos que pides antes de una pertenencia voluntaria al equipo) y art. 6.1.f (una decisión justa y protección contra abusos). Si tienes menos de 16 años, habla con tus padres antes de postularte.
+
+## Biblioteca de circuitos
+
+**Biblioteca pública.** Las páginas de circuitos (/circuits) y el TRS Client cargan los circuitos de nuestro servidor sin cuenta. El servidor solo cuenta las peticiones por dirección IP en memoria (límite de peticiones). El TRS Client busca circuitos nuevos una vez por inicio del juego, solo si has permitido las funciones en línea de TRS.
+
+**Enviar un circuito.** Cuando envías un circuito (con sesión iniciada, en esta web o en el TRS Client), guardamos el circuito (solo bloques y sus estados, sin contenido de cofres ni otros datos de bloques), el nombre, la descripción, la categoría y el idioma que indicaste, el tipo de archivo, tu UUID y tu nombre de Minecraft, la fecha, el estado y nuestra respuesta. El archivo subido no se guarda: se convierte y se descarta al instante. Solo ven los envíos los miembros del equipo cuyo rol puede gestionar la biblioteca.
+
+**Se muestra tu nombre.** Si aceptamos tu circuito, se publica en la biblioteca de esta web y en el TRS Client **con tu nombre de Minecraft (y tu UUID para la imagen de la cabeza) como creador**. Lo confirmas con la casilla al enviarlo.
+
+**Plazo de conservación.** Los envíos decididos (aceptados o rechazados) se **borran 90 días después de la decisión**; los abiertos se conservan hasta que se decidan. Un circuito publicado sigue en la biblioteca hasta que el equipo lo quite. Si borras tu cuenta TRS, se borran todos tus envíos y tu nombre se quita de tus circuitos (siguen en la biblioteca sin creador). Puedes pedirnos en cualquier momento que quitemos un circuito tuyo (correo arriba).
+
+**Denuncias.** Los usuarios con sesión iniciada pueden denunciar un circuito; la denuncia se trata como las demás (ver «Denuncias y moderación»).
+
+**Base jurídica.** Art. 6.1.b RGPD (quieres publicar tu circuito) y art. 6.1.f (revisar el contenido y evitar abusos, p. ej. un máximo de 5 envíos al día y bloqueos de subida).`,
     launcher: '## El TRS Launcher',
   },
 }

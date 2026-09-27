@@ -193,7 +193,7 @@ const limitReached = computed(() => !!limits.value && limits.value.today >= limi
             </div>
             <label class="flex items-start gap-2 text-sm text-base-300">
               <input v-model="form.consent" type="checkbox" class="mt-1" />
-              <span>{{ c.submit.consent }} <NuxtLink :to="`${lp('/privacy')}#website-circuits`" class="underline hover:text-base-50">{{ c.submit.privacy }}</NuxtLink></span>
+              <span>{{ c.submit.consent }} <NuxtLink :to="`${lp('/privacy')}#${c.submit.privacyAnchor}`" class="underline hover:text-base-50">{{ c.submit.privacy }}</NuxtLink></span>
             </label>
             <button type="submit" class="btn btn-primary w-full" :disabled="!valid || busy || limitReached">
               <SiteIcon name="check" class="size-4" />{{ busy ? c.submit.sending : c.submit.send }}

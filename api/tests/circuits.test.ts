@@ -619,3 +619,29 @@ describe('reports of circuits', () => {
     run(env.ctx.db, 'DELETE FROM chat_reports')
   })
 })
+
+describe('website (SEO, sitemap, texts)', () => {
+  it('has short SEO texts in all languages and lists every published circuit in the sitemap', async () => {
+    const { circuitTexts } = await import('../app/utils/circuit-i18n')
+    const { buildSitemap, buildRobots, SITE_PAGES } = await import('../shared/seo')
+    for (const lang of ['en', 'de', 'es'] as const) {
+      const seo = circuitTexts[lang].seo.list
+      expect(seo.title.length, `${lang} title`).toBeLessThanOrEqual(65)
+      expect(seo.description.length, `${lang} description`).toBeGreaterThan(50)
+      expect(seo.description.length, `${lang} description`).toBeLessThanOrEqual(160)
+      // alle Kategorien und Blöcke übersetzt
+      for (const cat of ['basics', 'clocks', 'memory', 'pulse', 'doors', 'farms', 'displays']) expect(circuitTexts[lang].categories[cat]).toBeTruthy()
+      for (const b of CIRCUIT_BLOCKS) expect(circuitTexts[lang].blocks[b.key], `${lang} ${b.key}`).toBeTruthy()
+    }
+    expect(SITE_PAGES.some((p) => p.path === '/circuits')).toBe(true)
+    const env = makeEnv()
+    seedAll(env)
+    const circuits = circuitIndex(env.ctx).index.circuits.map((x) => ({ id: x.id, updatedAt: x.updatedAt }))
+    const xml = buildSitemap('https://site.test', [], '2026-09-20T08:00:00.000Z', [], circuits)
+    expect(xml).toContain('<loc>https://site.test/circuits/and_gate?lang=de</loc>')
+    expect(xml).toContain('<loc>https://site.test/circuits</loc>')
+    const robots = buildRobots('https://site.test').split('\n')
+    expect(robots).toContain('Disallow: /circuits/submit')
+    expect(robots).toContain('Disallow: /circuits/mine')
+  })
+})
