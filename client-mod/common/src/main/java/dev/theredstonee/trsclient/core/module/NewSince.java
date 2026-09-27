@@ -79,6 +79,12 @@ public final class NewSince {
 	public static final String SOCIAL_WAYPOINT = "social:waypoint";
 	/** Clips &amp; Bilder: „Als Link teilen“ + „Meine geteilten Bilder“. */
 	public static final String CLIPS_SHARE = "clips:share";
+	/** Komfort-Paket 2 (TRS Client 0.11.0): bessere Tooltips, Server-Profile, Panorama-Screenshots. */
+	public static final String COMFORT = "0.11.0";
+	/** Menü-Leiste „Profile“ → Reiter „Server-Profile“. */
+	public static final String MENU_SERVER_PROFILES = "menu:serverProfiles";
+	/** Taste „Panorama aufnehmen“ (standardmäßig unbelegt). */
+	public static final String KEY_PANORAMA = "key.trsclient.panorama";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -124,6 +130,8 @@ public final class NewSince {
 		add(QOL, "chat.timestampTwelveHour", "chat.history", "chat.copyMode", "autoGg.presets");
 		// Teilen-Paket.
 		add(SHARE, SOCIAL_WAYPOINT, CLIPS_SHARE, "chat.coordLinks");
+		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama.
+		add(COMFORT, "tooltips", "serverProfiles", "panorama", MENU_SERVER_PROFILES, KEY_PANORAMA);
 	}
 
 	private NewSince() {

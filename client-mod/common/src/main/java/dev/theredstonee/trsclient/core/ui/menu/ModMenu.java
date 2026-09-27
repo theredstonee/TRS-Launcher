@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public final class ModMenu extends UiScreen {
 	private enum Page {
-		GRID, SETTINGS, PROFILES, PACKS
+		GRID, SETTINGS, PROFILES, PACKS, SERVERS
 	}
 
 	private static final int HEADER_H = 30;
@@ -73,6 +73,8 @@ public final class ModMenu extends UiScreen {
 	private long previewTouched;
 	/** Modul-Pakete (Seite im Menü, dieselbe Auswahl wie in der Einführung). */
 	private final PacksPage packsPage;
+	/** Server-Profile (automatischer Wechsel je Server). */
+	private final ServerProfilesPage serversPage;
 	/** Modul, dessen Seite gerade offen ist (für die „NEU“-Markierungen). */
 	private Module newsOpenFor;
 
@@ -97,6 +99,17 @@ public final class ModMenu extends UiScreen {
 			@Override
 			public void run() {
 				ModMenu.this.host.playClick();
+			}
+		});
+		serversPage = new ServerProfilesPage(host.modules().serverProfiles, new Runnable() {
+			@Override
+			public void run() {
+				ModMenu.this.host.playClick();
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				ModMenu.this.host.save();
 			}
 		});
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
@@ -139,6 +152,13 @@ public final class ModMenu extends UiScreen {
 	/** Modul-Pakete-Seite (Selbsttest). */
 	public PacksPage packsPage() {
 		return packsPage;
+	}
+
+	/** Öffnet das Menü direkt bei den Server-Profilen. */
+	public ModMenu showServerProfiles() {
+		page = Page.SERVERS;
+		serversPage.reset();
+		return this;
 	}
 
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
@@ -189,6 +209,10 @@ public final class ModMenu extends UiScreen {
 		contentRect[1] = cy;
 		contentRect[2] = cw;
 		contentRect[3] = ch;
+		if (ServerProfilesPage.takeOpenRequest()) {
+			page = Page.SERVERS;
+			serversPage.reset();
+		}
 		if (newsOpenFor != null && (page != Page.SETTINGS || selected != newsOpenFor)) {
 			host.modules().clientState.news().closed();
 			newsOpenFor = null;
@@ -198,10 +222,15 @@ public final class ModMenu extends UiScreen {
 				settingsPage(c, cx, cy, cw, ch, mouseX, mouseY, dt);
 				break;
 			case PROFILES:
-				profilesPage(c, cx, cy, cw, ch, mouseX, mouseY);
+				profileTabs(c, cx, cy, cw, mouseX, mouseY);
+				profilesPage(c, cx, cy + 20, cw, ch - 20, mouseX, mouseY);
 				break;
 			case PACKS:
 				packsPage(c, cx, cy, cw, ch, mouseX, mouseY);
+				break;
+			case SERVERS:
+				profileTabs(c, cx, cy, cw, mouseX, mouseY);
+				serversPage.draw(c, hits, cx + 2, cy + 20, cw - 4, ch - 20, mouseX, mouseY);
 				break;
 			default:
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
@@ -265,7 +294,7 @@ public final class ModMenu extends UiScreen {
 	private void rail(Canvas c, int x, int y, int w, int h, int mx, int my, float dt) {
 		Theme t = Theme.get();
 		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
-		// "Alle" + Kategorien + HUD-Editor + Profile (+ Packs) (+ Konten)
+		// "Alle" + Kategorien + HUD-Editor + Profile + Modul-Pakete (+ Packs) (+ Konten)
 		int items = 4 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0)
 				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0);
 		int rowH = 18;
@@ -321,7 +350,9 @@ public final class ModMenu extends UiScreen {
 			}
 		});
 		cy += rowH + gap;
-		railItem(c, x, cy, w, rowH, "profile", I18n.tr("menu.profiles"), page == Page.PROFILES, mx, my, new Runnable() {
+		// Profile: Reiter „HUD“ und „Server“ (Server-Profile seit TRS Client 0.11.0 → „NEU“ bis zum ersten Öffnen).
+		railItem(c, x, cy, w, rowH, "profile", I18n.tr("menu.profiles"), page == Page.PROFILES || page == Page.SERVERS, mx, my,
+				NewSince.MENU_SERVER_PROFILES, new Runnable() {
 			@Override
 			public void run() {
 				page = Page.PROFILES;
@@ -817,6 +848,33 @@ public final class ModMenu extends UiScreen {
 
 	// --- Profile ---
 
+	/** Reiter der Profil-Seite: HUD-Profile | Server-Profile. */
+	private void profileTabs(Canvas c, int x, int y, int w, int mx, int my) {
+		String[] labels = {I18n.tr("profiles.tab.hud"), I18n.tr("profiles.tab.servers")};
+		final Page[] pages = {Page.PROFILES, Page.SERVERS};
+		int tx = x;
+		for (int i = 0; i < 2; i++) {
+			final Page target = pages[i];
+			int tw = Math.min((w - 4) / 2, c.textWidth(labels[i]) + 20);
+			boolean active = page == target;
+			boolean hover = !active && inside(mx, my, tx, y, tw, 16);
+			Paint.button(c, tx, y, tw, 16, labels[i], active, hover);
+			if (!active) {
+				hits.add(tx, y, tw, 16, new Click(new Runnable() {
+					@Override
+					public void run() {
+						page = target;
+						editingProfile = -1;
+						profileError = null;
+						if (target == Page.SERVERS) serversPage.reset();
+					}
+				}));
+			}
+			tx += tw + 4;
+		}
+		Redstone.dustH(c, x, x + w, y + 18, Theme.get().dustOff, 0f);
+	}
+
 	private void profilesPage(Canvas c, int x, int y, int w, int h, int mx, int my) {
 		Theme t = Theme.get();
 		final HudProfiles profiles = host.modules().profiles;
@@ -987,6 +1045,7 @@ public final class ModMenu extends UiScreen {
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
 		if (panel.captureKey(rawKey, key, host)) return true;
 		if (panel.typeKey(key)) return true;
+		if (page == Page.SERVERS && serversPage.keyPressed(key)) return true;
 		if (nameInput.focused() && editingProfile != -1) {
 			if (key == UiKey.ENTER) {
 				confirmProfile();
@@ -1027,6 +1086,7 @@ public final class ModMenu extends UiScreen {
 	@Override
 	public boolean charTyped(char c) {
 		if (panel.typeChar(c)) return true;
+		if (page == Page.SERVERS && serversPage.charTyped(c)) return true;
 		if (nameInput.focused() && editingProfile != -1) return nameInput.type(c);
 		if (search.focused()) {
 			boolean typed = search.type(c);

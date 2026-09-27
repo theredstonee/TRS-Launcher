@@ -39,6 +39,8 @@ public final class TrsKeys {
 	public static KeyMapping quickReply;
 	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
 	public static KeyMapping worldMap;
+	/** Nimmt ein 360°-Panorama auf (standardmäßig unbelegt; auch im Menü auslösbar). */
+	public static KeyMapping panorama;
 
 	private TrsKeys() {
 	}
@@ -66,6 +68,7 @@ public final class TrsKeys {
 		worldMap = register(new KeyMapping("key.trsclient.worldMap", KEYBOARD, Keys.code("key.keyboard.m"), CATEGORY));
 		social = register(new KeyMapping("key.trsclient.social", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		quickReply = register(new KeyMapping("key.trsclient.quickReply", KEYBOARD, Keys.code("key.keyboard.y"), CATEGORY));
+		panorama = register(new KeyMapping("key.trsclient.panorama", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 	}
 
 	/**

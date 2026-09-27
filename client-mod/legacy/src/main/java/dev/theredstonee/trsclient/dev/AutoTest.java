@@ -85,6 +85,11 @@ public final class AutoTest {
 			QolTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=comfort: Tooltips, Server-Profil, Panorama (Komfort-Paket 2)
+		if ("comfort".equals(System.getProperty("trsclient.autotest.only"))) {
+			ComfortTest.install();
+			return;
+		}
 		if ("connect".equals(System.getProperty("trsclient.autotest.only"))) {
 			ConnectTest.install();
 			return;

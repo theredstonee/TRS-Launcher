@@ -149,6 +149,7 @@ public final class TrsMenuHost implements MenuHost {
 		*///?}
 		// Farben brauchen eine OpenGL-Zeichenfläche (nicht mit dem Vulkan-Backend).
 		if (!dev.theredstonee.trsclient.qol.QolHooks.supported(module)) return false;
+		if (!dev.theredstonee.trsclient.comfort.ComfortHooks.supported(module)) return false;
 		if (module == modules().colors) return dev.theredstonee.trsclient.render.ColorPass.supported();
 		return true;
 	}

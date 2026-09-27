@@ -43,6 +43,7 @@ const KEYS = [
   ['key.trsclient.worldMap', 'key.trsclient.worldMap'],
   ['key.trsclient.social', 'key.trsclient.social'],
   ['key.trsclient.quickReply', 'key.trsclient.quickReply'],
+  ['key.trsclient.panorama', 'key.trsclient.panorama'],
 ];
 
 const load = (code) => JSON.parse(readFileSync(join(i18nDir, `${code}.json`), 'utf8'));

@@ -59,6 +59,20 @@ How to write an entry:
   a screenshot in the game, "Share as link" uploads the picture and copies a link you can post anywhere – Discord
   shows a preview. Links stay online for 30 days and can be deleted earlier under "My shared pictures". Pictures are
   re-encoded without any hidden data, and the page never shows your name. Anyone can report a picture.
+- **Better tooltips in the TRS Client.** Hovering over a shulker box shows its contents as a grid in the box's colour,
+  filled maps show a small preview, tools and armour show their durability as a number and percent, food shows hunger
+  and saturation as drumsticks, and many enchantments are packed into a few lines – hold Shift for the full list.
+  Everything can be switched on and off one by one (TRS menu → "Better Tooltips"). Display only. Shulker contents from
+  Minecraft 1.11; the better tooltips are not available on 1.7.10 and 1.13.2.
+- **Server profiles.** Save a setup for a server – modules on or off, their settings and optionally a HUD profile – and
+  the TRS Client switches to it by itself when you join (by address or pattern like "*.hypixel.net", or for
+  singleplayer) and back to "Standard" when you leave. "Remember current setup for this server" in TRS menu →
+  Profiles → Server profiles saves what you just changed on the server. Profiles stay on this PC.
+- **Panorama screenshots.** One key (unbound by default, set it in Controls) or "Take panorama now" in the TRS menu
+  records a 360° panorama: six cube images like the title screen panorama (ready for a resource pack) and one 360°
+  picture you can view in any panorama viewer. Saved in screenshots/panorama; a message offers to open the folder, and "Share as link" on the
+  module page uploads the 360° picture and copies the link.
+  The HUD is hidden while recording. From Minecraft 1.8.9 (not on 1.7.10 and 1.13.2).
 
 ### Deutsch
 
@@ -99,6 +113,22 @@ How to write an entry:
   Discord zeigt eine Vorschau. Links bleiben 30 Tage online und lassen sich unter „Meine geteilten Bilder“ früher
   löschen. Bilder werden ohne versteckte Daten neu gespeichert, und die Seite zeigt nie deinen Namen. Jeder kann ein
   Bild melden.
+- **Bessere Tooltips im TRS Client.** Beim Überfahren einer Shulker-Kiste siehst du ihren Inhalt als Raster in der
+  Farbe der Kiste, gefüllte Karten zeigen eine kleine Vorschau, Werkzeuge und Rüstung ihre Haltbarkeit als Zahl und
+  Prozent, Essen Hunger und Sättigung als Keulen, und viele Verzauberungen passen in wenige Zeilen – Umschalt halten
+  zeigt die volle Liste. Alles lässt sich einzeln an- und ausschalten (TRS-Menü → „Bessere Tooltips“). Nur Anzeige.
+  Shulker-Inhalt ab Minecraft 1.11; auf 1.7.10 und 1.13.2 gibt es die besseren Tooltips nicht.
+- **Server-Profile.** Speichere ein Setup für einen Server – Module an oder aus, ihre Einstellungen und auf Wunsch ein
+  HUD-Profil –, und der TRS Client schaltet beim Betreten selbst darauf um (per Adresse oder Muster wie
+  „*.hypixel.net“ oder für Einzelspieler) und beim Verlassen zurück auf „Standard“. „Aktuelles Setup für diesen Server
+  merken“ unter TRS-Menü → Profile → Server-Profile speichert, was du gerade auf dem Server geändert hast. Die Profile
+  bleiben auf diesem PC.
+- **Panorama-Screenshots.** Eine Taste (ab Werk unbelegt, in der Steuerung festlegen) oder „Jetzt aufnehmen“ im
+  TRS-Menü nimmt ein 360°-Panorama auf: sechs Würfelbilder wie das Panorama des Titelbildschirms (fertig für ein
+  Ressourcenpaket) und ein 360°-Bild für jeden Panorama-Betrachter. Gespeichert in screenshots/panorama; eine Meldung
+  bietet an, den Ordner zu öffnen, und „Als Link teilen“ auf der Modulseite lädt das 360°-Bild hoch und kopiert den
+  Link. Das HUD ist währenddessen ausgeblendet. Ab Minecraft 1.8.9 (nicht auf 1.7.10 und
+  1.13.2).
 
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
 <!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->

@@ -194,9 +194,12 @@ public final class TrsClient {
 		installSocialOverlay();
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.LegacyQol.init(modules);
+		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama (eigene Kamera-Drehung).
+		dev.theredstonee.trsclient.comfort.LegacyComfort.init(modules);
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.qol.LegacyQol.get());
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.comfort.LegacyComfort.get());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());

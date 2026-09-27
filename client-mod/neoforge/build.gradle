@@ -279,6 +279,8 @@ if (stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
 mixinClasses += ['QolChatMixin', 'QolGuiMixin', 'BossBarMixin', 'TabPingMixin', 'QolEntityMixin', 'QolParticleMixin',
 		'NameMaskMixin', 'DisconnectScreenMixin', 'StreamerServerEntryMixin']
 mixinClasses << 'ShieldHandMixin'
+// Komfort-Paket 2: bessere Tooltips (Zusatzkarte am Inventar, Text-Zusätze an der Tooltip-Liste).
+mixinClasses += ['TooltipScreenMixin', 'TooltipLinesMixin']
 if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'ShieldSubmitMixin'
 if (stonecutter.eval(mc, '>=26.3')) mixinClasses << 'ShieldModelMixin'
 

@@ -126,6 +126,8 @@ public final class TrsClient {
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.qol.mentions, modules.qol.chatFilter, modules.qol.autoReconnect,
 				modules.qol.queueAlerts, modules.qol.scoreboard, modules.qol.tabPing, modules.qol.bossBar, modules.qol.titles,
 				modules.qol.warnings, modules.qol.itemCounter, modules.qol.hitFeedback, modules.qol.streamer));
+		// Komfort-Paket 2: Tooltips und Panorama sind für diese Version nicht umgesetzt (Server-Profile laufen).
+		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.comfort.tooltips, modules.comfort.panorama));
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());
@@ -209,6 +211,7 @@ public final class TrsClient {
 				return;
 			}
 			migrateKeys(mc);
+			tickServerProfiles(mc);
 			while (TrsKeys.hudProfile.isPressed()) {
 				String name = modules.profiles.cycle();
 				if (mc.ingameGUI != null) mc.ingameGUI.func_110326_a(I18n.tr("toast.hudProfile", name), false);
@@ -402,6 +405,23 @@ public final class TrsClient {
 		modules.keyDefaults.markMigrated();
 		saveConfig();
 	}
+
+	/** Server-Profile (Komfort-Paket 2): Kontext je Tick, bei Wechsel Meldung + Speichern. */
+	private void tickServerProfiles(Minecraft mc) {
+		if (!serverProfilesInstalled) {
+			serverProfilesInstalled = true;
+			dev.theredstonee.trsclient.core.comfort.Comfort.install(modules, mc.mcDataDir.toPath(), false);
+		}
+		boolean inWorld = mc.theWorld != null && mc.thePlayer != null;
+		net.minecraft.client.multiplayer.ServerData data = inWorld && !mc.isSingleplayer() ? mc.func_147104_D() : null;
+		String message = dev.theredstonee.trsclient.core.comfort.Comfort.tickProfiles(modules,
+				dev.theredstonee.trsclient.core.comfort.Comfort.context(inWorld, mc.isSingleplayer(), data == null ? null : data.serverIP));
+		if (message == null) return;
+		if (!message.isEmpty() && inWorld && mc.ingameGUI != null) mc.ingameGUI.func_110326_a(message, false);
+		saveConfig();
+	}
+
+	private boolean serverProfilesInstalled;
 
 	public void saveConfig() {
 		if (config == null) return;

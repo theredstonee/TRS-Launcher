@@ -58,8 +58,11 @@ public final class TrsKeys {
 	/** Schnellantwort/Beitreten zum neuesten Sozial-Toast (Y – in keiner Vanilla-Version belegt). */
 	public static final KeyMapping quickReply =
 			new KeyMapping("key.trsclient.quickReply", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, CATEGORY);
+	/** Nimmt ein 360°-Panorama auf (standardmäßig unbelegt; auch im Menü auslösbar). */
+	public static final KeyMapping panorama =
+			new KeyMapping("key.trsclient.panorama", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
-			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply};
+			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply, panorama};
 
 	private TrsKeys() {
 	}

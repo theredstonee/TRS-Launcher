@@ -247,6 +247,8 @@ mixinClasses << 'ShieldHandMixin'
 if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'ShieldSubmitMixin'
 if (stonecutter.eval(mc, '>=26.3')) mixinClasses << 'ShieldModelMixin'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses << 'ShieldGlMixin'
+// Komfort-Paket 2: bessere Tooltips (Zusatzkarte am Inventar, Text-Zusätze an der Tooltip-Liste).
+mixinClasses += ['TooltipScreenMixin', 'TooltipLinesMixin']
 
 processResources {
 	def props = [

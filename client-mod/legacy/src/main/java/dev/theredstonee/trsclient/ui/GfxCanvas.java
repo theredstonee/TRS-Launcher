@@ -115,6 +115,11 @@ public final class GfxCanvas implements Canvas {
 	}
 
 	@Override
+	public void item(Object stack, int x, int y) {
+		if (stack instanceof net.minecraft.item.ItemStack) g.item(font, (net.minecraft.item.ItemStack) stack, x, y);
+	}
+
+	@Override
 	public void rotate(float radians) {
 		GfxImage.rotate(radians);
 	}

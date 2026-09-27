@@ -39,6 +39,8 @@
 		"OldAnimationsMixin",
 		"ShieldHandMixin",
 		"QolChatMixin",
+		"TooltipScreenMixin",
+		"TooltipLinesMixin",
 		"QolGuiMixin",
 		"BossBarMixin",
 		"TabPingMixin",

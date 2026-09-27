@@ -120,6 +120,8 @@ public final class HudManager {
 		} finally {
 			// Sozial-Benachrichtigungen (Toasts) über dem HUD – auch wenn die TRS-Anzeigen gerade ruhen.
 			dev.theredstonee.trsclient.social.SocialHooks.hud(g);
+			// Panorama-Toast („gespeichert“, „Ordner öffnen“).
+			dev.theredstonee.trsclient.comfort.ComfortHooks.hud(g);
 		}
 	}
 

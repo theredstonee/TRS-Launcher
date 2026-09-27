@@ -121,6 +121,8 @@ public final class TrsClient implements ClientModInitializer {
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
+		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama.
+		dev.theredstonee.trsclient.comfort.ComfortHooks.init(modules);
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FabricLoader.getInstance().getConfigDir());
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
@@ -295,6 +297,7 @@ public final class TrsClient implements ClientModInitializer {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
+		if (dev.theredstonee.trsclient.comfort.ComfortHooks.tick(mc)) saveConfig();
 		hud.tick();
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
