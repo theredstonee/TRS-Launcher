@@ -111,6 +111,11 @@
     }
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["trs-launcher"]
+      }
+    },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQxOEQ3OUEwNjk2NTQxRjkKUldUNVFXVnBvSG1OUVRQZk5iYnpLcVdXbndGbVhxbDZaa1F2VnYrNm1rUzVzTG1NTmcyQWpiYVkK",
       "endpoints": [

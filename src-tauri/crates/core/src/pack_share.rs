@@ -126,6 +126,28 @@ pub struct PackUpdateResult {
     pub kept: Vec<String>,
 }
 
+/// Link-Protokoll des Launchers (Website-Knopf „Im Launcher öffnen“).
+pub const LINK_SCHEME: &str = "trs-launcher";
+
+/// `trs-launcher://pack/TRS-XXXX-XXXX` → Code. Alles andere (andere Pfade, Anhänge, kaputte Codes) → `None`.
+/// Der Link öffnet nur den Dialog „Modpack per Code“ – installiert wird nie ohne Klick.
+pub fn pack_code_from_link(url: &str) -> Option<String> {
+    let url = url.trim();
+    if url.len() > 200 {
+        return None;
+    }
+    let (scheme, rest) = url.split_once("://")?;
+    if !scheme.eq_ignore_ascii_case(LINK_SCHEME) {
+        return None;
+    }
+    let rest = rest.trim_end_matches('/');
+    let (kind, code) = rest.split_once('/')?;
+    if !kind.eq_ignore_ascii_case("pack") || code.contains(['/', '?', '#', '\\']) {
+        return None;
+    }
+    normalize_code(code)
+}
+
 fn invalid(msg: crate::error::Msg) -> Error {
     Error::validation(msg)
 }
@@ -657,6 +679,23 @@ mod tests {
 
     fn map(items: &[(&str, &str)]) -> BTreeMap<String, String> {
         items.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect()
+    }
+
+    #[test]
+    fn links_only_open_pack_codes() {
+        assert_eq!(pack_code_from_link("trs-launcher://pack/TRS-7K2M-Q9XA").as_deref(), Some("TRS-7K2M-Q9XA"));
+        assert_eq!(pack_code_from_link("TRS-Launcher://pack/trs-7k2m-q9xa/").as_deref(), Some("TRS-7K2M-Q9XA"));
+        for bad in [
+            "trs-launcher://pack/",
+            "trs-launcher://pack/TRS-7K2M-Q9XA/x",
+            "trs-launcher://pack/TRS-7K2M-Q9XA?install=1",
+            "trs-launcher://evil/TRS-7K2M-Q9XA",
+            "https://pack/TRS-7K2M-Q9XA",
+            "trs-launcher://pack/..%2F..",
+            "trs-launcher:pack/TRS-7K2M-Q9XA",
+        ] {
+            assert_eq!(pack_code_from_link(bad), None, "{bad}");
+        }
     }
 
     #[test]

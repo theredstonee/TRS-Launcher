@@ -40,6 +40,8 @@ How to write an entry:
   or no expiry). Others install it with Library → “Modpack by code”, from the list “Sent to you” or from the link page.
 - Upload a new version and keep the code: everyone who installed the pack sees “Update” – files they changed themselves
   stay as they are. Mod files that aren't on Modrinth need a confirmation when sharing and show a warning when installing.
+- “Open in TRS Launcher” on a pack's web page starts the launcher (or brings it to the front) and shows the pack right
+  away – nothing is installed until you click Install.
 - Exported modpacks no longer contain the TRS Client itself, its settings or private files such as the clip key.
 
 ### Deutsch
@@ -52,6 +54,8 @@ How to write an entry:
 - Neue Version hochladen und den Code behalten: Wer das Pack installiert hat, sieht „Update“ – selbst geänderte Dateien
   bleiben, wie sie sind. Mod-Dateien, die es nicht auf Modrinth gibt, brauchen beim Teilen eine Bestätigung und zeigen
   beim Installieren einen Hinweis.
+- „Im TRS Launcher öffnen“ auf der Webseite eines Packs startet den Launcher (oder holt ihn nach vorne) und zeigt das
+  Pack sofort – installiert wird erst, wenn du auf Installieren klickst.
 - Exportierte Modpacks enthalten nicht mehr den TRS Client selbst, seine Einstellungen oder private Dateien wie den
   Clip-Schlüssel.
 

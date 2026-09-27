@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { isTauri } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 // Spiel-Events, Accounts und Instanzen einmal zentral laden – unabhängig von der Seite.
 const games = useGamesStore()
 const accounts = useAccountsStore()
@@ -57,6 +59,19 @@ onMounted(async () => {
   void whatsNew.check(onboarding.open)
   await trs.init()
 })
+
+// „Im Launcher öffnen“ auf der Website (`trs-launcher://pack/<Code>`): Dialog „Modpack per Code“ mit Vorschau.
+let unlistenPackLink: (() => void) | null = null
+onMounted(async () => {
+  if (!isTauri()) return
+  const open = (code: unknown) => {
+    const c = typeof code === 'string' ? normalizePackCode(code) : null
+    if (c) packs.openCode(c)
+  }
+  unlistenPackLink = await listen<string>('open-pack-link', (e) => open(e.payload))
+  open(await backend.packs.takePendingLink().catch(() => null))
+})
+onBeforeUnmount(() => unlistenPackLink?.())
 
 // Geteilte Modpacks: Updates und „An dich geschickt“ laden, sobald die TRS-Dienste an sind.
 watch(

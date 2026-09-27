@@ -1,4 +1,5 @@
 mod commands;
+mod deeplink;
 mod dialog_text;
 mod error;
 mod open;
@@ -33,6 +34,8 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
+        // Nach Single-Instance: `trs-launcher://`-Links (auch an ein schon offenes Fenster).
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)
@@ -153,6 +156,7 @@ pub fn run() {
             app.manage(commands::system::DropState::default());
             app.manage(commands::export::PackPickState::default());
             app.manage(commands::tasks::TaskRegistry::default());
+            deeplink::setup(app);
             Ok(())
         })
         // Clips abspielen: `trsclip://localhost/<art>/<instanz>/<datei>` – nur Dateien im
@@ -411,6 +415,7 @@ pub fn run() {
             commands::export::import_modpack_file,
             commands::export::pick_modpack_file,
             commands::packs::share_pack,
+            deeplink::take_pending_pack_link,
             commands::packs::packs_mine,
             commands::packs::pack_set_duration,
             commands::packs::pack_delete,

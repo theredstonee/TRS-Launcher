@@ -746,6 +746,8 @@ export const backend = {
     updates: () => checked(z.array(packUpdateInfoSchema), 'pack_updates'),
     update: (id: string, onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
       checked(packUpdateResultSchema, 'update_pack_instance', { id, onProgress: channel(onProgress), taskId }),
+    /** Code aus einem `trs-launcher://pack/…`-Link beim Start (einmalig abholen). */
+    takePendingLink: () => call<string | null>('take_pending_pack_link'),
   },
 
   /** Sozial: Chat, Bilder, Meldungen, Moderation – alles über den Kern, ohne Token im Webview. */
