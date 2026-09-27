@@ -21,6 +21,37 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **Share waypoints with friends.** In the TRS Client you can send a waypoint – or where you are standing – to a
+  friend or a group in the social chat. It arrives as a card with name, coordinates, dimension and server. Your
+  friends can **take it over** as their own waypoint (when they are on the same server or in the same world) or
+  **show** it on the map. In the launcher chat the card has a button to copy the coordinates.
+- **Clickable coordinates in the Minecraft chat.** When someone writes coordinates like "x: 100 y: 64 z: -20" or
+  "100 64 -20", the TRS Client underlines them – one click saves them as a waypoint. This happens only on your PC,
+  nothing is sent anywhere.
+- **Share screenshots as a link.** In the launcher's screenshot gallery, in "Clips & pictures" and right after taking
+  a screenshot in the game, "Share as link" uploads the picture and copies a link you can post anywhere – Discord
+  shows a preview. Links stay online for 30 days and can be deleted earlier under "My shared pictures". Pictures are
+  re-encoded without any hidden data, and the page never shows your name. Anyone can report a picture.
+
+### Deutsch
+
+- **Wegpunkte mit Freunden teilen.** Im TRS Client schickst du einen Wegpunkt – oder deine aktuelle Position – an
+  einen Freund oder eine Gruppe im Sozial-Chat. Er kommt als Karte mit Name, Koordinaten, Dimension und Server an.
+  Deine Freunde können ihn als eigenen Wegpunkt **übernehmen** (wenn sie auf demselben Server bzw. in derselben
+  Welt sind) oder auf der Karte **anzeigen**. Im Launcher-Chat kopiert ein Knopf die Koordinaten.
+- **Anklickbare Koordinaten im Minecraft-Chat.** Schreibt jemand Koordinaten wie „x: 100 y: 64 z: -20“ oder
+  „100 64 -20“, unterstreicht der TRS Client sie – ein Klick speichert sie als Wegpunkt. Das passiert nur auf deinem
+  PC, es wird nichts gesendet.
+- **Screenshots als Link teilen.** In der Screenshot-Galerie des Launchers, in „Clips & Bilder“ und direkt nach einem
+  Screenshot im Spiel lädt „Als Link teilen“ das Bild hoch und kopiert einen Link, den du überall posten kannst –
+  Discord zeigt eine Vorschau. Links bleiben 30 Tage online und lassen sich unter „Meine geteilten Bilder“ früher
+  löschen. Bilder werden ohne versteckte Daten neu gespeichert, und die Seite zeigt nie deinen Namen. Jeder kann ein
+  Bild melden.
+
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
 <!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->
 <!-- shots:
