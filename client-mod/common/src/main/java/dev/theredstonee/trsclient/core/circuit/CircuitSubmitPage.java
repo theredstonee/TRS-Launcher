@@ -100,8 +100,11 @@ final class CircuitSubmitPage {
 		// Vorschau
 		int ph = Math.min(90, Math.max(60, h / 3));
 		Redstone.well(c, x, yy, w - 6, ph, t.border);
-		c.scissor(Math.max(x + 1, x), Math.max(yy + 1, y), x + w - 7, Math.min(yy + ph - 1, y + h));
+		// Scissor nie verschachteln (ab 1.20 ein Stapel, davor nicht): Seite beenden, Vorschau, Seite wieder an
+		c.noScissor();
+		c.scissor(x + 1, Math.max(yy + 1, y), x + w - 7, Math.max(Math.max(yy + 1, y), Math.min(yy + ph - 1, y + h)));
 		preview.draw(c, parsed, false, x + 2, yy + 2, w - 10, ph - 4, dt);
+		c.noScissor();
 		c.scissor(x, y, x + w, y + h);
 		hits.addDrag(x, Math.max(yy, y), w - 6, ph, new Hits.Drag() {
 			@Override

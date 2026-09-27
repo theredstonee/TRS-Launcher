@@ -112,6 +112,10 @@ public final class CircuitTest {
 				wait = 30;
 				return;
 			case 1:
+				// Bibliothek kommt vom Server (Attrappe): warten, bis sie da ist
+				if (lib.byId("xor_gate") == null && waited++ < 1500) return;
+				TrsClient.LOGGER.info("[Autotest] Bibliothek: {} Schaltungen, Abgleich {}", lib.all().size(),
+						dev.theredstonee.trsclient.core.circuit.CircuitSync.status());
 				CircuitLibraryPage.requestOpen();
 				mc.displayGuiScreen(new TrsMenuScreen(null));
 				phase++;

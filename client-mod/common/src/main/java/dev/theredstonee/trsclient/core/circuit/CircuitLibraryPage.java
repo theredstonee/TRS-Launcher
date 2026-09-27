@@ -52,6 +52,12 @@ public final class CircuitLibraryPage {
 		this.submitPage = new CircuitSubmitPage(click, closeMenu);
 	}
 
+	/** Beim nächsten Zeichnen des Menüs „Meine Einreichungen“ zeigen. */
+	public static void requestMine() {
+		openSub = 2;
+		openRequested = true;
+	}
+
 	/** Beim nächsten Zeichnen des Menüs „Eigene Schaltung einreichen“ zeigen (nach dem Markieren). */
 	public static void requestSubmit() {
 		openSub = 1;

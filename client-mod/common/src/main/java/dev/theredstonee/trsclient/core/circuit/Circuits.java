@@ -175,10 +175,8 @@ public final class Circuits {
 				handleKeys(ctx);
 			}
 		}
-		if (selecting) {
-			lastWorld = world;
-			hover = ctx.hit ? new int[] {ctx.hitX, ctx.hitY, ctx.hitZ} : null;
-		}
+		lastWorld = world;
+		if (selecting) hover = ctx.hit ? new int[] {ctx.hitX, ctx.hitY, ctx.hitZ} : null;
 		if (placing && active != null) {
 			Placement p = gazePlacement(active, ctx);
 			if (!p.equals(placement)) {
@@ -291,6 +289,22 @@ public final class Circuits {
 
 	public boolean selecting() {
 		return selecting;
+	}
+
+	/** Welt des letzten Ticks (für das Auslesen; null außerhalb einer Welt). */
+	public CircuitWorld world() {
+		return lastWorld;
+	}
+
+	/** Markieren beenden (ohne Auslesen). */
+	public void cancelSelecting() {
+		selecting = false;
+		cornerA = null;
+	}
+
+	/** Erste Ecke direkt setzen (Selbsttest). */
+	public void selectCorner(int[] a) {
+		cornerA = a;
 	}
 
 	/** Letzter ausgelesener Bereich (oder null). */
@@ -537,6 +551,7 @@ public final class Circuits {
 		int[] a = cornerA;
 		int[] b = hover;
 		if (a == null) a = b;
+		if (b == null) b = a;
 		if (a != null && b != null) {
 			int[] s = CircuitCapture.size(a[0], a[1], a[2], b[0], b[1], b[2]);
 			boolean ok = s[0] <= Circuit.MAX_SIZE && s[1] <= Circuit.MAX_SIZE && s[2] <= Circuit.MAX_SIZE;
