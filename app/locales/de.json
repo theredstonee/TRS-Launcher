@@ -612,7 +612,8 @@
       "dropExpired": "Die gezogenen Dateien sind nicht mehr verfügbar – bitte erneut ziehen.",
       "noJavaAtPath": "Unter diesem Pfad gibt es keine Java-Datei.",
       "invalidTaskId": "Ungültige Aufgaben-ID",
-      "taskRunning": "Diese Aufgabe läuft bereits."
+      "taskRunning": "Diese Aufgabe läuft bereits.",
+      "packPickExpired": "Die gewählte Datei ist nicht mehr verfügbar – bitte erneut wählen."
     },
     "curseforge": {
       "disabled": "CurseForge ist in dieser Version des Launchers nicht verfügbar.",
@@ -710,7 +711,8 @@
       "emptyMessage": "Die Nachricht ist leer.",
       "invalidCursor": "Ungültige Seite.",
       "groupFull": "Eine Gruppe hat höchstens {max} Mitglieder.",
-      "invalidReaction": "Unbekannte Reaktion."
+      "invalidReaction": "Unbekannte Reaktion.",
+      "invalidWaypoint": "Ungültiger Wegpunkt."
     },
     "hosting": {
       "invalidRoom": "Ungültige Welt.",
@@ -759,6 +761,16 @@
       "invalidRole": "Unbekannte Rolle.",
       "invalidRoom": "Ungültige Welt.",
       "emptySearch": "Bitte einen Suchbegriff eingeben."
+    },
+    "crash": {
+      "notFound": "Diesen Absturz gibt es nicht mehr."
+    },
+    "shareLink": {
+      "limit": "Du hast schon 50 geteilte Bilder – lösche zuerst ein altes unter „Meine geteilten Bilder“.",
+      "dailyLimit": "Heute hast du schon 20 Bilder geteilt – morgen geht es weiter.",
+      "storageFull": "Der TRS-Server hat gerade keinen Platz – bitte später erneut versuchen.",
+      "notFound": "Dieses geteilte Bild gibt es nicht (mehr).",
+      "invalidId": "Ungültiger Link."
     }
   },
   "browse": {
@@ -1532,7 +1544,10 @@
       "hooksCustom": "Eigene Start-Hooks gesetzt",
       "movedToGroup": "In Gruppe „{group}“ verschoben",
       "removedFromGroup": "Aus der Gruppe genommen",
-      "renamed": "Umbenannt"
+      "renamed": "Umbenannt",
+      "memoryChanged": "Arbeitsspeicher geändert",
+      "javaChanged": "Java geändert",
+      "settingsChanged": "Einstellungen geändert"
     },
     "details": {
       "played": "Gespielt: {time}",
@@ -1541,7 +1556,10 @@
       "asDependencyVersion": "{version} · als Abhängigkeit",
       "asDependency": "Als Abhängigkeit",
       "renamed": "„{from}“ → „{to}“",
-      "previousGroup": "vorher: {group}"
+      "previousGroup": "vorher: {group}",
+      "changed": "{from} → {to}",
+      "javaAuto": "automatisch",
+      "javaCustom": "eigener Pfad"
     }
   },
   "logConsole": {
@@ -1566,7 +1584,13 @@
       "missing_dependency": "Fehlende Abhängigkeit",
       "mod_conflict": "Mod-Konflikt",
       "graphics_driver": "Grafiktreiber",
-      "incompatible_mod": "Unverträgliche Mod-Version"
+      "incompatible_mod": "Unverträgliche Mod-Version",
+      "known_issue": "Bekanntes Problem",
+      "duplicate_mod": "Doppelte Mod",
+      "wrong_game_version": "Falsche Minecraft-Version",
+      "wrong_loader_version": "Falsche Loader-Version",
+      "mixin_conflict": "Mods stören sich",
+      "unknown": "Unbekannter Fehler"
     },
     "diagnosis": {
       "corrupt_files": "Eine Spieldatei ist beschädigt (z. B. nach einem abgebrochenen Download). „Dateien prüfen“ lädt sie neu herunter.",
@@ -1587,6 +1611,238 @@
     "installMissing": "{name} installieren",
     "installingMissing": "Installiere fehlende Mods …",
     "installMissingDone": "Installiert: {list}"
+  },
+  "crashHelper": {
+    "title": "Das Spiel ist abgestürzt",
+    "open": "Absturz-Helfer öffnen",
+    "openDetails": "Details ansehen",
+    "analyze": "Analysieren",
+    "whenStarting": "{at} · beim Start",
+    "whenPlaying": "{at} · nach {time} Spielzeit",
+    "involved": "Beteiligte Mods",
+    "bundledIn": "in {name}",
+    "modDisabled": "deaktiviert",
+    "working": "Läuft …",
+    "openJavaSettings": "Java-Einstellungen",
+    "confirmTitle": "Diese Änderung vornehmen?",
+    "confirmHistory": "Sie wird im Verlauf der Instanz vermerkt.",
+    "confirmDo": "Ja, ausführen",
+    "moreHints": "Weitere mögliche Ursachen",
+    "details": "Details aus dem Log",
+    "cause": "Ursache",
+    "firstFrame": "Erste Zeile aus einer Mod",
+    "excerpt": "Wichtige Zeilen",
+    "masked": "Pfade mit deinem Benutzernamen und dein Spielername sind ausgeblendet.",
+    "openContent": "Reiter „Inhalte“ öffnen",
+    "privacy": "Nur auf deinem PC analysiert. Gesendet wird nichts – außer du drückst „Log teilen“.",
+    "relaunch": "Erneut starten",
+    "undo": "Rückgängig",
+    "shadersHint": "Shader ({name}) belasten den Treiber zusätzlich – probier einen Start ohne sie.",
+    "aMod": "eine Mod",
+    "someMods": "mehrere Mods",
+    "actions": {
+      "disable": "{name} deaktivieren",
+      "install": "{name} installieren",
+      "removeDuplicates": "Doppelte entfernen",
+      "raiseMemory": "RAM auf {to} erhöhen",
+      "lowerMemory": "RAM auf {to} setzen",
+      "useJava": "Java {major} verwenden",
+      "autoJava": "Java automatisch wählen",
+      "updateTrsClient": "TRS Client aktualisieren"
+    },
+    "confirm": {
+      "disable": "{name} wird deaktiviert (die Datei bekommt die Endung .disabled). Das lässt sich jederzeit hier oder im Reiter „Inhalte“ rückgängig machen.",
+      "install": "{name} wird von Modrinth in diese Instanz installiert.",
+      "removeDuplicates": "Die älteren Kopien ({files}) werden deaktiviert, {keep} bleibt aktiv.",
+      "memory": "Der Arbeitsspeicher dieser Instanz ändert sich von {from} auf {to}.",
+      "java": "Java {major} wird bei Bedarf heruntergeladen und für diese Instanz eingestellt.",
+      "autoJava": "Der eigene Java-Pfad dieser Instanz wird entfernt – der Launcher wählt dann selbst die passende Java-Version.",
+      "updateTrsClient": "Der Launcher holt den neuesten TRS Client aus dem Update-Kanal und legt ihn in diese Instanz.",
+      "fixConflict": "Der Launcher sucht eine passende Version von {name} und tauscht sie aus.",
+      "repair": "Der Launcher prüft alle Spieldateien und lädt beschädigte neu herunter."
+    },
+    "done": {
+      "disabled": "Deaktiviert: {name}",
+      "enabledAgain": "Wieder aktiviert: {name}",
+      "memory": "Arbeitsspeicher auf {to} gesetzt",
+      "java": "Java {major} ist jetzt für diese Instanz eingestellt",
+      "autoJava": "Java wird jetzt automatisch gewählt",
+      "trsClient": "TRS Client {version} ist installiert – starte erneut.",
+      "trsClientNone": "Noch gibt es keinen neueren TRS Client. Deaktiviere vorerst Essential."
+    },
+    "progress": {
+      "java": "Richte Java {major} ein …"
+    },
+    "findings": {
+      "known_issue": {
+        "default": {
+          "title": "Bekanntes Problem",
+          "text": "Diese Kombination von Mods stürzt bekanntermaßen ab."
+        },
+        "trsclient_essential": {
+          "title": "TRS Client {version} verträgt sich nicht mit Essential",
+          "text": "TRS Client {version} und Essential (mit MixinExtras 0.5) ändern dieselbe Stelle im Spiel – den Einzelspieler-Server – und das Spiel stürzt beim Öffnen einer Welt ab. TRS Client {fixed} behebt das: aktualisiere ihn oder deaktiviere vorerst Essential."
+        },
+        "sodium_optifine": {
+          "title": "{name} und OptiFine vertragen sich nicht",
+          "text": "OptiFine (und OptiFabric) laufen nicht zusammen mit {name}. Behalte {name} – das ist schneller, und mit Iris gibt es trotzdem Shader – und deaktiviere OptiFine."
+        },
+        "iris_without_sodium": {
+          "title": "Iris braucht Sodium",
+          "text": "Iris funktioniert nur zusammen mit Sodium, und das fehlt in dieser Instanz. Der Launcher kann die passende Version installieren."
+        },
+        "two_minimaps": {
+          "title": "Zwei Minimaps gleichzeitig",
+          "text": "{names} sind beide installiert. Minimaps kommen sich oft in die Quere – behalte eine und deaktiviere die andere."
+        }
+      },
+      "duplicate_mod": {
+        "default": {
+          "title": "{name} ist doppelt installiert",
+          "text": "Im Mods-Ordner liegt {name} mehr als einmal ({files}). Das Spiel kann nur eine laden. Der Launcher behält die neueste und deaktiviert die anderen."
+        }
+      },
+      "wrong_game_version": {
+        "default": {
+          "title": "{name} ist für eine andere Minecraft-Version",
+          "text": "{name} braucht Minecraft {required}, diese Instanz läuft aber mit {present}. Deaktiviere die Mod oder installiere im Reiter „Inhalte“ eine passende Version."
+        }
+      },
+      "wrong_loader_version": {
+        "default": {
+          "title": "{name} braucht einen anderen {loader}",
+          "text": "{name} braucht {loader} {required}, installiert ist aber {present}. Ändere die Loader-Version der Instanz oder deaktiviere die Mod."
+        }
+      },
+      "incompatible_mod": {
+        "default": {
+          "title": "{name} verträgt sich nicht mit {other}",
+          "text": "{name} verträgt sich nicht mit {other}. Der Launcher kann sie gegen eine passende Version tauschen, oder du deaktivierst sie."
+        }
+      },
+      "missing_dependency": {
+        "default": {
+          "title": "{name} braucht {deps}",
+          "text": "{name} braucht {deps}, und das fehlt in dieser Instanz. Der Launcher kann es von Modrinth installieren."
+        },
+        "unnamed": {
+          "title": "Eine benötigte Mod fehlt",
+          "text": "Es fehlt {deps} – eine andere Mod braucht es. Der Launcher kann es von Modrinth installieren."
+        }
+      },
+      "wrong_java": {
+        "default": {
+          "title": "Falsche Java-Version",
+          "text": "Die Java-Version passt nicht zum Spiel oder zu einer seiner Mods."
+        },
+        "too_old": {
+          "title": "Java {present} ist zu alt",
+          "text": "{name} braucht Java {required}, das Spiel läuft aber mit Java {present}. Der Launcher kann Java {required} installieren und für diese Instanz verwenden."
+        },
+        "too_new": {
+          "title": "Java {present} ist zu neu für diese Version",
+          "text": "Ältere Minecraft- und Forge-Versionen laufen nur mit älterem Java (meist Java 8). Lass den Launcher Java automatisch wählen oder nimm Java 8."
+        },
+        "mod_requires": {
+          "title": "{name} braucht Java {required}",
+          "text": "{name} braucht Java {required} oder neuer, verwendet wird aber Java {present}. Der Launcher kann Java {required} für diese Instanz installieren."
+        }
+      },
+      "out_of_memory": {
+        "default": {
+          "title": "Dem Spiel ist der Arbeitsspeicher ausgegangen",
+          "text": "Das Spiel brauchte mehr Arbeitsspeicher, als es nutzen durfte. Gib der Instanz mehr RAM."
+        },
+        "heap": {
+          "title": "Dem Spiel ist der Arbeitsspeicher ausgegangen",
+          "text": "Die {current} MB, die das Spiel nutzen darf, haben nicht gereicht – viele Mods, Shader oder eine hohe Sichtweite brauchen mehr. Gib der Instanz mehr RAM."
+        },
+        "heap_max": {
+          "title": "Dem Spiel ist der Arbeitsspeicher ausgegangen",
+          "text": "Das Spiel bekommt schon so viel RAM, wie auf diesem PC sinnvoll ist ({current} MB). Entferne schwere Mods oder verringere die Sichtweite."
+        },
+        "reserve": {
+          "title": "Java bekam den Arbeitsspeicher nicht",
+          "text": "Java konnte {current} MB nicht reservieren – mehr, als auf diesem PC frei ist. Stell den RAM etwas niedriger ein."
+        }
+      },
+      "corrupt_files": {
+        "default": {
+          "title": "Eine Datei ist beschädigt",
+          "text": "Eine Datei lässt sich nicht lesen. „Dateien prüfen“ lädt beschädigte Spieldateien neu herunter."
+        },
+        "mod_file": {
+          "title": "{file} ist beschädigt",
+          "text": "Die Mod-Datei {file} lässt sich nicht lesen (z. B. nach einem abgebrochenen Download). Deaktiviere sie und lade sie im Reiter „Inhalte“ neu herunter."
+        },
+        "game_files": {
+          "title": "Eine Spieldatei ist beschädigt",
+          "text": "Eine Datei des Spiels ist kaputt (z. B. nach einem abgebrochenen Download). „Dateien prüfen“ lädt sie neu herunter."
+        },
+        "assets": {
+          "title": "Spiel-Ressourcen fehlen",
+          "text": "Einige Ressourcen des Spiels (Texturen, Sounds, Sprachdateien) fehlen. „Dateien prüfen“ lädt sie neu herunter."
+        }
+      },
+      "graphics_driver": {
+        "default": {
+          "title": "Der Grafiktreiber ist abgestürzt",
+          "text": "Der Absturz passierte im Grafiktreiber. Aktualisiere den Treiber deiner Grafikkarte."
+        },
+        "amd": {
+          "title": "Der AMD-Grafiktreiber ist abgestürzt",
+          "text": "Der Absturz passierte im AMD-Grafiktreiber. Aktualisiere den Treiber (AMD Software: Adrenalin Edition) und versuch es erneut."
+        },
+        "intel": {
+          "title": "Der Intel-Grafiktreiber ist abgestürzt",
+          "text": "Der Absturz passierte im Intel-Grafiktreiber. Aktualisiere den Treiber von Intel oder von der Seite deines PC-Herstellers."
+        },
+        "nvidia": {
+          "title": "Der NVIDIA-Grafiktreiber ist abgestürzt",
+          "text": "Der Absturz passierte im NVIDIA-Grafiktreiber. Aktualisiere den Treiber (NVIDIA App) und versuch es erneut."
+        },
+        "no_opengl": {
+          "title": "Der Grafiktreiber unterstützt kein OpenGL",
+          "text": "Minecraft kann OpenGL nicht starten. Meist fehlt der Grafiktreiber, er ist zu alt, oder das Spiel läuft auf der falschen Grafikkarte. Installiere den neuesten Treiber."
+        },
+        "opengl_too_old": {
+          "title": "OpenGL ist auf diesem PC zu alt",
+          "text": "Diese Minecraft-Version braucht ein neueres OpenGL, als Grafikkarte oder Treiber bieten. Aktualisiere den Treiber – sehr alte Grafikkarten schaffen nur ältere Minecraft-Versionen."
+        }
+      },
+      "mixin_conflict": {
+        "default": {
+          "title": "Mods kommen sich in die Quere",
+          "text": "Zwei oder mehr Mods ändern dieselbe Stelle im Spiel und stören sich. Deaktiviere die zuletzt hinzugefügten Mods und starte erneut."
+        },
+        "transform": {
+          "title": "Mods stören sich beim Ändern von {target}",
+          "text": "Mehrere Mods ändern dieselbe Stelle im Spiel ({target}) und kommen sich in die Quere. Beteiligt: {names}. Deaktiviere eine davon und starte erneut."
+        },
+        "transform_nomods": {
+          "title": "Mods stören sich beim Ändern von {target}",
+          "text": "Mehrere Mods ändern dieselbe Stelle im Spiel ({target}) und kommen sich in die Quere. Deaktiviere die zuletzt hinzugefügten Mods und starte erneut."
+        },
+        "redirect_conflict": {
+          "title": "Zwei Mods ändern dieselbe Stelle",
+          "text": "{names} leiten beide dieselbe Stelle im Spiel um – das kann nur eine. Deaktiviere eine davon."
+        },
+        "apply": {
+          "title": "Eine Mod konnte sich nicht ins Spiel einklinken",
+          "text": "{names} konnte ihre Änderungen an dieser Minecraft-Version nicht anbringen – oft eine veraltete Mod oder ein Konflikt mit einer anderen. Aktualisiere oder deaktiviere sie."
+        }
+      },
+      "unknown": {
+        "default": {
+          "title": "Unbekannter Fehler",
+          "text": "Die genaue Ursache konnte der Launcher nicht bestimmen. Die wichtigsten Zeilen stehen unter „Details“. Wenn du den Log teilst, können dir andere helfen."
+        },
+        "suspect": {
+          "title": "Unbekannter Fehler – vermutlich {name}",
+          "text": "Der Absturz beginnt in {name}. Deaktiviere die Mod für einen Teststart; läuft das Spiel dann, aktualisiere sie oder melde den Absturz ihrem Autor."
+        }
+      }
+    }
   },
   "exportPack": {
     "title": "Als Modpack exportieren",
@@ -2578,7 +2834,8 @@
       "title": "TRS-Dienste sind ausgeschaltet",
       "friends": "Für die Freundesliste meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "capes": "Für TRS-Umhänge meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
-      "button": "Mehr erfahren & einschalten"
+      "button": "Mehr erfahren & einschalten",
+      "shares": "Um Screenshots als Link zu teilen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
     },
     "account": {
       "title": "Kein Account angemeldet",
@@ -2603,7 +2860,8 @@
       "chat": "Chat-Nachrichten, gesendete Bilder und Meldungen – verschlüsselt auf dem Server, bis sie gelöscht werden; gemeldete Inhalte werden für die Moderation aufbewahrt",
       "settings": "deine Datenschutz-Einstellungen und Zeitpunkte (Anmeldung, Erstellung)",
       "sync": "bei eingeschalteter Synchronisation: deine eigenen Skins (Bilder und Namen), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache – damit sie auf all deinen PCs gleich sind; der TRS Client synchronisiert seine Module, HUD-Layouts und Tasten ebenso (Schalter im TRS-Menü)",
-      "presence": "der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher, er verfällt nach 3 Minuten"
+      "presence": "der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher, er verfällt nach 3 Minuten",
+      "shares": "Screenshots, die du als Link teilst – öffentlich für jeden mit dem Link, nach 30 Tagen automatisch gelöscht"
     },
     "footer": "Du kannst die Dienste jederzeit unter {path} ausschalten und dort alle deine TRS-Daten löschen. Ohne Zustimmung sendet der Launcher nichts an den TRS-Server.",
     "settingsPath": "Einstellungen → Datenschutz",
@@ -3136,7 +3394,9 @@
       "deleteMessage": "Nachricht löschen",
       "dismiss": "Abweisen",
       "resolve": "Erledigt",
-      "related": "Weitere Meldungen zu diesem Spieler"
+      "related": "Weitere Meldungen zu diesem Spieler",
+      "waypoint": "Wegpunkt „{name}“: {coords} ({dimension})",
+      "deleteShare": "Geteiltes Bild löschen"
     }
   },
   "whatsNew": {
@@ -4019,7 +4279,8 @@
         "message": "Nachricht melden",
         "image": "Bild melden",
         "player": "Spieler melden",
-        "group": "Gruppe melden"
+        "group": "Gruppe melden",
+        "share": "Geteiltes Bild melden"
       },
       "intro": "Du meldest {name}. Das TRS-Team prüft jede Meldung.",
       "reason": "Grund",
@@ -4079,6 +4340,19 @@
       "openChat": "Chat öffnen",
       "reply": "Antworten",
       "replyPlaceholder": "Schnell antworten …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Wegpunkt",
+      "copy": "Koordinaten kopieren",
+      "copyTitle": "Kopiert „x y z“ in die Zwischenablage",
+      "copied": "Koordinaten {coords} kopiert",
+      "singleplayer": "Einzelspielerwelt",
+      "dimensions": {
+        "overworld": "Oberwelt",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4575,6 +4849,71 @@
         "player": "Notizen",
         "hosting": "Welten"
       }
+    }
+  },
+  "trsChoice": {
+    "title": "TRS Client",
+    "with": "Mit TRS Client",
+    "withHint": "HUD, Zoom, Minimap, Umhänge und Freunde im Spiel.",
+    "without": "Ohne TRS Client",
+    "withoutHint": "Das Pack bleibt genau so, wie sein Autor es gebaut hat.",
+    "recommended": "Empfohlen",
+    "later": "Lässt sich jederzeit in den Instanz-Einstellungen ändern.",
+    "checking": "Pack wird geprüft …",
+    "previewFailed": "Das Pack ließ sich vorab nicht prüfen – du kannst trotzdem wählen.",
+    "unsupported": "Für {loader} {version} gibt es keinen TRS Client – die Instanz startet ohne.",
+    "conflicts": "Enthält {list} – überschneidet sich mit dem TRS Client (anderer Client, eigene Minimap oder eigenes HUD). Darum ist „Ohne“ vorausgewählt.",
+    "zoom": "{list} bringt einen eigenen Zoom mit – den TRS-Zoom kannst du im Spiel abschalten.",
+    "install": {
+      "title": "Modpack installieren",
+      "details": "Minecraft {version} · {loader}"
+    },
+    "import": {
+      "title": "TRS Client bei Instanzen mit Mods",
+      "intro": "Gilt für jeden Import unten – Ausnahmen je Instanz möglich.",
+      "exceptWithout": "Diese ohne TRS Client importieren",
+      "exceptWith": "Diese mit TRS Client importieren",
+      "found": "{list} gefunden",
+      "unsupported": "Kein TRS Client für {loader} {version}",
+      "pack": "„{name}“ importieren"
+    },
+    "settings": {
+      "label": "TRS Client bei Modpacks",
+      "hint": "Beim Installieren oder Importieren eines Modpacks bzw. einer Instanz mit Mods. Neue Instanzen ohne Pack sind nicht betroffen.",
+      "ask": "Immer fragen",
+      "always": "Immer mit TRS Client",
+      "never": "Immer ohne TRS Client"
+    }
+  },
+  "shareLink": {
+    "share": "Als Link teilen",
+    "shareTitle": "Lädt diesen Screenshot hoch und kopiert einen öffentlichen Link (30 Tage gültig)",
+    "sharing": "Wird geteilt …",
+    "myShares": "Meine geteilten Bilder",
+    "needConsent": "Links teilen braucht die TRS-Dienste – sie sind ausgeschaltet.",
+    "turnOn": "Einschalten",
+    "needAccount": "Melde dich zuerst mit deinem Minecraft-Konto an, um Links zu teilen.",
+    "open": "Öffnen",
+    "copyLink": "Link kopieren",
+    "openInBrowser": "Im Browser öffnen",
+    "toasts": {
+      "copied": "Link kopiert – {days} Tage gültig",
+      "ready": "Link erstellt, aber Kopieren ging nicht – du findest ihn unter „Meine geteilten Bilder“.",
+      "copiedAgain": "Link kopiert",
+      "deleted": "Link gelöscht – das Bild ist weg"
+    },
+    "dialog": {
+      "title": "Meine geteilten Bilder",
+      "intro": "Jeder mit dem Link sieht das Bild – ohne deinen Namen. Links löschen sich nach 30 Tagen selbst; hier kannst du sie vorher löschen.",
+      "active": "{n} von {max} Links aktiv",
+      "today": "{n} von {max} heute geteilt",
+      "empty": "Du hast noch keine Bilder geteilt. Nutze „Als Link teilen“ bei einem Screenshot.",
+      "expiresIn": "Läuft in {days} Tag ab | Läuft in {days} Tagen ab",
+      "expiresToday": "Läuft heute ab"
+    },
+    "deleteDialog": {
+      "title": "Link löschen?",
+      "text": "Das Bild wird vom TRS-Server entfernt und der Link funktioniert nicht mehr. Dein Screenshot auf diesem PC bleibt."
     }
   }
 }

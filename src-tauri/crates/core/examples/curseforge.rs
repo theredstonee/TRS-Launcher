@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let project = args.next().ok_or("Projekt-ID fehlt")?;
             let file = args.next();
             let outcome = launcher
-                .install_curseforge_modpack(&project, file.as_deref(), &|p| {
+                .install_curseforge_modpack(&project, file.as_deref(), None, &|p| {
                     println!("  {:?} {:.0} %", p.phase, p.percent);
                 })
                 .await?;

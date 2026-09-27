@@ -21,6 +21,85 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **With or without TRS Client – your choice for modpacks.** When you install a modpack (Modrinth or CurseForge,
+  from Discover or from a file) or import instances with mods from another launcher, the launcher now asks once:
+  "With TRS Client" or "Without TRS Client". "With" is recommended – unless the pack already brings mods that
+  overlap with it, such as another client (Essential), its own minimap (Xaero's, JourneyMap, VoxelMap, FTB Chunks)
+  or its own HUD (MiniHUD). Then you see which ones, and "Without" is preselected. Packs with their own zoom only
+  get a hint. If there is no TRS Client for the pack's Minecraft version, the option is greyed out with the reason.
+  When importing several instances you choose once for all and can tick exceptions per instance. Your choice is
+  saved in the instance and can be changed anytime in its settings. New instances without a pack work as before.
+- **New setting "TRS Client for modpacks"** (Settings → Default settings): always ask (default), always with or
+  always without – with "always …" the question no longer appears.
+- **Crash helper.** When the game crashes – at startup or later – the launcher now reads the crash report and the log
+  itself and explains in plain words what happened: which mods are involved (with their icons), and what helps. It
+  recognizes mods that clash, missing or wrong dependencies, the same mod installed twice, mods for another Minecraft
+  or loader version, too little memory, the wrong Java version, graphics driver crashes (AMD, Intel, NVIDIA, missing
+  OpenGL), damaged files and known combinations such as Sodium with OptiFine, Iris without Sodium or two minimaps.
+- **Fix it with one click.** Depending on the cause you get buttons like "Disable mod" (reversible), "Install
+  dependency", "Remove duplicates", "Increase RAM", "Use Java 21", "Update TRS Client", "Share log" and "Launch again".
+  Every change is confirmed first and shows up in the instance history.
+- **Earlier crashes stay available.** Open them again from the History tab, or analyze any older log or crash report
+  in the Logs tab.
+- **Private by design.** The analysis runs only on your PC; nothing is sent unless you share the log. Paths with your
+  user name and your player name are hidden in the lines shown.
+- Includes a clear answer for the crash of TRS Client 0.9.0 together with Essential: update the TRS Client.
+- **Share waypoints with friends.** In the TRS Client you can send a waypoint – or where you are standing – to a
+  friend or a group in the social chat. It arrives as a card with name, coordinates, dimension and server. Your
+  friends can **take it over** as their own waypoint (when they are on the same server or in the same world) or
+  **show** it on the map. In the launcher chat the card has a button to copy the coordinates.
+- **Clickable coordinates in the Minecraft chat.** When someone writes coordinates like "x: 100 y: 64 z: -20" or
+  "100 64 -20", the TRS Client underlines them – one click saves them as a waypoint. This happens only on your PC,
+  nothing is sent anywhere.
+- **Share screenshots as a link.** In the launcher's screenshot gallery, in "Clips & pictures" and right after taking
+  a screenshot in the game, "Share as link" uploads the picture and copies a link you can post anywhere – Discord
+  shows a preview. Links stay online for 30 days and can be deleted earlier under "My shared pictures". Pictures are
+  re-encoded without any hidden data, and the page never shows your name. Anyone can report a picture.
+
+### Deutsch
+
+- **Mit oder ohne TRS Client – deine Wahl bei Modpacks.** Wenn du ein Modpack installierst (Modrinth oder
+  CurseForge, aus „Entdecken“ oder als Datei) oder Instanzen mit Mods aus einem anderen Launcher importierst, fragt
+  der Launcher jetzt einmal: „Mit TRS Client“ oder „Ohne TRS Client“. Empfohlen ist „Mit“ – außer das Pack bringt
+  schon Mods mit, die sich damit überschneiden, etwa einen anderen Client (Essential), eine eigene Minimap
+  (Xaero's, JourneyMap, VoxelMap, FTB Chunks) oder ein eigenes HUD (MiniHUD). Dann siehst du, welche, und „Ohne“
+  ist vorausgewählt. Packs mit eigenem Zoom bekommen nur einen Hinweis. Gibt es für die Minecraft-Version des
+  Packs keinen TRS Client, ist die Option mit Begründung ausgegraut. Beim Import mehrerer Instanzen wählst du einmal
+  für alle und kannst je Instanz Ausnahmen anhaken. Die Wahl wird in der Instanz gespeichert und lässt sich
+  jederzeit in ihren Einstellungen ändern. Neue Instanzen ohne Pack bleiben wie bisher.
+- **Neue Einstellung „TRS Client bei Modpacks“** (Einstellungen → Standard-Einstellungen): immer fragen (Standard),
+  immer mit oder immer ohne – bei „immer …“ kommt keine Frage mehr.
+- **Absturz-Helfer.** Stürzt das Spiel ab – beim Start oder später –, liest der Launcher jetzt selbst Crash-Report und
+  Log und erklärt verständlich, was passiert ist: welche Mods beteiligt sind (mit Symbol) und was hilft. Er erkennt
+  Mods, die sich in die Quere kommen, fehlende oder falsche Abhängigkeiten, doppelt installierte Mods, Mods für eine
+  andere Minecraft- oder Loader-Version, zu wenig Arbeitsspeicher, die falsche Java-Version, Abstürze im Grafiktreiber
+  (AMD, Intel, NVIDIA, fehlendes OpenGL), beschädigte Dateien und bekannte Kombinationen wie Sodium mit OptiFine, Iris
+  ohne Sodium oder zwei Minimaps.
+- **Mit einem Klick beheben.** Je nach Ursache gibt es Knöpfe wie „Mod deaktivieren“ (rückgängig machbar),
+  „Abhängigkeit installieren“, „Doppelte entfernen“, „RAM erhöhen“, „Java 21 verwenden“, „TRS Client aktualisieren“,
+  „Log teilen“ und „Erneut starten“. Jede Änderung wird vorher bestätigt und landet im Verlauf der Instanz.
+- **Frühere Abstürze bleiben abrufbar.** Im Reiter „Verlauf“ lassen sie sich wieder öffnen, im Reiter „Logs“ lässt
+  sich jeder ältere Log oder Crash-Report analysieren.
+- **Datenschutz inklusive.** Die Analyse läuft nur auf deinem PC; gesendet wird nichts, außer du teilst den Log. In den
+  angezeigten Zeilen sind Pfade mit deinem Benutzernamen und dein Spielername ausgeblendet.
+- Mit klarer Antwort auf den Absturz von TRS Client 0.9.0 zusammen mit Essential: TRS Client aktualisieren.
+- **Wegpunkte mit Freunden teilen.** Im TRS Client schickst du einen Wegpunkt – oder deine aktuelle Position – an
+  einen Freund oder eine Gruppe im Sozial-Chat. Er kommt als Karte mit Name, Koordinaten, Dimension und Server an.
+  Deine Freunde können ihn als eigenen Wegpunkt **übernehmen** (wenn sie auf demselben Server bzw. in derselben
+  Welt sind) oder auf der Karte **anzeigen**. Im Launcher-Chat kopiert ein Knopf die Koordinaten.
+- **Anklickbare Koordinaten im Minecraft-Chat.** Schreibt jemand Koordinaten wie „x: 100 y: 64 z: -20“ oder
+  „100 64 -20“, unterstreicht der TRS Client sie – ein Klick speichert sie als Wegpunkt. Das passiert nur auf deinem
+  PC, es wird nichts gesendet.
+- **Screenshots als Link teilen.** In der Screenshot-Galerie des Launchers, in „Clips & Bilder“ und direkt nach einem
+  Screenshot im Spiel lädt „Als Link teilen“ das Bild hoch und kopiert einen Link, den du überall posten kannst –
+  Discord zeigt eine Vorschau. Links bleiben 30 Tage online und lassen sich unter „Meine geteilten Bilder“ früher
+  löschen. Bilder werden ohne versteckte Daten neu gespeichert, und die Seite zeigt nie deinen Namen. Jeder kann ein
+  Bild melden.
+
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
 <!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->
 <!-- shots:

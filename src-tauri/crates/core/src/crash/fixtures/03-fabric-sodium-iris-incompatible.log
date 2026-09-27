@@ -1,0 +1,11 @@
+[20:14:03] [main/INFO]: Loading Minecraft 1.21.11 with Fabric Loader 0.19.5
+[20:14:03] [main/ERROR]: Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+	 - Replace mod 'Sodium' (sodium) 0.8.14+mc1.21.11 with any 0.8.x version that is compatible with: iris 1.10.7+mc1.21.11.
+More details:
+	 - Mod 'Sodium' (sodium) 0.8.14+mc1.21.11 is incompatible with version 1.10.7 or earlier of mod 'Iris' (iris), yet a conflicting version is present: 1.10.7+mc1.21.11!
+	at net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51)
+	at net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:198)
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:146)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)

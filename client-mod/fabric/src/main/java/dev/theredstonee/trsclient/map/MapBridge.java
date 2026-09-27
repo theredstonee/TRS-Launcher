@@ -216,6 +216,14 @@ public final class MapBridge implements MapPlatform {
 	}
 
 	@Override
+	public boolean openWorldMap() {
+		dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
+		if (screen == null) return false;
+		Mc.setScreen(screen);
+		return true;
+	}
+
+	@Override
 	public String serverMotd() {
 		net.minecraft.client.multiplayer.ServerData data = mc().getCurrentServer();
 		if (data == null || data.motd == null) return null;

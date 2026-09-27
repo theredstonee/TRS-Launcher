@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::download::{self, Task};
 use crate::instance::{Instance, Loader, LoaderKind, NewInstance};
 use crate::modrinth::{self, CDN_PREFIX};
+use crate::trs_choice::{self, ModHint, TrsOffer};
 use crate::{Error, Launcher, Result, fsutil};
 
 const MAX_INDEX_BYTES: u64 = 16 << 20;
@@ -207,20 +208,92 @@ pub(crate) fn download_tasks(index: &PackIndex, game_dir: &Path) -> Result<Vec<T
     Ok(tasks)
 }
 
+/// Was der Installations- bzw. Import-Dialog über ein Pack zeigt, bevor es
+/// eine Instanz wird – vor allem die Frage „mit oder ohne TRS Client“.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackPreview {
+    pub name: String,
+    pub game_version: String,
+    pub loader: Loader,
+    /// Mods im Pack (Dateien in `mods/`).
+    pub mod_count: u32,
+    /// Gelesene Version (Modrinth-Versions- bzw. CurseForge-Datei-ID) – die
+    /// Installation nimmt genau diese.
+    pub version_id: Option<String>,
+    pub trs_client: TrsOffer,
+}
+
+/// Was über die Mods eines `.mrpack` bekannt ist: Dateiname + Modrinth-Projekt
+/// aus dem Index, dazu Jars, die das Pack direkt in `overrides/mods/` mitbringt.
+pub(crate) fn pack_hints(index: &PackIndex, bundled: Vec<String>) -> Vec<ModHint> {
+    index
+        .files
+        .iter()
+        .filter(|f| f.path.starts_with("mods/"))
+        .filter(|f| f.env.as_ref().and_then(|e| e.client.as_deref()) != Some("unsupported"))
+        .map(|f| ModHint::from_pack_file(&f.path, &f.downloads))
+        .chain(bundled.into_iter().map(ModHint::file))
+        .collect()
+}
+
+/// Jar-Namen, die ein Pack direkt in seinen Zusatzordnern mitbringt
+/// (`<ordner>/mods/*.jar`) – nur Namen, nichts wird entpackt.
+pub(crate) fn override_mod_names(pack: &Path, prefixes: &[&str]) -> Vec<String> {
+    const MAX_NAMES: usize = 2000;
+    let Ok(file) = std::fs::File::open(pack) else { return Vec::new() };
+    let Ok(archive) = zip::ZipArchive::new(file) else { return Vec::new() };
+    archive
+        .file_names()
+        .filter_map(|name| {
+            let name = name.replace('\\', "/");
+            prefixes.iter().find_map(|p| Some(name.strip_prefix(p)?.strip_prefix("mods/")?.to_owned()))
+        })
+        .filter(|n| {
+            let lower = n.to_ascii_lowercase();
+            !n.contains('/') && (lower.ends_with(".jar") || lower.ends_with(".jar.disabled"))
+        })
+        .take(MAX_NAMES)
+        .collect()
+}
+
+/// Index und mitgebrachte Mod-Jars einer `.mrpack` (blockierend).
+fn read_index_and_mods(pack: &Path) -> Result<(PackIndex, Vec<String>)> {
+    Ok((read_index(pack)?, override_mod_names(pack, &["overrides/", "client-overrides/"])))
+}
+
+/// Zwischenspeicher für Packs zwischen Vorschau und Installation.
+pub(crate) fn pack_cache_dir(paths: &crate::paths::Paths) -> PathBuf {
+    paths.meta_dir().join("packs")
+}
+
+/// Übrig gebliebene Packs (Vorschau ohne Installation) nach einem Tag löschen.
+pub(crate) async fn prune_pack_cache(dir: &Path) {
+    const MAX_AGE: std::time::Duration = std::time::Duration::from_secs(24 * 60 * 60);
+    let Ok(mut entries) = tokio::fs::read_dir(dir).await else { return };
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let old = entry
+            .metadata()
+            .await
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .and_then(|t| t.elapsed().ok())
+            .is_some_and(|age| age > MAX_AGE);
+        if old {
+            let _ = tokio::fs::remove_file(entry.path()).await;
+        }
+    }
+}
+
 impl Launcher {
-    /// Lädt ein Modpack von Modrinth und legt daraus eine neue Instanz an.
-    pub async fn install_modpack(
-        &self,
-        project_id: &str,
-        version_id: Option<&str>,
-        on_progress: &PackProgressFn,
-    ) -> Result<Instance> {
+    /// Die Version eines Modrinth-Modpacks samt Download-Auftrag für die
+    /// `.mrpack` (Ziel im Pack-Zwischenspeicher, damit Vorschau und
+    /// Installation dieselbe Datei nehmen).
+    async fn modrinth_pack_task(&self, project_id: &str, version_id: Option<&str>) -> Result<(modrinth::Version, Task)> {
         if !modrinth::is_safe_project_id(project_id) {
             return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
         }
         let http = self.http();
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
-
         let version = match version_id {
             Some(id) => modrinth::version_by_id(http, id).await?,
             None => {
@@ -249,16 +322,76 @@ impl Launcher {
         if !file.url.starts_with(CDN_PREFIX) {
             return Err(Error::download(&file.url, "Download liegt nicht auf Modrinths CDN"));
         }
+        let sha1 = file.hashes.sha1.to_ascii_lowercase();
+        if sha1.len() != 40 || !sha1.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(Error::validation(crate::msg!(
+                "modpack.invalidChecksum",
+                "Das Modpack enthält eine ungültige Prüfsumme."
+            )));
+        }
+        let path = pack_cache_dir(self.paths()).join(format!("mr-{sha1}.mrpack"));
+        let task = Task { url: file.url.clone(), path, sha1: Some(sha1), size: Some(file.size) };
+        Ok((version, task))
+    }
 
-        let pack_path = self.paths().meta_dir().join(format!("pack-{}.mrpack", uuid::Uuid::new_v4().simple()));
-        let pack_task =
-            Task { url: file.url.clone(), path: pack_path.clone(), sha1: Some(file.hashes.sha1.clone()), size: Some(file.size) };
-        let result = self.install_pack_file(&pack_task, on_progress).await;
-        let _ = tokio::fs::remove_file(&pack_path).await;
+    /// Lädt das Pack (für die Installation danach zwischengespeichert) und
+    /// sagt, was drin ist und ob der TRS Client dazu passt.
+    pub async fn preview_modpack(&self, project_id: &str, version_id: Option<&str>) -> Result<PackPreview> {
+        let (version, task) = self.modrinth_pack_task(project_id, version_id).await?;
+        prune_pack_cache(&pack_cache_dir(self.paths())).await;
+        download::fetch_all(self.http(), vec![task.clone()], 1, &|_| {}).await?;
+        let mut preview = self.preview_pack_file(&task.path).await?;
+        preview.version_id = Some(version.id);
+        Ok(preview)
+    }
+
+    /// Vorschau einer Pack-Datei auf der Platte (`.mrpack` oder CurseForge-Zip).
+    pub async fn preview_pack_file(&self, pack: &Path) -> Result<PackPreview> {
+        let path = pack.to_owned();
+        let curseforge = tokio::task::spawn_blocking(move || crate::curseforge::is_curseforge_pack(&path))
+            .await
+            .map_err(|e| Error::Internal(e.to_string()))?;
+        if curseforge {
+            return self.preview_curseforge_pack(pack).await;
+        }
+        let path = pack.to_owned();
+        let (index, bundled) = tokio::task::spawn_blocking(move || read_index_and_mods(&path))
+            .await
+            .map_err(|e| Error::Internal(e.to_string()))??;
+        let loader = index.loader()?;
+        let game_version = index.game_version()?.to_owned();
+        let hints = pack_hints(&index, bundled);
+        let trs_client = self.trs_client_offer(&loader, &game_version, &hints).await;
+        Ok(PackPreview {
+            name: index.name.chars().filter(|c| !c.is_control()).take(64).collect(),
+            game_version,
+            loader,
+            mod_count: hints.len() as u32,
+            version_id: None,
+            trs_client,
+        })
+    }
+
+    /// Lädt ein Modpack von Modrinth und legt daraus eine neue Instanz an.
+    /// `trs_client`: Wahl aus dem Dialog (`None` = Einstellung bzw. Vorauswahl).
+    pub async fn install_modpack(
+        &self,
+        project_id: &str,
+        version_id: Option<&str>,
+        trs_client: Option<bool>,
+        on_progress: &PackProgressFn,
+    ) -> Result<Instance> {
+        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
+        let (version, pack_task) = self.modrinth_pack_task(project_id, version_id).await?;
+        if version.project_id != project_id {
+            return Err(Error::validation(crate::msg!("modpack.noVersion", "Dieses Modpack hat keine Version.")));
+        }
+        let result = self.install_pack_file(&pack_task, trs_client, on_progress).await;
+        let _ = tokio::fs::remove_file(&pack_task.path).await;
         let instance = result?;
 
         // Das Pack-Icon wird zum Instanz-Bild (nur von Modrinths CDN, siehe `icon`).
-        let icon_url = modrinth::project_cards(http, &[project_id.to_owned()])
+        let icon_url = modrinth::project_cards(self.http(), &[project_id.to_owned()])
             .await
             .ok()
             .and_then(|cards| cards.into_iter().next())
@@ -274,7 +407,12 @@ impl Launcher {
 
     /// Legt aus einer Modpack-Datei auf der Platte eine Instanz an – `.mrpack`
     /// (etwa ein eigener Export) oder ein CurseForge-Zip mit `manifest.json`.
-    pub async fn import_modpack_file(&self, pack: &Path, on_progress: &PackProgressFn) -> Result<Instance> {
+    pub async fn import_modpack_file(
+        &self,
+        pack: &Path,
+        trs_client: Option<bool>,
+        on_progress: &PackProgressFn,
+    ) -> Result<Instance> {
         let meta = tokio::fs::metadata(pack).await.map_err(|e| Error::io(pack, e))?;
         if !meta.is_file() {
             return Err(Error::validation(crate::msg!("modpack.notPackFile", "Das ist keine Modpack-Datei.")));
@@ -287,33 +425,49 @@ impl Launcher {
         if curseforge {
             // Die Dateien des Packs löst nur die CurseForge-API auf.
             let cf = self.curseforge()?;
-            return Ok(self.install_curseforge_pack(cf, pack, on_progress).await?.instance);
+            return Ok(self.install_curseforge_pack(cf, pack, trs_client, on_progress).await?.instance);
         }
-        self.install_local_pack(pack, on_progress).await
+        self.install_local_pack(pack, trs_client, on_progress).await
     }
 
-    async fn install_pack_file(&self, pack_task: &Task, on_progress: &PackProgressFn) -> Result<Instance> {
+    async fn install_pack_file(
+        &self,
+        pack_task: &Task,
+        trs_client: Option<bool>,
+        on_progress: &PackProgressFn,
+    ) -> Result<Instance> {
         download::fetch_all(self.http(), vec![pack_task.clone()], 1, &|p| {
             on_progress(PackProgress { phase: PackPhase::Pack, percent: p.percent() });
         })
         .await?;
-        self.install_local_pack(&pack_task.path, on_progress).await
+        self.install_local_pack(&pack_task.path, trs_client, on_progress).await
     }
 
-    async fn install_local_pack(&self, pack: &Path, on_progress: &PackProgressFn) -> Result<Instance> {
+    pub(crate) async fn install_local_pack(
+        &self,
+        pack: &Path,
+        trs_client: Option<bool>,
+        on_progress: &PackProgressFn,
+    ) -> Result<Instance> {
         let pack_path = pack.to_owned();
-        let index = {
+        let (index, bundled) = {
             let path = pack_path.clone();
-            tokio::task::spawn_blocking(move || read_index(&path)).await.map_err(|e| Error::Internal(e.to_string()))??
+            tokio::task::spawn_blocking(move || read_index_and_mods(&path))
+                .await
+                .map_err(|e| Error::Internal(e.to_string()))??
         };
 
         // Abgebrochen, während das Pack lud? Dann gar nicht erst eine Instanz anlegen.
         crate::task::checkpoint().await?;
         let name: String = index.name.chars().filter(|c| !c.is_control()).take(64).collect();
+        let new = NewInstance { name: name.clone(), game_version: index.game_version()?.to_owned(), loader: index.loader()? };
+        // Mit oder ohne TRS Client – gewählt im Dialog, sonst Einstellung bzw. Vorauswahl.
+        let offer = self.trs_client_offer(&new.loader, &new.game_version, &pack_hints(&index, bundled)).await;
         let instance = self
-            .create_instance_as(
-                NewInstance { name: name.clone(), game_version: index.game_version()?.to_owned(), loader: index.loader()? },
+            .create_instance_with(
+                new,
                 crate::history::HistoryEntry::new(crate::history::HistoryKind::Created).subject(&name).detail("modpack"),
+                trs_choice::decide(&offer, trs_client),
             )
             .await?;
 

@@ -193,6 +193,8 @@ export interface Settings {
   trsSync: boolean
   /** Benachrichtigungen aus „Sozial“ (nur lokal) */
   social: SocialSettings
+  /** TRS Client bei Modpacks/Importen mit Mods: fragen (Standard) oder immer mit/ohne */
+  modpackTrsClient: ModpackTrsPolicy
 }
 
 /** Benachrichtigungen aus „Sozial“ (Rust: `SocialSettings`). */
@@ -438,7 +440,10 @@ export type GameEvent =
       crashed: boolean
       playSeconds: number
       diagnosis: Diagnosis | null
+      /** Nach einem Absturz: ID der Analyse, die gleich als `crashAnalyzed` folgt. */
+      crashId?: string
     }
+  | { type: 'crashAnalyzed'; instanceId: string; crash: CrashAnalysis }
   | {
       type: 'notice'
       instanceId: string
@@ -468,6 +473,82 @@ export interface Diagnosis {
   conflict?: ModConflictInfo
   /** Bei `missing_dependency`: welche Mods fehlen – der Launcher kann sie installieren. */
   missing?: MissingModInfo
+}
+
+// --- Absturz-Helfer (Kern: `crates/core/src/crash`) ------------------------------
+
+export type CrashKind =
+  | 'known_issue'
+  | 'duplicate_mod'
+  | 'wrong_game_version'
+  | 'wrong_loader_version'
+  | 'incompatible_mod'
+  | 'missing_dependency'
+  | 'wrong_java'
+  | 'out_of_memory'
+  | 'corrupt_files'
+  | 'graphics_driver'
+  | 'mixin_conflict'
+  | 'unknown'
+
+/** Was der Launcher auf Knopfdruck tun kann (jede Änderung wird vorher bestätigt). */
+export type CrashAction =
+  | { type: 'disableMods'; files: string[] }
+  | { type: 'installDependencies'; declarer: string | null; dependencies: string[] }
+  | { type: 'removeDuplicates'; files: string[]; keep: string[] }
+  | { type: 'setMemory'; fromMb: number; toMb: number }
+  | { type: 'switchJava'; major: number | null }
+  | { type: 'updateTrsClient' }
+  | { type: 'fixConflict'; modId: string }
+  | { type: 'repair' }
+
+export interface CrashFinding {
+  kind: CrashKind
+  /** Genauere Art für den Text, z. B. `trsclient_essential`, `amd`, `reserve`. */
+  variant?: string
+  score: number
+  params?: Record<string, string>
+  /** Beteiligte Mods (IDs aus `CrashAnalysis.mods`). */
+  mods: string[]
+  /** Log-Zeilen, an denen es erkannt wurde (maskiert). */
+  evidence: string[]
+  actions: CrashAction[]
+}
+
+export interface CrashModRef {
+  id: string
+  name: string
+  version?: string
+  /** Datei im Mods-Ordner (ohne `.disabled`). */
+  file?: string
+  enabled: boolean
+  iconUrl?: string
+  /** Steckt in einer anderen Mod (Jar-in-Jar). */
+  bundledIn?: string
+}
+
+export interface CrashAnalysis {
+  id: string
+  instanceId: string
+  at: string
+  exitCode: number | null
+  playSeconds: number | null
+  /** Log-Quellen (`crash-reports/…`, `live`, `logs/latest.log`). */
+  sources: string[]
+  /** Nach Wichtigkeit, der erste ist die Hauptursache; nie leer. */
+  findings: CrashFinding[]
+  mods: CrashModRef[]
+  cause?: string
+  firstFrame?: string
+  excerpt: string[]
+}
+
+export interface CrashSummary {
+  id: string
+  at: string
+  kind: CrashKind
+  variant?: string
+  mods: string[]
 }
 
 /** Aus der Loader-Meldung: `modId` braucht die Mods `dependencies` (Mod-IDs), die fehlen. */
@@ -659,6 +740,48 @@ export interface PackProgress {
   percent: number
 }
 
+/** Einstellung „Bei Modpacks: TRS Client“. */
+export type ModpackTrsPolicy = 'ask' | 'always' | 'never'
+
+/** Wie stark sich eine Mod mit dem TRS Client überschneidet (`zoom` = nur Hinweis). */
+export type TrsConflictKind = 'clientMod' | 'minimap' | 'hud' | 'zoom'
+
+export interface TrsConflict {
+  name: string
+  kind: TrsConflictKind
+}
+
+/** „Mit oder ohne TRS Client?“ – vom Kern für ein Pack bzw. eine Instanz berechnet. */
+export interface TrsOffer {
+  /** `false` = keine Frage (Vanilla bleibt wie bisher). */
+  applies: boolean
+  /** Es gibt einen TRS-Client-Build für Loader + Version. */
+  supported: boolean
+  unsupported: { kind: 'noBuild'; loader: LoaderKind; gameVersion: string } | null
+  /** Vorauswahl: `true` = „Mit TRS Client“. */
+  recommended: boolean
+  conflicts: TrsConflict[]
+  policy: ModpackTrsPolicy
+}
+
+/** Vorschau eines Modpacks vor der Installation. */
+export interface PackPreview {
+  name: string
+  gameVersion: string
+  loader: Loader
+  modCount: number
+  /** Genau diese Version wird installiert. */
+  versionId: string | null
+  trsClient: TrsOffer
+}
+
+/** Gewählte Modpack-Datei (Pfad bleibt im Kern). */
+export interface PickedPack {
+  token: number
+  fileName: string
+  preview: PackPreview
+}
+
 export interface Server {
   id: string
   name: string
@@ -808,6 +931,8 @@ export interface ImportCandidate {
   missingCount: number
   notes: ImportNote[]
   versionGuessed: boolean
+  /** „Mit oder ohne TRS Client“ für diese Instanz. */
+  trsClient: TrsOffer | null
 }
 
 /** Ein Launcher, dessen Daten auf diesem PC liegen. */
@@ -856,6 +981,7 @@ export type HistoryKind =
   | 'hooks_changed'
   | 'group_changed'
   | 'renamed'
+  | 'settings_changed'
 
 export interface HistoryEntry {
   at: string
@@ -865,6 +991,8 @@ export interface HistoryEntry {
   to?: string
   detail?: string
   seconds?: number
+  /** Absturz-Analyse zu diesem Eintrag (Absturz-Helfer). */
+  crash?: string
 }
 
 export interface DependencyInfo {

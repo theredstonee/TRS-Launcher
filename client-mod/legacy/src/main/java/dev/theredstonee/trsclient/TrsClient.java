@@ -242,6 +242,17 @@ public final class TrsClient {
 				public int vanillaToastBottom() {
 					return vanillaNoticeBottom();
 				}
+
+				@Override
+				public boolean openSocial() {
+					try {
+						if (!dev.theredstonee.trsclient.screen.MenuScreens.friendsAvailable()) return false;
+						Mc.setScreen(dev.theredstonee.trsclient.screen.MenuScreens.social(null));
+						return true;
+					} catch (RuntimeException e) {
+						return false;
+					}
+				}
 			}, modules);
 		} catch (RuntimeException e) {
 			LOGGER.warn("Sozial-Benachrichtigungen nicht verfügbar: " + e);
@@ -437,6 +448,12 @@ public final class TrsClient {
 	public void onGuiMouseInput(GuiScreenEvent.MouseInputEvent.Pre event) {
 		if (!(Mc.eventGui(event) instanceof GuiChat)) return;
 		if (!Mouse.getEventButtonState()) return;
+		// Klick auf markierte Koordinaten → „Als Wegpunkt speichern“ (Umschalt fügt wie in Vanilla nur den Text ein).
+		if (Mouse.getEventButton() == 0 && !GuiScreen.isShiftKeyDown() && !GuiScreen.isCtrlKeyDown()
+				&& chat.onLinkClick(Mouse.getX(), Mouse.getY())) {
+			event.setCanceled(true);
+			return;
+		}
 		// Strg+Linksklick und/oder Rechtsklick (Einstellung „Zeile kopieren mit“).
 		if (!dev.theredstonee.trsclient.qol.LegacyQol.copyAllowed(Mouse.getEventButton(), GuiScreen.isCtrlKeyDown())) return;
 		if (chat.onChatClick(Mouse.getX(), Mouse.getY())) event.setCanceled(true);

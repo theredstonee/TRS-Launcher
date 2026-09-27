@@ -26,6 +26,7 @@ mod ops;
 pub mod png;
 mod presence;
 pub mod sanctions;
+pub mod share;
 pub mod store;
 pub mod sync;
 pub mod team;
@@ -426,6 +427,11 @@ impl TrsApi {
 
     /// Adressen, von denen Umhang-Texturen geladen werden dürfen: die
     /// eingestellte API und die bekannten Adressen der echten API.
+    /// Eingestellte API-Adresse (ohne `/` am Ende).
+    pub(crate) fn base(&self) -> &str {
+        &self.base
+    }
+
     pub(crate) fn trusted_bases(&self) -> Vec<&str> {
         let mut bases = vec![self.base.as_str()];
         bases.extend(KNOWN_BASES.iter().copied().filter(|b| *b != self.base));
@@ -734,3 +740,5 @@ mod chat_tests;
 mod hosting_tests;
 #[cfg(test)]
 mod sanctions_tests;
+#[cfg(test)]
+mod share_tests;

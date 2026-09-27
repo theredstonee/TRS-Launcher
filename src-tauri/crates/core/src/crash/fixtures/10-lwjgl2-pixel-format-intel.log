@@ -1,0 +1,12 @@
+[12:00:01] [Client thread/INFO]: Setting user: Steve
+[12:00:01] [Client thread/INFO]: (Session ID is token:0123456789abcdef0123456789abcdef:0f3c7d1e2b4a4c8d9e6f1a2b3c4d5e6f)
+[12:00:03] [Client thread/INFO]: LWJGL Version: 2.9.4
+[12:00:03] [Client thread/ERROR]: Couldn't set pixel format
+org.lwjgl.LWJGLException: Pixel format not accelerated
+	at org.lwjgl.opengl.WindowsPeerInfo.nChoosePixelFormat(Native Method)
+	at org.lwjgl.opengl.WindowsPeerInfo.choosePixelFormat(WindowsPeerInfo.java:52)
+	at org.lwjgl.opengl.WindowsDisplay.createWindow(WindowsDisplay.java:253)
+	at org.lwjgl.opengl.Display.createWindow(Display.java:306)
+	at org.lwjgl.opengl.Display.create(Display.java:848)
+	at net.minecraft.client.Minecraft.createDisplay(Minecraft.java:528)
+	at net.minecraft.client.Minecraft.startGame(Minecraft.java:377)

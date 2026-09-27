@@ -15,12 +15,12 @@ const optPlayer = player.nullable().default(null)
 
 export const reportFilters = ['active', 'open', 'in_review', 'resolved', 'all'] as const
 export type ReportFilter = (typeof reportFilters)[number]
-export const reportActions = ['delete_message', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve'] as const
+export const reportActions = ['delete_message', 'delete_share', 'warn', 'mute', 'ban', 'sanction', 'dismiss', 'resolve'] as const
 export type ReportActionId = (typeof reportActions)[number]
 
 export const adminReportSummarySchema = z.object({
   id: z.string().regex(/^r[0-9a-f]{16}$/),
-  kind: z.enum(['message', 'image', 'player', 'group']),
+  kind: z.enum(['message', 'image', 'player', 'group', 'share']),
   reason: str(32),
   status: z.enum(['open', 'in_review', 'resolved']),
   outcome: z.enum(['actioned', 'dismissed']).nullable().default(null),
@@ -29,6 +29,8 @@ export const adminReportSummarySchema = z.object({
   conversationId: opt(32),
   messageId: opt(32),
   attachmentId: opt(32),
+  /** Gemeldeter geteilter Screenshot (§23). */
+  shareId: opt(32),
   preview: opt(400),
   images: num,
   lowTrust: z.boolean().default(false),
@@ -66,6 +68,12 @@ export const evidenceMessageSchema = z.object({
   sender: optPlayer,
   text: opt(),
   invite: z.object({ address: str(261), name: opt(32) }).nullable().default(null),
+  /** Wegpunkt-Karte (§18.10) – fehlt in älteren Beweisen. */
+  waypoint: z
+    .object({ name: str(32), x: z.number().int(), y: z.number().int(), z: z.number().int(), dimension: str(100) })
+    .nullable()
+    .catch(null)
+    .default(null),
   system: z.object({ event: str(32), target: z.union([str(32), player]).nullable().default(null), name: opt(32) }).nullable().default(null),
   attachments: z.array(z.object({ id: str(32), width: num, height: num, mime: str(20) })).default([]),
   replyTo: z.union([str(32), z.object({ id: str(32) }).passthrough()]).nullable().default(null),
@@ -88,6 +96,8 @@ export const adminReportDetailSchema = adminReportSummarySchema.extend({
       focus: opt(32),
       messages: z.array(evidenceMessageSchema).default([]),
       images: z.array(z.object({ id: str(32), width: num, height: num, mime: str(20) })).default([]),
+      /** Geteilter Screenshot zur Meldezeit (§23); das Bild liegt als Kopie unter `images`. */
+      share: z.object({ id: str(32), width: num, height: num, mime: str(20), createdAt: opt(40) }).nullable().default(null),
     })
     .nullable()
     .default(null),

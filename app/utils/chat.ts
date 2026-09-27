@@ -4,6 +4,7 @@ import { intlLocale, t } from './i18n'
 import { trsPresenceSchema, trsUserRefSchema } from './trs'
 import { chatWorldSchema, hostingEventSchemas } from './hosting'
 import { myAppealSchema, mySanctionSchema } from './sanctions'
+import { chatWaypointSchema } from './waypoint'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
 // geprüft), und reine Funktionen für Zeitleiste, Vorschauen, Reaktionen,
@@ -66,6 +67,8 @@ export const chatReplySchema = z.object({
   invite: z.boolean(),
   /** Antwort auf eine Weltkarte (ältere Kerne schicken das Feld nicht). */
   world: z.boolean().default(false),
+  /** Antwort auf eine Wegpunkt-Karte (API §18.10). */
+  waypoint: z.boolean().default(false),
   deleted: z.boolean(),
 })
 
@@ -86,6 +89,8 @@ export const chatMessageSchema = z.object({
   invite: chatInviteSchema.nullable(),
   /** Weltkarte einer gehosteten Welt (API §21.8). */
   world: chatWorldSchema.nullable().default(null),
+  /** Wegpunkt-Karte aus dem TRS Client (API §18.10). */
+  waypoint: chatWaypointSchema.nullable().default(null),
   attachments: z.array(chatAttachmentSchema).max(MAX_IMAGES),
   replyTo: chatReplySchema.nullable(),
   system: chatSystemSchema.nullable(),
@@ -158,7 +163,7 @@ export const stagedImagesSchema = z.object({ images: z.array(localImageSchema), 
 
 export const reportReasonIds = ['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other'] as const
 export type ReportReason = (typeof reportReasonIds)[number]
-export const reportKinds = ['message', 'image', 'player', 'group'] as const
+export const reportKinds = ['message', 'image', 'player', 'group', 'share'] as const
 export type ReportKind = (typeof reportKinds)[number]
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 
@@ -283,6 +288,7 @@ export type ReportTarget =
   | { kind: 'image'; attachmentId: string }
   | { kind: 'player'; uuid: string; conversationId?: string }
   | { kind: 'group'; conversationId: string }
+  | { kind: 'share'; shareId: string }
 
 /** Eine Nachricht in der Oberfläche – auch noch nicht bestätigte eigene. */
 export type LocalMessage = ChatMessage & {
@@ -534,7 +540,10 @@ export function systemText(system: ChatSystem | null): string {
 
 /** Kurzfassung einer Nachricht (Liste, Antwort, Benachrichtigung). */
 export function messageSummary(
-  m: Pick<ChatMessage, 'kind' | 'text' | 'attachments' | 'invite' | 'deleted' | 'hidden' | 'system'> & { world?: ChatMessage['world'] },
+  m: Pick<ChatMessage, 'kind' | 'text' | 'attachments' | 'invite' | 'deleted' | 'hidden' | 'system'> & {
+    world?: ChatMessage['world']
+    waypoint?: ChatMessage['waypoint']
+  },
 ): string {
   if (m.deleted) return t('social.chat.deleted')
   if (m.hidden) return t('social.chat.hidden')
@@ -544,6 +553,7 @@ export function messageSummary(
   if (m.attachments.length) return t('social.chat.images', m.attachments.length)
   if (m.invite) return t('social.chat.inviteTo', { address: m.invite.address })
   if (m.world) return t('social.hosting.cardSummary', { name: m.world.name })
+  if (m.waypoint) return t('social.waypoint.summary', { name: m.waypoint.name })
   return ''
 }
 

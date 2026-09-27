@@ -41,8 +41,8 @@ const group = computed(() => props.conversation.kind === 'group')
 const m = computed(() => props.message)
 const parts = computed(() => (m.value.text ? splitLinks(m.value.text) : []))
 /** Nur Bilder (ohne Text/Antwort/Einladung): ohne Blasen-Hintergrund. */
-const mediaOnly = computed(() => !m.value.text && !m.value.replyTo && !m.value.invite && !m.value.world && !m.value.deleted && !m.value.hidden && images.value.length > 0)
-const big = computed(() => onlyEmoji(m.value.text) && !m.value.attachments.length && !m.value.replyTo && !m.value.invite && !m.value.world)
+const mediaOnly = computed(() => !m.value.text && !m.value.replyTo && !m.value.invite && !m.value.world && !m.value.waypoint && !m.value.deleted && !m.value.hidden && images.value.length > 0)
+const big = computed(() => onlyEmoji(m.value.text) && !m.value.attachments.length && !m.value.replyTo && !m.value.invite && !m.value.world && !m.value.waypoint)
 const pickerOpen = ref(false)
 const canAct = computed(() => !m.value.local && !m.value.deleted && !m.value.hidden && m.value.kind === 'text')
 
@@ -68,6 +68,7 @@ function replyText(): string {
     if (r.attachments) return t('social.chat.images', r.attachments)
     if (r.invite) return t('social.chat.invite')
     if (r.world) return t('social.hosting.cardReply')
+    if (r.waypoint) return t('social.waypoint.reply')
   }
   return r.preview ?? ''
 }
@@ -142,7 +143,7 @@ const gridStyle = computed(() => {
               <span class="block truncate opacity-80" :class="{ italic: m.replyTo.deleted }">{{ replyText() }}</span>
             </button>
 
-            <div v-if="images.length" class="grid w-max max-w-full gap-1" :style="gridStyle" :class="m.text || m.invite || m.world ? 'mb-1.5' : ''">
+            <div v-if="images.length" class="grid w-max max-w-full gap-1" :style="gridStyle" :class="m.text || m.invite || m.world || m.waypoint ? 'mb-1.5' : ''">
               <button
                 v-for="(src, i) in images"
                 :key="i"
@@ -158,6 +159,7 @@ const gridStyle = computed(() => {
 
             <SocialInviteCard v-if="m.invite" :invite="m.invite" :class="m.text ? 'mb-1.5' : ''" />
             <SocialWorldCard v-if="m.world" :world="m.world" :class="m.text ? 'mb-1.5' : ''" />
+            <SocialWaypointCard v-if="m.waypoint" :waypoint="m.waypoint" :class="m.text ? 'mb-1.5' : ''" />
 
             <p v-if="parts.length" class="msg-text" :class="big ? 'text-4xl leading-tight' : 'text-sm'">
               <template v-for="(part, i) in parts" :key="i">

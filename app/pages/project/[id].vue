@@ -121,7 +121,7 @@ function installVersion(version: ModrinthVersion | null) {
 
 function installPack() {
   if (!details.value) return
-  installModpackTask(details.value, platform.value)
+  requestModpackInstall(details.value, platform.value)
 }
 
 function openPackPage() {

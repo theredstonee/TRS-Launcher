@@ -1,0 +1,13 @@
+[19:44:10] [main/INFO]: Loading Minecraft 1.20.1 with Fabric Loader 0.19.5
+[19:44:10] [main/INFO]: Loading 7 mods:
+	- fabric-api 0.92.2+1.20.1
+	- fabricloader 0.19.5
+	- java 17
+	- minecraft 1.20.1
+	- optifabric 1.14.3
+	- sodium 0.5.11+mc1.20.1
+[19:44:13] [main/INFO]: [OptiFabric] Found OptiFine_1.20.1_HD_U_I6.jar
+[19:44:21] [Render thread/ERROR]: Mixin apply for mod sodium failed sodium.mixins.json:core.render.world.WorldRendererMixin from mod sodium -> net.minecraft.class_761: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException Critical injection failure: @Inject annotation on onReload could not find any targets matching 'method_3279' in net.minecraft.class_761. [PREINJECT Applicator Phase -> sodium.mixins.json:core.render.world.WorldRendererMixin from mod sodium -> Prepare Injections]
+java.lang.RuntimeException: Mixin transformation of net.minecraft.class_761 failed
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:427)
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.tryLoadClass(KnotClassDelegate.java:323)

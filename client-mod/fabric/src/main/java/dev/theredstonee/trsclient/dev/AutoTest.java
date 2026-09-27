@@ -119,6 +119,11 @@ public final class AutoTest {
 			SocialTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=share: Wegpunkte teilen, Koordinaten im Chat, Bildschirmfoto als Link (gegen lokale API)
+		if ("share".equals(System.getProperty("trsclient.autotest.only"))) {
+			ShareTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=sanctions: „Meine Strafen“ + Einspruch (Moderation v2) gegen eine API-Attrappe
 		if ("sanctions".equals(System.getProperty("trsclient.autotest.only"))) {
 			SanctionsTest.install();

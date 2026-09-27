@@ -10,6 +10,7 @@ pub mod client_mod;
 pub mod clips;
 pub mod client_mod_update;
 pub mod content;
+pub mod crash;
 pub mod curseforge;
 pub mod depcheck;
 pub mod discord;
@@ -57,6 +58,7 @@ pub mod system;
 pub mod task;
 pub mod task_history;
 pub mod trs_api;
+pub mod trs_choice;
 pub mod upload;
 pub mod worlds;
 
@@ -156,22 +158,31 @@ impl Launcher {
         // Spielende landet zusätzlich im Verlauf der Instanz.
         let history_paths = paths.clone();
         let events: EventSink = Arc::new(move |event: GameEvent| {
-            if let GameEvent::Exited { instance_id, crashed, play_seconds, diagnosis, exit_code } = &event {
-                let entry = if *crashed {
+            if let GameEvent::Exited { instance_id, crashed, play_seconds, diagnosis, exit_code, crash, .. } = &event {
+                // Absturz-Helfer: analysiert im Hintergrund, schreibt den Verlauf und meldet `crashAnalyzed`.
+                let helped = *crashed
+                    && crash
+                        .as_ref()
+                        .is_some_and(|c| crash::analyze_after_exit(&history_paths, events.clone(), instance_id, (**c).clone()));
+                let entry = if helped {
+                    None
+                } else if *crashed {
                     let detail = diagnosis
                         .as_ref()
                         .and_then(|d| serde_json::to_value(d.kind).ok())
                         .and_then(|v| v.as_str().map(str::to_owned))
                         .or_else(|| exit_code.map(|c| format!("exit:{c}")));
                     let entry = HistoryEntry::new(HistoryKind::Crashed).seconds(*play_seconds);
-                    match detail {
+                    Some(match detail {
                         Some(d) => entry.detail(d),
                         None => entry,
-                    }
+                    })
                 } else {
-                    HistoryEntry::new(HistoryKind::Stopped).seconds(*play_seconds)
+                    Some(HistoryEntry::new(HistoryKind::Stopped).seconds(*play_seconds))
                 };
-                history::record_detached(&history_paths, instance_id, entry);
+                if let Some(entry) = entry {
+                    history::record_detached(&history_paths, instance_id, entry);
+                }
             }
             events(event);
         });
@@ -334,6 +345,19 @@ impl Launcher {
     /// z. B. damit Presets die im TRS Client eingebauten Mods weglassen.
     pub async fn client_mod_builds(&self) -> Vec<client_mod::Build> {
         self.client_mod_catalog().await.1.builds().to_vec()
+    }
+
+    /// „Mit oder ohne TRS Client?“ für ein Pack bzw. eine Instanz mit diesem
+    /// Loader, dieser Version und diesen Dateien (siehe [`trs_choice`]).
+    pub async fn trs_client_offer(
+        &self,
+        loader: &instance::Loader,
+        game_version: &str,
+        hints: &[trs_choice::ModHint],
+    ) -> trs_choice::TrsOffer {
+        let (_, catalog) = self.client_mod_catalog().await;
+        let policy = self.settings().await.modpack_trs_client;
+        trs_choice::offer(catalog.builds(), loader, game_version, hints, policy)
     }
 
     async fn client_mod_catalog(&self) -> (Option<PathBuf>, client_mod::Catalog) {
@@ -603,11 +627,23 @@ impl Launcher {
     /// Wie [`Self::create_instance`] mit eigenem ersten Verlaufseintrag
     /// (Import, Modpack, Kopie).
     pub(crate) async fn create_instance_as(&self, new: NewInstance, first: HistoryEntry) -> Result<Instance> {
+        self.create_instance_with(new, first, None).await
+    }
+
+    /// Wie [`Self::create_instance_as`]; `trs_client` landet gleich in den
+    /// Überschreibungen (Wahl beim Modpack bzw. Import, siehe [`trs_choice`]).
+    pub(crate) async fn create_instance_with(
+        &self,
+        new: NewInstance,
+        first: HistoryEntry,
+        trs_client: Option<bool>,
+    ) -> Result<Instance> {
         let manifest = self.version_manifest(false).await?;
         if manifest.find(&new.game_version).is_none() {
             return Err(Error::UnknownGameVersion(new.game_version));
         }
-        let instance = self.instances.create(new).await?;
+        let overrides = instance::InstanceOverrides { trs_client, ..Default::default() };
+        let instance = self.instances.create_with(new, overrides).await?;
         let first = first.to(describe_version(&instance.game_version, &instance.loader));
         history::record(&self.paths, &instance.id, first).await;
         Ok(instance)

@@ -278,6 +278,7 @@ export const useChatStore = defineStore('chat', () => {
       text: draft.text ?? null,
       invite: draft.invite ? { address: draft.invite.address, name: draft.invite.name } : null,
       world: null,
+      waypoint: null,
       attachments: [],
       replyTo: reply
         ? {
@@ -288,6 +289,7 @@ export const useChatStore = defineStore('chat', () => {
             attachments: reply.attachments.length,
             invite: !!reply.invite,
             world: !!reply.world,
+            waypoint: !!reply.waypoint,
             deleted: reply.deleted,
           }
         : null,

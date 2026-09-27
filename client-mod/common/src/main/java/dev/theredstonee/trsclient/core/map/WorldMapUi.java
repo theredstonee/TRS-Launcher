@@ -87,6 +87,31 @@ public final class WorldMapUi extends UiScreen {
 	private final double[] point = new double[2];
 	private final List<String> hover = new ArrayList<String>();
 
+	/** Beim nächsten Öffnen hierhin zentrieren (Wegpunkt-Karte „Anzeigen“) – nur Spiel-Thread. */
+	private static Focus pendingFocus;
+
+	/** Markierter Punkt (Wegpunkt-Karte aus dem Chat): Name, Block x/z. */
+	private static final class Focus {
+		final String name;
+		final int x;
+		final int z;
+		final int color;
+
+		Focus(String name, int x, int z, int color) {
+			this.name = name;
+			this.x = x;
+			this.z = z;
+			this.color = color;
+		}
+	}
+
+	private Focus focus;
+
+	/** Die nächste geöffnete Weltkarte zentriert auf (x, z) und markiert den Punkt. */
+	public static void requestFocus(String name, int x, int z, int color) {
+		pendingFocus = new Focus(name == null ? "" : name, x, z, color & 0xFFFFFF);
+	}
+
 	public WorldMapUi(MapEngine engine, Host host) {
 		this.e = engine;
 		this.host = host;
@@ -95,6 +120,20 @@ public final class WorldMapUi extends UiScreen {
 		centerX = engine.playerX();
 		centerZ = engine.playerZ();
 		engine.setWorldMapOpen(true);
+		Focus f = pendingFocus;
+		pendingFocus = null;
+		if (f != null) {
+			focus = f;
+			centerOn(f.x + 0.5, f.z + 0.5);
+		}
+	}
+
+	/** Karte auf einen Punkt zentrieren (folgt dem Spieler nicht mehr). */
+	public void centerOn(double x, double z) {
+		follow = false;
+		anchored = false;
+		centerX = x;
+		centerZ = z;
 	}
 
 	private MapLayer layer() {
@@ -310,6 +349,19 @@ public final class WorldMapUi extends UiScreen {
 				}
 			}
 		}
+		// Geteilter Punkt aus dem Chat („Anzeigen“).
+		if (focus != null) {
+			toScreen(focus.x + 0.5, focus.z + 0.5);
+			if (onScreen(20)) {
+				float x = (float) point[0], y = (float) point[1];
+				float pulse = 12f + 3f * (float) Math.sin(System.currentTimeMillis() / 180.0);
+				sprites.draw(c, MapSprites.HALO, x, y, pulse, 0f, 0xFF000000 | focus.color, s);
+				sprites.draw(c, MapSprites.DIAMOND, x, y, 10f, 0f, 0xFF000000 | focus.color, s);
+				int lw = c.textWidth(focus.name);
+				c.fill(Math.round(x - lw / 2f - 2), Math.round(y + 7), Math.round(x + lw / 2f + 2), Math.round(y + 17), 0xA0000000);
+				c.text(focus.name, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | focus.color, false);
+			}
+		}
 		// Eigene Position.
 		toScreen(px, pz);
 		float yawRad = (float) Math.toRadians(e.yaw());
@@ -358,7 +410,8 @@ public final class WorldMapUi extends UiScreen {
 			String pos = y == Integer.MIN_VALUE ? I18n.tr("map.cursor", bxw, bzw) : I18n.tr("map.cursorY", bxw, y, bzw);
 			c.text(pos, 8, h - BAR_H + 7, t.text, false);
 		}
-		String hint = I18n.tr("map.hint");
+		boolean flashing = flash != null && System.currentTimeMillis() < flashUntil;
+		String hint = flashing ? flash : I18n.tr("map.hint");
 		float screenPx = LADDER[step];
 		String zoom = screenPx >= 1f ? Math.round(screenPx) + " px/" + I18n.tr("map.block") : "1:" + Math.round(1 / screenPx);
 		String right = zoom;
@@ -367,7 +420,8 @@ public final class WorldMapUi extends UiScreen {
 		int rw = c.textWidth(right);
 		c.text(right, w - 8 - rw, h - BAR_H + 7, fp.active() ? (0xFF000000 | (t.dustOn & 0xFFFFFF)) : t.textDim, false);
 		int hw = c.textWidth(hint);
-		if (w / 2 + hw / 2 < w - 16 - rw && w / 2 - hw / 2 > 150) c.text(hint, w / 2 - hw / 2, h - BAR_H + 7, t.textDim, false);
+		if (flashing) c.text(hint, w / 2 - hw / 2, h - BAR_H + 7, 0xFFFFB02E, false);
+		else if (w / 2 + hw / 2 < w - 16 - rw && w / 2 - hw / 2 > 150) c.text(hint, w / 2 - hw / 2, h - BAR_H + 7, t.textDim, false);
 	}
 
 	private int button(Canvas c, int right, String icon, String tip, int mx, int my, Theme t, Runnable action) {
@@ -395,7 +449,7 @@ public final class WorldMapUi extends UiScreen {
 		return x - 4;
 	}
 
-	static String dimensionName(String dim) {
+	public static String dimensionName(String dim) {
 		if (dim == null) return "";
 		String d = dim.toLowerCase(Locale.ROOT);
 		if (d.contains("nether") || d.equals("dim-1")) return I18n.tr("map.dim.nether");
@@ -426,6 +480,7 @@ public final class WorldMapUi extends UiScreen {
 		} else {
 			items.add("create");
 		}
+		items.add("share");
 		items.add("centerHere");
 		items.add("centerPlayer");
 		return items;
@@ -469,6 +524,8 @@ public final class WorldMapUi extends UiScreen {
 			e.waypointEdited();
 		} else if ("delete".equals(id)) {
 			e.removeWaypoint(menuWaypoint);
+		} else if ("share".equals(id)) {
+			share();
 		} else if ("centerHere".equals(id)) {
 			follow = false;
 			centerX = menuBlockX + 0.5;
@@ -477,6 +534,29 @@ public final class WorldMapUi extends UiScreen {
 			follow = true;
 		}
 	}
+
+	/** „Teilen“: Wegpunkt unter dem Zeiger bzw. die angeklickte Stelle an Freunde/Gruppen schicken. */
+	private void share() {
+		dev.theredstonee.trsclient.core.waypoint.WaypointShare.Result r;
+		if (menuWaypoint != null) {
+			r = dev.theredstonee.trsclient.core.waypoint.WaypointShare.shareLocal(menuWaypoint);
+		} else {
+			MapLayer layer = e.surfaceLayer();
+			int y = layer == null ? Integer.MIN_VALUE : e.heightAt(layer, menuBlockX, menuBlockZ);
+			if (y == Integer.MIN_VALUE) y = (int) Math.floor(e.playerY());
+			else y += 1;
+			r = dev.theredstonee.trsclient.core.waypoint.WaypointShare.sharePosition(
+					I18n.tr("waypoint.share.spot"), menuBlockX, y, menuBlockZ);
+		}
+		if (r != dev.theredstonee.trsclient.core.waypoint.WaypointShare.Result.OK) {
+			flash = I18n.tr(r.key());
+			flashUntil = System.currentTimeMillis() + 4000;
+		}
+	}
+
+	/** Kurzer Hinweis unten in der Leiste (z. B. „Nicht mit TRS verbunden“). */
+	private String flash;
+	private long flashUntil;
 
 	private Waypoint waypointAt(double mx, double my) {
 		Waypoint best = null;

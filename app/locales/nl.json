@@ -612,7 +612,8 @@
       "dropExpired": "De neergezette bestanden zijn niet meer beschikbaar – sleep ze opnieuw hierheen.",
       "noJavaAtPath": "Er staat geen Java-programma op dit pad.",
       "invalidTaskId": "Ongeldige taak-ID",
-      "taskRunning": "Deze taak wordt al uitgevoerd."
+      "taskRunning": "Deze taak wordt al uitgevoerd.",
+      "packPickExpired": "Het gekozen bestand is niet meer beschikbaar – kies het opnieuw."
     },
     "curseforge": {
       "disabled": "CurseForge is niet beschikbaar in deze versie van de launcher.",
@@ -710,7 +711,8 @@
       "emptyMessage": "Het bericht is leeg.",
       "invalidCursor": "Ongeldige pagina.",
       "groupFull": "Een groep kan maximaal {max} leden hebben.",
-      "invalidReaction": "Onbekende reactie."
+      "invalidReaction": "Onbekende reactie.",
+      "invalidWaypoint": "Ongeldig waypoint."
     },
     "hosting": {
       "invalidRoom": "Ongeldige wereld.",
@@ -759,6 +761,16 @@
       "invalidRole": "Onbekende rol.",
       "invalidRoom": "Ongeldige wereld.",
       "emptySearch": "Voer een zoekterm in."
+    },
+    "crash": {
+      "notFound": "Deze crash bestaat niet meer."
+    },
+    "shareLink": {
+      "limit": "Je hebt al 50 gedeelde afbeeldingen – verwijder eerst een oude onder “Mijn gedeelde afbeeldingen”.",
+      "dailyLimit": "Je hebt vandaag al 20 afbeeldingen gedeeld – probeer het morgen opnieuw.",
+      "storageFull": "De TRS-server heeft nu geen ruimte – probeer het later opnieuw.",
+      "notFound": "Deze gedeelde afbeelding bestaat niet (meer).",
+      "invalidId": "Ongeldige link."
     }
   },
   "browse": {
@@ -1532,7 +1544,10 @@
       "hooksCustom": "Eigen starthooks ingesteld",
       "movedToGroup": "Verplaatst naar groep “{group}”",
       "removedFromGroup": "Uit groep verwijderd",
-      "renamed": "Hernoemd"
+      "renamed": "Hernoemd",
+      "memoryChanged": "Geheugen gewijzigd",
+      "javaChanged": "Java gewijzigd",
+      "settingsChanged": "Instellingen gewijzigd"
     },
     "details": {
       "played": "Gespeeld: {time}",
@@ -1541,7 +1556,10 @@
       "asDependencyVersion": "{version} · als afhankelijkheid",
       "asDependency": "Als afhankelijkheid",
       "renamed": "“{from}” → “{to}”",
-      "previousGroup": "eerder: {group}"
+      "previousGroup": "eerder: {group}",
+      "changed": "{from} → {to}",
+      "javaAuto": "automatisch",
+      "javaCustom": "eigen pad"
     }
   },
   "logConsole": {
@@ -1566,7 +1584,13 @@
       "missing_dependency": "Ontbrekende afhankelijkheid",
       "mod_conflict": "Modconflict",
       "graphics_driver": "Grafisch stuurprogramma",
-      "incompatible_mod": "Onverenigbare modversie"
+      "incompatible_mod": "Onverenigbare modversie",
+      "known_issue": "Bekend probleem",
+      "duplicate_mod": "Dubbele mod",
+      "wrong_game_version": "Verkeerde Minecraft-versie",
+      "wrong_loader_version": "Verkeerde loaderversie",
+      "mixin_conflict": "Mods botsen",
+      "unknown": "Onbekende fout"
     },
     "diagnosis": {
       "corrupt_files": "Een spelbestand is beschadigd (bijv. na een onderbroken download). “Bestanden controleren” downloadt het opnieuw.",
@@ -1587,6 +1611,238 @@
     "installMissing": "{name} installeren",
     "installingMissing": "Ontbrekende mods installeren …",
     "installMissingDone": "Geïnstalleerd: {list}"
+  },
+  "crashHelper": {
+    "title": "Het spel is gecrasht",
+    "open": "Crashhulp openen",
+    "openDetails": "Details bekijken",
+    "analyze": "Analyseren",
+    "whenStarting": "{at} · bij het starten",
+    "whenPlaying": "{at} · na {time} spelen",
+    "involved": "Betrokken mods",
+    "bundledIn": "in {name}",
+    "modDisabled": "uitgeschakeld",
+    "working": "Bezig …",
+    "openJavaSettings": "Java-instellingen",
+    "confirmTitle": "Deze wijziging doorvoeren?",
+    "confirmHistory": "Dit wordt vastgelegd in de geschiedenis van de instantie.",
+    "confirmDo": "Ja, uitvoeren",
+    "moreHints": "Andere mogelijke oorzaken",
+    "details": "Details uit het log",
+    "cause": "Oorzaak",
+    "firstFrame": "Eerste regel uit een mod",
+    "excerpt": "Belangrijke regels",
+    "masked": "Paden met je gebruikersnaam en je spelernaam zijn verborgen.",
+    "openContent": "Tabblad Content openen",
+    "privacy": "Alleen op je pc geanalyseerd. Er wordt niets verstuurd, tenzij je op „Log delen” klikt.",
+    "relaunch": "Opnieuw starten",
+    "undo": "Ongedaan maken",
+    "shadersHint": "Shaders ({name}) belasten de driver extra – probeer een start zonder.",
+    "aMod": "een mod",
+    "someMods": "meerdere mods",
+    "actions": {
+      "disable": "{name} uitschakelen",
+      "install": "{name} installeren",
+      "removeDuplicates": "Dubbele verwijderen",
+      "raiseMemory": "RAM verhogen naar {to}",
+      "lowerMemory": "RAM instellen op {to}",
+      "useJava": "Java {major} gebruiken",
+      "autoJava": "Java automatisch kiezen",
+      "updateTrsClient": "TRS Client bijwerken"
+    },
+    "confirm": {
+      "disable": "{name} wordt uitgeschakeld (het bestand krijgt de extensie .disabled). Je kunt dit altijd hier of in het tabblad Content terugdraaien.",
+      "install": "{name} wordt vanaf Modrinth in deze instantie geïnstalleerd.",
+      "removeDuplicates": "De oudere kopieën ({files}) worden uitgeschakeld, {keep} blijft actief.",
+      "memory": "Het geheugen van deze instantie gaat van {from} naar {to}.",
+      "java": "Java {major} wordt zo nodig gedownload en voor deze instantie ingesteld.",
+      "autoJava": "Het eigen Java-pad van deze instantie wordt verwijderd – de launcher kiest dan zelf de juiste Java-versie.",
+      "updateTrsClient": "De launcher haalt de nieuwste TRS Client uit het updatekanaal en zet hem in deze instantie.",
+      "fixConflict": "De launcher zoekt een passende versie van {name} en wisselt die om.",
+      "repair": "De launcher controleert alle spelbestanden en downloadt beschadigde opnieuw."
+    },
+    "done": {
+      "disabled": "Uitgeschakeld: {name}",
+      "enabledAgain": "Weer ingeschakeld: {name}",
+      "memory": "Geheugen ingesteld op {to}",
+      "java": "Java {major} is nu ingesteld voor deze instantie",
+      "autoJava": "Java wordt nu automatisch gekozen",
+      "trsClient": "TRS Client {version} is geïnstalleerd – start opnieuw.",
+      "trsClientNone": "Er is nog geen nieuwere TRS Client. Schakel Essential voorlopig uit."
+    },
+    "progress": {
+      "java": "Java {major} instellen …"
+    },
+    "findings": {
+      "known_issue": {
+        "default": {
+          "title": "Bekend probleem",
+          "text": "Deze combinatie van mods staat erom bekend te crashen."
+        },
+        "trsclient_essential": {
+          "title": "TRS Client {version} botst met Essential",
+          "text": "TRS Client {version} en Essential (met MixinExtras 0.5) passen hetzelfde deel van het spel aan – de singleplayer-server – en het spel crasht bij het openen van een wereld. TRS Client {fixed} lost dit op: werk hem bij of schakel Essential voorlopig uit."
+        },
+        "sodium_optifine": {
+          "title": "{name} en OptiFine werken niet samen",
+          "text": "OptiFine (en OptiFabric) kunnen niet samen met {name} draaien. Houd {name} – dat is sneller, en met Iris heb je nog steeds shaders – en schakel OptiFine uit."
+        },
+        "iris_without_sodium": {
+          "title": "Iris heeft Sodium nodig",
+          "text": "Iris werkt alleen samen met Sodium, en dat ontbreekt in deze instantie. De launcher kan de juiste versie installeren."
+        },
+        "two_minimaps": {
+          "title": "Twee minimaps tegelijk",
+          "text": "{names} zijn allebei geïnstalleerd. Minimaps zitten elkaar vaak in de weg – houd er één en schakel de andere uit."
+        }
+      },
+      "duplicate_mod": {
+        "default": {
+          "title": "{name} is dubbel geïnstalleerd",
+          "text": "De modsmap bevat meer dan één kopie van {name} ({files}). Het spel kan er maar één laden. De launcher houdt de nieuwste en schakelt de rest uit."
+        }
+      },
+      "wrong_game_version": {
+        "default": {
+          "title": "{name} is voor een andere Minecraft-versie",
+          "text": "{name} heeft Minecraft {required} nodig, maar deze instantie draait {present}. Schakel hem uit of installeer een passende versie in het tabblad Content."
+        }
+      },
+      "wrong_loader_version": {
+        "default": {
+          "title": "{name} heeft een andere {loader} nodig",
+          "text": "{name} heeft {loader} {required} nodig, maar {present} is geïnstalleerd. Wijzig de loaderversie van de instantie of schakel de mod uit."
+        }
+      },
+      "incompatible_mod": {
+        "default": {
+          "title": "{name} werkt niet met {other}",
+          "text": "{name} werkt niet met {other}. De launcher kan hem omwisselen voor een passende versie, of je schakelt hem uit."
+        }
+      },
+      "missing_dependency": {
+        "default": {
+          "title": "{name} heeft {deps} nodig",
+          "text": "{name} heeft {deps} nodig, en dat ontbreekt in deze instantie. De launcher kan het vanaf Modrinth installeren."
+        },
+        "unnamed": {
+          "title": "Er ontbreekt een benodigde mod",
+          "text": "{deps} ontbreekt – een andere mod heeft het nodig. De launcher kan het vanaf Modrinth installeren."
+        }
+      },
+      "wrong_java": {
+        "default": {
+          "title": "Verkeerde Java-versie",
+          "text": "De Java-versie past niet bij het spel of bij een van de mods."
+        },
+        "too_old": {
+          "title": "Java {present} is te oud",
+          "text": "{name} heeft Java {required} nodig, maar het spel draait met Java {present}. De launcher kan Java {required} installeren en voor deze instantie gebruiken."
+        },
+        "too_new": {
+          "title": "Java {present} is te nieuw voor deze versie",
+          "text": "Oudere Minecraft- en Forge-versies draaien alleen met oudere Java (meestal Java 8). Laat de launcher Java automatisch kiezen of gebruik Java 8."
+        },
+        "mod_requires": {
+          "title": "{name} heeft Java {required} nodig",
+          "text": "{name} heeft Java {required} of nieuwer nodig, maar Java {present} wordt gebruikt. De launcher kan Java {required} voor deze instantie installeren."
+        }
+      },
+      "out_of_memory": {
+        "default": {
+          "title": "Het spel had te weinig geheugen",
+          "text": "Het spel had meer geheugen nodig dan het mocht gebruiken. Geef de instantie meer RAM."
+        },
+        "heap": {
+          "title": "Het spel had te weinig geheugen",
+          "text": "De {current} MB die het spel mag gebruiken waren niet genoeg – veel mods, shaders of een grote kijkafstand vragen meer. Geef de instantie meer RAM."
+        },
+        "heap_max": {
+          "title": "Het spel had te weinig geheugen",
+          "text": "Het spel krijgt al zoveel RAM als zinvol is op deze pc ({current} MB). Verwijder zware mods of verlaag de kijkafstand."
+        },
+        "reserve": {
+          "title": "Java kreeg het geheugen niet",
+          "text": "Java kon geen {current} MB reserveren – meer dan deze pc vrij heeft. Stel het RAM wat lager in."
+        }
+      },
+      "corrupt_files": {
+        "default": {
+          "title": "Een bestand is beschadigd",
+          "text": "Een bestand kan niet worden gelezen. „Bestanden controleren” downloadt beschadigde spelbestanden opnieuw."
+        },
+        "mod_file": {
+          "title": "{file} is beschadigd",
+          "text": "Het modbestand {file} kan niet worden gelezen (bijvoorbeeld na een afgebroken download). Schakel het uit en download het opnieuw in het tabblad Content."
+        },
+        "game_files": {
+          "title": "Een spelbestand is beschadigd",
+          "text": "Een bestand van het spel is kapot (bijvoorbeeld na een afgebroken download). „Bestanden controleren” downloadt het opnieuw."
+        },
+        "assets": {
+          "title": "Er ontbreken spelbronnen",
+          "text": "Sommige spelbronnen (texturen, geluiden, taalbestanden) ontbreken. „Bestanden controleren” downloadt ze opnieuw."
+        }
+      },
+      "graphics_driver": {
+        "default": {
+          "title": "De grafische driver is gecrasht",
+          "text": "De crash gebeurde in de grafische driver. Werk de driver van je videokaart bij."
+        },
+        "amd": {
+          "title": "De AMD-driver is gecrasht",
+          "text": "De crash gebeurde in de AMD-driver. Werk de driver bij (AMD Software: Adrenalin Edition) en probeer het opnieuw."
+        },
+        "intel": {
+          "title": "De Intel-driver is gecrasht",
+          "text": "De crash gebeurde in de Intel-driver. Werk de driver bij via Intel of de site van je pc-fabrikant."
+        },
+        "nvidia": {
+          "title": "De NVIDIA-driver is gecrasht",
+          "text": "De crash gebeurde in de NVIDIA-driver. Werk de driver bij (NVIDIA App) en probeer het opnieuw."
+        },
+        "no_opengl": {
+          "title": "De grafische driver ondersteunt geen OpenGL",
+          "text": "Minecraft kan OpenGL niet starten. Meestal ontbreekt de driver, is hij te oud, of draait het spel op de verkeerde videokaart. Installeer de nieuwste driver."
+        },
+        "opengl_too_old": {
+          "title": "OpenGL is te oud op deze pc",
+          "text": "Deze Minecraft-versie heeft een nieuwere OpenGL nodig dan je videokaart of driver biedt. Werk de driver bij – zeer oude kaarten draaien alleen oudere versies."
+        }
+      },
+      "mixin_conflict": {
+        "default": {
+          "title": "Mods zitten elkaar in de weg",
+          "text": "Twee of meer mods passen hetzelfde deel van het spel aan en botsen. Schakel de laatst toegevoegde mods uit en start opnieuw."
+        },
+        "transform": {
+          "title": "Mods botsen bij het aanpassen van {target}",
+          "text": "Meerdere mods passen hetzelfde deel van het spel aan ({target}) en zitten elkaar in de weg. Betrokken: {names}. Schakel er één uit en start opnieuw."
+        },
+        "transform_nomods": {
+          "title": "Mods botsen bij het aanpassen van {target}",
+          "text": "Meerdere mods passen hetzelfde deel van het spel aan ({target}) en zitten elkaar in de weg. Schakel de laatst toegevoegde mods uit en start opnieuw."
+        },
+        "redirect_conflict": {
+          "title": "Twee mods passen dezelfde plek aan",
+          "text": "{names} leiden allebei dezelfde plek in het spel om – dat kan er maar één. Schakel er één uit."
+        },
+        "apply": {
+          "title": "Een mod kon niet inhaken op het spel",
+          "text": "{names} kon zijn wijzigingen niet toepassen op deze Minecraft-versie – vaak een verouderde mod of een botsing met een andere. Werk hem bij of schakel hem uit."
+        }
+      },
+      "unknown": {
+        "default": {
+          "title": "Onbekende fout",
+          "text": "De launcher kon de precieze oorzaak niet vinden. De belangrijkste regels staan onder „Details”. Als je het log deelt, kunnen anderen je helpen."
+        },
+        "suspect": {
+          "title": "Onbekende fout – waarschijnlijk {name}",
+          "text": "De crash begint in {name}. Schakel de mod uit voor een teststart; werkt het spel dan, werk de mod bij of meld de crash bij de maker."
+        }
+      }
+    }
   },
   "exportPack": {
     "title": "Exporteren als modpack",
@@ -2578,7 +2834,8 @@
       "title": "TRS-diensten zijn uitgeschakeld",
       "friends": "Om je vriendenlijst te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
       "capes": "Om TRS-capes te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
-      "button": "Meer info & inschakelen"
+      "button": "Meer info & inschakelen",
+      "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft."
     },
     "account": {
       "title": "Geen account ingelogd",
@@ -2603,7 +2860,8 @@
       "chat": "chatberichten, afbeeldingen die je verstuurt en meldingen – versleuteld op de server bewaard tot ze worden verwijderd; gemelde inhoud wordt bewaard voor moderatie",
       "settings": "je privacy-instellingen en tijdstempels (inloggen, aanmaken)",
       "sync": "als synchroniseren aan staat: je eigen skins (afbeeldingen en namen), je eigen presets en je thema, accentkleur en taal – zodat ze op al je pc’s gelijk zijn; de TRS Client synchroniseert zijn modules, HUD-indelingen en toetsen op dezelfde manier (schakelaar in het TRS-menu)",
-      "presence": "je onlinestatus (launcher open / in het spel, versie en, als je dat wilt, de server) – alleen in het geheugen bewaard, verloopt na 3 minuten"
+      "presence": "je onlinestatus (launcher open / in het spel, versie en, als je dat wilt, de server) – alleen in het geheugen bewaard, verloopt na 3 minuten",
+      "shares": "screenshots die je als link deelt – openbaar voor iedereen met de link, na 30 dagen automatisch verwijderd"
     },
     "footer": "Je kunt de diensten altijd uitschakelen onder {path} en daar al je TRS-gegevens verwijderen. Zonder jouw toestemming stuurt de launcher niets naar de TRS-server.",
     "settingsPath": "Instellingen → Privacy",
@@ -3136,7 +3394,9 @@
       "deleteMessage": "Bericht verwijderen",
       "dismiss": "Afwijzen",
       "resolve": "Afhandelen",
-      "related": "Andere meldingen over deze speler"
+      "related": "Andere meldingen over deze speler",
+      "waypoint": "Waypoint “{name}”: {coords} ({dimension})",
+      "deleteShare": "Gedeelde afbeelding verwijderen"
     }
   },
   "whatsNew": {
@@ -4019,7 +4279,8 @@
         "message": "Bericht melden",
         "image": "Afbeelding melden",
         "player": "Speler melden",
-        "group": "Groep melden"
+        "group": "Groep melden",
+        "share": "Gedeelde afbeelding melden"
       },
       "intro": "Je meldt {name}. Het TRS-team bekijkt elke melding.",
       "reason": "Reden",
@@ -4079,6 +4340,19 @@
       "openChat": "Chat openen",
       "reply": "Beantwoorden",
       "replyPlaceholder": "Snel antwoord …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Waypoint",
+      "copy": "Coördinaten kopiëren",
+      "copyTitle": "Kopieert “x y z” naar het klembord",
+      "copied": "Coördinaten {coords} gekopieerd",
+      "singleplayer": "Singleplayer-wereld",
+      "dimensions": {
+        "overworld": "Bovenwereld",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4575,6 +4849,71 @@
         "player": "Notities",
         "hosting": "Werelden"
       }
+    }
+  },
+  "trsChoice": {
+    "title": "TRS Client",
+    "with": "Met TRS Client",
+    "withHint": "HUD, zoom, minimap, capes en vrienden in het spel.",
+    "without": "Zonder TRS Client",
+    "withoutHint": "Het pack blijft precies zoals de maker het heeft gebouwd.",
+    "recommended": "Aanbevolen",
+    "later": "Je kunt dit altijd wijzigen in de instantie-instellingen.",
+    "checking": "Pack wordt gecontroleerd …",
+    "previewFailed": "Het pack kon niet vooraf worden gecontroleerd – je kunt toch kiezen.",
+    "unsupported": "Er is geen TRS Client voor {loader} {version} – de instantie start zonder.",
+    "conflicts": "Bevat {list} – overlapt met de TRS Client (andere client, eigen minimap of HUD). Daarom is „Zonder” voorgeselecteerd.",
+    "zoom": "{list} heeft een eigen zoom – de TRS-zoom kun je in het spel uitschakelen.",
+    "install": {
+      "title": "Modpack installeren",
+      "details": "Minecraft {version} · {loader}"
+    },
+    "import": {
+      "title": "TRS Client bij instanties met mods",
+      "intro": "Geldt voor elke import hieronder – uitzonderingen per instantie mogelijk.",
+      "exceptWithout": "Deze zonder TRS Client importeren",
+      "exceptWith": "Deze met TRS Client importeren",
+      "found": "{list} gevonden",
+      "unsupported": "Geen TRS Client voor {loader} {version}",
+      "pack": "„{name}” importeren"
+    },
+    "settings": {
+      "label": "TRS Client bij modpacks",
+      "hint": "Bij het installeren of importeren van een modpack of een instantie met mods. Nieuwe instanties zonder pack worden niet beïnvloed.",
+      "ask": "Altijd vragen",
+      "always": "Altijd met TRS Client",
+      "never": "Altijd zonder TRS Client"
+    }
+  },
+  "shareLink": {
+    "share": "Delen als link",
+    "shareTitle": "Uploadt deze screenshot en kopieert een openbare link (30 dagen geldig)",
+    "sharing": "Bezig met delen …",
+    "myShares": "Mijn gedeelde afbeeldingen",
+    "needConsent": "Links delen heeft de TRS-diensten nodig – die staan uit.",
+    "turnOn": "Inschakelen",
+    "needAccount": "Meld je eerst aan met je Minecraft-account om links te delen.",
+    "open": "Openen",
+    "copyLink": "Link kopiëren",
+    "openInBrowser": "Openen in browser",
+    "toasts": {
+      "copied": "Link gekopieerd – {days} dagen geldig",
+      "ready": "Link gemaakt, maar kopiëren lukte niet – je vindt hem onder “Mijn gedeelde afbeeldingen”.",
+      "copiedAgain": "Link gekopieerd",
+      "deleted": "Link verwijderd – de afbeelding is weg"
+    },
+    "dialog": {
+      "title": "Mijn gedeelde afbeeldingen",
+      "intro": "Iedereen met de link ziet de afbeelding – zonder je naam. Links verwijderen zichzelf na 30 dagen; hier kun je ze eerder verwijderen.",
+      "active": "{n} van {max} links actief",
+      "today": "{n} van {max} vandaag gedeeld",
+      "empty": "Je hebt nog geen afbeeldingen gedeeld. Gebruik “Delen als link” bij een screenshot.",
+      "expiresIn": "Verloopt over {days} dag | Verloopt over {days} dagen",
+      "expiresToday": "Verloopt vandaag"
+    },
+    "deleteDialog": {
+      "title": "Link verwijderen?",
+      "text": "De afbeelding wordt van de TRS-server verwijderd en de link werkt niet meer. Je screenshot op deze pc blijft."
     }
   }
 }

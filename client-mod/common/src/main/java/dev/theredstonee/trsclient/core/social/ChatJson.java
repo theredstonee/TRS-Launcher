@@ -51,6 +51,24 @@ public final class ChatJson {
 		UserDto host;
 	}
 
+	/** Welt einer Wegpunkt-Karte: {@code {type: "server", address}} oder {@code {type: "world", id}}. */
+	static final class WaypointWorldDto {
+		String type;
+		String address;
+		String id;
+	}
+
+	/** Wegpunkt-Karte (API.md §18.10). Zahlen als Double, damit Kommazahlen/Übergrößen auffallen. */
+	static final class WaypointDto {
+		String name;
+		Double x;
+		Double y;
+		Double z;
+		String dimension;
+		WaypointWorldDto world;
+		Double color;
+	}
+
 	static final class ThumbDto {
 		String mime;
 		Integer width;
@@ -74,6 +92,7 @@ public final class ChatJson {
 		Integer attachments;
 		Boolean invite;
 		Boolean world;
+		Boolean waypoint;
 		Boolean deleted;
 	}
 
@@ -99,6 +118,7 @@ public final class ChatJson {
 		String text;
 		InviteDto invite;
 		WorldDto world;
+		WaypointDto waypoint;
 		List<AttachmentDto> attachments;
 		ReplyDto replyTo;
 		SystemDto system;
@@ -231,6 +251,33 @@ public final class ChatJson {
 				host == null ? null : host.uuid, host == null ? "?" : host.name));
 	}
 
+	/** Wegpunkt-Karte streng prüfen (ganze Zahlen, Bereiche, Dimension, Welt); ungültig → null. */
+	static Chat.Waypoint waypoint(WaypointDto d) {
+		if (d == null || d.world == null) return null;
+		Long x = whole(d.x);
+		Long y = whole(d.y);
+		Long z = whole(d.z);
+		if (x == null || y == null || z == null) return null;
+		Long color = d.color == null ? null : whole(d.color);
+		return Chat.Waypoint.of(d.name, x, y, z, d.dimension, d.world.type, d.world.address, d.world.id, color);
+	}
+
+	/** Ganze Zahl im sicheren Bereich oder null (Kommazahl, NaN, zu groß). */
+	static Long whole(Double v) {
+		if (v == null || v.isNaN() || v.isInfinite() || Math.abs(v) > 1e12 || v != Math.rint(v)) return null;
+		return v.longValue();
+	}
+
+	/** Karte der Nachricht: Weltkarte, Wegpunkt oder Servereinladung (in dieser Reihenfolge) oder null. */
+	static Chat.Invite card(MessageDto d) {
+		if (d.world != null) return world(d.world);
+		if (d.waypoint != null) {
+			Chat.Waypoint w = waypoint(d.waypoint);
+			return w == null ? null : new Chat.Invite(w);
+		}
+		return invite(d.invite);
+	}
+
 	static Chat.Attachment attachment(AttachmentDto d) {
 		if (d == null || !Chat.validAttachmentId(d.id)) return null;
 		int w = clamp(d.width, 1, 8192);
@@ -289,8 +336,8 @@ public final class ChatJson {
 			ReplyDto r = d.replyTo;
 			boolean gone = Boolean.TRUE.equals(r.deleted) || r.preview == null;
 			reply = new Chat.Reply(r.id, r.seq == null ? 0 : r.seq, user(r.sender),
-					gone ? null : SafeText.line(r.preview, 120), clamp(r.attachments, 0, 10), Boolean.TRUE.equals(r.invite) || Boolean.TRUE.equals(r.world),
-					gone);
+					gone ? null : SafeText.line(r.preview, 120), clamp(r.attachments, 0, 10), Boolean.TRUE.equals(r.invite) || Boolean.TRUE.equals(r.world)
+							|| Boolean.TRUE.equals(r.waypoint), gone);
 		}
 		Chat.SystemInfo info = null;
 		if (system && d.system != null && d.system.event != null && d.system.event.matches("[a-z_]{1,32}")) {
@@ -299,7 +346,7 @@ public final class ChatJson {
 		}
 		String deletedBy = deleted && d.deletedBy != null && d.deletedBy.matches("sender|owner|admin") ? d.deletedBy : null;
 		String nonce = d.nonce != null && d.nonce.matches("[A-Za-z0-9_-]{8,64}") ? d.nonce : null;
-		return new Chat.Message(d.id, conv, d.seq, system, user(d.sender), text, content ? (d.world != null ? world(d.world) : invite(d.invite)) : null, atts,
+		return new Chat.Message(d.id, conv, d.seq, system, user(d.sender), text, content ? card(d) : null, atts,
 				reply, info, content ? reactions(d.reactions) : null, time(d.createdAt), time(d.editedAt), deleted, deletedBy,
 				hidden, nonce, false, null);
 	}

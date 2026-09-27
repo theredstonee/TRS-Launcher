@@ -29,6 +29,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::content::{self, ContentKind, Platform, Source};
 use crate::instance::{Instance, Loader, LoaderKind, NewInstance};
+use crate::trs_choice::{self, ModHint, TrsOffer};
 use crate::{Error, Launcher, Result};
 
 pub use copy::ImportProgress;
@@ -100,8 +101,13 @@ pub struct ImportCandidate {
     pub notes: Vec<ImportNote>,
     /// Version/Loader nur geschätzt – der Nutzer soll sie vor dem Import prüfen.
     pub version_guessed: bool,
+    /// „Mit oder ohne TRS Client“ für diese Instanz (siehe [`trs_choice`]).
+    pub trs_client: Option<TrsOffer>,
     #[serde(skip)]
     game_dir: PathBuf,
+    /// Dateinamen und Projekt-IDs der Mods – für [`Self::trs_client`].
+    #[serde(skip)]
+    mod_hints: Vec<ModHint>,
     #[serde(skip)]
     extras: CopyExtras,
 }
@@ -356,7 +362,9 @@ fn candidate(source: ImportSource, name: &str, game_version: &str, loader: Loade
         missing_count: 0,
         notes: Vec::new(),
         version_guessed: false,
+        trs_client: None,
         game_dir,
+        mod_hints: Vec::new(),
         extras: CopyExtras::default(),
     };
     c.refresh();
@@ -373,6 +381,7 @@ impl ImportCandidate {
             count_jars(&game.join("mods")) + self.extras.disabled_mods_dir.map_or(0, |d| count_jars(&game.join(d)))
         };
         self.mod_count = self.extras.mods_dir.as_deref().map_or(game_mods, count_jars);
+        self.mod_hints = self.collect_mod_hints();
         self.world_count = count_entries(&game.join("saves"), |e| e.path().join("level.dat").is_file());
         self.resource_pack_count = count_packs(&game.join("resourcepacks"));
         self.shader_pack_count = count_packs(&game.join("shaderpacks"));
@@ -383,6 +392,40 @@ impl ImportCandidate {
         if self.missing_count > 0 {
             self.add_note(ImportNote::CurseForgeDownloads);
         }
+    }
+
+    /// Was über die Mods bekannt ist: Dateinamen aus den Mod-Ordnern, die
+    /// dieser Import mitnimmt, dazu Projekt-IDs aus der Liste des Launchers.
+    fn collect_mod_hints(&self) -> Vec<ModHint> {
+        const MAX_HINTS: usize = 2000;
+        let game = &self.game_dir;
+        let dirs: Vec<PathBuf> = match self.extras.mods_dir.as_deref() {
+            Some(dir) => vec![dir.to_owned()],
+            None if self.extras.skip_game_mods => Vec::new(),
+            None => std::iter::once(game.join("mods")).chain(self.extras.disabled_mods_dir.map(|d| game.join(d))).collect(),
+        };
+        let mut hints: Vec<ModHint> = dirs
+            .iter()
+            .filter_map(|d| std::fs::read_dir(d).ok())
+            .flat_map(|it| it.flatten())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| {
+                let lower = n.to_ascii_lowercase();
+                lower.ends_with(".jar") || lower.ends_with(".jar.disabled")
+            })
+            .take(MAX_HINTS)
+            .map(ModHint::file)
+            .collect();
+        for source in self.extras.tracked.iter().filter(|t| t.kind == ContentKind::Mod).map(|t| &t.source) {
+            hints.push(match source.platform {
+                Platform::Modrinth => ModHint { modrinth: Some(source.project_id.clone()), ..ModHint::default() },
+                Platform::CurseForge => ModHint { curseforge: source.project_id.parse().ok(), ..ModHint::default() },
+            });
+        }
+        for m in self.extras.missing.iter().filter(|m| m.kind == ContentKind::Mod) {
+            hints.push(ModHint { curseforge: m.project_id.parse().ok(), ..ModHint::default() });
+        }
+        hints
     }
 
     fn add_note(&mut self, note: ImportNote) {
@@ -832,6 +875,7 @@ impl Launcher {
             found.retain(|c| manifest.find(&c.game_version).is_some());
         }
         found.sort_by_key(|c| c.name.to_lowercase());
+        self.offer_trs_client(&mut found).await;
         let launchers = detected_launchers(&present, &found);
         Ok(ImportOverview { candidates: found, launchers })
     }
@@ -852,6 +896,8 @@ impl Launcher {
         let found = tokio::task::spawn_blocking(move || scan_folder(&dir, latest.as_deref()))
             .await
             .map_err(|e| Error::Internal(e.to_string()))?;
+        let mut found = found;
+        self.offer_trs_client(&mut found).await;
         if found.is_empty() {
             return Err(Error::validation(crate::msg!(
                 "import.noInstallation",
@@ -862,12 +908,23 @@ impl Launcher {
         Ok(found)
     }
 
+    /// Füllt „mit oder ohne TRS Client“ für jeden Kandidaten.
+    pub(crate) async fn offer_trs_client(&self, candidates: &mut [ImportCandidate]) {
+        let (_, catalog) = self.client_mod_catalog().await;
+        let policy = self.settings().await.modpack_trs_client;
+        for c in candidates {
+            c.trs_client = Some(trs_choice::offer(catalog.builds(), &c.loader, &c.game_version, &c.mod_hints, policy));
+        }
+    }
+
     /// `game_version`/`loader` dürfen nur bei geschätzten Kandidaten gesetzt werden.
+    /// `trs_client`: Wahl aus dem Dialog (`None` = Einstellung bzw. Vorauswahl).
     pub async fn import_instance(
         &self,
         candidate_id: &str,
         game_version: Option<String>,
         loader: Option<Loader>,
+        trs_client: Option<bool>,
         on_progress: &ImportProgressFn,
     ) -> Result<ImportResult> {
         let mut candidate = self
@@ -885,16 +942,28 @@ impl Launcher {
                 candidate.loader = l;
             }
         }
+        self.import_candidate(candidate, trs_client, on_progress).await
+    }
 
+    /// Legt die Instanz für einen (fertig geprüften) Kandidaten an und kopiert.
+    pub(crate) async fn import_candidate(
+        &self,
+        candidate: ImportCandidate,
+        trs_client: Option<bool>,
+        on_progress: &ImportProgressFn,
+    ) -> Result<ImportResult> {
         let source = serde_json::to_value(candidate.source).ok().and_then(|v| v.as_str().map(str::to_owned));
+        // Mit oder ohne TRS Client – für Version und Loader, wie sie jetzt feststehen.
+        let offer = self.trs_client_offer(&candidate.loader, &candidate.game_version, &candidate.mod_hints).await;
         let instance = self
-            .create_instance_as(
+            .create_instance_with(
                 NewInstance {
                     name: candidate.name.clone(),
                     game_version: candidate.game_version.clone(),
                     loader: candidate.loader.clone(),
                 },
                 crate::history::HistoryEntry::new(crate::history::HistoryKind::Imported).subject(source.unwrap_or_default()),
+                trs_choice::decide(&offer, trs_client),
             )
             .await?;
 

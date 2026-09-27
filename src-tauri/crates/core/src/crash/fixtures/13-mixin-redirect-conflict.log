@@ -1,0 +1,14 @@
+[15:07:22] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.19.5
+[15:07:22] [main/INFO]: Loading 48 mods:
+	- betterchat 3.1.0
+	- chatheads 0.13.4
+	- fabric-api 0.116.6+1.21.1
+	- fabricloader 0.19.5
+	- java 21
+	- minecraft 1.21.1
+[15:07:31] [Render thread/WARN]: @Redirect conflict. Skipping betterchat.mixins.json:ChatHudMixin from mod betterchat->@Redirect::redirect$bhk000$betterchat$drawMessage(Lnet/minecraft/class_332;Lnet/minecraft/class_327;Lnet/minecraft/class_5481;III)I with priority 1000, already redirected by chatheads.mixins.json:ChatComponentMixin from mod chatheads->@Redirect::redirect$bcl000$chatheads$drawMessage(Lnet/minecraft/class_332;Lnet/minecraft/class_327;Lnet/minecraft/class_5481;III)I with priority 1000
+[15:07:31] [Render thread/ERROR]: Mixin apply for mod betterchat failed betterchat.mixins.json:ChatHudMixin from mod betterchat -> net.minecraft.class_338: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException Critical injection failure: @Redirect annotation on drawMessage could not find any targets matching 'Lnet/minecraft/class_332;method_51439(Lnet/minecraft/class_327;Lnet/minecraft/class_5481;III)I' in net.minecraft.class_338. Using refmap betterchat-refmap.json [PREINJECT Applicator Phase -> betterchat.mixins.json:ChatHudMixin from mod betterchat -> Prepare Injections -> redirect$bhk000$betterchat$drawMessage -> Parse]
+org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @Redirect annotation on drawMessage could not find any targets matching 'Lnet/minecraft/class_332;method_51439(Lnet/minecraft/class_327;Lnet/minecraft/class_5481;III)I' in net.minecraft.class_338. Using refmap betterchat-refmap.json [PREINJECT Applicator Phase -> betterchat.mixins.json:ChatHudMixin from mod betterchat -> Prepare Injections -> redirect$bhk000$betterchat$drawMessage -> Parse]
+	at org.spongepowered.asm.mixin.injection.struct.InjectionInfo.validateTargets(InjectionInfo.java:656)
+	at org.spongepowered.asm.mixin.injection.struct.InjectionInfo.findTargets(InjectionInfo.java:587)
+	at org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:314)

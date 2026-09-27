@@ -70,13 +70,18 @@ public final class Chat {
 		}
 	}
 
-	/** Servereinladung (API.md §18.6) oder Weltkarte (§21.8, dann ist {@link #world} gesetzt). */
+	/**
+	 * Servereinladung (API.md §18.6), Weltkarte (§21.8, dann ist {@link #world} gesetzt) oder Wegpunkt-Karte (§18.10,
+	 * dann ist {@link #waypoint} gesetzt). Die Karten teilen sich den Weg durch Speicher, Senden und Toasts.
+	 */
 	public static final class Invite {
 		public final String address;
 		/** Beschriftung (≤ 32 Zeichen) oder null. */
 		public final String name;
 		/** Weltkarte des Welt-Hostings (dann ist {@link #address} leer) oder null. */
 		public final World world;
+		/** Wegpunkt-Karte (dann ist {@link #address} leer) oder null. */
+		public final Waypoint waypoint;
 
 		public Invite(String address, String name) {
 			this(address, name, null);
@@ -86,6 +91,91 @@ public final class Chat {
 			this.address = address;
 			this.name = name;
 			this.world = world;
+			this.waypoint = null;
+		}
+
+		/** Wegpunkt-Karte als „Einladung“ (Name = Wegpunktname). */
+		public Invite(Waypoint waypoint) {
+			this.address = "";
+			this.name = waypoint.name;
+			this.world = null;
+			this.waypoint = waypoint;
+		}
+
+		/** Echte Servereinladung (keine Welt-, keine Wegpunkt-Karte)? */
+		public boolean server() {
+			return world == null && waypoint == null;
+		}
+	}
+
+	/**
+	 * Wegpunkt-Karte (API.md §18.10): Name, Blockposition, Dimension und die Welt – ein Server ({@link #address}) oder
+	 * eine Einzelspielerwelt als Kennung ({@link #worldId} = erste 16 Hex von SHA-256("sp:" + Weltname), kein Name).
+	 * Nur über {@link #of} gebaut: alles geprüft, sonst null.
+	 */
+	public static final class Waypoint {
+		public static final int MAX_XZ = 30_000_000;
+		public static final int MIN_Y = -2048;
+		public static final int MAX_Y = 4096;
+		private static final java.util.regex.Pattern DIMENSION = java.util.regex.Pattern.compile("[a-z0-9_.-]{1,32}:[a-z0-9_./-]{1,64}");
+		private static final java.util.regex.Pattern WORLD_ID = java.util.regex.Pattern.compile("[0-9a-f]{16}");
+
+		public final String name;
+		public final int x;
+		public final int y;
+		public final int z;
+		/** Namensraum-Kennung, z. B. {@code minecraft:overworld}. */
+		public final String dimension;
+		/** Serveradresse ("host[:port]", klein) oder null bei Einzelspielerwelten. */
+		public final String address;
+		/** Kennung der Einzelspielerwelt oder null bei Servern. */
+		public final String worldId;
+		/** 0xRRGGBB oder -1 (keine Farbe). */
+		public final int color;
+
+		private Waypoint(String name, int x, int y, int z, String dimension, String address, String worldId, int color) {
+			this.name = name;
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			this.dimension = dimension;
+			this.address = address;
+			this.worldId = worldId;
+			this.color = color;
+		}
+
+		/**
+		 * Geprüfte Karte oder null. {@code worldType} "server" (dann {@code address}) oder "world" (dann {@code worldId});
+		 * {@code color} null bzw. außerhalb 0..0xFFFFFF = keine Farbe.
+		 */
+		public static Waypoint of(String name, long x, long y, long z, String dimension, String worldType, String address,
+				String worldId, Long color) {
+			String n = name == null ? null : SafeText.line(name, SafeText.MAX_NAME);
+			if (n == null || n.isEmpty()) return null;
+			if (Math.abs(x) > MAX_XZ || Math.abs(z) > MAX_XZ || y < MIN_Y || y > MAX_Y) return null;
+			if (dimension == null || !DIMENSION.matcher(dimension).matches()) return null;
+			String a = null;
+			String w = null;
+			if ("server".equals(worldType)) {
+				a = SafeText.serverAddress(address);
+				if (a == null) return null;
+			} else if ("world".equals(worldType)) {
+				if (worldId == null || !WORLD_ID.matcher(worldId).matches()) return null;
+				w = worldId;
+			} else {
+				return null;
+			}
+			int c = color == null || color < 0 || color > 0xFFFFFF ? -1 : (int) (long) color;
+			return new Waypoint(n, (int) x, (int) y, (int) z, dimension, a, w, c);
+		}
+
+		public boolean server() {
+			return address != null;
+		}
+
+		/** „X Y Z“ zum Anzeigen/Kopieren. */
+		public String coords() {
+			return x + " " + y + " " + z;
 		}
 	}
 
@@ -266,6 +356,11 @@ public final class Chat {
 		public String preview() {
 			if (text != null && !text.isEmpty()) return SafeText.line(text, 120);
 			return null;
+		}
+
+		/** Wegpunkt-Karte der Nachricht oder null. */
+		public Waypoint waypoint() {
+			return invite == null ? null : invite.waypoint;
 		}
 	}
 

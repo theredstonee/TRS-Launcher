@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { Platform } from '~/types'
 
 const NAV_KEY = 'trs.nav.expanded'
 const RECENT_KEY = 'trs.palette.recent'
@@ -28,6 +29,8 @@ export const useUiStore = defineStore('ui', () => {
   const palette = ref(false)
   const creating = ref(false)
   const importing = ref(false)
+  /** Modpack, das vor der Installation fragt „mit oder ohne TRS Client“. */
+  const modpackInstall = ref<{ pack: { projectId: string; title: string; iconUrl: string | null }; platform: Platform } | null>(null)
   const navExpanded = ref(false)
   /** Zuletzt benutzte Befehle (IDs), neueste zuerst. */
   const recentCommands = ref<string[]>([])
@@ -66,6 +69,7 @@ export const useUiStore = defineStore('ui', () => {
     palette,
     creating,
     importing,
+    modpackInstall,
     navExpanded,
     recentCommands,
     restore,

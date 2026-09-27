@@ -58,6 +58,7 @@ import {
   type ReportQuery,
 } from './moderation'
 import { mySanctionSchema, mySanctionsSchema, sanctionErrorText } from './sanctions'
+import { sharedImageSchema, sharesPageSchema } from './share'
 import {
   appealEnvelopeSchema,
   appealPageSchema,
@@ -112,6 +113,8 @@ import type {
   ClientModStatus,
   CategoryTag,
   CommandError,
+  CrashAnalysis,
+  CrashSummary,
   Preset,
   PresetApplyReport,
   PresetInput,
@@ -169,7 +172,10 @@ import type {
   ModrinthVersion,
   NewInstance,
   NewTaskRecord,
+  PackPreview,
   PackProgress,
+  PickedPack,
+  TrsOffer,
   ProjectCard,
   ProjectDetails,
   RunningGame,
@@ -384,9 +390,20 @@ export const backend = {
     versionId: string | null = null,
     taskId: string | null = null,
   ) => call<string[]>('modrinth_install', { id, projectId, kind, versionId, taskId }),
-  /** `taskId`: Aufgabe im Kern (Abbrechen, Pause, Byte-Stand über `task-progress`). */
-  installModpack: (projectId: string, onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
-    call<Instance>('install_modpack', { projectId, onProgress: channel(onProgress), taskId }),
+  /** Lädt das Pack vorab (zwischengespeichert) und sagt, ob der TRS Client dazu passt. */
+  previewModpack: (projectId: string, versionId: string | null = null) =>
+    call<PackPreview>('preview_modpack', { projectId, versionId }),
+  /**
+   * `taskId`: Aufgabe im Kern (Abbrechen, Pause, Byte-Stand über `task-progress`).
+   * `trsClient`: Wahl „mit/ohne TRS Client“ (`null` = Einstellung bzw. Vorauswahl).
+   */
+  installModpack: (
+    projectId: string,
+    onProgress: (p: PackProgress) => void,
+    taskId: string | null = null,
+    versionId: string | null = null,
+    trsClient: boolean | null = null,
+  ) => call<Instance>('install_modpack', { projectId, versionId, trsClient, onProgress: channel(onProgress), taskId }),
 
   /**
    * CurseForge – alle Aufrufe laufen im Kern (der API-Schlüssel bleibt dort).
@@ -407,12 +424,23 @@ export const backend = {
     /** Gesperrte Dateien kommen als `blocked` zurück (von Hand laden). */
     install: (id: string, projectId: string, kind: ContentKind, fileId: string | null = null, taskId: string | null = null) =>
       call<CurseForgeInstallOutcome>('curseforge_install', { id, projectId, kind, fileId, taskId }),
+    /** Lädt das Pack vorab (zwischengespeichert) und sagt, ob der TRS Client dazu passt. */
+    previewModpack: (projectId: string, fileId: string | null = null) =>
+      call<PackPreview>('preview_curseforge_modpack', { projectId, fileId }),
     installModpack: (
       projectId: string,
       onProgress: (p: PackProgress) => void,
       taskId: string | null = null,
       fileId: string | null = null,
-    ) => call<CurseForgePackResult>('install_curseforge_modpack', { projectId, fileId, onProgress: channel(onProgress), taskId }),
+      trsClient: boolean | null = null,
+    ) =>
+      call<CurseForgePackResult>('install_curseforge_modpack', {
+        projectId,
+        fileId,
+        trsClient,
+        onProgress: channel(onProgress),
+        taskId,
+      }),
     /** Dateien, die der Nutzer für die Instanz selbst laden muss. */
     blocked: (id: string) => call<BlockedFile[]>('curseforge_blocked', { id }),
     /** Übernimmt passende Dateien aus dem Download-Ordner (Name + SHA1). */
@@ -490,9 +518,15 @@ export const backend = {
   /** Fragt nach dem Speicherort und schreibt das .mrpack; `null` = abgebrochen. */
   exportModpack: (id: string, options: ExportOptions, onProgress: (p: ExportProgress) => void) =>
     call<ExportSummary | null>('export_modpack', { id, options, onProgress: channel(onProgress) }),
-  /** Öffnet eine .mrpack-Datei und legt daraus eine Instanz an; `null` = abgebrochen. */
-  importModpackFile: (onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
-    call<string | null>('import_modpack_file', { onProgress: channel(onProgress), taskId }),
+  /** Öffnet den Dateidialog und liest das Pack (Vorschau); `null` = abgebrochen. */
+  pickModpackFile: () => call<PickedPack | null>('pick_modpack_file'),
+  /** Legt aus der gewählten Pack-Datei eine Instanz an (ID der Instanz). */
+  importModpackFile: (
+    token: number,
+    trsClient: boolean | null,
+    onProgress: (p: PackProgress) => void,
+    taskId: string | null = null,
+  ) => call<string>('import_modpack_file', { token, trsClient, onProgress: channel(onProgress), taskId }),
 
   /** Laufende Aufgabe abbrechen; `false` = läuft nicht (mehr). */
   cancelTask: (taskId: string) => call<boolean>('cancel_task', { taskId }),
@@ -587,17 +621,33 @@ export const backend = {
   shareLogSource: (id: string, source: string) => call<string>('share_log_source', { id, source }),
   qrCode: (text: string) => call<QrMatrix>('qr_code', { text }),
 
+  // --- Absturz-Helfer (alles lokal) ------------------------------------------------
+  listCrashes: (id: string) => call<CrashSummary[]>('list_crashes', { id }),
+  getCrash: (id: string, crashId: string) => call<CrashAnalysis>('get_crash', { id, crashId }),
+  /** Log-Datei oder Crash-Report aus dem Logs-Tab analysieren (wird nicht gespeichert). */
+  analyzeLogSource: (id: string, source: string) => call<CrashAnalysis>('analyze_log_source', { id, source }),
+  setInstanceMemory: (id: string, mb: number) => call<void>('set_instance_memory', { id, mb }),
+  /** `major`: Java installieren und für die Instanz einstellen; `null` = automatisch. */
+  switchInstanceJava: (id: string, major: number | null, onProgress: (percent: number) => void, taskId: string | null = null) =>
+    call<number | null>('switch_instance_java', { id, major, onProgress: channel(onProgress), taskId }),
+  /** Holt den TRS Client sofort aus dem Update-Kanal; liefert die installierte Version. */
+  updateTrsClientNow: (id: string) => call<string | null>('update_trs_client_now', { id }),
+
   scanImports: () => call<ImportCandidate[]>('scan_imports'),
   /** Wie scanImports, dazu die erkannten Launcher (auch nicht unterstützte). */
   importOverview: () => call<ImportOverview>('import_overview'),
   /** Öffnet den Ordnerdialog; `null` = abgebrochen. */
   pickImportFolder: () => call<ImportCandidate[] | null>('pick_import_folder'),
+  /** `trsClient`: Wahl „mit/ohne TRS Client“ (`null` = Einstellung bzw. Vorauswahl). */
   importInstance: (
     id: string,
     gameVersion: string | null,
     loader: Loader | null,
     onProgress: (p: ImportProgress) => void,
-  ) => call<ImportResult>('import_instance', { id, gameVersion, loader, onProgress: channel(onProgress) }),
+    trsClient: boolean | null = null,
+  ) => call<ImportResult>('import_instance', { id, gameVersion, loader, trsClient, onProgress: channel(onProgress) }),
+  /** „Mit oder ohne TRS Client“ nur nach Loader und Version (ohne Blick auf Mods). */
+  trsClientOffer: (gameVersion: string, loader: Loader) => call<TrsOffer>('trs_client_offer', { gameVersion, loader }),
 
   /** TRS-Dienste (Umhänge, Freunde, Verwaltung). Der Token bleibt im Kern. */
   trs: {
@@ -696,6 +746,10 @@ export const backend = {
     localImages: () => checked(z.array(localImageSchema), 'chat_local_images'),
     forgetLocal: (id: string) => call<void>('chat_forget_local', { id }),
     upload: (source: UploadSource) => checked(chatAttachmentSchema, 'chat_upload', { source }),
+    /** Screenshot als öffentlichen Link teilen (API §23; Upload + Neukodieren im Kern). */
+    shareScreenshot: (instanceId: string, fileName: string) => checked(sharedImageSchema, 'share_screenshot', { instanceId, fileName }),
+    shares: () => checked(sharesPageSchema, 'shares_list'),
+    deleteShare: (id: string) => call<void>('share_delete', { id }),
     screenshotFavorites: () => checked(z.array(z.string().max(300)), 'screenshot_favorites'),
     setScreenshotFavorite: (instanceId: string, fileName: string, favorite: boolean) =>
       checked(z.array(z.string().max(300)), 'set_screenshot_favorite', { instanceId, fileName, favorite }),

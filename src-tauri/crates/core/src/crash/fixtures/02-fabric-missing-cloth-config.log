@@ -1,0 +1,16 @@
+[18:02:11] [main/INFO]: Loading Minecraft 1.21.11 with Fabric Loader 0.19.5
+[18:02:11] [main/ERROR]: Mod resolution failed
+[18:02:11] [main/INFO]: Immediate reason: [HARD_DEP_NO_CANDIDATE moreculling 1.6.2 {depends cloth-config @ [>=16.0.0]}, ROOT_FORCELOAD_SINGLE moreculling 1.6.2]
+[18:02:11] [main/INFO]: Reason: [HARD_DEP moreculling 1.6.2 {depends cloth-config @ [>=16.0.0]}]
+[18:02:11] [main/INFO]: Fix: add [add:cloth-config 16.0.0 ([[16.0.0,∞)])], remove [], replace []
+[18:02:11] [main/ERROR]: Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+	 - Install cloth-config, version 16.0.0 or later.
+More details:
+	 - Mod 'More Culling' (moreculling) 1.6.2 requires version 16.0.0 or later of cloth-config, which is missing!
+	at net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51)
+	at net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:198)
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:146)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:68)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)

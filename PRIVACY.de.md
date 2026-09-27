@@ -152,8 +152,8 @@ eigenen Freunde weitergeben (höchstens 20 Spieler je Umhang).
 
 Mit eingeschalteten TRS-Diensten kannst du im Launcher und im Spiel mit Freunden und in Gruppen schreiben.
 
-- **Was gespeichert wird:** deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), Bilder, die du
-  sendest, Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften. Nachrichten bleiben
+- **Was gespeichert wird:** deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen, Wegpunkt-Karten),
+  Bilder, die du sendest, Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften. Nachrichten bleiben
   wie in einem normalen Chat **gespeichert, bis sie gelöscht werden** – von dir (für alle), vom Gruppenbesitzer, vom
   Team oder zusammen mit deinem Account.
 - **Verschlüsselung:** Nachrichtentexte, Einladungen und Gruppennamen liegen **verschlüsselt** auf dem Server
@@ -172,6 +172,10 @@ Mit eingeschalteten TRS-Diensten kannst du im Launcher und im Spiel mit Freunden
   Spielerzahl und Beschreibung (der übliche Server-List-Ping) und merkt sich die Antwort etwa eine Minute im
   Arbeitsspeicher. Deine IP-Adresse wird nicht weitergegeben – der Minecraft-Server sieht nur den TRS-Server. Adressen
   in lokalen Netzen werden nie angefragt.
+- **Wegpunkte:** Im TRS Client kannst du einen Wegpunkt (oder deine Position) an einen Freund oder eine Gruppe schicken.
+  Die Karte enthält nur den Namen, den du vergeben hast, die Koordinaten, die Dimension und die Server-Adresse – bei
+  einer Einzelspielerwelt nur eine kurze, aus dem Weltordner berechnete Kennung, nie den Weltnamen. Koordinaten, die im
+  normalen Minecraft-Chat stehen, erkennt der TRS Client **nur lokal**; sie als Wegpunkt zu speichern, sendet nichts.
 - **Echtzeit:** Solange Launcher oder Spiel offen sind, liefert eine Verbindung zum TRS-Server neue Nachrichten und
   andere Neuigkeiten (Freundschaftsanfragen, Online-Status, Umhang-Angebote) sofort. Verpasste Neuigkeiten hält der
   Server bis zu 10 Minuten im Arbeitsspeicher, damit sie nach einer kurzen Unterbrechung ankommen.
@@ -189,6 +193,31 @@ Mit eingeschalteten TRS-Diensten kannst du im Launcher und im Spiel mit Freunden
   wird auf die Platte geschrieben, und dein TRS-Token erreicht nie das Launcher-Fenster.
 - **„Zuletzt online“** in der Freundesliste ist das, was der Launcher selbst gesehen hat (lokal je Konto gespeichert),
   keine Angabe des Servers.
+
+### Geteilte Screenshots
+
+In der Screenshot-Galerie des Launchers und im TRS Client („Clips & Bilder“) kannst du einen Screenshot als Link teilen
+(`https://trs-launcher.theredstonee.de/s/…`). Gesendet wird nur das eine Bild, das du auswählst, und nur, wenn du auf
+„Als Link teilen“ klickst; deine anderen Screenshots bleiben auf deinem PC.
+
+- **Was gespeichert wird:** das Bild, vom Server **neu kodiert** (dabei gehen Standortdaten und alle anderen Metadaten
+  verloren; Bilder über 4096 Pixel werden verkleinert), Größe und Format, wann es geteilt wurde und wann es abläuft,
+  sowie welcher TRS-Account es geteilt hat. Der Account wird nur intern genutzt – für deine Liste „Meine geteilten
+  Bilder“, die Grenzen und die Moderation. Die öffentliche Seite und das Bild zeigen **keinen Spielernamen und keine
+  UUID**.
+- **Wer es sieht:** **jeder, der den Link hat** – es gibt kein Passwort. Der Link enthält einen langen Zufallscode, der
+  sich nicht erraten lässt, und die Seite bittet Suchmaschinen, sie nicht aufzunehmen (`noindex`). Postest du den Link
+  in Discord oder einer ähnlichen App, laden deren Server das Bild, um eine Vorschau zu zeigen.
+- **Wie lange:** **30 Tage**, danach wird das Bild automatisch gelöscht. Du kannst es vorher unter „Meine geteilten
+  Bilder“ im Launcher oder im TRS Client löschen – der Link funktioniert dann sofort nicht mehr (Vorschauen, die andere
+  Apps schon erstellt haben, liegen außerhalb unseres Einflusses). „Alle TRS-Daten löschen“ löscht alle deine geteilten
+  Bilder.
+- **Grenzen:** höchstens 10 MB je Bild, 50 aktive Links und 20 neue Links pro Tag und Account. Eine Upload-Sperre der
+  Moderation sperrt auch das Teilen.
+- **Meldungen:** Ein geteiltes Bild kann gemeldet werden, auch direkt auf seiner Seite. Eine Meldung von der Seite
+  sendet nur den Grund; die Seite speichert keine IP-Adresse (Ratenbegrenzungen zählen nur im Arbeitsspeicher). Eine
+  Meldung bewahrt wie andere Meldungen eine Kopie des Bildes als Beweis auf (siehe unten), und das Team kann geteilte
+  Bilder löschen.
 
 ### Meldungen und Moderation
 
@@ -318,6 +347,7 @@ den TRS-Server.
 | Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
+| Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl, Liste geteilter Mods und Resource-Pack-Angaben (Namen, Größen, Quellen, Prüfsummen – keine Dateien); deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
 
@@ -364,11 +394,13 @@ Profiling und keinen Verkauf von Daten.
   ebenfalls löschen können.
 - Chat-Nachrichten und Bilder bleiben, bis sie gelöscht werden (von dir für alle, vom Gruppenbesitzer oder vom Team)
   oder die Gruppe gelöscht wird. Hochgeladene, aber nie gesendete Bilder werden nach 1 Stunde gelöscht.
+- Geteilte Screenshots werden **30 Tage** nach dem Teilen automatisch gelöscht, oder früher, wenn du (oder das Team) sie
+  löschst.
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
   Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
   deinen Online-Status, alle synchronisierten Skins, Presets und Einstellungen, alle deine Direktchats (für beide
-  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied). Danach sind die TRS-Dienste im
+  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) und alle Bilder, die du als Link geteilt hast. Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
 - Nach der Löschung bleiben nur aktive Strafen (etwa eine Sperre oder eine laufende Chat-Stummschaltung, mit Grund
   und Zeitraum) und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht

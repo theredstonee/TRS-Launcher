@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { convertFileSrc } from '@tauri-apps/api/core'
 import type { GalleryShot } from '~/types'
+import { SHARE_DAYS, ShareQueue, shareGate } from '~/utils/share'
 
 // Alle Screenshots aller Instanzen: nach Tag gruppiert, mit Vollbild-Ansicht.
 // Vorschaubilder erzeugt der Kern und gibt sie einzeln frei; geladen wird erst,
@@ -16,6 +17,11 @@ const thumbs = ref<Record<string, string>>({})
 const full = ref<Record<string, string>>({})
 const viewerIndex = ref<number | null>(null)
 const toDelete = ref<GalleryShot | null>(null)
+const trs = useTrsStore()
+const accounts = useAccountsStore()
+const sharesOpen = ref(false)
+const sharing = ref<Record<string, boolean>>({})
+const shareQueue = new ShareQueue()
 
 const key = (shot: GalleryShot) => `${shot.instanceId}/${shot.fileName}`
 
@@ -151,6 +157,54 @@ function reveal(shot: GalleryShot) {
   backend.revealScreenshot(shot.instanceId, shot.fileName).catch((e) => toasts.error(e))
 }
 
+// --- Als Link teilen (API §23) ----------------------------------------------------------
+
+const gate = computed(() =>
+  shareGate({ statusLoaded: !!trs.status, enabled: trs.enabled, hasAccount: !!accounts.active, banned: trs.problem === 'banned' }),
+)
+
+/** Ohne Einwilligung/Konto: Hinweis statt Anfrage. `true` = Teilen geht. */
+function shareAllowed(): boolean {
+  switch (gate.value) {
+    case 'ok':
+      return true
+    case 'consent':
+      toasts.info(t('shareLink.needConsent'), { label: t('shareLink.turnOn'), run: () => trs.askConsent() })
+      return false
+    case 'account':
+      toasts.info(t('shareLink.needAccount'))
+      return false
+    case 'banned':
+      toasts.info(t('trsGate.banned.title'))
+      return false
+    default:
+      return false
+  }
+}
+
+async function share(shot: GalleryShot) {
+  if (!shareAllowed()) return
+  const id = key(shot)
+  sharing.value = { ...sharing.value, [id]: true }
+  try {
+    const result = await shareQueue.run(id, () => backend.social.shareScreenshot(shot.instanceId, shot.fileName))
+    if (!result) return
+    const open = { label: t('shareLink.open'), run: () => void backend.openExternalUrl(result.url).catch((e) => toasts.error(e)) }
+    try {
+      await navigator.clipboard.writeText(result.url)
+      toasts.ok(t('shareLink.toasts.copied', { days: SHARE_DAYS }), open)
+    } catch {
+      toasts.info(t('shareLink.toasts.ready'), { label: t('shareLink.myShares'), run: () => (sharesOpen.value = true) })
+    }
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    const next = { ...sharing.value }
+    delete next[id]
+    sharing.value = next
+  }
+}
+
 async function confirmDelete() {
   const shot = toDelete.value
   toDelete.value = null
@@ -176,6 +230,9 @@ async function confirmDelete() {
         <option value="all">{{ t('screenshots.allInstances') }}</option>
         <option v-for="i in usedInstances" :key="i.id" :value="i.id">{{ i.name }}</option>
       </select>
+      <button class="btn btn-ghost h-9 py-1 text-xs" data-testid="shares-open" @click="sharesOpen = true">
+        <SocialIcon name="link" class="size-4" />{{ t('shareLink.myShares') }}
+      </button>
       <button class="btn-icon" :title="t('screenshots.reload')" :aria-label="t('screenshots.reload')" @click="load">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5" /></svg>
       </button>
@@ -222,6 +279,17 @@ async function confirmDelete() {
                 <button class="btn-icon size-7" :title="t('screenshots.copyTitle')" :aria-label="t('common.actions.copy')" @click="copy(shot)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1.5" /><path d="M5 15V5a1 1 0 0 1 1-1h9" /></svg>
                 </button>
+                <button
+                  class="btn-icon size-7"
+                  :class="{ 'animate-pulse text-lamp-300': sharing[key(shot)] }"
+                  :title="t('shareLink.shareTitle')"
+                  :aria-label="t('shareLink.share')"
+                  :disabled="sharing[key(shot)]"
+                  data-testid="share-shot"
+                  @click="share(shot)"
+                >
+                  <SocialIcon name="link" class="size-3.5" />
+                </button>
                 <button class="btn-icon size-7" :title="t('screenshots.showInFolder')" :aria-label="t('screenshots.showInFolder')" @click="reveal(shot)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" /></svg>
                 </button>
@@ -251,6 +319,9 @@ async function confirmDelete() {
         </div>
         <div class="ml-auto flex shrink-0 items-center gap-1.5">
           <button class="btn btn-ghost py-1.5 text-xs" @click="copy(current)">{{ t('common.actions.copy') }}</button>
+          <button class="btn btn-ghost py-1.5 text-xs" :disabled="sharing[key(current)]" :title="t('shareLink.shareTitle')" data-testid="share-current" @click="share(current)">
+            <SocialIcon name="link" class="size-3.5" />{{ sharing[key(current)] ? t('shareLink.sharing') : t('shareLink.share') }}
+          </button>
           <button class="btn btn-ghost py-1.5 text-xs" @click="reveal(current)">{{ t('screenshots.showInFolder') }}</button>
           <button class="btn btn-ghost py-1.5 text-xs hover:text-redstone-300" @click="toDelete = current">{{ t('common.actions.delete') }}</button>
           <button class="btn-icon" :title="t('common.actions.close')" :aria-label="t('screenshots.viewer.closeLabel')" @click="viewerIndex = null">
@@ -273,6 +344,8 @@ async function confirmDelete() {
         {{ t('screenshots.viewer.hint') }}
       </p>
     </div>
+
+    <SharedImagesDialog v-if="sharesOpen" @close="sharesOpen = false" @deleted="(id) => shareQueue.forget(id)" />
 
     <BaseDialog v-if="toDelete" :title="t('screenshots.deleteDialog.title')" @close="toDelete = null">
       <i18n-t

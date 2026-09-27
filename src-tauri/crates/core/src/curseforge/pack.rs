@@ -19,7 +19,8 @@ use crate::content::{self, ContentKind, ProjectMeta};
 use crate::download::{self, Task};
 use crate::history::{self, HistoryEntry, HistoryKind};
 use crate::instance::{Instance, Loader, LoaderKind, NewInstance, UpdateChannel, validate_id};
-use crate::modpack::{PackPhase, PackProgress, PackProgressFn};
+use crate::modpack::{PackPhase, PackPreview, PackProgress, PackProgressFn};
+use crate::trs_choice::{self, ModHint};
 use crate::modrinth::{self, clip};
 use crate::paths::Paths;
 use crate::{Error, Launcher, Result, fsutil};
@@ -569,17 +570,41 @@ fn pack_blocked(m: &RawMod, file_id: u64) -> Error {
     ))
 }
 
+/// Name des Packs für die neue Instanz (ohne Steuerzeichen, nie leer).
+fn pack_name(manifest: &Manifest) -> String {
+    let name: String = manifest.name.chars().filter(|c| !c.is_control()).take(64).collect::<String>().trim().to_owned();
+    if name.is_empty() { "CurseForge".to_owned() } else { name }
+}
+
+/// Was über die Dateien eines CurseForge-Packs ohne API bekannt ist: die
+/// Projekt-IDs, dazu Jars, die das Pack direkt in `overrides/mods/` mitbringt.
+pub(crate) fn pack_hints(manifest: &Manifest, bundled: Vec<String>) -> Vec<ModHint> {
+    manifest
+        .files
+        .iter()
+        .filter(|f| f.required && f.project_id > 0)
+        .map(|f| ModHint { curseforge: Some(f.project_id), ..ModHint::default() })
+        .chain(bundled.into_iter().map(ModHint::file))
+        .collect()
+}
+
+/// Manifest und mitgebrachte Mod-Jars eines CurseForge-Packs (blockierend).
+fn read_manifest_and_mods(pack: &Path) -> Result<(Manifest, Vec<String>)> {
+    let manifest = read_manifest(pack)?;
+    let prefix = manifest.overrides_prefix()?;
+    let bundled = crate::modpack::override_mod_names(pack, &[prefix.as_str()]);
+    Ok((manifest, bundled))
+}
+
 impl Launcher {
-    /// Lädt ein CurseForge-Modpack und legt daraus eine neue Instanz an.
-    pub async fn install_curseforge_modpack(
+    /// Modpack-Datei auf CurseForge samt Download-Auftrag in den Pack-Zwischenspeicher.
+    async fn curseforge_pack_task(
         &self,
+        cf: &CurseForge,
         project_id: &str,
         file_id: Option<&str>,
-        on_progress: &PackProgressFn,
-    ) -> Result<PackOutcome> {
-        let cf = self.curseforge()?;
+    ) -> Result<(RawMod, RawFile, Task)> {
         let id = parse_id(project_id).ok_or_else(invalid_project_id)?;
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
         let m = cf.mod_info(id).await?;
         if m.class_id != Some(CLASS_MODPACKS) {
             return Err(Error::validation(crate::msg!("curseforge.notAModpack", "Das ist kein CurseForge-Modpack.")));
@@ -594,15 +619,63 @@ impl Launcher {
         if !is_allowed_download_url(&url) {
             return Err(Error::download(&url, "Download liegt nicht auf CurseForges CDN"));
         }
+        let path = crate::modpack::pack_cache_dir(self.paths()).join(format!("cf-{}-{}.zip", m.id, file.id));
+        let task = Task { url, path, sha1: file.sha1(), size: Some(file.file_length).filter(|s| *s > 0) };
+        Ok((m, file, task))
+    }
 
-        let pack_path = self.paths().meta_dir().join(format!("cfpack-{}.zip", uuid::Uuid::new_v4().simple()));
-        let task = Task { url, path: pack_path.clone(), sha1: file.sha1(), size: Some(file.file_length).filter(|s| *s > 0) };
+    /// Lädt das Pack (für die Installation danach zwischengespeichert) und
+    /// sagt, was drin ist und ob der TRS Client dazu passt.
+    pub async fn preview_curseforge_modpack(&self, project_id: &str, file_id: Option<&str>) -> Result<PackPreview> {
+        let cf = self.curseforge()?;
+        let (_, file, task) = self.curseforge_pack_task(cf, project_id, file_id).await?;
+        crate::modpack::prune_pack_cache(&crate::modpack::pack_cache_dir(self.paths())).await;
+        download::fetch_all(cf.download_client(), vec![task.clone()], 1, &|_| {}).await?;
+        let mut preview = self.preview_curseforge_pack(&task.path).await?;
+        preview.version_id = Some(file.id.to_string());
+        Ok(preview)
+    }
+
+    /// Vorschau eines CurseForge-Packs auf der Platte (ohne API).
+    pub(crate) async fn preview_curseforge_pack(&self, pack: &Path) -> Result<PackPreview> {
+        let (manifest, bundled) = {
+            let path = pack.to_owned();
+            tokio::task::spawn_blocking(move || read_manifest_and_mods(&path))
+                .await
+                .map_err(|e| Error::Internal(e.to_string()))??
+        };
+        let loader = manifest.loader()?;
+        let hints = pack_hints(&manifest, bundled);
+        let trs_client = self.trs_client_offer(&loader, &manifest.minecraft.version, &hints).await;
+        Ok(PackPreview {
+            name: pack_name(&manifest),
+            game_version: manifest.minecraft.version.clone(),
+            loader,
+            mod_count: hints.len() as u32,
+            version_id: None,
+            trs_client,
+        })
+    }
+
+    /// Lädt ein CurseForge-Modpack und legt daraus eine neue Instanz an.
+    /// `trs_client`: Wahl aus dem Dialog (`None` = Einstellung bzw. Vorauswahl).
+    pub async fn install_curseforge_modpack(
+        &self,
+        project_id: &str,
+        file_id: Option<&str>,
+        trs_client: Option<bool>,
+        on_progress: &PackProgressFn,
+    ) -> Result<PackOutcome> {
+        let cf = self.curseforge()?;
+        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
+        let (m, _, task) = self.curseforge_pack_task(cf, project_id, file_id).await?;
+        let pack_path = task.path.clone();
         let result = async {
             download::fetch_all(cf.download_client(), vec![task], 1, &|p| {
                 on_progress(PackProgress { phase: PackPhase::Pack, percent: p.percent() });
             })
             .await?;
-            self.install_curseforge_pack(cf, &pack_path, on_progress).await
+            self.install_curseforge_pack(cf, &pack_path, trs_client, on_progress).await
         }
         .await;
         let _ = tokio::fs::remove_file(&pack_path).await;
@@ -623,21 +696,26 @@ impl Launcher {
         &self,
         cf: &CurseForge,
         pack: &Path,
+        trs_client: Option<bool>,
         on_progress: &PackProgressFn,
     ) -> Result<PackOutcome> {
-        let manifest = {
+        let (manifest, bundled) = {
             let path = pack.to_owned();
-            tokio::task::spawn_blocking(move || read_manifest(&path)).await.map_err(|e| Error::Internal(e.to_string()))??
+            tokio::task::spawn_blocking(move || read_manifest_and_mods(&path))
+                .await
+                .map_err(|e| Error::Internal(e.to_string()))??
         };
         let loader = manifest.loader()?;
         crate::task::checkpoint().await?;
 
-        let name: String = manifest.name.chars().filter(|c| !c.is_control()).take(64).collect::<String>().trim().to_owned();
-        let name = if name.is_empty() { "CurseForge".to_owned() } else { name };
+        let name = pack_name(&manifest);
+        // Mit oder ohne TRS Client – gewählt im Dialog, sonst Einstellung bzw. Vorauswahl.
+        let offer = self.trs_client_offer(&loader, &manifest.minecraft.version, &pack_hints(&manifest, bundled)).await;
         let instance = self
-            .create_instance_as(
+            .create_instance_with(
                 NewInstance { name: name.clone(), game_version: manifest.minecraft.version.clone(), loader },
                 HistoryEntry::new(HistoryKind::Created).subject(&name).detail("modpack"),
+                trs_choice::decide(&offer, trs_client),
             )
             .await?;
 

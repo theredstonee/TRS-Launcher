@@ -7,7 +7,7 @@ use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use trs_core::content::ContentKind;
 use trs_core::curseforge::{self, AdoptResult, BlockedFile, CurseForgeStatus, InstallOutcome};
-use trs_core::modpack::PackProgress;
+use trs_core::modpack::{PackPreview, PackProgress};
 use trs_core::modrinth::{CategoryTag, ProjectCard, ProjectDetails, SearchParams, SearchResult, VersionSummary};
 
 use crate::LauncherState;
@@ -97,6 +97,17 @@ pub struct CurseForgePackResult {
     blocked: Vec<BlockedFile>,
 }
 
+/// Lädt ein CurseForge-Modpack vorab (für die Installation zwischengespeichert)
+/// und sagt, was drin ist – vor allem, ob der TRS Client dazu passt.
+#[tauri::command]
+pub async fn preview_curseforge_modpack(
+    launcher: State<'_, LauncherState>,
+    project_id: String,
+    file_id: Option<String>,
+) -> CommandResult<PackPreview> {
+    Ok(launcher.preview_curseforge_modpack(&project_id, file_id.as_deref()).await?)
+}
+
 /// Legt aus einem CurseForge-Modpack eine neue Instanz an.
 #[tauri::command]
 pub async fn install_curseforge_modpack(
@@ -104,6 +115,7 @@ pub async fn install_curseforge_modpack(
     launcher: State<'_, LauncherState>,
     project_id: String,
     file_id: Option<String>,
+    trs_client: Option<bool>,
     on_progress: Channel<PackProgress>,
     task_id: Option<String>,
 ) -> CommandResult<CurseForgePackResult> {
@@ -111,7 +123,7 @@ pub async fn install_curseforge_modpack(
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };
-    let work = launcher.install_curseforge_modpack(&project_id, file_id.as_deref(), &report);
+    let work = launcher.install_curseforge_modpack(&project_id, file_id.as_deref(), trs_client, &report);
     let outcome = tracked(&app, task_id, work).await?;
     Ok(CurseForgePackResult { instance: view(&app, &launcher, outcome.instance), blocked: outcome.blocked })
 }

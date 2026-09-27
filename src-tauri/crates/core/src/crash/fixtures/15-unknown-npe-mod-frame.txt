@@ -1,0 +1,27 @@
+---- Minecraft Crash Report ----
+// Surprise! Haha. Well, this is awkward.
+
+Time: 2026-09-24 17:21:55
+Description: Ticking entity
+
+java.lang.NullPointerException: Cannot invoke "net.minecraft.class_1297.method_5667()" because "this.owner" is null
+	at com.example.petmod.entity.goal.PetFollowGoal.method_6268(PetFollowGoal.java:57)
+	at net.minecraft.class_1355.method_6275(class_1355.java:124)
+	at net.minecraft.class_1308.method_5958(class_1308.java:771)
+	at net.minecraft.class_1309.method_6023(class_1309.java:2715)
+	at net.minecraft.class_3218.method_18762(class_3218.java:807)
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- System Details --
+Details:
+	Minecraft Version: 1.21.1
+	Java Version: 21.0.7, Microsoft
+	Memory: 812345678 bytes (774 MiB) / 4294967296 bytes (4096 MiB) up to 6442450944 bytes (6144 MiB)
+	Fabric Mods:
+		fabric-api: Fabric API 0.116.6+1.21.1
+		fabricloader: Fabric Loader 0.19.5
+		minecraft: Minecraft 1.21.1
+		petmod: Loyal Pets 2.4.0
