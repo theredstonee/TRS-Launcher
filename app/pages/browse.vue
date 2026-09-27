@@ -356,7 +356,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
   picking.value = null
   error.value = null
   if (isPack.value) {
-    installModpackTask(hit, platform.value)
+    requestModpackInstall(hit, platform.value)
     return
   }
   if (!target.value) return

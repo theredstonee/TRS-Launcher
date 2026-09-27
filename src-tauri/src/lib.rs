@@ -151,6 +151,7 @@ pub fn run() {
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
             app.manage::<LauncherState>(launcher);
             app.manage(commands::system::DropState::default());
+            app.manage(commands::export::PackPickState::default());
             app.manage(commands::tasks::TaskRegistry::default());
             Ok(())
         })
@@ -294,6 +295,7 @@ pub fn run() {
             commands::content::install_missing_dependencies,
             commands::content::install_performance_pack,
             commands::content::install_modpack,
+            commands::content::preview_modpack,
             commands::content::open_content_dir,
             commands::curseforge::curseforge_status,
             commands::curseforge::curseforge_search,
@@ -305,6 +307,7 @@ pub fn run() {
             commands::curseforge::curseforge_changelog,
             commands::curseforge::curseforge_install,
             commands::curseforge::install_curseforge_modpack,
+            commands::curseforge::preview_curseforge_modpack,
             commands::curseforge::curseforge_blocked,
             commands::curseforge::curseforge_adopt_downloads,
             commands::curseforge::curseforge_dismiss_blocked,
@@ -353,6 +356,7 @@ pub fn run() {
             commands::import::import_overview,
             commands::import::pick_import_folder,
             commands::import::import_instance,
+            commands::import::trs_client_offer,
             commands::skins::skin_profile,
             commands::skins::player_skin_url,
             commands::skins::skin_library,
@@ -399,6 +403,7 @@ pub fn run() {
             commands::export::export_candidates,
             commands::export::export_modpack,
             commands::export::import_modpack_file,
+            commands::export::pick_modpack_file,
             commands::trs::trs_status,
             commands::trs::trs_sync_status,
             commands::trs::trs_set_consent,

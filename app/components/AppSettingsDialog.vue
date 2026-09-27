@@ -511,6 +511,13 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.defaults.priorityTitle')" :description="t('settings.defaults.priorityDescription')">
         <ToggleSwitch v-model="form.highPriority" :label="t('settings.defaults.priorityTitle')" />
       </SettingRow>
+      <SettingRow :title="t('trsChoice.settings.label')" :description="t('trsChoice.settings.hint')">
+        <select v-model="form.modpackTrsClient" class="field w-52 py-1.5" :aria-label="t('trsChoice.settings.label')">
+          <option value="ask">{{ t('trsChoice.settings.ask') }}</option>
+          <option value="always">{{ t('trsChoice.settings.always') }}</option>
+          <option value="never">{{ t('trsChoice.settings.never') }}</option>
+        </select>
+      </SettingRow>
 
       <h3 class="section-heading mt-6">{{ t('settings.hooks.title') }}</h3>
       <SettingRow :title="t('settings.hooks.preLaunchTitle')" :description="t('settings.hooks.preLaunchDescription')" stacked>

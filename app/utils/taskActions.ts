@@ -31,10 +31,29 @@ function offerPackPage(e: unknown) {
   })
 }
 
-/** Modpack als neue Instanz installieren (abbrechbar, pausierbar). */
+/**
+ * Modpack installieren – mit der Frage „mit oder ohne TRS Client“ im
+ * Installations-Dialog. Mit „immer mit/ohne“ in den Einstellungen (oder wenn
+ * das Pack schon installiert wird) geht es ohne Dialog direkt los.
+ */
+export function requestModpackInstall(pack: { projectId: string; title: string; iconUrl: string | null }, platform: Platform = 'modrinth') {
+  const policy = useSettingsStore().current?.modpackTrsClient ?? 'ask'
+  const running = useTasksStore().get(modpackTaskKey(projectKey(platform, pack.projectId)))?.status === 'running'
+  if (policy !== 'ask' || running) {
+    installModpackTask(pack, platform)
+    return
+  }
+  useUiStore().modpackInstall = { pack: { projectId: pack.projectId, title: pack.title, iconUrl: pack.iconUrl }, platform }
+}
+
+/**
+ * Modpack als neue Instanz installieren (abbrechbar, pausierbar).
+ * `choice`: Version aus der Vorschau und Wahl „mit/ohne TRS Client“ (`null` = Einstellung bzw. Vorauswahl).
+ */
 export function installModpackTask(
   pack: { projectId: string; title: string; iconUrl: string | null },
   platform: Platform = 'modrinth',
+  choice: { versionId: string | null; trsClient: boolean | null } = { versionId: null, trsClient: null },
 ) {
   const instances = useInstancesStore()
   return useTasksStore().run(
@@ -56,7 +75,7 @@ export function installModpackTask(
       if (platform === 'curseforge') {
         let result
         try {
-          result = await backend.curseforge.installModpack(pack.projectId, onProgress, ctx.taskId)
+          result = await backend.curseforge.installModpack(pack.projectId, onProgress, ctx.taskId, choice.versionId, choice.trsClient)
         } catch (e) {
           offerPackPage(e)
           throw e
@@ -72,7 +91,7 @@ export function installModpackTask(
         showBlocked(instance.id, blocked.length > 0)
         return instance
       }
-      const instance = await backend.installModpack(pack.projectId, onProgress, ctx.taskId)
+      const instance = await backend.installModpack(pack.projectId, onProgress, ctx.taskId, choice.versionId, choice.trsClient)
       ctx.update({ instanceId: instance.id, doneText: t('tasks.toast.modpackReady', { name: instance.name }) })
       await instances.load()
       // Presets mit „immer automatisch“ laufen danach als eigene Aufgabe.

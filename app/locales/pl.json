@@ -612,7 +612,8 @@
       "dropExpired": "Upuszczone pliki nie są już dostępne – przeciągnij je ponownie.",
       "noJavaAtPath": "Pod tą ścieżką nie ma pliku wykonywalnego Javy.",
       "invalidTaskId": "Nieprawidłowy identyfikator zadania",
-      "taskRunning": "To zadanie już trwa."
+      "taskRunning": "To zadanie już trwa.",
+      "packPickExpired": "Wybrany plik nie jest już dostępny – wybierz go ponownie."
     },
     "curseforge": {
       "disabled": "CurseForge nie jest dostępny w tej wersji launchera.",
@@ -4575,6 +4576,40 @@
         "player": "Notatki",
         "hosting": "Światy"
       }
+    }
+  },
+  "trsChoice": {
+    "title": "TRS Client",
+    "with": "Z TRS Client",
+    "withHint": "HUD, zoom, minimapa, peleryny i znajomi w grze.",
+    "without": "Bez TRS Client",
+    "withoutHint": "Paczka zostaje dokładnie taka, jak zbudował ją autor.",
+    "recommended": "Zalecane",
+    "later": "Możesz to zmienić w każdej chwili w ustawieniach instancji.",
+    "checking": "Sprawdzanie paczki …",
+    "previewFailed": "Nie udało się wcześniej sprawdzić paczki – nadal możesz wybrać.",
+    "unsupported": "Nie ma TRS Client dla {loader} {version} – instancja uruchomi się bez niego.",
+    "conflicts": "Zawiera {list} – pokrywa się z TRS Client (inny klient, własna minimapa lub HUD). Dlatego wstępnie wybrano „Bez”.",
+    "zoom": "{list} ma własny zoom – zoom TRS możesz wyłączyć w grze.",
+    "install": {
+      "title": "Zainstaluj modpack",
+      "details": "Minecraft {version} · {loader}"
+    },
+    "import": {
+      "title": "TRS Client dla instancji z modami",
+      "intro": "Dotyczy każdego importu poniżej – wyjątki możliwe dla każdej instancji.",
+      "exceptWithout": "Zaimportuj tę bez TRS Client",
+      "exceptWith": "Zaimportuj tę z TRS Client",
+      "found": "Znaleziono: {list}",
+      "unsupported": "Brak TRS Client dla {loader} {version}",
+      "pack": "Importuj „{name}”"
+    },
+    "settings": {
+      "label": "TRS Client przy modpackach",
+      "hint": "Przy instalacji lub imporcie modpacka albo instancji z modami. Nie dotyczy nowych instancji bez paczki.",
+      "ask": "Zawsze pytaj",
+      "always": "Zawsze z TRS Client",
+      "never": "Zawsze bez TRS Client"
     }
   }
 }

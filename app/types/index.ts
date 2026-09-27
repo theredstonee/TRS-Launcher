@@ -193,6 +193,8 @@ export interface Settings {
   trsSync: boolean
   /** Benachrichtigungen aus „Sozial“ (nur lokal) */
   social: SocialSettings
+  /** TRS Client bei Modpacks/Importen mit Mods: fragen (Standard) oder immer mit/ohne */
+  modpackTrsClient: ModpackTrsPolicy
 }
 
 /** Benachrichtigungen aus „Sozial“ (Rust: `SocialSettings`). */
@@ -659,6 +661,48 @@ export interface PackProgress {
   percent: number
 }
 
+/** Einstellung „Bei Modpacks: TRS Client“. */
+export type ModpackTrsPolicy = 'ask' | 'always' | 'never'
+
+/** Wie stark sich eine Mod mit dem TRS Client überschneidet (`zoom` = nur Hinweis). */
+export type TrsConflictKind = 'clientMod' | 'minimap' | 'hud' | 'zoom'
+
+export interface TrsConflict {
+  name: string
+  kind: TrsConflictKind
+}
+
+/** „Mit oder ohne TRS Client?“ – vom Kern für ein Pack bzw. eine Instanz berechnet. */
+export interface TrsOffer {
+  /** `false` = keine Frage (Vanilla bleibt wie bisher). */
+  applies: boolean
+  /** Es gibt einen TRS-Client-Build für Loader + Version. */
+  supported: boolean
+  unsupported: { kind: 'noBuild'; loader: LoaderKind; gameVersion: string } | null
+  /** Vorauswahl: `true` = „Mit TRS Client“. */
+  recommended: boolean
+  conflicts: TrsConflict[]
+  policy: ModpackTrsPolicy
+}
+
+/** Vorschau eines Modpacks vor der Installation. */
+export interface PackPreview {
+  name: string
+  gameVersion: string
+  loader: Loader
+  modCount: number
+  /** Genau diese Version wird installiert. */
+  versionId: string | null
+  trsClient: TrsOffer
+}
+
+/** Gewählte Modpack-Datei (Pfad bleibt im Kern). */
+export interface PickedPack {
+  token: number
+  fileName: string
+  preview: PackPreview
+}
+
 export interface Server {
   id: string
   name: string
@@ -808,6 +852,8 @@ export interface ImportCandidate {
   missingCount: number
   notes: ImportNote[]
   versionGuessed: boolean
+  /** „Mit oder ohne TRS Client“ für diese Instanz. */
+  trsClient: TrsOffer | null
 }
 
 /** Ein Launcher, dessen Daten auf diesem PC liegen. */

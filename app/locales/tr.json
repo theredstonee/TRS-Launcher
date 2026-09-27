@@ -612,7 +612,8 @@
       "dropExpired": "Bırakılan dosyalar artık mevcut değil – lütfen tekrar sürükle.",
       "noJavaAtPath": "Bu yolda Java çalıştırılabilir dosyası yok.",
       "invalidTaskId": "Geçersiz görev kimliği",
-      "taskRunning": "Bu görev zaten çalışıyor."
+      "taskRunning": "Bu görev zaten çalışıyor.",
+      "packPickExpired": "Seçilen dosya artık kullanılamıyor – lütfen yeniden seç."
     },
     "curseforge": {
       "disabled": "CurseForge bu başlatıcı sürümünde kullanılamıyor.",
@@ -4575,6 +4576,40 @@
         "player": "Notlar",
         "hosting": "Dünyalar"
       }
+    }
+  },
+  "trsChoice": {
+    "title": "TRS Client",
+    "with": "TRS Client ile",
+    "withHint": "Oyunda HUD, yakınlaştırma, mini harita, pelerinler ve arkadaşlar.",
+    "without": "TRS Client olmadan",
+    "withoutHint": "Paket, yazarının oluşturduğu gibi kalır.",
+    "recommended": "Önerilen",
+    "later": "Bunu istediğin zaman örnek ayarlarından değiştirebilirsin.",
+    "checking": "Paket kontrol ediliyor …",
+    "previewFailed": "Paket önceden kontrol edilemedi – yine de seçebilirsin.",
+    "unsupported": "{loader} {version} için TRS Client yok – örnek onsuz başlar.",
+    "conflicts": "{list} içeriyor – TRS Client ile çakışıyor (başka bir istemci, kendi mini haritası veya HUD). Bu yüzden “olmadan” önceden seçili.",
+    "zoom": "{list} kendi yakınlaştırmasını getiriyor – TRS yakınlaştırmasını oyunda kapatabilirsin.",
+    "install": {
+      "title": "Modpack yükle",
+      "details": "Minecraft {version} · {loader}"
+    },
+    "import": {
+      "title": "Modlu örneklerde TRS Client",
+      "intro": "Aşağıdaki her içe aktarma için geçerli – örnek başına istisna yapılabilir.",
+      "exceptWithout": "Bunu TRS Client olmadan içe aktar",
+      "exceptWith": "Bunu TRS Client ile içe aktar",
+      "found": "{list} bulundu",
+      "unsupported": "{loader} {version} için TRS Client yok",
+      "pack": "“{name}” içe aktar"
+    },
+    "settings": {
+      "label": "Modpacklerde TRS Client",
+      "hint": "Bir modpack veya modlu bir örnek yüklenirken ya da içe aktarılırken. Paketsiz yeni örnekler etkilenmez.",
+      "ask": "Her zaman sor",
+      "always": "Her zaman TRS Client ile",
+      "never": "Her zaman TRS Client olmadan"
     }
   }
 }

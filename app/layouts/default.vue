@@ -109,6 +109,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <!-- Global, damit Seitenleiste und Befehlspalette sie überall öffnen können. -->
     <CreateInstanceDialog v-if="ui.creating" @close="ui.creating = false" @created="onCreated" />
     <ImportDialog v-if="ui.importing" @close="ui.importing = false" />
+    <ModpackInstallDialog v-if="ui.modpackInstall" :key="ui.modpackInstall.platform + ui.modpackInstall.pack.projectId" :request="ui.modpackInstall" @close="ui.modpackInstall = null" />
     <PresetReportDialog />
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <TrsConsentDialog v-if="trs.consentOpen" />

@@ -21,6 +21,35 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **With or without TRS Client – your choice for modpacks.** When you install a modpack (Modrinth or CurseForge,
+  from Discover or from a file) or import instances with mods from another launcher, the launcher now asks once:
+  "With TRS Client" or "Without TRS Client". "With" is recommended – unless the pack already brings mods that
+  overlap with it, such as another client (Essential), its own minimap (Xaero's, JourneyMap, VoxelMap, FTB Chunks)
+  or its own HUD (MiniHUD). Then you see which ones, and "Without" is preselected. Packs with their own zoom only
+  get a hint. If there is no TRS Client for the pack's Minecraft version, the option is greyed out with the reason.
+  When importing several instances you choose once for all and can tick exceptions per instance. Your choice is
+  saved in the instance and can be changed anytime in its settings. New instances without a pack work as before.
+- **New setting "TRS Client for modpacks"** (Settings → Default settings): always ask (default), always with or
+  always without – with "always …" the question no longer appears.
+
+### Deutsch
+
+- **Mit oder ohne TRS Client – deine Wahl bei Modpacks.** Wenn du ein Modpack installierst (Modrinth oder
+  CurseForge, aus „Entdecken“ oder als Datei) oder Instanzen mit Mods aus einem anderen Launcher importierst, fragt
+  der Launcher jetzt einmal: „Mit TRS Client“ oder „Ohne TRS Client“. Empfohlen ist „Mit“ – außer das Pack bringt
+  schon Mods mit, die sich damit überschneiden, etwa einen anderen Client (Essential), eine eigene Minimap
+  (Xaero's, JourneyMap, VoxelMap, FTB Chunks) oder ein eigenes HUD (MiniHUD). Dann siehst du, welche, und „Ohne“
+  ist vorausgewählt. Packs mit eigenem Zoom bekommen nur einen Hinweis. Gibt es für die Minecraft-Version des
+  Packs keinen TRS Client, ist die Option mit Begründung ausgegraut. Beim Import mehrerer Instanzen wählst du einmal
+  für alle und kannst je Instanz Ausnahmen anhaken. Die Wahl wird in der Instanz gespeichert und lässt sich
+  jederzeit in ihren Einstellungen ändern. Neue Instanzen ohne Pack bleiben wie bisher.
+- **Neue Einstellung „TRS Client bei Modpacks“** (Einstellungen → Standard-Einstellungen): immer fragen (Standard),
+  immer mit oder immer ohne – bei „immer …“ kommt keine Frage mehr.
+
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
 <!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->
 <!-- shots:

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Locale } from '~/utils/i18n'
+import type { TrsBulkState } from '~/utils/trsChoice'
 import type { ImportCandidate, Instance, LoaderKind } from '~/types'
 
 // Einrichtung beim ersten Start: anmelden, andere Launcher übernehmen, erste Instanz.
@@ -55,6 +56,12 @@ const scanned = ref(false)
 const importError = ref<string | null>(null)
 const importing = ref<{ id: string; percent: number } | null>(null)
 const imported = ref<Set<string>>(new Set())
+/** „Mit oder ohne TRS Client“ – eine Wahl für alle, Ausnahmen je Instanz. */
+const trsBulk = ref<TrsBulkState>({ all: true, exceptions: new Set() })
+const trsAll = computed({
+  get: () => trsBulk.value.all,
+  set: (all: boolean) => (trsBulk.value = trsBulkSetAll(candidates.value, all)),
+})
 
 async function scan() {
   if (scanned.value || scanning.value) return
@@ -62,6 +69,7 @@ async function scan() {
   importError.value = null
   try {
     candidates.value = await backend.scanImports()
+    trsBulk.value = trsBulkInit(candidates.value)
   } catch (e) {
     importError.value = errorMessage(e)
   } finally {
@@ -75,9 +83,15 @@ async function runImport(candidate: ImportCandidate) {
   importError.value = null
   importing.value = { id: candidate.id, percent: 0 }
   try {
-    const { instance } = await backend.importInstance(candidate.id, null, null, (p) => {
-      if (importing.value) importing.value.percent = Math.floor(p.percent)
-    })
+    const { instance } = await backend.importInstance(
+      candidate.id,
+      null,
+      null,
+      (p) => {
+        if (importing.value) importing.value.percent = Math.floor(p.percent)
+      },
+      trsBulkRequest(trsBulk.value, candidate),
+    )
     imported.value = new Set(imported.value).add(candidate.id)
     latestInstance.value = instance
     await instances.load()
@@ -406,7 +420,11 @@ onBeforeUnmount(() => {
           <p v-else-if="!candidates.length && !importError" class="card mt-6 px-4 py-6 text-center text-sm text-base-400">
             {{ t('onboarding.import.none') }}
           </p>
-          <ul v-else-if="candidates.length" class="-mr-2 mt-6 max-h-80 space-y-1.5 overflow-y-auto pr-2">
+          <section v-if="!scanning && trsBulkAsking(candidates).length" class="mt-6 max-w-lg" :aria-label="t('trsChoice.import.title')">
+            <h3 class="mb-1.5 text-xs font-medium uppercase tracking-wide text-base-400">{{ t('trsChoice.import.title') }}</h3>
+            <TrsClientChoice v-model="trsAll" :offer="null" compact />
+          </section>
+          <ul v-if="!scanning && candidates.length" class="-mr-2 mt-4 max-h-80 space-y-1.5 overflow-y-auto pr-2">
             <li v-for="c in candidates" :key="c.id" class="flex items-center gap-3 rounded-md border border-base-700 bg-base-900 px-3 py-2">
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium">{{ c.name }}</p>
@@ -415,6 +433,17 @@ onBeforeUnmount(() => {
                   <template v-if="c.modCount"> · {{ t('onboarding.import.modCount', c.modCount) }}</template>
                   <template v-if="c.worldCount"> · {{ t('onboarding.import.worldCount', c.worldCount) }}</template>
                 </p>
+                <label v-if="trsAsks(c.trsClient) && !imported.has(c.id)" class="mt-1 flex cursor-pointer items-center gap-1.5 text-xs text-base-200">
+                  <input
+                    type="checkbox"
+                    class="accent-redstone-500"
+                    :checked="trsBulk.exceptions.has(c.id)"
+                    :disabled="!!importing"
+                    @change="trsBulk = trsBulkToggle(trsBulk, c.id)"
+                  />
+                  {{ trsBulk.all ? t('trsChoice.import.exceptWithout') : t('trsChoice.import.exceptWith') }}
+                  <span v-if="trsStrongConflicts(c.trsClient).length" class="text-warn">· {{ t('trsChoice.import.found', { list: trsStrongConflicts(c.trsClient).map((x) => x.name).join(', ') }) }}</span>
+                </label>
                 <RedstoneWire v-if="importing?.id === c.id" :percent="importing.percent" :segments="28" class="mt-1.5" />
               </div>
               <span v-if="imported.has(c.id)" class="shrink-0 text-xs text-ok">{{ t('onboarding.import.imported') }}</span>

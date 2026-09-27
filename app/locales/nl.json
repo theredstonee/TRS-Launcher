@@ -612,7 +612,8 @@
       "dropExpired": "De neergezette bestanden zijn niet meer beschikbaar – sleep ze opnieuw hierheen.",
       "noJavaAtPath": "Er staat geen Java-programma op dit pad.",
       "invalidTaskId": "Ongeldige taak-ID",
-      "taskRunning": "Deze taak wordt al uitgevoerd."
+      "taskRunning": "Deze taak wordt al uitgevoerd.",
+      "packPickExpired": "Het gekozen bestand is niet meer beschikbaar – kies het opnieuw."
     },
     "curseforge": {
       "disabled": "CurseForge is niet beschikbaar in deze versie van de launcher.",
@@ -4575,6 +4576,40 @@
         "player": "Notities",
         "hosting": "Werelden"
       }
+    }
+  },
+  "trsChoice": {
+    "title": "TRS Client",
+    "with": "Met TRS Client",
+    "withHint": "HUD, zoom, minimap, capes en vrienden in het spel.",
+    "without": "Zonder TRS Client",
+    "withoutHint": "Het pack blijft precies zoals de maker het heeft gebouwd.",
+    "recommended": "Aanbevolen",
+    "later": "Je kunt dit altijd wijzigen in de instantie-instellingen.",
+    "checking": "Pack wordt gecontroleerd …",
+    "previewFailed": "Het pack kon niet vooraf worden gecontroleerd – je kunt toch kiezen.",
+    "unsupported": "Er is geen TRS Client voor {loader} {version} – de instantie start zonder.",
+    "conflicts": "Bevat {list} – overlapt met de TRS Client (andere client, eigen minimap of HUD). Daarom is „Zonder” voorgeselecteerd.",
+    "zoom": "{list} heeft een eigen zoom – de TRS-zoom kun je in het spel uitschakelen.",
+    "install": {
+      "title": "Modpack installeren",
+      "details": "Minecraft {version} · {loader}"
+    },
+    "import": {
+      "title": "TRS Client bij instanties met mods",
+      "intro": "Geldt voor elke import hieronder – uitzonderingen per instantie mogelijk.",
+      "exceptWithout": "Deze zonder TRS Client importeren",
+      "exceptWith": "Deze met TRS Client importeren",
+      "found": "{list} gevonden",
+      "unsupported": "Geen TRS Client voor {loader} {version}",
+      "pack": "„{name}” importeren"
+    },
+    "settings": {
+      "label": "TRS Client bij modpacks",
+      "hint": "Bij het installeren of importeren van een modpack of een instantie met mods. Nieuwe instanties zonder pack worden niet beïnvloed.",
+      "ask": "Altijd vragen",
+      "always": "Altijd met TRS Client",
+      "never": "Altijd zonder TRS Client"
     }
   }
 }

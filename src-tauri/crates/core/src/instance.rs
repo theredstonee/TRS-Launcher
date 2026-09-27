@@ -229,6 +229,13 @@ impl InstanceStore {
     }
 
     pub async fn create(&self, new: NewInstance) -> Result<Instance> {
+        self.create_with(new, InstanceOverrides::default()).await
+    }
+
+    /// Wie [`Self::create`], mit Überschreibungen von Anfang an (z. B. die
+    /// Wahl „mit/ohne TRS Client“ beim Modpack).
+    pub async fn create_with(&self, new: NewInstance, overrides: InstanceOverrides) -> Result<Instance> {
+        overrides.validate()?;
         let name = validate_name(&new.name)?;
         if !is_safe_version_string(&new.game_version) {
             return Err(Error::validation(crate::msg!("instance.invalidGameVersion", "Minecraft-Version enthält ungültige Zeichen")));
@@ -246,7 +253,7 @@ impl InstanceStore {
             created_at: Utc::now(),
             last_played: None,
             total_play_seconds: 0,
-            overrides: InstanceOverrides::default(),
+            overrides,
             icon: None,
             group: None,
         };

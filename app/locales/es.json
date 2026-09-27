@@ -612,7 +612,8 @@
       "dropExpired": "Los archivos arrastrados ya no están disponibles: vuelve a arrastrarlos.",
       "noJavaAtPath": "No hay ningún ejecutable de Java en esta ruta.",
       "invalidTaskId": "ID de tarea no válido",
-      "taskRunning": "Esta tarea ya se está ejecutando."
+      "taskRunning": "Esta tarea ya se está ejecutando.",
+      "packPickExpired": "El archivo elegido ya no está disponible; vuelve a elegirlo."
     },
     "curseforge": {
       "disabled": "CurseForge no está disponible en esta versión del launcher.",
@@ -4575,6 +4576,40 @@
         "player": "Notas",
         "hosting": "Mundos"
       }
+    }
+  },
+  "trsChoice": {
+    "title": "TRS Client",
+    "with": "Con TRS Client",
+    "withHint": "HUD, zoom, minimapa, capas y amigos en el juego.",
+    "without": "Sin TRS Client",
+    "withoutHint": "El pack queda exactamente como lo creó su autor.",
+    "recommended": "Recomendado",
+    "later": "Puedes cambiarlo cuando quieras en los ajustes de la instancia.",
+    "checking": "Comprobando el pack …",
+    "previewFailed": "No se pudo comprobar el pack de antemano; aun así puedes elegir.",
+    "unsupported": "No hay TRS Client para {loader} {version}: la instancia se inicia sin él.",
+    "conflicts": "Contiene {list}, que se solapa con TRS Client (otro cliente, minimapa o HUD propios). Por eso «Sin» está preseleccionado.",
+    "zoom": "{list} trae su propio zoom; puedes desactivar el zoom de TRS en el juego.",
+    "install": {
+      "title": "Instalar modpack",
+      "details": "Minecraft {version} · {loader}"
+    },
+    "import": {
+      "title": "TRS Client en instancias con mods",
+      "intro": "Se aplica a cada importación de abajo; puedes hacer excepciones por instancia.",
+      "exceptWithout": "Importar esta sin TRS Client",
+      "exceptWith": "Importar esta con TRS Client",
+      "found": "{list} encontrado",
+      "unsupported": "No hay TRS Client para {loader} {version}",
+      "pack": "Importar «{name}»"
+    },
+    "settings": {
+      "label": "TRS Client en modpacks",
+      "hint": "Al instalar o importar un modpack o una instancia con mods. Las instancias nuevas sin pack no se ven afectadas.",
+      "ask": "Preguntar siempre",
+      "always": "Siempre con TRS Client",
+      "never": "Siempre sin TRS Client"
     }
   }
 }

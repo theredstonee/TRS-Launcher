@@ -57,6 +57,7 @@ pub mod system;
 pub mod task;
 pub mod task_history;
 pub mod trs_api;
+pub mod trs_choice;
 pub mod upload;
 pub mod worlds;
 
@@ -336,6 +337,19 @@ impl Launcher {
         self.client_mod_catalog().await.1.builds().to_vec()
     }
 
+    /// „Mit oder ohne TRS Client?“ für ein Pack bzw. eine Instanz mit diesem
+    /// Loader, dieser Version und diesen Dateien (siehe [`trs_choice`]).
+    pub async fn trs_client_offer(
+        &self,
+        loader: &instance::Loader,
+        game_version: &str,
+        hints: &[trs_choice::ModHint],
+    ) -> trs_choice::TrsOffer {
+        let (_, catalog) = self.client_mod_catalog().await;
+        let policy = self.settings().await.modpack_trs_client;
+        trs_choice::offer(catalog.builds(), loader, game_version, hints, policy)
+    }
+
     async fn client_mod_catalog(&self) -> (Option<PathBuf>, client_mod::Catalog) {
         let dir = self.bundled_client_mod_dir();
         let catalog = client_mod::Catalog::load(dir.as_deref(), Some(&self.client_mod_updates)).await;
@@ -603,11 +617,23 @@ impl Launcher {
     /// Wie [`Self::create_instance`] mit eigenem ersten Verlaufseintrag
     /// (Import, Modpack, Kopie).
     pub(crate) async fn create_instance_as(&self, new: NewInstance, first: HistoryEntry) -> Result<Instance> {
+        self.create_instance_with(new, first, None).await
+    }
+
+    /// Wie [`Self::create_instance_as`]; `trs_client` landet gleich in den
+    /// Überschreibungen (Wahl beim Modpack bzw. Import, siehe [`trs_choice`]).
+    pub(crate) async fn create_instance_with(
+        &self,
+        new: NewInstance,
+        first: HistoryEntry,
+        trs_client: Option<bool>,
+    ) -> Result<Instance> {
         let manifest = self.version_manifest(false).await?;
         if manifest.find(&new.game_version).is_none() {
             return Err(Error::UnknownGameVersion(new.game_version));
         }
-        let instance = self.instances.create(new).await?;
+        let overrides = instance::InstanceOverrides { trs_client, ..Default::default() };
+        let instance = self.instances.create_with(new, overrides).await?;
         let first = first.to(describe_version(&instance.game_version, &instance.loader));
         history::record(&self.paths, &instance.id, first).await;
         Ok(instance)

@@ -612,7 +612,8 @@
       "dropExpired": "Os arquivos soltos não estão mais disponíveis – arraste-os novamente.",
       "noJavaAtPath": "Não há executável Java neste caminho.",
       "invalidTaskId": "ID de tarefa inválido",
-      "taskRunning": "Esta tarefa já está em execução."
+      "taskRunning": "Esta tarefa já está em execução.",
+      "packPickExpired": "O arquivo escolhido não está mais disponível – escolha-o novamente."
     },
     "curseforge": {
       "disabled": "O CurseForge não está disponível nesta versão do launcher.",
@@ -4575,6 +4576,40 @@
         "player": "Anotações",
         "hosting": "Mundos"
       }
+    }
+  },
+  "trsChoice": {
+    "title": "TRS Client",
+    "with": "Com TRS Client",
+    "withHint": "HUD, zoom, minimapa, capas e amigos no jogo.",
+    "without": "Sem TRS Client",
+    "withoutHint": "O pack fica exatamente como o autor o criou.",
+    "recommended": "Recomendado",
+    "later": "Você pode mudar isso a qualquer momento nas configurações da instância.",
+    "checking": "Verificando o pack …",
+    "previewFailed": "Não foi possível verificar o pack antes – você ainda pode escolher.",
+    "unsupported": "Não há TRS Client para {loader} {version} – a instância inicia sem ele.",
+    "conflicts": "Contém {list} – se sobrepõe ao TRS Client (outro cliente, minimapa ou HUD próprios). Por isso “Sem” está pré-selecionado.",
+    "zoom": "{list} traz o próprio zoom – você pode desativar o zoom do TRS no jogo.",
+    "install": {
+      "title": "Instalar modpack",
+      "details": "Minecraft {version} · {loader}"
+    },
+    "import": {
+      "title": "TRS Client em instâncias com mods",
+      "intro": "Vale para cada importação abaixo – exceções por instância são possíveis.",
+      "exceptWithout": "Importar esta sem TRS Client",
+      "exceptWith": "Importar esta com TRS Client",
+      "found": "{list} encontrado",
+      "unsupported": "Sem TRS Client para {loader} {version}",
+      "pack": "Importar “{name}”"
+    },
+    "settings": {
+      "label": "TRS Client em modpacks",
+      "hint": "Ao instalar ou importar um modpack ou uma instância com mods. Novas instâncias sem pack não são afetadas.",
+      "ask": "Sempre perguntar",
+      "always": "Sempre com TRS Client",
+      "never": "Sempre sem TRS Client"
     }
   }
 }

@@ -3,7 +3,7 @@ use tauri::{AppHandle, State};
 use trs_core::content::{self, ContentItem, ContentKind, Platform};
 use trs_core::depcheck::{self, DependencyFix};
 use trs_core::modcompat::{self, CompatReport};
-use trs_core::modpack::PackProgress;
+use trs_core::modpack::{PackPreview, PackProgress};
 use trs_core::modrinth::{
     self, CategoryTag, MigrationItem, MigrationStatus, ProjectCard, ProjectDetails, SearchParams, SearchResult,
     UpdateInfo, VersionSummary,
@@ -233,12 +233,25 @@ pub async fn install_performance_pack(
     Ok(tracked(&app, task_id, work).await?)
 }
 
+/// Lädt ein Modrinth-Modpack vorab (für die Installation zwischengespeichert)
+/// und sagt, was drin ist – vor allem, ob der TRS Client dazu passt.
+#[tauri::command]
+pub async fn preview_modpack(
+    launcher: State<'_, LauncherState>,
+    project_id: String,
+    version_id: Option<String>,
+) -> CommandResult<PackPreview> {
+    Ok(launcher.preview_modpack(&project_id, version_id.as_deref()).await?)
+}
+
 /// Legt aus einem Modrinth-Modpack eine neue Instanz an.
 #[tauri::command]
 pub async fn install_modpack(
     app: AppHandle,
     launcher: State<'_, LauncherState>,
     project_id: String,
+    version_id: Option<String>,
+    trs_client: Option<bool>,
     on_progress: Channel<PackProgress>,
     task_id: Option<String>,
 ) -> CommandResult<InstanceView> {
@@ -246,7 +259,7 @@ pub async fn install_modpack(
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };
-    let work = launcher.install_modpack(&project_id, None, &report);
+    let work = launcher.install_modpack(&project_id, version_id.as_deref(), trs_client, &report);
     let instance = tracked(&app, task_id, work).await?;
     Ok(view(&app, &launcher, instance))
 }

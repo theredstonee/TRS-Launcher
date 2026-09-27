@@ -198,6 +198,7 @@ export const settingsSchema = z
     clips: clipSettingsSchema,
     trsSync: z.boolean().default(true),
     social: socialSettingsSchema,
+    modpackTrsClient: z.enum(['ask', 'always', 'never']).default('ask'),
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {
