@@ -219,6 +219,28 @@ In der Screenshot-Galerie des Launchers und im TRS Client („Clips & Bilder“)
   Meldung bewahrt wie andere Meldungen eine Kopie des Bildes als Beweis auf (siehe unten), und das Team kann geteilte
   Bilder löschen.
 
+### Schaltungs-Bibliothek (TRS Client)
+
+Die Schaltungs-Bibliothek im TRS Client (und auf der Website, /circuits) lädt ihre Schaltungen vom TRS-Server. Dafür
+braucht es kein Konto: Einmal je Spielstart fragt der TRS Client, ob es neue oder geänderte Schaltungen gibt, und lädt
+nur diese; sie werden in `config/trsclient/circuits/` zwischengespeichert. Das passiert nur, solange die
+TRS-Online-Funktionen erlaubt sind. Der Server zählt Anfragen je IP-Adresse nur im Arbeitsspeicher (Rate-Limit).
+
+- **Schaltung einreichen** (angemeldet, im TRS Client oder auf der Website): Wir speichern die Schaltung (nur Blöcke
+  und ihre Zustände – keine Kisteninhalte oder anderen Blockdaten), den eingegebenen Namen, die Beschreibung,
+  Kategorie und Sprache, deine Minecraft-UUID und deinen Namen, den Zeitpunkt, den Status und die Antwort des Teams.
+  Hochgeladene Dateien werden umgewandelt und sofort verworfen. Einreichungen sehen nur Team-Mitglieder, deren Rolle
+  die Bibliothek verwalten darf.
+- **Dein Name wird angezeigt:** Nimmt das Team deine Schaltung an, erscheint sie in der Bibliothek im TRS Client und
+  auf der Website **mit deinem Minecraft-Namen (und deiner UUID für das Kopfbild) als Ersteller**. Das bestätigst du
+  vor dem Einreichen.
+- **Wie lange:** Entschiedene Einreichungen werden **90 Tage** nach der Entscheidung gelöscht, offene bleiben bis zur
+  Entscheidung. Eine veröffentlichte Schaltung bleibt, bis das Team sie entfernt; „Alle TRS-Daten löschen“ löscht
+  deine Einreichungen und entfernt deinen Namen aus deinen Schaltungen. Du kannst jederzeit verlangen, dass wir eine
+  Schaltung von dir entfernen.
+- **Grenzen und Meldungen:** höchstens 5 Einreichungen am Tag; eine Upload-Sperre aus der Moderation sperrt auch das
+  Einreichen. Schaltungen können wie andere Inhalte gemeldet werden (siehe unten).
+
 ### Meldungen und Moderation
 
 Du kannst Nachrichten, Bilder, Spieler und Gruppen melden (mit Grund und optionalem Hinweis). Die Meldung speichert eine
@@ -360,6 +382,7 @@ den TRS-Server.
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
 | Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
+| Eingereichte Schaltungen: die Schaltung (nur Blöcke und Zustände), Name, Beschreibung, Kategorie, Sprache, Zeitpunkt, Status und Antwort des Teams; bei angenommenen Schaltungen dein Name als Ersteller | Eine Schaltung für die Bibliothek einreichen (siehe oben) |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl, Liste geteilter Mods und Resource-Pack-Angaben (Namen, Größen, Quellen, Prüfsummen – keine Dateien); deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
 
@@ -408,6 +431,8 @@ Profiling und keinen Verkauf von Daten.
   oder die Gruppe gelöscht wird. Hochgeladene, aber nie gesendete Bilder werden nach 1 Stunde gelöscht.
 - Geteilte Screenshots werden **30 Tage** nach dem Teilen automatisch gelöscht, oder früher, wenn du (oder das Team) sie
   löschst.
+- Entschiedene Schaltungs-Einreichungen werden **90 Tage** nach der Entscheidung gelöscht; veröffentlichte
+  Schaltungen bleiben, bis das Team sie entfernt (nach „Alle TRS-Daten löschen“ ohne deinen Namen).
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
   Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
