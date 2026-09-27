@@ -287,7 +287,12 @@
       "cannot_change_self": "You can't change your own role.",
       "role_not_found": "This player has no team role.",
       "note_not_found": "This note doesn't exist (anymore).",
-      "bulk_too_large": "At most 50 entries at once."
+      "bulk_too_large": "At most 50 entries at once.",
+      "web_login_removed": "Signing in with a launcher code no longer exists – sign in on the website with Microsoft: {url}",
+      "missing_permission": "Your role is missing a permission for this.",
+      "rank_too_low": "Your rank in the team is too low for this.",
+      "application_closed": "This application is already closed.",
+      "application_not_found": "This application doesn’t exist (any more)."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -585,8 +590,7 @@
       "invalidCodeId": "Invalid code ID.",
       "redemptionsRange": "Redemptions per code: 1 to 100,000.",
       "countRange": "Amount: 1 to 100 codes at once.",
-      "expiryInPast": "The expiry date is in the past.",
-      "invalidWebLoginCode": "The code looks like ABCD-1234 (letters and digits)."
+      "expiryInPast": "The expiry date is in the past."
     },
     "trsPng": {
       "fileTooLarge": "The file is too large (max. 5 MB).",
@@ -649,12 +653,6 @@
       "invalidFile": "This isn’t a valid preset file.",
       "fileTooLarge": "The preset file is too large.",
       "noneSelected": "No preset selected."
-    },
-    "trsWebLogin": {
-      "invalidCode": "This sign-in code doesn't exist – compare it with the code on the website.",
-      "expired": "The sign-in code has expired – reload the website and enter the new code.",
-      "notAdmin": "Only TRS admins can sign in on the website.",
-      "alreadyUsed": "This sign-in code has already been confirmed."
     },
     "clips": {
       "bufferRange": "Clip length must be between {min} and {max} seconds",
@@ -758,7 +756,6 @@
       "invalidDecision": "Unknown decision.",
       "shortenNeedsEnd": "To shorten, please choose a new end.",
       "invalidNameQuery": "Names have 1–16 letters, digits or _.",
-      "invalidRole": "Unknown role.",
       "invalidRoom": "Invalid world.",
       "emptySearch": "Please enter a search term."
     },
@@ -771,6 +768,9 @@
       "storageFull": "The TRS server has no space right now – please try again later.",
       "notFound": "This shared picture doesn’t exist (anymore).",
       "invalidId": "Invalid link."
+    },
+    "applications": {
+      "invalidId": "Invalid application."
     }
   },
   "browse": {
@@ -2555,10 +2555,11 @@
       "import": "import prism multimc curseforge migrate",
       "modpacks": "modpack pack install",
       "dataDir": "folder explorer files",
-      "webLogin": "website web login sign in admin code browser",
       "clips": "clips recording record video replay shadowplay",
       "social": "friends chat messages groups social requests",
-      "admin": "team moderation reports sanctions appeals players admin"
+      "admin": "team moderation reports sanctions appeals players admin",
+      "websiteLogin": "website sign in login microsoft browser team",
+      "myApplications": "applications apply team job position status"
     },
     "actions": {
       "newInstance": {
@@ -2577,8 +2578,11 @@
         "title": "Open data folder",
         "subtitle": "Folder with instances and settings"
       },
-      "webLogin": {
-        "subtitle": "Enter the code from {host}"
+      "websiteLogin": {
+        "subtitle": "Opens {host} – sign in with Microsoft"
+      },
+      "myApplications": {
+        "subtitle": "Status and answers of your team applications"
       }
     }
   },
@@ -2805,8 +2809,7 @@
       "minCount": "At least 1 code.",
       "maxCount": "At most 100 codes at once.",
       "invalidExpiry": "Invalid expiry date.",
-      "expiryPast": "The expiry date is in the past.",
-      "webLoginCode": "The code looks like ABCD-1234 (letters and digits)."
+      "expiryPast": "The expiry date is in the past."
     },
     "unlock": {
       "own": "Custom",
@@ -3585,22 +3588,6 @@
     "imageOf": "Image {n} of {total}",
     "versions": "Versions",
     "more": "{n} more images"
-  },
-  "webLogin": {
-    "title": "Confirm website sign-in",
-    "intro": "The website {host} shows you a code. Enter it here to sign in there with your TRS account.",
-    "codeLabel": "Code from the website",
-    "question": "Sign in as {name} on {host}?",
-    "codeShown": "Code:",
-    "warningTitle": "Only confirm if you are on the website yourself right now.",
-    "warning": "Never give this code to anyone. Whoever asks you for it wants to take over your account.",
-    "approve": "Confirm sign-in",
-    "approving": "Confirming …",
-    "done": "Sign-in confirmed – you can go back to {host}.",
-    "needsServices": "Turn on the TRS services first (Settings → Privacy).",
-    "needsAccount": "Please sign in with your Minecraft account under \"Accounts\" first.",
-    "settingsDescription": "Sign in to the admin area on {host} with the code shown there.",
-    "open": "Enter code"
   },
   "clips": {
     "title": "Clips",
@@ -4459,11 +4446,16 @@
   "team": {
     "title": "Moderation",
     "subtitle": "Team area of the TRS services",
-    "notStaff": "This area is only for the TRS team (admins and moderators).",
+    "notStaff": "This area is only for the TRS team.",
     "roles": {
       "admin": "Admin",
       "moderator": "Moderator",
-      "system": "System"
+      "system": "System",
+      "owner": "Owner",
+      "senior_moderator": "Senior moderator",
+      "supporter": "Supporter",
+      "content": "Content team",
+      "recruiter": "Recruiting team"
     },
     "nav": {
       "label": "Moderation areas",
@@ -4478,7 +4470,11 @@
       "wordFilter": "Word filter",
       "roles": "Roles",
       "audit": "Audit log",
-      "keysHint": "Press ? for keyboard shortcuts."
+      "keysHint": "Press ? for keyboard shortcuts.",
+      "applications": "Applications",
+      "jobs": "Positions",
+      "website": "On the website",
+      "websiteHint": "Opens the website in your browser (sign in with Microsoft)."
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -4514,8 +4510,9 @@
       "sortDefault": "Default order",
       "oldest": "Oldest first",
       "newest": "Newest first",
-      "readOnly": "You can view this – changing it is up to admins.",
-      "adminOnly": "Only admins can see this."
+      "readOnly": "Your role can see this but not change it.",
+      "noPermission": "Your role can’t open this area.",
+      "nothingAllowed": "Your role has no area in the launcher – use the website."
     },
     "bulk": {
       "done": "{updated} changed, {skipped} skipped."
@@ -4545,7 +4542,7 @@
       "kind": "Kind",
       "duration": "Duration",
       "notAllowed": "Not allowed for your role",
-      "limitHint": "As a moderator you can give sanctions up to {days} days (warnings up to {warnDays} days). Permanent sanctions and account bans are for admins.",
+      "limitHint": "Your role can give sanctions up to {days} days (warnings up to {warnDays} days). Permanent sanctions need an extra permission.",
       "minutes": "= {n} minutes",
       "units": {
         "minutes": "minutes",
@@ -4565,7 +4562,8 @@
         "reasonCode": "Please choose a reason template.",
         "reason": "Public reason: one line, at most 500 characters.",
         "note": "Internal note: at most 2000 characters."
-      }
+      },
+      "noPermanent": "Permanent sanctions need an extra permission."
     },
     "sanction": {
       "newTitle": "New sanction for {name}",
@@ -4584,8 +4582,9 @@
       "replaced": "replaced by a team decision",
       "answer": "Answer ({name}):",
       "decideAppeal": "Decide on appeal",
-      "adminLocked": "Given by an admin – only admins can change it.",
-      "changeEnd": "Change end"
+      "changeEnd": "Change end",
+      "rankLocked": "Given by someone with a higher rank – you can’t change it.",
+      "permissionLocked": "Your role can’t change this sanction."
     },
     "change": {
       "liftTitle": "Lift {kind}?",
@@ -4602,7 +4601,8 @@
       "reasonRequired": "Please enter a reason.",
       "lift": "Lift",
       "save": "Save end",
-      "done": "Sanction updated."
+      "done": "Sanction updated.",
+      "cannotExtend": "Your role can’t extend this kind of sanction – only shorten it."
     },
     "appeals": {
       "decideTitle": "Appeal by {name}",
@@ -4628,7 +4628,7 @@
         "decided": "Decided",
         "all": "All"
       },
-      "lead": "Each sanction can be appealed once. Moderators don't decide on appeals against their own sanctions.",
+      "lead": "Each sanction can be appealed once. Nobody decides on appeals against their own sanctions.",
       "noneOpen": "No open appeals.",
       "sanctionLine": "Sanction #{id} · until {end}",
       "own": "Your own sanction – someone else decides."
@@ -4674,7 +4674,9 @@
       "disk": "Free disk space",
       "diskOf": "{free} of {total}",
       "recent": "Recent actions",
-      "allAudit": "Audit log"
+      "allAudit": "Audit log",
+      "applications": "Applications",
+      "newApplications": "{n} new"
     },
     "reports": {
       "highPriority": "High priority",
@@ -4693,7 +4695,11 @@
       },
       "openFile": "Open player file",
       "sanction": "Sanction …",
-      "sanctionFor": "Sanction for {name}"
+      "sanctionFor": "Sanction for {name}",
+      "contentHidden": "Content is only visible with the permission “See report contents”. You see who reported whom, when and why.",
+      "contentHiddenShort": "Content only visible with permission",
+      "messageHidden": "Content only visible with permission",
+      "readOnly": "Your role can view reports but not handle them."
     },
     "players": {
       "nameRule": "Enter a Minecraft name (1–16 letters, digits or _) or a UUID.",
@@ -4727,8 +4733,9 @@
       "sessions": "Sessions",
       "cannot": {
         "self": "You can't sanction yourself.",
-        "admin": "Admins can't be sanctioned.",
-        "staff": "Only admins can sanction team members."
+        "admin": "Owners can’t be sanctioned.",
+        "staff": "Only someone with a higher rank can sanction team members.",
+        "permission": "Your role can’t give sanctions."
       },
       "activeSanctions": "Active sanctions",
       "warnings": "Warnings (active / total)",
@@ -4815,23 +4822,6 @@
     "wordFilter": {
       "search": "Search the filter"
     },
-    "rolesPage": {
-      "added": "{name} is now {role}.",
-      "removed": "{name} is no longer in the team.",
-      "fixed": "Fixed in the server configuration",
-      "granted": "since {date} · by {name}",
-      "role": "Role",
-      "add": "Add to team",
-      "search": "Search player by name",
-      "picked": "Selected: {name}",
-      "note": "Note (optional)",
-      "help": {
-        "moderator": "Moderators handle reports and appeals, give warnings and sanctions up to 7 days and review uploads.",
-        "admin": "Admins can do everything: permanent sanctions, account bans, roles, codes and the word filter."
-      },
-      "removeTitle": "Remove {name} from the team?",
-      "removeText": "The role ends at once, including any website session."
-    },
     "audit": {
       "area": "Area",
       "from": "From",
@@ -4849,6 +4839,40 @@
         "player": "Notes",
         "hosting": "Worlds"
       }
+    },
+    "errors": {
+      "missingPermission": "Your role is missing the permission “{permission}”."
+    },
+    "permissions": {
+      "dashboard_view": "See the overview",
+      "stats_view": "See statistics",
+      "audit_view": "See the audit log",
+      "reports_view": "See reports",
+      "reports_content": "See report contents",
+      "reports_handle": "Handle reports",
+      "sanctions_warn": "Warn",
+      "sanctions_mute": "Mute in chat",
+      "sanctions_social": "Social ban",
+      "sanctions_upload": "Upload ban",
+      "sanctions_hosting": "Hosting ban",
+      "sanctions_ban": "Ban accounts",
+      "sanctions_permanent": "Permanent sanctions",
+      "sanctions_lift": "Lift sanctions",
+      "appeals_handle": "Decide appeals",
+      "players_view": "See players",
+      "players_notes": "Write player notes",
+      "uploads_review": "Review capes and cosmetics",
+      "uploads_delete": "Delete capes and cosmetics",
+      "items_grant": "Give capes and cosmetics",
+      "worlds_view": "See worlds",
+      "worlds_close": "Close worlds",
+      "codes": "Codes",
+      "wordfilter": "Word filter",
+      "roles_manage": "Manage roles",
+      "applications_view": "See applications",
+      "applications_review": "Review applications",
+      "applications_manage": "Manage positions",
+      "applications_decide": "Decide applications"
     }
   },
   "trsChoice": {
@@ -4914,6 +4938,62 @@
     "deleteDialog": {
       "title": "Delete link?",
       "text": "The picture is removed from the TRS server and the link stops working. Your screenshot on this PC stays."
+    }
+  },
+  "websiteLogin": {
+    "title": "Website",
+    "description": "On {host} you sign in with the Microsoft account that owns Minecraft – for team applications and, for team members, the full team area.",
+    "button": "Sign in on the website",
+    "hint": "The website only signs in with Microsoft. Opens in your browser."
+  },
+  "applications": {
+    "status": {
+      "new": "Received",
+      "review": "In review",
+      "interview": "Interview",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
+    },
+    "statusHelp": {
+      "new": "The team hasn’t looked at it yet.",
+      "review": "The team is reviewing your application.",
+      "interview": "The team would like to talk to you – watch out for a message.",
+      "accepted": "Welcome to the team!",
+      "rejected": "This time it didn’t work out.",
+      "withdrawn": "You withdrew this application."
+    },
+    "toast": {
+      "title": "Your application: {job}",
+      "status": {
+        "new": "Received – thanks for applying!",
+        "review": "The team is now reviewing it.",
+        "interview": "Invited to an interview.",
+        "accepted": "Accepted – welcome to the team!",
+        "rejected": "Not accepted this time.",
+        "withdrawn": "Withdrawn."
+      },
+      "withResponse": "{status} – “{response}”",
+      "view": "Show"
+    },
+    "dialog": {
+      "title": "My applications",
+      "subtitle": "Applications for the TRS team with status and answer",
+      "none": "You haven’t applied yet.",
+      "noneHint": "Open positions and the application form are on the website.",
+      "sent": "sent {date}",
+      "answer": "Answer from the team · {date}",
+      "withdraw": "Withdraw",
+      "withdrawConfirm": "Really withdraw this application?",
+      "withdrawn": "Application for “{job}” withdrawn.",
+      "footer": "You apply on the website (sign in with Microsoft).",
+      "jobs": "Open positions",
+      "website": "On the website"
+    },
+    "settings": {
+      "title": "My applications",
+      "description": "Your team applications with status and the team’s answer.",
+      "button": "Show"
     }
   }
 }

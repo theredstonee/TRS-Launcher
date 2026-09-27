@@ -17,11 +17,11 @@ import {
   draftToInput,
   durationAllowed,
   emptyDraft,
-  limitsByRole,
   playerFileSchema,
   dashboardSchema,
   adminSanctionSchema,
 } from '../app/utils/team'
+import { myTeamSchema, type StaffLimits } from '../app/utils/teamAccess'
 
 // Moderation v2 (API §22): Texte der Strafen, Einspruch-Regeln, Fehlerparameter
 // aus dem Kern, Rechte-Grenzen im Formular und die Schemas der Team-Antworten.
@@ -106,8 +106,15 @@ describe('Eigene Strafen', () => {
 })
 
 describe('Team: Strafe vergeben', () => {
-  const mod = limitsByRole.moderator
-  const admin = limitsByRole.admin
+  // Grenzen wie aus `me.team.limits` (§24.2) für Moderator und Admin.
+  const mod: StaffLimits = myTeamSchema.parse({
+    rank: 500,
+    limits: { kinds: ['warn', 'chat_mute', 'social_ban', 'upload_ban', 'hosting_ban'], maxMinutes: 10_080, maxWarnMinutes: 43_200, permanent: false },
+  }).limits
+  const admin: StaffLimits = myTeamSchema.parse({
+    rank: 900,
+    limits: { kinds: ['warn', 'chat_mute', 'social_ban', 'upload_ban', 'hosting_ban', 'account_ban'], maxMinutes: null, maxWarnMinutes: null, permanent: true },
+  }).limits
 
   it('Moderatoren: höchstens 7 Tage, Verwarnung 30, nie dauerhaft, kein Konto-Bann', () => {
     expect(durationAllowed('7d', 'chat_mute', mod)).toBe(true)
@@ -155,8 +162,11 @@ describe('Team: Strafe vergeben', () => {
     expect(file.reports.against.counts.total).toBe(0)
     expect(file.can.sanction).toBe(false)
     const d = dashboardSchema.parse({ reports: { open: 3 }, sanctions: { chat_mute: 2 } })
-    expect(d.reports.open).toBe(3)
-    expect(d.series.days).toEqual([])
+    expect(d.reports?.open).toBe(3)
+    // Ohne Recht fehlt ein Block (§24.2: `null` bzw. gar nicht da).
+    expect(d.series).toBeNull()
+    expect(d.users).toBeNull()
     expect(d.server).toBeNull()
+    expect(s.createdRank).toBeNull()
   })
 })

@@ -287,7 +287,12 @@
       "cannot_change_self": "Deine eigene Rolle kannst du nicht ändern.",
       "role_not_found": "Dieser Spieler hat keine Team-Rolle.",
       "note_not_found": "Diese Notiz gibt es nicht (mehr).",
-      "bulk_too_large": "Höchstens 50 Einträge auf einmal."
+      "bulk_too_large": "Höchstens 50 Einträge auf einmal.",
+      "web_login_removed": "Die Anmeldung per Launcher-Code gibt es nicht mehr – melde dich auf der Website mit Microsoft an: {url}",
+      "missing_permission": "Deiner Rolle fehlt dafür ein Recht.",
+      "rank_too_low": "Dafür ist dein Rang im Team zu niedrig.",
+      "application_closed": "Diese Bewerbung ist schon abgeschlossen.",
+      "application_not_found": "Diese Bewerbung gibt es nicht (mehr)."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -585,8 +590,7 @@
       "invalidCodeId": "Ungültige Code-ID.",
       "redemptionsRange": "Einlösungen je Code: 1 bis 100 000.",
       "countRange": "Anzahl: 1 bis 100 Codes auf einmal.",
-      "expiryInPast": "Das Ablaufdatum liegt in der Vergangenheit.",
-      "invalidWebLoginCode": "Der Code hat die Form ABCD-1234 (Buchstaben und Ziffern)."
+      "expiryInPast": "Das Ablaufdatum liegt in der Vergangenheit."
     },
     "trsPng": {
       "fileTooLarge": "Die Datei ist zu groß (höchstens 5 MB).",
@@ -649,12 +653,6 @@
       "invalidFile": "Das ist keine gültige Preset-Datei.",
       "fileTooLarge": "Die Preset-Datei ist zu groß.",
       "noneSelected": "Kein Preset ausgewählt."
-    },
-    "trsWebLogin": {
-      "invalidCode": "Diesen Anmeldecode gibt es nicht – vergleiche ihn mit dem Code auf der Website.",
-      "expired": "Der Anmeldecode ist abgelaufen – lade die Website neu und gib den neuen Code ein.",
-      "notAdmin": "Nur TRS-Admins können sich auf der Website anmelden.",
-      "alreadyUsed": "Dieser Anmeldecode wurde schon bestätigt."
     },
     "clips": {
       "bufferRange": "Die Clip-Länge muss zwischen {min} und {max} Sekunden liegen",
@@ -758,7 +756,6 @@
       "invalidDecision": "Unbekannte Entscheidung.",
       "shortenNeedsEnd": "Zum Verkürzen bitte ein neues Ende wählen.",
       "invalidNameQuery": "Namen bestehen aus 1–16 Buchstaben, Ziffern oder _.",
-      "invalidRole": "Unbekannte Rolle.",
       "invalidRoom": "Ungültige Welt.",
       "emptySearch": "Bitte einen Suchbegriff eingeben."
     },
@@ -771,6 +768,9 @@
       "storageFull": "Der TRS-Server hat gerade keinen Platz – bitte später erneut versuchen.",
       "notFound": "Dieses geteilte Bild gibt es nicht (mehr).",
       "invalidId": "Ungültiger Link."
+    },
+    "applications": {
+      "invalidId": "Ungültige Bewerbung."
     }
   },
   "browse": {
@@ -2555,10 +2555,11 @@
       "import": "import prism multimc curseforge übernehmen",
       "modpacks": "modpack pack installieren",
       "dataDir": "ordner explorer dateien",
-      "webLogin": "website webseite web login anmelden admin code browser",
       "clips": "clips aufnahme aufnehmen video replay shadowplay",
       "social": "freunde chat nachrichten gruppen sozial anfragen",
-      "admin": "team moderation meldungen strafen einsprüche spieler admin verwaltung"
+      "admin": "team moderation meldungen strafen einsprüche spieler admin verwaltung",
+      "websiteLogin": "website anmelden login microsoft browser team",
+      "myApplications": "bewerbungen bewerben team stelle status"
     },
     "actions": {
       "newInstance": {
@@ -2577,8 +2578,11 @@
         "title": "Datenverzeichnis öffnen",
         "subtitle": "Ordner mit Instanzen und Einstellungen"
       },
-      "webLogin": {
-        "subtitle": "Code von {host} eingeben"
+      "websiteLogin": {
+        "subtitle": "Öffnet {host} – Anmeldung mit Microsoft"
+      },
+      "myApplications": {
+        "subtitle": "Status und Antworten deiner Team-Bewerbungen"
       }
     }
   },
@@ -2805,8 +2809,7 @@
       "minCount": "Mindestens 1 Code.",
       "maxCount": "Höchstens 100 Codes auf einmal.",
       "invalidExpiry": "Ungültiges Ablaufdatum.",
-      "expiryPast": "Das Ablaufdatum liegt in der Vergangenheit.",
-      "webLoginCode": "Der Code hat die Form ABCD-1234 (Buchstaben und Ziffern)."
+      "expiryPast": "Das Ablaufdatum liegt in der Vergangenheit."
     },
     "unlock": {
       "own": "Eigener",
@@ -3585,22 +3588,6 @@
     "imageOf": "Bild {n} von {total}",
     "versions": "Versionen",
     "more": "{n} weitere Bilder"
-  },
-  "webLogin": {
-    "title": "Website-Anmeldung bestätigen",
-    "intro": "Die Website {host} zeigt dir einen Code. Gib ihn hier ein, um dich dort mit deinem TRS-Konto anzumelden.",
-    "codeLabel": "Code von der Website",
-    "question": "Anmelden als {name} auf {host}?",
-    "codeShown": "Code:",
-    "warningTitle": "Nur bestätigen, wenn du gerade selbst auf der Website bist.",
-    "warning": "Gib diesen Code niemals weiter. Wer dich danach fragt, will dein Konto übernehmen.",
-    "approve": "Anmeldung bestätigen",
-    "approving": "Wird bestätigt …",
-    "done": "Anmeldung bestätigt – du kannst zu {host} zurückkehren.",
-    "needsServices": "Schalte zuerst die TRS-Dienste ein (Einstellungen → Datenschutz).",
-    "needsAccount": "Bitte melde dich zuerst unter „Accounts“ mit deinem Minecraft-Konto an.",
-    "settingsDescription": "Im Admin-Bereich auf {host} mit dem dort angezeigten Code anmelden.",
-    "open": "Code eingeben"
   },
   "clips": {
     "title": "Clips",
@@ -4459,11 +4446,16 @@
   "team": {
     "title": "Moderation",
     "subtitle": "Team-Bereich der TRS-Dienste",
-    "notStaff": "Dieser Bereich ist nur für das TRS-Team (Admins und Moderatoren).",
+    "notStaff": "Dieser Bereich ist nur für das TRS-Team.",
     "roles": {
       "admin": "Admin",
       "moderator": "Moderator",
-      "system": "System"
+      "system": "System",
+      "owner": "Owner",
+      "senior_moderator": "Senior-Moderator",
+      "supporter": "Supporter",
+      "content": "Content-Team",
+      "recruiter": "Bewerbungs-Team"
     },
     "nav": {
       "label": "Bereiche der Moderation",
@@ -4478,7 +4470,11 @@
       "wordFilter": "Wortfilter",
       "roles": "Rollen",
       "audit": "Audit-Log",
-      "keysHint": "Mit ? siehst du alle Tastenkürzel."
+      "keysHint": "Mit ? siehst du alle Tastenkürzel.",
+      "applications": "Bewerbungen",
+      "jobs": "Stellen",
+      "website": "Auf der Website",
+      "websiteHint": "Öffnet die Website im Browser (Anmeldung mit Microsoft)."
     },
     "search": {
       "placeholder": "Spieler, UUIDs, Meldungs-IDs, #Strafen, Umhänge suchen …",
@@ -4514,8 +4510,9 @@
       "sortDefault": "Standard-Reihenfolge",
       "oldest": "Älteste zuerst",
       "newest": "Neueste zuerst",
-      "readOnly": "Du kannst das ansehen – ändern dürfen nur Admins.",
-      "adminOnly": "Das sehen nur Admins."
+      "readOnly": "Deine Rolle kann das ansehen, aber nicht ändern.",
+      "noPermission": "Diesen Bereich darf deine Rolle nicht öffnen.",
+      "nothingAllowed": "Deine Rolle hat im Launcher keinen Bereich – nutze die Website."
     },
     "bulk": {
       "done": "{updated} geändert, {skipped} übersprungen."
@@ -4545,7 +4542,7 @@
       "kind": "Art",
       "duration": "Dauer",
       "notAllowed": "Für deine Rolle nicht erlaubt",
-      "limitHint": "Als Moderator kannst du Strafen bis {days} Tage vergeben (Verwarnungen bis {warnDays} Tage). Dauerhafte Strafen und Konto-Banns vergeben Admins.",
+      "limitHint": "Deine Rolle darf Strafen bis {days} Tage vergeben (Verwarnungen bis {warnDays} Tage). Dauerhafte Strafen brauchen ein eigenes Recht.",
       "minutes": "= {n} Minuten",
       "units": {
         "minutes": "Minuten",
@@ -4565,7 +4562,8 @@
         "reasonCode": "Bitte eine Grund-Vorlage wählen.",
         "reason": "Öffentlicher Grund: eine Zeile, höchstens 500 Zeichen.",
         "note": "Interne Notiz: höchstens 2000 Zeichen."
-      }
+      },
+      "noPermanent": "Dauerhafte Strafen brauchen ein eigenes Recht."
     },
     "sanction": {
       "newTitle": "Neue Strafe für {name}",
@@ -4584,8 +4582,9 @@
       "replaced": "durch eine Entscheidung des Teams ersetzt",
       "answer": "Antwort ({name}):",
       "decideAppeal": "Über Einspruch entscheiden",
-      "adminLocked": "Von einem Admin vergeben – nur Admins können sie ändern.",
-      "changeEnd": "Ende ändern"
+      "changeEnd": "Ende ändern",
+      "rankLocked": "Von jemandem mit höherem Rang vergeben – du kannst sie nicht ändern.",
+      "permissionLocked": "Diese Strafe darf deine Rolle nicht ändern."
     },
     "change": {
       "liftTitle": "{kind} aufheben?",
@@ -4602,7 +4601,8 @@
       "reasonRequired": "Bitte eine Begründung eingeben.",
       "lift": "Aufheben",
       "save": "Ende speichern",
-      "done": "Strafe geändert."
+      "done": "Strafe geändert.",
+      "cannotExtend": "Diese Strafart darf deine Rolle nicht verlängern – nur verkürzen."
     },
     "appeals": {
       "decideTitle": "Einspruch von {name}",
@@ -4628,7 +4628,7 @@
         "decided": "Entschieden",
         "all": "Alle"
       },
-      "lead": "Gegen jede Strafe geht ein Einspruch. Moderatoren entscheiden nicht über Einsprüche gegen eigene Strafen.",
+      "lead": "Gegen jede Strafe gibt es einen Einspruch. Über Einsprüche gegen eigene Strafen entscheidet jemand anderes.",
       "noneOpen": "Keine offenen Einsprüche.",
       "sanctionLine": "Strafe #{id} · bis {end}",
       "own": "Deine eigene Strafe – darüber entscheidet jemand anderes."
@@ -4674,7 +4674,9 @@
       "disk": "Freier Speicher",
       "diskOf": "{free} von {total}",
       "recent": "Letzte Aktionen",
-      "allAudit": "Audit-Log"
+      "allAudit": "Audit-Log",
+      "applications": "Bewerbungen",
+      "newApplications": "{n} neu"
     },
     "reports": {
       "highPriority": "Hohe Priorität",
@@ -4693,7 +4695,11 @@
       },
       "openFile": "Spieler-Akte öffnen",
       "sanction": "Strafe …",
-      "sanctionFor": "Strafe für {name}"
+      "sanctionFor": "Strafe für {name}",
+      "contentHidden": "Inhalt nur mit dem Recht „Inhalte von Meldungen sehen“ sichtbar. Du siehst, wer wen wann und warum gemeldet hat.",
+      "contentHiddenShort": "Inhalt nur mit Recht sichtbar",
+      "messageHidden": "Inhalt nur mit Recht sichtbar",
+      "readOnly": "Deine Rolle kann Meldungen ansehen, aber nicht bearbeiten."
     },
     "players": {
       "nameRule": "Minecraft-Namen (1–16 Buchstaben, Ziffern oder _) oder eine UUID eingeben.",
@@ -4727,8 +4733,9 @@
       "sessions": "Sitzungen",
       "cannot": {
         "self": "Dich selbst kannst du nicht bestrafen.",
-        "admin": "Admins können nicht bestraft werden.",
-        "staff": "Team-Mitglieder bestrafen nur Admins."
+        "admin": "Owner können nicht bestraft werden.",
+        "staff": "Team-Mitglieder kann nur jemand mit höherem Rang bestrafen.",
+        "permission": "Deine Rolle darf keine Strafen vergeben."
       },
       "activeSanctions": "Aktive Strafen",
       "warnings": "Verwarnungen (aktiv / gesamt)",
@@ -4815,23 +4822,6 @@
     "wordFilter": {
       "search": "Im Filter suchen"
     },
-    "rolesPage": {
-      "added": "{name} ist jetzt {role}.",
-      "removed": "{name} ist nicht mehr im Team.",
-      "fixed": "Fest in der Server-Konfiguration",
-      "granted": "seit {date} · von {name}",
-      "role": "Rolle",
-      "add": "Zum Team hinzufügen",
-      "search": "Spieler nach Namen suchen",
-      "picked": "Ausgewählt: {name}",
-      "note": "Notiz (optional)",
-      "help": {
-        "moderator": "Moderatoren bearbeiten Meldungen und Einsprüche, verwarnen, vergeben Strafen bis 7 Tage und prüfen Uploads.",
-        "admin": "Admins dürfen alles: dauerhafte Strafen, Konto-Banns, Rollen, Codes und den Wortfilter."
-      },
-      "removeTitle": "{name} aus dem Team entfernen?",
-      "removeText": "Die Rolle endet sofort, auch eine Website-Sitzung."
-    },
     "audit": {
       "area": "Bereich",
       "from": "Ab",
@@ -4849,6 +4839,40 @@
         "player": "Notizen",
         "hosting": "Welten"
       }
+    },
+    "errors": {
+      "missingPermission": "Deiner Rolle fehlt das Recht „{permission}“."
+    },
+    "permissions": {
+      "dashboard_view": "Übersicht sehen",
+      "stats_view": "Statistiken sehen",
+      "audit_view": "Audit-Log sehen",
+      "reports_view": "Meldungen sehen",
+      "reports_content": "Inhalte von Meldungen sehen",
+      "reports_handle": "Meldungen bearbeiten",
+      "sanctions_warn": "Verwarnen",
+      "sanctions_mute": "Im Chat stummschalten",
+      "sanctions_social": "Sozial-Sperre",
+      "sanctions_upload": "Upload-Sperre",
+      "sanctions_hosting": "Hosting-Sperre",
+      "sanctions_ban": "Konten sperren",
+      "sanctions_permanent": "Dauerhafte Strafen",
+      "sanctions_lift": "Strafen aufheben",
+      "appeals_handle": "Über Einsprüche entscheiden",
+      "players_view": "Spieler sehen",
+      "players_notes": "Spieler-Notizen schreiben",
+      "uploads_review": "Umhänge und Kosmetik prüfen",
+      "uploads_delete": "Umhänge und Kosmetik löschen",
+      "items_grant": "Umhänge und Kosmetik vergeben",
+      "worlds_view": "Welten sehen",
+      "worlds_close": "Welten schließen",
+      "codes": "Codes",
+      "wordfilter": "Wortfilter",
+      "roles_manage": "Rollen verwalten",
+      "applications_view": "Bewerbungen sehen",
+      "applications_review": "Bewerbungen prüfen",
+      "applications_manage": "Stellen verwalten",
+      "applications_decide": "Über Bewerbungen entscheiden"
     }
   },
   "trsChoice": {
@@ -4914,6 +4938,62 @@
     "deleteDialog": {
       "title": "Link löschen?",
       "text": "Das Bild wird vom TRS-Server entfernt und der Link funktioniert nicht mehr. Dein Screenshot auf diesem PC bleibt."
+    }
+  },
+  "websiteLogin": {
+    "title": "Website",
+    "description": "Auf {host} meldest du dich mit dem Microsoft-Konto an, dem Minecraft gehört – für Bewerbungen ins Team und, als Team-Mitglied, für den vollen Team-Bereich.",
+    "button": "Auf der Website mit Microsoft anmelden",
+    "hint": "Die Website meldet nur noch mit Microsoft an. Öffnet sich im Browser."
+  },
+  "applications": {
+    "status": {
+      "new": "Eingegangen",
+      "review": "In Prüfung",
+      "interview": "Gespräch",
+      "accepted": "Angenommen",
+      "rejected": "Abgelehnt",
+      "withdrawn": "Zurückgezogen"
+    },
+    "statusHelp": {
+      "new": "Das Team hat sie noch nicht angesehen.",
+      "review": "Das Team prüft deine Bewerbung.",
+      "interview": "Das Team möchte mit dir sprechen – achte auf eine Nachricht.",
+      "accepted": "Willkommen im Team!",
+      "rejected": "Diesmal hat es leider nicht geklappt.",
+      "withdrawn": "Du hast diese Bewerbung zurückgezogen."
+    },
+    "toast": {
+      "title": "Deine Bewerbung: {job}",
+      "status": {
+        "new": "Eingegangen – danke für deine Bewerbung!",
+        "review": "Das Team prüft sie jetzt.",
+        "interview": "Einladung zum Gespräch.",
+        "accepted": "Angenommen – willkommen im Team!",
+        "rejected": "Diesmal leider nicht angenommen.",
+        "withdrawn": "Zurückgezogen."
+      },
+      "withResponse": "{status} – „{response}“",
+      "view": "Anzeigen"
+    },
+    "dialog": {
+      "title": "Meine Bewerbungen",
+      "subtitle": "Bewerbungen fürs TRS-Team mit Status und Antwort",
+      "none": "Du hast dich noch nicht beworben.",
+      "noneHint": "Offene Stellen und das Bewerbungsformular gibt es auf der Website.",
+      "sent": "gesendet {date}",
+      "answer": "Antwort des Teams · {date}",
+      "withdraw": "Zurückziehen",
+      "withdrawConfirm": "Diese Bewerbung wirklich zurückziehen?",
+      "withdrawn": "Bewerbung für „{job}“ zurückgezogen.",
+      "footer": "Beworben wird auf der Website (Anmeldung mit Microsoft).",
+      "jobs": "Offene Stellen",
+      "website": "Auf der Website"
+    },
+    "settings": {
+      "title": "Meine Bewerbungen",
+      "description": "Deine Bewerbungen fürs Team mit Status und Antwort des Teams.",
+      "button": "Anzeigen"
     }
   }
 }

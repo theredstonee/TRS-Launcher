@@ -287,7 +287,12 @@
       "cannot_change_self": "No puedes cambiar tu propio rol.",
       "role_not_found": "Este jugador no tiene rol en el equipo.",
       "note_not_found": "Esta nota no existe (ya).",
-      "bulk_too_large": "Como máximo 50 entradas a la vez."
+      "bulk_too_large": "Como máximo 50 entradas a la vez.",
+      "web_login_removed": "El inicio de sesión con código del launcher ya no existe – inicia sesión en la web con Microsoft: {url}",
+      "missing_permission": "A tu rol le falta un permiso para esto.",
+      "rank_too_low": "Tu rango en el equipo es demasiado bajo para esto.",
+      "application_closed": "Esta solicitud ya está cerrada.",
+      "application_not_found": "Esta solicitud no existe (ya)."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -585,8 +590,7 @@
       "invalidCodeId": "ID de código no válido.",
       "redemptionsRange": "Canjes por código: de 1 a 100 000.",
       "countRange": "Cantidad: de 1 a 100 códigos a la vez.",
-      "expiryInPast": "La fecha de caducidad ya ha pasado.",
-      "invalidWebLoginCode": "El código tiene la forma ABCD-1234 (letras y números)."
+      "expiryInPast": "La fecha de caducidad ya ha pasado."
     },
     "trsPng": {
       "fileTooLarge": "El archivo es demasiado grande (máx. 5 MB).",
@@ -649,12 +653,6 @@
       "invalidFile": "Este no es un archivo de preset válido.",
       "fileTooLarge": "El archivo de preset es demasiado grande.",
       "noneSelected": "No hay ningún preset seleccionado."
-    },
-    "trsWebLogin": {
-      "invalidCode": "Este código de inicio de sesión no existe: compáralo con el código de la web.",
-      "expired": "El código de inicio de sesión ha caducado: recarga la web e introduce el nuevo código.",
-      "notAdmin": "Solo los administradores de TRS pueden iniciar sesión en la web.",
-      "alreadyUsed": "Este código de inicio de sesión ya se ha confirmado."
     },
     "clips": {
       "bufferRange": "La duración del clip debe estar entre {min} y {max} segundos",
@@ -758,7 +756,6 @@
       "invalidDecision": "Decisión desconocida.",
       "shortenNeedsEnd": "Para acortar, elige un nuevo final.",
       "invalidNameQuery": "Los nombres tienen de 1 a 16 letras, cifras o _.",
-      "invalidRole": "Rol desconocido.",
       "invalidRoom": "Mundo no válido.",
       "emptySearch": "Escribe un término de búsqueda."
     },
@@ -771,6 +768,9 @@
       "storageFull": "El servidor TRS no tiene espacio ahora mismo; inténtalo más tarde.",
       "notFound": "Esta imagen compartida no existe (ya).",
       "invalidId": "Enlace no válido."
+    },
+    "applications": {
+      "invalidId": "Solicitud no válida."
     }
   },
   "browse": {
@@ -2555,10 +2555,11 @@
       "import": "importar prism multimc curseforge migrar",
       "modpacks": "modpack paquete instalar",
       "dataDir": "carpeta explorador archivos",
-      "webLogin": "web sitio login iniciar sesión admin código navegador",
       "clips": "clips grabación grabar vídeo repetición shadowplay",
       "social": "amigos chat mensajes grupos social solicitudes",
-      "admin": "equipo moderación reportes sanciones apelaciones jugadores admin"
+      "admin": "equipo moderación reportes sanciones apelaciones jugadores admin",
+      "websiteLogin": "web iniciar sesión login microsoft navegador equipo",
+      "myApplications": "solicitudes solicitar equipo puesto estado"
     },
     "actions": {
       "newInstance": {
@@ -2577,8 +2578,11 @@
         "title": "Abrir carpeta de datos",
         "subtitle": "Carpeta con instancias y ajustes"
       },
-      "webLogin": {
-        "subtitle": "Introduce el código de {host}"
+      "websiteLogin": {
+        "subtitle": "Abre {host} – inicio de sesión con Microsoft"
+      },
+      "myApplications": {
+        "subtitle": "Estado y respuestas de tus solicitudes al equipo"
       }
     }
   },
@@ -2805,8 +2809,7 @@
       "minCount": "Al menos 1 código.",
       "maxCount": "Máximo 100 códigos a la vez.",
       "invalidExpiry": "Fecha de caducidad no válida.",
-      "expiryPast": "La fecha de caducidad ya ha pasado.",
-      "webLoginCode": "El código tiene la forma ABCD-1234 (letras y números)."
+      "expiryPast": "La fecha de caducidad ya ha pasado."
     },
     "unlock": {
       "own": "Propia",
@@ -3585,22 +3588,6 @@
     "imageOf": "Imagen {n} de {total}",
     "versions": "Versiones",
     "more": "{n} imágenes más"
-  },
-  "webLogin": {
-    "title": "Confirmar inicio de sesión en la web",
-    "intro": "La web {host} te muestra un código. Introdúcelo aquí para iniciar sesión allí con tu cuenta TRS.",
-    "codeLabel": "Código de la web",
-    "question": "¿Iniciar sesión como {name} en {host}?",
-    "codeShown": "Código:",
-    "warningTitle": "Confirma solo si ahora mismo estás tú en la web.",
-    "warning": "Nunca le des este código a nadie. Quien te lo pida quiere quedarse con tu cuenta.",
-    "approve": "Confirmar inicio de sesión",
-    "approving": "Confirmando …",
-    "done": "Inicio de sesión confirmado: puedes volver a {host}.",
-    "needsServices": "Activa primero los servicios TRS (Ajustes → Privacidad).",
-    "needsAccount": "Primero inicia sesión con tu cuenta de Minecraft en «Cuentas».",
-    "settingsDescription": "Inicia sesión en el área de administración de {host} con el código que aparece allí.",
-    "open": "Introducir código"
   },
   "clips": {
     "title": "Clips",
@@ -4459,11 +4446,16 @@
   "team": {
     "title": "Moderación",
     "subtitle": "Área del equipo de los servicios TRS",
-    "notStaff": "Esta área es solo para el equipo TRS (administradores y moderadores).",
+    "notStaff": "Esta área es solo para el equipo TRS.",
     "roles": {
       "admin": "Admin",
       "moderator": "Moderador",
-      "system": "Sistema"
+      "system": "Sistema",
+      "owner": "Propietario",
+      "senior_moderator": "Moderador sénior",
+      "supporter": "Soporte",
+      "content": "Equipo de contenido",
+      "recruiter": "Equipo de selección"
     },
     "nav": {
       "label": "Áreas de moderación",
@@ -4478,7 +4470,11 @@
       "wordFilter": "Filtro de palabras",
       "roles": "Roles",
       "audit": "Registro de auditoría",
-      "keysHint": "Pulsa ? para ver los atajos de teclado."
+      "keysHint": "Pulsa ? para ver los atajos de teclado.",
+      "applications": "Solicitudes",
+      "jobs": "Puestos",
+      "website": "En la web",
+      "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft)."
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -4514,8 +4510,9 @@
       "sortDefault": "Orden predeterminado",
       "oldest": "Más antiguos primero",
       "newest": "Más recientes primero",
-      "readOnly": "Puedes verlo – solo los administradores pueden cambiarlo.",
-      "adminOnly": "Solo los administradores pueden ver esto."
+      "readOnly": "Tu rol puede ver esto, pero no cambiarlo.",
+      "noPermission": "Tu rol no puede abrir esta área.",
+      "nothingAllowed": "Tu rol no tiene ninguna área en el launcher – usa la web."
     },
     "bulk": {
       "done": "{updated} modificados, {skipped} omitidos."
@@ -4545,7 +4542,7 @@
       "kind": "Tipo",
       "duration": "Duración",
       "notAllowed": "No permitido para tu rol",
-      "limitHint": "Como moderador puedes asignar sanciones de hasta {days} días (advertencias hasta {warnDays} días). Las sanciones permanentes y las suspensiones de cuenta son para administradores.",
+      "limitHint": "Tu rol puede imponer sanciones de hasta {days} días (advertencias hasta {warnDays} días). Las sanciones permanentes necesitan un permiso propio.",
       "minutes": "= {n} minutos",
       "units": {
         "minutes": "minutos",
@@ -4565,7 +4562,8 @@
         "reasonCode": "Elige una plantilla de motivo.",
         "reason": "Motivo público: una línea, máximo 500 caracteres.",
         "note": "Nota interna: máximo 2000 caracteres."
-      }
+      },
+      "noPermanent": "Las sanciones permanentes necesitan un permiso propio."
     },
     "sanction": {
       "newTitle": "Nueva sanción para {name}",
@@ -4584,8 +4582,9 @@
       "replaced": "sustituida por una decisión del equipo",
       "answer": "Respuesta ({name}):",
       "decideAppeal": "Resolver apelación",
-      "adminLocked": "Aplicada por un admin – solo los admins pueden cambiarla.",
-      "changeEnd": "Cambiar fin"
+      "changeEnd": "Cambiar fin",
+      "rankLocked": "Impuesta por alguien de rango superior – no puedes cambiarla.",
+      "permissionLocked": "Tu rol no puede cambiar esta sanción."
     },
     "change": {
       "liftTitle": "¿Levantar {kind}?",
@@ -4602,7 +4601,8 @@
       "reasonRequired": "Escribe una justificación.",
       "lift": "Levantar",
       "save": "Guardar fin",
-      "done": "Sanción actualizada."
+      "done": "Sanción actualizada.",
+      "cannotExtend": "Tu rol no puede alargar este tipo de sanción, solo acortarla."
     },
     "appeals": {
       "decideTitle": "Apelación de {name}",
@@ -4628,7 +4628,7 @@
         "decided": "Resueltas",
         "all": "Todas"
       },
-      "lead": "Cada sanción se puede apelar una vez. Los moderadores no resuelven apelaciones contra sus propias sanciones.",
+      "lead": "Cada sanción se puede apelar una vez. Nadie decide sobre apelaciones contra sus propias sanciones.",
       "noneOpen": "No hay apelaciones abiertas.",
       "sanctionLine": "Sanción #{id} · hasta {end}",
       "own": "Tu propia sanción – decide otra persona."
@@ -4674,7 +4674,9 @@
       "disk": "Espacio libre",
       "diskOf": "{free} de {total}",
       "recent": "Acciones recientes",
-      "allAudit": "Registro de auditoría"
+      "allAudit": "Registro de auditoría",
+      "applications": "Solicitudes",
+      "newApplications": "{n} nuevas"
     },
     "reports": {
       "highPriority": "Alta prioridad",
@@ -4693,7 +4695,11 @@
       },
       "openFile": "Abrir ficha del jugador",
       "sanction": "Sanción …",
-      "sanctionFor": "Sanción para {name}"
+      "sanctionFor": "Sanción para {name}",
+      "contentHidden": "El contenido solo es visible con el permiso «Ver el contenido de las denuncias». Ves quién denunció a quién, cuándo y por qué.",
+      "contentHiddenShort": "Contenido visible solo con permiso",
+      "messageHidden": "Contenido visible solo con permiso",
+      "readOnly": "Tu rol puede ver las denuncias, pero no gestionarlas."
     },
     "players": {
       "nameRule": "Escribe un nombre de Minecraft (1–16 letras, cifras o _) o un UUID.",
@@ -4727,8 +4733,9 @@
       "sessions": "Sesiones",
       "cannot": {
         "self": "No puedes sancionarte a ti mismo.",
-        "admin": "Los administradores no pueden ser sancionados.",
-        "staff": "Solo los administradores sancionan a miembros del equipo."
+        "admin": "Los propietarios no pueden ser sancionados.",
+        "staff": "Solo alguien de rango superior puede sancionar a miembros del equipo.",
+        "permission": "Tu rol no puede imponer sanciones."
       },
       "activeSanctions": "Sanciones activas",
       "warnings": "Advertencias (activas / total)",
@@ -4815,23 +4822,6 @@
     "wordFilter": {
       "search": "Buscar en el filtro"
     },
-    "rolesPage": {
-      "added": "{name} ahora es {role}.",
-      "removed": "{name} ya no está en el equipo.",
-      "fixed": "Fijo en la configuración del servidor",
-      "granted": "desde {date} · por {name}",
-      "role": "Rol",
-      "add": "Añadir al equipo",
-      "search": "Buscar jugador por nombre",
-      "picked": "Seleccionado: {name}",
-      "note": "Nota (opcional)",
-      "help": {
-        "moderator": "Los moderadores gestionan reportes y apelaciones, advierten, aplican sanciones de hasta 7 días y revisan subidas.",
-        "admin": "Los administradores pueden hacerlo todo: sanciones permanentes, suspensiones de cuenta, roles, códigos y el filtro de palabras."
-      },
-      "removeTitle": "¿Quitar a {name} del equipo?",
-      "removeText": "El rol termina al instante, incluida cualquier sesión en la web."
-    },
     "audit": {
       "area": "Área",
       "from": "Desde",
@@ -4849,6 +4839,40 @@
         "player": "Notas",
         "hosting": "Mundos"
       }
+    },
+    "errors": {
+      "missingPermission": "A tu rol le falta el permiso «{permission}»."
+    },
+    "permissions": {
+      "dashboard_view": "Ver el resumen",
+      "stats_view": "Ver estadísticas",
+      "audit_view": "Ver el registro de auditoría",
+      "reports_view": "Ver denuncias",
+      "reports_content": "Ver el contenido de las denuncias",
+      "reports_handle": "Gestionar denuncias",
+      "sanctions_warn": "Advertir",
+      "sanctions_mute": "Silenciar en el chat",
+      "sanctions_social": "Bloqueo social",
+      "sanctions_upload": "Bloqueo de subidas",
+      "sanctions_hosting": "Bloqueo de alojamiento",
+      "sanctions_ban": "Bloquear cuentas",
+      "sanctions_permanent": "Sanciones permanentes",
+      "sanctions_lift": "Levantar sanciones",
+      "appeals_handle": "Decidir apelaciones",
+      "players_view": "Ver jugadores",
+      "players_notes": "Escribir notas de jugadores",
+      "uploads_review": "Revisar capas y cosméticos",
+      "uploads_delete": "Borrar capas y cosméticos",
+      "items_grant": "Dar capas y cosméticos",
+      "worlds_view": "Ver mundos",
+      "worlds_close": "Cerrar mundos",
+      "codes": "Códigos",
+      "wordfilter": "Filtro de palabras",
+      "roles_manage": "Gestionar roles",
+      "applications_view": "Ver solicitudes",
+      "applications_review": "Revisar solicitudes",
+      "applications_manage": "Gestionar puestos",
+      "applications_decide": "Decidir solicitudes"
     }
   },
   "trsChoice": {
@@ -4914,6 +4938,62 @@
     "deleteDialog": {
       "title": "¿Eliminar enlace?",
       "text": "La imagen se elimina del servidor TRS y el enlace deja de funcionar. Tu captura en este PC se queda."
+    }
+  },
+  "websiteLogin": {
+    "title": "Sitio web",
+    "description": "En {host} inicias sesión con la cuenta de Microsoft a la que pertenece Minecraft – para solicitudes al equipo y, como miembro del equipo, para toda el área del equipo.",
+    "button": "Iniciar sesión en la web con Microsoft",
+    "hint": "La web solo inicia sesión con Microsoft. Se abre en tu navegador."
+  },
+  "applications": {
+    "status": {
+      "new": "Recibida",
+      "review": "En revisión",
+      "interview": "Entrevista",
+      "accepted": "Aceptada",
+      "rejected": "Rechazada",
+      "withdrawn": "Retirada"
+    },
+    "statusHelp": {
+      "new": "El equipo aún no la ha visto.",
+      "review": "El equipo está revisando tu solicitud.",
+      "interview": "El equipo quiere hablar contigo – atento a un mensaje.",
+      "accepted": "¡Bienvenido al equipo!",
+      "rejected": "Esta vez no ha podido ser.",
+      "withdrawn": "Retiraste esta solicitud."
+    },
+    "toast": {
+      "title": "Tu solicitud: {job}",
+      "status": {
+        "new": "Recibida – ¡gracias por presentarte!",
+        "review": "El equipo la está revisando.",
+        "interview": "Invitación a una entrevista.",
+        "accepted": "Aceptada – ¡bienvenido al equipo!",
+        "rejected": "Esta vez no ha sido aceptada.",
+        "withdrawn": "Retirada."
+      },
+      "withResponse": "{status} – «{response}»",
+      "view": "Ver"
+    },
+    "dialog": {
+      "title": "Mis solicitudes",
+      "subtitle": "Solicitudes para el equipo TRS con estado y respuesta",
+      "none": "Aún no has enviado ninguna solicitud.",
+      "noneHint": "Los puestos abiertos y el formulario están en la web.",
+      "sent": "enviada {date}",
+      "answer": "Respuesta del equipo · {date}",
+      "withdraw": "Retirar",
+      "withdrawConfirm": "¿Seguro que quieres retirar esta solicitud?",
+      "withdrawn": "Solicitud para «{job}» retirada.",
+      "footer": "Las solicitudes se envían en la web (inicio de sesión con Microsoft).",
+      "jobs": "Puestos abiertos",
+      "website": "En la web"
+    },
+    "settings": {
+      "title": "Mis solicitudes",
+      "description": "Tus solicitudes al equipo con estado y la respuesta del equipo.",
+      "button": "Ver"
     }
   }
 }

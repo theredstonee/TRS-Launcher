@@ -287,7 +287,12 @@
       "cannot_change_self": "Je kunt je eigen rol niet wijzigen.",
       "role_not_found": "Deze speler heeft geen teamrol.",
       "note_not_found": "Deze notitie bestaat niet (meer).",
-      "bulk_too_large": "Hoogstens 50 items tegelijk."
+      "bulk_too_large": "Hoogstens 50 items tegelijk.",
+      "web_login_removed": "Inloggen met een launchercode bestaat niet meer – log op de website in met Microsoft: {url}",
+      "missing_permission": "Je rol mist hiervoor een recht.",
+      "rank_too_low": "Je rang in het team is hiervoor te laag.",
+      "application_closed": "Deze sollicitatie is al afgesloten.",
+      "application_not_found": "Deze sollicitatie bestaat niet (meer)."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -585,8 +590,7 @@
       "invalidCodeId": "Ongeldige code-ID.",
       "redemptionsRange": "Inwisselingen per code: 1 tot 100.000.",
       "countRange": "Aantal: 1 tot 100 codes tegelijk.",
-      "expiryInPast": "De vervaldatum ligt in het verleden.",
-      "invalidWebLoginCode": "De code heeft de vorm ABCD-1234 (letters en cijfers)."
+      "expiryInPast": "De vervaldatum ligt in het verleden."
     },
     "trsPng": {
       "fileTooLarge": "Het bestand is te groot (max. 5 MB).",
@@ -649,12 +653,6 @@
       "invalidFile": "Dit is geen geldig presetbestand.",
       "fileTooLarge": "Het presetbestand is te groot.",
       "noneSelected": "Geen preset geselecteerd."
-    },
-    "trsWebLogin": {
-      "invalidCode": "Deze aanmeldcode bestaat niet – vergelijk hem met de code op de website.",
-      "expired": "De aanmeldcode is verlopen – herlaad de website en voer de nieuwe code in.",
-      "notAdmin": "Alleen TRS-beheerders kunnen zich op de website aanmelden.",
-      "alreadyUsed": "Deze aanmeldcode is al bevestigd."
     },
     "clips": {
       "bufferRange": "De cliplengte moet tussen {min} en {max} seconden liggen",
@@ -758,7 +756,6 @@
       "invalidDecision": "Onbekende beslissing.",
       "shortenNeedsEnd": "Kies een nieuw einde om in te korten.",
       "invalidNameQuery": "Namen hebben 1–16 letters, cijfers of _.",
-      "invalidRole": "Onbekende rol.",
       "invalidRoom": "Ongeldige wereld.",
       "emptySearch": "Voer een zoekterm in."
     },
@@ -771,6 +768,9 @@
       "storageFull": "De TRS-server heeft nu geen ruimte – probeer het later opnieuw.",
       "notFound": "Deze gedeelde afbeelding bestaat niet (meer).",
       "invalidId": "Ongeldige link."
+    },
+    "applications": {
+      "invalidId": "Ongeldige sollicitatie."
     }
   },
   "browse": {
@@ -2555,10 +2555,11 @@
       "import": "importeren prism multimc curseforge migreren",
       "modpacks": "modpack pack installeren",
       "dataDir": "map verkenner bestanden",
-      "webLogin": "website web login aanmelden admin code browser",
       "clips": "clips opname opnemen video replay shadowplay",
       "social": "vrienden chat berichten groepen sociaal verzoeken",
-      "admin": "team moderatie meldingen straffen bezwaren spelers admin"
+      "admin": "team moderatie meldingen straffen bezwaren spelers admin",
+      "websiteLogin": "website inloggen login microsoft browser team",
+      "myApplications": "sollicitaties solliciteren team functie status"
     },
     "actions": {
       "newInstance": {
@@ -2577,8 +2578,11 @@
         "title": "Gegevensmap openen",
         "subtitle": "Map met instanties en instellingen"
       },
-      "webLogin": {
-        "subtitle": "Code van {host} invoeren"
+      "websiteLogin": {
+        "subtitle": "Opent {host} – inloggen met Microsoft"
+      },
+      "myApplications": {
+        "subtitle": "Status en antwoorden van je teamsollicitaties"
       }
     }
   },
@@ -2805,8 +2809,7 @@
       "minCount": "Minstens 1 code.",
       "maxCount": "Maximaal 100 codes tegelijk.",
       "invalidExpiry": "Ongeldige vervaldatum.",
-      "expiryPast": "De vervaldatum ligt in het verleden.",
-      "webLoginCode": "De code heeft de vorm ABCD-1234 (letters en cijfers)."
+      "expiryPast": "De vervaldatum ligt in het verleden."
     },
     "unlock": {
       "own": "Eigen",
@@ -3585,22 +3588,6 @@
     "imageOf": "Afbeelding {n} van {total}",
     "versions": "Versies",
     "more": "Nog {n} afbeeldingen"
-  },
-  "webLogin": {
-    "title": "Aanmelding op de website bevestigen",
-    "intro": "De website {host} toont je een code. Voer die hier in om je daar met je TRS-account aan te melden.",
-    "codeLabel": "Code van de website",
-    "question": "Aanmelden als {name} op {host}?",
-    "codeShown": "Code:",
-    "warningTitle": "Bevestig alleen als je nu zelf op de website bent.",
-    "warning": "Geef deze code nooit aan iemand anders. Wie erom vraagt, wil je account overnemen.",
-    "approve": "Aanmelding bevestigen",
-    "approving": "Bevestigen …",
-    "done": "Aanmelding bevestigd – je kunt terug naar {host}.",
-    "needsServices": "Zet eerst de TRS-diensten aan (Instellingen → Privacy).",
-    "needsAccount": "Meld je eerst aan met je Minecraft-account onder \"Accounts\".",
-    "settingsDescription": "Aanmelden in het beheergedeelte op {host} met de code die daar staat.",
-    "open": "Code invoeren"
   },
   "clips": {
     "title": "Clips",
@@ -4459,11 +4446,16 @@
   "team": {
     "title": "Moderatie",
     "subtitle": "Teamgedeelte van de TRS-diensten",
-    "notStaff": "Dit gedeelte is alleen voor het TRS-team (admins en moderators).",
+    "notStaff": "Dit gedeelte is alleen voor het TRS-team.",
     "roles": {
       "admin": "Admin",
       "moderator": "Moderator",
-      "system": "Systeem"
+      "system": "Systeem",
+      "owner": "Eigenaar",
+      "senior_moderator": "Senior moderator",
+      "supporter": "Supporter",
+      "content": "Contentteam",
+      "recruiter": "Wervingsteam"
     },
     "nav": {
       "label": "Moderatiegedeelten",
@@ -4478,7 +4470,11 @@
       "wordFilter": "Woordfilter",
       "roles": "Rollen",
       "audit": "Auditlog",
-      "keysHint": "Druk op ? voor sneltoetsen."
+      "keysHint": "Druk op ? voor sneltoetsen.",
+      "applications": "Sollicitaties",
+      "jobs": "Functies",
+      "website": "Op de website",
+      "websiteHint": "Opent de website in je browser (inloggen met Microsoft)."
     },
     "search": {
       "placeholder": "Zoek spelers, UUID’s, meldings-ID’s, #straffen, capes …",
@@ -4514,8 +4510,9 @@
       "sortDefault": "Standaardvolgorde",
       "oldest": "Oudste eerst",
       "newest": "Nieuwste eerst",
-      "readOnly": "Je kunt dit bekijken – wijzigen doen admins.",
-      "adminOnly": "Alleen admins zien dit."
+      "readOnly": "Je rol kan dit bekijken, maar niet wijzigen.",
+      "noPermission": "Je rol mag dit gedeelte niet openen.",
+      "nothingAllowed": "Je rol heeft geen gedeelte in de launcher – gebruik de website."
     },
     "bulk": {
       "done": "{updated} gewijzigd, {skipped} overgeslagen."
@@ -4545,7 +4542,7 @@
       "kind": "Soort",
       "duration": "Duur",
       "notAllowed": "Niet toegestaan voor jouw rol",
-      "limitHint": "Als moderator kun je straffen tot {days} dagen geven (waarschuwingen tot {warnDays} dagen). Permanente straffen en accountverbanningen zijn voor admins.",
+      "limitHint": "Je rol mag straffen tot {days} dagen geven (waarschuwingen tot {warnDays} dagen). Permanente straffen hebben een eigen recht nodig.",
       "minutes": "= {n} minuten",
       "units": {
         "minutes": "minuten",
@@ -4565,7 +4562,8 @@
         "reasonCode": "Kies een redensjabloon.",
         "reason": "Openbare reden: één regel, hoogstens 500 tekens.",
         "note": "Interne notitie: hoogstens 2000 tekens."
-      }
+      },
+      "noPermanent": "Permanente straffen hebben een eigen recht nodig."
     },
     "sanction": {
       "newTitle": "Nieuwe straf voor {name}",
@@ -4584,8 +4582,9 @@
       "replaced": "vervangen door een teambeslissing",
       "answer": "Antwoord ({name}):",
       "decideAppeal": "Over bezwaar beslissen",
-      "adminLocked": "Gegeven door een admin – alleen admins kunnen die wijzigen.",
-      "changeEnd": "Einde wijzigen"
+      "changeEnd": "Einde wijzigen",
+      "rankLocked": "Gegeven door iemand met een hogere rang – je kunt hem niet wijzigen.",
+      "permissionLocked": "Je rol mag deze straf niet wijzigen."
     },
     "change": {
       "liftTitle": "Opheffen: {kind}?",
@@ -4602,7 +4601,8 @@
       "reasonRequired": "Voer een motivering in.",
       "lift": "Opheffen",
       "save": "Einde opslaan",
-      "done": "Straf bijgewerkt."
+      "done": "Straf bijgewerkt.",
+      "cannotExtend": "Je rol mag dit soort straf niet verlengen, alleen verkorten."
     },
     "appeals": {
       "decideTitle": "Bezwaar van {name}",
@@ -4628,7 +4628,7 @@
         "decided": "Beslist",
         "all": "Alle"
       },
-      "lead": "Tegen elke straf kan één keer bezwaar worden gemaakt. Moderators beslissen niet over bezwaren tegen hun eigen straffen.",
+      "lead": "Tegen elke straf kun je één keer bezwaar maken. Niemand beslist over bezwaren tegen eigen straffen.",
       "noneOpen": "Geen open bezwaren.",
       "sanctionLine": "Straf #{id} · tot {end}",
       "own": "Je eigen straf – iemand anders beslist."
@@ -4674,7 +4674,9 @@
       "disk": "Vrije schijfruimte",
       "diskOf": "{free} van {total}",
       "recent": "Recente acties",
-      "allAudit": "Auditlog"
+      "allAudit": "Auditlog",
+      "applications": "Sollicitaties",
+      "newApplications": "{n} nieuw"
     },
     "reports": {
       "highPriority": "Hoge prioriteit",
@@ -4693,7 +4695,11 @@
       },
       "openFile": "Spelersdossier openen",
       "sanction": "Straf …",
-      "sanctionFor": "Straf voor {name}"
+      "sanctionFor": "Straf voor {name}",
+      "contentHidden": "Inhoud alleen zichtbaar met het recht “Inhoud van meldingen zien”. Je ziet wie wie wanneer en waarom heeft gemeld.",
+      "contentHiddenShort": "Inhoud alleen zichtbaar met recht",
+      "messageHidden": "Inhoud alleen zichtbaar met recht",
+      "readOnly": "Je rol kan meldingen bekijken, maar niet afhandelen."
     },
     "players": {
       "nameRule": "Voer een Minecraft-naam (1–16 letters, cijfers of _) of een UUID in.",
@@ -4727,8 +4733,9 @@
       "sessions": "Sessies",
       "cannot": {
         "self": "Je kunt jezelf niet straffen.",
-        "admin": "Admins kunnen niet worden gestraft.",
-        "staff": "Alleen admins straffen teamleden."
+        "admin": "Eigenaars kunnen niet gestraft worden.",
+        "staff": "Alleen iemand met een hogere rang kan teamleden straffen.",
+        "permission": "Je rol mag geen straffen geven."
       },
       "activeSanctions": "Actieve straffen",
       "warnings": "Waarschuwingen (actief / totaal)",
@@ -4815,23 +4822,6 @@
     "wordFilter": {
       "search": "Zoeken in het filter"
     },
-    "rolesPage": {
-      "added": "{name} is nu {role}.",
-      "removed": "{name} zit niet meer in het team.",
-      "fixed": "Vast in de serverconfiguratie",
-      "granted": "sinds {date} · door {name}",
-      "role": "Rol",
-      "add": "Aan team toevoegen",
-      "search": "Speler zoeken op naam",
-      "picked": "Gekozen: {name}",
-      "note": "Notitie (optioneel)",
-      "help": {
-        "moderator": "Moderators behandelen meldingen en bezwaren, waarschuwen, geven straffen tot 7 dagen en controleren uploads.",
-        "admin": "Admins mogen alles: permanente straffen, accountverbanningen, rollen, codes en het woordfilter."
-      },
-      "removeTitle": "{name} uit het team verwijderen?",
-      "removeText": "De rol eindigt meteen, ook een websitesessie."
-    },
     "audit": {
       "area": "Gedeelte",
       "from": "Vanaf",
@@ -4849,6 +4839,40 @@
         "player": "Notities",
         "hosting": "Werelden"
       }
+    },
+    "errors": {
+      "missingPermission": "Je rol mist het recht “{permission}”."
+    },
+    "permissions": {
+      "dashboard_view": "Overzicht zien",
+      "stats_view": "Statistieken zien",
+      "audit_view": "Auditlog zien",
+      "reports_view": "Meldingen zien",
+      "reports_content": "Inhoud van meldingen zien",
+      "reports_handle": "Meldingen afhandelen",
+      "sanctions_warn": "Waarschuwen",
+      "sanctions_mute": "Dempen in de chat",
+      "sanctions_social": "Sociale blokkade",
+      "sanctions_upload": "Uploadblokkade",
+      "sanctions_hosting": "Hostingblokkade",
+      "sanctions_ban": "Accounts blokkeren",
+      "sanctions_permanent": "Permanente straffen",
+      "sanctions_lift": "Straffen opheffen",
+      "appeals_handle": "Over bezwaren beslissen",
+      "players_view": "Spelers zien",
+      "players_notes": "Spelersnotities schrijven",
+      "uploads_review": "Capes en cosmetica controleren",
+      "uploads_delete": "Capes en cosmetica verwijderen",
+      "items_grant": "Capes en cosmetica geven",
+      "worlds_view": "Werelden zien",
+      "worlds_close": "Werelden sluiten",
+      "codes": "Codes",
+      "wordfilter": "Woordfilter",
+      "roles_manage": "Rollen beheren",
+      "applications_view": "Sollicitaties zien",
+      "applications_review": "Sollicitaties beoordelen",
+      "applications_manage": "Functies beheren",
+      "applications_decide": "Over sollicitaties beslissen"
     }
   },
   "trsChoice": {
@@ -4914,6 +4938,62 @@
     "deleteDialog": {
       "title": "Link verwijderen?",
       "text": "De afbeelding wordt van de TRS-server verwijderd en de link werkt niet meer. Je screenshot op deze pc blijft."
+    }
+  },
+  "websiteLogin": {
+    "title": "Website",
+    "description": "Op {host} log je in met het Microsoft-account dat Minecraft bezit – voor sollicitaties bij het team en, als teamlid, voor het volledige teamgedeelte.",
+    "button": "Op de website inloggen met Microsoft",
+    "hint": "De website logt alleen nog in met Microsoft. Opent in je browser."
+  },
+  "applications": {
+    "status": {
+      "new": "Ontvangen",
+      "review": "In behandeling",
+      "interview": "Gesprek",
+      "accepted": "Aangenomen",
+      "rejected": "Afgewezen",
+      "withdrawn": "Ingetrokken"
+    },
+    "statusHelp": {
+      "new": "Het team heeft er nog niet naar gekeken.",
+      "review": "Het team bekijkt je sollicitatie.",
+      "interview": "Het team wil graag met je praten – let op een bericht.",
+      "accepted": "Welkom in het team!",
+      "rejected": "Deze keer is het helaas niet gelukt.",
+      "withdrawn": "Je hebt deze sollicitatie ingetrokken."
+    },
+    "toast": {
+      "title": "Je sollicitatie: {job}",
+      "status": {
+        "new": "Ontvangen – bedankt voor je sollicitatie!",
+        "review": "Het team bekijkt hem nu.",
+        "interview": "Uitgenodigd voor een gesprek.",
+        "accepted": "Aangenomen – welkom in het team!",
+        "rejected": "Deze keer niet aangenomen.",
+        "withdrawn": "Ingetrokken."
+      },
+      "withResponse": "{status} – “{response}”",
+      "view": "Tonen"
+    },
+    "dialog": {
+      "title": "Mijn sollicitaties",
+      "subtitle": "Sollicitaties voor het TRS-team met status en antwoord",
+      "none": "Je hebt nog niet gesolliciteerd.",
+      "noneHint": "Openstaande functies en het formulier staan op de website.",
+      "sent": "verzonden {date}",
+      "answer": "Antwoord van het team · {date}",
+      "withdraw": "Intrekken",
+      "withdrawConfirm": "Deze sollicitatie echt intrekken?",
+      "withdrawn": "Sollicitatie voor “{job}” ingetrokken.",
+      "footer": "Solliciteren doe je op de website (inloggen met Microsoft).",
+      "jobs": "Open functies",
+      "website": "Op de website"
+    },
+    "settings": {
+      "title": "Mijn sollicitaties",
+      "description": "Je sollicitaties bij het team met status en antwoord.",
+      "button": "Tonen"
     }
   }
 }

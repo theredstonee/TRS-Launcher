@@ -103,7 +103,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-const KINDS: SocialToastKind[] = ['message', 'invite', 'friendRequest', 'capeOffer', 'online', 'report', 'moderation']
+const KINDS: SocialToastKind[] = ['message', 'invite', 'friendRequest', 'capeOffer', 'online', 'report', 'moderation', 'application']
 const here: Situation = { focused: false, visible: true, fullscreen: false, looking: false, muted: false, clientInGame: false }
 const toast = (key: string) => ({ key, title: 'Bob', body: 'hi', face: HOST, actions: [] })
 

@@ -287,7 +287,12 @@
       "cannot_change_self": "Você não pode mudar o seu próprio cargo.",
       "role_not_found": "Este jogador não tem cargo na equipe.",
       "note_not_found": "Esta anotação não existe (mais).",
-      "bulk_too_large": "No máximo 50 itens de uma vez."
+      "bulk_too_large": "No máximo 50 itens de uma vez.",
+      "web_login_removed": "O login com código do launcher não existe mais – entre no site com a Microsoft: {url}",
+      "missing_permission": "Falta uma permissão ao seu cargo para isso.",
+      "rank_too_low": "Seu nível na equipe é baixo demais para isso.",
+      "application_closed": "Esta candidatura já foi encerrada.",
+      "application_not_found": "Esta candidatura não existe (mais)."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -585,8 +590,7 @@
       "invalidCodeId": "ID de código inválido.",
       "redemptionsRange": "Resgates por código: 1 a 100.000.",
       "countRange": "Quantidade: 1 a 100 códigos de uma vez.",
-      "expiryInPast": "A data de validade está no passado.",
-      "invalidWebLoginCode": "O código tem o formato ABCD-1234 (letras e números)."
+      "expiryInPast": "A data de validade está no passado."
     },
     "trsPng": {
       "fileTooLarge": "O arquivo é grande demais (máx. 5 MB).",
@@ -649,12 +653,6 @@
       "invalidFile": "Este não é um arquivo de predefinição válido.",
       "fileTooLarge": "O arquivo de predefinição é grande demais.",
       "noneSelected": "Nenhuma predefinição selecionada."
-    },
-    "trsWebLogin": {
-      "invalidCode": "Este código de login não existe – compare com o código no site.",
-      "expired": "O código de login expirou – recarregue o site e digite o novo código.",
-      "notAdmin": "Só administradores do TRS podem entrar no site.",
-      "alreadyUsed": "Este código de login já foi confirmado."
     },
     "clips": {
       "bufferRange": "A duração do clipe deve ficar entre {min} e {max} segundos",
@@ -758,7 +756,6 @@
       "invalidDecision": "Decisão desconhecida.",
       "shortenNeedsEnd": "Para encurtar, escolha um novo fim.",
       "invalidNameQuery": "Nomes têm de 1 a 16 letras, números ou _.",
-      "invalidRole": "Cargo desconhecido.",
       "invalidRoom": "Mundo inválido.",
       "emptySearch": "Digite um termo de busca."
     },
@@ -771,6 +768,9 @@
       "storageFull": "O servidor TRS está sem espaço agora – tente mais tarde.",
       "notFound": "Esta imagem compartilhada não existe (mais).",
       "invalidId": "Link inválido."
+    },
+    "applications": {
+      "invalidId": "Candidatura inválida."
     }
   },
   "browse": {
@@ -2555,10 +2555,11 @@
       "import": "importar prism multimc curseforge migrar",
       "modpacks": "modpack pack instalar",
       "dataDir": "pasta explorador arquivos",
-      "webLogin": "site web login entrar admin código navegador",
       "clips": "clipes gravação gravar vídeo replay shadowplay",
       "social": "amigos chat mensagens grupos social pedidos",
-      "admin": "equipe moderação denúncias punições recursos jogadores admin"
+      "admin": "equipe moderação denúncias punições recursos jogadores admin",
+      "websiteLogin": "site entrar login microsoft navegador equipe",
+      "myApplications": "candidaturas candidatar equipe vaga status"
     },
     "actions": {
       "newInstance": {
@@ -2577,8 +2578,11 @@
         "title": "Abrir pasta de dados",
         "subtitle": "Pasta com instâncias e configurações"
       },
-      "webLogin": {
-        "subtitle": "Digite o código de {host}"
+      "websiteLogin": {
+        "subtitle": "Abre {host} – login com a Microsoft"
+      },
+      "myApplications": {
+        "subtitle": "Status e respostas das suas candidaturas"
       }
     }
   },
@@ -2805,8 +2809,7 @@
       "minCount": "Pelo menos 1 código.",
       "maxCount": "No máximo 100 códigos de uma vez.",
       "invalidExpiry": "Data de validade inválida.",
-      "expiryPast": "A data de validade está no passado.",
-      "webLoginCode": "O código tem o formato ABCD-1234 (letras e números)."
+      "expiryPast": "A data de validade está no passado."
     },
     "unlock": {
       "own": "Própria",
@@ -3585,22 +3588,6 @@
     "imageOf": "Imagem {n} de {total}",
     "versions": "Versões",
     "more": "Mais {n} imagens"
-  },
-  "webLogin": {
-    "title": "Confirmar login no site",
-    "intro": "O site {host} mostra um código. Digite-o aqui para entrar lá com sua conta TRS.",
-    "codeLabel": "Código do site",
-    "question": "Entrar como {name} em {host}?",
-    "codeShown": "Código:",
-    "warningTitle": "Só confirme se você mesmo estiver no site agora.",
-    "warning": "Nunca passe este código para ninguém. Quem pede por ele quer roubar sua conta.",
-    "approve": "Confirmar login",
-    "approving": "Confirmando …",
-    "done": "Login confirmado – você pode voltar para {host}.",
-    "needsServices": "Ative primeiro os serviços TRS (Configurações → Privacidade).",
-    "needsAccount": "Primeiro entre com sua conta do Minecraft em \"Contas\".",
-    "settingsDescription": "Entre na área de administração em {host} com o código mostrado lá.",
-    "open": "Digitar código"
   },
   "clips": {
     "title": "Clipes",
@@ -4459,11 +4446,16 @@
   "team": {
     "title": "Moderação",
     "subtitle": "Área da equipe dos serviços TRS",
-    "notStaff": "Esta área é só para a equipe TRS (admins e moderadores).",
+    "notStaff": "Esta área é só para a equipe TRS.",
     "roles": {
       "admin": "Admin",
       "moderator": "Moderador",
-      "system": "Sistema"
+      "system": "Sistema",
+      "owner": "Dono",
+      "senior_moderator": "Moderador sênior",
+      "supporter": "Suporte",
+      "content": "Equipe de conteúdo",
+      "recruiter": "Equipe de recrutamento"
     },
     "nav": {
       "label": "Áreas de moderação",
@@ -4478,7 +4470,11 @@
       "wordFilter": "Filtro de palavras",
       "roles": "Cargos",
       "audit": "Registro de auditoria",
-      "keysHint": "Pressione ? para ver os atalhos de teclado."
+      "keysHint": "Pressione ? para ver os atalhos de teclado.",
+      "applications": "Candidaturas",
+      "jobs": "Vagas",
+      "website": "No site",
+      "websiteHint": "Abre o site no seu navegador (login com a Microsoft)."
     },
     "search": {
       "placeholder": "Buscar jogadores, UUIDs, IDs de denúncia, #punições, capas …",
@@ -4514,8 +4510,9 @@
       "sortDefault": "Ordem padrão",
       "oldest": "Mais antigos primeiro",
       "newest": "Mais novos primeiro",
-      "readOnly": "Você pode ver – só admins podem alterar.",
-      "adminOnly": "Só admins veem isto."
+      "readOnly": "Seu cargo pode ver isto, mas não alterar.",
+      "noPermission": "Seu cargo não pode abrir esta área.",
+      "nothingAllowed": "Seu cargo não tem nenhuma área no launcher – use o site."
     },
     "bulk": {
       "done": "{updated} alterados, {skipped} ignorados."
@@ -4545,7 +4542,7 @@
       "kind": "Tipo",
       "duration": "Duração",
       "notAllowed": "Não permitido para o seu cargo",
-      "limitHint": "Como moderador você pode aplicar punições de até {days} dias (advertências até {warnDays} dias). Punições permanentes e banimentos de conta são para admins.",
+      "limitHint": "Seu cargo pode aplicar punições de até {days} dias (advertências até {warnDays} dias). Punições permanentes precisam de uma permissão própria.",
       "minutes": "= {n} minutos",
       "units": {
         "minutes": "minutos",
@@ -4565,7 +4562,8 @@
         "reasonCode": "Escolha um modelo de motivo.",
         "reason": "Motivo público: uma linha, no máximo 500 caracteres.",
         "note": "Anotação interna: no máximo 2000 caracteres."
-      }
+      },
+      "noPermanent": "Punições permanentes precisam de uma permissão própria."
     },
     "sanction": {
       "newTitle": "Nova punição para {name}",
@@ -4584,8 +4582,9 @@
       "replaced": "substituída por uma decisão da equipe",
       "answer": "Resposta ({name}):",
       "decideAppeal": "Decidir recurso",
-      "adminLocked": "Aplicada por um admin – só admins podem alterá-la.",
-      "changeEnd": "Alterar fim"
+      "changeEnd": "Alterar fim",
+      "rankLocked": "Aplicada por alguém de nível mais alto – você não pode alterá-la.",
+      "permissionLocked": "Seu cargo não pode alterar esta punição."
     },
     "change": {
       "liftTitle": "Revogar: {kind}?",
@@ -4602,7 +4601,8 @@
       "reasonRequired": "Digite uma justificativa.",
       "lift": "Revogar",
       "save": "Salvar fim",
-      "done": "Punição atualizada."
+      "done": "Punição atualizada.",
+      "cannotExtend": "Seu cargo não pode prolongar este tipo de punição, só encurtar."
     },
     "appeals": {
       "decideTitle": "Recurso de {name}",
@@ -4628,7 +4628,7 @@
         "decided": "Decididos",
         "all": "Todos"
       },
-      "lead": "Cada punição pode ter um recurso. Moderadores não decidem recursos contra as próprias punições.",
+      "lead": "Cada punição pode ser contestada uma vez. Ninguém decide sobre recursos contra as próprias punições.",
       "noneOpen": "Nenhum recurso aberto.",
       "sanctionLine": "Punição #{id} · até {end}",
       "own": "Sua própria punição – outra pessoa decide."
@@ -4674,7 +4674,9 @@
       "disk": "Espaço livre",
       "diskOf": "{free} de {total}",
       "recent": "Ações recentes",
-      "allAudit": "Registro de auditoria"
+      "allAudit": "Registro de auditoria",
+      "applications": "Candidaturas",
+      "newApplications": "{n} novas"
     },
     "reports": {
       "highPriority": "Alta prioridade",
@@ -4693,7 +4695,11 @@
       },
       "openFile": "Abrir ficha do jogador",
       "sanction": "Punição …",
-      "sanctionFor": "Punição para {name}"
+      "sanctionFor": "Punição para {name}",
+      "contentHidden": "Conteúdo visível só com a permissão “Ver o conteúdo das denúncias”. Você vê quem denunciou quem, quando e por quê.",
+      "contentHiddenShort": "Conteúdo visível só com permissão",
+      "messageHidden": "Conteúdo visível só com permissão",
+      "readOnly": "Seu cargo pode ver denúncias, mas não tratá-las."
     },
     "players": {
       "nameRule": "Digite um nome do Minecraft (1–16 letras, números ou _) ou um UUID.",
@@ -4727,8 +4733,9 @@
       "sessions": "Sessões",
       "cannot": {
         "self": "Você não pode punir a si mesmo.",
-        "admin": "Admins não podem ser punidos.",
-        "staff": "Só admins punem membros da equipe."
+        "admin": "Donos não podem ser punidos.",
+        "staff": "Só alguém de nível mais alto pode punir membros da equipe.",
+        "permission": "Seu cargo não pode aplicar punições."
       },
       "activeSanctions": "Punições ativas",
       "warnings": "Advertências (ativas / total)",
@@ -4815,23 +4822,6 @@
     "wordFilter": {
       "search": "Buscar no filtro"
     },
-    "rolesPage": {
-      "added": "{name} agora é {role}.",
-      "removed": "{name} não faz mais parte da equipe.",
-      "fixed": "Fixo na configuração do servidor",
-      "granted": "desde {date} · por {name}",
-      "role": "Cargo",
-      "add": "Adicionar à equipe",
-      "search": "Buscar jogador pelo nome",
-      "picked": "Selecionado: {name}",
-      "note": "Anotação (opcional)",
-      "help": {
-        "moderator": "Moderadores cuidam de denúncias e recursos, advertem, aplicam punições de até 7 dias e revisam envios.",
-        "admin": "Admins podem tudo: punições permanentes, banimentos de conta, cargos, códigos e filtro de palavras."
-      },
-      "removeTitle": "Remover {name} da equipe?",
-      "removeText": "O cargo termina na hora, inclusive uma sessão no site."
-    },
     "audit": {
       "area": "Área",
       "from": "A partir de",
@@ -4849,6 +4839,40 @@
         "player": "Anotações",
         "hosting": "Mundos"
       }
+    },
+    "errors": {
+      "missingPermission": "Falta ao seu cargo a permissão “{permission}”."
+    },
+    "permissions": {
+      "dashboard_view": "Ver a visão geral",
+      "stats_view": "Ver estatísticas",
+      "audit_view": "Ver o registro de auditoria",
+      "reports_view": "Ver denúncias",
+      "reports_content": "Ver o conteúdo das denúncias",
+      "reports_handle": "Tratar denúncias",
+      "sanctions_warn": "Advertir",
+      "sanctions_mute": "Silenciar no chat",
+      "sanctions_social": "Bloqueio social",
+      "sanctions_upload": "Bloqueio de envios",
+      "sanctions_hosting": "Bloqueio de hospedagem",
+      "sanctions_ban": "Banir contas",
+      "sanctions_permanent": "Punições permanentes",
+      "sanctions_lift": "Suspender punições",
+      "appeals_handle": "Decidir recursos",
+      "players_view": "Ver jogadores",
+      "players_notes": "Escrever notas de jogadores",
+      "uploads_review": "Revisar capas e cosméticos",
+      "uploads_delete": "Excluir capas e cosméticos",
+      "items_grant": "Dar capas e cosméticos",
+      "worlds_view": "Ver mundos",
+      "worlds_close": "Fechar mundos",
+      "codes": "Códigos",
+      "wordfilter": "Filtro de palavras",
+      "roles_manage": "Gerenciar cargos",
+      "applications_view": "Ver candidaturas",
+      "applications_review": "Analisar candidaturas",
+      "applications_manage": "Gerenciar vagas",
+      "applications_decide": "Decidir candidaturas"
     }
   },
   "trsChoice": {
@@ -4914,6 +4938,62 @@
     "deleteDialog": {
       "title": "Excluir link?",
       "text": "A imagem é removida do servidor TRS e o link para de funcionar. Sua captura neste PC continua."
+    }
+  },
+  "websiteLogin": {
+    "title": "Site",
+    "description": "Em {host} você entra com a conta Microsoft dona do Minecraft – para se candidatar à equipe e, como membro, para a área completa da equipe.",
+    "button": "Entrar no site com a Microsoft",
+    "hint": "O site só permite entrar com a Microsoft. Abre no seu navegador."
+  },
+  "applications": {
+    "status": {
+      "new": "Recebida",
+      "review": "Em análise",
+      "interview": "Entrevista",
+      "accepted": "Aceita",
+      "rejected": "Recusada",
+      "withdrawn": "Retirada"
+    },
+    "statusHelp": {
+      "new": "A equipe ainda não olhou.",
+      "review": "A equipe está analisando sua candidatura.",
+      "interview": "A equipe quer conversar com você – fique de olho nas mensagens.",
+      "accepted": "Bem-vindo à equipe!",
+      "rejected": "Desta vez não deu certo.",
+      "withdrawn": "Você retirou esta candidatura."
+    },
+    "toast": {
+      "title": "Sua candidatura: {job}",
+      "status": {
+        "new": "Recebida – obrigado por se candidatar!",
+        "review": "A equipe está analisando agora.",
+        "interview": "Convite para uma entrevista.",
+        "accepted": "Aceita – bem-vindo à equipe!",
+        "rejected": "Não aceita desta vez.",
+        "withdrawn": "Retirada."
+      },
+      "withResponse": "{status} – “{response}”",
+      "view": "Ver"
+    },
+    "dialog": {
+      "title": "Minhas candidaturas",
+      "subtitle": "Candidaturas para a equipe TRS com status e resposta",
+      "none": "Você ainda não se candidatou.",
+      "noneHint": "As vagas abertas e o formulário estão no site.",
+      "sent": "enviada {date}",
+      "answer": "Resposta da equipe · {date}",
+      "withdraw": "Retirar",
+      "withdrawConfirm": "Retirar mesmo esta candidatura?",
+      "withdrawn": "Candidatura para “{job}” retirada.",
+      "footer": "As candidaturas são feitas no site (login com a Microsoft).",
+      "jobs": "Vagas abertas",
+      "website": "No site"
+    },
+    "settings": {
+      "title": "Minhas candidaturas",
+      "description": "Suas candidaturas à equipe com status e resposta.",
+      "button": "Ver"
     }
   }
 }

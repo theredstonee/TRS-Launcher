@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { kindEffect, kindLabel, reasonCodes, reasonLabel, sanctionKinds } from '~/utils/sanctions'
-import { draftMinutes, draftProblem, durationAllowed, durationPresets, maxMinutesFor, type SanctionDraft, type StaffLimits } from '~/utils/team'
+import { draftMinutes, draftProblem, durationAllowed, durationPresets, maxMinutesFor, type SanctionDraft } from '~/utils/team'
+import type { StaffLimits } from '~/utils/teamAccess'
 
 // Eingabe einer Strafe: Art, Dauer (Vorlagen oder eigene), Grund-Vorlage
 // (Pflicht), öffentlicher Text, interne Notiz. Was die eigene Rolle nicht darf
@@ -22,6 +23,7 @@ watch(
 
 const limitHint = computed(() => {
   if (props.limits.permanent) return null
+  if (props.limits.maxMinutes === null) return t('team.form.noPermanent')
   const days = (maxMinutesFor('chat_mute', props.limits) ?? 0) / 1440
   const warnDays = (maxMinutesFor('warn', props.limits) ?? 0) / 1440
   return t('team.form.limitHint', { days, warnDays })

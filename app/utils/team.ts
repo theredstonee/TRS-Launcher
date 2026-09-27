@@ -4,8 +4,6 @@ import { adminReportSummarySchema, auditEntrySchema } from './moderation'
 import { appealStatuses, reasonCodes, sanctionKinds, systemReasonCodes, type SanctionKind } from './sanctions'
 import type { StaffLimits } from './teamAccess'
 
-export type { StaffLimits } from './teamAccess'
-
 // Team-Bereich (Moderation v2, API §22): Schemas der gesäuberten Antworten aus
 // dem Kern und die Dauer-Vorlagen (Rechte: `teamAccess.ts`, §24.2). Unbekannte Felder fallen
 // weg, fehlende bekommen harmlose Standardwerte – eine neuere API legt den

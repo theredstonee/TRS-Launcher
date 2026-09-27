@@ -287,7 +287,12 @@
       "cannot_change_self": "Nie możesz zmienić własnej roli.",
       "role_not_found": "Ten gracz nie ma roli w zespole.",
       "note_not_found": "Ta notatka nie istnieje (już).",
-      "bulk_too_large": "Najwyżej 50 wpisów naraz."
+      "bulk_too_large": "Najwyżej 50 wpisów naraz.",
+      "web_login_removed": "Logowanie kodem z launchera już nie istnieje – zaloguj się na stronie przez Microsoft: {url}",
+      "missing_permission": "Twojej roli brakuje do tego uprawnienia.",
+      "rank_too_low": "Twoja ranga w zespole jest do tego za niska.",
+      "application_closed": "To zgłoszenie jest już zamknięte.",
+      "application_not_found": "To zgłoszenie nie istnieje (już)."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -585,8 +590,7 @@
       "invalidCodeId": "Nieprawidłowy identyfikator kodu.",
       "redemptionsRange": "Liczba użyć na kod: od 1 do 100 000.",
       "countRange": "Ilość: od 1 do 100 kodów naraz.",
-      "expiryInPast": "Data wygaśnięcia jest w przeszłości.",
-      "invalidWebLoginCode": "Kod ma postać ABCD-1234 (litery i cyfry)."
+      "expiryInPast": "Data wygaśnięcia jest w przeszłości."
     },
     "trsPng": {
       "fileTooLarge": "Plik jest za duży (maks. 5 MB).",
@@ -649,12 +653,6 @@
       "invalidFile": "To nie jest prawidłowy plik presetu.",
       "fileTooLarge": "Plik presetu jest za duży.",
       "noneSelected": "Nie wybrano żadnego presetu."
-    },
-    "trsWebLogin": {
-      "invalidCode": "Taki kod logowania nie istnieje – porównaj go z kodem na stronie.",
-      "expired": "Kod logowania wygasł – odśwież stronę i wpisz nowy kod.",
-      "notAdmin": "Na stronie mogą logować się tylko administratorzy TRS.",
-      "alreadyUsed": "Ten kod logowania został już potwierdzony."
     },
     "clips": {
       "bufferRange": "Długość klipu musi wynosić od {min} do {max} sekund",
@@ -758,7 +756,6 @@
       "invalidDecision": "Nieznana decyzja.",
       "shortenNeedsEnd": "Aby skrócić, wybierz nowy koniec.",
       "invalidNameQuery": "Nazwy mają 1–16 liter, cyfr lub _.",
-      "invalidRole": "Nieznana rola.",
       "invalidRoom": "Nieprawidłowy świat.",
       "emptySearch": "Wpisz szukaną frazę."
     },
@@ -771,6 +768,9 @@
       "storageFull": "Serwer TRS nie ma teraz miejsca – spróbuj później.",
       "notFound": "Ten udostępniony obraz nie istnieje (już).",
       "invalidId": "Nieprawidłowy link."
+    },
+    "applications": {
+      "invalidId": "Nieprawidłowe zgłoszenie."
     }
   },
   "browse": {
@@ -2555,10 +2555,11 @@
       "import": "import importuj prism multimc curseforge migracja",
       "modpacks": "modpack paczka zainstaluj",
       "dataDir": "folder eksplorator pliki",
-      "webLogin": "strona www logowanie zaloguj admin kod przeglądarka",
       "clips": "klipy nagrywanie nagranie wideo powtórka shadowplay",
       "social": "znajomi czat wiadomości grupy społeczność zaproszenia",
-      "admin": "zespół moderacja zgłoszenia kary odwołania gracze admin"
+      "admin": "zespół moderacja zgłoszenia kary odwołania gracze admin",
+      "websiteLogin": "strona logowanie login microsoft przeglądarka zespół",
+      "myApplications": "zgłoszenia aplikuj zespół stanowisko status"
     },
     "actions": {
       "newInstance": {
@@ -2577,8 +2578,11 @@
         "title": "Otwórz folder danych",
         "subtitle": "Folder z instancjami i ustawieniami"
       },
-      "webLogin": {
-        "subtitle": "Wpisz kod z {host}"
+      "websiteLogin": {
+        "subtitle": "Otwiera {host} – logowanie przez Microsoft"
+      },
+      "myApplications": {
+        "subtitle": "Status i odpowiedzi na twoje zgłoszenia do zespołu"
       }
     }
   },
@@ -2805,8 +2809,7 @@
       "minCount": "Co najmniej 1 kod.",
       "maxCount": "Maksymalnie 100 kodów naraz.",
       "invalidExpiry": "Nieprawidłowa data wygaśnięcia.",
-      "expiryPast": "Data wygaśnięcia jest w przeszłości.",
-      "webLoginCode": "Kod ma postać ABCD-1234 (litery i cyfry)."
+      "expiryPast": "Data wygaśnięcia jest w przeszłości."
     },
     "unlock": {
       "own": "Własna",
@@ -3585,22 +3588,6 @@
     "imageOf": "Obraz {n} z {total}",
     "versions": "Wersje",
     "more": "Więcej obrazów: {n}"
-  },
-  "webLogin": {
-    "title": "Potwierdź logowanie na stronie",
-    "intro": "Strona {host} pokazuje ci kod. Wpisz go tutaj, aby zalogować się tam kontem TRS.",
-    "codeLabel": "Kod ze strony",
-    "question": "Zalogować jako {name} na {host}?",
-    "codeShown": "Kod:",
-    "warningTitle": "Potwierdzaj tylko, jeśli właśnie sam jesteś na stronie.",
-    "warning": "Nigdy nikomu nie podawaj tego kodu. Kto o niego prosi, chce przejąć twoje konto.",
-    "approve": "Potwierdź logowanie",
-    "approving": "Potwierdzanie …",
-    "done": "Logowanie potwierdzone – możesz wrócić na {host}.",
-    "needsServices": "Najpierw włącz usługi TRS (Ustawienia → Prywatność).",
-    "needsAccount": "Najpierw zaloguj się kontem Minecraft w „Konta”.",
-    "settingsDescription": "Zaloguj się do panelu administracyjnego na {host} kodem, który się tam wyświetla.",
-    "open": "Wpisz kod"
   },
   "clips": {
     "title": "Klipy",
@@ -4459,11 +4446,16 @@
   "team": {
     "title": "Moderacja",
     "subtitle": "Obszar zespołu usług TRS",
-    "notStaff": "Ten obszar jest tylko dla zespołu TRS (administratorzy i moderatorzy).",
+    "notStaff": "Ten obszar jest tylko dla zespołu TRS.",
     "roles": {
       "admin": "Admin",
       "moderator": "Moderator",
-      "system": "System"
+      "system": "System",
+      "owner": "Właściciel",
+      "senior_moderator": "Starszy moderator",
+      "supporter": "Wsparcie",
+      "content": "Zespół treści",
+      "recruiter": "Zespół rekrutacji"
     },
     "nav": {
       "label": "Obszary moderacji",
@@ -4478,7 +4470,11 @@
       "wordFilter": "Filtr słów",
       "roles": "Role",
       "audit": "Dziennik audytu",
-      "keysHint": "Naciśnij ?, aby zobaczyć skróty klawiszowe."
+      "keysHint": "Naciśnij ?, aby zobaczyć skróty klawiszowe.",
+      "applications": "Zgłoszenia",
+      "jobs": "Stanowiska",
+      "website": "Na stronie",
+      "websiteHint": "Otwiera stronę w przeglądarce (logowanie przez Microsoft)."
     },
     "search": {
       "placeholder": "Szukaj graczy, UUID, ID zgłoszeń, #kar, peleryn …",
@@ -4514,8 +4510,9 @@
       "sortDefault": "Domyślna kolejność",
       "oldest": "Najstarsze najpierw",
       "newest": "Najnowsze najpierw",
-      "readOnly": "Możesz to przeglądać – zmieniać mogą tylko administratorzy.",
-      "adminOnly": "Tylko administratorzy to widzą."
+      "readOnly": "Twoja rola może to oglądać, ale nie zmieniać.",
+      "noPermission": "Twoja rola nie może otworzyć tego obszaru.",
+      "nothingAllowed": "Twoja rola nie ma obszaru w launcherze – użyj strony."
     },
     "bulk": {
       "done": "Zmieniono: {updated}, pominięto: {skipped}."
@@ -4545,7 +4542,7 @@
       "kind": "Rodzaj",
       "duration": "Czas trwania",
       "notAllowed": "Niedozwolone dla twojej roli",
-      "limitHint": "Jako moderator możesz nadawać kary do {days} dni (ostrzeżenia do {warnDays} dni). Kary stałe i blokady kont nadają administratorzy.",
+      "limitHint": "Twoja rola może dawać kary do {days} dni (ostrzeżenia do {warnDays} dni). Kary stałe wymagają osobnego uprawnienia.",
       "minutes": "= {n} min",
       "units": {
         "minutes": "minuty",
@@ -4565,7 +4562,8 @@
         "reasonCode": "Wybierz szablon powodu.",
         "reason": "Powód publiczny: jedna linia, najwyżej 500 znaków.",
         "note": "Notatka wewnętrzna: najwyżej 2000 znaków."
-      }
+      },
+      "noPermanent": "Kary stałe wymagają osobnego uprawnienia."
     },
     "sanction": {
       "newTitle": "Nowa kara dla {name}",
@@ -4584,8 +4582,9 @@
       "replaced": "zastąpiona decyzją zespołu",
       "answer": "Odpowiedź ({name}):",
       "decideAppeal": "Rozpatrz odwołanie",
-      "adminLocked": "Nałożona przez admina – tylko administratorzy mogą ją zmienić.",
-      "changeEnd": "Zmień koniec"
+      "changeEnd": "Zmień koniec",
+      "rankLocked": "Nadana przez kogoś z wyższą rangą – nie możesz jej zmienić.",
+      "permissionLocked": "Twoja rola nie może zmienić tej kary."
     },
     "change": {
       "liftTitle": "Znieść: {kind}?",
@@ -4602,7 +4601,8 @@
       "reasonRequired": "Wpisz uzasadnienie.",
       "lift": "Znieś",
       "save": "Zapisz koniec",
-      "done": "Kara zaktualizowana."
+      "done": "Kara zaktualizowana.",
+      "cannotExtend": "Twoja rola nie może przedłużyć tego rodzaju kary, tylko ją skrócić."
     },
     "appeals": {
       "decideTitle": "Odwołanie od {name}",
@@ -4628,7 +4628,7 @@
         "decided": "Rozpatrzone",
         "all": "Wszystkie"
       },
-      "lead": "Od każdej kary można odwołać się raz. Moderatorzy nie rozpatrują odwołań od własnych kar.",
+      "lead": "Od każdej kary można się odwołać raz. Nikt nie decyduje o odwołaniach od własnych kar.",
       "noneOpen": "Brak otwartych odwołań.",
       "sanctionLine": "Kara #{id} · do {end}",
       "own": "Twoja własna kara – decyduje ktoś inny."
@@ -4674,7 +4674,9 @@
       "disk": "Wolne miejsce",
       "diskOf": "{free} z {total}",
       "recent": "Ostatnie działania",
-      "allAudit": "Dziennik audytu"
+      "allAudit": "Dziennik audytu",
+      "applications": "Zgłoszenia",
+      "newApplications": "{n} nowych"
     },
     "reports": {
       "highPriority": "Wysoki priorytet",
@@ -4693,7 +4695,11 @@
       },
       "openFile": "Otwórz kartotekę gracza",
       "sanction": "Kara …",
-      "sanctionFor": "Kara dla {name}"
+      "sanctionFor": "Kara dla {name}",
+      "contentHidden": "Treść widoczna tylko z uprawnieniem „Widzieć treść zgłoszeń”. Widzisz, kto kogo zgłosił, kiedy i dlaczego.",
+      "contentHiddenShort": "Treść widoczna tylko z uprawnieniem",
+      "messageHidden": "Treść widoczna tylko z uprawnieniem",
+      "readOnly": "Twoja rola może oglądać zgłoszenia, ale nie może ich rozpatrywać."
     },
     "players": {
       "nameRule": "Wpisz nazwę Minecraft (1–16 liter, cyfr lub _) albo UUID.",
@@ -4727,8 +4733,9 @@
       "sessions": "Sesje",
       "cannot": {
         "self": "Nie możesz ukarać samego siebie.",
-        "admin": "Administratorów nie można karać.",
-        "staff": "Członków zespołu karzą tylko administratorzy."
+        "admin": "Właściciele nie mogą być karani.",
+        "staff": "Członków zespołu może karać tylko ktoś z wyższą rangą.",
+        "permission": "Twoja rola nie może dawać kar."
       },
       "activeSanctions": "Aktywne kary",
       "warnings": "Ostrzeżenia (aktywne / wszystkie)",
@@ -4815,23 +4822,6 @@
     "wordFilter": {
       "search": "Szukaj w filtrze"
     },
-    "rolesPage": {
-      "added": "{name} ma teraz rolę: {role}.",
-      "removed": "{name} nie należy już do zespołu.",
-      "fixed": "Ustawione na stałe w konfiguracji serwera",
-      "granted": "od {date} · przez {name}",
-      "role": "Rola",
-      "add": "Dodaj do zespołu",
-      "search": "Szukaj gracza po nazwie",
-      "picked": "Wybrano: {name}",
-      "note": "Notatka (opcjonalnie)",
-      "help": {
-        "moderator": "Moderatorzy obsługują zgłoszenia i odwołania, ostrzegają, nakładają kary do 7 dni i sprawdzają pliki.",
-        "admin": "Administratorzy mogą wszystko: kary stałe, blokady kont, role, kody i filtr słów."
-      },
-      "removeTitle": "Usunąć {name} z zespołu?",
-      "removeText": "Rola kończy się natychmiast, także sesja na stronie."
-    },
     "audit": {
       "area": "Obszar",
       "from": "Od",
@@ -4849,6 +4839,40 @@
         "player": "Notatki",
         "hosting": "Światy"
       }
+    },
+    "errors": {
+      "missingPermission": "Twojej roli brakuje uprawnienia „{permission}”."
+    },
+    "permissions": {
+      "dashboard_view": "Widzieć przegląd",
+      "stats_view": "Widzieć statystyki",
+      "audit_view": "Widzieć dziennik audytu",
+      "reports_view": "Widzieć zgłoszenia",
+      "reports_content": "Widzieć treść zgłoszeń",
+      "reports_handle": "Rozpatrywać zgłoszenia",
+      "sanctions_warn": "Ostrzegać",
+      "sanctions_mute": "Wyciszać na czacie",
+      "sanctions_social": "Blokada społeczna",
+      "sanctions_upload": "Blokada przesyłania",
+      "sanctions_hosting": "Blokada hostowania",
+      "sanctions_ban": "Blokować konta",
+      "sanctions_permanent": "Kary stałe",
+      "sanctions_lift": "Znosić kary",
+      "appeals_handle": "Decydować o odwołaniach",
+      "players_view": "Widzieć graczy",
+      "players_notes": "Pisać notatki o graczach",
+      "uploads_review": "Sprawdzać peleryny i kosmetyki",
+      "uploads_delete": "Usuwać peleryny i kosmetyki",
+      "items_grant": "Dawać peleryny i kosmetyki",
+      "worlds_view": "Widzieć światy",
+      "worlds_close": "Zamykać światy",
+      "codes": "Kody",
+      "wordfilter": "Filtr słów",
+      "roles_manage": "Zarządzać rolami",
+      "applications_view": "Widzieć zgłoszenia do zespołu",
+      "applications_review": "Oceniać zgłoszenia",
+      "applications_manage": "Zarządzać stanowiskami",
+      "applications_decide": "Decydować o zgłoszeniach"
     }
   },
   "trsChoice": {
@@ -4914,6 +4938,62 @@
     "deleteDialog": {
       "title": "Usunąć link?",
       "text": "Obraz zostanie usunięty z serwera TRS, a link przestanie działać. Twój zrzut ekranu na tym PC zostaje."
+    }
+  },
+  "websiteLogin": {
+    "title": "Strona",
+    "description": "Na {host} logujesz się kontem Microsoft, do którego należy Minecraft – aby zgłosić się do zespołu, a jako członek zespołu – do pełnego panelu zespołu.",
+    "button": "Zaloguj się na stronie przez Microsoft",
+    "hint": "Strona loguje już tylko przez Microsoft. Otwiera się w przeglądarce."
+  },
+  "applications": {
+    "status": {
+      "new": "Otrzymane",
+      "review": "W ocenie",
+      "interview": "Rozmowa",
+      "accepted": "Przyjęte",
+      "rejected": "Odrzucone",
+      "withdrawn": "Wycofane"
+    },
+    "statusHelp": {
+      "new": "Zespół jeszcze go nie przejrzał.",
+      "review": "Zespół ocenia twoje zgłoszenie.",
+      "interview": "Zespół chce z tobą porozmawiać – wypatruj wiadomości.",
+      "accepted": "Witaj w zespole!",
+      "rejected": "Tym razem się nie udało.",
+      "withdrawn": "Wycofałeś to zgłoszenie."
+    },
+    "toast": {
+      "title": "Twoje zgłoszenie: {job}",
+      "status": {
+        "new": "Otrzymane – dzięki za zgłoszenie!",
+        "review": "Zespół właśnie je ocenia.",
+        "interview": "Zaproszenie na rozmowę.",
+        "accepted": "Przyjęte – witaj w zespole!",
+        "rejected": "Tym razem nieprzyjęte.",
+        "withdrawn": "Wycofane."
+      },
+      "withResponse": "{status} – „{response}”",
+      "view": "Pokaż"
+    },
+    "dialog": {
+      "title": "Moje zgłoszenia",
+      "subtitle": "Zgłoszenia do zespołu TRS ze statusem i odpowiedzią",
+      "none": "Nie wysłałeś jeszcze zgłoszenia.",
+      "noneHint": "Otwarte stanowiska i formularz są na stronie.",
+      "sent": "wysłane {date}",
+      "answer": "Odpowiedź zespołu · {date}",
+      "withdraw": "Wycofaj",
+      "withdrawConfirm": "Na pewno wycofać to zgłoszenie?",
+      "withdrawn": "Zgłoszenie na „{job}” wycofane.",
+      "footer": "Zgłoszenia wysyła się na stronie (logowanie przez Microsoft).",
+      "jobs": "Otwarte stanowiska",
+      "website": "Na stronie"
+    },
+    "settings": {
+      "title": "Moje zgłoszenia",
+      "description": "Twoje zgłoszenia do zespołu ze statusem i odpowiedzią.",
+      "button": "Pokaż"
     }
   }
 }

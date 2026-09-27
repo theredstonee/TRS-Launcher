@@ -287,7 +287,12 @@
       "cannot_change_self": "Kendi rolünü değiştiremezsin.",
       "role_not_found": "Bu oyuncunun ekip rolü yok.",
       "note_not_found": "Bu not (artık) yok.",
-      "bulk_too_large": "Tek seferde en fazla 50 kayıt."
+      "bulk_too_large": "Tek seferde en fazla 50 kayıt.",
+      "web_login_removed": "Launcher koduyla giriş artık yok – web sitesinde Microsoft ile giriş yap: {url}",
+      "missing_permission": "Rolünde bunun için bir yetki eksik.",
+      "rank_too_low": "Ekipteki rütben bunun için çok düşük.",
+      "application_closed": "Bu başvuru zaten kapandı.",
+      "application_not_found": "Bu başvuru (artık) yok."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -585,8 +590,7 @@
       "invalidCodeId": "Geçersiz kod kimliği.",
       "redemptionsRange": "Kod başına kullanım: 1 ile 100.000 arası.",
       "countRange": "Miktar: aynı anda 1 ile 100 kod arası.",
-      "expiryInPast": "Son kullanma tarihi geçmişte.",
-      "invalidWebLoginCode": "Kod ABCD-1234 biçimindedir (harfler ve rakamlar)."
+      "expiryInPast": "Son kullanma tarihi geçmişte."
     },
     "trsPng": {
       "fileTooLarge": "Dosya çok büyük (en fazla 5 MB).",
@@ -649,12 +653,6 @@
       "invalidFile": "Bu geçerli bir ön ayar dosyası değil.",
       "fileTooLarge": "Ön ayar dosyası çok büyük.",
       "noneSelected": "Hiçbir ön ayar seçilmedi."
-    },
-    "trsWebLogin": {
-      "invalidCode": "Böyle bir giriş kodu yok – web sitesindeki kodla karşılaştır.",
-      "expired": "Giriş kodunun süresi doldu – web sitesini yenile ve yeni kodu gir.",
-      "notAdmin": "Web sitesine yalnızca TRS yöneticileri giriş yapabilir.",
-      "alreadyUsed": "Bu giriş kodu zaten onaylandı."
     },
     "clips": {
       "bufferRange": "Klip uzunluğu {min} ile {max} saniye arasında olmalı",
@@ -758,7 +756,6 @@
       "invalidDecision": "Bilinmeyen karar.",
       "shortenNeedsEnd": "Kısaltmak için yeni bir bitiş seç.",
       "invalidNameQuery": "İsimler 1–16 harf, rakam veya _ içerir.",
-      "invalidRole": "Bilinmeyen rol.",
       "invalidRoom": "Geçersiz dünya.",
       "emptySearch": "Lütfen bir arama terimi gir."
     },
@@ -771,6 +768,9 @@
       "storageFull": "TRS sunucusunda şu an yer yok – lütfen daha sonra tekrar dene.",
       "notFound": "Bu paylaşılan resim yok (artık).",
       "invalidId": "Geçersiz bağlantı."
+    },
+    "applications": {
+      "invalidId": "Geçersiz başvuru."
     }
   },
   "browse": {
@@ -2555,10 +2555,11 @@
       "import": "içe aktar taşı prism multimc curseforge import migrate",
       "modpacks": "modpack paket yükle pack install",
       "dataDir": "klasör gezgin dosyalar folder explorer files",
-      "webLogin": "web site giriş oturum admin kod tarayıcı",
       "clips": "klipler kayıt kaydet video tekrar shadowplay",
       "social": "arkadaşlar sohbet mesajlar gruplar sosyal istekler",
-      "admin": "ekip moderasyon şikayetler cezalar itirazlar oyuncular admin"
+      "admin": "ekip moderasyon şikayetler cezalar itirazlar oyuncular admin",
+      "websiteLogin": "web sitesi giriş login microsoft tarayıcı ekip",
+      "myApplications": "başvurular başvur ekip pozisyon durum"
     },
     "actions": {
       "newInstance": {
@@ -2577,8 +2578,11 @@
         "title": "Veri klasörünü aç",
         "subtitle": "Kurulumları ve ayarları içeren klasör"
       },
-      "webLogin": {
-        "subtitle": "{host} kodunu gir"
+      "websiteLogin": {
+        "subtitle": "{host} açılır – Microsoft ile giriş"
+      },
+      "myApplications": {
+        "subtitle": "Ekip başvurularının durumu ve yanıtları"
       }
     }
   },
@@ -2805,8 +2809,7 @@
       "minCount": "En az 1 kod.",
       "maxCount": "Aynı anda en fazla 100 kod.",
       "invalidExpiry": "Geçersiz son kullanma tarihi.",
-      "expiryPast": "Son kullanma tarihi geçmişte.",
-      "webLoginCode": "Kod ABCD-1234 biçimindedir (harfler ve rakamlar)."
+      "expiryPast": "Son kullanma tarihi geçmişte."
     },
     "unlock": {
       "own": "Özel",
@@ -3585,22 +3588,6 @@
     "imageOf": "Görsel {n} / {total}",
     "versions": "Sürümler",
     "more": "{n} görsel daha"
-  },
-  "webLogin": {
-    "title": "Web sitesi girişini onayla",
-    "intro": "{host} web sitesi sana bir kod gösterir. Oraya TRS hesabınla giriş yapmak için kodu buraya gir.",
-    "codeLabel": "Web sitesindeki kod",
-    "question": "{host} üzerinde {name} olarak giriş yapılsın mı?",
-    "codeShown": "Kod:",
-    "warningTitle": "Yalnızca şu anda web sitesinde bizzat sen isen onayla.",
-    "warning": "Bu kodu asla kimseyle paylaşma. Senden bu kodu isteyen, hesabını ele geçirmek istiyordur.",
-    "approve": "Girişi onayla",
-    "approving": "Onaylanıyor …",
-    "done": "Giriş onaylandı – {host} sitesine geri dönebilirsin.",
-    "needsServices": "Önce TRS hizmetlerini aç (Ayarlar → Gizlilik).",
-    "needsAccount": "Lütfen önce \"Hesaplar\" bölümünden Minecraft hesabınla giriş yap.",
-    "settingsDescription": "{host} üzerindeki yönetim alanına orada gösterilen kodla giriş yap.",
-    "open": "Kodu gir"
   },
   "clips": {
     "title": "Klipler",
@@ -4459,11 +4446,16 @@
   "team": {
     "title": "Moderasyon",
     "subtitle": "TRS hizmetlerinin ekip alanı",
-    "notStaff": "Bu alan yalnızca TRS ekibi (adminler ve moderatörler) içindir.",
+    "notStaff": "Bu alan yalnızca TRS ekibi içindir.",
     "roles": {
       "admin": "Admin",
       "moderator": "Moderatör",
-      "system": "Sistem"
+      "system": "Sistem",
+      "owner": "Sahip",
+      "senior_moderator": "Kıdemli moderatör",
+      "supporter": "Destek",
+      "content": "İçerik ekibi",
+      "recruiter": "İşe alım ekibi"
     },
     "nav": {
       "label": "Moderasyon alanları",
@@ -4478,7 +4470,11 @@
       "wordFilter": "Kelime filtresi",
       "roles": "Roller",
       "audit": "Denetim kaydı",
-      "keysHint": "Klavye kısayolları için ? tuşuna bas."
+      "keysHint": "Klavye kısayolları için ? tuşuna bas.",
+      "applications": "Başvurular",
+      "jobs": "Pozisyonlar",
+      "website": "Web sitesinde",
+      "websiteHint": "Web sitesini tarayıcında açar (Microsoft ile giriş)."
     },
     "search": {
       "placeholder": "Oyuncu, UUID, şikayet kimliği, #ceza, pelerin ara …",
@@ -4514,8 +4510,9 @@
       "sortDefault": "Varsayılan sıra",
       "oldest": "Önce en eski",
       "newest": "Önce en yeni",
-      "readOnly": "Bunu görebilirsin – değiştirmek adminlere ait.",
-      "adminOnly": "Bunu yalnızca adminler görür."
+      "readOnly": "Rolün bunu görebilir ama değiştiremez.",
+      "noPermission": "Rolün bu alanı açamaz.",
+      "nothingAllowed": "Rolünün launcher’da bir alanı yok – web sitesini kullan."
     },
     "bulk": {
       "done": "{updated} değişti, {skipped} atlandı."
@@ -4545,7 +4542,7 @@
       "kind": "Tür",
       "duration": "Süre",
       "notAllowed": "Rolün için izin verilmiyor",
-      "limitHint": "Moderatör olarak {days} güne kadar ceza verebilirsin (uyarılar {warnDays} güne kadar). Kalıcı cezalar ve hesap yasakları adminlere aittir.",
+      "limitHint": "Rolün en fazla {days} günlük ceza verebilir (uyarılar {warnDays} güne kadar). Kalıcı cezalar ayrı bir yetki gerektirir.",
       "minutes": "= {n} dakika",
       "units": {
         "minutes": "dakika",
@@ -4565,7 +4562,8 @@
         "reasonCode": "Lütfen bir gerekçe şablonu seç.",
         "reason": "Açık gerekçe: tek satır, en fazla 500 karakter.",
         "note": "İç not: en fazla 2000 karakter."
-      }
+      },
+      "noPermanent": "Kalıcı cezalar ayrı bir yetki gerektirir."
     },
     "sanction": {
       "newTitle": "{name} için yeni ceza",
@@ -4584,8 +4582,9 @@
       "replaced": "ekip kararıyla değiştirildi",
       "answer": "Yanıt ({name}):",
       "decideAppeal": "İtiraza karar ver",
-      "adminLocked": "Bir admin verdi – yalnızca adminler değiştirebilir.",
-      "changeEnd": "Bitişi değiştir"
+      "changeEnd": "Bitişi değiştir",
+      "rankLocked": "Daha yüksek rütbeli biri verdi – değiştiremezsin.",
+      "permissionLocked": "Rolün bu cezayı değiştiremez."
     },
     "change": {
       "liftTitle": "Kaldırılsın mı: {kind}?",
@@ -4602,7 +4601,8 @@
       "reasonRequired": "Lütfen bir gerekçe gir.",
       "lift": "Kaldır",
       "save": "Bitişi kaydet",
-      "done": "Ceza güncellendi."
+      "done": "Ceza güncellendi.",
+      "cannotExtend": "Rolün bu tür cezayı uzatamaz, yalnızca kısaltabilir."
     },
     "appeals": {
       "decideTitle": "{name} itirazı",
@@ -4628,7 +4628,7 @@
         "decided": "Karara bağlanan",
         "all": "Tümü"
       },
-      "lead": "Her cezaya bir kez itiraz edilebilir. Moderatörler kendi cezalarına yapılan itirazlara karar vermez.",
+      "lead": "Her cezaya bir kez itiraz edilebilir. Kimse kendi verdiği cezalara yapılan itirazlara karar vermez.",
       "noneOpen": "Açık itiraz yok.",
       "sanctionLine": "Ceza #{id} · {end} tarihine kadar",
       "own": "Kendi cezan – başkası karar verir."
@@ -4674,7 +4674,9 @@
       "disk": "Boş disk alanı",
       "diskOf": "{total} içinden {free}",
       "recent": "Son işlemler",
-      "allAudit": "Denetim kaydı"
+      "allAudit": "Denetim kaydı",
+      "applications": "Başvurular",
+      "newApplications": "{n} yeni"
     },
     "reports": {
       "highPriority": "Yüksek öncelik",
@@ -4693,7 +4695,11 @@
       },
       "openFile": "Oyuncu dosyasını aç",
       "sanction": "Ceza …",
-      "sanctionFor": "{name} için ceza"
+      "sanctionFor": "{name} için ceza",
+      "contentHidden": "İçerik yalnızca “Bildirim içeriklerini görme” yetkisiyle görünür. Kimin kimi, ne zaman ve neden bildirdiğini görürsün.",
+      "contentHiddenShort": "İçerik yalnızca yetkiyle görünür",
+      "messageHidden": "İçerik yalnızca yetkiyle görünür",
+      "readOnly": "Rolün bildirimleri görebilir ama işleyemez."
     },
     "players": {
       "nameRule": "Bir Minecraft adı (1–16 harf, rakam veya _) ya da UUID gir.",
@@ -4727,8 +4733,9 @@
       "sessions": "Oturumlar",
       "cannot": {
         "self": "Kendini cezalandıramazsın.",
-        "admin": "Adminler cezalandırılamaz.",
-        "staff": "Ekip üyelerini yalnızca adminler cezalandırır."
+        "admin": "Sahipler cezalandırılamaz.",
+        "staff": "Ekip üyelerini yalnızca daha yüksek rütbeli biri cezalandırabilir.",
+        "permission": "Rolün ceza veremez."
       },
       "activeSanctions": "Etkin cezalar",
       "warnings": "Uyarılar (etkin / toplam)",
@@ -4815,23 +4822,6 @@
     "wordFilter": {
       "search": "Filtrede ara"
     },
-    "rolesPage": {
-      "added": "{name} artık {role}.",
-      "removed": "{name} artık ekipte değil.",
-      "fixed": "Sunucu yapılandırmasında sabit",
-      "granted": "{date} tarihinden beri · veren {name}",
-      "role": "Rol",
-      "add": "Ekibe ekle",
-      "search": "Oyuncuyu ada göre ara",
-      "picked": "Seçilen: {name}",
-      "note": "Not (isteğe bağlı)",
-      "help": {
-        "moderator": "Moderatörler şikayet ve itirazlarla ilgilenir, uyarır, 7 güne kadar ceza verir ve yüklemeleri inceler.",
-        "admin": "Adminler her şeyi yapabilir: kalıcı cezalar, hesap yasakları, roller, kodlar ve kelime filtresi."
-      },
-      "removeTitle": "{name} ekipten çıkarılsın mı?",
-      "removeText": "Rol hemen biter, web sitesi oturumu da dahil."
-    },
     "audit": {
       "area": "Alan",
       "from": "Başlangıç",
@@ -4849,6 +4839,40 @@
         "player": "Notlar",
         "hosting": "Dünyalar"
       }
+    },
+    "errors": {
+      "missingPermission": "Rolünde “{permission}” yetkisi eksik."
+    },
+    "permissions": {
+      "dashboard_view": "Genel bakışı görme",
+      "stats_view": "İstatistikleri görme",
+      "audit_view": "Denetim kaydını görme",
+      "reports_view": "Bildirimleri görme",
+      "reports_content": "Bildirim içeriklerini görme",
+      "reports_handle": "Bildirimleri işleme",
+      "sanctions_warn": "Uyarma",
+      "sanctions_mute": "Sohbette susturma",
+      "sanctions_social": "Sosyal engel",
+      "sanctions_upload": "Yükleme engeli",
+      "sanctions_hosting": "Barındırma engeli",
+      "sanctions_ban": "Hesapları yasaklama",
+      "sanctions_permanent": "Kalıcı cezalar",
+      "sanctions_lift": "Cezaları kaldırma",
+      "appeals_handle": "İtirazlara karar verme",
+      "players_view": "Oyuncuları görme",
+      "players_notes": "Oyuncu notları yazma",
+      "uploads_review": "Pelerin ve kozmetikleri inceleme",
+      "uploads_delete": "Pelerin ve kozmetikleri silme",
+      "items_grant": "Pelerin ve kozmetik verme",
+      "worlds_view": "Dünyaları görme",
+      "worlds_close": "Dünyaları kapatma",
+      "codes": "Kodlar",
+      "wordfilter": "Kelime filtresi",
+      "roles_manage": "Rolleri yönetme",
+      "applications_view": "Başvuruları görme",
+      "applications_review": "Başvuruları inceleme",
+      "applications_manage": "Pozisyonları yönetme",
+      "applications_decide": "Başvurulara karar verme"
     }
   },
   "trsChoice": {
@@ -4914,6 +4938,62 @@
     "deleteDialog": {
       "title": "Bağlantı silinsin mi?",
       "text": "Resim TRS sunucusundan kaldırılır ve bağlantı çalışmaz. Bu bilgisayardaki ekran görüntün kalır."
+    }
+  },
+  "websiteLogin": {
+    "title": "Web sitesi",
+    "description": "{host} üzerinde Minecraft’ın sahibi olan Microsoft hesabıyla giriş yaparsın – ekibe başvurmak ve ekip üyesi olarak tüm ekip alanı için.",
+    "button": "Web sitesinde Microsoft ile giriş yap",
+    "hint": "Web sitesi artık yalnızca Microsoft ile giriş yapar. Tarayıcında açılır."
+  },
+  "applications": {
+    "status": {
+      "new": "Alındı",
+      "review": "İnceleniyor",
+      "interview": "Görüşme",
+      "accepted": "Kabul edildi",
+      "rejected": "Reddedildi",
+      "withdrawn": "Geri çekildi"
+    },
+    "statusHelp": {
+      "new": "Ekip henüz bakmadı.",
+      "review": "Ekip başvurunu inceliyor.",
+      "interview": "Ekip seninle konuşmak istiyor – bir mesaj bekle.",
+      "accepted": "Ekibe hoş geldin!",
+      "rejected": "Bu sefer olmadı.",
+      "withdrawn": "Bu başvuruyu geri çektin."
+    },
+    "toast": {
+      "title": "Başvurun: {job}",
+      "status": {
+        "new": "Alındı – başvurduğun için teşekkürler!",
+        "review": "Ekip şimdi inceliyor.",
+        "interview": "Görüşmeye davet edildin.",
+        "accepted": "Kabul edildi – ekibe hoş geldin!",
+        "rejected": "Bu sefer kabul edilmedi.",
+        "withdrawn": "Geri çekildi."
+      },
+      "withResponse": "{status} – “{response}”",
+      "view": "Göster"
+    },
+    "dialog": {
+      "title": "Başvurularım",
+      "subtitle": "TRS ekibine başvurular, durum ve yanıtla",
+      "none": "Henüz başvurmadın.",
+      "noneHint": "Açık pozisyonlar ve başvuru formu web sitesinde.",
+      "sent": "{date} gönderildi",
+      "answer": "Ekibin yanıtı · {date}",
+      "withdraw": "Geri çek",
+      "withdrawConfirm": "Bu başvuruyu gerçekten geri çekmek istiyor musun?",
+      "withdrawn": "“{job}” başvurusu geri çekildi.",
+      "footer": "Başvurular web sitesinden yapılır (Microsoft ile giriş).",
+      "jobs": "Açık pozisyonlar",
+      "website": "Web sitesinde"
+    },
+    "settings": {
+      "title": "Başvurularım",
+      "description": "Ekibe yaptığın başvurular, durum ve ekibin yanıtıyla.",
+      "button": "Göster"
     }
   }
 }

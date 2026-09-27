@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
-import { applicationToast, isOpenApplication, type MyApplication } from '~/utils/applications'
-import type { LiveEvent } from '~/utils/chat'
+import { computed, ref } from 'vue'
+// Relativ importiert, damit Tests den Store ohne Nuxt laden können (`useTrsStore` bleibt Auto-Import).
+import { applicationToast, isOpenApplication, type MyApplication } from '../utils/applications'
+import { backend, errorMessage } from '../utils/backend'
+import type { LiveEvent } from '../utils/chat'
+import { t } from '../utils/i18n'
+import { useSocialToasts } from './socialToasts'
 
 type ApplicationEvent = Extract<LiveEvent, { type: 'application_updated' }>
 
