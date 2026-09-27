@@ -214,11 +214,31 @@ enlace»; tus demás capturas se quedan en tu PC.
   Como las demás denuncias, conserva una copia de la imagen como prueba (ver abajo), y el equipo puede borrar imágenes
   compartidas.
 
+### Biblioteca de circuitos (TRS Client)
+
+La biblioteca de circuitos del TRS Client (y de la web, /circuits) carga sus circuitos del servidor de TRS. No hace
+falta cuenta: una vez por inicio del juego, el TRS Client pregunta si hay circuitos nuevos o cambiados y descarga solo
+esos; se guardan en caché en `config/trsclient/circuits/`. Esto solo ocurre mientras las funciones en línea de TRS estén
+permitidas. El servidor solo cuenta las peticiones por dirección IP en memoria (límite de peticiones).
+
+- **Enviar un circuito** (con sesión iniciada, en el TRS Client o en la web): guardamos el circuito (solo bloques y sus
+  estados, sin contenido de cofres ni otros datos de bloques), el nombre, la descripción, la categoría y el idioma que
+  indicaste, tu UUID y tu nombre de Minecraft, la fecha, el estado y la respuesta del equipo. Los archivos subidos se
+  convierten y se descartan al instante. Solo ven los envíos los miembros del equipo cuyo rol puede gestionar la
+  biblioteca.
+- **Se muestra tu nombre:** si el equipo acepta tu circuito, aparece en la biblioteca del TRS Client y de la web **con
+  tu nombre de Minecraft (y tu UUID para la imagen de la cabeza) como creador**. Lo confirmas antes de enviarlo.
+- **Cuánto tiempo:** los envíos decididos se borran **90 días** después de la decisión; los abiertos se conservan hasta
+  que se decidan. Un circuito publicado sigue hasta que el equipo lo quite; «Alle TRS-Daten löschen» borra tus envíos y
+  quita tu nombre de tus circuitos. Puedes pedirnos en cualquier momento que quitemos un circuito tuyo.
+- **Límites y denuncias:** como máximo 5 envíos al día; un bloqueo de subida de la moderación también bloquea los
+  envíos. Los circuitos se pueden denunciar como cualquier otro contenido (ver abajo).
+
 ### Denuncias y moderación
 
 Puedes denunciar mensajes, imágenes, jugadores y grupos (con un motivo y una nota opcional). La denuncia guarda una
 copia cifrada del contenido denunciado y de hasta 10 mensajes anteriores y posteriores, tal como los veías; las imágenes
-denunciadas se copian. Los administradores del equipo revisan las denuncias en el sitio web o en el launcher y pueden
+denunciadas se copian. Los miembros del equipo cuyo rol lo permite revisan las denuncias en el sitio web o en el launcher y pueden
 borrar mensajes, advertir, silenciar en el chat durante un tiempo o bloquear; cada acción queda registrada. Quien
 denuncia solo sabe si se hizo algo, no qué. El jugador denunciado no sabe quién lo denunció.
 
@@ -235,7 +255,7 @@ plazos, para que la moderación no se pueda eludir borrando la cuenta.
 
 ### Sanciones y apelaciones
 
-El equipo (administradores y moderadores) puede imponer sanciones por infracciones: una advertencia, un silencio en el
+El equipo (los miembros cuyo rol lo permite) puede imponer sanciones por infracciones: una advertencia, un silencio en el
 chat, un bloqueo social (sin solicitudes de amistad, grupos ni invitaciones), un bloqueo de subidas (sin capas ni
 cosméticos propios), un bloqueo para alojar mundos o el bloqueo de toda la cuenta TRS – por un tiempo o de forma
 permanente. Guardamos tu UUID, el tipo, el motivo (de una lista fija, más un texto opcional que puedes ver), el inicio
@@ -254,6 +274,18 @@ nombres anteriores **2 años** después de su último uso y las entradas del reg
 **2 años**. Si borras tu cuenta, las advertencias y las sanciones terminadas se borran enseguida; las sanciones
 **activas** (y sus notas) se conservan hasta que terminen, para que no se puedan eludir borrando la cuenta. La base
 jurídica es nuestro interés legítimo en un servicio seguro (art. 6.1.f RGPD).
+
+### Inicio de sesión en la web y solicitudes para el equipo
+
+**Inicio de sesión con Microsoft en la web.** En trs-launcher.theredstonee.de puedes iniciar sesión con la cuenta de
+Microsoft a la que pertenece Minecraft: Java Edition. Solo recibimos tu UUID y nombre de Minecraft; los tokens de
+Microsoft, Xbox y Minecraft están unos segundos en memoria y se descartan – no guardamos tokens, correo ni contraseña,
+solo una sesión web (8 horas).
+
+**Solicitudes para el equipo:** puesto, nombre y UUID de Minecraft, nombre de Discord, grupo de edad (nunca la fecha de
+nacimiento), tus respuestas, estado y nuestra respuesta. Solo las ven los miembros del equipo que pueden revisar
+solicitudes. Las rechazadas o retiradas se borran 6 meses después de la decisión, las aceptadas 6 meses después de
+salir del equipo; al borrar tu cuenta TRS se borran al instante.
 
 ### Alojar un mundo para amigos (TRS Client)
 
@@ -341,6 +373,7 @@ servidor TRS.
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
 | Capturas compartidas (solo las imágenes que compartes): la imagen recodificada, tamaño, formato, fecha de publicación y de caducidad, la cuenta que la compartió (no visible públicamente) | Compartir una captura como enlace (ver arriba) |
+| Circuitos enviados: el circuito (solo bloques y estados), nombre, descripción, categoría, idioma, fecha, estado y respuesta del equipo; en los circuitos aceptados, tu nombre como creador | Enviar un circuito a la biblioteca (ver arriba) |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
 
@@ -387,6 +420,8 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   equipo) o se borra el grupo. Las imágenes subidas pero nunca enviadas se borran al cabo de 1 hora.
 - Las capturas compartidas se borran automáticamente **30 días** después de compartirlas, o antes si tú (o el equipo)
   las borráis.
+- Los envíos de circuitos decididos se borran **90 días** después de la decisión; los circuitos publicados siguen
+  hasta que el equipo los quite (sin tu nombre tras «Alle TRS-Daten löschen»).
 - **«Alle TRS-Daten löschen»** (borrar todos los datos TRS, en *Einstellungen → Datenschutz*) lo elimina todo al
   instante (art. 17 del RGPD): tu cuenta, sesiones, amistades, solicitudes y bloqueos, las capas subidas y sus archivos,
   las capas compartidas (tus capas con amigos y las que tus amigos compartieron contigo),

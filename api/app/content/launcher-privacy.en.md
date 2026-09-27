@@ -202,11 +202,31 @@ In the launcher's screenshot gallery and in the TRS Client ("Clips & pictures") 
   reason; the page stores no IP address (rate limits count in memory only). A report keeps a copy of the picture as
   evidence, like other reports (see below), and the team can delete shared pictures.
 
+### Circuit library (TRS Client)
+
+The circuit library in the TRS Client (and on the website, /circuits) loads its circuits from the TRS server. It needs
+no account: once per game start the TRS Client asks whether there are new or changed circuits and downloads only those;
+they are cached in `config/trsclient/circuits/`. This only happens while the TRS online features are allowed. The
+server only counts requests per IP address in memory (rate limit).
+
+- **Submitting a circuit** (signed in, in the TRS Client or on the website): we store the circuit (only blocks and their
+  states – no chest contents or other block data), the name, description, category and language you entered, your
+  Minecraft UUID and name, the time, the status and the team's answer. Uploaded files are converted and discarded right
+  away. Only team members whose role may manage the library see submissions.
+- **Your name is shown:** if the team accepts your circuit, it appears in the library in the TRS Client and on the
+  website **with your Minecraft name (and your UUID for the head picture) as the creator**. You confirm this before
+  submitting.
+- **How long:** decided submissions are deleted **90 days** after the decision, open ones stay until they are decided.
+  A published circuit stays until the team removes it; "Alle TRS-Daten löschen" deletes your submissions and removes
+  your name from your circuits. You can ask us to remove a circuit of yours at any time.
+- **Limits and reports:** at most 5 submissions per day; an upload ban from moderation also blocks submissions. Circuits
+  can be reported like other content (see below).
+
 ### Reports and moderation
 
 You can report messages, pictures, players and groups (with a reason and an optional note). The report stores an
 encrypted copy of the reported content and of up to 10 messages before and after it, exactly as you could see them;
-reported pictures are copied. Team admins review reports on the website or in the launcher and can delete messages,
+reported pictures are copied. Team members whose role allows it review reports on the website or in the launcher and can delete messages,
 warn a player, mute them in chat for a while or ban them; every action is logged. The reporter only learns whether
 something was done, not what. The reported player doesn't learn who reported them.
 
@@ -223,7 +243,7 @@ periods end, so moderation can't be escaped by deleting the account.
 
 ### Sanctions and appeals
 
-The team (admins and moderators) can give sanctions for violations: a warning, a chat mute, a social ban (no friend
+The team (members whose role allows it) can give sanctions for violations: a warning, a chat mute, a social ban (no friend
 requests, groups or invites), an upload ban (no own capes or cosmetics), a world hosting ban or a ban of the whole TRS
 account – for a limited time or permanently. We store your UUID, the kind, the reason (from a fixed list, plus an
 optional text you can see), start and end, who gave the sanction, an internal team note and every later change
@@ -240,6 +260,17 @@ permanent sanctions stay while they apply. Internal notes are deleted after **2 
 their last use, entries in the team's audit log after **2 years**. If you delete your account, warnings and ended
 sanctions are deleted at once; **active** sanctions (and notes about them) stay until they end, so they can't be
 escaped by deleting. The legal basis is our legitimate interest in a safe service (Art. 6(1)(f) GDPR).
+
+### Website sign-in and team applications
+
+**Website sign-in with Microsoft.** On trs-launcher.theredstonee.de you can sign in with the Microsoft account that owns
+Minecraft: Java Edition. We only receive your Minecraft UUID and name; the Microsoft, Xbox and Minecraft tokens exist in
+memory for a few seconds and are discarded – we store no tokens, e-mail or password, only a website session (8 hours).
+
+**Team applications:** position, Minecraft name and UUID, Discord name, age group (never a birth date), your answers,
+status and our answer. Only team members whose role may review applications see them. Rejected or withdrawn
+applications are deleted 6 months after the decision, accepted ones 6 months after you leave the team; deleting your
+TRS account deletes them at once.
 
 ### Hosting a world for friends (TRS Client)
 
@@ -323,6 +354,7 @@ the TRS server.
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
 | Shared screenshots (only the pictures you share): the re-encoded picture, size, format, share and expiry time, the sharing account (not shown publicly) | Sharing a screenshot as a link (see above) |
+| Circuit submissions: the circuit (blocks and states only), name, description, category, language, time, status and the team's answer; for accepted circuits your name as the creator | Submitting a circuit to the library (see above) |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
 
@@ -365,6 +397,8 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Chat messages and pictures stay until they are deleted (by you for everyone, by the group owner or by the team) or
   the group is deleted. Pictures that were uploaded but never sent are deleted after 1 hour.
 - Shared screenshots are deleted automatically **30 days** after sharing, or earlier when you (or the team) delete them.
+- Decided circuit submissions are deleted **90 days** after the decision; published circuits stay until the team
+  removes them (without your name after "Alle TRS-Daten löschen").
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
   account, sessions, friendships, requests and blocks, uploaded capes and their files, cape shares (your capes with
   friends and the capes friends shared with you), code redemptions, reports,
