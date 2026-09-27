@@ -114,7 +114,7 @@ async function sendReport() {
     </section>
 
     <footer class="mt-12 flex flex-wrap items-center gap-3 border-t border-base-800 pt-6 text-sm text-base-400">
-      <span class="flex-1">{{ m.share.madeWith }}</span>
+      <span class="w-full sm:w-auto sm:flex-1">{{ m.share.madeWith }}</span>
       <NuxtLink :to="lp('/privacy')" class="hover:text-base-100">{{ m.share.privacy }}</NuxtLink>
       <NuxtLink :to="lp('/download')" class="btn btn-primary text-sm"><SiteIcon name="download" class="size-4" />{{ m.share.getLauncher }}</NuxtLink>
     </footer>
