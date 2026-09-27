@@ -2821,6 +2821,9 @@ files only under `overrides/`, `client-overrides/`, `server-overrides/`. All pat
 or drive letters; no file twice. Index downloads **only from `https://cdn.modrinth.com/`**. At most 20,000 zip entries,
 5,000 index files and 1 GB unpacked. The server never unpacks anything to disk.
 
+The pack page links to `trs-launcher://pack/TRS-XXXX-XXXX` (“Open in TRS Launcher”, launcher ≥ 0.12.0). The launcher
+only accepts exactly this form and opens its “Modpack by code” preview – it never installs without a click.
+
 ### 27.4 Events (`/v1/events/me`)
 
 - `pack_shared` `{ pack, from, sentAt }` – a friend sent you a pack.

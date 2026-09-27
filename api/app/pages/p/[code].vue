@@ -134,9 +134,13 @@ async function sendReport() {
         <aside class="card flex flex-col gap-3 p-5">
           <p class="text-xs font-medium tracking-wide text-base-400 uppercase">{{ m.pack.codeLabel }}</p>
           <p ref="codeEl" class="code font-mono text-2xl text-base-50 select-all">{{ pack.code }}</p>
-          <button type="button" class="btn btn-primary" @click="copy">
+          <a :href="`trs-launcher://pack/${pack.code}`" class="btn btn-primary" data-testid="open-in-launcher">
+            <SiteIcon name="external" class="size-4" />{{ m.pack.openInLauncher }}
+          </a>
+          <button type="button" class="btn btn-ghost" @click="copy">
             <SiteIcon :name="copied ? 'check' : 'copy'" class="size-4" />{{ copied ? m.pack.copied : m.pack.copy }}
           </button>
+          <p class="text-xs text-base-400">{{ m.pack.openHint }}</p>
           <span class="sr-only" role="status">{{ copied ? m.pack.copied : '' }}</span>
         </aside>
       </div>
