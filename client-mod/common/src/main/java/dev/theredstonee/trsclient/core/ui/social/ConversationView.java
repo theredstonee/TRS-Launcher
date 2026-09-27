@@ -3,6 +3,13 @@ package dev.theredstonee.trsclient.core.ui.social;
 import dev.theredstonee.trsclient.core.clips.ClipLibrary;
 import dev.theredstonee.trsclient.core.clips.Thumbnails;
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.intro.IntroGate;
+import dev.theredstonee.trsclient.core.map.MapEngine;
+import dev.theredstonee.trsclient.core.module.NewSince;
+import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
+import dev.theredstonee.trsclient.core.waypoint.Waypoint;
+import dev.theredstonee.trsclient.core.waypoint.WaypointShare;
 import dev.theredstonee.trsclient.core.online.FriendsView;
 import dev.theredstonee.trsclient.core.social.Chat;
 import dev.theredstonee.trsclient.core.social.ChatStore;
@@ -455,7 +462,11 @@ final class ConversationView {
 		c.pop();
 	}
 
-	private void invite(Canvas c, Social s, final Chat.Invite inv, int x, int y, int w, int mx, int my) {
+	private void invite(Canvas c, final Social s, final Chat.Invite inv, int x, int y, int w, int mx, int my) {
+		if (inv.waypoint != null) {
+			WaypointCard.draw(c, ctx.kit(), inv.waypoint, x, y, w, mx, my, true, s::hint);
+			return;
+		}
 		if (inv.world != null) {
 			worldCard(c, inv, x, y, w, mx, my);
 			return;
@@ -517,6 +528,7 @@ final class ConversationView {
 
 	/** „Beitreten“: in einer Welt erst nachfragen, dann verbinden. */
 	void join(final Chat.Invite inv) {
+		if (inv.waypoint != null) return;
 		if (inv.world != null) {
 			final dev.theredstonee.trsclient.core.hosting.Hosting h = dev.theredstonee.trsclient.core.hosting.Hosting.current();
 			if (h == null) return;
@@ -591,6 +603,13 @@ final class ConversationView {
 		if (m.hasContent() && m.text != null && !m.text.isEmpty()) {
 			p.add("copy", I18n.tr("social.action.copy"), () -> ctx.host().copy(m.text));
 		}
+		final Chat.Waypoint wp = m.hasContent() ? m.waypoint() : null;
+		if (wp != null) {
+			p.add("copy", I18n.tr("waypoint.card.copy"), () -> {
+				ctx.host().copy(wp.coords());
+				s.hint("waypoint.card.copied", new Object[]{wp.coords()}, false);
+			});
+		}
 		if (own && m.hasContent() && m.text != null && conv.canWrite) {
 			p.add("pencil", I18n.tr("social.action.edit"), () -> {
 				editing = m;
@@ -632,7 +651,7 @@ final class ConversationView {
 			public int width(String s) {
 				return c.textWidth(s);
 			}
-		}, composer.text(), Math.max(20, w - 64));
+		}, composer.text(), Math.max(20, w - 82));
 	}
 
 	private void composer(Canvas c, final Social s, final Chat.Conversation conv, int x, int y, int w, int h, int mx, int my,
@@ -682,9 +701,13 @@ final class ConversationView {
 			if (invite != null) {
 				int iw = Math.min(140, x + w - sx - 2);
 				if (iw > 40) {
-					Redstone.stone(c, sx, cy, iw, 20, t.deep, ColorMath.lerp(t.border, t.lampOn, 0.4f));
-					Icons.draw(c, "globe", sx + 3, cy + 6, 1, t.lampOn);
-					Paint.textClipped(c, invite.address, sx + 14, cy + 6, iw - 28, t.text, false);
+					boolean pin = invite.waypoint != null;
+					int accent = pin ? 0xFF000000 | (invite.waypoint.color >= 0 ? invite.waypoint.color : WaypointCard.DEFAULT_COLOR)
+							: t.lampOn;
+					Redstone.stone(c, sx, cy, iw, 20, t.deep, ColorMath.lerp(t.border, accent, 0.4f));
+					Icons.draw(c, pin ? "pin" : "globe", sx + 3, cy + 6, 1, accent);
+					Paint.textClipped(c, pin ? WaypointCard.line(invite.waypoint) : invite.address, sx + 14, cy + 6, iw - 28, t.text,
+							false);
 					kit.icon(c, sx + iw - 11, cy + 1, 10, "close", false, mx, my, () -> invite = null);
 				}
 			}
@@ -697,10 +720,20 @@ final class ConversationView {
 		bx += 18;
 		final String server = ctx.host().currentServer();
 		if (server != null && SafeText.serverAddress(server) != null) {
-			kit.icon(c, bx, cy + 1, 16, "globe", invite != null, mx, my, () -> invite = invite == null
+			kit.icon(c, bx, cy + 1, 16, "globe", invite != null && invite.server(), mx, my, () -> invite = invite == null || !invite.server()
 					? new Chat.Invite(SafeText.serverAddress(server), null) : null);
 		} else {
 			kit.iconDisabled(c, bx, cy + 1, 16, "globe");
+		}
+		bx += 18;
+		// Wegpunkt teilen: aktuelle Position oder ein Wegpunkt dieser Welt.
+		if (ctx.host().inWorld()) {
+			final int px = bx;
+			final int py = cy + 18;
+			kit.icon(c, bx, cy + 1, 16, "pin", invite != null && invite.waypoint != null, mx, my, () -> waypointMenu(px, py));
+			if (isNew(NewSince.SOCIAL_WAYPOINT)) NewBadge.dot(c, bx + 12, cy - 1);
+		} else {
+			kit.iconDisabled(c, bx, cy + 1, 16, "pin");
 		}
 		bx += 18;
 		int fx = bx + 1;
@@ -748,6 +781,54 @@ final class ConversationView {
 		boolean can = !composer.isEmpty() || !images.isEmpty() || invite != null;
 		if (can) kit.icon(c, x + w - 18, cy + 1, 16, "send", true, mx, my, this::send);
 		else kit.iconDisabled(c, x + w - 18, cy + 1, 16, "send");
+	}
+
+	/** Auswahl „Wegpunkt teilen“: aktuelle Position oder ein Wegpunkt dieser Welt und Dimension. */
+	void waypointMenu(int x, int y) {
+		seen(NewSince.SOCIAL_WAYPOINT);
+		final Social s = ctx.social();
+		PopupMenu p = new PopupMenu(x, y);
+		p.add("pin", I18n.tr("waypoint.share.here"), () -> {
+			String who = s == null || s.selfName() == null ? "" : s.selfName();
+			Chat.Waypoint w = WaypointShare.here(I18n.tr("waypoint.share.hereName", who));
+			if (w == null) {
+				if (s != null) s.hint(WaypointShare.Result.NO_WORLD.key(), null, true);
+				return;
+			}
+			invite = new Chat.Invite(w);
+			composer.setFocused(true);
+		});
+		MapEngine e = MapEngine.get();
+		List<Waypoint> list = e == null ? java.util.Collections.<Waypoint>emptyList() : e.waypoints();
+		int shown = 0;
+		for (final Waypoint wp : list) {
+			if (shown >= 8) break;
+			final Chat.Waypoint card = WaypointShare.of(wp);
+			if (card == null) continue;
+			if (shown == 0) p.separator();
+			p.add("pin", wp.name, () -> {
+				invite = new Chat.Invite(card);
+				composer.setFocused(true);
+			});
+			shown++;
+		}
+		ctx.popup(p);
+	}
+
+	/** Bereich neu seit dem letzten Update und noch nie benutzt? */
+	static boolean isNew(String newId) {
+		TrsModules m = IntroGate.modules();
+		return m != null && m.clientState.news().isNew(newId);
+	}
+
+	static void seen(String newId) {
+		TrsModules m = IntroGate.modules();
+		if (m != null && m.clientState.news().markSeen(newId)) IntroGate.save(m);
+	}
+
+	/** Für Selbsttests: Karte in die Eingabe legen. */
+	void testWaypoint(Chat.Waypoint w) {
+		invite = w == null ? null : new Chat.Invite(w);
 	}
 
 	private static long modified(Path p) {

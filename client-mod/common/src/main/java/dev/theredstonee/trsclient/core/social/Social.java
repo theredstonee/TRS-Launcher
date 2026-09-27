@@ -54,7 +54,8 @@ public final class Social {
 			"not_sender", "already_reported", "too_many_open_reports", "cannot_target_self", "not_reportable",
 			"too_many_pending_attachments", "storage_quota", "storage_full", "payload_too_large", "image_too_large",
 			"invalid_image", "unsupported_media_type", "player_not_found", "attachment_not_found", "offline",
-			"image_unreadable", "busy", "sanctioned", "banned"));
+			"image_unreadable", "busy", "sanctioned", "banned", "shared_image_limit", "share_daily_limit", "share_not_found",
+			"animated_image"));
 
 	/** Anbindung an TrsOnline. */
 	public interface Backend {
@@ -906,6 +907,12 @@ public final class Social {
 					m.sender == null ? null : m.sender.uuid, sender, m.conversationId, null, now);
 			return;
 		}
+		if (m.invite != null && m.invite.waypoint != null) {
+			// Wegpunkt-Karte: normaler Nachrichten-Toast (Übernehmen/Anzeigen gibt es in der Unterhaltung).
+			toasts.add(Toasts.Kind.MESSAGE, "conv:" + m.conversationId, title, I18n.tr("social.preview.waypoint", m.invite.name),
+					m.sender == null ? null : m.sender.uuid, sender, m.conversationId, null, now);
+			return;
+		}
 		if (m.invite != null) {
 			String label = m.invite.name != null ? m.invite.name : m.invite.address;
 			toasts.add(Toasts.Kind.INVITE, "conv:" + m.conversationId, title, I18n.tr("social.toast.invite", label),
@@ -1735,6 +1742,65 @@ public final class Social {
 		}, maxSide);
 	}
 
+	// --- Geteilte Bilder (API.md §23) ---
+
+	/**
+	 * Bild als Link teilen: Datei lesen, bei Bedarf verkleinern ({@link ChatImages#prepareShare}), hochladen. Im
+	 * Upload-Thread; {@code done} im Spiel-Thread mit dem Link bzw. einem i18n-Fehlerschlüssel.
+	 */
+	public void shareImage(final Path file, final Done<SharedImage> done) {
+		action(new Job<SharedImage>() {
+			@Override
+			public SharedImage run(String t) throws IOException, ApiException {
+				ChatImages.Upload u;
+				try {
+					if (Files.size(file) > 128L * 1024 * 1024) throw new IOException("zu groß");
+					u = ChatImages.prepareShare(Files.readAllBytes(file));
+				} catch (IOException | RuntimeException | OutOfMemoryError e) {
+					throw new ApiException(0, "image_unreadable", 0);
+				}
+				return api.share(t, u.bytes, u.mime);
+			}
+		}, done, null, uploads);
+	}
+
+	/** Eigene geteilte Bilder laden. */
+	public void loadShares(final Done<SharedImage.Listing> done) {
+		action(new Job<SharedImage.Listing>() {
+			@Override
+			public SharedImage.Listing run(String t) throws IOException, ApiException {
+				return api.shares(t);
+			}
+		}, done, null);
+	}
+
+	/** Geteiltes Bild vorzeitig löschen. */
+	public void deleteShare(final String id, final Done<Boolean> done) {
+		action(new Job<Boolean>() {
+			@Override
+			public Boolean run(String t) throws IOException, ApiException {
+				api.deleteShare(t, id);
+				return Boolean.TRUE;
+			}
+		}, done, null);
+	}
+
+	/** Vorschau eines geteilten Bildes (öffentlich, ≤ 480 px) als Textur oder null. */
+	public TextureRef shareThumb(final SharedImage s) {
+		if (s == null) return null;
+		return images.get("s:" + s.id, new Callable<byte[]>() {
+			@Override
+			public byte[] call() throws Exception {
+				return api.shareThumb(s);
+			}
+		}, 480);
+	}
+
+	/** Hinweis im Sozial-Bildschirm (z. B. „Wegpunkt gesendet“). */
+	public void hint(String key, Object[] args, boolean error) {
+		note(key, args, error);
+	}
+
 	// --- Hilfen ---
 
 	/** Eine Aktion im REST-Thread; Ergebnis (bzw. Fehler als Meldung) im Spiel-Thread. */
@@ -1743,6 +1809,10 @@ public final class Social {
 	}
 
 	private <T> void action(final Job<T> job, final Done<T> done, final String successKey) {
+		action(job, done, successKey, rest);
+	}
+
+	private <T> void action(final Job<T> job, final Done<T> done, final String successKey, Executor executor) {
 		final String t = token;
 		if (t == null) {
 			note("social.error.offline", null, true);
@@ -1750,7 +1820,7 @@ public final class Social {
 			return;
 		}
 		final int gen = session;
-		if (!submit(rest, new Runnable() {
+		if (!submit(executor, new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -1808,6 +1878,8 @@ public final class Social {
 	}
 
 	static String errorKey(ApiException e) {
+		// Tageslimit geteilter Bilder kommt als 429 – eigener Text statt „zu schnell“.
+		if ("share_daily_limit".equals(e.code())) return "social.error.share_daily_limit";
 		if (e.status() == 429) return "social.error.rate_limited";
 		if (KNOWN_ERRORS.contains(e.code())) return "social.error." + e.code();
 		return "social.error.generic";

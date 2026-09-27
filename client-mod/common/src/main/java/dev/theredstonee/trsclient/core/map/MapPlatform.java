@@ -65,4 +65,12 @@ public interface MapPlatform {
 
 	/** MOTD des Servers (für Fair-Play-Codes) oder null. */
 	String serverMotd();
+
+	/**
+	 * Weltkarte öffnen (ersetzt den offenen Bildschirm); false = geht in dieser Version nicht. Für „Anzeigen“ an geteilten
+	 * Wegpunkten – die Stelle kommt vorher über {@link WorldMapUi#requestFocus}.
+	 */
+	default boolean openWorldMap() {
+		return false;
+	}
 }

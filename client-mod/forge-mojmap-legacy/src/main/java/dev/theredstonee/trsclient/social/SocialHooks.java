@@ -88,6 +88,17 @@ public final class SocialHooks {
 				return 0;
 			}
 		}
+
+		@Override
+		public boolean openSocial() {
+			try {
+				if (!dev.theredstonee.trsclient.screen.MenuScreens.friendsAvailable()) return false;
+				Mc.setScreen(dev.theredstonee.trsclient.screen.MenuScreens.social(null));
+				return true;
+			} catch (RuntimeException | LinkageError e) {
+				return false;
+			}
+		}
 	};
 
 	/** Liest die belegten Plätze der Vanilla-Toasts (Feldsuche per Typ, siehe VanillaToastProbe). Render-Thread. */

@@ -97,6 +97,12 @@ public final class MenuScreens {
 			public Path configDir() {
 				return gameDir.resolve("config");
 			}
+
+			@Override
+			public boolean copy(String text) {
+				Mc.setClipboard(text);
+				return true;
+			}
 		};
 		return new TrsUiScreen(I18n.tr("clips.title"), new ClipsUi(host));
 	}
