@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3'
-import { listAdminSubmissions, pendingSubmissionCount, submissionListQuery } from '../../../../lib/circuits'
+import { circuitCounts, listAdminSubmissions, pendingSubmissionCount, submissionListQuery } from '../../../../lib/circuits'
 import { useCtx } from '../../../../lib/context'
 import { queryWith, requireStaff } from '../../../../lib/http'
 
@@ -8,5 +8,5 @@ export default defineEventHandler((event) => {
   requireStaff(event, 'circuits.manage')
   const q = queryWith(event, submissionListQuery)
   const ctx = useCtx()
-  return { submissions: listAdminSubmissions(ctx, q.status), pending: pendingSubmissionCount(ctx) }
+  return { submissions: listAdminSubmissions(ctx, q.status), pending: pendingSubmissionCount(ctx), counts: circuitCounts(ctx) }
 })

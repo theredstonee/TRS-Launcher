@@ -793,6 +793,48 @@ try {
     const out = await http('POST', '/v1/web/logout', { headers: WC })
     check('web logout', out.status === 204 && (await http('GET', '/v1/web/me', { headers: W })).status === 401)
   }
+
+  // ------------------------------------------------------------ Schaltungs-Bibliothek (§25)
+  {
+    const K = { 'x-admin-key': ADMIN_KEY }
+    const idx = await http('GET', '/v1/circuits/index')
+    check('circuit index seeded', idx.status === 200 && idx.json.circuits.length === 25 && idx.json.circuits[0].id === 'not_gate')
+    const etag = idx.headers.get('etag')
+    check('circuit index etag', etag === `"${idx.json.version}"` && /public/.test(idx.headers.get('cache-control') ?? ''))
+    check('circuit index 304', (await http('GET', '/v1/circuits/index', { headers: { 'if-none-match': etag } })).status === 304)
+    const one = await http('GET', '/v1/circuits/and_gate?rev=1')
+    check('circuit per rev immutable', one.status === 200 && one.json.format === 1 && one.json.rev === 1 && /immutable/.test(one.headers.get('cache-control') ?? '') && one.json.texts.de.name === 'UND-Gatter')
+    const old = await http('GET', '/v1/circuits/and_gate?rev=7')
+    check('wrong rev 404', old.status === 404 && old.json.error.code === 'rev_mismatch' && old.json.error.rev === 1 && old.headers.get('cache-control') === 'no-store')
+    const nbt = await fetch(`${BASE}/v1/circuits/piston_door_2x2/export?format=nbt`, { headers: { 'cf-connecting-ip': '203.0.113.9' } })
+    const nbtBytes = Buffer.from(await nbt.arrayBuffer())
+    check('circuit .nbt export', nbt.status === 200 && nbtBytes[0] === 0x1f && nbtBytes[1] === 0x8b)
+    // Einreichen (Bearer), Duplikat, Import-Umwandlung, Team-Prüfung
+    const sub = await loginAs('Builder', 'b'.repeat(32))
+    const circuit = { format: 1, id: 'lamp', category: 'basics', palette: { A: 'lever[face=floor]@A', '-': 'redstone_wire', L: 'redstone_lamp@Q' }, layers: [['A---L']] }
+    const s1 = await http('POST', '/v1/circuits/submissions', { token: sub.json.token, body: { circuit, name: 'Long lamp', category: 'basics', description: 'A lever and a lamp.', lang: 'en' } })
+    check('circuit submission 201', s1.status === 201 && /^cs[0-9a-f]{16}$/.test(s1.json.id) && s1.json.status === 'pending')
+    const dup = await http('POST', '/v1/circuits/submissions', { token: sub.json.token, body: { circuit, name: 'Again', category: 'basics', description: 'x', lang: 'en' } })
+    check('circuit duplicate 409', dup.status === 409 && dup.json.error.code === 'circuit_duplicate')
+    const bad = await http('POST', '/v1/circuits/submissions', { token: sub.json.token, body: { circuit: { ...circuit, palette: { A: 'tnt' }, layers: [['A']] }, name: 'Boom', category: 'basics', description: 'x', lang: 'en' } })
+    check('circuit invalid 400', bad.status === 400 && bad.json.error.code === 'invalid_circuit' && Array.isArray(bad.json.error.errors))
+    const conv = await http('POST', '/v1/circuits/convert?name=door.nbt', { token: sub.json.token, raw: nbtBytes, headers: { 'content-type': 'application/octet-stream' } })
+    check('circuit convert .nbt', conv.status === 200 && conv.json.format === 'nbt' && conv.json.blockCount > 30)
+    const mineC = await http('GET', '/v1/me/circuit-submissions', { token: sub.json.token })
+    check('my circuit submissions', mineC.json.submissions.length === 1 && mineC.json.limits.maxPerDay === 5)
+    const acc = await http('POST', `/v1/admin/circuit-submissions/${s1.json.id}/accept`, { headers: K, body: {} })
+    check('accept submission', acc.status === 200 && acc.json.circuit.id === 'long_lamp' && acc.json.submission.status === 'approved')
+    const idx2 = await http('GET', '/v1/circuits/index', { headers: { 'if-none-match': etag } })
+    check('index changed after accept', idx2.status === 200 && idx2.json.circuits.some((c) => c.id === 'long_lamp'))
+    const pub = await http('GET', '/v1/circuits/long_lamp')
+    check('accepted circuit has author', pub.json.author?.name === 'Builder')
+    const noPerm = await http('GET', '/v1/admin/circuits', { token: sub.json.token })
+    check('player cannot open circuit admin', noPerm.status === 403)
+    const page = await http('GET', '/circuits/and_gate?lang=de')
+    check('circuit page SSR', page.status === 200 && page.text.includes('UND-Gatter'))
+    const sm = await http('GET', '/sitemap.xml')
+    check('circuits in sitemap', sm.text.includes('/circuits/and_gate?lang=es') && sm.text.includes('/circuits/long_lamp'))
+  }
 } catch (err) {
   failures++
   console.error(err)

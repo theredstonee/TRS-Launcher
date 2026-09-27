@@ -278,7 +278,7 @@ function litematicVolume(root: NbtCompound): Volume {
       return i
     })
     const bits = Math.max(2, 32 - Math.clz32(bsp.length - 1))
-    if (BigInt(states.length) * 64n < BigInt(sx * sy * sz) * BigInt(bits)) throw invalid('litematic block states are truncated')
+    if (BigInt(states.length) * BigInt(64) < BigInt(sx * sy * sz) * BigInt(bits)) throw invalid('litematic block states are truncated')
     regs.push({ x0, y0, z0, sx, sy, sz, pal, states, bits })
     minX = Math.min(minX, x0); minY = Math.min(minY, y0); minZ = Math.min(minZ, z0)
     maxX = Math.max(maxX, x0 + sx - 1); maxY = Math.max(maxY, y0 + sy - 1); maxZ = Math.max(maxZ, z0 + sz - 1)
@@ -287,11 +287,11 @@ function litematicVolume(root: NbtCompound): Volume {
   checkDims(W, H, L)
   const value = (r: Reg, i: number): number => {
     const start = BigInt(i) * BigInt(r.bits)
-    const word = Number(start >> 6n)
-    const bit = start & 63n
-    const mask = (1n << BigInt(r.bits)) - 1n
+    const word = Number(start >> BigInt(6))
+    const bit = start & BigInt(63)
+    const mask = (BigInt(1) << BigInt(r.bits)) - BigInt(1)
     let v = BigInt.asUintN(64, r.states[word]!) >> bit
-    if (bit + BigInt(r.bits) > 64n) v |= BigInt.asUintN(64, r.states[word + 1]!) << (64n - bit)
+    if (bit + BigInt(r.bits) > BigInt(64)) v |= BigInt.asUintN(64, r.states[word + 1]!) << (BigInt(64) - bit)
     return Number(v & mask)
   }
   const meta = isCompound(root.Metadata) ? root.Metadata : null

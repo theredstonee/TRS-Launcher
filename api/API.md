@@ -2683,7 +2683,7 @@ New permission **`circuits.manage`** (group "content"). Default roles: owner, ad
 
 | Route | Body | Answer |
 |---|---|---|
-| `GET /v1/admin/circuit-submissions?status=pending\|approved\|rejected\|all` | – | `{ submissions: [AdminSubmission], pending }` (pending = oldest first) |
+| `GET /v1/admin/circuit-submissions?status=pending\|approved\|rejected\|all` | – | `{ submissions: [AdminSubmission], pending, counts }` (pending = oldest first) |
 | `GET /v1/admin/circuit-submissions/{id}` | – | `{ submission, suggestedId }` |
 | `POST /v1/admin/circuit-submissions/{id}/accept` | `{ circuit?: edited circuit, status?: published (default)\|draft, sort? }` | `{ submission, circuit }` – creates the circuit with `author = { uuid, name }` of the submitter; `409 submission_decided`, `409 circuit_exists` |
 | `POST /v1/admin/circuit-submissions/{id}/reject` | `{ reason: 3–500 }` | `{ submission }` |

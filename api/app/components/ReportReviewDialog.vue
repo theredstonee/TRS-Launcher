@@ -18,7 +18,7 @@ async function load() {
     report.value = (await api<{ report: ReportDetail }>(`/v1/admin/reports/${props.reportId}`)).report
     if (!draft.value.reasonCode) draft.value.reasonCode = REPORT_TO_REASON[report.value.reason] ?? 'other'
     // Geteilte Screenshots: naheliegende Strafe ist die Upload-Sperre.
-    if (report.value.kind === 'share' && draft.value.kind === 'chat_mute') draft.value.kind = 'upload_ban'
+    if ((report.value.kind === 'share' || report.value.kind === 'circuit') && draft.value.kind === 'chat_mute') draft.value.kind = 'upload_ban'
   } catch (e) {
     error.value = fill(m.value.admin.failed, { error: apiMessage(e) })
   }
@@ -40,7 +40,7 @@ const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_messa
 const limits = computed(() => session.value?.limits ?? { kinds: [], maxMinutes: 0, maxWarnMinutes: 0, permanent: false })
 
 function resetForm() {
-  draft.value = newSanctionDraft(report.value?.kind === 'share' ? 'upload_ban' : 'chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
+  draft.value = newSanctionDraft(report.value?.kind === 'share' || report.value?.kind === 'circuit' ? 'upload_ban' : 'chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
   keepOpen.value = false
   includeRelated.value = false
   note.value = ''

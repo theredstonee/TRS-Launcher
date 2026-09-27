@@ -37,10 +37,9 @@ async function load() {
       circuits.value = r.circuits
       counts.value = r.counts
     } else {
-      const r = await api<{ submissions: AdminSubmission[], pending: number }>(`/v1/admin/circuit-submissions?status=${subStatus.value}`)
+      const r = await api<{ submissions: AdminSubmission[], counts: typeof counts.value }>(`/v1/admin/circuit-submissions?status=${subStatus.value}`)
       subs.value = r.submissions
-      if (counts.value) counts.value.pendingSubmissions = r.pending
-      else counts.value = { pendingSubmissions: r.pending, published: 0, total: 0 }
+      counts.value = r.counts
     }
   } catch (e) {
     error.value = fill(a.value.common.failed, { error: apiMessage(e) })
