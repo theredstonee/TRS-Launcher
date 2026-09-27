@@ -219,6 +219,8 @@ export interface PlayerFile {
     name: string | null
     known: boolean
     role: 'admin' | 'moderator' | null
+    /** Team-Rollen (Owner zuerst, dann nach Rang); fehlt bei älterer API. */
+    roles?: { id: string, name: string | null, color: string, builtin: boolean }[]
     online: boolean
     firstLoginAt: string | null
     lastLoginAt: string | null

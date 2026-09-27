@@ -193,6 +193,16 @@ export function myTeamView(ctx: AppContext, staff: Staff): MyTeamView {
   }
 }
 
+/** Alle Team-Rollen einer Person (Owner aus ADMIN_UUIDS zuerst, dann nach Rang) – für Listen und die Spieler-Akte. */
+export function roleRefsOf(ctx: AppContext, uuid: string): RoleRef[] {
+  const out = memberRoles(ctx, uuid).map(roleRef)
+  if (ctx.config.adminUuids.has(uuid)) {
+    const owner = getRole(ctx, 'owner')
+    if (owner && !out.some((r) => r.id === 'owner')) out.unshift(roleRef(owner))
+  }
+  return out
+}
+
 function roleRef(r: RoleRow): RoleRef {
   return { id: r.id, name: r.name, color: r.color, builtin: r.builtin === 1 }
 }

@@ -8,6 +8,7 @@ interface Row {
   uuid: string
   name: string
   role: string | null
+  roles?: { id: string, name: string | null, color: string, builtin: boolean }[]
   online: boolean
   createdAt: string
   lastLoginAt: string
@@ -81,7 +82,8 @@ const { active } = useListKeys(items, { open })
             <span class="flex flex-wrap items-center gap-1.5">
               <span class="truncate font-semibold text-base-50">{{ p.name }}</span>
               <span v-if="p.online" class="size-2 bg-ok" :title="a.file.online" />
-              <span v-if="p.role" class="tone tone-info">{{ a.role[p.role] }}</span>
+              <template v-if="p.roles?.length"><RoleBadge v-for="r in p.roles" :key="r.id" :role="r" small /></template>
+              <span v-else-if="p.role" class="tone tone-info">{{ a.role[p.role] }}</span>
               <span v-for="k in p.activeSanctions" :key="k" class="tone" :class="kindTone(k)">{{ a.kinds[k] }}</span>
               <span v-if="p.openReports" class="tone tone-warn">{{ fill(a.players.openReports, { n: p.openReports }) }}</span>
             </span>

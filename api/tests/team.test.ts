@@ -15,6 +15,7 @@ import {
   listMembers,
   listRoleViews,
   ownerStaff,
+  roleRefsOf,
   setMemberRoles,
   teamOf,
   updateRole,
@@ -266,6 +267,16 @@ describe('public team page and the old role API', () => {
     const perms = (id: string) => JSON.parse(one<{ permissions: string }>(db, 'SELECT permissions FROM team_roles WHERE id = ?', id)!.permissions) as string[]
     expect(perms('admin').filter((p) => p === 'team.page')).toHaveLength(1)
     expect(perms('moderator')).not.toContain('team.page')
+  })
+
+  it('lists the real team roles of a player (owner first, then by rank)', async () => {
+    const env = makeEnv()
+    const t = await crew(env)
+    setMemberRoles(env.ctx, OWNER, t.mod2.uuid, ['moderator', 'recruiter'])
+    expect(roleRefsOf(env.ctx, ADMIN).map((r) => r.id)).toEqual(['owner'])
+    expect(roleRefsOf(env.ctx, t.mod2.uuid).map((r) => r.id)).toEqual(['moderator', 'recruiter'])
+    expect(roleRefsOf(env.ctx, t.content.uuid).map((r) => r.id)).toEqual(['content'])
+    expect(roleRefsOf(env.ctx, t.p1.uuid)).toEqual([])
   })
 
   it('accepts only safe links and Discord names', () => {

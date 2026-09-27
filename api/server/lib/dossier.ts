@@ -17,7 +17,7 @@ import {
   type SanctionKind,
   type Staff,
 } from './sanctions'
-import { can, limitsOf, rankOf, type StaffLimits } from './team'
+import { can, limitsOf, rankOf, roleRefsOf, type RoleRef, type StaffLimits } from './team'
 import { ACTIVE_BANS, getUser, staffRole, type StaffRole } from './users'
 
 /**
@@ -44,6 +44,8 @@ export interface PlayerFile {
     name: string | null
     known: boolean
     role: StaffRole | null
+    /** Team-Rollen (Owner zuerst, dann nach Rang); leer = kein Team-Mitglied. */
+    roles: RoleRef[]
     online: boolean
     firstLoginAt: string | null
     lastLoginAt: string | null
@@ -149,6 +151,7 @@ export function playerFile(ctx: AppContext, viewer: Staff, uuid: string): Player
       name: u?.name ?? names[0]?.name ?? null,
       known: !!u,
       role,
+      roles: roleRefsOf(ctx, uuid),
       online: ctx.presence.get(uuid) !== null,
       firstLoginAt: u ? iso(u.created_at) : null,
       lastLoginAt: u ? iso(u.last_login_at) : null,
@@ -208,6 +211,7 @@ export interface PlayerListItem {
   uuid: string
   name: string
   role: StaffRole | null
+  roles: RoleRef[]
   online: boolean
   createdAt: string
   lastLoginAt: string
@@ -283,6 +287,7 @@ export function listPlayers(ctx: AppContext, q: PlayerListQuery): { players: Pla
       uuid: r.uuid,
       name: r.name,
       role: staffRole(ctx, r.uuid),
+      roles: roleRefsOf(ctx, r.uuid),
       online: ctx.presence.get(r.uuid) !== null,
       createdAt: iso(r.created_at),
       lastLoginAt: iso(r.last_login_at),

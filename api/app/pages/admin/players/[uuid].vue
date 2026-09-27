@@ -96,7 +96,8 @@ const QUICK: SanctionKind[] = ['warn', 'chat_mute', 'social_ban', 'upload_ban', 
           <div class="flex flex-wrap items-center gap-2">
             <h1 class="adm-title">{{ file.player.name || a.common.unknown }}</h1>
             <span class="tone" :class="file.player.online ? 'tone-ok' : 'tone-muted'">{{ file.player.online ? a.file.online : a.file.offline }}</span>
-            <span v-if="file.player.role" class="tone tone-info">{{ a.role[file.player.role] }}</span>
+            <template v-if="file.player.roles?.length"><RoleBadge v-for="(r, i) in file.player.roles" :key="r.id" :role="r" :small="Number(i) > 0" /></template>
+            <span v-else-if="file.player.role" class="tone tone-info">{{ a.role[file.player.role] }}</span>
             <span v-if="file.player.banned" class="tone tone-danger">{{ a.file.banned }}</span>
           </div>
           <button type="button" class="adm-mono mt-1 flex items-center gap-1.5 text-base-400 hover:text-base-50" :title="a.file.copyUuid" @click="copyUuid">
