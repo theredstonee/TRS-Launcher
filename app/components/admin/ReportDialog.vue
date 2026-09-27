@@ -177,6 +177,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                   : t('admin.mod.contextDm') }}
                 · {{ dateTime(report.evidence.capturedAt) }}
               </p>
+              <p v-if="report.contentHidden" class="mt-3 flex items-start gap-2 rounded-lg border border-base-800 bg-base-950 px-3 py-2 text-xs text-base-300" data-testid="report-content-hidden">
+                <SocialIcon name="shield" class="mt-0.5 size-3.5 shrink-0 text-base-400" />{{ t('team.reports.contentHidden') }}
+              </p>
               <p v-if="report.evidencePurged" class="mt-3 text-sm text-base-400">{{ t('admin.mod.purged') }}</p>
               <p v-else-if="!report.evidence?.messages.length" class="mt-3 text-sm text-base-400">{{ t('admin.mod.noContext') }}</p>
               <ol v-else ref="log" class="chat-log mt-3" data-testid="evidence-log">
@@ -193,6 +196,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                     <span v-if="msg.deleted" class="text-base-400">· {{ t('social.chat.deleted') }}</span>
                   </div>
                   <p v-if="msg.kind === 'system'" class="text-xs text-base-400 italic">{{ t('admin.mod.system', { event: systemLabel(msg.system?.event) }) }}</p>
+                  <p v-if="msg.hidden && msg.kind !== 'system'" class="text-xs text-base-600 italic">{{ t('team.reports.messageHidden') }}</p>
                   <p v-if="msg.text" class="msg-text">{{ msg.text }}</p>
                   <p v-if="msg.invite" class="text-xs text-lamp-300">{{ t('admin.mod.invite', { address: msg.invite.address }) }}</p>
                   <p v-if="msg.waypoint" class="text-xs text-lamp-300">
@@ -225,7 +229,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                   <p class="mt-1 whitespace-pre-wrap text-base-100">{{ n.text }}</p>
                 </li>
               </ul>
-              <form class="mt-3 flex gap-2" @submit.prevent="addNote">
+              <form v-if="team.can('reports.handle')" class="mt-3 flex gap-2" @submit.prevent="addNote">
                 <input v-model="note" class="field flex-1" maxlength="2000" :placeholder="t('admin.mod.notePlaceholder')" :aria-label="t('admin.mod.notePlaceholder')" />
                 <button class="btn btn-ghost" :disabled="busy || !note.trim()">{{ t('admin.mod.addNote') }}</button>
               </form>
@@ -258,7 +262,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                 <p class="mt-2 text-xs text-base-200">{{ t('admin.mod.targetStats', report.targetModeration.reports) }}</p>
                 <p v-if="report.targetModeration.mute" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-lamp-300">
                   {{ report.targetModeration.mute.expiresAt ? t('admin.mod.mutedUntil', { date: dateTime(report.targetModeration.mute.expiresAt) }) : t('admin.mod.mutedReview') }}
-                  <button class="btn btn-ghost px-2 py-0.5 text-xs" :disabled="busy" @click="unmute">{{ t('admin.mod.unmute') }}</button>
+                  <button v-if="team.can('sanctions.lift')" class="btn btn-ghost px-2 py-0.5 text-xs" :disabled="busy" @click="unmute">{{ t('admin.mod.unmute') }}</button>
                 </p>
                 <details v-if="report.targetModeration.sanctions.length" class="mt-2 text-xs">
                   <summary class="cursor-pointer text-base-200">{{ t('admin.mod.history') }}</summary>
@@ -284,7 +288,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
               <p class="mt-1 text-xs text-base-400">{{ dateTime(report.createdAt) }}</p>
             </div>
 
-            <div class="rounded-lg border border-base-800 p-4">
+            <div v-if="!team.can('reports.handle')" class="rounded-lg border border-base-800 p-4 text-xs text-base-400" data-testid="report-read-only">
+              <h3 class="section-title mb-1">{{ t('admin.mod.decision') }}</h3>
+              {{ t('team.reports.readOnly') }}
+            </div>
+            <div v-else class="rounded-lg border border-base-800 p-4">
               <h3 class="section-title">{{ t('admin.mod.decision') }}</h3>
               <div v-if="!resolved" class="mt-3 flex gap-2">
                 <button v-if="report.status === 'open'" class="btn btn-ghost text-xs" :disabled="busy" @click="setStatus('in_review')">{{ t('admin.mod.claim') }}</button>
@@ -306,7 +314,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                 <button
                   class="btn btn-ghost col-span-2 text-sm"
                   :class="{ 'ring-1 ring-redstone-500': sanctioning }"
-                  :disabled="busy || !report.target"
+                  :disabled="busy || !report.target || !team.limits.value.kinds.length"
                   data-testid="mod-sanction"
                   @click="sanctioning = sanctioning ? null : 'form'"
                 >

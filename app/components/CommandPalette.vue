@@ -2,6 +2,7 @@
 import type { ContentItem, Instance } from '~/types'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
+import { WEBSITE_LOGIN_URL } from '~/utils/teamAccess'
 
 // Globale Suche (Strg+K): Instanzen starten oder
 // öffnen, installierte Mods finden, in einen Einstellungs-Bereich springen,
@@ -73,7 +74,7 @@ const pages = computed<Command[]>(() => {
     { to: '/clips', label: 'nav.clips', icon: 'clips', keywords: 'palette.keywords.clips' },
     { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
     { to: '/social', label: 'nav.social', icon: 'chat', keywords: 'palette.keywords.social' },
-    // Team-Bereich: nur für Admins und Moderatoren.
+    // Team-Bereich: für alle Team-Rollen (was sie darin sehen, regeln ihre Rechte).
     ...(trs.isStaff ? [{ to: '/admin', label: 'nav.admin' as MessageKey, icon: 'admin' as IconName, keywords: 'palette.keywords.admin' as MessageKey }] : []),
   ]
   return list
@@ -187,18 +188,30 @@ const commands = computed<Command[]>(() => [
     icon: 'compass',
     run: () => go('/browse?kind=modpack'),
   },
-  // Nur für das TRS-Team – die Website-Anmeldung ist dessen Verwaltungszugang.
-  ...(trs.isStaff
+  // Website (Bewerbungen, Team-Verwaltung): Anmeldung dort nur noch mit Microsoft.
+  ...(trs.enabled
     ? [
         {
-          id: 'action:web-login',
+          id: 'action:website-login',
           group: 'actions',
-          title: t('webLogin.title'),
-          subtitle: t('palette.actions.webLogin.subtitle', { host: TRS_HOST }),
-          keywords: t('palette.keywords.webLogin'),
-          icon: 'shield',
+          title: t('websiteLogin.button'),
+          subtitle: t('palette.actions.websiteLogin.subtitle', { host: TRS_HOST }),
+          keywords: t('palette.keywords.websiteLogin'),
+          icon: 'external',
           run: () => {
-            trs.openWebLogin()
+            backend.openExternalUrl(WEBSITE_LOGIN_URL).catch((e) => toasts.error(e))
+            close()
+          },
+        } satisfies Command,
+        {
+          id: 'action:my-applications',
+          group: 'actions',
+          title: t('applications.dialog.title'),
+          subtitle: t('palette.actions.myApplications.subtitle'),
+          keywords: t('palette.keywords.myApplications'),
+          icon: 'mailUnread',
+          run: () => {
+            useApplicationsStore().show()
             close()
           },
         } satisfies Command,

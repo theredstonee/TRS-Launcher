@@ -4,6 +4,7 @@ import type { AdminRoom } from '~/utils/team'
 // Offene Welten (Welt-Hosting): Host, Version, Spieler, Mitglieder. Schließen
 // beendet die Welt für alle; wer draußen bleiben soll, bekommt eine Hosting-Sperre.
 const toasts = useToasts()
+const team = useTeam()
 const rooms = ref<AdminRoom[] | null>(null)
 const closing = ref<AdminRoom | null>(null)
 const busy = ref(false)
@@ -73,7 +74,7 @@ const { active } = useListKeys(items, { onR: (r) => (closing.value = r) })
             <td class="px-3 py-2 text-xs text-base-50 tabular-nums">{{ r.players }} / {{ r.maxPlayers }}</td>
             <td class="px-3 py-2 text-xs text-base-400">{{ t('team.worlds.memberLine', r.members) }}</td>
             <td class="px-3 py-2 text-xs text-base-400">{{ formatRelative(r.createdAt) }}</td>
-            <td class="px-3 py-2 text-right"><button class="btn btn-ghost px-2.5 py-1 text-xs hover:text-redstone-300" @click="closing = r">{{ t('team.worlds.close') }}</button></td>
+            <td class="px-3 py-2 text-right"><button v-if="team.can('worlds.close')" class="btn btn-ghost px-2.5 py-1 text-xs hover:text-redstone-300" @click="closing = r">{{ t('team.worlds.close') }}</button></td>
           </tr>
         </tbody>
       </table>

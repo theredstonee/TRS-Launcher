@@ -25,8 +25,6 @@ export const useTrsStore = defineStore('trs', () => {
   /** Letzter „stiller“ Zustand: offline, gesperrt usw. */
   const problem = ref<'offline' | 'banned' | 'auth' | null>(null)
   const consentOpen = ref(false)
-  /** Dialog „Website-Anmeldung bestätigen“ (global, auch aus der Befehlspalette). */
-  const webLoginOpen = ref(false)
   let knownIncoming: Set<string> | null = null
   /** Blockierte Spieler (Reiter „Freunde“ → „Blockiert“). */
   const blocked = ref<TrsBlocked[] | null>(null)
@@ -72,13 +70,12 @@ export const useTrsStore = defineStore('trs', () => {
 
   const enabled = computed(() => status.value?.consent === 'accepted')
   const undecided = computed(() => status.value !== null && status.value.consent === null)
-  /** Team-Rolle (§22.1): Admins und Moderatoren sehen den Team-Bereich, Moderatoren mit weniger Rechten. */
-  const role = computed<'admin' | 'moderator' | null>(() => {
-    if (!enabled.value || !me.value) return null
-    return me.value.role ?? (me.value.admin ? 'admin' : null)
-  })
-  const isAdmin = computed(() => role.value === 'admin')
-  const isStaff = computed(() => role.value !== null)
+  /**
+   * Team-Zugehörigkeit (§24.2): Rollen, Rechte, Rang, Straf-Grenzen. Jede Team-Rolle
+   * sieht den Team-Bereich – darin nur, was ihre Rechte erlauben.
+   */
+  const team = computed(() => (enabled.value && me.value ? me.value.team : null))
+  const isStaff = computed(() => team.value !== null)
   const offerCount = computed(() => capeOffers.value?.incoming.length ?? friends.value?.capeOffers ?? 0)
   /** Anfragen + Umhang-Angebote (Zähler in der Leiste). */
   const incomingCount = computed(() => (friends.value?.requests.incoming.length ?? 0) + offerCount.value)
@@ -372,23 +369,16 @@ export const useTrsStore = defineStore('trs', () => {
     consentOpen.value = true
   }
 
-  function openWebLogin() {
-    webLoginOpen.value = true
-  }
-
   return {
     status,
     me,
     friends,
     problem,
     consentOpen,
-    webLoginOpen,
-    openWebLogin,
     enabled,
     undecided,
-    isAdmin,
     isStaff,
-    role,
+    team,
     incomingCount,
     offerCount,
     capeOffers,

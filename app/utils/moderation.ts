@@ -43,6 +43,8 @@ export const adminReportSummarySchema = z.object({
   resolvedAt: opt(40),
   resolvedBy: opt(80),
   evidencePurged: z.boolean().default(false),
+  /** Ohne Recht `reports.content` (§24.2) schickt der Server keine Inhalte – nur Metadaten. */
+  contentHidden: z.boolean().catch(false).default(false),
 })
 
 export const sanctionSchema = z.object({
@@ -80,6 +82,8 @@ export const evidenceMessageSchema = z.object({
   createdAt: str(40),
   editedAt: opt(40),
   deleted: z.boolean().default(false),
+  /** Inhalt ausgeblendet (fehlendes Recht `reports.content`). */
+  hidden: z.boolean().catch(false).default(false),
 })
 
 export const adminReportDetailSchema = adminReportSummarySchema.extend({

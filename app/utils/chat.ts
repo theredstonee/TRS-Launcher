@@ -4,6 +4,7 @@ import { intlLocale, t } from './i18n'
 import { trsPresenceSchema, trsUserRefSchema } from './trs'
 import { chatWorldSchema, hostingEventSchemas } from './hosting'
 import { myAppealSchema, mySanctionSchema } from './sanctions'
+import { myApplicationSchema } from './applications'
 import { chatWaypointSchema } from './waypoint'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
@@ -235,6 +236,8 @@ export const liveEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('sanction_added'), sanction: mySanctionSchema }),
   z.object({ type: z.literal('sanction_updated'), sanction: mySanctionSchema }),
   z.object({ type: z.literal('appeal_decided'), sanctionId: z.number().int().positive(), appeal: myAppealSchema, sanction: mySanctionSchema }),
+  /** Eigene Team-Bewerbung geändert (§24.3). */
+  z.object({ type: z.literal('application_updated'), application: myApplicationSchema }),
   z.object({
     type: z.literal('settings'),
     settings: z.object({

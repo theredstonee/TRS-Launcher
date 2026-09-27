@@ -86,9 +86,9 @@ async function changed() {
 
 const { active } = useListKeys(items, {
   open,
-  onA: (r) => r.status !== 'resolved' && ask('resolve', [r.id]),
-  onR: (r) => r.status !== 'resolved' && ask('dismiss', [r.id]),
-  toggle: (r) => r.status !== 'resolved' && toggle(r.id),
+  onA: (r) => team.can('reports.handle') && r.status !== 'resolved' && ask('resolve', [r.id]),
+  onR: (r) => team.can('reports.handle') && r.status !== 'resolved' && ask('dismiss', [r.id]),
+  toggle: (r) => team.can('reports.handle') && r.status !== 'resolved' && toggle(r.id),
 })
 
 function statusClass(r: AdminReportSummary): string {
@@ -160,7 +160,7 @@ watch([filter, kind, reason, assigned, highOnly, sort], () => {
         <option value="oldest">{{ t('team.common.oldest') }}</option>
         <option value="newest">{{ t('team.common.newest') }}</option>
       </select>
-      <label v-if="selectable.length" class="ml-auto flex items-center gap-2 text-xs text-base-400">
+      <label v-if="selectable.length && team.can('reports.handle')" class="ml-auto flex items-center gap-2 text-xs text-base-400">
         <input
           type="checkbox"
           class="accent-redstone-500"
@@ -176,7 +176,7 @@ watch([filter, kind, reason, assigned, highOnly, sort], () => {
     <ul v-else class="space-y-2">
       <li v-for="(r, i) in reports" :key="r.id" :data-row="i">
         <div class="adm-row card flex items-stretch" :class="{ 'adm-row-active': active === i, 'adm-row-selected': selected.has(r.id), 'border-redstone-600/50': r.priority === 'high' && r.status !== 'resolved' }">
-          <label class="flex items-center px-3" :class="{ invisible: r.status === 'resolved' }">
+          <label v-if="team.can('reports.handle')" class="flex items-center px-3" :class="{ invisible: r.status === 'resolved' }">
             <input type="checkbox" class="accent-redstone-500" :checked="selected.has(r.id)" :aria-label="r.id" @change="toggle(r.id)" />
           </label>
           <button class="flex min-w-0 flex-1 flex-col gap-1.5 py-3 pr-4 text-left" data-testid="admin-report-row" @click="open(r)">
@@ -189,6 +189,7 @@ watch([filter, kind, reason, assigned, highOnly, sort], () => {
               <span class="ml-auto text-xs text-base-400" :title="formatDate(r.createdAt)">{{ formatRelative(r.createdAt) }}</span>
             </span>
             <span v-if="r.preview" class="line-clamp-2 text-sm text-base-200">„{{ r.preview }}“</span>
+            <span v-else-if="r.contentHidden" class="text-xs text-base-600 italic" data-testid="report-row-hidden">{{ t('team.reports.contentHiddenShort') }}</span>
             <span class="flex flex-wrap gap-x-3 text-xs text-base-400">
               <span>{{ t('admin.mod.target', { name: r.target?.name || t('admin.mod.unknown') }) }}</span>
               <span>{{ t('admin.mod.by', { name: r.reporter?.name || t('admin.mod.unknown') }) }}</span>

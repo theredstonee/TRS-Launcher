@@ -2,6 +2,7 @@ import { z } from 'zod'
 // Relativ importiert, damit Tests die Datei ohne Nuxt laden können.
 import { t } from './i18n'
 import { compareText, formatRelative, formatShortDate, loaderLabels } from './format'
+import { myTeamSchema } from './teamAccess'
 
 // TRS-Dienste (Umhänge, Freunde, Verwaltung): Schemas für das, was der Kern
 // liefert (wird beim Empfang geprüft), und für Eingaben, bevor sie rausgehen.
@@ -35,8 +36,10 @@ export const trsMeSchema = z.object({
   uuid,
   name: text(16),
   admin: z.boolean(),
-  /** Team-Rolle (API §22.1); ältere Kerne kennen nur `admin`. */
-  role: z.enum(['admin', 'moderator']).nullable().default(null),
+  /** Alte Team-Rolle (API §22.1) – nur noch Anzeige; maßgeblich ist `team`. */
+  role: z.enum(['admin', 'moderator']).nullable().catch(null).default(null),
+  /** Rollen, Rechte, Rang und Straf-Grenzen (§24.2); `null` = kein Team-Mitglied. */
+  team: myTeamSchema.nullable().catch(null).default(null),
   createdAt: text(40).nullable(),
   settings: trsPrivacySchema,
   activeCapeId: capeId.nullable(),
@@ -321,22 +324,6 @@ export const trsRedeemCodeSchema = z
   .string()
   .max(64, { error: () => t('trs.validation.codeTooLong') })
   .refine((s) => trsNormalizeCode(s) !== null, { error: () => t('trs.validation.codeFormat') })
-
-/**
- * Code der Website-Anmeldung wie der Kern: `ABCD-1234` (A–Z, 0–9). Kleinbuchstaben,
- * Leerzeichen und ein fehlender Bindestrich sind erlaubt; heraus kommt `XXXX-XXXX`.
- */
-export function trsNormalizeWebLoginCode(input: string): string | null {
-  if (input.length > 32) return null
-  const s = input.replace(/\s/g, '').toUpperCase()
-  const m = /^([A-Z0-9]{4})-?([A-Z0-9]{4})$/.exec(s)
-  return m ? `${m[1]}-${m[2]}` : null
-}
-
-export const trsWebLoginCodeSchema = z
-  .string()
-  .refine((s) => trsNormalizeWebLoginCode(s) !== null, { error: () => t('trs.validation.webLoginCode') })
-  .transform((s) => trsNormalizeWebLoginCode(s)!)
 
 export const trsCapeNameSchema = z
   .string()

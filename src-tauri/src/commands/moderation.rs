@@ -1,5 +1,5 @@
 //! Moderation v2 (API §22): eigene Strafen + Einspruch und der Team-Bereich
-//! (Übersicht, Suche, Akte, Strafen, Einsprüche, Rollen, Welten,
+//! (Übersicht, Suche, Akte, Strafen, Einsprüche, Welten,
 //! Sammelaktionen). Prüfung der Eingaben im Kern; Tokens bleiben dort.
 
 use serde_json::Value;
@@ -107,26 +107,6 @@ pub async fn admin_appeals(launcher: State<'_, LauncherState>, query: AppealQuer
 #[tauri::command]
 pub async fn admin_appeal_decide(launcher: State<'_, LauncherState>, id: u64, decision: AppealDecision) -> CommandResult<Value> {
     Ok(launcher.admin_appeal_decide(id, &decision).await?)
-}
-
-#[tauri::command]
-pub async fn admin_roles(launcher: State<'_, LauncherState>) -> CommandResult<Value> {
-    Ok(launcher.admin_roles().await?)
-}
-
-#[tauri::command]
-pub async fn admin_role_set(
-    launcher: State<'_, LauncherState>,
-    uuid: String,
-    role: String,
-    note: Option<String>,
-) -> CommandResult<Value> {
-    Ok(launcher.admin_role_set(&uuid, &role, note.as_deref()).await?)
-}
-
-#[tauri::command]
-pub async fn admin_role_remove(launcher: State<'_, LauncherState>, uuid: String) -> CommandResult<Value> {
-    Ok(launcher.admin_role_remove(&uuid).await?)
 }
 
 #[tauri::command]

@@ -199,7 +199,6 @@ async fn team_routes_send_checked_bodies() {
             ("POST", "/v1/admin/appeals/3/decide") => Response::error(403, "own_sanction"),
             ("GET", p) if p.starts_with("/v1/admin/players/") => Response::json(200, json!({ "file": { "player": { "uuid": BOB, "name": "Bob" } } })),
             ("POST", "/v1/admin/reports/bulk") => Response::json(200, json!({ "updated": ["r0123456789abcdef"], "skipped": [] })),
-            ("PUT", p) if p == format!("/v1/admin/roles/{BOB}") => Response::json(200, json!({ "roles": [] })),
             _ => Response::error(404, "not_found"),
         }
     })
@@ -256,7 +255,4 @@ async fn team_routes_send_checked_bodies() {
         .await
         .unwrap();
     assert_eq!(bulk["updated"][0], "r0123456789abcdef");
-    assert!(l.admin_role_set(BOB, "owner", None).await.is_err());
-    l.admin_role_set(BOB, "moderator", Some("Hilft im Discord")).await.unwrap();
-    assert_eq!(server.hits("PUT", &format!("/v1/admin/roles/{BOB}"))[0].json(), json!({ "role": "moderator", "note": "Hilft im Discord" }));
 }

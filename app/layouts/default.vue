@@ -8,6 +8,7 @@ const settings = useSettingsStore()
 const ui = useUiStore()
 const trs = useTrsStore()
 const sanctions = useSanctionsStore()
+const applications = useApplicationsStore()
 const whatsNew = useWhatsNewStore()
 const curseforge = useCurseForgeStore()
 const router = useRouter()
@@ -113,8 +114,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <PresetReportDialog />
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <TrsConsentDialog v-if="trs.consentOpen" />
-    <TrsWebLoginDialog v-if="trs.webLoginOpen && !trs.consentOpen" />
     <MySanctionsDialog v-if="sanctions.dialogOpen && !trs.consentOpen" />
+    <MyApplicationsDialog v-if="applications.dialogOpen && !trs.consentOpen" />
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
     <ToastHost />

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { kindLabel } from '~/utils/sanctions'
 import { maxMinutesFor, type AdminSanction } from '~/utils/team'
+import { sanctionPermission } from '~/utils/teamAccess'
 
 // Strafe aufheben oder das Ende ändern (verkürzen/verlängern) – immer mit
-// Begründung. Moderatoren: Grenzen ab Beginn der Strafe (≤ 7 Tage, Verwarnung
-// ≤ 30), nie dauerhaft; der Server prüft das.
+// Begründung. Grenzen der eigenen Rollen (`limits`, ab Beginn der Strafe);
+// dauerhaft nur mit Recht. Der Server prüft das.
 const props = defineProps<{ sanction: AdminSanction; mode: 'lift' | 'change' }>()
 const emit = defineEmits<{ close: []; changed: [sanction: AdminSanction] }>()
 const team = useTeam()
@@ -39,6 +40,9 @@ const tooLong = computed(() => {
   if (!newEnd.value) return true
   return newEnd.value.getTime() - Date.parse(props.sanction.createdAt) > max * 60_000 + 60_000
 })
+
+/** Verlängern braucht das Recht der Strafart (verkürzen geht auch mit „Aufheben“). */
+const cannotExtend = computed(() => direction.value === 'extend' && !team.can(sanctionPermission[props.sanction.kind]))
 
 /** Schnellwahl: ab jetzt. */
 function setIn(hours: number) {
@@ -88,7 +92,8 @@ async function submit() {
           {{ t(`team.change.${direction}`) }}
         </p>
         <p v-if="direction === 'same'" class="text-xs text-base-400">{{ t('team.change.same') }}</p>
-        <p v-if="tooLong" class="text-xs text-lamp-300">{{ t('team.change.tooLong') }}</p>
+        <p v-if="cannotExtend" class="text-xs text-lamp-300">{{ t('team.change.cannotExtend') }}</p>
+        <p v-else-if="tooLong" class="text-xs text-lamp-300">{{ t('team.change.tooLong') }}</p>
       </template>
       <div>
         <label class="label" for="change-reason">{{ t('team.change.reason') }} *</label>
@@ -100,7 +105,7 @@ async function submit() {
       <button class="btn btn-ghost" :disabled="busy" @click="emit('close')">{{ t('common.actions.cancel') }}</button>
       <button
         class="btn btn-primary"
-        :disabled="busy || !reason.trim() || (mode === 'change' && (direction === 'same' || direction === null))"
+        :disabled="busy || !reason.trim() || (mode === 'change' && (direction === 'same' || direction === null || cannotExtend))"
         data-testid="change-submit"
         @click="submit"
       >

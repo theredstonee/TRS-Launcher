@@ -24,6 +24,8 @@ function icon(toast: SocialToast) {
       return 'flag' as const
     case 'moderation':
       return 'shield' as const
+    case 'application':
+      return 'mailUnread' as const
     case 'invite':
       return 'invite' as const
     default:

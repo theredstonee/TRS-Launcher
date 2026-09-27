@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { sanctionKinds } from '~/utils/sanctions'
 import type { Dashboard } from '~/utils/team'
+import { TEAM_WEBSITE } from '~/utils/teamAccess'
 
-// Übersicht: was gerade Aufmerksamkeit braucht (Meldungen, Einsprüche, Uploads),
-// aktive Strafen je Art, Spieler, Welten, 30-Tage-Verlauf und Server-Zustand.
+// Übersicht: was gerade Aufmerksamkeit braucht (Meldungen, Einsprüche, Uploads,
+// Bewerbungen), aktive Strafen je Art, Spieler, Welten, 30-Tage-Verlauf und
+// Server-Zustand. Seit §24.2 kommt jeder Block nur mit dem passenden Recht –
+// sonst `null` und er fehlt hier.
 const toasts = useToasts()
+const team = useTeam()
+function openApplications() {
+  void backend.openExternalUrl(`${TEAM_WEBSITE}/admin/applications`).catch((e) => toasts.error(e))
+}
 const data = ref<Dashboard | null>(null)
 const series = ref<'newUsers' | 'messages' | 'reports' | 'sanctions'>('reports')
 const range = ref<7 | 30>(30)
@@ -31,8 +38,8 @@ function uptime(sec: number): string {
     <div v-if="!data" class="grid gap-3 md:grid-cols-3"><div v-for="i in 6" :key="i" class="skeleton h-28" /></div>
     <template v-else>
       <!-- Braucht Aufmerksamkeit -->
-      <div class="grid gap-3 md:grid-cols-3">
-        <NuxtLink to="/admin/reports" class="card card-hover block px-4 py-3.5" :class="{ 'border-redstone-600/60': data.reports.highPriority }">
+      <div v-if="data.reports || data.appeals || data.uploads || data.applications" class="grid gap-3 md:grid-cols-3">
+        <NuxtLink v-if="data.reports" to="/admin/reports" class="card card-hover block px-4 py-3.5" :class="{ 'border-redstone-600/60': data.reports.highPriority }">
           <p class="flex items-center gap-2 text-xs text-base-400"><SocialIcon name="flag" class="size-3.5" />{{ t('team.dashboard.openReports') }}</p>
           <p class="display mt-1 text-4xl text-base-50 tabular-nums">{{ formatNumber(data.reports.open + data.reports.inReview) }}</p>
           <p class="mt-1 flex flex-wrap gap-x-3 text-[11px]">
@@ -41,12 +48,12 @@ function uptime(sec: number): string {
             <span class="text-base-600">{{ since(data.reports.oldestOpenAt) }}</span>
           </p>
         </NuxtLink>
-        <NuxtLink to="/admin/appeals" class="card card-hover block px-4 py-3.5" :class="{ 'border-lamp-400/40': data.appeals.open }">
+        <NuxtLink v-if="data.appeals" to="/admin/appeals" class="card card-hover block px-4 py-3.5" :class="{ 'border-lamp-400/40': data.appeals.open }">
           <p class="flex items-center gap-2 text-xs text-base-400"><SocialIcon name="appeal" class="size-3.5" />{{ t('team.dashboard.openAppeals') }}</p>
           <p class="display mt-1 text-4xl tabular-nums" :class="data.appeals.open ? 'text-lamp-300' : 'text-base-50'">{{ formatNumber(data.appeals.open) }}</p>
           <p class="mt-1 text-[11px] text-base-600">{{ since(data.appeals.oldestOpenAt) || t('team.dashboard.nothingOpen') }}</p>
         </NuxtLink>
-        <NuxtLink to="/admin/uploads" class="card card-hover block px-4 py-3.5">
+        <NuxtLink v-if="data.uploads" to="/admin/uploads" class="card card-hover block px-4 py-3.5">
           <p class="flex items-center gap-2 text-xs text-base-400"><SocialIcon name="skins" class="size-3.5" />{{ t('team.dashboard.uploads') }}</p>
           <p class="display mt-1 text-4xl text-base-50 tabular-nums">{{ formatNumber(data.uploads.capesPending + data.uploads.cosmeticsPending) }}</p>
           <p class="mt-1 flex flex-wrap gap-x-3 text-[11px] text-base-400">
@@ -57,10 +64,27 @@ function uptime(sec: number): string {
             </span>
           </p>
         </NuxtLink>
+        <button
+          v-if="data.applications"
+          class="card card-hover block px-4 py-3.5 text-left"
+          :class="{ 'border-lamp-400/40': data.applications.new }"
+          :title="t('team.nav.websiteHint')"
+          data-testid="dashboard-applications"
+          @click="openApplications"
+        >
+          <p class="flex items-center gap-2 text-xs text-base-400">
+            <SocialIcon name="mailUnread" class="size-3.5" />{{ t('team.dashboard.applications') }}
+            <SocialIcon name="external" class="ml-auto size-3.5 text-base-600" />
+          </p>
+          <p class="display mt-1 text-4xl tabular-nums" :class="data.applications.new ? 'text-lamp-300' : 'text-base-50'">{{ formatNumber(data.applications.open) }}</p>
+          <p class="mt-1 text-[11px] text-base-400">
+            {{ data.applications.new ? t('team.dashboard.newApplications', { n: data.applications.new }) : t('team.dashboard.nothingOpen') }}
+          </p>
+        </button>
       </div>
 
       <!-- Aktive Strafen je Art -->
-      <div class="card px-4 py-3.5">
+      <div v-if="data.sanctions" class="card px-4 py-3.5">
         <div class="mb-2 flex items-center gap-2">
           <h2 class="section-title flex-1">{{ t('team.dashboard.activeSanctions') }}</h2>
           <NuxtLink to="/admin/sanctions" class="text-xs text-redstone-300 hover:underline">{{ t('team.dashboard.allSanctions') }}</NuxtLink>
@@ -78,9 +102,9 @@ function uptime(sec: number): string {
         </div>
       </div>
 
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div v-if="data.series || data.users || data.hosting || data.server" class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <!-- Verlauf -->
-        <div class="card p-4">
+        <div v-if="data.series" class="card p-4">
           <div class="mb-3 flex flex-wrap items-center gap-2">
             <h2 class="section-title flex-1">{{ t('team.dashboard.activity') }}</h2>
             <div class="flex gap-1 rounded-lg bg-base-850 p-1 text-xs" role="group" :aria-label="t('team.dashboard.series.label')">
@@ -106,7 +130,8 @@ function uptime(sec: number): string {
 
         <!-- Spieler, Welten, Server -->
         <div class="space-y-3">
-          <div class="card grid grid-cols-2 gap-3 p-4 text-sm">
+          <div v-if="data.users || data.hosting || data.chat" class="card grid grid-cols-2 gap-3 p-4 text-sm">
+            <template v-if="data.users">
             <div>
               <p class="text-xs text-base-400">{{ t('team.dashboard.players') }}</p>
               <p class="text-xl font-semibold text-base-50 tabular-nums">{{ formatNumber(data.users.total) }}</p>
@@ -117,12 +142,13 @@ function uptime(sec: number): string {
               <p class="text-xl font-semibold text-ok tabular-nums">{{ formatNumber(data.users.online) }}</p>
               <p class="text-[11px] text-base-400">{{ t('team.dashboard.activePlayers', { d: data.users.active24h, w: data.users.active7d }) }}</p>
             </div>
-            <div>
+            </template>
+            <div v-if="data.hosting">
               <p class="text-xs text-base-400">{{ t('team.dashboard.worlds') }}</p>
               <p class="text-xl font-semibold text-base-50 tabular-nums">{{ formatNumber(data.hosting.openRooms) }}</p>
               <p class="text-[11px] text-base-400">{{ t('team.dashboard.worldPlayers', { n: data.hosting.players }) }}</p>
             </div>
-            <div>
+            <div v-if="data.chat">
               <p class="text-xs text-base-400">{{ t('team.dashboard.messages') }}</p>
               <p class="text-xl font-semibold text-base-50 tabular-nums">{{ formatNumber(data.chat.messages24h) }}</p>
             </div>
@@ -143,7 +169,7 @@ function uptime(sec: number): string {
       </div>
 
       <!-- Letzte Aktionen -->
-      <div class="card p-4">
+      <div v-if="team.can('audit.view')" class="card p-4">
         <div class="mb-2 flex items-center gap-2">
           <h2 class="section-title flex-1">{{ t('team.dashboard.recent') }}</h2>
           <NuxtLink to="/admin/audit" class="text-xs text-redstone-300 hover:underline">{{ t('team.dashboard.allAudit') }}</NuxtLink>

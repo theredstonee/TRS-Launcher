@@ -58,6 +58,8 @@ import {
   type ReportQuery,
 } from './moderation'
 import { mySanctionSchema, mySanctionsSchema, sanctionErrorText } from './sanctions'
+import { myApplicationSchema, myApplicationsSchema } from './applications'
+import { teamErrorText } from './teamAccess'
 import { sharedImageSchema, sharesPageSchema } from './share'
 import {
   appealEnvelopeSchema,
@@ -69,7 +71,6 @@ import {
   playerFileEnvelopeSchema,
   playerPageSchema,
   roomListSchema,
-  rolesSchema,
   sanctionEnvelopeSchema,
   sanctionPageSchema,
   searchResultSchema,
@@ -691,8 +692,6 @@ export const backend = {
     removeFriend: (uuid: string) => call<void>('trs_friend_remove', { uuid }),
     block: (target: string) => checked(trsUserRefSchema, 'trs_block', { target }),
     unblock: (uuid: string) => call<void>('trs_unblock', { uuid }),
-    /** Anmeldung auf der Website bestätigen – der Kern schickt den Code mit dem TRS-Token. */
-    webLoginApprove: (code: string) => call<void>('trs_web_login_approve', { code }),
 
     adminStats: () => checked(trsAdminStatsSchema, 'trs_admin_stats'),
     adminCapes: (list: TrsReviewList) => checked(z.array(trsAdminCapeSchema), 'trs_admin_capes', { list }),
@@ -784,7 +783,13 @@ export const backend = {
     appeal: (id: number, text: string) => checked(mySanctionSchema, 'trs_appeal', { id, text }),
   },
 
-  /** Team-Bereich (§22): Admins und Moderatoren; Rechte prüft der Server bei jeder Anfrage. */
+  /** Eigene Team-Bewerbungen (§24.3): Status + Antwort, zurückziehen. Stellen und Formulare: Website. */
+  applications: {
+    mine: () => checked(myApplicationsSchema, 'trs_my_applications'),
+    withdraw: (id: string) => checked(myApplicationSchema, 'trs_withdraw_application', { id }),
+  },
+
+  /** Team-Bereich (§22, Rechte §24.2): sichtbar je nach `me.team.permissions`; der Server prüft jede Anfrage. */
   team: {
     dashboard: () => checked(dashboardSchema, 'admin_dashboard'),
     search: (q: string) => checked(searchResultSchema, 'admin_search', { q }),
@@ -802,9 +807,6 @@ export const backend = {
     appeals: (query: { status?: 'open' | 'decided' | 'all'; cursor?: string; limit?: number }) =>
       checked(appealPageSchema, 'admin_appeals', { query }),
     decideAppeal: (id: number, decision: AppealDecisionInput) => checked(appealEnvelopeSchema, 'admin_appeal_decide', { id, decision }),
-    roles: () => checked(rolesSchema, 'admin_roles'),
-    setRole: (uuid: string, role: 'admin' | 'moderator', note: string | null) => checked(rolesSchema, 'admin_role_set', { uuid, role, note }),
-    removeRole: (uuid: string) => checked(rolesSchema, 'admin_role_remove', { uuid }),
     rooms: () => checked(roomListSchema, 'admin_rooms'),
     closeRoom: (id: string, reason: string | null) => call<void>('admin_room_close', { id, reason }),
     bulk: (target: BulkTarget, bulk: { ids: string[]; action: string; reason?: string }) =>
@@ -845,7 +847,7 @@ export function isCancelled(e: unknown): boolean {
  * sonst die mitgelieferte Meldung.
  */
 export function errorMessage(e: unknown): string {
-  if (e instanceof BackendError) return sanctionErrorText(e.apiCode, e.params) ?? userErrorText(e)
+  if (e instanceof BackendError) return sanctionErrorText(e.apiCode, e.params) ?? teamErrorText(e.apiCode, e.params) ?? userErrorText(e)
   return t('errors.unexpected')
 }
 

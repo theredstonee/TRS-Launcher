@@ -1,46 +1,52 @@
 <script setup lang="ts">
 import type { IconName } from '~/utils/icons'
-import type { MessageKey } from '~/utils/i18n'
 import { kindLabel } from '~/utils/sanctions'
 import type { SearchResult } from '~/utils/team'
+import {
+  WEBSITE_LOGIN_URL,
+  canSearch,
+  landingPath,
+  mayOpen,
+  roleLabel,
+  visibleSections,
+  websiteSections,
+  type TeamSection,
+} from '~/utils/teamAccess'
 
-// Team-Bereich (Moderation v2, API §22): Seitenleiste mit den Bereichen und
-// Zählern, globale Suche (`/`), Hilfe (`?`) und die Unterseiten unter /admin/*.
-// Admins und Moderatoren sehen ihn; was die Rolle nicht darf, ist ausgeblendet –
-// der Server prüft jede Anfrage selbst.
+// Team-Bereich (Moderation v2, API §22; Rechte §24.2): Seitenleiste mit den
+// Bereichen und Zählern, globale Suche (`/`), Hilfe (`?`) und die Unterseiten
+// unter /admin/*. Jede Team-Rolle sieht ihn – Bereiche und Knöpfe nach
+// `me.team.permissions`; Rollen, Bewerbungen und Stellen öffnen die Website.
+// Der Server prüft jede Anfrage selbst.
 const trs = useTrsStore()
 const team = useTeam()
 const route = useRoute()
 const router = useRouter()
+const toasts = useToasts()
 
-interface Section {
-  to: string
-  label: MessageKey
-  icon: IconName
-  count?: number
-  hot?: boolean
-  exact?: boolean
+const sections = computed(() => visibleSections(team.team.value))
+const siteSections = computed(() => visibleSections(team.team.value, websiteSections))
+const allowed = computed(() => mayOpen(team.team.value, route.path))
+const searchable = computed(() => canSearch(team.team.value))
+
+function countOf(s: TeamSection): number | undefined {
+  return s.count ? team.counts.value?.[s.count] : undefined
+}
+function hot(s: TeamSection): boolean {
+  return s.count === 'reports' && (team.counts.value?.highPriority ?? 0) > 0
+}
+function isActive(s: TeamSection) {
+  return s.exact ? route.path === s.to : route.path.startsWith(s.to)
+}
+function openSite(url: string) {
+  void backend.openExternalUrl(url).catch((e) => toasts.error(e))
 }
 
-const sections = computed<Section[]>(() => {
-  const c = team.counts.value
-  return [
-    { to: '/admin', label: 'team.nav.overview', icon: 'home', exact: true },
-    { to: '/admin/reports', label: 'team.nav.reports', icon: 'flag', count: c?.reports, hot: (c?.highPriority ?? 0) > 0 },
-    { to: '/admin/appeals', label: 'team.nav.appeals', icon: 'appeal', count: c?.appeals },
-    { to: '/admin/players', label: 'team.nav.players', icon: 'friends' },
-    { to: '/admin/sanctions', label: 'team.nav.sanctions', icon: 'gavel' },
-    { to: '/admin/uploads', label: 'team.nav.uploads', icon: 'skins', count: c?.uploads },
-    { to: '/admin/worlds', label: 'team.nav.worlds', icon: 'world' },
-    { to: '/admin/codes', label: 'team.nav.codes', icon: 'ticket' },
-    { to: '/admin/word-filter', label: 'team.nav.wordFilter', icon: 'filter' },
-    ...(team.isAdmin.value ? [{ to: '/admin/roles', label: 'team.nav.roles' as MessageKey, icon: 'key' as IconName }] : []),
-    { to: '/admin/audit', label: 'team.nav.audit', icon: 'list' },
-  ]
-})
-
-function isActive(s: Section) {
-  return s.exact ? route.path === s.to : route.path.startsWith(s.to)
+/** Ohne Übersicht landet /admin im ersten erlaubten Bereich. */
+function landOnAllowed() {
+  if (!trs.isStaff || (route.path !== '/admin' && route.path !== '/admin/') || mayOpen(team.team.value, '/admin')) return
+  const next = landingPath(team.team.value)
+  if (next && next !== '/admin') void router.replace(next)
 }
 
 // --- Globale Suche ----------------------------------------------------------------------
@@ -150,6 +156,7 @@ useAdminKeys({
 let countTimer: ReturnType<typeof setInterval> | null = null
 onMounted(async () => {
   if (!trs.status) await trs.init()
+  landOnAllowed()
   if (trs.isStaff) void team.refreshCounts()
   countTimer = setInterval(() => {
     if (trs.isStaff && document.visibilityState === 'visible') void team.refreshCounts()
@@ -158,8 +165,14 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (countTimer) clearInterval(countTimer)
 })
-watch(() => route.fullPath, () => trs.isStaff && void team.refreshCounts())
-watch(() => trs.isStaff, (staff) => staff && void team.refreshCounts())
+watch(() => route.fullPath, () => {
+  landOnAllowed()
+  if (trs.isStaff) void team.refreshCounts()
+})
+watch(() => trs.team, () => {
+  landOnAllowed()
+  if (trs.isStaff) void team.refreshCounts()
+})
 </script>
 
 <template>
@@ -169,10 +182,15 @@ watch(() => trs.isStaff, (staff) => staff && void team.refreshCounts())
         <h1 class="display text-3xl leading-none text-base-50">{{ t('team.title') }}</h1>
         <p class="mt-1 text-sm text-base-400">
           {{ t('team.subtitle') }}
-          <span v-if="trs.role" class="badge ml-1 bg-redstone-900/60 text-redstone-300" data-testid="admin-role">{{ t(`team.roles.${trs.role}`) }}</span>
+          <span
+            v-if="team.role.value"
+            class="badge ml-1"
+            :style="{ backgroundColor: `${team.role.value.color}26`, color: team.role.value.color }"
+            data-testid="admin-role"
+          >{{ roleLabel(team.role.value) }}</span>
         </p>
       </div>
-      <div v-if="trs.isStaff" class="relative w-full max-w-md">
+      <div v-if="trs.isStaff && searchable" class="relative w-full max-w-md">
         <SocialIcon name="search" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-400" />
         <input
           ref="searchInput"
@@ -207,8 +225,14 @@ watch(() => trs.isStaff, (staff) => staff && void team.refreshCounts())
         </div>
       </div>
       <button v-if="trs.isStaff" class="btn-icon" :title="t('team.keys.title')" :aria-label="t('team.keys.title')" @click="help = true">?</button>
-      <button v-if="trs.isStaff" class="btn btn-ghost px-3 py-2 text-xs" data-testid="admin-web-login" @click="trs.openWebLogin()">
-        {{ t('webLogin.title') }}
+      <button
+        v-if="trs.isStaff"
+        class="btn btn-ghost px-3 py-2 text-xs"
+        :title="t('websiteLogin.hint')"
+        data-testid="admin-website-login"
+        @click="openSite(WEBSITE_LOGIN_URL)"
+      >
+        {{ t('websiteLogin.button') }} <SocialIcon name="external" class="size-3.5" />
       </button>
     </header>
 
@@ -223,17 +247,37 @@ watch(() => trs.isStaff, (staff) => staff && void team.refreshCounts())
           class="section-link"
           :class="{ 'section-on': isActive(s) }"
           :aria-current="isActive(s) ? 'page' : undefined"
+          :data-testid="`admin-nav-${s.to.split('/')[2] ?? 'overview'}`"
         >
           <SocialIcon :name="s.icon" class="size-4 shrink-0" />
           <span class="flex-1 truncate">{{ t(s.label) }}</span>
-          <span v-if="s.count" class="rounded-full px-1.5 text-[10px] font-bold tabular-nums" :class="s.hot ? 'bg-redstone-500 text-white' : 'bg-base-700 text-base-50'">
-            {{ s.count }}
+          <span v-if="countOf(s)" class="rounded-full px-1.5 text-[10px] font-bold tabular-nums" :class="hot(s) ? 'bg-redstone-500 text-white' : 'bg-base-700 text-base-50'">
+            {{ countOf(s) }}
           </span>
         </NuxtLink>
+        <template v-if="siteSections.length">
+          <p class="mt-3 hidden px-3 pb-1 text-[10px] font-semibold tracking-wide text-base-600 uppercase lg:block">{{ t('team.nav.website') }}</p>
+          <button
+            v-for="s in siteSections"
+            :key="s.to"
+            class="section-link text-left"
+            :title="t('team.nav.websiteHint')"
+            :data-testid="`admin-site-${s.to.split('/').pop()}`"
+            @click="openSite(s.to)"
+          >
+            <SocialIcon :name="s.icon" class="size-4 shrink-0" />
+            <span class="flex-1 truncate">{{ t(s.label) }}</span>
+            <span v-if="countOf(s)" class="rounded-full bg-base-700 px-1.5 text-[10px] font-bold text-base-50 tabular-nums">{{ countOf(s) }}</span>
+            <SocialIcon name="external" class="size-3.5 shrink-0 text-base-600" />
+          </button>
+        </template>
         <p class="mt-4 hidden px-3 text-[11px] leading-snug text-base-600 lg:block">{{ t('team.nav.keysHint') }}</p>
       </nav>
       <div class="min-w-0 flex-1">
-        <NuxtPage />
+        <NuxtPage v-if="allowed" />
+        <div v-else class="card px-4 py-6 text-center text-sm text-base-400" data-testid="admin-no-permission">
+          {{ sections.length ? t('team.common.noPermission') : t('team.common.nothingAllowed') }}
+        </div>
       </div>
     </div>
 

@@ -2,7 +2,7 @@
 // tests/social-toasts.test.ts. Wann eine Benachrichtigung erscheint, ob das
 // Betriebssystem sie zeigt, ob es einen Ton gibt, und wie die Liste wächst.
 
-export type SocialToastKind = 'message' | 'invite' | 'friendRequest' | 'capeOffer' | 'online' | 'report' | 'moderation'
+export type SocialToastKind = 'message' | 'invite' | 'friendRequest' | 'capeOffer' | 'online' | 'report' | 'moderation' | 'application'
 
 /** Einstellungen (Rust: `SocialSettings`, alles lokal). */
 export interface SocialPrefs {
@@ -65,9 +65,9 @@ export interface Delivery {
 
 const NONE: Delivery = { toast: false, native: false, sound: false }
 
-/** Rückmeldungen über dich selbst (Meldung geprüft, Stummschaltung) kommen immer. */
+/** Rückmeldungen über dich selbst (Meldung geprüft, Stummschaltung, Bewerbung) kommen immer. */
 function essential(kind: SocialToastKind): boolean {
-  return kind === 'report' || kind === 'moderation'
+  return kind === 'report' || kind === 'moderation' || kind === 'application'
 }
 
 function typeEnabled(kind: SocialToastKind, prefs: SocialPrefs): boolean {

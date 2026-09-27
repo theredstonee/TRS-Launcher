@@ -46,7 +46,7 @@ const p = computed(() => file.value?.player ?? null)
 const name = computed(() => p.value?.name ?? uuid.value)
 const sanctions = computed(() => (file.value?.sanctions ?? []).filter((s) => !onlyActive.value || s.status === 'active'))
 const activeCount = computed(() => (file.value?.sanctions ?? []).filter((s) => s.status === 'active').length)
-const canSanction = computed(() => (file.value ? file.value.can.sanction : unknown.value))
+const canSanction = computed(() => (file.value ? file.value.can.sanction : unknown.value && team.limits.value.kinds.length > 0))
 
 const tabs = computed<{ id: Tab; count?: number }[]>(() => {
   const f = file.value
@@ -105,12 +105,12 @@ async function deleteNote(id: number) {
   }
 }
 
-// --- Umhänge vergeben (nur Admins) ------------------------------------------------------
+// --- Umhänge vergeben (Recht items.grant) ------------------------------------------------------
 const catalog = ref<TrsCape[]>([])
 const grantCape = ref('')
 const grantable = computed(() => catalog.value.filter((c) => c.kind === 'builtin' && c.unlock !== 'free'))
 watch(tab, async (v) => {
-  if (v === 'uploads' && team.isAdmin.value && !catalog.value.length) catalog.value = await backend.trs.capes().catch(() => [])
+  if (v === 'uploads' && team.can('items.grant') && !catalog.value.length) catalog.value = await backend.trs.capes().catch(() => [])
 })
 async function grant() {
   if (!grantCape.value) return
@@ -286,7 +286,7 @@ const reportLine = (r: AdminReportSummary) => `${reasonLabel(r.reason)} · ${t(`
               <span class="text-[10px] text-base-400">{{ t(`team.file.source.${c.source}`) }} · {{ c.status }}</span>
               <span v-if="c.reports" class="text-[10px] text-lamp-300">⚑ {{ c.reports }}</span>
               <button
-                v-if="team.isAdmin.value && c.source !== 'upload'"
+                v-if="team.can('items.grant') && c.source !== 'upload'"
                 class="text-base-400 hover:text-redstone-300"
                 :aria-label="t('admin.players.revokeCape', { cape: c.name || c.id })"
                 @click="revokeGrant(c.id)"
@@ -294,7 +294,7 @@ const reportLine = (r: AdminReportSummary) => `${reasonLabel(r.reason)} · ${t(`
             </li>
           </ul>
           <p v-else class="mt-2 text-xs text-base-600">{{ t('admin.players.noCapes') }}</p>
-          <div v-if="team.isAdmin.value && p.known" class="mt-3 flex gap-2">
+          <div v-if="team.can('items.grant') && p.known" class="mt-3 flex gap-2">
             <select v-model="grantCape" class="field w-64 py-1.5" :aria-label="t('admin.players.grantLabel')">
               <option value="" disabled>{{ t('admin.players.grantPlaceholder') }}</option>
               <option v-for="c in grantable" :key="c.id" :value="c.id">{{ c.name }} ({{ trsUnlockLabel(c) }})</option>
@@ -351,7 +351,7 @@ const reportLine = (r: AdminReportSummary) => `${reasonLabel(r.reason)} · ${t(`
 
       <!-- Notizen -->
       <div v-else class="space-y-3">
-        <form class="card p-4" @submit.prevent="addNote">
+        <form v-if="team.can('players.notes')" class="card p-4" @submit.prevent="addNote">
           <label class="label" for="file-note">{{ t('team.file.noteLabel') }}</label>
           <textarea id="file-note" v-model="note" class="field min-h-20 resize-y" maxlength="2000" :placeholder="t('team.file.noteHint')" data-testid="file-note" />
           <div class="mt-2 flex items-center justify-between">

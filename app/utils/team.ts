@@ -2,9 +2,12 @@ import { z } from 'zod'
 // Relativ importiert, damit Tests die Datei ohne Nuxt laden können.
 import { adminReportSummarySchema, auditEntrySchema } from './moderation'
 import { appealStatuses, reasonCodes, sanctionKinds, systemReasonCodes, type SanctionKind } from './sanctions'
+import type { StaffLimits } from './teamAccess'
+
+export type { StaffLimits } from './teamAccess'
 
 // Team-Bereich (Moderation v2, API §22): Schemas der gesäuberten Antworten aus
-// dem Kern, Rechte je Rolle und die Dauer-Vorlagen. Unbekannte Felder fallen
+// dem Kern und die Dauer-Vorlagen (Rechte: `teamAccess.ts`, §24.2). Unbekannte Felder fallen
 // weg, fehlende bekommen harmlose Standardwerte – eine neuere API legt den
 // Bereich so nicht lahm. Rechte prüft ohnehin der Server bei jeder Anfrage.
 
@@ -16,8 +19,6 @@ const uuid = str(32)
 const actor = z.object({ uuid: str(40), name: opt(16) })
 const optActor = actor.nullable().default(null)
 
-export type StaffRole = 'admin' | 'moderator'
-
 export const durationPresets = ['1h', '6h', '1d', '3d', '7d', '30d', 'permanent', 'custom'] as const
 export type DurationPreset = (typeof durationPresets)[number]
 export const durationMinutes: Record<Exclude<DurationPreset, 'permanent' | 'custom'>, number> = {
@@ -28,25 +29,6 @@ export const durationMinutes: Record<Exclude<DurationPreset, 'permanent' | 'cust
   '7d': 10_080,
   '30d': 43_200,
 }
-
-// --- Rechte (Spiegel von lib/staff.ts, nur für die Oberfläche) ------------------------------
-
-export interface StaffLimits {
-  kinds: SanctionKind[]
-  /** Höchstdauer in Minuten (`null` = unbegrenzt). */
-  maxMinutes: number | null
-  maxWarnMinutes: number | null
-  permanent: boolean
-}
-
-export const limitsByRole: Record<StaffRole, StaffLimits> = {
-  admin: { kinds: [...sanctionKinds], maxMinutes: null, maxWarnMinutes: null, permanent: true },
-  moderator: { kinds: sanctionKinds.filter((k) => k !== 'account_ban'), maxMinutes: 10_080, maxWarnMinutes: 43_200, permanent: false },
-}
-
-/** Was nur Admins dürfen (Moderatoren sehen es ausgegraut oder gar nicht). */
-export const adminOnly = ['roles', 'codes', 'wordfilter', 'uploads.delete', 'grants', 'sanctions.modifyAdmin'] as const
-export type AdminOnly = (typeof adminOnly)[number]
 
 // --- Strafen --------------------------------------------------------------------------------
 
@@ -83,7 +65,9 @@ export const adminSanctionSchema = z.object({
   auto: z.enum(['reports', 'spam']).nullable().default(null),
   createdAt: str(40),
   createdBy: actor,
-  createdRole: z.enum(['admin', 'moderator', 'system']).default('admin'),
+  createdRole: z.enum(['admin', 'moderator', 'system']).catch('admin').default('admin'),
+  /** Rang des Erstellers (§24.2, Rang-Regel); fehlt bei älteren Servern. */
+  createdRank: z.number().int().min(0).max(1000).nullable().catch(null).default(null),
   endsAt: opt(40),
   permanent: z.boolean().default(false),
   status: z.enum(['active', 'expired', 'lifted']),
@@ -104,7 +88,7 @@ export const appealEnvelopeSchema = z.object({ appeal: adminAppealSchema })
 
 // --- Spieler --------------------------------------------------------------------------------
 
-const role = z.enum(['admin', 'moderator']).nullable().default(null)
+const role = z.enum(['admin', 'moderator']).nullable().catch(null).default(null)
 const counts = z.object({ total: num, open: num, actioned: num, dismissed: num }).default({ total: 0, open: 0, actioned: 0, dismissed: 0 })
 
 export const playerListItemSchema = z.object({
@@ -191,7 +175,7 @@ export const playerFileSchema = z.object({
   worlds: z.array(adminRoomSchema).default([]),
   notes: z.array(playerNoteSchema).default([]),
   can: z
-    .object({ sanction: z.boolean().default(false), reason: z.enum(['self', 'admin', 'staff']).nullable().default(null), limits: limits.nullable().default(null) })
+    .object({ sanction: z.boolean().default(false), reason: z.enum(['self', 'admin', 'staff', 'permission']).nullable().catch(null).default(null), limits: limits.nullable().default(null) })
     .default({ sanction: false, reason: null, limits: null }),
 })
 export const playerFileEnvelopeSchema = z.object({ file: playerFileSchema })
@@ -200,21 +184,21 @@ export const playerFileEnvelopeSchema = z.object({ file: playerFileSchema })
 
 const series = z.array(z.number().int().min(0)).default([])
 
+// Seit §24.2 ist jeder Block `null`, den die eigene Rolle nicht sehen darf.
 export const dashboardSchema = z.object({
-  reports: z.object({ open: num, inReview: num, highPriority: num, oldestOpenAt: opt(40) }).default({ open: 0, inReview: 0, highPriority: 0, oldestOpenAt: null }),
-  appeals: z.object({ open: num, oldestOpenAt: opt(40) }).default({ open: 0, oldestOpenAt: null }),
-  sanctions: z.record(z.string(), z.number().int().min(0)).default({}),
-  uploads: z
-    .object({ capesPending: num, capesReported: num, cosmeticsPending: num, cosmeticsReported: num })
-    .default({ capesPending: 0, capesReported: 0, cosmeticsPending: 0, cosmeticsReported: 0 }),
-  users: z
-    .object({ total: num, new24h: num, new7d: num, active24h: num, active7d: num, online: num })
-    .default({ total: 0, new24h: 0, new7d: 0, active24h: 0, active7d: 0, online: 0 }),
-  hosting: z.object({ openRooms: num, players: num }).default({ openRooms: 0, players: 0 }),
-  chat: z.object({ messages24h: num }).default({ messages24h: 0 }),
+  reports: z.object({ open: num, inReview: num, highPriority: num, oldestOpenAt: opt(40) }).nullable().default(null),
+  appeals: z.object({ open: num, oldestOpenAt: opt(40) }).nullable().default(null),
+  sanctions: z.record(z.string(), z.number().int().min(0)).nullable().default(null),
+  uploads: z.object({ capesPending: num, capesReported: num, cosmeticsPending: num, cosmeticsReported: num }).nullable().default(null),
+  users: z.object({ total: num, new24h: num, new7d: num, active24h: num, active7d: num, online: num }).nullable().default(null),
+  hosting: z.object({ openRooms: num, players: num }).nullable().default(null),
+  chat: z.object({ messages24h: num }).nullable().default(null),
+  /** Bewerbungen (§24.3): neue und offene. */
+  applications: z.object({ new: num, open: num }).nullable().catch(null).default(null),
   series: z
     .object({ days: z.array(str(10)).default([]), newUsers: series, messages: series, reports: series, sanctions: series })
-    .default({ days: [], newUsers: [], messages: [], reports: [], sanctions: [] }),
+    .nullable()
+    .default(null),
   server: z
     .object({
       version: str(40).default(''),
@@ -239,17 +223,6 @@ export const searchResultSchema = z.object({
     .default([]),
   sanctions: z.array(adminSanctionSchema).default([]),
 })
-
-export const roleViewSchema = z.object({
-  uuid,
-  name: opt(16),
-  role: z.enum(['admin', 'moderator']),
-  source: z.enum(['env', 'db']).catch('db'),
-  grantedAt: opt(40),
-  grantedBy: optActor,
-  note: opt(200),
-})
-export const rolesSchema = z.object({ roles: z.array(roleViewSchema) })
 
 export const bulkResultSchema = z.object({ updated: z.array(str(40)).default([]), skipped: z.array(str(40)).default([]) })
 
@@ -279,7 +252,6 @@ export type PlayerNote = z.infer<typeof playerNoteSchema>
 export type AdminRoom = z.infer<typeof adminRoomSchema>
 export type Dashboard = z.infer<typeof dashboardSchema>
 export type SearchResult = z.infer<typeof searchResultSchema>
-export type RoleView = z.infer<typeof roleViewSchema>
 export type BulkResult = z.infer<typeof bulkResultSchema>
 export type AdminCosmetic = z.infer<typeof adminCosmeticSchema>
 

@@ -11,8 +11,8 @@ const team = useTeam()
 
 const s = computed(() => props.sanction)
 const active = computed(() => s.value.status === 'active')
-/** Moderatoren dürfen Strafen von Admins nicht ändern. */
-const locked = computed(() => s.value.createdRole === 'admin' && !team.isAdmin.value)
+/** Rang-Regel (§24.2): Strafen von höherem Rang bleiben tabu; dazu die Rechte zum Aufheben/Ändern. */
+const rights = computed(() => team.rightsFor(s.value))
 const actorName = (a: { uuid: string; name: string | null } | null) =>
   !a ? '–' : a.uuid === 'system' ? t('team.common.system') : a.uuid === 'api-key' ? t('team.common.apiKey') : (a.name ?? a.uuid)
 </script>
@@ -82,9 +82,11 @@ const actorName = (a: { uuid: string; name: string | null } | null) =>
     </div>
 
     <footer v-if="active" class="mt-3 flex flex-wrap items-center justify-end gap-2">
-      <span v-if="locked" class="mr-auto text-[11px] text-base-400">{{ t('team.sanction.adminLocked') }}</span>
-      <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="locked" data-testid="sanction-change-open" @click="emit('change')">{{ t('team.sanction.changeEnd') }}</button>
-      <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="locked" data-testid="sanction-lift-open" @click="emit('lift')">{{ t('team.change.lift') }}</button>
+      <span v-if="rights.blocked" class="mr-auto text-[11px] text-base-400" data-testid="sanction-locked">
+        {{ rights.blocked === 'rank' ? t('team.sanction.rankLocked') : t('team.sanction.permissionLocked') }}
+      </span>
+      <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!rights.change" data-testid="sanction-change-open" @click="emit('change')">{{ t('team.sanction.changeEnd') }}</button>
+      <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!rights.lift" data-testid="sanction-lift-open" @click="emit('lift')">{{ t('team.change.lift') }}</button>
     </footer>
   </article>
 </template>

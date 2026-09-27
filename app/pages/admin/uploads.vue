@@ -185,7 +185,7 @@ const { active } = useListKeys(items, {
             <div class="flex shrink-0 flex-col gap-1.5">
               <button v-if="c.status !== 'approved' || c.reports.count" class="btn btn-primary px-2.5 py-1 text-xs" @click="ask('approve', [c.id])">{{ t('admin.review.approve') }}</button>
               <button v-if="c.status !== 'rejected'" class="btn btn-ghost px-2.5 py-1 text-xs" @click="ask('reject', [c.id])">{{ t('admin.review.reject') }}</button>
-              <button v-if="team.isAdmin.value" class="btn btn-ghost px-2.5 py-1 text-xs hover:text-redstone-300" @click="deleting = c">{{ t('common.actions.delete') }}</button>
+              <button v-if="team.can('uploads.delete')" class="btn btn-ghost px-2.5 py-1 text-xs hover:text-redstone-300" @click="deleting = c">{{ t('common.actions.delete') }}</button>
             </div>
           </div>
         </li>

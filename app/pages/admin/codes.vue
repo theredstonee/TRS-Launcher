@@ -91,7 +91,7 @@ async function revoke() {
 
 <template>
   <section class="space-y-4" :aria-label="t('team.nav.codes')" data-testid="admin-codes">
-    <form v-if="team.isAdmin.value" class="card grid grid-cols-1 gap-3 p-4 md:grid-cols-[2fr_1fr_1fr_1.4fr]" @submit.prevent="create">
+    <form v-if="team.can('codes')" class="card grid grid-cols-1 gap-3 p-4 md:grid-cols-[2fr_1fr_1fr_1.4fr]" @submit.prevent="create">
       <label class="block">
         <span class="label">{{ t('admin.codes.cape') }}</span>
         <select v-model="form.capeId" class="field">
@@ -163,7 +163,7 @@ async function revoke() {
             <td class="max-w-48 truncate px-3 py-2 text-base-400" :title="c.note ?? ''">{{ c.note ?? '–' }}</td>
             <td class="px-3 py-2 text-right">
               <span v-if="c.revokedAt" class="text-base-600">{{ t('admin.codes.revoked') }}</span>
-              <button v-else-if="team.isAdmin.value" class="btn btn-ghost px-2 py-0.5 text-[11px] hover:text-redstone-300" @click="revoking = c">{{ t('admin.codes.revoke') }}</button>
+              <button v-else-if="team.can('codes')" class="btn btn-ghost px-2 py-0.5 text-[11px] hover:text-redstone-300" @click="revoking = c">{{ t('admin.codes.revoke') }}</button>
             </td>
           </tr>
         </tbody>

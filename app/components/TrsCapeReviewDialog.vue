@@ -356,7 +356,7 @@ function reportSummary(reasons: Record<string, number>): string {
       <button class="btn btn-ghost px-3" :disabled="capes.length < 2" :aria-label="t('admin.review.dialog.prev')" @click="go(-1)">←</button>
       <span class="self-center text-xs text-base-400 tabular-nums">{{ index + 1 }} / {{ capes.length }}</span>
       <button class="btn btn-ghost px-3" :disabled="capes.length < 2" :aria-label="t('admin.review.dialog.next')" @click="go(1)">→</button>
-      <button v-if="team.isAdmin.value" class="btn btn-ghost hover:text-redstone-300" :disabled="!!busy" @click="remove">
+      <button v-if="team.can('uploads.delete')" class="btn btn-ghost hover:text-redstone-300" :disabled="!!busy" @click="remove">
         {{ confirmDelete ? t('admin.review.dialog.confirmDelete') : t('common.actions.delete') }}
       </button>
       <template v-if="canReject">

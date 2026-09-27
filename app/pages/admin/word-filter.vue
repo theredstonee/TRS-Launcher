@@ -60,7 +60,7 @@ async function remove(w: FilterWord) {
     <div class="card h-fit p-4">
       <h2 class="section-title">{{ t('admin.mod.wordFilter') }}</h2>
       <p class="mt-1 text-xs text-base-400">{{ t('admin.mod.wordFilterHint') }}</p>
-      <form v-if="team.isAdmin.value" class="mt-3 space-y-2" @submit.prevent="add">
+      <form v-if="team.can('wordfilter')" class="mt-3 space-y-2" @submit.prevent="add">
         <input v-model="form.word" class="field" maxlength="48" :placeholder="t('admin.mod.word')" :aria-label="t('admin.mod.word')" data-testid="word-input" />
         <div class="grid grid-cols-2 gap-2">
           <select v-model="form.mode" class="field py-1.5 text-xs" :aria-label="t('admin.mod.mode.word')">
@@ -86,7 +86,7 @@ async function remove(w: FilterWord) {
           <span class="min-w-0 flex-1 truncate font-mono text-sm text-base-50">{{ w.word }}</span>
           <span class="badge" :class="w.action === 'block' ? 'bg-redstone-900 text-redstone-300' : 'bg-base-800 text-base-200'">{{ t(`admin.mod.action.${w.action}`) }}</span>
           <span class="text-base-400">{{ t(`admin.mod.mode.${w.mode}`) }}</span>
-          <button v-if="team.isAdmin.value" class="btn-icon size-6" :aria-label="t('common.actions.remove')" :disabled="busy === `w${w.id}`" @click="remove(w)">
+          <button v-if="team.can('wordfilter')" class="btn-icon size-6" :aria-label="t('common.actions.remove')" :disabled="busy === `w${w.id}`" @click="remove(w)">
             <SocialIcon name="close" class="size-3" />
           </button>
         </li>

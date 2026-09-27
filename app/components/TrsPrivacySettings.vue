@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TrsPrivacy } from '~/utils/trs'
+import { WEBSITE_LOGIN_URL } from '~/utils/teamAccess'
 
 // Datenschutz der TRS-Dienste (Einstellungen → Datenschutz). Die Schalter
 // liegen auf dem TRS-Server je Minecraft-Account; die Einwilligung selbst
@@ -8,6 +9,7 @@ import type { TrsPrivacy } from '~/utils/trs'
 const sync = defineModel<boolean>('sync', { default: true })
 const trs = useTrsStore()
 const sanctions = useSanctionsStore()
+const applications = useApplicationsStore()
 const accounts = useAccountsStore()
 const toasts = useToasts()
 
@@ -18,6 +20,11 @@ const switching = ref(false)
 const myReports = ref(false)
 
 const settings = computed(() => trs.me?.settings ?? null)
+
+/** Die Website meldet nur noch mit Microsoft an (§24.1) – der Launcher öffnet sie nur. */
+function openWebsite() {
+  backend.openExternalUrl(WEBSITE_LOGIN_URL).catch((e) => toasts.error(e))
+}
 
 onMounted(async () => {
   if (!trs.status) await trs.refreshStatus()
@@ -92,6 +99,12 @@ function openPrivacy() {
       <SettingRow :title="t('trsPrivacy.sync.title')" :description="t('trsPrivacy.sync.description')">
         <ToggleSwitch v-model="sync" :label="t('trsPrivacy.sync.title')" data-testid="trs-sync-toggle" />
       </SettingRow>
+      <SettingRow v-if="accounts.active" :title="t('applications.settings.title')" :description="t('applications.settings.description')">
+        <button class="btn btn-ghost" data-testid="settings-my-applications" @click="applications.show()">
+          {{ t('applications.settings.button') }}
+          <span v-if="applications.openCount" class="rounded-full bg-base-700 px-1.5 text-[10px] font-bold text-base-50">{{ applications.openCount }}</span>
+        </button>
+      </SettingRow>
       <SettingRow v-if="accounts.active" :title="t('sanctions.settings.title')" :description="t('sanctions.settings.description')">
         <button class="btn btn-ghost" data-testid="settings-my-sanctions" @click="sanctions.open()">
           {{ t('sanctions.settings.button') }}
@@ -165,8 +178,10 @@ function openPrivacy() {
         </SettingRow>
         <SocialMyReportsDialog v-if="myReports" @close="myReports = false" />
 
-        <SettingRow v-if="trs.isStaff" :title="t('webLogin.title')" :description="t('webLogin.settingsDescription', { host: TRS_HOST })">
-          <button class="btn btn-ghost" data-testid="settings-web-login" @click="trs.openWebLogin()">{{ t('webLogin.open') }}</button>
+        <SettingRow :title="t('websiteLogin.title')" :description="t('websiteLogin.description', { host: TRS_HOST })">
+          <button class="btn btn-ghost" data-testid="settings-website-login" @click="openWebsite">
+            {{ t('websiteLogin.button') }} <SocialIcon name="external" class="size-3.5" />
+          </button>
         </SettingRow>
 
         <SettingRow

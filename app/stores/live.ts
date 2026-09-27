@@ -74,6 +74,7 @@ export const useLiveStore = defineStore('live', () => {
       useChatStore().resync(),
       hosting.loaded ? hosting.load() : Promise.resolve(),
       useSanctionsStore().load(),
+      useApplicationsStore().loaded ? useApplicationsStore().load() : Promise.resolve(),
     ])
   }
 
@@ -192,6 +193,9 @@ export const useLiveStore = defineStore('live', () => {
       case 'sanction_updated':
       case 'appeal_decided':
         useSanctionsStore().onLiveEvent(e)
+        return
+      case 'application_updated':
+        useApplicationsStore().onLiveEvent(e)
         return
       case 'moderation': {
         const until = e.until ? dateTime(e.until) : null

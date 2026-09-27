@@ -1,6 +1,6 @@
 //! Team-Bereich (Moderation v2, Vertrag: `api/API.md` §22): Übersicht,
 //! globale Suche, Spieler-Akte mit Notizen, Strafen (vergeben, aufheben,
-//! verkürzen/verlängern), Einsprüche, Rollen, Welten und Sammelaktionen.
+//! verkürzen/verlängern), Einsprüche, Welten und Sammelaktionen (Rollen: Website).
 //!
 //! Wie bei den Meldungen (`moderation.rs`) gehen die großen Antworten
 //! **gesäubert** als JSON ans Webview (zod prüft dort noch einmal). Alle
@@ -468,27 +468,6 @@ impl Launcher {
     pub async fn admin_appeal_decide(&self, id: u64, decision: &AppealDecision) -> Result<Value> {
         let id = sanction_id_arg(id)?;
         self.admin_json(Req::post(format!("/v1/admin/appeals/{id}/decide"), decision.body()?)).await
-    }
-
-    pub async fn admin_roles(&self) -> Result<Value> {
-        self.admin_json(Req::get("/v1/admin/roles")).await
-    }
-
-    pub async fn admin_role_set(&self, uuid: &str, role: &str, note: Option<&str>) -> Result<Value> {
-        let uuid = uuid_arg(uuid)?;
-        if !matches!(role, "admin" | "moderator") {
-            return Err(invalid(crate::msg!("team.invalidRole", "Unbekannte Rolle.")));
-        }
-        let mut body = json!({ "role": role });
-        if let Some(note) = note.map(str::trim).filter(|n| !n.is_empty()) {
-            body["note"] = json!(validate::plain_text(note, 200, validate::TextField::Note)?);
-        }
-        self.admin_json(Req::put(format!("/v1/admin/roles/{uuid}"), body)).await
-    }
-
-    pub async fn admin_role_remove(&self, uuid: &str) -> Result<Value> {
-        let uuid = uuid_arg(uuid)?;
-        self.admin_json(Req::delete(format!("/v1/admin/roles/{uuid}"))).await
     }
 
     /// Offene Welten (Welt-Hosting) für das Team.

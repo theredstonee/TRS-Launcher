@@ -35,10 +35,17 @@ watch(status, () => {
   void load()
 })
 
-/** Moderatoren entscheiden nicht über Einsprüche gegen eigene Strafen. */
-const own = (a: AdminAppeal) => !team.isAdmin.value && a.sanction.createdBy.uuid === trs.me?.uuid
+/** Über Einsprüche gegen eigene Strafen entscheidet jemand anderes (außer Owner). */
+const own = (a: AdminAppeal) => !team.owner.value && a.sanction.createdBy.uuid === trs.me?.uuid
+/** Aufheben/Verkürzen folgen der Rang-Regel und den Rechten (§24.2); Bestehen lassen geht immer. */
+function allowed(a: AdminAppeal, decision: 'lift' | 'shorten' | 'uphold'): boolean {
+  if (own(a)) return false
+  if (decision === 'uphold') return true
+  const r = team.rightsFor(a.sanction)
+  return decision === 'lift' ? r.lift : r.change
+}
 function decide(a: AdminAppeal, decision: 'lift' | 'shorten' | 'uphold' = 'uphold') {
-  if (a.status === 'open' && !own(a)) deciding.value = { appeal: a, decision }
+  if (a.status === 'open' && allowed(a, decision)) deciding.value = { appeal: a, decision }
 }
 async function decided() {
   deciding.value = null
@@ -91,9 +98,10 @@ const { active } = useListKeys(items, {
           </p>
           <footer v-if="a.status === 'open'" class="mt-3 flex flex-wrap items-center justify-end gap-2">
             <span v-if="own(a)" class="mr-auto text-[11px] text-base-400">{{ t('team.appeals.own') }}</span>
-            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="own(a)" @click="decide(a, 'uphold')">{{ t('team.appeals.decisions.uphold') }}</button>
-            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="own(a)" @click="decide(a, 'shorten')">{{ t('team.appeals.decisions.shorten') }}</button>
-            <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="own(a)" data-testid="appeal-open" @click="decide(a, 'lift')">{{ t('team.appeals.decisions.lift') }}</button>
+            <span v-else-if="team.rightsFor(a.sanction).blocked === 'rank'" class="mr-auto text-[11px] text-base-400">{{ t('team.sanction.rankLocked') }}</span>
+            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!allowed(a, 'uphold')" @click="decide(a, 'uphold')">{{ t('team.appeals.decisions.uphold') }}</button>
+            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!allowed(a, 'shorten')" @click="decide(a, 'shorten')">{{ t('team.appeals.decisions.shorten') }}</button>
+            <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!allowed(a, 'lift')" data-testid="appeal-open" @click="decide(a, 'lift')">{{ t('team.appeals.decisions.lift') }}</button>
           </footer>
         </article>
       </li>
