@@ -266,6 +266,21 @@ public final class Circuits {
 		return true;
 	}
 
+	/** An einer festen Lage einblenden (Selbsttest; bestätigt sofort). */
+	public void placeAt(Circuit c, int x, int y, int z, int rotation, boolean mirrored) {
+		if (c == null) return;
+		placing = false;
+		beforePlacing = null;
+		active = c;
+		mirror = mirrored;
+		hidden = false;
+		layer = -1;
+		placement = new Placement(x, y, z, rotation, mirrored);
+		check = new CircuitCheck(c, placement);
+		dirtyCheck = true;
+		persist();
+	}
+
 	public boolean hasSavedPosition() {
 		return store != null && worldKey != null && store.anchor(worldKey) != null;
 	}
@@ -306,7 +321,8 @@ public final class Circuits {
 		if (e != null) apply(e);
 	}
 
-	private void setLayer(int l) {
+	/** Schicht wählen (-1 = alle). */
+	public void setLayer(int l) {
 		layer = l;
 		persist();
 	}

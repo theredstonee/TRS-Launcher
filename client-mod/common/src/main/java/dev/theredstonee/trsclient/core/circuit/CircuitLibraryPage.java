@@ -20,6 +20,7 @@ import java.util.List;
  */
 public final class CircuitLibraryPage {
 	private static volatile boolean openRequested;
+	private static volatile Circuit openCircuit;
 
 	private final Runnable click;
 	private final Runnable closeMenu;
@@ -50,6 +51,12 @@ public final class CircuitLibraryPage {
 		openRequested = true;
 	}
 
+	/** Beim nächsten Zeichnen direkt die Detailseite dieser Schaltung zeigen (Selbsttest, Tasten). */
+	public static void requestOpen(Circuit circuit) {
+		openCircuit = circuit;
+		openRequested = true;
+	}
+
 	public static boolean takeOpenRequest() {
 		boolean r = openRequested;
 		openRequested = false;
@@ -60,6 +67,9 @@ public final class CircuitLibraryPage {
 	public void reset() {
 		search.setFocused(false);
 		dragX = Double.NaN;
+		Circuit c = openCircuit;
+		openCircuit = null;
+		if (c != null) show(c);
 	}
 
 	/** Direkt die Detailseite einer Schaltung (Selbsttest). */

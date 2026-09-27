@@ -86,11 +86,11 @@ public final class GhostPainter {
 			if (dist > 96) continue;
 			int base = statusColor(status, placing);
 			boolean correct = status == CircuitCheck.CORRECT;
-			int fillAlpha = (int) (opacity * (correct ? (hideCorrect ? 0 : 50) : status == CircuitCheck.MISSING ? 70 : 95));
+			int fillAlpha = (int) (opacity * (correct ? (hideCorrect ? 0 : 60) : status == CircuitCheck.MISSING ? 110 : 130));
 			if (status == CircuitCheck.OPTIONAL) fillAlpha = (int) (opacity * 35);
 			int fill = ColorMath.withAlpha(mix(base, BlockLook.color(cell.spec.def), 0.35f), fillAlpha);
-			int edge = ColorMath.withAlpha(base, correct ? 150 : 230);
-			float edgeWidth = dist < 6 ? 1.2f : dist < 16 ? 1f : 0.75f;
+			int edge = ColorMath.withAlpha(base, correct ? 170 : 255);
+			float edgeWidth = dist < 8 ? 1.5f : dist < 20 ? 1.1f : 0.8f;
 			float[] box = BlockLook.box(cell.spec, placement);
 			boolean full = BlockLook.fullCube(cell.spec);
 			if (!free) {
@@ -122,7 +122,7 @@ public final class GhostPainter {
 				}
 				drawn++;
 			}
-			if (labels && dist <= LABEL_DISTANCE && status != CircuitCheck.CORRECT && status != CircuitCheck.OPTIONAL) {
+			if (labels && !placing && dist <= LABEL_DISTANCE && status != CircuitCheck.CORRECT && status != CircuitCheck.OPTIONAL) {
 				labelCells.add(new int[] {i, (int) (dist * 100)});
 			}
 		}
@@ -257,6 +257,7 @@ public final class GhostPainter {
 		});
 		Circuit circuit = check.circuit();
 		int n = 0;
+		List<int[]> taken = new ArrayList<int[]>();
 		for (int[] e : cells) {
 			if (n++ >= MAX_LABELS) break;
 			int i = e[0];
@@ -273,6 +274,17 @@ public final class GhostPainter {
 			int tw = c.textWidth(text);
 			int x = (int) Math.round(point[0]);
 			int y = (int) Math.round(point[1]);
+			// Beschriftungen nicht übereinander (die nähere gewinnt)
+			int hw = (int) ((tw / 2 + 2) * scale), top = (int) (y - 11 * scale), bottom = (int) (y - scale);
+			boolean overlaps = false;
+			for (int[] r : taken) {
+				if (x - hw < r[2] && x + hw > r[0] && top < r[3] && bottom > r[1]) {
+					overlaps = true;
+					break;
+				}
+			}
+			if (overlaps) continue;
+			taken.add(new int[] {x - hw, top, x + hw, bottom});
 			c.push();
 			c.translate(x, y);
 			c.scale(scale);
