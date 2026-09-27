@@ -251,14 +251,24 @@ export function updateJob(ctx: AppContext, actor: Staff, id: string, raw: unknow
   return jobView(ctx, jobRow(ctx, id)!)
 }
 
-export function deleteJob(ctx: AppContext, actor: Staff, id: string): void {
-  assertCan(actor, 'applications.manage')
+/**
+ * Stelle endgültig löschen – nur Owner. Hat sie Bewerbungen, müssen diese ausdrücklich mitgelöscht werden
+ * (`withApplications`), sonst 409 `job_has_applications` mit der Anzahl. Notizen, Stimmen und Verlauf der
+ * Bewerbungen gehen per CASCADE mit; die Wartezeit nach einer Absage entfällt damit.
+ */
+export function deleteJob(ctx: AppContext, actor: Staff, id: string, withApplications = false): { applications: number } {
+  if (!actor.owner) throw forbidden('owner_only', 'Only owners can delete positions')
   if (!jobRow(ctx, id)) throw notFound('job_not_found', 'Job not found')
-  if (one(ctx.db, 'SELECT 1 AS x FROM team_applications WHERE job_id = ? LIMIT 1', id)) {
-    throw conflict('job_has_applications', 'This job has applications – close it instead')
+  const n = one<{ n: number }>(ctx.db, 'SELECT COUNT(*) AS n FROM team_applications WHERE job_id = ?', id)!.n
+  if (n > 0 && !withApplications) {
+    throw new ApiError(409, 'job_has_applications', `This job has ${n} applications – confirm deleting them too`, { applications: n })
   }
-  run(ctx.db, 'DELETE FROM team_jobs WHERE id = ?', id)
-  logAudit(ctx, actor.uuid, 'job.delete', null, id)
+  tx(ctx.db, () => {
+    run(ctx.db, 'DELETE FROM team_applications WHERE job_id = ?', id)
+    run(ctx.db, 'DELETE FROM team_jobs WHERE id = ?', id)
+    logAudit(ctx, actor.uuid, 'job.delete', null, n ? `${id} (+${n} applications)` : id)
+  })
+  return { applications: n }
 }
 
 function logAudit(ctx: AppContext, actor: string, action: string, target: string | null, detail: string, ref?: string): void {

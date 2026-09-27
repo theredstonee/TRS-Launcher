@@ -5,7 +5,8 @@ import type { Lang } from '~/utils/messages'
 
 const { a, fill } = useAdminText()
 const { t, lang } = useTeamText()
-const { api, can } = useAdmin()
+const { api, can, session } = useAdmin()
+const owner = computed(() => session.value?.owner ?? false)
 
 const LANG_LIST: Lang[] = ['en', 'de', 'es']
 const TYPES: FieldType[] = ['short', 'long', 'single', 'multi', 'yesno', 'number']
@@ -282,7 +283,8 @@ async function remove() {
   if (!deleting.value) return
   busy.value = true
   try {
-    await api(`/v1/admin/jobs/${deleting.value.id}`, { method: 'DELETE' })
+    const withApps = deleting.value.applications.total > 0 ? '?withApplications=1' : ''
+    await api(`/v1/admin/jobs/${deleting.value.id}${withApps}`, { method: 'DELETE' })
     deleting.value = null
     await load()
   } catch (e) {
@@ -329,7 +331,7 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
           <div class="flex flex-wrap gap-1.5">
             <a v-if="j.status !== 'draft'" :href="`/team/${j.id}`" target="_blank" rel="noopener" class="btn btn-ghost px-2.5 py-1 text-xs"><SiteIcon name="external" class="size-3.5" />{{ t.adm.jobs.publicPage }}</a>
             <button v-if="manage" type="button" class="btn btn-ghost px-2.5 py-1 text-xs" @click="edit(j)">{{ t.adm.jobs.edit }}</button>
-            <button v-if="manage && !j.applications.total" type="button" class="btn btn-danger px-2.5 py-1 text-xs" @click="deleting = j">{{ t.adm.jobs.delete }}</button>
+            <button v-if="owner" type="button" class="btn btn-danger px-2.5 py-1 text-xs" @click="deleting = j">{{ t.adm.jobs.delete }}</button>
           </div>
         </article>
       </li>
@@ -454,7 +456,18 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
       </template>
     </AdminDialog>
 
-    <AdminConfirm v-if="deleting" :title="t.adm.jobs.delete" :text="fill(t.adm.jobs.confirmDelete, { title: inLang(deleting.texts, lang)?.title ?? deleting.id })" danger :busy="busy" @cancel="deleting = null" @confirm="remove" />
+    <AdminConfirm
+      v-if="deleting"
+      :title="t.adm.jobs.delete"
+      :text="deleting.applications.total
+        ? fill(t.adm.jobs.confirmDeleteApps, { title: inLang(deleting.texts, lang)?.title ?? deleting.id, n: deleting.applications.total, open: deleting.applications.open })
+        : fill(t.adm.jobs.confirmDelete, { title: inLang(deleting.texts, lang)?.title ?? deleting.id })"
+      :confirm-label="t.adm.jobs.delete"
+      danger
+      :busy="busy"
+      @cancel="deleting = null"
+      @confirm="remove"
+    />
   </div>
 </template>
 

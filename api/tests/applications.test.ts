@@ -80,7 +80,8 @@ describe('jobs', () => {
     expect(code(() => publicJob(env.ctx, again.id))).toBe('job_not_found')
     updateJob(env.ctx, t.admin, again.id, { ...JOB, status: 'closed' })
     expect(publicJobs(env.ctx, true).map((j) => [j.id, j.status])).toEqual([['moderator', 'open'], [again.id, 'closed']])
-    deleteJob(env.ctx, t.admin, again.id)
+    expect(code(() => deleteJob(env.ctx, t.admin, again.id))).toBe('owner_only')
+    deleteJob(env.ctx, OWNER, again.id)
     // Ungültige Formulare und Texte.
     expect(code(() => createJob(env.ctx, t.admin, { ...JOB, texts: {} }))).toBe('invalid_request')
     expect(code(() => createJob(env.ctx, t.admin, { ...JOB, form: [{ id: 'discord', type: 'short', label: { en: 'x' } }] }))).toBe('invalid_request')
@@ -89,6 +90,22 @@ describe('jobs', () => {
     expect(code(() => createJob(env.ctx, t.admin, { ...JOB, form: [{ id: 'long', type: 'long', label: { en: 'x' }, max: 9000 }] }))).toBe('invalid_request')
     expect(code(() => createJob(env.ctx, t.admin, { ...JOB, roleId: 'owner' }))).toBe('invalid_role')
     expect(code(() => createJob(env.ctx, t.admin, { ...JOB, texts: { en: { title: '<b>x</b>'.repeat(30) } } }))).toBe('invalid_request')
+  })
+})
+
+describe('deleting positions', () => {
+  it('only owners delete; applications only go with an explicit confirmation', async () => {
+    const env = makeEnv()
+    const t = await setup(env)
+    const app = submitApplication(env.ctx, t.steve, 'moderator', GOOD)
+    expect(code(() => deleteJob(env.ctx, t.admin, 'moderator', true))).toBe('owner_only')
+    expect(code(() => deleteJob(env.ctx, OWNER, 'moderator'))).toBe('job_has_applications')
+    expect(one(env.ctx.db, 'SELECT 1 AS x FROM team_applications WHERE id = ?', app.id)).toBeTruthy()
+    expect(deleteJob(env.ctx, OWNER, 'moderator', true)).toEqual({ applications: 1 })
+    expect(one(env.ctx.db, 'SELECT 1 AS x FROM team_applications WHERE id = ?', app.id)).toBeUndefined()
+    expect(one(env.ctx.db, "SELECT 1 AS x FROM team_jobs WHERE id = 'moderator'")).toBeUndefined()
+    expect(all<{ action: string }>(env.ctx.db, "SELECT action FROM admin_log WHERE action = 'job.delete'")).toHaveLength(1)
+    expect(code(() => deleteJob(env.ctx, OWNER, 'moderator', true))).toBe('job_not_found')
   })
 })
 
