@@ -124,4 +124,10 @@ public final class FadeCanvas implements Canvas {
 	public void scale(float sx, float sy) {
 		delegate.scale(sx, sy);
 	}
+
+	/** Gegenstände ohne Blende (Minecraft zeichnet sie immer deckend) – erst ab halber Deckkraft. */
+	@Override
+	public void item(Object stack, int x, int y) {
+		if (factor >= 0.5f) delegate.item(stack, x, y);
+	}
 }

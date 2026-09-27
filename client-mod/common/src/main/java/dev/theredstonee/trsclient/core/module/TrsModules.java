@@ -94,6 +94,8 @@ public final class TrsModules {
 	public final QolModules qol;
 	/** Komfort-Paket 2: Tooltips, Server-Profile, Panorama. */
 	public final ComfortModules comfort;
+	/** Schaltungs-Bibliothek (Redstone). */
+	public final CircuitModules circuits;
 	/** Server-Profile (automatischer Wechsel je Server; nach den HUD-Profilen gelesen/geschrieben). */
 	public final dev.theredstonee.trsclient.core.profile.ServerProfiles serverProfiles;
 
@@ -844,6 +846,7 @@ public final class TrsModules {
 
 		qol = new QolModules(registry, this);
 		comfort = new ComfortModules(registry);
+		circuits = new CircuitModules(registry);
 
 		registry.addPart(keyDefaults);
 		registry.addPart(perfUndo);

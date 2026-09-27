@@ -85,6 +85,8 @@ public final class NewSince {
 	public static final String MENU_SERVER_PROFILES = "menu:serverProfiles";
 	/** Taste „Panorama aufnehmen“ (standardmäßig unbelegt). */
 	public static final String KEY_PANORAMA = "key.trsclient.panorama";
+	/** Schaltungs-Bibliothek (TRS Client 0.11.0): fertige Redstone-Schaltungen, als Vorlage in der Welt einblendbar. */
+	public static final String CIRCUITS = "0.11.0";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -132,6 +134,8 @@ public final class NewSince {
 		add(SHARE, SOCIAL_WAYPOINT, CLIPS_SHARE, "chat.coordLinks");
 		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama.
 		add(COMFORT, "tooltips", "serverProfiles", "panorama", MENU_SERVER_PROFILES, KEY_PANORAMA);
+		// Schaltungs-Bibliothek.
+		add(CIRCUITS, "circuitLibrary");
 	}
 
 	private NewSince() {
