@@ -43,7 +43,7 @@ public final class CircuitProbe implements CircuitWorld, Circuits.Platform {
 		if (!circuits.installed()) {
 			TrsClient client = TrsClient.get();
 			if (client == null) return;
-			circuits.install(client.modules().circuits, INSTANCE, Keys::isDown, I18n.configDir());
+			circuits.install(client.modules(), INSTANCE, Keys::isDown, I18n.configDir());
 		}
 		Circuits.Context ctx = CONTEXT;
 		INSTANCE.level = mc.level;

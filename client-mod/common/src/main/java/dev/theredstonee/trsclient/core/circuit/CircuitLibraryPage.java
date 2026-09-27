@@ -21,6 +21,8 @@ import java.util.List;
 public final class CircuitLibraryPage {
 	private static volatile boolean openRequested;
 	private static volatile Circuit openCircuit;
+	/** 0 = Liste/Details, 1 = Einreichen, 2 = Meine Einreichungen. */
+	private static volatile int openSub;
 
 	private final Runnable click;
 	private final Runnable closeMenu;
@@ -40,10 +42,20 @@ public final class CircuitLibraryPage {
 	private final int[] detailRect = new int[4];
 	private String note;
 	private long noteUntil;
+	/** 0 = Liste/Details, 1 = Einreichen, 2 = Meine Einreichungen. */
+	private int sub;
+	private final CircuitSubmitPage submitPage;
 
 	public CircuitLibraryPage(Runnable click, Runnable closeMenu) {
 		this.click = click;
 		this.closeMenu = closeMenu;
+		this.submitPage = new CircuitSubmitPage(click, closeMenu);
+	}
+
+	/** Beim nächsten Zeichnen des Menüs „Eigene Schaltung einreichen“ zeigen (nach dem Markieren). */
+	public static void requestSubmit() {
+		openSub = 1;
+		openRequested = true;
 	}
 
 	/** Beim nächsten Zeichnen des Menüs diese Seite zeigen. */
@@ -70,10 +82,21 @@ public final class CircuitLibraryPage {
 		Circuit c = openCircuit;
 		openCircuit = null;
 		if (c != null) show(c);
+		int s = openSub;
+		openSub = 0;
+		if (s != 0) openSub(s);
+	}
+
+	private void openSub(int s) {
+		sub = s;
+		detail = null;
+		submitPage.reset();
+		if (s == 2 && Circuits.get().submissions() != null) Circuits.get().submissions().refreshMineAsync();
 	}
 
 	/** Direkt die Detailseite einer Schaltung (Selbsttest). */
 	public void show(Circuit c) {
+		sub = 0;
 		detail = c;
 		detailScroll = 0;
 		preview.reset();
@@ -83,6 +106,11 @@ public final class CircuitLibraryPage {
 	public boolean back() {
 		if (search.focused()) {
 			search.setFocused(false);
+			return true;
+		}
+		if (sub != 0) {
+			if (submitPage.back()) return true;
+			sub = 0;
 			return true;
 		}
 		if (detail != null) {
@@ -103,8 +131,29 @@ public final class CircuitLibraryPage {
 		long now = System.currentTimeMillis();
 		float dt = lastFrame == 0 ? 0f : Math.min(0.1f, (now - lastFrame) / 1000f);
 		lastFrame = now;
-		if (detail != null) drawDetail(c, hits, x, y, w, h, mx, my, dt);
-		else drawList(c, hits, x, y, w, h, mx, my);
+		if (sub != 0) {
+			drawSubHeader(c, hits, x, y, w, mx, my);
+			if (sub == 1) submitPage.drawSubmit(c, hits, x, y + 22, w, h - 22, mx, my, dt);
+			else submitPage.drawMine(c, hits, x, y + 22, w, h - 22, mx, my);
+		} else if (detail != null) {
+			drawDetail(c, hits, x, y, w, h, mx, my, dt);
+		} else {
+			drawList(c, hits, x, y, w, h, mx, my);
+		}
+	}
+
+	private void drawSubHeader(Canvas c, Hits hits, int x, int y, int w, int mx, int my) {
+		Theme t = Theme.get();
+		boolean bh = inside(mx, my, x, y, 16, 16);
+		Paint.iconButton(c, x, y, 16, "back", bh, false);
+		hits.add(x, y, 16, 16, new Runnable() {
+			@Override
+			public void run() {
+				click.run();
+				sub = 0;
+			}
+		});
+		Paint.textClipped(c, I18n.tr(sub == 1 ? "circuits.submit.title" : "circuits.mine.title"), x + 22, y + 4, w - 30, t.text, true);
 	}
 
 	private void drawList(Canvas c, Hits hits, int x, int y, int w, int h, int mx, int my) {
@@ -156,9 +205,20 @@ public final class CircuitLibraryPage {
 			cy = chip(c, hits, cat, texts.category(cat), chipX, cy, x, w, mx, my);
 		}
 		cy += 17;
+		cy = subButtons(c, hits, x, cy, w, mx, my);
 
 		// Liste
-		List<Circuit> list = CircuitLibrary.get().filter(search.text(), category, myVersion ? ver : null, texts);
+		CircuitLibrary library = CircuitLibrary.get();
+		if (library.isEmpty()) {
+			String status;
+			CircuitSync.Status st = CircuitSync.status();
+			if (st == CircuitSync.Status.RUNNING) status = I18n.tr("circuits.loading");
+			else if (st == CircuitSync.Status.DISABLED) status = I18n.tr("circuits.disabled");
+			else status = I18n.tr("circuits.notLoaded");
+			Paint.paragraph(c, status, x + 4, cy + 6, w - 8, 10, t.textDim);
+			return;
+		}
+		List<Circuit> list = library.filter(search.text(), category, myVersion ? ver : null, texts);
 		int top = cy;
 		int areaH = y + h - top;
 		listRect[0] = x;
@@ -202,6 +262,31 @@ public final class CircuitLibraryPage {
 	}
 
 	private int chipX;
+
+	/** Zeile mit „Eigene Schaltung einreichen“ und „Meine Einreichungen“. */
+	private int subButtons(Canvas c, Hits hits, int x, int y, int w, int mx, int my) {
+		String a = I18n.tr("circuits.submit.title");
+		String b = I18n.tr("circuits.mine.title");
+		int aw = Math.min((w - 4) / 2, c.textWidth(a) + 16);
+		int bw = Math.min((w - 4) / 2, c.textWidth(b) + 16);
+		Paint.button(c, x, y, aw, 15, c.clip(a, aw - 8), false, inside(mx, my, x, y, aw, 15));
+		hits.add(x, y, aw, 15, new Runnable() {
+			@Override
+			public void run() {
+				click.run();
+				openSub(1);
+			}
+		});
+		Paint.button(c, x + aw + 4, y, bw, 15, c.clip(b, bw - 8), false, inside(mx, my, x + aw + 4, y, bw, 15));
+		hits.add(x + aw + 4, y, bw, 15, new Runnable() {
+			@Override
+			public void run() {
+				click.run();
+				openSub(2);
+			}
+		});
+		return y + 19;
+	}
 
 	/** Kategorie-Knopf; gibt die (evtl. neue) Zeile zurück und setzt {@link #chipX}. */
 	private int chip(Canvas c, Hits hits, final Circuit.Category cat, String label, int cx, int cy, int x, int w, int mx,
@@ -347,7 +432,7 @@ public final class CircuitLibraryPage {
 		}
 		yy = Paint.paragraph(c, circuit.serverOk ? I18n.tr("circuits.serverOk") : I18n.tr("circuits.serverNote", texts.note(circuit)),
 				tx, yy, tw - 6, lh, circuit.serverOk ? 0xFF7CD88C : 0xFFF0C050);
-		if (circuit.tests.size() > 0) yy = Paint.paragraph(c, I18n.tr("circuits.simulated"), tx, yy, tw - 6, lh, t.textDim);
+		if (circuit.simulated()) yy = Paint.paragraph(c, I18n.tr("circuits.simulated"), tx, yy, tw - 6, lh, t.textDim);
 		yy += 4;
 		yy = Paint.paragraph(c, texts.desc(circuit), tx, yy, tw - 6, lh, t.text);
 		yy += 6;
@@ -479,6 +564,7 @@ public final class CircuitLibraryPage {
 	// --- Eingaben ---
 
 	public boolean mouseScrolled(double mx, double my, double amount) {
+		if (sub != 0) return submitPage.mouseScrolled(mx, my, amount);
 		int step = (int) Math.signum(amount) * 18;
 		if (detail != null) {
 			if (inside(mx, my, detailRect[0], detailRect[1], detailRect[2], detailRect[3])) {
@@ -496,9 +582,11 @@ public final class CircuitLibraryPage {
 
 	public void mouseReleased() {
 		dragX = Double.NaN;
+		submitPage.mouseReleased();
 	}
 
 	public boolean keyPressed(UiKey key) {
+		if (sub != 0) return submitPage.keyPressed(key);
 		if (search.focused()) {
 			if (key == UiKey.ESCAPE || key == UiKey.ENTER) {
 				search.setFocused(false);
@@ -531,6 +619,7 @@ public final class CircuitLibraryPage {
 	}
 
 	public boolean charTyped(char ch) {
+		if (sub != 0) return submitPage.charTyped(ch);
 		if (detail != null) return false;
 		if (search.focused()) {
 			boolean typed = search.type(ch);

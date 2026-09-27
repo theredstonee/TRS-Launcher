@@ -103,7 +103,7 @@ public final class RedstoneHuds {
 			Minecraft mc = Minecraft.getInstance();
 			if (mc.player == null || mc.level == null) return;
 			// Schaltungs-Vorlage (Geisterblöcke + Fortschritt), gleiche Projektion wie das Signal-Overlay
-			if (dev.theredstonee.trsclient.core.circuit.Circuits.get().active() != null) {
+			if (dev.theredstonee.trsclient.core.circuit.Circuits.get().wantsDraw()) {
 				dev.theredstonee.trsclient.core.circuit.Circuits.get().draw(GfxCanvas.of(g, font), Mc.cameraX(), Mc.cameraY(),
 						Mc.cameraZ(), Mc.cameraYaw(), Mc.cameraPitch(), TrsClient.get().worldFov(), g.width(), g.height());
 			}

@@ -1,0 +1,50 @@
+{
+ "format": 1,
+ "id": "not_gate",
+ "category": "basics",
+ "difficulty": 1,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "NOT gate (inverter)",
+   "desc": "The lever powers the block, and a redstone torch on the side of a powered block turns off. So the lamp is on while the input is off – and the other way round. The building block for almost every other gate."
+  },
+  "de": {
+   "name": "NICHT-Gatter (Inverter)",
+   "desc": "Der Hebel bestromt den Block, und eine Redstone-Fackel an einem bestromten Block geht aus. Die Lampe leuchtet also, solange der Eingang aus ist – und umgekehrt. Grundbaustein fast aller anderen Gatter."
+  },
+  "es": {
+   "name": "Puerta NOT (inversor)",
+   "desc": "La palanca activa el bloque y una antorcha de redstone en el lateral de un bloque activado se apaga. Así la lámpara se enciende mientras la entrada está apagada, y al revés. La pieza básica de casi todas las demás puertas."
+  }
+ },
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "-": "redstone_wire",
+  "#": "solid",
+  "t": "redstone_wall_torch[facing=east]",
+  "L": "redstone_lamp@Q"
+ },
+ "layers": [
+  [
+   "A-#tL"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A"
+    ],
+    "out": [
+     "Q"
+    ],
+    "rows": [
+     "0:1",
+     "1:0",
+     "0:1"
+    ]
+   }
+  }
+ ]
+}

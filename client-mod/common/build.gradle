@@ -31,6 +31,14 @@ tasks.named('compileJava') {
 	options.compilerArgs << '-Xlint:-options'
 }
 
+// Schaltungs-Bibliothek: die mitgelieferten Schaltungen liegen als Quelldaten der TRS API in <repo>/data/circuits –
+// nicht im Mod-Jar (die Bibliothek kommt vom Server), aber im Test-Classpath (Simulation, Validierung).
+sourceSets {
+	test {
+		resources.srcDir '../../data'
+	}
+}
+
 test {
 	useJUnitPlatform()
 	// Opt-in-Tests mit Netz (z. B. -Dtrsclient.test.e4mc=true) an die Test-JVM durchreichen.

@@ -1,0 +1,71 @@
+{
+ "format": 1,
+ "id": "comparator_clock",
+ "category": "clocks",
+ "difficulty": 2,
+ "server": "note",
+ "texts": {
+  "en": {
+   "name": "Comparator clock",
+   "desc": "A comparator in subtract mode feeds its own output back into its side. The output keeps subtracting itself away, so it flickers very fast as long as the lever is on. Tiny and easy to switch on and off.",
+   "note": "Very fast – some anti-lag plugins limit clocks like this."
+  },
+  "de": {
+   "name": "Komparator-Takt",
+   "desc": "Ein Komparator im Subtrahier-Modus führt seine eigene Ausgabe zurück in die Seite. Die Ausgabe zieht sich immer wieder selbst ab und flackert dadurch sehr schnell, solange der Hebel an ist. Winzig und bequem ein- und ausschaltbar.",
+   "note": "Sehr schnell – manche Anti-Lag-Plugins begrenzen solche Takte."
+  },
+  "es": {
+   "name": "Reloj de comparador",
+   "desc": "Un comparador en modo resta devuelve su propia salida a su lateral. La salida se resta a sí misma una y otra vez y parpadea muy rápido mientras la palanca esté activada. Diminuto y fácil de encender y apagar.",
+   "note": "Muy rápido: algunos plugins anti-lag limitan relojes así."
+  }
+ },
+ "palette": {
+  "A": "lever[face=floor]@A",
+  "c": "comparator[facing=west,mode=subtract]",
+  "-": "redstone_wire",
+  "S": "redstone_wire@S",
+  "L": "redstone_lamp"
+ },
+ "layers": [
+  [
+   "Ac--L",
+   ".S-.."
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "set": {
+      "A": 1
+     }
+    },
+    {
+     "count": {
+      "out": "S",
+      "ticks": 100,
+      "toggles": [
+       10,
+       100
+      ]
+     }
+    },
+    {
+     "set": {
+      "A": 0
+     }
+    },
+    {
+     "run": 20
+    },
+    {
+     "expect": {
+      "S": 0
+     }
+    }
+   ]
+  }
+ ]
+}

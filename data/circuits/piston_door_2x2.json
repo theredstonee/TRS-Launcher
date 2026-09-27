@@ -1,0 +1,79 @@
+{
+ "format": 1,
+ "id": "piston_door_2x2",
+ "category": "doors",
+ "difficulty": 2,
+ "server": "ok",
+ "texts": {
+  "en": {
+   "name": "2×2 piston door",
+   "desc": "Four sticky pistons hold the door blocks in the opening. Torches keep them powered; a pressure plate powers the line under the floor, the torches go out and the pistons pull the blocks into the walls. Build walls around the pistons and hide the dust under the floor."
+  },
+  "de": {
+   "name": "2×2-Kolbentür",
+   "desc": "Vier klebrige Kolben halten die Türblöcke in der Öffnung. Fackeln halten sie bestromt; eine Druckplatte bestromt die Leitung unter dem Boden, die Fackeln gehen aus und die Kolben ziehen die Blöcke in die Wände. Wände um die Kolben bauen und den Staub unter dem Boden verstecken."
+  },
+  "es": {
+   "name": "Puerta de pistones 2×2",
+   "desc": "Cuatro pistones pegajosos sostienen los bloques de la puerta en la abertura. Unas antorchas los mantienen activados; una placa de presión activa la línea bajo el suelo, las antorchas se apagan y los pistones meten los bloques en las paredes. Construye paredes alrededor de los pistones y esconde el polvo bajo el suelo."
+  }
+ },
+ "palette": {
+  "#": "solid",
+  "-": "redstone_wire",
+  "t": "redstone_torch",
+  "D": "solid~",
+  "P": "sticky_piston[facing=east]@P1",
+  "O": "sticky_piston[facing=east]@P2",
+  "Q": "sticky_piston[facing=west]@P3",
+  "R": "sticky_piston[facing=west]@P4",
+  "a": "stone_pressure_plate@A",
+  "b": "stone_pressure_plate@B",
+  "p": "stone_pressure_plate"
+ },
+ "layers": [
+  [
+   "...--...",
+   "#------#",
+   "...--..."
+  ],
+  [
+   "...##...",
+   "t######t",
+   "...##..."
+  ],
+  [
+   "...ap...",
+   "#PD..DQ#",
+   "...bp..."
+  ],
+  [
+   "........",
+   "-OD..DR-",
+   "........"
+  ]
+ ],
+ "tests": [
+  {
+   "truth": {
+    "in": [
+     "A",
+     "B"
+    ],
+    "out": [
+     "P1",
+     "P2",
+     "P3",
+     "P4"
+    ],
+    "rows": [
+     "00:1111",
+     "10:0000",
+     "00:1111",
+     "01:0000",
+     "00:1111"
+    ]
+   }
+  }
+ ]
+}

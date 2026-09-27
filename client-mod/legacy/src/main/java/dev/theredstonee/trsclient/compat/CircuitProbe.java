@@ -41,7 +41,7 @@ public final class CircuitProbe implements CircuitWorld, Circuits.Platform {
 		if (!circuits.installed()) {
 			TrsClient client = TrsClient.get();
 			if (client == null) return;
-			circuits.install(client.modules().circuits, INSTANCE, new dev.theredstonee.trsclient.core.input.KeyPresses.Down() {
+			circuits.install(client.modules(), INSTANCE, new dev.theredstonee.trsclient.core.input.KeyPresses.Down() {
 				@Override
 				public boolean isDown(String keyName) {
 					return Keys.isDown(keyName);

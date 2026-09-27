@@ -100,7 +100,7 @@ public final class RedstoneHuds {
 		}
 
 		public void render(Gfx g, FontRenderer font, float partialTicks) {
-			boolean circuit = dev.theredstonee.trsclient.core.circuit.Circuits.get().active() != null;
+			boolean circuit = dev.theredstonee.trsclient.core.circuit.Circuits.get().wantsDraw();
 			if (!circuit && (!modules.redstoneOverlay.isEnabled() || tools.cache().size() == 0)) return;
 			if (Mc.player() == null || Mc.world() == null) return;
 			Entity view = Mc.viewEntity();

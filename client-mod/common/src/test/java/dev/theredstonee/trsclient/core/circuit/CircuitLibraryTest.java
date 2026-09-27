@@ -62,9 +62,9 @@ class CircuitLibraryTest {
 		for (String lang : new String[] {"en", "de", "es"}) {
 			CircuitTexts t = CircuitTexts.load(lang);
 			for (Circuit c : LIB.all()) {
-				assertTrue(t.hasOwn(c.id + ".name"), lang + " " + c.id + ".name");
-				assertTrue(t.hasOwn(c.id + ".desc"), lang + " " + c.id + ".desc");
-				if (!c.serverOk) assertTrue(t.hasOwn(c.id + ".note"), lang + " " + c.id + ".note");
+				assertTrue(c.hasText(lang, "name"), lang + " " + c.id + ".name");
+				assertTrue(c.hasText(lang, "desc"), lang + " " + c.id + ".desc");
+				if (!c.serverOk) assertTrue(c.hasText(lang, "note"), lang + " " + c.id + ".note");
 			}
 			for (BlockDef d : LIB.catalog().all()) assertTrue(t.hasOwn(d.labelKey()), lang + " " + d.labelKey());
 			for (Circuit.Category cat : Circuit.Category.values()) assertTrue(t.hasOwn("category." + cat.id), lang + " " + cat);

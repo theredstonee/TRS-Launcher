@@ -294,6 +294,20 @@ public final class GhostPainter {
 		}
 	}
 
+	/** Umriss eines Quaders (Welt-Koordinaten, max exklusiv) – für das Markieren eines Bereichs. */
+	public void box(Canvas c, int x1, int y1, int z1, int x2, int y2, int z2, int argb, double camX, double camY, double camZ,
+			float yaw, float pitch, double fov, int width, int height) {
+		if (!c.images()) return;
+		int[] w = {x1, y1, z1};
+		float[] b = {0f, 0f, 0f, x2 - x1, y2 - y1, z2 - z1};
+		if (!projectBox(w, b, camX, camY, camZ, yaw, pitch, fov, width, height)) return;
+		int[][] edges = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+		for (int[] e : edges) {
+			if (!ok[e[0]] || !ok[e[1]]) continue;
+			Quads.line(c, screen[e[0] * 2], screen[e[0] * 2 + 1], screen[e[1] * 2], screen[e[1] * 2 + 1], 1.5f, argb);
+		}
+	}
+
 	/** Umriss der ganzen Vorlage beim Platzieren. */
 	private void bounds(Canvas c, CircuitCheck check, double camX, double camY, double camZ, float yaw, float pitch,
 			double fov, int width, int height) {

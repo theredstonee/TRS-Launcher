@@ -103,15 +103,31 @@ public final class Circuits {
 	}
 
 	/** Einmal beim Start (idempotent). */
-	public synchronized void install(CircuitModules modules, Platform platform, KeyPresses.Down keyDown, Path configDir) {
-		this.modules = modules;
+	public synchronized void install(dev.theredstonee.trsclient.core.module.TrsModules all, Platform platform,
+			KeyPresses.Down keyDown, Path configDir) {
+		this.modules = all.circuits;
 		this.platform = platform;
 		dev.theredstonee.trsclient.core.ui.menu.ModulePanel.Registry.set(modules.circuitLibrary, new CircuitPanel());
 		if (keys == null && keyDown != null) keys = new KeyPresses(keyDown);
 		if (store == null && configDir != null) {
-			store = new CircuitStore(configDir.resolve("trsclient").resolve("circuits.json"));
+			store = new CircuitStore(configDir.resolve("trsclient").resolve("circuit-templates.json"));
 			store.load();
+			// Bibliothek: Cache laden, dann einmal je Start beim Server prüfen (Hintergrund, keine Anmeldung nötig).
+			dev.theredstonee.trsclient.core.online.OnlineConfig online = dev.theredstonee.trsclient.core.online.OnlineConfig.load(configDir);
+			boolean allowed = online.launcherEnabled() && all.trsOnline.isEnabled();
+			String version = platform == null ? "?" : platform.minecraftVersion();
+			CircuitSync.startOnce(new dev.theredstonee.trsclient.core.online.Http.UrlConnection("TRS-Client (circuits; Minecraft " + version + ")"),
+					allowed ? online.apiBase() : null, new CircuitCache(configDir.resolve("trsclient").resolve("circuits")));
+			submissions = new CircuitSubmissions(new dev.theredstonee.trsclient.core.online.Http.UrlConnection(
+					"TRS-Client (circuits; Minecraft " + version + ")"), online.apiBase());
 		}
+	}
+
+	private CircuitSubmissions submissions;
+
+	/** Einreichen + „Meine Einreichungen“ (null, solange nicht gestartet). */
+	public CircuitSubmissions submissions() {
+		return submissions;
 	}
 
 	public boolean installed() {
@@ -159,6 +175,10 @@ public final class Circuits {
 				handleKeys(ctx);
 			}
 		}
+		if (selecting) {
+			lastWorld = world;
+			hover = ctx.hit ? new int[] {ctx.hitX, ctx.hitY, ctx.hitZ} : null;
+		}
 		if (placing && active != null) {
 			Placement p = gazePlacement(active, ctx);
 			if (!p.equals(placement)) {
@@ -177,6 +197,28 @@ public final class Circuits {
 		if (pressed(modules.openKey) && platform != null) {
 			CircuitLibraryPage.requestOpen();
 			platform.openMenu();
+			return;
+		}
+		if (selecting) {
+			if (pressed(modules.confirmKey) && ctx.hit) {
+				int[] p = {ctx.hitX, ctx.hitY, ctx.hitZ};
+				if (cornerA == null) {
+					cornerA = p;
+				} else {
+					int[] s = CircuitCapture.size(cornerA[0], cornerA[1], cornerA[2], p[0], p[1], p[2]);
+					if (s[0] > Circuit.MAX_SIZE || s[1] > Circuit.MAX_SIZE || s[2] > Circuit.MAX_SIZE) {
+						say(I18n.tr("circuits.select.tooBig"));
+					} else {
+						finishSelecting(p);
+					}
+				}
+			}
+			if (pressed(modules.hideKey)) {
+				selecting = false;
+				cornerA = null;
+				CircuitLibraryPage.requestSubmit();
+				if (platform != null) platform.openMenu();
+			}
 			return;
 		}
 		if (placing) {
@@ -229,6 +271,57 @@ public final class Circuits {
 	static int rotationFromYaw(float yaw) {
 		int d = ((int) Math.floor(yaw / 90.0 + 0.5)) & 3; // 0 Süden, 1 Westen, 2 Norden, 3 Osten
 		return (d + 2) & 3;
+	}
+
+	// --- Bereich markieren (Einreichen) ---
+
+	private boolean selecting;
+	private int[] cornerA;
+	private int[] hover;
+	private CircuitWorld lastWorld;
+	private volatile CircuitCapture.Result capture;
+
+	/** Bereich markieren: erste Ecke anschauen + Bestätigen, zweite Ecke genauso (höchstens 16×16×16). */
+	public void startSelecting() {
+		selecting = true;
+		cornerA = null;
+		placing = false;
+		if (keys != null) keys.releaseAll();
+	}
+
+	public boolean selecting() {
+		return selecting;
+	}
+
+	/** Letzter ausgelesener Bereich (oder null). */
+	public CircuitCapture.Result capture() {
+		return capture;
+	}
+
+	public void clearCapture() {
+		capture = null;
+	}
+
+	/** Bereich direkt auslesen (Selbsttest; sonst über die Tasten). */
+	public CircuitCapture.Result captureNow(CircuitWorld world, int[] a, int[] b) {
+		String id = "submission";
+		CircuitCapture.Result r = CircuitCapture.capture(world, CircuitLibrary.blockCatalog(), a[0], a[1], a[2], b[0], b[1], b[2], id);
+		capture = r;
+		return r;
+	}
+
+	private void finishSelecting(int[] b) {
+		int[] a = cornerA;
+		selecting = false;
+		cornerA = null;
+		captureNow(lastWorld, a, b);
+		CircuitLibraryPage.requestSubmit();
+		if (platform != null) platform.openMenu();
+	}
+
+	/** Etwas zu zeichnen (Vorlage oder Markierung)? */
+	public boolean wantsDraw() {
+		return active != null || selecting;
 	}
 
 	// --- Aktionen aus dem Menü ---
@@ -422,7 +515,12 @@ public final class Circuits {
 	/** Geisterblöcke + Fortschritt; aus dem Redstone-Overlay des Baums aufgerufen. */
 	public void draw(Canvas c, double camX, double camY, double camZ, float yaw, float pitch, double fov, int width,
 			int height) {
-		if (modules == null || !modules.circuitLibrary.isEnabled() || active == null || check == null) return;
+		if (modules == null || !modules.circuitLibrary.isEnabled()) return;
+		if (selecting) {
+			drawSelection(c, camX, camY, camZ, yaw, pitch, fov, width, height);
+			return;
+		}
+		if (active == null || check == null) return;
 		if (hidden && !placing) {
 			hint(c, width);
 			return;
@@ -432,6 +530,35 @@ public final class Circuits {
 				modules.hideCorrect.get(), texts, camX, camY, camZ, yaw, pitch, fov, width, height);
 		c.flush();
 		panel(c, width, texts);
+	}
+
+	private void drawSelection(Canvas c, double camX, double camY, double camZ, float yaw, float pitch, double fov, int width,
+			int height) {
+		int[] a = cornerA;
+		int[] b = hover;
+		if (a == null) a = b;
+		if (a != null && b != null) {
+			int[] s = CircuitCapture.size(a[0], a[1], a[2], b[0], b[1], b[2]);
+			boolean ok = s[0] <= Circuit.MAX_SIZE && s[1] <= Circuit.MAX_SIZE && s[2] <= Circuit.MAX_SIZE;
+			painter.box(c, Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2]), Math.max(a[0], b[0]) + 1,
+					Math.max(a[1], b[1]) + 1, Math.max(a[2], b[2]) + 1, ok ? GhostPainter.PLACING : GhostPainter.RED, camX, camY,
+					camZ, yaw, pitch, fov, width, height);
+		}
+		String title = I18n.tr(cornerA == null ? "circuits.select.first" : "circuits.select.second", keyName(modules.confirmKey));
+		String line2;
+		if (cornerA != null && b != null) {
+			int[] s = CircuitCapture.size(cornerA[0], cornerA[1], cornerA[2], b[0], b[1], b[2]);
+			line2 = I18n.tr("circuits.select.size", s[0], s[1], s[2]) + " · " + I18n.tr("circuits.select.cancel", keyName(modules.hideKey));
+		} else {
+			line2 = I18n.tr("circuits.select.cancel", keyName(modules.hideKey));
+		}
+		if (message != null && System.currentTimeMillis() < messageUntil) line2 = message;
+		int w = Math.max(c.textWidth(title), c.textWidth(line2)) + 16;
+		int x = width / 2 - w / 2;
+		c.fill(x, 4, x + w, 30, 0xB0101010);
+		c.fill(x, 4, x + w, 5, GhostPainter.PLACING);
+		c.text(title, x + 8, 8, 0xFFFFFFFF, true);
+		c.text(line2, x + 8, 19, 0xFFD0D0D0, false);
 	}
 
 	private void hint(Canvas c, int width) {

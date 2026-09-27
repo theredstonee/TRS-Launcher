@@ -1,0 +1,53 @@
+{
+ "format": 1,
+ "id": "observer_clock",
+ "category": "clocks",
+ "difficulty": 1,
+ "server": "note",
+ "texts": {
+  "en": {
+   "name": "Observer clock",
+   "desc": "Two observers watching each other: when one pulses, the other sees the change and pulses back. This is the fastest simple clock. It starts when the second observer is placed; break one to stop it. Great for flying machines and farms.",
+   "note": "Very fast clocks may be slowed down or removed by anti-lag plugins on some servers."
+  },
+  "de": {
+   "name": "Beobachter-Takt",
+   "desc": "Zwei Beobachter, die sich gegenseitig ansehen: Pulst einer, sieht der andere die Änderung und pulst zurück. Der schnellste einfache Takt. Er startet, sobald der zweite Beobachter gesetzt wird; zum Anhalten einen abbauen. Ideal für Flugmaschinen und Farmen.",
+   "note": "Sehr schnelle Takte werden auf manchen Servern von Anti-Lag-Plugins gebremst oder entfernt."
+  },
+  "es": {
+   "name": "Reloj de observadores",
+   "desc": "Dos observadores que se miran: cuando uno emite un pulso, el otro detecta el cambio y responde. Es el reloj sencillo más rápido. Arranca al colocar el segundo observador; rompe uno para pararlo. Ideal para máquinas voladoras y granjas.",
+   "note": "En algunos servidores, los plugins anti-lag pueden frenar o eliminar relojes muy rápidos."
+  }
+ },
+ "palette": {
+  "-": "redstone_wire@Q",
+  "a": "observer[facing=east]",
+  "b": "observer[facing=west]@S"
+ },
+ "layers": [
+  [
+   "-ab"
+  ]
+ ],
+ "tests": [
+  {
+   "steps": [
+    {
+     "bump": "S"
+    },
+    {
+     "count": {
+      "out": "Q",
+      "ticks": 100,
+      "toggles": [
+       20,
+       100
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

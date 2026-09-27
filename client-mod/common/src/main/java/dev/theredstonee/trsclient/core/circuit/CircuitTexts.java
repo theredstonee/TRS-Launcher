@@ -8,9 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Texte der Schaltungen (Name, Erklärung, Server-Hinweis, Blocknamen, Kategorien) aus
- * {@code circuits/lang/<sprache>.json}. Englisch, Deutsch und Spanisch sind vollständig; die Beta-Sprachen fallen
- * je Schlüssel auf Englisch zurück (die Menütexte selbst stehen in den normalen i18n-Dateien).
+ * Texte der Schaltungs-Bibliothek: Blocknamen, Kategorien und Zusätze aus {@code circuits/lang/<sprache>.json}
+ * (Englisch, Deutsch, Spanisch vollständig; Beta-Sprachen fallen je Schlüssel auf Englisch zurück). Name,
+ * Erklärung und Server-Hinweis einer Schaltung stehen in der Schaltung selbst (vom Server, {@code texts}).
  */
 public final class CircuitTexts {
 	private static CircuitTexts cached;
@@ -41,7 +41,7 @@ public final class CircuitTexts {
 
 	private static Map<String, String> read(String code) {
 		Map<String, String> out = new HashMap<String, String>();
-		JsonObject o = CircuitLibrary.read("lang/" + code + ".json");
+		JsonObject o = CircuitLibrary.read("/assets/trsclient/circuits/lang/" + code + ".json");
 		if (o == null) return out;
 		for (Map.Entry<String, JsonElement> e : o.entrySet()) {
 			if (e.getKey().startsWith("_")) continue;
@@ -63,17 +63,21 @@ public final class CircuitTexts {
 		return v != null && !v.isEmpty();
 	}
 
+	/** Name der Schaltung (Texte kommen mit der Schaltung vom Server; Rückfall Englisch, sonst die ID). */
 	public String name(Circuit c) {
-		return text(c.id + ".name");
+		String v = c.text(language, "name");
+		return v == null ? c.id.replace('_', ' ') : v;
 	}
 
 	public String desc(Circuit c) {
-		return text(c.id + ".desc");
+		String v = c.text(language, "desc");
+		return v == null ? "" : v;
 	}
 
 	/** Server-Hinweis (nur wenn {@link Circuit#serverOk} false ist). */
 	public String note(Circuit c) {
-		return text(c.id + ".note");
+		String v = c.text(language, "note");
+		return v == null ? "" : v;
 	}
 
 	public String block(BlockDef def) {

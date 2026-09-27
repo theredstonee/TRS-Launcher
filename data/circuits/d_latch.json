@@ -1,8 +1,23 @@
 {
+ "format": 1,
  "id": "d_latch",
  "category": "memory",
  "difficulty": 2,
  "server": "ok",
+ "texts": {
+  "en": {
+   "name": "D latch",
+   "desc": "While E (enable) is on, the output follows D. When E is off, a torch locks the data repeater from the side and the output keeps its last value. Stores a value at exactly the moment you choose."
+  },
+  "de": {
+   "name": "D-Latch",
+   "desc": "Solange E (Freigabe) an ist, folgt der Ausgang D. Ist E aus, sperrt eine Fackel den Daten-Verstärker von der Seite und der Ausgang behält seinen letzten Wert. Speichert einen Wert genau im gewünschten Moment."
+  },
+  "es": {
+   "name": "Biestable D",
+   "desc": "Mientras E (habilitar) está activada, la salida sigue a D. Con E apagada, una antorcha bloquea el repetidor de datos por el lateral y la salida conserva su último valor. Guarda un valor justo en el momento que elijas."
+  }
+ },
  "palette": {
   "D": "lever[face=floor]@D",
   "r": "repeater[facing=west,delay=1]",

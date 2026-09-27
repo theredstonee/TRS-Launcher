@@ -1,8 +1,23 @@
 {
+ "format": 1,
  "id": "rs_latch",
  "category": "memory",
  "difficulty": 2,
  "server": "ok",
+ "texts": {
+  "en": {
+   "name": "RS latch (memory cell)",
+   "desc": "Two torches that keep each other in check: S (set) switches the output on, R (reset) switches it off, and the state stays when the lever goes back. Remembers one bit – for example “is the farm running?”."
+  },
+  "de": {
+   "name": "RS-Latch (Speicherzelle)",
+   "desc": "Zwei Fackeln, die sich gegenseitig halten: S (Setzen) schaltet den Ausgang an, R (Rücksetzen) aus, und der Zustand bleibt, wenn der Hebel zurückgeht. Merkt sich ein Bit – z. B. „läuft die Farm?“."
+  },
+  "es": {
+   "name": "Biestable RS (celda de memoria)",
+   "desc": "Dos antorchas que se sujetan mutuamente: S (activar) enciende la salida, R (reiniciar) la apaga, y el estado se mantiene al devolver la palanca. Guarda un bit, por ejemplo «¿está funcionando la granja?»."
+  }
+ },
  "palette": {
   "#": "solid",
   "t": "redstone_wall_torch[facing=east]",

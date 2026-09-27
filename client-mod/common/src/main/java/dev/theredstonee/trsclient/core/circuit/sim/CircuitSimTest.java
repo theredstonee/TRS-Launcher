@@ -22,6 +22,11 @@ import java.util.Map;
  * Vor jedem Test läuft die Schaltung 40 Spiel-Ticks „warm“ (Fackeln gehen an, Takte starten …).
  */
 public final class CircuitSimTest {
+	/** Schutz vor riesigen Angaben (Schaltungen kommen vom Server): höchstens so viele Ticks je Schritt. */
+	static final int MAX_TICKS = 2000;
+	/** Höchstens so viele Schritte bzw. Zeilen je Test. */
+	static final int MAX_STEPS = 128;
+
 	private CircuitSimTest() {
 	}
 
@@ -58,8 +63,10 @@ public final class CircuitSimTest {
 	private static void truth(RedstoneSim sim, JsonObject t, String where, List<String> errors) {
 		List<String> in = names(t.get("in"));
 		List<String> out = names(t.get("out"));
-		int ticks = t.has("ticks") ? t.get("ticks").getAsInt() : 30;
-		for (JsonElement r : t.getAsJsonArray("rows")) {
+		int ticks = Math.max(1, Math.min(MAX_TICKS, t.has("ticks") ? t.get("ticks").getAsInt() : 30));
+		JsonArray rows = t.getAsJsonArray("rows");
+		if (rows.size() > MAX_STEPS) throw new IllegalArgumentException("zu viele Zeilen");
+		for (JsonElement r : rows) {
 			String row = r.getAsString();
 			int colon = row.indexOf(':');
 			String ins = row.substring(0, colon);
@@ -75,6 +82,7 @@ public final class CircuitSimTest {
 	}
 
 	private static void steps(RedstoneSim sim, JsonArray steps, String where, List<String> errors) {
+		if (steps.size() > MAX_STEPS) throw new IllegalArgumentException("zu viele Schritte");
 		int index = 0;
 		java.util.Map<String, Boolean> marked = new java.util.HashMap<String, Boolean>();
 		for (JsonElement e : steps) {
@@ -87,7 +95,7 @@ public final class CircuitSimTest {
 			}
 			if (s.has("press")) sim.press(s.get("press").getAsString());
 			if (s.has("bump")) sim.bump(s.get("bump").getAsString());
-			if (s.has("run")) sim.run(s.get("run").getAsInt());
+			if (s.has("run")) sim.run(Math.max(0, Math.min(MAX_TICKS, s.get("run").getAsInt())));
 			if (s.has("mark")) {
 				for (String m : names(s.get("mark"))) marked.put(m, sim.on(m));
 			}
@@ -110,7 +118,7 @@ public final class CircuitSimTest {
 			if (s.has("count")) {
 				JsonObject c = s.getAsJsonObject("count");
 				String out = c.get("out").getAsString();
-				int ticks = c.get("ticks").getAsInt();
+				int ticks = Math.max(1, Math.min(MAX_TICKS, c.get("ticks").getAsInt()));
 				int toggles = 0;
 				int onTicks = 0;
 				boolean last = sim.on(out);
