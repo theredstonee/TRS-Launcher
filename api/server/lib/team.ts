@@ -511,36 +511,4 @@ export function addMemberRole(ctx: AppContext, actor: Staff, uuid: string, roleI
   setMemberRoles(ctx, actor, uuid, [...current, roleId], undefined, { auditAction: 'role.grant.application', ref, skipPermission: true, inTx: true })
 }
 
-// ---------------------------------------------------------------- Öffentliche Team-Seite
-
-export interface PublicTeam {
-  roles: { id: string, name: string | null, color: string, builtin: boolean, members: { uuid: string, name: string }[] }[]
-}
-
-/** Team-Mitglieder je öffentlicher Rolle (jede Person nur unter ihrer ranghöchsten öffentlichen Rolle). */
-export function publicTeam(ctx: AppContext): PublicTeam {
-  const roles = all<RoleRow>(ctx.db, 'SELECT * FROM team_roles WHERE public = 1 ORDER BY rank DESC')
-  const seen = new Set<string>()
-  const out: PublicTeam['roles'] = []
-  const banned = new Set(all<{ uuid: string }>(
-    ctx.db, "SELECT uuid FROM sanctions WHERE kind = 'account_ban' AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at > ?)", ctx.now(),
-  ).map((r) => r.uuid))
-  for (const r of roles) {
-    let members: { uuid: string, name: string }[]
-    if (r.id === 'owner') {
-      const env = [...ctx.config.adminUuids]
-      const names = namesOf(ctx, env)
-      members = env.filter((u) => names.has(u)).map((u) => ({ uuid: u, name: names.get(u)! }))
-    } else {
-      members = all<{ uuid: string, name: string }>(
-        ctx.db,
-        'SELECT u.uuid, u.name FROM team_members m JOIN users u ON u.uuid = m.uuid WHERE m.role_id = ? ORDER BY u.name_lower',
-        r.id,
-      )
-    }
-    members = members.filter((m) => !seen.has(m.uuid) && !banned.has(m.uuid))
-    for (const m of members) seen.add(m.uuid)
-    if (members.length > 0) out.push({ id: r.id, name: r.name, color: r.color, builtin: r.builtin === 1, members })
-  }
-  return { roles: out }
-}
+// Öffentliche Team-Seite: siehe teampage.ts (§26).

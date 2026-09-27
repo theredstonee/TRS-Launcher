@@ -5,6 +5,7 @@ import { useCtx } from '../../../../lib/context'
 import { notFound } from '../../../../lib/errors'
 import { clientIp, limit, paramWith } from '../../../../lib/http'
 import { RULES } from '../../../../lib/ratelimit'
+import { storedSkins } from '../../../../lib/skins'
 
 /** Website (§25.3): eine veröffentlichte Schaltung mit Maßen, Materialliste und Versionen. */
 export default defineEventHandler((event) => {
@@ -13,5 +14,10 @@ export default defineEventHandler((event) => {
   const row = publishedCircuit(useCtx(), id)
   if (!row) throw notFound('circuit_not_found', 'Circuit not found')
   setResponseHeader(event, 'Cache-Control', 'public, max-age=60')
-  return siteCircuitView(row)
+  const view = siteCircuitView(row)
+  // Kopf des Erstellers aus dem gespeicherten Skin (keine Mojang-Abfrage beim Seitenaufruf).
+  const author = view.circuit.author
+  if (!author) return view
+  const skin = storedSkins(useCtx().db, [author.uuid]).get(author.uuid)?.url ?? null
+  return { ...view, circuit: { ...view.circuit, author: { ...author, skin } } }
 })

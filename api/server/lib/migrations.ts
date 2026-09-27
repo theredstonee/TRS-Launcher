@@ -698,6 +698,13 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 14,
     run: migrateCircuits,
   },
+  {
+    // Team-Seite (§26): von Hand gepflegte Mitglieder (Gruppe = Rolle, Reihenfolge, Positions-Titel EN/DE/ES,
+    // Discord, Links) + neues Recht `team.page` für Owner/Admin. Dazu die zuletzt gesehene Skin-Adresse je Konto,
+    // damit Admin-Listen und die Team-Seite Köpfe/Skins ohne Mojang-Abfrage je Aufruf zeigen. Idempotent.
+    version: 15,
+    run: migrateTeamPage,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {
@@ -1115,5 +1122,46 @@ CREATE INDEX chat_reports_share ON chat_reports(share_id);
 CREATE INDEX chat_reports_circuit ON chat_reports(circuit_id);
 CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
 `)
+  }
+}
+
+/** Migration 15 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateTeamPage(db: DatabaseSync): void {
+  if (!hasColumn(db, 'users', 'skin_url')) db.exec('ALTER TABLE users ADD COLUMN skin_url TEXT')
+  if (!hasColumn(db, 'users', 'skin_model')) db.exec("ALTER TABLE users ADD COLUMN skin_model TEXT CHECK (skin_model IS NULL OR skin_model IN ('classic', 'slim'))")
+  if (!hasColumn(db, 'users', 'skin_at')) db.exec('ALTER TABLE users ADD COLUMN skin_at INTEGER')
+  db.exec(`
+-- Öffentliche Team-Seite: nur wer hier steht, wird gezeigt. role_id = Gruppe (NULL, wenn die Rolle gelöscht wurde).
+CREATE TABLE IF NOT EXISTS team_page_members (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  role_id TEXT REFERENCES team_roles(id) ON DELETE SET NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  -- {"en": "...", "de": "...", "es": "..."}
+  titles TEXT NOT NULL DEFAULT '{}',
+  discord TEXT,
+  -- [{"label": "...", "url": "https://..."}]
+  links TEXT NOT NULL DEFAULT '[]',
+  added_at INTEGER NOT NULL,
+  added_by TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS team_page_members_role ON team_page_members(role_id, sort);
+`)
+  // Recht team.page für Owner/Admin ergänzen (angepasste Rechte bleiben erhalten).
+  if (hasTable(db, 'team_roles')) {
+    for (const id of ['owner', 'admin']) {
+      const row = db.prepare('SELECT permissions FROM team_roles WHERE id = ? AND builtin = 1').get(id) as { permissions: string } | undefined
+      if (!row) continue
+      let perms: string[] = []
+      try {
+        const parsed = JSON.parse(row.permissions) as unknown
+        if (Array.isArray(parsed)) perms = parsed.filter((p): p is string => typeof p === 'string')
+      } catch {
+        perms = []
+      }
+      if (perms.includes('team.page')) continue
+      perms.push('team.page')
+      db.prepare('UPDATE team_roles SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(perms), Date.now(), id)
+    }
   }
 }

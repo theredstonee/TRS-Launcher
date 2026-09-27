@@ -105,7 +105,7 @@ const { active } = useListKeys(items, {
       <li v-for="(x, i) in items" :key="x.id">
         <article class="adm-row flex-col" :data-row="i" :data-active="active === i">
           <div class="flex w-full flex-wrap items-center gap-2">
-            <PlayerHead :uuid="x.sanction.player.uuid" :name="x.sanction.player.name" :size="28" :fetch="false" />
+            <PlayerHead :uuid="x.sanction.player.uuid" :name="x.sanction.player.name" :size="28" />
             <NuxtLink :to="`/admin/players/${x.sanction.player.uuid}`" class="font-semibold text-base-50 hover:underline">{{ x.sanction.player.name || x.sanction.player.uuid.slice(0, 8) }}</NuxtLink>
             <span class="tone" :class="x.status === 'open' ? 'tone-warn' : x.status === 'upheld' ? 'tone-muted' : 'tone-ok'">{{ a.appealStatus[x.status] }}</span>
             <span class="ml-auto text-xs text-base-400" :title="when(x.createdAt)">{{ rel(x.createdAt) }}</span>

@@ -340,6 +340,7 @@ the TRS server.
 |---|---|
 | Minecraft UUID and player name | To identify your TRS account and show your name to friends |
 | Account creation time and last sign-in time | Account management and abuse prevention |
+| The address of your current Minecraft skin (a public link on Mojang's texture server), its model and when it was last seen | Showing your face in lists and your figure on the team page without asking Mojang every time |
 | Session tokens (only as SHA-256 hashes, valid for 30 days, at most 10 per account) | Keeping you signed in |
 | Your privacy settings (TRS badge, cape visible to others, online status visible to friends/nobody, share server) | So the services respect your choices |
 | Your chosen cape, capes unlocked by codes or granted by the team | Showing your cape to other TRS players |

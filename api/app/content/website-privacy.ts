@@ -71,6 +71,12 @@ If you apply for a position in the TRS team, we store your **application**: the 
 
 **Legal basis.** Art. 6(1)(b) GDPR (steps you asked for before a voluntary team membership) and Art. 6(1)(f) (a fair decision and protection against abuse). If you are under 16, please talk to your parents before you apply.
 
+## Team page
+
+The team page (/team) shows team members that the team **added by hand** – nobody appears there automatically. For each of them it shows the Minecraft name, the Minecraft skin (loaded from Mojang's texture server and shown as a 3D figure), the TRS cape if the person shows it to others, the group (role) and – only if entered – a position title, a Discord name and up to three links. To show faces and figures without asking Mojang on every visit, we store the address of the last seen Minecraft skin with the TRS account. If you are on the team page and want to be removed, tell a team member or write to us (e-mail above); leaving the team does not remove you automatically, the team does. Deleting your TRS account removes you from the page at once.
+
+**Legal basis.** Art. 6(1)(f) GDPR (showing who runs TRS and how to reach them) and your agreement as a team member.
+
 ## Circuit library
 
 **Public library.** The circuit pages (/circuits) and the TRS Client load circuits from our server without an account. The server only counts requests per IP address in memory (rate limit). The TRS Client checks for new circuits once per game start – only if you allowed the TRS online features.
@@ -145,6 +151,12 @@ Wenn du dich auf eine Stelle im TRS-Team bewirbst, speichern wir deine **Bewerbu
 
 **Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (von dir gewünschte Schritte vor einer freiwilligen Team-Mitgliedschaft) und Art. 6 Abs. 1 lit. f (faire Entscheidung und Schutz vor Missbrauch). Bist du unter 16, sprich bitte vor der Bewerbung mit deinen Eltern.
 
+## Team-Seite
+
+Die Team-Seite (/team) zeigt Team-Mitglieder, die das Team **von Hand eingetragen** hat – niemand erscheint dort automatisch. Zu jeder Person zeigt sie den Minecraft-Namen, den Minecraft-Skin (vom Textur-Server von Mojang geladen und als 3D-Figur gezeigt), den TRS-Umhang, wenn die Person ihn anderen zeigt, die Gruppe (Rolle) und – nur wenn eingetragen – einen Positions-Titel, einen Discord-Namen und bis zu drei Links. Damit Gesichter und Figuren nicht bei jedem Aufruf bei Mojang abgefragt werden müssen, speichern wir zum TRS-Konto die Adresse des zuletzt gesehenen Minecraft-Skins. Stehst du auf der Team-Seite und möchtest entfernt werden, sag es einem Team-Mitglied oder schreib uns (E-Mail oben); wer das Team verlässt, wird vom Team entfernt, nicht automatisch. Löschst du dein TRS-Konto, verschwindest du sofort von der Seite.
+
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. f DSGVO (zeigen, wer TRS betreibt und wie man es erreicht) und deine Zustimmung als Team-Mitglied.
+
 ## Schaltungs-Bibliothek
 
 **Öffentliche Bibliothek.** Die Schaltungs-Seiten (/circuits) und der TRS Client laden Schaltungen ohne Konto von unserem Server. Der Server zählt Anfragen je IP-Adresse nur im Arbeitsspeicher (Rate-Limit). Der TRS Client prüft einmal je Spielstart auf neue Schaltungen – nur, wenn du die TRS-Online-Funktionen erlaubt hast.
@@ -216,6 +228,12 @@ Si te postulas a un puesto en el equipo TRS, guardamos tu **solicitud**: el pues
 **Plazo de conservación.** Las solicitudes rechazadas o retiradas se **borran 6 meses después de la decisión**. Las aceptadas se conservan mientras estés en el equipo y se **borran 6 meses después de que salgas**. Si borras tu cuenta TRS, se borran al instante todas tus solicitudes.
 
 **Base jurídica.** Art. 6.1.b RGPD (pasos que pides antes de una pertenencia voluntaria al equipo) y art. 6.1.f (una decisión justa y protección contra abusos). Si tienes menos de 16 años, habla con tus padres antes de postularte.
+
+## Página del equipo
+
+La página del equipo (/team) muestra a los miembros que el equipo **añadió a mano**; nadie aparece allí automáticamente. De cada persona muestra el nombre de Minecraft, el skin de Minecraft (cargado desde el servidor de texturas de Mojang y mostrado como figura 3D), la capa TRS si la persona la muestra a otros, el grupo (rol) y, solo si se ha indicado, un título del puesto, un nombre de Discord y hasta tres enlaces. Para no preguntar a Mojang en cada visita, guardamos con la cuenta TRS la dirección del último skin de Minecraft visto. Si estás en la página del equipo y quieres que te quitemos, díselo a un miembro del equipo o escríbenos (correo arriba); al dejar el equipo no se te quita automáticamente, lo hace el equipo. Si borras tu cuenta TRS, desapareces de la página al instante.
+
+**Base jurídica.** Art. 6.1.f RGPD (mostrar quién gestiona TRS y cómo contactar) y tu acuerdo como miembro del equipo.
 
 ## Biblioteca de circuitos
 

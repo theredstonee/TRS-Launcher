@@ -9,7 +9,7 @@ import { PresenceStore } from './presence'
 import { RateLimiter } from './ratelimit'
 import { SpamGuard } from './safety'
 import { ServerStatusService, type PingDeps } from './serverping'
-import { SkinService } from './skins'
+import { SkinService, rememberSkin } from './skins'
 import { TemplateSet } from './templates'
 import { PlayerWatchHub } from './watch'
 
@@ -75,7 +75,7 @@ export function createContext(opts: {
     }),
     watch: new PlayerWatchHub(lim.maxPlayerStreamsPerUser, lim.maxPlayerStreamsTotal),
     limiter,
-    skins: new SkinService(opts.mojang, limiter, now),
+    skins: new SkinService(opts.mojang, limiter, now, (p) => rememberSkin(opts.db, p, now())),
     templates: opts.templates ?? TemplateSet.empty(),
     now,
     capeDir: opts.capeDir,

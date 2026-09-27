@@ -33,6 +33,7 @@ export const PERMISSIONS = [
   'applications.manage',
   'applications.decide',
   'circuits.manage',
+  'team.page',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -47,7 +48,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'content', permissions: ['uploads.review', 'uploads.delete', 'items.grant', 'codes', 'wordfilter', 'circuits.manage'] },
   { id: 'worlds', permissions: ['worlds.view', 'worlds.close'] },
   { id: 'applications', permissions: ['applications.view', 'applications.review', 'applications.manage', 'applications.decide'] },
-  { id: 'team', permissions: ['roles.manage'] },
+  { id: 'team', permissions: ['roles.manage', 'team.page'] },
 ]
 
 /** Recht je Strafart (§22.2). */

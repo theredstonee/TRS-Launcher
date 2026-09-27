@@ -140,7 +140,7 @@ describe('migration 14 + seed', () => {
     migrate(db)
     const version = (db.prepare('SELECT MAX(version) AS v FROM schema_migrations').get() as { v: number }).v
     expect(version).toBe(MIGRATIONS.at(-1)!.version)
-    expect(version).toBe(14)
+    expect(version).toBeGreaterThanOrEqual(14)
     for (const t of ['circuits', 'circuit_tombstones', 'circuit_submissions']) {
       expect(db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type = 'table' AND name = ?").get(t)).toBeTruthy()
     }
@@ -171,7 +171,8 @@ describe('migration 14 + seed', () => {
     db.prepare(`INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, reason, status, created_at, updated_at)
       VALUES ('r0000000000000001', ?, NULL, 'player', 'spam', 'open', 1, 1)`).run('a'.repeat(32))
     db.prepare("INSERT INTO chat_report_notes (report_id, at, actor, text) VALUES ('r0000000000000001', 1, 'x', x'00')").run()
-    expect(migrate(db)).toBe(1)
+    // 14 und alle späteren Migrationen
+    expect(migrate(db)).toBe(MIGRATIONS.filter((x) => x.version > 13).length)
     expect(db.prepare('SELECT COUNT(*) AS n FROM chat_reports').get()).toEqual({ n: 1 })
     expect(db.prepare('SELECT COUNT(*) AS n FROM chat_report_notes').get()).toEqual({ n: 1 })
     db.prepare(`INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, circuit_id, reason, status, created_at, updated_at)

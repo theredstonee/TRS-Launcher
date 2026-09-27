@@ -62,6 +62,8 @@ function toL(x: L): Localized | undefined {
 
 function edit(j?: AdminJob) {
   draftError.value = ''
+  draftErrors.value = []
+  badFields.value = new Map()
   editLang.value = lang.value
   const texts = {} as JobDraft['texts']
   for (const l of LANG_LIST) {
@@ -170,11 +172,99 @@ function body(d: JobDraft) {
   }
 }
 
+// --- Prüfen (gleiche Regeln wie der Server, Meldungen mit Frage-Nummer und -Text statt rohem Pfad) ----
+const FIELD_ID = /^[a-z][a-z0-9_]{0,31}$/
+const RESERVED = ['discord', 'agegroup', 'age_group', 'website', 'name', 'uuid']
+const JOB_ID = /^[a-z0-9](?:[a-z0-9-]{1,46}[a-z0-9])$/
+const draftErrors = ref<string[]>([])
+/** Fragen (Index) mit Fehler → rote Umrandung; `id` = Feld-ID falsch. */
+const badFields = ref<Map<number, Set<string>>>(new Map())
+
+function questionName(d: JobDraft, i: number): string {
+  const f = d.form[i]
+  const label = f ? (f.label[editLang.value] || f.label.en || f.label.de || f.label.es).trim() : ''
+  const fe = t.value.adm.jobs.formErrors
+  return label ? fill(fe.question!, { n: i + 1, label: label.length > 40 ? `${label.slice(0, 40)}…` : label }) : fill(fe.questionNoLabel!, { n: i + 1 })
+}
+
+function checkDraft(d: JobDraft): { list: string[], bad: Map<number, Set<string>> } {
+  const fe = t.value.adm.jobs.formErrors
+  const list: string[] = []
+  const bad = new Map<number, Set<string>>()
+  const mark = (i: number, what: string, msg: string) => {
+    list.push(`${questionName(d, i)}: ${msg}`)
+    if (!bad.has(i)) bad.set(i, new Set())
+    bad.get(i)!.add(what)
+  }
+  if (d.isNew && d.id.trim() && !JOB_ID.test(d.id.trim())) list.push(fe.jobId!)
+  if (!LANG_LIST.some((l) => d.texts[l].title.trim())) list.push(fe.title!)
+  const seen = new Map<string, number>()
+  d.form.forEach((f, i) => {
+    const id = f.id.trim()
+    if (id) {
+      if (!FIELD_ID.test(id)) mark(i, 'id', fill(fe.keyRule!, { id }))
+      else if (RESERVED.includes(id)) mark(i, 'id', fill(fe.keyReserved!, { id }))
+      else if (seen.has(id)) mark(i, 'id', fill(fe.keyDup!, { id }))
+      else seen.set(id, i)
+    }
+    if (!LANG_LIST.some((l) => f.label[l].trim())) mark(i, 'label', fe.labelMissing!)
+    if (f.type === 'single' || f.type === 'multi') {
+      if (f.options.length < 2 || f.options.length > 20) mark(i, 'options', fe.options!)
+      if (f.options.some((o) => !LANG_LIST.some((l) => o.label[l].trim()))) mark(i, 'options', fe.optionLabel!)
+    }
+    const min = f.min === null || String(f.min) === '' ? null : Number(f.min)
+    const max = f.max === null || String(f.max) === '' ? null : Number(f.max)
+    if (f.type === 'short' || f.type === 'long') {
+      const cap = f.type === 'short' ? 200 : 4000
+      if ((max ?? 0) > cap || (min ?? 0) < 0) mark(i, 'limits', fill(fe.limits!, { cap }))
+    }
+    if (min !== null && max !== null && min > max && f.type !== 'yesno' && f.type !== 'single') mark(i, 'limits', fe.minMax!)
+  })
+  return { list, bad }
+}
+
+/** Server-Fehler (Pfad wie `form.1.id`) in dieselbe Sprache übersetzen. */
+function explainServer(d: JobDraft, fields: { path: string, message: string }[]): string[] {
+  const fe = t.value.adm.jobs.formErrors
+  return fields.map((x) => {
+    const m = /^form\.(\d+)(?:\.(\w+))?/.exec(x.path)
+    if (m) {
+      const i = Number(m[1])
+      const prop = m[2] ?? ''
+      const id = d.form[i]?.id ?? ''
+      let msg = x.message
+      if (prop === 'id') msg = x.message === 'reserved id' ? fill(fe.keyReserved!, { id }) : fill(fe.keyRule!, { id })
+      else if (prop === 'label') msg = fe.labelMissing!
+      else if (prop === 'options') msg = x.message.includes('label') ? fe.optionLabel! : x.message.includes('duplicate') ? fe.optionDup! : fe.options!
+      else if (prop === 'min' || prop === 'max') msg = x.message.startsWith('character') ? fill(fe.limits!, { cap: d.form[i]?.type === 'short' ? 200 : 4000 }) : fe.minMax!
+      return `${questionName(d, i)}: ${msg}`
+    }
+    if (x.path === 'id') return fe.jobId!
+    if (x.path.startsWith('texts')) return fe.title!
+    return `${x.path}: ${x.message}`
+  })
+}
+
+/** Feld-ID beim Verlassen säubern: „Ü18“ → „ue18“, „18“ → „q2_18“; leer bleibt leer (wird beim Speichern erzeugt). */
+function tidyId(d: JobDraft, i: number) {
+  const f = d.form[i]
+  if (!f || !f.id.trim() || FIELD_ID.test(f.id.trim())) {
+    if (f) f.id = f.id.trim()
+    return
+  }
+  const taken = new Set(d.form.filter((_, j) => j !== i).map((x) => x.id).filter(Boolean))
+  f.id = slugId(f.id.replace(/ä/gi, 'ae').replace(/ö/gi, 'oe').replace(/ü/gi, 'ue'), taken, `q${i + 1}`)
+}
+
 async function save() {
   const d = draft.value
   if (!d) return
-  busy.value = true
   draftError.value = ''
+  const check = checkDraft(d)
+  draftErrors.value = check.list
+  badFields.value = check.bad
+  if (check.list.length) return
+  busy.value = true
   try {
     if (d.isNew) await api('/v1/admin/jobs', { method: 'POST', body: body(d) })
     else await api(`/v1/admin/jobs/${d.id}`, { method: 'PUT', body: body(d) })
@@ -182,7 +272,8 @@ async function save() {
     await load()
   } catch (e) {
     const fields = (e as { data?: { error?: { fields?: { path: string, message: string }[] } } }).data?.error?.fields
-    draftError.value = fill(a.value.common.failed, { error: fields?.length ? fields.map((x) => `${x.path}: ${x.message}`).join(' · ') : apiMessage(e) })
+    if (fields?.length) draftErrors.value = explainServer(d, fields)
+    else draftError.value = fill(a.value.common.failed, { error: apiMessage(e) })
   } finally {
     busy.value = false
   }
@@ -300,7 +391,7 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
       <h3 class="section-title mt-6">{{ t.adm.jobs.form }}</h3>
       <p class="mt-1 text-xs text-base-400">{{ t.adm.jobs.standard }}</p>
       <ol class="mt-3 space-y-3">
-        <li v-for="(f, i) in draft.form" :key="f.key" class="field-card rounded-lg border border-base-800 bg-base-950 p-3">
+        <li v-for="(f, i) in draft.form" :key="f.key" class="field-card rounded-lg border bg-base-950 p-3" :class="badFields.has(Number(i)) ? 'border-redstone-600 has-error' : 'border-base-800'">
           <div class="flex flex-wrap items-center gap-2">
             <span class="font-mono text-xs text-base-400">{{ Number(i) + 1 }}.</span>
             <select :value="f.type" class="field adm-select w-auto py-1 text-sm" :aria-label="t.adm.jobs.type" @change="setType(f, ($event.target as HTMLSelectElement).value as FieldType)">
@@ -314,10 +405,22 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
             </span>
           </div>
           <div class="mt-2 grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem]">
-            <input v-model="f.label[editLang]" class="field" maxlength="120" :placeholder="`${t.adm.jobs.label} (${editLang.toUpperCase()})`" :aria-label="t.adm.jobs.label" />
+            <input v-model="f.label[editLang]" class="field" maxlength="120" :placeholder="`${t.adm.jobs.label} (${editLang.toUpperCase()})`" :aria-label="t.adm.jobs.label" :aria-invalid="badFields.get(Number(i))?.has('label') || undefined" />
             <input v-model="f.help[editLang]" class="field" maxlength="300" :placeholder="`${t.adm.jobs.help} (${editLang.toUpperCase()})`" :aria-label="t.adm.jobs.help" />
-            <input v-model="f.id" class="field font-mono text-xs" maxlength="32" :placeholder="t.adm.jobs.fieldId" :aria-label="t.adm.jobs.fieldId" />
+            <input
+              v-model="f.id"
+              class="field font-mono text-xs"
+              maxlength="32"
+              spellcheck="false"
+              autocomplete="off"
+              :placeholder="t.adm.jobs.fieldId"
+              :aria-label="t.adm.jobs.fieldId"
+              :title="t.adm.jobs.fieldIdHint"
+              :aria-invalid="badFields.get(Number(i))?.has('id') || undefined"
+              @blur="tidyId(draft!, Number(i))"
+            />
           </div>
+          <p v-if="Number(i) === 0" class="mt-1 text-[11px] text-base-400">{{ t.adm.jobs.fieldIdHint }}</p>
           <div v-if="f.type !== 'yesno' && f.type !== 'single'" class="mt-2 flex flex-wrap items-center gap-2 text-sm text-base-300">
             <span>{{ minMaxLabel(f) }}</span>
             <input v-model.number="f.min" type="number" class="field w-24 py-1" :aria-label="t.adm.jobs.min" :placeholder="t.adm.jobs.min" />
@@ -337,6 +440,12 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
       <div class="mt-3 flex flex-wrap gap-1.5">
         <button v-for="ty in TYPES" :key="ty" type="button" class="btn btn-ghost px-2.5 py-1 text-xs" :disabled="draft.form.length >= 30" @click="addField(ty)"><SiteIcon name="plus" class="size-3.5" />{{ t.adm.jobs.types[ty] }}</button>
       </div>
+      <div v-if="draftErrors.length" role="alert" class="mt-3 rounded-lg border border-redstone-600 bg-redstone-900/50 px-3 py-2 text-sm text-base-50">
+        <p class="font-semibold">{{ t.adm.jobs.errorsIntro }}</p>
+        <ul class="mt-1 list-disc space-y-0.5 pl-5">
+          <li v-for="(e, k) in draftErrors" :key="k">{{ e }}</li>
+        </ul>
+      </div>
       <p v-if="draftError" role="alert" class="mt-3 text-sm text-redstone-300">{{ draftError }}</p>
       <template #footer>
         <span v-if="draft.roleId && roleOf(draft.roleId)" class="mr-auto"><RoleBadge :role="roleOf(draft.roleId)!" /></span>
@@ -352,5 +461,9 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
 <style scoped>
 .field-card {
   border-left: 3px solid var(--color-redstone-600);
+}
+.field-card :deep([aria-invalid='true']) {
+  border-color: var(--color-redstone-500);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-redstone-500) 45%, transparent);
 }
 </style>

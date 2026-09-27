@@ -4,6 +4,8 @@ import type { CircuitCategory, CircuitData } from '#shared/circuits'
 export interface CircuitAuthor {
   uuid: string
   name: string
+  /** Nur auf der Detailseite: gespeicherte Skin-Adresse für den Kopf. */
+  skin?: string | null
 }
 
 export type CircuitJson = CircuitData & { rev: number, updatedAt: string, author: CircuitAuthor | null }

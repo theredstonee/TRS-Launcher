@@ -5,18 +5,58 @@ const { c } = useCircuitText()
 const lp = useLocalePath()
 const route = useRoute()
 const menuOpen = ref(false)
+const menuButton = shallowRef<HTMLButtonElement | null>(null)
+const menuPanel = shallowRef<HTMLElement | null>(null)
 
+// Alle Seiten stecken im Menü (immer, auf jeder Breite) – oben bleiben nur Logo, Sprache, Konto, GitHub, Download.
 const links = computed(() => [
-  { to: lp('/features'), label: m.value.nav.features },
-  { to: lp('/download'), label: m.value.nav.download },
-  { to: lp('/blog'), label: m.value.nav.blog },
-  { to: lp('/capes'), label: m.value.nav.capes },
-  { to: lp('/circuits'), label: c.value.nav },
-  { to: lp('/faq'), label: m.value.nav.faq },
-  { to: lp('/team'), label: m.value.nav.team },
+  { to: lp('/features'), label: m.value.nav.features, icon: 'bolt' },
+  { to: lp('/download'), label: m.value.nav.download, icon: 'download' },
+  { to: lp('/blog'), label: m.value.nav.blog, icon: 'book' },
+  { to: lp('/capes'), label: m.value.nav.capes, icon: 'cape' },
+  { to: lp('/circuits'), label: c.value.nav, icon: 'blocks' },
+  { to: lp('/faq'), label: m.value.nav.faq, icon: 'note' },
+  { to: lp('/team'), label: m.value.nav.team, icon: 'users' },
+  { to: lp('/applications'), label: t.value.account.myApplications, icon: 'inbox' },
 ])
 
-watch(() => route.path, () => (menuOpen.value = false))
+/** Aktuelle Seite (auch Unterseiten wie /blog/0.9.0) – ohne Sprach-Parameter vergleichen. */
+function isCurrent(to: string): boolean {
+  const target = to.split('?')[0]!.replace(/\/+$/, '') || '/'
+  const here = route.path.replace(/\/+$/, '') || '/'
+  return target === '/' ? here === '/' : here === target || here.startsWith(`${target}/`)
+}
+
+function closeMenu(focusButton = false) {
+  if (!menuOpen.value) return
+  menuOpen.value = false
+  if (focusButton) void nextTick(() => menuButton.value?.focus())
+}
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value
+  if (menuOpen.value) void nextTick(() => menuPanel.value?.querySelector<HTMLElement>('a')?.focus())
+}
+function onKey(e: KeyboardEvent) {
+  if (e.key === 'Escape' && menuOpen.value) {
+    e.preventDefault()
+    closeMenu(true)
+  }
+}
+function onPointer(e: PointerEvent) {
+  if (!menuOpen.value) return
+  const target = e.target as Node
+  if (menuPanel.value?.contains(target) || menuButton.value?.contains(target)) return
+  closeMenu()
+}
+onMounted(() => {
+  document.addEventListener('keydown', onKey)
+  document.addEventListener('pointerdown', onPointer)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKey)
+  document.removeEventListener('pointerdown', onPointer)
+})
+watch(() => route.fullPath, () => closeMenu())
 const year = new Date().getFullYear()
 </script>
 
@@ -25,15 +65,25 @@ const year = new Date().getFullYear()
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 btn btn-primary">Skip to content</a>
 
     <header class="site-header sticky top-0 z-30">
-      <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-        <NuxtLink :to="lp('/')" class="flex items-center gap-2.5 text-base-50" aria-label="TRS Launcher">
-          <img src="/icon.png" alt="" width="32" height="32" class="size-8 [image-rendering:pixelated]" />
-          <span class="display text-xl leading-none">TRS Launcher</span>
-        </NuxtLink>
+      <div class="relative mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
+        <button
+          ref="menuButton"
+          type="button"
+          class="menu-button"
+          :class="{ open: menuOpen }"
+          :aria-label="m.nav.menu"
+          :aria-expanded="menuOpen"
+          aria-controls="site-menu"
+          @click="toggleMenu"
+        >
+          <SiteIcon :name="menuOpen ? 'close' : 'menu'" class="size-5" />
+          <span class="hidden text-sm font-semibold md:inline">{{ m.nav.menu }}</span>
+        </button>
 
-        <nav class="ml-4 hidden items-center gap-1 md:flex" :aria-label="m.nav.menu">
-          <NuxtLink v-for="l in links" :key="l.to" :to="l.to" class="nav-link">{{ l.label }}</NuxtLink>
-        </nav>
+        <NuxtLink :to="lp('/')" class="flex min-w-0 items-center gap-2.5 text-base-50" aria-label="TRS Launcher">
+          <img src="/icon.png" alt="" width="32" height="32" class="size-8 shrink-0 [image-rendering:pixelated]" />
+          <span class="display hidden text-xl leading-none min-[400px]:inline">TRS Launcher</span>
+        </NuxtLink>
 
         <div class="ml-auto flex items-center gap-2">
           <LangSwitch />
@@ -45,24 +95,25 @@ const year = new Date().getFullYear()
             <SiteIcon name="download" class="size-4" />
             {{ m.nav.download }}
           </NuxtLink>
-          <button
-            type="button"
-            class="btn-icon md:hidden"
-            :aria-label="m.nav.menu"
-            :aria-expanded="menuOpen"
-            @click="menuOpen = !menuOpen"
-          >
-            <SiteIcon :name="menuOpen ? 'close' : 'menu'" class="size-5" />
-          </button>
         </div>
+
+        <Transition name="menu">
+          <nav v-if="menuOpen" id="site-menu" ref="menuPanel" class="menu-panel" :aria-label="m.nav.menu">
+            <ul class="grid gap-1 sm:grid-cols-2">
+              <li v-for="l in links" :key="l.to">
+                <NuxtLink :to="l.to" class="menu-link" :aria-current="isCurrent(l.to) ? 'page' : undefined" @click="closeMenu()">
+                  <SiteIcon :name="l.icon" class="size-4.5 shrink-0" />
+                  <span>{{ l.label }}</span>
+                </NuxtLink>
+              </li>
+            </ul>
+            <div class="mt-3 flex gap-2 border-t border-base-800 pt-3 sm:hidden">
+              <NuxtLink :to="lp('/download')" class="btn btn-primary flex-1" @click="closeMenu()"><SiteIcon name="download" class="size-4" />{{ m.nav.download }}</NuxtLink>
+              <a :href="REPO_URL" class="btn-icon" aria-label="GitHub" rel="noopener" target="_blank"><SiteIcon name="github" class="size-4.5" /></a>
+            </div>
+          </nav>
+        </Transition>
       </div>
-      <nav v-if="menuOpen" class="border-t border-base-800 px-4 pb-4 md:hidden" :aria-label="m.nav.menu">
-        <NuxtLink v-for="l in links" :key="l.to" :to="l.to" class="block rounded-md px-3 py-2.5 text-base text-base-200 hover:bg-base-800">
-          {{ l.label }}
-        </NuxtLink>
-        <NuxtLink :to="lp('/applications')" class="block rounded-md px-3 py-2.5 text-base text-base-200 hover:bg-base-800">{{ t.account.myApplications }}</NuxtLink>
-        <NuxtLink :to="lp('/download')" class="btn btn-primary mt-2 w-full">{{ m.nav.download }}</NuxtLink>
-      </nav>
     </header>
 
     <main id="main" class="flex-1">
@@ -113,20 +164,77 @@ const year = new Date().getFullYear()
   backdrop-filter: blur(12px);
   border-bottom: 1px solid color-mix(in srgb, var(--color-base-800) 70%, transparent);
 }
-.nav-link {
-  border-radius: 0.375rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  color: var(--color-base-400);
+.menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-900);
+  color: var(--color-base-200);
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+.menu-button:hover,
+.menu-button.open {
+  color: var(--color-base-50);
+  border-color: var(--color-base-700);
+  background: var(--color-base-800);
+}
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 1rem;
+  width: min(34rem, calc(100vw - 2rem));
+  padding: 0.6rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--color-base-800);
+  background-color: var(--color-base-900);
+  box-shadow: 0 18px 50px -12px rgb(0 0 0 / 0.7);
+}
+@media (min-width: 640px) {
+  .menu-panel {
+    left: 1.5rem;
+  }
+}
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.55rem;
+  font-size: 0.95rem;
+  color: var(--color-base-200);
   transition: color 0.15s, background-color 0.15s;
 }
-.nav-link:hover {
+.menu-link:hover,
+.menu-link:focus-visible {
   color: var(--color-base-50);
-  background: var(--color-base-900);
+  background: var(--color-base-800);
 }
-.nav-link.router-link-active {
+.menu-link[aria-current="page"] {
   color: var(--color-base-50);
-  box-shadow: inset 0 -2px 0 var(--color-redstone-500);
+  background: color-mix(in srgb, var(--color-redstone-600) 18%, var(--color-base-900));
+  box-shadow: inset 3px 0 0 var(--color-redstone-500);
+}
+.menu-link[aria-current="page"] svg {
+  color: var(--color-redstone-400);
+}
+.menu-enter-active,
+.menu-leave-active {
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.menu-enter-from,
+.menu-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-enter-active,
+  .menu-leave-active {
+    transition: none;
+  }
 }
 .site-footer {
   background-color: var(--color-base-950);

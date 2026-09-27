@@ -86,7 +86,7 @@ async function sendReport() {
         </div>
         <h1 class="display mt-3 text-4xl leading-tight text-base-50 sm:text-5xl">{{ name }}</h1>
         <p v-if="circuit.author" class="mt-2 flex items-center gap-2 text-sm text-base-400">
-          <PlayerHead :uuid="circuit.author.uuid" :name="circuit.author.name" :size="20" />{{ fill(c.common.by, { name: circuit.author.name }) }}
+          <PlayerHead :uuid="circuit.author.uuid" :name="circuit.author.name" :skin="circuit.author.skin ?? null" :size="20" />{{ fill(c.common.by, { name: circuit.author.name }) }}
         </p>
 
         <div class="card stage mt-6 overflow-hidden p-3">

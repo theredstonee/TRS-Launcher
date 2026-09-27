@@ -364,6 +364,7 @@ den TRS-Server.
 |---|---|
 | Minecraft-UUID und Spielername | Um deinen TRS-Account zu erkennen und Freunden deinen Namen zu zeigen |
 | Zeitpunkt der Account-Erstellung und der letzten Anmeldung | Account-Verwaltung und Schutz vor Missbrauch |
+| Die Adresse deines aktuellen Minecraft-Skins (ein öffentlicher Link auf dem Textur-Server von Mojang), sein Modell und wann er zuletzt gesehen wurde | Dein Gesicht in Listen und deine Figur auf der Team-Seite zeigen, ohne jedes Mal Mojang zu fragen |
 | Sitzungs-Tokens (nur als SHA-256-Hashes, 30 Tage gültig, höchstens 10 pro Account) | Damit du angemeldet bleibst |
 | Deine Datenschutz-Einstellungen (TRS-Symbol, Umhang für andere sichtbar, Online-Status sichtbar für Freunde/niemanden, Server teilen) | Damit sich die Dienste an deine Entscheidungen halten |
 | Dein gewählter Umhang, per Code freigeschaltete oder vom Team vergebene Umhänge | Um anderen TRS-Spielern deinen Umhang zu zeigen |

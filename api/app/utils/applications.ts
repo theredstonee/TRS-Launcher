@@ -51,8 +51,46 @@ export interface AdminJob extends JobView {
   applications: { open: number, total: number }
 }
 
+/** Positions-Titel je Sprache (fehlende Sprachen → Englisch → erste vorhandene). */
+export type TeamTitles = Partial<Record<'en' | 'de' | 'es', string>>
+
+export interface TeamLink {
+  label: string
+  url: string
+}
+
+/** Mitglied auf der öffentlichen Team-Seite (§26.1). */
+export interface PublicTeamMember {
+  uuid: string
+  name: string
+  /** `null` = unbekannt (Kopf mit Anfangsbuchstabe, 3D mit Standard-Figur); `url: null` = Standard-Skin. */
+  skin: { url: string | null, model: 'classic' | 'slim' } | null
+  cape: { id: string, url: string, frames: number, frameTimeMs: number | null } | null
+  titles: TeamTitles
+  discord: string | null
+  links: TeamLink[]
+}
+
 export interface PublicTeam {
-  roles: (TeamRole & { members: { uuid: string, name: string, skin: string | null }[] })[]
+  groups: (TeamRole & { members: PublicTeamMember[] })[]
+}
+
+/** Team-Seite im Admin (§26.2). */
+export interface TeamPageMember {
+  uuid: string
+  name: string
+  roleId: string | null
+  titles: TeamTitles
+  discord: string | null
+  links: TeamLink[]
+  mainRole: string | null
+  banned: boolean
+}
+
+export interface TeamPageAdmin {
+  groups: { role: TeamRole & { rank: number, public: boolean }, members: TeamPageMember[] }[]
+  ungrouped: TeamPageMember[]
+  editable: boolean
 }
 
 export interface Eligibility {

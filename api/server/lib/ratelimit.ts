@@ -176,6 +176,11 @@ export const RULES = {
   adminBulk: { limit: 10, windowMs: MIN },
   /** Strafen verhängen/ändern/aufheben und Einsprüche entscheiden, je Team-Mitglied. */
   adminSanction: { limit: 60, windowMs: MIN },
+  // ------------------------------------------------ Team-Seite (§26)
+  /** Köpfe für Admin-Listen (bis 120 UUIDs je Aufruf, höchstens 6 neue Mojang-Abfragen je Aufruf). */
+  adminHeads: { limit: 40, windowMs: MIN },
+  /** Team-Seite bearbeiten (hinzufügen, ändern, sortieren, entfernen). */
+  adminTeamPage: { limit: 60, windowMs: MIN },
   /** Einsprüche (Spieler): höchstens 5 je Stunde (und genau einer je Strafe). */
   appealUser: { limit: 5, windowMs: HOUR },
   /** Eigene Strafen lesen (auch mit Einspruch-Token). */

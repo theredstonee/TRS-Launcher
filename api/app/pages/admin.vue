@@ -81,6 +81,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },
   { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter, perm: ['wordfilter'] },
   { to: '/admin/roles', icon: 'key', label: t.value.adm.nav.roles, perm: ['roles.manage'] },
+  { to: '/admin/team-page', icon: 'users', label: t.value.adm.nav.teamPage, perm: ['team.page'] },
   { to: '/admin/audit', icon: 'list', label: a.value.nav.audit, perm: ['audit.view'] },
 ])
 const allowed = (n: NavItem) => n.perm.some((p) => can(p))

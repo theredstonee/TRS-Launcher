@@ -87,7 +87,7 @@ const { active } = useListKeys(items, { open: (x) => void router.push(`/admin/ap
     <ul v-else class="mt-4 space-y-2">
       <li v-for="(x, i) in items" :key="x.id">
         <NuxtLink :to="`/admin/applications/${x.id}`" class="adm-row items-center" :data-row="i" :data-active="active === i">
-          <PlayerHead :uuid="x.applicant.uuid" :name="x.applicant.name" :size="36" :fetch="false" />
+          <PlayerHead :uuid="x.applicant.uuid" :name="x.applicant.name" :size="36" />
           <div class="min-w-0 flex-1">
             <p class="flex flex-wrap items-center gap-2">
               <span class="font-semibold text-base-50">{{ x.applicant.name }}</span>

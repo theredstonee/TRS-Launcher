@@ -2721,3 +2721,51 @@ Tables `circuits` (id, rev, status, category, difficulty, min/max version, sort,
 
 - **TRS Client** (done in main): index with `If-None-Match`, circuits per `rev`, submissions with the bearer token, `GET /v1/me/circuit-submissions`, the error codes above. Optional: a toast on `circuit_submission_updated`, "Report" with `kind: circuit`.
 - **TRS Launcher:** nothing required. Optional: a toast on `circuit_submission_updated`; a team-area link to `/admin/circuits` for `circuits.manage`.
+
+## 26. Team page and player heads
+
+### 26.1 Public team page
+
+`GET /v1/site/team` → `{ team: { groups }, jobs }` (cacheable 60 s). Only people added in the team area (§26.2) appear –
+roles alone put nobody on the page. Groups are the **public** roles by rank (Owner first); banned accounts are hidden.
+
+```json
+{ "team": { "groups": [ { "id": "owner", "name": null, "color": "#facc15", "builtin": true, "members": [
+  { "uuid": "…", "name": "Theredstonee",
+    "skin": { "url": "https://textures.minecraft.net/texture/…", "model": "classic" },
+    "cape": { "id": "…", "url": "/v1/capes/….png?v=…", "frames": 1, "frameTimeMs": null },
+    "titles": { "en": "Founder", "de": "Gründer" }, "discord": "theredstonee",
+    "links": [ { "label": "GitHub", "url": "https://github.com/theredstonee" } ] } ] } ] },
+  "jobs": [ … ] }
+```
+
+`skin: null` = not looked up yet, `skin.url: null` = default skin. `cape` only for an approved TRS cape the person shows
+to others. Skins come from the database (§26.3); at most 8 missing or older than 6 hours are looked up per request.
+
+### 26.2 Team area (`team.page`)
+
+| Route | Body | Notes |
+|---|---|---|
+| `GET /v1/admin/team-page` | – | `{ groups: [{ role, members }], ungrouped, editable }` – all roles by rank, also empty ones |
+| `POST /v1/admin/team-page/members` | `{ player, roleId? }` | `player` = UUID or Minecraft name; without `roleId` the person's main role. 201 |
+| `PATCH /v1/admin/team-page/members/{uuid}` | `{ roleId?, titles?, discord?, links? }` | titles EN/DE/ES ≤ 60, Discord username (a–z 0–9 _ ., 2–32), ≤ 3 links (`https://` only, label ≤ 30) |
+| `DELETE /v1/admin/team-page/members/{uuid}` | – | roles stay unchanged |
+| `PUT /v1/admin/team-page/order` | `{ groups: [{ roleId, uuids }] }` | full order per group after drag & drop; people not listed keep their place |
+
+Every route answers with the new admin view. Errors: `user_not_found` (404), `already_on_team_page` (409),
+`group_required` (400, no team role and no `roleId`), `team_page_full` (409, 200 people), `not_on_team_page` (404),
+`duplicate_member` (400), `role_not_found` (404). Rate limit 60/min per team member; all changes go to the audit log
+(`teampage.add|update|remove|reorder`). Permission `team.page` (Owner/Admin by default; group "team").
+
+### 26.3 Heads for team lists
+
+`POST /v1/admin/heads` `{ uuids: [≤ 120] }` (any team member, 40/min) → `{ heads: { uuid: { url, model } | null }, pending }`.
+Stored skins come from the database; missing or older than a day are looked up at Mojang, at most 6 per call – the rest
+comes back in `pending`, and the website asks again a moment later. Every successful skin lookup (also `/v1/skins/…`,
+`/v1/web/me`) stores the texture address (`users.skin_url`, `skin_model`, `skin_at`; only `textures.minecraft.net`).
+
+### 26.4 Data and migration 15
+
+`users.skin_url|skin_model|skin_at`, table `team_page_members` (uuid, role_id = group, sort, titles JSON, discord, links
+JSON, added/updated), permission `team.page` for Owner/Admin. Idempotent (`migrateTeamPage`). The old automatic member
+list of `GET /v1/site/team` (everyone with a public role) is replaced by the manual list.

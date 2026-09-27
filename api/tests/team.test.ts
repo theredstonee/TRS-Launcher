@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { all, migrate, one } from '../server/lib/db'
-import { MIGRATIONS, migrateTeamV3 } from '../server/lib/migrations'
+import { MIGRATIONS, migrateTeamPage, migrateTeamV3 } from '../server/lib/migrations'
 import { adminReportDetail, createReport, redactDetail, reportDetailFor } from '../server/lib/moderation'
 import { changeDuration, createSanction, liftSanction, type SanctionInput } from '../server/lib/sanctions'
 import { listRoles, setRole } from '../server/lib/staff'
@@ -15,12 +15,22 @@ import {
   listMembers,
   listRoleViews,
   ownerStaff,
-  publicTeam,
   setMemberRoles,
   teamOf,
   updateRole,
   type Staff,
 } from '../server/lib/team'
+import { rememberSkin, storedSkins } from '../server/lib/skins'
+import {
+  addTeamPageMember,
+  discordNameSchema,
+  publicTeamPage,
+  removeTeamPageMember,
+  reorderTeamPage,
+  teamPageAdmin,
+  teamPageLinkSchema,
+  updateTeamPageMember,
+} from '../server/lib/teampage'
 import { getUser, staffRole } from '../server/lib/users'
 import { code, players } from './chathelpers'
 import { ADMIN, login, makeEnv, type TestEnv } from './helpers'
@@ -185,22 +195,88 @@ describe('rank rule', () => {
 })
 
 describe('public team page and the old role API', () => {
-  it('lists members under their highest public role, hides non-public roles and banned members', async () => {
+  it('shows only manually added members, grouped by public role, without banned accounts', async () => {
     const env = makeEnv()
     const t = await crew(env)
+    // Niemand steht automatisch auf der Seite.
+    expect((await publicTeamPage(env.ctx)).groups).toEqual([])
+    addTeamPageMember(env.ctx, OWNER, ADMIN)
+    addTeamPageMember(env.ctx, OWNER, t.mod2.uuid)
+    addTeamPageMember(env.ctx, OWNER, t.mod.uuid)
+    addTeamPageMember(env.ctx, OWNER, t.content.uuid)
+    addTeamPageMember(env.ctx, OWNER, t.supporter.uuid)
+    addTeamPageMember(env.ctx, OWNER, t.p1.uuid, 'recruiter')
+    expect(code(() => addTeamPageMember(env.ctx, OWNER, t.p2.uuid))).toBe('group_required')
+    expect(code(() => addTeamPageMember(env.ctx, OWNER, t.mod.uuid))).toBe('already_on_team_page')
     updateRole(env.ctx, OWNER, 'content', { public: false })
-    setMemberRoles(env.ctx, OWNER, t.mod2.uuid, ['moderator', 'recruiter'])
     createSanction(env.ctx, OWNER, input(t.supporter.uuid, 'account_ban', null))
-    const team = publicTeam(env.ctx)
-    const byRole = Object.fromEntries(team.roles.map((r) => [r.id, r.members.map((m) => m.name)]))
-    expect(byRole).toEqual({
-      owner: ['Owner'],
-      admin: ['Admin'],
-      senior_moderator: ['Senior'],
-      moderator: ['Mod', 'Mod2'],
-      recruiter: ['Recruiter'],
+    reorderTeamPage(env.ctx, OWNER, [{ roleId: 'moderator', uuids: [t.mod.uuid, t.mod2.uuid] }])
+    updateTeamPageMember(env.ctx, OWNER, t.mod.uuid, {
+      titles: { en: 'Event lead', de: 'Event-Leitung' },
+      discord: 'mod_one',
+      links: [{ label: 'YouTube', url: 'https://youtube.com/@mod' }],
     })
-    expect(JSON.stringify(team)).not.toContain('granted')
+    const page = await publicTeamPage(env.ctx)
+    expect(Object.fromEntries(page.groups.map((g) => [g.id, g.members.map((m) => m.name)]))).toEqual({
+      owner: ['Owner'],
+      moderator: ['Mod', 'Mod2'],
+      recruiter: ['Player1'],
+    })
+    const mod = page.groups[1]!.members[0]!
+    expect(mod).toMatchObject({ titles: { en: 'Event lead', de: 'Event-Leitung' }, discord: 'mod_one', links: [{ label: 'YouTube', url: 'https://youtube.com/@mod' }] })
+    expect(JSON.stringify(page)).not.toContain('added_by')
+    // Drag & Drop in eine andere Gruppe.
+    reorderTeamPage(env.ctx, OWNER, [{ roleId: 'admin', uuids: [t.mod2.uuid] }])
+    const admin = teamPageAdmin(env.ctx, OWNER)
+    expect(admin.groups.find((g) => g.role.id === 'admin')!.members.map((m) => m.name)).toEqual(['Mod2'])
+    expect(admin.groups.find((g) => g.role.id === 'admin')!.members[0]!.mainRole).toBe('moderator')
+    expect(code(() => reorderTeamPage(env.ctx, OWNER, [{ roleId: 'admin', uuids: [t.mod2.uuid, t.mod2.uuid] }]))).toBe('duplicate_member')
+    expect(code(() => reorderTeamPage(env.ctx, OWNER, [{ roleId: 'admin', uuids: [t.p2.uuid] }]))).toBe('not_on_team_page')
+    removeTeamPageMember(env.ctx, OWNER, t.p1.uuid)
+    expect((await publicTeamPage(env.ctx)).groups.map((g) => g.id)).toEqual(['owner', 'admin', 'moderator'])
+    // Rechte: Owner/Admin haben team.page, Moderatoren nicht.
+    expect(can(t.admin, 'team.page')).toBe(true)
+    expect(can(t.mod, 'team.page')).toBe(false)
+  })
+
+  it('remembers skins from Mojang and serves them from the database afterwards', async () => {
+    const env = makeEnv()
+    const t = await crew(env)
+    const tex = 'https://textures.minecraft.net/texture/abc123'
+    env.mojang.accounts.set('mod', { uuid: t.mod.uuid, name: 'Mod', model: 'slim', skinUrl: tex, capeUrl: null })
+    addTeamPageMember(env.ctx, OWNER, t.mod.uuid)
+    const first = await publicTeamPage(env.ctx)
+    expect(first.groups[0]!.members[0]!.skin).toEqual({ url: tex, model: 'slim' })
+    expect(storedSkins(env.ctx.db, [t.mod.uuid]).get(t.mod.uuid)).toMatchObject({ url: tex, model: 'slim' })
+    // Zweiter Aufruf ohne Mojang (auch wenn Mojang ausfällt).
+    const calls = env.mojang.profileCalls
+    env.mojang.fail = true
+    expect((await publicTeamPage(env.ctx)).groups[0]!.members[0]!.skin?.url).toBe(tex)
+    expect(env.mojang.profileCalls).toBe(calls)
+    // Fremde Adressen werden nie gespeichert.
+    rememberSkin(env.ctx.db, { uuid: t.mod.uuid, skinUrl: 'https://evil.example/x.png', model: 'classic' }, 1)
+    expect(storedSkins(env.ctx.db, [t.mod.uuid]).get(t.mod.uuid)?.url).toBeNull()
+  })
+
+  it('migration 15 is idempotent and adds team.page to owner/admin', () => {
+    const db = new DatabaseSync(':memory:')
+    migrate(db)
+    migrateTeamPage(db)
+    migrateTeamPage(db)
+    const perms = (id: string) => JSON.parse(one<{ permissions: string }>(db, 'SELECT permissions FROM team_roles WHERE id = ?', id)!.permissions) as string[]
+    expect(perms('admin').filter((p) => p === 'team.page')).toHaveLength(1)
+    expect(perms('moderator')).not.toContain('team.page')
+  })
+
+  it('accepts only safe links and Discord names', () => {
+    expect(teamPageLinkSchema.safeParse({ label: 'x', url: 'javascript:alert(1)' }).success).toBe(false)
+    expect(teamPageLinkSchema.safeParse({ label: 'x', url: 'http://example.com' }).success).toBe(false)
+    expect(teamPageLinkSchema.safeParse({ label: 'x', url: 'https://user:pw@example.com' }).success).toBe(false)
+    expect(teamPageLinkSchema.safeParse({ label: 'x', url: 'https://localhost/x' }).success).toBe(false)
+    expect(teamPageLinkSchema.safeParse({ label: 'Twitch', url: 'https://twitch.tv/abc' }).success).toBe(true)
+    expect(discordNameSchema.safeParse('Some.User_1').data).toBe('some.user_1')
+    expect(discordNameSchema.safeParse('a..b').success).toBe(false)
+    expect(discordNameSchema.safeParse('<script>').success).toBe(false)
   })
 
   it('keeps /v1/admin/roles working (admin/moderator map to the default roles)', async () => {

@@ -30,7 +30,7 @@ async function signOut() {
 <template>
   <div ref="root" class="relative">
     <template v-if="loaded">
-      <NuxtLink v-if="!account" :to="loginLink" class="btn btn-ghost hidden sm:inline-flex"><SiteIcon name="user" class="size-4" />{{ t.account.signIn }}</NuxtLink>
+      <NuxtLink v-if="!account" :to="loginLink" class="btn btn-ghost px-2.5 sm:px-4" :aria-label="t.account.signIn"><SiteIcon name="user" class="size-4" /><span class="hidden sm:inline">{{ t.account.signIn }}</span></NuxtLink>
       <button v-else type="button" class="account-btn" :aria-expanded="open" :aria-label="t.account.menu" @click.stop="open = !open">
         <PlayerHead :uuid="account.uuid" :name="account.name" :skin="account.skin" :size="26" />
         <span class="hidden max-w-32 truncate text-sm text-base-100 lg:inline">{{ account.name }}</span>

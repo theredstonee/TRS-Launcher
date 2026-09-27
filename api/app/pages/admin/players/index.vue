@@ -76,7 +76,7 @@ const { active } = useListKeys(items, { open })
     <ul v-else class="mt-6 grid gap-2 md:grid-cols-2">
       <li v-for="(p, i) in items" :key="p.uuid">
         <NuxtLink :to="`/admin/players/${p.uuid}`" class="adm-row items-center" :data-row="i" :data-active="active === i">
-          <PlayerHead :uuid="p.uuid" :name="p.name" :size="36" :fetch="false" />
+          <PlayerHead :uuid="p.uuid" :name="p.name" :size="36" />
           <span class="min-w-0 flex-1">
             <span class="flex flex-wrap items-center gap-1.5">
               <span class="truncate font-semibold text-base-50">{{ p.name }}</span>

@@ -359,6 +359,7 @@ servidor TRS.
 |---|---|
 | UUID de Minecraft y nombre de jugador | Para identificar tu cuenta TRS y mostrar tu nombre a tus amigos |
 | Fecha de creación de la cuenta y del último inicio de sesión | Gestión de cuentas y prevención de abusos |
+| La dirección de tu skin actual de Minecraft (un enlace público en el servidor de texturas de Mojang), su modelo y cuándo se vio por última vez | Mostrar tu cara en listas y tu figura en la página del equipo sin preguntar a Mojang cada vez |
 | Tokens de sesión (solo como hashes SHA-256, válidos 30 días, como máximo 10 por cuenta) | Mantener tu sesión iniciada |
 | Tus ajustes de privacidad (insignia TRS, capa visible para otros, estado en línea visible para amigos/nadie, compartir servidor) | Para que los servicios respeten tus decisiones |
 | La capa que has elegido y las capas desbloqueadas con códigos o concedidas por el equipo | Mostrar tu capa a otros jugadores TRS |

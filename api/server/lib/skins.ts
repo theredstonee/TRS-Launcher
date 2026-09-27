@@ -1,6 +1,42 @@
 import { notFound, tooMany, upstreamFailed } from './errors'
 import { MojangUnavailable, type MojangClient, type MojangProfile, type SkinProfile } from './mojang'
+import { all, run, type Db } from './db'
 import { RULES, type RateLimiter } from './ratelimit'
+
+/** Nur Mojang-Texturen – alles andere wird nie gespeichert oder ausgeliefert. */
+export const SKIN_URL_RE = /^https:\/\/textures\.minecraft\.net\/texture\/[0-9a-f]{1,128}$/
+
+/** Zuletzt gesehenen Skin eines Kontos merken (nur für vorhandene Konten; unbekannte UUIDs ändern nichts). */
+export function rememberSkin(db: Db, p: { uuid: string, skinUrl: string | null, model: 'classic' | 'slim' }, at: number): void {
+  const url = p.skinUrl && SKIN_URL_RE.test(p.skinUrl) ? p.skinUrl : null
+  run(db, 'UPDATE users SET skin_url = ?, skin_model = ?, skin_at = ? WHERE uuid = ?', url, p.model, at, p.uuid)
+}
+
+export interface StoredSkin {
+  url: string | null
+  model: 'classic' | 'slim'
+  /** Wann zuletzt bei Mojang gesehen; `null` = nie. */
+  at: number | null
+}
+
+/** Gespeicherte Skins mehrerer Konten (für Listen und die Team-Seite). */
+export function storedSkins(db: Db, uuids: readonly string[]): Map<string, StoredSkin> {
+  const out = new Map<string, StoredSkin>()
+  for (let i = 0; i < uuids.length; i += 200) {
+    const part = uuids.slice(i, i + 200)
+    const rows = all<{ uuid: string, skin_url: string | null, skin_model: string | null, skin_at: number | null }>(
+      db, `SELECT uuid, skin_url, skin_model, skin_at FROM users WHERE uuid IN (${part.map(() => '?').join(', ')})`, ...part,
+    )
+    for (const r of rows) {
+      out.set(r.uuid, {
+        url: r.skin_url && SKIN_URL_RE.test(r.skin_url) ? r.skin_url : null,
+        model: r.skin_model === 'slim' ? 'slim' : 'classic',
+        at: r.skin_at,
+      })
+    }
+  }
+  return out
+}
 
 export interface SkinView {
   uuid: string
@@ -35,6 +71,8 @@ export class SkinService {
     private readonly mojang: MojangClient,
     private readonly limiter: RateLimiter,
     private readonly now: () => number,
+    /** Nach jeder erfolgreichen Mojang-Abfrage (auch aus dem Zwischenspeicher nur einmal): Skin in der Datenbank merken. */
+    private readonly onProfile?: (p: { uuid: string, skinUrl: string | null, model: 'classic' | 'slim' }) => void,
   ) {}
 
   private cached<T>(m: Map<string, Entry<T>>, key: string): Entry<T> | undefined {
@@ -77,6 +115,13 @@ export class SkinService {
     if (!hit) {
       const value = await this.fetchOnce(`p:${uuid}`, () => this.mojang.skinProfile(uuid))
       this.store(this.profiles, uuid, value, value ? PROFILE_TTL_MS : MISS_TTL_MS)
+      if (value && this.onProfile) {
+        try {
+          this.onProfile({ uuid: value.uuid, skinUrl: value.skinUrl, model: value.model })
+        } catch (err) {
+          console.warn('[skins] could not remember skin:', (err as Error).message)
+        }
+      }
       hit = { value, expires: 0 }
     }
     const p = hit.value
