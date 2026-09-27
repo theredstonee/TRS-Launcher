@@ -759,6 +759,9 @@
       "invalidRole": "Unknown role.",
       "invalidRoom": "Invalid world.",
       "emptySearch": "Please enter a search term."
+    },
+    "crash": {
+      "notFound": "This crash no longer exists."
     }
   },
   "browse": {
@@ -1532,7 +1535,10 @@
       "hooksCustom": "Custom launch hooks set",
       "movedToGroup": "Moved to group “{group}”",
       "removedFromGroup": "Removed from group",
-      "renamed": "Renamed"
+      "renamed": "Renamed",
+      "memoryChanged": "Changed memory",
+      "javaChanged": "Changed Java",
+      "settingsChanged": "Changed settings"
     },
     "details": {
       "played": "Played: {time}",
@@ -1541,7 +1547,10 @@
       "asDependencyVersion": "{version} · as a dependency",
       "asDependency": "As a dependency",
       "renamed": "“{from}” → “{to}”",
-      "previousGroup": "previously: {group}"
+      "previousGroup": "previously: {group}",
+      "changed": "{from} → {to}",
+      "javaAuto": "automatic",
+      "javaCustom": "custom path"
     }
   },
   "logConsole": {
@@ -1566,7 +1575,13 @@
       "missing_dependency": "Missing dependency",
       "mod_conflict": "Mod conflict",
       "graphics_driver": "Graphics driver",
-      "incompatible_mod": "Incompatible mod version"
+      "incompatible_mod": "Incompatible mod version",
+      "known_issue": "Known problem",
+      "duplicate_mod": "Duplicate mod",
+      "wrong_game_version": "Wrong Minecraft version",
+      "wrong_loader_version": "Wrong loader version",
+      "mixin_conflict": "Mods clash",
+      "unknown": "Unknown error"
     },
     "diagnosis": {
       "corrupt_files": "A game file is corrupted (e.g. after an interrupted download). “Check files” downloads it again.",
@@ -1587,6 +1602,238 @@
     "installMissing": "Install {name}",
     "installingMissing": "Installing missing mods …",
     "installMissingDone": "Installed: {list}"
+  },
+  "crashHelper": {
+    "title": "The game crashed",
+    "open": "Open crash helper",
+    "openDetails": "Show details",
+    "analyze": "Analyze",
+    "whenStarting": "{at} · while starting",
+    "whenPlaying": "{at} · after {time} of play",
+    "involved": "Involved mods",
+    "bundledIn": "inside {name}",
+    "modDisabled": "disabled",
+    "working": "Working …",
+    "openJavaSettings": "Java settings",
+    "confirmTitle": "Make this change?",
+    "confirmHistory": "It will be noted in the instance history.",
+    "confirmDo": "Yes, do it",
+    "moreHints": "Other possible causes",
+    "details": "Details from the log",
+    "cause": "Cause",
+    "firstFrame": "First line from a mod",
+    "excerpt": "Key lines",
+    "masked": "Paths with your user name and your player name are hidden.",
+    "openContent": "Open the Content tab",
+    "privacy": "Analyzed on your PC only. Nothing is sent unless you press “Share log”.",
+    "relaunch": "Launch again",
+    "undo": "Undo",
+    "shadersHint": "Shaders ({name}) put extra load on the driver – try a launch without them.",
+    "aMod": "a mod",
+    "someMods": "several mods",
+    "actions": {
+      "disable": "Disable {name}",
+      "install": "Install {name}",
+      "removeDuplicates": "Remove duplicates",
+      "raiseMemory": "Increase RAM to {to}",
+      "lowerMemory": "Set RAM to {to}",
+      "useJava": "Use Java {major}",
+      "autoJava": "Choose Java automatically",
+      "updateTrsClient": "Update TRS Client"
+    },
+    "confirm": {
+      "disable": "{name} will be disabled (the file gets the ending .disabled). You can undo this at any time here or in the Content tab.",
+      "install": "{name} will be installed from Modrinth into this instance.",
+      "removeDuplicates": "The older copies ({files}) will be disabled, {keep} stays active.",
+      "memory": "The memory of this instance changes from {from} to {to}.",
+      "java": "Java {major} will be downloaded if needed and set for this instance.",
+      "autoJava": "The custom Java path of this instance will be removed – the launcher then picks the right Java version itself.",
+      "updateTrsClient": "The launcher fetches the newest TRS Client from the update channel and puts it into this instance.",
+      "fixConflict": "The launcher looks for a version of {name} that fits and swaps it.",
+      "repair": "The launcher checks all game files and downloads broken ones again."
+    },
+    "done": {
+      "disabled": "Disabled: {name}",
+      "enabledAgain": "Enabled again: {name}",
+      "memory": "Memory set to {to}",
+      "java": "Java {major} is now set for this instance",
+      "autoJava": "Java is now chosen automatically",
+      "trsClient": "TRS Client {version} is installed – launch again.",
+      "trsClientNone": "No newer TRS Client is available yet. Disable Essential for now."
+    },
+    "progress": {
+      "java": "Setting up Java {major} …"
+    },
+    "findings": {
+      "known_issue": {
+        "default": {
+          "title": "Known problem",
+          "text": "This combination of mods is known to crash."
+        },
+        "trsclient_essential": {
+          "title": "TRS Client {version} clashes with Essential",
+          "text": "TRS Client {version} and Essential (with MixinExtras 0.5) change the same part of the game – the singleplayer server – and the game crashes when a world opens. TRS Client {fixed} fixes this: update it, or disable Essential for now."
+        },
+        "sodium_optifine": {
+          "title": "{name} and OptiFine don’t work together",
+          "text": "OptiFine (and OptiFabric) can’t run alongside {name}. Keep {name} – it is faster, and with Iris you still get shaders – and disable OptiFine."
+        },
+        "iris_without_sodium": {
+          "title": "Iris needs Sodium",
+          "text": "Iris only works together with Sodium, which is missing from this instance. The launcher can install the right version."
+        },
+        "two_minimaps": {
+          "title": "Two minimaps at once",
+          "text": "{names} are both installed. Minimaps often get in each other’s way – keep one and disable the other."
+        }
+      },
+      "duplicate_mod": {
+        "default": {
+          "title": "{name} is installed twice",
+          "text": "The mods folder contains more than one copy of {name} ({files}). The game can only load one. The launcher keeps the newest and disables the rest."
+        }
+      },
+      "wrong_game_version": {
+        "default": {
+          "title": "{name} is made for another Minecraft version",
+          "text": "{name} needs Minecraft {required}, but this instance runs {present}. Disable it or install a matching version in the Content tab."
+        }
+      },
+      "wrong_loader_version": {
+        "default": {
+          "title": "{name} needs a different {loader}",
+          "text": "{name} needs {loader} {required}, but {present} is installed. Change the loader version of this instance or disable the mod."
+        }
+      },
+      "incompatible_mod": {
+        "default": {
+          "title": "{name} doesn’t work with {other}",
+          "text": "{name} doesn’t work with {other}. The launcher can swap it for a version that fits, or you can disable it."
+        }
+      },
+      "missing_dependency": {
+        "default": {
+          "title": "{name} needs {deps}",
+          "text": "{name} needs {deps}, which is missing from this instance. The launcher can install it from Modrinth."
+        },
+        "unnamed": {
+          "title": "A required mod is missing",
+          "text": "{deps} is missing – another mod needs it. The launcher can install it from Modrinth."
+        }
+      },
+      "wrong_java": {
+        "default": {
+          "title": "Wrong Java version",
+          "text": "The Java version doesn’t fit this game or one of its mods."
+        },
+        "too_old": {
+          "title": "Java {present} is too old",
+          "text": "{name} needs Java {required}, but the game runs with Java {present}. The launcher can install Java {required} and use it for this instance."
+        },
+        "too_new": {
+          "title": "Java {present} is too new for this version",
+          "text": "Older Minecraft and Forge versions only run with older Java (usually Java 8). Let the launcher choose Java automatically or use Java 8."
+        },
+        "mod_requires": {
+          "title": "{name} needs Java {required}",
+          "text": "{name} needs Java {required} or newer, but Java {present} is used. The launcher can install Java {required} for this instance."
+        }
+      },
+      "out_of_memory": {
+        "default": {
+          "title": "The game ran out of memory",
+          "text": "The game needed more memory than it was allowed to use. Give the instance more RAM."
+        },
+        "heap": {
+          "title": "The game ran out of memory",
+          "text": "The {current} MB the game may use weren’t enough – lots of mods, shaders or a high render distance need more. Give the instance more RAM."
+        },
+        "heap_max": {
+          "title": "The game ran out of memory",
+          "text": "The game already gets as much RAM as makes sense on this PC ({current} MB). Remove heavy mods or lower the render distance."
+        },
+        "reserve": {
+          "title": "Java couldn’t get the memory",
+          "text": "Java couldn’t reserve {current} MB – more than this PC has free. Set the RAM a bit lower."
+        }
+      },
+      "corrupt_files": {
+        "default": {
+          "title": "A file is damaged",
+          "text": "A file can’t be read. “Check files” downloads broken game files again."
+        },
+        "mod_file": {
+          "title": "{file} is damaged",
+          "text": "The mod file {file} can’t be read (for example after an interrupted download). Disable it and download it again in the Content tab."
+        },
+        "game_files": {
+          "title": "A game file is damaged",
+          "text": "A game file is broken (for example after an interrupted download). “Check files” downloads it again."
+        },
+        "assets": {
+          "title": "Game resources are missing",
+          "text": "Some game resources (textures, sounds, language files) are missing. “Check files” downloads them again."
+        }
+      },
+      "graphics_driver": {
+        "default": {
+          "title": "The graphics driver crashed",
+          "text": "The crash happened in the graphics driver. Update the driver of your graphics card."
+        },
+        "amd": {
+          "title": "The AMD graphics driver crashed",
+          "text": "The crash happened inside the AMD graphics driver. Update the driver (AMD Software: Adrenalin Edition) and try again."
+        },
+        "intel": {
+          "title": "The Intel graphics driver crashed",
+          "text": "The crash happened inside the Intel graphics driver. Update the driver from Intel or from your PC maker’s website."
+        },
+        "nvidia": {
+          "title": "The NVIDIA graphics driver crashed",
+          "text": "The crash happened inside the NVIDIA graphics driver. Update the driver (NVIDIA App) and try again."
+        },
+        "no_opengl": {
+          "title": "The graphics driver doesn’t support OpenGL",
+          "text": "Minecraft can’t start OpenGL. Usually the graphics driver is missing or too old, or the game runs on the wrong graphics card. Install the newest driver."
+        },
+        "opengl_too_old": {
+          "title": "OpenGL on this PC is too old",
+          "text": "This Minecraft version needs a newer OpenGL than your graphics card or driver offers. Update the driver – very old graphics cards only run older Minecraft versions."
+        }
+      },
+      "mixin_conflict": {
+        "default": {
+          "title": "Mods get in each other’s way",
+          "text": "Two or more mods change the same part of the game and clash. Disable the mods you added most recently and launch again."
+        },
+        "transform": {
+          "title": "Mods clash while changing {target}",
+          "text": "Several mods change the same part of the game ({target}) and get in each other’s way. Involved: {names}. Disable one of them and launch again."
+        },
+        "transform_nomods": {
+          "title": "Mods clash while changing {target}",
+          "text": "Several mods change the same part of the game ({target}) and get in each other’s way. Disable the mods you added most recently and launch again."
+        },
+        "redirect_conflict": {
+          "title": "Two mods change the same spot",
+          "text": "{names} both redirect the same spot in the game – only one can. Disable one of them."
+        },
+        "apply": {
+          "title": "A mod couldn’t hook into the game",
+          "text": "{names} couldn’t apply its changes to this Minecraft version – often an outdated mod or a clash with another mod. Update or disable it."
+        }
+      },
+      "unknown": {
+        "default": {
+          "title": "Unknown error",
+          "text": "The launcher couldn’t work out the exact cause. The most important lines are under “Details”. Sharing the log helps others help you."
+        },
+        "suspect": {
+          "title": "Unknown error – probably {name}",
+          "text": "The crash starts in {name}. Disable it for a test launch; if the game runs then, update the mod or report the crash to its author."
+        }
+      }
+    }
   },
   "exportPack": {
     "title": "Export as modpack",

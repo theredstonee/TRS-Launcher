@@ -112,6 +112,8 @@ import type {
   ClientModStatus,
   CategoryTag,
   CommandError,
+  CrashAnalysis,
+  CrashSummary,
   Preset,
   PresetApplyReport,
   PresetInput,
@@ -586,6 +588,18 @@ export const backend = {
   /** Lädt die Datei geschwärzt auf mclo.gs hoch; liefert den Link. */
   shareLogSource: (id: string, source: string) => call<string>('share_log_source', { id, source }),
   qrCode: (text: string) => call<QrMatrix>('qr_code', { text }),
+
+  // --- Absturz-Helfer (alles lokal) ------------------------------------------------
+  listCrashes: (id: string) => call<CrashSummary[]>('list_crashes', { id }),
+  getCrash: (id: string, crashId: string) => call<CrashAnalysis>('get_crash', { id, crashId }),
+  /** Log-Datei oder Crash-Report aus dem Logs-Tab analysieren (wird nicht gespeichert). */
+  analyzeLogSource: (id: string, source: string) => call<CrashAnalysis>('analyze_log_source', { id, source }),
+  setInstanceMemory: (id: string, mb: number) => call<void>('set_instance_memory', { id, mb }),
+  /** `major`: Java installieren und für die Instanz einstellen; `null` = automatisch. */
+  switchInstanceJava: (id: string, major: number | null, onProgress: (percent: number) => void, taskId: string | null = null) =>
+    call<number | null>('switch_instance_java', { id, major, onProgress: channel(onProgress), taskId }),
+  /** Holt den TRS Client sofort aus dem Update-Kanal; liefert die installierte Version. */
+  updateTrsClientNow: (id: string) => call<string | null>('update_trs_client_now', { id }),
 
   scanImports: () => call<ImportCandidate[]>('scan_imports'),
   /** Wie scanImports, dazu die erkannten Launcher (auch nicht unterstützte). */

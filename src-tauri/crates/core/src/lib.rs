@@ -10,6 +10,7 @@ pub mod client_mod;
 pub mod clips;
 pub mod client_mod_update;
 pub mod content;
+pub mod crash;
 pub mod curseforge;
 pub mod depcheck;
 pub mod discord;
@@ -156,22 +157,31 @@ impl Launcher {
         // Spielende landet zusätzlich im Verlauf der Instanz.
         let history_paths = paths.clone();
         let events: EventSink = Arc::new(move |event: GameEvent| {
-            if let GameEvent::Exited { instance_id, crashed, play_seconds, diagnosis, exit_code } = &event {
-                let entry = if *crashed {
+            if let GameEvent::Exited { instance_id, crashed, play_seconds, diagnosis, exit_code, crash, .. } = &event {
+                // Absturz-Helfer: analysiert im Hintergrund, schreibt den Verlauf und meldet `crashAnalyzed`.
+                let helped = *crashed
+                    && crash
+                        .as_ref()
+                        .is_some_and(|c| crash::analyze_after_exit(&history_paths, events.clone(), instance_id, (**c).clone()));
+                let entry = if helped {
+                    None
+                } else if *crashed {
                     let detail = diagnosis
                         .as_ref()
                         .and_then(|d| serde_json::to_value(d.kind).ok())
                         .and_then(|v| v.as_str().map(str::to_owned))
                         .or_else(|| exit_code.map(|c| format!("exit:{c}")));
                     let entry = HistoryEntry::new(HistoryKind::Crashed).seconds(*play_seconds);
-                    match detail {
+                    Some(match detail {
                         Some(d) => entry.detail(d),
                         None => entry,
-                    }
+                    })
                 } else {
-                    HistoryEntry::new(HistoryKind::Stopped).seconds(*play_seconds)
+                    Some(HistoryEntry::new(HistoryKind::Stopped).seconds(*play_seconds))
                 };
-                history::record_detached(&history_paths, instance_id, entry);
+                if let Some(entry) = entry {
+                    history::record_detached(&history_paths, instance_id, entry);
+                }
             }
             events(event);
         });

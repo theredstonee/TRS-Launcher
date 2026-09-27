@@ -16,7 +16,7 @@ export interface GameState {
    * abgeschnittene). Die Log-Ansicht erkennt daran neue Zeilen und einen Neustart.
    */
   logTotal: number
-  lastExit: { exitCode: number | null; crashed: boolean; diagnosis: Diagnosis | null } | null
+  lastExit: { exitCode: number | null; crashed: boolean; diagnosis: Diagnosis | null; crashId?: string | null } | null
   /** Startzeit (ms) des laufenden Spiels – für die Laufzeit in der Titelleiste. */
   startedAt: number | null
 }
@@ -44,6 +44,11 @@ export const useGamesStore = defineStore('games', () => {
       useToasts().error(userErrorText(event))
       return
     }
+    // Absturz-Helfer fertig: Dialog öffnet sich.
+    if (event.type === 'crashAnalyzed') {
+      useCrashHelperStore().received(event.crash)
+      return
+    }
     const s = state(event.instanceId)
     if (event.type === 'started') {
       s.phase = 'running'
@@ -57,8 +62,18 @@ export const useGamesStore = defineStore('games', () => {
     } else {
       s.phase = 'idle'
       s.startedAt = null
-      s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis }
-      if (event.crashed) useToasts().error(event.diagnosis ? userErrorText(event.diagnosis) : t('game.crashed'))
+      s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis, crashId: event.crashId ?? null }
+      if (event.crashed) {
+        const toast = () => useToasts().error(event.diagnosis ? userErrorText(event.diagnosis) : t('game.crashed'))
+        // Der Absturz-Helfer meldet sich gleich mit einem Dialog – nur wenn er
+        // ausbleibt, gibt es den kurzen Hinweis.
+        if (event.crashId) {
+          const id = event.crashId
+          setTimeout(() => {
+            if (useCrashHelperStore().latest[event.instanceId]?.id !== id) toast()
+          }, 10_000)
+        } else toast()
+      }
       // Spielzeit und "zuletzt gespielt" haben sich geändert.
       useInstancesStore().load()
     }

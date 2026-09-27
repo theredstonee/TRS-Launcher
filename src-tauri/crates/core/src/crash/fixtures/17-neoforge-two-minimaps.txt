@@ -1,0 +1,27 @@
+---- Minecraft Crash Report ----
+// Don't be sad, have a hug! <3
+
+Time: 2026-09-23 20:02:12
+Description: Rendering overlay
+
+java.lang.IllegalStateException: Tried to render minimap framebuffer while another map owns the GL state
+	at TRANSFORMER/xaerominimap@25.2.0/xaero.common.minimap.render.MinimapFBORenderer.renderMainEntity(MinimapFBORenderer.java:201) ~[xaerominimap-neoforge-1.21.1-25.2.0.jar%23188!/:25.2.0] {re:classloading}
+	at TRANSFORMER/xaerominimap@25.2.0/xaero.common.minimap.render.MinimapRenderer.renderMinimap(MinimapRenderer.java:92) ~[xaerominimap-neoforge-1.21.1-25.2.0.jar%23188!/:25.2.0] {re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.gui.Gui.render(Gui.java:215) ~[client-1.21.1-20240808.144430-srg.jar%23250!/:?] {re:classloading}
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- System Details --
+Details:
+	Minecraft Version: 1.21.1
+	Java Version: 21.0.7, Microsoft
+	Mod List:
+		client-1.21.1-20240808.144430-srg.jar             |Minecraft                     |minecraft                     |1.21.1              |Manifest: NOSIGNATURE
+		journeymap-neoforge-1.21.1-6.0.0-beta.28.jar      |Journeymap                    |journeymap                    |1.21.1-6.0.0-beta.28|Manifest: NOSIGNATURE
+		xaerominimap-neoforge-1.21.1-25.2.0.jar           |Xaero's Minimap               |xaerominimap                  |25.2.0              |Manifest: NOSIGNATURE
+		neoforge-21.1.200-universal.jar                   |NeoForge                      |neoforge                      |21.1.200            |Manifest: NOSIGNATURE
+	Suspected Mods:
+		Xaero's Minimap (xaerominimap), Version: 25.2.0
+			at TRANSFORMER/xaerominimap@25.2.0/xaero.common.minimap.render.MinimapFBORenderer.renderMainEntity(MinimapFBORenderer.java:201)

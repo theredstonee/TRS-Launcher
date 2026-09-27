@@ -5,6 +5,7 @@ pub mod accounts;
 pub mod app;
 pub mod clips;
 pub mod content;
+pub mod crash;
 pub mod curseforge;
 pub mod export;
 pub mod extras;

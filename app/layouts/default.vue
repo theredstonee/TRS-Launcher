@@ -121,6 +121,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <JoinServerDialog />
     <HostingJoinDialog />
     <HostingModsDialog />
+    <CrashHelperDialog />
   </div>
 </template>
 

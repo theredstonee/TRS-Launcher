@@ -21,6 +21,41 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **Crash helper.** When the game crashes – at startup or later – the launcher now reads the crash report and the log
+  itself and explains in plain words what happened: which mods are involved (with their icons), and what helps. It
+  recognizes mods that clash, missing or wrong dependencies, the same mod installed twice, mods for another Minecraft
+  or loader version, too little memory, the wrong Java version, graphics driver crashes (AMD, Intel, NVIDIA, missing
+  OpenGL), damaged files and known combinations such as Sodium with OptiFine, Iris without Sodium or two minimaps.
+- **Fix it with one click.** Depending on the cause you get buttons like "Disable mod" (reversible), "Install
+  dependency", "Remove duplicates", "Increase RAM", "Use Java 21", "Update TRS Client", "Share log" and "Launch again".
+  Every change is confirmed first and shows up in the instance history.
+- **Earlier crashes stay available.** Open them again from the History tab, or analyze any older log or crash report
+  in the Logs tab.
+- **Private by design.** The analysis runs only on your PC; nothing is sent unless you share the log. Paths with your
+  user name and your player name are hidden in the lines shown.
+- Includes a clear answer for the crash of TRS Client 0.9.0 together with Essential: update the TRS Client.
+
+### Deutsch
+
+- **Absturz-Helfer.** Stürzt das Spiel ab – beim Start oder später –, liest der Launcher jetzt selbst Crash-Report und
+  Log und erklärt verständlich, was passiert ist: welche Mods beteiligt sind (mit Symbol) und was hilft. Er erkennt
+  Mods, die sich in die Quere kommen, fehlende oder falsche Abhängigkeiten, doppelt installierte Mods, Mods für eine
+  andere Minecraft- oder Loader-Version, zu wenig Arbeitsspeicher, die falsche Java-Version, Abstürze im Grafiktreiber
+  (AMD, Intel, NVIDIA, fehlendes OpenGL), beschädigte Dateien und bekannte Kombinationen wie Sodium mit OptiFine, Iris
+  ohne Sodium oder zwei Minimaps.
+- **Mit einem Klick beheben.** Je nach Ursache gibt es Knöpfe wie „Mod deaktivieren“ (rückgängig machbar),
+  „Abhängigkeit installieren“, „Doppelte entfernen“, „RAM erhöhen“, „Java 21 verwenden“, „TRS Client aktualisieren“,
+  „Log teilen“ und „Erneut starten“. Jede Änderung wird vorher bestätigt und landet im Verlauf der Instanz.
+- **Frühere Abstürze bleiben abrufbar.** Im Reiter „Verlauf“ lassen sie sich wieder öffnen, im Reiter „Logs“ lässt
+  sich jeder ältere Log oder Crash-Report analysieren.
+- **Datenschutz inklusive.** Die Analyse läuft nur auf deinem PC; gesendet wird nichts, außer du teilst den Log. In den
+  angezeigten Zeilen sind Pfade mit deinem Benutzernamen und dein Spielername ausgeblendet.
+- Mit klarer Antwort auf den Absturz von TRS Client 0.9.0 zusammen mit Essential: TRS Client aktualisieren.
+
 ## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
 <!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->
 <!-- shots:

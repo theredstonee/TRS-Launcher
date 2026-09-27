@@ -114,6 +114,13 @@ watch(
     if (typeof wanted === 'string' && tabs.value.includes(wanted as Tab)) tab.value = wanted as Tab
   },
 )
+// Absturz-Helfer „Java-Einstellungen“, während die Seite schon offen ist.
+watch(
+  () => route.query.settings,
+  (wanted) => {
+    if (typeof wanted === 'string' && wanted) settingsOpen.value = wanted
+  },
+)
 
 // Nach Spielende lädt der Instanz-Store neu – Spielzeit hier mitziehen.
 watch(
@@ -215,7 +222,7 @@ function openFolder() {
         </InstanceBanner>
 
         <p v-if="game.error" role="alert" class="card mb-4 shrink-0 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ game.error }}</p>
-        <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" class="mb-4 shrink-0" />
+        <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" :crash-id="game.lastExit.crashId" class="mb-4 shrink-0" />
         <FpsBoostHint :instance="instance" />
 
         <!-- Tab-Leiste: Redstone-Leitung, der aktive Tab „leuchtet“. -->
