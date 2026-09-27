@@ -21,7 +21,18 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.9.0 – 2026-09-27 – Pack Up | Einpacken & los
+<!-- banner: accent=#ff4d5e motif=/news/0.9.0/banner.png -->
+<!-- shots:
+/news/0.9.0/share-mods.png | Hosting: choose which mods your friends take along | Hosting: auswählen, welche Mods deine Freunde mitnehmen
+/news/0.9.0/join-with-mods.png | Joining a world with mods: new instance or a copy, with a clear warning for files from the host | Beitreten mit Mods: neue Instanz oder Kopie, mit klarer Warnung bei Dateien vom Host
+/news/0.9.0/resource-pack.png | The host's resource pack comes straight over the hosting connection | Das Resource Pack des Hosts kommt direkt über die Hosting-Verbindung
+/news/0.9.0/ping.png | Honest ping display with jitter, history and server TPS | Ehrliche Ping-Anzeige mit Jitter, Verlauf und Server-TPS
+/news/0.9.0/ping-test.png | Ping test sorts your server list | Der Ping-Test sortiert deine Serverliste
+/news/0.9.0/chat.png | Chat with timestamps, stacking and mentions | Chat mit Zeitstempeln, Stapeln und Erwähnungen
+/news/0.9.0/pvp-hud.png | Counter HUD, hitmarker and warnings | Zähler-HUD, Hitmarker und Warnungen
+/news/0.9.0/streamer.png | Streamer mode and Auto-GG | Streamer-Modus und Auto-GG
+-->
 
 ### English
 

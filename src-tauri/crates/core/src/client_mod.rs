@@ -885,7 +885,14 @@ mod tests {
                             .take_while(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'_' | b'$'))
                             .map(|&b| b as char)
                             .collect();
-                        if !KEEPS_NAME.contains(&class.as_str()) {
+                        // Innere Klassen behaltener Klassen heißen in Intermediary z. B. `MinecraftServer$class_7460`.
+                        let kept_inner = KEEPS_NAME.iter().any(|k| {
+                            class
+                                .strip_prefix(k)
+                                .and_then(|rest| rest.strip_prefix("$class_"))
+                                .is_some_and(|n| !n.is_empty() && n.bytes().all(|c| c.is_ascii_digit()))
+                        });
+                        if !KEEPS_NAME.contains(&class.as_str()) && !kept_inner {
                             problems.push(format!("{}: {name} enthält {class}", build.file));
                         }
                     }
