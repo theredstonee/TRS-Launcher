@@ -465,7 +465,7 @@ public final class Panorama {
 
 	/** Neuer Ordner {@code screenshots/panorama/<Datum_Uhrzeit>[_n]}. */
 	static Path newFolder(Path gameDirectory, long now) throws IOException {
-		Path root = gameDirectory.resolve("screenshots").resolve("panorama");
+		Path root = gameDirectory.toAbsolutePath().normalize().resolve("screenshots").resolve("panorama");
 		Files.createDirectories(root);
 		String stamp = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss").format(new Date(now));
 		Path dir = root.resolve(stamp);

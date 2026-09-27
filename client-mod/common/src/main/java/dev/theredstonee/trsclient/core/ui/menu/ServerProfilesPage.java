@@ -105,9 +105,12 @@ public final class ServerProfilesPage {
 
 		// Liste
 		int rowH = 20;
-		int detailH = selected >= 0 ? 66 : 0;
-		int listBottom = y + h - 34 - detailH;
-		for (int i = 0; i < profiles.size() && ry + rowH <= listBottom; i++) {
+		// Von oben nach unten: Liste (so viele Zeilen, dass „Neu“ und der Bearbeiten-Bereich noch passen), dann das
+		// gewählte Profil, darunter – wenn Platz bleibt – Hinweis bzw. Fehler.
+		int detailH = selected >= 0 ? DETAIL_H : 0;
+		int maxRows = Math.max(1, (y + h - ry - 21 - detailH - 4) / rowH);
+		int first = selected >= maxRows ? Math.min(selected - maxRows + 1, Math.max(0, profiles.size() - maxRows)) : 0;
+		for (int i = first; i < profiles.size() && i < first + maxRows; i++) {
 			final int index = i;
 			ServerProfiles.Profile p = profiles.get(i);
 			boolean isActive = p == active;
@@ -199,18 +202,27 @@ public final class ServerProfilesPage {
 			ry += 21;
 		}
 
-		if (selected >= 0 && selected < profiles.size()) details(c, hits, x, y + h - 34 - detailH + 4, w, mx, my);
+		if (selected >= 0 && selected < profiles.size()) {
+			details(c, hits, x, ry + 1, w, mx, my, y + h - ry - DETAIL_H >= 12);
+			ry += DETAIL_H + (y + h - ry - DETAIL_H >= 12 ? 12 : 0);
+		}
 
 		String bottom = error != null ? error : note != null && System.currentTimeMillis() < noteUntil ? note : I18n.tr("serverProfiles.note");
 		List<String> lines = Paint.wrap(c, bottom, w - 4);
-		int ly = y + h - 9 - (Math.min(3, lines.size()) - 1) * 10;
-		for (int i = 0; i < Math.min(3, lines.size()); i++) {
+		int room = Math.min(3, (y + h - ry - 2) / 10);
+		// Fehler immer zeigen (notfalls über dem Bearbeiten-Bereich), den allgemeinen Hinweis nur bei Platz.
+		if (room < 1 && error == null) return;
+		int show = Math.max(1, Math.min(room, lines.size()));
+		int ly = y + h - 9 - (show - 1) * 10;
+		for (int i = 0; i < show; i++) {
 			Paint.textClipped(c, lines.get(i), x + 2, ly + i * 10, w - 4, error != null ? t.dustOn : t.textDim, false);
 		}
 	}
 
 	/** Bearbeiten des gewählten Profils: Muster, Einzelspieler, HUD-Profil, Abweichungen. */
-	private void details(Canvas c, Hits hits, int x, int y, int w, int mx, int my) {
+	private static final int DETAIL_H = 46;
+
+	private void details(Canvas c, Hits hits, int x, int y, int w, int mx, int my, boolean hint) {
 		Theme t = Theme.get();
 		final int index = selected;
 		ServerProfiles.Profile p = profiles.get(index);
@@ -295,8 +307,7 @@ public final class ServerProfilesPage {
 				}
 			});
 		}
-		ly += 21;
-		Paint.textClipped(c, I18n.tr("serverProfiles.editHint"), x + 2, ly + 2, w - 4, t.textDim, false);
+		if (hint) Paint.textClipped(c, I18n.tr("serverProfiles.editHint"), x + 2, ly + 22, w - 4, t.textDim, false);
 	}
 
 	private static String patternsDisplay(ServerProfiles.Profile p) {
