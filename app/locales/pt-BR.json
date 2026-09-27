@@ -771,6 +771,20 @@
     },
     "applications": {
       "invalidId": "Candidatura inválida."
+    },
+    "packShare": {
+      "notLinked": "Esta instância não pertence a nenhum modpack compartilhado.",
+      "tooLarge": "O modpack tem mais de 50 MB – escolha menos pastas (por exemplo, sem resource packs).",
+      "changed": "O modpack acabou de mudar – tente de novo.",
+      "notFound": "Este modpack não existe (mais).",
+      "invalidCode": "Isso não é um código de modpack válido (como TRS-XXXX-XXXX).",
+      "limit": "Você já compartilha 10 modpacks – exclua um em “Meus modpacks” primeiro.",
+      "dailyLimit": "Você já enviou 30 modpacks hoje – tente amanhã.",
+      "storageFull": "O servidor TRS está sem espaço agora – tente mais tarde.",
+      "unchanged": "Nada mudou desde a última versão.",
+      "invalidPack": "O servidor recusou o modpack – ele não é um pack válido do Modrinth.",
+      "noRecipients": "Você só pode enviar modpacks para seus amigos.",
+      "invalidDuration": "Prazo inválido."
     }
   },
   "browse": {
@@ -1547,7 +1561,8 @@
       "renamed": "Renomeada",
       "memoryChanged": "Memória alterada",
       "javaChanged": "Java alterado",
-      "settingsChanged": "Configurações alteradas"
+      "settingsChanged": "Configurações alteradas",
+      "packUpdated": "Modpack “{name}” atualizado"
     },
     "details": {
       "played": "Jogado: {time}",
@@ -1858,7 +1873,8 @@
     "phase": {
       "hashing": "Verificando arquivos",
       "lookup": "Comparando com o Modrinth",
-      "writing": "Gravando modpack"
+      "writing": "Gravando modpack",
+      "uploading": "Enviando"
     },
     "pickLocation": "Escolher local …",
     "done": "“{file}” gravado – {downloads} arquivos do Modrinth, {overrides} copiados ({size})"
@@ -3941,6 +3957,13 @@
       "title": "Escolher arquivos",
       "text": "Abra a pasta da instância para enviar arquivos avulsos como configs ou schematics.",
       "action": "Ir para arquivos"
+    },
+    "pack": {
+      "title": "Compartilhar modpack",
+      "text": "Envie seus mods e configurações e ganhe um código e um link – ou mande o pack direto para amigos.",
+      "textShared": "Compartilhado como {code}. Envie uma nova versão – quem instalou recebe uma atualização.",
+      "action": "Compartilhar …",
+      "actionUpdate": "Nova versão …"
     }
   },
   "social": {
@@ -4275,7 +4298,8 @@
         "image": "Denunciar imagem",
         "player": "Denunciar jogador",
         "group": "Denunciar grupo",
-        "share": "Denunciar imagem compartilhada"
+        "share": "Denunciar imagem compartilhada",
+        "pack": "Denunciar modpack"
       },
       "intro": "Você está denunciando {name}. A equipe da TRS analisa cada denúncia.",
       "reason": "Motivo",
@@ -5002,6 +5026,106 @@
       "title": "Minhas candidaturas",
       "description": "Suas candidaturas à equipe com status e resposta.",
       "button": "Ver"
+    }
+  },
+  "packs": {
+    "needsTrs": "Compartilhar modpacks precisa dos serviços TRS – ative-os em Configurações → Privacidade.",
+    "expiry": {
+      "never": "Não expira",
+      "until": "Válido até {date}"
+    },
+    "duration": {
+      "label": "Código válido por",
+      "1d": "1 dia",
+      "7d": "7 dias",
+      "30d": "30 dias",
+      "forever": "Sem prazo",
+      "hint": "Ao mudar, o tempo recomeça a partir de agora."
+    },
+    "toast": {
+      "sharedTitle": "{name} te enviou um modpack",
+      "view": "Ver",
+      "updateTitle": "Atualização de “{name}”",
+      "updateBody": "A versão {version} está pronta."
+    },
+    "update": {
+      "available": "Nova versão de “{name}” ({version}) de {owner}.",
+      "keepHint": "Arquivos que você mesmo alterou ficam como estão.",
+      "action": "Atualizar",
+      "running": "Atualizando …",
+      "badge": "Atualizar",
+      "done": "“{name}” está atualizado",
+      "doneKept": "“{name}” está atualizado – {count} arquivo alterado por você foi mantido | “{name}” está atualizado – {count} arquivos alterados por você foram mantidos"
+    },
+    "send": {
+      "title": "Enviar para amigos",
+      "noFriends": "Você ainda não tem amigos TRS.",
+      "search": "Buscar amigos",
+      "sent": "Enviado",
+      "sending": "Enviando …",
+      "action": "Enviar para {count} amigo | Enviar para {count} amigos",
+      "done": "“{name}” enviado para {count} amigo | “{name}” enviado para {count} amigos"
+    },
+    "code": {
+      "label": "Código",
+      "copied": "Copiado",
+      "copyCode": "Copiar código",
+      "copyLink": "Copiar link",
+      "openPage": "Abrir página",
+      "open": "Modpack por código",
+      "title": "Instalar modpack por código",
+      "intro": "Digite o código (TRS-XXXX-XXXX) ou cole o link que compartilharam com você.",
+      "check": "Verificar",
+      "checking": "Verificando …",
+      "loadingHint": "O pack é baixado e verificado – isso pode levar um momento.",
+      "invalid": "Isso não é um código de modpack. Ele tem este formato: TRS-XXXX-XXXX.",
+      "by": "de {name}",
+      "mods": "{n} mod do Modrinth | {n} mods do Modrinth",
+      "files": "{n} configuração ou outro arquivo | {n} configurações e outros arquivos",
+      "ownJars": "Contém {n} arquivo de mod que não vem do Modrinth. | Contém {n} arquivos de mods que não vêm do Modrinth.",
+      "trust": "Confio em {name} – instalar o pack com esses arquivos",
+      "report": "Denunciar"
+    },
+    "share": {
+      "title": "Compartilhar modpack",
+      "resultTitle": "Modpack compartilhado",
+      "resultIntro": "“{name}” está online. Passe o código ou o link – ou envie direto para amigos.",
+      "preparing": "Preparando …",
+      "done": "“{name}” compartilhado – código {code}",
+      "doneUpdate": "Nova versão de “{name}” compartilhada – o código {code} continua",
+      "modeLabel": "Como compartilhar",
+      "modeUpdate": "Nova versão de {code}",
+      "modeUpdateHint": "O código continua o mesmo – quem instalou recebe uma atualização.",
+      "modeNew": "Compartilhar como pack novo (código novo)",
+      "included": "Incluído (lista de mods e configurações)",
+      "hint": "Mods que estão no Modrinth vão só como lista; o resto é copiado ({size}). Mundos, logs e seus arquivos do TRS Client nunca vão junto. No máximo 50 MB.",
+      "ownJarsIntro": "Este arquivo não está no Modrinth e seria copiado para o pack: | Estes arquivos não estão no Modrinth e seriam copiados para o pack:",
+      "ownJarsHint": "Compartilhe só mods que você pode repassar. Quem instalar o pack verá um aviso.",
+      "ownJarsConfirm": "Compartilhar com esses arquivos",
+      "action": "Compartilhar",
+      "actionUpdate": "Compartilhar nova versão",
+      "sharing": "Compartilhando …"
+    },
+    "mine": {
+      "open": "Meus modpacks",
+      "title": "Meus modpacks",
+      "empty": "Você ainda não compartilhou nenhum modpack. Abra uma instância → Compartilhar → Compartilhar modpack.",
+      "limits": "{active} de {max} packs compartilhados · {today} de {perDay} envios hoje",
+      "stats": "{installs} instalações · enviado para {sent}",
+      "delete": "Excluir",
+      "deleted": "“{name}” excluído",
+      "deleteTitle": "Excluir “{name}”?",
+      "deleteText": "O código e o link param de funcionar na hora. Instâncias que outros já instalaram continuam nos PCs deles."
+    },
+    "inbox": {
+      "title": "Enviados para você",
+      "from": "de {name}",
+      "view": "Ver",
+      "dismiss": "Tirar “{name}” da lista"
+    },
+    "linked": {
+      "shared": "Compartilhado como modpack {code}",
+      "newVersion": "Compartilhar nova versão"
     }
   }
 }

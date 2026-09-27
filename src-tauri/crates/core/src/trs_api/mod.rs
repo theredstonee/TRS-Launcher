@@ -22,6 +22,7 @@ pub mod cape_import;
 pub mod chat;
 pub mod hosting;
 pub mod moderation;
+pub mod packs;
 pub mod live;
 pub mod media;
 mod ops;
@@ -101,30 +102,37 @@ pub(crate) struct Req {
     pub body: Body,
     /// Größte angenommene Antwort (JSON: [`MAX_JSON_BYTES`], Bilder mehr).
     pub limit: usize,
+    /// Eigene Zeitgrenze statt der üblichen 20 s (große Uploads/Downloads, z. B. Modpacks).
+    pub timeout: Option<Duration>,
 }
 
 impl Req {
     pub fn get(path: impl Into<String>) -> Self {
-        Self { method: Method::GET, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
+        Self { method: Method::GET, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None }
     }
     pub fn post(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
+        Self { method: Method::POST, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None }
     }
     pub fn post_empty(path: impl Into<String>) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
+        Self { method: Method::POST, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None }
     }
     pub fn put(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PUT, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
+        Self { method: Method::PUT, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None }
     }
     pub fn patch(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES }
+        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None }
     }
     pub fn delete(path: impl Into<String>) -> Self {
-        Self { method: Method::DELETE, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES }
+        Self { method: Method::DELETE, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None }
     }
     /// Beliebiger Body mit eigener Grenze für die Antwort.
     pub fn with(method: Method, path: impl Into<String>, body: Body, limit: usize) -> Self {
-        Self { method, path: path.into(), body, limit }
+        Self { method, path: path.into(), body, limit, timeout: None }
+    }
+    /// Längere Zeitgrenze für diese Anfrage.
+    pub fn timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = Some(timeout);
+        self
     }
 }
 
@@ -494,6 +502,9 @@ impl TrsApi {
         let mut builder = self.http.request(req.method.clone(), &url).header("Accept", "application/json");
         if let Some(token) = token {
             builder = builder.bearer_auth(token);
+        }
+        if let Some(timeout) = req.timeout {
+            builder = builder.timeout(timeout);
         }
         builder = match &req.body {
             Body::Empty => builder,

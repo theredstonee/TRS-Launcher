@@ -771,6 +771,20 @@
     },
     "applications": {
       "invalidId": "Invalid application."
+    },
+    "packShare": {
+      "notLinked": "This instance doesn’t belong to a shared modpack.",
+      "tooLarge": "The modpack is larger than 50 MB – pick fewer folders (for example without resource packs).",
+      "changed": "The modpack just changed – please try again.",
+      "notFound": "This modpack doesn’t exist (anymore).",
+      "invalidCode": "That’s not a valid modpack code (like TRS-XXXX-XXXX).",
+      "limit": "You already share 10 modpacks – delete one under “My modpacks” first.",
+      "dailyLimit": "You uploaded 30 modpacks today – try again tomorrow.",
+      "storageFull": "The TRS server is out of space right now – please try again later.",
+      "unchanged": "Nothing changed since the last version.",
+      "invalidPack": "The server rejected the modpack – it isn’t a valid Modrinth pack.",
+      "noRecipients": "You can only send modpacks to your friends.",
+      "invalidDuration": "Invalid duration."
     }
   },
   "browse": {
@@ -1547,7 +1561,8 @@
       "renamed": "Renamed",
       "memoryChanged": "Changed memory",
       "javaChanged": "Changed Java",
-      "settingsChanged": "Changed settings"
+      "settingsChanged": "Changed settings",
+      "packUpdated": "Updated modpack “{name}”"
     },
     "details": {
       "played": "Played: {time}",
@@ -1858,7 +1873,8 @@
     "phase": {
       "hashing": "Checking files",
       "lookup": "Matching with Modrinth",
-      "writing": "Writing modpack"
+      "writing": "Writing modpack",
+      "uploading": "Uploading"
     },
     "pickLocation": "Choose location …",
     "done": "Wrote “{file}” – {downloads} files from Modrinth, {overrides} copied ({size})"
@@ -3941,6 +3957,13 @@
       "title": "Pick files",
       "text": "Open the instance folder to send single files like configs or schematics.",
       "action": "Go to files"
+    },
+    "pack": {
+      "title": "Share modpack",
+      "text": "Upload your mods and settings and get a code and a link – or send the pack straight to friends.",
+      "textShared": "Shared as {code}. Upload a new version – everyone who installed it gets an update.",
+      "action": "Share …",
+      "actionUpdate": "New version …"
     }
   },
   "social": {
@@ -4275,7 +4298,8 @@
         "image": "Report picture",
         "player": "Report player",
         "group": "Report group",
-        "share": "Report shared picture"
+        "share": "Report shared picture",
+        "pack": "Report modpack"
       },
       "intro": "You’re reporting {name}. The TRS team reviews every report.",
       "reason": "Reason",
@@ -5002,6 +5026,106 @@
       "title": "My applications",
       "description": "Your team applications with status and the team’s answer.",
       "button": "Show"
+    }
+  },
+  "packs": {
+    "needsTrs": "Sharing modpacks needs the TRS services – turn them on in Settings → Privacy.",
+    "expiry": {
+      "never": "No expiry",
+      "until": "Valid until {date}"
+    },
+    "duration": {
+      "label": "Code valid for",
+      "1d": "1 day",
+      "7d": "7 days",
+      "30d": "30 days",
+      "forever": "No expiry",
+      "hint": "Changing it starts the time again from now."
+    },
+    "toast": {
+      "sharedTitle": "{name} sent you a modpack",
+      "view": "View",
+      "updateTitle": "Update for “{name}”",
+      "updateBody": "Version {version} is ready."
+    },
+    "update": {
+      "available": "New version of “{name}” ({version}) from {owner}.",
+      "keepHint": "Files you changed yourself stay as they are.",
+      "action": "Update",
+      "running": "Updating …",
+      "badge": "Update",
+      "done": "“{name}” is up to date",
+      "doneKept": "“{name}” is up to date – {count} file you changed was kept | “{name}” is up to date – {count} files you changed were kept"
+    },
+    "send": {
+      "title": "Send to friends",
+      "noFriends": "You don’t have any TRS friends yet.",
+      "search": "Search friends",
+      "sent": "Sent",
+      "sending": "Sending …",
+      "action": "Send to {count} friend | Send to {count} friends",
+      "done": "“{name}” sent to {count} friend | “{name}” sent to {count} friends"
+    },
+    "code": {
+      "label": "Code",
+      "copied": "Copied",
+      "copyCode": "Copy code",
+      "copyLink": "Copy link",
+      "openPage": "Open page",
+      "open": "Modpack by code",
+      "title": "Install modpack by code",
+      "intro": "Enter the code (TRS-XXXX-XXXX) or paste the link someone shared with you.",
+      "check": "Check",
+      "checking": "Checking …",
+      "loadingHint": "The pack is downloaded and checked – this can take a moment.",
+      "invalid": "That’s not a modpack code. It looks like TRS-XXXX-XXXX.",
+      "by": "by {name}",
+      "mods": "{n} mod from Modrinth | {n} mods from Modrinth",
+      "files": "{n} setting or other file | {n} settings and other files",
+      "ownJars": "Contains {n} mod file that is not from Modrinth. | Contains {n} mod files that are not from Modrinth.",
+      "trust": "I trust {name} – install the pack with these files",
+      "report": "Report"
+    },
+    "share": {
+      "title": "Share modpack",
+      "resultTitle": "Modpack shared",
+      "resultIntro": "“{name}” is online. Share the code or link – or send it to friends right away.",
+      "preparing": "Preparing …",
+      "done": "“{name}” shared – code {code}",
+      "doneUpdate": "New version of “{name}” shared – code {code} stays",
+      "modeLabel": "How to share",
+      "modeUpdate": "New version of {code}",
+      "modeUpdateHint": "The code stays the same – everyone who installed it gets an update.",
+      "modeNew": "Share as a new pack (new code)",
+      "included": "Included (mod list and settings)",
+      "hint": "Mods that are on Modrinth only go in as a list; everything else is copied ({size}). Worlds, logs and your TRS Client files never go in. At most 50 MB.",
+      "ownJarsIntro": "This file is not on Modrinth and would be copied into the pack: | These files are not on Modrinth and would be copied into the pack:",
+      "ownJarsHint": "Only share mods you’re allowed to pass on. Everyone who installs the pack sees a warning.",
+      "ownJarsConfirm": "Share with these files",
+      "action": "Share",
+      "actionUpdate": "Share new version",
+      "sharing": "Sharing …"
+    },
+    "mine": {
+      "open": "My modpacks",
+      "title": "My modpacks",
+      "empty": "You haven’t shared a modpack yet. Open an instance → Share → Share modpack.",
+      "limits": "{active} of {max} packs shared · {today} of {perDay} uploads today",
+      "stats": "{installs} installs · sent to {sent}",
+      "delete": "Delete",
+      "deleted": "“{name}” deleted",
+      "deleteTitle": "Delete “{name}”?",
+      "deleteText": "The code and link stop working right away. Instances others already installed stay on their PCs."
+    },
+    "inbox": {
+      "title": "Sent to you",
+      "from": "from {name}",
+      "view": "View",
+      "dismiss": "Remove “{name}” from the list"
+    },
+    "linked": {
+      "shared": "Shared as modpack {code}",
+      "newVersion": "Share new version"
     }
   }
 }

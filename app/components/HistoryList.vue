@@ -30,6 +30,7 @@ const groupsOf: Record<HistoryKind, 'play' | 'content' | 'instance'> = {
   group_changed: 'instance',
   renamed: 'instance',
   settings_changed: 'instance',
+  pack_updated: 'content',
 }
 
 // Absturz-Helfer: gespeicherte Analyse wieder öffnen.
@@ -113,6 +114,8 @@ function title(e: HistoryEntry): string {
       if (e.detail === 'memory') return t('history.titles.memoryChanged')
       if (e.detail === 'java') return t('history.titles.javaChanged')
       return t('history.titles.settingsChanged')
+    case 'pack_updated':
+      return t('history.titles.packUpdated', { name: s })
   }
 }
 
@@ -133,6 +136,7 @@ function detail(e: HistoryEntry): string | null {
   if (e.kind === 'renamed' && e.from && e.to) return t('history.details.renamed', { from: e.from, to: e.to })
   if (e.kind === 'group_changed' && e.from) return t('history.details.previousGroup', { group: e.from })
   if (e.kind === 'settings_changed' && e.detail === 'java') return t('history.details.changed', { from: javaLabel(e.from), to: javaLabel(e.to) })
+  if (e.kind === 'pack_updated' && e.to) return t('history.details.changed', { from: e.from ?? '?', to: e.to })
   if (e.kind === 'settings_changed' && (e.from || e.to)) return t('history.details.changed', { from: e.from ?? '?', to: e.to ?? '?' })
   return null
 }
@@ -157,6 +161,7 @@ const tone: Record<HistoryKind, string> = {
   group_changed: 'bg-base-800 text-base-200',
   renamed: 'bg-base-800 text-base-200',
   settings_changed: 'bg-base-800 text-base-200',
+  pack_updated: 'bg-lamp-900 text-lamp-300',
 }
 
 const icons: Record<HistoryKind, string> = {
@@ -179,6 +184,7 @@ const icons: Record<HistoryKind, string> = {
   group_changed: 'M3 7h7l2 2h9v10H3z',
   renamed: 'M4 20h4L18 10l-4-4L4 16zM14 6l4 4',
   settings_changed: 'M4 7h10m4 0h2M4 17h4m4 0h8M14 5v4M8 15v4',
+  pack_updated: 'M12 19V5m0 0-5 5m5-5 5 5',
 }
 
 const visible = computed(() => entries.value.filter((e) => filter.value === 'all' || groupsOf[e.kind] === filter.value))

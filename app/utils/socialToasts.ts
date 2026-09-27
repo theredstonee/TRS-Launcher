@@ -2,7 +2,7 @@
 // tests/social-toasts.test.ts. Wann eine Benachrichtigung erscheint, ob das
 // Betriebssystem sie zeigt, ob es einen Ton gibt, und wie die Liste wächst.
 
-export type SocialToastKind = 'message' | 'invite' | 'friendRequest' | 'capeOffer' | 'online' | 'report' | 'moderation' | 'application'
+export type SocialToastKind = 'message' | 'invite' | 'friendRequest' | 'capeOffer' | 'online' | 'report' | 'moderation' | 'application' | 'pack'
 
 /** Einstellungen (Rust: `SocialSettings`, alles lokal). */
 export interface SocialPrefs {
@@ -75,6 +75,7 @@ function typeEnabled(kind: SocialToastKind, prefs: SocialPrefs): boolean {
     case 'message':
       return prefs.messages
     case 'invite':
+    case 'pack':
       return prefs.invites
     case 'friendRequest':
       return prefs.friendRequests

@@ -46,6 +46,8 @@ pub enum HistoryKind {
     Renamed,
     /// Einstellung geändert (z. B. vom Absturz-Helfer): `detail` = `memory`/`java`.
     SettingsChanged,
+    /// Geteiltes Modpack auf eine neue Version gebracht: `subject` = Pack, `from`/`to` = Version (Revision).
+    PackUpdated,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

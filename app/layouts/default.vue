@@ -7,6 +7,7 @@ const onboarding = useOnboardingStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 const trs = useTrsStore()
+const packs = usePacksStore()
 const sanctions = useSanctionsStore()
 const applications = useApplicationsStore()
 const whatsNew = useWhatsNewStore()
@@ -56,6 +57,16 @@ onMounted(async () => {
   void whatsNew.check(onboarding.open)
   await trs.init()
 })
+
+// Geteilte Modpacks: Updates und „An dich geschickt“ laden, sobald die TRS-Dienste an sind.
+watch(
+  () => trs.enabled,
+  (on) => {
+    if (!on) return
+    void packs.checkUpdates(true)
+    void packs.loadInbox()
+  },
+)
 
 // TRS-Dienste: nach einem Account-Wechsel neu laden. Noch nicht entschieden?
 // Dann einmal fragen, sobald ein Account da ist (nicht während der Einrichtung).
@@ -111,6 +122,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <CreateInstanceDialog v-if="ui.creating" @close="ui.creating = false" @created="onCreated" />
     <ImportDialog v-if="ui.importing" @close="ui.importing = false" />
     <ModpackInstallDialog v-if="ui.modpackInstall" :key="ui.modpackInstall.platform + ui.modpackInstall.pack.projectId" :request="ui.modpackInstall" @close="ui.modpackInstall = null" />
+    <PackCodeDialog v-if="packs.codeDialog" :key="packs.codeDialog.code" :initial-code="packs.codeDialog.code" @close="packs.codeDialog = null" />
+    <MyPacksDialog v-if="packs.mineOpen" @close="packs.mineOpen = false" />
     <PresetReportDialog />
     <CommandPalette v-if="ui.palette" @close="ui.palette = false" />
     <TrsConsentDialog v-if="trs.consentOpen" />

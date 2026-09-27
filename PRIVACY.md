@@ -206,6 +206,28 @@ In the launcher's screenshot gallery and in the TRS Client ("Clips & pictures") 
   reason; the page stores no IP address (rate limits count in memory only). A report keeps a copy of the picture as
   evidence, like other reports (see below), and the team can delete shared pictures.
 
+### Sharing modpacks
+
+In the launcher you can share an instance as a modpack (*Instance → Share → Share modpack*). The launcher packs the
+**mod list** (mods that are on Modrinth are only listed with their download address) and the **folders you pick**
+(e.g. settings/configs, resource packs, your own mod files) into a `.mrpack` file and uploads it only when you click
+"Share". Worlds, screenshots, logs and account files are never included.
+
+- **What is stored:** the pack file, its name, description and version, Minecraft version and mod loader, how many
+  files it contains, when it was shared, updated and when it expires, how often it was installed, the sharing TRS
+  account, and to which friends it was sent.
+- **Who sees it:** anyone with the **code** (`TRS-XXXX-XXXX`) or the **link** (`/p/…`) sees the name, description,
+  contents summary and **your player name and head** – so people know whose pack it is. Downloading the pack needs a
+  TRS account (the launcher). Friends you send it to see it in their list "Shared with me". The page is not indexed
+  by search engines.
+- **How long:** you choose per pack – **1, 7 or 30 days, or no expiry**. Expired packs are deleted automatically; you
+  can delete a pack earlier in "My modpacks" – code and link stop working right away (copies others already installed
+  stay on their PCs). A new version keeps the code; friends who installed it see "Update available".
+- **Limits:** at most 50 MB per pack, 10 shared packs and 30 uploads per day per account. An upload ban from
+  moderation also blocks sharing.
+- **Reports:** a pack can be reported in the launcher or on its page (signed in). The report keeps the pack's name,
+  code, description, contents summary and checksum as evidence (not the file); the team can delete packs.
+
 ### Circuit library (TRS Client)
 
 The circuit library in the TRS Client (and on the website, /circuits) loads its circuits from the TRS server. It needs
@@ -359,6 +381,7 @@ the TRS server.
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
 | Shared screenshots (only the pictures you share): the re-encoded picture, size, format, share and expiry time, the sharing account (not shown publicly) | Sharing a screenshot as a link (see above) |
+| Shared modpacks (only the packs you share): the pack file, name, description, version, Minecraft version, loader, file counts, share/update/expiry time, installs, the sharing account (name shown on the pack page), friends it was sent to | Sharing a modpack by code, link or with friends (see above) |
 | Circuit submissions: the circuit (blocks and states only), name, description, category, language, time, status and the team's answer; for accepted circuits your name as the creator | Submitting a circuit to the library (see above) |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
@@ -402,13 +425,15 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Chat messages and pictures stay until they are deleted (by you for everyone, by the group owner or by the team) or
   the group is deleted. Pictures that were uploaded but never sent are deleted after 1 hour.
 - Shared screenshots are deleted automatically **30 days** after sharing, or earlier when you (or the team) delete them.
+- Shared modpacks are deleted automatically when the duration you chose ends (1, 7 or 30 days; "no expiry" stays
+  until you or the team delete it).
 - Decided circuit submissions are deleted **90 days** after the decision; published circuits stay until the team
   removes them (without your name after "Alle TRS-Daten löschen").
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
   account, sessions, friendships, requests and blocks, uploaded capes and their files, cape shares (your capes with
   friends and the capes friends shared with you), code redemptions, reports,
   your online status, all synced skins, presets and settings, all your direct chats (for both sides) and your messages,
-  reactions and pictures in groups (groups you own go to the longest member), and all pictures you shared as a link. Afterwards the TRS services are turned off in the
+  reactions and pictures in groups (groups you own go to the longest member), all pictures you shared as a link and all modpacks you shared. Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
 - Only active sanctions (such as a ban or a running chat mute, with reason and period) and reports about you (until
   their retention ends, see above) are kept after deletion, so they can't be escaped by signing in again.

@@ -771,6 +771,20 @@
     },
     "applications": {
       "invalidId": "Geçersiz başvuru."
+    },
+    "packShare": {
+      "notLinked": "Bu örnek paylaşılan bir modpack’e ait değil.",
+      "tooLarge": "Modpack 50 MB’tan büyük – daha az klasör seç (örneğin kaynak paketleri olmadan).",
+      "changed": "Modpack az önce değişti – lütfen tekrar dene.",
+      "notFound": "Bu modpack yok (artık yok).",
+      "invalidCode": "Bu geçerli bir modpack kodu değil (TRS-XXXX-XXXX gibi).",
+      "limit": "Zaten 10 modpack paylaşıyorsun – önce “Modpacklerim” altından birini sil.",
+      "dailyLimit": "Bugün zaten 30 modpack yükledin – yarın tekrar dene.",
+      "storageFull": "TRS sunucusunda şu an yer yok – lütfen daha sonra tekrar dene.",
+      "unchanged": "Son sürümden bu yana hiçbir şey değişmedi.",
+      "invalidPack": "Sunucu modpack’i reddetti – geçerli bir Modrinth paketi değil.",
+      "noRecipients": "Modpack’leri yalnızca arkadaşlarına gönderebilirsin.",
+      "invalidDuration": "Geçersiz süre."
     }
   },
   "browse": {
@@ -1547,7 +1561,8 @@
       "renamed": "Yeniden adlandırıldı",
       "memoryChanged": "Bellek değiştirildi",
       "javaChanged": "Java değiştirildi",
-      "settingsChanged": "Ayarlar değiştirildi"
+      "settingsChanged": "Ayarlar değiştirildi",
+      "packUpdated": "“{name}” modpack’i güncellendi"
     },
     "details": {
       "played": "Oynandı: {time}",
@@ -1858,7 +1873,8 @@
     "phase": {
       "hashing": "Dosyalar kontrol ediliyor",
       "lookup": "Modrinth ile eşleştiriliyor",
-      "writing": "Modpack yazılıyor"
+      "writing": "Modpack yazılıyor",
+      "uploading": "Yükleniyor"
     },
     "pickLocation": "Konum seç …",
     "done": "“{file}” yazıldı – Modrinth'ten {downloads} dosya, {overrides} kopyalandı ({size})"
@@ -3941,6 +3957,13 @@
       "title": "Dosya seç",
       "text": "Yapılandırma veya şematik gibi tek dosyaları göndermek için örnek klasörünü aç.",
       "action": "Dosyalara git"
+    },
+    "pack": {
+      "title": "Modpack paylaş",
+      "text": "Modlarını ve ayarlarını yükle, bir kod ve bağlantı al – ya da paketi doğrudan arkadaşlarına gönder.",
+      "textShared": "{code} olarak paylaşıldı. Yeni bir sürüm yükle – yükleyen herkes güncelleme alır.",
+      "action": "Paylaş …",
+      "actionUpdate": "Yeni sürüm …"
     }
   },
   "social": {
@@ -4275,7 +4298,8 @@
         "image": "Resmi şikâyet et",
         "player": "Oyuncuyu şikâyet et",
         "group": "Grubu şikâyet et",
-        "share": "Paylaşılan resmi bildir"
+        "share": "Paylaşılan resmi bildir",
+        "pack": "Modpack’i bildir"
       },
       "intro": "Şikâyet edilen: {name}. TRS ekibi her şikâyeti inceler.",
       "reason": "Sebep",
@@ -5002,6 +5026,106 @@
       "title": "Başvurularım",
       "description": "Ekibe yaptığın başvurular, durum ve ekibin yanıtıyla.",
       "button": "Göster"
+    }
+  },
+  "packs": {
+    "needsTrs": "Modpack paylaşmak için TRS hizmetleri gerekir – Ayarlar → Gizlilik bölümünden aç.",
+    "expiry": {
+      "never": "Süresi dolmaz",
+      "until": "{date} tarihine kadar geçerli"
+    },
+    "duration": {
+      "label": "Kod geçerlilik süresi",
+      "1d": "1 gün",
+      "7d": "7 gün",
+      "30d": "30 gün",
+      "forever": "Süresiz",
+      "hint": "Değiştirince süre şimdiden itibaren yeniden başlar."
+    },
+    "toast": {
+      "sharedTitle": "{name} sana bir modpack gönderdi",
+      "view": "Göster",
+      "updateTitle": "“{name}” için güncelleme",
+      "updateBody": "{version} sürümü hazır."
+    },
+    "update": {
+      "available": "{owner} tarafından “{name}” için yeni sürüm ({version}).",
+      "keepHint": "Kendi değiştirdiğin dosyalar olduğu gibi kalır.",
+      "action": "Güncelle",
+      "running": "Güncelleniyor …",
+      "badge": "Güncelleme",
+      "done": "“{name}” güncel",
+      "doneKept": "“{name}” güncel – değiştirdiğin {count} dosya korundu | “{name}” güncel – değiştirdiğin {count} dosya korundu"
+    },
+    "send": {
+      "title": "Arkadaşlara gönder",
+      "noFriends": "Henüz TRS arkadaşın yok.",
+      "search": "Arkadaş ara",
+      "sent": "Gönderildi",
+      "sending": "Gönderiliyor …",
+      "action": "{count} arkadaşa gönder | {count} arkadaşa gönder",
+      "done": "“{name}” {count} arkadaşa gönderildi | “{name}” {count} arkadaşa gönderildi"
+    },
+    "code": {
+      "label": "Kod",
+      "copied": "Kopyalandı",
+      "copyCode": "Kodu kopyala",
+      "copyLink": "Bağlantıyı kopyala",
+      "openPage": "Sayfayı aç",
+      "open": "Kodla modpack",
+      "title": "Kodla modpack yükle",
+      "intro": "Kodu gir (TRS-XXXX-XXXX) ya da seninle paylaşılan bağlantıyı yapıştır.",
+      "check": "Kontrol et",
+      "checking": "Kontrol ediliyor …",
+      "loadingHint": "Paket indiriliyor ve kontrol ediliyor – bu biraz sürebilir.",
+      "invalid": "Bu bir modpack kodu değil. Şöyle görünür: TRS-XXXX-XXXX.",
+      "by": "{name} tarafından",
+      "mods": "Modrinth’ten {n} mod | Modrinth’ten {n} mod",
+      "files": "{n} ayar veya başka dosya | {n} ayar ve başka dosya",
+      "ownJars": "Modrinth’ten gelmeyen {n} mod dosyası içeriyor. | Modrinth’ten gelmeyen {n} mod dosyası içeriyor.",
+      "trust": "{name} kişisine güveniyorum – paketi bu dosyalarla yükle",
+      "report": "Bildir"
+    },
+    "share": {
+      "title": "Modpack paylaş",
+      "resultTitle": "Modpack paylaşıldı",
+      "resultIntro": "“{name}” çevrimiçi. Kodu ya da bağlantıyı paylaş – veya doğrudan arkadaşlarına gönder.",
+      "preparing": "Hazırlanıyor …",
+      "done": "“{name}” paylaşıldı – kod {code}",
+      "doneUpdate": "“{name}” yeni sürümü paylaşıldı – kod {code} aynı kalıyor",
+      "modeLabel": "Nasıl paylaşılsın",
+      "modeUpdate": "{code} için yeni sürüm",
+      "modeUpdateHint": "Kod aynı kalır – yükleyen herkes güncelleme alır.",
+      "modeNew": "Yeni paket olarak paylaş (yeni kod)",
+      "included": "Dahil (mod listesi ve ayarlar)",
+      "hint": "Modrinth’te olan modlar sadece liste olarak eklenir; geri kalanı kopyalanır ({size}). Dünyalar, günlükler ve TRS Client dosyaların asla eklenmez. En fazla 50 MB.",
+      "ownJarsIntro": "Bu dosya Modrinth’te yok ve pakete kopyalanacak: | Bu dosyalar Modrinth’te yok ve pakete kopyalanacak:",
+      "ownJarsHint": "Sadece dağıtmana izin verilen modları paylaş. Paketi yükleyen herkes bir uyarı görür.",
+      "ownJarsConfirm": "Bu dosyalarla paylaş",
+      "action": "Paylaş",
+      "actionUpdate": "Yeni sürümü paylaş",
+      "sharing": "Paylaşılıyor …"
+    },
+    "mine": {
+      "open": "Modpacklerim",
+      "title": "Modpacklerim",
+      "empty": "Henüz bir modpack paylaşmadın. Bir örnek aç → Paylaş → Modpack paylaş.",
+      "limits": "{max} paketten {active} paylaşıldı · bugün {perDay} yüklemeden {today}",
+      "stats": "{installs} yükleme · {sent} kişiye gönderildi",
+      "delete": "Sil",
+      "deleted": "“{name}” silindi",
+      "deleteTitle": "“{name}” silinsin mi?",
+      "deleteText": "Kod ve bağlantı hemen çalışmaz olur. Başkalarının zaten yüklediği örnekler onların bilgisayarında kalır."
+    },
+    "inbox": {
+      "title": "Sana gönderilenler",
+      "from": "{name} gönderdi",
+      "view": "Göster",
+      "dismiss": "“{name}” listeden kaldır"
+    },
+    "linked": {
+      "shared": "{code} modpack’i olarak paylaşıldı",
+      "newVersion": "Yeni sürümü paylaş"
     }
   }
 }

@@ -27,6 +27,19 @@ import {
   type TrsReviewList,
 } from './trs'
 import {
+  inboxPackSchema,
+  myPacksSchema,
+  ownPackSchema,
+  packLinkSchema,
+  packSendResultSchema,
+  packUpdateInfoSchema,
+  packUpdateResultSchema,
+  sharedPackSchema,
+  sharePackOutcomeSchema,
+  type PackDuration,
+  type SharePackOptions,
+} from './packs'
+import {
   chatAttachmentSchema,
   chatConversationSchema,
   chatMessageSchema,
@@ -709,6 +722,30 @@ export const backend = {
     adminRevokeGrant: (uuid: string, capeId: string) => call<void>('trs_admin_revoke_grant', { uuid, capeId }),
     adminBan: (player: string, reason: string | null) => checked(trsAdminUserSchema, 'trs_admin_ban', { player, reason }),
     adminUnban: (uuid: string) => call<void>('trs_admin_unban', { uuid }),
+  },
+
+  /** Geteilte Modpacks (API §27): per Code/Link/an Freunde teilen, per Code installieren, Updates. */
+  packs: {
+    /** Instanz packen und hochladen; `update` = neue Version des schon geteilten Packs (gleicher Code). */
+    share: (id: string, options: SharePackOptions, update: boolean, onProgress: (p: ExportProgress) => void) =>
+      checked(sharePackOutcomeSchema, 'share_pack', { id, options, update, onProgress: channel(onProgress) }),
+    mine: () => checked(myPacksSchema, 'packs_mine'),
+    setDuration: (id: string, duration: PackDuration) => checked(ownPackSchema, 'pack_set_duration', { id, duration }),
+    remove: (id: string) => call<void>('pack_delete', { id }),
+    send: (id: string, friends: string[]) => checked(packSendResultSchema, 'pack_send', { id, friends }),
+    inbox: () => checked(z.array(inboxPackSchema), 'pack_inbox'),
+    dismiss: (id: string) => call<void>('pack_inbox_dismiss', { id }),
+    byCode: (code: string) => checked(sharedPackSchema, 'pack_by_code', { code }),
+    /** Pack laden und prüfen (für „mit/ohne TRS Client“); bleibt für die Installation liegen. */
+    previewCode: (code: string) =>
+      checked(z.object({ pack: sharedPackSchema, preview: z.custom<PackPreview>((v) => typeof v === 'object' && v !== null) }), 'preview_pack_code', { code }),
+    installCode: (code: string, trsClient: boolean | null, onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
+      call<Instance>('install_pack_code', { code, trsClient, onProgress: channel(onProgress), taskId }),
+    links: () => checked(z.array(packLinkSchema), 'pack_links'),
+    unlink: (id: string) => call<void>('pack_unlink', { id }),
+    updates: () => checked(z.array(packUpdateInfoSchema), 'pack_updates'),
+    update: (id: string, onProgress: (p: PackProgress) => void, taskId: string | null = null) =>
+      checked(packUpdateResultSchema, 'update_pack_instance', { id, onProgress: channel(onProgress), taskId }),
   },
 
   /** Sozial: Chat, Bilder, Meldungen, Moderation – alles über den Kern, ohne Token im Webview. */

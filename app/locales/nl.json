@@ -771,6 +771,20 @@
     },
     "applications": {
       "invalidId": "Ongeldige sollicitatie."
+    },
+    "packShare": {
+      "notLinked": "Deze instantie hoort niet bij een gedeeld modpack.",
+      "tooLarge": "Het modpack is groter dan 50 MB – kies minder mappen (bijvoorbeeld zonder resource packs).",
+      "changed": "Het modpack is net veranderd – probeer het opnieuw.",
+      "notFound": "Dit modpack bestaat niet (meer).",
+      "invalidCode": "Dat is geen geldige modpack-code (zoals TRS-XXXX-XXXX).",
+      "limit": "Je deelt al 10 modpacks – verwijder er eerst een bij „Mijn modpacks”.",
+      "dailyLimit": "Je hebt vandaag al 30 modpacks geüpload – probeer het morgen opnieuw.",
+      "storageFull": "De TRS-server heeft nu geen ruimte – probeer het later opnieuw.",
+      "unchanged": "Er is niets veranderd sinds de vorige versie.",
+      "invalidPack": "De server heeft het modpack geweigerd – het is geen geldig Modrinth-pack.",
+      "noRecipients": "Je kunt modpacks alleen naar je vrienden sturen.",
+      "invalidDuration": "Ongeldige duur."
     }
   },
   "browse": {
@@ -1547,7 +1561,8 @@
       "renamed": "Hernoemd",
       "memoryChanged": "Geheugen gewijzigd",
       "javaChanged": "Java gewijzigd",
-      "settingsChanged": "Instellingen gewijzigd"
+      "settingsChanged": "Instellingen gewijzigd",
+      "packUpdated": "Modpack „{name}” bijgewerkt"
     },
     "details": {
       "played": "Gespeeld: {time}",
@@ -1858,7 +1873,8 @@
     "phase": {
       "hashing": "Bestanden controleren",
       "lookup": "Vergelijken met Modrinth",
-      "writing": "Modpack schrijven"
+      "writing": "Modpack schrijven",
+      "uploading": "Uploaden"
     },
     "pickLocation": "Locatie kiezen …",
     "done": "“{file}” geschreven – {downloads} bestanden van Modrinth, {overrides} gekopieerd ({size})"
@@ -3941,6 +3957,13 @@
       "title": "Bestanden kiezen",
       "text": "Open de instantiemap om losse bestanden zoals configs of schematics te versturen.",
       "action": "Naar bestanden"
+    },
+    "pack": {
+      "title": "Modpack delen",
+      "text": "Upload je mods en instellingen en krijg een code en een link – of stuur het pack meteen naar vrienden.",
+      "textShared": "Gedeeld als {code}. Upload een nieuwe versie – iedereen die het heeft geïnstalleerd, krijgt een update.",
+      "action": "Delen …",
+      "actionUpdate": "Nieuwe versie …"
     }
   },
   "social": {
@@ -4275,7 +4298,8 @@
         "image": "Afbeelding melden",
         "player": "Speler melden",
         "group": "Groep melden",
-        "share": "Gedeelde afbeelding melden"
+        "share": "Gedeelde afbeelding melden",
+        "pack": "Modpack melden"
       },
       "intro": "Je meldt {name}. Het TRS-team bekijkt elke melding.",
       "reason": "Reden",
@@ -5002,6 +5026,106 @@
       "title": "Mijn sollicitaties",
       "description": "Je sollicitaties bij het team met status en antwoord.",
       "button": "Tonen"
+    }
+  },
+  "packs": {
+    "needsTrs": "Voor het delen van modpacks heb je de TRS-diensten nodig – zet ze aan bij Instellingen → Privacy.",
+    "expiry": {
+      "never": "Verloopt niet",
+      "until": "Geldig tot {date}"
+    },
+    "duration": {
+      "label": "Code geldig voor",
+      "1d": "1 dag",
+      "7d": "7 dagen",
+      "30d": "30 dagen",
+      "forever": "Onbeperkt",
+      "hint": "Bij wijzigen begint de tijd opnieuw vanaf nu."
+    },
+    "toast": {
+      "sharedTitle": "{name} heeft je een modpack gestuurd",
+      "view": "Bekijken",
+      "updateTitle": "Update voor „{name}”",
+      "updateBody": "Versie {version} staat klaar."
+    },
+    "update": {
+      "available": "Nieuwe versie van „{name}” ({version}) van {owner}.",
+      "keepHint": "Bestanden die je zelf hebt aangepast, blijven zoals ze zijn.",
+      "action": "Bijwerken",
+      "running": "Bijwerken …",
+      "badge": "Update",
+      "done": "„{name}” is bijgewerkt",
+      "doneKept": "„{name}” is bijgewerkt – {count} door jou aangepast bestand is behouden | „{name}” is bijgewerkt – {count} door jou aangepaste bestanden zijn behouden"
+    },
+    "send": {
+      "title": "Naar vrienden sturen",
+      "noFriends": "Je hebt nog geen TRS-vrienden.",
+      "search": "Vrienden zoeken",
+      "sent": "Verstuurd",
+      "sending": "Versturen …",
+      "action": "Naar {count} vriend sturen | Naar {count} vrienden sturen",
+      "done": "„{name}” naar {count} vriend gestuurd | „{name}” naar {count} vrienden gestuurd"
+    },
+    "code": {
+      "label": "Code",
+      "copied": "Gekopieerd",
+      "copyCode": "Code kopiëren",
+      "copyLink": "Link kopiëren",
+      "openPage": "Pagina openen",
+      "open": "Modpack via code",
+      "title": "Modpack via code installeren",
+      "intro": "Voer de code in (TRS-XXXX-XXXX) of plak de link die iemand met je heeft gedeeld.",
+      "check": "Controleren",
+      "checking": "Controleren …",
+      "loadingHint": "Het pack wordt gedownload en gecontroleerd – dit kan even duren.",
+      "invalid": "Dat is geen modpack-code. Hij ziet eruit als TRS-XXXX-XXXX.",
+      "by": "van {name}",
+      "mods": "{n} mod van Modrinth | {n} mods van Modrinth",
+      "files": "{n} instelling of ander bestand | {n} instellingen en andere bestanden",
+      "ownJars": "Bevat {n} modbestand dat niet van Modrinth komt. | Bevat {n} modbestanden die niet van Modrinth komen.",
+      "trust": "Ik vertrouw {name} – pack met deze bestanden installeren",
+      "report": "Melden"
+    },
+    "share": {
+      "title": "Modpack delen",
+      "resultTitle": "Modpack gedeeld",
+      "resultIntro": "„{name}” staat online. Geef de code of link door – of stuur het meteen naar vrienden.",
+      "preparing": "Voorbereiden …",
+      "done": "„{name}” gedeeld – code {code}",
+      "doneUpdate": "Nieuwe versie van „{name}” gedeeld – code {code} blijft",
+      "modeLabel": "Hoe delen",
+      "modeUpdate": "Nieuwe versie van {code}",
+      "modeUpdateHint": "De code blijft hetzelfde – iedereen die het heeft geïnstalleerd, krijgt een update.",
+      "modeNew": "Als nieuw pack delen (nieuwe code)",
+      "included": "Gaat mee (modlijst en instellingen)",
+      "hint": "Mods die op Modrinth staan, gaan alleen als lijst mee; de rest wordt gekopieerd ({size}). Werelden, logs en je TRS Client-bestanden gaan nooit mee. Maximaal 50 MB.",
+      "ownJarsIntro": "Dit bestand staat niet op Modrinth en zou in het pack worden gekopieerd: | Deze bestanden staan niet op Modrinth en zouden in het pack worden gekopieerd:",
+      "ownJarsHint": "Deel alleen mods die je mag doorgeven. Wie het pack installeert, ziet een waarschuwing.",
+      "ownJarsConfirm": "Met deze bestanden delen",
+      "action": "Delen",
+      "actionUpdate": "Nieuwe versie delen",
+      "sharing": "Delen …"
+    },
+    "mine": {
+      "open": "Mijn modpacks",
+      "title": "Mijn modpacks",
+      "empty": "Je hebt nog geen modpack gedeeld. Open een instantie → Delen → Modpack delen.",
+      "limits": "{active} van {max} packs gedeeld · {today} van {perDay} uploads vandaag",
+      "stats": "{installs} installaties · naar {sent} gestuurd",
+      "delete": "Verwijderen",
+      "deleted": "„{name}” verwijderd",
+      "deleteTitle": "„{name}” verwijderen?",
+      "deleteText": "De code en link werken meteen niet meer. Instanties die anderen al hebben geïnstalleerd, blijven op hun pc."
+    },
+    "inbox": {
+      "title": "Naar jou gestuurd",
+      "from": "van {name}",
+      "view": "Bekijken",
+      "dismiss": "„{name}” uit de lijst halen"
+    },
+    "linked": {
+      "shared": "Gedeeld als modpack {code}",
+      "newVersion": "Nieuwe versie delen"
     }
   }
 }

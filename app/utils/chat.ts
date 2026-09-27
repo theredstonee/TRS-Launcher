@@ -6,6 +6,7 @@ import { chatWorldSchema, hostingEventSchemas } from './hosting'
 import { myAppealSchema, mySanctionSchema } from './sanctions'
 import { myApplicationSchema } from './applications'
 import { chatWaypointSchema } from './waypoint'
+import { packEventSchemas } from './packs'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
 // geprüft), und reine Funktionen für Zeitleiste, Vorschauen, Reaktionen,
@@ -250,6 +251,7 @@ export const liveEventSchema = z.discriminatedUnion('type', [
     }),
   }),
   ...hostingEventSchemas,
+  ...packEventSchemas,
 ])
 
 export type ChatReaction = z.infer<typeof chatReactionSchema>
@@ -292,6 +294,7 @@ export type ReportTarget =
   | { kind: 'player'; uuid: string; conversationId?: string }
   | { kind: 'group'; conversationId: string }
   | { kind: 'share'; shareId: string }
+  | { kind: 'pack'; packId: string }
 
 /** Eine Nachricht in der Oberfläche – auch noch nicht bestätigte eigene. */
 export type LocalMessage = ChatMessage & {

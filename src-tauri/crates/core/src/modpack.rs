@@ -76,6 +76,15 @@ impl PackIndex {
             .unwrap_or_else(Loader::vanilla))
     }
 
+    /// Dateien, die der Client bekommt: (Pfad im Spielordner, SHA-1 klein geschrieben).
+    pub(crate) fn client_files(&self) -> Vec<(String, String)> {
+        self.files
+            .iter()
+            .filter(|f| f.env.as_ref().and_then(|e| e.client.as_deref()) != Some("unsupported"))
+            .map(|f| (f.path.clone(), f.hashes.sha1.to_ascii_lowercase()))
+            .collect()
+    }
+
     pub(crate) fn game_version(&self) -> Result<&str> {
         self.dependencies
             .get("minecraft")
@@ -88,7 +97,7 @@ impl PackIndex {
 }
 
 /// Pfade im Pack sind relativ zum Spielordner und dürfen ihn nicht verlassen.
-fn safe_relative(path: &str) -> Option<PathBuf> {
+pub(crate) fn safe_relative(path: &str) -> Option<PathBuf> {
     let ok = !path.is_empty()
         && path.len() <= 260
         && !path.starts_with('/')
@@ -258,7 +267,7 @@ pub(crate) fn override_mod_names(pack: &Path, prefixes: &[&str]) -> Vec<String> 
 }
 
 /// Index und mitgebrachte Mod-Jars einer `.mrpack` (blockierend).
-fn read_index_and_mods(pack: &Path) -> Result<(PackIndex, Vec<String>)> {
+pub(crate) fn read_index_and_mods(pack: &Path) -> Result<(PackIndex, Vec<String>)> {
     Ok((read_index(pack)?, override_mod_names(pack, &["overrides/", "client-overrides/"])))
 }
 

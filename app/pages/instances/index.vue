@@ -9,6 +9,7 @@ const settings = useSettingsStore()
 const meta = useMetaStore()
 const toasts = useToasts()
 const shell = useUiStore()
+const packs = usePacksStore()
 
 const newGroupFor = ref<{ preselect: string | null } | null>(null)
 const toDelete = ref<Instance | null>(null)
@@ -46,6 +47,7 @@ const filterOpen = ref(false)
 const collapsed = ref<Set<string>>(new Set())
 
 onMounted(() => {
+  void packs.checkUpdates()
   instances.load()
   if (!settings.current) settings.load().catch(() => {})
   meta.loadManifest().catch(() => {})
@@ -120,6 +122,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
 <template>
   <div class="p-6">
     <PageHeader :title="t('library.title')" :subtitle="t('library.subtitle')">
+      <button class="btn btn-ghost" @click="packs.openCode()">{{ t('packs.code.open') }}</button>
       <button class="btn btn-ghost" @click="shell.importing = true">{{ t('common.actions.import') }}</button>
       <button v-if="instances.items.length" class="btn btn-ghost" @click="newGroupFor = { preselect: null }">{{ t('library.newGroup') }}</button>
       <button class="btn btn-primary" @click="shell.creating = true">
@@ -127,6 +130,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
         {{ t('library.newInstance') }}
       </button>
     </PageHeader>
+
+    <PackInbox />
 
     <p v-if="instances.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">{{ instances.error }}</p>
 

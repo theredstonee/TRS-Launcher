@@ -26,10 +26,25 @@ How to write an entry:
 ### English
 - Installing a modpack no longer waits for the pack check – click Install right away. If you haven't picked with or
   without TRS Client yet, the launcher chooses as usual (including the check for mods that clash).
+- Share modpacks: Instance → Share → Share modpack uploads your mod list and the settings you pick and gives you a
+  code (TRS-XXXX-XXXX) and a link – or send it straight to friends. You choose how long the code works (1, 7 or 30 days
+  or no expiry). Others install it with Library → “Modpack by code”, from the list “Sent to you” or from the link page.
+- Upload a new version and keep the code: everyone who installed the pack sees “Update” – files they changed themselves
+  stay as they are. Mod files that aren't on Modrinth need a confirmation when sharing and show a warning when installing.
+- Exported modpacks no longer contain the TRS Client itself, its settings or private files such as the clip key.
 
 ### Deutsch
 - Modpacks lassen sich sofort installieren, ohne auf die Prüfung des Packs zu warten. Hast du „mit“ oder „ohne TRS
   Client“ noch nicht gewählt, entscheidet der Launcher wie gewohnt (samt Prüfung auf Mods, die sich beißen).
+- Modpacks teilen: Instanz → Teilen → Modpack teilen lädt deine Mod-Liste und die Einstellungen, die du auswählst,
+  hoch und gibt dir einen Code (TRS-XXXX-XXXX) und einen Link – oder schick es direkt an Freunde. Wie lange der Code
+  gilt, wählst du selbst (1, 7 oder 30 Tage oder unbegrenzt). Andere installieren es über Bibliothek → „Modpack per
+  Code“, über die Liste „An dich geschickt“ oder über die Link-Seite.
+- Neue Version hochladen und den Code behalten: Wer das Pack installiert hat, sieht „Update“ – selbst geänderte Dateien
+  bleiben, wie sie sind. Mod-Dateien, die es nicht auf Modrinth gibt, brauchen beim Teilen eine Bestätigung und zeigen
+  beim Installieren einen Hinweis.
+- Exportierte Modpacks enthalten nicht mehr den TRS Client selbst, seine Einstellungen oder private Dateien wie den
+  Clip-Schlüssel.
 
 ## 0.11.0 – 2026-09-27 – Back Online | Wieder verbunden
 <!-- banner: accent=#3ddc84 motif=/news/0.11.0/banner.png -->

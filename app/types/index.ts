@@ -984,6 +984,7 @@ export type HistoryKind =
   | 'group_changed'
   | 'renamed'
   | 'settings_changed'
+  | 'pack_updated'
 
 export interface HistoryEntry {
   at: string
@@ -1219,7 +1220,7 @@ export interface ExportOptions {
 }
 
 export interface ExportProgress {
-  phase: 'hashing' | 'lookup' | 'writing'
+  phase: 'hashing' | 'lookup' | 'writing' | 'uploading'
   percent: number
 }
 

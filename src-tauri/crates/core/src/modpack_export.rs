@@ -32,6 +32,24 @@ const NEVER: &[&str] = &[
     "launcher_accounts.json",
     "screenshots",
 ];
+/// Nie im Pack, auch wenn der Ordner gewählt ist: Dateien, die der Launcher für den TRS Client selbst verwaltet
+/// (Mod, Einstellungen, Farben, Schlüssel – der Empfänger wählt den TRS Client selbst) und Dateien mit Geheimnissen.
+fn is_private_file(rel: &Path) -> bool {
+    let parts: Vec<String> = rel
+        .components()
+        .filter_map(|c| match c {
+            std::path::Component::Normal(p) => p.to_str().map(str::to_owned),
+            _ => None,
+        })
+        .collect();
+    let lower: Vec<String> = parts.iter().map(|p| p.to_ascii_lowercase()).collect();
+    let is = |path: &[&str]| lower.len() >= path.len() && lower.iter().zip(path).all(|(a, b)| a == b);
+    crate::instance_files::is_sensitive(&parts)
+        || (lower.len() == 2 && lower[0] == "mods" && (lower[1] == "trsclient.jar" || lower[1] == "trsclient.jar.disabled"))
+        || (lower.len() == 2 && lower[0] == "config" && lower[1] == "trsclient.json")
+        || (lower.len() > 2 && is(&["config", "trsclient"]))
+}
+
 /// Diese Ordner werden gegen Modrinth geprüft (dort liegen Downloads).
 const LOOKUP_DIRS: &[&str] = &["mods", "resourcepacks", "shaderpacks", "datapacks"];
 
@@ -70,6 +88,8 @@ pub enum ExportPhase {
     Lookup,
     /// `.mrpack` schreiben.
     Writing,
+    /// Zum TRS-Server hochladen (Modpack teilen).
+    Uploading,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -187,10 +207,13 @@ fn plan_files(game_dir: &Path, include: &[String]) -> Result<Vec<(PathBuf, u64)>
         }
         if meta.is_dir() {
             collect_dir(&path, &PathBuf::from(name), &mut |rel, len| {
+                if is_private_file(&rel) {
+                    return;
+                }
                 total += len;
                 files.push((rel, len));
             });
-        } else if meta.is_file() {
+        } else if meta.is_file() && !is_private_file(Path::new(name)) {
             total += meta.len();
             files.push((PathBuf::from(name), meta.len()));
         }
@@ -568,6 +591,25 @@ mod tests {
         assert!(plan_files(&game, &["logs".into()]).is_err());
         assert!(plan_files(&game, &["../../geheim".into()]).is_err());
         assert!(plan_files(&game, &["mods/../logs".into()]).is_err());
+    }
+
+    #[test]
+    fn plan_leaves_out_trs_client_files_and_secrets() {
+        let dir = tempfile::tempdir().unwrap();
+        let game = game_dir_with_files(dir.path());
+        std::fs::create_dir_all(game.join("config/trsclient")).unwrap();
+        for f in ["mods/trsclient.jar", "mods/TRSClient.jar.disabled", "config/trsclient.json", "config/trsclient/clips.json",
+            "config/trsclient/hud.json", "config/my_accounts.json", "config/sodium.json"]
+        {
+            std::fs::write(game.join(f), b"x").unwrap();
+        }
+        let files = plan_files(&game, &["mods".into(), "config".into()]).unwrap();
+        let names: Vec<String> = files.iter().map(|(p, _)| pack_path(p)).collect();
+        assert!(names.contains(&"config/sodium.json".to_owned()));
+        assert!(names.contains(&"mods/bekannt.jar".to_owned()));
+        for hidden in ["trsclient.jar", "TRSClient.jar.disabled", "config/trsclient.json", "config/trsclient/", "my_accounts.json"] {
+            assert!(!names.iter().any(|n| n.contains(hidden)), "{hidden} darf nicht ins Pack: {names:?}");
+        }
     }
 
     #[test]

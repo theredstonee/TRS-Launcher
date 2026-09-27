@@ -54,6 +54,9 @@ pub enum ReportTarget {
     /// Geteilter Screenshot (§23).
     #[serde(rename_all = "camelCase")]
     Share { share_id: String },
+    /// Geteiltes Modpack (§27).
+    #[serde(rename_all = "camelCase")]
+    Pack { pack_id: String },
 }
 
 /// Eine neue Meldung vom Webview.
@@ -95,6 +98,13 @@ impl NewReport {
                 }
                 body["kind"] = json!("share");
                 body["shareId"] = json!(share_id);
+            }
+            ReportTarget::Pack { pack_id } => {
+                if !super::packs::pack_id(pack_id) {
+                    return Err(invalid(crate::msg!("packShare.notFound", "Dieses Modpack gibt es nicht (mehr).")));
+                }
+                body["kind"] = json!("pack");
+                body["packId"] = json!(pack_id);
             }
         }
         if let Some(note) = self.note.as_deref().map(str::trim).filter(|n| !n.is_empty()) {

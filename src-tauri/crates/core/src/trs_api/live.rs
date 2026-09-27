@@ -220,6 +220,12 @@ pub enum LiveEvent {
     /// Einstellungen/Spielerzahl einer sichtbaren Welt, oder eine neue Welt eines Freundes.
     HostingRoomUpdated { room: Box<Room> },
     HostingRoomClosed { room_id: String, reason: String },
+    /// Ein Freund hat dir ein Modpack geschickt (§27.4).
+    PackShared { pack: Box<super::packs::SharedPack>, from: UserRef, sent_at: Option<String> },
+    /// Ein Pack in deiner Liste hat eine neue Version.
+    PackUpdated { pack: Box<super::packs::SharedPack> },
+    /// Ein Pack in deiner Liste wurde gelöscht.
+    PackRemoved { pack_id: String },
 }
 
 #[derive(Deserialize)]
@@ -295,6 +301,12 @@ struct D {
     appeal: Option<MyAppeal>,
     #[serde(default)]
     application: Option<serde_json::Value>,
+    #[serde(default)]
+    pack: Option<super::packs::ApiPack>,
+    #[serde(default)]
+    pack_id: Option<String>,
+    #[serde(default)]
+    sent_at: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -342,6 +354,11 @@ fn room(id: Option<String>) -> Option<String> {
 
 fn time(t: Option<String>) -> Option<String> {
     t.map(|t| validate::text(&t, 40)).filter(|t| !t.is_empty())
+}
+
+/// Links in Pack-Ereignissen: nur zur echten API (ohne Launcher-Zustand).
+fn live_pack(raw: super::packs::ApiPack) -> Option<Box<super::packs::SharedPack>> {
+    raw.cleaned(&super::KNOWN_BASES, super::DEFAULT_BASE).map(|(p, ..)| Box::new(p))
 }
 
 /// Wandelt ein Ereignis der API in ein gesäubertes [`LiveEvent`]. Unbekannte
@@ -469,6 +486,9 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
             room_id: room(d.room_id)?,
             reason: d.reason.filter(|r| hosting::CLOSE_REASONS.contains(&r.as_str())).unwrap_or_else(|| "closed".into()),
         },
+        "pack_shared" => LiveEvent::PackShared { pack: live_pack(d.pack?)?, from: clean_user(d.from?)?, sent_at: time(d.sent_at) },
+        "pack_updated" => LiveEvent::PackUpdated { pack: live_pack(d.pack?)? },
+        "pack_removed" => LiveEvent::PackRemoved { pack_id: d.pack_id.filter(|id| super::packs::pack_id(id))? },
         _ => return None,
     })
 }

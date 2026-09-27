@@ -38,6 +38,7 @@ pub mod meta;
 pub mod modcompat;
 pub mod modpack;
 pub mod modpack_export;
+pub mod pack_share;
 pub mod modrinth;
 pub mod news;
 pub mod nbt;
@@ -722,7 +723,7 @@ impl Launcher {
         history::list(&self.paths, &instance.id).await
     }
 
-    fn is_preparing(&self, id: &str) -> bool {
+    pub(crate) fn is_preparing(&self, id: &str) -> bool {
         self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).contains(id)
     }
 

@@ -49,6 +49,9 @@ function rememberedTab(): Tab | null {
   }
 }
 const tab = ref<Tab>('content')
+/** „Neue Version teilen“ aus dem Hinweis über den Tabs. */
+const sharingPack = ref(false)
+
 function selectTab(next: Tab, focus = false) {
   tab.value = next
   try {
@@ -245,6 +248,8 @@ function openFolder() {
           </button>
         </div>
 
+        <PackUpdateNotice :instance-id="instance.id" @share="sharingPack = true" />
+        <SharePackDialog v-if="sharingPack" :instance="instance" @close="sharingPack = false" />
         <ChangeVersionDialog v-if="changingVersion" :instance="instance" @close="changingVersion = false" @changed="onUpdated" />
         <InstanceSettingsDialog
           v-if="settingsOpen"

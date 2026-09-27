@@ -9,6 +9,8 @@ const emit = defineEmits<{ delete: [instance: Instance]; move: [group: string | 
 
 const games = useGamesStore()
 const game = computed(() => games.state(props.instance.id))
+/** Neue Version des geteilten Modpacks, aus dem die Instanz stammt. */
+const packUpdate = computed(() => usePacksStore().updateOf(props.instance.id))
 const menu = ref<'main' | 'groups' | null>(null)
 
 const percent = computed(() =>
@@ -70,6 +72,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
 
       <span v-if="game.phase === 'running'" class="badge absolute top-2 left-2 bg-lamp-400 text-base-950">
         <span class="size-1.5 animate-lamp rounded-full bg-base-950" />{{ t('common.status.running') }}
+      </span>
+      <span v-else-if="packUpdate" class="badge absolute top-2 left-2 bg-base-950/85 text-lamp-300" :title="t('packs.update.available', { name: packUpdate.latest.name, version: packUpdate.latest.packVersion, owner: packUpdate.latest.owner.name })">
+        {{ t('packs.update.badge') }}
       </span>
 
       <!-- Das Instanz-Bild sitzt auf der Kante des Banners. -->

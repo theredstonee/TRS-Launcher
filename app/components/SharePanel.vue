@@ -8,6 +8,13 @@ const emit = defineEmits<{ navigate: [tab: 'worlds' | 'screenshots' | 'logs' | '
 
 const tasks = useTasksStore()
 const exporting = ref(false)
+const sharingPack = ref(false)
+const packs = usePacksStore()
+const sharedLink = computed(() => {
+  const l = packs.linkOf(props.instance.id)
+  return l?.role === 'shared' ? l : null
+})
+onMounted(() => void packs.loadLinks())
 const sharingLog = ref(false)
 const exportTask = computed(() => tasks.get(taskKey('export', props.instance.id)))
 
@@ -22,6 +29,15 @@ interface Card {
   busy?: boolean
 }
 const cards = computed<Card[]>(() => [
+  {
+    key: 'pack',
+    title: t('share.pack.title'),
+    text: sharedLink.value ? t('share.pack.textShared', { code: sharedLink.value.code }) : t('share.pack.text'),
+    icon: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+    tone: 'text-redstone-400',
+    action: sharedLink.value ? t('share.pack.actionUpdate') : t('share.pack.action'),
+    run: () => (sharingPack.value = true),
+  },
   {
     key: 'modpack',
     title: t('share.modpack.title'),
@@ -64,7 +80,10 @@ const cards = computed<Card[]>(() => [
 
 <template>
   <div class="min-h-0 flex-1 overflow-y-auto pr-1 pb-4">
-    <p class="mb-4 max-w-2xl text-sm text-base-400">{{ t('share.intro') }}</p>
+    <div class="mb-4 flex flex-wrap items-start gap-3">
+      <p class="max-w-2xl flex-1 text-sm text-base-400">{{ t('share.intro') }}</p>
+      <button class="btn btn-ghost ml-auto px-3 py-1.5 text-xs" @click="packs.mineOpen = true">{{ t('packs.mine.open') }}</button>
+    </div>
     <ul class="grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-3">
       <li v-for="c in cards" :key="c.key" class="card card-hover flex flex-col p-4">
         <div class="mb-3 flex items-center gap-3">
@@ -74,10 +93,11 @@ const cards = computed<Card[]>(() => [
           <h3 class="font-medium text-base-50">{{ c.title }}</h3>
         </div>
         <p class="flex-1 text-sm text-base-400">{{ c.text }}</p>
-        <button class="btn mt-4 self-start px-3 py-1.5 text-xs" :class="c.key === 'modpack' ? 'btn-primary' : 'btn-ghost'" :disabled="c.busy" @click="c.run">{{ c.action }}</button>
+        <button class="btn mt-4 self-start px-3 py-1.5 text-xs" :class="c.key === 'pack' ? 'btn-primary' : 'btn-ghost'" :disabled="c.busy" @click="c.run">{{ c.action }}</button>
       </li>
     </ul>
 
+    <SharePackDialog v-if="sharingPack" :instance="instance" @close="sharingPack = false" />
     <ExportPackDialog v-if="exporting" :instance="instance" @close="exporting = false" />
     <LogShareDialog v-if="sharingLog" :instance-id="instance.id" source="live" :label="t('logViewer.latest')" @close="sharingLog = false" />
   </div>

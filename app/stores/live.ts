@@ -75,6 +75,7 @@ export const useLiveStore = defineStore('live', () => {
       hosting.loaded ? hosting.load() : Promise.resolve(),
       useSanctionsStore().load(),
       useApplicationsStore().loaded ? useApplicationsStore().load() : Promise.resolve(),
+      usePacksStore().inboxLoaded ? usePacksStore().loadInbox() : Promise.resolve(),
     ])
   }
 
@@ -196,6 +197,11 @@ export const useLiveStore = defineStore('live', () => {
         return
       case 'application_updated':
         useApplicationsStore().onLiveEvent(e)
+        return
+      case 'pack_shared':
+      case 'pack_updated':
+      case 'pack_removed':
+        usePacksStore().onLiveEvent(e)
         return
       case 'moderation': {
         const until = e.until ? dateTime(e.until) : null
