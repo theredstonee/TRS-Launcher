@@ -710,7 +710,8 @@
       "emptyMessage": "Die Nachricht ist leer.",
       "invalidCursor": "Ungültige Seite.",
       "groupFull": "Eine Gruppe hat höchstens {max} Mitglieder.",
-      "invalidReaction": "Unbekannte Reaktion."
+      "invalidReaction": "Unbekannte Reaktion.",
+      "invalidWaypoint": "Ungültiger Wegpunkt."
     },
     "hosting": {
       "invalidRoom": "Ungültige Welt.",
@@ -759,6 +760,13 @@
       "invalidRole": "Unbekannte Rolle.",
       "invalidRoom": "Ungültige Welt.",
       "emptySearch": "Bitte einen Suchbegriff eingeben."
+    },
+    "shareLink": {
+      "limit": "Du hast schon 50 geteilte Bilder – lösche zuerst ein altes unter „Meine geteilten Bilder“.",
+      "dailyLimit": "Heute hast du schon 20 Bilder geteilt – morgen geht es weiter.",
+      "storageFull": "Der TRS-Server hat gerade keinen Platz – bitte später erneut versuchen.",
+      "notFound": "Dieses geteilte Bild gibt es nicht (mehr).",
+      "invalidId": "Ungültiger Link."
     }
   },
   "browse": {
@@ -2578,7 +2586,8 @@
       "title": "TRS-Dienste sind ausgeschaltet",
       "friends": "Für die Freundesliste meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "capes": "Für TRS-Umhänge meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
-      "button": "Mehr erfahren & einschalten"
+      "button": "Mehr erfahren & einschalten",
+      "shares": "Um Screenshots als Link zu teilen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
     },
     "account": {
       "title": "Kein Account angemeldet",
@@ -2601,6 +2610,7 @@
       "capes": "gewählter Umhang, eingelöste Codes und hochgeladene Umhang-Bilder",
       "friends": "Freunde, Anfragen und Blockierungen",
       "chat": "Chat-Nachrichten, gesendete Bilder und Meldungen – verschlüsselt auf dem Server, bis sie gelöscht werden; gemeldete Inhalte werden für die Moderation aufbewahrt",
+      "shares": "Screenshots, die du als Link teilst – öffentlich für jeden mit dem Link, nach 30 Tagen automatisch gelöscht",
       "settings": "deine Datenschutz-Einstellungen und Zeitpunkte (Anmeldung, Erstellung)",
       "sync": "bei eingeschalteter Synchronisation: deine eigenen Skins (Bilder und Namen), deine eigenen Presets sowie Theme, Akzentfarbe und Sprache – damit sie auf all deinen PCs gleich sind; der TRS Client synchronisiert seine Module, HUD-Layouts und Tasten ebenso (Schalter im TRS-Menü)",
       "presence": "der Online-Status (Launcher offen / im Spiel, Version, auf Wunsch der Server) – nur im Arbeitsspeicher, er verfällt nach 3 Minuten"
@@ -3136,7 +3146,9 @@
       "deleteMessage": "Nachricht löschen",
       "dismiss": "Abweisen",
       "resolve": "Erledigt",
-      "related": "Weitere Meldungen zu diesem Spieler"
+      "related": "Weitere Meldungen zu diesem Spieler",
+      "waypoint": "Wegpunkt „{name}“: {coords} ({dimension})",
+      "deleteShare": "Geteiltes Bild löschen"
     }
   },
   "whatsNew": {
@@ -4019,7 +4031,8 @@
         "message": "Nachricht melden",
         "image": "Bild melden",
         "player": "Spieler melden",
-        "group": "Gruppe melden"
+        "group": "Gruppe melden",
+        "share": "Geteiltes Bild melden"
       },
       "intro": "Du meldest {name}. Das TRS-Team prüft jede Meldung.",
       "reason": "Grund",
@@ -4079,6 +4092,19 @@
       "openChat": "Chat öffnen",
       "reply": "Antworten",
       "replyPlaceholder": "Schnell antworten …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Wegpunkt",
+      "copy": "Koordinaten kopieren",
+      "copyTitle": "Kopiert „x y z“ in die Zwischenablage",
+      "copied": "Koordinaten {coords} kopiert",
+      "singleplayer": "Einzelspielerwelt",
+      "dimensions": {
+        "overworld": "Oberwelt",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4575,6 +4601,37 @@
         "player": "Notizen",
         "hosting": "Welten"
       }
+    }
+  },
+  "shareLink": {
+    "share": "Als Link teilen",
+    "shareTitle": "Lädt diesen Screenshot hoch und kopiert einen öffentlichen Link (30 Tage gültig)",
+    "sharing": "Wird geteilt …",
+    "myShares": "Meine geteilten Bilder",
+    "needConsent": "Links teilen braucht die TRS-Dienste – sie sind ausgeschaltet.",
+    "turnOn": "Einschalten",
+    "needAccount": "Melde dich zuerst mit deinem Minecraft-Konto an, um Links zu teilen.",
+    "open": "Öffnen",
+    "copyLink": "Link kopieren",
+    "openInBrowser": "Im Browser öffnen",
+    "toasts": {
+      "copied": "Link kopiert – {days} Tage gültig",
+      "ready": "Link erstellt, aber Kopieren ging nicht – du findest ihn unter „Meine geteilten Bilder“.",
+      "copiedAgain": "Link kopiert",
+      "deleted": "Link gelöscht – das Bild ist weg"
+    },
+    "dialog": {
+      "title": "Meine geteilten Bilder",
+      "intro": "Jeder mit dem Link sieht das Bild – ohne deinen Namen. Links löschen sich nach 30 Tagen selbst; hier kannst du sie vorher löschen.",
+      "active": "{n} von {max} Links aktiv",
+      "today": "{n} von {max} heute geteilt",
+      "empty": "Du hast noch keine Bilder geteilt. Nutze „Als Link teilen“ bei einem Screenshot.",
+      "expiresIn": "Läuft in {days} Tag ab | Läuft in {days} Tagen ab",
+      "expiresToday": "Läuft heute ab"
+    },
+    "deleteDialog": {
+      "title": "Link löschen?",
+      "text": "Das Bild wird vom TRS-Server entfernt und der Link funktioniert nicht mehr. Dein Screenshot auf diesem PC bleibt."
     }
   }
 }

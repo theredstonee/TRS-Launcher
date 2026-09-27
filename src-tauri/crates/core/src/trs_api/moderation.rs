@@ -51,6 +51,9 @@ pub enum ReportTarget {
     Player { uuid: String, #[serde(default)] conversation_id: Option<String> },
     #[serde(rename_all = "camelCase")]
     Group { conversation_id: String },
+    /// Geteilter Screenshot (§23).
+    #[serde(rename_all = "camelCase")]
+    Share { share_id: String },
 }
 
 /// Eine neue Meldung vom Webview.
@@ -86,6 +89,13 @@ impl NewReport {
                 body["kind"] = json!("group");
                 body["conversationId"] = json!(conversation_arg(conversation_id)?);
             }
+            ReportTarget::Share { share_id } => {
+                if !super::share::share_id(share_id) {
+                    return Err(invalid(crate::msg!("shareLink.invalidId", "Ungültiger Link.")));
+                }
+                body["kind"] = json!("share");
+                body["shareId"] = json!(share_id);
+            }
         }
         if let Some(note) = self.note.as_deref().map(str::trim).filter(|n| !n.is_empty()) {
             let note = chat_text(note, usize::MAX);
@@ -114,7 +124,7 @@ pub struct MyReport {
     pub updated_at: Option<String>,
 }
 
-const KINDS: [&str; 4] = ["message", "image", "player", "group"];
+const KINDS: [&str; 5] = ["message", "image", "player", "group", "share"];
 const REASONS: [&str; 6] = ["insult_hate", "spam", "inappropriate", "scam_phishing", "harassment", "other"];
 const STATUSES: [&str; 3] = ["open", "in_review", "resolved"];
 
@@ -328,7 +338,7 @@ pub struct ReportAction {
 impl ReportAction {
     fn body(&self) -> Result<Value> {
         let action = self.action.as_str();
-        if !matches!(action, "delete_message" | "warn" | "mute" | "ban" | "sanction" | "dismiss" | "resolve") {
+        if !matches!(action, "delete_message" | "delete_share" | "warn" | "mute" | "ban" | "sanction" | "dismiss" | "resolve") {
             return Err(invalid(crate::msg!("reports.invalidAction", "Unbekannte Entscheidung.")));
         }
         let mut body = json!({ "action": action });
@@ -598,6 +608,21 @@ impl Launcher {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shared_screenshots_can_be_reported_and_deleted() {
+        let r: NewReport = serde_json::from_value(json!({ "target": { "kind": "share", "shareId": "Qm9vLWJhei1xdXV4LTEyMw" }, "reason": "inappropriate" }))
+            .unwrap();
+        assert_eq!(r.body().unwrap(), json!({ "kind": "share", "shareId": "Qm9vLWJhei1xdXV4LTEyMw", "reason": "inappropriate" }));
+        let bad: NewReport =
+            serde_json::from_value(json!({ "target": { "kind": "share", "shareId": "../x" }, "reason": "spam" })).unwrap();
+        assert!(bad.body().is_err());
+        assert_eq!(ReportAction { action: "delete_share".into(), ..Default::default() }.body().unwrap(), json!({ "action": "delete_share" }));
+        let q = ReportQuery { kind: Some("share".into()), ..Default::default() };
+        assert!(q.path().unwrap().contains("&kind=share"));
+        let mine: MyReport = serde_json::from_value(json!({ "id": "r0123456789abcdef", "kind": "share", "reason": "spam", "status": "open" })).unwrap();
+        assert!(mine.cleaned().is_some());
+    }
 
     #[test]
     fn report_bodies() {

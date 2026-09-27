@@ -710,7 +710,8 @@
       "emptyMessage": "Het bericht is leeg.",
       "invalidCursor": "Ongeldige pagina.",
       "groupFull": "Een groep kan maximaal {max} leden hebben.",
-      "invalidReaction": "Onbekende reactie."
+      "invalidReaction": "Onbekende reactie.",
+      "invalidWaypoint": "Ongeldig waypoint."
     },
     "hosting": {
       "invalidRoom": "Ongeldige wereld.",
@@ -759,6 +760,13 @@
       "invalidRole": "Onbekende rol.",
       "invalidRoom": "Ongeldige wereld.",
       "emptySearch": "Voer een zoekterm in."
+    },
+    "shareLink": {
+      "limit": "Je hebt al 50 gedeelde afbeeldingen – verwijder eerst een oude onder “Mijn gedeelde afbeeldingen”.",
+      "dailyLimit": "Je hebt vandaag al 20 afbeeldingen gedeeld – probeer het morgen opnieuw.",
+      "storageFull": "De TRS-server heeft nu geen ruimte – probeer het later opnieuw.",
+      "notFound": "Deze gedeelde afbeelding bestaat niet (meer).",
+      "invalidId": "Ongeldige link."
     }
   },
   "browse": {
@@ -2578,7 +2586,8 @@
       "title": "TRS-diensten zijn uitgeschakeld",
       "friends": "Om je vriendenlijst te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
       "capes": "Om TRS-capes te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
-      "button": "Meer info & inschakelen"
+      "button": "Meer info & inschakelen",
+      "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft."
     },
     "account": {
       "title": "Geen account ingelogd",
@@ -2601,6 +2610,7 @@
       "capes": "je gekozen cape, ingewisselde codes en geüploade cape-afbeeldingen",
       "friends": "vrienden, verzoeken en blokkeringen",
       "chat": "chatberichten, afbeeldingen die je verstuurt en meldingen – versleuteld op de server bewaard tot ze worden verwijderd; gemelde inhoud wordt bewaard voor moderatie",
+      "shares": "screenshots die je als link deelt – openbaar voor iedereen met de link, na 30 dagen automatisch verwijderd",
       "settings": "je privacy-instellingen en tijdstempels (inloggen, aanmaken)",
       "sync": "als synchroniseren aan staat: je eigen skins (afbeeldingen en namen), je eigen presets en je thema, accentkleur en taal – zodat ze op al je pc’s gelijk zijn; de TRS Client synchroniseert zijn modules, HUD-indelingen en toetsen op dezelfde manier (schakelaar in het TRS-menu)",
       "presence": "je onlinestatus (launcher open / in het spel, versie en, als je dat wilt, de server) – alleen in het geheugen bewaard, verloopt na 3 minuten"
@@ -3136,7 +3146,9 @@
       "deleteMessage": "Bericht verwijderen",
       "dismiss": "Afwijzen",
       "resolve": "Afhandelen",
-      "related": "Andere meldingen over deze speler"
+      "related": "Andere meldingen over deze speler",
+      "waypoint": "Waypoint “{name}”: {coords} ({dimension})",
+      "deleteShare": "Gedeelde afbeelding verwijderen"
     }
   },
   "whatsNew": {
@@ -4019,7 +4031,8 @@
         "message": "Bericht melden",
         "image": "Afbeelding melden",
         "player": "Speler melden",
-        "group": "Groep melden"
+        "group": "Groep melden",
+        "share": "Gedeelde afbeelding melden"
       },
       "intro": "Je meldt {name}. Het TRS-team bekijkt elke melding.",
       "reason": "Reden",
@@ -4079,6 +4092,19 @@
       "openChat": "Chat openen",
       "reply": "Beantwoorden",
       "replyPlaceholder": "Snel antwoord …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Waypoint",
+      "copy": "Coördinaten kopiëren",
+      "copyTitle": "Kopieert “x y z” naar het klembord",
+      "copied": "Coördinaten {coords} gekopieerd",
+      "singleplayer": "Singleplayer-wereld",
+      "dimensions": {
+        "overworld": "Bovenwereld",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4575,6 +4601,37 @@
         "player": "Notities",
         "hosting": "Werelden"
       }
+    }
+  },
+  "shareLink": {
+    "share": "Delen als link",
+    "shareTitle": "Uploadt deze screenshot en kopieert een openbare link (30 dagen geldig)",
+    "sharing": "Bezig met delen …",
+    "myShares": "Mijn gedeelde afbeeldingen",
+    "needConsent": "Links delen heeft de TRS-diensten nodig – die staan uit.",
+    "turnOn": "Inschakelen",
+    "needAccount": "Meld je eerst aan met je Minecraft-account om links te delen.",
+    "open": "Openen",
+    "copyLink": "Link kopiëren",
+    "openInBrowser": "Openen in browser",
+    "toasts": {
+      "copied": "Link gekopieerd – {days} dagen geldig",
+      "ready": "Link gemaakt, maar kopiëren lukte niet – je vindt hem onder “Mijn gedeelde afbeeldingen”.",
+      "copiedAgain": "Link gekopieerd",
+      "deleted": "Link verwijderd – de afbeelding is weg"
+    },
+    "dialog": {
+      "title": "Mijn gedeelde afbeeldingen",
+      "intro": "Iedereen met de link ziet de afbeelding – zonder je naam. Links verwijderen zichzelf na 30 dagen; hier kun je ze eerder verwijderen.",
+      "active": "{n} van {max} links actief",
+      "today": "{n} van {max} vandaag gedeeld",
+      "empty": "Je hebt nog geen afbeeldingen gedeeld. Gebruik “Delen als link” bij een screenshot.",
+      "expiresIn": "Verloopt over {days} dag | Verloopt over {days} dagen",
+      "expiresToday": "Verloopt vandaag"
+    },
+    "deleteDialog": {
+      "title": "Link verwijderen?",
+      "text": "De afbeelding wordt van de TRS-server verwijderd en de link werkt niet meer. Je screenshot op deze pc blijft."
     }
   }
 }

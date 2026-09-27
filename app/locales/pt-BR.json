@@ -710,7 +710,8 @@
       "emptyMessage": "A mensagem está vazia.",
       "invalidCursor": "Página inválida.",
       "groupFull": "Um grupo pode ter no máximo {max} membros.",
-      "invalidReaction": "Reação desconhecida."
+      "invalidReaction": "Reação desconhecida.",
+      "invalidWaypoint": "Ponto de referência inválido."
     },
     "hosting": {
       "invalidRoom": "Mundo inválido.",
@@ -759,6 +760,13 @@
       "invalidRole": "Cargo desconhecido.",
       "invalidRoom": "Mundo inválido.",
       "emptySearch": "Digite um termo de busca."
+    },
+    "shareLink": {
+      "limit": "Você já tem 50 imagens compartilhadas – exclua uma antiga em “Minhas imagens compartilhadas” primeiro.",
+      "dailyLimit": "Você já compartilhou 20 imagens hoje – tente de novo amanhã.",
+      "storageFull": "O servidor TRS está sem espaço agora – tente mais tarde.",
+      "notFound": "Esta imagem compartilhada não existe (mais).",
+      "invalidId": "Link inválido."
     }
   },
   "browse": {
@@ -2578,7 +2586,8 @@
       "title": "Os serviços TRS estão desativados",
       "friends": "Para mostrar sua lista de amigos, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
       "capes": "Para mostrar as capas TRS, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
-      "button": "Saiba mais e ative"
+      "button": "Saiba mais e ative",
+      "shares": "Para compartilhar capturas como link, o launcher entra no servidor TRS. Isso só acontece depois que você concordar."
     },
     "account": {
       "title": "Nenhuma conta conectada",
@@ -2601,6 +2610,7 @@
       "capes": "sua capa selecionada, códigos resgatados e imagens de capa enviadas",
       "friends": "amigos, solicitações e bloqueios",
       "chat": "mensagens do chat, imagens que você envia e denúncias – guardadas criptografadas no servidor até serem apagadas; o conteúdo denunciado é mantido para a moderação",
+      "shares": "capturas que você compartilha como link – públicas para quem tiver o link, apagadas automaticamente após 30 dias",
       "settings": "suas configurações de privacidade e datas (login, criação)",
       "sync": "com a sincronização ativada: suas próprias skins (imagens e nomes), seus próprios presets e seu tema, cor de destaque e idioma – para que fiquem iguais em todos os seus PCs; o TRS Client sincroniza do mesmo jeito seus módulos, layouts de HUD e teclas (chave no menu TRS)",
       "presence": "seu status online (launcher aberto / no jogo, versão e, se você quiser, o servidor) – mantido só na memória, expira após 3 minutos"
@@ -3136,7 +3146,9 @@
       "deleteMessage": "Apagar mensagem",
       "dismiss": "Rejeitar",
       "resolve": "Concluir",
-      "related": "Outras denúncias sobre este jogador"
+      "related": "Outras denúncias sobre este jogador",
+      "waypoint": "Ponto “{name}”: {coords} ({dimension})",
+      "deleteShare": "Excluir imagem compartilhada"
     }
   },
   "whatsNew": {
@@ -4019,7 +4031,8 @@
         "message": "Denunciar mensagem",
         "image": "Denunciar imagem",
         "player": "Denunciar jogador",
-        "group": "Denunciar grupo"
+        "group": "Denunciar grupo",
+        "share": "Denunciar imagem compartilhada"
       },
       "intro": "Você está denunciando {name}. A equipe da TRS analisa cada denúncia.",
       "reason": "Motivo",
@@ -4079,6 +4092,19 @@
       "openChat": "Abrir chat",
       "reply": "Responder",
       "replyPlaceholder": "Resposta rápida …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Ponto de referência",
+      "copy": "Copiar coordenadas",
+      "copyTitle": "Copia “x y z” para a área de transferência",
+      "copied": "Coordenadas {coords} copiadas",
+      "singleplayer": "Mundo single player",
+      "dimensions": {
+        "overworld": "Superfície",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4575,6 +4601,37 @@
         "player": "Anotações",
         "hosting": "Mundos"
       }
+    }
+  },
+  "shareLink": {
+    "share": "Compartilhar como link",
+    "shareTitle": "Envia esta captura e copia um link público (válido por 30 dias)",
+    "sharing": "Compartilhando …",
+    "myShares": "Minhas imagens compartilhadas",
+    "needConsent": "Compartilhar links precisa dos serviços TRS – eles estão desativados.",
+    "turnOn": "Ativar",
+    "needAccount": "Entre primeiro com sua conta do Minecraft para compartilhar links.",
+    "open": "Abrir",
+    "copyLink": "Copiar link",
+    "openInBrowser": "Abrir no navegador",
+    "toasts": {
+      "copied": "Link copiado – válido por {days} dias",
+      "ready": "Link criado, mas não foi possível copiá-lo – ele está em “Minhas imagens compartilhadas”.",
+      "copiedAgain": "Link copiado",
+      "deleted": "Link excluído – a imagem sumiu"
+    },
+    "dialog": {
+      "title": "Minhas imagens compartilhadas",
+      "intro": "Qualquer pessoa com o link vê a imagem – sem o seu nome. Os links se apagam sozinhos após 30 dias; aqui você pode apagá-los antes.",
+      "active": "{n} de {max} links ativos",
+      "today": "{n} de {max} compartilhadas hoje",
+      "empty": "Você ainda não compartilhou imagens. Use “Compartilhar como link” em uma captura.",
+      "expiresIn": "Expira em {days} dia | Expira em {days} dias",
+      "expiresToday": "Expira hoje"
+    },
+    "deleteDialog": {
+      "title": "Excluir link?",
+      "text": "A imagem é removida do servidor TRS e o link para de funcionar. Sua captura neste PC continua."
     }
   }
 }

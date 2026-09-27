@@ -66,6 +66,8 @@ export const icons = {
   filter: 'M4 5h16l-6 7v6l-4 2v-8z',
   key: 'M8 14a4 4 0 1 1 3.5-6l8.5.1V11h-2v2h-2v-2h-4.5A4 4 0 0 1 8 14zM7 10h.01',
   list: 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01',
+  pin: 'M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
 } as const
 
 export type IconName = keyof typeof icons

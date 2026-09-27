@@ -141,14 +141,14 @@ pub fn prepare(bytes: Vec<u8>) -> Result<PreparedImage> {
     Err(invalid(crate::msg!("chatImage.fileTooLarge", "Die Datei ist zu groß.")))
 }
 
-fn encode_png(img: &image::DynamicImage) -> Result<Vec<u8>> {
+pub(crate) fn encode_png(img: &image::DynamicImage) -> Result<Vec<u8>> {
     let mut out = Cursor::new(Vec::new());
     img.write_to(&mut out, image::ImageFormat::Png)
         .map_err(|_| invalid(crate::msg!("chatImage.broken", "Das Bild ist beschädigt.")))?;
     Ok(out.into_inner())
 }
 
-fn encode_jpeg(img: &image::DynamicImage, quality: u8) -> Result<Vec<u8>> {
+pub(crate) fn encode_jpeg(img: &image::DynamicImage, quality: u8) -> Result<Vec<u8>> {
     let mut out = Vec::new();
     let rgb = img.to_rgb8();
     image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, quality)
@@ -606,7 +606,8 @@ impl Launcher {
                 Some((bytes, mime)) => ok(&bytes, mime, "no-store"),
                 None => Response::status(404),
             },
-            ["e", report, id] if report_id(report) && attachment_id(id) => match self.evidence_image(report, id).await {
+            // Beweisbild: Chat-Bild oder (Meldung eines geteilten Screenshots, §23) dessen Kopie.
+            ["e", report, id] if report_id(report) && (attachment_id(id) || super::share::share_id(id)) => match self.evidence_image(report, id).await {
                 Ok((bytes, mime)) => ok(&bytes, mime, "no-store"),
                 Err(e) => failed(e),
             },

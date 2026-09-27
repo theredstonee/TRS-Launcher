@@ -16,6 +16,7 @@ function message(seq: number, sender = BOB, extra: Partial<ChatMessage> = {}): C
     text: `Text ${seq}`,
     invite: null,
     world: null,
+    waypoint: null,
     attachments: [],
     replyTo: null,
     system: null,

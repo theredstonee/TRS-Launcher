@@ -710,7 +710,8 @@
       "emptyMessage": "Mesaj boş.",
       "invalidCursor": "Geçersiz sayfa.",
       "groupFull": "Bir grupta en fazla {max} üye olabilir.",
-      "invalidReaction": "Bilinmeyen tepki."
+      "invalidReaction": "Bilinmeyen tepki.",
+      "invalidWaypoint": "Geçersiz yol noktası."
     },
     "hosting": {
       "invalidRoom": "Geçersiz dünya.",
@@ -759,6 +760,13 @@
       "invalidRole": "Bilinmeyen rol.",
       "invalidRoom": "Geçersiz dünya.",
       "emptySearch": "Lütfen bir arama terimi gir."
+    },
+    "shareLink": {
+      "limit": "Zaten 50 paylaşılan resmin var – önce “Paylaştığım resimler” altında eski birini sil.",
+      "dailyLimit": "Bugün zaten 20 resim paylaştın – yarın tekrar dene.",
+      "storageFull": "TRS sunucusunda şu an yer yok – lütfen daha sonra tekrar dene.",
+      "notFound": "Bu paylaşılan resim yok (artık).",
+      "invalidId": "Geçersiz bağlantı."
     }
   },
   "browse": {
@@ -2578,7 +2586,8 @@
       "title": "TRS hizmetleri kapalı",
       "friends": "Arkadaş listeni göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
       "capes": "TRS pelerinlerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
-      "button": "Daha fazla bilgi ve aç"
+      "button": "Daha fazla bilgi ve aç",
+      "shares": "Ekran görüntülerini bağlantı olarak paylaşmak için başlatıcı TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur."
     },
     "account": {
       "title": "Giriş yapılmış hesap yok",
@@ -2601,6 +2610,7 @@
       "capes": "seçtiğin pelerin, kullandığın kodlar ve yüklediğin pelerin görselleri",
       "friends": "arkadaşlar, istekler ve engellemeler",
       "chat": "sohbet mesajları, gönderdiğin resimler ve şikâyetler – silinene kadar sunucuda şifreli saklanır; şikâyet edilen içerik moderasyon için tutulur",
+      "shares": "bağlantı olarak paylaştığın ekran görüntüleri – bağlantıya sahip herkese açık, 30 gün sonra otomatik silinir",
       "settings": "gizlilik ayarların ve zaman damgaları (giriş, oluşturma)",
       "sync": "eşitleme açıksa: kendi skinlerin (görseller ve adlar), kendi hazır ayarların ile temanı, vurgu rengini ve dilini – tüm bilgisayarlarında aynı olsunlar diye; TRS Client da modüllerini, HUD düzenlerini ve tuşlarını aynı şekilde eşitler (TRS menüsündeki anahtar)",
       "presence": "çevrimiçi durumun (launcher açık / oyunda, sürüm ve istersen sunucu) – yalnızca bellekte tutulur, 3 dakika sonra sona erer"
@@ -3136,7 +3146,9 @@
       "deleteMessage": "Mesajı sil",
       "dismiss": "Reddet",
       "resolve": "Tamamla",
-      "related": "Bu oyuncu hakkındaki diğer şikâyetler"
+      "related": "Bu oyuncu hakkındaki diğer şikâyetler",
+      "waypoint": "Yol noktası “{name}”: {coords} ({dimension})",
+      "deleteShare": "Paylaşılan resmi sil"
     }
   },
   "whatsNew": {
@@ -4019,7 +4031,8 @@
         "message": "Mesajı şikâyet et",
         "image": "Resmi şikâyet et",
         "player": "Oyuncuyu şikâyet et",
-        "group": "Grubu şikâyet et"
+        "group": "Grubu şikâyet et",
+        "share": "Paylaşılan resmi bildir"
       },
       "intro": "Şikâyet edilen: {name}. TRS ekibi her şikâyeti inceler.",
       "reason": "Sebep",
@@ -4079,6 +4092,19 @@
       "openChat": "Sohbeti aç",
       "reply": "Yanıtla",
       "replyPlaceholder": "Hızlı yanıt …"
+    },
+    "waypoint": {
+      "summary": "📍 {name}",
+      "reply": "Yol noktası",
+      "copy": "Koordinatları kopyala",
+      "copyTitle": "“x y z” panoya kopyalanır",
+      "copied": "{coords} koordinatları kopyalandı",
+      "singleplayer": "Tek oyunculu dünya",
+      "dimensions": {
+        "overworld": "Yüzey",
+        "nether": "Nether",
+        "end": "End"
+      }
     }
   },
   "sanctions": {
@@ -4575,6 +4601,37 @@
         "player": "Notlar",
         "hosting": "Dünyalar"
       }
+    }
+  },
+  "shareLink": {
+    "share": "Bağlantı olarak paylaş",
+    "shareTitle": "Bu ekran görüntüsünü yükler ve herkese açık bir bağlantı kopyalar (30 gün geçerli)",
+    "sharing": "Paylaşılıyor …",
+    "myShares": "Paylaştığım resimler",
+    "needConsent": "Bağlantı paylaşmak TRS hizmetlerini gerektirir – kapalılar.",
+    "turnOn": "Aç",
+    "needAccount": "Bağlantı paylaşmak için önce Minecraft hesabınla giriş yap.",
+    "open": "Aç",
+    "copyLink": "Bağlantıyı kopyala",
+    "openInBrowser": "Tarayıcıda aç",
+    "toasts": {
+      "copied": "Bağlantı kopyalandı – {days} gün geçerli",
+      "ready": "Bağlantı oluşturuldu ama kopyalanamadı – “Paylaştığım resimler” altında bulabilirsin.",
+      "copiedAgain": "Bağlantı kopyalandı",
+      "deleted": "Bağlantı silindi – resim artık yok"
+    },
+    "dialog": {
+      "title": "Paylaştığım resimler",
+      "intro": "Bağlantıya sahip herkes resmi görür – adın olmadan. Bağlantılar 30 gün sonra kendiliğinden silinir; burada daha önce silebilirsin.",
+      "active": "{max} bağlantıdan {n} tanesi etkin",
+      "today": "Bugün {max} resimden {n} tanesi paylaşıldı",
+      "empty": "Henüz resim paylaşmadın. Bir ekran görüntüsünde “Bağlantı olarak paylaş”ı kullan.",
+      "expiresIn": "{days} gün içinde sona erer | {days} gün içinde sona erer",
+      "expiresToday": "Bugün sona erer"
+    },
+    "deleteDialog": {
+      "title": "Bağlantı silinsin mi?",
+      "text": "Resim TRS sunucusundan kaldırılır ve bağlantı çalışmaz. Bu bilgisayardaki ekran görüntün kalır."
     }
   }
 }

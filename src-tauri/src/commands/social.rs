@@ -244,6 +244,27 @@ pub async fn chat_upload(
     Ok(launcher.chat_upload(&source).await?)
 }
 
+// --- Screenshots als Link teilen (§23) -------------------------------------------------
+
+#[tauri::command]
+pub async fn share_screenshot(
+    launcher: State<'_, LauncherState>,
+    instance_id: String,
+    file_name: String,
+) -> CommandResult<trs_core::trs_api::share::SharedImage> {
+    Ok(launcher.share_screenshot(&instance_id, &file_name).await?)
+}
+
+#[tauri::command]
+pub async fn shares_list(launcher: State<'_, LauncherState>) -> CommandResult<trs_core::trs_api::share::SharesPage> {
+    Ok(launcher.shares_list().await?)
+}
+
+#[tauri::command]
+pub async fn share_delete(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    Ok(launcher.share_delete(&id).await?)
+}
+
 #[tauri::command]
 pub async fn screenshot_favorites(launcher: State<'_, LauncherState>) -> CommandResult<Vec<String>> {
     Ok(launcher.screenshot_favorites().await)

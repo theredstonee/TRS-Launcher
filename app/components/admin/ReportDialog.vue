@@ -195,6 +195,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
                   <p v-if="msg.kind === 'system'" class="text-xs text-base-400 italic">{{ t('admin.mod.system', { event: systemLabel(msg.system?.event) }) }}</p>
                   <p v-if="msg.text" class="msg-text">{{ msg.text }}</p>
                   <p v-if="msg.invite" class="text-xs text-lamp-300">{{ t('admin.mod.invite', { address: msg.invite.address }) }}</p>
+                  <p v-if="msg.waypoint" class="text-xs text-lamp-300">
+                    {{ t('admin.mod.waypoint', { name: msg.waypoint.name, coords: `${msg.waypoint.x} ${msg.waypoint.y} ${msg.waypoint.z}`, dimension: msg.waypoint.dimension }) }}
+                  </p>
                   <p v-if="msg.attachments.length" class="text-xs text-base-400">{{ t('admin.mod.images', msg.attachments.length) }}</p>
                 </li>
               </ol>
@@ -296,6 +299,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
               <div class="mt-4 grid grid-cols-2 gap-2">
                 <button v-if="report.messageId" class="btn btn-danger col-span-2 text-sm" :disabled="busy" data-testid="mod-delete" @click="act('delete_message')">
                   <SocialIcon name="trash" class="size-4" />{{ t('admin.mod.deleteMessage') }}
+                </button>
+                <button v-if="report.kind === 'share' && report.shareId" class="btn btn-danger col-span-2 text-sm" :disabled="busy" data-testid="mod-delete-share" @click="act('delete_share')">
+                  <SocialIcon name="trash" class="size-4" />{{ t('admin.mod.deleteShare') }}
                 </button>
                 <button
                   class="btn btn-ghost col-span-2 text-sm"

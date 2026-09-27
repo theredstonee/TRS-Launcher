@@ -25,7 +25,7 @@ fn modified(meta: &std::fs::Metadata) -> Option<DateTime<Utc>> {
     meta.modified().ok().map(DateTime::<Utc>::from)
 }
 
-fn is_plain_file_name(name: &str, extension: &str) -> bool {
+pub(crate) fn is_plain_file_name(name: &str, extension: &str) -> bool {
     !name.is_empty()
         && name.len() <= 200
         && !name.starts_with('.')
