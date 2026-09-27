@@ -27,7 +27,6 @@ import net.minecraft.item.ItemMap;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.ScreenShotHelper;
 import net.minecraft.world.storage.MapData;
 import net.minecraftforge.client.event.EntityViewRenderEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
@@ -44,7 +43,6 @@ import net.minecraft.item.EnumDyeColor;
 import net.minecraft.util.NonNullList;
 *///?}
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -160,10 +158,9 @@ public final class LegacyComfort {
 				rotated = false;
 			}
 			if (capture.wantsFrame()) {
-				int w = mc.displayWidth, h = mc.displayHeight;
-				BufferedImage img = ScreenShotHelper.createScreenshot(w, h, mc.getFramebuffer());
-				int[] argb = img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
-				capture.frame(argb, img.getWidth(), img.getHeight());
+				int[] size = new int[2];
+				int[] argb = readFrame(mc, size);
+				capture.frame(argb, size[0], size[1]);
 			}
 			if (capture.finished()) endCapture(mc);
 		} catch (RuntimeException e) {
@@ -171,6 +168,36 @@ public final class LegacyComfort {
 			capture.cancel(e.toString());
 			endCapture(mc);
 		}
+	}
+
+	/** Bild des Hauptpuffers als ARGB (Zeilen von oben) – wie Vanillas Screenshot, in allen Versionen 1.8.9–1.12.2. */
+	private static int[] readFrame(Minecraft mc, int[] size) {
+		net.minecraft.client.shader.Framebuffer fb = mc.getFramebuffer();
+		boolean useFb = net.minecraft.client.renderer.OpenGlHelper.isFramebufferEnabled() && fb != null;
+		int texW = useFb ? fb.framebufferTextureWidth : mc.displayWidth;
+		int texH = useFb ? fb.framebufferTextureHeight : mc.displayHeight;
+		int w = useFb ? fb.framebufferWidth : mc.displayWidth;
+		int h = useFb ? fb.framebufferHeight : mc.displayHeight;
+		java.nio.IntBuffer buf = org.lwjgl.BufferUtils.createIntBuffer(texW * texH);
+		org.lwjgl.opengl.GL11.glPixelStorei(org.lwjgl.opengl.GL11.GL_PACK_ALIGNMENT, 1);
+		org.lwjgl.opengl.GL11.glPixelStorei(org.lwjgl.opengl.GL11.GL_UNPACK_ALIGNMENT, 1);
+		if (useFb) {
+			GlStateManager.bindTexture(fb.framebufferTexture);
+			org.lwjgl.opengl.GL11.glGetTexImage(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, 0, 32993, 33639, buf);
+		} else {
+			org.lwjgl.opengl.GL11.glReadPixels(0, 0, texW, texH, 32993, 33639, buf);
+		}
+		int[] raw = new int[texW * texH];
+		buf.get(raw);
+		// Zeilen von unten (OpenGL) → von oben; nur der benutzte Bereich des Puffers.
+		int[] out = new int[w * h];
+		for (int y = 0; y < h; y++) {
+			System.arraycopy(raw, (h - 1 - y) * texW, out, y * w, w);
+		}
+		for (int i = 0; i < out.length; i++) out[i] |= 0xFF000000;
+		size[0] = w;
+		size[1] = h;
+		return out;
 	}
 
 	private void endCapture(Minecraft mc) {

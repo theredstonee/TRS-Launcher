@@ -137,6 +137,8 @@ public final class TrsClient {
 				client.modules.qol.autoReconnect, client.modules.qol.queueAlerts, client.modules.qol.scoreboard,
 				client.modules.qol.tabPing, client.modules.qol.bossBar, client.modules.qol.titles, client.modules.qol.warnings,
 				client.modules.qol.itemCounter, client.modules.qol.hitFeedback, client.modules.qol.streamer));
+		// Komfort-Paket 2: Tooltips und Panorama sind für diese Version nicht umgesetzt (Server-Profile laufen).
+		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.comfort.tooltips, client.modules.comfort.panorama));
 		client.version =ModList.get().getModContainerById(MOD_ID)
 				.map(c -> c.getModInfo().getVersion().toString()).orElse("?");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
@@ -207,6 +209,7 @@ public final class TrsClient {
 			return;
 		}
 		migrateKeys(mc);
+		tickServerProfiles(mc);
 		while (TrsKeys.hudProfile.isPressed()) {
 			String name = modules.profiles.cycle();
 			if (mc.ingameGUI != null) mc.ingameGUI.setOverlayMessage(I18n.tr("toast.hudProfile", name), false);
@@ -456,6 +459,23 @@ public final class TrsClient {
 		modules.keyDefaults.markMigrated();
 		saveConfig();
 	}
+
+	/** Server-Profile (Komfort-Paket 2): Kontext je Tick, bei Wechsel Meldung + Speichern. */
+	private void tickServerProfiles(Minecraft mc) {
+		if (!serverProfilesInstalled) {
+			serverProfilesInstalled = true;
+			dev.theredstonee.trsclient.core.comfort.Comfort.install(modules, mc.gameDir.toPath(), false);
+		}
+		boolean inWorld = mc.world != null && mc.player != null;
+		net.minecraft.client.multiplayer.ServerData data = inWorld && !mc.isSingleplayer() ? mc.getCurrentServerData() : null;
+		String message = dev.theredstonee.trsclient.core.comfort.Comfort.tickProfiles(modules,
+				dev.theredstonee.trsclient.core.comfort.Comfort.context(inWorld, mc.isSingleplayer(), data == null ? null : data.serverIP));
+		if (message == null) return;
+		if (!message.isEmpty() && inWorld && mc.ingameGUI != null) mc.ingameGUI.setOverlayMessage(message, false);
+		saveConfig();
+	}
+
+	private boolean serverProfilesInstalled;
 
 	public void saveConfig() {
 		if (config == null) return;

@@ -127,6 +127,9 @@ public final class ComfortTest {
 				shot(mc, "comfort-sword");
 				hover = -1;
 				mc.displayGuiScreen(null);
+				//? if >=1.11 {
+				/*mc.ingameGUI.getChatGUI().clearChatMessages(false);
+				*///?} else
 				mc.ingameGUI.getChatGUI().clearChatMessages();
 				modules.fps.setEnabled(true);
 				modules.coords.setEnabled(true);
@@ -183,6 +186,9 @@ public final class ComfortTest {
 		GuiInventory gui = (GuiInventory) mc.currentScreen;
 		net.minecraft.inventory.Slot slot = gui.inventorySlots.inventorySlots.get(index);
 		int left = (gui.width - 176) / 2, top = (gui.height - 166) / 2;
+		//? if >=1.10.2 {
+		/*int gx = left + slot.xPos + 8, gy = top + slot.yPos + 8;
+		*///?} else
 		int gx = left + slot.xDisplayPosition + 8, gy = top + slot.yDisplayPosition + 8;
 		ScaledResolution res = Mc.scaledResolution();
 		int px = gx * mc.displayWidth / res.getScaledWidth();
