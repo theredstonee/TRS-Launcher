@@ -21,6 +21,22 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+
+- **Log filters you can combine.** In an instance's Logs tab, Errors, Warnings, Info and Debug are now switches: turn
+  on as many as you like (for example only errors and warnings). New buttons "TRS" and "Chat" show only lines of the
+  TRS Client or chat messages, and work together with the levels and the search. "All" shows everything again. Works
+  for the live log and for older log files.
+
+### Deutsch
+
+- **Log-Filter, die sich kombinieren lassen.** Im Reiter „Logs“ einer Instanz sind Fehler, Warnungen, Info und Debug
+  jetzt Schalter: Schalte beliebig viele an (zum Beispiel nur Fehler und Warnungen). Neue Knöpfe „TRS“ und „Chat“
+  zeigen nur Zeilen des TRS Client bzw. Chat-Nachrichten und wirken zusammen mit den Stufen und der Suche. „Alle“
+  zeigt wieder alles. Gilt für den Live-Log und für ältere Log-Dateien.
+
 ## 0.10.0 – 2026-09-27 – Toolbox | Werkzeugkasten
 <!-- banner: accent=#ff9f1c motif=/news/0.10.0/banner.png -->
 <!-- shots:

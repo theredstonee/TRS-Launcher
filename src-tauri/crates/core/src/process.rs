@@ -867,7 +867,7 @@ mod tests {
     use crate::gamelog::Level;
 
     fn line(msg: &str) -> LogLine {
-        LogLine { time: 0, level: Level::Error, thread: None, message: msg.into() }
+        LogLine { time: 0, level: Level::Error, thread: None, logger: None, message: msg.into() }
     }
 
     #[test]

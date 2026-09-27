@@ -3768,7 +3768,10 @@
       "all": "Todo",
       "error": "Errores",
       "warn": "Avisos",
-      "info": "Info"
+      "info": "Info",
+      "debug": "Depuración",
+      "trs": "TRS",
+      "chat": "Chat"
     },
     "expandAll": "Desplegar todas las trazas",
     "collapseAll": "Plegar todas las trazas",
@@ -3789,7 +3792,12 @@
     "toBottom": "Ir al final",
     "following": "Siguiendo en vivo",
     "loading": "Cargando …",
-    "shortcut": "Ctrl+F para buscar"
+    "shortcut": "Ctrl+F para buscar",
+    "sourceFilter": "Solo líneas de",
+    "trsHint": "Solo líneas del TRS Client",
+    "chatHint": "Solo mensajes del chat",
+    "allHint": "Volver a mostrar todo",
+    "nothingSelected": "Ningún nivel seleccionado: pulsa uno de los botones de arriba."
   },
   "logShare": {
     "qrLabel": "Código QR del enlace",

@@ -3768,7 +3768,10 @@
       "all": "Tudo",
       "error": "Erros",
       "warn": "Avisos",
-      "info": "Info"
+      "info": "Info",
+      "debug": "Debug",
+      "trs": "TRS",
+      "chat": "Chat"
     },
     "expandAll": "Expandir todos os stack traces",
     "collapseAll": "Recolher todos os stack traces",
@@ -3789,7 +3792,12 @@
     "toBottom": "Ir para o fim",
     "following": "Acompanhando ao vivo",
     "loading": "Carregando …",
-    "shortcut": "Ctrl+F para pesquisar"
+    "shortcut": "Ctrl+F para pesquisar",
+    "sourceFilter": "Só linhas de",
+    "trsHint": "Só linhas do TRS Client",
+    "chatHint": "Só mensagens do chat",
+    "allHint": "Mostrar tudo de novo",
+    "nothingSelected": "Nenhum nível selecionado – clique em um dos botões acima."
   },
   "logShare": {
     "qrLabel": "QR code do link",

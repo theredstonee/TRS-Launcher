@@ -7,7 +7,38 @@
 // ändert. Anhängen ist inkrementell – nur neue Zeilen werden gefiltert.
 import type { LogLevel, LogLine } from '../types'
 
-export type LevelFilter = 'all' | 'error' | 'warn' | 'info'
+/** Stufen-Gruppen der Filterknöpfe (Trace zählt zu Debug, Fatal zu Fehler). */
+export type LevelKey = 'error' | 'warn' | 'info' | 'debug'
+/** Herkunft: Zeilen des TRS Client bzw. Chat-Nachrichten. */
+export type SourceKey = 'trs' | 'chat'
+export const LEVEL_KEYS: readonly LevelKey[] = ['error', 'warn', 'info', 'debug']
+export const SOURCE_KEYS: readonly SourceKey[] = ['trs', 'chat']
+
+/**
+ * Mehrfach-Filter: angeklickte Stufen (ODER) und – wenn welche angeklickt sind – nur diese Herkünfte (ODER);
+ * Stufen und Herkünfte werden kombiniert (UND). Keine Herkunft gewählt = alle Zeilen.
+ */
+export interface LogFilter {
+  levels: ReadonlySet<LevelKey>
+  sources: ReadonlySet<SourceKey>
+}
+
+/** Frühere Einzelauswahl – für Aufrufer, die nur eine Stufe wollen. */
+export type LevelFilter = 'all' | LevelKey
+
+export function allFilter(): LogFilter {
+  return { levels: new Set(LEVEL_KEYS), sources: new Set() }
+}
+
+export function toFilter(f: LevelFilter | LogFilter): LogFilter {
+  if (typeof f !== 'string') return f
+  return { levels: new Set(f === 'all' ? LEVEL_KEYS : [f]), sources: new Set() }
+}
+
+/** Zeigt der Filter alles (alle Stufen, keine Herkunft)? */
+export function isAllFilter(f: LogFilter): boolean {
+  return f.sources.size === 0 && LEVEL_KEYS.every((l) => f.levels.has(l))
+}
 
 export interface LogEntry {
   /** Unix-ms (Live-Log bzw. log4j-XML); sonst `null`. */
@@ -20,8 +51,12 @@ export interface LogEntry {
   message: string
   /** Folgezeilen: Stacktrace, „Caused by“ … (eingeklappt). */
   detail: string[]
+  /** Logger-Name (Live-Log aus log4j-XML bzw. Datei-Präfix), sonst `null`. */
+  logger?: string | null
   /** Kleingeschriebener Suchtext – erst bei der ersten Suche berechnet. */
   lower?: string
+  /** Herkunft (TRS/Chat) – erst bei Bedarf berechnet. */
+  source?: SourceKey | null
 }
 
 /** Eine Zeile der virtualisierten Liste: Eintrag + Folgezeile (-1 = Kopfzeile). */
@@ -35,7 +70,12 @@ export interface LevelCounts {
   error: number
   warn: number
   info: number
+  debug: number
+  trs: number
+  chat: number
 }
+
+const emptyCounts = (): LevelCounts => ({ all: 0, error: 0, warn: 0, info: 0, debug: 0, trs: 0, chat: 0 })
 
 /** Höchstens so viele Einträge hält die Ansicht (älteste fliegen raus). */
 export const MAX_ENTRIES = 150_000
@@ -78,11 +118,28 @@ export function parseLevel(raw: string): LogLevel | null {
   return LEVELS[raw.trim().toUpperCase()] ?? null
 }
 
-/** Zu welchem Filter gehört eine Stufe? */
-export function levelGroup(level: LogLevel): Exclude<LevelFilter, 'all'> {
+/** Zu welchem Stufen-Knopf gehört eine Stufe? */
+export function levelGroup(level: LogLevel): LevelKey {
   if (level === 'error' || level === 'fatal') return 'error'
   if (level === 'warn') return 'warn'
+  if (level === 'debug' || level === 'trace') return 'debug'
   return 'info'
+}
+
+// Feste Muster: TRS Client (Logger „TRS Client“, Forge-Paketname, Fabric-Präfix „(TRS Client)“) und
+// Minecraft-Chat („[CHAT] …“, auch „[System] [CHAT] …“ oder „[Not Secure] [CHAT] …“).
+const TRS_MESSAGE = /^\((?:TRS Client|trsclient)\)|^\[TRS[ \]]/
+const CHAT_MESSAGE = /^(?:\[[^\]]{1,20}\] )?\[CHAT\] /
+
+/** Herkunft eines Eintrags: `trs`, `chat` oder `null`. */
+export function entrySource(entry: LogEntry): SourceKey | null {
+  if (entry.source !== undefined) return entry.source
+  const logger = entry.logger ?? ''
+  let src: SourceKey | null = null
+  if (logger === 'TRS Client' || logger.startsWith('dev.theredstonee.trsclient') || TRS_MESSAGE.test(entry.message)) src = 'trs'
+  else if (CHAT_MESSAGE.test(entry.message)) src = 'chat'
+  entry.source = src
+  return src
 }
 
 /**
@@ -101,7 +158,7 @@ export function isContinuation(line: string): boolean {
 // `[12:34:56] [Render thread/INFO]: …`
 // `[25Sep2026 12:34:56.123] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: …`
 // `[12:34:56] [main/INFO] (FabricLoader/GameProvider) …`
-const HEADER = /^\[([^\]]{1,40})\] \[([^\]]{0,200})\/([A-Za-z]{3,13})\](?: \[[^\]]{0,200}\])?:? ?(.*)$/
+const HEADER = /^\[([^\]]{1,40})\] \[([^\]]{0,200})\/([A-Za-z]{3,13})\](?: \[([^\]]{0,200})\])?:? ?(.*)$/
 // java.util.logging (vor 1.7): `2013-01-01 12:00:00 [INFO] …` oder `[INFO] …`
 const LEGACY = /^(?:(\d{4}-\d{2}-\d{2} )?(\d{1,2}:\d{2}:\d{2}) )?(?:\[[A-Z]+\] )?\[(SEVERE|WARNING|INFO|FINE|FINER|FINEST|CONFIG)\] ?(.*)$/
 
@@ -110,9 +167,9 @@ function clockOf(raw: string): string | null {
   return m ? m[1]! : null
 }
 
-function makeEntry(level: LogLevel, message: string, thread: string | null = null, time: number | null = null, clock: string | null = null): LogEntry {
+function makeEntry(level: LogLevel, message: string, thread: string | null = null, time: number | null = null, clock: string | null = null, logger: string | null = null): LogEntry {
   const lines = cleanText(message).split(/\r?\n/)
-  return { time, clock, level, thread, message: lines[0] ?? '', detail: lines.slice(1).filter((l) => l.trim() !== '') }
+  return { time, clock, level, thread, logger, message: lines[0] ?? '', detail: lines.slice(1).filter((l) => l.trim() !== '') }
 }
 
 /** Eine Zeile einer Log-Datei → Eintrag bzw. `null`, wenn sie an den vorigen gehört. */
@@ -122,7 +179,7 @@ export function parseTextLine(raw: string, fallback: LogLevel = 'info'): LogEntr
   const m = HEADER.exec(line)
   if (m) {
     const level = parseLevel(m[3]!)
-    if (level) return makeEntry(level, m[4] ?? '', m[2] || null, null, clockOf(m[1]!))
+    if (level) return makeEntry(level, m[5] ?? '', m[2] || null, null, clockOf(m[1]!), m[4] ? m[4].replace(/\/[A-Z]*$/, '') : null)
   }
   const legacy = LEGACY.exec(line)
   if (legacy) return makeEntry(parseLevel(legacy[3]!) ?? fallback, legacy[4] ?? '', null, null, legacy[2] ?? null)
@@ -156,12 +213,12 @@ export function parseXmlEvent(xml: string): LogEntry {
   const throwable = xmlCdata(xml, 'Throwable')
   if (throwable?.trim()) message += `\n${throwable.trimEnd()}`
   const stamp = Number(xmlAttr(xml, 'timestamp'))
-  return makeEntry(parseLevel(xmlAttr(xml, 'level') ?? '') ?? 'info', message, xmlAttr(xml, 'thread'), Number.isFinite(stamp) && stamp > 0 ? stamp : null)
+  return makeEntry(parseLevel(xmlAttr(xml, 'level') ?? '') ?? 'info', message, xmlAttr(xml, 'thread'), Number.isFinite(stamp) && stamp > 0 ? stamp : null, null, xmlAttr(xml, 'logger'))
 }
 
 /** Live-Zeile aus dem Kern → Eintrag (Throwable steht nach einem Zeilenumbruch in `message`). */
 export function fromLogLine(line: LogLine): LogEntry {
-  return makeEntry(line.level, line.message, line.thread, line.time)
+  return makeEntry(line.level, line.message, line.thread, line.time, null, line.logger ?? null)
 }
 
 /**
@@ -261,8 +318,13 @@ function haystack(entry: LogEntry): string {
   return (entry.lower ??= (entry.detail.length ? `${entry.message}\n${entry.detail.join('\n')}` : entry.message).toLowerCase())
 }
 
-export function entryMatches(entry: LogEntry, level: LevelFilter, needle: string): boolean {
-  if (level !== 'all' && levelGroup(entry.level) !== level) return false
+export function entryMatches(entry: LogEntry, filter: LevelFilter | LogFilter, needle: string): boolean {
+  const f = toFilter(filter)
+  if (!f.levels.has(levelGroup(entry.level))) return false
+  if (f.sources.size) {
+    const src = entrySource(entry)
+    if (!src || !f.sources.has(src)) return false
+  }
   return !needle || haystack(entry).includes(needle)
 }
 
@@ -272,20 +334,20 @@ export function entryMatches(entry: LogEntry, level: LevelFilter, needle: string
 export class LogModel {
   entries: LogEntry[] = []
   rows: LogRow[] = []
-  counts: LevelCounts = { all: 0, error: 0, warn: 0, info: 0 }
+  counts: LevelCounts = emptyCounts()
   /** Anzahl Treffer (Einträge) für den aktuellen Filter. */
   visibleEntries = 0
-  private level: LevelFilter = 'all'
+  private level: LogFilter = allFilter()
   private needle = ''
   private expanded = new Set<LogEntry>()
 
-  get filter(): { level: LevelFilter; needle: string } {
+  get filter(): { level: LogFilter; needle: string } {
     return { level: this.level, needle: this.needle }
   }
 
   /** Filter setzen und alles neu berechnen. */
-  setFilter(level: LevelFilter, search: string): void {
-    this.level = level
+  setFilter(level: LevelFilter | LogFilter, search: string): void {
+    this.level = toFilter(level)
     this.needle = search.trim().toLowerCase().slice(0, 200)
     this.rebuild()
   }
@@ -294,7 +356,7 @@ export class LogModel {
     this.entries = []
     this.rows = []
     this.expanded.clear()
-    this.counts = { all: 0, error: 0, warn: 0, info: 0 }
+    this.counts = emptyCounts()
     this.visibleEntries = 0
   }
 
@@ -351,10 +413,12 @@ export class LogModel {
   private count(entry: LogEntry, delta: number): void {
     this.counts.all += delta
     this.counts[levelGroup(entry.level)] += delta
+    const src = entrySource(entry)
+    if (src) this.counts[src] += delta
   }
 
   rebuild(): void {
-    this.counts = { all: 0, error: 0, warn: 0, info: 0 }
+    this.counts = emptyCounts()
     const rows: LogRow[] = []
     let visible = 0
     for (let i = 0; i < this.entries.length; i++) {

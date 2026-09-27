@@ -3768,7 +3768,10 @@
       "all": "Alle",
       "error": "Fehler",
       "warn": "Warnungen",
-      "info": "Info"
+      "info": "Info",
+      "debug": "Debug",
+      "trs": "TRS",
+      "chat": "Chat"
     },
     "expandAll": "Alle Stacktraces aufklappen",
     "collapseAll": "Alle Stacktraces zuklappen",
@@ -3789,7 +3792,12 @@
     "toBottom": "Nach unten",
     "following": "Läuft live mit",
     "loading": "Lädt …",
-    "shortcut": "Strg+F zum Suchen"
+    "shortcut": "Strg+F zum Suchen",
+    "sourceFilter": "Nur Zeilen von",
+    "trsHint": "Nur Zeilen des TRS Client",
+    "chatHint": "Nur Chat-Nachrichten",
+    "allHint": "Wieder alles zeigen",
+    "nothingSelected": "Keine Stufe ausgewählt – klick oben einen der Knöpfe an."
   },
   "logShare": {
     "qrLabel": "QR-Code des Links",

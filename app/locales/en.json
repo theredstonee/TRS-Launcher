@@ -3768,7 +3768,10 @@
       "all": "All",
       "error": "Errors",
       "warn": "Warnings",
-      "info": "Info"
+      "info": "Info",
+      "debug": "Debug",
+      "trs": "TRS",
+      "chat": "Chat"
     },
     "expandAll": "Expand all stack traces",
     "collapseAll": "Collapse all stack traces",
@@ -3789,7 +3792,12 @@
     "toBottom": "Jump to bottom",
     "following": "Following live",
     "loading": "Loading …",
-    "shortcut": "Ctrl+F to search"
+    "shortcut": "Ctrl+F to search",
+    "sourceFilter": "Only lines from",
+    "trsHint": "Only lines of the TRS Client",
+    "chatHint": "Only chat messages",
+    "allHint": "Show everything again",
+    "nothingSelected": "No level selected – click one of the buttons above."
   },
   "logShare": {
     "qrLabel": "QR code of the link",

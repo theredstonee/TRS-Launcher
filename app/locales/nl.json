@@ -3768,7 +3768,10 @@
       "all": "Alles",
       "error": "Fouten",
       "warn": "Waarschuwingen",
-      "info": "Info"
+      "info": "Info",
+      "debug": "Debug",
+      "trs": "TRS",
+      "chat": "Chat"
     },
     "expandAll": "Alle stacktraces uitklappen",
     "collapseAll": "Alle stacktraces inklappen",
@@ -3789,7 +3792,12 @@
     "toBottom": "Naar beneden",
     "following": "Live meevolgen",
     "loading": "Laden …",
-    "shortcut": "Ctrl+F om te zoeken"
+    "shortcut": "Ctrl+F om te zoeken",
+    "sourceFilter": "Alleen regels van",
+    "trsHint": "Alleen regels van de TRS Client",
+    "chatHint": "Alleen chatberichten",
+    "allHint": "Weer alles tonen",
+    "nothingSelected": "Geen niveau gekozen – klik hierboven op een van de knoppen."
   },
   "logShare": {
     "qrLabel": "QR-code van de link",

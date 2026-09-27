@@ -3768,7 +3768,10 @@
       "all": "Tümü",
       "error": "Hatalar",
       "warn": "Uyarılar",
-      "info": "Bilgi"
+      "info": "Bilgi",
+      "debug": "Hata ayıklama",
+      "trs": "TRS",
+      "chat": "Sohbet"
     },
     "expandAll": "Tüm yığın izlerini aç",
     "collapseAll": "Tüm yığın izlerini kapat",
@@ -3789,7 +3792,12 @@
     "toBottom": "En alta git",
     "following": "Canlı takip",
     "loading": "Yükleniyor …",
-    "shortcut": "Aramak için Ctrl+F"
+    "shortcut": "Aramak için Ctrl+F",
+    "sourceFilter": "Yalnızca şu satırlar",
+    "trsHint": "Yalnızca TRS Client satırları",
+    "chatHint": "Yalnızca sohbet mesajları",
+    "allHint": "Yeniden her şeyi göster",
+    "nothingSelected": "Seviye seçilmedi – yukarıdaki düğmelerden birine tıkla."
   },
   "logShare": {
     "qrLabel": "Bağlantının QR kodu",

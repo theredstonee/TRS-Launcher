@@ -487,7 +487,7 @@ async fn analyzes_after_exit_saves_and_reports() {
     let sink: crate::process::EventSink = Arc::new(move |e: GameEvent| sink_events.lock().unwrap().push(e));
     let ctx = CrashContext {
         crash_id: "20260926-215844-00ab".into(),
-        lines: vec![LogLine { time: 0, level: Level::Error, thread: None, message: "Setting user: Steve".into() }],
+        lines: vec![LogLine { time: 0, level: Level::Error, thread: None, logger: None, message: "Setting user: Steve".into() }],
         started_at: chrono::Utc::now() - chrono::Duration::minutes(2),
         exit_code: Some(-1),
         play_seconds: 120,

@@ -5,7 +5,9 @@ import {
   LogTextParser,
   MAX_ENTRIES,
   cleanText,
+  allFilter,
   entryMatches,
+  entrySource,
   highlightMatches,
   isContinuation,
   levelGroup,
@@ -82,7 +84,9 @@ describe('Filter und Suche', () => {
   it('ordnet Stufen den Filtern zu', () => {
     expect(levelGroup('fatal')).toBe('error')
     expect(levelGroup('warn')).toBe('warn')
-    expect(levelGroup('debug')).toBe('info')
+    expect(levelGroup('debug')).toBe('debug')
+    expect(levelGroup('trace')).toBe('debug')
+    expect(levelGroup('info')).toBe('info')
   })
 
   it('sucht ohne RegExp und groß/klein-unabhängig, auch im Stacktrace', () => {
@@ -106,11 +110,55 @@ describe('Filter und Suche', () => {
   })
 })
 
+describe('Mehrfach-Filter (Stufen + TRS/Chat)', () => {
+  const f = (levels: string[], sources: string[] = []) => ({ levels: new Set(levels), sources: new Set(sources) }) as ReturnType<typeof allFilter>
+
+  it('erkennt TRS-Zeilen (Logger, Forge-Präfix, Fabric-Präfix) und Chat', () => {
+    const model = new LogModel()
+    model.appendLines([
+      { ...line('Modul geladen'), logger: 'TRS Client' },
+      line('[CHAT] <Steve> hallo'),
+      line('[System] [CHAT] Du hast Stufe 5 erreicht'),
+      line('Sound engine started'),
+      line('kaputt', 'error'),
+      line('ping', 'debug'),
+    ])
+    expect(model.counts).toEqual({ all: 6, error: 1, warn: 0, info: 4, debug: 1, trs: 1, chat: 2 })
+    expect(entrySource(parseTextLine('[12:00:00] [main/INFO] [TRS Client/]: Start')!)).toBe('trs')
+    expect(entrySource(parseTextLine('[12:00:00] [Render thread/INFO] (TRS Client) Start')!)).toBe('trs')
+    expect(entrySource(parseTextLine('[12:00:00] [Render thread/INFO]: [CHAT] <Alex> hi')!)).toBe('chat')
+    expect(entrySource(parseTextLine('[12:00:00] [Render thread/INFO]: Chat öffnet')!)).toBeNull()
+  })
+
+  it('kombiniert angeklickte Stufen (oder) mit Herkunft (und)', () => {
+    const model = new LogModel()
+    model.appendLines([
+      { ...line('trs info'), logger: 'TRS Client' },
+      { ...line('trs fehler', 'error'), logger: 'TRS Client' },
+      line('[CHAT] hallo'),
+      line('warnung', 'warn'),
+      line('fehler', 'error'),
+      line('debug', 'debug'),
+    ])
+    const shown = () => model.rows.map((r) => model.entries[r.entry]!.message)
+    model.setFilter(f(['error', 'warn']), '')
+    expect(shown()).toEqual(['trs fehler', 'warnung', 'fehler'])
+    model.setFilter(f(['error', 'warn', 'info', 'debug'], ['trs']), '')
+    expect(shown()).toEqual(['trs info', 'trs fehler'])
+    model.setFilter(f(['info'], ['trs', 'chat']), '')
+    expect(shown()).toEqual(['trs info', '[CHAT] hallo'])
+    model.setFilter(f([]), '')
+    expect(shown()).toEqual([])
+    model.setFilter(allFilter(), 'fehler')
+    expect(shown()).toEqual(['trs fehler', 'fehler'])
+  })
+})
+
 describe('LogModel', () => {
   it('zählt Stufen und filtert inkrementell', () => {
     const model = new LogModel()
     model.appendLines([line('a'), line('b', 'warn'), line('c', 'error'), line('d', 'fatal')])
-    expect(model.counts).toEqual({ all: 4, error: 2, warn: 1, info: 1 })
+    expect(model.counts).toEqual({ all: 4, error: 2, warn: 1, info: 1, debug: 0, trs: 0, chat: 0 })
     model.setFilter('error', '')
     expect(model.rows).toHaveLength(2)
     // Neue Zeilen werden nur geprüft, nicht alles neu gebaut.

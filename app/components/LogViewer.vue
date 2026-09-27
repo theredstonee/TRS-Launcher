@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LogLine, LogSource } from '~/types'
-import { LogModel, LogTextParser, highlightMatches, type LevelFilter, type LogEntry, type LogRow } from '~/utils/logview'
+import { LEVEL_KEYS, LogModel, LogTextParser, highlightMatches, isAllFilter, type LevelKey, type LogEntry, type LogFilter, type LogRow, type SourceKey } from '~/utils/logview'
 
 // Log-Tab der Instanzseite: Live-Log des laufenden Spiels oder ältere
 // Log-Dateien/Absturzberichte. Virtualisiert (feste Zeilenhöhe), neue Zeilen
@@ -20,7 +20,9 @@ const source = ref<string>('live')
 const sources = ref<LogSource[]>([])
 const loadingSource = ref(false)
 const truncated = ref(false)
-const level = ref<LevelFilter>('all')
+// Mehrfach-Filter: Stufen an/aus (mindestens eine sinnvoll), TRS/Chat grenzen zusätzlich ein.
+const levels = ref<Set<LevelKey>>(new Set(LEVEL_KEYS))
+const sourcesOn = ref<Set<SourceKey>>(new Set())
 const search = ref('')
 const follow = ref(true)
 const expandedView = ref(false)
@@ -123,10 +125,28 @@ watch(search, () => {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(applyFilter, 120)
 })
-watch(level, applyFilter)
+const filter = computed<LogFilter>(() => ({ levels: levels.value, sources: sourcesOn.value }))
+const showsAll = computed(() => isAllFilter(filter.value))
+watch(filter, applyFilter)
 function applyFilter() {
-  model.setFilter(level.value, search.value)
+  model.setFilter(filter.value, search.value)
   bump()
+}
+function toggleLevel(key: LevelKey) {
+  const next = new Set(levels.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  levels.value = next
+}
+function toggleSource(key: SourceKey) {
+  const next = new Set(sourcesOn.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  sourcesOn.value = next
+}
+function showAll() {
+  levels.value = new Set(LEVEL_KEYS)
+  sourcesOn.value = new Set()
 }
 const needle = computed(() => search.value.trim().slice(0, 200))
 
@@ -139,10 +159,14 @@ const matchCount = computed(() => {
   return model.visibleEntries
 })
 const levelChips = computed(() => [
-  { key: 'all' as const, label: t('logViewer.levels.all'), count: counts.value.all, dot: 'bg-base-400' },
   { key: 'error' as const, label: t('logViewer.levels.error'), count: counts.value.error, dot: 'bg-redstone-400' },
   { key: 'warn' as const, label: t('logViewer.levels.warn'), count: counts.value.warn, dot: 'bg-warn' },
   { key: 'info' as const, label: t('logViewer.levels.info'), count: counts.value.info, dot: 'bg-base-200' },
+  { key: 'debug' as const, label: t('logViewer.levels.debug'), count: counts.value.debug, dot: 'bg-base-600' },
+])
+const sourceChips = computed(() => [
+  { key: 'trs' as const, label: t('logViewer.levels.trs'), count: counts.value.trs, hint: t('logViewer.trsHint') },
+  { key: 'chat' as const, label: t('logViewer.levels.chat'), count: counts.value.chat, hint: t('logViewer.chatHint') },
 ])
 
 // --- Virtualisierte Liste ------------------------------------------------------
@@ -380,17 +404,48 @@ const shareLabel = computed(() => (isLive.value ? t('logViewer.latest') : (curre
 
     <!-- Stufen-Filter -->
     <div class="flex flex-wrap items-center gap-1.5 border-b border-base-800 bg-base-900/60 px-3 py-1.5">
-      <div class="flex flex-wrap gap-1" role="radiogroup" :aria-label="t('logViewer.levelFilter')">
+      <button
+        type="button"
+        class="level-chip"
+        :class="{ 'level-chip-on': showsAll }"
+        :aria-pressed="showsAll"
+        :title="t('logViewer.allHint')"
+        @click="showAll"
+      >
+        <span class="size-1.5 rounded-full bg-base-400" />
+        {{ t('logViewer.levels.all') }}
+        <span class="tabular-nums opacity-70">{{ formatNumber(counts.all) }}</span>
+      </button>
+      <span class="h-4 w-px bg-base-800" aria-hidden="true" />
+      <div class="flex flex-wrap gap-1" role="group" :aria-label="t('logViewer.levelFilter')">
         <button
           v-for="chip in levelChips"
           :key="chip.key"
-          role="radio"
-          :aria-checked="level === chip.key"
+          type="button"
+          :aria-pressed="levels.has(chip.key)"
           class="level-chip"
-          :class="{ 'level-chip-on': level === chip.key, [`level-chip-${chip.key}`]: true }"
-          @click="level = chip.key"
+          :class="{ 'level-chip-on': levels.has(chip.key), [`level-chip-${chip.key}`]: true }"
+          @click="toggleLevel(chip.key)"
         >
           <span class="size-1.5 rounded-full" :class="chip.dot" />
+          {{ chip.label }}
+          <span class="tabular-nums opacity-70">{{ formatNumber(chip.count) }}</span>
+        </button>
+      </div>
+      <span class="h-4 w-px bg-base-800" aria-hidden="true" />
+      <div class="flex flex-wrap items-center gap-1" role="group" :aria-label="t('logViewer.sourceFilter')">
+        <button
+          v-for="chip in sourceChips"
+          :key="chip.key"
+          type="button"
+          :aria-pressed="sourcesOn.has(chip.key)"
+          :title="chip.hint"
+          class="level-chip"
+          :class="{ 'level-chip-on': sourcesOn.has(chip.key), [`level-chip-${chip.key}`]: true }"
+          @click="toggleSource(chip.key)"
+        >
+          <svg v-if="chip.key === 'trs'" viewBox="0 0 16 16" class="size-3" aria-hidden="true"><path d="M2 2h12v12H2z" class="fill-redstone-600" /><path d="M5 5h6v6H5z" class="fill-redstone-400" /></svg>
+          <svg v-else viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg>
           {{ chip.label }}
           <span class="tabular-nums opacity-70">{{ formatNumber(chip.count) }}</span>
         </button>
@@ -454,7 +509,7 @@ const shareLabel = computed(() => (isLive.value ? t('logViewer.latest') : (curre
         @scroll.passive="onScroll"
       >
         <p v-if="!rowCount && !loadingSource" class="px-3 py-10 text-center font-sans text-sm text-base-600">
-          {{ needle || level !== 'all' ? t('logViewer.noMatches') : isLive ? t('logViewer.waiting') : t('logViewer.emptyFile') }}
+          {{ !levels.size ? t('logViewer.nothingSelected') : needle || !showsAll ? t('logViewer.noMatches') : isLive ? t('logViewer.waiting') : t('logViewer.emptyFile') }}
         </p>
         <div v-else class="log-canvas" :style="{ height: `${rowCount * ROW + 8}px`, paddingTop: `${start * ROW + 4}px` }">
           <div
@@ -528,6 +583,12 @@ const shareLabel = computed(() => (isLive.value ? t('logViewer.latest') : (curre
 }
 .level-chip-on.level-chip-warn {
   @apply border-lamp-400/40 bg-lamp-900/60 text-lamp-300;
+}
+.level-chip-on.level-chip-trs {
+  @apply border-redstone-500/50 bg-redstone-900/40 text-base-50;
+}
+.level-chip-on.level-chip-chat {
+  @apply border-ok/40 bg-ok/10 text-base-50;
 }
 
 .log-canvas {

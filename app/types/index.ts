@@ -421,6 +421,8 @@ export interface LogLine {
   time: number
   level: LogLevel
   thread: string | null
+  /** Logger-Name aus dem log4j-XML (z. B. „TRS Client“), fehlt bei einfachen Textzeilen. */
+  logger?: string
   message: string
 }
 

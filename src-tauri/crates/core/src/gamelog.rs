@@ -36,6 +36,9 @@ pub struct LogLine {
     pub time: i64,
     pub level: Level,
     pub thread: Option<String>,
+    /// Logger-Name (log4j-XML `logger`), z. B. „TRS Client“ – für Filter in der Log-Ansicht.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub logger: Option<String>,
     pub message: String,
 }
 
@@ -114,6 +117,7 @@ fn parse_event(xml: &str, now_ms: i64, default_level: Level) -> LogLine {
         time: attr(xml, "timestamp").and_then(|t| t.parse().ok()).unwrap_or(now_ms),
         level: attr(xml, "level").and_then(Level::parse).unwrap_or(default_level),
         thread: attr(xml, "thread").map(str::to_owned),
+        logger: attr(xml, "logger").map(str::to_owned),
         message,
     }
 }
@@ -129,11 +133,12 @@ fn parse_plain(line: &str, now_ms: i64, default_level: Level) -> LogLine {
     })();
 
     match parsed {
-        Some((thread, level, message)) => LogLine { time: now_ms, level, thread: Some(thread), message },
+        Some((thread, level, message)) => LogLine { time: now_ms, level, thread: Some(thread), logger: None, message },
         None => LogLine {
             time: now_ms,
             level: legacy_level(line).unwrap_or(default_level),
             thread: None,
+            logger: None,
             message: line.to_owned(),
         },
     }
@@ -177,6 +182,7 @@ mod tests {
         assert_eq!(line.time, 1_700_000_000_123);
         assert_eq!(line.level, Level::Warn);
         assert_eq!(line.thread.as_deref(), Some("Render thread"));
+        assert_eq!(line.logger.as_deref(), Some("net.minecraft.client.Minecraft"));
         assert_eq!(line.message, "Etwas ist <komisch> & seltsam");
     }
 
