@@ -159,6 +159,10 @@ public final class Circuits {
 			loadForWorld();
 		}
 		ticks++;
+		if (pending != null && active == null && !placing && ticks % 20 == 0 && CircuitLibrary.get().byId(pending.circuit) != null) {
+			apply(pending);
+			pending = null;
+		}
 		if (ticks % 20 == 0 && platform != null) {
 			try {
 				Map<String, Integer> inv = platform.inventory();
@@ -395,6 +399,7 @@ public final class Circuits {
 	/** Eingeblendete Vorlage entfernen. */
 	public void remove() {
 		placing = false;
+		pending = null;
 		clearActive();
 		if (store != null && worldKey != null) {
 			store.setActive(worldKey, null);
@@ -444,10 +449,17 @@ public final class Circuits {
 
 	private void loadForWorld() {
 		clearActive();
+		pending = null;
 		if (store == null) return;
 		CircuitStore.Entry e = store.active(worldKey);
-		if (e != null) apply(e);
+		if (e == null) return;
+		// Bibliothek evtl. noch nicht geladen (Download beim Start) → später erneut versuchen
+		if (CircuitLibrary.get().byId(e.circuit) == null) pending = e;
+		else apply(e);
 	}
+
+	/** Gespeicherte Vorlage, deren Schaltung beim Betreten noch nicht geladen war. */
+	private CircuitStore.Entry pending;
 
 	private void apply(CircuitStore.Entry e) {
 		Circuit c = CircuitLibrary.get().byId(e.circuit);

@@ -208,6 +208,9 @@ public final class CircuitTest {
 		server.addScheduledTask(new Runnable() {
 			@Override
 			public void run() {
+				//? if >=1.10 {
+				/*World w = server.worlds[0];
+				*///?} else
 				World w = server.worldServers[0];
 				for (Map.Entry<int[], IBlockState> e : todo.entrySet()) {
 					w.setBlockState(new BlockPos(e.getKey()[0], e.getKey()[1], e.getKey()[2]), e.getValue(), 2);
