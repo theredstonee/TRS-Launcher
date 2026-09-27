@@ -705,6 +705,14 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 15,
     run: migrateTeamPage,
   },
+  {
+    // Geteilte Modpacks (§27): Packs mit Code (Laufzeit je Pack, `expires_at` NULL = unbegrenzt), an Freunde geschickte
+    // Packs, Upload-Protokoll für die Tagesgrenze. Meldungen bekommen die Art `pack` (+ Spalte pack_id) – wie in
+    // Migration 14 die drei Meldungs-Tabellen neu anlegen (Kinder zuerst). Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 16,
+    run: migrateSharedPacks,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {
@@ -1163,5 +1171,124 @@ CREATE INDEX IF NOT EXISTS team_page_members_role ON team_page_members(role_id, 
       perms.push('team.page')
       db.prepare('UPDATE team_roles SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(perms), Date.now(), id)
     }
+  }
+}
+
+/** Migration 16 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateSharedPacks(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS shared_packs (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  -- 8 Zeichen Crockford-Base32, angezeigt als TRS-XXXX-XXXX.
+  code TEXT NOT NULL UNIQUE CHECK (length(code) = 8),
+  owner_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  summary TEXT,
+  pack_version TEXT NOT NULL,
+  mc_version TEXT NOT NULL,
+  loader TEXT NOT NULL CHECK (loader IN ('vanilla', 'forge', 'neoforge', 'fabric', 'quilt')),
+  loader_version TEXT,
+  index_files INTEGER NOT NULL,
+  own_jars INTEGER NOT NULL,
+  other_files INTEGER NOT NULL,
+  revision INTEGER NOT NULL CHECK (revision >= 1),
+  bytes INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  duration TEXT NOT NULL CHECK (duration IN ('1d', '7d', '30d', 'forever')),
+  installs INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  expires_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS shared_packs_owner ON shared_packs(owner_uuid, updated_at);
+CREATE INDEX IF NOT EXISTS shared_packs_expires ON shared_packs(expires_at);
+
+CREATE TABLE IF NOT EXISTS shared_pack_recipients (
+  pack_id TEXT NOT NULL REFERENCES shared_packs(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  from_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  dismissed_at INTEGER,
+  PRIMARY KEY (pack_id, uuid)
+);
+CREATE INDEX IF NOT EXISTS shared_pack_recipients_uuid ON shared_pack_recipients(uuid, created_at);
+
+CREATE TABLE IF NOT EXISTS shared_pack_uploads (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS shared_pack_uploads_uuid ON shared_pack_uploads(uuid, at);
+`)
+
+  // Meldungen: Art `pack` + Spalte pack_id.
+  if (hasTable(db, 'chat_reports') && !hasColumn(db, 'chat_reports', 'pack_id')) {
+    db.exec(`
+CREATE TABLE chat_reports_v16 (
+  id TEXT PRIMARY KEY,
+  reporter_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  target_uuid TEXT CHECK (target_uuid IS NULL OR length(target_uuid) = 32),
+  kind TEXT NOT NULL CHECK (kind IN ('message', 'image', 'player', 'group', 'share', 'circuit', 'pack')),
+  conversation_id TEXT,
+  message_id TEXT,
+  attachment_id TEXT,
+  share_id TEXT,
+  circuit_id TEXT,
+  pack_id TEXT,
+  reason TEXT NOT NULL CHECK (reason IN ('insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other')),
+  note BLOB,
+  evidence BLOB,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved')),
+  outcome TEXT CHECK (outcome IS NULL OR outcome IN ('actioned', 'dismissed')),
+  low_trust INTEGER NOT NULL DEFAULT 0,
+  assigned_to TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  resolved_at INTEGER,
+  resolved_by TEXT,
+  evidence_purged_at INTEGER,
+  CHECK ((status = 'resolved') = (outcome IS NOT NULL))
+);
+INSERT INTO chat_reports_v16 (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, circuit_id, pack_id,
+  reason, note, evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by, evidence_purged_at)
+SELECT id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, circuit_id, NULL,
+  reason, note, evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by, evidence_purged_at
+FROM chat_reports;
+
+CREATE TABLE chat_report_notes_v16 (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id TEXT NOT NULL REFERENCES chat_reports_v16(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text BLOB NOT NULL
+);
+INSERT INTO chat_report_notes_v16 (id, report_id, at, actor, text) SELECT id, report_id, at, actor, text FROM chat_report_notes;
+
+CREATE TABLE chat_evidence_files_v16 (
+  report_id TEXT NOT NULL REFERENCES chat_reports_v16(id) ON DELETE CASCADE,
+  attachment_id TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  key_id TEXT NOT NULL,
+  PRIMARY KEY (report_id, attachment_id)
+);
+INSERT INTO chat_evidence_files_v16 (report_id, attachment_id, mime, width, height, bytes, key_id)
+SELECT report_id, attachment_id, mime, width, height, bytes, key_id FROM chat_evidence_files;
+
+DROP TABLE chat_evidence_files;
+DROP TABLE chat_report_notes;
+DROP TABLE chat_reports;
+ALTER TABLE chat_reports_v16 RENAME TO chat_reports;
+ALTER TABLE chat_report_notes_v16 RENAME TO chat_report_notes;
+ALTER TABLE chat_evidence_files_v16 RENAME TO chat_evidence_files;
+CREATE INDEX chat_reports_status ON chat_reports(status, created_at);
+CREATE INDEX chat_reports_target ON chat_reports(target_uuid, created_at);
+CREATE INDEX chat_reports_reporter ON chat_reports(reporter_uuid, status);
+CREATE INDEX chat_reports_share ON chat_reports(share_id);
+CREATE INDEX chat_reports_circuit ON chat_reports(circuit_id);
+CREATE INDEX chat_reports_pack ON chat_reports(pack_id);
+CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
+`)
   }
 }

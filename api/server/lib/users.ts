@@ -9,6 +9,7 @@ import { forgetCircuitAuthor } from './circuits'
 import { endHostingFor } from './hosting'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
+import { packsOf, removePackFiles } from './packs'
 import { removeShareFiles, sharesOf } from './shares'
 import { forbidden } from './errors'
 import { legacyRole, myTeamView, rankOf, teamOf, type MyTeamView } from './team'
@@ -202,6 +203,8 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   const chat = prepareChatPurge(ctx, uuid)
   // Geteilte Screenshots (§23): Zeilen per FK weg, Dateien danach.
   const sharedImages = sharesOf(ctx, uuid)
+  // Geteilte Modpacks (§27): Zeilen per FK weg, Dateien danach.
+  const sharedPacks = packsOf(ctx, uuid)
   // Gehostete Welten schließen, aus fremden austragen (Rest per ON DELETE CASCADE).
   endHostingFor(ctx, uuid)
   tx(ctx.db, () => {
@@ -214,6 +217,7 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   })
   finishChatPurge(ctx, chat)
   removeShareFiles(ctx, sharedImages)
+  removePackFiles(ctx, sharedPacks)
   for (const s of sharedOut) {
     for (const u of s.worn) if (u !== uuid) emitCape(ctx, u)
     notifyShareRemoved(ctx, s.id, s.holders)

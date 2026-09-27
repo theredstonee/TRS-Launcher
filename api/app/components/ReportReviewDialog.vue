@@ -18,7 +18,7 @@ async function load() {
     report.value = (await api<{ report: ReportDetail }>(`/v1/admin/reports/${props.reportId}`)).report
     if (!draft.value.reasonCode) draft.value.reasonCode = REPORT_TO_REASON[report.value.reason] ?? 'other'
     // Geteilte Screenshots: naheliegende Strafe ist die Upload-Sperre.
-    if ((report.value.kind === 'share' || report.value.kind === 'circuit') && draft.value.kind === 'chat_mute') draft.value.kind = 'upload_ban'
+    if (UPLOAD_KINDS.has(report.value.kind) && draft.value.kind === 'chat_mute') draft.value.kind = 'upload_ban'
   } catch (e) {
     error.value = fill(m.value.admin.failed, { error: apiMessage(e) })
   }
@@ -36,11 +36,13 @@ const sanctionForm = shallowRef<{ valid: boolean } | null>(null)
 const keepOpen = ref(false)
 const includeRelated = ref(false)
 const note = ref('')
-const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit'>(null)
+/** Meldungen über Hochgeladenes: naheliegende Strafe ist die Upload-Sperre. */
+const UPLOAD_KINDS = new Set(['share', 'circuit', 'pack'])
+const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack'>(null)
 const limits = computed(() => session.value?.limits ?? { kinds: [], maxMinutes: 0, maxWarnMinutes: 0, permanent: false })
 
 function resetForm() {
-  draft.value = newSanctionDraft(report.value?.kind === 'share' || report.value?.kind === 'circuit' ? 'upload_ban' : 'chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
+  draft.value = newSanctionDraft(report.value && UPLOAD_KINDS.has(report.value.kind) ? 'upload_ban' : 'chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
   keepOpen.value = false
   includeRelated.value = false
   note.value = ''
@@ -68,7 +70,7 @@ async function run(fn: () => Promise<{ report: ReportDetail }>) {
   }
 }
 
-function act(action: 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit') {
+function act(action: 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack') {
   confirming.value = null
   const body: Record<string, unknown> = { action }
   if (action === 'sanction') Object.assign(body, draftBody(draft.value))
@@ -223,7 +225,7 @@ onBeforeUnmount(() => {
         <div v-if="report" class="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
           <!-- Kontext -->
           <section class="min-w-0 space-y-5">
-            <div v-if="report.kind !== 'share' && report.kind !== 'circuit'">
+            <div v-if="!UPLOAD_KINDS.has(report.kind)">
               <h3 class="section-title">{{ t.context }}</h3>
               <p v-if="report.evidence?.conversation" class="mt-1 text-xs text-base-400">
                 {{ report.evidence.conversation.kind === 'group'
@@ -266,6 +268,26 @@ onBeforeUnmount(() => {
               <div class="mt-2 flex flex-wrap gap-2">
                 <a :href="`/circuits/${report.evidence.circuit.id}`" target="_blank" rel="noopener" class="btn btn-ghost text-xs"><SiteIcon name="external" class="size-3.5" />/circuits/{{ report.evidence.circuit.id }}</a>
                 <NuxtLink v-if="can('circuits.manage')" :to="`/admin/circuits/${report.evidence.circuit.id}`" class="btn btn-ghost text-xs"><SiteIcon name="blocks" class="size-3.5" />{{ t.openCircuit }}</NuxtLink>
+              </div>
+            </div>
+
+            <div v-if="report.evidence?.pack">
+              <h3 class="section-title">{{ m.admin.mod.kinds.pack }}</h3>
+              <p class="mt-1 text-sm text-base-200">
+                {{ fill(t.packInfo, {
+                  name: report.evidence.pack.name,
+                  code: report.evidence.pack.code,
+                  mc: report.evidence.pack.mcVersion,
+                  loader: report.evidence.pack.loader,
+                  rev: report.evidence.pack.revision,
+                  owner: report.evidence.pack.owner.name,
+                }) }}
+              </p>
+              <p v-if="report.evidence.pack.summary" class="mt-1 text-sm text-base-300">{{ report.evidence.pack.summary }}</p>
+              <p v-if="report.evidence.pack.ownJars" class="mt-1 text-xs text-lamp-300">{{ fill(t.packOwnJars, { n: report.evidence.pack.ownJars }) }}</p>
+              <p class="mt-1 break-all font-mono text-[11px] text-base-400">SHA-256 {{ report.evidence.pack.sha256 }}</p>
+              <div class="mt-2">
+                <a :href="`/p/${report.evidence.pack.code}`" target="_blank" rel="noopener" class="btn btn-ghost text-xs"><SiteIcon name="external" class="size-3.5" />/p/{{ report.evidence.pack.code }}</a>
               </div>
             </div>
 
@@ -362,6 +384,9 @@ onBeforeUnmount(() => {
                 <button v-if="report.shareId" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'delete_share'">
                   <SiteIcon name="trash" class="size-4" />{{ t.deleteShare }}
                 </button>
+                <button v-if="report.packId" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'delete_pack'">
+                  <SiteIcon name="trash" class="size-4" />{{ t.deletePack }}
+                </button>
                 <button v-if="report.circuitId && can('circuits.manage')" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'hide_circuit'">
                   <SiteIcon name="blocks" class="size-4" />{{ t.hideCircuit }}
                 </button>
@@ -389,10 +414,10 @@ onBeforeUnmount(() => {
             </div>
             <AdminConfirm
               v-if="confirming"
-              :title="confirming === 'sanction' ? at.decision.confirmTitle : confirming === 'dismiss' ? t.dismiss : confirming === 'resolve' ? t.resolve : confirming === 'delete_share' ? t.deleteShare : confirming === 'hide_circuit' ? t.hideCircuit : t.deleteMessage"
+              :title="confirming === 'sanction' ? at.decision.confirmTitle : confirming === 'dismiss' ? t.dismiss : confirming === 'resolve' ? t.resolve : confirming === 'delete_share' ? t.deleteShare : confirming === 'hide_circuit' ? t.hideCircuit : confirming === 'delete_pack' ? t.deletePack : t.deleteMessage"
               :text="confirming === 'sanction' ? sanctionSummary : ''"
               :confirm-label="confirming === 'sanction' ? at.decision.apply : at.common.confirm"
-              :danger="confirming === 'sanction' || confirming === 'delete_message' || confirming === 'delete_share' || confirming === 'hide_circuit'"
+              :danger="confirming !== 'dismiss' && confirming !== 'resolve'"
               :busy="busy"
               @cancel="confirming = null"
               @confirm="act(confirming!)"

@@ -6,6 +6,7 @@ import type { ConversationView, MessageView, ReactionView } from './chat'
 import type { HostRoomView, RoomCloseReason, RoomView, SignalKind } from './hosting'
 import type { MyAppealView, MySanctionView } from './sanctions'
 import type { Settings } from './users'
+import type { PackView } from './packs'
 
 export interface PlayerRef {
   uuid: string
@@ -102,6 +103,13 @@ export type ApiEvent =
   // ---------------------------------------------------------------- Schaltungs-Bibliothek (§25, nur /v1/events/me)
   /** Eigene Einreichung: eingegangen (anderes Gerät), angenommen (mit `circuitId`) oder abgelehnt (mit `reason`). */
   | { type: 'circuit_submission_updated', submission: MySubmissionView }
+  // ---------------------------------------------------------------- Geteilte Modpacks (§27, nur /v1/events/me)
+  /** Ein Freund hat dir ein Modpack geschickt. */
+  | { type: 'pack_shared', pack: PackView, from: PlayerRef, sentAt: string }
+  /** Ein an dich geschicktes Pack hat eine neue Version (`pack.revision`). */
+  | { type: 'pack_updated', pack: PackView }
+  /** Ein an dich geschicktes Pack wurde gelöscht (Besitzer oder Moderation). */
+  | { type: 'pack_removed', packId: string }
 
 export type ApiEventType = ApiEvent['type']
 

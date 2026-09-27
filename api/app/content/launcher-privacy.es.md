@@ -214,6 +214,30 @@ enlace»; tus demás capturas se quedan en tu PC.
   Como las demás denuncias, conserva una copia de la imagen como prueba (ver abajo), y el equipo puede borrar imágenes
   compartidas.
 
+### Compartir modpacks
+
+En el launcher puedes compartir una instancia como modpack (*Instancia → Compartir → Compartir modpack*). El launcher
+guarda la **lista de mods** (los mods que están en Modrinth solo aparecen con su dirección de descarga) y las **carpetas
+que elijas** (p. ej. ajustes/configs, resource packs, tus propios archivos de mods) en un archivo `.mrpack` y solo lo
+sube cuando pulsas «Compartir». Nunca se incluyen mundos, capturas, registros ni archivos de cuenta.
+
+- **Qué se guarda:** el archivo del pack, su nombre, descripción y versión, la versión de Minecraft y el cargador de
+  mods, cuántos archivos contiene, cuándo se compartió, se actualizó y cuándo caduca, cuántas veces se instaló, la
+  cuenta TRS que lo compartió y a qué amigos se envió.
+- **Quién lo ve:** cualquiera con el **código** (`TRS-XXXX-XXXX`) o el **enlace** (`/p/…`) ve el nombre, la
+  descripción, el resumen del contenido y **tu nombre de jugador con tu cabeza**, para saber de quién es el pack.
+  Descargarlo requiere una cuenta TRS (el launcher). Los amigos a los que se lo envías lo ven en su lista «Enviados a
+  ti». Los buscadores no indexan la página.
+- **Cuánto tiempo:** lo eliges para cada pack: **1, 7 o 30 días, o sin caducidad**. Los packs caducados se borran
+  automáticamente; puedes borrar un pack antes en «Mis modpacks» y el código y el enlace dejan de funcionar al momento
+  (las copias que otros ya instalaron se quedan en sus PC). Una versión nueva mantiene el código; quien lo instaló ve
+  «Actualización disponible».
+- **Límites:** como máximo 50 MB por pack, 10 packs compartidos y 30 subidas al día por cuenta. Una prohibición de
+  subidas de la moderación también impide compartir.
+- **Denuncias:** un pack se puede denunciar en el launcher o en su página (con sesión iniciada). La denuncia guarda
+  como prueba el nombre, el código, la descripción, el resumen del contenido y la suma de comprobación (no el archivo);
+  el equipo puede borrar packs.
+
 ### Biblioteca de circuitos (TRS Client)
 
 La biblioteca de circuitos del TRS Client (y de la web, /circuits) carga sus circuitos del servidor de TRS. No hace
@@ -374,6 +398,7 @@ servidor TRS.
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
 | Capturas compartidas (solo las imágenes que compartes): la imagen recodificada, tamaño, formato, fecha de publicación y de caducidad, la cuenta que la compartió (no visible públicamente) | Compartir una captura como enlace (ver arriba) |
+| Modpacks compartidos (solo los packs que compartes): archivo del pack, nombre, descripción, versión, versión de Minecraft, cargador, número de archivos, fecha de publicación/actualización/caducidad, instalaciones, la cuenta que lo compartió (nombre visible en la página del pack), amigos a los que se envió | Compartir un modpack por código, enlace o con amigos (ver arriba) |
 | Circuitos enviados: el circuito (solo bloques y estados), nombre, descripción, categoría, idioma, fecha, estado y respuesta del equipo; en los circuitos aceptados, tu nombre como creador | Enviar un circuito a la biblioteca (ver arriba) |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
@@ -421,6 +446,8 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   equipo) o se borra el grupo. Las imágenes subidas pero nunca enviadas se borran al cabo de 1 hora.
 - Las capturas compartidas se borran automáticamente **30 días** después de compartirlas, o antes si tú (o el equipo)
   las borráis.
+- Los modpacks compartidos se borran automáticamente cuando termina el tiempo que elegiste (1, 7 o 30 días; «sin
+  caducidad» sigue hasta que tú o el equipo lo borréis).
 - Los envíos de circuitos decididos se borran **90 días** después de la decisión; los circuitos publicados siguen
   hasta que el equipo los quite (sin tu nombre tras «Alle TRS-Daten löschen»).
 - **«Alle TRS-Daten löschen»** (borrar todos los datos TRS, en *Einstellungen → Datenschutz*) lo elimina todo al
@@ -428,7 +455,7 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   las capas compartidas (tus capas con amigos y las que tus amigos compartieron contigo),
   los códigos canjeados, las denuncias, tu estado en línea, todas las skins, presets y ajustes sincronizados, todos tus
   chats directos (para ambas partes) y tus mensajes, reacciones e imágenes en grupos (tus grupos pasan al miembro más
-  antiguo), y todas las imágenes que compartiste como enlace. Después,
+  antiguo), todas las imágenes que compartiste como enlace y todos los modpacks que compartiste. Después,
   los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
 - Tras la eliminación solo se conservan las sanciones activas (por ejemplo un bloqueo o un silencio en el chat, con
   motivo y periodo) y las denuncias sobre ti (hasta que termine su plazo, ver arriba), para que no se puedan eludir

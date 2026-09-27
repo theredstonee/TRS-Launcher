@@ -29,6 +29,10 @@ export interface Config {
   chatStorageMaxBytes: number
   /** Höchstens so viele Bytes geteilte Screenshots insgesamt (§23), `SHARE_STORAGE_MAX_MB`. */
   shareStorageMaxBytes: number
+  /** Geteilte Modpacks (§27): größte Pack-Datei, `PACK_MAX_MB`. */
+  packMaxBytes: number
+  /** Höchstens so viele Bytes geteilte Modpacks insgesamt, `PACK_STORAGE_MAX_MB`. */
+  packStorageMaxBytes: number
   /** Server-Einladungen: Status vom Server abfragen (Ping mit SSRF-Schutz). `SERVER_PING=false` schaltet ab. */
   serverPing: boolean
   /** Welt-Hosting (§21): Relay-Adresse + gemeinsames Geheimnis. `null` = Hosting aus (503 hosting_unavailable). */
@@ -122,6 +126,13 @@ export interface Limits {
   // ------------------------------------------------ Schaltungs-Bibliothek (§25)
   /** Einreichungen je Konto in 24 Stunden (auch entschiedene zählen). */
   maxCircuitSubmissionsPerDay: number
+  // ------------------------------------------------ Geteilte Modpacks (§27)
+  /** Gleichzeitig geteilte Modpacks je Konto. */
+  maxSharedPacks: number
+  /** Uploads (neue Packs + neue Versionen) je Konto in 24 Stunden. */
+  maxPackUploadsPerDay: number
+  /** Ungelesene an dich geschickte Packs (danach lehnt der Server weitere ab). */
+  maxPackInbox: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -168,6 +179,9 @@ export const DEFAULT_LIMITS: Limits = {
   maxActiveShares: 50,
   maxSharesPerDay: 20,
   maxCircuitSubmissionsPerDay: 5,
+  maxSharedPacks: 10,
+  maxPackUploadsPerDay: 30,
+  maxPackInbox: 100,
 }
 
 const bool = z
@@ -237,6 +251,8 @@ const envSchema = z.object({
   CHAT_KEYS: z.string().default(''),
   CHAT_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
   SHARE_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
+  PACK_MAX_MB: z.coerce.number().int().min(1).max(500).default(50),
+  PACK_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(5120),
   SERVER_PING: bool.default(true),
   // Welt-Hosting: Relay (eigener Pterodactyl-Server). Ohne RELAY_SECRET + RELAY_HOST ist Hosting aus.
   RELAY_SECRET: z.string().default(''),
@@ -365,6 +381,8 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     chatKeys: parseChatKeys(e.CHAT_KEYS, e.SECRET_KEY),
     chatStorageMaxBytes: e.CHAT_STORAGE_MAX_MB * 1024 * 1024,
     shareStorageMaxBytes: e.SHARE_STORAGE_MAX_MB * 1024 * 1024,
+    packMaxBytes: e.PACK_MAX_MB * 1024 * 1024,
+    packStorageMaxBytes: e.PACK_STORAGE_MAX_MB * 1024 * 1024,
     serverPing: e.SERVER_PING,
     hosting: parseHosting(e),
     microsoft: parseMicrosoft(e),

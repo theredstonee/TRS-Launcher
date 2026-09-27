@@ -2769,3 +2769,73 @@ comes back in `pending`, and the website asks again a moment later. Every succes
 `users.skin_url|skin_model|skin_at`, table `team_page_members` (uuid, role_id = group, sort, titles JSON, discord, links
 JSON, added/updated), permission `team.page` for Owner/Admin. Idempotent (`migrateTeamPage`). The old automatic member
 list of `GET /v1/site/team` (everyone with a public role) is replaced by the manual list.
+
+## 27. Shared modpacks
+
+A player shares an instance as a Modrinth pack (`.mrpack`): the launcher exports it (mods that Modrinth knows are only
+listed with their download address, everything else – configs, resource packs, own mod files – goes into `overrides/`)
+and uploads the file. Others install it by **code** (`TRS-XXXX-XXXX`, 8 characters Crockford base32), by **link**
+(`https://trs-launcher.theredstonee.de/p/TRS-XXXX-XXXX`) or from the list of packs friends sent them. A new version
+keeps the code and raises `revision` – that is how launchers detect updates.
+
+### 27.1 Pack view
+
+```json
+{ "id": "22 chars", "code": "TRS-7K2M-Q9XA", "url": "https://…/p/TRS-7K2M-Q9XA",
+  "name": "Redstone Pack", "summary": "Tech & Redstone", "packVersion": "1.2.0", "revision": 3,
+  "mcVersion": "1.21.1", "loader": { "kind": "fabric", "version": "0.16.9" },
+  "modrinthFiles": 42, "ownJars": 1, "otherFiles": 57, "bytes": 812345, "sha256": "…",
+  "owner": { "uuid": "…", "name": "Alex" },
+  "createdAt": "…", "updatedAt": "…", "expiresAt": "… | null" }
+```
+
+Own packs (`/v1/me/packs`, upload answers) add `duration` (`1d|7d|30d|forever`), `installs` (downloads by others) and
+`sentTo` (friends it was sent to). `expiresAt: null` = no expiry. `ownJars` > 0 means mod files that are not from
+Modrinth – launchers show a trust warning before installing.
+
+### 27.2 Routes
+
+| Route | Auth | Notes |
+|---|---|---|
+| `POST /v1/packs?duration=7d` | user | raw `.mrpack` body (`application/x-modrinth-modpack+zip`, `application/zip` or `application/octet-stream`), ≤ `PACK_MAX_MB` (50) → 201 `{ pack }` (own view) |
+| `PUT /v1/packs/{id}/file` | owner | new version, same code, `revision + 1`; recipients get `pack_updated`. `pack_unchanged` (409) for the same file |
+| `PATCH /v1/packs/{id}` | owner | `{ duration }` – counts from now |
+| `DELETE /v1/packs/{id}` | owner | 204; code and link stop working, recipients get `pack_removed` |
+| `GET /v1/me/packs` | user | `{ packs, limits: { active, maxActive, uploadsToday, maxPerDay, maxBytes } }` |
+| `GET /v1/packs/code/{code}` | public | `{ pack }` – code case-insensitive, with or without `TRS-`/dashes, O→0, I/L→1. 60/min per IP without account |
+| `GET /v1/packs/code/{code}/file` | user | the `.mrpack` (headers `X-Pack-Revision`, `X-Pack-Sha256`); counts an install unless you are the owner |
+| `POST /v1/packs/lookup` | user | `{ codes: [≤ 100] }` → `{ packs }` (update check; unknown/expired codes are missing) |
+| `POST /v1/packs/{id}/send` | user | `{ to: [uuid ≤ 20] }` → `{ sent: [PlayerRef], skipped: [uuid] }`. Anyone who can see a pack may send it to **their own friends**; non-friends and blocks are skipped, `no_recipients` (400) if nobody was left |
+| `GET /v1/me/pack-inbox` | user | `{ packs: [{ pack, from, sentAt }] }` – newest first, without dismissed/expired |
+| `DELETE /v1/me/pack-inbox/{packId}` | user | hide from the list (the pack stays) |
+
+Packs of banned accounts are hidden (404). Errors: `invalid_pack` (422, with a readable message and sometimes
+`details.path`), `pack_not_found` (404), `pack_limit` (409, `details.max`), `pack_daily_limit` (429, `Retry-After`),
+`payload_too_large` (413), `storage_full` (507), `sanctioned` (403, upload ban for uploads, social ban for sending).
+
+### 27.3 What the server checks
+
+Only real Modrinth packs: a zip (no ZIP64, no encryption) with `modrinth.index.json` (`formatVersion` 1, `game`
+`minecraft`, `dependencies.minecraft` plus at most one of `forge`, `neoforge`, `fabric-loader`, `quilt-loader`) and
+files only under `overrides/`, `client-overrides/`, `server-overrides/`. All paths relative without `..`, backslashes
+or drive letters; no file twice. Index downloads **only from `https://cdn.modrinth.com/`**. At most 20,000 zip entries,
+5,000 index files and 1 GB unpacked. The server never unpacks anything to disk.
+
+### 27.4 Events (`/v1/events/me`)
+
+- `pack_shared` `{ pack, from, sentAt }` – a friend sent you a pack.
+- `pack_updated` `{ pack }` – a pack in your list has a new version.
+- `pack_removed` `{ packId }` – deleted by its owner or the team.
+
+### 27.5 Limits, reports, data
+
+Per account: 10 active packs (`maxSharedPacks`), 30 uploads (new packs and versions) per 24 h, 100 unread packs in the
+inbox; all packs together ≤ `PACK_STORAGE_MAX_MB` (5120). Rate limits: upload 6/min, manage 60/min, lookup 60/min,
+download 20/min per account, public page 60/min per IP.
+
+Reports: `POST /v1/reports` with `{ kind: "pack", packId, reason }`. Evidence keeps name, code, description, revision,
+Minecraft version, loader, own-jar count, checksum and owner (not the file). Team action `delete_pack`.
+
+Migration 16: tables `shared_packs` (file `<DATA_DIR>/packs/<xx>/<id>.<revision>.mrpack`, only the current version is
+kept), `shared_pack_recipients`, `shared_pack_uploads`; report kind `pack` + column `pack_id`. Expired packs are
+removed every 10 minutes, orphaned files every 6 hours; account deletion removes all own packs and files.

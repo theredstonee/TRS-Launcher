@@ -194,6 +194,17 @@ export const RULES = {
   sharePublicIp: { limit: 240, windowMs: MIN },
   /** Anonyme Meldungen von der öffentlichen Seite je IP. */
   shareReportIp: { limit: 5, windowMs: HOUR },
+  // ------------------------------------------------ Geteilte Modpacks (§27)
+  /** Hochladen (neu + neue Version) – die Tagesgrenze steht zusätzlich in der Datenbank. */
+  packUploadUser: { limit: 6, windowMs: MIN },
+  /** Eigene Liste, Laufzeit, Löschen, an Freunde schicken, Posteingang. */
+  packManageUser: { limit: 60, windowMs: MIN },
+  /** Code einlösen / Update-Prüfung mit Konto. */
+  packLookupUser: { limit: 60, windowMs: MIN },
+  /** Pack-Datei herunterladen. */
+  packDownloadUser: { limit: 20, windowMs: MIN },
+  /** Öffentliche Vorschau (Website) je IP – bremst das Durchprobieren von Codes. */
+  packPublicIp: { limit: 60, windowMs: MIN },
   // ------------------------------------------------ Schaltungs-Bibliothek (§25)
   /** Öffentliche Abrufe (Index, Schaltung, Download) je IP – zusätzlich zur globalen IP-Grenze. */
   circuitPublicIp: { limit: 240, windowMs: MIN },

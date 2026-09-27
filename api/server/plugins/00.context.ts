@@ -14,6 +14,7 @@ import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
 import { setWebpWasmLoader } from '../lib/images'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
+import { sweepExpiredPacks, sweepOrphanPackFiles } from '../lib/packs'
 import { sweepExpiredShares, sweepOrphanShareFiles } from '../lib/shares'
 import { createMojangClient } from '../lib/mojang'
 import { afterPresenceChange } from '../lib/playerevents'
@@ -129,6 +130,7 @@ export default defineNitroPlugin((nitroApp) => {
     every(10 * 60_000, () => {
       sweepExpired(ctx)
       sweepExpiredShares(ctx)
+      sweepExpiredPacks(ctx)
     }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.
@@ -148,6 +150,7 @@ export default defineNitroPlugin((nitroApp) => {
       // Bewerbungen: Löschfristen (§24.3).
       sweepApplications(ctx)
       sweepOrphanShareFiles(ctx)
+      sweepOrphanPackFiles(ctx)
       // Schaltungs-Einreichungen: Löschfrist nach der Entscheidung (§25.5).
       sweepCircuitSubmissions(ctx)
     }),

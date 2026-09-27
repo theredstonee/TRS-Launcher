@@ -215,6 +215,30 @@ In der Screenshot-Galerie des Launchers und im TRS Client („Clips & Bilder“)
   Meldung bewahrt wie andere Meldungen eine Kopie des Bildes als Beweis auf (siehe unten), und das Team kann geteilte
   Bilder löschen.
 
+### Modpacks teilen
+
+Im Launcher kannst du eine Instanz als Modpack teilen (*Instanz → Teilen → Modpack teilen*). Der Launcher packt die
+**Mod-Liste** (Mods, die es auf Modrinth gibt, stehen nur mit ihrer Download-Adresse drin) und die **Ordner, die du
+auswählst** (z. B. Einstellungen/Configs, Resource Packs, eigene Mod-Dateien) in eine `.mrpack`-Datei und lädt sie erst
+hoch, wenn du auf „Teilen“ klickst. Welten, Screenshots, Logs und Konto-Dateien kommen nie mit.
+
+- **Was gespeichert wird:** die Pack-Datei, Name, Beschreibung und Version, Minecraft-Version und Modloader, wie viele
+  Dateien sie enthält, wann sie geteilt, aktualisiert wurde und wann sie abläuft, wie oft sie installiert wurde, der
+  teilende TRS-Account und an welche Freunde sie geschickt wurde.
+- **Wer es sieht:** Jeder mit dem **Code** (`TRS-XXXX-XXXX`) oder dem **Link** (`/p/…`) sieht Name, Beschreibung,
+  Inhaltsübersicht und **deinen Spielernamen samt Kopf** – damit man weiß, von wem das Pack ist. Herunterladen geht nur
+  mit TRS-Account (im Launcher). Freunde, an die du es schickst, sehen es in ihrer Liste „An dich geschickt“. Die Seite
+  wird von Suchmaschinen nicht aufgenommen.
+- **Wie lange:** Das wählst du je Pack – **1, 7 oder 30 Tage oder unbegrenzt**. Abgelaufene Packs werden automatisch
+  gelöscht; vorher kannst du ein Pack unter „Meine Modpacks“ löschen – Code und Link gelten dann sofort nicht mehr
+  (Kopien, die andere schon installiert haben, bleiben auf deren PCs). Eine neue Version behält den Code; wer das Pack
+  installiert hat, sieht „Update verfügbar“.
+- **Grenzen:** höchstens 50 MB je Pack, 10 geteilte Packs und 30 Uploads pro Tag je Account. Eine Upload-Sperre der
+  Moderation verhindert auch das Teilen.
+- **Meldungen:** Ein Pack kann im Launcher oder auf seiner Seite (angemeldet) gemeldet werden. Die Meldung bewahrt Name,
+  Code, Beschreibung, Inhaltsübersicht und Prüfsumme des Packs als Beleg auf (nicht die Datei); das Team kann Packs
+  löschen.
+
 ### Schaltungs-Bibliothek (TRS Client)
 
 Die Schaltungs-Bibliothek im TRS Client (und auf der Website, /circuits) lädt ihre Schaltungen vom TRS-Server. Dafür
@@ -379,6 +403,7 @@ den TRS-Server.
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
 | Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
+| Geteilte Modpacks (nur die Packs, die du teilst): Pack-Datei, Name, Beschreibung, Version, Minecraft-Version, Loader, Dateizahlen, Zeitpunkt des Teilens/Aktualisierens/Ablaufs, Installationen, der teilende Account (Name auf der Pack-Seite sichtbar), Freunde, an die es geschickt wurde | Ein Modpack per Code, Link oder an Freunde teilen (siehe oben) |
 | Eingereichte Schaltungen: die Schaltung (nur Blöcke und Zustände), Name, Beschreibung, Kategorie, Sprache, Zeitpunkt, Status und Antwort des Teams; bei angenommenen Schaltungen dein Name als Ersteller | Eine Schaltung für die Bibliothek einreichen (siehe oben) |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl, Liste geteilter Mods und Resource-Pack-Angaben (Namen, Größen, Quellen, Prüfsummen – keine Dateien); deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
@@ -428,13 +453,15 @@ Profiling und keinen Verkauf von Daten.
   oder die Gruppe gelöscht wird. Hochgeladene, aber nie gesendete Bilder werden nach 1 Stunde gelöscht.
 - Geteilte Screenshots werden **30 Tage** nach dem Teilen automatisch gelöscht, oder früher, wenn du (oder das Team) sie
   löschst.
+- Geteilte Modpacks werden automatisch gelöscht, wenn die gewählte Laufzeit endet (1, 7 oder 30 Tage; „unbegrenzt“
+  bleibt, bis du oder das Team es löschen).
 - Entschiedene Schaltungs-Einreichungen werden **90 Tage** nach der Entscheidung gelöscht; veröffentlichte
   Schaltungen bleiben, bis das Team sie entfernt (nach „Alle TRS-Daten löschen“ ohne deinen Namen).
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
   Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
   deinen Online-Status, alle synchronisierten Skins, Presets und Einstellungen, alle deine Direktchats (für beide
-  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) und alle Bilder, die du als Link geteilt hast. Danach sind die TRS-Dienste im
+  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) alle Bilder, die du als Link geteilt hast, und alle Modpacks, die du geteilt hast. Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
 - Nach der Löschung bleiben nur aktive Strafen (etwa eine Sperre oder eine laufende Chat-Stummschaltung, mit Grund
   und Zeitraum) und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht
