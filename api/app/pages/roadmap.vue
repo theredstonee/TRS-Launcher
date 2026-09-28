@@ -61,7 +61,7 @@ usePageSeo(() => ({
               <div class="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
                 <span class="badge bg-base-800 text-base-200">{{ it.areas[i.area] }}</span>
                 <IssueStatus v-if="i.status === 'in_review'" :status="i.status" />
-                <span v-if="i.fixedIn" class="badge fixed"><SiteIcon name="check" class="size-3" />{{ i.fixedIn }}</span>
+                <span v-if="i.fixedIn" class="badge fixed-in"><SiteIcon name="check" class="size-3" />{{ i.fixedIn }}</span>
                 <span v-if="i.priority === 'critical' || i.priority === 'high'" class="badge prio" :data-p="i.priority">{{ it.priorities[i.priority] }}</span>
                 <span class="ml-auto flex items-center gap-2 text-base-400">
                   <span class="inline-flex items-center gap-0.5 tabular-nums" :title="fill(it.common.score, { n: i.score })"><SiteIcon name="voteUp" class="size-3.5" />{{ i.score }}</span>
@@ -152,7 +152,7 @@ usePageSeo(() => ({
   border: 1px dashed var(--color-base-700);
   border-radius: 0.6rem;
 }
-.badge.fixed {
+.badge.fixed-in {
   background: color-mix(in srgb, var(--color-ok) 14%, transparent);
   color: var(--color-ok);
 }

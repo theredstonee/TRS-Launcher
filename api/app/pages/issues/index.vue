@@ -176,7 +176,7 @@ usePageSeo(() => ({
             <IssueStatus :status="i.status" />
             <span class="badge area">{{ it.areas[i.area] }}</span>
             <span class="badge kind" :data-t="i.type">{{ it.types[i.type] }}</span>
-            <span v-if="i.fixedIn" class="badge fixed"><SiteIcon name="check" class="size-3" />{{ fill(it.common.fixedIn, { v: i.fixedIn }) }}</span>
+            <span v-if="i.fixedIn" class="badge fixed-in"><SiteIcon name="check" class="size-3" />{{ fill(it.common.fixedIn, { v: i.fixedIn }) }}</span>
             <span v-if="i.duplicateOf" class="badge area">{{ fill(it.common.duplicateOf, { n: i.duplicateOf.number }) }}</span>
             <span v-for="t in i.tags" :key="t" class="badge tag">{{ t }}</span>
             <span v-if="i.locked" class="text-base-400" :title="it.common.locked"><SiteIcon name="lock" class="size-3.5" /></span>
@@ -306,7 +306,7 @@ usePageSeo(() => ({
   background: color-mix(in srgb, var(--color-lamp-400) 12%, transparent);
   color: var(--color-lamp-300);
 }
-.badge.fixed {
+.badge.fixed-in {
   background: color-mix(in srgb, var(--color-ok) 14%, transparent);
   color: var(--color-ok);
 }

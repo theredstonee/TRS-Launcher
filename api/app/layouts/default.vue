@@ -140,6 +140,8 @@ const year = new Date().getFullYear()
           <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>
           <NuxtLink :to="lp('/capes')" class="footer-link">{{ m.nav.capes }}</NuxtLink>
           <NuxtLink :to="lp('/circuits')" class="footer-link">{{ c.nav }}</NuxtLink>
+          <NuxtLink :to="lp('/issues')" class="footer-link">{{ it.nav.issues }}</NuxtLink>
+          <NuxtLink :to="lp('/roadmap')" class="footer-link">{{ it.nav.roadmap }}</NuxtLink>
           <NuxtLink :to="lp('/faq')" class="footer-link">{{ m.nav.faq }}</NuxtLink>
           <NuxtLink :to="lp('/team')" class="footer-link">{{ m.nav.team }}</NuxtLink>
         </nav>

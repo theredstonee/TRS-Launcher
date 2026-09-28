@@ -464,7 +464,7 @@ usePageSeo(() => ({
             <p v-if="reportMsg" role="status" class="mt-2 text-sm text-emerald-300">{{ reportMsg }}</p>
             <p v-if="!timeline.length" class="mt-3 text-sm text-base-400">{{ it.detail.noComments }}</p>
             <ol class="timeline mt-3">
-              <li v-for="(item, idx) in timeline" :key="idx" :class="item.kind">
+              <li v-for="(item, idx) in timeline" :key="idx" :class="item.kind === 'event' ? 't-event' : 't-comment'">
                 <template v-if="item.kind === 'event'">
                   <span class="event-dot" aria-hidden="true" />
                   <p class="text-sm text-base-400">
@@ -581,7 +581,7 @@ usePageSeo(() => ({
               <span v-if="!issue.tags.length" class="text-base-400">{{ it.detail.sidebar.noTags }}</span>
             </dd>
             <dt>{{ it.detail.sidebar.fixedIn }}</dt>
-            <dd><span v-if="issue.fixedIn" class="badge fixed"><SiteIcon name="check" class="size-3" />{{ issue.fixedIn }}</span><span v-else class="text-base-400">{{ it.detail.sidebar.notYet }}</span></dd>
+            <dd><span v-if="issue.fixedIn" class="badge fixed-in"><SiteIcon name="check" class="size-3" />{{ issue.fixedIn }}</span><span v-else class="text-base-400">{{ it.detail.sidebar.notYet }}</span></dd>
             <dt>{{ it.detail.sidebar.opened }}</dt>
             <dd><time :datetime="issue.createdAt">{{ date(issue.createdAt) }}</time></dd>
             <dt>{{ it.detail.sidebar.activity }}</dt>
@@ -653,7 +653,7 @@ usePageSeo(() => ({
               <p class="text-[11px] text-base-400">{{ it.team.notesHint }}</p>
               <ul class="mt-2 space-y-2">
                 <li v-for="n in issue.notes ?? []" :key="n.id" class="note">
-                  <p class="text-[11px] text-base-400">{{ n.author?.name ?? '?' }} · {{ dateTime(n.at) }}</p>
+                  <p class="text-[11px] text-base-400">{{ n.author?.name || it.detail.teamName }} · {{ dateTime(n.at) }}</p>
                   <p class="text-sm whitespace-pre-wrap text-base-100">{{ n.text }}</p>
                 </li>
                 <li v-if="!(issue.notes ?? []).length" class="text-xs text-base-400">{{ it.team.noNotes }}</li>
@@ -731,7 +731,7 @@ usePageSeo(() => ({
   color: var(--color-base-200);
   box-shadow: inset 0 0 0 1px var(--color-base-700);
 }
-.badge.fixed {
+.badge.fixed-in {
   background: color-mix(in srgb, var(--color-ok) 14%, transparent);
   color: var(--color-ok);
 }
@@ -779,7 +779,7 @@ usePageSeo(() => ({
   display: grid;
   gap: 0.75rem;
 }
-.timeline > li.event {
+.timeline > li.t-event {
   position: relative;
   display: flex;
   align-items: center;

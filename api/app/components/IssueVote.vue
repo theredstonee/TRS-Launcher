@@ -109,8 +109,8 @@ const label = (dir: -1 | 1) => {
   opacity: 0.45;
 }
 .score {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-weight: 700;
+  font-size: 1.05rem;
   line-height: 1;
   color: var(--color-base-50);
 }
@@ -125,6 +125,6 @@ const label = (dir: -1 | 1) => {
   height: 2rem;
 }
 .lg .score {
-  font-size: 1.9rem;
+  font-size: 1.6rem;
 }
 </style>
