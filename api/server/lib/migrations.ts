@@ -713,6 +713,16 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 16,
     run: migrateSharedPacks,
   },
+  {
+    // Issues & Roadmap (§28): öffentlicher Issue-Tracker (Nummer = id), Stimmen hoch/runter, Folgen, Kommentare,
+    // Bild-Uploads, Tags, interne Notizen, öffentlicher Verlauf, Tagesgrenzen. Neue Rechte `issues.manage` und
+    // `issues.moderate` für die Standardrollen (angepasste Rechte bleiben, es wird nur ergänzt). Meldungen bekommen
+    // die Arten `issue` und `issue_comment` (+ Spalten issue_id, issue_comment_id) – wie in Migration 16 die drei
+    // Meldungs-Tabellen neu anlegen (Kinder zuerst). Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen; Login/Blog = 18).
+    version: 17,
+    run: migrateIssues,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {
@@ -1288,6 +1298,248 @@ CREATE INDEX chat_reports_reporter ON chat_reports(reporter_uuid, status);
 CREATE INDEX chat_reports_share ON chat_reports(share_id);
 CREATE INDEX chat_reports_circuit ON chat_reports(circuit_id);
 CREATE INDEX chat_reports_pack ON chat_reports(pack_id);
+CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
+`)
+  }
+}
+
+/** Standardrollen um Rechte ergänzen (angepasste Rechte bleiben erhalten, fehlende Rollen werden übersprungen). */
+function grantBuiltin(db: DatabaseSync, grants: Record<string, string[]>): void {
+  if (!hasTable(db, 'team_roles')) return
+  for (const [id, add] of Object.entries(grants)) {
+    const row = db.prepare('SELECT permissions FROM team_roles WHERE id = ? AND builtin = 1').get(id) as { permissions: string } | undefined
+    if (!row) continue
+    let perms: string[] = []
+    try {
+      const parsed = JSON.parse(row.permissions) as unknown
+      if (Array.isArray(parsed)) perms = parsed.filter((p): p is string => typeof p === 'string')
+    } catch {
+      perms = []
+    }
+    const missing = add.filter((p) => !perms.includes(p))
+    if (missing.length === 0) continue
+    db.prepare('UPDATE team_roles SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify([...perms, ...missing]), Date.now(), id)
+  }
+}
+
+/** Migration 17 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateIssues(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS issues (
+  -- Öffentliche Nummer (#57).
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL CHECK (type IN ('bug', 'feature')),
+  area TEXT NOT NULL CHECK (area IN ('launcher', 'client', 'website')),
+  status TEXT NOT NULL CHECK (status IN ('open', 'planned', 'in_progress', 'in_review', 'done', 'rejected', 'duplicate')),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  -- NULL = Konto gelöscht.
+  author_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  -- Ersteller war beim Anlegen im Team (Abzeichen).
+  author_team INTEGER NOT NULL DEFAULT 0,
+  source TEXT NOT NULL CHECK (source IN ('web', 'client')),
+  -- JSON {modVersion, mcVersion, loader, mods} (öffentlich); das Log extra (nur Team + Ersteller).
+  meta TEXT,
+  log TEXT,
+  priority TEXT CHECK (priority IS NULL OR priority IN ('low', 'medium', 'high', 'critical')),
+  assignee_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  fixed_in TEXT,
+  duplicate_of INTEGER REFERENCES issues(id) ON DELETE SET NULL,
+  locked INTEGER NOT NULL DEFAULT 0,
+  up INTEGER NOT NULL DEFAULT 0,
+  down INTEGER NOT NULL DEFAULT 0,
+  score INTEGER NOT NULL DEFAULT 0,
+  comments INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  edited_at INTEGER,
+  activity_at INTEGER NOT NULL,
+  closed_at INTEGER,
+  deleted_at INTEGER,
+  deleted_by TEXT,
+  deleted_reason TEXT
+);
+CREATE INDEX IF NOT EXISTS issues_score ON issues(deleted_at, score DESC, id DESC);
+CREATE INDEX IF NOT EXISTS issues_created ON issues(deleted_at, created_at DESC);
+CREATE INDEX IF NOT EXISTS issues_activity ON issues(deleted_at, activity_at DESC);
+CREATE INDEX IF NOT EXISTS issues_status ON issues(status, closed_at);
+CREATE INDEX IF NOT EXISTS issues_author ON issues(author_uuid, created_at);
+CREATE INDEX IF NOT EXISTS issues_assignee ON issues(assignee_uuid);
+
+-- Je Konto eine Stimme (+1/-1), änderbar.
+CREATE TABLE IF NOT EXISTS issue_votes (
+  issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  vote INTEGER NOT NULL CHECK (vote IN (-1, 1)),
+  at INTEGER NOT NULL,
+  PRIMARY KEY (issue_id, uuid)
+);
+CREATE INDEX IF NOT EXISTS issue_votes_uuid ON issue_votes(uuid);
+
+CREATE TABLE IF NOT EXISTS issue_follows (
+  issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  PRIMARY KEY (issue_id, uuid)
+);
+CREATE INDEX IF NOT EXISTS issue_follows_uuid ON issue_follows(uuid, at);
+
+CREATE TABLE IF NOT EXISTS issue_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+  author_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  team INTEGER NOT NULL DEFAULT 0,
+  -- NULL = gelöscht (Platzhalter bleibt).
+  body TEXT,
+  created_at INTEGER NOT NULL,
+  edited_at INTEGER,
+  deleted_at INTEGER,
+  deleted_by TEXT CHECK (deleted_by IS NULL OR deleted_by IN ('author', 'team'))
+);
+CREATE INDEX IF NOT EXISTS issue_comments_issue ON issue_comments(issue_id, id);
+CREATE INDEX IF NOT EXISTS issue_comments_author ON issue_comments(author_uuid);
+
+-- Hochgeladene Bilder: erst lose (issue_id NULL, 1 h gültig), dann an Issue bzw. Kommentar gebunden.
+CREATE TABLE IF NOT EXISTS issue_uploads (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  owner_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  issue_id INTEGER REFERENCES issues(id) ON DELETE CASCADE,
+  comment_id INTEGER REFERENCES issue_comments(id) ON DELETE CASCADE,
+  sort INTEGER NOT NULL DEFAULT 0,
+  mime TEXT NOT NULL CHECK (mime IN ('image/png', 'image/jpeg')),
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  thumb_mime TEXT NOT NULL CHECK (thumb_mime IN ('image/png', 'image/jpeg')),
+  thumb_width INTEGER NOT NULL,
+  thumb_height INTEGER NOT NULL,
+  thumb_bytes INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS issue_uploads_issue ON issue_uploads(issue_id, comment_id, sort);
+CREATE INDEX IF NOT EXISTS issue_uploads_owner ON issue_uploads(owner_uuid, created_at);
+
+CREATE TABLE IF NOT EXISTS issue_tags (
+  issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+  tag TEXT NOT NULL,
+  PRIMARY KEY (issue_id, tag)
+);
+CREATE INDEX IF NOT EXISTS issue_tags_tag ON issue_tags(tag);
+
+-- Interne Notizen des Teams (nie öffentlich).
+CREATE TABLE IF NOT EXISTS issue_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS issue_notes_issue ON issue_notes(issue_id, at);
+
+-- Öffentlicher Verlauf (Status, Zuständig, Priorität, „Erledigt in“, Zusammenführen …).
+CREATE TABLE IF NOT EXISTS issue_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT,
+  action TEXT NOT NULL,
+  from_value TEXT,
+  to_value TEXT
+);
+CREATE INDEX IF NOT EXISTS issue_history_issue ON issue_history(issue_id, at);
+
+-- Tagesgrenzen (bleiben beim Löschen, nach 24 h weg).
+CREATE TABLE IF NOT EXISTS issue_actions (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('issue', 'comment', 'upload')),
+  at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS issue_actions_uuid ON issue_actions(uuid, kind, at);
+`)
+
+  grantBuiltin(db, {
+    owner: ['issues.manage', 'issues.moderate'],
+    admin: ['issues.manage', 'issues.moderate'],
+    senior_moderator: ['issues.manage', 'issues.moderate'],
+    moderator: ['issues.moderate'],
+    supporter: ['issues.manage'],
+  })
+
+  // Meldungen: Arten `issue` + `issue_comment`, Spalten issue_id + issue_comment_id.
+  if (hasTable(db, 'chat_reports') && !hasColumn(db, 'chat_reports', 'issue_id')) {
+    db.exec(`
+CREATE TABLE chat_reports_v17 (
+  id TEXT PRIMARY KEY,
+  reporter_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  target_uuid TEXT CHECK (target_uuid IS NULL OR length(target_uuid) = 32),
+  kind TEXT NOT NULL CHECK (kind IN ('message', 'image', 'player', 'group', 'share', 'circuit', 'pack', 'issue', 'issue_comment')),
+  conversation_id TEXT,
+  message_id TEXT,
+  attachment_id TEXT,
+  share_id TEXT,
+  circuit_id TEXT,
+  pack_id TEXT,
+  issue_id INTEGER,
+  issue_comment_id INTEGER,
+  reason TEXT NOT NULL CHECK (reason IN ('insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other')),
+  note BLOB,
+  evidence BLOB,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved')),
+  outcome TEXT CHECK (outcome IS NULL OR outcome IN ('actioned', 'dismissed')),
+  low_trust INTEGER NOT NULL DEFAULT 0,
+  assigned_to TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  resolved_at INTEGER,
+  resolved_by TEXT,
+  evidence_purged_at INTEGER,
+  CHECK ((status = 'resolved') = (outcome IS NOT NULL))
+);
+INSERT INTO chat_reports_v17 (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, circuit_id, pack_id,
+  issue_id, issue_comment_id, reason, note, evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by,
+  evidence_purged_at)
+SELECT id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, circuit_id, pack_id,
+  NULL, NULL, reason, note, evidence, status, outcome, low_trust, assigned_to, created_at, updated_at, resolved_at, resolved_by,
+  evidence_purged_at
+FROM chat_reports;
+
+CREATE TABLE chat_report_notes_v17 (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id TEXT NOT NULL REFERENCES chat_reports_v17(id) ON DELETE CASCADE,
+  at INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  text BLOB NOT NULL
+);
+INSERT INTO chat_report_notes_v17 (id, report_id, at, actor, text) SELECT id, report_id, at, actor, text FROM chat_report_notes;
+
+CREATE TABLE chat_evidence_files_v17 (
+  report_id TEXT NOT NULL REFERENCES chat_reports_v17(id) ON DELETE CASCADE,
+  attachment_id TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  key_id TEXT NOT NULL,
+  PRIMARY KEY (report_id, attachment_id)
+);
+INSERT INTO chat_evidence_files_v17 (report_id, attachment_id, mime, width, height, bytes, key_id)
+SELECT report_id, attachment_id, mime, width, height, bytes, key_id FROM chat_evidence_files;
+
+DROP TABLE chat_evidence_files;
+DROP TABLE chat_report_notes;
+DROP TABLE chat_reports;
+ALTER TABLE chat_reports_v17 RENAME TO chat_reports;
+ALTER TABLE chat_report_notes_v17 RENAME TO chat_report_notes;
+ALTER TABLE chat_evidence_files_v17 RENAME TO chat_evidence_files;
+CREATE INDEX chat_reports_status ON chat_reports(status, created_at);
+CREATE INDEX chat_reports_target ON chat_reports(target_uuid, created_at);
+CREATE INDEX chat_reports_reporter ON chat_reports(reporter_uuid, status);
+CREATE INDEX chat_reports_share ON chat_reports(share_id);
+CREATE INDEX chat_reports_circuit ON chat_reports(circuit_id);
+CREATE INDEX chat_reports_pack ON chat_reports(pack_id);
+CREATE INDEX chat_reports_issue ON chat_reports(issue_id);
+CREATE INDEX chat_reports_issue_comment ON chat_reports(issue_comment_id);
 CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
 `)
   }

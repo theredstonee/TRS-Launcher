@@ -13,6 +13,7 @@ import { sweepApplications } from '../lib/applications'
 import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
 import { setWebpWasmLoader } from '../lib/images'
+import { sweepIssues, sweepOrphanIssueFiles } from '../lib/issues'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
 import { sweepExpiredPacks, sweepOrphanPackFiles } from '../lib/packs'
 import { sweepExpiredShares, sweepOrphanShareFiles } from '../lib/shares'
@@ -131,6 +132,8 @@ export default defineNitroPlugin((nitroApp) => {
       sweepExpired(ctx)
       sweepExpiredShares(ctx)
       sweepExpiredPacks(ctx)
+      // Issues (§28): lose Bilder, gelöschte Issues nach 90 Tagen, Tagesprotokoll.
+      sweepIssues(ctx)
     }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.
@@ -151,6 +154,7 @@ export default defineNitroPlugin((nitroApp) => {
       sweepApplications(ctx)
       sweepOrphanShareFiles(ctx)
       sweepOrphanPackFiles(ctx)
+      sweepOrphanIssueFiles(ctx)
       // Schaltungs-Einreichungen: Löschfrist nach der Entscheidung (§25.5).
       sweepCircuitSubmissions(ctx)
     }),

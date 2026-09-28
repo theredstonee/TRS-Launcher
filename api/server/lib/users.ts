@@ -7,6 +7,7 @@ import { notifyShareRemoved, releaseHoldings, shareHolders } from './capeshares'
 import { finishChatPurge, prepareChatPurge } from './chat'
 import { forgetCircuitAuthor } from './circuits'
 import { endHostingFor } from './hosting'
+import { forgetIssueAuthor, removeUploadFiles, type UploadRow } from './issues'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
 import { packsOf, removePackFiles } from './packs'
@@ -207,7 +208,10 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   const sharedPacks = packsOf(ctx, uuid)
   // Gehostete Welten schließen, aus fremden austragen (Rest per ON DELETE CASCADE).
   endHostingFor(ctx, uuid)
+  // Issues (§28): Issues/Kommentare bleiben ohne Ersteller, Logs und eigene Bilder gehen (Dateien danach).
+  let issueFiles: UploadRow[] = []
   tx(ctx.db, () => {
+    issueFiles = forgetIssueAuthor(ctx, uuid)
     run(ctx.db, 'DELETE FROM users WHERE uuid = ?', uuid)
     // Einträge zu Meldungen (ref) bleiben mit der Meldung bis zu deren Ablauf.
     run(ctx.db, 'DELETE FROM admin_log WHERE target = ? AND ref IS NULL', uuid)
@@ -218,6 +222,7 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   finishChatPurge(ctx, chat)
   removeShareFiles(ctx, sharedImages)
   removePackFiles(ctx, sharedPacks)
+  removeUploadFiles(ctx, issueFiles)
   for (const s of sharedOut) {
     for (const u of s.worn) if (u !== uuid) emitCape(ctx, u)
     notifyShareRemoved(ctx, s.id, s.holders)

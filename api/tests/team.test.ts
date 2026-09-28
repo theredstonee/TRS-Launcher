@@ -70,11 +70,11 @@ describe('permissions and default roles', () => {
     expect(matrix(t.mod)).toEqual([
       'dashboard.view', 'audit.view', 'reports.view', 'reports.content', 'reports.handle',
       'sanctions.warn', 'sanctions.mute', 'sanctions.social', 'sanctions.upload', 'sanctions.hosting', 'sanctions.lift',
-      'appeals.handle', 'players.view', 'players.notes', 'uploads.review', 'worlds.view', 'worlds.close',
+      'appeals.handle', 'players.view', 'players.notes', 'uploads.review', 'worlds.view', 'worlds.close', 'issues.moderate',
     ])
     expect(can(t.senior, 'sanctions.ban')).toBe(true)
     expect(can(t.senior, 'sanctions.permanent')).toBe(false)
-    expect(matrix(t.supporter)).toEqual(['dashboard.view', 'reports.view', 'sanctions.warn', 'players.view', 'worlds.view'])
+    expect(matrix(t.supporter)).toEqual(['dashboard.view', 'reports.view', 'sanctions.warn', 'players.view', 'worlds.view', 'issues.manage'])
     expect(matrix(t.content)).toEqual(['dashboard.view', 'uploads.review', 'codes', 'circuits.manage'])
     expect(can(t.senior, 'circuits.manage')).toBe(true)
     expect(can(t.mod, 'circuits.manage')).toBe(false)

@@ -36,6 +36,7 @@ import {
   type Staff,
 } from './sanctions'
 import { getCircuit, publishedCircuit, setCircuitStatus, type CircuitRow } from './circuits'
+import { commentForReport, deleteReported, issueForReport, type IssueCommentEvidence, type IssueEvidence } from './issues'
 import { adminDeletePack, displayCode, packById, type PackRow } from './packs'
 import { adminDeleteShare, getShare, readShareImage, type ShareRow } from './shares'
 import { can } from './team'
@@ -50,7 +51,7 @@ import { getUser, staffRole } from './users'
 export const REPORT_ID = /^r[0-9a-f]{16}$/
 export const REPORT_REASONS = ['insult_hate', 'spam', 'inappropriate', 'scam_phishing', 'harassment', 'other'] as const
 export type ReportReason = (typeof REPORT_REASONS)[number]
-export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share' | 'circuit' | 'pack'
+export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share' | 'circuit' | 'pack' | 'issue' | 'issue_comment'
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 export type ReportOutcome = 'actioned' | 'dismissed'
 
@@ -204,6 +205,10 @@ export interface ReportRow {
   circuit_id: string | null
   /** Geteiltes Modpack (§27) bei `kind = 'pack'`. */
   pack_id: string | null
+  /** Issue (§28) bei `kind = 'issue'` bzw. das Issue des Kommentars bei `issue_comment`. */
+  issue_id: number | null
+  /** Issue-Kommentar (§28) bei `kind = 'issue_comment'`. */
+  issue_comment_id: number | null
   reason: ReportReason
   note: Uint8Array | null
   evidence: Uint8Array | null
@@ -266,6 +271,10 @@ export interface Evidence {
     sha256: string
     owner: PlayerRef
   } | null
+  /** Gemeldetes Issue zur Meldezeit (§28): Nummer, Titel, Beschreibung, Ersteller. */
+  issue?: IssueEvidence | null
+  /** Gemeldeter Issue-Kommentar zur Meldezeit (§28). */
+  issueComment?: IssueCommentEvidence | null
   /** Meldung über die öffentliche Seite ohne Konto. */
   anonymous?: boolean
 }
@@ -296,6 +305,8 @@ export interface ReportInput {
   shareId?: string
   circuitId?: string
   packId?: string
+  issueNumber?: number
+  commentId?: number
 }
 
 const ref = (ctx: AppContext, uuid: string | null): PlayerRef | null => (uuid ? { uuid, name: getUser(ctx, uuid)?.name ?? '' } : null)
@@ -385,6 +396,10 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
   let share: ShareRow | null = null
   let circuit: CircuitRow | null = null
   let pack: PackRow | null = null
+  let issue: IssueEvidence | null = null
+  let issueComment: IssueCommentEvidence | null = null
+  let issueId: number | null = null
+  let issueCommentId: number | null = null
 
   if (input.kind === 'message' || input.kind === 'image') {
     let msgId = input.messageId
@@ -445,6 +460,21 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     if (p.owner_uuid === reporter) throw badRequest('cannot_target_self', 'You cannot report yourself')
     target = p.owner_uuid
     pack = p
+  } else if (input.kind === 'issue') {
+    if (!input.issueNumber) throw badRequest('invalid_request', 'issueNumber is required')
+    const x = issueForReport(ctx, input.issueNumber)
+    if (x.row.author_uuid === reporter) throw badRequest('cannot_target_self', 'You cannot report yourself')
+    target = x.row.author_uuid
+    issue = x.evidence
+    issueId = x.row.id
+  } else if (input.kind === 'issue_comment') {
+    if (!input.commentId) throw badRequest('invalid_request', 'commentId is required')
+    const x = commentForReport(ctx, input.commentId)
+    if (x.row.author_uuid === reporter) throw badRequest('cannot_target_self', 'You cannot report yourself')
+    target = x.row.author_uuid
+    issueComment = x.evidence
+    issueId = x.row.issue_id
+    issueCommentId = x.row.id
   } else {
     if (!input.conversationId) throw badRequest('invalid_request', 'conversationId is required')
     const a = access(ctx, reporter, input.conversationId)
@@ -459,8 +489,10 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     ctx.db,
     `SELECT 1 AS x FROM chat_reports WHERE reporter_uuid = ? AND kind = ? AND status <> 'resolved'
        AND COALESCE(message_id, '') = ? AND COALESCE(attachment_id, '') = ? AND COALESCE(target_uuid, '') = ? AND COALESCE(conversation_id, '') = ?
-       AND COALESCE(share_id, '') = ? AND COALESCE(circuit_id, '') = ? AND COALESCE(pack_id, '') = ?`,
+       AND COALESCE(share_id, '') = ? AND COALESCE(circuit_id, '') = ? AND COALESCE(pack_id, '') = ?
+       AND COALESCE(issue_id, 0) = ? AND COALESCE(issue_comment_id, 0) = ?`,
     reporter, input.kind, messageId ?? '', attachmentId ?? '', target ?? '', conv?.id ?? '', share?.id ?? '', circuit?.id ?? '', pack?.id ?? '',
+    issueId ?? 0, issueCommentId ?? 0,
   )
   if (dup) throw conflict('already_reported', 'You already reported this')
 
@@ -478,16 +510,18 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     ...(share ? { share: shareEvidence(share) } : {}),
     ...(circuit ? { circuit: circuitEvidence(circuit) } : {}),
     ...(pack ? { pack: packEvidence(ctx, pack) } : {}),
+    ...(issue ? { issue } : {}),
+    ...(issueComment ? { issueComment } : {}),
   }
   const lowTrust = reporterTrust(ctx, reporter).low
   tx(ctx.db, () => {
     run(
       ctx.db,
       `INSERT INTO chat_reports (id, reporter_uuid, target_uuid, kind, conversation_id, message_id, attachment_id, share_id, circuit_id, pack_id,
-         reason, note, evidence, status, outcome, low_trust, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?, ?, ?)`,
+         issue_id, issue_comment_id, reason, note, evidence, status, outcome, low_trust, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?, ?, ?)`,
       id, reporter, target, input.kind, conv?.id ?? null, messageId, attachmentId, share?.id ?? null, circuit?.id ?? null, pack?.id ?? null,
-      input.reason,
+      issueId, issueCommentId, input.reason,
       input.note ? ctx.cipher.encrypt(input.note, `rnote:${id}`) : null,
       ctx.cipher.encrypt(JSON.stringify(evidence), `rep:${id}`),
       lowTrust ? 1 : 0, t, t,
@@ -632,6 +666,10 @@ export interface AdminReportSummary {
   circuitId: string | null
   /** Modpack (§27) bei `kind = 'pack'`, sonst `null`. */
   packId: string | null
+  /** Issue-Nummer (§28) bei `issue`/`issue_comment`, sonst `null`. */
+  issueNumber: number | null
+  /** Issue-Kommentar (§28) bei `issue_comment`, sonst `null`. */
+  issueCommentId: number | null
   /** Über die öffentliche Seite ohne Konto gemeldet (`reporter` ist dann `null`). */
   anonymous: boolean
   /** Anfang des gemeldeten Texts (≤ 140 Zeichen) oder `null`. */
@@ -702,8 +740,16 @@ export function summaries(ctx: AppContext, rows: ReportRow[]): AdminReportSummar
       shareId: r.share_id,
       circuitId: r.circuit_id,
       packId: r.pack_id,
+      issueNumber: r.issue_id,
+      issueCommentId: r.issue_comment_id,
       anonymous: r.kind === 'share' && r.reporter_uuid === null && ev?.anonymous === true,
-      preview: focus?.text ? [...focus.text].slice(0, 140).join('') : null,
+      preview: focus?.text
+        ? [...focus.text].slice(0, 140).join('')
+        : ev?.issueComment
+          ? [...ev.issueComment.body].slice(0, 140).join('')
+          : ev?.issue
+            ? [...ev.issue.title].slice(0, 140).join('')
+            : null,
       images: ev?.images.length ?? 0,
       lowTrust: r.low_trust === 1,
       assignedTo: ref(ctx, r.assigned_to),
@@ -734,6 +780,8 @@ export function redactDetail(d: AdminReportDetail): AdminReportDetail & { conten
           ...d.evidence,
           messages: d.evidence.messages.map((m) => ({ ...m, text: null, invite: null, world: null, waypoint: null, attachments: [], hidden: true })),
           images: [],
+          issue: d.evidence.issue ? { ...d.evidence.issue, description: '' } : d.evidence.issue,
+          issueComment: d.evidence.issueComment ? { ...d.evidence.issueComment, body: '' } : d.evidence.issueComment,
         }
       : null,
     related: d.related.map(redactSummary),
@@ -955,7 +1003,7 @@ export function adminAddNote(ctx: AppContext, actor: string, id: string, text: s
   return adminReportDetail(ctx, id)
 }
 
-export type ReportAction = 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack' | 'warn' | 'mute' | 'ban' | 'sanction' | 'dismiss' | 'resolve'
+export type ReportAction = 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack' | 'delete_issue' | 'warn' | 'mute' | 'ban' | 'sanction' | 'dismiss' | 'resolve'
 
 export interface ReportActionInput {
   action: ReportAction
@@ -1057,6 +1105,13 @@ export function adminReportAction(ctx: AppContext, actorIn: string | Staff, id: 
       audit(ctx, actor.uuid, 'pack.delete', r.target_uuid, r.pack_id, id)
       break
     }
+    case 'delete_issue': {
+      if (r.issue_id === null && r.issue_comment_id === null) throw conflict('no_issue', 'This report is not about an issue or comment')
+      // Löschen ist Pflege des Issue-Trackers → zusätzlich zum Meldungs-Recht `issues.moderate`.
+      if (!can(actor, 'issues.moderate')) throw forbidden('missing_permission', 'You need the permission issues.moderate')
+      deleteReported(ctx, actor, r.kind === 'issue_comment' ? null : r.issue_id, r.kind === 'issue_comment' ? r.issue_comment_id : null)
+      break
+    }
     case 'warn':
       warnUser(ctx, actor, r.target_uuid!, reason, id, { reasonCode, note })
       break
@@ -1094,6 +1149,10 @@ export function adminReportAction(ctx: AppContext, actorIn: string | Staff, id: 
           ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE circuit_id = ? AND id <> ? AND status <> 'resolved'", r.circuit_id, r.id)
           : r.pack_id
           ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE pack_id = ? AND id <> ? AND status <> 'resolved'", r.pack_id, r.id)
+          : r.issue_comment_id
+          ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE issue_comment_id = ? AND id <> ? AND status <> 'resolved'", r.issue_comment_id, r.id)
+          : r.issue_id
+          ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE kind = 'issue' AND issue_id = ? AND id <> ? AND status <> 'resolved'", r.issue_id, r.id)
           : r.target_uuid
           ? all<ReportRow>(ctx.db, "SELECT * FROM chat_reports WHERE target_uuid = ? AND kind = ? AND id <> ? AND status <> 'resolved'", r.target_uuid, r.kind, r.id)
           : []

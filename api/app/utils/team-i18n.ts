@@ -145,6 +145,7 @@ const en = {
       worlds: 'Worlds',
       applications: 'Applications',
       team: 'Team',
+      issues: 'Issues',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -178,6 +179,8 @@ const en = {
       'applications.decide': 'Accept or reject applications',
       'circuits.manage': 'Manage the circuit library (editor, import, submissions)',
       'team.page': 'Edit the public team page (members, order, titles)',
+      'issues.manage': 'Triage issues (status, priority, assignee, tags, fixed in, merge, internal notes)',
+      'issues.moderate': 'Moderate issues (delete, restore, close comments)',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -529,6 +532,7 @@ const de: TeamTexts = {
       worlds: 'Welten',
       applications: 'Bewerbungen',
       team: 'Team',
+      issues: 'Issues',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -562,6 +566,8 @@ const de: TeamTexts = {
       'applications.decide': 'Bewerbungen annehmen oder ablehnen',
       'circuits.manage': 'Schaltungs-Bibliothek verwalten (Editor, Import, Einreichungen)',
       'team.page': 'Öffentliche Team-Seite pflegen (Mitglieder, Reihenfolge, Titel)',
+      'issues.manage': 'Issues bearbeiten (Status, Priorität, Zuständig, Tags, Erledigt in, Zusammenführen, interne Notizen)',
+      'issues.moderate': 'Issues moderieren (löschen, wiederherstellen, Kommentare schließen)',
     },
     roles: {
       title: 'Rollen & Team',
@@ -911,6 +917,7 @@ const es: TeamTexts = {
       worlds: 'Mundos',
       applications: 'Solicitudes',
       team: 'Equipo',
+      issues: 'Incidencias',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -944,6 +951,8 @@ const es: TeamTexts = {
       'applications.decide': 'Aceptar o rechazar solicitudes',
       'circuits.manage': 'Gestionar la biblioteca de circuitos (editor, importación, envíos)',
       'team.page': 'Editar la página pública del equipo (miembros, orden, títulos)',
+      'issues.manage': 'Gestionar incidencias (estado, prioridad, responsable, etiquetas, corregido en, fusionar, notas internas)',
+      'issues.moderate': 'Moderar incidencias (eliminar, restaurar, cerrar comentarios)',
     },
     roles: {
       title: 'Roles y equipo',

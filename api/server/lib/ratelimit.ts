@@ -213,4 +213,17 @@ export const RULES = {
   circuitConvertUser: { limit: 30, windowMs: HOUR },
   /** Team: Import/Export und Speichern im Editor. */
   adminCircuit: { limit: 120, windowMs: MIN },
+  // ------------------------------------------------ Issues & Roadmap (§28)
+  /** Öffentliche Abrufe (Liste, Issue, Roadmap, Bilder) je IP – zusätzlich zur globalen IP-Grenze. */
+  issuePublicIp: { limit: 240, windowMs: MIN },
+  /** Issues anlegen – die Tagesgrenze steht zusätzlich in der Datenbank. */
+  issueCreateUser: { limit: 5, windowMs: HOUR },
+  /** Kommentieren (dazu die Tagesgrenze in der Datenbank). */
+  issueCommentUser: { limit: 10, windowMs: 5 * MIN },
+  /** Eigene Issues/Kommentare bearbeiten oder löschen. */
+  issueEditUser: { limit: 30, windowMs: 10 * MIN },
+  issueVoteUser: { limit: 60, windowMs: MIN },
+  issueFollowUser: { limit: 60, windowMs: MIN },
+  /** Bilder hochladen (dazu die Tagesgrenze in der Datenbank). */
+  issueUploadUser: { limit: 20, windowMs: 10 * MIN },
 } satisfies Record<string, Rule>

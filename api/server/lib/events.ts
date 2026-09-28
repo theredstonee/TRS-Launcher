@@ -6,6 +6,7 @@ import type { ConversationView, MessageView, ReactionView } from './chat'
 import type { HostRoomView, RoomCloseReason, RoomView, SignalKind } from './hosting'
 import type { MyAppealView, MySanctionView } from './sanctions'
 import type { Settings } from './users'
+import type { IssueUpdatedEvent } from './issues'
 import type { PackView } from './packs'
 
 export interface PlayerRef {
@@ -110,6 +111,9 @@ export type ApiEvent =
   | { type: 'pack_updated', pack: PackView }
   /** Ein an dich geschicktes Pack wurde gelöscht (Besitzer oder Moderation). */
   | { type: 'pack_removed', packId: string }
+  // ---------------------------------------------------------------- Issues (§28, nur /v1/events/me)
+  /** Ein Issue, dem du folgst: Status geändert, „Erledigt in“, Team-Antwort oder zusammengeführt. */
+  | IssueUpdatedEvent
 
 export type ApiEventType = ApiEvent['type']
 

@@ -37,6 +37,8 @@ export interface AppContext {
   shareDir: string
   /** Geteilte Modpacks (§27): `<DATA_DIR>/packs/<xx>/<id>.<rev>.mrpack`. */
   packDir: string
+  /** Bilder im Issue-Tracker (§28): `<DATA_DIR>/issues/<xx>/<id>.<jpg|png>` (+ `.t.` Vorschau), öffentlich. */
+  issueDir: string
   /** Verschlüsselung der Chat-Inhalte (Schlüssel aus `CHAT_KEYS`). */
   cipher: ChatCipher
   /** Status für Server-Einladungen (Ping mit Cache + SSRF-Schutz). */
@@ -85,6 +87,7 @@ export function createContext(opts: {
     chatDir: opts.chatDir ?? join(opts.config.dataDir, 'chat'),
     shareDir: join(opts.config.dataDir, 'shares'),
     packDir: join(opts.config.dataDir, 'packs'),
+    issueDir: join(opts.config.dataDir, 'issues'),
     cipher: new ChatCipher(opts.config.chatKeys.keys),
     servers: new ServerStatusService(opts.config.serverPing, now, opts.pingDeps),
     spam: new SpamGuard(opts.config.secretKey, now),
