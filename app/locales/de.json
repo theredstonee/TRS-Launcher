@@ -2223,7 +2223,8 @@
         "friendRequests": "Freundschaftsanfragen",
         "capeOffers": "Umhang-Angebote",
         "friendOnline": "Freunde kommen online",
-        "issues": "Issues, denen du folgst"
+        "issues": "Issues, denen du folgst",
+        "achievements": "Freigeschaltete Erfolge"
       },
       "preview": "Test-Benachrichtigung zeigen",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Presets",
     "clips": "Clips",
     "social": "Sozial",
-    "socialBadge": "{messages} ungelesen · {requests} Anfragen"
+    "socialBadge": "{messages} ungelesen · {requests} Anfragen",
+    "achievements": "Erfolge"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -2582,7 +2584,8 @@
       "social": "freunde chat nachrichten gruppen sozial anfragen",
       "admin": "team moderation meldungen strafen einsprüche spieler admin verwaltung",
       "websiteLogin": "website anmelden login code bestätigen launcher microsoft browser team",
-      "myApplications": "bewerbungen bewerben team stelle status"
+      "myApplications": "bewerbungen bewerben team stelle status",
+      "achievements": "erfolge trophäen punkte belohnungen abzeichen freischalten achievements"
     },
     "actions": {
       "newInstance": {
@@ -2864,7 +2867,8 @@
       "friends": "Für die Freundesliste meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "capes": "Für TRS-Umhänge meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "button": "Mehr erfahren & einschalten",
-      "shares": "Um Screenshots als Link zu teilen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
+      "shares": "Um Screenshots als Link zu teilen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
+      "achievements": "Um deine Erfolge zu zeigen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
     },
     "account": {
       "title": "Kein Account angemeldet",
@@ -5194,5 +5198,81 @@
     "approve": "Bestätigen",
     "sending": "Wird bestätigt …",
     "enterCode": "Code eingeben"
+  },
+  "achievements": {
+    "title": "Erfolge",
+    "subtitle": "Spielen, entdecken, mitmachen – jeder Erfolg bringt Punkte, manche sogar eine Belohnung.",
+    "refresh": "Aktualisieren",
+    "error": "Erfolge konnten nicht geladen werden",
+    "empty": "Noch keine Erfolge da – schau bald wieder vorbei.",
+    "emptyFilter": "Mit diesem Filter gibt es hier nichts.",
+    "overall": "Freigeschaltete Erfolge",
+    "unlocked": "Freigeschaltet",
+    "unlockedAt": "Freigeschaltet am {date}",
+    "unlockedOf": "{n} von {total} freigeschaltet",
+    "points": "{points} Punkt | {points} Punkte",
+    "pointsOf": "Punkte von {max}",
+    "pointsTitle": "Punkte",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} Std.",
+      "days": "{current} / {goal} Tag | {current} / {goal} Tage"
+    },
+    "filter": {
+      "label": "Anzeigen",
+      "all": "Alle",
+      "unlocked": "Freigeschaltet",
+      "locked": "Gesperrt"
+    },
+    "category": {
+      "playtime": "Spielzeit",
+      "launcher": "Launcher",
+      "community": "Community",
+      "secret": "Geheim"
+    },
+    "rarity": {
+      "common": "Gewöhnlich",
+      "uncommon": "Ungewöhnlich",
+      "rare": "Selten",
+      "epic": "Episch",
+      "legendary": "Legendär"
+    },
+    "secret": {
+      "title": "Geheimer Erfolg",
+      "description": "???",
+      "badge": "Geheim"
+    },
+    "reward": {
+      "cape": "Belohnung: Umhang „{name}“",
+      "cosmetic": "Belohnung: „{name}“",
+      "emote": "Belohnung: Emote „{name}“",
+      "wearNow": "Jetzt tragen",
+      "whereEmote": "Wo finde ich es?",
+      "emoteHint": "„{name}“ liegt im Emote-Rad des TRS Clients (Standard-Taste G)."
+    },
+    "toast": {
+      "title": "Erfolg freigeschaltet!",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – Belohnung: {reward}",
+      "view": "Ansehen"
+    },
+    "friend": {
+      "title": "Erfolge von {name}",
+      "subtitle": "Was dein Freund freigeschaltet hat – geheime Erfolge bleiben verborgen, bis du sie selbst hast.",
+      "back": "Zurück zu Freunde",
+      "unavailable": "Erfolge sehen nur Freunde – oder der TRS-Server ist gerade nicht erreichbar.",
+      "unlockedCount": "{n} Erfolg | {n} Erfolge",
+      "none": "{name} hat noch keine Erfolge freigeschaltet.",
+      "viewAll": "Alle Erfolge ansehen",
+      "menu": "Erfolge ansehen",
+      "toggle": "Erfolge von {name} zeigen",
+      "youToo": "Du auch",
+      "private": "Erfolge sind privat",
+      "privateText": "{name} teilt die eigenen Erfolge nicht."
+    },
+    "visibility": {
+      "title": "Erfolge für Freunde sichtbar",
+      "description": "Freunde sehen deine Punkte und freigeschalteten Erfolge. Aus: deine Erfolge bleiben privat."
+    }
   }
 }

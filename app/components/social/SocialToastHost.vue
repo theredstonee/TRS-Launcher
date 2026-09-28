@@ -28,6 +28,8 @@ function icon(toast: SocialToast) {
       return 'mailUnread' as const
     case 'invite':
       return 'invite' as const
+    case 'achievement':
+      return 'trophy' as const
     default:
       return 'chat' as const
   }

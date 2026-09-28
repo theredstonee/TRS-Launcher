@@ -157,7 +157,11 @@ export const useCrashHelperStore = defineStore('crashHelper', () => {
     if (running.value.has(key)) return
     running.value = new Set(running.value).add(key)
     try {
-      if (await perform(crash, action)) done.value = new Set(done.value).add(key)
+      if (await perform(crash, action)) {
+        done.value = new Set(done.value).add(key)
+        // Erfolge: der Absturz-Helfer hat etwas behoben.
+        useAchievementsStore().reportCrashFixed()
+      }
     } finally {
       const next = new Set(running.value)
       next.delete(key)

@@ -431,6 +431,26 @@ servidor TRS.
   paquete de recursos solo se usa si respondes que sí a la pregunta de Minecraft; tu juego se lo pasa a Minecraft por una
   dirección local en tu ordenador (`127.0.0.1`) que solo vale para esta conexión.
 
+### Logros
+
+El launcher tiene logros (puntos, rarezas y algunas recompensas como una capa o un cosmético). Forman parte de los
+servicios TRS y solo funcionan mientras estén activados.
+
+- **Lo que cuenta el propio servidor:** el tiempo de juego y los días seguidos (a partir del estado en juego que el
+  launcher o el TRS Client ya envían), amigos, mensajes de chat, incidencias y votos, circuitos, packs compartidos,
+  mundos, capas y cosméticos.
+- **Lo que informa el launcher:** algunas cosas que solo él sabe: se inició una partida (con la hora local del inicio,
+  0–23, para logros según la hora del día), se instalaron mods o un modpack (solo el número), se guardó un clip (solo el
+  número), el asistente de fallos arregló algo, se importaron instancias de otro launcher. No se envían nombres,
+  archivos, rutas ni instancias. Los avisos se agrupan unos segundos y se envían en segundo plano; sin los servicios TRS
+  o sin conexión no se envía nada.
+- **Guardado en el servidor TRS:** qué logros desbloqueaste y cuándo, contadores e indicadores por cuenta, tu tiempo
+  total de juego con la sesión actual y la más larga y tu racha de días (sin historial de sesiones), y el interruptor
+  «Logros visibles para amigos».
+- **Quién lo ve:** tú y tus amigos aceptados (puntos y logros desbloqueados), nadie más. Si desactivas «Logros visibles
+  para amigos» (página de logros o *Einstellungen → Datenschutz*), tus amigos solo ven que tus logros son privados.
+- **Cuánto tiempo:** mientras exista tu cuenta TRS; «Alle TRS-Daten löschen» lo borra todo.
+
 ### Qué se guarda
 
 | Datos | Para qué |
@@ -454,6 +474,7 @@ servidor TRS.
 | Capturas compartidas (solo las imágenes que compartes): la imagen recodificada, tamaño, formato, fecha de publicación y de caducidad, la cuenta que la compartió (no visible públicamente) | Compartir una captura como enlace (ver arriba) |
 | Modpacks compartidos (solo los packs que compartes): archivo del pack, nombre, descripción, versión, versión de Minecraft, cargador, número de archivos, fecha de publicación/actualización/caducidad, instalaciones, la cuenta que lo compartió (nombre visible en la página del pack), amigos a los que se envió | Compartir un modpack por código, enlace o con amigos (ver arriba) |
 | Incidencias y comentarios que escribes, tus votos y lo que sigues; con «Informar de un error» en TRS Client lo que marques (versiones, lista de mods, extracto del log – limpio, solo visible para ti y el equipo – y una captura) | Informar de errores, sugerir funciones, votar y avisos (ver arriba) |
+| Logros: cuáles desbloqueaste y cuándo, contadores e indicadores (p. ej. número de partidas iniciadas o mods instalados, la hora local de un inicio), tiempo total de juego con la sesión actual y la más larga, racha de días y si tus amigos pueden ver tus logros | Logros y sus recompensas; solo visibles para ti y tus amigos (ver arriba) |
 | Circuitos enviados: el circuito (solo bloques y estados), nombre, descripción, categoría, idioma, fecha, estado y respuesta del equipo; en los circuitos aceptados, tu nombre como creador | Enviar un circuito a la biblioteca (ver arriba) |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
@@ -510,7 +531,7 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   las capas compartidas (tus capas con amigos y las que tus amigos compartieron contigo),
   los códigos canjeados, las denuncias, tu estado en línea, todas las skins, presets y ajustes sincronizados, todos tus
   chats directos (para ambas partes) y tus mensajes, reacciones e imágenes en grupos (tus grupos pasan al miembro más
-  antiguo), todas las imágenes que compartiste como enlace y todos los modpacks que compartiste. Después,
+  antiguo), todas las imágenes que compartiste como enlace, todos los modpacks que compartiste y tus logros con sus contadores. Después,
   los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
 - Tras la eliminación solo se conservan las sanciones activas (por ejemplo un bloqueo o un silencio en el chat, con
   motivo y periodo) y las denuncias sobre ti (hasta que termine su plazo, ver arriba), para que no se puedan eludir

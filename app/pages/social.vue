@@ -171,6 +171,9 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
         <button class="btn-icon" :disabled="!trs.enabled" :title="t('social.actions.blockPlayer')" :aria-label="t('social.actions.blockPlayer')" data-testid="social-block" @click="dialog = 'block'">
           <SocialIcon name="block" class="size-4.5" />
         </button>
+        <NuxtLink to="/achievements" class="btn-icon" :title="t('nav.achievements')" :aria-label="t('nav.achievements')" data-testid="social-achievements">
+          <SocialIcon name="trophy" class="size-4.5" />
+        </NuxtLink>
         <button class="btn-icon" :disabled="!trs.enabled || !chat.me" :title="t('social.reports.title')" :aria-label="t('social.reports.title')" data-testid="social-reports" @click="dialog = 'reports'">
           <SocialIcon name="flag" class="size-4.5" />
         </button>

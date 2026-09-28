@@ -72,6 +72,7 @@ import {
 } from './moderation'
 import { mySanctionSchema, mySanctionsSchema, sanctionErrorText } from './sanctions'
 import { myApplicationSchema, myApplicationsSchema } from './applications'
+import { myAchievementsSchema, playerAchievementsSchema } from './achievements'
 import { teamErrorText } from './teamAccess'
 import { sharedImageSchema, sharesPageSchema } from './share'
 import { webLoginAccountSchema, webLoginRequestSchema } from './webLogin'
@@ -838,6 +839,16 @@ export const backend = {
   sanctions: {
     mine: () => checked(mySanctionsSchema, 'trs_my_sanctions'),
     appeal: (id: number, text: string) => checked(mySanctionSchema, 'trs_appeal', { id, text }),
+  },
+
+  /** Launcher-Erfolge: eigene (Katalog, Fortschritt, Punkte) und die eines Freundes. */
+  achievements: {
+    mine: () => checked(myAchievementsSchema, 'trs_achievements'),
+    player: (uuid: string) => checked(playerAchievementsSchema, 'trs_player_achievements', { uuid }),
+    /** Meldung aus der Oberfläche (nur `crash_fixed`), gesendet wird gesammelt im Hintergrund. */
+    report: (kind: 'crash_fixed') => call<void>('trs_achievement_report', { kind }),
+    /** Erfolge für Freunde sichtbar oder privat – gibt den neuen Stand zurück. */
+    setVisible: (visible: boolean) => checked(z.boolean(), 'trs_set_achievements_visible', { visible }),
   },
 
   /** Eigene Team-Bewerbungen (§24.3): Status + Antwort, zurückziehen. Stellen und Formulare: Website. */

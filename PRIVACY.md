@@ -406,6 +406,26 @@ the TRS server.
   answer Minecraft's question with yes; your game serves it to Minecraft through a local address on your computer
   (`127.0.0.1`) that only works for this connection.
 
+### Achievements
+
+The launcher has achievements (points, rarities, a few rewards such as a cape or a cosmetic). They are part of the TRS
+services and only work while those are on.
+
+- **What the server counts itself:** time in game and day streaks (from the in-game status the launcher or the TRS
+  Client sends anyway), friends, chat messages, issues and votes, circuits, shared packs, worlds, capes and cosmetics.
+- **What the launcher reports:** a few facts only it knows – a game was started (with the local hour of the start,
+  0–23, for time-of-day achievements), mods or a modpack were installed (only the number), a clip was saved (only the
+  number), the crash helper fixed something, instances were imported from another launcher. No names, files, paths or
+  instances are sent. Reports are collected for a few seconds and sent in the background; nothing is sent without the
+  TRS services or while you are offline.
+- **Stored on the TRS server:** which achievements you unlocked and when, counters and flags per account, your total
+  time in game with the current and longest session and your day streak (no history of sessions), and the switch
+  "Achievements visible to friends".
+- **Who sees it:** you and your accepted friends (points and unlocked achievements) – nobody else. With "Achievements
+  visible to friends" off (achievements page or *Einstellungen → Datenschutz*) your friends only see that your
+  achievements are private.
+- **How long:** as long as your TRS account exists; "Alle TRS-Daten löschen" deletes all of it.
+
 ### What is stored
 
 | Data | Why |
@@ -429,6 +449,7 @@ the TRS server.
 | Shared screenshots (only the pictures you share): the re-encoded picture, size, format, share and expiry time, the sharing account (not shown publicly) | Sharing a screenshot as a link (see above) |
 | Shared modpacks (only the packs you share): the pack file, name, description, version, Minecraft version, loader, file counts, share/update/expiry time, installs, the sharing account (name shown on the pack page), friends it was sent to | Sharing a modpack by code, link or with friends (see above) |
 | Issues and comments you write, your votes and follows; with "Report a bug" in the TRS Client the parts you tick (versions, mod list, log excerpt – cleaned, only visible to you and the team – and a screenshot) | Reporting bugs, suggesting features, voting and notifications (see above) |
+| Achievements: which ones you unlocked and when, counters and flags (e.g. number of game starts or installed mods, the local hour of a start), total time in game with current and longest session, day streak, and whether friends may see your achievements | Achievements and their rewards; visible to you and your friends only (see above) |
 | Circuit submissions: the circuit (blocks and states only), name, description, category, language, time, status and the team's answer; for accepted circuits your name as the creator | Submitting a circuit to the library (see above) |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
@@ -480,7 +501,7 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   account, sessions, friendships, requests and blocks, uploaded capes and their files, cape shares (your capes with
   friends and the capes friends shared with you), code redemptions, reports,
   your online status, all synced skins, presets and settings, all your direct chats (for both sides) and your messages,
-  reactions and pictures in groups (groups you own go to the longest member), all pictures you shared as a link and all modpacks you shared. Afterwards the TRS services are turned off in the
+  reactions and pictures in groups (groups you own go to the longest member), all pictures you shared as a link, all modpacks you shared and your achievements with their counters. Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
 - Only active sanctions (such as a ban or a running chat mute, with reason and period) and reports about you (until
   their retention ends, see above) are kept after deletion, so they can't be escaped by signing in again.

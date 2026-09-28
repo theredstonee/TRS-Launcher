@@ -214,6 +214,8 @@ export interface SocialSettings {
   friendOnline: boolean
   /** Issues auf der Website, denen man folgt (§28). */
   issues: boolean
+  /** Freigeschaltete Erfolge. */
+  achievements: boolean
 }
 
 // --- Clips & Aufnahme ------------------------------------------------------------------

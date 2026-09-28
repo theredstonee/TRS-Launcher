@@ -154,6 +154,7 @@ function openPrivacy() {
             @update:model-value="update('shareServer', $event)"
           />
         </SettingRow>
+        <AchievementsVisibility />
 
         <h4 class="mt-5 mb-1 text-xs font-semibold tracking-wide text-base-400 uppercase">{{ t('trsPrivacy.chat.heading') }}</h4>
         <SettingRow :title="t('trsPrivacy.chat.receiptsTitle')" :description="t('trsPrivacy.chat.receiptsDescription')">

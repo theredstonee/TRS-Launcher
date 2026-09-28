@@ -2223,7 +2223,8 @@
         "friendRequests": "Arkadaşlık istekleri",
         "capeOffers": "Pelerin teklifleri",
         "friendOnline": "Çevrimiçi olan arkadaşlar",
-        "issues": "Takip ettiğin kayıtlar"
+        "issues": "Takip ettiğin kayıtlar",
+        "achievements": "Açılan başarımlar"
       },
       "preview": "Test bildirimi göster",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Ön ayarlar",
     "clips": "Klipler",
     "social": "Sosyal",
-    "socialBadge": "{messages} okunmamış · {requests} istek"
+    "socialBadge": "{messages} okunmamış · {requests} istek",
+    "achievements": "Başarımlar"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -2582,7 +2584,8 @@
       "social": "arkadaşlar sohbet mesajlar gruplar sosyal istekler",
       "admin": "ekip moderasyon şikayetler cezalar itirazlar oyuncular admin",
       "websiteLogin": "web sitesi oturum aç giriş kod onayla launcher microsoft tarayıcı ekip",
-      "myApplications": "başvurular başvur ekip pozisyon durum"
+      "myApplications": "başvurular başvur ekip pozisyon durum",
+      "achievements": "başarımlar kupalar puanlar ödüller rozetler kilit achievements"
     },
     "actions": {
       "newInstance": {
@@ -2864,7 +2867,8 @@
       "friends": "Arkadaş listeni göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
       "capes": "TRS pelerinlerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
       "button": "Daha fazla bilgi ve aç",
-      "shares": "Ekran görüntülerini bağlantı olarak paylaşmak için başlatıcı TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur."
+      "shares": "Ekran görüntülerini bağlantı olarak paylaşmak için başlatıcı TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur.",
+      "achievements": "Başarımlarını göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur."
     },
     "account": {
       "title": "Giriş yapılmış hesap yok",
@@ -5194,5 +5198,81 @@
     "approve": "Onayla",
     "sending": "Onaylanıyor…",
     "enterCode": "Kodu gir"
+  },
+  "achievements": {
+    "title": "Başarımlar",
+    "subtitle": "Oyna, keşfet, katıl – her başarım puan kazandırır, bazıları ödül bile verir.",
+    "refresh": "Yenile",
+    "error": "Başarımlar yüklenemedi",
+    "empty": "Henüz başarım yok – yakında tekrar bak.",
+    "emptyFilter": "Bu filtreyle burada bir şey yok.",
+    "overall": "Açılan başarımlar",
+    "unlocked": "Açıldı",
+    "unlockedAt": "{date} tarihinde açıldı",
+    "unlockedOf": "{total} başarımdan {n} tanesi açıldı",
+    "points": "{points} puan | {points} puan",
+    "pointsOf": "{max} puandan",
+    "pointsTitle": "Puan",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} sa",
+      "days": "{current} / {goal} gün | {current} / {goal} gün"
+    },
+    "filter": {
+      "label": "Göster",
+      "all": "Tümü",
+      "unlocked": "Açılanlar",
+      "locked": "Kilitli"
+    },
+    "category": {
+      "playtime": "Oyun süresi",
+      "launcher": "Launcher",
+      "community": "Topluluk",
+      "secret": "Gizli"
+    },
+    "rarity": {
+      "common": "Yaygın",
+      "uncommon": "Sıra dışı",
+      "rare": "Nadir",
+      "epic": "Destansı",
+      "legendary": "Efsanevi"
+    },
+    "secret": {
+      "title": "Gizli başarım",
+      "description": "???",
+      "badge": "Gizli"
+    },
+    "reward": {
+      "cape": "Ödül: “{name}” pelerini",
+      "cosmetic": "Ödül: “{name}”",
+      "emote": "Ödül: “{name}” ifadesi",
+      "wearNow": "Şimdi giy",
+      "whereEmote": "Nerede?",
+      "emoteHint": "“{name}”, TRS Client içindeki ifade çarkında (varsayılan tuş G)."
+    },
+    "toast": {
+      "title": "Başarım açıldı!",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – ödül: {reward}",
+      "view": "Görüntüle"
+    },
+    "friend": {
+      "title": "{name} adlı oyuncunun başarımları",
+      "subtitle": "Arkadaşının açtıkları – gizli başarımlar sen de açana kadar gizli kalır.",
+      "back": "Arkadaşlara dön",
+      "unavailable": "Başarımları yalnızca arkadaşlar görebilir – ya da TRS sunucusuna şu an ulaşılamıyor.",
+      "unlockedCount": "{n} başarım | {n} başarım",
+      "none": "{name} henüz hiç başarım açmadı.",
+      "viewAll": "Tüm başarımları göster",
+      "menu": "Başarımları göster",
+      "toggle": "{name} adlı oyuncunun başarımlarını göster",
+      "youToo": "Sen de",
+      "private": "Başarımlar gizli",
+      "privateText": "{name} başarımlarını paylaşmıyor."
+    },
+    "visibility": {
+      "title": "Başarımlar arkadaşlara görünür",
+      "description": "Arkadaşların puanlarını ve açtığın başarımları görür. Kapatırsan başarımların gizli kalır."
+    }
   }
 }

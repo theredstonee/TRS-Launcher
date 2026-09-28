@@ -8,6 +8,7 @@ import { myApplicationSchema } from './applications'
 import { chatWaypointSchema } from './waypoint'
 import { packEventSchemas } from './packs'
 import { issueEventSchemas } from './issues'
+import { achievementEventSchemas } from './achievements'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
 // geprüft), und reine Funktionen für Zeitleiste, Vorschauen, Reaktionen,
@@ -254,6 +255,7 @@ export const liveEventSchema = z.discriminatedUnion('type', [
   ...hostingEventSchemas,
   ...packEventSchemas,
   ...issueEventSchemas,
+  ...achievementEventSchemas,
 ])
 
 export type ChatReaction = z.infer<typeof chatReactionSchema>

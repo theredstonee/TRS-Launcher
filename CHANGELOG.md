@@ -21,6 +21,36 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- **Achievements.** The launcher now has achievements: for playtime, for trying out launcher features and for the
+  community – plus a few secret ones you only see once you have unlocked them. Every achievement earns points and has
+  a rarity; some come with a reward (100 hours played gives the "Veteran" cape, an implemented idea the "Ideengeber"
+  cape, 10 friends a party emote, all secrets a secret crown). Open them from the account menu at the top right, the
+  trophy in Social or with Ctrl+K: grouped by category, with progress bars (playtime in hours), unlock dates and a
+  filter for all, unlocked and locked.
+- When you unlock an achievement, a notification pops up. If it gives you a cape or a head cosmetic, "Wear now" puts
+  it on right away; for the emote it tells you where to find it in the TRS Client. You can switch these notifications
+  off under Settings → Notifications → "Unlocked achievements".
+- See what your friends achieved: click a friend in Social to see their points and latest achievements, or open all of
+  them. Secret achievements stay "???" until you have them too. If you'd rather keep yours to yourself, turn off
+  "Achievements visible to friends" on the achievements page or under Settings → Privacy.
+
+### Deutsch
+- **Erfolge.** Der Launcher hat jetzt Erfolge: für Spielzeit, fürs Ausprobieren von Launcher-Funktionen und für die
+  Community – dazu ein paar geheime, die du erst siehst, wenn du sie freigeschaltet hast. Jeder Erfolg bringt Punkte und
+  hat eine Seltenheit; manche haben eine Belohnung (100 Stunden gespielt gibt den Umhang „Veteran“, eine umgesetzte Idee
+  den Umhang „Ideengeber“, 10 Freunde ein Party-Emote, alle Geheimnisse eine geheime Krone). Du findest sie im
+  Kontomenü oben rechts, über den Pokal in „Sozial“ oder mit Strg+K: nach Kategorien sortiert, mit Fortschrittsbalken
+  (Spielzeit in Stunden), Datum der Freischaltung und Filter für alle, freigeschaltete und gesperrte.
+- Schaltest du einen Erfolg frei, erscheint eine Benachrichtigung. Gibt es dafür einen Umhang oder eine Kopf-Kosmetik,
+  legt „Jetzt tragen“ sie sofort an; beim Emote steht dort, wo du es im TRS Client findest. Abschalten kannst du diese
+  Hinweise unter Einstellungen → Benachrichtigungen → „Freigeschaltete Erfolge“.
+- Sieh dir an, was deine Freunde geschafft haben: Klick in „Sozial“ auf einen Freund, um seine Punkte und neuesten
+  Erfolge zu sehen, oder öffne alle. Geheime Erfolge bleiben „???“, bis du sie selbst hast. Willst du deine lieber für
+  dich behalten, schalte „Erfolge für Freunde sichtbar“ auf der Erfolge-Seite oder unter Einstellungen → Datenschutz aus.
+
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->
 <!-- shots:
