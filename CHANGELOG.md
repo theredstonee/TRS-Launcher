@@ -7,10 +7,7 @@ updating ("What's new").
 <!--
 How to write an entry:
 - Collect changes under "## Unreleased" while working. For a release, rename it to "## <version> – <YYYY-MM-DD>".
-- Every version needs both "### English" and "
-- New emote “Party” in the TRS Client – the reward for having 10 friends (achievements).
-
-### Deutsch" with the same points. Write for players, not
+- Every version needs both "### English" and "### Deutsch" with the same points. Write for players, not
   developers: what changed for them, in plain words, no file or function names.
 - The release build fails when the section for its version is missing or one language is empty.
 - Every release gets a theme name in the heading ("## 0.5.0 – 2026-09-30 – The Clip Update | Das Clip-Update")
@@ -56,7 +53,7 @@ How to write an entry:
 - **Achievements.** The launcher now has achievements: for playtime, for trying out launcher features and for the
   community – plus a few secret ones you only see once you have unlocked them. Every achievement earns points and has
   a rarity; some come with a reward (100 hours played gives the "Veteran" cape, an implemented idea the "Ideengeber"
-  cape, 10 friends a party emote, all secrets a secret crown). Open them from the account menu at the top right, the
+  cape, 10 friends the “Party” emote). Open them from the account menu at the top right, the
   trophy in Social or with Ctrl+K: grouped by category, with progress bars (playtime in hours), unlock dates and a
   filter for all, unlocked and locked.
 - When you unlock an achievement, a notification pops up. If it gives you a cape or a head cosmetic, "Wear now" puts
@@ -79,6 +76,7 @@ How to write an entry:
 - Notes are saved in `config/trsclient/notes` and synced with your TRS account note by note: the newest change of a
   note wins, deleted notes are deleted on all your PCs, and changes from another PC arrive within seconds. Sync can be
   switched off on the *World Notes* page – then your notes stay on this PC.
+- New emote “Party” in the TRS Client – the reward for having 10 friends (achievements).
 
 ### Deutsch
 - Ein Modpack (CurseForge oder Modrinth) sieht beim Installieren nicht mehr fertig aus, während es noch lädt: Die neue
@@ -117,7 +115,7 @@ How to write an entry:
 - **Erfolge.** Der Launcher hat jetzt Erfolge: für Spielzeit, fürs Ausprobieren von Launcher-Funktionen und für die
   Community – dazu ein paar geheime, die du erst siehst, wenn du sie freigeschaltet hast. Jeder Erfolg bringt Punkte und
   hat eine Seltenheit; manche haben eine Belohnung (100 Stunden gespielt gibt den Umhang „Veteran“, eine umgesetzte Idee
-  den Umhang „Ideengeber“, 10 Freunde ein Party-Emote, alle Geheimnisse eine geheime Krone). Du findest sie im
+  den Umhang „Ideengeber“, 10 Freunde das Emote „Party“). Du findest sie im
   Kontomenü oben rechts, über den Pokal in „Sozial“ oder mit Strg+K: nach Kategorien sortiert, mit Fortschrittsbalken
   (Spielzeit in Stunden), Datum der Freischaltung und Filter für alle, freigeschaltete und gesperrte.
 - Schaltest du einen Erfolg frei, erscheint eine Benachrichtigung. Gibt es dafür einen Umhang oder eine Kopf-Kosmetik,
