@@ -276,16 +276,23 @@ export function softwareLd(s: SoftwareInput): JsonLdNode {
 export interface BlogPostingInput {
   siteUrl: string
   lang: SeoLang
-  version: string
+  /** Update-Beitrag: Version (Pfad `/blog/<version>`). */
+  version?: string
+  /** News-Beitrag (§30): eigener Pfad `/blog/<slug>` statt der Version. */
+  path?: string
   headline: string
   description: string
   datePublished?: string | null
+  dateModified?: string | null
   images?: string[]
+  /** Autor (Person); sonst das Projekt als Organisation. */
+  authorName?: string | null
 }
 
 export function blogPostingLd(b: BlogPostingInput): JsonLdNode {
-  const url = localizedUrl(b.siteUrl, `/blog/${b.version}`, b.lang)
+  const url = localizedUrl(b.siteUrl, b.path ?? `/blog/${b.version ?? ''}`, b.lang)
   const images = (b.images?.length ? b.images : [DEFAULT_OG_IMAGE.url]).map((u) => absoluteUrl(b.siteUrl, u))
+  const modified = b.dateModified ?? b.datePublished
   return {
     '@type': 'BlogPosting',
     '@id': `${url}#post`,
@@ -294,9 +301,11 @@ export function blogPostingLd(b: BlogPostingInput): JsonLdNode {
     url,
     mainEntityOfPage: url,
     image: images,
-    ...(b.datePublished ? { datePublished: isoDate(b.datePublished), dateModified: isoDate(b.datePublished) } : {}),
+    ...(b.datePublished ? { datePublished: isoDate(b.datePublished), dateModified: isoDate(modified!) } : {}),
     inLanguage: b.lang,
-    author: { '@type': 'Organization', '@id': organizationId(b.siteUrl), name: SITE_NAME, url: `${trimBase(b.siteUrl)}/` },
+    author: b.authorName
+      ? { '@type': 'Person', name: b.authorName }
+      : { '@type': 'Organization', '@id': organizationId(b.siteUrl), name: SITE_NAME, url: `${trimBase(b.siteUrl)}/` },
     publisher: { '@id': organizationId(b.siteUrl) },
     about: { '@id': softwareId(b.siteUrl) },
   }
@@ -330,11 +339,11 @@ function escapeXml(s: string): string {
   return s.replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]!)
 }
 
-function sitemapEntries(siteUrl: string, path: string, lastmod: string | null, priority: number): string[] {
-  const alt = alternates(siteUrl, path)
+function sitemapEntries(siteUrl: string, path: string, lastmod: string | null, priority: number, langs: readonly SeoLang[] = SEO_LANGS): string[] {
+  const alt = alternates(siteUrl, path, langs)
     .map((a) => `<xhtml:link rel="alternate" hreflang="${a.hreflang}" href="${escapeXml(a.href)}"/>`)
     .join('')
-  return SEO_LANGS.map(
+  return langs.map(
     (lang) =>
       `<url><loc>${escapeXml(localizedUrl(siteUrl, path, lang))}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}<priority>${priority.toFixed(1)}</priority>${alt}</url>`,
   )
@@ -366,8 +375,15 @@ export interface SitemapJob {
   updatedAt: string
 }
 
-export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: string | null, jobs: SitemapJob[] = [], circuits: SitemapJob[] = []): string {
-  const newestPost = latest(posts.map((p) => p.date))
+/** News-Beitrag des Teams (§30): `/blog/<slug>`, nur in den übersetzten Sprachen. */
+export interface SitemapNews {
+  slug: string
+  updatedAt: string
+  langs: readonly SeoLang[]
+}
+
+export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: string | null, jobs: SitemapJob[] = [], circuits: SitemapJob[] = [], news: SitemapNews[] = []): string {
+  const newestPost = latest([...posts.map((p) => p.date), ...news.map((n) => n.updatedAt)])
   const newestJob = latest(jobs.map((j) => j.updatedAt))
   const newestCircuit = latest(circuits.map((c) => c.updatedAt))
   const lastmodOf = (path: string) =>
@@ -375,6 +391,7 @@ export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: s
   const urls = [
     ...SITE_PAGES.flatMap((pg) => sitemapEntries(siteUrl, pg.path, lastmodOf(pg.path), pg.priority)),
     ...posts.flatMap((p) => sitemapEntries(siteUrl, `/blog/${p.version}`, p.date, 0.5)),
+    ...news.flatMap((n) => sitemapEntries(siteUrl, `/blog/${n.slug}`, n.updatedAt, 0.5, n.langs.includes(DEFAULT_LANG) ? n.langs : [DEFAULT_LANG])),
     ...jobs.flatMap((j) => sitemapEntries(siteUrl, `/team/${j.id}`, j.updatedAt, 0.4)),
     // Schaltungs-Bibliothek (§25): jede veröffentlichte Schaltung hat eine eigene Seite.
     ...circuits.flatMap((c) => sitemapEntries(siteUrl, `/circuits/${c.id}`, c.updatedAt, 0.4)),

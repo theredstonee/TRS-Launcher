@@ -213,4 +213,23 @@ export const RULES = {
   circuitConvertUser: { limit: 30, windowMs: HOUR },
   /** Team: Import/Export und Speichern im Editor. */
   adminCircuit: { limit: 120, windowMs: MIN },
+  // ------------------------------------------------ Anmeldung per TRS Launcher (§29)
+  /** Neue Anmelde-Anfragen der Website je IP. */
+  launcherLoginCreateIp: { limit: 10, windowMs: 10 * MIN },
+  /** Abfragen des Stands (Website, alle 2 s) je IP. */
+  launcherLoginPollIp: { limit: 120, windowMs: MIN },
+  /** Launcher: Anfrage nachschlagen (Link oder Code) je Konto. */
+  launcherLoginLookupUser: { limit: 30, windowMs: 10 * MIN },
+  /** Falsch eingegebene Codes je Konto und je IP (streng – Codes sind kurz). */
+  launcherLoginCodeFailUser: { limit: 5, windowMs: 10 * MIN },
+  launcherLoginCodeFailIp: { limit: 20, windowMs: 10 * MIN },
+  /** Bestätigen/Ablehnen je Konto. */
+  launcherLoginDecideUser: { limit: 20, windowMs: 10 * MIN },
+  // ------------------------------------------------ Blog (§30)
+  /** Team: Speichern, Veröffentlichen, Löschen. */
+  adminBlog: { limit: 120, windowMs: MIN },
+  /** Team: Bilder hochladen. */
+  adminBlogUpload: { limit: 30, windowMs: MIN },
+  /** Öffentliche Blog-Bilder je IP (zusätzlich zur globalen IP-Grenze). */
+  blogMediaIp: { limit: 600, windowMs: MIN },
 } satisfies Record<string, Rule>
