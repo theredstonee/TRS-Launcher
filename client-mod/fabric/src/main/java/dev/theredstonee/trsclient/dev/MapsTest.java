@@ -14,7 +14,8 @@ import java.util.Locale;
 /**
  * Selbsttest Karten ({@code -PtrsAutotestOnly=maps}): kleine Testwelt mit festem Seed (wiederverwendet), Minimap
  * rund/eckig/nah, Kreaturen, Wegpunkt + Todespunkt, Weltkarte (nah, weit, Kontextmenü, Wegpunkt-Dialog),
- * Höhlenansicht unter Tage und Fair Play. Misst Tick- und Zeichenkosten. Beendet das Spiel danach.
+ * Höhlenansicht unter Tage und Fair Play, Minimap 2 (Wegpunkte am Rand, Mob-Köpfe, Symbole, Vanilla-/Texturfarben,
+ * Auto-Zoom schnell/drinnen). Misst Tick- und Zeichenkosten. Beendet das Spiel danach.
  * Screenshots: trsclient-&lt;mc&gt;-maps-*.png.
  */
 public final class MapsTest {
@@ -23,6 +24,8 @@ public final class MapsTest {
 	private int wait;
 	private int waited;
 	private int bx, by, bz;
+	private int moved;
+	private static final java.util.List<String> EDGE_NAMES = java.util.Arrays.asList("Alpha", "Arena", "Burg", "Camp", "Dorf");
 
 	public static void install() {
 		MapsTest test = new MapsTest();
@@ -192,7 +195,7 @@ public final class MapsTest {
 				wait = 120;
 				return;
 			case 11:
-				log("Höhlenansicht aktiv: " + e.caveActive());
+				log("Höhlenansicht aktiv: " + e.caveActive() + ", Auto-Zoom drinnen: " + e.autoZoom().indoorSteps() + " Stufe(n) näher");
 				shot(mc, "minimap-cave");
 				m.minimapFairPlay.set(true);
 				phase++;
@@ -214,9 +217,7 @@ public final class MapsTest {
 			case 14:
 				shot(mc, "minimap-final");
 				log(String.format(Locale.ROOT, "Messung: Tick Ø %.0f µs, Minimap zeichnen Ø %.0f µs", e.tickMicros(), e.drawMicros()));
-				Mc.setScreen(new dev.theredstonee.trsclient.screen.TrsMenuScreen(null).select(m.minimap));
-				phase++;
-				wait = 20;
+				phase = 30;
 				return;
 			case 15:
 				shot(mc, "menu-minimap");
@@ -234,6 +235,88 @@ public final class MapsTest {
 			case 17:
 				mc.stop();
 				phase++;
+				return;
+			// --- Minimap 2: Wegpunkte am Rand, Köpfe/Symbole, Texturfarben, Auto-Zoom ---
+			case 30:
+				for (dev.theredstonee.trsclient.core.waypoint.Waypoint old : e.waypoints()) {
+					if (EDGE_NAMES.contains(old.name)) e.removeWaypoint(old);
+				}
+				// Weit weg in mehreren Richtungen; „Alpha“ und „Arena“ fast in derselben Richtung (leicht versetzt).
+				e.addWaypoint("Alpha", bx + 320, by, bz, 0xE0281E);
+				e.addWaypoint("Arena", bx + 320, by, bz + 14, 0x3D7BFF);
+				e.addWaypoint("Burg", bx + 10, by, bz - 420, 0xF2E14C);
+				e.addWaypoint("Camp", bx - 260, by, bz + 260, 0xB07CFF);
+				e.addWaypoint("Dorf", bx - 400, by, bz - 40, 0x4DD8E0);
+				cmd(mc, "summon minecraft:creeper " + (bx + 7) + " " + (by + 1) + " " + (bz + 9) + " {NoAI:1b,PersistenceRequired:1b}");
+				cmd(mc, "summon minecraft:sheep " + (bx - 9) + " " + (by + 1) + " " + (bz + 7) + " {NoAI:1b,PersistenceRequired:1b}");
+				cmd(mc, "summon minecraft:chicken " + (bx + 12) + " " + (by + 1) + " " + (bz + 3) + " {NoAI:1b,PersistenceRequired:1b}");
+				cmd(mc, "summon minecraft:wolf " + (bx - 4) + " " + (by + 1) + " " + (bz - 11) + " {NoAI:1b,PersistenceRequired:1b}");
+				cmd(mc, "summon minecraft:spider " + (bx + 9) + " " + (by + 1) + " " + (bz - 12) + " {NoAI:1b,PersistenceRequired:1b}");
+				cmd(mc, "summon minecraft:enderman " + (bx - 13) + " " + (by + 1) + " " + (bz - 3) + " {NoAI:1b,PersistenceRequired:1b}");
+				m.minimapShape.set(TrsModules.MapShape.ROUND);
+				m.minimapRotate.set(true);
+				m.minimapZoom.set(TrsModules.MinimapZoom.NORMAL);
+				m.minimapSize.set(128);
+				m.minimapCompass.set(true);
+				m.minimapWaypoints.set(true);
+				m.minimapEdgeWaypoints.set(true);
+				m.minimapHostile.set(true);
+				m.minimapPassive.set(true);
+				m.minimapMobIcons.set(TrsModules.MobIcons.HEADS);
+				m.minimapColors.set(TrsModules.MapColorMode.TEXTURES);
+				m.minimapAutoZoomSpeed.set(true);
+				m.minimapAutoZoomIndoor.set(true);
+				phase = 31;
+				wait = 140; // Texturfarben rechnen + neu abtasten
+				return;
+			case 31:
+				log("Texturfarben: " + e.palette().spriteCount() + " Texturen gemittelt, im Hintergrund noch: " + e.palette().busy());
+				shot(mc, "minimap2-edge-heads");
+				m.minimapShape.set(TrsModules.MapShape.SQUARE);
+				phase = 32;
+				wait = 10;
+				return;
+			case 32:
+				shot(mc, "minimap2-edge-square");
+				m.minimapShape.set(TrsModules.MapShape.ROUND);
+				m.minimapMobIcons.set(TrsModules.MobIcons.SYMBOLS);
+				phase = 33;
+				wait = 10;
+				return;
+			case 33:
+				shot(mc, "minimap2-symbols");
+				m.minimapMobIcons.set(TrsModules.MobIcons.HEADS);
+				m.minimapColors.set(TrsModules.MapColorMode.VANILLA);
+				phase = 34;
+				wait = 100;
+				return;
+			case 34:
+				shot(mc, "minimap2-vanilla-colors");
+				m.minimapColors.set(TrsModules.MapColorMode.TEXTURES);
+				phase = 35;
+				wait = 100;
+				return;
+			case 35:
+				shot(mc, "minimap2-texture-colors");
+				moved = 0;
+				phase = 36;
+				return;
+			case 36:
+				// Schnell nach Osten (1,2 Blöcke je Tick ≈ Elytra/Boot auf Eis) → Auto-Zoom zoomt heraus.
+				cmd(mc, "tp @p ~1.2 ~ ~");
+				if (++moved < 40) return;
+				log("Auto-Zoom schnell: " + e.autoZoom().speedSteps() + " Stufen heraus");
+				shot(mc, "minimap2-autozoom-fast");
+				phase = 37;
+				wait = 80;
+				return;
+			case 37:
+				log("Auto-Zoom nach dem Anhalten: " + e.autoZoom().speedSteps() + " Stufen heraus");
+				shot(mc, "minimap2-autozoom-back");
+				log(String.format(Locale.ROOT, "Messung Minimap 2: Tick Ø %.0f µs, Minimap zeichnen Ø %.0f µs", e.tickMicros(), e.drawMicros()));
+				Mc.setScreen(new dev.theredstonee.trsclient.screen.TrsMenuScreen(null).select(m.minimap));
+				phase = 15;
+				wait = 20;
 				return;
 			default:
 		}

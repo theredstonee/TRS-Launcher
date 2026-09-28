@@ -15,8 +15,10 @@ import java.util.List;
 /**
  * Zeichnet die Minimap in jeder Minecraft-Version gleich: Bereichs-Texturen (ein Texel je Block) werden mit
  * Drehung, Zoom und Bruchteil-Verschiebung gezeichnet (kein Ruckeln, kein Neuaufbau je Bild), rund über
- * Streifen ({@link MapShapes}) unter einem Redstone-Rahmen, eckig über einen Scissor. Darüber Wegpunkte,
- * Todespunkt, Spieler (Gesichter, Freunde hervorgehoben), Kreaturen, Himmelsrichtungen und die eigene Position.
+ * Streifen ({@link MapShapes}) unter einem Redstone-Rahmen, eckig über einen Scissor. Darüber Himmelsrichtungen,
+ * Wegpunkte (außerhalb des Sichtfelds als Kästchen mit Anfangsbuchstaben am Rand, siehe {@link EdgeLayout}),
+ * Todespunkt, Spieler (Gesichter, Freunde hervorgehoben), Kreaturen (Köpfe aus ihrer Textur oder Symbole) und die
+ * eigene Position. Der Zoom folgt auf Wunsch dem Tempo und der Umgebung ({@link AutoZoom}).
  */
 public final class MinimapRenderer {
 	/** Scissor im lokalen Koordinatensystem des HUD-Elements (false = nicht möglich → Streifen). */
@@ -32,12 +34,19 @@ public final class MinimapRenderer {
 	static final int HOSTILE = 0xFFE5483E;
 	static final int PASSIVE = 0xFFEDE6D2;
 	static final int FRIEND = 0xFFFFC23D;
+	static final int NEUTRAL = 0xFFF2B63D;
+	/** Kantenlänge der Rand-Kästchen (GUI-Pixel). */
+	static final int EDGE_BOX = 9;
+	/** Höchstens so viele Wegpunkte am Rand. */
+	static final int MAX_EDGE = 64;
 
 	private final float[] bands = new float[4 * 512];
 	private float zoom = -1f;
 	private float spin = -1f;
 	private long lastFrame;
 	private final double[] point = new double[2];
+	private final double[] edgeS = new double[MAX_EDGE];
+	private final Waypoint[] edgeW = new Waypoint[MAX_EDGE];
 
 	// Zwischengespeicherte Texte (nur bei Änderung neu).
 	private String coordsText = "";
@@ -85,9 +94,13 @@ public final class MinimapRenderer {
 		int opacity = Math.round(m.minimapOpacity.getFloat() * 2.55f);
 		Theme theme = Theme.get();
 
-		// Zoom in Bildschirmpixeln je Block (ganzzahlig → gestochen scharf), umgerechnet in GUI-Pixel.
-		float target = (float) (m.minimapZoom.get().pixelsPerBlock() / Math.max(0.5, scale));
-		zoom = zoom < 0 ? target : Anim.approach(zoom, target, dt, 0.09f);
+		// Zoom in Bildschirmpixeln je Block (ganzzahlig → gestochen scharf), umgerechnet in GUI-Pixel; der Auto-Zoom
+		// verschiebt ihn um ganze Stufen und blendet selbst weich über.
+		float basePx = m.minimapZoom.get().pixelsPerBlock();
+		boolean auto = !preview && (m.minimapAutoZoomSpeed.get() || m.minimapAutoZoomIndoor.get());
+		float screenPx = auto ? e.autoZoom().frame(basePx, dt) : basePx;
+		float target = (float) (screenPx / Math.max(0.5, scale));
+		zoom = zoom < 0 || auto ? target : Anim.approach(zoom, target, dt, 0.09f);
 		// Drehen an/aus weich überblenden.
 		float spinTarget = m.minimapRotate.get() ? 1f : 0f;
 		spin = spin < 0 ? spinTarget : Anim.approach(spin, spinTarget, dt, 0.12f);
@@ -117,11 +130,11 @@ public final class MinimapRenderer {
 			squareFrame(c, pad, size, theme);
 		}
 
-		if (live) {
-			if (m.minimapWaypoints.get() || m.minimapDeath.get()) drawWaypoints(c, e, cx, cy, radius, round, theta, px, pz, scale);
-			drawEntities(c, e, cx, cy, radius, round, theta, px, pz, scale);
-		}
 		if (m.minimapCompass.get()) drawCompass(c, e, cx, cy, radius, round, theta, scale, theme);
+		if (live) {
+			drawEntities(c, e, cx, cy, radius, round, theta, px, pz, scale);
+			if (m.minimapWaypoints.get() || m.minimapDeath.get()) drawWaypoints(c, e, cx, cy, radius, round, theta, px, pz, scale);
+		}
 		// Eigene Position: Pfeil in Blickrichtung (bei gedrehter Karte immer nach oben).
 		float arrowRot = theta + yawRad + (float) Math.PI;
 		if (!e.sprites().draw(c, MapSprites.ARROW, cx, cy, 10f, arrowRot, 0xFF000000 | (theme.dustOn & 0xFFFFFF), scale)) {
@@ -249,11 +262,21 @@ public final class MinimapRenderer {
 	private void drawWaypoints(Canvas c, MapEngine e, float cx, float cy, float radius, boolean round, float theta,
 			double px, double pz, double scale) {
 		TrsModules m = e.modules();
+		boolean edgeBoxes = m.minimapEdgeWaypoints.get();
 		List<Waypoint> list = e.waypoints();
+		int edges = 0;
 		for (int i = 0, n = list.size(); i < n; i++) {
 			Waypoint w = list.get(i);
 			if (w.death ? !m.minimapDeath.get() : (!m.minimapWaypoints.get() || !w.visible)) continue;
 			toScreen(w.x + 0.5, w.z + 0.5, px, pz, theta);
+			if (!w.death && edgeBoxes && !inside(radius, round, 4f)) {
+				// Außerhalb des Sichtfelds: später als Kästchen am Rand (dicht beieinander leicht versetzt).
+				if (edges < MAX_EDGE) {
+					edgeS[edges] = EdgeLayout.along(point[0], point[1], edgeHalf(radius, round), round);
+					edgeW[edges++] = w;
+				}
+				continue;
+			}
 			boolean edge = clampToEdge(radius, round, 5f);
 			float x = cx + (float) point[0], y = cy + (float) point[1];
 			if (w.death) {
@@ -262,6 +285,54 @@ public final class MinimapRenderer {
 				e.sprites().draw(c, MapSprites.DIAMOND, x, y, edge ? 6f : 8f, 0f, 0xFF000000 | w.color, scale);
 			}
 		}
+		if (edges == 0) return;
+		float half = edgeHalf(radius, round);
+		EdgeLayout.spread(edgeS, edges, EDGE_BOX + 1, EdgeLayout.perimeter(half, round));
+		for (int i = 0; i < edges; i++) {
+			EdgeLayout.point(edgeS[i], half, round, point);
+			edgeBox(c, cx + (float) point[0], cy + (float) point[1], edgeW[i]);
+			edgeW[i] = null;
+		}
+	}
+
+	/** Abstand der Rand-Kästchen von der Mitte: rund auf dem Ring, eckig auf der Kante. */
+	static float edgeHalf(float radius, boolean round) {
+		return round ? radius - MapSprites.ringIn(radius) * 0.5f + 0.5f : radius;
+	}
+
+	/** Kästchen in der Farbe des Wegpunkts mit seinem Anfangsbuchstaben. */
+	private static void edgeBox(Canvas c, float x, float y, Waypoint w) {
+		int s = EDGE_BOX;
+		int x0 = Math.round(x - s / 2f), y0 = Math.round(y - s / 2f);
+		int color = 0xFF000000 | (w.color & 0xFFFFFF);
+		c.fill(x0 - 1, y0 - 1, x0 + s + 1, y0 + s + 1, 0xF0101014);
+		c.fill(x0, y0, x0 + s, y0 + s, color);
+		// Obere Kante etwas heller, untere dunkler – wie ein kleiner Block.
+		c.fill(x0, y0, x0 + s, y0 + 1, ColorMath.lerp(color, 0xFFFFFFFF, 0.3f));
+		c.fill(x0, y0 + s - 1, x0 + s, y0 + s, ColorMath.lerp(color, 0xFF000000, 0.3f));
+		String letter = initial(w.name);
+		int tw = c.textWidth(letter);
+		c.text(letter, x0 + (s - tw) / 2 + 1, y0 + 1, textOn(w.color), false);
+	}
+
+	/** Anfangsbuchstabe (groß) eines Namens, "?" wenn es keinen gibt. */
+	static String initial(String name) {
+		if (name != null) {
+			for (int i = 0; i < name.length(); ) {
+				int cp = name.codePointAt(i);
+				if (Character.isLetterOrDigit(cp)) {
+					return new String(Character.toChars(Character.toUpperCase(cp)));
+				}
+				i += Character.charCount(cp);
+			}
+		}
+		return "?";
+	}
+
+	/** Gut lesbare Schriftfarbe auf der Hintergrundfarbe (dunkel auf hell, weiß auf dunkel). */
+	static int textOn(int rgb) {
+		int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
+		return r * 299 + g * 587 + b * 114 > 150_000 ? 0xFF15131A : 0xFFFFFFFF;
 	}
 
 	private void drawEntities(Canvas c, MapEngine e, float cx, float cy, float radius, boolean round, float theta,
@@ -269,20 +340,26 @@ public final class MinimapRenderer {
 		TrsModules m = e.modules();
 		float alpha = e.alpha();
 		int count = e.entityCount();
+		boolean heads = m.minimapMobIcons.get() == TrsModules.MobIcons.HEADS && c.images();
+		int headGen = e.palette().generation();
 		// Erst Kreaturen, dann Spieler (liegen oben).
 		for (int pass = 0; pass < 2; pass++) {
 			for (int i = 0; i < count; i++) {
 				MapEntity en = e.entity(i);
 				boolean player = en.type == MapEntity.PLAYER;
 				if ((pass == 1) != player) continue;
-				if (player ? !m.minimapPlayers.get()
-						: (en.type == MapEntity.HOSTILE ? !m.minimapHostile.get() : !m.minimapPassive.get())) continue;
+				if (!player && !showCreature(m, en.type)) continue;
+				if (player && !m.minimapPlayers.get()) continue;
 				toScreen(en.lerpX(alpha), en.lerpZ(alpha), px, pz, theta);
 				if (!inside(radius, round, 3f)) continue;
 				float x = cx + (float) point[0], y = cy + (float) point[1];
 				if (!player) {
-					e.sprites().draw(c, MapSprites.DOT, x, y, en.type == MapEntity.HOSTILE ? 5f : 4.5f, 0f,
-							en.type == MapEntity.HOSTILE ? HOSTILE : PASSIVE, scale);
+					MobHeads.Head head = heads ? e.heads().head(en.kind, e.palette(), headGen) : null;
+					if (head != null) {
+						mobHead(c, head, x, y, 7f);
+					} else {
+						e.sprites().draw(c, MapSprites.DOT, x, y, en.type == MapEntity.HOSTILE ? 5f : 4.5f, 0f, creatureColor(en.type), scale);
+					}
 					continue;
 				}
 				if (en.friend && m.minimapFriends.get()) {
@@ -291,6 +368,31 @@ public final class MinimapRenderer {
 				face(c, e, en, x, y, 7f, scale);
 			}
 		}
+	}
+
+	/** Soll diese Kreatur gezeigt werden? Neutrale (Wolf, Enderman …) mit feindlichen oder mit Tieren. */
+	static boolean showCreature(TrsModules m, int type) {
+		if (type == MapEntity.HOSTILE) return m.minimapHostile.get();
+		if (type == MapEntity.NEUTRAL) return m.minimapHostile.get() || m.minimapPassive.get();
+		return m.minimapPassive.get();
+	}
+
+	/** Symbolfarbe: feindlich rot, neutral gelb, freundlich hell. */
+	static int creatureColor(int type) {
+		return type == MapEntity.HOSTILE ? HOSTILE : (type == MapEntity.NEUTRAL ? NEUTRAL : PASSIVE);
+	}
+
+	/** Gesicht einer Kreatur aus ihrer Textur (größte Kante = {@code size}), mit dunklem Rand. */
+	static void mobHead(Canvas c, MobHeads.Head h, float x, float y, float size) {
+		float k = size / Math.max(h.w, h.h);
+		float w = h.w * k, hh = h.h * k;
+		c.fill(Math.round(x - w / 2 - 1), Math.round(y - hh / 2 - 1), Math.round(x + w / 2 + 1), Math.round(y + hh / 2 + 1), 0xE0101014);
+		c.push();
+		c.translate(x - w / 2, y - hh / 2);
+		c.scale(k, k);
+		c.image(h.texture, h.u, h.v, h.w, h.h, 0xFFFFFFFF);
+		if (h.hatU >= 0) c.image(h.texture, h.hatU, h.hatV, h.w, h.h, 0xFFFFFFFF);
+		c.pop();
 	}
 
 	/** Gesicht eines Spielers (Skin-Textur, mit Hut-Ebene) oder ein Punkt. */

@@ -145,8 +145,10 @@ public final class MapBridge implements MapPlatform {
 			}
 			MapEntity m = sink.add();
 			if (m == null) return;
-			int type = e instanceof EntityPlayer ? MapEntity.PLAYER : (e instanceof IMob ? MapEntity.HOSTILE : MapEntity.PASSIVE);
+			int type = e instanceof EntityPlayer ? MapEntity.PLAYER : (neutral(e) ? MapEntity.NEUTRAL
+					: (e instanceof IMob ? MapEntity.HOSTILE : MapEntity.PASSIVE));
 			m.set(type, e.prevPosX, e.prevPosZ, e.posX, e.posY, e.posZ, e.rotationYaw);
+			if (type != MapEntity.PLAYER) m.kind = kind(e);
 			if (type == MapEntity.PLAYER) {
 				m.uuid = e.getUniqueID();
 				m.name = e.getName().getString();
@@ -197,6 +199,71 @@ public final class MapBridge implements MapPlatform {
 		} catch (IOException e) {
 			// nächster Versuch beim nächsten Ändern
 		}
+	}
+
+	/** Art je Entity-Typ ("minecraft:zombie"), einmal ermittelt. */
+	private final java.util.Map<Object, String> kinds = new java.util.IdentityHashMap<Object, String>();
+
+	/** Neutrale Kreaturen (vor IMob prüfen – Schweinezombie und Enderman sind auch IMob). */
+	private static boolean neutral(Entity e) {
+		return e instanceof net.minecraft.entity.passive.EntityWolf || e instanceof net.minecraft.entity.monster.EntityPigZombie
+				|| e instanceof net.minecraft.entity.monster.EntityEnderman || e instanceof net.minecraft.entity.monster.EntityIronGolem
+				|| e instanceof net.minecraft.entity.monster.EntityPolarBear;
+	}
+
+	private String kind(Entity e) {
+		Object type = e.getType();
+		String k = kinds.get(type);
+		if (k == null) {
+			ResourceLocation id = net.minecraft.entity.EntityType.getId(e.getType());
+			k = id == null ? "" : id.toString();
+			kinds.put(type, k);
+		}
+		return k;
+	}
+
+	@Override
+	public int movement() {
+		EntityPlayerSP p = mc().player;
+		if (p == null) return 0;
+		int m = 0;
+		if (p.isSprinting()) m |= SPRINTING;
+		if (p.isElytraFlying()) m |= GLIDING;
+		Entity vehicle = p.getRidingEntity();
+		if (vehicle != null) m |= vehicle instanceof net.minecraft.entity.item.EntityBoat ? BOAT : RIDING;
+		return m;
+	}
+
+	@Override
+	public byte[] readResource(String namespace, String path) throws java.io.IOException {
+		net.minecraft.resources.IResource res;
+		try {
+			res = mc().getResourceManager().getResource(new ResourceLocation(namespace, path));
+		} catch (java.io.FileNotFoundException e) {
+			return null;
+		}
+		try (java.io.InputStream in = res.getInputStream()) {
+			return readAll(in);
+		} finally {
+			res.close();
+		}
+	}
+
+	/** Liest höchstens 4 MB (größere Texturen nimmt die Karte nicht). */
+	private static byte[] readAll(java.io.InputStream in) throws java.io.IOException {
+		java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(4096);
+		byte[] buf = new byte[8192];
+		int n;
+		while ((n = in.read(buf)) > 0) {
+			out.write(buf, 0, n);
+			if (out.size() > (4 << 20)) return null;
+		}
+		return out.toByteArray();
+	}
+
+	@Override
+	public Object resourceGeneration() {
+		return mc().getTextureMap().getAtlasSprite("minecraft:block/stone");
 	}
 
 	@Override

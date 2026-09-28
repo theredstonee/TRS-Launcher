@@ -8,6 +8,15 @@ import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
  * Alle Aufrufe aus dem Spiel-Thread.
  */
 public interface MapPlatform {
+	/** {@link #movement()}: Spieler sprintet. */
+	int SPRINTING = 1;
+	/** {@link #movement()}: Spieler reitet/fährt (Pferd, Lore, Schwein …). */
+	int RIDING = 2;
+	/** {@link #movement()}: Spieler sitzt in einem Boot. */
+	int BOAT = 4;
+	/** {@link #movement()}: Spieler gleitet mit Elytren. */
+	int GLIDING = 8;
+
 	/** Nimmt Kartenobjekte entgegen (wiederverwendet; null = voll). */
 	interface EntitySink {
 		MapEntity add();
@@ -72,5 +81,30 @@ public interface MapPlatform {
 	 */
 	default boolean openWorldMap() {
 		return false;
+	}
+
+	/**
+	 * Bewegungsart des Spielers als Merker ({@link #SPRINTING}, {@link #RIDING}, {@link #BOAT}, {@link #GLIDING}) –
+	 * für den Auto-Zoom der Minimap. 0 = zu Fuß/unbekannt.
+	 */
+	default int movement() {
+		return 0;
+	}
+
+	/**
+	 * Liest eine Datei aus den gerade geladenen Ressourcen (Resource Packs vor Vanilla), z. B.
+	 * {@code ("minecraft", "textures/block/stone.png")}. Wird aus dem Hintergrund-Thread der Texturfarben
+	 * aufgerufen ({@link TexturePalette}). null = gibt es nicht (oder die Version kann es nicht).
+	 */
+	default byte[] readResource(String namespace, String path) throws java.io.IOException {
+		return null;
+	}
+
+	/**
+	 * Ein Objekt, das bei jedem Neuladen der Ressourcen (Resource Pack gewechselt, F3+T) neu entsteht – z. B. das
+	 * Blockmodell von Stein. Ändert es sich, rechnet die Karte die Texturfarben neu. null = unbekannt.
+	 */
+	default Object resourceGeneration() {
+		return null;
 	}
 }

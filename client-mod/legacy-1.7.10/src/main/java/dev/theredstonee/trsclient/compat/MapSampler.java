@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.compat;
 
 import dev.theredstonee.trsclient.core.map.ChunkReader;
+import dev.theredstonee.trsclient.core.map.MapEngine;
+import dev.theredstonee.trsclient.core.map.TexturePalette;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
@@ -12,6 +14,9 @@ import net.minecraft.world.chunk.Chunk;
  * Chunk-Zugriff der Karte ({@link ChunkReader}) für Forge 1.7.10: Blöcke mit Metadaten statt Zuständen,
  * Kartenfarbe über {@code Block#getMapColor(meta)}, Tönung über {@code Block#colorMultiplier}. Nur geladene Chunks.
  * Unsichtbare Blöcke wie die Barriere gibt es in 1.7.10 noch nicht.
+ *
+ * <p>Texturfarben: Symbol der Oberseite ({@code Block#getIcon(1, meta)}); die Pixel verwirft 1.7.10 nach dem
+ * Zusammensetzen des Atlas – {@link TexturePalette} liest und mittelt die Datei im Hintergrund.
  */
 public final class MapSampler implements ChunkReader {
 	private World world;
@@ -77,5 +82,40 @@ public final class MapSampler implements ChunkReader {
 		// Ungetönte Blöcke melden Weiß.
 		if (c == -1 || (c & 0xFFFFFF) == 0xFFFFFF) return -1;
 		return c & 0xFFFFFF;
+	}
+
+	/** Je Block und Metadaten ein fester Schlüssel für die Texturfarben (1.7.10 hat keine Zustands-Objekte). */
+	private final java.util.Map<Block, Object[]> stateKeys = new java.util.IdentityHashMap<Block, Object[]>();
+
+	@Override
+	public int textureColor(int localX, int y, int localZ) {
+		MapEngine engine = MapEngine.get();
+		if (engine == null || chunk == null || y < 0 || y > 255) return -1;
+		TexturePalette palette = engine.palette();
+		Block b = chunk.getBlock(localX, y, localZ);
+		if (b == null) return -1;
+		int meta = chunk.getBlockMetadata(localX, y, localZ) & 15;
+		Object[] keys = stateKeys.get(b);
+		if (keys == null) {
+			keys = new Object[16];
+			stateKeys.put(b, keys);
+		}
+		if (keys[meta] == null) keys[meta] = new Object();
+		Object key = keys[meta];
+		int c = palette.lookup(key);
+		if (c != TexturePalette.UNRESOLVED) return c;
+		String sprite = null;
+		try {
+			net.minecraft.util.IIcon icon = b.getIcon(1, meta);
+			String name = icon == null ? null : icon.getIconName();
+			if (name != null && !name.isEmpty()) {
+				int colon = name.indexOf(':');
+				sprite = colon < 0 ? "minecraft:blocks/" + name : name.substring(0, colon) + ":blocks/" + name.substring(colon + 1);
+			}
+		} catch (RuntimeException | LinkageError e) {
+			sprite = null;
+		}
+		boolean tinted = tint(localX, y, localZ) != -1;
+		return palette.resolve(key, sprite, tinted);
 	}
 }

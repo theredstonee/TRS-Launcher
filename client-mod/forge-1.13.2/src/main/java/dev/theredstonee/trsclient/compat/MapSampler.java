@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.compat;
 
 import dev.theredstonee.trsclient.core.map.ChunkReader;
+import dev.theredstonee.trsclient.core.map.MapEngine;
+import dev.theredstonee.trsclient.core.map.TexturePalette;
 import net.minecraft.block.material.MaterialColor;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -13,6 +15,9 @@ import net.minecraft.world.gen.Heightmap;
  * Chunk-Zugriff der Karte ({@link ChunkReader}) für Forge 1.13.2: Oberkante (Höhenkarte WORLD_SURFACE),
  * Kartenfarbe und Tönung (BlockColors) der Blöcke eines geladenen Chunks. Nur geladene Chunks. Barriere und
  * Strukturleere gelten als Luft (wassergeflutet als Wasser).
+ *
+ * <p>Texturfarben: Textur der Oberseite aus dem Blockmodell (sonst beliebige Fläche, sonst Partikelbild);
+ * {@link TexturePalette} liest und mittelt die Datei im Hintergrund.
  */
 public final class MapSampler implements ChunkReader {
 	private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -79,5 +84,36 @@ public final class MapSampler implements ChunkReader {
 		if (state == null) return -1;
 		int c = Minecraft.getInstance().getBlockColors().getColor(state, world, pos, 0);
 		return c == -1 ? -1 : c & 0xFFFFFF;
+	}
+
+	private final java.util.Random random = new java.util.Random(42L);
+
+	@Override
+	public int textureColor(int localX, int y, int localZ) {
+		MapEngine engine = MapEngine.get();
+		if (engine == null || chunk == null) return -1;
+		TexturePalette palette = engine.palette();
+		pos.setPos(baseX + localX, y, baseZ + localZ);
+		IBlockState state = chunk.getBlockState(pos);
+		if (state == null) return -1;
+		int c = palette.lookup(state);
+		if (c != TexturePalette.UNRESOLVED) return c;
+		String sprite = null;
+		boolean tinted = false;
+		try {
+			net.minecraft.client.renderer.model.IBakedModel model = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(state);
+			java.util.List<net.minecraft.client.renderer.model.BakedQuad> quads = model.getQuads(state, net.minecraft.util.EnumFacing.UP, random);
+			if (quads.isEmpty()) quads = model.getQuads(state, null, random);
+			net.minecraft.client.renderer.texture.TextureAtlasSprite found = null;
+			if (!quads.isEmpty()) {
+				found = quads.get(0).getSprite();
+				tinted = quads.get(0).hasTintIndex();
+			}
+			if (found == null) found = model.getParticleTexture();
+			if (found != null) sprite = found.getName().toString();
+		} catch (RuntimeException | LinkageError e) {
+			sprite = null;
+		}
+		return palette.resolve(state, sprite, tinted);
 	}
 }

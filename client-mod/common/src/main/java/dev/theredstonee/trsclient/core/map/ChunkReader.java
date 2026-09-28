@@ -49,4 +49,13 @@ public interface ChunkReader {
 
 	/** Tönungsfarbe (Biom-Gras, Laub, Wasser …) des Blocks als 0xRRGGBB oder -1. */
 	int tint(int localX, int y, int localZ);
+
+	/**
+	 * Farbe aus der Block-Textur (Mittel der Oberseite im geladenen Resource Pack, siehe {@link TexturePalette}):
+	 * 0xRRGGBB, bei getönten Texturen zusätzlich {@link TexturePalette#TINTED}; -1 = unbekannt (dann gilt die
+	 * Vanilla-Kartenfarbe aus {@link #block}).
+	 */
+	default int textureColor(int localX, int y, int localZ) {
+		return -1;
+	}
 }

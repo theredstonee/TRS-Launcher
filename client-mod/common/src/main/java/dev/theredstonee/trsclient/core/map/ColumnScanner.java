@@ -42,6 +42,17 @@ public final class ColumnScanner {
 	 * @return false, wenn der Chunk nicht gelesen werden konnte
 	 */
 	public static boolean surface(ChunkReader r, int chunkX, int chunkZ, int cut, int[] pixels, int[] heights) {
+		return surface(r, chunkX, chunkZ, cut, false, pixels, heights);
+	}
+
+	/**
+	 * Wie {@link #surface(ChunkReader, int, int, int, int[], int[])}, auf Wunsch mit Farben aus den Block-Texturen
+	 * ({@link ChunkReader#textureColor}; wo keine bekannt ist, gilt die Vanilla-Kartenfarbe).
+	 *
+	 * @param textures true = Texturfarben, false = Vanilla-Kartenfarben
+	 */
+	public static boolean surface(ChunkReader r, int chunkX, int chunkZ, int cut, boolean textures, int[] pixels,
+			int[] heights) {
 		if (!r.open(chunkX, chunkZ)) return false;
 		int min = r.minY();
 		// Merker je Abschnitt für diesen Chunk: 0 = unbekannt, 1 = nur Luft, 2 = mit Blöcken.
@@ -75,14 +86,14 @@ public final class ColumnScanner {
 				}
 				// Blumen/Feldfrüchte (Pflanzenfarbe ohne Tönung): Boden darunter zeigen, leicht grün – statt grellem Grün.
 				if (rgb == MapColors.MAP_PLANT && r.tint(x, y, z) == -1) {
-					int ground = groundBelow(r, x, y, z, min);
+					int ground = groundBelow(r, x, y, z, min, textures);
 					if (ground != 0) {
 						pixels[i] = MapColors.KNOWN | MapColors.mix(ground, MapColors.FLOWER_GREEN, 0.3f);
 						heights[i] = y - 1;
 						continue;
 					}
 				}
-				pixels[i] = colorAt(r, x, y, z, rgb, min);
+				pixels[i] = colorAt(r, x, y, z, rgb, min, textures);
 				heights[i] = y;
 			}
 		}
@@ -115,14 +126,28 @@ public final class ColumnScanner {
 	}
 
 	/** Farbe (getönt) des nächsten festen Blocks unter y (höchstens 3 tiefer), 0 = keiner/Wasser. */
-	private static int groundBelow(ChunkReader r, int x, int y, int z, int min) {
+	private static int groundBelow(ChunkReader r, int x, int y, int z, int min, boolean textures) {
 		for (int yy = y - 1; yy >= Math.max(min, y - 3); yy--) {
 			int c = r.block(x, yy, z) & MapColors.RGB;
 			if (c == 0) continue;
 			if (c == MapColors.MAP_WATER) return 0;
-			return MapColors.tint(c, r.tint(x, yy, z));
+			return blockColor(r, x, yy, z, c, textures);
 		}
 		return 0;
+	}
+
+	/**
+	 * Farbe eines Blocks mit Tönung: aus der Textur (falls gewünscht und bekannt – getönte Texturen × Tönung),
+	 * sonst die Vanilla-Kartenfarbe mit Tönung.
+	 */
+	static int blockColor(ChunkReader r, int x, int y, int z, int mapRgb, boolean textures) {
+		if (textures) {
+			int t = r.textureColor(x, y, z);
+			if (t != -1) {
+				return (t & TexturePalette.TINTED) != 0 ? TexturePalette.tint(t, r.tint(x, y, z)) : t & MapColors.RGB;
+			}
+		}
+		return MapColors.tint(mapRgb, r.tint(x, y, z));
 	}
 
 	/**
@@ -130,6 +155,12 @@ public final class ColumnScanner {
 	 * übersprungen (Decke); danach folgt Luft bis zum Boden. Ohne Luft bis zur Grenze: Wand.
 	 */
 	public static boolean cave(ChunkReader r, int chunkX, int chunkZ, int yStart, int[] pixels, int[] heights) {
+		return cave(r, chunkX, chunkZ, yStart, false, pixels, heights);
+	}
+
+	/** Höhlenschnitt, auf Wunsch mit Texturfarben (siehe {@link #surface(ChunkReader, int, int, int, boolean, int[], int[])}). */
+	public static boolean cave(ChunkReader r, int chunkX, int chunkZ, int yStart, boolean textures, int[] pixels,
+			int[] heights) {
 		if (!r.open(chunkX, chunkZ)) return false;
 		int min = r.minY();
 		for (int z = 0; z < 16; z++) {
@@ -158,7 +189,7 @@ public final class ColumnScanner {
 					heights[i] = low;
 					continue;
 				}
-				pixels[i] = colorAt(r, x, y, z, rgb, min);
+				pixels[i] = colorAt(r, x, y, z, rgb, min, textures);
 				heights[i] = y;
 			}
 		}
@@ -172,9 +203,9 @@ public final class ColumnScanner {
 	}
 
 	/** Farbe eines gefundenen Blocks inkl. Tönung; Wasser mit Tiefe und Grund. */
-	private static int colorAt(ChunkReader r, int x, int y, int z, int rgb, int min) {
+	private static int colorAt(ChunkReader r, int x, int y, int z, int rgb, int min, boolean textures) {
 		if (rgb != MapColors.MAP_WATER) {
-			return MapColors.KNOWN | MapColors.tint(rgb, r.tint(x, y, z));
+			return MapColors.KNOWN | blockColor(r, x, y, z, rgb, textures);
 		}
 		int waterTint = r.tint(x, y, z);
 		int depth = 1;
@@ -183,7 +214,7 @@ public final class ColumnScanner {
 		while (yy >= min && depth < MAX_WATER) {
 			int c = r.block(x, yy, z) & MapColors.RGB;
 			if (c != 0 && c != MapColors.MAP_WATER) {
-				floor = MapColors.tint(c, r.tint(x, yy, z));
+				floor = blockColor(r, x, yy, z, c, textures);
 				break;
 			}
 			depth++;

@@ -91,6 +91,11 @@ public final class NewSince {
 	public static final String KEY_SEARCH = "0.12.0";
 	/** Fehlerbildschirme im TRS-Stil mit „Neu anmelden“, „Erneut verbinden“ … (TRS Client 0.12.0). */
 	public static final String ERROR_SCREENS = "0.12.0";
+	/**
+	 * Minimap nach Art von Xaero (TRS Client 0.13.0): Wegpunkte am Rand, Köpfe/Symbole für Kreaturen, Farben aus
+	 * den Block-Texturen, Auto-Zoom.
+	 */
+	public static final String MINIMAP_2 = "0.13.0";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -143,6 +148,9 @@ public final class NewSince {
 		// Suche in der Tastenbelegung.
 		add(KEY_SEARCH, "keySearch");
 		add(ERROR_SCREENS, "menuStyle.errors");
+		// Minimap 2: Wegpunkte am Rand, Kreatur-Köpfe/Symbole, Texturfarben, Auto-Zoom.
+		add(MINIMAP_2, "minimap.edgeWaypoints", "minimap.mobIcons", "minimap.colors", "minimap.autoZoomSpeed",
+				"minimap.autoZoomIndoor");
 	}
 
 	private NewSince() {

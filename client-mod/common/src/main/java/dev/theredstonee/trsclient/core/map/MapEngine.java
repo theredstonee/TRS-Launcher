@@ -51,6 +51,14 @@ public final class MapEngine {
 	private final MapTextures textures = new MapTextures();
 	private final MapSprites sprites = new MapSprites();
 	private final FairPlay fairPlay = new FairPlay();
+	private final TexturePalette palette;
+	private final MobHeads heads = new MobHeads();
+	private final AutoZoom autoZoom = new AutoZoom();
+	private MapPlatform paletteSource;
+	private boolean lastTextures;
+	private long lastPaletteCheck;
+	private boolean indoorZoom;
+	private int outdoorTicks;
 	private final int[] chunkPixels = new int[256];
 	private final int[] chunkHeights = new int[256];
 
@@ -110,6 +118,7 @@ public final class MapEngine {
 		this.modules = modules;
 		Path root = configDir == null ? null : configDir.resolve("trsclient").resolve("maps");
 		this.disk = root == null ? null : new MapDisk(root, synchronousDisk);
+		this.palette = new TexturePalette(synchronousDisk);
 	}
 
 	/** Einmal beim Start (je Loader). */
@@ -142,6 +151,26 @@ public final class MapEngine {
 
 	public FairPlay fairPlay() {
 		return fairPlay;
+	}
+
+	/** Farben aus den Block-Texturen (für {@code compat/MapSampler}). */
+	public TexturePalette palette() {
+		return palette;
+	}
+
+	/** Köpfe der Kreaturen aus ihren Texturen (Render-Thread). */
+	public MobHeads heads() {
+		return heads;
+	}
+
+	/** Auto-Zoom der Minimap (Tempo/drinnen). */
+	public AutoZoom autoZoom() {
+		return autoZoom;
+	}
+
+	/** Nimmt die Karte ihre Farben gerade aus den Block-Texturen? */
+	public boolean textureColors() {
+		return modules.minimapColors.get() == TrsModules.MapColorMode.TEXTURES;
 	}
 
 	public MapPlatform platform() {
@@ -412,6 +441,7 @@ public final class MapEngine {
 		curY = p.y();
 		tickNanos = System.nanoTime();
 		hasPos = true;
+		double speed = Math.sqrt((curX - prevX) * (curX - prevX) + (curZ - prevZ) * (curZ - prevZ));
 
 		// Oberfläche oder Höhle?
 		boolean nether = isNether(dim);
@@ -446,6 +476,31 @@ public final class MapEngine {
 			clearTicks = 0;
 			roofCut = ColumnScanner.NO_CUT;
 		}
+
+		// Auto-Zoom: Tempo und „drinnen“ (Höhle, unter Tage, Dach oder wenig Himmelslicht an der Oberwelt-Oberfläche).
+		boolean end = isEnd(dim);
+		boolean dark = !nether && !end && sky <= 7;
+		if (caveActive || underground || roofActive || dark) {
+			indoorZoom = true;
+			outdoorTicks = 0;
+		} else if (indoorZoom && ++outdoorTicks >= 10) {
+			indoorZoom = false;
+		}
+		int movement = 0;
+		try {
+			movement = p.movement();
+		} catch (RuntimeException e) {
+			movement = 0;
+		}
+		autoZoom.tick(speed, movement, indoorZoom, modules.minimapAutoZoomSpeed.get(), modules.minimapAutoZoomIndoor.get());
+
+		// Texturfarben (und Mob-Köpfe): Resource-Reload erkennen, neue Farben → Umgebung einmal neu abtasten.
+		boolean texMode = textureColors();
+		if (texMode != lastTextures) {
+			lastTextures = texMode;
+			restamp();
+		}
+		updatePalette(p, now, texMode);
 
 		// Abtasten mit Zeitbudget: die gerade gezeigte Ebene zuerst, dann die Oberfläche.
 		if (reader != null) {
@@ -504,6 +559,29 @@ public final class MapEngine {
 		}
 		float us = (System.nanoTime() - t0) / 1000f;
 		tickMicros = tickMicros == 0 ? us : tickMicros + (us - tickMicros) * 0.05f;
+	}
+
+	private void updatePalette(MapPlatform p, long now, boolean texMode) {
+		if (paletteSource != p) {
+			paletteSource = p;
+			palette.setResources(p::readResource);
+		}
+		try {
+			if (palette.checkGeneration(p.resourceGeneration()) && texMode) restamp();
+		} catch (RuntimeException e) {
+			// ohne Erkennung eben ohne
+		}
+		if (now - lastPaletteCheck >= 1000) {
+			lastPaletteCheck = now;
+			if (palette.takeChanged() && texMode) restamp();
+		}
+	}
+
+	/** Alle geladenen Chunks neu abtasten (neue Farben): Stempel vergessen – das Zeitbudget je Tick bleibt. */
+	private void restamp() {
+		surfaceStamps.clear();
+		caveStamps.clear();
+		roofStamps.clear();
 	}
 
 	private boolean wantsEntities() {
@@ -679,8 +757,9 @@ public final class MapEngine {
 	}
 
 	private void scan(ChunkReader r, MapLayer layer, ChunkStamps stamps, int cx, int cz, long key, long now) {
-		boolean ok = layer.cave() ? ColumnScanner.cave(r, cx, cz, layer.caveRef, chunkPixels, chunkHeights)
-				: ColumnScanner.surface(r, cx, cz, layer.roofCut, chunkPixels, chunkHeights);
+		boolean texMode = lastTextures;
+		boolean ok = layer.cave() ? ColumnScanner.cave(r, cx, cz, layer.caveRef, texMode, chunkPixels, chunkHeights)
+				: ColumnScanner.surface(r, cx, cz, layer.roofCut, texMode, chunkPixels, chunkHeights);
 		stamps.put(key, now);
 		if (!ok) return;
 		layer.forWrite(cx >> 3, cz >> 3, now).writeChunk(cx, cz, chunkPixels, chunkHeights, now);
@@ -717,6 +796,8 @@ public final class MapEngine {
 		dimension = "";
 		hasPos = false;
 		entityCount = 0;
+		autoZoom.reset();
+		indoorZoom = false;
 		fairPlay.resetServer();
 	}
 

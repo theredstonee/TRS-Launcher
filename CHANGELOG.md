@@ -21,6 +21,31 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- TRS Client minimap: waypoints outside the map now sit as small coloured boxes with their first letter on the ring
+  (or edge) pointing the way – several close ones move apart a little instead of covering each other.
+- The minimap takes its colours from the block textures of your resource pack (grass, leaves and water keep their
+  biome colour, relief shading as before). You can switch back to the vanilla map colours in the minimap settings.
+- Animals and monsters show up as their real heads (cut from the mob texture, so they match your resource pack) –
+  or, if you prefer, as simple symbols for friendly, neutral and hostile creatures.
+- Auto zoom: the minimap zooms out when you are fast (sprinting, riding, boat, elytra) and back in when you slow down,
+  and it goes a step closer indoors and in caves. Both can be turned off on their own.
+
+### Deutsch
+- Minimap im TRS Client: Wegpunkte außerhalb der Karte sitzen jetzt als kleine farbige Kästchen mit ihrem
+  Anfangsbuchstaben auf dem Ring (bzw. am Rand) und zeigen die Richtung – liegen mehrere dicht beieinander, rücken sie
+  ein Stück auseinander, statt sich zu verdecken.
+- Die Minimap nimmt ihre Farben aus den Block-Texturen deines Resource Packs (Gras, Laub und Wasser behalten ihre
+  Biomfarbe, Relief-Schattierung wie bisher). In den Minimap-Einstellungen kannst du zu den Vanilla-Kartenfarben
+  zurückschalten.
+- Tiere und Monster erscheinen als ihre echten Köpfe (aus der Mob-Textur, passend zu deinem Resource Pack) – oder auf
+  Wunsch als einfache Symbole für freundliche, neutrale und feindliche Kreaturen.
+- Auto-Zoom: Die Minimap zoomt heraus, wenn du schnell unterwegs bist (Sprinten, Reiten, Boot, Elytren), und wieder
+  hinein, wenn du langsamer wirst – drinnen und in Höhlen geht sie eine Stufe näher heran. Beides lässt sich einzeln
+  abschalten.
+
 ## 0.12.0 – 2026-09-27 – Pass It On | Weitergeben
 <!-- banner: accent=#27d3e6 motif=/news/0.12.0/banner.png -->
 <!-- shots:

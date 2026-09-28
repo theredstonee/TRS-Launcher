@@ -263,6 +263,11 @@ public final class TrsModules {
 	public final BoolSetting minimapCompass;
 	public final BoolSetting minimapBiome;
 	public final BoolSetting minimapTime;
+	public final BoolSetting minimapEdgeWaypoints;
+	public final ChoiceSetting<MobIcons> minimapMobIcons;
+	public final ChoiceSetting<MapColorMode> minimapColors;
+	public final BoolSetting minimapAutoZoomSpeed;
+	public final BoolSetting minimapAutoZoomIndoor;
 	// --- Weltkarte ---
 	public final Module worldMap;
 	public final KeySetting worldMapKey;
@@ -382,6 +387,40 @@ public final class TrsModules {
 		private final String label;
 
 		MapShape(String label) {
+			this.label = label;
+		}
+
+		@Override
+		public String label() {
+			return label;
+		}
+	}
+
+	/** Wie die Minimap Kreaturen zeigt. */
+	public enum MobIcons implements ChoiceSetting.Option {
+		HEADS("Heads (from the mob texture)"),
+		SYMBOLS("Symbols (friendly / neutral / hostile)");
+
+		private final String label;
+
+		MobIcons(String label) {
+			this.label = label;
+		}
+
+		@Override
+		public String label() {
+			return label;
+		}
+	}
+
+	/** Woher die Karten ihre Farben nehmen. */
+	public enum MapColorMode implements ChoiceSetting.Option {
+		TEXTURES("Block textures (follows your resource pack)"),
+		VANILLA("Vanilla map colors");
+
+		private final String label;
+
+		MapColorMode(String label) {
 			this.label = label;
 		}
 
@@ -743,15 +782,20 @@ public final class TrsModules {
 		minimapSize = minimap.add(new NumberSetting("size", "Size (pixels)", 112, 64, 256, 8, ""));
 		minimapZoom = minimap.add(new ChoiceSetting<>("zoom", "Zoom", MinimapZoom.class, MinimapZoom.NORMAL));
 		minimapRotate = minimap.add(new BoolSetting("rotate", "Rotate with view", true));
+		minimapAutoZoomSpeed = minimap.add(new BoolSetting("autoZoomSpeed", "Auto zoom: further out when fast (sprinting, riding, boat, elytra)", true));
+		minimapAutoZoomIndoor = minimap.add(new BoolSetting("autoZoomIndoor", "Auto zoom: closer indoors and in caves", true));
 		minimapOpacity = minimap.add(new NumberSetting("opacity", "Map opacity", 100, 20, 100, 5, "", "%"));
+		minimapColors = minimap.add(new ChoiceSetting<>("colors", "Map colors", MapColorMode.class, MapColorMode.TEXTURES));
 		minimapCaveMode = minimap.add(new ChoiceSetting<>("caveMode", "Cave view", CaveMode.class, CaveMode.AUTO));
 		minimapHideRoof = minimap.add(new BoolSetting("hideRoof", "Hide roofs (show the inside of buildings)", true));
 		minimapWaypoints = minimap.add(new BoolSetting("showWaypoints", "Show waypoints", true));
+		minimapEdgeWaypoints = minimap.add(new BoolSetting("edgeWaypoints", "Waypoints out of view at the map edge", true));
 		minimapDeath = minimap.add(new BoolSetting("showDeath", "Show last death point", true));
 		minimapPlayers = minimap.add(new BoolSetting("showPlayers", "Show players", true));
 		minimapFriends = minimap.add(new BoolSetting("showFriends", "Highlight TRS friends", true));
 		minimapHostile = minimap.add(new BoolSetting("showHostile", "Show hostile mobs", false));
 		minimapPassive = minimap.add(new BoolSetting("showPassive", "Show animals", false));
+		minimapMobIcons = minimap.add(new ChoiceSetting<>("mobIcons", "Creatures as", MobIcons.class, MobIcons.HEADS));
 		minimapCompass = minimap.add(new BoolSetting("compass", "Compass directions", true));
 		minimapCoords = minimap.add(new BoolSetting("coords", "Coordinates below the map", true));
 		minimapBiome = minimap.add(new BoolSetting("biome", "Biome below the map", true));

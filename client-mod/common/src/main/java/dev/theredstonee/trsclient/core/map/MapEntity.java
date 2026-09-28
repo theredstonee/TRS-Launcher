@@ -9,6 +9,8 @@ public final class MapEntity {
 	public static final int PLAYER = 0;
 	public static final int HOSTILE = 1;
 	public static final int PASSIVE = 2;
+	/** Neutrale Kreatur (greift nur an, wenn man sie reizt: Wolf, Enderman, Eisengolem …). */
+	public static final int NEUTRAL = 3;
 
 	public int type;
 	/** Position im letzten und im aktuellen Tick (für flüssige Bewegung dazwischen). */
@@ -20,6 +22,11 @@ public final class MapEntity {
 	public TextureRef skin;
 	/** TRS-Freund? (setzt die Karte selbst) */
 	public boolean friend;
+	/**
+	 * Kreaturen: Art, wie die Version sie nennt – modern {@code minecraft:zombie}, Legacy {@code Zombie}/{@code PigZombie}
+	 * (siehe {@link MobHeads#normalize}); null = unbekannt.
+	 */
+	public String kind;
 
 	public MapEntity set(int type, double prevX, double prevZ, double x, double y, double z, float yaw) {
 		this.type = type;
@@ -33,6 +40,7 @@ public final class MapEntity {
 		this.name = null;
 		this.skin = null;
 		this.friend = false;
+		this.kind = null;
 		return this;
 	}
 

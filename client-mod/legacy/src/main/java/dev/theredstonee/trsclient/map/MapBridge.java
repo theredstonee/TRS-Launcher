@@ -27,11 +27,14 @@ import java.util.List;
 
 /**
  * Die Karte ({@code core.map}) sieht Minecraft 1.8.9–1.12.2 nur durch diese Klasse: Welt/Dimension,
- * Spielerposition, Chunks ({@link MapSampler}), Spieler und Kreaturen, Biom, Tageszeit, Wegpunkte.
+ * Spielerposition, Chunks ({@link MapSampler}), Spieler und Kreaturen, Biom, Tageszeit, Wegpunkte, Ressourcen
+ * (Texturfarben/Köpfe) und die Bewegungsart (Auto-Zoom).
  */
 public final class MapBridge implements MapPlatform {
 	private static final int MAX_SIGHT_CHECKS = 48;
 	private final MapSampler sampler = new MapSampler();
+	/** Art je Entity-Klasse (Legacy-Name bzw. ab 1.11 ID), einmal ermittelt. */
+	private final java.util.Map<Class<?>, String> kinds = new java.util.IdentityHashMap<Class<?>, String>();
 
 	private static Minecraft mc() {
 		return Minecraft.getMinecraft();
@@ -110,8 +113,10 @@ public final class MapBridge implements MapPlatform {
 			}
 			MapEntity m = sink.add();
 			if (m == null) return;
-			int type = e instanceof EntityPlayer ? MapEntity.PLAYER : (e instanceof IMob ? MapEntity.HOSTILE : MapEntity.PASSIVE);
+			int type = e instanceof EntityPlayer ? MapEntity.PLAYER : (neutral(e) ? MapEntity.NEUTRAL
+					: (e instanceof IMob ? MapEntity.HOSTILE : MapEntity.PASSIVE));
 			m.set(type, e.prevPosX, e.prevPosZ, e.posX, e.posY, e.posZ, e.rotationYaw);
+			if (type != MapEntity.PLAYER) m.kind = kind(e);
 			if (type == MapEntity.PLAYER) {
 				m.uuid = e.getUniqueID();
 				m.name = e.getName();
@@ -124,6 +129,73 @@ public final class MapBridge implements MapPlatform {
 				}
 			}
 		}
+	}
+
+	/** Neutrale Kreaturen (vor IMob prüfen – Schweinezombie und Enderman sind auch IMob). */
+	private static boolean neutral(Entity e) {
+		if (e instanceof net.minecraft.entity.passive.EntityWolf || e instanceof net.minecraft.entity.monster.EntityPigZombie
+				|| e instanceof net.minecraft.entity.monster.EntityEnderman || e instanceof net.minecraft.entity.monster.EntityIronGolem) {
+			return true;
+		}
+		//? if >=1.10 {
+		/*return e instanceof net.minecraft.entity.monster.EntityPolarBear;
+		*///?} else
+		return false;
+	}
+
+	private String kind(Entity e) {
+		String k = kinds.get(e.getClass());
+		if (k == null) {
+			//? if >=1.11 {
+			/*Object id = net.minecraft.entity.EntityList.getKey(e);
+			k = id == null ? "" : id.toString();
+			*///?} else {
+			String id = net.minecraft.entity.EntityList.getEntityString(e);
+			k = id == null ? "" : id;
+			//?}
+			kinds.put(e.getClass(), k);
+		}
+		return k;
+	}
+
+	@Override
+	public int movement() {
+		EntityPlayer p = Mc.player();
+		if (p == null) return 0;
+		int m = 0;
+		if (p.isSprinting()) m |= SPRINTING;
+		//? if >=1.9 {
+		/*Entity vehicle = p.getRidingEntity();
+		if (p.isElytraFlying()) m |= GLIDING;
+		*///?} else
+		Entity vehicle = p.ridingEntity;
+		if (vehicle != null) m |= vehicle instanceof net.minecraft.entity.item.EntityBoat ? BOAT : RIDING;
+		return m;
+	}
+
+	@Override
+	public byte[] readResource(String namespace, String path) throws java.io.IOException {
+		net.minecraft.client.resources.IResource res;
+		try {
+			res = mc().getResourceManager().getResource(new net.minecraft.util.ResourceLocation(namespace, path));
+		} catch (java.io.FileNotFoundException e) {
+			return null;
+		}
+		try (java.io.InputStream in = res.getInputStream()) {
+			java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(4096);
+			byte[] buf = new byte[8192];
+			int n;
+			while ((n = in.read(buf)) > 0) {
+				out.write(buf, 0, n);
+				if (out.size() > (4 << 20)) return null;
+			}
+			return out.toByteArray();
+		}
+	}
+
+	@Override
+	public Object resourceGeneration() {
+		return mc().getTextureMapBlocks().getAtlasSprite("minecraft:blocks/stone");
 	}
 
 	@Override

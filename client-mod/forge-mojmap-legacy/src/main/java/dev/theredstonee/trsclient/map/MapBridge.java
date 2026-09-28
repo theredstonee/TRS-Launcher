@@ -20,13 +20,16 @@ import net.minecraft.world.level.LightLayer;
 
 /**
  * Die Karte ({@code core.map}) sieht Minecraft nur durch diese Klasse: Welt/Dimension, Spielerposition,
- * Chunks ({@link MapSampler}), Spieler und Kreaturen, Biom, Tageszeit, Wegpunkte. Mojmap-Bäume teilen die Datei.
+ * Chunks ({@link MapSampler}), Spieler und Kreaturen, Biom, Tageszeit, Wegpunkte, Ressourcen (Texturfarben/Köpfe) und
+ * die Bewegungsart (Auto-Zoom). Mojmap-Bäume teilen die Datei.
  */
 public final class MapBridge implements MapPlatform {
 	/** Sichtlinien-Prüfungen je Tick (Fair Play) – jede ist ein Strahl durch die Welt. */
 	private static final int MAX_SIGHT_CHECKS = 48;
 
 	private final MapSampler sampler = new MapSampler();
+	/** Art je Entity-Typ ("minecraft:zombie"), einmal ermittelt. */
+	private final java.util.Map<Object, String> kinds = new java.util.IdentityHashMap<>();
 
 	private static Minecraft mc() {
 		return Minecraft.getInstance();
@@ -134,14 +137,34 @@ public final class MapBridge implements MapPlatform {
 			}
 			MapEntity m = sink.add();
 			if (m == null) return;
-			int type = e instanceof Player ? MapEntity.PLAYER : (e instanceof Enemy ? MapEntity.HOSTILE : MapEntity.PASSIVE);
+			int type = e instanceof Player ? MapEntity.PLAYER : (neutral(e) ? MapEntity.NEUTRAL
+					: (e instanceof Enemy ? MapEntity.HOSTILE : MapEntity.PASSIVE));
 			m.set(type, e.xo, e.zo, x(e), y(e), z(e), yRot(e));
+			if (type != MapEntity.PLAYER) m.kind = kind(e);
 			if (type == MapEntity.PLAYER) {
 				m.uuid = e.getUUID();
 				m.name = e.getName().getString();
 				if (e instanceof AbstractClientPlayer) m.skin = skin((AbstractClientPlayer) e);
 			}
 		}
+	}
+
+	/** Neutrale Kreatur (Wolf, Enderman, Eisengolem, Zombifizierter Piglin …) – die Schnittstelle gibt es ab 1.16. */
+	private static boolean neutral(Entity e) {
+		//? if >=1.16 {
+		return e instanceof net.minecraft.world.entity.NeutralMob;
+		//?} else
+		/*return false;*/
+	}
+
+	private String kind(Entity e) {
+		Object type = e.getType();
+		String k = kinds.get(type);
+		if (k == null) {
+			k = String.valueOf(net.minecraft.world.entity.EntityType.getKey(e.getType()));
+			kinds.put(type, k);
+		}
+		return k;
 	}
 
 	private static boolean canSee(Player self, Entity e) {
@@ -221,6 +244,72 @@ public final class MapBridge implements MapPlatform {
 		if (screen == null) return false;
 		Mc.setScreen(screen);
 		return true;
+	}
+
+	@Override
+	public int movement() {
+		Player p = mc().player;
+		if (p == null) return 0;
+		int m = 0;
+		if (p.isSprinting()) m |= SPRINTING;
+		Entity vehicle = p.getVehicle();
+		if (vehicle != null) m |= boat(vehicle) ? BOAT : RIDING;
+		if (p.isFallFlying()) m |= GLIDING;
+		return m;
+	}
+
+	private static boolean boat(Entity e) {
+		//? if >=1.21.11 {
+		/*return e instanceof net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+		*///?} elif >=1.21.2 {
+		/*return e instanceof net.minecraft.world.entity.vehicle.AbstractBoat;
+		*///?} else
+		return e instanceof net.minecraft.world.entity.vehicle.Boat;
+	}
+
+	@Override
+	public byte[] readResource(String namespace, String path) throws java.io.IOException {
+		Minecraft mc = mc();
+		//? if >=1.21.11 {
+		/*net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.fromNamespaceAndPath(namespace, path);
+		*///?} elif >=1.21 {
+		/*net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(namespace, path);
+		*///?} else
+		net.minecraft.resources.ResourceLocation id = new net.minecraft.resources.ResourceLocation(namespace, path);
+		//? if >=1.19 {
+		/*java.util.Optional<net.minecraft.server.packs.resources.Resource> res = mc.getResourceManager().getResource(id);
+		if (!res.isPresent()) return null;
+		try (java.io.InputStream in = res.get().open()) {
+			return readAll(in);
+		}
+		*///?} else {
+		try (net.minecraft.server.packs.resources.Resource res = mc.getResourceManager().getResource(id);
+				java.io.InputStream in = res.getInputStream()) {
+			return readAll(in);
+		} catch (java.io.FileNotFoundException e) {
+			return null;
+		}
+		//?}
+	}
+
+	/** Liest höchstens 4 MB (größere Texturen nimmt die Karte nicht). */
+	private static byte[] readAll(java.io.InputStream in) throws java.io.IOException {
+		java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(4096);
+		byte[] buf = new byte[8192];
+		int n;
+		while ((n = in.read(buf)) > 0) {
+			out.write(buf, 0, n);
+			if (out.size() > (4 << 20)) return null;
+		}
+		return out.toByteArray();
+	}
+
+	@Override
+	public Object resourceGeneration() {
+		//? if >=26.1 {
+		/*return mc().getModelManager().getBlockStateModelSet();
+		*///?} else
+		return mc().getBlockRenderer().getBlockModel(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
 	}
 
 	@Override

@@ -6,9 +6,10 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 /**
- * Kleiner PNG-Dekoder (ohne AWT/ImageIO – das kann auf macOS mit LWJGL hängen): 8 Bit je Kanal,
- * Graustufen, RGB, Palette (+tRNS), Graustufen+Alpha und RGBA, ohne Interlacing. Das deckt die
- * Umhänge der TRS API ab (die API kodiert jedes Bild als RGBA neu). Ergebnis: ARGB-Pixel.
+ * Kleiner PNG-Dekoder (ohne AWT/ImageIO – das kann auf macOS mit LWJGL hängen): alle Farbtypen (Graustufen,
+ * RGB, Palette, Graustufen+Alpha, RGBA) in allen Bittiefen (1/2/4/8/16), durchsichtige Farbe (tRNS) und
+ * Interlacing (Adam7). Das deckt die Umhänge der TRS API ab und auch Texturen aus Resource Packs (die Karte
+ * mittelt Blocktexturen). Ergebnis: ARGB-Pixel.
  */
 public final class PngDecoder {
 	/** Größter Umhang: Faktor 8 (512×256) mit 64 Bildern. */
@@ -40,9 +41,14 @@ public final class PngDecoder {
 		int pos = 8;
 		int width = 0;
 		int height = 0;
+		int depth = 8;
 		int colorType = -1;
+		int interlace = 0;
 		int[] palette = null;
 		int[] paletteAlpha = null;
+		// Durchsichtige Farbe bei Graustufen/RGB ohne Alpha (tRNS) in der Bittiefe der Datei; -1 = keine.
+		int transGray = -1;
+		long transRgb = -1;
 		ByteArrayOutputStream idat = new ByteArrayOutputStream();
 		boolean end = false;
 		while (!end && pos + 8 <= png.length) {
@@ -54,10 +60,13 @@ public final class PngDecoder {
 				case "IHDR":
 					width = readInt(png, data);
 					height = readInt(png, data + 4);
-					int depth = png[data + 8] & 0xFF;
+					depth = png[data + 8] & 0xFF;
 					colorType = png[data + 9] & 0xFF;
-					int interlace = png[data + 12] & 0xFF;
-					if (depth != 8 || interlace != 0) throw new IOException("nur 8 Bit ohne Interlacing");
+					interlace = png[data + 12] & 0xFF;
+					if (depth != 1 && depth != 2 && depth != 4 && depth != 8 && depth != 16) {
+						throw new IOException("Bittiefe " + depth);
+					}
+					if (interlace > 1) throw new IOException("Interlacing " + interlace);
 					if (width <= 0 || height <= 0 || (long) width * height > MAX_PIXELS) {
 						throw new IOException("Bildgröße ungültig");
 					}
@@ -70,8 +79,16 @@ public final class PngDecoder {
 					}
 					break;
 				case "tRNS":
-					paletteAlpha = new int[len];
-					for (int i = 0; i < len; i++) paletteAlpha[i] = png[data + i] & 0xFF;
+					if (colorType == 0 && len >= 2) {
+						transGray = ((png[data] & 0xFF) << 8) | (png[data + 1] & 0xFF);
+					} else if (colorType == 2 && len >= 6) {
+						transRgb = ((long) (((png[data] & 0xFF) << 8) | (png[data + 1] & 0xFF)) << 32)
+								| ((long) (((png[data + 2] & 0xFF) << 8) | (png[data + 3] & 0xFF)) << 16)
+								| (((png[data + 4] & 0xFF) << 8) | (png[data + 5] & 0xFF));
+					} else {
+						paletteAlpha = new int[len];
+						for (int i = 0; i < len; i++) paletteAlpha[i] = png[data + i] & 0xFF;
+					}
 					break;
 				case "IDAT":
 					idat.write(png, data, len);
@@ -95,60 +112,115 @@ public final class PngDecoder {
 			default: throw new IOException("Farbtyp " + colorType);
 		}
 		if (colorType == 3 && palette == null) throw new IOException("Palette fehlt");
-		int stride = width * channels;
-		byte[] raw = inflate(idat.toByteArray(), (stride + 1) * height);
+		if (colorType == 3 && depth == 16) throw new IOException("Palette mit 16 Bit");
+		if ((colorType == 2 || colorType == 4 || colorType == 6) && depth < 8) throw new IOException("Bittiefe " + depth);
+		int bitsPerPixel = channels * depth;
+		// Abstand für die Filter: ganze Bytes je Pixel, mindestens 1.
+		int bpp = Math.max(1, bitsPerPixel / 8);
+		// Durchgänge: ohne Interlacing einer, sonst Adam7 (Start x, Start y, Schritt x, Schritt y).
+		int[][] passes = interlace == 0 ? new int[][] {{0, 0, 1, 1}}
+				: new int[][] {{0, 0, 8, 8}, {4, 0, 8, 8}, {0, 4, 4, 8}, {2, 0, 4, 4}, {0, 2, 2, 4}, {1, 0, 2, 2}, {0, 1, 1, 2}};
+		long expected = 0;
+		for (int[] p : passes) {
+			long pw = passSize(width, p[0], p[2]), ph = passSize(height, p[1], p[3]);
+			if (pw == 0 || ph == 0) continue;
+			expected += ((pw * bitsPerPixel + 7) / 8 + 1) * ph;
+		}
+		if (expected > Integer.MAX_VALUE - 16) throw new IOException("Bild zu groß");
+		byte[] raw = inflate(idat.toByteArray(), (int) expected);
 		int[] out = new int[width * height];
-		byte[] prev = new byte[stride];
-		byte[] line = new byte[stride];
-		for (int y = 0; y < height; y++) {
-			int base = y * (stride + 1);
-			int filter = raw[base] & 0xFF;
-			System.arraycopy(raw, base + 1, line, 0, stride);
-			unfilter(filter, line, prev, channels);
-			for (int x = 0; x < width; x++) {
-				int o = x * channels;
-				int a;
-				int r;
-				int g;
-				int b;
-				switch (colorType) {
-					case 0:
-						r = g = b = line[o] & 0xFF;
-						a = 255;
-						break;
-					case 2:
-						r = line[o] & 0xFF;
-						g = line[o + 1] & 0xFF;
-						b = line[o + 2] & 0xFF;
-						a = 255;
-						break;
-					case 3: {
-						int idx = line[o] & 0xFF;
-						int rgb = idx < palette.length ? palette[idx] : 0;
-						r = (rgb >> 16) & 0xFF;
-						g = (rgb >> 8) & 0xFF;
-						b = rgb & 0xFF;
-						a = paletteAlpha != null && idx < paletteAlpha.length ? paletteAlpha[idx] : 255;
-						break;
+		int maxSample = (1 << depth) - 1;
+		int off = 0;
+		for (int[] p : passes) {
+			int pw = passSize(width, p[0], p[2]), ph = passSize(height, p[1], p[3]);
+			if (pw == 0 || ph == 0) continue;
+			int rowBytes = (pw * bitsPerPixel + 7) / 8;
+			byte[] prev = new byte[rowBytes];
+			byte[] line = new byte[rowBytes];
+			for (int row = 0; row < ph; row++) {
+				int filter = raw[off] & 0xFF;
+				System.arraycopy(raw, off + 1, line, 0, rowBytes);
+				off += rowBytes + 1;
+				unfilter(filter, line, prev, bpp);
+				int y = p[1] + row * p[3];
+				for (int col = 0; col < pw; col++) {
+					int x = p[0] + col * p[2];
+					int a;
+					int r;
+					int g;
+					int b;
+					switch (colorType) {
+						case 0: {
+							int v = sample(line, col, 0, 1, depth);
+							r = g = b = to8(v, depth, maxSample);
+							a = v == transGray ? 0 : 255;
+							break;
+						}
+						case 2: {
+							int rv = sample(line, col, 0, 3, depth);
+							int gv = sample(line, col, 1, 3, depth);
+							int bv = sample(line, col, 2, 3, depth);
+							r = to8(rv, depth, maxSample);
+							g = to8(gv, depth, maxSample);
+							b = to8(bv, depth, maxSample);
+							long key = ((long) rv << 32) | ((long) gv << 16) | bv;
+							a = key == transRgb ? 0 : 255;
+							break;
+						}
+						case 3: {
+							int idx = sample(line, col, 0, 1, depth);
+							int rgb = idx < palette.length ? palette[idx] : 0;
+							r = (rgb >> 16) & 0xFF;
+							g = (rgb >> 8) & 0xFF;
+							b = rgb & 0xFF;
+							a = paletteAlpha != null && idx < paletteAlpha.length ? paletteAlpha[idx] : 255;
+							break;
+						}
+						case 4:
+							r = g = b = to8(sample(line, col, 0, 2, depth), depth, maxSample);
+							a = to8(sample(line, col, 1, 2, depth), depth, maxSample);
+							break;
+						default:
+							r = to8(sample(line, col, 0, 4, depth), depth, maxSample);
+							g = to8(sample(line, col, 1, 4, depth), depth, maxSample);
+							b = to8(sample(line, col, 2, 4, depth), depth, maxSample);
+							a = to8(sample(line, col, 3, 4, depth), depth, maxSample);
+							break;
 					}
-					case 4:
-						r = g = b = line[o] & 0xFF;
-						a = line[o + 1] & 0xFF;
-						break;
-					default:
-						r = line[o] & 0xFF;
-						g = line[o + 1] & 0xFF;
-						b = line[o + 2] & 0xFF;
-						a = line[o + 3] & 0xFF;
-						break;
+					out[y * width + x] = (a << 24) | (r << 16) | (g << 8) | b;
 				}
-				out[y * width + x] = (a << 24) | (r << 16) | (g << 8) | b;
+				byte[] t = prev;
+				prev = line;
+				line = t;
 			}
-			byte[] t = prev;
-			prev = line;
-			line = t;
 		}
 		return new Image(width, height, out);
+	}
+
+	/** Pixel eines Durchgangs in einer Richtung (Start, Schritt); 0 = Durchgang leer. */
+	private static int passSize(int size, int start, int step) {
+		return size <= start ? 0 : (size - start + step - 1) / step;
+	}
+
+	/** Abtastwert (Kanal {@code ch} von {@code channels}) des Pixels {@code px} einer Zeile in Bittiefe {@code depth}. */
+	private static int sample(byte[] line, int px, int ch, int channels, int depth) {
+		if (depth == 8) return line[px * channels + ch] & 0xFF;
+		if (depth == 16) {
+			int o = (px * channels + ch) * 2;
+			return ((line[o] & 0xFF) << 8) | (line[o + 1] & 0xFF);
+		}
+		// 1/2/4 Bit: nur Graustufen/Palette (ein Kanal), höchstwertige Bits zuerst.
+		int bit = px * depth;
+		int v = line[bit >> 3] & 0xFF;
+		int shift = 8 - depth - (bit & 7);
+		return (v >> shift) & ((1 << depth) - 1);
+	}
+
+	/** Abtastwert auf 0..255 umrechnen. */
+	private static int to8(int v, int depth, int maxSample) {
+		if (depth == 8) return v;
+		if (depth == 16) return v >> 8;
+		return v * 255 / maxSample;
 	}
 
 	private static void unfilter(int filter, byte[] line, byte[] prev, int bpp) throws IOException {
