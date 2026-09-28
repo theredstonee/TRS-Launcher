@@ -165,5 +165,15 @@
     "animated": true,
     "frames": 4,
     "frameTimeMs": 150
+  },
+  {
+    "id": "content-team",
+    "name": "Content Team",
+    "file": "content-team.png",
+    "unlock": "code",
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 150
   }
 ]
