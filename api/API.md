@@ -3214,10 +3214,10 @@ stops being true, e.g. a friend is removed).
 |---|---|
 | `id` | `^[a-z0-9_]{1,40}$`, stable. Secret achievements have neutral ids (`secret_01`, …). |
 | `category` | `playtime` \| `launcher` \| `community` \| `secret` |
-| `secret` | Secret achievement (always `category: "secret"`). |
+| `secret` | Secret achievement (always `category: "secret"`; the visible meta achievement `all_secrets` is in that category too, with `secret: false`). |
 | `hidden` | `true` = secret **and not unlocked by the viewer**: `title`, `description`, `reward`, `goal` and `unit` are `null`, `icon` is `"secret"`. Show it as "???". |
 | `title`, `description` | `{ en, de, es }` (all three always present) or `null` when `hidden`. Pick the UI language, fall back to `en`. |
-| `icon` | Icon key; the client maps it to its own icon set: `rocket`, `repeat`, `clock`, `hourglass`, `trophy`, `flame`, `calendar`, `puzzle`, `boxes`, `package`, `share`, `download`, `film`, `clapperboard`, `globe`, `cape`, `hat`, `camera`, `wrench`, `truck`, `user-plus`, `users`, `message`, `messages`, `bug`, `thumbs-up`, `vote`, `lightbulb`, `bug-off`, `circuit`, `duck`, `moon`, `key`, `timer`, `secret`. Unknown keys → a generic trophy. |
+| `icon` | Icon key; the client maps it to its own icon set: `rocket`, `repeat`, `clock`, `hourglass`, `trophy`, `flame`, `calendar`, `puzzle`, `boxes`, `package`, `share`, `download`, `film`, `clapperboard`, `globe`, `cape`, `hat`, `camera`, `wrench`, `truck`, `user-plus`, `users`, `message`, `messages`, `bug`, `thumbs-up`, `vote`, `lightbulb`, `bug-off`, `circuit`, `duck`, `moon`, `key`, `timer`, `crown`, `secret`. Unknown keys → a generic trophy. |
 | `points` | Points for unlocking (5–100). |
 | `rarity` | `common` \| `uncommon` \| `rare` \| `epic` \| `legendary` (fixed by the server, not computed). |
 | `goal` | Target value for achievements with a counter, otherwise `null` (a single event unlocks it). |
@@ -3294,14 +3294,14 @@ Titles come from the viewer's catalog (`GET /v1/me/achievements` → `achievemen
 
 ```json
 { "type": "achievement_unlocked", "achievement": AchievementView, "at": "2026-09-28T10:00:00.000Z",
-  "reward": { "kind": "cosmetic", "id": "idea_bulb" } }
+  "reward": { "kind": "cape", "id": "ideengeber" } }
 ```
 
 - `achievement` is never `hidden` (secret ones come with their texts).
 - `reward`: the item **granted with this unlock** (now owned: reload `GET /v1/me/cosmetics` or `GET /v1/capes`), or
   `null` (no reward, or the item is not available yet).
 - Rewards are normal grants (they look like an admin grant). If the reward item does not exist yet, the unlock still
-  happens and the item is granted once it exists (on server start and on the next `GET /v1/me/achievements`).
+  happens and the item is granted once it exists (§31.8: server start, every 10 min, next `GET /v1/me/achievements`).
 
 ### 31.7 How the server counts
 
@@ -3327,10 +3327,10 @@ Titles come from the viewer's catalog (`GET /v1/me/achievements` → `achievemen
 | `play_1h` | playtime | 60 min | 10 | common | yes | |
 | `play_10h` | playtime | 600 min | 20 | uncommon | yes | |
 | `play_50h` | playtime | 3000 min | 40 | rare | yes | |
-| `play_100h` | playtime | 6000 min | 60 | epic | yes | |
-| `play_500h` | playtime | 30000 min | 100 | legendary | yes | cape `veteran` |
+| `play_100h` | playtime | 6000 min | 60 | epic | yes | cape `veteran` |
+| `play_500h` | playtime | 30000 min | 100 | legendary | yes | |
 | `streak_7` | playtime | 7 days | 25 | uncommon | yes | |
-| `streak_30` | playtime | 30 days | 60 | epic | yes | cosmetic `streak_flame` |
+| `streak_30` | playtime | 30 days | 60 | epic | yes | |
 | `first_mod` | launcher | – | 5 | common | no | |
 | `mods_50` | launcher | 50 | 20 | uncommon | no | |
 | `first_modpack` | launcher | – | 10 | common | no | |
@@ -3345,19 +3345,27 @@ Titles come from the viewer's catalog (`GET /v1/me/achievements` → `achievemen
 | `crash_fixed` | launcher | – | 10 | common | no | |
 | `launcher_import` | launcher | – | 10 | common | no | |
 | `first_friend` | community | – | 10 | common | yes | |
-| `friends_10` | community | 10 | 30 | rare | yes | |
+| `friends_10` | community | 10 | 30 | rare | yes | emote (cosmetic) `emote-party` |
 | `first_message` | community | – | 5 | common | yes | |
 | `messages_500` | community | 500 | 30 | rare | yes | |
 | `first_issue` | community | – | 10 | common | yes | |
 | `votes_10` | community | 10 | 10 | common | yes | |
 | `upvotes_10` | community | 10 | 30 | rare | yes | |
 | `bug_squashed` | community | – | 25 | uncommon | yes | |
-| `idea_implemented` | community | – | 50 | epic | yes | cosmetic `idea_bulb` |
+| `idea_implemented` | community | – | 50 | epic | yes | cape `ideengeber` |
 | `circuit_approved` | community | – | 40 | rare | yes | |
-| `secret_01` … `secret_05` | secret | – | 10–30 | uncommon–epic | mixed | |
+| `secret_01` … `secret_05` | secret (`secret: true`) | – / 360 min | 10–30 | uncommon–epic | mixed | |
+| `all_secrets` | secret (visible, `secret: false`) | 5 (= number of secret achievements) | 50 | legendary | yes | cosmetic `secret-crown` |
 
-The reward items `veteran`, `streak_flame` and `idea_bulb` are placeholders until their designs ship; until then the
-unlock happens without the item (§31.6). The texts live in `server/lib/achievement-catalog.ts`.
+- `all_secrets` is a visible meta achievement: its progress is the number of unlocked **secret** achievements, its goal
+  grows when secret achievements are added (an account that already had it keeps it).
+- The reward items `veteran` (cape), `ideengeber` (cape), `emote-party` (emote) and `secret-crown` (head cosmetic) are
+  added later as built-in items. Until an item exists the unlock happens without it (`reward: null` in the event, the
+  catalog still shows the planned reward) and the server logs once per item. **Everyone who already unlocked the
+  achievement gets the item** as soon as it exists: after every server start (once the built-in capes and cosmetics are
+  seeded), every 10 minutes, and on the account's next `GET /v1/me/achievements`. No event is sent for such a late
+  grant; the item simply appears in the account's capes/cosmetics.
+- The texts live in `server/lib/achievement-catalog.ts`.
 
 ### 31.9 Data, privacy, migration 19
 
