@@ -7,7 +7,10 @@ updating ("What's new").
 <!--
 How to write an entry:
 - Collect changes under "## Unreleased" while working. For a release, rename it to "## <version> – <YYYY-MM-DD>".
-- Every version needs both "### English" and "### Deutsch" with the same points. Write for players, not
+- Every version needs both "### English" and "
+- New emote “Party” in the TRS Client – the reward for having 10 friends (achievements).
+
+### Deutsch" with the same points. Write for players, not
   developers: what changed for them, in plain words, no file or function names.
 - The release build fails when the section for its version is missing or one language is empty.
 - Every release gets a theme name in the heading ("## 0.5.0 – 2026-09-30 – The Clip Update | Das Clip-Update")
@@ -138,6 +141,7 @@ How to write an entry:
   Änderung einer Notiz gewinnt, gelöschte Notizen verschwinden auf all deinen PCs, und Änderungen von einem anderen PC
   kommen nach wenigen Sekunden an. Der Sync lässt sich auf der Seite *Welt-Notizen* ausschalten – dann bleiben deine
   Notizen auf diesem PC.
+- Neues Emote „Party“ im TRS Client – die Belohnung für 10 Freunde (Erfolge).
 
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->

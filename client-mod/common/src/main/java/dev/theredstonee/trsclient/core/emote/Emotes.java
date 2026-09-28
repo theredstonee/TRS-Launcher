@@ -145,6 +145,19 @@ public final class Emotes {
 				.key(L_LEG_Z, 0, 0, 300, 0, 600, 0, 900, -12)
 				.build());
 
+		// Party (Schleife 0,8 s): Hüpfen, Arme abwechselnd hoch in die Luft, Kopf wippt – Belohnung für 10 Freunde.
+		all.add(EmoteDef.builder("party", 6000, true, 800, "party")
+				.key(ROOT_Y, 0, 0, 200, 2.2f, 400, 0, 600, 2.2f)
+				.key(R_ARM_X, 0, -170, 200, -115, 400, -170, 600, -115)
+				.key(R_ARM_Z, 0, 18, 400, 34)
+				.key(L_ARM_X, 0, -115, 200, -170, 400, -115, 600, -170)
+				.key(L_ARM_Z, 0, -34, 400, -18)
+				.key(HEAD_X, 0, -10, 200, 8, 400, -10, 600, 8)
+				.key(TORSO_TWIST, 0, -10, 400, 10)
+				.key(R_LEG_X, 0, 0, 200, -22, 400, 0)
+				.key(L_LEG_X, 0, 0, 400, 0, 600, -22)
+				.build());
+
 		for (EmoteDef d : all) BY_ID.put(d.id(), d);
 		ALL = Collections.unmodifiableList(all);
 	}
