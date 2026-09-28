@@ -18,7 +18,7 @@ usePageSeo(() => ({
 <template>
   <IssueWorkspace active="issues">
     <div class="px-4 pt-8 pb-6 sm:px-6 lg:px-8">
-      <IssueExplorer default-view="list" open-as="page" :title="it.list.title" :lead="it.list.lead" />
+      <IssueExplorer default-view="list" open-as="page" list-only :title="it.list.title" :lead="it.list.lead" />
     </div>
   </IssueWorkspace>
 </template>

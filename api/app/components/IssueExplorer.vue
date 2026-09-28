@@ -5,7 +5,8 @@
 import { ISSUE_SORTS, type IssueDetail, type IssueListResult, type IssueSort, type IssueStatus, type IssueView, type RoadmapColumnView, type RoadmapResult } from '#shared/issues'
 
 /** `openAs`: `page` = Klick führt auf die ganze Issue-Seite (Issue-Liste), `modal` = Fenster über Board/Liste (Roadmap). */
-const props = withDefaults(defineProps<{ defaultView: 'board' | 'list', title: string, lead: string, openAs?: 'page' | 'modal' }>(), { openAs: 'modal' })
+/** `listOnly`: Issue-Seite – nur die Liste als Karten, rechts oben ein Link zur Roadmap statt Board|Liste. */
+const props = withDefaults(defineProps<{ defaultView: 'board' | 'list', title: string, lead: string, openAs?: 'page' | 'modal', listOnly?: boolean }>(), { openAs: 'modal', listOnly: false })
 const lp = useLocalePath()
 const { it, fill, errorText } = useIssueText()
 const route = useRoute()
@@ -13,7 +14,7 @@ const router = useRouter()
 const { account, load, api } = useAccount()
 
 type View = 'board' | 'list'
-const view = computed<View>(() => (route.query.view === 'board' || route.query.view === 'list' ? route.query.view : props.defaultView))
+const view = computed<View>(() => (props.listOnly ? 'list' : route.query.view === 'board' || route.query.view === 'list' ? route.query.view : props.defaultView))
 const filter = computed(() => (typeof route.query.q === 'string' ? route.query.q.slice(0, 300) : ''))
 const sort = computed<IssueSort>(() => (typeof route.query.sort === 'string' && (ISSUE_SORTS as readonly string[]).includes(route.query.sort) ? (route.query.sort as IssueSort) : 'top'))
 const page = computed(() => Math.max(1, Math.min(100_000, Number(route.query.page) || 1)))
@@ -173,7 +174,10 @@ const pageLink = (p: number) => ({ query: { ...route.query, page: p > 1 ? String
         </h1>
         <p class="mt-3 max-w-2xl text-base-400">{{ lead }}</p>
       </div>
-      <div class="seg" role="group" :aria-label="it.ws.view">
+      <NuxtLink v-if="listOnly" :to="lp('/roadmap')" class="btn btn-ghost" data-testid="to-roadmap">
+        <SiteIcon name="roadmap" class="size-4" />{{ it.nav.roadmap }}
+      </NuxtLink>
+      <div v-else class="seg" role="group" :aria-label="it.ws.view">
         <button type="button" :aria-pressed="view === 'board'" data-testid="view-board" @click="setQuery({ view: 'board', page: null })">
           <SiteIcon name="roadmap" class="size-4" />{{ it.ws.board }}
         </button>
@@ -217,6 +221,11 @@ const pageLink = (p: number) => ({ query: { ...route.query, page: p > 1 ? String
         <SiteIcon name="bug" class="mx-auto size-9 text-base-400" />
         <p class="mt-3 text-base-300">{{ filter || closed ? it.list.noResults : it.list.empty }}</p>
       </div>
+      <ul v-else-if="listOnly" class="mt-5 grid gap-2.5" data-testid="issue-cards">
+        <li v-for="i in list.issues" :key="i.number">
+          <IssueListItem :issue="i" :signed-in="!!account" @open="openIssue" @voted="onVoted(i.number, $event)" @error="say('error', $event)" />
+        </li>
+      </ul>
       <IssueTable v-else class="mt-5" :issues="list.issues" :signed-in="!!account" @open="openIssue" @voted="onVoted" @error="say('error', $event)" />
       <nav v-if="list.pages > 1" class="mt-5 flex items-center justify-center gap-2 text-sm" :aria-label="fill(it.list.page, { page: list.page, pages: list.pages })">
         <NuxtLink v-if="list.page > 1" :to="pageLink(list.page - 1)" class="btn-icon" :aria-label="it.list.prev"><SiteIcon name="back" class="size-4" /></NuxtLink>

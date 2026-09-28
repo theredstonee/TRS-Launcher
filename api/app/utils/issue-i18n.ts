@@ -58,7 +58,7 @@ const en = {
   },
   list: {
     title: 'Issues',
-    lead: 'You decide what comes next. Report bugs, suggest features and vote on what matters to you – for the launcher, the TRS Client and this website.',
+    lead: 'Share your ideas and report bugs here – for the TRS Launcher, the TRS Client and this website. Vote on what matters to you: you decide what comes next.',
     newIssue: 'New issue',
     mine: 'My issues',
     roadmap: 'Roadmap',
@@ -413,7 +413,7 @@ const de: IssueTexts = {
   },
   list: {
     title: 'Issues',
-    lead: 'Du entscheidest, was als Nächstes kommt. Melde Fehler, wünsch dir Funktionen und stimme ab, was dir wichtig ist – für den Launcher, den TRS Client und diese Website.',
+    lead: 'Hier kannst du Ideen einreichen und Bugs melden – für den TRS Launcher, den TRS Client und diese Website. Stimme ab, was dir wichtig ist: Du entscheidest, was als Nächstes kommt.',
     newIssue: 'Neues Issue',
     mine: 'Meine Issues',
     roadmap: 'Roadmap',
@@ -766,7 +766,7 @@ const es: IssueTexts = {
   },
   list: {
     title: 'Incidencias',
-    lead: 'Tú decides lo que viene. Informa de errores, sugiere funciones y vota lo que te importa – para el launcher, TRS Client y esta web.',
+    lead: 'Aquí puedes proponer ideas e informar de errores – para TRS Launcher, TRS Client y esta web. Vota lo que te importa: tú decides lo que viene.',
     newIssue: 'Nueva incidencia',
     mine: 'Mis incidencias',
     roadmap: 'Hoja de ruta',
