@@ -131,6 +131,15 @@ public final class TrsMenuHost implements MenuHost {
 	}
 
 	@Override
+	public String clipboard() {
+		try {
+			return Mc.clipboard();
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
+	@Override
 	public boolean hasClips() {
 		return true;
 	}

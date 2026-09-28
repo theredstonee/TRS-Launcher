@@ -141,6 +141,8 @@ public final class TrsClient {
 					return s == null ? null : new dev.theredstonee.trsclient.core.account.SessionData(s.getPlayerID(), s.getUsername(), s.getToken(), null);
 				}, () -> Minecraft.getMinecraft().theWorld != null, file.getParentFile().toPath(), "TRS-Client/" + version + " (Minecraft 1.7.10; forge)", message -> LOGGER.info(message));
 		dev.theredstonee.trsclient.core.account.AccountManager.init(accountSwap);
+		// Bug melden (TRS-Menü): Mod-Liste, Log und Screenshots aus dem Spielordner, Senden über die TRS API.
+		dev.theredstonee.trsclient.core.bugreport.BugReports.init(file.getParentFile().toPath(), version, "1.7.10", "forge");
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
 		if (status == ConfigStore.Status.RECOVERED) {

@@ -265,6 +265,26 @@ TRS-Online-Funktionen erlaubt sind. Der Server zählt Anfragen je IP-Adresse nur
 - **Grenzen und Meldungen:** höchstens 5 Einreichungen am Tag; eine Upload-Sperre aus der Moderation sperrt auch das
   Einreichen. Schaltungen können wie andere Inhalte gemeldet werden (siehe unten).
 
+### Bug melden im TRS Client
+
+TRS-Client-Menü → „Bug melden“ schickt eine Fehlermeldung an den Issue-Tracker von TRS, angemeldet mit deinem TRS-Konto
+(die TRS-Dienste müssen im Launcher eingeschaltet sein). Gesendet wird erst, wenn du auf der Vorschau-Seite „Jetzt
+senden“ drückst – die Vorschau zeigt genau, was mitgeht.
+
+- **Immer:** Titel und Beschreibung, die du eingibst, deine Minecraft-UUID und dein Name (als Verfasser der Meldung) und
+  die Uhrzeit.
+- **Standardmäßig angehakt:** Version des TRS Clients, Minecraft-Version und Loader, Liste der Mod-Dateinamen in `mods/`.
+- **Nur wenn du es anhakst:** ein Ausschnitt aus dem Spiel-Log (die letzten 300 Zeilen von `logs/latest.log` oder der
+  Anfang des neuesten Absturzberichts) und ein Screenshot (der neueste oder einer, den du auswählst).
+- **Das Log wird vor dem Senden auf deinem PC gesäubert:** Zugangs- und Sitzungs-Tokens, `--accessToken` und ähnliche
+  Start-Argumente, UUIDs, dein Spielername und deine Kontonamen, IP-Adressen, Benutzernamen in Pfaden
+  (`C:\Users\<Name>` → `C:\Users\<user>`), E-Mail-Adressen und der Inhalt von Chat-Zeilen werden ersetzt. Die Vorschau
+  zeigt, wie viel davon entfernt wurde. Ein Screenshot geht unverändert raus – sieh dir an, was er zeigt.
+- **Wer es sieht:** Die Meldung erscheint öffentlich im Issue-Tracker auf trs-launcher.theredstonee.de (Titel,
+  Beschreibung, Screenshot, Versionen, Mod-Liste und dein Name als Verfasser). Den Log-Ausschnitt sehen nur das TRS-Team
+  und du.
+- **Grenzen:** einige Meldungen pro Tag; eine Strafe aus der Moderation kann das Melden sperren.
+
 ### Meldungen und Moderation
 
 Du kannst Nachrichten, Bilder, Spieler und Gruppen melden (mit Grund und optionalem Hinweis). Die Meldung speichert eine

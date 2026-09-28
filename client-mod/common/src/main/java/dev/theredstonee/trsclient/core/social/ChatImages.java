@@ -329,6 +329,26 @@ public final class ChatImages {
 		throw new IOException("Bild zu groß");
 	}
 
+	/**
+	 * Bild für einen Upload mit fester Grenze (z. B. „Bug melden“: 8 MB): PNG/JPEG bis {@code maxBytes} und
+	 * {@code maxSide} px unverändert, sonst auf höchstens {@code maxSide} px verkleinert und als JPEG (Qualität
+	 * 90 → 80 → 70 → 60) neu kodiert.
+	 */
+	public static Upload prepareLimited(byte[] file, int maxBytes, int maxSide) throws IOException {
+		if (file == null || file.length == 0) throw new IOException("leer");
+		boolean png = isPng(file);
+		if (!png && !isJpeg(file)) throw new IOException("unbekanntes Bildformat");
+		int[] size = png ? pngSize(file) : null;
+		boolean small = size != null ? size[0] <= maxSide && size[1] <= maxSide : !png && jpegFits(file, maxSide);
+		if (file.length <= maxBytes && small) return new Upload(file, png ? "image/png" : "image/jpeg");
+		Image img = readScaled(file, maxSide);
+		for (float q : new float[]{0.9f, 0.8f, 0.7f, 0.6f}) {
+			byte[] jpeg = encodeJpeg(img, q);
+			if (jpeg.length <= maxBytes) return new Upload(jpeg, "image/jpeg");
+		}
+		throw new IOException("Bild zu groß");
+	}
+
 	/** Breite/Höhe aus dem PNG-Kopf (IHDR) oder null. */
 	static int[] pngSize(byte[] b) {
 		if (b.length < 24 || b[12] != 'I' || b[13] != 'H' || b[14] != 'D' || b[15] != 'R') return null;

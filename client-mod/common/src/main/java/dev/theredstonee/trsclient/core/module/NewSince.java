@@ -99,6 +99,11 @@ public final class NewSince {
 	/** Weltkarte 2 (TRS Client 0.13.0): stufenlos zoomen, Schwung, Wegpunkt-Liste, andere Dimensionen, Export. */
 	public static final String WORLD_MAP_2 = "0.13.0";
 
+	/** „Bug melden“ im TRS-Menü (TRS Client 0.13.0). */
+	public static final String BUG_REPORT = "0.13.0";
+	/** Leisten-Eintrag „Bug melden“. */
+	public static final String MENU_BUG_REPORT = "menu:bugReport";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -156,6 +161,8 @@ public final class NewSince {
 		// Weltkarte 2.
 		add(WORLD_MAP_2, "worldMap.smoothZoom", "worldMap.inertia", "worldMap.waypointList", "worldMap.otherDimensions",
 				"worldMap.netherCoords", "worldMap.exportSize");
+		// Bug melden (Issue-Tracker der Website).
+		add(BUG_REPORT, MENU_BUG_REPORT);
 	}
 
 	private NewSince() {

@@ -262,6 +262,26 @@ permitidas. El servidor solo cuenta las peticiones por dirección IP en memoria 
 - **Límites y denuncias:** como máximo 5 envíos al día; un bloqueo de subida de la moderación también bloquea los
   envíos. Los circuitos se pueden denunciar como cualquier otro contenido (ver abajo).
 
+### Reportar errores en el TRS Client
+
+Menú del TRS Client → «Reportar» envía un reporte de error al gestor de incidencias de TRS, con tu cuenta TRS (los
+servicios TRS deben estar activados en el launcher). No se envía nada hasta que pulsas «Enviar ahora» en la vista
+previa, que muestra exactamente qué se envía.
+
+- **Siempre:** el título y la descripción que escribes, tu UUID y nombre de Minecraft (como autor del reporte) y la hora.
+- **Marcado por defecto:** versión del TRS Client, versión de Minecraft y loader, lista de nombres de archivo de los mods
+  en `mods/`.
+- **Solo si lo marcas:** un extracto del log del juego (las últimas 300 líneas de `logs/latest.log` o el principio del
+  informe de fallo más reciente) y una captura de pantalla (la más reciente o la que elijas).
+- **El log se limpia en tu PC antes de enviarlo:** se reemplazan tokens de acceso y de sesión, `--accessToken` y
+  argumentos de inicio parecidos, UUIDs, tu nombre de jugador y los nombres de tus cuentas, direcciones IP, nombres de
+  usuario en rutas (`C:\Users\<nombre>` → `C:\Users\<user>`), correos electrónicos y el contenido de las líneas de
+  chat. La vista previa muestra cuánto se eliminó. La captura se envía tal cual: revisa lo que muestra.
+- **Quién lo ve:** el reporte aparece públicamente en el gestor de incidencias de trs-launcher.theredstonee.de (título,
+  descripción, captura, versiones, lista de mods y tu nombre como autor). El extracto del log solo lo ven el equipo de
+  TRS y tú.
+- **Límites:** unos pocos reportes al día; una sanción de moderación puede bloquear los reportes.
+
 ### Denuncias y moderación
 
 Puedes denunciar mensajes, imágenes, jugadores y grupos (con un motivo y una nota opcional). La denuncia guarda una

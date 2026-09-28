@@ -171,6 +171,8 @@ public final class TrsClient {
 		// Konten: Wechsel ohne Neustart (mit TRS Launcher dessen Konten, sonst eigene Anmeldung je Instanz).
 		dev.theredstonee.trsclient.core.account.AccountManager.init(new dev.theredstonee.trsclient.online.SessionSwap(
 				FMLPaths.CONFIGDIR.get(), "TRS-Client/" + modVersion(MOD_ID) + " (Minecraft " + modVersion("minecraft") + "; neoforge)", message -> LOGGER.info(message)));
+		// Bug melden (TRS-Menü): Mod-Liste, Log und Screenshots aus dem Spielordner, Senden über die TRS API.
+		dev.theredstonee.trsclient.core.bugreport.BugReports.init(FMLPaths.CONFIGDIR.get(), modVersion(MOD_ID), modVersion("minecraft"), "neoforge");
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> ModList.get().isLoaded(id),
 				dev.theredstonee.trsclient.core.perf.PerfCompat.NEOFORGE, modVersion("minecraft"), message -> LOGGER.info(message), true);

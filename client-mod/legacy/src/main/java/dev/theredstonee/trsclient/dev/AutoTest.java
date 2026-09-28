@@ -136,6 +136,11 @@ public final class AutoTest {
 			SocialTest.installToasts();
 			return;
 		}
+		// -PtrsAutotestOnly=bugreport: „Bug melden“ – Formular, Vorschau, Senden an die Attrappe, Fehlerfall
+		if ("bugreport".equals(System.getProperty("trsclient.autotest.only"))) {
+			BugReportTest.install();
+			return;
+		}
 		MinecraftForge.EVENT_BUS.register(new AutoTest());
 	}
 

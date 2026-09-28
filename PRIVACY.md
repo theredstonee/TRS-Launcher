@@ -248,6 +248,24 @@ server only counts requests per IP address in memory (rate limit).
 - **Limits and reports:** at most 5 submissions per day; an upload ban from moderation also blocks submissions. Circuits
   can be reported like other content (see below).
 
+### Reporting bugs in the TRS Client
+
+TRS Client menu → "Report bug" sends a bug report to the TRS issue tracker, signed in with your TRS account (TRS services
+must be turned on in the launcher). Nothing is sent before you press "Send now" on the preview page, which shows exactly
+what goes out.
+
+- **Always:** title and description you typed, your Minecraft UUID and name (as the author of the report) and the time.
+- **Ticked by default:** TRS Client version, Minecraft version and loader, list of mod file names in `mods/`.
+- **Only if you tick it:** an excerpt of the game log (the last 300 lines of `logs/latest.log`, or the start of the newest
+  crash report) and one screenshot (the newest one or one you pick).
+- **The log is cleaned on your PC before it's sent:** access and session tokens, `--accessToken` and similar start
+  arguments, UUIDs, your player name and account names, IP addresses, user names in paths (`C:\Users\<name>` →
+  `C:\Users\<user>`), email addresses and the content of chat lines are replaced. The preview shows how many of each were
+  removed. A screenshot is sent as it is – check what it shows.
+- **Who sees it:** the report appears publicly in the issue tracker on trs-launcher.theredstonee.de (title, description,
+  screenshot, versions, mod list and your name as author). The log excerpt is only visible to the TRS team and to you.
+- **Limits:** a few reports per day; a sanction from moderation can block reporting.
+
 ### Reports and moderation
 
 You can report messages, pictures, players and groups (with a reason and an optional note). The report stores an
