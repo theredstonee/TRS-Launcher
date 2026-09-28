@@ -8,7 +8,7 @@ const en = {
   lead: 'Choose how you want to sign in. We only learn your Minecraft name and UUID – no e-mail, no password.',
   choose: 'Sign-in method',
   launcher: { title: 'TRS Launcher', sub: 'With your launcher account' },
-  microsoft: { title: 'Microsoft', sub: 'With the account that owns Minecraft' },
+  microsoft: { title: 'Microsoft', sub: 'With your Microsoft account' },
   starting: 'Starting…',
   wait: {
     kicker: 'Sign in with the TRS Launcher',
@@ -44,7 +44,7 @@ const de: LoginTexts = {
   lead: 'Wähle, wie du dich anmelden möchtest. Wir erfahren nur deinen Minecraft-Namen und deine UUID – keine E-Mail, kein Passwort.',
   choose: 'Anmeldemethode',
   launcher: { title: 'TRS Launcher', sub: 'Mit deinem Launcher-Konto' },
-  microsoft: { title: 'Microsoft', sub: 'Mit dem Konto, dem Minecraft gehört' },
+  microsoft: { title: 'Microsoft', sub: 'Mit deinem Microsoft-Konto' },
   starting: 'Wird gestartet …',
   wait: {
     kicker: 'Anmelden mit dem TRS Launcher',
@@ -78,7 +78,7 @@ const es: LoginTexts = {
   lead: 'Elige cómo quieres iniciar sesión. Solo conocemos tu nombre de Minecraft y tu UUID: ni correo ni contraseña.',
   choose: 'Método de inicio de sesión',
   launcher: { title: 'TRS Launcher', sub: 'Con tu cuenta del launcher' },
-  microsoft: { title: 'Microsoft', sub: 'Con la cuenta que tiene Minecraft' },
+  microsoft: { title: 'Microsoft', sub: 'Con tu cuenta de Microsoft' },
   starting: 'Iniciando…',
   wait: {
     kicker: 'Iniciar sesión con el TRS Launcher',

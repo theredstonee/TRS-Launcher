@@ -26,8 +26,8 @@ const en = {
         'Download the free TRS Launcher for Windows 10/11 and Linux (AppImage, .deb, .rpm, AUR). Java is set up automatically and the launcher updates itself.',
     },
     blog: {
-      title: 'Updates & Patch Notes – TRS Launcher',
-      description: 'What is new in the TRS Launcher and the TRS Client: patch notes for every release, with screenshots of the new features.',
+      title: 'Blog – News, Updates & Patch Notes | TRS Launcher',
+      description: 'News, updates and behind-the-scenes posts from the TRS team: patch notes for every TRS Launcher and TRS Client release, with screenshots.',
     },
     capes: {
       title: 'Minecraft Capes – Free & Animated TRS Capes',
@@ -327,11 +327,11 @@ const en = {
     unavailable: 'The download list is unavailable right now – you can always find every version on GitHub.',
   },
   blog: {
-    title: 'Updates',
-    lead: 'Everything that is new in the TRS Launcher – with pictures.',
+    title: 'Blog',
+    lead: 'News, updates and a look behind the scenes of the TRS Launcher.',
     read: 'Read post',
     empty: 'No posts yet.',
-    back: 'All updates',
+    back: 'All posts',
     notFound: 'This post does not exist.',
     rss: 'RSS feed',
     screenshots: 'Screenshots',
@@ -622,8 +622,8 @@ const de: Messages = {
         'Lade den kostenlosen TRS Launcher für Windows 10/11 und Linux herunter (AppImage, .deb, .rpm, AUR). Java wird automatisch eingerichtet, Updates kommen selbst.',
     },
     blog: {
-      title: 'Updates & Patch Notes – TRS Launcher',
-      description: 'Was im TRS Launcher und im TRS Client neu ist: Patch Notes zu jeder Version, mit Screenshots der neuen Funktionen.',
+      title: 'Blog – News, Updates & Patch Notes | TRS Launcher',
+      description: 'News, Updates und Blicke hinter die Kulissen vom TRS-Team: Patch Notes zu jeder Version von TRS Launcher und TRS Client, mit Screenshots.',
     },
     capes: {
       title: 'Minecraft Umhänge – kostenlose & animierte TRS-Umhänge',
@@ -924,11 +924,11 @@ const de: Messages = {
     unavailable: 'Die Download-Liste ist gerade nicht erreichbar – alle Versionen findest du immer auf GitHub.',
   },
   blog: {
-    title: 'Updates',
-    lead: 'Alles, was im TRS Launcher neu ist – mit Bildern.',
+    title: 'Blog',
+    lead: 'Neuigkeiten, Updates und Blicke hinter die Kulissen des TRS Launchers.',
     read: 'Beitrag lesen',
     empty: 'Noch keine Beiträge.',
-    back: 'Alle Updates',
+    back: 'Alle Beiträge',
     notFound: 'Diesen Beitrag gibt es nicht.',
     rss: 'RSS-Feed',
     screenshots: 'Screenshots',
@@ -1218,8 +1218,8 @@ const es: Messages = {
         'Descarga gratis el TRS Launcher para Windows 10/11 y Linux (AppImage, .deb, .rpm, AUR). Java se instala solo y el launcher se actualiza automáticamente.',
     },
     blog: {
-      title: 'Actualizaciones y notas de versión – TRS Launcher',
-      description: 'Novedades del TRS Launcher y del TRS Client: notas de cada versión con capturas de las nuevas funciones.',
+      title: 'Blog – Noticias y notas de versión | TRS Launcher',
+      description: 'Noticias, actualizaciones y entre bastidores del equipo TRS: notas de cada versión del TRS Launcher y del TRS Client, con capturas.',
     },
     capes: {
       title: 'Capas de Minecraft – capas TRS gratis y animadas',
@@ -1512,7 +1512,7 @@ const es: Messages = {
     checksums: 'Firmas y todos los archivos en GitHub',
     unavailable: 'La lista de descargas no está disponible ahora – encontrarás todas las versiones en GitHub.',
   },
-  blog: { title: 'Actualizaciones', lead: 'Todo lo nuevo del TRS Launcher – con imágenes.', read: 'Leer', empty: 'Aún no hay entradas.', back: 'Todas las actualizaciones', notFound: 'Esta entrada no existe.', rss: 'Feed RSS', screenshots: 'Capturas de pantalla', previous: 'Imagen anterior', next: 'Imagen siguiente', enlarge: 'Ampliar imagen', closeImage: 'Cerrar imagen', imageOf: 'Imagen {n} de {total}', more: '{n} imágenes más' },
+  blog: { title: 'Blog', lead: 'Noticias, actualizaciones y un vistazo entre bastidores del TRS Launcher.', read: 'Leer', empty: 'Aún no hay entradas.', back: 'Todas las entradas', notFound: 'Esta entrada no existe.', rss: 'Feed RSS', screenshots: 'Capturas de pantalla', previous: 'Imagen anterior', next: 'Imagen siguiente', enlarge: 'Ampliar imagen', closeImage: 'Cerrar imagen', imageOf: 'Imagen {n} de {total}', more: '{n} imágenes más' },
   share: {
     title: 'Captura compartida',
     description: 'Una captura de Minecraft compartida con TRS Launcher.',
