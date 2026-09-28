@@ -248,6 +248,8 @@ public final class TrsClient {
 		// Konten: Wechsel ohne Neustart (mit TRS Launcher dessen Konten, sonst eigene Anmeldung je Instanz).
 		dev.theredstonee.trsclient.core.account.AccountManager.init(new dev.theredstonee.trsclient.online.SessionSwap(
 				FMLPaths.CONFIGDIR.get(), "TRS-Client/" + Mc.modVersion(MOD_ID) + " (Minecraft " + Mc.modVersion("minecraft") + "; forge)", message -> LOGGER.info(message)));
+		// Bug melden (TRS-Menü): Mod-Liste, Log und Screenshots aus dem Spielordner, Senden über die TRS API.
+		dev.theredstonee.trsclient.core.bugreport.BugReports.init(FMLPaths.CONFIGDIR.get(), Mc.modVersion(MOD_ID), Mc.modVersion("minecraft"), "forge");
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		// Forge 1.14.4 hat kein Mixin – dort nur Dynamische FPS (Bild-Event in legacyHooks).
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> net.minecraftforge.fml.ModList.get().isLoaded(id),

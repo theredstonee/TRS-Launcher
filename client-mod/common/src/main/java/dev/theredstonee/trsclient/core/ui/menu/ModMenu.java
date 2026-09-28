@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public final class ModMenu extends UiScreen {
 	private enum Page {
-		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS
+		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS, BUG_REPORT
 	}
 
 	private static final int HEADER_H = 30;
@@ -77,6 +77,8 @@ public final class ModMenu extends UiScreen {
 	private final ServerProfilesPage serversPage;
 	/** Schaltungs-Bibliothek (Unterseite, geöffnet von der Modulseite). */
 	private final dev.theredstonee.trsclient.core.circuit.CircuitLibraryPage circuitsPage;
+	/** „Bug melden“ (Issue an die TRS API). */
+	private final dev.theredstonee.trsclient.core.ui.bugreport.BugReportPage bugPage;
 	/** Modul, dessen Seite gerade offen ist (für die „NEU“-Markierungen). */
 	private Module newsOpenFor;
 
@@ -125,6 +127,32 @@ public final class ModMenu extends UiScreen {
 				requestClose();
 			}
 		});
+		bugPage = new dev.theredstonee.trsclient.core.ui.bugreport.BugReportPage(
+				new dev.theredstonee.trsclient.core.ui.bugreport.BugReportPage.Host() {
+					@Override
+					public void click() {
+						ModMenu.this.host.playClick();
+					}
+
+					@Override
+					public void closeMenu() {
+						requestClose();
+					}
+
+					@Override
+					public String menuKey() {
+						return ModMenu.this.host.menuKeyLabel();
+					}
+
+					@Override
+					public String clipboard() {
+						try {
+							return ModMenu.this.host.clipboard();
+						} catch (RuntimeException e) {
+							return null;
+						}
+					}
+				});
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
 			@Override
 			public String label(String keyName) {
@@ -182,6 +210,15 @@ public final class ModMenu extends UiScreen {
 		return this;
 	}
 
+	/** Öffnet das Menü direkt bei „Bug melden“. */
+	public ModMenu showBugReport() {
+		if (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null) {
+			page = Page.BUG_REPORT;
+			bugPage.opened();
+		}
+		return this;
+	}
+
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
 	public ModMenu showProfiles() {
 		page = Page.PROFILES;
@@ -190,6 +227,7 @@ public final class ModMenu extends UiScreen {
 
 	@Override
 	protected void onClosed() {
+		bugPage.closed();
 		host.modules().clientState.news().closed();
 		host.save();
 		host.closeScreen();
@@ -238,6 +276,11 @@ public final class ModMenu extends UiScreen {
 			page = Page.CIRCUITS;
 			circuitsPage.reset();
 		}
+		dev.theredstonee.trsclient.core.bugreport.BugReports bugReports = dev.theredstonee.trsclient.core.bugreport.BugReports.get();
+		if (bugReports != null && bugReports.takeOpenRequest()) {
+			page = Page.BUG_REPORT;
+			bugPage.opened();
+		}
 		if (newsOpenFor != null && (page != Page.SETTINGS || selected != newsOpenFor)) {
 			host.modules().clientState.news().closed();
 			newsOpenFor = null;
@@ -259,6 +302,9 @@ public final class ModMenu extends UiScreen {
 				break;
 			case CIRCUITS:
 				circuitsPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY);
+				break;
+			case BUG_REPORT:
+				bugPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY, dt);
 				break;
 			default:
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
@@ -324,7 +370,8 @@ public final class ModMenu extends UiScreen {
 		// Zeilenhöhe und Abstand so wählen, dass alle Einträge (und möglichst die Fußzeile) passen.
 		// "Alle" + Kategorien + HUD-Editor + Profile + Modul-Pakete (+ Packs) (+ Konten)
 		int items = 4 + Category.values().length + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0)
-				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0);
+				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0)
+				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0);
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -444,6 +491,17 @@ public final class ModMenu extends UiScreen {
 					host.openClips();
 				}
 			});
+			cy += rowH + gap;
+		}
+		if (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null) {
+			railItem(c, x, cy, w, rowH, "bug", I18n.tr("menu.bugReport"), page == Page.BUG_REPORT, mx, my, NewSince.MENU_BUG_REPORT,
+					new Runnable() {
+						@Override
+						public void run() {
+							page = Page.BUG_REPORT;
+							bugPage.opened();
+						}
+					});
 			cy += rowH + gap;
 		}
 
@@ -1065,6 +1123,7 @@ public final class ModMenu extends UiScreen {
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
 		if (!inside(mouseX, mouseY, contentRect[0], contentRect[1], contentRect[2], contentRect[3])) return false;
 		if (page == Page.CIRCUITS) return circuitsPage.mouseScrolled(mouseX, mouseY, amount);
+		if (page == Page.BUG_REPORT) return bugPage.mouseScrolled(mouseX, mouseY, amount);
 		int step = (int) Math.signum(amount) * (page == Page.SETTINGS ? 16 : TILE_H + TILE_GAP);
 		if (page == Page.SETTINGS) settingsScroll = Math.max(0, settingsScroll - step);
 		else if (page == Page.GRID) gridScroll = Math.max(0, gridScroll - step);
@@ -1079,6 +1138,10 @@ public final class ModMenu extends UiScreen {
 		if (page == Page.CIRCUITS) {
 			if (key == UiKey.ESCAPE && circuitsPage.back()) return true;
 			if (circuitsPage.keyPressed(key)) return true;
+		}
+		if (page == Page.BUG_REPORT) {
+			if (key == UiKey.ESCAPE && bugPage.back()) return true;
+			if (bugPage.keyPressed(key)) return true;
 		}
 		if (nameInput.focused() && editingProfile != -1) {
 			if (key == UiKey.ENTER) {
@@ -1122,6 +1185,7 @@ public final class ModMenu extends UiScreen {
 		if (panel.typeChar(c)) return true;
 		if (page == Page.SERVERS && serversPage.charTyped(c)) return true;
 		if (page == Page.CIRCUITS) return circuitsPage.charTyped(c);
+		if (page == Page.BUG_REPORT && !search.focused()) return bugPage.charTyped(c);
 		if (nameInput.focused() && editingProfile != -1) return nameInput.type(c);
 		if (search.focused()) {
 			boolean typed = search.type(c);

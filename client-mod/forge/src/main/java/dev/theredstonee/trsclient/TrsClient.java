@@ -117,6 +117,8 @@ public final class TrsClient {
 		// Konten: Wechsel ohne Neustart (mit TRS Launcher dessen Konten, sonst eigene Anmeldung je Instanz).
 		dev.theredstonee.trsclient.core.account.AccountManager.init(new dev.theredstonee.trsclient.online.SessionSwap(
 				Platform.configDir(), "TRS-Client/" + Platform.modVersion(MOD_ID) + " (Minecraft " + Platform.modVersion("minecraft") + "; forge)", message -> LOGGER.info(message)));
+		// Bug melden (TRS-Menü): Mod-Liste, Log und Screenshots aus dem Spielordner, Senden über die TRS API.
+		dev.theredstonee.trsclient.core.bugreport.BugReports.init(Platform.configDir(), Platform.modVersion(MOD_ID), Platform.modVersion("minecraft"), "forge");
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, dev.theredstonee.trsclient.compat.Platform::isModLoaded,
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FORGE, Platform.modVersion("minecraft"), message -> LOGGER.info(message), true);

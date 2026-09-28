@@ -161,6 +161,8 @@ public final class TrsClient {
 					return s == null ? null : new dev.theredstonee.trsclient.core.account.SessionData(s.getPlayerID(), s.getUsername(), s.getToken(), null);
 				}, () -> Mc.world() != null, file.getParentFile().toPath(), "TRS-Client/" + version + " (Minecraft " + Mc.version() + "; forge)", message -> LOGGER.info(message));
 		dev.theredstonee.trsclient.core.account.AccountManager.init(accountSwap);
+		// Bug melden (TRS-Menü): Mod-Liste, Log und Screenshots aus dem Spielordner, Senden über die TRS API.
+		dev.theredstonee.trsclient.core.bugreport.BugReports.init(file.getParentFile().toPath(), version, Mc.version(), "forge");
 		// Grafik-Modus „Schön“/„Max FPS“ (config/trsclient/fps-mode.json).
 		dev.theredstonee.trsclient.core.perf.FpsConfigMode.init(file.getParentFile().toPath());
 		initWaypoints(event.getModConfigurationDirectory());

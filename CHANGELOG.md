@@ -21,6 +21,25 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- TRS Client: report bugs straight from the game – TRS menu → "Report bug". Write a title and what happened, and choose
+  what to attach: TRS Client version, Minecraft version and loader, your mod list, a log excerpt (latest.log or the
+  newest crash report) and a screenshot (the newest one, another one, or take a new one). Before sending you see exactly
+  what goes out; the log is cleaned first (tokens, UUIDs, your player and account names, IP addresses, user names in
+  folder paths, email addresses and chat messages are removed). After sending you get the issue number and can open it
+  in the browser. Works in every Minecraft version the TRS Client supports.
+
+### Deutsch
+- TRS Client: Bugs direkt aus dem Spiel melden – TRS-Menü → „Bug melden“. Titel und Beschreibung eingeben und
+  auswählen, was mitgeht: TRS-Client-Version, Minecraft-Version und Loader, deine Mod-Liste, ein Log-Ausschnitt
+  (latest.log oder der neueste Absturzbericht) und ein Screenshot (der neueste, ein anderer oder gleich ein neuer). Vor
+  dem Senden siehst du genau, was mitgeht; das Log wird vorher gesäubert (Tokens, UUIDs, dein Spieler- und deine
+  Kontonamen, IP-Adressen, Benutzernamen in Ordnerpfaden, E-Mail-Adressen und Chat-Nachrichten fliegen raus). Danach
+  bekommst du die Issue-Nummer und kannst sie im Browser öffnen. Geht in jeder Minecraft-Version, die der TRS Client
+  unterstützt.
+
 ## 0.12.0 – 2026-09-27 – Pass It On | Weitergeben
 <!-- banner: accent=#27d3e6 motif=/news/0.12.0/banner.png -->
 <!-- shots:

@@ -92,6 +92,11 @@ public final class NewSince {
 	/** Fehlerbildschirme im TRS-Stil mit „Neu anmelden“, „Erneut verbinden“ … (TRS Client 0.12.0). */
 	public static final String ERROR_SCREENS = "0.12.0";
 
+	/** „Bug melden“ im TRS-Menü (TRS Client 0.13.0). */
+	public static final String BUG_REPORT = "0.13.0";
+	/** Leisten-Eintrag „Bug melden“. */
+	public static final String MENU_BUG_REPORT = "menu:bugReport";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -143,6 +148,8 @@ public final class NewSince {
 		// Suche in der Tastenbelegung.
 		add(KEY_SEARCH, "keySearch");
 		add(ERROR_SCREENS, "menuStyle.errors");
+		// Bug melden (Issue-Tracker der Website).
+		add(BUG_REPORT, MENU_BUG_REPORT);
 	}
 
 	private NewSince() {

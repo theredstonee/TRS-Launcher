@@ -144,6 +144,11 @@ public final class AutoTest {
 			SocialTest.installToasts();
 			return;
 		}
+		// -PtrsAutotestOnly=bugreport: „Bug melden“ – Formular, Vorschau, Senden an die Attrappe, Fehlerfall
+		if ("bugreport".equals(System.getProperty("trsclient.autotest.only"))) {
+			BugReportTest.install();
+			return;
+		}
 		AutoTest test = new AutoTest();
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}

@@ -147,6 +147,8 @@ public final class TrsClient implements ClientModInitializer {
 		// Konten: Wechsel ohne Neustart (mit TRS Launcher dessen Konten, sonst eigene Anmeldung je Instanz).
 		dev.theredstonee.trsclient.core.account.AccountManager.init(new dev.theredstonee.trsclient.online.SessionSwap(
 				FabricLoader.getInstance().getConfigDir(), "TRS-Client/" + version + " (Minecraft " + minecraft + "; fabric)", message -> LOGGER.info(message)));
+		// Bug melden (TRS-Menü): Mod-Liste, Log und Screenshots aus dem Spielordner, Senden über die TRS API.
+		dev.theredstonee.trsclient.core.bugreport.BugReports.init(FabricLoader.getInstance().getConfigDir(), version, minecraft, "fabric");
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> FabricLoader.getInstance().isModLoaded(id),
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FABRIC, minecraft, message -> LOGGER.info(message), true);
