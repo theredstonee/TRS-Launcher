@@ -10,7 +10,9 @@ const props = withDefaults(defineProps<{
   closed?: boolean
   signedIn: boolean
   size?: 'sm' | 'lg'
-}>(), { myVote: 0, up: 0, down: 0, closed: false, size: 'sm' })
+  /** `row` = Pfeile links/rechts der Zahl (Community-Score-Box auf der Issue-Seite). */
+  layout?: 'col' | 'row'
+}>(), { myVote: 0, up: 0, down: 0, closed: false, size: 'sm', layout: 'col' })
 const emit = defineEmits<{ voted: [r: { score: number, up: number, down: number, myVote: -1 | 0 | 1 }], error: [message: string] }>()
 
 const { it, fill, errorText } = useIssueText()
@@ -42,7 +44,7 @@ const label = (dir: -1 | 1) => {
 </script>
 
 <template>
-  <div class="vote" :class="[size, { closed }]" :title="fill(it.detail.sidebar.votes, { up, down })">
+  <div class="vote" :class="[size, layout, { closed }]" :title="fill(it.detail.sidebar.votes, { up, down })">
     <button
       type="button"
       class="arrow"
@@ -119,6 +121,15 @@ const label = (dir: -1 | 1) => {
 }
 .score[data-v='-1'] {
   color: #9fd4ff;
+}
+.vote.row {
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem;
+}
+.row .score {
+  min-width: 3ch;
+  text-align: center;
 }
 .lg .arrow {
   width: 2.4rem;

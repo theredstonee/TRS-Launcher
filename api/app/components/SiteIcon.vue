@@ -70,6 +70,11 @@ const PATHS: Record<string, string> = {
   pencil: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
   voteUp: 'M12 5l7 9h-4v5H9v-5H5z',
   voteDown: 'M12 19l-7-9h4V5h6v5h4z',
+  // Aktivität eines Issues
+  swap: 'M5 8h14M15 4l4 4-4 4M19 16H5M9 12l-4 4 4 4',
+  tag: 'M4 4h7l9 9-7 7-9-9zM8 8h.01',
+  merge: 'M7 4v4a7 7 0 0 0 7 7h4M15 12l3 3-3 3M7 20v-4',
+  unlock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 7.7-1.5',
 }
 
 // Marken als ausgefüllte Formen.

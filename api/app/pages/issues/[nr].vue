@@ -12,7 +12,6 @@ const nr = computed(() => {
 })
 const { it, lang, fill } = useIssueText()
 const { m } = useLang()
-const lp = useLocalePath()
 const siteUrl = useSiteUrl()
 
 const { data } = await useAsyncData<IssuePageData | null>(
@@ -44,11 +43,8 @@ usePageSeo(() => ({
 
 <template>
   <IssueWorkspace active="issue">
-    <div class="mx-auto max-w-6xl px-4 pt-8 pb-6 sm:px-6">
-      <NuxtLink :to="lp('/issues')" class="inline-flex items-center gap-1.5 text-sm text-base-400 hover:text-base-100">
-        <SiteIcon name="back" class="size-4" />{{ it.detail.back }}
-      </NuxtLink>
-      <IssueDetailView :key="nr" class="mt-2" :nr="nr" :initial="data" />
+    <div class="mx-auto max-w-6xl px-4 pt-7 pb-10 sm:px-6">
+      <IssueDetailView :key="nr" :nr="nr" :initial="data" />
     </div>
   </IssueWorkspace>
 </template>

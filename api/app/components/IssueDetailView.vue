@@ -97,6 +97,29 @@ function eventText(e: IssueHistoryEntry): string {
   return fill(ev[key] ?? key, { from: valueLabel(e.action, e.from), to: valueLabel(e.action, e.to) })
 }
 const actorName = (p: PlayerRefView | null) => p?.name || it.value.detail.teamName
+/** Symbol + Farbe je Art der Änderung (Status = Pfeile, Priorität = Fahne …). */
+function eventLook(e: IssueHistoryEntry): { icon: string, tone: string } {
+  switch (e.action) {
+    case 'status': return { icon: 'swap', tone: e.to === 'done' ? 'ok' : e.to === 'rejected' ? 'red' : 'blue' }
+    case 'priority': return { icon: 'flag', tone: 'amber' }
+    case 'assignee': return { icon: 'user', tone: 'violet' }
+    case 'tags': return { icon: 'tag', tone: 'grey' }
+    case 'fixed_in': return { icon: 'check', tone: e.to === null ? 'grey' : 'ok' }
+    case 'type': return { icon: e.to === 'feature' ? 'bolt' : 'bug', tone: 'red' }
+    case 'area': return { icon: 'blocks', tone: 'grey' }
+    case 'title': return { icon: 'pencil', tone: 'grey' }
+    case 'locked': return { icon: 'lock', tone: 'red' }
+    case 'unlocked': return { icon: 'unlock', tone: 'ok' }
+    case 'merged_into':
+    case 'merged_from': return { icon: 'merge', tone: 'violet' }
+    default: return { icon: 'refresh', tone: 'grey' }
+  }
+}
+/** „Erstellt von {name}“ → Text vor/nach dem Namen (der Name wird fett gesetzt). */
+const openedByParts = computed<[string, string]>(() => {
+  const [a = '', b = ''] = it.value.detail.openedBy.split('{name}')
+  return [a, b]
+})
 
 // --- Folgen, Link kopieren --------------------------------------------------------------------------------------
 const followBusy = ref(false)
@@ -378,138 +401,165 @@ async function restoreIssue() {
         <NuxtLink :to="lp(`/issues/${issue.duplicateOf.number}`)" class="ml-auto font-semibold text-base-50 underline-offset-4 hover:underline">#{{ issue.duplicateOf.number }} {{ issue.duplicateOf.title }}</NuxtLink>
       </p>
 
-      <header :class="modal ? 'mt-1' : 'mt-5'">
-        <div v-if="!editing" class="flex items-start gap-3">
-          <span class="type-icon" :data-t="issue.type" :title="it.types[issue.type]"><SiteIcon :name="issue.type === 'bug' ? 'bug' : 'bolt'" class="size-5" /></span>
-          <h1 :id="`issue-title-${issue.number}`" class="min-w-0 flex-1 text-2xl leading-tight font-semibold break-words text-base-50 sm:text-3xl">
-            {{ issue.title }} <span class="font-normal text-base-400">#{{ issue.number }}</span>
-          </h1>
+      <header :class="modal ? 'mt-1' : 'mt-2'">
+        <nav v-if="!modal" class="crumbs" aria-label="Breadcrumb">
+          <NuxtLink :to="lp('/')">{{ m.nav.home }}</NuxtLink>
+          <SiteIcon name="chevron" class="size-3 -rotate-90" aria-hidden="true" />
+          <NuxtLink :to="lp('/issues')">{{ it.nav.issues }}</NuxtLink>
+          <SiteIcon name="chevron" class="size-3 -rotate-90" aria-hidden="true" />
+          <span aria-current="page">{{ issue.title }}</span>
+        </nav>
+        <div v-if="!editing" class="flex items-start gap-4" :class="modal ? '' : 'mt-4'">
+          <h1 :id="`issue-title-${issue.number}`" class="display title min-w-0 flex-1 break-words text-base-50" :class="{ small: modal }">{{ issue.title }}</h1>
+          <NuxtLink v-if="!modal" :to="lp('/issues/new')" class="btn btn-ghost shrink-0 max-sm:hidden"><SiteIcon name="plus" class="size-4" />{{ it.list.newIssue }}</NuxtLink>
         </div>
-        <div class="mt-3 flex flex-wrap items-center gap-2 text-sm text-base-400">
+        <div class="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-2 text-sm text-base-400">
+          <IssueVote class="mobile-vote" layout="row" :number="issue.number" :score="issue.score" :my-vote="issue.myVote ?? 0" :up="issue.up" :down="issue.down" :closed="closed" :signed-in="signedIn" @voted="onVoted" @error="actionError = $event" />
+          <span class="type-badge" :data-t="issue.type"><SiteIcon :name="issue.type === 'bug' ? 'bug' : 'bolt'" class="size-3.5" />{{ it.types[issue.type] }}</span>
           <IssueStatus :status="issue.status" />
           <span class="badge bg-base-800 text-base-200">{{ it.areas[issue.area] }}</span>
           <span v-if="issue.source === 'client'" class="badge bg-base-800 text-base-200"><SiteIcon name="client" class="size-3" />{{ it.common.fromClient }}</span>
-          <span class="inline-flex items-center gap-1.5">
-            <PlayerHead v-if="issue.author" :uuid="issue.author.uuid" :name="issue.author.name" :skin="issue.author.skin ?? null" :fetch="false" :size="18" />
-            {{ issue.author ? fill(it.detail.opened, { name: issue.author.name, date: date(issue.createdAt) }) : fill(it.detail.openedAnon, { date: date(issue.createdAt) }) }}
-          </span>
-          <span v-if="issue.authorTeam" class="badge team">{{ it.common.team }}</span>
-          <span v-if="issue.editedAt" class="text-xs">({{ it.common.edited }})</span>
+          <span class="text-base-200 tabular-nums">#{{ issue.number }}</span>
+          <span v-if="issue.author">{{ openedByParts[0] }}<strong class="font-medium text-base-100">{{ issue.author.name }}</strong>{{ openedByParts[1] }}</span>
+          <span aria-hidden="true">·</span>
+          <time :datetime="issue.createdAt">{{ date(issue.createdAt) }}</time>
+          <span aria-hidden="true">·</span>
+          <span>{{ issue.comments === 1 ? it.common.comment1 : fill(it.common.comments, { n: issue.comments }) }}</span>
         </div>
       </header>
 
-      <div class="layout mt-6">
-        <main class="min-w-0 space-y-5">
-          <!-- Beschreibung / Bearbeiten -->
-          <article v-if="!editing" class="card p-5">
-            <!-- eslint-disable-next-line vue/no-v-html -- renderUserMarkdown lässt kein HTML durch (tests/usermarkdown.test.ts) -->
-            <div v-if="description" class="prose-md text-[0.95rem]" v-html="description" />
-            <p v-else class="text-base-400">{{ it.detail.noDescription }}</p>
-            <div v-if="issue.attachments.length" class="mt-5">
-              <h2 class="mb-2 text-xs font-medium tracking-wide text-base-400 uppercase">{{ it.detail.attachments }}</h2>
-              <ul class="shots">
-                <li v-for="img in issue.attachments" :key="img.id">
-                  <a :href="img.url" target="_blank" rel="noopener"><img :src="img.thumbUrl" :width="img.width" :height="img.height" :alt="it.detail.attachments" loading="lazy" /></a>
-                </li>
-              </ul>
+      <div class="layout" :class="modal ? 'mt-5' : 'mt-7'">
+        <main class="min-w-0">
+          <!-- Beschreibung als erster Beitrag / Bearbeiten -->
+          <div class="post">
+            <div class="avatar">
+              <PlayerHead v-if="issue.author" :uuid="issue.author.uuid" :name="issue.author.name" :skin="issue.author.skin ?? null" :fetch="false" :size="36" />
+              <span v-else class="avatar-empty"><SiteIcon name="user" class="size-4" /></span>
             </div>
-            <div v-if="issue.can.edit" class="mt-4 flex justify-end">
-              <button type="button" class="btn btn-ghost text-xs" @click="startEdit"><SiteIcon name="pencil" class="size-3.5" />{{ it.detail.editIssue }}</button>
-            </div>
-          </article>
-          <form v-else class="card space-y-3 p-5" @submit.prevent="saveEdit">
-            <p class="text-sm text-base-400">{{ it.detail.editHint }}</p>
-            <div class="flex flex-wrap gap-2">
-              <select v-model="editType" class="field w-auto" :aria-label="it.new.type">
-                <option v-for="t in ISSUE_TYPES" :key="t" :value="t">{{ it.types[t] }}</option>
-              </select>
-              <input v-model="editTitle" class="field min-w-0 flex-1" :maxlength="ISSUE_LIMITS.titleMax" :aria-label="it.new.titleLabel" />
-            </div>
-            <IssueEditor id="edit-body" v-model="editBody" :max="ISSUE_LIMITS.descriptionMax" :max-images="0" :rows="10" :label="it.new.description" />
-            <p v-if="editError" role="alert" class="text-sm text-redstone-300">{{ editError }}</p>
-            <div class="flex gap-2">
-              <button type="submit" class="btn btn-primary" :disabled="editBusy">{{ it.common.save }}</button>
-              <button type="button" class="btn btn-ghost" @click="editing = false">{{ it.common.cancel }}</button>
-            </div>
-          </form>
+            <article v-if="!editing" class="post-card" :class="{ team: issue.authorTeam }">
+              <header class="post-head">
+                <strong class="font-semibold text-base-50">{{ issue.author?.name ?? it.common.deletedUser }}</strong>
+                <span v-if="issue.authorTeam" class="badge team">{{ it.common.team }}</span>
+                <span class="text-base-400">{{ it.detail.postedIssue }}</span>
+                <time class="text-base-400" :datetime="issue.createdAt" :title="dateTime(issue.createdAt)">{{ date(issue.createdAt) }}</time>
+                <span v-if="issue.editedAt" class="edited"><SiteIcon name="pencil" class="size-3" />{{ it.detail.edited }}</span>
+                <span class="ml-auto flex gap-1">
+                  <button v-if="issue.can.edit" type="button" class="mini" :title="it.detail.editIssue" :aria-label="it.detail.editIssue" @click="startEdit"><SiteIcon name="pencil" class="size-3.5" /></button>
+                  <button v-if="!issue.author || issue.author.uuid !== account?.uuid" type="button" class="mini" :title="it.detail.reportIssue" :aria-label="it.detail.reportIssue" @click="openReport({ kind: 'issue' })"><SiteIcon name="flag" class="size-3.5" /></button>
+                </span>
+              </header>
+              <div class="post-body">
+                <!-- eslint-disable-next-line vue/no-v-html -- renderUserMarkdown lässt kein HTML durch (tests/usermarkdown.test.ts) -->
+                <div v-if="description" class="prose-md text-[0.95rem]" v-html="description" />
+                <p v-else class="text-base-400">{{ it.detail.noDescription }}</p>
+                <ul v-if="issue.attachments.length" class="shots mt-4" :aria-label="it.detail.attachments">
+                  <li v-for="img in issue.attachments" :key="img.id">
+                    <a :href="img.url" target="_blank" rel="noopener"><img :src="img.thumbUrl" :width="img.width" :height="img.height" :alt="it.detail.attachments" loading="lazy" /></a>
+                  </li>
+                </ul>
+              </div>
+              <!-- Technische Infos (TRS Client) -->
+              <details v-if="issue.meta" class="tech">
+                <summary class="cursor-pointer text-sm font-medium text-base-100"><SiteIcon name="terminal" class="mr-1.5 inline size-4 align-[-3px] text-base-400" />{{ it.detail.tech }}</summary>
+                <p class="mt-2 text-xs text-base-400">{{ it.detail.techHint }}</p>
+                <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+                  <template v-if="issue.meta.modVersion"><dt class="text-base-400">{{ it.detail.modVersion }}</dt><dd class="text-base-100">{{ issue.meta.modVersion }}</dd></template>
+                  <template v-if="issue.meta.mcVersion"><dt class="text-base-400">{{ it.detail.mcVersion }}</dt><dd class="text-base-100">{{ issue.meta.mcVersion }}</dd></template>
+                  <template v-if="issue.meta.loader"><dt class="text-base-400">{{ it.detail.loader }}</dt><dd class="text-base-100">{{ issue.meta.loader }}</dd></template>
+                </dl>
+                <details v-if="issue.meta.mods.length" class="mt-3">
+                  <summary class="cursor-pointer text-sm text-base-200">{{ fill(it.detail.mods, { n: issue.meta.mods.length }) }}</summary>
+                  <ul class="mods mt-2">
+                    <li v-for="mod in issue.meta.mods" :key="mod">{{ mod }}</li>
+                  </ul>
+                </details>
+                <div v-if="issue.meta.log !== undefined" class="mt-3">
+                  <p class="text-sm text-base-200">{{ it.detail.log }}</p>
+                  <p class="mt-1 text-xs text-base-400">{{ it.detail.logPrivate }}</p>
+                  <pre class="log mt-2"><code>{{ issue.meta.log }}</code></pre>
+                </div>
+                <p v-else-if="issue.meta.hasLog" class="mt-3 text-xs text-base-400"><SiteIcon name="lock" class="mr-1 inline size-3.5 align-[-2px]" />{{ it.detail.logHidden }}</p>
+              </details>
+            </article>
+            <form v-else class="post-card space-y-3 p-4" @submit.prevent="saveEdit">
+              <p class="text-sm text-base-400">{{ it.detail.editHint }}</p>
+              <div class="flex flex-wrap gap-2">
+                <select v-model="editType" class="field w-auto" :aria-label="it.new.type">
+                  <option v-for="t in ISSUE_TYPES" :key="t" :value="t">{{ it.types[t] }}</option>
+                </select>
+                <input v-model="editTitle" class="field min-w-0 flex-1" :maxlength="ISSUE_LIMITS.titleMax" :aria-label="it.new.titleLabel" />
+              </div>
+              <IssueEditor id="edit-body" v-model="editBody" :max="ISSUE_LIMITS.descriptionMax" :max-images="0" :rows="10" :label="it.new.description" />
+              <p v-if="editError" role="alert" class="text-sm text-redstone-300">{{ editError }}</p>
+              <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary" :disabled="editBusy">{{ it.common.save }}</button>
+                <button type="button" class="btn btn-ghost" @click="editing = false">{{ it.common.cancel }}</button>
+              </div>
+            </form>
+          </div>
 
-          <!-- Technische Infos (TRS Client) -->
-          <details v-if="issue.meta" class="card tech p-5">
-            <summary class="cursor-pointer font-semibold text-base-50"><SiteIcon name="terminal" class="mr-1.5 inline size-4 align-[-2px]" />{{ it.detail.tech }}</summary>
-            <p class="mt-2 text-xs text-base-400">{{ it.detail.techHint }}</p>
-            <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-              <template v-if="issue.meta.modVersion"><dt class="text-base-400">{{ it.detail.modVersion }}</dt><dd class="text-base-100">{{ issue.meta.modVersion }}</dd></template>
-              <template v-if="issue.meta.mcVersion"><dt class="text-base-400">{{ it.detail.mcVersion }}</dt><dd class="text-base-100">{{ issue.meta.mcVersion }}</dd></template>
-              <template v-if="issue.meta.loader"><dt class="text-base-400">{{ it.detail.loader }}</dt><dd class="text-base-100">{{ issue.meta.loader }}</dd></template>
-            </dl>
-            <details v-if="issue.meta.mods.length" class="mt-3">
-              <summary class="cursor-pointer text-sm text-base-200">{{ fill(it.detail.mods, { n: issue.meta.mods.length }) }}</summary>
-              <ul class="mods mt-2">
-                <li v-for="mod in issue.meta.mods" :key="mod">{{ mod }}</li>
-              </ul>
-            </details>
-            <div v-if="issue.meta.log !== undefined" class="mt-3">
-              <p class="text-sm text-base-200">{{ it.detail.log }}</p>
-              <p class="mt-1 text-xs text-base-400">{{ it.detail.logPrivate }}</p>
-              <pre class="log mt-2"><code>{{ issue.meta.log }}</code></pre>
-            </div>
-            <p v-else-if="issue.meta.hasLog" class="mt-3 text-xs text-base-400"><SiteIcon name="lock" class="mr-1 inline size-3.5 align-[-2px]" />{{ it.detail.logHidden }}</p>
-          </details>
-
-          <!-- Zeitleiste -->
-          <section>
-            <h2 class="text-lg font-semibold text-base-50">{{ it.detail.comments }} <span class="text-base-400 tabular-nums">{{ issue.comments }}</span></h2>
+          <!-- Aktivität: Kommentare + Verlauf nach Zeit -->
+          <section class="mt-8" :aria-label="it.detail.activity">
+            <h2 class="act-title">{{ it.detail.activity }}</h2>
             <p v-if="actionError" role="alert" class="mt-2 text-sm text-redstone-300">{{ actionError }}</p>
             <p v-if="reportMsg" role="status" class="mt-2 text-sm text-emerald-300">{{ reportMsg }}</p>
-            <p v-if="!timeline.length" class="mt-3 text-sm text-base-400">{{ it.detail.noComments }}</p>
+            <p v-if="!timeline.length" class="indent mt-3 text-sm text-base-400">{{ it.detail.noComments }}</p>
             <ol class="timeline mt-3">
               <li v-for="(item, idx) in timeline" :key="idx" :class="item.kind === 'event' ? 't-event' : 't-comment'">
                 <template v-if="item.kind === 'event'">
-                  <span class="event-dot" aria-hidden="true" />
-                  <p class="text-sm text-base-400">
-                    <strong class="font-medium text-base-200">{{ actorName(item.e.actor) }}</strong> {{ eventText(item.e) }}
-                    · <time :datetime="item.e.at">{{ date(item.e.at) }}</time>
+                  <span class="event-icon" :data-k="eventLook(item.e).tone" aria-hidden="true"><SiteIcon :name="eventLook(item.e).icon" class="size-4" /></span>
+                  <p class="min-w-0 text-sm text-base-400">
+                    <strong class="font-semibold text-base-100">{{ actorName(item.e.actor) }}</strong> {{ eventText(item.e) }}
+                    · <time :datetime="item.e.at" :title="dateTime(item.e.at)">{{ date(item.e.at) }}</time>
                   </p>
                 </template>
-                <article v-else :id="`c${item.c.id}`" class="comment" :class="{ team: item.c.team, deleted: item.c.deleted }">
-                  <header class="flex flex-wrap items-center gap-2 text-sm">
-                    <PlayerHead v-if="item.c.author" :uuid="item.c.author.uuid" :name="item.c.author.name" :skin="item.c.author.skin ?? null" :fetch="false" :size="22" />
-                    <strong class="font-semibold text-base-100">{{ item.c.author?.name ?? it.common.deletedUser }}</strong>
-                    <span v-if="item.c.team" class="badge team">{{ it.common.team }}</span>
-                    <a :href="`#c${item.c.id}`" class="text-xs text-base-400 hover:text-base-200"><time :datetime="item.c.createdAt">{{ dateTime(item.c.createdAt) }}</time></a>
-                    <span v-if="item.c.editedAt && !item.c.deleted" class="text-xs text-base-400">({{ it.common.edited }})</span>
-                    <span class="ml-auto flex gap-1">
-                      <template v-if="!item.c.deleted">
-                        <button v-if="item.c.mine" type="button" class="mini" :title="it.common.edit" :aria-label="it.common.edit" @click="editingComment = item.c.id; editCommentText = item.c.body ?? ''"><SiteIcon name="pencil" class="size-3.5" /></button>
-                        <button v-if="item.c.mine" type="button" class="mini" :title="it.common.delete" :aria-label="it.common.delete" @click="deleteComment(item.c, false)"><SiteIcon name="trash" class="size-3.5" /></button>
-                        <button v-else-if="canModerate" type="button" class="mini" :title="it.team.removeComment" :aria-label="it.team.removeComment" @click="deleteComment(item.c, true)"><SiteIcon name="trash" class="size-3.5" /></button>
-                        <button v-if="!item.c.mine && item.c.author" type="button" class="mini" :title="it.detail.reportComment" :aria-label="it.detail.reportComment" @click="openReport({ kind: 'issue_comment', id: item.c.id })"><SiteIcon name="flag" class="size-3.5" /></button>
+                <div v-else :id="`c${item.c.id}`" class="post">
+                  <div class="avatar">
+                    <PlayerHead v-if="item.c.author" :uuid="item.c.author.uuid" :name="item.c.author.name" :skin="item.c.author.skin ?? null" :fetch="false" :size="36" />
+                    <span v-else class="avatar-empty"><SiteIcon name="user" class="size-4" /></span>
+                  </div>
+                  <article class="post-card" :class="{ team: item.c.team, deleted: item.c.deleted }">
+                    <header class="post-head">
+                      <strong class="font-semibold text-base-50">{{ item.c.author?.name ?? it.common.deletedUser }}</strong>
+                      <span v-if="item.c.team" class="badge team">{{ it.common.team }}</span>
+                      <span class="text-base-400">{{ it.detail.commented }}</span>
+                      <a :href="`#c${item.c.id}`" class="text-base-400 hover:text-base-200"><time :datetime="item.c.createdAt" :title="dateTime(item.c.createdAt)">{{ date(item.c.createdAt) }}</time></a>
+                      <span v-if="item.c.editedAt && !item.c.deleted" class="edited"><SiteIcon name="pencil" class="size-3" />{{ it.detail.edited }}</span>
+                      <span class="ml-auto flex gap-1">
+                        <template v-if="!item.c.deleted">
+                          <button v-if="item.c.mine" type="button" class="mini" :title="it.common.edit" :aria-label="it.common.edit" @click="editingComment = item.c.id; editCommentText = item.c.body ?? ''"><SiteIcon name="pencil" class="size-3.5" /></button>
+                          <button v-if="item.c.mine" type="button" class="mini" :title="it.common.delete" :aria-label="it.common.delete" @click="deleteComment(item.c, false)"><SiteIcon name="trash" class="size-3.5" /></button>
+                          <button v-else-if="canModerate" type="button" class="mini" :title="it.team.removeComment" :aria-label="it.team.removeComment" @click="deleteComment(item.c, true)"><SiteIcon name="trash" class="size-3.5" /></button>
+                          <button v-if="!item.c.mine && item.c.author" type="button" class="mini" :title="it.detail.reportComment" :aria-label="it.detail.reportComment" @click="openReport({ kind: 'issue_comment', id: item.c.id })"><SiteIcon name="flag" class="size-3.5" /></button>
+                        </template>
+                      </span>
+                    </header>
+                    <div class="post-body">
+                      <p v-if="item.c.deleted" class="text-sm text-base-400 italic">{{ item.c.deletedBy === 'team' ? it.detail.deletedTeam : it.detail.deletedAuthor }}</p>
+                      <form v-else-if="editingComment === item.c.id" class="space-y-2" @submit.prevent="saveComment(item.c)">
+                        <IssueEditor :id="`edit-c${item.c.id}`" v-model="editCommentText" :max="ISSUE_LIMITS.commentMax" :max-images="0" :rows="4" />
+                        <div class="flex gap-2">
+                          <button type="submit" class="btn btn-primary text-xs">{{ it.common.save }}</button>
+                          <button type="button" class="btn btn-ghost text-xs" @click="editingComment = null">{{ it.common.cancel }}</button>
+                        </div>
+                      </form>
+                      <template v-else>
+                        <!-- eslint-disable-next-line vue/no-v-html -- renderUserMarkdown lässt kein HTML durch -->
+                        <div class="prose-md text-sm" v-html="md(item.c.body)" />
+                        <ul v-if="item.c.attachments.length" class="shots mt-3">
+                          <li v-for="img in item.c.attachments" :key="img.id">
+                            <a :href="img.url" target="_blank" rel="noopener"><img :src="img.thumbUrl" :width="img.width" :height="img.height" :alt="it.detail.attachments" loading="lazy" /></a>
+                          </li>
+                        </ul>
                       </template>
-                    </span>
-                  </header>
-                  <p v-if="item.c.deleted" class="mt-2 text-sm text-base-400 italic">{{ item.c.deletedBy === 'team' ? it.detail.deletedTeam : it.detail.deletedAuthor }}</p>
-                  <form v-else-if="editingComment === item.c.id" class="mt-2 space-y-2" @submit.prevent="saveComment(item.c)">
-                    <IssueEditor :id="`edit-c${item.c.id}`" v-model="editCommentText" :max="ISSUE_LIMITS.commentMax" :max-images="0" :rows="4" />
-                    <div class="flex gap-2">
-                      <button type="submit" class="btn btn-primary text-xs">{{ it.common.save }}</button>
-                      <button type="button" class="btn btn-ghost text-xs" @click="editingComment = null">{{ it.common.cancel }}</button>
                     </div>
-                  </form>
-                  <template v-else>
-                    <!-- eslint-disable-next-line vue/no-v-html -- renderUserMarkdown lässt kein HTML durch -->
-                    <div class="prose-md mt-2 text-sm" v-html="md(item.c.body)" />
-                    <ul v-if="item.c.attachments.length" class="shots mt-3">
-                      <li v-for="img in item.c.attachments" :key="img.id">
-                        <a :href="img.url" target="_blank" rel="noopener"><img :src="img.thumbUrl" :width="img.width" :height="img.height" :alt="it.detail.attachments" loading="lazy" /></a>
-                      </li>
-                    </ul>
-                  </template>
-                </article>
+                  </article>
+                </div>
               </li>
             </ol>
 
             <!-- Melden -->
-            <form v-if="reportTarget" class="card mt-4 max-w-xl p-5" @submit.prevent="sendReport">
+            <form v-if="reportTarget" class="card indent-m mt-4 max-w-xl p-5" @submit.prevent="sendReport">
               <h3 class="text-base font-semibold text-base-50">{{ it.detail.reportTitle }}</h3>
               <p class="mt-1 text-sm text-base-300">{{ it.detail.reportLead }}</p>
               <label class="mt-4 block text-xs text-base-400" for="issue-report-reason">{{ it.detail.reportReason }}</label>
@@ -524,72 +574,90 @@ async function restoreIssue() {
             </form>
 
             <!-- Kommentar schreiben -->
-            <div class="mt-6">
-              <p v-if="issue.locked && !issue.can.comment" class="banner"><SiteIcon name="lock" class="size-4 shrink-0" />{{ it.detail.lockedText }}</p>
-              <a v-else-if="!signedIn" :href="loginUrl()" class="btn btn-ghost"><SiteIcon name="microsoft" class="size-4" />{{ it.detail.signInToComment }}</a>
-              <form v-else-if="issue.can.comment" class="space-y-2" @submit.prevent="sendComment">
-                <label for="new-comment" class="label">{{ it.detail.write }}</label>
-                <IssueEditor id="new-comment" v-model="commentText" v-model:images="commentImages" :placeholder="it.detail.placeholder" :max="ISSUE_LIMITS.commentMax" :max-images="ISSUE_LIMITS.uploadsPerComment" :rows="4" />
-                <p v-if="commentError" role="alert" class="text-sm text-redstone-300">{{ commentError }}</p>
-                <div class="flex justify-end">
-                  <button type="submit" class="btn btn-primary" :disabled="commentBusy || !commentText.trim()" data-testid="send-comment">
-                    <SiteIcon name="chat" class="size-4" />{{ it.detail.send }}
-                  </button>
+            <div class="mt-8">
+              <p v-if="issue.locked && !issue.can.comment" class="banner indent-m"><SiteIcon name="lock" class="size-4 shrink-0" />{{ it.detail.lockedText }}</p>
+              <p v-else-if="!signedIn" class="indent text-sm text-base-400 italic">
+                <a :href="loginUrl()" class="text-base-200 underline-offset-4 hover:text-base-50 hover:underline">{{ it.detail.signInToComment }}</a>
+              </p>
+              <div v-else-if="issue.can.comment" class="post">
+                <div class="avatar">
+                  <PlayerHead v-if="account" :uuid="account.uuid" :name="account.name" :skin="account.skin ?? null" :fetch="false" :size="36" />
                 </div>
-              </form>
+                <form class="min-w-0 space-y-2" @submit.prevent="sendComment">
+                  <label for="new-comment" class="sr-only">{{ it.detail.write }}</label>
+                  <IssueEditor id="new-comment" v-model="commentText" v-model:images="commentImages" :placeholder="it.detail.placeholder" :max="ISSUE_LIMITS.commentMax" :max-images="ISSUE_LIMITS.uploadsPerComment" :rows="4" />
+                  <p v-if="commentError" role="alert" class="text-sm text-redstone-300">{{ commentError }}</p>
+                  <div class="flex justify-end">
+                    <button type="submit" class="btn btn-primary" :disabled="commentBusy || !commentText.trim()" data-testid="send-comment">
+                      <SiteIcon name="chat" class="size-4" />{{ it.detail.send }}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </section>
         </main>
 
-        <aside class="space-y-4">
-          <section class="card score-card p-4">
-            <IssueVote size="lg" :number="issue.number" :score="issue.score" :my-vote="issue.myVote ?? 0" :up="issue.up" :down="issue.down" :closed="closed" :signed-in="signedIn" @voted="onVoted" @error="actionError = $event" />
-            <div class="min-w-0">
-              <p class="text-xs font-medium tracking-wide text-base-400 uppercase">{{ it.detail.sidebar.score }}</p>
-              <p class="mt-1 text-sm text-base-200 tabular-nums">{{ fill(it.detail.sidebar.votes, { up: issue.up, down: issue.down }) }}</p>
-            </div>
+        <aside class="space-y-5">
+          <section class="card score-card" :aria-label="it.detail.sidebar.score">
+            <p class="text-sm font-medium text-base-200">{{ it.detail.sidebar.score }}</p>
+            <IssueVote size="lg" layout="row" class="mt-2" :number="issue.number" :score="issue.score" :my-vote="issue.myVote ?? 0" :up="issue.up" :down="issue.down" :closed="closed" :signed-in="signedIn" @voted="onVoted" @error="actionError = $event" />
+            <p class="mt-1.5 text-xs text-base-400 tabular-nums">{{ fill(it.detail.sidebar.votes, { up: issue.up, down: issue.down }) }}</p>
           </section>
 
-          <div class="flex gap-2">
-            <button type="button" class="btn flex-1" :class="issue.following ? 'btn-ghost following' : 'btn-primary'" :disabled="followBusy" :aria-pressed="!!issue.following" data-testid="follow" @click="toggleFollow">
-              <SiteIcon :name="issue.following ? 'check' : 'bell'" class="size-4" />{{ issue.following ? it.detail.following : it.detail.follow }}
-            </button>
-            <button type="button" class="btn-icon" :title="copied ? it.common.copied : it.common.copyLink" :aria-label="it.common.copyLink" @click="copyLink">
-              <SiteIcon :name="copied ? 'check' : 'link'" class="size-4" />
-            </button>
+          <div>
+            <div class="flex gap-2">
+              <button type="button" class="btn flex-1" :class="issue.following ? 'btn-ghost following' : 'btn-primary'" :disabled="followBusy" :aria-pressed="!!issue.following" data-testid="follow" @click="toggleFollow">
+                <SiteIcon :name="issue.following ? 'check' : 'bell'" class="size-4" />{{ issue.following ? it.detail.following : it.detail.follow }}
+              </button>
+              <button type="button" class="btn-icon" :title="copied ? it.common.copied : it.common.copyLink" :aria-label="it.common.copyLink" @click="copyLink">
+                <SiteIcon :name="copied ? 'check' : 'link'" class="size-4" />
+              </button>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-base-400">{{ it.detail.followHint }}</p>
           </div>
-          <p class="text-xs text-base-400">{{ it.detail.followHint }}</p>
 
-          <dl class="card facts p-4 text-sm">
-            <dt>{{ it.detail.sidebar.status }}</dt>
-            <dd><IssueStatus :status="issue.status" /></dd>
-            <dt>{{ it.detail.sidebar.assignee }}</dt>
-            <dd>
-              <span v-if="issue.assignee" class="inline-flex items-center gap-1.5"><PlayerHead :uuid="issue.assignee.uuid" :name="issue.assignee.name" :skin="issue.assignee.skin ?? null" :fetch="false" :size="18" />{{ issue.assignee.name }}</span>
-              <span v-else class="text-base-400">{{ it.detail.sidebar.nobody }}</span>
-            </dd>
-            <dt>{{ it.detail.sidebar.priority }}</dt>
-            <dd><span class="prio" :data-p="issue.priority ?? 'none'">{{ it.priorities[issue.priority ?? 'none'] }}</span></dd>
-            <dt>{{ it.detail.sidebar.area }}</dt>
-            <dd>{{ it.areas[issue.area] }}</dd>
-            <dt>{{ it.detail.sidebar.type }}</dt>
-            <dd>{{ it.types[issue.type] }}</dd>
-            <dt>{{ it.detail.sidebar.tags }}</dt>
-            <dd class="flex flex-wrap gap-1">
-              <span v-for="t in issue.tags" :key="t" class="badge tag">{{ t }}</span>
-              <span v-if="!issue.tags.length" class="text-base-400">{{ it.detail.sidebar.noTags }}</span>
-            </dd>
-            <dt>{{ it.detail.sidebar.fixedIn }}</dt>
-            <dd><span v-if="issue.fixedIn" class="badge fixed-in"><SiteIcon name="check" class="size-3" />{{ issue.fixedIn }}</span><span v-else class="text-base-400">{{ it.detail.sidebar.notYet }}</span></dd>
-            <dt>{{ it.detail.sidebar.opened }}</dt>
-            <dd><time :datetime="issue.createdAt">{{ date(issue.createdAt) }}</time></dd>
-            <dt>{{ it.detail.sidebar.activity }}</dt>
-            <dd><time :datetime="issue.activityAt">{{ date(issue.activityAt) }}</time></dd>
-          </dl>
-
-          <button v-if="!issue.author || issue.author.uuid !== account?.uuid" type="button" class="flex items-center gap-1.5 text-xs text-base-400 hover:text-base-200" @click="openReport({ kind: 'issue' })">
-            <SiteIcon name="flag" class="size-3.5" />{{ it.detail.reportIssue }}
-          </button>
+          <div class="facts">
+            <section>
+              <h3>{{ it.detail.sidebar.assignee }}</h3>
+              <p v-if="issue.assignee" class="inline-flex items-center gap-2 text-sm text-base-100"><PlayerHead :uuid="issue.assignee.uuid" :name="issue.assignee.name" :skin="issue.assignee.skin ?? null" :fetch="false" :size="20" />{{ issue.assignee.name }}</p>
+              <p v-else class="text-sm text-base-400">{{ it.detail.sidebar.nobody }}</p>
+            </section>
+            <section>
+              <h3>{{ it.detail.sidebar.area }}</h3>
+              <div class="flex flex-wrap gap-1.5">
+                <span v-for="a in ISSUE_AREAS" :key="a" class="pill" :class="{ on: a === issue.area }">{{ it.areas[a] }}</span>
+              </div>
+            </section>
+            <section>
+              <h3>{{ it.detail.sidebar2.versionLoader }}</h3>
+              <div v-if="issue.meta && (issue.meta.mcVersion || issue.meta.loader || issue.meta.modVersion)" class="flex flex-wrap gap-1.5">
+                <span v-if="issue.meta.mcVersion" class="pill on">{{ it.detail.mcVersion }} {{ issue.meta.mcVersion }}</span>
+                <span v-if="issue.meta.loader" class="pill on">{{ issue.meta.loader }}</span>
+                <span v-if="issue.meta.modVersion" class="pill">{{ it.detail.modVersion }} {{ issue.meta.modVersion }}</span>
+              </div>
+              <p v-else class="text-sm text-base-400">{{ it.detail.sidebar2.noVersion }}</p>
+            </section>
+            <section>
+              <h3>{{ it.detail.sidebar2.project }}</h3>
+              <dl class="kv text-sm">
+                <dt>{{ it.detail.sidebar.status }}</dt>
+                <dd><IssueStatus :status="issue.status" /></dd>
+                <dt>{{ it.detail.sidebar.priority }}</dt>
+                <dd><span class="prio" :data-p="issue.priority ?? 'none'">{{ it.priorities[issue.priority ?? 'none'] }}</span></dd>
+                <dt>{{ it.detail.sidebar.fixedIn }}</dt>
+                <dd><span v-if="issue.fixedIn" class="badge fixed-in"><SiteIcon name="check" class="size-3" />{{ issue.fixedIn }}</span><span v-else class="text-base-400">{{ it.detail.sidebar.notYet }}</span></dd>
+              </dl>
+            </section>
+            <section>
+              <h3>{{ it.detail.sidebar.tags }}</h3>
+              <div v-if="issue.tags.length" class="flex flex-wrap gap-1.5">
+                <span v-for="t in issue.tags" :key="t" class="pill tag">#{{ t }}</span>
+              </div>
+              <p v-else class="text-sm text-base-400">{{ it.detail.sidebar.noTags }}</p>
+            </section>
+            <p class="dates">{{ fill(it.detail.sidebar2.dates, { opened: date(issue.createdAt), activity: date(issue.activityAt) }) }}</p>
+          </div>
 
           <!-- Team -->
           <section v-if="canManage || canModerate" class="card team-panel p-4" data-testid="team-panel">
@@ -680,11 +748,20 @@ async function restoreIssue() {
 <style scoped>
 .layout {
   display: grid;
-  gap: 1.5rem;
+  gap: 2rem;
 }
-@media (min-width: 900px) {
+.mobile-vote {
+  gap: 0.25rem !important;
+  padding: 0 0.15rem;
+  border-radius: 0.4rem;
+  box-shadow: inset 0 0 0 1px var(--color-base-700);
+}
+@media (min-width: 960px) {
+  .mobile-vote {
+    display: none !important;
+  }
   .layout {
-    grid-template-columns: minmax(0, 1fr) 19rem;
+    grid-template-columns: minmax(0, 1fr) 18.5rem;
     align-items: start;
   }
   aside {
@@ -694,6 +771,51 @@ async function restoreIssue() {
   .in-modal aside {
     top: 0;
   }
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--color-base-400);
+}
+.crumbs a:hover {
+  color: var(--color-base-100);
+}
+.crumbs [aria-current] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-base-200);
+}
+.title {
+  font-size: clamp(1.7rem, 1.1rem + 2.2vw, 2.6rem);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.title.small {
+  font-size: clamp(1.4rem, 1rem + 1.4vw, 1.9rem);
+}
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-redstone-300);
+  background: color-mix(in srgb, var(--color-redstone-500) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-redstone-500) 40%, transparent);
+}
+.type-badge[data-t='feature'] {
+  color: var(--color-lamp-300);
+  background: color-mix(in srgb, var(--color-lamp-400) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-lamp-400) 38%, transparent);
 }
 .banner {
   display: flex;
@@ -711,27 +833,102 @@ async function restoreIssue() {
   border-color: color-mix(in srgb, var(--color-redstone-500) 50%, transparent);
   background: color-mix(in srgb, var(--color-redstone-900) 60%, transparent);
 }
-.type-icon {
+
+/* Beiträge: Kopf links neben der Karte (wie ein Forum), Kopfzeile der Karte mit Trennlinie. */
+.post {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+.avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  overflow: hidden;
+  border-radius: 0.3rem;
+  background: var(--color-base-800);
+  box-shadow: 0 0 0 1px var(--color-base-700);
+}
+.avatar-empty {
   display: grid;
   place-items: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  flex-shrink: 0;
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--color-redstone-500) 14%, transparent);
-  color: var(--color-redstone-300);
+  width: 100%;
+  height: 100%;
+  color: var(--color-base-400);
 }
-.type-icon[data-t='feature'] {
-  background: color-mix(in srgb, var(--color-lamp-400) 14%, transparent);
-  color: var(--color-lamp-300);
+.indent {
+  padding-left: 3.25rem;
+}
+.indent-m {
+  margin-left: 3.25rem;
+}
+.post-card {
+  position: relative;
+  min-width: 0;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-900);
+}
+/* Kleine Spitze zum Kopf hin. */
+.post-card::before {
+  content: '';
+  position: absolute;
+  top: 0.85rem;
+  left: -6px;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  border-left: 1px solid var(--color-base-800);
+  border-bottom: 1px solid var(--color-base-800);
+  background: var(--color-base-850);
+}
+form.post-card::before {
+  display: none;
+}
+.post-card.team {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 45%, var(--color-base-800));
+}
+.post-card.team::before {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 45%, var(--color-base-800));
+}
+.post-card.team .post-head {
+  background: color-mix(in srgb, var(--color-redstone-500) 9%, var(--color-base-850));
+}
+.post-card.deleted {
+  background: transparent;
+  border-style: dashed;
+}
+.post-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  min-height: 2.6rem;
+  padding: 0.35rem 0.5rem 0.35rem 1rem;
+  border-bottom: 1px solid var(--color-base-800);
+  border-radius: 0.6rem 0.6rem 0 0;
+  background: var(--color-base-850);
+  font-size: 0.85rem;
+}
+.post-card.deleted .post-head {
+  background: transparent;
+}
+.post-body {
+  padding: 0.9rem 1rem 1rem;
+}
+.edited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--color-base-400);
+  box-shadow: inset 0 0 0 1px var(--color-base-700);
 }
 .badge.team {
   background: color-mix(in srgb, var(--color-redstone-500) 20%, transparent);
   color: var(--color-redstone-300);
-}
-.badge.tag {
-  color: var(--color-base-200);
-  box-shadow: inset 0 0 0 1px var(--color-base-700);
 }
 .badge.fixed-in {
   background: color-mix(in srgb, var(--color-ok) 14%, transparent);
@@ -753,6 +950,10 @@ async function restoreIssue() {
 }
 .shots a:hover img {
   border-color: var(--color-redstone-500);
+}
+.tech {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-base-800);
 }
 .tech summary::marker {
   color: var(--color-base-400);
@@ -776,40 +977,58 @@ async function restoreIssue() {
   color: var(--color-base-200);
   white-space: pre;
 }
+
+/* Aktivität */
+.act-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-base-200);
+}
 .timeline {
   position: relative;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.9rem;
+}
+/* Redstone-Leitung hinter den Köpfen. */
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: calc(1.125rem - 1px);
+  width: 2px;
+  background: linear-gradient(var(--color-base-800), var(--color-base-800)) ;
+}
+.timeline > li {
+  position: relative;
 }
 .timeline > li.t-event {
-  position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 1rem;
   align-items: center;
-  gap: 0.6rem;
-  padding-left: 0.9rem;
+  padding-block: 0.1rem;
 }
-.event-dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  flex-shrink: 0;
-  border-radius: 2px;
-  background: var(--color-base-600);
-  box-shadow: 0 0 0 3px var(--color-base-950);
+.event-icon {
+  --c: var(--color-base-400);
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 13%, var(--color-base-950));
+  box-shadow: 0 0 0 4px var(--color-base-950), inset 0 0 0 1px color-mix(in srgb, var(--c) 38%, transparent);
 }
-.comment {
-  padding: 0.9rem 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-base-800);
-  background: var(--color-base-900);
-}
-.comment.team {
-  border-color: color-mix(in srgb, var(--color-redstone-500) 45%, var(--color-base-800));
-  box-shadow: inset 3px 0 0 var(--color-redstone-500);
-}
-.comment.deleted {
-  background: transparent;
-  border-style: dashed;
-}
+.event-icon[data-k='blue'] { --c: #7cc4ff; }
+.event-icon[data-k='amber'] { --c: var(--color-lamp-400); }
+.event-icon[data-k='violet'] { --c: #c4a5ff; }
+.event-icon[data-k='ok'] { --c: var(--color-ok); }
+.event-icon[data-k='red'] { --c: var(--color-redstone-400); }
+.event-icon[data-k='grey'] { --c: var(--color-base-400); }
 .mini {
   display: grid;
   place-items: center;
@@ -822,27 +1041,64 @@ async function restoreIssue() {
   color: var(--color-base-50);
   background: var(--color-base-800);
 }
+
+/* Seitenleiste */
 .score-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  padding: 1rem 1rem 0.85rem;
+  text-align: center;
 }
 .following {
   color: var(--color-ok);
 }
-.facts {
+.facts > section {
+  padding-block: 0.85rem;
+  border-bottom: 1px solid var(--color-base-800);
+}
+.facts > section:first-child {
+  padding-top: 0;
+}
+.facts h3 {
+  margin-bottom: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-base-200);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--color-base-400);
+  box-shadow: inset 0 0 0 1px var(--color-base-700);
+}
+.pill.on {
+  color: var(--color-base-50);
+  background: var(--color-base-800);
+  box-shadow: inset 0 0 0 1px var(--color-base-600);
+}
+.pill.tag {
+  color: var(--color-base-200);
+}
+.kv {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.55rem 1rem;
+  gap: 0.5rem 1rem;
   align-items: center;
 }
-.facts dt {
+.kv dt {
   font-size: 0.75rem;
   color: var(--color-base-400);
 }
-.facts dd {
+.kv dd {
   min-width: 0;
   color: var(--color-base-100);
+}
+.dates {
+  padding-top: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--color-base-400);
 }
 .prio[data-p='critical'] {
   color: var(--color-redstone-300);
