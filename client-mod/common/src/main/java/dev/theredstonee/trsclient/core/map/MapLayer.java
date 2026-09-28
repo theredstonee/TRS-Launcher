@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Eine Kartenebene einer Welt/Dimension: die Oberfläche, ein Höhlenschnitt auf einer bestimmten Höhe oder die
@@ -41,6 +42,18 @@ public final class MapLayer {
 	/** Ändert sich, sobald sich irgendeine Übersicht ändert (Weltkarten-Kacheln neu bauen). */
 	private int generation;
 	private int maxRegions = 256;
+	/** Stand für alle Kacheln (Auflistung fertig, unbekannte Änderung). */
+	private int globalStamp;
+	/** Stand je Übersichtskachel: Stufe 1 = {@link MapTextures#SUPER}² Bereiche, Stufe 2 = {@link MapTextures#MEGA}² Bereiche. */
+	private final Map<Long, Integer> tileStamps1 = new HashMap<Long, Integer>();
+	private final Map<Long, Integer> tileStamps2 = new HashMap<Long, Integer>();
+	/**
+	 * Wann ein wartender Ladeauftrag zuletzt im Bild gebraucht wurde (ms) – vom Kartenthread gelesen, damit Aufträge
+	 * für längst weggeschobene Bereiche nicht mehr gelesen werden.
+	 */
+	private final ConcurrentHashMap<Long, Long> wantedAt = new ConcurrentHashMap<Long, Long>();
+	/** So lange (ms) gilt ein Ladeauftrag ohne erneute Anfrage noch als gebraucht. */
+	static final long WANTED_MS = 1500;
 
 	/**
 	 * @param dir Ordner auf der Platte oder null (nur im Speicher)
@@ -66,6 +79,7 @@ public final class MapLayer {
 				for (long k : keys) onDisk.add(k);
 				listed = true;
 				generation++;
+				touchAllTiles();
 			});
 		} else {
 			listed = true;
@@ -112,6 +126,35 @@ public final class MapLayer {
 		return all;
 	}
 
+	/** Gibt es diesen Bereich (geladen oder auf der Platte)? Ohne Kopie – für jedes Bild. */
+	public boolean known(long key) {
+		return regions.containsKey(key) || onDisk.contains(key);
+	}
+
+	/**
+	 * Stand einer Übersichtskachel ({@code level} 1 oder 2) – ändert sich, sobald sich eine Übersicht darin ändert
+	 * (Bereich geladen, Übersicht gelesen, Bereich neu abgetastet) oder die ganze Ebene (Auflistung fertig).
+	 */
+	public long tileStamp(int level, int tx, int tz) {
+		Integer n = (level == 2 ? tileStamps2 : tileStamps1).get(MapRegion.key(tx, tz));
+		return ((long) globalStamp << 32) | ((n == null ? 0 : n) & 0xFFFFFFFFL);
+	}
+
+	private void touchTiles(int rx, int rz) {
+		long k1 = MapRegion.key(Math.floorDiv(rx, MapTextures.SUPER), Math.floorDiv(rz, MapTextures.SUPER));
+		long k2 = MapRegion.key(Math.floorDiv(rx, MapTextures.MEGA), Math.floorDiv(rz, MapTextures.MEGA));
+		Integer a = tileStamps1.get(k1);
+		tileStamps1.put(k1, a == null ? 1 : a + 1);
+		Integer b = tileStamps2.get(k2);
+		tileStamps2.put(k2, b == null ? 1 : b + 1);
+	}
+
+	private void touchAllTiles() {
+		globalStamp++;
+		tileStamps1.clear();
+		tileStamps2.clear();
+	}
+
 	/** Geladener Bereich ohne Nachladen (Nachbarn beim Schattieren). */
 	public MapRegion peek(int rx, int rz) {
 		return regions.get(MapRegion.key(rx, rz));
@@ -125,7 +168,10 @@ public final class MapLayer {
 			r.lastUsed = now;
 			return r;
 		}
-		if (onDisk.contains(key)) requestLoad(rx, rz, key);
+		if (onDisk.contains(key)) {
+			if (loading.contains(key)) wantedAt.put(key, now);
+			else requestLoad(rx, rz, key, true);
+		}
 		return null;
 	}
 
@@ -136,9 +182,11 @@ public final class MapLayer {
 		if (r == null) {
 			r = new MapRegion(rx, rz);
 			regions.put(key, r);
-			if (onDisk.contains(key)) requestLoad(rx, rz, key);
+			if (onDisk.contains(key)) requestLoad(rx, rz, key, false);
 		}
 		r.lastUsed = now;
+		// Neu abgetastet: die Übersichtskacheln darüber sind veraltet.
+		touchTiles(rx, rz);
 		return r;
 	}
 
@@ -166,13 +214,25 @@ public final class MapLayer {
 		}
 		int[] s = diskSummaries.get(key);
 		if (s != null) return s;
-		if (onDisk.contains(key) && disk != null && dir != null && !summaryLoading.contains(key)) {
+		if (onDisk.contains(key) && disk != null && dir != null) {
+			// Eigener Schlüsselraum für Übersichten (bitweise invertiert), damit sie Bereichs-Ladeaufträge nicht stören.
+			final long summaryKey = ~key;
+			wantedAt.put(summaryKey, System.currentTimeMillis());
+			if (summaryLoading.contains(key)) return null;
 			summaryLoading.add(key);
-			disk.loadSummary(MapDisk.regionFile(dir, rx, rz), summary -> {
+			final int trx = rx, trz = rz;
+			disk.loadSummary(MapDisk.regionFile(dir, rx, rz), () -> stillWanted(summaryKey), summary -> {
 				summaryLoading.remove(key);
+				wantedAt.remove(summaryKey);
 				if (closed || summary == null) return;
 				diskSummaries.put(key, summary);
 				generation++;
+				touchTiles(trx, trz);
+			}, () -> {
+				// Nicht mehr im Bild: Kachel als veraltet markieren – sobald sie wieder sichtbar ist, fragt sie neu an.
+				summaryLoading.remove(key);
+				wantedAt.remove(summaryKey);
+				touchTiles(trx, trz);
 			});
 		}
 		return null;
@@ -181,13 +241,32 @@ public final class MapLayer {
 	/** Eine Übersicht hat sich geändert (Textur neu schattiert). */
 	public void summaryChanged() {
 		generation++;
+		touchAllTiles();
 	}
 
-	private void requestLoad(int rx, int rz, final long key) {
+	/** Die Übersicht dieses Bereichs hat sich geändert (Textur neu schattiert) – nur seine Kacheln neu bauen. */
+	public void summaryChanged(int rx, int rz) {
+		generation++;
+		touchTiles(rx, rz);
+	}
+
+	private boolean stillWanted(long key) {
+		Long t = wantedAt.get(key);
+		return t != null && System.currentTimeMillis() - t <= WANTED_MS;
+	}
+
+	/**
+	 * @param onlyIfWanted true = Anzeige (fällt weg, wenn der Bereich eine Weile nicht mehr gebraucht wurde); false =
+	 *                     Zusammenführen mit neu Abgetastetem (muss immer geladen werden)
+	 */
+	private void requestLoad(final int rx, final int rz, final long key, boolean onlyIfWanted) {
 		if (disk == null || dir == null || loading.contains(key) || closed) return;
 		loading.add(key);
-		disk.loadRegion(MapDisk.regionFile(dir, rx, rz), decoded -> {
+		if (onlyIfWanted) wantedAt.put(key, System.currentTimeMillis());
+		else wantedAt.remove(key);
+		disk.loadRegion(MapDisk.regionFile(dir, rx, rz), onlyIfWanted ? () -> stillWanted(key) : null, decoded -> {
 			loading.remove(key);
+			wantedAt.remove(key);
 			if (closed) return;
 			if (decoded == null) {
 				onDisk.remove(key);
@@ -212,6 +291,13 @@ public final class MapLayer {
 			}
 			diskSummaries.remove(key);
 			generation++;
+			touchTiles(rx, rz);
+		}, () -> {
+			// Übersprungen (aus dem Bild geschoben): beim nächsten Anzeigen neu anfragen.
+			loading.remove(key);
+			wantedAt.remove(key);
+			// Wurde der Bereich inzwischen beschrieben, muss er doch geladen werden (Zusammenführen).
+			if (regions.containsKey(key) && !closed) requestLoad(rx, rz, key, false);
 		});
 	}
 
@@ -278,6 +364,7 @@ public final class MapLayer {
 		closed = true;
 		regions.clear();
 		diskSummaries.clear();
+		wantedAt.clear();
 	}
 
 	public boolean closed() {

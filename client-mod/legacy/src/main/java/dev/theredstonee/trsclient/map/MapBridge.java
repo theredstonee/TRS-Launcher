@@ -247,4 +247,15 @@ public final class MapBridge implements MapPlatform {
 		ServerData data = mc().getCurrentServerData();
 		return data == null ? null : data.serverMOTD;
 	}
+
+	@Override
+	public void message(String text) {
+		// Nur lokal im eigenen Chat (z. B. „Karte gespeichert als …“).
+		if (mc().ingameGUI == null) return;
+		//? if >=1.9 {
+		/*mc().ingameGUI.getChatGUI().printChatMessage(new net.minecraft.util.text.TextComponentString(text));
+		*///?} else {
+		mc().ingameGUI.getChatGUI().printChatMessage(new net.minecraft.util.ChatComponentText(text));
+		//?}
+	}
 }

@@ -107,4 +107,8 @@ public interface MapPlatform {
 	default Object resourceGeneration() {
 		return null;
 	}
+
+	/** Kurze Meldung im Chat (nur für den Spieler, z. B. „Karte gespeichert als …“). Nur Spiel-Thread. */
+	default void message(String text) {
+	}
 }

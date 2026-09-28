@@ -28,6 +28,7 @@ public final class MapsTest {
 	private int maxSteps;
 	private dev.theredstonee.trsclient.core.map.MapColorDiff colorDiff;
 	private static final java.util.List<String> EDGE_NAMES = java.util.Arrays.asList("Alpha", "Arena", "Burg", "Camp", "Dorf");
+	private final WorldMapTest worldMap2 = new WorldMapTest();
 
 	public static void install() {
 		MapsTest test = new MapsTest();
@@ -230,11 +231,22 @@ public final class MapsTest {
 			case 16:
 				shot(mc, "menu-worldmap");
 				Mc.setScreen(null);
+				phase++;
+				wait = 10;
+				return;
+			case 17: {
+				// Weltkarte 2 (eigene Klasse): Liste, Zoom, Nether, Export.
+				int more = worldMap2.step(mc, bx, by, bz);
+				if (more >= 0) {
+					wait = more;
+					return;
+				}
 				AutoTest.disconnect(mc);
 				phase++;
 				wait = 40;
 				return;
-			case 17:
+			}
+			case 18:
 				mc.stop();
 				phase++;
 				return;

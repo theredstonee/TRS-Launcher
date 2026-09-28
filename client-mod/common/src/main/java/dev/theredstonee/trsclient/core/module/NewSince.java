@@ -96,6 +96,8 @@ public final class NewSince {
 	 * den Block-Texturen, Auto-Zoom.
 	 */
 	public static final String MINIMAP_2 = "0.13.0";
+	/** Weltkarte 2 (TRS Client 0.13.0): stufenlos zoomen, Schwung, Wegpunkt-Liste, andere Dimensionen, Export. */
+	public static final String WORLD_MAP_2 = "0.13.0";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -151,6 +153,9 @@ public final class NewSince {
 		// Minimap 2: Wegpunkte am Rand, Kreatur-Köpfe/Symbole, Texturfarben, Auto-Zoom.
 		add(MINIMAP_2, "minimap.edgeWaypoints", "minimap.mobIcons", "minimap.colors", "minimap.autoZoomSpeed",
 				"minimap.autoZoomIndoor");
+		// Weltkarte 2.
+		add(WORLD_MAP_2, "worldMap.smoothZoom", "worldMap.inertia", "worldMap.waypointList", "worldMap.otherDimensions",
+				"worldMap.netherCoords", "worldMap.exportSize");
 	}
 
 	private NewSince() {
