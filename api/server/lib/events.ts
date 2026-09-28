@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import type { AchievementUnlockedEvent } from './achievements'
 import type { MyApplicationView } from './applications'
 import type { MySubmissionView } from './circuits'
 import type { IncomingOffer } from './capeshares'
@@ -114,6 +115,9 @@ export type ApiEvent =
   // ---------------------------------------------------------------- Issues (§28, nur /v1/events/me)
   /** Ein Issue, dem du folgst: Status geändert, „Erledigt in“, Team-Antwort oder zusammengeführt. */
   | IssueUpdatedEvent
+  // ---------------------------------------------------------------- Erfolge (§31, nur /v1/events/me)
+  /** Du hast einen Erfolg freigeschaltet (`reward` = dabei vergebenes Teil oder `null`). */
+  | AchievementUnlockedEvent
 
 export type ApiEventType = ApiEvent['type']
 

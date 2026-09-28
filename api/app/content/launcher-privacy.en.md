@@ -402,6 +402,21 @@ the TRS server.
   answer Minecraft's question with yes; your game serves it to Minecraft through a local address on your computer
   (`127.0.0.1`) that only works for this connection.
 
+### Achievements
+
+With the TRS services on, the launcher shows achievements (for example "played 10 hours", "first friend", "shared a
+modpack"). The TRS server works most of them out from what it already has for the other services: your in-game time is
+added up from the online status the launcher and the TRS Client send anyway (only the **total**, the current and the
+longest session and your day streak are stored – no list of sessions or times), friends, chat messages, issues and
+votes, circuits, shared modpacks, hosted worlds, capes and cosmetics. A few things only the launcher knows are reported
+by it: that a game was started (with the **local hour** of the start, for one hidden achievement – not the date or
+time zone), that mods or a modpack were installed, a clip was saved, the crash helper fixed a crash or instances were
+imported. Only counters and yes/no flags are stored – no names of mods, packs, clips or files.
+
+- **Who sees it:** you, and your **friends** (which achievements you unlocked and when, and your points). Nobody else;
+  nothing is public.
+- Some achievements come with a cape or cosmetic, which is then added to your items like a gift from the team.
+
 ### What is stored
 
 | Data | Why |
@@ -428,6 +443,7 @@ the TRS server.
 | Circuit submissions: the circuit (blocks and states only), name, description, category, language, time, status and the team's answer; for accepted circuits your name as the creator | Submitting a circuit to the library (see above) |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
+| Achievements: which ones you unlocked and when (and whether their reward was given), counters and flags reported by the launcher (games started, mods, modpacks, clips, crash fixes, imports, a start between 3 and 4 a.m.), counters for shared modpacks, their installs, hosted worlds and shared screenshots, your total in-game time, current and longest session and day streak | Achievements and their rewards (see above) |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
 your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your
@@ -444,7 +460,8 @@ launcher follows. Deleting all TRS data deletes this document too.
 
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
-Only whether you are in game right now can also show up as your TRS badge (see above).
+Only whether you are in game right now can also show up as your TRS badge (see above). For achievements only the totals
+described above are kept (playtime, sessions, day streak).
 
 Admin actions (such as approving a cape, a ban or a decision on a chat report) are recorded in an audit log together
 with the affected UUID.
@@ -478,6 +495,8 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   your online status, all synced skins, presets and settings, all your direct chats (for both sides) and your messages,
   reactions and pictures in groups (groups you own go to the longest member), all pictures you shared as a link and all modpacks you shared. Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
+- Achievements, their counters and your playtime totals stay as long as your TRS account exists and are deleted with
+  "Alle TRS-Daten löschen" (items you received as a reward go with your other capes and cosmetics).
 - Only active sanctions (such as a ban or a running chat mute, with reason and period) and reports about you (until
   their retention ends, see above) are kept after deletion, so they can't be escaped by signing in again.
 - Server logs contain only technical data (method, path without query, status, duration, request id) – **no IP

@@ -247,4 +247,11 @@ export const RULES = {
   adminBlogUpload: { limit: 30, windowMs: MIN },
   /** Öffentliche Blog-Bilder je IP (zusätzlich zur globalen IP-Grenze). */
   blogMediaIp: { limit: 600, windowMs: MIN },
+  // ------------------------------------------------ Erfolge (§31)
+  /** Öffentlicher Katalog je IP. */
+  achievementCatalogIp: { limit: 60, windowMs: MIN },
+  /** Launcher-Meldungen je Konto. */
+  achievementReportUser: { limit: 30, windowMs: MIN },
+  /** Erfolge eines Spielers (selbst/Freund) je Konto. */
+  achievementViewUser: { limit: 60, windowMs: MIN },
 } satisfies Record<string, Rule>

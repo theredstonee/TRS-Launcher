@@ -1,4 +1,5 @@
 import { defineEventHandler, getHeader } from 'h3'
+import { countAchievement } from '../../../lib/achievements'
 import { useCtx } from '../../../lib/context'
 import { unsupportedMedia } from '../../../lib/errors'
 import { created, limit, readLimited, requireUser } from '../../../lib/http'
@@ -14,5 +15,8 @@ export default defineEventHandler(async (event) => {
   const type = (getHeader(event, 'content-type') ?? '').split(';')[0]!.trim().toLowerCase()
   if (!TYPES.has(type)) throw unsupportedMedia('Content-Type must be image/png, image/jpeg or image/webp')
   const body = await readLimited(event, MAX_SHARE_BYTES)
-  return created(event, { share: await uploadShare(useCtx(), auth.uuid, body, type) })
+  const ctx = useCtx()
+  const share = await uploadShare(ctx, auth.uuid, body, type)
+  countAchievement(ctx, auth.uuid, 'screenshots_shared')
+  return created(event, { share })
 })

@@ -732,7 +732,52 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 18,
     run: migrateLauncherLoginBlog,
   },
+  {
+    // Erfolge (§31): Freischaltungen (mit Stand der Belohnung), Zähler/Flags je Konto (Launcher-Meldungen und
+    // Server-Zähler für Dinge, die später verschwinden – geteilte Packs, Welten, Screenshots), Spielzeit-Summe + Serie.
+    // Alles per ON DELETE CASCADE am Konto. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 19,
+    run: migrateAchievements,
+  },
 ]
+
+/** Migration 19 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateAchievements(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS achievement_unlocks (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  achievement_id TEXT NOT NULL CHECK (length(achievement_id) BETWEEN 1 AND 40),
+  unlocked_at INTEGER NOT NULL,
+  -- Belohnung vergeben (NULL = keine oder noch nicht – das Teil gibt es noch nicht).
+  reward_granted_at INTEGER,
+  PRIMARY KEY (uuid, achievement_id)
+);
+CREATE INDEX IF NOT EXISTS achievement_unlocks_pending ON achievement_unlocks(achievement_id) WHERE reward_granted_at IS NULL;
+
+-- Zähler und Flags je Konto (key aus der festen Liste in achievement-catalog.ts).
+CREATE TABLE IF NOT EXISTS achievement_stats (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  key TEXT NOT NULL CHECK (length(key) BETWEEN 1 AND 40),
+  value INTEGER NOT NULL CHECK (value >= 0),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, key)
+);
+
+-- Spielzeit aus den In-Game-Herzschlägen (§31.7): nur Summen, kein Verlauf. Tage = UTC-Tage seit 1970.
+CREATE TABLE IF NOT EXISTS achievement_playtime (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  played_ms INTEGER NOT NULL DEFAULT 0,
+  -- letzter In-Game-Herzschlag (NULL = gerade nicht im Spiel)
+  last_beat_at INTEGER,
+  session_ms INTEGER NOT NULL DEFAULT 0,
+  best_session_ms INTEGER NOT NULL DEFAULT 0,
+  last_day INTEGER,
+  streak INTEGER NOT NULL DEFAULT 0,
+  best_streak INTEGER NOT NULL DEFAULT 0
+);
+`)
+}
 
 function hasTable(db: DatabaseSync, name: string): boolean {
   return db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !== undefined

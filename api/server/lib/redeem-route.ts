@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+import { touchAchievements } from './achievements'
 import { redeemCode, type RedeemResult } from './codes'
 import { useCtx } from './context'
 import { isApiError, tooMany } from './errors'
@@ -32,7 +33,10 @@ export async function handleRedeem(event: H3Event): Promise<RedeemResult> {
     throw err
   }
   try {
-    return redeemCode(ctx, auth.uuid, code)
+    const result = redeemCode(ctx, auth.uuid, code)
+    // Erfolge (§31): Code eingelöst, ggf. die Quietscheente gefunden.
+    touchAchievements(ctx, auth.uuid, ['codes_redeemed', 'duck_flag'])
+    return result
   } catch (err) {
     if (isApiError(err) && err.status < 500) countFailure()
     throw err

@@ -1,4 +1,5 @@
 import { defineEventHandler } from 'h3'
+import { touchAchievements } from '../../../lib/achievements'
 import { useCtx } from '../../../lib/context'
 import { equipCosmetics, ownedEmotes } from '../../../lib/cosmetics'
 import { readJson, requireUser } from '../../../lib/http'
@@ -9,5 +10,7 @@ export default defineEventHandler(async (event) => {
   const auth = requireUser(event, 'write')
   const body = await readJson(event, equipBody)
   const ctx = useCtx()
-  return { equipped: equipCosmetics(ctx, auth.uuid, body), emotes: ownedEmotes(ctx, auth.uuid) }
+  const equipped = equipCosmetics(ctx, auth.uuid, body)
+  touchAchievements(ctx, auth.uuid, ['cosmetic_equipped_flag'])
+  return { equipped, emotes: ownedEmotes(ctx, auth.uuid) }
 })

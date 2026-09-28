@@ -1,3 +1,4 @@
+import { recordHeartbeat } from './achievements'
 import type { AppContext } from './context'
 import { all } from './db'
 import type { EmoteDef } from './emotes'
@@ -144,4 +145,10 @@ export function reportPresence(ctx: AppContext, user: Pick<UserRow, 'uuid' | 'sh
     }
     return ctx.presence.set(uuid, body.state, game, body.via ?? (body.state === 'in-game' ? 'client' : 'launcher'))
   })
+  // Erfolge (§31.7): Spielzeit aus In-Game-Herzschlägen, Tages-Serie aus jedem Herzschlag. Darf die Präsenz nie stören.
+  try {
+    recordHeartbeat(ctx, uuid, ctx.presence.isInGame(uuid), body.state !== 'offline')
+  } catch (err) {
+    console.error('[trs-api] achievement heartbeat failed', (err as Error).message)
+  }
 }

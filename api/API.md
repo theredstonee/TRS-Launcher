@@ -3242,7 +3242,7 @@ whose item became available since the unlock (§31.6).
   "unlocked": [ { "id": "first_launch", "at": "2026-09-28T10:00:00.000Z" } ],
   "progress": { "play_10h": 134, "friends_10": 3 },
   "points": 45,
-  "totalPoints": 875
+  "totalPoints": 940
 }
 ```
 
@@ -3358,7 +3358,8 @@ Titles come from the viewer's catalog (`GET /v1/me/achievements` → `achievemen
 | `all_secrets` | secret (visible, `secret: false`) | 5 (= number of secret achievements) | 50 | legendary | yes | cosmetic `secret-crown` |
 
 - `all_secrets` is a visible meta achievement: its progress is the number of unlocked **secret** achievements, its goal
-  grows when secret achievements are added (an account that already had it keeps it).
+  grows when secret achievements are added (an account that already had it keeps it). It is counted by the server, but
+  one of the secrets (`secret_02`) comes from a launcher report.
 - The reward items `veteran` (cape), `ideengeber` (cape), `emote-party` (emote) and `secret-crown` (head cosmetic) are
   added later as built-in items. Until an item exists the unlock happens without it (`reward: null` in the event, the
   catalog still shows the planned reward) and the server logs once per item. **Everyone who already unlocked the

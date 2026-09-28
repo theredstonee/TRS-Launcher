@@ -1,5 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { z } from 'zod'
+import { touchCircuitSubmitter } from '../../../../../lib/achievements'
 import { acceptSubmission, acceptSubmissionBody } from '../../../../../lib/circuits'
 import { useCtx } from '../../../../../lib/context'
 import { limit, paramWith, readJson, requireStaff } from '../../../../../lib/http'
@@ -14,5 +15,8 @@ export default defineEventHandler(async (event) => {
   limit(`adminCircuit:${staff.uuid}`, RULES.adminCircuit)
   const id = paramWith(event, 'id', z.string().regex(/^cs[0-9a-f]{16}$/))
   const body = await readJson(event, acceptSubmissionBody, 300 * 1024)
-  return acceptSubmission(useCtx(), staff, id, body)
+  const ctx = useCtx()
+  const result = acceptSubmission(ctx, staff, id, body)
+  touchCircuitSubmitter(ctx, id)
+  return result
 })

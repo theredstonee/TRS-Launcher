@@ -1,3 +1,4 @@
+import { touchAchievements } from './achievements'
 import { dropOffersBetween, incomingOfferCount } from './capeshares'
 import { refreshDm } from './chat'
 import type { AppContext } from './context'
@@ -152,6 +153,8 @@ export function sendRequest(ctx: AppContext, me: UserRow, target: { uuid: string
     publish(ctx, other.uuid, { type: 'friend_added', friend: { uuid: me.uuid, name: me.name } })
     publish(ctx, me.uuid, { type: 'friend_added', friend: { uuid: other.uuid, name: other.name } })
     refreshDm(ctx, me.uuid, other.uuid)
+    touchAchievements(ctx, me.uuid, ['friends'])
+    touchAchievements(ctx, other.uuid, ['friends'])
   } else {
     publish(ctx, other.uuid, { type: 'friend_request', from: { uuid: me.uuid, name: me.name } })
     selfChanged(ctx, me.uuid)
@@ -184,6 +187,8 @@ export function acceptRequest(ctx: AppContext, me: UserRow, from: string): Frien
   // Eigene andere Geräte erfahren es auch (Freundesliste ohne Neuladen).
   ctx.events.publish(me.uuid, { type: 'friend_added', friend: { uuid: other!.uuid, name: other!.name } }, { meOnly: true })
   refreshDm(ctx, me.uuid, from)
+  touchAchievements(ctx, me.uuid, ['friends'])
+  touchAchievements(ctx, from, ['friends'])
   return { uuid: other!.uuid, name: other!.name, since: iso(t), presence: visiblePresence(other!, ctx.presence.get(from)) }
 }
 

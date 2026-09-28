@@ -1,5 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { z } from 'zod'
+import { countAchievement } from '../../../lib/achievements'
 import { useCtx } from '../../../lib/context'
 import { created, limit, queryWith, readLimited, requireUser } from '../../../lib/http'
 import { assertPackType, PACK_DURATIONS, uploadPack } from '../../../lib/packs'
@@ -13,5 +14,7 @@ export default defineEventHandler(async (event) => {
   assertPackType(event)
   const ctx = useCtx()
   const body = await readLimited(event, ctx.config.packMaxBytes)
-  return created(event, { pack: uploadPack(ctx, auth.uuid, body, q.duration) })
+  const pack = uploadPack(ctx, auth.uuid, body, q.duration)
+  countAchievement(ctx, auth.uuid, 'packs_shared')
+  return created(event, { pack })
 })

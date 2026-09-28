@@ -1,4 +1,5 @@
 import { defineEventHandler } from 'h3'
+import { touchAchievements } from '../../../../../lib/achievements'
 import { sendMessage } from '../../../../../lib/chat'
 import { useCtx } from '../../../../../lib/context'
 import { created, limit, paramWith, readJson, requireUser } from '../../../../../lib/http'
@@ -12,6 +13,8 @@ export default defineEventHandler(async (event) => {
   const body = await readJson(event, sendMessageBody)
   limit(`chatSend:${auth.uuid}`, RULES.chatSendUser)
   limit(`chatBurst:${auth.uuid}`, RULES.chatBurstUser)
-  const r = sendMessage(useCtx(), auth.uuid, id, body)
+  const ctx = useCtx()
+  const r = sendMessage(ctx, auth.uuid, id, body)
+  if (r.created) touchAchievements(ctx, auth.uuid, ['chat_messages'])
   return r.created ? created(event, { message: r.message }) : { message: r.message }
 })

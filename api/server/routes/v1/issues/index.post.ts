@@ -1,4 +1,5 @@
 import { defineEventHandler } from 'h3'
+import { touchAchievements } from '../../../lib/achievements'
 import { useCtx } from '../../../lib/context'
 import { created, readJson } from '../../../lib/http'
 import { createIssueBody, requireIssueWriter } from '../../../lib/issue-http'
@@ -8,5 +9,8 @@ import { createIssue } from '../../../lib/issues'
 export default defineEventHandler(async (event) => {
   const viewer = requireIssueWriter(event, 'issueCreateUser')
   const body = await readJson(event, createIssueBody, 64 * 1024)
-  return created(event, { issue: createIssue(useCtx(), viewer, body) })
+  const ctx = useCtx()
+  const issue = createIssue(ctx, viewer, body)
+  touchAchievements(ctx, viewer.uuid, ['issues_opened', 'bug_from_game_flag'])
+  return created(event, { issue })
 })

@@ -1,5 +1,6 @@
 import { defineEventHandler, setResponseHeaders } from 'h3'
 import { z } from 'zod'
+import { countAchievement } from '../../../../../lib/achievements'
 import { useCtx } from '../../../../../lib/context'
 import { notFound } from '../../../../../lib/errors'
 import { limit, paramWith, requireUser } from '../../../../../lib/http'
@@ -21,6 +22,8 @@ export default defineEventHandler((event) => {
     console.error(`[trs-api] could not read shared pack ${p.id}`, (err as Error).message)
     throw notFound('pack_not_found', 'No modpack with this code (wrong code, expired or deleted)')
   }
+  // Erfolge (§31): Installation durch ein anderes Konto zählt für den Besitzer.
+  if (p.owner_uuid !== auth.uuid) countAchievement(ctx, p.owner_uuid, 'pack_installs')
   setResponseHeaders(event, {
     'Content-Type': 'application/x-modrinth-modpack+zip',
     'Content-Disposition': `attachment; filename="trs-pack-${p.code}-${p.revision}.mrpack"`,

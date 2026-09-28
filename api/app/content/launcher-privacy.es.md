@@ -427,6 +427,21 @@ servidor TRS.
   paquete de recursos solo se usa si respondes que sí a la pregunta de Minecraft; tu juego se lo pasa a Minecraft por una
   dirección local en tu ordenador (`127.0.0.1`) que solo vale para esta conexión.
 
+### Logros
+
+Con los servicios TRS activados, el launcher muestra logros (por ejemplo «10 horas jugadas», «primer amigo», «modpack
+compartido»). El servidor TRS calcula la mayoría a partir de lo que ya tiene para los demás servicios: tu tiempo de juego
+se suma a partir del estado en línea que el launcher y el TRS Client envían de todos modos (solo se guardan el
+**total**, la sesión actual y la más larga y tu racha de días – ninguna lista de sesiones ni horas), además de amigos,
+mensajes de chat, incidencias y votos, circuitos, modpacks compartidos, mundos alojados, capas y cosméticos. Algunas
+cosas solo las sabe el launcher y las comunica: que se inició un juego (con la **hora local** del inicio, para un logro
+oculto – no la fecha ni la zona horaria), que se instalaron mods o un modpack, se guardó un clip, el asistente de fallos
+arregló un fallo o se importaron instancias. Solo se guardan contadores y valores sí/no – ningún nombre de mods, packs,
+clips ni archivos.
+
+- **Quién lo ve:** tú y tus **amigos** (qué logros desbloqueaste y cuándo, y tus puntos). Nadie más; nada es público.
+- Algunos logros traen una capa o un cosmético, que se añade a tus objetos como un regalo del equipo.
+
 ### Qué se guarda
 
 | Datos | Para qué |
@@ -453,6 +468,7 @@ servidor TRS.
 | Circuitos enviados: el circuito (solo bloques y estados), nombre, descripción, categoría, idioma, fecha, estado y respuesta del equipo; en los circuitos aceptados, tu nombre como creador | Enviar un circuito a la biblioteca (ver arriba) |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
+| Logros: cuáles desbloqueaste y cuándo (y si se entregó su recompensa), contadores y valores que comunica el launcher (juegos iniciados, mods, modpacks, clips, fallos arreglados, importaciones, un inicio entre las 3 y las 4 de la madrugada), contadores de modpacks compartidos, sus instalaciones, mundos alojados y capturas compartidas, tu tiempo total de juego, la sesión actual y la más larga y la racha de días | Logros y sus recompensas (ver arriba) |
 
 **Sincronización:** «Sincronizar con la cuenta de TRS» (*Einstellungen → Datenschutz*, activado de fábrica mientras
 los servicios TRS estén activados) mantiene iguales en todos tus PC tus skins propias, tus presets propios y el aspecto
@@ -471,7 +487,8 @@ idioma sincronizados y los vuelve a escribir cuando los cambias en la introducci
 
 El estado en línea se guarda **solo en la memoria del servidor**, nunca se escribe en disco, no tiene historial y
 caduca **3 minutos** después de la última actualización. Solo lo ven tus amigos, y nadie si lo configuras en «nadie».
-Solo el hecho de que estés jugando en este momento puede aparecer además como tu insignia TRS (ver arriba).
+Solo el hecho de que estés jugando en este momento puede aparecer además como tu insignia TRS (ver arriba). Para los
+logros solo se guardan los totales descritos arriba (tiempo de juego, sesiones, racha de días).
 
 Las acciones de administración (como aprobar una capa, un bloqueo o la decisión sobre una denuncia del chat) se
 registran en un registro de auditoría junto con la UUID afectada.
@@ -508,6 +525,8 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   chats directos (para ambas partes) y tus mensajes, reacciones e imágenes en grupos (tus grupos pasan al miembro más
   antiguo), todas las imágenes que compartiste como enlace y todos los modpacks que compartiste. Después,
   los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
+- Los logros, sus contadores y tus totales de tiempo de juego se conservan mientras exista tu cuenta TRS y se borran con
+  «Alle TRS-Daten löschen» (los objetos recibidos como recompensa se van con tus demás capas y cosméticos).
 - Tras la eliminación solo se conservan las sanciones activas (por ejemplo un bloqueo o un silencio en el chat, con
   motivo y periodo) y las denuncias sobre ti (hasta que termine su plazo, ver arriba), para que no se puedan eludir
   volviendo a iniciar sesión.

@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { grantPendingRewards } from '../lib/achievements'
 import { rotateAttachmentKeys, sweepOrphanFiles, sweepPendingAttachments } from '../lib/attachments'
 import { sweepExpired } from '../lib/auth'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
@@ -99,6 +100,9 @@ export default defineNitroPlugin((nitroApp) => {
       if (r.invalid.length) console.warn(`[trs-api] invalid built-in circuits skipped: ${r.invalid.join(', ')}`)
       circuits = r.inserted + r.updated + r.skipped
     }
+    // Erfolge (§31): Belohnungen nachreichen, deren Teil es jetzt gibt (z. B. neu im Katalog).
+    const rewards = grantPendingRewards(ctx)
+    if (rewards > 0) console.info(`[trs-api] granted ${rewards} pending achievement rewards`)
     console.info(
       `[trs-api] ready – ${circuits} built-in circuits, ${capes.length} built-in capes, ${ctx.templates.list.length} templates, ${cosmetics} built-in cosmetics, data in ${config.dataDir}`,
     )
@@ -134,6 +138,8 @@ export default defineNitroPlugin((nitroApp) => {
       sweepExpiredPacks(ctx)
       // Issues (§28): lose Bilder, gelöschte Issues nach 90 Tagen, Tagesprotokoll.
       sweepIssues(ctx)
+      // Erfolge (§31): nachgereichte Belohnungen (billig: nur offene Freischaltungen mit vorhandenem Teil).
+      grantPendingRewards(ctx)
     }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.
