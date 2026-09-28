@@ -21,7 +21,17 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.14.0 – 2026-09-28 – Achievement Unlocked | Erfolg freigeschaltet
+<!-- banner: accent=#ffc53d motif=/news/0.14.0/banner.png -->
+<!-- shots:
+/news/0.14.0/achievements.png | Achievements with points, rarities and rewards | Erfolge mit Punkten, Seltenheit und Belohnungen
+/news/0.14.0/friends-achievements.png | See what your friends achieved | Sieh, was deine Freunde geschafft haben
+/news/0.14.0/screenshot-toast.png | After F2: edit, favourite, copy or send your screenshot | Nach F2: Screenshot bearbeiten, merken, kopieren oder senden
+/news/0.14.0/screenshot-editor.png | The screenshot editor: crop, arrows, text, pixelate, pen | Der Screenshot-Editor: zuschneiden, Pfeile, Text, verpixeln, Stift
+/news/0.14.0/notes.png | Notes for every world – with checklists and coordinates | Notizen für jede Welt – mit Checklisten und Koordinaten
+/news/0.14.0/notes-links.png | Click a coordinate: world map or waypoint | Koordinate anklicken: Weltkarte oder Wegpunkt
+/news/0.14.0/menus.png | Server screens in the TRS style | Server-Fenster im TRS-Stil
+-->
 
 ### English
 - Installing a modpack (CurseForge or Modrinth) no longer looks finished while it is still downloading: the new
