@@ -281,7 +281,7 @@ public final class AutoTest {
 				}
 				// -PtrsAutotestOnly=notes: Notizen je Welt (HUD, Liste, Lesen, Bearbeiten, Suche, Koordinaten, Wegpunkt, Karte)
 				if ("notes".equals(System.getProperty("trsclient.autotest.only"))) {
-					step = 35;
+					step = 36;
 					break;
 				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
@@ -642,7 +642,7 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
-			case 35:
+			case 36:
 				// Notizen je Welt: Screenshots trsclient-<mc>-notes-*.png
 				if (notesTest.step(mc, modules, new CapeTest.Actions() {
 					@Override
