@@ -123,6 +123,8 @@ public final class TrsClient implements ClientModInitializer {
 		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
 		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama.
 		dev.theredstonee.trsclient.comfort.ComfortHooks.init(modules);
+		// Screenshot-Werkzeuge: Vorschau nach F2, Chat-Aktionen, Bild-Editor, Essential-Vorschau ersetzen.
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.install(modules);
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FabricLoader.getInstance().getConfigDir());
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
@@ -301,6 +303,7 @@ public final class TrsClient implements ClientModInitializer {
 		chat.tick(mc);
 		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
 		if (dev.theredstonee.trsclient.comfort.ComfortHooks.tick(mc)) saveConfig();
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.tick();
 		hud.tick();
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);

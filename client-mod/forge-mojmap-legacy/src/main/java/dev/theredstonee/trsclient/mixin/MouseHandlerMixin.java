@@ -23,10 +23,14 @@ public abstract class MouseHandlerMixin {
 	@Shadow private double accumulatedDX;
 	@Shadow private double accumulatedDY;
 
-	@Inject(method = "onPress", at = @At("HEAD"), require = 1)
+	@Inject(method = "onPress", at = @At("HEAD"), cancellable = true, require = 1)
 	private void trsclient$countClick(long window, int button, int action, int mods, CallbackInfo ci) {
 		HookStats.press++;
 		if (action == GLFW.GLFW_PRESS && window == Mc.window().getWindow()) {
+			if (dev.theredstonee.trsclient.screenshot.ScreenshotHooks.onMousePress(button)) {
+				ci.cancel();
+				return;
+			}
 			TrsClient.get().onMouseClick(button);
 		}
 	}

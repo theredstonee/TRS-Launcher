@@ -8,6 +8,7 @@ import dev.theredstonee.trsclient.core.chat.ChatText;
 import dev.theredstonee.trsclient.core.clips.ScreenshotShare;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.screenshot.Screenshots;
 import dev.theredstonee.trsclient.core.ui.WaypointSaveUi;
 import dev.theredstonee.trsclient.screen.TrsUiScreen;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,12 @@ import java.util.Optional;
 public final class ChatLinks {
 	private static boolean uploading;
 
+	/** Hängt diese Version Aktionen an die Vanilla-Chatzeile „Bildschirmfoto gespeichert …“? */
+	//? if >=1.16 {
+	public static final boolean DECORATES = true;
+	//?} else
+	/*public static final boolean DECORATES = false;*/
+
 	private ChatLinks() {
 	}
 
@@ -58,9 +65,15 @@ public final class ChatLinks {
 			if (!coords && shot == null) return message;
 			MutableComponent out = coords ? withCoords(message) : message.copy();
 			if (shot != null) {
-				Style st = Style.EMPTY.applyFormat(ChatFormatting.GOLD).withUnderlined(true)
-						.withInsertion(ScreenshotShare.marker(shot)).withHoverEvent(hover(I18n.tr("chat.screenshot.shareHover")));
-				out.append(QolText.literal(" ")).append(QolText.literal(I18n.tr("chat.screenshot.share")).setStyle(st));
+				Screenshots svc = Screenshots.get();
+				if (svc != null && svc.onVanillaLine(shot)) {
+					// Screenshot-Werkzeuge: [Bearbeiten] [Link kopieren] [Bild kopieren]
+					for (Screenshots.Part p : svc.actionParts(shot)) out.append(part(p));
+				} else if (svc == null || !svc.enabled()) {
+					Style st = Style.EMPTY.applyFormat(ChatFormatting.GOLD).withUnderlined(true)
+							.withInsertion(ScreenshotShare.marker(shot)).withHoverEvent(hover(I18n.tr("chat.screenshot.shareHover")));
+					out.append(QolText.literal(" ")).append(QolText.literal(I18n.tr("chat.screenshot.share")).setStyle(st));
+				}
 			}
 			return out;
 		} catch (RuntimeException e) {
@@ -130,12 +143,42 @@ public final class ChatLinks {
 				share(shot);
 				return true;
 			}
+			Screenshots svc = Screenshots.get();
+			if (svc != null && svc.onMarker(ins)) return true;
 		} catch (RuntimeException e) {
 			TrsClient.LOGGER.error("Chat-Klick fehlgeschlagen", e);
 		}
 		return false;
 	}
 	//?}
+
+	//? if >=1.16 {
+	// Ein Teil der Screenshot-Chatzeile als Komponente (Aktion = gold, Dateiname unterstrichen).
+	private static MutableComponent part(Screenshots.Part p) {
+		Style st = Style.EMPTY;
+		if (p.kind == Screenshots.Part.Kind.ACTION) st = st.applyFormat(ChatFormatting.GOLD);
+		else if (p.kind == Screenshots.Part.Kind.NAME) st = st.withUnderlined(true);
+		if (p.insertion != null) st = st.withInsertion(p.insertion);
+		if (p.hover != null) st = st.withHoverEvent(hover(p.hover));
+		return QolText.literal(p.text).setStyle(st);
+	}
+	//?}
+
+	/**
+	 * Eigene Zeile „Bildschirmfoto gespeichert: &lt;name&gt; [Bearbeiten] …“ – wenn keine Vanilla-Zeile kam (z. B. weil
+	 * Essential sie verschluckt). Ab 1.16; davor false.
+	 */
+	public static boolean addScreenshotLine(String relativeName) {
+		//? if >=1.16 {
+		Screenshots svc = Screenshots.get();
+		if (svc == null) return false;
+		MutableComponent line = QolText.literal("");
+		for (Screenshots.Part p : svc.chatLine(relativeName)) line.append(part(p));
+		ChatLines.addMessage(line);
+		return true;
+		//?} else
+		/*return false;*/
+	}
 
 	// Klick-/Hover-Ereignisse: ab 1.21.5 eigene Datensätze je Art.
 	//? if >=1.21.5 {
@@ -160,7 +203,7 @@ public final class ChatLinks {
 		return Mc.mc().gameDirectory.toPath().toAbsolutePath();
 	}
 
-	private static void notice(String text) {
+	public static void notice(String text) {
 		// Direkt statt Mc.actionBar: dessen Parameter unterscheidet sich zwischen den Bäumen (Text/Komponente).
 		//? if >=26.2 {
 		/*Mc.mc().gui.hud.setOverlayMessage(QolText.plain(text), false);

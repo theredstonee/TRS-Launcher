@@ -124,6 +124,8 @@ public final class TrsClient {
 				client.modules.colors));
 		// Sozial (Chat, Toasts) braucht die TRS-Online-Funktionen – hier ausgeblendet.
 		UNSUPPORTED.add(client.modules.social);
+		// Screenshot-Werkzeuge ohne eigene Chatzeile; Essential gibt es für 1.13.2 nicht.
+		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.comfort.shotChatActions, client.modules.comfort.shotReplaceEssential));
 		// Schild-Position braucht einen Haken am Hand-Renderer (Mixin) – hier nicht umgesetzt.
 		UNSUPPORTED.add(client.modules.shieldPosition);
 		// Niedrige Eingabeverzögerung braucht die Leistungs-Hooks – hier nicht umgesetzt.
@@ -173,6 +175,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FMLPaths.CONFIGDIR.get());
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
+		// Screenshot-Werkzeuge: Vorschau nach F2, Bild-Editor, Favoriten, Bild kopieren.
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.install(modules);
 		// Netzwerk-Optimierung (schnellere Entschlüsselung, Kompression ohne Kopien) + Ping-Messung, siehe core.net.
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.net.NetHooks.get());

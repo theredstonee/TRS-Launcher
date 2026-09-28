@@ -33,6 +33,23 @@ How to write an entry:
 - Confirmations such as "Delete server?", the server resource pack question and link warnings follow the style of
   the menu they come from; the multiplayer warning, "Open to LAN", world editing, game rules, flat/buffet world
   settings, resource packs and credits are restyled as well.
+- **Screenshot preview (TRS Client).** After F2 a small preview of your screenshot slides in at the top right for a
+  few seconds. Open the chat or your inventory to use it: hover it and four buttons appear – **Edit**, **Favourite**
+  (the heart), **Copy picture** (straight to the clipboard, paste it anywhere with Ctrl+V) and **Send to friends**
+  (pick one or more friends or chats, the picture goes out as a normal chat image). While your mouse is on it, it
+  stays. Length and on/off are in the new module “Screenshot Tools”.
+- The chat message “Screenshot saved …” now has **[Edit] [Copy link] [Copy picture]**, and hovering it shows the
+  picture. “Copy link” uploads the screenshot as a share link (valid for 30 days) and copies it.
+- **Screenshot editor.** Crop with handles on the corners and edges, rotate by 90°, draw arrows, frames, text and
+  freehand lines, and **pixelate** areas to hide names or coordinates (great for streamers). Pick a colour and a size,
+  undo and redo (also with Z and Y). Saving always creates “Copy of …” next to the original – your original
+  screenshot is never changed. Share straight from the editor: send to friends, copy the picture or copy a link.
+- **Favourites** show up in their own tab in “Clips & Images”; the big image view there got a heart and an edit
+  button too.
+- **Works with Essential.** If Essential is installed, its screenshot popup is replaced by the TRS preview (setting
+  “Replace Essential's screenshot preview”, on by default – turning it off gives Essential its preview back).
+- Available in every TRS Client version. Minecraft 1.7.10 and 1.13.2 have the preview, editor, favourites and copy
+  picture (no links or sending there); copying pictures on Linux needs wl-clipboard or xclip.
 
 ### Deutsch
 - Ein Modpack (CurseForge oder Modrinth) sieht beim Installieren nicht mehr fertig aus, während es noch lädt: Die neue
@@ -47,6 +64,27 @@ How to write an entry:
 - Rückfragen wie „Server löschen?“, die Frage nach dem Server-Ressourcenpaket und Link-Warnungen folgen dem Stil des
   Menüs, aus dem sie kommen; Mehrspieler-Hinweis, „Im LAN öffnen“, Welt bearbeiten, Spielregeln,
   Flachland-/Buffet-Einstellungen, Ressourcenpakete und Mitwirkende sind ebenfalls gestylt.
+- **Screenshot-Vorschau (TRS Client).** Nach F2 fährt oben rechts für ein paar Sekunden eine kleine Vorschau deines
+  Screenshots herein. Öffne den Chat oder dein Inventar, um sie zu benutzen: Fährst du darüber, erscheinen vier Knöpfe –
+  **Bearbeiten**, **Favorit** (das Herz), **Bild kopieren** (direkt in die Zwischenablage, überall mit Strg+V
+  einfügen) und **An Freunde senden** (einen oder mehrere Freunde bzw. Chats auswählen, das Bild geht als normales
+  Chat-Bild raus). Solange die Maus darauf liegt, bleibt sie stehen. Dauer und An/Aus im neuen Modul
+  „Screenshot-Werkzeuge“.
+- Die Chatnachricht „Screenshot gespeichert …“ hat jetzt **[Bearbeiten] [Link kopieren] [Bild kopieren]**, und
+  beim Überfahren siehst du das Bild. „Link kopieren“ lädt den Screenshot als Teilen-Link hoch (30 Tage gültig) und
+  kopiert ihn.
+- **Screenshot-Editor.** Zuschneiden mit Griffen an Ecken und Kanten, um 90° drehen, Pfeile, Rahmen, Text und
+  Freihand-Linien zeichnen und Bereiche **verpixeln**, um Namen oder Koordinaten zu verbergen (ideal für Streamer).
+  Farbe und Größe wählen, Rückgängig und Wiederholen (auch mit Z und Y). Speichern legt immer „Kopie von …“ neben dem
+  Original an – dein Original-Screenshot wird nie verändert. Direkt aus dem Editor teilen: an Freunde senden, Bild
+  kopieren oder Link kopieren.
+- **Favoriten** haben in „Clips & Bilder“ einen eigenen Reiter; die große Bildansicht dort hat außerdem ein Herz und
+  einen Bearbeiten-Knopf.
+- **Klappt mit Essential.** Ist Essential installiert, ersetzt die TRS-Vorschau das Screenshot-Popup von Essential
+  (Einstellung „Essential-Screenshot-Vorschau ersetzen“, ab Werk an – ausgeschaltet bekommt Essential seine Vorschau
+  zurück).
+- In jeder TRS-Client-Version verfügbar. Minecraft 1.7.10 und 1.13.2 haben Vorschau, Editor, Favoriten und Bild
+  kopieren (dort ohne Links und Senden); Bilder kopieren unter Linux braucht wl-clipboard oder xclip.
 
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->

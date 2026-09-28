@@ -45,7 +45,7 @@ public final class ClipsUi extends WindowUi {
 	private static final long RESCAN_MS = 4_000L;
 
 	enum Filter {
-		ALL, CLIPS, SCREENSHOTS, SHARED
+		ALL, CLIPS, SCREENSHOTS, SHARED, FAVORITES
 	}
 
 	// „Als Link teilen“ / „Meine geteilten Bilder“ (API.md §23).
@@ -76,6 +76,8 @@ public final class ClipsUi extends WindowUi {
 	/** Clip in der Vorschau (Index in der gefilterten Liste) oder −1. */
 	private int clipView = -1;
 	private final ClipPreview clipPreview;
+	/** Favoriten (Herz in der Screenshot-Vorschau, im Editor und hier). */
+	private final dev.theredstonee.trsclient.core.screenshot.ScreenshotStore favorites;
 	/** Ergebnis von „Im Launcher öffnen“ (Netz-Thread → Render-Thread); "" = geklappt. */
 	private volatile String openResult;
 
@@ -92,6 +94,7 @@ public final class ClipsUi extends WindowUi {
 		this.thumbs = new Thumbnails(worker, 224, 126, 48);
 		this.large = new Thumbnails(worker, 1280, 720, 3);
 		this.clipPreview = new ClipPreview(ClipPreview.shared(), worker);
+		this.favorites = dev.theredstonee.trsclient.core.screenshot.ScreenshotStore.shared(host.configDir());
 		I18n.refresh();
 		library.refresh();
 		lastScan = System.currentTimeMillis();
@@ -170,6 +173,10 @@ public final class ClipsUi extends WindowUi {
 		if (filter == Filter.ALL) return all;
 		if (filter == Filter.SHARED) return new ArrayList<>();
 		List<ClipLibrary.Entry> out = new ArrayList<>();
+		if (filter == Filter.FAVORITES) {
+			for (ClipLibrary.Entry e : all) if (favorite(e)) out.add(e);
+			return out;
+		}
 		for (ClipLibrary.Entry e : all) {
 			if ((filter == Filter.CLIPS) == (e.type == ClipLibrary.Type.CLIP)) out.add(e);
 		}
@@ -229,6 +236,24 @@ public final class ClipsUi extends WindowUi {
 			});
 			// Neu: Clip-Vorschau im Spiel – Schild am Reiter „Clips“, bis die erste Vorschau offen war.
 			if (f == Filter.CLIPS && isNew(NewSince.CLIPS_PREVIEW)) NewBadge.draw(c, tx + tw - NewBadge.width(c) + 3, y - 6);
+			tx += tw + 3;
+			tabsRight = tx;
+		}
+		// Favoriten (Bildschirmfotos mit Herz)
+		{
+			String label = I18n.tr("clips.filter.favorites", favoriteCount(listing));
+			int tw = c.textWidth(label) + 12;
+			tab(c, tx, y, tw, 16, label, filter == Filter.FAVORITES, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					filter = Filter.FAVORITES;
+					scroll = 0;
+					preview = -1;
+					closeClip();
+					seen(NewSince.SCREENSHOTS_FAVORITES);
+				}
+			});
+			if (isNew(NewSince.SCREENSHOTS_FAVORITES)) NewBadge.draw(c, tx + tw - NewBadge.width(c) + 3, y - 6);
 			tx += tw + 3;
 			tabsRight = tx;
 		}
@@ -358,7 +383,8 @@ public final class ClipsUi extends WindowUi {
 		} else if (list.isEmpty()) {
 			String empty = !listing.scanned ? I18n.tr("clips.loading")
 					: filter == Filter.CLIPS ? (listing.clipsDir == null ? I18n.tr("clips.empty.noFolder") : I18n.tr("clips.empty.clips"))
-					: filter == Filter.SCREENSHOTS ? I18n.tr("clips.empty.screenshots") : I18n.tr("clips.empty.all");
+					: filter == Filter.SCREENSHOTS ? I18n.tr("clips.empty.screenshots")
+					: filter == Filter.FAVORITES ? I18n.tr("clips.empty.favorites") : I18n.tr("clips.empty.all");
 			List<String> lines = Paint.wrap(c, empty, gw - 20);
 			int ty = cy + Math.max(10, gh / 2 - lines.size() * 6);
 			for (String l : lines) {
@@ -447,6 +473,7 @@ public final class ClipsUi extends WindowUi {
 				}
 				c.fill(ix + 2, iy + 2, ix + 8, iy + 8, t.dustOn);
 			}
+			if (favorite(e)) Icons.draw(c, "heart", ix + iw - 11, iy + 3, 1, t.dustOn);
 			Paint.textClipped(c, stem(e.name), tx + 4, ty + thumbH + 3, tileW - 8, t.text, false);
 			Paint.textClipped(c, meta(e), tx + 4, ty + thumbH + 13, tileW - 8, t.textDim, false);
 			if (hover) {
@@ -462,6 +489,12 @@ public final class ClipsUi extends WindowUi {
 						@Override
 						public void run() {
 							share(e);
+						}
+					});
+					iconButton(c, bx - 34, ty + 5, 14, favorite(e) ? "heart" : "heartOutline", favorite(e), mx, my, new Runnable() {
+						@Override
+						public void run() {
+							toggleFavorite(e);
 						}
 					});
 				}
@@ -553,6 +586,26 @@ public final class ClipsUi extends WindowUi {
 				if (!OpenPath.open(e.path)) setNotice(I18n.tr("clips.openFailed"), true);
 			}
 		});
+		// Favorit + Bearbeiten (Bild-Editor)
+		open -= 17;
+		iconButton(c, open, by + 4, 14, favorite(e) ? "heart" : "heartOutline", favorite(e), mx, my, new Runnable() {
+			@Override
+			public void run() {
+				toggleFavorite(e);
+			}
+		});
+		final dev.theredstonee.trsclient.core.screenshot.Screenshots shots = dev.theredstonee.trsclient.core.screenshot.Screenshots.get();
+		if (shots != null) {
+			open -= 17;
+			iconButton(c, open, by + 4, 14, "pencil", false, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					seen(NewSince.SCREENSHOTS_EDITOR);
+					shots.edit(e.path);
+				}
+			});
+			if (isNew(NewSince.SCREENSHOTS_EDITOR)) NewBadge.dot(c, open + 12, by + 2);
+		}
 		// Als Link teilen (mit Beschriftung, damit man es findet)
 		String shareLabel = I18n.tr(sharing ? "clips.share.uploading" : "clips.share.button");
 		int sw = Math.min(130, c.textWidth(shareLabel) + 22);
@@ -973,6 +1026,29 @@ public final class ClipsUi extends WindowUi {
 		return notice;
 	}
 
+	private boolean favorite(ClipLibrary.Entry e) {
+		return e.type == ClipLibrary.Type.SCREENSHOT && favorites.isFavorite(e.name);
+	}
+
+	private int favoriteCount(ClipLibrary.Listing listing) {
+		int n = 0;
+		for (ClipLibrary.Entry e : listing.entries) if (favorite(e)) n++;
+		return n;
+	}
+
+	private void toggleFavorite(ClipLibrary.Entry e) {
+		if (e.type != ClipLibrary.Type.SCREENSHOT) return;
+		boolean now = favorites.toggleFavorite(e.name);
+		setNotice(I18n.tr(now ? "screenshots.favorite.added" : "screenshots.favorite.removed"), false);
+	}
+
+	/** Für den Selbsttest: Reiter „Favoriten“ zeigen. */
+	public void testShowFavorites() {
+		filter = Filter.FAVORITES;
+		scroll = 0;
+		preview = -1;
+	}
+
 	/** Bereich neu seit dem letzten Update und noch nie benutzt? */
 	private static boolean isNew(String newId) {
 		TrsModules m = IntroGate.modules();
@@ -1081,6 +1157,7 @@ public final class ClipsUi extends WindowUi {
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
 		if (preview >= 0 || clipView >= 0 || confirmDelete != null || confirmShare != null) return true;
 		if (!inside(mouseX, mouseY, gridRect[0], gridRect[1], gridRect[2], gridRect[3])) return false;
+		if (filter == Filter.FAVORITES && filtered().isEmpty()) return true;
 		scroll = Math.max(0, Math.min(maxScroll, scroll - (int) Math.round(amount * 30)));
 		return true;
 	}

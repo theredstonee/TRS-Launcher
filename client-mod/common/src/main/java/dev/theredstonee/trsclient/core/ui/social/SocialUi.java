@@ -68,11 +68,19 @@ public final class SocialUi extends WindowUi implements SocialContext {
 		// Vorgemerkte Wegpunkt-Karte (Weltkarte/Wegpunkt-Liste → „Teilen“): Ziel auswählen.
 		Chat.Waypoint share = dev.theredstonee.trsclient.core.waypoint.WaypointShare.takePending();
 		if (share != null && social() != null) dialog = new ShareTargetDialog(this, social(), share);
+		// Vorgemerktes Bildschirmfoto (Vorschau/Editor → „An Freunde senden“): Ziele auswählen.
+		java.nio.file.Path shot = dev.theredstonee.trsclient.core.clips.ScreenshotShare.takePendingImages();
+		if (shot != null && social() != null) dialog = new ShareTargetDialog(this, social(), shot);
 	}
 
 	/** Für Selbsttests: Zielauswahl für eine Karte öffnen. */
 	public void testShareTarget(Chat.Waypoint card) {
 		if (social() != null) dialog(new ShareTargetDialog(this, social(), card));
+	}
+
+	/** Für Selbsttests: Zielauswahl für ein Bild öffnen. */
+	public void testSendImage(java.nio.file.Path image) {
+		if (social() != null) dialog(new ShareTargetDialog(this, social(), image));
 	}
 
 	/** Für Selbsttests: Karte in die Eingabe der offenen Unterhaltung legen und senden. */

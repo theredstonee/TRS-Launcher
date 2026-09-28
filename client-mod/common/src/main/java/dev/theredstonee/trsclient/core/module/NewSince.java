@@ -104,6 +104,16 @@ public final class NewSince {
 	/** Leisten-Eintrag „Bug melden“. */
 	public static final String MENU_BUG_REPORT = "menu:bugReport";
 
+	/**
+	 * Screenshot-Werkzeuge (TRS Client 0.14.0): Vorschau nach F2 mit Bearbeiten/Favorit/Bild kopieren/An Freunde
+	 * senden, Chatzeile mit Aktionen und Bild beim Überfahren, Bild-Editor, ersetzt Essentials Vorschau.
+	 */
+	public static final String SCREENSHOTS = "0.14.0";
+	/** Clips &amp; Bilder: Reiter „Favoriten“. */
+	public static final String SCREENSHOTS_FAVORITES = "clips:favorites";
+	/** Clips &amp; Bilder: „Bearbeiten“ in der großen Bildansicht (Bild-Editor). */
+	public static final String SCREENSHOTS_EDITOR = "clips:editor";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -163,6 +173,8 @@ public final class NewSince {
 				"worldMap.netherCoords", "worldMap.exportSize");
 		// Bug melden (Issue-Tracker der Website).
 		add(BUG_REPORT, MENU_BUG_REPORT);
+		// Screenshot-Werkzeuge (Vorschau, Editor, Favoriten, Essential ersetzen).
+		add(SCREENSHOTS, "screenshots", SCREENSHOTS_FAVORITES, SCREENSHOTS_EDITOR);
 	}
 
 	private NewSince() {

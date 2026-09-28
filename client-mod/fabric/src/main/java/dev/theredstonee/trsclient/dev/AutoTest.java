@@ -264,6 +264,11 @@ public final class AutoTest {
 					step = 32;
 					break;
 				}
+				// -PtrsAutotestOnly=screenshots: Screenshot-Werkzeuge (Vorschau, Chat, Editor, Favoriten)
+				if ("screenshots".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 35;
+					break;
+				}
 				// -PtrsAutotestOnly=keysearch: Suche in der Tastenbelegung
 				if ("keysearch".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 33;
@@ -601,6 +606,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 35:
+				// Screenshot-Werkzeuge: Screenshots trsclient-<mc>-screenshots-*.png
+				if (screenshotTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 34:
 				if (disconnectTest.step(mc, new CapeTest.Actions() {
 					@Override
@@ -653,6 +674,7 @@ public final class AutoTest {
 	private final QolTest qolTest = new QolTest();
 	private final ComfortTest comfortTest = new ComfortTest();
 	private final CircuitTest circuitTest = new CircuitTest();
+	private final ScreenshotTest screenshotTest = new ScreenshotTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {
@@ -862,7 +884,7 @@ public final class AutoTest {
 	}
 
 	/** Linksklick an einer GUI-Position – wie ein echter Klick des Fensters. */
-	private static void click(Minecraft mc, double guiX, double guiY) {
+	static void click(Minecraft mc, double guiX, double guiY) {
 		com.mojang.blaze3d.platform.Window w = Mc.window();
 		dev.theredstonee.trsclient.mixin.MouseHandlerAccessor mouse = (dev.theredstonee.trsclient.mixin.MouseHandlerAccessor) mc.mouseHandler;
 		mouse.trsclient$setXpos(guiX * w.getScreenWidth() / (double) w.getGuiScaledWidth());
@@ -880,8 +902,16 @@ public final class AutoTest {
 		mouse.trsclient$setYpos(0);
 	}
 
+	/** Mauszeiger an eine GUI-Position setzen (ohne Klick) – für Hover-Bilder. */
+	static void moveMouse(Minecraft mc, double guiX, double guiY) {
+		com.mojang.blaze3d.platform.Window w = Mc.window();
+		dev.theredstonee.trsclient.mixin.MouseHandlerAccessor mouse = (dev.theredstonee.trsclient.mixin.MouseHandlerAccessor) mc.mouseHandler;
+		mouse.trsclient$setXpos(guiX * w.getScreenWidth() / (double) w.getGuiScaledWidth());
+		mouse.trsclient$setYpos(guiY * w.getScreenHeight() / (double) w.getGuiScaledHeight());
+	}
+
 	/** Taste drücken und loslassen – wie ein echter Tastendruck des Fensters. */
-	private static void key(Minecraft mc, int code) {
+	static void key(Minecraft mc, int code) {
 		dev.theredstonee.trsclient.mixin.KeyboardHandlerAccessor keyboard = (dev.theredstonee.trsclient.mixin.KeyboardHandlerAccessor) mc.keyboardHandler;
 		//? if >=1.21.9 {
 		/*keyboard.trsclient$keyPress(windowHandle(), dev.theredstonee.trsclient.compat.Keys.PRESS, new net.minecraft.client.input.KeyEvent(code, 0, 0));

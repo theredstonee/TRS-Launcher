@@ -3,6 +3,7 @@ package dev.theredstonee.trsclient.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.theredstonee.trsclient.TrsClient;
+import dev.theredstonee.trsclient.compat.Keys;
 import dev.theredstonee.trsclient.core.camera.FreelookState;
 import dev.theredstonee.trsclient.dev.HookStats;
 import net.minecraft.client.Minecraft;
@@ -27,18 +28,26 @@ public abstract class MouseHandlerMixin {
 
 	// Maustaste: onPress(window, button, action, mods) bis 1.21.8, onButton(window, info, action) ab 1.21.9.
 	//? if >=1.21.9 {
-	/*@Inject(method = "onButton", at = @At("HEAD"), require = 1)
+	/*@Inject(method = "onButton", at = @At("HEAD"), cancellable = true, require = 1)
 	private void trsclient$countClick(long window, MouseButtonInfo info, int action, CallbackInfo ci) {
 		HookStats.press++;
 		if (action == InputConstants.PRESS && window == trsclient$window()) {
+			if (dev.theredstonee.trsclient.screenshot.ScreenshotHooks.onMousePress(Keys.uiButton(info.button()))) {
+				ci.cancel();
+				return;
+			}
 			TrsClient.get().onMouseClick(info.button());
 		}
 	}
 	*///?} else {
-	@Inject(method = "onPress", at = @At("HEAD"), require = 1)
+	@Inject(method = "onPress", at = @At("HEAD"), cancellable = true, require = 1)
 	private void trsclient$countClick(long window, int button, int action, int mods, CallbackInfo ci) {
 		HookStats.press++;
 		if (action == InputConstants.PRESS && window == trsclient$window()) {
+			if (dev.theredstonee.trsclient.screenshot.ScreenshotHooks.onMousePress(Keys.uiButton(button))) {
+				ci.cancel();
+				return;
+			}
 			TrsClient.get().onMouseClick(button);
 		}
 	}

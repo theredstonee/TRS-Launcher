@@ -113,6 +113,22 @@ public final class ScreenshotShare {
 		return true;
 	}
 
+	// --- „An Freunde senden“: Bild vormerken, der Sozial-Bildschirm zeigt die Zielauswahl ---
+
+	private static volatile Path pendingImage;
+
+	/** Bild für die Zielauswahl im Sozial-Bildschirm vormerken. */
+	public static void requestSend(Path file) {
+		pendingImage = file;
+	}
+
+	/** Vorgemerktes Bild abholen (Sozial-Bildschirm) – danach leer. */
+	public static Path takePendingImages() {
+		Path p = pendingImage;
+		pendingImage = null;
+		return p;
+	}
+
 	/** „Link kopiert – gültig bis …“ bzw. „Link: …“, wenn die Zwischenablage nicht ging. */
 	public static String copiedText(SharedImage s, boolean copied) {
 		String until = date(s.expiresAt > 0 ? s.expiresAt : System.currentTimeMillis() + SharedImage.LIFETIME_MS);

@@ -26,6 +26,13 @@ public final class ComfortModules {
 	// --- Panorama ---
 	public final Module panorama;
 
+	// --- Bildschirmfotos (Vorschau, Editor, Teilen) ---
+	public final Module screenshots;
+	public final BoolSetting shotToast;
+	public final NumberSetting shotSeconds;
+	public final BoolSetting shotChatActions;
+	public final BoolSetting shotReplaceEssential;
+
 	// --- Suche in der Tastenbelegung ---
 	public final Module keySearch;
 	public final ChoiceSetting<PanoramaFormat> panoramaFormat;
@@ -119,6 +126,17 @@ public final class ComfortModules {
 		panoramaFormat = panorama.add(new ChoiceSetting<PanoramaFormat>("format", "Save as", PanoramaFormat.class,
 				PanoramaFormat.BOTH));
 
+		screenshots = registry.register(new Module("screenshots", "Screenshot Tools",
+				"After F2 a small preview appears in the top right: edit, favourite, copy the picture or send it to "
+						+ "friends (open the chat or inventory to click it). The chat message gets the same actions and "
+						+ "shows the picture on hover. The editor crops, rotates, draws arrows, frames, text and pixelates "
+						+ "areas – it saves a copy, the original stays untouched.", true));
+		shotToast = screenshots.add(new BoolSetting("toast", "Preview after a screenshot", true));
+		shotSeconds = screenshots.add(new NumberSetting("seconds", "Preview duration", 5, 3, 15, 1, "", " s"));
+		shotChatActions = screenshots.add(new BoolSetting("chatActions", "Actions in the chat message", true));
+		shotReplaceEssential = screenshots.add(new BoolSetting("replaceEssential", "Replace Essential's screenshot preview",
+				true));
+
 		keySearch = registry.register(new Module("keySearch", "Key Binding Search",
 				"Adds a search box to Minecraft's Controls → Key Binds: search by name, by key (key:R, key:2), mouse buttons "
 						+ "(mouse, key:mouse4), mod (mod:sodium), double-bound keys (conflict) or free actions (unbound). The "
@@ -129,5 +147,6 @@ public final class ComfortModules {
 		dev.theredstonee.trsclient.core.keys.KeySearch.bind(keySearch);
 		serverProfiles.icon("globe").category(Category.MISC);
 		panorama.icon("image").category(Category.WORLD);
+		screenshots.icon("image").category(Category.MISC);
 	}
 }
