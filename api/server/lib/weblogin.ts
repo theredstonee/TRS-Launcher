@@ -3,6 +3,7 @@ import type { AppContext } from './context'
 import { one, run, tx } from './db'
 import { forbidden, unauthorized } from './errors'
 import { safeEqual, sha256Hex } from './ids'
+import { sweepLauncherLogins } from './launcherlogin'
 import { getUser, isBanned } from './users'
 
 // Website-Sitzungen (§24.1): nach der Anmeldung mit Microsoft bekommt der Browser ein httpOnly-Cookie
@@ -83,4 +84,5 @@ export function endWebSession(ctx: AppContext, tokenHash: string): void {
 export function sweepWebLogins(ctx: AppContext): void {
   run(ctx.db, 'DELETE FROM web_sessions WHERE expires_at <= ?', ctx.now())
   ctx.oauth.sweep()
+  sweepLauncherLogins(ctx)
 }

@@ -117,7 +117,7 @@ const limitReached = computed(() => !!limits.value && limits.value.today >= limi
     <div v-if="!loaded" class="skeleton mt-8 h-40 rounded-xl" />
     <div v-else-if="!account" class="card mt-8 p-6">
       <p class="text-base-300">{{ c.submit.signIn }}</p>
-      <a :href="loginUrl()" class="btn btn-primary mt-4"><MsLogo class="size-4" />{{ c.common.signIn }}</a>
+      <a :href="loginUrl()" class="btn btn-primary mt-4"><SiteIcon name="user" class="size-4" />{{ c.common.signIn }}</a>
     </div>
 
     <div v-else-if="done" class="card mt-8 p-6">

@@ -8,7 +8,7 @@ const { m } = useLang()
 const lp = useLocalePath()
 const siteUrl = useSiteUrl()
 
-const { data } = await useFetch<{ team: PublicTeam, jobs: JobView[] }>('/v1/site/team', {
+const { data } = await useApiFetch<{ team: PublicTeam, jobs: JobView[] }>('/v1/site/team', {
   key: 'site-team',
   default: () => ({ team: { groups: [] }, jobs: [] }),
 })

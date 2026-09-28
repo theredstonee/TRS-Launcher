@@ -38,7 +38,7 @@ onMounted(async () => {
     <div v-if="!loaded || loading" class="mt-8 space-y-3"><div v-for="i in 2" :key="i" class="skeleton h-24 rounded-xl" /></div>
     <div v-else-if="!account" class="card mt-8 p-6">
       <p class="text-base-300">{{ c.submit.signIn }}</p>
-      <a :href="loginUrl()" class="btn btn-primary mt-4"><MsLogo class="size-4" />{{ c.common.signIn }}</a>
+      <a :href="loginUrl()" class="btn btn-primary mt-4"><SiteIcon name="user" class="size-4" />{{ c.common.signIn }}</a>
     </div>
     <template v-else>
       <p v-if="error" role="alert" class="mt-6 text-sm text-redstone-300">{{ error }}</p>

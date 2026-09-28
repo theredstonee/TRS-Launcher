@@ -723,6 +723,15 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 17,
     run: migrateIssues,
   },
+  {
+    // Anmeldung auf der Website per TRS Launcher (§29): kurzlebige Anfragen (Link-Token + Bestätigungscode, an den
+    // Browser gebunden). Blog (§30): eigene News-Beiträge mit Texten je Sprache, Titelbild und hochgeladenen Bildern;
+    // neue Rechte `blog.write` (Owner, Admin, Content) und `blog.publish` (Owner, Admin) – angepasste Rechte bleiben,
+    // es wird nur ergänzt. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen; der Issue-Tracker nimmt 17).
+    version: 18,
+    run: migrateLauncherLoginBlog,
+  },
 ]
 
 function hasTable(db: DatabaseSync, name: string): boolean {
@@ -1543,4 +1552,67 @@ CREATE INDEX chat_reports_issue_comment ON chat_reports(issue_comment_id);
 CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
 `)
   }
+}
+
+/** Migration 18 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateLauncherLoginBlog(db: DatabaseSync): void {
+  db.exec(`
+-- Anmelde-Anfragen der Website an den TRS Launcher (§29). Gespeichert werden nur Hashes von Link-Token und
+-- Browser-Wert; die Zeile verschwindet nach dem Einlösen bzw. kurz nach dem Ablauf.
+CREATE TABLE IF NOT EXISTS launcher_logins (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  token_hash TEXT NOT NULL UNIQUE,
+  code TEXT NOT NULL UNIQUE CHECK (length(code) = 6),
+  browser_hash TEXT NOT NULL,
+  -- grobe Angabe wie „Firefox · Windows“ (nie der ganze User-Agent)
+  browser TEXT,
+  return_to TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'denied')),
+  uuid TEXT REFERENCES users(uuid) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  CHECK ((status = 'approved') = (uuid IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS launcher_logins_expires ON launcher_logins(expires_at);
+CREATE INDEX IF NOT EXISTS launcher_logins_browser ON launcher_logins(browser_hash);
+
+-- Blog-Beiträge (News). texts = {"en": {"title", "summary", "body"}, "de": {…}, "es": {…}} (Englisch Pflicht zum
+-- Veröffentlichen). status 'published' mit publish_at in der Zukunft = geplant.
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  slug TEXT NOT NULL UNIQUE CHECK (length(slug) BETWEEN 3 AND 80),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  publish_at INTEGER,
+  texts TEXT NOT NULL DEFAULT '{}',
+  cover_id TEXT,
+  author_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  rev INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT NOT NULL,
+  CHECK (status = 'draft' OR publish_at IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS blog_posts_public ON blog_posts(status, publish_at);
+
+-- Bilder der Beiträge (neu kodiert, öffentlich, sobald der Beitrag öffentlich ist).
+CREATE TABLE IF NOT EXISTS blog_media (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  post_id TEXT NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+  mime TEXT NOT NULL CHECK (mime IN ('image/png', 'image/jpeg')),
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  bytes INTEGER NOT NULL,
+  thumb_mime TEXT NOT NULL CHECK (thumb_mime IN ('image/png', 'image/jpeg')),
+  thumb_width INTEGER NOT NULL,
+  thumb_height INTEGER NOT NULL,
+  thumb_bytes INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  uploaded_by TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS blog_media_post ON blog_media(post_id, created_at);
+`)
+  grantBuiltin(db, { owner: ['blog.write', 'blog.publish'], admin: ['blog.write', 'blog.publish'], content: ['blog.write'] })
 }

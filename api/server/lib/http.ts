@@ -20,6 +20,26 @@ export function clientIp(event: H3Event): string {
   return event.node.req.socket.remoteAddress ?? 'unknown'
 }
 
+/**
+ * Nur Aufrufe von der eigenen Website (für ändernde Website-Routen ohne Sitzung, z. B. eine Anmeldung starten):
+ * `Sec-Fetch-Site` muss `same-origin` sein bzw. `Origin` zur Website (oder CORS_ORIGINS) passen. Ohne beide Header
+ * (kein Browser) geht es durch – das Cookie bindet die Anfrage ohnehin an den Browser.
+ */
+export function assertSameOrigin(event: H3Event): void {
+  const ctx = useCtx()
+  const fetchSite = getHeader(event, 'sec-fetch-site')
+  if (fetchSite !== undefined && fetchSite !== 'same-origin') throw forbidden('cross_site', 'Cross-site request refused')
+  const origin = getHeader(event, 'origin')
+  if (origin === undefined || fetchSite === 'same-origin') return
+  let site: string
+  try {
+    site = new URL(ctx.config.siteUrl).origin
+  } catch {
+    site = ''
+  }
+  if (origin !== site && !ctx.config.corsOrigins.has(origin)) throw forbidden('cross_site', 'Cross-site request refused')
+}
+
 export function limit(key: string, rule: Rule): void {
   const r = useCtx().limiter.take(key, rule)
   if (!r.ok) throw tooMany(r.retryAfter)

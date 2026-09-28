@@ -24,7 +24,7 @@ const { m, fill, date } = useLang()
 const lp = useLocalePath()
 
 const { data } = valid
-  ? await useFetch<{ share: PublicShare }>(() => `/v1/shares/${id.value}`, { key: `share-${id.value}` })
+  ? await useApiFetch<{ share: PublicShare }>(() => `/v1/shares/${id.value}`, { key: `share-${id.value}` })
   : { data: ref<{ share: PublicShare } | null>(null) }
 const share = computed(() => data.value?.share ?? null)
 
@@ -53,7 +53,7 @@ async function sendReport() {
   if (!share.value || state.value === 'sending') return
   state.value = 'sending'
   try {
-    await $fetch(`/v1/shares/${share.value.id}/report`, { method: 'POST', body: { reason: reason.value } })
+    await apiFetch(`/v1/shares/${share.value.id}/report`, { method: 'POST', body: { reason: reason.value } })
     state.value = 'done'
     reporting.value = false
   } catch {

@@ -3019,3 +3019,137 @@ the author. Team action `delete_issue` deletes the reported comment or issue (ne
   logs and all images uploaded by the account are deleted.
 - Deleted issues are removed completely 90 days after deletion.
 - Migration 17 is idempotent and only adds permissions to the default roles.
+
+## 29. Website sign-in with the TRS Launcher
+
+A second way to sign in on the website (next to Microsoft, §24.1): the website shows a short code, the launcher confirms it
+with its TRS account. The result is exactly the same website session as after the Microsoft sign-in (cookie `trs_session`,
+httpOnly, Secure, SameSite=Strict, 8 h, session rotation, team rights read per request). **Nothing is confirmed
+automatically** – the launcher only answers after a click.
+
+```
+Browser                         Server                              Launcher (Bearer token of the chosen account)
+POST /v1/web/launcher-login ──▶ request (2 min): link token, code,
+◀── token, code, link           cookie trs_llogin (browser value)
+opens trs-launcher://web-login/<token>  ─────────────────────────▶  POST /v1/launcher-login/lookup {token} (or {code})
+POST …/poll every 2 s  ──────▶  pending                        ◀──  shows site, code, browser, time, account
+                                                               ◀──  POST /v1/launcher-login/approve {id, code}  (click)
+POST …/poll  ────────────────▶  approved → trs_session (once)
+```
+
+### 29.1 Start (website, no session)
+
+`POST /v1/web/launcher-login` `{ "return"?: "/admin" }` → `201`
+
+```json
+{ "token": "<43 chars>", "code": "K7Q-2MX", "link": "trs-launcher://web-login/<token>", "expiresAt": "…", "expiresIn": 120, "pollMs": 2000 }
+```
+
+- Sets cookie `trs_llogin` (random browser value; httpOnly, Secure, SameSite=Strict, path `/v1/web/launcher-login`). Only
+  this browser can redeem the request. A new start in the same browser replaces its older request.
+- `token`: 32 random bytes (base64url) – only for the link and the polling. `code`: 6 characters from
+  `23456789ABCDEFGHJKMNPQRSTVWXYZ` (no 0/O, 1/I/L, U), shown as `XXX-XXX`, unique among open requests.
+- Same origin only (`Sec-Fetch-Site: same-origin` or a matching `Origin`, else `403 cross_site`). `return` like §24.1
+  (own relative paths only, otherwise `/applications`).
+- Limits: 10 per 10 min and IP (`429`), at most 2,000 open requests in total (`503 busy`).
+
+### 29.2 Poll / cancel (website)
+
+`POST /v1/web/launcher-login/poll` `{ "token" }` (with the cookie) →
+
+- `{ "status": "pending", "expiresAt" }`
+- `{ "status": "approved", "returnTo": "/admin" }` – exactly once: sets `trs_session` (a previous session cookie of this
+  browser is ended = rotation), deletes `trs_llogin` and the request. Team members get an audit entry `web.login` with
+  detail `launcher`.
+- `{ "status": "denied", "reason": "denied" | "banned" }` – declined in the launcher, or the account was banned before
+  redeeming.
+- `{ "status": "expired" }` – unknown, expired, already used, or wrong/missing cookie (no hint which).
+
+120 polls per minute and IP. `POST /v1/web/launcher-login/cancel` `{ "token" }` → `204` (the “back” button; always 204).
+
+### 29.3 Launcher routes (Bearer token, full scope)
+
+- `POST /v1/launcher-login/lookup` `{ "token" }` **or** `{ "code": "k7q 2mx" }` (any spelling) →
+  `{ "request": { "id", "code": "K7Q-2MX", "site": "trs-launcher.theredstonee.de", "browser": "Firefox · Windows" | null, "createdAt", "expiresAt" } }`.
+  Errors: `404 login_request_expired`, `409 login_request_used`, `400 invalid_code` (malformed code). Wrong codes count
+  strictly: 5 per 10 min and account, 20 per 10 min and IP (`429` with `Retry-After`), plus 30 lookups per 10 min and account.
+- `POST /v1/launcher-login/approve` `{ "id", "code" }` → `204`. The code must be the one shown for this request. Once only
+  (`409 login_request_used`), only while open (`404 login_request_expired`). Banned accounts cannot approve (`403 banned` /
+  `401`). After approval the browser has at least 30 s to redeem.
+- `POST /v1/launcher-login/deny` `{ "id", "code" }` → `204`.
+
+Limit for approve/deny: 20 per 10 min and account.
+
+`GET /v1/web/login` now also returns `launcher: true`. The old code sign-in (`/v1/web-login/*`, §15) stays `410`.
+
+### 29.4 Data
+
+Table `launcher_logins` (migration 18): id, SHA-256 of the link token and of the browser value, the code, a coarse browser
+label from a fixed list (“Chrome · Windows” – never the full User-Agent), return path, status, the approving UUID, times.
+No IP address. Rows disappear on redeeming/denial and with the regular sweep after expiry.
+
+## 30. Blog: news posts
+
+The team writes news posts; the automatic update posts from `CHANGELOG.md` (`/v1/site/blog` → `posts`, §site) stay
+unchanged. The website shows both in one list by date (filter “All / Updates / News”); news also appear in the launcher's
+news feed.
+
+### 30.1 Public
+
+- `GET /v1/site/blog` → `{ "posts": [update posts, unchanged], "news": [NewsSummary] }` (newest first).
+- `GET /v1/site/news?limit=10` (1–20) → `{ "posts": [NewsPost] }` – for the launcher (with Markdown).
+- `GET /v1/site/news/{slug}` → `{ "post": NewsPost }` or `404 post_not_found`.
+- `GET /v1/site/blog/media/{id}.{jpg|png}` (preview `{id}.t.{ext}`) – images; public (`Cache-Control: public, max-age=604800,
+  immutable`) as soon as their post is public, before that only for team members with a blog permission (website
+  session, `private, no-store`), otherwise `404`. 600 per minute and IP.
+
+```ts
+NewsSummary = {
+  kind: 'news', slug: string, publishedAt: ISO, updatedAt: ISO,
+  langs: ('en' | 'de' | 'es')[],            // translated languages, English always first
+  title: { en: string, de?: string, es?: string },
+  summary: { en: string, … },               // short text; empty → start of the text
+  cover: { url, thumbUrl, width, height } | null,   // relative to the website
+  author: { uuid, name, skin: string | null } | null // null = “TRS Team”
+}
+NewsPost = NewsSummary & { markdown: { en: string, de?: string, es?: string } }
+```
+
+A post is public when it is published and its time has come (`publish_at <= now`) – scheduled posts appear without any
+background job. Missing languages fall back to English (the page shows a hint); only translated languages get their own
+`?lang=` address, hreflang and sitemap entry. Markdown is rendered without raw HTML, links only http(s)/own paths,
+images only `/v1/site/blog/media/…` (`app/utils/markdown.ts`, `blogImages: true`).
+
+Slugs: `[a-z0-9]+(-[a-z0-9]+)*`, 3–80 characters, at least one letter – so `/blog/<slug>` never collides with
+`/blog/<version>` of the update posts. Sitemap, RSS feed (`/feed.xml`) and JSON-LD (`BlogPosting` with author) include news.
+
+### 30.2 Team (`requireStaff`, website session + CSRF or Bearer)
+
+Permissions: `blog.write` (drafts, images) and `blog.publish` (publish, schedule, unpublish, change or delete published
+and scheduled posts). Defaults: Owner and Admin both, Content `blog.write` (migration 18 only adds them to the default
+roles – changes made by admins stay).
+
+| Route | Permission | |
+| --- | --- | --- |
+| `GET /v1/admin/blog` | write or publish | all posts (`AdminBlogListItem`), drafts first |
+| `GET /v1/admin/blog/authors` | write or publish | team members to choose as author |
+| `POST /v1/admin/blog` | write | `{ slug?, texts?, author? }` → new draft (slug from the English title) |
+| `GET /v1/admin/blog/{id}` | write or publish | `AdminBlogPost` incl. `rev`, `media` |
+| `PATCH /v1/admin/blog/{id}` | write (+publish if not a draft) | `{ rev, slug?, texts?, coverId?, author? }` |
+| `POST /v1/admin/blog/{id}/publish` | publish | `{ rev, at? }` – `at` missing/past = now, future = scheduled (≤ 1 year) |
+| `POST /v1/admin/blog/{id}/unpublish` | publish | `{ rev }` → draft again |
+| `DELETE /v1/admin/blog/{id}` | write (+publish if not a draft) | post and all its images |
+| `POST /v1/admin/blog/{id}/media` | write (+publish if not a draft) | raw PNG/JPEG/WebP ≤ 8 MiB → `201 { media }` |
+| `DELETE /v1/admin/blog/{id}/media/{mediaId}` | write (+publish if not a draft) | removes the cover too if it was one |
+
+`texts` = `{ en?, de?, es? }` with `{ title ≤ 120, summary ≤ 300, body ≤ 40,000 }` each; a completely empty language is
+removed. Publishing needs an English title and text; other languages must be complete or empty
+(`400 english_required`, `400 translation_incomplete` with `lang`). `rev` protects against overwriting (`409 stale`).
+Other errors: `409 slug_taken`, `400 invalid_author` (not a team member), `400 invalid_cover` (image of another post),
+`409 media_limit` (40 per post), `507 storage_full` (2 GiB), `503 busy` (image processing).
+Images are always re-encoded (no metadata, ≤ 2400 px, preview ≤ 720 px) like chat images.
+Audit: `blog.create`, `blog.update`, `blog.publish`, `blog.schedule`, `blog.unpublish`, `blog.delete`.
+Limits: 120 changes and 30 uploads per minute and team member.
+
+Migration 18: tables `blog_posts` (texts as JSON, status `draft`/`published` + `publish_at`, `rev`), `blog_media`
+(files in `<DATA_DIR>/blog/<xx>/<id>.<ext>`). Deleting an author's account keeps the post (author → “TRS Team”).

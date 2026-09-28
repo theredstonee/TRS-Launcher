@@ -10,7 +10,7 @@ const route = useRoute()
 const siteUrl = useSiteUrl()
 const id = computed(() => String(route.params.id))
 
-const { data, error: fetchError } = await useFetch<{ job: JobView }>(() => `/v1/site/jobs/${id.value}`, { key: `site-job-${id.value}` })
+const { data, error: fetchError } = await useApiFetch<{ job: JobView }>(() => `/v1/site/jobs/${id.value}`, { key: `site-job-${id.value}` })
 if (fetchError.value || !data.value) throw createError({ statusCode: 404, statusMessage: 'Not found', fatal: true })
 const job = computed(() => data.value!.job)
 const texts = computed(() => inLang(job.value.texts, lang.value))
@@ -47,7 +47,7 @@ onMounted(async () => {
   }
   for (const f of job.value.form) if (f.type === 'multi') form.answers[f.id] = []
 })
-const loginHref = computed(() => `/auth/microsoft/login?return=${encodeURIComponent(route.fullPath)}`)
+const loginHref = computed(() => `/login?return=${encodeURIComponent(route.fullPath)}`)
 const blockedText = computed(() => {
   const e = eligibility.value
   if (!e || e.canApply || !e.reason) return ''
@@ -169,7 +169,7 @@ async function submit() {
           <div v-else-if="!loaded" class="skeleton mt-4 h-24 rounded-lg" />
           <template v-else-if="!account">
             <p class="mt-2 text-sm text-base-400">{{ t.job.signInHint }}</p>
-            <a :href="loginHref" class="ms-btn mt-5"><MsLogo class="size-5" />{{ t.job.signInToApply }}</a>
+            <a :href="loginHref" class="btn btn-primary mt-5"><SiteIcon name="user" class="size-4" />{{ t.job.signInToApply }}</a>
           </template>
           <div v-else-if="sent" class="mt-4">
             <p class="flex gap-2 text-sm text-ok"><SiteIcon name="check" class="mt-0.5 size-4 shrink-0" />{{ t.job.sent }}</p>
@@ -305,21 +305,5 @@ async function submit() {
   width: 1px;
   height: 1px;
   overflow: hidden;
-}
-.ms-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  height: 3rem;
-  width: 100%;
-  border: 1px solid #8c8c8c;
-  background: #2f2f2f;
-  color: #fff;
-  font: 600 15px 'Segoe UI', system-ui, sans-serif;
-  border-radius: 0.25rem;
-}
-.ms-btn:hover {
-  background: #3a3a3a;
 }
 </style>
