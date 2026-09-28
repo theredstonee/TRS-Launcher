@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Karte auf dem Roadmap-Board (§28): Art, Bereich, Priorität, Nummer, Titel, Score, Kommentare, Zuständige(r).
-// Klick öffnet das Issue als Fenster. Team (issues.manage): ziehen zwischen Spalten oder Status-Menü (Tastatur).
+// Klick auf die ganze Karte öffnet das Issue (Seite oder Fenster, entscheidet der Explorer). Team (issues.manage): ziehen zwischen Spalten oder Status-Menü (Tastatur).
 import { ISSUE_STATUSES, type IssueStatus, type IssueView } from '#shared/issues'
 
 const props = withDefaults(defineProps<{ issue: IssueView, canMove?: boolean, dragging?: boolean }>(), { canMove: false, dragging: false })
@@ -25,6 +25,16 @@ function open(e: MouseEvent) {
   e.preventDefault()
   emit('open', props.issue.number)
 }
+/** Klick irgendwo auf den Block (außer auf Knöpfe/Links/Menüs) öffnet das Issue; Strg/Cmd = neuer Tab. */
+function onBlock(e: MouseEvent, nr: number) {
+  if ((e.target as HTMLElement).closest('a, button, select, input, textarea, label')) return
+  if (window.getSelection()?.toString()) return
+  if (e.ctrlKey || e.metaKey || e.shiftKey) {
+    window.open(lp(`/issues/${nr}`), '_blank', 'noopener')
+    return
+  }
+  emit('open', nr)
+}
 </script>
 
 <template>
@@ -35,6 +45,7 @@ function open(e: MouseEvent) {
     :data-nr="issue.number"
     @dragstart="onDragStart"
     @dragend="emit('dragend')"
+    @click="onBlock($event, issue.number)"
   >
     <div class="top">
       <SiteIcon :name="issue.type === 'bug' ? 'bug' : 'bolt'" class="size-4 shrink-0" :class="issue.type === 'bug' ? 'text-redstone-300' : 'text-lamp-300'" :title="it.types[issue.type]" />
@@ -71,6 +82,9 @@ function open(e: MouseEvent) {
   background: var(--color-base-900);
   box-shadow: 0 1px 0 rgb(255 255 255 / 0.025) inset, 0 6px 16px -12px rgb(0 0 0 / 0.8);
   transition: border-color 0.12s, transform 0.12s, background-color 0.12s;
+}
+.card-i {
+  cursor: pointer;
 }
 .card-i:hover {
   border-color: var(--color-base-600);

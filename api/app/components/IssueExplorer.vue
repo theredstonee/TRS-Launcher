@@ -4,7 +4,9 @@
 // – teilbar, Zurück-Taste schließt das Fenster. Serverseitig anonym gerendert, im Browser mit Sitzung neu geladen.
 import { ISSUE_SORTS, type IssueDetail, type IssueListResult, type IssueSort, type IssueStatus, type IssueView, type RoadmapColumnView, type RoadmapResult } from '#shared/issues'
 
-const props = defineProps<{ defaultView: 'board' | 'list', title: string, lead: string }>()
+/** `openAs`: `page` = Klick führt auf die ganze Issue-Seite (Issue-Liste), `modal` = Fenster über Board/Liste (Roadmap). */
+const props = withDefaults(defineProps<{ defaultView: 'board' | 'list', title: string, lead: string, openAs?: 'page' | 'modal' }>(), { openAs: 'modal' })
+const lp = useLocalePath()
 const { it, fill, errorText } = useIssueText()
 const route = useRoute()
 const router = useRouter()
@@ -118,6 +120,10 @@ async function more(statusKey: IssueStatus) {
 // --- Fenster ------------------------------------------------------------------------------------------
 let pushed = false
 function openIssue(nr: number) {
+  if (props.openAs === 'page') {
+    void router.push(lp(`/issues/${nr}`))
+    return
+  }
   pushed = true
   setQuery({ issue: nr }, true)
 }

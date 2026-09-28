@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// Liste als dichte Tabelle (§28): Stimmen, Art, Titel, Bereich, Status, Priorität, Zuständig, Datum. Klick auf den
-// Titel öffnet das Issue als Fenster (Strg/Mittelklick: neuer Tab). Auf dem Handy werden Nebenspalten ausgeblendet.
+// Liste als dichte Tabelle (§28): Stimmen, Art, Titel, Bereich, Status, Priorität, Zuständig, Datum. Klick auf die
+// ganze Zeile öffnet das Issue (Strg-Klick: neuer Tab). Auf dem Handy werden Nebenspalten ausgeblendet.
 import { isClosed, type IssueView } from '#shared/issues'
 
 defineProps<{ issues: IssueView[], signedIn: boolean }>()
@@ -11,6 +11,16 @@ const lp = useLocalePath()
 function open(e: MouseEvent, nr: number) {
   if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return
   e.preventDefault()
+  emit('open', nr)
+}
+/** Klick irgendwo auf den Block (außer auf Knöpfe/Links/Menüs) öffnet das Issue; Strg/Cmd = neuer Tab. */
+function onBlock(e: MouseEvent, nr: number) {
+  if ((e.target as HTMLElement).closest('a, button, select, input, textarea, label')) return
+  if (window.getSelection()?.toString()) return
+  if (e.ctrlKey || e.metaKey || e.shiftKey) {
+    window.open(lp(`/issues/${nr}`), '_blank', 'noopener')
+    return
+  }
   emit('open', nr)
 }
 </script>
@@ -30,7 +40,7 @@ function open(e: MouseEvent, nr: number) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="i in issues" :key="i.number" :class="{ closed: isClosed(i.status) }">
+        <tr v-for="i in issues" :key="i.number" :class="{ closed: isClosed(i.status) }" @click="onBlock($event, i.number)">
           <td class="c-vote">
             <IssueVote
               :number="i.number"
@@ -111,6 +121,7 @@ td {
   color: var(--color-base-200);
 }
 tbody tr {
+  cursor: pointer;
   transition: background-color 0.1s;
 }
 tbody tr:hover {
