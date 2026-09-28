@@ -5142,7 +5142,6 @@
       "newVersion": "Yeni sürümü paylaş"
     }
   },
-<<<<<<< HEAD
   "issues": {
     "status": {
       "open": "Açık",
@@ -5163,7 +5162,7 @@
       "merged": "#{number} {title} ile birleştirildi",
       "view": "Görüntüle"
     }
-=======
+  },
   "webLogin": {
     "title": "Web sitesinde oturum aç",
     "needsServices": "Web sitesinde oturum açmak TRS hizmetlerini kullanır. Önce bunları aç – iznin olmadan launcher TRS sunucusuna hiçbir şey göndermez.",
@@ -5195,6 +5194,5 @@
     "approve": "Onayla",
     "sending": "Onaylanıyor…",
     "enterCode": "Kodu gir"
->>>>>>> worktree-agent-a22492f1a72458e6b
   }
 }

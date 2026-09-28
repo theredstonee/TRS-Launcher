@@ -5142,7 +5142,6 @@
       "newVersion": "Udostępnij nową wersję"
     }
   },
-<<<<<<< HEAD
   "issues": {
     "status": {
       "open": "Otwarte",
@@ -5163,7 +5162,7 @@
       "merged": "Połączone z #{number} {title}",
       "view": "Zobacz"
     }
-=======
+  },
   "webLogin": {
     "title": "Zaloguj się na stronie",
     "needsServices": "Logowanie na stronie korzysta z usług TRS. Najpierw je włącz – bez twojej zgody launcher nic nie wysyła na serwer TRS.",
@@ -5195,6 +5194,5 @@
     "approve": "Potwierdź",
     "sending": "Potwierdzanie…",
     "enterCode": "Wpisz kod"
->>>>>>> worktree-agent-a22492f1a72458e6b
   }
 }

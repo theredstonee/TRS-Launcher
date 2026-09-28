@@ -5142,7 +5142,6 @@
       "newVersion": "Compartilhar nova versão"
     }
   },
-<<<<<<< HEAD
   "issues": {
     "status": {
       "open": "Aberta",
@@ -5163,7 +5162,7 @@
       "merged": "Mesclada com #{number} {title}",
       "view": "Ver"
     }
-=======
+  },
   "webLogin": {
     "title": "Entrar no site",
     "needsServices": "Entrar no site usa os serviços TRS. Ative-os primeiro – sem o seu consentimento o launcher não envia nada ao servidor TRS.",
@@ -5195,6 +5194,5 @@
     "approve": "Confirmar",
     "sending": "Confirmando…",
     "enterCode": "Digitar código"
->>>>>>> worktree-agent-a22492f1a72458e6b
   }
 }
