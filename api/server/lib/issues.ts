@@ -185,6 +185,7 @@ function escapeRe(s: string): string {
  * übergebenen Namen (der Ersteller) werden ersetzt.
  */
 export function scrubLog(raw: string, names: string[] = []): string {
+  // eslint-disable-next-line no-control-regex -- Steuerzeichen sind genau das, was entfernt wird
   let s = raw.normalize('NFC').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
   // Minecraft-Sitzung „token:<accessToken>:<uuid>“ und Befehlszeilen-/Konfigurationswerte.
   s = s.replace(/token:[^\s:]{8,}:[0-9a-fA-F-]{32,36}/g, '<session>')
@@ -313,7 +314,7 @@ export function issueViews(ctx: AppContext, rows: IssueRow[], viewer: Viewer | n
 
 function metaView(r: IssueRow, showLog: boolean): IssueMetaView | null {
   if (r.meta === null && r.log === null) return null
-  let m: StoredMeta = {}
+  let m: StoredMeta
   try {
     m = r.meta ? (JSON.parse(r.meta) as StoredMeta) : {}
   } catch {
@@ -655,7 +656,7 @@ function attachUploads(ctx: AppContext, uuid: string, ids: string[], issueId: nu
 export function readUpload(ctx: AppContext, id: string, viewer: Viewer | null, thumb: boolean): { row: UploadRow, data: Buffer, public: boolean } {
   const r = UPLOAD_ID.test(id) ? one<UploadRow>(ctx.db, 'SELECT * FROM issue_uploads WHERE id = ?', id) : undefined
   if (!r) throw notFound('upload_not_found', 'Image not found')
-  let visible = false
+  let visible: boolean
   let pub = false
   if (r.issue_id === null) {
     visible = !!viewer && viewer.uuid === r.owner_uuid && r.created_at > ctx.now() - UPLOAD_TTL_MS

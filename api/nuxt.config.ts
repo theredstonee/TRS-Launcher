@@ -107,6 +107,15 @@ export default defineNuxtConfig({
     ],
     experimental: { asyncContext: false },
     externals: { external: ['node:sqlite'] },
+    hooks: {
+      // Typisierte Routen ($fetch/useFetch): Nitro prüft jeden Literal-Pfad gegen ALLE Routen. Ab etwa 250 Routen bricht
+      // TypeScript mit TS2589 („excessively deep“) ab. Team-Routen (/v1/admin/**) ruft die Website nur über
+      // useAdmin().api mit string-Pfad auf – ohne sie in den Typen bleibt genug Luft für weitere Routen.
+      'types:extend'(types) {
+        const routes = (types as { routes?: Record<string, unknown> }).routes ?? {}
+        for (const key of Object.keys(routes)) if (key.startsWith('/v1/admin/')) delete routes[key]
+      },
+    },
   },
   hooks: {
     // API-Fehler als JSON (nur /v1 …), danach Nuxts eigener Handler für die Fehlerseite der Website.
