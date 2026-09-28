@@ -2842,3 +2842,155 @@ Minecraft version, loader, own-jar count, checksum and owner (not the file). Tea
 Migration 16: tables `shared_packs` (file `<DATA_DIR>/packs/<xx>/<id>.<revision>.mrpack`, only the current version is
 kept), `shared_pack_recipients`, `shared_pack_uploads`; report kind `pack` + column `pack_id`. Expired packs are
 removed every 10 minutes, orphaned files every 6 hours; account deletion removes all own packs and files.
+
+## 28. Issues & roadmap
+
+A public issue tracker on the website (`/issues`, `/issues/<number>`, `/roadmap`): players report **bugs** and suggest
+**features** for the launcher, the TRS Client or the website, vote them **up or down**, comment and follow them. The
+team triages (status, priority, assignee, tags, “fixed in”), merges duplicates and writes internal notes. Reading is
+public; writing needs an account – a **website session** (§24.1, cookie + `X-CSRF-Token`) or a **Bearer token**
+(launcher/TRS Client, e.g. “Report a bug” in the client).
+
+### 28.1 Values
+
+| field | values |
+|---|---|
+| `type` | `bug`, `feature` |
+| `area` | `launcher`, `client`, `website` |
+| `status` | `open` (new), `planned`, `in_progress`, `in_review`, `done`, `rejected`, `duplicate` – the last three are **closed** |
+| `priority` | `null` (not set), `low`, `medium`, `high`, `critical` |
+
+Limits: title 5–120 characters, description 0–8,000 (Markdown; the website asks for at least 10), comment 1–5,000 (after cleaning: NFC, control/bidi characters
+removed, word filter §20.4 – blocked words → `422 message_blocked`). Tags: ≤ 6 per issue, `^[a-z0-9][a-z0-9-]{0,23}$`.
+`fixedIn`: a version like `0.13.0` or `0.13.0-beta.1` (`^\d{1,3}\.\d{1,3}\.\d{1,3}(?:[-+][0-9A-Za-z.-]{1,20})?$`).
+
+### 28.2 Views
+
+**IssueView** (lists):
+
+```json
+{ "number": 57, "url": "https://trs-launcher.theredstonee.de/issues/57",
+  "type": "feature", "area": "launcher", "status": "planned", "title": "Share modpacks by code",
+  "author": { "uuid": "…", "name": "Alex" }, "authorTeam": false,
+  "score": 12, "up": 14, "down": 2, "comments": 3,
+  "priority": "low", "assignee": { "uuid": "…", "name": "Theredstonee" }, "tags": ["ui"], "fixedIn": null,
+  "duplicateOf": null, "locked": false, "source": "web",
+  "createdAt": "…", "updatedAt": "…", "activityAt": "…", "closedAt": null,
+  "myVote": 1 }
+```
+
+- `author` is `null` for deleted accounts. `authorTeam`: the author is a team member.
+- `score` = `up − down`. `myVote` (`1`, `-1`, `0`) only when the request is signed in.
+- `duplicateOf`: `{ number, title, status, url }` when merged into another issue (status `duplicate`).
+- `locked`: comments are closed (only the team can still comment). `source`: `web` or `client` (sent from the TRS Client).
+- `activityAt`: last comment, status change or creation.
+
+**IssueDetail** (`GET /v1/issues/{number}`) = IssueView plus:
+
+```json
+{ "description": "markdown", "attachments": [ImageView], "editedAt": null,
+  "meta": { "modVersion": "0.13.0", "mcVersion": "1.21.11", "loader": "fabric", "mods": ["fabric-api 0.110.0", "sodium 0.6.0"], "log": "…" },
+  "following": true,
+  "can": { "edit": true, "comment": true, "vote": true, "manage": false, "moderate": false },
+  "notes": [ { "id": 1, "at": "…", "author": PlayerRef, "text": "…" } ] }
+```
+
+- `meta` (“technical info”, `null` if none was sent): versions and mod list are public; `log` is only returned to the
+  **author and the team** (`issues.manage` or `issues.moderate`) – for everyone else it is missing (`hasLog: true`
+  tells that there is one). The website shows `meta` as a collapsed section, the log as a code block.
+- `following` only when signed in. `notes` (internal) only with `issues.manage`. The team also gets `deleted`.
+- Markdown is rendered by clients **without raw HTML** (HTML is shown as text), links only `http(s)`/relative with
+  `rel="nofollow ugc noopener"`, no remote images.
+
+**ImageView**: `{ "id": "22 chars", "url": "…/v1/issues/uploads/<id>", "thumbUrl": "…?thumb=1", "width": 1920, "height": 1080 }`
+
+**CommentView**:
+```json
+{ "id": 812, "author": PlayerRef | null, "team": true, "body": "markdown | null", "attachments": [ImageView],
+  "createdAt": "…", "editedAt": null, "deleted": false, "deletedBy": null, "mine": false }
+```
+Deleted comments stay as a placeholder (`body: null`, `attachments: []`, `deleted: true`, `deletedBy`: `author`|`team`).
+`team`: written by a team member (shown with a badge; followers are notified).
+
+**HistoryEntry** (public timeline): `{ "at": "…", "actor": PlayerRef | null, "action": "status" | "fixed_in" | "assignee" | "priority" | "type" | "area" | "tags" | "title" | "locked" | "unlocked" | "merged_into" | "merged_from", "from": "… | null", "to": "… | null" }`
+(`assignee` values are names, `merged_*` values are issue numbers as text).
+
+### 28.3 Public and player routes
+
+| Route | Auth | Notes |
+|---|---|---|
+| `GET /v1/issues` | public (optional sign-in for `myVote`) | Query: `sort=top\|new\|activity` (default `top`), `type`, `area`, `status` (comma list), `closed=1` (include closed; a status filter naming closed statuses includes them anyway), `q` (≤ 80, title/description; `#57` also matches the number), `page` (1…), `per` (≤ 50, default 20) → `{ issues: [IssueView], total, page, pages, per }`. Deleted issues are never listed. |
+| `GET /v1/issues/roadmap` | public | `{ planned: [IssueView], inProgress: [IssueView], done: [IssueView], doneDays: 30 }` – `inProgress` = `in_progress` + `in_review`; `done` = closed as `done` within the last 30 days (newest first); ≤ 100 each. `planned` sorted by priority, then score. |
+| `GET /v1/issues/{number}` | public (optional sign-in) | `{ issue: IssueDetail, comments: [CommentView], history: [HistoryEntry] }` – `404 issue_not_found` for unknown/deleted issues (the team still sees deleted ones). |
+| `POST /v1/issues` | player (website session **or** Bearer token) | `{ type, area, title (5–120), description (≤ 8000, Markdown), attachments?: [uploadId ≤ 6], meta?: { modVersion? (≤ 32), mcVersion? (≤ 32), loader? (≤ 32), mods? ([≤ 300], ≤ 100 chars each), log? (≤ 20000) } }` → **201** `{ issue: IssueDetail }` (has `number` and `url`). The author follows automatically. The server removes tokens, session ids, e-mail addresses, IP addresses, UUIDs and the author's name from `log` again before storing it (defence in depth). `source` is `client` when `meta.modVersion` is set, else `web`. |
+| `PATCH /v1/issues/{number}` | author | `{ title?, description?, type? }` – only while the status is `open` (`409 issue_not_editable`). |
+| `POST /v1/issues/{number}/vote` | player | `{ vote: 1 \| -1 \| 0 }` (0 = remove) → `{ score, up, down, myVote }`. Closed issues: `409 issue_closed`. |
+| `PUT /v1/issues/{number}/follow` · `DELETE …/follow` | player | 204. Following = notifications (§28.6). |
+| `POST /v1/issues/{number}/comments` | player | `{ body, attachments?: [uploadId ≤ 4] }` → **201** `{ comment: CommentView }`. Commenting follows the issue. `409 issue_locked` when comments are closed (team excepted). |
+| `PATCH /v1/issues/{number}/comments/{id}` | author | `{ body }` → `{ comment }` |
+| `DELETE /v1/issues/{number}/comments/{id}` | author | 204 (placeholder stays) |
+| `POST /v1/issues/uploads` | player (Bearer or website session) | raw PNG/JPEG/WebP body (`Content-Type` must match the magic bytes), ≤ 8 MiB, ≤ 8192 px / 24 MP → **201** `{ upload: ImageView }` (`id` = 22 chars base64url). Always re-encoded (PNG with transparency, else JPEG q88), ≤ 2560 px, preview ≤ 400 px, no metadata. Valid for **1 hour** until attached, then deleted. |
+| `GET /v1/issues/uploads/{id}` | public | the image (`?thumb=1` preview) while its issue/comment is visible; the uploader also sees unused ones. |
+| `GET /v1/me/issues` | player | `{ created: [IssueView], following: [IssueView] }` (latest activity first, ≤ 100 each) |
+
+Errors: `invalid_request` (400 with `details.fields`), `issue_not_found` (404), `comment_not_found` (404),
+`upload_not_found` (404 when attaching an unknown, expired, foreign or already used upload), `issue_closed`, `issue_locked`, `issue_not_editable` (409), `issue_daily_limit` /
+`comment_daily_limit` / `upload_daily_limit` (429 with `Retry-After`), `sanctioned` (403: a **social ban** blocks new
+issues and comments, an **upload ban** blocks images; voting and following stay), `message_blocked` (422).
+
+### 28.4 Team (`/v1/admin/issues…`)
+
+Permissions (§24.2): **`issues.manage`** – triage: status, priority, assignee, tags, type, area, title, “fixed in”,
+merge, internal notes, lock/unlock comments. **`issues.moderate`** – delete/restore issues and comments, lock/unlock.
+Default roles (migration 17 adds them; customised roles keep everything else): owner, admin, senior moderator: both;
+moderator: `issues.moderate`; supporter: `issues.manage`.
+
+| Route | Permission | Notes |
+|---|---|---|
+| `GET /v1/admin/issues` | manage or moderate | like the public list plus `view=all\|unassigned\|mine\|deleted`, `priority` → items carry `deleted` |
+| `GET /v1/admin/issues/staff` | manage | `{ staff: [PlayerRef] }` – team members with `issues.manage` (assignee choices) |
+| `PATCH /v1/admin/issues/{number}` | manage (`locked` also moderate) | `{ status?, priority?, assignee? (uuid \| null, must have issues.manage), tags?, fixedIn? (string \| null), type?, area?, title?, locked? }` → `{ issue, history }`. `status: duplicate` only via merge (`400 use_merge`). Setting `fixedIn` does not change the status by itself. |
+| `POST /v1/admin/issues/{number}/merge` | manage | `{ into: number }` → `{ issue }` (the target). Votes move to the target (a voter who already voted there keeps that vote), followers are added, the source becomes `duplicate` + closed with `duplicateOf` and is locked, both get a history entry. `409 merge_invalid` (same issue, target deleted, target itself a duplicate or source already merged). |
+| `POST /v1/admin/issues/{number}/notes` | manage | `{ text ≤ 2000 }` → `{ notes }` (internal, never public) |
+| `DELETE /v1/admin/issues/{number}` | moderate | `{ reason? }` → 204; hidden everywhere, restorable for 90 days, then removed with its images |
+| `POST /v1/admin/issues/{number}/restore` | moderate | → `{ issue }` |
+| `DELETE /v1/admin/issues/{number}/comments/{id}` | moderate | 204 (placeholder “removed by the team”) |
+
+Every team change is written to the audit log (`issue.*`).
+
+### 28.5 Reports
+
+`POST /v1/reports` (§20.1) with `{ kind: "issue", issueNumber, reason }` or `{ kind: "issue_comment", commentId, reason }`.
+Target = the author (none for deleted accounts). Evidence keeps number, title, description (or the comment text) and
+the author. Team action `delete_issue` deletes the reported comment or issue (needs `issues.moderate` in addition to
+`reports.handle`); sanctions work as for every report.
+
+### 28.6 Events (`/v1/events/me`, §19)
+
+`issue_updated` goes to everyone following the issue (never to the one who made the change):
+
+```json
+{ "type": "issue_updated", "change": "status | team_comment | fixed | merged",
+  "issue": { "number": 57, "title": "…", "type": "feature", "area": "launcher", "status": "done", "url": "https://…/issues/57" },
+  "by": { "uuid": "…", "name": "…" } | null, "status": "done", "fixedIn": "0.13.0 | null",
+  "mergedInto": { "number": 12, "title": "…", "url": "…" } | null, "excerpt": "first 140 chars of the team comment | null", "at": "…" }
+```
+
+- `status`: the status changed (not to `duplicate`). `fixed`: “fixed in” was set or changed (when the status changed
+  in the same request only this event is sent). `team_comment`: a team member commented. `merged`: the issue was
+  merged into `mergedInto` (its followers now follow the target).
+- Launchers show a social toast with a “View” button that opens `issue.url` in the browser (only if it is on the
+  API's own site).
+
+### 28.7 Data, limits, migration 17
+
+- Tables: `issues` (number = `id`), `issue_votes`, `issue_follows`, `issue_comments`, `issue_uploads` (files
+  `<DATA_DIR>/issues/<xx>/<id>.<jpg|png>` + `.t.` preview; public content, not encrypted), `issue_tags`,
+  `issue_notes`, `issue_history`, `issue_actions` (daily limits). Reports: kinds `issue` / `issue_comment` + columns
+  `issue_id`, `issue_comment_id` (report tables rebuilt as in migration 16).
+- Per account and 24 h: 10 issues, 60 comments, 30 uploads. Rate limits: create 5/h, comment 10/5 min, vote 60/min,
+  follow 60/min, image upload 20/10 min, edit 30/10 min; public reads 240/min per IP.
+- Account deletion: votes and follows go; issues and comments stay **without author** (`author: null`), their
+  logs and all images uploaded by the account are deleted.
+- Deleted issues are removed completely 90 days after deletion.
+- Migration 17 is idempotent and only adds permissions to the default roles.
