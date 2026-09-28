@@ -2223,7 +2223,8 @@
         "friendRequests": "Pedidos de amizade",
         "capeOffers": "Ofertas de capas",
         "friendOnline": "Amigos ficando online",
-        "issues": "Issues que você segue"
+        "issues": "Issues que você segue",
+        "achievements": "Conquistas desbloqueadas"
       },
       "preview": "Mostrar notificação de teste",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Predefinições",
     "clips": "Clipes",
     "social": "Social",
-    "socialBadge": "{messages} não lidas · {requests} pedidos"
+    "socialBadge": "{messages} não lidas · {requests} pedidos",
+    "achievements": "Conquistas"
   },
   "accountMenu": {
     "menuLabel": "Contas",
@@ -2582,7 +2584,8 @@
       "social": "amigos chat mensagens grupos social pedidos",
       "admin": "equipe moderação denúncias punições recursos jogadores admin",
       "websiteLogin": "site entrar login código confirmar launcher microsoft navegador equipe",
-      "myApplications": "candidaturas candidatar equipe vaga status"
+      "myApplications": "candidaturas candidatar equipe vaga status",
+      "achievements": "conquistas troféus pontos recompensas emblemas desbloquear achievements"
     },
     "actions": {
       "newInstance": {
@@ -2867,7 +2870,8 @@
       "friends": "Para mostrar sua lista de amigos, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
       "capes": "Para mostrar as capas TRS, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
       "button": "Saiba mais e ative",
-      "shares": "Para compartilhar capturas como link, o launcher entra no servidor TRS. Isso só acontece depois que você concordar."
+      "shares": "Para compartilhar capturas como link, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
+      "achievements": "Para mostrar suas conquistas, o launcher entra no servidor TRS. Isso só acontece depois que você concordar."
     },
     "account": {
       "title": "Nenhuma conta conectada",
@@ -5197,5 +5201,81 @@
     "approve": "Confirmar",
     "sending": "Confirmando…",
     "enterCode": "Digitar código"
+  },
+  "achievements": {
+    "title": "Conquistas",
+    "subtitle": "Jogue, descubra e participe – cada conquista dá pontos, algumas até uma recompensa.",
+    "refresh": "Atualizar",
+    "error": "Não foi possível carregar as conquistas",
+    "empty": "Ainda não há conquistas – volte em breve.",
+    "emptyFilter": "Nada aqui com este filtro.",
+    "overall": "Conquistas desbloqueadas",
+    "unlocked": "Desbloqueada",
+    "unlockedAt": "Desbloqueada em {date}",
+    "unlockedOf": "{n} de {total} desbloqueadas",
+    "points": "{points} ponto | {points} pontos",
+    "pointsOf": "pontos de {max}",
+    "pointsTitle": "Pontos",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} h",
+      "days": "{current} / {goal} dia | {current} / {goal} dias"
+    },
+    "filter": {
+      "label": "Mostrar",
+      "all": "Todas",
+      "unlocked": "Desbloqueadas",
+      "locked": "Bloqueadas"
+    },
+    "category": {
+      "playtime": "Tempo de jogo",
+      "launcher": "Launcher",
+      "community": "Comunidade",
+      "secret": "Secretas"
+    },
+    "rarity": {
+      "common": "Comum",
+      "uncommon": "Incomum",
+      "rare": "Rara",
+      "epic": "Épica",
+      "legendary": "Lendária"
+    },
+    "secret": {
+      "title": "Conquista secreta",
+      "description": "???",
+      "badge": "Secreta"
+    },
+    "reward": {
+      "cape": "Recompensa: capa “{name}”",
+      "cosmetic": "Recompensa: “{name}”",
+      "emote": "Recompensa: emote “{name}”",
+      "wearNow": "Usar agora",
+      "whereEmote": "Onde encontro?",
+      "emoteHint": "“{name}” está na sua roda de emotes do TRS Client (tecla G por padrão)."
+    },
+    "toast": {
+      "title": "Conquista desbloqueada!",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – recompensa: {reward}",
+      "view": "Ver"
+    },
+    "friend": {
+      "title": "Conquistas de {name}",
+      "subtitle": "O que seu amigo desbloqueou – conquistas secretas ficam ocultas até você conseguir também.",
+      "back": "Voltar para amigos",
+      "unavailable": "Só amigos podem ver as conquistas – ou o servidor TRS está indisponível no momento.",
+      "unlockedCount": "{n} conquista | {n} conquistas",
+      "none": "{name} ainda não desbloqueou nenhuma conquista.",
+      "viewAll": "Ver todas as conquistas",
+      "menu": "Ver conquistas",
+      "toggle": "Mostrar conquistas de {name}",
+      "youToo": "Você também",
+      "private": "As conquistas são privadas",
+      "privateText": "{name} não compartilha as conquistas."
+    },
+    "visibility": {
+      "title": "Conquistas visíveis para amigos",
+      "description": "Seus amigos veem seus pontos e conquistas desbloqueadas. Desative para manter suas conquistas privadas."
+    }
   }
 }

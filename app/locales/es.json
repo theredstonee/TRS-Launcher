@@ -2223,7 +2223,8 @@
         "friendRequests": "Solicitudes de amistad",
         "capeOffers": "Ofertas de capas",
         "friendOnline": "Amigos que se conectan",
-        "issues": "Incidencias que sigues"
+        "issues": "Incidencias que sigues",
+        "achievements": "Logros desbloqueados"
       },
       "preview": "Mostrar una notificación de prueba",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Presets",
     "clips": "Clips",
     "social": "Social",
-    "socialBadge": "{messages} sin leer · {requests} solicitudes"
+    "socialBadge": "{messages} sin leer · {requests} solicitudes",
+    "achievements": "Logros"
   },
   "accountMenu": {
     "menuLabel": "Cuentas",
@@ -2582,7 +2584,8 @@
       "social": "amigos chat mensajes grupos social solicitudes",
       "admin": "equipo moderación reportes sanciones apelaciones jugadores admin",
       "websiteLogin": "web iniciar sesión login código confirmar launcher microsoft navegador equipo",
-      "myApplications": "solicitudes solicitar equipo puesto estado"
+      "myApplications": "solicitudes solicitar equipo puesto estado",
+      "achievements": "logros trofeos puntos recompensas insignias desbloquear achievements"
     },
     "actions": {
       "newInstance": {
@@ -2867,7 +2870,8 @@
       "friends": "Para la lista de amigos, el launcher inicia sesión en el servidor de TRS. Solo ocurre si das tu consentimiento.",
       "capes": "Para las capas de TRS, el launcher inicia sesión en el servidor de TRS. Solo ocurre si das tu consentimiento.",
       "button": "Más información y activar",
-      "shares": "Para compartir capturas como enlace, el launcher inicia sesión en el servidor TRS. Eso solo ocurre cuando aceptas."
+      "shares": "Para compartir capturas como enlace, el launcher inicia sesión en el servidor TRS. Eso solo ocurre cuando aceptas.",
+      "achievements": "Para mostrar tus logros, el launcher inicia sesión en el servidor TRS. Eso solo ocurre cuando aceptas."
     },
     "account": {
       "title": "No has iniciado sesión",
@@ -5197,5 +5201,81 @@
     "approve": "Confirmar",
     "sending": "Confirmando…",
     "enterCode": "Introducir código"
+  },
+  "achievements": {
+    "title": "Logros",
+    "subtitle": "Juega, descubre y participa: cada logro da puntos y algunos incluso una recompensa.",
+    "refresh": "Actualizar",
+    "error": "No se pudieron cargar los logros",
+    "empty": "Todavía no hay logros; vuelve pronto.",
+    "emptyFilter": "No hay nada con este filtro.",
+    "overall": "Logros desbloqueados",
+    "unlocked": "Desbloqueado",
+    "unlockedAt": "Desbloqueado el {date}",
+    "unlockedOf": "{n} de {total} desbloqueados",
+    "points": "{points} punto | {points} puntos",
+    "pointsOf": "puntos de {max}",
+    "pointsTitle": "Puntos",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} h",
+      "days": "{current} / {goal} día | {current} / {goal} días"
+    },
+    "filter": {
+      "label": "Mostrar",
+      "all": "Todos",
+      "unlocked": "Desbloqueados",
+      "locked": "Bloqueados"
+    },
+    "category": {
+      "playtime": "Tiempo de juego",
+      "launcher": "Launcher",
+      "community": "Comunidad",
+      "secret": "Secretos"
+    },
+    "rarity": {
+      "common": "Común",
+      "uncommon": "Poco común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario"
+    },
+    "secret": {
+      "title": "Logro secreto",
+      "description": "???",
+      "badge": "Secreto"
+    },
+    "reward": {
+      "cape": "Recompensa: capa «{name}»",
+      "cosmetic": "Recompensa: «{name}»",
+      "emote": "Recompensa: emote «{name}»",
+      "wearNow": "Usar ahora",
+      "whereEmote": "¿Dónde está?",
+      "emoteHint": "«{name}» está en tu rueda de emotes del TRS Client (tecla G por defecto)."
+    },
+    "toast": {
+      "title": "¡Logro desbloqueado!",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – recompensa: {reward}",
+      "view": "Ver"
+    },
+    "friend": {
+      "title": "Logros de {name}",
+      "subtitle": "Lo que ha desbloqueado tu amigo: los logros secretos siguen ocultos hasta que los consigas tú.",
+      "back": "Volver a amigos",
+      "unavailable": "Solo los amigos pueden ver los logros, o el servidor TRS no está disponible ahora mismo.",
+      "unlockedCount": "{n} logro | {n} logros",
+      "none": "{name} aún no ha desbloqueado ningún logro.",
+      "viewAll": "Ver todos los logros",
+      "menu": "Ver logros",
+      "toggle": "Mostrar los logros de {name}",
+      "youToo": "Tú también",
+      "private": "Los logros son privados",
+      "privateText": "{name} no comparte sus logros."
+    },
+    "visibility": {
+      "title": "Logros visibles para amigos",
+      "description": "Tus amigos ven tus puntos y logros desbloqueados. Desactívalo para que tus logros sean privados."
+    }
   }
 }

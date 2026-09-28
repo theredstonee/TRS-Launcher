@@ -2223,7 +2223,8 @@
         "friendRequests": "Friend requests",
         "capeOffers": "Cape offers",
         "friendOnline": "Friends coming online",
-        "issues": "Issues you follow"
+        "issues": "Issues you follow",
+        "achievements": "Unlocked achievements"
       },
       "preview": "Show a test notification",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Presets",
     "clips": "Clips",
     "social": "Social",
-    "socialBadge": "{messages} unread · {requests} requests"
+    "socialBadge": "{messages} unread · {requests} requests",
+    "achievements": "Achievements"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -2582,7 +2584,8 @@
       "social": "friends chat messages groups social requests",
       "admin": "team moderation reports sanctions appeals players admin",
       "websiteLogin": "website sign in login code confirm launcher microsoft browser team",
-      "myApplications": "applications apply team job position status"
+      "myApplications": "applications apply team job position status",
+      "achievements": "achievements trophies points rewards badges unlock"
     },
     "actions": {
       "newInstance": {
@@ -2867,7 +2870,8 @@
       "friends": "To show your friends list, the launcher signs in to the TRS server. That only happens once you agree.",
       "capes": "To show TRS capes, the launcher signs in to the TRS server. That only happens once you agree.",
       "button": "Learn more & turn on",
-      "shares": "To share screenshots as links, the launcher signs in to the TRS server. That only happens once you agree."
+      "shares": "To share screenshots as links, the launcher signs in to the TRS server. That only happens once you agree.",
+      "achievements": "To show your achievements, the launcher signs in to the TRS server. That only happens once you agree."
     },
     "account": {
       "title": "No account signed in",
@@ -5197,5 +5201,81 @@
     "approve": "Confirm",
     "sending": "Confirming…",
     "enterCode": "Enter code"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "subtitle": "Play, discover and join in – every achievement earns points, some even a reward.",
+    "refresh": "Refresh",
+    "error": "Achievements couldn't be loaded",
+    "empty": "There are no achievements yet – check back soon.",
+    "emptyFilter": "Nothing here with this filter.",
+    "overall": "Achievements unlocked",
+    "unlocked": "Unlocked",
+    "unlockedAt": "Unlocked on {date}",
+    "unlockedOf": "{n} of {total} unlocked",
+    "points": "{points} point | {points} points",
+    "pointsOf": "points of {max}",
+    "pointsTitle": "Points",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} h",
+      "days": "{current} / {goal} day | {current} / {goal} days"
+    },
+    "filter": {
+      "label": "Show",
+      "all": "All",
+      "unlocked": "Unlocked",
+      "locked": "Locked"
+    },
+    "category": {
+      "playtime": "Playtime",
+      "launcher": "Launcher",
+      "community": "Community",
+      "secret": "Secret"
+    },
+    "rarity": {
+      "common": "Common",
+      "uncommon": "Uncommon",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    },
+    "secret": {
+      "title": "Secret achievement",
+      "description": "???",
+      "badge": "Secret"
+    },
+    "reward": {
+      "cape": "Reward: cape “{name}”",
+      "cosmetic": "Reward: “{name}”",
+      "emote": "Reward: emote “{name}”",
+      "wearNow": "Wear now",
+      "whereEmote": "Where is it?",
+      "emoteHint": "“{name}” is in your emote wheel in the TRS Client (default key G)."
+    },
+    "toast": {
+      "title": "Achievement unlocked!",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – reward: {reward}",
+      "view": "View"
+    },
+    "friend": {
+      "title": "{name}'s achievements",
+      "subtitle": "What your friend has unlocked – secret achievements stay hidden until you unlock them too.",
+      "back": "Back to friends",
+      "unavailable": "Achievements are only visible to friends – or the TRS server can't be reached right now.",
+      "unlockedCount": "{n} achievement | {n} achievements",
+      "none": "{name} hasn't unlocked any achievements yet.",
+      "viewAll": "Show all achievements",
+      "menu": "Show achievements",
+      "toggle": "Show {name}'s achievements",
+      "youToo": "You too",
+      "private": "Achievements are private",
+      "privateText": "{name} doesn't share their achievements."
+    },
+    "visibility": {
+      "title": "Achievements visible to friends",
+      "description": "Friends can see your points and unlocked achievements. Turn it off to keep your achievements private."
+    }
   }
 }

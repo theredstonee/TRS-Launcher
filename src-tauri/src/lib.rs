@@ -68,6 +68,15 @@ pub fn run() {
             // Clips: Status, gespeicherte Clips und Fehler gehen als Event ans Frontend.
             let handle = app.handle().clone();
             launcher.clips().set_sink(Arc::new(move |event| {
+                // Erfolge: gespeicherter Clip bzw. gespeicherte Aufnahme (gesendet wird gesammelt im Hintergrund).
+                if matches!(event, trs_core::clips::ClipEvent::Saved { .. })
+                    && let Some(state) = handle.try_state::<LauncherState>()
+                {
+                    let launcher = Arc::clone(&state);
+                    tauri::async_runtime::spawn(async move {
+                        launcher.trs_achievement_event(trs_core::trs_api::achievements::ReportKind::ClipRecorded { count: 1 }, None).await;
+                    });
+                }
                 if let Err(e) = handle.emit("clip-event", &event) {
                     log::warn!("clip-event konnte nicht gesendet werden: {e}");
                 }
@@ -143,6 +152,8 @@ pub fn run() {
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_sync());
             // Echtzeit-Kanal `/v1/events/me` (nur mit Einwilligung und Account).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_live());
+            // Erfolge: gesammelte Meldungen (Spielstart, Mods, Modpacks, Clips) im Hintergrund senden.
+            tauri::async_runtime::spawn(Arc::clone(&launcher).run_achievement_reports());
             // Spiele mit verbundenem TRS Client: Der Launcher schweigt dann zu Sozial-Hinweisen.
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_social_game_clients(Arc::new(move |clients| {
@@ -435,6 +446,10 @@ pub fn run() {
             commands::trs::trs_web_login_lookup,
             commands::trs::trs_web_login_decide,
             commands::trs::trs_sync_status,
+            commands::trs::trs_achievements,
+            commands::trs::trs_player_achievements,
+            commands::trs::trs_achievement_report,
+            commands::trs::trs_set_achievements_visible,
             commands::trs::trs_set_consent,
             commands::trs::trs_me,
             commands::trs::trs_update_me,

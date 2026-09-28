@@ -2223,7 +2223,8 @@
         "friendRequests": "Demandes d’ami",
         "capeOffers": "Offres de capes",
         "friendOnline": "Amis qui se connectent",
-        "issues": "Tickets que tu suis"
+        "issues": "Tickets que tu suis",
+        "achievements": "Succès débloqués"
       },
       "preview": "Afficher une notification de test",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Préréglages",
     "clips": "Clips",
     "social": "Social",
-    "socialBadge": "{messages} non lus · {requests} demandes"
+    "socialBadge": "{messages} non lus · {requests} demandes",
+    "achievements": "Succès"
   },
   "accountMenu": {
     "menuLabel": "Comptes",
@@ -2582,7 +2584,8 @@
       "social": "amis chat messages groupes social demandes",
       "admin": "équipe modération signalements sanctions appels joueurs admin",
       "websiteLogin": "site connexion login code confirmer launcher microsoft navigateur équipe",
-      "myApplications": "candidatures postuler équipe poste statut"
+      "myApplications": "candidatures postuler équipe poste statut",
+      "achievements": "succès trophées points récompenses badges débloquer achievements"
     },
     "actions": {
       "newInstance": {
@@ -2867,7 +2870,8 @@
       "friends": "Pour afficher ta liste d'amis, le launcher se connecte au serveur TRS. Cela n'arrive qu'une fois que tu as donné ton accord.",
       "capes": "Pour afficher les capes TRS, le launcher se connecte au serveur TRS. Cela n'arrive qu'une fois que tu as donné ton accord.",
       "button": "En savoir plus et activer",
-      "shares": "Pour partager des captures par lien, le launcher se connecte au serveur TRS. Cela n’arrive qu’après ton accord."
+      "shares": "Pour partager des captures par lien, le launcher se connecte au serveur TRS. Cela n’arrive qu’après ton accord.",
+      "achievements": "Pour afficher tes succès, le launcher se connecte au serveur TRS. Cela n'arrive qu'une fois que tu as accepté."
     },
     "account": {
       "title": "Aucun compte connecté",
@@ -5197,5 +5201,81 @@
     "approve": "Confirmer",
     "sending": "Confirmation…",
     "enterCode": "Saisir le code"
+  },
+  "achievements": {
+    "title": "Succès",
+    "subtitle": "Joue, découvre et participe : chaque succès rapporte des points, certains même une récompense.",
+    "refresh": "Actualiser",
+    "error": "Impossible de charger les succès",
+    "empty": "Pas encore de succès – reviens bientôt.",
+    "emptyFilter": "Rien ici avec ce filtre.",
+    "overall": "Succès débloqués",
+    "unlocked": "Débloqué",
+    "unlockedAt": "Débloqué le {date}",
+    "unlockedOf": "{n} sur {total} débloqués",
+    "points": "{points} point | {points} points",
+    "pointsOf": "points sur {max}",
+    "pointsTitle": "Points",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} h",
+      "days": "{current} / {goal} jour | {current} / {goal} jours"
+    },
+    "filter": {
+      "label": "Afficher",
+      "all": "Tous",
+      "unlocked": "Débloqués",
+      "locked": "Verrouillés"
+    },
+    "category": {
+      "playtime": "Temps de jeu",
+      "launcher": "Launcher",
+      "community": "Communauté",
+      "secret": "Secrets"
+    },
+    "rarity": {
+      "common": "Commun",
+      "uncommon": "Peu commun",
+      "rare": "Rare",
+      "epic": "Épique",
+      "legendary": "Légendaire"
+    },
+    "secret": {
+      "title": "Succès secret",
+      "description": "???",
+      "badge": "Secret"
+    },
+    "reward": {
+      "cape": "Récompense : cape « {name} »",
+      "cosmetic": "Récompense : « {name} »",
+      "emote": "Récompense : emote « {name} »",
+      "wearNow": "Porter maintenant",
+      "whereEmote": "Où le trouver ?",
+      "emoteHint": "« {name} » se trouve dans ta roue d'emotes du TRS Client (touche G par défaut)."
+    },
+    "toast": {
+      "title": "Succès débloqué !",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – récompense : {reward}",
+      "view": "Voir"
+    },
+    "friend": {
+      "title": "Succès de {name}",
+      "subtitle": "Ce que ton ami a débloqué – les succès secrets restent cachés jusqu'à ce que tu les obtiennes aussi.",
+      "back": "Retour aux amis",
+      "unavailable": "Seuls les amis peuvent voir les succès – ou le serveur TRS est injoignable pour le moment.",
+      "unlockedCount": "{n} succès | {n} succès",
+      "none": "{name} n'a encore débloqué aucun succès.",
+      "viewAll": "Voir tous les succès",
+      "menu": "Voir les succès",
+      "toggle": "Afficher les succès de {name}",
+      "youToo": "Toi aussi",
+      "private": "Les succès sont privés",
+      "privateText": "{name} ne partage pas ses succès."
+    },
+    "visibility": {
+      "title": "Succès visibles par les amis",
+      "description": "Tes amis voient tes points et tes succès débloqués. Désactive-le pour garder tes succès privés."
+    }
   }
 }

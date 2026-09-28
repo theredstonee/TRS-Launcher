@@ -108,6 +108,12 @@ async function confirmAction() {
 
 const shareWith = ref<TrsUserRef | null>(null)
 
+/** Aufgeklappte Erfolge eines Freundes (Klick auf Kopf/Name). */
+const achievementsFor = ref<string | null>(null)
+function openAchievements(f: TrsFriend) {
+  void navigateTo({ path: '/achievements', query: { friend: f.uuid, name: f.name } })
+}
+
 // --- Umhang melden (hochgeladene Umhänge von Freunden) ----------------------------------------
 
 const reportingCape = ref<{ friend: TrsFriend; capeId: string } | null>(null)
@@ -159,56 +165,70 @@ function join(f: TrsFriend) {
         <span v-if="trs.friends?.friends.length" class="text-xs text-base-400">{{ onlineCount }}/{{ trs.friends.friends.length }}</span>
       </h2>
       <ul v-if="friends.length" class="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2" data-testid="friends-list">
-        <li v-for="f in friends" :key="f.uuid" class="flex items-center gap-3 rounded-lg bg-base-850 px-3 py-2">
-          <span class="relative shrink-0">
-            <span class="block size-10 overflow-hidden rounded-md"><PlayerFace :uuid="f.uuid" :name="f.name" /></span>
-            <span class="absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-2 ring-base-850" :class="dotClass(f)" />
-          </span>
-          <div class="min-w-0 flex-1">
-            <p class="flex items-center gap-2 truncate text-sm font-semibold text-base-50">
-              {{ f.name }}
-              <span v-if="capes[f.uuid]?.badge" class="badge bg-redstone-900/50 px-1.5 py-0 text-[10px] text-redstone-300" :title="t('friends.list.usesTrs')">TRS</span>
-            </p>
-            <p class="truncate text-xs" :class="f.presence ? 'text-base-200' : 'text-base-400'">{{ statusLine(f) }}</p>
-          </div>
-          <CapeThumb
-            v-if="capes[f.uuid]?.texture"
-            :texture="capes[f.uuid]!.texture"
-            :scale="capes[f.uuid]!.scale"
-            :frames="capes[f.uuid]!.frames"
-            :frame-time-ms="capes[f.uuid]!.frameTimeMs"
-            :width="16"
-            :title="t('friends.list.capeOf', { name: f.name })"
-          />
-          <button v-if="f.presence?.game?.server" class="btn btn-primary px-2.5 py-1 text-xs" data-testid="friend-join" @click="join(f)">
-            {{ t('social.invite.join') }}
-          </button>
-          <div class="relative" data-row-menu>
-            <button class="btn-icon size-8" :aria-label="t('friends.list.moreActions', { name: f.name })" :aria-expanded="menuFor === f.uuid" @click="menuFor = menuFor === f.uuid ? null : f.uuid">
-              <SocialIcon name="menu" class="size-4" />
+        <li v-for="f in friends" :key="f.uuid" class="rounded-lg bg-base-850 px-3 py-2">
+          <div class="flex items-center gap-3">
+            <button
+              class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline-2 focus-visible:outline-redstone-400"
+              :aria-expanded="achievementsFor === f.uuid"
+              :title="t('achievements.friend.toggle', { name: f.name })"
+              data-testid="friend-profile"
+              @click="achievementsFor = achievementsFor === f.uuid ? null : f.uuid"
+            >
+              <span class="relative shrink-0">
+                <span class="block size-10 overflow-hidden rounded-md"><PlayerFace :uuid="f.uuid" :name="f.name" /></span>
+                <span class="absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-2 ring-base-850" :class="dotClass(f)" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-center gap-2 truncate text-sm font-semibold text-base-50">
+                  {{ f.name }}
+                  <span v-if="capes[f.uuid]?.badge" class="badge bg-redstone-900/50 px-1.5 py-0 text-[10px] text-redstone-300" :title="t('friends.list.usesTrs')">TRS</span>
+                </span>
+                <span class="block truncate text-xs" :class="f.presence ? 'text-base-200' : 'text-base-400'">{{ statusLine(f) }}</span>
+              </span>
             </button>
-            <div v-if="menuFor === f.uuid" class="menu top-9 right-0 w-52" role="menu">
-              <button class="menu-item" role="menuitem" data-testid="friend-message" @click="menuFor = null; emit('message', f.uuid)">
-                <SocialIcon name="chat" class="size-4" />{{ t('social.friends.sendMessage') }}
+            <CapeThumb
+              v-if="capes[f.uuid]?.texture"
+              :texture="capes[f.uuid]!.texture"
+              :scale="capes[f.uuid]!.scale"
+              :frames="capes[f.uuid]!.frames"
+              :frame-time-ms="capes[f.uuid]!.frameTimeMs"
+              :width="16"
+              :title="t('friends.list.capeOf', { name: f.name })"
+            />
+            <button v-if="f.presence?.game?.server" class="btn btn-primary px-2.5 py-1 text-xs" data-testid="friend-join" @click="join(f)">
+              {{ t('social.invite.join') }}
+            </button>
+            <div class="relative" data-row-menu>
+              <button class="btn-icon size-8" :aria-label="t('friends.list.moreActions', { name: f.name })" :aria-expanded="menuFor === f.uuid" @click="menuFor = menuFor === f.uuid ? null : f.uuid">
+                <SocialIcon name="menu" class="size-4" />
               </button>
-              <button class="menu-item" role="menuitem" data-testid="friend-share-cape" @click="menuFor = null; shareWith = { uuid: f.uuid, name: f.name }">
-                <SocialIcon name="skins" class="size-4" />{{ t('capeShare.friendMenu') }}
-              </button>
-              <div class="my-1 border-t border-base-700" />
-              <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'remove', uuid: f.uuid, name: f.name }">
-                <SocialIcon name="close" class="size-4" />{{ t('social.menu.removeFriend') }}
-              </button>
-              <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'block', uuid: f.uuid, name: f.name }">
-                <SocialIcon name="block" class="size-4" />{{ t('social.menu.block') }}
-              </button>
-              <button class="menu-item text-redstone-300" role="menuitem" @click="menuFor = null; emit('report', { uuid: f.uuid, name: f.name })">
-                <SocialIcon name="flag" class="size-4" />{{ t('social.menu.reportPlayer') }}
-              </button>
-              <button v-if="capes[f.uuid]?.upload" class="menu-item text-redstone-300" role="menuitem" @click="menuFor = null; startCapeReport(f)">
-                <SocialIcon name="flag" class="size-4" />{{ t('friends.list.reportCape') }}
-              </button>
+              <div v-if="menuFor === f.uuid" class="menu top-9 right-0 w-52" role="menu">
+                <button class="menu-item" role="menuitem" data-testid="friend-message" @click="menuFor = null; emit('message', f.uuid)">
+                  <SocialIcon name="chat" class="size-4" />{{ t('social.friends.sendMessage') }}
+                </button>
+                <button class="menu-item" role="menuitem" data-testid="friend-share-cape" @click="menuFor = null; shareWith = { uuid: f.uuid, name: f.name }">
+                  <SocialIcon name="skins" class="size-4" />{{ t('capeShare.friendMenu') }}
+                </button>
+                <button class="menu-item" role="menuitem" data-testid="friend-achievements-menu" @click="menuFor = null; openAchievements(f)">
+                  <SocialIcon name="trophy" class="size-4" />{{ t('achievements.friend.menu') }}
+                </button>
+                <div class="my-1 border-t border-base-700" />
+                <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'remove', uuid: f.uuid, name: f.name }">
+                  <SocialIcon name="close" class="size-4" />{{ t('social.menu.removeFriend') }}
+                </button>
+                <button class="menu-item" role="menuitem" @click="menuFor = null; confirm = { kind: 'block', uuid: f.uuid, name: f.name }">
+                  <SocialIcon name="block" class="size-4" />{{ t('social.menu.block') }}
+                </button>
+                <button class="menu-item text-redstone-300" role="menuitem" @click="menuFor = null; emit('report', { uuid: f.uuid, name: f.name })">
+                  <SocialIcon name="flag" class="size-4" />{{ t('social.menu.reportPlayer') }}
+                </button>
+                <button v-if="capes[f.uuid]?.upload" class="menu-item text-redstone-300" role="menuitem" @click="menuFor = null; startCapeReport(f)">
+                  <SocialIcon name="flag" class="size-4" />{{ t('friends.list.reportCape') }}
+                </button>
+              </div>
             </div>
           </div>
+          <SocialFriendAchievements v-if="achievementsFor === f.uuid" :friend="{ uuid: f.uuid, name: f.name }" />
         </li>
       </ul>
       <div v-else class="grid flex-1 place-items-center p-6 text-center text-sm text-base-400">

@@ -2223,7 +2223,8 @@
         "friendRequests": "Vriendschapsverzoeken",
         "capeOffers": "Cape-aanbiedingen",
         "friendOnline": "Vrienden die online komen",
-        "issues": "Issues die je volgt"
+        "issues": "Issues die je volgt",
+        "achievements": "Ontgrendelde prestaties"
       },
       "preview": "Testmelding tonen",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Presets",
     "clips": "Clips",
     "social": "Sociaal",
-    "socialBadge": "{messages} ongelezen · {requests} verzoeken"
+    "socialBadge": "{messages} ongelezen · {requests} verzoeken",
+    "achievements": "Prestaties"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -2582,7 +2584,8 @@
       "social": "vrienden chat berichten groepen sociaal verzoeken",
       "admin": "team moderatie meldingen straffen bezwaren spelers admin",
       "websiteLogin": "website inloggen login code bevestigen launcher microsoft browser team",
-      "myApplications": "sollicitaties solliciteren team functie status"
+      "myApplications": "sollicitaties solliciteren team functie status",
+      "achievements": "prestaties trofeeën punten beloningen badges ontgrendelen achievements"
     },
     "actions": {
       "newInstance": {
@@ -2867,7 +2870,8 @@
       "friends": "Om je vriendenlijst te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
       "capes": "Om TRS-capes te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
       "button": "Meer info & inschakelen",
-      "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft."
+      "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft.",
+      "achievements": "Om je prestaties te tonen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je akkoord gaat."
     },
     "account": {
       "title": "Geen account ingelogd",
@@ -5197,5 +5201,81 @@
     "approve": "Bevestigen",
     "sending": "Bevestigen…",
     "enterCode": "Code invoeren"
+  },
+  "achievements": {
+    "title": "Prestaties",
+    "subtitle": "Speel, ontdek en doe mee – elke prestatie levert punten op, sommige zelfs een beloning.",
+    "refresh": "Vernieuwen",
+    "error": "Prestaties konden niet worden geladen",
+    "empty": "Nog geen prestaties – kom snel terug.",
+    "emptyFilter": "Niets hier met dit filter.",
+    "overall": "Ontgrendelde prestaties",
+    "unlocked": "Ontgrendeld",
+    "unlockedAt": "Ontgrendeld op {date}",
+    "unlockedOf": "{n} van {total} ontgrendeld",
+    "points": "{points} punt | {points} punten",
+    "pointsOf": "punten van {max}",
+    "pointsTitle": "Punten",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} u",
+      "days": "{current} / {goal} dag | {current} / {goal} dagen"
+    },
+    "filter": {
+      "label": "Tonen",
+      "all": "Alle",
+      "unlocked": "Ontgrendeld",
+      "locked": "Vergrendeld"
+    },
+    "category": {
+      "playtime": "Speeltijd",
+      "launcher": "Launcher",
+      "community": "Community",
+      "secret": "Geheim"
+    },
+    "rarity": {
+      "common": "Gewoon",
+      "uncommon": "Ongewoon",
+      "rare": "Zeldzaam",
+      "epic": "Episch",
+      "legendary": "Legendarisch"
+    },
+    "secret": {
+      "title": "Geheime prestatie",
+      "description": "???",
+      "badge": "Geheim"
+    },
+    "reward": {
+      "cape": "Beloning: cape ‘{name}’",
+      "cosmetic": "Beloning: ‘{name}’",
+      "emote": "Beloning: emote ‘{name}’",
+      "wearNow": "Nu dragen",
+      "whereEmote": "Waar vind ik het?",
+      "emoteHint": "‘{name}’ staat in je emote-wiel in de TRS Client (standaardtoets G)."
+    },
+    "toast": {
+      "title": "Prestatie ontgrendeld!",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – beloning: {reward}",
+      "view": "Bekijken"
+    },
+    "friend": {
+      "title": "Prestaties van {name}",
+      "subtitle": "Wat je vriend heeft ontgrendeld – geheime prestaties blijven verborgen tot jij ze ook hebt.",
+      "back": "Terug naar vrienden",
+      "unavailable": "Alleen vrienden kunnen prestaties zien – of de TRS-server is nu niet bereikbaar.",
+      "unlockedCount": "{n} prestatie | {n} prestaties",
+      "none": "{name} heeft nog geen prestaties ontgrendeld.",
+      "viewAll": "Alle prestaties bekijken",
+      "menu": "Prestaties bekijken",
+      "toggle": "Prestaties van {name} tonen",
+      "youToo": "Jij ook",
+      "private": "Prestaties zijn privé",
+      "privateText": "{name} deelt geen prestaties."
+    },
+    "visibility": {
+      "title": "Prestaties zichtbaar voor vrienden",
+      "description": "Vrienden zien je punten en ontgrendelde prestaties. Zet dit uit om je prestaties privé te houden."
+    }
   }
 }

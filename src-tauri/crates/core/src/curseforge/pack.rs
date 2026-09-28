@@ -761,7 +761,10 @@ impl Launcher {
         .await;
 
         match work {
-            Ok(blocked) => Ok(PackOutcome { instance, blocked }),
+            Ok(blocked) => {
+                self.trs_achievement_event(crate::trs_api::achievements::ReportKind::ModpackInstalled, None).await;
+                Ok(PackOutcome { instance, blocked })
+            }
             Err(e) => {
                 // Halb installierte (oder abgebrochene) Packs nicht herumliegen lassen.
                 if let Err(cleanup) = self.instances().delete(&instance.id).await {

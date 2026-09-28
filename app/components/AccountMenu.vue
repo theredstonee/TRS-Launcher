@@ -98,6 +98,10 @@ onBeforeUnmount(() => {
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
         {{ t('accountMenu.add') }}
       </button>
+      <button v-if="accounts.active" class="menu-item" role="menuitem" data-testid="account-achievements" @click="go('/achievements')">
+        <SocialIcon name="trophy" class="size-4" />
+        {{ t('nav.achievements') }}
+      </button>
       <button class="menu-item" role="menuitem" @click="go('/accounts')">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" /></svg>
         {{ t('accountMenu.manage') }}

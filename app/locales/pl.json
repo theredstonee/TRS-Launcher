@@ -2223,7 +2223,8 @@
         "friendRequests": "Zaproszenia do znajomych",
         "capeOffers": "Oferty peleryn",
         "friendOnline": "Znajomi, którzy są online",
-        "issues": "Obserwowane zgłoszenia"
+        "issues": "Obserwowane zgłoszenia",
+        "achievements": "Odblokowane osiągnięcia"
       },
       "preview": "Pokaż powiadomienie testowe",
       "previewTitle": "TRS Launcher",
@@ -2526,7 +2527,8 @@
     "presets": "Presety",
     "clips": "Klipy",
     "social": "Społeczność",
-    "socialBadge": "{messages} nieprzeczytane · {requests} zaproszenia"
+    "socialBadge": "{messages} nieprzeczytane · {requests} zaproszenia",
+    "achievements": "Osiągnięcia"
   },
   "accountMenu": {
     "menuLabel": "Konta",
@@ -2582,7 +2584,8 @@
       "social": "znajomi czat wiadomości grupy społeczność zaproszenia",
       "admin": "zespół moderacja zgłoszenia kary odwołania gracze admin",
       "websiteLogin": "strona logowanie login kod potwierdź launcher microsoft przeglądarka zespół",
-      "myApplications": "zgłoszenia aplikuj zespół stanowisko status"
+      "myApplications": "zgłoszenia aplikuj zespół stanowisko status",
+      "achievements": "osiągnięcia trofea punkty nagrody odznaki odblokuj achievements"
     },
     "actions": {
       "newInstance": {
@@ -2867,7 +2870,8 @@
       "friends": "Aby wyświetlić listę znajomych, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie.",
       "capes": "Aby wyświetlić peleryny TRS, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie.",
       "button": "Dowiedz się więcej i włącz",
-      "shares": "Aby udostępniać zrzuty ekranu jako link, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie."
+      "shares": "Aby udostępniać zrzuty ekranu jako link, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie.",
+      "achievements": "Aby pokazać twoje osiągnięcia, launcher loguje się na serwer TRS. Dzieje się to dopiero po twojej zgodzie."
     },
     "account": {
       "title": "Brak zalogowanego konta",
@@ -5197,5 +5201,81 @@
     "approve": "Potwierdź",
     "sending": "Potwierdzanie…",
     "enterCode": "Wpisz kod"
+  },
+  "achievements": {
+    "title": "Osiągnięcia",
+    "subtitle": "Graj, odkrywaj i dołączaj – każde osiągnięcie daje punkty, niektóre nawet nagrodę.",
+    "refresh": "Odśwież",
+    "error": "Nie udało się wczytać osiągnięć",
+    "empty": "Nie ma jeszcze osiągnięć – zajrzyj wkrótce.",
+    "emptyFilter": "Brak wyników dla tego filtra.",
+    "overall": "Odblokowane osiągnięcia",
+    "unlocked": "Odblokowane",
+    "unlockedAt": "Odblokowano {date}",
+    "unlockedOf": "Odblokowano {n} z {total}",
+    "points": "{points} punkt | {points} punkty | {points} punktów",
+    "pointsOf": "punktów z {max}",
+    "pointsTitle": "Punkty",
+    "progress": "{current} / {goal}",
+    "unit": {
+      "hours": "{current} / {goal} godz.",
+      "days": "{current} / {goal} dzień | {current} / {goal} dni | {current} / {goal} dni"
+    },
+    "filter": {
+      "label": "Pokaż",
+      "all": "Wszystkie",
+      "unlocked": "Odblokowane",
+      "locked": "Zablokowane"
+    },
+    "category": {
+      "playtime": "Czas gry",
+      "launcher": "Launcher",
+      "community": "Społeczność",
+      "secret": "Sekretne"
+    },
+    "rarity": {
+      "common": "Zwykłe",
+      "uncommon": "Niezwykłe",
+      "rare": "Rzadkie",
+      "epic": "Epickie",
+      "legendary": "Legendarne"
+    },
+    "secret": {
+      "title": "Sekretne osiągnięcie",
+      "description": "???",
+      "badge": "Sekretne"
+    },
+    "reward": {
+      "cape": "Nagroda: peleryna „{name}”",
+      "cosmetic": "Nagroda: „{name}”",
+      "emote": "Nagroda: emotka „{name}”",
+      "wearNow": "Załóż teraz",
+      "whereEmote": "Gdzie to znajdę?",
+      "emoteHint": "„{name}” jest w kole emotek TRS Client (domyślnie klawisz G)."
+    },
+    "toast": {
+      "title": "Osiągnięcie odblokowane!",
+      "body": "{name} (+{points})",
+      "bodyReward": "{name} (+{points}) – nagroda: {reward}",
+      "view": "Zobacz"
+    },
+    "friend": {
+      "title": "Osiągnięcia gracza {name}",
+      "subtitle": "Co odblokował twój znajomy – sekretne osiągnięcia pozostają ukryte, dopóki sam ich nie zdobędziesz.",
+      "back": "Wróć do znajomych",
+      "unavailable": "Osiągnięcia widzą tylko znajomi – albo serwer TRS jest teraz nieosiągalny.",
+      "unlockedCount": "{n} osiągnięcie | {n} osiągnięcia | {n} osiągnięć",
+      "none": "{name} nie odblokował jeszcze żadnych osiągnięć.",
+      "viewAll": "Pokaż wszystkie osiągnięcia",
+      "menu": "Pokaż osiągnięcia",
+      "toggle": "Pokaż osiągnięcia gracza {name}",
+      "youToo": "Ty też",
+      "private": "Osiągnięcia są prywatne",
+      "privateText": "{name} nie udostępnia swoich osiągnięć."
+    },
+    "visibility": {
+      "title": "Osiągnięcia widoczne dla znajomych",
+      "description": "Znajomi widzą twoje punkty i odblokowane osiągnięcia. Wyłącz, aby twoje osiągnięcia były prywatne."
+    }
   }
 }

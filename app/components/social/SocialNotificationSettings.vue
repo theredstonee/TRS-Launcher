@@ -6,7 +6,7 @@ import { playNotificationSound } from '~/utils/sound'
 // (von Hand + automatisch bei Vollbild), Windows-Benachrichtigung, Arten.
 const model = defineModel<SocialSettings>({ required: true })
 const corners: SocialSettings['corner'][] = ['top-right', 'top-left', 'bottom-right', 'bottom-left']
-const types = ['messages', 'invites', 'friendRequests', 'capeOffers', 'friendOnline', 'issues'] as const
+const types = ['messages', 'invites', 'friendRequests', 'capeOffers', 'friendOnline', 'issues', 'achievements'] as const
 
 function preview() {
   void useSocialToasts().notify(

@@ -73,6 +73,7 @@ const pages = computed<Command[]>(() => {
     { to: '/clips', label: 'nav.clips', icon: 'clips', keywords: 'palette.keywords.clips' },
     { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
     { to: '/social', label: 'nav.social', icon: 'chat', keywords: 'palette.keywords.social' },
+    { to: '/achievements', label: 'nav.achievements', icon: 'trophy', keywords: 'palette.keywords.achievements' },
     // Team-Bereich: für alle Team-Rollen (was sie darin sehen, regeln ihre Rechte).
     ...(trs.isStaff ? [{ to: '/admin', label: 'nav.admin' as MessageKey, icon: 'admin' as IconName, keywords: 'palette.keywords.admin' as MessageKey }] : []),
   ]

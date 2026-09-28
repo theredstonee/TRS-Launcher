@@ -550,6 +550,7 @@ impl Launcher {
             }
             return Err(e);
         }
+        self.trs_achievement_event(crate::trs_api::achievements::ReportKind::ModpackInstalled, None).await;
         Ok(instance)
     }
 }

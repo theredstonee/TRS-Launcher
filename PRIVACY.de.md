@@ -437,6 +437,27 @@ den TRS-Server.
   Pack wird nur verwendet, wenn du Minecrafts Frage mit Ja beantwortest; dein Spiel reicht es über eine lokale Adresse
   auf deinem Rechner (`127.0.0.1`) an Minecraft, die nur für diese Verbindung gilt.
 
+### Erfolge
+
+Der Launcher hat Erfolge (Punkte, Seltenheiten, ein paar Belohnungen wie ein Umhang oder eine Kosmetik). Sie gehören
+zu den TRS-Diensten und funktionieren nur, solange diese eingeschaltet sind.
+
+- **Was der Server selbst zählt:** Zeit im Spiel und Tage am Stück (aus dem Spielstatus, den der Launcher bzw. der TRS
+  Client ohnehin meldet), Freunde, Chat-Nachrichten, Issues und Stimmen, Schaltungen, geteilte Packs, Welten, Umhänge
+  und Kosmetik.
+- **Was der Launcher meldet:** ein paar Dinge, die nur er weiß – ein Spiel wurde gestartet (mit der Stunde der
+  Ortszeit, 0–23, für Tageszeit-Erfolge), Mods oder ein Modpack wurden installiert (nur die Anzahl), ein Clip wurde
+  gespeichert (nur die Anzahl), der Absturz-Helfer hat etwas behoben, Instanzen wurden aus einem anderen Launcher
+  übernommen. Es gehen keine Namen, Dateien, Pfade oder Instanzen mit. Meldungen werden ein paar Sekunden gesammelt und
+  im Hintergrund gesendet; ohne TRS-Dienste oder offline geht nichts raus.
+- **Auf dem TRS-Server gespeichert:** welche Erfolge du wann freigeschaltet hast, Zähler und Merker je Account, deine
+  Gesamtzeit im Spiel mit aktueller und längster Sitzung und deine Tage am Stück (kein Verlauf der Sitzungen) sowie der
+  Schalter „Erfolge für Freunde sichtbar“.
+- **Wer es sieht:** du und deine bestätigten Freunde (Punkte und freigeschaltete Erfolge) – sonst niemand. Ist
+  „Erfolge für Freunde sichtbar“ aus (Erfolge-Seite oder *Einstellungen → Datenschutz*), sehen Freunde nur, dass deine
+  Erfolge privat sind.
+- **Wie lange:** solange dein TRS-Konto besteht; „Alle TRS-Daten löschen“ löscht alles davon.
+
 ### Was gespeichert wird
 
 | Daten | Wozu |
@@ -460,6 +481,7 @@ den TRS-Server.
 | Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
 | Geteilte Modpacks (nur die Packs, die du teilst): Pack-Datei, Name, Beschreibung, Version, Minecraft-Version, Loader, Dateizahlen, Zeitpunkt des Teilens/Aktualisierens/Ablaufs, Installationen, der teilende Account (Name auf der Pack-Seite sichtbar), Freunde, an die es geschickt wurde | Ein Modpack per Code, Link oder an Freunde teilen (siehe oben) |
 | Issues und Kommentare, die du schreibst, deine Stimmen und dein Folgen; bei „Bug melden“ im TRS Client die angekreuzten Teile (Versionen, Mod-Liste, Log-Ausschnitt – gesäubert, nur für dich und das Team sichtbar – und ein Screenshot) | Fehler melden, Funktionen vorschlagen, abstimmen und Benachrichtigungen (siehe oben) |
+| Erfolge: welche du wann freigeschaltet hast, Zähler und Merker (z. B. Zahl der Spielstarts oder installierten Mods, die Ortszeit-Stunde eines Starts), Gesamtzeit im Spiel mit aktueller und längster Sitzung, Tage am Stück und ob Freunde deine Erfolge sehen dürfen | Erfolge und ihre Belohnungen; nur für dich und deine Freunde sichtbar (siehe oben) |
 | Eingereichte Schaltungen: die Schaltung (nur Blöcke und Zustände), Name, Beschreibung, Kategorie, Sprache, Zeitpunkt, Status und Antwort des Teams; bei angenommenen Schaltungen dein Name als Ersteller | Eine Schaltung für die Bibliothek einreichen (siehe oben) |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl, Liste geteilter Mods und Resource-Pack-Angaben (Namen, Größen, Quellen, Prüfsummen – keine Dateien); deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
@@ -517,7 +539,7 @@ Profiling und keinen Verkauf von Daten.
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
   Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
   deinen Online-Status, alle synchronisierten Skins, Presets und Einstellungen, alle deine Direktchats (für beide
-  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) alle Bilder, die du als Link geteilt hast, und alle Modpacks, die du geteilt hast. Danach sind die TRS-Dienste im
+  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) alle Bilder, die du als Link geteilt hast, alle Modpacks, die du geteilt hast, und deine Erfolge samt Zählern. Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
 - Nach der Löschung bleiben nur aktive Strafen (etwa eine Sperre oder eine laufende Chat-Stummschaltung, mit Grund
   und Zeitraum) und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht

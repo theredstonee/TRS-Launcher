@@ -76,6 +76,7 @@ export const useLiveStore = defineStore('live', () => {
       useSanctionsStore().load(),
       useApplicationsStore().loaded ? useApplicationsStore().load() : Promise.resolve(),
       usePacksStore().inboxLoaded ? usePacksStore().loadInbox() : Promise.resolve(),
+      useAchievementsStore().data ? useAchievementsStore().load(true) : Promise.resolve(),
     ])
   }
 
@@ -202,6 +203,9 @@ export const useLiveStore = defineStore('live', () => {
       case 'pack_updated':
       case 'pack_removed':
         usePacksStore().onLiveEvent(e)
+        return
+      case 'achievement_unlocked':
+        void useAchievementsStore().onLiveEvent(e)
         return
       case 'issue_updated': {
         // Issue auf der Website (§28): nur Hinweis, „Ansehen“ öffnet es im Browser.
