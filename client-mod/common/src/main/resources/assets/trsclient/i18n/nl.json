@@ -1841,6 +1841,7 @@
   "map.export.view": "Alleen het zichtbare deel",
   "map.export.running": "Kaart wordt geëxporteerd … {0} %",
   "map.export.done": "Kaart opgeslagen als {0} (in screenshots)",
+  "map.export.saved": "Kaart opgeslagen in screenshots",
   "map.export.failed": "Kaart kon niet worden geëxporteerd: {0}",
   "map.export.cancelled": "Export geannuleerd",
   "map.export.busy": "Er loopt al een export",

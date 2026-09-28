@@ -414,6 +414,57 @@ class WorldMap2Test {
 		}
 	}
 
+	/** Leinwand nur zum Messen: jedes Zeichen 6 Pixel. */
+	private static final dev.theredstonee.trsclient.core.ui.Canvas MEASURE = new dev.theredstonee.trsclient.core.ui.Canvas() {
+		public void fill(int x1, int y1, int x2, int y2, int argb) { }
+		public void text(String text, int x, int y, int argb, boolean shadow) { }
+		public int textWidth(String text) { return text.length() * 6; }
+		public int lineHeight() { return 9; }
+		public String clip(String text, int maxWidth) { return text.length() * 6 <= maxWidth ? text : text.substring(0, Math.max(0, maxWidth / 6)); }
+		public void flush() { }
+		public void scissor(int x1, int y1, int x2, int y2) { }
+		public void noScissor() { }
+		public void raise(float z) { }
+		public void push() { }
+		public void translate(float x, float y) { }
+		public void scale(float factor) { }
+		public void pop() { }
+	};
+
+	@Test
+	void cursorCoordinatesStayCompleteInEveryShorterVariant(@TempDir Path dir) {
+		TrsModules modules = new TrsModules();
+		modules.worldMap.setEnabled(true);
+		MapEngine e = new MapEngine(modules, dir, true);
+		MapTest.FakePlatform p = new MapTest.FakePlatform(dir);
+		p.dim = "minecraft:the_nether";
+		e.tick(p);
+		WorldMapUi ui = new WorldMapUi(e, new WorldMapUi.Host() {
+			public void closeScreen() { }
+			public void playClick() { }
+			public boolean isMapKey(int rawKey) { return false; }
+		});
+		List<String> v = ui.coordinateTexts(4, 38, -2);
+		assertTrue(v.size() >= 3);
+		for (String s : v) {
+			assertTrue(s.contains("4") && s.contains("-2"), s);
+			assertTrue(s.contains("32") && s.contains("-16"), "Oberwelt X und Z immer dabei: " + s);
+		}
+		for (int i = 1; i < v.size(); i++) assertTrue(v.get(i).length() < v.get(i - 1).length(), "wird kürzer");
+		modules.worldMapNetherCoords.set(false);
+		for (String s : ui.coordinateTexts(4, 38, -2)) assertFalse(s.contains("32"), s);
+		assertEquals("X 1 Z 2", WorldMapUi.tight("X 1   Z 2"));
+	}
+
+	@Test
+	void longFileNamesAreShortenedInTheMiddle() {
+		String name = "trs-map_trs-maps-1.21.11_overworld_2026-09-28_12.30.05.png";
+		String s = WorldMapUi.middleEllipsis(MEASURE, name, 30 * 6);
+		assertTrue(s.length() <= 30, s);
+		assertTrue(s.startsWith("trs-map_") && s.endsWith(".png") && s.contains("…"), s);
+		assertEquals(name, WorldMapUi.middleEllipsis(MEASURE, name, 1000));
+	}
+
 	@Test
 	void tileStampsChangeOnlyForTheTouchedTile() {
 		MapLayer layer = new MapLayer("surface", 1, Integer.MIN_VALUE, null, null);

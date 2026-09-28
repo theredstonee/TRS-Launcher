@@ -1841,6 +1841,7 @@
   "map.export.view": "Tylko widoczny obszar",
   "map.export.running": "Eksportowanie mapy … {0} %",
   "map.export.done": "Mapa zapisana jako {0} (w screenshots)",
+  "map.export.saved": "Mapa zapisana w screenshots",
   "map.export.failed": "Nie udało się wyeksportować mapy: {0}",
   "map.export.cancelled": "Eksport anulowany",
   "map.export.busy": "Eksport już trwa",

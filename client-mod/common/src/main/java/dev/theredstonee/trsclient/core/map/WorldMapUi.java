@@ -597,49 +597,132 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 
 		// Unten: Koordinaten unter dem Zeiger (+ umgerechnet), Maßstab, Hinweise/Export, Fair Play.
 		c.fill(0, h - BAR_H, w, h, 0xE0141217);
-		int leftEnd = 150;
+		// Rechts: Maßstab (+ Fair Play). Die Koordinaten haben Vorrang – wird es eng, fällt erst Fair Play weg.
+		String zoom = zoomText();
+		FairPlay fp = e.fairPlay();
+		String right = fp.active() ? I18n.tr(fp.serverFair() ? "map.fairPlayServer" : "map.fairPlay") + "  ·  " + zoom : zoom;
+		List<String> coords = null;
 		if (layer != null && my > BAR_H && my < h - BAR_H && !overSidebar(mx, my)) {
 			int bxw = (int) Math.floor(worldX(mx)), bzw = (int) Math.floor(worldZ(my));
-			int y = e.heightAt(layer, bxw, bzw);
-			String pos = y == Integer.MIN_VALUE ? I18n.tr("map.cursor", bxw, bzw) : I18n.tr("map.cursorY", bxw, y, bzw);
-			String other = MapDimensions.counterpart(viewDimension());
-			if (other != null && e.modules().worldMapNetherCoords.get()) {
-				pos += "   ·   " + I18n.tr("map.cursorOther", dimensionName(other),
-						MapDimensions.convert(bxw, viewDimension(), other), MapDimensions.convert(bzw, viewDimension(), other));
+			coords = coordinateTexts(bxw, e.heightAt(layer, bxw, bzw), bzw);
+		}
+		int leftEnd = 150;
+		if (coords != null) {
+			String pos = fitting(c, coords, w - 16 - c.textWidth(right) - 12);
+			if (pos == null) {
+				right = zoom;
+				pos = fitting(c, coords, w - 16 - c.textWidth(right) - 12);
 			}
-			String clipped = c.clip(pos, w / 2 - 20);
-			c.text(clipped, 8, h - BAR_H + 7, t.text, false);
-			leftEnd = Math.max(leftEnd, 8 + c.textWidth(clipped) + 12);
+			if (pos == null) pos = coords.get(coords.size() - 1);
+			c.text(pos, 8, h - BAR_H + 7, t.text, false);
+			leftEnd = Math.max(leftEnd, 8 + c.textWidth(pos) + 12);
 		}
-		long nowMs = System.currentTimeMillis();
-		boolean flashing = flash != null && nowMs < flashUntil;
-		String hint;
-		int hintColor;
-		if (MapExport.running()) {
-			hint = I18n.tr("map.export.running", Math.round(MapExport.current().progress() * 100));
-			hintColor = 0xFF000000 | (t.dustOn & 0xFFFFFF);
-		} else if (flashing) {
-			hint = flash;
-			hintColor = 0xFFFFB02E;
-		} else {
-			hint = I18n.tr("map.hint");
-			hintColor = t.textDim;
-		}
-		String right = zoomText();
-		FairPlay fp = e.fairPlay();
-		if (fp.active()) right = I18n.tr(fp.serverFair() ? "map.fairPlayServer" : "map.fairPlay") + "  ·  " + right;
 		int rw = c.textWidth(right);
-		c.text(right, w - 8 - rw, h - BAR_H + 7, fp.active() ? (0xFF000000 | (t.dustOn & 0xFFFFFF)) : t.textDim, false);
+		c.text(right, w - 8 - rw, h - BAR_H + 7, fp.active() && right != zoom ? (0xFF000000 | (t.dustOn & 0xFFFFFF)) : t.textDim, false);
+		// Mitte: nur die Bedienhilfe, wenn Platz ist – Meldungen erscheinen als eigener Hinweis darüber (toast).
+		String hint = I18n.tr("map.hint");
 		int hw = c.textWidth(hint);
-		boolean important = flashing || MapExport.running();
-		if (important) {
-			String s = c.clip(hint, w - 16 - rw);
-			int sw = c.textWidth(s);
-			c.fill(w / 2 - sw / 2 - 4, h - BAR_H + 3, w / 2 + sw / 2 + 4, h - 3, 0xF0141217);
-			c.text(s, w / 2 - sw / 2, h - BAR_H + 7, hintColor, false);
-		} else if (w / 2 + hw / 2 < w - 16 - rw && w / 2 - hw / 2 > leftEnd) {
-			c.text(hint, w / 2 - hw / 2, h - BAR_H + 7, hintColor, false);
+		if (w / 2 + hw / 2 < w - 16 - rw && w / 2 - hw / 2 > leftEnd) {
+			c.text(hint, w / 2 - hw / 2, h - BAR_H + 7, t.textDim, false);
 		}
+		toast(c, w, h, t);
+	}
+
+	/**
+	 * Koordinatenzeile unter dem Zeiger in immer kürzeren Fassungen – X und Z (auch die umgerechneten) bleiben in jeder
+	 * Fassung vollständig; zuerst werden Abstände enger, dann fällt die Höhe weg, dann der Name der anderen Dimension.
+	 */
+	List<String> coordinateTexts(int x, int y, int z) {
+		List<String> out = new ArrayList<String>();
+		String view = viewDimension();
+		String other = e.modules().worldMapNetherCoords.get() ? MapDimensions.counterpart(view) : null;
+		boolean hasY = y != Integer.MIN_VALUE;
+		String full = hasY ? I18n.tr("map.cursorY", x, y, z) : I18n.tr("map.cursor", x, z);
+		String noY = I18n.tr("map.cursor", x, z);
+		if (other == null) {
+			out.add(full);
+			out.add(tight(full));
+			if (hasY) out.add(tight(noY));
+			return out;
+		}
+		int ox = MapDimensions.convert(x, view, other), oz = MapDimensions.convert(z, view, other);
+		String o = I18n.tr("map.cursorOther", dimensionName(other), ox, oz);
+		out.add(full + "   ·   " + o);
+		out.add(tight(full) + " · " + tight(o));
+		if (hasY) out.add(tight(noY) + " · " + tight(o));
+		out.add(tight(noY) + " → " + ox + ", " + oz);
+		return out;
+	}
+
+	/** Mehrfache Leerzeichen zu einem (engere Fassung derselben Angaben). */
+	static String tight(String s) {
+		return s.replaceAll(" {2,}", " ");
+	}
+
+	/** Erste Fassung, die in {@code max} Pixel passt, sonst null. */
+	private static String fitting(Canvas c, List<String> variants, int max) {
+		for (String v : variants) {
+			if (c.textWidth(v) <= max) return v;
+		}
+		return null;
+	}
+
+	/**
+	 * Hinweis über der unteren Leiste (Export läuft/fertig, Fehler, „keine Karte dort“): eigener Kasten, nie über den
+	 * Koordinaten. Zweite Zeile (z. B. Dateiname) wird in der Mitte mit „…“ gekürzt – vollständig steht er im Chat.
+	 */
+	private void toast(Canvas c, int w, int h, Theme t) {
+		long now = System.currentTimeMillis();
+		String title, detail = null;
+		int accent;
+		float progress = -1f;
+		if (MapExport.running()) {
+			progress = MapExport.current().progress();
+			title = I18n.tr("map.export.running", Math.round(progress * 100));
+			accent = 0xFF000000 | (t.dustOn & 0xFFFFFF);
+		} else if (toastTitle != null && now < toastUntil) {
+			title = toastTitle;
+			detail = toastDetail;
+			accent = toastColor;
+		} else {
+			return;
+		}
+		int free = sidebarOpen ? w - WorldMapSidebar.WIDTH : w;
+		int maxW = Math.max(120, Math.min(free - 24, 380));
+		String line1 = c.clip(title, maxW - 16);
+		String line2 = detail == null ? null : middleEllipsis(c, detail, maxW - 16);
+		int bw = Math.max(c.textWidth(line1), line2 == null ? 0 : c.textWidth(line2)) + 16;
+		if (progress >= 0) bw = Math.max(bw, 140);
+		int bh = line2 == null ? 18 : 28;
+		if (progress >= 0) bh += 4;
+		int x = free / 2 - bw / 2, y = h - BAR_H - bh - 6;
+		c.push();
+		c.raise(250);
+		Redstone.block(c, x, y, bw, bh, 0xF0141217);
+		Redstone.frame(c, x, y, bw, bh, ColorMath.withAlpha(accent, 0xC0));
+		c.fill(x + 1, y + 1, x + 3, y + bh - 1, accent);
+		c.text(line1, x + 8, y + 5, accent, false);
+		if (line2 != null) c.text(line2, x + 8, y + 15, t.text, false);
+		if (progress >= 0) {
+			int px = x + 8, pw = bw - 16, py = y + bh - 6;
+			c.fill(px, py, px + pw, py + 2, 0x60FFFFFF);
+			c.fill(px, py, px + Math.round(pw * Math.max(0f, Math.min(1f, progress))), py + 2, accent);
+		}
+		c.pop();
+	}
+
+	/** Kürzt in der Mitte („trs-map_Welt…12.30.05.png“), damit Anfang und Endung lesbar bleiben. */
+	static String middleEllipsis(Canvas c, String s, int max) {
+		if (c.textWidth(s) <= max) return s;
+		String dots = "…";
+		int keepEnd = s.length() / 2, keepStart = s.length() - keepEnd;
+		while (keepStart + keepEnd > 2) {
+			if (keepEnd >= keepStart) keepEnd--;
+			else keepStart--;
+			String v = s.substring(0, keepStart) + dots + s.substring(s.length() - keepEnd);
+			if (c.textWidth(v) <= max) return v;
+		}
+		return dots;
 	}
 
 	/** Maßstab rechts unten: „2 px/Block“, „1.5 px/Block“ oder „1:8“. */
@@ -817,17 +900,17 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		MapExport.StartResult r = MapExport.start(layer, e.worldKey(), viewDimension(), rect,
 				e.modules().worldMapExportSize.getInt(), out, e.disk(), true, job -> {
 					String file = job.file().getFileName().toString();
-					String msg;
 					if (job.state() == MapExport.State.DONE) {
-						msg = I18n.tr("map.export.done", file);
-						if (platform != null) platform.message(msg);
+						// Im Chat der volle Name, auf der Karte ein eigener Hinweis (Name ggf. in der Mitte gekürzt).
+						if (platform != null) platform.message(I18n.tr("map.export.done", file));
+						showToast(I18n.tr("map.export.saved"), file, 0xFF4BE38A, 7000);
 					} else if (job.state() == MapExport.State.CANCELLED) {
-						msg = I18n.tr("map.export.cancelled");
+						showToast(I18n.tr("map.export.cancelled"), null, 0xFFFFB02E, 4000);
 					} else {
-						msg = I18n.tr("map.export.failed", job.error() == null ? "?" : job.error());
+						String msg = I18n.tr("map.export.failed", job.error() == null ? "?" : job.error());
 						if (platform != null) platform.message(msg);
+						showToast(msg, null, 0xFFFF6B5E, 7000);
 					}
-					flash(msg, 6000);
 				});
 		if (r == MapExport.StartResult.RUNNING) flash(I18n.tr("map.export.busy"));
 		else if (r == MapExport.StartResult.EMPTY) flash(I18n.tr("map.export.empty"));
@@ -915,17 +998,26 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		if (r != dev.theredstonee.trsclient.core.waypoint.WaypointShare.Result.OK) flash(I18n.tr(r.key()));
 	}
 
-	/** Kurzer Hinweis unten in der Leiste (z. B. „Nicht mit TRS verbunden“). */
-	private String flash;
-	private long flashUntil;
+	/** Kurzer Hinweis über der unteren Leiste (z. B. „Nicht mit TRS verbunden“, „Karte gespeichert“). */
+	private String toastTitle;
+	private String toastDetail;
+	private int toastColor;
+	private long toastUntil;
 
 	private void flash(String text) {
-		flash(text, 4000);
+		showToast(text, null, 0xFFFFB02E, 4000);
 	}
 
-	private void flash(String text, long ms) {
-		flash = text;
-		flashUntil = System.currentTimeMillis() + ms;
+	private void showToast(String title, String detail, int color, long ms) {
+		toastTitle = title;
+		toastDetail = detail;
+		toastColor = color;
+		toastUntil = System.currentTimeMillis() + ms;
+	}
+
+	/** Aktueller Hinweis (Selbsttest): Titel und zweite Zeile, null = keiner. */
+	public String[] testToast() {
+		return toastTitle == null || System.currentTimeMillis() >= toastUntil ? null : new String[]{toastTitle, toastDetail};
 	}
 
 	private Waypoint waypointAt(double mx, double my) {

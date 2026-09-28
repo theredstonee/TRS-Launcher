@@ -1841,6 +1841,7 @@
   "map.export.view": "Zone visible uniquement",
   "map.export.running": "Export de la carte … {0} %",
   "map.export.done": "Carte enregistrée sous {0} (dans screenshots)",
+  "map.export.saved": "Carte enregistrée dans screenshots",
   "map.export.failed": "Impossible d’exporter la carte : {0}",
   "map.export.cancelled": "Export annulé",
   "map.export.busy": "Un export est déjà en cours",

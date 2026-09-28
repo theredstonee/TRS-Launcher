@@ -1841,6 +1841,7 @@
   "map.export.view": "Yalnızca görünen alan",
   "map.export.running": "Harita dışa aktarılıyor … %{0}",
   "map.export.done": "Harita {0} olarak kaydedildi (screenshots içinde)",
+  "map.export.saved": "Harita screenshots içine kaydedildi",
   "map.export.failed": "Harita dışa aktarılamadı: {0}",
   "map.export.cancelled": "Dışa aktarma iptal edildi",
   "map.export.busy": "Zaten bir dışa aktarma çalışıyor",

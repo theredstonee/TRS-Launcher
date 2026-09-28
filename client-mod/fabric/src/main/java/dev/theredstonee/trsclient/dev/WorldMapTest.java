@@ -24,6 +24,7 @@ import java.util.Locale;
 final class WorldMapTest {
 	private int phase;
 	private int polls;
+	private boolean settled;
 	private int nx, nz;
 	private int sx, sy;
 	private double[] anchor;
@@ -152,7 +153,13 @@ final class WorldMapTest {
 				return 10;
 			case 11:
 				if (MapExport.running() && polls++ < 400) return 5;
+				// Die Meldung kommt über den nächsten Karten-Tick an: kurz warten.
+				if (!settled) {
+					settled = true;
+					return 5;
+				}
 				logExport("Ausschnitt");
+				log("Hinweis über der Leiste: " + java.util.Arrays.toString(ui().testToast()));
 				shot(mc, "worldmap2-export");
 				log("Export ganz gestartet: " + ui().startExport(false));
 				polls = 0;
