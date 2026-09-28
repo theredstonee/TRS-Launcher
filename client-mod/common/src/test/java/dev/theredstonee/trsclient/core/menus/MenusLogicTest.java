@@ -33,6 +33,22 @@ class MenusLogicTest {
 	}
 
 	@Test
+	void dialogsFollowTheirOpener() {
+		// „Server löschen?“ aus der Serverliste, „Welt löschen?“ aus der Weltenliste.
+		assertEquals(MenuStyle.Kind.MULTIPLAYER, MenuStyle.dialogKind(MenuStyle.Kind.MULTIPLAYER, false, false));
+		assertEquals(MenuStyle.Kind.WORLDS, MenuStyle.dialogKind(MenuStyle.Kind.WORLDS, false, false));
+		// Paket-Frage des Servers während des Verbindens (Ladebildschirm) = Mehrspieler.
+		assertEquals(MenuStyle.Kind.MULTIPLAYER, MenuStyle.dialogKind(MenuStyle.Kind.LOADING, false, true));
+		assertEquals(MenuStyle.Kind.MULTIPLAYER, MenuStyle.dialogKind(MenuStyle.Kind.LOADING, false, false));
+		// Ohne bekanntes Menü: auf einem Server Mehrspieler, in der eigenen Welt Pause, im Hauptmenü klassisch.
+		assertEquals(MenuStyle.Kind.MULTIPLAYER, MenuStyle.dialogKind(null, true, true));
+		assertEquals(MenuStyle.Kind.PAUSE, MenuStyle.dialogKind(null, true, false));
+		assertNull(MenuStyle.dialogKind(null, false, false));
+		// Aus dem Pausenmenü (z. B. „Feedback geben“) bleibt es das Pausenmenü.
+		assertEquals(MenuStyle.Kind.PAUSE, MenuStyle.dialogKind(MenuStyle.Kind.PAUSE, true, true));
+	}
+
+	@Test
 	void normalizesAddresses() {
 		assertEquals("play.example.net", ServerPins.normalize(" Play.Example.NET:25565 "));
 		assertEquals("play.example.net:25566", ServerPins.normalize("play.example.net:25566"));

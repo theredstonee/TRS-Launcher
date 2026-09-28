@@ -48,6 +48,19 @@ public final class MenuStyle {
 		}
 	}
 
+	/**
+	 * Art eines Dialogs ohne eigenes Menü (Bestätigen wie „Server löschen?“, Frage nach dem Server-Ressourcenpaket,
+	 * Link öffnen …): die des Menüs, aus dem er geöffnet wurde ({@code opener}, null = keins bekannt). Aus einem
+	 * Ladebildschirm heraus (Paket-Frage beim Verbinden) gilt er als Mehrspieler-Dialog; ohne bekanntes Menü in der
+	 * Welt bzw. auf einem Server als Pause- bzw. Mehrspieler-Dialog, sonst bleibt er klassisch (null).
+	 */
+	public static Kind dialogKind(Kind opener, boolean inWorld, boolean onServer) {
+		if (opener == Kind.LOADING) return Kind.MULTIPLAYER;
+		if (opener != null) return opener;
+		if (onServer) return Kind.MULTIPLAYER;
+		return inWorld ? Kind.PAUSE : null;
+	}
+
 	/** Zusätzliche TRS-Knöpfe (Garderobe, Konten, Clips, Freunde, Server-Info) im Pausenmenü? */
 	public static boolean pauseButtons() {
 		TrsModules m = modules;

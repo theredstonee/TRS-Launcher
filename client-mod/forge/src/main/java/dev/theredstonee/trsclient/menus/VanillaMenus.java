@@ -58,7 +58,9 @@ import java.util.WeakHashMap;
 
 /**
  * Redstone-Stil für Vanilla-Menüs – die Minecraft-Seite: welches Menü welche Art ist, Hintergrund und Knöpfe
- * zeichnen (aus den Mixins), TRS-Knöpfe im Pausenmenü, Anheften in der Serverliste, Ladebildschirme. Die
+ * zeichnen (aus den Mixins), TRS-Knöpfe im Pausenmenü, Anheften in der Serverliste, Ladebildschirme,
+ * Formulare (Direkt verbinden, Server hinzufügen) mit Fläche und Textfeldern im Stil, Dialoge im Stil ihres
+ * Menüs. Die
  * Menüs selbst bleiben die von Minecraft – mit allen Knöpfen anderer Mods. Dieselbe Datei in allen
  * Mojmap-Bäumen (Fabric, NeoForge, Forge, Forge-Mojmap-Legacy).
  */
@@ -80,15 +82,107 @@ public final class VanillaMenus {
 	/** Art des Menüs oder null. */
 	public static MenuStyle.Kind kind(Screen s) {
 		if (s == null) return null;
-		if (s instanceof PauseScreen) return MenuStyle.Kind.PAUSE;
-		if (s instanceof JoinMultiplayerScreen) return MenuStyle.Kind.MULTIPLAYER;
-		if (s instanceof OptionsScreen || optionsSub(s)) return MenuStyle.Kind.OPTIONS;
-		if (s instanceof SelectWorldScreen || s instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen) {
+		if (dialog(s)) return dialogKind(s);
+		if (s instanceof PauseScreen || lanScreen(s)) return MenuStyle.Kind.PAUSE;
+		if (s instanceof JoinMultiplayerScreen || serverForm(s) || multiplayerNotice(s)) return MenuStyle.Kind.MULTIPLAYER;
+		if (s instanceof OptionsScreen || optionsSub(s) || optionsExtra(s)) return MenuStyle.Kind.OPTIONS;
+		if (s instanceof SelectWorldScreen || s instanceof net.minecraft.client.gui.screens.worldselection.CreateWorldScreen
+				|| worldsExtra(s)) {
 			return MenuStyle.Kind.WORLDS;
 		}
 		if (loading(s)) return MenuStyle.Kind.LOADING;
 		if (s instanceof net.minecraft.client.gui.screens.DisconnectedScreen) return MenuStyle.Kind.ERROR;
 		return null;
+	}
+
+	/** Formulare der Serverliste: „Direkt verbinden“ und „Server hinzufügen/bearbeiten“. */
+	static boolean serverForm(Screen s) {
+		if (s instanceof net.minecraft.client.gui.screens.DirectJoinServerScreen) return true;
+		//? if >=1.21.9 {
+		/*return s instanceof net.minecraft.client.gui.screens.ManageServerScreen;
+		*///?} else
+		return s instanceof net.minecraft.client.gui.screens.EditServerScreen;
+	}
+
+	/** Hinweise vor dem Mehrspieler-Menü bzw. vom Server (Mehrspieler-Warnung, Verhaltensregeln des Servers). */
+	static boolean multiplayerNotice(Screen s) {
+		//? if >=1.21.9 {
+		/*if (s instanceof net.minecraft.client.gui.screens.multiplayer.CodeOfConductScreen) return true;
+		*///?}
+		//? if >=1.15 {
+		return s instanceof net.minecraft.client.gui.screens.multiplayer.SafetyScreen;
+		//?} else
+		/*return false;*/
+	}
+
+	/** „Im LAN öffnen“ (aus dem Pausenmenü; ab 26.2 gibt es den Bildschirm nicht mehr). */
+	static boolean lanScreen(Screen s) {
+		//? if <26.2 {
+		return s instanceof net.minecraft.client.gui.screens.ShareToLanScreen;
+		//?} else
+		/*return false;*/
+	}
+
+	/** Weitere Einstellungs-Seiten ohne gemeinsame Oberklasse: Ressourcenpakete, Mitwirkende. */
+	static boolean optionsExtra(Screen s) {
+		//? if >=1.19.4 {
+		if (s instanceof net.minecraft.client.gui.screens.CreditsAndAttributionScreen) return true;
+		//?}
+		//? if >=1.16 {
+		return s instanceof net.minecraft.client.gui.screens.packs.PackSelectionScreen;
+		//?} else
+		/*return false;*/
+	}
+
+	/** Unterseiten der Welten: bearbeiten, Spielregeln, Flachland/Buffet anpassen, Experimente. */
+	static boolean worldsExtra(Screen s) {
+		if (s instanceof net.minecraft.client.gui.screens.worldselection.EditWorldScreen
+				|| s instanceof net.minecraft.client.gui.screens.CreateFlatWorldScreen
+				|| s instanceof net.minecraft.client.gui.screens.PresetFlatWorldScreen
+				|| s instanceof net.minecraft.client.gui.screens.CreateBuffetWorldScreen) {
+			return true;
+		}
+		//? if >=1.19.4 {
+		if (s instanceof net.minecraft.client.gui.screens.worldselection.ExperimentsScreen) return true;
+		//?}
+		//? if >=26.1 {
+		/*return s instanceof net.minecraft.client.gui.screens.worldselection.AbstractGameRulesScreen;
+		*///?} elif >=1.16 {
+		return s instanceof net.minecraft.client.gui.screens.worldselection.EditGameRulesScreen;
+		//?} else
+		/*return false;*/
+	}
+
+	// --- Dialoge: übernehmen die Art des Menüs, aus dem sie kommen ---
+
+	/** Art je offenem Dialog (beim ersten init festgelegt; schwach referenziert). */
+	private static final Map<Screen, MenuStyle.Kind> DIALOGS = new WeakHashMap<>();
+	/** Art des zuletzt aufgebauten Nicht-Dialog-Bildschirms (= Menü, aus dem ein Dialog geöffnet wird). */
+	private static MenuStyle.Kind lastKind;
+
+	/** Bestätigungen (Server/Welt löschen, Server-Ressourcenpaket, Link öffnen …) und „Sicherung anlegen?“. */
+	static boolean dialog(Screen s) {
+		return s instanceof net.minecraft.client.gui.screens.ConfirmScreen
+				|| s instanceof net.minecraft.client.gui.screens.BackupConfirmScreen;
+	}
+
+	static MenuStyle.Kind dialogKind(Screen s) {
+		if (DIALOGS.containsKey(s)) return DIALOGS.get(s);
+		MenuStyle.Kind k = MenuStyle.dialogKind(lastKind, inWorld(), Mc.mc().getCurrentServer() != null);
+		DIALOGS.put(s, k);
+		return k;
+	}
+
+	/** Aus afterInit (vor allem anderen): Öffner für spätere Dialoge merken bzw. Dialog einordnen. */
+	static void remember(Screen s) {
+		if (dialog(s)) dialogKind(s);
+		else lastKind = kind(s);
+	}
+
+	/** Ohne Kopfleiste: Pause, Fehler, Dialoge, Hinweise, „Welt bearbeiten“ (Titel steht dort nicht oben). */
+	static boolean headerless(Screen s, MenuStyle.Kind k) {
+		return k == MenuStyle.Kind.PAUSE || k == MenuStyle.Kind.ERROR || dialog(s) || multiplayerNotice(s)
+				|| s instanceof net.minecraft.client.gui.screens.worldselection.EditWorldScreen;
 	}
 
 	/** Unterseiten der Einstellungen (Grafik, Steuerung, …); bis 1.15 ohne gemeinsame Oberklasse. */
@@ -101,6 +195,9 @@ public final class VanillaMenus {
 
 	static boolean loading(Screen s) {
 		if (s instanceof LevelLoadingScreen || s instanceof ConnectScreen || s instanceof ProgressScreen) return true;
+		//? if >=1.20.2 {
+		if (s instanceof net.minecraft.client.gui.screens.multiplayer.ServerReconfigScreen) return true;
+		//?}
 		//? if <1.21.9 {
 		if (s instanceof ReceivingLevelScreen) return true;
 		//?}
@@ -134,9 +231,11 @@ public final class VanillaMenus {
 		try {
 			final int w = s.width;
 			final int h = s.height;
-			final int[] list = k == MenuStyle.Kind.PAUSE ? null : listBounds(s);
-			final int header = k == MenuStyle.Kind.PAUSE || k == MenuStyle.Kind.ERROR ? 0 : (list != null ? Math.max(0, list[1]) : MenuSkin.HEADER);
+			final List<int[]> lists = k == MenuStyle.Kind.PAUSE ? new ArrayList<int[]>() : allListBounds(s);
+			final int[] list = lists.isEmpty() ? null : lists.get(0);
+			final int header = headerless(s, k) ? 0 : (list != null ? Math.max(0, list[1]) : MenuSkin.HEADER);
 			final int footer = list != null ? Math.min(h, list[3]) : h;
+			final int[] form = serverForm(s) ? formBounds(s, header) : null;
 			final boolean world = inWorld();
 			final Canvas c = canvas(g);
 			g.managed(new Runnable() {
@@ -144,11 +243,12 @@ public final class VanillaMenus {
 				public void run() {
 					MenuSkin.background(c, w, h, world, header, footer);
 					//? if <1.20.5 {
-					/*if (list != null) MenuSkin.listWell(c, list[0], list[1], list[2], list[3], world);
+					/*for (int[] l : lists) MenuSkin.listWell(c, l[0], l[1], l[2], l[3], world);
 					*///?}
+					if (form != null) MenuSkin.formPanel(c, form[0], form[1], form[2], form[3], world);
 				}
 			});
-			if (k == MenuStyle.Kind.MULTIPLAYER) {
+			if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof JoinMultiplayerScreen) {
 				updatePinButton(s);
 				updatePingTest(s);
 			}
@@ -164,6 +264,36 @@ public final class VanillaMenus {
 			if (child instanceof AbstractSelectionList) return bounds((AbstractSelectionList<?>) child);
 		}
 		return null;
+	}
+
+	/** Lage aller Listen des Bildschirms (z. B. zwei nebeneinander bei den Ressourcenpaketen). */
+	static List<int[]> allListBounds(Screen s) {
+		List<int[]> out = new ArrayList<>();
+		for (GuiEventListener child : s.children()) {
+			if (child instanceof AbstractSelectionList) out.add(bounds((AbstractSelectionList<?>) child));
+		}
+		return out;
+	}
+
+	/**
+	 * Fläche hinter einem Formular {x1, y1, x2, y2}: alle sichtbaren Felder und Knöpfe, oben Platz für die
+	 * Beschriftung über dem ersten Feld (Vanilla schreibt sie 12–16 Pixel darüber), nie in der Kopfleiste.
+	 */
+	static int[] formBounds(Screen s, int header) {
+		int x1 = Integer.MAX_VALUE;
+		int y1 = Integer.MAX_VALUE;
+		int x2 = Integer.MIN_VALUE;
+		int y2 = Integer.MIN_VALUE;
+		for (GuiEventListener child : s.children()) {
+			if (!(child instanceof AbstractWidget) || !((AbstractWidget) child).visible) continue;
+			int[] r = rect((AbstractWidget) child);
+			x1 = Math.min(x1, r[0]);
+			y1 = Math.min(y1, r[1]);
+			x2 = Math.max(x2, r[0] + r[2]);
+			y2 = Math.max(y2, r[1] + r[3]);
+		}
+		if (x1 == Integer.MAX_VALUE) return null;
+		return new int[]{Math.max(2, x1 - 12), Math.max(header + 4, y1 - 22), Math.min(s.width - 2, x2 + 12), Math.min(s.height - 2, y2 + 10)};
 	}
 
 	static int[] bounds(AbstractSelectionList<?> l) {
@@ -367,6 +497,20 @@ public final class VanillaMenus {
 		}
 	}
 
+	/**
+	 * Aus dem Textfeld-Mixin, bevor Vanilla den Rahmen zeichnet: Fläche im Redstone-Stil, wenn der offene
+	 * Bildschirm gestylt ist. Rückgabe true = Vanilla-Rahmen weglassen (Text und Schreibmarke bleiben Vanilla).
+	 */
+	public static boolean drawTextField(Gfx g, int x, int y, int w, int h, boolean focused, boolean hover, boolean active) {
+		if (!styled(Mc.screen())) return false;
+		try {
+			MenuSkin.textField(canvas(g), x, y, w, h, focused, hover, active);
+			return true;
+		} catch (RuntimeException | LinkageError e) {
+			return false;
+		}
+	}
+
 	/** Beschriftung wie Vanilla (für Versionen, in denen der Mixin sie selbst zeichnen muss). */
 	public static void label(Gfx g, String message, int x, int y, int w, int h, boolean active) {
 		int color = active ? 0xFFFFFFFF : 0xFFA0A0A0;
@@ -377,7 +521,7 @@ public final class VanillaMenus {
 	}
 
 	/** {x, y, w, h} eines Widgets. */
-	static int[] rect(AbstractWidget b) {
+	public static int[] rect(AbstractWidget b) {
 		//? if >=1.19.3 {
 		return new int[]{b.getX(), b.getY(), b.getWidth(), b.getHeight()};
 		//?} elif >=1.16 {
@@ -406,6 +550,11 @@ public final class VanillaMenus {
 
 	/** Nach Screen#init bzw. #rebuildWidgets. */
 	public static void afterInit(Screen s, WidgetHost host) {
+		try {
+			remember(s);
+		} catch (RuntimeException | LinkageError ignored) {
+			// dann eben ohne Öffner
+		}
 		KeySearchUi.afterInit(s, host);
 		DisconnectUi.afterInit(s, host);
 		MenuStyle.Kind k = kind(s);
@@ -416,7 +565,7 @@ public final class VanillaMenus {
 					if (child instanceof AbstractSelectionList) plainList((AbstractSelectionList<?>) child);
 				}
 			}
-			if (k == MenuStyle.Kind.PAUSE && MenuStyle.pauseButtons() && !s.children().isEmpty()) pauseButtons(s, host);
+			if (k == MenuStyle.Kind.PAUSE && s instanceof PauseScreen && MenuStyle.pauseButtons() && !s.children().isEmpty()) pauseButtons(s, host);
 			if (k == MenuStyle.Kind.PAUSE && s instanceof PauseScreen && !s.children().isEmpty()) hostingButtons(s, host);
 			if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof JoinMultiplayerScreen) joinButton(s, host);
 			if (k == MenuStyle.Kind.MULTIPLAYER && MenuStyle.enabled(k) && s instanceof JoinMultiplayerScreen) {

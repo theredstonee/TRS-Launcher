@@ -31,6 +31,8 @@ public final class MenusTest {
 	private int phase;
 	private int wait;
 	private int waited;
+	/** Unterschritte in Phase 2 (Direkt verbinden, Server hinzufügen, Löschen-Dialog). */
+	private int mpStep;
 	private final String mcVersion = Mc.version();
 	private final String world = "trs-autotest-" + Mc.version();
 
@@ -55,6 +57,10 @@ public final class MenusTest {
 		String file = "trsclient-" + mcVersion + "-menus-" + name + ".png";
 		ScreenShotHelper.saveScreenshot(Mc.gameDir(), file, mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 		TrsClient.LOGGER.info("[Autotest] Menüs: Bild {} (Hintergrund Ø {} µs)", name, Math.round(MenuSkin.averageMicros()));
+	}
+
+	private static net.minecraft.client.multiplayer.ServerData testServer() {
+		return new net.minecraft.client.multiplayer.ServerData("TRS Testserver", "play.trs-test.net", false);
 	}
 
 	private boolean waitFor(boolean ready, int max) {
@@ -86,7 +92,37 @@ public final class MenusTest {
 				wait = 40;
 				return;
 			case 2:
-				shot(mc, "multiplayer");
+				// Serverliste → Direkt verbinden → Server hinzufügen → „Server löschen?“ (Formulare, Textfelder, Dialog).
+				if (mpStep == 0) {
+					shot(mc, "multiplayer");
+					mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreenServerList(screen, testServer()));
+					mpStep = 1;
+					wait = 10;
+					return;
+				}
+				if (mpStep == 1) {
+					shot(mc, "direct-connect");
+					mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreenAddServer(screen, testServer()));
+					mpStep = 2;
+					wait = 10;
+					return;
+				}
+				if (mpStep == 2) {
+					shot(mc, "add-server");
+					String q = net.minecraft.client.resources.I18n.format("selectServer.deleteQuestion");
+					String w = "'TRS Testserver' " + net.minecraft.client.resources.I18n.format("selectServer.deleteWarning");
+					mc.displayGuiScreen(new net.minecraft.client.gui.GuiYesNo(new net.minecraft.client.gui.GuiYesNoCallback() {
+						@Override
+						public void confirmClicked(boolean result, int id) {
+							// nur fürs Bild
+						}
+					}, q, w, net.minecraft.client.resources.I18n.format("selectServer.deleteButton"),
+							net.minecraft.client.resources.I18n.format("gui.cancel"), 0));
+					mpStep = 3;
+					wait = 10;
+					return;
+				}
+				shot(mc, "delete-server");
 				mc.displayGuiScreen(new GuiOptions(new TrsTitleScreen(), mc.gameSettings));
 				phase++;
 				wait = 10;

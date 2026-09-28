@@ -27,12 +27,26 @@ How to write an entry:
 - Installing a modpack (CurseForge or Modrinth) no longer looks finished while it is still downloading: the new
   instance shows “Downloading mods · 120/261 … 45 %” in the library and on its page, and Play stays locked until
   everything is there. Big packs also download faster – large files first and more downloads at the same time.
+- TRS Client menu style: "Direct Connection" and "Add Server" / "Edit Server" now use the redstone look too – text
+  fields, buttons and the server resource pack switch on a calm panel instead of the plain vanilla screen.
+- Text fields in all restyled menus (e.g. world search) look like the TRS text fields and glow while you type.
+- Confirmations such as "Delete server?", the server resource pack question and link warnings follow the style of
+  the menu they come from; the multiplayer warning, "Open to LAN", world editing, game rules, flat/buffet world
+  settings, resource packs and credits are restyled as well.
 
 ### Deutsch
 - Ein Modpack (CurseForge oder Modrinth) sieht beim Installieren nicht mehr fertig aus, während es noch lädt: Die neue
   Instanz zeigt in der Bibliothek und auf ihrer Seite „Mods werden geladen · 120/261 … 45 %“, und Spielen bleibt
   gesperrt, bis alles da ist. Große Packs laden außerdem schneller – große Dateien zuerst und mehr Downloads
   gleichzeitig.
+- TRS-Client-Menü-Stil: „Direkt verbinden“ und „Server hinzufügen“/„Server bearbeiten“ haben jetzt auch den
+  Redstone-Look – Textfelder, Knöpfe und der Schalter für Server-Ressourcenpakete auf ruhiger Fläche statt im
+  schlichten Vanilla-Bildschirm.
+- Textfelder in allen gestylten Menüs (z. B. die Weltensuche) sehen aus wie die TRS-Eingabefelder und leuchten beim
+  Tippen.
+- Rückfragen wie „Server löschen?“, die Frage nach dem Server-Ressourcenpaket und Link-Warnungen folgen dem Stil des
+  Menüs, aus dem sie kommen; Mehrspieler-Hinweis, „Im LAN öffnen“, Welt bearbeiten, Spielregeln,
+  Flachland-/Buffet-Einstellungen, Ressourcenpakete und Mitwirkende sind ebenfalls gestylt.
 
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->

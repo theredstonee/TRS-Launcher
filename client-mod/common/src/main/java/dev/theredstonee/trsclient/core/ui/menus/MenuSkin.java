@@ -174,6 +174,41 @@ public final class MenuSkin {
 		}
 	}
 
+	/**
+	 * Fläche eines Vanilla-Textfelds (Text und Schreibmarke zeichnet Minecraft darüber): eingelassene Mulde wie
+	 * die TRS-Eingabefelder, mit Akzentkante und bestromter Staubleitung, solange das Feld den Fokus hat.
+	 * Wie bei den Knöpfen immer dunkel – Vanilla schreibt hellgrau.
+	 */
+	public static void textField(Canvas c, int x, int y, int w, int h, boolean focused, boolean hover, boolean active) {
+		if (w < 3 || h < 3) return;
+		Theme t = Theme.get();
+		if (focused && active) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
+		int edge = focused && active ? t.accent : (hover && active ? ColorMath.lerp(FIELD_EDGE, t.accent, 0.4f) : FIELD_EDGE);
+		Redstone.block(c, x, y, w, h, edge);
+		if (h < 5) return;
+		int fill = active ? FIELD : STONE_OFF;
+		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, BEVEL_DARK);
+		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, ColorMath.lerp(fill, BEVEL_LIGHT, 0.35f));
+		if (focused && active && w > 8) Redstone.dustH(c, x + 2, x + w - 2, y + h - 1, t.dustOn, 0f);
+	}
+
+	private static final int FIELD = 0xFF0C0A0B;
+	private static final int FIELD_EDGE = 0xFF4A4244;
+
+	/**
+	 * Fläche hinter einem Formular (Direkt verbinden, Server hinzufügen/bearbeiten): Mulde wie hinter den Listen,
+	 * oben und unten eine Staubleitung – Beschriftungen und Felder stehen lesbar auf ruhigem Grund.
+	 */
+	public static void formPanel(Canvas c, int x1, int y1, int x2, int y2, boolean inWorld) {
+		if (x2 - x1 < 8 || y2 - y1 < 8) return;
+		listWell(c, x1, y1, x2, y2, inWorld);
+		Theme t = Theme.get();
+		int dust = ColorMath.lerp(t.dustOff, t.dustOn, 0.6f);
+		Redstone.dustH(c, x1, x2, y1, dust, 0.3f);
+		Redstone.dustH(c, x1, x2, y2 - 2, ColorMath.withAlpha(t.dustOff, 0xC0), 0f);
+	}
+
 	/** Symbol links auf einem Knopf (TRS-Knöpfe im Pausenmenü). */
 	public static void buttonIcon(Canvas c, int x, int y, int h, String icon, boolean active) {
 		Theme t = Theme.get();
