@@ -2093,7 +2093,7 @@
   "bugreport.uploading": "Screenshot wird hochgeladen …",
   "bugreport.retry": "Erneut versuchen",
   "bugreport.preview.title": "Das wird gesendet",
-  "bugreport.preview.public": "Die Meldung wird im Issue-Tracker auf trs-launcher.theredstonee.de veröffentlicht: Titel, Beschreibung, Screenshot und Versionen sind öffentlich. Mod-Liste und Log-Ausschnitt sieht nur das TRS-Team.",
+  "bugreport.preview.public": "Die Meldung wird im Issue-Tracker auf trs-launcher.theredstonee.de veröffentlicht: Titel, Beschreibung, Screenshot, Versionen und Mod-Liste sind öffentlich. Den Log-Ausschnitt sehen nur das TRS-Team und du.",
   "bugreport.preview.nothing": "Keine Anhänge – nur Titel und Beschreibung.",
   "bugreport.preview.removed": "Aus dem Log entfernt: {0}",
   "bugreport.preview.removedNone": "Im Log wurde nichts Persönliches gefunden.",

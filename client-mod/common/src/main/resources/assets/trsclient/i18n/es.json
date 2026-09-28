@@ -2093,7 +2093,7 @@
   "bugreport.uploading": "Subiendo captura …",
   "bugreport.retry": "Reintentar",
   "bugreport.preview.title": "Esto se enviará",
-  "bugreport.preview.public": "El reporte se publica en el gestor de incidencias de trs-launcher.theredstonee.de: título, descripción, captura y versiones son públicos. La lista de mods y el extracto del log solo los ve el equipo de TRS.",
+  "bugreport.preview.public": "El reporte se publica en el gestor de incidencias de trs-launcher.theredstonee.de: título, descripción, captura, versiones y lista de mods son públicos. El extracto del log solo lo ven el equipo de TRS y tú.",
   "bugreport.preview.nothing": "Sin adjuntos – solo título y descripción.",
   "bugreport.preview.removed": "Eliminado del log: {0}",
   "bugreport.preview.removedNone": "No se encontró nada personal en el log.",

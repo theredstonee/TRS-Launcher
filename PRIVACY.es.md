@@ -278,8 +278,8 @@ previa, que muestra exactamente qué se envía.
   usuario en rutas (`C:\Users\<nombre>` → `C:\Users\<user>`), correos electrónicos y el contenido de las líneas de
   chat. La vista previa muestra cuánto se eliminó. La captura se envía tal cual: revisa lo que muestra.
 - **Quién lo ve:** el reporte aparece públicamente en el gestor de incidencias de trs-launcher.theredstonee.de (título,
-  descripción, captura, versiones y tu nombre como autor). La lista de mods y el extracto del log solo los ve el equipo
-  de TRS.
+  descripción, captura, versiones, lista de mods y tu nombre como autor). El extracto del log solo lo ven el equipo de
+  TRS y tú.
 - **Límites:** unos pocos reportes al día; una sanción de moderación puede bloquear los reportes.
 
 ### Denuncias y moderación

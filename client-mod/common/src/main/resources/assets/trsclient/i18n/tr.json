@@ -2093,7 +2093,7 @@
   "bugreport.uploading": "Ekran görüntüsü yükleniyor …",
   "bugreport.retry": "Tekrar dene",
   "bugreport.preview.title": "Gönderilecekler",
-  "bugreport.preview.public": "Bildirim trs-launcher.theredstonee.de üzerindeki sorun takipçisinde yayımlanır: başlık, açıklama, ekran görüntüsü ve sürümler herkese açıktır. Mod listesini ve log alıntısını yalnızca TRS ekibi görür.",
+  "bugreport.preview.public": "Bildirim trs-launcher.theredstonee.de üzerindeki sorun takipçisinde yayımlanır: başlık, açıklama, ekran görüntüsü, sürümler ve mod listesi herkese açıktır. Log alıntısını yalnızca TRS ekibi ve sen görürsünüz.",
   "bugreport.preview.nothing": "Ek yok – yalnızca başlık ve açıklama.",
   "bugreport.preview.removed": "Logdan kaldırılanlar: {0}",
   "bugreport.preview.removedNone": "Logda kişisel bir şey bulunamadı.",

@@ -281,7 +281,8 @@ senden“ drückst – die Vorschau zeigt genau, was mitgeht.
   (`C:\Users\<Name>` → `C:\Users\<user>`), E-Mail-Adressen und der Inhalt von Chat-Zeilen werden ersetzt. Die Vorschau
   zeigt, wie viel davon entfernt wurde. Ein Screenshot geht unverändert raus – sieh dir an, was er zeigt.
 - **Wer es sieht:** Die Meldung erscheint öffentlich im Issue-Tracker auf trs-launcher.theredstonee.de (Titel,
-  Beschreibung, Screenshot, Versionen, dein Name als Verfasser). Mod-Liste und Log-Ausschnitt sieht nur das TRS-Team.
+  Beschreibung, Screenshot, Versionen, Mod-Liste und dein Name als Verfasser). Den Log-Ausschnitt sehen nur das TRS-Team
+  und du.
 - **Grenzen:** einige Meldungen pro Tag; eine Strafe aus der Moderation kann das Melden sperren.
 
 ### Meldungen und Moderation

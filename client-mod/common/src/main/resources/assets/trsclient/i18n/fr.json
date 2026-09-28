@@ -2093,7 +2093,7 @@
   "bugreport.uploading": "Envoi de la capture …",
   "bugreport.retry": "Réessayer",
   "bugreport.preview.title": "Voici ce qui sera envoyé",
-  "bugreport.preview.public": "Le signalement est publié dans le suivi des bugs sur trs-launcher.theredstonee.de : titre, description, capture et versions sont publics. Seule l'équipe TRS voit la liste des mods et l'extrait du log.",
+  "bugreport.preview.public": "Le signalement est publié dans le suivi des bugs sur trs-launcher.theredstonee.de : titre, description, capture, versions et liste des mods sont publics. Seuls l'équipe TRS et toi voyez l'extrait du log.",
   "bugreport.preview.nothing": "Aucune pièce jointe – seulement titre et description.",
   "bugreport.preview.removed": "Retiré du log : {0}",
   "bugreport.preview.removedNone": "Rien de personnel trouvé dans le log.",

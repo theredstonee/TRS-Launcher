@@ -263,7 +263,7 @@ what goes out.
   `C:\Users\<user>`), email addresses and the content of chat lines are replaced. The preview shows how many of each were
   removed. A screenshot is sent as it is – check what it shows.
 - **Who sees it:** the report appears publicly in the issue tracker on trs-launcher.theredstonee.de (title, description,
-  screenshot, versions, your name as author). The mod list and the log excerpt are only visible to the TRS team.
+  screenshot, versions, mod list and your name as author). The log excerpt is only visible to the TRS team and to you.
 - **Limits:** a few reports per day; a sanction from moderation can block reporting.
 
 ### Reports and moderation

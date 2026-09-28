@@ -2093,7 +2093,7 @@
   "bugreport.uploading": "Przesyłanie zrzutu …",
   "bugreport.retry": "Spróbuj ponownie",
   "bugreport.preview.title": "To zostanie wysłane",
-  "bugreport.preview.public": "Zgłoszenie zostanie opublikowane w systemie zgłoszeń na trs-launcher.theredstonee.de: tytuł, opis, zrzut ekranu i wersje są publiczne. Listę modów i fragment logu widzi tylko zespół TRS.",
+  "bugreport.preview.public": "Zgłoszenie zostanie opublikowane w systemie zgłoszeń na trs-launcher.theredstonee.de: tytuł, opis, zrzut ekranu, wersje i lista modów są publiczne. Fragment logu widzi tylko zespół TRS i ty.",
   "bugreport.preview.nothing": "Brak załączników – tylko tytuł i opis.",
   "bugreport.preview.removed": "Usunięto z logu: {0}",
   "bugreport.preview.removedNone": "W logu nie znaleziono niczego osobistego.",

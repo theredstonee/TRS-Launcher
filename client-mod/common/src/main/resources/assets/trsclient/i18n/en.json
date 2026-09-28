@@ -2093,7 +2093,7 @@
   "bugreport.uploading": "Uploading screenshot …",
   "bugreport.retry": "Try again",
   "bugreport.preview.title": "This will be sent",
-  "bugreport.preview.public": "The report is published in the issue tracker on trs-launcher.theredstonee.de: title, description, screenshot and versions are public. Only the TRS team sees the mod list and the log excerpt.",
+  "bugreport.preview.public": "The report is published in the issue tracker on trs-launcher.theredstonee.de: title, description, screenshot, versions and mod list are public. Only the TRS team and you see the log excerpt.",
   "bugreport.preview.nothing": "No attachments – only title and description.",
   "bugreport.preview.removed": "Removed from the log: {0}",
   "bugreport.preview.removedNone": "Nothing personal was found in the log.",

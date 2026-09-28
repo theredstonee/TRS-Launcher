@@ -2093,7 +2093,7 @@
   "bugreport.uploading": "Screenshot uploaden …",
   "bugreport.retry": "Opnieuw proberen",
   "bugreport.preview.title": "Dit wordt verzonden",
-  "bugreport.preview.public": "De melding wordt gepubliceerd in de issuetracker op trs-launcher.theredstonee.de: titel, beschrijving, screenshot en versies zijn openbaar. De modlijst en het logfragment ziet alleen het TRS-team.",
+  "bugreport.preview.public": "De melding wordt gepubliceerd in de issuetracker op trs-launcher.theredstonee.de: titel, beschrijving, screenshot, versies en modlijst zijn openbaar. Het logfragment zien alleen het TRS-team en jij.",
   "bugreport.preview.nothing": "Geen bijlagen – alleen titel en beschrijving.",
   "bugreport.preview.removed": "Uit de log verwijderd: {0}",
   "bugreport.preview.removedNone": "Niets persoonlijks gevonden in de log.",
