@@ -153,6 +153,50 @@ public final class ChatCompat {
 		//?}
 	}
 
+	/**
+	 * Eigene Chatzeile aus Teilen der Screenshot-Werkzeuge (Aktionen gold mit Einfüge-Text + Hinweis, Dateiname
+	 * unterstrichen).
+	 */
+	public static void printScreenshotLine(java.util.List<dev.theredstonee.trsclient.core.screenshot.Screenshots.Part> parts) {
+		GuiNewChat gui = chat();
+		if (gui == null) return;
+		//? if >=1.9 {
+		/*TextComponentString out = new TextComponentString("");
+		for (dev.theredstonee.trsclient.core.screenshot.Screenshots.Part p : parts) {
+			net.minecraft.util.text.Style st = new net.minecraft.util.text.Style();
+			if (p.kind == dev.theredstonee.trsclient.core.screenshot.Screenshots.Part.Kind.ACTION) {
+				st.setColor(net.minecraft.util.text.TextFormatting.GOLD);
+			} else if (p.kind == dev.theredstonee.trsclient.core.screenshot.Screenshots.Part.Kind.NAME) {
+				st.setUnderlined(true);
+			}
+			if (p.insertion != null) st.setInsertion(p.insertion);
+			if (p.hover != null) {
+				st.setHoverEvent(new net.minecraft.util.text.event.HoverEvent(net.minecraft.util.text.event.HoverEvent.Action.SHOW_TEXT,
+						new TextComponentString(p.hover)));
+			}
+			out.appendSibling(new TextComponentString(p.text).setStyle(st));
+		}
+		gui.printChatMessage(out);
+		*///?} else {
+		ChatComponentText out = new ChatComponentText("");
+		for (dev.theredstonee.trsclient.core.screenshot.Screenshots.Part p : parts) {
+			net.minecraft.util.ChatStyle st = new net.minecraft.util.ChatStyle();
+			if (p.kind == dev.theredstonee.trsclient.core.screenshot.Screenshots.Part.Kind.ACTION) {
+				st.setColor(net.minecraft.util.EnumChatFormatting.GOLD);
+			} else if (p.kind == dev.theredstonee.trsclient.core.screenshot.Screenshots.Part.Kind.NAME) {
+				st.setUnderlined(true);
+			}
+			if (p.insertion != null) st.setInsertion(p.insertion);
+			if (p.hover != null) {
+				st.setChatHoverEvent(new net.minecraft.event.HoverEvent(net.minecraft.event.HoverEvent.Action.SHOW_TEXT,
+						new ChatComponentText(p.hover)));
+			}
+			out.appendSibling(new ChatComponentText(p.text).setChatStyle(st));
+		}
+		gui.printChatMessage(out);
+		//?}
+	}
+
 	/** Einfüge-Text der Chat-Komponente unter der Maus – nur ohne eigene Klick-Aktion –, sonst null. */
 	public static String insertionAt(int rawMouseX, int rawMouseY) {
 		GuiNewChat gui = chat();

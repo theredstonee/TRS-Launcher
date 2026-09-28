@@ -172,6 +172,46 @@ independent in `common/core/clips`:
   `clips-buffer`, `clips-saved`, `clips-recording`, `clips-recording-saved` (fabric and legacy). Against a
   launcher attrappe or a real launcher start.
 
+## Screenshot-Werkzeuge (Vorschau, Editor, Essential)
+
+Module `screenshots` (Comfort, `common/core/screenshot`, UI `common/core/ui/screenshot`). Behaviour inspired by
+Essential's screenshot popup – own code, Essential is closed source.
+
+- **Detection** without a mixin in `Screenshot`: `ScreenshotWatcher` (daemon thread, `stat` of `screenshots/` every
+  400 ms, lists only on change; vanilla names only, created after game start, complete = size stable + PNG `IEND`)
+  plus the faster path through the vanilla chat line (`qol/ChatLinks.decorate` → `Screenshots.onVanillaLine`). Works
+  no matter who took the picture (F2, Essential, other mods).
+- **Preview** (`ScreenshotToast`): top right, drawn from `SocialHooks` (HUD, `overScreen`/`afterScreen`/`afterUi`),
+  legacy/1.7.10/1.13.2 from their overlay + `DrawScreenEvent.Post`. With a screen open the mouse is free: hover shows
+  Edit / Favourite / Copy picture / Send to friends. Clicks: Mojmap `MouseHandlerMixin` (now cancellable, before the
+  screen), legacy `MouseInputEvent.Pre`, 1.13.2 `MouseClickedEvent.Pre`, 1.7.10 edge detection (not cancellable).
+- **Chat**: ≥1.16 the vanilla line gets `[Edit] [Copy link] [Copy picture]` (style insertion
+  `trs-shot:<session secret>:<action>:<file>` – a server can't trigger actions without the secret). Without a vanilla
+  line (Essential swallows it) an own line after 1.5 s. Legacy can't extend the vanilla line → compact line below it.
+  Hovering a chat line with a screenshot shows the picture (`ChatLines.lineAt` / `ChatCompat.insertionAt`).
+- **Editor** (`ScreenshotEditorUi`): state = `EditState` (rotation, crop, shapes in rotated image space, immutable →
+  `EditHistory` undo/redo), rendering `EditRender` (Java2D on a `BufferedImage` wrapping the pixel array, works
+  headless; pixelate/rotate/crop on the pixels) – the same code draws the preview (≤ 1600×900, background thread) and
+  the export. Saving writes `Copy of <name>.png` (localised prefix, ASCII only) next to the original via
+  `PanoramaPng`; the original is never written.
+- **Clipboard** (`ImageClipboard`): Windows JNA (`CF_DIB` + registered `PNG`, reflection like `SecretBox`), AWT if not
+  headless, else PowerShell/WinForms (path via environment variable), `osascript` (argv), `wl-copy`/`xclip`.
+- **Essential** (`EssentialInterop`, checked with `javap` on Essential 1.5 Fabric 1.21.11 + Forge 1.12.2): Essential
+  redirects `Screenshot.grab` in `KeyboardHandler#keyPress` to its `ScreenshotManager` (which calls vanilla `grab`
+  again, printing the vanilla chat line only with its option "Screenshot message") and shows its toast from a mixin
+  after `NativeImage.writeTo` when `EssentialConfig.getEssentialScreenshots()` ("Screenshot preview",
+  `essential_screenshots` in `essential/config.toml`) is true. With "Replace Essential's screenshot preview" on, the
+  mod switches that option off through `EssentialConfig.INSTANCE.setEssentialScreenshots(false)` (reflection, game
+  thread, re-checked every 2 s) and remembers it in `config/trsclient/screenshots.json`; switching our option off turns
+  Essential's preview back on – only if we turned it off. Any failure → nothing happens, both popups show.
+- Favourites: `config/trsclient/screenshots.json` (local only, like server pins); tab "Favourites" in Clips & Images.
+- Send to friends: `ScreenshotShare.requestSend` + `SocialPlatform.openSocial()` → `ShareTargetDialog` in image mode
+  (multi-select, `Social.send` with the image per target, missing DMs opened first).
+- Autotest `-PtrsAutotestOnly=screenshots` (fabric: real F2 through `KeyboardHandler`, legacy: vanilla save + chat
+  line): shots `screenshots-toast`, `-toast-hover`, `-toast-tooltip`, `-chat-hover`, `-chat-own` (fabric),
+  `-editor-empty`, `-editor`, `-editor-crop`, `-editor-share`, `-editor-saved`, `-favorites`. "Copy picture" only with
+  `-Dtrsclient.autotest.clipboard=true` (it would overwrite the clipboard of the machine).
+
 ## TRS Link & Kontowechsel
 
 **TRS Link** (`common/core/link`): one daemon thread „TRS-Link“ to the launcher on **127.0.0.1**.
@@ -448,6 +488,9 @@ vanilla toggle sprint/sneak only exists from 1.15.
 | Leistung: leiser im Hintergrund | 1.21.9, 1.21.10 | master volume only through the option itself there |
 | Leistung (Culling, Partikel, Welt-Details) | Forge 1.14.4 | no Mixin – only Dynamic FPS and FPS-Boost |
 | Leistung (ganze Kategorie) | Forge 1.13.2 and 1.7.10 | not ported – hidden |
+| Screenshot-Werkzeuge: Chat-Aktionen, Bild über der Chatzeile | Fabric/Forge 1.14.4–1.15.2, Forge 1.13.2 and 1.7.10 | no style insertion hook (<1.16) / not ported; preview, editor, favourites work |
+| Screenshot-Vorschau: Klick | Forge 1.14.4 | no Mixin – the preview shows, open the editor from Clips & Images |
+| Screenshot-Werkzeuge: Link kopieren, An Freunde senden | Forge 1.13.2 and 1.7.10 | no TRS Online there – buttons say "not available in this version" |
 | Bewegungsunschärfe | all | not implemented (see "Open") – copying the frame needs a different path per render era |
 
 ### Open

@@ -115,7 +115,8 @@ public final class Thumbnails {
 	Decoded decode(Path path, String key, long modified) {
 		try {
 			if (Files.size(path) > MAX_FILE_BYTES) return new Decoded(key, modified, 0, 0, null);
-			PngDecoder.Image img = PngDecoder.decode(Files.readAllBytes(path));
+			// Große Bildschirmfotos (5K, Ultrawide) liegen über der Standardgrenze des Dekoders.
+			PngDecoder.Image img = PngDecoder.decode(Files.readAllBytes(path), 40_000_000L);
 			float scale = Math.min(1f, Math.min(maxW / (float) img.width, maxH / (float) img.height));
 			int w = Math.max(1, Math.round(img.width * scale));
 			int h = Math.max(1, Math.round(img.height * scale));

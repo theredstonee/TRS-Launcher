@@ -202,6 +202,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.qol.LegacyQol.init(modules);
 		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama (eigene Kamera-Drehung).
 		dev.theredstonee.trsclient.comfort.LegacyComfort.init(modules);
+		// Screenshot-Werkzeuge: Vorschau nach F2, Chat-Aktionen, Bild-Editor, Essential-Vorschau ersetzen.
+		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.install(modules);
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.qol.LegacyQol.get());
@@ -327,6 +329,7 @@ public final class TrsClient {
 	public void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
 		if (accountSwap != null) accountSwap.drain();
+		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.tick();
 		Minecraft mc = Minecraft.getMinecraft();
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.isPressed()) {
@@ -454,8 +457,19 @@ public final class TrsClient {
 	/** Strg+Klick im Chat kopiert die angeklickte Zeile. */
 	@SubscribeEvent
 	public void onGuiMouseInput(GuiScreenEvent.MouseInputEvent.Pre event) {
+		// Screenshot-Vorschau oben rechts: Klick in jedem Bildschirm.
+		if (dev.theredstonee.trsclient.screenshot.LegacyScreenshots.onMouse(Mc.eventGui(event))) {
+			event.setCanceled(true);
+			return;
+		}
 		if (!(Mc.eventGui(event) instanceof GuiChat)) return;
 		if (!Mouse.getEventButtonState()) return;
+		// [Bearbeiten] [Link kopieren] [Bild kopieren] hinter „Screenshot gespeichert“.
+		if (Mouse.getEventButton() == 0 && !GuiScreen.isShiftKeyDown() && !GuiScreen.isCtrlKeyDown()
+				&& dev.theredstonee.trsclient.screenshot.LegacyScreenshots.onChatClick()) {
+			event.setCanceled(true);
+			return;
+		}
 		// Klick auf markierte Koordinaten → „Als Wegpunkt speichern“ (Umschalt fügt wie in Vanilla nur den Text ein).
 		if (Mouse.getEventButton() == 0 && !GuiScreen.isShiftKeyDown() && !GuiScreen.isCtrlKeyDown()
 				&& chat.onLinkClick(Mouse.getX(), Mouse.getY())) {
@@ -593,6 +607,7 @@ public final class TrsClient {
 		hud.render(Gfx.of(res.getScaledWidth(), res.getScaledHeight()), Mc.partialTicks(event));
 		// Sozial-Toasts im Spiel (über Bildschirmen zeichnet sie onScreenDrawn).
 		if (Mc.screen() == null && !Mc.hudHidden()) drawToasts(res.getScaledWidth(), res.getScaledHeight());
+		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.hud(res.getScaledWidth(), res.getScaledHeight());
 		// Welt-Hosting: rotes Abzeichen „Öffentlicher Link aktiv“.
 		if (!Mc.hudHidden()) drawHostingBadge(res.getScaledWidth(), res.getScaledHeight(), -1, -1);
 	}
@@ -607,6 +622,7 @@ public final class TrsClient {
 					dev.theredstonee.trsclient.menus.LegacyMenus.linkBadgeY());
 		}
 		drawToasts(s.width, s.height);
+		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.afterScreen(s);
 	}
 
 	/** Abzeichen „Öffentlicher Link aktiv“: oben mittig (x &lt; 0) oder an fester Stelle (Pausemenü). */

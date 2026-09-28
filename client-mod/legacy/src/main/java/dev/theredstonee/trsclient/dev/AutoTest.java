@@ -100,6 +100,11 @@ public final class AutoTest {
 			DisconnectTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=screenshots: Screenshot-Werkzeuge (Vorschau, Chat, Editor, Favoriten)
+		if ("screenshots".equals(System.getProperty("trsclient.autotest.only"))) {
+			ScreenshotTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=keysearch: Suche in der Tastenbelegung (Steuerung)
 		if ("keysearch".equals(System.getProperty("trsclient.autotest.only"))) {
 			KeySearchTest.install();

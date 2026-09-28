@@ -116,6 +116,8 @@ public final class TrsClient {
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.trsOnline, modules.capePhysics, modules.emotes, modules.colors));
 		// Sozial (Chat, Toasts) braucht die TRS-Online-Funktionen – hier ausgeblendet.
 		UNSUPPORTED.add(modules.social);
+		// Screenshot-Werkzeuge ohne eigene Chatzeile (kein Einfüge-Text in 1.7.10); Essential gibt es hier nicht.
+		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.comfort.shotChatActions, modules.comfort.shotReplaceEssential));
 		// Schilde gibt es erst ab 1.9.
 		UNSUPPORTED.add(modules.shieldPosition);
 		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
@@ -163,6 +165,8 @@ public final class TrsClient {
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		FMLCommonHandler.instance().bus().register(new TickHandler());
+		// Screenshot-Werkzeuge: Vorschau nach F2, Bild-Editor, Favoriten, Bild kopieren.
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.install(modules);
 		// Netzwerk-Optimierung (TCP_NODELAY, schnellere Entschlüsselung) + Ping-Messung, siehe core.net.
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
 		FMLCommonHandler.instance().bus().register(dev.theredstonee.trsclient.net.NetHooks.get());

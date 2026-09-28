@@ -289,15 +289,19 @@ public final class SocialHooks {
 	 */
 	public static void hud(Gfx g) {
 		dev.theredstonee.trsclient.hosting.HostingHooks.hud(g);
-		if (!SocialOverlay.active() || Mc.hudHidden()) return;
+		if (Mc.hudHidden()) return;
 		Screen s = Mc.screen();
 		if (s != null && (screenHookLive() || s instanceof TrsUiScreen)) return;
+		// Screenshot-Vorschau (ohne Maus – im Spiel ist der Zeiger gefangen).
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.draw(g, false, false);
+		if (!SocialOverlay.active()) return;
 		draw(g, false);
 	}
 
 	/** Nach dem ganzen Bildschirm (ab 1.19.4, aus MenuScreenMixin): Toasts über jedem Menü. */
 	public static void overScreen(Gfx g) {
 		if (SCREEN_HOOK) pauseBadge(g);
+		if (SCREEN_HOOK) dev.theredstonee.trsclient.screenshot.ScreenshotHooks.draw(g, true, true);
 		if (!SCREEN_HOOK || !SocialOverlay.active()) return;
 		draw(g, true);
 	}
@@ -313,7 +317,8 @@ public final class SocialHooks {
 	public static boolean afterScreenPending() {
 		if (SCREEN_HOOK) return false;
 		legacyScreenHookAt = System.currentTimeMillis();
-		return SocialOverlay.active() || dev.theredstonee.trsclient.core.hosting.HostingOverlay.linkActive();
+		return SocialOverlay.active() || dev.theredstonee.trsclient.core.hosting.HostingOverlay.linkActive()
+				|| dev.theredstonee.trsclient.screenshot.ScreenshotHooks.active();
 	}
 
 	/** Pausemenü: Abzeichen „Öffentlicher Link aktiv“ über dem Knopf „Deaktivieren“. */
@@ -326,6 +331,7 @@ public final class SocialHooks {
 	public static void afterScreen(Gfx g) {
 		if (SCREEN_HOOK) return;
 		pauseBadge(g);
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.draw(g, true, true);
 		if (!SocialOverlay.active()) return;
 		draw(g, true);
 	}
@@ -339,7 +345,9 @@ public final class SocialHooks {
 
 	/** Nach einem TRS-Bildschirm (nur solange kein Haken nach jedem Bildschirm zeichnet): Toasts darüber. */
 	public static void afterUi(Gfx g) {
-		if (screenHookLive() || !SocialOverlay.active()) return;
+		if (screenHookLive()) return;
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.draw(g, true, true);
+		if (!SocialOverlay.active()) return;
 		draw(g, true);
 	}
 

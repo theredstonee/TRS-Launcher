@@ -33,6 +33,14 @@ public final class PngDecoder {
 	}
 
 	public static Image decode(byte[] png) throws IOException {
+		return decode(png, MAX_PIXELS);
+	}
+
+	/**
+	 * Wie {@link #decode(byte[])}, aber mit eigener Pixel-Grenze (große Bildschirmfotos: 5K/Ultrawide liegen über der
+	 * Standardgrenze von 8,4 MP).
+	 */
+	public static Image decode(byte[] png, long maxPixels) throws IOException {
 		if (png == null || png.length < 33) throw new IOException("keine PNG");
 		byte[] sig = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
 		for (int i = 0; i < 8; i++) {
@@ -67,7 +75,7 @@ public final class PngDecoder {
 						throw new IOException("Bittiefe " + depth);
 					}
 					if (interlace > 1) throw new IOException("Interlacing " + interlace);
-					if (width <= 0 || height <= 0 || (long) width * height > MAX_PIXELS) {
+					if (width <= 0 || height <= 0 || (long) width * height > maxPixels) {
 						throw new IOException("Bildgröße ungültig");
 					}
 					break;

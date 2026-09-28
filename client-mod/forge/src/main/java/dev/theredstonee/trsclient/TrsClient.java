@@ -104,6 +104,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
 		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama.
 		dev.theredstonee.trsclient.comfort.ComfortHooks.init(modules);
+		// Screenshot-Werkzeuge: Vorschau nach F2, Chat-Aktionen, Bild-Editor, Essential-Vorschau ersetzen.
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.install(modules);
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, Platform.configDir());
 		if (status == ConfigStore.Status.RECOVERED) {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
@@ -261,6 +263,7 @@ public final class TrsClient {
 		chat.tick(mc);
 		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
 		if (dev.theredstonee.trsclient.comfort.ComfortHooks.tick(mc)) saveConfig();
+		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.tick();
 		hud.tick();
 		tickRedstone();
 		dev.theredstonee.trsclient.online.OnlineHooks.tick(mc);
