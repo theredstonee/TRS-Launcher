@@ -272,6 +272,13 @@ public final class TrsModules {
 	public final BoolSetting worldMapPassive;
 	public final BoolSetting worldMapGrid;
 	public final NumberSetting worldMapCache;
+	// Weltkarte 2 (TRS Client 0.13.0): stufenlos zoomen, Schwung, Wegpunkt-Liste, andere Dimensionen, Export.
+	public final BoolSetting worldMapSmoothZoom;
+	public final BoolSetting worldMapInertia;
+	public final BoolSetting worldMapList;
+	public final BoolSetting worldMapDimensions;
+	public final BoolSetting worldMapNetherCoords;
+	public final NumberSetting worldMapExportSize;
 
 	// --- TRS-Online / Umhänge ---
 	public final BoolSetting badgeTab;
@@ -763,6 +770,12 @@ public final class TrsModules {
 		worldMapPassive = worldMap.add(new BoolSetting("showPassive", "Show animals", false));
 		worldMapGrid = worldMap.add(new BoolSetting("grid", "Chunk grid when zoomed in", true));
 		worldMapCache = worldMap.add(new NumberSetting("cacheSize", "Map storage on disk (MB)", 256, 32, 2048, 32, "", " MB"));
+		worldMapSmoothZoom = worldMap.add(new BoolSetting("smoothZoom", "Smooth zoom to the mouse pointer", true));
+		worldMapInertia = worldMap.add(new BoolSetting("inertia", "Keep gliding after dragging", true));
+		worldMapList = worldMap.add(new BoolSetting("waypointList", "Waypoint list open", false));
+		worldMapDimensions = worldMap.add(new BoolSetting("otherDimensions", "View other dimensions", true));
+		worldMapNetherCoords = worldMap.add(new BoolSetting("netherCoords", "Matching Nether/Overworld coordinates", true));
+		worldMapExportSize = worldMap.add(new NumberSetting("exportSize", "Largest image when exporting", 8192, 1024, 16384, 1024, "", " px"));
 		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Badge in the tab list", true));
 		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Badge above names", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));

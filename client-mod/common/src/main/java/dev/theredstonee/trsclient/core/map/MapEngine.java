@@ -148,6 +148,21 @@ public final class MapEngine {
 		return platform;
 	}
 
+	/** Kartenspeicher (null = nur im Speicher, z. B. ohne Config-Ordner). */
+	public MapDisk disk() {
+		return disk;
+	}
+
+	/** Welt-/Server-Schlüssel der offenen Karte ("" = keine Welt). */
+	public String worldKey() {
+		return worldKey;
+	}
+
+	/** Neue laufende Ebenen-Nummer (Texturnamen) – für Ebenen, die die Weltkarte selbst öffnet (andere Dimension). */
+	public int nextLayerIndex() {
+		return ++layerSerial;
+	}
+
 	/** Läuft die Karte überhaupt (Minimap oder Weltkarte an)? */
 	public boolean enabled() {
 		return modules.minimap.isEnabled() || modules.worldMap.isEnabled();
@@ -308,13 +323,37 @@ public final class MapEngine {
 		return out;
 	}
 
+	/** Wegpunkte dieser Welt in einer bestimmten Dimension (auch ohne dort zu sein; ohne Dimension = überall). */
+	public List<Waypoint> waypointsIn(String dim) {
+		List<Waypoint> all = allWaypoints();
+		List<Waypoint> out = new ArrayList<Waypoint>(all.size());
+		for (Waypoint w : all) {
+			if (w.inDimension(dim)) out.add(w);
+		}
+		return out;
+	}
+
+	/** Alle Wegpunkte dieser Welt (alle Dimensionen). */
+	public List<Waypoint> allWaypoints() {
+		if (platform == null) return Collections.emptyList();
+		WaypointStore store = platform.waypoints();
+		String key = platform.waypointWorldKey();
+		if (store == null || key == null || key.isEmpty()) return Collections.emptyList();
+		return new ArrayList<Waypoint>(store.all(key));
+	}
+
 	/** Neuer Wegpunkt (von der Karte). */
 	public Waypoint addWaypoint(String name, int x, int y, int z, int color) {
+		return addWaypoint(name, x, y, z, color, dimension);
+	}
+
+	/** Neuer Wegpunkt in einer bestimmten Dimension (Weltkarte zeigt gerade eine andere Dimension). */
+	public Waypoint addWaypoint(String name, int x, int y, int z, int color, String dim) {
 		if (platform == null) return null;
 		WaypointStore store = platform.waypoints();
 		String key = platform.waypointWorldKey();
 		if (store == null || key == null || key.isEmpty()) return null;
-		Waypoint w = new Waypoint(name, x, y, z, dimension, color);
+		Waypoint w = new Waypoint(name, x, y, z, dim == null || dim.isEmpty() ? dimension : dim, color);
 		store.add(key, w);
 		platform.waypointsChanged();
 		return w;
@@ -517,6 +556,8 @@ public final class MapEngine {
 	private void openDimension(String dim) {
 		closeLayers();
 		dimension = dim;
+		// Echte Kennung merken: die Weltkarte kann die Dimension so auch von woanders aus anzeigen.
+		if (disk != null) disk.rememberDimension(worldKey, dim);
 		Path dir = disk == null ? null : disk.layerDir(worldKey, dim, "surface");
 		surface = new MapLayer("surface", ++layerSerial, Integer.MIN_VALUE, disk, dir);
 		surfaceStamps.clear();

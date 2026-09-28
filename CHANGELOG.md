@@ -21,6 +21,45 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- **World map: smooth zoom and gliding (TRS Client).** The mouse wheel now zooms smoothly towards the mouse pointer –
+  the spot under the pointer stays where it is. Let go while dragging and the map glides on for a moment. Big explored
+  areas appear much faster: what you look at loads first, and far out the map uses overview tiles instead of single
+  areas. Both can be switched off in the world map settings (then zoom works in fixed steps as before).
+- **Waypoint list with search.** The pin button on the world map opens a list of all waypoints of the world: search by
+  name or coordinate, filter by dimension, see the distance (across Nether and Overworld, converted ×8), turn each one
+  on or off. Click a waypoint to center the map on it, the pencil opens the waypoint window (edit or delete), “+” adds
+  a new one in the middle of the map.
+- **View other dimensions.** Click the dimension name at the top of the world map to look at the Nether, the End or
+  other dimensions of this world you have mapped – without going there. In the Nether view you can switch between the
+  mapped cave levels. In the Nether and the Overworld the bottom bar also shows the matching coordinates of the other
+  side (×8 or ÷8), handy for portals.
+- **Export the map as an image.** The image button saves the whole explored map or just the visible part as a PNG in
+  your `screenshots` folder (named after world, dimension and time; unexplored parts stay transparent). Very large
+  maps are scaled down to the size set in the settings (default 8192 pixels). The export runs in the background – the
+  game keeps running – and a chat message tells you the file name.
+
+### Deutsch
+- **Weltkarte: stufenlos zoomen und gleiten (TRS Client).** Das Mausrad zoomt jetzt stufenlos zum Mauszeiger hin – die
+  Stelle unter dem Zeiger bleibt, wo sie ist. Lässt du beim Ziehen los, gleitet die Karte noch kurz weiter. Große
+  erkundete Gebiete erscheinen deutlich schneller: Was du ansiehst, lädt zuerst, und weit herausgezoomt nutzt die Karte
+  Übersichtskacheln statt einzelner Bereiche. Beides lässt sich in den Weltkarten-Einstellungen abschalten (dann zoomt
+  sie wie bisher in festen Stufen).
+- **Wegpunkt-Liste mit Suche.** Der Stecknadel-Knopf auf der Weltkarte öffnet eine Liste aller Wegpunkte der Welt: nach
+  Name oder Koordinate suchen, nach Dimension filtern, Entfernung sehen (auch über Nether und Oberwelt hinweg, ×8
+  umgerechnet), jeden einzeln ein- oder ausblenden. Klick auf einen Wegpunkt zentriert die Karte darauf, der Stift
+  öffnet das Wegpunkt-Fenster (bearbeiten oder löschen), „+“ legt einen neuen in der Kartenmitte an.
+- **Andere Dimensionen ansehen.** Ein Klick auf den Dimensionsnamen oben auf der Weltkarte zeigt den Nether, das End oder
+  andere Dimensionen dieser Welt, die du schon kartiert hast – ohne dorthin zu reisen. In der Nether-Ansicht lässt sich
+  zwischen den kartierten Höhlenebenen wechseln. Im Nether und in der Oberwelt zeigt die untere Leiste zusätzlich die
+  passenden Koordinaten der anderen Seite (×8 bzw. ÷8) – praktisch für Portale.
+- **Karte als Bild exportieren.** Der Bild-Knopf speichert die ganze erkundete Karte oder nur den sichtbaren Ausschnitt
+  als PNG im Ordner `screenshots` (benannt nach Welt, Dimension und Uhrzeit; Unerkundetes bleibt durchsichtig). Sehr
+  große Karten werden auf die eingestellte Größe verkleinert (Standard 8192 Pixel). Der Export läuft im Hintergrund –
+  das Spiel läuft weiter – und eine Chat-Nachricht nennt den Dateinamen.
+
 ## 0.12.0 – 2026-09-27 – Pass It On | Weitergeben
 <!-- banner: accent=#27d3e6 motif=/news/0.12.0/banner.png -->
 <!-- shots:

@@ -73,4 +73,8 @@ public interface MapPlatform {
 	default boolean openWorldMap() {
 		return false;
 	}
+
+	/** Kurze Meldung im Chat (nur für den Spieler, z. B. „Karte gespeichert als …“). Nur Spiel-Thread. */
+	default void message(String text) {
+	}
 }
