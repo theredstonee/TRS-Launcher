@@ -21,7 +21,17 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
-## Unreleased
+## 0.13.0 – 2026-09-28 – Your Say | Mitreden
+<!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->
+<!-- shots:
+/news/0.13.0/issues.png | Share ideas and report bugs – vote on what comes next | Ideen einreichen und Bugs melden – abstimmen, was als Nächstes kommt
+/news/0.13.0/issue-page.png | Every issue with its own page, activity and community score | Jedes Issue mit eigener Seite, Aktivität und Community-Score
+/news/0.13.0/roadmap.png | The roadmap: six columns from open to done | Die Roadmap: sechs Spalten von offen bis erledigt
+/news/0.13.0/bug-report.png | Report bugs straight from the game – you see exactly what gets sent | Bugs direkt aus dem Spiel melden – du siehst genau, was mitgeht
+/news/0.13.0/minimap.png | Minimap: waypoints on the edge, real mob heads, texture colours | Minimap: Wegpunkte am Rand, echte Mob-Köpfe, Texturfarben
+/news/0.13.0/world-map.png | World map: smooth zoom, waypoint list with search, other dimensions | Weltkarte: stufenlos zoomen, Wegpunkt-Liste mit Suche, andere Dimensionen
+/news/0.13.0/web-login.png | Sign in on the website with your TRS Launcher | Auf der Website mit dem TRS Launcher anmelden
+-->
 
 ### English
 - TRS Client minimap: waypoints outside the map now sit as small coloured boxes with their first letter on the ring
@@ -54,11 +64,12 @@ How to write an entry:
   what goes out; the log is cleaned first (tokens, UUIDs, your player and account names, IP addresses, user names in
   folder paths, email addresses and chat messages are removed). After sending you get the issue number and can open it
   in the browser. Works in every Minecraft version the TRS Client supports.
-- New on the website: an issue tracker (trs-launcher.theredstonee.de/issues) and a roadmap. Report bugs, suggest
-  features for the launcher, the TRS Client or the website, vote them up or down, comment with screenshots and follow
-  issues. The roadmap board shows every issue in six columns – open, planned, in progress, in review, done and
-  rejected – or as a compact list; filter with a search field (e.g. status:planned area:client) or the filter menus
-  and open any issue in a window right on the board.
+- New on the website: an issue tracker (trs-launcher.theredstonee.de/issues) and a roadmap. Share ideas and report
+  bugs for the launcher, the TRS Client or the website, vote them up or down, comment with screenshots and follow
+  issues. Every issue has its own page with the whole activity – comments and every change with its own symbol – and
+  a sidebar with the community score, area, version & loader, status and tags. The roadmap board shows every issue in
+  six columns – open, planned, in progress, in review, done and rejected – or as a compact list; filter with a search
+  field (e.g. status:planned area:client) or the filter menus and open any issue in a window right on the board.
 - Follow an issue and the launcher tells you when its status changes, the team answers, a fix ships ("fixed in") or it
   is merged into another issue – “View” opens it in your browser. You can turn this off under Settings →
   Notifications → “Issues you follow”.
@@ -105,11 +116,13 @@ How to write an entry:
   Kontonamen, IP-Adressen, Benutzernamen in Ordnerpfaden, E-Mail-Adressen und Chat-Nachrichten fliegen raus). Danach
   bekommst du die Issue-Nummer und kannst sie im Browser öffnen. Geht in jeder Minecraft-Version, die der TRS Client
   unterstützt.
-- Neu auf der Website: ein Issue-Tracker (trs-launcher.theredstonee.de/issues) und eine Roadmap. Melde Fehler, wünsch
-  dir Funktionen für den Launcher, den TRS Client oder die Website, stimme hoch oder runter, kommentiere mit
-  Screenshots und folge Issues. Das Roadmap-Board zeigt alle Issues in sechs Spalten – offen, geplant, in Arbeit, in
-  Prüfung, erledigt und abgelehnt – oder als kompakte Liste; filtern geht über ein Suchfeld (z. B. status:geplant
-  bereich:client) oder die Filter-Menüs, und jedes Issue öffnet sich als Fenster direkt über dem Board.
+- Neu auf der Website: ein Issue-Tracker (trs-launcher.theredstonee.de/issues) und eine Roadmap. Reiche Ideen ein und
+  melde Bugs für den Launcher, den TRS Client oder die Website, stimme hoch oder runter, kommentiere mit Screenshots
+  und folge Issues. Jedes Issue hat eine eigene Seite mit der ganzen Aktivität – Kommentare und jede Änderung mit
+  eigenem Symbol – und einer Seitenleiste mit Community-Score, Bereich, Version & Loader, Status und Tags. Das
+  Roadmap-Board zeigt alle Issues in sechs Spalten – offen, geplant, in Arbeit, in Prüfung, erledigt und abgelehnt –
+  oder als kompakte Liste; filtern geht über ein Suchfeld (z. B. status:geplant bereich:client) oder die Filter-Menüs,
+  und jedes Issue öffnet sich als Fenster direkt über dem Board.
 - Folgst du einem Issue, sagt dir der Launcher Bescheid, wenn sich der Status ändert, das Team antwortet, eine Lösung
   erscheint („Erledigt in“) oder es mit einem anderen Issue zusammengeführt wird – „Ansehen“ öffnet es im Browser.
   Abschalten kannst du das unter Einstellungen → Benachrichtigungen → „Issues, denen du folgst“.
