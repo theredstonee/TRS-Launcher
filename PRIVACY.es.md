@@ -477,8 +477,8 @@ idioma sincronizados y los vuelve a escribir cuando los cambias en la introducci
 **Notas del TRS Client:** las notas de cada mundo se guardan en tu PC en `config/trsclient/notes` (un archivo por
 mundo o servidor). Con los servicios TRS activados y ambos interruptores activados (*Funciones en línea de TRS* →
 «Sincronizar con la cuenta de TRS» y en la página *Notas del mundo* «Sincronizar con la cuenta TRS», ambos activados
-de fábrica), el TRS Client también las guarda nota por nota en tu cuenta TRS para que sean iguales en todos tus PC,
-en cuanto los servicios TRS lo admitan; hasta entonces se quedan en tu PC. Qué nota está fijada en el HUD se queda en
+de fábrica), el TRS Client también las guarda nota por nota en tu cuenta TRS para que sean iguales en todos tus PC.
+Qué nota está fijada en el HUD se queda en
 tu PC. Solo tú puedes leer tus notas: no hay vista de administración. Una nota borrada deja una marca vacía durante
 90 días para que tus otros PC también la borren. Si desactivas el interruptor de notas, todas se quedan en este PC;
 «Alle TRS-Daten löschen» borra las notas sincronizadas.

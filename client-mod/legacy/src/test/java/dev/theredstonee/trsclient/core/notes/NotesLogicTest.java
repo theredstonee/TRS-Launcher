@@ -408,6 +408,8 @@ class NotesLogicTest {
 	/** In-Memory-Attrappe des vorgeschlagenen Vertrags (API.md §17.5). */
 	static final class FakeNotesServer implements Http {
 		boolean supported = true;
+		/** Nächster GET mit Cursor antwortet mit der vollständigen Liste und {@code reset: true}. */
+		boolean resetNext;
 		final Map<String, JsonObject> notes = new LinkedHashMap<String, JsonObject>();
 		final Map<String, Long> seq = new LinkedHashMap<String, Long>();
 		long counter;
@@ -424,6 +426,11 @@ class NotesLogicTest {
 				long since = 0;
 				int i = url.indexOf("since=");
 				if (i >= 0) since = Long.parseLong(url.substring(i + 6).split("&")[0]);
+				boolean reset = resetNext && i >= 0;
+				if (reset) {
+					resetNext = false;
+					since = 0;
+				}
 				JsonArray arr = new JsonArray();
 				for (Map.Entry<String, JsonObject> e : notes.entrySet()) {
 					if (seq.get(e.getKey()) > since) arr.add(e.getValue());
@@ -432,6 +439,7 @@ class NotesLogicTest {
 				body.add("notes", arr);
 				body.addProperty("cursor", String.valueOf(counter));
 				body.addProperty("more", false);
+				body.addProperty("reset", reset);
 				return json(200, body.toString());
 			}
 			if (request.method.equals("POST") && url.endsWith(NotesSyncApi.PATH)) {
@@ -584,6 +592,86 @@ class NotesLogicTest {
 		again.round();
 		assertEquals(gets, server.gets);
 		assertEquals(NotesSync.Status.UNSUPPORTED, again.sync.status());
+	}
+
+	@Test
+	void completeListDropsNotesDeletedElsewhereButKeepsPendingOnes() {
+		String gone = "00000000000000a1", edited = "00000000000000a2", fresh = "00000000000000a3", ghost = "00000000000000a4";
+		NotesMerge.Account acc = new NotesMerge.Account();
+		acc.synced.put(gone, 100L);
+		acc.synced.put(edited, 100L);
+		acc.synced.put(ghost, 100L);
+		List<NotesStore.Entry> local = new ArrayList<NotesStore.Entry>();
+		local.add(entry(SERVER, gone, 100, false)); // unverändert, fehlt → weg
+		local.add(entry(SERVER, edited, 150, false)); // lokal geändert, fehlt → bleibt, hochladen
+		local.add(entry(SERVER, fresh, 120, false)); // nie synchronisiert → bleibt, hochladen
+		local.add(entry(SERVER, ghost, 100, true)); // Grabstein, fehlt → weg
+		NotesMerge.Plan plan = NotesMerge.plan(local, acc, Collections.<NotesSyncApi.Remote>emptyList(), true);
+		List<String> dropped = new ArrayList<String>();
+		for (NotesStore.Entry e : plan.drop) dropped.add(e.note.id);
+		List<String> uploaded = new ArrayList<String>();
+		for (NotesStore.Entry e : plan.upload) uploaded.add(e.note.id);
+		Collections.sort(dropped);
+		Collections.sort(uploaded);
+		assertEquals(java.util.Arrays.asList(gone, ghost), dropped);
+		assertEquals(java.util.Arrays.asList(edited, fresh), uploaded);
+		assertFalse(acc.synced.containsKey(gone));
+		// Ohne vollständige Liste wird nichts verworfen.
+		NotesMerge.Account acc2 = new NotesMerge.Account();
+		acc2.synced.put(gone, 100L);
+		assertTrue(NotesMerge.plan(local.subList(0, 1), acc2, Collections.<NotesSyncApi.Remote>emptyList(), false).drop.isEmpty());
+	}
+
+	@Test
+	void resetFromServerDropsDeletedNotesAndUploadsPendingOnes() {
+		FakeNotesServer server = new FakeNotesServer();
+		Pc pc = new Pc(tmp.resolve("pc"), server);
+		NoteBook book = pc.store.book(SERVER);
+		Note gone = pc.store.create(book, 1000);
+		pc.store.update(book, gone, "weg", "", 1001);
+		Note kept = pc.store.create(book, 1002);
+		pc.store.update(book, kept, "bleibt", "", 1003);
+		pc.store.pin(book, gone);
+		pc.round();
+		assertEquals(2, server.notes.size());
+
+		// Anderswo gelöscht, Grabstein auf dem Server schon abgelaufen; hier wird „bleibt“ inzwischen geändert und eine
+		// neue Notiz angelegt.
+		server.notes.remove(gone.id);
+		server.notes.remove(kept.id);
+		server.resetNext = true;
+		pc.store.update(book, book.byId(kept.id), "bleibt geändert", "", 5000);
+		Note fresh = pc.store.create(book, 5001);
+		pc.store.update(book, fresh, "neu", "", 5002);
+		pc.round();
+		assertNull(book.byId(gone.id), "anderswo gelöschte Notiz muss lokal verschwinden");
+		assertNull(pc.store.pinned(book));
+		assertEquals("bleibt geändert", book.byId(kept.id).title);
+		assertTrue(server.notes.containsKey(kept.id), "ausstehende Änderung wird hochgeladen");
+		assertTrue(server.notes.containsKey(fresh.id));
+		assertFalse(server.notes.containsKey(gone.id));
+		assertEquals(NotesSync.Status.SYNCED, pc.sync.status());
+	}
+
+	@Test
+	void notesChangedEventTriggersAPull() {
+		FakeNotesServer server = new FakeNotesServer();
+		Pc pc = new Pc(tmp.resolve("pc"), server);
+		pc.round();
+		int gets = server.gets;
+		Notes.forTest(pc.modules, pc.store);
+		pc.sync.tick(pc.clock + 100); // innerhalb der 5 Minuten: nichts
+		assertEquals(gets, server.gets);
+		pc.sync.remoteChanged();
+		pc.sync.tick(pc.clock + 200);
+		assertEquals(gets + 1, server.gets);
+	}
+
+	@Test
+	void serverAddressesWithControlCharactersAreNoWorld() {
+		assertNull(NoteWorld.fromWaypointKey("mp:bad\u0085host"));
+		assertNull(NoteWorld.fromWaypointKey("mp:a\u2028b"));
+		assertEquals("server:mc.example.org:25570", NoteWorld.fromWaypointKey("mp:MC.Example.org:25570").key());
 	}
 
 	@Test

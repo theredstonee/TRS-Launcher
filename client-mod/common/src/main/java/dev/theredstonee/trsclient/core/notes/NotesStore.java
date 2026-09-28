@@ -304,6 +304,25 @@ public final class NotesStore {
 	}
 
 	/**
+	 * Notiz ganz entfernen (ohne Grabstein), wenn sie noch den Stand {@code updated} hat – anderswo gelöscht und auf
+	 * dem Server schon vergessen ({@code reset}). Rückgabe: entfernt.
+	 */
+	public boolean dropIfUnchanged(String id, long updated) {
+		for (NoteBook b : books.values()) {
+			Note n = b.byId(id);
+			if (n == null) continue;
+			if (n.updated != updated) return false;
+			b.removeById(id);
+			if (id.equals(state.pins.get(b.world.key()))) {
+				state.pins.remove(b.world.key());
+				stateDirty = true;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Stand des Kontos einspielen, wenn er neuer ist (letzter Schreiber gewinnt je Notiz). Rückgabe: übernommen.
 	 * Wechselt eine Notiz die Welt (auf einem anderen PC verschoben), zieht sie mit.
 	 */

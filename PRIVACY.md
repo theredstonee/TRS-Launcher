@@ -450,8 +450,7 @@ launcher follows. Deleting all TRS data deletes this document too.
 **TRS Client notes:** notes per world are saved on your PC in `config/trsclient/notes` (one file per world or
 server). With the TRS services on and both switches on (*TRS Online Features* → "Sync with TRS account" and on the
 *World Notes* page "Sync with TRS account", both on by default) the TRS Client also keeps them in your TRS account,
-note by note, so they are the same on every PC – as soon as the TRS services support it; until then they stay on
-your PC. Which note is pinned to the HUD stays on your PC. Only you can read your notes – there is no admin view.
+note by note, so they are the same on every PC. Which note is pinned to the HUD stays on your PC. Only you can read your notes – there is no admin view.
 A deleted note leaves an empty marker for 90 days so your other PCs delete it too. Turn off the notes switch to keep
 all notes on this PC; "Alle TRS-Daten löschen" deletes the synced notes.
 

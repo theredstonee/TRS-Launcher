@@ -37,10 +37,16 @@ public final class NotesMerge {
 		}
 	}
 
-	/** Ergebnis: vom Konto übernehmen, hochladen. */
+	/** Ergebnis: vom Konto übernehmen, hochladen, lokal verwerfen. */
 	public static final class Plan {
 		public final List<NotesSyncApi.Remote> apply = new ArrayList<NotesSyncApi.Remote>();
 		public final List<NotesStore.Entry> upload = new ArrayList<NotesStore.Entry>();
+		/**
+		 * Nach einer vollständigen Liste ({@code reset}): Notizen, die das Konto schon hatte und die darin fehlen –
+		 * anderswo gelöscht, der Grabstein ist auf dem Server schon abgelaufen. Lokal ganz entfernen (ohne Grabstein),
+		 * aber nur, wenn sie seitdem nicht geändert wurden ({@code note.updated} = Stand des Plans).
+		 */
+		public final List<NotesStore.Entry> drop = new ArrayList<NotesStore.Entry>();
 	}
 
 	/**
@@ -48,6 +54,15 @@ public final class NotesMerge {
 	 * {@code acc}, was das Konto danach hat.
 	 */
 	public static Plan plan(List<NotesStore.Entry> local, Account acc, List<NotesSyncApi.Remote> pulled) {
+		return plan(local, acc, pulled, false);
+	}
+
+	/**
+	 * Wie {@link #plan(List, Account, List)}; {@code complete} = {@code pulled} ist die vollständige Liste des Kontos
+	 * (Antwort mit {@code reset: true} bzw. ohne Cursor, alle Seiten geholt). Dann gilt: schon synchronisierte Notizen,
+	 * die fehlen, wurden anderswo gelöscht → verwerfen; lokal geänderte (ausstehende) Notizen bleiben und werden hochgeladen.
+	 */
+	public static Plan plan(List<NotesStore.Entry> local, Account acc, List<NotesSyncApi.Remote> pulled, boolean complete) {
 		acc.normalized();
 		Plan plan = new Plan();
 		Map<String, NotesStore.Entry> byId = new HashMap<String, NotesStore.Entry>();
@@ -67,8 +82,22 @@ public final class NotesMerge {
 			}
 			acc.synced.put(r.note.id, Long.valueOf(r.note.updated));
 		}
+		if (complete) {
+			for (NotesStore.Entry l : local) {
+				String id = l.note.id;
+				if (latest.containsKey(id)) continue;
+				Long s = acc.synced.get(id);
+				if (s == null) continue; // nie synchronisiert → bleibt, wird unten hochgeladen
+				acc.synced.remove(id);
+				acc.rejected.remove(id);
+				// Unverändert seit dem Abgleich (oder ohnehin gelöscht): anderswo gelöscht → weg.
+				if (l.note.deleted || s.longValue() == l.note.updated) plan.drop.add(l);
+				// Sonst lokal geändert: bleibt; ohne Merker gilt sie als neu und wird hochgeladen.
+			}
+		}
 		for (NotesStore.Entry l : local) {
 			String id = l.note.id;
+			if (containsId(plan.drop, id)) continue;
 			NotesSyncApi.Remote r = latest.get(id);
 			if (r != null && r.note.updated >= l.note.updated) continue;
 			Long s = acc.synced.get(id);
@@ -80,6 +109,11 @@ public final class NotesMerge {
 			plan.upload.add(l);
 		}
 		return plan;
+	}
+
+	private static boolean containsId(List<NotesStore.Entry> list, String id) {
+		for (NotesStore.Entry e : list) if (e.note.id.equals(id)) return true;
+		return false;
 	}
 
 	/** Ergebnis eines POST einarbeiten; neuere Stände des Kontos landen in {@code apply}. */

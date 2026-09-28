@@ -85,6 +85,7 @@ public final class NotesSync {
 	private volatile Status status = Status.OFF;
 	private volatile long lastSyncAt;
 	private volatile String rejectReason;
+	private volatile boolean remoteChanged;
 
 	public NotesSync(TrsModules modules, ClientSync.Online online, NotesSyncApi api, Path stateFile, Executor executor,
 			Consumer<String> log) {
@@ -165,6 +166,14 @@ public final class NotesSync {
 		nextAllowedAt = 0;
 	}
 
+	/**
+	 * {@code notes_changed} (oder {@code resync}) auf {@code /v1/events/me}: beim nächsten Tick holen – beliebiger
+	 * Thread. Die Wartezeit nach Fehlern/„nicht verfügbar“ bleibt bestehen.
+	 */
+	public void remoteChanged() {
+		remoteChanged = true;
+	}
+
 	/** Darf synchronisiert werden (Einwilligung + alle Schalter)? */
 	public boolean enabled() {
 		return online.consent() && modules.trsOnline.isEnabled() && modules.syncClient.get() && modules.notes.notes.isEnabled()
@@ -204,7 +213,8 @@ public final class NotesSync {
 		}
 		if (inFlight || now < nextAllowedAt) return;
 		NotesStore store = notes.store();
-		boolean pull = now >= nextPullAt;
+		boolean pull = now >= nextPullAt || remoteChanged;
+		remoteChanged = false;
 		boolean local = store.revision() != syncedRevision && now - store.changedAt() >= DEBOUNCE_MS;
 		if (!pull && !local) return;
 		start(store, token, uuid, now);
@@ -243,17 +253,28 @@ public final class NotesSync {
 			List<NotesSyncApi.Remote> pulled = new ArrayList<NotesSyncApi.Remote>();
 			String cursor = acc.cursor;
 			boolean more = false;
+			// Ohne Cursor ist die Antwort ohnehin die vollständige Liste (mit Grabsteinen).
+			boolean full = cursor == null || cursor.isEmpty();
 			for (int page = 0; page < MAX_PAGES; page++) {
 				NotesSyncApi.Page p = api.pull(token, cursor);
+				if (p.reset) {
+					// Cursor zu alt/unbekannt: ab hier kommt die vollständige Liste – Bisheriges verwerfen.
+					pulled.clear();
+					full = true;
+				}
 				pulled.addAll(p.notes);
 				cursor = p.cursor;
 				more = p.more;
 				if (!more) break;
 			}
-			NotesMerge.Plan plan = NotesMerge.plan(snapshot, acc, pulled);
+			// Nur eine ganz geholte Liste darf Notizen verwerfen; sonst beim nächsten Mal von vorn.
+			boolean complete = full && !more;
+			if (full && more) cursor = null;
+			NotesMerge.Plan plan = NotesMerge.plan(snapshot, acc, pulled, complete);
+			final List<NotesStore.Entry> drop = new ArrayList<NotesStore.Entry>(plan.drop);
 			final List<NotesSyncApi.Remote> apply = new ArrayList<NotesSyncApi.Remote>(plan.apply);
 			List<List<NotesStore.Entry>> batches = NotesMerge.batches(plan.upload);
-			boolean complete = batches.size() <= MAX_BATCHES && !more;
+			boolean done0 = batches.size() <= MAX_BATCHES && !more;
 			for (int i = 0; i < batches.size() && i < MAX_BATCHES; i++) {
 				List<NotesStore.Entry> batch = batches.get(i);
 				List<NotesSyncApi.Result> res = api.push(token, batch);
@@ -264,11 +285,11 @@ public final class NotesSync {
 			state.unsupportedUntil = 0;
 			save();
 			final String reason = acc.rejectReason;
-			final boolean done = complete;
+			final boolean done = done0;
 			post(new Runnable() {
 				@Override
 				public void run() {
-					finished(uuid, apply, revision, reason, done);
+					finished(uuid, apply, drop, revision, reason, done);
 				}
 			});
 		} catch (final NotesSyncApi.Unsupported e) {
@@ -306,7 +327,8 @@ public final class NotesSync {
 
 	// --- Ergebnisse (Spiel-Thread) ---
 
-	private void finished(String uuid, List<NotesSyncApi.Remote> apply, long revision, String reason, boolean complete) {
+	private void finished(String uuid, List<NotesSyncApi.Remote> apply, List<NotesStore.Entry> drop, long revision, String reason,
+			boolean complete) {
 		inFlight = false;
 		failures = 0;
 		rejectReason = reason;
@@ -315,6 +337,9 @@ public final class NotesSync {
 		int applied = 0;
 		if (notes != null) {
 			NotesStore store = notes.store();
+			for (NotesStore.Entry d : drop) {
+				if (store.dropIfUnchanged(d.note.id, d.note.updated)) applied++;
+			}
 			for (NotesSyncApi.Remote r : apply) {
 				if (store.applyRemote(r.world, r.note)) applied++;
 			}

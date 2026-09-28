@@ -485,6 +485,11 @@ public final class Social {
 
 	// --- Ereignisse ---
 
+	private static void notesChanged() {
+		dev.theredstonee.trsclient.core.notes.NotesSync sync = dev.theredstonee.trsclient.core.notes.NotesSync.get();
+		if (sync != null) sync.remoteChanged();
+	}
+
 	void apply(MeEvent e, long now, boolean screen) {
 		eventsSeen++;
 		Friends friends = backend.friends();
@@ -505,6 +510,12 @@ public final class Social {
 		}
 		if (t.equals("resync")) {
 			resyncWanted = true;
+			notesChanged();
+			return;
+		}
+		if (t.equals("notes_changed")) {
+			// Notizen je Welt (API.md §17.5): gleich neu holen statt auf die 5-Minuten-Abfrage zu warten.
+			notesChanged();
 			return;
 		}
 		if (t.equals("chat_message")) {

@@ -17,11 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Notiz-Sync mit der TRS API – <b>vorgeschlagener Vertrag</b> (API.md §17.5, noch nicht auf dem Server):
+ * Notiz-Sync mit der TRS API (API.md §17.5):
  *
  * <pre>
- * GET  /v1/me/sync/notes?since=&lt;cursor&gt;&amp;limit=200
- *      → 200 { notes: [NoteView], cursor: "…", more: false }
+ * GET  /v1/me/sync/notes?since=&lt;cursor&gt;&amp;limit=500
+ *      → 200 { notes: [NoteView], cursor: "…", more: false, reset: false }
  * POST /v1/me/sync/notes   { changes: [ {id, world, title, text, createdAt, updatedAt}
  *                                     | {id, world, deleted: true, updatedAt} ] }   (1–50 Einträge, ≤ 512 KiB)
  *      → 200 { results: [ {id, status: "ok"|"stale"|"note_limit"|"invalid", current?: NoteView} ] }
@@ -38,8 +38,8 @@ public final class NotesSyncApi {
 	public static final int MAX_BATCH = 50;
 	/** Körper eines POST (Server-Grenze 512 KiB, etwas Luft). */
 	public static final int MAX_BATCH_BYTES = 480 * 1024;
-	/** Notizen je Seite beim Holen. */
-	public static final int PAGE = 200;
+	/** Notizen je Seite beim Holen (Server: 1–500). */
+	public static final int PAGE = 500;
 	static final int MAX_RESPONSE = 8 * 1024 * 1024;
 	private static final Gson GSON = new Gson();
 
@@ -66,11 +66,21 @@ public final class NotesSyncApi {
 		public final List<Remote> notes;
 		public final String cursor;
 		public final boolean more;
+		/**
+		 * Server kannte den Cursor nicht mehr (älter als die gelöschten Grabsteine): diese Seite ist der Anfang der
+		 * VOLLSTÄNDIGEN Liste – früher synchronisierte Notizen, die darin fehlen, wurden anderswo gelöscht.
+		 */
+		public final boolean reset;
 
 		public Page(List<Remote> notes, String cursor, boolean more) {
+			this(notes, cursor, more, false);
+		}
+
+		public Page(List<Remote> notes, String cursor, boolean more, boolean reset) {
 			this.notes = notes;
 			this.cursor = cursor;
 			this.more = more;
+			this.reset = reset;
 		}
 	}
 
@@ -118,9 +128,11 @@ public final class NotesSyncApi {
 		}
 		JsonElement c = body.get("cursor");
 		JsonElement more = body.get("more");
+		JsonElement reset = body.get("reset");
 		String next = c != null && c.isJsonPrimitive() ? c.getAsString() : cursor;
 		if (next != null && next.length() > 256) next = null;
-		return new Page(notes, next, more != null && more.isJsonPrimitive() && more.getAsBoolean());
+		return new Page(notes, next, more != null && more.isJsonPrimitive() && more.getAsBoolean(),
+				reset != null && reset.isJsonPrimitive() && reset.getAsBoolean());
 	}
 
 	/** Schreibt Änderungen (höchstens {@link #MAX_BATCH}); Ergebnisse in derselben Reihenfolge, fehlende = Fehler. */

@@ -41,7 +41,7 @@ public final class NoteWorld {
 		if (key == null || key.length() < 4) return null;
 		if (key.startsWith("mp:")) {
 			String addr = WaypointShare.normalizeServer(key.substring(3));
-			if (addr.isEmpty() || addr.equals("?") || addr.length() > MAX_ADDRESS) return null;
+			if (addr.isEmpty() || addr.equals("?") || addr.length() > MAX_ADDRESS || !plainAddress(addr)) return null;
 			return new NoteWorld(SERVER, addr, addr);
 		}
 		if (key.startsWith("sp:")) {
@@ -114,10 +114,14 @@ public final class NoteWorld {
 		return null;
 	}
 
+	/** Wie die API (§17.5): keine Leer- oder Steuerzeichen (U+0000–001F, U+007F–009F, U+2028/2029), kein Schrägstrich. */
 	private static boolean plainAddress(String a) {
 		for (int i = 0; i < a.length(); i++) {
 			char c = a.charAt(i);
-			if (c <= ' ' || c == '/' || c == '\\' || c == 0x7F) return false;
+			if (c <= ' ' || c == '/' || c == '\\' || (c >= 0x7F && c <= 0x9F) || c == 0x2028 || c == 0x2029
+					|| Character.isWhitespace(c)) {
+				return false;
+			}
 		}
 		return true;
 	}

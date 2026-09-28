@@ -483,8 +483,7 @@ auch dieses Dokument.
 **Notizen im TRS Client:** Notizen je Welt liegen auf deinem PC in `config/trsclient/notes` (eine Datei je Welt bzw.
 Server). Mit eingeschalteten TRS-Diensten und beiden Schaltern (*TRS-Online-Funktionen* → „Mit TRS-Konto
 synchronisieren“ und auf der Seite *Welt-Notizen* „Mit TRS-Konto synchronisieren“, beide ab Werk an) legt der TRS
-Client sie zusätzlich Notiz für Notiz in deinem TRS-Konto ab, damit sie auf jedem PC gleich sind – sobald die
-TRS-Dienste das unterstützen; bis dahin bleiben sie auf deinem PC. Welche Notiz im HUD angeheftet ist, bleibt auf
+Client sie zusätzlich Notiz für Notiz in deinem TRS-Konto ab, damit sie auf jedem PC gleich sind. Welche Notiz im HUD angeheftet ist, bleibt auf
 deinem PC. Deine Notizen kannst nur du lesen – es gibt keine Admin-Ansicht. Eine gelöschte Notiz hinterlässt 90 Tage
 einen leeren Vermerk, damit deine anderen PCs sie auch löschen. Notiz-Schalter aus = alle Notizen bleiben auf diesem
 PC; „Alle TRS-Daten löschen“ löscht die synchronisierten Notizen.
