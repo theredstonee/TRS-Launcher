@@ -734,8 +734,8 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
   },
   {
     // Erfolge (§31): Freischaltungen (mit Stand der Belohnung), Zähler/Flags je Konto (Launcher-Meldungen und
-    // Server-Zähler für Dinge, die später verschwinden – geteilte Packs, Welten, Screenshots), Spielzeit-Summe + Serie.
-    // Alles per ON DELETE CASCADE am Konto. Idempotent.
+    // Server-Zähler für Dinge, die später verschwinden – geteilte Packs, Welten, Screenshots), Spielzeit-Summe + Serie,
+    // Spalte users.achievements_visible (für Freunde sichtbar). Alles per ON DELETE CASCADE am Konto. Idempotent.
     // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
     version: 19,
     run: migrateAchievements,
@@ -777,6 +777,10 @@ CREATE TABLE IF NOT EXISTS achievement_playtime (
   best_streak INTEGER NOT NULL DEFAULT 0
 );
 `)
+  // Erfolge für Freunde sichtbar (Standard: ja). Liegt am Konto, geht also mit ihm.
+  if (hasTable(db, 'users') && !hasColumn(db, 'users', 'achievements_visible')) {
+    db.exec('ALTER TABLE users ADD COLUMN achievements_visible INTEGER NOT NULL DEFAULT 1')
+  }
 }
 
 function hasTable(db: DatabaseSync, name: string): boolean {

@@ -489,6 +489,20 @@ export interface MyAchievements {
   progress: Record<string, number>
   points: number
   totalPoints: number
+  /** Freunde dürfen die eigenen Erfolge sehen (Einstellung, Standard: ja). */
+  visibleToFriends: boolean
+}
+
+/** Einstellung „Erfolge für Freunde sichtbar“ (Standard: ja). */
+export function achievementsVisible(ctx: AppContext, uuid: string): boolean {
+  return (one<{ v: number }>(ctx.db, 'SELECT achievements_visible AS v FROM users WHERE uuid = ?', uuid)?.v ?? 1) === 1
+}
+
+export const achievementSettingsBody = z.strictObject({ visibleToFriends: z.boolean() })
+
+export function setAchievementsVisible(ctx: AppContext, uuid: string, visible: boolean): { visibleToFriends: boolean } {
+  run(ctx.db, 'UPDATE users SET achievements_visible = ? WHERE uuid = ?', visible ? 1 : 0, uuid)
+  return { visibleToFriends: achievementsVisible(ctx, uuid) }
 }
 
 /** `GET /v1/me/achievements`: erst nachreichen + alles prüfen, dann der Stand. */
@@ -517,19 +531,22 @@ export function myAchievements(ctx: AppContext, uuid: string): MyAchievements {
     progress,
     points,
     totalPoints: TOTAL_POINTS,
+    visibleToFriends: achievementsVisible(ctx, uuid),
   }
 }
 
 /**
  * `GET /v1/players/{uuid}/achievements`: nur man selbst oder angenommene Freunde. Unbekannt, gesperrt, blockiert (in
- * beide Richtungen) oder kein Freund → 404 `player_not_found` (verrät nichts).
+ * beide Richtungen) oder kein Freund → 404 `player_not_found` (verrät nichts). Hat der Freund seine Erfolge verborgen:
+ * `hidden: true` ohne Inhalt; man selbst sieht die eigenen immer.
  */
-export function playerAchievements(ctx: AppContext, viewer: string, target: string): { unlocked: UnlockView[], points: number } {
+export function playerAchievements(ctx: AppContext, viewer: string, target: string): { hidden: boolean, unlocked: UnlockView[], points: number } {
   if (target !== viewer) {
     const denied = () => notFound('player_not_found', 'No friend with this UUID')
     if (!getUser(ctx, target) || isBanned(ctx, target)) throw denied()
     if (hasBlocked(ctx, target, viewer) || hasBlocked(ctx, viewer, target) || !areFriends(ctx, viewer, target)) throw denied()
+    if (!achievementsVisible(ctx, target)) return { hidden: true, unlocked: [], points: 0 }
   }
   const { list, points } = unlockedList(ctx, target)
-  return { unlocked: list, points }
+  return { hidden: false, unlocked: list, points }
 }

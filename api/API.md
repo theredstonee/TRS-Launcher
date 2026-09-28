@@ -3242,7 +3242,8 @@ whose item became available since the unlock (§31.6).
   "unlocked": [ { "id": "first_launch", "at": "2026-09-28T10:00:00.000Z" } ],
   "progress": { "play_10h": 134, "friends_10": 3 },
   "points": 45,
-  "totalPoints": 940
+  "totalPoints": 940,
+  "visibleToFriends": true
 }
 ```
 
@@ -3252,6 +3253,7 @@ whose item became available since the unlock (§31.6).
 - `progress`: current value for every achievement with a `goal` that is not `hidden`, capped at `goal` (unlocked
   ones report `goal`). Achievements without a goal are not listed.
 - `points`: sum of the points of the unlocked achievements; `totalPoints`: sum over the whole catalog.
+- `visibleToFriends`: the account's setting (§31.5), default `true`.
 
 ### 31.4 Launcher reports: `POST /v1/me/achievements/report`
 
@@ -3282,11 +3284,18 @@ Auth required (60 / min per account). Only for **yourself** or an **accepted fri
 friend, banned, or blocked in either direction – gets `404 player_not_found`.
 
 ```json
-{ "unlocked": [ { "id": "first_friend", "at": "…" } ], "points": 25 }
+{ "hidden": false, "unlocked": [ { "id": "first_friend", "at": "…" } ], "points": 25 }
 ```
+
+If the friend hid their achievements (setting below), the answer is `200 { "hidden": true, "unlocked": [], "points": 0 }`
+– show "hidden by the player". You always see your own (`hidden: false`).
 
 Titles come from the viewer's catalog (`GET /v1/me/achievements` → `achievements`): a friend's secret achievement stays
 "???" unless the viewer unlocked it too.
+
+**Setting:** `PATCH /v1/me/achievements/settings` `{ "visibleToFriends": false }` → `200 { "visibleToFriends": false }`.
+Auth required, write bucket (30 / min). Strict body (`400 invalid_request` for anything else). Default for every account:
+`true`. It only affects friends' views; unlocking, events and your own view stay the same.
 
 ### 31.6 Event and rewards
 
@@ -3372,7 +3381,9 @@ Titles come from the viewer's catalog (`GET /v1/me/achievements` → `achievemen
 
 - Tables: `achievement_unlocks` (account, id, time, reward granted), `achievement_stats` (counters and flags per
   account), `achievement_playtime` (total in-game time, time of the last in-game heartbeat, current and longest session,
-  last active day, current and best day streak). No history of sessions or heartbeats.
+  last active day, current and best day streak). No history of sessions or heartbeats. Column
+  `users.achievements_visible` (default 1) for the friends setting.
 - Account deletion (§3.3) removes all three (`ON DELETE CASCADE`); granted reward items go with the other grants.
-- Visible to the account itself and its accepted friends (§31.5) only. Nothing is public.
+- Visible to the account itself and its accepted friends (§31.5) only – unless the account hides them from friends.
+  Nothing is public.
 - Limits: catalog 60 / min per IP, `GET /v1/players/{uuid}/achievements` 60 / min, reports 30 / min per account.

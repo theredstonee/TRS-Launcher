@@ -10,6 +10,7 @@ import {
   playerAchievements,
   publicCatalog,
   reportAchievement,
+  setAchievementsVisible,
   touchIssueAuthor,
   TOTAL_POINTS,
 } from '../server/lib/achievements'
@@ -26,6 +27,7 @@ import { deleteUser, getUser, type UserRow } from '../server/lib/users'
 import catalogRoute from '../server/routes/v1/achievements/index.get'
 import meRoute from '../server/routes/v1/me/achievements/index.get'
 import reportRoute from '../server/routes/v1/me/achievements/report.post'
+import settingsRoute from '../server/routes/v1/me/achievements/settings.patch'
 import playerRoute from '../server/routes/v1/players/[uuid]/achievements.get'
 import { befriend, code, players } from './chathelpers'
 import { callRoute } from './circuithelpers'
@@ -140,6 +142,8 @@ describe('achievement catalog', () => {
     migrateAchievements(db)
     const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'achievement_%' ORDER BY name").all() as { name: string }[]).map((r) => r.name)
     expect(tables).toEqual(['achievement_playtime', 'achievement_stats', 'achievement_unlocks'])
+    const cols = (db.prepare('PRAGMA table_info(users)').all() as { name: string, dflt_value: string }[])
+    expect(cols.find((c) => c.name === 'achievements_visible')?.dflt_value).toBe('1')
   })
 })
 
@@ -396,7 +400,7 @@ describe('GET /v1/me/achievements and friends visibility', () => {
     const env = makeEnv()
     const [a, b, c, d] = await players(env, 'Alex', 'Bea', 'Carl', 'Dora')
     reportAchievement(env.ctx, b!.uuid, { kind: 'launch' })
-    expect(playerAchievements(env.ctx, a!.uuid, a!.uuid)).toEqual({ unlocked: [], points: 0 })
+    expect(playerAchievements(env.ctx, a!.uuid, a!.uuid)).toEqual({ hidden: false, unlocked: [], points: 0 })
     expect(code(() => playerAchievements(env.ctx, a!.uuid, b!.uuid))).toBe('player_not_found')
     expect(code(() => playerAchievements(env.ctx, a!.uuid, 'f'.repeat(32)))).toBe('player_not_found')
     env.clock.advance(1000)
@@ -404,7 +408,18 @@ describe('GET /v1/me/achievements and friends visibility', () => {
     const view = playerAchievements(env.ctx, a!.uuid, b!.uuid)
     expect(view.unlocked.map((u) => u.id)).toEqual(['first_launch', 'first_friend'])
     expect(view.points).toBe(15)
-    expect(Object.keys(view).sort()).toEqual(['points', 'unlocked'])
+    expect(Object.keys(view).sort()).toEqual(['hidden', 'points', 'unlocked'])
+    expect(view.hidden).toBe(false)
+
+    // Bea verbirgt ihre Erfolge: Freunde sehen nur `hidden`, sie selbst alles; blockiert bleibt 404.
+    expect(myAchievements(env.ctx, b!.uuid).visibleToFriends).toBe(true)
+    expect(setAchievementsVisible(env.ctx, b!.uuid, false)).toEqual({ visibleToFriends: false })
+    expect(myAchievements(env.ctx, b!.uuid).visibleToFriends).toBe(false)
+    expect(playerAchievements(env.ctx, a!.uuid, b!.uuid)).toEqual({ hidden: true, unlocked: [], points: 0 })
+    expect(playerAchievements(env.ctx, b!.uuid, b!.uuid)).toMatchObject({ hidden: false, points: 15 })
+    expect(code(() => playerAchievements(env.ctx, c!.uuid, b!.uuid))).toBe('player_not_found')
+    setAchievementsVisible(env.ctx, b!.uuid, true)
+    expect(playerAchievements(env.ctx, a!.uuid, b!.uuid).points).toBe(15)
 
     befriend(env, a!, c!)
     block(env.ctx, c!.uuid, { uuid: a!.uuid })
@@ -439,8 +454,16 @@ describe('GET /v1/me/achievements and friends visibility', () => {
     const friend = (t: string, uuid: string) => callRoute(env, playerRoute, { url: `/v1/players/${uuid}/achievements`, params: { uuid }, headers: auth(t) })
     expect((await friend(bea.token, alex.user.uuid)).error?.code).toBe('player_not_found')
     befriend(env, getUser(env.ctx, alex.user.uuid)!, getUser(env.ctx, bea.user.uuid)!)
-    expect((await friend(bea.token, alex.user.uuid)).body).toMatchObject({ points: 30 })
+    expect((await friend(bea.token, alex.user.uuid)).body).toMatchObject({ hidden: false, points: 30 })
     expect((await friend(bea.token, 'not-a-uuid')).error?.code).toBe('not_found')
+
+    const patch = (t: string, body: string) => callRoute(env, settingsRoute, { method: 'PATCH', url: '/v1/me/achievements/settings', headers: auth(t), body })
+    expect((await patch(alex.token, '{"visibleToFriends":"no"}')).error?.code).toBe('invalid_request')
+    expect((await patch(alex.token, '{"visibleToFriends":false,"x":1}')).error?.code).toBe('invalid_request')
+    expect((await patch(alex.token, '{}')).error?.code).toBe('invalid_request')
+    expect((await patch(alex.token, '{"visibleToFriends":false}')).body).toEqual({ visibleToFriends: false })
+    expect((await friend(bea.token, alex.user.uuid)).body).toEqual({ hidden: true, unlocked: [], points: 0 })
+    expect((await callRoute(env, meRoute, { url: '/v1/me/achievements', headers: auth(alex.token) })).body).toMatchObject({ visibleToFriends: false, points: 30 })
   })
 
   it('account deletion removes unlocks, counters and playtime', async () => {

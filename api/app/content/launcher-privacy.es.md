@@ -439,7 +439,8 @@ oculto – no la fecha ni la zona horaria), que se instalaron mods o un modpack,
 arregló un fallo o se importaron instancias. Solo se guardan contadores y valores sí/no – ningún nombre de mods, packs,
 clips ni archivos.
 
-- **Quién lo ve:** tú y tus **amigos** (qué logros desbloqueaste y cuándo, y tus puntos). Nadie más; nada es público.
+- **Quién lo ve:** tú y tus **amigos** (qué logros desbloqueaste y cuándo, y tus puntos). Nadie más; nada es público. Puedes ocultar tus
+  logros a tus amigos en el launcher en cualquier momento.
 - Algunos logros traen una capa o un cosmético, que se añade a tus objetos como un regalo del equipo.
 
 ### Qué se guarda

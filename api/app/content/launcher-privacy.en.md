@@ -414,7 +414,7 @@ time zone), that mods or a modpack were installed, a clip was saved, the crash h
 imported. Only counters and yes/no flags are stored – no names of mods, packs, clips or files.
 
 - **Who sees it:** you, and your **friends** (which achievements you unlocked and when, and your points). Nobody else;
-  nothing is public.
+  nothing is public. You can hide your achievements from your friends in the launcher at any time.
 - Some achievements come with a cape or cosmetic, which is then added to your items like a gift from the team.
 
 ### What is stored

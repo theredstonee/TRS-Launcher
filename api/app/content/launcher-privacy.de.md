@@ -446,7 +446,7 @@ ein Clip gespeichert, ein Absturz vom Absturz-Helfer behoben oder Instanzen impo
 Zähler und Ja/Nein-Werte – keine Namen von Mods, Packs, Clips oder Dateien.
 
 - **Wer es sieht:** du und deine **Freunde** (welche Erfolge du wann freigeschaltet hast und deine Punkte). Sonst
-  niemand; nichts davon ist öffentlich.
+  niemand; nichts davon ist öffentlich. Du kannst deine Erfolge im Launcher jederzeit vor deinen Freunden verbergen.
 - Manche Erfolge bringen einen Umhang oder eine Kosmetik mit, die dann wie ein Geschenk des Teams zu deinen Sachen kommt.
 
 ### Was gespeichert wird
