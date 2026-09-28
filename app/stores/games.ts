@@ -112,6 +112,8 @@ export const useGamesStore = defineStore('games', () => {
   ): Promise<boolean> {
     const s = state(id)
     if (s.phase !== 'idle') return false
+    // Modpack lädt noch Dateien: nicht halb installiert starten.
+    if (useTasksStore().installingInstance(id)) return false
     s.phase = 'preparing'
     s.error = null
     s.lastExit = null

@@ -21,6 +21,19 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- Installing a modpack (CurseForge or Modrinth) no longer looks finished while it is still downloading: the new
+  instance shows “Downloading mods · 120/261 … 45 %” in the library and on its page, and Play stays locked until
+  everything is there. Big packs also download faster – large files first and more downloads at the same time.
+
+### Deutsch
+- Ein Modpack (CurseForge oder Modrinth) sieht beim Installieren nicht mehr fertig aus, während es noch lädt: Die neue
+  Instanz zeigt in der Bibliothek und auf ihrer Seite „Mods werden geladen · 120/261 … 45 %“, und Spielen bleibt
+  gesperrt, bis alles da ist. Große Packs laden außerdem schneller – große Dateien zuerst und mehr Downloads
+  gleichzeitig.
+
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->
 <!-- shots:

@@ -18,21 +18,59 @@ const MAX_PACK_FILES: usize = 5000;
 const ALLOWED_HOSTS: [&str; 4] =
     ["https://cdn.modrinth.com/", "https://github.com/", "https://raw.githubusercontent.com/", "https://gitlab.com/"];
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PackPhase {
+    #[default]
     Pack,
     Files,
     Overrides,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+/// Fortschritt einer Modpack-Installation. `instance_id` kommt einmal, sobald die Instanz angelegt ist (die Oberfläche
+/// zeigt sie dann als „wird installiert“ statt als fertig); `done_files`/`total_files` beim Laden der Dateien.
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PackProgress {
     pub phase: PackPhase,
     pub percent: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub done_files: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_files: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instance_id: Option<String>,
+}
+
+impl PackProgress {
+    pub fn new(phase: PackPhase, percent: f64) -> Self {
+        Self { phase, percent, ..Self::default() }
+    }
+
+    /// Stand beim Laden der Pack-Dateien (Prozent nach Bytes, dazu Dateien).
+    pub fn files(p: &download::Progress) -> Self {
+        Self { phase: PackPhase::Files, percent: p.percent(), done_files: Some(p.done_files), total_files: Some(p.total_files), instance_id: None }
+    }
+
+    /// Die Instanz ist angelegt – ab jetzt gehört sie zu dieser Installation.
+    pub fn created(instance_id: &str) -> Self {
+        Self { phase: PackPhase::Files, percent: 0.0, instance_id: Some(instance_id.to_owned()), ..Self::default() }
+    }
 }
 
 pub type PackProgressFn = dyn Fn(PackProgress) + Send + Sync;
+
+/// Gleichzeitige Downloads beim Installieren eines Packs: das Doppelte der Einstellung (höchstens 32). Packs bestehen
+/// aus Hunderten Dateien, und CDNs wie CurseForges liefern je Verbindung nur wenige MB/s.
+pub(crate) fn pack_concurrency(setting: u8) -> usize {
+    (usize::from(setting) * 2).clamp(1, 32)
+}
+
+/// Große Dateien zuerst, damit am Ende nicht eine einzelne große Mod allein nachlädt.
+pub(crate) fn pack_download_order(mut tasks: Vec<Task>) -> Vec<Task> {
+    tasks.sort_by_key(|t| std::cmp::Reverse(t.size.unwrap_or(0)));
+    tasks
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -390,7 +428,7 @@ impl Launcher {
         trs_client: Option<bool>,
         on_progress: &PackProgressFn,
     ) -> Result<Instance> {
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
+        on_progress(PackProgress::new(PackPhase::Pack, 0.0));
         let (version, pack_task) = self.modrinth_pack_task(project_id, version_id).await?;
         if version.project_id != project_id {
             return Err(Error::validation(crate::msg!("modpack.noVersion", "Dieses Modpack hat keine Version.")));
@@ -426,7 +464,7 @@ impl Launcher {
         if !meta.is_file() {
             return Err(Error::validation(crate::msg!("modpack.notPackFile", "Das ist keine Modpack-Datei.")));
         }
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 100.0 });
+        on_progress(PackProgress::new(PackPhase::Pack, 100.0));
         let path = pack.to_owned();
         let curseforge = tokio::task::spawn_blocking(move || crate::curseforge::is_curseforge_pack(&path))
             .await
@@ -446,7 +484,7 @@ impl Launcher {
         on_progress: &PackProgressFn,
     ) -> Result<Instance> {
         download::fetch_all(self.http(), vec![pack_task.clone()], 1, &|p| {
-            on_progress(PackProgress { phase: PackPhase::Pack, percent: p.percent() });
+            on_progress(PackProgress::new(PackPhase::Pack, p.percent()));
         })
         .await?;
         self.install_local_pack(&pack_task.path, trs_client, on_progress).await
@@ -479,22 +517,23 @@ impl Launcher {
                 trs_choice::decide(&offer, trs_client),
             )
             .await?;
+        on_progress(PackProgress::created(&instance.id));
 
         let game_dir = self.paths().instance_game_dir(&instance.id);
         let files = async {
-            let tasks = download_tasks(&index, &game_dir)?;
-            let concurrency = usize::from(self.settings().await.concurrent_downloads);
+            let tasks = pack_download_order(download_tasks(&index, &game_dir)?);
+            let concurrency = pack_concurrency(self.settings().await.concurrent_downloads);
             download::fetch_all(self.http(), tasks, concurrency, &|p| {
-                on_progress(PackProgress { phase: PackPhase::Files, percent: p.percent() });
+                on_progress(PackProgress::files(&p));
             })
             .await?;
 
-            on_progress(PackProgress { phase: PackPhase::Overrides, percent: 0.0 });
+            on_progress(PackProgress::new(PackPhase::Overrides, 0.0));
             let (pack, dir) = (pack_path.clone(), game_dir.clone());
             tokio::task::spawn_blocking(move || extract_overrides(&pack, &dir))
                 .await
                 .map_err(|e| Error::Internal(e.to_string()))??;
-            on_progress(PackProgress { phase: PackPhase::Overrides, percent: 100.0 });
+            on_progress(PackProgress::new(PackPhase::Overrides, 100.0));
             fsutil::ensure_dir(&game_dir).await?;
             // Während des Entpackens abgebrochen: trotzdem aufräumen.
             if crate::task::is_cancelled() {

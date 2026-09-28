@@ -740,6 +740,11 @@ export interface ContentUpdate {
 }
 
 export interface PackProgress {
+  /** Einmal, sobald die Instanz angelegt ist (die Installation läuft dann noch). */
+  instanceId?: string
+  /** Beim Laden der Dateien: wie viele schon da sind. */
+  doneFiles?: number
+  totalFiles?: number
   phase: 'pack' | 'files' | 'overrides'
   percent: number
 }

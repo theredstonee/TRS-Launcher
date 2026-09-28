@@ -1,4 +1,4 @@
-import type { ContentKind, ContentUpdate, Instance, Platform, StageProgress } from '~/types'
+import type { ContentKind, ContentUpdate, Instance, PackProgress, Platform, StageProgress } from '~/types'
 
 // Gemeinsame Aufgaben, die mehrere Seiten starten (Entdecken, Projektseite,
 // Inhaltsliste). Sie laufen im Aufgaben-Store weiter, auch wenn die Seite
@@ -67,8 +67,8 @@ export function installModpackTask(
       pausable: true,
     },
     async (ctx) => {
-      const onProgress = (p: { phase: 'pack' | 'files' | 'overrides'; percent: number }) => {
-        ctx.progress(packPercent(p), packStageLabel(p.phase))
+      const onProgress = (p: PackProgress) => {
+        packTaskProgress(ctx, p)
         // Entpacken lässt sich nicht mehr sinnvoll anhalten.
         if (p.phase === 'overrides') ctx.update({ pausable: false })
       }

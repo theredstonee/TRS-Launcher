@@ -17,6 +17,8 @@ const canCancel = computed(() => {
   const task = tasks.get(taskKey('launch', props.instanceId))
   return task?.status === 'running' && task.cancellable && !task.cancelling
 })
+/** Modpack lädt noch Dateien in diese Instanz: statt „Spielen“ der Installationsstand. */
+const install = computed(() => (game.value.phase === 'idle' ? tasks.installingInstance(props.instanceId) : null))
 const files = computed(() => {
   const p = game.value.progress
   return p && p.totalFiles > 1 ? `${p.doneFiles} / ${p.totalFiles}` : ''
@@ -27,7 +29,27 @@ const files = computed(() => {
   <!-- Groß: Redstone-Lampe -->
   <div v-if="large" class="lamp-wrap relative min-w-0 flex-1" :class="`lamp-${game.phase}`" :style="{ '--charge': percent / 100 }">
     <button
-      v-if="game.phase === 'idle'"
+      v-if="install"
+      class="lamp pixel-corners cursor-progress"
+      :style="{ '--charge': (install.percent ?? 0) / 100 }"
+      role="progressbar"
+      :aria-valuenow="install.percent ?? 0"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-label="t('instanceCard.stillInstalling')"
+      :title="t('instanceCard.stillInstalling')"
+      @click="tasks.openPanel(install.key)"
+    >
+      <span class="lamp-light" />
+      <span class="lamp-glass" />
+      <span class="relative flex w-full items-baseline justify-between gap-3 px-4">
+        <span class="min-w-0 truncate text-left text-xs font-medium">{{ install.stage || t('instanceCard.installing') }}</span>
+        <span class="display shrink-0 text-xl tabular-nums">{{ t('tasks.percent', { percent: install.percent ?? 0 }) }}</span>
+      </span>
+    </button>
+
+    <button
+      v-else-if="game.phase === 'idle'"
       class="lamp pixel-corners"
       @click="games.launch(instanceId)"
     >
@@ -80,7 +102,23 @@ const files = computed(() => {
 
   <!-- Klein: schlichter Knopf (Listen, Kacheln) -->
   <div v-else class="min-w-0 flex-1">
-    <button v-if="game.phase === 'idle'" class="btn btn-primary w-full" @click="games.launch(instanceId)">
+    <button
+      v-if="install"
+      class="flex h-9 w-full flex-col justify-center rounded-md bg-base-800 px-3 text-left"
+      role="progressbar"
+      :aria-valuenow="install.percent ?? 0"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-label="t('instanceCard.stillInstalling')"
+      @click="tasks.openPanel(install.key)"
+    >
+      <span class="flex w-full items-baseline justify-between gap-2 text-xs font-medium">
+        <span class="truncate">{{ install.stage || t('instanceCard.installing') }}</span>
+        <span class="display tabular-nums text-redstone-300">{{ t('tasks.percent', { percent: install.percent ?? 0 }) }}</span>
+      </span>
+      <RedstoneWire :percent="install.percent ?? 0" :segments="20" class="mt-1 w-full" />
+    </button>
+    <button v-else-if="game.phase === 'idle'" class="btn btn-primary w-full" @click="games.launch(instanceId)">
       <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><path d="M7 4v16l13-8z" /></svg>
       {{ t('common.actions.play') }}
     </button>

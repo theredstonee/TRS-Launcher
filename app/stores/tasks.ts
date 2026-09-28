@@ -122,6 +122,11 @@ export const useTasksStore = defineStore('tasks', () => {
     return tasks.value[key]?.status === 'running'
   }
 
+  /** Laufende Modpack-Installation, zu der diese Instanz gehört (angelegt, Dateien laden noch). */
+  function installingInstance(instanceId: string): Task | null {
+    return active.value.find((t) => t.kind === 'modpack' && t.instanceId === instanceId) ?? null
+  }
+
   function openPanel(key: string | null = null) {
     focused.value = key
     panelOpen.value = true
@@ -417,6 +422,7 @@ export const useTasksStore = defineStore('tasks', () => {
     totalSpeed,
     get,
     isRunning,
+    installingInstance,
     run,
     cancel,
     pause,

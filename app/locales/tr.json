@@ -2718,6 +2718,9 @@
     "preparing": "Hazırlanıyor …"
   },
   "instanceCard": {
+    "installing": "Yükleniyor",
+    "installingLabel": "{name} hâlâ yükleniyor ({percent} %) – görev panelinde göster",
+    "stillInstalling": "Mod paketi hâlâ yükleniyor …",
     "actionsFor": "İşlemler: {name}",
     "settings": "Ayarlar",
     "moveToGroup": "Gruba taşı",

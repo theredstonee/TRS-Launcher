@@ -13,6 +13,9 @@ const game = computed(() => games.state(props.instance.id))
 const packUpdate = computed(() => usePacksStore().updateOf(props.instance.id))
 const menu = ref<'main' | 'groups' | null>(null)
 
+/** Modpack wird noch installiert (Instanz ist schon angelegt): Fortschritt statt „Spielen“. */
+const install = computed(() => useTasksStore().installingInstance(props.instance.id))
+
 const percent = computed(() =>
   game.value.progress ? Math.floor(overallPercent(game.value.progress.stage, game.value.progress.percent)) : 0,
 )
@@ -50,7 +53,23 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
 
       <!-- Spielen beim Überfahren; während der Vorbereitung Prozent, beim Laufen Stopp -->
       <button
-        v-if="game.phase !== 'preparing'"
+        v-if="install"
+        class="absolute inset-x-2 bottom-2 rounded-lg bg-base-950/85 px-2.5 py-1.5 text-left backdrop-blur"
+        role="progressbar"
+        :aria-valuenow="install.percent ?? 0"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-label="t('instanceCard.installingLabel', { name: instance.name, percent: install.percent ?? 0 })"
+        @click="useTasksStore().openPanel(install.key)"
+      >
+        <div class="flex justify-between gap-2 text-[11px]">
+          <span class="truncate text-base-200">{{ install.stage || t('instanceCard.installing') }}</span>
+          <span class="display shrink-0 text-redstone-300">{{ t('tasks.percent', { percent: install.percent ?? 0 }) }}</span>
+        </div>
+        <RedstoneWire :percent="install.percent ?? 0" :segments="16" class="mt-1" />
+      </button>
+      <button
+        v-else-if="game.phase !== 'preparing'"
         class="absolute right-2 -bottom-4 grid place-items-center rounded-full shadow-lg shadow-black/50 transition-all"
         :class="[
           compact ? 'size-9' : 'size-11',
@@ -104,7 +123,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
           <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
         </button>
         <div v-if="menu === 'main'" class="menu right-0 bottom-8" role="menu">
-          <button class="menu-item" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; games.launch(instance.id)">{{ t('common.actions.play') }}</button>
+          <button class="menu-item" role="menuitem" :disabled="game.phase !== 'idle' || !!install" @click="menu = null; games.launch(instance.id)">{{ t('common.actions.play') }}</button>
           <NuxtLink :to="{ path: `/instances/${instance.id}`, query: { settings: 'general' } }" class="menu-item" role="menuitem">{{ t('instanceCard.settings') }}</NuxtLink>
           <button class="menu-item justify-between" role="menuitem" @click="menu = 'groups'">
             {{ t('instanceCard.moveToGroup') }}

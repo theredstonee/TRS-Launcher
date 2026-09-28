@@ -667,12 +667,12 @@ impl Launcher {
         on_progress: &PackProgressFn,
     ) -> Result<PackOutcome> {
         let cf = self.curseforge()?;
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
+        on_progress(PackProgress::new(PackPhase::Pack, 0.0));
         let (m, _, task) = self.curseforge_pack_task(cf, project_id, file_id).await?;
         let pack_path = task.path.clone();
         let result = async {
             download::fetch_all(cf.download_client(), vec![task], 1, &|p| {
-                on_progress(PackProgress { phase: PackPhase::Pack, percent: p.percent() });
+                on_progress(PackProgress::new(PackPhase::Pack, p.percent()));
             })
             .await?;
             self.install_curseforge_pack(cf, &pack_path, trs_client, on_progress).await
@@ -718,19 +718,20 @@ impl Launcher {
                 trs_choice::decide(&offer, trs_client),
             )
             .await?;
+        on_progress(PackProgress::created(&instance.id));
 
         let game_dir = self.paths().instance_game_dir(&instance.id);
         let work = async {
-            on_progress(PackProgress { phase: PackPhase::Files, percent: 0.0 });
             let entries = resolve(cf, &manifest).await?;
             let (tasks, blocked) = plan_downloads(&entries, &game_dir)?;
-            let concurrency = usize::from(self.settings().await.concurrent_downloads);
+            let tasks = crate::modpack::pack_download_order(tasks);
+            let concurrency = crate::modpack::pack_concurrency(self.settings().await.concurrent_downloads);
             download::fetch_all(cf.download_client(), tasks, concurrency, &|p| {
-                on_progress(PackProgress { phase: PackPhase::Files, percent: p.percent() });
+                on_progress(PackProgress::files(&p));
             })
             .await?;
 
-            on_progress(PackProgress { phase: PackPhase::Overrides, percent: 0.0 });
+            on_progress(PackProgress::new(PackPhase::Overrides, 0.0));
             let prefix = manifest.overrides_prefix()?;
             let (pack, dir) = (pack.to_owned(), game_dir.clone());
             tokio::task::spawn_blocking(move || crate::modpack::extract_folders(&pack, &dir, &[prefix.as_str()]))
@@ -750,7 +751,7 @@ impl Launcher {
             })
             .await?;
             remember_blocked(self.paths(), &instance.id, &blocked).await?;
-            on_progress(PackProgress { phase: PackPhase::Overrides, percent: 100.0 });
+            on_progress(PackProgress::new(PackPhase::Overrides, 100.0));
             // Während des Entpackens abgebrochen: trotzdem aufräumen.
             if crate::task::is_cancelled() {
                 return Err(Error::Cancelled);

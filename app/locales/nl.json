@@ -2718,6 +2718,9 @@
     "preparing": "Voorbereiden …"
   },
   "instanceCard": {
+    "installing": "Wordt geïnstalleerd",
+    "installingLabel": "{name} wordt nog geïnstalleerd ({percent} %) – tonen in het takenpaneel",
+    "stillInstalling": "Modpack wordt nog geïnstalleerd …",
     "actionsFor": "Acties voor {name}",
     "settings": "Instellingen",
     "moveToGroup": "Naar groep verplaatsen",

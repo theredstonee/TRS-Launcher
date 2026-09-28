@@ -153,9 +153,23 @@ const packStageKeys: Record<PackProgress['phase'], MessageKey> = {
   overrides: 'tasks.stage.packOverrides',
 }
 
-/** Was beim Modpack-Installieren gerade passiert („Mods werden geladen“). */
-export function packStageLabel(phase: PackProgress['phase']): string {
-  return t(packStageKeys[phase])
+/** Was beim Modpack-Installieren gerade passiert („Mods werden geladen“, mit Stand „120/261“). */
+export function packStageLabel(phase: PackProgress['phase'], p?: Pick<PackProgress, 'doneFiles' | 'totalFiles'>): string {
+  const label = t(packStageKeys[phase])
+  return phase === 'files' && p?.totalFiles ? `${label} · ${p.doneFiles ?? 0}/${p.totalFiles}` : label
+}
+
+/**
+ * Fortschritt einer Modpack-Installation an eine Aufgabe weitergeben: Prozent, Stufe samt Dateizahl und – sobald die
+ * Instanz angelegt ist – deren ID (die Bibliothek zeigt sie dann als „wird installiert“ und sperrt „Spielen“).
+ */
+export function packTaskProgress(ctx: { progress: (percent: number, stage?: string) => void, update: (patch: { instanceId?: string | null }) => void }, p: PackProgress) {
+  if (p.instanceId) {
+    ctx.update({ instanceId: p.instanceId })
+    // Gleich in der Bibliothek zeigen – als „wird installiert“ (Spielen gesperrt, siehe installingInstance).
+    void useInstancesStore().load()
+  }
+  ctx.progress(packPercent(p), packStageLabel(p.phase, p))
 }
 
 /** Wie `packStageLabel`, als Objekt – übersetzt beim Lesen. */

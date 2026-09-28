@@ -516,9 +516,9 @@ impl Launcher {
 
     /// Pack per Code als neue Instanz installieren und für Updates merken.
     pub async fn install_pack_code(&self, code: &str, trs_client: Option<bool>, on_progress: &PackProgressFn) -> Result<Instance> {
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
+        on_progress(PackProgress::new(PackPhase::Pack, 0.0));
         let (path, pack) = self.fetch_pack(code).await?;
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 100.0 });
+        on_progress(PackProgress::new(PackPhase::Pack, 100.0));
         let instance = self.install_local_pack(&path, trs_client, on_progress).await?;
         let p = path.clone();
         let files = tokio::task::spawn_blocking(move || pack_files(&p))
@@ -577,12 +577,12 @@ impl Launcher {
         let instance = self.instances().get(instance_id).await?;
         self.ensure_idle(&instance.id)?;
         let link = read_link(self.paths(), &instance.id).await.filter(|l| l.role == PackRole::Installed).ok_or_else(not_linked)?;
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 0.0 });
+        on_progress(PackProgress::new(PackPhase::Pack, 0.0));
         let (path, pack) = self.fetch_pack(&link.code).await?;
         if pack.id != link.pack_id {
             return Err(not_linked());
         }
-        on_progress(PackProgress { phase: PackPhase::Pack, percent: 100.0 });
+        on_progress(PackProgress::new(PackPhase::Pack, 100.0));
 
         let game_dir = self.paths().instance_game_dir(&instance.id);
         let (p, g, old) = (path.clone(), game_dir.clone(), link.files.clone());
@@ -611,12 +611,12 @@ impl Launcher {
             .collect();
         let concurrency = usize::from(self.settings().await.concurrent_downloads);
         download::fetch_all(self.http(), tasks, concurrency, &|p| {
-            on_progress(PackProgress { phase: PackPhase::Files, percent: p.percent() });
+            on_progress(PackProgress::files(&p));
         })
         .await?;
 
         // Overrides schreiben, Altes löschen.
-        on_progress(PackProgress { phase: PackPhase::Overrides, percent: 0.0 });
+        on_progress(PackProgress::new(PackPhase::Overrides, 0.0));
         let (p, g) = (path.clone(), game_dir.clone());
         let write: HashSet<String> = plan.write.iter().cloned().collect();
         let delete = plan.delete.clone();
@@ -634,7 +634,7 @@ impl Launcher {
         })
         .await
         .map_err(|e| Error::Internal(e.to_string()))??;
-        on_progress(PackProgress { phase: PackPhase::Overrides, percent: 100.0 });
+        on_progress(PackProgress::new(PackPhase::Overrides, 100.0));
 
         let mut files = downloads;
         files.extend(overrides);

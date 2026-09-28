@@ -2718,6 +2718,9 @@
     "preparing": "Preparando …"
   },
   "instanceCard": {
+    "installing": "Instalando",
+    "installingLabel": "{name} todavía se está instalando ({percent} %) – ver en el panel de tareas",
+    "stillInstalling": "El modpack todavía se está instalando …",
     "actionsFor": "Acciones de {name}",
     "settings": "Ajustes",
     "moveToGroup": "Mover a grupo",

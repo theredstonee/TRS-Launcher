@@ -2718,6 +2718,9 @@
     "preparing": "Przygotowywanie …"
   },
   "instanceCard": {
+    "installing": "Instalowanie",
+    "installingLabel": "{name} wciąż się instaluje ({percent} %) – pokaż w panelu zadań",
+    "stillInstalling": "Modpack wciąż się instaluje …",
     "actionsFor": "Akcje dla {name}",
     "settings": "Ustawienia",
     "moveToGroup": "Przenieś do grupy",

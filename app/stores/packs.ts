@@ -83,7 +83,7 @@ export const usePacksStore = defineStore('packs', () => {
     return useTasksStore().run(
       { key: taskKey('packupdate', instanceId), kind: 'modpack', title, stage: packStageLabel('pack'), instanceId, cancellable: true },
       async (ctx) => {
-        const result = await backend.packs.update(instanceId, (p) => ctx.progress(packPercent(p), packStageLabel(p.phase)), ctx.taskId)
+        const result = await backend.packs.update(instanceId, (p) => ctx.progress(packPercent(p), packStageLabel(p.phase, p)), ctx.taskId)
         ctx.update({
           doneText: result.kept.length
             ? t('packs.update.doneKept', { name: title, count: result.kept.length }, result.kept.length)

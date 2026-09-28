@@ -57,7 +57,7 @@ function install() {
   void tasks.run(
     { key: taskKey('packcode', p.code), kind: 'modpack', title: p.name, stage: packStageLabel('pack'), cancellable: true },
     async (ctx) => {
-      const instance = await backend.packs.installCode(p.code, trsClient, (pr) => ctx.progress(packPercent(pr), packStageLabel(pr.phase)), ctx.taskId)
+      const instance = await backend.packs.installCode(p.code, trsClient, (pr) => packTaskProgress(ctx, pr), ctx.taskId)
       ctx.update({ instanceId: instance.id, doneText: t('tasks.toast.modpackReady', { name: instance.name }) })
       await Promise.allSettled([useInstancesStore().load(), packs.loadLinks()])
       if (packs.inbox.some((x) => x.pack.id === p.id)) void packs.dismiss(p.id)

@@ -188,7 +188,7 @@ function startPackImport(pack: PickedPack, trsClient: boolean | null) {
   tasks.run(
     { key: PACK_FILE_KEY, kind: 'modpack-file', title: pack.preview.name || t('import.task.packTitle'), stage: packStageLabel('pack'), cancellable: true },
     async (ctx) => {
-      const id = await backend.importModpackFile(pack.token, trsClient, (p) => ctx.progress(packPercent(p), packStageLabel(p.phase)), ctx.taskId)
+      const id = await backend.importModpackFile(pack.token, trsClient, (p) => packTaskProgress(ctx, p), ctx.taskId)
       await instances.load()
       const instance = instances.items.find((i) => i.id === id)
       ctx.update({
