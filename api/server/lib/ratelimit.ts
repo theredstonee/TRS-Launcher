@@ -205,6 +205,8 @@ export const RULES = {
   packDownloadUser: { limit: 20, windowMs: MIN },
   /** Öffentliche Vorschau (Website) je IP – bremst das Durchprobieren von Codes. */
   packPublicIp: { limit: 60, windowMs: MIN },
+  /** Modrinth-Symbole der Pack-Inhalte (über unseren Server) je IP. */
+  modrinthIconIp: { limit: 600, windowMs: MIN },
   // ------------------------------------------------ Schaltungs-Bibliothek (§25)
   /** Öffentliche Abrufe (Index, Schaltung, Download) je IP – zusätzlich zur globalen IP-Grenze. */
   circuitPublicIp: { limit: 240, windowMs: MIN },

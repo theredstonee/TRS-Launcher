@@ -7,6 +7,7 @@ import { migrate, one } from '../server/lib/db'
 import { block } from '../server/lib/friends'
 import { migrateSharedPacks } from '../server/lib/migrations'
 import { adminReportAction, createReport } from '../server/lib/moderation'
+import { modrinthIcon, resetModrinthCache } from '../server/lib/modrinth'
 import { inspectPack, listPackContents } from '../server/lib/packfile'
 import {
   deletePack,
@@ -298,12 +299,12 @@ describe('pack contents for the website (§27.6)', () => {
       'server-overrides/mods/server.jar': 'x',
     }))
     expect(c.mods).toEqual([
-      { name: 'own-mod', file: 'own-mod.jar', source: 'pack', projectId: null },
-      { name: 'sodium-fabric-0.6', file: 'sodium-fabric-0.6.jar', source: 'modrinth', projectId: 'AANobbMI' },
+      { name: 'own-mod', file: 'own-mod.jar', source: 'pack', projectId: null, versionId: null },
+      { name: 'sodium-fabric-0.6', file: 'sodium-fabric-0.6.jar', source: 'modrinth', projectId: 'AANobbMI', versionId: null },
     ])
     expect(c.resourcePacks).toEqual([
-      { name: 'Faithful 32x', file: 'Faithful 32x.zip', source: 'modrinth', projectId: 'FaithFul' },
-      { name: 'My Pack', file: 'My Pack/', source: 'pack', projectId: null },
+      { name: 'Faithful 32x', file: 'Faithful 32x.zip', source: 'modrinth', projectId: 'FaithFul', versionId: null },
+      { name: 'My Pack', file: 'My Pack/', source: 'pack', projectId: null, versionId: null },
     ])
     expect(c.shaderPacks.map((s) => [s.name, s.source, s.projectId])).toEqual([
       ['ComplementaryReimagined', 'modrinth', 'HVnmMxH1'],
@@ -311,14 +312,50 @@ describe('pack contents for the website (§27.6)', () => {
     ])
   })
 
-  it('reads the stored pack without counting an install', async () => {
+  it('reads the stored pack with Modrinth names, versions and icons, without counting an install', async () => {
+    resetModrinthCache()
     const env = makeEnv()
+    const calls: string[] = []
+    env.ctx.modrinthFetch = (async (input: string | URL | Request) => {
+      const url = String(input)
+      calls.push(url)
+      if (url.startsWith('https://api.modrinth.com/v2/projects')) {
+        return new Response(JSON.stringify([{ id: 'AANobbMI', slug: 'sodium', title: 'Sodium', project_type: 'mod', icon_url: 'https://cdn.modrinth.com/data/AANobbMI/icon.png' }]))
+      }
+      if (url.startsWith('https://api.modrinth.com/v2/versions')) {
+        return new Response(JSON.stringify([{ id: 'VVVVVVV1', version_number: 'mc1.21.1-0.6.13' }]))
+      }
+      if (url === 'https://cdn.modrinth.com/data/AANobbMI/icon.png') return new Response(Buffer.from('89504e470d0a1a0a0000', 'hex'))
+      return new Response('nope', { status: 404 })
+    }) as typeof fetch
+    const [alex] = await players(env, 'Alex')
+    const files = [{ path: 'mods/sodium.jar', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://cdn.modrinth.com/data/AANobbMI/versions/VVVVVVV1/sodium.jar'], fileSize: 1 }]
+    const shared = uploadPack(env.ctx, alex!.uuid, pack({ files }), '7d')
+    const row = packByCode(env.ctx, shared.code)!
+    const c = await packContents(env.ctx, row)
+    expect(c.mods).toEqual([
+      { name: 'own-mod', file: 'own-mod.jar', source: 'pack', projectId: null, versionId: null, title: null, version: null, icon: null, url: null },
+      { name: 'sodium', file: 'sodium.jar', source: 'modrinth', projectId: 'AANobbMI', versionId: 'VVVVVVV1', title: 'Sodium', version: 'mc1.21.1-0.6.13', icon: '/v1/modrinth/icon/AANobbMI', url: 'https://modrinth.com/mod/sodium' },
+    ])
+    // Zweiter Aufruf: alles aus dem Zwischenspeicher.
+    const before = calls.length
+    await packContents(env.ctx, row)
+    expect(calls.length).toBe(before)
+    expect(packByCode(env.ctx, shared.code)!.installs).toBe(0)
+    const icon = await modrinthIcon(env.ctx, 'AANobbMI')
+    expect(icon?.type).toBe('image/png')
+    // Unbekanntes Projekt: kein offener Proxy.
+    expect(await modrinthIcon(env.ctx, 'ZZZZZZZZ')).toBeNull()
+  })
+
+  it('falls back to file names when Modrinth is down', async () => {
+    resetModrinthCache()
+    const env = makeEnv()
+    env.ctx.modrinthFetch = (async () => new Response('down', { status: 503 })) as typeof fetch
     const [alex] = await players(env, 'Alex')
     const shared = uploadPack(env.ctx, alex!.uuid, pack(), '7d')
-    const row = packByCode(env.ctx, shared.code)!
-    const c = packContents(env.ctx, row)
-    expect(c.mods.map((m) => m.name)).toEqual(['own-mod', 'sodium'])
-    expect(packContents(env.ctx, row)).toBe(c)
-    expect(packByCode(env.ctx, shared.code)!.installs).toBe(0)
+    const c = await packContents(env.ctx, packByCode(env.ctx, shared.code)!)
+    expect(c.mods.map((m) => [m.name, m.title])).toEqual([['own-mod', null], ['sodium', null]])
+    resetModrinthCache()
   })
 })

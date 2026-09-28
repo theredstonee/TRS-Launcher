@@ -9,7 +9,8 @@ import { ApiError, badRequest, conflict, notFound, unsupportedMedia } from './er
 import type { PlayerRef } from './events'
 import { areFriends, hasBlocked } from './friends'
 import { sha256Hex } from './ids'
-import { inspectPack, listPackContents, type PackContents, type PackLoader } from './packfile'
+import { loadModrinth, modrinthProject, modrinthVersion } from './modrinth'
+import { inspectPack, listPackContents, type PackContentItem, type PackContents, type PackLoader } from './packfile'
 import { assertNotSanctioned } from './sanctions'
 import { ACTIVE_BANS, getUser } from './users'
 
@@ -398,8 +399,23 @@ export function readPackFile(ctx: AppContext, r: PackRow, count: boolean): Buffe
 /** Letzte Inhaltslisten je Pack-Version (die Datei ändert sich nur mit einer neuen `revision`). */
 const contentsCache = new Map<string, PackContents>()
 
-/** Mods, Resource Packs und Shader eines Packs für die Website (§27.6) – ohne die Installation zu zählen. */
-export function packContents(ctx: AppContext, r: PackRow): PackContents {
+/** Eintrag der Inhaltsliste mit Modrinth-Angaben (Name, Version, Symbol über unseren Server, Link). */
+export interface PackContentView extends PackContentItem {
+  title: string | null
+  version: string | null
+  /** `/v1/modrinth/icon/<projectId>` – nur wenn Modrinth ein Symbol hat. */
+  icon: string | null
+  /** Projektseite auf modrinth.com. */
+  url: string | null
+}
+
+export interface PackContentsView {
+  mods: PackContentView[]
+  resourcePacks: PackContentView[]
+  shaderPacks: PackContentView[]
+}
+
+function baseContents(ctx: AppContext, r: PackRow): PackContents {
   const key = `${r.id}.${r.revision}`
   const hit = contentsCache.get(key)
   if (hit) return hit
@@ -413,6 +429,32 @@ export function packContents(ctx: AppContext, r: PackRow): PackContents {
   contentsCache.set(key, list)
   if (contentsCache.size > 64) contentsCache.delete(contentsCache.keys().next().value!)
   return list
+}
+
+/**
+ * Mods, Resource Packs und Shader eines Packs für die Website (§27.6) – ohne die Installation zu zählen. Namen,
+ * Versionen und Symbole kommen von Modrinth (Zwischenspeicher); fällt Modrinth aus, bleiben die Dateinamen.
+ */
+export async function packContents(ctx: AppContext, r: PackRow): Promise<PackContentsView> {
+  const base = baseContents(ctx, r)
+  const all = [...base.mods, ...base.resourcePacks, ...base.shaderPacks]
+  await loadModrinth(
+    ctx,
+    all.map((i) => i.projectId).filter((x): x is string => x !== null),
+    all.map((i) => i.versionId).filter((x): x is string => x !== null),
+  )
+  const view = (i: PackContentItem): PackContentView => {
+    const p = i.projectId ? modrinthProject(i.projectId) : null
+    return {
+      ...i,
+      title: p?.title || null,
+      version: i.versionId ? modrinthVersion(i.versionId) : null,
+      icon: p?.iconUrl ? `/v1/modrinth/icon/${i.projectId}` : null,
+      url: p ? `https://modrinth.com/${encodeURIComponent(p.type)}/${encodeURIComponent(p.slug)}` : i.projectId ? `https://modrinth.com/project/${i.projectId}` : null,
+    }
+  }
+  const sorted = (list: PackContentItem[]) => list.map(view).sort((x, y) => (x.title ?? x.name).localeCompare(y.title ?? y.name, 'en', { sensitivity: 'base' }))
+  return { mods: sorted(base.mods), resourcePacks: sorted(base.resourcePacks), shaderPacks: sorted(base.shaderPacks) }
 }
 
 /** Viele Codes auf einmal (Update-Prüfung im Launcher). Unbekannte/abgelaufene fehlen einfach. */

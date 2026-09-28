@@ -233,6 +233,8 @@ export interface PackContentItem {
   source: 'modrinth' | 'pack'
   /** Modrinth-Projekt-ID aus der Download-Adresse (für den Link zur Projektseite), sonst `null`. */
   projectId: string | null
+  /** Modrinth-Versions-ID aus der Download-Adresse, sonst `null`. */
+  versionId: string | null
 }
 
 export interface PackContents {
@@ -246,20 +248,24 @@ const CONTENT_DIRS: { dir: string, key: keyof PackContents, file: RegExp }[] = [
   { dir: 'resourcepacks/', key: 'resourcePacks', file: /\.zip$/i },
   { dir: 'shaderpacks/', key: 'shaderPacks', file: /\.zip$/i },
 ]
+const MODRINTH_FILE = /^\/data\/([A-Za-z0-9]{8})\/versions\/([A-Za-z0-9]{8})\//
 const MODRINTH_PROJECT = /^\/data\/([A-Za-z0-9]{8})\/versions\//
 /** Höchstens so viele Einträge je Liste (Index erlaubt 5000 Dateien). */
 export const PACK_CONTENT_MAX = 1000
 
-function projectIdOf(urls: string[]): string | null {
+function modrinthIdsOf(urls: string[]): { projectId: string | null, versionId: string | null } {
   for (const u of urls) {
     try {
-      const m = MODRINTH_PROJECT.exec(new URL(u).pathname)
-      if (m) return m[1]!
+      const path = new URL(u).pathname
+      const full = MODRINTH_FILE.exec(path)
+      if (full) return { projectId: full[1]!, versionId: full[2]! }
+      const m = MODRINTH_PROJECT.exec(path)
+      if (m) return { projectId: m[1]!, versionId: null }
     } catch {
       // ungültige Adresse – ignorieren
     }
   }
-  return null
+  return { projectId: null, versionId: null }
 }
 
 /**
@@ -291,7 +297,7 @@ export function listPackContents(buf: Buffer): PackContents {
         const c = CONTENT_DIRS.find((d) => f.path.startsWith(d.dir))
         const file = c ? f.path.slice(c.dir.length) : ''
         if (!c || file.includes('/') || !c.file.test(file)) continue
-        add(c.key, { name: clean(file.replace(c.file, ''), 120), file: clean(file, 200), source: 'modrinth', projectId: projectIdOf(f.downloads) })
+        add(c.key, { name: clean(file.replace(c.file, ''), 120), file: clean(file, 200), source: 'modrinth', ...modrinthIdsOf(f.downloads) })
       }
     }
   }
@@ -305,11 +311,11 @@ export function listPackContents(buf: Buffer): PackContents {
     if (!inner) continue
     const slash = inner.indexOf('/')
     if (slash < 0) {
-      if (c.file.test(inner)) add(c.key, { name: clean(inner.replace(c.file, ''), 120), file: clean(inner, 200), source: 'pack', projectId: null })
+      if (c.file.test(inner)) add(c.key, { name: clean(inner.replace(c.file, ''), 120), file: clean(inner, 200), source: 'pack', projectId: null, versionId: null })
     } else if (c.key !== 'mods') {
       // Entpackter Resource Pack/Shader als Ordner.
       const folder = inner.slice(0, slash)
-      if (folder) add(c.key, { name: clean(folder, 120), file: clean(`${folder}/`, 200), source: 'pack', projectId: null })
+      if (folder) add(c.key, { name: clean(folder, 120), file: clean(`${folder}/`, 200), source: 'pack', projectId: null, versionId: null })
     }
   }
   const byName = (a: PackContentItem, b: PackContentItem) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })

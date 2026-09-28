@@ -2851,7 +2851,13 @@ unpacked): **mods** (`mods/*.jar`), **resource packs** (`resourcepacks/*.zip` or
 (`shaderpacks/*.zip` or a folder) – from the index (`source: "modrinth"`, `projectId` from the CDN address
 `/data/<id>/versions/…`, linked to `https://modrinth.com/project/<id>`) and from `overrides/`/`client-overrides/`
 (`source: "pack"`, marked as own file). Files for servers only (`env.client` `unsupported`, `server-overrides/`) are
-left out. Sorted by name, at most 1,000 per list; `name` is the file name without extension. Cached per pack revision.
+left out. At most 1,000 per list; `name` is the file name without extension. Cached per pack revision.
+
+Each entry also has `versionId` (from the CDN address), `title` and `version` (looked up on Modrinth's public API –
+`/v2/projects?ids=` and `/v2/versions?ids=`, only IDs from the pack, cached for a day, file names as fallback when
+Modrinth is down), `url` (project page on modrinth.com) and `icon` (`/v1/modrinth/icon/{projectId}` – the server
+fetches the icon from `cdn.modrinth.com` itself, only PNG/JPEG/GIF/WebP ≤ 512 KB, only for projects that appeared in a
+pack list; 600/min per IP, `Cache-Control: public, max-age=86400`). Sorted by title (else name).
 
 ## 28. Issues & roadmap
 

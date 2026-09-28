@@ -23,7 +23,16 @@ interface PublicPack {
   expiresAt: string | null
 }
 
-interface ContentItem { name: string, file: string, source: 'modrinth' | 'pack', projectId: string | null }
+interface ContentItem {
+  name: string
+  file: string
+  source: 'modrinth' | 'pack'
+  projectId: string | null
+  title: string | null
+  version: string | null
+  icon: string | null
+  url: string | null
+}
 interface PackContents { mods: ContentItem[], resourcePacks: ContentItem[], shaderPacks: ContentItem[] }
 type ContentKey = keyof PackContents
 
@@ -71,9 +80,8 @@ watch(contentTabs, (tabs) => {
 const contentItems = computed(() => {
   const list = contents.value?.[contentTab.value] ?? []
   const q = contentQuery.value.trim().toLowerCase()
-  return q ? list.filter((i) => i.name.toLowerCase().includes(q) || i.file.toLowerCase().includes(q)) : list
+  return q ? list.filter((i) => (i.title ?? '').toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || i.file.toLowerCase().includes(q)) : list
 })
-const modrinthUrl = (i: ContentItem) => `https://modrinth.com/project/${i.projectId}`
 
 const loaderLine = computed(() => {
   const p = pack.value
@@ -199,17 +207,37 @@ async function sendReport() {
               <SiteIcon :name="t.icon" class="size-4" />{{ t.label }}<span class="count">{{ t.count }}</span>
             </button>
           </div>
-          <ul v-if="contentItems.length" class="items mt-3">
-            <li v-for="i in contentItems" :key="i.file" class="item">
-              <span class="min-w-0 flex-1">
-                <span class="block truncate text-sm text-base-100" :title="i.file">{{ i.name }}</span>
-              </span>
-              <a v-if="i.source === 'modrinth' && i.projectId" :href="modrinthUrl(i)" target="_blank" rel="noopener noreferrer" class="tag modrinth">
-                {{ m.pack.contentsModrinth }}<SiteIcon name="external" class="size-3" />
-              </a>
-              <span v-else-if="i.source === 'pack'" class="tag own" :title="m.pack.contentsOwnHint"><SiteIcon name="warn" class="size-3" />{{ m.pack.contentsOwn }}</span>
-            </li>
-          </ul>
+          <div v-if="contentItems.length" class="ctable mt-3" role="table" :aria-label="m.pack.contentsTitle">
+            <div class="crow chead" role="row">
+              <span role="columnheader" class="col-name">{{ m.pack.contentsName }}</span>
+              <span role="columnheader" class="col-version">{{ m.pack.contentsVersion }}</span>
+            </div>
+            <div class="cbody">
+              <component
+                :is="i.url ? 'a' : 'div'"
+                v-for="i in contentItems"
+                :key="i.file"
+                class="crow"
+                :class="{ link: !!i.url }"
+                role="row"
+                v-bind="i.url ? { href: i.url, target: '_blank', rel: 'noopener noreferrer' } : {}"
+                :title="i.url ? `${i.title ?? i.name} – ${m.pack.contentsModrinth}` : i.file"
+              >
+                <span role="cell" class="col-name">
+                  <img v-if="i.icon" :src="i.icon" alt="" class="cicon" width="32" height="32" loading="lazy" decoding="async" />
+                  <span v-else class="cicon empty" :class="{ own: i.source === 'pack' }"><SiteIcon :name="i.source === 'pack' ? 'warn' : contentTab === 'mods' ? 'blocks' : contentTab === 'resourcePacks' ? 'image' : 'bolt'" class="size-4" /></span>
+                  <span class="min-w-0">
+                    <span class="block truncate text-[0.95rem] text-base-50">{{ i.title ?? i.name }}</span>
+                    <span v-if="i.source === 'pack'" class="own-note">{{ m.pack.contentsOwn }} · {{ i.file }}</span>
+                  </span>
+                </span>
+                <span role="cell" class="col-version">
+                  <span class="truncate">{{ i.version ?? (i.source === 'pack' ? '—' : '') }}</span>
+                  <SiteIcon v-if="i.url" name="external" class="ext size-3.5 shrink-0" />
+                </span>
+              </component>
+            </div>
+          </div>
           <p v-else class="mt-3 text-sm text-base-400">{{ m.pack.contentsNoMatch }}</p>
         </template>
       </section>
@@ -317,43 +345,104 @@ async function sendReport() {
   background: var(--color-base-800);
   color: var(--color-base-200);
 }
-.items {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
-  gap: 0.4rem;
-  max-height: 28rem;
-  overflow-y: auto;
-  padding-right: 0.2rem;
-}
-.item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-width: 0;
-  padding: 0.5rem 0.7rem;
-  border-radius: 0.5rem;
+.ctable {
+  overflow: hidden;
+  border-radius: 0.75rem;
   border: 1px solid var(--color-base-800);
   background: var(--color-base-900);
 }
-.tag {
-  display: inline-flex;
-  flex-shrink: 0;
+.crow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.1rem 0.45rem;
-  border-radius: 0.3rem;
-  font-size: 0.68rem;
-  white-space: nowrap;
+  gap: 1rem;
+  min-height: 3.5rem;
+  padding: 0.45rem 1rem;
+  border-top: 1px solid var(--color-base-800);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.12s;
 }
-.tag.modrinth {
-  color: #5fe39a;
-  background: color-mix(in srgb, #1bd96a 12%, transparent);
+.cbody .crow:first-child {
+  border-top: 0;
 }
-.tag.modrinth:hover {
-  background: color-mix(in srgb, #1bd96a 22%, transparent);
+.chead {
+  min-height: 2.75rem;
+  border-top: 0;
+  border-bottom: 1px solid var(--color-base-800);
+  background: var(--color-base-850);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-base-200);
 }
-.tag.own {
+.chead .col-name {
+  padding-left: 2.75rem;
+}
+.crow.link {
+  cursor: pointer;
+}
+.crow.link:hover,
+.crow.link:focus-visible {
+  background: var(--color-base-850);
+  outline: none;
+}
+.crow.link:focus-visible {
+  box-shadow: inset 3px 0 0 var(--color-redstone-500);
+}
+.col-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.col-version {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--color-base-200);
+  font-variant-numeric: tabular-nums;
+}
+.ext {
+  margin-left: auto;
+  color: var(--color-base-600);
+  transition: color 0.12s;
+}
+.crow.link:hover .ext {
+  color: var(--color-base-200);
+}
+.cicon {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 0.4rem;
+  object-fit: cover;
+  background: var(--color-base-800);
+}
+.cicon.empty {
+  display: grid;
+  place-items: center;
+  color: var(--color-base-400);
+}
+.cicon.own {
   color: var(--color-lamp-300);
-  background: color-mix(in srgb, var(--color-lamp-400) 12%, transparent);
+  background: color-mix(in srgb, var(--color-lamp-400) 12%, var(--color-base-900));
+}
+.own-note {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  color: var(--color-lamp-300);
+}
+@media (max-width: 520px) {
+  .crow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .col-version {
+    max-width: 8rem;
+  }
 }
 </style>

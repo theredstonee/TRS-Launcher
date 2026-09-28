@@ -50,6 +50,8 @@ export interface AppContext {
   oauth: OAuthStateStore
   /** Für Tests: eigenes fetch für die Microsoft-/Xbox-/Minecraft-Kette. */
   msFetch?: typeof fetch
+  /** Für Tests: eigenes fetch für Modrinth (Namen/Symbole der Pack-Inhalte, §27.6). */
+  modrinthFetch?: typeof fetch
 }
 
 export function createContext(opts: {
