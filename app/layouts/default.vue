@@ -73,6 +73,20 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => unlistenPackLink?.())
 
+// „Mit TRS Launcher anmelden“ auf der Website (`trs-launcher://web-login/<Token>`): Bestätigungsdialog – bestätigt
+// wird dort erst nach einem Klick.
+const webLogin = useWebLoginStore()
+let unlistenWebLogin: (() => void) | null = null
+onMounted(async () => {
+  if (!isTauri()) return
+  const open = (token: unknown) => {
+    if (isWebLoginToken(token)) webLogin.open(token)
+  }
+  unlistenWebLogin = await listen<string>('open-web-login', (e) => open(e.payload))
+  open(await backend.webLogin.takePending().catch(() => null))
+})
+onBeforeUnmount(() => unlistenWebLogin?.())
+
 // Geteilte Modpacks: Updates und „An dich geschickt“ laden, sobald die TRS-Dienste an sind.
 watch(
   () => trs.enabled,
@@ -137,6 +151,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <CreateInstanceDialog v-if="ui.creating" @close="ui.creating = false" @created="onCreated" />
     <ImportDialog v-if="ui.importing" @close="ui.importing = false" />
     <ModpackInstallDialog v-if="ui.modpackInstall" :key="ui.modpackInstall.platform + ui.modpackInstall.pack.projectId" :request="ui.modpackInstall" @close="ui.modpackInstall = null" />
+    <WebLoginDialog v-if="webLogin.request" :key="webLogin.request.seq" :token="webLogin.request.token" @close="webLogin.close()" />
     <PackCodeDialog v-if="packs.codeDialog" :key="packs.codeDialog.code" :initial-code="packs.codeDialog.code" @close="packs.codeDialog = null" />
     <MyPacksDialog v-if="packs.mineOpen" @close="packs.mineOpen = false" />
     <PresetReportDialog />

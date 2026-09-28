@@ -508,7 +508,8 @@
       "tagSnapshot": "Snapshot",
       "tagPreview": "Vorschau",
       "tagUpdate": "Update",
-      "tagDownloads": "{count} Downloads"
+      "tagDownloads": "{count} Downloads",
+      "tagNews": "News"
     },
     "screenshots": {
       "tooLargeForClipboard": "Das Bild ist zu groß für die Zwischenablage.",
@@ -785,6 +786,11 @@
       "invalidPack": "Der Server hat das Modpack abgelehnt – es ist kein gültiges Modrinth-Pack.",
       "noRecipients": "Modpacks kannst du nur an deine Freunde schicken.",
       "invalidDuration": "Ungültige Laufzeit."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Das ist kein gültiger Code (Form: XXX-XXX).",
+      "expired": "Diese Anmelde-Anfrage gibt es nicht (mehr) – starte die Anmeldung auf der Website neu.",
+      "used": "Diese Anmelde-Anfrage wurde schon beantwortet."
     }
   },
   "browse": {
@@ -2574,7 +2580,7 @@
       "clips": "clips aufnahme aufnehmen video replay shadowplay",
       "social": "freunde chat nachrichten gruppen sozial anfragen",
       "admin": "team moderation meldungen strafen einsprüche spieler admin verwaltung",
-      "websiteLogin": "website anmelden login microsoft browser team",
+      "websiteLogin": "website anmelden login code bestätigen launcher microsoft browser team",
       "myApplications": "bewerbungen bewerben team stelle status"
     },
     "actions": {
@@ -2595,7 +2601,7 @@
         "subtitle": "Ordner mit Instanzen und Einstellungen"
       },
       "websiteLogin": {
-        "subtitle": "Öffnet {host} – Anmeldung mit Microsoft"
+        "subtitle": "Code von {host} bestätigen"
       },
       "myApplications": {
         "subtitle": "Status und Antworten deiner Team-Bewerbungen"
@@ -2774,7 +2780,10 @@
     "empty": "Für diesen Bereich gibt es gerade nichts Neues.",
     "readPatchNotes": "Patchnotes lesen",
     "openInBrowser": "Im Browser öffnen",
-    "launcherReleased": "{title} ist da"
+    "launcherReleased": "{title} ist da",
+    "sourceTrs": "TRS-News",
+    "trsTeam": "TRS-Team",
+    "onlyEnglish": "Diesen Beitrag gibt es nur auf Englisch."
   },
   "game": {
     "preparing": "Minecraft wird vorbereitet",
@@ -4974,9 +4983,10 @@
   },
   "websiteLogin": {
     "title": "Website",
-    "description": "Auf {host} meldest du dich mit dem Microsoft-Konto an, dem Minecraft gehört – für Bewerbungen ins Team und, als Team-Mitglied, für den vollen Team-Bereich.",
-    "button": "Auf der Website mit Microsoft anmelden",
-    "hint": "Die Website meldet nur noch mit Microsoft an. Öffnet sich im Browser."
+    "description": "Auf {host} meldest du dich mit deinem TRS Launcher (Code hier bestätigen) oder mit Microsoft an – für Bewerbungen und als Team-Mitglied für den vollen Team-Bereich.",
+    "button": "Auf der Website anmelden",
+    "hint": "Wähle auf der Website „TRS Launcher“ und bestätige den Code hier.",
+    "open": "Website öffnen"
   },
   "applications": {
     "status": {
@@ -5127,5 +5137,37 @@
       "shared": "Als Modpack {code} geteilt",
       "newVersion": "Neue Version teilen"
     }
+  },
+  "webLogin": {
+    "title": "Auf der Website anmelden",
+    "needsServices": "Die Anmeldung auf der Website nutzt die TRS-Dienste. Schalte sie zuerst ein – ohne deine Einwilligung schickt der Launcher nichts an den TRS-Server.",
+    "enableServices": "TRS-Dienste einschalten",
+    "codeIntro": "Wähle auf {host} „TRS Launcher“ – die Website zeigt einen Code. Gib ihn hier ein:",
+    "codeLabel": "Code von der Website",
+    "invalidCode": "Gib den 6-stelligen Code von der Website ein (z. B. K7Q-2MX).",
+    "openWebsite": "{host} im Browser öffnen",
+    "question": "Jemand möchte sich auf {site} mit deinem TRS-Konto anmelden.",
+    "codeHeading": "Code",
+    "compare": "Zeigt dein Browser genau diesen Code?",
+    "site": "Website",
+    "browser": "Browser",
+    "unknownBrowser": "Unbekannt",
+    "time": "Anfrage",
+    "expires": "läuft ab in {time}",
+    "account": "Anmelden als",
+    "activeAccount": "aktiv",
+    "otherAccounts": "Es stehen nur Konten zur Wahl, die bei den TRS-Diensten angemeldet sind.",
+    "warning": "Bestätige nur, wenn du gerade selbst auf {site} „Mit TRS Launcher anmelden“ gewählt hast und dort derselbe Code steht. Bestätige nie einen Code, den dir jemand geschickt hat.",
+    "done": "Bestätigt – {name} ist jetzt auf der Website angemeldet.",
+    "doneToast": "Auf {site} angemeldet",
+    "doneHint": "Du kannst zurück zum Browser wechseln.",
+    "denied": "Anmeldung abgelehnt.",
+    "deniedHint": "Die Website zeigt, dass die Anfrage abgelehnt wurde.",
+    "errorHint": "Starte die Anmeldung auf der Website neu, um einen neuen Code zu bekommen.",
+    "next": "Weiter",
+    "deny": "Ablehnen",
+    "approve": "Bestätigen",
+    "sending": "Wird bestätigt …",
+    "enterCode": "Code eingeben"
   }
 }

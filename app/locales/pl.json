@@ -508,7 +508,8 @@
       "tagSnapshot": "Snapshot",
       "tagPreview": "Podgląd",
       "tagUpdate": "Aktualizacja",
-      "tagDownloads": "Pobrania: {count}"
+      "tagDownloads": "Pobrania: {count}",
+      "tagNews": "Wiadomości"
     },
     "screenshots": {
       "tooLargeForClipboard": "Obraz jest za duży dla schowka.",
@@ -785,6 +786,11 @@
       "invalidPack": "Serwer odrzucił modpack – to nie jest prawidłowy pack Modrinth.",
       "noRecipients": "Modpacki możesz wysyłać tylko znajomym.",
       "invalidDuration": "Nieprawidłowy czas ważności."
+    },
+    "trsWebLogin": {
+      "invalidCode": "To nie jest prawidłowy kod (format: XXX-XXX).",
+      "expired": "To żądanie logowania nie istnieje (już) – zacznij logowanie na stronie od nowa.",
+      "used": "Na to żądanie logowania już odpowiedziano."
     }
   },
   "browse": {
@@ -2574,7 +2580,7 @@
       "clips": "klipy nagrywanie nagranie wideo powtórka shadowplay",
       "social": "znajomi czat wiadomości grupy społeczność zaproszenia",
       "admin": "zespół moderacja zgłoszenia kary odwołania gracze admin",
-      "websiteLogin": "strona logowanie login microsoft przeglądarka zespół",
+      "websiteLogin": "strona logowanie login kod potwierdź launcher microsoft przeglądarka zespół",
       "myApplications": "zgłoszenia aplikuj zespół stanowisko status"
     },
     "actions": {
@@ -2595,7 +2601,7 @@
         "subtitle": "Folder z instancjami i ustawieniami"
       },
       "websiteLogin": {
-        "subtitle": "Otwiera {host} – logowanie przez Microsoft"
+        "subtitle": "Potwierdź kod z {host}"
       },
       "myApplications": {
         "subtitle": "Status i odpowiedzi na twoje zgłoszenia do zespołu"
@@ -2774,7 +2780,10 @@
     "empty": "Na razie nic nowego.",
     "readPatchNotes": "Czytaj informacje o aktualizacji",
     "openInBrowser": "Otwórz w przeglądarce",
-    "launcherReleased": "Wydano {title}"
+    "launcherReleased": "Wydano {title}",
+    "sourceTrs": "Wiadomości TRS",
+    "trsTeam": "Zespół TRS",
+    "onlyEnglish": "Ten wpis jest dostępny tylko po angielsku."
   },
   "game": {
     "preparing": "Przygotowywanie Minecrafta",
@@ -4974,9 +4983,10 @@
   },
   "websiteLogin": {
     "title": "Strona",
-    "description": "Na {host} logujesz się kontem Microsoft, do którego należy Minecraft – aby zgłosić się do zespołu, a jako członek zespołu – do pełnego panelu zespołu.",
-    "button": "Zaloguj się na stronie przez Microsoft",
-    "hint": "Strona loguje już tylko przez Microsoft. Otwiera się w przeglądarce."
+    "description": "Na {host} logujesz się TRS Launcherem (potwierdzając tutaj kod) albo kontem Microsoft – do zgłoszeń do zespołu, a jako członek zespołu do pełnej strefy zespołu.",
+    "button": "Zaloguj się na stronie",
+    "hint": "Wybierz na stronie „TRS Launcher” i potwierdź kod tutaj.",
+    "open": "Otwórz stronę"
   },
   "applications": {
     "status": {
@@ -5127,5 +5137,37 @@
       "shared": "Udostępniono jako modpack {code}",
       "newVersion": "Udostępnij nową wersję"
     }
+  },
+  "webLogin": {
+    "title": "Zaloguj się na stronie",
+    "needsServices": "Logowanie na stronie korzysta z usług TRS. Najpierw je włącz – bez twojej zgody launcher nic nie wysyła na serwer TRS.",
+    "enableServices": "Włącz usługi TRS",
+    "codeIntro": "Na {host} wybierz „TRS Launcher” – strona pokaże kod. Wpisz go tutaj:",
+    "codeLabel": "Kod ze strony",
+    "invalidCode": "Wpisz 6-znakowy kod ze strony (np. K7Q-2MX).",
+    "openWebsite": "Otwórz {host} w przeglądarce",
+    "question": "Ktoś chce zalogować się na {site} twoim kontem TRS.",
+    "codeHeading": "Kod",
+    "compare": "Czy twoja przeglądarka pokazuje dokładnie ten kod?",
+    "site": "Strona",
+    "browser": "Przeglądarka",
+    "unknownBrowser": "Nieznana",
+    "time": "Żądanie",
+    "expires": "wygasa za {time}",
+    "account": "Zaloguj jako",
+    "activeAccount": "aktywne",
+    "otherAccounts": "Na liście są tylko konta zalogowane do usług TRS.",
+    "warning": "Potwierdź tylko wtedy, gdy sam przed chwilą wybrałeś „Zaloguj przez TRS Launcher” na {site} i widnieje tam ten sam kod. Nigdy nie potwierdzaj kodu, który ktoś ci przysłał.",
+    "done": "Potwierdzono – {name} jest teraz zalogowany na stronie.",
+    "doneToast": "Zalogowano na {site}",
+    "doneHint": "Możesz wrócić do przeglądarki.",
+    "denied": "Logowanie odrzucone.",
+    "deniedHint": "Strona pokazuje, że żądanie zostało odrzucone.",
+    "errorHint": "Rozpocznij logowanie na stronie od nowa, aby dostać nowy kod.",
+    "next": "Dalej",
+    "deny": "Odrzuć",
+    "approve": "Potwierdź",
+    "sending": "Potwierdzanie…",
+    "enterCode": "Wpisz kod"
   }
 }

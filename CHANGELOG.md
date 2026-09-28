@@ -21,6 +21,24 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- Sign in on the website with your launcher: choose “TRS Launcher” on trs-launcher.theredstonee.de, the launcher opens
+  and shows the same short code, the website and the browser – click Confirm and you are signed in (Microsoft still
+  works too). You can pick another of your accounts, and on another PC type the code under Settings → Privacy →
+  “Sign in on the website” (or Ctrl+K). Nothing is confirmed without your click.
+- News from the TRS team now appear under News on the home page (with TRS services switched on) and open with pictures
+  and a button to read them on the website.
+
+### Deutsch
+- Auf der Website mit dem Launcher anmelden: Wähle auf trs-launcher.theredstonee.de „TRS Launcher“, der Launcher öffnet
+  sich und zeigt denselben kurzen Code, die Website und den Browser – auf Bestätigen klicken und du bist angemeldet
+  (Microsoft geht weiterhin). Du kannst ein anderes deiner Konten wählen und an einem anderen PC den Code unter
+  Einstellungen → Datenschutz → „Auf der Website anmelden“ (oder Strg+K) eingeben. Ohne deinen Klick wird nichts bestätigt.
+- News vom TRS-Team erscheinen jetzt unter Neuigkeiten auf der Startseite (mit eingeschalteten TRS-Diensten) und öffnen
+  sich mit Bildern und einem Knopf zum Weiterlesen auf der Website.
+
 ## 0.12.0 – 2026-09-27 – Pass It On | Weitergeben
 <!-- banner: accent=#27d3e6 motif=/news/0.12.0/banner.png -->
 <!-- shots:

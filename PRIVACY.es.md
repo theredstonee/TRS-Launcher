@@ -310,6 +310,17 @@ Microsoft a la que pertenece Minecraft: Java Edition. Solo recibimos tu UUID y n
 Microsoft, Xbox y Minecraft están unos segundos en memoria y se descartan – no guardamos tokens, correo ni contraseña,
 solo una sesión web (8 horas).
 
+**Inicio de sesión en la web con el TRS Launcher.** En lugar de Microsoft puedes confirmar un inicio de sesión en la web
+desde el launcher: la web muestra un código corto y abre el launcher (o escribes el código en Ajustes → Privacidad →
+«Iniciar sesión en la web»). El launcher consulta la solicitud y **solo tras tu clic en «Confirmar»** la confirma con el
+token TRS de la cuenta que elijas; «Rechazar» la rechaza. Solo se envían la referencia de la solicitud y el código; se
+muestran la web, el código, una descripción aproximada del navegador (como «Firefox · Windows») y la hora de la
+solicitud. El servidor guarda la solicitud como máximo dos minutos (hashes del enlace y de un valor del navegador,
+código, descripción aproximada del navegador y, tras confirmar, tu UUID) y después solo la sesión web (8 horas).
+
+**Noticias en el launcher.** Con los servicios TRS activados, el launcher también carga las noticias del equipo desde
+trs-launcher.theredstonee.de (texto e imágenes; sin tu token, no se envía nada sobre ti) y las guarda en caché.
+
 **Solicitudes para el equipo:** puesto, nombre y UUID de Minecraft, nombre de Discord, grupo de edad (nunca la fecha de
 nacimiento), tus respuestas, estado y nuestra respuesta. Solo las ven los miembros del equipo que pueden revisar
 solicitudes. Las rechazadas o retiradas se borran 6 meses después de la decisión, las aceptadas 6 meses después de

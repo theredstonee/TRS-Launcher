@@ -1175,7 +1175,14 @@ export interface SkinSyncStatus {
 
 // --- Neuigkeiten ------------------------------------------------------------------
 
-export type NewsSource = 'patchNotes' | 'mojang' | 'modrinth' | 'launcher'
+export type NewsSource = 'patchNotes' | 'mojang' | 'modrinth' | 'launcher' | 'trs'
+
+/** TRS-News: Texte einer Sprache (Markdown im Kern gesäubert, Bilder nur von der eigenen Website). */
+export interface NewsTexts {
+  title: string
+  summary: string
+  markdown: string
+}
 
 export interface NewsItem {
   id: string
@@ -1193,6 +1200,10 @@ export interface NewsItem {
   link?: string
   /** Pfad für den vollen Patchnotes-Text. */
   contentPath?: string
+  /** TRS-News: Texte je Sprache (`en` immer). */
+  texts?: Record<string, NewsTexts>
+  /** TRS-News: Autor, sonst TRS-Team. */
+  author?: string
 }
 
 export interface NewsFeed {

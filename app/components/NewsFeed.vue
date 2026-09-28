@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { convertFileSrc } from '@tauri-apps/api/core'
 import changelogText from '~~/CHANGELOG.md?raw'
-import type { NewsItem, NewsSource } from '~/types'
+import type { NewsItem, NewsSource, NewsTexts } from '~/types'
 
 // Neuigkeiten für die Startseite im Blog-Stil: jede Meldung als Karte mit Titelbild, die neueste
-// groß als Aufmacher. Quellen: Minecraft-Patchnotes, Mojang-News, gerade beliebte Modrinth-Projekte
-// und neue Launcher-Versionen. Geholt, geprüft und zwischengespeichert wird alles im Kern; Bilder
+// groß als Aufmacher. Quellen: Minecraft-Patchnotes, Mojang-News, gerade beliebte Modrinth-Projekte,
+// neue Launcher-Versionen und die News des TRS-Teams (Website-Blog, nur mit TRS-Diensten). Geholt, geprüft und zwischengespeichert wird alles im Kern; Bilder
 // kommen aus dessen Cache. Ohne Bild: Launcher-Versionen bekommen ihre Redstone-Szene als Banner,
 // Modrinth-Projekte ihr Icon groß auf einem weichgezeichneten Hintergrund aus sich selbst.
 const props = withDefaults(defineProps<{ listLimit?: number }>(), { listLimit: 6 })
@@ -18,7 +18,7 @@ const error = ref<string | null>(null)
 const stale = ref(false)
 const refreshing = ref(false)
 
-const filters: (NewsSource | 'all')[] = ['all', 'patchNotes', 'mojang', 'modrinth', 'launcher']
+const filters = ['all', 'patchNotes', 'mojang', 'modrinth', 'launcher'] as const
 const filter = ref<NewsSource | 'all'>('all')
 
 const changelog = parseChangelog(changelogText)
@@ -34,12 +34,16 @@ function sourceLabel(source: NewsSource): string {
       return 'Modrinth'
     case 'launcher':
       return 'TRS Launcher'
+    case 'trs':
+      return t('news.sourceTrs')
   }
 }
 
 // In „Alles“ zählt vom Launcher nur die neueste Version – ältere Releases
 // würden sonst die Liste füllen. Unter „Launcher“ stehen alle.
 const visible = computed(() => {
+  // Unter „Launcher“ stehen auch die News des TRS-Teams.
+  if (filter.value === 'launcher') return items.value.filter((i) => i.source === 'launcher' || i.source === 'trs')
   if (filter.value !== 'all') return items.value.filter((i) => i.source === filter.value)
   let launcherShown = false
   return items.value.filter((i) => {
@@ -72,7 +76,20 @@ function tagOf(item: NewsItem): string | null {
   return item.tagInfo ? userErrorText(item.tagInfo) : (item.tag ?? null)
 }
 
+/** TRS-News: Texte in der Launcher-Sprache, sonst Englisch. */
+function trsTexts(item: NewsItem): NewsTexts | null {
+  if (item.source !== 'trs' || !item.texts) return null
+  const lang = currentLocale.value.split('-')[0]!
+  return item.texts[lang] ?? item.texts.en ?? null
+}
+
+function summaryOf(item: NewsItem): string {
+  return trsTexts(item)?.summary ?? item.summary
+}
+
 function titleOf(item: NewsItem): string {
+  const trsText = trsTexts(item)
+  if (trsText) return trsText.title
   // Launcher-Version mit Update-Namen: „Das Clip-Update“; sonst „TRS Launcher v0.3.0 ist da“.
   const post = launcherPost(item)
   if (post?.title) return german.value ? post.title.de : post.title.en
@@ -115,6 +132,10 @@ async function loadImages() {
 onMounted(() => load())
 
 function open(item: NewsItem) {
+  if (item.source === 'trs') {
+    trsReading.value = item
+    return
+  }
   const post = launcherPost(item)
   if (post) {
     reading.value = post
@@ -128,7 +149,7 @@ function open(item: NewsItem) {
 }
 
 function actionLabel(item: NewsItem) {
-  if (launcherPost(item)) return t('updateNews.read')
+  if (launcherPost(item) || item.source === 'trs') return t('updateNews.read')
   return item.contentPath ? t('news.readPatchNotes') : item.link ? t('news.openInBrowser') : item.title
 }
 
@@ -136,6 +157,8 @@ function actionLabel(item: NewsItem) {
 
 /** Launcher-Version: Beitrag im Dialog (Banner, Screenshots, Hinweise, „Auf Website ansehen“). */
 const reading = ref<ChangelogEntry | null>(null)
+/** TRS-News: Beitrag im Dialog (Titelbild, Text, „Auf Website ansehen“). */
+const trsReading = ref<NewsItem | null>(null)
 const notes = ref<{ title: string; cover: string | null; body: string | null; error: string | null } | null>(null)
 
 async function showPatchNotes(item: NewsItem) {
@@ -208,7 +231,7 @@ async function showPatchNotes(item: NewsItem) {
             </div>
           </div>
           <div class="flex items-center gap-4 px-5 py-3">
-            <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-base-400">{{ featured.summary }}</p>
+            <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-base-400">{{ summaryOf(featured) }}</p>
             <span class="shrink-0 text-xs font-medium text-redstone-300">{{ actionLabel(featured) }}</span>
           </div>
         </button>
@@ -219,7 +242,7 @@ async function showPatchNotes(item: NewsItem) {
         <li v-for="item in list" :key="item.id" class="min-w-0">
           <button
             class="card card-hover group flex h-full w-full flex-col overflow-hidden text-left"
-            :class="{ 'launcher-item': item.source === 'launcher' }"
+            :class="{ 'launcher-item': item.source === 'launcher', 'trs-item': item.source === 'trs' }"
             :title="actionLabel(item)"
             @click="open(item)"
           >
@@ -240,6 +263,7 @@ async function showPatchNotes(item: NewsItem) {
     </div>
 
     <UpdatePostDialog v-if="reading" :entries="[reading]" @close="reading = null" />
+    <TrsNewsDialog v-if="trsReading" :item="trsReading" :cover="images[trsReading.id] ?? null" @close="trsReading = null" />
 
     <BaseDialog v-if="notes" :title="notes.title" wide @close="notes = null">
       <img v-if="notes.cover" :src="notes.cover" alt="" class="-mx-5 -mt-4 mb-4 aspect-[21/9] w-[calc(100%+2.5rem)] max-w-none object-cover" />
@@ -268,7 +292,8 @@ async function showPatchNotes(item: NewsItem) {
 .cover-shade {
   background: linear-gradient(to top, rgb(12 11 14 / 0.9), rgb(12 11 14 / 0.25) 55%, transparent);
 }
-.launcher-item {
+.launcher-item,
+.trs-item {
   border-color: color-mix(in srgb, var(--color-redstone-500) 35%, var(--color-base-800));
 }
 </style>

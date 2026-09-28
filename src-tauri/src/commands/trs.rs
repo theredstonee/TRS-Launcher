@@ -287,3 +287,36 @@ pub async fn trs_admin_ban(
 pub async fn trs_admin_unban(launcher: State<'_, LauncherState>, uuid: String) -> CommandResult<()> {
     Ok(launcher.trs_admin_unban(&uuid).await?)
 }
+
+// --- Anmeldung auf der Website per TRS Launcher (API §29) ------------------------------------------------
+
+/// Konten, mit denen eine Website-Anmeldung bestätigt werden kann (aktives zuerst).
+#[tauri::command]
+pub async fn trs_web_login_accounts(
+    launcher: State<'_, LauncherState>,
+) -> CommandResult<Vec<trs_core::trs_api::web_login::WebLoginAccount>> {
+    Ok(launcher.trs_web_login_accounts().await?)
+}
+
+/// Anfrage nachschlagen – per Link-Token oder eingetipptem Code. Bestätigt wird damit noch nichts.
+#[tauri::command]
+pub async fn trs_web_login_lookup(
+    launcher: State<'_, LauncherState>,
+    account: Option<String>,
+    token: Option<String>,
+    code: Option<String>,
+) -> CommandResult<trs_core::trs_api::web_login::WebLoginRequest> {
+    Ok(launcher.trs_web_login_lookup(account.as_deref(), token.as_deref(), code.as_deref()).await?)
+}
+
+/// Bestätigen (`approve = true`) oder ablehnen – nur nach einem Klick im Dialog.
+#[tauri::command]
+pub async fn trs_web_login_decide(
+    launcher: State<'_, LauncherState>,
+    account: Option<String>,
+    id: String,
+    code: String,
+    approve: bool,
+) -> CommandResult<()> {
+    Ok(launcher.trs_web_login_decide(account.as_deref(), &id, &code, approve).await?)
+}
