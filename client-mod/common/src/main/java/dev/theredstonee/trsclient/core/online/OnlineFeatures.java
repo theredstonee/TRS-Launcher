@@ -72,11 +72,16 @@ public final class OnlineFeatures<T> {
 		// Client-Sync (Einstellungen je TRS-Konto, Launcher-Aussehen live) – läuft über die Anmeldung von TrsOnline.
 		features.sync = dev.theredstonee.trsclient.core.sync.ClientSync.create(modules, online, configDir, userAgent, modVersion,
 				platform::log);
+		// Notizen je Welt: eigener Sync (Notiz für Notiz), läuft über dieselbe TRS-Anmeldung.
+		features.notesSync = dev.theredstonee.trsclient.core.notes.NotesSync.create(modules, online, configDir, userAgent, platform::log);
 		return features;
 	}
 
 	/** Client-Sync (null in Tests ohne Konfig-Ordner). */
 	private dev.theredstonee.trsclient.core.sync.ClientSync sync;
+
+	/** Notiz-Sync (null in Tests ohne Konfig-Ordner). */
+	private dev.theredstonee.trsclient.core.notes.NotesSync notesSync;
 
 	public dev.theredstonee.trsclient.core.sync.ClientSync sync() {
 		return sync;
@@ -139,6 +144,7 @@ public final class OnlineFeatures<T> {
 			online.tick(now, visible, modules.trsOnline.isEnabled());
 			textures.cleanup(now);
 			if (sync != null) sync.tick(now);
+			if (notesSync != null) notesSync.tick(now);
 		} catch (RuntimeException e) {
 			online.reportError(e);
 		}

@@ -156,7 +156,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if ((step >= 3 && step < 25 || step == 28) && Mc.screen() instanceof PauseScreen) {
+		if ((step >= 3 && step < 25 || step == 28 || step == 35) && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -272,6 +272,11 @@ public final class AutoTest {
 				// -PtrsAutotestOnly=disconnect: Fehlerbildschirm (Neu anmelden, kopieren, Server-Status)
 				if ("disconnect".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 34;
+					break;
+				}
+				// -PtrsAutotestOnly=notes: Notizen je Welt (HUD, Liste, Lesen, Bearbeiten, Suche, Koordinaten, Wegpunkt, Karte)
+				if ("notes".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 35;
 					break;
 				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
@@ -616,6 +621,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 35:
+				// Notizen je Welt: Screenshots trsclient-<mc>-notes-*.png
+				if (notesTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -653,6 +674,7 @@ public final class AutoTest {
 	private final QolTest qolTest = new QolTest();
 	private final ComfortTest comfortTest = new ComfortTest();
 	private final CircuitTest circuitTest = new CircuitTest();
+	private final NotesTest notesTest = new NotesTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {

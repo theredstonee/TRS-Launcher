@@ -118,12 +118,15 @@ public final class TrsClient implements ClientModInitializer {
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
+		modules.notes.openKey.link(TrsKeys.link(TrsKeys.notes));
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
 		// Komfort-Paket 2: Tooltips, Server-Profile, Panorama.
 		dev.theredstonee.trsclient.comfort.ComfortHooks.init(modules);
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FabricLoader.getInstance().getConfigDir());
+		// Notizen je Welt (config/trsclient/notes): Seite im TRS-Menü, Taste, angeheftete Notiz im HUD.
+		dev.theredstonee.trsclient.core.notes.Notes.init(modules, FabricLoader.getInstance().getConfigDir(), message -> LOGGER.info(message));
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
@@ -135,6 +138,7 @@ public final class TrsClient implements ClientModInitializer {
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
 			saveConfig();
 			waypoints.save();
+			if (dev.theredstonee.trsclient.core.notes.Notes.get() != null) dev.theredstonee.trsclient.core.notes.Notes.get().save();
 			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
 		});
 		String version = FabricLoader.getInstance().getModContainer(MOD_ID)
@@ -280,6 +284,16 @@ public final class TrsClient implements ClientModInitializer {
 				Mc.setScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));
 			}
 		}
+		// Notizen (Taste standardmäßig unbelegt): TRS-Menü direkt auf der Notiz-Seite der aktuellen Welt.
+		if (TrsKeys.notes != null) {
+			while (TrsKeys.notes.consumeClick()) {
+				if (Mc.screen() == null && modules.notes.notes.isEnabled()) {
+					dev.theredstonee.trsclient.core.notes.Notes.requestOpen();
+					Mc.setScreen(new TrsMenuScreen(null));
+				}
+			}
+		}
+		if (dev.theredstonee.trsclient.core.notes.Notes.get() != null) dev.theredstonee.trsclient.core.notes.Notes.get().tick(System.currentTimeMillis());
 		// Sozial (Taste standardmäßig unbelegt) und Schnellantwort zum neuesten Toast (Y).
 		while (TrsKeys.social.consumeClick()) dev.theredstonee.trsclient.social.SocialHooks.onSocialKey();
 		while (TrsKeys.quickReply.consumeClick()) dev.theredstonee.trsclient.social.SocialHooks.onQuickReplyKey();

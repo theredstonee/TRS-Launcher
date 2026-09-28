@@ -14,5 +14,6 @@
 	"key.trsclient.worldMap": "Mapa del mundo",
 	"key.trsclient.social": "Abrir social",
 	"key.trsclient.quickReply": "Respuesta rápida / unirse",
-	"key.trsclient.panorama": "Tomar panorámica"
+	"key.trsclient.panorama": "Tomar panorámica",
+	"key.trsclient.notes": "Abrir notas"
 }

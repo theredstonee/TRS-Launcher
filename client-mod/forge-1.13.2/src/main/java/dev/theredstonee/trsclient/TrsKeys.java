@@ -23,6 +23,8 @@ public final class TrsKeys {
 	public static KeyBinding wardrobe;
 	/** Öffnet die Weltkarte (M – in keiner Vanilla-Version belegt; bei Doppelbelegung einmalig freigegeben). */
 	public static KeyBinding worldMap;
+	/** Öffnet die Notizen der aktuellen Welt im TRS-Menü (standardmäßig unbelegt). */
+	public static KeyBinding notes;
 
 	private TrsKeys() {
 	}
@@ -40,6 +42,7 @@ public final class TrsKeys {
 		toggleRecording = register(new KeyBinding("key.trsclient.toggleRecording", GLFW.GLFW_KEY_F10, CATEGORY));
 		wardrobe = register(new KeyBinding("key.trsclient.wardrobe", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
 		worldMap = register(new KeyBinding("key.trsclient.worldMap", GLFW.GLFW_KEY_M, CATEGORY));
+		notes = register(new KeyBinding("key.trsclient.notes", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
 	}
 
 	/**

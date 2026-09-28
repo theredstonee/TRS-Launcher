@@ -47,7 +47,8 @@ public final class HudManager {
 				minimap,
 				new RedstoneHuds.Signal(modules, redstone),
 				new RedstoneHuds.Clock(modules, redstone),
-				new ClipHud(modules)));
+				new ClipHud(modules),
+				new NotesHud(modules)));
 	}
 
 	/** Einmal je Client-Tick (Karte abtasten). */

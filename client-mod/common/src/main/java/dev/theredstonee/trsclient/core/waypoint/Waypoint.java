@@ -16,6 +16,11 @@ public final class Waypoint {
 	public boolean death;
 	/** Zeitpunkt der Erstellung (ms). */
 	public long created;
+	/**
+	 * Vorübergehend (z. B. Koordinate aus einer Notiz): wird nie gespeichert und verschwindet beim Erreichen bzw.
+	 * spätestens beim Neustart. {@code transient} = Gson schreibt/liest es nicht.
+	 */
+	public transient boolean temporary;
 
 	public Waypoint() {
 	}

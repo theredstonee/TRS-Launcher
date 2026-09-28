@@ -61,8 +61,11 @@ public final class TrsKeys {
 	/** Nimmt ein 360°-Panorama auf (standardmäßig unbelegt; auch im Menü auslösbar). */
 	public static final KeyMapping panorama =
 			new KeyMapping("key.trsclient.panorama", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	/** Öffnet die Notizen der aktuellen Welt im TRS-Menü (standardmäßig unbelegt). */
+	public static final KeyMapping notes =
+			new KeyMapping("key.trsclient.notes", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
-			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply, panorama};
+			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply, panorama, notes};
 
 	private TrsKeys() {
 	}

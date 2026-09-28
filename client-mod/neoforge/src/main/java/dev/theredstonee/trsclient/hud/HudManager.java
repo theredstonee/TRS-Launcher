@@ -53,7 +53,8 @@ public final class HudManager {
 				minimap,
 				new RedstoneHuds.Signal(modules, redstone),
 				new RedstoneHuds.Clock(modules, redstone),
-				new ClipHud(modules)), modules);
+				new ClipHud(modules),
+				new NotesHud(modules)), modules);
 	}
 
 	public CrosshairRenderer crosshair() {

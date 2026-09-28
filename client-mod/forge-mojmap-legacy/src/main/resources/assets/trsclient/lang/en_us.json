@@ -14,5 +14,6 @@
 	"key.trsclient.worldMap": "World map",
 	"key.trsclient.social": "Open social",
 	"key.trsclient.quickReply": "Quick reply / join",
-	"key.trsclient.panorama": "Take panorama"
+	"key.trsclient.panorama": "Take panorama",
+	"key.trsclient.notes": "Open notes"
 }

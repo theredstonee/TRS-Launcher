@@ -104,6 +104,13 @@ public final class NewSince {
 	/** Leisten-Eintrag „Bug melden“. */
 	public static final String MENU_BUG_REPORT = "menu:bugReport";
 
+	/** Notizen je Welt (TRS Client 0.14.0): Notizbuch je Welt/Server, Checklisten, Koordinaten-Links, Sync, HUD. */
+	public static final String NOTES = "0.14.0";
+	/** Leisten-Eintrag „Notizen“. */
+	public static final String MENU_NOTES = "menu:notes";
+	/** Taste „Notizen öffnen“ (standardmäßig unbelegt). */
+	public static final String KEY_NOTES = "key.trsclient.notes";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -163,6 +170,8 @@ public final class NewSince {
 				"worldMap.netherCoords", "worldMap.exportSize");
 		// Bug melden (Issue-Tracker der Website).
 		add(BUG_REPORT, MENU_BUG_REPORT);
+		// Notizen je Welt.
+		add(NOTES, "notes", "pinnedNote", MENU_NOTES, KEY_NOTES);
 	}
 
 	private NewSince() {

@@ -37,6 +37,8 @@ public final class TrsKeys {
 	public static KeyMapping quickReply;
 	/** Nimmt ein 360°-Panorama auf (standardmäßig unbelegt; auch im Menü auslösbar). */
 	public static KeyMapping panorama;
+	/** Öffnet die Notizen der aktuellen Welt im TRS-Menü (standardmäßig unbelegt). */
+	public static KeyMapping notes;
 
 	private TrsKeys() {
 	}
@@ -67,6 +69,7 @@ public final class TrsKeys {
 		social = register(event, new KeyMapping("key.trsclient.social", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		quickReply = register(event, new KeyMapping("key.trsclient.quickReply", KEYBOARD, InputConstants.KEY_Y, CATEGORY));
 		panorama = register(event, new KeyMapping("key.trsclient.panorama", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		notes = register(event, new KeyMapping("key.trsclient.notes", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 	}
 
 	/**

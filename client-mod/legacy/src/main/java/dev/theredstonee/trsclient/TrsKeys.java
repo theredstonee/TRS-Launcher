@@ -32,6 +32,8 @@ public final class TrsKeys {
 	public static KeyBinding quickReply;
 	/** Nimmt ein 360°-Panorama auf (standardmäßig unbelegt; auch im Menü auslösbar). */
 	public static KeyBinding panorama;
+	/** Öffnet die Notizen der aktuellen Welt im TRS-Menü (standardmäßig unbelegt). */
+	public static KeyBinding notes;
 
 	private TrsKeys() {
 	}
@@ -57,6 +59,7 @@ public final class TrsKeys {
 		social = register(new KeyBinding("key.trsclient.social", Keyboard.KEY_NONE, CATEGORY));
 		quickReply = register(new KeyBinding("key.trsclient.quickReply", Keyboard.KEY_Y, CATEGORY));
 		panorama = register(new KeyBinding("key.trsclient.panorama", Keyboard.KEY_NONE, CATEGORY));
+		notes = register(new KeyBinding("key.trsclient.notes", Keyboard.KEY_NONE, CATEGORY));
 	}
 
 	/**
