@@ -43,6 +43,8 @@ export interface AdminCounts {
   applications: number
   /** Offene Schaltungs-Einreichungen (§25). */
   circuits: number
+  /** Neue Issues ohne Zuständige (§28). */
+  issues?: number
 }
 
 export const ADMIN_RANK = 900

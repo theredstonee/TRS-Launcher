@@ -2,6 +2,7 @@
 const { m } = useLang()
 const { t } = useTeamText()
 const { c } = useCircuitText()
+const { it } = useIssueText()
 const lp = useLocalePath()
 const route = useRoute()
 const menuOpen = ref(false)
@@ -15,6 +16,8 @@ const links = computed(() => [
   { to: lp('/blog'), label: m.value.nav.blog, icon: 'book' },
   { to: lp('/capes'), label: m.value.nav.capes, icon: 'cape' },
   { to: lp('/circuits'), label: c.value.nav, icon: 'blocks' },
+  { to: lp('/issues'), label: it.value.nav.issues, icon: 'bug' },
+  { to: lp('/roadmap'), label: it.value.nav.roadmap, icon: 'roadmap' },
   { to: lp('/faq'), label: m.value.nav.faq, icon: 'note' },
   { to: lp('/team'), label: m.value.nav.team, icon: 'users' },
   { to: lp('/applications'), label: t.value.account.myApplications, icon: 'inbox' },

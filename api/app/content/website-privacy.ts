@@ -14,7 +14,7 @@ const c = CONTROLLER
 export const WEBSITE_PRIVACY: Record<'en' | 'de' | 'es', { title: string, updated: string, intro: string, body: string, launcher: string }> = {
   en: {
     title: 'Privacy policy',
-    updated: 'Last updated: 27 September 2026',
+    updated: 'Last updated: 28 September 2026',
     intro:
       'This policy covers the website trs-launcher.theredstonee.de, the TRS Launcher, the TRS Client mod and the TRS services. In short: no tracking, no analytics, no advertising – only what is needed for what you use.',
     body: `## Controller
@@ -91,12 +91,30 @@ The team page (/team) shows team members that the team **added by hand** – nob
 
 **Reports.** Signed-in users can report a circuit; the report is handled like other reports (see “Reports and moderation”).
 
-**Legal basis.** Art. 6(1)(b) GDPR (you want to publish your circuit) and Art. 6(1)(f) (reviewing content and preventing abuse, e.g. at most 5 submissions a day and upload bans).`,
+**Legal basis.** Art. 6(1)(b) GDPR (you want to publish your circuit) and Art. 6(1)(f) (reviewing content and preventing abuse, e.g. at most 5 submissions a day and upload bans).
+
+## Issue tracker and roadmap
+
+**Public pages.** The issue list (/issues), every issue page (/issues/<number>) and the roadmap (/roadmap) can be read by anyone without an account. They show the issues, comments and screenshots together with **the Minecraft name and head of the player who wrote them**, votes (as totals), the status and the team's triage (assignee, priority, tags, “fixed in”).
+
+**Writing, voting, following.** To open an issue, comment, vote or follow you sign in (Microsoft sign-in on this website, or your TRS account in the TRS Client). We store the issue or comment (title, text, type, area), your Minecraft UUID, the time, edits, your vote per issue (up or down) and which issues you follow. Following means you get a notification in the TRS Launcher (over the TRS connection you already use) when the status changes, the team answers, a fix ships or the issue is merged – you can unfollow at any time. Your votes are never shown individually, only as a total.
+
+**Screenshots.** Pictures you attach are re-encoded on our server (no metadata such as location or camera data stays) and are public together with the issue or comment. Pictures you upload but don't attach are deleted after one hour. Please don't put personal data in texts or screenshots.
+
+**Bug reports from the TRS Client.** “Report a bug” in the TRS Client can attach technical info – only the parts you tick, and you see exactly what is sent: the TRS Client version, the Minecraft version and loader and your mod list (shown publicly with the issue), and an **excerpt of the game log**, which only you and the team can see. Before sending, the client removes access tokens, session ids, e-mail addresses, IP addresses, UUIDs and your player name from the log; our server does it again.
+
+**Team.** Team members with the matching permission change status, priority, assignee, tags and “fixed in”, merge duplicates (votes and followers move to the other issue), write internal notes (only visible to the team), close comments and delete issues or comments. These actions are recorded in the audit log (2 years).
+
+**Storage period.** Issues and comments stay public as long as the tracker exists, because they document the development. You can edit your issue while it is open and edit or delete your comments at any time. Deleted issues are removed completely after 90 days. **Deleting your TRS account** deletes your votes, follows, the log excerpts of your issues and all pictures you uploaded; your issues and comments stay **without your name**. You can ask us to remove content of yours (e-mail above).
+
+**Reports.** Signed-in users can report issues and comments; reports are handled like other reports (see “Reports and moderation”).
+
+**Legal basis.** Art. 6(1)(b) GDPR (you want to report a bug, suggest a feature, vote, comment or be notified) and Art. 6(1)(f) (a transparent development process, moderation, protection against spam – e.g. at most 10 issues, 60 comments and 30 pictures a day).`,
     launcher: '## The TRS Launcher',
   },
   de: {
     title: 'Datenschutzerklärung',
-    updated: 'Stand: 27. September 2026',
+    updated: 'Stand: 28. September 2026',
     intro:
       'Diese Erklärung gilt für die Website trs-launcher.theredstonee.de, den TRS Launcher, die TRS-Client-Mod und die TRS-Dienste. Kurz gesagt: kein Tracking, keine Analyse, keine Werbung – nur, was für das nötig ist, was du nutzt.',
     body: `## Verantwortlicher
@@ -173,12 +191,30 @@ Die Team-Seite (/team) zeigt Team-Mitglieder, die das Team **von Hand eingetrage
 
 **Meldungen.** Angemeldete Nutzer können eine Schaltung melden; die Meldung wird wie andere Meldungen bearbeitet (siehe „Meldungen und Moderation“).
 
-**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (du möchtest deine Schaltung veröffentlichen) und Art. 6 Abs. 1 lit. f (Prüfung der Inhalte und Schutz vor Missbrauch, z. B. höchstens 5 Einreichungen am Tag und Upload-Sperren).`,
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (du möchtest deine Schaltung veröffentlichen) und Art. 6 Abs. 1 lit. f (Prüfung der Inhalte und Schutz vor Missbrauch, z. B. höchstens 5 Einreichungen am Tag und Upload-Sperren).
+
+## Issue-Tracker und Roadmap
+
+**Öffentliche Seiten.** Die Issue-Liste (/issues), jede Issue-Seite (/issues/<Nummer>) und die Roadmap (/roadmap) kann jeder ohne Account lesen. Sie zeigen die Issues, Kommentare und Screenshots zusammen mit **Minecraft-Namen und Kopf des Spielers, der sie geschrieben hat**, die Stimmen (als Summe), den Status und die Einordnung durch das Team (zuständig, Priorität, Tags, „Erledigt in“).
+
+**Schreiben, Abstimmen, Folgen.** Um ein Issue zu erstellen, zu kommentieren, abzustimmen oder zu folgen, meldest du dich an (Microsoft-Anmeldung auf dieser Website oder dein TRS-Account im TRS Client). Wir speichern das Issue bzw. den Kommentar (Titel, Text, Art, Bereich), deine Minecraft-UUID, den Zeitpunkt, Bearbeitungen, deine Stimme je Issue (hoch oder runter) und welchen Issues du folgst. Folgen heißt: Du bekommst im TRS Launcher eine Benachrichtigung (über die TRS-Verbindung, die du ohnehin nutzt), wenn sich der Status ändert, das Team antwortet, eine Lösung erscheint oder das Issue zusammengeführt wird – du kannst jederzeit aufhören zu folgen. Deine Stimmen werden nie einzeln gezeigt, nur als Summe.
+
+**Screenshots.** Bilder, die du anhängst, werden auf unserem Server neu kodiert (Metadaten wie Standort oder Kameradaten bleiben nicht erhalten) und sind zusammen mit dem Issue bzw. Kommentar öffentlich. Hochgeladene, aber nicht angehängte Bilder werden nach einer Stunde gelöscht. Bitte schreib keine persönlichen Daten in Texte oder Screenshots.
+
+**Bug-Meldungen aus dem TRS Client.** „Bug melden“ im TRS Client kann technische Infos anhängen – nur die Teile, die du ankreuzt, und du siehst genau, was gesendet wird: die Version des TRS Client, Minecraft-Version und Loader und deine Mod-Liste (öffentlich beim Issue sichtbar) sowie einen **Ausschnitt aus dem Spiel-Log**, den nur du und das Team sehen. Vor dem Senden entfernt der Client Zugangs-Tokens, Sitzungs-IDs, E-Mail-Adressen, IP-Adressen, UUIDs und deinen Spielernamen aus dem Log; unser Server macht das noch einmal.
+
+**Team.** Team-Mitglieder mit dem passenden Recht ändern Status, Priorität, Zuständigkeit, Tags und „Erledigt in“, führen Duplikate zusammen (Stimmen und Folgende wandern zum anderen Issue), schreiben interne Notizen (nur für das Team sichtbar), schließen Kommentare und löschen Issues oder Kommentare. Diese Aktionen stehen im Audit-Log (2 Jahre).
+
+**Speicherdauer.** Issues und Kommentare bleiben öffentlich, solange es den Tracker gibt, weil sie die Entwicklung dokumentieren. Dein Issue kannst du bearbeiten, solange es offen ist, deine Kommentare jederzeit bearbeiten oder löschen. Gelöschte Issues werden nach 90 Tagen vollständig entfernt. **Löschst du deinen TRS-Account**, werden deine Stimmen, dein Folgen, die Log-Ausschnitte deiner Issues und alle Bilder, die du hochgeladen hast, gelöscht; deine Issues und Kommentare bleiben **ohne deinen Namen** stehen. Du kannst uns bitten, Inhalte von dir zu entfernen (E-Mail oben).
+
+**Meldungen.** Angemeldete Nutzer können Issues und Kommentare melden; die Meldungen werden wie andere Meldungen bearbeitet (siehe „Meldungen und Moderation“).
+
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (du möchtest einen Fehler melden, eine Funktion vorschlagen, abstimmen, kommentieren oder benachrichtigt werden) und Art. 6 Abs. 1 lit. f (eine nachvollziehbare Entwicklung, Moderation, Schutz vor Spam – z. B. höchstens 10 Issues, 60 Kommentare und 30 Bilder am Tag).`,
     launcher: '## Der TRS Launcher',
   },
   es: {
     title: 'Política de privacidad',
-    updated: 'Última actualización: 27 de septiembre de 2026',
+    updated: 'Última actualización: 28 de septiembre de 2026',
     intro:
       'Esta política cubre el sitio web trs-launcher.theredstonee.de, el TRS Launcher, el mod TRS Client y los servicios TRS. En resumen: sin rastreo, sin analíticas, sin publicidad – solo lo necesario para lo que usas. La versión alemana es la vinculante.',
     body: `## Responsable
@@ -253,7 +289,25 @@ La página del equipo (/team) muestra a los miembros que el equipo **añadió a 
 
 **Denuncias.** Los usuarios con sesión iniciada pueden denunciar un circuito; la denuncia se trata como las demás (ver «Denuncias y moderación»).
 
-**Base jurídica.** Art. 6.1.b RGPD (quieres publicar tu circuito) y art. 6.1.f (revisar el contenido y evitar abusos, p. ej. un máximo de 5 envíos al día y bloqueos de subida).`,
+**Base jurídica.** Art. 6.1.b RGPD (quieres publicar tu circuito) y art. 6.1.f (revisar el contenido y evitar abusos, p. ej. un máximo de 5 envíos al día y bloqueos de subida).
+
+## Gestor de incidencias y hoja de ruta
+
+**Páginas públicas.** La lista de incidencias (/issues), cada página de incidencia (/issues/<número>) y la hoja de ruta (/roadmap) las puede leer cualquiera sin cuenta. Muestran las incidencias, comentarios y capturas junto con **el nombre y la cabeza de Minecraft del jugador que los escribió**, los votos (como total), el estado y la clasificación del equipo (responsable, prioridad, etiquetas, «corregido en»).
+
+**Escribir, votar, seguir.** Para abrir una incidencia, comentar, votar o seguirla inicias sesión (con Microsoft en esta web o con tu cuenta TRS en TRS Client). Guardamos la incidencia o el comentario (título, texto, tipo, área), tu UUID de Minecraft, la hora, las ediciones, tu voto por incidencia (a favor o en contra) y qué incidencias sigues. Seguir significa que recibes un aviso en TRS Launcher (por la conexión TRS que ya usas) cuando cambia el estado, responde el equipo, sale una corrección o se fusiona la incidencia – puedes dejar de seguirla cuando quieras. Tus votos nunca se muestran de forma individual, solo como total.
+
+**Capturas.** Las imágenes que adjuntas se vuelven a codificar en nuestro servidor (no quedan metadatos como ubicación o datos de la cámara) y son públicas junto con la incidencia o el comentario. Las imágenes subidas pero no adjuntadas se eliminan al cabo de una hora. No pongas datos personales en textos ni capturas.
+
+**Informes de errores desde TRS Client.** «Informar de un error» en TRS Client puede adjuntar información técnica – solo lo que marques, y ves exactamente qué se envía: la versión de TRS Client, la versión de Minecraft y el loader y tu lista de mods (visibles públicamente con la incidencia), y un **extracto del log del juego**, que solo ves tú y el equipo. Antes de enviarlo, el cliente quita del log tokens de acceso, IDs de sesión, direcciones de correo, direcciones IP, UUIDs y tu nombre de jugador; nuestro servidor lo vuelve a hacer.
+
+**Equipo.** Los miembros del equipo con el permiso correspondiente cambian estado, prioridad, responsable, etiquetas y «corregido en», fusionan duplicados (los votos y seguidores pasan a la otra incidencia), escriben notas internas (solo visibles para el equipo), cierran comentarios y eliminan incidencias o comentarios. Estas acciones quedan en el registro de auditoría (2 años).
+
+**Plazo de conservación.** Las incidencias y comentarios siguen públicos mientras exista el gestor, porque documentan el desarrollo. Puedes editar tu incidencia mientras esté abierta y editar o eliminar tus comentarios en cualquier momento. Las incidencias eliminadas se borran por completo a los 90 días. **Si eliminas tu cuenta TRS**, se borran tus votos, lo que sigues, los extractos de log de tus incidencias y todas las imágenes que subiste; tus incidencias y comentarios quedan **sin tu nombre**. Puedes pedirnos que retiremos contenido tuyo (correo arriba).
+
+**Denuncias.** Los usuarios con sesión pueden denunciar incidencias y comentarios; se tramitan como las demás denuncias (ver «Denuncias y moderación»).
+
+**Base jurídica.** Art. 6.1.b RGPD (quieres informar de un error, sugerir una función, votar, comentar o recibir avisos) y art. 6.1.f (un desarrollo transparente, moderación, protección contra spam – p. ej. como máximo 10 incidencias, 60 comentarios y 30 imágenes al día).`,
     launcher: '## El TRS Launcher',
   },
 }

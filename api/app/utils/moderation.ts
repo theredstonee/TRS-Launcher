@@ -1,6 +1,6 @@
 // Typen der Chat-Moderation (`/v1/admin/reports*`, `/v1/admin/moderation/*`, `/v1/admin/chat/word-filter`).
 
-export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share' | 'circuit' | 'pack'
+export type ReportKind = 'message' | 'image' | 'player' | 'group' | 'share' | 'circuit' | 'pack' | 'issue' | 'issue_comment'
 export type ReportStatus = 'open' | 'in_review' | 'resolved'
 export type ReportOutcome = 'actioned' | 'dismissed'
 export type ReportReason = 'insult_hate' | 'spam' | 'inappropriate' | 'scam_phishing' | 'harassment' | 'other'
@@ -28,6 +28,10 @@ export interface ReportSummary {
   circuitId?: string | null
   /** Geteiltes Modpack (§27), sonst `null`. */
   packId?: string | null
+  /** Issue (§28) bei `issue`/`issue_comment`, sonst `null`. */
+  issueNumber?: number | null
+  /** Issue-Kommentar (§28), sonst `null`. */
+  issueCommentId?: number | null
   /** Über die öffentliche Seite ohne Konto gemeldet. */
   anonymous?: boolean
   preview: string | null
@@ -113,6 +117,9 @@ export interface ReportDetail extends ReportSummary {
       sha256: string
       owner: PlayerRef
     } | null
+    /** Gemeldetes Issue bzw. Kommentar zur Meldezeit (§28). */
+    issue?: { number: number, title: string, description: string, author: PlayerRef | null } | null
+    issueComment?: { id: number, issueNumber: number, issueTitle: string, body: string, author: PlayerRef | null } | null
     anonymous?: boolean
   } | null
   notes: { id: number, at: string, actor: string, actorName: string | null, text: string }[]
@@ -284,6 +291,8 @@ export interface DashboardData {
   applications: { open: number, new: number } | null
   /** Schaltungs-Bibliothek (§25), nur mit circuits.manage. */
   circuits?: { pendingSubmissions: number, published: number, total: number } | null
+  /** Issues (§28), nur mit issues.manage: neu ohne Zuständige, mir zugewiesen. */
+  issues?: { new: number, mine: number } | null
 }
 
 export interface SearchResult {

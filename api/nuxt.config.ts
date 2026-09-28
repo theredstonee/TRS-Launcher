@@ -81,6 +81,9 @@ export default defineNuxtConfig({
     // Schaltungen einreichen + eigene Einreichungen (§25): persönlich, nur im Browser, nie indexieren.
     '/circuits/submit': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/circuits/mine': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // Issue anlegen + eigene/gefolgte Issues (§28): persönlich, nur im Browser, nie indexieren.
+    '/issues/new': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/issues/mine': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/auth/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // Geteilte Screenshots (§23): öffentlich per Link, aber nie indexieren; Adresse nicht weiterreichen.
     '/s/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },

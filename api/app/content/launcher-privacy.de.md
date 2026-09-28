@@ -261,6 +261,24 @@ TRS-Online-Funktionen erlaubt sind. Der Server zählt Anfragen je IP-Adresse nur
 - **Grenzen und Meldungen:** höchstens 5 Einreichungen am Tag; eine Upload-Sperre aus der Moderation sperrt auch das
   Einreichen. Schaltungen können wie andere Inhalte gemeldet werden (siehe unten).
 
+### Issues und Bug-Meldungen
+
+Der öffentliche Issue-Tracker auf der Website (/issues, /roadmap) ist im Website-Teil dieser Erklärung beschrieben.
+Launcher und TRS Client nutzen ihn so:
+
+- **Benachrichtigungen:** Folgst du einem Issue (bei eigenen und kommentierten automatisch), bekommt der Launcher über
+  seine bestehende TRS-Verbindung ein Ereignis, wenn sich der Status ändert, das Team antwortet, eine Lösung erscheint
+  („Erledigt in“) oder das Issue zusammengeführt wird, und zeigt einen Sozial-Hinweis mit dem Knopf „Ansehen“, der das
+  Issue im Browser öffnet. Dafür wird auf deinem PC nichts gespeichert; es gelten die Einstellungen für Sozial-Hinweise.
+- **„Bug melden“ im TRS Client** sendet einen Titel, deine Beschreibung und – nur die Teile, die du ankreuzt, vor dem
+  Senden angezeigt – die Version des TRS Client, Minecraft-Version und Loader, deine Mod-Liste, einen Ausschnitt aus dem
+  Spiel-Log und einen Screenshot, zusammen mit deinem TRS-Account. Der Client entfernt vorher Zugangs-Tokens,
+  Sitzungs-IDs, E-Mail-Adressen, IP-Adressen, UUIDs und deinen Spielernamen aus dem Log, der Server macht das noch
+  einmal. Issue, Versionen, Mod-Liste und Screenshot sind auf der Website mit deinem Minecraft-Namen öffentlich; den
+  Log-Ausschnitt sehen nur du und das Team.
+- **Wie lange:** Issues und Kommentare bleiben, solange es den Tracker gibt; „Alle TRS-Daten löschen“ löscht deine
+  Stimmen, dein Folgen, Log-Ausschnitte und hochgeladene Bilder, deine Issues und Kommentare bleiben ohne deinen Namen.
+
 ### Meldungen und Moderation
 
 Du kannst Nachrichten, Bilder, Spieler und Gruppen melden (mit Grund und optionalem Hinweis). Die Meldung speichert eine
@@ -404,6 +422,7 @@ den TRS-Server.
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
 | Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
 | Geteilte Modpacks (nur die Packs, die du teilst): Pack-Datei, Name, Beschreibung, Version, Minecraft-Version, Loader, Dateizahlen, Zeitpunkt des Teilens/Aktualisierens/Ablaufs, Installationen, der teilende Account (Name auf der Pack-Seite sichtbar), Freunde, an die es geschickt wurde | Ein Modpack per Code, Link oder an Freunde teilen (siehe oben) |
+| Issues und Kommentare, die du schreibst, deine Stimmen und dein Folgen; bei „Bug melden“ im TRS Client die angekreuzten Teile (Versionen, Mod-Liste, Log-Ausschnitt – gesäubert, nur für dich und das Team sichtbar – und ein Screenshot) | Fehler melden, Funktionen vorschlagen, abstimmen und Benachrichtigungen (siehe oben) |
 | Eingereichte Schaltungen: die Schaltung (nur Blöcke und Zustände), Name, Beschreibung, Kategorie, Sprache, Zeitpunkt, Status und Antwort des Teams; bei angenommenen Schaltungen dein Name als Ersteller | Eine Schaltung für die Bibliothek einreichen (siehe oben) |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl, Liste geteilter Mods und Resource-Pack-Angaben (Namen, Größen, Quellen, Prüfsummen – keine Dateien); deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |

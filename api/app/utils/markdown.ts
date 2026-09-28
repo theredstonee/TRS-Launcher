@@ -55,3 +55,42 @@ const withBreaks = new Marked(extension(), { breaks: true })
 export function renderMarkdown(md: string, opts: { breaks?: boolean } = {}): string {
   return (opts.breaks ? withBreaks : plain).parse(md, { async: false }) as string
 }
+
+// ---------------------------------------------------------------- Nutzer-Inhalte (Issues, §28)
+
+/**
+ * Markdown aus Nutzer-Eingaben (Issues, Kommentare): wie oben kein rohes HTML und nur sichere Links, zusätzlich
+ * `rel="nofollow ugc noopener noreferrer"`, Überschriften erst ab h3 (die Seite hat h1/h2) und ohne IDs, Zeilen-
+ * umbrüche wie getippt.
+ */
+function userExtension(): MarkedExtension {
+  return {
+    gfm: true,
+    breaks: true,
+    renderer: {
+      html(token: Tokens.HTML | Tokens.Tag) {
+        return escapeHtml(token.text)
+      },
+      heading(token: Tokens.Heading) {
+        const level = Math.min(6, token.depth + 2)
+        return `<h${level}>${this.parser.parseInline(token.tokens)}</h${level}>\n`
+      },
+      link(token: Tokens.Link) {
+        const text = this.parser.parseInline(token.tokens)
+        const href = safeHref(token.href)
+        if (!href) return text
+        const external = /^https?:/i.test(href)
+        return `<a href="${escapeHtml(href)}" rel="nofollow ugc noopener noreferrer"${external ? ' target="_blank"' : ''}>${text}</a>`
+      },
+      image(token: Tokens.Image) {
+        return escapeHtml(token.text)
+      },
+    },
+  }
+}
+
+const user = new Marked(userExtension())
+
+export function renderUserMarkdown(md: string): string {
+  return user.parse(md, { async: false }) as string
+}

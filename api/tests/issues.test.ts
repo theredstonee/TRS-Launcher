@@ -72,7 +72,7 @@ describe('issues: create, read, edit', () => {
     expect(i.can.edit).toBe(true)
     const page = issuePage(env.ctx, 1, viewer(env, bea))
     expect(page.issue.description).toBe('It **crashes** every time.')
-    expect(page.issue.author).toEqual({ uuid: alex.uuid, name: 'Alex' })
+    expect(page.issue.author).toEqual({ uuid: alex.uuid, name: 'Alex', skin: null })
     expect(page.issue.can.edit).toBe(false)
     expect(page.issue.following).toBe(false)
     expect(issuePage(env.ctx, 1, null).issue.following).toBeUndefined()

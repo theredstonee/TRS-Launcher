@@ -11,6 +11,7 @@ const { m, fill } = useLang()
 const { a } = useAdminText()
 const { t } = useTeamText()
 const { c: ct } = useCircuitText()
+const { it: iss } = useIssueText()
 const { session, account, counts, load, api, logout, can } = useAdmin()
 const { loginUrl } = useAccount()
 const route = useRoute()
@@ -31,6 +32,7 @@ async function refreshCounts() {
       uploads: d.uploads ? d.uploads.capesPending + d.uploads.cosmeticsPending + d.uploads.capesReported + d.uploads.cosmeticsReported : 0,
       applications: d.applications?.new ?? 0,
       circuits: d.circuits?.pendingSubmissions ?? 0,
+      issues: d.issues?.new ?? 0,
     }
   } catch {
     // Zähler sind nur Beiwerk.
@@ -78,6 +80,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/applications', icon: 'inbox', label: t.value.adm.nav.applications, count: counts.value?.applications, perm: ['applications.view'] },
   { to: '/admin/jobs', icon: 'briefcase', label: t.value.adm.nav.jobs, perm: ['applications.view', 'applications.manage'] },
   { to: '/admin/circuits', icon: 'blocks', label: ct.value.adm.nav, count: counts.value?.circuits, perm: ['circuits.manage'] },
+  { to: '/admin/issues', icon: 'bug', label: iss.value.adm.nav, count: counts.value?.issues, perm: ['issues.manage', 'issues.moderate'] },
   { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },
   { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter, perm: ['wordfilter'] },
   { to: '/admin/roles', icon: 'key', label: t.value.adm.nav.roles, perm: ['roles.manage'] },

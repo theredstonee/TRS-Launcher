@@ -61,6 +61,15 @@ const PATHS: Record<string, string> = {
   thumbDown: 'M7 13V4H4v9zM7 13l4 7c1.5 0 2.5-1 2-3l-1-3h6a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7',
   microsoft: 'M4 4h7.5v7.5H4zM12.5 4H20v7.5h-7.5zM4 12.5h7.5V20H4zM12.5 12.5H20V20h-7.5z',
   crown: 'M4 18h16M5 16l-1-9 5 4 3-6 3 6 5-4-1 9z',
+  // Issues & Roadmap (§28)
+  bug: 'M9 7a3 3 0 0 1 6 0M8 9h8v6a4 4 0 0 1-8 0zM12 11v8M4 13h4M16 13h4M5 8l3 2M19 8l-3 2M5 19l3-2M19 19l-3-2',
+  roadmap: 'M4 6h5v12H4zM10 6h5v8h-5zM16 6h4v5h-4z',
+  lock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
+  image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01',
+  pencil: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
+  voteUp: 'M12 5l7 9h-4v5H9v-5H5z',
+  voteDown: 'M12 19l-7-9h4V5h6v5h4z',
 }
 
 // Marken als ausgefüllte Formen.

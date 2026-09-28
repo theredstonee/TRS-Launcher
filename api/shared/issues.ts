@@ -55,6 +55,8 @@ export const ISSUE_LIMITS = {
 export interface PlayerRefView {
   uuid: string
   name: string
+  /** Zuletzt gesehene Skin-Adresse (textures.minecraft.net) für den Kopf, sonst `null`. */
+  skin?: string | null
 }
 
 /** Bild an einem Issue oder Kommentar (bzw. frisch hochgeladen). */

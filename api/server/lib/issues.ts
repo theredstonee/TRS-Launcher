@@ -234,15 +234,35 @@ function uploadView(ctx: AppContext, r: Pick<UploadRow, 'id' | 'width' | 'height
   return { id: r.id, url, thumbUrl: `${url}?thumb=1`, width: r.width, height: r.height }
 }
 
-function ref(names: Map<string, string>, uuid: string | null): PlayerRefView | null {
-  return uuid ? { uuid, name: names.get(uuid) ?? '' } : null
+interface Person {
+  name: string
+  skin: string | null
+}
+
+/** Namen + zuletzt gesehene Skin-Adresse (für Köpfe ohne Mojang-Abfrage) vieler UUIDs auf einmal. */
+function people(ctx: AppContext, uuids: Iterable<string | null>): Map<string, Person> {
+  const list = [...new Set([...uuids].filter((u): u is string => !!u && u.length === 32))]
+  const out = new Map<string, Person>()
+  for (let i = 0; i < list.length; i += 400) {
+    const part = list.slice(i, i + 400)
+    for (const r of all<{ uuid: string, name: string, skin_url: string | null }>(ctx.db, `SELECT uuid, name, skin_url FROM users WHERE uuid IN (${placeholders(part.length)})`, ...part)) {
+      out.set(r.uuid, { name: r.name, skin: r.skin_url })
+    }
+  }
+  return out
+}
+
+function ref(names: Map<string, Person>, uuid: string | null): PlayerRefView | null {
+  if (!uuid) return null
+  const p = names.get(uuid)
+  return { uuid, name: p?.name ?? '', skin: p?.skin ?? null }
 }
 
 /** Viele Issues auf einmal in Listen-Sichten (Namen, Tags, Duplikat-Ziele, eigene Stimme in wenigen Abfragen). */
 export function issueViews(ctx: AppContext, rows: IssueRow[], viewer: Viewer | null, opts: { deleted?: boolean } = {}): IssueView[] {
   if (rows.length === 0) return []
   const ids = rows.map((r) => r.id)
-  const names = nameMap(ctx, rows.flatMap((r) => [r.author_uuid, r.assignee_uuid]))
+  const names = people(ctx, rows.flatMap((r) => [r.author_uuid, r.assignee_uuid]))
   const tags = new Map<number, string[]>()
   for (const t of all<{ issue_id: number, tag: string }>(ctx.db, `SELECT issue_id, tag FROM issue_tags WHERE issue_id IN (${placeholders(ids.length)}) ORDER BY tag`, ...ids)) {
     const list = tags.get(t.issue_id) ?? []
@@ -321,7 +341,7 @@ function uploadsOf(ctx: AppContext, issueId: number): Map<number | null, UploadR
 }
 
 function commentViews(ctx: AppContext, rows: CommentRow[], uploads: Map<number | null, UploadRow[]>, viewer: Viewer | null): IssueCommentView[] {
-  const names = nameMap(ctx, rows.map((c) => c.author_uuid))
+  const names = people(ctx, rows.map((c) => c.author_uuid))
   return rows.map((c) => {
     const deleted = c.deleted_at !== null
     return {
@@ -343,7 +363,7 @@ function historyViews(ctx: AppContext, issueId: number): IssueHistoryEntry[] {
   const rows = all<{ at: number, actor: string | null, action: IssueHistoryAction, from_value: string | null, to_value: string | null }>(
     ctx.db, 'SELECT at, actor, action, from_value, to_value FROM issue_history WHERE issue_id = ? ORDER BY at, id LIMIT 500', issueId,
   )
-  const names = nameMap(ctx, rows.map((r) => r.actor))
+  const names = people(ctx, rows.map((r) => r.actor))
   return rows.map((r) => ({ at: iso(r.at), actor: ref(names, r.actor), action: r.action, from: r.from_value, to: r.to_value }))
 }
 
@@ -351,7 +371,7 @@ function notesOf(ctx: AppContext, issueId: number): IssueNoteView[] {
   const rows = all<{ id: number, at: number, actor: string, text: string }>(
     ctx.db, 'SELECT id, at, actor, text FROM issue_notes WHERE issue_id = ? ORDER BY at, id LIMIT 500', issueId,
   )
-  const names = nameMap(ctx, rows.map((r) => r.actor))
+  const names = people(ctx, rows.map((r) => r.actor))
   return rows.map((r) => ({ id: r.id, at: iso(r.at), author: ref(names, r.actor), text: r.text }))
 }
 
@@ -510,6 +530,15 @@ export function myIssues(ctx: AppContext, viewer: Viewer): { created: IssueView[
     viewer.uuid,
   )
   return { created: issueViews(ctx, created, viewer), following: issueViews(ctx, following, viewer) }
+}
+
+/** Zahlen für die Team-Übersicht: neue (offen, niemandem zugewiesen) und mir zugewiesene offene Issues. */
+export function issueCounts(ctx: AppContext, uuid: string): { new: number, mine: number } {
+  const closed = CLOSED_STATUSES.map((x) => `'${x}'`).join(', ')
+  return {
+    new: one<{ n: number }>(ctx.db, `SELECT COUNT(*) AS n FROM issues WHERE deleted_at IS NULL AND status = 'open' AND assignee_uuid IS NULL`)!.n,
+    mine: one<{ n: number }>(ctx.db, `SELECT COUNT(*) AS n FROM issues WHERE deleted_at IS NULL AND assignee_uuid = ? AND status NOT IN (${closed})`, uuid)!.n,
+  }
 }
 
 // ---------------------------------------------------------------- Grenzen
@@ -1083,7 +1112,7 @@ export interface IssueCommentEvidence {
 
 export function issueForReport(ctx: AppContext, number: number): { row: IssueRow, evidence: IssueEvidence } {
   const r = issueOr404(ctx, number)
-  const names = nameMap(ctx, [r.author_uuid])
+  const names = people(ctx, [r.author_uuid])
   return { row: r, evidence: { number: r.id, title: r.title, description: [...r.description].slice(0, 4000).join(''), author: ref(names, r.author_uuid) } }
 }
 
@@ -1091,7 +1120,7 @@ export function commentForReport(ctx: AppContext, id: number): { row: CommentRow
   const c = Number.isSafeInteger(id) ? one<CommentRow>(ctx.db, 'SELECT * FROM issue_comments WHERE id = ?', id) : undefined
   const r = c ? getIssue(ctx, c.issue_id) : undefined
   if (!c || !r || c.deleted_at !== null) throw notFound('comment_not_found', 'Comment not found')
-  const names = nameMap(ctx, [c.author_uuid])
+  const names = people(ctx, [c.author_uuid])
   return { row: c, evidence: { id: c.id, issueNumber: r.id, issueTitle: r.title, body: c.body ?? '', author: ref(names, c.author_uuid) } }
 }
 

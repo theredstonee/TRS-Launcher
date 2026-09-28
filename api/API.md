@@ -2879,7 +2879,9 @@ removed, word filter §20.4 – blocked words → `422 message_blocked`). Tags: 
   "myVote": 1 }
 ```
 
-- `author` is `null` for deleted accounts. `authorTeam`: the author is a team member.
+- `author` is `null` for deleted accounts. `authorTeam`: the author is a team member. Player references in §28
+  (author, assignee, comment authors, history actors) also carry `skin` (last seen skin URL on textures.minecraft.net or
+  `null`) so the website can draw heads without asking Mojang.
 - `score` = `up − down`. `myVote` (`1`, `-1`, `0`) only when the request is signed in.
 - `duplicateOf`: `{ number, title, status, url }` when merged into another issue (status `duplicate`).
 - `locked`: comments are closed (only the team can still comment). `source`: `web` or `client` (sent from the TRS Client).

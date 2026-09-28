@@ -38,11 +38,13 @@ const includeRelated = ref(false)
 const note = ref('')
 /** Meldungen über Hochgeladenes: naheliegende Strafe ist die Upload-Sperre. */
 const UPLOAD_KINDS = new Set(['share', 'circuit', 'pack'])
-const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack'>(null)
+/** Meldungen über Issues/Kommentare: naheliegende Strafe ist die Sozial-Sperre (blockiert Issues + Kommentare). */
+const ISSUE_KINDS = new Set(['issue', 'issue_comment'])
+const confirming = ref<null | 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack' | 'delete_issue'>(null)
 const limits = computed(() => session.value?.limits ?? { kinds: [], maxMinutes: 0, maxWarnMinutes: 0, permanent: false })
 
 function resetForm() {
-  draft.value = newSanctionDraft(report.value && UPLOAD_KINDS.has(report.value.kind) ? 'upload_ban' : 'chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
+  draft.value = newSanctionDraft(report.value && UPLOAD_KINDS.has(report.value.kind) ? 'upload_ban' : report.value && ISSUE_KINDS.has(report.value.kind) ? 'social_ban' : 'chat_mute', report.value ? (REPORT_TO_REASON[report.value.reason] ?? 'other') : '')
   keepOpen.value = false
   includeRelated.value = false
   note.value = ''
@@ -70,7 +72,7 @@ async function run(fn: () => Promise<{ report: ReportDetail }>) {
   }
 }
 
-function act(action: 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack') {
+function act(action: 'sanction' | 'dismiss' | 'resolve' | 'delete_message' | 'delete_share' | 'hide_circuit' | 'delete_pack' | 'delete_issue') {
   confirming.value = null
   const body: Record<string, unknown> = { action }
   if (action === 'sanction') Object.assign(body, draftBody(draft.value))
@@ -291,6 +293,24 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
+            <div v-if="report.evidence?.issue">
+              <h3 class="section-title">{{ m.admin.mod.kinds.issue }}</h3>
+              <p class="mt-1 text-sm text-base-200">{{ fill(t.issueInfo, { n: report.evidence.issue.number, title: report.evidence.issue.title, author: report.evidence.issue.author?.name || t.unknown }) }}</p>
+              <p v-if="report.evidence.issue.description" class="msg-text mt-2 max-h-48 overflow-auto rounded-md bg-base-950 p-3 text-sm whitespace-pre-wrap text-base-300">{{ report.evidence.issue.description }}</p>
+              <div class="mt-2">
+                <a :href="`/issues/${report.evidence.issue.number}`" target="_blank" rel="noopener" class="btn btn-ghost text-xs"><SiteIcon name="external" class="size-3.5" />/issues/{{ report.evidence.issue.number }}</a>
+              </div>
+            </div>
+
+            <div v-if="report.evidence?.issueComment">
+              <h3 class="section-title">{{ m.admin.mod.kinds.issue_comment }}</h3>
+              <p class="mt-1 text-sm text-base-200">{{ fill(t.issueCommentInfo, { n: report.evidence.issueComment.issueNumber, title: report.evidence.issueComment.issueTitle, author: report.evidence.issueComment.author?.name || t.unknown }) }}</p>
+              <p v-if="report.evidence.issueComment.body" class="msg-text mt-2 max-h-48 overflow-auto rounded-md bg-base-950 p-3 text-sm whitespace-pre-wrap text-base-300">{{ report.evidence.issueComment.body }}</p>
+              <div class="mt-2">
+                <a :href="`/issues/${report.evidence.issueComment.issueNumber}#c${report.evidence.issueComment.id}`" target="_blank" rel="noopener" class="btn btn-ghost text-xs"><SiteIcon name="external" class="size-3.5" />/issues/{{ report.evidence.issueComment.issueNumber }}#c{{ report.evidence.issueComment.id }}</a>
+              </div>
+            </div>
+
             <div v-if="report.evidence?.share || report.evidence?.images.length">
               <h3 class="section-title">{{ t.reportedImages }}</h3>
               <p v-if="report.evidence?.share" class="mt-1 text-xs text-base-400">
@@ -387,6 +407,9 @@ onBeforeUnmount(() => {
                 <button v-if="report.packId" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'delete_pack'">
                   <SiteIcon name="trash" class="size-4" />{{ t.deletePack }}
                 </button>
+                <button v-if="(report.issueNumber || report.issueCommentId) && can('issues.moderate')" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'delete_issue'">
+                  <SiteIcon name="trash" class="size-4" />{{ report.kind === 'issue_comment' ? t.deleteIssueComment : t.deleteIssue }}
+                </button>
                 <button v-if="report.circuitId && can('circuits.manage')" type="button" class="btn btn-danger col-span-2 text-sm" :disabled="busy" @click="confirming = 'hide_circuit'">
                   <SiteIcon name="blocks" class="size-4" />{{ t.hideCircuit }}
                 </button>
@@ -414,7 +437,7 @@ onBeforeUnmount(() => {
             </div>
             <AdminConfirm
               v-if="confirming"
-              :title="confirming === 'sanction' ? at.decision.confirmTitle : confirming === 'dismiss' ? t.dismiss : confirming === 'resolve' ? t.resolve : confirming === 'delete_share' ? t.deleteShare : confirming === 'hide_circuit' ? t.hideCircuit : confirming === 'delete_pack' ? t.deletePack : t.deleteMessage"
+              :title="confirming === 'sanction' ? at.decision.confirmTitle : confirming === 'dismiss' ? t.dismiss : confirming === 'resolve' ? t.resolve : confirming === 'delete_share' ? t.deleteShare : confirming === 'hide_circuit' ? t.hideCircuit : confirming === 'delete_pack' ? t.deletePack : confirming === 'delete_issue' ? (report.kind === 'issue_comment' ? t.deleteIssueComment : t.deleteIssue) : t.deleteMessage"
               :text="confirming === 'sanction' ? sanctionSummary : ''"
               :confirm-label="confirming === 'sanction' ? at.decision.apply : at.common.confirm"
               :danger="confirming !== 'dismiss' && confirming !== 'resolve'"

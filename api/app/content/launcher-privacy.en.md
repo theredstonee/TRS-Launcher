@@ -244,6 +244,23 @@ server only counts requests per IP address in memory (rate limit).
 - **Limits and reports:** at most 5 submissions per day; an upload ban from moderation also blocks submissions. Circuits
   can be reported like other content (see below).
 
+### Issues and bug reports
+
+The public issue tracker on the website (/issues, /roadmap) is described in the website part of this policy. The
+launcher and the TRS Client use it like this:
+
+- **Notifications:** if you follow an issue (you do automatically for issues you opened or commented on), the launcher
+  gets an event over its existing TRS connection when the status changes, the team answers, a fix ships ("fixed in")
+  or the issue is merged, and shows a social notification with a "View" button that opens the issue in your browser.
+  Nothing is stored for this on your PC; the social notification settings apply.
+- **"Report a bug" in the TRS Client** sends a title, your description and – only the parts you tick, shown before
+  sending – the TRS Client version, the Minecraft version and loader, your mod list, an excerpt of the game log and a
+  screenshot, together with your TRS account. The client removes access tokens, session ids, e-mail addresses, IP
+  addresses, UUIDs and your player name from the log first, the server does it again. The issue, versions, mod list and
+  screenshot are public on the website with your Minecraft name; the log excerpt only you and the team can see.
+- **How long:** issues and comments stay while the tracker exists; "Alle TRS-Daten löschen" deletes your votes,
+  follows, log excerpts and uploaded pictures, your issues and comments stay without your name.
+
 ### Reports and moderation
 
 You can report messages, pictures, players and groups (with a reason and an optional note). The report stores an
@@ -378,6 +395,7 @@ the TRS server.
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
 | Shared screenshots (only the pictures you share): the re-encoded picture, size, format, share and expiry time, the sharing account (not shown publicly) | Sharing a screenshot as a link (see above) |
 | Shared modpacks (only the packs you share): the pack file, name, description, version, Minecraft version, loader, file counts, share/update/expiry time, installs, the sharing account (name shown on the pack page), friends it was sent to | Sharing a modpack by code, link or with friends (see above) |
+| Issues and comments you write, your votes and follows; with "Report a bug" in the TRS Client the parts you tick (versions, mod list, log excerpt – cleaned, only visible to you and the team – and a screenshot) | Reporting bugs, suggesting features, voting and notifications (see above) |
 | Circuit submissions: the circuit (blocks and states only), name, description, category, language, time, status and the team's answer; for accepted circuits your name as the creator | Submitting a circuit to the library (see above) |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
