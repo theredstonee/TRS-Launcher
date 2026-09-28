@@ -435,6 +435,7 @@ imported. Only counters and yes/no flags are stored – no names of mods, packs,
 | Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
 | Only with the TRS services on and "Sync with TRS account" on in the TRS Client (in game): your TRS Client settings – which modules are on and their settings, HUD layouts and profiles, the TRS keys of the modules, the config mode for performance mods, whether you finished the introduction (and the module pack you picked) and which "NEW" entries you have opened – each part with the time of its last change; no waypoints, no server addresses, no files, paths or tokens | Keeping the TRS Client the same on every PC and game folder where you use this Minecraft account, and showing the introduction only once |
 | Only with the TRS services on: the wardrobe entry of the TRS Client – your favourite skins, outfits (name, skin, cape) and emote wheel slots, with the time of the last change | The same wardrobe on every PC |
+| Only with "Sync with TRS account" on in the TRS Client: your notes per server or world (title, text, server address or world name and ID, created/changed time); deleted notes are remembered for 90 days | The same notes on every PC |
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
 | Shared screenshots (only the pictures you share): the re-encoded picture, size, format, share and expiry time, the sharing account (not shown publicly) | Sharing a screenshot as a link (see above) |
@@ -457,6 +458,10 @@ its switch "Sync with TRS account" (TRS menu → *TRS Online Features*, on by de
 waypoints, the freelook server list and Minecraft's own options (options.txt) stay on your PC. The game also reads
 your synced theme, accent colour and language and, when you change them in the introduction, writes them back so the
 launcher follows. Deleting all TRS data deletes this document too.
+
+**Notes (TRS Client):** with the same switch on, the notes you write per server or world are synced between your PCs:
+their title and text, the server address or the world's name and an ID for it, and when each note was created and
+changed. Only you can read them – there is no admin view – and deleting all TRS data deletes them.
 
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
@@ -482,6 +487,8 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
   the world.
 - Synced skins, presets and settings stay until you delete them in the launcher (a skin deleted on one PC is deleted on
   the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
+- Synced TRS Client notes stay until you delete them in the game; a deleted note is remembered (without its text) for
+  90 days so your other PCs delete it too.
 - Chat messages and pictures stay until they are deleted (by you for everyone, by the group owner or by the team) or
   the group is deleted. Pictures that were uploaded but never sent are deleted after 1 hour.
 - Shared screenshots are deleted automatically **30 days** after sharing, or earlier when you (or the team) delete them.

@@ -8,6 +8,7 @@ import { MojangUnavailable } from './mojang'
 import { updatePresence } from './playerevents'
 import { getUser, isAdmin, upsertOnLogin, meView, type MeView, type UserRow } from './users'
 import { activeSanction, sanctionError } from './sanctions'
+import { sweepNoteTombstones } from './notes-sync'
 import { sweepSyncTombstones } from './sync'
 import { sweepWebLogins } from './weblogin'
 
@@ -178,4 +179,5 @@ export function sweepExpired(ctx: AppContext): void {
   run(ctx.db, 'DELETE FROM sessions WHERE expires_at <= ?', t)
   sweepWebLogins(ctx)
   sweepSyncTombstones(ctx)
+  sweepNoteTombstones(ctx)
 }

@@ -735,12 +735,50 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
   {
     // Erfolge (§31): Freischaltungen (mit Stand der Belohnung), Zähler/Flags je Konto (Launcher-Meldungen und
     // Server-Zähler für Dinge, die später verschwinden – geteilte Packs, Welten, Screenshots), Spielzeit-Summe + Serie,
-    // Spalte users.achievements_visible (für Freunde sichtbar). Alles per ON DELETE CASCADE am Konto. Idempotent.
+    // Spalte users.achievements_visible (für Freunde sichtbar). Dazu Notizen je Welt/Server (§17.5): sync_notes +
+    // Änderungszähler je Konto. Alles per ON DELETE CASCADE am Konto. Idempotent.
     // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
     version: 19,
-    run: migrateAchievements,
+    run: (db) => {
+      migrateAchievements(db)
+      migrateSyncNotes(db)
+    },
   },
 ]
+
+/** Notizen-Sync (§17.5), Teil von Migration 19. Exportiert für den Idempotenz-Test. */
+export function migrateSyncNotes(db: DatabaseSync): void {
+  db.exec(`
+-- Notizen des TRS Clients je Server/Welt. deleted = 1 → Grabstein (title/text leer), deleted_at = Serverzeit des Löschens.
+CREATE TABLE IF NOT EXISTS sync_notes (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  id TEXT NOT NULL CHECK (length(id) = 16),
+  world_type TEXT NOT NULL CHECK (world_type IN ('server', 'world')),
+  -- Server-Adresse bzw. Welt-Kennung (16 hex)
+  world_ref TEXT NOT NULL,
+  world_name TEXT,
+  title TEXT NOT NULL DEFAULT '',
+  text TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  deleted_at INTEGER,
+  -- Stand des Änderungszählers des Kontos bei der letzten Änderung (Cursor).
+  seq INTEGER NOT NULL,
+  PRIMARY KEY (uuid, id)
+);
+CREATE INDEX IF NOT EXISTS sync_notes_seq ON sync_notes(uuid, seq);
+CREATE INDEX IF NOT EXISTS sync_notes_world ON sync_notes(uuid, world_type, world_ref, deleted);
+CREATE INDEX IF NOT EXISTS sync_notes_tombstones ON sync_notes(deleted, deleted_at);
+
+-- Änderungszähler je Konto; horizon = höchster seq entfernter Grabsteine (ältere Cursor → komplette Liste).
+CREATE TABLE IF NOT EXISTS sync_note_state (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  seq INTEGER NOT NULL DEFAULT 0,
+  horizon INTEGER NOT NULL DEFAULT 0
+);
+`)
+}
 
 /** Migration 19 (siehe oben). Exportiert für den Idempotenz-Test. */
 export function migrateAchievements(db: DatabaseSync): void {

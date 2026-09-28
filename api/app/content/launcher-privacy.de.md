@@ -467,6 +467,7 @@ Zähler und Ja/Nein-Werte – keine Namen von Mods, Packs, Clips oder Dateien.
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
 | Nur mit eingeschalteten TRS-Diensten und eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client (im Spiel): deine TRS-Client-Einstellungen – welche Module an sind und ihre Einstellungen, HUD-Layouts und -Profile, die TRS-Tasten der Module, der Config-Modus für Leistungs-Mods, ob du die Einführung abgeschlossen hast (und das gewählte Modul-Paket) und welche „NEU“-Einträge du geöffnet hast – je Teil mit dem Zeitpunkt der letzten Änderung; keine Wegpunkte, keine Server-Adressen, keine Dateien, Pfade oder Tokens | Damit der TRS Client auf allen PCs und Spielordnern mit diesem Minecraft-Account gleich ist und die Einführung nur einmal erscheint |
 | Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
+| Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client: deine Notizen je Server oder Welt (Titel, Text, Serveradresse bzw. Weltname und Kennung, Erstell-/Änderungszeit); gelöschte Notizen werden 90 Tage vermerkt | Dieselben Notizen auf jedem PC |
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
 | Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
@@ -491,6 +492,11 @@ ab Werk an) an ist; der Schalter selbst, Wegpunkte, die Freelook-Serverliste und
 (options.txt) bleiben auf deinem PC. Das Spiel liest außerdem dein synchronisiertes Theme, Akzentfarbe und Sprache und
 schreibt sie zurück, wenn du sie in der Einführung änderst, damit der Launcher folgt. „Alle TRS-Daten löschen“ löscht
 auch dieses Dokument.
+
+**Notizen (TRS Client):** Mit demselben Schalter werden deine Notizen je Server oder Welt zwischen deinen PCs
+abgeglichen: Titel und Text, die Serveradresse bzw. der Name der Welt samt einer Kennung dafür und wann jede Notiz
+erstellt und geändert wurde. Lesen kannst sie nur du – es gibt keine Admin-Ansicht –, und „Alle TRS-Daten löschen“
+löscht sie.
 
 Der Online-Status liegt **nur im Arbeitsspeicher des Servers**, wird nie auf die Festplatte geschrieben, hat keinen
 Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen können ihn nur deine Freunde – und gar
@@ -518,6 +524,8 @@ Profiling und keinen Verkauf von Daten.
 - Synchronisierte Skins, Presets und Einstellungen bleiben, bis du sie im Launcher löschst (ein auf einem PC gelöschter
   Skin wird auch auf dem Server gelöscht). Vermerke über gelöschte Skins bleiben 30 Tage, damit deine anderen PCs sie
   ebenfalls löschen können.
+- Synchronisierte Notizen des TRS Clients bleiben, bis du sie im Spiel löschst; eine gelöschte Notiz wird (ohne Text)
+  90 Tage vermerkt, damit deine anderen PCs sie auch löschen.
 - Chat-Nachrichten und Bilder bleiben, bis sie gelöscht werden (von dir für alle, vom Gruppenbesitzer oder vom Team)
   oder die Gruppe gelöscht wird. Hochgeladene, aber nie gesendete Bilder werden nach 1 Stunde gelöscht.
 - Geteilte Screenshots werden **30 Tage** nach dem Teilen automatisch gelöscht, oder früher, wenn du (oder das Team) sie

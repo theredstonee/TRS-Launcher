@@ -118,6 +118,9 @@ export type ApiEvent =
   // ---------------------------------------------------------------- Erfolge (§31, nur /v1/events/me)
   /** Du hast einen Erfolg freigeschaltet (`reward` = dabei vergebenes Teil oder `null`). */
   | AchievementUnlockedEvent
+  // ---------------------------------------------------------------- Notizen-Sync (§17.5, nur /v1/events/me)
+  /** Eigene Notizen wurden (auf einem anderen Gerät) geändert: `GET /v1/me/sync/notes?since=<eigener Cursor>`. */
+  | { type: 'notes_changed', cursor: string }
 
 export type ApiEventType = ApiEvent['type']
 

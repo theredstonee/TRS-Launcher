@@ -15,7 +15,7 @@ The German deployment guide is in [README.md](README.md).
 | Topic | Rule |
 |---|---|
 | Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`, chat images (§18.7) and shared screenshots (§23), which send raw `image/png`, `image/jpeg` or `image/webp`, and circuit files (§25.6), which send the raw file as `application/octet-stream`. |
-| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**, a chat image at most **5 MiB**, a shared screenshot at most **10 MiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**. Circuit bodies (§25) at most **300 KiB**, circuit files at most **2 MiB**. Anything larger gets `413`. |
+| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**, a chat image at most **5 MiB**, a shared screenshot at most **10 MiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**, notes (§17.5) at most **512 KiB**. Circuit bodies (§25) at most **300 KiB**, circuit files at most **2 MiB**. Anything larger gets `413`. |
 | Unknown fields | They are **rejected** with `400 invalid_request`. All request objects are strict. |
 | UUIDs | Requests accept 32 hex digits with or without dashes, in any case. **Responses always use 32 lowercase hex digits without dashes**, for example `75c1a6f3112240abbdb57b9d21c64232`. |
 | Minecraft names | `^[A-Za-z0-9_]{1,16}$` |
@@ -270,7 +270,7 @@ Auth required. Deletes everything immediately:
 - equipped cosmetics, cape and cosmetic grants
 - cape shares (§5.10): capes friends shared with you (and everything you re-shared from them), and every share of your own uploads
 - code redemptions, reports and presence
-- all sync data (§17): skins with their images, deletion markers, presets and settings
+- all sync data (§17): skins with their images, deletion markers, presets and settings, notes (§17.5)
 - chat (§18.8): all DMs of the account for **both** sides, own messages, reactions and images in groups, pending uploads; owned groups go to the longest member, empty groups are deleted
 - world hosting (§21.9): hosted worlds are closed, memberships in other worlds and the account's own and foreign ban-list entries are removed
 - shared screenshots (§23): all links of the account and their images
@@ -1560,6 +1560,75 @@ After the TRS login at start, after local changes (debounced about 3 s) and ever
 3. Presets and settings: the newer `updatedAt` wins; on `409 stale` take over `current`.
 4. Errors or offline: stay silent, try again later, never block the UI.
 
+### 17.5 Notes (TRS Client: notes per server and world)
+
+The TRS Client keeps notes per multiplayer server or singleplayer world. They sync per note (last writer wins per note),
+with a change cursor so a device only fetches what changed. Same rules as §17: Bearer token, the sync bucket
+(**120 / min**, `requireUser(event, 'sync')`), owner only, deleted with the account.
+
+**NoteView** and **tombstone**:
+
+```json
+{ "id": "0f1e2d3c4b5a6978", "world": { "type": "server", "address": "play.example.net" },
+  "title": "Base", "text": "Coords 100 64 -20\nNether hub",
+  "createdAt": "2026-09-28T10:00:00.000Z", "updatedAt": "2026-09-28T10:05:00.000Z" }
+{ "id": "0f1e2d3c4b5a6978", "world": { "type": "world", "id": "abcdef0123456789", "name": "My world" },
+  "deleted": true, "updatedAt": "2026-09-28T11:00:00.000Z" }
+```
+
+| Field | Rules |
+|---|---|
+| `id` | 16 lowercase hex, chosen by the client, unique per account |
+| `world` | `{ "type": "server", "address" }` – host with optional `:port`, 1–255 characters, no whitespace, `/` or `\`, stored lower-case; or `{ "type": "world", "id", "name"? }` – `id` 16 hex (stored lower-case), `name` ≤ 64 characters |
+| `title` | ≤ 64 characters (code points), may be empty, no control characters |
+| `text` | ≤ 20,000 characters (code points), may be empty, no control characters except `\n` |
+| `createdAt`, `updatedAt` | ISO 8601 (with `Z` or offset) like §17.3; returned in UTC with milliseconds |
+
+"Control characters" = U+0000–001F, U+007F–009F, U+2028, U+2029 (tab and `\r` included – send spaces and `\n`).
+
+#### `GET /v1/me/sync/notes?since=<cursor>&limit=200`
+
+→ `200 { "notes": [NoteView | tombstone], "cursor": "n1.42", "more": false, "reset": false }`
+
+- Without `since`: everything, **tombstones included**. With `since`: only notes changed after that cursor, in the order
+  of the changes. `limit` 1–500 (default 200). `more: true` → call again with the returned `cursor`.
+- `cursor` is opaque (≤ 256 characters, currently `n1.<n>`); store it after applying the page. A malformed `since` →
+  `400 invalid_request`.
+- `reset: true` (rare): the cursor is older than the removed tombstones (> 90 days) or unknown. The page then is the
+  **full list** from the start – notes you synced before that are missing from it were deleted elsewhere.
+
+#### `POST /v1/me/sync/notes`
+
+Body (≤ **512 KiB**, 1–50 entries):
+
+```json
+{ "changes": [
+  { "id": "…", "world": {…}, "title": "…", "text": "…", "createdAt": "…", "updatedAt": "…" },
+  { "id": "…", "world": {…}, "deleted": true, "updatedAt": "…" }
+] }
+```
+
+→ `200 { "results": [ … ] }`, one result per entry **in the same order**:
+
+| Result | Meaning |
+|---|---|
+| `{ id, status: "ok" }` | stored (or deleted) |
+| `{ id, status: "stale", current: NoteView \| tombstone }` | the stored note is **newer** – take over `current` |
+| `{ id, status: "note_limit" }` | 200 notes in this server/world or 2,000 notes on the account (only counted for new notes, restored notes and notes moved to another world; updates and deletions always work) |
+| `{ id, status: "invalid" }` | the entry breaks a rule above, has unknown fields, or its `updatedAt` is more than **24 h in the future** |
+
+- **Last writer wins per note** by `updatedAt`: a stored newer state → `stale`; the **same** `updatedAt` overwrites
+  (a retry). A tombstone is a normal change: it wins or loses like an edit, and a newer edit restores the note.
+- Deleting an unknown id stores a tombstone (so other devices learn it). A change may move a note to another world.
+- Only the envelope can fail as a whole: every entry must be an object with a valid `id`, 1–50 entries, no other
+  top-level field → otherwise `400 invalid_request`. Body too big → `413`.
+- After at least one `ok` your devices get `notes_changed` `{ cursor }` on `/v1/events/me` (§19): fetch with your own
+  cursor.
+
+**Storage.** Tombstones are kept **90 days** (server time of the deletion), at most 5,000 per account (the oldest go
+first); then an older cursor gets `reset` (see above). Migration 19: tables `sync_notes` and `sync_note_state` (change
+counter and tombstone horizon per account).
+
 ---
 
 ## 18. Chat (direct messages and groups)
@@ -1854,6 +1923,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `application_updated` | `{application: MyApplicationView}` – your team application changed (§24.3) |
 | `hosting_*` | world hosting: `hosting_invite`, `hosting_invite_revoked`, `hosting_join_request`, `hosting_join_accepted`, `hosting_join_declined`, `hosting_kicked`, `hosting_room`, `hosting_room_updated`, `hosting_room_closed`, `hosting_signal` – see §21.5 |
 | `achievement_unlocked` | `{achievement: AchievementView, at, reward: {kind, id}\|null}` – you unlocked an achievement (§31.6) |
+| `notes_changed` | `{cursor}` – your synced notes changed (§17.5); fetch `GET /v1/me/sync/notes?since=<your cursor>` |
 
 **Rules**
 

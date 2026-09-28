@@ -461,6 +461,7 @@ clips ni archivos.
 | Solo con «Sincronizar con la cuenta de TRS» activado: tus skins propias de «Mis skins» (la imagen, recodificada sin metadatos, su nombre y modelo), tus presets de mods propios (nombres e ID de proyectos de Modrinth, sin archivos ni rutas de carpetas) y tu tema, color de acento e idioma, cada uno con la fecha del último cambio; las skins y presets eliminados se anotan durante un tiempo | Mantenerlos iguales en todos los PC donde uses esta cuenta de Minecraft |
 | Solo con los servicios TRS activados y «Sincronizar con la cuenta de TRS» activado en el TRS Client (en el juego): los ajustes del TRS Client – qué módulos están activados y sus ajustes, los diseños y perfiles de HUD, las teclas TRS de los módulos, el modo de configuración de los mods de rendimiento, si terminaste la introducción (y el paquete de módulos elegido) y qué entradas «NUEVO» has abierto –, cada parte con la fecha de su último cambio; sin puntos de ruta, direcciones de servidor, archivos, rutas ni tokens | Mantener el TRS Client igual en todos los PC y carpetas de juego donde uses esta cuenta de Minecraft y mostrar la introducción solo una vez |
 | Solo con los servicios TRS activados: la entrada del vestuario del TRS Client – tus skins favoritas, atuendos (nombre, skin, capa) y las casillas de la rueda de emotes, con la hora del último cambio | El mismo vestuario en cada PC |
+| Solo con «Sincronizar con la cuenta de TRS» activado en el TRS Client: tus notas por servidor o mundo (título, texto, dirección del servidor o nombre e identificador del mundo, fecha de creación/cambio); las notas borradas se anotan durante 90 días | Las mismas notas en cada PC |
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
 | Capturas compartidas (solo las imágenes que compartes): la imagen recodificada, tamaño, formato, fecha de publicación y de caducidad, la cuenta que la compartió (no visible públicamente) | Compartir una captura como enlace (ver arriba) |
@@ -485,6 +486,10 @@ TRS*, activado de fábrica) esté activado; el propio interruptor, los puntos de
 libre y las opciones de Minecraft (options.txt) se quedan en tu PC. El juego también lee tu tema, color de acento e
 idioma sincronizados y los vuelve a escribir cuando los cambias en la introducción, para que el launcher los siga.
 «Alle TRS-Daten löschen» borra también este documento.
+
+**Notas (TRS Client):** con el mismo interruptor, tus notas por servidor o mundo se sincronizan entre tus PC: título y
+texto, la dirección del servidor o el nombre del mundo con un identificador, y cuándo se creó y cambió cada nota. Solo
+tú puedes leerlas – no hay vista de administración – y «Alle TRS-Daten löschen» las borra.
 
 El estado en línea se guarda **solo en la memoria del servidor**, nunca se escribe en disco, no tiene historial y
 caduca **3 minutos** después de la última actualización. Solo lo ven tus amigos, y nadie si lo configuras en «nadie».
@@ -511,6 +516,8 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
 - Las skins, presets y ajustes sincronizados se conservan hasta que los borres en el launcher (una skin borrada en un PC
   también se borra en el servidor). Las notas sobre skins borradas se guardan 30 días para que tus otros PC también
   puedan borrarlas.
+- Las notas sincronizadas del TRS Client se conservan hasta que las borres en el juego; una nota borrada se anota (sin su
+  texto) durante 90 días para que tus otros PC también la borren.
 - Los mensajes e imágenes del chat se conservan hasta que se borran (por ti para todos, por el dueño del grupo o por el
   equipo) o se borra el grupo. Las imágenes subidas pero nunca enviadas se borran al cabo de 1 hora.
 - Las capturas compartidas se borran automáticamente **30 días** después de compartirlas, o antes si tú (o el equipo)
