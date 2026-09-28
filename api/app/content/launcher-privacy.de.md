@@ -435,19 +435,24 @@ den TRS-Server.
 
 ### Erfolge
 
-Mit eingeschalteten TRS-Diensten zeigt der Launcher Erfolge (zum Beispiel „10 Stunden gespielt“, „erster Freund“,
-„Modpack geteilt“). Die meisten ermittelt der TRS-Server aus dem, was er für die anderen Dienste ohnehin hat: deine
-Spielzeit wird aus dem Online-Status zusammengezählt, den Launcher und TRS Client sowieso senden (gespeichert werden nur
-die **Summe**, die aktuelle und die längste Sitzung und deine Tages-Serie – keine Liste von Sitzungen oder Uhrzeiten),
-dazu Freunde, Chat-Nachrichten, Issues und Stimmen, Schaltungen, geteilte Modpacks, gehostete Welten, Umhänge und
-Kosmetik. Ein paar Dinge kennt nur der Launcher und meldet sie: dass ein Spiel gestartet wurde (mit der **Stunde der
-Ortszeit** beim Start, für einen versteckten Erfolg – nicht Datum oder Zeitzone), dass Mods oder ein Modpack installiert,
-ein Clip gespeichert, ein Absturz vom Absturz-Helfer behoben oder Instanzen importiert wurden. Gespeichert werden nur
-Zähler und Ja/Nein-Werte – keine Namen von Mods, Packs, Clips oder Dateien.
+Der Launcher hat Erfolge (Punkte, Seltenheiten, ein paar Belohnungen wie ein Umhang oder eine Kosmetik). Sie gehören
+zu den TRS-Diensten und funktionieren nur, solange diese eingeschaltet sind.
 
-- **Wer es sieht:** du und deine **Freunde** (welche Erfolge du wann freigeschaltet hast und deine Punkte). Sonst
-  niemand; nichts davon ist öffentlich. Du kannst deine Erfolge im Launcher jederzeit vor deinen Freunden verbergen.
-- Manche Erfolge bringen einen Umhang oder eine Kosmetik mit, die dann wie ein Geschenk des Teams zu deinen Sachen kommt.
+- **Was der Server selbst zählt:** Zeit im Spiel und Tage am Stück (aus dem Spielstatus, den der Launcher bzw. der TRS
+  Client ohnehin meldet), Freunde, Chat-Nachrichten, Issues und Stimmen, Schaltungen, geteilte Packs, Welten, Umhänge
+  und Kosmetik.
+- **Was der Launcher meldet:** ein paar Dinge, die nur er weiß – ein Spiel wurde gestartet (mit der Stunde der
+  Ortszeit, 0–23, für Tageszeit-Erfolge), Mods oder ein Modpack wurden installiert (nur die Anzahl), ein Clip wurde
+  gespeichert (nur die Anzahl), der Absturz-Helfer hat etwas behoben, Instanzen wurden aus einem anderen Launcher
+  übernommen. Es gehen keine Namen, Dateien, Pfade oder Instanzen mit. Meldungen werden ein paar Sekunden gesammelt und
+  im Hintergrund gesendet; ohne TRS-Dienste oder offline geht nichts raus.
+- **Auf dem TRS-Server gespeichert:** welche Erfolge du wann freigeschaltet hast, Zähler und Merker je Account, deine
+  Gesamtzeit im Spiel mit aktueller und längster Sitzung und deine Tage am Stück (kein Verlauf der Sitzungen) sowie der
+  Schalter „Erfolge für Freunde sichtbar“.
+- **Wer es sieht:** du und deine bestätigten Freunde (Punkte und freigeschaltete Erfolge) – sonst niemand. Ist
+  „Erfolge für Freunde sichtbar“ aus (Erfolge-Seite oder *Einstellungen → Datenschutz*), sehen Freunde nur, dass deine
+  Erfolge privat sind.
+- **Wie lange:** solange dein TRS-Konto besteht; „Alle TRS-Daten löschen“ löscht alles davon.
 
 ### Was gespeichert wird
 
@@ -467,16 +472,16 @@ Zähler und Ja/Nein-Werte – keine Namen von Mods, Packs, Clips oder Dateien.
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
 | Nur mit eingeschalteten TRS-Diensten und eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client (im Spiel): deine TRS-Client-Einstellungen – welche Module an sind und ihre Einstellungen, HUD-Layouts und -Profile, die TRS-Tasten der Module, der Config-Modus für Leistungs-Mods, ob du die Einführung abgeschlossen hast (und das gewählte Modul-Paket) und welche „NEU“-Einträge du geöffnet hast – je Teil mit dem Zeitpunkt der letzten Änderung; keine Wegpunkte, keine Server-Adressen, keine Dateien, Pfade oder Tokens | Damit der TRS Client auf allen PCs und Spielordnern mit diesem Minecraft-Account gleich ist und die Einführung nur einmal erscheint |
 | Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
-| Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client: deine Notizen je Server oder Welt (Titel, Text, Serveradresse bzw. Weltname und Kennung, Erstell-/Änderungszeit); gelöschte Notizen werden 90 Tage vermerkt | Dieselben Notizen auf jedem PC |
+| Nur mit eingeschalteten TRS-Diensten, eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client und eingeschaltetem Notiz-Schalter „Mit TRS-Konto synchronisieren“: deine Welt-Notizen aus dem TRS Client – Titel, Text (samt Checklisten und eingetippten Koordinaten), Zeitpunkt von Anlage und Änderung und die Welt, zu der sie gehören (Server-Adresse bzw. bei Einzelspielerwelten eine aus dem Weltordner gebildete Kennung samt Ordnername); gelöschte Notizen bleiben als leerer Vermerk | Dieselben Notizen auf jedem PC |
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
 | Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
 | Geteilte Modpacks (nur die Packs, die du teilst): Pack-Datei, Name, Beschreibung, Version, Minecraft-Version, Loader, Dateizahlen, Zeitpunkt des Teilens/Aktualisierens/Ablaufs, Installationen, der teilende Account (Name auf der Pack-Seite sichtbar), Freunde, an die es geschickt wurde | Ein Modpack per Code, Link oder an Freunde teilen (siehe oben) |
 | Issues und Kommentare, die du schreibst, deine Stimmen und dein Folgen; bei „Bug melden“ im TRS Client die angekreuzten Teile (Versionen, Mod-Liste, Log-Ausschnitt – gesäubert, nur für dich und das Team sichtbar – und ein Screenshot) | Fehler melden, Funktionen vorschlagen, abstimmen und Benachrichtigungen (siehe oben) |
+| Erfolge: welche du wann freigeschaltet hast, Zähler und Merker (z. B. Zahl der Spielstarts oder installierten Mods, die Ortszeit-Stunde eines Starts), Gesamtzeit im Spiel mit aktueller und längster Sitzung, Tage am Stück und ob Freunde deine Erfolge sehen dürfen | Erfolge und ihre Belohnungen; nur für dich und deine Freunde sichtbar (siehe oben) |
 | Eingereichte Schaltungen: die Schaltung (nur Blöcke und Zustände), Name, Beschreibung, Kategorie, Sprache, Zeitpunkt, Status und Antwort des Teams; bei angenommenen Schaltungen dein Name als Ersteller | Eine Schaltung für die Bibliothek einreichen (siehe oben) |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl, Liste geteilter Mods und Resource-Pack-Angaben (Namen, Größen, Quellen, Prüfsummen – keine Dateien); deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
-| Erfolge: welche du wann freigeschaltet hast (und ob die Belohnung vergeben wurde), vom Launcher gemeldete Zähler und Werte (gestartete Spiele, Mods, Modpacks, Clips, behobene Abstürze, Importe, ein Start zwischen 3 und 4 Uhr nachts), Zähler für geteilte Modpacks, deren Installationen, gehostete Welten und geteilte Screenshots, deine gesamte Spielzeit, aktuelle und längste Sitzung und Tages-Serie | Erfolge und ihre Belohnungen (siehe oben) |
 
 **Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
 TRS-Dienste an sind) hält deine eigenen Skins, deine eigenen Presets und das Aussehen des Launchers (Theme, Akzentfarbe,
@@ -493,15 +498,18 @@ ab Werk an) an ist; der Schalter selbst, Wegpunkte, die Freelook-Serverliste und
 schreibt sie zurück, wenn du sie in der Einführung änderst, damit der Launcher folgt. „Alle TRS-Daten löschen“ löscht
 auch dieses Dokument.
 
-**Notizen (TRS Client):** Mit demselben Schalter werden deine Notizen je Server oder Welt zwischen deinen PCs
-abgeglichen: Titel und Text, die Serveradresse bzw. der Name der Welt samt einer Kennung dafür und wann jede Notiz
-erstellt und geändert wurde. Lesen kannst sie nur du – es gibt keine Admin-Ansicht –, und „Alle TRS-Daten löschen“
-löscht sie.
+**Notizen im TRS Client:** Notizen je Welt liegen auf deinem PC in `config/trsclient/notes` (eine Datei je Welt bzw.
+Server). Mit eingeschalteten TRS-Diensten und beiden Schaltern (*TRS-Online-Funktionen* → „Mit TRS-Konto
+synchronisieren“ und auf der Seite *Welt-Notizen* „Mit TRS-Konto synchronisieren“, beide ab Werk an) legt der TRS
+Client sie zusätzlich Notiz für Notiz in deinem TRS-Konto ab, damit sie auf jedem PC gleich sind. Welche Notiz im HUD angeheftet ist, bleibt auf
+deinem PC. Deine Notizen kannst nur du lesen – es gibt keine Admin-Ansicht. Eine gelöschte Notiz hinterlässt 90 Tage
+einen leeren Vermerk, damit deine anderen PCs sie auch löschen. Notiz-Schalter aus = alle Notizen bleiben auf diesem
+PC; „Alle TRS-Daten löschen“ löscht die synchronisierten Notizen.
 
 Der Online-Status liegt **nur im Arbeitsspeicher des Servers**, wird nie auf die Festplatte geschrieben, hat keinen
 Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen können ihn nur deine Freunde – und gar
 niemand, wenn du „niemand“ einstellst. Nur ob du gerade im Spiel bist, kann zusätzlich als TRS-Symbol erscheinen (siehe
-oben). Für Erfolge werden nur die oben beschriebenen Summen gespeichert (Spielzeit, Sitzungen, Tages-Serie).
+oben).
 
 Admin-Aktionen (etwa das Freigeben eines Umhangs, eine Sperre oder die Entscheidung über eine Chat-Meldung) werden
 zusammen mit der betroffenen UUID in einem Audit-Log festgehalten.
@@ -521,11 +529,11 @@ Profiling und keinen Verkauf von Daten.
 - Sitzungs-Tokens verfallen nach 30 Tagen; Abmelden oder Entfernen eines Accounts im Launcher widerruft das Token.
 - Der Online-Status verschwindet 3 Minuten nach der letzten Aktualisierung oder sofort, wenn du den Launcher schließt
   und die Welt verlässt.
+- Synchronisierte Notizen bleiben, bis du sie im TRS Client löschst oder alle TRS-Daten löschst; Vermerke gelöschter
+  Notizen werden nach 90 Tagen entfernt.
 - Synchronisierte Skins, Presets und Einstellungen bleiben, bis du sie im Launcher löschst (ein auf einem PC gelöschter
   Skin wird auch auf dem Server gelöscht). Vermerke über gelöschte Skins bleiben 30 Tage, damit deine anderen PCs sie
   ebenfalls löschen können.
-- Synchronisierte Notizen des TRS Clients bleiben, bis du sie im Spiel löschst; eine gelöschte Notiz wird (ohne Text)
-  90 Tage vermerkt, damit deine anderen PCs sie auch löschen.
 - Chat-Nachrichten und Bilder bleiben, bis sie gelöscht werden (von dir für alle, vom Gruppenbesitzer oder vom Team)
   oder die Gruppe gelöscht wird. Hochgeladene, aber nie gesendete Bilder werden nach 1 Stunde gelöscht.
 - Geteilte Screenshots werden **30 Tage** nach dem Teilen automatisch gelöscht, oder früher, wenn du (oder das Team) sie
@@ -538,10 +546,8 @@ Profiling und keinen Verkauf von Daten.
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
   Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
   deinen Online-Status, alle synchronisierten Skins, Presets und Einstellungen, alle deine Direktchats (für beide
-  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) alle Bilder, die du als Link geteilt hast, und alle Modpacks, die du geteilt hast. Danach sind die TRS-Dienste im
+  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) alle Bilder, die du als Link geteilt hast, alle Modpacks, die du geteilt hast, und deine Erfolge samt Zählern. Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
-- Erfolge, ihre Zähler und deine Spielzeit-Summen bleiben, solange dein TRS-Account besteht, und werden mit „Alle
-  TRS-Daten löschen“ gelöscht (als Belohnung erhaltene Sachen gehen mit deinen anderen Umhängen und Kosmetik).
 - Nach der Löschung bleiben nur aktive Strafen (etwa eine Sperre oder eine laufende Chat-Stummschaltung, mit Grund
   und Zeitraum) und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht
   durch erneutes Anmelden umgehen lassen.
