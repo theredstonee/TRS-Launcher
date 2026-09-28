@@ -32,6 +32,7 @@ public final class MapsTest {
 	private int bx, by, bz;
 	private final String mcVersion = Mc.version();
 	private final String world = "trs-maps-" + Mc.version();
+	private final WorldMapTest worldMap2 = new WorldMapTest();
 
 	public static void install() {
 		MinecraftForge.EVENT_BUS.register(new MapsTest());
@@ -235,9 +236,20 @@ public final class MapsTest {
 			case 21:
 				shot(mc, "menu-worldmap");
 				mc.displayGuiScreen(null);
+				phase = 23;
+				wait = 10;
+				return;
+			case 23: {
+				// Weltkarte 2 (eigene Klasse): Liste, Zoom, Nether, Export.
+				int more = worldMap2.step(mc, bx, by, bz);
+				if (more >= 0) {
+					wait = more;
+					return;
+				}
 				phase = 22;
 				wait = 2;
 				return;
+			}
 			case 22:
 				if (Mc.world() != null) Mc.world().sendQuittingDisconnectingPacket();
 				mc.loadWorld((net.minecraft.client.multiplayer.WorldClient) null);

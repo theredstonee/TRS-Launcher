@@ -232,4 +232,13 @@ public final class MapBridge implements MapPlatform {
 		//?} else
 		/*return data.motd;*/
 	}
+
+	@Override
+	public void message(String text) {
+		// Nur lokal im eigenen Chat (z. B. „Karte gespeichert als …“).
+		//? if >=1.19 {
+		dev.theredstonee.trsclient.compat.ChatLines.addMessage(net.minecraft.network.chat.Component.literal(text));
+		//?} else
+		/*dev.theredstonee.trsclient.compat.ChatLines.addMessage(new net.minecraft.network.chat.TextComponent(text));*/
+	}
 }
