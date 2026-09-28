@@ -52,7 +52,7 @@ const en = {
     allLayers: 'All layers',
     preview: '3D preview of {name}',
     loading: 'Loading …',
-    signIn: 'Sign in with Microsoft',
+    signIn: 'Sign in',
   },
   list: {
     title: 'Redstone circuits',
@@ -100,7 +100,7 @@ const en = {
   submit: {
     title: 'Submit a circuit',
     lead: 'Share your own redstone build with everyone. The team checks every submission; accepted circuits appear in the library on this website and in the TRS Client – with your Minecraft name as the creator.',
-    signIn: 'Sign in with Microsoft to submit a circuit.',
+    signIn: 'Sign in to submit a circuit.',
     fileTitle: '1. Your file',
     fileLead: 'Litematica (.litematic), Sponge schematic (.schem), structure block file (.nbt) or TRS JSON. At most 2 MB and 16 × 16 × 16 blocks. Only blocks and their states are used – no chest contents, no entities.',
     choose: 'Choose file',
@@ -299,7 +299,7 @@ const de: CircuitTexts = {
     allLayers: 'Alle Schichten',
     preview: '3D-Vorschau von {name}',
     loading: 'Lädt …',
-    signIn: 'Mit Microsoft anmelden',
+    signIn: 'Anmelden',
   },
   list: {
     title: 'Redstone-Schaltungen',
@@ -347,7 +347,7 @@ const de: CircuitTexts = {
   submit: {
     title: 'Schaltung einreichen',
     lead: 'Teile deinen eigenen Redstone-Bau mit allen. Das Team prüft jede Einreichung; angenommene Schaltungen erscheinen in der Bibliothek auf dieser Website und im TRS Client – mit deinem Minecraft-Namen als Ersteller.',
-    signIn: 'Melde dich mit Microsoft an, um eine Schaltung einzureichen.',
+    signIn: 'Melde dich an, um eine Schaltung einzureichen.',
     fileTitle: '1. Deine Datei',
     fileLead: 'Litematica (.litematic), Sponge-Schematic (.schem), Konstruktionsblock-Datei (.nbt) oder TRS-JSON. Höchstens 2 MB und 16 × 16 × 16 Blöcke. Übernommen werden nur Blöcke und ihre Zustände – keine Kisteninhalte, keine Wesen.',
     choose: 'Datei auswählen',
@@ -542,7 +542,7 @@ const es: CircuitTexts = {
     allLayers: 'Todas las capas',
     preview: 'Vista 3D de {name}',
     loading: 'Cargando …',
-    signIn: 'Iniciar sesión con Microsoft',
+    signIn: 'Iniciar sesión',
   },
   list: {
     title: 'Circuitos de redstone',
@@ -590,7 +590,7 @@ const es: CircuitTexts = {
   submit: {
     title: 'Enviar un circuito',
     lead: 'Comparte tu propia construcción de redstone con todos. El equipo revisa cada envío; los circuitos aceptados aparecen en la biblioteca de esta web y en el TRS Client, con tu nombre de Minecraft como creador.',
-    signIn: 'Inicia sesión con Microsoft para enviar un circuito.',
+    signIn: 'Inicia sesión para enviar un circuito.',
     fileTitle: '1. Tu archivo',
     fileLead: 'Litematica (.litematic), schematic de Sponge (.schem), archivo de bloque de estructuras (.nbt) o JSON de TRS. Como máximo 2 MB y 16 × 16 × 16 bloques. Solo se usan los bloques y sus estados: sin contenido de cofres ni entidades.',
     choose: 'Elegir archivo',

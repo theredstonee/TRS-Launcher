@@ -436,7 +436,7 @@ const en = {
   admin: {
     title: 'Admin',
     lead: 'Team members sign in with the Microsoft account of their Minecraft profile.',
-    start: 'Sign in with Microsoft',
+    start: 'Sign in',
     noAccess: 'Your account ({name}) is not in the team. The team area is only for team members.',
     toTeam: 'Join the team',
     signedInAs: 'Signed in as {name}',
@@ -1033,7 +1033,7 @@ const de: Messages = {
   admin: {
     title: 'Admin',
     lead: 'Team-Mitglieder melden sich mit dem Microsoft-Konto ihres Minecraft-Profils an.',
-    start: 'Mit Microsoft anmelden',
+    start: 'Anmelden',
     noAccess: 'Dein Konto ({name}) gehört nicht zum Team. Der Team-Bereich ist nur für Team-Mitglieder.',
     toTeam: 'Zum Team bewerben',
     signedInAs: 'Angemeldet als {name}',
@@ -1583,7 +1583,7 @@ const es: Messages = {
   admin: {
     title: 'Admin',
     lead: 'Los miembros del equipo inician sesión con la cuenta de Microsoft de su perfil de Minecraft.',
-    start: 'Iniciar sesión con Microsoft',
+    start: 'Iniciar sesión',
     noAccess: 'Tu cuenta ({name}) no forma parte del equipo. El área del equipo es solo para miembros.',
     toTeam: 'Unirse al equipo',
     signedInAs: 'Sesión iniciada como {name}',

@@ -31,13 +31,14 @@ All details are in the [imprint](https://theredstonee.de/imprint/).
 
 **Server logs.** Our logs contain only technical data (method, path without query, status, duration, request id) – **no IP addresses**. Rate limits count requests per IP address **in memory only**; the counters are never written to disk and disappear after a few minutes.
 
-**Cookies.** The website sets no tracking or advertising cookies and uses no analytics. There are only three technically necessary cookies (§ 25(2) TDDDG):
+**Cookies.** The website sets no tracking or advertising cookies and uses no analytics. There are only four technically necessary cookies (§ 25(2) TDDDG):
 
 | Cookie | Purpose | Duration |
 |---|---|---|
 | \`trs_lang\` | Remembers the language you picked | 1 year |
 | \`trs_oauth\` | Protects the sign-in with Microsoft against forgery (random value, only on /auth/microsoft, httpOnly) | max. 10 minutes |
-| \`trs_session\` | Keeps you signed in after the sign-in with Microsoft (httpOnly, Secure, SameSite=Strict) | 8 hours |
+| \`trs_llogin\` | Ties a sign-in with the TRS Launcher to this browser (random value, only on /v1/web/launcher-login, httpOnly) | max. 3 minutes |
+| \`trs_session\` | Keeps you signed in after the sign-in with Microsoft or the TRS Launcher (httpOnly, Secure, SameSite=Strict) | 8 hours |
 
 **Fonts and scripts** are served from this server – no external CDNs, no Google Fonts.
 
@@ -48,6 +49,8 @@ All details are in the [imprint](https://theredstonee.de/imprint/).
 **Shared modpacks (\`/p/…\` pages).** A player can share a modpack with a code; its page shows the pack's name, description, a summary of its contents and **the name and head of the player who shared it**, and is never indexed by search engines. Downloading the pack is only possible in the TRS Launcher with a TRS account. Signed in, you can report a pack; the report is handled like other reports. Legal basis: Art. 6(1)(f) GDPR (showing a pack the player chose to share, a safe service). Details: “Sharing modpacks” below.
 
 **Shared screenshots (\`/s/…\` pages).** When a player shares a screenshot as a link, anyone with the link can open this page for 30 days. It shows only the picture, the upload date and the expiry date – **no name, no Minecraft UUID** – and is never indexed by search engines. Chat apps such as Discord load the picture when someone posts the link, to show a preview. With **“Report”** you can tell our team about a picture without an account: we store only the reason you picked, never your IP address (it is counted for rate limiting in memory only). Legal basis: Art. 6(1)(f) GDPR (a safe service). Details: “Shared screenshots” below.
+
+**News posts (\`/blog\`).** Besides the automatic update posts, the team writes news. A news post shows the **name and head of the team member** who wrote it (or “TRS Team”); its pictures are served from this server. Legal basis: Art. 6(1)(f) GDPR (informing about the project).
 
 **Links** to Discord, GitHub and other sites are plain links; nothing is loaded from them until you click.
 
@@ -60,6 +63,14 @@ You can sign in to this website with the Microsoft account that owns Minecraft: 
 **What we store.** Your TRS account (UUID, name, first and last sign-in – created now if you have not used TRS before) and a website session: a hash of the session token, a CSRF token and the expiry (8 hours, at most 5 sessions per account). Signing out deletes the session at once. Sign-ins of team members are recorded in the audit log (2 years).
 
 **Legal basis.** Art. 6(1)(b) GDPR (you want to use the sign-in); for security measures such as rate limits and the audit log Art. 6(1)(f). Microsoft processes the sign-in under its own privacy statement (Microsoft Corporation, USA; EU-US Data Privacy Framework).
+
+## Website sign-in with the TRS Launcher
+
+Instead of Microsoft you can confirm the sign-in in your **TRS Launcher**. The website shows a short code and opens the launcher (link \`trs-launcher://web-login/…\`); the launcher shows the code, the website, a rough browser description and your account and asks you to confirm. Nothing is confirmed without your click.
+
+**What we store.** For the up to two minutes of the request: a hash of the link value and of a random browser value (cookie \`trs_llogin\`), the code, a rough browser description such as “Firefox · Windows” (never the full browser identification, never your IP address), the return page and – after you confirm – your Minecraft UUID. The request is deleted when you are signed in, when it is declined, or shortly after it expires. The session afterwards is the same as after the sign-in with Microsoft (see above). Sign-ins of team members are recorded in the audit log (2 years).
+
+**Legal basis.** Art. 6(1)(b) GDPR (you want to use the sign-in); rate limits and the audit log Art. 6(1)(f).
 
 ## Team applications
 
@@ -113,13 +124,14 @@ Alle Angaben stehen im [Impressum](https://theredstonee.de/imprint/).
 
 **Server-Logs.** Unsere Logs enthalten nur technische Daten (Methode, Pfad ohne Query, Status, Dauer, Request-ID) – **keine IP-Adressen**. Ratenbegrenzungen zählen Anfragen pro IP-Adresse **nur im Arbeitsspeicher**; die Zähler werden nie auf die Festplatte geschrieben und verfallen nach wenigen Minuten.
 
-**Cookies.** Die Website setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analyse-Dienste. Es gibt nur drei technisch notwendige Cookies (§ 25 Abs. 2 TDDDG):
+**Cookies.** Die Website setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analyse-Dienste. Es gibt nur vier technisch notwendige Cookies (§ 25 Abs. 2 TDDDG):
 
 | Cookie | Zweck | Dauer |
 |---|---|---|
 | \`trs_lang\` | Merkt sich die gewählte Sprache | 1 Jahr |
 | \`trs_oauth\` | Schützt die Anmeldung mit Microsoft vor Fälschung (Zufallswert, nur auf /auth/microsoft, httpOnly) | höchstens 10 Minuten |
-| \`trs_session\` | Hält dich nach der Anmeldung mit Microsoft angemeldet (httpOnly, Secure, SameSite=Strict) | 8 Stunden |
+| \`trs_llogin\` | Bindet eine Anmeldung mit dem TRS Launcher an diesen Browser (Zufallswert, nur auf /v1/web/launcher-login, httpOnly) | höchstens 3 Minuten |
+| \`trs_session\` | Hält dich nach der Anmeldung mit Microsoft oder dem TRS Launcher angemeldet (httpOnly, Secure, SameSite=Strict) | 8 Stunden |
 
 **Schriften und Skripte** kommen von diesem Server – keine externen CDNs, keine Google Fonts.
 
@@ -130,6 +142,8 @@ Alle Angaben stehen im [Impressum](https://theredstonee.de/imprint/).
 **Geteilte Modpacks (Seiten \`/p/…\`).** Ein Spieler kann ein Modpack per Code teilen; dessen Seite zeigt Name, Beschreibung, eine Inhaltsübersicht und **Namen und Kopf des Spielers, der es geteilt hat**, und wird von Suchmaschinen nie indexiert. Herunterladen geht nur im TRS Launcher mit TRS-Account. Angemeldet kannst du ein Pack melden; die Meldung wird wie andere Meldungen behandelt. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (ein Pack zeigen, das der Spieler teilen wollte; ein sicherer Dienst). Einzelheiten: „Modpacks teilen“ unten.
 
 **Geteilte Screenshots (Seiten \`/s/…\`).** Teilt ein Spieler einen Screenshot als Link, kann jeder mit dem Link diese Seite 30 Tage lang öffnen. Sie zeigt nur das Bild, das Datum des Hochladens und das Ablaufdatum – **keinen Namen, keine Minecraft-UUID** – und wird von Suchmaschinen nie indexiert. Chat-Apps wie Discord laden das Bild, wenn jemand den Link postet, um eine Vorschau zu zeigen. Mit **„Melden“** kannst du unserem Team ohne Konto ein Bild melden: Wir speichern nur den gewählten Grund, nie deine IP-Adresse (sie wird nur im Arbeitsspeicher für die Ratenbegrenzung gezählt). Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (ein sicherer Dienst). Einzelheiten: „Geteilte Screenshots“ unten.
+
+**News-Beiträge (\`/blog\`).** Neben den automatischen Update-Beiträgen schreibt das Team News. Ein News-Beitrag zeigt **Namen und Kopf des Team-Mitglieds**, das ihn geschrieben hat (oder „TRS-Team“); seine Bilder kommen von diesem Server. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Information über das Projekt).
 
 **Links** zu Discord, GitHub und anderen Seiten sind einfache Links; von dort wird erst etwas geladen, wenn du klickst.
 
@@ -142,6 +156,14 @@ Du kannst dich auf dieser Website mit dem Microsoft-Konto anmelden, dem Minecraf
 **Was wir speichern.** Dein TRS-Konto (UUID, Name, erste und letzte Anmeldung – wird jetzt angelegt, falls du TRS noch nicht genutzt hast) und eine Website-Sitzung: einen Hash des Sitzungs-Tokens, ein CSRF-Token und die Ablaufzeit (8 Stunden, höchstens 5 Sitzungen je Konto). Beim Abmelden wird die Sitzung sofort gelöscht. Anmeldungen von Team-Mitgliedern stehen im Audit-Log (2 Jahre).
 
 **Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (du möchtest die Anmeldung nutzen); für Sicherheitsmaßnahmen wie Ratenbegrenzung und Audit-Log Art. 6 Abs. 1 lit. f. Microsoft verarbeitet die Anmeldung nach seiner eigenen Datenschutzerklärung (Microsoft Corporation, USA; EU-US Data Privacy Framework).
+
+## Anmeldung mit dem TRS Launcher
+
+Statt mit Microsoft kannst du die Anmeldung in deinem **TRS Launcher** bestätigen. Die Website zeigt einen kurzen Code und öffnet den Launcher (Link \`trs-launcher://web-login/…\`); der Launcher zeigt Code, Website, eine grobe Browser-Angabe und dein Konto und fragt nach. Ohne deinen Klick wird nichts bestätigt.
+
+**Was wir speichern.** Für die höchstens zwei Minuten der Anfrage: einen Hash des Link-Werts und eines zufälligen Browser-Werts (Cookie \`trs_llogin\`), den Code, eine grobe Browser-Angabe wie „Firefox · Windows“ (nie die vollständige Browser-Kennung, nie deine IP-Adresse), die Rücksprung-Seite und – nach deiner Bestätigung – deine Minecraft-UUID. Die Anfrage wird gelöscht, sobald du angemeldet bist, sie abgelehnt wurde oder kurz nach ihrem Ablauf. Die Sitzung danach ist dieselbe wie nach der Anmeldung mit Microsoft (siehe oben). Anmeldungen von Team-Mitgliedern stehen im Audit-Log (2 Jahre).
+
+**Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (du möchtest die Anmeldung nutzen); Ratenbegrenzung und Audit-Log Art. 6 Abs. 1 lit. f.
 
 ## Bewerbungen für das Team
 
@@ -195,13 +217,14 @@ Todos los datos están en el [aviso legal](https://theredstonee.de/imprint/).
 
 **Registros del servidor.** Solo datos técnicos (método, ruta sin query, estado, duración, id de solicitud) – **sin direcciones IP**. Los límites de frecuencia cuentan solicitudes por IP **solo en memoria**.
 
-**Cookies.** Sin cookies de rastreo ni publicidad y sin analíticas. Solo tres cookies técnicamente necesarias:
+**Cookies.** Sin cookies de rastreo ni publicidad y sin analíticas. Solo cuatro cookies técnicamente necesarias:
 
 | Cookie | Finalidad | Duración |
 |---|---|---|
 | \`trs_lang\` | Recuerda el idioma elegido | 1 año |
 | \`trs_oauth\` | Protege el inicio de sesión con Microsoft contra falsificaciones (valor aleatorio, solo en /auth/microsoft, httpOnly) | máx. 10 minutos |
-| \`trs_session\` | Mantiene tu sesión tras iniciar sesión con Microsoft (httpOnly, Secure, SameSite=Strict) | 8 horas |
+| \`trs_llogin\` | Vincula un inicio de sesión con el TRS Launcher a este navegador (valor aleatorio, solo en /v1/web/launcher-login, httpOnly) | máx. 3 minutos |
+| \`trs_session\` | Mantiene tu sesión tras iniciar sesión con Microsoft o el TRS Launcher (httpOnly, Secure, SameSite=Strict) | 8 horas |
 
 **Fuentes y scripts** se sirven desde este servidor – sin CDN externos ni Google Fonts.
 
@@ -222,6 +245,16 @@ Puedes iniciar sesión en este sitio con la cuenta de Microsoft que tiene Minecr
 **Qué guardamos.** Tu cuenta TRS (UUID, nombre, primer y último inicio de sesión; se crea ahora si aún no usabas TRS) y una sesión web: un hash del token de sesión, un token CSRF y la caducidad (8 horas, como máximo 5 sesiones por cuenta). Al cerrar sesión se borra al instante. Los inicios de sesión de miembros del equipo quedan en el registro de auditoría (2 años).
 
 **Base jurídica.** Art. 6.1.b RGPD (quieres usar el inicio de sesión); para medidas de seguridad como límites de frecuencia y el registro de auditoría, art. 6.1.f. Microsoft trata el inicio de sesión según su propia política de privacidad (Microsoft Corporation, EE. UU.; EU-US Data Privacy Framework).
+
+## Inicio de sesión con el TRS Launcher
+
+En lugar de Microsoft puedes confirmar el inicio de sesión en tu **TRS Launcher**. La web muestra un código corto y abre el launcher (enlace \`trs-launcher://web-login/…\`); el launcher muestra el código, la web, una descripción aproximada del navegador y tu cuenta, y te pide confirmar. Sin tu clic no se confirma nada.
+
+**Qué guardamos.** Durante los dos minutos como máximo de la solicitud: un hash del valor del enlace y de un valor aleatorio del navegador (cookie \`trs_llogin\`), el código, una descripción aproximada del navegador como «Firefox · Windows» (nunca la identificación completa del navegador ni tu dirección IP), la página de retorno y, tras tu confirmación, tu UUID de Minecraft. La solicitud se borra al iniciar sesión, al rechazarla o poco después de caducar. La sesión posterior es la misma que tras iniciar sesión con Microsoft (ver arriba). Los inicios de sesión de miembros del equipo quedan en el registro de auditoría (2 años).
+
+**Entradas de noticias (\`/blog\`).** Además de las entradas automáticas de actualización, el equipo escribe noticias. Una noticia muestra **el nombre y la cabeza del miembro del equipo** que la escribió (o «Equipo TRS»); sus imágenes se sirven desde este servidor.
+
+**Base jurídica.** Art. 6.1.b RGPD (quieres usar el inicio de sesión); límites de frecuencia, registro de auditoría y noticias, art. 6.1.f.
 
 ## Solicitudes para el equipo
 

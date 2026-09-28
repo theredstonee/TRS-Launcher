@@ -68,7 +68,7 @@ const en = {
     role: 'Role',
     closed: 'This position is closed – applications are not possible right now.',
     applyTitle: 'Apply',
-    signInToApply: 'Sign in with Microsoft to apply',
+    signInToApply: 'Sign in to apply',
     signInHint: 'You need a Minecraft: Java Edition account. We only use your Minecraft name and UUID.',
     as: 'You apply as {name}',
     standard: 'About you',
@@ -145,6 +145,7 @@ const en = {
       worlds: 'Worlds',
       applications: 'Applications',
       team: 'Team',
+      blog: 'Blog',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -178,6 +179,8 @@ const en = {
       'applications.decide': 'Accept or reject applications',
       'circuits.manage': 'Manage the circuit library (editor, import, submissions)',
       'team.page': 'Edit the public team page (members, order, titles)',
+      'blog.write': 'Write blog posts (drafts, images)',
+      'blog.publish': 'Publish, schedule and unpublish blog posts',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -452,7 +455,7 @@ const de: TeamTexts = {
     role: 'Rolle',
     closed: 'Diese Stelle ist geschlossen – Bewerbungen sind gerade nicht möglich.',
     applyTitle: 'Bewerben',
-    signInToApply: 'Mit Microsoft anmelden und bewerben',
+    signInToApply: 'Anmelden und bewerben',
     signInHint: 'Du brauchst ein Konto mit Minecraft: Java Edition. Wir nutzen nur deinen Minecraft-Namen und deine UUID.',
     as: 'Du bewirbst dich als {name}',
     standard: 'Über dich',
@@ -529,6 +532,7 @@ const de: TeamTexts = {
       worlds: 'Welten',
       applications: 'Bewerbungen',
       team: 'Team',
+      blog: 'Blog',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -562,6 +566,8 @@ const de: TeamTexts = {
       'applications.decide': 'Bewerbungen annehmen oder ablehnen',
       'circuits.manage': 'Schaltungs-Bibliothek verwalten (Editor, Import, Einreichungen)',
       'team.page': 'Öffentliche Team-Seite pflegen (Mitglieder, Reihenfolge, Titel)',
+      'blog.write': 'Blog-Beiträge schreiben (Entwürfe, Bilder)',
+      'blog.publish': 'Blog-Beiträge veröffentlichen, planen und zurückziehen',
     },
     roles: {
       title: 'Rollen & Team',
@@ -834,7 +840,7 @@ const es: TeamTexts = {
     role: 'Rol',
     closed: 'Este puesto está cerrado: ahora no se aceptan solicitudes.',
     applyTitle: 'Postularme',
-    signInToApply: 'Inicia sesión con Microsoft para postularte',
+    signInToApply: 'Inicia sesión para postularte',
     signInHint: 'Necesitas una cuenta con Minecraft: Java Edition. Solo usamos tu nombre de Minecraft y tu UUID.',
     as: 'Te postulas como {name}',
     standard: 'Sobre ti',
@@ -911,6 +917,7 @@ const es: TeamTexts = {
       worlds: 'Mundos',
       applications: 'Solicitudes',
       team: 'Equipo',
+      blog: 'Blog',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -944,6 +951,8 @@ const es: TeamTexts = {
       'applications.decide': 'Aceptar o rechazar solicitudes',
       'circuits.manage': 'Gestionar la biblioteca de circuitos (editor, importación, envíos)',
       'team.page': 'Editar la página pública del equipo (miembros, orden, títulos)',
+      'blog.write': 'Escribir entradas del blog (borradores, imágenes)',
+      'blog.publish': 'Publicar, programar y retirar entradas del blog',
     },
     roles: {
       title: 'Roles y equipo',

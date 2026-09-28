@@ -1,4 +1,4 @@
-// Website-Anmeldung (Microsoft, §24.1): Sitzung im httpOnly-Cookie `trs_session`, ändernde Anfragen schicken das
+// Website-Anmeldung (Microsoft §24.1 oder TRS Launcher §29): Sitzung im httpOnly-Cookie `trs_session`, ändernde Anfragen schicken das
 // CSRF-Token im Header X-CSRF-Token. Wird nur im Browser geladen (keine persönlichen Daten im SSR-HTML).
 
 export interface TeamRoleRef {
@@ -40,7 +40,7 @@ export function useAccount() {
   async function load(force = false): Promise<WebAccount | null> {
     if (loaded.value && !force) return account.value
     try {
-      account.value = await $fetch<WebAccount>('/v1/web/me', { credentials: 'same-origin' })
+      account.value = await apiFetch<WebAccount>('/v1/web/me', { credentials: 'same-origin' })
     } catch {
       account.value = null
     } finally {
@@ -53,7 +53,7 @@ export function useAccount() {
     const method = opts.method ?? 'GET'
     const headers: Record<string, string> = {}
     if (method !== 'GET' && account.value) headers['X-CSRF-Token'] = account.value.csrf
-    return $fetch<T>(path, { method, body: opts.body as Record<string, unknown> | undefined, headers, credentials: 'same-origin' }) as Promise<T>
+    return apiFetch<T>(path, { method, body: opts.body, headers, credentials: 'same-origin' }) as Promise<T>
   }
 
   async function logout(): Promise<void> {
@@ -64,9 +64,9 @@ export function useAccount() {
     }
   }
 
-  /** Link zur Microsoft-Anmeldung mit Rücksprung (Standard: aktuelle Seite). */
+  /** Link zur Anmeldeseite (TRS Launcher oder Microsoft, §29) mit Rücksprung (Standard: aktuelle Seite). */
   function loginUrl(returnTo?: string): string {
-    return `/auth/microsoft/login?return=${encodeURIComponent(returnTo ?? route.fullPath)}`
+    return `/login?return=${encodeURIComponent(returnTo ?? route.fullPath)}`
   }
 
   return { account, loaded, load, api, logout, loginUrl }

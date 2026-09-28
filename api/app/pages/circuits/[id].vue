@@ -13,7 +13,7 @@ const route = useRoute()
 const siteUrl = useSiteUrl()
 const id = computed(() => String(route.params.id))
 
-const { data, error: fetchError } = await useFetch<SiteCircuit>(() => `/v1/site/circuits/${id.value}`, { key: `site-circuit-${id.value}` })
+const { data, error: fetchError } = await useApiFetch<SiteCircuit>(() => `/v1/site/circuits/${id.value}`, { key: `site-circuit-${id.value}` })
 if (fetchError.value || !data.value) throw createError({ statusCode: 404, statusMessage: 'Not found', fatal: true })
 const s = computed(() => data.value!)
 const circuit = computed(() => s.value.circuit)

@@ -289,6 +289,17 @@ escaped by deleting. The legal basis is our legitimate interest in a safe servic
 Minecraft: Java Edition. We only receive your Minecraft UUID and name; the Microsoft, Xbox and Minecraft tokens exist in
 memory for a few seconds and are discarded – we store no tokens, e-mail or password, only a website session (8 hours).
 
+**Website sign-in with the TRS Launcher.** Instead of Microsoft you can confirm a website sign-in in the launcher: the
+website shows a short code and opens the launcher (or you type the code under Settings → Privacy → "Sign in on the
+website"). The launcher then looks up the request and – **only after you click "Confirm"** – confirms it with the TRS
+token of the account you picked; "Decline" rejects it. The launcher sends only the request reference and the code; it
+shows the website, the code, a rough browser description (such as "Firefox · Windows") and the time of the request.
+The server keeps the request for at most two minutes (hashes of the link and of a browser value, the code, the rough
+browser description, after confirming your UUID) and then only the website session (8 hours).
+
+**News in the launcher.** With the TRS services switched on, the launcher also loads the team's news posts from
+trs-launcher.theredstonee.de (text and pictures; without your token – nothing about you is sent) and caches them locally.
+
 **Team applications:** position, Minecraft name and UUID, Discord name, age group (never a birth date), your answers,
 status and our answer. Only team members whose role may review applications see them. Rejected or withdrawn
 applications are deleted 6 months after the decision, accepted ones 6 months after you leave the team; deleting your

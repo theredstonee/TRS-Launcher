@@ -41,15 +41,16 @@ export const WIKI_URL = `${REPO_URL}/wiki`
 export const IMPRINT_URL = 'https://theredstonee.de/imprint/'
 
 export function useRelease() {
-  return useFetch<{ release: LatestRelease | null }>('/v1/site/releases', { key: 'release', default: () => ({ release: null }) })
+  return useApiFetch<{ release: LatestRelease | null }>('/v1/site/releases', { key: 'release', default: () => ({ release: null }) })
 }
 
+/** Update-Beiträge (`posts`, aus CHANGELOG.md) und News-Beiträge des Teams (`news`, §30). */
 export function useBlog() {
-  return useFetch<{ posts: BlogPostSummary[] }>('/v1/site/blog', { key: 'blog', default: () => ({ posts: [] }) })
+  return useApiFetch<{ posts: BlogPostSummary[], news?: NewsSummary[] }>('/v1/site/blog', { key: 'blog', default: () => ({ posts: [], news: [] }) })
 }
 
 export function useCapes() {
-  return useFetch<{ capes: SiteCape[] }>('/v1/site/capes', { key: 'capes', default: () => ({ capes: [] }) })
+  return useApiFetch<{ capes: SiteCape[] }>('/v1/site/capes', { key: 'capes', default: () => ({ capes: [] }) })
 }
 
 export function assetFor(release: LatestRelease | null | undefined, platform: Platform): ReleaseAsset | null {

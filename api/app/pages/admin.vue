@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import '~/assets/css/admin.css'
 
-// Team-Bereich: Anmeldung mit Microsoft (dieselbe Website-Sitzung wie überall), danach Seitenleiste + Suche und
+// Team-Bereich: Anmeldung mit Microsoft oder dem TRS Launcher (dieselbe Website-Sitzung wie überall), danach Seitenleiste + Suche und
 // die Unterseiten unter /admin/*. Alles über /v1/admin; Rechte prüft der Server, die Oberfläche zeigt nur, was die
 // Rechte der eigenen Rollen erlauben (§24.2).
 definePageMeta({ layout: false })
@@ -11,13 +11,13 @@ const { m, fill } = useLang()
 const { a } = useAdminText()
 const { t } = useTeamText()
 const { c: ct } = useCircuitText()
+const { b: bt } = useBlogText()
 const { session, account, counts, load, api, logout, can } = useAdmin()
 const { loginUrl } = useAccount()
 const route = useRoute()
 const router = useRouter()
 
 const ready = ref(false)
-const msEnabled = ref(true)
 
 // --- Zähler für die Seitenleiste ---------------------------------------------------------------
 async function refreshCounts() {
@@ -39,10 +39,7 @@ async function refreshCounts() {
 let countTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
-  const [team] = await Promise.all([
-    load(),
-    $fetch<{ microsoft: boolean }>('/v1/web/login').then((r) => (msEnabled.value = r.microsoft)).catch(() => {}),
-  ])
+  const team = await load()
   if (team) {
     void refreshCounts()
     goToAllowed()
@@ -78,6 +75,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/applications', icon: 'inbox', label: t.value.adm.nav.applications, count: counts.value?.applications, perm: ['applications.view'] },
   { to: '/admin/jobs', icon: 'briefcase', label: t.value.adm.nav.jobs, perm: ['applications.view', 'applications.manage'] },
   { to: '/admin/circuits', icon: 'blocks', label: ct.value.adm.nav, count: counts.value?.circuits, perm: ['circuits.manage'] },
+  { to: '/admin/blog', icon: 'book', label: bt.value.adm.nav, perm: ['blog.write', 'blog.publish'] },
   { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },
   { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter, perm: ['wordfilter'] },
   { to: '/admin/roles', icon: 'key', label: t.value.adm.nav.roles, perm: ['roles.manage'] },
@@ -193,8 +191,7 @@ useAdminKeys({
         <p class="mt-3 text-base-400">{{ m.admin.lead }}</p>
         <div class="card mt-8 p-6">
           <template v-if="!account">
-            <a v-if="msEnabled" :href="loginUrl('/admin')" class="btn btn-primary h-12 w-full text-base"><MsLogo class="size-5" />{{ m.admin.start }}</a>
-            <p v-else class="text-sm text-lamp-300">{{ t.login.disabled }}</p>
+            <a :href="loginUrl('/admin')" class="btn btn-primary h-12 w-full text-base"><SiteIcon name="user" class="size-5" />{{ m.admin.start }}</a>
           </template>
           <template v-else>
             <div class="flex items-center gap-3">

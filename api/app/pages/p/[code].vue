@@ -35,7 +35,7 @@ const { m, fill, date } = useLang()
 const lp = useLocalePath()
 
 const { data } = valid
-  ? await useFetch<{ pack: PublicPack }>(() => `/v1/packs/code/${encodeURIComponent(code.value)}`, { key: `pack-${code.value}` })
+  ? await useApiFetch<{ pack: PublicPack }>(() => `/v1/packs/code/${encodeURIComponent(code.value)}`, { key: `pack-${code.value}` })
   : { data: ref<{ pack: PublicPack } | null>(null) }
 const pack = computed(() => data.value?.pack ?? null)
 

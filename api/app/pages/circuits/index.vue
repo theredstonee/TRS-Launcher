@@ -13,7 +13,7 @@ const route = useRoute()
 const router = useRouter()
 const siteUrl = useSiteUrl()
 
-const { data, error } = await useFetch<{ circuits: SiteCircuit[] }>('/v1/site/circuits', { key: 'site-circuits', default: () => ({ circuits: [] }) })
+const { data, error } = await useApiFetch<{ circuits: SiteCircuit[] }>('/v1/site/circuits', { key: 'site-circuits', default: () => ({ circuits: [] }) })
 const all = computed(() => data.value?.circuits ?? [])
 
 const category = ref<string>(typeof route.query.category === 'string' && (CIRCUIT_CATEGORIES as readonly string[]).includes(route.query.category) ? route.query.category : '')
