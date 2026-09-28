@@ -220,6 +220,14 @@ public final class ColumnScanner {
 			depth++;
 			yy--;
 		}
+		if (textures) {
+			// Wasser aus der Wassertextur (Graustufe) × Biom-Wasserfarbe.
+			int t = r.textureColor(x, y, z);
+			if (t != -1) {
+				int water = TexturePalette.tint(t, waterTint == -1 ? MapColors.DEFAULT_WATER : waterTint);
+				return MapColors.KNOWN | MapColors.WATER | MapColors.waterOver(floor, water, depth);
+			}
+		}
 		return MapColors.KNOWN | MapColors.WATER | MapColors.water(floor, waterTint, depth);
 	}
 }

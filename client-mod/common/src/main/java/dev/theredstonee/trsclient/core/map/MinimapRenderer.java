@@ -39,6 +39,8 @@ public final class MinimapRenderer {
 	static final int EDGE_BOX = 9;
 	/** Höchstens so viele Wegpunkte am Rand. */
 	static final int MAX_EDGE = 64;
+	/** Abstand zweier Rand-Kästchen bzw. Kästchen ↔ Himmelsrichtung entlang des Randes (GUI-Pixel). */
+	static final float EDGE_GAP = EDGE_BOX + 3;
 
 	private final float[] bands = new float[4 * 512];
 	private float zoom = -1f;
@@ -47,6 +49,7 @@ public final class MinimapRenderer {
 	private final double[] point = new double[2];
 	private final double[] edgeS = new double[MAX_EDGE];
 	private final Waypoint[] edgeW = new Waypoint[MAX_EDGE];
+	private final double[] compassS = new double[4];
 
 	// Zwischengespeicherte Texte (nur bei Änderung neu).
 	private String coordsText = "";
@@ -130,11 +133,12 @@ public final class MinimapRenderer {
 			squareFrame(c, pad, size, theme);
 		}
 
-		if (m.minimapCompass.get()) drawCompass(c, e, cx, cy, radius, round, theta, scale, theme);
 		if (live) {
 			drawEntities(c, e, cx, cy, radius, round, theta, px, pz, scale);
 			if (m.minimapWaypoints.get() || m.minimapDeath.get()) drawWaypoints(c, e, cx, cy, radius, round, theta, px, pz, scale);
 		}
+		// Himmelsrichtungen zuletzt: immer lesbar, die Rand-Kästchen weichen ihnen aus.
+		if (m.minimapCompass.get()) drawCompass(c, e, cx, cy, radius, round, theta, scale, theme);
 		// Eigene Position: Pfeil in Blickrichtung (bei gedrehter Karte immer nach oben).
 		float arrowRot = theta + yawRad + (float) Math.PI;
 		if (!e.sprites().draw(c, MapSprites.ARROW, cx, cy, 10f, arrowRot, 0xFF000000 | (theme.dustOn & 0xFFFFFF), scale)) {
@@ -287,7 +291,15 @@ public final class MinimapRenderer {
 		}
 		if (edges == 0) return;
 		float half = edgeHalf(radius, round);
-		EdgeLayout.spread(edgeS, edges, EDGE_BOX + 1, EdgeLayout.perimeter(half, round));
+		// Die Himmelsrichtungen sind feste Stellen am Rand – die Kästchen rücken seitlich an ihnen vorbei.
+		int fixed = 0;
+		if (m.minimapCompass.get()) {
+			for (int i = 0; i < 4; i++) {
+				double a = theta + i * Math.PI / 2;
+				compassS[fixed++] = EdgeLayout.along(Math.sin(a), -Math.cos(a), half, round);
+			}
+		}
+		EdgeLayout.spread(edgeS, edges, EDGE_GAP, EdgeLayout.perimeter(half, round), compassS, fixed);
 		for (int i = 0; i < edges; i++) {
 			EdgeLayout.point(edgeS[i], half, round, point);
 			edgeBox(c, cx + (float) point[0], cy + (float) point[1], edgeW[i]);

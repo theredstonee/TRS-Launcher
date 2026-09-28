@@ -261,6 +261,22 @@ class MinimapFeaturesTest {
 		assertEquals(MapColors.KNOWN | 0xDBCFA3, px[1], "Sand aus der Textur");
 		assertTrue(ColumnScanner.surface(r, 0, 0, ColumnScanner.NO_CUT, false, px, h));
 		assertEquals(MapColors.KNOWN | MapColors.tint(MapColors.MAP_GRASS, 0x91BD59), px[0], "Vanilla-Farben");
+		// Wasser: Wassertextur (Graustufe) × Biom-Wasserfarbe.
+		r.textures.put(MapColors.MAP_WATER, 0xB1B1B1);
+		r.base.column(3, 0, new int[] {MapTest.SAND, MapColors.MAP_WATER, MapColors.MAP_WATER, ChunkReader.AIR});
+		assertTrue(ColumnScanner.surface(r, 0, 0, ColumnScanner.NO_CUT, true, px, h));
+		assertEquals(MapColors.KNOWN | MapColors.WATER | MapColors.waterOver(0xDBCFA3, TexturePalette.tint(0xB1B1B1, 0x3F76E4), 2), px[3]);
+		assertNotEquals(MapColors.KNOWN | MapColors.WATER | MapColors.water(MapTest.SAND, 0x3F76E4, 2), px[3]);
+		// Unterschied messen (Selbsttest-Hilfe): Vanilla → Textur.
+		MapLayer layer = new MapLayer("surface", 1, Integer.MIN_VALUE, null, null);
+		assertTrue(ColumnScanner.surface(r, 0, 0, ColumnScanner.NO_CUT, false, px, h));
+		layer.forWrite(0, 0, 0).writeChunk(0, 0, px, h, 0);
+		MapColorDiff diff = MapColorDiff.snapshot(layer, 8, 8, 40);
+		assertTrue(ColumnScanner.surface(r, 0, 0, ColumnScanner.NO_CUT, true, px, h));
+		layer.forWrite(0, 0, 0).writeChunk(0, 0, px, h, 0);
+		long[] cmp = diff.compare(layer);
+		assertEquals(256, cmp[0]);
+		assertTrue(cmp[1] > 200, "fast alles Gras ändert sich: " + MapColorDiff.describe(cmp));
 		// Stein hat keine Texturfarbe → Vanilla.
 		r.base.column(2, 0, new int[] {MapTest.STONE, ChunkReader.AIR});
 		assertTrue(ColumnScanner.surface(r, 0, 0, ColumnScanner.NO_CUT, true, px, h));
@@ -318,6 +334,30 @@ class MinimapFeaturesTest {
 				assertTrue(Math.min(d, 400 - d) >= 50 - 1e-6);
 			}
 		}
+	}
+
+	@Test
+	void edgeMarkersMakeWayForCompassLetters() {
+		// Himmelsrichtung fest bei 100: ein Kästchen genau dort weicht aus, die feste Stelle bleibt.
+		double[] fixed = {100, 200, 300, 0};
+		double[] s = {101};
+		EdgeLayout.spread(s, 1, 12, 400, fixed, 4);
+		assertTrue(Math.abs(s[0] - 100) >= 12 - 1e-9, "Abstand zur Himmelsrichtung: " + s[0]);
+		assertArrayEquals(new double[] {100, 200, 300, 0}, fixed, "feste Stellen unverändert");
+		// Zwei Kästchen links und rechts nah an der festen Stelle: beide weichen zur eigenen Seite aus.
+		double[] two = {97, 104};
+		EdgeLayout.spread(two, 2, 12, 400, fixed, 4);
+		assertEquals(88, two[0], 1e-9);
+		assertEquals(112, two[1], 1e-9);
+		// Über die Nahtstelle 0/400: Kästchen bei 399 und fester Punkt bei 0.
+		double[] wrap = {399};
+		EdgeLayout.spread(wrap, 1, 12, 400, fixed, 4);
+		double d = Math.min(Math.abs(wrap[0] - 0), 400 - Math.abs(wrap[0] - 0));
+		assertTrue(d >= 12 - 1e-9, "über die Naht: " + wrap[0]);
+		// Weit weg: bleibt, wo es ist.
+		double[] far = {150};
+		EdgeLayout.spread(far, 1, 12, 400, fixed, 4);
+		assertEquals(150, far[0], 1e-9);
 	}
 
 	@Test

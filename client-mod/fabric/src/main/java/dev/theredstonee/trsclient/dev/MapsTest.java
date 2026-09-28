@@ -25,6 +25,8 @@ public final class MapsTest {
 	private int waited;
 	private int bx, by, bz;
 	private int moved;
+	private int maxSteps;
+	private dev.theredstonee.trsclient.core.map.MapColorDiff colorDiff;
 	private static final java.util.List<String> EDGE_NAMES = java.util.Arrays.asList("Alpha", "Arena", "Burg", "Camp", "Dorf");
 
 	public static void install() {
@@ -292,26 +294,43 @@ public final class MapsTest {
 				return;
 			case 34:
 				shot(mc, "minimap2-vanilla-colors");
+				colorDiff = dev.theredstonee.trsclient.core.map.MapColorDiff.snapshot(e.surfaceLayer(), e.playerX(), e.playerZ(), 80);
 				m.minimapColors.set(TrsModules.MapColorMode.TEXTURES);
 				phase = 35;
 				wait = 100;
 				return;
 			case 35:
 				shot(mc, "minimap2-texture-colors");
+				log("Farbunterschied Vanilla → Texturfarben (80 Blöcke um den Spieler): "
+						+ dev.theredstonee.trsclient.core.map.MapColorDiff.describe(colorDiff.compare(e.surfaceLayer())));
+				// Auto-Zoom: hoch in die Luft, fliegen und nach Osten schauen.
+				cmd(mc, "gamemode creative");
+				cmd(mc, "tp @p " + bx + " " + (by + 40) + " " + bz + " -90 30");
 				moved = 0;
+				maxSteps = 0;
 				phase = 36;
+				wait = 30;
 				return;
 			case 36:
-				// Schnell nach Osten (1,2 Blöcke je Tick ≈ Elytra/Boot auf Eis) → Auto-Zoom zoomt heraus.
-				cmd(mc, "tp @p ~1.2 ~ ~");
-				if (++moved < 40) return;
-				log("Auto-Zoom schnell: " + e.autoZoom().speedSteps() + " Stufen heraus");
+				// Echtes Tempo: jeden Tick 1,2 Blöcke nach Osten (wie Elytra/Boot auf Eis) – clientseitig, der Server nimmt es an.
+				//? if >=1.17 {
+				mc.player.getAbilities().flying = true;
+				//?} else
+				/*mc.player.abilities.flying = true;*/
+				mc.player.setPos(Mc.x(mc.player) + 1.2, Mc.y(mc.player), Mc.z(mc.player));
+				maxSteps = Math.max(maxSteps, e.autoZoom().speedSteps());
+				if (++moved < 50) return;
+				log("Auto-Zoom schnell: jetzt " + e.autoZoom().speedSteps() + ", höchstens " + maxSteps + " Stufe(n) heraus, Ziel "
+						+ e.autoZoom().target(2f) + " px/Block (eingestellt 2)");
 				shot(mc, "minimap2-autozoom-fast");
+				moved = 0;
 				phase = 37;
-				wait = 80;
 				return;
 			case 37:
-				log("Auto-Zoom nach dem Anhalten: " + e.autoZoom().speedSteps() + " Stufen heraus");
+				// Anhalten (weiter fliegen, nicht fallen): nach der Pause zoomt die Karte wieder hinein.
+				if (++moved < 100) return;
+				log("Auto-Zoom nach dem Anhalten: " + e.autoZoom().speedSteps() + " Stufe(n) heraus, Ziel " + e.autoZoom().target(2f)
+						+ " px/Block" + (maxSteps >= 1 && e.autoZoom().speedSteps() == 0 ? " – OK" : " – FEHLER"));
 				shot(mc, "minimap2-autozoom-back");
 				log(String.format(Locale.ROOT, "Messung Minimap 2: Tick Ø %.0f µs, Minimap zeichnen Ø %.0f µs", e.tickMicros(), e.drawMicros()));
 				Mc.setScreen(new dev.theredstonee.trsclient.screen.TrsMenuScreen(null).select(m.minimap));

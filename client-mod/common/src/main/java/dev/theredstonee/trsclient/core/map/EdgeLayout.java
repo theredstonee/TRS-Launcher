@@ -72,41 +72,61 @@ public final class EdgeLayout {
 	 * @param n Anzahl gültiger Einträge
 	 */
 	public static void spread(double[] s, int n, double gap, double period) {
-		if (n <= 1 || period <= 0) return;
-		if (gap * n > period) gap = period / n;
-		// Sortieren (Indizes), dann an der größten Lücke aufschneiden – dort kann nichts zusammenstoßen.
-		Integer[] order = new Integer[n];
-		for (int i = 0; i < n; i++) {
-			s[i] = ((s[i] % period) + period) % period;
-			order[i] = i;
+		spread(s, n, gap, period, null, 0);
+	}
+
+	/**
+	 * Wie {@link #spread(double[], int, double, double)}, dazu feste Stellen (z. B. die Himmelsrichtungen), die sich
+	 * nicht bewegen: Markierungen halten auch zu ihnen mindestens {@code gap} Abstand und weichen seitlich aus –
+	 * eine Gruppe, die an eine feste Stelle stößt, richtet sich an ihr aus.
+	 *
+	 * @param fixed feste Stellen (werden nicht verändert) oder null
+	 * @param nFixed Anzahl fester Stellen
+	 */
+	public static void spread(double[] s, int n, double gap, double period, double[] fixed, int nFixed) {
+		if (n <= 0 || period <= 0) return;
+		if (fixed == null) nFixed = 0;
+		int total = n + nFixed;
+		if (total <= 1) return;
+		if (gap * total > period) gap = period / total;
+		double[] all = new double[total];
+		for (int i = 0; i < total; i++) {
+			double x = i < n ? s[i] : fixed[i - n];
+			all[i] = ((x % period) + period) % period;
 		}
-		final double[] pos = s;
-		Arrays.sort(order, (a, b) -> Double.compare(pos[a], pos[b]));
+		// Sortieren (Indizes), dann an der größten Lücke aufschneiden – dort kann nichts zusammenstoßen.
+		Integer[] order = new Integer[total];
+		for (int i = 0; i < total; i++) order[i] = i;
+		final double[] pos = all;
+		Arrays.sort(order, (a, b) -> {
+			int c = Double.compare(pos[a], pos[b]);
+			return c != 0 ? c : Integer.compare(a, b);
+		});
 		int cut = 0;
 		double best = -1;
-		for (int k = 0; k < n; k++) {
-			double next = k + 1 < n ? s[order[k + 1]] : s[order[0]] + period;
-			double g = next - s[order[k]];
+		for (int k = 0; k < total; k++) {
+			double next = k + 1 < total ? all[order[k + 1]] : all[order[0]] + period;
+			double g = next - all[order[k]];
 			if (g > best) {
 				best = g;
-				cut = (k + 1) % n;
+				cut = (k + 1) % total;
 			}
 		}
-		double[] v = new double[n];
-		int[] idx = new int[n];
-		double base = s[order[cut]];
-		for (int k = 0; k < n; k++) {
-			idx[k] = order[(cut + k) % n];
-			double x = s[idx[k]];
+		double[] v = new double[total];
+		int[] idx = new int[total];
+		double base = all[order[cut]];
+		for (int k = 0; k < total; k++) {
+			idx[k] = order[(cut + k) % total];
+			double x = all[idx[k]];
 			if (x < base) x += period;
 			v[k] = x;
 		}
 		// Gruppen zusammenlegen, bis keine sich mehr überlappen.
-		int[] start = new int[n];
-		int[] len = new int[n];
-		double[] center = new double[n];
-		int groups = n;
-		for (int k = 0; k < n; k++) {
+		int[] start = new int[total];
+		int[] len = new int[total];
+		double[] center = new double[total];
+		int groups = total;
+		for (int k = 0; k < total; k++) {
 			start[k] = k;
 			len[k] = 1;
 			center[k] = v[k];
@@ -118,11 +138,9 @@ public final class EdgeLayout {
 				double endA = center[g] + (len[g] - 1) * gap / 2;
 				double startB = center[g + 1] - (len[g + 1] - 1) * gap / 2;
 				if (startB - endA < gap - 1e-9) {
-					int total = len[g] + len[g + 1];
-					double sum = 0;
-					for (int k = start[g]; k < start[g] + total; k++) sum += v[k];
-					center[g] = sum / total;
-					len[g] = total;
+					int size = len[g] + len[g + 1];
+					len[g] = size;
+					center[g] = groupCenter(v, idx, start[g], size, n, gap);
 					for (int j = g + 1; j + 1 < groups; j++) {
 						start[j] = start[j + 1];
 						len[j] = len[j + 1];
@@ -136,9 +154,21 @@ public final class EdgeLayout {
 		}
 		for (int g = 0; g < groups; g++) {
 			for (int k = 0; k < len[g]; k++) {
+				int i = idx[start[g] + k];
+				if (i >= n) continue;
 				double x = center[g] + (k - (len[g] - 1) / 2.0) * gap;
-				s[idx[start[g] + k]] = ((x % period) + period) % period;
+				s[i] = ((x % period) + period) % period;
 			}
 		}
+	}
+
+	/** Mitte einer Gruppe: an der ersten festen Stelle ausgerichtet, sonst der Mittelwert der eigentlichen Stellen. */
+	private static double groupCenter(double[] v, int[] idx, int start, int size, int movable, double gap) {
+		for (int k = 0; k < size; k++) {
+			if (idx[start + k] >= movable) return v[start + k] - (k - (size - 1) / 2.0) * gap;
+		}
+		double sum = 0;
+		for (int k = start; k < start + size; k++) sum += v[k];
+		return sum / size;
 	}
 }

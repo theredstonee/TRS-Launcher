@@ -79,7 +79,16 @@ public final class MapColors {
 	 * @param depth Wasserblöcke über dem Grund (≥ 1)
 	 */
 	public static int water(int floorRgb, int waterTint, int depth) {
-		int water = mul(waterTint == -1 ? DEFAULT_WATER : (waterTint & RGB), 0.86f);
+		return waterOver(floorRgb, mul(waterTint == -1 ? DEFAULT_WATER : (waterTint & RGB), 0.86f), depth);
+	}
+
+	/**
+	 * Wie {@link #water}, aber mit fertiger Wasserfarbe (z. B. aus der Wassertextur × Biom-Tönung).
+	 *
+	 * @param water Farbe der Wasseroberfläche (0xRRGGBB)
+	 */
+	public static int waterOver(int floorRgb, int water, int depth) {
+		water &= RGB;
 		if (depth < 1) depth = 1;
 		float alpha = Math.min(0.92f, 0.38f + depth * 0.07f);
 		int base = floorRgb == 0 ? water : mul(floorRgb & RGB, 0.72f);
