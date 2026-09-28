@@ -213,7 +213,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'friends_10', category: 'community', metric: 'friends', goal: 10, unit: 'count', points: 30, rarity: 'rare', icon: 'users',
-    reward: { kind: 'cosmetic', id: 'emote-party' },
+    reward: { kind: 'cosmetic', id: 'party' },
     title: { en: 'Squad', de: 'Die Truppe', es: 'La pandilla' },
     description: { en: 'Have 10 friends', de: 'Habe 10 Freunde', es: 'Ten 10 amigos' },
   },
@@ -293,7 +293,6 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     // Meta-Erfolg: sichtbar (nicht geheim), zählt die freigeschalteten geheimen Erfolge. Immer als LETZTER Eintrag
     // geprüft (siehe achievements.ts), das Ziel wächst mit neuen geheimen Erfolgen mit.
     id: 'all_secrets', category: 'secret', metric: 'secrets_unlocked', goal: 5, unit: 'count', points: 50, rarity: 'legendary', icon: 'crown',
-    reward: { kind: 'cosmetic', id: 'secret-crown' },
     title: { en: 'Explorer', de: 'Entdecker', es: 'Explorador' },
     description: { en: 'Unlock every secret achievement', de: 'Schalte alle geheimen Erfolge frei', es: 'Desbloquea todos los logros secretos' },
   },

@@ -1,4 +1,5 @@
 import type { AppContext } from './context'
+import { ACHIEVEMENTS } from './achievement-catalog'
 import { all } from './db'
 import { changelogFor, parseChangelog, postContent, type ChangelogEntry, type PostShot, type UpdateBanner } from './changelog'
 
@@ -167,6 +168,8 @@ export async function blogPost(version: string): Promise<BlogPost | null> {
 export interface PublicCape {
   id: string
   name: string
+  /** Titel des Erfolgs, der diesen Umhang als Belohnung vergibt (§31), sonst `null`. */
+  achievement: { en: string, de: string, es: string } | null
   unlock: 'free' | 'code' | 'admin'
   /** Relativ zur Website – gleiche App, gleiche Herkunft. */
   url: string
@@ -182,10 +185,13 @@ export function publicCapes(ctx: AppContext): PublicCape[] {
     `SELECT id, name, unlock, sha256, width, frames, frame_time_ms FROM capes
      WHERE kind = 'builtin' AND status = 'approved' AND retired = 0 ORDER BY sort, id`,
   )
+  // Umhänge, die ein Erfolg als Belohnung vergibt (§31): Titel des Erfolgs statt „Nur Team“.
+  const byReward = new Map(ACHIEVEMENTS.filter((a) => a.reward?.kind === 'cape').map((a) => [a.reward!.id, a.title]))
   return rows.map((c) => ({
     id: c.id,
     name: c.name,
     unlock: c.unlock,
+    achievement: byReward.get(c.id) ?? null,
     url: `/v1/capes/${c.id}.png?v=${c.sha256.slice(0, 12)}`,
     scale: Math.round(c.width / 64),
     frames: c.frames,

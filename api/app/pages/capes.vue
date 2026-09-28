@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { breadcrumbLd } from '#shared/seo'
 
-const { lang, m } = useLang()
+const { lang, m, fill } = useLang()
 const { data, error } = await useCapes()
 const capes = computed(() => data.value?.capes ?? [])
 const selected = ref<SiteCape | null>(null)
@@ -22,9 +22,10 @@ usePageSeo(() => ({
   ],
 }))
 
-const unlockLabel = (c: SiteCape) => (c.unlock === 'free' ? m.value.capes.free : c.unlock === 'code' ? m.value.capes.code : m.value.capes.admin)
+const unlockLabel = (c: SiteCape) =>
+  c.achievement ? fill(m.value.capes.achievement, { name: c.achievement[lang.value] ?? c.achievement.en }) : c.unlock === 'free' ? m.value.capes.free : c.unlock === 'code' ? m.value.capes.code : m.value.capes.admin
 const unlockClass = (c: SiteCape) =>
-  c.unlock === 'free' ? 'bg-ok/15 text-ok' : c.unlock === 'code' ? 'bg-lamp-900 text-lamp-300' : 'bg-redstone-900 text-redstone-300'
+  c.achievement ? 'bg-[#2a1f4a] text-[#c4a5ff]' : c.unlock === 'free' ? 'bg-ok/15 text-ok' : c.unlock === 'code' ? 'bg-lamp-900 text-lamp-300' : 'bg-redstone-900 text-redstone-300'
 </script>
 
 <template>

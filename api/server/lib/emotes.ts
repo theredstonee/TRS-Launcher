@@ -24,6 +24,8 @@ export const EMOTES: readonly EmoteDef[] = [
   { id: 'salutieren', name: 'Salutieren', unlock: 'code', durationMs: 2000, loop: false },
   { id: 'luftgitarre', name: 'Luftgitarre', unlock: 'code', durationMs: 5000, loop: true },
   { id: 'redstone_tanz', name: 'Redstone-Tanz', unlock: 'admin', durationMs: 6000, loop: true },
+  // Belohnung für den Erfolg „10 Freunde“ (§31).
+  { id: 'party', name: 'Party', unlock: 'admin', durationMs: 6000, loop: true },
 ]
 
 export const EMOTE_BY_ID: ReadonlyMap<string, EmoteDef> = new Map(EMOTES.map((e) => [e.id, e]))

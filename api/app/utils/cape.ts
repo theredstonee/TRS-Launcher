@@ -3,6 +3,8 @@
 export interface SiteCape {
   id: string
   name: string
+  /** Belohnung für einen Erfolg (Titel je Sprache), sonst `null`. */
+  achievement?: { en: string, de: string, es: string } | null
   unlock: 'free' | 'code' | 'admin'
   url: string
   scale: number

@@ -108,8 +108,7 @@ describe('achievement catalog', () => {
     expect(rewards).toEqual({
       play_100h: { kind: 'cape', id: 'veteran' },
       idea_implemented: { kind: 'cape', id: 'ideengeber' },
-      friends_10: { kind: 'cosmetic', id: 'emote-party' },
-      all_secrets: { kind: 'cosmetic', id: 'secret-crown' },
+      friends_10: { kind: 'cosmetic', id: 'party' },
     })
   })
 
@@ -277,9 +276,8 @@ describe('playtime and streak from heartbeats (§31.7)', () => {
 })
 
 describe('server-verified community achievements', () => {
-  it('friends: both sides unlock; 10 friends grant the emote once it exists (logged once while missing)', async () => {
+  it('friends: both sides unlock; 10 friends grant the party emote', async () => {
     const env = makeEnv()
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const all11 = await players(env, 'Alex', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10')
     const [a, ...others] = all11
     const ev = events(env, a!.uuid)
@@ -289,20 +287,29 @@ describe('server-verified community achievements', () => {
     for (const o of others.slice(1)) befriend(env, a!, o)
     expect(unlockedIds(env, a!.uuid)).toEqual(['first_friend', 'friends_10'])
     const tenth = ev.find((e) => e.achievement!.id === 'friends_10')!
-    expect(tenth.reward).toBeNull()
-    expect(warn.mock.calls.filter((c) => String(c[0]).includes('cosmetic:emote-party'))).toHaveLength(1)
-    // Noch einmal prüfen → kein zweites Log, keine zweite Freischaltung.
+    expect(tenth.reward).toEqual({ kind: 'cosmetic', id: 'party' })
+    expect(one(env.ctx.db, "SELECT source FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = 'party'", a!.uuid)).toEqual({ source: 'admin' })
+    // Noch einmal prüfen → keine zweite Freischaltung, nichts nachzureichen.
     expect(grantPendingRewards(env.ctx)).toBe(0)
     expect(checkAchievements(env.ctx, a!.uuid)).toEqual([])
-    expect(warn.mock.calls.filter((c) => String(c[0]).includes('cosmetic:emote-party'))).toHaveLength(1)
-    expect(one(env.ctx.db, 'SELECT 1 AS x FROM user_cosmetics WHERE uuid = ?', a!.uuid)).toBeUndefined()
+  })
 
-    // Das Teil kommt später → wird nachgereicht (einmal), auch über den eigenen Abruf.
-    seedCosmeticRow(env, 'emote-party')
+  it('a reward whose item does not exist yet is granted later (logged once while missing)', async () => {
+    const env = makeEnv()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const [a] = await players(env, 'Alex')
+    // Umhang „ideengeber“ fehlt noch (nicht angelegt).
+    const issue = createIssue(env.ctx, a!, { type: 'feature', area: 'launcher', title: 'Add achievements please', description: 'Would be fun.' })
+    adminUpdateIssue(env.ctx, OWNER, issue.number, { status: 'done' })
+    touchIssueAuthor(env.ctx, issue.number)
+    expect(unlockedIds(env, a!.uuid)).toContain('idea_implemented')
+    expect(warn.mock.calls.filter((c) => String(c[0]).includes('cape:ideengeber'))).toHaveLength(1)
+    expect(grantPendingRewards(env.ctx)).toBe(0)
+    expect(warn.mock.calls.filter((c) => String(c[0]).includes('cape:ideengeber'))).toHaveLength(1)
+    seedCape(env, 'ideengeber')
     expect(grantPendingRewards(env.ctx)).toBe(1)
     expect(grantPendingRewards(env.ctx)).toBe(0)
-    expect(one(env.ctx.db, "SELECT source FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = 'emote-party'", a!.uuid)).toEqual({ source: 'admin' })
-    expect(one<{ t: number | null }>(env.ctx.db, "SELECT reward_granted_at AS t FROM achievement_unlocks WHERE uuid = ? AND achievement_id = 'friends_10'", a!.uuid)!.t).toBe(env.clock.t)
+    expect(one(env.ctx.db, "SELECT 1 AS x FROM user_capes WHERE uuid = ? AND cape_id = 'ideengeber'", a!.uuid)).toBeDefined()
   })
 
   it('an implemented idea grants the cape immediately when it exists; up-votes from others count', async () => {
@@ -345,7 +352,7 @@ describe('server-verified community achievements', () => {
     expect(unlockedIds(env, a!.uuid)).toContain('pack_installs_10')
   })
 
-  it('all secrets unlock the meta achievement; its crown is granted once the item exists', async () => {
+  it('all secrets unlock the meta achievement (no reward)', async () => {
     const env = makeEnv()
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     const [a] = await players(env, 'Alex')
@@ -370,10 +377,8 @@ describe('server-verified community achievements', () => {
       beat(env, a!, 'in-game', 'client')
     }
     expect(unlockedIds(env, a!.uuid)).toEqual(expect.arrayContaining(['secret_01', 'secret_02', 'secret_03', 'secret_04', 'secret_05', 'all_secrets']))
-    expect(one(env.ctx.db, "SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = 'secret-crown'", a!.uuid)).toBeUndefined()
-    seedCosmeticRow(env, 'secret-crown', 'hat')
     const me = myAchievements(env.ctx, a!.uuid)
-    expect(one(env.ctx.db, "SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = 'secret-crown'", a!.uuid)).toBeDefined()
+    expect(me.achievements.find((x) => x.id === 'all_secrets')!.reward).toBeNull()
     expect(me.achievements.filter((x) => x.secret).every((x) => !x.hidden && x.title !== null)).toBe(true)
     expect(me.progress.all_secrets).toBe(5)
   })

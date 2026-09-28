@@ -1310,6 +1310,7 @@ Emotes are a **fixed list**. Launcher and mod contain the animations; the server
 | `salutieren` | Salutieren | code | 2000 | no |
 | `luftgitarre` | Luftgitarre | code | 5000 | yes |
 | `redstone_tanz` | Redstone-Tanz | admin | 6000 | yes |
+| `party` | Party | admin (reward for `friends_10`, §31) | 6000 | yes |
 
 Emotes appear in `GET /v1/cosmetics` with `slot: "emote"` and in `GET /v1/me/cosmetics` → `emotes`. They are unlocked with codes (`cosmeticId` = emote id) or admin grants, like other cosmetics.
 
@@ -3424,7 +3425,7 @@ Auth required, write bucket (30 / min). Strict body (`400 invalid_request` for a
 | `crash_fixed` | launcher | – | 10 | common | no | |
 | `launcher_import` | launcher | – | 10 | common | no | |
 | `first_friend` | community | – | 10 | common | yes | |
-| `friends_10` | community | 10 | 30 | rare | yes | emote (cosmetic) `emote-party` |
+| `friends_10` | community | 10 | 30 | rare | yes | emote `party` |
 | `first_message` | community | – | 5 | common | yes | |
 | `messages_500` | community | 500 | 30 | rare | yes | |
 | `first_issue` | community | – | 10 | common | yes | |
@@ -3434,13 +3435,13 @@ Auth required, write bucket (30 / min). Strict body (`400 invalid_request` for a
 | `idea_implemented` | community | – | 50 | epic | yes | cape `ideengeber` |
 | `circuit_approved` | community | – | 40 | rare | yes | |
 | `secret_01` … `secret_05` | secret (`secret: true`) | – / 360 min | 10–30 | uncommon–epic | mixed | |
-| `all_secrets` | secret (visible, `secret: false`) | 5 (= number of secret achievements) | 50 | legendary | yes | cosmetic `secret-crown` |
+| `all_secrets` | secret (visible, `secret: false`) | 5 (= number of secret achievements) | 50 | legendary | yes | – |
 
 - `all_secrets` is a visible meta achievement: its progress is the number of unlocked **secret** achievements, its goal
   grows when secret achievements are added (an account that already had it keeps it). It is counted by the server, but
   one of the secrets (`secret_02`) comes from a launcher report.
-- The reward items `veteran` (cape), `ideengeber` (cape), `emote-party` (emote) and `secret-crown` (head cosmetic) are
-  added later as built-in items. Until an item exists the unlock happens without it (`reward: null` in the event, the
+- The reward items are the capes `veteran` and `ideengeber` and the emote `party` (§12). Capes are built-in items
+  added with the catalog. Until an item exists the unlock happens without it (`reward: null` in the event, the
   catalog still shows the planned reward) and the server logs once per item. **Everyone who already unlocked the
   achievement gets the item** as soon as it exists: after every server start (once the built-in capes and cosmetics are
   seeded), every 10 minutes, and on the account's next `GET /v1/me/achievements`. No event is sent for such a late
