@@ -49,6 +49,8 @@ public final class MenusTest {
 	private Path clipsJson;
 	/** Unterschritte in Phase 12 (Bild groß, Clip-Vorschau). */
 	private int clipStep;
+	/** Unterschritte in Phase 2 (Direkt verbinden, Server hinzufügen, Löschen-Dialog). */
+	private int mpStep;
 
 	public static void install() {
 		MenusTest test = new MenusTest();
@@ -108,7 +110,29 @@ public final class MenusTest {
 				wait = 60;
 				return;
 			case 2:
-				shot(mc, "multiplayer");
+				// Serverliste → Direkt verbinden → Server hinzufügen → „Server löschen?“ (Formulare, Textfelder, Dialog).
+				if (mpStep == 0) {
+					shot(mc, "multiplayer");
+					Mc.setScreen(directJoin(screen));
+					mpStep = 1;
+					wait = 15;
+					return;
+				}
+				if (mpStep == 1) {
+					shot(mc, "direct-connect");
+					Mc.setScreen(addServer(screen));
+					mpStep = 2;
+					wait = 15;
+					return;
+				}
+				if (mpStep == 2) {
+					shot(mc, "add-server");
+					Mc.setScreen(deleteServer());
+					mpStep = 3;
+					wait = 10;
+					return;
+				}
+				shot(mc, "delete-server");
 				Mc.setScreen(options(new TrsTitleScreen(), mc));
 				phase++;
 				wait = 15;
@@ -271,6 +295,40 @@ public final class MenusTest {
 				return;
 			default:
 		}
+	}
+
+	private static ServerData testServer() {
+		//? if >=1.20.2 {
+		return new ServerData("TRS Testserver", FRIEND_SERVER, ServerData.Type.OTHER);
+		//?} else
+		/*return new ServerData("TRS Testserver", FRIEND_SERVER, false);*/
+	}
+
+	private static Screen directJoin(Screen parent) {
+		//? if >=1.15 {
+		return new net.minecraft.client.gui.screens.DirectJoinServerScreen(parent, b -> { }, testServer());
+		//?} else
+		/*return new net.minecraft.client.gui.screens.DirectJoinServerScreen(b -> { }, testServer());*/
+	}
+
+	private static Screen addServer(Screen parent) {
+		//? if >=1.21.9 {
+		/*return new net.minecraft.client.gui.screens.ManageServerScreen(parent,
+				net.minecraft.network.chat.Component.translatable("manageServer.add.title"), b -> { }, testServer());
+		*///?} elif >=1.15 {
+		return new net.minecraft.client.gui.screens.EditServerScreen(parent, b -> { }, testServer());
+		//?} else
+		/*return new net.minecraft.client.gui.screens.EditServerScreen(b -> { }, testServer());*/
+	}
+
+	/** „Server löschen?“ wie aus der Serverliste (Vanilla-Schlüssel). */
+	private static Screen deleteServer() {
+		//? if >=1.19 {
+		return new net.minecraft.client.gui.screens.ConfirmScreen(b -> { },
+				net.minecraft.network.chat.Component.translatable("selectServer.deleteQuestion"),
+				net.minecraft.network.chat.Component.translatable("selectServer.deleteWarning", "TRS Testserver"));
+		//?} else
+		/*return new net.minecraft.client.gui.screens.ConfirmScreen(b -> { }, new net.minecraft.network.chat.TranslatableComponent("selectServer.deleteQuestion"), new net.minecraft.network.chat.TranslatableComponent("selectServer.deleteWarning", "TRS Testserver"));*/
 	}
 
 	private static Screen options(Screen parent, Minecraft mc) {

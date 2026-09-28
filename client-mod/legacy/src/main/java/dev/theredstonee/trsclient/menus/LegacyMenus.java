@@ -26,8 +26,13 @@ import dev.theredstonee.trsclient.core.net.ServerPingTest;
 import dev.theredstonee.trsclient.core.net.StatusPing;
 import net.minecraft.client.gui.GuiOptions;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiScreenAddServer;
 import net.minecraft.client.gui.GuiScreenOptionsSounds;
+import net.minecraft.client.gui.GuiScreenServerList;
+import net.minecraft.client.gui.GuiShareToLan;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.GuiVideoSettings;
+import net.minecraft.client.gui.GuiYesNo;
 import net.minecraft.client.gui.ScreenChatOptions;
 import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraftforge.client.event.GuiScreenEvent;
@@ -35,6 +40,9 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -43,7 +51,9 @@ import java.util.WeakHashMap;
  * Redstone-Stil für Vanilla-Menüs unter Minecraft 1.8.9–1.12.2 (ohne Mixins, nur Forge-Ereignisse):
  * Hintergrund von Pausenmenü und Einstellungen ({@code BackgroundDrawnEvent}), Knopfflächen im Stil
  * (nach dem Vanilla-Zeichnen übermalt, Beschriftung neu), Ladebildschirme komplett, TRS-Knöpfe im
- * Pausenmenü. Die Menüs selbst – und Knöpfe anderer Mods – bleiben unverändert bedienbar.
+ * Pausenmenü. Formulare (Direkt verbinden, Server hinzufügen/bearbeiten) bekommen eine Fläche hinter den
+ * Feldern, Textfelder die TRS-Mulde, Bestätigungen ({@code GuiYesNo}) den Stil des Menüs, aus dem sie kommen.
+ * Die Menüs selbst – und Knöpfe anderer Mods – bleiben unverändert bedienbar.
  */
 public final class LegacyMenus {
 	/** Knopf-IDs der TRS-Knöpfe im Pausenmenü (weit weg von Vanilla- und üblichen Mod-IDs). */
@@ -86,8 +96,9 @@ public final class LegacyMenus {
 
 	MenuStyle.Kind kind(GuiScreen s) {
 		if (s == null) return null;
-		if (s instanceof GuiIngameMenu) return MenuStyle.Kind.PAUSE;
-		if (s instanceof GuiMultiplayer) return MenuStyle.Kind.MULTIPLAYER;
+		if (dialog(s)) return dialogKind(s);
+		if (s instanceof GuiIngameMenu || s instanceof GuiShareToLan) return MenuStyle.Kind.PAUSE;
+		if (s instanceof GuiMultiplayer || serverForm(s)) return MenuStyle.Kind.MULTIPLAYER;
 		if (s instanceof GuiOptions || s instanceof GuiVideoSettings || s instanceof GuiControls
 				|| s instanceof GuiScreenOptionsSounds || s instanceof GuiLanguage || s instanceof ScreenChatOptions
 				|| s instanceof GuiCustomizeSkin) {
@@ -105,6 +116,133 @@ public final class LegacyMenus {
 		return k != null && MenuStyle.enabled(k);
 	}
 
+	/** Formulare der Serverliste: „Direkt verbinden“ und „Server hinzufügen/bearbeiten“. */
+	static boolean serverForm(GuiScreen s) {
+		return s instanceof GuiScreenServerList || s instanceof GuiScreenAddServer;
+	}
+
+	/** Bildschirme mit Vanilla-Liste (GuiSlot übermalt alles – Kopf/Fuß zeichnet onDrawn). */
+	boolean listScreen(GuiScreen s) {
+		if (s instanceof GuiMultiplayer) return true;
+		if (worldsClass == null) worldsClass = Mc.worldSelectScreen(null).getClass();
+		return s.getClass() == worldsClass;
+	}
+
+	// --- Dialoge: übernehmen die Art des Menüs, aus dem sie kommen ---
+
+	/** Art je offenem Dialog (beim ersten Einordnen festgelegt; schwach referenziert). */
+	private final Map<GuiScreen, MenuStyle.Kind> dialogs = new WeakHashMap<GuiScreen, MenuStyle.Kind>();
+	/** Art des zuletzt aufgebauten Nicht-Dialog-Bildschirms (= Menü, aus dem ein Dialog geöffnet wird). */
+	private MenuStyle.Kind lastKind;
+
+	/** Bestätigungen (Server/Welt löschen, Server-Ressourcenpaket, Link öffnen …). */
+	static boolean dialog(GuiScreen s) {
+		return s instanceof GuiYesNo;
+	}
+
+	MenuStyle.Kind dialogKind(GuiScreen s) {
+		if (dialogs.containsKey(s)) return dialogs.get(s);
+		MenuStyle.Kind k = MenuStyle.dialogKind(lastKind, Mc.world() != null, Mc.mc().getCurrentServerData() != null);
+		dialogs.put(s, k);
+		return k;
+	}
+
+	// --- Textfelder im Stil ---
+
+	/** Textfelder je Bildschirmklasse (Reflection, einmal gesucht). */
+	private final Map<Class<?>, List<Field>> textFieldsByClass = new HashMap<Class<?>, List<Field>>();
+	/** Textfelder, deren Vanilla-Rahmen für das laufende Bild abgeschaltet ist: {x, y, width}. */
+	private final Map<GuiTextField, int[]> hiddenFields = new IdentityHashMap<GuiTextField, int[]>();
+
+	List<GuiTextField> textFields(GuiScreen s) {
+		List<Field> fields = textFieldsByClass.get(s.getClass());
+		if (fields == null) {
+			fields = new ArrayList<Field>();
+			for (Class<?> c = s.getClass(); c != null && c != GuiScreen.class && c != Object.class; c = c.getSuperclass()) {
+				for (Field f : c.getDeclaredFields()) {
+					if (!GuiTextField.class.isAssignableFrom(f.getType()) || java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+					try {
+						f.setAccessible(true);
+						fields.add(f);
+					} catch (RuntimeException e) {
+						// dann eben ohne dieses Feld
+					}
+				}
+			}
+			textFieldsByClass.put(s.getClass(), fields);
+		}
+		List<GuiTextField> out = new ArrayList<GuiTextField>();
+		for (Field f : fields) {
+			try {
+				Object v = f.get(s);
+				if (v instanceof GuiTextField) out.add((GuiTextField) v);
+			} catch (IllegalAccessException | RuntimeException e) {
+				// weiter
+			}
+		}
+		return out;
+	}
+
+	/**
+	 * Vor dem Zeichnen der Textfelder (nach dem Hintergrund): TRS-Fläche zeichnen und den Vanilla-Rahmen für
+	 * dieses Bild abschalten. Ohne Rahmen schreibt Vanilla ab (x, y) statt (x+4, mittig) und nutzt die volle
+	 * Breite – darum Lage und Breite so verschieben, dass Text und Schreibmarke genau wie mit Rahmen stehen.
+	 * Nach dem Bild ({@link #restoreFields()}) wieder zurück.
+	 */
+	void styleTextFields(GuiScreen s, Canvas c, int mouseX, int mouseY) {
+		restoreFields();
+		for (GuiTextField f : textFields(s)) {
+			if (!f.getVisible() || !f.getEnableBackgroundDrawing()) continue;
+			int x = fieldX(f);
+			int y = fieldY(f);
+			boolean hover = mouseX >= x && mouseY >= y && mouseX < x + f.width && mouseY < y + f.height;
+			MenuSkin.textField(c, x - 1, y - 1, f.width + 2, f.height + 2, f.isFocused(), hover, true);
+			hiddenFields.put(f, new int[]{x, y, f.width});
+			f.setEnableBackgroundDrawing(false);
+			setFieldPos(f, x + 4, y + (f.height - 8) / 2);
+			f.width = f.width - 8;
+		}
+	}
+
+	void restoreFields() {
+		if (hiddenFields.isEmpty()) return;
+		for (Map.Entry<GuiTextField, int[]> e : hiddenFields.entrySet()) {
+			GuiTextField f = e.getKey();
+			int[] o = e.getValue();
+			setFieldPos(f, o[0], o[1]);
+			f.width = o[2];
+			f.setEnableBackgroundDrawing(true);
+		}
+		hiddenFields.clear();
+	}
+
+	/** Fläche hinter einem Formular {x1, y1, x2, y2}: Knöpfe und Felder, oben Platz für die Beschriftung. */
+	int[] formBounds(GuiScreen s, List<GuiTextField> fields) {
+		int x1 = Integer.MAX_VALUE;
+		int y1 = Integer.MAX_VALUE;
+		int x2 = Integer.MIN_VALUE;
+		int y2 = Integer.MIN_VALUE;
+		List<GuiButton> list = buttons.get(s);
+		if (list != null) {
+			for (GuiButton b : list) {
+				if (!b.visible) continue;
+				x1 = Math.min(x1, x(b));
+				y1 = Math.min(y1, y(b));
+				x2 = Math.max(x2, x(b) + b.width);
+				y2 = Math.max(y2, y(b) + height(b));
+			}
+		}
+		for (GuiTextField f : fields) {
+			if (!f.getVisible()) continue;
+			x1 = Math.min(x1, fieldX(f));
+			y1 = Math.min(y1, fieldY(f));
+			x2 = Math.max(x2, fieldX(f) + f.width);
+			y2 = Math.max(y2, fieldY(f) + f.height);
+		}
+		if (x1 == Integer.MAX_VALUE) return null;
+		return new int[]{Math.max(2, x1 - 12), Math.max(MenuSkin.HEADER + 4, y1 - 22), Math.min(s.width - 2, x2 + 12), Math.min(s.height - 2, y2 + 10)};
+	}
+
 	// --- Ereignisse ---
 
 	@SubscribeEvent
@@ -112,18 +250,22 @@ public final class LegacyMenus {
 		GuiScreen s = Mc.eventGui(event);
 		List<GuiButton> list = buttonList(event);
 		if (s == null || list == null) return;
+		restoreFields();
+		// Öffner für spätere Dialoge merken (Dialoge selbst werden hier eingeordnet).
+		if (dialog(s)) dialogKind(s);
+		else lastKind = kind(s);
 		MenuStyle.Kind k = kind(s);
 		if (k == null) return;
 		buttons.put(s, list);
 		try {
-			if (k == MenuStyle.Kind.PAUSE && MenuStyle.pauseButtons()) pauseButtons(s, list);
+			if (k == MenuStyle.Kind.PAUSE && s instanceof GuiIngameMenu && MenuStyle.pauseButtons()) pauseButtons(s, list);
 		} catch (RuntimeException e) {
 			// Menü bleibt dann klassisch.
 		}
 		try {
-			if (k == MenuStyle.Kind.PAUSE) hostingButtons(s, list);
-			if (k == MenuStyle.Kind.MULTIPLAYER) joinButton(s, list);
-			if (k == MenuStyle.Kind.MULTIPLAYER && MenuStyle.enabled(k)) pingButton(s, list);
+			if (k == MenuStyle.Kind.PAUSE && s instanceof GuiIngameMenu) hostingButtons(s, list);
+			if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof GuiMultiplayer) joinButton(s, list);
+			if (k == MenuStyle.Kind.MULTIPLAYER && MenuStyle.enabled(k) && s instanceof GuiMultiplayer) pingButton(s, list);
 		} catch (RuntimeException | LinkageError e) {
 			// ohne Hosting-Knöpfe weiter
 		}
@@ -163,12 +305,21 @@ public final class LegacyMenus {
 		MenuStyle.Kind k = kind(s);
 		if (k == null || k == MenuStyle.Kind.LOADING || !MenuStyle.enabled(k)) return;
 		// Listen-Bildschirme übermalt die Liste ohnehin – dort zeichnet onDrawn Kopf und Fuß.
-		if (k == MenuStyle.Kind.MULTIPLAYER || k == MenuStyle.Kind.WORLDS) return;
+		if (listScreen(s)) return;
 		try {
 			Canvas c = canvas(s);
-			int header = k == MenuStyle.Kind.PAUSE || k == MenuStyle.Kind.ERROR ? 0 : MenuSkin.HEADER;
-			MenuSkin.background(c, s.width, s.height, Mc.world() != null, header, s.height);
+			boolean world = Mc.world() != null;
+			int header = k == MenuStyle.Kind.PAUSE || k == MenuStyle.Kind.ERROR || dialog(s) ? 0 : MenuSkin.HEADER;
+			MenuSkin.background(c, s.width, s.height, world, header, s.height);
+			List<GuiTextField> fields = textFields(s);
+			if (serverForm(s)) {
+				restoreFields();
+				int[] form = formBounds(s, fields);
+				if (form != null) MenuSkin.formPanel(c, form[0], form[1], form[2], form[3], world);
+			}
+			if (!fields.isEmpty()) styleTextFields(s, c, -1, -1);
 		} catch (RuntimeException e) {
+			restoreFields();
 			// klassisch weiter
 		}
 	}
@@ -177,6 +328,8 @@ public final class LegacyMenus {
 	@SubscribeEvent
 	public void onDrawn(GuiScreenEvent.DrawScreenEvent.Post event) {
 		GuiScreen s = Mc.eventGui(event);
+		// Textfelder nach dem Bild wieder auf Vanilla-Lage (Klicks und Maße stimmen dann wieder).
+		restoreFields();
 		MenuStyle.Kind k = kind(s);
 		if (k == null || !MenuStyle.enabled(k)) return;
 		try {
@@ -197,7 +350,7 @@ public final class LegacyMenus {
 					}
 				}
 				MenuSkin.loading(c, s.width, s.height, title, null, -1f, false, bottom < 0 ? -1 : top, bottom);
-			} else if (k == MenuStyle.Kind.MULTIPLAYER || k == MenuStyle.Kind.WORLDS) {
+			} else if (listScreen(s)) {
 				// Die Liste (GuiSlot) übermalt alles mit Erde – Kopf- und Fußleiste im Stil neu zeichnen.
 				if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof GuiMultiplayer) pingLabels((GuiMultiplayer) s, c);
 				listFrame(s, c, k);
@@ -507,6 +660,30 @@ public final class LegacyMenus {
 		/*return b.y;
 		*///?} else
 		return b.yPosition;
+	}
+
+	private static int fieldX(GuiTextField f) {
+		//? if >=1.11 {
+		/*return f.x;
+		*///?} else
+		return f.xPosition;
+	}
+
+	private static int fieldY(GuiTextField f) {
+		//? if >=1.11 {
+		/*return f.y;
+		*///?} else
+		return f.yPosition;
+	}
+
+	private static void setFieldPos(GuiTextField f, int x, int y) {
+		//? if >=1.11 {
+		/*f.x = x;
+		f.y = y;
+		*///?} else {
+		f.xPosition = x;
+		f.yPosition = y;
+		//?}
 	}
 
 	/** Höhe ist bis 1.12.2 geschützt – einmal per Reflection (MCP- oder SRG-Name) gesucht. */

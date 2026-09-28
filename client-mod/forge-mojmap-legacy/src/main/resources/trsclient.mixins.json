@@ -55,6 +55,7 @@
 		"KeySearchListInvoker",
 		"ConnectTargetMixin",
 		"MenuButtonMixin",
+		"MenuEditBoxMixin",
 		"ServerEntryMixin",
 		"WorldEntryMixin",
 		"LoadingOverlayMixin",

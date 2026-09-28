@@ -21,6 +21,26 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- TRS Client menu style: "Direct Connection" and "Add Server" / "Edit Server" now use the redstone look too – text
+  fields, buttons and the server resource pack switch on a calm panel instead of the plain vanilla screen.
+- Text fields in all restyled menus (e.g. world search) look like the TRS text fields and glow while you type.
+- Confirmations such as "Delete server?", the server resource pack question and link warnings follow the style of
+  the menu they come from; the multiplayer warning, "Open to LAN", world editing, game rules, flat/buffet world
+  settings, resource packs and credits are restyled as well.
+
+### Deutsch
+- TRS-Client-Menü-Stil: „Direkt verbinden“ und „Server hinzufügen“/„Server bearbeiten“ haben jetzt auch den
+  Redstone-Look – Textfelder, Knöpfe und der Schalter für Server-Ressourcenpakete auf ruhiger Fläche statt im
+  schlichten Vanilla-Bildschirm.
+- Textfelder in allen gestylten Menüs (z. B. die Weltensuche) sehen aus wie die TRS-Eingabefelder und leuchten beim
+  Tippen.
+- Rückfragen wie „Server löschen?“, die Frage nach dem Server-Ressourcenpaket und Link-Warnungen folgen dem Stil des
+  Menüs, aus dem sie kommen; Mehrspieler-Hinweis, „Im LAN öffnen“, Welt bearbeiten, Spielregeln,
+  Flachland-/Buffet-Einstellungen, Ressourcenpakete und Mitwirkende sind ebenfalls gestylt.
+
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->
 <!-- shots:

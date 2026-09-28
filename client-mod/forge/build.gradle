@@ -120,7 +120,7 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'GuiMixin', 'Li
 		'ColorGradeMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 // Menü-Stil (Pause, Serverliste, Laden, Optionen, Welten): Hintergrund, Knöpfe, Karten, Ladebildschirme.
-mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
+mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'MenuEditBoxMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
 // Suche in der Tastenbelegung: Einträge der Liste ersetzen (alle Versionen).

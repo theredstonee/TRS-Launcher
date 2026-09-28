@@ -208,7 +208,7 @@ mixinClasses << (stonecutter.eval(mc, '>=1.21.9') ? 'HostingPlayerListMixin' : '
 // Welt-Hosting: Resource Pack des Hosts als Server-Pack (Konfigurationsphase ab 1.20.3), Gast-Adresse lokal.
 if (stonecutter.eval(mc, '>=1.20.3')) mixinClasses += ['HostingPackServerMixin', 'HostingPackConfigMixin', 'HostingPackClientMixin']
 // Menü-Stil (Pause, Serverliste, Laden, Optionen, Welten): Hintergrund, Knöpfe, Karten, Ladebildschirme.
-mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
+mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'MenuEditBoxMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
 // Suche in der Tastenbelegung: Einträge der Liste ersetzen (alle Versionen).
